@@ -1,0 +1,105 @@
+#
+# $Id: multi.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+class ChildDialog : Dialog(label, close_button, create_modeless_button, 
+                            create_modal_button, clock_label)
+   #
+   # Set a string to appear as the dialog's title label
+   #
+   method set_label(s)
+      return label := s
+   end
+
+   method handle_create_modeless_button(ev)
+      d := ChildDialog()
+      d.set_label("Modeless Dialog")
+      d.show_modeless(self)
+   end
+
+   method handle_create_modal_button(ev)
+      d := ChildDialog()
+      d.set_label("Modal Dialog")
+      d.show_modal(self)
+   end
+
+   method tick()
+      clock_label.set_label(&clock)
+   end
+
+   method init_dialog(ev)
+   end
+
+   method setup()
+      local panel_1, panel_2, label_1, label_2
+      self.set_attribs("size=324,332", "resize=on")
+      self.set_ticker(1000)
+      close_button := TextButton()
+      close_button.set_pos("50%", "87%")
+      close_button.set_align("c", "c")
+      close_button.set_internal_alignment("c")
+      close_button.connect(self, "dispose", ACTION_EVENT)
+      close_button.set_label("Close")
+      self.add(close_button)
+      label_1 := Label()
+      label_1.set_pos("50%", "12%")
+      label_1.set_align("c", "c")
+      label_1.set_attribs("font=serif,20")
+      label_1.set_internal_alignment("l")
+      label_1.set_label("Multiple dialogs")
+      self.add(label_1)
+      panel_1 := Panel()
+      panel_1.set_pos("50%", "62%")
+      panel_1.set_size(223, 63)
+      panel_1.set_align("c", "c")
+      create_modeless_button := TextButton()
+      create_modeless_button.set_pos("50%", "75%")
+      create_modeless_button.set_align("c", "c")
+      create_modeless_button.set_internal_alignment("c")
+      create_modeless_button.connect(self, "handle_create_modeless_button", ACTION_EVENT)
+      create_modeless_button.set_label("Create Child Modeless Dialog")
+      panel_1.add(create_modeless_button)
+      create_modal_button := TextButton()
+      create_modal_button.set_pos("50%", "25%")
+      create_modal_button.set_align("c", "c")
+      create_modal_button.connect(self, "handle_create_modal_button", ACTION_EVENT)
+      create_modal_button.set_internal_alignment("c")
+      create_modal_button.set_label("Create Child Modal Dialog")
+      panel_1.add(create_modal_button)
+      self.add(panel_1)
+      panel_2 := Panel()
+      panel_2.set_pos("50%", "37%")
+      panel_2.set_size(235, 56)
+      panel_2.set_align("c", "c")
+      label_2 := Label()
+      label_2.set_pos(43, "50%")
+      label_2.set_align("c", "c")
+      label_2.set_internal_alignment("l")
+      label_2.set_label("Ticker")
+      panel_2.add(label_2)
+      clock_label := Label()
+      clock_label.set_pos(148, "50%")
+      clock_label.set_size(93, )
+      clock_label.set_align("c", "c")
+      clock_label.set_draw_border()
+      clock_label.set_internal_alignment("l")
+      clock_label.set_label("")
+      panel_2.add(clock_label)
+      self.add(panel_2)
+   end
+
+   method component_setup()
+      self.setup()
+      self.set_attribs("label=" || label)
+   end
+end
+
+procedure main()
+   local d
+   d := ChildDialog()
+   d.set_label("Dialog Modes")
+   d.show_modal()
+end

@@ -1,0 +1,132 @@
+#
+# $Id: getweb.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+#
+
+import gui
+import util
+import http
+import ipc
+
+$include "guih.icn"
+
+class GetWeb : Dialog(text_list_1, text_button_1, text_button_2, text_button_3, text_field_1, bp, data, mq)
+   method handle_start(ev)
+      local url
+
+      url := URL()
+      url.parse(text_field_1.get_contents())
+      if url.get_protocol() ~== "http" then
+         stop("only supports http")
+
+      data := []
+      text_list_1.set_contents(data)
+      bp := GetHttpGui()
+      mq := ipc::create_private_msg()
+      bp.set_url(url)
+      bp.set_mq(mq)
+      bp.start()
+      set_ticker(1000)
+   end
+
+   method handle_stop(ev)
+      if \bp then {
+         bp.stop()
+         write("joining")
+         bp.join()
+         write("removeing")
+         mq.remove()
+         bp := &null
+         mq := &null
+         stop_ticker()
+      }
+   end
+
+   method tick()
+      while r := mq.poll(0) do {
+         if integer(r) then {
+            s := http::decode_code(r)
+            put(data, "Status " || s)
+            if s == "Failed" then {
+               bp.join()
+               bp := &null
+               mq.remove()
+               mq := &null
+               stop_ticker()
+               break
+            }
+         } else {
+            bp.join()
+            bp := &null
+            mq.remove()
+            mq := &null
+            stop_ticker()
+            data |||:= r.get_string_list()
+            break
+         }
+      }
+      text_list_1.set_contents(data)
+   end
+
+   method init_dialog(ev)
+      text_field_1.set_contents("http://news.bbc.co.uk")
+      data := []
+   end
+
+   method setup()
+      local panel_1
+      self.set_attribs("size=423,450", "resize=on")
+      text_list_1 := TextDisplay()
+      text_list_1.set_pos("50%", "25")
+      text_list_1.set_size("100%-50", "248")
+      text_list_1.set_align("c", "t")
+      text_list_1.set_contents([""])
+      self.add(text_list_1)
+      panel_1 := Panel()
+      panel_1.set_pos("50%", "373")
+      panel_1.set_size("263", "50")
+      panel_1.set_align("c", "t")
+      text_button_1 := TextButton()
+      text_button_1.connect(self, "dispose", ACTION_EVENT)
+      text_button_1.set_pos("0", "50%")
+      text_button_1.set_align("l", "c")
+      text_button_1.set_internal_alignment("c")
+      text_button_1.set_label("Close")
+      panel_1.add(text_button_1)
+      text_button_2 := TextButton()
+      text_button_2.set_pos("50%", "50%")
+      text_button_2.set_align("c", "c")
+      text_button_2.set_internal_alignment("c")
+      text_button_2.set_label("Start")
+      text_button_2.connect(self, "handle_start", ACTION_EVENT)
+      panel_1.add(text_button_2)
+      text_button_3 := TextButton()
+      text_button_3.set_pos("100%", "50%")
+      text_button_3.set_align("r", "c")
+      text_button_3.set_internal_alignment("c")
+      text_button_3.set_label("Stop")
+      text_button_3.connect(self, "handle_stop", ACTION_EVENT)
+      panel_1.add(text_button_3)
+      self.add(panel_1)
+      text_field_1 := TextField()
+      text_field_1.set_pos("50%", "316")
+      text_field_1.set_size("263", )
+      text_field_1.set_align("c", "t")
+      text_field_1.set_draw_border()
+      text_field_1.set_contents("")
+      self.add(text_field_1)
+   end
+
+   method component_setup()
+      self.setup()
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main(a)
+   local d
+
+   d := GetWeb()
+   d.show_modal()
+end

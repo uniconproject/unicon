@@ -1,0 +1,179 @@
+#
+# $Id: explorer.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+#
+
+import gui
+
+$include "keysyms.icn"
+$include "guih.icn"
+
+#
+# A very simple filesystem explorer with a tree and a table.
+#
+class Explorer : Dialog(tree, 
+                        sizer,
+                        tbl)
+
+   #
+   # Given a Node n, get the full file path it represents by traversing
+   # up the tree structure to the root.
+   #
+   method get_full_path(n)
+      local s
+
+      s := ""
+      repeat {
+         s := n.get_label() || s
+         n := n.get_parent_node() | break
+      }
+      return s
+   end
+
+   #
+   # Invoked when a sub-tree is expanded (ie: the little + is
+   # clicked).  An expansion event also includes contractions
+   # too.
+   #
+   method handle_tree_expansion()
+      local n
+
+      n := tree.get_last_expanded()
+      #
+      # Check whether it was an expansion or a contraction.  If
+      # an expansion, load the subtree and refresh the tree.
+      #
+      if n.is_expanded() then {
+         load_subtree(n)
+         tree.tree_structure_changed()
+      }
+   end
+
+   #
+   # Invoked when a row in the tree is selected (or de-selected).
+   #
+   method handle_tree_selection()
+      local n
+
+      #
+      # If we have something selected, load the table.  We may not
+      # have something selected if the user contracted the parent
+      # node of the selected node.
+      #
+      if n := tree.object_get_selections()[1] then {
+         load_table(n)
+      }
+   end
+
+   #
+   # Given a Node n, load its children with the sub-directories.
+   #
+   method load_subtree(n)
+      local s, name, r1, dir_list, file_list
+
+      s := get_full_path(n)
+
+      l := get_directory_list(s)
+
+      n.clear_children()
+      every name := !l[1] do {
+         if (name ~== "./") & (name ~== "../") then {
+            r1 := Node("always_expandable=t")
+            r1.set_label(name)
+            n.add(r1)
+         }
+      }
+   end
+
+   #
+   # Given a Node n, load the table with the sub-files and
+   # sub-directories.
+   #
+   method load_table(n)
+      local s, l, t
+
+      s := get_full_path(n)
+
+      t := get_directory_list(s)
+
+      l := []
+      every el := !sort(t[1] ||| t[2]) do {
+         p := stat(s || el) | stop("No stat")
+         put(l, [el, p.size, ctime(p.mtime)[5:17], p.mode])
+      }
+
+      tbl.set_contents(l)
+      tbl.goto_pos(1, 0)
+   end
+
+   #
+   # The sizer has moved, so reset the sizes and positions of the
+   # table, tree and sizer.  Then call resize() to reposition
+   # everything.
+   #
+   method handle_sizer(ev)
+      result_x := sizer.get_curr_pos()
+      tree.set_size(result_x - 10, tree.h_spec)
+      sizer.set_pos(result_x, sizer.y_spec)
+      tbl.set_pos(result_x + 10, tbl.y_spec)
+      tbl.set_size("100%-" || string(result_x + 20), tbl.h_spec)
+      resize()
+   end
+
+   #
+   # Catch Alt-q to close the dialog.
+   #
+   method quit_check(ev)
+      if ev.get_param() === "q" & &meta then
+         dispose()
+   end
+
+   #
+   # Override resize to set the sizer's min/max locations.
+   #
+   method resize()
+      self.Dialog.resize()
+      sizer.set_min_max(135, get_w_reference() - 160)
+   end
+
+   method component_setup()
+      local root_node
+
+      attrib("size=750,440", "resize=on", "label=Explorer")
+      connect(self, "dispose", CLOSE_BUTTON_EVENT)
+      connect(self, "quit_check", ICON_EVENT)
+
+      tree := Tree("pos=10,10", "size=250,100%-20", "select_one")
+      tree.connect(self, "handle_tree_expansion", TREE_NODE_EXPANSION_EVENT)
+      tree.connect(self, "handle_tree_selection", SELECTION_CHANGED_EVENT)
+      add(tree)
+
+      tbl := Table("pos=270,10", "size=100%-280,100%-20", "select_none")
+      tbl.add_column(TableColumn("label=File", "column_width=150"))
+      tbl.add_column(TableColumn("label=Size", "column_width=75", "internal_alignment=r"))
+      tbl.add_column(TableColumn("label=Date", "column_width=100"))
+      tbl.add_column(TableColumn("label=Bits", "column_width=100"))
+      add(tbl)
+
+      sizer := Sizer("pos=260,10", "size=10,100%-20")
+      sizer.connect(self, "handle_sizer", SIZER_RELEASED_EVENT)
+      add(sizer)
+
+      #
+      # Initialize the tree data structure.
+      #
+      root_node := Node("label=/")
+      load_subtree(root_node)
+      tree.set_root_node(root_node)
+      tree.object_set_selections([root_node])
+      load_table(root_node)
+   end
+end
+
+
+procedure main()
+   local d
+   d := Explorer()
+   d.show_modal()
+end
+
+

@@ -1,0 +1,118 @@
+#
+# $Id: empty.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+class ChildDialog : Dialog(text_button_1, text_button_3, text_button_2, label_1, label_2, label_3)
+   method handle_text_button_1(ev)
+      dispose()
+   end
+
+   method handle_text_button_3(ev)
+      ChildDialog().show_modeless(self)
+   end
+
+   method handle_text_button_2(ev)
+      ChildDialog().show_unique(self)
+   end
+
+   method tick()
+      label_3.set_label(&clock)
+   end
+
+   method init_dialog(ev)
+   end
+
+   method setup()
+      local panel_1, panel_2
+      self.set_attribs("size=324,332", "resize=on")
+      self.set_ticker(1000)
+      text_button_1 := TextButton()
+      text_button_1.set_pos("50%", "87%")
+      text_button_1.set_align("c", "c")
+      text_button_1.set_internal_alignment("c")
+      text_button_1.set_label("Close")
+      text_button_1.connect(self, "handle_text_button_1", ACTION_EVENT)
+      self.add(text_button_1)
+      label_1 := Label()
+      label_1.set_pos("50%", "12%")
+      label_1.set_align("c", "c")
+      label_1.set_attribs("font=serif,20")
+      label_1.set_internal_alignment("l")
+      label_1.set_label("Multiple dialogs")
+      self.add(label_1)
+      panel_1 := Panel()
+      panel_1.set_pos("50%", "62%")
+      panel_1.set_size(223, 63)
+      panel_1.set_align("c", "c")
+      text_button_3 := TextButton()
+      text_button_3.set_pos("50%", "75%")
+      text_button_3.set_align("c", "c")
+      text_button_3.set_internal_alignment("c")
+      text_button_3.connect(self, "handle_text_button_3", ACTION_EVENT)
+      text_button_3.set_label("Create Child Modeless Dialog")
+      panel_1.add(text_button_3)
+      text_button_2 := TextButton()
+      text_button_2.set_pos("50%", "25%")
+      text_button_2.set_align("c", "c")
+      text_button_2.set_internal_alignment("c")
+      text_button_2.connect(self, "handle_text_button_2", ACTION_EVENT)
+      text_button_2.set_label("Create Child Modal Dialog")
+      panel_1.add(text_button_2)
+      self.add(panel_1)
+      panel_2 := Panel()
+      panel_2.set_pos("50%", "37%")
+      panel_2.set_size(235, 56)
+      panel_2.set_align("c", "c")
+      label_2 := Label()
+      label_2.set_pos(43, "50%")
+      label_2.set_align("c", "c")
+      label_2.set_internal_alignment("l")
+      label_2.set_label("Ticker")
+      panel_2.add(label_2)
+      label_3 := Label()
+      label_3.set_pos(148, "50%")
+      label_3.set_size(93, )
+      label_3.set_align("c", "c")
+      label_3.set_draw_border()
+      label_3.set_internal_alignment("l")
+      label_3.set_label("")
+      panel_2.add(label_3)
+      self.add(panel_2)
+   end
+
+   method component_setup()
+      self.setup()
+   end
+end
+
+class Empty : Dialog()
+   method tick()
+      static i
+      initial i := 0
+      write("in tick")
+      if i < 5 then {
+         d := ChildDialog()
+         d.show_modeless(self)
+      } else
+         dispose()
+      i +:= 1
+   end
+
+   method init_dialog()
+      set_ticker(5000)
+   end
+
+   method component_setup()
+      self.set_attribs("canvas=hidden")
+   end
+end
+
+
+procedure main()
+   local d
+   d := Empty()
+   d.show_modal()
+end

@@ -1,0 +1,118 @@
+import gui
+$include "guih.icn"
+
+class Untitled : Dialog(slider1, label1, slider2,label2,slider3,label3)
+   method component_setup()
+      self.setup()
+
+      slider1.set_range(0,5)
+      slider1.set_value(2)
+      slider1.set_ticks(1)
+      slider1.set_labels(1)
+      slider1.set_snaps(1)
+      slider1.set_is_horizontal()
+
+      slider2.set_range(0,5000)
+      slider2.set_value(2500)
+      slider2.set_ticks(500)
+      slider2.set_labels(1000)
+      slider2.set_snaps(500)
+      slider2.set_increment_size(500)
+      slider2.set_is_horizontal()
+
+      slider3.set_range(0.0,3.0)
+      slider3.set_value(2.0)
+      slider3.set_ticks(0.5)
+      slider3.set_labels(0.5)
+      slider3.set_snaps(0.5)
+      slider3.set_is_horizontal()
+
+      slider1.connect(self, "on_slider1")
+      slider2.connect(self, "on_slider2")
+      slider3.connect(self, "on_slider3")
+
+      # Init the labels
+      on_slider1()
+      on_slider2()
+      on_slider3()
+   end
+
+   method on_slider1()
+      label1.set_label(slider1.get_value())
+   end
+
+   method on_slider2()
+      label2.set_label(slider2.get_value())
+   end
+
+   method on_slider3()
+      label3.set_label(slider3.get_value())
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_qb(ev)
+      dispose()
+   end
+
+   method setup()
+      local qb
+      self.set_attribs("size=378,287")
+      slider1 := Slider()
+      slider1.set_pos("23", "30")
+      slider1.set_size("224", )
+      self.add(slider1)
+      qb := TextButton()
+      qb.set_pos("50%", 244)
+      qb.set_align("c", "t")
+      qb.connect(self, "on_qb", ACTION_EVENT)
+      qb.set_label("Quit")
+      qb.set_internal_alignment("c")
+      self.add(qb)
+      label1 := Label()
+      label1.set_pos("318", "40")
+      label1.set_size("88", )
+      label1.set_align("c", "t")
+      label1.set_internal_alignment("l")
+      label1.set_label("Label")
+      self.add(label1)
+      slider2 := Slider()
+      slider2.set_pos("23", "100")
+      slider2.set_size("224", )
+      self.add(slider2)
+      label2 := Label()
+      label2.set_pos("318", "100")
+      label2.set_size("88", "14")
+      label2.set_align("c", "t")
+      label2.set_internal_alignment("l")
+      label2.set_label("Label")
+      self.add(label2)
+      slider3 := Slider()
+      slider3.set_pos("23", "170")
+      slider3.set_size("224", )
+      self.add(slider3)
+      label3 := Label()
+      label3.set_pos("318", "170")
+      label3.set_size("88", "14")
+      label3.set_align("c", "t")
+      label3.set_internal_alignment("l")
+      label3.set_label("Label")
+      self.add(label3)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := Untitled()
+   d.show_modal()
+end
+
+### Ivib layout ###
+#class|ivib__Canvas|17|Name Table|table|integer|0|4|string|custom|integer|2|string|label|integer|3|string|slider|integer|1|string|text_button|integer|1|SuperClass Name|string|Dialog|Import Name|string|gui|Button Groups|class|ivib__ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|ivib__CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Main|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class|ivib__CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|list|0|Name|string|Untitled|Width|integer|378|Height|integer|287|Items|list|7|class|ivib__CanvasCustom|24|Parent Canvas|1|Name|string|slider1|Class Name|string|Slider|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|integer|1|X Spec|string|23|Y Spec|string|30|W Spec|string|224|H Spec|integer|100|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|class|ivib__CanvasTextButton|35|Parent Canvas|1|Name|string|qb|Class Name|string|TextButton|Import Name|string|gui|X Fix|integer|1|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|50%|Y Spec|integer|244|W Spec|integer|40|H Spec|integer|23|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_qb|Class Variable|null|Parent Component|1|Label|string|Quit|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align|string|c|class|ivib__CanvasLabel|26|Parent Canvas|1|Name|string|label1|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|integer|1|X Spec|string|318|Y Spec|string|40|W Spec|string|88|H Spec|integer|13|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|Label|string|Label|Internal Align|string|l|class|ivib__CanvasCustom|24|Parent Canvas|1|Name|string|slider2|Class Name|string|Slider|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|integer|1|X Spec|string|23|Y Spec|string|100|W Spec|string|224|H Spec|integer|100|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|class|ivib__CanvasLabel|26|Parent Canvas|1|Name|string|label2|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|318|Y Spec|string|100|W Spec|string|88|H Spec|string|14|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|Label|string|Label|Internal Align|string|l|class|ivib__CanvasCustom|24|Parent Canvas|1|Name|string|slider3|Class Name|string|Slider|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|integer|1|X Spec|string|23|Y Spec|string|170|W Spec|string|224|H Spec|integer|100|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|class|ivib__CanvasLabel|26|Parent Canvas|1|Name|string|label3|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|318|Y Spec|string|170|W Spec|string|88|H Spec|string|14|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|Label|string|Label|Internal Align|string|l|Initial Focus|null|Event Handlers|null|

@@ -1,0 +1,58 @@
+import gui
+$include "guih.icn"
+
+class TextSizeTest : Dialog(s,label)
+   method component_setup()
+      local win, width
+
+      self.setup()
+
+      win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fatal("couldn't open window")
+      width := TextWidth(win, s)
+      WClose(win)
+
+      label.set_label(s)
+      set_attribs("size=" || (width + 50) || ",140")
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_quit(ev)
+      dispose()
+   end
+
+   method setup()
+      local quit
+      #self.set_attribs("size=247,142")
+      quit := TextButton()
+      quit.set_pos("50%", 86)
+      quit.set_align("c", "t")
+      quit.connect(self, "on_quit", ACTION_EVENT)
+      quit.set_label("Quit")
+      quit.set_internal_alignment("c")
+      self.add(quit)
+      label := Label()
+      label.set_pos("50%", "28")
+      label.set_align("c", "t")
+      label.set_internal_alignment("l")
+      label.set_label("Label")
+      self.add(label)
+   end
+
+   initially(s)
+      self.Dialog.initially()
+      self.s := s
+end
+
+procedure main(a)
+   local d
+   d := TextSizeTest(a[1]) | stop("Needs one param")
+   d.show_modal()
+end
+
+### Ivib layout ###
+#class|Canvas|17|Name Table|table|integer|0|2|string|label|integer|1|string|text_button|integer|1|SuperClass Name|string|Dialog|Import Name|string|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Main|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|list|0|Name|string|TextSizeTest|Width|integer|247|Height|integer|142|Items|list|2|class|CanvasTextButton|36|Parent Canvas|1|Name|string|quit|Class Name|string|TextButton|Import Name|string|gui|X Fix|integer|1|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|50%|Y Spec|integer|86|W Spec|integer|40|H Spec|integer|23|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_quit|Class Variable|null|Parent Component|1|Label|string|Quit|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align|string|c|class|CanvasLabel|27|Parent Canvas|1|Name|string|label|Class Name|string|Label|Import Name|string|gui|X Fix|integer|1|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|50%|Y Spec|string|28|W Spec|integer|30|H Spec|integer|13|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|Label|string|Label|Internal Align|string|l|Initial Focus|null|Event Handlers|list|0|

@@ -1,0 +1,1963 @@
+#
+# $Id: demo.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+#
+
+import gui
+import util
+
+#
+# Include some standard constants
+#
+$include "guih.icn"
+
+global global_attribs, next_label
+
+#
+# Very simple dialog to test the Tree component.
+#
+class TreeDialog : Dialog(pb, b, root_node)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_tree(ev)
+      local r
+      if ev.get_type() === TREE_NODE_EXPANSION_EVENT then {
+         r := pb.get_last_expanded()
+         if *r.subnodes = 0 then {
+            traverse_one_level(r)
+            pb.set_root_node(root_node)
+         }
+      } else if ev.get_type() === SELECTION_CHANGED_EVENT then {
+         if r := pb.object_get_selections()[1] then
+            write(get_full_path(r))
+      }
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   #
+   # Given a Node n, get the full file path it represents by traversing
+   # up the tree structure to the root.
+   #
+   method get_full_path(n)
+      local s
+
+      s := ""
+      repeat {
+         s := n.get_label() || s
+         n := n.get_parent_node() | break
+      }
+      return s
+   end
+
+   #
+   # Traverse whole of directory tree s into root node r - no recursive descent
+   #
+   method traverse_one_level(r)
+      s := get_full_path(r)
+
+      l := get_directory_list(s)
+      every t := !l[1] do {
+         if (t ~== "./") & (t ~== "../") then {
+            r1 := Node()
+            r1.set_label(t)
+            r1.set_always_expandable()
+            r.add(r1)
+         }
+      }
+      every t := !l[2] do {
+         r1 := Node()
+         r1.set_label(t)
+         r.add(r1)
+      }
+   end
+   
+   initially
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A Tree")
+      l.set_pos("50%", "13%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      pb := Tree()
+      pb.set_select_one()
+      pb.set_pos("50%", "50%")
+      pb.set_size("70%", "50%")
+      pb.set_align("c", "c")
+      pb.connect(self, "on_tree")
+      self.add(pb)
+
+      root_node := Node("label=/")
+      traverse_one_level(root_node)
+      pb.set_root_node(root_node)
+
+      #
+      # Add a close button. 
+      #
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+end
+
+class EditListDialog : Dialog(b, c)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_edit_list(ev)
+      write("Event code ", ev.get_type(), " - Current contents: ", c.get_contents())
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A drop-down EditList")
+      l.set_pos("50%", "16%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      c := EditList()
+      c.set_pos("50%", "32%")
+      c.set_size("30%")
+      c.set_align("c", "c")
+      l := ["red", "green", "orange", "blue", "purple", "grey", "azure", "maroon", "yellow", "pink", "brown"]
+      c.set_selection_list(l)
+      c.connect(self, "on_edit_list")
+      self.add(c)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class BorderDialog : Dialog(b1, b2, b3, b)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=300,370"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Decorative Borders")
+      l.set_pos("50%", "20%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      b1 := Border()
+      b1.set_pos("50%", "40%")
+      b1.set_size("70%", "18%")
+      b1.set_align("c", "c")
+      self.add(b1)
+      c1 := CheckBox()
+      c1.set_label("A CheckBox")
+      b1.set_title(c1)
+
+      b2 := Border()
+      b2.set_pos("33%", "60%")
+      b2.set_size("25%", "18%")
+      b2.set_align("c", "c")
+      b2.set_internal_alignment("c")
+      self.add(b2)
+      l1 := Label()
+      l1.set_label("A label")
+      b2.set_title(l1)
+      
+      b3 := Border()
+      b3.set_pos("66%", "60%")
+      b3.set_size("25%", "18%")
+      b3.set_align("c", "c")
+      b3.set_internal_alignment("r")
+      self.add(b3)
+      t1 := TextField()
+      t1.set_size(50)
+      b3.set_title(t1)
+      
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "80%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+end
+
+class ColourRectangle : Component(r, g, b)
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      FreeColor(W, WAttrib(self.cwin, "fg"))
+      WAttrib(W, "fg=" || r || "," || g || "," || b)
+      FillRectangle(W, self.x, self.y, self.w, self.h)
+   end
+
+   method handle_event(e)
+      fail
+   end
+
+   method set_colours(r, g, b)
+      self.r := r
+      self.g := g
+      self.b := b
+   end
+
+   initially
+      self.Component.initially()
+end
+
+class Sliders : Dialog(s1, s2, s3, b, cr, lab)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_slider(ev)
+      cr.set_colours(s1.get_value(), s2.get_value(), s3.get_value())
+      cr.display()
+      lab.set_label("(" || s1.get_value() || ", " || s2.get_value() || ", " || s3.get_value() || ")")
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=300,370"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Sliders")
+      l.set_pos("50%", "12%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      s1 := Slider()
+      s1.set_pos("40", "50%")      
+      s1.set_align("c", "c")
+      s1.set_size(, "50%")
+      s1.set_range(0, 65535)
+      s1.set_ticks(10000)
+      s1.set_increment_size(1000)
+      s1.set_value(0)
+      s1.connect(self, "on_slider")
+      self.add(s1)
+ 
+      s2 := Slider()
+      s2.set_pos("80", "50%")      
+      s2.set_align("c", "c")
+      s2.set_size(, "50%")
+      s2.set_range(0, 65535)
+      s2.set_ticks(10000)
+      s2.set_increment_size(1000)
+      s2.set_value(0)
+      s2.connect(self, "on_slider")
+      self.add(s2)
+ 
+      s3 := Slider()
+      s3.set_pos("120", "50%")      
+      s3.set_align("c", "c")
+      s3.set_size(, "50%")
+      s3.set_range(0, 65535)
+      s3.set_ticks(10000)
+      s3.set_increment_size(1000)
+      s3.set_value(0)
+      s3.connect(self, "on_slider")
+      self.add(s3)
+
+      cr := ColourRectangle()
+      cr.set_pos("200", "50%")      
+      cr.set_align("c", "c")
+      cr.set_size(70, 70)   
+      cr.set_colours(0, 0, 0)
+      self.add(cr)
+
+      lab := Label()
+      lab.set_size(150,24)
+      lab.set_label("(0, 0, 0)")
+      lab.set_internal_alignment("c")
+      lab.set_pos(200, "50%-90")
+      lab.set_align("c", "c")
+      self.add(lab)
+      
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "88%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+end
+
+class MenuDialog : Dialog(mb, b, mi1, mi2, mi3, mi4, mi5, mi6, mi7, mi8, mi9, mi10, mi11, mi12)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_menu_item(ev)
+      case ev.get_source() of {
+         mi1 : write("you selected the menu item mi1")
+         mi2 : write("you selected the menu item mi2")
+         mi3 : write("you selected the menu item mi3")
+         mi4 : write("you selected the menu item mi4")
+         mi5 : write("you selected the menu item mi5")
+         mi6 : write("you selected the menu item mi6")
+         mi7 : write("you selected the menu item mi7")
+         mi8 : write("you selected the menu item mi8")
+         mi9 : write("you selected the menu item mi9")
+         mi10 : write("you selected the menu item mi10")
+         mi11 : write("you selected the menu item mi11")
+         mi12 : write("you selected the menu item mi12")
+      }
+   end
+
+   initially
+      local l, m1, m2, m3
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A menu system")
+      l.set_pos("50%", "25%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+
+      mb := MenuBar()
+      m1 := Menu()
+      m1.set_label("First")
+      mb.add(m1)
+      m2 := Menu()
+      m2.set_label("Second")
+      mb.add(m2)
+      
+      m3 := Menu()
+      m3.set_label("Sub menu")
+      m1.add(m3)
+
+      mi1 := TextMenuItem()
+      mi1.set_label("First sub item")
+
+      mi1.set_img_left("13,c1,_
+~~~~0000~~~~~_
+~~~000000~~~~_
+~~00~~~~00~~~_
+~00~~~~~~00~~_
+~00~~~~~~00~~_
+~00~~~~~~~~~~_
+~00~~~~~~~~~~_
+~00~~~~~~0~~~_
+~00~~~~~000~~_
+~00~~~~00000~_
+~00~~~0000000_
+~00~~~~~~00~~_
+~00~~~~~~00~~_
+~00~~~~~~00~~_
+~~00~~~~00~~~_
+~~~000000~~~~_
+~~~~0000~~~~~_
+")
+      m1.add(mi1)
+
+      mi2 := CheckBoxMenuItem()
+      mi2.set_label("A checkbox")
+      m1.add(mi2)
+
+      mi3 := TextMenuItem()
+      mi3.set_label("2nd sub item")
+      mi3.set_label_right("Alt-F4")
+      m2.add(mi3)
+
+      mi4 := TextMenuItem()
+      mi4.set_label("A shaded item")
+      mi4.toggle_is_shaded()
+      m2.add(mi4)
+
+      mi5 := TextMenuItem()
+      mi5.set_label("First sub item")
+      m3.add(mi5)
+
+      mi6 := TextMenuItem()
+      mi6.set_label("2nd sub item")
+      m3.add(mi6)
+
+      m3.add(MenuSeparator())
+
+      cb := CheckBoxGroup()
+
+      mi7 := CheckBoxMenuItem()
+      mi7.set_label("First checkbox")
+      m3.add(mi7)
+      cb.add(mi7)
+
+      mi8 := CheckBoxMenuItem()
+      mi8.set_label("Second checkbox")
+      m3.add(mi8)
+      cb.add(mi8)
+
+      mi9 := CheckBoxMenuItem()
+      mi9.set_label("Third checkbox")
+      m3.add(mi9)
+      cb.add(mi9)
+
+      cb.set_which_one(mi8)
+      self.add(mb)
+
+      mbb := MenuButton()
+      mbb.set_pos("50%", "50%")
+      mbb.set_align("c", "c")
+      self.add(mbb)
+
+      m4 := Menu()
+      m4.set_label("Menu")
+      mbb.set_menu(m4)
+
+      mi10 := TextMenuItem()
+      mi10.set_label("First item")
+      m4.add(mi10)
+      mi11 := TextMenuItem()
+      mi11.set_label("Second item")
+      m4.add(mi11)
+      mi12 := TextMenuItem()
+      mi12.set_label("Third item")
+      m4.add(mi12)
+
+      listener := FilterListener(self, "on_menu_item")
+      every menu_item := mi1 | mi2 | mi3 | mi4 | mi5 | mi6 | mi7 | mi8 | mi9 | mi10 | mi11 | mi12 do
+         menu_item.add_event_listener(listener)
+
+end
+
+class CustomDialog : Dialog(b, c)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_circulate(ev)
+      write("Current index into list: ", c.get_selection())
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A custom component")
+      l.set_pos("50%", "25%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      c := Circulate()
+      c.set_pos("50%", "50%")
+      c.set_size("60%")
+      c.set_align("c", "c")
+      c.set_selection_list(["red", "green", "orange", "blue", "purple"])
+      c.set_selection(2)
+      c.connect(self, "on_circulate", SELECTION_CHANGED_EVENT)
+      self.add(c)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class ScrollDialog : Dialog(vb, hb, lab, b)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_scrollbar(ev)
+      lab.set_label("(" || hb.get_value() || ", " || vb.get_value() || ")")
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=300,370"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Scroll bars")
+      l.set_pos("50%", "16%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      lab := Label()
+      lab.set_size(120, 24)
+      lab.set_label("(0, 0)")
+      lab.set_internal_alignment("c")
+      lab.set_pos("50%", "45%")
+      lab.set_align("c", "c")
+      self.add(lab)
+
+      vb := ScrollBar()
+      vb.set_pos("85%", "25%")      
+      vb.set_size(20, "40%")
+      vb.set_total_size(120)
+      vb.set_page_size(20)
+      vb.set_increment_size(1)
+      vb.set_value(0)
+      vb.connect(self, "on_scrollbar")
+      self.add(vb)
+
+      hb := ScrollBar()
+      hb.set_is_horizontal()
+      hb.set_pos("15%", "65%")      
+      hb.set_size("70%", 20)
+      hb.set_total_size(120)
+      hb.set_page_size(20)
+      hb.set_increment_size(1)
+      hb.set_value(0)
+      hb.connect(self, "on_scrollbar")
+      self.add(hb)
+ 
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "84%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+procedure comp_nums(x, y)
+   return x[1] < y[1]
+end
+
+procedure comp_names(x, y)
+   return x[2] << y[2]
+end
+
+class TableDialog : Dialog(b, c1, c2, tbl, data)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_table(ev)
+      local i
+      i := data[tbl.get_selections()[1]]
+      write("Present selection : ", i[1], "/", i[2])
+   end
+
+   method on_column1(ev)
+      write("Sorting by number")
+      tbl.set_contents(qsort(tbl.get_contents(), comp_nums))
+      tbl.clear_selections()
+   end
+
+   method on_column2(ev)
+      write("Sorting by name")
+      tbl.set_contents(qsort(tbl.get_contents(), comp_names))
+      tbl.clear_selections()
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=450,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A table")
+      l.set_pos("50%", "13%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      data := [[1040, "Smith, R"], [1049, "Jones, L"], [984, "Wilson, R"], [3789, "Mainwaring, C"],
+               [849, "Smith, J"], [4857, "Parlett, R"], [298, "Williams, J"], [938, "Higgins, A"],
+               [938, "Clinton, B"], [874, "Major, J"], [2894, "Nixon, R"], [398, "Blair, A"],
+               [939, "Napoleon, B"], [398, "Amin, I"], [938, "Rogers, R"], [928, "Smith, A"]]
+
+      tbl := Table()
+      tbl.set_select_one()
+      tbl.set_pos("50%", "50%")
+      tbl.set_size("70%", "50%")
+      tbl.set_align("c", "c")
+      tbl.set_contents(data)
+      tbl.connect(self, "on_table", SELECTION_CHANGED_EVENT)
+      self.add(tbl)
+
+      c1 := TableColumn()
+      c1.set_internal_alignment("r")
+      c1.set_column_width(80)
+      c1.set_label("Number")
+      c1.connect(self, "on_column1", ACTION_EVENT)
+      tbl.add_column(c1)
+
+      c2 := TableColumn()
+      c2.set_column_width(180)
+      c2.set_label("Name")
+      c2.connect(self, "on_column2", ACTION_EVENT)
+      tbl.add_column(c2)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+procedure qsort(l, comp, first, last)
+   /first := 1
+   /last := *l
+
+   i := first
+   j := last
+
+   if i = j then
+      return l
+
+   pivot := l[(i + j) / 2]
+   repeat {
+      while comp(l[i], pivot) do i +:= 1
+      while comp(pivot, l[j]) do j -:= 1
+      if i <= j then {
+         l[i] :=: l[j]
+         i +:= 1
+         j -:= 1
+      }
+      if i > j then
+         break
+   }
+   if first < j then
+      qsort(l, comp, first, j)
+   if i < last then
+      qsort(l, comp, i, last)
+   return l
+end
+
+class TextListDialog1 : Dialog(b, tl, data)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+write("dispose")
+      dispose()
+   end
+
+   method init_dialog()
+      tl.goto_pos(*data)
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A non-editable TextList")
+      l.set_pos("50%", "13%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      data := [
+               "``But if he thought the woman was being murdered ---''",
+               "     ``My dear Charles,'' said the young man with the",
+               "monocle, ``it doesn't do for people, especially doctors,",
+               "to go about `thinking' things.  They may get into",
+               "frightful trouble.  In Pritchard's case, I consider Dr.",
+               "Paterson did all he reasonably could by refusing a",
+               "certificate for Mrs. Taylor and sending that uncommonly",
+               "disquieting letter to the Registrar.  He couldn't help",
+               "the man's being a fool.  If there had only been an inquest",
+               "on Mrs. Taylor, Pritchard would probably have been frightened",
+               "off and left his wife alone.  After all, Paterson hadn't a spark",
+               "of real evidence,  And supposed he'd been quite wrong --- what",
+               "a dust up there'd have been!''",
+               "      ``All the same,'' urged the nondescript young man, dubiously",
+               "extracting a bubbling hot Helix Pomatia from its shell, and eyeing",
+               "it nervously before putting it in his mouth, ``surely it's a clear",
+               "case of public duty to voice one's suspicions.''"
+               ]
+
+      tl := TextDisplay()
+      tl.set_pos("50%", "50%")
+      tl.set_size("70%", "50%")
+      tl.set_align("c", "c")
+      tl.set_contents(data)
+      self.add(tl)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class TickerDialog : Dialog(b, tl, data)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method tick()
+      put(self.data, "Time is now " || &clock)
+      tl.set_contents(data)
+      tl.goto_pos(*data, 0)
+   end
+      
+   method on_next(ev)
+      dispose()
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+      self.set_ticker(1000)
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Demo of tick() method")
+      l.set_pos("50%", "13%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      data := ["This window will be updated with", 
+               "the time of day approximately every", 
+               "second, by the tick() method of",
+               "this dialog."]
+
+      tl := TextDisplay()
+      tl.set_pos("50%", "50%")
+      tl.set_size("70%", "50%")
+      tl.set_align("c", "c")
+      tl.set_contents(data)
+      self.add(tl)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class TextListDialog2 : Dialog(b, tl, show_contents)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_text_list(ev)
+      write("event generated by TextList")
+   end
+
+   method on_show(ev)
+      every write(!tl.get_contents())
+   end
+
+   initially
+      local l, data
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,400"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("An editable TextList")
+      l.set_pos("50%", "10%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      l := Label()
+      l.set_attribs("font=serif")
+      l.set_label("Enter some data and press Show to print it on the terminal")
+      l.set_pos("50%", "10%+20")
+      l.set_align("c", "c")
+      self.add(l)
+
+      tl := EditableTextList()
+      tl.set_pos("50%", "50%")
+      tl.set_size("70%", "50%")
+      tl.set_align("c", "c")
+      tl.set_contents([])
+      tl.connect(self, "on_text_list")
+      self.add(tl)
+
+      show_contents := TextButton()
+      show_contents.set_label("Show")
+      show_contents.set_pos("33%", "87%")
+      show_contents.set_align("c", "c")
+      show_contents.connect(self, "on_show", ACTION_EVENT)
+      self.add(show_contents)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("66%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class ButtonDialog1 : Dialog(b, b1, b2, b3)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_button1(ev)
+      write("Button b1 pressed, code ", ev.get_type())
+   end
+
+   method on_button2(ev)
+      write("Button b2 pressed, type ", ev.get_type())
+   end
+
+   method on_button3(ev)
+      write("Button b3 pressed, type ", ev.get_type())
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      toolbar := ToolBar()
+      toolbar.set_pos(0, 0)
+      toolbar.set_size("100%", 30)
+      toolbar.set_draw_border()
+      self.add(toolbar)
+      button_group_1 := ButtonGroup()
+      exit_icon_button := IconButton()
+      exit_icon_button.set_pos("0", "50%")
+      exit_icon_button.set_align("l", "c")
+      exit_icon_button.set_draw_border()
+      exit_icon_button.set_tooltip("Exit")
+      exit_icon_button.set_no_keyboard()
+      button_group_1.add(exit_icon_button)
+      exit_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~0000000000~~~~~~~~0HHHHHHDD0~~~~~~~~0HHHHDDQQ0~~~~~~~~0HHDDQQQQ0~~~~~~~~0HHDQQQQQ0~~~~~~~~0HHDQQQQQ0~~~~~~~~0SSDQQQQQ0~~~~~~~~0SSDQQ0QQ0~~~~~~~~0SSDQ0QQQ0~~~~~~~~0SSDQQQQQ0~~~~~~~~0SSDQQQQQ0~~~~~~~~0SSDQQQQQ0~~~~00000SSDQQQQQ00000~~~~~~~DQQQ00~~~~~~~~~~~~DQ00~~~~~~~~~~~~~~D0~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(exit_icon_button)
+      add_icon_button := IconButton()
+      add_icon_button.set_pos(102, "50%")
+      add_icon_button.set_align("l", "c")
+      add_icon_button.set_draw_border()
+      add_icon_button.set_tooltip("Add")
+      add_icon_button.set_no_keyboard()
+      button_group_1.add(add_icon_button)
+      add_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~00000000~~~~~~~~~~066666600~~~~~~~~~0666666060~~~~~~~~06666660000~~~~~~~06666666660~~~~~~~06666666660~~~~~~~06666666660~~~~~~~06666666660~~~~~~~06666666660~~~~~~~06666666660~~~~~~~06666666660~~~~~~~06666666660~~~~~~~00000000000~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(add_icon_button)
+      open_icon_button := IconButton()
+      open_icon_button.set_pos(34, "50%")
+      open_icon_button.set_align("l", "c")
+      open_icon_button.set_draw_border()
+      open_icon_button.set_tooltip("Open")
+      open_icon_button.set_no_keyboard()
+      button_group_1.add(open_icon_button)
+      open_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~000~~~~~~~~~~~~~~0~~~0~0~~~~~~~~~~~~~~~~00~~~~000~~~~~~~~000~~~0DDD0000000~~~~~~~0DDDDDDDDD0~~~~~~~0DDDDDDDDD0~~~~~~~0DDDD00000000000~~0DDD0D3D3D3D3D0~~~0DD0D3D3D3D3D0~~~~0D0D3D3D3D3D0~~~~~00D3D3D3D3D0~~~~~~00000000000~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(open_icon_button)
+      delete_icon_button := IconButton()
+      delete_icon_button.set_pos(136, "50%")
+      delete_icon_button.set_align("l", "c")
+      delete_icon_button.set_draw_border()
+      delete_icon_button.set_tooltip("Delete")
+      delete_icon_button.set_no_keyboard()
+      button_group_1.add(delete_icon_button)
+      delete_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~000~~~~~~~~~0~~~~~0000~~~~~~00~~~~~~~0000~~~~00~~~~~~~~~~000~~00~~~~~~~~~~~~00000~~~~~~~~~~~~~~000~~~~~~~~~~~~~~00000~~~~~~~~~~~~000~~00~~~~~~~~~~000~~~~00~~~~~~~~000~~~~~~0~~~~~~~0000~~~~~~~0~~~~~~000~~~~~~~~~~~~~~~~0~~~~~~~~~~0~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(delete_icon_button)
+      download_icon_button := IconButton()
+      download_icon_button.set_pos(204, "50%")
+      download_icon_button.set_align("l", "c")
+      download_icon_button.set_draw_border()
+      download_icon_button.set_tooltip("Download")
+      download_icon_button.set_no_keyboard()
+      button_group_1.add(download_icon_button)
+      download_icon_button.set_img("18,c1,~~~0U~~~~~~~~~~~~~~~~0U~~~~~00~~~~~~~~~0U~~~~0~U0~~~~~~~~0U~~~0~U~~0~~~~~~~0U~~~0U~~~0U~~~~~~0U~~~0U~~~0U~~~~00000~~0U~00000~~~06660U~0U~06660U~~06330U~0U~06330U~~06330U~0U~06330U~~00000U~0U~00000U~~~U0UUU~0U~~U0UUU~~~~0U~~~0U~~~0U~~~~~~0U~~~0U~~~0U~~~~~~~0~~0~U~~~0U~~~~~~~~00~U~~~~0U~~~~~~~~~UU~~~~~0U~~~~~~~~~~~~~~~~0U~~~")
+      toolbar.add(download_icon_button)
+      edit_icon_button := IconButton()
+      edit_icon_button.set_pos(272, "50%")
+      edit_icon_button.set_align("l", "c")
+      edit_icon_button.set_draw_border()
+      edit_icon_button.set_tooltip("Edit")
+      edit_icon_button.set_no_keyboard()
+      button_group_1.add(edit_icon_button)
+      edit_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~JJJJJ~~~~~~~~~~~JJJJJJJJJ~~~~~~~~JJJJ565JJJJ~~~~~~JJJJJ6660JJJJ~~~~~JJJJJ5650JJJJ~~~~JJJJJJJ00JJJJJJ~~~JJJJJ66660JJJJJ~~~JJJJJJ6660JJJJJ~~~JJJJJJ6660JJJJJ~~~JJJJJJ6660JJJJJ~~~~JJJJJ6660JJJJ~~~~~JJJJ666660JJJ~~~~~~JJJJ00000JJ~~~~~~~~JJJJJJJJJ~~~~~~~~~~~JJJJJ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(edit_icon_button)
+      expand_icon_button := IconButton()
+      expand_icon_button.set_pos("238", "50%")
+      expand_icon_button.set_align("l", "c")
+      expand_icon_button.set_draw_border()
+      expand_icon_button.set_tooltip("Expand")
+      expand_icon_button.set_no_keyboard()
+      button_group_1.add(expand_icon_button)
+      expand_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~000~36666666666~~~0D0~36666666666~~~000~33333333333~~~~0~~~~~~~~~~~~~~~~~0~~000~3666666~~~~0000D0~3666666~~~~0~~000~3333333~~~~0~~~~~~~~~~~~~~~~~0~~000~3666666~~~~0000D0~3666666~~~~~~~000~3333333~~~~~~~~0~~~~~~~~~~~~~~~~~0~~000~366~~~~~~~~0000D0~366~~~~~~~~~~~000~333~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(expand_icon_button)
+      check_box_group_1 := CheckBoxGroup()
+      graph_icon_button := ToggleIconButton()
+      graph_icon_button.set_pos("306", "50%")
+      graph_icon_button.set_align("l", "c")
+      graph_icon_button.set_draw_border()
+      graph_icon_button.set_tooltip("Graph View")
+      graph_icon_button.set_no_keyboard()
+      button_group_1.add(graph_icon_button)
+      check_box_group_1.add(graph_icon_button)
+      graph_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~0~~~~~~~~~~~~~~~~~0~AAN~~~~~~~~~~~~~0~AAN~~~~~JJW~~~~00~AAN~~~~~JJW~~~~~0~AAN~~~~~JJW~~~~~0~AAN~FFS~JJW~~~~00~AAN~FFS~JJW~~~~~0~AAN~FFS~JJW~~~~~0~AAN~FFS~JJW~~~~00~AAN~FFS~JJW~~~~~0~AAN~FFS~JJW~~~~~0~AAN~FFS~JJW~~~~00~AAN~FFS~JJW~~~~~0000000000000000~~~0~~0~~0~~0~~0~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(graph_icon_button)
+      table_icon_button := ToggleIconButton()
+      table_icon_button.set_pos("340", "50%")
+      table_icon_button.set_align("l", "c")
+      table_icon_button.set_draw_border()
+      table_icon_button.set_tooltip("Table View")
+      table_icon_button.set_no_keyboard()
+      button_group_1.add(table_icon_button)
+      check_box_group_1.add(table_icon_button)
+      check_box_group_1.set_which_one(table_icon_button)
+      table_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~3333333333333333~~3555505555055550~~355550555W055550~~3000000000000000~~3666606666066660~~3600606006060060~~3666606666066660~~3666606666066660~~3600606006060060~~3666606666066660~~3666606666066660~~3600606006060060~~3666606666066660~~3000000000000000~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(table_icon_button)
+      save_icon_button := IconButton()
+      save_icon_button.set_pos("68", "50%")
+      save_icon_button.set_align("l", "c")
+      save_icon_button.set_draw_border()
+      save_icon_button.set_tooltip("Save")
+      save_icon_button.set_no_keyboard()
+      button_group_1.add(save_icon_button)
+      save_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~00000000000000~~~~03055555555050~~~~03055555555000~~~~03055555555030~~~~03055555555030~~~~03055555555030~~~~03055555555030~~~~03300000000330~~~~03333333333330~~~~03300000000030~~~~03300000055030~~~~03300000055030~~~~03300000055030~~~~~0000000000000~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(save_icon_button)
+      print_icon_button := IconButton()
+      print_icon_button.set_pos("170", "50%")
+      print_icon_button.set_align("l", "c")
+      print_icon_button.set_draw_border()
+      print_icon_button.set_tooltip("Print")
+      print_icon_button.set_no_keyboard()
+      button_group_1.add(print_icon_button)
+      print_icon_button.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~000000000~~~~~~~~0666666660~~~~~~~~060000060~~~~~~~~0666666660~~~~~~~~060000060000~~~~~06666666605050~~~000000000050500~~0555555555505050~~0000000000000550~~055555533355050~~~055555566655000~~~000000000000050~~~~0555555555050~~~~~~00000000000~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      toolbar.add(print_icon_button)
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Image Buttons and a ToolBar")
+      l.set_pos("50%", "25%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      b1 := IconButton()
+      b1.set_img(
+"56,c1,_
+66666666666666666666666666666666666666666666666666666664_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444400000000000000000000444444444440_
+64444444444444444444444404444444444444444440444444444440_
+64444444444444444444444044444444444444444400444444444440_
+64444444444444444444444044-------------44400444444444440_
+64444444444444444444440444444444444444444040444444444440_
+6444444444444444444444044-------------444040444444444440_
+64444444444444444444404444444444444444440440444444444440_
+644444444444444444444044-------------4440440444444444440_
+64444444444444444444044444444444444444400000444444444440_
+64444444444444444444044------------444404444444444444440_
+64444444444444444440444444444444444444044444444444444440_
+64444444444444444000444444444444444444000000444444444440_
+64444444444444440D04444444444444444440ODOD00444444444440_
+6444444444444440DO00000000000000000000-OD0D0444444444440_
+644444444444440DO---------------------OD0DO0444444444440_
+63444344434440DODODODODODODODODODODODOD0DOD0434443444340_
+644444444444000000000000000000000000000DODO0444444444440_
+6443434344430ODODODODODODODODODODODODO0ODOD0434344434340_
+6444444444440DODODODODODODO000000004OD0DODO0444444444440_
+6343434343430ODODODODODODOD0-------3DO0ODOD0434343434340_
+6444444444440DODODODODODODO0-------4OD0DODO0444444444440_
+6343434343430ODODODODODODOD0-------3DO0ODO03434343434340_
+6434443444340DODODODODODODO044344434OD0DO0--443444344430_
+6343434343430ODODODODODODODODODODODODO0O0--3434343434340_
+6434343434340DODODODODODODODODODODODOD00--34343434343430_
+634343434343000000000000000000000000000--343434343434340_
+63343334333433--------------------------3334333433343330_
+634343434343434------------------------34343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63434343434343434343434343434343434343434343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63334333433343334333433343334333433343334333433343334330_
+63333333333333333333333333333333333333333333333333333330_
+63433333334333333343333333433333334333333343333333433330_
+63333333333333333333333333333333333333333333333333333330_
+63333333333333333333333333333333333333333333333333333330_
+40000000000000000000000000000000000000000000000000000000_
+"
+)
+      b1.set_pos("25%", "50%")
+      b1.set_align("c", "c")
+      b1.connect(self, "on_button1")
+      self.add(b1)
+
+      b2 := IconButton()
+      b2.set_img(
+"56,c1,_
+66666666666666666666666666666666666666666666666666666664_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+644444444444444444444444cc6c6cccc44444444444444444444440_
+644444444444444444444cccc6c6c6cc4c4c44444444444444444440_
+6444444444444444444ccccc6c666c4cc3c4c4344444444444444440_
+644444444444444444cc4c4cc6c6c43c334c>4c43444444444444440_
+6444444444444444ccc4c4c43343433>>344>c33c444444444444440_
+644444444444444ccc4c44>00000000000>>43>c4c44444444444440_
+64444444444444cc44c>>003334>0000000000>43c43444444444440_
+6444444444444cc44>000>>33663>0000>>>>000>5>c444444444440_
+644444444444cc43>000>>>33666>00>0>43>>>000>4334444444440_
+64444444443ccc>>400>3>000c6c>00>0>443>>4>000003444444440_
+6444444444cc4>>330>33>000>>>000>0>334>>644>0>>>344444440_
+644444444ccc>44443>433>00000003>0>443>>66644>0>>34444440_
+644444444c4>446665>444>000000340>3343>>6666643>00>444440_
+63444344c4>4466664>4333>000>3>0>44333>56666643>>43444340_
+6444444c6>44666666>>3433>00000>334433>66666c44>434444440_
+644343c6>4366666664>4334334343344343>56666c43>4444434340_
+644444c4333666666665>34434334333434>46666c44>44444444440_
+634343c44446666666665>433443433343336666c43>444343434340_
+64444434cc446c6c666665>333434434>>36666c44>4444444444440_
+63434343333>3446c6c6c654>4>4>>>>5c6666443>43434343434340_
+6434443c34434>>344646465656c6c6c666c443>3344443444344430_
+63434343434c343>>344464646464656c443>>343343434343434340_
+64343434343434c343>>>344444444443>>333433434343434343430_
+634343434343434344444>>>>>>>>>>>333433434343434343434340_
+63343334333433343334444434344444344433343334333433343330_
+63434343434343434343434343434343434343434343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63434343434343434343434343434343434343434343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63334333433343334333433343334333433343334333433343334330_
+63333333333333333333333333333333333333333333333333333330_
+63433333334333333343333333433333334333333343333333433330_
+63333333333333333333333333333333333333333333333333333330_
+63333333333333333333333333333333333333333333333333333330_
+40000000000000000000000000000000000000000000000000000000_
+"
+)
+      b2.set_pos("50%", "50%")
+      b2.set_align("c", "c")
+      b2.connect(self, "on_button2")
+      self.add(b2)
+
+      b3 := IconButton()
+      b3.set_img(
+"56,c1,_
+66666666666666666666666666666666666666666666666666666664_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444440000000444444444444444444444440_
+64444444444444444444440---0))0)0000444444444444444444440_
+64444444444444444444-0g)))))))))0)0004444444444444444440_
+6444444444444444444))g-))))))----00)00444444444444444440_
+644444444444444444))))-g)))-)g0---)000044444444444444440_
+64444444444444444))))g--g-)g---)--0)00004444444444444440_
+6444444444444444)))))g)g-gg-g--g0))))0)00444444444444440_
+644444444444444))))))))ggg--g))--)0)0)000044444444444440_
+644444444444444))))))))--g-g-))g--)))0)00044444444444440_
+64444444444444)))))))))gg-g-ggg-g))))0)00004444444444440_
+64444444444444)))))))))ggggg)--g-g))))0)0004444444444440_
+64444444444444)))))))))ggg-gg-g--))))0)00004444444444440_
+6444444444444))))))))))gg-gg-gg-g)))))0)0)00444444444440_
+6444444444444))))))))))gggg-g-g-g))))))00000444444444440_
+6444444444444)))))))))))g-ggg-g-)))))0))0)00444444444440_
+6444444444444)))))))))))ggg-g-)g)))))))0000)444444444440_
+6344434443444)))))))))))gggg))))))))))0)0)00434443444340_
+6444444444444)))))))))))))gg)))))))))))00000444444444440_
+6443434344434)))))))))))))gg)-)))))))))0)0)0434344434340_
+64444444444444)))))))))))))))g-g))))-0)00004444444444440_
+63434343434343)))))))))))))))))g)------0)003434343434340_
+64444444444444)))))))))))))))))))g----0-0004444444444440_
+634343434343434))))))))))))))))))0-----00043434343434340_
+643444344434443))))))))))))))))))g---0-0-034443444344430_
+6343434343434343)))))))))))))))))---0g000343434343434340_
+64343434343434343))))))))))))))))---000-3434343434343430_
+634343434343434343))))))))))))))))0---034343434343434340_
+6334333433343334333))))))))))))))0-0-0343334333433343330_
+63434343434343434343)))))))))))))0-003434343434343434340_
+633333333333333333333-)))))))))0)00333333333333333333330_
+6343434343434343434343433)))))0)434343434343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63334333433343334333433343334333433343334333433343334330_
+63333333333333333333333333333333333333333333333333333330_
+63433333334333333343333333433333334333333343333333433330_
+63333333333333333333333333333333333333333333333333333330_
+63333333333333333333333333333333333333333333333333333330_
+40000000000000000000000000000000000000000000000000000000_
+")
+      b3.set_pos("75%", "50%")
+      b3.set_align("c", "c")
+      b3.connect(self, "on_button2")
+      self.add(b3)
+
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class ButtonDialog2 : Dialog(b, b1, b2, b3, b4, b5, b6)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_button1(ev)
+      write("Button b1 pressed, code ", ev.get_type())
+   end
+
+   method on_button2(ev)
+      write("Button b2 pressed, code ", ev.get_type())
+   end
+
+   method on_button3(ev)
+      write("Button b3 pressed, code ", ev.get_type())
+   end
+
+   method on_button4(ev)
+      write("Button b5 pressed, code ", ev.get_type())
+   end
+
+   method on_button5(ev)
+      write("Button b6 pressed, code ", ev.get_type())
+   end
+
+   method on_button6(ev)
+      write("Button b6 pressed, code ", ev.get_type())
+   end
+
+   initially
+      local l, bg
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Text Buttons")
+      l.set_pos("50%", "16%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      b1 := TextButton()
+      b1.set_label("First")
+      b1.set_accel("f")
+      b1.set_attribs("font=mono,20", "bg=orange")
+      b1.set_pos("25%", "32%")
+      b1.set_align("c", "c")
+      b1.connect(self, "on_button1")
+      self.add(b1)
+
+      b2 := TextButton()
+      b2.set_label("Second")
+      b2.set_accel("s")
+      b2.set_attribs("font=sans,20", "bg=green", "fg=black")
+      b2.set_pos("50%", "32%")
+      b2.set_align("c", "c")
+      b2.connect(self, "on_button2")
+      self.add(b2)
+
+      b3 := TextButton()
+      b3.set_label("Third")
+      b3.set_accel("t")
+      b3.set_attribs("font=serif,24", "bg=black", "fg=green")
+      b3.set_pos("75%", "32%")
+      b3.set_align("c", "c")
+      b3.connect(self, "on_button3")
+      self.add(b3)
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("ButtonGroup")
+      l.set_pos("50%", "50%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      bg := ButtonGroup()
+
+      b4 := TextButton()
+      b4.set_label("1")
+      b4.set_pos("50%-30", "66%")
+      b4.set_size(30)
+      b4.set_align("c", "c")
+      b4.connect(self, "on_button4")
+      self.add(b4)
+      bg.add(b4)
+
+      b5 := TextButton()
+      b5.set_label("2")
+      b5.set_pos("50%", "66%")
+      b5.set_size(30)
+      b5.set_align("c", "c")
+      b5.connect(self, "on_button5")
+      self.add(b5)
+      bg.add(b5)
+
+      b6 := TextButton()
+      b6.set_label("3")
+      b6.set_pos("50%+30", "66%")
+      b6.set_size(30)
+      b6.set_align("c", "c")
+      b6.connect(self, "on_button6")
+      self.add(b6)
+      bg.add(b6)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "84%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class TabSetDialog : Dialog(b, t1, t2, t3, t4, t5, b1, b2, b3, b4, b5)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,400"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("TabSet")
+      l.set_pos("50%", "13%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      tc := TabSet()
+      tc.set_pos("50%", "50%")
+      tc.set_size("80%","50%")
+      tc.set_align("c", "c")
+
+      t1 := TabItem()
+      t1.set_label("First pane")
+      tc.add(t1)
+
+      b1 := TextButton()
+      b1.set_label("First button")
+      b1.set_pos("50%", "50%")
+      b1.set_align("c", "c")
+      t1.add(b1)
+      
+      t2 := TabItem()
+      t2.set_label("Second pane")
+      tc.add(t2)
+      b2 := TextButton()
+      b2.set_label("Second button")
+      b2.set_pos(10, 10)
+      b2.set_align("l", "t")
+      t2.add(b2)
+
+      t3 := TabItem()
+      t3.set_label("Third pane")
+      tc.add(t3)   
+
+      c := CheckBoxGroup()
+      c1 := CheckBox()
+      c1.set_pos("50%", "50%-20")
+      c1.set_align("c", "c")
+      c1.set_label("Checkbox 1")
+      c1.set_accel("c")
+      t3.add(c1)
+      c.add(c1)
+      c2 := CheckBox()
+      c2.set_pos("50%", "50%")
+      c2.set_align("c", "c")
+      c2.set_label("Checkbox 2")
+      c2.set_accel("h")
+      t3.add(c2)
+      c.add(c2)
+      c3 := CheckBox()
+      c3.set_pos("50%", "50%+20")
+      c3.set_align("c", "c")
+      c3.set_label("Checkbox 3")
+      c3.set_accel("e")
+      t3.add(c3)
+      c.add(c3)
+      c.set_which_one(c1)
+
+      t4 := TabItem()
+      t4.set_label("Fourth")
+      tc.add(t4)
+
+      t := TextField()
+      t.set_pos("50%", "50%")
+      t.set_align("c", "c")
+      t.set_size(100)
+      t.set_attribs("fg=black", "bg=white")
+      t4.add(t)
+
+      t5 := TabItem()
+      t5.set_label("Five")
+      tc.add(t5)   
+
+      l := List()
+      l.set_pos("50%", "50%")
+      l.set_align("c", "c")
+      l.set_size(140)
+      l.set_selection_list(["red", "green", "purple", "mauve", "blue", "orange"])
+      t5.add(l)
+
+      self.add(tc)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class CheckBoxDialog : Dialog(b, c, c1, c2, c3, c4, c5, c6)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_check1(ev)
+      write("c1 checked")
+   end
+
+   method on_check2(ev)
+      write("c2 checked")
+   end
+
+   method on_check3(ev)
+      write("c3 checked")
+   end
+
+   method on_check4(ev)
+      write("c4 checked")
+   end
+
+   method on_check5(ev)
+      write("c5 checked")
+   end
+
+   method on_check6(ev)
+      write("c6 checked")
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,400"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("CheckBoxes")
+      l.set_pos("50%", "13%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      c1 := CheckBox()
+      c1.set_pos("25%", "25%")
+      c1.set_align("c", "c")
+      c1.set_label("Checkbox 1")
+      c1.set_accel("c")
+      c1.connect(self, "on_check1")
+      self.add(c1)
+      c2 := CheckBox()
+      c2.set_pos("50%", "25%")
+      c2.set_align("c", "c")
+      c2.set_label("Checkbox 2")
+      c2.set_accel("h")
+      c2.connect(self, "on_check2")
+      self.add(c2)
+      c3 := CheckBox()
+      c3.set_pos("75%", "25%")
+      c3.set_align("c", "c")
+      c3.set_label("Checkbox 3")
+      c3.set_accel("e")
+      c3.connect(self, "on_check3")
+      self.add(c3)
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("CheckBoxes in a CheckBoxGroup")
+      l.set_pos("50%", "40%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      c := CheckBoxGroup()
+      c4 := CheckBox()
+      c4.set_pos("50%", "40%+60")
+      c4.set_align("c", "c")
+      c4.set_label("Checkbox 1")
+      c4.set_accel("k")
+      c4.connect(self, "on_check4")
+      self.add(c4)
+      c.add(c4)
+      c5 := CheckBox()
+      c5.set_pos("50%", "40%+80")
+      c5.set_align("c", "c")
+      c5.set_label("Checkbox 2")
+      c5.set_accel("b")
+      c5.connect(self, "on_check5")
+      self.add(c5)
+      c.add(c5)
+      c6 := CheckBox()
+      c6.set_pos("50%", "40%+100")
+      c6.set_align("c", "c")
+      c6.set_label("Checkbox 3")
+      c6.set_accel("o")
+      c6.connect(self, "on_check6")
+      self.add(c6)
+      c.add(c6)
+      c.set_which_one(c4)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "87%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+
+      
+end
+
+class ListDialog : Dialog(b, c)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_list(ev)
+      write("Current index into list: ", c.get_selection())
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,300"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A drop-down List")
+      l.set_pos("50%", "16%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      c := List()
+      c.set_pos("50%", "32%")
+      c.set_size("30%")
+      c.set_align("c", "c")
+      c.set_selection_list(["red", "green", "orange", "blue", "purple"])
+      c.connect(self, "on_list")
+      self.add(c)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+end
+
+class _TextDialog : Dialog(b, t)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   method on_text_field(ev)
+      write("text field event ", ev.get_type())
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,200"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A TextField")
+      l.set_pos("50%", "25%")
+      l.set_align("c", "c")
+      self.add(l)
+      
+      t := TextField()
+      t.set_pos("50%", "50%")
+      t.set_attribs("bg=white")
+      t.set_size("40%")
+      t.set_align("c", "c")
+      t.connect(self, "on_text_field")
+      self.add(t)
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class ImageDialog : Dialog(b)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+
+   initially
+      local l, i1, i2, i3
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,400"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Images and Icons")
+      l.set_pos("50%", "20%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      i1 := Image()
+      i1.set_filename("babbage.gif")
+      i1.set_pos("25%", "40%")
+      i1.set_size("15%", "15%")
+      i1.set_scale_up()
+      i1.toggle_draw_border()
+      i1.set_align("c", "c")
+      i1.set_internal_alignment("c", "c")
+      self.add(i1)
+
+      i2 := Image()
+      i2.set_filename("babbage.gif")
+      i2.set_pos("50%", "40%")
+      i2.set_size("20%", "20%")
+      i2.set_scale_up()
+      i2.toggle_draw_border()
+      i2.set_align("c", "c")
+      i2.set_internal_alignment("c", "c")
+      self.add(i2)
+
+      i3 := Image()
+      i3.set_filename("babbage.gif")
+      i3.set_pos("75%", "40%")
+      i3.set_size("25%", "25%")
+      i3.set_scale_up()
+      i3.toggle_draw_border()
+      i3.set_align("c", "c")
+      i3.set_internal_alignment("c", "c")
+      self.add(i3)
+
+      j1 := Icon()
+      j1.set_img(
+"56,c1,_
+66666666666666666666666666666666666666666666666666666664_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444444444444444444444444444444444440_
+64444444444444444444444400000000000000000000444444444440_
+64444444444444444444444404444444444444444440444444444440_
+64444444444444444444444044444444444444444400444444444440_
+64444444444444444444444044-------------44400444444444440_
+64444444444444444444440444444444444444444040444444444440_
+6444444444444444444444044-------------444040444444444440_
+64444444444444444444404444444444444444440440444444444440_
+644444444444444444444044-------------4440440444444444440_
+64444444444444444444044444444444444444400000444444444440_
+64444444444444444444044------------444404444444444444440_
+64444444444444444440444444444444444444044444444444444440_
+64444444444444444000444444444444444444000000444444444440_
+64444444444444440D04444444444444444440ODOD00444444444440_
+6444444444444440DO00000000000000000000-OD0D0444444444440_
+644444444444440DO---------------------OD0DO0444444444440_
+63444344434440DODODODODODODODODODODODOD0DOD0434443444340_
+644444444444000000000000000000000000000DODO0444444444440_
+6443434344430ODODODODODODODODODODODODO0ODOD0434344434340_
+6444444444440DODODODODODODO000000004OD0DODO0444444444440_
+6343434343430ODODODODODODOD0-------3DO0ODOD0434343434340_
+6444444444440DODODODODODODO0-------4OD0DODO0444444444440_
+6343434343430ODODODODODODOD0-------3DO0ODO03434343434340_
+6434443444340DODODODODODODO044344434OD0DO0--443444344430_
+6343434343430ODODODODODODODODODODODODO0O0--3434343434340_
+6434343434340DODODODODODODODODODODODOD00--34343434343430_
+634343434343000000000000000000000000000--343434343434340_
+63343334333433--------------------------3334333433343330_
+634343434343434------------------------34343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63434343434343434343434343434343434343434343434343434340_
+63333333333333333333333333333333333333333333333333333330_
+63334333433343334333433343334333433343334333433343334330_
+63333333333333333333333333333333333333333333333333333330_
+63433333334333333343333333433333334333333343333333433330_
+63333333333333333333333333333333333333333333333333333330_
+63333333333333333333333333333333333333333333333333333330_
+40000000000000000000000000000000000000000000000000000000_
+"
+)
+      j1.set_pos("25%", "60%")
+      j1.set_align("c", "c")
+      self.add(j1)
+
+      j2 := Icon()
+      j2.set_img(img_style("arrow_down"))
+      j2.set_pos("75%", "60%")
+      j2.set_align("c", "c")
+      j2.toggle_draw_border()
+      self.add(j2)
+
+      j3 := Icon()
+      j3.set_pos("50%", "60%")
+      j3.set_align("c", "c")
+      j3.set_img("64,c1,_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~00~~~~~~~~~~~~~~~~00~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~0C00~~~~~~~~~~~~~~0CC0~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~0CC0~~~~~~~~~~~~~~0C00~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~0C00~~~~~~~~~~~~~~0CC0~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~0000000000000CC0000000000000000C00000000000000~~~~~~~~~~~_
+~~~~~~~0666666666660C00660606666666660CC0660606666660~~~~~~~~~~~_
+~~~~~~~0666666666660CC0606066666666660C00606066666660~~~~~~~~~~~_
+~~~~~~~0666666666660C00060606666666660CC00606066666600~0~~~~~~~~_
+~~~~~~~0666666666660CC0606066666666660C006060666666606060~~~~~~~_
+~~~~~~~0666666666600C00060666666666600CC0060666666660060~~~~~~~~_
+~~~~~~~0666666666600CC0006666666666600C000066666666606060~~~~~~~_
+~~~~~~~0666666666600000066666666666600000066666666660060~~~~~~~~_
+~~~~~~~06666666666600006666666666666600006666666666606060~~~~~~~_
+~~~~~~~0666666666666666666666666666666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666666666666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~066666666666666666666AAAAAAA6666666666666666606060~~~~~~~_
+~~~~~~~0666666666666666666AAAAAAAAA666666666666666660060~~~~~~~~_
+~~~~~~~0666666666666666666AAAAAAAAA6666666666666666606060~~~~~~~_
+~~~~~~~0666666666666666666AAAAAAAAA666666666666666660060~~~~~~~~_
+~~~~~~~0666666666666666666AAAAAAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06666666666666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~00000000006666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~00666666606666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~06066666606666666666666AAAAA666666666666666660060~~~~~~~~_
+~~~~~~~06606666606666666666666AAAAA6666666666666666606060~~~~~~~_
+~~~~~~~0666066660666666666666666666666666666666666660060~~~~~~~~_
+~~~~~~~06666066606666666666666666666666666666666666606060~~~~~~~_
+~~~~~~~0666660660666666666666666666666666666666666660060~~~~~~~~_
+~~~~~~~06666660606666666666666666666666666666666666606060~~~~~~~_
+~~~~~~~0666666600666666666666666666666666666666666660060~~~~~~~~_
+~~~~~~~00000000000000000000000000000000000000000000006060~~~~~~~_
+~~~~~~~~~06060606060606060606060606060606060606060606060~~~~~~~~_
+~~~~~~~~~~06060606060606060606060606060606060606060606060~~~~~~~_
+~~~~~~~~~06060606060606060606060606060606060606060606060~~~~~~~~_
+~~~~~~~~~~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~0~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~_
+"
+)
+      self.add(j3)
+ 
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "80%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class IntroDialog : Dialog(b)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+   
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,400"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("Introduction")
+      l.set_pos("50%", "16%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      msg := ["This is a demo program to illustrate the various",
+              "GUI classes in the file gui.iol.  Each window shows",
+              "one or more of the classes, and can easily be adapted",
+              "for use in your own program.  Try re-sizing the windows to",
+              "see how the various components adjust their position",
+              "automatically.",
+              "",
+              "None of the components have any effect other than to",
+              "print informative messages on the screen."]
+
+      i := 0
+      every s := !msg do {
+         l := Label()
+         l.set_label(s)
+         l.set_pos("50%", "32%+" || i)
+         l.set_align("c", "c")
+         i +:= 15
+         self.add(l)
+      }
+
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+end
+
+class EndDialog : Dialog(b)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_end(ev)
+      dispose()
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,400"])
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("End of Tour - Goodbye!")
+      l.set_pos("50%", "33%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      b := TextButton()
+      b.set_label("End")
+      b.set_pos("50%", "66%")
+      b.set_align("c", "c")
+      b.connect(self, "on_end", ACTION_EVENT)
+      self.add(b)
+      
+      
+end
+
+class ProgressDialog : Dialog(b, pb, pct)
+   method init_dialog()
+      set_focus(b)
+   end
+
+   method on_next(ev)
+      dispose()
+   end
+   
+   method tick()
+      pb.set_percentage(pct)
+      if pct = 100 then
+         stop_ticker()
+      else
+         pct +:= 1
+   end
+
+   initially
+      local l
+
+      self.Dialog.initially()
+      self.set_attribs_list(global_attribs ||| ["size=400,200"])
+
+      pct := 0
+      self.set_ticker(100)
+
+      l := Label()
+      l.set_attribs("font=serif,20")
+      l.set_label("A ProgressBar")
+      l.set_pos("50%", "25%")
+      l.set_align("c", "c")
+      self.add(l)
+
+      pb := ProgressBar()
+      pb.set_pos("50%", "50%")
+      pb.set_size("50%")
+      pb.set_align("c", "c")
+      self.add(pb)
+
+      #
+      # Add a close button. 
+      #
+      b := TextButton()
+      b.set_label(next_label)
+      b.set_pos("50%", "75%")
+      b.set_align("c", "c")
+      b.connect(self, "on_next", ACTION_EVENT)
+      self.add(b)
+end
+
+procedure main()
+   global_attribs := ["bg=light gray", "fg=black", "font=times", "resize=on"]
+   next_label := "Next screen ->"
+   IntroDialog().show_modal()
+   ListDialog().show_modal()
+   EditListDialog().show_modal()
+   TextListDialog1().show_modal()
+   TextListDialog2().show_modal()
+   ButtonDialog1().show_modal()
+   ButtonDialog2().show_modal()
+   TickerDialog().show_modal()
+   CheckBoxDialog().show_modal()
+   ImageDialog().show_modal()
+   _TextDialog().show_modal()
+   BorderDialog().show_modal()
+   ScrollDialog().show_modal()
+   TableDialog().show_modal()
+   MenuDialog().show_modal()
+   TreeDialog().show_modal()
+   CustomDialog().show_modal()
+   ProgressDialog().show_modal()
+   Sliders().show_modal()
+   TabSetDialog().show_modal()
+   EndDialog().show_modal()
+end

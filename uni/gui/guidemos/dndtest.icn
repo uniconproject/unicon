@@ -1,0 +1,329 @@
+import gui
+
+$include "guih.icn"
+
+#
+# A DndHandler for the list
+#
+class ListDndHandler : SelectableScrollAreaDndHandler()
+   #
+   # A drop has occurred; we succeed iff we accept it
+   #
+   method can_drop(d)
+      local l, ll
+      if l := parent.get_highlight() then {
+         if d.get_source() === parent then {
+            #
+            # Move within the list itself
+            #
+            parent.move_rows(parent.get_gesture_selections(), l)
+         } else {
+            #
+            # Copy from tree to list.  d.get_content() gives
+            # a list of the nodes being dragged.
+            #
+            ll := []
+            every el := !d.get_content() do {
+               #
+               # Don't drag folders.
+               #
+               if /el.is_folder_flag then
+                  put(ll, el.get_label())
+            }
+            parent.insert_rows(ll, l)
+         }
+         return
+      }
+   end
+
+   #
+   # This is invoked after a successful operation when the
+   # list was the source.  If the destination (c) wasn't the
+   # list, then we must delete the rows from the list.
+   #
+   method end_drag(d, c)
+      if c ~=== parent then
+         parent.delete_rows(parent.get_gesture_selections())
+   end
+end
+
+#
+# A DndHandler for the tree
+#
+class TreeDndHandler : SelectableScrollAreaDndHandler()
+   #
+   # Called during a drag event
+   #
+   method drag_event(d)
+      #
+      # We succeed if and only if the user is dragging over a row
+      # (this is handled by the parent) AND the thing we're over
+      # is a folder.
+      #
+      if self.SelectableScrollAreaDndHandler.drag_event(d) then
+         return \parent.object_get_highlight().is_folder_flag
+   end
+
+   #
+   # A drop has occurred; we succeed iff we accept it
+   #
+   method can_drop(d)
+      local s, other, n, el
+      #
+      # Only consider a drop on a folder
+      #
+      if other := parent.object_get_highlight() & \other.is_folder_flag then {
+         if d.get_source() === parent then {
+            #
+            # If parent is the drop source, then we have a dnd from 
+            # within the tree.  So, we just move the nodes.
+            # d.get_content() will be a list of the nodes that were
+            # dragged.
+            #
+            every el := !d.get_content() do {
+               if el.get_parent_node().delete_node(el) then
+                  other.add(el)
+            }
+         } else {
+            #
+            # Drop from list.  In this case d.get_content() will
+            # be a list of strings.
+            #
+            every el := !d.get_content() do {
+               n := TreeNode()
+               n.set_label(el)
+               other.add(n)
+            }
+         }
+
+         #
+         # Notify the tree that the node data structure has altered.
+         #
+         parent.tree_structure_changed()
+         return
+      }
+   end
+
+   #
+   # This is invoked after a successful operation when the
+   # tree was the source.  If the destination (c) wasn't the
+   # tree, then we must delete the nodes from the tree.
+   #
+   method end_drag(d, c)
+      if c ~=== parent then {
+         #
+         # Delete all the nodes which will have been dragged.
+         #
+         every n := !parent.object_get_gesture_selections() do {
+            if /n.is_folder_flag then {
+               n.get_parent_node().delete_node(n)
+            }
+         }
+
+         #
+         # Notify the tree that the node data structure has altered.
+         #
+         parent.tree_structure_changed()
+      }
+   end
+end
+
+#
+# We use a custom Node subclass to also store an "is_folder_flag" flag.
+#
+class TreeNode : Node(is_folder_flag)
+   initially
+      self.Node.initially()
+      if \is_folder_flag then
+         set_bmps([img_style("closed_folder"), img_style("closed_folder"), img_style("closed_folder")])
+end
+
+#
+# The main dialog.
+#
+class DNDTest : Dialog(tree,
+                       lst, 
+                       tree_popup, 
+                       list_popup, 
+                       new_folder_menu_item, 
+                       delete_node_menu_item,
+                       delete_rows_menu_item)
+
+   #
+   # Delete nodes handler
+   #
+   method on_delete_node()
+      local n, i, l
+
+      every n := !(tree.object_get_gesture_selections()) do {
+         n.get_parent_node().delete_node(n)
+      }
+      #
+      # Notify the tree that the node data structure has altered.
+      #
+      tree.tree_structure_changed()
+   end
+
+   #
+   # Create a new folder
+   #
+   method on_new_folder()
+      local n, o
+
+      #
+      # Simply add a new node under the cursor, and notify the
+      # tree that the data structure changed.
+      #
+      if o := tree.object_get_cursor() then {
+         n := TreeNode(1)
+         n.set_label("New folder")
+         o.add(n)
+         tree.tree_structure_changed()
+      }
+   end
+
+   #
+   # Delete rows from the list
+   #
+   method on_delete_rows()
+      lst.delete_rows(lst.get_gesture_selections())
+   end
+
+   #
+   # Add some rows to the list, at the cursor position.
+   #
+   method on_new_rows()
+      lst.insert_rows(["new1", "new2", "new3"], lst.get_cursor() | 1)
+   end
+
+   #
+   # Helper method to create a tree structure.
+   #
+   method create_tree()
+      local r, n
+      r := TreeNode(1)
+      r.set_label("root")
+
+      every s := "red" | "green" | "blue" | "yellow" do {
+         n := TreeNode(1)
+         n.set_label(s)
+         r.add(n)
+         every t := 1 to 5 do {
+            o := TreeNode()
+            o.set_label(s || "-" ||t)
+            n.add(o)
+         }
+      }
+      return r
+   end
+
+   #
+   # A selection-up event on the tree
+   #
+   method on_tree_release(ev)
+      local n
+
+      #
+      # If the Icon event was a right mouse release,
+      # display the popup at the cursor.
+      #
+      if ev.get_param() === &rrelease then {
+         n := tree.object_get_cursor() | fail
+         #
+         # Adjust the shading depending on the node 
+         # type.
+         #
+         if /n.is_folder_flag then
+            new_folder_menu_item.set_is_shaded()
+         else
+            new_folder_menu_item.clear_is_shaded()
+         if n === tree.get_root_node() then
+            delete_node_menu_item.set_is_shaded()
+         else
+            delete_node_menu_item.clear_is_shaded()
+
+         tree_popup.popup()
+      }
+   end
+
+   #
+   # A mouse release event on the list
+   #
+   method on_list_release(ev)
+      if ev.get_param() === &rrelease then {
+         #
+         # If some rows to delete...
+         #
+         if lst.get_gesture_selections() then
+            delete_rows_menu_item.clear_is_shaded()
+         else
+            delete_rows_menu_item.set_is_shaded()
+
+         list_popup.popup()
+      }
+   end
+
+   method component_setup()
+      local m, quit, mi
+
+      attrib("size=350,295", "resize=on")
+      connect(self, "dispose", CLOSE_BUTTON_EVENT)
+
+      tree := Tree("pos=50%-10,10", "size=50%-20,100%-70", "align=r,t", 
+                   "select_many", "show_root_handles=f")
+      tree.set_root_node(create_tree())
+      tree.set_dnd_handler(TreeDndHandler(tree))
+      tree.connect(self, "on_tree_release", MOUSE_RELEASE_EVENT)
+
+      add(tree)
+
+      quit := TextButton("pos=50%,100%-40", "align=c,t", "label=Quit")
+      quit.connect(self, "dispose", ACTION_EVENT)
+      add(quit)
+
+      #
+      # Create a TextList, with some arbitrary content.
+      #
+      lst := TextList("pos=50%+10,10", "size=50%-20,100%-70", 
+                      "select_many",
+                      "contents=one,two,three,four,five,_
+                       six,seven,eight,nine,ten,eleven,_
+                       twelve,thirteen,fourteen,fifteen,_
+                       sixteen,red,blue,green")
+
+      lst.connect(self, "on_list_release", MOUSE_RELEASE_EVENT)
+      lst.set_dnd_handler(ListDndHandler(lst))
+      add(lst)
+
+      tree_popup := PopupMenu()
+      m := Menu()
+      tree_popup.set_menu(m)
+
+      delete_node_menu_item := TextMenuItem("label=Delete")
+      delete_node_menu_item.connect(self, "on_delete_node", ACTION_EVENT)
+      m.add(delete_node_menu_item)
+
+      new_folder_menu_item := TextMenuItem("label=New folder")
+      new_folder_menu_item.connect(self, "on_new_folder", ACTION_EVENT)
+      m.add(new_folder_menu_item)
+      add(tree_popup)
+
+      list_popup := PopupMenu()
+      m := Menu()
+      list_popup.set_menu(m)
+      delete_rows_menu_item := TextMenuItem("label=Delete")
+      delete_rows_menu_item.connect(self, "on_delete_rows", ACTION_EVENT)
+      m.add(delete_rows_menu_item)
+      mi := TextMenuItem("label=Insert rows")
+      mi.connect(self, "on_new_rows", ACTION_EVENT)
+      m.add(mi)
+
+      add(list_popup)
+   end
+end
+
+procedure main()
+   local d
+   d := DNDTest()
+   d.show_modal()
+end

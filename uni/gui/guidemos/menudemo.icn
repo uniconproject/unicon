@@ -1,0 +1,206 @@
+#
+# $Id: menudemo.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+#
+# Menu example program.
+#
+class MenuDemo : Dialog(pm)
+   method component_setup()
+      local file_menu, menu_bar, check_box_group, text_menu_item,
+         labels_menu, images_menu, checkboxes_menu, group_menu, alone_menu,
+         menu_button, check_box_menu_item, button_menu
+
+      attrib("size=426,270", "font=sans", "bg=light gray",
+             "label=Menu example")
+
+      check_box_group := CheckBoxGroup()
+
+      #
+      # Create the menu bar.  The position and size default to give a bar covering the
+      # top of the window.
+      #
+      menu_bar := MenuBar()
+
+      #
+      # The first menu ("File") - just contains one text item.
+      #
+      file_menu := Menu("label=File", "accel=f")
+      text_menu_item := TextMenuItem("label=Quit", "accel=q")
+      text_menu_item.connect(self, "dispose", ACTION_EVENT)
+      file_menu.add(text_menu_item)
+      menu_bar.add(file_menu)
+
+      #
+      # A disabled menu
+      # 
+      dis_menu := Menu("label=Grey")
+      dis_menu.set_is_shaded()
+      menu_bar.add(dis_menu)
+
+      #
+      # A menu with only disabled items
+      # 
+      test_menu := Menu("label=Test", "accel=t")
+      item := TextMenuItem("label=One")
+      item.set_is_shaded()
+      test_menu.add(item)
+      item := TextMenuItem("label=Two")
+      item.set_is_shaded()
+      test_menu.add(item)
+      item := TextMenuItem("label=Three")
+      item.set_is_shaded()
+      test_menu.add(item)
+      menu_bar.add(test_menu)
+
+      #
+      # An empty menu
+      #
+      menu_bar.add(Menu("label=Empty", "accel=e"))
+
+      #
+      # The second menu ("Labels") - add some labels
+      #
+      labels_menu := Menu("label=Labels", "accel=l")
+      labels_menu.add(TextMenuItem("label=Grey","accel=g", "is_shaded=y"))
+      labels_menu.add(TextMenuItem("label=One","accel=o"))
+      labels_menu.add(TextMenuItem("label=Two", "accel=w", "label_left=ABC"))
+      #
+      # Add a separator and another text item
+      labels_menu.add(MenuSeparator())
+      labels_menu.add(TextMenuItem("label=Three", "accel=t", "label_right=123"))
+      #
+      # A sub-menu in this menu, labelled "Images"
+      images_menu := Menu("label=Images", "accel=i")
+      #
+      # Add three text items with custom images.   The rather unwieldy strings
+      # create a triangle, a circle and a rectangle.
+      #
+      text_menu_item := TextMenuItem("label=One", "accel=o")
+      text_menu_item.set_img_left("15,c1,_
+~~~~~~~0~~~~~~~_
+~~~~~~~0~~~~~~~_
+~~~~~~000~~~~~~_
+~~~~~~000~~~~~~_
+~~~~~00~00~~~~~_
+~~~~~00~00~~~~~_
+~~~~00~~~00~~~~_
+~~~~00~~~00~~~~_
+~~~00~~~~~00~~~_
+~~~00~~~~~00~~~_
+~~00~~~~~~~00~~_
+~~00~~~~~~~00~~_
+~00~~~~~~~~~00~_
+~0000000000000~_
+000000000000000")
+      images_menu.add(text_menu_item)
+      text_menu_item := TextMenuItem("label=Two", "accel=w")
+      text_menu_item.set_img_left("15,c1,_
+~~~~~~000~~~~~~_
+~~~~0000000~~~~_
+~~000~~~~~000~~_
+~~00~~~~~~~00~~_
+~00~~~~~~~~~00~_
+~0~~~~~~~~~~~0~_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+~0~~~~~~~~~~~0~_
+~00~~~~~~~~~00~_
+~~00~~~~~~~00~~_
+~~000~~~~~000~~_
+~~~~0000000~~~~_
+~~~~~~000~~~~~~")
+      images_menu.add(text_menu_item)
+      text_menu_item := TextMenuItem("label=Three", "accel=t")
+      text_menu_item.set_img_left("15,c1,_
+000000000000000_
+000000000000000_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+00~~~~~~~~~~~00_
+000000000000000_
+000000000000000")
+      images_menu.add(text_menu_item)
+      labels_menu.add(images_menu)
+      menu_bar.add(labels_menu)
+
+      #
+      # The third menu ("Checkboxes")
+      #
+      checkboxes_menu := Menu("label=Checkboxes", "accel=c")
+      #
+      # Sub-menu - "Group" - two checkboxes in a checkbox group.
+      #
+      group_menu := Menu("label=Group","accel=g")
+      check_box_menu_item := CheckBoxMenuItem("label=One","accel=o")
+      check_box_group.add(check_box_menu_item)
+      group_menu.add(check_box_menu_item)
+      check_box_menu_item := CheckBoxMenuItem("label=Two","accel=w")
+      check_box_group.add(check_box_menu_item)
+      group_menu.add(check_box_menu_item)
+      checkboxes_menu.add(group_menu)
+      #
+      # Sub-menu - "Alone" - two checkboxes on their own
+      #
+      alone_menu := Menu()
+      alone_menu.set_label("Alone")
+      check_box_menu_item_3 := CheckBoxMenuItem("label=Three","accel=t")
+      alone_menu.add(check_box_menu_item_3)
+      check_box_menu_item_4 := CheckBoxMenuItem("label=Four","accel=f")
+      alone_menu.add(check_box_menu_item_4)
+      checkboxes_menu.add(alone_menu)
+      menu_bar.add(checkboxes_menu)
+      add(menu_bar)
+
+      #
+      # A popup menu
+      # 
+      pm := PopupMenu()
+      pm_menu := Menu()
+      pm_menu.add(TextMenuItem("label=One","accel=o"))
+      pm_menu.add(TextMenuItem("label=Two","accel=w"))
+      pm.set_menu(pm_menu)
+      add(pm)
+
+      l := Label("pos=40,25%", "label=Right click for popup")
+      l.connect(self, "show_popup", MOUSE_RELEASE_EVENT)
+      add(l)
+
+      #
+      # Finally, create a menu button - a mini floating menu with
+      # one menu inside it.
+      #
+      menu_button := MenuButton("pos=350,50%", "align=c,c")
+      #
+      # This is the menu, its label appears on the button.  It just
+      # contains a couple of text items for illustration purposes.
+      #
+      button_menu := Menu("label=Click", "accel=k")
+      button_menu.add(TextMenuItem("label=One","accel=o"))
+      button_menu.add(TextMenuItem("label=Two","accel=w"))
+      menu_button.set_menu(button_menu)
+      add(menu_button)
+   end
+
+   method show_popup()
+      pm.popup()
+   end
+end
+
+procedure main()
+   local d
+   d := MenuDemo()
+   d.show_modal()
+end

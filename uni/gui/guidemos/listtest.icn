@@ -1,0 +1,79 @@
+import gui
+import util
+$include "guih.icn"
+
+class Untitled : Dialog()
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_text_button_1_event(ev)
+      write(ev.get_type())
+      exit(0)
+   end
+
+   method on_text_list_2_event(ev)
+      if not( ev.get_type() = (MOUSE_MOTION_EVENT|MOUSE_DRAG_EVENT)) then
+         write("on_text_list_2_event ", ev.get_type())
+   end
+
+   method on_text_list_3_event(ev)
+      if not(ev.get_type() == (MOUSE_MOTION_EVENT|MOUSE_DRAG_EVENT)) then
+         write("on_text_list_3_event ", ev.get_type())
+   end
+
+   method setup()
+      local text_list_1, text_button_1, text_list_2, text_list_3
+      self.set_attribs("size=421,245", "resize=on")
+      text_list_1 := TextDisplay()
+      text_list_1.set_pos("80", "24")
+      text_list_1.set_size("99", "66%")
+      text_list_1.set_align("c", "t")
+      text_list_1.set_contents(["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen"])
+      #text_list_1.clear_draw_border()
+      self.add(text_list_1)
+      text_button_1 := TextButton()
+      text_button_1.set_pos("50%", "100%-40")
+      text_button_1.set_align("c", "t")
+      text_button_1.connect(self, "on_text_button_1_event", ACTION_EVENT)
+      text_button_1.set_label("Quit")
+      text_button_1.set_internal_alignment("c")
+      self.add(text_button_1)
+      text_list_2 := TextList()
+      text_list_2.set_pos("206", "24")
+      text_list_2.set_size("99", "66%")
+      text_list_2.set_align("c", "t")
+      text_list_2.connect(self, "on_text_list_2_event")
+      text_list_2.set_select_one()
+      text_list_2.set_draggable_cursor()
+      #text_list_2.clear_draw_border()
+      text_list_2.set_contents(["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"])
+      self.add(text_list_2)
+      text_list_3 := TextList()
+      text_list_3.set_pos("332", "24")
+      #text_list_3.clear_draw_border()
+      text_list_3.set_size("99", "66%")
+      text_list_3.set_align("c", "t")
+      text_list_3.connect(self, "on_text_list_3_event")
+      text_list_3.set_select_many()
+      text_list_3.set_contents(["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen"])
+      self.add(text_list_3)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := Untitled()
+   d.show_modal()
+end
+
+

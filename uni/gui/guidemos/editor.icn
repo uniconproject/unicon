@@ -1,0 +1,124 @@
+#
+# $Id: editor.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+class Editor : Dialog(curr_file_name, text, text_menu_item_1, text_menu_item_2, text_menu_item_3,
+                      cut_item, copy_item, paste_item, undo_item, redo_item)
+   method load(s)
+      local f
+
+      l := []
+      if f := ::open(s) then {
+         l := []
+         every put(l, !f)
+         close(f)
+      }
+
+      text.set_contents(l)
+      curr_file_name := s
+      return
+   end
+
+   method handle_save(ev)
+      local f
+      if not(f := ::open(curr_file_name, "w")) then {
+         write(&error, "couldn't open " || curr_file_name)
+         fail
+      }
+      every write(f, !text.get_contents())
+      close(f)
+      return
+   end
+
+   method handle_open(ev)
+      fd := FileDialog()
+      fd.show_modal()
+      if s := fd.get_result() then
+         load(s)
+   end
+
+   method init_dialog(ev)
+      set_focus(text)
+   end
+
+   method update_grey()
+      if text.has_region() then {
+         cut_item.clear_is_shaded()
+         copy_item.clear_is_shaded()
+      } else {
+         cut_item.set_is_shaded()
+         copy_item.set_is_shaded()
+      }
+      if text.can_undo() then
+         undo_item.clear_is_shaded()
+      else
+         undo_item.set_is_shaded()
+      if text.can_redo() then
+         redo_item.clear_is_shaded()
+      else
+         redo_item.set_is_shaded()
+   end
+
+   method setup()
+      local menu_bar_1, menu_1
+      self.set_attribs("size=323,345", "label=Editor", "resize=on")
+      text := EditableTextList()
+      text.set_pos("20", "40")
+      text.set_size("100%-40", "100%-60")
+      text.set_contents([""])
+      text.connect(self, "update_grey", SELECTION_CHANGED_EVENT)
+      text.connect(self, "update_grey", CONTENT_CHANGED_EVENT)
+      self.add(text)
+      menu_bar_1 := MenuBar()
+      menu_bar_1.set_pos("0", "0")
+      menu_1 := Menu("label=File", "accel=f")
+      text_menu_item_1 := TextMenuItem("label=Open", "accel=o")
+      text_menu_item_1.connect(self, "handle_open", ACTION_EVENT)
+      menu_1.add(text_menu_item_1)
+      text_menu_item_2 := TextMenuItem("label=Save", "accel=s")
+      text_menu_item_2.connect(self, "handle_save", ACTION_EVENT)
+      menu_1.add(text_menu_item_2)
+      text_menu_item_3 := TextMenuItem("label=Quit", "accel=q")
+      text_menu_item_3.connect(self, "dispose", ACTION_EVENT)
+      menu_1.add(text_menu_item_3)
+      menu_bar_1.add(menu_1)
+
+      menu_2 := Menu("label=Edit", "accel=e")
+      cut_item := TextMenuItem("label=Cut", "accel=c")
+      cut_item.connect(text, "handle_cut", ACTION_EVENT)
+      menu_2.add(cut_item)
+      copy_item := TextMenuItem("label=Copy", "accel=o")
+      copy_item.connect(text, "handle_copy", ACTION_EVENT)
+      menu_2.add(copy_item)
+      paste_item := TextMenuItem("label=Paste", "accel=p")
+      paste_item.connect(text, "handle_paste", ACTION_EVENT)
+      menu_2.add(paste_item)
+      undo_item := TextMenuItem("label=Undo", "accel=u")
+      undo_item.connect(text, "handle_undo", ACTION_EVENT)
+      menu_2.add(undo_item)
+      redo_item := TextMenuItem("label=Redo", "accel=r")
+      redo_item.connect(text, "handle_redo", ACTION_EVENT)
+      menu_2.add(redo_item)
+      menu_bar_1.add(menu_2)
+
+      self.add(menu_bar_1)
+
+      update_grey()
+   end
+end
+
+procedure main(args)
+   local d
+
+   if *args = 0 then
+      stop("usage: editor <file>")
+
+   d := Editor()
+   d.setup()
+   d.load(args[1]) 
+
+   d.show_modal()
+end

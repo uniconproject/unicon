@@ -1,0 +1,25 @@
+
+class GetWebProcess : Process(url)
+   method set_url(url)
+      self.url := url
+   end
+
+   method run()
+      local f
+      write("in child run")
+      if not(f := url$Open()) then {
+         send("Couldn't open connection")
+         send()
+         return
+      }
+      send("connected")
+      write("getting", url$get_file())
+      write(f, "GET " || url$get_file() || " HTTP/1.0")
+      write(f)
+      while send(!f)
+      close(f)
+      send()
+      write("ending child")
+   end
+end
+

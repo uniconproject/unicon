@@ -1,0 +1,204 @@
+#
+# $Id: palette.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+
+#
+# The standard constants
+#
+$include "guih.icn"
+
+#
+# Width of one colour cell in pixels
+#
+$define CELL_WIDTH 30
+
+#
+# The Palette class
+#
+class Palette : SubMenu(
+   w,                      #         
+   h,                      #         
+   colour,                 # Colour number selected
+   palette,                # List of colours
+   box_size,               # Width/height in cells
+   temp_win                # Temporary window               
+   )
+
+   #
+   # Get the result
+   #
+   method get_colour()
+      return self.palette[self.colour]
+   end
+
+   #
+   # Set the palette list
+   #
+   method set_palette(l)
+      box_size := integer(sqrt(*l))
+      return self.palette := l
+   end
+
+   #
+   # This is called by the toolkit; it is a convenient place to initialize any sizes.
+   #
+   method resize()
+      self.w := self.h := self.box_size * CELL_WIDTH + 2 * BORDER_WIDTH
+   end
+
+   #
+   # Called to display the item.  The x, y co-ordinates have been set up for us
+   # and give the top left hand corner of the display. 
+   #
+   method display()
+      if /self.temp_win then {
+         #
+         # Open a temporary area for the menu and copy.
+         #
+         self.temp_win := WOpen("canvas=hidden", "size=" || self.w || "," || self.h)
+         CopyArea(self.parent_component.get_parent_win(), self.temp_win, self.x, self.y, self.w, self.h, 0, 0)
+      }
+
+      cw := Clone(self.parent_component.cwin)
+
+      #
+      # Clear area and draw rectangle around whole
+      #
+      EraseRectangle(cw, self.x, self.y, self.w, self.h)
+      DrawRaisedRectangle(cw, self.x, self.y, self.w, self.h)
+
+      #
+      # Draw the colour grid.
+      #
+      y1 := self.y + BORDER_WIDTH      
+      e := create "fg=" || !palette
+      every 1 to box_size do {
+         x1 := self.x + BORDER_WIDTH  
+         every 1 to box_size do {
+            WAttrib(cw, @e)
+            FillRectangle(cw, x1, y1, CELL_WIDTH, CELL_WIDTH)
+            x1 +:= CELL_WIDTH
+         }
+         y1 +:= CELL_WIDTH
+      }
+      Uncouple(cw)
+   end
+
+   #
+   # Test whether pointer in palette_region, and if so which cell it's in
+   #
+   method in_palette_region()
+      if (self.x <= &x < self.x + self.w) & (self.y <= &y < self.y + self.h) then {
+         x1 := (&x - self.x - BORDER_WIDTH) / CELL_WIDTH
+         y1 := (&y - self.y - BORDER_WIDTH) / CELL_WIDTH
+         return 1 + x1 + y1 * box_size
+      }
+   end
+
+   #
+   # Will be called if our menu is open.
+   #
+   method handle_event(e)
+      if i := self.in_palette_region() then {
+         if integer(e) = (&lrelease | &rrelease | &mrelease) then {
+            self.colour := i
+            # This is a helper method in the superclass which closes the menu
+            # system and fires an ACTION_EVENT
+            succeed(e)
+         }
+      } else {
+         if integer(e) = (&lrelease | &rrelease | &mrelease | &lpress | &rpress | &mpress) then
+            # This is a helper method in the superclass which closes the menu
+            # system, without firing an event.
+            close_all()
+      }
+   end
+
+   #
+   # Close this menu.
+   #
+   method hide()
+      #
+      # Restore window area.
+      #
+      cw := self.parent_component.cwin
+      EraseRectangle(cw, self.x, self.y, self.w, self.h)
+      CopyArea(self.temp_win, self.parent_component.get_parent_win(), 0, 0, self.w, self.h, self.x, self.y)
+      WClose(self.temp_win)
+      self.temp_win := &null
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "palette" : set_palette(val)
+         default : self.MenuComponent.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.SubMenu.initially()
+      #
+      # Set the image to appear on the Menu above ours.  We could design a tiny 
+      # icon and use that instead of the standard arrow if we wished.
+      # 
+      self.set_img_right(img_style("arrow_right"))
+      #
+      # Support the attrib style constructor.
+      #
+      set_fields(a)
+end
+
+#
+# Test class dialog.
+#
+class TestPalette : Dialog(palette)
+   method on_palette(ev)
+      write("Colour selected : " || palette.get_colour())
+   end
+
+   method on_anything(ev)
+      write("Anything item selected")
+   end
+
+   method component_setup()
+      local menu_bar, menu, text_menu_item, close
+
+      attrib("size=400,200")
+
+      #
+      # Create a MenuBar structure which includes our palette as a sub-menu
+      #
+      menu_bar := MenuBar("pos=0,0")
+      menu := Menu("label=Test")
+      text_menu_item := TextMenuItem("label=Anything")
+      text_menu_item.connect(self, "on_anything", ACTION_EVENT)
+      menu.add(text_menu_item)
+
+      palette := Palette("label=Test menu",
+                         "palette=red,green,yellow,black,white,_
+                          purple,gray,blue,pink")
+
+      palette.connect(self, "on_palette", ACTION_EVENT)
+      menu.add(palette)
+      menu_bar.add(menu)
+      add(menu_bar)
+
+      #
+      # Add a close button. 
+      #
+      close := TextButton("pos=50%,66%", "align=c,c", "label=Close")
+      close.connect(self, "dispose", ACTION_EVENT)
+      add(close)
+   end
+end
+
+#
+# Main program entry point.
+#
+procedure main()
+   local d
+   d := TestPalette()
+   d.show_modal()
+end

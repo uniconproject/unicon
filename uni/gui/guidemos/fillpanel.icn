@@ -1,0 +1,56 @@
+import gui
+$include "guih.icn"
+
+#
+# A simple example showing how to subclass Panel so that it
+# fills its own background.
+#
+#
+
+class FillPanel : Panel()
+   method display(buffer_flag)
+      EraseRectangle(if /buffer_flag then self.cwin else self.cbwin, 
+                     self.x, self.y, self.w, self.h)
+      self.Panel.display(buffer_flag)
+   end
+
+   initially(a[])
+      self.Panel.initially()
+      set_fields(a)
+end
+
+
+class Untitled : Dialog()
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method setup()
+      local panel_1, text_button_1
+      self.set_attribs("size=338,274")
+      panel_1 := FillPanel("pos=50%,50%", "size=200,100", "bg=blue", "align=c,c")
+      text_button_1 := TextButton()
+      text_button_1.set_pos("50%", "50%")
+      text_button_1.set_label("Close")
+      text_button_1.connect(self, "dispose", ACTION_EVENT)
+      text_button_1.set_align("c", "c")
+      text_button_1.set_internal_alignment("c")
+      panel_1.add(text_button_1)
+      self.add(panel_1)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := Untitled()
+   d.show_modal()
+end

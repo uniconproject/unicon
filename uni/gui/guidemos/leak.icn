@@ -1,0 +1,41 @@
+#
+# $Id: leak.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+class SubDialog:Dialog()
+   initially
+      self.Dialog.initially("size=200,200","pos=300,300")
+      #self.add(Label("label=Child", "pos=50,50"))
+end
+
+class TopDialog:Dialog(child)
+   method tick()
+      collect()
+      system("free")
+      if \child then
+         child.dispose()
+      child := SubDialog()
+      child.show_modeless(self)
+      BevelRectangle(child.win, 20,20,80,80, 2)
+      #DrawRaisedRectangle(child.win, 20,20,60,60)
+   end
+
+   method on_quit()
+      exit(0)
+   end
+
+   initially
+      self.Dialog.initially("size=200,200","pos=100,100")
+      self.add(Label("label=Parent", "pos=50,50"))
+      b := TextButton("label=Quit", "pos=50,80")
+      b.connect(self, "on_quit", ACTION_EVENT)
+      self.add(b)
+      set_ticker(100)
+end
+
+procedure main()
+   TopDialog().show_modal()
+end

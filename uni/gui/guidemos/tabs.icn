@@ -1,0 +1,70 @@
+#
+# $Id: tabs.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+#
+# Simple example of a TabSet
+#
+class Tabs : Dialog(quit_button)
+   method change(e)
+      write("The tabset selection changed")
+   end
+
+   method component_setup()
+      local tab_set, tab_item_1, tab_item_2, tab_item_3
+
+      attrib("size=355,295", "font=sans", "bg=light gray", 
+             "label=TabSet example", "resize=on")
+
+      # 
+      # Create the TabSet
+      #
+      tab_set := TabSet("pos=20,20", "size=100%-40,100%-80")
+
+      # 
+      # First pane
+      #
+      tab_item_1 := TabItem("label=Pane 1", "accel=p")
+      tab_item_1.add(Label("pos=50%,50%", "align=c,c", "label=Label 1"))
+      tab_set.add(tab_item_1)
+
+      #
+      # Second pane
+      #
+      tab_item_2 := TabItem("label=Pane 2", "accel=a")
+      tab_item_2.add(Label("pos=50%,50%", "align=c,c", "label=Label 2"))
+      tab_set.add(tab_item_2)
+
+      #
+      # Third pane
+      #
+      tab_item_3 := TabItem("label=Pane 3", "accel=n")
+      tab_item_3.add(Label("pos=50%,50%", "align=c,c", "label=Label 3"))
+      tab_set.add(tab_item_3)
+
+      tab_set.set_which_one(tab_item_1)
+      tab_set.connect(self, "change", SELECTION_CHANGED_EVENT)
+      add(tab_set)
+
+      #
+      # Add a quit button
+      #
+      quit_button := TextButton("pos=50%,100%-30", "align=c,c", "label=Quit")
+      quit_button.connect(self, "dispose", ACTION_EVENT)
+      add(quit_button)
+
+      #
+      # Close the dialog when the window close button is pressed
+      #
+      connect(self, "dispose", CLOSE_BUTTON_EVENT)
+   end
+end
+
+procedure main()
+   local d
+   d := Tabs()
+   d.show_modal()
+end

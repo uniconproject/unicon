@@ -1,0 +1,52 @@
+#
+# $Id: lines.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+class Lines : Dialog(quit_button, l, cb)
+   method on_cb(ev)
+      if cb.is_checked() then
+         l.set_is_vertical()
+      else
+         l.clear_is_vertical()
+   end
+
+   method component_setup()
+      self.set_attribs("size=355,295", "bg=light gray", 
+                       "label=Line example", "resize=on")
+
+      b := Border()
+      b.set_title(Label("label=Line"))
+      b.set_pos(20,20)
+      b.set_size("100%-40", "100%-100")
+      add(b)
+
+      l := Line()
+      l.set_pos(30,30)
+      l.set_size("100%-60","100%-60")
+      b.add(l)
+
+      cb := CheckBox("label=Vertical")
+      cb.connect(self, "on_cb")
+      cb.set_pos("20%", "100%-50")
+      add(cb)
+
+      #
+      # Add a quit button
+      #
+      quit_button := TextButton()
+      quit_button.set_pos("60%", "100%-50")
+      quit_button.set_align("c", "t")
+      quit_button.set_label("Quit")
+      quit_button.connect(self, "dispose", ACTION_EVENT)
+      add(quit_button)
+   end
+end
+
+procedure main()
+   local d
+   d := Lines()
+   d.show_modal()
+end

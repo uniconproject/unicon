@@ -1,0 +1,153 @@
+#
+# $Id: sieve.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+$include "guih.icn"
+
+$define PRIME_LIMIT 20000
+
+#
+# A program to calculate prime numbers in a background ticker,
+# and display them in a dialog.
+#
+class Sieve : Dialog(prime_ce, 
+                     interval, 
+                     count_label, 
+                     prime_label, 
+                     rate_label, 
+                     start, 
+                     stop)
+
+   #
+   # Bring the label and ticker into line with the interval slider.
+   #
+   method synch_interval()
+      rate_label.set_label(interval.get_value() || " ms")
+      #
+      # If the ticker is running, retime it.
+      #
+      if is_ticking() then
+         retime_ticker(interval.get_value())
+   end
+
+   #
+   # Toggle the grey state of the start/stop buttons.
+   #
+   method toggle_buttons()
+      start.toggle_is_shaded()
+      stop.toggle_is_shaded()
+   end
+
+   #
+   # Called when the start button has been pressed: toggle the
+   # grey state and start the ticker.
+   #
+   method on_start()
+      toggle_buttons()
+      set_ticker(interval.get_value())
+   end
+
+   #
+   # Called when the stop button has been pressed: toggle the
+   # grey state and stop the ticker.
+   # 
+   method on_stop()
+      toggle_buttons()
+      stop_ticker()
+   end
+
+   #
+   # The tick method, which is invoked regularly by the toolkit.
+   # It just invokes the co-expression to display the next prime.
+   #
+   method tick()
+      @prime_ce
+   end
+
+   #
+   # This method consitutes the co-expression body.
+   #
+   method primes()
+      local prime_candidate, non_prime_set, prime_count
+
+      non_prime_set := set()
+      prime_count := 0
+
+      every prime_candidate := 2 to  PRIME_LIMIT do {
+         if not member(non_prime_set, prime_candidate) then {
+            #
+            # Update the UI
+            #
+            count_label.set_label(prime_count +:= 1)
+            prime_label.set_label(prime_candidate)
+            #
+            # Update the non-prime set.
+            #
+            every insert(non_prime_set, 
+                         2 * prime_candidate to PRIME_LIMIT by prime_candidate)
+            #
+            # Suspend the co-expression until the next tick.
+            #
+            @&source
+         }
+      }
+   end
+
+   method component_setup()
+      local prime_border, rate, buttons, b
+
+      attrib("size=325,200", "label=Sieve")
+      connect(self, "dispose", CLOSE_BUTTON_EVENT)
+
+      prime_border := Border("pos=20,20", "size=100%-40,78")
+      prime_border.set_title(Label("pos=10,0", "label=Primes"))
+      prime_ce := create primes()
+
+      prime_border.add(Label("pos=20,18", "label=Prime:"))
+      count_label := Label("pos=77,18", "size=40")
+      count_label.set_label("")
+      prime_border.add(count_label)
+      prime_border.add(Label("pos=20,40", "label=Value:"))
+      prime_label := Label("pos=77,40", "size=40")
+      prime_label.set_label("")
+      prime_border.add(prime_label)
+      
+      add(prime_border)
+
+      rate := Panel("pos=20,112", "size=100%-40,30")
+      rate.add(Label("pos=0,50%", "size=45", "align=l,c", "label=Rate:"))
+      interval := Slider("pos=45,50%", "size=100%-90", "align=l,c",
+                         "range=20,2020", "is_horizontal=t")
+      interval.set_value(1000)
+      interval.connect(self, "synch_interval", SLIDER_DRAGGED_EVENT)
+      rate.add(interval)
+
+      rate_label := Label("pos=100%,50%", "size=45", "align=r,c", "internal_alignment=r")
+      rate.add(rate_label)
+      synch_interval()
+      add(rate)
+
+      buttons := Panel("pos=50%,158", "size=161,25", "align=c,t")
+      start := TextButton("pos=0,0", "label=Start")
+      start.connect(self, "on_start", ACTION_EVENT)
+      buttons.add(start)
+      stop := TextButton("pos=58,0", "label=Stop", "is_shaded=t")
+      stop.connect(self, "on_stop", ACTION_EVENT)
+      buttons.add(stop)
+      b := TextButton("pos=108,0", "label=Quit")
+      b.connect(self, "dispose", ACTION_EVENT)
+      buttons.add(b)
+      add(buttons)
+   end
+end
+
+procedure main()
+   local d
+   d := Sieve()
+   d.show_modal()
+end

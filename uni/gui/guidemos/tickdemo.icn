@@ -1,0 +1,72 @@
+#
+# $Id: tickdemo.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+#
+# Ticker demo program
+#
+class TickDemo : Dialog(close_button, time_label)
+   #
+   # This method will be invoked approximately every second; it just
+   # updates the label with the current time of day.
+   #
+   method tick()
+      time_label.set_label(&clock)
+   end
+
+   method setup()
+      local border_1, label_1, label_3
+      self.set_attribs("size=358,229", "label=Ticker Demo", "font=sans", "bg=light gray")
+      border_1 := Border()
+      border_1.set_pos("50%", "50%")
+      border_1.set_size(249, 84)
+      border_1.set_align("c", "c")
+      time_label := Label()
+      time_label.set_pos("50%", "50%")
+      time_label.set_size("85", )
+      time_label.set_align("c", "c")
+      time_label.set_draw_border()
+      time_label.set_internal_alignment("c")
+      time_label.set_label("")
+      border_1.add(time_label)
+      label_1 := Label()
+      label_1.set_pos(10, 0)
+      label_1.set_internal_alignment("l")
+      label_1.set_label("Time")
+      border_1.set_title(label_1)
+      self.add(border_1)
+      close_button := TextButton()
+      close_button.set_pos("50%", "83%")
+      close_button.connect(self, "dispose", ACTION_EVENT)
+      close_button.set_align("c", "c")
+      close_button.set_label("Close")
+      close_button.set_internal_alignment("c")
+      self.add(close_button)
+      label_3 := Label()
+      label_3.set_pos("50%", "16%")
+      label_3.set_align("c", "c")
+      label_3.set_internal_alignment("l")
+      label_3.set_label("Ticker Demo")
+      self.add(label_3)
+      #
+      # Start the ticker with interval 1000ms = 1 second.
+      # 
+      self.set_ticker(1000)
+   end
+
+   method component_setup()
+      self.setup()
+   end
+end
+
+#
+# Simple main procedure to just show the dialog.
+#
+procedure main()
+   local d
+   d := TickDemo()
+   d.show_modal()
+end

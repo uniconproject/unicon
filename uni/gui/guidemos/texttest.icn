@@ -1,0 +1,67 @@
+import gui
+import util
+$include "guih.icn"
+
+class Untitled : Dialog()
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method quit_action(ev)
+      exit()
+   end
+
+   method tf_any_event(ev)
+      write("tf got an event:", ev.get_type(), ",", ev.get_param())
+   end
+
+   method setup()
+      local text_button_1, text_field_1, edit_list_1
+      self.set_attribs("size=201,248")
+      text_button_1 := TextButton("accel=q")
+      text_button_1.set_pos("50%", 193)
+      text_button_1.set_align("c", "t")
+      text_button_1.connect(self, "quit_action", ACTION_EVENT)
+      text_button_1.set_label("Quit")
+      text_button_1.set_internal_alignment("c")
+      self.add(text_button_1)
+      text_field_1 := TextField()
+      text_field_1.set_pos("50%", "25")
+      text_field_1.set_size("100%-50", )
+      text_field_1.set_align("c", "t")
+      text_field_1.set_draw_border()
+      text_field_1.set_contents("thequickbrownfoxjumps")
+      text_field_1.connect(self, "tf_any_event")
+      self.add(text_field_1)
+      edit_list_1 := EditList("accel=1")
+      edit_list_1.set_pos("50%", "87")
+      edit_list_1.set_size("100%-50", )
+      edit_list_1.set_align("c", "t")
+      edit_list_1.set_selection_list(["one", "two", "three", "four", "five", "six", "seven", "anc",
+                                      "defksdjf", "kjsdf", "khf" , "two", "three", "four", "five", "six"])
+      self.add(edit_list_1)
+      text_list_1 := List("accel=2")
+      text_list_1.set_pos("50%", "130")
+      text_list_1.set_size("100%-50", )
+      text_list_1.set_align("c", "t")
+      text_list_1.set_selection_list(["one", "two", "three", "four", "five", "six", "seven", "anc",
+                                      "defksdjf", "kjsdf", "khf" , "two", "three", "four", "five", "six"])
+      self.add(text_list_1)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := Untitled()
+   d.show_modal()
+end
+

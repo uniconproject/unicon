@@ -1,0 +1,76 @@
+import gui
+$include "guih.icn"
+
+class Untitled : Dialog(spin1,spin2,spin3)
+   method component_setup()
+      self.setup()
+      spin1.set_range(0.0,1.0)
+      spin1.set_value(0.5)
+      spin1.set_increment(0.1)
+      spin1.connect(self, "on_spin1")
+      spin2.set_selection_list(["red","yellow","green","blue","pink"])
+      spin2.set_selection(2)
+      spin2.connect(self, "on_spin2")
+      spin3.set_range(1,100)
+      spin3.set_value(30)
+      spin3.connect(self, "on_spin3")
+   end
+
+   method on_spin1()
+      write("spin1=", spin1.get_value())
+   end
+
+   method on_spin2()
+      write("spin2=", spin2.get_selection())
+   end
+
+   method on_spin3()
+      write("spin3=", spin3.get_value())
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_quit(ev)
+      dispose()
+   end
+
+   method setup()
+      local text_button_1
+      self.set_attribs("size=262,225")
+      text_button_1 := TextButton()
+      text_button_1.set_pos("50%", 186)
+      text_button_1.set_align("c", "t")
+      text_button_1.connect(self, "on_quit", ACTION_EVENT)
+      text_button_1.set_label("Quit")
+      text_button_1.set_internal_alignment("c")
+      self.add(text_button_1)
+      spin1 := RangeSpin("accel=1")
+      spin1.set_pos("50%", "28")
+      spin1.set_size("100", )
+      spin1.set_align("c", "t")
+      self.add(spin1)
+      spin2 := ListSpin("accel=2")
+      spin2.set_pos("50%", "70")
+      spin2.set_size("100", )
+      spin2.set_align("c", "t")
+      self.add(spin2)
+      spin3 := RangeSpin("accel=3")
+      spin3.set_pos("50%", "120")
+      spin3.set_size("100", )
+      spin3.set_align("c", "t")
+      self.add(spin3)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := Untitled()
+   d.show_modal()
+end

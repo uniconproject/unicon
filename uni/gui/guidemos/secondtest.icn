@@ -1,0 +1,222 @@
+#
+# $Id: secondtest.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+#
+
+import gui
+$include "guih.icn"
+
+#
+# Second test program
+#
+class SecondTest : Dialog(
+   #
+   # The class variables; each represents an object
+   # in the dialog.
+   #
+   text_list, 
+   table, 
+   list, 
+   text_field, 
+   #
+   # Some data variables.
+   #
+   oses, 
+   languages,
+   shares
+   )
+
+   #
+   # Add a line to the end of the text list
+   #
+   method put_line(s)
+      local l
+      l := text_list.get_contents()
+      put(l, s)
+      text_list.set_contents(l)
+      text_list.goto_pos(*l)
+   end
+
+   #
+   # Event handlers - produce a line of interest.
+   #
+
+   method handle_check_box_1(ev)
+      put_line("Favourite o/s is " || oses[1])
+   end
+
+   method handle_check_box_2(ev)
+      put_line("Favourite o/s is " || oses[2])
+   end
+
+   method handle_check_box_3(ev)
+      put_line("Favourite o/s is " || oses[3])
+   end
+
+   method handle_text_field(ev)
+      put_line("Contents = " || text_field.get_contents())
+   end
+
+   method handle_list(ev)
+      put_line("Favourite language is " || languages[list.get_selection()])
+   end
+
+   method handle_text_menu_item_2(ev)
+      put_line("You selected the menu item")
+   end
+
+   #
+   # The quit menu item
+   #
+   method handle_text_menu_item_1(ev)
+      dispose()
+   end
+
+   method handle_table(ev)
+      local i
+      i := table.get_selections()[1]
+      put_line(shares[i][1] || " is trading at " || shares[i][2])
+   end
+
+   method handle_table_column_1(ev)
+      put_line("Clicked on column 1")
+   end
+
+   method handle_table_column_2(ev)
+      put_line("Clicked on column 2")
+   end
+
+   #
+   # This method is invoked for a component which may potentially want to 
+   # handle an event (by firing an event to its listeners for example).  A dialog
+   # is just another custom component, and so it can override this method to
+   # do any custom processing.
+   #
+   method handle_event(ev)
+      put_line("Icon event " || ev)
+      self.Dialog.handle_event(ev)
+   end
+
+   method component_setup()
+      local menu_bar, menu, panel_1, panel_2, panel_3, panel_4, panel_5,
+         label_1, label_2, label_3, label_4, label_5, text_menu_item_1, 
+         text_menu_item_2, check_box_1, check_box_2, check_box_3, 
+         table_column_1, table_column_2, check_box_group
+
+      #
+      # Initialize some data for the objects.
+      #
+      oses := ["Windows", "Linux", "Solaris"]
+      languages := ["C", "C++", "Java", "Icon"]
+      shares := [["Microsoft", "101.84"], ["Oracle", "32.52"], ["IBM", "13.22"], 
+                 ["Intel", "142.00"]]
+
+      #
+      # Set the attribs
+      #
+      attrib("size=490,400", "min_size=490,400", "font=sans", "bg=light gray", 
+             "label=Second example", "resize=on", "inputmask=m")
+
+      #
+      # Set up a simple menu system
+      #
+      menu_bar := MenuBar()
+      menu := Menu("label=File", "accel=f")
+      text_menu_item_1 := TextMenuItem("label=Quit", "accel=q")
+      text_menu_item_1.connect(self, "handle_text_menu_item_1", ACTION_EVENT)
+      menu.add(text_menu_item_1)
+      text_menu_item_2 := TextMenuItem("label=Message", "accel=m")
+      text_menu_item_2.connect(self, "handle_text_menu_item_2", ACTION_EVENT)
+      menu.add(text_menu_item_2)
+      menu_bar.add(menu)
+      add(menu_bar)
+
+      #
+      # Set-up the checkbox panel
+      #
+      check_box_group := CheckBoxGroup()
+      panel_1 := Panel("pos=20,50", "size=130,130")
+      label_2 := Label("pos=0,0", "internal_alignment=l", "label=Favorite o/s")
+      panel_1.add(label_2)
+      check_box_1 := CheckBox("pos=0,30")
+      check_box_1.set_label(oses[1])
+      check_box_1.connect(self, "handle_check_box_1", ACTION_EVENT)
+      check_box_group.add(check_box_1)
+      panel_1.add(check_box_1)
+      check_box_2 := CheckBox("pos=0,60")
+      check_box_2.set_label(oses[2])
+      check_box_group.add(check_box_2)
+      check_box_2.connect(self, "handle_check_box_2", ACTION_EVENT)
+      panel_1.add(check_box_2)
+      check_box_3 := CheckBox("pos=0,90")
+      check_box_3.set_label(oses[3])
+      check_box_group.add(check_box_3)
+      check_box_3.connect(self, "handle_check_box_3", ACTION_EVENT)
+      panel_1.add(check_box_3)
+      add(panel_1)
+
+      #
+      # The text-list of messages.
+      #
+      panel_2 := Panel("pos=220,50", "size=100%-240,50%-60")
+      label_1 := Label("pos=0,0", "internal_alignment=l", "label=Messages")
+      panel_2.add(label_1)
+      text_list := TextDisplay("pos=0,30", "size=100%,100%-30")
+      text_list.set_contents([])
+      panel_2.add(text_list)
+      add(panel_2)
+
+      #
+      # The table of shares.
+      #
+      panel_3 := Panel("pos=220,50%","size=100%-240,50%-40")
+      table := Table("pos=0,30","size=100%,100%-30", "select_one", "accel=s")
+      table.connect(self, "handle_table", SELECTION_CHANGED_EVENT)
+      table.set_contents(shares)
+
+      table_column_1 := TableColumn("label=Company", "internal_alignment=l", "column_width=100")
+      table_column_1.connect(self, "handle_table_column_1", ACTION_EVENT)
+      table.add_column(table_column_1)
+      table_column_2 := TableColumn("label=Share price", "internal_alignment=r", "column_width=100")
+      table_column_2.connect(self, "handle_table_column_2", ACTION_EVENT)
+      table.add_column(table_column_2)
+      panel_3.add(table)
+      label_5 := Label("pos=0,0", "internal_alignment=l", "label=Shares")
+      label_5.set_linked_accel(table)
+      panel_3.add(label_5)
+      add(panel_3)
+
+      #
+      # The drop-down list of languages.
+      #
+      panel_4 := Panel("pos=20,190", "size=180,50")
+      list := List("pos=0,30", "size=100", "accel=v")
+      list.connect(self, "handle_list", SELECTION_CHANGED_EVENT)
+      list.set_selection_list(languages)
+      panel_4.add(list)
+      label_3 := Label("pos=0,0", "internal_alignment=l", "label=Favorite language")
+      label_3.set_linked_accel(list)
+      panel_4.add(label_3)
+      add(panel_4)
+
+      #
+      # The text field.
+      #
+      panel_5 := Panel("pos=20,280", "size=180,50")
+      label_4 := Label("pos=0,0", "internal_alignment=l", "label=Enter a string")
+      panel_5.add(label_4)
+      text_field := TextField("pos=0,30", "size=130,", "draw_border=t", "accel=e")
+      text_field.connect(self, "handle_text_field", CONTENT_CHANGED_EVENT)
+      label_4.set_linked_accel(text_field)
+      panel_5.add(text_field)
+      add(panel_5)
+   end
+end
+
+#
+# Simple main procedure just creates the dialog.
+#
+procedure main()
+   local d
+   d := SecondTest()
+   d.show_modal()
+end

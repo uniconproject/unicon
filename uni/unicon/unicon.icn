@@ -210,7 +210,7 @@ procedure main(argv)
 	 if yynerrs = 0 then iwrite(&errout)
 	 if /yydbg then
 	    close(yyout)
-	 if rv = 0 & errors = 0 & yynerrs = 0 & /parseonly then {
+	 if (rv = errors = yynerrs = 0) & /parseonly then {
 	     rv := mysystem(cmd || tmpname)
 	     if rv ~=== 0 then yynerrs +:= 1
 	     if &features == "Win32" then { # copy icont log to our console

@@ -53,6 +53,7 @@ struct descrip nullptr =
 struct descrip emptystr; 		/* zero-length empty string */
 
 struct tend_desc *tend;
+char *reserve_0(int r, int n) { return malloc(1); }
 
 #ifdef MSWindows
    char *getenv(const char *s)

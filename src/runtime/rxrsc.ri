@@ -938,6 +938,12 @@ wsp ws;
             ws->pix = (Pixmap) NULL;
             }
          }
+      /*
+       * free any malloc'ed space within this window state, before freeing it in GRFX_UNLINK
+       */
+      if (ws->theColors) { free(ws->theColors); ws->iconColors = NULL; }
+      if (ws->iconColors) { free(ws->iconColors); ws->iconColors = NULL; }
+      /* if (ws->selectiondata) { free(ws->selectiondata); ws->selectiondata = NULL; } ?? */
       GRFX_UNLINK(ws, wstates);
       }
    return 0;

@@ -2375,6 +2375,32 @@ class Label : Component(
       if *argv > 0 then set_fields(argv)
 end
 
+global ImageCache
+
+procedure CacheImage(win,x,y,w,h,filename)
+   static zoomed
+   /cache := table()
+   /zoomed := table()
+   / (cache[filename]) := open(filename,"g",
+			       "canvas=hidden","image="||filename) |
+       stop("can't open ", image(filename))
+
+   wc := cache[filename]
+   if WAttrib(wc, "width") = w & WAttrib(wc,"height") = h then
+       return CopyArea(wc, win, , , , , x, y) 
+
+    # otherwise, we have to zoom
+   wc := cache[filename]
+   / (zoomed[filename]) := table()
+   if / (zoomed[filename][w||","||h]) :=
+       open(filename,"g","size="||w||","||h, "canvas=hidden") then {
+       Zoom(wc, zoomed[filename][w||","||h],
+	    0,0,WAttrib(wc,"width"),WAttrib(wc,"height"),0,0,w,h)
+       }
+   zc := zoomed[filename][w||","||h]
+   CopyArea(zc, win, 0, 0, w, h, x, y)
+end
+
 ##
 #  This class loads an image from file and displays it.  The
 #  image should be in GIF format.  A border may be included
@@ -2446,8 +2472,13 @@ class Image : Component(
       #
       # Load the image
       #
-      if not(imwin := WOpen("image=" || \self.filename, "canvas=hidden")) then
-         fail
+      if \ImageCache then {
+	 / (cache[filename]) := (open(filename,"g",
+				    "canvas=hidden","image="||filename) | fail)
+	 imwin := cache[filename]
+	 }
+      else if not(imwin := WOpen("image=" || \self.filename, "canvas=hidden"))
+         then fail
 #
 #      Uncomment the following lines if you're multiple images are using
 #      more than 256 colors and aren't showing properly on X11 systems.
@@ -2498,8 +2529,12 @@ class Image : Component(
       #
       # Transform and copy image to window.
       #
-      Zoom(imwin, W, 0, 0, img_w, img_h, x1 + xoff, y1 + yoff, zoom_w, zoom_h)
-      WClose(imwin)
+      if \ImageCache then
+         CacheImage(W, x1 + xoff, y1 + yoff, zoom_w, zoom_h, self.filename)
+      else {
+         Zoom(imwin, W,0,0, img_w, img_h, x1 + xoff, y1 + yoff, zoom_w, zoom_h)
+         WClose(imwin)
+	 }
 
       #
       # Border if required.
@@ -5241,8 +5276,7 @@ local st, lst, l, i
       if *st > 0 then 
          put(lst,st)
       } 
-
-  return lst
+   return lst
 end
 
 #

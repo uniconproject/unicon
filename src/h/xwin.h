@@ -48,6 +48,10 @@
 #define UpdateCursorPos(x, y) /* noop */
 #define showcrsr(x) /* noop */
 #define SysColor XColor
+/* 8-bit primary components of a current fg or bg index, used in 3D code */
+#define RED(colrindex) ((w->context->display->colors[colrindex].r)>>8)
+#define GREEN(colrindex) ((w->context->display->colors[colrindex].g)>>8)
+#define BLUE(colrindex) ((w->context->display->colors[colrindex].b)>>8)
 #define ARCWIDTH(arc) ((arc).width)
 #define ARCHEIGHT(arc) ((arc).height)
 #define RECX(rec) ((rec).x)

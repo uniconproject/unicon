@@ -369,7 +369,12 @@ typedef struct _wcontext {
 #endif					/* MSWindows*/
 
 #ifdef Graphics3D
+#ifdef XWindows
   GLXContext    ctx;			   /* context for "gl" windows */
+#endif					/* XWindows */
+#ifdef MSWindows
+  HGLRC ctx;
+#endif					/* MSWindows */
   int           dim;			   /* # of coordinates per vertex */
   int           is_3D;			   /* flag for 3D windows */
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */

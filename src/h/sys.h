@@ -321,7 +321,9 @@
 
 #ifdef Graphics3D
 #include <GL/gl.h>
+#ifdef XWindows
 #include <GL/glx.h>
+#endif					/* XWindows */
 #include <GL/glu.h>
 #endif					/* Graphics3D */
 

@@ -202,3 +202,9 @@ typedef struct {
 #define MAXXOBJS 8
 
 #define GammaCorrection 1.0
+
+#define glXSwapBuffers(foo, bar) { \
+HDC stddc = CreateWinDC(w);\
+         SwapBuffers(stddc);\
+ReleaseDC(w->window->iconwin, stddc);\
+}

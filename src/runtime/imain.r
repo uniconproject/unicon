@@ -398,17 +398,19 @@ Boolean gDone;
 char *cmlArgs;
 StringHandle textHandle;
 
-void MacMain (argc, argv)
+void MacMain (int argc, char **argv)
 #else					/* MacGraph */
 #ifdef DLLICONX
-#passthru void __declspec(dllexport) iconx_entry(argc, argv)
+#passthru void __declspec(dllexport) iconx_entry(int argc, char **argv)
 #else					/* DLLICONX */
-void main(argc, argv)
+#ifdef INTMAIN
+int main(int argc, char **argv)
+#else
+void main(int argc, char **argv)
+#endif					/* INTMAIN */
 #endif					/* DLLICONX */
 #endif					/* MacGraph */
 #endif					/* OS2 */
-int argc;
-char **argv;
    {
    int i, slen;
 
@@ -775,6 +777,9 @@ char **argv;
 #endif
 
    c_exit(EXIT_SUCCESS);
+#ifdef INTMAIN
+   return 0;
+#endif
 }
 
 /*

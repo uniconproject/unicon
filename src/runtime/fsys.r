@@ -1431,10 +1431,22 @@ function{0,1} reads(f,i)
         }
 #endif					/* ConsoleWindow */
 
-#ifdef PosixFns
-       if (status & Fs_Directory)
-	   runerr(174, f);
-#endif					/* PosixFns */
+#ifdef ReadDirectory
+      /*
+       *  If reading a directory, return up to i bytes of next entry.
+       */
+      if ((BlkLoc(f)->file.status & Fs_Directory) != 0) {
+         char *sp;
+         struct dirent *de = readdir((DIR*) fp);
+         if (de == NULL)
+            fail;
+         nbytes = strlen(de->d_name);
+         if (nbytes > i)
+            nbytes = i;
+         Protect(sp = alcstr(de->d_name, nbytes), runerr(0));
+         return string(nbytes, sp);
+         }
+#endif					/* ReadDirectory */
 
       /*
        * Be sure that a positive number of bytes is to be read.

@@ -280,7 +280,7 @@ xrgfxsys.o: rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c xrgfxsys.c
 	rm xrgfxsys.c
 
-xrwinsys.o: rwinsys.r $(HDRS) $(GRAPHICSHDRS) rxwin.ri
+xrwinsys.o: rwinsys.r $(HDRS) $(GRAPHICSHDRS) rxwin.ri ropengl.ri
 	../../bin/rtt -x rwinsys.r
 	$(CC) $(CFLAGS) -c xrwinsys.c
 	rm xrwinsys.c

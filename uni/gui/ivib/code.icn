@@ -1,5 +1,5 @@
 #
-# $Id: code.icn,v 1.4 2004-11-11 20:06:09 rparlett Exp $
+# $Id: code.icn,v 1.5 2004-12-30 10:58:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -130,15 +130,18 @@ class Code(
    end
 
    #
-   # Interpose code to already existing file named s.
+   # Interpose code to already existing file named src_name, resulting
+   # in dest_name.
    #
-   method interpose_code(fname)
+   method interpose_code(src_name, dest_name)
       static idchars
       initial idchars := &letters++&digits++"_"
 
+      /dest_name := src_name
+
       add_setup_methods()
 
-      f := open(fname) | return alert_error("Couldn't open " || fname)
+      f := open(src_name) | return alert_error("Couldn't open " || src_name)
 
       #
       # Save contents up to setup() method
@@ -207,7 +210,7 @@ class Code(
       #
       # Re-create file
       #
-      temp_name := fname || ".temp"
+      temp_name := dest_name || ".temp"
       f := open(temp_name, "w") | return alert_error("Couldn't open " || temp_name)
 
       #
@@ -277,8 +280,8 @@ class Code(
       #
       # Everything okay, so rename
       #
-      remove(fname)
-      rename(temp_name, fname) | stop("Couldn't rename new source file " || temp_name || " to " || fname)
+      remove(dest_name)
+      rename(temp_name, dest_name) | stop("Couldn't rename new source file " || temp_name || " to " || dest_name)
 
       return
    end

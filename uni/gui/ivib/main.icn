@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.9 2004-11-13 20:29:58 rparlett Exp $
+# $Id: main.icn,v 1.10 2004-12-30 10:58:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -654,7 +654,12 @@ class Main : CommonDialog(
       last_icn_dir := fd.get_directory()
 
       c := self.canvas.gen_code()
-      c.output_code(s) | fail
+
+      if /self.canvas.filename | \self.canvas.new_file_flag then
+         c.output_code(s) | fail
+      else
+         c.interpose_code(self.canvas.filename, s) | fail
+
       self.canvas.clear_modified()
       self.canvas.set_filename(s)
       save.clear_is_shaded()

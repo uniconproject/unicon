@@ -181,41 +181,6 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
       p = i-1;
 
       switch (SQLType) {
-        case SQL_CHAR:
-        case SQL_VARCHAR:
-        case SQL_LONGVARCHAR:
-        case SQL_BINARY:
-        case SQL_VARBINARY:
-        case SQL_LONGVARBINARY:
-        case SQL_DECIMAL:
-        case SQL_NUMERIC:
-        case SQL_DATE:
-        case SQL_TIME:
-        case SQL_TIMESTAMP:
-
-          /* allocate column */
-          StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz):"";
-          if (StrLoc(r->fields[p])==NULL) {
-             t_errornumber = 306;
-             t_errorvalue = nulldesc;
-             t_have_val = 0;
-             return Error;
-             }
-          StrLen(r->fields[p])=colsz>0?colsz:0;
-
-          /* copy buffer to column */
-
-          len=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
-          memcpy(StrLoc(r->fields[p]), buff, len);
-
-          /* still data to read (BLOBs) */
-          while (rc==SQL_SUCCESS_WITH_INFO) {
-            rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR,
-                          StrLoc(r->fields[p])+len, BUFF_SZ, &colsz);
-            len+=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
-	    }
-          break;
-
         case SQL_BIT:
         case SQL_INTEGER:
         /* SQL_BIGINT (64 bits)*/
@@ -231,15 +196,30 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
           (r->fields[p]).dword=D_Real;
           break;
 
+        case SQL_CHAR:
+        case SQL_VARCHAR:
+        case SQL_LONGVARCHAR:
+        case SQL_BINARY:
+        case SQL_VARBINARY:
+        case SQL_LONGVARBINARY:
+        case SQL_DECIMAL:
+        case SQL_NUMERIC:
+        case SQL_DATE:
+        case SQL_TIME:
+        case SQL_TIMESTAMP:
         default:
           /*
-           * this is another data type that may occur so try to
-           * convert it to string
+           * for all other data types, try to convert it to string
            */
-
           /* allocate column */
-          StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz):"";
-	  if (StrLoc(r->fields[p]) == NULL) return Failed;
+          StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz+1):"";
+          if (StrLoc(r->fields[p])==NULL) {
+             t_errornumber = 306;
+             t_errorvalue = nulldesc;
+             t_have_val = 0;
+             return Error;
+	     /* used to return Failed for strange types */
+             }
           StrLen(r->fields[p])=colsz>0?colsz:0;
 
           /* copy buffer to column */
@@ -247,14 +227,17 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
           len=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
           memcpy(StrLoc(r->fields[p]), buff, len);
 
+{int tot = colsz;
           /* still data to read (BLOBs) */
-          while (rc==SQL_SUCCESS_WITH_INFO) {
+/*          while (rc==SQL_SUCCESS_WITH_INFO) { */
+          while (colsz > 0 && len < tot) {
             rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR,
-                          StrLoc(r->fields[p])+len, BUFF_SZ, &colsz);
-            len+=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
+                          StrLoc(r->fields[p])+len-1, BUFF_SZ, &colsz);
+            len+=colsz>BUFF_SZ?BUFF_SZ-2:colsz;
 	    }
           break;
 	  } /* switch */
+}
 
       } /* for */
    return Succeeded;

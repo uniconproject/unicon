@@ -12,7 +12,7 @@
  *  These are the only two entries that change any more.
  */
 #define VersionNumber "11.2 (beta)"
-#define VersionDate "January 4, 2005"
+#define VersionDate "February 18, 2005"
 
 /*
  * Version number to insure format of data base matches version of iconc

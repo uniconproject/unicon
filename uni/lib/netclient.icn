@@ -1,11 +1,13 @@
 #
-# $Id: netclient.icn,v 1.2 2004-06-30 10:36:58 rparlett Exp $
+# $Id: netclient.icn,v 1.3 2004-07-03 10:13:47 rparlett Exp $
 #
 
 package net
 
 import util
 link posix
+
+$include "posix.icn"
 
 #
 # Common base class for a client class which holds a connection to a
@@ -32,10 +34,19 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
    # Open the connection.
    #
    method open()
+      local s
+
       close() | fail
-      fire("Connecting", "Connecting to " || server || ":" || port)
-      connection := socket_connect(server, port, timeout) | 
-         return error("Couldn't connect to " || server || ": errno=" || &errno)
+      s := server || ":" || port
+      fire("Connecting", "Connecting to " || s)
+
+      if not(connection := ::open(s, "n", timeout)) then {
+         if &errno = EINTR then
+            return error("Timed out connecting to " || s)
+         else
+            return error("Couldn't connect to " || s)
+      }
+
       sbuff := ""
       fire("Connected")
       return connection
@@ -68,12 +79,39 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
    end
 
    #
+   # @p
+   method send(s)
+      local t
+
+      if /timeout | (timeout = 0) then
+         return writes(connection, s)
+
+      fcntl(connection, "F", "d")
+      t := curr_time_millis()
+      repeat {
+         if writes(connection,s) then
+            return
+         if curr_time_millis() - t > timeout then
+            return error("Send timed out")
+         sleep(50)
+      }
+   end
+
+   #
+   # @p
+   method recv(len)
+      if /timeout | (timeout = 0) | (*select(connection, timeout) > 0) then
+         return sysread(connection, len) | error("EOF encountered")
+      else
+         return error("Failed to select")
+   end
+
+   #
    # Write the given string to the connection.
    #
    method write_str(s)
       fire("Sending string", s)
-      return socket_send(connection, s, timeout) | 
-         error("Failed to send on connection: errno=" || &errno)
+      return send(s)
    end
 
    #
@@ -82,8 +120,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
    method write_line(s)
       /s := ""
       fire("Sending line", s)
-      return socket_send(connection, s || "\r\n", timeout) | 
-         error("Failed to send on connection: errno=" || &errno)
+      return send(s || "\r\n") 
    end
 
    #
@@ -104,8 +141,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
                return line
             }
          }
-         sbuff ||:= socket_recv(connection, 1024, timeout) | 
-            return error("Failed to recv on connection: errno=" || &errno)
+         sbuff ||:= recv(1024) | fail
       }
    end
 
@@ -123,8 +159,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
             sbuff := tab(0)
          }
       } else {
-         t := socket_recv(connection, len, timeout) | 
-            return error("Failed to recv on connection: errno=" || &errno)
+         t := recv(len) | fail
       }
       fire("Read string", t)
       return t

@@ -3239,7 +3239,7 @@ unsigned char *s;
 word len;
 int on_icon;
    {
-   int c, v, ret, trans;
+   int c, v, ret, trans = 0;
    unsigned int r, g, b, ix, iy;
    XImage *im;
    wclrp cp;
@@ -3247,16 +3247,18 @@ int on_icon;
    char tmp[32];
    STDLOCALS(w);
 
-   /*
-    * Get an XImage structure and free the old color set if possible.
-    */
-   trans = 0;
-   for (c = 0; c < 256; c++)
-      trans |= e[c].used && e[c].transpt;
+   if (e) {
+      /*
+       * Get an XImage structure and free the old color set if possible.
+       */
+      for (c = 0; c < 256; c++)
+	 trans |= e[c].used && e[c].transpt;
+      }
    im = getximage(w, x, y, width, height, trans);
    if (im == NULL)
       return -1;
 
+   if (e) {
    /*
     * Allocate the colors we need.  Use black or white if unsuccessful.
     */
@@ -3297,6 +3299,21 @@ int on_icon;
    if (ix > 0) {			/* pad final row if incomplete */
       while (ix < width)
          XPutPixel(im, ix++, iy, wd->colors[wc->bg].c);
+      }
+   }
+   else {
+      iy = 0;
+      while (iy < height) {
+	 ix = 0;
+	 while (ix < width) {
+	    int b = *s++ * 257;
+	    int g = *s++ * 257;
+	    int r = *s++ * 257;
+	    wclrp cp = alc_rgb(w,"anon", r, g, b, 0);
+	    XPutPixel(im, ix++, iy, cp->c);
+	    }
+	 iy++;
+	 }
       }
    /*
     * Put it on the screen.

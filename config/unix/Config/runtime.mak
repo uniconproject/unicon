@@ -30,7 +30,7 @@ XOBJS=	xcnv.o xdata.o xdef.o xerrmsg.o xextcall.o xfconv.o xfload.o xfmath.o\
 
 COBJS=	../common/long.o ../common/time.o ../common/save.o \
 	../common/rswitch.o ../common/redirerr.o ../common/xwindow.o \
-	../common/alloc.o
+	../common/alloc.o ../common/mlocal.o
 
 ICOBJS=	long.o time.o save.o rswitch.o redirerr.o xwindow.o alloc.o
 

@@ -26,17 +26,17 @@ int incol;			/* current input column number */
 int peekc;			/* one-character look ahead */
 struct srcfile *srclst = NULL;	/* list of source files to translate */
 
-static char *lpath;		/* LPATH value */
+char *lpath;			/* LPATH value */
 
 /*
  * translate a number of files, returning an error count
  */
-int trans()
+int trans(char *argv0)
    {
    register struct pentry *proc;
    struct srcfile *sf;
 
-   lpath = getenv("LPATH");	/* remains null if unspecified */
+   lpath = libpath(argv0, "LPATH");	/* remains null if unspecified */
 
    for (sf = srclst; sf != NULL; sf = sf->next)
       trans1(sf->name);	/* translate each file in turn */

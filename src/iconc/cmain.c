@@ -25,33 +25,9 @@ static void usage   (void);
 char *toolstr = "${TOOLS}";
 #endif					/* ExpTools */
 
+char *refpath;
 char patchpath[MaxPath+18] = "%PatchStringHere->";
 
-/*
- * The following code is operating-system dependent [@tmain.01].  Definition
- *  of refpath.
- */
-
-#if PORT
-   /* something is needed */
-Deliberate Syntax Error
-#endif					/* PORT */
-
-#if UNIX || AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || OS2 || VM
-char *refpath = RefPath;
-#endif					/* UNIX ... */
-
-#if VMS
-char *refpath = "ICON_BIN:";
-#endif					/* VMS */
-
-/*
- * End of operating-system specific code.
- */
-
-/*
- *  Define global variables.
- */
 
 #define Global
 #define Init(v) = v
@@ -117,11 +93,13 @@ char **argv;
    if ((int)strlen(patchpath) > 18)
       refpath = patchpath+18;
 #endif					/* ExpTools */
+   else
+     refpath = relfile(argv[0], "/../");
 
    /*
     * Process options.
     */
-   while ((c = getopt(argc,argv,IconOptions)) != EOF)
+   while ((c = getopt(argc,argv,"C:ELS:Tce:f:mn:o:p:r:stuv:x")) != EOF)
       switch (c) {
          case 'C':			/* -C C-comp: C compiler*/
             c_comp = optarg;
@@ -352,7 +330,7 @@ Deliberate Syntax Error
       usage();				/* error -- no files named */
 
    if (pponly) {
-      if (trans() == 0)
+      if (trans(argv[0]]) == 0)
 	 exit (EXIT_FAILURE);
       else
 	 exit (EXIT_SUCCESS);
@@ -393,7 +371,7 @@ Deliberate Syntax Error
    if ((verbose > 0) && !just_type_trace)
       report("Translating to C");
 
-   errors = trans();
+   errors = trans(argv[0]);
    if ((errors > 0) || just_type_trace) {	/* exit if errors seen */
       rmfile(cfile);
       rmfile(hfile);
@@ -437,8 +415,7 @@ Deliberate Syntax Error
       execute (ofile, efile, argv+optind+1);
       }
 
-   exit(ret_code);
-   return 0; /* NOTUSED */
+   return ret_code;
    }
 
 /*

@@ -1,5 +1,5 @@
 #
-# $Id: ticker.icn,v 1.4 2004-09-18 19:51:50 rparlett Exp $
+# $Id: ticker.icn,v 1.5 2004-10-15 09:04:40 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -14,11 +14,19 @@ import util
 $include "guih.icn"
 
 #
+# This class is used to generate "tick" events
+# at regular intervals.  These events will be fired
+# between the handling of input and repaint events,
+# so at least one dialog has to be open for the
+# Ticker class to work.
 #
-# A class for an object with a ticker.
-# This class should be subclassed by a class that wishes to
-# have a ticker facility, namely implement a method that is
-# called repeatedly at set intervals.
+# The following will cause the method on_tick of object
+# obj to be invoked roughly every 2 seconds.
+#
+# @example
+# @ t := Ticker()
+# @ t.connect(obj, "on_tick", TICK_EVENT)
+# @ t.start(2000)
 #
 class Ticker : Object : Connectable(
    ticker_rate,             # Ticker rate

@@ -191,41 +191,36 @@ end
 
 operator{*} ... toby(from, to, by)
 
-   if cnv:(exact)C_integer(by) then {
-      arith_case(from,to) of {
-         C_integer: {
-            abstract {
-               return integer
-               }
-            inline {
-               /*
-                * by must not be zero.
-                */
-               if (by == 0) {
-                  irunerr(211, by);
-                  errorfail;
-                  }
-               /*
-                * Count up or down (depending on relationship of from and to) and
-                *  suspend each value in sequence, failing when the limit has been
-                *  exceeded.
-                */
-               if (by > 0)
-                  for ( ; from <= to; from += by) {
-                     suspend C_integer from;
-                     }
-               else
-                  for ( ; from >= to; from += by) {
-                     suspend C_integer from;
+   if cnv:(exact)C_integer(by) && cnv:(exact)C_integer(from) then {
+	 if !cnv:C_integer(to) then { runerr(101, to) }
+	 abstract {
+	    return integer
+            }
+	 inline {
+	    /*
+	     * by must not be zero.
+	     */
+	    if (by == 0) {
+	       irunerr(211, by);
+	       errorfail;
+	       }
+	    /*
+	     * Count up or down (depending on relationship of from and to)
+	     *  and suspend each value in sequence, failing
+	     *  when the limit has been exceeded.
+	     */
+	    if (by > 0)
+	       for ( ; from <= to; from += by) {
+		  suspend C_integer from;
+		  }
+	    else
+	       for ( ; from >= to; from += by) {
+		  suspend C_integer from;
                   }
                fail;
 	       }
-	    }
-	 integer: {
-            abstract { return integer }
-	    inline { fail; }
-	    }
-	 C_double: {
+	 }
+   else if cnv:C_double(from) && cnv:C_double(to) && cnv:C_double(by) then {
             abstract { return real }
 	    inline {
                if (by == 0) {
@@ -243,9 +238,7 @@ operator{*} ... toby(from, to, by)
 	       fail;
 	       }
 	    }
-	    }
-      }
-else if cnv:(exact) integer(by) then { /* step by a large integer */
+   else if cnv:(exact) integer(by) then { /* step by a large integer */
    arith_case(from,to) of {
    C_integer: {
    abstract { return integer }
@@ -258,36 +251,6 @@ else if cnv:(exact) integer(by) then { /* step by a large integer */
    C_double: {
    abstract { return real }
    inline { fail; }
-      }
-      }
-   }
-else if cnv:C_double(by) then { /* step by a real number */
-   arith_case(from,to) of {
-   C_integer: {
-   abstract { return real }
-   inline { fail; }
-      }
-   integer: {
-   abstract { return real }
-   inline { fail; }
-      }
-   C_double: {
-   abstract { return real }
-	    inline {
-               if (by == 0.0) {
-                  drunerr(211, by);
-                  errorfail;
-                  }
-               if (by > 0)
-                  for ( ; from <= to; from += by) {
-                     suspend C_double from;
-                     }
-               else
-                  for ( ; from >= to; from += by) {
-                     suspend C_double from;
-                  }
-	       fail;
-	       }
       }
       }
    }

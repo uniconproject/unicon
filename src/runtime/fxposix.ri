@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.28 2004-11-05 04:46:28 jeffery Exp $
+ * $Id: fxposix.ri,v 1.29 2004-12-16 11:41:42 jeffery Exp $
  */
 
 /*
@@ -1008,7 +1008,11 @@ end
 
 "fork() - spawn a new identical process."
 
+#if NT
+function{0} fork()
+#else					/* NT */
 function{0,1} fork()
+#endif					/* NT */
    abstract {
       return integer
       }
@@ -1962,7 +1966,7 @@ function{0,1} fetch(d, k)
    if !is:file(d) then
       runerr(190, d)
    abstract {
-      return string
+      return string ++ record
       }
    body {
       tended struct descrip dkey;
@@ -2013,12 +2017,12 @@ function{0,1} fetch(d, k)
 			EVVal(i+1, E_Rsub);
 
 #if COMPILER
+			syserr("dynamic records not supported in compiler yet");
+#else					/* COMPILER */
 			/*
 			 * Found the field, return a pointer to it.
 			 */
 			return struct_var(&bp->record.fields[i], bp);
-#else					/* COMPILER */
-			syserr("dynamic records not supported in compiler yet");
 #endif					/* COMPILER */
 			}
 		     }
@@ -2039,8 +2043,7 @@ end
 /* 
  * Select
  */
-int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
-		      struct descrip *lwdp)
+int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
 {
    int fd, status;
    if (is:file(*f)) {
@@ -2055,7 +2058,6 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
        * windows are handled separately from sockets in select()
        */
       if (status & Fs_Window) {
-	 c_put(lwdp, f);
 	 return 0;
 	 }
       else 
@@ -2118,7 +2120,9 @@ function{0,1} select(files[nargs])
       return new list(file)
       }
    body {
-      int rv, status, timeout = -1;
+      struct tms t;
+      int base_time = times(&t), acc_time = 0, check_time, clocks;
+      int rv, status, timeout = -1, ctps = sysconf(_SC_CLK_TCK);
       fd_set fds;
       int i, j, k=0, n=0, nset, nset_add=0;
       struct timeval tv, *ptv = &tv;
@@ -2130,17 +2134,40 @@ function{0,1} select(files[nargs])
       tended struct b_list *lws = NULL;
 
       /*
+       * prepass: pull out windows, into their own list
+       */
+      if ((lws = alclist(0, MinListSlots)) == NULL) fail;
+      d2.dword = D_List;
+      BlkLoc(d2) = (union block *)lws;
+      for (k=0; k<nargs; k++) {
+	 if (is:file(files[k]) && BlkLoc(files[k])->file.status & Fs_Window)
+	    c_put(&d2, files+k);
+	 else if (is:list(files[k])) {
+	    for (ep = BlkLoc(files[k])->list.listhead;
+		 BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
+	       for (i = 0; i < ep->lelem.nused; i++) {
+		  j = ep->lelem.first + i;
+		  if (j >= ep->lelem.nslots)
+		     j -= ep->lelem.nslots;
+		  f = &ep->lelem.lslots[j];
+		  if (is:file(*f) && BlkLoc(*f)->file.status & Fs_Window)
+		     c_put(&d2, f);
+		  }
+	       }
+	    }
+	 }
+
+      /*
        * Unicon select() repeats until a timeout or real result.
        * GUI activity requires periodic service while select() waits.
+       *
+       * Could pull a lot of redundant work out of this loop, such as
+       * the calculation of the list of windows.
        */
 
       do {
 	 n = 0;
 	 FD_ZERO(&fds);			/* Set the fd's in the set */
-
-	 if ((lws = alclist(0, MinListSlots)) == NULL) fail;
-	 d2.dword = D_List;
-	 BlkLoc(d2) = (union block *)lws;
 
 	 for(k=0;k<nargs;k++) {
 	    /* Traverse the list, build fd_set of sockets */
@@ -2148,7 +2175,7 @@ function{0,1} select(files[nargs])
 	       if ((k+1 == nargs) && is:integer(files[k]))
 		  cnv:C_integer(files[k], timeout);
 	       else
-		  if (rv = set_if_selectable(files+k, &fds, &n, &d2))
+		  if (rv = set_if_selectable(files+k, &fds, &n))
 		     runerr(rv, files[k]);
 	       }
 	    else
@@ -2159,7 +2186,7 @@ function{0,1} select(files[nargs])
 		     if (j >= ep->lelem.nslots)
 		        j -= ep->lelem.nslots;
 		     f = &ep->lelem.lslots[j];
-		     if (rv = set_if_selectable(f, &fds, &n, &d2))
+		     if (rv = set_if_selectable(f, &fds, &n))
 			runerr(rv, *f);
 		     }
 	          }
@@ -2167,12 +2194,16 @@ function{0,1} select(files[nargs])
       
       /* Set the tv struct */
       if (timeout < 0) {
-#if NT
-	 tv.tv_sec = 0;
-         tv.tv_usec = 50000;
-#else
-	 ptv = 0;
-#endif
+	 /*
+	  * if there are any windows, then even if we said to go forever
+	  * timeout periodically to check for window events.
+	  */
+	 if (lws->size > 0) {
+	    tv.tv_sec = 0;
+	    tv.tv_usec = 50000;
+	    }
+	 else
+	    ptv = 0;
          }
       else {
 	 tv.tv_sec = timeout/1000;
@@ -2206,14 +2237,18 @@ function{0,1} select(files[nargs])
 	 pollevent();
 #endif
 
-      /*
-       * if our select() could have taken any time, try windows again
-       */
-      if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
-	 d.dword = D_List;
-	 BlkLoc(d) = (union block *) lp;
-         }
+	 /*
+	  * if our select() could have taken any time, try windows again
+	  */
+	 if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
+	    d.dword = D_List;
+	    BlkLoc(d) = (union block *) lp;
+	    }
 #endif					/* Graphics */
+	 }
+      else if (ptv && (ptv->tv_sec || ptv->tv_usec)) {
+	 idelay(ptv->tv_sec * 1000 + ptv->tv_usec / 1000);
+
 	 }
 
       if (lp == NULL) {
@@ -2257,7 +2292,24 @@ function{0,1} select(files[nargs])
 	    }
           }
 	 }
-      } while ((timeout < 0) && (BlkLoc(d)->list.size == 0));
+	 /*
+	  * This little gem tries to check if the timeout has elapsed.
+	  * On some buggy versions of linux, at least, the struct members
+	  * that t points at don't get updated, although times()'s return
+	  * value does show forward progress.  Use that return value,
+	  * try to handle overflow.  More ifdef's will be needed here
+	  * if times() return value doesn't work on some systems.
+	  */
+	 clocks = times(&t);
+	 if (clocks > base_time) {
+	    acc_time = clocks - base_time;
+	    check_time = acc_time;
+	    }
+	 else {
+	    check_time = clocks + acc_time;
+	    }
+      } while ((BlkLoc(d)->list.size == 0) &&
+	       ((timeout < 0)||(check_time*1000/ctps<timeout)));
 
       Desc_EVValD(lp, E_Lcreate, D_List);
       return list(lp);

@@ -148,14 +148,11 @@ class HttpClient : NetClient(url,
          remove(\data_file)
          close()
 
-         if &errno ~= EINTR then {
+         if (i -:= 1) < 0 then {
             fire("Failed")
             fail
          }
 
-         fire("Timeout")
-         if (i -:= 1) < 0 then
-            fail
          fire("Retrying")
       }
    end

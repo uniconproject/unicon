@@ -15,7 +15,7 @@ Test:
 #
 Clean:
 		rm -rf local/*
-		mkdir -p local
+		-mkdir -p local
 		touch local/.placeholder
 
 

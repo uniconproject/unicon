@@ -1,5 +1,5 @@
 #
-# $Id: canvasbuttondialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvasbuttondialog.icn,v 1.2 2004-11-13 21:29:54 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -31,6 +31,7 @@ class CanvasButtonDialog : CanvasComponentDialog(
    tab_images,
    label_label,
    cp_img,
+   toggles,
    initially_checked        #
    )
 
@@ -80,7 +81,7 @@ class CanvasButtonDialog : CanvasComponentDialog(
       # Set checked flag
       #
       c.is_checked_flag := initially_checked.get_status()
-
+      c.toggles_flag := toggles.get_status()
       c.no_keyboard_flag := keyboard.get_status()
       c.set_parent_button_group(if in_button_group.is_checked() then c.parent_Canvas.button_groups.group_number(button_group_list.get_selection()) else &null)
    end
@@ -146,6 +147,13 @@ class CanvasButtonDialog : CanvasComponentDialog(
       initially_checked.set_pos(50, 120)
       initially_checked.set_label("Initially checked")
       tab_basic.add(initially_checked)
+      toggles := CheckBox()
+      toggles.set_align("l", "c")
+      toggles.set_pos(50, 160)
+      toggles.set_label("Toggles state")
+      if \c.toggles_flag then
+         toggles.set_is_checked()
+      tab_basic.add(toggles)
       add_tab_at_front(tab_basic)
 
       tab_groups := TabItem("label=Groups", "accel=r")

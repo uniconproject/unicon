@@ -323,7 +323,6 @@ typedef struct _lclIdentifier {
 
 #endif					/* PresentationManager */
 
-
 /*
  * "Context" comprises the graphics context, and the font (i.e. text context).
  * Foreground and background colors (pointers into the display color table)
@@ -394,11 +393,13 @@ typedef struct _wcontext {
   double        eyeposx, eyeposy, eyeposz; /* eye position */
   
   int           autogen;  /* flag to automatically generate texture coordinate */
-  int           ntextures;  /* the number of textures in the scene */
-  int           texmode;   /* texutres on or off */
+  int           texmode;    /* textures on or off */
   int           numtexcoords;  /* number of texture coordinate */
   double        texcoords[MAXTEXCOORDS]; /* texture coordinates */
-  GLuint        texName[256];  /* array to store opengl texture name */
+  int ntextures;			/* number actually used */
+  int curtexture;			/* subscript of current texture */
+  int nalced;				/* number allocated */
+  GLuint *texName;			/* array of GL textures */
 
 #endif					/* Graphics3D */
 } wcontext, *wcp;

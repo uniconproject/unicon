@@ -45,7 +45,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    w->context->autogen = 1;
    w->context->texmode = 0;
    w->context->numtexcoords = 0;
+   w->context->texName = malloc(16 * sizeof(GLuint));
+   w->context->nalced = 16;
    w->context->ntextures = 0;
+   w->context->curtexture = -1;
 
    /* create an empty list for list of function calls */
    if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
@@ -58,7 +61,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 		GREEN(w->context->bg)/(GLfloat)255,
 		BLUE(w->context->bg)/(GLfloat)255, 0.0);
 
-   glGenTextures(10, w->context->texName);
+   glGenTextures(16, w->context->texName);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_TEXTURE_GEN_S);
    glEnable(GL_TEXTURE_GEN_T);
@@ -1767,6 +1770,7 @@ int seteye(wbp w, char *s)
 /* set a texture */
 int settexture(wbp w, char* str)
 {
+   wcp wc = w->context;
    char* s;
    char filename[MaxFileName +1];
    int i, nfields;
@@ -1788,15 +1792,21 @@ int settexture(wbp w, char* str)
    f.vword.bptr = (union block *)rp;
    MakeStr("Texture", 7, &(rp->fields[0])); 
 
-   /* to redraw the window we must keep track of the
-      texture name assigned to it by opengl. This name
-      is stored in w->context->texName[w->context->ntextures].
-      So by remembering w->context->ntextures we can
-      recover the name of the texture */
-   MakeInt(w->context->ntextures, &(rp->fields[1]));
+   /*
+    * To redraw the window we must keep track of the texture name assigned
+    * to it by opengl. This name is stored in wc->texName[wc->ntextures].
+    * So by remembering wc->ntextures we can recover the name of the texture.
+    */
+   MakeInt(wc->ntextures, &(rp->fields[1]));
    c_put(&(w->window->funclist), &f);
-   glBindTexture(GL_TEXTURE_2D, w->context->texName[w->context->ntextures]);
-   w->context->ntextures++;
+   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+   wc->curtexture = wc->ntextures;
+   wc->ntextures++;
+   if (wc->ntextures > wc->nalced) {
+      wc->nalced *= 2;
+      wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
+      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
+      }
 
    s=str;
    while(isspace(*s)) s++;

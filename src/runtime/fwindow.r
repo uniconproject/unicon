@@ -3881,6 +3881,7 @@ function{1} Texture(argv[argc])
    abstract{ return record }
    body {
       wbp w, w2;
+      wcp wc;
       int warg = 0, nfields;
       unsigned char *s;
       char filename[MaxFileName + 1];
@@ -3890,6 +3891,7 @@ function{1} Texture(argv[argc])
       static dptr constr;
 
       OptWindow(w);
+      wc = w->context;
       if (argc - warg < 1)/* missing texture source */
          runerr(103);	
 
@@ -3910,10 +3912,16 @@ function{1} Texture(argv[argc])
        * This name is stored in w->context->texName[w->context->ntexture]. so
        * we put w->context->ntexture in the list.
        */
-      MakeInt(w->context->ntextures, &(rp->fields[1]));
+      MakeInt(wc->ntextures, &(rp->fields[1]));
       c_put(&(w->window->funclist), &f);
-      glBindTexture(GL_TEXTURE_2D, w->context->texName[w->context->ntextures]);
-      w->context->ntextures++;
+      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+      wc->curtexture = wc->ntextures;
+      wc->ntextures++;
+      if (wc->ntextures > wc->nalced) {
+         wc->nalced *= 2;
+         wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
+         glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
+         }
   
       /* check if the source is another window */
       if (argc>warg && is:file(argv[warg])) {

@@ -328,9 +328,9 @@ function{0,1} ColorValue(argv[argc])
       wbp w;
       C_integer n;
       int warg = 0, len;
-      long r, g, b;
+      long r, g, b, a = 65535;
       tended char *s;
-      char tmp[24], *t;
+      char tmp[32], *t;
 
       if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window)) {
          w = (wbp)BlkLoc(argv[0])->file.fd;		/* explicit window */	
@@ -354,8 +354,11 @@ function{0,1} ColorValue(argv[argc])
       else if (!cnv:C_string(argv[warg], s))
          runerr(103,argv[warg]);
 
-      if (parsecolor(w, s, &r, &g, &b) == Succeeded) {
-         sprintf(tmp,"%ld,%ld,%ld", r, g, b);
+      if (parsecolor(w, s, &r, &g, &b, &a) == Succeeded) {
+	 if (a < 65535)
+            sprintf(tmp,"%ld,%ld,%ld,%ld", r, g, b, a);
+	 else
+            sprintf(tmp,"%ld,%ld,%ld", r, g, b);
 	 len = strlen(tmp);
 	 Protect(s = alcstr(tmp,len), runerr(306));
 	 return string(len, s);
@@ -1819,7 +1822,7 @@ function{0,1} PaletteKey(argv[argc])
       int warg = 0, p;
       C_integer n;
       tended char *s;
-      long r, g, b;
+      long r, g, b, a;
 
       if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window)) {
          w = (wbp)BlkLoc(argv[0])->file.fd;		/* explicit window */	
@@ -1846,7 +1849,7 @@ function{0,1} PaletteKey(argv[argc])
       else if (!cnv:C_string(argv[warg + 1], s))
          runerr(103, argv[warg + 1]);
 
-      if (parsecolor(w, s, &r, &g, &b) == Succeeded)
+      if (parsecolor(w, s, &r, &g, &b, &a) == Succeeded)
          return string(1, rgbkey(p, r / 65535.0, g / 65535.0, b / 65535.0));
       else
          fail;
@@ -2881,7 +2884,7 @@ function{0,1} WinColorDialog(argv[argc])
    body {
       wbp w;
       C_integer x, y, width, height, warg = 0;
-      long r, g, b;
+      long r, g, b, a;
       tended char *s;
       char buf[64], *tmp = buf;
       OptWindow(w);
@@ -2891,7 +2894,7 @@ function{0,1} WinColorDialog(argv[argc])
 	 else if (!cnv:C_string(argv[warg], s)) runerr(103, argv[warg]);
          }
       else s = "white";
-      if (parsecolor(w, s, &r, &g, &b) == Failed) fail;
+      if (parsecolor(w, s, &r, &g, &b, &a) == Failed) fail;
 
       if (nativecolordialog(w, r, g, b, buf) == NULL) fail;
       StrLoc(result) = alcstr(buf, strlen(buf));

@@ -34,14 +34,21 @@ keyword{2} clock
       struct tm *ct;
       char sbuf[128], *tmp;
 
+      int tz_sec;
+      int offset_hrs;
+
       time(&t);
       ct = localtime(&t);
+      tz_sec = ct->tm_gmtoff;
+
       sprintf(sbuf,"%02d:%02d:%02d", ct->tm_hour, ct->tm_min, ct->tm_sec);
       Protect(tmp = alcstr(sbuf,(word)8), runerr(0));
       suspend string(8, tmp);
 
-      sprintf(sbuf, "UTC%c%d %s", timezone < 0 ? '+' : '-', timezone/3600,
-         ct->tm_isdst > 0 ? tzname[1] : tzname[0]);
+      /* Timezone information. Warning: tm_isdst and tm_zone may disappear */
+      offset_hrs = tz_sec/3600;
+      if (ct->tm_isdst) offset_hrs--;
+      sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);
       i = strlen(sbuf);
       Protect(tmp = alcstr(sbuf, i), runerr(0));
       suspend string(i, tmp);
@@ -141,9 +148,12 @@ keyword{2} dateline
       int hour;
       char *merid, *tmp;
       int i;
+      int tz_sec, offset_hrs;
 
       time(&t);
       ct = localtime(&t);
+      tz_sec = ct->tm_gmtoff;
+
       if ((hour = ct->tm_hour) >= 12) {
          merid = "pm";
          if (hour > 12)
@@ -160,8 +170,9 @@ keyword{2} dateline
       Protect(tmp = alcstr(sbuf, i), runerr(0));
       suspend string(i, tmp);
 
-      sprintf(sbuf, "UTC%c%d %s", timezone < 0 ? '+' : '-', timezone/3600,
-         ct->tm_isdst > 0 ? tzname[1] : tzname[0]);
+      offset_hrs = tz_sec/3600;
+      if (ct->tm_isdst) offset_hrs--;
+      sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);
       i = strlen(sbuf);
       Protect(tmp = alcstr(sbuf, i), runerr(0));
       suspend string(i, tmp);

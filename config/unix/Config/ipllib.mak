@@ -1,2 +1,6 @@
 all:
+	if grep LoadFunc ../../src/h/define.h >/dev/null; then $(MAKE) Cfun; fi
 	cd ..; sh Translate-icont
+
+Cfun:
+	cd ../cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont

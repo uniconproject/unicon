@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.8 2001-12-12 21:20:50 jeffery Exp $
+ * $Id: fxposix.ri,v 1.9 2001-12-13 22:29:09 phliar Exp $
  */
 
 /*
@@ -1138,7 +1138,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       if (is:list(argv)) {
 	 n = 0;
 	 /* Traverse the list */
-	 for (ep = BlkLoc(argv)->list.listhead; ep != NULL;
+	 for (ep = BlkLoc(argv)->list.listhead; BlkType(ep) == T_Lelem;
 	      ep = ep->lelem.listnext) {
 	    for (i = 0; i < ep->lelem.nused; i++) {
 	       dptr f;

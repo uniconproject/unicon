@@ -979,13 +979,11 @@ Deliberate Syntax Error
 	    if (status & Fs_Append) {
 	       /* "na" => listen for connections */
 	       f = sock_listen(fnamestr, is_udp);
-/* fprintf(stderr, "\n f listen is %d\n", f); */
 	    } else {
 	       /* connect to a port */
 	       f = sock_connect(fnamestr, is_udp);
-/* fprintf(stderr, "\n f connect is %d\n", f); */
 	    }
-	    /* read/read is not allowed on a UDP socket, only receive */
+	    /* read/reads is not allowed on a UDP socket, only receive */
 	    if (is_udp)
 	       status = Fs_Socket | Fs_Write;
 	    else

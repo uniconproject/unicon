@@ -1,187 +1,149 @@
-SHELL=/bin/sh
-MAKE=make
+#  Makefile for Unicon, based on that of Version 9.4 of Icon
+#
+#  Things have changed since Version 9.3.
+#  See doc/install.htm for instructions.
+
+
+#  configuration parameters
+VERSION=v940
 name=unspecified
+dest=/must/specify/dest/
 
 help:
 	@echo UNIX: Run "make Configure name=system" or "make X-Configure name=system"
 	@echo "   where system is one of those in config/unix."
-	@echo Windows: Run "nmake NT-Configure" or "nmake W-Configure".
+	@echo Windows (MSVC): Run "nmake NT-Configure" or "nmake W-Configure".
 	@echo "   then add the Unicon bin directory to your path."
 	@echo All: after configuration, run "make (or nmake) Unicon".
 
 ##################################################################
 #
+# Default targets.
+
+All:	Icont Ilib Ibin
+
+config/unix/$(name)/status src/h/define.h:
+	:
+	: To configure Icon, run either
+	:
+	:	make Configure name=xxxx     [for no graphics]
+	: or	make X-Configure name=xxxx   [with X-Windows graphics]
+	:
+	: where xxxx is one of
+	:
+	@cd config/unix; ls -d [a-z]*
+	:
+	@exit 1
+
+
+##################################################################
+#
 # Code configuration.
 #
-# $Id: Makefile,v 1.1.1.1 2001-05-05 08:28:06 jeffery Exp $
+# $Id: Makefile,v 1.2 2001-09-11 08:40:17 jeffery Exp $
 
-#
+
 # Configure the code for a specific system.
-#
 
-Configure:
-		make Clean
-		echo '#define BinPath' \"`pwd`/bin/\" >src/h/path.h
-		cp config/unix/Common/Makefile config/unix/$(name)
-		cd config/unix/$(name);	$(MAKE) 
-		rm -f config/unix/$(name)/Makefile
+Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
 
-X-Configure:
-		make Clean
-		echo '#define BinPath' \"`pwd`/bin/\" >src/h/path.h
-		cp config/unix/Common/Makefile config/unix/$(name)
-		cd config/unix/$(name);	$(MAKE) X-Icon
-		rm -f config/unix/$(name)/Makefile
+X-Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 
-#
-# Check to see what systems have configuration information.
-#
 
-Supported:
-		@echo "There is configuration information for"
-		@echo " the following systems:"
-		@echo ""
-		@cd config/unix;		ls -d [a-z]*
-
-#
 # Get the status information for a specific system.
-#
 
 Status:
 		@cat config/unix/$(name)/status
 
-#
-# Build a prototype configuration for a new system.
-#
-
-Platform:
-		mkdir config/unix/$(name)
-		cp config/unix/Common/* config/unix/$(name)
-
-#
-# Copy default header files.
-#
-
-Headers:
-		cp config/unix/Common/*.hdr config/unix/$(name)
-
 ##################################################################
 #
 # Compilation and installation.
-#
 
-#
 # The OO translator. Add a line for uni/iyacc if you modify the Unicon grammar
-#
-Unicon:		Icon-icont
+
+Unicon:		Icont
 		cd ipl/lib; $(MAKE)
 		cd uni/unicon; $(MAKE) unicon
-		cd uni/ivib; $(MAKE) ivib
+		cd uni/ivib; PATH=${PATH}:${PWD}/bin $(MAKE) ivib
 
-#
-# The interpreter.
-#
-
-Icon:
-		$(MAKE) Icon-icont
-
-#
-# The compiler: rtt, the run-time system, and iconc.
-#
-
-Icon-iconc:	Common
-		cd src/runtime;		$(MAKE) comp_all
-		cd src/iconc;		$(MAKE)
-#
 # The interpreter: icont and iconx.
-#
 
-Icon-icont:	Common
+Icont bin/icont: Common
 		cd src/icont;		$(MAKE)
 		cd src/runtime;		$(MAKE) interp_all
 
-#
-# Common components.
-#
+# The compiler: rtt, the run-time system, and iconc.
 
-Common:
+Iconc bin/iconc: Common
+		cd src/runtime;		$(MAKE) comp_all
+		cd src/iconc;		$(MAKE)
+
+# Common components.
+
+Common:		src/h/define.h
 		cd src/common;		$(MAKE)
 		cd src/rtt;		$(MAKE)
 
+# The Icon program library.
+
+Ilib:		bin/icont
+		cd ipl;			$(MAKE)
+
+Ibin:		bin/icont
+		cd ipl;			$(MAKE) Ibin
+
+
 ##################################################################
 #
-# 
-#
+# Installation and packaging.
 
-CopyLib:
-		cp bin/dlrgint.o bin/rt.db bin/rt.h bin/*.a $(Target)
-		-(test -f NoRanlib) || (ranlib $(Target)/*.a)
+
+# Installation:  "make Install dest=new-parent-directory"
+
+D=$(dest)
+Install:
+		test -d $D || mkdir $D
+		test -d $D/bin || mkdir $D/bin
+		test -d $D/lib || mkdir $D/lib
+		test -d $D/doc || mkdir $D/doc
+		test -d $D/man || mkdir $D/man
+		test -d $D/man/man1 || mkdir $D/man/man1
+		cp README $D
+		cp bin/[a-qs-z]* $D/bin
+		rm -f $D/bin/libXpm*
+		cp lib/*.* $D/lib
+		cp doc/*.* $D/doc
+		cp man/man1/icont.1 $D/man/man1
+
+
+# Bundle up for binary distribution.
+
+DIR=icon.$(VERSION)
+Package:
+		rm -rf $(DIR)
+		umask 002; $(MAKE) Install dest=$(DIR)
+		tar cf - icon.$(VERSION) | gzip -9 >icon.$(VERSION).tgz
+		rm -rf $(DIR)
+
 
 ##################################################################
 #
 # Tests.
-#
 
-#
-# Some simple tests to be sure Icon works.
-#
+Test    Test-icont:	; cd tests; $(MAKE) Test
+Samples Samples-icont:	; cd tests; $(MAKE) Samples
 
-Samples:
-		$(MAKE) Samples-icont
+Test-iconc:		; cd tests; $(MAKE) Test-iconc
+Samples-iconc:		; cd tests; $(MAKE) Samples-iconc
 
-Samples-iconc:
-		cd tests/samples;	$(MAKE) Samples-iconc
-
-Samples-icont:
-		cd tests/samples;	$(MAKE) Samples-icont
-
-#
-# More exhaustive tests of various features of Icon and larger programs.
-#
-
-#
-# Basic tests. Should show only insignificant differences.
-#
-
-Test:
-		$(MAKE) Test-icont
-
-Test-iconc:
-		cd tests/general;	$(MAKE) test-iconc
-
-Test-icont:
-		cd tests/general;	$(MAKE) test-icont
-
-Test-opt:
-		cd tests/general;	$(MAKE) test-opt
-
-Test-noopt:
-		cd tests/general;	$(MAKE) test-noopt
-
-Test-posix:
-		cd tests/posix;		$(MAKE) test-posix
-
-#
-# Tests of co-expressions. Should not show differences if co-expressions
-# are implemented.
-#
-
-Test-coexpr:
-		$(MAKE) Test-coexpr-icont
-
-Test-coexpr-iconc:
-		cd tests/general;	$(MAKE) test-coexpr-iconc
-
-Test-coexpr-icont:
-		cd tests/general;	$(MAKE) test-coexpr-icont
-
-Test-large:
-		cd tests/general;	$(MAKE) test-large
 
 #################################################################
 #
 # Run benchmarks.
-#
 
 Benchmark:
 		$(MAKE) Benchmark-icont
@@ -197,11 +159,31 @@ Benchmark-icont:
 #
 # Clean-up.
 #
+# "make Clean" removes intermediate files, leaving executables and library.
+# "make Pure"  also removes binaries, library, and configured files.
 
 Clean:
-		-cd src;		$(MAKE) Clean
-		-cd uni;		$(MAKE) Clean
-		-cd tests;		$(MAKE) Clean
+		touch Makedefs
+		rm -rf icon.*
+		cd src;			$(MAKE) Clean
+		cd uni;			$(MAKE) Clean
+		cd tests;		$(MAKE) Clean
+
+Pure:
+		touch Makedefs
+		rm -rf icon.* bin/[a-z]* lib/[a-z]*
+		cd ipl;			$(MAKE) Pure
+		cd src;			$(MAKE) Pure
+		cd tests;		$(MAKE) Pure
+		cd config/unix; 	$(MAKE) Pure
+
+
+
+#  (This is used at Arizona to prepare source distributions.)
+
+Dist-Clean:
+		rm -rf `find * -type d -name CVS`
+		rm -f `find * -type f | xargs grep -l '<<ARIZONA-[O]NLY>>'`
 
 ##################################################################
 

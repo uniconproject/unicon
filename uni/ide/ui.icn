@@ -157,7 +157,7 @@ $endif
   MsgBox.set_contents(["opened " || filename || ", " || *L || " lines, " ||
 		       nchars || " characters"])
   self.set_attribs("label=Ui editing: " || filename)
-  WAttrib(self.win, "label=Ui editing: " || filename)
+  WAttrib(\ (self.win), "label=Ui editing: " || filename)
   current_file := filename    
 end
 
@@ -363,7 +363,7 @@ end
    end
 
    method complink()
-   local x, arglist, lst, logf, wiconlog, icodename
+   local x, arglist, lst, logf, wiconlog, icodename, i, s
    lst := []
    /targs := ""
    wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
@@ -677,6 +677,7 @@ $endif
       MsgBox$set_attribs("bg=white")
       MsgBox$set_contents([""])
       self$add(MsgBox)
+      if \current_file then handle_openfile(, current_file)
    end
 
    method component_setup()
@@ -708,9 +709,14 @@ $endif
 end
 
 procedure main(argv)
-# figure out how to load file from command line argument
+   local d
    ui_initialize()
-   dialog().show_modal()
+   d := dialog()
+   # load file from command line argument, if any; add options etc.
+   if *argv>0 then {
+      current_file := argv[1]
+      }
+   d.show_modal()
 end
 
 # is t1 newer than t2?

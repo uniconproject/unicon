@@ -1,5 +1,5 @@
 #
-# $Id: filedialog.icn,v 1.4 2004-02-15 22:10:54 rparlett Exp $
+# $Id: filedialog.icn,v 1.5 2005-01-20 00:00:44 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -80,7 +80,12 @@ class FileDialog : Dialog(
    #
    # @p
    method set_result()
-      self.res := self.get_std_dir() || file.get_contents()
+      local path_to_file
+      path_to_file := file.get_contents()
+      self.res := if ((\path_to_file)[1] == PATHCHAR) then 
+                     path_to_file
+                  else 
+                     self.get_std_dir() || path_to_file
    end
 
    #
@@ -128,7 +133,7 @@ class FileDialog : Dialog(
       #
       # Update directory and file lists.
       #
-      l := get_directory_list(s)
+      l := (get_directory_list(s) | [[],[]])
       dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
@@ -150,7 +155,7 @@ class FileDialog : Dialog(
       # Return pressed in directory TextField; update lists.
       #
       dir.set_contents(s := self.get_std_dir())
-      l := get_directory_list(s)
+      l := (get_directory_list(s) | [[],[]])
       dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
@@ -193,7 +198,7 @@ class FileDialog : Dialog(
       self.add(file)
       l.set_linked_accel(file)
 
-      l := get_directory_list(init_dir)
+      l := (get_directory_list(init_dir) | [[],[]])
 
       dlist := TextList("pos=25,110", "size=50%-38,100%-170", "select_one", "selection_on_key_moves=f")
       dlist.connect(self, "on_dlist", SELECTION_CHANGED_EVENT)

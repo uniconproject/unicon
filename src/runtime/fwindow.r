@@ -3300,6 +3300,8 @@ function{1} DrawCube(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
+      makecurrent(w);
+
       for(i = warg; i < argc; i += 4) {
  
 	 /* convert parameters and draw a cube */
@@ -3307,6 +3309,8 @@ function{1} DrawCube(argv[argc])
          if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
          if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
          if (!cnv:C_double(argv[i+3], l)) runerr(102, argv[i+3]);  
+
+
 	 cube(l, x, y, z, (w->context->texmode?w->context->autogen:0));
         
 	 /*
@@ -3670,6 +3674,10 @@ function{1} PopMatrix(argv[argc])
 
       OptWindow(w);
 
+      if (w->window->is_3D == 0) {
+         runerr(150, (warg==0?kywd_xwin[XKey_Window]:argv[0]));
+         }
+
       if (argc == warg) npops = 1;
       else if (!def:C_integer(argv[warg], 1, npops))
 	 runerr(101, argv[warg]);
@@ -3678,6 +3686,8 @@ function{1} PopMatrix(argv[argc])
 	 if (!(constr = rec_structor3d("gl_popmatrix")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      makecurrent(w);
 
       for (i=0; i<npops; i++) {
 
@@ -3717,12 +3727,17 @@ function{1} PushMatrix(argv[argc])
  
       OptWindow(w);
 
+      if (w->window->is_3D == 0) {
+         runerr(150, (warg==0?kywd_xwin[XKey_Window]:argv[0]));
+         }
+
       if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
+      makecurrent(w);
       /* push a copy of the top matrix, if possible */
-      if (pushmatrix() == 0)
+      if (pushmatrix() == Failed)
 	 runerr(151);
 
       /*

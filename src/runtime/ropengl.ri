@@ -98,6 +98,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    int i, j;
    wcp wc = w->context;
 
+   makecurrent(w);
    /* must reset the current normal vector */
    glNormal3f(0.0, 0.0, 1.0);
 
@@ -296,7 +297,9 @@ void cube(double length, double x, double y, double z, int gen)
   GLfloat v[8][3];
   GLint i;
 
+   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &i);
   glPushMatrix();
+   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &i);
 
   glTranslatef(x, y, z);
 
@@ -370,9 +373,9 @@ void sphere(double radius, double x, double y,
 }
 
 
-/* helper function to draw cylinders. makes use of the
-   glu library */
-
+/*
+ * helper function to draw cylinders. makes use of the glu library
+ */
 void cylinder(double radius1, double radius2, double height,
               double x,  double y, double z, int gen)
 {
@@ -441,8 +444,9 @@ void disk(double radius1, double radius2, double angle1, double angle2,
 
 /* other helper functions */
   	
-/* pop a matrix from either the projection or
-   the modelview matrix stack */
+/*
+ * pop a matrix from either the projection or the modelview matrix stack
+ */
 int popmatrix()
 {
    int params1, params2;
@@ -477,6 +481,7 @@ int popmatrix()
    return Succeeded;
 }
 
+
 /* push a matrix onto the current stack -- that is
    either the modelview of projection matrix stack */
 int pushmatrix()
@@ -491,8 +496,9 @@ int pushmatrix()
        * matrices on the stack return Failed
        */
       glGetIntegerv(GL_PROJECTION_STACK_DEPTH, &params2);
-      if (params2 < 2)
+      if (params2 < 2) {
          glPushMatrix();
+         }
       else
 	 return Failed;
       }
@@ -504,7 +510,7 @@ int pushmatrix()
           return Failed */
        glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
        if (params2 < 32)
-          glPushMatrix();	
+          glPushMatrix();
        else
           return Failed;
         }
@@ -523,6 +529,8 @@ int pushmatrix_rd(wbp w, dptr f)
    if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
       syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   makecurrent(w);
 
    /* push a copy of the top matrix, if possible */
    if (pushmatrix() == 0)
@@ -552,6 +560,8 @@ int redraw3D(wbp w)
    GLfloat deflt_diffuse[4] = {0.8, 0.8, 0.8, 1.0};
    GLfloat deflt_emission[4] = {0.0, 0.0, 0.0, 1.0};
    GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
+
+   makecurrent(w);
 
 #if 0
    gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
@@ -661,6 +671,7 @@ int traversefunctionlist(wbp w)
    tended char *temp;
    tended struct b_record *rp;
 
+   makecurrent(w);
    /*
     * The ith element of the list is a list with information
     * about the function call made on the window.
@@ -1024,6 +1035,7 @@ int setlinewidth3D(wbp w, LONG linewid)
    struct b_list *func;
 
    if (linewid < 0) return Error;
+   makecurrent(w);
    setlinewidth(w, linewid);
    glLineWidth(linewid);
 
@@ -1060,6 +1072,7 @@ int setmaterials(wbp w, char* s)
    struct descrip f, funcname, material, r, b, g, a;
    struct b_list *func;
 
+   makecurrent(w);
    while(s[i]) {
       j = 0;
       k = 0;
@@ -1242,6 +1255,9 @@ int setlight(wbp w, char* s, int light)
    int i, j;
    GLfloat color[4];
    long rd, gr, bl, al;
+
+   makecurrent(w);
+
    while(isspace(*s2)) s2++;
 
    /* turn on a light */
@@ -1387,6 +1403,7 @@ int setdim(wbp w, char* s)
    struct descrip d;
    int dim;
 
+   makecurrent(w);
    /* create a list */
    if ((func = alclist(0, MinListSlots)) == NULL)
          return Failed;
@@ -1417,6 +1434,7 @@ int settexmode(wbp w, char* s)
    wcp wc = w->context;
    int oldtexmode = wc->texmode;
 
+   makecurrent(w);
     /* create a list */
    if ((func = alclist(0, MinListSlots)) == NULL)
          return Failed;
@@ -1468,6 +1486,7 @@ int settexcoords(wbp w, char* s)
    struct descrip f, funcname;
    struct b_list *func;
    struct descrip mode, val, test;
+   makecurrent(w);
 
    /* create a list */
    if ((func = alclist(0, MinListSlots)) == NULL)
@@ -1521,11 +1540,11 @@ int settexcoords(wbp w, char* s)
          c_put(&f, &val);
 	 if (j >= w->context->ntexcoordsalced) {
 	    w->context->texcoords = realloc(w->context->texcoords,
-					    (w->context->ntexcoordsalced +
-					     strlen(s2)/2) * sizeof(double));
+					    (w->context->ntexcoordsalced + 1+
+					     strlen(s)/2) * sizeof(double));
 	    if (w->context->texcoords == NULL)
 	       return Failed;
-	    w->context->ntexcoordsalced += (strlen(s2)/2);
+	    w->context->ntexcoordsalced += (strlen(s)/2);
 	    }
          w->context->texcoords[j] = atof(s3);
          j++;
@@ -1805,6 +1824,7 @@ int settexture(wbp w, char* str, int len)
    wtp wt;
    int ttype;
 
+   makecurrent(w);
    if (!constr &&  !(constr = rec_structor3d("gl_texture")))
       syserr("failed to create opengl record constructor");
    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
@@ -1983,6 +2003,7 @@ int textureimg(wbp w, int width, int height,
    unsigned int ix = 0, iy = height -1;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
 
+   makecurrent(w);
    if (tex == NULL) return Failed;
 
    /*
@@ -2041,6 +2062,8 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
    unsigned int m, msk1, c, ix, iy;
    int r, b, g, i;
    GLubyte tex[height][width][3];
+
+   makecurrent(w);
    m = width % 4;
    if (m == 0)
       msk1 = 8;
@@ -2124,6 +2147,7 @@ int texwindow2D(wbp w)
    char *s2;
    GLubyte tex[ws->height][ws->width][3];
 
+   makecurrent(w);
    imem.x = 0;
    imem.y = 0;
    imem.width = ws->width;
@@ -2243,6 +2267,8 @@ int translate(wbp w, dptr argv, int i, dptr f)
     */
    for (j=0; j<3; j++)
       if (!cnv:C_double(argv[i+j], coords[j])) return (-(i+j)-1);
+
+   makecurrent(w);
    glTranslated(coords[0], coords[1], coords[2]);
 
    /*
@@ -2277,6 +2303,7 @@ int rotate(wbp w, dptr argv, int i, dptr f)
    /* convert parameters and perform the rotation */
    for (j=0; j < 4; j++)
       if (!cnv:C_double(argv[i+j], coords[j])) return (-(i+j)-1);
+   makecurrent(w);
    glRotated(coords[0], coords[1], coords[2], coords[3]);
 
    /*
@@ -2296,7 +2323,7 @@ int rotate(wbp w, dptr argv, int i, dptr f)
 }
 
 /*
- * do a translation
+ * do a scaling
  * return -i for runerr 102 on arg i; return 1 for runerr(0) on alloc failure
  */
 int scale(wbp w, dptr argv, int i, dptr f)
@@ -2316,6 +2343,7 @@ int scale(wbp w, dptr argv, int i, dptr f)
     */
    for(j=0; j<3; j++)
       if (!cnv:C_double(argv[i+j], coords[j])) return -(i+j)-1;
+   makecurrent(w);
    glScaled(coords[0], coords[1], coords[2]);
 
    /*
@@ -2424,6 +2452,7 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
    wcp wc = w->context;
    wtp wt = wc->textures, wt2;
    int i;
+   makecurrent(w);
    while (wt) {
       if (wt->textype == ttype) {
 	 switch (ttype) {

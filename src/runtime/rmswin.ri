@@ -20,7 +20,6 @@
  *   getvisual
  *   getdefault
  */
-#ifdef Graphics
 
 #ifdef ConsoleWindow
 extern void closelogfile();
@@ -676,9 +675,8 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
       pt.x=x;
       pt.y=y;
       win = ChildWindowFromPoint(ws->win,pt);
-      if ((win!=NULL) && (win != ws->win)) {
+      if ((win!=NULL) && (win != GetFocus())) {
 	 SetFocus(win);
-	 return;
 	 }
       }
       eventcode = MOUSELEFT;
@@ -4907,6 +4905,11 @@ char my_wmap(wbp w, wbp wpp, char child_window)
    return 1;
 }
 
-#else                                   /* Graphics */
-  static char aaa;
-#endif                                  /* Graphics */
+#ifdef Graphics3D
+void makecurrent(wbp w)
+{
+   HDC stddc = GetDC(w->window->iconwin);
+   wglMakeCurrent(stddc, w->context->ctx);
+   ReleaseDC(w->window->iconwin, stddc);
+}
+#endif					/* Graphics3D */

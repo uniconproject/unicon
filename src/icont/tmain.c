@@ -928,7 +928,12 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     * now call file_comp() to compress it
     */
    if (Zflag) {
-      if (file_comp(ofile)) {
+#if NT
+#define stat _stat
+#endif					/* NT */
+      struct stat buf;
+      int i = stat(ofile, &buf);
+      if (i==0 && buf.st_size > 1000000 && file_comp(ofile)) {
 	 report("error during icode compression\n");
 	 }
       }

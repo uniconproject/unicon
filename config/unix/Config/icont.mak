@@ -34,6 +34,7 @@ $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
 $(COBJS):	../h/mproto.h
 
 tmain.o:	tglobals.h
+tglobals.o:	tglobals.h
 util.o:		tglobals.h tree.h ../h/fdefs.h
 
 # translator files

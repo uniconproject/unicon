@@ -1,5 +1,5 @@
 #
-# $Id: httpclient.icn,v 1.11 2004-10-02 17:25:24 rparlett Exp $
+# $Id: httpclient.icn,v 1.12 2004-10-15 21:33:05 rparlett Exp $
 #
 
 package http
@@ -97,10 +97,8 @@ class HttpClient : NetClient(request,
    end
 
    #
-   # This method invokes retrieve_page, but only returns the page if
-   # its status was 200 OK - otherwise it fails and sets the failure
-   # reason appropriately.  It also handles redirection and authentication
-   # request responses.
+   # Retrive the given {HttpRequest} request.
+   # @param request - an {HttpRequest} instance
    #
    method retrieve(request)
       self.request := request.clone()
@@ -497,9 +495,9 @@ class HttpClient : NetClient(request,
    end
 
    #
-   # Retrieve the given url.  A {HttpResponse} object is returned upon success.
-   # Failure occurs if the url could not be retrieved.
-   #
+   # Retrieve the current request; doesn't handle redirects and so
+   # on - these are handled by the caller, retrieve().
+   # @p
    method retrieve_page()
       local i
 

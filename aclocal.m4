@@ -90,7 +90,7 @@ then
         CPPFLAGS="$CPPFLAGS -I${JPEG_HOME}/include"
         AC_LANG_SAVE
         AC_LANG_C
-        AC_CHECK_LIB(jpeg, inflateEnd, [jpeg_cv_libjpeg=yes], [jpeg_cv_libjpeg=no])
+        AC_CHECK_LIB(jpeg, jpeg_destroy_decompress, [jpeg_cv_libjpeg=yes], [jpeg_cv_libjpeg=no])
         AC_CHECK_HEADER(jpeglib.h, [jpeg_cv_jpeglib_h=yes], [jpeg_cv_jpeglib_h=no])
         AC_CHECK_HEADER(jerror.h, [jpeg_cv_jerror_h=yes], [jpeg_cv_jerror_h=no])
         AC_LANG_RESTORE
@@ -99,7 +99,7 @@ then
                 #
                 # If both library and headers were found, use them
                 #
-                AC_CHECK_LIB(jpeg, inflateEnd)
+                AC_CHECK_LIB(jpeg, jpeg_destroy_decompress)
                 AC_MSG_CHECKING(jpeg in ${JPEG_HOME})
                 AC_MSG_RESULT(ok)
         else
@@ -116,97 +116,76 @@ fi
 ])
 
 
-AC_DEFUN([MDL_HAVE_OPENGL],
-[
-  AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AC_PATH_X])
-  AC_REQUIRE([AC_PATH_XTRA])
-  AC_REQUIRE([MDL_CHECK_LIBM])
-
-  AC_CACHE_CHECK([for OpenGL], mdl_cv_have_OpenGL,
-  [
-dnl Check for Mesa first, unless we were asked not to.
-    AC_ARG_WITH([--with-Mesa],
-                   [Prefer the Mesa library over a vendors native OpenGL library (default=yes)],
-                   with_Mesa_help_string)
-    AC_ARG_ENABLE(Mesa, $with_Mesa_help_string, use_Mesa=$enableval, use_Mesa=yes)
-
-    if test x"$use_Mesa" = xyes; then
-       GL_search_list="MesaGL   GL"
-      GLU_search_list="MesaGLU GLU"
-      GLX_search_list="MesaGLX GLX"
-    else
-       GL_search_list="GL  MesaGL"
-      GLU_search_list="GLU MesaGLU"
-      GLX_search_list="GLX MesaGLX"
-    fi
-
-    AC_LANG_SAVE
-    AC_LANG_C
-
-dnl If we are running under X11 then add in the appropriate libraries.
-if test x"$no_x" != xyes; then
-dnl Add everything we need to compile and link X programs to GL_CFLAGS
-dnl and GL_X_LIBS.
-  GL_CFLAGS="$X_CFLAGS"
-  GL_X_LIBS="$X_PRE_LIBS $X_LIBS -lX11 -lXext -lXmu -lXt -lXi $X_EXTRA_LIBS"
+AC_DEFUN([CHECK_OPENGL],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if opengl is wanted)
+AC_ARG_WITH(opengl,
+[  --with-opengl=DIR root directory path of opengl installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-opengl to disable opengl usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  OPENGL_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+OPENGL_HOME=/usr/local
+if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
+then
+        OPENGL_HOME=/usr/X11R6
 fi
-    GL_save_CPPFLAGS="$CPPFLAGS"
-    CPPFLAGS="$GL_CFLAGS"
-
-    GL_save_LIBS="$LIBS"
-    LIBS="$GL_X_LIBS"
-
-
-    # Save the "AC_MSG_RESULT file descriptor" to FD 8.
-    exec 8>&AC_FD_MSG
-
-    # Temporarily turn off AC_MSG_RESULT so that the user gets pretty
-    # messages.
-    exec AC_FD_MSG>/dev/null
-
-    AC_SEARCH_LIBS(glAccum,          $GL_search_list, have_GL=yes,   have_GL=no)
-    AC_SEARCH_LIBS(gluBeginCurve,   $GLU_search_list, have_GLU=yes,  have_GLU=no)
-    AC_SEARCH_LIBS(glXChooseVisual, $GLX_search_list, have_GLX=yes,  have_GLX=no)
-    AC_SEARCH_LIBS(glutInit,        glut,             have_glut=yes, have_glut=no)
-
-
-
-    # Restore pretty messages.
-    exec AC_FD_MSG>&8
-
-    if test -n "$LIBS"; then
-      mdl_cv_have_OpenGL=yes
-      GL_LIBS="$LIBS"
-      AC_SUBST(GL_CFLAGS)
-      AC_SUBST(GL_LIBS)
-    else
-      mdl_cv_have_OpenGL=no
-      GL_CFLAGS=
-    fi
-
-dnl Reset GL_X_LIBS regardless, since it was just a temporary variable
-dnl and we don't want to be global namespace polluters.
-    GL_X_LIBS=
-
-    LIBS="$GL_save_LIBS"
-    CPPFLAGS="$GL_save_CPPFLAGS"
-
-    AC_LANG_RESTORE
-    
-dnl bugfix: dont forget to cache this variables, too
-    mdl_cv_GL_CFLAGS="$GL_CFLAGS"
-    mdl_cv_GL_LIBS="$GL_LIBS"
-    mdl_cv_have_GL="$have_GL"
-    mdl_cv_have_GLU="$have_GLU"
-    mdl_cv_have_GLX="$have_GLX"
-    mdl_cv_have_glut="$have_glut"
-  ])
-  GL_CFLAGS="$mdl_cv_GL_CFLAGS"
-  GL_LIBS="$mdl_cv_GL_LIBS"
-  have_GL="$mdl_cv_have_GL"
-  have_GLU="$mdl_cv_have_GLU"
-  have_GLX="$mdl_cv_have_GLX"
-  have_glut="$mdl_cv_have_glut"
+if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
+then
+        OPENGL_HOME=/usr
+fi
 ])
-dnl endof bugfix -ainan
+
+#
+# Locate OPENGL, if wanted
+#
+if test -n "${OPENGL_HOME}"
+then
+        OPENGL_OLD_LDFLAGS=$LDFLAGS
+        OPENGL_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${OPENGL_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${OPENGL_HOME}/include"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(GL, glAccum, [opengl_cv_libGL=yes], [opengl_cv_libGL=no])
+        AC_CHECK_LIB(GLU, gluBeginCurve, [opengl_cv_libGLU=yes], [opengl_cv_libGLU=no], [-lGL])
+        AC_CHECK_HEADER(GL/gl.h, [opengl_cv_gl_h=yes], [opengl_cv_gl_h=no])
+        AC_CHECK_HEADER(GL/glx.h, [opengl_cv_glx_h=yes], [opengl_cv_glx_h=no])
+        AC_CHECK_HEADER(GL/glu.h, [opengl_cv_glu_h=yes], [opengl_cv_glu_h=no])
+        AC_LANG_RESTORE
+        if test "$opengl_cv_libGL" = "yes" -a "$opengl_cv_libGLU" = "yes" -a "$opengl_cv_gl_h" = "yes" -a "$opengl_cv_glx_h" = "yes" -a "$opengl_cv_glu_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+                AC_CHECK_LIB(GL, glAccum)
+                AC_CHECK_LIB(GLU, gluBeginCurve)
+	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
+	        AC_SUBST(GL_CFLAGS)
+	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
+	        AC_SUBST(GL_LDFLAGS)
+                AC_MSG_CHECKING(GL in ${OPENGL_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(GL in ${OPENGL_HOME})
+                LDFLAGS="$OPENGL_OLD_LDFLAGS"
+                CPPFLAGS="$OPENGL_OLD_CPPFLAGS"
+	        GL_CFLAGS=
+	        AC_SUBST(GL_CFLAGS)
+	        GL_LDFLAGS=
+	        AC_SUBST(GL_LDFLAGS)
+                AC_MSG_RESULT(failed)
+        fi
+fi
+
+])

@@ -311,6 +311,7 @@ procedure SelectDialog( 		#: selection dialog
 
    default_button := buttons[index] 		# null if out of bounds
 
+$ifdef _MS_WINDOWS_NT
    if (*labels=0) & (p := proc("WinSelectDialog", 0)) then {
       # call built-in selectdialog, but only for supported buttons
       every x := !buttons do
@@ -321,6 +322,7 @@ procedure SelectDialog( 		#: selection dialog
 	  return dialog_value := dialog_button := rv
           }
       }
+$endif
 
    maxl := 0
    every maxl <:= *labels
@@ -387,11 +389,13 @@ procedure Notice(captions[])		#: notice dialog
       /win := temp_win := WOpen("canvas=hidden", "bg=" || VBackground)
       }
 
+$ifdef _MS_WINDOWS_NT
    if p := proc("WinSelectDialog", 0) then {	# use built-in if available
       p(win, captions)
       dialog_button := "Okay"
       }
    else
+$endif
       TextDialog(win, captions, , , , "Okay")
 
    dialog_value := &null
@@ -418,6 +422,7 @@ procedure SaveDialog(win, caption, filename, len)	#: save dialog
    /filename := ""
    /len := OpenWidth
 
+$ifdef _MS_WINDOWS_NT
    if p := proc("WinSaveDialog", 0) then {	# use built-in if available
       SelectDialog(win, caption, , , ["Yes", "No", "Cancel"])
       if dialog_button == ("No" | "Cancel") then return dialog_button
@@ -426,6 +431,7 @@ procedure SaveDialog(win, caption, filename, len)	#: save dialog
       else dialog_button := "Cancel"
       return dialog_button
       }
+$endif
 
    TextDialog(win, caption, , filename, len, ["Yes", "No", "Cancel"])
 
@@ -453,12 +459,14 @@ procedure OpenDialog(win, caption, filename, len)	#: open dialog
    /filename := ""
    /len := OpenWidth
 
+$ifdef _MS_WINDOWS_NT
    if p := proc("WinOpenDialog", 0) then {	# use built-in if available
       if dialog_value := p(win, caption, filename, len) then
          dialog_button := "Okay"
       else dialog_button := "Cancel"
       return dialog_button
       }
+$endif
 
    TextDialog(win, caption, , filename, len)
 
@@ -508,12 +516,14 @@ procedure ColorDialog(			#: color dialog
    /captions := "Select color:"
    if type(captions) ~== "list" then captions := [captions]
 
+$ifdef _MS_WINDOWS_NT
    if p := proc("WinColorDialog", 0) then {	# use built-in if available
       if dialog_value := p(win, caption, filename, len) then
          dialog_button := "Okay"
       else dialog_button := "Cancel"
       return dialog_button
       }
+$endif
 
    cdl_data := cdl_rec()
    cdl_data.callback := callback

@@ -316,16 +316,7 @@ keyword{1,*} features
 	     */
 	    while ((c = getc(f)) && (c != EOF) && (c != '\n'));
 	    refpath = patchpath+18;
-	    if (fscanf(f, "IXBIN=%s\n", refpath) == 1) {
-	       if(strstr(refpath+strlen(refpath)-5, "iconx"))
-	       refpath[strlen(refpath)-5] = '\0';
-	       /*
-		* Trim prefix letters in front of iconx, if any
-		*/
-	       while ((strlen(refpath)>0) &&
-		      isalpha(refpath[strlen(refpath)-1]))
-	          refpath[strlen(refpath)-1] = '\0';
-	       }
+	    if (fscanf(f, "IXBIN=%s\n", refpath) != 1) refpath = "";
 	    fclose(f);
             }
 #endif					/* UNIX */
@@ -339,7 +330,26 @@ keyword{1,*} features
 #include "../h/features.h"
 
       if (refpath && strlen(refpath) > 0) {
-	 char *s = alcstr(NULL, strlen(refpath) + strlen("Binaries at ") + 1);
+	 char *s;
+#if UNIX
+#define ICONXNAM "iconx"
+#else
+#if MSDOS
+#define ICONXNAM "iconx.exe"
+#else
+deliberate syntax error
+#endif
+#endif
+	 if (!strcmp(refpath+strlen(refpath)-strlen(ICONXNAM), ICONXNAM)) {
+	    refpath[strlen(refpath)-strlen(ICONXNAM)] = '\0';
+	    /*
+	     * Trim prefix letters in front of iconx, if any
+	     */
+	    while ((strlen(refpath)>0) && isalpha(refpath[strlen(refpath)-1]))
+	       refpath[strlen(refpath)-1] = '\0';
+	    }
+
+	 s = alcstr(NULL, strlen(refpath) + strlen("Binaries at ") + 1);
 	 strcpy(s, "Binaries at ");
 	 strcat(s, refpath);
 	 suspend C_string s;

@@ -8,7 +8,7 @@ UFILES=border.u button.u buttongroup.u checkbox.u checkboxgroup.u \
 	dialog.u dispatcher.u displayscrollarea.u dndhandler.u \
 	drag.u dropdown.u editabletextlist.u editlist.u editspin.u \
 	event.u filedialog.u filterlistener.u guiprocs.u \
-	icon.u iconbutton.u image.u keysyms.u label.u line.u \
+	icon.u iconbutton.u image.u label.u line.u \
 	linebasedscrollarea.u list.u listspin.u menu.u menubar.u \
 	menubutton.u menucomponent.u menuseparator.u node.u \
 	overlayitem.u overlayset.u panel.u popupmenu.u progressbar.u \

@@ -19,37 +19,41 @@ AlwaysCreateUninstallIcon=yes
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4
 
 [Files]
-Source: "D:\unicon\bin\*.exe"; DestDir: "{app}\bin"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\doc\*.gif"; DestDir: "{app}\doc"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\doc\unicon\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\packs\*.*"; DestDir: "{app}\ipl\packs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\procs\*.*"; DestDir: "{app}\ipl\procs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\progs\*.*"; DestDir: "{app}\ipl\progs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\data\*.*"; DestDir: "{app}\ipl\data"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\docs\*.*"; DestDir: "{app}\ipl\docs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\gpacks\*.*"; DestDir: "{app}\ipl\gpacks"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\gprocs\*.*"; DestDir: "{app}\ipl\gprocs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\gprogs\*.*"; DestDir: "{app}\ipl\gprogs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\gdata\*.*"; DestDir: "{app}\ipl\gdata"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\gdocs\*.*"; DestDir: "{app}\ipl\gdocs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\mpacks\*.*"; DestDir: "{app}\ipl\mpacks"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\mprocs\*.*"; DestDir: "{app}\ipl\mprocs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\mprogs\*.*"; DestDir: "{app}\ipl\mprogs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\mdata\*.*"; DestDir: "{app}\ipl\mdata"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\lib\*.*"; DestDir: "{app}\uni"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
-Source: "D:\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
+Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\unicon\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\packs\*.*"; DestDir: "{app}\ipl\packs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\procs\*.*"; DestDir: "{app}\ipl\procs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\progs\*.*"; DestDir: "{app}\ipl\progs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\incl\*.*"; DestDir: "{app}\ipl\incl"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\data\*.*"; DestDir: "{app}\ipl\data"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\docs\*.*"; DestDir: "{app}\ipl\docs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\gpacks\*.*"; DestDir: "{app}\ipl\gpacks"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\gprocs\*.*"; DestDir: "{app}\ipl\gprocs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\gprogs\*.*"; DestDir: "{app}\ipl\gprogs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\gincl\*.*"; DestDir: "{app}\ipl\gincl"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\gdata\*.*"; DestDir: "{app}\ipl\gdata"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\gdocs\*.*"; DestDir: "{app}\ipl\gdocs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\mpacks\*.*"; DestDir: "{app}\ipl\mpacks"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\mprocs\*.*"; DestDir: "{app}\ipl\mprocs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\mprogs\*.*"; DestDir: "{app}\ipl\mprogs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\mincl\*.*"; DestDir: "{app}\ipl\mincl"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\mdata\*.*"; DestDir: "{app}\ipl\mdata"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; CopyMode: alwaysoverwrite
+Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
 
 [INI]
 Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.sourceforge.net"

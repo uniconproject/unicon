@@ -369,6 +369,9 @@ typedef struct _wcontext {
 #endif					/* MSWindows*/
 
 #ifdef Graphics3D
+
+#define MAXTEXCOORDS 256 /* change this to be dynamic */
+
 #ifdef XWindows
   GLXContext    ctx;			   /* context for "gl" windows */
 #endif					/* XWindows */
@@ -385,7 +388,7 @@ typedef struct _wcontext {
   int           ntextures;  /* the number of textures in the scene */
   int           texmode;   /* texutres on or off */
   int           numtexcoords;  /* number of texture coordinate */
-  double        texcoords[256]; /* texture coordinates */
+  double        texcoords[MAXTEXCOORDS]; /* texture coordinates */
   GLuint        texName[256];  /* array to store opengl texture name */
 
 #endif					/* Graphics3D */

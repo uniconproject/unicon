@@ -4,6 +4,9 @@ import lang
 
 $include "guih.icn"
 
+#
+# Simulate a V1 _Event, but within the gui package.
+#
 class _Event:Object(event, component, code)
    method get_event()
       return self.event
@@ -18,9 +21,16 @@ class _Event:Object(event, component, code)
    end
 end
 
+#
+# Convert a V2 style Event to a V1 _Event.
+#
 procedure V2TOV1(ev)
-   local code
-   
+   local p, code
+
+   #
+   # V1 didn't have mouse movement, so speed things up
+   # by ignoring these events.
+   #
    if ev.get_param() === -12 then
       fail
 
@@ -97,6 +107,16 @@ procedure V2TOV1(ev)
          default: fail
       }
    }
+   else
+      code := 0
 
-   return _Event(ev.param, ev.source, code)
+   #
+   # Some components now return nested Event objects as the param
+   # field; so go down to the lowest level if needed.
+   #
+   p := ev.get_param()
+   while lang::is_instance(p, "util__Event") do
+      p := p.get_param()
+
+   return _Event(p, ev.get_source(), code)
 end

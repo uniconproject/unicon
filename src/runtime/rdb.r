@@ -5,7 +5,7 @@
  * -- error handler for FDB.R
  *
  */
- 
+
 #ifdef ISQL
 
 #define BUFF_SZ      32768      /* 32Kb buffer size for C/S data transfer */
@@ -15,23 +15,29 @@
 int dbclose(struct ISQLFile *fp)
 {
     if (SQLFreeStmt(fp->hstmt, SQL_DROP)!=SQL_SUCCESS) {
-       odbcerror(FREE_STMT_ERR);
+       odbcerror(fp, FREE_STMT_ERR);
        return -1;
        }
-      
-    if (SQLDisconnect(fp->hdbc)!=SQL_SUCCESS) {
-       odbcerror(DISCONNECT_ERR);
-       return -1;
-       }
-      
-    if (SQLFreeConnect(fp->hdbc)!=SQL_SUCCESS) {
-       odbcerror(FREE_CONNECT_ERR);
-       return -1;
-       }
-            
-    free(fp->tablename);  /* release table name     */
 
-    free(fp->query);      /* release query buffer   */
+    if (SQLDisconnect(fp->hdbc)!=SQL_SUCCESS) {
+       odbcerror(fp, DISCONNECT_ERR);
+       return -1;
+       }
+
+    if (SQLFreeConnect(fp->hdbc)!=SQL_SUCCESS) {
+       odbcerror(fp, FREE_CONNECT_ERR);
+       return -1;
+       }
+
+    if (fp->tablename) {
+       free(fp->tablename);  /* release table name     */
+       fp->tablename = NULL;
+       }
+
+    if (fp->query) {
+       free(fp->query);      /* release query buffer   */
+       fp->query = NULL;
+       }
     fp->qsize = 0;        /* reset query buffer sz  */
 
     free(fp);             /* release file structure */
@@ -43,9 +49,14 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
    struct ISQLFile *fp = (struct ISQLFile *) malloc(sizeof(struct ISQLFile));
    if (fp == NULL) return NULL;
 
+   /* initialize DB connection and statement handlers */
+   fp->hdbc = SQL_NULL_HDBC;
+   fp->hstmt = SQL_NULL_HSTMT;
+
    if (ISQLEnv==NULL) {
+      ISQLEnv=SQL_NULL_HENV;
       if (SQLAllocEnv(&ISQLEnv)!=SQL_SUCCESS) {
-	 odbcerror(ALLOC_ENV_ERR);
+	 odbcerror(fp, ALLOC_ENV_ERR);
 	 return 0;
 	 }
 
@@ -56,27 +67,30 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
       }
 
    if (SQLAllocConnect(ISQLEnv, &(fp->hdbc))!=SQL_SUCCESS) {
-      odbcerror(ALLOC_CONNECT_ERR);
+      odbcerror(fp, ALLOC_CONNECT_ERR);
       return 0;
       }
 
    if (SQLConnect(fp->hdbc,
-		  db, (SQLSMALLINT)strlen(db), 
+		  db, (SQLSMALLINT)strlen(db),
 		  StrLoc(*user), (SQLSMALLINT)StrLen(*user),
 		  StrLoc(*password), (SQLSMALLINT)StrLen(*password)) ==
        SQL_ERROR){
-      odbcerror(CONNECT_ERR);
+      odbcerror(fp, CONNECT_ERR);
       return 0;
       }
 
    if (SQLAllocStmt(fp->hdbc, &(fp->hstmt))!=SQL_SUCCESS) {
-      odbcerror(ALLOC_STMT_ERR);
+      odbcerror(fp, ALLOC_STMT_ERR);
       return 0;
       }
 
-   fp->tablename=malloc(StrLen(*table)+1); /* allocate space for table name */
-   strncpy(fp->tablename, StrLoc(*table), StrLen(*table));
-   fp->tablename[StrLen(*table)]='\0';
+   if (table) { /* allocate space for table name */
+      fp->tablename=malloc(StrLen(*table)+1);
+      strncpy(fp->tablename, StrLoc(*table), StrLen(*table));
+      fp->tablename[StrLen(*table)]='\0';
+      }
+   else fp->tablename = NULL;
 
    /* empty query buffer */
    fp->query=NULL;
@@ -93,7 +107,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
     SWORD colsize;
     SDWORD colsz;  /* SQLGetData() wants an SDWORD */
     SDWORD len;
-    
+
     char buff[BUFF_SZ]; /* data buffer */
 
     UCHAR colname[MAX_COL_NAME];
@@ -103,7 +117,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
     SWORD nullable;
 
     struct descrip fieldname[MAXTABLECOLS];
-    
+
     /* record structures */
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
@@ -112,29 +126,29 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 
     /* num columns in table */
     if (SQLNumResultCols(fp->hstmt, &numcols)!=SQL_SUCCESS) {
-      odbcerror(NUM_RESULT_COLS_ERR);
+      odbcerror(fp, NUM_RESULT_COLS_ERR);
       return Failed;
       }
-    
+
     /* record field names */
     for (i=1; i<=numcols; i++) {
       p=i-1;
       rc=SQLDescribeCol(fp->hstmt, i, colname, MAX_COL_NAME, &colsize,
                        &SQLType, &typesize, &scale, &nullable);
-      
+
       if (rc!=SQL_SUCCESS) {
-        odbcerror(DESCRIBE_COL_ERR);
+        odbcerror(fp, DESCRIBE_COL_ERR);
         return Failed;
       }
-      
+
       len=strlen(colname);
       StrLoc(fieldname[p])=alcstr(colname, len);
       StrLen(fieldname[p])=len;
     }
-   
+
     /* allocate record */
 
-    proc=dynrecord(&rectypename, fieldname, numcols); 
+    proc=dynrecord(&rectypename, fieldname, numcols);
     r = alcrecd(numcols, (union block *)proc);
     pR->dword=D_Record;
     pR->vword.bptr=(union block *) r;
@@ -142,10 +156,10 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
     /* while data to retrieve */
 
     if (SQLFetch(fp->hstmt)!=SQL_SUCCESS) {
-       odbcerror(FETCH_ERR);
+       odbcerror(fp, FETCH_ERR);
        return Failed;
     }
-     
+
     for(i=1; i<=numcols; i++) {
       SQLDescribeCol(fp->hstmt, i, colname, MAX_COL_NAME, &colsize,
                      &SQLType, &typesize, &scale, &nullable);
@@ -161,34 +175,34 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
         case SQL_CHAR:
         case SQL_VARCHAR:
         case SQL_LONGVARCHAR:
-        
+
         case SQL_BINARY:
         case SQL_VARBINARY:
         case SQL_LONGVARBINARY:
 
         case SQL_DECIMAL:
         case SQL_NUMERIC:
-         
+
         case SQL_DATE:
         case SQL_TIME:
         case SQL_TIMESTAMP:
-            
+
           /* allocate column */
           StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz):"";
           StrLen(r->fields[p])=colsz>0?colsz:0;
-            
+
           /* copy buffer to column */
-            
+
           len=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
           memcpy(StrLoc(r->fields[p]), buff, len);
-            
+
           /* still data to read (BLOBs) */
           while (rc==SQL_SUCCESS_WITH_INFO) {
             rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR,
                           StrLoc(r->fields[p])+len, BUFF_SZ, &colsz);
             len+=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
 	    }
-            
+
           break;
 
         case SQL_BIT:
@@ -215,12 +229,12 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
           /* allocate column */
           StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz):"";
           StrLen(r->fields[p])=colsz>0?colsz:0;
-            
+
           /* copy buffer to column */
-            
+
           len=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
           memcpy(StrLoc(r->fields[p]), buff, len);
-            
+
           /* still data to read (BLOBs) */
           while (rc==SQL_SUCCESS_WITH_INFO) {
             rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR,
@@ -230,47 +244,43 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 
           break;
 	  } /* switch */
-        
+
       } /* for */
 
    return Succeeded;
 }
 
 
-void odbcerror(int errornum)
+void odbcerror(struct ISQLFile *fp, int errornum)
 {
-  /*
-  char SQLState[6];
-  char ErrMsg[SQL_MAX_MESSAGE_LENGTH];
+   char SQLState[6];
+   static char ErrMsg[SQL_MAX_MESSAGE_LENGTH];
+   SDWORD NativeErr;
+   SWORD  ErrMsgLen;
 
-  SDWORD NativeErr;
-  SWORD  ErrMsgLen;
-  
-  SQLError(ISQLEnv, SQL_NULL_HDBC, hstmt, SQLState,&NativeErr,
-           ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen);
+   char *errmsg[]={
+      "file is not ODBC", "cannot release statement",
+      "cannot disconnect from database", "cannot release connection",
+      "cannot allocate statement", "cannot allocate environment",
+      "cannot allocate connection", "cannot connect to database",
+      "cannot exec SQL command", "cannot close cursor",
+      "cannot get table columns", "cannot get table primary keys",
+      "cannot determine number result columns",
+      "cannot get columns description", "cannot fetch data",
+      "cannot get tables information", "row has no key definition",
+      "row has too many keys defined", "row is missing one or more table keys"
+      };
 
-  printf("*** %s ***\n", ErrMsg);
-  
-  */
-  
-  char *errmsg[]={
-    "file is not ODBC", "cannot release statement",
-    "cannot disconnect from database", "cannot release connection", 
-    "cannot allocate statement", "cannot allocate environment",
-    "cannot allocate connection", "cannot connect to database",
-    "cannot exec SQL command", "cannot close cursor",
-    "cannot get table columns", "cannot get table primary keys",
-    "cannot determine number result columns","cannot get columns description",
-    "cannot fetch data", "cannot get tables information", 
-    "row has no key definition", "row has too many keys defined",
-    "row is missing one or more table keys"
-  };
-
-  
-  /* set Icon error constants */
-  
-  k_errornumber=errornum;
-  k_errortext=errmsg[errornum-NOT_ODBC_FILE_ERR];
+   k_errornumber=errornum;
+   if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState,&NativeErr,
+		       ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
+	      SQL_NO_DATA_FOUND))
+      k_errortext=alcstr(ErrMsg, strlen(ErrMsg)+1);
+   else {
+      if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))
+	 k_errortext=errmsg[errornum-NOT_ODBC_FILE_ERR];
+      else k_errortext = "unidentified odbc error";
+      }
 }
 
 /* allocate memory for query buffer */

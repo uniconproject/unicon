@@ -13,7 +13,7 @@
  * -- Unicon ODBC support functions (2.x compliant)
  *
  * dbcolumns, dbdelete, dbinsert, dbkeys,
- * dbselect, dbsql, dbtables, dbupdate
+ * dbselect, sql, dbtables, dbupdate
  */
 
 #ifdef ISQL
@@ -48,8 +48,8 @@ SQLHENV ISQLEnv=NULL;           /* global environment variable */
 
 /*-- functions implementation --*/
 
-"dbcolumns(f) - get information about an ODBC file column"
-function{0,1} dbcolumns(f)
+"dbcolumns(f, T) - get information about columns in an ODBC table"
+function{0,1} dbcolumns(f,table_name)
   if !is:file(f) then runerr(105, f)   /* f is not a file */
 
   abstract {
@@ -57,9 +57,7 @@ function{0,1} dbcolumns(f)
   }
 
   body {
-
     struct descrip fieldname[DBCOLNCOLS]; /* record field names */
-
     tended struct descrip R;
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
@@ -99,23 +97,28 @@ function{0,1} dbcolumns(f)
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
-    }
+      }
 
     fp=FDESC(f); /* file descriptor */
 
+    if (is:null(table_name) && (fp->tablename != NULL)) {
+       MakeStr(fp->tablename, strlen(f->tablename), &table_name);
+       }
+    else if (!Qual(table_name)) runerr(103, table_name);
+
     if (SQLAllocStmt(fp->hdbc, &hstmt)==SQL_ERROR) {
-      odbcerror(ALLOC_STMT_ERR);
+      odbcerror(fp, ALLOC_STMT_ERR);
       fail;
     }
 
     retcode=SQLColumns(hstmt,      
                        NULL, 0,                /* all catalogs */
                        NULL, 0,                /* all schemas */
-                       fp->tablename, SQL_NTS, /* table */
+                       StrLoc(table_name), StrLen(table_name), /* table */
                        NULL, 0);               /* All columns */
 
     if (retcode!=SQL_SUCCESS) {
-      odbcerror(COLUMNS_ERR);
+      odbcerror(fp, COLUMNS_ERR);
       fail;
     }
         
@@ -204,98 +207,12 @@ function{0,1} dbcolumns(f)
     }
       
     if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) { /* release statement */
-      odbcerror(FREE_STMT_ERR);
+      odbcerror(fp, FREE_STMT_ERR);
       fail;
     }
     return L;
   }
 end
-
-
-/*
- *
- * dbdelete(f, filter)
- *
- * build a DELETE SQL query like:
- *
- * DELETE FROM <table> WHERE <filter>
- *
- * Partial parameters: dbdelete(f) => dbdelete(f,"") (DANGEROUS)
- *
- * Null parameters: dbdelete(f,) => dbdelete(f,"") (DANGEROUS)
- *
- * if filter is null/"" filter is ignored (ALL ROWS ARE REMOVED FROM TABLE)
- */
-
-"dbdelete(f, filter) - delete one or more rows from a table"
-function{0,1} dbdelete(f, x[n])
-  
-  abstract {
-    return integer
-  }
-
-  body {
-    int i;
-    char *query;
-    struct ISQLFile *fp;
-    
-    HSTMT hstmt;
-    
-    long querysize;
-
-    if (!is:file(f)) runerr(105, f);
-
-    for (i=0; i<n; i++) {
-      if (!(Qual(x[i]) || is:null(x[i]))) runerr(103, x[i]);
-    }
-    
-    if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) {
-      runerr(NOT_ODBC_FILE_ERR, f);
-    }
-
-    fp=FDESC(f);
-
-    /* allocate string for SQl statement construction */
-    /* DELETE FROM <table> [WHERE <filter>]\0  */
-      
-    querysize=(n==0 || is:null(x[0]))? strlen(fp->tablename) + 13 :
-               strlen(fp->tablename) + StrLen(x[0]) + 21;
-   
-    
-    qalloc(fp, querysize);
-    query=fp->query;
-
-    /* build SQL statement */
-    strcpy(query,"DELETE ");
-    strcat(query,"FROM ");
-    strcat(query, fp->tablename);
-
-    /* add criteria if any specified */
-    if ((n!=0) && (!is:null(x[0])) && (StrLen(x[0])>0)) {
-      strcat(query," WHERE ");
-      strncat(query, StrLoc(x[0]), StrLen(x[0]));
-    }
-
-    /* allocate SQL statement handler */
-    if (SQLAllocStmt(fp->hdbc, &hstmt)==SQL_ERROR) {
-      odbcerror(ALLOC_STMT_ERR);
-      fail;
-    }
-
-    if (SQLExecDirect(hstmt, query, SQL_NTS)!=SQL_SUCCESS) {
-      odbcerror(EXEC_DIRECT_ERR);
-      fail;
-    }
-
-    if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) {
-      odbcerror(FREE_STMT_ERR);
-      fail;
-    }
-
-    return C_integer(0);
-  }
-end
-
 
 "dbdriver(f) - return driver information"
 function {0,1} dbdriver(f)
@@ -370,138 +287,8 @@ function {0,1} dbdriver(f)
 end
 
 
-"dbinsert(f, rec) - insert a row into a table"
-function{0,1} dbinsert(f, rec)
-  if !is:file(f) then
-    runerr(105, f);
-
-  if !is:record(rec) then
-    runerr(105, f);
-
-  abstract {
-    return integer;
-  }
-
-  body {
-    HSTMT  hstmt;
-    tended char *cfield;
-    char *query;
-
-    UWORD i;
-    SWORD rc;
-
-    SWORD nfields;
-    int querysize=0;
-
-    struct ISQLFile *fp;
-
-    struct descrip fieldname[MAXTABLECOLS]; 
-
-    /* record structures */
-    tended struct descrip R;
-    tended struct descrip rectypename=emptystr;
-    tended struct b_record *r;
-    struct b_proc *proc;
-
-
-    if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
-      runerr(NOT_ODBC_FILE_ERR, f);
-    }
-
-    fp=FDESC(f);
-
-    nfields=BlkLoc(rec)->record.recdesc->proc.nfields;
-
-    /* calculate query size */
-    
-    for (i=0; i<nfields; i++) {
-      if (Qual(RFVAL[i])) { /* field value is a string */
-        querysize+=StrLen(RFVAL[i]) + 2; /* 2 hyphens */
-      }
-      else {
-        /* try convert field value to C string */
-        if (!cnv:C_string(RFVAL[i], cfield))
-          runerr(103, rec);
-        querysize+=strlen(cfield);
-      }
-
-      /* field name */
-      querysize+=StrLen(RFNAME[i]);
-    }
-   
-    /* calculate amount of bytes to allocate SQL statement */
-    /* INSERT INTO <table> ( , , ) VALUES ( , , )          */
-    
-    querysize += 26 + strlen(fp->tablename) + 2*(nfields-1);
-
-    qalloc(fp, querysize);
-    query=fp->query;
-
-    strcpy(query, "INSERT INTO ");
-    strcat(query, fp->tablename);
-    strcat(query, " (");
-    
-    /* add record field names to the SQL statement */
-    for (i=0; i<nfields-1; i++) {
-      strncat(query, StrLoc(RFNAME[i]), StrLen(RFNAME[i]));
-      strcat(query,","); /* separator */
-    }
-
-    /* last field name (do not append ",") */
-    strncat(query, StrLoc(RFNAME[nfields-1]), StrLen(RFNAME[nfields-1]));
-
-    strcat(query, ") VALUES (");
-    
-    /* record field values */
-    for(i=0; i<nfields-1; i++) {
-      if (Qual(RFVAL[i])) { /* field value is a string */
-         strcat(query, "'");
-         strncat(query, StrLoc(RFVAL[i]), StrLen(RFVAL[i]));
-         strcat(query, "'");
-      }
-      else {
-        cnv:C_string(BlkLoc(rec)->record.fields[i], cfield);
-        strcat(query, cfield);
-      }
-      strcat(query, ",");
-    }
-
-    /* add last field */
-    i=nfields-1;
-    if (Qual(RFVAL[i])) { /* field value is a string */
-      strcat(query, "'");
-      strncat(query, StrLoc(RFVAL[i]), StrLen(RFVAL[i]));
-      strcat(query, "'");
-    }
-    else {
-      cnv:C_string(BlkLoc(rec)->record.fields[i], cfield);
-      strcat(query, cfield);
-    }
-    
-    strcat(query, ")"); /* close parameter values list */
-
-    if (SQLAllocStmt(fp->hdbc, &hstmt)!=SQL_SUCCESS) {
-      odbcerror(ALLOC_STMT_ERR);
-      fail;
-    }
-
-    if (SQLExecDirect(hstmt, query, SQL_NTS)!=SQL_SUCCESS) {
-      odbcerror(EXEC_DIRECT_ERR);
-      fail;
-    }
-
-    if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) {
-      odbcerror(FREE_STMT_ERR);
-      fail;
-    }
-
-    return C_integer(0);
-  }
-end
-
-
-"dbkeys(f) - get information about ODBC file primary keys"
-function{1} dbkeys(f)
+"dbkeys(f, T) - get information about ODBC table primary keys"
+function{1} dbkeys(f, table_name)
   if !is:file(f) then
     runerr(105, f)              /* f is not a file */
 
@@ -543,8 +330,13 @@ function{1} dbkeys(f)
 
     fp=FDESC(f); /* file descriptor */
       
+    if (is:null(table_name) && (fp->tablename != NULL)) {
+       MakeStr(fp->tablename, strlen(f->tablename), &table_name);
+       }
+    else if (!Qual(table_name)) runerr(103, table_name);
+
     if (SQLAllocStmt(fp->hdbc, &hstmt)!=SQL_SUCCESS) {
-      odbcerror(ALLOC_STMT_ERR);
+      odbcerror(fp, ALLOC_STMT_ERR);
       fail;
     }
 
@@ -554,10 +346,10 @@ function{1} dbkeys(f)
     retcode=SQLPrimaryKeys(hstmt,      
                            NULL, 0,                 /* all catalogs */
                            NULL, 0,                 /* all schemas */
-                           fp->tablename, SQL_NTS); /* table */
+                           StrLoc(table_name), StrLen(table_name)); /* table */
 
     if (retcode!=SQL_SUCCESS) {
-      odbcerror(PRIMARY_KEYS_ERR);
+      odbcerror(fp, PRIMARY_KEYS_ERR);
       fail;
     }
    
@@ -596,7 +388,7 @@ function{1} dbkeys(f)
     }
 
     if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) {
-      odbcerror(FREE_STMT_ERR);
+      odbcerror(fp, FREE_STMT_ERR);
       fail;
     }
 
@@ -734,108 +526,9 @@ function {0,1} dbproduct(f)
       }
 end
 
-/*
- * dbselect(f, cols, filter, order)
- *
- * build a SELECT SQL query like:
- *
- * SELECT <cols> FROM <table> WHERE <filter> ORDER BY <order>
- *
- * Partial parameters: dbselect(f,"*","id=1") (no order specified)
- *
- * Null parameters: dbselect(f,,,) => dbselect(f,"*")
- *
- * if cols is null/"" cols = "*"
- * if filter is null/"" filter is ignored
- * if order is null/"" order is ignored
- */
- 
-"dbselect(f, cols, filter, order) - select cols from f using filter/order"
-function{0,1} dbselect(f, x[n])
-  
-  abstract {
-    return integer
-  }
 
-  body {
-    char *query;
-
-    struct ISQLFile *fp;
-    int rc, i;
-    long querysize;
-
-    if (!is:file(f)) runerr(105, f);
-    
-    /* parameter x[i] has to be a string */
-    
-    for (i=0; i<n; i++) {
-      /* if parameters are not a string or not null */
-      if (!(Qual(x[i]) || is:null(x[i]))) runerr(103, x[i]);
-    }
-   
-    if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) {
-      runerr(NOT_ODBC_FILE_ERR, f); /* not ODBC file */
-    }
-    
-    fp=FDESC(f);
-
-    /* allocate string for SQL statement construction                   */
-    /* SELECT <cols> FROM <table> [WHERE <filter>] [ORDER BY <order>]\0  */
-    
-    querysize=0;
-    
-    switch (n) {
-      case 3: querysize += (is:null(x[2]))?0:StrLen(x[2]) + 10; /* " ORDER BY " */
-      case 2: querysize += (is:null(x[1]))?0:StrLen(x[1]) +  7; /* " WHERE "    */
-      case 1: querysize += (is:null(x[0]))?0:StrLen(x[0]);
-      case 0: querysize += strlen(fp->tablename) + 15; /* "SELECT * FROM \0" */
-    }
-    
-    qalloc(fp, querysize);
-    query=fp->query;
-
-    /* build SQL statement */
-    strcpy(query,"SELECT ");
-    
-    /* if columns list is null put an "*" as default */
-     
-    if (n==0 || (n>0 && StrLen(x[0])==0) || (is:null(x[0]))) {
-      strcat(query, "*");
-    }
-    else {
-      strncat(query, StrLoc(x[0]), StrLen(x[0]));
-    }
-         
-    strcat(query," FROM ");
-    strcat(query, fp->tablename);
-
-    /* add criteria if any */
-    if (n>1 && StrLen(x[1])>0) {
-      strcat(query," WHERE ");
-      strncat(query, StrLoc(x[1]), StrLen(x[1]));
-    }
-    
-    /* add order criteria if any */
-    if (n>2 && StrLen(x[2])>0) {
-      strcat(query," ORDER BY ");
-      strncat(query, StrLoc(x[2]), StrLen(x[2]));
-    }
-    
-    SQLFreeStmt(fp->hstmt, SQL_CLOSE);
-
-    /* execute SQL statement */
-    if (SQLExecDirect(fp->hstmt, query, SQL_NTS)!=SQL_SUCCESS) {
-      odbcerror(EXEC_DIRECT_ERR);
-      fail;
-    }
-
-    return C_integer(0);
-  }
-end
-
-
-"dbsql(f, query) - submit an SQL query on an ODBC file f"
-function{0,1} dbsql(f, query)
+"sql(f, query) - submit an SQL query on an ODBC file f"
+function{0,1} sql(f, query)
   if !is:file(f) then
     runerr(105, f)              /* f is not a file */
 
@@ -862,7 +555,7 @@ function{0,1} dbsql(f, query)
     rc=SQLExecDirect(fp->hstmt, StrLoc(query), StrLen(query));
 
     if(rc==SQL_ERROR || rc==SQL_SUCCESS_WITH_INFO) {
-      odbcerror(EXEC_DIRECT_ERR);
+      odbcerror(fp, EXEC_DIRECT_ERR);
       fail;
     }
 
@@ -924,14 +617,14 @@ function{0,1} dbtables(f)
     fp=FDESC(f); /* file descriptor */
 
     if (SQLAllocStmt(fp->hdbc, &hstmt)!=SQL_SUCCESS) {
-      odbcerror(ALLOC_STMT_ERR);
+      odbcerror(fp, ALLOC_STMT_ERR);
       fail;
     }
 
     retcode=SQLTables(hstmt, NULL, 0, NULL, 0, NULL, 0, NULL, 0);
 
     if (retcode!=SQL_SUCCESS) {
-      odbcerror(TABLES_ERR);
+      odbcerror(fp, TABLES_ERR);
       fail;
     }    
      
@@ -980,229 +673,11 @@ function{0,1} dbtables(f)
     }
     
     if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) {
-      odbcerror(FREE_STMT_ERR);
+      odbcerror(fp, FREE_STMT_ERR);
       fail;
     }
 
     return L;
-  }
-end
-
-
-"dbupdate(f, rec) - update a row of a table"
-function{0,1} dbupdate(f, rec)
-  if !is:file(f) then
-    runerr(105, f);
-
-  if !is:record(rec) then
-    runerr(105, f);
-
-  abstract {
-    return integer;
-  }
-
-  body {
-    HSTMT kstmt;           /* SQLPrimaryKeys statement  */
-    HSTMT hstmt;           /* query statement handler */
-    
-    char szPkCol[COL_LEN]; /* primary key column name   */
-    char *pos=NULL;        /* key positions in record field list */
-    char *query;           /* SQL query */
-    
-    SQLINTEGER cbPkCol;    /* column size */
-    
-    short nkeys=0;         /* number of key columns found */
-    short keyfound=1;      /* let enter loop */
-
-    UWORD i;
-    SWORD rc;
-
-    int nfields;           /* number of record fields */
-    int n;
-
-    long querysize=0;
-
-    tended char *cfield;   /* field conversion */
-  
-    struct ISQLFile *fp;   /* file pointer */
-
-    struct descrip fieldname[MAXTABLECOLS]; /* record field name */
-    
-    /* record structures */
-    tended struct descrip R;
-    tended struct descrip rectypename=emptystr;
-    tended struct b_record *r;
-    struct b_proc *proc;
-
-    if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
-      runerr(NOT_ODBC_FILE_ERR, f);
-    }
-
-    fp=FDESC(f);
-
-    if (SQLAllocStmt(fp->hdbc, &kstmt)!=SQL_SUCCESS) {
-      odbcerror(ALLOC_STMT_ERR);
-      fail;
-    }
-
-    /* bind key column name */
-    SQLBindCol(kstmt, 4, SQL_C_CHAR, szPkCol, COL_LEN, &cbPkCol);
-    
-    /* get column names that comprise primary key */
-    rc=SQLPrimaryKeys(kstmt, NULL, 0, NULL, 0, fp->tablename, SQL_NTS);
-    
-    if (rc!=SQL_SUCCESS) {
-      odbcerror(PRIMARY_KEYS_ERR);
-      fail;
-    }
-    
-    nfields=BlkLoc(rec)->record.recdesc->proc.nfields;
-    
-    pos=calloc(nfields, sizeof(int)); /* key positions (init el.s to zero) */
-    
-    nkeys=0; /* no keys */
-
-    while (SQLFetch(kstmt)==SQL_SUCCESS && keyfound==1) {
-      keyfound=0; /* key not found */
-      
-      for (i=0; i<nfields; i++) {
-        /* 
-           compare fetched key with i-th field name
-           (no C_string conversion required using strncasecmp())
-        */
-        if (strncasecmp(szPkCol, StrLoc(RFNAME[i]), StrLen(RFNAME[i]))==0) {
-          keyfound=1; /* key found in record */
-          nkeys++;
-          pos[i]='k'; /* it's a key */
-          break;
-        }
-      } 
-    }
-
-    if (SQLFreeStmt(kstmt, SQL_DROP)!=SQL_SUCCESS) { /* release statement handler */
-      free(pos);
-      odbcerror(FREE_STMT_ERR);
-      fail;
-    }
-    
-    if (nkeys==0) { /* record has no key defined */
-      free(pos);
-      odbcerror(NO_KEY_DEFINED_ERR);
-      fail;
-    }
-
-    if (nkeys==nfields) { /* record has no nonkey columns defined */
-      free(pos);
-      odbcerror(TOO_MANY_KEYS_ERR);
-      fail;
-    }
-    
-    if (keyfound==0) { /* record misses table keys */
-      free(pos);
-      odbcerror(KEY_MISSING_ERR);
-      fail;
-    }
-
-    /* calculate UPDATE query length */
-
-    for (i=0; i<nfields; i++) {
-      /* field is a string */
-      if (Qual(RFVAL[i])) {
-        querysize+=StrLen(RFVAL[i]) + 2; /* 2 hyphens */
-      }
-      else {
-        /* convert field value to C string */
-        if (!cnv:C_string(RFVAL[i], cfield))
-          runerr(103, rec);
-
-        querysize+=strlen(cfield); /* string conversion length */
-      }
-
-      /* add field name length */
-      querysize+=StrLen(RFNAME[i]);
-    }
-   
-    /* calculate amount of bytes to allocate SQL statement       */
-    /* UPDATE <table> SET c1=..., c2=... WHERE k1=... AND K2=... */
-    
-    querysize+=20 + strlen(fp->tablename) + nfields + nfields-nkeys-1
-                  + 5*(nkeys-1);
-
-    qalloc(fp, querysize);
-    query=fp->query;
-
-    strcpy(query, "UPDATE ");
-    strcat(query, fp->tablename);
-    strcat(query, " SET ");
-    
-    /* add record field names to the SQL statement excluding key(s) */
-    
-    n=nfields-nkeys;
-    for (i=0; i<nfields; i++) {
-      if (pos[i]!='k') {
-        strncat(query, StrLoc(RFNAME[i]), StrLen(RFNAME[i])); /* field name */
-        strcat(query,"=");
-        
-        if (Qual(RFVAL[i])) { /* field value is string */
-          strcat(query, "'");
-          strncat(query, StrLoc(RFVAL[i]), StrLen(RFVAL[i]));
-          strcat(query, "'");
-        }
-        else {
-          cnv:C_string(RFVAL[i], cfield);
-          strcat(query, cfield);
-        }
-        
-        if (--n==0) break; /* all fields processed */
-        
-        strcat(query, ","); /* fields separator */
-      }
-    }
-
-    /* WHERE clause part */
-    strcat(query, " WHERE ");
-    
-    /* key list */
-
-    for(i=0; i<nfields; i++) {
-      if (pos[i]=='k') {
-        strncat(query, StrLoc(RFNAME[i]), StrLen(RFNAME[i]));
-        strcat(query,"=");
-
-        if (Qual(RFVAL[i])) { /* field value is a string */
-          strcat(query, "'");
-          strncat(query, StrLoc(RFVAL[i]), StrLen(RFVAL[i]));
-          strcat(query, "'");
-        }
-        else {
-          cnv:C_string(RFVAL[i], cfield);
-          strcat(query, cfield);
-        }
-
-        if (--nkeys==0) break; /* all keys processed */
-        
-        strcat(query, " AND "); /* columns separator */
-      }
-    }
-    
-    free(pos);
-    
-    if (SQLAllocStmt(fp->hdbc, &hstmt)!=SQL_SUCCESS) {
-      odbcerror(ALLOC_STMT_ERR);
-      fail;
-    }
-
-    if (SQLExecDirect(hstmt, query, SQL_NTS)!=SQL_SUCCESS) {
-      odbcerror(EXEC_DIRECT_ERR);
-      fail;
-    }
-    
-    if (SQLFreeStmt(hstmt, SQL_DROP)!=SQL_SUCCESS) {
-      odbcerror(FREE_STMT_ERR);
-      fail;
-    }
-
-    return C_integer(rc);
   }
 end
 

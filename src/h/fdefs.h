@@ -326,15 +326,11 @@ FncDef(fetch,2)
 
 /* SQL/ODBC database support */
 #ifdef ISQL
-  FncDef(dbcolumns,1)
-  FncDef(dbdelete,2)
+  FncDef(dbcolumns,2)
   FncDef(dbdriver,1)
-  FncDef(dbinsert,2)
-  FncDef(dbkeys,1)
+  FncDef(dbkeys,2)
   FncDef(dblimits,1)
   FncDef(dbproduct,1)
-  FncDefV(dbselect)
-  FncDef(dbsql,2)
+  FncDef(sql,2)
   FncDef(dbtables,1)
-  FncDef(dbupdate,2)
 #endif					/* ISQL */

@@ -915,11 +915,16 @@ Deliberate Syntax Error
 
 #ifdef ISQL
    if (status & Fs_ODBC) {
-      if (n < 3) runerr(103);
+      if (n < 2) runerr(103);
       if (!is:string(attr[0])) runerr(103, attr[0]);
       if (!is:string(attr[1])) runerr(103, attr[1]);
-      if (!is:string(attr[2])) runerr(103, attr[2]);
-      f = isql_open(fnamestr, attr, attr+1, attr+2);
+      if (n >= 3) {
+	 if (!is:string(attr[2])) runerr(103, attr[2]);
+	 f = isql_open(fnamestr, attr, attr+1, attr+2);
+	 }
+      else {
+	 f = isql_open(fnamestr, NULL, attr+1, attr+2);
+	 }
       }
    else
 #endif					/* ISQL */

@@ -273,30 +273,60 @@ procedure errsrc()
   iwrites(&errout,"File ",\fName,"; Line ",\fLine,": Unicon/")
 end
 
+#
+# Canonize a path.  This involves :-
+#   - lower-casing the name (Windows only)
+#   - changing backslashes to forward slashes (Windows)
+#   - expanding non-absolute paths to absolute ones
+#     using chdir()
+#   - adding a trailing /
+#   - removing any ".." or "." directories
+#
 procedure canonize(path)
-   notslash := &cset -- '/'
+   local res, cd
+
    path := map(path, "\\", "/")
-   rv := ""
-   path ? {
-      if rv ||:= tab(any(&letters)) || =":" then drive:=2 else drive:=0
-      rv ||:= tab(many('/'))
-      while component := tab(many(notslash)) do {
-	 if ="/../" then component := ""
-	 rv ||:= component
-	 rv ||:= ="/"
-         }
-      rv ||:= tab(0)
-   }
-   rv[drive:0] := map(rv[drive:0])
-   return rv
+
+$ifdef _MS_WINDOWS_NT
+   path := map(path)
+   if not (path[1:3] == "//" | path[2:4] == ":/") then {
+      cd := map(chdir(), "\\", "/")
+      if path[1] == "/" then
+         # Root of current drive.
+         path := cd[1:3] || path
+      else
+         path := cd || "/" || path
+      }
+$else
+   if path[1] ~== "/" then
+      path := chdir() || "/" || path
+$endif
+
+   if path[-1] ~== "/" then
+      path ||:= "/"
+
+   res := ""
+   path ? repeat {
+      res ||:= tab(upto('/') | 0)
+      if pos(0) then
+         break
+      if match("/../") then {
+         move(3)
+         while res[-1] ~== "/" do
+            res[-1] := ""
+         res[-1] := ""
+         } 
+      else if match("/./") then
+         move(2)
+      else
+         res ||:= move(1)
+      }
+   return res
 end
 
 procedure writelink(dir, s)
    if map(s[-4:0]) == ".icn" then
       s[-4:0] := ""
-   if dir == ("." || ("" | "/" | "\\")) then dir := chdir()
-   if dir[-1] ~== PATHCHAR then
-      dir ||:= PATHCHAR
    write(yyout,"link \"",canonize(dir),map(s,"\\","/"),"\"")
 end
 procedure trans(argstr, prefix)

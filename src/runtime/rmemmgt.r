@@ -344,8 +344,13 @@ int region;
    struct rlimit rl;
 
    getrlimit(RLIMIT_STACK , &rl);
-   if (rl.rlim_cur < curpstate->blockregion->size) {
-      rl.rlim_cur = curpstate->blockregion->size;
+   /*
+    * Grow the C stack, proportional to the block region. Seems crazy large,
+    * but garbage collection uses stack proportional heap size.  May want to
+    * move this whole #if block so it is only performed when the heap grows.
+    */
+   if (rl.rlim_cur < curblock->size) {
+      rl.rlim_cur = curblock->size;
       setrlimit(RLIMIT_STACK , &rl);
       }
 #endif

@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.4 2004-01-26 15:31:09 rparlett Exp $
+# $Id: textfield.icn,v 1.5 2004-02-12 16:45:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -23,8 +23,10 @@ $include "guih.icn"
 # The horizontal size must be set by the {set_size()} method:
 # there is no default (the vertical size will default, however).
 #
-# A TEXTFIELD_RETURN_EVENT is generated when return is pressed,
-# and a TEXTFIELD_CHANGED_EVENT whenever the contents are changed.
+# An ACTION_EVENT is generated when return is pressed,
+# a CONTENT_CHANGED_EVENT whenever the contents are changed,
+# a CURSOR_MOVED_EVENT when the cursor moves, and a
+# SELECTION_CHANGED_EVENT whenver the selection changes.
 #
 # @example
 # @ t := TextField()
@@ -476,7 +478,7 @@ class TextField : Component(
    end
 
    method got_focus(e)
-      if e === ("\t" | Shift_Tab) then {
+      if not(e === (&lpress | &rpress | &mpress)) then {
          self.cursor := *self.contents + 1
          self.mark := 1
       }

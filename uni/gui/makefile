@@ -1,5 +1,7 @@
 base = $(shell dirname `pwd`)
-export IPATH:=$(base)/lib
+export ICON_IPL:=$(shell dirname $(base))/ipl
+export IPATH:=$(base)/lib $(ICON_IPL)/lib
+export LPATH:=$(ICON_IPL)/incl
 
 all: libs
 
@@ -7,7 +9,7 @@ clean:
 	rm -f *.u uniclass.dir uniclass.pag 
 
 deps:
-	$(base)/bin/unidep *.icn -p libs
+	unidep *.icn -p libs
 
 %.u: %.icn
 	unicon -c $*
@@ -21,7 +23,7 @@ checkboxgroup.u : checkboxgroup.icn guih.icn keysyms.icn
 checkboxmenuitem.u : checkboxmenuitem.icn guiprocs.u menucomponent.u toggle.u guih.icn keysyms.icn
 circulate.u : circulate.icn component.u guiprocs.u iconbutton.u label.u guih.icn keysyms.icn
 clipboard.u : clipboard.icn
-component.u : component.icn dispatcher.u drag.u event.u filterlistener.u guiprocs.u ticker.u guih.icn keysyms.icn
+component.u : component.icn drag.u event.u filterlistener.u guiprocs.u ticker.u guih.icn keysyms.icn
 dialog.u : dialog.icn component.u dispatcher.u guih.icn keysyms.icn
 dispatcher.u : dispatcher.icn guih.icn keysyms.icn
 displayscrollarea.u : displayscrollarea.icn linebasedscrollarea.u guih.icn keysyms.icn
@@ -59,7 +61,7 @@ progressbar.u : progressbar.icn component.u guiprocs.u guih.icn keysyms.icn
 rangespin.u : rangespin.icn editspin.u spin.u guih.icn keysyms.icn
 scrollarea.u : scrollarea.icn component.u guiprocs.u scrollbar.u guih.icn keysyms.icn
 scrollbar.u : scrollbar.icn component.u dispatcher.u guiprocs.u iconbutton.u guih.icn keysyms.icn
-selectablescrollarea.u : selectablescrollarea.icn linebasedscrollarea.u scrollarea.u guih.icn keysyms.icn
+selectablescrollarea.u : selectablescrollarea.icn component.u linebasedscrollarea.u scrollarea.u guih.icn keysyms.icn
 selectablescrollareadndhandler.u : selectablescrollareadndhandler.icn dndhandler.u guih.icn keysyms.icn
 sizer.u : sizer.icn component.u guih.icn keysyms.icn
 slider.u : slider.icn component.u dispatcher.u guiprocs.u guih.icn keysyms.icn

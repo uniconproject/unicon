@@ -1,5 +1,5 @@
 #
-# $Id: tabset.icn,v 1.2 2004-01-25 23:04:54 rparlett Exp $
+# $Id: tabset.icn,v 1.3 2004-02-12 16:45:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -121,12 +121,28 @@ class TabSet : Component(
    end
 
    method handle_event(e)
-      if e === (&lpress | &rpress | &mpress) & (self.y <= &y < self.y + self.tab_h) then {
+      if &meta & m := find_key(e) then {
+         self.set_which_one(m)
+         create_event_and_fire(SELECTION_CHANGED_EVENT, e)     
+      } else if e === (&lpress | &rpress | &mpress) & (self.y <= &y < self.y + self.tab_h) then {
          self.set_which_one(which_tab())
          create_event_and_fire(SELECTION_CHANGED_EVENT, e)     
       }
 
       which_one.handle_event(e)
+   end
+
+   #
+   # Find the TabItem with the given accelerator.  This isn't done using
+   # the handle_accel method in the TabItem because only the current 
+   # TabItem is treated as being unhidden.
+   # @p
+   method find_key(k)
+      local m
+      every m := !self.children do {
+         if m.accel === k & not(m.is_shaded()) then
+            return m
+      }
    end
 
    #

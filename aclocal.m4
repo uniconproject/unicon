@@ -150,7 +150,7 @@ if test -n "${OPENGL_HOME}"
 then
         OPENGL_OLD_LDFLAGS=$LDFLAGS
         OPENGL_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${OPENGL_HOME}/lib"
+        LDFLAGS="$LDFLAGS -lm -L${OPENGL_HOME}/lib"
         CPPFLAGS="$CPPFLAGS -I${OPENGL_HOME}/include"
         AC_LANG_SAVE
         AC_LANG_C

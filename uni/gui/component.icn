@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.4 2004-05-09 20:04:05 rparlett Exp $
+# $Id: component.icn,v 1.5 2004-05-10 13:57:44 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -112,17 +112,18 @@ class Component : Ticker : SetFields (
    #
    event_listener_list,
    #
-   # The handler for drag and drop operations
-   #
-   dnd_handler,
-   #
    # Flag indicating whether component is up-to-date on the screen
    #
    valid,
    #
    # Mnemonic key for keyboard accelerators.
    #
-   accel
+   accel,
+   #
+   # Flags to turn on drag and drop
+   #
+   allow_drag_flag,
+   allow_drop_flag
    )
 
    #
@@ -848,20 +849,6 @@ class Component : Ticker : SetFields (
    end
 
    #
-   # Set the drag and drop handler
-   #
-   method set_dnd_handler(h)
-      self.dnd_handler := h
-   end
-
-   #
-   # Get the drag and drop handler Component
-   #
-   method get_dnd_handler()
-      return self.dnd_handler
-   end
-
-   #
    # Drag and drop helper to invoke can_drag
    #
    method invoke_can_drag(ev)
@@ -870,7 +857,7 @@ class Component : Ticker : SetFields (
          if x := c.invoke_can_drag(ev) then
             return x
       }
-      if o := (\self.dnd_handler).can_drag(ev) then
+      if \allow_drag_flag & o := can_drag(ev) then
          return Drag(self, o, ev)
    end
 
@@ -878,7 +865,7 @@ class Component : Ticker : SetFields (
    # Drag and drop helper to invoke drag_event
    #
    method invoke_drag_event(d)
-      return (!self.children).invoke_drag_event(d) | (\self.dnd_handler).drag_event(d)
+      return (!self.children).invoke_drag_event(d) | (\allow_drop_flag & drag_event(d))
    end
 
    #
@@ -890,7 +877,7 @@ class Component : Ticker : SetFields (
          if x := c.invoke_can_drop(d) then
             return x
       }
-      if (\self.dnd_handler).can_drop(d) then
+      if \allow_drop_flag & can_drop(d) then
          return self
    end
 
@@ -898,7 +885,7 @@ class Component : Ticker : SetFields (
    # Drag and drop helper to invoke end_drag
    #
    method invoke_end_drag(d, c)
-      (\self.dnd_handler).end_drag(d, c)
+      end_drag(d, c)
    end
 
    #
@@ -906,12 +893,97 @@ class Component : Ticker : SetFields (
    #
    method invoke_drag_reset()
       every (!self.children).invoke_drag_reset()
-      (\self.dnd_handler).drag_reset()
+      drag_reset()
+   end
+
+   #
+   # Invoked on a drag gesture; if the  component wishes to start a drag and drop session,
+   # it should succeed, otherwise it should fail.
+   #
+   # NB - this method will only be invoked if the allow_drag flag is non-null.
+   #
+   # @param ev the Icon event, one of &ldrag, &rdrag, &mdrag.
+   #
+   method can_drag(ev)
+   end
+
+   #
+   # Invoked during a drag.  The component may update itself accordingly to indicate a potential
+   # drop.  If it succeeds, then the mouse cursor will be changed accordingly, to indicate this.
+   #
+   # NB - this method will only be invoked if the allow_drop flag is non-null.
+   #
+   # @param d the current Drag object.
+   #
+   method drag_event(d)
+   end
+
+   #
+   # Invoked on a drop.  If the component accepts the drop, it should handle it and succeed;
+   # otherwise it should fail.
+   #
+   # NB - this method will only be invoked if the allow_drop flag is non-null.
+   #
+   # @param d the current Drag object.
+   #
+   method can_drop(d)
+   end
+
+   #
+   # Invoked on the component that started the drag, after a successful drop
+   # @param d the current Drag object.
+   # @param c the component that accepted the drop
+   #
+   method end_drag(d, c)
+   end
+
+   #
+   # Invoked at the end of drag and drop (on all components) to clear any drag state
+   #
+   method drag_reset()
+   end
+
+   #
+   # Configure the component to allow drags, if it is so capable.
+   #
+   method set_allow_drag()
+      return self.allow_drag_flag := 1
+   end
+
+   #
+   # Configure the component to disallow drags.
+   #
+   method clear_allow_drag()
+      return self.allow_drag_flag := &null
+   end
+
+   #
+   # Configure the component to allow drops, if it is so capable.
+   #
+   method set_allow_drop()
+      return self.allow_drop_flag := 1
+   end
+
+   #
+   # Configure the component to disallow drops.
+   #
+   method clear_allow_drop()
+      return self.allow_drop_flag := &null
    end
 
    method set_one(attr, val)
       case attr of {
          "tooltip" : set_tooltip(string_val(attr, val))
+         "allow_drop" :
+            if test_flag(attr, val) then
+               set_allow_drop() 
+            else
+               clear_allow_drop()
+         "allow_drag" :
+            if test_flag(attr, val) then
+               set_allow_drag() 
+            else
+               clear_allow_drag()
          "is_shaded" : 
             if test_flag(attr, val) then
                set_is_shaded() 

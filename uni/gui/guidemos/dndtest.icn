@@ -3,20 +3,20 @@ import gui
 $include "guih.icn"
 
 #
-# A DndHandler for the list
+# A Dnd-enabled list
 #
-class ListDndHandler : SelectableScrollAreaDndHandler()
+class CustomList : TextList()
    #
    # A drop has occurred; we succeed iff we accept it
    #
    method can_drop(d)
       local l, ll
-      if l := parent.get_highlight() then {
-         if d.get_source() === parent then {
+      if l := self.get_highlight() then {
+         if d.get_source() === self then {
             #
             # Move within the list itself
             #
-            parent.move_rows(parent.get_gesture_selections(), l)
+            self.move_rows(self.get_gesture_selections(), l)
          } else {
             #
             # Copy from tree to list.  d.get_content() gives
@@ -30,7 +30,7 @@ class ListDndHandler : SelectableScrollAreaDndHandler()
                if /el.is_folder_flag then
                   put(ll, el.get_label())
             }
-            parent.insert_rows(ll, l)
+            self.insert_rows(ll, l)
          }
          return
       }
@@ -42,26 +42,29 @@ class ListDndHandler : SelectableScrollAreaDndHandler()
    # list, then we must delete the rows from the list.
    #
    method end_drag(d, c)
-      if c ~=== parent then
-         parent.delete_rows(parent.get_gesture_selections())
+      if c ~=== self then
+         self.delete_rows(self.get_gesture_selections())
    end
+
+   initially(a[])
+      self.TextList.initially()
+      set_fields(a)
 end
 
 #
-# A DndHandler for the tree
+# A Dnd tree
 #
-class TreeDndHandler : SelectableScrollAreaDndHandler()
+class CustomTree : Tree()
    #
    # Called during a drag event
    #
    method drag_event(d)
       #
       # We succeed if and only if the user is dragging over a row
-      # (this is handled by the parent) AND the thing we're over
-      # is a folder.
+      # AND the thing we're over is a folder.
       #
-      if self.SelectableScrollAreaDndHandler.drag_event(d) then
-         return \parent.object_get_highlight().is_folder_flag
+      if self.SelectableScrollArea.drag_event(d) then
+         return \self.object_get_highlight().is_folder_flag
    end
 
    #
@@ -72,10 +75,10 @@ class TreeDndHandler : SelectableScrollAreaDndHandler()
       #
       # Only consider a drop on a folder
       #
-      if other := parent.object_get_highlight() & \other.is_folder_flag then {
-         if d.get_source() === parent then {
+      if other := self.object_get_highlight() & \other.is_folder_flag then {
+         if d.get_source() === self then {
             #
-            # If parent is the drop source, then we have a dnd from 
+            # If self is the drop source, then we have a dnd from 
             # within the tree.  So, we just move the nodes.
             # d.get_content() will be a list of the nodes that were
             # dragged.
@@ -99,7 +102,7 @@ class TreeDndHandler : SelectableScrollAreaDndHandler()
          #
          # Notify the tree that the node data structure has altered.
          #
-         parent.tree_structure_changed()
+         self.tree_structure_changed()
          return
       }
    end
@@ -110,11 +113,11 @@ class TreeDndHandler : SelectableScrollAreaDndHandler()
    # tree, then we must delete the nodes from the tree.
    #
    method end_drag(d, c)
-      if c ~=== parent then {
+      if c ~=== self then {
          #
          # Delete all the nodes which will have been dragged.
          #
-         every n := !parent.object_get_gesture_selections() do {
+         every n := !self.object_get_gesture_selections() do {
             if /n.is_folder_flag then {
                n.get_parent_node().delete_node(n)
             }
@@ -123,9 +126,13 @@ class TreeDndHandler : SelectableScrollAreaDndHandler()
          #
          # Notify the tree that the node data structure has altered.
          #
-         parent.tree_structure_changed()
+         self.tree_structure_changed()
       }
    end
+
+   initially(a[])
+      self.Tree.initially()
+      set_fields(a)
 end
 
 #
@@ -269,10 +276,14 @@ class DNDTest : Dialog(tree,
       attrib("size=350,295", "resize=on")
       connect(self, "dispose", CLOSE_BUTTON_EVENT)
 
-      tree := Tree("pos=50%-10,10", "size=50%-20,100%-70", "align=r,t", 
-                   "select_many", "show_root_handles=f")
+      tree := CustomTree("pos=50%-10,10", 
+                         "size=50%-20,100%-70", 
+                         "align=r,t", 
+                         "allow_drag=y",
+                         "allow_drop=y",
+                         "select_many", 
+                         "show_root_handles=f")
       tree.set_root_node(create_tree())
-      tree.set_dnd_handler(TreeDndHandler(tree))
       tree.connect(self, "on_tree_release", MOUSE_RELEASE_EVENT)
 
       add(tree)
@@ -284,15 +295,16 @@ class DNDTest : Dialog(tree,
       #
       # Create a TextList, with some arbitrary content.
       #
-      lst := TextList("pos=50%+10,10", "size=50%-20,100%-70", 
-                      "select_many",
-                      "contents=one,two,three,four,five,_
-                       six,seven,eight,nine,ten,eleven,_
-                       twelve,thirteen,fourteen,fifteen,_
-                       sixteen,red,blue,green")
+      lst := CustomList("pos=50%+10,10", "size=50%-20,100%-70", 
+                        "allow_drag=y",
+                        "allow_drop=y",
+                        "select_many",
+                        "contents=one,two,three,four,five,_
+                         six,seven,eight,nine,ten,eleven,_
+                         twelve,thirteen,fourteen,fifteen,_
+                         sixteen,red,blue,green")
 
       lst.connect(self, "on_list_release", MOUSE_RELEASE_EVENT)
-      lst.set_dnd_handler(ListDndHandler(lst))
       add(lst)
 
       tree_popup := PopupMenu()

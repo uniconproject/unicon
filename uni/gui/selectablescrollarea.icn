@@ -1,5 +1,5 @@
 #
-# $Id: selectablescrollarea.icn,v 1.5 2004-05-09 20:02:21 rparlett Exp $
+# $Id: selectablescrollarea.icn,v 1.6 2004-05-10 13:57:44 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -716,6 +716,32 @@ class SelectableScrollArea : LineBasedScrollArea(
    # @param highlight_cw If non-null, this cloned window must be used to show the highlight
    #
    abstract method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
+
+   method can_drag()
+      local l, obj
+      if /self.draggable_cursor & \self.is_held then {
+         self.is_held := &null
+         return self.object_get_gesture_selections()
+      }
+   end
+
+   method drag_event(d)
+      local old_highlight
+
+      old_highlight := self.highlight
+      self.highlight := self.get_line_under_pointer() | &null
+      if self.highlight ~=== old_highlight then
+         self.refresh(1)
+
+      return \self.highlight
+   end
+
+   method drag_reset()
+      if \self.highlight then {
+         self.highlight := &null
+         self.refresh(1)
+      }
+   end
 
    initially
       self.ScrollArea.initially()

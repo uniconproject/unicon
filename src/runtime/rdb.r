@@ -237,7 +237,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 }
 
 
-void odbcerror(int errno)
+void odbcerror(int errornum)
 {
   /*
   char SQLState[6];
@@ -269,8 +269,8 @@ void odbcerror(int errno)
   
   /* set Icon error constants */
   
-  k_errornumber=errno;
-  k_errortext=errmsg[errno-NOT_ODBC_FILE_ERR];
+  k_errornumber=errornum;
+  k_errortext=errmsg[errornum-NOT_ODBC_FILE_ERR];
 }
 
 /* allocate memory for query buffer */

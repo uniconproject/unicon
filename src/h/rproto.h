@@ -701,6 +701,6 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n);
 FILE   *isql_open (char *, dptr, dptr, dptr);
 int     dbclose(struct ISQLFile *);
 int     dbfetch(struct ISQLFile *, dptr);
-void    odbcerror               (int errno);
+void    odbcerror               (int errornum);
 void    qalloc                  (struct ISQLFile *f, long n); /* query space alloc */
 #endif					/* ISQL */

@@ -4004,7 +4004,16 @@ function{1} Texcoord(argv[argc])
          wc->autogen = 0; 
          wc->numtexcoords = 0;
          coords = (struct b_list*) argv[argc-warg].vword.bptr;
-	 if (coords->size > MAXTEXCOORDS) fail;
+	 if (coords->size > wc->ntexcoordsalced) {
+	    wc->texcoords = realloc(wc->texcoords,
+				    coords->size * sizeof(double));
+	    if (wc->texcoords == NULL) {
+	       if(wc->texcoords = malloc(wc->ntexcoordsalced * sizeof(double)))
+		  fail;
+	       runerr(305, argv[argc-warg]);
+	       }
+	    wc->ntexcoordsalced = coords->size;
+	    }
          for (i = 0; i < coords->size; i++) {
             c_traverse(coords, &val, i); 
             if (!cnv:C_double(val, wc->texcoords[i]))
@@ -4039,7 +4048,16 @@ function{1} Texcoord(argv[argc])
 	    c_put(&f, &mode);
 	    wc->autogen = 0; 
 	    wc->numtexcoords = 0;
-	    if (argc - warg > MAXTEXCOORDS) fail;
+	    if (argc - warg > wc->ntexcoordsalced) {
+	       wc->texcoords = realloc(wc->texcoords,
+				       (argc-warg) * sizeof(double));
+	    if (wc->texcoords == NULL) {
+	       if(wc->texcoords = malloc(wc->ntexcoordsalced * sizeof(double)))
+		  fail;
+	       runerr(305);
+	       }
+	    wc->ntexcoordsalced = (argc-warg);
+	       }
 	    for (i = warg; i < argc; i++) {
 	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords++]))
 		  runerr(102, argv[i]);

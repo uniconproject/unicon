@@ -12,6 +12,7 @@
 #define LoadFunc
 #define SysOpt
 #define ExecImages
+#define NoCrypt
 
 #define MaxStatSize 20480
 

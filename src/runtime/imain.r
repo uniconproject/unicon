@@ -259,8 +259,8 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
 
    /*
     * Select log file name.  Might make this a command-line option.
-    * Default to "WICON.LOG".  The log file is used by Wi to report
-    * translation errors and jump to the offending source code line.
+    * Default to "WICON.LOG".  The log file is used by IDE programs to
+    * report translation errors and jump to the offending source code line.
     */
    if ((lognam = getenv("WICONLOG")) == NULL) {
       if (((lognam = getenv("TEMP")) != NULL) &&

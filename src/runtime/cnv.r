@@ -75,7 +75,7 @@ double *d;
       }
 
    /*
-    * s is now an string.
+    * s is now a string.
     */
    switch( ston(s, &numrc) ) {
       case T_Integer:

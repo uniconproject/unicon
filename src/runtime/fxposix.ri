@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.10 2001-12-14 04:01:32 phliar Exp $
+ * $Id: fxposix.ri,v 1.11 2002-01-04 23:26:00 jeffery Exp $
  */
 
 /*
@@ -1985,16 +1985,20 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
 void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 {
    int fd, status = BlkLoc(*f)->file.status;
+#ifdef Graphics
    wbp w;
+#endif					/* Graphics */
 #if NT
    if ((status & Fs_Socket) == 0) return;
 #endif					/* NT */
    fd = get_fd(*f, Fs_Read|Fs_Socket);
    if (FD_ISSET(fd, fdsp)
 #if !NT
+#ifdef Graphics
        && (((status & Fs_Window) == 0) ||
 	((w = (wbp)(BlkLoc(*f)->file.fd)) &&
 	 ((BlkLoc(w->window->listp))->list.size > 0)))
+#endif					/* Graphics */
 #endif					/* NT */
        ) {
       c_put(ldp, f);
@@ -2089,12 +2093,12 @@ function{0,1} select(files[nargs])
 	    fail;
 	 }
 
+#ifdef Graphics
 #if UNIX
       pollevent();
 #endif
 
 #if NT
-#ifdef Graphics
       /*
        * if our select() could have taken any time, try windows again
        */
@@ -2102,8 +2106,8 @@ function{0,1} select(files[nargs])
 	 d.dword = D_List;
 	 BlkLoc(d) = (union block *) lp;
          }
-#endif					/* Graphics */
 #endif					/* NT */
+#endif					/* Graphics */
 
       if (lp == NULL) {
 	 if ((lp = emptylist()) == NULL) fail;

@@ -435,25 +435,29 @@ int popmatrix()
   /* determine what is the current matrix stack */
    glGetIntegerv(GL_MATRIX_MODE, &params1);
    if (params1 == GL_PROJECTION) {
-
-      /* check the stack depth. return failed if the
-          matrix stack is one */
+      /*
+       * check the stack depth. return failed if the
+       * matrix stack is one
+       */
       glGetIntegerv(GL_PROJECTION_STACK_DEPTH, &params2);
       if (params2 > 1)
          glPopMatrix();
       else
-	    return Failed;
+	 return Failed;
       }
 
       /* we must be the Modelview stack */
    else {
-      /* check to see if there is more than one
-          matrix on the stack. if not return Failed */
+      /*
+       * check to see if there is more than one
+       * matrix on the stack. if not return Failed
+       */
       glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
 	 if (params2 > 1)
 	    glPopMatrix();
-    	 else
+    	 else {
 	    return Failed;
+            }
       }
    return Succeeded;
 }
@@ -500,10 +504,14 @@ int pushmatrix()
  */
 int redraw3D(wbp w)
 {
+   wcp wc = w->context;
    GLfloat deflt_ambient[4] = {0.2, 0.2, 0.2, 1.0};
    GLfloat deflt_diffuse[4] = {0.8, 0.8, 0.8, 1.0};
    GLfloat deflt_emission[4] = {0.0, 0.0, 0.0, 1.0};
    GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
+
+   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
+	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
 
    /*
     * reset the defaults for those objects that used them
@@ -512,6 +520,8 @@ int redraw3D(wbp w)
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
+   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
+	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
 
    glMaterialfv(GL_FRONT, GL_AMBIENT, deflt_ambient);
    glMaterialfv(GL_FRONT, GL_DIFFUSE, deflt_diffuse);
@@ -611,7 +621,7 @@ int traversefunctionlist(wbp w)
       c_traverse(list, &flist, i);
       if (flist.dword == D_Record) {
 	 rp = (struct b_record *)BlkLoc(flist);
-	 if (rp->recdesc == BlkLoc(gl_torus)) {
+	 if (!strcmp(StrLoc(rp->fields[0]), "DrawTorus")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
@@ -619,21 +629,21 @@ int traversefunctionlist(wbp w)
 	    if (!cnv:C_double(rp->fields[5], r2)) goto free_v_and_fail;
 	    torus(r1, r2, x, y, z, (wc->texmode ? wc->autogen : 0));
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_cube)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawCube")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
 	    cube(r1, x, y, z, (wc->texmode ? wc->autogen : 0));
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_sphere)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawSphere")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
 	    sphere(r1, x, y, z, (wc->texmode ? wc->autogen : 0));
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_cylinder)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawCylinder")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
@@ -642,7 +652,7 @@ int traversefunctionlist(wbp w)
 	    if (!cnv:C_double(rp->fields[6], r2)) goto free_v_and_fail;
 	    cylinder(r1,r2,h,x,y,z, (wc->texmode ? wc->autogen : 0));
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_disk)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawDisk")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
@@ -652,40 +662,40 @@ int traversefunctionlist(wbp w)
 	    if (!cnv:C_double(rp->fields[7], a2)) goto free_v_and_fail;
 	    disk(r1, r2, a1, a2, x, y, z, (wc->texmode ? wc->autogen : 0));
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_rotate)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"Rotate")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
 	    glRotated(r1, x, y, z);
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_translate)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"Translate")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
 	    glTranslated(x, y, z);
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_scale)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"Scale")) {
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
 	    glScaled(x, y, z);
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_popmatrix)) {
-	    popmatrix();
+	 else if (!strcmp(StrLoc(rp->fields[0]),"PopMatrix")) {
+	    if (popmatrix() != Succeeded) goto free_v_and_fail;
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_pushmatrix)) {
-	    pushmatrix();
+	 else if (!strcmp(StrLoc(rp->fields[0]),"PushMatrix")) {
+	    if (pushmatrix() != Succeeded) goto free_v_and_fail;
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_identity)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"Identity")) {
 	    glLoadIdentity();
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_matrixmode)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"MatrixMode")) {
 	    if (!cnv:C_string(rp->fields[1], temp)) goto free_v_and_fail;
 	    if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
 	    if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
 	    }
-	 else if (rp->recdesc == BlkLoc(gl_texture)) {
+	 else if (!strcmp(StrLoc(rp->fields[0]),"Texture")) {
 	    /*
 	     * lookup the name of the texture and bind it
              * the objects using glBindTexture()
@@ -693,8 +703,9 @@ int traversefunctionlist(wbp w)
 	    if (!cnv:C_integer(rp->fields[1], num)) goto free_v_and_fail;
 	    glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
 	    }
-
-	 else return Failed;
+	 else {
+            return Failed;
+            }
 	 continue;
 	 }
       if (flist.dword == D_List) {
@@ -1480,8 +1491,6 @@ int seteyepos(wbp w, char *s)
       }
    if (*s2) return Error;
 
-   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
    redraw3D(w);
    return Succeeded;
 }
@@ -1527,8 +1536,6 @@ int seteyedir(wbp w, char *s)
       }
    /* if there are more entries return an error */
    if (*s2) return Error;
-   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
    redraw3D(w);
    return Succeeded;
 }
@@ -1578,8 +1585,6 @@ int seteyeup(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    if (*s2) return Error;
-   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
    redraw3D(w);
    return Succeeded;
 }
@@ -1689,13 +1694,9 @@ int seteye(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    if (*s2) return Error;
-   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
    redraw3D(w);
    return Succeeded;
-
 }
-
 
 /* set a texture */
 int settexture(wbp w, char* str)

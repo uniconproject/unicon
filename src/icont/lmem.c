@@ -155,8 +155,11 @@ char *name;
       char buf[256];
       strcpy(buf, "cannot resolve reference to file '");
       strcat(buf, name);
-      buf[strlen(buf)-1] = '\0';
-      strcat(buf, "' or '%s'");
+      strcat(buf, "'");
+      if (name[strlen(name)-1] != 'u') { /* .u[12], tried also .u */
+         buf[strlen(buf)-1] = '\0';
+         strcat(buf, " or '%s'");
+         }
       quitf(buf, name);
       }
 

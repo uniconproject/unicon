@@ -166,7 +166,7 @@ struct b_file *fbp;
 #endif                                  /* Messaging */
 
 #ifdef XWindows
-   if (isatty(fileno(fd))) wflushall();
+   wflushall();
 #endif					/* XWindows */
 #if NT
    if (fbp->status & Fs_Pipe) {

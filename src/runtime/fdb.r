@@ -1,30 +1,14 @@
 /*
- *
- * IODBC - Unicon ODBC Interface
- *
- * Federico Balbi - fbalbi@cs.utsa.edu
- *
- * Origin Date:  07/22/1999
- *
- * Latest Revision: 07/13/2000
- *
- * File:  FDB.R
- *
- * -- Unicon ODBC support functions (2.x compliant)
- *
- * dbcolumns, dbdelete, dbinsert, dbkeys,
- * dbselect, sql, dbtables, dbupdate
+ * File:  fdb.r
+ *  Contents: dbcolumns, dbdriver, dbkeys, dblimits, dbproduct, sql, dbtables
  */
 
 #ifdef ISQL
 
 SQLHENV ISQLEnv=NULL;           /* global environment variable */
 
-#define STR_LEN        128+1
-#define REM_LEN        128+1
-#define BUFF_SZ      32768      /* 32Kb buffer size for C/S data transfer */
-#define MAX_COL_NAME    64      /* max column name length    */
-#define MAXTABLECOLS   256      /* try driver specific const */
+#define STR_LEN        256+1
+#define REM_LEN        256+1
 
 /*-- catalog functions ODBC 2.x compliant --*/
 
@@ -39,29 +23,25 @@ SQLHENV ISQLEnv=NULL;           /* global environment variable */
 #define COL_LEN SQL_MAX_COLUMN_NAME_LEN+1
 
 /* hate long names... */
-#define RFNAME     BlkLoc(rec)->record.recdesc->proc.lnames /* field name       */
-#define RFVAL      BlkLoc(rec)->record.fields               /* field value      */
-
-#define FSTATUS(f) BlkLoc(f)->file.status                   /* file status      */
-#define FDESC(f)   (struct ISQLFile *) BlkLoc(f)->file.fd   /* file description */
+#define FSTATUS(f) BlkLoc(f)->file.status                 /* file status */
+#define FDESC(f)  (struct ISQLFile *) BlkLoc(f)->file.fd /* file description */
 
 
 /*-- functions implementation --*/
 
 "dbcolumns(f, T) - get information about columns in an ODBC table"
 function{0,1} dbcolumns(f,table_name)
-  if !is:file(f) then runerr(105, f)   /* f is not a file */
+   if !is:file(f) then runerr(105, f)   /* f is not a file */
 
-  abstract {
-    return list
-  }
+   abstract {
+      return list
+      }
 
   body {
-    struct descrip fieldname[DBCOLNCOLS]; /* record field names */
     tended struct descrip R;
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
-    struct b_proc *proc;
+    static struct b_proc *proc;
     
     /* list declarations */
     tended struct descrip L;
@@ -89,11 +69,11 @@ function{0,1} dbcolumns(f,table_name)
     
     HSTMT hstmt;
     
-    char *colname[DBCOLNCOLS]={
-      "catalog", "schema", "tablename", "colname","datatype", "typename", 
-      "colsize", "buflen", "decdigits", "numprecradix", "nullable", "remarks"
-    };
-    
+    static struct descrip colnames[] = {
+       {7,"catalog"}, {6,"schema"}, {9,"tablename"}, {7,"colname"},
+       {8,"datatype"}, {8,"typename"}, {7,"colsize"}, {6,"buflen"},
+       {9,"decdigits"}, {12,"numprecradix"}, {8,"nullable"}, {7,"remarks"}
+       };
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -144,18 +124,12 @@ function{0,1} dbcolumns(f,table_name)
     L.vword.bptr=(union block *) hp;
 
     /* create record fields definition */
-    
-    /* note there's no alcstr() call to allocate memory */
-
-    for (i=0; i<DBCOLNCOLS; i++) {
-      StrLoc(fieldname[i])=colname[i];
-      StrLen(fieldname[i])=strlen(colname[i]);
-    }
+    if (!proc)
+       proc=dynrecord(&rectypename, colnames, DBCOLNCOLS);
 
     while (SQLFetch(hstmt)==SQL_SUCCESS) {
 
       /* allocate record */
-      proc=dynrecord(&rectypename, fieldname, DBCOLNCOLS);
       r = alcrecd(DBCOLNCOLS, (union block *)proc);
       R.dword=D_Record;
       R.vword.bptr=(union block *) r;

@@ -178,10 +178,10 @@ word oldsum = 0;
 static char scopechars[] = "+:^-";
 
 /*
- * Special event function for E_Assign; allocates out of monitor's heap.
+ * Special event function for E_Assign & E_Deref;
+ * allocates out of monitor's heap.
  */
-void EVAsgn(dx)
-dptr dx;
+void EVVariable(dptr dx, int eventcode)
 {
    int i;
    dptr procname;
@@ -226,7 +226,7 @@ dptr dx;
    parent->stringregion = curpstate->stringregion;
    curpstate->stringregion = rp;
    noMTevents--;
-   actparent(E_Assign);
+   actparent(eventcode);
 }
 
 

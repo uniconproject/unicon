@@ -1,15 +1,21 @@
+RM=rm -f
+UNICON=../unicon/unicon
+CP=cp
+BINDIR=../../bin
+export IPATH:=../lib ../../ipl/lib
+
 #
 # makefile for constructing ivib
 #
 
 ICONDIR=icon
 
-LIBFILES=../lib/qsort.u \
-      ../lib/gui.u \
-      ../lib/encode.u \
+LIBFILES=../lib/gui.u \
       ../lib/file_dlg.u
 
-UFILES=cdialog.u \
+UFILES=qsort.u \
+      encode.u \
+      cdialog.u \
       grid.u \
       canvcomp.u \
       ivib.u \
@@ -17,7 +23,7 @@ UFILES=cdialog.u \
       canvas.u \
       images.u \
       utils.u \
-      code.u 
+      code.u
 
 ICONS=$(ICONDIR)/icn1.ico \
       $(ICONDIR)/icn2.ico \
@@ -59,13 +65,10 @@ ICONS=$(ICONDIR)/icn1.ico \
 #
 # Linking
 #
-ivib: ivib2 $(UFILES)
+ivib: $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
 	$(CP) ivib$(EXE) $(BINDIR)
 	@echo Linking complete.
-
-ivib2:
-	cd ../lib; make
 
 #
 # Program to translate xpm to Icon image format.
@@ -86,23 +89,27 @@ ivib2:
 # Class and include dependencies
 #
 
-cdialog.u : cdialog.icn ../lib/gui.u ../lib/encode.u
+cdialog.u : cdialog.icn ../lib/gui.u 
 	$(UNICON) -c cdialog
-grid.u : grid.icn ../lib/qsort.u
+grid.u : grid.icn
 	$(UNICON) -c grid
-canvcomp.u : canvcomp.icn ../lib/gui.u ../lib/encode.u cdialog.icn
+canvcomp.u : canvcomp.icn ../lib/gui.u  cdialog.icn
 	$(UNICON) -c canvcomp
 ivib.u : ivib.icn ../lib/gui.u version.icn
 	$(UNICON) -c ivib
-groups.u : groups.icn ../lib/gui.u ../lib/encode.u cdialog.icn
+groups.u : groups.icn ../lib/gui.u  cdialog.icn
 	$(UNICON) -c groups
-canvas.u : canvas.icn ../lib/gui.u ../lib/encode.u grid.icn cdialog.icn
+canvas.u : canvas.icn ../lib/gui.u  grid.icn cdialog.icn
 	$(UNICON) -c canvas
 images.u : images.icn $(ICONS)
 	$(UNICON) -c images
 utils.u : utils.icn
 	$(UNICON) -c $?
 code.u : code.icn
+	$(UNICON) -c $?
+qsort.u : qsort.icn
+	$(UNICON) -c $?
+encode.u : encode.icn
 	$(UNICON) -c $?
 
 Clean:

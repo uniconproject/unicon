@@ -1,5 +1,5 @@
 #
-# $Id: drawscrollarea.icn,v 1.2 2004-05-16 09:21:39 rparlett Exp $
+# $Id: drawscrollarea.icn,v 1.3 2004-11-06 21:06:14 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -14,8 +14,7 @@ $include "guih.icn"
 class DrawScrollAreaView : Component()
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      # Clipping on self.cbwin doesn't seem to work okay, so clip on the parent.  A bug
-      # in the graphics code perhaps.
+      # As we delegate drawing to the parent, we clip on the parent cbwin.
       Clip(self.parent.cbwin, self.x, self.y, self.w, self.h)
       parent.draw(parent.get_areax(), parent.get_areay(), self.x, self.y, self.w, self.h)
       Clip(self.parent.cbwin)

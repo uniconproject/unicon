@@ -756,9 +756,11 @@ function{0,1} member(s, x[n])
 end
 
 
-"pull(L) - pull an element from end of list L."
+"pull(L,n) - pull an element from end of list L."
 
-function{0,1} pull(x)
+function{0,1} pull(x,n)
+   if !def:C_integer(n, 1L) then
+      runerr(101, n)
    /*
     * x must be a list.
     */
@@ -769,41 +771,43 @@ function{0,1} pull(x)
       }
 
    body {
-      register word i;
+      register word i, j;
       register struct b_list *hp;
       register struct b_lelem *bp;
 
-      EVValD(&x, E_Lpull);
+      for(j=0;j<n;j++) {
+	 EVValD(&x, E_Lpull);
 
-      /*
-       * Point at list header block and fail if the list is empty.
-       */
-      hp = (struct b_list *) BlkLoc(x);
-      if (hp->size <= 0)
-         fail;
+	 /*
+	  * Point at list header block and fail if the list is empty.
+	  */
+	 hp = (struct b_list *) BlkLoc(x);
+	 if (hp->size <= 0)
+	    fail;
 
-      /*
-       * Point bp at the last list element block.  If the last block has no
-       *  elements in use, point bp at the previous list element block.
-       */
-      bp = (struct b_lelem *) hp->listtail;
-      if (bp->nused <= 0) {
-         bp = (struct b_lelem *) bp->listprev;
-         hp->listtail = (union block *) bp;
-         bp->listnext = (union block *) hp;
-         }
+	 /*
+	  * Point bp at the last list element block.  If the last block has no
+	  *  elements in use, point bp at the previous list element block.
+	  */
+	 bp = (struct b_lelem *) hp->listtail;
+	 if (bp->nused <= 0) {
+	    bp = (struct b_lelem *) bp->listprev;
+	    hp->listtail = (union block *) bp;
+	    bp->listnext = (union block *) hp;
+	    }
 
-      /*
-       * Set i to position of last element and assign the element to
-       *  result for return.  Decrement the usage count for the block
-       *  and the size of the list.
-       */
-      i = bp->first + bp->nused - 1;
-      if (i >= bp->nslots)
-         i -= bp->nslots;
-      result = bp->lslots[i];
-      bp->nused--;
-      hp->size--;
+	 /*
+	  * Set i to position of last element and assign the element to
+	  *  result for return.  Decrement the usage count for the block
+	  *  and the size of the list.
+	  */
+	 i = bp->first + bp->nused - 1;
+	 if (i >= bp->nslots)
+	    i -= bp->nslots;
+	 result = bp->lslots[i];
+	 bp->nused--;
+	 hp->size--;
+	 }
       return result;
       }
 end

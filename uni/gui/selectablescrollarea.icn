@@ -1,5 +1,5 @@
 #
-# $Id: selectablescrollarea.icn,v 1.3 2004-01-25 23:04:37 rparlett Exp $
+# $Id: selectablescrollarea.icn,v 1.4 2004-01-26 15:31:32 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -21,6 +21,8 @@ class SelectableScrollArea : LineBasedScrollArea(
    select_one,              #                  
    select_many,             #                   
    cursor,                                
+   old_cursor,
+   selchange,
    going_up,
    prev_cursor,
    is_held,
@@ -348,8 +350,9 @@ class SelectableScrollArea : LineBasedScrollArea(
       compute_and_invalidate()
    end
 
+   # @p
    method move_cursor_on_key(row)
-      local i, j, selchange
+      local i, j
 
       row <:= 1
       row >:= *self.contents
@@ -368,79 +371,112 @@ class SelectableScrollArea : LineBasedScrollArea(
          goto_pos(i - j + row)
       else
          self.refresh(1)
+   end
+
+   # @p
+   method start_handle(e)
+      self.old_cursor := self.cursor
+      selchange := &null
+   end
+
+   # @p
+   method end_handle(e)
+      if self.cursor ~=== self.old_cursor then
+         create_event_and_fire(CURSOR_MOVED_EVENT, e)
 
       if \selchange then
          create_event_and_fire(SELECTION_CHANGED_EVENT, e)
    end
 
    method handle_return(e)
+      start_handle(e)
       if /self.cursor | (/self.select_one & /self.select_many) then
          return
       if not (&shift & \select_many) then
          self.checked := list(*self.contents)
       self.checked[self.cursor] := 1
       self.refresh(1)
-      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+      selchange := 1
+      end_handle(e)
    end
 
    method handle_key_page_up(e)
+      start_handle(e)
       if i := (1 < get_cursor()) then {
          move_cursor_on_key(i - get_max_lines())
       }
+      end_handle(e)
    end
 
    method handle_key_page_down(e)
+      start_handle(e)
       if i := (*self.contents > get_cursor()) then {
          move_cursor_on_key(i + get_max_lines())
       }
+      end_handle(e)
    end
 
    method handle_key_up(e)
+      start_handle(e)
       if i := (1 < get_cursor()) then {
          move_cursor_on_key(i - 1)
       }
+      end_handle(e)
    end
 
    method handle_key_down(e)
+      start_handle(e)
       if i := (*self.contents > get_cursor()) then {
          move_cursor_on_key(i + 1)
       }
+      end_handle(e)
    end
 
    method handle_key_left(e)
+      start_handle(e)
       if i := (\self.hsb).get_value() then {
          self.hsb.set_value(i - self.hsb.increment_size) 
          self.refresh()
       }
+      end_handle(e)
    end
 
    method handle_key_right(e)
+      start_handle(e)
       if i := (\self.hsb).get_value() then {
          self.hsb.set_value(i + self.hsb.increment_size) 
          self.refresh()
       }
+      end_handle(e)
    end
 
    method handle_key_home(e)
+      start_handle(e)
       move_cursor_on_key(1)
+      end_handle(e)
    end
 
    method handle_key_end(e)
+      start_handle(e)
       move_cursor_on_key(*self.contents)
+      end_handle(e)
    end
 
    method handle_press(e)
       local l
+      start_handle(e)
       if l := get_line_under_pointer() then {
          self.prev_cursor := self.cursor
          self.cursor := l
          self.is_held := 1
          self.refresh(1)
       }
+      end_handle(e)
    end
 
    method handle_move(e)
       local l
+      start_handle(e)
       if \self.motion_cursor & /self.is_held & self.view.in_region() then {
          l := (&y - self.view.y) / self.line_height + self.get_first_line()
          l >:= self.get_last_line()
@@ -449,11 +485,13 @@ class SelectableScrollArea : LineBasedScrollArea(
             self.refresh(1)
          }            
       }
+      end_handle(e)
    end
 
    method handle_drag(e)
       local old_down, l
 
+      start_handle(e)
       if \self.draggable_cursor & \self.is_held then {
          #
          # Mouse drag - save present marked line
@@ -481,9 +519,11 @@ class SelectableScrollArea : LineBasedScrollArea(
          if old_down ~=== self.cursor then
             self.refresh(1)
       }
+      end_handle(e)
    end
 
    method tick()
+      start_handle()
       if \going_up then {
          self.cursor := self.get_first_line() - 1
          self.cursor <:= 1
@@ -494,9 +534,11 @@ class SelectableScrollArea : LineBasedScrollArea(
          (\self.vsb).set_value(self.vsb.get_value() + self.vsb.increment_size)
       }
       self.refresh(1)
+      end_handle()
    end
 
    method handle_release(e)
+      start_handle(e)
       if \self.is_held then {
          #
          # Mouse released after being held down.  Clear flag
@@ -527,9 +569,10 @@ class SelectableScrollArea : LineBasedScrollArea(
                self.checked[\self.cursor] := 1
             }
             self.refresh(1)
-            create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+            selchange := 1
          }
       }
+      end_handle(e)
    end
 
    method handle_event(e)

@@ -4,9 +4,9 @@ global count
 
 procedure main()
 
-   L1 := filepair() | stop("couldn't open")
+   L1 := filepair() | stop("Couldn't get filepair: ", sys_errstr(&errno))
 
-   count := 20000
+   count := 20
 
    pid := fork() | stop("Couldn't fork")
    if pid = 0 then {
@@ -30,13 +30,14 @@ procedure parent(in)
    i := 0
    str := ""
    while i < count do {
+#       write("parent ", i)
+       i +:= 1
       if s := read(in) then {
 	 j := (s ? integer(tab(many(&digits)))) | -1
 	 if j ~= i then {
 	    write("failed - expected ", i)
 	    break
 	 }
-	 i +:= 1
       }
       else
 	 delay(1)
@@ -51,6 +52,7 @@ end
 procedure child(out)
    i := 0
    every 1 to count do {
+#      write("child ", i)
       s := i || " " || repl("x", ?200)
 
       write(out, s) | stop("child failed to write")

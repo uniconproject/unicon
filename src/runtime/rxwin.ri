@@ -681,10 +681,12 @@ wbp w;
 	       if (ws->iconic == IconicState)
 		  SETEXPOSED(wb);
 	       break;
-	    case KeyRelease:
-	       if (ws->inputmask & KeyReleaseMask)
+	    case KeyRelease: {
+	       if (ws->inputmask & KeyReleaseMask) {
 		  handle_keypress(wb, (XKeyEvent *)&event);
+		  }
 	       break;
+	       }
 	    case KeyPress:
 	       handle_keypress(wb, (XKeyEvent *)&event);
 	       break;
@@ -760,6 +762,12 @@ wbp w;
 	       bar = &selectfoo;
 	    }
 	    break;
+	 case KeyRelease: {
+	       if (ws->inputmask & KeyReleaseMask) {
+		  handle_keypress(wb, (XKeyEvent *)&event);
+		  }
+	       break;
+	       }
 	 case KeyPress:
 	    handle_keypress(wb, (XKeyEvent *)&event);
 	    break;
@@ -1192,7 +1200,7 @@ int wmap(wbp w)
    struct imgdata *imd;
    int i, r;
    int new_pixmap = 0;
-   char *p, *s;
+   char *p, *s, sbuf[256];
    XWMHints wmhints;
    XClassHint clhints;
 
@@ -1404,8 +1412,10 @@ int wmap(wbp w)
       while (s > p && s[-1] != '/')
 	 s--;				/* find tail of prog_name */
       }
-   clhints.res_name = s;
+   clhints.res_name = sbuf;
    clhints.res_class = "IconProg";
+   for (i=0; s < p+StrLen(kywd_prog); ) clhints.res_name[i++] = *s++;
+   clhints.res_name[i] = '\0';
    XSetClassHint(stddpy, stdwin, &clhints);
 
    if (wd->cmap != DefaultColormap(stddpy,wd->screen)) { /* ? */
@@ -2611,6 +2621,7 @@ XKeyEvent *event;
    case -1:
       return;
    case 0:
+      if (event->type == KeyRelease) k = -k - 128;
       MakeInt(k, &d);
       qevent(w->window, &d, event->x, event->y,
 	     (uword)event->time, event->state);
@@ -2618,9 +2629,16 @@ XKeyEvent *event;
    default:
       StrLen(d) = 1;
       for (j = 0; j < i; j++) {
+	 if (event->type == KeyRelease) {
+	    MakeInt(-(FromAscii(s[j]) & 0xFF)-128, &d);
+	    qevent(w->window, &d, event->x, event->y,
+		   (uword)event->time, event->state);
+	    }
+	 else {
 	 StrLoc(d) = (char *)&allchars[FromAscii(s[j]) & 0xFF];
 	 qevent(w->window, &d, event->x, event->y,
 		(uword)event->time, event->state);
+	 }
 	 }
       }
    }

@@ -1,0 +1,236 @@
+#
+# $Id: image.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+global image_cache, zoom_cache
+
+#
+# This class loads an image from file and displays it.  The
+# image should be in GIF format.  A border may be included
+# with {toggle_draw_border()}.
+#
+# The size of the area into which the image is drawn must be
+# set with {set_size()}.
+#
+class Image : Component(
+   filename,                #                
+   scale_up_flag,           #                     
+   cache_image_flag,
+   x_internal_alignment,    #                            
+   y_internal_alignment     #
+   )
+
+   #
+   # Set the horizontal and vertical alignment of the image within the
+   # area of the component; {x} should be ``l'', ``c'' or ``r'', {y} should
+   # be ``t'', ``c'' or ``b''.  Default is ``c'', ``c''.
+   #
+   method set_internal_alignment(x, y)
+      self.x_internal_alignment := x
+      self.y_internal_alignment := y
+      return
+   end
+
+   #
+   # Set the name of the file from which to load the image;
+   # re-display the image from the new file if appropriate.
+   #
+   method set_filename(x)
+      if /self.cache_image_flag then
+         close_image()
+      self.filename := x
+      self.invalidate()
+      return x
+   end
+
+   #
+   # If set, then the image will be scaled up to fit in the space
+   # specified by {set_size()}.  The image will not be distorted, 
+   # but will be expanded to fill one of the dimensions depending 
+   # on its shape.  If the image is bigger than the specified size 
+   # then it will always be scaled down.
+   #
+   method set_scale_up()
+      return self.scale_up_flag := 1
+   end
+
+   #
+   # Clear the scale up flag (the default).
+   #
+   method clear_scale_up()
+      return self.scale_up_flag := &null
+   end
+
+   #
+   # Invoke this is if the image in the file changed (but the filename
+   # didn't).  The image will be reloaded and redisplayed.
+   #
+   method image_changed()
+      close_image()
+      invalidate()
+   end
+
+   method close_image()
+      if member(image_cache, filename) then {
+         WClose(image_cache[filename])
+         delete(image_cache, filename)
+      }
+      if member(zoom_cache, filename) then {
+         WClose(zoom_cache[filename])
+         delete(zoom_cache, filename)
+      }
+   end
+
+   #
+   # Set the cache image flag
+   #
+   method set_cache_image()
+      return self.cache_image_flag := 1
+   end
+
+   #
+   # Clear the cache image flag (the default).
+   #
+   method clear_cache_image()
+      return self.cache_image_flag := &null
+   end
+
+   method display(buffer_flag)
+      local imwin
+
+      W := if /buffer_flag then self.cwin else self.cbwin
+ 
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+
+      #
+      # Compute borders; smaller if border needed.
+      #
+      if \self.draw_border_flag then {
+         x1 := self.x + BORDER_WIDTH
+         y1 := self.y + BORDER_WIDTH
+         w1 := self.w - 2 * BORDER_WIDTH
+         h1 := self.h - 2 * BORDER_WIDTH
+      } else {
+         x1 := self.x
+         y1 := self.y
+         w1 := self.w
+         h1 := self.h
+      }
+
+      if member(image_cache, filename) then
+         imwin := image_cache[filename]
+      else {
+         #
+         # Load the image
+         #
+         imwin := WOpen("image=" || \self.filename, "canvas=hidden") | fail
+         insert(image_cache, filename, imwin)
+      }
+
+      #
+      # Scale the image to the desired size
+      #
+      img_w := WAttrib(imwin, "width")
+      img_h := WAttrib(imwin, "height")
+      aspr := real(img_w) / real(img_h)
+      aspmax := real(w1) / real(h1)
+
+      if /self.scale_up_flag & (img_w <= w1) & (img_h <= h1) then {
+         zoom_w := img_w
+         zoom_h := img_h
+      } else {
+         if aspr > aspmax then {
+            zoom_w := w1
+            zoom_h := integer(w1 / aspr)
+         } else {
+            zoom_w := integer(h1 * aspr)
+            zoom_h := h1
+         }
+      }
+
+      #
+      # Adjust within region as per internal_alignment
+      #
+      case self.y_internal_alignment of {
+         "t" : yoff := 0
+         "b" : yoff := h1 - zoom_h
+         "c" : yoff := (h1 - zoom_h) / 2
+         default : error("incorrect y internal_alignment specifier: " || image(self.y_internal_alignment))
+      }
+
+      case self.x_internal_alignment of {
+         "l" : xoff := 0
+         "r" : xoff := w1 - zoom_w
+         "c" : xoff := (w1 - zoom_w) / 2
+         default : error("incorrect x internal_alignment specifier: " || image(self.x_internal_alignment))
+      }
+
+      zoom_w <:= 1
+      zoom_h <:= 1
+
+      if member(zoom_cache, filename) then {
+         zc := zoom_cache[filename]
+         if WAttrib(zc, "width") = zoom_w & WAttrib(zc,"height") = zoom_h then
+            CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)
+         else
+            Zoom(imwin, W, 0, 0, img_w, img_h, x1 + xoff, y1 + yoff, zoom_w, zoom_h)
+      } else {
+         zc := WOpen("size=" || zoom_w || "," || zoom_h, "canvas=hidden") | error("Couldn't open temp window")
+         Zoom(imwin, zc, 0, 0, img_w, img_h, 0, 0, zoom_w, zoom_h)
+         insert(zoom_cache, filename, zc)
+         CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)
+      }
+
+      #
+      # Border if required.
+      #
+      if \self.draw_border_flag then
+         DrawRaisedRectangle(W, x1 + xoff - BORDER_WIDTH, y1 + yoff - BORDER_WIDTH, zoom_w + 2 * BORDER_WIDTH, zoom_h + 2 * BORDER_WIDTH)
+      self.do_shading(W)
+
+   end
+
+   method handle_event(e)
+      fail
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "filename" : set_filename(string_val(attr, val))
+         "scale_up" :
+            if test_flag(attr, val) then
+               set_scale_up()
+            else
+               clear_scale_up()
+         "cache_image" :
+            if test_flag(attr, val) then
+               set_cache_image()
+            else
+               clear_cache_image()
+         "internal_alignment" : set_internal_alignment!string_vals(attr, val, 2)
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   method finally()
+      self.Component.finally()
+      if /self.cache_image_flag then
+         close_image()
+   end
+
+   initially(a[])
+      self.Component.initially()
+      /image_cache := table()
+      /zoom_cache := table()
+      self.x_internal_alignment := self.y_internal_alignment := "c"
+      set_fields(a)
+end

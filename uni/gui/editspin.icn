@@ -1,0 +1,80 @@
+#
+# $Id: editspin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This class is the base class for editable spin components which use a
+# TextField to display/edit the current value.
+#
+class EditSpin : Spin(tf)
+   method on_tf()
+   end
+
+   method resize()
+      local bh, bw
+
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      self.Component.compute_absolutes()
+
+      bw := self.h - 2 * BORDER_WIDTH
+      bh := bw / 2
+      #
+      # Set buttons position and size
+      #
+      up.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      up.set_size(bw, bh)
+      up.resize()
+      down.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH + bh)
+      down.set_size(bw, bh)
+      down.resize()
+
+      #
+      # Set TextField position and size
+      #
+      tf.set_pos(BORDER_WIDTH, BORDER_WIDTH)
+      tf.set_size(self.w - bw - 2 * BORDER_WIDTH,  self.h - 2 * BORDER_WIDTH)
+      tf.resize()
+   end
+
+   method display(buffer_flag)
+      #
+      # Draw text element 
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      #
+      # Draw button and list
+      #
+      self.up.display(1)
+      self.down.display(1)
+      self.tf.display(1)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Manage our own focus handling so that the textfield always gets the focus.
+   #
+   method find_focus()
+      if self.is_unshaded() & self.in_region() & self.is_unhidden() then
+         return tf
+   end
+
+   initially()
+      self.Spin.initially()
+      self.tf := TextField()
+      self.tf.connect(self, "on_tf")
+      self.tf.set_parent(self)
+      self.tf.toggle_draw_border()
+      self.add(tf)
+end

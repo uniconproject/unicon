@@ -1,0 +1,488 @@
+#
+# $Id: textfield.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# A class for a single input line of text.  The text can
+# scroll within the area specified.  By default, a border
+# surrounds the text area; this can be turned of by using
+# {toggle_draw_border()}.
+#
+# The horizontal size must be set by the {set_size()} method:
+# there is no default (the vertical size will default, however).
+#
+# A TEXTFIELD_RETURN_EVENT is generated when return is pressed,
+# and a TEXTFIELD_CHANGED_EVENT whenever the contents are changed.
+#
+# @example
+# @ t := TextField()
+# @ t.set_pos(50, 250)
+# @ # Vertical size will default
+# @ t.set_size(100)
+# @ t.set_contents("Initial string")
+# @ self.add(t)
+#
+class TextField : Component(
+   filter,                  # Cset for filtering characters
+   printable,               # The printable characters
+   contents,                #                
+   is_held,                 # True if dragging
+   going_left,
+   cursor,                  #              
+   mark,
+   leftmost,                #                
+   rightmost,               #                 
+   tx,                      #          
+   tw,                      #
+   displaychar              # char to print on screen
+   )
+
+   #
+   # Set the displaychar attribute
+   #
+   method set_displaychar(c)
+      displaychar := c
+   end
+
+   #
+   # Set a filter on the characters allowed to be input to the text field.
+   # @param c  The cset of permissible characters.
+   # @example
+   # @ # Permit only hexadecimal characters as input
+   # @ set_filter('0987654321abcdefABCDEF')
+   #
+   method set_filter(c)
+      return self.filter := c ** printable
+   end
+
+   #
+   # Return the present contents of the text field.
+   #
+   method get_contents()
+      return self.contents
+   end
+
+   method resize()
+      if \self.draw_border_flag then 
+         /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      else 
+         /self.h_spec := WAttrib(self.cwin, "fheight")
+      self.Component.resize()
+
+      if \self.draw_border_flag then {
+         self.tx := self.x + DEFAULT_TEXT_X_SURROUND
+         self.tw := self.w - 2 *  DEFAULT_TEXT_X_SURROUND
+      } else {
+         #
+         # Still want an offset for the text so that a click slightly to the left of
+         # the text itself is recognised.  Therefore, just have a slightly smaller surround.
+         #
+         self.tx := self.x + (DEFAULT_TEXT_X_SURROUND - BORDER_WIDTH)
+         self.tw := self.w - 2 * (DEFAULT_TEXT_X_SURROUND - BORDER_WIDTH)
+      }
+   end
+
+   #
+   # Set the contents of the field.  If not invoked then
+   # the initial content is the empty string.
+   # @param x   The contents
+   #
+   method set_contents(x)
+      self.contents := string(x)
+      self.cursor := *self.contents + 1
+      self.mark := &null
+      self.leftmost := 1
+      self.invalidate()
+      return x
+   end
+
+   #      
+   # Mouse click - compute new cursor position, re-display
+   #
+   # @p
+   method handle_press()
+      in_region() | fail
+      self.mark := self.cursor := whereis_x()
+      self.is_held := 1
+      self.invalidate()
+   end
+
+   method whereis_x()
+      local i, startx, s
+
+      # Space at end for cursor at end of string
+      s := self.contents || " "
+      i := self.leftmost
+      startx := self.tx
+      while (startx + TextWidth(self.cwin, s[self.leftmost:i + 1]) <= &x) & (i + 1 < self.rightmost) do
+         i +:= 1
+
+      return i
+   end
+
+   method handle_drag(e)
+      local p
+      if \self.is_held then {
+         p := self.cursor
+
+         # Start ticking if to the left/right, otherwise stop ticking
+         if &x < self.tx then {
+            self.going_left := 1
+            if /self.ticker_rate then
+               set_ticker(30)
+         } else if &x > self.tx + self.tw then {
+            self.going_left := &null
+            if /self.ticker_rate then
+               set_ticker(30)
+         } else {
+            self.cursor := whereis_x()
+            stop_ticker()
+         }
+
+         if p ~= self.cursor then 
+            invalidate()
+      }
+   end
+
+   method tick()
+      if \going_left then {
+         self.cursor := self.leftmost - 1
+         self.cursor <:= 1
+      } else {
+         self.cursor := self.rightmost
+         self.cursor >:= (*self.contents + 1)
+      }
+      self.invalidate()
+   end
+
+   method handle_release(e)
+      if \self.is_held then {
+         #
+         # Mouse released after being held down.  Clear flag
+         #
+         self.is_held := &null
+         stop_ticker()
+      }
+   end
+
+   #
+   # Delete
+   #
+   # @p
+   method handle_delete1()
+      if has_region() then
+         delete_region()
+      else if self.cursor > 1 then {
+         self.contents[self.cursor - 1] := ""
+         self.cursor -:= 1
+         self.mark := &null
+      } else
+         fail
+
+      self.invalidate()
+      create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+   end
+
+   method handle_return(e)
+      create_event_and_fire(ACTION_EVENT, e)
+   end
+
+   method keyboard_mark()
+      if &shift then
+         /mark := cursor
+      else
+         mark := &null
+   end
+
+   method handle_key_right(e)
+      keyboard_mark()
+      self.cursor := (*self.contents + 1 >= self.cursor + 1)
+      self.invalidate()
+   end
+
+   method handle_key_left(e)
+      keyboard_mark()
+      self.cursor := (0 < self.cursor - 1)
+      self.invalidate()
+   end
+
+   method handle_delete_line(e)
+      self.contents := ""
+      self.cursor := 1
+      self.mark := &null
+      self.invalidate()
+      create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+   end
+
+   method handle_delete_2(e)
+      if has_region() then
+         delete_region()
+      else if self.cursor <= *self.contents then {
+         self.contents[self.cursor] := ""
+         self.mark := &null
+      } else
+         fail
+      
+      self.invalidate()
+      create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+   end
+
+   method handle_select_all(e)
+      self.cursor := *self.contents + 1
+      self.mark := 1
+      self.invalidate()
+   end
+
+   method handle_end_of_line(e)
+      keyboard_mark()
+      self.cursor := *self.contents + 1
+      self.invalidate()
+   end
+
+   method handle_start_of_line(e)
+      keyboard_mark()
+      self.cursor := 1
+      self.invalidate()
+   end
+
+   method handle_cut(e)
+      if has_region() then {
+         get_clipboard().set_content(get_region())
+         delete_region()
+         self.invalidate()
+         create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+      }
+   end
+
+   method handle_copy(e)
+      if has_region() then {
+         get_clipboard().set_content(get_region())
+      }
+   end
+
+   method handle_paste(e)
+      local x, s, t, c
+      x := get_clipboard().get_content()
+      if t := string(x) then {
+         if has_region() then
+            delete_region()
+         self.mark := &null
+         # Apply the filter to the string to paste
+         s := ""
+         every c := !t do {
+            if member(filter, c) then
+               s ||:= c
+         }
+         self.contents := self.contents[1:self.cursor] || s || self.contents[self.cursor:0]
+         self.cursor +:= *s
+         self.invalidate()
+         create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+      }
+   end
+
+   method handle_default(e)
+      # 
+      # Add any printable character at cursor position, and return
+      # event with code 1.
+      #
+      if type(e) == "string" & not(&control | &meta) & any(filter, e) then {
+         if has_region() then
+            delete_region()
+         if self.cursor = 1 then
+            self.contents := e || self.contents
+         else
+            self.contents[self.cursor - 1] ||:= e
+         self.cursor +:= 1
+         self.mark := &null
+         self.invalidate()
+         create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+      }
+   end
+
+   method handle_event(e)
+      local code
+
+      if e === (&lpress | &rpress | &mpress) then
+         return handle_press(e)
+      else if e === (&ldrag | &rdrag | &mdrag) then
+         return handle_drag(e)
+      else if e === (&lrelease | &rrelease | &mrelease) then
+         return handle_release(e)
+      else if \self.has_focus then {
+         #
+         # Object has focus.  Handle various key presses.
+         #
+         return case e of {
+            "\b" : handle_delete1(e)
+            "\r" | "\l": handle_return(e)
+            "\^k" : handle_delete_line(e)
+            Key_Right : handle_key_right(e)
+            Key_Left : handle_key_left(e)
+            "\^a" : handle_select_all(e)
+            "\^e" : handle_end_of_line(e)
+            "\d" | "\^d" : handle_delete_2(e)
+            "\^x" :  handle_cut()
+            "\^c" :  handle_copy()
+            "\^v" :  handle_paste()
+            default : handle_default(e)
+         }
+      }
+   end
+
+   method get_region() 
+      if self.mark < self.cursor then {
+         return self.contents[self.mark:self.cursor]
+      } else {
+         return self.contents[self.cursor:self.mark]
+      }
+   end
+
+   method delete_region()
+      if self.mark < self.cursor then {
+         self.contents[self.mark:self.cursor] := ""
+         self.cursor := self.mark
+      } else {
+         self.contents[self.cursor:self.mark] := ""
+      }
+      self.mark := &null
+   end
+
+   method has_region()
+      return \self.mark ~= self.cursor
+   end
+
+   method got_focus(e)
+      if e === ("\t" | Shift_Tab) then {
+         self.cursor := *self.contents + 1
+         self.mark := 1
+      }
+      self.Component.got_focus(e)
+   end
+
+   method lost_focus(e)
+      self.mark := &null
+      self.Component.lost_focus(e)
+   end
+
+   method display(buffer_flag)
+      local r
+
+      #write("cursor=",cursor," mark=",mark," rm=",rightmost," lm=",leftmost)
+      fh := WAttrib(self.cwin, "fheight")
+
+      spc := self.tw
+
+      #
+      # Space at end for cursor at end of string
+      #
+      if \displaychar then
+         s := repl(displaychar, *(self.contents)) || " "
+      else
+         s := self.contents || " "
+
+      #
+      # Initialize left and right markers; only move leftmost if needed
+      #
+      self.leftmost >:= self.cursor
+      self.rightmost := self.cursor + 1
+
+      #
+      # Now pad out left and right markers to fill space
+      #
+      if TextWidth(self.cwin, s[self.leftmost:self.rightmost]) <= spc then {
+         while TextWidth(self.cwin, s[self.leftmost:self.rightmost + 1]) <= spc do
+            self.rightmost +:= 1
+      } else {
+         while TextWidth(self.cwin, s[self.leftmost:self.rightmost]) > spc do
+            self.leftmost +:= 1
+      }
+
+      #
+      # Clear rectangle, set s to string to display
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      s := s[self.leftmost:self.rightmost]
+
+      #
+      # Cursor position within s
+      #
+      cp := self.cursor - self.leftmost + 1
+
+      if \self.draw_border_flag then
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      #
+      # Display s centred vertically in box
+      #
+      left_string(self.cbwin, self.tx, self.y + self.h / 2 , s)
+
+      #
+      # If has focus display box cursor, else display outline cursor
+      #
+      if \self.has_focus then {
+         cw := Clone(self.cbwin, "bg=red", "fg=white")
+         EraseRectangle(cw, self.tx + TextWidth(self.cwin, s[1:cp]), 1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, s[cp]), fh)
+         left_string(cw, self.tx + TextWidth(cw, s[1:cp]), self.y + self.h / 2 , s[cp])
+         Uncouple(cw)
+      } else {
+         cw := Clone(self.cbwin, "fg=red")
+         Rectangle(cw, self.tx + TextWidth(self.cwin, s[1:cp]), 1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, s[cp]), fh)
+         Uncouple(cw)
+      }
+
+      if has_region() then {
+         mp := self.mark - self.leftmost + 1 
+         mp <:= 1
+         mp >:= (*s + 1)
+         if mp > cp then {
+            np := mp
+            mp := cp + 1
+         } else {
+            np := cp
+         }
+         off1 := TextWidth(self.cwin, s[1:mp])
+         off2 := TextWidth(self.cwin, s[1:np])
+
+         FillRectangle(self.cbwin, 
+                       self.tx + off1, 
+                       1 + self.y + (self.h - fh) / 2, 
+                       off2 - off1,
+                       fh)
+
+         cw := Clone(self.cbwin, "drawop=reverse")
+         left_string(cw, self.tx + off1, self.y + self.h / 2 , s[mp:np])
+         Uncouple(cw)
+      }
+
+      self.do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "filter" : set_filter(cset_val(attr, val))
+         "displaychar" : set_displaychar(string_val(attr, val))
+         "contents" : set_contents(string_val(attr, val))
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.Component.initially()
+      filter := printable := cset(&ascii[33:128])
+      self.accepts_focus_flag := 1
+      self.set_contents("")
+      self.draw_border_flag := 1
+      set_fields(a)
+end

@@ -1,0 +1,53 @@
+#
+# $Id: dndhandler.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+
+#
+# This class can be extended to provide a drag and drop handler for a component,
+# which can be installed with set_dnd_handler method of Component.
+#
+class DndHandler(parent)
+   #
+   # Invoked on a drag gesture; if the  component wishes to start a drag and drop session,
+   # it should succeed, otherwise it should fail.
+   # @param ev the Icon event, one of &ldrag, &rdrag, &mdrag.
+   #
+   method can_drag(ev)
+   end
+
+   #
+   # Invoked during a drag.  The component may update itself accordingly to indicate a potential
+   # drop.  If it succeeds, then the mouse cursor will be changed accordingly, to indicate this.
+   # @param d the current Drag object.
+   #
+   method drag_event(d)
+   end
+
+   #
+   # Invoked on a drop.  If the component accepts the drop, it should handle it and succeed;
+   # otherwise it should fail.
+   # @param d the current Drag object.
+   #
+   method can_drop(d)
+   end
+
+   #
+   # Invoked on the component that started the drag, after a successful drop
+   # @param d the current Drag object.
+   # @param c the component that accepted the drop
+   #
+   method end_drag(d, c)
+   end
+
+   #
+   # Invoked at the end of drag and drop (on all components) to clear any drag state
+   #
+   method drag_reset()
+   end
+end

@@ -1,0 +1,60 @@
+#
+# $Id: listspin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# Selection from a list
+#
+class ListSpin : StaticSpin(selection, selection_list)
+   method set_selection_list(x)
+      self.selection_list := x
+      self.set_selection(1)
+      return x
+   end
+
+   method set_selection(x)
+      self.selection := x
+      self.lab.set_label(self.selection_list[self.selection])
+      self.invalidate()
+      return x
+   end
+
+   method get_selection()
+      return self.selection
+   end
+
+   method do_increment()
+      if self.selection = *self.selection_list then
+         self.set_selection(1)
+      else
+         self.set_selection(self.selection + 1)
+   end
+
+   method do_decrement()
+      if self.selection = 1 then
+         self.set_selection(*self.selection_list)
+      else
+         self.set_selection(self.selection - 1)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "selection" : set_selection(int_val(attr, val))
+         "selection_list" : set_selection_list(val)
+         default: self.StaticSpin.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.StaticSpin.initially()
+      set_fields(a)
+end

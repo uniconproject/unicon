@@ -1,0 +1,87 @@
+#
+# $Id: rangespin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This is a Spin for numeric values, optionally within a fixed range.
+#
+class RangeSpin : EditSpin(lo, hi, increment)
+   method do_increment()
+      set_value(get_value() + self.increment)
+   end
+
+   method do_decrement()
+      set_value(get_value() - self.increment)
+   end
+
+   #
+   # Set the range of allowed values.  The values may
+   # be integer or real.
+   #
+   # @param lo  The lower bound
+   # @param hi  The upper bound
+   #
+   method set_range(lo, hi)
+      self.lo := lo
+      self.hi := hi
+   end
+
+   #
+   # Set the value
+   #
+   method set_value(x)
+      x <:= \self.lo
+      x >:= \self.hi
+      tf.set_contents(x)
+   end
+
+   #
+   # Set the increment, ie the amount moved up/down by the buttons.
+   #
+   method set_increment(x)
+      self.increment := x
+   end
+
+   method on_tf(ev)
+      local x
+      if x := get_value() then {
+         if x < \self.lo then
+            tf.set_contents(self.lo)
+         else if x > \self.hi then
+            tf.set_contents(self.hi)
+         create_event_and_fire(SELECTION_CHANGED_EVENT, ev.get_param())
+      } 
+   end
+
+   #
+   # Return the value, or fail if the value is not presently a valid
+   # numeric value.
+   #
+   method get_value()
+      return numeric(tf.get_contents())
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "value" : set_value(numeric_val(attr, val))
+         "increment" : set_increment(numeric_val(attr, val))
+         "range" : set_range!numeric_vals(attr, val, 2)
+         default: self.Spin.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.EditSpin.initially()
+      tf.set_filter(&digits ++ '.-')
+      self.increment := 1
+      set_fields(a)
+end

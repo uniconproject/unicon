@@ -1,0 +1,151 @@
+#
+# $Id: node.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+import lang
+
+$include "guih.icn"
+
+#
+# This class represents a node in a {Tree} object.
+#
+class Node : Object(
+   label,
+   bmps,
+   always_expandable,
+   depth,
+   is_open,
+   subnodes,
+   draw_line,
+   parent_node
+   )
+
+   #
+   # Generate all the {Nodes} in this subtree, including this {Node},
+   # in preorder ordering.
+   #
+   method generate_all_preorder()
+      suspend self | (!subnodes).generate_all_preorder()
+   end
+
+   #
+   # Generate all the {Nodes} in this subtree, including this {Node},
+   # in postorder ordering.
+   #
+   method generate_all_postorder()
+      suspend (!subnodes).generate_all_postorder() | self
+   end
+
+   #
+   # Generate all the open {Nodes} in this subtree, including this {Node},
+   # in preorder ordering.
+   #
+   method generate_open_preorder()
+      suspend self
+      if \self.is_open then
+         suspend (!subnodes).generate_open_preorder()
+   end
+
+   #
+   # Generate all open {Nodes} in this subtree, including this {Node},
+   # in postorder ordering.
+   #
+   method generate_open_postorder()
+      if \self.is_open then
+         suspend (!subnodes).generate_open_postorder()
+      suspend self
+   end
+
+   #
+   # Expand all the {Nodes} below this node.
+   #
+   method expand()
+      every n := generate_all_postorder() do
+         if *n.subnodes > 0 then
+            n.is_open := 1
+   end
+
+   #
+   # Set the label for this node.
+   #
+   method set_label(x)
+      return self.label := x
+   end
+
+   #
+   # Return the label
+   #
+   method get_label()
+      return self.label
+   end
+
+   #
+   # Set the bitmaps for this node.  The parameter should provide a list of 3
+   # bitmaps.  The first is displayed if the {Node} is open and has subnodes, the 
+   # second is displayed if the {Node} is closed and has subnodes, and the third is
+   # displayed if the node has no subnodes.
+   # @param x  A list of 3 bitmaps.
+   #
+   method set_bmps(x)
+      return self.bmps := x
+   end
+
+   #
+   # Add the given {Node} to this {Node}'s list of subnodes.
+   # @param  The {Node} to add.
+   #
+   method add(n)
+      n.parent_node := self
+      return put(subnodes, n)
+   end
+
+   #
+   # Get the parent node, or fail if there is none.
+   #
+   method get_parent_node()
+      return \self.parent_node
+   end
+
+   #
+   # Get the child nodes
+   #
+   method get_children()
+      return subnodes
+   end
+
+   #
+   # This configures the {Node} so that it is always treated as though it has subnodes
+   # for display purposes, event though it may in fact have no subnodes.
+   #
+   method set_always_expandable()
+      return always_expandable := 1
+   end
+
+   #
+   # Toggle the opened status of the {Node}.
+   #
+   method toggle_opened()
+      return is_open := if /is_open then 1 else &null
+   end
+
+   #
+   # Delete the given {Node} from the subnodes.
+   #
+   method delete_node(n)
+      every i := 1 to *self.subnodes do {
+         if n === self.subnodes[i] then {
+            delete(self.subnodes, i)
+            return
+         }
+      }
+   end
+
+   initially
+      subnodes := []
+end

@@ -1,0 +1,144 @@
+#
+# $Id: list.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+
+$include "guih.icn"
+
+#
+#
+# This component is for selecting one string from a list of
+# several.  When a button is pressed a list appears (possibly
+# with a scroll bar) from which one item can be selected.
+# 
+# A SELECTION_CHANGED_EVENT is generated whenever an item is selected from the
+# list.
+# 
+# @example
+# @ l := List()
+# @ l.set_selection_list(["Red", "Green", "Yellow", "Blue", "Orange"])
+# @ l.set_size(120)
+# @ l.set_pos(100, 100)
+# @ l.set_selection(2)  # Green will be the first selection
+# @ self.add(l)
+#
+class List : DropDown(
+   l,                       #         
+   constant_label           #
+   )
+
+   #
+   # Set the selected item.
+   # @param x   An index into the list of selectable items.
+   #
+   method set_selection(x)
+     self.selection := x
+     self.l.set_label(\self.constant_label | self.selection_list[self.selection])
+     self.invalidate()
+     return x
+   end
+
+   #
+   # The given string will always appear in the text part of the
+   # component, rather than the currently selected item.
+   #
+   method set_constant_label(x)
+      return self.constant_label := x
+   end
+
+   method firstly()
+      self.DropDown.firstly()
+      self.l.set_label(\self.constant_label | self.selection_list[self.selection])
+   end
+
+   method resize()
+      local bw
+
+      if /self.selection_list then
+         error("no selection list specified")
+
+      #
+      # Re-sized with text list showing, just get rid of it
+      #
+      if \self.tl then {
+         self.close_textlist()
+         self.unique_end()  
+      }
+
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      self.Component.compute_absolutes()
+
+      bw := self.h - 2 * BORDER_WIDTH
+
+      #
+      # Set button position and size
+      #
+      b.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      b.set_size(bw, bw)
+      b.resize()
+
+      #
+      # Set label position and size
+      #
+      l.set_pos(BORDER_WIDTH + DEFAULT_TEXT_X_SURROUND, BORDER_WIDTH)
+      l.set_size(self.w - bw - 2 * BORDER_WIDTH - 2 * DEFAULT_TEXT_X_SURROUND,  self.h - 2 * BORDER_WIDTH)
+
+      l.resize()
+
+      return
+   end
+
+   method display(buffer_flag)
+      #
+      # Draw text element 
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      #
+      # Draw button and list
+      #
+      self.b.display(1)
+      self.l.display(1)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   method on_textlist_selection()
+      local tmp
+      #
+      # Selection in list - close textlist, amend label, return event.
+      #
+      tmp := tl.get_selections()[1]
+      self.close_textlist()
+      self.unique_end(1)  
+      if self.selection := \tmp then {
+         if /self.constant_label then
+            self.l.set_label(self.selection_list[self.selection])
+         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+      }
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "selection" : set_selection(int_val(attr, val))
+         "constant_label" : set_constant_label(string_val(attr, val))
+         default: self.DropDown.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.DropDown.initially()
+      self.l := Label()
+      self.l.set_label("")
+      self.l.set_parent(self)
+      self.add(l)
+      set_fields(a)
+end

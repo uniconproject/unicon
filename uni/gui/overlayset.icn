@@ -1,0 +1,70 @@
+#
+# $Id: overlayset.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This class provides a container which contains several {OverlayItems}, only one
+# of which is visible at a time.
+#
+class OverlaySet : Component(
+   which_one              #
+   )
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      #
+      # Display contents of current tab into buffer
+      #
+      which_one.display(1)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Set which OverlayItem is currently displayed.  The default is
+   # the first which was added.
+   #
+   method set_which_one(x)
+      if \ (\self.parent_dialog).is_open then {
+         self.which_one := x
+         self.invalidate()
+      } else
+         self.which_one := x
+      return x
+   end
+
+   method handle_event(e)
+      which_one.handle_event(e)
+   end
+
+   method compute_absolutes()
+      if *self.children = 0 then
+         error("no OverlayItems in OverlaySet")
+
+      self.Component.compute_absolutes()
+
+      /self.which_one := self.children[1]
+   end
+
+   #
+   # Return the currently selected item
+   #
+   method get_which_one()
+      return self.which_one
+   end
+
+   initially(a[])
+      self.Component.initially()
+      set_fields(a)
+end

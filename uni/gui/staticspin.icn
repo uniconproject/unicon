@@ -1,0 +1,66 @@
+#
+# $Id: staticspin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This class is the base class for non-editable spin components which use
+# a Label to display the current value.
+#
+class StaticSpin : Spin(lab)
+   method resize()
+      local bh, bw
+
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      self.Component.compute_absolutes()
+
+      bw := self.h - 2 * BORDER_WIDTH
+      bh := bw / 2
+      #
+      # Set buttons position and size
+      #
+      up.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      up.set_size(bw, bh)
+      up.resize()
+      down.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH + bh)
+      down.set_size(bw, bh)
+      down.resize()
+
+      #
+      # Set Label position and size
+      #
+      lab.set_pos(BORDER_WIDTH + DEFAULT_TEXT_X_SURROUND, BORDER_WIDTH)
+      lab.set_size(self.w - bw - 2 * BORDER_WIDTH - 2 * DEFAULT_TEXT_X_SURROUND,  self.h - 2 * BORDER_WIDTH)
+      lab.resize()
+   end
+
+   method display(buffer_flag)
+      #
+      # Draw text element 
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      #
+      # Draw button and list
+      #
+      self.up.display(1)
+      self.down.display(1)
+      self.lab.display(1)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   initially()
+      self.Spin.initially()
+      self.lab := Label()
+      self.add(lab)
+end

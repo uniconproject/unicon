@@ -1,0 +1,515 @@
+#
+# $Id: dialog.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+#
+# This is the parent class of a dialog window.
+#
+class Dialog : Component(
+   win,                     # The dialog's window.
+   is_open,                 # Flag indicates whether window is open              
+   owning_dialog,
+   child_dialogs,
+   focus,                   # Component with current focus            
+   unique_flag,             # Flag indicates whether in unique processing mode             
+   re_process_flag,         # Flag indicates whether to distribute last
+                            # Icon event during unique mode                      
+   buffer_win,              # Buffer window for double buffering                 
+   min_width,               # Minimum size of window.                
+   min_height,              #                  
+   click_count,             # Variables controlling multiple clicks
+   double_click_delay,
+   repeat_delay,            # Repeat event delays
+   repeat_rate,
+   prev_x,
+   prev_y,
+   prev_time,
+   prev_event,
+   is_blocked_flag,
+   resize_attrib,
+   drag_gesture_x,
+   drag_gesture_y,
+   curr_drag,
+   tried_drag,
+   pointer_stack,
+   all_valid
+   )
+
+   method invoke_validate()
+      if \self.all_valid then
+         return
+      if \self.unique_flag then
+         self.unique_flag.validate()
+      else
+         self.validate()
+      self.all_valid := 1
+   end
+
+   method needs_validate()
+      return /self.all_valid
+   end
+
+   method is_shaded()
+      return \self.is_shaded_flag
+   end
+
+   method is_unshaded()
+      return /self.is_shaded_flag
+   end
+
+   method is_hidden()
+      return /self.is_open
+   end
+
+   method is_unhidden()
+      return \self.is_open
+   end
+
+   method block()
+      self.is_blocked_flag := 1
+      self.resize_attrib := WAttrib(self.win, "resize")
+      WAttrib(self.win, "resize=off")
+   end
+
+   method unblock()
+      self.is_blocked_flag := &null
+      WAttrib(self.win, "resize=" || self.resize_attrib)
+   end
+
+   #
+   # Returns the number of mouse clicks that have occurred
+   # consecutively, with each click in the sequence being less
+   # than {double_click_delay} milliseconds apart.  That variable is by default 500
+   # milliseconds, but it may be configured with {set_double_click_delay().}
+   #
+   method get_click_count()
+      return self.click_count
+   end
+
+   method compute_absolutes()
+      self.x := 0
+      self.y := 0
+      self.w := WAttrib(self.win, "width")
+      self.h := WAttrib(self.win, "height")
+   end
+
+   #
+   # Change pointer, saving current pointer on a stack for restoration.
+   #
+   method change_pointer(s)
+      push(pointer_stack, WAttrib(self.win, "pointer"))
+      WAttrib(self.win, "pointer=" || s)
+   end
+
+   #
+   # Restore pointer, from the stack of pointers.
+   #
+   method restore_pointer()
+      WAttrib(self.win, "pointer=" || pop(pointer_stack))
+   end
+
+   #
+   # This is a variation on the conventional modal and modeless
+   # methods.  The dialog is opened, input to other windows is not blocked, but
+   # the call does not return until the window is closed.
+   # @param d   The parent dialog, if specified, is blocked until
+   # @ the window is closed.
+   #
+   method show_child(d)
+      self.show()
+      dispatcher.add(self)
+      if \d then {
+         insert(d.child_dialogs, self)
+         self.owning_dialog := d
+         d.block()
+         dispatcher.message_loop(self)
+         d.unblock()
+      } else
+         dispatcher.message_loop(self)
+   end
+
+   #
+   # Displays the dialog as a modeless dialog.  This 
+   # means that window events are processed by this dialog
+   # and other open dialogs concurrently.  The call to
+   # {show_modeless()} opens the dialog and returns immediately.
+   #
+   # @param d   This optional parameter specifies the parent dialog.
+   # @ When a parent dialog is closed, its child dialogs are automatically closed.
+   #
+   method show_modeless(d)
+      self.show()
+      dispatcher.add(self)
+      if \d then {
+         insert(d.child_dialogs, self)
+         self.owning_dialog := d
+         self.is_blocked_flag := d.is_blocked_flag
+      }
+   end
+
+   #
+   # Displays the dialog as a modal dialog.  In other
+   # words, window events to any other open dialogs are blocked
+   # until the dialog is closed.  This method doesn't return
+   # until the dialog is closed.
+   # @param d   The parent dialog.  It will not normally be
+   # @ needed.
+   #
+   method show_modal(d)
+      self.show()
+      if \d then {
+         insert(d.child_dialogs, self)
+         self.owning_dialog := d
+      }
+      l := dispatcher.list_unblocked()
+      every (!l).block()
+      dispatcher.add(self)
+      dispatcher.message_loop(self)
+      every (!l).unblock()
+   end
+
+   #
+   # Returns the Icon window associated with the dialog.
+   #
+   method get_win()
+      return self.win
+   end
+
+   method resize_win(w, h)
+      WAttrib(self.win, "size=" || w || "," || h)
+      Enqueue(self.win, &resize)      
+   end
+
+   method final_setup()
+      self.parent_dialog := self
+      self.cwin := Clone(self.win)
+      self.cbwin := Clone(self.buffer_win)
+      every (!self.children).final_setup(self)
+   end
+
+   method open_win()
+      self.win := (WOpen ! self.attribs) | error("couldn't open window")
+      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | error("couldn't open window")
+      return
+   end
+
+   method close_win()
+      WClose(self.buffer_win)
+      return WClose(self.win)
+   end
+
+   #
+   # Sets the minimum dimensions for a window.  The user will not
+   # be able to resize the window below this size.
+   #
+   method set_min_size(w, h)
+      self.min_width := w
+      self.min_height := h
+      return
+   end
+
+   method get_buffer_win()
+      return self.buffer_win
+   end
+
+   method set_unique(c)
+      /self.unique_flag := c | stop("internal error")
+      return
+   end
+
+   method clear_unique(x)
+      self.re_process_flag := x
+      self.unique_flag := &null
+      self.all_valid := &null
+      return
+   end
+
+   #
+   # Sets keyboard focus to the given component.  This method
+   # should only be invoked after the dialog has been displayed.
+   # To give a component the initial keyboard focus,
+   # invoke this method from within {init_dialog()}
+   #
+   method set_focus(c, e)
+      if \self.focus === c then
+         return
+
+      (\self.focus).lost_focus(e)
+      self.focus := c
+      self.focus.got_focus(e)
+
+      return
+   end
+
+   #
+   # Clear the keyboard focus.
+   #
+   method clear_focus(e)
+      (\self.focus).lost_focus(e)
+      self.focus := &null
+      return
+   end
+
+   #
+   # Display all components
+   #
+   # @p
+   method display(buffer_flag)
+      if \buffer_flag then {
+         EraseArea(buffer_win, 0, 0, get_w_reference(), get_h_reference())
+         self.Component.display(1)
+         CopyArea(buffer_win, win, 0, 0, get_w_reference(), get_h_reference(), 0, 0)
+      } else {
+         EraseArea(win, 0, 0, get_w_reference(), get_h_reference())
+         self.Component.display()
+      }
+   end
+
+   #
+   # This empty method is invoked just after the dialog is displayed for the first time.
+   #
+   method init_dialog()
+   end
+
+   #
+   # This empty method may be overridden to add components to the
+   # dialog.  Alternatively, components may be added in the
+   # dialog's {initially} method.
+   #
+   method component_setup()
+   end
+
+   #
+   # This empty method may be overridden.  It is invoked just
+   # before the dialog window is closed.
+   #
+   method end_dialog()
+   end
+
+   method show()
+      self.component_setup()
+      self.open_win()
+      self.final_setup(self)
+      self.resize()
+      self.firstly()
+      self.is_open := 1
+      self.validate()
+      self.init_dialog()
+   end
+
+   method dispose()
+      self.end_dialog()
+      every (!child_dialogs).dispose()
+      self.finally()
+      self.close_win()
+      self.is_open := &null
+      dispatcher.del(self)
+      delete((\owning_dialog).child_dialogs, self)
+   end
+
+   method consume_same(e)
+      while *Pending(self.win) > 0 & Pending(self.win)[1] === e do {
+         e := ::Event(self.win)
+      }
+   end
+
+   method process_event(e)
+      if e === (&lpress | &rpress | &mpress) then {
+         t := dispatcher.curr_time_of_day()
+         if e = \prev_event & prev_x = &x & prev_y = &y & (t - prev_time < double_click_delay) then
+            click_count +:= 1
+         else
+            click_count := 1
+
+         prev_event := e
+         prev_time := t
+         prev_x := &x
+         prev_y := &y
+      }
+
+      if e === &resize then {
+         consume_same(e)
+         nw := WAttrib(self.win, "width")
+         nh := WAttrib(self.win, "height")
+         #write("size=",nw,",",nh)
+         #
+         # Don't allow size to fall below minimum.
+         #
+         if nw <:= \self.min_width then
+            WAttrib(self.win, "width=" || nw)
+
+         if nh <:= \self.min_height then
+            WAttrib(self.win, "height=" || nh)
+
+         #
+         # Resize buffer canvas
+         #
+         WAttrib(self.buffer_win, "width=" || nw)
+         WAttrib(self.buffer_win, "height=" || nh)
+         EraseArea(self.win, 0, 0, nw, nh)
+         self.resize()
+      }
+
+      if \self.unique_flag then {
+         #
+         # Unique mode
+         #
+
+         if e === (&ldrag | &rdrag | &mdrag) then
+            consume_same(e)
+         self.unique_flag.handle_event(e)
+         if /self.is_open then
+            return
+      }
+
+      if /self.unique_flag & /self.re_process_flag then {
+         #
+         # Non-unique mode
+         #
+
+         if e === (&ldrag | &rdrag | &mdrag) then {
+            # Note the position of the start of a drag
+            /self.drag_gesture_x := &x
+            /self.drag_gesture_y := &y
+            consume_same(e)
+            if /self.tried_drag &
+               (abs(&x - self.drag_gesture_x) > 3 |
+                abs(&y - self.drag_gesture_y) > 3 ) then {
+                   # Try to begin a drag.
+                   self.curr_drag := self.invoke_can_drag(e) 
+                   self.tried_drag := 1
+                   if \self.curr_drag then {
+                      change_pointer("exchange")
+                   }
+                }
+         } else
+            self.tried_drag := self.drag_gesture_x := self.drag_gesture_y := &null
+
+         if \self.curr_drag then {
+            #
+            # Drag & drop mode
+            #
+            if e === (&ldrag | &rdrag | &mdrag) then {
+               if self.invoke_drag_event(self.curr_drag) then
+                  WAttrib(self.win, "pointer=hand2")
+               else
+                  WAttrib(self.win, "pointer=exchange")
+            } else if e === (&lrelease | &rrelease | &mrelease) then {
+               if c := self.invoke_can_drop(self.curr_drag) then
+                  self.curr_drag.get_source().invoke_end_drag(self.curr_drag, c)
+               self.curr_drag := &null
+               self.invoke_drag_reset()
+               restore_pointer()
+            }
+         } else {
+            #
+            # Normal mode
+            #
+            if e === (&lpress | &rpress | &mpress) then {
+               if c := self.find_focus() then
+                  self.set_focus(c, e)
+               else
+                  self.clear_focus(e)
+            }
+            
+            self.handle_event(e)
+            if /self.is_open then
+               return
+
+            if (string(e) == "\t") & ( /self.focus | /self.focus.keeps_tabs) then {
+               if c := find_next_focus() then
+                  self.set_focus(c, e)
+            } else if e === Shift_Tab & ( /self.focus | /self.focus.keeps_tabs) then {
+               if c := find_previous_focus() then
+                  self.set_focus(c, e)
+            }
+         }
+      }
+      self.re_process_flag := &null
+   end
+
+   method get_focus_list()
+      local l, c
+      l := []
+      every c := self.generate_components() do {
+         if c.accepts_focus() & c.is_unhidden() & c.is_unshaded() then {
+            put(l, c)
+         }
+      }
+      return l
+   end
+
+   method find_next_focus()
+      local l
+      l := get_focus_list()
+      every i := 1 to *l - 1 do {
+         if l[i] === self.focus then
+            return l[i + 1]
+      }
+      return l[1]
+   end
+
+   method find_previous_focus()
+      local l
+      l := get_focus_list()
+      every i := 2 to *l do {
+         if l[i] === self.focus then
+            return l[i - 1]
+      }
+      return l[-1]
+   end
+
+   #
+   # Set the delay in milliseconds between double clicks.  The
+   # default is 500 milliseconds
+   #
+   method set_double_click_delay(i)
+      return self.double_click_delay := i
+   end
+
+   #
+   # Set the delay in milliseconds between an initial repeating event
+   # and the start of repeat events.   The
+   # default is 500 milliseconds
+   #
+   method set_repeat_delay(i)
+      return self.repeat_delay := i
+   end
+
+   #
+   # Set the delay in milliseconds between repeating events.
+   # The default is 100 milliseconds
+   #
+   method set_repeat_rate(i)
+      return self.repeat_rate := i
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "double_click_delay" : set_double_click_delay(int_val(attr, val))
+         "repeat_delay" : set_repeat_delay(int_val(attr, val))
+         "repeat_rate" : set_repeat_rate(int_val(attr, val))
+         "min_size" : set_min_size!int_vals(attr, val)
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.Component.initially()
+      self.child_dialogs := set([])
+      self.pointer_stack := []
+      self.double_click_delay := 500
+      self.repeat_delay := 500
+      self.repeat_rate := 100
+      set_fields(a)
+end

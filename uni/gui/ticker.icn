@@ -1,0 +1,67 @@
+#
+# $Id: ticker.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+import lang
+
+
+$include "guih.icn"
+
+#
+#
+# A class for an object with a ticker.
+# This class should be subclassed by a class that wishes to
+# have a ticker facility, namely implement a method that is
+# called repeatedly at set intervals.
+#
+class Ticker : Object(
+   ticker_rate,             # Ticker rate
+   next_tick_time           # Time of next tick
+   )
+
+   #
+   # This method should be overridden by the subclass.  It will
+   # be called repeatedly.
+   #
+   abstract method tick()
+
+   #
+   # Start the ticker process, with the {tick()}
+   # method being invoked approximately every {n} milliseconds.
+   #
+   # @param n   the ticker interval in milliseconds.
+   #
+   method set_ticker(n)
+      dispatcher.set_ticker(self, n)
+   end
+
+   #
+   # Stop the ticker.
+   #
+   method stop_ticker()
+      dispatcher.stop_ticker(self)
+   end
+
+   #
+   # Change the interval of the ticker
+   # @param n   the new interval.
+   #
+   method retime_ticker(n)
+      dispatcher.retime_ticker(self, n)
+   end
+
+   #
+   # Succeeds if and only if the ticker is active.
+   #
+   method is_ticking()
+      return \ticker_rate
+   end
+
+   initially
+end

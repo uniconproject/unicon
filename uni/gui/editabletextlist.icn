@@ -1,0 +1,729 @@
+#
+# $Id: editabletextlist.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# A scrollable editable text area.  An CONTENT_CHANGED_EVENT is generated whenever the contents
+# are changed by the user.
+#
+class EditableTextList : LineBasedScrollArea(
+   contents,                                     
+   printable,               # The printable characters
+   cursor_x,                #                
+   cursor_y,                #                
+   mark_x,                  #
+   mark_y,                  #
+   direction,               #
+   is_held,
+   changed,                 #
+   long_line,               #
+   moved                    #
+   )
+
+   method get_line_count()
+      return *self.contents
+   end
+
+   method get_contents()
+      return self.contents
+   end
+
+   method set_contents(x)
+      self.contents := x
+      if *self.contents = 0 then
+         #
+         # Must have somewhere for the cursor to go.
+         #
+         self.contents := [""]
+
+      clear_mark()
+      if \ (\self.parent_dialog).is_open then {
+         long_line := &null
+         self.cursor_x := self.cursor_y := 1
+         compute_and_invalidate()
+      }
+      return x
+   end
+
+   #
+   # Move cursor y to line n, and constrain x within range of that line.
+   #
+   # @p
+   method set_cursor_y(n)
+      local d, i, dest
+
+      # Search for the nearest x position on the new line corresponding to
+      # the current x position.
+      d := TextWidthEx(self.cwin, self.contents[cursor_y], 1, self.cursor_x)
+      dest := self.contents[n]
+      i := 1
+      while (i <= *dest) & (TextWidthEx(self.cwin, dest, 1, i) < d) do
+         i +:= 1
+
+      self.cursor_x := i
+      self.cursor_y := n
+
+      return n
+   end
+
+   #
+   # Move cursor so that it is in the text area, if possible.  May not be possible
+   # if cursor at end of line to the left of the text area.
+   #     
+   # @p
+   method constrain_cursor()
+      if self.cursor_y < self.get_first_line() then
+         self.set_cursor_y(self.get_first_line())
+      else if self.cursor_y >= self.get_first_line() + self.get_max_lines() then
+         self.set_cursor_y(self.get_first_line() + self.get_max_lines() - 1)
+
+      s := self.contents[self.cursor_y] || " "
+      i := TextWidthEx(self.cwin, s, 1, self.cursor_x)
+      j := i + TextWidthEx(self.cwin, s, self.cursor_x)
+      l := self.get_left_pos()
+      if self.view.x - l > i then {
+         while (self.cursor_x < *s) & (TextWidthEx(self.cwin, s, 1, self.cursor_x) < self.view.x - l) do
+            self.cursor_x +:= 1
+      } else if self.view.x - l + self.view.w < j then {
+         while (self.cursor_x > 1) & TextWidthEx(self.cwin, s, 1, self.cursor_x + 1) > self.view.x - l + self.view.w do
+            self.cursor_x -:= 1
+      }
+   end
+
+   #
+   # Move the text area displayed so that the cursor is on the screen.
+   #
+   # @p
+   method constrain_line()
+      if self.cursor_y < self.get_first_line() then
+         self.vsb.set_value(self.line_height * (self.cursor_y - 1))
+      else if self.cursor_y > self.get_last_line() then
+         self.vsb.set_value(self.line_height * (self.cursor_y - self.get_max_lines()))
+
+      s := self.contents[self.cursor_y] || " "
+      i := TextWidthEx(self.cwin, s, 1, self.cursor_x)
+      j := i + TextWidthEx(self.cwin, s, self.cursor_x)
+      l := self.get_left_pos()
+      if self.view.x - l > i then
+         self.hsb.set_value(i)
+      else if self.view.x - l + self.view.w < j then
+         self.hsb.set_value(j - self.view.w)
+   end
+
+   method handle_cut(e)
+      if has_region() then {
+         get_clipboard().set_content(get_region())
+         delete_region()
+      }
+   end
+
+   method handle_copy(e)
+      if has_region() then {
+         get_clipboard().set_content(get_region())
+      }
+   end
+
+   method handle_paste(e)
+      local x
+      x := get_clipboard().get_content()
+      if s := string(x) then {
+         if has_region() then
+            delete_region()
+         clear_mark()
+         changed := 1
+         long_line := &null
+
+         s ? repeat {
+            t := tab(upto('\n') | 0)
+            if any('\n') then {
+               nl := self.contents[self.cursor_y][self.cursor_x:0]
+               self.contents[self.cursor_y] := self.contents[self.cursor_y][1:self.cursor_x] || t
+               if self.cursor_y = *self.contents then
+                  put(self.contents, nl)
+               else
+                  insert(self.contents, self.cursor_y + 1, nl)
+               self.cursor_y +:= 1
+               self.cursor_x := 1
+               move(1)
+            } else {
+               self.contents[self.cursor_y] := self.contents[self.cursor_y][1:self.cursor_x] || t || self.contents[self.cursor_y][self.cursor_x:0]
+               self.cursor_x +:= *t
+               break
+            }
+         }
+      }
+   end
+
+   method on_vsb()
+      self.constrain_cursor()
+      self.refresh()
+   end
+
+   method on_hsb()
+      self.constrain_cursor()
+      self.refresh()
+   end
+
+   method handle_event(e)
+      (\self.vsb).handle_event(e)
+      (\self.hsb).handle_event(e)
+
+      old_contents_size := *contents
+      old_mw := TextWidthEx(cwin, contents[long_line])
+
+      changed := moved := &null
+      if e === (&lpress | &rpress | &mpress) then
+         handle_press(e)
+      else if e === (&ldrag | &rdrag | &mdrag) then
+         handle_drag(e)
+      else if e === (&lrelease | &rrelease | &mrelease) then
+         handle_release(e)
+      else if \self.has_focus then {
+         case e of {
+            Key_Home : handle_key_home(e)
+            Key_End : handle_key_end(e)
+            Key_PgUp : handle_key_page_up(e)
+            Key_PgDn : handle_key_page_down(e)
+            Key_Up : handle_key_up(e)
+            Key_Down : handle_key_down(e)
+            Key_Left : handle_key_left(e)
+            Key_Right : handle_key_right(e)
+            "\b" : handle_delete_1(e)
+            "\r" | "\l": handle_return(e)
+            "\^k" : handle_delete_line(e)
+            "\^a" : handle_select_all(e)
+            "\^e" : handle_end_of_line(e)
+            "\d" | "\^d" : handle_delete_2(e)
+            "\^x" :  handle_cut()
+            "\^c" :  handle_copy()
+            "\^v" :  handle_paste()
+            default : handle_default(e)
+         }
+      }
+
+      if \moved then {
+         #
+         # Cursor moved.  Make sure still on screen; update scrollbars,
+         # and refresh text.
+         #
+         self.constrain_line()
+         self.refresh(1)
+      } else if \changed then {
+         if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidthEx(cwin, contents[long_line])) then {
+            #
+            # Contents changed.  Re-compute all internal fields, ensure on
+            # screen and re-display whole object.
+            #
+            self.set_internal_fields()
+            self.constrain_line()
+            self.display()
+         } else {
+            self.constrain_line()
+            self.refresh(1)
+         }
+         create_event_and_fire(CONTENT_CHANGED_EVENT, e)
+      }
+   end
+
+   #
+   # Set cursor from the current &x, &y
+   #
+   # @p
+   method set_cursor_from_pos()
+      local l, nlines, s, i
+      l := (&y - self.view.y) / self.line_height
+      nlines := self.get_curr_lines()
+      l <:= 0
+      l >:= nlines - 1
+      self.cursor_y := l + self.get_first_line()
+
+      s := self.contents[self.cursor_y] || " "
+      i := 1
+      l := self.get_left_pos()
+      while (i < *s) & (TextWidthEx(self.cwin, s, 1, i + 1) < &x - l) do
+         i+:= 1
+
+      self.cursor_x := i
+   end
+
+   method get_leftmost_visible()
+
+   end
+
+   method clear_mark()
+      mark_x := mark_y := &null
+   end
+
+   method has_region()
+      return \mark_x & (mark_x ~= cursor_x | mark_y ~= cursor_y)
+   end
+
+   method handle_press(e)
+      if ((self.x <= &x < self.x + self.view.w + 2 * TX_PADDING) & (self.y  <= &y < self.y + self.view.h + 2 * TY_PADDING)) then {
+         #
+         # Button down in region - move to cursor position.
+         #
+         set_cursor_from_pos()
+         self.mark_y := self.cursor_y
+         self.mark_x := self.cursor_x
+         self.is_held := 1
+
+         moved := 1
+      }
+   end
+
+   method handle_drag(e)
+      if \self.is_held then {
+         if &y < self.y then
+            direction := "up"
+         else if &y >= self.y + self.view.h + 2 * TY_PADDING then
+            direction := "down"
+         else if &x < self.x then
+            direction := "left"
+         else if &x >= self.x + self.view.w + 2 * TX_PADDING then
+            direction := "right"
+         else
+            direction := &null
+
+         if /direction then {
+            stop_ticker()
+            set_cursor_from_pos()
+            moved := 1
+         } else {
+            if /self.ticker_rate then
+               set_ticker(30)
+         }
+      }
+   end
+
+   method tick()
+      local moved, l, s
+      case self.direction of {
+         "up" : {
+            l := self.get_first_line() - 1
+            if l > 0 then {
+               self.set_cursor_y(l) 
+               moved := 1
+            }
+         }
+         "down" : {
+            l := self.get_last_line() + 1
+            if l <= *self.contents then {
+               self.set_cursor_y(l) 
+               moved := 1
+            }
+         }
+         "left" : {
+            l := self.get_left_pos()
+            s := self.contents[self.cursor_y] || " "
+            while (self.cursor_x > 1) & TextWidthEx(self.cwin, s, 1, self.cursor_x) >= self.view.x - l do {
+               self.cursor_x -:= 1
+               moved := 1
+            }
+         }
+         "right" : {
+            l := self.get_left_pos()
+            s := self.contents[self.cursor_y] || " "
+            while (self.cursor_x < *s) & TextWidthEx(self.cwin, s, 1, self.cursor_x) < self.view.x - l + self.view.w do {
+               self.cursor_x +:= 1
+               moved := 1
+            }
+         }
+            
+      }
+      if \moved then {
+         self.constrain_line()
+         self.refresh(1)
+      }
+   end
+
+   method handle_release(e)
+      if \self.is_held then {
+         #
+         # Mouse released after being held down.  Clear flag
+         #
+         self.is_held := &null
+         stop_ticker()
+      }
+   end
+
+   method keyboard_mark()
+      if &shift then {
+         /mark_x := cursor_x
+         /mark_y := cursor_y
+      } else
+         clear_mark()
+   end
+
+   method handle_start_of_line(e)
+      keyboard_mark()
+      cursor_x := 1
+      moved := 1
+   end
+
+   method handle_end_of_line(e)
+      keyboard_mark()
+      cursor_x := *contents[cursor_y] + 1
+      moved := 1
+   end
+
+   method handle_key_up(e)
+      keyboard_mark()
+      if self.set_cursor_y(0 < self.cursor_y - 1) then
+         moved := 1
+   end
+
+   method handle_key_home(e)
+      keyboard_mark()
+      cursor_y := cursor_x := 1
+      moved := 1
+   end
+
+   method handle_key_end(e)
+      keyboard_mark()
+      cursor_y := *contents
+      cursor_x := *contents[cursor_y] + 1
+      moved := 1
+   end
+
+   method handle_select_all(e)
+      mark_x := mark_y := 1
+      cursor_y := *contents
+      cursor_x := *contents[cursor_y] + 1
+      moved := 1
+   end
+
+   method handle_key_down(e)
+      keyboard_mark()
+      if self.set_cursor_y(*self.contents >= self.cursor_y + 1) then
+         moved := 1
+   end
+
+   method handle_key_left(e)
+      keyboard_mark()
+      if self.cursor_x = 1 then {
+         if self.cursor_y > 1 then {
+            self.cursor_y -:= 1
+            self.cursor_x := *self.contents[self.cursor_y] + 1
+         }
+      } else
+         self.cursor_x -:= 1
+         moved := 1
+   end
+
+   method handle_key_right(e)
+      keyboard_mark()
+      if self.cursor_x = *self.contents[self.cursor_y] + 1 then {
+         if self.cursor_y < *self.contents then {
+            self.cursor_x := 1
+            self.cursor_y +:= 1
+         }
+      } else
+         self.cursor_x +:= 1
+         moved := 1
+   end
+
+   method handle_key_page_up(e)
+      keyboard_mark()
+      if i := (\self.vsb).get_value() then {
+         self.vsb.set_value(i - self.vsb.page_size) 
+         self.constrain_cursor()
+         self.refresh()
+      }
+   end
+
+   method handle_key_page_down(e)
+      keyboard_mark()
+      if i := (\self.vsb).get_value() then {
+         self.vsb.set_value(i + self.vsb.page_size) 
+         self.constrain_cursor()
+         self.refresh()
+      }
+   end
+
+   method handle_delete_line(e)
+      if cursor_y < *self.contents then {
+         self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
+         if long_line = self.cursor_y then
+            long_line := &null
+         else if long_line > self.cursor_y then
+            long_line -:= 1
+         clear_mark()
+         changed := 1
+         cursor_x := 1
+      }
+   end
+
+   method get_region()
+      local r
+
+      r := ""
+      if self.mark_y < self.cursor_y then {
+         r := self.contents[self.mark_y][self.mark_x:0] || "\n"
+         every r ||:= self.contents[self.mark_y + 1 to self.cursor_y - 1] || "\n"
+         r ||:= self.contents[self.cursor_y][1:self.cursor_x]
+      } else if self.mark_y > self.cursor_y then {
+         r := self.contents[self.cursor_y][self.cursor_x:0] || "\n"
+         every r ||:= self.contents[self.cursor_y + 1 to self.mark_y - 1] || "\n"
+         r ||:= self.contents[self.mark_y][1:self.mark_x]
+      } else {
+         # mark_y = cursor_y
+         if self.mark_x < self.cursor_x then {
+            r := self.contents[self.cursor_y][self.mark_x:self.cursor_x]
+         } else {
+            r := self.contents[self.cursor_y][self.cursor_x:self.mark_x]
+         }
+      }
+      return r
+   end
+
+   method delete_region()
+      if self.mark_y < self.cursor_y then {
+         self.contents[self.mark_y] := self.contents[self.mark_y][1:self.mark_x] || self.contents[self.cursor_y][self.cursor_x:0] 
+         every self.mark_y + 1 to self.cursor_y do
+            delete(self.contents, self.mark_y + 1)
+         self.cursor_x := self.mark_x
+         self.cursor_y := self.mark_y
+         long_line := &null
+      } else if self.mark_y > self.cursor_y then {
+         self.contents[self.cursor_y] := self.contents[self.cursor_y][1:self.cursor_x] || self.contents[self.mark_y][self.mark_x:0] 
+         every self.cursor_y + 1 to self.mark_y do
+            delete(self.contents, self.cursor_y + 1)
+         long_line := &null
+      } else {
+         # mark_y = cursor_y
+         if self.mark_x < self.cursor_x then {
+            self.contents[self.cursor_y][self.mark_x:self.cursor_x] := ""
+            self.cursor_x := self.mark_x
+         } else {
+            self.contents[self.cursor_y][self.cursor_x:self.mark_x] := ""
+         }
+      }
+      changed := 1
+      clear_mark()
+   end
+
+   method handle_delete_1(e)
+      if has_region() then {
+         delete_region()
+      } else {
+         #
+         # Delete
+         #
+         if self.cursor_x = 1 then {
+            if self.cursor_y > 1 then {
+               self.cursor_x := *self.contents[self.cursor_y - 1] + 1
+               self.contents[self.cursor_y - 1] ||:= self.contents[self.cursor_y]
+               self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
+               self.cursor_y -:= 1
+               changed := 1
+               long_line := &null
+            }
+         } else {
+            # self.cursor_x > 1
+            self.contents[self.cursor_y][self.cursor_x - 1] := ""
+            self.cursor_x -:= 1
+            changed := 1
+         }
+         clear_mark()
+      }
+   end
+
+   method handle_delete_2(e)
+      if has_region() then {
+         delete_region()
+      } else {
+         #
+         # Delete
+         #
+         if self.cursor_x = *contents[cursor_y] + 1 then {
+            if self.cursor_y < *contents then {
+               self.contents[self.cursor_y] ||:= self.contents[self.cursor_y + 1]
+               self.contents := self.contents[1:self.cursor_y + 1] ||| self.contents[self.cursor_y + 2 : 0]
+               changed := 1
+               long_line := &null
+            }
+         } else {
+            # Cursor not at end of line
+            self.contents[self.cursor_y][self.cursor_x] := ""
+            changed := 1
+         }
+         clear_mark()
+      }
+   end
+
+   method handle_return(e)
+      s := self.contents[self.cursor_y]
+      self.contents[self.cursor_y] := s[1:self.cursor_x]
+      self.contents := self.contents[1:cursor_y + 1] ||| [s[self.cursor_x:0]] ||| self.contents[cursor_y + 1:0]
+      if long_line = self.cursor_y then
+         long_line := &null
+      else if long_line > self.cursor_y then
+         long_line +:= 1
+         
+      self.cursor_y +:= 1
+      self.cursor_x := 1
+
+      changed := 1
+   end
+
+   method handle_default(e)
+      # 
+      # Add any printable character at cursor position
+      #
+      if type(e) == "string" & not(&control | &meta) & any(printable, e) then {
+         clear_mark()
+         if self.cursor_x = 1 then
+            self.contents[self.cursor_y] := e || self.contents[self.cursor_y]
+         else
+            self.contents[self.cursor_y][self.cursor_x - 1] ||:= e
+         self.cursor_x +:= 1
+         changed := 1
+         if TextWidthEx(cwin, self.contents[self.cursor_y]) > TextWidthEx(cwin, self.contents[long_line]) then
+            long_line := self.cursor_y
+      }
+   end
+
+   method resize()
+      self.ScrollArea.resize()
+      self.constrain_line()
+   end
+
+   method draw(subject_x, subject_y)
+      local rev, first_line, last_line, xp, yp, i
+
+      #
+      # Which lines to draw
+      #
+      first_line := get_first_line()
+      last_line := get_last_line()
+      last_line >:= get_line_count()
+
+      #
+      # Where to draw them
+      #
+      yp := self.view.y + self.line_height / 2
+
+      #
+      # Left offset
+      #
+      xp := self.view.x - subject_x
+
+      rev := Clone(self.cbwin, "drawop=reverse")
+
+      #
+      # Write the lines
+      #
+      every i := first_line to last_line do {
+         draw_line(xp, yp, i, rev)
+         yp +:= self.line_height
+      }
+
+      Uncouple(rev)
+      rev := &null
+      return
+   end
+
+   method draw_line(xp, yp, i, rev)
+      local s, off1, off2
+
+      s := self.contents[i]
+
+      left_string(self.cbwin, xp, yp, detab(s))
+
+      if i = \self.cursor_y then {
+         s ||:= " "
+         if \self.has_focus then {
+            cw := Clone(self.cbwin, "bg=red", "fg=white")
+            off := TextWidthEx(self.cbwin, s, 1, self.cursor_x)
+            EraseRectangle(cw, xp + off, 1 + yp - self.line_height / 2, CharWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+            if s[self.cursor_x] ~== "\t" then
+               left_string(cw, xp + off, yp, s[self.cursor_x])
+            Uncouple(cw)
+         } else {
+            cw := Clone(self.cbwin, "fg=red")
+            Rectangle(cw, xp + TextWidthEx(self.cbwin, s, 1, self.cursor_x), 1 + yp - self.line_height / 2, CharWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+            Uncouple(cw)
+         }
+      }
+
+      if \self.mark_y then {
+         if (self.mark_y < i < self.cursor_y) | (self.mark_y > i > self.cursor_y) then {
+            # Whole line selected
+            off1 := 0
+            off2 := TextWidthEx(self.cbwin, s)
+         } else if i = self.mark_y = self.cursor_y then {
+            # Part of line 
+            if self.mark_x < self.cursor_x then {
+               off1 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
+               off2 := TextWidthEx(self.cbwin, s, 1, self.cursor_x)
+            } else if self.mark_x > self.cursor_x then {
+               off1 := TextWidthEx(self.cbwin, s, 1, self.cursor_x + 1)
+               off2 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
+            }
+         } else if i = self.mark_y then {
+            if self.mark_y < self.cursor_y then {
+               off1 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
+               off2 := TextWidthEx(self.cbwin, s)
+            } else {
+               off1 := 0
+               off2 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
+            }
+         } else if i = self.cursor_y then {
+            if self.mark_y > self.cursor_y then {
+               off1 := TextWidthEx(self.cbwin, s, 1, self.cursor_x + 1)
+               off2 := TextWidthEx(self.cbwin, s)
+            } else {
+               off1 := 0
+               off2 := TextWidthEx(self.cbwin, s, 1, self.cursor_x)
+            }
+         }
+         if \off1 then
+            FillRectangle(rev, xp + off1, 1 + yp - self.line_height / 2,  off2 - off1, self.line_height)
+      }
+   end
+
+   method lost_focus(e)
+      clear_mark()
+      self.Component.lost_focus(e)
+   end
+
+   method get_line_height()
+      return WAttrib(self.cwin, "fheight")
+   end
+
+   method get_subject_width()
+      if /long_line then {
+         mw := TextWidthEx(cwin, contents[1])
+         long_line := 1
+         every i := 2 to *self.contents do
+            if mw <:= TextWidthEx(cwin, contents[i]) then
+               long_line := i
+      } else
+         mw := TextWidthEx(self.cwin, contents[long_line])
+      return mw + TextWidthEx(self.cwin, " ")
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "contents" : set_contents(val)
+         default: self.LineBasedScrollArea.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.LineBasedScrollArea.initially()
+      printable := cset(&ascii[33:128]) ++ '\t'
+      self.cursor_x := self.cursor_y := 1
+      self.keeps_tabs := 1
+      set_fields(a)
+end

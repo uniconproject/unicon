@@ -1,0 +1,58 @@
+#
+# $Id: spin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This class is the base class for all spin components.  It just provides the up/down
+# buttons and two abstract methods which are invoked to implement those actions.
+#
+class Spin : Component(up, down)
+   #
+   # This method must be overridden to do something to the textfield when the
+   # up button is pressed.
+   #
+   abstract method do_increment()
+
+   #
+   # This method must be overridden to do something to the textfield when the
+   # down button is pressed.
+   #
+   abstract method do_decrement()
+
+   method on_up(ev)
+      do_increment()
+      create_event_and_fire(SELECTION_CHANGED_EVENT, ev.get_param())
+   end
+
+   method on_down(ev)
+      do_decrement()
+      create_event_and_fire(SELECTION_CHANGED_EVENT, ev.get_param())
+   end
+   
+   initially()
+      self.Component.initially()
+      self.up := IconButton()
+      self.up.connect(self, "on_up", BUTTON_PRESS_EVENT)
+      self.up.connect(self, "on_up", BUTTON_HELD_EVENT)
+      self.up.toggle_draw_border()
+      self.up.set_img(img_style("tiny_arrow_up"))
+      self.up.clear_accepts_focus()
+      self.add(up)
+      self.down := IconButton()
+      self.down.connect(self, "on_down", BUTTON_PRESS_EVENT)
+      self.down.connect(self, "on_down", BUTTON_HELD_EVENT)
+      self.down.toggle_draw_border()
+      self.down.set_img(img_style("tiny_arrow_down"))
+      self.down.clear_accepts_focus()
+      self.add(down)
+end
+

@@ -1,0 +1,201 @@
+#
+# $Id: dropdown.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+import lang
+
+$include "guih.icn"
+
+class DropDownTextList : TextList(drag_flag) 
+   #
+   # Determine an appropriate size for the drop-down list.
+   #
+   # @p
+   method set_ideal_size(min_w, max_w, min_h, max_h)
+      local fh, mw, s
+      fh := WAttrib(self.cwin, "fheight")
+
+      #
+      # Compute longest line
+      #
+      mw := 0
+      every s := !self.contents do
+         mw <:= TextWidth(self.cwin, s)
+
+      # 
+      # Set the width needed, ensuring within min/max dimensions requested
+      #
+      self.w_spec := mw + 2 * TX_PADDING
+      self.w_spec <:= min_w
+      self.w_spec >:= max_w
+
+      #
+      # Set the height needed, checking for presence of HSB
+      #
+      if self.w_spec - 2 * TX_PADDING >= mw then
+         self.h_spec := *self.contents * fh + 2 * TY_PADDING
+      else
+         self.h_spec := *self.contents * fh + 2 * TY_PADDING + SB_SIZE
+
+      self.h_spec <:= min_h
+      self.h_spec >:= max_h
+   end
+
+   #
+   # This solves a problem whereby clicking on the button and moving slightlty
+   # would start the ticker.  Therefore, ignore drags until the point where the
+   # cursor has crossed a line.
+   #
+   # @p
+   method handle_drag(e)
+      if get_line_under_pointer() then
+         self.drag_flag := 1
+      /self.drag_flag | self.TextList.handle_drag(e)
+   end
+end
+
+#
+# This class is just a superclass of {List} and {EditList}.
+#
+class DropDown : Component(
+   b,                           
+   selection,               #                 
+   selection_list,          #                      
+   tl,                      #          
+   temp_win                 #
+   )
+
+   #
+   # Set the list selection items to the list x.
+   # @param  The list of items
+   #
+   method set_selection_list(x)
+      return self.selection_list := x
+   end
+
+   #
+   # Return an integer corresponding to the item in the list
+   # presently selected.
+   #
+   method get_selection()
+      return self.selection
+   end
+
+   method on_textlist()
+   end
+
+   method on_button(ev)
+      if \tl then {
+         if ev.get_type() === BUTTON_PRESS_EVENT then {
+            #
+            # Button pressed whilst list open; just close
+            #
+            self.close_textlist()
+            self.unique_end(1)
+         } else if ev.get_type() === BUTTON_RELEASE_EVENT then {
+            self.tl.is_held := &null
+            self.tl.drag_flag := 1
+         }
+      } else {
+         if ev.get_type() === BUTTON_PRESS_EVENT then {
+            #
+            # Button pressed whilst no list; open list
+            #
+            self.open_textlist()
+            self.tl.is_held := 1
+            self.unique_start()
+         }
+      }
+   end
+
+   abstract method on_textlist_selection()
+
+   method open_textlist()
+      local lno
+      #
+      # Initialize and open a list, saving window area below in a temp window.
+      #
+      self.tl := DropDownTextList()
+      self.tl.connect(self, "on_textlist_selection", SELECTION_CHANGED_EVENT)
+      self.tl.set_contents(self.selection_list)
+      self.tl.set_pos(0, self.h)
+      self.tl.set_parent(self)
+      self.tl.set_draggable_cursor()
+      self.tl.final_setup(self.get_parent_dialog())
+      self.tl.set_ideal_size(self.w, WAttrib(self.get_parent_win(), "width") - self.x - 10, 0, WAttrib(self.get_parent_win(), "height") - self.y - self.h - 10)
+      self.tl.set_select_one()
+      self.tl.resize()
+      self.tl.firstly()
+      self.temp_win := WOpen("canvas=hidden", "size=" || self.tl.w || "," || self.tl.h)
+      CopyArea(self.get_parent_win(), self.temp_win, self.tl.x, self.tl.y, self.tl.w, self.tl.h, 0, 0)
+      self.tl.set_no_selection_on_key_moves()
+      self.tl.set_cursor(self.selection)
+      lno := self.selection - self.tl.get_max_lines() / 2
+      lno <:= 1
+      self.tl.goto_pos(lno)
+      self.tl.got_focus()
+      self.add(tl)
+   end
+
+   method close_textlist()
+      #
+      # Close list, restore window
+      #
+      self.tl.finally()
+      EraseRectangle(self.get_parent_win(), self.tl.x, self.tl.y, self.tl.w, self.tl.h)
+      CopyArea(self.temp_win, self.get_parent_win(), 0, 0, self.tl.w, self.tl.h, self.tl.x, self.tl.y)
+      WClose(self.temp_win)
+      self.remove(tl)
+      self.tl := &null
+   end
+
+   method finally()
+      #
+      # Disposed with text list showing, just get rid of it
+      #
+      if \self.tl then {
+         self.close_textlist()
+         self.unique_end()  
+      }
+      self.Component.finally()
+   end
+
+   method handle_event(e)
+      if \tl then {
+         b.handle_event(e)
+         (\tl).handle_event(e)
+         if \tl & (e === (&lpress | &rpress | &mpress)) & not(tl.in_region()) then {
+            #
+            # Mouse click outside textlist.  Close.
+            # 
+            self.close_textlist()
+            self.unique_end()
+         }
+      } else {
+         self.Component.handle_event(e)
+      }
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "selection_list" : set_selection_list(val)
+      }
+   end
+
+   initially()
+      self.Component.initially()
+      self.b := IconButton()
+      self.b.set_parent(self)
+      self.b.connect(self, "on_button")
+      self.b.toggle_draw_border()
+      self.b.set_img(img_style("arrow_down"))
+      self.b.clear_accepts_focus()
+      self.add(b)
+      self.selection := 1
+end

@@ -1,0 +1,154 @@
+#
+# $Id: displayscrollarea.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This class extends LineBasedScrollArea to provide keyboard movement.  No
+# selection, or cursor handling, and no events are generated.
+#
+class DisplayScrollArea : LineBasedScrollArea(contents)
+   method get_line_count()
+      return *self.contents
+   end
+
+   #
+   # Set the data to be displayed.
+   # @param x  The list of data.
+   #
+   method set_contents(x)
+      self.contents := x
+      compute_and_invalidate()
+      return x
+   end
+
+   #
+   # Return the contents of the {ScrollArea}
+   #
+   method get_contents()
+      return self.contents
+   end
+
+   method handle_key_page_up(e)
+      if i := (\self.vsb).get_value() then {
+         self.vsb.set_value(i - self.vsb.page_size) 
+         self.refresh()
+      }
+   end
+
+   method handle_key_page_down(e)
+      if i := (\self.vsb).get_value() then {
+         self.vsb.set_value(i + self.vsb.page_size) 
+         self.refresh()
+      }
+   end
+
+   method handle_key_up(e)
+      if i := (\self.vsb).get_value() then {
+         self.vsb.set_value(i - self.vsb.increment_size) 
+         self.refresh()
+      }
+   end
+
+   method handle_key_down(e)
+      if i := (\self.vsb).get_value() then {
+         self.vsb.set_value(i + self.vsb.increment_size) 
+         self.refresh()
+      }
+   end
+
+   method handle_key_left(e)
+      if i := (\self.hsb).get_value() then {
+         self.hsb.set_value(i - self.hsb.increment_size) 
+         self.refresh()
+      }
+   end
+
+   method handle_key_right(e)
+      if i := (\self.hsb).get_value() then {
+         self.hsb.set_value(i + self.hsb.increment_size) 
+         self.refresh()
+      }
+   end
+
+   method handle_key_home(e)
+      if (\self.vsb).set_value(0) then
+         self.refresh()
+   end
+
+   method handle_key_end(e)
+      if (\self.vsb).set_value(get_subject_height() - self.view.h) then
+         self.refresh()
+   end
+
+   method handle_event(e)
+      (\self.vsb).handle_event(e)
+      (\self.hsb).handle_event(e)
+
+      if \self.has_focus then {
+         case e of {
+            Key_Home : handle_key_home(e)
+            Key_End : handle_key_end(e)
+            Key_PgUp : handle_key_page_up(e)
+            Key_PgDn : handle_key_page_down(e)
+            Key_Up : handle_key_up(e)
+            Key_Down : handle_key_down(e)
+            Key_Left : handle_key_left(e)
+            Key_Right : handle_key_right(e)
+         }
+      }
+   end
+
+   method draw(subject_x, subject_y)
+      local first_line, last_line, xp, yp, i
+
+      #
+      # Which lines to draw
+      #
+      first_line := get_first_line()
+      last_line := get_last_line()
+      last_line >:= get_line_count()
+
+      #
+      # Where to draw them
+      #
+      yp := self.view.y + self.line_height / 2
+
+      #
+      # Left offset
+      #
+      xp := self.view.x - subject_x
+
+      #
+      # Write the lines
+      #
+      every i := first_line to last_line do {
+         draw_line(xp, yp, i, rev)
+         yp +:= self.line_height
+      }
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "contents" : set_contents(val)
+         default: self.LineBasedScrollArea.set_one(attr, val)
+      }
+   end
+
+   #
+   # This method is overridden by the subclass to draw the given 
+   # line at the given position, into the buffer window cbwin.
+   # @param xp  The left position it should be drawn at
+   # @param yp   The y position it should be drawn at
+   # @param i   The line number to draw
+   #
+   abstract method draw_line(xp, yp, i)
+end

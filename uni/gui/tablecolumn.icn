@@ -1,0 +1,115 @@
+#
+# $Id: tablecolumn.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+$define CHANGE_SIZE_BORDER 4
+$define MIN_BUTTON_WIDTH 20
+
+#
+# This class provides one column within a {Table}, which
+# displays a table of data.  A column has a label with a
+# button which produces an event when clicked.  The column may
+# be expanded or contracted by dragging the right edge of the
+# button.
+#
+# The label is set by calling the {set_label(x)} method of the
+# parent class, {TextButton}.
+#
+class TableColumn : TextButton(
+   column_width,            #                    
+   change_size_mode         #                        
+   )
+
+   method handle_event(e)
+      if e === (&lpress | &rpress | &mpress) then {
+         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & self.in_region() then {
+            if(self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then {
+               self.change_size_mode := 1
+               get_parent_dialog().change_pointer("sb h double arrow")
+            }
+            else
+               self.TextButton.handle_event(e)
+         }
+      } else if \self.change_size_mode & (e === (&lrelease | &rrelease | &mrelease)) then {
+         get_parent_dialog().restore_pointer()
+         self.column_width := &x - self.x
+         self.column_width <:= MIN_BUTTON_WIDTH
+         self.change_size_mode := &null
+         self.parent.resize()
+         self.parent.parent.table_content.set_internal_fields()
+         self.parent.parent.invalidate()
+      } else
+         self.TextButton.handle_event(e)
+   end
+
+   #
+   # Set the initial width of the column, in pixels; this must be
+   # specified.
+   # @param x  The width
+   #
+   method set_column_width(x)
+      return self.column_width := x
+   end
+
+   method check_width()
+      if /self.column_width then
+         error("no column width specified")
+   end
+
+   method display(buffer_flag)
+      local yoff, clip_x1, clip_x2
+
+      yoff := self.y + self.h / 2
+
+      clip_x1 := self.x
+      clip_x1 <:= self.parent.button_x
+      clip_x2 := self.x + self.w
+      clip_x2 >:= self.parent.button_x + self.parent.button_w
+
+      Clip(self.cbwin, clip_x1, self.y, clip_x2 - clip_x1, self.h)
+
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      case self.internal_alignment of {
+         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label)
+         "l" : left_string(self.cbwin, self.tx, yoff, self.label)
+         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
+         default : error("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+      }         
+
+      if \self.is_down then {
+         cw := Clone(self.cbwin, "drawop=reverse")
+         FillRectangle(cw, self.x, self.y, self.w - CHANGE_SIZE_BORDER, self.h)
+         Uncouple(cw)
+      } 
+
+      DrawRaisedRectangle(self.cbwin, self.x + self.w - CHANGE_SIZE_BORDER, self.y + BORDER_WIDTH, CHANGE_SIZE_BORDER, self.h - 2 * BORDER_WIDTH)
+
+      Clip(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "column_width" : set_column_width(int_val(attr, val))
+         default: self.TextButton.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.TextButton.initially()
+      self.clear_accepts_focus()
+      self.internal_alignment := "l"
+      set_fields(a)
+end

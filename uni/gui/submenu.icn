@@ -1,0 +1,67 @@
+#
+# $Id: submenu.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This is the parent class of menu components which popup other submenus to the
+# right of their labels.  A submenu need not necessarily contain other {MenuComponent}s;
+# see for example the Palette class.
+#
+class SubMenu : MenuComponent(
+   x,                       #         
+   y                        #         
+   )
+
+   #
+   # Invoked by the parent system to set the top-left position of the menu prior
+   # to {resize()} being invoked
+   # @param x
+   # @param y
+   #
+   method set_abs_coords(x, y)
+      self.x := x
+      self.y := y
+   end
+
+   #
+   # Invoked after {set_abs_coords()} above, this empty method may be implemented
+   # so that the submenu may initialize its size.
+   #
+   method resize()
+   end
+
+   #
+   # Invoked by the parent menu when the mouse is dragged off the menu whilst it
+   # is active.
+   #
+   method drag_off()
+   end
+
+   #
+   # Display the submenu.
+   #
+   abstract method display()
+
+   #
+   # Handle the given event.
+   # @param e the Icon event to handle.
+   abstract method handle_event(e)
+
+   #
+   # Hide the submenu.
+   #
+   abstract method hide()
+
+   initially()
+      self.MenuComponent.initially()
+      self.is_sub_menu_flag := 1
+end

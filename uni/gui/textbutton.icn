@@ -1,0 +1,97 @@
+#
+# $Id: textbutton.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# A button with a text label.
+#
+# The size of the button can either be set using {set_size()},
+# be left to default to a size based on the given label.
+#
+class TextButton : Button(
+   internal_alignment,      #                          
+   tx,                      #          
+   tw                       #
+   )
+
+   #
+   # Set the alignment of the label within the button.  The
+   # parameter should be either ``l'', ``c'' or ``r'' to set the
+   # alignment to left, centre or right respectively.  If this
+   # method is not invoked, then the alignment is centred.
+   # @param x   The alignment
+   #
+   method set_internal_alignment(x)
+      return self.internal_alignment := x
+   end
+
+   method display(buffer_flag)
+      local cw
+      yoff := self.y + self.h / 2
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      case self.internal_alignment of {
+         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label)
+         "l" : left_string(self.cbwin, self.tx, yoff, self.label)
+         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
+         default : error("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+      }         
+
+      if /self.no_keyboard_flag & \self.has_focus then {
+         cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
+         Rectangle(cw, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
+         Uncouple(cw)
+      }
+
+      if \self.is_down then {
+         cw := Clone(self.cbwin, "drawop=reverse")
+         FillRectangle(cw, self.x, self.y, self.w, self.h)
+         Uncouple(cw)
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      } else {
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         if /self.is_checked_flag then
+            DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         else
+            DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      }
+
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+
+      return
+   end
+
+   method resize()
+      if /self.label then
+         error("no label specified")
+      /self.w_spec := TextWidth(self.cwin, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
+      /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND
+      self.Component.resize()
+
+      self.tx := self.x + DEFAULT_TEXT_X_SURROUND
+      self.tw := self.w - 2 *  DEFAULT_TEXT_X_SURROUND
+   end
+      
+   method set_one(attr, val)
+      case attr of {
+         "internal_alignment" : set_internal_alignment(string_val(attr, val))
+         default: self.Button.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.Button.initially()
+      self.internal_alignment := "c"
+      set_fields(a)
+end

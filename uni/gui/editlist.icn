@@ -1,0 +1,165 @@
+#
+# $Id: editlist.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This component functions in the same way as List above, but
+# the item selected may be edited by the user.  An extra
+# method is therefore supplied to get the content, as it may
+# not correspond to an element of the list.
+#
+# A SELECTION_CHANGED_EVENT is generated when an item in the
+# list is selectd.  Also, the embedded textfield's events are forwarded
+# as though they were from this component itself.
+#
+class EditList : DropDown(
+   tf,                      #          
+   no_default               #
+   )
+
+   #
+   # Set the text field's filter (see {TextField} for details).
+   # @param c  The filter
+   #
+   method set_filter(c)
+      return self.tf.set_filter(c)
+   end
+
+   method firstly()
+      self.DropDown.firstly()
+      if /self.no_default then {
+         #
+         # Initialize textfield to default, neither set_contents or set_selection
+         # having been called.
+         #
+         tf.set_contents(self.selection_list[self.selection])
+      }
+   end
+
+   #
+   # Return the contents of the selected item (which may have
+   # been edited).
+   #
+   method get_contents()
+      return self.tf.get_contents()
+   end
+
+   #
+   # Set the initial contents of the text to the given string.
+   #
+   method set_contents(x)
+      self.no_default := 1
+      return self.tf.set_contents(x)
+   end
+
+   #
+   # Set the selected item.
+   # @param x   An index into the list of selectable items.
+   #
+   method set_selection(x)
+      self.no_default := 1
+      self.selection := x
+      self.tf.set_contents(self.selection_list[self.selection])
+      return x
+   end
+
+   method resize()
+      local bw
+
+      if /self.selection_list then
+         error("no selection list specified")
+
+      #
+      # Re-sized with text list showing, just get rid of it
+      #
+      if \self.tl then {
+         self.close_textlist()
+         self.unique_end()  
+      }
+
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      self.Component.compute_absolutes()
+
+      bw := self.h - 2 * BORDER_WIDTH
+
+      #
+      # Set button position and size
+      #
+      b.set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      b.set_size(bw, bw)
+      b.resize()
+
+      #
+      # Set TextField position and size
+      #
+      tf.set_pos(BORDER_WIDTH, BORDER_WIDTH)
+      tf.set_size(self.w - bw - 2 * BORDER_WIDTH,  self.h - 2 * BORDER_WIDTH)
+      tf.resize()
+
+      return
+   end
+
+   method display(buffer_flag)
+      #
+      # Draw text element 
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      #
+      # Draw button and list
+      #
+      self.b.display(1)
+      self.tf.display(1)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   method on_textfield(ev)
+      # Change the source to point to self rather than table_content.
+      ev.set_source(self)
+      fire_event(ev)
+   end
+
+   method on_textlist_selection()
+      local tmp
+      #
+      # Selection in list - close textlist, amend label, return event.
+      #
+      tmp := tl.get_selections()[1]
+      self.close_textlist()
+      self.unique_end(1)  
+      if self.selection := \tmp then {
+         self.tf.set_contents(self.selection_list[self.selection])
+         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+      }
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "selection" : set_selection(int_val(attr, val))
+         "filter" : set_filter(cset_val(attr, val))
+         "contents" : set_contents(string_val(attr, val))
+         default: self.DropDown.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.DropDown.initially()
+      self.tf := TextField()
+      self.tf.set_parent(self)
+      self.tf.connect(self, "on_textfield")
+      self.tf.toggle_draw_border()
+      self.add(tf)
+      self.selection := 1
+      set_fields(a)
+end

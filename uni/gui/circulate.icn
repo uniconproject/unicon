@@ -1,0 +1,120 @@
+#
+# $Id: circulate.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# Selection from a list
+#
+class Circulate : Component(selection, selection_list, b, l)
+   #
+   # Some methods to set/get the selection data. 
+   #
+
+   method set_selection_list(x)
+      self.selection_list := x
+      self.set_selection(1)
+      return x
+   end
+
+   method set_selection(x)
+      self.selection := x
+      self.l.set_label(self.selection_list[self.selection])
+      self.invalidate()
+      return x
+   end
+
+   method get_selection()
+      return self.selection
+   end
+
+   #
+   # Called once at startup, and whenever the window is resized.
+   #
+   # @p
+   method resize()
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 16
+      compute_absolutes()
+
+      #
+      # Set button position and size
+      #
+      b.set_pos(BORDER_WIDTH, BORDER_WIDTH)
+      b.set_size(self.h - 2 * BORDER_WIDTH, self.h - 2 * BORDER_WIDTH)
+      b.resize()
+
+      l.set_pos(self.h - BORDER_WIDTH + DEFAULT_TEXT_X_SURROUND, self.h / 2)
+      l.set_align("l", "c")
+      l.set_size(self.w - self.h - 2 * DEFAULT_TEXT_X_SURROUND, self.h - 2 * BORDER_WIDTH)
+      l.resize()
+
+      return
+   end
+
+   #
+   # Display the object.  In this case, double buffering is not
+   # necessary.
+   #
+   # @p
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(W, self.x, self.y, self.w, self.h)
+      l.display(buffer_flag)
+      b.display(buffer_flag)
+      self.do_shading(W)
+   end
+
+   method on_button_pressed(ev)
+      self.set_selection(1 + self.selection % *self.selection_list)
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "selection" : set_selection(int_val(attr, val))
+         "selection_list" : set_selection_list(val)
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   initially(a[]) 
+      self.Component.initially()
+      self.l := Label()
+      self.l.set_parent(self)
+      self.l.clear_draw_border()
+      add(self.l)
+      self.b := IconButton()
+      self.b.set_parent(self)
+      self.b.connect(self, "on_button_pressed", ACTION_EVENT)
+      add(self.b)
+      b.set_draw_border()
+      self.b.set_img("13,c1,_
+~~~~0000~~~~~_
+~~~000000~~~~_
+~~00~~~~00~~~_
+~00~~~~~~00~~_
+~00~~~~~~00~~_
+~00~~~~~~~~~~_
+~00~~~~~~~~~~_
+~00~~~~~~0~~~_
+~00~~~~~000~~_
+~00~~~~00000~_
+~00~~~0000000_
+~00~~~~~~00~~_
+~00~~~~~~00~~_
+~00~~~~~~00~~_
+~~00~~~~00~~~_
+~~~000000~~~~_
+~~~~0000~~~~~_
+")
+      set_fields(a)
+end

@@ -1,0 +1,40 @@
+#
+# $Id: selectablescrollareadndhandler.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+class SelectableScrollAreaDndHandler : DndHandler()
+   method can_drag()
+      local l, obj
+      if /parent.draggable_cursor & \parent.is_held then {
+         parent.is_held := &null
+         return parent.object_get_gesture_selections()
+      }
+   end
+
+   method drag_event(d)
+      local old_highlight
+
+      old_highlight := parent.highlight
+      parent.highlight := parent.get_line_under_pointer() | &null
+      if parent.highlight ~=== old_highlight then
+         parent.refresh(1)
+
+      return \parent.highlight
+   end
+
+   method drag_reset()
+      if \parent.highlight then {
+         parent.highlight := &null
+         parent.refresh(1)
+      }
+   end
+end

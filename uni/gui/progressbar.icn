@@ -1,0 +1,89 @@
+#
+# $Id: progressbar.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+
+package gui
+
+$include "guih.icn"
+
+
+#
+# A progress bar
+#
+class ProgressBar : Component(
+   p,        # The percentage on display.
+   bar_x,
+   bar_y,
+   bar_h,    # Maximum bar height and width.
+   bar_w
+   )
+
+   method resize()
+      #
+      # Set a default height based on the font size.
+      #
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      #
+      # Call the parent class's method (this is mandatory).
+      #
+      self.Component.resize()
+      #
+      # Set bar height and width figures - this just gives a sensible border between
+      # the "bar" and the border of the object.  By using these constants, a consistent
+      # appearance with other objects is obtained.
+      #
+      bar_x := self.x + DEFAULT_TEXT_X_SURROUND
+      bar_y := self.y + BORDER_WIDTH + 3
+      bar_w := self.w - 2 * DEFAULT_TEXT_X_SURROUND
+      bar_h := self.h - 2 * (BORDER_WIDTH + 3) 
+   end
+
+   method display(buffer_flag)
+      #
+      # Erase and re-draw the border and bar
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      FillRectangle(self.cbwin, self.bar_x, self.bar_y, self.bar_w * p / 100.0, self.bar_h)
+      #
+      # Draw the string in reverse mode
+      #
+      cw := Clone(self.cbwin, "drawop=reverse")
+      center_string(cw, self.x + self.w / 2, self.y + self.h / 2, p || "%")
+      Uncouple(cw)
+      #
+      # Copy from buffer to window if flag not set.
+      #
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Get the current percentage.
+   #
+   method get_percentage()
+      return p
+   end
+
+   #
+   # Set the percentage.
+   #
+   method set_percentage(p)
+      p <:= 0
+      p >:= 100
+      self.p := p
+      self.invalidate()
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "percentage" : set_percentage(int_val(attr, val))
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.Component.initially()
+      self.set_percentage(0)
+      set_fields(a)
+end

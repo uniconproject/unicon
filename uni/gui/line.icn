@@ -1,0 +1,65 @@
+#
+# $Id: line.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This class implements an etched Line, drawn within its region.
+#
+class Line : Component(is_vertical_flag)
+   #
+   # Configure the {Line} to be vertical; the default is horizontal.
+   #
+   method set_is_vertical()
+      self.is_vertical_flag := 1
+      self.invalidate()
+   end
+
+   #
+   # Configure the {Line} to be horizontal; the default.
+   #
+   method clear_is_vertical()
+      self.is_vertical_flag := &null
+      self.invalidate()
+   end
+
+   method resize()
+      if /self.is_vertical_flag then
+         /self.h_spec := 3
+      else
+         /self.w_spec := 3
+      self.Component.resize()
+   end
+
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+      if /self.is_vertical_flag then
+         DrawEtchedHorizontalLine(W, self.x, self.y + self.h / 2, self.w)
+      else
+         DrawEtchedVerticalLine(W, self.x + self.w / 2, self.y, self.h)
+      self.do_shading(W)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "is_vertical" : if test_flag(attr, val) then 
+            set_is_vertical()
+         else
+            clear_is_vertical()
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.Component.initially()
+      set_fields(a)
+end

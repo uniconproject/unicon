@@ -1,0 +1,26 @@
+package gui
+
+import util
+
+#
+# A Listener which listens for gui _Event objects to be fired by
+# a component.
+#
+class FilterListener : MethodListener(type)
+   #
+   # The type for which we are listening, or &null implying
+   # we are listening for all types.
+   #
+   method get_type()
+      return type
+   end
+
+   method fire(event) 
+      if /type | type === event.get_type() then
+         call(event)
+   end
+
+   initially(obj, method_name, type) 
+      self.MethodListener.initially(obj, method_name)
+      self.type := type
+end

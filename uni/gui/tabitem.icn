@@ -1,0 +1,85 @@
+#
+# $Id: tabitem.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+
+#
+# This class represents a single pane in a {TabSet}.  {Components}
+# can be added to the {TabItem} using {Component}'s {add} method.
+# They are then displayed and accept input when that TabItem
+# is selected.
+#
+# Components added to the {TabItem} are positioned relative to
+# the position and size of the parent {TabSet}.  Therefore for
+# example {set_pos("50%", "50%")} refers to the centre of the
+# {TabSet} rather than the centre of the screen.  The components
+# also inherit any window attributes of the {TabSet}, such as
+# font, colour and so on.
+#
+class TabItem : Component(
+   label,                   #             
+   label_x,                 #               
+   line_no,                 #               
+   label_w                  #               
+   )
+
+   #
+   # Set the {TabItem}'s label.
+   #
+   method set_label(x)
+      return self.label := x
+   end
+ 
+   method check_label()
+      if /self.label then
+         error("no label specified")
+   end
+
+   method is_hidden()
+      return parent.which_one ~=== self
+   end
+
+   method is_unhidden()
+      return parent.which_one === self
+   end
+
+   method display_tab()
+      ypos := (self.line_no - 1) * self.parent.line_h + self.parent.y
+      cw := Clone(self.parent.cbwin)
+      Fg(cw, "black")
+      DrawLine(cw, self.label_x + self.label_w - 1, ypos, self.label_x + self.label_w - 1, ypos + self.parent.line_h - 1)
+      DrawLine(cw, self.label_x + self.label_w - 2, ypos + 1, self.label_x + self.label_w - 2, ypos + self.parent.line_h - 2)
+      Fg(cw, "pale gray")
+      DrawLine(cw, self.label_x, ypos + self.parent.line_h - 1, self.label_x, ypos, self.label_x + self.label_w - 1, ypos)
+      Fg(cw, "white")
+      DrawLine(cw, self.label_x + 1, ypos + self.parent.line_h - 2, self.label_x + 1, ypos + 1, self.label_x + self.label_w - 2, ypos  + 1)
+      Uncouple(cw)
+
+      left_string(self.parent.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + self.parent.line_h / 2, self.label)
+
+      if is_shaded() then
+         FilterRectangle(self.parent.cbwin, self.label_x, ypos + 2, self.label_w - 2, self.parent.line_h - 1)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "label" : set_label(string_val(attr, val))
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      self.Component.initially()
+      self.set_pos(0, 0)
+      self.set_size("100%", "100%")
+      set_fields(a)
+end

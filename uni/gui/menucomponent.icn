@@ -1,0 +1,291 @@
+#
+# $Id: menucomponent.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+import lang
+import util
+
+$include "guih.icn"
+
+#
+# This is the superclass of all the objects that make up the
+# menu system (other than the top level {Components} of course).
+# It encapsulates the basic labels and images to display a menu
+# item.  The functionality of an actual menu is in the subclass,
+# {SubMenu}.
+#
+class MenuComponent : SetFields : Object(
+   label,                   #             
+   label_x,                 #               
+   label_y,                 #               
+   label_h,                 #               
+   label_left_w,            #                    
+   label_right_w,           #                     
+   label_mid_w,             #                   
+   is_sub_menu_flag,        #                        
+   parent_component,        #                       
+   is_shaded_flag,          #                      
+   label_left,              #                  
+   img_left,                #                
+   img_left_h,              #                  
+   img_left_w,              #                  
+   label_right,             #                   
+   img_right,               #                 
+   img_right_h,             #                   
+   img_right_w,             #                   
+   parent,             #
+   event_listener_list
+   )
+
+   method error(s)
+      stop("gui : error whilst processing object " || lang::get_class_name(self) || " : " || s)
+   end
+
+   method set_parent(x)
+      return self.parent := x
+   end
+
+   #
+   # Set the optional left label to the given string.
+   #
+   method set_label_left(x)
+      self.label_left := x
+      possibly_invalidate()
+   end
+
+   #
+   # Set the optional right label to the given string.
+   #
+   method set_label_right(x)
+      self.label_right := x
+      possibly_invalidate()
+   end
+
+   #
+   # Set the optional left image to the given Icon image.
+   #
+   method set_img_left(x)
+      self.img_left := x
+      self.img_left_w := img_width(self.img_left)
+      self.img_left_h := img_height(self.img_left) 
+      possibly_invalidate()
+   end
+
+   #
+   # Set the optional right image to the given Icon image.
+   #
+   method set_img_right(x)
+      self.img_right := x
+      self.img_right_w := img_width(self.img_right)
+      self.img_right_h := img_height(self.img_right) 
+      possibly_invalidate()
+   end
+
+   #
+   # Succeed iff the component is shaded
+   #
+   method is_shaded()
+      return \self.is_shaded_flag
+   end
+
+   #
+   # Toggle whether or not the item is shaded.  If it is, it is
+   # displayed in a filtered way and will not accept input.
+   #
+   method toggle_is_shaded()
+      if /self.is_shaded_flag then
+         self.is_shaded_flag := 1
+      else
+         self.is_shaded_flag := &null
+      possibly_invalidate()
+   end
+
+   #
+   # Set the shaded status of the component to shaded.
+   #
+   method set_is_shaded()
+      self.is_shaded_flag := 1
+      possibly_invalidate()
+   end
+
+   #
+   # Set the shaded status of the component to not shaded.
+   #
+   method clear_is_shaded()
+      self.is_shaded_flag := &null
+      possibly_invalidate()
+   end
+
+   #
+   # Invalidate the parent {Component} if this is the root of the menu hierarchy.
+   #
+   method possibly_invalidate()
+      if /self.parent then
+         (\self.parent_component).invalidate()
+   end
+
+   method set_parent_component(x)
+      return self.parent_component := x
+   end
+
+   method is_sub_menu()
+      return \self.is_sub_menu_flag
+   end
+
+   #
+   # Get the label.
+   #
+   method get_label()
+      return self.label
+   end
+
+   #
+   # Set the centre label to the given string.
+   #
+   method set_label(x)
+      return self.label := x
+   end
+
+   #
+   # Display the label at its position using the given widths for the left, middle
+   # and right elements.
+   #
+   method display_label(lw, mw, rw)
+      cw := self.parent_component.cbwin
+
+      #
+      # Draw the left label or image
+      #
+      if \self.label_left then
+         left_string(cw, self.label_x + DEFAULT_TEXT_X_SURROUND, self.label_y + self.label_h / 2, self.label_left)
+      else if \self.img_left then
+         DrawImage(cw, self.label_x + DEFAULT_TEXT_X_SURROUND, self.label_y + (self.label_h - img_left_h) / 2, img_left)
+
+      #
+      # Draw the right label or image
+      #
+      if \self.label_right then
+         left_string(cw, self.label_x + lw + mw, self.label_y + self.label_h / 2, self.label_right)
+      else if \self.img_right then
+         DrawImage(cw, self.label_x + lw + mw, self.label_y + (self.label_h - img_right_h) / 2, img_right)
+
+      #  
+      # Draw the centre label
+      #
+      left_string(cw, self.label_x + lw + DEFAULT_TEXT_X_SURROUND, self.label_y + self.label_h / 2, self.label)
+
+      #
+      # Filter if shaded
+      #
+      if \self.is_shaded_flag then
+         FilterRectangle(cw, self.label_x, self.label_y, mw + lw + rw, self.label_h)
+
+   end
+
+   #
+   # Invoked by the menu system to set the component's label position.
+   #
+   method set_label_pos(x, y)
+      self.label_x := x
+      self.label_y := y
+   end
+
+   #
+   # Close the menu system, possibly discarding the current event.
+   #
+   method close_all(discard)
+      parent_component.set_which_open()
+      parent_component.unique_end(discard)
+   end
+
+   #
+   # Called when the menu component is selected
+   #
+   method succeed(ev)
+      close_all(1)
+      event_listener_list.fire(Event(self, ACTION_EVENT, ev))
+   end
+
+   #
+   # Compute the size fields.
+   #
+   method size_label()
+      cw := self.parent_component.cwin
+
+      if /self.label then
+         error("no label specified")
+
+      self.label_h := WAttrib(cw, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+
+      #
+      # Set the left hand sizes; the left hand label has DEFAULT_TEXT_X_SURROUND to its left.
+      #
+      if \self.label_left then
+         self.label_left_w := TextWidth(cw, self.label_left) + DEFAULT_TEXT_X_SURROUND
+      else if \self.img_left then {
+         self.label_left_w :=  self.img_left_w + DEFAULT_TEXT_X_SURROUND
+         self.label_h <:=  self.img_left_h + 2 * DEFAULT_TEXT_Y_SURROUND
+      } else
+         self.label_left_w := 0
+
+      #
+      # Set the right hand sizes; this has DEFAULT_TEXT_X_SURROUND to its right.
+      #
+      if \self.label_right then
+         self.label_right_w := TextWidth(cw, self.label_right) + DEFAULT_TEXT_X_SURROUND
+      else if \self.img_right then {
+         self.label_right_w :=  self.img_right_w + DEFAULT_TEXT_X_SURROUND
+         self.label_h <:=  self.img_right_h + 2 * DEFAULT_TEXT_Y_SURROUND
+      } else
+         self.label_right_w := 0
+
+      #
+      # Space for the string and DEFAULT_TEXT_X_SURROUND either side.
+      #
+      self.label_mid_w := TextWidth(cw, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
+   end
+
+   #
+   # Add an Event listener
+   #
+   method add_event_listener(l)
+      event_listener_list.add_listener(l)
+   end
+
+   #
+   # Convenience method to create and add a FilterListener
+   #
+   method connect(cl, meth, ev)
+      add_event_listener(FilterListener(cl, meth, ev))
+   end
+
+   #
+   # Remove an Event listener
+   #
+   method remove_event_listener(l)
+      event_listener_list.remove_listener(l)
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "label" : set_label(string_val(attr, val))
+         "label_left" : set_label_left(string_val(attr, val))
+         "label_right" : set_label_right(string_val(attr, val))
+         "is_shaded" : 
+            if test_flag(attr, val) then
+               set_is_shaded()
+            else
+               clear_is_shaded()
+         default : error("Unkown attribute " || attr)
+      }
+   end
+
+   initially()
+      event_listener_list := ListenerList()
+end

@@ -1,0 +1,328 @@
+#
+# $Id: scrollarea.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This is the part of the component displaying the underlying object.
+#
+# @p
+class View : Component()
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      # Clipping on self.cbwin doesn't seem to work okay, so clip on the parent.  A bug
+      # in the graphics code perhaps.
+      Clip(self.parent.cbwin, self.x, self.y, self.w, self.h)
+      parent.draw(parent.get_areax(), parent.get_areay(), self.x, self.y, self.w, self.h)
+      Clip(self.parent.cbwin)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+end
+
+#
+# This is a base class for displaying an arbitrarily large object
+# using a pair of scroll bars.  This specification of the object is
+# provided by implementing methods in a subclass.
+#
+# No event handling is done; see BasicScrollArea for the necessary
+# requirement for the subclass.
+#
+class ScrollArea : Component(
+   hsb,                     #           
+   vsb,
+   view,
+   last_refresh_x,
+   last_refresh_y
+   )
+
+   #
+   # The x offset into the object we are viewing
+   #
+   method get_areax()
+      return (\self.hsb).get_value() | 0
+   end
+
+   #
+   # The y offset into the object we are viewing
+   #
+   method get_areay()
+      return (\self.vsb).get_value() | 0
+   end
+
+   #
+   # Recompute the scrollbars and redisplay the object.
+   #
+   method compute_and_invalidate()
+      if \ (\self.parent_dialog).is_open then
+         self.set_internal_fields()
+      self.invalidate()
+   end
+
+   method resize()
+      self.Component.compute_absolutes()
+      self.set_internal_fields()
+   end
+
+   method on_vsb()
+      self.refresh()
+   end
+
+   method on_hsb()
+      self.refresh()
+   end
+
+   #
+   # Called on resize, buttons resized, or contents amended
+   #
+   # @p
+   method set_internal_fields()
+      local line_count, subject_width, subject_height
+
+      #
+      # Position and size of scrolling region
+      #
+      if \self.draw_border_flag then {
+         view.set_pos(TX_PADDING, TY_PADDING)
+         max_th := self.h - 2 * TY_PADDING
+         max_tw := self.w - 2 * TX_PADDING
+      } else {
+         view.set_pos(0, 0)
+         max_th := self.h
+         max_tw := self.w
+      }         
+
+      #
+      # Compute maximum width
+      #
+      subject_width := get_subject_width()
+      subject_height := get_subject_height()
+
+      #
+      # Compute max/min heights/widths for text; max if no scroll bar
+      # needed; min otherwise.
+      #
+      min_th := max_th - SB_SIZE
+      min_tw := max_tw - SB_SIZE
+
+      #
+      # Set flags indicating whether scroll bars needed.  0 => definitely not
+      # 1 => yes if opposite scroll bar needed; 2 => definitely yes.
+      #
+      if min_th >= subject_height then
+         need_vsb := 0
+      else if max_th >= subject_height then
+         need_vsb := 1
+      else
+         need_vsb := 2
+
+      if min_tw >= subject_width then
+         need_hsb := 0
+      else if max_tw >= subject_width then
+         need_hsb := 1
+      else
+         need_hsb := 2
+
+      #
+      # Case analysis on flags to set up correct scroll bars, text width
+      # and height fields.
+      #
+      if (need_vsb < 2) & (need_hsb < 2) then {
+         #
+         # No scroll bars.
+         #
+         view.set_size(max_tw, max_th)
+         (\self.vsb).finally()
+         (\self.hsb).finally()
+         self.remove(\self.vsb)
+         self.remove(\self.hsb)
+         self.vsb := self.hsb := &null
+      } else if (need_hsb + need_vsb > 2) then {
+         #
+         # Two scroll bars.
+         #
+         if /self.vsb := ScrollBar() then
+            new_vsb := 1
+         if /self.hsb := ScrollBar() then {
+            self.hsb.set_is_horizontal()
+            new_hsb := 1
+         }
+
+         view.set_size(min_tw, min_th)
+
+         if \self.draw_border_flag then {
+            self.vsb.set_pos(self.w - SB_SIZE - BORDER_WIDTH, BORDER_WIDTH)
+            self.vsb.set_size(SB_SIZE, self.h - SB_SIZE - BORDER_WIDTH * 2)
+            self.hsb.set_pos(BORDER_WIDTH, self.h - SB_SIZE - BORDER_WIDTH)
+            self.hsb.set_size(self.w - SB_SIZE - BORDER_WIDTH * 2, SB_SIZE)
+         } else {
+            self.vsb.set_pos(self.w - SB_SIZE, 0)
+            self.vsb.set_size(SB_SIZE, self.h - SB_SIZE)
+            self.hsb.set_pos(0, self.h - SB_SIZE)
+            self.hsb.set_size(self.w - SB_SIZE, SB_SIZE)
+         }
+      } else if (need_hsb = 0) & (need_vsb = 2) then {
+         #
+         # One vertical scroll bar.
+         #
+         if /self.vsb := ScrollBar() then
+            new_vsb := 1
+         (\self.hsb).finally()
+         self.remove(\self.hsb)
+         self.hsb := &null
+
+         view.set_size(min_tw, max_th)
+
+         if \self.draw_border_flag then {
+            self.vsb.set_pos(self.w - SB_SIZE - BORDER_WIDTH, BORDER_WIDTH)
+            self.vsb.set_size(SB_SIZE, self.h  - BORDER_WIDTH * 2)
+         } else {
+            self.vsb.set_pos(self.w - SB_SIZE, 0)
+            self.vsb.set_size(SB_SIZE, self.h)
+         }
+      } else if (need_hsb = 2) & (need_vsb = 0) then {
+         #
+         # One horizontal scroll bar.
+         #
+         if /self.hsb := ScrollBar() then {
+            self.hsb.set_is_horizontal()
+            new_hsb := 1
+         }
+         (\self.vsb).finally()
+         self.remove(\self.vsb)
+         self.vsb := &null
+
+         view.set_size(max_tw, min_th)
+
+         if \self.draw_border_flag then {
+            self.hsb.set_pos(BORDER_WIDTH, self.h - SB_SIZE - BORDER_WIDTH)
+            self.hsb.set_size(self.w  - BORDER_WIDTH * 2, SB_SIZE)
+         } else {
+            self.hsb.set_pos(0, self.h - SB_SIZE)
+            self.hsb.set_size(self.w, SB_SIZE)
+         }
+      }
+
+      view.resize()
+
+      #
+      # Initialize scroll bars.
+      #
+      if \self.vsb then {
+         if view.h > 0 then
+            self.vsb.set_page_size(view.h)
+         else
+            self.vsb.set_page_size(1)
+         self.vsb.set_total_size(subject_height)
+         if \new_vsb then {
+            self.vsb.set_increment_size(get_subject_vertical_increment())
+            self.vsb.connect(self, "on_vsb")
+            self.vsb.set_value(0)
+            self.add(self.vsb)
+            self.vsb.final_setup(self.get_parent_dialog())
+            self.vsb.resize()
+            self.vsb.firstly()
+         } else
+            self.vsb.resize()
+      } 
+
+      if \self.hsb then {
+         if view.w > 0 then
+            self.hsb.set_page_size(view.w)
+         else
+            self.hsb.set_page_size(1)
+         self.hsb.set_total_size(subject_width)
+         if \new_hsb then {
+            self.hsb.set_increment_size(get_subject_horizontal_increment())
+            self.hsb.connect(self, "on_hsb")
+            self.hsb.set_value(0)
+            self.add(self.hsb)
+            self.hsb.final_setup(self.get_parent_dialog())
+            self.hsb.resize()
+            self.hsb.firstly()
+         } else
+            self.hsb.resize()
+      }
+   end
+
+   #
+   # Re-draw the text area.  Use double-buffering to avoid flicker.
+   #
+   # @p
+   method refresh(redraw)
+      local currx, curry
+
+      currx := self.get_areax()
+      curry := self.get_areay()
+
+      #
+      # Do nothing unless have to
+      #
+      if /redraw & (\self.last_refresh_x = currx) & (\self.last_refresh_y = curry) then
+         return
+
+      #
+      # Save present co-ordinates
+      #
+      self.last_refresh_x := currx
+      self.last_refresh_y := curry
+
+      view.invalidate()
+   end
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if \self.draw_border_flag then
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      view.display(1)
+      (\self.vsb).display(1)
+      (\self.hsb).display(1)
+
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Return the width of the subject object
+   #
+   abstract method get_subject_width()
+
+   #
+   # Return the height of the subject object
+   #
+   abstract method get_subject_height()
+
+   #
+   # Return the increment on a line-up/line-down
+   #
+   abstract method get_subject_vertical_increment()
+
+   #
+   # Return the increment on a line-left/line-right
+   #
+   abstract method get_subject_horizontal_increment()
+
+   #
+   # Draw the object at its offset subject_x, subject_y, into self.cbwin
+   # at x, y, with size w, h.
+   #
+   abstract method draw(subject_x, subject_y, x, y, w, h)
+
+   initially()
+      self.Component.initially()
+      self.set_accepts_focus()
+      self.set_draw_border()
+      self.view := View()
+      add(view)
+end

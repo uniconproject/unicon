@@ -1,0 +1,135 @@
+#
+# $Id: linebasedscrollarea.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# This is a scroll area where the objects to be displayed are lines of
+# a fixed height.
+#
+class LineBasedScrollArea : ScrollArea(
+   line_height              # Height of one line
+   )
+
+   #
+   # The virtual x position of a line in the canvas.
+   #
+   method get_left_pos()
+      return (self.view.x - (\self.hsb).get_value()) | self.view.x
+   end
+
+   #
+   # Initialize the line_height variable 
+   #
+   # @p
+   method final_setup(x)
+      self.ScrollArea.final_setup(x)
+      self.line_height := get_line_height()
+   end
+
+   #
+   # Get the number of the first visible line
+   #
+   method get_first_line()
+      local t
+      t := get_areay()
+      if t % line_height = 0 then
+         return t / line_height + 1
+      else
+         return t / line_height + 2
+   end
+   
+   #
+   # The maximum number of lines which can be displayed  in the area
+   #
+   method get_max_lines()
+      return self.view.h / line_height
+   end
+
+   #
+   # The index of the last line in the area, or zero if there are no
+   # lines.
+   #
+   method get_last_line()
+      return self.get_first_line() + self.get_curr_lines() - 1
+   end
+
+   #
+   #
+   # Present number of lines on screen
+   #
+   method get_curr_lines()
+      return (\self.vsb).get_page_size() / line_height | get_line_count()
+   end
+
+   #
+   # Goto line, horiz
+   #
+   # @p
+   method goto_pos(line, horiz)
+      (\self.vsb).set_value(line_height * (\line - 1))
+      (\self.hsb).set_value(\horiz)
+      self.invalidate()
+   end
+
+   #
+   # Ensure the given row is visible
+   #
+   method ensure_row_visible(row) 
+      local i, j
+      i := get_first_line()
+      j := get_last_line()
+      if row < i then
+         goto_pos(row)
+      else if row > j then
+         goto_pos(i - j + row)
+   end
+
+   #
+   # Return the line under the current x, y cursor, or fail if not over a line.
+   #
+   method get_line_under_pointer()
+      local l
+      if (self.view.x <= &x < self.view.x + self.view.w) & (self.view.y  <= &y < self.view.y + self.view.h) then {
+         l := (&y - self.view.y) / self.line_height + self.get_first_line()
+         if l <= self.get_last_line() then
+            return l
+      }
+   end
+
+   #
+   # This method is overridden by the subclass to return the
+   # line height.
+   #
+   abstract method get_line_height()
+
+   #
+   # This method is overridden by the subclass to return the
+   # number of lines.
+   #
+   abstract method get_line_count()
+
+   method get_subject_height()
+      return get_line_count() * self.line_height
+   end
+
+   method get_subject_vertical_increment()
+      return self.line_height
+   end
+
+   method get_subject_horizontal_increment()
+      return TextWidth(self.cwin, "m")
+   end
+
+   initially()
+      self.ScrollArea.initially()
+      self.set_accepts_focus()
+end

@@ -17,7 +17,7 @@ UFILES=border.u button.u buttongroup.u checkbox.u checkboxgroup.u \
 	staticspin.u submenu.u tabitem.u table.u tablecolumn.u tabset.u \
 	textbutton.u textdisplay.u textfield.u textlist.u textmenuitem.u \
 	ticker.u toggle.u toggleiconbutton.u toggletextbutton.u \
-	toolbar.u tree.u
+	toolbar.u tree.u migration.u
 
 all: $(UFILES)
 

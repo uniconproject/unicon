@@ -1,5 +1,5 @@
 #
-# $Id: table.icn,v 1.7 2004-11-06 20:58:22 rparlett Exp $
+# $Id: table.icn,v 1.8 2004-11-07 10:54:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -358,20 +358,26 @@ class Table : Component(
    end
 
    #
-   # This method just creates the TableContent object for use as the main area
-   # of the component; override it to use a customized TableContent object, which
-   # should extend TableContent.
+   # This method can be used to change the TableContent object, which
+   # makes up the main area of the component.  To use it, extend TableContent
+   # and insert the customized object with this method.
    #
-   method create_content()
-      return TableContent()
+   method set_table_content(tc)
+      self.remove(\self.table_content)
+      self.table_content := tc
+      self.table_content.connect(self, "on_table_content")
+      self.add(table_content)
    end
 
    #
-   # This method creates the TableHeader object for use as the column header
-   # component; override it to use a custom one, which should extend TableHeader.
+   # This method can be used to change the TableHeader object, which
+   # makes up the header of the table.  To use it, extend TableHeader
+   # and insert the customized object with this method.
    #
-   method create_header()
-      return TableHeader()
+   method set_table_header(th)
+      self.remove(\self.table_header)
+      self.table_header := th
+      self.add(table_header)
    end
 
    #
@@ -384,10 +390,8 @@ class Table : Component(
 
    initially(a[])
       self.Component.initially()
-      self.table_content := create_content()
-      self.table_content.connect(self, "on_table_content")
-      self.add(table_content)
-      self.table_header := create_header()
-      self.add(table_header)
+      # Set default content and header components.
+      set_table_content(TableContent())
+      set_table_header(TableHeader())
       set_fields(a)
 end

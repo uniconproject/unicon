@@ -2,6 +2,10 @@ import util
 import gui
 $include "guih.icn"
 
+#
+# An example of a custom TableContent, which shows checkboxes in one
+# column.
+#
 class CustomTableContent : TableContent()
    method get_line_height()
       return 20
@@ -29,12 +33,6 @@ class CustomTableContent : TableContent()
    initially()
       self.TableContent.initially()
       connect(self, "mouse_up", MOUSE_RELEASE_EVENT)
-end
-
-class CustomTable : Table()
-   method create_content()
-      return CustomTableContent()
-   end
 end
 
 class Untitled : Dialog(t)
@@ -65,7 +63,8 @@ class Untitled : Dialog(t)
    method setup()
       local table_column_1, table_column_2, table_column_3, text_button_1
       self.set_attribs("size=300,238", "resize=on")
-      t := CustomTable("accel=t", "select_none")
+      t := Table("accel=t", "select_none")
+      t.set_table_content(CustomTableContent())
       t.connect(self, "tbl_event")
       t.set_pos("50%", "10")
       t.set_size("100%-40", "100%-75")

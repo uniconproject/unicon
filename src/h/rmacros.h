@@ -59,11 +59,8 @@
    #define Fs_Socket    010000
    #define Fs_Buff      020000
    #define Fs_Unbuf     040000
+   #define Fs_Listen   0100000
 #endif					/* PosixFns */
-
-#ifdef Network
-   #define Fs_Network   0100000
-#endif
 
 #ifdef ISQL
    #define Fs_ODBC      0200000

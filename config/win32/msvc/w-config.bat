@@ -18,3 +18,4 @@ echo UNICON=..\unicon\unicon >> ..\..\..\uni\unicon\makefile
 type ..\..\unix\Config\unicon.mak >>..\..\..\uni\unicon\makefile
 echo ICONT=..\..\bin\wicont -s >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile
+call copymk

@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.11 2001-12-13 06:34:48 phliar Exp $
+ * $Id: rposix.r,v 1.12 2001-12-13 07:07:49 phliar Exp $
  */
 
 #ifdef PosixFns
@@ -803,8 +803,9 @@ FILE *sock_connect(char *fn, int is_udp)
 	 if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0) return 0;
       }
 
+      len = sizeof(struct sockaddr_in);
 #ifdef BSD_4_4_LITE
-      saddr_in.sin_len = len = sizeof(struct sockaddr_in);
+      saddr_in.sin_len = len;
 #endif
       saddr_in.sin_family = AF_INET;
       saddr_in.sin_port = htons((u_short)port);
@@ -900,8 +901,9 @@ int is_udp;
             memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
             }
 
+        len = sizeof(struct sockaddr_in);
 #ifdef BSD_4_4_LITE
-        saddr_in.sin_len = len = sizeof(struct sockaddr_in);
+        saddr_in.sin_len = len;
 #endif
         saddr_in.sin_family = AF_INET;
         saddr_in.sin_port = htons((u_short)atoi(p+1));
@@ -1006,8 +1008,9 @@ int sock_send(char *adr, char *msg, int msglen)
    if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
       return 0;
 
+   len = sizeof(saddr_in);
 #ifdef BSD_4_4_LITE
-   saddr_in.sin_len = len = sizeof(saddr_in);
+   saddr_in.sin_len = len;
 #endif
    saddr_in.sin_family = AF_INET;
    saddr_in.sin_port = htons((u_short)port);

@@ -4483,6 +4483,7 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 
 char my_wmap(wbp w)
 {
+   double tb;
    XWindowAttributes attrs;
    XGCValues gcv;
    unsigned long gcmask =
@@ -4814,8 +4815,8 @@ char my_wmap(wbp w)
      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
      glMatrixMode(GL_PROJECTION);
      glLoadIdentity();
-     glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width, 0.125 * ws->height / ws->width, 0.25, 50000.0);     
-/*     glFrustum(-0.5, 0.5, -0.5, 0.5, 1.0, 15.0); */
+     tb = 0.125 * ws->height / ws->width;
+     glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);     
      glMatrixMode(GL_MODELVIEW);
      glLoadIdentity();
    }

@@ -1,0 +1,115 @@
+import gui
+$include "guih.icn"
+
+#
+# An example of a custom scroll area which displays an image
+# with scrollbars.
+#
+
+class ImageView : DrawScrollArea(img)
+   method draw(subject_x, subject_y, vx, vy, vw, vh)
+      CopyArea(img, self.cbwin, subject_x, subject_y, vw, vh, vx, vy)
+   end
+
+   method get_subject_width()
+      return WAttrib(img, "width")
+   end
+
+   method get_subject_height()
+      return WAttrib(img, "height")
+   end
+
+   method get_subject_vertical_increment()
+      return 10
+   end
+
+   method get_subject_horizontal_increment()
+      return 10
+   end
+
+   method set_image(img)
+      self.img := img
+      invalidate()
+   end
+end
+
+class ImageViewTest : Dialog(iv, img)
+   method component_setup()
+      self.setup()
+      iv.set_image(img)
+   end
+
+   method end_dialog()
+      WClose(img)
+   end
+
+   method set_file(f)
+      self.img := WOpen("image=" || f, "canvas=hidden") | stop("Couldn't load image")
+      (\iv).set_image(img)
+   end
+
+   method init_dialog()
+   end
+
+   method on_quit(ev)
+      dispose()
+   end
+
+   method setup()
+      local quit
+      self.set_attribs("size=231,227", "resize=on")
+      iv := ImageView()
+      iv.set_pos("50%", "10")
+      iv.set_size("100%-20", "100%-60")
+      iv.set_align("c", "t")
+      self.add(iv)
+      quit := TextButton()
+      quit.set_pos("50%", "100%-25")
+      quit.set_align("c", "c")
+      quit.set_accel("q")
+      quit.connect(self, "on_quit", ACTION_EVENT)
+      quit.set_label("Quit")
+      quit.set_internal_alignment("c")
+      self.add(quit)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main(a)
+   local d, f
+   f := a[1] | "babbage.gif"
+   d := ImageViewTest()
+   d.set_file(f)
+   d.show_modal()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|2|string|custom|integer|1|s
+#tring|text_button|integer|1|SuperClass Name|string|Dialog|Import Name|
+#string|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|
+#list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|
+#list|0|Gen Indent|integer|3|Gen Main|integer|1|Gen Component Setup|int
+#eger|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct
+#|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attri
+#bs|list|1|string|resize=on|Name|string|ImageViewTest|Width|integer|231
+#|Height|integer|227|Items|list|2|class|CanvasCustom|25|Parent Canvas|1
+#|Name|string|iv|Class Name|string|ImageView|Import Name|string|gui|X F
+#ix|integer|1|Y Fix|integer|1|W Fix|integer|1|H Fix|integer|1|W Default
+#|null|H Default|null|X Spec|string|50%|Y Spec|string|10|W Spec|string|
+#100%-20|H Spec|string|100%-60|X Align|string|c|Y Align|string|t|Is sha
+#ded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Toolt
+#ip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Pare
+#nt Component|1|class|CanvasTextButton|36|Parent Canvas|1|Name|string|q
+#uit|Class Name|string|TextButton|Import Name|string|gui|X Fix|integer|
+#1|Y Fix|integer|1|W Fix|null|H Fix|null|W Default|integer|1|H Default|
+#integer|1|X Spec|string|50%|Y Spec|string|100%-25|W Spec|integer|40|H 
+#Spec|integer|23|X Align|string|c|Y Align|string|c|Is shaded|null|Is Bu
+#tton Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|A
+#ccel|string|q|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|
+#on_quit|Class Variable|null|Parent Component|1|Label|string|Quit|No Ke
+#yboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|I
+#s Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Pa
+#rent Button Group|null|Internal Align|string|c|Initial Focus|null|Even
+#t Handlers|list|0|

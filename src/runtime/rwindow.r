@@ -2388,6 +2388,19 @@ char * abuf;
          allowresize(w, ATOBOOL(val));
 	 break;
          }
+      case A_TITLEBAR: {
+	 int on_off;
+         if (w->window->pix != NULL) return Failed;
+	 if (strcmp(val, "on") & strcmp(val, "off"))
+	    return Failed;
+         if (ATOBOOL(val)) {
+            SETTITLEBAR(w->window);
+            }
+         else {
+            CLRTITLEBAR(w->window);
+            }
+	 break;
+         }
       case A_ROW: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
@@ -3226,6 +3239,7 @@ FILE *OpenConsole()
        */
 #ifdef MultiThread
       if (!curpstate) curpstate = &rootpstate;
+      if (!alclist) curpstate->Alclist = alclist_0;
 #endif
       if (!curblock) {
          curstring = (struct region *)malloc(sizeof (struct region));
@@ -3461,6 +3475,7 @@ stringint attribs[] = {
    {"rows",		A_ROWS},
    {"selection",	A_SELECTION},
    {"size",		A_SIZE},
+   {"titlebar",		A_TITLEBAR},
    {"visual",		A_VISUAL},
    {"width",		A_WIDTH},
    {"windowlabel",	A_WINDOWLABEL},

@@ -289,6 +289,9 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
    if (!hPrevInstance) {
 #if NT
       wc.style = CS_HREDRAW | CS_VREDRAW;
+#ifdef Graphics3D
+      wc.style |= CS_OWNDC;
+#endif
 #else					/* NT */
       wc.style = 0;
 #endif					/* NT */

@@ -6,16 +6,16 @@
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {   
    FILE *f;
-   wdp  wd; 
    wbp  w;
    wsp  ws;
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
    int  query;
    int major, minor;
-   int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
  
    /* create an opengl window */
-   wd = alc_display(NULL); 
+#ifdef XWindows
+   int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+   wdp wd = alc_display(NULL); 
    if (!glXQueryExtension(wd->display, &query, &query)) {
       printf("X server has no OpenGL GLX extension");
       return NULL;
@@ -25,8 +25,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
       printf("visual failed");
       return NULL;
       }
-   if (wd->vis->class == TrueColor)
-      printf("yup we are truecolor\n");
+#endif					/* XWindows */
    f = wopen(name, lp, attr, n, err_index, 1);
 
    if (!f) return NULL;
@@ -53,10 +52,9 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
    /* set up the appropriate opengl states */
    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
-   glClearColor((w->context->bg->r)/(GLfloat)65535,   
-		(w->context->bg->g)/(GLfloat)65535, 
-		(w->context->bg->b)/(GLfloat)65535, 0.0);
-  
+   glClearColor(RED(w->context->bg)/(GLfloat)256,   
+		GREEN(w->context->bg)/(GLfloat)256, 
+		BLUE(w->context->bg)/(GLfloat)256, 0.0);
    glGenTextures(10, w->context->texName);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_TEXTURE_GEN_S);
@@ -235,6 +233,10 @@ void torus(double radius1, double radius2, double x,
    glPushMatrix();
    glTranslatef(x, y, z);
    
+#ifndef M_PI
+#define M_PI        3.14159265358979323846264338327950288419716939937511
+#endif					/* M_PI */
+
    /* rotate to make the torus look nicer */
    glRotatef(130.0, 1.0, 0.0, 0.0);
    ringDelta = 2.0 * M_PI / rings;
@@ -513,7 +515,6 @@ int pushmatrix()
    specifed list */
 int redraw3D(wbp w)
 {
-    
     GLfloat deflt_ambient[4] = {0.2, 0.2, 0.2, 1.0};
     GLfloat deflt_diffuse[4] = {0.8, 0.8, 0.8, 1.0};
     GLfloat deflt_emission[4] = {0.0, 0.0, 0.0, 1.0};
@@ -532,8 +533,8 @@ int redraw3D(wbp w)
     glMaterialfv(GL_FRONT, GL_EMISSION, deflt_emission);
     glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
     
-    w->context->linewidth = 1.0; 
-    glLineWidth(1.0); 
+    setlinewidth(w, 1);
+    glLineWidth(1.0);
     w->context->dim = 3;
  
     if (!w->context->autogen) { 
@@ -548,7 +549,7 @@ int redraw3D(wbp w)
 
     if (w->window->flist)
        if (traversefunctionlist(w) == Failed)
-          return Failed; 
+          return Failed;
     glPopMatrix();
     glXSwapBuffers(w->window->display->display, w->window->win);
     return Succeeded;
@@ -651,7 +652,7 @@ int traversefunctionlist(wbp w)
       else if(!strcmp(fname.vword.sptr, "linewidth")) {
          c_traverse(funclist, &var1, 1);
          cnv:C_integer(var1, num);    
-         wc->linewidth = num;
+         setlinewidth(w, num);
          glLineWidth(num);
       }
 
@@ -1066,7 +1067,7 @@ int setlinewidth3D(wbp w, LONG linewid)
    struct b_list *func;
 
    if (linewid < 0) return Error;
-   w->context->linewidth = linewid;
+   setlinewidth(w, linewid);
    glLineWidth(linewid);
 
    /* create a list */	   
@@ -1237,20 +1238,20 @@ int setmaterials(wbp w, char* s)
      /* otherwise set the current forground color */
       else {
 	   if(setfg(w, s) == Failed) return Failed;
-	   rd = w->context->fg->r;
-	   gr = w->context->fg->g;
-   	   bl = w->context->fg->b;
- 	   glColor3f(rd/(GLfloat)65535, 
-                	 gr/(GLfloat)65535, bl/(GLfloat)65535);
+	   rd = RED(w->context->fg);
+	   gr = GREEN(w->context->fg);
+   	   bl = BLUE(w->context->fg);
+ 	   glColor3f(rd/(GLfloat)255, 
+                	 gr/(GLfloat)255, bl/(GLfloat)255);
          MakeStr("none", 4, &material);
 	   c_put(&f, &material);  
         }
       /* put material property values on the list */
-      MakeInt(rd, &r);
+      MakeInt(rd * 257, &r);
       c_put(&f, &r);
-      MakeInt(gr, &g);
+      MakeInt(gr * 257, &g);
       c_put(&f, &g);
-      MakeInt(bl, &b);
+      MakeInt(bl * 257, &b);
       c_put(&f, &b);
       c_put(&(w->window->funclist), &f);
 
@@ -2000,9 +2001,9 @@ int textureimg(wbp w, int width, int height, struct palentry *e, unsigned char *
         }
       if (v || e[c].transpt) {		/* advance if valid or transparent */
 	   if (e[c].transpt) { /* if transparent use background color */
-            tex[iy][ix][0] = (GLint)w->context->bg->r/256;
-            tex[iy][ix][1] = (GLint)w->context->bg->g/256;
-            tex[iy][ix][2] = (GLint)w->context->bg->b/256;
+            tex[iy][ix][0] = (GLint)RED(w->context->bg);
+            tex[iy][ix][1] = (GLint)GREEN(w->context->bg);
+            tex[iy][ix][2] = (GLint)BLUE(w->context->bg);
          }
          if (++ix >= width) {
             ix = 0;	
@@ -2013,9 +2014,9 @@ int textureimg(wbp w, int width, int height, struct palentry *e, unsigned char *
       }
       if (ix > 0)	/* pad final row if incomplete */
          while (ix < width) {
-            tex[iy][ix][0] = (GLint)w->context->bg->r/256;
-            tex[iy][ix][1] = (GLint)w->context->bg->g/256;
-            tex[iy][ix][2] = (GLint)w->context->bg->b/256;
+            tex[iy][ix][0] = (GLint)RED(w->context->bg);
+            tex[iy][ix][1] = (GLint)GREEN(w->context->bg);
+            tex[iy][ix][2] = (GLint)BLUE(w->context->bg);
             ix++;
            }
       /* set the texture */  
@@ -2048,17 +2049,17 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
          while (m > 0) { 
 	    --ix;
 	    if (c & m){
-	       r = (GLint)(w->context->fg->r)/256;
-	       g = (GLint)(w->context->fg->g)/256;
- 	       b = (GLint)(w->context->fg->b)/256;
+	       r = (GLint)RED(w->context->fg);
+	       g = (GLint)GREEN(w->context->fg);
+ 	       b = (GLint)BLUE(w->context->fg);
 	       tex[iy][ix][0] = r; 
 	       tex[iy][ix][1] = g;
 	       tex[iy][ix][2] = b;
             }
 	    else if (ch != TCH1) {
-    	       r = (GLint)(w->context->bg->r)/256;
-	       g = (GLint)(w->context->bg->g)/256;
-  	       b = (GLint)(w->context->bg->b)/256;
+	       r = (GLint)RED(w->context->fg);
+	       g = (GLint)GREEN(w->context->fg);
+ 	       b = (GLint)BLUE(w->context->fg);
 	       tex[iy][ix][0] = r; 
 	       tex[iy][ix][1] = g;
 	       tex[iy][ix][2] = b;
@@ -2076,9 +2077,9 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
       }
    if (ix > 0)				/* pad final row if incomplete */
       while (ix < width){
-         r = (GLint)(w->context->bg->r)/256;
-         g = (GLint)(w->context->bg->g)/256;
-         b = (GLint)(w->context->bg->b)/256;
+         r = (GLint)RED(w->context->bg);
+         g = (GLint)GREEN(w->context->bg);
+         b = (GLint)BLUE(w->context->bg);
          tex[iy][ix][0] = r; 
          tex[iy][ix][1] = g;
          tex[iy][ix][2] = b;
@@ -2160,9 +2161,20 @@ int texwindow3D(wbp w1, wbp w2)
        return Failed;
 
    /* change the current context to w2's context */
+#ifdef XWindows
    glXMakeCurrent(w2->window->display->display, w2->window->win, w2->context->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex); 
    glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
+#endif					/* XWindows */
+#ifdef MSWindows
+{
+HDC stddc = CreateWinDC(w1);
+   wglMakeCurrent(stddc, w2->context->ctx);
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex); 
+   wglMakeCurrent(stddc, w1->context->ctx);
+ReleaseDC(w1->window->iconwin, stddc);
+}
+#endif					/* MSWindows */
     i = texture(width, height, tex); 
     if (i == Succeeded)
        return Succeeded;

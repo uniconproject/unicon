@@ -298,6 +298,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    ws->width = ws->height = 0;
    wc = w->context;
 
+#ifdef Graphics3D
+   ws->is_3D = wc->is_3D = is_3d;
+#endif					/* Graphics3D */
+
    /*
     * process the passed in attributes - by calling wattrib
     */
@@ -393,6 +397,16 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       }
    ws->pixwidth = ws->width;
    ws->pixheight = ws->height;
+
+#ifdef Graphics3D
+   if (wc->is_3D) {
+      hdc = GetDC(ws->iconwin);
+      wc->ctx = wglCreateContext (hdc);
+      wglMakeCurrent (hdc, wc->ctx);
+      ReleaseDC(ws->iconwin, hdc);
+      }
+#endif					/* Graphics3D */
+
    if (!ISTOBEHIDDEN(ws)) {
       ws->win = ws->iconwin;
       ShowWindow(ws->win, ncmdShow);
@@ -2576,140 +2590,21 @@ dptr dp;
 
 /*
  * dumpimage -- write an image to a disk file.
+ *  At present, there are no MS Windows-specific image file formats.
  */
 int dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
 	      unsigned int width, unsigned int height)
    {
-   int result = 0;
-   HDIB dib;
-   HDC  destdc;
-   HBITMAP dumppix, oldpix;
-   STDLOCALS(w);
-
-   if (strcmp(".bmp", filename + strlen(filename) - 4) &&
-       strcmp(".BMP", filename + strlen(filename) - 4)) {
-      FREE_STDLOCALS(w);
-      return NoCvt;
-      }
-
-   /*
-    * extract the desired rectangle from the source bitmap
-    */
-   if (x || y || width != ws->pixwidth || height != ws->pixheight) {
-      dumppix  = CreateCompatibleBitmap(stddc, width, height);
-      destdc   = CreateCompatibleDC(stddc);
-      oldpix = SelectObject(destdc, dumppix);
-      BitBlt(destdc, 0, 0, width, height, pixdc, x, y, SRCCOPY);   
-      }
-   else dumppix = ws->pix;
-   dib = BitmapToDIB(dumppix, palette);
-   if (dumppix != ws->pix) {
-      SelectObject(destdc, oldpix);
-      DeleteDC(destdc);
-      DeleteObject(dumppix);
-      }
-
-   if (dib == NULL) {
-      result = Failed;
-      }
-   else {
-      if (result = SaveDIB(dib, filename)) { /* != 0 implies error */
-	 result = Failed;
-	 }
-      else {
-         result = Succeeded;
-         }
-      DestroyDIB(dib);
-      }
-
-   FREE_STDLOCALS(w);
-   return result;
+   return NoCvt;
    }
 
 
 /*
- * loadimage
+ * loadimage. At present, there are no MS Windows-specific image formats.
  */
 HBITMAP loadimage(wbp w, char *filename, unsigned int *width,
 		  unsigned int *height, int atorigin, int *status)
    {
-   HDC hdc;
-   HDIB dib;
-   HBITMAP bmap;
-   HPALETTE p2;
-   PALETTEENTRY pe;
-   LPBITMAPINFO lpbmi;
-   int j;
-   int ii,jj, kk;
-   int xx[256];
-   unsigned char * pd;
-   char *j2;
-
-   dib = LoadDIB(filename);
-   if (dib != NULL) {
-      LPSTR pdib;
-      p2 = CreateDIBPalette(dib);
-      j2 = GlobalLock(dib);
-      j = DIBNumColors(j2);
-      jj = DIBWidth(j2);
-      kk = DIBHeight(j2);
-      GlobalUnlock(dib);
-
-      if (!palette) {
-	 LOGPALETTE logpal[4]; /* (1, + space for an extra palette entry) */
-         hdc = GetDC(w->window->iconwin);
-         if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors ==0)){
-	    /* This window is on a device that supports palettes */
-	    numColors = 2;
-	    logpal[0].palNumEntries = 2;
-	    logpal[0].palVersion = 0x300;
-	    logpal[0].palPalEntry[0].peFlags = 0;
-	    logpal[0].palPalEntry[0].peRed = 0;
-	    logpal[0].palPalEntry[0].peGreen = 0;
-	    logpal[0].palPalEntry[0].peBlue = 0;
-	    logpal[0].palPalEntry[1].peFlags = 0;
-	    logpal[0].palPalEntry[1].peRed = 255;
-	    logpal[0].palPalEntry[1].peGreen = 255;
-	    logpal[0].palPalEntry[1].peBlue = 255;
-	    palette = CreatePalette(logpal);
-	    if (!palette) {
-	       return NULL;
-	       }
-	    if ((scp = malloc(2 * sizeof (struct wcolor))) == NULL)
-	       return NULL;
-	    scp[0].c = RGB(0,0,0);
-	    scp[0].type = SHARED;
-	    strcpy(scp[0].name, "black");
-	    scp[1].c = RGB(255,255,255);
-	    scp[1].type = SHARED;
-	    strcpy(scp[1].name, "white");
-            }
-	 else {
-	    /* this window is not on a device that supports palettes */
-	    }
-	 ReleaseDC(w->window->iconwin, hdc);
-         }
-      if (palette) {
-         if (ResizePalette(palette, numColors + j) == 0) {
-            return NULL;
-            }
-         for (ii = 0; ii < j; ii++) {
-            if (GetPaletteEntries(p2, ii, 1, &pe) == 0) {
-               return NULL;
-	       }
-            SetPaletteEntries(palette, numColors++, 1, &pe);
-            }
-         }
-      bmap = DIBToBitmap(dib, palette);
-      pdib = GlobalLock(dib);
-      *width = DIBWidth(pdib);
-      *height = DIBHeight(pdib);
-      GlobalUnlock(dib);
-      DestroyDIB(dib);
-      DeleteObject(p2);
-      *status = 0;
-      return bmap;
-      }
    return NULL;
    }
 
@@ -3893,6 +3788,25 @@ HDC CreateWinDC(wbp w)
    if (wc->clipw >= 0){
       SelectClipRgn(hdc, wc->cliprgn);
       }
+/*   wc->ctx = wglCreateContext (hdc); */
+   wglMakeCurrent (hdc, wc->ctx);
+
+{
+PIXELFORMATDESCRIPTOR pfd;
+int iFormat;
+ZeroMemory( &pfd, sizeof( pfd ) );
+pfd.nSize = sizeof( pfd );
+pfd.nVersion = 1;
+pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
+              PFD_DOUBLEBUFFER;
+pfd.iPixelType = PFD_TYPE_RGBA;
+pfd.cColorBits = 24;
+pfd.cDepthBits = 16;
+pfd.iLayerType = PFD_MAIN_PLANE;
+iFormat = ChoosePixelFormat( hdc, &pfd );
+SetPixelFormat( hdc, iFormat, &pfd );
+}
+
    return hdc;
    }
 

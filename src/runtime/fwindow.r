@@ -1142,17 +1142,25 @@ function{1} EraseArea(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-
-        /* allocate a new list for functions */
-         Protect(w->window->flist = alclist(0, MinListSlots), runerr(0));            
-	   w->window->funclist.vword.bptr = (union block *)w->window->flist;
+        /*
+	 * allocate a new list for functions
+	 */
+         Protect(w->window->flist = alclist(0, MinListSlots), runerr(0));
+	 w->window->funclist.vword.bptr = (union block *)w->window->flist;
+#ifdef XWindows
          glClearColor((w->context->bg->r)/(GLfloat)65535,
                (w->context->bg->g)/(GLfloat)65535, 
                (w->context->bg->b)/(GLfloat)65535, 0.0);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+#endif					/* XWindows */
+#ifdef MSWindows
+         glClearColor(RED(w->context->bg)/(GLfloat)256,
+               GREEN(w->context->bg)/(GLfloat)256, 
+               BLUE(w->context->bg)/(GLfloat)256, 0.0);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+#endif					/* XWindows */
          glXSwapBuffers(w->window->display->display, 
                     w->window->win);
-         
          ReturnWindow;
         }
        
@@ -3877,9 +3885,15 @@ function{1} Texcoord(argv[argc])
 	    wc->autogen = 0; 
 	    wc->numtexcoords = 0;
 	    for (i = warg; i < argc-warg; i++) {
-	       if (!cnv:real(argv[i]))
+	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords]))
 		  runerr(102, argv[i]);
-	       GetReal(argv+i, wc->texcoords[wc->numtexcoords++]);
+#ifdef Double
+	       *((struct size_dbl *) &(BlkLoc(argv[i])->realblk.realval)) =
+		  *((struct size_dbl *) & (wc->texcoords[wc->numtexcoords++]));
+#else
+	       BlkLoc(argv[i])->realblk.realval =
+		  wc->texcoords[wc->numtexcoords++];
+#endif
 	       c_put(&f, &argv[i]);
 	       }
 	    }

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.19 2002-08-01 01:47:18 phliar Exp $
+ * $Id: fxposix.ri,v 1.20 2002-08-17 08:47:18 jeffery Exp $
  */
 
 /*
@@ -1192,7 +1192,14 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       */
       if (i_mode) {
          _flushall();
-         i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], margv);
+	 if (is:string(argv)) {
+	    int argc;
+	    char **garbage;
+	    argc = CmdParamToArgv(cmdline, &garbage, 0);
+	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], garbage);
+	    }
+	 else
+	    i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], margv);
 	 if (i != 0) {
 	    IntVal(amperErrno) = errno;
 	    fail;
@@ -1954,6 +1961,7 @@ function{0,1} fetch(d, k)
       else
 #endif					/* ISQL */
 	 runerr(190, d);
+      fail; /* avoid (gcc) compiler warning */
       }
 end
 

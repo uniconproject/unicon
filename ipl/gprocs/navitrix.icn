@@ -150,7 +150,15 @@ $ifdef _UNIX
       return
       }
 $else
+$ifdef _MS_WINDOWS_NT
+   if value ?:= tab(upto('/\\')) then {
+      chdir(value) # map the / to \?
+      nav_refresh()
+      return
+      }
+$else
    Deliberate Syntax Error
+$endif
 $endif
 
    nav_file := value

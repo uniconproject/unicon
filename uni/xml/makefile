@@ -5,7 +5,8 @@ export IPATH:=$(base)/lib $(ICON_IPL)/lib
 all: libs testhtml testxml testpatterns testvalid testnotwf testinvalid globaldemo createdemo
 
 clean:
-	rm -f *.u uniclass.dir uniclass.pag 
+	rm -f testhtml testxml testpatterns testvalid testnotwf \
+		testinvalid globaldemo createdemo *.u uniclass.dir uniclass.pag 
 
 deps:
 	$(base)/bin/unidep *.icn -p libs

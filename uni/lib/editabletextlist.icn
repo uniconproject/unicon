@@ -1,5 +1,5 @@
 
-#  $Id: editabletextlist.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+#  $Id: editabletextlist.icn,v 1.2 2005-03-25 02:00:32 jeffery Exp $
 
 #
 #  A scrollable editable text area.  An {Event} is generated whenever the
@@ -23,6 +23,14 @@ class EditableTextList : ScrollArea(
    noedit,
    modified # not the same as "changed"; external needs-to-be-saved flag
    )
+
+   method select_all()
+      startdragx := startdragy := 1
+      cursor_y := enddragy := *contents
+      cursor_x := enddragx := *actual_line(contents[-1]) + 1
+      constrain_line()
+      refresh(1)
+   end
 
    method clear_modified()
       modified := &null

@@ -226,16 +226,15 @@ static char *followsym(char *name, char *buf, size_t len) {
  */
 
 static char *canonize(char *path) {
-   int len;
-   char *root, *end, *in, *out, *prev;
+   int len = 0;
+   char *root = path, *end = path + strlen(path),
+        *in = NULL, *out = NULL, *prev = NULL;
 
 #if MSDOS
    while(strchr(path, '\\')) *strchr(path, '\\') = '/';
 #endif
 
    /* initialize */
-   root = path;			/* set barrier for trimming by ".." */
-   end = path + strlen(path);		/* set end of input marker */
 #ifdef MSDOS
    if (isalpha(root[0]) && root[1]==':') root += 2;
 #endif

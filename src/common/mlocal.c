@@ -3,12 +3,23 @@
  */
 #include "../h/gsupport.h"
 
-#if UNIX
+#if UNIX || NT
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#if UNIX || defined(NTGCC)
 #include <unistd.h>
+#endif					/* UNIX || NTGCC */
+#if UNIX
+#define PATHSEP ':'
+#define FILESEP '/'
+#endif
+#if MSDOS
+#define PATHSEP ';'
+#define FILESEP '\\'
+#endif
 
 static char *findexe(char *name, char *buf, size_t len);
 char *findonpath(char *name, char *buf, size_t len);
@@ -40,9 +51,15 @@ char *relfile(char *prog, char *mod) {
 
    strcpy(buf, baseloc);		/* start with base location */
    strcat(buf, mod);			/* append adjustment */
+
    canonize(buf);			/* canonize result */
-   if (mod[strlen(mod)-1] == '/')	/* if trailing slash wanted */
-      strcat(buf, "/");			/* append to result */
+
+   if ((mod[strlen(mod)-1] == '/')	/* if trailing slash wanted */
+#if MSDOS
+       ||(mod[strlen(mod)-1] == '\\')
+#endif
+       )
+      sprintf(buf+strlen(buf), "%c", mod[strlen(mod)-1]);/* append to result */
    return salloc(buf);			/* return allocated string */
    }
 
@@ -63,13 +80,24 @@ static char *findexe(char *name, char *buf, size_t len) {
       return NULL;
 
    /* if name does not contain a slash, search $PATH for file */
-   if (strchr(name, '/') != NULL)
+   if ((strchr(name, '/') != NULL)
+#if MSDOS
+       || (strchr(name, '\\') != NULL)
+#endif
+       )
       strcpy(buf, name);
    else if (findonpath(name, buf, len) == NULL) 
       return NULL;
 
    /* if path is not absolute, prepend working directory */
-   if (buf[0] != '/') {
+#if MSDOS
+   if (! (isalpha(buf[0]) && buf[1] == ':'))
+#endif
+   if ((buf[0] != '/')
+#if MSDOS
+       && (buf[0] != '\\')
+#endif
+   ) {
       n = strlen(buf) + 1;
       memmove(buf + len - n, buf, n);
       if (getcwd(buf, len - n) == NULL)
@@ -98,7 +126,7 @@ char *findonpath(char *name, char *buf, size_t len) {
       path = ".";
    end = path + strlen(path);
    for (next = path; next <= end; next = sep + 1) {
-      sep = strchr(next, ':');
+      sep = strchr(next, PATHSEP);
       if (sep == NULL)
          sep = end;
       plen = sep - next;
@@ -113,6 +141,11 @@ char *findonpath(char *name, char *buf, size_t len) {
       strcpy(buf + plen + 1, name);
       if (access(buf, X_OK) == 0)
          return buf;
+#if MSDOS
+      strcat(buf, ".exe");
+      if (access(buf, X_OK) == 0)
+         return buf;
+#endif
       }
    return NULL;
    }
@@ -134,6 +167,7 @@ static char *followsym(char *name, char *buf, size_t len) {
    int i, n;
    char *s, tbuf[MaxPath];
 
+#if UNIX
    strcpy(buf, name);
 
    for (i = 0; i < MAX_FOLLOWED_LINKS; i++) {
@@ -164,6 +198,7 @@ static char *followsym(char *name, char *buf, size_t len) {
    if (i > 0 && i < MAX_FOLLOWED_LINKS)
       return buf;
    else
+#endif
       return NULL;
    }
 
@@ -185,9 +220,16 @@ static char *canonize(char *path) {
    int len;
    char *root, *end, *in, *out, *prev;
 
+#if MSDOS
+   while(strchr(path, '\\')) *strchr(path, '\\') = '/';
+#endif
+
    /* initialize */
    root = path;			/* set barrier for trimming by ".." */
    end = path + strlen(path);		/* set end of input marker */
+#ifdef MSDOS
+   if (isalpha(root[0]) && root[1]==':') root += 2;
+#endif
    while (*root == '/')		/* preserve all leading slashes */
       root++;
    in = root;				/* input pointer */
@@ -237,12 +279,13 @@ static char *canonize(char *path) {
    if (out == path)
       *out++ = '.';			/* change null path to "." */
    *out++ = '\0';
+
+#if MSDOS
+   while(strchr(path, '/')) *strchr(path, '/') = '\\';
+#endif
+
    return path;			/* return result */
    }
-
-#else                                  /* UNIX */
-
-static char junk;		/* avoid empty module */
 
 #endif					/* UNIX */
 

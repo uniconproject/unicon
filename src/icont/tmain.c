@@ -69,7 +69,7 @@
 
 static	void	execute	(char *ofile,char *efile,char * *args);
 static	void	usage (void);
-static char *libpath (char *prog, char *envname);
+char *libpath (char *prog, char *envname);
 
 #if AMIGA && __SASC
    extern void PostClip(char *file, int line, int number, char *text);
@@ -1281,33 +1281,6 @@ static void usage()
    exit(EXIT_FAILURE);
    }
 
-/*
- * Return path after appending lib directories.
- */
-static char *libpath(char *prog, char *envname) {
-   char buf[1000], *s;
-
-   s = getenv(envname);
-   if (s != NULL)
-      strcpy(buf, s);
-   else
-      strcpy(buf, ".");
-   if (!strcmp(envname, "IPATH")) {
-      strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/lib"));
-      }
-   else if (!strcmp(envname, "LPATH")) {
-      strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/mincl"));
-      strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/gincl"));
-      strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/incl"));
-      }
-   strcat(buf, " ");
-   strcat(buf, relfile(prog, "/../../uni/lib"));
-   return salloc(buf);
-   }
 
 
 #if MACINTOSH

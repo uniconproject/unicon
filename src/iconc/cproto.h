@@ -121,7 +121,7 @@ struct node      *to_nd      (nodeptr loc_model, nodeptr arg1,
                                nodeptr arg2);
 struct node      *toby_nd    (nodeptr loc_model, nodeptr arg1,
                                nodeptr arg2, nodeptr arg3);
-int               trans      (void);
+int               trans      (char *);
 struct node      *tree1      (int type);
 struct node      *tree2      (int type,struct node *loc_model);
 struct node      *tree3      (int type,struct node *loc_model,

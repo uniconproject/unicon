@@ -163,6 +163,19 @@ char *name;
       quitf(buf, name);
       }
 
+#if UNIX
+   /* use full pathname for all file references during linking */
+   if (isalpha(file[0])) {
+     char file2[MaxFileName];
+     if (getcwd(file2, PATH_MAX)) {
+       if (file2[strlen(file2)-1] != '/')
+	 strcat(file2, "/");
+       strcat(file2, file);
+       strcpy(file, file2);
+     }
+   }
+#endif
+
 #if MSDOS
    if (file[0] == '\\' || file[0] == '/' ||
        (isalpha(file[0]) && file[1] == ':')) {

@@ -330,7 +330,7 @@ Deliberate Syntax Error
       usage();				/* error -- no files named */
 
    if (pponly) {
-      if (trans(argv[0]]) == 0)
+      if (trans(argv[0]) == 0)
 	 exit (EXIT_FAILURE);
       else
 	 exit (EXIT_SUCCESS);

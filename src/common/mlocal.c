@@ -295,6 +295,34 @@ FILE *pathOpen(char *fname, char *mode)
    return NULL;
 }
 
+/*
+ * Return path after appending lib directories.
+ */
+char *libpath(char *prog, char *envname) {
+   char buf[1000], *s;
+
+   s = getenv(envname);
+   if (s != NULL)
+      strcpy(buf, s);
+   else
+      strcpy(buf, ".");
+   if (!strcmp(envname, "IPATH")) {
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/lib"));
+      }
+   else if (!strcmp(envname, "LPATH")) {
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/mincl"));
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/gincl"));
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/incl"));
+      }
+   strcat(buf, " ");
+   strcat(buf, relfile(prog, "/../../uni/lib"));
+   return salloc(buf);
+   }
+
 #else                                  /* UNIX */
 
 static char junk;		/* avoid empty module */

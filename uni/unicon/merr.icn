@@ -1,0 +1,198 @@
+#
+# metaerr.icn, the Unicon error message generator program.
+#
+# Maintains the mapping from parse states to error messages.
+# In the old days this was done by hand whenever the grammar changed.
+#
+
+global C, att, bison, byacc, make, compile, ofile, target
+
+procedure main(argv)
+
+    if *argv=0 then
+	stop("usage: metaerr [-yYB] [-s make] [-o msgfile] compiler target")
+    ofile := "errmsg.icn"
+    yamfile := "meta.err"
+    i := 1
+    while i<= *argv do {
+	case argv[i] of {
+	    "-Y": { C := att := 1 }
+	    "-B": { C := bison := 1 }
+	    "-y": { C := byacc := 1 }
+	    "-s": { i+:=1; make := argv[i] }
+	    "-o": { i +:= 1; ofile := argv[i] }
+	    default: {
+		if not (/compile := argv[i]) then
+		    target := argv[i]
+	    }
+	}
+	i+:= 1
+    }
+    /compile := "./unicon"
+    /make := "make " || compile
+    if \C & ofile=="errmsg.icn" then ofile := "errmsg.c"
+    gen()
+
+    # now the fun begins: write error-inducing source codes, run them,
+    # and read the stack states from their errors.
+
+    t := table()
+    fin := open(yamfile) | stop("no ", yamfile)
+    while line := read(fin) do {
+        prog := []
+	while not (i := find(":::",line)) do put(prog,line)
+	if i>1 then put(prog,line[1:i])
+	msg := line[i+3:0]
+	write(msg)
+	generr(t, prog, msg)
+    }
+    gen(t)
+end
+
+procedure gen(t)
+
+    f := open(ofile, "w")
+    if \C then {
+	if /byacc then {
+	    f2 := open("yyerror.h", "w")
+	    write(f2, "#define yyerror(s) _yyerror(s, yystate)")
+	    close(f2)
+	    }
+	maxstate := -1
+	every maxstate <:= key(\t)
+	write(f,"#include <stdio.h>\n")
+	write(f,"int yyerror_isinitialized, yymaxstate = ",maxstate,";")
+	write(f,"struct errtable {\n",
+	        "   int i;\n",
+	        "   union {\n",
+	        "      char *msg;\n",
+	        "      struct errtable *p;\n",
+	        "      } u;\n",
+	        "   } errtab[", maxstate+1, "];")
+
+	write(f, "int yyerror_init()\n{")
+
+	every k := key(\t) do {
+	    write(f, "   errtab[",k,"].i = ", *t[k], ";")
+	    if *t[k] > 1 then {
+		write(f, "   errtab[",k,"].u.p = calloc(1,",*t[k]+1," * sizeof(struct errtable));")
+		write(f, "   errtab[",k,"].u.p[0].u.msg = ", image(t[k,10000000000]),";")
+		j := 1
+		every k2 := key(t[k]) do {
+		    write(f, "   errtab[", k, "].u.p[", j, "].i = ", k2, ";")
+		    write(f, "   errtab[", k, "].u.p[", j, "].u.msg = ", image(t[k,k2]), ";")
+		    j +:= 1
+		}
+	    }
+	    else
+		write(f,"   errtab[",k,"].u.msg = ",image(t[k,10000000000]),";")
+	}
+      write(f, "}\n")
+
+      write(f,"extern int errors;\n",
+	      "extern char *yyfilename, yytext[];\n",
+	      "extern int yychar, yylineno;\n")
+
+      if byacc then
+          write(f, "extern short *yyssp;\n\n",
+		   "int yyerror(char *s)\n{\n   int state = *yyssp;")
+      else
+          write(f, "int _yyerror(char *s, int state)\n{")
+      write(f, "   int i;\n",
+	       "   char sbuf[128];")
+
+      write(f, "   if (! yyerror_isinitialized++) yyerror_init();\n",
+               "   if (strstr(s, \"stack\")) return 0;")
+
+      write(f, "   if (errors++ > 10) {\n",
+	       "      fprintf(stderr, \"too many errors, aborting\");\n",
+	       "      exit(errors); }")
+
+      write(f, "   if(yyfilename) fprintf(stderr, \"%s:\", yyfilename);")
+      write(f, "   if ((!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\"))&&")
+      write(f,"         (state>=0 && state<=yymaxstate))")
+      write(f,"       if (errtab[state].i==1)")
+      write(f, "         s = errtab[state].u.msg;")
+      write(f,"       else {")
+      write(f,"          for(i=1;i<=errtab[state].i;i++)")
+      write(f,"             if(yychar == errtab[state].u.p[i].i) {")
+      write(f,"                s=errtab[state].u.p[i].u.msg;break;}")
+      write(f,"          if(i>errtab[state].i)s=errtab[state].u.p[0].u.msg;")
+      write(f,"          }")
+
+      write(f, "   if (!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\")){")
+      write(f, "      sprintf(sbuf,\"%s (%d;%d)\", s, state, yychar);")
+      write(f, "      s=sbuf;\n      }")
+      write(f, "   fprintf(stderr, \"%d: # \\\"%s\\\": %s\\n\", yylineno, yytext, s);")
+      write(f, "   return 0;")
+      write(f, "}")
+      }
+   else {
+      write(f,"procedure yyerror(s)\n",
+	      "static t\n",
+	      "initial {\n",
+	      "   t := table(table(\"syntax error\"))")
+      every k := key(\t) do {
+	  if *t[k] > 1 then {
+	      write(f, "   t[",k,"] := table(",image(t[k,10000000000]),")")
+	      every k2 := key(t[k]) do {
+		  write(f, "   t[", k, ",", k2, "] := ", image(t[k,k2]))
+	      }
+	  }
+	  else
+	      write(f,"   t[",k,"] := table(",image(t[k,10000000000]),")")
+      }
+      write(f, "   }\n")
+
+      write(f, "   /errors := 0")
+      write(f, "   if errors = 0 then write(&errout)")
+      write(f, "   else if map(s)== \"stack underflow. aborting...\" then return")
+      write(f, "   errors +:= 1")
+      write(f, "   if errors > 10 then stop(\"too many errors, aborting\")")
+      write(f, "   writes(&errout, \\fName, \":\")")
+      write(f, "   if s == \"syntax error\" then")
+      write(f, "      s := t[statestk[1], yychar]")
+      write(f, "   if s == \"syntax error\" then")
+      write(f, "      s ||:= \" (\" || statestk[1] ||\";\"|| yychar || \")\"")
+      write(f, "   write(&errout, yylineno, \": # \\\"\", yytext, \"\\\": \", s)")
+      write(f, "   return")
+      write(f, "end")
+}
+close(f)
+
+system(make)
+
+end
+
+procedure generr(t, prog, msg)
+
+    efile := \target | "err.icn"
+    f := open(efile,"w")
+    every write(f, !prog) 
+    close(f)
+
+    system(compile ||" "||efile||" 2> err.out")
+
+    f := open("err.out")
+    line := read(f)
+    line := read(f) | stop("no error in ",efile)
+    line2 := line
+    while line ?:= (tab(find(":")+1) & tab(0))
+    line ? {
+	tab(find("(")+1) | unknownstate(line2)
+	state := integer(tab(many(&digits))) | unknownstate(line2)
+	=";"
+	token := integer(tab(many(&digits))) | unknownstate(line2)
+	=")"
+    }
+    close(f)
+
+    if not member(t, state) then t[state] := table(msg)
+    t[state,token] := msg
+end
+
+procedure unknownstate(s)
+    write("unknown state in ", s)
+    system("cat err.icn")
+    system("cat err.out")
+end

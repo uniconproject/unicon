@@ -335,6 +335,12 @@
 #    define OF(args)  ()
 #  endif
 
+#if !VMS
+#undef VMS
+#endif
 #include <zlib.h>
+#ifndef VMS
+#define VMS 0
+#endif
 
 #endif					/* HAVE_LIBZ */

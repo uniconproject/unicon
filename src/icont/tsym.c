@@ -508,7 +508,7 @@ FILE *fd;
 #if MVS
       writecheck(fprintf(fd,"link\t%s\n",lfl->lf_name));
 #else					/* MVS */
-      writecheck(fprintf(fd,"link\t%s.u1\n",lfl->lf_name));
+      writecheck(fprintf(fd,"link\t%s.u\n",lfl->lf_name));
 #endif					/* MVS */
 
       lfl = lfl->lf_link;

@@ -62,6 +62,7 @@ Makefiles:
 		cp util.mak ../../../uni/util/makefile
 		cp gui.mak ../../../uni/gui/makefile
 		cp guidemos.mak ../../../uni/gui/guidemos/makefile
+		cp docs.mak ../../../uni/unidoc/docs/makefile
 		cp ivib-v2.mak ../../../uni/gui/ivib/makefile
 		cp uni-top.mak ../../../uni/Makefile
 		cp iyacc.mak ../../../uni/iyacc/Makefile

@@ -1,16 +1,12 @@
 /*
- *
- * File: RDB.R
- *
- * -- error handler for FDB.R
- *
+ * File: rdb.r
+ *  Contents: dbclose, isql_open, dbfetch, odbcerror, qalloc
  */
 
 #ifdef ISQL
 
 #define BUFF_SZ      32768      /* 32Kb buffer size for C/S data transfer */
-#define MAX_COL_NAME    64      /* max column name length    */
-#define MAXTABLECOLS   256      /* try driver specific const */
+#define MAX_COL_NAME   128      /* max column name length    */
 
 int dbclose(struct ISQLFile *fp)
 {
@@ -46,7 +42,7 @@ int dbclose(struct ISQLFile *fp)
 
 FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 {
-   struct ISQLFile *fp = (struct ISQLFile *) malloc(sizeof(struct ISQLFile));
+   struct ISQLFile *fp = (struct ISQLFile *) calloc(1,sizeof(struct ISQLFile));
    if (fp == NULL) return NULL;
 
    /* initialize DB connection and statement handlers */
@@ -87,6 +83,7 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 
    if (table) { /* allocate space for table name */
       fp->tablename=malloc(StrLen(*table)+1);
+      if (fp->tablename == NULL) { return 0; }
       strncpy(fp->tablename, StrLoc(*table), StrLen(*table));
       fp->tablename[StrLen(*table)]='\0';
       }
@@ -108,12 +105,11 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
    UCHAR colname[MAX_COL_NAME+1];
    SWORD SQLType, scale, nullable;
    UDWORD typesize;
-   struct descrip fieldname[MAXTABLECOLS];
+   struct descrip *fieldname;
 
    /* record structures */
    tended struct descrip rectypename=emptystr;
    tended struct b_record *r;
-   struct b_proc *proc;
 
    /* num columns in table */
    if (SQLNumResultCols(fp->hstmt, &numcols)!=SQL_SUCCESS) {
@@ -124,33 +120,40 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
    Protect(reserve(Strings, MAX_COL_NAME * numcols), return Error);
    Protect(reserve(Blocks, sizeof (struct b_record)+(numcols-1)*sizeof(struct descrip)), return Error);
 
-    /* record field names */
-    for (i=1; i<=numcols; i++) {
-      p=i-1;
-      rc=SQLDescribeCol(fp->hstmt, i, colname, MAX_COL_NAME, &colsize,
-                       &SQLType, &typesize, &scale, &nullable);
-
-      if (rc!=SQL_SUCCESS) {
-        odbcerror(fp, DESCRIBE_COL_ERR);
-        return Failed;
+   if (fp->proc == NULL) {
+      fieldname = malloc(numcols * sizeof(struct descrip));
+      if (fieldname == NULL) {
+         t_errornumber = 305;
+         t_errorvalue = nulldesc;
+         t_have_val = 0;
+         return Error;
+         }
+      /* record field names */
+      for (i=1; i<=numcols; i++) {
+         p=i-1;
+         rc=SQLDescribeCol(fp->hstmt, i, colname, MAX_COL_NAME, &colsize,
+                           &SQLType, &typesize, &scale, &nullable);
+         if (rc!=SQL_SUCCESS) {
+            odbcerror(fp, DESCRIBE_COL_ERR);
+            free(fieldname);
+            return Failed;
+            }
+         if (colsize >= MAX_COL_NAME-1) printf("column name size exceeded\n");
+         StrLoc(fieldname[p]) = alcstr(colname, colsize);
+         StrLen(fieldname[p]) = colsize;
+         }
+      /* allocate record */
+      fp->proc = dynrecord(&rectypename, fieldname, numcols);
+      free(fieldname);
+      if (fp->proc==NULL) {
+         t_errornumber = 305;
+         t_errorvalue = nulldesc;
+         t_have_val = 0;
+         return Error;
+         }
       }
 
-      len=strlen(colname);
-      StrLoc(fieldname[p]) = alcstr(colname, len);
-      StrLen(fieldname[p]) = len;
-    }
-
-    /* allocate record */
-
-    proc = dynrecord(&rectypename, fieldname, numcols);
-    if (proc==NULL) {
-       t_errornumber = 305;
-       t_errorvalue = nulldesc;
-       t_have_val = 0;
-       return Error;
-       }
-
-    r = alcrecd(numcols, (union block *)proc);
+    r = alcrecd(numcols, (union block *)(fp->proc));
     if (r==NULL) {
        t_errornumber = 307;
        t_errorvalue = nulldesc;
@@ -171,25 +174,21 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
       SQLDescribeCol(fp->hstmt, i, colname, MAX_COL_NAME, &colsize,
                      &SQLType, &typesize, &scale, &nullable);
 
-      rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR, buff, BUFF_SZ, &colsz);
+      rc = SQLGetData(fp->hstmt, i, SQL_C_CHAR, buff, BUFF_SZ, &colsz);
 
       /* if the column is NULL colsz=-1 */
-      colsz=colsz>0?colsz:0; /* normalize colsz to prevent a crash! */
-
-      p=i-1;
+      colsz = colsz>0?colsz:0; /* normalize colsz to prevent a crash! */
+      p = i-1;
 
       switch (SQLType) {
         case SQL_CHAR:
         case SQL_VARCHAR:
         case SQL_LONGVARCHAR:
-
         case SQL_BINARY:
         case SQL_VARBINARY:
         case SQL_LONGVARBINARY:
-
         case SQL_DECIMAL:
         case SQL_NUMERIC:
-
         case SQL_DATE:
         case SQL_TIME:
         case SQL_TIMESTAMP:
@@ -240,6 +239,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 
           /* allocate column */
           StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz):"";
+	  if (StrLoc(r->fields[p]) == NULL) return Failed;
           StrLen(r->fields[p])=colsz>0?colsz:0;
 
           /* copy buffer to column */
@@ -257,7 +257,6 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 	  } /* switch */
 
       } /* for */
-
    return Succeeded;
 }
 
@@ -285,22 +284,15 @@ void odbcerror(struct ISQLFile *fp, int errornum)
    k_errornumber=errornum;
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState,&NativeErr,
 		       ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
-	      SQL_NO_DATA_FOUND))
+	      SQL_NO_DATA_FOUND)) {
       k_errortext=alcstr(ErrMsg, strlen(ErrMsg)+1);
+      if (k_errortext == NULL) k_errortext = ErrMsg;
+      }
    else {
       if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))
 	 k_errortext=errmsg[errornum-NOT_ODBC_FILE_ERR];
       else k_errortext = "unidentified odbc error";
       }
-}
-
-/* allocate memory for query buffer */
-void qalloc(struct ISQLFile *f, long n)
-{
-  if (f->qsize < n) { /* not enough buffer space */
-    f->qsize = n;
-    f->query = (char *) realloc(f->query, n); /* enlarge buffer */
-  }
 }
 
 #else					/* ISQL */

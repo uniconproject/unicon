@@ -443,6 +443,9 @@ struct progstate {
    word Set_ser;
    word Table_ser;
 
+   word Kywd_time_elsewhere;		/* &time spent in other programs */
+   word Kywd_time_out;			/* &time at last program switch out */
+
    uword stringtotal;			/* cumulative total allocation */
    uword blocktotal;			/* cumulative total allocation */
    word colltot;			/* total number of collections */

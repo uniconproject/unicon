@@ -1,5 +1,5 @@
 #
-# $Id: textlist.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: textlist.icn,v 1.2 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -23,14 +23,18 @@ class TextList : SelectableScrollArea()
       mw := 0
       every s := !self.contents do
          mw <:= TextWidth(self.cwin, detab(s))
-      return mw
+      return mw + 2 * HIGHLIGHT_TEXT_SPACING
    end
 
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
       local s
       s := contents[i]
 
-      left_string(self.cbwin, xp, yp, detab(s))
+      #
+      # Cosmetic - add a little to the left of xp; this looks better 
+      # with the cursor, selection and highlight.
+      #
+      left_string(self.cbwin, xp + HIGHLIGHT_TEXT_SPACING, yp, detab(s))
 
       if \selection_cw then
          FillRectangle(selection_cw, self.view.x, yp - self.line_height / 2, self.view.w, self.line_height)

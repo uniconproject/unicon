@@ -1,5 +1,5 @@
 #
-# $Id: tabitem.icn,v 1.3 2004-02-12 16:45:24 rparlett Exp $
+# $Id: tabitem.icn,v 1.4 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -53,16 +53,17 @@ class TabItem : Component(
    end
 
    method display_tab()
+      local hw, sw
+
       ypos := (self.line_no - 1) * self.parent.line_h + self.parent.y
-      cw := Clone(self.parent.cbwin)
-      Fg(cw, "black")
-      DrawLine(cw, self.label_x + self.label_w - 1, ypos, self.label_x + self.label_w - 1, ypos + self.parent.line_h - 1)
-      DrawLine(cw, self.label_x + self.label_w - 2, ypos + 1, self.label_x + self.label_w - 2, ypos + self.parent.line_h - 2)
-      Fg(cw, "pale gray")
-      DrawLine(cw, self.label_x, ypos + self.parent.line_h - 1, self.label_x, ypos, self.label_x + self.label_w - 1, ypos)
-      Fg(cw, "white")
-      DrawLine(cw, self.label_x + 1, ypos + self.parent.line_h - 2, self.label_x + 1, ypos + 1, self.label_x + self.label_w - 2, ypos  + 1)
-      Uncouple(cw)
+
+      hw := get_hilite_win(self.cbwin)
+      sw := get_shadow_win(self.cbwin)
+
+      DrawLine(sw, self.label_x + self.label_w - 1, ypos, self.label_x + self.label_w - 1, ypos + self.parent.line_h - 1)
+      DrawLine(sw, self.label_x + self.label_w - 2, ypos + 1, self.label_x + self.label_w - 2, ypos + self.parent.line_h - 2)
+      DrawLine(hw, self.label_x, ypos + self.parent.line_h - 1, self.label_x, ypos, self.label_x + self.label_w - 1, ypos)
+      DrawLine(hw, self.label_x + 1, ypos + self.parent.line_h - 2, self.label_x + 1, ypos + 1, self.label_x + self.label_w - 2, ypos  + 1)
 
       left_string(self.parent.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + self.parent.line_h / 2, self.label, self.accel)
 

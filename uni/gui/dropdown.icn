@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.8 2004-09-18 18:44:58 rparlett Exp $
+# $Id: dropdown.icn,v 1.9 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -23,24 +23,22 @@ class DropDownTextList : TextList(drag_flag)
       #
       # Compute longest line
       #
-      mw := 0
-      every s := !self.contents do
-         mw <:= TextWidth(self.cwin, s)
+      mw := get_subject_width()
 
       # 
       # Set the width needed, ensuring within min/max dimensions requested
       #
-      self.w_spec := mw + 2 * TX_PADDING
+      self.w_spec := mw + 2 * SP_X_PADDING
       self.w_spec <:= min_w
       self.w_spec >:= max_w
 
       #
       # Set the height needed, checking for presence of HSB
       #
-      if self.w_spec - 2 * TX_PADDING >= mw then
-         self.h_spec := *self.contents * fh + 2 * TY_PADDING
+      if self.w_spec - 2 * SP_X_PADDING >= mw then
+         self.h_spec := *self.contents * fh + 2 * SP_Y_PADDING
       else
-         self.h_spec := *self.contents * fh + 2 * TY_PADDING + SB_SIZE
+         self.h_spec := *self.contents * fh + 2 * SP_Y_PADDING + SB_SIZE
 
       self.h_spec <:= min_h
       self.h_spec >:= max_h

@@ -1,5 +1,5 @@
 #
-# $Id: tabset.icn,v 1.4 2004-09-18 18:44:58 rparlett Exp $
+# $Id: tabset.icn,v 1.5 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -34,7 +34,7 @@ class TabSet : Component(
    end
 
    method display(buffer_flag)
-      local last_on_a_line
+      local last_on_a_line, hw
 
       #
       # Erase all and display outline of tabbed pane area.
@@ -52,17 +52,17 @@ class TabSet : Component(
       #
       # Display line under tabs.
       #
-      cw := Clone(self.cbwin)
-      Fg(cw, "pale gray")
-      DrawLine(cw, self.x, self.y + self.tab_h - 2, self.which_one.label_x, self.y + self.tab_h - 2)
-      if /last_on_a_line then
-         DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 2, self.x + self.w - 1, self.y + self.tab_h - 2)
-      Fg(cw, "white")
-      DrawLine(cw, self.x, self.y + self.tab_h - 1, self.which_one.label_x, self.y + self.tab_h - 1)
-      if /last_on_a_line then
-         DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 1, self.x + self.w - 2, self.y + self.tab_h - 1)
+      hw := get_hilite_win(self.cbwin)
 
-      Uncouple(cw)
+      DrawLine(hw, self.x, self.y + self.tab_h - 2, self.which_one.label_x, self.y + self.tab_h - 2)
+
+      if /last_on_a_line then
+         DrawLine(hw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 2, self.x + self.w - 1, self.y + self.tab_h - 2)
+
+      DrawLine(hw, self.x, self.y + self.tab_h - 1, self.which_one.label_x, self.y + self.tab_h - 1)
+
+      if /last_on_a_line then
+         DrawLine(hw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 1, self.x + self.w - 2, self.y + self.tab_h - 1)
 
       #
       # Display contents of current tab into buffer

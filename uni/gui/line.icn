@@ -1,5 +1,5 @@
 #
-# $Id: line.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: line.icn,v 1.2 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -43,9 +43,13 @@ class Line : Component(is_vertical_flag)
       W := if /buffer_flag then self.cwin else self.cbwin
       EraseRectangle(W, self.x, self.y, self.w, self.h)
       if /self.is_vertical_flag then
-         DrawEtchedHorizontalLine(W, self.x, self.y + self.h / 2, self.w)
+         DrawEtchedLine(W, 
+                        self.x, self.y + self.h / 2, 
+                        self.x + self.w, self.y + self.h / 2)
       else
-         DrawEtchedVerticalLine(W, self.x + self.w / 2, self.y, self.h)
+         DrawEtchedLine(W, 
+                        self.x + self.w / 2, self.y, 
+                        self.x + self.w / 2, self.y + self.h)
       self.do_shading(W)
    end
 

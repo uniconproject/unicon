@@ -1,5 +1,5 @@
 #
-# $Id: tree.icn,v 1.4 2004-09-18 18:44:58 rparlett Exp $
+# $Id: tree.icn,v 1.5 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -45,7 +45,7 @@ class Tree : SelectableScrollArea(
       mw := 0
       every s := !self.contents do
          mw <:= col_w * s.depth + col_w + TextWidth(self.cwin, s.label)
-      return mw
+      return mw + 2 * HIGHLIGHT_TEXT_SPACING
    end
 
    #
@@ -260,20 +260,20 @@ class Tree : SelectableScrollArea(
          DrawImageEx(self.cbwin, lp - col_w / 2 - little_w / 2, yp - little_h / 2, little)
       }
       DrawImageEx(self.cbwin, lp + col_w / 2 - bmp_w / 2, yp - bmp_h / 2, img)
-      left_string(self.cbwin, lp + col_w, yp, N.label)
+      left_string(self.cbwin, lp + col_w + HIGHLIGHT_TEXT_SPACING, yp, N.label)
 
       if \selection_cw then
          FillRectangle(selection_cw, lp + col_w,
-                       yp - self.line_height / 2, TextWidth(self.cbwin, N.label), self.line_height)
+                       yp - self.line_height / 2, TextWidth(self.cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING, self.line_height)
 
       if \cursor_cw then {
          Rectangle(cursor_cw, lp + col_w,
-                   yp - self.line_height / 2, TextWidth(self.cbwin, N.label), self.line_height)
+                   yp - self.line_height / 2, TextWidth(self.cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING, self.line_height)
       }
 
       if \highlight_cw then {
          Rectangle(highlight_cw, lp + col_w,
-                   yp - self.line_height / 2, TextWidth(self.cbwin, N.label), self.line_height)
+                   yp - self.line_height / 2, TextWidth(self.cbwin, N.label) + 2 * HIGHLIGHT_TEXT_SPACING, self.line_height)
       }
 
       Uncouple(dashed)

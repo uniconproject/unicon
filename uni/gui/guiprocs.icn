@@ -1,5 +1,5 @@
 #
-# $Id: guiprocs.icn,v 1.5 2004-05-09 21:10:48 rparlett Exp $
+# $Id: guiprocs.icn,v 1.6 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -26,6 +26,7 @@ procedure EraseRectangle(W, x, y, w, h)
 end
 
 procedure DrawImageEx(W, x, y, i)
+   i := get_extended_image(W, i) | fail
    #
    # This gets round a bug whereby painting an image
    # in a -ve location (off screen) takes a really long
@@ -34,6 +35,44 @@ procedure DrawImageEx(W, x, y, i)
    if x + img_width(i) < 0 & y + img_height(i) < 0 then
       return
    DrawImage(W, x, y, i)
+end
+
+procedure PaletteKeyEx(W, palette, spec)
+   local color
+   color := case spec of {
+      "hilite" : WAttrib(get_hilite_win(W), "fg")
+      "shadow" : WAttrib(get_shadow_win(W), "fg")
+      "fg" : WAttrib(W, "fg")
+      "bg" : WAttrib(W, "bg")
+      "trans" : return "\377"
+      default : spec
+   }
+   return PaletteKey(W, palette, color)
+end
+
+procedure get_extended_image(W, img)
+   local s1, s2, head, spec, palette
+
+   img ? {
+      ="(" | return img
+      spec := tab(upto(')')) | fail
+      =")"
+      tab(many(' '))
+      head := tab(upto(',')) || move(1) ||
+         (palette := tab(upto(','))) || move(1) | fail
+
+      s1 := s2 := ""
+      spec ? repeat {
+         tab(many('; '))
+         if pos(0) then 
+            break
+         s1 ||:= move(1) | fail
+         ="=" | fail
+         spec := tab(upto(';') | 0)
+         s2 ||:= PaletteKeyEx(W, palette, spec) | fail
+      }
+      return head || map(tab(0), s1, s2)
+   }
 end
 
 procedure Rectangle(W, x, y, w, h)
@@ -98,62 +137,44 @@ end
 #
 # Draw a raised rectangle.
 #
-procedure DrawRaisedRectangle(W, x, y, w, h)
-   cw := Clone(W)
-   Fg(cw, "black")
-   DrawLine(cw, x + w - 1, y, x + w - 1, y + h - 1, x, y + h - 1)
-   DrawLine(cw, x + w - 2, y + 1, x + w - 2, y + h - 2, x + 1, y + h - 2)
-   Fg(cw, "pale gray")
-   DrawLine(cw, x, y + h - 1, x, y, x + w - 1, y)
-   Fg(cw, "white")
-   DrawLine(cw, x + 1, y + h - 2, x + 1, y + 1, x + w - 2, y  + 1)
-   Uncouple(cw)
+procedure DrawRaisedRectangle(W, x, y, w, h, i)
+   /i := BORDER_WIDTH
+   BevelRectangle(W, x, y, w, h, i)
 end
 
 #
 # Draw a sunken rectangle.
 #
-procedure DrawSunkenRectangle(W, x, y, w, h)
-   cw := Clone(W)
+procedure DrawSunkenRectangle(W, x, y, w, h, i)
+   /i := -BORDER_WIDTH
+   BevelRectangle(W, x, y, w, h, i)
+end
 
-   Fg(cw, "pale gray")
-   DrawLine(cw, x + w - 1, y, x + w - 1, y + h - 1, x, y + h - 1)
-   Fg(cw, "white")
-   DrawLine(cw, x + w - 2, y + 1, x + w - 2, y + h - 2, x + 1, y + h - 2)
-   Fg(cw, "black")
-   DrawLine(cw, x, y + h - 1, x, y, x + w - 1, y)
-   DrawLine(cw, x + 1, y + h - 2, x + 1, y + 1, x + w - 2, y  + 1)
+#
+# Draw a dashed rectangle using the shadow color.
+#
+procedure DashedRectangle(W, x, y, w, h)
+   local cw
+   cw := Clone(get_shadow_win(W), "pattern=gray", "fillstyle=masked")
+   #cw := Clone(W, "fg=black", "pattern=gray", "fillstyle=masked")
+   Rectangle(cw, x, y, w, h)
    Uncouple(cw)
 end
 
 #
-# Draw an etched horizontal line.  The result is 3 pixels wide
+# Draw an etched line.
 #
-procedure DrawEtchedHorizontalLine(W, x, y, l)
-   cw := Clone(W)
-
-   Fg(cw, "black")
-   DrawLine(cw, x, y - 1, x + l, y - 1)
-   Fg(cw, "pale gray")
-   DrawLine(cw, x, y, x + l, y)
-   Fg(cw, "white")
-   DrawLine(cw, x, y + 1, x + l, y + 1)
-   Uncouple(cw)
+procedure DrawEtchedLine(W, x1, y1, x2, y2, w)
+   /w := 3
+   DrawGroove(W, x1, y1, x2, y2, w)
 end
 
-#
-# Draw an etched vertical line.  The result is 3 pixels wide
-#
-procedure DrawEtchedVerticalLine(W, x, y, l)
-   cw := Clone(W)
+procedure get_shadow_win(W)
+   return bev_lookup(W).shadow
+end
 
-   Fg(cw, "black")
-   DrawLine(cw, x - 1, y, x - 1, y + l)
-   Fg(cw, "pale gray")
-   DrawLine(cw, x, y, x, y + l)
-   Fg(cw, "white")
-   DrawLine(cw, x + 1, y, x + 1, y + l)
-   Uncouple(cw)
+procedure get_hilite_win(W)
+   return bev_lookup(W).hilite
 end
 
 procedure FilterRectangle(W, x, y, w, h)
@@ -189,11 +210,21 @@ procedure right_string(win, x, y, s, k)
 end
 
 procedure img_width(s)
-   return s ? integer(tab(upto(',')))
+   s ? {
+      if ="(" then {
+         tab(upto(')')) 
+         move(1)
+      }
+      return integer(tab(upto(',')))
+   }
 end
 
 procedure img_height(s)
    s ? {
+      if ="(" then {
+         tab(upto(')')) 
+         move(1)
+      }
       w := integer(tab(upto(',')))
       move(1)
       tab(upto(','))
@@ -205,7 +236,7 @@ end
 procedure img_style(s)
    return case s of {
       "box_up" :
-"11,g2,_
+"(0=shadow;1=hilite;~=trans)11,c6,_
 11111111111_
 11111111110_
 11~~~~~~~00_
@@ -219,21 +250,21 @@ procedure img_style(s)
 10000000000_
 "
          "box_down" :
-"11,g2,_
+"(b=black;0=shadow;1=hilite;~=trans)11,c6,_
 00000000001_
-00000000011_
-00000000011_
-00000000011_
-00000000011_
-00000000011_
-00000000011_
-00000000011_
-00000000011_
+0bbbbbbbb11_
+0bbbbbbbb11_
+0bbbbbbbb11_
+0bbbbbbbb11_
+0bbbbbbbb11_
+0bbbbbbbb11_
+0bbbbbbbb11_
+0bbbbbbbb11_
 01111111111_
 11111111111_
 "
       "diamond_up" :
-"11,g2,_
+"(0=shadow;1=hilite;~=trans)11,c6,_
 ~~~~~1~~~~~_
 ~~~~111~~~~_
 ~~~11~11~~~_
@@ -247,16 +278,16 @@ procedure img_style(s)
 ~~~~~0~~~~~_
 "
          "diamond_down" :
-"11,g2,_
+"(b=black;0=shadow;1=hilite;~=trans)11,c6,_
 ~~~~~0~~~~~_
-~~~~000~~~~_
-~~~00000~~~_
-~~0000000~~_
-~000000000~_
-00000000000_
-~110000011~_
-~~1100011~~_
-~~~11011~~~_
+~~~~0b0~~~~_
+~~~0bbb0~~~_
+~~0bbbbb0~~_
+~0bbbbbbb0~_
+00bbbbbbbb0_
+~11bbbbb11~_
+~~11bbb11~~_
+~~~11b11~~~_
 ~~~~111~~~~_
 ~~~~~1~~~~~_
 "

@@ -1,5 +1,5 @@
 #
-# $Id: checkbox.icn,v 1.3 2004-05-09 21:10:48 rparlett Exp $
+# $Id: checkbox.icn,v 1.4 2004-11-05 19:24:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -39,7 +39,10 @@ class CheckBox : Button()
 
       if /self.h_spec := WAttrib(self.cwin, "fheight") then
          self.h_spec <:= img_h
-      /self.w_spec := TextWidth(self.cwin, self.label) + 2 * self.img_w
+      #
+      # We give extra border space; this looks better with the focus rectangle.
+      #
+      /self.w_spec := TextWidth(self.cwin, self.label) + 2 * self.img_w + HIGHLIGHT_TEXT_SPACING
       self.Component.resize()
    end
       
@@ -59,9 +62,8 @@ class CheckBox : Button()
       left_string(self.cbwin, self.x + 2 * self.img_w, self.y + self.h / 2, self.label, self.accel)
 
       if /self.no_keyboard_flag & \self.has_focus then {
-         cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
-         Rectangle(cw, self.x + 2 * self.img_w, self.y, self.w - 2 * self.img_w, self.h)
-         Uncouple(cw)
+         DashedRectangle(self.cbwin, self.x + 2 * self.img_w - HIGHLIGHT_TEXT_SPACING, self.y, 
+                         self.w - 2 * self.img_w + HIGHLIGHT_TEXT_SPACING, self.h)
       }
 
       self.do_shading(self.cbwin)

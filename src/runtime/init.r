@@ -249,8 +249,8 @@ extern int first_time;
 int fdgets(int fd, char *buf, size_t count) 
 {
   int i;
-  char *temp;
-  temp=buf;
+  char *temp=buf;
+
   for (i=0;i<count;i++) {
     if (read(fd,temp,1)==-1) {
       return -1;
@@ -593,7 +593,7 @@ char *argv[];
    {
 #if !COMPILER
    int fdname = -1;
-   FILE *fname = NULL;
+   FILE *fname = 0;
    word cbread, longread(), gzlongread();
 #endif					/* COMPILER */
 
@@ -660,20 +660,20 @@ char *argv[];
    rootpstate.parentdesc = nulldesc;
    rootpstate.eventmask= nulldesc;
    rootpstate.opcodemask = nulldesc;
-   MakeInt(0, &(rootpstate.eventcount));
+   rootpstate.eventcount = zerodesc;
    rootpstate.valuemask = nulldesc;
    rootpstate.eventcode= nulldesc;
    rootpstate.eventval = nulldesc;
    rootpstate.eventsource = nulldesc;
    rootpstate.Glbl_argp = NULL;
-   MakeInt(0, &(rootpstate.Kywd_err));
+   rootpstate.Kywd_err = zerodesc;
    MakeInt(1, &(rootpstate.Kywd_pos));
    StrLen(rootpstate.ksub) = 0;
    StrLoc(rootpstate.ksub) = "";
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;
-   MakeInt(0, &(rootpstate.Kywd_ran));
+   rootpstate.Kywd_ran = zerodesc;
    rootpstate.K_errornumber = 0;
    rootpstate.T_errornumber = 0;
    rootpstate.Have_errval = 0;
@@ -682,15 +682,15 @@ char *argv[];
    rootpstate.K_errorvalue = nulldesc;
    rootpstate.T_errorvalue = nulldesc;
 #ifdef PosixFns
-   MakeInt(0,&(rootpstate.AmperErrno));
+   rootpstate.AmperErrno = zerodesc;
 #endif					/* PosixFns */
 
 #ifdef Graphics
-   MakeInt(0,&(rootpstate.AmperX));
-   MakeInt(0,&(rootpstate.AmperY));
-   MakeInt(0,&(rootpstate.AmperRow));
-   MakeInt(0,&(rootpstate.AmperCol));
-   MakeInt(0,&(rootpstate.AmperInterval));
+   rootpstate.AmperX = zerodesc;
+   rootpstate.AmperY = zerodesc;
+   rootpstate.AmperRow = zerodesc;
+   rootpstate.AmperCol = zerodesc;
+   rootpstate.AmperInterval = zerodesc;
    rootpstate.LastEventWin = nulldesc;
    rootpstate.Kywd_xwin[XKey_Window] = nulldesc;
 #endif					/* Graphics */
@@ -1135,8 +1135,6 @@ else {
 
 #endif					/* HAVE_LIBZ */
   
-/* this is the end of yonggang's compressed icode else-branch ! */
-
 
 #endif					/* !COMPILER */
 
@@ -1147,6 +1145,8 @@ else {
 #ifdef MultiThread
    EVInit();
 #endif					/* MultiThread */
+
+/* this is the end of yonggang's compressed icode else-branch ! */
 
    /*
     * Check command line for redirected standard I/O.
@@ -1900,27 +1900,29 @@ C_integer bs, ss, stk;
    pstate->hsize = hdr.hsize;
    pstate->parent= NULL;
    pstate->parentdesc= nulldesc;
-   pstate->opcodemask= nulldesc;
-   MakeInt(0, &(pstate->eventcount));
-   pstate->valuemask= nulldesc;
    pstate->eventmask= nulldesc;
+   pstate->opcodemask= nulldesc;
+   pstate->eventcount = zerodesc;
+   pstate->valuemask= nulldesc;
    pstate->eventcode= nulldesc;
    pstate->eventval = nulldesc;
    pstate->eventsource = nulldesc;
+   pstate->Glbl_argp = NULL;
    pstate->K_current.dword = D_Coexpr;
 
-   MakeInt(0, &(pstate->Kywd_err));
-   MakeInt(1, &(pstate->Kywd_pos));
-   MakeInt(0, &(pstate->Kywd_ran));
-
-   StrLen(pstate->Kywd_prog) = strlen(prog_name);
-   StrLoc(pstate->Kywd_prog) = prog_name;
+   pstate->Kywd_err = zerodesc;
+   pstate->Kywd_pos = onedesc;
    StrLen(pstate->ksub) = 0;
    StrLoc(pstate->ksub) = "";
+   StrLen(pstate->Kywd_prog) = strlen(prog_name);
+   StrLoc(pstate->Kywd_prog) = prog_name;
+   pstate->Kywd_ran = zerodesc;
    MakeInt(hdr.trace, &(pstate->Kywd_trc));
 
    pstate->Line_num = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
    pstate->Lastop = 0;
+   pstate->Xargp = NULL;
+   pstate->Xnargs = 0;
    /*
     * might want to override from TRACE environment variable here.
     */
@@ -1974,11 +1976,11 @@ C_integer bs, ss, stk;
    pstate->T_errorvalue = nulldesc;
 
 #ifdef Graphics
-   MakeInt(0, &(pstate->AmperX));
-   MakeInt(0, &(pstate->AmperY));
-   MakeInt(0, &(pstate->AmperRow));
-   MakeInt(0, &(pstate->AmperCol));
-   MakeInt(0, &(pstate->AmperInterval));
+   pstate->AmperX = zerodesc;
+   pstate->AmperY = zerodesc;
+   pstate->AmperRow = zerodesc;
+   pstate->AmperCol = zerodesc;
+   pstate->AmperInterval = zerodesc;
    pstate->LastEventWin = nulldesc;
    pstate->Kywd_xwin[XKey_Window] = nulldesc;
 #endif					/* Graphics */

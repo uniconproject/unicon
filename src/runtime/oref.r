@@ -117,19 +117,17 @@ operator{*} ! bang(underef x -> dx)
 		  msgnum = 1;
 		  for (;;) {
 		     snprintf(buf, sizeof(buf), "%d", msgnum);
-		     if (mf->resp != NULL) {
+		     if (mf->resp != NULL)
 			tp_freeresp(mf->tp, mf->resp);
-			}
+
 		     req.type = LIST;
 		     mf->resp = tp_sendreq(mf->tp, &req);
 		     sc = mf->resp->sc;
-		     if (mf->resp->sc != 200) {
+		     if (mf->resp->sc != 200)
 			fail;
-			}
-		     if (sscanf(mf->resp->msg, "%*s %*d %d", 
-				&msglen) < 1) {
+
+		     if (sscanf(mf->resp->msg, "%*s %*d %d", &msglen) < 1)
 			runerr(1212, dx);
-			}
 		     tp_freeresp(mf->tp, mf->resp);
 
 		     Protect(reserve(Strings, msglen), runerr(0));
@@ -138,13 +136,13 @@ operator{*} ! bang(underef x -> dx)
 
 		     req.type = RETR;
 		     mf->resp = tp_sendreq(mf->tp, &req);
-		     if (mf->resp->sc != 200) {
+		     if (mf->resp->sc != 200)
 			runerr(1212, dx);
-			}
+
 		     tp_read(mf->tp, StrLoc(result), msglen);
-		     while (buf[0] != '.') {
+		     while (buf[0] != '.')
 			tp_readln(mf->tp, buf, sizeof(buf));
-			}
+
 		     suspend result;
 		     msgnum++;
 		     }
@@ -153,8 +151,9 @@ operator{*} ! bang(underef x -> dx)
 #endif                                  /* Messaging */
 
 #ifdef Dbm
-	    if (status & Fs_Dbm)
+	    if (status & Fs_Dbm) {
 	       key = dbm_firstkey((DBM *)fd);
+	       }
 #endif					/* Dbm */
             for (;;) {
                StrLen(result) = 0;
@@ -172,15 +171,14 @@ operator{*} ! bang(underef x -> dx)
                   else
 #endif					/* Graphics */
 
-#ifdef PosixFns
+#ifdef ReadDirectory
 #if !NT
-          	  if (status & Fs_Dir) {
-		     struct dirent *d;
+          	  if (status & Fs_Directory) {
+		     struct dirent *d = readdir((DIR *)fd);
 		     char *s, *p=sbuf;
-		     slen = 0;
-		     d = readdir((DIR *)fd);
-		     if (!d) fail;
+		     if (d == NULL) fail;
 		     s = d->d_name;
+		     slen = 0;
 		     while(*s && slen++ < MaxCvtLen)
 		        *p++ = *s++;
 		     if (slen == MaxCvtLen)
@@ -188,8 +186,7 @@ operator{*} ! bang(underef x -> dx)
 		  }
 		  else
 #endif					/* !NT */
-#endif                                  /* PosixFns */
-
+#endif                                  /* ReadDirectory */
 
 #ifdef Dbm
 		  if (status & Fs_Dbm) {

@@ -608,8 +608,8 @@ class _Dialog : Container(
 
    method dispose(was_closed)
       self$end_dialog()
-      every (!child_dialogs)$dispose()
-      self$finally()
+      every (!child_dialogs)$dispose(was_closed)
+      self$finally(was_closed)
       if /was_closed then
          self$Close()
       self.is_open := &null
@@ -1349,9 +1349,9 @@ class Component : Ticker(
          if find(",", val) then {
 	    vals := []
 	    val ? {
-		while put(vals, tab(find(","))) do move(1)
-		put(vals, tab(0))
-		}
+	       while put(vals, tab(find(","))) do move(1)
+	       put(vals, tab(0))
+	       }
 	    self.__m["set_" || attr] ! (push(vals, self))
 	    }
 	 else
@@ -1456,9 +1456,9 @@ class Container : Component(
       return
    end
 
-   method finally()
+   method finally(was_closed)
       stop_ticker()
-      every (!self.components)$finally()
+      every (!self.components)$finally(was_closed)
       return
    end
 
@@ -2387,7 +2387,7 @@ procedure CacheImage(win,x,y,w,h,filename)
 
    wc := cache[filename]
    if WAttrib(wc, "width") = w & WAttrib(wc,"height") = h then
-       return CopyArea(wc, win, , , , , x, y)
+      return CopyArea(wc, win, , , , , x, y)
 
     # otherwise, we have to zoom
    wc := cache[filename]
@@ -2478,7 +2478,7 @@ class Image : Component(
 	 imwin := cache[filename]
 	 }
       else if not(imwin := WOpen("image=" || \self.filename, "canvas=hidden"))
-         then fail
+	 then fail
 #
 #      Uncomment the following lines if you're multiple images are using
 #      more than 256 colors and aren't showing properly on X11 systems.

@@ -35,6 +35,13 @@
 
 /* Make sure the database is all on disk. */
 
+#if defined(NT) || defined(NTGCC)
+void fsync(int i)
+{
+  fflush(NULL); fflush(NULL);
+}
+#endif
+
 void
 gdbm_sync (dbf)
      gdbm_file_info *dbf;
@@ -47,10 +54,3 @@ gdbm_sync (dbf)
   fsync (dbf->desc);
 
 }
-
-#ifdef NT
-void fsync(int i)
-{
-  fflush(NULL); fflush(NULL);
-}
-#endif

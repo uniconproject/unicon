@@ -39,8 +39,8 @@ struct t_coexpr {
 struct t_coexpr *coexp_lst;
 
 #ifdef TypTrc
-extern int typealloc;		/* flag to account for allocation */
-extern long typespace;		/* amount of space for type inference */
+int typealloc;		/* flag to account for allocation */
+long typespace;		/* amount of space for type inference */
 #endif					/* TypTrc */
 
 struct symtyps *cur_symtyps; /* maps run-time routine symbols to types */
@@ -137,8 +137,13 @@ static void         side_effect (struct il_code *il);
 static struct symtyps *symtyps     (int nsyms);
 
 #ifdef TypTrc
+#ifdef OptimizeType
 static void         prt_d_typ   (FILE *file, struct typinfo *typ);
 static void         prt_typ     (FILE *file, struct typinfo *typ);
+#else
+static void         prt_d_typ   (FILE *file, unsigned int *typ);
+static void         prt_typ     (FILE *file, unsigned int *typ);
+#endif
 #endif					/* TypTrc */
 
 #define CanFail   1

@@ -981,9 +981,7 @@ end
 /*
  * c_put - C-level, nontending list put function
  */
-void c_put(l, val)
-struct descrip *l;
-struct descrip *val;
+void c_put(struct descrip *l, struct descrip *val)
 {
    register word i;
    register struct b_lelem *bp;  /* does not need to be tended */
@@ -1158,15 +1156,36 @@ function{1} put(x, vals[n])
       }
 end
 
+/*
+ * C language set insert.  pps must point to a tended block pointer.
+ * pe can't be tended, so allocate before, and deallocate if unused.
+ * returns: 0 = yes it was inserted, -1 = runtime error, 1 = already there.
+ */
+int c_setinsert(union block **pps, dptr pd)
+{
+   int res;
+   register uword hn;
+   union block **pe;
+   struct b_selem *ne;			/* does not need to be tended */
+   Protect(ne = alcselem(&nulldesc, (uword)0), return -1);
+   pe = memb(*pps, pd, hn = hash(pd), &res);
+   if (res==0) {
+      ne->setmem = *pd;			/* add new element */
+      ne->hashnum = hn;
+      addmem((struct b_set *)*pps, ne, pe);
+      }
+   else deallocate((union block *)ne);
+   return res;
+}
 
 "set(L) - create a set with members in list L."
 "  The members are linked into hash chains which are"
 " arranged in increasing order by hash number."
 
-function{1} set(l)
+function{1} set(x[n])
 
-   type_case l of {
-      null: {
+   len_case n of {
+      0: {
          abstract {
             return new set(empty_type)
             }
@@ -1180,7 +1199,7 @@ function{1} set(l)
             }
          }
 
-      list: {
+      default: {
          abstract {
             return new set(store[type(l).lst_elem])
             }
@@ -1194,51 +1213,43 @@ function{1} set(l)
             word i, j;
             tended union block *ps;
             union block **pe;
+	    int arg;
 
-            /*
-             * Make a set of the appropriate size.
+	    /*
+	     * Make a set.
              */
-            pb = BlkLoc(l);
-            ps = hmake(T_Set, (word)0, pb->list.size);
+            ps = hmake(T_Set, (word)0, 0);
             if (ps == NULL)
                runerr(0);
 
-            /*
-             * Chain through each list block and for
-             *  each element contained in the block
-             *  insert the element into the set if not there.
-	     *
-	     * ne always has a new element ready for use.  We must get one
-	     *  in advance, and stay one ahead, because pe can't be tended.
-	     */
-	    Protect(ne = alcselem(&nulldesc, (uword)0), runerr(0));
-
-            for (pb = pb->list.listhead;
-		 BlkType(pb) == T_Lelem;
-		 pb = pb->lelem.listnext) {
-               for (i = 0; i < pb->lelem.nused; i++) {
-                  j = pb->lelem.first + i;
-                  if (j >= pb->lelem.nslots)
-                     j -= pb->lelem.nslots;
-                  pd = &pb->lelem.lslots[j];
-                  pe = memb(ps, pd, hn = hash(pd), &res);
-                  if (res == 0) {
-		     ne->setmem = *pd;			/* add new element */
-		     ne->hashnum = hn;
-                     addmem((struct b_set *)ps, ne, pe);
-							/* get another blk */
-	             Protect(ne = alcselem(&nulldesc, (uword)0), runerr(0));
-                     }
-                  }
-               }
-	    deallocate((union block *)ne);
-            Desc_EVValD(ps, E_Screate, D_Set);
+	    for (arg = 0; arg < n; arg++) {
+	      if (is:list(x[arg])) {
+		pb = BlkLoc(x[arg]);
+		/*
+		 * Chain through each list block and for
+		 *  each element contained in the block
+		 *  insert the element into the set if not there.
+		 */
+		for (pb = pb->list.listhead;
+		     BlkType(pb) == T_Lelem;
+		     pb = pb->lelem.listnext) {
+		  for (i = 0; i < pb->lelem.nused; i++) {
+		    j = pb->lelem.first + i;
+		    if (j >= pb->lelem.nslots)
+		      j -= pb->lelem.nslots;
+		    pd = &pb->lelem.lslots[j];
+		    if (c_setinsert(&ps, pd) == -1) runerr(0);
+                    }
+		}
+	      }
+	      else {
+		if (c_setinsert(&ps, & (x[arg])) == -1) runerr(0);
+	      }
+	    }
+	    Desc_EVValD(ps, E_Screate, D_Set);
             return set(ps);
-            }
+	    }
          }
-
-      default :
-         runerr(108, l)
       }
 end
 

@@ -56,8 +56,26 @@ initial {
    writes(&errout, \fName, ":")
    if s == "syntax error" then
       s := t[statestk[1], yychar]
-   if s == "syntax error" then
+   if s == "syntax error" then {
       s ||:= " (" || statestk[1] ||";"|| yychar || ")"
+      if /merrflag then s ||:= "\n(use -M for assistance with this error)"
+      }
    write(&errout, yylineno, ": # \"", yytext, "\": ", s)
+   if \merrflag then {
+       if ferr2 := open(\fName) then {
+	 write(&errout, "Reporting (-M) your error to the Oracle (",
+	       merraddress, ") for assistance.")
+	 write(&errout, "Type any question you have on the lines below.",
+	       " Type a blank line to finish.")
+	 ferr := open("mail " || merraddress, "pw")
+	 while write(ferr, "" ~== read())
+	 write(ferr)
+	 write(ferr, yylineno, ": # \"", yytext, "\": ", s)
+	 write(ferr)
+	 while write(ferr, read(ferr2))
+	 close(ferr2)
+	 close(ferr)
+         }
+      }
    return
 end

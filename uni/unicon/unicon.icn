@@ -37,6 +37,9 @@ global yydbg, yyout, linkline, translateducode, imported, imported_classes
 
 link basename, io
 
+$define MERRADDRESS "jeffery@cs.nmsu.edu"
+global merrflag, merraddress
+
 $ifdef _MS_WINDOWS_NT
 $define PATHCHAR "\\"
 $else
@@ -84,6 +87,7 @@ procedure initialize()
   comp     := 0
   yynerrs  := 0
   errors   := 0
+  merraddress := MERRADDRESS
   alpha    := &ucase ++ &lcase ++ '_' ++ &digits
   nonalpha := &cset -- alpha
   alphadot := alpha ++ '.'
@@ -144,6 +148,7 @@ procedure main(argv)
 	 "-y": parseonly := 1
 	 "-yydbg": parseonly := yydbg := 1
 	 "-G"|"-B": ilinkopt ||:= argv[i] || " "
+	 "-M" : merrflag := 1
 	 default   : icontopt ||:= argv[i] || " "
          }
       }

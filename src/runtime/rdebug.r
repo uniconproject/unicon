@@ -239,6 +239,28 @@ int get_name(dptr dp1,dptr dp0)
             StrLoc(*dp0) = "&errno";
             }
 #endif					/* PosixFns */
+#ifdef Graphics
+         else if (VarLoc(*dp1) == &amperCol) {
+            StrLen(*dp0) = 4;
+            StrLoc(*dp0) = "&col";
+            }
+         else if (VarLoc(*dp1) == &amperRow) {
+            StrLen(*dp0) = 4;
+            StrLoc(*dp0) = "&row";
+            }
+         else if (VarLoc(*dp1) == &amperX) {
+            StrLen(*dp0) = 2;
+            StrLoc(*dp0) = "&x";
+            }
+         else if (VarLoc(*dp1) == &amperY) {
+            StrLen(*dp0) = 2;
+            StrLoc(*dp0) = "&y";
+            }
+         else if (VarLoc(*dp1) == &amperInterval) {
+            StrLen(*dp0) = 9;
+            StrLoc(*dp0) = "&interval";
+            }
+#endif					/* Graphics */
          else
             syserr("name: unknown integer keyword variable");
             

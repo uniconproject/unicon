@@ -15,4 +15,3 @@
  * If you have crypt, you can remove this.
  */
 #define NoCrypt
-#define Messaging

@@ -12,6 +12,7 @@ Setup-Common:
 	cp $(name)/define.h $(SRC)/h
 	cp $(name)/rswitch.[cs] $(SRC)/common
 	cp $(name)/Makedefs $(TOP)
+	cp $(name)/Makedefs $(TOP)/Makedefs.in
 	echo ''					>> $(TOP)/Makedefs
 	if [ -f $(name)/custom.sh ]; then cd $(name); sh custom.sh; fi
 
@@ -21,6 +22,8 @@ Setup-NoGraphics: Setup-Common
 Setup-Graphics:  Setup-Common
 	echo '# Graphics enabled'		>> $(TOP)/Makedefs
 	echo 'XL = -L../../bin -lXpm $$(XLIBS)'	>> $(TOP)/Makedefs
+	echo '# Graphics enabled'		>> $(TOP)/Makedefs.in
+	echo 'XL = -L../../bin -lXpm $$(XLIBS)'	>> $(TOP)/Makedefs.in
 	echo '#define Graphics 1'		>> $(SRC)/h/define.h
 
 

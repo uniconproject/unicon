@@ -36,7 +36,8 @@ keyword{2} clock
 
       time(&t);
       ct = localtime(&t);
-#if defined(SUN) || defined(NTGCC)
+
+#if defined(SUN) || defined(NTGCC) /* and probably others */
       tz_sec = timezone;
 #else
       tz_sec = ct->tm_gmtoff;
@@ -46,14 +47,16 @@ keyword{2} clock
       Protect(tmp = alcstr(sbuf,(word)8), runerr(0));
       suspend string(8, tmp);
 
-      /* Timezone information. Warning: tm_isdst and tm_zone may disappear */
+      /* Timezone information. Warning: portability problem here. */
       offset_hrs = tz_sec/3600;
       if (ct->tm_isdst) offset_hrs--;
+
 #if defined(SUN) || defined(NTGCC)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
 #else
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);
 #endif
+
       i = strlen(sbuf);
       Protect(tmp = alcstr(sbuf, i), runerr(0));
       suspend string(i, tmp);
@@ -157,7 +160,8 @@ keyword{2} dateline
 
       time(&t);
       ct = localtime(&t);
-#if defined(SUN) || defined(NTGCC)
+
+#if defined(SUN) || defined(NTGCC) /* and probably others */
       tz_sec = timezone;
 #else
       tz_sec = ct->tm_gmtoff;

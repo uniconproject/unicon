@@ -55,7 +55,6 @@
 extern FILE *popen();
 #endif
 
-#if defined(SYSV) || defined(SVR4) || defined(VMS) || defined(WIN32)
 #include <string.h>
 
 #ifndef index
@@ -65,12 +64,6 @@ extern FILE *popen();
 #ifndef rindex
 #define rindex strrchr
 #endif
-
-#else  /* defined(SYSV) || defined(SVR4) || defined(VMS) */
-#include <strings.h>
-#endif
-
-
 
 #if defined(SYSV) || defined(SVR4) || defined(VMS) || defined(WIN32)
 #ifndef bcopy
@@ -227,7 +220,7 @@ FUNC(xpmHashSlot, xpmHashAtom *, (xpmHashTable *table, char *s));
 FUNC(xpmHashIntern, int, (xpmHashTable *table, char *tag, void *data));
 
 #define HashAtomData(i) ((void *)i)
-#define HashColorIndex(slot) ((unsigned int)((*slot)->data))
+#define HashColorIndex(slot) ((unsigned long int)((*slot)->data))
 #define USE_HASHTABLE (cpp > 2 && ncolors > 4)
 
 /* I/O utility */

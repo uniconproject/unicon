@@ -333,6 +333,8 @@ char *libpath(char *prog, char *envname) {
       }
    strcat(buf, " ");
    quotestrcat(buf, relfile(prog, "/../../uni/lib"));
+   strcat(buf, " ");
+   quotestrcat(buf, relfile(prog, "/../../uni/gui"));
    return salloc(buf);
    }
 

@@ -1,5 +1,5 @@
 #
-# $Id: guiprocs.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
+# $Id: guiprocs.icn,v 1.3 2004-02-15 22:11:32 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -141,8 +141,14 @@ procedure DrawEtchedVerticalLine(W, x, y, l)
 end
 
 procedure FilterRectangle(W, x, y, w, h)
+   local cw
+$ifdef _MS_WINDOWS_NT
+   cw := Clone(W, "fillstyle=masked", "drawop=reverse", "pattern=verydark")
+   FillRectangle(cw, x, y, w, h)
+$else
    cw := Clone(W, "fillstyle=masked", "reverse=on", "pattern=waves")
    FillRectangle(cw, x, y, w, h)
+$endif
    Uncouple(cw)
 end
 

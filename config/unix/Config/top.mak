@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.5 2002-02-21 18:30:39 jeffery Exp $
+# $Id: top.mak,v 1.6 2002-06-13 09:34:36 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -109,16 +109,29 @@ D=$(dest)
 Install:
 		test -d $D || mkdir $D
 		test -d $D/bin || mkdir $D/bin
-		test -d $D/lib || mkdir $D/lib
+		test -d $D/ipl || mkdir $D/ipl
+		test -d $D/ipl/lib || mkdir $D/ipl/lib
+		test -d $D/ipl/incl || mkdir $D/ipl/incl
+		test -d $D/ipl/gincl || mkdir $D/ipl/gincl
+		test -d $D/ipl/mincl || mkdir $D/ipl/mincl
+		test -d $D/uni || mkdir $D/uni
+		test -d $D/uni/lib || mkdir $D/uni/lib
 		test -d $D/doc || mkdir $D/doc
+		test -d $D/doc/icon || mkdir $D/doc/icon
+		test -d $D/doc/unicon || mkdir $D/doc/unicon
 		test -d $D/man || mkdir $D/man
 		test -d $D/man/man1 || mkdir $D/man/man1
 		cp README $D
 		cp bin/[a-qs-z]* $D/bin
 		rm -f $D/bin/libXpm*
-		cp lib/*.* $D/lib
-		cp doc/*.* $D/doc
-		cp man/man1/icont.1 $D/man/man1
+		cp ipl/lib/*.* $D/ipl/lib
+		cp ipl/incl/*.* $D/ipl/incl
+		cp ipl/gincl/*.* $D/ipl/gincl
+		cp ipl/mincl/*.* $D/ipl/mincl
+		cp uni/lib/*.* $D/uni/lib
+		cp doc/icon/*.* $D/doc/icon
+		cp doc/unicon/*.* $D/doc/unicon
+		cp doc/icon/icon.1 $D/man/man1
 
 
 # Bundle up for binary distribution.

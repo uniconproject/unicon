@@ -212,10 +212,12 @@ function{0,1} proc(x,i)
 
 #ifdef MultiThread
    if is:coexpr(x) then {
+      if !def:C_integer(i, 1) then
+         runerr(101, i)
       abstract {
          return proc
          }
-      inline {
+      body {
 	 struct b_coexpr *ce = NULL;
 	 struct b_proc *bp = NULL;
 	 struct pf_marker *fp;
@@ -223,11 +225,28 @@ function{0,1} proc(x,i)
 	 if (BlkLoc(x) != BlkLoc(k_current)) {
 	    ce = (struct b_coexpr *)BlkLoc(x);
 	    dp = ce->es_argp;
+	    fp = ce->es_pfp;
 	    if (dp == NULL) fail;
-	    bp = (struct b_proc *)BlkLoc(*(dp));
 	    }
-	 else
-	    bp = (struct b_proc *)BlkLoc(*(glbl_argp));
+	 else {
+	    fp = pfp;
+	    dp = glbl_argp;
+	    }
+	 /* follow upwards, i levels */
+	 while (i--) {
+	    if (fp == NULL) fail;
+#if COMPILER
+	    dp = fp->old_argp;
+	    fp = fp->old_pfp;
+#else					/* COMPILER */
+	    dp = fp->pf_argp;
+	    fp = fp->pf_pfp;
+#endif					/* COMPILER */
+	    }
+	 if (fp == NULL) fail;
+	 if (dp)
+	    bp = (struct b_proc *)BlkLoc(*(dp));
+	 else fail;
 	 return proc(bp);
 	 }
       }

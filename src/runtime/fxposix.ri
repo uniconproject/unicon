@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.30 2004-12-17 09:50:26 jeffery Exp $
+ * $Id: fxposix.ri,v 1.31 2005-03-15 20:40:53 jeffery Exp $
  */
 
 /*
@@ -1929,8 +1929,7 @@ function{0,1} receive(f)
    body {
       struct b_record *rp;
       static dptr constr;
-      int nfields;
-      int status, ret;
+      int nfields, status, ret;
       
       status = BlkLoc(f)->file.status;
       if (!(status & Fs_Socket))
@@ -1953,7 +1952,6 @@ function{0,1} receive(f)
 	 
       result.dword = D_Record;
       result.vword.bptr = (union block *)rp;
-
       return result;
    }
 end
@@ -2140,6 +2138,7 @@ function{0,1} select(files[nargs])
       /*
        * prepass: pull out windows, into their own list
        */
+#ifdef Graphics
       if ((lws = alclist(0, MinListSlots)) == NULL) fail;
       d2.dword = D_List;
       BlkLoc(d2) = (union block *)lws;
@@ -2160,6 +2159,7 @@ function{0,1} select(files[nargs])
 	       }
 	    }
 	 }
+#endif					/* Graphics */
 
       /*
        * Unicon select() repeats until a timeout or real result.
@@ -2198,6 +2198,7 @@ function{0,1} select(files[nargs])
       
       /* Set the tv struct */
       if (timeout < 0) {
+#ifdef Graphics
 	 /*
 	  * if there are any windows, then even if we said to go forever
 	  * timeout periodically to check for window events.
@@ -2207,6 +2208,7 @@ function{0,1} select(files[nargs])
 	    tv.tv_usec = 50000;
 	    }
 	 else
+#endif					/* Graphics */
 	    ptv = 0;
          }
       else {
@@ -2252,7 +2254,6 @@ function{0,1} select(files[nargs])
 	 }
       else if (ptv && (ptv->tv_sec || ptv->tv_usec)) {
 	 idelay(ptv->tv_sec * 1000 + ptv->tv_usec / 1000);
-
 	 }
 
       if (lp == NULL) {
@@ -2262,7 +2263,6 @@ function{0,1} select(files[nargs])
       d.dword = D_List;
       BlkLoc(d) = (union block *)lp;
 
-
       for(k=0;k<nargs;k++) {
 	 if (is:file(files[k])) {
 
@@ -2271,7 +2271,6 @@ function{0,1} select(files[nargs])
                fail;
                }
 #endif					/* HAVE_LIBZ */
-
 	    post_if_ready(&d, files+k, &fds);
 	    }
          else if (is:integer(files[k])) {/* timeout */}
@@ -2681,15 +2680,14 @@ function{0, 1} sysread(f, i)
 
       if ((fd = get_fd(f, 0)) < 0)
 	 runerr(174, f);
-      
+
       if (status & Fs_Buff)
 	 runerr(1048, f);
       BlkLoc(f)->file.status = status;
-      
+
       IntVal(amperErrno) = 0;
       if (u_read(fd, i, &desc) == 0)
 	 fail;
-
       return desc;
    }
 end
@@ -2743,16 +2741,12 @@ function{0, 1} setenv(name, value)
          fail;
       if (q)
          free(q);
-
 #else
-
       /* Tested on OpenBSD 3.1, FreeBSD-4.6, Linux 2.4.18 */
-
       if (setenv(name, value, 1) < 0)
          fail;
 #endif
-
-#endif                                  /* NoCrypt */
+#endif					/* NoCrypt */
       return nulldesc;
    }
 end

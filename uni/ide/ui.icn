@@ -240,10 +240,10 @@ end
 
    method handle_exit_menu_item(ev)
       if EditBox.changed then {
-      case SelectDialog(current_file || " is modified, save it?",,,
+      case SelectDialog((\current_file|"file") || " is modified, save it?",,,
 		 ["Yes", "Save As", "No", "Cancel"]) of {
 	 "Yes": {
-	    handle_savefile(current_file)
+	    handle_save_menu_item(ev)
 	    }
 	 "Save As": {
 	    handle_saveas_menu_item()
@@ -548,7 +548,8 @@ $ifdef _UNIX
         remove("ui.err")
 	}
 $else
-      proc("system",0)(\browser || " " || URL || " &")
+      s := \browser[2:-1] || " " || URL
+      proc("system",0)(s,,,,1)
 $endif
    end
 
@@ -568,7 +569,7 @@ $endif
    end
 
    method handle_help_unicon_reference(ev)
-     handle_help("doc/unicon/ub.pdf","http://unicon.sourceforge.net/ub/ub.pdf")
+     handle_help("doc/unicon/utr8.pdf","http://unicon.sourceforge.net/utr/utr8.pdf")
    end
 
    method handle_help_graphics(ev)

@@ -1,22 +1,24 @@
-############################################################################ 
+############################################################################
 #
 #	File:     cgi.icn
 #
 #	Subject:  Procedures for writing CGI scripts
 #
-#	Authors:  Joe Van Meter, Clinton Jeffery, and Federico Balbi
+#	Authors:  Joe Van Meter, Clinton Jeffery,
+#		  Federico Balbi, and Kostas Oikonomou
 #
-#	Date:     May 4, 2000
+#	Date:     September 9, 2004
 #
-############################################################################ 
+############################################################################
 #
 # This library makes programming cgi programs easier by automatically 
 # checking for title and body procedures.  There are other procedures
 # that do some repetitive things for the programmer.
 #
-############################################################################ 
+############################################################################
 
 global cgi			# table of input fields
+global cgi_hexen                # set in cgiReadParse()
 
 
 #
@@ -100,13 +102,13 @@ end
 #
 
 procedure cgiReadParse()
-static hexen
-initial {
-   hexen := &digits ++ 'ABCDEF'
+  local html, it, line, r, k, data, c1, c2
+  initial {
+    cgi_hexen := &digits ++ 'ABCDEF'
    }
    html := [ ]
    it := ""
-   cgi := table(0)
+   cgi := table()
    line := ""
 
    ct := getenv("CONTENT_TYPE")
@@ -115,67 +117,66 @@ initial {
       ct ? {
 	 tab(find("boundary=") + 9)
 	 boundary := "--" || tab(0)
-         }
-   content := reads(&input, cl)
-   content ? {
-      while tab(find(boundary)) do {
-	  tab(find("\n")+1)
-	  while match("Content-") do {
-	      line := tab(find("\n"))
-	      move(1)
-	      line ? {
+	 }
+      content := reads(&input, cl)
+      content ? {
+	 while tab(find(boundary)) do {
+	    tab(find("\n")+1)
+	    while match("Content-") do {
+	       line := tab(find("\n"))
+	       move(1)
+	       line ? {
 		  s := tab(many(&letters++'-')) | stop("bogons")
 		  case s of {
 		  "Content-Disposition": {
-		      move (2)
-		      if ="form-data; " then {
-			  if ="name=" then {
-			      if delim := ="\"" then {
-				 nam := tab(find("\""))
-				 ="\""
-				 if nam == "file" then {
-				    ="; "
-				    if ="filename=" then {
-				       if delim := ="\"" then {
-					  filename := tab(find("\""))
-					  cgi["filename"] := filename
-					  }
+		     move(2)
+		     if ="form-data; " then {
+			if ="name=" then {
+			   if delim := ="\"" then {
+			      nam := tab(find("\""))
+			      ="\""
+			      if nam == "file" then {
+				 ="; "
+				 if ="filename=" then {
+				    if delim := ="\"" then {
+				       filename := tab(find("\""))
+				       cgi["filename"] := filename
 				       }
 				    }
-			         }
+				 }
 			      }
-		           }
-		  }
-		  "Content-Type": {
+			   }
 			}
+		     }
+		  "Content-Type": {
+		     }
 		  default: cgiEcho("eh? ", line)
-	      }
-	      }
-	  }
-	  #if it didn't match "Content-" its not header any more, skip a line
-	  tab(find("\n")+1)
-	  # then grab rest
-	  value := tab(find(boundary)) | stop("incomplete value")
-	  if value[-1] == "\n" then value[-1] := ""
-	  if value[-1] == "\r" then value[-1] := ""
-	  if \nam then cgi[\nam] := value
-	  if match(boundary || "--") then {
-	      break
-	      }
-	  else if match(boundary) then { # no terminating --
-	      next
-	      }
+		  }
+	       }
+	    }
+	 #if it didn't match "Content-" its not header any more, skip a line
+	 tab(find("\n")+1)
+	 # then grab rest
+	 value := tab(find(boundary)) | stop("incomplete value")
+	 if value[-1] == "\n" then value[-1] := ""
+	 if value[-1] == "\r" then value[-1] := ""
+	 if \nam then cgi[\nam] := value
+	 if match(boundary || "--") then {
+	    break
+	    }
+	 else if match(boundary) then { # no terminating --
+	    next
+	    }
+	 }
       }
-  }
-  }
+   }
 else {
    if cgiMethGet() then
       line := getenv("QUERY_STRING")
    else line := reads(&input, getenv("CONTENT_LENGTH"))
    line ? {
-      while put(html, tab(find("&"))) do {
+      while put(html, tab(find("&"))) do
 	 tab(many('&'))
-         }
       put(html, tab(0))
       }
    every r := 1 to *html do
@@ -184,20 +185,29 @@ else {
       # does this really loop multiple times?  If so, what are we
       # throwing away?
       while k := tab(find("=")) do
-         tab(many('='))
-      data := tab(0)
-
-      while data ?:= ((tab(find("%")) ||
-		      (move(1) &
-		      (c1 := tab(any(hexen))) & (c2 := tab(any(hexen))) &
-		      cgiHexchar(c1,c2)) ||
-		       tab(0)))
-
+	 tab(many('='))
+      k := cgiFixHex(k)
+      data := cgiFixHex(tab(0))
       if member(cgi, k) then cgi[k] ||:= "," || data
       else cgi[k] := data
       }
-}
+   }
    return cgi
+end
+
+
+# Replaces any hex codes in the given string by their ascii character 
+# equivalents and returns the fixed string.
+procedure cgiFixHex(s)
+   while s ?:=
+      ((tab(find("%")) ||
+	(move(1) &
+	 (c1 := tab(any(cgi_hexen))) & (c2 := tab(any(cgi_hexen))) &
+	 cgiHexchar(c1,c2)
+	 ) || tab(0)
+	)
+       )
+   return s
 end
 
 #
@@ -327,18 +337,24 @@ end
 #
 # procedure main
 #
-# This procedure checks for a title procedure and a body procedure and places 
-# the html headers and tail... it then calls the users cgimain.
+# This procedure wraps the application's cgimain() inside a standard HTML
+# document, with customizable title, head, and body attributes procedures.
+# It reads the input for the application, placing results in variable "cgi".
 #
 
 procedure main(args)
+   local BB
    write("Content-type: text/html\n\n")
    write("<html>")
+   write("<head>")
    if \cgititle then {
       write("<title>")
       write(cgititle(args))
       write("</title>")
       }
+   # This can write arbitrary stuff, e.g. JavaScript.
+   if \cgihead then cgihead(args)
+   write("</head>")
    writes("<body")
    if \cgiBBuilder then {
       BB := cgiBBuilder(args)
@@ -355,5 +371,3 @@ procedure main(args)
    write("</body>")
    write("</html>")
 end
-
-

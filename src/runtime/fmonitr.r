@@ -183,7 +183,9 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
 }
 
 /*
- * EvGet(c) - user function for reading event streams.
+ * EvGet(eventmask, valuemask, flag) - user function for reading event streams.
+ * Installs cset eventmask (and optional table valuemask) in the event source,
+ * then activates it.
  * EvGet returns the code of the matched token.  These keywords are also set:
  *    &eventcode     token code
  *    &eventvalue    token value
@@ -192,9 +194,12 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
 "EvGet(c,flag) - read through the next event token having a code matched "
 " by cset c."
 
-function{0,1} EvGet(cs,flag)
+function{0,1} EvGet(cs,vmask,flag)
    if !def:cset(cs,fullcs) then
       runerr(104,cs)
+   if !is:null(vmask) then
+      if !is:table(vmask) then
+         runerr(124,vmask)
 
    body {
       register int c;
@@ -206,6 +211,8 @@ function{0,1} EvGet(cs,flag)
        */
       if (!is:coexpr(curpstate->eventsource))
          runerr(118,curpstate->eventsource);
+      if (!is:null(vmask))
+         BlkLoc(curpstate->eventsource)->coexpr.program->valuemask = vmask;
 
       /*
        * If our event source is a child of ours, assign its event mask.

@@ -44,7 +44,7 @@ wicont:
 	make wicont2
 
 # add $(linkdebug) after $(link) for debugging
-MYGUILIBS= -lkernel32 -luser32 -lgdi32 -lcomdlg32
+MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
 wicont2: $(OBJS) common
 	gcc -o wicont.exe -mwindows $(guiflags) $(OBJS) $(COBJS) $(WOBJS) -lwinmm $(MYGUILIBS)

@@ -964,6 +964,19 @@ int i;
    exit(i);
 }
 
+void syserr(s)
+char *s;
+{
+   fprintf(stderr, "System error %s in console code\n"); fflush(stderr);
+   c_exit(EXIT_FAILURE);
+}
+
+/* dynamic records, not used by console code */
+struct b_proc *dynrecord(dptr s, dptr fields, int n)
+   {
+   return NULL;
+   }
+
 
 #ifndef NTGCC
 int strncasecmp(char *s1, char *s2, int n)

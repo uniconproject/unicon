@@ -2458,7 +2458,13 @@ XExposeEvent *event;
 /* end of " if its a 3D window " */
 
 #ifdef Graphics3D
-       if (w->context->is_3D) {
+       if (wc->is_3D) {
+	  /*
+	   * since we redraw whole window, its safe to discard duplicate
+	   * exposures
+	   */
+	  while (XCheckTypedWindowEvent(wd->display, ws->win, Expose,
+					(XEvent *)event) == True) ;
 	  redraw3D(w);
 	  }
 #endif                        /* Graphics3D */

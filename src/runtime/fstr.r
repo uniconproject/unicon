@@ -600,10 +600,29 @@ end
 
 "reverse(s) - reverse string s."
 
-function{1} reverse(s)
+function{1} reverse(x)
 
-   if !cnv:string(s) then
-      runerr(103,s)
+   if is:list(x) then {
+      abstract {
+         return type(x)
+         }
+      body {
+	 int i=0, size = BlkLoc(x)->list.size;
+	 struct descrip temp;
+	 dptr dp;
+	 cplist(&x, &result, 1, size+1);
+	 dp = BlkLoc(result)->list.listhead->lelem.lslots;
+	 while (i<size-1) {
+	    temp = dp[i]; dp[i] = dp[size-1]; dp[size-1] = temp;
+	    i++; size--;
+	    }
+	 return result;
+	 }
+      }
+   else {
+
+   if !cnv:string(x) then
+      runerr(103,x)
 
    abstract {
       return string
@@ -613,10 +632,10 @@ function{1} reverse(s)
       register word slen;
 
       /*
-       * Allocate a copy of s.
+       * Allocate a copy of x.
        */
-      slen = StrLen(s);
-      Protect(StrLoc(result) = alcstr(StrLoc(s), slen), runerr(0));
+      slen = StrLen(x);
+      Protect(StrLoc(result) = alcstr(StrLoc(x), slen), runerr(0));
       StrLen(result) = slen;
 
       /*
@@ -633,6 +652,7 @@ function{1} reverse(s)
          }
       return result;
       }
+}
 end
 
 

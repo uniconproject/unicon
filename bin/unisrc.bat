@@ -1,7 +1,7 @@
 cd \unicon
 del uni.zip
-zip -r uni.zip Makefile README
-zip -r uni.zip src\Makefile src\h\*.h
+zip -r uni.zip Makefile README configure configure.ac aclocal.m4
+zip -r uni.zip src\Makefile src\h\*.h src\h\auto.in
 zip -r uni.zip bin\unisrc.*
 zip -r uni.zip src\icont\*.c src\icont\*.h src\icont\*.icn src\icont\Makefile
 zip -r uni.zip src\common\*.c src\common\*.h src\common\*.icn src\common\Makefile

@@ -18,12 +18,6 @@
 #include <string.h>
 #include <time.h>
 
-#if HAVE_LIBJPEG
-#include "jpeglib.h"
-#include "jerror.h"
-#include <setjmp.h>
-#endif					/* HAVE_LIBJPEG */
-
 /*
  * Operating-system-dependent includes.
  */
@@ -266,6 +260,19 @@
    #endif					/* NAS */
 
 #endif					/* XWindows */
+
+/*
+ * Include this after Xlib stuff, jmorecfg.h expects this.
+ */
+#if HAVE_LIBJPEG
+#include "jpeglib.h"
+#include "jerror.h"
+#include <setjmp.h>
+/* we do not use their definitions of GLOBAL, LOCAL, or OF; we use our own */
+#undef GLOBAL
+#undef LOCAL
+#undef OF
+#endif					/* HAVE_LIBJPEG */
 
 #ifdef Graphics
    #define VanquishReturn(s) return s;

@@ -264,7 +264,7 @@ typedef int siptr, stringint, inst;
       typedef int XSizeHints, XWMHints, XClassHint, XTextProperty;
       typedef int Colormap, XVisualInfo, va_list;
       typedef int *Display, Cursor, GC, Window, Pixmap, Visual, KeySym;
-      typedef int WidgetClass, XImage, XpmAttributes;
+      typedef int WidgetClass, XImage, XpmAttributes, XSetWindowAttributes;
    #endif				/* XWindows */
       
    #ifdef MSWindows
@@ -413,6 +413,6 @@ typedef int siptr, stringint, inst;
  
 #ifdef Graphics3D
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, XStandardColormap;
-   typedef int XSetWindowAttributes, XWindowChanges;
+   typedef int XWindowChanges;
    typedef int XMappingEvent, GLUquadricObj;
 #endif					/* Graphics3D */

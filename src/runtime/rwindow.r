@@ -2329,6 +2329,7 @@ char * abuf;
 	 if (setwidth(w, new_width) == Failed) return Failed;
 	 break;
          }
+#ifdef Graphics3D
       case A_DIM:
 	 AttemptAttr(setdim(w, val));
 	 break;
@@ -2345,6 +2346,7 @@ char * abuf;
    	 AttemptAttr(seteyedir(w, val));
 	/* code to write eyedir attribute */
 	 break;
+#endif					/* Graphics3D */
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
@@ -2662,6 +2664,7 @@ char * abuf;
       case A_IMAGE:
          ReturnErrNum(147, Error);
          break;
+#ifdef Graphics3D
       case A_DIM:
 	 MakeInt(wc->dim, answer);
 	 break;
@@ -2683,6 +2686,7 @@ char * abuf;
 	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyedirx, wc->eyediry, wc->eyedirz);
 	MakeStr(abuf, strlen(abuf), answer);
 	break;
+#endif					/* Graphics3D */
       case A_VISUAL:
 	 if (getvisual(w, abuf) == Failed) return Failed;
 	 MakeStr(abuf, strlen(abuf), answer);

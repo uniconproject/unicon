@@ -28,7 +28,7 @@ static XImage *	     getximage	      (wbp w, int x, int y,
 void              moveWindow       (wbp w, int x, int y);
 int                  setdisplay       (wbp w, char *s);
 void              makeIcon         (wbp w, int x, int y);
-int		     wmap	      (wbp w, Colormap cm);
+int		     wmap	      (wbp w);
 Pixmap		     loadimage	      (wbp w, char *filename, unsigned int *height, unsigned int *width, int atorigin, int *status);
 void unsetclip (wbp w);
 
@@ -1007,7 +1007,7 @@ wbp w;
  *  -1  : ordinary failure
  *  -2  : out of memory
  */
-FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, Colormap cm)
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    {
    wbp w;
    wsp ws;
@@ -1097,7 +1097,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, Col
 	 }
       }
 
-   if ((i = wmap(w, cm)) != Succeeded) {
+   if ((i = wmap(w)) != Succeeded) {
       if (i == Failed) *err_index = -1;
       else *err_index = 0;
       return NULL;
@@ -1164,7 +1164,7 @@ int x, y;		/* current mouse position */
  *  If a window, cause the window to actually become visible on the screen.
  *  returns Succeeded, Failed, or Error
  */
-int wmap(wbp w, Colormap cm)
+int wmap(wbp w)
    {
    XWindowAttributes attrs;
    XGCValues gcv;
@@ -1207,7 +1207,9 @@ int wmap(wbp w, Colormap cm)
       attr.background_pixmap = None;
       attr.background_pixel = wc->bg->c;
       attr.border_pixel = wc->fg->c;
-      attr.colormap = cm;
+#ifdef Graphics3D
+      attr.colormap = wopengl_cm;
+#endif					/* Graphics3D */
       attr.event_mask = StructureNotifyMask | ExposureMask;
       ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
 
@@ -1750,7 +1752,7 @@ char *s;
 	 if (ws->iconic != IconicState) {
 #ifdef Iconify
 	    if (ws->win == (Window) NULL) {
-	       wmap(w, NULL);
+	       wmap(w);
 	       }
 	    XIconifyWindow(ws->display->display, ws->win, ws->display->screen);
 	    XSync(stddpy, False);
@@ -1777,7 +1779,7 @@ char *s;
 	    ws->iconic = NormalState;
 	    ws->initialPix = ws->pix;
 	    ws->pix = (Window) NULL;
-	    wmap(w, NULL);
+	    wmap(w);
 	    }
 	 else if (ws->iconic == IconicState) {
 	    XMapWindow(stddpy, stdwin);
@@ -1807,7 +1809,7 @@ char *s;
 	       ws->iconic = MaximizedState;
 	       ws->initialPix = ws->pix;
 	       ws->pix = (Window) NULL;
-	       wmap(w, NULL);
+	       wmap(w);
 	       }
 	    else if (ws->iconic == IconicState) {
 	       XMapWindow(stddpy, stdwin);

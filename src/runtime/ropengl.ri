@@ -1,3 +1,5 @@
+Colormap wopengl_cm;
+
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
    FILE *f;
@@ -9,7 +11,6 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    char s[128];
    Status status;
    XStandardColormap *standardCmaps;
-   Colormap cm;
 			
    wd = alc_display(NULL);
    if(glXQueryExtension(wd->display, &error, &event)){
@@ -45,8 +46,8 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
        if (status == 1) {
         for (i = 0; i < numCmaps; i++) {
           if (standardCmaps[i].visualid == vis->visualid) {
-            cm = wd->cmap = standardCmaps[i].colormap;
-	    printf("cm = standardCmaps[i].colormap %p\n", cm);
+            wopengl_cm = wd->cmap = standardCmaps[i].colormap;
+	    printf("cm = standardCmaps[i].colormap %p\n", wopengl_cm);
 	    XFree(standardCmaps);
 	    printf("XFree\n");
           }
@@ -57,7 +58,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
     }
 }
 
-   f = wopen(name, lp, attr, n, err_index, cm);
+   f = wopen(name, lp, attr, n, err_index);
    if (!f) return NULL;
    w = (wbp) f;
    ws = w->window;

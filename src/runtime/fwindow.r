@@ -1094,6 +1094,7 @@ function{0,1} Fg(argv[argc])
       int len;
       tended char *tmp;
       int warg = 0;
+
       OptWindow(w);
 
       /*
@@ -1109,11 +1110,13 @@ function{0,1} Fg(argv[argc])
 	       runerr(103,argv[warg]);
 	    if(setfg(w, tmp) == Failed) fail;
 	    }
-	 if (w.....status & Fs_Window3D){
+#ifdef Graphics3D
+	 if (w->window->glpix & Fs_Window3D){ /*would like to check status but*/
 	    glColor3f((w->context->fg->r)/(GLfloat)65535, 
 		      (w->context->fg->g)/(GLfloat)65535, 
 		      (w->context->fg->b)/(GLfloat)65535);
 	    }
+#endif					/* Graphics3D */
          }
 
       /*
@@ -1242,7 +1245,8 @@ function{1} FillPolygon(argv[argc])
 
       OptWindow(w);
 
-      if (Fs_Window3D){
+#ifdef Graphics3D
+      if (Fs_Window3D) {
 	for(i = 0; i<argc-warg; i++){
 	   if(!cnv:C_double(argv[warg + i], v[i]))
               runerr(102, argv[warg+i]);
@@ -1269,29 +1273,30 @@ function{1} FillPolygon(argv[argc])
 	   glEnd();
            }
 	glFlush();
+	ReturnWindow;
 	}
-      else {
-	 CheckArgMultiple(2)
+#endif					/* Graphics3D */
 
-         /*
-	  * Allocate space for all the points in a contiguous array,
-	  * because a FillPolygon must be performed in a single call.
-	  */
-	 n = argc>>1;
-	 Protect(points = (XPoint *)malloc(sizeof(XPoint) * n), runerr(305));
-	 dx = w->context->dx;
-	 dy = w->context->dy;
-	 for(i=0; i < n; i++) {
-	    int base = warg + i * 2;
-	    CnvCShort(argv[base], points[i].x);
-	    CnvCShort(argv[base + 1], points[i].y);
-	    points[i].x += dx;
-	    points[i].y += dy;
-	    }
-	 fillpolygon(w, points, n);
-	 free(points);
-	 ReturnWindow;
+      CheckArgMultiple(2)
+
+      /*
+       * Allocate space for all the points in a contiguous array,
+       * because a FillPolygon must be performed in a single call.
+       */
+      n = argc>>1;
+      Protect(points = (XPoint *)malloc(sizeof(XPoint) * n), runerr(305));
+      dx = w->context->dx;
+      dy = w->context->dy;
+      for(i=0; i < n; i++) {
+	 int base = warg + i * 2;
+	 CnvCShort(argv[base], points[i].x);
+	 CnvCShort(argv[base + 1], points[i].y);
+	 points[i].x += dx;
+	 points[i].y += dy;
 	 }
+      fillpolygon(w, points, n);
+      free(points);
+      ReturnWindow;
       }
 end
 
@@ -2917,7 +2922,7 @@ MissingGraphicsFuncV(WinSaveDialog)
 #endif					/* MSWindows */
 
 
-
+#ifdef Graphics3D
 
 "a sample GL function"
 function{1} Accpersp(argv[argc])
@@ -3008,6 +3013,13 @@ function{1} DrawSphere(argv[argc])
         ReturnWindow;
     }
 end
+
+#else					/* Graphics3D */
+MissingGraphicsFuncV(Accpersp)
+MissingGraphicsFuncV(DrawTorus)
+MissingGraphicsFuncV(DrawCube)
+MissingGraphicsFuncV(DrawSphere)
+#endif					/* Graphics3D */
 
 #else					/* Graphics */
 

@@ -1,0 +1,94 @@
+#
+# $Id: util.icn,v 1.1 2004-02-12 17:03:31 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+
+#
+# Print an error message and exit with code 1
+#
+procedure err(s)
+   write(&errout, s)
+   exit(1)
+end
+
+procedure resolve_include(incl)
+   static include_cache, lpath
+   local s
+   initial {
+      include_cache := table()
+      lpath := []
+      s := getenv("LPATH") | err("no ipath")
+      every put(lpath, parser::split_path_string(s))
+   }
+
+   if s := \include_cache[incl] then
+      return s 
+
+   # Current directory
+   if stat(incl) then {
+      return include_cache[incl] := incl
+   }
+
+   # Path
+   every el := !lpath do {
+      s := el || "/" || incl
+      if stat(s) then {
+         return include_cache[incl] := s
+      }
+   }
+
+   fail
+end
+
+procedure get_include_dependencies(file)
+   static dependency_cache, filechars
+   initial {
+      dependency_cache := table()
+      filechars := &letters++&digits++"_./\\"
+   }
+
+   if l := \dependency_cache[file] then
+      return l
+
+   l := set()
+   f := open(file) | err("Couldn't open " || file)
+   while s := read(f) do {
+      s ? {
+         tab(many(' '))
+         if ="$include" then {
+            tab(upto(filechars)) | err("Bad include line: " || s || " in file " || file)
+            inclname := tab(many(filechars))
+            if not(fullinclname := resolve_include(inclname)) then
+               err("Couldn't resolve include to " || inclname || " in file " || a || " line " || line)
+            every insert(l, fullinclname | !get_include_dependencies(fullinclname))
+         }
+      }
+   }
+
+   close(f)
+
+   dependency_cache[file] := l
+
+   return l
+end
+
+procedure find_arg(file)
+   every x := !all_fileargs do
+      if x.file == file then
+         return x
+end
+
+#
+# Convert "abc.icn" to "abc.u"
+#
+procedure convert_filename(s)
+   if s[-4:0] == ".icn" then
+      return s[1:-4] || ".u"
+   fail
+end
+

@@ -1,0 +1,40 @@
+#
+# $Id: symbolinfo.icn,v 1.1 2004-02-12 17:03:31 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+#
+# Represents a symbol.
+# name is the string being the name of the symbol
+# file is the name of the file where it is defined; will be null for a general
+# package imported symbol.
+# package_name is the package name, or null for the default no-package
+# filearg_class is the FileArgClass object for a local class name symbol
+# filearg is the FileArg object for a symbol from a local file.
+# is_class is a flag indicating whether or not the sym represents a class (may
+# or may not be external; if not then filearg_class will also be set).
+#
+class SymbolInfo(name, 
+                 file,
+                 package_name,
+                 filearg_class,
+                 filearg,
+                 is_class
+                 )
+
+   method to_string()
+      s := "SymbolInfo " || name
+
+      s ||:= " package " || \package_name
+      s ||:= " defined in " || \file
+
+      if \filearg then
+         s ||:= " (parsed symbol)"
+      else
+         s ||:= " (external package symbol)"
+      return s
+   end
+end

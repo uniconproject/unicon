@@ -1,0 +1,432 @@
+#
+# $Id: ivibmigrate.icn,v 1.1 2004-02-12 17:04:02 rparlett Exp $
+#
+
+#
+# Utility to convert old Ivib input files to new ones
+#
+
+import lang
+
+link options
+
+#
+# An action to apply to a field of a class
+#
+class Action()
+   abstract method apply()
+end
+
+#
+# Rename the key
+#
+class RenameAction:Action(new_key)
+   method apply(decode, proxy, key, val)
+      proxy.add(new_key, val)
+   end
+end
+
+#
+# Change the entry
+#
+class ChangeAction:Action(new_val)
+   method apply(decode, proxy, key, val)
+      proxy.add(key, new_val)
+   end
+end
+
+#
+# Remove the entry
+#
+class RemoveAction:Action()
+   method apply()
+   end
+end
+
+#
+# Add a new entry
+#
+class AddAction:Action(key, val)
+   method apply(decode, proxy)
+      proxy.add(key, val)
+   end
+end
+
+#
+# This class holds the details of how to convert one class, as a table
+# of actions to apply to the encoded fields.
+#
+class Converter(orig_name, new_name, actions, extras)
+   method add_action(key, a)
+      insert(actions, key, a)
+   end
+
+   method add_extra(a)
+      put(extras, a)
+   end
+
+   method get_new_name()
+      return new_name
+   end
+
+   method get_orig_name()
+      return orig_name
+   end
+
+   method apply_extras(decode, proxy)
+      every (!extras).apply(decode, proxy)
+   end
+
+   method apply(decode, proxy, key, val)
+      if member(actions, key) then
+         actions[key].apply(decode, proxy, key, val)
+      else
+         proxy.add(key, val)
+   end
+
+   initially(s, t)
+      orig_name := s
+      new_name := \t | s
+      actions := table()
+      extras := []
+end
+
+#
+# Simple holder for several Converters stored in a map.
+#
+class ConverterSet(map)
+   method add(c)
+      insert(map, c.get_orig_name(), c)
+   end
+
+   method get_converter(s)
+      if member(map, s) then
+         return map[s]
+   end
+
+   initially
+      map := table()
+end
+
+#
+# Simple class to hold the values of the fields representing a class as a
+# table of field names.
+#
+class ClassProxy(name, l)
+   method add(name, val)
+      put(l, [name, val])
+   end
+
+   method get_name()
+      return name
+   end
+
+   method get_map()
+      return l
+   end
+
+   method get_value(s)
+      every x := !l do {
+         if x[1] == s then
+            return x[2]
+      }
+   end
+
+   initially(s)
+      name := s
+      l := []
+end
+
+#
+# An amended Decoder with decode_class changed to output to ClassProxy instances.
+#
+class CustomDecode : Decode(cs)
+   method decode_class()
+      local cname, res, n, i, key, val
+
+      cname := line_in() | fail
+
+      if c := cs.get_converter(cname) then {
+         res := ClassProxy(c.get_new_name())
+
+         seen[tag_count +:= 1] := res
+
+         n := integer(line_in()) | fail
+         every i := 1 to n do {
+            key := line_in() | fail
+            val := decode() | fail
+            c.apply(self, res, key, val)
+         }
+         c.apply_extras(self, res)
+      } else {
+         res := ClassProxy(cname)
+
+         seen[tag_count +:= 1] := res
+
+         n := integer(line_in()) | fail
+         every i := 1 to n do {
+            key := line_in() | fail
+            val := decode() | fail
+            res.add(key, val)
+         }
+      }
+
+      return res
+   end
+
+   initially(cs, s)
+      self.Decode.initially(s)
+      self.cs := cs
+end
+
+#
+# The converse of CustomDecode, this creates the amended string.
+#
+class CustomEncode : Encode()
+   method encode_class(o)
+      local l, e
+      seen[o] := (tag_count +:= 1)
+      line_out(o.get_name())
+      l := o.get_map()
+      line_out(*l)
+      every e := !l do {
+         line_out(e[1])
+         encode(e[2])
+      }
+   end
+end
+
+#
+# Convert event handling
+#
+class VarCategoryAction:Action()
+   method apply(decode, proxy, key, val)
+      case val of {
+         &null : {
+            proxy.add("Class Variable", 1)
+            proxy.add("Event Handlers", [["ACTION_EVENT", "handle_" || proxy.get_value("Name")]])
+         }
+         1 :
+            proxy.add("Class Variable", 1)
+         2 :
+            proxy.add("Class Variable", &null)
+      }
+   end
+end
+
+#
+# Convert children fields
+#
+class ChildrenAction:Action()
+   method apply(decode, proxy, key, val)
+      proxy.add("Children", val)
+      every (!val).add("Parent Component", proxy)
+   end
+end
+
+#
+# Menu event handling
+#
+class MenuVarCategoryAction:Action()
+   method apply(decode, proxy, key, val)
+      case val of {
+         &null : {
+            proxy.add("Class Variable", 1)
+            proxy.add("Event Method", "handle_" || proxy.get_value("Name"))
+         }
+         1 :
+            proxy.add("Class Variable", 1)
+         2 :
+            proxy.add("Class Variable", &null)
+      }
+   end
+end
+
+#
+# ConverterSet for MenuComponents
+#
+procedure create_cmc_converter(s)
+   local c
+   c := Converter(s)
+   c.add_action("Var Category", MenuVarCategoryAction())
+   c.add_extra(AddAction("Import Name", "gui"))
+   return c
+end
+
+#
+# ConverterSet for Components
+#
+procedure create_cc_converter(s)
+   local c
+   c := Converter(s)
+   c.add_action("Var Category", VarCategoryAction())
+   c.add_extra(AddAction("Import Name", "gui"))
+   return c
+end
+
+#
+# Create the ConverterSet to use.
+#
+procedure create_converterset()
+   local cs, c
+   cs := ConverterSet()
+
+   c := Converter("Canvas")
+   c.add_action("Gen Methods", RemoveAction())
+   c.add_extra(AddAction("SuperClass Name", "Dialog"))
+   c.add_extra(AddAction("Import Name", "gui"))
+   cs.add(c)
+
+   c := create_cc_converter("CanvasBorder")
+   c.add_action("Components", ChildrenAction())
+   cs.add(c)
+
+   c := create_cc_converter("CanvasButton")
+   cs.add(c)
+
+   c := Converter("CanvasButtonGroup")
+   c.add_extra(AddAction("Import Name", "gui"))
+   cs.add(c)
+
+   c := create_cc_converter("CanvasCheckBox")
+   cs.add(c)
+
+   c := Converter("CanvasCheckBoxGroup")
+   c.add_extra(AddAction("Import Name", "gui"))
+   cs.add(c)
+
+   c := create_cmc_converter("CanvasCheckBoxMenuItem")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasCustom")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasEditableTextList")
+   c.add_action("Draw Border", ChangeAction(1))
+   cs.add(c)
+
+   c := create_cc_converter("CanvasEditList")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasIcon")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasIconButton")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasImage")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasLabel")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasList")
+   cs.add(c)
+
+   c := create_cmc_converter("CanvasMenu")
+   c.add_action("Menus",RenameAction("Children"))
+   cs.add(c)
+
+   c := create_cc_converter("CanvasMenuBar")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasMenuButton")
+   cs.add(c)
+
+   c := create_cmc_converter("CanvasMenuSeparator")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasOverlayItem")
+   c.add_action("Components", ChildrenAction())
+   c.add_extra(AddAction("X Spec", 0))
+   c.add_extra(AddAction("Y Spec", 0))
+   c.add_extra(AddAction("W Spec", "100%"))
+   c.add_extra(AddAction("H Spec", "100%"))
+   c.add_extra(AddAction("X Align", "l"))
+   c.add_extra(AddAction("Y Align", "t"))
+   cs.add(c)
+
+   c := create_cc_converter("CanvasOverlaySet")
+   c.add_action("Components", ChildrenAction())
+   cs.add(c)
+
+   c := create_cc_converter("CanvasPanel")
+   c.add_action("Components", ChildrenAction())
+   cs.add(c)
+
+   c := create_cc_converter("CanvasScrollBar")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTabItem")
+   c.add_action("Components", ChildrenAction())
+   c.add_extra(AddAction("X Spec", 0))
+   c.add_extra(AddAction("Y Spec", 0))
+   c.add_extra(AddAction("W Spec", "100%"))
+   c.add_extra(AddAction("H Spec", "100%"))
+   c.add_extra(AddAction("X Align", "l"))
+   c.add_extra(AddAction("Y Align", "t"))
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTable")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTableColumn")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTabSet")
+   c.add_action("Components", ChildrenAction())
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTextButton")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTextField")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasTextList")
+   c.add_action("Draw Border", ChangeAction(1))
+   cs.add(c)
+
+   c := create_cmc_converter("CanvasTextMenuItem")
+   cs.add(c)
+
+   c := create_cc_converter("CanvasToolBar")
+   cs.add(c)
+
+   return cs
+end
+
+procedure main(args)
+   t := options(args, "-o:")
+
+   if *args = 0 then {
+      write("Usage: ivibmigrate [OPTIONS] SOURCEFILE")
+      write("  -o OUTPUT FILE      Output file (if not given output is to stdout)")
+      exit()
+   }
+
+   fin := open(args[1]) | stop("Couldn't open ", args[1])
+
+   if s := \t["o"] then
+      fout := open(s, "w") | stop("Couldn't open ", s)
+   else
+      fout := &output
+
+   cs := create_converterset()
+
+   while s := read(fin) do {
+      write(fout, s)
+      if s == "### Ivib layout ###" then {
+         s := read(fin) | stop("Couldn't read encoded line")
+         s := s[2:0]
+         d := CustomDecode(cs, s)
+         o := d.decode() | stop("Couldn't decode")
+         e := CustomEncode()
+         e.encode(o)
+         write(fout, "#", e.get_string())
+         break
+      }
+   }
+   close(fin)
+   close(&output ~=== fout)
+end

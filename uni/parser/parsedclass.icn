@@ -1,0 +1,84 @@
+#
+# $Id: parsedclass.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+ 
+class ParsedClass : ParsedObject(superclasses,
+                                 superclasses_nodes,
+                                 methods,
+                                 variables,
+                                 initially_method)
+   method add_method(n)
+      put(methods, ParsedMethod(n, self))
+   end
+
+   method init(n)
+      local classhead, arglist
+
+      superclasses := []
+      superclasses_nodes := []
+      methods := []
+      variables := []
+      initially_method := &null
+
+      classhead := n.children[1]
+      name := classhead.children[2].s
+      every sc := tree_seq1_pre(\classhead.children[3], 3, 2) do {
+         if type(sc) == "token" then
+            pref := sc.s
+         else { # It's a packageref node
+            if *sc.children = 2 then
+               pref := "::" || sc.children[2].s
+            else
+               pref := sc.children[1].s || "::" || sc.children[3].s
+         }
+         put(superclasses, pref)
+         put(superclasses_nodes, sc)
+      }
+
+      arglist := classhead.children[5]
+      every x := tree_seq2((\arglist).children[1], "parmlist") do {
+         if type(x) == "token" then
+            put(variables, x.s)
+         else
+            put(variables, x.children[1].s)
+      }
+
+      if *n.children = 5 then {
+         every x := tree_seq1_pre(\n.children[2], 2, 1) do {
+            case x.label of {
+               # "Inner" records/globals are treated as
+               # top-level definitions.
+               "record" : parent.add_record(x)
+               "global" : parent.add_global(x)
+               "method":  add_method(x)
+            }
+         }
+         if \n.children[4] then
+            initially_method := ParsedInitiallyMethod(n.children[4], self)
+      }
+
+   end
+
+   method to_string()
+      s := "class " || name
+      every s ||:= " : " || !superclasses
+      s ||:= "("
+      every s ||:= !variables || ","
+      if *variables > 0 then
+         s[-1] := ""
+      s ||:= ")"
+
+      every s ||:= "\n" || (!methods).to_string() 
+      s ||:= "\n" || (\initially_method).to_string()
+      return s
+   end
+
+   initially(n, p)
+      self.ParsedObject.initially(n, p)
+end

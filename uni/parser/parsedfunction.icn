@@ -1,0 +1,48 @@
+#
+# $Id: parsedfunction.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+class ParsedFunction : ParsedObject(args,
+                                    locals,
+                                    statics,
+                                    initial_node,
+                                    body_node)
+   method init(n)
+      name := ""
+      args := []
+      locals := []
+      statics := []
+      initial_node := body_node := &null
+   end
+
+   method to_string_impl()
+      s := name || "("
+      every s ||:= !args || ","
+      if *args > 0 then
+         s[-1] := ""
+      s ||:= ")"
+
+      if *locals > 0 then {
+         s ||:= " local "
+         every s ||:= !locals || ","
+         s[-1] := ""
+      }
+
+      if *statics > 0 then {
+         s ||:= " static "
+         every s ||:= !statics || ","
+         s[-1] := ""
+      }
+
+      return s
+   end
+
+   initially(n, p)
+      self.ParsedObject.initially(n, p)
+end

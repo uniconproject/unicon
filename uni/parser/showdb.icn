@@ -1,0 +1,25 @@
+#
+# $Id: showdb.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+
+procedure main(a)
+   load_package_info("lang") | stop("no")
+   f:= open(a[1],"d")
+   every x:= key(f) do {
+      s := fetch(f,x)
+      if match("package ", s) then {
+         x := PackageInfo()
+         x.init(s) | stop(s)
+      } else {
+         x := ClassInfo()
+         x.init(s) | stop(s)
+      }
+      write(x.to_string())
+   }
+end

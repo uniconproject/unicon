@@ -1,0 +1,183 @@
+#
+# $Id: classinfo.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+link scan
+
+#
+# This class represents and entry in the class database for a single class.
+#
+#
+class ClassInfo : DatabaseInfo(file,
+                               supers,
+                               variables,
+                               methods
+                               )
+
+   #
+   # Get the file name
+   #
+   method get_file()
+      return file
+   end
+
+   #
+   # Get the list of superclass names; again in the form pack__name
+   #
+   method get_supers()
+      return supers
+   end
+
+   #
+   # Get the list of variable names
+   #
+   method get_variables()
+      return variables
+   end
+
+   #
+   # Get the list of method names
+   #
+   method get_methods()
+      return methods
+   end
+
+   #
+   # Initialize from the given string in the db format; fail
+   # on unsuccessful parse.
+   #
+   # @p
+   method init(s)
+      idchars := &lcase ++ &ucase ++ &digits ++ "_"
+      filechars := &lcase ++ &ucase ++ &digits ++ "._"
+      s ? {
+         file := tab(upto('\n')) | fail
+         ="\nclass " | fail
+         name := tab(many(idchars)) | fail
+         supers := []
+         while tab(match(" : " | ":")) do 
+            put(supers, tab(many(idchars))) | fail
+         ="(" | fail
+         variables := []
+         if any(idchars) then {
+            repeat {
+               put(variables, tab(upto(',)'))) | fail
+               if any(')') then
+                  break
+               move(1)
+            }
+         }
+         =")\n" | fail
+
+         methods := []
+         repeat {
+            s := tab(upto('\n')) | fail
+            if s == "end" then
+               break
+            put(methods, s)
+            move(1)
+         }            
+      }
+      return
+   end
+
+   method to_string()
+      local s
+      s := "Name: " || name || " File: " || file 
+      if *supers > 0 then {
+         s ||:= " Supers: ("
+         every s ||:= !supers || ","
+         s[-1] := ")"
+      }
+      if *variables > 0 then {
+         s ||:= " Variables: ("
+         every s ||:= !variables || ","
+         s[-1] := ")"
+      }
+      if *methods > 0 then {
+         s ||:= " Methods: ("
+         every s ||:= !methods || ","
+         s[-1] := ")"
+      }
+      return s
+   end
+end
+
+#
+# Load and return a ClassInfo for the given class name
+# @param name the class name
+# @param home the first directory to look in ahead of IPATH; default "."
+#
+procedure load_class_info(name, home)
+   local f, x, t, ci
+   every x := get_all_dirs(home) do {
+      if f := open(x || "uniclass", "dr") then {
+         if t := fetch(f, name) then {
+            if not match("package ", t) then {
+               ci := ClassInfo()
+               ci.init(t) | stop("Corrupt class database " || t)
+               ci.directory := x
+               close(f)
+               return ci
+            }
+         }
+         close(f)
+      }
+   }
+end
+
+#
+# Get the package name from a raw name in the form package__name; or fail.
+#
+procedure get_package_name(sym)
+   return sym ? tab(find("__" | "::"))
+end
+
+#
+# Get the symbol name from a raw name in the form package__name or package::name; or fail.
+#
+procedure get_symbol_name(sym)
+   sym ? {
+      if tab(find("__" | "::")) then {
+         move(2)
+         return tab(0)
+      }
+   }
+end
+
+#
+# Generate all the dirs in the IPATH as file names normalized with a "/" at the end
+#
+procedure get_all_dirs(home)
+   local s, x
+   /home := "."
+   s := getenv("IPATH") | fail
+   every x := home | split_path_string(s) do {
+      if x[-1] ~== "/" then
+         x ||:= "/"
+      suspend x
+   }
+end
+
+#
+# Split a space-separated string into its constituent elements.
+#
+procedure split_path_string(s)
+   s ? {
+      repeat {
+         tab(many(' '))
+         if pos(0) then
+            break
+         x := tab(upto(' ') | 0)
+         suspend x
+      }
+   }
+end
+
+

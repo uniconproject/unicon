@@ -1,0 +1,44 @@
+#
+# $Id: parsedprocedure.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+class ParsedProcedure : ParsedFunction()
+   method to_string()
+      return "procedure " || to_string_impl()
+   end
+
+   method init(n)
+      local prochead, arglist, locals_node
+
+      self.ParsedFunction.init(n)
+      prochead := n.children[1]
+      arglist := prochead.children[4]
+      name := prochead.children[2].s
+
+      every x := tree_seq2((\arglist).children[1], "parmlist") do {
+         if type(x) == "token" then
+            put(args, x.s)
+         else
+            put(args, x.children[1].s)
+      }
+
+      locals_node := n.children[3]
+      every x := tree_seq1a(\locals_node) do {
+         l := if x.children[2].tok = 281 then locals else statics
+         every tok := tree_seq2(x.children[3], "idlist") do
+            put(l, tok.s)
+      }
+
+      initial_node := n.children[4]
+      body_node := n.children[5]
+   end
+
+   initially(n, p)
+      self.ParsedFunction.initially(n, p)
+end

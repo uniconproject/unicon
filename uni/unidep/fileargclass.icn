@@ -1,0 +1,159 @@
+#
+# $Id: fileargclass.icn,v 1.1 2004-02-12 17:03:31 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+
+#
+# This represents one class within a FileArg.
+#
+# parent is the parent FileArg
+# parsed_class is the ParsedClass
+# inherited_syms is a set of symbols (strings) being all the variables and
+# method names in this class and its superclasses.
+# superclass_symbol_infos is a list of SymbolInfo objects, corresponding
+# to the superclasses.
+# inited a flag to ensure the work in init() is only done once.
+#
+# The latter two variables are created by the init() method, which may call
+# the init() method of other FileArgClass instances recursively in order to
+# compute the set of inherited symbols.
+#
+class FileArgClass(parent,
+                   parsed_class,
+                   inherited_syms,
+                   inited
+                   )
+
+   method get_inherited_syms()
+      return inherited_syms
+   end
+
+   method init()
+      if \inited then
+         return
+
+      inherited_syms := set()
+
+      #
+      # Start off with the method and variable names in the parsed class itself.
+      #
+      every insert(inherited_syms, (!parsed_class.methods).get_name() | !parsed_class.variables)
+
+      #
+      # Add from the superclasses.
+      #
+      every s := !parsed_class.superclasses do {
+         if pn := get_package_name(s) then {
+            sn := get_symbol_name(s)
+            if *pn = 0 then {
+               #
+               # The  superclass is of the form ::x
+               # First see if it is in the unqualified symbol table, ie is it at the default level
+               # in one of the fileargs.
+               #
+               if si := symbol_table.lookup_unqualified_symbol_info(sn) then
+                  # 
+                  # Must be a filearg, as that part of the symbol table only holds default pacakge filearg classes.
+                  #
+                  do_filearg(si)
+               else {
+                  #
+                  # Lookup as an external default level class.
+                  #
+                  do_lookup(sn)
+               }
+            } else {
+               #
+               # It's in the form x::y .  Lookup in the symbol table.  This must succeed, because even for an external
+               # class as the symbol table loads package information externally on demand.
+               #
+               si := symbol_table.lookup_fully_qualified_symbol_info(pn, sn) |
+                  err("Couldn't lookup the superclass " || s || " in file " || parent.file)
+
+               if \si.filearg then
+                  do_filearg(si)
+               else {
+                  #
+                  # The symbol table had an entry, but it was for an external class; so load the
+                  # classinfo and process.
+                  #
+                  do_lookup(pn || "__" || sn)
+               }
+            }
+         } else {
+            if si := parent.get_unqualified_class_symbol_info(s) then {
+               #
+               # It is a SymbolInfo either delcared in the parent file, or imported from another FileArg,
+               # or from an external package.
+               #
+               if \si.filearg then
+                  # Another filearg, so process recursively.
+                  do_filearg(si)
+               else {
+                  #
+                  # Try and find the classinfo; so create the full name of the symbol first.
+                  #
+                  t := si.name
+                  t := \si.package_name || "__" || t
+                  do_lookup(t)
+               }
+            } else {
+               #
+               # It is an unknown reference; try and find the ClassInfo on the IPATH.
+               #
+               do_lookup(s)
+            }
+         }
+      }
+
+      inited := 1
+      return
+   end
+
+   method do_filearg(si)
+      #
+      # Defined somewhere else in the file args, so call recursively.
+      #
+      if /si.filearg_class then
+         err("Expected a class definition for " || si.name || " referenced in " || parent.file)
+
+      si.filearg_class.init()
+
+      inherited_syms ++:= si.filearg_class.get_inherited_syms()
+
+      #
+      # Create a dependency in the parent FileArg
+      #
+      parent.add_dep(si)
+      parent.used_import(si.package_name)
+   end
+
+   method do_lookup(s)
+      ci := parser::load_class_info(s) | err("Couldn't load class " || s)
+
+      parent.add_external_dependency(ci)
+      parent.used_import(get_package_name(ci.get_name()))
+
+      #
+      # Found in the database, so just add the symbols from there.
+      #
+      every insert(inherited_syms, !ci.variables | !ci.methods)
+
+      #
+      # Call recursively to get the symbols for the superclasses
+      #
+      every do_lookup(!ci.get_supers())
+   end
+   
+   # debug function
+   method show_inherited_syms()
+      write("Inherited syms for class " || parsed_class.get_name() || " in file " || parent.file)
+      every writes(!sort(inherited_syms), "\t")
+      write("\n=========")
+   end
+end

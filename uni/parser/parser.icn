@@ -1,0 +1,130 @@
+#
+# $Id: parser.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+link unigram, preproce, unilex
+
+procedure parse_unicon(fname)
+   yyin := ""
+   /yydebug := 0
+   every yyin ||:= preprocessor(fname, predefs()) do 
+      yyin ||:= "\n"
+   yylex_reinit()
+   yyout := &output
+#   write(yyout, "#line 0 \"", fName, "\"")
+#  writes(&errout, "Parsing ", fName ,": ")
+   rv := yyparse()
+   if yynerrs > 0 then
+      fail
+   return yyval
+end
+
+#
+# Suspend the sequence of nodes X1, X2, ... Xn, held in
+# the following node structure :-
+#
+#                 n
+#                / \
+#               n   Xn
+#              / \
+#             n   Xn-1
+#            /
+#          ...
+#          n
+#         / \
+#     &null  X1
+#
+# The indices of the child tree/leaf may be supplied, but
+# default to 1, 2 respectively.
+#
+# A single EmptyNode is the empty list, and just fails.
+#
+procedure tree_seq1(n, i, j)
+   /i := 1
+   /j := 2
+   if \n then
+      suspend tree_seq1(\n.children[i], i, j) | n.children[j]
+end
+
+#
+# Same, but in preorder
+#
+procedure tree_seq1_pre(n, i, j)
+   /i := 1
+   /j := 2
+   if \n then
+      suspend n.children[j] | tree_seq1_pre(\n.children[i], i, j) 
+end
+
+#
+# As above, but suspends the parent node rather than the leaf.
+#
+procedure tree_seq1a(n, i)
+   /i := 1
+   if \n then
+      suspend tree_seq1a(\n.children[i]) | n
+end
+
+#
+# Suspend the sequence of nodes t1, t2, ..., tn held in
+# the following node structure :-
+#
+#                 n
+#               / | \
+#            .... S  tN
+#             n
+#           / | \
+#          n  S  t3
+#        / | \
+#      t1  S  t2 
+#
+# The parameter "lab" provides the common label for all
+# the nodes n.
+#
+procedure tree_seq2(n, lab, i, j)
+   /i := 1
+   /j := 3
+   if (type(n) == "treenode") & (n.label == lab) then
+      suspend tree_seq2(n.children[i], lab, i, j) | n.children[j]
+   else
+      return n
+end
+
+procedure dump_node(n)
+   if /n then
+      write("EmptyNode")
+   else if type(n) == "treenode" then {
+      write("treenode : ", n.label, ", ", *n.children, " children")
+   } else if type(n) == "token" then {
+      write("token ", n.s)
+   } else
+      write("other ", image(n))
+end
+
+procedure dump_tree(root, level, count)
+   /level := 0
+   /count := 0
+   i := repl(" ", level * 3) || count || ":"
+   if /root then {
+      write(i, "EmptyNode")
+   } else if type(root) == "treenode" then {
+      write(i, "node(\"", root.label, "\"")
+      j := 1
+      every e := !root.children do  {
+         dump_tree(e, level + 1, j)
+         j +:= 1
+      }
+   } else if type(root) == "token" then {
+      write(i, root.s)
+   } else
+      write(i, image(root))
+end
+
+
+

@@ -1,0 +1,142 @@
+#
+# $Id: packageinfo.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+class PackageInfo : DatabaseInfo(files, 
+                                 symbols,
+                                 classes
+                                 )
+
+   #
+   # Return the list of files in the package
+   #
+   method get_files()
+      return files
+   end
+
+   #
+   # Return the list of symbols in the package
+   #
+   method get_symbols()
+      return symbols
+   end
+
+   #
+   # Return the symbols which are classes in the package.
+   #
+   method get_classes()
+      local f
+      if \classes then
+         return classes
+
+      classes := []
+      f := open(directory || "uniclass", "dr") | stop("Couldn't re-open uniclass db in " || directory)
+      every sym := !symbols do 
+         if fetch(f, name || "__" || sym) then
+            put(classes, sym)
+      
+      close(f)
+
+      return classes
+   end
+
+   #
+   # Initialize from the given string in the db format; fail
+   # on unsuccessful parse.
+   #
+   # @p
+   method init(s)
+      idchars := &lcase ++ &ucase ++ &digits ++ "_"
+      filechars := &lcase ++ &ucase ++ &digits ++ "._"
+
+      s ? {
+         ="package " | fail
+         name := tab(many(idchars)) | fail
+         =" : " | fail
+         files := []
+         repeat {
+            put(files, tab(upto(':('))) | fail
+            if any('(') then
+               break
+            move(1)
+         }
+         ="(" | fail
+         symbols := []
+         if any(idchars) then {
+            repeat {
+               put(symbols, tab(upto(',)'))) | fail
+               if any(')') then
+                  break
+               move(1)
+            }
+         }
+      }
+      return
+   end
+
+   method to_string()
+      local s
+      s := "Name: " || name || " Files: ("
+      every s ||:= !files || ","
+      if *files > 0 then
+         s[-1] := ""
+      s ||:= ") Symbols: ("
+      every s ||:= !symbols || ","
+      if *symbols > 0 then
+         s[-1] := ""
+      s ||:= ")"
+      return s
+   end
+end
+
+#
+# Load and return a PackageInfo for the given class name
+# @param name the package name
+# @param home the first directory to look in ahead of IPATH; default "."
+#
+procedure load_package_info(pack, home)
+   local f, t, pi, x
+   every x := get_all_dirs(home) do {
+      if f := open(x || "uniclass", "dr") then {
+         if t := fetch(f, pack) then {
+            if match("package ", t) then {
+               pi := PackageInfo()
+               pi.init(t) | stop("Corrupt class database " || t)
+               pi.directory := x
+               close(f)
+               return pi
+            }
+         }
+         close(f)
+      }
+   }
+end
+
+#
+# Get, as a list of {PackageInfo} objects, all the packages found on the IPATH
+# @param home the first directory to look in ahead of IPATH; default "."
+#
+procedure get_all_packages(home)
+   l := []
+   every x := get_all_dirs(home) do {
+      if f := open(x || "uniclass", "dr") then {
+         every k := key(f) do {
+            v := fetch(f, k)
+            if match("package ", v) then {
+               pi := PackageInfo()
+               pi.init(v) | stop("Corrupt class database " || v)
+               pi.directory := x
+               put(l, pi)
+            }
+         }
+         close(f)
+      }
+   }
+   return l
+end

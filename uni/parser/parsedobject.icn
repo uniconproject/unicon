@@ -1,0 +1,38 @@
+#
+# $Id: parsedobject.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+class ParsedObject(name, source_node, parent)
+   method get_name()
+      return name
+   end
+
+   method get_parent()
+      return parent
+   end
+
+   method set_parent(x)
+      parent := x
+   end
+
+   method get_source_node()
+      return source_node
+   end
+
+   method set_source_node(n)
+      source_node := n
+      init(n)
+   end
+
+   abstract method init(n)
+
+   initially(n, p)
+      self.parent := p
+      set_source_node(\n)
+end

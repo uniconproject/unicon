@@ -1,0 +1,117 @@
+#
+# $Id: parsedprogram.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+class ParsedProgram : ParsedObject(records,
+                                   globals,
+                                   links,
+                                   imports,
+                                   package_name,
+                                   invocables,
+                                   classes,
+                                   procedures)
+
+   method set_package_from_node(n)
+      local t
+      t := n.children[2]
+      if t.tok = 260 then   # STRINGLIT - strip quotes
+         package_name := t.s[2:-1]
+      else
+         package_name := t.s
+   end
+
+   method add_record(n)
+      put(records, ParsedRecord(n, self))
+   end
+
+   method add_global(n)
+      every put(globals, tree_seq2(n.children[2], "idlist").s)
+   end
+
+   method add_link(n)
+      list_common(n, links)
+   end
+
+   method add_import(n)
+      list_common(n, imports)
+   end
+
+   method list_common(n, l)
+      every t := tree_seq2(n.children[2], "lnklist") do {
+         if t.tok = 260 then   # STRINGLIT - strip quotes
+            put(l, t.s[2:-1])
+         else
+            put(l, t.s)
+      }
+   end
+
+   method add_class(n)
+      put(classes, ParsedClass(n, self))
+   end
+
+   method add_invocable(n)
+      every put(invocables, tree_seq2(n.children[2], "invoclist"))
+   end
+
+   method add_proc(n)
+      put(procedures, ParsedProcedure(n, self))
+   end
+
+   method to_string()
+      s := ""
+      s ||:= "package " || \package_name || "\n"
+      s ||:= do_list("globals", globals)
+      s ||:= do_list("links", links)
+      s ||:= do_list("imports", imports)
+      if *invocables > 0 then
+         s ||:= "invocables: " || *invocables || "\n"
+      every s ||:= (!records).to_string() || "\n"
+      every s ||:= (!procedures).to_string() || "\n"
+      every s ||:= (!classes).to_string() || "\n"
+      return s
+   end
+
+   method do_list(start, l)
+      local s
+      if *l = 0 then
+         return ""
+
+      s := start || " "
+      every s ||:= !l || ","
+      s[-1] := "\n"
+
+      return s
+   end
+
+   method init(n)
+      records := []
+      globals := []
+      links := []
+      imports := []
+      package_name := &null
+      invocables := []
+      classes := []
+      procedures := []
+      every decl := tree_seq1(n.children[1]) do {
+         case decl.label of {
+            "record" : add_record(decl)
+            "class" : add_class(decl)
+            "proc" : add_proc(decl)
+            "global" : add_global(decl)
+            "link" : add_link(decl)
+            "import" : add_import(decl)
+            "package" : set_package_from_node(decl)
+            "invocable" : add_invocable(decl)
+         }
+      }
+   end
+
+   initially(n, p)
+      self.ParsedObject.initially(n, p)
+end

@@ -1,0 +1,28 @@
+#
+# $Id: parsedrecord.icn,v 1.1 2004-02-12 17:01:53 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package parser
+
+class ParsedRecord : ParsedObject(fields)
+   method init(n)
+      name := n.children[2].s
+      fields := []
+      every put(fields, tree_seq2(n.children[4], "idlist").s)
+   end
+
+   method to_string()
+      s := "record " || name || "("
+      every s ||:= !fields || ","
+      if *fields > 0 then
+         s[-1] := ""
+      return s || ")"
+   end
+
+   initially(n, p)
+      self.ParsedObject.initially(n, p)
+end

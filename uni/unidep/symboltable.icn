@@ -1,0 +1,148 @@
+#
+# $Id: symboltable.icn,v 1.1 2004-02-12 17:03:31 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+
+#
+# The symbol table holds data about package level symbols (classes, records, globals, procs),
+# defined either in the set of FileArgs, or in external packages.  Each symbol is held as
+# a SymbolInfo object, which contains a link to the relevant FileArg, if appropriate.
+#
+# The table is initialized to hold just symbols from the FileArgs.  Symbols from external
+# packages are loaded into the table as and when the package is referenced.
+#
+# The table contains two data structures, namely a table of package names which has values
+# of other tables mapping symbol names to SymbolInfo objects.  The other data structure
+# is a map of class names in the default namespace, defined in the FileArgs.  The values
+# are the corresponding SymbolInfo objects.
+#
+class SymbolTable(packages, 
+                  external_packages_loaded,
+                  default_namespace
+                  )
+
+   #
+   # Get the SymbolInfo for the given package and symbol, or fail if none can
+   # be found.
+   #
+   method lookup_fully_qualified_symbol_info(pack, sym)
+      load_external_package(pack)
+
+      if member(packages, pack) & member(packages[pack], sym) then
+         return packages[pack][sym]
+   end
+
+   #
+   # Get the SymbolInfo from the default namespace table for the given symbol.  This
+   # table only contains SymbolInfo records for classes defined in the FileArgs.
+   #
+   method lookup_unqualified_symbol_info(sym)
+      if member(default_namespace, sym) then
+         return default_namespace[sym]
+   end
+
+   #
+   # Get the table of symbol->SymbolInfo mappings for the named package.
+   #
+   method get_table_for_package(pack)
+      load_external_package(pack)
+
+      if member(packages, pack) then
+         return packages[pack]
+   end
+
+   #
+   # This is invoked to load any external package data for the given package.
+   #
+   method load_external_package(name)
+      if member(external_packages_loaded, name) then
+         return 
+      insert(external_packages_loaded, name)
+
+      pi := parser::load_package_info(name) | fail
+
+      #
+      # Create a new table entry if needed
+      #
+      if member(packages, name) then
+         t := packages[name]
+      else {
+         t := table()
+         insert(packages, name, t)
+      }
+
+      classes := set(pi.get_classes())
+
+      #
+      # Add the symbols, not overwriting any existing ones.
+      #
+      every sym := !pi.get_symbols() do {
+         if not member(t, sym) then {
+            si := SymbolInfo()
+            si.name := sym
+            si.package_name := name
+            if member(classes, sym) then
+               si.is_class := 1
+            insert(t, sym, si)
+         }
+      }
+
+      return
+   end
+
+   #
+   # Add the initialized data from the given FileArg to the table.
+   #
+   method add_file_arg(fa)
+      local pp, t
+      pp := fa.parsed_program
+
+      #
+      # Get, or create, the table to put the syms into.
+      #
+      if \pp.package_name then {
+         if member(packages, pp.package_name) then
+            t := packages[pp.package_name]
+         else {
+            t := table()
+            insert(packages, pp.package_name, t)
+         }
+         #
+         # Insert all the local package level syms into the global table.
+         #
+         every x := !sort(fa.local_package_level_syms) do
+            insert(t, x[1], x[2])
+      } else {
+         #
+         # Insert only class definitions into the default namespace; procs, records
+         # and globals don't go in.
+         #
+         every x := !sort(fa.local_package_level_syms) do
+            if \x[2].filearg_class then
+               insert(default_namespace, x[1], x[2])
+      }
+   end
+
+   method dump()
+      write("Internal packages")
+      every x := !sort(packages) do {
+         write("======== Package ", x[1])
+         every y := !sort(x[2]) do
+            write("   Symbol ", y[1], " -> ", y[2].to_string())
+      }
+
+      write("======= Default namespace")
+      every y := !sort(default_namespace) do
+         write("   Symbol ", y[1], " -> ", y[2].to_string())
+   end
+
+   initially
+      packages := table()
+      external_packages_loaded := set()
+      default_namespace := table()
+end

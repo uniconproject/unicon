@@ -2,7 +2,7 @@
 EXE=.exe
 SHELL=/bin/sh
 
-ICONT = nticont
+ICONT = icont
 IFLAGS = -us
 ITRAN = $(ICONT) $(IFLAGS)
 

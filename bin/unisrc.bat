@@ -1,4 +1,4 @@
-cd \unicon\v
+cd \unicon
 del uni.zip
 zip -r uni.zip Makefile README
 zip -r uni.zip src\Makefile src\h\*.h

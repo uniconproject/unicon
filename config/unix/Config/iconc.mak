@@ -11,7 +11,7 @@ OBJS=		cmain.o clocal.o ctrans.o dbase.o clex.o\
 		typinfer.o types.o lifetime.o incheck.o
 
 COBJS=		../common/long.o ../common/getopt.o ../common/time.o\
-		  ../common/filepart.o ../common/identify.o\
+		  ../common/filepart.o ../common/identify.o ../common/mlocal.o\
 		  ../common/strtbl.o ../common/rtdb.o ../common/literals.o \
 		  ../common/alloc.o ../common/redirerr.o ../common/ipp.o
 

@@ -1,0 +1,114 @@
+.so macros
+.\" Macros for use with ms
+.\"
+.\" MS initialization
+.de INITIALIZE_MS
+.COMMON_INITIALIZE
+.nr PS 12                            \" Point size
+.nr VS 14                            \" Vertical spacing
+.nr PO \\n[PAGE_OFFSET]u             \" Set up page parameters
+.po \\n[PAGE_OFFSET]u
+.nr LL \\n[LINE_LENGTH]u
+.pl \\n[PAGE_LENGTH]u
+.\" The following sets inter-paragraph space to zero
+.\" .nr PD 0u
+.ds CH
+.ds CF \\\\n[PN]
+.LP
+..
+.de TC
+.bp
+.PX \\$1
+..
+.de TITLE
+.nr PS +4
+.nr VS +4
+.LP
+.ft BI
+\\$1
+.nr PS -4
+.nr VS -4
+.LP
+.sp
+.ft BI
+.FORMAL_DATE
+.sp
+.ft
+..
+.de BT
+.ch pg*footer \\n[.p]u*2u
+.ev 1
+'sp |\\n[.p]u-0.7i
+'tl ''\\*[CF]''
+.ev
+..
+.de H
+.if \\$1=1 \{\
+.nr PS +4
+.nr VS +4
+.\}
+.NH \\$1
+\\$2
+.if \\$1=1 \{\
+.nr PS -4
+.nr VS -4
+.\}
+.XS
+\\*[SN]\t\\$2
+.XE
+.LP
+..
+.de P
+.ie \\n[LIST_WIDTH]=0 .LP
+.el .IP
+..
+.de LS_SET
+.if \\n[LIST_WIDTH]>0 .RS
+.stack_push LIST_STACK \\n[LIST_COUNTER]
+.stack_push LIST_STACK \\*[LIST_STYLE]
+.stack_push LIST_STACK \\n[LIST_WIDTH]
+.ie \\n[.$]=0 \{\
+.	ds LIST_STYLE (i)
+.	nr LIST_WIDTH \\*[DEFAULT_LIST_WIDTH]
+.\}
+.el \{\
+.	ds LIST_STYLE \\$1
+.	ie \\n[.$]=1 .nr LIST_WIDTH \\*[DEFAULT_LIST_WIDTH]
+.	el .nr LIST_WIDTH \\$2
+.\}
+.nr LIST_COUNTER 1
+.nr LIST_INDENT +\\n[LIST_WIDTH]u
+..
+.de LS_ITEM
+.if '\\*[LIST_STYLE]'(i)' \{\
+.	af LIST_COUNTER i
+.IP (\\n[LIST_COUNTER]) \\n[LIST_WIDTH]u
+.\}
+.if '\\*[LIST_STYLE]'1' \{\
+.	af LIST_COUNTER 1
+.IP \\n[LIST_COUNTER]. \\n[LIST_WIDTH]u
+.\}
+.if '\\*[LIST_STYLE]'(a)' \{\
+.	af LIST_COUNTER a
+.IP (\\n[LIST_COUNTER]) \\n[LIST_WIDTH]u
+.\}
+.if '\\*[LIST_STYLE]'c' \{\
+.	af LIST_COUNTER 1
+.ie \\n[.$]=0 .IP "" \\n[LIST_WIDTH]u
+.el .IP \\$1 \\n[LIST_WIDTH]u
+.\}
+.if '\\*[LIST_STYLE]'b' \{\
+.	af LIST_COUNTER 1
+.IP \[bu] \\n[LIST_WIDTH]u
+.\}
+.af LIST_COUNTER 1
+.nr LIST_COUNTER +1
+..
+.de LS_END
+.nr LIST_INDENT -\\n[LIST_WIDTH]u
+.stack_pop-nr LIST_STACK LIST_WIDTH
+.stack_pop-ds LIST_STACK LIST_STYLE
+.stack_pop-nr LIST_STACK LIST_COUNTER
+.if \\n[LIST_WIDTH]>0 .RE
+..
+.nx

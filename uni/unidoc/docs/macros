@@ -1,0 +1,169 @@
+.\" Date macro - output formal date
+.\"
+.de FORMAL_DATE
+.if \\n[mo]=1 .ds TMP1 January
+.if \\n[mo]=2 .ds TMP1 February
+.if \\n[mo]=3 .ds TMP1 March
+.if \\n[mo]=4 .ds TMP1 April
+.if \\n[mo]=5 .ds TMP1 May
+.if \\n[mo]=6 .ds TMP1 June
+.if \\n[mo]=7 .ds TMP1 July
+.if \\n[mo]=8 .ds TMP1 August
+.if \\n[mo]=9 .ds TMP1 September
+.if \\n[mo]=10 .ds TMP1 October
+.if \\n[mo]=11 .ds TMP1 November
+.if \\n[mo]=12 .ds TMP1 December
+.nr TMP2 \\n[yr]+1900
+\\n[dy] \\*[TMP1], \\n[TMP2]
+..
+.\" a4 macro
+.\"
+.de A4
+.nr PAGE_OFFSET 1i                 \" Page offset
+.nr HEADER_MARGIN 1i               \" Header margin
+.nr FOOTER_MARGIN 1i               \" Footer margin
+.nr FOOTER_PRINTABLE_MARGIN 0.6i   \" Last printable part of page
+.nr PAGE_LENGTH 29.7c            \" Page length
+.nr PAGE_WIDTH 21c                 \" Page width
+.\"Line length - centre on page using page offset either side
+.nr LINE_LENGTH \\n[PAGE_WIDTH]u-(2*\\n[PAGE_OFFSET]u)
+..
+.\" Page header
+.de PAGE_HEADER
+'sp \\n[HEADER_MARGIN]u
+..
+.\" Page footer
+.de PAGE_FOOTER
+.ev 1                             \" Switch environments
+.ps 8
+.vs 10
+'sp |\\n[.p]u-\\n[FOOTER_PRINTABLE_MARGIN]u
+.lt \\n[LINE_LENGTH]u
+.if '\\*[FOOTER_FLAG]'' 'tl ''-- % --'\\n[dy]-\\n[mo]-\\n[yr]'
+'bp                               \" New page; don't break line
+.ev                               \" Restore environment
+..
+.\"
+.\" Initialize parts common to both letter and ms uses.
+.de COMMON_INITIALIZE
+.\" Translate # to pound sign
+.if t .tr #\[Po]
+.ie t .ds DEFAULT_LIST_WIDTH 0.5i
+.el .ds DEFAULT_LIST_WIDTH 0.7i
+.A4                               \" Invoke A4
+.nr LIST_COUNTER 0
+.nr LIST_WIDTH 0
+.ds LIST_STYLE (i)
+.ds SIGNATURE_NAME R P Parlett
+..
+.\" Initialisation macro for letter
+.\"
+.de INITIALIZE
+.COMMON_INITIALIZE
+.nr % 1
+.ps 12                            \" Point size
+.vs 14                            \" Vertical spacing
+.wh 0u PAGE_HEADER                \" Page header trap
+.\" select page footer
+.wh -\\n[FOOTER_MARGIN]u PAGE_FOOTER
+.ds FOOTER_FLAG \\$1
+.po \\n[PAGE_OFFSET]u             \" Set up page parameters
+.ll \\n[LINE_LENGTH]u
+.pl \\n[PAGE_LENGTH]u
+.sp                               \" Invoke header for first page
+..
+.\" Stack utilities
+.\" .stack_push stackname value
+.de stack_push
+.ie d stack_name_st-\\$1 .ds stack_name_st-\\$1 \\$2 \\*[stack_name_st-\\$1]
+.el .ds stack_name_st-\\$1 \\$2
+..
+.\"-------------
+.\" .stack_pop stackname
+.\" value returned in the string stack_name_pop
+.de stack_pop
+.stack_pop-set stack_name_st-\\$1 \\*[stack_name_st-\\$1]
+..
+.\"-------------
+.de stack_pop-set
+.ds stack_name_st-name \\$1
+.shift
+.if \\n[.$]<1 .@error "stack \\*[stack_name_st-name] empty"
+.ds stack_name_pop \\$1
+.shift
+.ds \\*[stack_name_st-name] \\$*
+..
+.\"-------------
+.\" .stack_pop-nr stackname varname
+.de stack_pop-nr
+.stack_pop \\$1
+.nr \\$2 \\*[stack_name_pop]
+..
+.\"-------------
+.\" .stack_pop-ds stackname varname
+.de stack_pop-ds
+.stack_pop \\$1
+.ds \\$2 \\*[stack_name_pop]
+..
+.\" Numbered paragraph macros
+.\" Initialize
+.\"
+.de LS_SET
+.stack_push LIST_STACK \\n[LIST_COUNTER]
+.stack_push LIST_STACK \\*[LIST_STYLE]
+.stack_push LIST_STACK \\n[LIST_WIDTH]
+.ie \\n[.$]=0 \{\
+.	ds LIST_STYLE (i)
+.	nr LIST_WIDTH \\*[DEFAULT_LIST_WIDTH]
+.\}
+.el \{\
+.	ds LIST_STYLE \\$1
+.	ie \\n[.$]=1 .nr LIST_WIDTH \\*[DEFAULT_LIST_WIDTH]
+.	el .nr LIST_WIDTH \\$2
+.\}
+.nr LIST_COUNTER 1
+.nr LIST_INDENT +\\n[LIST_WIDTH]u
+.ta \\n[LIST_WIDTH]u
+.in \\n[LIST_INDENT]u
+..
+.de LS_ITEM
+.br
+.ti -\\n[LIST_WIDTH]u
+.if '\\*[LIST_STYLE]'(i)' \{\
+.	af LIST_COUNTER i
+(\\n[LIST_COUNTER])\t\c
+.\}
+.if '\\*[LIST_STYLE]'1' \{\
+.	af LIST_COUNTER 1
+\\n[LIST_COUNTER].\t\c
+.\}
+.if '\\*[LIST_STYLE]'(a)' \{\
+.	af LIST_COUNTER a
+(\\n[LIST_COUNTER])\t\c
+.\}
+.if '\\*[LIST_STYLE]'c' \{\
+.	af LIST_COUNTER 1
+\\$1\t\c
+.\}
+.if '\\*[LIST_STYLE]'b' \{\
+.	af LIST_COUNTER 1
+\[bu]\t\c
+.\}
+.af LIST_COUNTER 1
+.nr LIST_COUNTER +1
+..
+.de LS_END
+.nr LIST_INDENT -\\n[LIST_WIDTH]u
+.stack_pop-nr LIST_STACK LIST_WIDTH
+.stack_pop-ds LIST_STACK LIST_STYLE
+.stack_pop-nr LIST_STACK LIST_COUNTER
+.ta \\n[LIST_WIDTH]u
+.in \\n[LIST_INDENT]u
+..
+.\" Call after table to reset tab and indents
+.de LS_RESET
+.ta \\n[LIST_WIDTH]u
+.in \\n[LIST_INDENT]u
+..
+.\" End of file
+.nx

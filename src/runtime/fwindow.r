@@ -3471,6 +3471,56 @@ function{1} DrawDisk(argv[argc])
       }
 end
 
+
+/*
+ * Eye(w,px,py,pz,dx,dy,dz,ux,uy,yz) - get/set eye attributes
+ *
+ */
+
+"Eye(argv[]){1} - get/set eye attributes"
+
+function{1} Eye(argv[argc])
+    abstract{ return record }
+    body {
+      wbp w;
+      wcp wc;
+      int warg = 0, n, i=0, len;
+      double x;
+      char abuf[128];
+
+      OptWindow(w);
+      wc = w->context;
+
+      while (warg+i < argc && i < 9) {
+	 if (!is:null(argv[warg+i]))
+	    if (!cnv:C_double(argv[warg+i], x))
+               runerr(102, argv[warg+i]);
+	 switch (i) {
+	 case 0: wc->eyeposx = x; break;
+	 case 1: wc->eyeposy = x; break;
+	 case 2: wc->eyeposz = x; break;
+	 case 3: wc->eyedirx = x; break;
+	 case 4: wc->eyediry = x; break;
+	 case 5: wc->eyedirz = x; break;
+	 case 6: wc->eyeupx = x; break;
+	 case 7: wc->eyeupy = x; break;
+	 case 8: wc->eyeupz = x; break;
+	    }
+	 i++;
+	 }
+
+      if (warg < argc) redraw3D(w);
+
+      sprintf(abuf,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+	      wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx,
+	      wc->eyediry, wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+      len = strlen(abuf);
+      StrLoc(result) = alcstr(abuf, len);
+      StrLen(result) = len;
+      return result;
+      }
+end
+
 /*
  * Rotate(w,angle,x,y,z,...)
  *
@@ -4039,7 +4089,7 @@ MissingGraphicsFuncV(DrawCube)
 MissingGraphicsFuncV(DrawSphere)
 MissingGraphicsFuncV(DrawCylinder)
 MissingGraphicsFuncV(DrawDisk)
-MissingGraphicsFuncV(DrawPartialDisk)
+MissingGraphicsFuncV(Eye)
 MissingGraphicsFuncV(PushMatrix)
 MissingGraphicsFuncV(PushRotate)
 MissingGraphicsFuncV(PushScale)

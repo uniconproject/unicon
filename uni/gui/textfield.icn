@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.3 2004-01-25 22:58:01 rparlett Exp $
+# $Id: textfield.icn,v 1.4 2004-01-26 15:31:09 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -49,6 +49,7 @@ class TextField : Component(
    displaychar,             # char to print on screen
    undo_manager,
    old_cursor,
+   old_has_region,
    changed
    )
 
@@ -114,17 +115,31 @@ class TextField : Component(
 
    method start_handle(e)
       old_cursor := cursor
+      old_has_region := has_region() | &null
       changed := &null
    end
 
    method end_handle(e)
+      local hr, moved
       if \changed then {
          self.invalidate()
          create_event_and_fire(CONTENT_CHANGED_EVENT, e)
       }
       if old_cursor ~= cursor then {
+         moved := 1
          self.invalidate()
          create_event_and_fire(CURSOR_MOVED_EVENT, e)
+      }
+      #
+      # Deduce a region change from looking for a change in whether there
+      # was/is a region; or if there is and was a region and if the cursor
+      # has moved, or the content changed.
+      #
+      hr := has_region()
+      if (/old_has_region & \hr) | (\old_has_region & /hr) |
+         (\hr & (\moved | \changed)) then 
+      {
+         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
       }
    end
 

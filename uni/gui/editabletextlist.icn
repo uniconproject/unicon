@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.3 2004-01-25 22:58:03 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.4 2004-01-26 15:31:09 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -33,6 +33,7 @@ class EditableTextList : LineBasedScrollArea(
    old_mw,
    old_cursor_x,
    old_cursor_y,
+   old_has_region,
    changed
    )
 
@@ -204,10 +205,12 @@ class EditableTextList : LineBasedScrollArea(
       old_mw := TextWidthEx(cwin, contents[long_line])
       old_cursor_x := cursor_x
       old_cursor_y := cursor_y
+      old_has_region := has_region() | &null
       changed := &null
    end
 
    method end_handle(e)
+      local hr, moved
       if \changed then {
          if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidthEx(cwin, contents[long_line])) then {
             #
@@ -225,11 +228,24 @@ class EditableTextList : LineBasedScrollArea(
       }
 
       if (cursor_x ~= old_cursor_x) | (cursor_y ~= old_cursor_y) then {
+         moved := 1
          if /changed then {
             self.constrain_line()
             self.refresh(1)
          }
          create_event_and_fire(CURSOR_MOVED_EVENT, e)
+      }
+
+      #
+      # Deduce a region change from looking for a change in whether there
+      # was/is a region; or if there is and was a region and if the cursor
+      # has moved, or the content changed.
+      #
+      hr := has_region()
+      if (/old_has_region & \hr) | (\old_has_region & /hr) |
+         (\hr & (\moved | \changed)) then 
+      {
+         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
       }
    end
 

@@ -68,7 +68,6 @@
  */
 
 static	void	execute	(char *ofile,char *efile,char * *args);
-static	void	rmfiles (char **p);
 static	void	usage (void);
 static char *libpath (char *prog, char *envname);
 
@@ -205,7 +204,7 @@ void main ( void )
 #endif               /* MACINTOSH */
 
 
-#ifdef ConsoleWindow
+#if NT || defined(ConsoleWindow)
 /*
  * expand Icon project (.icp) files
  */
@@ -249,7 +248,7 @@ void expand_proj(int *argc, char ***argv)
    fclose(f);
    for( ; j < ac; j++, k++) (*argv)[k] = av[j];
 }
-#endif					/* ConsoleWindow */
+#endif					/* NT || ConsoleWindow */
 
 #ifndef NTConsole
 #ifdef MSWindows
@@ -573,7 +572,17 @@ char **argv;
    if ((int)strlen(patchpath) > 18)
       iconxloc = patchpath+18;	/* use stated iconx path if patched */
    else
-      iconxloc = relfile(argv[0], "/../iconx");
+      iconxloc = relfile(argv[0],
+#ifdef MSVC
+#ifdef MSWindows
+			 "/../wiconx"
+#else					/* MSWindows */
+			 "/../nticonx"
+#endif					/* MSWindows */
+#else					/* MSVC */
+			 "/../iconx"
+#endif					/* MSVC */
+			 );
 
 #ifdef ConsoleWindow
    if ((int)strlen(patchpath) <= 18) {
@@ -586,10 +595,10 @@ char **argv;
 #endif					/* ConsoleWindow */
 
    /*
-    * Process options.  NOTE: Keep Usage definition in sync with getopt() call.
+    * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
    #define Usage "[-cstuE] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
-   while ((c = getopt(argc,argv, "ce:f:o:stuv:EL")) != EOF)
+   while ((c = getopt(argc,argv, "ce:f:o:O:stuv:EL")) != EOF)
       switch (c) {
          case 'C':			/* Ignore: compiler only */
             break;
@@ -865,7 +874,7 @@ char **argv;
       }
 
    /*
-    * Link .u1 and .u2 files to make an executable.
+    * Link .u files to make an executable.
     */
    if (nolink) {			/* exit if no linking wanted */
 
@@ -892,7 +901,6 @@ char **argv;
       }
 
 #if MSDOS
-#if NT
    {
    if (ofile == NULL)  {                /* if no -o file, synthesize a name */
       ofile = salloc(makename(buf,TargetDir,lfiles[0],
@@ -905,19 +913,6 @@ char **argv;
                                  makeExe ? ".exe" : IcodeSuffix));
       }
    }
-#else					/* NT */
-   if (ofile == NULL)  {                /* if no -o file, synthesize a name */
-      ofile = salloc(makename(buf,TargetDir,lfiles[0],
-                              makeExe ? ".Exe" : IcodeSuffix));
-      }
-   else {                             /* add extension if necessary */
-      fp = fparse(ofile);
-      if (*fp->ext == '\0' && *IcodeSuffix != '\0') /* if no ext given */
-         ofile = salloc(makename(buf,NULL,ofile,
-                                 makeExe ? ".Exe" : IcodeSuffix));
-   }
-#endif					/* NT */
-
 #else                                   /* MSDOS */
 
    if (ofile == NULL)  {		/* if no -o file, synthesize a name */
@@ -988,7 +983,8 @@ char **argv;
 #endif					/* MPW */
 #endif					/* MACINTOSH */
 
-   rmfiles(rfiles);			/* remove intermediate files */
+   for (rptr = rfiles; *rptr; rptr++)	/* delete intermediate files */
+      remove(*rptr);
    if (errors > 0) {			/* exit if linker errors seen */
       char errbuf[32];
       remove(ofile);
@@ -1258,24 +1254,18 @@ char *s;
    }
 
 /*
- * rmfiles - remove a list of files
- */
-
-static void rmfiles(p)
-char **p;
-   {
-   for (; *p; p++) {
-      remove(*p);
-      }
-   }
-
-/*
  * Print an error message if called incorrectly.  The message depends
  *  on the legal options for this system.
  */
 static void usage()
    {
+#if MVS || VM
+   fprintf(stderr,"usage: %s %s file ... <-x args>\n", progname, Usage);
+#elif MPW
+   fprintf(stderr,"usage: %s %s file ...\n", progname, Usage);
+#else
    fprintf(stderr,"usage: %s %s file ... [-x args]\n", progname, Usage);
+#endif					/* MVS || VM || MPW */
    exit(EXIT_FAILURE);
    }
 

@@ -92,9 +92,9 @@ Global char *iconxloc;			/* path to iconx */
 Global long hdrsize;			/* size of iconx header */
 
 #if NT
-#ifdef MSWindows
+#if defined(MSWindows) && defined(MSVC)
 Global int Gflag	Init(1);	/* -G: enable graphics (write wiconx)*/
-#else					/* MSWindows */
+#else					/* MSWindows && MSVC */
 Global int Gflag	Init(0);	/* -G: enable graphics (write wiconx)*/
-#endif					/* MSWindows */
+#endif					/* MSWindows && MSVC */
 #endif					/* NT */

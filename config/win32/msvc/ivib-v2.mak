@@ -21,7 +21,7 @@ canvastextmenuitem.u canvastoolbar.u canvastoolbardialog.u canvastoolbarui.u can
 cdialog.u checkboxgroupset.u choicedialog.u code.u commondialog.u \
 componentsort.u custom.u eventtab.u gridelement.u gridset.u \
 group.u groupset.u groupsetdialog.u hcomponentsort.u infodialog.u \
-ivib.u main.u menucomponentedit.u menutree.u menutreenode.u \
+ivib.u ivibmigrate.u main.u menucomponentedit.u menutree.u menutreenode.u \
 savechangesdialog.u utils.u vcomponentsort.u version.u \
 canvashlineui.u  canvasline.u  canvaslinedialog.u  canvasvlineui.u
 

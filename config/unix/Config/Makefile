@@ -66,6 +66,13 @@ Makefiles:
 		-mkdir ../../../ipl/lib
 		cp ../Config/ipllib.mak ../../../ipl/lib/makefile
 		cp ../Config/ide.mak ../../../uni/ide/makefile
+		cp ../Config/xml.mak ../../../uni/xml/makefile
+		cp ../Config/unidep.mak ../../../uni/unidep/makefile
+		cp ../Config/parser.mak ../../../uni/parser/makefile
+		cp ../Config/util.mak ../../../uni/util/makefile
+		cp ../Config/gui.mak ../../../uni/gui/makefile
+		cp ../Config/guidemos.mak ../../../uni/gui/guidemos/makefile
+		cp ../Config/ivib-v2.mak ../../../uni/gui/ivib/makefile
 
 Localcode:
 		cp define.h ../../../src/h

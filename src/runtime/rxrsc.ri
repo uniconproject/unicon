@@ -952,42 +952,30 @@ wdp wd;
 #define Synchronous  1
 
 
-/**********************************************************************
- *
- *	G L O B A L S
+/*
+ *	GLOBALS
  *
  *	AuDev is a pointer to the struct AuServer, which basicaly is
  *	a pointer to the audio device
  *
  *	count is an int that keeps track of how many Asychronous files
  *	need to be played
- *
- *********************************************************************/
+ */
 
 static int NumOfConn = 0;
 
 
-/**********************************************************************
- *
- *	S E T  V O L U M E
- *
- *	this function adjusts the volume on the server
- *
- *********************************************************************/
-
+/*
+ *	SetVolume() - adjusts the volume on the server
+ */
 short int SetVolume ( AudioComponentType *AuDev )
 {
    return 0;
-}  /*  end of setvolume  */
+}
 
-/********************************************************************** 
- * 
- *      G E T  V O L U M E 
- * 
- *      this function returns the volume of the audio server 
- * 
- *********************************************************************/
-
+/*
+ *      GetVolume -  returns the volume of the audio server 
+ */
 short int GetVolume ( AudioComponentType *AuDev )
 {
 
@@ -1000,205 +988,137 @@ AuDevicePart *Device;
 */
 }
 
-/**********************************************************************
- *
- *	S T O P  P L A Y I N G
- *
- *	stops playing a sound file specified by AuDev->FlowID 
- *
- *********************************************************************/
+/*
+ *	StopFlow - stops playing a sound file specified by AuDev->FlowID 
+ */
 
 short int StopFlow ( AudioComponentType *AuDev )
 {
-AuStatus Results;
+   AuStatus Results;
+   AuStopFlow ( AuDev->Server, AuDev->FlowID, &Results );
+   AuDev->NumOfJobs--;
 
-	AuStopFlow ( AuDev->Server, AuDev->FlowID, &Results );
+   if ( Results == AuSuccess )
+      return SUCCEED;
+   else return FAILED; 
+}
 
-	AuDev->NumOfJobs--;
-
-        if ( Results == AuSuccess )
-                return SUCCEED;
-        else    return FAILED; 
-
-}  /*  end of stopflow  */
-
-/*********************************************************************
- *
- *	P A U S E  F L O W
- *
- *	pauses a flow ( a file that is playing specified by AuDev->
- *	FlowId
- *
- ********************************************************************/
-
+/*
+ *	PauseFlow
+ *	pauses a flow ( a file that is playing specified by AuDev->FlowId
+ */
 short int PauseFlow ( AudioComponentType *AuDev )
 {
+   AuStatus Results;
+   AuPauseFlow ( AuDev->Server, AuDev->FlowID, &Results );
+   if ( Results == AuSuccess )
+      return SUCCEED;
+   else return FAILED; 
+}
 
-AuStatus Results;
-
-        AuPauseFlow ( AuDev->Server, AuDev->FlowID, &Results );
-        
-        if ( Results == AuSuccess )
-		return SUCCEED;
-	else	return FAILED; 
- 
-}  /*  end of pauseflow  */ 
-
-/********************************************************************* 
- * 
- *      R E S U M E  F L O W 
- * 
- *     	continues a flow that has been stoped by pauseflow 
- * 
- ********************************************************************/ 
-
+/*
+ *      ResumeFlow - continues a flow that has been stoped by pauseflow 
+ */
 short int ResumeFlow ( AudioComponentType *AuDev )
 { 
- 
-AuStatus Results; 
- 
-        AuStartFlow ( AuDev->Server, AuDev->FlowID, &Results ); 
+   AuStatus Results; 
+   AuStartFlow ( AuDev->Server, AuDev->FlowID, &Results ); 
          
-        if ( Results == AuSuccess )
-                return SUCCEED;
-        else    return FAILED; 
- 
-}  /*  end of pauseflow  */
+   if (Results == AuSuccess)
+      return SUCCEED;
+   else return FAILED; 
+}
 
-/**********************************************************************
- *
- *	I N I T  A U D I O
- *
- *	this function needs to be called to initialize the 
- *	AudioComponentType 
- *
- *********************************************************************/
+/*
+ *	InitAudio -  initialize the AudioComponentType 
+ */
 
 short int InitAudio ( AudioComponentType *AuDev )
 {
+   AuDev->Server    = NULL;
+   AuDev->FlowID    = NULL;
+   AuDev->Volume    = 20;
+   AuDev->NumOfJobs = 0;
+   return SUCCEED;
+}
 
-	AuDev->Server    = NULL;
-	AuDev->FlowID    = NULL;
-	AuDev->Volume    = 20;
-	AuDev->NumOfJobs = 0;
-	
-	return SUCCEED;
-
-}  /*  end of initaudio  */
-
-/**********************************************************************
- *
- *	O P E N  A U D I O
- *
+/*
+ *	OpenAudio
  *	basically AuOpenServer, but only cares about the filename
  *	being passed
- *
- *********************************************************************/
+ */
 
 short int OpenAudio ( AudioComponentType *AuDev, char *AudioDeviceName )
 {
-	
-	if ( NumOfConn > MaxAudioConn )
-		return FAILED;
+   if (NumOfConn > MaxAudioConn)
+      return FAILED;
+   InitAudio (AuDev);
 
-	InitAudio ( AuDev );
+   if (AuDev->Server = AuOpenServer(AudioDeviceName, 0, NULL, 0, NULL, NULL)){
+      NumOfConn++;
+      return SUCCEED;
+      }
+   else
+     return FAILED;
+}
 
-	if ( AuDev->Server = AuOpenServer ( AudioDeviceName, 0, NULL, 0, NULL, NULL ) )
-	{
-		NumOfConn++;
-		return SUCCEED;
-	}
-	else
-	{
-		return FAILED;
-	}
-
-}  /*  end of openaudio  */
-
-/**********************************************************************
- *
- *	C L O S E  A U D I O
- *
+/*
+ *	CloseAudio
  *	basically AuCloseServer ( audiodevice )
- *
- *********************************************************************/
+ */
 
 short int CloseAudio ( AudioComponentType *AuDev )
 {
-	NumOfConn--;
-	AuCloseServer ( AuDev->Server );
-	AuDev->NumOfJobs = 0;  /*  clear num of jobs in case pause~close  */
+   NumOfConn--;
+   AuCloseServer ( AuDev->Server );
+   AuDev->NumOfJobs = 0;  /*  clear num of jobs in case pause~close  */
+   return SUCCEED;  
+}
 
-	return SUCCEED;  
-
-}  /*  end of closeaudio  */
-
-/*********************************************************************
- *
- *	I S  A U D I O  I N  U S E
- *
+/*
+ *	IsAudioInUse
  *	returns true if the audio device is currently being used,
  *	else it returns false
  *	this also applies only to the user's use of the server, not
  *	others who access it
- *	
- ********************************************************************/
+ */
 
 short int IsAudioInUse ( AudioComponentType *AuDev )
 {
-
-	if ( AuDev->NumOfJobs )
-	{
-		return TRUE;
-	}
-	else	return FALSE;
-
+   return AuDev->NumOfJobs != 0;
 }
 
-/**********************************************************************
- *
- *	P O L L  S E R V E R
- *
+/*
+ *	PollServer
  *	this function should be called repeatedly so that a file 
  *	that is being played Asynchronous will be played.  you can
  *	use IsAudioInUse to determine if it needs to be called	
- *
- *********************************************************************/
-
+ */
 short int PollServer ( AudioComponentType *AuDev )
 {
    if (AuDev->NumOfJobs > 0) {
       AuHandleEvents ( AuDev->Server );
       }
    return AuDev->NumOfJobs;
+}
 
-}  /*  end of pollserver  */
-
-/**********************************************************************
- *
- *	D O N E  P L A Y I N G  C A L L  B A C K
- *
+/*
+ *	DonePlayingCB
  *	this function is called when AuSoundPlayFromFile is done
  *	playing.  this is only called when PlaySound is in Asynchronous
  *	mode.
- *
- *********************************************************************/
+ */
 
 static void DonePlayingCB ( AuServer *audio, AuEvent *event, 
-		            AuEventHandlerRec *handler, 
-			    AuPointer data ) 
+		            AuEventHandlerRec *handler, AuPointer data ) 
 
 {
-	AudioComponentType *AuDev = ( AudioComponentType * ) data;
+   AudioComponentType *AuDev = ( AudioComponentType * ) data;
+   AuDev->NumOfJobs --;
+}
 
-	AuDev->NumOfJobs --;
-
-}  /*  end of doneplayingcb  */
-
-/**********************************************************************
- *
- *      P L A Y  S O U N D 
- *
+/*
+ *      PlaySound 
  *      the function that plays the sound file in either Asynchronous
  *	or Synchronous mode.  In Asyn, the user must repeatedly make
  *	calls to PollServer so that the file will be played.  With
@@ -1208,8 +1128,7 @@ static void DonePlayingCB ( AuServer *audio, AuEvent *event,
  *	WARNING :  if you are using Asynchronous mode, you make ensure
  *	that PollServer is called often enough to prevent the audio
  *	from bottoming out or gaps from forming.   
- *
- *********************************************************************/
+ */
  
 short int PlaySound ( AudioComponentType *AuDev, char *FileName,
 		     int Volume, int Mode ) 
@@ -1218,32 +1137,25 @@ fprintf(stderr, "in playsound, AuDev->Server %x\n", AuDev->Server); fflush(stder
 	if ( AuSoundPlayFromFile ( AuDev->Server, FileName, AuNone,
 	     AuFixedPointFromFraction ( Volume, MaxVolume ), 
 	     DonePlayingCB, ( AuPointer ) AuDev, AuDev->FlowID,
-				  NULL, NULL, NULL ) )
-	{
-		AuDev->NumOfJobs++;
-	}
+				  NULL, NULL, NULL )) {
+	   AuDev->NumOfJobs++;
+	   }
 	else {
 fprintf(stderr, "AuSoundPlayFromFile fails\n"); fflush(stderr);
 	   return FAILED;
 	   }
 
-	switch ( Mode )
-	{
-		case Asynchronous : 
-			{
-				return SUCCEED;
-			}
-		case Synchronous : 
-			{
-				while ( PollServer ( AuDev ) );
-				return SUCCEED;	
-			}
-		default       	 : return FAILED;
-
+	switch ( Mode ){
+	case Asynchronous : {
+	   return SUCCEED;
+	   }
+	case Synchronous : {
+	   while ( PollServer ( AuDev ) );
+	   return SUCCEED;	
+	   }
+	default       	 : return FAILED;
 	}
-
-}  /*  end of playsound  */
-
+}
 
 
 int playmedia(wbp w, char *s)
@@ -1263,8 +1175,6 @@ fprintf(stderr, "playsound fails\n"); fflush(stderr);
 fprintf(stderr, "playsound succeeds\n"); fflush(stderr);
    return Succeeded;
 }
-
-
 
 #else					/* NAS */
 

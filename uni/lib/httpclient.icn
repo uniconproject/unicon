@@ -109,21 +109,21 @@ class HttpClient : NetClient(url,
    # reason appropriately.  It also handles redirection responses.
    #
    method retrieve()
-      local res, l, redir_set
+      local l, redir_set
       redir_set := set()
       repeat {
          http_error := &null
 
-         res := retrieve_page() | fail
-         if res.status_okay() then
-            return res
+         retrieve_page() | fail
+         if find("200"|"206", result.get_status()) then
+            return result
 
          remove(\data_file)
-         if find("302"|"303"|"307", res.get_status()) then {
+         if find("302"|"303"|"307", result.get_status()) then {
             #
             # A redirection, so extract the URL if possible.
             #
-            l := \res.get_header("Location") | return on_http_error("No Location in a redirect response")
+            l := \result.get_header("Location") | return on_http_error("No Location in a redirect response")
             if member(redir_set, l) then
                return on_http_error("Circular redirection detected:" || l)
             insert(redir_set, l)
@@ -131,7 +131,7 @@ class HttpClient : NetClient(url,
             delete(headers, "host")
          }
          else
-            return on_http_error(res.get_status())
+            return on_http_error(result.get_status())
       }
    end
 
@@ -172,19 +172,22 @@ class HttpClient : NetClient(url,
    # Failure occurs if the url could not be retrieved.
    #
    method retrieve_page()
-      local i, res
+      local i
 
       i := retries
+
+      self.read := self.length := &null
+
       repeat {
-         if res := tryone() then {
+         if tryone() then {
             fire("Complete")
-            return res
+            return result
          }
 
-         remove(\data_file)
          close()
 
          if (i -:= 1) < 0 then {
+            remove(\data_file)
             fire("Failed")
             if retries = 0 then
                fail
@@ -229,7 +232,7 @@ class HttpClient : NetClient(url,
       else
          maybe_close()
 
-      return result
+      return
    end
 
    #
@@ -242,13 +245,16 @@ class HttpClient : NetClient(url,
          close()
    end
 
-
    #
    # @p
    method write_request()
       /headers["user-agent"] :=  "gethttp.icn [en] (" || &host || ")"
       /headers["host"] := url.get_address()
       /headers["connection"] := "Keep-Alive"
+      if \self.read > 0 then
+         headers["range"] := "bytes=" || self.read || "-"
+      else
+         delete(headers, "range")
 
       s := \request_type | if \post_data then "POST" else "GET"
 
@@ -312,13 +318,26 @@ class HttpClient : NetClient(url,
    #
    # @p
    method read_data()
-      #
-      # Set up either a data file or a string buffer.
-      #
-      if /data_file then
-         string_buff := StringBuff()
-      else
-         data_out := ::open(data_file, "w") | stop("Couldn't open ", data_file)
+      if find("206", result.get_status()) then {
+         #
+         # Continue a partial read.  The self.read and self.length values
+         # continue from the previous attempt.
+         #
+         if \data_file then
+            data_out := ::open(data_file, "a") | stop("Couldn't open ", data_file)
+      } else {
+         #
+         # Set up either a new data file or a string buffer, and reset
+         # the self.read and self.length values.
+         #
+         if /data_file then
+            string_buff := StringBuff()
+         else
+            data_out := ::open(data_file, "w") | stop("Couldn't open ", data_file)
+
+         self.length := integer(result.get_header("content-length")) | &null
+         self.read := 0
+      }
 
       if not read_data_impl() then {
          if \data_file then
@@ -342,9 +361,6 @@ class HttpClient : NetClient(url,
    #
    # @p
    method read_data_impl()
-      self.length := integer(result.get_header("content-length")) | &null
-      self.read := 0
-
       #
       # Read the data.
       #

@@ -1,0 +1,204 @@
+import gui
+$include "guih.icn"
+
+class DynComps : Dialog(cont, p)
+   method component_setup()
+      self.setup()
+      p := Panel("size=0,0")
+      cont.set_inner(p)
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_add(ev)
+      local b, bn
+      b := p.get_children()[-1]
+      bn := TextButton("label=Something", "align=l,t")
+      if /b then
+         bn.set_pos(20, 0)
+      else
+         bn.set_pos(20, b.y + b.h + 10)
+      p.add(bn)
+      bn.init()
+      bn.resize()
+      bn.firstly()
+      change_size()
+   end
+
+   method on_del(ev)
+      local b
+      b := p.get_children()[-1] | fail
+      p.remove(b)
+      b.finally()
+      change_size()
+   end
+
+   method on_repos(ev)
+      local b
+      b := p.get_children()[-1] | fail
+      b.set_pos(b.x+10,b.y+10)
+      b.resize()
+      change_size()
+   end
+
+   method on_resize(ev)
+      local b
+      b := p.get_children()[-1] | fail
+      b.set_size(b.w+10,b.h+10)
+      b.resize()
+      change_size()
+   end
+
+   method change_size()
+      local b
+      b := p.get_children()[-1]
+      if /b then 
+         p.set_size(0,0)
+      else
+         p.set_size(b.x + b.w, b.y + b.h)
+      p.resize()
+      cont.inner_resized()
+   end
+
+   method on_quit(ev)
+      dispose()
+   end
+
+   method setup()
+      local add, del, panel_1, quit, repos, resize
+      self.set_attribs("size=437,276", "resize=on")
+      panel_1 := Panel()
+      panel_1.set_pos("50%", "100%")
+      panel_1.set_size("333", "26")
+      panel_1.set_align("c", "b")
+      quit := TextButton()
+      quit.set_pos(291, "0")
+      quit.set_align("c", "t")
+      quit.connect(self, "on_quit", ACTION_EVENT)
+      quit.set_label("Quit")
+      quit.set_internal_alignment("c")
+      panel_1.add(quit)
+      del := TextButton()
+      del.set_pos(105, "0")
+      del.set_align("c", "t")
+      del.connect(self, "on_del", ACTION_EVENT)
+      del.set_label("Delete")
+      del.set_internal_alignment("c")
+      panel_1.add(del)
+      add := TextButton()
+      add.set_pos(48, "0")
+      add.set_align("c", "t")
+      add.connect(self, "on_add", ACTION_EVENT)
+      add.set_label("Add")
+      add.set_internal_alignment("c")
+      panel_1.add(add)
+      resize := TextButton()
+      resize.set_pos("142", "0")
+      resize.connect(self, "on_resize", ACTION_EVENT)
+      resize.set_label("Resize")
+      resize.set_internal_alignment("c")
+      panel_1.add(resize)
+      repos := TextButton()
+      repos.set_pos("208", "0")
+      repos.connect(self, "on_repos", ACTION_EVENT)
+      repos.set_label("Repos")
+      repos.set_internal_alignment("c")
+      panel_1.add(repos)
+      self.add(panel_1)
+      cont := ComponentScrollArea()
+      cont.set_pos("50%", "10")
+      cont.set_size("100%-20", "100%-50")
+      cont.set_align("c", "t")
+      self.add(cont)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := DynComps()
+   d.show_modal()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|3|string|border|integer|1|s
+#tring|panel|integer|2|string|text_button|integer|5|SuperClass Name|str
+#ing|Dialog|Import Name|string|gui|Button Groups|class|ButtonGroupSet|2
+#|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2
+#|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Main|integer|1|
+#Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen Initially|
+#integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min Height|null
+#|Ticker Rate|null|Attribs|list|1|string|resize=on|Name|string|DynComps
+#|Width|integer|437|Height|integer|276|Items|list|2|class|CanvasPanel|2
+#6|Parent Canvas|1|Name|string|panel_1|Class Name|string|Panel|Import N
+#ame|string|gui|X Fix|integer|1|Y Fix|integer|1|W Fix|null|H Fix|null|W
+# Default|null|H Default|null|X Spec|string|50%|Y Spec|string|100%|W Sp
+#ec|string|333|H Spec|string|26|X Align|string|c|Y Align|string|b|Is sh
+#aded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tool
+#tip|null|Accel|null|Event Handlers|list|0|Class Variable|null|Parent C
+#omponent|1|Children|list|5|class|CanvasTextButton|36|Parent Canvas|1|N
+#ame|string|quit|Class Name|string|TextButton|Import Name|string|gui|X 
+#Fix|null|Y Fix|integer|1|W Fix|null|H Fix|null|W Default|integer|1|H D
+#efault|integer|1|X Spec|integer|291|Y Spec|string|0|W Spec|integer|40|
+#H Spec|integer|23|X Align|string|c|Y Align|string|t|Is shaded|null|Is 
+#Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null
+#|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on
+#_quit|Class Variable|null|Parent Component|10|Label|string|Quit|No Key
+#board|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is
+# Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Par
+#ent Button Group|null|Internal Align|string|c|class|CanvasTextButton|3
+#6|Parent Canvas|1|Name|string|del|Class Name|string|TextButton|Import 
+#Name|string|gui|X Fix|null|Y Fix|integer|1|W Fix|null|H Fix|null|W Def
+#ault|integer|1|H Default|integer|1|X Spec|integer|105|Y Spec|string|0|
+#W Spec|integer|52|H Spec|integer|23|X Align|string|c|Y Align|string|t|
+#Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|l
+#ist|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTI
+#ON_EVENT|string|on_del|Class Variable|null|Parent Component|10|Label|s
+#tring|Delete|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null
+#|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent Che
+#ckBoxGroup|null|Parent Button Group|null|Internal Align|string|c|class
+#|CanvasTextButton|36|Parent Canvas|1|Name|string|add|Class Name|string
+#|TextButton|Import Name|string|gui|X Fix|null|Y Fix|integer|1|W Fix|nu
+#ll|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|integer|4
+#8|Y Spec|string|0|W Spec|integer|34|H Spec|integer|23|X Align|string|c
+#|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Bor
+#der|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|
+#list|2|string|ACTION_EVENT|string|on_add|Class Variable|null|Parent Co
+#mponent|10|Label|string|Add|No Keyboard|null|Img Up|null|Img Down|null
+#|Img Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|
+#null|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align
+#|string|c|class|CanvasTextButton|36|Parent Canvas|1|Name|string|resize
+#|Class Name|string|TextButton|Import Name|string|gui|X Fix|null|Y Fix|
+#integer|1|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|
+#1|X Spec|string|142|Y Spec|string|0|W Spec|integer|52|H Spec|integer|2
+#3|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|
+#integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Even
+#t Handlers|list|1|list|2|string|ACTION_EVENT|string|on_resize|Class Va
+#riable|null|Parent Component|10|Label|string|Resize|No Keyboard|null|I
+#mg Up|null|Img Down|null|Img Width|null|Img Height|null|Is Checked Fla
+#g|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button G
+#roup|null|Internal Align|string|c|class|CanvasTextButton|36|Parent Can
+#vas|1|Name|string|repos|Class Name|string|TextButton|Import Name|strin
+#g|gui|X Fix|null|Y Fix|integer|1|W Fix|null|H Fix|null|W Default|integ
+#er|1|H Default|integer|1|X Spec|string|208|Y Spec|string|0|W Spec|inte
+#ger|46|H Spec|integer|23|X Align|string|l|Y Align|string|t|Is shaded|n
+#ull|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Toolt
+#ip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|st
+#ring|on_repos|Class Variable|null|Parent Component|10|Label|string|Rep
+#os|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Heigh
+#t|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup
+#|null|Parent Button Group|null|Internal Align|string|c|class|CanvasPan
+#el|26|Parent Canvas|1|Name|string|cont|Class Name|string|ComponentScro
+#llArea|Import Name|string|gui|X Fix|integer|1|Y Fix|null|W Fix|null|H 
+#Fix|null|W Default|null|H Default|null|X Spec|string|50%|Y Spec|string
+#|10|W Spec|string|100%-20|H Spec|string|100%-50|X Align|string|c|Y Ali
+#gn|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|At
+#tribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Varia
+#ble|integer|1|Parent Component|1|Children|list|0|Initial Focus|null|Ev
+#ent Handlers|list|0|

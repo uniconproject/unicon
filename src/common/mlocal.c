@@ -142,6 +142,11 @@ char *findonpath(char *name, char *buf, size_t len) {
       memcpy(buf, next, plen);
       buf[plen] = '/';
       strcpy(buf + plen + 1, name);
+#if NT && !defined(NTGCC)
+/* under visual C++, just check whether the file exists */
+#define access _access
+#define X_OK 00
+#endif
       if (access(buf, X_OK) == 0)
          return buf;
 #if MSDOS

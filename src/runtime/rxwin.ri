@@ -2652,8 +2652,8 @@ int x, y, width, height;
     * if width >= window width or height >= window height, clear any
     * offscreen portion as well in order to allow the freeing of colors.
     */
-   if (width  >= ws->width)  width  = ws->pixwidth;
-   if (height >= ws->height) height = ws->pixheight;
+   if (x + width  >= ws->width)  width  = ws->pixwidth - x;
+   if (y + height >= ws->height) height = ws->pixheight - y;
 
    /*
     * fill the rectangle with the background color
@@ -3416,8 +3416,10 @@ struct imgmem *imem;
    {
    STDLOCALS(w);
 
-   if (imem->width <= 0 || imem->height <= 0)
+   if (imem->width <= 0 || imem->height <= 0) {
+      imem->im = NULL;
       return Succeeded;
+      }
 
    imem->im = XGetImage(stddpy, stdpix,
 			imem->x, imem->y, imem->width, imem->height,
@@ -3431,7 +3433,7 @@ int getpixel_term(w, imem)
 wbp w;
 struct imgmem *imem;
    {
-   if (imem->width > 0 && imem->height > 0)
+   if (imem->im != NULL)
       XDestroyImage(imem->im);
    return Succeeded;
    }
@@ -3453,9 +3455,8 @@ struct imgmem *imem;
    STDLOCALS(w);
 
    if (x < imem->x || x >= imem->x + imem->width ||
-       y < imem->y || y >= imem->y + imem->height) {
+       y < imem->y || y >= imem->y + imem->height)
       c = colorcell.pixel = wc->bg->c;
-      }
    else
       c = colorcell.pixel = XGetPixel(imem->im, x - imem->x, y - imem->y);
    *rv = 0xff000000;
@@ -4022,8 +4023,7 @@ int *status;
 	 wd->colors[j].g = color.green;
 	 wd->colors[j].b = color.blue;
          clr = lcolor(w, color);
-         sprintf(wd->colors[j].name, "%ld,%ld,%ld",
-		 clr.red, clr.green, clr.blue);
+         sprintf(wd->colors[j].name,"%ld,%ld,%ld",clr.red,clr.green,clr.blue);
 	 if (ws->numColors == WMAXCOLORS)
 	    ;
 	 else {

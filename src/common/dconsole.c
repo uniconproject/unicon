@@ -104,8 +104,6 @@ struct b_list *alclist(uword size, uword nslots)
    register struct b_lelem *lblk;
    register word i;
 
-   if (!reserve(Blocks, (word)(sizeof(struct b_list) + sizeof (struct b_lelem)
-      + (nslots - 1) * sizeof(struct descrip)))) return NULL;
    AlcFixBlk(blk, b_list, T_List)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;

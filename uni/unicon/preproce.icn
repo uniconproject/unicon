@@ -76,10 +76,10 @@ procedure preprocessor(fname,predefined_syms)
     preproc_new(fname,predefined_syms)
     
     while line := preproc_read() do line ? {
-        if match("#line") then {
-            next
-        }
         preproc_space()
+        if ="#" & match("line") then {
+            suspend preproc_scan_directive()
+        }
         if ="$" & any(nonpunctuation) then {
             suspend preproc_scan_directive()
         } else {

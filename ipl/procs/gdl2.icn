@@ -47,14 +47,14 @@ procedure gdl(dir)
 
 end
 
-procedure gdlrec(dir, method)
+procedure gdlrec(dir, Method)
 
 # Unix method to use:   &null for compatibility (uses "/bin/ls"), 
 #                       not null for speed (uses "find")
 
     local getdir
 
-    getdir := set_getdir_rec_by_os(method)
+    getdir := set_getdir_rec_by_os(Method)
     return getdir(dir)
 
 end
@@ -73,13 +73,13 @@ procedure set_getdir_by_os()
 
 end
 
-procedure set_getdir_rec_by_os(method)
+procedure set_getdir_rec_by_os(Method)
 
     # Decide how to get a directory, based on whether we are running
     # under Unix or MS-DOS.
 
     if find("UNIX", &features) then {
-        if /method then
+        if /Method then
             return unix_get_dir_rec
         else
             return unix_get_dir_rec2

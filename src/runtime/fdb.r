@@ -136,7 +136,7 @@ function{0,1} dbcolumns(f)
       
     /* create empty list */
     
-    if ((hp=emptylist()) == NULL) fail;
+    if ((hp=alclist(0, MinListSlots)) == NULL) fail;
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
 
@@ -563,7 +563,7 @@ function{1} dbkeys(f)
    
     /* create empty list */
     
-    if ((hp=emptylist()) == NULL) fail;
+    if ((hp=alclist(0, MinListSlots)) == NULL) fail;
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
 
@@ -945,7 +945,7 @@ function{0,1} dbtables(f)
         
     /* create empty list */
     
-    if ((hp=emptylist()) == NULL) fail;
+    if ((hp=alclist(0, MinListSlots)) == NULL) fail;
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
 

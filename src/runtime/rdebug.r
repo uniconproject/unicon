@@ -454,7 +454,7 @@ static int keyref(bp, dp)
    dptr dp;
    {
    char *s, *s2;
-   char sbuf[100];			/* buffer; might be too small */
+   char sbuf[256];			/* buffer; might be too small */
    int len;
 
    if (getimage(&(bp->telem.tref),dp) == Error)
@@ -470,7 +470,13 @@ static int keyref(bp, dp)
    else
       while(BlkType(bp) == T_Telem)
          bp = bp->telem.clink;
-   sprintf(sbuf, "table_%d[", bp->table.id);
+#ifdef Dbm
+   if (BlkType(bp) == T_File) {
+      sprintf(sbuf, "dbmfile(%s)[", bp->file.fname);
+      }
+   else
+#endif					/* Dbm */
+      sprintf(sbuf, "table_%d[", bp->table.id);
    { char * dest = sbuf + strlen(sbuf);
    strncpy(dest, s2, len);
    dest[len] = '\0';

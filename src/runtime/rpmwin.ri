@@ -1195,14 +1195,10 @@ FILE *OpenConsole()
 
    if (!ConsoleBinding) {
       tended struct b_list *hp;
-      tended struct b_lelem *bp;
       /*
        * allocate an empty event queue
        */
-      hp = alclist(0);
-      bp = alclstb(MinListSlots, (word)0, 0);
-      hp->listhead = hp->listtail = (union block *)bp;
-      bp->listprev = bp->listnext = (union block *)hp;
+      hp = alclist(0, MinListSlots);
 
       /*
        * build the attribute list

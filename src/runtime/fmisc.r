@@ -737,7 +737,7 @@ function{1} sort(t, i)
             register dptr d1;
             register word size;
             tended struct b_list *lp;
-            union block *ep, *bp;
+            union block *bp;
             register int i;
             /*
              * Create a list the size of the record, copy each element into
@@ -746,10 +746,8 @@ function{1} sort(t, i)
              */
             size = BlkLoc(t)->record.recdesc->proc.nfields;
 
-            Protect(lp = alclist(size), runerr(0));
-            Protect(ep = (union block *)alclstb(size,(word)0,size), runerr(0));
-            lp->listhead = lp->listtail = ep;
-            ep->lelem.listprev = ep->lelem.listnext = (union block *) lp;
+            Protect(lp = alclist_raw(size, size), runerr(0));
+
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty records */
@@ -783,17 +781,15 @@ function{1} sort(t, i)
              */
             size = BlkLoc(t)->set.size;
 
-            Protect(lp = alclist(size), runerr(0));
-            Protect(ep = (union block *)alclstb(size,(word)0,size), runerr(0));
-            lp->listhead = lp->listtail = ep;
-            ep->lelem.listprev = ep->lelem.listnext = (union block *)lp;
+            Protect(lp = alclist(size, size), runerr(0));
+
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty sets */
                d1 = lp->listhead->lelem.lslots;
-               for (j = 0; j < HSegs && (seg = bp->table.hdir[j]) != NULL; j++)
+               for (j=0; j < HSegs && (seg = bp->table.hdir[j]) != NULL; j++)
                   for (k = segsize[j] - 1; k >= 0; k--)
-                     for (ep = seg->hslots[k]; ep != NULL; ep= ep->telem.clink)
+                     for (ep= seg->hslots[k]; ep != NULL; ep= ep->telem.clink)
                         *d1++ = ep->selem.setmem;
                qsort((char *)lp->listhead->lelem.lslots,(int)size,
                      sizeof(struct descrip),(QSortFncCast)anycmp);
@@ -817,7 +813,7 @@ function{1} sort(t, i)
             register int j, k, n;
 	    tended struct b_table *bp;
             tended struct b_list *lp, *tp;
-            tended union block *ep, *ev;
+            tended union block *ep;
 	    tended struct b_slots *seg;
 
             switch ((int)i) {
@@ -850,10 +846,8 @@ function{1} sort(t, i)
                 *  that will hold the the result of sorting the table.
                 */
                bp = (struct b_table *)BlkLoc(t);
-               Protect(lp = alclist(size), runerr(0));
-               Protect(ep=(union block *)alclstb(size,(word)0,size),runerr(0));
-               lp->listtail = lp->listhead = ep;
-               ep->lelem.listprev = ep->lelem.listnext = (union block *) lp;
+               Protect(lp = alclist(size, size), runerr(0));
+
                /*
                 * If the table is empty, there is no need to sort anything.
                 */
@@ -874,12 +868,7 @@ function{1} sort(t, i)
                      for (ep= seg->hslots[k];
 			  BlkType(ep) == T_Telem;
 			  ep = ep->telem.clink){
-                        Protect(tp = alclist((word)2), runerr(0));
-                        Protect(ev = (union block *)alclstb((word)2,
-                           (word)0, (word)2), runerr(0));
-                        tp->listhead = tp->listtail = ev;
-                        ev->lelem.listprev = ev->lelem.listnext =
-			   (union block *)tp;
+                        Protect(tp = alclist_raw(2, 2), runerr(0));
                         tp->listhead->lelem.lslots[0] = ep->telem.tref;
                         tp->listhead->lelem.lslots[1] = ep->telem.tval;
                         d1 = &lp->listhead->lelem.lslots[n++];
@@ -917,10 +906,8 @@ function{1} sort(t, i)
              *  that will hold the the result of sorting the table.
              */
             bp = (struct b_table *)BlkLoc(t);
-            Protect(lp = alclist(size), runerr(0));
-            Protect(ep = (union block *)alclstb(size,(word)0,size), runerr(0));
-            lp->listhead = lp->listtail = ep;
-            ep->lelem.listprev = ep->lelem.listnext = (union block *)lp;
+            Protect(lp = alclist(size, size), runerr(0));
+
             /*
              * If the table is empty there's no need to sort anything.
              */
@@ -929,7 +916,7 @@ function{1} sort(t, i)
 
             /*
              * Point d1 at the start of the list elements in the new list
-             *  element block in preparation for use as an index into the list.
+             * element block in preparation for use as an index into the list.
              */
             d1 = lp->listhead->lelem.lslots;
             /*
@@ -1099,10 +1086,8 @@ function{1} sortf(t, i)
              */
             size = BlkLoc(t)->record.recdesc->proc.nfields;
 
-            Protect(lp = alclist(size), runerr(0));
-            Protect(ep = (union block *)alclstb(size,(word)0,size), runerr(0));
-            lp->listhead = lp->listtail = ep;
-            ep->lelem.listprev = ep->lelem.listnext = (union block *) lp;
+            Protect(lp = alclist_raw(size, size), runerr(0));
+
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty records */
@@ -1145,10 +1130,8 @@ function{1} sortf(t, i)
              */
             size = BlkLoc(t)->set.size;
 
-            Protect(lp = alclist(size), runerr(0));
-            Protect(ep = (union block *)alclstb(size,(word)0,size), runerr(0));
-            lp->listhead = lp->listtail = ep;
-            ep->lelem.listprev = ep->lelem.listnext = (union block *)lp;
+            Protect(lp = alclist(size, size), runerr(0));
+
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty sets */
@@ -1353,9 +1336,11 @@ function{0,1} variable(s)
 
       while (i--) {
 	 if (pfp == NULL) fail;
-	 glbl_argp = pfp->pf_argp;
 	 pfp = pfp->pf_pfp;
          }
+      if (pfp)
+      glbl_argp = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
+      else glbl_argp = NULL;
 #endif						/* MultiThread */
 
       rv = getvar(s, &result);

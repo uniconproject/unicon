@@ -617,10 +617,8 @@ function{1} list(n, x)
        *  Note that nslots is the number of slots in the list-element
        *  block while size is the number of elements in the list.
        */
-      Protect(hp = alclist(size), runerr(0));
-      Protect(bp = alclstb(nslots, (word)0, size), runerr(0));
-      hp->listhead = hp->listtail = (union block *) bp;
-      bp->listprev = bp->listnext = (union block *) hp;
+      Protect(hp = alclist_raw(size, nslots), runerr(0));
+      bp = (struct b_lelem *)hp->listhead;
 
       /*
        * Initialize each slot.
@@ -1201,7 +1199,8 @@ function{1} set(x[n])
 
       default: {
          abstract {
-            return new set(store[type(x).lst_elem]) /* should be anything */
+            return new set(type(x)) /* ?? */
+/*            return new set(store[type(x).lst_elem]) /* should be anything */
             }
 
          body {

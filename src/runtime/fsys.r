@@ -349,11 +349,13 @@ function{1} close(f)
 #endif					/* PosixFns */
 
 #ifdef ReadDirectory
+#if !NT
       if (BlkLoc(f)->file.status & Fs_Directory) {
 	 BlkLoc(f)->file.status = 0;
 	 closedir((DIR *)fp);
 	 return f;
          }
+#endif
 #endif					/* ReadDirectory */
 
 #ifdef ISQL
@@ -527,7 +529,6 @@ function{0,1} open(fname, spec)
 #ifdef Graphics
       int j, err_index = -1;
       tended struct b_list *hp;
-      tended struct b_lelem *bp;
 #endif					/* Graphics */
 
 #ifdef Messaging
@@ -817,10 +818,7 @@ Deliberate Syntax Error
 	 /*
 	  * allocate an empty event queue for the window
 	  */
-	 Protect(hp = alclist(0), runerr(0));
-	 Protect(bp = alclstb(MinListSlots, (word)0, 0), runerr(0));
-	 hp->listhead = hp->listtail = (union block *) bp;
-	 bp->listprev = bp->listnext = (union block *) hp;
+	 Protect(hp = alclist(0, MinListSlots), runerr(0));
 
 	 /*
 	  * loop through attributes, checking validity
@@ -1432,6 +1430,7 @@ function{0,1} reads(f,i)
 #endif					/* ConsoleWindow */
 
 #ifdef ReadDirectory
+#if !NT
       /*
        *  If reading a directory, return up to i bytes of next entry.
        */
@@ -1446,6 +1445,7 @@ function{0,1} reads(f,i)
          Protect(sp = alcstr(de->d_name, nbytes), runerr(0));
          return string(nbytes, sp);
          }
+#endif
 #endif					/* ReadDirectory */
 
       /*

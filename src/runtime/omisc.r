@@ -91,27 +91,36 @@ operator{1} * size(x)
       coexpr: inline {
          return C_integer BlkLoc(x)->coexpr.size;
          }
-#ifdef ISQL
       file: inline {
-	 struct ISQLFile *fp;
-	 int status;
-	 int rc;
-#if UNIX
-	 SQLINTEGER numrows;
-#else					/* UNIX */
-	 SQLLEN numrows;
-#endif					/* UNIX */
-
-	 status = BlkLoc(x)->file.status;
-
+	 int status = BlkLoc(x)->file.status;
+#ifdef Dbm
+	 if ((status & Fs_Dbm) == Fs_Dbm) {
+	    int count = 0;
+	    DBM *db = (DBM *)BlkLoc(x)->file.fd;
+	    datum key = dbm_firstkey(db);
+	    while (key.dptr != NULL) {
+	       count++;
+	       key = dbm_nextkey(db);
+	       }
+	    return C_integer count;
+	    }
+#endif					/* Dbm */
+#ifdef ISQL
 	 if ((status & Fs_ODBC) == Fs_ODBC) { /* ODBC file */
+	    struct ISQLFile *fp;
+	    int rc;
+#if (ODBCVER >= 0x0351)
+	    SQLLEN numrows;
+#else					/* ODBCVER >= 0x0351 */
+	    SQLINTEGER numrows;
+#endif					/* ODBCVER >= 0x0351 */
 	    fp = (struct ISQLFile *) BlkLoc(x)->file.fd;
 	    rc = SQLRowCount(fp->hstmt, &numrows);
 	    return C_integer(numrows);
 	    }
+#endif					/* ISQL */
 	 runerr(1100, x); /* not ODBC file */
 	 }
-#endif					/* ISQL */
       default: {
          /*
           * Try to convert it to a string.
@@ -326,16 +335,9 @@ operator{1} [...] llist(elems[n])
       /*
        * Allocate the list and a list block.
        */
-      Protect(hp = alclist(n), runerr(0));
-      Protect(bp = alclstb(nslots, (word)0, n), runerr(0));
+      Protect(hp = alclist_raw(n, nslots), runerr(0));
+      bp = (struct b_lelem *)hp->listhead;
    
-      /*
-       * Make the list block just allocated into the first and last blocks
-       *  for the list.
-       */
-      hp->listhead = hp->listtail = (union block *)bp;
-      bp->listprev = bp->listnext = (union block *)hp;
-
       /*
        * Assign each argument to a list element.
        */

@@ -362,22 +362,56 @@ word nslots;
 
 /*
  * alclist - allocate a list header block in the block region.
- *
+ *  A corresponding list element block is also allocated.
  *  Forces a g.c. if there's not enough room for the whole list.
+ *  The "alclstb" code inlined so as to avoid duplicated initialization.
+ *
+ * alclist_raw() - as per alclist(), except initialization is left to
+ * the caller, who promises to initialize first n==size slots w/o allocating.
  */
 
-struct b_list *alclist(size)
-uword size;
+struct b_list *alclist_raw(size, nslots)
+uword size, nslots;
    {
    register struct b_list *blk;
+   register struct b_lelem *lblk;
+   register word i;
 
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + sizeof (struct b_lelem)
-      + (size - 1) * sizeof(struct descrip)))) return NULL;
+      + (nslots - 1) * sizeof(struct descrip)))) return NULL;
    AlcFixBlk(blk, b_list, T_List)
+   AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
    blk->id = list_ser++;
-   blk->listhead = NULL;
-   blk->listtail = NULL;
+   blk->listhead = blk->listtail = (union block *)lblk;
+
+   lblk->nslots = nslots;
+   lblk->first = 0;
+   lblk->nused = size;
+   lblk->listprev = lblk->listnext = (union block *)blk;
+   /*
+    * Set all elements beyond size to &null.
+    */
+   for (i = size; i < nslots; i++)
+      lblk->lslots[i] = nulldesc;
+   return blk;
+   }
+
+struct b_list *alclist(size, nslots)
+uword size, nslots;
+{
+   register word i;
+   register struct b_list *blk = alclist_raw(size, nslots);
+   register struct b_lelem *lblk;
+
+   if (!blk) return NULL;
+   lblk = (struct b_lelem *)blk->listhead;
+
+   /*
+    * Set any additional elements to &null.
+    */
+   for (i = 0; i < size; i++)
+      blk->listhead->lelem.lslots[i] = nulldesc;
    return blk;
    }
 

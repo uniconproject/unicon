@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.15 2002-01-26 09:56:38 jeffery Exp $
+ * $Id: rposix.r,v 1.16 2002-03-21 19:20:46 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1577,7 +1577,7 @@ struct b_list *findactivewindow(struct b_list *lws)
             syserr("internal error calling findactivewindow()");
 	 if (BlkLoc(((wbp)(BlkLoc(*f)->file.fd))->window->listp)->list.size > 0) {
 	    if (is:null(d)) {
-	       BlkLoc(d) = (union block *)emptylist();
+	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
 	       d.dword = D_List;
 	       }
 	    c_put(&d, f);

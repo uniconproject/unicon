@@ -88,10 +88,8 @@ operator{1} ||| lconcat(x, y)
       size2 = BlkLoc(y)->list.size;
       size3 = size1 + size2;
 
-      Protect(bp1 = (struct b_list *)alclist(size3), runerr(0));
-      Protect(lp1 = (struct b_lelem *)alclstb(size3,(word)0,size3), runerr(0));
-      bp1->listhead = bp1->listtail = (union block *)lp1;
-      lp1->listprev = lp1->listnext = (union block *)bp1;
+      Protect(bp1 = (struct b_list *)alclist_raw(size3, size3), runerr(0));
+      lp1 = bp1->listhead;
 
       /*
        * Make a copy of both lists in adjacent slots.

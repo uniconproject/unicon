@@ -79,7 +79,6 @@ word i, j;
    {
    word size, nslots;
    tended struct b_list *lp2;
-   tended struct b_lelem *bp2;
 
    /*
     * Calculate the size of the sublist.
@@ -88,12 +87,8 @@ word i, j;
    if (nslots == 0)
       nslots = MinListSlots;
 
-   Protect(lp2 = (struct b_list *) alclist(size), return Error);
-   Protect(bp2 = (struct b_lelem *)alclstb(nslots,(word)0,size), return Error);
-   lp2->listhead = lp2->listtail = (union block *) bp2;
-   bp2->listprev = bp2->listnext = (union block *) lp2;
-
-   cpslots(dp1, bp2->lslots, i, j);
+   Protect(lp2 = (struct b_list *) alclist(size, nslots), return Error);
+   cpslots(dp1, lp2->listhead->lelem.lslots, i, j);
 
    /*
     * Fix type and location fields for the new list.
@@ -535,18 +530,6 @@ int *res;				/* pointer to integer result flag */
     *  At end of chain - not there.
     */
    return lp;
-   }
-
-struct b_list *emptylist()
-   {
-   tended struct b_list *hp;
-   register struct b_lelem *bp;
-
-   Protect(hp = (struct b_list *) alclist(0), return NULL);
-   Protect(bp = (struct b_lelem *)alclstb(MinListSlots,0,0), return NULL);
-   hp->listhead = hp->listtail = (union block *) bp;
-   bp->listprev = bp->listnext = (union block *) hp;
-   return hp;
    }
 
 struct b_proc *dynrecord(dptr s, dptr fields, int n)

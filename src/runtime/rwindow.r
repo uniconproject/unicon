@@ -3163,7 +3163,6 @@ FILE *OpenConsole()
    if (!ConsoleBinding) {
       char ConsoleTitle[256];
       tended struct b_list *hp;
-      tended struct b_lelem *bp;
 
       /*
        * If we haven't already allocated regions, we are called due to a
@@ -3188,10 +3187,7 @@ FILE *OpenConsole()
       /*
        * allocate an empty event queue
        */
-      if ((hp = alclist(0)) == NULL) return NULL;
-      if ((bp = alclstb(MinListSlots, (word)0, 0)) == NULL) return NULL;
-      hp->listhead = hp->listtail = (union block *)bp;
-      bp->listprev = bp->listnext = (union block *)hp;
+      if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
 
       /*
        * build the attribute list

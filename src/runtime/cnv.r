@@ -649,6 +649,29 @@ dptr s, d;
           * Look up the element in the table.
           */
          bp = BlkLoc(*s);
+	 if (BlkType(bp->tvtbl.clink) == T_File) {
+	    int status = bp->tvtbl.clink->file.status;
+#ifdef Dbm
+	    if (status & Fs_Dbm) {
+	       int rv;
+	       DBM *db;
+	       datum key, content;
+	       db = (DBM *)bp->tvtbl.clink->file.fd;
+	       if (!cnv:string(bp->tvtbl.tref, bp->tvtbl.tref)) { /* key */
+		  fatalerr(103, &(bp->tvtbl.tref));
+		  }
+	       key.dptr = StrLoc(bp->tvtbl.tref);
+	       key.dsize = StrLen(bp->tvtbl.tref);
+	       content = dbm_fetch(db, key);
+	       if (content.dptr == NULL) fatalerr(103, s);
+	       Protect(StrLoc(*d) = alcstr(content.dptr, content.dsize),fatalerr(103, s));
+	       StrLen(*d) = content.dsize;
+	       return;
+	       }
+	    else
+#endif					/* Dbm */
+	       fatalerr(103, s);
+	       }
          ep = memb(bp->tvtbl.clink,&bp->tvtbl.tref,bp->tvtbl.hashnum,&res);
          if (res == 1)
             *d = (*ep)->telem.tval;			/* found; use value */

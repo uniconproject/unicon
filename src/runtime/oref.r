@@ -747,93 +747,106 @@ operator{0,1} [] subsc(underef x -> dx,y)
       }
 
    type_case dx of {
-#ifdef Messaging
       file: {
 	 abstract {
-	    return string ++ integer
-	    }
-
-	 if !cnv:C_string(y) then {
-	    runerr(103, y);
+	    return string ++ integer /* bug: this value is for messaging */
 	    }
 
 	 body {
-	    struct MFile *mf = (struct MFile *)BlkLoc(dx)->file.fd;
 	    int status = BlkLoc(dx)->file.status;
-	    if (!(status & Fs_Messaging)) {
-	       runerr(1208, x);
+#ifdef Dbm
+	    if (status & Fs_Dbm) {
+	       struct b_tvtbl *tp;
+
+	       EVValD(&dx, E_Tref);
+	       EVValD(&y, E_Tsub);
+	       Protect(tp = alctvtbl(&dx, &y, 0), runerr(0));
+	       return tvtbl(tp);
 	       }
-	    if (!MFIN(mf, READING)) {
-	       Mstartreading(mf);
-	       }
-	    if (mf->resp == NULL) {
-	       fail;
-	       }
-	    if (strcmp(y, "Status-Code") == 0 || strcmp(y, "code") == 0) {
-	       return C_integer mf->resp->sc;
-	       }
-	    else if (strcmp(y, "Reason-Phrase") == 0 || 
-		     strcmp(y, "message") == 0) {
-	       if (mf->resp->msg != NULL && strlen(mf->resp->msg) > 0) {
-		  return string(strlen(mf->resp->msg), mf->resp->msg);
+	    else
+#endif					/* Dbm */
+#ifdef Messaging
+	    if (status & Fs_Messaging) {
+	       tended char *c_y;
+	       struct MFile *mf = (struct MFile *)BlkLoc(dx)->file.fd;
+	       if (!cnv:C_string(y, c_y)) {
+		  runerr(103, y);
 		  }
-	       else {
+	       if (!MFIN(mf, READING)) {
+		  Mstartreading(mf);
+		  }
+	       if (mf->resp == NULL) {
 		  fail;
 		  }
-	       }
-	    else if (y[0] >= '0' && y[0] <= '9' && 
-		     strcmp(mf->tp->uri.scheme, "pop") == 0) {
-	       Tprequest_t req = { LIST, NULL, 0 };
-	       size_t msglen;
-	       char buf[100];
+	       if (strcmp(c_y, "Status-Code") == 0 ||
+		   strcmp(c_y, "code") == 0) {
+		  return C_integer mf->resp->sc;
+		  }
+	       else if (strcmp(c_y, "Reason-Phrase") == 0 || 
+			strcmp(c_y, "message") == 0) {
+		  if (mf->resp->msg != NULL && strlen(mf->resp->msg) > 0) {
+		     return string(strlen(mf->resp->msg), mf->resp->msg);
+		     }
+		  else {
+		     fail;
+		     }
+		  }
+	       else if (c_y[0] >= '0' && c_y[0] <= '9' && 
+			strcmp(mf->tp->uri.scheme, "pop") == 0) {
+		  Tprequest_t req = { LIST, NULL, 0 };
+		  size_t msglen;
+		  char buf[100];
 
-	       req.args = y;
-	       if (mf->resp != NULL) {
+		  req.args = c_y;
+		  if (mf->resp != NULL) {
+		     tp_freeresp(mf->tp, mf->resp);
+		     }
+		  mf->resp = tp_sendreq(mf->tp, &req);
+		  if (mf->resp->sc != 200) {
+		     fail;
+		     }
+		  if (sscanf(mf->resp->msg, "%*s %*d %d", &msglen) < 1) {
+		     runerr(1212, dx);
+		     }
 		  tp_freeresp(mf->tp, mf->resp);
-		  }
-	       mf->resp = tp_sendreq(mf->tp, &req);
-	       if (mf->resp->sc != 200) {
-		  fail;
-		  }
-	       if (sscanf(mf->resp->msg, "%*s %*d %d", &msglen) < 1) {
-		  runerr(1212, dx);
-		  }
-	       tp_freeresp(mf->tp, mf->resp);
 
-	       Protect(reserve(Strings, msglen), runerr(0));
-	       StrLen(result) = msglen;
-	       StrLoc(result) = alcstr(NULL, msglen);
+		  Protect(reserve(Strings, msglen), runerr(0));
+		  StrLen(result) = msglen;
+		  StrLoc(result) = alcstr(NULL, msglen);
 
-	       req.type = RETR;
-	       mf->resp = tp_sendreq(mf->tp, &req);
-	       if (mf->resp->sc != 200) {
-		  runerr(1212, dx);
-		  }
-	       tp_read(mf->tp, StrLoc(result), msglen);
-	       while (buf[0] != '.') {
-		  tp_readln(mf->tp, buf, sizeof(buf));
-		  }
-	       return result;
-	       }
-	    else {
-	       char *val = tp_headerfield(mf->resp->header, y);
-	       char *end;
-	       if (val == NULL) {
-		  fail;
-		  }
-	       if ((end = strchr(val, '\r')) != NULL) {
-		  return string(end-val, val);
-		  }
-	       else if ((end = strchr(val, '\n')) != NULL) {
-		  return string(end-val, val);
+		  req.type = RETR;
+		  mf->resp = tp_sendreq(mf->tp, &req);
+		  if (mf->resp->sc != 200) {
+		     runerr(1212, dx);
+		     }
+		  tp_read(mf->tp, StrLoc(result), msglen);
+		  while (buf[0] != '.') {
+		     tp_readln(mf->tp, buf, sizeof(buf));
+		     }
+		  return result;
 		  }
 	       else {
-		  return string(strlen(val), val);
+		  char *val = tp_headerfield(mf->resp->header, c_y);
+		  char *end;
+		  if (val == NULL) {
+		     fail;
+		     }
+		  if ((end = strchr(val, '\r')) != NULL) {
+		     return string(end-val, val);
+		     }
+		  else if ((end = strchr(val, '\n')) != NULL) {
+		     return string(end-val, val);
+		     }
+		  else {
+		     return string(strlen(val), val);
+		     }
 		  }
 	       }
+	    else
+#endif                                  /* Messaging */
+	       runerr(114,dx);
 	    }
 	 }
-#endif                                  /* Messaging */
 
       list: {
          abstract {

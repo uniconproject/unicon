@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.11 2002-01-04 23:26:00 jeffery Exp $
+ * $Id: fxposix.ri,v 1.12 2002-03-21 19:20:46 jeffery Exp $
  */
 
 /*
@@ -914,11 +914,8 @@ function{0,1} filepair()
 	 fail;
 	 }
       /* create a list to put them in */
-      Protect(lp = alclist(2), runerr(0));
-      Protect(ep = (union block *)alclstb(2,(word)0,2), runerr(0));
-      lp->listhead = lp->listtail = ep;
-      ep->lelem.first = 0;
-      ep->lelem.nused = 2;
+      Protect(lp = alclist(2, 2), runerr(0));
+      ep = lp->listhead;
 
       /* Create the two file objects and put them into the list */
       StrLoc(fname) = "filepair";
@@ -959,11 +956,8 @@ function{0,1} pipe()
 	 fail;
 	 }
       /* create a list to put them in */
-      Protect(lp = alclist(2), runerr(0));
-      Protect(ep = (union block *)alclstb(2,(word)0,2), runerr(0));
-      lp->listhead = lp->listtail = ep;
-      ep->lelem.first = 0;
-      ep->lelem.nused = 2;
+      Protect(lp = alclist(2, 2), runerr(0));
+      ep = lp->listhead;
 
       /* Create the two file objects and put them into the list */
       StrLoc(fname) = "pipe";
@@ -1911,9 +1905,9 @@ function{0,1} fetch(d, k)
       return string
       }
    body {
+      tended struct descrip dkey;
 #ifdef Dbm
       if (BlkLoc(d)->file.status & Fs_Dbm) {
-	 tended struct descrip dkey;
 	 DBM *db;
 	 datum key, content;
 	 int n;
@@ -1933,8 +1927,42 @@ function{0,1} fetch(d, k)
 #endif					/* Dbm */
 #ifdef ISQL
       if (BlkLoc(d)->file.status & Fs_ODBC) {
-	    int rv = dbfetch(BlkLoc(d)->file.fd, &result);
-	    if (rv == Succeeded) return result;
+	    int rv;
+	    if (!is:null(k) && (!cnv:string(k, dkey))
+		runerr(103, k);
+	    rv = dbfetch(BlkLoc(d)->file.fd, &result);
+	    if (rv == Succeeded) {
+	       if is:null(k)
+		  return result;
+	       else { /* pick out element k from result record */
+		  register union block *bp;  /* doesn't need to be tended */
+		  register union block *bp2; /* doesn't need to be tended */
+		  register word i;
+		  register int len;
+		  char *loc;
+		  int nf;
+		  bp = BlkLoc(result);
+		  bp2 = BlkLoc(result)->record.recdesc;
+		  nf = bp2->proc.nfields;
+		  loc = StrLoc(dkey);
+		  len = StrLen(dkey);
+		  for(i=0; i<nf; i++) {
+		     if (len == StrLen(bp2->proc.lnames[i]) &&
+			 !strncmp(loc, StrLoc(bp2->proc.lnames[i]), len)) {
+#ifdef EventMon
+			EVValD(&result, E_Rref);
+			MakeInt(i+1, &eventdesc);
+			EVValD(&eventdesc, E_Rsub);
+#endif					/* EventMon */
+
+			/*
+			 * Found the field, return a pointer to it.
+			 */
+			return struct_var(&bp->record.fields[i], bp);
+			}
+		     }
+		  }
+	       }
 	    else if (rv == Failed) fail;
 	    else runerr(0);
 	 }
@@ -2032,7 +2060,7 @@ function{0,1} select(files[nargs])
 	 n = 0;
 	 FD_ZERO(&fds);			/* Set the fd's in the set */
 
-	 if ((lws = emptylist()) == NULL) fail;
+	 if ((lws = alclist(0, MinListSlots)) == NULL) fail;
 	 d2.dword = D_List;
 	 BlkLoc(d2) = (union block *)lws;
 
@@ -2110,7 +2138,7 @@ function{0,1} select(files[nargs])
 #endif					/* Graphics */
 
       if (lp == NULL) {
-	 if ((lp = emptylist()) == NULL) fail;
+	 if ((lp = alclist(0, MinListSlots)) == NULL) fail;
          }
 
       d.dword = D_List;

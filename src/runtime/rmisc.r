@@ -174,11 +174,13 @@ int getvar(s,vp)
    
    np = bp->lnames;		/* Check the formal parameter names. */
 
+
    for (i = abs((int)bp->nparam); i > 0; i--) {
 #if COMPILER
       if (eq(&sdp, np) == 1) {
 #else					/* COMPILER */
       dp++;
+
       if (strcmp(s,StrLoc(*np)) == 0) {
 #endif					/* COMPILER */
          vp->dword = D_Var;
@@ -668,9 +670,14 @@ int noimage;
           *  the element and s is the image of the subscript.
           */
          bp = BlkLoc(*dp);
-	 tdp.dword = D_Table;
+#ifdef Dbm
+	 if (BlkType(bp) == T_File)
+	    tdp.dword = D_File;
+	 else
+#endif					/* Dbm */
+	    tdp.dword = D_Table;
 	 BlkLoc(tdp) = bp->tvtbl.clink;
-         outimage(f, &tdp, noimage);
+	 outimage(f, &tdp, noimage);
 
 #if EBCDIC != 1
          putc('[', f);
@@ -1922,15 +1929,8 @@ dptr rslt;
    /*
     * Allocate the list and a list block.
     */
-   Protect(hp = alclist(argc), fatalerr(0,NULL));
-   Protect(bp = alclstb(argc, (word)0, argc), fatalerr(0,NULL));
-
-   /*
-    * Make the list block just allocated into the first and last blocks
-    *  for the list.
-    */
-   hp->listhead = hp->listtail = (union block *)bp;
-   bp->listprev = bp->listnext = (union block *)hp;
+   Protect(hp = alclist(argc, argc), fatalerr(0,NULL));
+   bp = hp->listhead;
 
    /*
     * Copy the arguments into the list
@@ -1960,15 +1960,8 @@ dptr rslt;
    /*
     * Allocate the list and a list block.
     */
-   Protect(hp = alclist(nargs), fatalerr(0,NULL));
-   Protect(bp = alclstb(nargs, (word)0, nargs), fatalerr(0,NULL));
-
-   /*
-    * Make the list block just allocated into the first and last blocks
-    *  for the list.
-    */
-   hp->listhead = hp->listtail = (union block *)bp;
-   bp->listprev = bp->listnext = (union block *)hp;
+   Protect(hp = alclist(nargs, nargs), fatalerr(0,NULL));
+   bp = hp->listhead;
 
    /*
     * Copy the arguments into the list

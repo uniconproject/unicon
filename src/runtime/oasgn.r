@@ -487,6 +487,41 @@ const dptr src;
     */
    bp = (struct b_tvtbl *) BlkLoc(*dest);	/* Save params to tended vars */
    tval = *src;
+
+   if (BlkType(bp->clink) == T_File) {
+      int status = bp->clink->file.status;
+#ifdef Dbm
+      if (status & Fs_Dbm) {
+	 int rv;
+	 DBM *db;
+	 datum key, content;
+	 db = (DBM *)bp->clink->file.fd;
+	 /*
+	  * we are doing an assignment to a subscripted DBM file, treat same
+	  * as insert().  key is bp->tref, and value is src
+	  */
+	 if (!cnv:string(bp->tref, bp->tref)) { /* key */
+	    ReturnErrVal(103, bp->tref, Error);
+	    }
+	 if (!cnv:string(tval, tval)) { /* value */
+	    ReturnErrVal(103, tval, Error);
+	    }
+	 key.dptr = StrLoc(bp->tref);
+	 key.dsize = StrLen(bp->tref);
+	 content.dptr = StrLoc(tval);
+	 content.dsize = StrLen(tval);
+	 if ((rv = dbm_store(db, key, content, DBM_REPLACE)) < 0) {
+	    fprintf(stderr, "dbm_store returned %d\n", rv);
+	    fflush(stderr);
+	    return Failed;
+	    }
+	 return Succeeded;
+	 }
+      else
+#endif					/* Dbm */
+	 return Failed; /* should set runerr instead, or maybe syserr */
+      }
+
    Protect(te = alctelem(), return Error);
 
    /*

@@ -421,38 +421,38 @@ expr1a	: expr1 ;
 	| expr1a QMARK expr1	{ $$ := node("binques", $1,$2,$3);} ;
 
 expr1	: expr2 ;
-	| expr2 SWAP expr1      { $$ := node("swap", ckfnasgn($1),$2,$3);} ;
-	| expr2 ASSIGN expr1    { $$ := node("assign", ckfnasgn($1),$2,$3);} ;
-	| expr2 REVSWAP expr1   { $$ := node("revswap", ckfnasgn($1),$2,$3);} ;
-	| expr2 REVASSIGN expr1 { $$ := node("revasgn", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGCONCAT expr1 { $$ := node("augcat", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGLCONCAT expr1 { $$ := node("auglcat", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGDIFF expr1   { $$ := node("Bdiffa", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGUNION expr1  { $$ := node("Buniona", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGPLUS expr1   { $$ := node("Bplusa", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGMINUS expr1  { $$ := node("Bminusa", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSTAR expr1   { $$ := node("Bstara", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGINTER expr1  { $$ := node("Bintera", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSLASH expr1  { $$ := node("Bslasha", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGMOD expr1    { $$ := node("Bmoda", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGCARET expr1  { $$ := node("Bcareta", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNMEQ expr1   { $$ := node("Baugeq", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGEQUIV expr1  { $$ := node("Baugeqv", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNMGE expr1   { $$ := node("Baugge", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNMGT expr1   { $$ := node("Bauggt", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNMLE expr1   { $$ := node("Baugle", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNMLT expr1   { $$ := node("Bauglt", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNMNE expr1   { $$ := node("Baugne", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGNEQUIV expr1 { $$ := node("Baugneqv", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSEQ expr1    { $$ := node("Baugseq", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSGE expr1    { $$ := node("Baugsge", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSGT expr1    { $$ := node("Baugsgt", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSLE expr1    { $$ := node("Baugsle", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSLT expr1    { $$ := node("Baugslt", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGSNE expr1    { $$ := node("Baugsne", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGQMARK expr1  { $$ := node("Baugques", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGAND expr1    { $$ := node("Baugamper", ckfnasgn($1),$2,$3);} ;
-	| expr2 AUGAT expr1     { $$ := node("Baugact", ckfnasgn($1),$2,$3);} ;
+	| expr2 SWAP expr1      { $$ := node("swap", $1,$2,$3);} ;
+	| expr2 ASSIGN expr1    { $$ := node("assign", $1,$2,$3);} ;
+	| expr2 REVSWAP expr1   { $$ := node("revswap", $1,$2,$3);} ;
+	| expr2 REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3);} ;
+	| expr2 AUGCONCAT expr1 { $$ := node("augcat", $1,$2,$3);} ;
+	| expr2 AUGLCONCAT expr1 { $$ := node("auglcat", $1,$2,$3);} ;
+	| expr2 AUGDIFF expr1   { $$ := node("Bdiffa", $1,$2,$3);} ;
+	| expr2 AUGUNION expr1  { $$ := node("Buniona", $1,$2,$3);} ;
+	| expr2 AUGPLUS expr1   { $$ := node("Bplusa", $1,$2,$3);} ;
+	| expr2 AUGMINUS expr1  { $$ := node("Bminusa", $1,$2,$3);} ;
+	| expr2 AUGSTAR expr1   { $$ := node("Bstara", $1,$2,$3);} ;
+	| expr2 AUGINTER expr1  { $$ := node("Bintera", $1,$2,$3);} ;
+	| expr2 AUGSLASH expr1  { $$ := node("Bslasha", $1,$2,$3);} ;
+	| expr2 AUGMOD expr1    { $$ := node("Bmoda", $1,$2,$3);} ;
+	| expr2 AUGCARET expr1  { $$ := node("Bcareta", $1,$2,$3);} ;
+	| expr2 AUGNMEQ expr1   { $$ := node("Baugeq", $1,$2,$3);} ;
+	| expr2 AUGEQUIV expr1  { $$ := node("Baugeqv", $1,$2,$3);} ;
+	| expr2 AUGNMGE expr1   { $$ := node("Baugge", $1,$2,$3);} ;
+	| expr2 AUGNMGT expr1   { $$ := node("Bauggt", $1,$2,$3);} ;
+	| expr2 AUGNMLE expr1   { $$ := node("Baugle", $1,$2,$3);} ;
+	| expr2 AUGNMLT expr1   { $$ := node("Bauglt", $1,$2,$3);} ;
+	| expr2 AUGNMNE expr1   { $$ := node("Baugne", $1,$2,$3);} ;
+	| expr2 AUGNEQUIV expr1 { $$ := node("Baugneqv", $1,$2,$3);} ;
+	| expr2 AUGSEQ expr1    { $$ := node("Baugseq", $1,$2,$3);} ;
+	| expr2 AUGSGE expr1    { $$ := node("Baugsge", $1,$2,$3);} ;
+	| expr2 AUGSGT expr1    { $$ := node("Baugsgt", $1,$2,$3);} ;
+	| expr2 AUGSLE expr1    { $$ := node("Baugsle", $1,$2,$3);} ;
+	| expr2 AUGSLT expr1    { $$ := node("Baugslt", $1,$2,$3);} ;
+	| expr2 AUGSNE expr1    { $$ := node("Baugsne", $1,$2,$3);} ;
+	| expr2 AUGQMARK expr1  { $$ := node("Baugques", $1,$2,$3);} ;
+	| expr2 AUGAND expr1    { $$ := node("Baugamper", $1,$2,$3);} ;
+	| expr2 AUGAT expr1     { $$ := node("Baugact", $1,$2,$3);} ;
 
 expr2	: expr3 ;
 	| expr2 TO expr3 { $$ := node("to", $1,$2,$3);} ;
@@ -665,15 +665,4 @@ case type(node) of {
       if (node.tok = IDENT) & (node.s == s) then return
       }
    }
-end
-
-#
-# check whether x is the name of a function that is accidentally being
-# assgined.  if it is, issue a warning unless a flag has been set.
-#
-procedure ckfnasgn(x)
-
-if type(x)=="token" & proc(x.s, 0) then
-   warning("Warning: assignment to built-in function "|| x.s)
-return x
 end

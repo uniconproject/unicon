@@ -410,6 +410,16 @@ procedure scopecheck_expr(node, local_vars, self_vars)
             fail
          else if node.label == "field" then {
             scopecheck_field(node, local_vars, self_vars)
+         } else if node.label == ("swap"|"assign"|"revswap"|"revasgn"|
+				  "augcat"|"auglcat"|"Bdiffa"|"Buniona"|
+				  "Bplusa"|"Bminusa"|"Bstara"|"Bintera"|
+				  "Bslasha"|"Bmoda"|"Bcareta"|"Baugeq"|
+				  "Baugeqv"|"Baugge"|"Bauggt"|"Baugle"|
+				  "Bauglt"|"Baugne"|"Baugneqv"|"Baugseq"|
+				  "Baugsge"|"Baugsgt"|"Baugsle"|"Baugslt"|
+				  "Baugsne"|"Baugques"|"Baugamper"|"Baugact") then {
+            every scopecheck_expr(!node.children, local_vars, self_vars)
+	    ckfnasgn(node.children[1])
          } else
             every scopecheck_expr(!node.children, local_vars, self_vars)
       }
@@ -504,4 +514,16 @@ procedure print_node(node, childindex, indent)
       "Class__state": { write(s, "class: ", image(node)) }
       default: write("its a ", type(node))
    }
+end
+
+#
+# check whether x is the name of a function that is accidentally being
+# assigned.  if it is, issue a warning unless a flag has been set.
+#
+procedure ckfnasgn(x)
+
+   if type(x)=="token" & proc(x.s, 0) then
+      warning("Warning: assignment to built-in function "|| x.s,
+              x.line, x.filename)
+   return x
 end

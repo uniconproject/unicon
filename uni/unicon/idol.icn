@@ -442,17 +442,17 @@ class Class : declaration (supers,
 		    move(1)   # if last was nonfinal write it
 		    if find(",") then writes(f,",")
 		    }
-	         writes(f, "]|||", tab(0),")")
+	         writes(f, "]|||", tab(0),") | fail")
                  }
              else {
-		write(f,"  self.__m.initially!(push(", tab(0), ",self))")
+		write(f,"  self.__m.initially!(push(", tab(0), ",self)) | fail")
                   }
 	     }
 	  }
       else {
           writes(f,"  self.__m.initially(self,")
           yyprint(m.fields)
-          yyprint(")\n")
+          yyprint(") | fail\n")
           }
        }
     else {
@@ -460,7 +460,7 @@ class Class : declaration (supers,
        if \self.ifields then every writes(f,",",(!self.ifields).ident)
        yyprint(")\n  self.__s := self\n")
     if ((methods$foreach())$name()| (!self.imethods).ident) == "initially" then
-	  yyprint("  self.__m.initially(self)\n")
+	  yyprint("  self.__m.initially(self) | fail\n")
        }
 
     #
@@ -583,6 +583,8 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag)
        yyprint(initl)
        (\fields).coercions()
        yyprint(procbody)
+       if name=="initially" then
+          writes(f, "\n      return")
        }
     else write(f, "   runerr(700, \"method " || name || "()\")")
     yyprint("\nend\n")

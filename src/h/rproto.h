@@ -545,7 +545,7 @@ void detectRedirection();
    #ifdef Graphics3D
       /* For creating child windows for 3D graphics */
       char child_window_stuff(wbp w, wbp wp, char child_window);
-      char my_wmap(wbp w, wbp wp, char child_window);
+      char my_wmap(wbp w);
       void makecurrent(wbp w);
    #endif					/* Graphics3D */
 

@@ -243,7 +243,7 @@ function{1} Clone(argv[argc])
 	       }
 	    }
 	 }
-      if (child_window) my_wmap(w2, w, child_window);
+      if (child_window) my_wmap(w2);
 
       Protect(BlkLoc(result) =
 	      (union block *)alcfile((FILE *)w2,

@@ -992,35 +992,35 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	 tmp_wb = w->window->children->child;
 	 wbl = w->window->children;
 	 w->window->children = w->window->children->next;
-
-	 /* added next line */
-	 /* remove child from parent */
-	 p = tmp_wb->window->parent;
-	 t = p->window->children;
-	 b = NULL;
-	 while (t) {
-	    if (t->child->window==w->window) {
-	       if (b==NULL)
-		  p->window->children = t->next;
-	       else b->next = t->next;
-	       t->next = NULL;
-	       t->child = NULL;
-	       free(t);
-	       break;
-	       }
-	    t = t->next;
-	    }
-	 tmp_wb->window->parent = NULL;
+	 tmp_wb->refcount--;
+	 tmp_wb->window->parent=NULL;
+	 w->refcount--;
 	 tmp_wb->window->win = (HWND) 0;
-
 	 /* added next line */
 	 SETCLOSED(tmp_wb);
-	 tmp_wb->window->refcount--;
-
-	 w->window->refcount--;
 	 wbl->next=NULL;
 	 free(wbl);
 	 }
+      p = w->window->parent;
+      if (p) {
+        t = p->window->children;
+        b = NULL;
+        while (t) {
+	  if (t->child->window==w->window) {
+            if (b==NULL)
+               p->window->children = t->next;
+            else b->next = t->next;
+            t->next = NULL;
+            t->child = NULL;
+            free(t);
+            w->refcount--;
+            break;
+          }
+          b=t;
+          t = t->next;
+        }
+        w->window->parent=NULL;
+        p->refcount--;
       }
       if (ws->refcount > 0) {
          /*
@@ -1057,6 +1057,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
          ConsoleBinding = 0;
          }
 #endif					/* ConsoleWindow */
+      }
       break;
    case MM_MCINOTIFY:
       mciSendCommand(LOWORD(lp), MCI_CLOSE, 0, (DWORD)NULL);
@@ -3821,48 +3822,85 @@ wbp w;
 int status;
    {
    wsp ws = w->window;
+   wcp wc = w->context;
    int wid = ws->width, ht = ws->height;
    int posx = ws->posx, posy = ws->posy;
+   HDC hdc;
+   HWND w_tmp;
+
    if (! resizePixmap(w, wid, ht))
       return Failed;
    if (ws->win) {
       pollevent();
       if (status == 3) {
-	 SetWindowPos(ws->win, ws->win, posx, posy,
+	 if (ws->parent)
+	   SetWindowPos(ws->win, ws->win, posx, posy, wid, ht, 
+			SWP_NOZORDER|SWP_NOACTIVATE);
+         else 
+	   SetWindowPos(ws->win, ws->win, posx, posy,
 		      wid + BORDWIDTH, ht + BORDHEIGHT + 1,
 			SWP_NOZORDER|SWP_NOACTIVATE);
 	 }
       else if (status == 2) {
-	 SetWindowPos(ws->win, ws->win, 0, 0,
+	 if (ws->parent)
+	    SetWindowPos(ws->win, ws->win, 0, 0, wid, ht, 
+			 SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else 
+	   SetWindowPos(ws->win, ws->win, 0, 0,
 		      wid + BORDWIDTH, ht + BORDHEIGHT + 1,
 		      SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
          }
       else if (status == 1)
-	 SetWindowPos(ws->win, ws->win,
+	 if (ws->parent)
+	    SetWindowPos(ws->win, ws->win, posx, posy, 0, 0,
+			 SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else
+	   SetWindowPos(ws->win, ws->win,
 		      posx,
 		      posy,
 		      0, 0, SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
       }
    else if (ws->iconwin) {
       if (status == 3) {
-	 SetWindowPos(ws->iconwin, ws->iconwin,
+	 if (ws->parent)
+	    SetWindowPos(ws->iconwin, ws->iconwin, posx, posy, wid, ht,
+			 SWP_NOZORDER|SWP_NOACTIVATE);
+         else 
+	   SetWindowPos(ws->iconwin, ws->iconwin,
 		      posx,
 		      posy,
 		      wid, ht, SWP_NOZORDER|SWP_NOACTIVATE);
 	 }
       else if (status == 2) {
-	 SetWindowPos(ws->iconwin, ws->iconwin, 0, 0,
+	 if (ws->parent)
+	    SetWindowPos(ws->iconwin, ws->iconwin, 0, 0, wid, ht, 
+			 SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else 
+	   SetWindowPos(ws->iconwin, ws->iconwin, 0, 0,
 		      wid, ht, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
          }
       else if (status == 1)
-	 SetWindowPos(ws->iconwin, ws->iconwin,
+	 if (ws->parent)
+	    SetWindowPos(ws->iconwin, ws->iconwin, posx, posy, 0, 0,
+			 SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
+         else 
+	    SetWindowPos(ws->iconwin, ws->iconwin,
 		      posx,
 		      posy,
 		      0, 0, SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE);
       }
 #ifdef Graphics3D
-   if (ws->is_3D) redraw3D(w);
-#endif					/* Graphics3D */
+   if (ws->is_3D) {
+      makecurrent(w);
+      glViewport(0, 0, (GLsizei)wid, (GLsizei)ht);
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      glFrustum(-0.5, 0.5, -0.5, 0.5, 1.0, 15.0);
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+      redraw3D(w);
+      }
+#endif
    return Succeeded;
    }
 
@@ -3942,16 +3980,21 @@ void UpdateCursorPos(wsp ws, wcp wc)
 int resizePixmap(wbp w, int width, int height)
    {
    HDC hdc, hdc2, hdc3;
+   HGLRC ctx;
    HBITMAP newpix, oldpix, oldpix2;
    HBRUSH hb;
    LOGBRUSH lb;
    XRectangle rect;
    wsp ws = w->window;
+   wcp wc = w->context;
    int x = ws->pixwidth, y = ws->pixheight;
+
    if (ISEXPOSED(w)) {
-      if (ws->pixwidth >= width && ws->pixheight >= height) {
-         return 1;
-         }
+      if (!ws->parent) {
+        if (ws->pixwidth >= width && ws->pixheight >= height) {
+           return 1;
+        }
+      }
       ws->pixheight = max(ws->pixheight, height);
       ws->pixwidth = max(ws->pixwidth, width);
       }
@@ -3984,10 +4027,15 @@ int resizePixmap(wbp w, int width, int height)
    rect.left = 0; rect.right = ws->pixwidth;
    rect.top = 0; rect.bottom = ws->pixheight;
    FillRect(hdc3, &rect, hb);
-   if (ws->win)
+   if (ws->win) {
       FillRect(hdc, &rect, hb);
+   }
 
-   if (ws->pix) BitBlt(hdc3, 0, 0, x - 2, y - 1, hdc2, 0, 0, SRCCOPY);
+   if (ws->pix) 
+      if (ws->parent)
+	 BitBlt(hdc3, 0, 0, x, y, hdc2, 0, 0, SRCCOPY);
+      else 
+	 BitBlt(hdc3, 0, 0, x - 2, y - 1, hdc2, 0, 0, SRCCOPY);
    if (ws->win)
       BitBlt(hdc, 0, 0, ws->pixwidth, ws->pixheight, hdc3, 0, 0, SRCCOPY);
    SelectObject(hdc3, oldpix2);
@@ -3999,7 +4047,7 @@ int resizePixmap(wbp w, int width, int height)
    ReleaseDC(ws->iconwin, hdc);
    if (ws->pix) DeleteObject(ws->pix);
    DeleteObject(hb);
-   ws->pix = newpix;   
+   ws->pix = newpix;
    return 1;
    }
 
@@ -4657,19 +4705,20 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 
   ws->children=NULL;
   ws->parent = wp;
+  wp->refcount++;
 
   curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
   curr->child = w;
   curr->next = wp->window->children;
   wp->window->children = curr;
-  w->window->refcount++;
+  w->refcount++;
   wp->window->no++;
   ws->no = wp->window->no;
 #endif
   return 1;
 }
 
-char my_wmap(wbp w, wbp wpp, char child_window)
+char my_wmap(wbp w)
 {
    wsp ws = w->window;
    wcp wc = w->context;
@@ -4686,15 +4735,8 @@ char my_wmap(wbp w, wbp wpp, char child_window)
    int MAXBYTESPERCHAR;
    WNDCLASS wcls;
    WNDCLASS *lpwcls;
+   wbp wpp = ws->parent;
 
- /*
-   if (! winInitialized++) {
-      BORDWIDTH = FRAMEWIDTH * 2; 
-      BORDHEIGHT = TITLEHEIGHT + FRAMEHEIGHT * 2 - 1; 
-      GetCPInfo(CP_ACP, &cpinfo);
-      MAXBYTESPERCHAR = cpinfo.MaxCharSize;
-   }
-*/
    ws->windowlabel = NULL;
    ws->iconlabel = NULL;
 
@@ -4703,7 +4745,7 @@ char my_wmap(wbp w, wbp wpp, char child_window)
 
    lpwcls = (WNDCLASS *) malloc(sizeof(WNDCLASS));
    if (!GetClassInfo(mswinInstance, "ChildWClass", lpwcls)) {
-     wcls.style = 0;
+     wcls.style = CS_HREDRAW | CS_VREDRAW;
      wcls.lpfnWndProc = WndProc;
      wcls.cbClsExtra = 0;
      wcls.cbWndExtra = 0;
@@ -4865,7 +4907,7 @@ char my_wmap(wbp w, wbp wpp, char child_window)
    if (ws->win)
       UpdateWindow(ws->win);
 #ifdef Graphics3D
-   if (child_window==2) {
+   if (ws->is_3D) { /*child_window==2) { */
 
    /* set defaults for attributes */
    w->context->eyeupx = w->context->eyeupz = 0.0;

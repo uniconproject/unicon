@@ -223,12 +223,15 @@ function{1} Clone(argv[argc])
 	 else Protect(w2->context = clone_context(w), runerr(0));
 	 }
 
+#ifdef Graphics3D
       if (child_window==2) {
-             /* create an empty list for list of function calls */
-        if ((w2->window->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
-           fail;
-        w2->window->funclist.dword = D_List;
-      }
+	 /* create an empty list for list of function calls */
+	 if ((w2->window->funclist.vword.bptr =
+	      (union block *)alclist(0, MinListSlots)) == NULL)
+	    fail;
+	 w2->window->funclist.dword = D_List;
+	 }
+#endif					/* Graphics3D */
 
       for (n = warg; n < argc; n++) {
 	 if (!is:null(argv[n])) {

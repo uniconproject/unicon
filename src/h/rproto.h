@@ -540,13 +540,14 @@ void detectRedirection();
       void postcursor(wbp);
       void scrubcursor(wbp);
 
-/* For creating child windows for 3D graphics */
-
-
-char child_window_stuff(wbp w, wbp wp, char child_window);
-char my_wmap(wbp w, wbp wp, char child_window);
-
    #endif				/* XWindows */
+
+   #ifdef Graphics3D
+      /* For creating child windows for 3D graphics */
+      char child_window_stuff(wbp w, wbp wp, char child_window);
+      char my_wmap(wbp w, wbp wp, char child_window);
+      void makecurrent(wbp w);
+   #endif					/* Graphics3D */
 
    #ifdef MSWindows
       /*

@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.10 2004-11-06 00:28:13 rparlett Exp $
+# $Id: dropdown.icn,v 1.11 2004-11-11 19:56:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -117,7 +117,7 @@ class DropDown : Component(
       }
    end
 
-   method on_textlist_selection()
+   method on_textlist_selection(ev)
       local tmp
       #
       # Selection in list - close textlist, amend label, return event.
@@ -125,7 +125,7 @@ class DropDown : Component(
       tmp := tl.get_selections()[1]
       self.close_textlist()
       self.unique_end(1)  
-      go_to(\tmp)
+      go_to(\tmp, ev)
    end
 
    method go_up(e)
@@ -141,7 +141,7 @@ class DropDown : Component(
       fire(SELECTION_CHANGED_EVENT, e)
    end
 
-   method go_to(x)
+   method go_to(x, e)
       set_selection(x)
       fire(SELECTION_CHANGED_EVENT, e)
    end

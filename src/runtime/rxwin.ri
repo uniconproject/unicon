@@ -3169,7 +3169,7 @@ int on_icon;
    {
    int c, v, ret, trans;
    unsigned int r, g, b, ix, iy;
-   wclrp cp, cplist[256];
+   wclrp cp, cparray[256];
    char tmp[24];
    XImage *im;
    STDLOCALS(w);
@@ -3202,7 +3202,7 @@ int on_icon;
             else
                cp = alc_rgb(w, "black", 0, 0, 0, 0);
             }
-         cplist[c] = cp;
+         cparray[c] = cp;
          }
 
    /*
@@ -3213,7 +3213,7 @@ int on_icon;
       c = *s++;
       v = e[c].valid;
       if (v)				/* put char if valid */
-         XPutPixel(im, ix, iy, cplist[c]->c);
+         XPutPixel(im, ix, iy, cparray[c]->c);
       if (v || e[c].transpt) {		/* advance if valid or transparent */
          if (++ix >= width) {
             ix = 0;			/* reset for new row */

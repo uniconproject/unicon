@@ -359,7 +359,7 @@ function{1} close(f)
 #ifdef ISQL
       if (BlkLoc(f)->file.status & Fs_ODBC) {
 	 BlkLoc(f)->file.status = 0;
-	 if (dbclose((struct ISQLfile *)fp)) fail;
+	 if (dbclose((struct ISQLFile *)fp)) fail;
 	 return C_integer 0;
 	 }
 #endif					/* ISQL */

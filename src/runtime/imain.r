@@ -108,12 +108,10 @@ FILE *finredir, *fouredir, *ferredir;
 int CmdParamToArgv(char *s, char ***avp, int dequote)
    {
    char tmp[MaxPath], dir[MaxPath];
-   char *t, *t2;
-   int rv=0, i;
-   FILE *f;
+   char *t=salloc(s), *t2=t;
+   int rv=0, i=0;
+   FILE *f=NULL;
 
-   t = salloc(s);
-   t2 = t;
    *avp = malloc(2 * sizeof(char *));
    (*avp)[rv] = NULL;
 
@@ -518,9 +516,9 @@ void main(int argc, char **argv)
     * this program, specified by MTENV environment variable.
     */
    {
-   char *p;
-   char **new_argv;
-   int i, j = 1, k = 1;
+   char *p = NULL;
+   char **new_argv = NULL;
+   int i=0, j = 1, k = 1;
    if ((p = getenv("MTENV")) != NULL) {
       for(i=0;p[i];i++)
 	 if (p[i] == ' ')
@@ -549,11 +547,14 @@ void main(int argc, char **argv)
     *  Append to FPATH the bin directory from which iconx was executed.
     */
    {
-      char *p, *q, buf[1000];
-      p = getenv("FPATH");
-      q = relfile(argv[0], "/..");
-      sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
-      putenv(buf);
+      char *p = getenv("FPATH");
+      char *q = relfile(argv[0], "/..");
+      char *buf = malloc((p?strlen(p):1) + (q?strlen(q):1) + 8);
+      if (buf) {
+	 sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
+	 putenv(buf);
+	 free(buf);
+	 }
       }
 #endif
 
@@ -681,6 +682,7 @@ void main(int argc, char **argv)
    if (argc <= 1) {
       error(NULL, "no icode file specified");
       }
+
    /*
     * Call icon_init with the name of the icode file to execute.	[[I?]]
     */
@@ -691,6 +693,131 @@ void main(int argc, char **argv)
 #ifdef Messaging
    errno = 0;
 #endif					/* Messaging */
+
+
+#ifdef NativeObjects
+   /*
+    * The following block of code calls <classname>initialize() methods of
+    * every class in the program. initialize methods create an instance of the
+    * methods vector record for the class. In the original implementation of
+    * Unicon, methods vector instance is created when first instance of that
+    * class is created. This implementation creates methods vectors for all
+    * the classes in the program before main() begins its execution.
+    *
+    * This is achieved by calling initialize() methods in icode from this
+    * program. Following block of code aligns icode instructions to call
+    * initialize() method and descriptor for these methods are pushed
+    * on stack. When instructions and stack is setup, interp() is called
+    * just like it is called for execution of main().
+    *
+    * This program also implements the modified Unicon object structure.
+    * Object instances no longer carry a pointer to the methods vector.
+    * Instead, the record constructor block now holds pointer to it.
+    *
+    * When initialize() method is called, it assigns the newly created method
+    * vector pointer to <classname>__oprec global variable. This new value is
+    * also copied into __m field of the record constructor block. This field
+    * is reserved.
+    */
+
+{
+    unsigned *temp_stackend=stackend, *temp_sp=sp;
+    inst temp_ipc=ipc;
+    struct gf_marker *temp_gfp=gfp;
+    struct ef_marker *temp_efp=efp;
+    struct pf_marker *temp_pfp=pfp;
+    int temp_ilevel=ilevel;
+    dptr temp_glbl_argp = glbl_argp;
+    int temp_set_up=set_up;
+
+    int numberof_globals,i,j,k;
+    char classname[500]={0}, *begin=0,*position=0;
+    register dptr dp=0;
+    char *initialize="initialize";
+    int initialize_length=strlen(initialize);
+
+    numberof_globals = egnames - gnames;
+
+    for(i=0;i < numberof_globals;++i) {
+       char *sptr;
+
+       if ((globals[i].dword == D_Proc) &&
+           (sptr=globals[i].vword.bptr->proc.pname.vword.sptr) &&
+           (position=(char *)memmem(sptr,strlen(sptr)+1,initialize,initialize_length+1))) {
+
+          begin=sptr;
+          k=0;
+          while(begin != position) {
+             classname[k]=*begin;
+             k++;
+             begin++;
+          }
+          classname[k]=0;
+
+          stackend = stack + mstksize/WordSize;
+          sp = stack + Wsizeof(struct b_coexpr);
+
+          ipc.opnd = istart;
+          *ipc.op++ = Op_Noop;
+          *ipc.op++ = Op_Invoke;
+          *ipc.opnd++ = 0;
+          *ipc.op = Op_Quit;
+          ipc.opnd = istart;
+
+          gfp = 0;
+
+          efp = (struct ef_marker *)(sp);
+          efp->ef_failure.op = &mterm;
+          efp->ef_gfp = 0;
+          efp->ef_efp = 0;
+          efp->ef_ilevel = 1;
+          sp += Wsizeof(*efp) - 1;
+
+          pfp = 0;
+          ilevel = 0;
+
+          glbl_argp = 0;
+          set_up = 1;
+
+          PushDesc(globals[i]);
+          interp(0,(dptr)NULL);
+
+	  /*
+	   * Now we have <classname>__oprec pointing at method vector.
+	   * Copy it in  __m field of record constructor block
+	   */
+
+	  strcat(classname,"__state");
+	  for(j=0; j < numberof_globals; ++j) {
+	     union block *bptr=globals[j].vword.bptr;
+	     if((globals[j].dword == D_Proc) && (-3 == bptr->proc.ndynam) &&
+		(0==strcmp(classname,bptr->proc.pname.vword.sptr))) {
+		*strstr(classname,"__state")=0;
+		strcat(classname,"__oprec");
+
+		for(k=0;k < numberof_globals;++k) {
+		   if(strcmp(classname,gnames[k].vword.sptr)==0) {
+		      bptr->proc.lnames[bptr->proc.nparam]=globals[k];
+		      j = numberof_globals; /* exit outer for-loop */
+		      break;
+		      }
+		   }
+		}
+             }
+	  }
+       }
+
+    stackend=temp_stackend;
+    sp=temp_sp;
+    ipc=temp_ipc;
+    gfp=temp_gfp;
+    efp=temp_efp;
+    pfp=temp_pfp;
+    ilevel=temp_ilevel;
+    glbl_argp = temp_glbl_argp;
+    set_up=temp_set_up;
+    }
+#endif					/* NativeObjects */
 
 
    /*
@@ -773,11 +900,14 @@ void main(int argc, char **argv)
     *  c_exit() is called to wrap things up.
     */
 
+
+
 #ifdef CoProcesses
    codisp();    /* start up co-expr dispatcher, which will call interp */
 #else					/* CoProcesses */
    interp(0,(dptr)NULL);                        /*      [[I?]] */
 #endif					/* CoProcesses */
+
 
 #if SCCX_MX
     dos_set_ctrl_break(ctrlbrk);   /* Restore original Ctrl-C operation */
@@ -827,17 +957,18 @@ int *ip;
     * so that our icode filename is argv[1].
     */
    {
-   char tmp[256], *t2;
    int len = 0;
-   strcpy(tmp, argv[0]);
-   t2 = tmp;
+   char *tmp = strdup(argv[0]), *t2 = tmp;
+   if (tmp == NULL) {
+      syserr("memory allocation failure in startup code");
+      }
    while (*t2) {
       *t2 = tolower(*t2);
       t2++;
-      len++;
       }
+   len = t2 - tmp;
 
-   if (len > 4 && !strcmp(tmp+len-4, ".exe")) {len-=4; tmp[len] = '\0'; }
+   if (len > 4 && !strcmp(tmp+len-4, ".exe")) {len -= 4; tmp[len] = '\0'; }
 
    /*
     * if argv[0] is not a reference to our interpreter, take it as the
@@ -1013,7 +1144,7 @@ int *ip;
           */
          StrLoc(pp->pname) = strcons + (uword)StrLoc(pp->pname);
 
-         if (pp->ndynam == -2) {
+         if ((pp->ndynam == -2) || (pp->ndynam == -3)) {
             /*
              * This procedure is a record constructor.	Make its entry point
              *	be the entry point of Omkrec().

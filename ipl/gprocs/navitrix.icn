@@ -177,25 +177,19 @@ procedure nav_refresh()
       directory := ""
       }
 
-$ifdef _UNIX
-   input := open("pwd", "p")
-$else
-   Deliberate Syntax Error
-$endif
+   input := chdir()
 
    WAttrib( nav_window, "drawop=reverse")
    DrawString(nav_window, x, y, directory)
-   DrawString(nav_window, x, y, directory := !input)
+   DrawString(nav_window, x, y, directory := input)
    WAttrib(nav_window, "drawop=copy")
-
-   close(input)
 
    file_list := []
 
 $ifdef _UNIX
    ls := open("ls -a -p .", "p")
 $else
-   Deliberate Syntax Error
+   ls := open(".")
 $endif
 
    every put(file_list, !ls)

@@ -1404,7 +1404,7 @@ HFONT mkfont(char *s)
        * Check first for special "standard" family names.
        */
       if (!strcmp(family, "mono") || !strcmp(family, "fixed")) {
-	 stdfam = "Lucida Sans";
+	 stdfam = "Lucida Sans"; /* Lucida Console? */
 	 flags |= FONTFLAG_MONO + FONTFLAG_SANS;
 	 }
       else if (!strcmp(family, "typewriter")) {
@@ -3037,9 +3037,10 @@ int on;
    return Succeeded;
    }
 
-int getselection(wbp w, char *buf)
+char *getselection(wbp w, char *buf)
 {
-   int rv = Failed;
+   char *p;
+   char* rv = NULL;
    int i = 0;
    HGLOBAL hClipMemory;
    STDLOCALS(w);
@@ -3048,38 +3049,48 @@ int getselection(wbp w, char *buf)
          hClipMemory = GetClipboardData(CF_TEXT);
          if (hClipMemory != NULL) {
             char *pClip = GlobalLock(hClipMemory);
-            while (i<8191 && pClip[i]) {
+            int len = strlen(pClip);
+            if (len > 4000) {
+               rv = p = malloc(len+1);
+               }
+            else {
+               rv = p = buf;
+               }
+            while (pClip[i]) {
                if (!(pClip[i]=='\r' && pClip[i+1]=='\n'))
-                  *buf++ = pClip[i];
+                  *p++ = pClip[i];
                i++;
                }
-            *buf++ = '\0';
+            *p++ = '\0';
             GlobalUnlock(hClipMemory);
-            rv = Succeeded;
             }
          CloseClipboard();
          }
       }
    FREE_STDLOCALS(w);
-   return rv;
+ 
+  return rv;
 }
 
-int setselection(wbp w, char *val)
+int setselection(wbp w, dptr val)
 {
    int i, iLength = 0;
-   char *pMem;
+   char *s, *send, *pMem;
    HGLOBAL hGlobalMemory;
    STDLOCALS(w);
 
-   for(i=0; val[i]; i++, iLength++) if (val[i] == '\n') iLength++;
+   s = StrLoc(*val);
+   send = s + StrLen(*val);
+   for(i=0; i < StrLen(*val); i++, iLength++) if (s[i] == '\n') iLength++;
+
    hGlobalMemory = GlobalAlloc(GHND, iLength+1);
    if (hGlobalMemory) {
       pMem = GlobalLock(hGlobalMemory);
-      while (*val) {
-         if (*val == '\n') {
+      while (s < send) {
+         if (*s == '\n') {
             *pMem++ = '\r';
             }
-         *pMem++ = *val++;
+         *pMem++ = *s++;
          }
       *pMem++ = '\0';
       GlobalUnlock(hGlobalMemory);
@@ -3087,6 +3098,8 @@ int setselection(wbp w, char *val)
          EmptyClipboard();
          SetClipboardData(CF_TEXT, hGlobalMemory);
          CloseClipboard();
+         FREE_STDLOCALS(w);
+	 return Succeeded;
          }
       }
    FREE_STDLOCALS(w);

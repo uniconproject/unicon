@@ -268,7 +268,7 @@ Window requestor;
 Atom selection, target;
 Time timestmp;
 
-int copyselection(wsp ws, char* s)
+char *copyselection(wsp ws, char* s, int *ip)
 {
    Display *display = ws->display->display;
    Window window = ws->win;
@@ -315,15 +315,15 @@ int copyselection(wsp ws, char* s)
 
       /* printf("Owning program failed to convert data."); */
 
-      return 0;
+      *ip = 0;
+      return NULL;
       }
 
    /* Check if we need to convert target. */
    new_target = ConvertTarget(display, event->target);
 
    /*
-    * Read data from property identified in
-    * SelectionNotify event.
+    * Read data from property identified in SelectionNotify event.
     */
    status = XGetWindowProperty(display, event->requestor, event->property,
                 0L,        /* offset */
@@ -344,31 +344,28 @@ int copyselection(wsp ws, char* s)
 				 new_target, number_items, (char*) data);
 
        if (string != NULL) {
-	  strcpy(s, string);
 	  str_len = strlen(string);
+	  if (str_len > 4000) s = strdup(string);
+	  else strcpy(s, string);
 	  XFree(string);
 	  }
-
-       if (data) {
+       if (data)
 	  XFree( data );
-	  }
        }
-   return str_len;
+   *ip = str_len;
+   return s;
 }
 
-int getselection(wbp w, char *buf)
+char *getselection(wbp w, char *buf)
 {
    int i;
+   char *s;
    STDLOCALS(w);
 
-   if (ws->selectiondata != NULL) {
-      strcpy(buf, ws->selectiondata);
-      }
-   else {
-      i = copyselection(ws, buf);
-      if (i == -1) return Failed;
-      }
-   return Succeeded;
+   s = copyselection(ws, buf, &i);
+   if (i == -1) return NULL;
+
+   return s;
 }
 
 
@@ -1052,6 +1049,7 @@ int n, *err_index;
       return NULL;
       }
    ws = w->window;
+   ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *)tlp;
 
@@ -1669,16 +1667,17 @@ char *s;
       }
    }
 
-int setselection(wbp w, char *val)
+int setselection(wbp w, dptr val)
 {
    wsp ws = w->window;
    int i;
    i = ownselection(ws->display->display, ws->win, XA_PRIMARY,
 			(Time) ws->timestamp);
    if (i != True) return Failed;
-   ws->selectiondata = malloc(strlen(val)+1);
+   ws->selectiondata = malloc(StrLen(*val)+1);
    if (ws->selectiondata == NULL) return Failed;
-   strcpy(ws->selectiondata, val);
+   strncpy(ws->selectiondata, StrLoc(*val), StrLen(*val));
+   ws->selectiondata[StrLen(*val)] = '\0';
    ws->inputmask |= PropertyChangeMask;
    return Succeeded;
 }

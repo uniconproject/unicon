@@ -244,6 +244,7 @@ void		xmfree		(void);
    void	genCurve	(wbp w, XPoint *p, int n, void (*h)());
    wsp	getactivewindow	(void);
    int	getpattern	(wbp w, char *answer);
+   char *getselection(wbp w, char *buf);
    struct palentry *palsetup(int p);
    int	palnum		(dptr d);
    int	parsecolor	(wbp w, char *s, long *r, long *g, long *b);
@@ -255,6 +256,8 @@ void		xmfree		(void);
    int	rectargs	(wbp w, int argc, dptr argv, int i,
    			   word *px, word *py, word *pw, word *ph);
    char	*rgbkey		(int p, double r, double g, double b);
+
+   int	setselection	(wbp w, dptr val);
    int	setsize		(wbp w, char *s);
    int	ulcmp		(pointer p1, pointer p2);
    int	wattrib		(wbp w, char *s, long len, dptr answer, char *abuf);

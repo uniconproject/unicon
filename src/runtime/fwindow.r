@@ -171,7 +171,7 @@ function{1} Clone(argv[argc])
       wbp w, w2;
       int warg = 0, n;
       tended struct descrip sbuf, sbuf2;
-      char answer[8192];
+      char answer[128];
       OptWindow(w);
 
       Protect(w2 = alc_wbinding(), runerr(0));
@@ -1958,7 +1958,7 @@ function{*} WAttrib(argv[argc])
       wbp w, wsave;
       word n;
       tended struct descrip sbuf, sbuf2;
-      char answer[8192];
+      char answer[4096];
       int  pass, config = 0;
       int warg = 0;
       OptWindow(w);
@@ -2005,12 +2005,9 @@ function{*} WAttrib(argv[argc])
 		  }
                /*
                 * Convert the argument to a string
-		* The code can't handle very long attributes, so check length.
                 */
                if (!cnv:tmp_string(argv[n], sbuf)) 
                   runerr(109, argv[n]);
-	       if (StrLen(sbuf) > 8100)
-		  runerr(145, argv[n]);
                /*
                 * Read/write the attribute
                 */
@@ -2084,8 +2081,11 @@ function{*} WAttrib(argv[argc])
 		  case Failed: continue;
 		  case Error:  runerr(0, argv[n]);
 		     }
-		  if (is:string(sbuf2))
+		  if (is:string(sbuf2)) {
+	             char *p=StrLoc(sbuf2);
 		     Protect(StrLoc(sbuf2) = alcstr(StrLoc(sbuf2),StrLen(sbuf2)), runerr(0));
+                     if (p != answer) free(p);
+                     }
                   suspend sbuf2;
                   }
                }

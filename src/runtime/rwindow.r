@@ -2263,7 +2263,7 @@ long len;
 dptr answer;
 char * abuf;
    {
-   char val[128], *valptr;
+   char val[256], *valptr;
    struct descrip d;
    char *mid, *midend, c;
    int r, a;
@@ -2273,6 +2273,7 @@ char * abuf;
    SHORT new_height, new_width;
    wsp ws = w->window;
    wcp wc = w->context;
+   int toolong = 0;
 
    valptr = val;
    /*
@@ -2295,10 +2296,18 @@ char * abuf;
 
       strncpy(abuf, s, lenattr);
       abuf[lenattr] = '\0';
-      strncpy(val, mid, lenval);
-      val[lenval] = '\0';
-      StrLen(d) = strlen(val);
-      StrLoc(d) = val;
+
+      if (lenval > 255) {
+         toolong = 1;
+         StrLen(d) = lenval;
+         StrLoc(d) = mid;
+         }
+      else {
+         strncpy(val, mid, lenval);
+         val[lenval] = '\0';
+         StrLen(d) = strlen(val);
+         StrLoc(d) = val;
+         }
 
       switch (a = si_s2i(attribs, abuf)) {
       case A_LINES: case A_ROWS: {
@@ -2343,7 +2352,11 @@ char * abuf;
 	 break;
          }
       case A_SELECTION: {
-	 setselection(w, val);
+	 if (setselection(w, &d) == Succeeded) {
+            *answer = d;
+            wflush(w);
+            return Succeeded;
+            }
 	 break;
 	 }
       case A_INPUTMASK: {
@@ -2618,6 +2631,7 @@ char * abuf;
       abuf[len] = '\0';
       }
    else {
+      char *selectiontemp;
       int a;
       /*
        * get an attribute
@@ -2626,8 +2640,8 @@ char * abuf;
       abuf[len] = '\0';
       switch (a=si_s2i(attribs, abuf)) {
       case A_SELECTION:
-	 if (getselection(w, abuf) == Failed) return Failed;
-	 MakeStr(abuf, strlen(abuf), answer);
+	 if ((selectiontemp=getselection(w, abuf)) == NULL) return Failed;
+	 MakeStr(selectiontemp, strlen(abuf), answer);
 	 break;
       case A_IMAGE:
          ReturnErrNum(147, Error);

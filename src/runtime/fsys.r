@@ -1889,7 +1889,11 @@ end
 	    runerr(213);
 	    }
 	 if (tp_write(mf->tp, "\n", 1) < 0) {
+#if terminate
+	    syserr("tp_write failed in stop()");
+#else
 	    fail;
+#endif
 	    }
 	 if (Merror != 0) {
 	    runerr(Merror);
@@ -2076,7 +2080,11 @@ function {1} name(x[nargs])
 			     runerr(213);
 			   }
 			   if (tp_write(mf->tp, "\n", 1) < 0) {
+#if terminate
+	    syserr("tp_write failed in stop()");
+#else
 			      fail;
+#endif
 			      }
 			   if (Merror != 0) {
 			      runerr(Merror, x[n]);

@@ -628,7 +628,6 @@ function{0,1} flock(f, cmd)
 	 IntVal(amperErrno) = errno;
 	 fail;
       }
-      return nulldesc;
 #endif					/* NT */
 #if defined(BSD) || defined(BSD_4_4_LITE) || defined(IRIS4D) || defined(Linux)
 
@@ -650,11 +649,10 @@ function{0,1} flock(f, cmd)
 	 IntVal(amperErrno) = errno;
 	 fail;
       }
-      return nulldesc;
-
 #else					/* BSD */
       fail;
 #endif					/* BSD */
+      return nulldesc;
    }
 end
 
@@ -882,11 +880,11 @@ function{0,1} ioctl(f, action, options)
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
-      return C_integer retval;
 #else					/* UNICON_IOCTL */
       runerr(121, f);
 #endif					/* UNICON_IOCTL */
 #endif					/* NT */
+      return C_integer retval;
       }
 end
 

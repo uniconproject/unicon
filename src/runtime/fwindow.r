@@ -1218,7 +1218,8 @@ function{1} Event(argv[argc])
          lastEvFWidth = FWIDTH((wbp)BlkLoc(lastEventWin)->file.fd);
          lastEvLeading = LEADING((wbp)BlkLoc(lastEventWin)->file.fd);
          lastEvAscent = ASCENT((wbp)BlkLoc(lastEventWin)->file.fd);
-	 if (is:integer(d) && IntVal(d)==WINDOWCLOSED) {
+	 if (is:integer(d) && IntVal(d)==WINDOWCLOSED && 
+	     !(w->window->inputmask & WindowClosureMask)) {
 	    /* closed, don't accept more I/O on it */
 	    BlkLoc(lastEventWin)->file.status &= ~(Fs_Read|Fs_Write);
 	    }

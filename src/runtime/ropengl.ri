@@ -2,6 +2,7 @@
  *  File: ropengl.ri
  *     opengl support routines
  */
+int texture(int width, int height, GLubyte *tex, int texmode);
 
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
@@ -785,11 +786,12 @@ free_v_and_fail:
          if (num) {
             if (wc->texmode == 0)
 	       glEnable(GL_TEXTURE_2D);
-            wc->texmode = 1;
+
+            wc->texmode = num;
            }
          /* texturing is off */
          else {
-            if (wc->texmode == 1)
+            if (wc->texmode != 0)
                glDisable(GL_TEXTURE_2D);
             wc->texmode = 0;
            }
@@ -1377,9 +1379,11 @@ int setdim(wbp w, char* s)
 /* set the texture mode, either on or off */
 int settexmode(wbp w, char* s)
 {
-   struct descrip f, funcname;
+   tended struct descrip f, funcname;
    struct b_list *func;
    struct descrip mode;
+   wcp wc = w->context;
+   int oldtexmode = wc->texmode;
 
     /* create a list */
    if ((func = alclist(0, MinListSlots)) == NULL)
@@ -1389,29 +1393,35 @@ int settexmode(wbp w, char* s)
    MakeStr("texmode", 7, &funcname);
    c_put(&f, &funcname);
 
-   /* turn textures on */
-   if (!strcmp("on", s)) {
-      if (w->context->texmode == 0)
-         glEnable(GL_TEXTURE_2D);
-      w->context->texmode = 1;
-      MakeInt(1, &mode);
-      c_put(&f, &mode);
-      c_put(&(w->window->funclist), &f);
-      return Succeeded;
-	}
+   /*
+    * turn textures on in replace, blend, or modulate (default mode = replace)
+    */
+   if (!strcmp("on", s) || !strcmp("replace", s)) {
+      wc->texmode = GL_REPLACE;
+      }
+   else if (!strcmp("blend", s)) {
+      wc->texmode = GL_BLEND;
+      }
+   else if (!strcmp("modulate", s)) {
+      wc->texmode = GL_MODULATE;
+      }
    /* turn texture off */
    else if (!strcmp("off", s)) {
-      if (w->context->texmode == 1)
-         glDisable(GL_TEXTURE_2D);
-      w->context->texmode = 0;
-      MakeInt(0, &mode);
-      c_put(&f, &mode);
-      c_put(&(w->window->funclist), &f);
-      return Succeeded;
+      wc->texmode = 0;
      }
-   /* not on or off so generate and error */
+   /* not a valid texture mode so generate an error */
    else
       return Error;
+
+   if ((oldtexmode == 0) && (wc->texmode != 0))
+      glEnable(GL_TEXTURE_2D);
+   else if ((oldtexmode != 0) && (wc->texmode == 0))
+      glDisable(GL_TEXTURE_2D);
+
+   MakeInt(wc->texmode, &mode);
+   c_put(&f, &mode);
+   c_put(&(w->window->funclist), &f);
+   return Succeeded;
 }
 
 /* set texture coordinates */
@@ -1969,7 +1979,7 @@ int textureimg(wbp w, int width, int height,
 	 }
 
    /* set the texture */
-   i = texture(width, height, tex);
+   i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded)
       return Succeeded;
@@ -2039,7 +2049,7 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
          ix++;
        }
 
-   i = texture(width, height, tex);
+   i = texture(width, height, (GLubyte *)tex, w->context->texmode);
    if (i == Succeeded)
 	return Succeeded;
    else
@@ -2093,7 +2103,7 @@ int texwindow2D(wbp w)
         }
 
    /* apply the texture */
-   r = texture(ws->width, ws->height, tex);
+   r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
    if (r == Succeeded)
 	return Succeeded;
    else
@@ -2114,7 +2124,7 @@ int texwindow3D(wbp w1, wbp w2)
    glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
    glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
-    i = texture(width, height, tex);
+    i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
 #endif					/* XWindows */
 #ifdef MSWindows
    {
@@ -2124,7 +2134,7 @@ int texwindow3D(wbp w1, wbp w2)
    ReleaseDC(ws->iconwin, stddc);
    stddc = CreateWinDC(w1);
    wglMakeCurrent(stddc, w1->context->ctx);
-   i = texture(width, height, tex);
+   i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
    ReleaseDC(w1->window->iconwin, stddc);
    }
 #endif					/* MSWindows */
@@ -2135,16 +2145,16 @@ int texwindow3D(wbp w1, wbp w2)
 }
 
 /* apply a texture to a scene */
-int texture(int width, int height, GLubyte ***tex)
+int texture(int width, int height, GLubyte *tex, int texmode)
 {
-   GLubyte ***tex2;
+   GLubyte *tex2;
 
    /* if not a power of two, scale image to closest power of two */
    if (powertwo(width) || powertwo(height)) {
       int neww=1, newh=1, rv;
       while (neww * 2 < width) neww *= 2;
       while (newh * 2 < height) newh *= 2;
-      tex2 = (GLubyte ***) malloc(neww * newh * 3);
+      tex2 = (GLubyte *) malloc(neww * newh * 3);
       if (tex2 == NULL) return Failed;
       rv = gluScaleImage(GL_RGB, width, height, GL_UNSIGNED_BYTE, tex,
 			 neww, newh, GL_UNSIGNED_BYTE, tex2);
@@ -2163,7 +2173,7 @@ int texture(int width, int height, GLubyte ***tex)
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, texmode);
    return Succeeded;
 }
 

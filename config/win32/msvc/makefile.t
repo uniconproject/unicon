@@ -16,7 +16,8 @@ MAKE=nmake
 O=obj
 RM=-del
 
-TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O) tree.$(O)
+TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O)\
+		tree.$(O) tglobals.$(O)
 
 LINKR=          link.$(O) lglob.$(O) lcode.$(O) llex.$(O) lmem.$(O) lsym.$(O) opcode.$(O)
 
@@ -24,7 +25,7 @@ OBJS=           tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
 
 COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		   ../common/filepart.$(O) ../common/strtbl.$(O)\
-		../common/ipp.$(O)
+		../common/mlocal.$(O) ../common/ipp.$(O)
 
 ICOBJS=         long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O)
 
@@ -87,6 +88,7 @@ tlex.$(O):              ../h/lexdef.h ../h/parserr.h ttoken.h tree.h ../h/esctab
 tmem.$(O):              tglobals.h tsym.h tree.h
 tree.$(O):              tree.h
 tsym.$(O):              tglobals.h tsym.h ttoken.h lfile.h keyword.h ../h/kdefs.h
+tglobals.$(O):		tglobals.h
 
 # linker files
 $(LINKR):       link.h lfile.h ../h/rt.h ../h/sys.h ../h/monitor.h \
@@ -108,7 +110,7 @@ ixhdr.exe:      ixhdr.$(O)
 		copy ixhdr.exe ..\..\bin
 
 #nticont: nticont.exe
-		
+
 #nticont.exe:   nticont.obj
 #               link32 -subsystem:console nticont.obj libc.lib kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB -out:nticont.exe
 

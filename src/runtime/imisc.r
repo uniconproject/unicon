@@ -18,7 +18,7 @@ LibDcl(field,2,".")
    extern dptr clintsrargp;
 
 #ifdef MultiThread
-   struct progstate *thisprog = curpstate, *progtouse;
+   struct progstate *thisprog = curpstate, *progtouse = NULL;
 #else					/* MultiThread */
    extern int *ftabp;
    #ifdef FieldTableCompression
@@ -79,7 +79,7 @@ linearsearch:
    else {
 
 #ifdef MultiThread
-      /* 
+      /*
        * If this record type is from another program, we would like to use
        * its field table, not ours.  But, the field # we have is from
        * the current program, we may need to translate it, eh?
@@ -138,19 +138,34 @@ linearsearch:
     */
    if (fnum < 0) {
       /*
-       * if fnum < 0 and we are an object, look for a corresponding method
+       * if we are an object, look for a corresponding method
        */
-if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) {
-      tended struct descrip md = rp->fields[1];
+if ((rp->recdesc->proc.ndynam == -3) ||
+    (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) ||
+    (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__m")) ||
+    (!strcmp(StrLoc(rp->recdesc->proc.lnames[
+			rp->recdesc->proc.nfields-1]), "__m"))) {
       struct b_record *rp2;
-      if (!is:record(md)) 
+      tended struct descrip md;
+      if (rp->recdesc->proc.ndynam == -3)
+	 md = rp->recdesc->proc.lnames[rp->recdesc->proc.nparam];
+      else if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s"))
+	 md = rp->fields[1];
+      else if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__m"))
+	 md = rp->fields[0];
+      else
+	 md = rp->fields[rp->recdesc->proc.nfields-1];
+
+      if (!is:record(md))
          RunErr(107, &Arg1);
       rp2 = (struct b_record *)BlkLoc(md);
       if (IntVal(Arg2) < 0) {
 	 int nfields = rp2->recdesc->proc.nfields;
 	 int i;
 #ifdef MultiThread
-	 Arg0 = progtouse->Efnames[IntVal(Arg2)];
+	 if (progtouse)
+	    Arg0 = progtouse->Efnames[IntVal(Arg2)];
+	 else RunErr(207, &Arg1);
 #else					/* MultiThread */
 	 Arg0 = efnames[IntVal(Arg2)];
 #endif					/* MultiThread */
@@ -231,7 +246,10 @@ if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) {
          }
       else {
 	 Arg0 = md;
-	 *((&(Arg0))+1) = rp->fields[0];
+	 if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s"))
+	    *((&(Arg0))+1) = rp->fields[0];
+	 else
+	    *((&(Arg0))+1) = Arg1;
 	 sp++; sp++;
 	 clintsrargp = cargp+1;
 	 Return;

@@ -4,7 +4,7 @@ BIN=$(BASE)/bin
 RM=rm -f
 UNICON=$(UNI)/unicon/unicon
 UNIDEP=$(UNI)/unidep/unidep
-export ICON_IPL:=$(BASE)/ipl
+ICON_IPL=$(BASE)/ipl
 export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
 .PHONY: all clean deps

@@ -5,7 +5,7 @@ RM=rm -f
 CP=cp
 UNICON=$(UNI)/unicon/unicon
 UNIDEP=$(UNI)/unidep/unidep
-export ICON_IPL:=$(BASE)/ipl
+ICON_IPL=$(BASE)/ipl
 export IPATH:=$(UNI)/lib $(UNI)/parser $(ICON_IPL)/lib
 UFILES = filearg.u  fileargclass.u  main.u  symbolinfo.u  symboltable.u  util.u
 

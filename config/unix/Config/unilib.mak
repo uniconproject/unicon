@@ -3,7 +3,7 @@ BASE=../..
 UNI=..
 UNICON=$(UNI)/unicon/unicon
 UNIDEP=$(UNI)/unidep/unidep
-export ICON_IPL:=$(BASE)/ipl
+ICON_IPL=$(BASE)/ipl
 export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 export LPATH:=$(ICON_IPL)/incl $(ICON_IPL)/gincl
 

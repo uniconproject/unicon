@@ -1,0 +1,215 @@
+#################################################################
+# Definitions Proc:
+procedure definitions(s)
+   
+   return case s of {
+
+      "break":
+         ["break expr                                                    exit loop",
+          " ",
+          "The break expression exits the nearest enclosing loop. expr is evaluated and treated as the",
+          "result of the entire loop expression. If expr is another break expression, multiple loops",
+          "will be exited."] 
+
+      "case":
+         ["case expr of { ? }                                          select expression",
+          " ",
+          "The case expression selects one of several branches of code to be executed."]
+      
+      "class":
+         ["class name [: superclass]* (fields) methods [initially] end class declaration",
+          " ",
+          "The class declaration introduces a new object type into the program. The class declaration",
+          "may include a list of superclasses, fields, methods, and an optional initially section.",
+          " "] ||| definitions("method") |||[" "] ||| definitions("initially") |||[" "] 
+
+      "create":
+         ["create expr                           create co-expression",
+          " ",
+          "The create expression produces a new co-expression to evaluate expr."]
+
+      "default":
+         ["default : expr                                        default case branch",
+          " ",
+          "The default branch of a case expression is taken if no other case branch is taken."]
+
+      "do":
+         ["do expr                                                iteration expression",
+          " ",
+          "The do reserved word specifies an expression to be executed for each iteration of a",
+          "preceding while, every, or suspend loop (yes, suspend is a looping construct)."]
+      
+      "else":
+         ["  if expr1 then expr2 else expr3                                 else branch",
+          " ",
+          "The else expression is executed if expr1 fails to produce a result."]
+
+      "end":
+         ["end                                                             end of declared body",
+          " ",
+          "The reserved word end signifies the end of a procedure, method, or class body."]
+
+      "every":
+         ["   every expr1 [do expr2]                                generate all results",
+          " ",
+          "The every expression always fails, causing expr1 to be resumed for all its results.",
+          " "] ||| definitions("do")
+
+      "fail":
+         [" fail                                       produce no results",
+          " ",
+          "The fail reserved word causes the enclosing procedure or method invocation to terminate",
+          "immediately and produce no results. The invocation may not be resumed. See also the",
+          "keyword &fail, which produces a less drastic expression failure. fail is equivalent to",
+          "return &fail"]
+
+      "global":
+         ["global var [, var]*                           declare global variables",
+          " ",
+          "Reserved word global introduces one or more global variables."]
+
+      "if":
+         ["   if expr then expr2 [else expr3]                       conditional expression",
+          " ",
+          "The if expression evaluates expr2 only if expr1 produces a result."]
+
+      "import":
+         ["import name [, name]*                               import package",
+          " ",
+          "The import declaration introduces the names from package name so that they may be",
+          "used without prefixing them with the package name."]
+
+      "initial":
+         ["initial expr                                          execute on first invocation",
+          " ",
+          "The initial expression is executed the first time a procedure or method is invoked."]
+
+      "initially":
+         ["initially [(parameters)]                            initialize object",
+          " ",
+          "The initially section defines a special method that is invoked automatically when an",
+          "object is created. If the initially section has declared parameters, they are used as the",
+          "parameters of the constructor for objects of that class."]
+
+      "invocable":
+         ["invocable procedure [, procedure]*                           allow string invocation"]
+      
+      "invocable all":
+         ["invocable all                  allow string invocation",
+          " ",
+          "The invocable declaration indicates that procedures may be used in string invocation."]
+
+      "link":
+         ["link filename [, filename]*                              link code module",
+          " ",
+          "The link declaration directs that the code in filename will be added to the executable",
+          "when this program is linked. filename may be an identifier or a string literal file path."]
+
+      "local":
+         ["local var [ := initialize r ] [, var [:= initializer ] ]*           declare local variables",
+          " ",
+          "The local declaration introduces one or more local variables into the current procedure or",
+          "method body. Variable declarations must be at the beginning of a procedure or method."]
+      
+      "method":
+         ["method name (params) body end" || right("declare method", 82),
+          " ",
+          "The method declaration introduces a procedure that is only invoked with respect to",
+          "instances of an enclosing class declaration. The params and body are as in procedures.",
+          " "] ||| definitions("end")
+
+      "next":
+         ["next expr                       iterate loop",
+          " ",
+          "The next expression causes a loop to immediate skip to its next iteration."]
+
+      "not":
+         ["not expr                         negate expression failure",
+          " ",
+          "The not expression fails if expr succeeds, and succeeds (producing null) if expr fails."]
+
+      "of":
+         ["case expr of { ? }                            introduce case branches",
+          " ",
+          "The of reserved word precedes a special compound expression consisting if a sequence of",
+          "case branches of the form expr : expr. Case branches are evaluated in sequence until one",
+          "is found that matches the expression given between the word case and the of."]
+
+   "package":
+      ["package name                                      declare package",
+       " ",
+       "The package declaration segregates the global names in the current source file. In order to",
+       "refer to them, client code must either import the package, or prepend name . (the package",
+       "name followed by a period) onto the front of a name in the package."]
+      
+      "procedure":
+         ["procedure name (params) body end" ||  right("declare procedure",80),
+          " ",
+          "The procedure declaration specifies a procedure with the specified parameters and code",
+          "body. The parameters are a comma-separated list of zero or more variable names. The",
+          "last parameter may optionally be suffixed by [] indicating that any following parameters",
+          "will be supplied to the procedure in a list. The body is an optional sequence of local and",
+          "static variable declarations, followed by a sequence of zero or more expressions.",
+          " "] ||| definitions("end")
+
+      "record":
+         ["record name (fields)                            declare record",
+          " ",
+          "The record declaration introduces a new record type into the program."]
+
+      "repeat":
+         ["repeat expr                                            infinite loop",
+          " ",
+          "The repeat expression introduces an infinite loop that will reevaluate expr forever. Of",
+          "course, expr may exit the loop or terminate the program in any number of ways."]
+
+      "return":
+         ["return expr                    return from invocation",
+          " ",
+          "The return expression exits a procedure or method invocation, producing expr as its",
+          "result. The invocation may not be resumed."]
+      
+      "static":
+         ["   static var [, var]*                   declare static variables",
+          " ",
+          "The static declaration introduces one or more local variables into the current procedure or",
+          "method body. Variable declarations must be at the beginning of a procedure or method."]
+      
+      "suspend":
+         ["suspend expr [do expr]"||right("produce result from invocation",88),
+          " ",
+          "The suspend expression produces one or more results from an invocation for use by the",
+          "calling expression. The procedure or method may be resumed for additional results if the",
+          "calling expression needs them. Execution in the suspended invocation resumes where it",
+          "left off, in the suspend expression. A single evaluation of a suspend expression may",
+          "produce multiple results for the caller if expr is a generator. An optional do expression is",
+          "evaluated each time the suspend is resumed.",
+          " "] ||| definitions("do")
+
+      "then":
+         ["if expr1 then expr2                                      conditional expression",
+         " ",
+         "The expr2 following a then is evaluated only if expr1 following an if succeeds. In that",
+         "case, the result of the whole expression is the result of expr2."]
+
+      "to":
+         ["expr1 to expr2                            generate arithmetic sequence",
+          " ",
+          "The to expression produces the integer sequence from expr1 to expr2."]
+
+      "until":
+         ["until expr1 [do expr2]                      loop until success",
+          " ",
+          "The until expression loops as long as expr1 fails.",
+          " "] ||| definitions("do")
+      
+      "while":
+         ["while expr1 [do expr2]                          loop until failure",
+          " ",
+          "The while expression loops as long as expr1 succeeds.",
+          " "] ||| definitions("do")
+      
+   }
+   
+   
+end

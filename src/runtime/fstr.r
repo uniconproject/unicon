@@ -696,7 +696,7 @@ end
 
 "trim(s,c) - trim trailing characters in c from s."
 
-function{1} trim(s,c)
+function{1} trim(s,c,ends)
 
    if !cnv:string(s) then
       runerr(103, s)
@@ -706,6 +706,9 @@ function{1} trim(s,c)
    if !def:tmp_cset(c,blankcs) then
       runerr(104, c)
 
+   if !def:C_integer(ends,-1) then
+      runerr(101, ends)
+
    abstract {
       return string
       }
@@ -714,18 +717,34 @@ function{1} trim(s,c)
       char *sloc;
       C_integer slen;
 
-      /*
-       * Start at the end of s and then back up until a character that is
-       *  not in c is found.  The actual trimming is done by having a
-       *  descriptor that points at a substring of s, but with the length
-       *  reduced.
-       */
       slen = StrLen(s);
-      sloc = StrLoc(s) + slen - 1;
-      while (sloc >= StrLoc(s) && Testb(ToAscii(*sloc), c)) {
-         sloc--;
-         slen--;
+      /*
+       * Left trimming: Start at the beginning of s and then advance StrLoc(s)
+       * and decrease the slen until a character that is not in c is found.
+       */
+      if (ends > -1) {
+         sloc = StrLoc(s);
+         while (slen > 0 && Testb(ToAscii(*sloc), c)) {
+            sloc++;
+            slen--;
+            }
+         StrLoc(s) = sloc;
          }
+      /*
+       * Regular (right) trimming: Start at the end of s and then back up
+       * until a character that is not in c is found.
+       */
+      if (ends < 1) {
+         sloc = StrLoc(s) + slen - 1;
+         while (sloc >= StrLoc(s) && Testb(ToAscii(*sloc), c)) {
+            sloc--;
+            slen--;
+            }
+         }
+      /*
+       *  Do the actual trimming by creating a descriptor that
+       *  points at a substring of s, but with the length reduced.
+       */
       return string(slen, StrLoc(s));
       }
 end

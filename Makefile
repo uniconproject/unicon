@@ -10,7 +10,7 @@ help:
 	@echo "   where system is one of those in config/unix."
 	@echo Windows (MSVC): Run "nmake NT-Configure" or "nmake W-Configure".
 	@echo Windows (GCC): Run "make NT-Configure-GCC" or "make W-Configure-GCC".
-	@echo "Windows (both): Then add the Unicon bin directory to your path."
+	@echo "All: Then add the Unicon bin directory to your path."
 	@echo All: after configuration, run "make (or nmake) Unicon".
 
 # Configure the code for a specific system.
@@ -18,26 +18,32 @@ help:
 Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
+		@echo Now remember to add unicon/bin to your path
 
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
+		@echo Now remember to add unicon/bin to your path
 
 NT-Configure:
 		cd config\win32\msvc
 		config
+		@echo Now remember to add unicon/bin to your path
 
 W-Configure:
 		cd config\win32\msvc
 		w-config
+		@echo Now remember to add unicon/bin to your path
 
 W-Configure-GCC:
 		cd config/win32/gcc && sh w-config.sh
-		echo Run "make Unicon" to build
+		@echo Now remember to add unicon/bin to your path
+		@echo Then run "make Unicon" to build
 
 NT-Configure-GCC:
 		cd config/win32/gcc && sh config.sh
-		echo Run "make Unicon" to build
+		@echo Now remember to add unicon/bin to your path
+		@echo Then run "make Unicon" to build
 
 Pure:
 		touch Makedefs

@@ -98,17 +98,19 @@ dptr v;
    err_msg(n, v);
    }
 
-struct b_list *alclist(size)
+struct b_list *alclist(size, nslots)
 uword size;
    {
    register struct b_list *blk;
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
    blk->id = list_ser++;
-   blk->listhead = NULL;
-   blk->listtail = NULL;
+   if ((blk->listhead = blk->listtail = alclstb(nslots, (word)0, size))==NULL)
+      return NULL;
+   blk->listhead->listprev = blk->listhead->listnext = blk;
    return blk;
    }
+
 /*
  * alclstb - allocate a list element block in the block region.
  */

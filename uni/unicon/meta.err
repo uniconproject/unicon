@@ -194,9 +194,21 @@ sql(db, "DELETE FROM " || blah blah || filter)
 end
 ::: unclosed literal or missing operator
 procedure p()
+s || +:= k
+end
+::: missing operand after ||
+procedure p()
 s || := k
 end
-::: missing operand after || or illegal space inside ||:=
+::: illegal space inside ||:=
+procedure p()
+s ||| +:= k
+end
+::: missing operand after |||
+procedure p()
+s ||| := k
+end
+::: illegal space inside |||:=
 class c() method m(); if x + &1press then p()
 ::: bad keyword name or bogus & precedes this token
 class c() method m() if
@@ -220,3 +232,16 @@ end
 class C { x )
 end
 ::: fieldlist starts with left *parenthesis*, not curly brace!
+procedure main()
+   while ((str:=reads(f4,100))) {
+       write(s)
+       writes(x)
+       }
+end
+::: missing "do" or some such keyword earlier, or expected a comma or right brace here
+procedure move_characters()
+every u do {
+if x then
+}
+end
+::: missing then-part

@@ -3085,6 +3085,8 @@ echo "${ECHO_T}failed" >&6
 fi
 
 
+ac_config_files="$ac_config_files Makedefs:Makedefs.in"
+
 ac_config_headers="$ac_config_headers src/h/auto.h:src/h/auto.in"
 
 cat >confcache <<\_ACEOF
@@ -3455,8 +3457,13 @@ Usage: $0 [OPTIONS] [FILE]...
   -V, --version    print version number, then exit
   -d, --debug      don't remove temporary files
       --recheck    update $as_me by reconfiguring in the same conditions
+  --file=FILE[:TEMPLATE]
+                   instantiate the configuration file FILE
   --header=FILE[:TEMPLATE]
                    instantiate the configuration header FILE
+
+Configuration files:
+$config_files
 
 Configuration headers:
 $config_headers
@@ -3552,6 +3559,7 @@ for ac_config_target in $ac_config_targets
 do
   case "$ac_config_target" in
   # Handling of arguments.
+  "Makedefs" ) CONFIG_FILES="$CONFIG_FILES Makedefs:Makedefs.in" ;;
   "src/h/auto.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/h/auto.h:src/h/auto.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -3564,6 +3572,7 @@ done
 # We use the long form for the default assignment because of an extremely
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
+  test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
 fi
 
@@ -3591,6 +3600,251 @@ $debug ||
 
 _ACEOF
 
+cat >>$CONFIG_STATUS <<_ACEOF
+
+#
+# CONFIG_FILES section.
+#
+
+# No need to generate the scripts if there are no CONFIG_FILES.
+# This happens for instance when ./config.status config.h
+if test -n "\$CONFIG_FILES"; then
+  # Protect against being on the right side of a sed subst in config.status.
+  sed 's/,@/@@/; s/@,/@@/; s/,;t t\$/@;t t/; /@;t t\$/s/[\\\\&,]/\\\\&/g;
+   s/@@/,@/; s/@@/@,/; s/@;t t\$/,;t t/' >\$tmp/subs.sed <<\\CEOF
+s,@SHELL@,$SHELL,;t t
+s,@PATH_SEPARATOR@,$PATH_SEPARATOR,;t t
+s,@PACKAGE_NAME@,$PACKAGE_NAME,;t t
+s,@PACKAGE_TARNAME@,$PACKAGE_TARNAME,;t t
+s,@PACKAGE_VERSION@,$PACKAGE_VERSION,;t t
+s,@PACKAGE_STRING@,$PACKAGE_STRING,;t t
+s,@PACKAGE_BUGREPORT@,$PACKAGE_BUGREPORT,;t t
+s,@exec_prefix@,$exec_prefix,;t t
+s,@prefix@,$prefix,;t t
+s,@program_transform_name@,$program_transform_name,;t t
+s,@bindir@,$bindir,;t t
+s,@sbindir@,$sbindir,;t t
+s,@libexecdir@,$libexecdir,;t t
+s,@datadir@,$datadir,;t t
+s,@sysconfdir@,$sysconfdir,;t t
+s,@sharedstatedir@,$sharedstatedir,;t t
+s,@localstatedir@,$localstatedir,;t t
+s,@libdir@,$libdir,;t t
+s,@includedir@,$includedir,;t t
+s,@oldincludedir@,$oldincludedir,;t t
+s,@infodir@,$infodir,;t t
+s,@mandir@,$mandir,;t t
+s,@build_alias@,$build_alias,;t t
+s,@host_alias@,$host_alias,;t t
+s,@target_alias@,$target_alias,;t t
+s,@DEFS@,$DEFS,;t t
+s,@ECHO_C@,$ECHO_C,;t t
+s,@ECHO_N@,$ECHO_N,;t t
+s,@ECHO_T@,$ECHO_T,;t t
+s,@LIBS@,$LIBS,;t t
+s,@CC@,$CC,;t t
+s,@CFLAGS@,$CFLAGS,;t t
+s,@LDFLAGS@,$LDFLAGS,;t t
+s,@CPPFLAGS@,$CPPFLAGS,;t t
+s,@ac_ct_CC@,$ac_ct_CC,;t t
+s,@EXEEXT@,$EXEEXT,;t t
+s,@OBJEXT@,$OBJEXT,;t t
+s,@CPP@,$CPP,;t t
+CEOF
+
+_ACEOF
+
+  cat >>$CONFIG_STATUS <<\_ACEOF
+  # Split the substitutions into bite-sized pieces for seds with
+  # small command number limits, like on Digital OSF/1 and HP-UX.
+  ac_max_sed_lines=48
+  ac_sed_frag=1 # Number of current file.
+  ac_beg=1 # First line for current file.
+  ac_end=$ac_max_sed_lines # Line after last line for current file.
+  ac_more_lines=:
+  ac_sed_cmds=
+  while $ac_more_lines; do
+    if test $ac_beg -gt 1; then
+      sed "1,${ac_beg}d; ${ac_end}q" $tmp/subs.sed >$tmp/subs.frag
+    else
+      sed "${ac_end}q" $tmp/subs.sed >$tmp/subs.frag
+    fi
+    if test ! -s $tmp/subs.frag; then
+      ac_more_lines=false
+    else
+      # The purpose of the label and of the branching condition is to
+      # speed up the sed processing (if there are no `@' at all, there
+      # is no need to browse any of the substitutions).
+      # These are the two extra sed commands mentioned above.
+      (echo ':t
+  /@[a-zA-Z_][a-zA-Z_0-9]*@/!b' && cat $tmp/subs.frag) >$tmp/subs-$ac_sed_frag.sed
+      if test -z "$ac_sed_cmds"; then
+  	ac_sed_cmds="sed -f $tmp/subs-$ac_sed_frag.sed"
+      else
+  	ac_sed_cmds="$ac_sed_cmds | sed -f $tmp/subs-$ac_sed_frag.sed"
+      fi
+      ac_sed_frag=`expr $ac_sed_frag + 1`
+      ac_beg=$ac_end
+      ac_end=`expr $ac_end + $ac_max_sed_lines`
+    fi
+  done
+  if test -z "$ac_sed_cmds"; then
+    ac_sed_cmds=cat
+  fi
+fi # test -n "$CONFIG_FILES"
+
+_ACEOF
+cat >>$CONFIG_STATUS <<\_ACEOF
+for ac_file in : $CONFIG_FILES; do test "x$ac_file" = x: && continue
+  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
+  case $ac_file in
+  - | *:- | *:-:* ) # input from stdin
+        cat >$tmp/stdin
+        ac_file_in=`echo "$ac_file" | sed 's,[^:]*:,,'`
+        ac_file=`echo "$ac_file" | sed 's,:.*,,'` ;;
+  *:* ) ac_file_in=`echo "$ac_file" | sed 's,[^:]*:,,'`
+        ac_file=`echo "$ac_file" | sed 's,:.*,,'` ;;
+  * )   ac_file_in=$ac_file.in ;;
+  esac
+
+  # Compute @srcdir@, @top_srcdir@, and @INSTALL@ for subdirectories.
+  ac_dir=`(dirname "$ac_file") 2>/dev/null ||
+$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+         X"$ac_file" : 'X\(//\)[^/]' \| \
+         X"$ac_file" : 'X\(//\)$' \| \
+         X"$ac_file" : 'X\(/\)' \| \
+         .     : '\(.\)' 2>/dev/null ||
+echo X"$ac_file" |
+    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{ s//\1/; q; }
+  	  /^X\(\/\/\)[^/].*/{ s//\1/; q; }
+  	  /^X\(\/\/\)$/{ s//\1/; q; }
+  	  /^X\(\/\).*/{ s//\1/; q; }
+  	  s/.*/./; q'`
+  { case "$ac_dir" in
+  [\\/]* | ?:[\\/]* ) as_incr_dir=;;
+  *)                      as_incr_dir=.;;
+esac
+as_dummy="$ac_dir"
+for as_mkdir_dir in `IFS='/\\'; set X $as_dummy; shift; echo "$@"`; do
+  case $as_mkdir_dir in
+    # Skip DOS drivespec
+    ?:) as_incr_dir=$as_mkdir_dir ;;
+    *)
+      as_incr_dir=$as_incr_dir/$as_mkdir_dir
+      test -d "$as_incr_dir" ||
+        mkdir "$as_incr_dir" ||
+	{ { echo "$as_me:$LINENO: error: cannot create \"$ac_dir\"" >&5
+echo "$as_me: error: cannot create \"$ac_dir\"" >&2;}
+   { (exit 1); exit 1; }; }
+    ;;
+  esac
+done; }
+
+  ac_builddir=.
+
+if test "$ac_dir" != .; then
+  ac_dir_suffix=/`echo "$ac_dir" | sed 's,^\.[\\/],,'`
+  # A "../" for each directory in $ac_dir_suffix.
+  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
+else
+  ac_dir_suffix= ac_top_builddir=
+fi
+
+case $srcdir in
+  .)  # No --srcdir option.  We are building in place.
+    ac_srcdir=.
+    if test -z "$ac_top_builddir"; then
+       ac_top_srcdir=.
+    else
+       ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
+    fi ;;
+  [\\/]* | ?:[\\/]* )  # Absolute path.
+    ac_srcdir=$srcdir$ac_dir_suffix;
+    ac_top_srcdir=$srcdir ;;
+  *) # Relative path.
+    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
+    ac_top_srcdir=$ac_top_builddir$srcdir ;;
+esac
+# Don't blindly perform a `cd "$ac_dir"/$ac_foo && pwd` since $ac_foo can be
+# absolute.
+ac_abs_builddir=`cd "$ac_dir" && cd $ac_builddir && pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd $ac_top_builddir && pwd`
+ac_abs_srcdir=`cd "$ac_dir" && cd $ac_srcdir && pwd`
+ac_abs_top_srcdir=`cd "$ac_dir" && cd $ac_top_srcdir && pwd`
+
+
+
+  if test x"$ac_file" != x-; then
+    { echo "$as_me:$LINENO: creating $ac_file" >&5
+echo "$as_me: creating $ac_file" >&6;}
+    rm -f "$ac_file"
+  fi
+  # Let's still pretend it is `configure' which instantiates (i.e., don't
+  # use $as_me), people would be surprised to read:
+  #    /* config.h.  Generated by config.status.  */
+  if test x"$ac_file" = x-; then
+    configure_input=
+  else
+    configure_input="$ac_file.  "
+  fi
+  configure_input=$configure_input"Generated from `echo $ac_file_in |
+                                     sed 's,.*/,,'` by configure."
+
+  # First look for the input files in the build tree, otherwise in the
+  # src tree.
+  ac_file_inputs=`IFS=:
+    for f in $ac_file_in; do
+      case $f in
+      -) echo $tmp/stdin ;;
+      [\\/$]*)
+         # Absolute (can't be DOS-style, as IFS=:)
+         test -f "$f" || { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
+echo "$as_me: error: cannot find input file: $f" >&2;}
+   { (exit 1); exit 1; }; }
+         echo $f;;
+      *) # Relative
+         if test -f "$f"; then
+           # Build tree
+           echo $f
+         elif test -f "$srcdir/$f"; then
+           # Source tree
+           echo $srcdir/$f
+         else
+           # /dev/null tree
+           { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
+echo "$as_me: error: cannot find input file: $f" >&2;}
+   { (exit 1); exit 1; }; }
+         fi;;
+      esac
+    done` || { (exit 1); exit 1; }
+_ACEOF
+cat >>$CONFIG_STATUS <<_ACEOF
+  sed "$ac_vpsub
+$extrasub
+_ACEOF
+cat >>$CONFIG_STATUS <<\_ACEOF
+:t
+/@[a-zA-Z_][a-zA-Z_0-9]*@/!b
+s,@configure_input@,$configure_input,;t t
+s,@srcdir@,$ac_srcdir,;t t
+s,@abs_srcdir@,$ac_abs_srcdir,;t t
+s,@top_srcdir@,$ac_top_srcdir,;t t
+s,@abs_top_srcdir@,$ac_abs_top_srcdir,;t t
+s,@builddir@,$ac_builddir,;t t
+s,@abs_builddir@,$ac_abs_builddir,;t t
+s,@top_builddir@,$ac_top_builddir,;t t
+s,@abs_top_builddir@,$ac_abs_top_builddir,;t t
+" $ac_file_inputs | (eval "$ac_sed_cmds") >$tmp/out
+  rm -f $tmp/stdin
+  if test x"$ac_file" != x-; then
+    mv $tmp/out $ac_file
+  else
+    cat $tmp/out
+    rm -f $tmp/out
+  fi
+
+done
+_ACEOF
 cat >>$CONFIG_STATUS <<\_ACEOF
 
 #

@@ -63,8 +63,8 @@ void UtoL (char *s1, char *s2)
 }
 
 /*
- * is_url() takes a string s as its parameter. If s starts with a URL scheme, 
- * is_url() returns 1. If s starts with "net:", it returns 2. Otherwise, 
+ * is_url() takes a string s as its parameter. If s starts with a URL scheme,
+ * is_url() returns 1. If s starts with "net:", it returns 2. Otherwise,
  * for normal files, is_url() returns 0.
 */
 
@@ -73,7 +73,7 @@ int is_url(char *s)
    char *tmp = s;
 
    while ( *tmp == ' ' || *tmp == '\t' || *tmp == '\n' )
-      tmp++; 
+      tmp++;
 
    if (!strncasecmp (tmp, "http:", 5) ){
       UtoL(tmp, "http");
@@ -84,20 +84,20 @@ int is_url(char *s)
       return 1;
       }
    if (!strncasecmp (tmp, "ftp:", 4) ) {
-      UtoL(tmp, "ftp"); 
+      UtoL(tmp, "ftp");
       return 1;
       }
    if (!strncasecmp (tmp, "gopher:", 7) ) {
       UtoL(tmp, "gopher");
       return 1;
-      } 
+      }
    if (!strncasecmp (tmp, "telnet:", 7) )  {
       UtoL(tmp, "telnet");
       return 1;
       }
    if ( !strncasecmp(tmp, "net:", 4) )
       return 2;
-   return 0; 
+   return 0;
 }
 
 #ifdef FAttrib
@@ -105,13 +105,13 @@ int is_url(char *s)
 "fattrib(str, att) - get the attribute of a file "
 
 function{*} fattrib (fname, att[argc])
- 
+
    if !cnv:C_string(fname) then
         runerr(103, fname)
 
    abstract {
       return string ++ integer
-      }  
+      }
 
    body {
       tended char *s;
@@ -130,7 +130,7 @@ function{*} fattrib (fname, att[argc])
       char *retval;
       char *temp;
       long l;
-   
+
 #ifdef Network
       struct netstat info;
 
@@ -220,7 +220,7 @@ for(i=0; i<argc; i++) {
 		  l = strlen(temp);
                   Protect(retval = alcstr(temp,l), runerr(0));
                   free(temp);
-                  suspend string(l, retval); 
+                  suspend string(l, retval);
 		  break;
                default:
                   fail;
@@ -230,7 +230,7 @@ for(i=0; i<argc; i++) {
                l = strlen(temp);
                Protect(retval = alcstr(temp,l), runerr(0));
                free(temp);
-               suspend string(l,retval); 
+               suspend string(l,retval);
                }
             else if (!strcasecmp("content_type", s)) {
 	       l = strlen(info.u.hbuf.type);
@@ -260,7 +260,7 @@ for(i=0; i<argc; i++) {
 	       l = strlen(temp);
 	       Protect(retval = alcstr(temp,l), runerr(0));
 	       free(temp);
-	       suspend string(l, retval); 
+	       suspend string(l, retval);
 	       }
 #if UNIX
          else if ( !strcasecmp("owner", s) ) {
@@ -579,7 +579,7 @@ Deliberate Syntax Error
 
 #ifdef Network
      if (is_url(fnamestr) == 1) {
-	status |= Fs_Network; 
+	status |= Fs_Network;
 	}
 #endif					/* Network */
 
@@ -711,7 +711,7 @@ Deliberate Syntax Error
 	       runerr(209, spec);
 	    }
 	 }
-   
+
       /*
        * Construct a mode field for fopen/popen.
        */
@@ -807,7 +807,7 @@ Deliberate Syntax Error
 #endif					/* SASC */
 
 #else					/* OpenAttributes */
-   
+
 #ifdef Graphics
       if (status & Fs_Window) {
 	 /*
@@ -868,13 +868,13 @@ Deliberate Syntax Error
 		     case URI_OK:
 			break;
 		     case URI_EMALFORMED:
-			runerr(1201, fname); 
+			runerr(1201, fname);
 			break;
 		     case URI_ENOUSER:
-			runerr(1202, fname); 
+			runerr(1202, fname);
 			break;
 		     case URI_EUNKNOWNSCHEME:
-			runerr(1203, fname); 
+			runerr(1203, fname);
 			break;
 		     case URI_ECHECKERRNO:
 		     default:
@@ -885,13 +885,13 @@ Deliberate Syntax Error
 #endif                                  /* PosixFns */
 			runerr(1204, fname);
 		     }
-		 
+
 		  f = (FILE *)Mopen(puri, attr, n, is_shortreq);
 		  if (Merror > 1200) {
 		    runerr(Merror, fname);
 		  }
 		  switch (Merror) {
-		     case 0: 
+		     case 0:
 			break;
 		     case TP_ECONNECT:
 			runerr(1205, fname);
@@ -912,7 +912,7 @@ Deliberate Syntax Error
 	       }
 	    else
 #endif                                  /* Messaging */
-	    
+
 #ifdef ISQL
    if (status & Fs_ODBC) {
       if (n < 3) runerr(103);
@@ -955,7 +955,7 @@ Deliberate Syntax Error
 	 }
 	 else
 	   mode = O_RDONLY;
-	   
+
 	 f = (FILE *)dbm_open(fnamestr, mode, 0666);
 	 if (!f)
 	    fail;
@@ -1023,10 +1023,10 @@ Deliberate Syntax Error
 		     fseek(f, 0, SEEK_SET);
 		     }
 #endif					/* NT */
-		  }  
+		  }
 	       }
 	    else {
-	       f = fopen(fnamestr, mode); 
+	       f = fopen(fnamestr, mode);
 	       }
 	    }
 	 }
@@ -1192,7 +1192,7 @@ function{0,1} read(f)
          return s;
 	  }
 
-      /* 
+      /*
        * well.... switching from unbuffered to buffered actually works so
        * we will allow it except for sockets.
        */
@@ -1360,13 +1360,13 @@ function{0,1} reads(f,i)
 	       }
 	    fail;
 	    }
-	 
+
 	 return string(bytesread, sbuf);
 	 }
       else
-#endif                                  /* Messaging */	       
+#endif                                  /* Messaging */
 
-#ifdef PosixFns     
+#ifdef PosixFns
       if (status & Fs_Socket)  {
          StrLen(s) = 0;
 	 Maxread = ((i<=MaxReadStr)?i:MaxReadStr);
@@ -1464,7 +1464,7 @@ function{0,1} reads(f,i)
 
 	 if ((fd = get_fd(f, 0)) < 0)
 	    runerr(174, f);
-      
+
 	 IntVal(amperErrno) = 0;
 	 if (u_read(fd, i, &s) == 0)
 	    fail;
@@ -1561,7 +1561,7 @@ function{0,1} rename(s1,s2)
       int i=0;
 #if NT
       if ((i = rename(s1,s2)) != 0) {
-	 remove(s2); 
+	 remove(s2);
 	 if (rename(s1,s2) != 0)
 	    fail;
 	 }
@@ -1740,7 +1740,7 @@ function{1} system(s, o)
 #if NT
       if (o == 0)   { /* nowait, or 0, for second argument */
          cmdname = strtok(s, " ");
-         for(j = 0; j<256; j++)   
+         for(j = 0; j<256; j++)
             if ((args[j] = strtok(NULL, " ")) == NULL)
 	       break;
 	 args[j] = NULL;
@@ -1874,7 +1874,7 @@ end
 	    runerr(Merror);
 	    }
 	 }
-      else	 
+      else
 #endif                                  /* Messaging */
 #ifdef PosixFns
       if (status & Fs_Socket) {
@@ -1922,7 +1922,7 @@ end
       }
 #ifdef PresentationManager
     /* must be writing to a window, then, if it is not the console,
-       we have to set the background mix mode of the character bundle 
+       we have to set the background mix mode of the character bundle
        back to LEAVEALONE so the background is no longer clobbered */
     else if (f != ConsoleBinding) {
       /* have to set the background mode back to leave-alone */
@@ -2170,9 +2170,9 @@ function {1} name(x[nargs])
 			   fail;
 #endif
 			   }
-		     } else {  
+		     } else {
 #endif					/* PosixFns */
-		     if (putstr(f, &t) == Failed) 
+		     if (putstr(f, &t) == Failed)
 #endif					/* RecordIO */
 			runerr(214, x[n]);
 #ifdef PosixFns

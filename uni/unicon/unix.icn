@@ -1,0 +1,90 @@
+#
+# @(#)unix.icn	1.8 3/29/92
+# OS-specific code for UNIX Idol
+#
+global icontopt,env,sysok,comp
+
+procedure mysystem(s)
+  if \loud then write(s)
+  return system(s)
+end
+
+# find filename, truncate to 8 characters, but leave path intact
+procedure filename(s,ext)
+  every i := find("/",s)
+  if \i then { path := s[1:i+1]; s := s[i+1:0] }
+#  s[9:0] := ""
+  if \i then s := path||s
+  s ||:= \ext
+  return s
+end
+
+# produce a filename, sans path if any
+procedure cwdfilename(s,ext)
+  while s ?:= (tab(find("/")+1) & tab(0))
+#  s[9:0] := ""
+  s ||:= \ext
+  return s
+end
+
+# if the filename s has extension ext then return the filename less the
+# extension, otherwise fail.
+procedure fileroot(s,ext)
+  if s[- *ext : 0] == ext then return s[1 : - *ext]
+end
+
+#
+# Installation.
+# Uses hierarchical filesystem on some systems (see initialize)
+#
+procedure install(args)
+  if "-t" == !args then comp := -2
+  write("Installing idol environment in ",env)
+  if env ~== "" then mysystem("mkdir "||env)
+  fout := envopen("i_object.icn","w")
+  write(fout,"record idol_object(__s,__m)")
+  close(fout)
+  fout := &null
+  cdicont(["i_object"])
+end
+procedure uninstall(args)
+  mysystem("rm -r "||env)
+end
+
+procedure makeexe(args,i)
+  exe := args[i]
+  if icont(exe) = \sysok then {
+      mysystem("rm "||exe||".icn")
+      if \exec then {
+	write("Executing:")
+	every i := exec+1 to *args do exe ||:= " "||args[i]
+	return mysystem(exe)
+      } else return
+  }
+end
+#
+# system-dependent compilation of idolfile.icn
+#   (in the idol subdirectory, if there is one)
+#
+procedure cdicont(idolfiles)
+  if comp = -2 then return                     # -t --> don't translate at all
+  args := ""
+  rms  := ""
+  every ifile := !idolfiles do args ||:= " " || ifile
+  every ifile := !idolfiles do rms  ||:= " " || ifile || ".icn"
+
+  if (rv := trans(args,"cd "||env||"; ")) = \sysok
+  then mysystem("cd "||env||"; rm "||rms)
+  return \rv = 0
+end
+procedure sysinitialize()
+  &version ? {
+     tab(find("Version ")+ *"Version ")
+     if numeric(tab(many(&digits))) * 100 +
+	(move(1) & numeric(tab(many(&digits)))) >= 806 then icontopt := " "
+     else # older versions of icont required lots of -S options
+        icontopt := " -Sc500 -Sf600 -Sg600 -Si1200 -Sl400 -Sn3000 -Sr2000 -Ss30000 -St20000 -SC30000 -SF60 -SL1000 "
+  }
+  env := getenv("IDOLENV") | "uniclass"
+  sysok := 0
+end

@@ -1,0 +1,35 @@
+
+procedure main()
+ f:=dbopen("mysql","test","fbalbi","ana230473")
+
+ #select name, id, amt from test
+
+ r:=dbselect(f, "id, name, amt, paid, due","id=1")
+ #r:=dbsql(f, "select name,id, amt, due from test")
+ 
+ write(r)
+
+ write(*f, " row(s) selected")
+
+ write("\nrow values")
+ 
+ rec:=dbfetch(f)
+ 
+ rec["id"]:=24
+ rec["name"]:="Paperone\\\\s"
+ rec["amt"]:=20000.00
+ rec["paid"]:="N"
+ rec["due"]:="1999-06-23"
+
+ #every i:=(1 to *rec) do writes("[",rec[i],"]")
+ write()
+
+ every i:=(1000 to 2000) do {
+   rec["id"]:=i
+   rc:=dbinsert(f, rec)
+ }
+
+ dbclose(f)
+ write("done")
+
+end

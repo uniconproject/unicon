@@ -1,0 +1,7121 @@
+############################################################################
+#
+#	File:     canvcomp.icn
+#
+#	Subject:  Definition of the classes for canvas components
+#
+#	Author:   Robert Parlett
+#
+#	Date:     January 1999
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+#
+# Constants
+#
+
+$include "../lib/guiconst.icn"
+
+#
+# Constants defining resizing corner sizes.
+$define RSW 12
+$define RST 3
+
+############################################################################
+#
+# Parent class for a all components.
+#
+class CanvasComponent : ClassIO(
+   parent_Canvas,           # Link to owning Canvas object
+   name,                    # Object name
+   class_name,              # Class name of object
+   is_button_subclass,      # Set if subclass of CanvasButton
+   var_category,            # Category of variable name for code generation
+   x_fixed,                 # Flags - is position/size fixed
+   y_fixed,                 #
+   w_fixed,                 #
+   h_fixed,                 #
+   w_default,               # Flags - if on size defaults 
+   h_default                #
+   )
+
+   #
+   # An adjustment to add to the object's absolute x position,
+   # depending upon its alignment.
+   #  
+   method get_x_alignment_offset()
+      return case self.x_align of {
+         "l" : 0
+         "c" : self.w / 2
+         "r" : self.w
+      }
+   end
+
+   # 
+   # As above, for the y value.
+   #
+   method get_y_alignment_offset()
+      return case self.y_align of {
+         "t" : 0
+         "c" : self.h / 2
+         "b" : self.h
+      }
+   end
+
+   #
+   # Unfix an object's position.
+   #
+   method unfix()
+      self.x_fixed := self.y_fixed := &null
+   end
+
+   #
+   # Set the object's name.
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Set the object's class name.
+   #
+   method set_class_name(x)
+      return self.class_name := x
+   end
+
+   #
+   # Generate the code into the Code object c.
+   #
+   method gen_code(c)
+      c$line(name || " := " || self.class_name || "()")
+
+      c$line(name || "$set_pos(" || image(self.x_spec) || ", " || image(self.y_spec) || ")")
+      if /self.w_default | /self/h_default then {
+         t := name || "$set_size("
+         if /self.w_default then
+            t ||:= image(self.w_spec)
+         t ||:= ", "
+         if /self.h_default then
+            t ||:= image(self.h_spec)
+         t ||:= ")"
+         c$line(t)
+      }
+
+      #
+      # Output alignment unless using default of "l", "t"
+      #
+      if not(self.x_align == "l" & self.y_align == "t") then
+         c$line(name || "$set_align(" || image(self.x_align) || ", " || image(self.y_align) || ")")
+
+      if \self.draw_border_flag then
+         c$line(name || "$set_draw_border()")
+
+      if \self.is_shaded_flag then
+         c$line(name || "$set_is_shaded()")
+
+      if *self.attribs > 0 then
+         c$line(name || "$set_attribs(" || list2string(self.attribs) || ")")
+
+      if \self.tooltip then
+         c$line(name || "$set_tooltip(" || image(self.tooltip) || ")")
+
+      if self === self.parent_Canvas.initial_focus then
+         c$line("self$set_focus(" || self.name || ")")
+
+      c$add_var(name, var_category)
+   end
+
+   #
+   # Duplicate c (this will be extended by subclasses).
+   #
+   method dup(c, pc)
+      c$set_parent_Canvas(pc)
+
+      if \self.parent_Canvas & \pc then {
+         if self === self.parent_Canvas.selected then
+            pc.selected := c
+         if self === !self.parent_Canvas.selections then
+            put(pc.selections, c)
+         if self === self.parent_Canvas.initial_focus then
+            pc.initial_focus := c
+      }
+      self$CanvasComponent.cp_fields(c)
+      return c
+   end
+
+   #
+   # Copy c (this will also be extended by subclasses).
+   #
+   method cp(c)
+      c$set_parent_Canvas(self.parent_Canvas)
+
+      self$CanvasComponent.cp_fields(c)
+
+      #
+      # A copy has a new name.
+      #
+      c.name := self.parent_Canvas$get_new_name(c)
+
+      return c
+   end
+
+   #
+   # Copy the fields from self to c.
+   #
+   method cp_fields(c)
+      c.name := self.name
+      c.class_name := self.class_name
+      c.x_fixed := self.x_fixed
+      c.y_fixed := self.y_fixed
+      c.w_fixed := self.w_fixed
+      c.h_fixed := self.h_fixed
+      c.w_default := self.w_default
+      c.h_default := self.h_default
+      c.x_spec := self.x_spec
+      c.y_spec := self.y_spec
+      c.w_spec := self.w_spec
+      c.h_spec := self.h_spec
+      c.x_align := self.x_align
+      c.y_align := self.y_align
+      c.is_shaded_flag := self.is_shaded_flag
+      c.draw_border_flag := self.draw_border_flag
+      c.var_category := self.var_category
+      c.tooltip := self.tooltip
+      c.attribs := copy(self.attribs)
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Parent Canvas", "parent_Canvas"],
+              ["Name", "name"],
+              ["Var Category", "var_category"],
+              ["Class Name", "class_name"],
+              ["X Fix", "x_fixed"],
+              ["Y Fix", "y_fixed"],
+              ["W Fix", "w_fixed"],
+              ["H Fix", "h_fixed"],
+              ["W Default", "w_default"],
+              ["H Default", "h_default"],
+              ["X Spec", "x_spec"],
+              ["Y Spec", "y_spec"],
+              ["W Spec", "w_spec"],
+              ["H Spec", "h_spec"],
+              ["X Align", "x_align"],
+              ["Y Align", "y_align"],
+              ["Is shaded", "is_shaded_flag"],
+              ["Is Button Subclass", "is_button_subclass"],
+              ["Draw Border", "draw_border_flag"],
+              ["Attribs", "attribs"],
+              ["Tooltip", "tooltip"]
+             ]
+   end
+
+   #
+   # Default minimum width for the object
+   #
+   method min_width()
+      return 20
+   end
+
+   #
+   # Default minimum height for the object
+   #
+   method min_height()
+      return 20
+   end
+
+   #
+   # Reset an object, ie finalize it and set it up again afresh.
+   #
+   method reset(x)
+      self$finally()
+      self$final_setup(self.parent_Canvas.dialog_struct, x)
+      self$reset_size()
+      self$resize()
+      self$firstly()
+   end
+
+   #
+   # Reset the two size specs to null if the right flags are set.
+   #
+   method reset_size()
+      if \self.w_default then self.w_spec := &null
+      if \self.h_default then self.h_spec := &null
+   end
+
+   #
+   # Is obj inside this object?
+   #
+   method inside(obj)
+      fail
+   end
+
+   #
+   # Highlight the given object.
+   #
+   method highlight(W)
+      cw := Clone(W, "linestyle=dashed")
+      Rectangle(cw, self.x - RST, self.y - RST, self.w + 2 * RST, self.h + 2 * RST)
+
+      WAttrib(cw, "linestyle=solid")
+      if self === self.parent_Canvas.selected then
+         WAttrib(cw, "fg=red")
+
+      every i := 0 to RST - 1 do {
+         DrawLine(cw, self.x + i, self.y + RSW, self.x + i, self.y + i, self.x + RSW, self.y + i)
+
+         DrawLine(cw, self.x + self.w - 1 - RSW, self.y + i, self.x + self.w - 1 - i, self.y + i, self.x + self.w - 1 - i, self.y + RSW)
+
+         DrawLine(cw, self.x + i, self.y + self.h - 1  - RSW, self.x + i, self.y + self.h - 1 - i, self.x + RSW, self.y + self.h - 1 - i)
+
+
+         DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 - i, self.x + self.w - 1 - i, self.y + self.h - 1 - i, self.x + self.w - 1 - i, self.y + self.h - 1 - RSW)
+
+      }
+      Uncouple(cw)
+   end
+
+   #
+   # Set the parent canvas.
+   #
+   method set_parent_Canvas(p)
+      return self.parent_Canvas := p
+   end
+
+   #
+   # Is the cursor on the resize corners?
+   #
+   method in_resize_region()
+      if ((self.x <= &x < self.x + RSW) & (self.y <= &y < self.y + RST)) | ((self.x <= &x < self.x + RST) & (self.y <= &y < self.y + RSW)) then
+         return 1       # Top left
+
+      if ((self.x + self.w - RSW <= &x < self.x + self.w) & (self.y <= &y < self.y + RST)) | ((self.x + self.w - RST <= &x < self.x + self.w) & (self.y <= &y < self.y + RSW)) then
+         return 2       # Top right
+
+      if ((self.x <= &x < self.x + RSW) & (self.y + self.h - RST <= &y < self.y + self.h)) | ((self.x <= &x < self.x + RST) & (self.y + self.h - RSW <= &y < self.y + self.h)) then
+         return 3       # Bottom left
+
+      if ((self.x + self.w - RSW <= &x < self.x + self.w) & (self.y + self.h - RST <= &y < self.y + self.h)) | ((self.x + self.w - RST <= &x < self.x + self.w) & (self.y + self.h - RSW <= &y < self.y + self.h)) then
+         return 4       # Bottom right
+
+      fail
+   end
+
+   #
+   # If the cursor is over the object, return it.  This will be over-ridden for
+   # container subclasses.
+   #
+   method which_cursor_over()
+      if ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then
+         return self
+   end
+
+   #
+   # Place object c inside the container subclass
+   #
+   method place_inside(c)
+      #
+      # Add c to the object.
+      #
+      self$add(c)      
+
+      #
+      # Set c's x and y position, and set size to the current absolute size.
+      #
+      c.x_spec := c$get_x_alignment_offset() + c.x - self$get_x_reference()
+      c.y_spec := c$get_y_alignment_offset() + c.y - self$get_y_reference()
+      c.w_spec := c.w
+      c.h_spec := c.h
+
+      #
+      # Reset c.
+      #
+      c$reset(self)
+
+      #
+      # Resize
+      #
+      self$resize()
+   end
+
+   #
+   # Remove object c from the container.
+   #
+   method place_outside(c)
+      every i := 1 to *self.components do
+         if c === self.components[i] then {
+            self.components := self.components[1 : i] ||| self.components[i + 1 : 0]
+            break
+         }
+      #
+      # Resize
+      #
+      self$resize()
+   end
+
+   #
+   # Called during a move within the container, used for example in Border class.
+   #
+   method still_inside(c)
+   end
+
+   #
+   # Reorder selections
+   #
+   method reorder()
+      every i := 1 to *self.parent_Canvas.selections do {
+         every j := i to *self.components do {
+            if self.components[j] === self.parent_Canvas.selections[i] then {
+               self.components[i] :=: self.components[j]
+               break
+	       }
+         }
+      }
+   end
+
+   initially
+
+end
+
+############################################################################
+#
+# Parent class for all CanvasComponent configuration dialogs.
+#
+class CanvasComponentDialog : CommonDialog(
+   size_list,               # List of sizes to select from
+   align_list,              # List of alignments   
+   x_spec,                  # EditLists for pos & size
+   y_spec,                  #              
+   w_spec,                  #              
+   h_spec,                  #              
+   set_w_default,           # CheckBoxes                     
+   set_h_default,           #                     
+   align_spec,              # List for align specification                 
+   draw_border,             # CheckBoxes                  
+   shaded,                  #              
+   tbl,                     # Table for attribute specification          
+   tbl_add,                 # Buttons              
+   tbl_delete,              #                  
+   tbl_apply,               #                 
+   tbl_contents,            # Table contents
+   tbl_edit_attrib,         # Two TextFields                                         
+   tbl_edit_value,          #                      
+   name,                    # TextField - object name           
+   class_name,              # TextField - class name
+   tooltip_flag,            # Tooltip on/off
+   tooltip,                 # TextField - tooltip
+   okay,                    # Buttons           
+   cancel,                  #              
+   pos_tab,                 # Tabs in TabSet              
+   attrib_tab,              #                  
+   other_tab,               #                 
+   gen_tabset,              #                  
+   set_x_fixed,             # CheckBoxes to fix pos/size                  
+   set_y_fixed,             #                   
+   set_w_fixed,             #                   
+   set_h_fixed,             #                   
+   var_category0,           # Checkboxes for variable category
+   var_category1,           #  
+   var_category2,           # 
+   var_category_cbg,        #
+   has_initial_focus,       # CheckBox                        
+   label,                   # Dialog title
+   okay_result              # Result flag
+   )
+
+   #
+   # Get result flag
+   #
+   method okay_result()
+      return self.okay_result
+   end
+
+   #
+   # This will be extended by subclasses.
+   #
+   method dialog_event(ev)
+      case ev$get_component() of {
+         set_w_default : if ev$get_code() > 0 then 
+            w_spec$toggle_is_shaded()
+
+         set_h_default : if ev$get_code() > 0 then 
+            h_spec$toggle_is_shaded()
+
+         tooltip_flag :  if ev$get_code() > 0 then 
+            tooltip$toggle_is_shaded()
+
+         tbl_add : if ev$get_code() > 0 then {
+            #
+            # Add a new value to the attributes table.
+            #
+            put(tbl_contents, ["Edit", "me"])
+            tbl$set_contents(tbl_contents)
+            tbl$goto_pos(*tbl_contents, 0)
+            tbl$set_selections([*tbl_contents])
+            tbl_edit_attrib$set_contents(tbl_contents[-1][1])
+            tbl_edit_value$set_contents(tbl_contents[-1][2])
+            tbl_edit_attrib$clear_is_shaded()
+            tbl_edit_value$clear_is_shaded()
+            tbl_delete$clear_is_shaded()
+            tbl_apply$clear_is_shaded()
+         }
+
+         tbl : if ev$get_code() > 0 then {
+            #
+            # Line in the table clicked - copy the line to the edit area.
+            #
+            if i := tbl$get_selections()[1] then {
+               tbl_edit_attrib$set_contents(tbl_contents[i][1])
+               tbl_edit_value$set_contents(tbl_contents[i][2])
+               tbl_edit_attrib$clear_is_shaded()
+               tbl_edit_value$clear_is_shaded()
+               tbl_delete$clear_is_shaded()
+               tbl_apply$clear_is_shaded()
+            } else {
+               tbl_edit_attrib$set_is_shaded()
+               tbl_edit_value$set_is_shaded()
+               tbl_delete$set_is_shaded()
+               tbl_apply$set_is_shaded()
+            }
+         }
+
+         tbl_delete : if ev$get_code() > 0 then {
+            #
+            # Delete a line from the table.
+            #
+            i := tbl$get_selections()[1]
+            tbl_contents := tbl_contents[1 : i] ||| tbl_contents[i + 1 : 0]
+            tbl$set_contents(tbl_contents)
+            tbl$clear_selections()
+            tbl_edit_attrib$set_is_shaded()
+            tbl_edit_value$set_is_shaded()
+            tbl_delete$set_is_shaded()
+            tbl_apply$set_is_shaded()
+         }
+
+         tbl_apply : if ev$get_code() > 0 then {
+            #
+            # Copy the edited item back to the table. 
+            #
+            i := tbl$get_selections()[1]
+            tbl_contents[i] := [tbl_edit_attrib$get_contents(), tbl_edit_value$get_contents()]
+            tbl$set_contents(tbl_contents)
+            tbl$clear_selections()
+            tbl_edit_attrib$set_is_shaded()
+            tbl_edit_value$set_is_shaded()
+            tbl_delete$set_is_shaded()
+            tbl_apply$set_is_shaded()
+         }
+      }
+   end
+
+   #
+   # Set up the dialog fields.  This will be called from the initially method
+   # of subclasses.
+   #
+   method setup(c)
+      self$CommonDialog.initially()
+
+      size_list := ["0", "20%", "25%", "33%", "40%", "50%", "66%", "75%", "80%", "100%"]
+      align_list := ["(l, t)", "(l, c)", "(l, b)", "(c, t)", "(c, c)", "(c, b)", "(r, t)", "(r, c)", "(r, b)"]
+
+      object_class_name(c) ? {
+         ="Canvas"
+         label := tab(0) || " Setup"
+      }
+
+      b := Border()
+      b$set_pos("50%", 12)
+      b$set_size("100%-50", 308)
+      b$set_align("c", "t")
+      l := Label()
+      l$set_label("General Setup")
+      b$set_title(l)
+      self$add(b)
+
+      gen_tabset := TabSet()
+      gen_tabset$set_pos("50%", 18)
+      gen_tabset$set_size("100%-50", 265)
+      gen_tabset$set_align("c", "t")
+      b$add(gen_tabset)
+
+      pos_tab := TabItem()
+      pos_tab$set_label("Position & Size")
+      gen_tabset$add(pos_tab)
+
+      l := Label()
+      l$set_label("X : ")
+      l$set_pos(50, "20%")
+      l$set_align("l", "c")
+      pos_tab$add(l)
+
+      x_spec := EditList()
+      x_spec$set_pos(80, "20%")
+      x_spec$set_size(130)
+      x_spec$set_align("l", "c")
+      x_spec$set_selection_list(size_list)
+      x_spec$set_contents(c.x_spec)
+      pos_tab$add(x_spec)
+
+      set_x_fixed := CheckBox()
+      set_x_fixed$set_label("Fix")
+      set_x_fixed$set_pos(230, "20%")
+      set_x_fixed$set_align("l", "c")
+      if \c.x_fixed then
+         set_x_fixed$set_is_checked()
+      pos_tab$add(set_x_fixed)
+
+      l := Label()
+      l$set_label("Alignment : ")
+      l$set_pos(300, "20%")
+      l$set_align("l", "c")
+      pos_tab$add(l)
+
+      align_spec := List()
+      align_spec$set_pos(375, "20%")
+      align_spec$set_size(75)
+      align_spec$set_align("l", "c")
+      align_spec$set_selection_list(align_list)
+      align_spec$set_selection(case c.x_align || c.y_align of {
+           "lt" : 1
+           "lc" : 2
+           "lb" : 3
+           "ct" : 4
+           "cc" : 5
+           "cb" : 6
+           "rt" : 7
+           "rc" : 8 
+           "rb" : 9 })
+
+      pos_tab$add(align_spec)
+
+      l := Label()
+      l$set_label("Y : ")
+      l$set_pos(50, "40%")
+      l$set_align("l", "c")
+      pos_tab$add(l)
+
+      y_spec := EditList()
+      y_spec$set_pos(80, "40%")
+      y_spec$set_size(130)
+      y_spec$set_align("l", "c")
+      y_spec$set_selection_list(size_list)
+      y_spec$set_contents(c.y_spec)
+      pos_tab$add(y_spec)
+
+      set_y_fixed := CheckBox()
+      set_y_fixed$set_label("Fix")
+      set_y_fixed$set_pos(230, "40%")
+      set_y_fixed$set_align("l", "c")
+      if \c.y_fixed then
+         set_y_fixed$set_is_checked()
+      pos_tab$add(set_y_fixed)
+
+      l := Label()
+      l$set_label("W : ")
+      l$set_pos(50, "60%")
+      l$set_align("l", "c")
+      pos_tab$add(l)
+
+      w_spec := EditList()
+      w_spec$set_pos(80, "60%")
+      w_spec$set_size(130)
+      w_spec$set_align("l", "c")
+      w_spec$set_selection_list(size_list)
+      w_spec$set_contents(c.w_spec)
+      pos_tab$add(w_spec)
+
+      set_w_fixed := CheckBox()
+      set_w_fixed$set_label("Fix")
+      set_w_fixed$set_pos(230, "60%")
+      set_w_fixed$set_align("l", "c")
+      if \c.w_fixed then
+         set_w_fixed$set_is_checked()
+      pos_tab$add(set_w_fixed)
+
+      set_w_default := CheckBox()
+      set_w_default$set_label("Use default")
+      set_w_default$set_pos(300, "60%")
+      set_w_default$set_align("l", "c")
+      if \c.w_default then {
+         set_w_default$set_is_checked()
+         w_spec$set_is_shaded()
+      }
+      pos_tab$add(set_w_default)
+
+      l := Label()
+      l$set_label("H : ")
+      l$set_pos(50, "80%")
+      l$set_align("l", "c")
+      pos_tab$add(l)
+
+      h_spec := EditList()
+      h_spec$set_pos(80, "80%")
+      h_spec$set_size(130)
+      h_spec$set_align("l", "c")
+      h_spec$set_selection_list(size_list)
+      h_spec$set_contents(c.h_spec)
+      pos_tab$add(h_spec)
+
+      set_h_fixed := CheckBox()
+      set_h_fixed$set_label("Fix")
+      set_h_fixed$set_pos(230, "80%")
+      set_h_fixed$set_align("l", "c")
+      if \c.h_fixed then
+         set_h_fixed$set_is_checked()
+      pos_tab$add(set_h_fixed)
+
+      set_h_default := CheckBox()
+      set_h_default$set_label("Use default")
+      set_h_default$set_pos(300, "80%")
+      set_h_default$set_align("l", "c")
+      if \c.h_default then {
+         set_h_default$set_is_checked()
+         h_spec$set_is_shaded()
+      }
+      pos_tab$add(set_h_default)
+
+      attrib_tab := TabItem()
+      attrib_tab$set_label("Attribs")
+      gen_tabset$add(attrib_tab)
+
+      #
+      # Parse the object's attributes into a list of pairs for
+      # the table contents.
+      #
+      tbl_contents := []
+      every s := !c.attribs do {
+         s ? {
+             a := tab(upto('='))
+             move(1)
+             l := tab(0)
+         }
+         put(tbl_contents, [a, l])
+      }
+      tbl := Table()
+      tbl$set_select_one()
+      tbl$set_pos("50%", 12)
+      tbl$set_size(300, 145)
+      tbl$set_align("c", "t")
+      tbl$set_contents(tbl_contents)
+      attrib_tab$add(tbl)
+
+      c1 := TableColumn()
+      c1$set_column_width(100)
+      c1$set_label("Attrib")
+      tbl$add(c1)
+
+      c2 := TableColumn()
+      c2$set_column_width(175)
+      c2$set_label("Value")
+      tbl$add(c2)
+
+      tbl_edit_attrib := TextField()
+      tbl_edit_attrib$set_pos("50%-140", 177)
+      tbl_edit_attrib$set_align("l", "c")
+      tbl_edit_attrib$set_size(95)
+      tbl_edit_attrib$set_is_shaded()
+      attrib_tab$add(tbl_edit_attrib)
+
+      tbl_edit_value := TextField()
+      tbl_edit_value$set_pos("50%-40", 177)
+      tbl_edit_value$set_align("l", "c")
+      tbl_edit_value$set_size(175)
+      tbl_edit_value$set_is_shaded()
+      attrib_tab$add(tbl_edit_value)
+
+      tbl_add := TextButton()
+      tbl_add$set_pos("25%", 215)
+      tbl_add$set_align("c", "c")
+      tbl_add$set_label("Add")
+      attrib_tab$add(tbl_add)
+
+      tbl_delete := TextButton()
+      tbl_delete$set_pos("50%", 215)
+      tbl_delete$set_align("c", "c")
+      tbl_delete$set_label("Delete")
+      tbl_delete$set_is_shaded()
+      attrib_tab$add(tbl_delete)
+
+      tbl_apply := TextButton()
+      tbl_apply$set_pos("75%", 215)
+      tbl_apply$set_align("c", "c")
+      tbl_apply$set_label("Apply")
+      tbl_apply$set_is_shaded()
+      attrib_tab$add(tbl_apply)
+
+      other_tab := TabItem()
+      other_tab$set_label("Other")
+      gen_tabset$add(other_tab)
+
+      l := Label()
+      l$set_label("Name")
+      l$set_pos(50, "16%")
+      l$set_align("l", "c")
+      other_tab$add(l)
+
+      name := TextField()
+      name$set_size(125)
+      name$set_pos(100, "16%")
+      name$set_align("l", "c")
+      other_tab$add(name)
+      name$set_contents(c.name)
+
+      l := Label()
+      l$set_label("Class")
+      l$set_pos("50%", "16%")
+      l$set_align("l", "c")
+      other_tab$add(l)
+
+      class_name := TextField()
+      class_name$set_size(125)
+      class_name$set_pos("50%+50", "16%")
+      class_name$set_align("l", "c")
+      other_tab$add(class_name)
+      class_name$set_contents(c.class_name)
+
+      tooltip := TextField()
+      tooltip$set_size(125)
+      tooltip$set_pos("150", "33%")
+      tooltip$set_align("l", "c")
+      other_tab$add(tooltip)
+
+      tooltip_flag := CheckBox()
+      tooltip_flag$set_label("Set Tooltip")
+      tooltip_flag$set_pos("50", "33%")
+      tooltip_flag$set_align("l", "c")
+      if /c.tooltip then
+         tooltip$set_is_shaded()
+      else  {
+         tooltip_flag$set_is_checked()
+         tooltip$set_contents(c.tooltip)
+      }
+
+      other_tab$add(tooltip_flag)
+
+      draw_border := CheckBox()
+      draw_border$set_label("Draw Border")
+      draw_border$set_pos(50, "50%")
+      draw_border$set_align("l", "c")
+      if \c.draw_border_flag then
+         draw_border$set_is_checked()
+      other_tab$add(draw_border)
+
+      shaded := CheckBox()
+      shaded$set_label("Is shaded")
+      shaded$set_pos(50, "66%")
+      shaded$set_align("l", "c")
+      if \c.is_shaded_flag then
+         shaded$set_is_checked()
+      other_tab$add(shaded)
+
+      has_initial_focus := CheckBox()
+      has_initial_focus$set_label("Has initial focus")
+      has_initial_focus$set_pos(50, "83%")
+      has_initial_focus$set_align("l", "c")
+      if c.parent_Canvas.initial_focus === c then
+         has_initial_focus$set_is_checked()
+      other_tab$add(has_initial_focus)
+
+      var_category_cbg := CheckBoxGroup()
+
+      var_category0 := CheckBox()
+      var_category0$set_label("Class variable with method")
+      var_category0$set_pos("50%", "50%")
+      var_category0$set_align("l", "c")
+      var_category_cbg$add(var_category0)
+      other_tab$add(var_category0)
+
+      var_category1 := CheckBox()
+      var_category1$set_label("Class variable without method")
+      var_category1$set_pos("50%", "66%")
+      var_category1$set_align("l", "c")
+      var_category_cbg$add(var_category1)
+      other_tab$add(var_category1)
+
+      var_category2 := CheckBox()
+      var_category2$set_label("Local setup variable")
+      var_category2$set_pos("50%", "83%")
+      var_category2$set_align("l", "c")
+      var_category_cbg$add(var_category2)
+      other_tab$add(var_category2)
+
+      case c.var_category of {
+         2 : var_category_cbg$set_which_one(var_category2)
+         1 : var_category_cbg$set_which_one(var_category1)
+         default : var_category_cbg$set_which_one(var_category0)
+      }
+
+      okay := TextButton()
+      okay$set_pos("33%", "100%-20")
+      okay$set_align("c", "c")
+      okay$set_label("Okay")
+      self$add(okay)
+
+      cancel := TextButton()
+      cancel$set_pos("66%", "100%-20")
+      cancel$set_align("c", "c")
+      cancel$set_label("Cancel")
+      self$add(cancel)
+   end
+
+   #
+   # Validate data
+   #
+   method validate()
+      check_attribs(tbl$get_contents()) | fail
+      parse_pos(0, x_spec$get_contents()) | return alert_error("Invalid x specification")
+      parse_pos(0, y_spec$get_contents()) | return alert_error("Invalid y specification")
+      parse_pos(0, w_spec$get_contents()) | return alert_error("Invalid w specification")
+      parse_pos(0, h_spec$get_contents()) | return alert_error("Invalid h specification")
+      return
+   end
+
+   #
+   # Copy the fields back to c; called by subclass.
+   #
+   method set_vals(c)
+      c.x_spec := x_spec$get_contents()
+      c.y_spec := y_spec$get_contents()
+
+      c.w_default := set_w_default$get_status()
+      c.h_default := set_h_default$get_status()
+
+      c.w_spec := if /c.w_default then w_spec$get_contents() else &null
+      c.h_spec := if /c.h_default then h_spec$get_contents() else &null
+
+      c.x_fixed := set_x_fixed$get_status()
+      c.y_fixed := set_y_fixed$get_status()
+      c.w_fixed := set_w_fixed$get_status()
+      c.h_fixed := set_h_fixed$get_status()
+      c.is_shaded_flag := shaded$get_status()
+      c.draw_border_flag := draw_border$get_status()
+      c.tooltip := if tooltip_flag$is_checked() then tooltip$get_contents() else &null
+      if has_initial_focus$is_checked() then
+         c.parent_Canvas.initial_focus := c
+      else {
+         #
+         # Clear if already set to this object
+         #
+         if c.parent_Canvas.initial_focus === c then
+            c.parent_Canvas.initial_focus := &null
+      }
+
+      c.name := name$get_contents()
+      c.class_name := class_name$get_contents()
+
+      case align_spec$get_selection() of {
+         1 : c$set_align("l", "t")
+         2 : c$set_align("l", "c")
+         3 : c$set_align("l", "b")
+         4 : c$set_align("c", "t")
+         5 : c$set_align("c", "c")
+         6 : c$set_align("c", "b")
+         7 : c$set_align("r", "t")
+         8 : c$set_align("r", "c")
+         9 : c$set_align("r", "b")
+      }
+
+      c.var_category := case var_category_cbg$get_which_one() of {
+         var_category0 : &null
+         var_category1 : 1
+         var_category2 : 2
+      }
+
+      #
+      # Build the attribs list.
+      #
+      c.attribs := []
+      every pair := !tbl$get_contents() do
+         put(c.attribs, pair[1] || "=" || pair[2])
+   end
+end
+
+############################################################################
+#
+# Class for representing Buttons.
+# 
+class CanvasButton : CanvasComponent()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      (\self.parent_button_group)$gen_code(c)
+      (\self.parent_check_box_group)$gen_code(c)
+      #
+      # Extend superclass method
+      #
+      self$CanvasComponent.gen_code(c)
+      #
+      # Add the code
+      #
+      if \self.no_keyboard_flag then
+         c$line(name || "$set_no_keyboard()")
+      if \self.parent_button_group then
+         c$line(self.parent_button_group.name || "$add(" || name || ")")
+
+      if \self.parent_check_box_group then
+         c$line(self.parent_check_box_group.name || "$add(" || name || ")")
+
+      if \self.is_checked_flag then {
+         if \self.parent_check_box_group then
+            c$line(self.parent_check_box_group.name || "$set_which_one(" || name || ")")
+         else
+            c$line(name || "$set_is_checked()")
+      }         
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["No Keyboard", "no_keyboard_flag"],
+          ["Img Up", "img_up"],
+          ["Img Down", "img_down"],
+          ["Img Width", "img_w"],
+          ["Img Height", "img_h"],
+          ["Is Checked Flag", "is_checked_flag"],
+          ["Is Checkbox Flag", "is_checkbox_flag"],
+          ["Parent CheckBoxGroup", "parent_check_box_group"],
+          ["Parent Button Group", "parent_button_group"]
+         ]
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.label := self.label
+      c.no_keyboard_flag := self.no_keyboard_flag
+      c$set_imgs(\self.img_up, \self.img_down)
+      if \self.parent_check_box_group then
+         c$set_parent_check_box_group((\c.parent_Canvas).checkbox_groups.boxes[self.parent_check_box_group.number])
+      if \self.parent_button_group then
+         c$set_parent_button_group((\c.parent_Canvas).button_groups.boxes[self.parent_button_group.number])
+      # If a checked box in a cbg is copied then the copy will not
+      # be checked.
+      #
+      if \self.is_checked_flag & /c.parent_check_box_group then
+         c$set_is_checked()
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(c, pc)
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      if \self.is_checked_flag then {
+         if \c.parent_check_box_group then
+            c.parent_check_box_group.which_one := c
+         c$set_is_checked()
+      }         
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp(c)
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self.is_button_subclass := 1
+end
+
+############################################################################
+#
+#
+#
+class CanvasButtonDialog : CanvasComponentDialog(
+   label_str,               #                 
+   button_group_list,       #                  
+   in_checkbox_group,       #                          
+   browse_up,               #                     
+   browse_down,             #                     
+   icon_up,
+   icon_down,
+   keyboard,                #                
+   checkbox_group_list,     #                  
+   in_button_group,         #
+   button_tab_set,
+   tab_basic,
+   tab_groups,
+   tab_images,
+   label_label,
+   cp_img,
+   initially_checked        #
+   )
+
+   method validate()
+      self$CanvasComponentDialog.validate() | fail
+      if not tab_images$is_shaded() then {
+         if img_width(icon_up.img) ~= img_width(icon_down.img) then
+            return alert_error("Image widths differ")
+
+         if img_height(icon_up.img) ~= img_height(icon_down.img) then
+            return alert_error("Image heights differ")
+      }
+      return
+   end
+      
+   method set_vals(c)
+      self$CanvasComponentDialog.set_vals(c)
+      if not tab_images$is_shaded() then
+         c$set_imgs(icon_up.img, icon_down.img)
+
+      if not label_str$is_shaded() then
+         c$set_label(label_str$get_contents())
+
+      #
+      # If in cbg and on, turn off, since may go out of cbg or into
+      # a different one.
+      #
+      if (\c.parent_check_box_group).which_one === c then
+         c.parent_check_box_group.which_one := &null                 
+
+      if in_checkbox_group$is_checked() then {
+         #
+         # Put in cbg.
+         #
+         c$set_parent_check_box_group(c.parent_Canvas.checkbox_groups$group_number(checkbox_group_list$get_selection()))
+         if initially_checked$is_checked() then {
+            #      
+            # Turn off current one on, if any; turn self on.
+            #
+            (\c.parent_check_box_group.which_one).is_checked_flag := &null
+            c.parent_check_box_group.which_one := c
+         }
+      } else
+         c.parent_check_box_group := &null
+
+      #
+      # Set checked flag
+      #
+      c.is_checked_flag := initially_checked$get_status()
+
+      c.no_keyboard_flag := keyboard$get_status()
+      c$set_parent_button_group(if in_button_group$is_checked() then c.parent_Canvas.button_groups$group_number(button_group_list$get_selection()) else &null)
+   end
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         browse_up : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if s := read_icon(fd$get_result()) then
+               self.icon_up$set_img(s)
+         }
+         browse_down : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if s := read_icon(fd$get_result()) then
+               self.icon_down$set_img(s)
+         }
+
+         cp_img : if ev$get_code() > 0 then {
+            self.icon_down$set_img(self.icon_up.img)
+         }
+
+         in_button_group : if ev$get_code() > 0 then {
+            button_group_list$toggle_is_shaded()
+         }
+
+         in_checkbox_group : if ev$get_code() > 0 then {
+            checkbox_group_list$toggle_is_shaded()
+         }
+      }
+   end
+
+   method setup(c)
+      local panel_1, border_2, panel_2, border_3
+      self$CanvasComponentDialog.setup(c)
+
+      p := Border()
+      p$set_size("100%-50", 220)
+      p$set_pos("50%", 335)
+      p$set_align("c", "t")
+      self$add(p)
+      button_tab_set := TabSet()
+      button_tab_set$set_pos("50%", "50%")
+      button_tab_set$set_align("c", "c")
+      button_tab_set$set_size("100%-30", "100%-30")
+      tab_basic := TabItem()
+      tab_basic$set_label("Basic")
+      label_label := Label()
+      label_label$set_pos(30, 41)
+      label_label$set_internal_alignment("l")
+      label_label$set_label("Label")
+      tab_basic$add(label_label)
+      label_str := TextField()
+      label_str$set_pos("94", "37")
+      label_str$set_size("100", )
+      label_str$set_draw_border()
+      label_str$set_contents(\c.label)
+      tab_basic$add(label_str)
+      keyboard := CheckBox()
+      keyboard$set_pos("39", "87")
+      keyboard$set_label("No keyboard input")
+      if \c.no_keyboard_flag then
+         keyboard$set_is_checked()
+      tab_basic$add(keyboard)
+      initially_checked := CheckBox()
+      initially_checked$set_pos(41, 108)
+      initially_checked$set_label("Initially checked")
+      tab_basic$add(initially_checked)
+      button_tab_set$add(tab_basic)
+      tab_groups := TabItem()
+      tab_groups$set_label("Groups")
+      button_group_list := List()
+      button_group_list$set_pos("189", 35)
+      button_group_list$set_size("175", )
+      button_group_list$set_selection_list(c.parent_Canvas.button_groups$string_rep())
+      tab_groups$add(button_group_list)
+      in_button_group := CheckBox()
+      in_button_group$set_pos(43, 40)
+      in_button_group$set_label("Button Group")
+      tab_groups$add(in_button_group)
+      in_checkbox_group := CheckBox()
+      in_checkbox_group$set_pos(42, 97)
+      in_checkbox_group$set_label("CheckBox Group")
+      tab_groups$add(in_checkbox_group)
+      checkbox_group_list := List()
+      checkbox_group_list$set_pos("189", "78")
+      checkbox_group_list$set_size("175", )
+      checkbox_group_list$set_selection_list(c.parent_Canvas.checkbox_groups$string_rep())
+      tab_groups$add(checkbox_group_list)
+      button_tab_set$add(tab_groups)
+      tab_images := TabItem()
+      tab_images$set_label("Images")
+      panel_1 := Border()
+      panel_1$set_pos("100%-50", "50%")
+      panel_1$set_size("50%-100", "100%-25")
+      panel_1$set_align("r", "c")
+      if \c.img_down then {
+         icon_down := Icon()
+         icon_down$set_pos("50%", "33%")
+         icon_down$set_size("75", "62")
+         icon_down$set_align("c", "c")
+         icon_down$set_draw_border()
+         icon_down$set_img(c.img_down)
+         panel_1$add(icon_down)
+      }
+      label_3 := Label()
+      label_3$set_pos(10, 0)
+      label_3$set_internal_alignment("l")
+      label_3$set_label("Down")
+      panel_1$set_title(label_3)
+      browse_down := TextButton()
+      browse_down$set_pos("50%", "75%")
+      browse_down$set_align("c", "c")
+      browse_down$set_internal_alignment("c")
+      browse_down$set_label("Browse...")
+      panel_1$add(browse_down)
+      tab_images$add(panel_1)
+      panel_2 := Border()
+      panel_2$set_pos("50", "50%")
+      panel_2$set_size("50%-100", "100%-25")
+      panel_2$set_align("l", "c")
+      if \c.img_up then {
+         icon_up := Icon()
+         icon_up$set_pos("50%", "33%")
+         icon_up$set_size("75", "62")
+         icon_up$set_align("c", "c")
+         icon_up$set_draw_border()
+         icon_up$set_img(c.img_up)
+         panel_2$add(icon_up)
+      }
+      label_4 := Label()
+      label_4$set_pos(10, 0)
+      label_4$set_internal_alignment("l")
+      label_4$set_label("Up")
+      panel_2$set_title(label_4)
+      browse_up := TextButton()
+      browse_up$set_pos("50%", "75%")
+      browse_up$set_align("c", "c")
+      browse_up$set_internal_alignment("c")
+      browse_up$set_label("Browse...")
+      panel_2$add(browse_up)
+      tab_images$add(panel_2)
+      cp_img := TextButton()
+      cp_img$set_pos("50%", "50%")
+      cp_img$set_align("c", "c")
+      cp_img$set_internal_alignment("c")
+      cp_img$set_label("Copy ->")
+      tab_images$add(cp_img)
+      button_tab_set$add(tab_images)
+      button_tab_set$set_which_one(tab_basic)
+      p$add(button_tab_set)
+
+      self$set_attribs("size=600,700", "label=" || label)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      checkbox_group_list$set_selection_list(c.parent_Canvas.checkbox_groups$string_rep())
+
+      if c.parent_Canvas.checkbox_groups$is_empty() then {
+         in_checkbox_group$set_is_shaded()
+         checkbox_group_list$set_is_shaded()
+         if c$is_checked() then
+            initially_checked$set_is_checked()
+      } else {
+         if \c.parent_check_box_group then {
+            in_checkbox_group$set_is_checked()
+            checkbox_group_list$set_selection(c.parent_Canvas.checkbox_groups$group_index(c.parent_check_box_group))
+            if c === c.parent_check_box_group.which_one then
+               initially_checked$set_is_checked()
+         } else  {
+            checkbox_group_list$set_is_shaded()
+            if c$is_checked() then
+               initially_checked$set_is_checked()
+         }
+      }
+
+      if c.parent_Canvas.button_groups$is_empty() then {
+         in_button_group$set_is_shaded()
+         button_group_list$set_is_shaded()
+      } else {
+         if \c.parent_button_group then {
+            in_button_group$set_is_checked()
+            button_group_list$set_selection(c.parent_Canvas.button_groups$group_index(c.parent_button_group))
+         } else 
+            button_group_list$set_is_shaded()
+      }
+
+   end
+end
+
+############################################################################
+#
+#
+#
+class CanvasTextButtonDialog : CanvasButtonDialog(
+   c,                                                  
+   internal_alignment,      #                          
+   internal_alignment_list
+   )
+
+   method dialog_event(ev)
+      self$CanvasButtonDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_internal_alignment(internal_alignment_list[internal_alignment$get_selection()])
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self$setup(c)
+      l := Label()
+      l$set_label("Label alignment : ")
+      l$set_pos("250", "25%")
+      l$set_align("l", "c")
+      tab_basic$add(l)
+      internal_alignment := List()
+      internal_alignment$set_pos("400", "25%")
+      internal_alignment$set_size(50)
+      internal_alignment$set_align("l", "c")
+      internal_alignment$set_selection_list(internal_alignment_list)
+      internal_alignment$set_selection(case c.internal_alignment of {
+           "c" : 1
+           "l" : 2
+           "r" : 3 })
+
+      tab_basic$add(internal_alignment)
+      tab_images$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=600,600", "label=" || label)
+
+
+end
+
+############################################################################
+#
+# 
+#
+class CanvasTextButton : CanvasButton : TextButton()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasButton.gen_code(c)
+      c$line(name || "$set_label(" || image(self.label) || ")")
+      c$line(name || "$set_internal_alignment(" || image(self.internal_alignment) || ")")
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TextButton"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "text_button"
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasButton.get_template() ||| 
+         [["Internal Align", "internal_alignment"]]
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      self$CanvasButton.cp_fields(c)
+      c.internal_alignment := self.internal_alignment
+   end
+
+   # 
+   # Duplicate object
+   #
+   method dup(pc)
+      c := CanvasTextButton()
+      self$CanvasButton.dup(c, pc)
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp()
+      c := CanvasTextButton()
+      self$CanvasButton.cp(c)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTextButtonDialog(self)
+   end
+
+   initially
+      self$CanvasButton.initially()
+      self$TextButton.initially()
+end
+
+############################################################################
+#
+# IconButton configuration dialog
+#
+class CanvasIconButtonDialog : CanvasButtonDialog(
+   c
+   )
+
+   method dialog_event(ev)
+      self$CanvasButtonDialog.dialog_event(ev)
+
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      label_label$set_is_shaded()
+      label_str$set_is_shaded()
+      self$set_attribs("size=600,650", "label=" || label)
+#   self$set_attribs("size=600,750", "label=" || label)  icon button swj
+
+end
+
+############################################################################
+#
+# Class for representing a IconButton on the canvas.
+#
+class CanvasIconButton : CanvasButton : IconButton()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "IconButton"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "icon_button"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasButton.gen_code(c)
+
+      if self.img_up == self.img_down then
+         c$line(name || "$set_img(" || image(self.img_up) || ")")
+      else
+         c$line(name || "$set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
+   end
+
+   # 
+   # Duplicate object
+   #
+   method dup(pc)
+      c := CanvasIconButton()
+      self$CanvasButton.dup(c, pc)
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp()
+      c := CanvasIconButton()
+      self$CanvasButton.cp(c)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasIconButtonDialog(self)
+   end
+
+   initially
+      self$CanvasButton.initially()
+      self$IconButton.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasCheckBoxDialog : CanvasButtonDialog(
+   c
+   )
+
+   method dialog_event(ev)
+      self$CanvasButtonDialog.dialog_event(ev)
+
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+
+         in_checkbox_group : if ev$get_code() > 0 then {
+            if in_checkbox_group$is_checked() then {
+               if self.icon_up.img == img_style("box_up") & self.icon_down.img == img_style("box_down") then {
+                  self.icon_up$set_img(img_style("diamond_up"))
+                  self.icon_down$set_img(img_style("diamond_down"))
+               }
+            } else {
+               if self.icon_up.img == img_style("diamond_up") & self.icon_down.img == img_style("diamond_down") then {
+                  self.icon_up$set_img(img_style("box_up"))
+                  self.icon_down$set_img(img_style("box_down"))
+               }
+            }
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+# swj     self$set_attribs("size=600,750", "label=" || label)  checkbox
+      self$set_attribs("size=600,600", "label=" || label)
+
+end
+
+############################################################################
+#
+# Class for representing a CheckBox on the canvas.
+#
+class CanvasCheckBox : CanvasButton : CheckBox()
+   method set_parent_check_box_group(x)
+      #
+      # Set the images to the standard diamonds, unless custom images already set.
+      #   
+      if self.img_up == img_style("box_up") & self.img_down == img_style("box_down") then 
+         self$set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+
+      self$CheckBox.set_parent_check_box_group(x)
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "CheckBox"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "check_box"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasButton.gen_code(c)
+
+      c$line(name || "$set_label(" || image(self.label) || ")")
+      if not((/self.parent_check_box_group & self.img_up == img_style("box_up") & self.img_down == img_style("box_down")) | 
+             (\self.parent_check_box_group & self.img_up == img_style("diamond_up") & self.img_down == img_style("diamond_down"))) then
+         c$line(name || "$set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasCheckBox()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasCheckBox()
+      self$CanvasButton.dup(c, pc)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasCheckBoxDialog(self)
+   end
+
+   initially
+      self$CanvasButton.initially()
+      self$CheckBox.initially()
+end
+
+
+############################################################################
+#
+# Dialog box for a CanvasScrollBar
+#
+class CanvasScrollBarDialog : CanvasComponentDialog(
+   c,                       # The object being configured
+   slider,                  #              
+   total_size,              #                  
+   page_size,               #                 
+   increment_size,          #                      
+   range_from,              #                  
+   range_to,                #                
+   initial_value            #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            #
+            # Check valid numeric fields
+            #
+            numeric(increment_size$get_contents()) | return alert_error("Increment size is non-numeric")
+            numeric(initial_value$get_contents()) | return alert_error("Initial value is non-numeric")
+            if slider$is_checked() then {
+               numeric(range_from$get_contents()) | return alert_error("Range from is non-numeric")
+               numeric(range_to$get_contents()) | return alert_error("Range to is non-numeric")
+            } else {
+               numeric(page_size$get_contents()) | return alert_error("Page size is non-numeric")
+               numeric(total_size$get_contents()) | return alert_error("Total size is non-numeric")
+            }
+            c$set_increment_size(numeric(increment_size$get_contents()))
+            c$set_value(numeric(initial_value$get_contents()))
+            if slider$is_checked() then
+               c$set_range(numeric(range_from$get_contents()), numeric(range_to$get_contents()))
+            else {
+               c.is_range_flag := &null
+               c$set_page_size(numeric(page_size$get_contents()))
+               c$set_total_size(numeric(total_size$get_contents()))
+            }
+
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+
+         slider : if ev$get_code() > 0 then {
+            page_size$toggle_is_shaded()
+            total_size$toggle_is_shaded()
+            range_from$toggle_is_shaded()
+            range_to$toggle_is_shaded()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=600,650", "label=" || label)
+# swj self$set_attribs("size=600,750", "label=" || label)scrollbar
+
+
+      p := Border()
+      p$set_pos("50%", 350)
+
+
+# swj  p$set_pos("50%", 410)
+      p$set_size("100%-50", 250)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      slider := CheckBox()
+      slider$set_pos(50, 50)
+      slider$set_align("l", "c")
+      slider$set_label("Slider")
+      p$add(slider)
+
+      l := Label()
+      l$set_label("Increment size : ")
+      l$set_pos(150, 50)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      increment_size := TextField()
+      increment_size$set_pos(250, 50)
+      increment_size$set_size(100)
+      increment_size$set_align("l", "c")
+      increment_size$set_contents(c.increment_size)
+      p$add(increment_size)
+
+      l := Label()
+      l$set_label("Page size : ")
+      l$set_pos(50, 100)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      page_size := TextField()
+      page_size$set_pos(125, 100)
+      page_size$set_size(100)
+      page_size$set_align("l", "c")
+      p$add(page_size)
+
+      l := Label()
+      l$set_label("Total size : ")
+      l$set_pos(250, 100)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      total_size := TextField()
+      total_size$set_pos(325, 100)
+      total_size$set_size(100)
+      total_size$set_align("l", "c")
+      p$add(total_size)
+
+      l := Label()
+      l$set_label("Range from : ")
+      l$set_pos(50, 150)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      range_from := TextField()
+      range_from$set_pos(125, 150)
+      range_from$set_size(100)
+      range_from$set_align("l", "c")
+      p$add(range_from)
+
+      l := Label()
+      l$set_label("Range to : ")
+      l$set_pos(250, 150)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      range_to := TextField()
+      range_to$set_pos(325, 150)
+      range_to$set_size(100)
+      range_to$set_align("l", "c")
+      p$add(range_to)
+
+      if \c.is_range_flag then {
+         range_from$set_contents(c.lo)
+         range_to$set_contents(c.hi)
+         slider$set_is_checked()
+         page_size$set_is_shaded()
+         total_size$set_is_shaded()
+      } else {
+         page_size$set_contents(c.page_size)
+         total_size$set_contents(c.total_size)
+         range_from$set_is_shaded()
+         range_to$set_is_shaded()
+      }
+
+      l := Label()
+      l$set_label("Initial value : ")
+      l$set_pos(50, 200)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      initial_value := TextField()
+      initial_value$set_pos(125, 200)
+      initial_value$set_size(100)
+      initial_value$set_align("l", "c")
+      initial_value$set_contents(c$get_value())
+      p$add(initial_value)
+end
+      
+############################################################################
+#
+# Class for representing a ScrollBar on the canvas.Class for a ScrollBar on the canvas.
+#
+class CanvasScrollBar : CanvasComponent : ScrollBar()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "ScrollBar"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "scroll_bar"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_value(" || self.value || ")")
+      c$line(name || "$set_increment_size(" || self.increment_size || ")")
+      if \self.is_range_flag then
+         c$line(name || "$set_range(" || self.lo || ", " || self.hi || ")")
+      else {
+         c$line(name || "$set_total_size(" || self.total_size || ")")
+         c$line(name || "$set_page_size(" || self.page_size || ")")
+      }
+      if \self.is_horizontal_flag then
+         c$line(name || "$set_is_horizontal()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.increment_size := self.increment_size
+      c.value := self.value
+      c.is_range_flag := self.is_range_flag
+      c.is_horizontal_flag := self.is_horizontal_flag
+      c.lo := self.lo
+      c.hi := self.hi
+      c.page_size := self.page_size
+      c.total_size := self.total_size
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasScrollBar()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasScrollBar()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [
+          ["Increment Size", "increment_size"],
+          ["Value", "value"],
+          ["Is Range Flag", "is_range_flag"],
+          ["Is Horizontal Flag", "is_horizontal_flag"],
+          ["Lo", "lo"],
+          ["Hi", "hi"],
+          ["Page Size", "page_size"],
+          ["Total Size", "total_size"]
+         ]
+   end
+                                                      
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasScrollBarDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$ScrollBar.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasLabelDialog : CanvasComponentDialog(
+   c,                       #         
+   label_str,               #                 
+   internal_alignment,      #                          
+   internal_alignment_list  #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_label(label_str$get_contents())
+            c$set_internal_alignment(internal_alignment_list[internal_alignment$get_selection()])
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self$setup(c)
+      self$set_attribs("size=600,650", "label=" || label)
+
+      p := Border()
+      p$set_pos("50%", 410)
+      p$set_size("100%-50", 150)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      l := Label()
+      l$set_label("Label : ")
+      l$set_pos(50, "33%")
+      l$set_align("l", "c")
+      p$add(l)
+      
+      label_str := TextField()
+      label_str$set_pos(200, "33%")
+      label_str$set_size(100)
+      label_str$set_align("l", "c")
+      label_str$set_contents(c.label)
+      p$add(label_str)
+
+      l := Label()
+      l$set_label("Internal alignment : ")
+      l$set_pos(50, "66%")
+      l$set_align("l", "c")
+      p$add(l)
+
+      internal_alignment := List()
+      internal_alignment$set_pos(200, "66%")
+      internal_alignment$set_size(50)
+      internal_alignment$set_align("l", "c")
+      internal_alignment$set_selection_list(internal_alignment_list)
+      internal_alignment$set_selection(case c.internal_alignment of {
+           "c" : 1
+           "l" : 2
+           "r" : 3 })
+
+      p$add(internal_alignment)
+end
+
+############################################################################
+#
+# Class for representing a Label on the canvas.
+#
+class CanvasLabel : CanvasComponent : Label()
+   #
+   # Overrides CanvasComponent.min_height()
+   #
+   method min_height()
+      return 13
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Label"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "label"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_internal_alignment(" || image(self.internal_alignment) || ")")
+      c$line(name || "$set_label(" || image(self.label) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.label := self.label
+      c.internal_alignment := self.internal_alignment
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasLabel()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasLabel()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["Internal Align", "internal_alignment"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasLabelDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Label.initially()
+      var_category := 1
+end
+
+############################################################################
+#
+#
+#
+class CanvasTextFieldDialog : CanvasComponentDialog(c, contents, filter)
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_contents(contents$get_contents())
+            c.filter_str := filter$get_contents()
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      self$set_attribs("size=600,650", "label=" || label)
+
+      p := Border()
+      p$set_pos("50%", 410)
+      p$set_size("100%-50", 150)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      l := Label()
+      l$set_label("Initial contents : ")
+      l$set_pos(50, "33%")
+      l$set_align("l", "c")
+      p$add(l)
+      
+      contents := TextField()
+      contents$set_pos(170, "33%")
+      contents$set_size(100)
+      contents$set_align("l", "c")
+      contents$set_contents(c.contents)
+      p$add(contents)
+
+      l := Label()
+      l$set_label("Filter : ")
+      l$set_pos(50, "66%")
+      l$set_align("l", "c")
+      p$add(l)
+      
+      filter := TextField()
+      filter$set_pos(170, "66%")
+      filter$set_size(100)
+      filter$set_align("l", "c")
+      filter$set_contents(c.filter_str)
+      p$add(filter)
+end
+
+############################################################################
+#
+# Class for representing a TextField on the canvas.
+#
+class CanvasTextField : CanvasComponent : TextField(
+   filter_str       
+   )
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TextField"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "text_field"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_contents(" || image(self.contents) || ")")
+      if *filter_str > 0 then
+         c$line(name || "$set_filter(" || image(cset(self.filter_str)) || ")")
+
+      if /self.draw_border_flag then
+         c$line(name || "$clear_draw_border()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_contents(self$get_contents())
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTextField()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTextField()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Contents", "contents"],
+          ["Filter String", "filter_str"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTextFieldDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$TextField.initially()
+      filter_str := ""
+end
+
+############################################################################
+#
+#
+#
+class CanvasBorderDialog : CanvasComponentDialog(
+   c,                       #         
+   internal_alignment,      #                          
+   internal_alignment_list  #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_internal_alignment(internal_alignment_list[internal_alignment$get_selection()])
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self$setup(c)
+      draw_border$set_is_shaded()
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      self$set_attribs("size=600,650", "label=" || label)
+
+      p := Border()
+      p$set_pos("50%", 410)
+      p$set_size("100%-50", 150)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      l := Label()
+      l$set_label("Label alignment : ")
+      l$set_pos(50, "50%")
+      l$set_align("l", "c")
+      p$add(l)
+
+      internal_alignment := List()
+      internal_alignment$set_pos(200, "50%")
+      internal_alignment$set_size(50)
+      internal_alignment$set_align("l", "c")
+      internal_alignment$set_selection_list(internal_alignment_list)
+      internal_alignment$set_selection(case c.internal_alignment of {
+           "c" : 1
+           "l" : 2
+           "r" : 3 })
+
+      p$add(internal_alignment)
+end
+
+$define INSIDE_BOX 30
+
+############################################################################
+#
+# Class for representing a Borde on the canvas.
+#
+class CanvasBorder : CanvasComponent : Border()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Border"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "border"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_internal_alignment(" || image(self.internal_alignment) || ")")
+      every i := !self.components do {
+         i$gen_code(c)
+         if i === self.title_obj then
+            c$line(self.name || "$set_title(" || i.name || ")")
+         else
+            c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.internal_alignment := self.internal_alignment
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasBorder() 
+      self$CanvasComponent.cp(c)
+      every e := !self.components do {
+         put(c.components, e$cp())
+         if e === self.title_obj then
+            c.title_obj := c.components[-1]
+      }
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasBorder()
+      self$CanvasComponent.dup(c, pc)
+      every e := !self.components do {
+         put(c.components, e$dup(pc))
+         if e === self.title_obj then
+            c.title_obj := c.components[-1]
+      }
+      self$cp_fields(c)
+      return c
+   end
+
+   method place_inside(c)
+      if (self.x + self.w - INSIDE_BOX <= c.x < self.x + self.w) & (self.y + self.h - INSIDE_BOX <= c.y < self.y + self.h) & /title_obj then
+         self.title_obj := c
+      self$CanvasComponent.place_inside(c)
+   end
+
+   method place_outside(c)
+      if c === self.title_obj then
+         self.title_obj := &null
+      self$CanvasComponent.place_outside(c)
+   end
+
+   method still_inside(c)
+      if c === self.title_obj then
+         self.title_obj := &null
+      if (self.x + self.w - INSIDE_BOX <= c.x < self.x + self.w) & (self.y + self.h - INSIDE_BOX <= c.y < self.y + self.h) & /title_obj then
+         self.title_obj := c
+      self$CanvasComponent.still_inside(c)
+      self$resize()
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Internal Alignment", "internal_alignment"],
+          ["Components", "components"],
+          ["Title Obj", "title_obj"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasBorderDialog(self)
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.components) do
+         if o := e$which_cursor_over() then
+            return o
+
+      if (self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h) then
+         return self
+   end
+
+   #
+   # Overrides Border.display()
+   #
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      self$Border.display(buffer_flag)
+      cw := Clone(W, "linestyle=dashed")
+      Rectangle(cw, self.x + self.w - INSIDE_BOX, self.y + self.h - INSIDE_BOX, INSIDE_BOX - BORDER_WIDTH, INSIDE_BOX- BORDER_WIDTH)
+      Uncouple(cw)
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self$CanvasComponent.reset_size()
+      every (!self.components)$reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.components do
+         if o := e$inside(c) then
+            return o
+
+      if (c ~=== self) & (((self.x + self.w - INSIDE_BOX <= c.x < self.x + self.w) & (self.y + self.h - INSIDE_BOX <= c.y < self.y + self.h) & /title_obj) | ((self.x <= c.x < self.x + self.w) & (self.y <= c.y < self.y + self.h) & (self.x <= c.x + c.w <= self.x + self.w) & (self.y <= c.y + c.h <= self.y + self.h))) then 
+         return self
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Border.initially()
+      var_category := 2
+end
+
+
+############################################################################
+#
+#
+#
+class CanvasIconDialog : CanvasComponentDialog(
+   c,                       #         
+   browse,                  #              
+   icon                     #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         browse : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if s := read_icon(fd$get_result()) then 
+               self.icon$set_img(s)
+         }
+
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_img(self.icon.img)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      self$set_attribs("size=600,650", "label=" || label)
+
+      p := Border()
+      p$set_pos("50%", 410)
+      p$set_size("100%-50", 150)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      l := Label()
+      l$set_label("Icon : ")
+      l$set_pos(50, "50%")
+      l$set_align("l", "c")
+      p$add(l)
+      
+      icon := Icon()
+      icon$toggle_draw_border()
+      icon$set_pos(100, "50%")
+      icon$set_size(80, 80)
+      icon$set_align("l", "c")
+      icon$set_img(c.img)
+      p$add(icon)
+
+      browse := TextButton()
+      browse$set_label("Browse...")
+      browse$set_pos(250, "50%")
+      browse$set_align("l", "c")
+      p$add(browse)
+end
+
+############################################################################
+#
+# Class for representing a Icon on the canvas.
+#
+class CanvasIcon : CanvasComponent : Icon()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Icon"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "icon"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_img(" || image(self.img) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_img(self.img)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasIcon()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasIcon()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Img", "img"],
+          ["Img Width", "img_w"],
+          ["Img Height", "img_h"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasIconDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Icon.initially()
+      var_category := 1
+end
+
+############################################################################
+#
+#
+#
+class CanvasImageDialog : CanvasComponentDialog(c, filename, internal_align_spec, scale_up)
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_filename("" ~== filename$get_contents())
+            if scale_up$is_checked() then
+               c.scale_up_flag := 1
+            else
+               c.scale_up_flag := &null
+            case internal_align_spec$get_selection() of {
+               1 : c$set_internal_alignment("l", "t")
+               2 : c$set_internal_alignment("l", "c")
+               3 : c$set_internal_alignment("l", "b")
+               4 : c$set_internal_alignment("c", "t")
+               5 : c$set_internal_alignment("c", "c")
+               6 : c$set_internal_alignment("c", "b")
+               7 : c$set_internal_alignment("r", "t")
+               8 : c$set_internal_alignment("r", "c")
+               9 : c$set_internal_alignment("r", "b")
+            }
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      self$set_attribs("size=600,650", "label=" || label)
+
+      p := Border()
+      p$set_pos("50%", 410)
+      p$set_size("100%-50", 150)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      l := Label()
+      l$set_label("Image filename : ")
+      l$set_pos(200, "66%")
+      l$set_align("l", "c")
+      p$add(l)
+      
+      filename := TextField()
+      filename$set_pos(320, "66%")
+      filename$set_size(100)
+      filename$set_align("l", "c")
+      filename$set_contents(c.filename)
+      p$add(filename)
+
+      scale_up := CheckBox()
+      scale_up$set_label("Scale up image")
+      scale_up$set_pos(50, "66%")
+      scale_up$set_align("l", "c")
+      if \c.scale_up_flag then
+         scale_up$toggle_is_checked()
+      p$add(scale_up)
+
+      l := Label()
+      l$set_label("Internal alignment : ")
+      l$set_pos(50, "33%")
+      l$set_align("l", "c")
+      p$add(l)
+
+      internal_align_spec := List()
+      internal_align_spec$set_pos(180, "33%")
+      internal_align_spec$set_size(75)
+      internal_align_spec$set_align("l", "c")
+      internal_align_spec$set_selection_list(align_list)
+      internal_align_spec$set_selection(case c.x_internal_alignment || c.y_internal_alignment of {
+           "lt" : 1
+           "lc" : 2
+           "lb" : 3
+           "ct" : 4
+           "cc" : 5
+           "cb" : 6
+           "rt" : 7
+           "rc" : 8 
+           "rb" : 9 })
+
+      p$add(internal_align_spec)
+    
+end
+
+############################################################################
+#
+# Class for representing a Image on the canvas.
+#
+class CanvasImage : CanvasComponent : Image()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Image"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "image"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      s := \self.filename | ""
+      c$line(name || "$set_filename(" || image(s) || ")")
+      c$line(name || "$set_internal_alignment(" || image(self.x_internal_alignment) || ", " || image(y_internal_alignment) || ")")
+
+      if \self.scale_up_flag then
+         c$line(name || "$set_scale_up()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_filename(self.filename)
+      c$set_internal_alignment(self.x_internal_alignment, y_internal_alignment)
+      c.scale_up_flag := self.scale_up_flag
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasImage()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasImage()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["File name", "filename"],
+          ["X Internal Alignment", "x_internal_alignment"],
+          ["Y Internal Alignment", "y_internal_alignment"],
+          ["Scale Up Flag", "scale_up_flag"]
+         ]
+   end
+
+   #
+   # Overrides Image.display() 
+   #
+   method display(buffer_flag)
+      if \self.filename then
+         self$Image.display(buffer_flag)
+      else {
+         W := if /buffer_flag then self.cwin else self.cbwin
+         Rectangle(W, self.x, self.y, self.w, self.h)
+         center_string(W, self.x + self.w / 2, self.y + 10, "<Image>")
+      }
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasImageDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Image.initially()
+      var_category := 1
+end
+
+############################################################################
+#
+#
+#
+class MenuComponentEdit : CommonDialog(
+   name,                    #            
+   class_name,              # Class name
+   okay,                    #            
+   cancel,                  #              
+   label,                   # Dialog title
+   main_panel               #
+   )
+
+   method dialog_event(ev)
+   end
+
+   method setup(c)
+      object_class_name(c) ? {
+         ="Canvas"
+         label := tab(0) || " Setup"
+      }
+
+      okay := TextButton()
+      okay$set_pos("33%", "100%-50")
+      okay$set_align("c", "c")
+      okay$set_label("Okay")
+      self$add(okay)
+
+      cancel := TextButton()
+      cancel$set_pos("66%", "100%-50")
+      cancel$set_align("c", "c")
+      cancel$set_label("Cancel")
+      self$add(cancel)
+
+      main_panel := Border()
+      main_panel$set_pos("50%", 35)
+      main_panel$set_align("c", "t")
+      self$add(main_panel)
+
+      l := Label()
+      l$set_label("General Setup")
+      main_panel$set_title(l)
+
+      l := Label()
+      l$set_label("Object name")
+      l$set_pos(50, 50)
+      l$set_align("l", "c")
+      main_panel$add(l)
+
+      name := TextField()
+      name$set_size(150)
+      name$set_pos(150, 50)
+      name$set_align("l", "c")
+      main_panel$add(name)
+
+      name$set_contents(c.name)
+
+      l := Label()
+      l$set_label("Class name")
+      l$set_pos(50, 100)
+      l$set_align("l", "c")
+      main_panel$add(l)
+
+      class_name := TextField()
+      class_name$set_size(150)
+      class_name$set_pos(150, 100)
+      class_name$set_align("l", "c")
+      main_panel$add(class_name)
+
+      class_name$set_contents(c.class_name)
+   end
+
+   method set_vals(c)
+      c$set_name(name$get_contents())
+      c$set_class_name(class_name$get_contents())
+   end
+end
+
+############################################################################
+#
+#
+#
+class CanvasMenuComponentDialog : MenuComponentEdit(
+   c,                       #         
+   label,                   #             
+   left_icon,               #                 
+   browse_left,             #                   
+   left_label,              #                  
+   use_left_label,          #                      
+   use_left_icon,           #                     
+   use_left_neither,        #                        
+   img_left,                #                
+   cbg_left,                #                
+   right_icon,              #                  
+   browse_right,            #                    
+   right_label,             #                   
+   use_right_label,         #                       
+   use_right_icon,          #                      
+   use_right_neither,       #                         
+   img_right,               #                 
+   cbg_right,               #                 
+   shaded                   #
+   )
+
+   method dialog_event(ev)
+      self$MenuComponentEdit.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$set_vals(c)
+            c.is_shaded_flag := shaded$get_status()
+            c.label := label$get_contents()
+
+            case cbg_left$get_which_one() of {
+               use_left_label : {
+                  c.img_left := &null
+                  c$set_label_left(left_label$get_contents())
+               }
+      
+               use_left_icon : {
+                  c$set_img_left(self.img_left)
+                  c.label_left := &null
+               }
+      
+               use_left_neither : {
+                  c.img_left := c.label_left := &null
+               }
+            }
+      
+            case cbg_right$get_which_one() of {
+               use_right_label : {
+                  c.img_right := &null
+                  c$set_label_right(right_label$get_contents())
+               }
+      
+               use_right_icon : {
+                  c$set_img_right(self.img_right)
+                  c.label_right := &null
+               }
+      
+               use_right_neither : {
+                  c.img_right := c.label_right := &null
+               }
+            }
+            self$dispose()
+         }
+
+         use_left_label : if ev$get_code() > 0 then {
+            left_icon$set_is_shaded()
+            browse_left$set_is_shaded()
+            left_label$clear_is_shaded()
+         }
+
+         use_left_icon : if ev$get_code() > 0 then {
+            left_icon$clear_is_shaded()
+            browse_left$clear_is_shaded()
+            left_label$set_is_shaded()
+         }
+
+         use_left_neither : if ev$get_code() > 0 then {
+            left_icon$set_is_shaded()
+            browse_left$set_is_shaded()
+            left_label$set_is_shaded()
+         }
+
+         browse_left : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if self.img_left := read_icon(fd$get_result()) then 
+               left_icon$set_img(self.img_left)
+         }
+
+         use_right_label : if ev$get_code() > 0 then {
+            right_icon$set_is_shaded()
+            browse_right$set_is_shaded()
+            right_label$clear_is_shaded()
+         }
+
+         use_right_icon :  if ev$get_code() > 0 then {
+            right_icon$clear_is_shaded()
+            browse_right$clear_is_shaded()
+            right_label$set_is_shaded()
+         }
+
+         use_right_neither :  if ev$get_code() > 0 then {
+            right_icon$set_is_shaded()
+            browse_right$set_is_shaded()
+            right_label$set_is_shaded()
+         }
+
+         browse_right : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if self.img_right := read_icon(fd$get_result()) then 
+               right_icon$set_img(self.img_right)
+         }
+      }
+   end
+
+   initially
+      self$MenuComponentEdit.initially()
+      self$setup(c)
+
+      self.main_panel$set_size("100%-100", 200)
+#swj     self.main_panel$set_size("100%-100", 200)
+      self.main_panel$set_pos(300, 10)
+
+
+      self$set_attribs("size=600,700", "label=" || label)
+# swj self$set_attribs("size=600,800", "label=" || label
+
+
+
+      l := Label()
+      l$set_label("Label : ")
+      l$set_pos(50, 150)
+      l$set_align("l", "c")
+      main_panel$add(l)
+
+      label := TextField()
+      label$set_pos(150, 150)
+      label$set_size(150)
+      label$set_align("l", "c")
+      label$set_contents(c.label)
+      main_panel$add(label)
+
+      shaded := CheckBox()
+      shaded$set_label("Is shaded")
+      shaded$set_pos(350, 150)
+      shaded$set_align("l", "c")
+      if \c.is_shaded_flag then
+         shaded$set_is_checked()
+      main_panel$add(shaded)
+
+
+#swj
+
+      p_left := Border()
+      p_left$set_pos(50, 220)
+
+# swj  p_left$set_pos(50, 275)
+
+      p_left$set_size("100%-100", 200)
+      self$add(p_left)
+
+      l := Label()
+      l$set_label("Left label")
+      p_left$set_title(l)
+
+      cbg_left := CheckBoxGroup()
+
+      use_left_label := CheckBox()
+      use_left_label$set_pos(50, "25%")
+      use_left_label$set_label("Use label")
+      use_left_label$set_align("l", "c")
+      p_left$add(use_left_label)
+      cbg_left$add(use_left_label)
+
+      left_label := TextField()
+      left_label$set_size(100)
+      left_label$set_pos(150, "25%")
+      left_label$set_align("l", "c")
+      left_label$set_is_shaded()
+      left_label$set_contents(\c.label_left)
+      p_left$add(left_label)
+      
+      use_left_icon := CheckBox()
+      use_left_icon$set_pos(50, "50%")
+      use_left_icon$set_label("Use Icon")
+      use_left_icon$set_align("l", "c")
+      p_left$add(use_left_icon)
+      cbg_left$add(use_left_icon)
+
+      left_icon := Icon()
+      left_icon$set_pos(150, "50%")
+      left_icon$set_size(40, 40)
+      left_icon$set_align("l", "c")
+      left_icon$set_is_shaded()
+      left_icon$toggle_draw_border()
+      self.img_left := \c.img_left | "1,c1,~"
+      left_icon$set_img(self.img_left)
+      p_left$add(left_icon)
+
+      browse_left := TextButton() 
+      browse_left$set_label("Browse...")
+      browse_left$set_pos(250, "50%")
+      browse_left$set_is_shaded()
+      browse_left$set_align("l", "c")
+      p_left$add(browse_left)
+
+      use_left_neither := CheckBox()
+      use_left_neither$set_pos(50, "75%")
+      use_left_neither$set_label("Leave blank")
+      use_left_neither$set_align("l", "c")
+      p_left$add(use_left_neither)
+      cbg_left$add(use_left_neither)
+
+      if \c.label_left then {
+         cbg_left$set_which_one(use_left_label)
+         left_label$clear_is_shaded()
+      } else if \c.img_left then {
+         cbg_left$set_which_one(use_left_icon)
+         left_icon$clear_is_shaded()
+         browse_left$clear_is_shaded()
+      } else
+         cbg_left$set_which_one(use_left_neither)
+
+      p_right := Border()
+      p_right$set_pos(50, 430)
+
+#     p_right$set_pos(50, 500)
+
+      p_right$set_size("100%-100", 200)
+      self$add(p_right)
+
+      l := Label()
+      l$set_label("Right label")
+      p_right$set_title(l)
+
+      cbg_right := CheckBoxGroup()
+
+      use_right_label := CheckBox()
+      use_right_label$set_pos(50, "25%")
+      use_right_label$set_label("Use label")
+      use_right_label$set_align("l", "c")
+      p_right$add(use_right_label)
+      cbg_right$add(use_right_label)
+
+      right_label := TextField()
+      right_label$set_size(100)
+      right_label$set_pos(150, "25%")
+      right_label$set_align("l", "c")
+      right_label$set_is_shaded()
+      right_label$set_contents(\c.label_right)
+      p_right$add(right_label)
+      
+      use_right_icon := CheckBox()
+      use_right_icon$set_pos(50, "50%")
+      use_right_icon$set_label("Use Icon")
+      use_right_icon$set_align("l", "c")
+      p_right$add(use_right_icon)
+      cbg_right$add(use_right_icon)
+
+      right_icon := Icon()
+      right_icon$set_pos(150, "50%")
+      right_icon$set_size(40, 40)
+      right_icon$set_align("l", "c")
+      right_icon$set_is_shaded()
+      right_icon$toggle_draw_border()
+      self.img_right := \c.img_right | "1,c1,~"
+      right_icon$set_img(self.img_right)
+      p_right$add(right_icon)
+
+      browse_right := TextButton() 
+      browse_right$set_label("Browse...")
+      browse_right$set_pos(250, "50%")
+      browse_right$set_is_shaded()
+      browse_right$set_align("l", "c")
+      p_right$add(browse_right)
+
+      use_right_neither := CheckBox()
+      use_right_neither$set_pos(50, "75%")
+      use_right_neither$set_label("Leave blank")
+      use_right_neither$set_align("l", "c")
+      p_right$add(use_right_neither)
+      cbg_right$add(use_right_neither)
+
+      if \c.label_right then {
+         cbg_right$set_which_one(use_right_label)
+         right_label$clear_is_shaded()
+      } else if \c.img_right then {
+         cbg_right$set_which_one(use_right_icon)
+         right_icon$clear_is_shaded()
+         browse_right$clear_is_shaded()
+      } else
+         cbg_right$set_which_one(use_right_neither)
+
+end
+
+
+############################################################################
+#
+#
+#
+class CanvasCheckBoxMenuEdit : MenuComponentEdit(
+   c,                       #         
+   tab_basic,
+   tab_images,
+   browse_up,               #                     
+   browse_down,             #                     
+   icon_up,
+   icon_down,
+   cp_img,
+   label,                   #             
+   right_icon,              #                  
+   browse_right,            #                    
+   right_label,             #                   
+   use_right_label,         #                       
+   use_right_icon,          #                      
+   use_right_neither,       #                         
+   img_right,               #                 
+   cbg_right,               #                 
+   shaded,                  #              
+   browse_custom,           #                     
+   group_list,              #                  
+   in_checkbox_group,       #                          
+   initially_checked        #
+   )
+
+   method dialog_event(ev)
+      self$MenuComponentEdit.dialog_event(ev)
+      case ev$get_component() of {
+         in_checkbox_group :  if ev$get_code() > 0 then {
+            group_list$toggle_is_shaded()
+            if in_checkbox_group$is_checked() then {
+               if self.icon_up.img == img_style("box_up") &
+                     self.icon_down.img == img_style("box_down") then {
+                  self.icon_up$set_img(img_style("diamond_up"))
+                  self.icon_down$set_img(img_style("diamond_down"))
+               }
+            } else {
+               if self.icon_up.img == img_style("diamond_up") &
+                     self.icon_down.img == img_style("diamond_down") then {
+                  self.icon_up$set_img(img_style("box_up"))
+                  self.icon_down$set_img(img_style("box_down"))
+               }
+            }
+         }
+
+         browse_up : if ev$get_code() > 0 then {
+            fd := FileDialog()
+#write("c ", image(self.c))
+            fd$set_directory(\self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if s := read_icon(fd$get_result()) then
+               self.icon_up$set_img(s)
+         }
+         browse_down : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if s := read_icon(fd$get_result()) then
+               self.icon_down$set_img(s)
+         }
+
+         cp_img : if ev$get_code() > 0 then {
+            self.icon_down$set_img(self.icon_up.img)
+         }
+
+         cancel : if ev$get_code() > 0 then {
+            self$dispose()
+         }
+
+         okay : if ev$get_code() > 0 then {
+            if img_width(icon_up.img) ~= img_width(icon_down.img) then
+               return alert_error("Up/down image widths differ")
+            
+            if img_height(icon_up.img) ~= img_height(icon_down.img) then
+               return alert_error("Up/down image heights differ")
+
+            self$set_vals(c)
+            c.is_shaded_flag := shaded$get_status()
+            c.label := label$get_contents()
+
+            #
+            # If in cbg and on, turn off, since may go out of cbg or into
+            # a different one.
+            #
+            if (\c.parent_check_box_group).which_one === c then
+               c.parent_check_box_group.which_one := &null                 
+
+            if in_checkbox_group$is_checked() then {
+               #
+               # Put in cbg.
+               #
+               c$set_parent_check_box_group(c.parent_menu_bar.parent_Canvas.checkbox_groups$group_number(group_list$get_selection()))
+               if initially_checked$is_checked() then {
+                  #      
+                  # Turn off current one on, if any; turn self on.
+                  #
+                  (\c.parent_check_box_group.which_one).is_checked_flag := &null
+                  c.parent_check_box_group.which_one := c
+               }
+            } else
+               c.parent_check_box_group := &null
+
+            #
+            # Set checked flag
+            #
+            c.is_checked_flag := initially_checked$get_status()
+
+            c$set_imgs(icon_up.img, icon_down.img)
+
+            case cbg_right$get_which_one() of {
+               use_right_label : {
+                  c.img_right := &null
+                  c$set_label_right(right_label$get_contents())
+               }
+      
+               use_right_icon : {
+                  c$set_img_right(self.img_right)
+                  c.label_right := &null
+               }
+      
+               use_right_neither : {
+                  c.img_right := c.label_right := &null
+               }
+            }
+            self$dispose()
+         }
+
+         use_right_label : {
+            right_icon$set_is_shaded()
+            browse_right$set_is_shaded()
+            right_label$clear_is_shaded()
+         }
+
+         use_right_icon : {
+            right_icon$clear_is_shaded()
+            browse_right$clear_is_shaded()
+            right_label$set_is_shaded()
+         }
+
+         use_right_neither : {
+            right_icon$set_is_shaded()
+            browse_right$set_is_shaded()
+            right_label$set_is_shaded()
+         }
+
+         browse_right : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_menu_bar.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if self.img_right := read_icon(fd$get_result()) then 
+               right_icon$set_img(self.img_right)
+         }
+      }
+   end
+
+   initially
+      self$MenuComponentEdit.initially()
+      self$setup(c)
+      self.main_panel$set_size("100%-100", 250)
+      self.main_panel$set_align("c", "t") # was ("t", "c") ?!
+#    swj self.main_panel$set_size("100%-100", 250)
+      self$set_attribs("size=600,815", "label=" || label)
+      img_up := c.img_up
+      img_down := c.img_down
+
+      l := Label()
+      l$set_label("Label : ")
+      l$set_pos(50, 150)
+      l$set_align("l", "c")
+      main_panel$add(l)
+
+      label := TextField()
+      label$set_pos(150, 150)
+      label$set_size(150)
+      label$set_align("l", "c")
+      label$set_contents(c.label)
+      main_panel$add(label)
+
+      shaded := CheckBox()
+      shaded$set_label("Is shaded")
+      shaded$set_pos(350, 150)
+      shaded$set_align("l", "c")
+      if \c.is_shaded_flag then
+         shaded$set_is_checked()
+      main_panel$add(shaded)
+
+      in_checkbox_group := CheckBox()
+      in_checkbox_group$set_label("CheckBox Group")
+      in_checkbox_group$set_pos("50", 200)
+      in_checkbox_group$set_align("l", "c")
+      main_panel$add(in_checkbox_group)
+
+      group_list := List()
+      group_list$set_pos(200, 200)
+      group_list$set_size(175)
+      group_list$set_align("l", "c")
+      group_list$set_selection_list(c.parent_menu_bar.parent_Canvas.checkbox_groups$string_rep())
+      main_panel$add(group_list)
+
+      initially_checked := CheckBox()
+      initially_checked$set_label("Initially checked")
+      initially_checked$set_pos(350, 100)
+      initially_checked$set_align("l", "c")
+      main_panel$add(initially_checked)
+
+      if c.parent_menu_bar.parent_Canvas.checkbox_groups$is_empty() then {
+         in_checkbox_group$set_is_shaded()
+         group_list$set_is_shaded()
+         if c$is_checked() then
+            initially_checked$set_is_checked()
+      } else {
+         if \c.parent_check_box_group then {
+            in_checkbox_group$set_is_checked()
+            group_list$set_selection(c.parent_menu_bar.parent_Canvas.checkbox_groups$group_index(c.parent_check_box_group))
+            if c === c.parent_check_box_group.which_one then
+               initially_checked$set_is_checked()
+         } else  {
+            group_list$set_is_shaded()
+            if c$is_checked() then
+               initially_checked$set_is_checked()
+         }
+      }
+
+      tab_images := Border()
+      tab_images$set_pos(50, 305)
+      tab_images$set_size("100%-100", 200)
+
+      label_3 := Label()
+      label_3$set_pos(10, 0)
+      label_3$set_internal_alignment("l")
+      label_3$set_label("Up/Down Images")
+      tab_images$set_title(label_3)
+
+      panel_1 := Border()
+      panel_1$set_pos("100%-50", "50%")
+      panel_1$set_size("50%-100", "100%-50")
+      panel_1$set_align("r", "c")
+      if \c.img_down then {
+         icon_down := Icon()
+         icon_down$set_pos("50%", "33%")
+         icon_down$set_size("40", "40")
+         icon_down$set_align("c", "c")
+         icon_down$set_draw_border()
+         icon_down$set_img(c.img_down)
+         panel_1$add(icon_down)
+      }
+      label_3 := Label()
+      label_3$set_pos(10, 0)
+      label_3$set_internal_alignment("l")
+      label_3$set_label("Down")
+      panel_1$set_title(label_3)
+
+      browse_down := TextButton()
+      browse_down$set_pos("50%", "75%")
+      browse_down$set_align("c", "c")
+      browse_down$set_internal_alignment("c")
+      browse_down$set_label("Browse...")
+      panel_1$add(browse_down)
+      tab_images$add(panel_1)
+      panel_2 := Border()
+      panel_2$set_pos("50", "50%")
+      panel_2$set_size("50%-100", "100%-50")
+      panel_2$set_align("l", "c")
+      if \c.img_up then {
+         icon_up := Icon()
+         icon_up$set_pos("50%", "33%")
+         icon_up$set_size("40", "40")
+         icon_up$set_align("c", "c")
+         icon_up$set_draw_border()
+         icon_up$set_img(c.img_up)
+         panel_2$add(icon_up)
+      }
+      label_4 := Label()
+      label_4$set_pos(10, 0)
+      label_4$set_internal_alignment("l")
+      label_4$set_label("Up")
+      panel_2$set_title(label_4)
+
+      browse_up := TextButton()
+      browse_up$set_pos("50%", "75%")
+      browse_up$set_align("c", "c")
+      browse_up$set_internal_alignment("c")
+      browse_up$set_label("Browse...")
+      panel_2$add(browse_up)
+      tab_images$add(panel_2)
+      cp_img := TextButton()
+      cp_img$set_pos("50%", "50%")
+      cp_img$set_align("c", "c")
+      cp_img$set_internal_alignment("c")
+      cp_img$set_label("Copy ->")
+      tab_images$add(cp_img)
+      self$add(tab_images)
+
+      p_right := Border()
+      p_right$set_pos(50, 525)
+      p_right$set_size("100%-100", 200)
+      self$add(p_right)
+
+      l := Label()
+      l$set_label("Right label")
+      p_right$set_title(l)
+
+      cbg_right := CheckBoxGroup()
+
+      use_right_label := CheckBox()
+      use_right_label$set_pos(50, "25%")
+      use_right_label$set_label("Use label")
+      use_right_label$set_align("l", "c")
+      p_right$add(use_right_label)
+      cbg_right$add(use_right_label)
+
+      right_label := TextField()
+      right_label$set_size(100)
+      right_label$set_pos(150, "25%")
+      right_label$set_align("l", "c")
+      right_label$set_is_shaded()
+      right_label$set_contents(\c.label_right)
+      p_right$add(right_label)
+      
+      use_right_icon := CheckBox()
+      use_right_icon$set_pos(50, "50%")
+      use_right_icon$set_label("Use Icon")
+      use_right_icon$set_align("l", "c")
+      p_right$add(use_right_icon)
+      cbg_right$add(use_right_icon)
+
+      right_icon := Icon()
+      right_icon$set_pos(150, "50%")
+      right_icon$set_size(40, 40)
+      right_icon$set_align("l", "c")
+      right_icon$set_is_shaded()
+      right_icon$toggle_draw_border()
+      self.img_right := \c.img_right | "1,c1,~"
+      right_icon$set_img(self.img_right)
+      p_right$add(right_icon)
+
+      browse_right := TextButton() 
+      browse_right$set_label("Browse...")
+      browse_right$set_pos(250, "50%")
+      browse_right$set_is_shaded()
+      browse_right$set_align("l", "c")
+      p_right$add(browse_right)
+
+      use_right_neither := CheckBox()
+      use_right_neither$set_pos(50, "75%")
+      use_right_neither$set_label("Leave blank")
+      use_right_neither$set_align("l", "c")
+      p_right$add(use_right_neither)
+      cbg_right$add(use_right_neither)
+
+      if \c.label_right then {
+         cbg_right$set_which_one(use_right_label)
+         right_label$clear_is_shaded()
+      } else if \c.img_right then {
+         cbg_right$set_which_one(use_right_icon)
+         right_icon$clear_is_shaded()
+         browse_right$clear_is_shaded()
+      } else
+         cbg_right$set_which_one(use_right_neither)
+
+end
+
+############################################################################
+#
+#
+#
+class CanvasMenuSeparatorEdit : MenuComponentEdit(c)
+   method dialog_event(ev)
+      self$MenuComponentEdit.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$set_vals(c)
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$MenuComponentEdit.initially()
+      self$setup(c)
+      self.main_panel$set_size("100%-100", 150)
+      self$set_attribs("size=450,300", "label=" || label)
+end
+
+
+class MenuTreeNode(depth, parent, index, owner)
+
+end
+
+$define SPACING 25
+
+class MenuTree : TextList()
+   method draw(s, left_pos, yp, i)
+      local dashed
+
+      dashed := Clone(self.cbwin, "pattern=gray", "fillstyle=textured")
+      lp := left_pos
+      every 1 to s.depth do {
+         DrawLine(dashed, lp + SPACING / 2, yp - line_height / 2, lp + SPACING / 2, yp + line_height / 2)
+         
+         lp +:= SPACING
+      }
+      if \s.owner then {
+         if contents[i + 1].depth > s.depth then
+            DrawLine(dashed, lp + SPACING / 2, yp, lp + SPACING / 2, yp + line_height / 2)
+
+         DrawLine(dashed, lp - SPACING / 2, yp, lp + SPACING, yp)
+         lp +:= SPACING
+         left_string(self.cbwin, lp, yp, s.owner$get_string_label())
+      }
+
+      if \self.checked[i] | i = \self.which_down then
+         FillRectangle(rev, self.tx, yp - self.line_height / 2, self.tw, self.line_height)
+      Uncouple(dashed)
+   end
+
+   method get_rec(n)
+      return contents[n]
+   end
+
+   method get_max_width()
+      local ww, mw
+
+      mw := 0
+      every s := !self.contents do {
+         ww := SPACING * s.depth
+         if \s.owner then
+            ww +:= 2 * SPACING + TextWidth(self.cwin, s.owner$get_string_label())
+         mw <:= ww
+      }
+      return mw
+   end
+end
+
+############################################################################
+#
+#
+#
+class CanvasMenuBarDialog : CanvasComponentDialog(
+   c,                       #         
+   add_label,               #                 
+   add_menu,                #                
+   add_separator,           #                     
+   add_checkbox,            #                    
+   delete,                  #              
+   edit,                    #            
+   struct,                  #              
+   select_rec,              #                  
+   new_cbg,                 #               
+   icon,                    #            
+   browse                   #
+   )
+
+   #
+   # Insert new into tree, update string representation.
+   #
+   method update(new)
+      local nl
+
+      select_rec.parent$insert(new, select_rec.index)
+      c$set_string_rep()
+      #
+      # Compute line in which new insertion goes.
+      #
+      nl := struct$get_selections()[1]
+      if /select_rec.owner then nl +:= 1
+      struct$set_contents(c$get_string_rep())
+      #
+      # Move line down if necessary to ensure new addition on page.
+      #
+      line := struct$get_line()
+      nlines := struct$get_page_size()
+      if nl > line + nlines - 1 then
+         line := nl - nlines + 1
+      else if nl < line then
+         line := nl
+      struct$goto_pos(line)
+      #
+      # Make new insertion selected.
+      #
+      struct$set_selections([nl])
+      #
+      # Set select_rec to inserted record.
+      #
+      select_rec := struct$get_rec(nl)
+
+      #
+      # Clear two buttons for editing/deleting
+      #
+      edit$clear_is_shaded()
+      delete$clear_is_shaded()
+      add_menu$clear_is_shaded()
+   end
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         struct : if ev$get_code() > 0 then {
+            l := struct$get_selections()
+            if *l = 1 then {
+               select_rec := struct$get_rec(l[1])
+               if c === select_rec.parent then {
+                  add_label$set_is_shaded()
+                  add_separator$set_is_shaded()
+                  add_checkbox$set_is_shaded()
+                  if object_class_name(c) == "CanvasMenuButton" then 
+                     add_menu$set_is_shaded()
+                  else
+                     add_menu$clear_is_shaded()
+               } else {
+                  add_label$clear_is_shaded()
+                  add_separator$clear_is_shaded()
+                  add_checkbox$clear_is_shaded()
+                  add_menu$clear_is_shaded()
+               }
+               if \select_rec.owner then {
+                  edit$clear_is_shaded()
+                  if object_class_name(c) == "CanvasMenuButton" & c.menu === select_rec.owner then
+                     delete$set_is_shaded()
+                  else
+                     delete$clear_is_shaded()
+               } else {
+                  delete$set_is_shaded()
+                  edit$set_is_shaded()
+               }
+            } else
+               every (add_menu | add_label | add_separator | add_checkbox | delete | edit)$set_is_shaded()
+
+            every e := struct$get_rec(!l) do {
+               if not(object_class_name(\e.owner) == "CanvasCheckBoxMenuItem") then {
+                  flag := 1
+                  break
+               }
+            }
+            if *l = 0 | \flag then
+               new_cbg$set_is_shaded()
+            else
+               new_cbg$clear_is_shaded()
+         }
+
+         new_cbg : if ev$get_code() > 0 then {
+            #
+            # Should only have been selected if get_rec(!l) are all CanvasCheckBox
+            #
+            l := struct$get_selections()
+            n := c.parent_Canvas.checkbox_groups$new()
+            every e := struct$get_rec(!l) do {
+               e.owner$set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+               e.owner$set_parent_check_box_group(n)
+               e.owner$clear_is_checked()
+            }
+            c$set_string_rep()
+            struct$set_contents(c$get_string_rep())
+            struct$clear_selections()
+            every (new_cbg | add_menu | add_label | add_separator | add_checkbox | delete | edit)$set_is_shaded()
+         }
+
+         add_label : if ev$get_code() > 0 then {
+            new := CanvasTextMenuItem()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            new$set_label("Edit me")
+            update(new)
+            new_cbg$set_is_shaded()
+         }
+
+         add_menu :  if ev$get_code() > 0 then {
+            new := CanvasMenu()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            new$set_label("Edit me")
+            update(new)
+            new_cbg$set_is_shaded()
+         }
+
+         add_separator :  if ev$get_code() > 0 then {
+            new := CanvasMenuSeparator()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            update(new)
+            new_cbg$set_is_shaded()
+         }
+
+         add_checkbox :  if ev$get_code() > 0 then {
+            new := CanvasCheckBoxMenuItem()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            new$set_label("Edit me")
+            update(new)
+            new_cbg$clear_is_shaded()
+         }
+
+         edit :  if ev$get_code() > 0 then {
+            case object_class_name(select_rec.owner) of {
+               "CanvasMenu" | "CanvasTextMenuItem" : CanvasMenuComponentDialog(select_rec.owner)$show_modal(self)
+               "CanvasCheckBoxMenuItem" : CanvasCheckBoxMenuEdit(select_rec.owner)$show_modal(self)
+               "CanvasMenuSeparator" : CanvasMenuSeparatorEdit(select_rec.owner)$show_modal(self)
+            }
+            c$set_string_rep()
+            struct$set_contents(c$get_string_rep())
+         }
+
+         delete :  if ev$get_code() > 0 then {
+            select_rec.parent$delete(select_rec.index)
+            c$set_string_rep()
+            struct$set_contents(c$get_string_rep())
+            struct$clear_selections()
+            every (new_cbg | add_menu | add_label | add_separator | add_checkbox | delete | edit)$set_is_shaded()
+         }
+
+         cancel : if ev$get_code() > 0 then {
+            c.parent_Canvas.parent_Dialog$use_extra_undo()
+            self$dispose()
+         }
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            if object_class_name(c) == "CanvasMenuButton" then
+               c$set_img(self.icon.img)
+            self$dispose()
+         }
+
+         \browse : if ev$get_code() > 0 then {
+            fd := FileDialog()
+            fd$set_directory(\self.c.parent_Canvas.parent_Dialog.last_icon_dir)
+            fd$set_extra_attribs(global_attribs ||| ["label=Select File"])
+            fd$show_modal(self)
+            self.c.parent_Canvas.parent_Dialog.last_icon_dir := fd$get_directory()
+            if s := read_icon(fd$get_result()) then
+               self.icon$set_img(s)
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      draw_border$set_is_shaded()
+
+      self$set_attribs("size=650,700", "label=" || label)
+ #     self$set_attribs("size=650,850", "label=" || label)MenuBar swj
+
+      c.parent_Canvas.parent_Dialog$save_extra_undo()
+
+      p := Border()
+      p$set_pos("50%", 325)
+ #     p$set_size("100%-50", 315)
+
+      p$set_size("100%-50", 320)
+  #swj    p$set_pos("50%", 410)
+  #swj    p$set_size("100%-50", 350)
+
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      struct := MenuTree()
+      c$set_string_rep()
+      struct$set_size(350, 250)
+#     struct$set_pos(50, 50)swj
+      struct$set_pos(50, 25)
+
+#      struct$set_pos(50, 50)
+      struct$set_contents(c$get_string_rep())
+      struct$set_select_many()
+      p$add(struct)
+
+      add_label := TextButton()
+      add_label$set_label("Add label")
+      add_label$set_pos(490, 50)
+      add_label$set_is_shaded()
+      add_label$set_align("c", "t")
+      p$add(add_label)
+
+      add_separator := TextButton()
+      add_separator$set_label("Add separator")
+      add_separator$set_pos(490, 80)
+      add_separator$set_is_shaded()
+      add_separator$set_align("c", "t")
+      p$add(add_separator)
+ 
+      add_menu := TextButton()
+      add_menu$set_label("Add Menu")
+      add_menu$set_pos(490, 110)
+      add_menu$set_align("c", "t")
+      add_menu$set_is_shaded()
+      p$add(add_menu)
+     
+      add_checkbox := TextButton()
+      add_checkbox$set_label("Add checkbox")
+      add_checkbox$set_pos(490, 140)
+      add_checkbox$set_is_shaded()
+      add_checkbox$set_align("c", "t")
+      p$add(add_checkbox)
+
+      delete := TextButton()
+      delete$set_label("Delete")
+      delete$set_pos(490, 170)
+      delete$set_is_shaded()
+      delete$set_align("c", "t")
+      p$add(delete)
+
+      edit := TextButton()
+      edit$set_label("Edit")
+      edit$set_pos(490, 200)
+      edit$set_is_shaded()
+      edit$set_align("c", "t")
+      p$add(edit)
+
+      new_cbg := TextButton()
+      new_cbg$set_label("CheckBoxGroup")
+      new_cbg$set_pos(490, 230)
+      new_cbg$set_is_shaded()
+      new_cbg$set_align("c", "t")
+      p$add(new_cbg)
+
+      if object_class_name(c) == "CanvasMenuButton" then {
+         icon := Icon()
+         icon$toggle_draw_border()
+         icon$set_pos(430, 285)
+#  swj       icon$set_pos(430, 300)
+
+         icon$set_size(40, 40)
+         icon$set_align("l", "c")
+         icon$set_img(c.img)
+         p$add(icon)
+
+         browse := TextButton()
+         browse$set_label("Browse...")
+         browse$set_pos(490, 290)
+
+
+#swj         browse$set_pos(490, 300)
+         browse$set_align("l", "c")
+         p$add(browse)
+      }
+
+end
+
+############################################################################
+#
+#
+#
+class CanvasMenuComponent : ClassIO(name, class_name, var_category)
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c$line(name || " := " || self.class_name || "()")
+
+      if \self.label then
+         c$line(name || "$set_label(" || image(self.label) || ")")
+     
+      if \self.is_shaded_flag then
+         c$line(name || "$set_is_shaded()")
+
+      c$add_var(name, var_category)
+   end    
+
+   #
+   # Set the object name
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Set the class name
+   #
+   method set_class_name(x)
+      return self.class_name := x
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.name := self.name
+      c.class_name := self.class_name
+      c.var_category := self.var_category
+      c.label := self.label
+      c.label_left := self.label_left
+      c.label_right := self.label_right
+      c$set_img_left(\self.img_left)
+      c$set_img_right(\self.img_right)
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(c, mb)
+      c$set_parent_menu_bar(mb)
+      self$CanvasMenuComponent.cp_fields(c)
+      return c
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(c, mb)
+      c$set_parent_menu_bar(mb)
+      self$CanvasMenuComponent.cp_fields(c)
+      c.name := self.parent_menu_bar.parent_Canvas$get_new_name(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [
+         ["Name", "name"],
+         ["Class Name", "class_name"],
+         ["Var Category", "var_category"],
+         ["Label", "label"],
+         ["Label Left", "label_left"],
+         ["Label Right", "label_right"],
+         ["Is shaded", "is_shaded_flag"],
+         ["Img Left", "img_left"],
+         ["Img Left Width", "img_left_w"],
+         ["Img Left Height", "img_left_h"],
+         ["Img Right", "img_right"],
+         ["Img Right Width", "img_right_w"],
+         ["Img Right Height", "img_right_h"]
+         ]
+   end
+
+   initially
+
+end
+
+############################################################################
+#
+#
+#
+class CanvasMenu : CanvasMenuComponent : Menu()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasMenuComponent.gen_code(c)
+      if \self.label_left then
+         c$line(name || "$set_label_left(" || image(self.label_left) || ")")
+      else if \self.img_left then
+         c$line(name || "$set_img_left(" || image(self.img_left) || ")")
+
+      if \self.label_right then
+         c$line(name || "$set_label_right(" || image(self.label_right) || ")")
+      else if \self.img_right ~== img_style("arrow_right") then
+         c$line(name || "$set_img_right(" || image(self.img_right) || ")")
+      every i := !self.menus do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Menu"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "menu"
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasMenu()
+      self$CanvasMenuComponent.cp(c, mb)
+      every c$add((!self.menus)$cp(c.parent_menu_bar))
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasMenu()
+      self$CanvasMenuComponent.dup(c, mb)
+      every c$add((!self.menus)$dup(c.parent_menu_bar))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasMenuComponent.get_template() ||| 
+         [["Menus", "menus"]
+         ]
+   end
+
+   #
+   # Insert object x into the menu at position i.
+   #
+   method insert(x, i)
+      self.menus := self.menus[1 : i] ||| [x] ||| self.menus[i : 0]
+      x.parent_menu_bar := self.parent_menu_bar
+   end
+
+   #
+   # Delete the i'th menu item
+   #
+   method delete(i)
+      self.menus := self.menus[1 : i] ||| self.menus[i + 1 : 0]
+   end
+
+   #
+   # Add the menu's string representation into s.
+   #
+   method set_string_rep(s, level, parent, i)
+      local sub
+      put(s, MenuTreeNode(level, parent, i))
+      put(s, MenuTreeNode(level, parent, i, self))
+      every sub := self.menus[i := 1 to *self.menus] do {
+         if sub$is_sub_menu() then 
+            sub$set_string_rep(s, level + 1, self, i)
+         else {
+            put(s, MenuTreeNode(level + 1, self, i))
+            put(s, MenuTreeNode(level + 1, self, i, sub))
+         }
+      }
+      put(s, MenuTreeNode(level + 1, self, *self.menus + 1))
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      return self.label
+   end
+
+   initially
+      self$CanvasMenuComponent.initially()
+      self$Menu.initially()
+      var_category := 2
+end
+
+############################################################################
+#
+#
+#
+class CanvasTextMenuItem : CanvasMenuComponent : TextMenuItem()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasMenuComponent.gen_code(c)
+      if \self.label_left then
+         c$line(name || "$set_label_left(" || image(self.label_left) || ")")
+      else if \self.img_left then
+         c$line(name || "$set_img_left(" || image(self.img_left) || ")")
+
+      if \self.label_right then
+         c$line(name || "$set_label_right(" || image(self.label_right) || ")")
+      else if \self.img_right then
+         c$line(name || "$set_img_right(" || image(self.img_right) || ")")
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TextMenuItem"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "text_menu_item"
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasTextMenuItem()
+      self$CanvasMenuComponent.cp(c, mb)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasTextMenuItem()
+      self$CanvasMenuComponent.dup(c, mb)
+      return c
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      return self.label || "(Txt)"
+   end
+
+   initially
+      self$CanvasMenuComponent.initially()
+      self$TextMenuItem.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "CheckBoxMenuItem"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "check_box_menu_item"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      (\self.parent_check_box_group)$gen_code(c)
+      self$CanvasMenuComponent.gen_code(c)
+      if not((/self.parent_check_box_group & self.img_up == img_style("box_up") & self.img_down == img_style("box_down")) | 
+             (\self.parent_check_box_group & self.img_up == img_style("diamond_up") & self.img_down == img_style("diamond_down"))) then
+         c$line(name || "$set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
+      if \self.label_right then
+         c$line(name || "$set_label_right(" || image(self.label_right) || ")")
+      else if \self.img_right then
+         c$line(name || "$set_img_right(" || image(self.img_right) || ")")
+
+      if \self.parent_check_box_group then
+         c$line(self.parent_check_box_group.name || "$add(" || name || ")")
+
+      if \self.is_checked_flag then {
+         if \self.parent_check_box_group then
+            c$line(self.parent_check_box_group.name || "$set_which_one(" || name || ")")
+         else
+            c$line(name || "$set_is_checked()")
+      }         
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_imgs(self.img_up, self.img_down)
+      if \self.parent_check_box_group then
+         c$set_parent_check_box_group((\c.parent_menu_bar.parent_Canvas).checkbox_groups.boxes[self.parent_check_box_group.number])
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasCheckBoxMenuItem()
+      self$CanvasMenuComponent.cp(c, mb)
+      self$cp_fields(c)
+      #
+      # If a checked box in a cbg is copied then the copy will not
+      # be checked.
+      #
+      if \self.is_checked_flag then {
+         if /c.parent_check_box_group then
+            c$set_is_checked()
+      }         
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasCheckBoxMenuItem()
+      self$CanvasMenuComponent.dup(c, mb)
+      self$cp_fields(c)
+      if \self.is_checked_flag then {
+         if \c.parent_check_box_group then
+            c.parent_check_box_group.which_one := c
+         c$set_is_checked()
+      }         
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasMenuComponent.get_template() ||| 
+         [["Img Up", "img_up"],
+          ["Img Down", "img_down"],
+          ["Is Checked Flag", "is_checked_flag"],
+          ["Parent CheckBoxGroup", "parent_check_box_group"]
+         ]
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      s := self.label || "(Check)"
+      if \self.parent_check_box_group then
+         s ||:= " G"
+      if self$is_checked() then
+         s ||:= " X"
+      return s
+   end
+
+   initially
+      self$CanvasMenuComponent.initially()
+      self$CheckBoxMenuItem.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasMenuSeparator : CanvasMenuComponent : MenuSeparator()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "MenuSeparator"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "menu_separator"
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasMenuSeparator()
+      self$CanvasMenuComponent.cp(c, mb)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasMenuSeparator()
+      self$CanvasMenuComponent.dup(c, mb)
+      return c
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      return "___(Sep)"
+   end
+
+   initially
+      self$CanvasMenuComponent.initially()
+      self$MenuSeparator.initially()
+      var_category := 2
+end
+
+############################################################################
+#
+# Class for representing a MenuBar on the canvas.
+#
+class CanvasMenuBar : CanvasComponent : MenuBar(
+   string_rep               #                  
+   )
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      every i := !self.menus do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "MenuBar"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "menu_bar"
+   end
+ 
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasMenuBar()
+      self$CanvasComponent.cp(c)
+      every c$add((!self.menus)$cp(c))
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasMenuBar()
+      self$CanvasComponent.dup(c, pc)
+      every c$add((!self.menus)$dup(c))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Menus", "menus"]
+         ]
+   end
+
+   #
+   # Delete the i'th menu item
+   #
+   method delete(i)
+      self.menus := self.menus[1 : i] ||| self.menus[i + 1 : 0]
+   end
+
+   #
+   # Insert object x into the menu at position i.
+   #
+   method insert(x, i)
+      self.menus := self.menus[1 : i] ||| [x] ||| self.menus[i : 0]
+      x.parent_menu_bar := self
+   end
+
+   #
+   # Set the menu bar's string representation.
+   #
+   method set_string_rep()
+      local sub
+      string_rep := []
+      every sub := self.menus[i := 1 to *self.menus] do 
+         sub$set_string_rep(string_rep, 1, self, i)
+      put(string_rep, MenuTreeNode(1, self, *self.menus + 1))
+   end
+
+   method get_string_rep()
+      return self.string_rep      
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasMenuBarDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$MenuBar.initially()
+      var_category := 2
+end
+
+############################################################################
+#
+# Class for representing a Table on the canvas.
+#
+class CanvasTable : CanvasComponent : Table()
+   #
+   # Default minimum width for the object
+   #
+   method min_width()
+      return 65
+   end
+
+   #
+   # Default minimum height for the object
+   #
+   method min_height()
+      return 65
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Table"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "table"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      if \self.select_one then
+         c$line(self.name || "$set_select_one()")
+      if \self.select_many then
+         c$line(self.name || "$set_select_many()")
+      c$line(self.name || "$set_contents([])")
+
+      every i := !self.columns do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.select_one := self.select_one
+      c.select_many := self.select_many
+      c$set_contents([])
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTable()
+      self$CanvasComponent.cp(c)
+      every c$add((!self.columns)$cp())
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTable()
+      self$CanvasComponent.dup(c, pc)
+      every c$add((!self.columns)$dup(pc))
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Select One", "select_one"],
+          ["Select Many", "select_many"],
+          ["Columns", "columns"],
+          ["Contents", "contents"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self$CanvasComponent.reset_size()
+      #
+      # Ensure button heights default on resize()
+      #
+      self.head_h := &null
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTableDialog(self)
+   end
+
+   method string_rep()
+      l := []
+      every c := !self.columns do
+         put(l, [c.label, c.column_width, c.internal_alignment])
+      put(l, ["", "", ""])
+      return l
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Table.initially()
+end
+
+############################################################################
+#
+# Class for representing a TableColumn on the canvas.
+#
+class CanvasTableColumn : CanvasComponent : TableColumn()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c$add_var(self.name)
+      c$line(name || " := " || self.class_name || "()")
+      c$line(name || "$set_label(" || image(self.label) || ")")
+      c$line(name || "$set_internal_alignment(" || image(self.internal_alignment) || ")")
+      c$line(name || "$set_column_width(" || self.column_width || ")")
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TableColumn"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "table_column"
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.label := self.label
+      c.column_width := self.column_width
+      c.internal_alignment := self.internal_alignment
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTableColumn()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTableColumn()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["Column Width", "column_width"],
+          ["Internal Alignment", "internal_alignment"],
+          ["Parent Table", "parent_table"]
+         ]
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$TableColumn.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasTableDialog : CanvasComponentDialog(
+   c,                       #         
+   add_col,                 #               
+   delete,                  #              
+   apply,                   #             
+   struct,                  #              
+   edit_label,              #                  
+   size,                    #            
+   internal_alignment,      #                          
+   os,                      #          
+   os_on,                   #             
+   os_off,                  #              
+   internal_alignment_list, #                               
+   col_name,                #
+   select_group             #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         struct : if ev$get_code() > 0 then {
+            if i := struct$get_selections()[1] & i <= *c.columns then {
+               new := c.columns[i]
+               delete$clear_is_shaded()
+               apply$clear_is_shaded()
+               os$set_which_one(os_on)
+               edit_label$set_contents(new.label)
+               size$set_contents(new.column_width)
+               col_name$set_contents(new.name)
+               internal_alignment$set_selection(case new.internal_alignment of {
+                 "c" : 1
+                 "l" : 2
+                 "r" : 3 })
+            } else {
+              apply$set_is_shaded()
+              delete$set_is_shaded()
+              os$set_which_one(os_off)
+            }
+         }
+
+         add_col : if ev$get_code() > 0 then {
+            new := CanvasTableColumn()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            new$set_label("Edit me")
+            new$set_column_width(75)
+            new$set_parent_table(c)
+            new$final_setup(c.parent_Dialog, c)
+            new$set_parent_Canvas(c.parent_Canvas)
+            l := struct$get_selections()
+            nl := l[1]
+            if *l = 0 | nl > *c.columns then {
+               put(c.columns, new)
+               struct$set_contents(c$string_rep())
+               struct$goto_pos(*c.columns)                             
+               struct$set_selections([*c.columns])
+            } else {
+               c.columns := c.columns[1:nl] ||| [new] ||| c.columns[nl:0]
+               struct$set_contents(c$string_rep())      
+               line := struct$get_line()
+               nlines := struct$get_page_size()
+               if nl > line + nlines - 1 then
+                  line := nl - nlines + 1
+               else if nl < line then
+                  line := nl
+               struct$goto_pos(line)
+               struct$set_selections([nl])
+            }                              
+            delete$clear_is_shaded()
+            apply$clear_is_shaded()
+            os$set_which_one(os_on)
+            edit_label$set_contents(new.label)
+            size$set_contents(new.column_width)
+            col_name$set_contents(new.name)
+            internal_alignment$set_selection(case new.internal_alignment of {
+              "c" : 1
+              "l" : 2
+              "r" : 3 })
+         }
+
+         apply :  if ev$get_code() > 0 then {
+            #
+            # Validate fields
+            #
+            integer(self.size$get_contents()) | return alert_error("Integer field required for col width")
+            r := c.columns[struct$get_selections()[1]]
+            r$set_label(self.edit_label$get_contents())
+            r$set_column_width(integer(self.size$get_contents()))
+            r$set_internal_alignment(internal_alignment_list[internal_alignment$get_selection()])
+            r$set_name(col_name$get_contents())
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            delete$set_is_shaded()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         delete :  if ev$get_code() > 0 then {
+            i := struct$get_selections()[1]
+            c.columns[i]$finally()
+            c.columns := c.columns[1:i] ||| c.columns[i + 1:0]
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            delete$set_is_shaded()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         cancel : if ev$get_code() > 0 then {
+            c.parent_Canvas.parent_Dialog$use_extra_undo()
+            self$dispose()
+         }
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c.select_one := c.select_many := &null
+            case select_group$get_selection() of {
+               2 :  c$set_select_one()
+               3 :  c$set_select_many()
+            }
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      c.parent_Canvas.parent_Dialog$save_extra_undo()
+
+      self$set_attribs("size=750,710", "label=" || label)
+ #    self$set_attribs("size=750,850", "label=" || label)swj
+
+
+      p := Border()
+      p$set_pos("50%", 320)
+
+
+ # swj    p$set_pos("50%", 410)table
+      p$set_size("100%-50", 350)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      struct := Table()
+      struct$set_size(225, 250)
+      struct$set_pos(50, 50)
+      struct$set_select_one()
+      struct$set_contents(c$string_rep())
+      p$add(struct)
+
+      t1 := TableColumn()
+      t1$set_label("Label")
+      t1$set_column_width(75)
+      struct$add(t1)
+
+      t2 := TableColumn()
+      t2$set_label("Width")
+      t2$set_internal_alignment("r")
+      t2$set_column_width(60)
+      struct$add(t2)
+
+      t3 := TableColumn()
+      t3$set_label("Align")
+      t3$set_internal_alignment("r")
+      t3$set_column_width(60)
+      struct$add(t3)
+
+      add_col := TextButton()
+      add_col$set_label("Add")
+      add_col$set_align("c", "t")
+      add_col$set_pos(340, 50)
+      p$add(add_col)
+
+      delete := TextButton()
+      delete$set_label("Delete")
+      delete$set_align("c", "t")
+      delete$set_pos(400, 50)
+      delete$set_is_shaded()
+      p$add(delete)
+
+      apply := TextButton()
+      apply$set_label("Apply")
+      apply$set_align("c", "t")
+      apply$set_pos(460, 50)
+      apply$set_is_shaded()
+      p$add(apply)
+
+      os := OverlaySet()
+      os$set_pos(320, 100)
+      os$set_size(350, 200)
+      p$add(os)
+
+      os_off := OverlayItem()
+      os$add(os_off)
+
+      select_group := List()
+      select_group$set_selection_list(["No selection", "Select one", "Select many"])
+      select_group$set_size(120)
+      select_group$set_pos(510, 50)
+      p$add(select_group)
+
+      if \c.select_one then
+         select_group$set_selection(2)
+      else if \c.select_many then
+         select_group$set_selection(3)
+
+      os_on := OverlayItem() 
+      os$add(os_on)
+
+      b := Border()
+      b$set_pos(0, 0)
+      b$set_size("100%", "100%")
+      l := Label()
+      l$set_label("Edit")
+      b$set_title(l)
+      os_on$add(b)
+
+      l := Label()
+      l$set_label("Label : ")
+      l$set_pos(30, "20%")
+      l$set_align("l", "c")
+      b$add(l)
+      
+      edit_label := TextField()
+      edit_label$set_align("l", "c")
+      edit_label$set_pos(100, "20%")
+      edit_label$set_size(125)
+      b$add(edit_label)
+
+      l := Label()
+      l$set_label("Width : ")
+      l$set_pos(30, "40%")
+      l$set_align("l", "c")
+      b$add(l)
+      
+      size := TextField()
+      size$set_align("l", "c")
+      size$set_pos(100, "40%")
+      size$set_size(125)
+      b$add(size)
+
+      l := Label()
+      l$set_label("Align : ")
+      l$set_pos(30, "60%")
+      l$set_align("l", "c")
+      b$add(l)
+
+      internal_alignment := List()
+      internal_alignment$set_pos(100, "60%")
+      internal_alignment$set_size(50)
+      internal_alignment$set_align("l", "c")
+      internal_alignment$set_selection_list(internal_alignment_list)
+      b$add(internal_alignment)
+
+      l := Label()
+      l$set_label("Name :")
+      l$set_pos(30, "80%")
+      l$set_align("l", "c")
+      b$add(l)
+
+      col_name := TextField()
+      col_name$set_size(125)
+      col_name$set_pos(100, "80%")
+      col_name$set_align("l", "c")
+      b$add(col_name)
+
+end
+
+############################################################################
+#
+# Class for representing a TabSet on the canvas.
+#
+class CanvasTabSet : CanvasComponent : TabSet()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TabSet"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "tab_set"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      every i := !self.components do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+      c$line(self.name || "$set_which_one(" || self.which_one.name || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTabSet()
+      self$CanvasComponent.cp(c)
+      every e := !self.components do {
+         e1 := e$cp()
+         c$add(e1)
+         if self.which_one === e then
+            c$set_which_one(e1)
+      }
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTabSet()
+      self$CanvasComponent.dup(c, pc)
+      every e := !self.components do {
+         e1 := e$dup(pc)
+         c$add(e1)
+         if self.which_one === e then
+            c$set_which_one(e1)
+      }
+      return c
+   end
+      
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Components", "components"],
+          ["Which One", "which_one"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self$CanvasComponent.reset_size()
+      every (!self.components)$reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      return (c ~=== self) & self.which_one$inside(c)
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      #
+      # If over one of the objects in the current item, return it.
+      #
+      if o := self.which_one$which_cursor_over() then
+         return o
+
+      #
+      # Otherwise, see if within the present TabSet.
+      #
+      if ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then
+         return self
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTabSetDialog(self)
+   end
+
+   method string_rep()
+      l := []
+      every c := !self.components do {
+         s := c.name
+         if c === self.which_one then
+            s ||:= "*"
+         put(l, s)
+      }
+      put(l, "")
+      return l
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$TabSet.initially()
+      var_category := 1
+end
+
+############################################################################
+#
+# Class for representing a TabItem on the canvas.
+#
+class CanvasTabItem : CanvasComponent : TabItem()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c$add_var(self.name, 1)
+      c$line(name || " := " || self.class_name || "()")
+      c$line(name || "$set_label(" || image(self.label) || ")")
+      if \self.is_shaded_flag then
+         c$line(name || "$set_is_shaded()")
+      every i := !self.components do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TabItem"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "tab_item"
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_label(self.label)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTabItem()
+      self$CanvasComponent.cp(c)
+      every c$add((!self.components)$cp())
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTabItem()
+      self$CanvasComponent.dup(c, pc)
+      every c$add((!self.components)$dup(pc))
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["Parent TabSet", "parent_tab_set"],
+          ["Components", "components"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      every (!self.components)$reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.components do
+         if o := e$inside(c) then
+            return o
+
+      if (c ~=== self) & (self.parent_tab_set.x <= c.x < self.parent_tab_set.x + self.parent_tab_set.w) & (self.parent_tab_set.y <= c.y < self.parent_tab_set.y + self.parent_tab_set.h) & (self.parent_tab_set.x <= c.x + c.w <= self.parent_tab_set.x + self.parent_tab_set.w) & (self.parent_tab_set.y <= c.y + c.h <= self.parent_tab_set.y + self.parent_tab_set.h) then
+         return self
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.components) do
+         if o := e$which_cursor_over() then
+            return o
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$TabItem.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasTabSetDialog : CanvasComponentDialog(
+   c,                       #         
+   add_col,                 #               
+   delete,                  #              
+   apply,                   #             
+   struct,                  #              
+   edit_label,              #                  
+   os,                      #          
+   os_on,                   #             
+   os_off,                  #              
+   col_name,                #                
+   item_shaded,                  #              
+   which_one                #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         struct : if ev$get_code() > 0 then {
+            if i := struct$get_selections()[1] & i <= *c.components then {
+               new := c.components[i]
+               if *c.components > 1 then
+                  delete$clear_is_shaded()
+               apply$clear_is_shaded()
+               which_one$clear_is_shaded()
+               os$set_which_one(os_on)
+               edit_label$set_contents(new.label)
+               if \new.is_shaded_flag then
+                  item_shaded$set_is_checked()
+               else
+                  item_shaded$clear_is_checked()
+               col_name$set_contents(new.name)
+            } else {
+              apply$set_is_shaded()
+              delete$set_is_shaded()
+              which_one$set_is_shaded()
+              os$set_which_one(os_off)
+            }
+         }
+
+         add_col : if ev$get_code() > 0 then {
+            new := CanvasTabItem()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            new$set_label("Edit me")
+            new$set_parent_tab_set(c)
+            new$final_setup(c.parent_Dialog, c)
+            new$set_parent_Canvas(c.parent_Canvas)
+            l := struct$get_selections()
+            nl := l[1]
+            if *l = 0 | nl > *c.components then {
+               put(c.components, new)
+               struct$set_contents(c$string_rep())
+               struct$goto_pos(*c.components)                             
+               struct$set_selections([*c.components])
+            } else {
+               c.components := c.components[1:nl] ||| [new] ||| c.components[nl:0]
+               struct$set_contents(c$string_rep())      
+               line := struct$get_line()
+               nlines := struct$get_page_size()
+               if nl > line + nlines - 1 then
+                  line := nl - nlines + 1
+               else if nl < line then
+                  line := nl
+               struct$goto_pos(line)
+               struct$set_selections([nl])
+            }                              
+            delete$clear_is_shaded()
+            apply$clear_is_shaded()
+            which_one$clear_is_shaded()
+            os$set_which_one(os_on)
+            edit_label$set_contents(new.label)
+            item_shaded$clear_is_checked()
+            col_name$set_contents(new.name)
+         }
+
+         apply :  if ev$get_code() > 0 then {
+            r := c.components[struct$get_selections()[1]]
+            r$set_label(self.edit_label$get_contents())
+            r.is_shaded_flag := item_shaded$get_status()
+            r$set_name(col_name$get_contents())
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            which_one$set_is_shaded()
+            delete$set_is_shaded()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         delete :  if ev$get_code() > 0 then {
+            i := struct$get_selections()[1]
+            if c.which_one === c.components[i] then
+               c.which_one := c.components[i + 1 | i - 1]
+            c.components[i]$finally()
+            c.components := c.components[1:i] ||| c.components[i + 1:0]
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            delete$set_is_shaded()
+            which_one$set_is_shaded()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         cancel : if ev$get_code() > 0 then {
+            c.parent_Canvas.parent_Dialog$use_extra_undo()
+            self$dispose()
+         }
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+
+         which_one : if ev$get_code() > 0 then {
+            c.which_one := c.components[struct$get_selections()[1]]
+            struct$set_contents(c$string_rep())
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=750,710", "label=" || label)
+
+
+#     self$set_attribs("size=750,850", "label=" || label)swj TabSet
+
+      c.parent_Canvas.parent_Dialog$save_extra_undo()
+
+      p := Border()
+      p$set_pos("50%", 325)
+
+#     p$set_pos("50%", 410) swj
+
+      p$set_size("100%-50", 350)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      struct := TextList()
+      struct$set_size(225, 250)
+      struct$set_pos(50, 50)
+      struct$set_select_one()
+      struct$set_contents(c$string_rep())
+      p$add(struct)
+
+      add_col := TextButton()
+      add_col$set_label("Add")
+      add_col$set_align("c", "t")
+      add_col$set_pos(340, 50)
+      p$add(add_col)
+
+      delete := TextButton()
+      delete$set_label("Delete")
+      delete$set_align("c", "t")
+      delete$set_pos(400, 50)
+      delete$set_is_shaded()
+      p$add(delete)
+
+      apply := TextButton()
+      apply$set_label("Apply")
+      apply$set_align("c", "t")
+      apply$set_pos(460, 50)
+      apply$set_is_shaded()
+      p$add(apply)
+
+      which_one := TextButton()
+      which_one$set_label("Which")
+      which_one$set_align("c", "t")
+      which_one$set_pos(520, 50)
+      which_one$set_is_shaded()
+      p$add(which_one)
+
+      os := OverlaySet()
+      os$set_pos(320, 100)
+      os$set_size(350, 200)
+      p$add(os)
+
+      os_off := OverlayItem()
+      os$add(os_off)
+
+      os_on := OverlayItem() 
+      os$add(os_on)
+
+      b := Border()
+      b$set_pos(0, 0)
+      b$set_size("100%", "100%")
+      l := Label()
+      l$set_label("Edit")
+      b$set_title(l)
+      os_on$add(b)
+
+      l := Label()
+      l$set_label("Label : ")
+      l$set_pos(30, "25%")
+      l$set_align("l", "c")
+      b$add(l)
+      
+      edit_label := TextField()
+      edit_label$set_align("l", "c")
+      edit_label$set_pos(100, "25%")
+      edit_label$set_size(125)
+      b$add(edit_label)
+
+      item_shaded := CheckBox()
+      item_shaded$set_label("Is shaded")
+      item_shaded$set_pos(30, "50%")
+      item_shaded$set_align("l", "c")
+      b$add(item_shaded)
+
+      l := Label()
+      l$set_label("Name :")
+      l$set_pos(30, "75%")
+      l$set_align("l", "c")
+      b$add(l)
+
+      col_name := TextField()
+      col_name$set_size(125)
+      col_name$set_pos(100, "75%")
+      col_name$set_align("l", "c")
+      b$add(col_name)
+
+end
+
+############################################################################
+#
+# Class for representing a MenuButton on the canvas.
+#
+class CanvasMenuButton : CanvasComponent : MenuButton(
+   string_rep               #                  
+   )
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "MenuButton"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "menu_button"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      if self.img ~=== img_style("arrow_down") then
+         c$line(name || "$set_img(" || image(self.img) || ")")
+      self.menu$gen_code(c)
+      c$line(self.name || "$set_menu(" || self.menu.name || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_img(self.img)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasMenuButton()
+      self$CanvasComponent.cp(c)
+      c$set_menu(self.menu$cp(c))
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasMenuButton()
+      self$CanvasComponent.dup(c, pc)
+      c$set_menu(self.menu$dup(c))
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Img", "img"],
+          ["Menu", "menu"]
+         ]
+   end
+
+   method set_string_rep()
+      local sub
+      string_rep := []
+      self.menu$set_string_rep(string_rep, 1, self, 1)
+      put(string_rep, MenuTreeNode(1, self, 2))
+   end
+
+   method get_string_rep()
+      return self.string_rep      
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasMenuBarDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$MenuButton.initially()
+      var_category := 2
+end
+
+############################################################################
+#
+# Class for representing a OverlaySet on the canvas.
+#
+class CanvasOverlaySet : CanvasComponent : OverlaySet()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "OverlaySet"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "overlay_set"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      every i := !self.components do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+      c$line(self.name || "$set_which_one(" || self.which_one.name || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasOverlaySet()
+      self$CanvasComponent.cp(c)
+      every e := !self.components do {
+         e1 := e$cp()
+         c$add(e1)
+         if self.which_one === e then
+            c$set_which_one(e1)
+      }
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasOverlaySet()
+      self$CanvasComponent.dup(c, pc)
+      every e := !self.components do {
+         e1 := e$dup(pc)
+         c$add(e1)
+         if self.which_one === e then
+            c$set_which_one(e1)
+      }
+      return c
+   end
+      
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Components", "components"],
+          ["Which One", "which_one"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self$CanvasComponent.reset_size()
+      every (!self.components)$reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      return (c ~=== self) & self.which_one$inside(c)
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      #
+      # If over one of the objects in the current item, return it.
+      #
+      if o := self.which_one$which_cursor_over() then
+         return o
+
+      #
+      # Otherwise, see if within the present OverlaySet.
+      #
+      if ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then
+         return self
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasOverlaySetDialog(self)
+   end
+
+   method display(buffer_flag)
+      self$OverlaySet.display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      Rectangle(W, self.x, self.y, self.w, self.h)
+      center_string(W, self.x + self.w / 2, self.y + 10, "<OverlaySet>")
+      self$do_shading(W)
+   end
+
+   method string_rep()
+      l := []
+      every c := !self.components do {
+         s := c.name
+         if c === self.which_one then
+            s ||:= "*"
+         put(l, s)
+      }
+      put(l, "")
+      return l
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$OverlaySet.initially()
+      var_category := 1
+end
+
+############################################################################
+#
+# Class for representing a OverlayItem on the canvas.
+#
+class CanvasOverlayItem : CanvasComponent : OverlayItem()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "OverlayItem"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "overlay_item"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c$add_var(self.name, 1)
+      c$line(name || " := " || self.class_name || "()")
+      every i := !self.components do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasOverlayItem()
+      self$CanvasComponent.cp(c)
+      every c$add((!self.components)$cp())
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasOverlayItem()
+      self$CanvasComponent.dup(c, pc)
+      every c$add((!self.components)$dup(pc))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Components", "components"],
+          ["Parent OverlaySet", "parent_overlay_set"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      every (!self.components)$reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.components do
+         if o := e$inside(c) then
+            return o
+
+      if (c ~=== self) & (self.parent_overlay_set.x <= c.x < self.parent_overlay_set.x + self.parent_overlay_set.w) & (self.parent_overlay_set.y <= c.y < self.parent_overlay_set.y + self.parent_overlay_set.h) & (self.parent_overlay_set.x <= c.x + c.w <= self.parent_overlay_set.x + self.parent_overlay_set.w) & (self.parent_overlay_set.y <= c.y + c.h <= self.parent_overlay_set.y + self.parent_overlay_set.h) then
+         return self
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.components) do
+         if o := e$which_cursor_over() then
+            return o
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$OverlayItem.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasOverlaySetDialog : CanvasComponentDialog(
+   c,                       #         
+   add_col,                 #               
+   delete,                  #              
+   apply,                   #             
+   struct,                  #              
+   os,                      #          
+   os_on,                   #             
+   os_off,                  #              
+   col_name,                #                
+   which_one                #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         struct : if ev$get_code() > 0 then {
+            if i := struct$get_selections()[1] & i <= *c.components then {
+               new := c.components[i]
+               if *c.components > 1 then
+                  delete$clear_is_shaded()
+               apply$clear_is_shaded()
+               which_one$clear_is_shaded()
+               os$set_which_one(os_on)
+               col_name$set_contents(new.name)
+            } else {
+              apply$set_is_shaded()
+              which_one$set_is_shaded()
+              delete$set_is_shaded()
+              os$set_which_one(os_off)
+            }
+         }
+
+         add_col : if ev$get_code() > 0 then {
+            new := CanvasOverlayItem()
+            new$set_name(c.parent_Canvas$get_new_name(new))
+            new$set_class_name(new$gen_class_name())
+            new$set_parent_overlay_set(c)
+            new$final_setup(c.parent_Dialog, c)
+            new$set_parent_Canvas(c.parent_Canvas)
+            l := struct$get_selections()
+            nl := l[1]
+            if *l = 0 | nl > *c.components then {
+               put(c.components, new)
+               struct$set_contents(c$string_rep())
+               struct$goto_pos(*c.components)                             
+               struct$set_selections([*c.components])
+            } else {
+               c.components := c.components[1:nl] ||| [new] ||| c.components[nl:0]
+               struct$set_contents(c$string_rep())      
+               line := struct$get_line()
+               nlines := struct$get_page_size()
+               if nl > line + nlines - 1 then
+                  line := nl - nlines + 1
+               else if nl < line then
+                  line := nl
+               struct$goto_pos(line)
+               struct$set_selections([nl])
+            }                              
+            delete$clear_is_shaded()
+            apply$clear_is_shaded()
+            which_one$clear_is_shaded()
+            os$set_which_one(os_on)
+            col_name$set_contents(new.name)
+         }
+
+         apply :  if ev$get_code() > 0 then {
+            r := c.components[struct$get_selections()[1]]
+            r$set_name(col_name$get_contents())
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            which_one$set_is_shaded()
+            delete$set_is_shaded()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         delete :  if ev$get_code() > 0 then {
+            i := struct$get_selections()[1]
+            if c.which_one === c.components[i] then
+               c.which_one := c.components[i + 1 | i - 1]
+            c.components[i]$finally()
+            c.components := c.components[1:i] ||| c.components[i + 1:0]
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            delete$set_is_shaded()
+            which_one$set_is_shaded()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         cancel : if ev$get_code() > 0 then {
+            c.parent_Canvas.parent_Dialog$use_extra_undo()
+            self$dispose()
+         }
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+
+         which_one : if ev$get_code() > 0 then {
+            c.which_one := c.components[struct$get_selections()[1]]
+            struct$set_contents(c$string_rep())
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=725,710", "label=" || label)
+
+#     self$set_attribs("size=750,850", "label=" || label)swj overlay
+
+      c.parent_Canvas.parent_Dialog$save_extra_undo()
+
+      p := Border()
+      p$set_pos("50%", 320)
+
+#   swj  p$set_pos("50%", 410)
+
+      p$set_size("100%-50", 325)
+#swj    p$set_size("100%-50", 350)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      struct := TextList()
+      struct$set_size(225, 250)
+      struct$set_pos(50, 50)
+      struct$set_select_one()
+      struct$set_contents(c$string_rep())
+      p$add(struct)
+
+      add_col := TextButton()
+      add_col$set_label("Add")
+      add_col$set_align("c", "t")
+      add_col$set_pos(340, 50)
+      p$add(add_col)
+
+      delete := TextButton()
+      delete$set_label("Delete")
+      delete$set_align("c", "t")
+      delete$set_pos(400, 50)
+      delete$set_is_shaded()
+      p$add(delete)
+
+      apply := TextButton()
+      apply$set_label("Apply")
+      apply$set_align("c", "t")
+      apply$set_pos(460, 50)
+      apply$set_is_shaded()
+      p$add(apply)
+
+      which_one := TextButton()
+      which_one$set_label("Which")
+      which_one$set_align("c", "t")
+      which_one$set_pos(520, 50)
+      which_one$set_is_shaded()
+      p$add(which_one)
+
+      os := OverlaySet()
+      os$set_pos(320, 100)
+      os$set_size(320, 200)
+
+
+#  swj   os$set_size(350, 200)
+      p$add(os)
+
+      os_off := OverlayItem()
+      os$add(os_off)
+
+      os_on := OverlayItem() 
+      os$add(os_on)
+
+      b := Border()
+      b$set_pos(0, 0)
+      b$set_size("100%", "100%")
+#      b$set_size("100%", "100%")
+      l := Label()
+      l$set_label("Edit")
+      b$set_title(l)
+      os_on$add(b)
+
+      l := Label()
+      l$set_label("Custom name")
+      l$set_pos(30, "50%")
+      l$set_align("l", "c")
+      b$add(l)
+
+      col_name := TextField()
+      col_name$set_size(125)
+      col_name$set_pos(150, "50%")
+      col_name$set_align("l", "c")
+      b$add(col_name)
+
+end
+
+############################################################################
+#
+# Class for representing a TextList on the canvas.
+#
+class CanvasTextList : CanvasComponent : TextList()
+
+   method min_height()
+      # need a smart calculation font height + borders + scrollbar
+      # for now based on constants in gui.icn, guiconst.icn we go with
+      # 14 + 8*2 + 22
+      return 52
+   end
+
+   method min_width()
+      # need a smart calculation font height + borders + scrollbar
+      # for now based on constants in gui.icn, guiconst.icn we go with
+      # 14 + 5*2 + 22
+      return 46
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "TextList"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "text_list"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+
+      if \self.select_one then
+         c$line(name || "$set_select_one()")
+      if \self.select_many then
+         c$line(name || "$set_select_many()")
+
+      c$line(name || "$set_contents([" || list2string(self.contents) || "])")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.select_one := self.select_one
+      c.select_many := self.select_many
+      c$set_contents(copy(self.contents))
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTextList()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTextList()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Select One", "select_one"],
+          ["Select Many", "select_many"],
+          ["Checked", "checked"],
+          ["Contents", "contents"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTextListDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$TextList.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasTextListDialog : CanvasComponentDialog(
+   c,                       #         
+   contents,                #                
+   select_group             #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_contents(contents$get_contents())
+            c.select_one := c.select_many := &null
+            case select_group$get_selection() of {
+               2 :  c$set_select_one()
+               3 :  c$set_select_many()
+            }
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=700,710", "label=" || label)
+#     self$set_attribs("size=750,850", "label=" || label)swj TextList
+
+
+
+      p := Border()
+      p$set_pos("50%", 320)
+#  p$set_pos("50%", 410)
+
+      p$set_size("100%-50", 350)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      contents := EditableTextList()
+      contents$set_size(225, 250)
+      contents$set_pos(50, 50)
+      contents$set_contents(copy(c$get_contents()))
+      p$add(contents)
+
+      select_group := List()
+      select_group$set_selection_list(["No selection", "Select one", "Select many"])
+      select_group$set_size(120)
+      select_group$set_pos(300, 50)
+      p$add(select_group)
+
+      if \c.select_one then
+         select_group$set_selection(2)
+      else if \c.select_many then
+         select_group$set_selection(3)
+
+end
+
+############################################################################
+#
+# Class for representing a EditableTextList on the canvas.
+#
+class CanvasEditableTextList : CanvasComponent : EditableTextList()
+   method min_height()
+      # need a smart calculation font height + borders + scrollbar
+      # for now based on constants in gui.icn, guiconst.icn we go with
+      # 14 + 8*2 + 22
+      return 52
+   end
+
+   method min_width()
+      # need a smart calculation font height + borders + scrollbar
+      # for now based on constants in gui.icn, guiconst.icn we go with
+      # 14 + 5*2 + 22
+      return 46
+   end
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "EditableTextList"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "editable_text_list"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_contents([" || list2string(self.contents) || "])")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c$set_contents(copy(self.contents))
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasEditableTextList()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasEditableTextList()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Contents", "contents"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasEditableTextListDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$EditableTextList.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasEditableTextListDialog : CanvasComponentDialog(
+   c,                       #         
+   contents                 #                
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_contents(contents$get_contents())
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=700,700", "label=" || label)
+  # self$set_attribs("size=750,850", "label=" || label)swj editable textlist
+
+
+      p := Border()
+      p$set_pos("50%", 320)
+#  p$set_pos("50%", 410)
+
+      p$set_size("100%-50", 325)
+#      p$set_size("100%-50", 350)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      contents := EditableTextList()
+      contents$set_size(225, 250)
+      contents$set_pos(50, 50)
+      contents$set_contents(copy(c$get_contents()))
+      p$add(contents)
+
+end
+
+############################################################################
+#
+# Class for representing a List on the canvas.
+#
+class CanvasList : CanvasComponent : List()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "List"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "list"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      c$line(name || "$set_constant_label(" || image(\self.constant_label) || ")")
+      c$line(name || "$set_selection_list([" || list2string(self.selection_list) || "])")
+      if self.selection ~= 1 then
+         c$line(name || "$set_selection(" || self.selection || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.constant_label := self.constant_label
+      c$set_selection_list(copy(self.selection_list))
+      c$set_selection(self.selection)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasList()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasList()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Constant Label", "constant_label"],
+          ["Selection", "selection"],
+          ["Selection List", "selection_list"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasListDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$List.initially()
+end
+
+############################################################################
+#
+#
+#
+class CanvasListDialog : CanvasComponentDialog(
+   c,                       #         
+   selection_list,          #                      
+   set_selection,           #                     
+   selection,               #                 
+   use_constant_label,      #                          
+   constant_label,          #                      
+   group,                   #             
+   default_setting          #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            #
+            # Validate
+            #
+            if (group$get_which_one() === set_selection) & not(integer(selection$get_contents())) then
+               return alert_error("Selection is non-integer")
+
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_selection_list(selection_list$get_contents())
+
+            c.constant_label := &null
+            c.selection := 1
+            case group$get_which_one() of {
+               use_constant_label : c$set_constant_label(constant_label$get_contents())
+               set_selection : c$set_selection(integer(selection$get_contents()))
+               default_setting : c$set_selection(1)
+            }
+            c.l$set_label(\c.constant_label | c.selection_list[c.selection])
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+
+         use_constant_label : {
+            selection$set_is_shaded()
+            constant_label$clear_is_shaded() 
+         }
+
+         set_selection : {
+            selection$clear_is_shaded()
+            constant_label$set_is_shaded() 
+         }
+
+         default_setting : {
+            c$set_selection(1)
+            selection$set_is_shaded()
+            constant_label$set_is_shaded() 
+         }
+      }
+   end
+
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=700,700", "label=" || label)
+
+# swj  self$set_attribs("size=750,850", "label=" || label) list
+
+      p := Border()
+      p$set_pos("50%", 320)
+
+ #    p$set_pos("50%", 410)
+#    p$set_size("100%-50", 350)
+    
+      p$set_size("100%-50", 325)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      selection_list := EditableTextList()
+      selection_list$set_size(225, 250)
+      selection_list$set_pos(50, 50)
+      selection_list$set_contents(copy(c.selection_list))
+      p$add(selection_list)
+
+      group := CheckBoxGroup()
+
+      set_selection := CheckBox()
+      set_selection$set_label("Set selection")
+      set_selection$set_pos(300, 50)
+      set_selection$set_align("l", "c")
+      p$add(set_selection)
+      group$add(set_selection)
+
+      selection := TextField()
+      selection$set_size(100)
+      selection$set_pos(450, 50)
+      selection$set_align("l", "c")
+      selection$set_contents(c.selection)
+      p$add(selection)
+
+      use_constant_label := CheckBox()
+      use_constant_label$set_label("Set constant_label")
+      use_constant_label$set_pos(300, 100)
+      use_constant_label$set_align("l", "c")
+      p$add(use_constant_label)
+      group$add(use_constant_label)
+
+      constant_label := TextField()
+      constant_label$set_size(100)
+      constant_label$set_pos(450, 100)
+      constant_label$set_align("l", "c")
+      p$add(constant_label)
+
+      default_setting := CheckBox()
+      default_setting$set_label("Default")
+      default_setting$set_pos(300, 150)
+      default_setting$set_align("l", "c")
+      p$add(default_setting)
+      group$add(default_setting)
+
+      if \c.constant_label then {
+         group$set_which_one(use_constant_label)
+         constant_label$set_contents(c.constant_label)
+         selection$set_is_shaded()
+      } else if c.selection ~= 1 then {
+         group$set_which_one(set_selection)
+         constant_label$set_is_shaded()
+      } else {
+         group$set_which_one(default_setting)
+         selection$set_is_shaded()
+         constant_label$set_is_shaded()
+      }
+
+end
+
+############################################################################
+#
+# Class for representing a EditList on the canvas.
+#
+class CanvasEditList : CanvasComponent : EditList(
+   tmp, 
+   filter_str
+   )
+
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "EditList"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "edit_list"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+
+      s := self$get_contents()
+      t := self.selection
+      c$line(name || "$set_selection_list([" || list2string(self.selection_list) || "])")
+
+      if s ~== self.selection_list[t] then
+         c$line(name || "$set_contents(" || image(s) || ")")
+      else if t ~= 1 then
+         c$line(name || "$set_selection(" || self.selection || ")")
+
+      if *\filter_str > 0 then
+         c$line(name || "$set_filter(" || image(cset(self.filter_str)) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      s := self$get_contents()
+      t := self.selection
+      c$set_selection_list(copy(self.selection_list))
+
+      if s ~== self.selection_list[t] then
+         c$set_contents(s)
+      else if t ~= 1 then
+         c$set_selection(t)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasEditList()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasEditList()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+      
+   #
+   # I/o template.  The tmp field is necessary to save/set the
+   # contents of the tf (TextField) structure.
+   #
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Contents", "tmp"],
+          ["Selection", "selection"],
+          ["Selection List", "selection_list"],
+          ["Filter String", "filter_str"]
+         ]
+   end
+
+   method pre_encode()
+      tmp := get_contents()
+   end
+
+   method post_decode()
+      set_contents(tmp)
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasEditListDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$EditList.initially()
+      self.filter_str := ""
+end
+
+############################################################################
+#
+#
+#
+class CanvasEditListDialog : CanvasComponentDialog(
+   c,                       #         
+   selection_list,          #                      
+   set_selection,           #                     
+   selection,               #                 
+   set_initial_text,        #                        
+   initial_text,            #                    
+   group,                   #             
+   filter,                  #
+   default_setting          #
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            #
+            # Validate
+            #
+            if (group$get_which_one() === set_selection) & not(integer(selection$get_contents())) then
+               return alert_error("Selection is non-integer")
+
+            self$validate() | fail
+            self$set_vals(c)
+            c$set_selection_list(selection_list$get_contents())
+            case group$get_which_one() of {
+               set_initial_text : c$set_contents(initial_text$get_contents())
+               set_selection : c$set_selection(integer(selection$get_contents()))
+               default_setting : c$set_contents(c.selection_list[1])
+            }
+            c.filter_str := filter$get_contents()
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+
+         set_initial_text : {
+            selection$set_is_shaded()
+            initial_text$clear_is_shaded() 
+         }
+
+         set_selection : {
+            selection$clear_is_shaded()
+            initial_text$set_is_shaded() 
+         }
+
+         default_setting : {
+            c$set_selection(1)
+            selection$set_is_shaded()
+            initial_text$set_is_shaded() 
+         }
+      }
+   end
+
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      draw_border$set_is_shaded()
+      self$set_attribs("size=700,700", "label=" || label)
+ # self$set_attribs("size=750,850", "label=" || label)swjEditList
+
+      p := Border()
+      p$set_pos("50%", 320)
+
+# p$set_pos("50%", 410)
+
+#     p$set_size("100%-50", 350)  
+      p$set_size("100%-50", 320)
+      p$set_align("c", "t")
+      self$add(p)
+
+      l := Label()
+      l$set_label(label)
+      p$set_title(l)
+
+      selection_list := EditableTextList()
+      selection_list$set_size(225, 250)
+      selection_list$set_pos(50, 50)
+      selection_list$set_contents(copy(c.selection_list))
+      p$add(selection_list)
+
+      group := CheckBoxGroup()
+
+      set_selection := CheckBox()
+      set_selection$set_label("Set selection")
+      set_selection$set_pos(300, 50)
+      set_selection$set_align("l", "c")
+      p$add(set_selection)
+      group$add(set_selection)
+
+      selection := TextField()
+      selection$set_size(100)
+      selection$set_pos(450, 50)
+      selection$set_align("l", "c")
+      selection$set_contents(c.selection)
+      p$add(selection)
+
+      set_initial_text := CheckBox()
+      set_initial_text$set_label("Set initial_text")
+      set_initial_text$set_pos(300, 100)
+      set_initial_text$set_align("l", "c")
+      p$add(set_initial_text)
+      group$add(set_initial_text)
+
+      initial_text := TextField()
+      initial_text$set_size(100)
+      initial_text$set_pos(450, 100)
+      initial_text$set_align("l", "c")
+      initial_text$set_contents(c$get_contents())
+      p$add(initial_text)
+
+      default_setting := CheckBox()
+      default_setting$set_label("Default")
+      default_setting$set_pos(300, 150)
+      default_setting$set_align("l", "c")
+      p$add(default_setting)
+      group$add(default_setting)
+
+      if c$get_contents() ~== c.selection_list[c.selection] then {
+         group$set_which_one(set_initial_text)
+         selection$set_is_shaded()
+      } else if c.selection ~= 1 then {
+         group$set_which_one(set_selection)
+         initial_text$set_is_shaded()
+      } else {
+         group$set_which_one(default_setting)
+         selection$set_is_shaded()
+         initial_text$set_is_shaded()
+      }
+
+      l := Label()
+      l$set_label("Filter : ")
+      l$set_pos(300, 200)
+      l$set_align("l", "c")
+      p$add(l)
+      
+      filter := TextField()
+      filter$set_pos(450, 200)
+      filter$set_size(100)
+      filter$set_align("l", "c")
+      filter$set_contents(c.filter_str)
+      p$add(filter)
+
+end
+
+############################################################################
+#
+# Class for representing a Panel on the canvas.
+#
+class CanvasPanel : CanvasComponent : Panel()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Panel"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "panel"
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self$CanvasComponent.gen_code(c)
+      every i := !self.components do {
+         i$gen_code(c)
+         c$line(self.name || "$add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasPanel()
+      self$CanvasComponent.cp(c)
+      every put(c.components, (!self.components)$cp())
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasPanel()
+      self$CanvasComponent.dup(c, pc)
+      every put(c.components, (!self.components)$dup(pc))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$CanvasComponent.get_template() ||| 
+         [["Components", "components"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self$CanvasComponent.reset_size()
+      every (!self.components)$reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.components do
+         if o := e$inside(c) then
+            return o
+
+      if (c ~=== self) & (self.x <= c.x < self.x + self.w) & (self.y <= c.y < self.y + self.h) & (self.x <= c.x + c.w <= self.x + self.w) & (self.y <= c.y + c.h <= self.y + self.h) then
+         return self
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.components) do
+         if o := e$which_cursor_over() then
+            return o
+
+      if (self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h) then
+         return self
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasPanelDialog(self)
+   end
+
+   method display(buffer_flag)
+      self$Panel.display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      Rectangle(W, self.x, self.y, self.w, self.h)
+      center_string(W, self.x + self.w / 2, self.y + 10, "<Panel>")
+      self$do_shading(W)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Panel.initially()
+      var_category := 2
+end
+
+############################################################################
+#
+#
+#
+class CanvasPanelDialog : CanvasComponentDialog(c)
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel : if ev$get_code() > 0 then
+            self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      set_w_default$set_is_shaded()
+      set_h_default$set_is_shaded()
+      self$set_attribs("size=750,500", "label=" || label)
+end
+
+############################################################################
+#
+# Represents an unknown user defined component
+#
+class Custom : Component()
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+      Rectangle(W, self.x, self.y, self.w, self.h)
+      center_string(W, self.x + self.w / 2, self.y + 10, "<" || self.class_name || ">")
+      self$do_shading(W)
+   end
+
+   method resize()
+      /self.w_spec := 100
+      /self.h_spec := 100
+      self$Component.resize()
+   end
+
+   method handle_event(e)
+      fail
+   end
+end
+
+############################################################################
+#
+# Class for representing a Custom on the canvas.
+# 
+class CanvasCustom : CanvasComponent : Custom()
+   #
+   # Generate class name for code generation.
+   #
+   method gen_class_name()
+      return "Custom"
+   end
+
+   #
+   # Generate a name for instances (1, 2, 3...) is appended.
+   #
+   method gen_instance_name()
+      return "custom"
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+ 
+   # 
+   # Duplicate object
+   #
+   method dup(pc)
+      c := CanvasCustom()
+      self$CanvasComponent.dup(c, pc)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp()
+      c := CanvasCustom()
+      self$CanvasComponent.cp(c)
+      self$cp_fields(c)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasCustomDialog(self)
+   end
+
+   initially
+      self$CanvasComponent.initially()
+      self$Custom.initially()
+end
+
+############################################################################
+#
+# Dialog for configuring a CanvasCustom
+#
+class CanvasCustomDialog : CanvasComponentDialog(
+   c                        # The CanvasCustom being configured
+   )
+
+   method dialog_event(ev)
+      self$CanvasComponentDialog.dialog_event(ev)
+      case ev$get_component() of {
+         cancel :
+            if ev$get_code() > 0 then
+               self$dispose()
+
+         okay : if ev$get_code() > 0 then {
+            self$validate() | fail
+            self$set_vals(c)
+            c$reset(c.parent_Component)
+            self.okay_result := 1
+            self$dispose()
+         }
+      }
+   end
+
+   initially
+      self$setup(c)
+      self$set_attribs("size=750,500", "label=" || label)
+end
+      

@@ -1,0 +1,96 @@
+	include dos.mac
+; external functions
+	extrn cxstkp:far
+	extrn syserr:far, new_context: far, CXA38: far, CXV83: far, CXV38:far
+	dseg
+	SETX
+errmsg	db	'NEW_CONTEXT() RETURNED IN COSWITCH',0
+	extrn stksize:word
+	endds
+	pseg
+; void coswitch(oldstate,newstate,first)
+; int *oldstate, *newstate;
+; int first;
+	begin coswitch
+
+	Mov	Ax,-4			; Allocate local variables
+	Call	Cxstkp
+;
+;  oldstate[0] = stack pointer;
+;
+	Xor	Cx,Cx		; Index = 0
+	Xor	Dx,Dx
+	Mov	Ax,[Bp+12]	; Address of oldstate
+	Mov	Bx,[Bp+10]
+	Call	CXA38		; Get normalized address
+	Mov	[Bp+2],Ax	; Save oldstate[0] address
+	Mov	[Bp+0],Bx
+;
+	Les	Si,[Bp+0]	; Addressability to oldstate[0]
+	Mov	Ax,Ss		; get current stack address
+	Mov	Bx,Sp
+	Mov	Es:[Si+2],Ax	; stash away..
+	Mov	Es:[Si+0],Bx
+;  if (first) {
+	Cmp	Word Ptr [Bp+18],0
+	Jnz	notfirst
+;      stackp = newstate[0];
+;-----
+; We have to do some special processing here..
+; Since this is the first time through, we have to
+; set sp equal to stksize.
+;
+	Xor	Cx,Cx		; get the address of newstate[0]
+	Xor	Dx,Dx
+	Mov	Ax,[Bp+16]
+	Mov	Bx,[Bp+14]
+	Call	CXA38
+	Mov	Es,Ax
+	Mov	Ax,Es:[Bx+2]
+	Mov	Bx,Es:[Bx]
+; Ax, Bx now have the absolute address of the top of the stack
+	Sub	Bx,0ffffh	; subtract -1
+	Sbb	Ax,0ffffh
+	Call	CXV38		; convert to a pointer.
+	Add	Bx,stksize
+	Cli
+	Mov	Ss,Ax
+	Mov	Sp,Bx
+	Sti
+	Sub	Sp,4
+	Push	Bp
+	Mov	Bp,Sp
+;      new_contet(0,0);
+	XOR	ax,ax
+	push	ax
+	push	ax
+	push	ax
+	call	new_context
+	Mov	Sp,Bp
+;	syserr("new_context() returned in coswitch");
+	push	ds
+	mov	ax,offset errmsg
+	push	ax
+	call	syserr
+;  }
+;  else {
+notfirst:
+;      stackp = newstate[0];
+	Xor	Cx,Cx
+	Xor	Dx,Dx
+	Mov	Ax,[Bp+16]
+	Mov	Bx,[Bp+14]
+	Call	CXA38
+	Mov	Es,Ax
+	Mov	Ax,Es:[Bx+2]
+	Mov	Bx,Es:[Bx]
+	Mov	Ss,Ax
+	Mov	Sp,Bx
+;
+	Add	Sp,4
+	Pop	Bp
+	Ret
+;}
+coswitch endp
+	endps
+	end

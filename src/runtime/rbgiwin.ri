@@ -1,0 +1,1200 @@
+/*
+ * Here are some things I noticed.
+
+ * default should be black fg on white bg
+ * input handling.  Event() should at least handle keystrokes.
+	Needs a pollevent() and a wgetq().
+ * the default window, &window, doesn't seem to work:
+	procedure main()
+	   &window := open("win","g")
+	   DrawLine(10,10,100,100)
+	   Event()
+	end
+
+ */
+
+/*
+ * rbgiwin.ri - Borland Graphics-specific graphics interface code.
+ */
+#ifdef Graphics
+
+#ifndef min
+#define min(x,y) (((x) < (y))?(x):(y))
+#define max(x,y) (((x) > (y))?(x):(y))
+#endif          /* min */
+
+
+extern unsigned _stklen = 64000;
+
+
+/* replace this with stringint type if possible */
+typedef struct {
+   char *name;
+   int  value;
+   } BGIcolortype;
+
+
+/* Must be kept in asceding order based on Fill Macros (eh?) */
+
+const char *BGI_fillpattern_tbl[] = {
+   "stipple",		/* FS_STIPPLE	*/
+   "solid",		/* FS_SOLID	*/
+   "line",		/* LINE_FILL	*/
+   "light slash",	/* LTSLASH_FILL	*/
+   "slash",		/* SLASH_FILL	*/
+   "back slash",	/* BKSLASH_FILL */	
+   "light back slash",	/* LTBKSLASH_FILL*/
+   "hatch",		/* HATCH_FILL	*/
+   "cross hatch",	/* XHATCH_FILL	*/
+   "interleave",	/* INTERLEAVE_FILL*/
+   "wide dot",		/* WIDE_DOT_FILL*/
+   "close dot",		/* CLOSE_DOT_FILL*/
+   NULL
+};
+
+const BGIcolortype BGI_color_tbl[] = { 
+	{"black"        ,BLACK	},
+	{"blue"         ,BLUE	},
+	{"green"        ,GREEN	},
+	{"cyan"         ,CYAN	},
+	{"red"          ,RED	},
+	{"magenta"      ,MAGENTA	},
+	{"light gray"   ,LIGHTGRAY	},
+	{"brown"        ,BROWN	},
+	{"dark gray"    ,DARKGRAY	},
+	{"light blue"   ,LIGHTBLUE	},
+	{"light cyan"   ,LIGHTCYAN	},
+	{"light red"    ,LIGHTRED	},
+	{"light magenta",LIGHTMAGENTA},
+	{"yellow"       ,YELLOW	},
+	{"white"        ,WHITE	},
+        {NULL,-1}
+};
+
+int getcolorval(char *string)
+{
+   int i = 0;
+   int found = 0;
+
+   strlwr(string);
+
+   do {
+      if((strcmp(string,BGI_color_tbl[i].name) == 0)) found = 1;
+      }
+   while(!found && BGI_color_tbl[++i].name != NULL);
+   if(found) return BGI_color_tbl[i].value;
+   else return Failed;
+}
+
+char* getcolorname(char *string)
+{
+   int i = 0;
+   int found = 0;
+
+   strlwr(string);
+
+   do {
+      if((strcmp(string,BGI_color_tbl[i].name) == 0)) found = 1;
+      }
+   while(!found && BGI_color_tbl[++i].name != NULL);
+   if(found) return BGI_color_tbl[i].name;
+   else return NULL;
+}
+
+/*
+ * wflush
+ */
+novalue wflush(wbp w)
+{
+   /* Flushes all streams since we only have one window */
+   /* fflush(NULL); shouldn't this be a noop ? */
+}
+
+
+novalue setclip(wbp w)
+{
+   wcp wc;
+   int x, y, height, width;
+
+   wc = w->context;
+
+   x      = w->window->posx + wc->clipx;
+   y      = w->window->posy + wc->clipy;
+   width  = x + wc->clipw;
+   height = y + wc->cliph;
+
+   if(x < 0) { x = 0; wc->clipx = 0; }
+   if(y < 0) { y = 0; wc->clipy = 0; }
+
+   if(width < 0) { width = 0; wc->clipw = 0; }
+   else if(width > w->window->width) {
+      width = w->window->width; wc->clipw = w->window->width;
+      }
+
+  if(height < 0) { height = 0; wc->cliph = 0; }
+  else if (height > w->window->height) {
+     height = w->window->height; wc->cliph = w->window->height;
+     }
+
+   /* Need because setviewport()  redefines (0.0) as its upper left */
+   wc->isclipped = 1;
+   setviewport(x, y, width, height, 1);
+}
+
+
+/*
+ * unsetclip
+ */
+unsetclip(wbp w)
+{
+   wsp ws = w->window;
+
+   w->context->isclipped = 0;
+   setviewport(ws->posx, ws->posy, ws->posx + ws->width,
+               ws->posy + ws->height, 1);
+}
+
+
+/*
+ * wopen
+ */
+void EGAVGA_driver(void);
+
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
+{
+   wbp wb;
+   int gdriver = DETECT, gmode;
+   char* display = NULL;
+
+   /*
+    * allocate memory for the structures
+    */
+
+   Protect(wb = alc_wbinding(), return NULL);
+   Protect(wb->window = alc_winstate(), { free_binding(wb); return NULL; });
+   Protect(wb->context = alc_context(wb), {free_binding(wb); return NULL;});
+
+   registerbgidriver(EGAVGA_driver);
+   initgraph(&gdriver, &gmode, "");
+
+   wb->context->dx = 0;
+   wb->context->dy = 0;
+   wb->context->isclipped = 0;
+   wb->context->fillstyle = SOLID_FILL;
+   wb->context->fg = getcolor();
+   wb->context->bg = getbkcolor();
+   wb->context->leading = 1;
+
+   /* The start of the cursor should be at baseline, if not set y to 0 */
+   wb->window->x = 0;
+   wb->window->y = 8;
+   wb->window->posx = wb->window->posy = 0;
+   wb->window->height = getmaxy();
+   wb->window->width = getmaxx();
+   return (FILE *)wb;
+}
+
+
+/*
+ * wclose - make sure the window goes away - no questions asked
+ */
+int wclose(wbp w)
+{
+   free_context(w->context);
+   free_window(w);
+   closegraph();
+}
+
+
+/*
+ * wputc
+ */
+int wputc(int ci, wbp wb)
+{
+   char string[2];
+
+   if(isalnum(ci)) {
+      string[0] = (char)ci;
+      string[1] = NULL;
+      outtextxy(wb->window->x, wb->window->y - FHEIGHT(wb), string);
+      }
+
+   /* Handle BackSpace Characters */
+   else if (ci == 8) {
+      moveto(YTOROW(wb, gety()), XTOCOL(wb, getx()) - 1);
+      outtextxy(wb->window->x, wb->window->y - FHEIGHT(wb), " ");
+      }
+  else if (ci == '\n') {
+     moveto(wb->window->x = 0, wb->window->y += FHEIGHT(wb) + LEADING(wb));
+     }
+}
+
+
+int setcursor(wbp w, int on)
+{
+}
+
+
+/*
+ * Set the window's font by name.
+ */
+int setfont(wbp w, char **s)
+{
+}
+
+
+/*
+ * Set the context's fill style by name.
+ */
+int icon_setfillstyle(wbp w, char *s)
+{
+   strlwr(s);
+
+   /* replace this with a stringint */
+   if (!strcmp(s, "stipple")) w->context->fillstyle = FS_STIPPLE;
+   else if (!strcmp(s, "solid")) w->context->fillstyle = FS_SOLID;
+   else if (!strcmp(s, "line")) w->context->fillstyle = LINE_FILL;
+   else if (!strcmp(s, "light slash")) w->context->fillstyle = LTSLASH_FILL;
+   else if (!strcmp(s, "slash")) w->context->fillstyle = SLASH_FILL;
+   else if (!strcmp(s, "back slash")) w->context->fillstyle = BKSLASH_FILL;
+   else if (!strcmp(s, "light back slash")) w->context->fillstyle = LTBKSLASH_FILL;
+   else if (!strcmp(s, "hatch")) w->context->fillstyle = HATCH_FILL;
+   else if (!strcmp(s, "cross hatch")) w->context->fillstyle = XHATCH_FILL;
+   else if (!strcmp(s, "interleave")) w->context->fillstyle = INTERLEAVE_FILL;
+   else if (!strcmp(s, "wide dot")) w->context->fillstyle = WIDE_DOT_FILL;
+   else if (!strcmp(s, "close dot")) w->context->fillstyle = CLOSE_DOT_FILL;
+   else return Failed;
+   w->context->patternname = BGI_fillpattern_tbl[w->context->fillstyle];
+   return Succeeded;
+}
+
+
+/*
+ * Set the context's line style by name.
+ */
+int icon_setlinestyle(wbp w, char *s)
+{
+   strlwr(s);
+
+   if(!strcmp(s,"dashed"))
+      w->context->linestyle = DASHED_LINE;
+   else if(!strcmp(s,"solid"))
+      w->context->linestyle = SOLID_LINE;
+   else if(!strcmp(s,"striped"))
+      w->context->linestyle = DOTTED_LINE;
+   else return Failed;
+   return Succeeded;
+}
+
+
+/*
+ * Set the context's line width
+ */
+int setlinewidth(wbp w, LONG linewidth)
+{
+   if(linewidth != 1 && linewidth != 3) return Failed;
+   w->context->linewidth = linewidth;
+   return Succeeded;
+}
+
+
+/*
+ * Set the context's foreground color
+ */
+int setfg(wbp wb, char *string)
+{
+   int color;
+
+   color  = getcolorval(string); 
+   if (color == Failed) return Failed;
+   wb->context->fg = color;
+   wb->context->fgname = getcolorname(string);
+   return Succeeded;
+}
+
+
+/*
+ * Set the window context's background color
+ */
+int setbg(wbp wb, char *string)
+{
+   int color;
+
+   color  = getcolorval(string); 
+   if(color == Failed || color > 7) return Failed;
+   wb->context->bg = color;
+   wb->context->bgname = getcolorname(string);
+   setbkcolor(color);
+   return Succeeded;
+}
+
+
+/*
+ * Set the context's background color by color cell.
+ */
+int isetbg(wbp w, int bg)
+{
+}
+
+
+/*
+ * setdrawop() - set the drawing operation
+ */
+int setdrawop(wbp w, char *val)
+{
+}
+
+
+setdisplay(wbp w, char *val)
+{
+}
+
+
+setimage(wbp w, char *val)
+{
+}
+
+
+setleading(wbp w, int i)
+{
+  w->context->leading = i;
+}
+
+
+novalue toggle_fgbg(wbp w)
+{
+   int temp;
+
+   temp = w->context->fg;
+   w->context->fg = w->context->bg;
+   w->context->bg = temp;
+}
+
+
+/*
+ * getpos() - update the window state's notion of its current position
+ *  (a no-op under OS/2).
+ */
+int getpos(wbp w)
+{
+}
+
+
+novalue getfg(wbp w, char *answer)
+{
+   answer = w->context->fgname;
+}
+
+
+novalue getbg(wbp w, char *answer)
+{
+   answer = w->context->bgname;
+}
+
+
+int getlinestyle(wbp w, char *answer)
+{
+   static char *names[] = { "solid","dashed","dotted"};
+
+   *answer = '\0';
+
+   if (w->context->linestyle == SOLID_LINE) 
+      strcpy(answer, names[0]);
+   else if (w->context->linestyle == DASHED_LINE) 
+      strcpy(answer, names[1]);
+   else if (w->context->linestyle == DOTTED_LINE) 
+      strcpy(answer, names[2]);
+   if (*answer != '\0') return Succeeded;
+   else return Failed;
+}
+
+
+novalue getfntnam(wbp w, char *answer)
+{
+}
+
+
+int getdrawop(wbp w, char *answer)
+{
+}
+
+
+/*
+ * erase an area
+ */
+novalue eraseArea(wbp wb, int x, int y, int width, int height)
+{
+   int polypoints[8];
+   int oldfg;
+
+   oldfg = getcolor();
+   setcolor(getbkcolor());
+
+   setfillstyle(SOLID_FILL, getbkcolor());
+   setlinestyle(wb->context->linestyle, 0, wb->context->linewidth);
+
+   if (wb->context->isclipped == 1) {
+      x -= (wb->window->posx + wb->context->clipx);
+      y -= (wb->window->posy + wb->context->clipy);
+      }
+
+   polypoints[0] = x;
+   polypoints[1] = y;
+   polypoints[2] = x + width;
+   polypoints[3] = y;
+   polypoints[4] = x + width;
+   polypoints[5] = y + height;
+   polypoints[6] = x;
+   polypoints[7] = y + height;
+  
+   fillpoly(4,polypoints);
+   setcolor(oldfg);
+}
+
+
+/*
+ * copy an area
+ */
+int copyArea(wbp wb,wbp w2, int x, int y,int width, int height, int x2, int y2)
+{
+   char *buffer;
+   int size;
+   int pos;
+   int i, k;
+
+   if(wb->context->isclipped == 1) {
+      x  -= (wb->window->posx + wb->context->clipx);
+      y  -= (wb->window->posy + wb->context->clipy);
+      x2 -= (wb->window->posx + wb->context->clipx);
+      y2 -= (wb->window->posy + wb->context->clipy);
+      }
+  
+   size = imagesize(x,y,width+x,height+y);
+
+   if (size == -1) return Failed;
+
+   buffer = (char *)malloc(size);
+   if (buffer == NULL) return Failed;
+
+   getimage(x,y,x+width,y+height,buffer);
+   putimage(x2,y2,buffer,COPY_PUT);
+   free(buffer);
+
+   return Succeeded;
+}
+
+/*
+ *
+ */
+int icon_getpixel(wbp w, int x, int y, long *ri, char *s)
+{
+}
+
+
+/*
+ * drawarcs() - assumes x and y are already fixed up for the bitmap
+ */
+void drawarcs(wbp wb, XArc *arcs, int narcs)
+{
+   int i;
+   int oldbg;
+   int oldfg;
+
+   oldfg = getcolor();
+   oldbg = getbkcolor();
+   setbkcolor(wb->context->bg);
+   setcolor(wb->context->fg);
+   setlinestyle(wb->context->linestyle, 0, wb->context->linewidth);
+  
+   for(i=0; i < narcs; i++) {
+      if(wb->context->isclipped == 1) {
+         arcs[i].x -= (wb->window->posx + wb->context->clipx);
+         arcs[i].y -= (wb->window->posy + wb->context->clipy);
+         }
+  
+      arcs[i].angle2 += arcs[i].angle1;
+      arcs[i].width /= 2;
+      arcs[i].height /= 2;
+      arcs[i].x += arcs[i].width;
+      arcs[i].y += arcs[i].height;
+      ellipse(arcs[i].x,arcs[i].y,(int)arcs[i].angle1,(int)arcs[i].angle2,
+              arcs[i].width,arcs[i].height);   
+      }
+
+   setbkcolor(oldbg);
+   setcolor(oldfg);
+}
+
+
+/*
+ * drawlines - Support routine for XDrawLine
+ */
+
+void drawlines(wbp wb, XPoint *points, int npoints)
+{
+   int i;
+   int oldbg;
+   int oldfg;
+   int x1, x2, y1, y2;
+
+   oldfg = getcolor();
+   oldbg = getbkcolor();
+   setbkcolor(wb->context->bg);
+   setcolor(wb->context->fg);
+   setlinestyle(wb->context->linestyle, 0, wb->context->linewidth);
+
+   for(i=0; i < npoints - 1; i += 1) {
+      x1 = points[i].x;
+      x2 = points[i+1].x;
+      y1 = points[i].y;
+      y2 = points[i+1].y;
+      if (wb->context->isclipped == 1) {
+         x1 -= (wb->window->posx + wb->context->clipx);
+         y1 -= (wb->window->posy + wb->context->clipy);
+         x2 -= (wb->window->posx + wb->context->clipx);
+         y2 -= (wb->window->posy + wb->context->clipy);
+         }
+      line(x1,y1,x2,y2);
+      }
+
+   setbkcolor(oldbg);
+   setcolor(oldfg);
+}
+
+
+/*
+ * drawpoints() - 
+ *  Parameters - the window binding for output, an array of points (assumed
+ *         to be fixed up for bitmap) and the number of points
+ */
+void drawpoints(wbp wb, XPoint *points, int npoints)
+{
+   int i;
+   int oldbg;
+   int oldfg;
+
+   oldfg = getcolor();
+   oldbg = getbkcolor();
+   setbkcolor(wb->context->bg);
+   setcolor(wb->context->fg);
+   setlinestyle(wb->context->linestyle,0,wb->context->linewidth);
+
+   for(i=0; i < npoints; i++) {
+      if(wb->context->isclipped == 1) {
+         points[i].x -= (wb->window->posx + wb->context->clipx);
+         points[i].y -= (wb->window->posy + wb->context->clipy);
+         }
+      line(points[i].x,points[i].y,points[i].x,points[i].y);
+      }
+   setbkcolor(oldbg);
+   setcolor(oldfg);
+}
+
+/*
+ * drawsegments() -
+ */
+void drawsegments(wbinding *wb, XSegment *segs, int nsegs)
+{
+   int i;
+   int oldbg;
+   int oldfg;
+
+   oldfg = getcolor();
+   oldbg = getbkcolor();
+   setbkcolor(wb->context->bg);
+   setcolor(wb->context->fg);
+   setlinestyle(wb->context->linestyle,0,wb->context->linewidth);
+
+   for(i=0; i < nsegs; i++) {
+      if(wb->context->isclipped == 1) {
+         segs[i].x1 -= (wb->window->posx + wb->context->clipx);
+         segs[i].y1 -= (wb->window->posy + wb->context->clipy);
+         segs[i].x2 -= (wb->window->posx + wb->context->clipx);
+         segs[i].y2 -= (wb->window->posy + wb->context->clipy);
+         }
+      line(segs[i].x1,segs[i].y1,segs[i].x2,segs[i].y2);
+      }
+   setbkcolor(oldbg);
+   setcolor(oldfg);
+}
+
+
+/*
+ * drawstrng()
+ */
+void drawstrng(wbinding *wb, int x, int y, char *s, int slen)
+{
+   int oldbg;
+   int oldfg;
+   char *data;
+
+   data = (char *)calloc(slen+1, sizeof(char));
+   mystrncpy(data, s, slen);
+
+   oldfg = getcolor();
+   oldbg = getbkcolor();
+   setbkcolor(wb->context->bg);
+   setcolor(wb->context->fg);
+
+   if(wb->context->isclipped == 1) {
+      x -= (wb->window->posx + wb->context->clipx);
+      y -= (wb->window->posy + wb->context->clipy);
+      }
+   outtextxy(x,y - FHEIGHT(w) + 1,data);  
+ 
+   free(data);
+   setbkcolor(oldbg);
+   setcolor(oldfg);
+} 
+
+
+/*
+ * fillarcs
+ */
+void fillarcs(wbp wb, XArc *arcs, int narcs)
+{
+   int i;
+   int oldfg;
+
+   oldfg = getcolor();
+
+   setcolor(wb->context->fg);
+   setfillstyle(wb->context->fillstyle,wb->context->bg);
+   setlinestyle(wb->context->linestyle,0,wb->context->linewidth);
+
+   for(i=0; i < narcs; i++) {
+      if(wb->context->isclipped == 1) {
+         arcs[i].x -= (wb->window->posx + wb->context->clipx);
+         arcs[i].y -= (wb->window->posy + wb->context->clipy);
+         }
+
+      arcs[i].angle2 += arcs[i].angle1;
+      arcs[i].width /= 2;
+      arcs[i].height /= 2;
+      arcs[i].x += arcs[i].width;
+      arcs[i].y += arcs[i].height;
+  
+      sector(arcs[i].x,arcs[i].y,(int)arcs[i].angle1,(int)arcs[i].angle2,
+             arcs[i].width,arcs[i].height);   
+      }
+   setcolor(oldfg);
+}
+
+/*
+ * fillrectangles
+ */
+void fillrectangles(wbp wb, XRectangle *recs, int nrecs)
+{
+   int i;
+   int polypoints[8];
+   int oldfg;
+
+   oldfg = getcolor();
+   setcolor(wb->context->fg);
+   setfillstyle(wb->context->fillstyle, wb->context->bg);
+   setlinestyle(wb->context->linestyle, 0, wb->context->linewidth);
+
+   for(i=0; i < nrecs; i++) {
+      if(wb->context->isclipped == 1) {
+         recs[i].left   -= (wb->window->posx + wb->context->clipx);
+         recs[i].right  -= (wb->window->posx + wb->context->clipx);
+         recs[i].top    -= (wb->window->posy + wb->context->clipy);
+         recs[i].bottom -= (wb->window->posy + wb->context->clipy);
+         }
+
+      polypoints[0] = recs[i].left;
+      polypoints[1] = recs[i].top;
+      polypoints[2] = recs[i].left+recs[i].right;
+      polypoints[3] = recs[i].top;
+      polypoints[4] = recs[i].left+recs[i].right;
+      polypoints[5] = recs[i].top+recs[i].bottom;
+      polypoints[6] = recs[i].left;
+      polypoints[7] = recs[i].top+recs[i].bottom;
+
+      fillpoly(4,polypoints);
+      }
+   setcolor(oldfg);
+}
+
+
+/*
+ * drawrectangles
+ *  Parameters - the window binding for output, an array of rectangle
+ *         a count of the number of structures -> the number of
+ *         rectangles
+ */
+void drawrectangles(wbp wb, XRectangle *recs, int nrecs)
+{
+   int i;
+   int oldfg;
+
+   oldfg = getcolor();
+   setbkcolor(wb->context->bg);
+   setcolor(wb->context->fg);
+   setlinestyle(wb->context->linestyle, 0, wb->context->linewidth);
+
+   for(i=0; i < nrecs; i++) {
+      if(wb->context->isclipped == 1) {
+         recs[i].left   -= (wb->window->posx + wb->context->clipx);
+         recs[i].right  -= (wb->window->posx + wb->context->clipx);
+         recs[i].top    -= (wb->window->posy + wb->context->clipy);
+         recs[i].bottom -= (wb->window->posy + wb->context->clipy);
+         }
+
+      rectangle(recs[i].left,recs[i].top,recs[i].right+recs[i].left,
+                recs[i].bottom+recs[i].top);
+      }
+   setcolor(oldfg);
+}
+
+
+/*
+ * fillpolygon
+ */
+void fillpolygon(wbp wb, XPoint *pts, int npts)
+{
+   int i;
+   int oldfg;
+
+   oldfg = getcolor();
+
+   setcolor(wb->context->fg);
+   setfillstyle(wb->context->fillstyle,wb->context->bg);
+   setlinestyle(wb->context->linestyle,0,wb->context->linewidth);
+
+   if (wb->context->isclipped == 1) {
+      for(i=0; i < npts; i++) {
+         pts[i].x -= (wb->window->posx + wb->context->clipx);
+         pts[i].y -= (wb->window->posy + wb->context->clipy);
+         }
+      }
+
+   fillpoly(npts,pts);
+   setcolor(oldfg);
+}
+
+int walert(wbp w, int volume)
+{
+   sound((unsigned)300);
+   delay((unsigned)250);
+   nosound();
+}
+
+/*
+ * SetPattern
+ */
+int SetPattern(w, name, len)
+wbp w;
+char *name;
+int len;
+   {
+   }
+
+/*
+ * UpdateCursorPos
+ */
+void UpdateCursorPos(wsp ws, wcp wc)
+{
+   moveto(ws->x,ws->y);
+}
+
+int textWidth(wbp w, char *s, int n)
+{
+   char *string;
+   int length;
+
+   string = (char *)malloc((n+1) * sizeof(char));
+   mystrncpy(string,s,n);
+   length = textwidth(string);
+   free(string);
+   return length;
+}
+
+
+/*
+ * The rest of the functions are no-ops and are to be done at a later time
+ */
+int pixmap_init(w)
+wbp w;
+   {
+   }
+
+int pixmap_open(w, attribs, argc)
+wbp w;
+dptr attribs;
+int argc;
+   {
+   }
+
+
+int do_config(w, status)
+wbp w;
+int status;
+   {
+   }
+
+/*
+ * clone_context
+/*
+wcp clone_context(wbp w)
+  {
+  }
+
+
+/*
+ * freecolor
+ */
+novalue freecolor(wbp w, char *s)
+{
+}
+
+
+/*
+ * mutable_color
+ */
+int mutable_color(wbp w, dptr argv, int ac, int *retval)
+{
+}
+
+
+/*
+ * wsync
+ */
+novalue wsync(wbp w)
+{
+}
+
+
+
+/*
+ * query_pointer
+ */
+int query_pointer(wbp w, XPoint *point)
+{
+}
+
+
+/*
+ * query_rootpointer
+ */
+int query_rootpointer(XPoint *point)
+{
+}
+
+
+/*
+ * dumpimage
+ */
+int dumpimage(wbp w, char *filename, unsigned int x, unsigned int y,
+          unsigned int width, unsigned int height)
+{
+}
+
+
+/*
+ * getimstr
+ */
+int getimstr(wbp w, int x, int y, int width, int hgt,
+         struct palentry *ptbl, unsigned char *data)
+{
+}
+
+
+/*
+ * free_context
+ */
+novalue free_context(wcp wc)
+{
+}
+
+/*
+ * free_window
+ */
+int free_window(wsp ws)
+{
+}
+
+/*
+ * xdis
+ */
+novalue xdis(wbp w, char *s, int n)
+{
+   char       *data;
+   int        i;
+   int        polypoints[8];
+   int        oldfg;
+   XRectangle recs;
+
+   data = (char *)calloc(n, sizeof(char));
+   mystrncpy(data, s, n);
+
+   recs.left   = w->window->x;
+   recs.top    = w->window->y - FHEIGHT(w);
+   recs.right  = textwidth(data);
+   recs.bottom = FHEIGHT(w) - 1; 
+
+   oldfg = getcolor();
+   setcolor(w->context->bg);
+   setfillstyle(SOLID_FILL, w->context->bg);
+   setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
+
+   if(w->context->isclipped == 1) {
+      recs.left   -= (w->window->posx + w->context->clipx);
+      recs.right  -= (w->window->posx + w->context->clipx);
+      recs.top    -= (w->window->posy + w->context->clipy);
+      recs.bottom -= (w->window->posy + w->context->clipy);
+      }
+
+   polypoints[0] = recs.left;
+   polypoints[1] = recs.top;
+   polypoints[2] = recs.left+recs.right;
+   polypoints[3] = recs.top;
+   polypoints[4] = recs.left+recs.right;
+   polypoints[5] = recs.top+recs.bottom;
+   polypoints[6] = recs.left;
+   polypoints[7] = recs.top+recs.bottom;
+
+   fillpoly(4,polypoints);
+
+   setcolor(w->context->fg);
+   outtextxy(w->window->x+w->context->dx,w->window->y - FHEIGHT(w) +
+             w->context->dy,data);
+   w->window->x += textwidth(data);
+   free(data);
+   setcolor(oldfg);
+}
+
+
+/*
+ * strimage
+ */
+int strimage(wbp w, int x, int y, int width,
+             int height, struct palentry *e,
+             unsigned char *s, word len, int on_icon)
+{
+}
+
+
+/*
+ * free_mutable
+ */
+void free_mutable(wbp w, int mute_index)
+{
+}
+
+
+/*
+ * blimage
+ */
+int blimage(wbp w, int x, int y, int width, int hgt,
+            int ch, unsigned char *s, word len)
+{
+}
+
+
+/*
+ * get_mutable_name
+ */
+char *get_mutable_name(wbp w, int mutable_name)
+{
+}
+
+/*
+ * set_mutable
+ */
+int set_mutable(wbp w, int n, char *s)
+{
+}
+
+int pollevent()
+   {
+   }
+/*
+ * Get a window that has an event pending (queued)
+ */
+wsp getactivewindow(void)
+{
+}
+
+
+/*
+ * wgetq - get event from pending queue
+ */
+int wgetq(wbp w, dptr res)
+   {
+   }
+
+/*
+ * determine the new size of the client
+ */
+int setheight(w, height)
+wbp w;
+int height;
+   {
+   }
+
+/*
+ * determine new size of client
+ */
+int setwidth(w, width)
+wbp w;
+SHORT width;
+   {
+   }
+
+int setgeometry(w, geo)
+wbp w;
+char *geo;
+   {
+   }
+
+int setcanvas(w,s)
+wbp w;
+char *s;
+   {
+   }
+int seticonicstate(w, val)
+wbp w;
+char *val;
+   {
+   }
+
+int seticonlabel(w, val)
+wbp w;
+char *val;
+   {
+   }
+
+int seticonpos(w, val)
+wbp w;
+char *val;
+   {
+   }
+
+
+int setwindowlabel(w, val)
+wbp w;
+char *val;
+   {
+   }
+
+/*
+ * rebind() - bind w's context to that of w2.
+ */
+int rebind(w, w2)
+wbp w, w2;
+   {
+   }
+ int lowerWindow(wbp w)
+   {
+   }
+
+int raiseWindow(wbp w)
+   {
+   }
+
+int nativecolor(w, s, r, g, b)
+wbp w;
+char *s;
+int *r, *g, *b;
+   {
+   }
+
+novalue warpPointer(w, x, y)
+wbp w;
+int x, y;
+   {
+   }
+
+
+/*
+ * Set the foreground to draw in a mutable color (not supported under PM)
+ */
+int isetfg(wbp w, int i)
+   {
+   }
+
+
+
+/*
+ * Set the gamma correction factor  (not supported yet).
+ */
+int setgamma(w, gamma)
+wbp w;
+double gamma;
+   {
+   }
+/*
+ * setpointer() - define a mouse pointer shape
+ */
+int setpointer(w, val)
+wbp w;
+char *val;
+   {
+   }
+
+int getvisual(w, answer)
+wbp w;
+char *answer;
+   {
+   }
+
+getpointername(w, answer)
+wbp w;
+char *answer;
+   {
+   }
+
+int getdisplay(wbp w, char *answer)
+   {
+   }
+
+novalue geticonic(w, answer)
+wbp w;
+char *answer;
+   {
+   }
+
+int getcanvas(w, answer)
+wbp w;
+char *answer;
+   {
+   }
+
+int geticonpos(w, val)
+wbp w;
+char *val;
+   {
+   }
+
+int getdefault(w, prog, opt, answer)
+wbp w;
+char *prog, *opt, *answer;
+   {
+   }
+
+/*
+ * Initialize client for producing pixels from a window, usually a no-op.
+ */
+int getpixel_init(w, x, y, width, height)
+wbp w;
+int x, y, width, height;
+   {
+   }
+
+readimage(w, filename, x, y, status)
+wbp w;
+char *filename;
+int x, y, *status;
+   {
+   }
+
+
+int seticonimage(wbp wb, dptr dp)
+{
+}
+
+
+#else          /* Graphics */
+  static char aaa;
+#endif          /* Graphics */

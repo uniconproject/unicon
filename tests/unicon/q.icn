@@ -1,0 +1,29 @@
+procedure main()
+  
+  f:=open("test","sql")
+
+  q:="select * from test"
+  #q:="show columns from test"
+
+  r:=query(f, q)
+  
+  write(*f, " row(s) selected")
+  write()
+
+  write("row values")
+  while (l:=sqlfetch(f)) do {
+    every i:=(1 to *l) do
+      writes("[",l[i],"]")
+    write()
+  }
+  
+  write()
+  write("column info ([name][type][size][prec][1=nullable]")
+
+  cinfo:=colinfo(f,1)
+  every i:=(1 to *cinfo) do
+    writes("[",cinfo[i],"]")
+  write()
+
+  close(f)
+end

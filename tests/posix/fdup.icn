@@ -1,0 +1,21 @@
+
+$include "posix.icn"
+
+procedure main()
+   L := pipe() | stop("Couldn't get pipe: ", sys_errstr(&errno))
+
+   if fork() = 0 then {
+      # parent
+      close(L[1])
+      write(L[2], "Hello,")
+      write(L[2], "   world!")
+      close(L[2])
+      delay(100)
+   } else {
+      close(L[2])
+      fdup(L[1], &input)
+      while line := read() do
+	 write(line)
+      write("Everything's ok.")
+   }
+end

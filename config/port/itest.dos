@@ -1,0 +1,22 @@
+echo off
+rem |
+rem | batch file to run against the test suite
+rem | ex: test expr01
+rem |
+itran -s %1
+ilink %1
+echo executing:
+if not exist %1.dat goto skip1
+iconx -e - %1 <%1.dat >%1.out
+goto comp
+:skip1
+iconx -e - %1 >%1.out
+:comp
+compare %1.out stand\%1.out -t -w -l %1.dif
+xmore %1.dif
+del %1
+del %1.u1
+del %1.u2
+movefile %1.out \tmp
+movefile %1.dif \tmp
+:exit

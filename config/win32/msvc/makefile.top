@@ -1,0 +1,54 @@
+# top-level Icon makefile, configured for Windows NT
+Top:
+	@echo Run "nmake NT-Configure" or "nmake W-Configure" to configure sources
+	@echo Run "nmake Unicon" to build everything
+
+NT-Configure:
+	cd config\win32\msvc
+	config
+	echo Run "nmake Unicon" to build
+
+W-Configure:
+	cd config\win32\msvc
+	w-config
+	echo Run "nmake Unicon" to build
+
+Unicon:
+	nmake W-Configure
+	nmake Icon-icont
+	cd ipl\lib
+	$(MAKE)
+	cd ..\..\uni\unicon
+	$(MAKE) wunicon
+	cd ..\..
+	nmake NT-Configure
+	nmake Icon-icont
+	cd uni\unicon
+	$(MAKE) unicon
+	cd ..\lib
+	$(MAKE)
+	cd ..\ivib
+	$(MAKE) ivib
+	cd ..\ide
+	$(MAKE)
+
+Icon-icont:
+        nmake Rtt
+        cd src\runtime
+	nmake interp_all
+        cd ..\icont
+	nmake
+	cd ..\..
+
+Rtt:
+        cd src\rtt
+	nmake
+
+Configure:
+	copy config/unix/Config/top.mak ./Makefile
+	@echo "NT makefile replaced with UNIX makefile; try again."
+
+
+X-Configure:
+	copy config\unix\Config\top.mak ./Makefile
+	@echo "NT makefile replaced with UNIX makefile; try again."

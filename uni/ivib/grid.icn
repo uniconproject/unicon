@@ -1,0 +1,250 @@
+############################################################################
+#
+#	File:     grid.icn
+#
+#	Subject:  
+#
+#	Author:   Robert Parlett
+#
+#	Date:     
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   Place items in grid
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+#
+# All the elements in a grid line will be within this distance of
+# one another originally.
+#
+$define GRID_TOLERANCE 15
+
+############################################################################
+#
+# An element within a GridLine.
+#
+class GridElement(
+   c,                       # The original CanvasComponent
+   abs_x_spec,              # Its absolute position                 
+   abs_y_spec               #
+   )
+
+   initially
+      abs_x_spec := c$get_x_alignment_offset() + c.x - c.parent_Component$get_x_reference()
+      abs_y_spec := c$get_y_alignment_offset() + c.y - c.parent_Component$get_y_reference()
+end
+
+############################################################################
+#
+# A line of GridElements.
+#
+class GridLine(
+   avg,                     # The average of the x or y values 
+   elements                 # The elements
+   )
+   method enter(e)
+      put(elements, e)
+   end
+
+   initially
+      elements := []
+end
+
+############################################################################
+#
+# Vertical line
+#
+class VGridLine : GridLine()
+   #
+   # Set the average.
+   #
+   method set_avg()
+      s := 0
+      every s +:= (!elements).abs_y_spec
+      avg := s / *elements
+   end
+
+   #
+   # Is element e in this line?
+   #
+   method in_line(e)
+      every f := !elements do
+         if abs(f.abs_y_spec - e.abs_y_spec) > GRID_TOLERANCE then
+            fail
+      return
+   end
+
+   #
+   # Set all the elements' positions
+   # 
+   method set_positions(spec, align, fix)
+      every e := !elements do {
+         e.c.y_spec := spec
+         e.c.y_align := \align
+         e.c.y_fixed := \fix
+      }
+   end
+end
+
+############################################################################
+#
+# Horizontal line - as above for the x direction.
+#
+class HGridLine : GridLine()
+   method set_avg()
+      s := 0
+      every s +:= (!elements).abs_x_spec
+      avg := s / *elements
+   end
+
+   method in_line(e)
+      every f := !elements do
+         if abs(f.abs_x_spec - e.abs_x_spec) > GRID_TOLERANCE then
+            fail
+      return
+   end
+
+   method set_positions(spec, align, fix)
+      every e := !elements do {
+         e.c.x_spec := spec
+         e.c.x_align := \align
+         e.c.x_fixed := \fix
+      }
+   end
+end
+
+############################################################################
+#
+# A set of GridLines
+#
+class GridSet : Qsort(
+   orientation,             # Either "h" or "v"                  
+   lines                    # The lines - all HGridLines or all VGridLines.
+   )
+
+   #
+   # Determine whether e fits into one of the GridLines
+   #
+   method which_grid_line(e)
+      every l := !lines do
+         if l$in_line(e) then
+            return l
+      fail
+   end
+
+   #
+   # Create a new GridLine and enter e into it.
+   #
+   method enter_new(e)
+      new := if orientation == "v" then VGridLine() else HGridLine()
+      put(lines, new)
+      new$enter(e)
+   end
+
+   #
+   # Enter e either into a current GridLine, or a new one.
+   #
+   method enter(e)
+      if l := which_grid_line(e) then
+         l$enter(e)
+      else
+         self$enter_new(e)
+   end
+
+   #
+   # Equalize the GridLines.
+   #
+   method equalize_lines()
+      #
+      # Set the averages.
+      #
+      every (!lines)$set_avg()
+
+      #
+      # Sort the lines by average, so the first is at the top/left.
+      #
+      self$qsort(lines)
+
+      #
+      # Compute the inter-line increment.
+      #
+      if *lines > 1 then
+         delta := (lines[-1].avg - lines[1].avg) / (*lines - 1)
+
+      #
+      # Set the positions of the lines' elements.
+      #
+      i := lines[1].avg
+      every l := !lines do {
+         l$set_positions(i)
+         i +:= \delta
+      }
+   end
+
+   #
+   # Over-rides qsort.comp
+   #
+   method comp(x, y)
+      return x.avg < y.avg
+   end
+
+   initially
+      lines := []
+end
+
+############################################################################
+#
+# A class for sorting GridElements.
+#
+class ComponentSort : Qsort(
+   elements
+   )
+
+   method enter(c)
+      put(elements, GridElement(c))
+   end
+
+   method get_sorted_elements()
+      self$qsort(elements)
+      return elements
+   end
+
+   initially
+      elements := []
+end
+
+############################################################################
+#
+# A class for sorting GridElements vertically.
+#
+class VComponentSort : ComponentSort()
+   #
+   # Over-rides qsort.comp
+   #
+   method comp(x, y)
+      return x.abs_y_spec < y.abs_y_spec
+   end
+end
+
+############################################################################
+#
+# A class for sorting GridElements vertically.
+#
+class HComponentSort : ComponentSort()
+   #
+   # Over-rides qsort.comp
+   #
+   method comp(x, y)
+      return x.abs_x_spec < y.abs_x_spec
+   end
+end

@@ -1,0 +1,701 @@
+/*
+ * rpmgraph.ri - Presentation Manager graphics support routines.
+ */
+#ifdef Graphics
+/*
+ * drawarcs() - assumes x and y are already fixed up for the bitmap
+ */
+void drawarcs(wbinding *wb, XArc *arcs, int narcs)
+   {
+   int i, diff, bheight;
+   unsigned long a1, a2;
+   STDLOCALS(wb);
+
+   bheight = ws->pixheight;
+   /*
+    * Fix up coordinates for window-system calls
+    */
+   for (i = 0; i < narcs; i++) {
+      /*
+       * width and height must be from center point... half them,
+       * and add the radii to (x,y) to get the center point.
+       */
+      arcs[i].arcp.lP >>= 1;
+      arcs[i].arcp.lQ >>= 1;
+      arcs[i].arcp.lR = arcs[i].arcp.lS = 0;
+      arcs[i].x += arcs[i].arcp.lP;
+      arcs[i].y += arcs[i].arcp.lQ;
+      arcs[i].y = bheight - arcs[i].y - 1;
+      }
+   MutexOn(ws);
+   /*
+    * make sure our line context is loaded
+    */
+   SetLineContext(wb, ws, wc);
+   /*
+    * check if we have to do wide line
+    */
+   if (wc->lineBundle.lGeomWidth > 0) {
+      /*
+       * load our area context to get the color right, and
+       * load the default pattern to fill the line
+       */
+      SetAreaContext(wb, ws, wc);
+      GpiSetPatternSet(stdbit, LCID_DEFAULT);
+      GpiSetPattern(stdbit, PATSYM_SOLID);
+      /*
+       * do the drawing on the bitmap
+       */
+      for (i = 0; i < narcs; i++) {
+	 /*
+	  * set the parameters
+	  */
+	 GpiSetArcParams(stdbit, &arcs[i].arcp);
+	 a1 = arcs[i].angle1 * 1024;
+	 a2 = arcs[i].angle2 * 1024;
+	 if (a2 < MAKEFIXED(360, 0)) { /* partial arc */
+	    /*
+	     * sweep all the way around to find starting point
+	     */
+	    GpiSetLineType(stdbit, LINETYPE_INVISIBLE);
+	    GpiPartialArc(stdbit, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			  a1, MAKEFIXED(360, 0));
+	    /*
+	     * set the line back and do the actual draw
+	     */
+	    GpiSetLineType(stdbit, wc->lineBundle.usType);
+	    GpiBeginPath(stdbit, 1);
+	    GpiPartialArc(stdbit, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			  a1, a2);
+	    }
+	 else { /* full arc */
+	    /*
+	     * move the center of the ellipse
+	     */
+	    GpiMove(stdbit, (PPOINTL)(&arcs[i].x));
+	    GpiBeginPath(stdbit, 1);
+	    GpiFullArc(stdbit, DRO_OUTLINE, MAKEFIXED(1, 0));
+	    }
+	 GpiEndPath(stdbit);
+	 GpiStrokePath(stdbit, 1, 0);
+	 }
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 GpiSetPatternSet(stdwin, LCID_DEFAULT);
+	 GpiSetPattern(stdwin, PATSYM_SOLID);
+	 diff = ws->pixheight - ws->height;
+	 for (i = 0; i < narcs; i++) {
+	    arcs[i].y -= diff;
+	    /*
+	     * set the parameters
+	     */
+	    GpiSetArcParams(stdwin, &arcs[i].arcp);
+	    a1 = arcs[i].angle1 * 1024;
+	    a2 = arcs[i].angle2 * 1024;
+	    if (a2 < MAKEFIXED(360, 0)) { /* partial arc */
+	       /*
+		* sweep all the way around to find starting point
+		*/
+	       GpiSetLineType(stdwin, LINETYPE_INVISIBLE);
+	       GpiPartialArc(stdwin, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			     a1, MAKEFIXED(360, 0));
+	       /*
+		* set the line back and do the actual draw
+		*/
+	       GpiSetLineType(stdwin, wc->lineBundle.usType);
+	       GpiBeginPath(stdwin, 1);
+	       GpiPartialArc(stdwin, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			     a1, a2);
+	       }
+	    else { /* full arc */
+	       /* move the center of the ellipse */
+	       GpiMove(stdwin, (PPOINTL)(&arcs[i].x));
+	       GpiBeginPath(stdwin, 1);
+	       GpiFullArc(stdwin, DRO_OUTLINE, MAKEFIXED(1, 0));
+	       }
+	    GpiEndPath(stdwin);
+	    GpiStrokePath(stdwin, 1, 0);
+	    }
+	 }
+      /*
+       * unset the area context
+       */
+      ws->areaContext = NULL;
+      }
+   else {
+      /*
+       * do the drawing on the bitmap
+       */
+      for (i = 0; i < narcs; i++) {
+	 /*
+	  * set the parameters
+	  */
+	 GpiSetArcParams(stdbit, &arcs[i].arcp);
+	 a1 = arcs[i].angle1 * 1024;
+	 a2 = arcs[i].angle2 * 1024;
+	 if (a2 < MAKEFIXED(360, 0)) { /* partial arc */
+	    /*
+	     * sweep all the way around to find starting point
+	     */
+	    GpiSetLineType(stdbit, LINETYPE_INVISIBLE);
+	    GpiPartialArc(stdbit, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			  a1, MAKEFIXED(360, 0));
+	    /*
+	     * set the line back and do the actual draw
+	     */
+	    GpiSetLineType(stdbit, wc->lineBundle.usType);
+	    GpiPartialArc(stdbit, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			  a1, a2);
+	    }
+	 else { /* full arc */
+	    /*
+	     * move the center of the ellipse
+	     */
+	    GpiMove(stdbit, (PPOINTL)(&arcs[i].x));
+	    GpiFullArc(stdbit, DRO_OUTLINE, MAKEFIXED(1, 0));
+	    }
+	 }
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 diff = ws->pixheight - ws->height;
+	 for (i = 0; i < narcs; i++) {
+	    arcs[i].y -= diff;
+	    /*
+	     * set the parameters
+	     */
+	    GpiSetArcParams(stdwin, &arcs[i].arcp);
+	    a1 = arcs[i].angle1 * 1024;
+	    a2 = arcs[i].angle2 * 1024;
+	    if (a2 < MAKEFIXED(360, 0)) { /* partial arc */
+	       /*
+		* sweep all the way around to find starting point
+		*/
+	       GpiSetLineType(stdwin, LINETYPE_INVISIBLE);
+	       GpiPartialArc(stdwin, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			     a1, MAKEFIXED(360, 0));
+	       /*
+		* set the line back and do the actual draw
+		*/
+	       GpiSetLineType(stdwin, wc->lineBundle.usType);
+	       GpiPartialArc(stdwin, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			     a1, a2);
+	       }
+	    else { /* full arc */
+	       /*
+		* move the center of the ellipse
+		*/
+	       GpiMove(stdwin, (PPOINTL)(&arcs[i].x));
+	       GpiFullArc(stdwin, DRO_OUTLINE, MAKEFIXED(1, 0));
+	       }
+	    }
+	 }
+      }
+   MutexOff(ws);
+   return;
+   }
+
+
+/*
+ * drawlines - Support routine for XDrawLine
+ */
+void drawlines(wbinding *wb, XPoint *points, int npoints)
+   {
+   int i, diff, bheight;
+   STDLOCALS(wb);
+
+   MutexOn(ws);
+
+   bheight = ws->pixheight;
+   for (i = 0; i < npoints; i++)
+      points[i].y = bheight - points[i].y - 1;
+
+   /*
+    * make sure our line context is loaded
+    */
+   SetLineContext(wb, ws, wc);
+   /*
+    * check if we have to do a wide line
+    */
+   if (wc->lineBundle.lGeomWidth > 0) {
+      /*
+       * load our area also - to get the colors right
+       */
+      SetAreaContext(wb, ws, wc);
+      GpiSetPatternSet(stdbit, LCID_DEFAULT);
+      GpiSetPattern(stdbit, PATSYM_SOLID);
+      /*
+       * move to the first point in bitmap
+       */
+      GpiBeginPath(stdbit, 1);
+      GpiMove(stdbit, (PPOINTL)points);
+      GpiPolyLine(stdbit, npoints - 1, (PPOINTL)&points[1]);
+      GpiEndPath(stdbit);
+      GpiStrokePath(stdbit, 1, 0);
+      /*
+       * do the window output - have to fixup the points
+       */
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 diff = ws->pixheight - ws->height;
+	 /*
+	  * see if we can save ourselves some work
+	  */
+	 if (diff != 0)
+	    for (i = 0; i < npoints; i++) points[i].y -= diff;
+	 /*
+	  * move to the first point
+	  */
+	 GpiSetPatternSet(stdwin, LCID_DEFAULT);
+	 GpiSetPattern(stdwin, PATSYM_SOLID);
+	 GpiBeginPath(stdwin, 1);
+	 GpiMove(stdwin, (PPOINTL)points);
+	 GpiPolyLine(stdwin, npoints - 1, (PPOINTL)&points[1]);
+	 GpiEndPath(stdwin);
+	 GpiStrokePath(stdwin, 1, 0);
+	 }
+      /*
+       * unset our area for this window, since we change the PS
+       */
+      ws->areaContext = NULL;
+      }
+   else {
+      /*
+       * move to the first point in bitmap
+       */
+      GpiMove(stdbit, (PPOINTL)points);
+      GpiPolyLine(stdbit, npoints - 1, (PPOINTL)&points[1]);
+      /*
+       * do the window output - have to fixup the points
+       */
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 diff = ws->pixheight - ws->height;
+	 /*
+	  * see if we can save ourselves some work
+	  */
+	 if (diff != 0)
+	    for (i = 0; i < npoints; i++) points[i].y -= diff;
+	 /*
+	  * move to the first point
+	  */
+	 GpiMove(stdwin, (PPOINTL)points);
+	 GpiPolyLine(stdwin, npoints - 1, (PPOINTL)&points[1]);
+	 }
+      }
+
+   MutexOff(ws);
+   return;
+   }
+
+/*
+ * drawpoints() -
+ *  Parameters - the window binding for output, an array of points (assumed
+ *		 to be fixed up for bitmap) and the number of points
+ */
+void drawpoints(wbinding *wb, XPoint *points, int npoints)
+   {
+   int i, diff, bheight;
+   STDLOCALS(wb);
+   MutexOn(ws);
+   bheight = ws->pixheight;
+   /*
+    * make sure our context is loaded
+    */
+   SetLineContext(wb, ws, wc);
+   /*
+    * fixup and draw the points to the bitmap first
+    */
+   for (i = 0; i < npoints; i++) {
+      points[i].y = bheight - points[i].y - 1;
+      GpiSetPel(stdbit, &points[i]);
+      }
+   /*
+    * if there is a window, fix up the points and draw them
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+      diff = ws->pixheight - ws->height;
+      for (i = 0; i < npoints; i++) {
+	 points[i].y -= diff;
+	 GpiSetPel(stdwin, &points[i]);
+	 } /* End of for - run through points again, this time put to stdwin */
+      } /* End of if - window is there */
+   MutexOff(ws);
+   return;
+   }
+
+/*
+ * drawsegments() -
+ */
+void drawsegments(wbinding *wb, XSegment *segs, int nsegs)
+   {
+   int i, diff, bheight;
+   STDLOCALS(wb);
+
+   /*
+    * check for wide lines
+    */
+   if (wc->lineBundle.lGeomWidth > 0) {
+      /*
+       * Just break them into individual lines and pass to drawlines.
+       * This cast (seg to 2 points) should work because of the layout of
+       * the structures in graphics.h.
+       */
+      for (i = 0; i < nsegs; i++) drawlines(wb, (XPoint *)&segs[i], 2);
+      }
+   else {
+      MutexOn(ws);
+      bheight = ws->pixheight;
+      for (i = 0; i < nsegs; i++) {
+	 segs[i].y1 = bheight - segs[i].y1 - 1;
+	 segs[i].y2 = bheight - segs[i].y2 - 1;
+	 }
+      /*
+       * make sure our context is loaded
+       */
+      SetLineContext(wb, ws, wc);
+      /*
+       * draw to the bitmap
+       */
+      GpiPolyLineDisjoint(stdbit, (nsegs << 1), (PPOINTL)segs);
+      /*
+       * draw to the window
+       */
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 /*
+	  * fix up points previously made for bitmap
+	  */
+	 diff = ws->pixheight - ws->height;
+	 /*
+	  * see if we can save some work
+	  */
+	 if (diff != 0)
+	    for (i = 0; i < nsegs; i++) {
+	       segs[i].y1 -= diff;
+	       segs[i].y2 -= diff;
+	       }
+	 /*
+	  * do the output
+	  */
+	 GpiPolyLineDisjoint(stdwin, (nsegs << 1), (PPOINTL)segs);
+	 }
+      MutexOff(ws);
+      }
+   return;
+   }
+
+
+/*
+ * drawstrng()
+ */
+void drawstrng(wbinding *wb, int x, int y, char *s, int slen)
+   {
+   POINTL pt;
+   STDLOCALS(wb);
+
+   MutexOn(ws);
+   /*
+    * make sure our context is loaded
+    */
+   SetCharContext(wb, ws, wc);
+   pt.x = x; pt.y = ws->pixheight - y;
+   GpiCharStringAt(stdbit, &pt, slen, s);
+   /*
+    * draw to window, if any
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+      pt.y = ws->height - y;
+      GpiCharStringAt(stdwin, &pt, slen, s);
+      }
+   MutexOff(ws);
+   return;
+   }
+
+/*
+ * fillarcs
+ */
+void fillarcs(wbp wb, XArc *arcs, int narcs)
+   {
+   int i, diff, bheight;
+   unsigned long a1,a2;
+   STDLOCALS(wb);
+   bheight = ws->pixheight;
+   /*
+    * Fix up coordinates for window-system calls
+    */
+   for (i = 0; i < narcs; i++) {
+      /*
+       * width and height must be from center point... half them,
+       * and add the radii to (x,y) to get the center point.
+       */
+      arcs[i].arcp.lP >>= 1;
+      arcs[i].arcp.lQ >>= 1;
+      arcs[i].arcp.lR = arcs[i].arcp.lS = 0;
+      arcs[i].x += arcs[i].arcp.lP;
+      arcs[i].y += arcs[i].arcp.lQ;
+      arcs[i].y = bheight - arcs[i].y - 1;
+      }
+
+   MutexOn(ws);
+   /*
+    * make sure our area context is loaded
+    */
+   SetAreaContext(wb, ws, wc);
+   /*
+    * set the line invisible for the partial arcs
+    */
+   GpiSetLineType(stdbit, LINETYPE_INVISIBLE);
+   /*
+    * do the drawing on the bitmap
+    */
+   for (i = 0; i < narcs; i++) {
+      /*
+       * set the parameters
+       */
+      GpiSetArcParams(stdbit, &arcs[i].arcp);
+      a1 = arcs[i].angle1 * 1024;
+      a2 = arcs[i].angle2 * 1024;
+      if (a2 < MAKEFIXED(360, 0)) { /* partial arc */
+	 /*
+	  * draw the arc invisible first so we know the ending point
+	  */
+	 GpiPartialArc(stdbit, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+		       a1,  a2);
+	 /*
+	  * start an area
+	  */
+	 GpiBeginArea(stdbit, BA_BOUNDARY);
+	 GpiLine(stdbit,(PPOINTL)(&arcs[i].x));
+	 GpiPartialArc(stdbit, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+		       a1, a2);
+	 GpiEndArea(stdbit);
+	 }
+      else { /* full arc */
+	 /*
+	  * move the center of the ellipse, then draw it
+	  */
+	 GpiMove(stdbit, (PPOINTL)(&arcs[i].x));
+	 GpiFullArc(stdbit, DRO_FILL, MAKEFIXED(1, 0));
+	 }
+      }
+
+   if (ws->lineContext)
+      GpiSetLineType(stdbit, ws->lineContext->lineBundle.usType);
+   if (stdwin && !(ws->winState & WS_MIN)) {
+      diff = ws->pixheight - ws->height;
+      GpiSetLineType(stdwin, LINETYPE_INVISIBLE);
+      for (i = 0; i < narcs; i++) {
+	 arcs[i].y -= diff;
+	 /*
+	  * set the parameters
+	  */
+	 GpiSetArcParams(stdwin, &arcs[i].arcp);
+	 a1 = arcs[i].angle1 * 1024;
+	 a2 = arcs[i].angle2 * 1024;
+	 if (a2 < MAKEFIXED(360, 0)) { /* partial arc */
+	    /*
+	     * draw the arc first so we know the ending point
+	     */
+	    GpiPartialArc(stdwin, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			  a1, a2);
+	    /*
+	     * start an area
+	     */
+	    GpiBeginArea(stdwin, BA_BOUNDARY);
+	    GpiLine(stdwin,(PPOINTL)(&arcs[i].x));
+	    GpiPartialArc(stdwin, (PPOINTL)(&arcs[i].x), MAKEFIXED(1, 0),
+			  a1, a2);
+	    GpiEndArea(stdwin);
+	    }
+	 else { /* full arc */
+	    /*
+	     * move the center of the ellipse, then draw it
+	     */
+	    GpiMove(stdwin, (PPOINTL)(&arcs[i].x));
+	    GpiFullArc(stdwin, DRO_FILL, MAKEFIXED(1, 0));
+	    }
+	 }
+      /*
+       * put the line type back to what it was
+       */
+      if (ws->lineContext)
+	 GpiSetLineType(stdwin, ws->lineContext->lineBundle.usType);
+      }
+   MutexOff(ws);
+   return;
+   }
+
+/*
+ * fillrectangles
+ *  Parameters - the window binding for output, an array of rectangle
+ *		 structures (assumed to be fixed up for the bitmap),
+ *		 a count of the number of structures -> the number of
+ *		 rectangles
+ */
+void fillrectangles(wbp wb, XRectangle *recs, int nrecs)
+   {
+   int i, diff, bheight;
+   STDLOCALS(wb);
+
+   bheight = ws->pixheight;
+   MutexOn(ws);
+   /*
+    * make sure the area is loaded
+    */
+   SetAreaContext(wb, ws, wc);
+   /*
+    * loop through the rectangle array, drawing to bitmap
+    */
+   for (i = 0; i < nrecs; i++) {
+      recs[i].yTop = bheight - recs[i].yTop - 1;
+      recs[i].xRight += recs[i].xLeft - 1;
+      recs[i].yBottom = recs[i].yTop - recs[i].yBottom + 1;
+      GpiMove(stdbit, (PPOINTL)&recs[i]);
+      GpiBox(stdbit, DRO_FILL, (PPOINTL)&(recs[i].xRight), 0, 0);
+      }
+   /*
+    * if the window is there, draw to it as well
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+      diff = ws->pixheight - ws->height;
+      for (i = 0; i < nrecs; i++) {
+	 recs[i].yTop -= diff;
+	 recs[i].yBottom -= diff;
+	 GpiMove(stdwin, (PPOINTL)&recs[i]);
+	 GpiBox(stdwin, DRO_FILL, (PPOINTL)&(recs[i].xRight), 0, 0);
+	 }
+      }
+   MutexOff(ws);
+   return;
+   }
+
+/*
+ * drawrectangles
+ *  Parameters - the window binding for output, an array of rectangle
+ *		 a count of the number of structures -> the number of
+ *		 rectangles
+ */
+void drawrectangles(wbp wb, XRectangle *recs, int nrecs)
+   {
+   int i, diff, bheight;
+   STDLOCALS(wb);
+
+   MutexOn(ws);
+   bheight = ws->pixheight;
+   /*
+    * do the fixup (flip y for PM origin)
+    */
+   for (i = 0; i < nrecs; i++) {
+      recs[i].yTop = bheight - recs[i].yTop - 1;
+      recs[i].xRight += recs[i].xLeft;
+      recs[i].yBottom = recs[i].yTop - recs[i].yBottom;
+      }
+   /*
+    * make sure the line context is loaded
+    */
+   SetLineContext(wb, ws, wc);
+   /*
+    * check for wide lines
+    */
+   if (wc->lineBundle.lGeomWidth > 0) {
+      /*
+       * load the area context to get the colors/mix right
+       */
+      SetAreaContext(wb, ws, wc);
+      /*
+       * knock it out
+       */
+      ws->areaContext = NULL;
+      /*
+       * load the corrects fills
+       */
+      GpiSetPatternSet(stdbit, LCID_DEFAULT);
+      GpiSetPattern(stdbit, PATSYM_DEFAULT);
+      /*
+       * loop through the rectangle array, drawing to bitmap
+       */
+      for (i = 0; i < nrecs; i++) {
+	 GpiBeginPath(stdbit, 1);
+	 GpiMove(stdbit, (PPOINTL)&recs[i]);
+	 GpiBox(stdbit, DRO_OUTLINE, (PPOINTL)&(recs[i].xRight), 0, 0);
+	 GpiEndPath(stdbit);
+	 GpiStrokePath(stdbit, 1, 0);
+	 } /* End of for - draw rectangles on the bitmap */
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 GpiSetPatternSet(stdwin, LCID_DEFAULT);
+	 GpiSetPattern(stdwin, PATSYM_DEFAULT);
+	 diff = ws->pixheight - ws->height;
+	 for (i = 0; i < nrecs; i++) {
+	    recs[i].yTop -= diff;
+	    recs[i].yBottom -= diff;
+	    GpiBeginPath(stdwin, 1);
+	    GpiMove(stdwin, (PPOINTL)&recs[i]);
+	    GpiBox(stdwin, DRO_OUTLINE, (PPOINTL)&(recs[i].xRight), 0, 0);
+	    GpiEndPath(stdwin);
+	    GpiStrokePath(stdwin, 1, 0);
+	    }
+	 }
+      }
+   else {
+      /*
+       * loop through the rectangle array, drawing to bitmap
+       */
+      for (i = 0; i < nrecs; i++) {
+	 GpiMove(stdbit, (PPOINTL)&recs[i]);
+	 GpiBox(stdbit, DRO_OUTLINE, (PPOINTL)&(recs[i].xRight), 0, 0);
+	 }
+      if (stdwin && !(ws->winState & WS_MIN)) {
+	 diff = ws->pixheight - ws->height;
+	 for (i = 0; i < nrecs; i++) {
+	    recs[i].yTop -= diff;
+	    recs[i].yBottom -= diff;
+	    GpiMove(stdwin, (PPOINTL)&recs[i]);
+	    GpiBox(stdwin, DRO_OUTLINE, (PPOINTL)&(recs[i].xRight), 0, 0);
+	    }
+	 }
+      }
+   MutexOff(ws);
+   return;
+   }
+
+/*
+ * fillpolygon
+ */
+void fillpolygon(wbp wb, XPoint *pts, int npts)
+   {
+   int i, diff, bheight = wb->window->pixheight;
+   POLYGON poly;
+   STDLOCALS(wb);
+
+   MutexOn(ws);
+   /*
+    * set the fill
+    */
+   SetAreaContext(wb, ws, wc);
+   poly.aPointl = &pts[1];
+   poly.ulPoints = npts - 1;
+
+   /*
+    * Draw the polygon on the pixmap.
+    * First, fix up the points' y coordinates, then
+    * move to the first point, and do the polygon starting from there.
+    */
+   for (i = 0; i < npts; i++)
+      pts[i].y = bheight - pts[i].y - 1;
+   GpiMove(stdbit, pts);
+   GpiPolygons(stdbit, 1, &poly, POLYGON_NOBOUNDARY | POLYGON_ALTERNATE,
+	       POLYGON_INCL);
+   /*
+    * If there is a window, draw the polygon on it.
+    * First, further fix up the points' y coordinates if necessary, then
+    * move to the first point, and do the polygon starting from there.
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+      if (diff = ws->pixheight - ws->height)
+	 for (i = 0; i < npts; i++)
+	    pts[i].y -= diff;
+      GpiMove(stdwin, pts);
+      GpiPolygons(stdwin, 1, &poly, POLYGON_NOBOUNDARY | POLYGON_ALTERNATE,
+		  POLYGON_INCL);
+      }
+   MutexOff(ws);
+   return;
+   }
+#else					/* Graphics */
+  static char aaa;
+#endif					/* Graphics */

@@ -1,0 +1,17 @@
+
+$include "posix.icn"
+
+procedure main()
+   trap("SIGHUP", handler)
+
+   if fork() == 0 then {
+      kill(getppid(), "SIGHUP")
+      exit(0)
+   }
+   
+   delay(10000)
+end
+
+procedure handler(s)
+   write("Got ", s)
+end

@@ -1,0 +1,33 @@
+$include "posix.icn"
+
+procedure main()
+
+   if fork() ~== 0 then {
+      delay(2000)
+      f := open(":12340", "n") | stop("Couldn't open connection: ",
+                                    sys_errstr(&errno))
+      write(f, "hellow, world!")
+      write("ret: ", read(f))
+
+      exit(0)
+   }
+
+   if f := open(":12340", "na") then {
+      if fork() = 0 then {
+         handle(f)
+         exit(0)
+      }
+      delay(10)
+      close(f)
+      exit(0)
+   }
+   (&errno = 0) | stop("Couldn't accept: ", sys_errstr(&errno))
+end
+   
+procedure handle(f)
+   while line := read(f) do {
+      s := reverse(line)
+      write(f, s)
+   }
+end
+

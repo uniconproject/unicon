@@ -1,0 +1,46 @@
+class Attributed ()
+method isAttribute(s)
+   if /s then return
+   if type(s)=="string" & find("=", s) then return
+end
+initially
+   local L
+   if not isAttribute(self[3 to *self]) then return
+   L := copy(self) # get a copy, so set_ methods do not over write attr=values
+   mytype := type(self)
+   if mytype[-7:0] == "__state" then mytype := mytype[1:-7]
+   every s := L[3 to *self] do {
+      s ? {
+      attr := tab(find("="))
+      move(1)
+      val := tab(0)
+      #
+      #  Invoke set_ method for this attribute.
+      #  Relies on current implementation details of the object model
+      #
+      m := proc(mytype || "_set_"||attr) | {
+         write(&errout, mytype, " has no attribute ", attr)
+         next
+         }
+      m(self, val)
+      }
+   }
+end
+
+#
+# Demonstration program for class Attributed.  Comment this out for library
+# use, its just here for standalone test purposes.
+#
+
+class LabeledThing : Attributed(label)
+method set_label(x)
+   label := x
+end
+initially
+   self$Attributed.initially()
+end
+
+procedure main()
+   x := LabeledThing("label=foobar")
+   write(x.label)
+end

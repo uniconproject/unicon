@@ -1,0 +1,43 @@
+
+procedure main()
+ f:=dbopen("mysql","test","fbalbi","ana230473")
+
+ #select name, id, amt from test
+
+ r:=dbselect(f, "id, name, amt, due, paid","id<5")
+ #r:=dbsql(f, "select name,id, amt, due from test")
+ 
+ write(r)
+
+ write(*f, " row(s) selected")
+
+ write("\nrow values")
+ 
+ while(rec:=dbfetch(f)) do {
+  every i:=(1 to *rec) do
+    writes("[", rec[i], "]")
+  write()
+ }
+
+ write("\ncolumn info")
+
+ cinfo:=dbcolumns(f)
+    
+ every i:=(1 to *cinfo) do { 
+   rr:=cinfo[i]
+   every j:=(1 to *rr) do writes("[",rr[j],"]")
+   write()
+ }
+ write()
+
+ lk:=dbkeys(f)
+ every i:=(1 to *lk) do {
+   rr:=lk[i]
+   every j:=(1 to *rr) do writes("[",rr[j],"]")
+   write()
+ }
+
+ dbclose(f)
+ write("done")
+
+end

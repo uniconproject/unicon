@@ -1,0 +1,35 @@
+
+$include "posix.icn"
+
+procedure main()
+
+   if fork() ~== 0 then {
+      # parent
+      delay(1000)
+      f := open("revsock", "n") | stop("Couldn't open connection: ",
+				       sys_errstr(&errno))
+
+      write(f, "hello, world!")
+      write(read(f))
+
+      delay(1000)
+      exit(0)
+   }
+
+   # child
+   if f := open("revsock", "na") then {
+      if fork() = 0 then {
+	 handle(f)
+	 exit(0)
+      }
+      close(f)
+
+      system("rm revsock")
+   }
+   (&errno = 0) | stop("Couldn't accept: ", sys_errstr(&errno))
+end
+   
+procedure handle(f)
+   while line := read(f) do
+      write(f, reverse(line))
+end

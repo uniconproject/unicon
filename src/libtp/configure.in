@@ -1,0 +1,78 @@
+Executing ssh-askpass to query the password...
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(tp.h)
+
+# Get host type using shtool
+AC_MSG_CHECKING([system type])
+if host=`${CONFIG_SHELL-/bin/sh} shtool/shtool guessos`; then
+  AC_MSG_RESULT($host)
+else
+  AC_MSG_ERROR([cannot guess host type])
+fi
+
+dnl Package options
+AC_ARG_ENABLE(debug,    [  --enable-debug          enable debug flags [default=no]], , enable_debug=no)
+AC_ARG_ENABLE(warnings, [  --enable-warnings       -Wall -Werror if CC=gcc [default=no]], , enable_warnings=no)
+
+CFLAGS=""
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+DEBUG=""
+if eval "test x$enable_debug = xyes"; then
+  DEBUG="-g"
+fi
+
+WARNINGS=""
+if eval "test x$enable_warnings = xyes"; then
+  if eval "test x$GCC = xyes"; then
+    WARNINGS="-Wall -Werror -ansi -pedantic"
+  else
+    AC_MSG_WARN([--enable-warnings only valid with GCC])
+  fi
+fi
+
+dnl Checks for libraries.
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(nsl, gethostbyname)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
+                 netinet/in.h sys/errno.h sys/socket.h sys/types.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_CHECK_TYPE(ssize_t, signed)
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(socket bcopy bzero memcpy memset inet_aton inet_pton \
+	       snprintf vsprintf)
+
+AC_MSG_CHECKING([for OS-specific defines])
+irix=0
+linux=0
+solaris=0
+case $host in
+  *-*-linux*)   linux=1;;
+  *-*-solaris*) solaris=1;;
+esac
+
+if test $linux -eq 1; then
+  AC_MSG_RESULT([Linux, will define _BSD_SOURCE])
+  AC_DEFINE(_BSD_SOURCE)
+elif test $solaris -eq 1 ; then
+  AC_MSG_RESULT([Solaris, will define __EXTENSIONS__])
+  AC_DEFINE(__EXTENSIONS__)
+else
+  AC_MSG_RESULT(no)
+fi
+
+AC_SUBST(DEBUG)
+AC_SUBST(WARNINGS)
+AC_CONFIG_HEADER(config.h)
+AC_OUTPUT(tests/Makefile uri/Makefile Makefile)

@@ -1,0 +1,59 @@
+procedure main()
+  
+  f:=dbopen("mysql","test","fbalbi","ana230473")
+
+  q:="select * from test"
+
+  r:=dbsql(f, q)
+  
+  write(*f, " row(s) selected")
+  write()
+
+  write("row values")
+  while (l:=dbfetch(f)) do {
+    every i:=(1 to *l) do
+      writes("[",l[i],"]")
+    write()
+  }
+  
+  write()
+  write("column info")
+  write("---")
+
+  cinfo:=dbcolumns(f, 1)
+    
+  every i:=(1 to *cinfo) do
+    writes("[",cinfo[i],"]")
+
+  write()
+
+  lk:=dbkeys(f)
+  every i:=(1 to *lk) do
+    writes("[",lk[i],"]")
+  write()
+
+  #
+  # name, amt, paid, due for people that has a debit
+  #
+
+  q2:="select name,amt,paid,due from test where amt > 0.00"
+  r:=dbsql(f, q2);
+
+  while (l2:=dbfetch(f)) do {
+    every i:=(1 to *l2) do
+      writes("[",l2[i],"]")
+    write()
+  }
+
+  # name, due for people that has a debit
+  #
+  r:=dbsql(f, "select name, due from test where amt > 0.00");
+
+  while (l2:=dbfetch(f)) do {
+    every i:=(1 to *l2) do
+      writes("[",l2[i],"]")
+    write()
+  }
+  
+  dbclose(f)
+end

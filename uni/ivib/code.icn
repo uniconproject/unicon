@@ -1,0 +1,352 @@
+############################################################################
+#
+#	File:     code.icn
+#
+#	Subject:  Code generation
+#
+#	Author:   Robert Parlett
+#
+#	Date:     
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   Generate Idol source code
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+
+
+############################################################################
+#
+# Class to process code generation
+#
+class Code(
+   vars_0,                  # Class variables which have methods
+   vars_1,                  # Class variables without methods
+   vars_2,                  # Variables local to the initially method
+   code,                    # List of strings to generate the initially method
+   parent_Canvas,           #
+   indent                   # Spaces for indentation
+   )
+
+   #
+   # Display an error message
+   #
+   method alert_error(s)
+      return self.parent_Canvas.alert_error(s)
+   end
+
+   method set_parent_Canvas(c)
+      self.parent_Canvas := c
+      self.indent := repl(" ", self.parent_Canvas.gen_indent)
+      return c
+   end
+
+   #
+   # Add a line of code.
+   #
+   method line(s)
+      put(code, s)
+   end
+
+   #
+   # Add a variable to the given list.
+   #
+   method add_var(s, which_list)
+      case which_list of {
+         1 : put(vars_1, s)
+         2 : put(vars_2, s)
+         default : put(vars_0, s)
+      }
+   end
+
+   #
+   # Output the code to file called s.
+   #
+   method output_code(s)
+      f := open(s, "w") | return alert_error("Couldn't open " || s)
+      self.header_out(f)
+      if \self.parent_Canvas.gen_methods then {
+         self.methods_out(f)
+         write(f)
+      }
+      self.dialog_event_out(f)
+      if \self.parent_Canvas.gen_init_dialog then {
+         write(f)
+         self.init_dialog_out(f)
+      }
+      write(f)
+      self.setup_out(f)
+      if \self.parent_Canvas.gen_component_setup then {
+         write(f)
+         self.show_component_setup(f)
+      }
+      if \self.parent_Canvas.gen_initially then {
+         write(f)
+         self.initially_out(f)
+      }
+      write(f, "end")
+      if \self.parent_Canvas.gen_main then {
+         write(f)
+         self.main_out(f)
+      }
+      write(f)
+      write(f, "### Ivib layout ###")
+      writes(f, "#")
+      myd := ClassEncode()
+      write(f, myd.encode(ivibMain.canvas)) | write(f,"failed")
+      write(f)
+      close(f)
+      return
+   end
+
+   #
+   # Interpose code to already existing file named s.
+   #
+   method interpose_code(s)
+   static idchars
+   local existing_fields
+   initial idchars := &letters++&digits++"_"
+
+   existing_fields := set()
+
+      f := open(s) | return alert_error("Couldn't open " || s)
+      #
+      # Save contents up to setup() method
+      #
+      part1 := []
+      while t := read(f) do {
+         t ? {
+             tab(many(' '))
+             if ="class " & tab(many(idchars)) & = " : _Dialog(" then {
+                while insert(existing_fields, tab(many(idchars))) do {
+                   tab(many(' '))
+                   =","
+                   tab(many(' '))
+                   }
+                }
+             if ="method setup(" then
+                break
+         }
+         put(part1, t)         
+      }
+      #
+      # Skip over old setup method
+      #
+      while t := read(f) do {
+         t ? {
+            tab(many(' '))
+            if tab(0) == "end" then
+               break
+         }
+      }
+      #
+      # Get remainder of file
+      #
+      part2 := []
+      every put(part2, !f)
+      close(f)
+      #
+      # Re-create file
+      #
+      f := open(s, "w") | return alert_error("Couldn't open " || s)
+      every s := !part1 do {
+         s ? {
+            tab(many(' '))
+            if ="class " & (cl := tab(many(idchars))) & = " : _Dialog(" then {
+               if cl ~== self.parent_Canvas.name then {
+		  s[7 +: *cl] := self.parent_Canvas.name
+		  }
+               every id := !(self.vars_0 | self.vars_1) do
+                  if not member(existing_fields, id) then
+                     s[-1] := "," || id || ")"
+               }
+            write(f, s)
+
+            if ="case ev.get_component() of {" then {
+               every s := !vars_0 do
+                  if not member(existing_fields, s) then {
+                     write(f, indent, indent, indent, s,
+			   " : handle_",s,"(ev)")
+                     }
+               }
+            }
+         }
+      every id := !vars_0 do
+         if not(member(existing_fields, id)) then {
+            write(f, indent, "method handle_" || id || "(ev)")
+            write(f, indent, "end")
+            write(f)
+            }
+      self.setup_out(f)
+      every s := !part2 do {
+         if s == "### Ivib layout ###" then break
+         write(f, s)
+         }
+      write(f)
+      write(f, "### Ivib layout ###")
+      writes(f, "#")
+      myd := ClassEncode()
+      write(f, myd.encode(ivibMain.canvas))
+      close(f)
+      return
+   end
+
+   #
+   # Generate the head of the dialog.
+   #
+   method header_out(f)
+      s := "class " || self.parent_Canvas.name || " : _Dialog("
+      e := create !(self.vars_0 | self.vars_1)
+      s ||:= @e
+      while s ||:= ", " || @e
+      write(f, s || ")")
+   end
+
+   #
+   # Generate the methods.
+   #
+   method methods_out(f)
+      every s := !vars_0 do {
+         write(f, indent, "method handle_" || s || "(ev)")
+         write(f, indent, "end")
+         write(f)
+      } 
+
+      write(f, indent, "method handle_default(ev)")
+      write(f, indent, "end")
+
+      if \self.parent_Canvas.dialog_struct.ticker_rate then {
+         write(f)
+         write(f, indent, "method tick()")
+         write(f, indent, "end")
+      }
+   end
+
+   #
+   # Generate the init_dialog and end_dialog methods.
+   #
+   method init_dialog_out(f)
+      write(f, indent, "method init_dialog()")
+      write(f, indent, "end")
+      write(f)
+      write(f, indent, "method end_dialog()")
+      write(f, indent, "end")
+   end
+
+   #
+   # Generate the dialog_event() method
+   #
+   method dialog_event_out(f)
+      write(f, indent, "method dialog_event(ev)")
+      write(f, indent, indent, "case ev.get_component() of {")
+      every s := !vars_0 do {
+         writes(f, indent, indent, indent,  s, " : ")
+         if /self.parent_Canvas.gen_methods then {
+            write(f, "{")
+            write(f, indent, indent, indent, indent, ";")
+            write(f, indent, indent, indent, "}")
+            }
+	 else
+            write(f, "handle_", s, "(ev)")
+         }
+      if /self.parent_Canvas.gen_methods then {
+         write(f, indent, indent, indent, "default : {")
+         write(f, indent, indent, indent, indent, ";")
+         write(f, indent, indent, indent, "}")
+      } else 
+          write(f, indent, indent, indent, "default : handle_default(ev)")
+
+      write(f, indent, indent, "}")
+      write(f, indent, "end")
+   end
+
+   #
+   # Generate the setup() method with the code.
+   #
+   method setup_out(f)
+      write(f, indent, "method setup()")
+
+      #
+      # Local variables.
+      #
+      if *vars_2 > 0 then {
+         e := create !vars_2
+         s := "local " || @e
+         while s ||:= ", " || @e
+         write(f, indent, indent, s)
+      }
+
+      #
+      # Dialog attribs.
+      #
+      l := ["size=" || self.parent_Canvas.w || "," || self.parent_Canvas.h] |||
+            self.parent_Canvas.dialog_struct.attribs
+      write(f, indent, indent, "self.set_attribs(", list2string(l), ")")
+      #
+      # Minimum size.
+      #
+      if \(self.parent_Canvas.dialog_struct.min_width |
+           self.parent_Canvas.dialog_struct.min_height) then {
+         s := indent || indent || "self.set_min_size("
+         s ||:= \self.parent_Canvas.dialog_struct.min_width
+         s ||:= ", "
+         s ||:= \self.parent_Canvas.dialog_struct.min_height
+         s ||:= ")"
+         write(f, s)
+      }
+      #
+      # Ticker
+      #
+      if \self.parent_Canvas.dialog_struct.ticker_rate then
+         write(f, indent, indent, "self.set_ticker(",
+               self.parent_Canvas.dialog_struct.ticker_rate, ")")
+      #
+      # Insert the code already generated by the components.
+      every write(f, indent, indent, !code)
+
+      write(f, indent, "end")
+   end
+
+   method show_component_setup(f)
+      write(f, indent, "method component_setup()")
+      write(f, indent, indent, "self.setup()")
+      write(f, indent, "end")
+   end
+
+   method initially_out(f)
+      write(f, indent, "initially")
+      write(f, indent, indent, "self$_Dialog.initially()")
+      if /self.parent_Canvas.gen_component_setup then
+         write(f, indent, indent, "self.setup()")
+   end
+
+   #
+   # Generate a main procedure. 
+   #
+   method main_out(f)
+      write(f, "procedure main()")
+      write(f, indent, "local d")
+      write(f, indent, "d := ", self.parent_Canvas.name, "()")
+      if /self.parent_Canvas.gen_component_setup &
+         /self.parent_Canvas.gen_initially then
+         write(f, indent, "d.setup()")
+      write(f, indent, "d.show_modal()")
+      write(f, "end")
+   end
+
+   initially
+      vars_0 := []
+      vars_1 := []
+      vars_2 := []
+      code := []
+end

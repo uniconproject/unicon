@@ -1,0 +1,71 @@
+############################################################################
+#
+#	File:     qsort.icn
+#
+#	Subject:  Sorting
+#
+#	Author:   Robert Parlett
+#
+#	Date:     3 February, 1999
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   Class for performing quick sort.
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+############################################################################
+#
+# A class extends this class and defines the comp method to utilize the
+# qsort method.
+#
+class Qsort()
+   #
+   # The classic quick sort procedure.
+   #
+   method qsort(l, first, last)
+      /first := 1
+      /last := *l
+
+      i := first
+      j := last
+
+      if i = j then
+         return l
+
+      pivot := l[(i + j) / 2]
+      repeat {
+         while self$comp(l[i], pivot) do i +:= 1
+         while self$comp(pivot, l[j]) do j -:= 1
+         if i <= j then {
+            l[i] :=: l[j]
+            i +:= 1
+            j -:= 1
+         }
+         if i > j then
+            break
+      }
+      if first < j then
+         qsort(l, first, j)
+      if i < last then
+         qsort(l, i, last)
+      return l
+   end
+
+   #
+   # This method is over-ridden by the subclass.  It defines
+   # the comparison for elements of list l.
+   #
+   method comp(x, y)
+      stop("comp must be over-ridden in Qsort's subclass")
+   end
+end

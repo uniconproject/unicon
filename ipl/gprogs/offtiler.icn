@@ -1,0 +1,88 @@
+############################################################################
+#
+#	File:     offtiler.icn
+#
+#	Subject:  Program to tile images with offset
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     May 23, 1996
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This program reads an image file given on the command line and tiles it
+#  with a precentage offset to produce a larger tile.
+#
+#  The supported options are:
+#
+#	-v	offset vertically (the default)
+#	-h	offset horizontally
+#	-f i	factor for shift; default 2
+#	-s	show new tile
+#	-t s	name for new file; default tile.gif
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:  options, xio
+#
+############################################################################
+
+link options
+link xio
+
+procedure main(args)
+   local opts, offset, name, n, w, h, direction, subject, target, W, H, i, j
+   local incr, canvas, filename
+
+   opts := options(args, "vhf+st:")
+   direction := opts["h"]
+   n := \opts["f"] | 2
+   name := \opts["t"] | "tile.gif"
+   if \opts["s"] then canvas := "canvas=normal" else canvas := "canvas=hidden"
+   filename := \opts["t"] | "tile.gif"
+
+   subject := WOpen("canvas=hidden", "image=" || args[1], "pos=20,20") |
+      stop("*** cannot open image file")
+
+   w := WAttrib(subject, "width")
+   h := WAttrib(subject, "height")
+   W := n * w
+   H := n * h
+
+   target := WOpen(canvas, "size=" || W || "," || H, "pos=200,200") |
+      stop("*** cannot open target window")
+
+   if /direction then {			# vertical offset
+      if (h % n) ~= 0 then stop("*** factor does not evenly divide dimension")
+      incr := h / n
+      every i := -1 to n do {		# columns
+         offset := i * incr
+         every j := -1 to n do {	# rows
+            CopyArea(subject, target, 0, 0, w, h, i * w, j * h + offset)
+            }
+         }
+      }
+   else {				# horizontal offset
+      if (w % n) ~= 0 then stop("*** factor does not evenly divide dimension")
+      incr := w / n
+      every i := -1 to n do {		# rows
+         offset := i * incr
+         every j := -1 to n do {	# columns
+            CopyArea(subject, target, 0, 0, w, h, j * w + offset, i * h)
+            }
+         }
+      }
+
+   WriteImage(target, filename)
+
+   if canvas == "canvas=normal" then Event(target)
+
+end

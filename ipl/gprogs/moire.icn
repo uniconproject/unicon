@@ -1,0 +1,88 @@
+############################################################################
+#
+#	File:     moire.icn
+#
+#	Subject:  Program to display Moire patterns
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     September 12, 1997
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This is a barebones version of a display of Moire patterns.
+#  It has deliberately been left simple and free of options so
+#  that the basic idea is clear and so that it can be used as the basis of
+#  more capable versions.
+#
+#  A palette name can be given on the command line, as in
+#
+#	moire g16
+#
+#  The default palette is c6.
+#
+#  This program is based on material given in "FractalVision",
+#  Dick Oliver, Sams Publishing, 1992.
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:  colrlist, interact,  wopen
+#
+############################################################################
+
+link colrlist
+link interact
+link wopen
+
+procedure main(args)
+   local extent, size, cx, cy, colors, ncolors, a, x, i, y, j, c, palette
+
+   palette := args[1] | "c6"
+   extent := 300
+   size := extent / 2
+
+   WOpen("label=moire", "height=" || extent, "width=" || extent) |
+      stop("*** cannot open window")
+
+   cx := cy := extent / 2
+
+   colors := colrplte(palette) | stop("*** invalid palette")
+   ncolors := *colors
+
+   every a := 100 to 200 do {
+      x := a
+      every i := 0 to size do {
+         y := x
+         every j := i to size do {
+            c := colors[ishift(x ^ 2 + y ^ 2, -10) % ncolors + 1]
+            Fg(c)
+            DrawPoint(
+               cx + i, cy + j,
+               cx + j, cy + i,
+               cx + j, cy - i,
+               cx + i, cy - j,
+               cx - i, cy - j,
+               cx - j, cy - i,
+               cx - j, cy + i,
+               cx - i, cy + j
+               )
+            y +:= a
+            }
+         x +:= a
+         }
+      while case Event() of {
+         "q":   exit()
+         "s":   snapshot()
+         "c":   break
+         }
+      }
+
+end

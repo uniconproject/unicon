@@ -1,0 +1,120 @@
+	include dos.mac
+	dseg
+	endds
+	IF	LPROG
+	extrn	fatalerr:far
+	ELSE
+	extrn	fatalerr:near
+	ENDIF
+	pseg
+;
+	SETX		; Set X to skip over bp and return address in
+			; stack frame
+;
+;
+	begin ckadd
+	PUSH	  BP
+	SUB	  SP,4
+	MOV	  BP,SP
+	MOV	  AX,[BP+X+4]
+	ADD	  AX,[BP+X+8]
+	MOV	  BX,[BP+X+6]
+	ADC	  BX,[BP+X+10]
+	Jno	addok
+	Jmp	oflow
+addok:	XCHG	  AX,BX
+	ADD	  SP,4
+	POP	  BP
+	RET
+ckadd	endp
+
+	begin	cksub
+	PUSH	  BP
+	SUB	  SP,04
+	MOV	  BP,SP
+	MOV	  AX,[BP+X+4]
+	SUB	  AX,[BP+X+8]
+	MOV	  BX,[BP+X+6]
+	SBB	  BX,[BP+X+10]
+	Jno	subok
+	jmp	  oflow
+subok:	XCHG	  AX,BX
+	ADD	  SP,04
+	POP	  BP
+	RET
+cksub	endp
+
+	begin	ckmul
+	PUSH	  BP
+	SUB	  SP,04
+	MOV	  BP,SP
+	MOV	  AX,[BP+X+6]		; High word A
+	MOV	  BX,[BP+X+4]		; Low word  A
+	MOV	  CX,[BP+X+10]		; High word B
+	MOV	  DX,[BP+X+8]		; Low word  B
+;-- here is code to do the actual mult --
+; Check for mult by ZERO..
+	Push	Si
+	Push	Di
+;-- Check for x 0 --
+	Or	Ax,Ax
+	Jnz	l1
+	Or	Bx,Bx
+	Jz	l2
+;--
+l1:	Or	Cx,Cx
+	Jnz	l3
+	Or	Dx,Dx
+	Jnz	l3
+;-- Yep -- mult by zero so return zero
+	Xor	Ax,Ax
+	Xor	Bx,Bx
+l2:	Pop	Di
+	Pop	Si
+	Add	Sp,04
+	Pop	Bp
+	Ret
+;-- Do the actual mult now..
+l3:	Mov	Si,Bx		;  A:B
+	Mov	Di,Dx		;x C:D
+;-- Check to see if high order words are going to create problems..
+;-- if (A==0 || C==0 ||
+;	A==0xffff || C==0xffff ||
+	Or	Ax,Ax
+	Jz	l4
+	Or	Cx,Cx
+	Jz	l4
+	Cmp	Ax,0ffffH
+	Je	l4
+	Cmp	Cx,0ffffH
+	Je	l4
+	Jmp	oflow
+;-- done with range check..
+;-- A x D
+l4:	IMul	 Di
+	Jo	oflow
+	Xchg	Ax,Bx
+;-- C x B
+	IMul	 Cx
+	Jo	oflow
+	Add	Bx,Ax
+	Jo	oflow
+;-- B x D
+	Mov	Ax,Si
+	Mul	Di
+	Add	Bx,Dx
+	Jo	oflow
+	Xchg	Ax,Bx
+	Jmp	l2
+ckmul	endp
+
+oflow:
+	mov	cx,0
+	push	cx
+	push	cx
+	mov	cx,-203
+	push	cx
+	call	fatalerr
+;
+	endps
+	end

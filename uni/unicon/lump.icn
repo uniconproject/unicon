@@ -1,0 +1,53 @@
+############################################################################
+#
+#	Name:	lump.icn
+#
+#	Title:	Lump separately-compiled Icon sources
+#
+#	Author:	Clinton L. Jeffery
+#
+#	Date:	September 8, 1990
+#
+############################################################################
+#
+#     Program that reads in Icon sources and replaces link statements by
+#  the matching source file.  Multiple source files may be specified on
+#  the command line; they are concatenated in the result.  Sources are not
+#  "lumped" recursively.  The output is written to a file named LUMP.icn.
+
+global fout
+
+procedure main(args)
+    local i
+    fout := open("LUMP.icn","w") | stop("can't open LUMP")
+    if *args=0 then lump(&input)
+    else {
+	every i := 1 to *args do {
+	    fin := open(args[i],"r") | stop("can't open ",args[i])
+	    lump(fin)
+	    close(fin)
+	}
+    }
+    close(fout)
+end
+
+procedure lump(f)
+    every line := !f do {
+	if match("link",line) then {
+	    source(line[5:0])
+	} else write(fout,line)
+    }
+end
+
+procedure source(s)
+   writes("lumping ",s)
+   while s[find("\"",s)] := ""
+   every i := find("/",s)
+   s[i < find(".",s):0] := ""
+   s := reverse(trim(reverse(trim(s))))
+   s ||:= ".icn"
+   write(" as ",s)
+   f := open(s,"r") | stop("can't open ",s)
+   every write(fout,!f)
+   close(f)
+end

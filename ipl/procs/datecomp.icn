@@ -1,0 +1,203 @@
+############################################################################
+#
+#	File:     datecomp.icn
+#
+#	Subject:  Procedures for date comparison
+#
+#	Author:   C. Scott McArthur  (kaltorak@poboxes.com)
+#
+#	Date:     March 13, 1999 (03/13/1999)  :)
+#    
+#       Revised:  April 20, 1999 (04/20/1999)
+#
+############################################################################
+#
+#   This file is in the public domain.  But I will take money if you want :)
+#
+############################################################################
+#
+#   These procedures do simple date comparisons.  The first
+#   is a greater than [dgt(date1, date2)] the second is less than 
+#   [dlt(date1, date2)] the third is equaity [deq(date1, date2)], 
+#   and the fourth will determine if the date parameter
+#   in the future or not [futuredate(date1)] finally, pastdate  will 
+#   determine if date1 is less than &date [pastdate(date1)] (in the past)
+#
+#   dgt will succede if date1 is greater than date2
+#   dlt will succede if date1 is less than date2
+#   deq will succede if date1 is equal to date2
+#   futuredate will succede if date1 is greater than &date
+#   pastdate will succede if date1 is less than &date
+#
+#   The format for the parameters are strings of the format mm/dd/yyyy
+#   or yyyy/mm/dd (not my favorite, but this will comply with icons format
+#   of &date)
+#
+# NOTE:
+#   These functions will not work unless they are 
+#   formatted precicely as stated above (i.e., January first 12 ad needs to
+#   be passed as "01/01/0012" or "0012/01/01")
+#
+# REVISION: 
+#    Added procedure betweendates(date1, date2, date3)
+#    This function will return 1 if date 1 is between (or equal to)
+#    date2 and date3.
+#    Made all procedures that may need to reformat date call it by default.
+#    Now, reformatdate will only reformat the date if needed.  Otherwise
+#    it will just return what it was passed.
+# 
+#    April 20, 1999
+#      modified reformatdate to handle dates passed in as yyyymmdd with no '/'
+#
+############################################################################
+
+##  returns 1 if date1 is greater than date2, fails otherwise
+
+procedure dgt(date1, date2)
+
+   # reformat the dates if we need to
+   date1 := reformatdate(date1)
+   date2 := reformatdate(date2)
+
+   # check the years. Is date1.year > date2.year?
+   if (integer(right(date1, 4)) > integer(right(date2, 4))) then
+      return
+   else {
+      # Is date1.year < date2.year?
+      if(integer(right(date2, 4)) > integer(right(date1, 4))) then
+         fail
+      }
+
+   # the years are equal, check the months!  Is date1.month > date2.month?
+   if (integer(left(date1, 2)) > integer(left(date2, 2))) then
+      return
+   else {
+      # Is date1.month < date2.month?
+      if(integer(left(date2, 2)) > integer(left(date1, 2))) then
+         fail
+      }
+
+   # check the days. cheat here a little bit.  Notice that the function
+   # getmonth(thisdate) below really only returns whatever is enclosed
+   # in two "/" marks.  Well, that is where the day is here, so we will
+   # just call that function  :)
+
+   # Is date1.day > date2.day?
+   if (integer(getmonth(date1)) > integer(getmonth(date2))) then
+      return
+   else {
+      # Is date1.day < date2.day?
+      if(integer(getmonth(date2)) > integer(getmonth(date1))) then
+         fail
+      }
+
+   # equal dates: dgt implicitly fails by falling off the end
+end
+
+
+
+##  returns if date1 is less than date2, fails otherwise
+procedure dlt(date1, date2)
+
+   return dgt(date2, date1)
+
+end
+
+
+#  returns if date1 is the same as date2, fails otherwise (copy and paste is cool)
+procedure deq(date1, date2)
+   # first reformat the dates if we need to
+   date1 := reformatdate(date1)
+   date2 := reformatdate(date2)
+   return date1 == date2
+end
+
+
+# returns if date1 is in the future, fails otherwise
+procedure futuredate(date1)
+
+   return dgt(date1, &date)
+
+end
+
+# returns if date1 is in the past, fails otherwise
+procedure pastdate(date1)
+
+   return dgt(&date, date1)
+
+end
+
+
+#######################################################
+##  This procedure will determine if date1 is between
+##  the CLOSED interval dates of date2 and date3
+##  (include date2 and date3 in the interval)
+##  This will fail if date3 < date2
+#######################################################
+procedure betweendates(date1, date2, date3)
+   if dlt(date3, date2) then fail
+   if dlt(date1, date2) then fail 
+   if dgt(date1, date3) then fail
+   return
+end
+
+
+#######################################################
+##  This procedure will simply return the date format
+##  mm/dd/yyyy for a date passed in as yyyy/mm/dd or yyyymmdd
+##  This could probably be cleaned up some....
+#######################################################
+
+procedure reformatdate(thisdate)
+   ## if thisdate came as yyyymmdd then fix it
+   thisdate ? {
+      str := tab(find("/"))
+      if (/str & (8 = *thisdate)) then { ##  we will assume that the date came in as yyyymmdd
+         move(4)
+         str := move(2) || "/" || move(2)
+         tab(1)
+         str := str || "/" || move(4)
+         return (str)
+         }
+      }
+   str := ""
+   ## first see if thisdate came as yyyy/mm/dd
+   thisdate ? {
+      str := tab(find("/"))
+      if (*str > 2) then {
+         # year is first, let's make it how we want it
+         return (getmonth(thisdate) || "/" || getday(thisdate) || "/" || getyear(thisdate))
+         }
+      else
+         return thisdate
+      }
+end
+
+
+#######################################################
+##  these are just functions which are used to extract
+##  specific parts of a date if the date is formatted 
+##  yyyy/mm/dd.  You can use these too if you want :)
+##  you can pass in &date to extract todays parts
+#######################################################
+
+procedure getmonth(thisdate)
+   ##  this returns the number of the current month
+   thisdate ? {
+      thismonth := tab(find("/"))
+      ="/"
+      thismonth := tab(find("/"))
+      ="/"
+      return thismonth
+      }
+end
+
+procedure getday(thisdate)
+   ##  this returns the number of the current day
+   return right(thisdate, 2)
+end
+
+procedure getyear(thisdate)
+   ##  this returns the number of the current year
+   return left(thisdate, 4)
+end

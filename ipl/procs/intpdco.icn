@@ -1,0 +1,90 @@
+############################################################################
+#
+#	File:     intpdco.icn
+#
+#	Subject:  Procedures for programmer-defined control operations
+#
+#	Authors:  Ralph E. Griswold and Robert J. Alexander
+#
+#	Date:     August 14, 1996
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#  These procedures use co-expressions to perform operations on
+#  integer sequences.
+#
+#	Compl{e}	   produces the integers not in e
+#
+#	Delta{e, i}	   produces the difference of values in e by
+#			   i places	  
+#
+#	Selfrepl{e, j}	   produces i * j copies of i, where i is from
+#			   e1
+#
+#	Sumlimit{e, i, j}  produces values of e until their sum exceeds
+#			   i.  Values less than j are discarded.
+#  
+############################################################################
+#
+#  Requires:  co-expressions
+#
+############################################################################
+
+procedure Compl(L)	#: PDCO to generate integers not in sequence
+   local i, j
+
+   j := 1
+
+   while i := @L[1] do {
+      i := integer(i) | stop("*** invalid value in sequence to Compl{}")
+      suspend j to i - 1
+      j := i + 1
+      }
+
+   suspend seq(j)
+
+end
+
+procedure Delta(L)	#: PDCO to generate differences in sequences 
+   local C, i
+
+   C := ^L[1]
+   every 1 to @L[2] do @C
+
+   while i := @C - @L[1] do
+     suspend i
+
+end
+
+procedure Selfrepl(L)	#: PDCO to produce multiple of values in sequence
+   local i, j
+
+   j := @L[2] | 1
+   j := integer(j) | stop("*** invalid second argument to Selfrepl{}")
+
+   while i := @L[1] do {
+      i := integer(i) | stop("*** invalid value in Selfrepl{}")
+      suspend (1 to i * j) & i
+      }
+
+end
+
+procedure Sumlimit(L) 	#: PDCO to sum sequence to a limit
+   local sum, min, limit, i
+
+   limit := integer(@L[2]) | 2 ^ 31
+   min := integer(@L[3]) | 0
+   sum := 0
+
+   while i := @L[1] do {
+      if i < min then next
+      if (sum + i) > limit then fail
+      sum +:= i
+      suspend i
+      }
+
+end

@@ -1,0 +1,255 @@
+/*
+ * File: rpmrsc.r
+ *  OS/2 Presentation Manager Window resource module
+ *
+ * Resources are allocated through a layer of internal management
+ * routines in order to handle aliasing and resource sharing.
+ */
+LONG NumWindows = 0;
+
+/*
+ * allocate a context.	Can't be called until w has a display and window.
+ */
+wcp alc_context(w)
+wbp w;
+   {
+   int i;
+   wcp wc;
+   GRFX_ALLOC(wc, _wcontext);
+   /*
+    * need to make the dependant list
+    */
+   if (!(wc->depWindows = calloc(INITDEPS, sizeof(wsp)))) {
+      free(wc);
+      ReturnErrNum(305, NULL);
+      }
+   /*
+    * size of table
+    */
+   wc->maxDeps = INITDEPS;
+   /*
+    * fill style is initially solid
+    */
+   wc->fillstyle = FS_SOLID;
+   /*
+    * gamma value is a configuration default
+    */
+   wc->gamma = GammaCorrection;
+
+   GRFX_LINK(wc, wcntxts);
+   return wc;
+   }
+
+/*
+ * allocate a context, cloning attributes from an existing context
+ */
+wcp clone_context(w)
+wbp w;
+   {
+   wcp wc, wc2 = w->context;
+   wsp ws = w->window;
+   Protect(wc = alc_context(w), return NULL);
+   /*
+    * copy over some stuff
+    */
+   wc->charBundle = wc2->charBundle;
+   wc->areaBundle = wc2->areaBundle;
+   wc->lineBundle = wc2->lineBundle;
+   wc->fntLeading = wc2->fntLeading;
+   wc->font = wc2->font;
+   wc->dx = wc2->dx; wc->dy = wc2->dy;
+   wc->drawop = wc2->drawop;
+   wc->gamma = wc2->gamma;
+   wc->bits = wc2->bits;
+   /*
+    * bump up reference counts on colors
+    */
+   AddColorDependant(wc->charBundle.lColor);
+   AddColorDependant(wc->charBundle.lBackColor);
+   /*
+    * have to bump up reference count on pattern and font, if not default
+    */
+   wc->currPattern = wc2->currPattern;
+   AddPatternDependant(wc->currPattern);
+   /*
+    * font ..
+    */
+   AddFontDependant(wc->charBundle.usSet);
+   /* copy the clipping region */
+   wc->clipx = wc2->clipx;
+   wc->clipy = wc2->clipy;
+   wc->clipw = wc2->clipw;
+   wc->cliph = wc2->cliph;
+   /*
+    * make the dependencies
+    */
+   if (!AddWindowDep(ws, wc) || !AddContextDep(ws, wc))
+      return NULL;
+   return wc;
+   }
+
+/*
+ * allocate a window state structure
+ */
+wsp alc_winstate()
+   {
+   int i;
+   wsp ws;
+
+   GRFX_ALLOC(ws, _wstate);
+   ws->bits = 1024;				/* echo ON; others OFF */
+   ws->filep = nulldesc;
+   ws->listp = nulldesc;
+   /*
+    * make the dependant list
+    */
+   if (!(ws->depContexts = calloc(INITDEPS, sizeof(wcp)))) {
+      free(ws);
+      ReturnErrNum(305, NULL);
+      }
+   ws->maxDeps = INITDEPS;
+   /*
+    * we now have one more window
+    */
+   NumWindows++;
+   GRFX_LINK(ws, wstates);
+   return ws;
+   }
+
+/*
+ * free a window state
+ */
+free_window(ws)
+wsp ws;
+   {
+   ws->refcount--;
+   if(ws->refcount == 0) {
+      HRGN hscrap;
+      wcp wc;
+      int i, j;
+      BOOL bret;
+      HBITMAP hbm;
+
+      /*
+       * remove this window from the context dependencies
+       */
+      for (i = 0; i < ws->maxDeps && ws->numDeps > 0; i++)
+	 if (wc = ws->depContexts[i]) { /* found a valid dep */
+	    for (j = 0; j < wc->maxDeps; j++)
+	       if (wc->depWindows[j] == ws) { /* found the mapping */
+		  wc->depWindows[j] = NULL;
+		  wc->numDeps--;
+		  break;
+		  }
+	    ws->numDeps--;
+	    }
+
+      /*
+       * free the dependant list
+       */
+      free(ws->depContexts);
+      ws->depContexts = NULL;
+      /*
+       * remove the clip regions - if present
+       */
+      GpiSetClipRegion(ws->hpsBitmap, NULLHANDLE, &hscrap);
+      if (ws->hpsWin)
+	 GpiSetClipRegion(ws->hpsWin, NULLHANDLE, &hscrap);
+      /*
+       * kill the window - if this was done previously, there
+       * is no harm in calling this again
+       */
+      DestroyWindow(ws);
+      /*
+       * now time to kill the bitmap stuff
+       */
+      GpiDestroyPS(ws->hpsBitmap);
+      GpiDeleteBitmap(ws->hBitmap);
+      DevCloseDC(ws->hdcBitmap);
+      ws->hpsBitmap = ws->hdcBitmap = ws->hBitmap = NULLHANDLE;
+      /*
+       * close the mutex semaphore
+       */
+      if (ws->mutex) {
+	DosCloseMutexSem(ws->mutex);
+	ws->mutex = NULLHANDLE;
+	} /* End of if - mutex semaphore open */
+      /* get rid of the window pointer */
+      if (ws->hPointer) {
+	/* this has to be destroyed by the creating thread */
+	WinDestroyPointer(ws->hPointer);
+	ws->hPointer = NULLHANDLE;
+	} /* End of if - pointer exists */
+
+      /*
+       * release the window background color
+       */
+      ReleaseColor(ws->winbg);
+      /*
+       * destroy the initial bitmap
+       */
+      if (ws->hInitialBitmap)
+	 GpiDeleteBitmap(ws->hInitialBitmap);
+      /*
+       * free the strings for titles, etc.
+       */
+      free(ws->windowlabel);
+      free(ws->iconlabel);
+      free(ws->iconimage);
+      /*
+       * we now have one less window
+       */
+      NumWindows--;
+      GRFX_UNLINK(ws, wstates);
+      }
+   return 0;
+   }
+
+/*
+ * free a window context
+ */
+void free_context(wc)
+wcp wc;
+   {
+   wc->refcount--;
+   if(wc->refcount == 0) {
+      wsp ws;
+      int i, j;
+      LONG tmp;
+
+      /*
+       * free the pattern and font, and release the foreground and background
+       */
+      ReleasePattern(wc->currPattern);
+      ReleaseFont(wc->charBundle.usSet);
+
+      tmp = (ISXORREVERSEW(wc)) ? wc->charBundle.lColor ^ wc->charBundle.lBackColor :
+				  wc->charBundle.lColor;
+      ReleaseColor(tmp);
+      ReleaseColor(wc->charBundle.lBackColor);
+      /*
+       * remove this context from the window's dependencies
+       */
+      for (i = 0; i < wc->maxDeps && wc->numDeps > 0; i++)
+	if (ws = wc->depWindows[i]) { /* a valid window pointer */
+	  if (ws->charContext == wc) ws->charContext = NULL;
+	  if (ws->areaContext == wc) ws->areaContext = NULL;
+	  if (ws->lineContext == wc) ws->lineContext = NULL;
+	  if (ws->imageContext == wc) ws->imageContext = NULL;
+	  if (ws->clipContext == wc) ws->clipContext = NULL;
+	  for (j = 0; j < ws->maxDeps; j++)
+	    if (ws->depContexts[j] == wc) { /* found the mapping */
+	      ws->depContexts[j] = NULL;
+	      ws->numDeps--;
+	      break;
+	      }
+	  wc->numDeps--;
+	  }
+      /*
+       * free the dependant list
+       */
+      free(wc->depWindows);
+      wc->depWindows = NULL;
+      GRFX_UNLINK(wc, wcntxts);
+      }
+   }

@@ -1,0 +1,21 @@
+#
+$include "posix.icn"
+
+procedure main()
+
+   L := pipe()
+
+   write(image(L[1]))
+   write(image(L[2]))
+
+   system(["/bin/cat", "-n"], L[1], , , "nowait")
+   close(L[1])
+   
+   system("/bin/ls test-dir", , L[2])
+   close(L[2])
+
+   write("everything written to pipe.")
+
+   delay(1000)
+
+end

@@ -1,0 +1,17 @@
+echo running kross
+../../bin/iconx ../../ipl/icode/kross \
+  <../../ipl/data/egg.krs >local/kross.out 2>&1
+rm -f kross
+echo checking kross
+diff local/kross.out stand/kross.out
+echo running bold
+IPATH="../../ipl/ucode" ../../bin/icont -s tbold.icn -x \
+   <../../ipl/data/gilbert.txt >local/bold.out 2>&1
+echo checking bold
+diff local/bold.out stand/bold.out
+rm -r tbold
+echo running gener
+IPATH="../../ipl/ucode" ../../bin/icont -s tgener.icn -x >local/gener.out 2>&1
+echo checking gener
+diff local/gener.out stand/gener.out
+rm -f tgener

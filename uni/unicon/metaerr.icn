@@ -1,0 +1,129 @@
+#
+# metaerr.icn, the Unicon error message generator program.
+#
+# Maintains the mapping from parse states to error messages.
+# In the old days this was done by hand whenever the grammar changed.
+#
+
+procedure main()
+
+gen()
+
+# now the fun begins: write error-inducing source codes, run them, and read
+# the stack states from their errors.
+
+t := table()
+
+generr(t, ["global"], "unexpected end of file")
+generr(t, ["global x y"], "invalid global declaration")
+generr(t, ["global x, , y"], "missing identifier")
+generr(t, ["procedure p(x) end"], "missing semicolon")
+generr(t, ["link procedure p(x)", "end"], "link list expected")
+generr(t, ["invocable procedure p(x)", "end"], "invocable list expected")
+generr(t, ["local x"], "invalid declaration")
+missingarg(t, "+")
+missingarg(t, "*")
+missingarg(t, "!")
+generr(t, ["procedure ()", "end"], "procedure name expected")
+generr(t, ["procedure p(1)", "end"], "parameter name expected")
+generr(t, ["procedure p(x,)", "end"], "parameter name expected")
+generr(t, ["procedure p(x)", "global x", "end"], "semicolon expected")
+generr(t, ["procedure p(x);", "global x", "end"], "invalid procedure body")
+generr(t, ["procedure p()", "!", "end"], "invalid argument to unary !")
+generr(t, ["procedure p()", "c$meth || x", "end"], "parenthesis is required for method invocation")
+generr(t, ["procedure p()", "create", "end"], "invalid create expression")
+generr(t, ["procedure p()", "{", "end"], "invalid compound expression")
+generr(t, ["procedure p()", "if", "end"], "invalid if control expression")
+generr(t, ["procedure p()", "case", "end"], "invalid case control expression")
+generr(t, ["procedure p()", "while", "end"], "invalid while control expression")
+generr(t, ["procedure p()", "until", "end"], "invalid until control expression")
+generr(t, ["procedure p()", "every", "end"], "invalid every control expression")
+generr(t, ["procedure p()", "repeat", "end"], "invalid repeat control expression")
+generr(t, ["link x+", "procedure p()", "end"], "invalid link declaration")
+generr(t, ["procedure p", "write()", "end"], "missing parameter list in procedure declaration")
+generr(t, ["procedure p()", "local \"hello\"", "end"], "invalid local declaration")
+generr(t, ["class c()", "[", "end"], "method expected")
+generr(t, ["class c()", "method m(); [", "end"], "unclosed list")
+generr(t, ["class c()", "method m(); [\"help!\"", "end"], "unclosed list")
+generr(t, ["class c()", "method m(); [\"help!\" end","end"], "unclosed list")
+generr(t, ["class c()", "method m();end","procedure p();end", "end"], "procedure not allowed within a class")
+generr(t, ["class c()", "procedure p();end", "end"], "procedure not allowed within a class")
+generr(t, ["procedure p()", "initial ]", "end"], "invalid initial expression")
+generr(t, ["procedure p()", "if (1) {", "hello","}", "end"], "missing then?")
+generr(t, ["procedure p()", "write(p()", "hello", "end"], "unclosed parenthesis")
+generr(t, ["procedure p()", "local list := []", "end"], "illegal assignment in declaration")
+
+generr(t, ["procedure p()","if \self.focus | (\self.focus & string(e) == \"\\t\" then {","end"], "missing right parenthesis")
+
+generr(t, ["procedure p()", "    AddressTxt$set_contents(selectRow[3]",
+       "{","end"], "missing right parenthesis")
+
+gen(t)
+
+end
+
+procedure gen(t)
+
+f := open("errmsg.icn","w")
+write(f, "procedure yyerror(s)")
+write(f, "static statemsg")
+write(f, "initial {")
+write(f, "   statemsg := table(\"syntax error\")")   
+every k := key(\t) do
+   write(f, "   statemsg[", k, "] := ", image(t[k]))
+write(f, "   }")
+write(f)
+write(f, "   /errors := 0")
+write(f, "   if errors = 0 then write(&errout)")
+write(f, "   else if map(s)== \"stack underflow. aborting...\" then return")
+write(f, "   errors +:= 1")
+write(f, "   if errors > 10 then stop(\"too many errors, aborting\")")
+write(f, "   writes(&errout, \\fName, \":\")")
+write(f, "   if s == \"syntax error\" then")
+write(f, "      s := statemsg[statestk[1]]")
+write(f, "   if s == \"syntax error\" then")
+write(f, "      s ||:= \" (\" || statestk[1] || \")\"")
+write(f, "   write(&errout, yylineno, \": # \\\"\", yytext, \"\\\": \", s)")
+write(f, "   return")
+write(f, "end")
+close(f)
+
+system("make")
+
+end
+
+procedure generr(t, prog, msg)
+
+f := open("err.icn","w")
+every write(f, !prog) 
+close(f)
+
+system("./unicon err 2> err.out")
+
+f := open("err.out")
+line := read(f)
+line := read(f) | stop("no error in err.icn")
+line2 := line
+while line ?:= (tab(find(":")+1) & tab(0))
+line ?:= (tab(find("(")+1) & tab(find(")")))
+close(f)
+if not integer(line) then { write("unknown state in ", line2)
+			    system("cat err.icn")
+			    system("cat err.out")
+			}
+
+t[line] := msg
+
+end
+
+procedure experr(t, err, msg)
+
+generr(t, ["procedure main()", err, "end"], msg)
+
+end
+
+procedure missingarg(t, op)
+
+experr(t, "  a " || op, "missing or invalid second argument to " || op)
+
+end

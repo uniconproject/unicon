@@ -1,0 +1,66 @@
+#
+
+procedure main()
+
+   L1 := pipe()
+   L2 := pipe()
+
+   L3 := pipe()
+   L4 := pipe()
+
+   if fork() == 0 then {
+      close(L2[1])
+      close(L2[2])
+      close(L4[1])
+      close(L4[2])
+      close(L1[1])
+      close(L3[2])
+      child(L3[1], L1[2])
+      exit(0)
+   }
+   if fork() == 0 then {
+      close(L1[1])
+      close(L1[2])
+      close(L3[1])
+      close(L3[2])
+      close(L2[1])
+      close(L4[2])
+      child(L4[1], L2[2])
+      exit(0)
+   }
+
+   close(L2[2])
+   close(L1[2])
+   close(L3[1])
+   close(L4[1])
+
+   parent(L1[1], L2[1], L3[2], L4[2])
+end
+
+procedure parent(fin1, fin2, fout1, fout2)
+
+   L := select(fin1, fin2, 1000)
+   # We expect this to timeout
+   write("Should be 0: ", *L)
+
+   # Make the first child write to the pipe
+   writes(fout1, "0")
+   delay(1000)
+   L := select(fin1, fin2, 1000)
+   if L[1] === fin1 then write("fin1 ok") else write("fin1 failed")
+   write(image(reads(L[1])) | "read1 failed")
+
+   # Second child
+   writes(fout2, "0")
+   delay(1000)
+   L := select(fin1, fin2, 1000)
+   if L[1] === fin2 then write("fin2 ok") else write("fin2 failed")
+   write(image(reads(L[1])))
+end
+
+procedure child(fin, fout)
+   reads(fin)
+   writes(fout, "x")
+   # delay so this end of the pipe isn't closed immediately
+   delay(10000)
+end

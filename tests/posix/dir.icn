@@ -1,0 +1,29 @@
+
+$include "posix.icn"
+
+procedure main()
+
+   mkdir("./tmp", 8r0755) | stop("Couldn't make ./tmp: ", sys_errstr(&errno))
+
+   f := stat("tmp") | stop("Couldn't stat: ", sys_errstr(&errno))
+
+   write(format(f, "tmp"))
+   
+   rmdir("tmp") | stop("Couldn't remove ./tmp: ", sys_errstr(&errno))
+
+   f := stat("tmp") | write("Couldn't stat: ", sys_errstr(&errno))
+
+end
+
+procedure format(p, name)
+
+   s := right(p.blocks, 4) || " " || p.mode || " " ||
+      right(p.nlink, 3) || " "  ||
+      " " || right(p.size, 8) || " " || name
+
+   if p.mode[1] == "l" then
+      s ||:= " -> " || readlink(name)
+
+   return s
+end
+

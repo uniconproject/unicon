@@ -1,0 +1,50 @@
+
+$include "posix.icn"
+
+procedure main()
+
+   if (child1 := fork()) = 0 then {
+      delay(1000)
+      exit(3)
+   }
+
+   st := wait(child1) | write(&errout, "Wait 1 failed: ", sys_errstr(&errno))
+   write(trim(st))
+   
+   if (child2 := fork()) = 0 then {
+      delay(10000)
+      exit(5)
+   }
+
+   kill(child2, "SIGQUIT")
+   st := wait() | write(&errout, "Wait 2 failed: ", sys_errstr(&errno))
+   write(trim(st))
+   
+
+   if (child3 := fork()) = 0 then {
+      delay(10000)
+      exit(0)
+   }
+
+   kill(child3, "SIGSTOP")
+   st := wait(child3, "u") |
+      write(&errout, "Wait 3 failed: ", sys_errstr(&errno))
+   write(trim(st))
+   
+   
+   kill(child3, "SIGCONT")
+   kill(child3, "SIGTERM")
+
+
+   delay(1000)
+   system("rm core")
+end
+
+procedure trim(st)
+   st ? {
+      pid := (integer(tab(many(&digits))) | &null)
+      writes(type(pid), " ")
+      move(1)
+      write(tab(0))
+   }
+end

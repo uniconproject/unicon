@@ -1,0 +1,50 @@
+# Makefile for libtp library
+
+CC = cl
+
+RM = del
+AR = ar
+RANLIB = ranlib
+
+LIBS=
+
+INCLUDES = /Iuri
+DEFINES = /DHAVE_CONFIG_H /D_LIBTP_
+CFLAGS = $(WARNINGS) $(DEBUG) $(DEFINES) $(INCLUDES) $(CPPFLAGS)
+
+SUBDIRS = uri . tests
+
+OBJS = tp.obj util.obj tpdunix.obj tpmdaytm.obj tpmfinge.obj tpmhttp.obj  \
+       tpmpop.obj tpmsmtp.obj
+
+SRCS = tp.c util.c tpdunix.c tpmdaytm.c tpmfinge.c tpmhttp.c  \
+       tpmpop.c tpmsmtp.c
+LIBURI = uri\uri.obj uri\uri_file.obj uri\uri_fing.obj uri\uri_ftp.obj uri\uri_http.obj uri\uri_mail.obj uri\uri_pop.obj uri\uri_schm.obj
+
+libtp.lib: uridir config_h $(OBJS) $(LIBURI)
+	lib /OUT:libtp.lib $(OBJS) $(LIBURI)
+
+uridir:
+	cd uri
+	$(MAKE) /f makefile.win
+	cd ..
+
+clean:
+	$(RM) $(OBJS)
+
+config.h: config_h.win
+	-del config.h
+	copy config_h.win config.h
+
+config_h:
+	-del config.h
+	copy config_h.win config.h
+
+
+tp.obj: tp.c config.h tp.h util.h uri/uri.h
+tpdunix.obj: tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h
+tpmdaytm.obj: tpmdaytm.c config.h tp.h util.h uri/uri.h
+tpmfinge.obj: tpmfinge.c config.h tp.h util.h uri/uri.h
+tpmhttp.obj: tpmhttp.c config.h tp.h uri/uri.h util.h
+tpmsmtp.obj: tpmsmtp.c config.h tp.h uri/uri.h util.h
+util.obj: util.c config.h

@@ -1,0 +1,5017 @@
+/*
+ * rpmwin.ri - PresentationManager specific X-Icon support
+ */
+
+#ifdef PresentationManager
+
+void dumpdata(void *data,int len, char *title)
+{
+    FILE *dlog;
+    char *p,*s,*d;
+    int i,j;
+    char tbuf[17];
+    fprintf(stderr,"------<%s>------- Len=%8x\n",title,len);
+    for(i=0, s = data;i<len;i+=16,s+=16) {
+	p = tbuf;
+	for(j = 0; j < 16; j++,p++) {
+	    *p = ( isprint( *(s+j))) ? *(s+j) : '.';
+	}
+	*p = '\0';
+	fprintf(stderr,"%08X +%04X",s,i);
+
+	for(j=0;j<16;j+=4) {
+	    fprintf(stderr," %02X%02X%02X%02X",
+		*(s+0+j),
+		*(s+1+j),
+		*(s+2+j),
+		*(s+3+j));
+	}
+	fprintf(stderr," *%s*\n",tbuf);
+    }
+    fflush(stderr);
+}
+
+#ifdef OS2EMX
+int errno;
+#endif					/* OS2EMX */
+
+#ifndef min
+#define min(x,y) (((x) < (y))?(x):(y))
+#define max(x,y) (((x) > (y))?(x):(y))
+#endif					/* min */
+
+/*
+ * flags for context setting, querying
+ */
+ULONG lineAttrs = LBB_COLOR    |
+		  LBB_MIX_MODE |
+		 /* LBB_WIDTH	 | */
+		  LBB_GEOM_WIDTH |
+		  LBB_TYPE |
+		  LBB_JOIN;
+
+ULONG areaAttrs = ABB_COLOR    |
+		  ABB_MIX_MODE |
+		  ABB_BACK_COLOR |
+		  ABB_BACK_MIX_MODE |
+		  ABB_SET |
+		  ABB_SYMBOL;
+
+ULONG charAttrs = CBB_COLOR |
+		  CBB_BACK_COLOR |
+		  CBB_MIX_MODE |
+		  CBB_BACK_MIX_MODE |
+		  CBB_SET |
+		  CBB_BOX;
+
+ULONG imageAttrs = IBB_COLOR |
+		   IBB_MIX_MODE |
+		   IBB_BACK_COLOR |
+		   IBB_BACK_MIX_MODE;
+
+/*
+ * the event sem use for parent/child thread sync
+ */
+HEV HSyncEventSem1;
+HEV HSyncEventSem2;
+
+/*
+ * PMStringBuf, PMStringBufPtr, PMFlags replaced by Console
+ * variables in fwindow.r
+ */
+
+
+/*
+ * the system color table - made to match hardware - may not work with
+ * all drivers - index into the table is implied by order -> order is *very*
+ * important
+ */
+LONG defClrTable[16] = {
+	RGB_BLACK,
+	RGB_BLUE,
+	RGB_RED,
+	RGB_PINK,
+	RGB_GREEN,
+	RGB_CYAN,
+	RGB_YELLOW,
+	MAKERGB(190, 190, 190),  /* pale gray */
+	MAKERGB(128, 128, 128),  /* dark gray */
+	MAKERGB(0, 0, 128),	 /* dark blue */
+	MAKERGB(128, 0, 0),	 /* dark red */
+	MAKERGB(128, 0, 128),	 /* dark pink */
+	MAKERGB(0, 128, 0),	 /* dark green */
+	MAKERGB(0, 128, 128),	 /* dark cyan */
+	MAKERGB(128, 128, 0),	 /* brown */
+	RGB_WHITE
+	};
+
+/* the color name <-> rgb table. You can add more color names and appropriate
+   RGB values here */
+stringint siColorNames[] = {
+  {0, 33},
+  {"beige",             MAKERGB(245, 245, 220)},
+  {"black",             RGB_BLACK},
+  {"blue",              RGB_BLUE},
+  {"brown",             MAKERGB(128, 128, 0)},
+  {"chocolate",         MAKERGB(210, 105, 30)},
+  {"cyan",              RGB_CYAN},
+  {"darkblue",          MAKERGB(0, 0, 128)},
+  {"darkcyan",          MAKERGB(0, 128, 128)},
+  {"darkgray",          MAKERGB(128, 128, 128)},
+  {"darkgreen",         MAKERGB(0, 128, 0)},
+  {"darkpink",          MAKERGB(128, 0, 128)},
+  {"darkred",           MAKERGB(128, 0, 0)},
+  {"firebrick",         MAKERGB(178, 34, 34)},
+  {"gold",              MAKERGB(255, 215, 0)},
+  {"gray",              MAKERGB(158, 158, 158)},
+  {"green",             RGB_GREEN},
+  {"ivory",             MAKERGB(255, 255, 240)},
+  {"lightgray",         MAKERGB(190, 190, 190)},
+  {"magenta",           MAKERGB(255, 0, 255)},
+  {"maroon",            MAKERGB(176, 48, 96)},
+  {"navy",              MAKERGB(0, 0, 128)},
+  {"orange",            MAKERGB(255, 165, 0)},
+  {"orchid",            MAKERGB(218, 112, 214)},
+  {"palegray",          MAKERGB(190, 190, 190)},
+  {"pink",              RGB_PINK},
+  {"plum",              MAKERGB(221, 160, 221)},
+  {"purple",            MAKERGB(160, 32, 240)},
+  {"red",               RGB_RED},
+  {"tan",               MAKERGB(210, 180, 140)},
+  {"violet",            MAKERGB(238, 130, 238)},
+  {"wheat",             MAKERGB(245, 222, 179)},
+  {"white",             RGB_WHITE},
+  {"yellow",            RGB_YELLOW}
+  };
+
+
+/*
+ * pattern symbols
+ */
+stringint siPatternSyms[] = {
+  {0, 16},
+  {"blank",             PATSYM_BLANK},
+  {"diagonal1",         PATSYM_DIAG1},
+  {"diagonal2",         PATSYM_DIAG2},
+  {"diagonal3",         PATSYM_DIAG3},
+  {"diagonal4",         PATSYM_DIAG4},
+  {"gray1",             PATSYM_DENSE8},
+  {"gray2",             PATSYM_DENSE7},
+  {"gray3",             PATSYM_DENSE6},
+  {"gray4",             PATSYM_DENSE5},
+  {"gray5",             PATSYM_DENSE4},
+  {"gray6",             PATSYM_DENSE3},
+  {"gray7",             PATSYM_DENSE2},
+  {"gray8",             PATSYM_DENSE1},
+  {"horizontalLines",   PATSYM_HORIZ},
+  {"solid",             PATSYM_SOLID},
+  {"verticalLines",     PATSYM_VERT}};
+
+/*
+ * mix modes (draw ops)
+ */
+stringint siMixModes[] = {
+  {0, 17},
+  {"and",               ROP_SRCAND},
+  {"andInverted",       ROP_SRCERASE},
+  {"andReverse",        ROP_SRCERASE},
+  {"clear",             ROP_ZERO},
+  {"copy",              ROP_SRCCOPY},
+  {"copyInverted",      ROP_NOTSRCCOPY},
+  {"equiv",             ROP_SRCCOPY},
+  {"invert",            ROP_DSTINVERT},
+  {"nand",              ROP_SRCERASE},
+  {"noop",              ROP_ONE},
+  {"nor",               ROP_MERGEPAINT},
+  {"or",                ROP_SRCPAINT},
+  {"orInverted",        ROP_MERGEPAINT},
+  {"orReverse",         0xDD},
+  {"reverse",           ROP_USER1},
+  {"set",               ROP_ONE},
+  {"xor",               ROP_SRCINVERT}};
+
+/*
+ * line types
+ */
+stringint siLineTypes[] = {
+  {0, 10},
+  {"alternate",         LINETYPE_ALTERNATE},
+  {"dashdot",           LINETYPE_DASHDOT},
+  {"dashdoubledot",     LINETYPE_DASHDOUBLEDOT},
+  {"dashed",            LINETYPE_ALTERNATE},
+  {"dotted",            LINETYPE_DOT},
+  {"doubledot",         LINETYPE_DOUBLEDOT},
+  {"longdash",          LINETYPE_LONGDASH},
+  {"shortdash",         LINETYPE_SHORTDASH},
+  {"solid",             LINETYPE_SOLID},
+  {"striped",           LINETYPE_LONGDASH}};
+
+
+#define NUMSYSCURSORSYMS	3
+#define NUMCURSORSYMS		76
+
+/*
+ * cursor/pointer symbols
+ */
+stringint siSysCursorSyms[] = {
+  {0, NUMSYSCURSORSYMS},
+  {"arrow",             SPTR_ARROW},
+  {"clock",             SPTR_WAIT},
+  {"xterm",             SPTR_TEXT}};
+
+stringint siCursorSyms[] = {
+  {0, NUMCURSORSYMS},
+  {"X arrow",                   PTR_XARROW},
+  {"X cursor",                  PTR_X_CURSOR},
+  {"X watch",                   PTR_XWATCH},
+  {"based arrow down",          PTR_BASE_ARROW_DOWN},
+  {"based arrow up",            PTR_BASE_ARROW_UP},
+  {"boat",                      PTR_BOAT},
+  {"bogosity",                  PTR_BOGOSITY},
+  {"bottom left corner",        PTR_BOTTOM_LEFT_CORNER},
+  {"bottom right corner",       PTR_BOTTOM_RIGHT_CORNER},
+  {"bottom side",               PTR_BOTTOM_SIDE},
+  {"bottom tee",                PTR_BOTTOM_TEE},
+  {"box spiral",                PTR_BOX_SPIRAL},
+  {"center ptr",                PTR_CENTER_PTR},
+  {"circle",                    PTR_CIRCLE},
+  {"clock",                     PTR_CLOCK},
+  {"coffee mug",                PTR_COFFEE_MUG},
+  {"cross",                     PTR_CROSS},
+  {"cross reverse",             PTR_CROSS_REVERSE},
+  {"crosshair",                 PTR_CROSSHAIR},
+  {"diamond cross",             PTR_DIAMOND_CROSS},
+  {"dot",                       PTR_DOT},
+  {"dot box",                   PTR_DOTBOX},
+  {"double arrow",              PTR_DOUBLE_ARROW},
+  {"draft large",               PTR_DRAFT_LARGE},
+  {"draft small",               PTR_DRAFT_SMALL},
+  {"draped box",                PTR_DRAPED_BOX},
+  {"exchange",                  PTR_EXCHANGE},
+  {"fleur",                     PTR_FLEUR},
+  {"gobbler",                   PTR_GOBBLER},
+  {"gumby",                     PTR_GUMBY},
+  {"hand1",                     PTR_HAND1},
+  {"hand2",                     PTR_HAND2},
+  {"heart",                     PTR_HEART},
+  {"icon",                      PTR_ICON},
+  {"iron cross",                PTR_IRON_CROSS},
+  {"leftbutton",                PTR_LEFTBUTTON},
+  {"left ptr",                  PTR_LEFT_PTR},
+  {"left side",                 PTR_LEFT_SIDE},
+  {"left tee",                  PTR_LEFT_TEE},
+  {"ll angle",                  PTR_LL_ANGLE},
+  {"lr angle",                  PTR_LR_ANGLE},
+  {"man",                       PTR_MAN},
+  {"middlebutton",              PTR_MIDDLEBUTTON},
+  {"mouse",                     PTR_MOUSE},
+  {"pencil",                    PTR_PENCIL},
+  {"pirate",                    PTR_PIRATE},
+  {"plus",                      PTR_PLUS},
+  {"question arrow",            PTR_QUESTION_ARROW},
+  {"right ptr",                 PTR_RIGHT_PTR},
+  {"right side",                PTR_RIGHT_SIDE},
+  {"right tee",                 PTR_RIGHT_TEE},
+  {"rightbutton",               PTR_RIGHTBUTTON},
+  {"rtl logo",                  PTR_RTLLOGO},
+  {"sailboat",                  PTR_SAILBOAT},
+  {"sb down arrow",             PTR_SB_DOWN_ARROW},
+  {"sb h double arrow",         PTR_SB_H_DOUBLE_ARROW},
+  {"sb left arrow",             PTR_SB_LEFT_ARROW},
+  {"sb right arrow",            PTR_SB_RIGHT_ARROW},
+  {"sb up arrow",               PTR_SB_UP_ARROW},
+  {"sb v double arrow",         PTR_SB_V_DOUBLE_ARROW},
+  {"shuttle",                   PTR_SHUTTLE},
+  {"sizing",                    PTR_SIZING},
+  {"spider",                    PTR_SPIDER},
+  {"spraycan",                  PTR_SPRAYCAN},
+  {"star",                      PTR_STAR},
+  {"target",                    PTR_TARGET},
+  {"tcross",                    PTR_TCROSS},
+  {"top left arrow",            PTR_TOP_LEFT_ARROW},
+  {"top left corner",           PTR_TOP_LEFT_CORNER},
+  {"top right corner",          PTR_TOP_RIGHT_CORNER},
+  {"top side",                  PTR_TOP_SIDE},
+  {"top tee",                   PTR_TOP_TEE},
+  {"trek",                      PTR_TREK},
+  {"ul angle",                  PTR_UL_ANGLE},
+  {"umbrella",                  PTR_UMBRELLA},
+  {"ur angle",                  PTR_UR_ANGLE},
+  {"xterm",                     PTR_XTERM}};
+
+/*
+ *
+ * Local Prototypes
+ *
+ */
+static lclIdentifier *AllocateLocalID(void);
+static void RippleColorAddition(LONG aindx);
+static void RippleLocalIdAddition(wcp wc, LONG id);
+static void RippleLocalIdRemoval(LONG id);
+
+/*
+ * main window callback, or should I say, the only window callback
+ */
+MRESULT_N_EXPENTRY MainWndProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2);
+
+/*
+ * PM globals
+ */
+HAB HInterpAnchorBlock;
+HMQ HInterpMessageQueue;
+HAB HMainAnchorBlock;
+HMQ HMainMessageQueue;
+
+/*
+ * the color table
+ */
+colorEntry *ColorTable;
+colorEntry *FreeCEntries;
+colorEntry *UsedCEntries;
+
+/*
+ * the local id table
+ */
+lclIdentifier *LocalIds;
+lclIdentifier *FreeIdEntries;
+lclIdentifier *FontIdEntries;
+lclIdentifier *PatIdEntries;
+
+/*
+ * device capabilities
+ */
+LONG FontResX;		/* resolutions used to select image fonts */
+LONG FontResY;
+ULONG DefFontSize;
+LONG ScreenWidth;	/* media (screen) dimensions */
+LONG ScreenHeight;
+LONG ScreenBitsPerPel;	/* number of bits per pixel for the screen */
+LONG MaxPSColors;	/* max color index in logical color table for a PS */
+
+
+static void dumplocalids()
+{
+    register int i;
+    FONTMETRICS *fm;
+    lclIdentifier *ptr;
+
+    int freeid;
+    freeid = FreeIdEntries - LocalIds;
+    fprintf(stderr,"\n--- Dump of local IDs --- FreeIdEntries = %d (%08lx) Base=%08lx \n",
+		   freeid,FreeIdEntries,LocalIds);
+    fprintf(stderr,"Fonts..\n");
+    for( ptr = FontIdEntries; ptr; ptr = ptr->next) {
+	i = (ptr - LocalIds) + 1;
+	fprintf(stderr,"%3d type=%hd refcount=%hd next=%d (%08lx) prev=%d (%08lx)\n",i,
+	    ptr->idtype,
+	    ptr->refcount,
+	    ptr->next - LocalIds, ptr->next,
+	    ptr->previous - LocalIds,ptr->previous);
+	    fm = &ptr->u.font.metrics;
+	    fprintf(stderr,"FontName=[%s] Base = %d Width=%d\n",fm->szFacename,fm->lMaxBaselineExt,
+							      fm->lAveCharWidth);
+    }
+    fprintf(stderr,"Patterns..\n");
+    for( ptr = PatIdEntries; ptr; ptr = ptr->next) {
+	i = (ptr - LocalIds) + 1;
+	fprintf(stderr,"%3d type=%hd refcount=%hd next=%d (%08lx) prev=%d (%08lx)\n",i,
+	    ptr->idtype,
+	    ptr->refcount,
+	    ptr->next - LocalIds, ptr->next,
+	    ptr->previous - LocalIds,ptr->previous);
+    }
+/*
+    fprintf(stderr,"Free..\n");
+    for( ptr = FreeIdEntries; ptr; ptr = ptr->next) {
+	i = (ptr - LocalIds) + 1;
+	fprintf(stderr,"%3d Free\n",i);
+    }
+*/
+    fprintf(stderr,"-----\n");
+    fflush(stderr);
+}
+
+/*
+ * AddLocalIdToWindow
+ *  Parameters - assume id is presentation space relative
+ */
+void AddLocalIdToWindow(wsp ws, LONG id)
+{
+   LONG newid;
+   lclIdentifier *ptr;
+   FATTRS fat;
+   int rc;
+   newid = id - 1;
+
+   if (newid >= 0 && newid < MAXLOCALS) { /* if the id is valid */
+      MutexOn(ws);
+      ptr = &LocalIds[newid];
+      if (ptr->idtype & IS_PATTERN) {	/* if its a pattern... */
+	 RENDER2(GpiSetBitmapId, ptr->u.hpat, id); /* ok to do win first?#$#$*/
+	 }
+      else {				/* else its a font... */
+	 memset(&fat, 0, sizeof(FATTRS));
+	 fat.usRecordLength   = sizeof(FATTRS);
+	 fat.lMatch	      = ptr->u.font.metrics.lMatch;
+	 strcpy(fat.szFacename, ptr->u.font.metrics.szFacename);
+
+	 GpiSetCharMode(ws->hpsBitmap,CM_MODE2);
+	 GpiCreateLogFont(ws->hpsBitmap, NULL, id, &fat);
+	 if (ws->hpsWin) {
+	    GpiSetCharMode(ws->hpsWin,CM_MODE2);
+	    GpiCreateLogFont(ws->hpsWin, NULL, id, &fat);
+	 }
+      }
+      MutexOff(ws);
+   }
+}
+
+/*
+ * AddContextDep
+ */
+int AddContextDep(wsp ws, wcp wc)
+   {
+   int i, first = -1;
+   /*
+    * Search for the dependency, if its already there, return it, otherwise
+    *  find the first open slot.
+    */
+   for (i = 0; i < ws->maxDeps; i++) {
+      if (ws->depContexts[i] == wc) return 1;
+      if (first < 0 && !ws->depContexts[i]) first = i;
+      }
+   /*
+    * if there were no free slots, make some more
+    */
+   if (first < 0) {
+      ULONG newsize;
+      wcp *newtbl;
+      newsize = (ws->maxDeps << 1) * sizeof(wcp);
+      /*
+       * blow the table up a little bigger, if possible
+       */
+      if (!(newtbl = realloc(ws->depContexts, newsize))) return 0;
+      /*
+       * zero out the upper pointers
+       */
+      memset(&newtbl[ws->maxDeps], 0, sizeof(wcp) * ws->maxDeps);
+      ws->depContexts = newtbl;
+      first = ws->maxDeps;
+      ws->maxDeps <<= 1;
+      }
+   ws->depContexts[first] = wc;
+   ws->numDeps++;
+   return 1;
+   }
+
+/*
+ * AddWindowDep - adds a window dependency to a context
+ */
+int AddWindowDep(wsp ws, wcp wc)
+   {
+   int i, first = -1;
+   /*
+    * Search for the dependency, if its already there, return it, otherwise
+    *  find the first open slot.
+    */
+   for (i = 0; i < wc->maxDeps; i++) {
+      if (wc->depWindows[i] == ws) /* already there ? */
+	 return 1;
+      if (first < 0 && !wc->depWindows[i]) /* is this slot open? */
+	 first = i;
+      }
+   /*
+    * if there were no free slots, make some more
+    */
+   if (first < 0) {
+      ULONG newsize;
+      wsp *newtbl;
+      newsize = (wc->maxDeps << 1) * sizeof(wsp);
+      /*
+       * blow the table up a little bigger, if possible
+       */
+      if (!(newtbl = realloc(wc->depWindows, newsize))) return 0;
+      /*
+       * zero out the upper pointers
+       */
+      memset(&newtbl[wc->maxDeps], 0, sizeof(wsp) * wc->maxDeps);
+      wc->depWindows = newtbl;
+      first = wc->maxDeps;
+      wc->maxDeps <<= 1;
+      }
+   wc->depWindows[first] = ws;
+   wc->numDeps++;
+   return 1;
+   }
+
+/*
+ * Bomb - temp runtime error message reporter
+ */
+void Bomb(char *mesg, char *place)
+   {
+   char buf[256];
+
+   strcpy(buf, mesg);
+   strcat(buf, place);
+   WinMessageBox(HWND_DESKTOP, HWND_DESKTOP, buf, NULL, 1,
+		 MB_OK | MB_ERROR | MB_APPLMODAL);
+   DosExit(EXIT_PROCESS, 1);
+   }
+
+/*
+ * ColorInitPS - initializes a new wstate will all the colors in the global
+ *  'rainbow'
+ */
+void ColorInitPS(wbp wb)
+   {
+   wsp ws = wb->window;
+   colorEntry *ce;
+   LONG map[2];
+
+   /*
+    * load the base color tables
+    */
+
+   RENDER5(GpiCreateLogColorTable, 0, LCOLF_CONSECRGB, 0, 16, defClrTable);
+
+
+   for (ce = UsedCEntries; ce; ce = ce->next) {
+      if (!(ce->bits & CLR_BASE)) {
+	 /*
+	  * figure out next entry
+	  */
+	 map[0] = ((ULONG)ce - (ULONG)ColorTable) / sizeof(colorEntry);
+	 map[1] = (LONG)ce->rgb;
+	 /*
+	  * add the rgb-index mapping (color entry) to PS
+	  */
+	 RENDER5(GpiCreateLogColorTable, 0, LCOLF_INDRGB, 0, 2, map);
+	 }
+      }
+   }
+
+/*
+ * DestroyWindow
+ */
+void DestroyWindow(wsp ws)
+   {
+   QMSG qmsg;
+   static int windowid = 0;
+   /*
+    * send a message to the first thread to destroy the window - since
+    * he created it, he has to destroy it.  He'll send back a message
+    * saying that he did it.
+    */
+   if (ws->hwndFrame) {
+      /*
+       * hdc will be wiped out by window destruction; post notice and
+       *  wait for our reply
+       */
+/* See wopen for explanation of this */
+#if 0
+      WinPostQueueMsg(HMainMessageQueue, REQUEST_DESTROY, (MPARAM)ws,
+		      (MPARAM)0);
+      /* we may never return from this - if we get a shutdown... */
+      WaitForEvent(DESTROYED_WINDOW, &qmsg);
+#else					/* PM Bug?? */
+   qmsg.msg = 0;
+   for (;;) {
+     /* ask for a new window */
+     WinPostQueueMsg(HMainMessageQueue, REQUEST_DESTROY, (MPARAM)ws,
+		     (MPARAM)windowid);
+     /* look for our results (cross fingers) */
+     ObtainEvents(NULL, NO_WAIT_EVT, DESTROYED_WINDOW, &qmsg);
+     /* check what we picked up */
+     if (qmsg.msg != DESTROYED_WINDOW) DosSleep(100);
+     else break;
+     } /* End of for - infinite loop, waiting for reply */
+   windowid++;
+#endif					/* PM Bug?? */
+
+      /* bye bye presentation space, should have been disassociated by destroy */
+      GpiDestroyPS(ws->hpsWin);
+      /*
+       * knock out the handles so that this can never happen again
+       */
+      ws->hdcWin = ws->hpsWin = ws->hwndFrame = ws->hwnd = NULLHANDLE;
+      }
+   }
+
+/*
+ * EnsureColorAvailable
+ */
+void EnsureColorAvailable(LONG indx)
+   {
+   wsp ws;
+   LONG map[2];
+
+   if (!(ColorTable[indx].bits & CLR_USED)) {
+      map[0] = indx;
+      /*
+       * make up some color to put in the slot
+       */
+      map[1] = MAKERGB(0, 0, 0);
+      for (ws = wstates; ws; ws = ws->next) {
+	 MutexOn(ws);
+	 /*
+	  * add the rgb-index mapping (color entry) to each PS
+	  */
+	 RENDER5(GpiCreateLogColorTable, 0, LCOLF_INDRGB, 0, 2, map);
+	 MutexOff(ws);
+	 }
+      }
+   }
+
+/*
+ * GetColorName
+ */
+void GetColorName(LONG indx, char *buf, int len)
+   {
+   char *ptr;
+   ULONG rgb;
+
+   if (indx >= 0 && indx < MaxPSColors && (ColorTable[indx].bits & CLR_USED)) {
+     if (ptr = ColorTable[indx].name) {
+       strncpy(buf, ptr, len - 1);
+       buf [ len - 1 ] = '\0';
+       }
+     else {
+       rgb = ColorTable[indx].rgb;
+       sprintf(buf, "rgb8:%d,%d,%d", RED(rgb), GREEN(rgb), BLUE(rgb));
+       } /* End of else - color has no name */
+     } /* End of if - color allocated */
+   else strcpy(buf, "error: color not allocated");
+   }
+
+/*
+ * GetFontName
+ *  Parameters - the index of the font, PS relative
+ */
+int GetFontName(LONG id, char *buf, int maxlen)
+   {
+   LONG newid;
+   lclIdentifier *ptr;
+   /*
+    * sanity check
+    */
+   if ((newid = id - 1) >= 0 && newid < MAXLOCALS &&
+       (LocalIds[newid].idtype & IS_FONT)) {
+      ptr = &LocalIds[newid];
+
+/*
+ * XXX notice, we are ignoring the maxlen here - oooh dangerous :)
+ * XXX may have to get the 'long' facename by following the facename atom
+ * XXX what if we are simulating italic or bold? - may need flags for that
+ */
+
+/* XXX this is a hack... change it later */
+      sprintf(buf, "%s%s%s,%dx%d", ptr->u.font.metrics.szFamilyname,
+	      ptr->u.font.metrics.fsSelection & FM_SEL_ITALIC ? ",Italic" : "",
+	      ptr->u.font.metrics.fsSelection & FM_SEL_BOLD   ? ",Bold"   : "",
+	      ptr->u.font.metrics.lAveCharWidth,
+	      ptr->u.font.metrics.lMaxBaselineExt);
+      return strlen(buf);
+      }
+   /* error */
+   return 0;
+   }
+
+/*
+ * GetTextWidth
+ */
+int GetTextWidth(wbp wb, char *text, int len)
+   {
+   POINTL pts[TXTBOX_COUNT];
+   STDLOCALS(wb);
+   /*
+    * make sure our text context is loaded
+    */
+   SetCharContext(wb, ws, wc);
+   /*
+    * calculate the text box
+    */
+   GpiQueryTextBox(stdbit, len, text, TXTBOX_COUNT, pts);
+   return pts[TXTBOX_TOPRIGHT].x - pts[TXTBOX_BOTTOMLEFT].x;
+   }
+
+/*
+ * InitializeColorTable
+ */
+void InitializeColorTable()
+   {
+   ULONG i, rgb;
+   colorEntry *prev;
+   /*
+    * grab space for the color table (minus the default colors)
+    */
+   ColorTable = (colorEntry *)calloc(sizeof(colorEntry), MaxPSColors);
+   /*
+    * fill in the default colors (system colors)
+    */
+   UsedCEntries = &ColorTable[0];
+   for (i = 0, prev = NULL; i < 16; prev = &ColorTable[i++]) {
+      /*
+       * lock the color so it cannot be released, then set the color data
+       */
+      ColorTable[i].bits = CLR_LOCKED | CLR_USED | CLR_BASE;
+      rgb = defClrTable[i];
+      ColorTable[i].rgb = rgb;
+      ColorTable[i].name = salloc(si_i2s(siColorNames, rgb));
+      /*
+       * link to next color
+       */
+      if (i < 15) ColorTable[i].next = &ColorTable[i + 1];
+      ColorTable[i].previous = prev;
+      }
+   /*
+    * link all the remaining entries together for the free list
+    */
+   FreeCEntries = &ColorTable[16];
+   for (i = 16; i < MaxPSColors - 1; i++) {
+      ColorTable[i].next = &ColorTable[i + 1];
+      ColorTable[i + 1].previous = &ColorTable[i];
+      }
+   }
+
+/*
+ * InitializeIdTable
+ */
+void InitializeIdTable()
+   {
+   ULONG i;
+   /*
+    * allocate the space for the table
+    */
+   LocalIds = (lclIdentifier *)calloc(sizeof(lclIdentifier), MAXLOCALS);
+   /*
+    * link all the entries together on the free list
+    */
+   FreeIdEntries = LocalIds;
+   for (i = 0; i < MAXLOCALS - 1; i++) {
+      LocalIds[i].next = &LocalIds[i + 1];
+      LocalIds[i + 1].previous = &LocalIds[i];
+      }
+   /*
+    * initialize font and pattern list pointers
+    */
+   FontIdEntries = PatIdEntries = NULL;
+   }
+
+
+/*
+ * LoadDefAttrs
+ */
+void LoadDefAttrs(wbp wb, wsp ws, wcp wc)
+   {
+   PLINEBUNDLE lBundle;
+   PCHARBUNDLE cBundle;
+   PAREABUNDLE aBundle;
+   PIMAGEBUNDLE iBundle;
+   /*
+    * initialize the color table for the new presentation space(s)
+    */
+   ColorInitPS(wb);
+   /*
+    * set the defaults for the context attribute bundles
+    */
+   lBundle = &(wc->lineBundle);
+   GpiQueryAttrs(ws->hpsBitmap, PRIM_LINE,
+		 LBB_COLOR | LBB_MIX_MODE | LBB_WIDTH |
+		 LBB_GEOM_WIDTH | LBB_END | LBB_TYPE | LBB_JOIN, lBundle);
+   cBundle = &(wc->charBundle);
+   GpiQueryAttrs(ws->hpsBitmap, PRIM_CHAR,
+		 CBB_COLOR | CBB_BACK_COLOR | CBB_MIX_MODE |
+		 CBB_BACK_MIX_MODE | CBB_SET | CBB_MODE | CBB_BOX | CBB_ANGLE |
+		 CBB_SHEAR | CBB_DIRECTION, cBundle);
+   aBundle = &(wc->areaBundle);
+   GpiQueryAttrs(ws->hpsBitmap, PRIM_AREA,
+		 ABB_COLOR | ABB_BACK_COLOR | ABB_MIX_MODE |
+		 ABB_BACK_MIX_MODE | ABB_SET | ABB_SYMBOL | ABB_REF_POINT,
+		 aBundle);
+   iBundle = &(wc->imageBundle);
+   GpiQueryAttrs(ws->hpsBitmap, PRIM_IMAGE, IBB_COLOR | IBB_MIX_MODE |
+		 IBB_BACK_COLOR | IBB_BACK_MIX_MODE, iBundle);
+   /*
+    * set the foreground, background, and window background colors
+    */
+   setfg(wb, "black");
+   setbg(wb, "white");
+   ws->winbg = aBundle->lBackColor;
+   /*
+    * set the default drawing mode (for XCopyArea, etc.)
+    */
+   wc->drawop = ROP_SRCCOPY;
+   cBundle->usBackMixMode = aBundle->usBackMixMode = BM_OVERPAINT;
+ /*cBundle->usBackMixMode = BM_LEAVEALONE;*/
+   cBundle->usMixMode = aBundle->usMixMode = lBundle->usMixMode = FM_OVERPAINT;
+   /*
+    * default line attributes
+    */
+   lBundle->lGeomWidth = 1;
+   lBundle->usJoin = LINEJOIN_MITRE;
+   ws->height = 400;
+   ws->width = 400;
+   /*
+    * load the default font, set the default cursor position RC 1,1
+    */
+   LoadFont(wb, "System Monospaced", (LONG)0, (ULONG)DefFontSize);
+   ws->y = ROWTOY(wb, 1) + wc->dx;
+   ws->x = COLTOX(wb, 1) + wc->dy;
+   return;
+   }
+
+/*
+ * Name - MainWndProc
+ */
+MRESULT_N_EXPENTRY MainWndProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
+   {
+   static SHORT drag_state[3] = { 0, 0, 0 };
+   ULONG icon_event, icon_event2, keyval;
+   USHORT keyflags;
+   int i, button_num = 0;
+   RECTL rect;
+   HPS hps;
+   POINTL pts[4];
+   SHORT cx, cy;
+   SHORT flag;
+   wsp ws;
+   HWND caphwnd = NULLHANDLE;
+   HRGN hsave, hsave2, hscrap;
+   PSWP swp;
+   BITMAPINFOHEADER2 bmp;
+
+   /*
+    * All positional information will be provided by the WinPostQueueMsg
+    * when it fills in the QMSG structure
+    */
+
+   /*
+    * get a pointer to the icon window state from the pm window state
+    */
+   if (ws = (wsp)WinQueryWindowULong(hwnd, QWL_USER)) {
+      switch (msg) {
+      case WM_SIZE:
+	 /*
+	  * don't handle the sizing if already an icon
+	  */
+	 if (ws->winState & WS_MIN) break;
+
+	 TimedMutexOn(ws, "WM_SIZE");
+
+	 cy = SHORT2FROMMP(mp2);
+	 /*
+	  * update the current window cursor position - use the
+	  * last descender for the positioning
+	  */
+	 ws->y = min(ws->y, cy - ws->lastDescender);
+	 /*
+	  * change the cursor position
+	  */
+	 ws->cursInfo.y += (cy - ws->height);
+	 if (ISCURSORONW(ws))
+	    WinCreateCursor(ws->hwnd, ws->cursInfo.x, ws->cursInfo.y, 0, 0,
+			    CURSOR_SETPOS, NULL);
+	 /*
+	  * update the window state
+	  */
+	 ws->width = SHORT1FROMMP(mp2);
+	 ws->height= cy;
+	 /*
+	  * resize the backing bitmap - will only make bigger
+	  */
+	 ResizeBackingBitmap(ws, ws->width, ws->height);
+	 MutexOff(ws);
+	 /*
+	  * first time through, just clear the bit - mimic XIcon
+	  */
+	 if (ISINITIALW(ws)) CLRINITIALW(ws);
+	 else WinPostQueueMsg(HInterpMessageQueue, WINDOW_SIZED, (MPARAM)ws,
+			      (MPARAM)((UCHAR)RESIZED));
+	 return (MRESULT)0;
+
+      case WM_MOVE:
+	 /*
+	  * do the query
+	  */
+	 WinQueryWindowRect(ws->hwndFrame, &rect);
+	 /*
+	  * map the points relative to us to the desktop
+	  */
+	 WinMapWindowPoints(ws->hwndFrame, HWND_DESKTOP, (POINTL *)&rect, 1);
+	 /* do the change as quickly as possible */
+	 TimedMutexOn(ws, "WM_MOVE");
+	 ws->posx = rect.xLeft;
+	 ws->posy = ScreenHeight - rect.yBottom - rect.yTop;
+	 MutexOff(ws);
+	 return (MRESULT)0;
+
+      case WM_PAINT:
+	 TimedMutexOn(ws, "WM_PAINT");
+	 /*
+	  * save the current clip region
+	  */
+	 GpiSetClipRegion(ws->hpsWin, NULLHANDLE, &hsave);
+	 hps = WinBeginPaint(hwnd, ws->hpsWin, &rect);
+	 if (ws->winState & WS_MIN) {
+
+/* here is a wonderful hack.  After calling winsetwindowposition,
+ *  it seems that PM gives us a paint message even before we are
+ *  iconified, it then gives us another one after we are iconified.
+ *  This results in the icon bitmap being stretched to the
+ *  window before PM iconifies it.  For a brief moment, depending on the
+ *  size of the window, the user can see this image.  So, when we do the
+ *  iconization, a bit is set, the first paint message is ignored and clears
+ *  the bit and the second draws the icon.
+ *  Note that this problem still exists if we let winState be changed only
+ *  by thread 1 because the WM_MINMAXFRAME is dispatched before the WM_PAINT
+ *  message is delivered.
+ */
+	    if (!ISMINPENDW(ws)) {
+	       /*
+		* if icon image is set/defined and not just hiding, blit it
+		*/
+	       if (ws->hIconBitmap) {
+		  /*
+		   * bottom left target and source
+		   */
+		  pts[0].x = pts[0].y = pts[2].x = pts[2].y = 0;
+		  bmp.cbFix = sizeof(BITMAPINFOHEADER2);
+		  GpiQueryBitmapInfoHeader(ws->hIconBitmap, &bmp);
+		  /*
+		   * top right target
+		   */
+		  pts[1].x = rect.xRight;
+		  pts[1].y = rect.yTop;
+		  /*
+		   * top right source
+		   */
+		  pts[3].x = bmp.cx;
+		  pts[3].y = bmp.cy;
+		  /*
+		   * carry out the blit
+		   */
+		  GpiWCBitBlt(hps, ws->hIconBitmap, 4, pts, ROP_SRCCOPY, BBO_IGNORE);
+		  }
+	       /* otherwise, blit the default */
+	       }
+	    else CLRMINPENDW(ws);
+	    }
+	 else {    /* not minimized */
+	   /*
+	    * copy over the affected region - taking into account that
+	    * the backing bitmap might be larger
+	    */
+
+	   /*
+	    * target lower left corner
+	    */
+	   pts[0].x = rect.xLeft; pts[0].y = rect.yBottom;
+	   /*
+	    * target upper right corner
+	    */
+	   pts[1].x = rect.xRight; pts[1].y = rect.yTop;
+
+	   /*
+	    * source lower left corner - this is the one transformed
+	    */
+	   pts[2].x = rect.xLeft;
+	   pts[2].y = rect.yBottom + ws->pixheight - ws->height;
+	   GpiBitBlt(hps, ws->hpsBitmap, 3, pts, ROP_SRCCOPY, 0UL);
+	   }
+
+	 WinEndPaint(hps);
+	 GpiSetClipRegion(ws->hpsWin, hsave, &hscrap);
+	 MutexOff(ws);
+	 return (MRESULT)0;
+
+      case WM_MINMAXFRAME:
+	 swp = (PSWP)mp1;
+	 TimedMutexOn(ws, "WM_MINMAXFRAME");
+	 /* since we just flip the pointer on the labels when changed,
+	    it is an atomic action and needs no mutex protection
+	    now, the setting of the flags is a different matter */
+	 /*
+	  * flip titles if needed..
+	  */
+	 if (!(swp->fl & SWP_MINIMIZE)) {
+	    WinSetWindowText(ws->hwndFrame, ws->windowlabel);
+	    /*
+	     * make sure a redraw occurs on the window ps
+	     */
+	    WinInvalidateRect(ws->hwndFrame, NULL, TRUE);
+	    }
+	 else if (ws->iconlabel)
+	    WinSetWindowText(ws->hwndFrame, ws->iconlabel);
+
+	 /* set the new flag state */
+	 if (swp->fl & SWP_MINIMIZE) ws->winState = (ws->winState & WS_HIDDEN) | WS_MIN;
+	 else if (swp->fl & SWP_MAXIMIZE) ws->winState = (ws->winState & WS_HIDDEN) | WS_MAX;
+	 else ws->winState = (ws->winState & WS_HIDDEN) | WS_NORMAL;
+
+	 MutexOff(ws);
+	 return (MRESULT)FALSE; /* use the swp structure */
+
+      case WM_CHAR:
+	 /*
+	  * get the flags out of message parameter 1
+	  */
+	 keyflags = SHORT1FROMMP(mp1);
+	 /*
+	  * we will ignore key-ups
+	  */
+	 if (!(keyflags & KC_KEYUP) && TransKeyMsg(keyflags, mp2, &keyval)) {
+	   /* looping through repeat count - break into multiple events */
+	   for (i = 0; i < (int)CHAR3FROMMP(mp1); i++)
+	      WinPostQueueMsg(HInterpMessageQueue, KEY_PRESS, (MPARAM)ws,
+			      (MPARAM)keyval);
+	   return (MRESULT)TRUE;  /* return that we have processed it */
+	   }
+	return (MRESULT)FALSE;	/* ignored */
+
+      case WM_MOUSEMOVE:
+	 icon_event = (UCHAR)((drag_state[0]) ? MOUSELEFTDRAG :
+		      (drag_state[1]) ? MOUSERIGHTDRAG :
+		      (drag_state[2]) ? MOUSEMIDDRAG : 0);
+	 /*
+	  * combine the event with the control flags, if we have an event
+	  */
+	 if (icon_event) {
+	    keyflags = SHORT2FROMMP(mp2);
+	    icon_event |= (keyflags & KC_CTRL) ? ControlMask : 0;
+	    icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	    icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	    WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			    (MPARAM)icon_event);
+	    }
+	 /*
+	  * have to change the cursor based on selected pointer
+	  */
+	 return (MRESULT)WinSetPointer(HWND_DESKTOP, ws->hPointer);
+
+      /*
+       * start the drag
+       */
+      case WM_BUTTON3MOTIONSTART:
+	 button_num++;
+      case WM_BUTTON2MOTIONSTART:
+	 button_num++;
+      case WM_BUTTON1MOTIONSTART:
+	 drag_state[button_num] = 1;
+	 WinSetCapture(HWND_DESKTOP, hwnd);
+	 return (MRESULT)TRUE;
+
+      /*
+       * end the drag
+       */
+      case WM_BUTTON3MOTIONEND:
+	 button_num++;
+      case WM_BUTTON2MOTIONEND:
+	 button_num++;
+      case WM_BUTTON1MOTIONEND:
+	 drag_state[button_num] = 0;
+	 WinSetCapture(HWND_DESKTOP, NULLHANDLE);
+	 return (MRESULT)TRUE;
+
+      case WM_BUTTON1DOWN:
+	 /*
+	  * combine the event with the control flags
+	  */
+	 keyflags = SHORT2FROMMP(mp2);
+	 icon_event = (UCHAR)MOUSELEFT | ((keyflags & KC_CTRL) ? ControlMask : 0);
+	 icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	 icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	 WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			 (MPARAM)icon_event);
+	 WinSetActiveWindow(HWND_DESKTOP, hwnd);
+	 return (MRESULT)TRUE;
+
+      case WM_BUTTON2DOWN:
+	 /*
+	  * combine the event with the control flags
+	  */
+	 keyflags = SHORT2FROMMP(mp2);
+	 icon_event = (UCHAR)MOUSERIGHT | ((keyflags & KC_CTRL) ? ControlMask : 0);
+	 icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	 icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	 WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			(MPARAM)icon_event);
+	 WinSetActiveWindow(HWND_DESKTOP, hwnd);
+	 return (MRESULT)TRUE;
+
+      case WM_BUTTON3DOWN:
+	 /*
+	  * combine the event with the control flags
+	  */
+	 keyflags = SHORT2FROMMP(mp2);
+	 icon_event = (UCHAR)MOUSEMID | ((keyflags & KC_CTRL) ? ControlMask : 0);
+	 icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	 icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	 WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			 (MPARAM)icon_event);
+	 WinSetActiveWindow(HWND_DESKTOP, hwnd);
+	 return (MRESULT)TRUE;
+
+      case WM_BUTTON1UP:
+	 /*
+	  * combine the event with the control flags
+	  */
+	 keyflags = SHORT2FROMMP(mp2);
+	 icon_event = (UCHAR)MOUSELEFTUP | ((keyflags & KC_CTRL) ? ControlMask : 0);
+	 icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	 icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	 WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			  (MPARAM)icon_event);
+	 return (MRESULT)TRUE;
+
+      case WM_BUTTON2UP:
+	 /*
+	  * combine the event with the control flags
+	  */
+	 keyflags = SHORT2FROMMP(mp2);
+	 icon_event = (UCHAR)MOUSERIGHTUP | ((keyflags & KC_CTRL) ? ControlMask : 0);
+	 icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	 icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	 WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			 (MPARAM)icon_event);
+	 return (MRESULT)TRUE;
+
+      case WM_BUTTON3UP:
+	 /*
+	  * combine the event with the control flags
+	  */
+	 keyflags = SHORT2FROMMP(mp2);
+	 icon_event = (UCHAR)MOUSEMIDUP | ((keyflags & KC_CTRL) ? ControlMask : 0);
+	 icon_event |= (keyflags & KC_ALT) ? Mod1Mask : 0;
+	 icon_event |= (keyflags & KC_SHIFT) ? ShiftMask : 0;
+	 WinPostQueueMsg(HInterpMessageQueue, MOUSE_EVENT, (MPARAM)ws,
+			 (MPARAM)icon_event);
+	 return (MRESULT)TRUE;
+
+      case WM_SETFOCUS:
+	 TimedMutexOn(ws, "WM_SETFOCUS");
+	 /*
+	  * we have the cursor on, do the right thing
+	  */
+	 if (ISCURSORONW(ws)) {
+	    /*
+	     * receiving focus, make the cursor
+	     */
+	    if (SHORT1FROMMP(mp2)) {
+	       WinCreateCursor(ws->hwnd, ws->cursInfo.x, ws->cursInfo.y,
+			       ws->cursInfo.cx, ws->cursInfo.cy,
+			       CURSOR_FLASH, NULL);
+	       WinShowCursor(ws->hwnd, 1);
+	       }
+	    /* losing focus.. good bye cursor */
+	    else WinDestroyCursor(ws->hwnd);
+	    }
+	  MutexOff(ws);
+	  return (MRESULT)FALSE;
+
+      case WM_CLOSE:
+	 /*
+	  * send the quit to the interp thread
+	  */
+	 WinPostQueueMsg(HInterpMessageQueue, REQUEST_SHUTDOWN, 0, 0);
+	 /*
+	  * send ourselves the quit
+	  */
+	 WinPostQueueMsg(HMainMessageQueue, WM_QUIT, (MPARAM)0, (MPARAM)0);
+	 return (MRESULT)FALSE;
+
+      default:;
+      }
+    }
+   return WinDefWindowProc(hwnd, msg, mp1, mp2);
+   }
+
+/*
+ * OpenConsole
+ */
+FILE *OpenConsole()
+   {
+   struct descrip attrs[4];
+   int eindx;
+
+   if (!ConsoleBinding) {
+      tended struct b_list *hp;
+      tended struct b_lelem *bp;
+      /*
+       * allocate an empty event queue
+       */
+      hp = alclist(0);
+      bp = alclstb(MinListSlots, (word)0, 0);
+      hp->listhead = hp->listtail = (union block *)bp;
+      bp->listprev = bp->listnext = (union block *)hp;
+
+      /*
+       * build the attribute list
+       */
+      StrLoc(attrs[0]) = "cursor=on";
+      StrLen(attrs[0]) = strlen("cursor=on");
+      StrLoc(attrs[1]) = "rows=24";
+      StrLen(attrs[1]) = strlen("rows=24");
+      StrLoc(attrs[2]) = "columns=80";
+      StrLen(attrs[2]) = strlen("columns=80");
+
+      StrLoc(attrs[3]) = "reverse=on";
+      StrLen(attrs[3]) = strlen("reverse=on");
+
+      ConsoleBinding = wopen("Console", hp, attrs, 4, &eindx);
+      /* make sure we are overpainting the background */
+      UnsetCharContext(((wbp)ConsoleBinding)->context);
+      ((wbp)ConsoleBinding)->context->charBundle.usBackMixMode = BM_OVERPAINT;
+      ((wbp)ConsoleBinding)->context->charBundle.usMixMode = FM_OVERPAINT;
+      }
+   return ConsoleBinding;
+   }
+
+/*
+ * ParseRGBValue - call parsecolor(), convert from 16-bit to 8-bit colors,
+ *  and return a PM-style 32-bit RGB spec.
+ */
+LONG ParseRGBValue(char *buf,double gamma)
+   {
+   int r, g, b;
+
+   if (parsecolor((wbp)NULL, buf, &r, &g, &b) == Error) return -1;
+/* Apply GAMMA Correction */
+   r = 65535 * pow(r/65535.0,gamma);
+   g = 65535 * pow(g/65535.0,gamma);
+   b = 65535 * pow(b/65535.0,gamma);
+   RGB16TO8(r); RGB16TO8(g); RGB16TO8(b);
+   return MAKERGB(r, g, b);
+   }
+
+/*
+ * PMfprintf, PMputc - replaced by Consolefprintf, Consoleputc in rwindow.r
+ * (I also added a printf and an fflush for consoles).
+ */
+
+void PMStartup(void);
+static int PMInited = 0;
+void PMInitialize(void)
+{
+   ULONG htype, flags, tmp;
+   if (PMInited) return;
+
+   /*
+    * set the flags for I/O redirection
+    */
+   DosQueryHType(0, &htype, &flags);
+   ConsoleFlags |= (htype != 1) ? StdInRedirect : 0;
+   DosQueryHType(1, &htype, &flags);
+   ConsoleFlags |= (htype != 1) ? StdOutRedirect : 0;
+   DosQueryHType(2, &htype, &flags);
+   ConsoleFlags |= (htype != 1) ? StdErrRedirect : 0;
+
+   /*
+    * get the anchor block
+    */
+   HInterpAnchorBlock = WinInitialize(0);
+   HInterpMessageQueue = WinCreateMsgQueue(HInterpAnchorBlock,MAXMSGS);
+   DosCreateEventSem(NULL, &HSyncEventSem1, 0, 0);
+   DosCreateEventSem(NULL, &HSyncEventSem2, 0, 0);
+
+   /*
+    * allocate the event semaphore we'll use to synch with child thread on
+    * close.
+    */
+    /* initialize PM and startup interp thread */
+    _beginthread(PMStartup,NULL,THREADSTACKSIZE,NULL);
+
+    /* Wait for the PM side to finish setting up */
+    DosWaitEventSem(HSyncEventSem1,-1);
+
+   PMInited = 1;
+
+}
+/*
+ *  InterpThreadShutdown - shutdown the interpreter thread by synching with
+ *			   the primary
+ */
+void InterpThreadShutdown()
+{
+  HMQ hmsgq;
+
+  /* tell 'dad' to go on and destroy the windows */
+  DosPostEventSem(HSyncEventSem1);
+
+  /* wait for him to finish so we can remove all resources we created */
+  DosWaitEventSem(HSyncEventSem2, 10000);
+
+  /* free all the bindings */
+  while (wbndngs) free_binding(wbndngs);
+
+  /* knock out the handle to our message queue and axe our link */
+  WinDestroyMsgQueue(HInterpMessageQueue);
+
+  /* done with anything to do with PM now */
+  WinTerminate(HInterpAnchorBlock);
+
+   /* free the event semaphores */
+   DosCloseEventSem(HSyncEventSem1);
+   DosCloseEventSem(HSyncEventSem2);
+
+  PMInited = 0;
+} /* End of InterpThreadShutdown */
+/*
+ * PMStartup - This function initializes PM structures (anchor block,
+ *  message queue, etc), starts up the secondary interpreter
+ *  thread and locks thread 1 into retrieving messages and
+ *  dispatching them.
+ *  Since a window is tied to the thread that created it, window
+ *  creation forms a request from the second (interp) thread to
+ *  the first (main) thread.  A window is created and a handle
+ *  to it is passed through the second (interp) thread's queue.
+ */
+void PMStartup(void)
+   {
+   QMSG qmsg;
+   ULONG frame_flags = 0;
+   HWND hwnd, client;
+   HDC hdc;
+   wsp ws;
+   ULONG htype, flags, tmp;
+   static int createwindowid = 0;
+   static int destroywindowid = 0;
+
+
+   /*
+    * build a message queue - queue up more than the default
+    */
+   HMainMessageQueue = WinCreateMsgQueue(HMainAnchorBlock, MAXMSGS);
+
+   /*
+    * register a window class - extra bytes to store pointer to wstate
+    */
+   WinRegisterClass(HMainAnchorBlock, "XIconPM", MainWndProc,
+		    CS_MOVENOTIFY, sizeof(wsp));
+
+   /*
+    * load some device capabilities
+    */
+   hdc = DevOpenDC(HMainAnchorBlock, OD_MEMORY, "*", 0, NULL, NULLHANDLE);
+
+   /*
+    * get device resolutions used to select image fonts
+    */
+   DevQueryCaps(hdc, CAPS_HORIZONTAL_FONT_RES, 1, &FontResX);
+   DevQueryCaps(hdc, CAPS_VERTICAL_FONT_RES, 1, &FontResY);
+
+   /*
+    * calculate the default font size - for now, a constant
+    */
+   DefFontSize = 13;
+
+   /*
+    * load the display resolutions
+    */
+   DevQueryCaps(hdc, CAPS_WIDTH, 1, &ScreenWidth);
+   DevQueryCaps(hdc, CAPS_HEIGHT, 1, &ScreenHeight);
+
+   /*
+    * load the max color table index
+    */
+   DevQueryCaps(hdc, CAPS_COLOR_INDEX, 1, &MaxPSColors);
+
+   /*
+    * bump up the max index by one to get the max number of colors
+    */
+   MaxPSColors++;
+
+   /*
+    * load the bits per pel
+    */
+   DevQueryCaps(hdc, CAPS_COLOR_BITCOUNT, 1, &ScreenBitsPerPel);
+   DevCloseDC(hdc);
+
+   /*
+    * initialize the global color table
+    */
+   InitializeColorTable();
+
+   /*
+    * initialize the id table
+    */
+   InitializeIdTable();
+
+   /*
+    * frame flags for new window
+    */
+   frame_flags = FCF_STANDARD & ~FCF_ICON & ~FCF_MENU & ~FCF_ACCELTABLE;
+   DosPostEventSem(HSyncEventSem1);
+   /*
+    * start processing messages
+    */
+   while (WinGetMsg(HMainAnchorBlock, &qmsg, 0, 0, 0)) {
+      if (qmsg.hwnd == NULLHANDLE) {
+	 /*
+	  * If the message wasn't a window event, it was from the interpreter.
+	  *  Handle the message from the other thread
+	  */
+	 if (qmsg.msg == REQUEST_WINDOW) {
+	    /* if we have already seen this request, ignore */
+	    if ((int)(qmsg.mp2) < createwindowid) continue;
+
+	    /* XXX parameter 2 will have the special flags for the new window*/
+
+	    /*
+	     * build the window
+	     */
+	    /* XXX perhaps make it synchronous paint */
+	    hwnd = WinCreateStdWindow(HWND_DESKTOP, 0UL,
+				      &frame_flags, "XIconPM", "",
+				      0UL, NULLHANDLE, 256, &client);
+	    /*
+	     * message param 1 has a pointer to the window state, set that now
+	     */
+	    WinSetWindowULong(client, QWL_USER, (ULONG)qmsg.mp1);
+	    WinSetWindowULong(hwnd, QWL_USER, (ULONG)0);
+	    /*
+	     * post a reply
+	     */
+	    WinPostQueueMsg(HInterpMessageQueue, NEW_WINDOW, (MPARAM)client,
+			    (MPARAM)hwnd);
+	    /* update the id of the next request we are expecting */
+	    createwindowid = (int)(qmsg.mp2) + 1;
+	    }
+	 else if (qmsg.msg == REQUEST_DESTROY) {
+	    /* if we have already seen this request, ignore */
+	    if ((int)(qmsg.mp2) < destroywindowid) continue;
+
+	    ws = (wsp)qmsg.mp1;
+	    WinDestroyWindow(ws->hwndFrame);
+	    /*
+	     * tell the secondary thread to remove the window structures
+	     */
+	    WinPostQueueMsg(HInterpMessageQueue, DESTROYED_WINDOW, qmsg.mp1,0);
+	    /* update the id of the next request we are expecting */
+	    destroywindowid = (int)(qmsg.mp2) + 1;
+	    }
+	 }
+      else WinDispatchMsg(HMainAnchorBlock, &qmsg);
+      }
+   /*
+    * destroy any remaining windows and free whatever memory we allocated
+    */
+   for (ws = wstates; ws; ws = ws->next)
+      if (ws->hwndFrame) {
+	 GpiDestroyPS(ws->hpsWin);
+	 ws->hpsWin = NULLHANDLE;
+	 WinDestroyWindow(ws->hwndFrame);
+	 ws->hdcWin = ws->hwndFrame = ws->hwnd = NULLHANDLE;
+	 }
+
+   free(ColorTable);
+   free(LocalIds);
+
+   WinDestroyMsgQueue(HMainMessageQueue);
+
+   /*
+    * release PM access
+    */
+   WinTerminate(HMainAnchorBlock);
+
+   /* let the interp thread do its housekeeping */
+   DosPostEventSem(HSyncEventSem2);
+
+   _endthread();
+   }
+
+/*
+ *
+ * ReleaseColor - decrements the reference count of the color, if last one,
+ *  the color entry is returned to the free pool.
+ */
+void ReleaseColor(LONG indx)
+   {
+   colorEntry *ptr;
+
+   if (indx >= 0 && indx < MaxPSColors && (ColorTable[indx].bits & CLR_USED) &&
+       !(ColorTable[indx].bits & CLR_LOCKED) &&
+       --ColorTable[indx].refcount < 1) {
+      ptr = &ColorTable[indx];
+      /*
+       * knock out bits and count
+       */
+      ptr->bits = 0;
+      ptr->refcount = 0;
+      /* free the color name (if avail) */
+      if (ptr->name) free(ptr->name);
+      /*
+       * remove from used list
+       */
+      if (ptr->next) ptr->next->previous = ptr->previous;
+      if (ptr->previous) ptr->previous->next = ptr->next;
+      else UsedCEntries = ptr->next;
+      /*
+       * place on the free list
+       */
+      if (FreeCEntries) FreeCEntries->previous = ptr;
+      ptr->next = FreeCEntries;
+      ptr->previous = NULL;
+      FreeCEntries = ptr;
+      }
+   }
+
+/*
+ * AllocateLocalID
+ */
+static lclIdentifier *AllocateLocalID()
+   {
+   lclIdentifier *tmp;
+   if (tmp = FreeIdEntries) {
+      FreeIdEntries = tmp->next;
+      if (FreeIdEntries) FreeIdEntries->previous = NULL;
+      memset(tmp, 0, sizeof(lclIdentifier));
+      tmp->refcount = 1;
+      }
+   return tmp;
+   }
+
+/*
+ * ReleaseLocalId(id) - a lazy release. id is presentation-space relative
+ */
+void ReleaseLocalId(LONG id)
+   {
+   LONG newid;
+   lclIdentifier *ptr, *fptr;
+
+   newid = id - 1;
+   /*
+    * If an id is within range and an element needs to be removed...
+    */
+   if (newid >= 0 && newid < MAXLOCALS && --LocalIds[newid].refcount < 1) {
+      /*
+       * quick access
+       */
+      ptr = &LocalIds[newid];
+
+      /*
+       * go change all the PSes
+       */
+      RippleLocalIdRemoval(id);
+
+      /*
+       * free info and begin removal from list
+       */
+      if (ptr->idtype & IS_PATTERN) {	/* if its a pattern */
+	 GpiDeleteBitmap(ptr->u.hpat);
+	 if (ptr->previous == NULL) PatIdEntries = ptr->next;
+      }
+      else if (ptr->idtype & IS_FONT)
+	 if (ptr->previous == NULL) FontIdEntries = ptr->next;
+
+      /*
+       * finish removal
+       */
+      if (ptr->previous) ptr->previous->next = ptr->next;
+      if (ptr->next) ptr->next->previous = ptr->previous;
+
+      /*
+       * put on the end of the free list
+       */
+      if (FreeIdEntries) {
+	for( fptr = FreeIdEntries; fptr->next; fptr = fptr->next);
+	fptr->next = ptr;
+	ptr->previous = fptr;
+	ptr->next = NULL;
+      }
+      else {
+	FreeIdEntries = ptr;
+	ptr->previous = ptr->next = NULL;
+      }
+    }
+}
+
+/*
+ * ResizeBackingBitmap - Makes the bitmap at least as big as the passed
+ *  in dimensions.
+ */
+void ResizeBackingBitmap(wsp ws, SHORT cx, SHORT cy)
+   {
+   HPS hpsMem = ws->hpsBitmap;
+   HBITMAP hbm, hbmOld;
+   LONG alData[2];
+   BITMAPINFOHEADER2 bmp;
+   POINTL pt;
+   HRGN hsave, hscrap;
+   AREABUNDLE abundle;
+   POINTL pts[2];
+
+   /*
+    * if the bitmap is large enough, just return
+    */
+   if (cx <= ws->pixwidth && cy <= ws->pixheight) return;
+   /*
+    * take the clip region off
+    */
+   GpiSetClipRegion(hpsMem, NULLHANDLE, &hsave);
+   /*
+    * find out about formats  (plane/bit count)
+    */
+   GpiQueryDeviceBitmapFormats(hpsMem, 2, alData);
+   /*
+    * etake the old bitmap out - if there was one
+    */
+   hbmOld = GpiSetBitmap(hpsMem, NULLHANDLE);
+   /*
+    * build the bitmap header
+    */
+   memset(&bmp, 0, sizeof(BITMAPINFOHEADER2));
+   bmp.cbFix = sizeof(BITMAPINFOHEADER2);
+   bmp.cx = max(cx, ws->pixwidth);
+   bmp.cy = max(cy, ws->pixheight);
+   bmp.cPlanes = alData[0];
+   bmp.cBitCount = alData[1];
+
+   /*
+    * build the bitmap
+    */
+   if (!(ws->hBitmap = GpiCreateBitmap(hpsMem, &bmp, 0, NULL, NULL)))
+      Bomb("Couldn't build a backing bitmap", NULL);
+   /*
+    * select into the bitmap presentation space
+    */
+   GpiSetBitmap(hpsMem, ws->hBitmap);
+   /*
+    * clear the background with the appropriate color
+    */
+   memset(&abundle, 0, sizeof(AREABUNDLE));   /* clear out the bundle */
+   abundle.lColor = ws->winbg;
+   /*
+    * set up the rectangle values
+    */
+   pt.x = pt.y = 0;
+   GpiMove(hpsMem, &pt);
+   pt.x = bmp.cx;
+   pt.y = bmp.cy;
+   /*
+    * knock out the context currently selected
+    */
+   ws->areaContext = NULL;
+   /*
+    * clear area using window background color
+    */
+   GpiSetAttrs(hpsMem, PRIM_AREA, ABB_COLOR, ABB_SYMBOL | ABB_SET, &abundle);
+   GpiBox(hpsMem, DRO_FILL, &pt, 0, 0);
+   /*
+    * if an old bitmap exists, copy over the information from it
+    */
+   if (hbmOld) {
+      pt.x = 0;
+      pt.y = bmp.cy - ws->pixheight;
+      WinDrawBitmap(hpsMem, hbmOld, NULL, &pt, CLR_BLACK, CLR_WHITE,
+		    DBM_NORMAL);
+      /*
+       * destroy the old bitmap
+       */
+      GpiDeleteBitmap(hbmOld);
+      }
+   else if (ws->hInitialBitmap) {
+      pt.x = 0;
+      pt.y = 0;
+      WinDrawBitmap(hpsMem, ws->hInitialBitmap, NULL, &pt,
+		    CLR_BLACK, CLR_WHITE, DBM_NORMAL);
+      /* XXX could probably get rid of the initial bitmap here */
+      }
+   /*
+    * update the dimensions
+    */
+   ws->pixwidth = bmp.cx;
+   ws->pixheight = bmp.cy;
+   /*
+    * put the clip region back on
+    */
+   GpiSetClipRegion(hpsMem, hsave, &hscrap);
+   }
+
+
+/*
+ * RippleColorAddition() - adds a color to all presentation spaces.
+ *  Parameters - the index of the color to 'ripple'
+ */
+static void RippleColorAddition(LONG indx)
+   {
+   wsp ws;
+   LONG map[2];
+
+   map[0] = indx;
+   map[1] = (LONG)ColorTable[indx].rgb;
+   for (ws = wstates; ws; ws = ws->next) {
+      MutexOn(ws);
+      /*
+       * add the rgb-index mapping (color entry) to each PS
+       */
+      RENDER5(GpiCreateLogColorTable, 0, LCOLF_INDRGB, 0, 2, map);
+      MutexOff(ws);
+      }
+   }
+
+/*
+ * RuntimeErrorDlgProc - callback for runtime error dialog box
+ */
+MRESULT_N_EXPENTRY RuntimeErrorDlgProc(HWND hwnd, ULONG msg,
+				     MPARAM mp1, MPARAM mp2)
+{
+   HWND hwndMLE;
+   int extent;
+
+   switch (msg) {
+   case WM_INITDLG:
+      sprintf(ConsoleStringBuf, "%d", k_errornumber);
+      WinSetDlgItemText(hwnd, DID_ERRNO, ConsoleStringBuf);
+      WinSetDlgItemText(hwnd, DID_FILE, findfile(ipc.opnd));
+      sprintf(ConsoleStringBuf, "%d", (long)findline(ipc.opnd));
+      WinSetDlgItemText(hwnd, DID_LINE, ConsoleStringBuf);
+      WinSetDlgItemText(hwnd, DID_MSG, k_errortext);
+      /* make sure our output goes to the buffer */
+      ConsoleFlags |= OutputToBuf;
+      /* just in case someone has changed it */
+      ConsoleStringBufPtr = ConsoleStringBuf;
+      if (have_errval) {
+	outimage(stderr, &k_errorvalue, 0);
+	WinSetDlgItemText(hwnd, DID_OFFEND, ConsoleStringBuf);
+	} /* End of if - have an offending value to display */
+      else WinSetDlgItemText(hwnd, DID_OFFEND, "?");
+      if (debug_info && pfp) {
+	hwndMLE = WinWindowFromID(hwnd, DID_TRACE);
+	tracebk(NULL, argp, hwndMLE);
+	} /* End of if - info and not startup problem */
+      /* reset */
+      ConsoleFlags &= ~OutputToBuf;
+      break;
+   case WM_COMMAND:
+      WinDismissDlg(hwnd, 1);
+      break;
+   default:
+     break;
+   } /* endswitch */
+   return WinDefDlgProc(hwnd, msg, mp1, mp2);
+} /* End of RuntimeErrorDlgProc */
+
+/*
+ * RippleLocalIdAddition
+ *  Parameters - assume id is presentation space relative id and valid
+ */
+static void RippleLocalIdAddition(wcp wc, LONG id)
+   {
+   wsp ws;
+   int i;
+   int num;
+   num = wc->numDeps;
+   for (i = 0; i < wc->maxDeps && num > 0; i++)
+      if (ws = wc->depWindows[i]) {
+	 num--;
+	 AddLocalIdToWindow(ws, id);
+	 } /* End of if - found a dependant */
+   }
+
+/*
+ * RippleLocalIdRemoval
+ *  Parameters - assumes id is index with respect to presentation space
+ */
+static void RippleLocalIdRemoval(LONG id)
+   {
+   wsp ws;
+
+   for (ws = wstates; ws; ws = ws->next) {
+      MutexOn(ws);
+      RENDER1(GpiDeleteSetId, id);
+      MutexOff(ws);
+      }
+   }
+
+
+/*
+ * SetClipContext
+ */
+void SetClipContext(wbp w, wsp ws, wcp wc)
+   {
+   HRGN hscrap;
+   RECTL rect;
+   int diff;
+
+   /*
+    * If this context is not already loaded
+    */
+   if (ws->clipContext != wc) {
+      ws->hClipBitmap = ws->hClipWindow = NULLHANDLE;
+
+      /*
+       * if clip is even set
+       */
+      if (wc->cliph > 0 || wc->clipw > 0 ||
+	  wc->clipx > 0 || wc->clipy > 0 ) {
+	 rect.xLeft = wc->clipx;
+	 rect.xRight = (wc->clipw) ? wc->clipx + wc->clipw : ws->width;
+	 rect.yTop = ws->pixheight - wc->clipy;
+	 rect.yBottom = (wc->cliph) ? rect.yTop - wc->cliph : 0;
+	 ws->hClipBitmap = GpiCreateRegion(ws->hpsBitmap, 1, &rect);
+	 if (ws->hpsWin) {
+	    diff = ws->pixheight - ws->height;
+	    rect.yTop -= diff;
+	    rect.yBottom -= diff;
+	    ws->hClipWindow = GpiCreateRegion(ws->hpsWin, 1, &rect);
+	    }
+	 }
+      GpiSetClipRegion(ws->hpsBitmap, ws->hClipBitmap, &hscrap);
+      GpiDestroyRegion(ws->hpsBitmap, hscrap);
+      if (ws->hpsWin) {
+	 GpiSetClipRegion(ws->hpsWin, ws->hClipWindow, &hscrap);
+	 GpiDestroyRegion(ws->hpsWin, hscrap);
+	 }
+      /*
+       * Install the newly-loaded context
+       */
+      ws->clipContext = wc;
+      }
+   }
+
+static FONTMETRICS afm[20];
+
+int fontcompare(char *f1, char *f2)
+{
+    char *n1, *n2;
+    char *s1, *s2;
+    int nl1, nl2;
+
+    n1 = strchr(f1,',');
+    n2 = strchr(f2,',');
+    if (n1) nl1 = n1 - f1;
+    else nl1 = strlen(f1);
+    if (n2) nl2 = n2 - f2;
+    else nl2 = strlen(f2);
+    s1 = n1 + 1;
+    s2 = n2 + 1;
+
+    /* Compare the face names first */
+    if (nl2 >= nl1 ) {
+	if (nl2 == nl1) {
+	 if (strnicmp(f1,f2,nl1)) return 0;
+	}
+	if (nl2 > nl1) {
+	    if (strnicmp(f1,f2,nl1) || strcmpi(f2+nl1," Non-ISO"))
+		return 0;
+	}
+    }
+    else     return 0;
+
+    if (n1 && n2 && strcmpi(s1,s2)) return 0;
+    if (n1 == NULL || n2 == NULL) return 0;
+
+    return 1;
+}
+/*
+ * LoadFont
+ *  Returns - the index of the font, PS relative
+ */
+int LoadFont(wbp wb, char *family, LONG attrs, ULONG fsize)
+   {
+
+   int rc;
+
+   lclIdentifier *ptr;
+   LONG newid;
+   SIZEF sizef;
+   HDC hdc;
+   char name1[128];
+   char name2[128];
+   char attstr[32];
+   FATTRS fat;
+   LONG cfonts;
+   LONG i;
+   int fwidth, fheight;
+   SIZEL size = {0, 0};
+   STDLOCALS(wb);
+
+   /*
+    * break out the selection attributes
+    */
+
+   if ((signed long)fsize < 0 ) fsize = DefFontSize;
+   i = fsize;
+   fsize = MAKEFNTSIZE(i,i);
+
+   fwidth = FNTWIDTH(fsize);
+   fheight = FNTHEIGHT(fsize);
+   attstr[0] = '\0';
+
+#ifndef CSET2
+#define FATTR_SEL_BOLD		    FM_SEL_BOLD
+#define FATTR_SEL_ITALIC	    FM_SEL_ITALIC
+#define FATTR_FONTUSE_OUTLINE	    FM_SEL_OUTLINE
+#define FATTR_FONTUSE_TRANSFORMABLE FM_SEL_ISO9241_TESTED
+#endif					/* CSET2 */
+
+   if (attrs & FONTFLAG_BOLD) strcat(attstr, " Bold");
+   if (attrs & FONTFLAG_ITALIC) strcat(attstr, " Italic");
+
+   /*
+    * build the name to search for
+    */
+   sizef.cx = MAKEFIXED(fwidth, 0);
+   sizef.cy = MAKEFIXED(fheight, 0);
+   sprintf(name1, "%s%s%s,%dx%d", family,
+    attrs & FONTFLAG_ITALIC ? ",Italic" : "",
+    attrs & FONTFLAG_BOLD   ? ",Bold"   : "",
+   fwidth, fheight);
+   /*
+    * search through font entries... - try to find matching name
+    */
+   for (ptr = FontIdEntries; ptr; ptr = ptr->next) {
+      newid = (ptr - LocalIds)+1;
+      GetFontName(newid, name2, 128);
+      if (fontcompare(name1, name2)) break;
+      }
+
+   /*
+    * if we found one, simply bump up the reference.  Else, make a new one.
+    */
+   if (ptr) {
+      AddFontDependant(newid);
+      }
+   else {
+      newid = (FreeIdEntries - LocalIds) + 1;
+      GpiDeleteSetId(stdwin,newid);
+      /*
+       * try to create a font
+       *
+       * build the font request
+       */
+      memset(&fat, 0, sizeof(FATTRS));
+      fat.usRecordLength = sizeof(FATTRS);
+      fat.fsFontUse = 0;
+
+      if (attrs & FONTFLAG_BOLD) fat.fsSelection |= FATTR_SEL_BOLD;
+      if (attrs & FONTFLAG_ITALIC) fat.fsSelection |= FATTR_SEL_ITALIC;
+
+
+      /*
+       * make the facename to look for
+       */
+      strcpy(fat.szFacename, family);
+      strcat(fat.szFacename,attstr);
+      fat.lMaxBaselineExt = fheight;
+      fat.lAveCharWidth   = fwidth;
+      fat.fsSelection = 0;
+      /*
+       * request the font
+       */
+
+      if (rc = GpiCreateLogFont(stdwin, NULL, newid, &fat) != FONT_MATCH) {
+
+	if ( rc != GPI_ERROR )
+	    GpiDeleteSetId(stdwin,newid);
+	 /*
+	  * couldn't get an outline font, try for an image
+	  */
+	 cfonts = 20;  /* maximum fonts to get info on */
+
+	 /*
+	  * notice we query the memory PS since it may have fewer fonts
+	  * than the display
+	  */
+	 GpiQueryFonts(stdwin, QF_PUBLIC, family, &cfonts,
+		       sizeof(FONTMETRICS), afm);
+
+/* XXX
+ *  this will cause a problem when trying to implement the WxH format -
+ *  seems that memory DCs only have one monospaced font per resolution
+ *  in the 32bit Graphics Enging (GA+SPP) - check back on this in OS/2 2.1
+ *  and see if the situation improves.	If not - checking for width and
+ *  height below is pretty much useless
+ */
+
+	 /* try to match one with the exact attributes */
+	 for (i = 0;
+	      i < cfonts &&
+	      (afm[i].sXDeviceRes != FontResX ||
+	       afm[i].sYDeviceRes != FontResY ||
+	       afm[i].lEmHeight != fheight ||
+	       afm[i].lMaxCharInc != fwidth ||
+	       strcmpi(afm[i].szFacename, fat.szFacename)); i++);
+
+	 /*
+	  * see if we got one
+	  */
+	 if (i >= cfonts) {
+	    /*
+	     * ok, didn't find an exact match, this time search for just
+	     * the height - go for broke
+	     */
+	    for (i = 0; i < cfonts && afm[i].lEmHeight > fheight; i++);
+
+	    /*
+	     * couldn't find an appropriate font - sorry charlie
+	     */
+	    if (i >= cfonts) return 0;
+	    /* else - we made it */
+	    }
+	 memset(&fat, 0, sizeof(FATTRS));
+	 fat.usRecordLength = sizeof(FATTRS);
+	 fat.lMatch = afm[i].lMatch;
+	 strcpy(fat.szFacename, afm[i].szFacename);
+
+	 /*
+	  * try once again to make the font
+	  */
+	 if (rc = GpiCreateLogFont(stdwin, NULL, newid, &fat) != FONT_MATCH) {
+	      if ( rc != GPI_ERROR ) GpiDeleteSetId(stdwin,newid);
+	      return 0;
+	 }
+      }
+
+      /*
+       * grab a new font node
+       */
+      if (!(ptr = AllocateLocalID())) return 0;
+      ptr->idtype = IS_FONT;
+
+      /*
+       * set the box on the presentation space - in case we have an outline
+       */
+      GpiSetCharBox(stdwin, &sizef);
+
+      /*
+       * set the new set
+       */
+      GpiSetCharSet(stdwin, newid);
+      GpiQueryFontMetrics(stdwin, sizeof(FONTMETRICS), &(ptr->u.font.metrics));
+      GpiDeleteSetId(stdwin,newid);
+
+      /*
+       * add this font to the font list
+       */
+      ptr->next = FontIdEntries;
+      if (FontIdEntries) FontIdEntries->previous = ptr;
+      ptr->previous = NULL;
+      FontIdEntries = ptr;
+      }
+
+   /*
+    * before we release the font, subtract out the leading
+    */
+   if (wc->font) wc->fntLeading -=
+       (wc->font->metrics.lMaxBaselineExt +
+	wc->font->metrics.lExternalLeading);
+   /*
+    * release the previous font
+    */
+   ReleaseFont(wc->charBundle.usSet);
+
+   /*
+    * Set the cell in case we got an outline font,
+    * the new character set,
+    * the new font, and
+    * our new leading.
+    */
+   wc->charBundle.sizfxCell = sizef;
+   wc->charBundle.usSet = newid;
+   wc->font = &(ptr->u.font);
+   wc->fntLeading += (wc->font->metrics.lMaxBaselineExt+
+		      wc->font->metrics.lExternalLeading);
+
+   /*
+    * ripple the change -> put this log font on all our wstate PSes
+    */
+   RippleLocalIdAddition(wc, newid);
+
+   /*
+    * unset us from everyone
+    */
+   UnsetCharContext(wc);
+   return 1;
+   }
+
+
+/*
+ * SetNewPattern
+ *  Returns - id of the newly created pattern or -1 on error.
+ */
+int SetNewBitPattern(wcp wc, PBYTE bits)
+   {
+   lclIdentifier *ptr;
+   int i;
+   SHORT id;
+   wsp ws;
+   HBITMAP hbm;
+   HDC hdcMem;
+   HPS hpsMem;
+   SIZEL size = {0, 0};
+   BITMAPINFOHEADER2 bmp;
+   PBITMAPINFO2 pbmi;
+   PRGB2 prgb;
+
+   /* XXX for now, each pattern will be separate */
+
+   /*
+    * try to find it first
+    */
+
+   /*
+    * grab a new local id
+    */
+   if (ptr = AllocateLocalID()) {
+      /*
+       * initialize some data
+       */
+      ptr->idtype = IS_PATTERN;
+      /*
+       * if there was a different stipple before destroy it
+       */
+      ReleasePattern(wc->currPattern);
+      /*
+       * make the bitmap for the pattern
+       *
+       * grab a memory DC
+       */
+      hdcMem = DevOpenDC(HInterpAnchorBlock, OD_MEMORY, "*", 0, NULL,
+			 NULLHANDLE);
+      /*
+       * make a presentation space
+       */
+      hpsMem = GpiCreatePS(HInterpAnchorBlock, hdcMem, &size, GPIT_MICRO |
+			   GPIA_ASSOC | PU_PELS);
+
+      /*
+       * initialize the bitmap structure
+       */
+      memset(&bmp, 0, sizeof(BITMAPINFOHEADER2));
+      bmp.cbFix = sizeof(BITMAPINFOHEADER2);
+      bmp.cPlanes = 1;
+      bmp.cBitCount = 1;
+      bmp.cx = bmp.cy = 8;
+
+      pbmi = (PBITMAPINFO2)calloc(1,sizeof(BITMAPINFO2) + (sizeof(RGB2) << 1));
+      pbmi->cbFix = bmp.cbFix;
+      pbmi->cx = pbmi->cy = 8;
+      pbmi->cPlanes = 1;
+      pbmi->cBitCount = 1;
+
+      /*
+       * set up the color info
+       */
+      prgb = (PRGB2)(pbmi->argbColor);
+      prgb[1].bBlue = prgb[1].bRed = prgb[1].bGreen = 255;  /* white */
+
+      /*
+       * build the bitmap
+       */
+      hbm = GpiCreateBitmap(hpsMem, &bmp, CBM_INIT, (PBYTE)bits, pbmi);
+
+      /*
+       * store the handle to the pattern bitmap
+       */
+      ptr->u.hpat = hbm;
+      /* shouldn't need this anymore ... */
+      free(pbmi);
+
+      /*
+       * dump the hps, then get rid of the dc
+       */
+      GpiAssociate(hpsMem, NULLHANDLE);
+      GpiDestroyPS(hpsMem);
+
+      DevCloseDC(hdcMem);
+
+      /*
+       * set the current stipple pattern
+       */
+      id = (ptr - LocalIds) + 1;
+      wc->currPattern = id;
+
+      /*
+       * if we are currently 'stippled', update the area bundle
+       */
+      if (!(wc->fillstyle & FS_SOLID)) {
+	 wc->areaBundle.usSet = id;
+	 wc->areaBundle.usSymbol = PATSYM_DEFAULT;
+
+	 UnsetAreaContext(wc);
+	 }
+
+      /*
+       * update all the PSes
+       */
+      RippleLocalIdAddition(wc, id);
+      /*
+       * add the pattern to the pattern list
+       */
+      ptr->next = PatIdEntries;
+      if (PatIdEntries) PatIdEntries->previous = ptr;
+      ptr->previous = NULL;
+      PatIdEntries = ptr;
+      return 1;
+      }
+   return 0;
+   }
+
+/*
+ * SetPattern
+ */
+int patbits[] = {
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFE,0xFF,0xEF,0xFF,0xFE,0xFF,0xEF,0xFF,
+  0x77,0xDD,0x77,0xDD,0x77,0xDD,0x77,0xDD,
+  0x55,0xAA,0x55,0xAA,0x55,0xAA,0x55,0xAA,
+  0x11,0x44,0x11,0x44,0x11,0x44,0x11,0x44,
+  0x01,0x00,0x10,0x00,0x01,0x00,0x10,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,
+  0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01,
+  0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0x00,
+  0x10,0x10,0x10,0xFF,0x10,0x10,0x10,0x10,
+  0x82,0x44,0x28,0x10,0x28,0x44,0x82,0x01,
+  0x0F,0x0F,0x0F,0x0F,0xF0,0xF0,0xF0,0xF0,
+  0x1B,0x18,0x81,0xB1,0x36,0x06,0x60,0x63,
+  0x02,0x02,0x05,0xF8,0x20,0x20,0x50,0x8F,
+  0x03,0x84,0x48,0x30,0x03,0x84,0x48,0x30,
+
+};
+/*
+ * pattern symbols
+ */
+stringint siPatternSyms2[] = {
+  {0,		16},
+  { "black",     0},
+  { "checkers",  12},
+  { "darkgray",  2},
+  { "diagonal",  8},
+  { "grains",    13},
+  { "gray",      3},
+  { "grid",      10},
+  { "horizontal",9},
+  { "lightgray", 4},
+  { "scales",    14},
+  { "trellis",   11},
+  { "vertical",  7},
+  { "verydark",  1},
+  { "verylight", 5},
+  { "waves",     15},
+  { "white",     6},
+};
+int SetPattern(wbp w, char *name, int len)
+   {
+   C_integer buf[64];
+   int symbol;
+   int width, nbits = 64;
+   STDLOCALS(w);
+
+   if (w->context->patternname != NULL)
+      free(w->context->patternname);
+   w->context->patternname = malloc(len+1);
+   strncpy(w->context->patternname, name, len);
+   w->context->patternname [ len ] = '\0';
+
+  /*
+   * If the pattern starts with a number it is a width , bits encoding
+   */
+  if ((len > 0) && ((name[0] == '#') || isdigit(name[0]))) {
+     if (parsepattern(name, len, &width, &nbits, buf) == Error)
+	ReturnErrNum(144, 0);
+     return SetPatternBits(w, width, buf, nbits);
+     }
+   /*
+    * find the symbol id
+    */
+   if ((symbol = si_s2i(siPatternSyms, w->context->patternname)) >= 0) {
+      /*
+       * release the previous pattern
+       */
+      ReleasePattern(wc->currPattern);
+      wc->currPattern = -symbol;
+      /*
+       * if we are currently stippled, change the bundle
+       */
+      if (!(wc->fillstyle & FS_SOLID)) {
+	 wc->areaBundle.usSet = LCID_DEFAULT;
+	 wc->areaBundle.usSymbol = symbol;
+	 UnsetAreaContext(wc);
+	 }
+      return Succeeded;
+      }
+   /*
+    * find the symbol id
+    */
+   if ((symbol = si_s2i(siPatternSyms2, w->context->patternname)) >= 0) {
+      return SetPatternBits(w,8,&patbits[ symbol * 8] ,8);
+      }
+   ReturnErrNum(144,0);
+   }
+
+int SetPatternBits(w, width, bits, nbits)
+wbp w;
+int width;
+C_integer *bits;
+int nbits;
+   {
+   int i, j, k, val, height;
+   BYTE data[32];
+   STDLOCALS(w);
+   /*
+    * zero out the bits
+    */
+   memset(data, 0, sizeof(data));
+   /*
+    * bitmaps are aligned on word (32bit) boundaries.  So, with an 8x8
+    * pattern, you need 32 bytes (1 bit per pel).
+    *
+    * fill in the bits, flipping over because of PM way of doing things.
+    * In PM, patterns *must* be 8x8.  if the user supplies fewer bits,
+    * we'll blow the pattern 'out' for them to fill in the remainder
+    */
+   for (i = 0, j = 28; i < nbits && j >= 0; j -= 4, i++) {
+      val = bits[i];
+      /*
+       * if they specified a smaller than 8 width, blow the pattern out
+       * to fill in the missing
+       */
+      data[j] = (BYTE)val;
+      if (width < 8)
+	 for (k = 0; k < (8 / width) + ((8 % width != 0) ? 0 : -1); k++)
+	    data[j] = (data[j] << width) | (BYTE)val;
+      }
+   /*
+    * have to blow out the height too - if j > 0, some left to do
+    */
+   for (k = 28; j >= 0; j -= 4, k -= 4)
+      data[j] = data[k];
+
+   /* this function will do all the work */
+   if (!SetNewBitPattern(w->context, data))
+      return Error;
+   return Succeeded;
+   }
+
+
+/*
+ * TransKeyMsg -
+ *  Parameters - the broken out flags, and the two identifying words
+ *  Returns - an icon event code equivalent or -1 if the event should
+ *	      be dropped
+ */
+int TransKeyMsg(USHORT flags, MPARAM mp, ULONG *keyval)
+   {
+   SHORT tmp;
+
+   /* set the key modifier flags */
+   *keyval = (flags & KC_CTRL) ? ControlMask : 0;
+   *keyval |= (flags & KC_ALT) ? Mod1Mask : 0;
+   *keyval |= (flags & KC_SHIFT) ? ShiftMask : 0;
+
+   if (flags & KC_VIRTUALKEY) {
+      switch(tmp = SHORT2FROMMP(mp)) {
+      case VK_F1: *keyval |= 65470; break;
+      case VK_F2: *keyval |= 65471; break;
+      case VK_F3: *keyval |= 65472; break;
+      case VK_F4: *keyval |= 65473; break;
+      case VK_F5: *keyval |= 65474; break;
+      case VK_F6: *keyval |= 65475; break;
+      case VK_F7: *keyval |= 65476; break;
+      case VK_F8: *keyval |= 65477; break;
+      case VK_F9: *keyval |= 65478; break;
+      case VK_F10: *keyval |= 65479; break;
+      case VK_F11: *keyval |= 65480; break;
+      case VK_F12: *keyval |= 65481; break;
+      case VK_LEFT: *keyval |= 65361; break;
+      case VK_UP: *keyval |= 65362; break;
+      case VK_RIGHT: *keyval |= 65363; break;
+      case VK_DOWN: *keyval |= 65364; break;
+      case VK_HOME: *keyval |= 65360; break;
+      case VK_PAGEUP: *keyval |= 65365; break;
+      case VK_END: *keyval |= 65367; break;
+      case VK_PAGEDOWN: *keyval |= 65366; break;
+      case VK_ALTGRAF: *keyval |= 0; break;
+      case VK_PAUSE: *keyval |= 65299; break;
+      case VK_PRINTSCRN: *keyval |= 65377; break;
+      case VK_SCRLLOCK: *keyval |= 65300; break;
+      case VK_NUMLOCK: *keyval |= 65407; break;
+      case VK_INSERT: *keyval |= 65379; break;
+      /* this is the control key going down by itself */
+      case VK_CTRL: return 0;
+      case VK_ESC:
+	/* ASCII value for escape is 27 */
+	*keyval |= 0x1B;
+	return 1;
+      case VK_DELETE:
+	/* ASCII value for delete is 16 */
+	*keyval |= 0x10;
+	return 1;
+      default:;
+	 }
+      /* see if we set the lower 16 bits */
+      if ((*keyval) & 0xFFFF) {
+	*keyval |= VirtKeyMask;
+	return 1;
+	} /* End of if - recognized virtual key */
+      }
+
+   /*
+    * make sure we don't get some garbage in the upper 8
+    */
+   tmp = (SHORT1FROMMP(mp) & 0xFF);
+   /*
+    * check for a control character (modify keycode if CTRL pressed)
+    */
+   if (((flags & KC_CHAR) || (flags & KC_CTRL)) && tmp > 0) {
+      *keyval |= (flags & KC_CTRL) ? tmp % 32 : tmp;
+      return 1;
+      }
+   /*
+    * drop everything else
+    */
+   return 0;
+   }
+
+
+/*
+ * UpdateCursorPos
+ */
+void UpdateCursorPos(wsp ws, wcp wc)
+   {
+   PCURSORINFO ptr;
+
+   if (ws->hpsWin) {
+      ptr = &(ws->cursInfo);
+      MutexOn(ws);
+      ptr->x = ws->x;
+      ptr->y = ws->height - ws->y ;
+      if (ISCURSORONW(ws) && ws->hwnd == WinQueryFocus(HWND_DESKTOP))
+	 WinCreateCursor(ws->hwnd, ptr->x, ptr->y, 0, 0, CURSOR_SETPOS, NULL);
+      MutexOff(ws);
+      }
+   }
+
+/*
+ * wopen
+ */
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
+   {
+   wbp wb;
+   wsp ws;
+   wcp wc;
+   char answer[128];
+   ULONG frame_flags = 0, showflags;
+   static HWND client;
+   QMSG qmsg;
+   HDC hdc;
+   POINTL pt;
+   HDC hdcMem;
+   HPS hps, hpsMem;
+   SIZEL size = { 0, 0 };
+   SHORT height, width, tmp;
+   int i;
+   tended struct b_list *tlp;
+   tended struct descrip attrrslt;
+   static windowid = 0;
+
+   tlp = lp;
+
+   /*
+    * allocate a binding, a window state, and a context
+    */
+   Protect(wb = alc_wbinding(), return NULL);
+   Protect(wb->window = alc_winstate(), { free_binding(wb); return NULL; });
+   Protect(wb->context = alc_context(wb), { free_binding(wb); return NULL; });
+   ws = wb->window;
+   ws->listp.dword = D_List;
+   BlkLoc(ws->listp) = (union block *)lp;
+   wc = wb->context;
+
+   /*
+    * add the context to the window's context pointer array, and
+    * add the window to the context's window pointer array
+    */
+   AddContextDep(ws, wc);
+   AddWindowDep(ws, wc);
+
+   /*
+    * make a mutex semaphore and grab it
+    */
+   DosCreateMutexSem(NULL, &(ws->mutex), 0, TRUE);
+
+   /*
+    * send the request for a new window to be made, and wait for a reply
+    */
+/* I wanted to do the simple two liner below.  However, it seems that there is
+   a bug in PM.  If the user is moving or sizing a window when this post happens,
+   the message is lost, even though WinPostQueueMsg reports no error (ie - says
+   it posted the event).  This causes the secondary thread (us) to block
+   indefinately waiting for a reply from thread 1 that will never come.
+   The workaround below solves this by polling our queue, waiting for the
+   response to come back.  If no response in 100 milliseconds, the request is
+   sent again.	The request for a new window is tagged with a window ID.  After
+   creating a window with a specific 'request ID', thread 1 ignores all requests
+   for window creations tagged with that ID (so our request won't be fullfilled
+   multiple times).
+   Yes, this is ugly, but it works.  Any better ideas?
+   I plan to report this behavior when I get a chance to write a little program
+   exhibiting the behavior.  However, since queue managment is being completely
+   rewritten for the next release (> 2.1), I doubt this will be fixed for me.
+   Oh, there'll be something like this in wclose as well.
+*/
+#if 0
+   /* ask for a new window */
+   WinPostQueueMsg(HMainMessageQueue, REQUEST_WINDOW, (MPARAM)ws, (MPARAM)0);
+   /* wait for our response from thread 1 */
+   WaitForEvent(NEW_WINDOW, &qmsg);
+#else					/* PM Bug?? */
+  qmsg.msg = 0;
+  for (;;) {
+     /* ask for a new window */
+     WinPostQueueMsg(HMainMessageQueue, REQUEST_WINDOW, (MPARAM)ws, (MPARAM)windowid);
+     /* look for our results (cross fingers) - this may never return (on close) */
+     ObtainEvents(NULL, NO_WAIT_EVT, NEW_WINDOW, &qmsg);
+     /* check out what we nabbed (if anything), if not what we want sleep for a bit */
+     if (qmsg.msg != NEW_WINDOW) DosSleep(100);
+     else break;
+     } /* End of for - infinite loop waiting for reply */
+   windowid++;
+#endif					/* PM Bug?? */
+
+   ws->hwnd = (HWND)qmsg.mp1;		/* mp1 is the client handle */
+   ws->hwndFrame = (HWND)qmsg.mp2;	/* mp2 is the frame window handle */
+   /*
+    * set the initial flag - first size message will clear the initial
+    */
+   SETINITIAL(wb);
+
+   /*
+    * get the device context for the window, and
+    * build a presentation space for the window
+    */
+   hdc = ws->hdcWin = WinOpenWindowDC(ws->hwnd);
+   ws->hpsWin = GpiCreatePS(HInterpAnchorBlock, hdc, &size,
+			    PU_PELS | GPIA_ASSOC | GPIT_MICRO);
+   /*
+    * setup the backing bitmap
+    */
+   hdcMem = ws->hdcBitmap = DevOpenDC(HInterpAnchorBlock, OD_MEMORY, "*", 0,
+				      NULL, NULLHANDLE);
+   hpsMem = ws->hpsBitmap = GpiCreatePS(HInterpAnchorBlock, hdcMem, &size,
+					PU_PELS | GPIA_ASSOC | GPIT_MICRO);
+   /*
+    * load the default attributes into the bundles in context
+    */
+   LoadDefAttrs(wb, ws, wc);
+
+   /* set the system pointer - copy it because we may have to destroy it */
+   ws->hPointer = WinQuerySysPointer(HWND_DESKTOP, SPTR_ARROW, TRUE);
+   ws->theCursor = SPTR_ARROW;
+
+   /*
+    * process the passed in attributes - by calling wattrib
+    */
+   for(i = 0; i < n; i++)
+      switch (wattrib(wb, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt,
+		      answer)) {
+      case Failed:
+	 DosReleaseMutexSem(ws->mutex);
+	 wclose(wb);
+	 return NULL;
+      case Error:
+	 DosReleaseMutexSem(ws->mutex);
+	 /* think of something to do here */
+	 break;
+	 }
+
+   /*
+    * set the title, defaulting to the "filename" supplied to open()
+    */
+   if (ws->windowlabel == NULL) ws->windowlabel = salloc(name);
+   WinSetWindowText(ws->hwndFrame,
+		    ((ws->winState & WS_MIN) ? ws->iconlabel :
+		     ws->windowlabel));
+   /*
+    * query system settings to find out size of borders and title bar -
+    * make the window the exact size the customer wanted (ie - size frame)
+    */
+   height = ws->height + TITLEHEIGHT + (BORDERHEIGHT << 1);
+   width = ws->width + (BORDERWIDTH << 1);
+
+   /*
+    * the window background is taken from the context background
+    */
+   ws->winbg = wc->areaBundle.lBackColor;
+
+   /*
+    * preload our contexts - only char context is really neede for the
+    * cursor display, but lets load them all for the fun of it
+    */
+
+   SetCharContext(wb, ws, wc);
+   SetLineContext(wb, ws, wc);
+   SetAreaContext(wb, ws, wc);
+   SetImageContext(wb, ws, wc);
+
+   MutexOff(ws);
+   ResizeBackingBitmap(ws, ws->width, ws->height);
+
+   /* size, make visible, place and bring the window to the top  */
+   showflags = SWP_SIZE | SWP_MOVE;
+
+   if (ws->winState & WS_MIN) showflags |= SWP_MINIMIZE;
+   else if(ws->winState & WS_MAX) showflags |= SWP_MAXIMIZE;
+
+   if (!(ws->winState & WS_HIDDEN)) showflags |= SWP_ZORDER | SWP_SHOW | SWP_ACTIVATE;
+
+   WinSetWindowPos(ws->hwndFrame, HWND_TOP,
+		   ws->posx, ScreenHeight - ws->posy - height,
+		   width, height, showflags);
+
+   return (FILE *)wb;
+   }
+
+/*
+ * wclose - make sure the window goes away - no questions asked
+ */
+int wclose(wbp w)
+   {
+   /*
+    * Ask primary to close the window for us
+    */
+   DestroyWindow(w->window);
+
+   free_binding(w);
+   return 1;
+   }
+
+/*
+ * write some text to both the window and the pixmap
+ */
+void xdis(w,s,n)
+register wbp w;
+char *s;
+int n;
+   {
+   POINTL pt;
+   STDLOCALS(w);
+
+   pollctr>>=1; pollctr++;
+
+   MutexOn(ws);
+   /*
+    * load the character context
+    */
+
+   SetCharContext(w, ws, wc);
+   /*
+    * fixup the current position
+    */
+   pt.x = ws->x;
+   /*
+    * draw to the window
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+      /*
+       * move the position, then draw the stuff on the window
+       */
+      pt.y = ws->height - (ws->y);
+      GpiCharStringAt(stdwin, &pt, n, s);
+      }
+   /*
+    * draw to the bitmap
+    */
+   pt.y = ws->pixheight - ws->y;
+   GpiCharStringAt(stdbit, &pt, n, s);
+   /*
+    * update the current position
+    */
+   GpiQueryCurrentPosition(stdbit, &pt);
+   ws->x = pt.x;
+   ws->y = ws->pixheight - pt.y;
+
+   MutexOff(ws);
+   }
+/*
+ * wputc
+ */
+int wputc(int ci, wbp wb)
+   {
+   char c = (char)ci;
+   POINTL pt, pt2;
+   HPS hps, hpsb;
+   wsp ws;
+   POINTL pts[3];
+   int diff;
+   wcp wc;
+   int scrollamt;
+   FONTMETRICS *metrics;
+
+
+   wc = wb->context;
+   ws = wb->window;
+   hps = ws->hpsWin;
+   hpsb = ws->hpsBitmap;
+
+   /*
+    * turn off the cursor
+    */
+   hidecrsr(ws);
+   switch (c) {
+   case '\n':
+
+      MutexOn(ws);
+      /*
+       * load the current character context
+       */
+      SetCharContext(wb, ws, wc);
+      metrics = &(wc->font->metrics);
+      /*
+       * check if we need to clear to end of line
+       */
+      if (ISCEOLON(wb)) {
+	pts[0].x = 0;
+	pts[0].y = ws->height - (ws->y + metrics->lMaxDescender);
+	pts[1].x = ws->width;
+	pts[1].y = pts[0].y - metrics->lMaxBaselineExt;
+	WinFillRect(hps, (PRECTL)pts, ws->winbg);
+	pts[0].y = ws->pixheight - (ws->y + metrics->lMaxDescender);
+	pts[1].y = pts[0].y + metrics->lMaxBaselineExt;
+	WinFillRect(hpsb, (PRECTL)pts, ws->winbg);
+	}
+
+      /*
+       * if at the end of the window (currpos.y - height < 0)
+       */
+/* CCW
+      scrollamt = metrics->lMaxDescender + wc->fntLeading +
+		  metrics->lMaxBaselineExt + ws->y + wc->dy - ws->height;
+*/
+      scrollamt = wc->fntLeading + ws->y - ws->height;
+
+      if (scrollamt > 0) {
+	 /*
+	  * common calculation done once
+	  */
+	 diff = ws->pixheight - ws->height;
+	 /*
+	  * determine the points for the region to be scrolled
+	  */
+	 pts[0].x = 0;
+	 pts[0].y = diff + scrollamt;
+	 pts[1].x = ws->width;
+	 pts[1].y = ws->pixheight;
+	 pts[2].x = 0;
+	 pts[2].y =  diff;
+	 /*
+	  * move a portion of the bitmap 'up'
+	  */
+	 GpiBitBlt(ws->hpsBitmap, ws->hpsBitmap, 3, pts, ROP_SRCCOPY, 0UL);
+	 /*
+	  * paint over the exposed area - make point array look like rect
+	  */
+	 pts[1].y = pts[0].y;
+	 pts[0].y = diff;
+	 WinFillRect(hpsb, (PRECTL)pts, ws->winbg);
+	 /*
+	  * blit to the window
+	  */
+	 pts[0].y = 0;
+	 pts[1].x = ws->width;
+	 pts[1].y = ws->height;
+	 pts[2].y = diff;
+	 GpiBitBlt(hps, hpsb, 3, pts, ROP_SRCCOPY, 0UL);
+	 ws->y += wc->fntLeading - scrollamt;
+	 }
+      else
+	 /*
+	  * update the cursor position
+	  */
+	 ws->y += wc->fntLeading;
+      /* intended fall-through */
+    case '\r':
+      /*
+       * set the new x position
+       */
+      ws->x = wc->dx;
+      MutexOff(ws);
+      break;
+   case '\t':
+      xdis(wb, "        ", 8 - (XTOCOL(wb,ws->x) & 7));
+      break;
+      /*
+       * Handle backspaces.  This implements cooked mode echo handling.
+       */
+   case '\177':
+   case '\010': {
+      int i = 0, pre_x;
+      LONG cwid;
+
+      MutexOn(ws);
+      /*
+       * grab the current character context
+       */
+      SetCharContext(wb, ws, wc);
+      MutexOff(ws);
+      /*
+       * Start with the last character queued up.
+       */
+      i--;
+      /*
+       * Trot back to the control-H itself.
+       */
+      while ((i>-EQUEUELEN) && (EVQUESUB(wb,i) != c)) i--;
+      if (i == -EQUEUELEN) break;
+      /*
+       * Go past the control-H.
+       */
+      i--;
+      /*
+       * Go back through any number of control-H's from prior lifetimes.
+       */
+      while((i > -EQUEUELEN) && !isprint(EVQUESUB(wb,i))) i--;
+      if (i == -EQUEUELEN) break;
+
+      /*
+       * OK, here's the character we're actually rubbing out.  Back up.
+       */
+      c = EVQUESUB(wb,i);
+      pre_x = ws->x;
+
+      /* get the width of the character to rub out */
+      GpiQueryWidthTable(hps, (LONG)c, 1, &cwid);
+      ws->x -= cwid;
+      /*
+       * Physically erase the character from the queue.  This results in
+       * two control-H's present in the queue.
+       */
+      *evquesub(wb,i) = '\010';
+      /*
+       * Save the backed-up position, and draw spaces through the erased.
+       */
+      i = ws->x;
+      while(ws->x < pre_x) xdis(wb, " ",1);
+      ws->x = i;
+      break;
+      }
+    /*
+     * bell (control-G)
+     */
+    case '\007':
+      DosBeep(800, 200);
+      break;
+   default:
+      xdis(wb, &c, 1);
+      }
+   /*
+    * turn the cursor back on
+    */
+   UpdateCursorPos(ws, wc);
+   showcrsr(ws);
+   return 0;
+   }
+
+/*
+ * Get a window that has an event pending (queued)
+ */
+wsp getactivewindow(void)
+{
+  static LONG next = 0;
+  LONG i;
+  wsp ws, ptr, stdws = NULL;
+
+  /* cache the console window value, if exists */
+  if (ConsoleBinding) stdws = ((wbp)ConsoleBinding)->window;
+  /* make sure we are still in bounds */
+  next %= NumWindows;
+  /* gather any new events */
+  ObtainEvents(NULL, NO_WAIT_EVT, 0, NULL);
+  /* position ptr on the next window to get events from (fairness) */
+  for (ws = wstates, i = 0; i < next; i++, ws = ws->next);
+  /* now, see if any events pending on windows */
+  for (i = 0; i < NumWindows; ws = (ws->next) ? ws->next : wstates, i++)
+    if (ws != stdws && BlkLoc(ws->listp)->list.size > 0) {
+      next += i + 1;
+      return ws;
+      } /* End of if - found one with events pending */
+  /* well, we'll just have to wait I guess (and don't wait for console) */
+  while ((ws = ObtainEvents(NULL, WAIT_EVT, 0, NULL)) == stdws && stdws);
+  /* reset 'next' */
+  for (next = 1, ptr = wstates; ptr != ws; next++, ptr = ptr->next);
+  return ws;
+}
+
+/*
+ * ObtainEvents
+ */
+wsp ObtainEvents(wsp ws, SHORT blockflag, ULONG messg, QMSG *msgout)
+   {
+   static QMSG msg;
+   static QMSG *qmsg;
+   static struct descrip evt;
+   static ULONG evt_x, evt_y;
+   wsp msg_ws = NULL;
+
+   /*
+    * if block flag set, go for the block
+    */
+   qmsg = (msgout) ? msgout : &msg;
+   while (WinPeekMsg(HInterpAnchorBlock, qmsg, NULLHANDLE, 0, 0, PM_REMOVE) ||
+	  (blockflag && WinGetMsg(HInterpAnchorBlock, qmsg, NULLHANDLE, 0, 0))) {
+
+      /* decipher the window state pointer */
+      msg_ws = (wsp)qmsg->mp1;
+
+      /* Events that don't get passed on to the icon prog */
+      if (qmsg->msg == REQUEST_SHUTDOWN)
+	 InterpThreadShutdown();  /* never return */
+
+      /* short circuit - if we match and they passed in a structure to fill,
+			 break out */
+      else if ((!ws || ws == msg_ws) && (!messg || qmsg->msg == messg) && msgout)
+	return msg_ws;
+
+      /* catch some errors - we should never see these events getting this far */
+      else if (qmsg->msg == DESTROYED_WINDOW || qmsg->msg == NEW_WINDOW)
+	Bomb("Received and event that shouldn't have happened.", "");
+
+      /* Events that get passed on to the icon program */
+      else {
+	 /*
+	  * update pointerx, and pointery in window state.
+	  * map the point to our window
+	  */
+	 WinMapWindowPoints(HWND_DESKTOP, msg_ws->hwnd, &(qmsg->ptl), 1);
+	 msg_ws->pointerx = (SHORT)qmsg->ptl.x;
+	 msg_ws->pointery = msg_ws->height - (SHORT)msg.ptl.y;
+
+	 /* message data is formatted as follows: (mp2)
+	    [byte 3] - unused
+	    [byte 2] - keyboard modifier flags, virtual key flag
+	    [byte 1] - extended keyboard spills over into this byte (VIRT_KEY)
+	    [byte 0] - ASCII code if KEY_PRESS, part of VIRT_KEY or window
+		       event otherwise (like mouse move, resize...)
+	 */
+
+	 /*
+	  * take the event and shove it onto the window's icon list
+	  */
+	 if (qmsg->msg == KEY_PRESS) {
+	    /* check for virtual key flag */
+	    if (((ULONG)qmsg->mp2) & VirtKeyMask) {
+	      MakeInt(0xFFFF & (int)qmsg->mp2, &evt);
+	      } /* End of if - virt key */
+	    else {
+	      StrLen(evt) = 1;
+	      StrLoc(evt) = &allchars[((int)qmsg->mp2) & 0xFF];
+	      } /* End of else - ascii char (vs. virtual key) */
+	    } /* End of if - event is a key press */
+	 else {
+	    MakeInt((signed char)(0xFF & ((int)qmsg->mp2)), &evt);
+	    } /* End of else - all other events (like mouse click, ...) */
+	 /*
+	  * send the event to be queued up
+	  */
+	 qevent(&(msg_ws->listp), &evt, msg_ws->pointerx, msg_ws->pointery,
+		qmsg->time, (((ULONG)qmsg->mp2) & 0x00FF0000));
+
+	 /* if the event matches up to what we want, get out */
+	 if ((!messg || messg == qmsg->msg) && (!ws || ws == msg_ws))
+	   return msg_ws;
+	 }
+      }
+   return msg_ws;
+   }
+
+/*
+ * wgetq - get event from pending queue
+ */
+int wgetq(wbp w, dptr res)
+   {
+   wsp ws;
+   int first = 0;
+
+   if (!w || !(ws = w->window) || !(ws->hpsWin)) return -1;
+   while (1) {
+      /*
+       * grab the built up queue
+       */
+      if (!EVQUEEMPTY(ws)) {
+	 EVQUEGET(ws, *res);
+	 return 1;
+	 }
+      ObtainEvents(ws, WAIT_EVT, 0, NULL);
+      }
+   return -1;
+   }
+
+int do_config(wbp w, int status)
+   {
+   int wid = w->window->width, ht = w->window->height;
+   int posx = w->window->posx, posy = w->window->posy;
+
+   STDLOCALS(w);
+
+   if (ws->hwndFrame) {
+      pollevent();
+      if (status == 3) {
+	 if (moveResizeWindow(w, posx, posy, wid, ht) == Failed) return Failed;
+	 }
+      else if (status == 2)
+	 resizeWindow(w,wid, ht);
+      else if (status == 1)
+	 moveWindow(w, posx, posy);
+      }
+   return Succeeded;
+   }
+/*
+ * determine the new size of the client
+ */
+int setheight(wbp w,SHORT height)
+   {
+   wsp ws = w->window;
+   ws->height = height;
+
+   /*
+    * If this is not an initial sizing specification, change the
+    *  existing window.
+    */
+   if (!ISINITIAL(w)) {
+      /*
+       * if we are dealing with a window
+       */
+      if (ws->hwndFrame) {
+	 if (ws->winState & WS_MIN)
+	    WinSetWindowUShort(ws->hwndFrame, QWS_CYRESTORE,
+			       height + TITLEHEIGHT + (BORDERHEIGHT << 1));
+	 else
+	    WinSetWindowPos(ws->hwndFrame, 0, 0, 0,
+			    ws->width + (BORDERWIDTH << 1),
+			    height + TITLEHEIGHT + (BORDERHEIGHT << 1),
+			    SWP_SIZE);
+	 }
+      /*
+       * make sure the bitmap is big enough
+       */
+      if (ws->hBitmap) ResizeBackingBitmap(ws, ws->width, height);
+      }
+   return Succeeded;
+   }
+
+/*
+ * determine new size of client
+ */
+int setwidth(wbp w,SHORT width)
+   {
+   wsp ws = w->window;
+   ws->width = width;
+   /*
+    * If this is not an initial sizing specification, change the
+    *  existing window.
+    */
+   if (!ISINITIAL(w)) {
+      /*
+       * if we are dealing with a window
+       */
+      if (ws->hwndFrame) {
+	 if (ws->winState & WS_MIN)
+	    WinSetWindowUShort(ws->hwndFrame, QWS_CXRESTORE,
+			       width + (BORDERWIDTH << 1));
+	 else
+	    WinSetWindowPos(ws->hwndFrame, 0, 0, 0,
+			    width + (BORDERWIDTH << 1),
+			    ws->height + TITLEHEIGHT + (BORDERHEIGHT << 1),
+			    SWP_SIZE);
+	 }
+      /*
+       * make sure the bitmap is big enough
+       */
+      if (ws->hBitmap) ResizeBackingBitmap(ws, width, ws->height);
+      }
+   }
+
+int setgeometry(w, geo)
+wbp w;
+char *geo;
+   {
+   wsp ws = w->window;
+   LONG stat;
+   SHORT x, y, width, height;
+
+   /*
+    * load some defaults
+    */
+   MutexOn(ws);
+   y = ws->posy; x = ws->posx;
+   width = ws->width; height = ws->height;
+   MutexOff(ws);
+   /*
+    * figure out what we are dealing with
+    */
+   if ((stat = parsegeometry(geo, &x, &y, &width, &height)) == 0) {
+      return Error;
+    }
+   else {
+      /*
+       * correct for neg positional values
+       */
+      if (x != ws->posx && x < 0)
+	x += ScreenWidth - width - (BORDERWIDTH << 1);
+      if (y != ws->posy && y < 0)
+	y += ScreenHeight - height - (BORDERHEIGHT << 1) - TITLEHEIGHT;
+      /*
+       * make the changes stick
+       */
+      if (stat & 1) {
+	 ws->width = width;
+	 ws->height = height;
+	 }
+      if (stat & 2) {
+	 ws->posx = x;
+	 ws->posy = y;
+	 }
+      if (!ISINITIAL(w)) {
+	 if (ws->hwndFrame) {
+	    if (ws->winState & WS_MIN) {
+	       WinSetWindowUShort(ws->hwndFrame, QWS_CXRESTORE,
+				  width + (BORDERWIDTH << 1));
+	       WinSetWindowUShort(ws->hwndFrame, QWS_CYRESTORE,
+				  height + TITLEHEIGHT + (BORDERWIDTH << 1));
+	       WinSetWindowUShort(ws->hwndFrame, QWS_XRESTORE, x);
+	       WinSetWindowUShort(ws->hwndFrame, QWS_YRESTORE,
+				  ScreenHeight - y -
+				  (height + (BORDERHEIGHT << 1) + TITLEHEIGHT));
+	       }
+	    else
+	       WinSetWindowPos(ws->hwndFrame, 0, x,
+			       ScreenHeight - y -
+			       (height + (BORDERHEIGHT << 1) + TITLEHEIGHT),
+			       width + (BORDERWIDTH << 1),
+			       height + TITLEHEIGHT + (BORDERHEIGHT << 1),
+			       SWP_SIZE | SWP_MOVE);
+	    }
+	 /*
+	  * make sure the bitmap is big enough - dont bother on the initial
+	  */
+	 if (ws->hBitmap) ResizeBackingBitmap(ws, width, height);
+	 }
+      }
+   return Succeeded;
+   }
+
+void getcanvas(wbp w,char *s)
+   {
+   STDLOCALS(w);
+      if (!WinIsWindowVisible(stdwin)) {
+	sprintf(s,"hidden");
+      }
+      else switch (w->window->winState) {
+      case WS_NORMAL:
+	 sprintf(s, "normal");
+	 break;
+      case WS_MIN:
+	 sprintf(s, "iconic");
+	 break;
+      case WS_MAX:
+	 sprintf(s, "maximal");
+	 break;
+      default:
+	 sprintf(s, "hidden");
+      }
+   }
+
+int setcanvas(wbp w,char *s)
+   {
+   ULONG cmd;
+   STDLOCALS(w);
+   cmd = SWP_SHOW;
+   if (!strcmp(s, "iconic")) {
+	cmd |= SWP_MINIMIZE;
+	w->window->winState = (w->window->winState & WS_HIDDEN) | WS_MIN;
+      }
+   else if (!strcmp(s, "normal")) {
+	cmd != SWP_RESTORE;
+	w->window->winState = (w->window->winState & WS_HIDDEN) | WS_NORMAL;
+      }
+   else if (!strcmp(s, "maximal")) {
+	cmd != SWP_MAXIMIZE;
+	w->window->winState = (w->window->winState & WS_HIDDEN) | WS_MAX;
+      }
+   else if (!strcmp(s, "hidden")) {
+	w->window->winState |= WS_HIDDEN;
+	WinShowWindow(stdwin,FALSE);
+	return Succeeded;
+      }
+   else return Error;
+   WinSetWindowPos(stdwin,HWND_TOP,0,0,0,0,cmd);
+   return Succeeded;
+   }
+
+int seticonicstate(w, val)
+wbp w;
+char *val;
+   {
+   int height;
+   ULONG flags = SWP_SIZE | SWP_MOVE | SWP_ACTIVATE | SWP_ZORDER;
+   wsp ws = w->window;
+   int already = 0;
+   /*
+    * doesn't apply to bitmap
+    */
+   if (!ws->hwndFrame) return Failed;
+   /*
+    * break out what we mean
+    */
+   if (!strcmp(val, "icon")) {
+      already = (ws->winState & WS_MIN);
+      ws->winState = (ws->winState & WS_HIDDEN) | WS_MIN;
+      flags |= SWP_MINIMIZE;
+      }
+   else if (!strcmp(val, "window")) {
+      already = (ws->winState & WS_NORMAL);
+      ws->winState = (ws->winState & WS_HIDDEN) | WS_NORMAL;
+      flags |= SWP_RESTORE;
+      }
+   else if (!strcmp(val, "fullscreen")) {
+      already = (ws->winState & WS_MAX);
+      ws->winState = (ws->winState & WS_HIDDEN) | WS_MAX;
+      flags |= SWP_MAXIMIZE;
+      }
+   else return Error;
+   if( !(ws->winState & WS_HIDDEN)) flags |= SWP_SHOW;
+
+   height = ws->height + TITLEHEIGHT + (BORDERHEIGHT << 1);
+   if (!already && !ISINITIAL(w)) {
+	    /*
+	     * dumb hack - see WM_PAINT in rxwindw.r
+	     */
+      if (flags & SWP_MINIMIZE) SETMINPEND(w);
+      WinSetWindowPos(ws->hwndFrame, HWND_TOP,
+		      ws->posx, ScreenHeight - ws->posy - height,
+		      ws->width + (BORDERWIDTH << 1), height, flags);
+      }
+   return Succeeded;
+   }
+
+int seticonlabel(w, val)
+wbp w;
+char *val;
+   {
+   wsp ws = w->window;
+   /*
+    * doesn't make sense for a bitmap
+    */
+   if (!ws->hpsWin) return Failed;
+   /*
+    * plug in the new string
+    */
+   free(ws->iconlabel);
+   ws->iconlabel = salloc(val);
+   /*
+    * if we have to update, do it
+    */
+   if (!ISINITIAL(w) && (ws->winState & WS_MIN))
+      WinSetWindowText(ws->hwndFrame, ws->iconlabel);
+   return Succeeded;
+   }
+
+int seticonpos(w, val)
+wbp w;
+char *val;
+   {
+   return Failed;
+   }
+
+int setwindowlabel(w, val)
+wbp w;
+char *val;
+   {
+   wsp ws = w->window;
+   char *tmp;
+
+   if (!ws->hpsWin) return Failed;   /* doesn't make sense for a bitmap */
+   /*
+    * plug in the new string
+    */
+   /* done (flip) this way to avoid a race condition */
+   tmp = ws->windowlabel;
+   ws->windowlabel = salloc(val);
+   free(tmp);
+   /*
+    * if we have to update, do it
+    */
+   MutexOn(ws);
+   if (!ISINITIAL(w) && !(ws->winState & WS_MIN))
+      WinSetWindowText(ws->hwndFrame, ws->windowlabel);
+   MutexOff(ws);
+   return Succeeded;
+   }
+
+int setcursor(w, on)
+wbp w;
+int on;
+   {
+   wsp ws = w->window;
+   if (!ws->hpsWin) return Failed;
+   MutexOn(ws);
+   if (on) {
+     SETCURSORON(w);
+     if (WinQueryFocus(HWND_DESKTOP) == ws->hwnd) {
+       WinCreateCursor(ws->hwnd, ws->cursInfo.x, ws->cursInfo.y,
+		       ws->cursInfo.cx, ws->cursInfo.cy, CURSOR_FLASH, NULL);
+       WinShowCursor(ws->hwnd, 1);
+       } /* End of if - we have the focus */
+     } /* End of if - turning it on */
+   else {
+     CLRCURSORON(w);
+     WinDestroyCursor(ws->hwnd);
+     } /* End of else - turnin off */
+   MutexOff(ws);
+   return Succeeded;
+   }
+
+/*
+ * Set the window's font by name.
+ */
+int setfont(w, s)
+wbp w;
+char **s;
+   {
+   int flags;
+   int size;
+
+   char family[256];
+   char *stdfam;
+
+   if( parsefont(*s,family,&flags,&size) ) {
+      /*
+       * This is a legal Icon font spec (and it's not an unadorned "fixed").
+       * Check first for special "standard" family names.
+       */
+      if (!strcmp(family, "mono")) {
+	 stdfam = "System Monospaced";
+	 flags |= FONTFLAG_MONO + FONTFLAG_SANS;
+	 }
+      else if (!strcmp(family, "fixed")) {
+	 stdfam = "System Monospaced";
+	 flags |= FONTFLAG_MONO + FONTFLAG_SANS;
+	 }
+      else if (!strcmp(family, "typewriter")) {
+	 stdfam = "Courier";
+	 flags |= FONTFLAG_MONO + FONTFLAG_SERIF;
+	 }
+      else if (!strcmp(family, "sans")) {
+	 stdfam = "Helvetica";
+	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
+	 }
+      else if (!strcmp(family, "serif")) {
+	 stdfam = "Times New Roman";
+	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
+	 }
+      else if (!strcmp(family, "proportional")) {
+	 stdfam = "System Proportional";
+	 }
+      else stdfam = NULL;
+
+      if (stdfam) {
+	 /*
+	  * Standard name: first try preferred family, then generalize.
+	  */
+	 if (LoadFont(w, stdfam, flags,size) )
+	     return Succeeded;
+      }
+      else {
+	 /*
+	  * Any other name: must match as specified.
+	  */
+	 if (LoadFont(w, family, flags,size) )
+	     return Succeeded;
+	 else {
+	    strcpy(family,*s);
+	    stdfam = strchr(family,',');
+	    if (stdfam) *stdfam = '\0';
+	    if (LoadFont(w,family,flags,size) )
+	     return Succeeded;
+	 }
+      }
+
+
+      }
+   return Failed;
+
+   }
+
+/*
+ * rebind() - bind w's context to that of w2.
+ */
+int rebind(w, w2)
+wbp w, w2;
+   {
+   wsp ws = w->window;
+   wcp wc;
+   w->context = wc = w2->context;
+   /*
+    * Make sure font and such are loaded for that window
+    */
+   AddPatternToWindow(ws, wc->currPattern);
+   AddFontToWindow(ws, wc->charBundle.usSet);
+   /*
+    * make the dependencies
+    */
+   if (!AddWindowDep(ws, wc) || !AddContextDep(ws, wc))
+      return Error;
+   return Succeeded;
+   }
+
+void setclip(w)
+wbp w;
+   {
+   UnsetClipContext(w->context);
+   MutexOn(w->window);
+   SetClipContext(w, w->window, w->context);
+   MutexOff(w->window);
+   }
+
+void unsetclip(w)
+wbp w;
+   {
+   HRGN hscrap;
+   STDLOCALS(w);
+   GpiSetClipRegion(stdwin,NULL,&hscrap);
+   GpiSetClipRegion(stdbit,NULL,&hscrap);
+   UnsetClipContext(w->context);
+   /* ?? */
+   }
+
+/*
+ * if the window exists and is visible, set its position to (x,y)
+ */
+void moveWindow(wbp w,int x, int y)
+   {
+   STDLOCALS(w);
+   if (stdwin && WinIsWindowVisible(ws->hwndFrame))
+      /* won't protect with mutex since only 1 state var is accessed - atomic */
+      WinSetWindowPos(ws->hwndFrame, 0, x,
+		     ScreenHeight - y -
+		     (ws->height + (BORDERHEIGHT << 1) + TITLEHEIGHT),
+		     0, 0, SWP_MOVE);
+   else if (stdwin) {
+      /* only time this will happen is when invisible, shouldn't have to
+	 protect with mutex */
+      ws->posx = x;
+      ws->posy = y;
+      }
+   }
+
+int resizeWindow(w,width,height)
+wbp w;
+int width, height;
+   {
+   STDLOCALS(w);
+   if (stdwin && WinIsWindowVisible(ws->hwndFrame))
+      WinSetWindowPos(ws->hwndFrame, 0, 0, 0, width + (BORDERWIDTH << 1),
+		      height + (BORDERHEIGHT << 1) + TITLEHEIGHT, SWP_SIZE);
+   else {
+      /* win is either invisible or is jsut bitmap, either case, user cannot
+	 adjust size and therefore this needs not be protected */
+      ws->width = width;
+      ws->height = height;
+      }
+   }
+
+int moveResizeWindow(wbp w,int x, int y, int width, int height)
+   {
+   STDLOCALS(w);
+   if (stdwin && WinIsWindowVisible(ws->hwndFrame))
+      WinSetWindowPos(ws->hwndFrame, 0, x,
+		      ScreenHeight - y -
+		      (ws->height + (BORDERHEIGHT << 1) + TITLEHEIGHT),
+		      width + (BORDERWIDTH << 1),
+		      height + (BORDERHEIGHT << 1) + TITLEHEIGHT,
+		      SWP_SIZE | SWP_MOVE);
+   else {
+      ws->posx = x;
+      ws->posy = y;
+      ws->width = width;
+      ws->height = height;
+      }
+   }
+
+int lowerWindow(wbp w)
+   {
+   STDLOCALS(w);
+
+   return (!ws->hpsWin ||
+	   !WinSetWindowPos(ws->hwndFrame, HWND_BOTTOM, 0, 0, 0, 0,
+	   SWP_ZORDER)) ? Failed : Succeeded;
+   }
+
+int raiseWindow(wbp w)
+   {
+   STDLOCALS(w);
+
+   return (!ws->hpsWin ||
+	   !WinSetWindowPos(ws->hwndFrame, HWND_TOP, 0, 0, 0, 0,
+	   SWP_ZORDER)) ? Failed : Succeeded;
+   }
+
+int lookup_color(wbp w,char *s,SysColor *rgbreturn)
+   {
+   return ((*rgbreturn = si_s2i(siColorNames, s)) >= 0);
+   }
+
+int nativecolor(wbp w,char *s,int *r, int *g, int *b)
+   {
+   SysColor rgb;
+   double invgamma;
+   if(w && w->context)
+    invgamma = 1.0 / w->context->gamma;
+   else invgamma = 1.0;
+
+   rgb = si_s2i(siColorNames, s);
+   if (rgb < 0)
+      return 0;
+
+
+   *r = RED(rgb)   * 257;
+   *g = GREEN(rgb) * 257;
+   *b = BLUE(rgb)  * 257;
+
+   *r = 65535 * pow(*r / 65535.0, invgamma);
+   *g = 65535 * pow(*g / 65535.0, invgamma);
+   *b = 65535 * pow(*b / 65535.0, invgamma);
+
+   return 1;
+   }
+
+void warpPointer(wbp w,int x, int y)
+   {
+   POINTL pt;
+
+   pt.x = x;
+   /*
+    * Fixup the y with respect to the window - ie. flip it, then
+    *  convert coordinates to desktop (i.e. root) coordinates, and
+    *  finally, set the pointer position.
+    */
+   pt.y = w->window->height - y;
+   WinMapWindowPoints(w->window->hwnd, HWND_DESKTOP, &pt, 1);
+   WinSetPointerPos(HWND_DESKTOP, pt.x, pt.y);
+   }
+int warpAbsolute(int x, int y)
+   {
+   y = ScreenHeight - y;
+   WinSetPointerPos(HWND_DESKTOP, x, y);
+   }
+
+/*
+ * Set the context's fill style by name.
+ */
+int setfillstyle(wbp w,char *s)
+   {
+   STDLOCALS(w);
+
+   if (!strcmp(s, "solid")) {
+      wc->fillstyle = FS_SOLID;
+      wc->areaBundle.usSet = LCID_DEFAULT;
+      wc->areaBundle.usSymbol = PATSYM_SOLID;
+      wc->areaBundle.usBackMixMode = BM_LEAVEALONE;
+      }
+   else {
+      if (!strcmp(s, "masked")
+       || !strcmp(s, "stippled") ||
+	  !strcmp(s, "patterned")) {
+	 wc->fillstyle = FS_STIPPLE;
+	 wc->areaBundle.usBackMixMode = BM_LEAVEALONE;
+	 }
+      else if (!strcmp(s, "textured")
+	    || !strcmp(s, "opaquestippled") ||
+	       !strcmp(s, "opaquepatterned")) {
+	 wc->fillstyle = FS_OPAQUESTIPPLE;
+	 wc->areaBundle.usBackMixMode = BM_OVERPAINT;
+	 }
+      else return Error;
+      /*
+       * fixup the bundle
+       */
+      if (wc->currPattern >= 0) { /* pattern currently bitmap or default */
+	 wc->areaBundle.usSet = wc->currPattern;
+	 wc->areaBundle.usSymbol = PATSYM_DEFAULT;
+	 }
+      else { /* pattern specifies symbol */
+	 wc->areaBundle.usSet = LCID_DEFAULT;
+	 wc->areaBundle.usSymbol = abs(wc->currPattern);
+	 }
+      }
+   /*
+    * cause a lazy update
+    */
+   UnsetAreaContext(wc);
+   return Succeeded;
+   }
+
+/*
+ * Set the context's line style by name.
+ */
+int setlinestyle(wbp w,char *s)
+   {
+   SHORT ltype;
+   STDLOCALS(w);
+
+   if ((ltype = si_s2i(siLineTypes, s)) < 0)
+      return Error;
+   wc->lineBundle.usType = ltype;
+   UnsetLineContext(wc);
+   return Succeeded;
+   }
+
+/*
+ * Set the context's line width
+ */
+int setlinewidth(wbp w, LONG linewid)
+   {
+   STDLOCALS(w);
+
+   if (linewid < 0)
+      return Error;
+   if (linewid == 0) wc->lineBundle.lGeomWidth = LINEWIDTH_DEFAULT;
+   else wc->lineBundle.lGeomWidth = linewid - 1;
+   UnsetLineContext(wc);
+   return Succeeded;
+   }
+
+
+/*
+ * Set the foreground to draw in a mutable color (not supported under PM)
+ */
+int isetfg(wbp w, int i)
+   {
+   return Failed;
+   }
+
+
+/*
+ * Builds a color and returns its index
+ */
+LONG GetColorIndex(char *buf,double gamma)
+{
+  char *ptr;
+  int r, g, b;
+  ULONG rgb;
+  colorEntry *ce;
+  LONG indx;
+
+  /* trim the color name */
+  while (isspace(*buf)) buf++;
+  for (ptr = buf + strlen(buf) - 1; isspace(*ptr) && ptr > buf; ptr--) *ptr = '\0';
+  /* is it a real name or an RGB spec */
+  ptr = (isalpha(*buf)) ? buf : NULL;
+
+  rgb = ParseRGBValue(buf,gamma);
+
+  if ((LONG)rgb < 0)
+     return -1;
+
+
+  /* let's see if we can find it already allocated and placed */
+  for (ce = UsedCEntries; ce; ce = ce->next)
+    if (ce->rgb == rgb) {
+      /* check if we need to set the name */
+      if (!ce->name && ptr) ce->name = salloc(ptr);
+      /* one more person using this color */
+      ce->refcount++;
+      return ((ULONG)ce - (ULONG)ColorTable) / sizeof(colorEntry);
+      } /* End of if - we found a match */
+
+  /* did not find it... allocate a new color and ripple effect */
+  if (FreeCEntries) {
+    /* remove the node from the list */
+    ce = FreeCEntries;
+    FreeCEntries = ce->next;
+    if (FreeCEntries) FreeCEntries->previous = NULL;
+    /* put it in the used list */
+    ce->next = UsedCEntries;
+    if (UsedCEntries) UsedCEntries->previous = ce;
+    UsedCEntries = ce;
+    /* fill the entry in */
+    ce->refcount = 1;
+    ce->rgb = rgb;
+    ce->bits = CLR_USED;
+    /* try to set the color name */
+    if (ptr) ce->name = salloc(ptr);
+    /* update all the presentation spaces */
+    indx = ((ULONG)ce - (ULONG)ColorTable) / sizeof(colorEntry);
+    RippleColorAddition(indx);
+    return indx;
+    } /* End of if - have some space to use still */
+   return -1;
+} /* End of GetColorIndex */
+
+/*
+ * Set the context's foreground color
+ */
+int setfg(wbp w, char *s)
+{
+  int indx, tmpindx;
+  wcp wc = w->context;
+
+  if ((indx = GetColorIndex(s,wc->gamma)) >= 0) {
+    /* if we are in mode reverse, xor the index for the new color */
+    if (ISXORREVERSE(w)) {
+      /* construct the new foreground color */
+      indx ^= wc->charBundle.lBackColor;
+      /* make sure it is available for PS loading */
+      EnsureColorAvailable(indx);
+      /* release the previous foreground color */
+      tmpindx = wc->charBundle.lColor ^ wc->charBundle.lBackColor;
+      ReleaseColor(tmpindx);
+      }
+    else /* just free the old color */
+      ReleaseColor(wc->charBundle.lColor);
+    /* set the color attribute in the context */
+    wc->areaBundle.lColor = indx;
+    wc->charBundle.lColor = indx;
+    wc->lineBundle.lColor = indx;
+    /* This context needs to be unloaded and subsequently reload for our change
+       to take	effect. */
+    UnsetAllContext(wc);
+    return Succeeded;
+    } /* End of if - got the color */
+  return Failed;
+} /* End of setfg */
+
+/*
+ * Set the window context's background color
+ */
+int setbg(wbp w, char *s)
+{
+  int indx, findx;
+  wcp wc = w->context;
+
+  if ((indx = GetColorIndex(s,wc->gamma)) >= 0) {
+    /* release the current background color */
+    ReleaseColor(wc->charBundle.lBackColor);
+    /* if we are in reverse mode, have to change the foreground color */
+    if (ISXORREVERSE(w)) {
+      /* break the real foreground color back out */
+      findx = (wc->charBundle.lColor ^ wc->charBundle.lBackColor);
+      /* the new index for the foreground */
+      findx ^= indx;
+      /* make sure new foreground color is available */
+      EnsureColorAvailable(findx);
+      /* set the new foreground color */
+      wc->areaBundle.lColor = findx;
+      wc->lineBundle.lColor = findx;
+      wc->charBundle.lColor = findx;
+      /* have to unset the line bundle here too */
+      UnsetLineContext(wc);
+      } /* End of if - mode reverse */
+    /* set the color attribute in the context */
+    wc->areaBundle.lBackColor = indx;
+    wc->charBundle.lBackColor = indx;
+    /* unset us */
+    UnsetCharContext(wc);
+    UnsetAreaContext(wc);
+    /* if we are initializing, also set the window background color */
+    if (ISINITIAL(w)) w->window->winbg = wc->areaBundle.lBackColor;
+    return Succeeded;
+    } /* End of if - got the color */
+  return Failed;
+} /* End of setbg */
+
+/*
+ * Set the context's background color by color cell.
+ */
+int isetbg(wbp w,int bg)
+   {
+   return 0;
+   }
+
+/*
+ * Set the gamma correction factor  (not supported yet).
+ */
+int setgamma(wbp w,double gamma)
+   {
+   char colorname[65];
+   w->context->gamma = gamma;
+   GetColorName(w->context->charBundle.lColor,colorname,64);
+   setfg(w, colorname); 		/* reinterpret current Fg/Bg spec */
+   GetColorName(w->context->charBundle.lBackColor,colorname,64);
+   setbg(w, colorname);
+   return 1;
+   }
+
+/*
+ * setpointer() - define a mouse pointer shape
+ */
+int setpointer(wbp w,char *val)
+   {
+   wsp ws = w->window;
+   int id;
+   HPOINTER oldPtr, newPtr;
+   POINTL ptl;
+   /*
+    * if we are trying to set the pointer on a bitmap- fail
+    */
+   if (!ws->hpsWin) return Failed;
+
+   if ((id = si_s2i(siSysCursorSyms, val)) >= 0) {
+      ws->theCursor = id;
+      newPtr = WinQuerySysPointer(HWND_DESKTOP, id, TRUE);
+      } /* End of if - a system cursor */
+   else if ((id = si_s2i(siCursorSyms, val)) >= 0) {
+      /* make it negative so we know that we had to load it */
+      ws->theCursor = -id;
+      newPtr = WinLoadPointer(HWND_DESKTOP, NULLHANDLE, id);
+      } /* End of elseif - a loadable cursor? */
+   else return Failed;
+
+   /* make sure we got the new pointer */
+   if (!newPtr) return Failed;
+
+   /* store the old handle */
+   oldPtr = ws->hPointer;
+   /* place the new -> atomic change */
+   ws->hPointer = newPtr;
+   /* if the pointer is within our window's boundaries and we have focus,
+      make the change now */
+   WinQueryPointerPos(HWND_DESKTOP, &ptl);
+   if (WinQueryFocus(HWND_DESKTOP) == ws->hwnd &&
+       WinWindowFromPoint(HWND_DESKTOP, &ptl, FALSE) == ws->hwndFrame)
+     WinSetPointer(HWND_DESKTOP, ws->hPointer);
+   /* destroy the previous pointer */
+   if (oldPtr) WinDestroyPointer(oldPtr);
+   return Succeeded;
+   }
+
+/*
+ * setdrawop() - set the drawing operation
+ */
+int setdrawop(wbp w,char *val)
+   {
+   wcp wc = w->context;
+   int dop;
+   LONG clrindex;
+   USHORT foreground = FM_OVERPAINT;
+
+   if ((dop = si_s2i(siMixModes, val)) < 0)
+      return Error;
+
+   /* check if we really need to change - dop != wc->drawop */
+
+   /*
+    * if we were in mode reverse before, change things back
+    */
+   if (ISXORREVERSE(w)) {
+      /*
+       * put the color back
+       */
+      clrindex = (wc->charBundle.lColor ^ wc->charBundle.lBackColor);
+      wc->charBundle.lColor = clrindex;
+      wc->lineBundle.lColor = clrindex;
+      wc->areaBundle.lColor = clrindex;
+      /*
+       * unset the reverse mode
+       */
+      CLRXORREVERSE(w);
+      }
+
+   /* set the other, drawing mix modes */
+   switch(dop) {
+   case ROP_USER1: /* mode reverse */
+      /*
+       * find the new foreground color index and set it
+       */
+      clrindex = (wc->charBundle.lColor ^ wc->charBundle.lBackColor);
+      /*
+       * ensure that some color is loaded at clrindex
+       */
+      EnsureColorAvailable(clrindex);
+      /*
+       * set the flag
+       */
+      SETXORREVERSE(w);
+      wc->charBundle.lColor = clrindex;
+      wc->lineBundle.lColor = clrindex;
+      wc->areaBundle.lColor = clrindex;
+      /*
+       * foreground mix will be XOR
+       */
+      foreground = FM_XOR;
+      break;
+   case ROP_SRCAND:
+      foreground = FM_AND;
+      break;
+   case ROP_ZERO:
+      foreground = FM_ZERO;
+      break;
+   case ROP_SRCINVERT:
+      foreground = FM_XOR;
+      break;
+   case ROP_DSTINVERT:
+      foreground = FM_INVERT;
+      break;
+   case ROP_SRCERASE:
+      foreground = FM_MASKSRCNOT;
+      break;
+   case ROP_ONE:
+      foreground = FM_ONE;
+      break;
+   case ROP_MERGEPAINT:
+      foreground = FM_MERGENOTSRC;
+      break;
+   case ROP_SRCPAINT:
+      foreground = FM_OR;
+      break;
+   case ROP_NOTSRCCOPY:
+      foreground = FM_NOTCOPYSRC;
+      break;
+   case ROP_SRCCOPY:
+   default:;
+      }
+   /*
+    * bitblt mix mode
+    */
+   wc->drawop = (dop == ROP_USER1) ? ROP_SRCINVERT : dop;
+
+   wc->areaBundle.usMixMode = foreground;
+   wc->lineBundle.usMixMode = foreground;
+   wc->charBundle.usMixMode = foreground;
+   UnsetAllContext(wc);
+   return Succeeded;
+   }
+
+setdisplay(wbp w, char *s)
+   {
+   return Succeeded;	/* Nop under OS/2 */
+   }
+
+int setimage(wbp w,char *val)
+   {
+   wsp ws = w->window;
+   int width, height;
+   HBITMAP hbm;
+   /*
+    * ensure that we are only called at initialization
+    */
+   if (!ISINITIAL(w)) return Failed;
+   /*
+    * grab the bitmap
+    */
+   if (hbm = loadimage(w, val, &width, &height)) {
+      GpiDeleteBitmap(ws->hInitialBitmap);
+      ws->hInitialBitmap = hbm;
+      /*
+       * set the window size
+       */
+      ws->width = width;
+      ws->height = height;
+      }
+   else return Failed;
+   return Succeeded;
+   }
+
+int setleading(wbp w,int i)
+   {
+   wcp wc = w->context;
+   wc->fntLeading = wc->font->metrics.lMaxBaselineExt +
+		    wc->font->metrics.lExternalLeading + i;
+   }
+
+void toggle_fgbg(wbp w)
+   {
+   LONG tmp;
+   wcp wc = w->context;
+   /*
+    * swap the colors in the character bundle
+    */
+   tmp = wc->charBundle.lColor;
+   wc->charBundle.lColor = wc->charBundle.lBackColor;
+   wc->charBundle.lBackColor = tmp;
+   tmp = wc->areaBundle.lColor;
+   wc->areaBundle.lColor = wc->areaBundle.lBackColor;
+   wc->areaBundle.lBackColor = tmp;
+   tmp = wc->imageBundle.lColor;
+   wc->imageBundle.lColor = wc->imageBundle.lBackColor;
+   wc->imageBundle.lBackColor = tmp;
+   /*
+    * unmark this context as being current (since it has to be
+    * reloaded with new values)
+    */
+   UnsetCharContext(wc);
+   UnsetAreaContext(wc);
+   UnsetImageContext(wc);
+   }
+
+int getvisual(wbp w,char *answer)
+   {
+   return Failed;
+   }
+
+/*
+ * getpos() - update the window state's notion of its current position
+ *  (a no-op under OS/2).
+ */
+int getpos(wbp w)
+   {
+   if (!w->window->hpsWin) return Failed;
+   return Succeeded;
+   }
+
+void getfg(wbp w,char *answer)
+   {
+/* strcpy(answer, "fg="); */
+   GetColorName(w->context->charBundle.lColor, answer, 64);
+   }
+
+void getbg(wbp w,char *answer)
+   {
+/* strcpy(answer, "bg="); */
+   GetColorName(w->context->charBundle.lBackColor, answer, 64);
+   }
+
+void getlinestyle(wbp w,char *answer)
+   {
+   char *ptr;
+   if (ptr = si_i2s(siLineTypes, w->context->lineBundle.usType))
+/*    sprintf(answer, "linestyle=%s", ptr); */
+      sprintf(answer, "%s", ptr);
+   else strcpy(answer, "solid");
+   }
+
+void getfntnam(wbp w,char *answer)
+   {
+/* strcpy(answer, "font="); */
+   GetFontName(w->context->charBundle.usSet, answer, 128);
+   }
+
+void getpointername(wbp w,char *answer)
+   {
+   char *s;
+   wsp ws = w->window;
+
+   if (ws->theCursor < 0)
+     s = si_i2s(siCursorSyms, abs(ws->theCursor));
+   else
+     s = si_i2s(siSysCursorSyms, ws->theCursor);
+   if (s) sprintf(answer, "%s", s);
+/* if (s) sprintf(answer, "pointer=%s", s); */
+   else strcpy(answer, "???");
+   }
+
+void getdisplay(wbp w, char *answer)
+   {
+   strcpy(answer, "local");
+   }
+
+void getdrawop(wbp w,char *answer)
+   {
+   char *s;
+   if (ISXORREVERSE(w)) s = "reverse";
+   else s = si_i2s(siMixModes, w->context->drawop);
+   if (s) sprintf(answer, "%s", s);
+/* if (s) sprintf(answer, "drawop=%s", s); */
+   else strcpy(answer, "copy");
+   }
+
+void geticonic(wbp w,char *answer)
+   {
+/* sprintf(answer, "iconic=%s", */
+   sprintf(answer, "%s",
+	   ((w->window->winState & WS_MIN) ? "icon" :
+	    (w->window->winState & WS_MAX) ? "fullscreen" : "window"));
+   }
+
+int geticonpos(wbp w,char *val)
+   {
+   return Failed;
+   }
+
+/*
+ * erase an area
+ */
+void eraseArea(wbp w,int x, int y, int width, int height)
+   {
+   AREABUNDLE abundle;
+   POINTL pts[2];
+   STDLOCALS(w);
+   /*
+    * clear out the bundle
+    */
+   memset(&abundle, 0, sizeof(AREABUNDLE));
+   abundle.lColor = wc->areaBundle.lBackColor;
+   /*
+    * set up the rectangle values
+    */
+   pts[0].x = x;
+   pts[1].x = (width > 0) ? pts[0].x + width - 1 : ws->width - pts[0].x;
+
+   MutexOn(ws);
+   /*
+    * knock out the context currently selected
+    */
+   ws->areaContext = NULL;
+   /*
+    * clear area using window background color
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+     GpiSetAttrs(stdwin, PRIM_AREA, ABB_COLOR, ABB_SYMBOL | ABB_SET, &abundle);
+     pts[1].y = ws->height - y - 1;
+     pts[0].y = (height > 0) ? pts[1].y - height + 1: 0;
+     GpiMove(stdwin, &pts[0]);
+     GpiBox(stdwin, DRO_FILL, &pts[1], 0, 0);
+     }
+
+   GpiSetAttrs(stdbit, PRIM_AREA, ABB_COLOR, ABB_SYMBOL | ABB_SET, &abundle);
+   pts[1].y = ws->pixheight - y - 1;
+   /*
+    * if the height is 0.. clear to the bottom of the window
+    */
+   pts[0].y = (height > 0) ? pts[1].y - height + 1 : 0;
+   GpiMove(stdbit, &pts[0]);
+   GpiBox(stdbit, DRO_FILL, &pts[1], 0, 0);
+
+   MutexOff(ws);
+   }
+
+/*
+ * copy an area
+ */
+int copyArea(wbp w, wbp w2, int x, int y, int width, int height, int x2, int y2)
+   {
+   POINTL pts[3];
+   wsp src_ws = w->window;
+   HPS src_hps = src_ws->hpsBitmap;
+   STDLOCALS(w2);
+
+   /*
+    * have to do the copies in the order they are.. from bmp to window
+    * and *then* bmp to bmp.  This is because of the source=destination
+    * problem.	If you do it the other way around, you will get an inconsistent
+    * bmp<->window state
+    */
+   /*
+    * grab both mutexes
+    */
+   MutexOn(ws);
+   MutexOn(src_ws);
+   /*
+    * fix up the points..
+    */
+   pts[0].x = x2;				 /* lower left - target */
+   pts[1].x = x2 + width;			 /* upper right - target */
+   pts[2].x = x;				 /* lower left - src */
+   pts[2].y = src_ws->pixheight - y - height;
+   /*
+    * if window is around, blit to it too
+    */
+   if (stdwin && !(ws->winState & WS_MIN)) {
+     /*
+      * fixup the points
+      */
+     pts[1].y = pts[0].y = ws->height - y2;
+     pts[0].y -= height;
+     GpiBitBlt(stdwin, src_hps, 3, pts, wc->drawop, 0UL);
+     }
+   /*
+    * fixup the points for the bitmap
+    */
+   pts[1].y = pts[0].y = ws->pixheight - y2;
+   pts[0].y -= height;
+   /*
+    * blit from src bitmap to destination bitmap
+    */
+   GpiBitBlt(stdbit, src_hps, 3, pts, wc->drawop, 0UL);
+   /*
+    * release the mutexes
+    */
+   MutexOff(ws);
+   MutexOff(src_ws);
+   return Succeeded;
+   }
+
+int getdefault(wbp w,char *prog, char *opt, char *answer)
+   {
+   return Failed;
+   }
+
+/*
+ * Draw a bilevel image.
+  */
+int blimage(wbp w, int x, int y, int width, int hgt,
+	    int ch, unsigned char *s, word len)
+   {
+   POINTL pt;
+   POINTL pts[3];
+
+   int c, v, ret;
+
+   unsigned int m, msk1;
+   unsigned int r, g, b, ix, iy;
+   unsigned int fg, bg;
+
+   long colorndx[256], i;
+
+   char tmp[24];
+
+   STDLOCALS(w);
+
+   MutexOn(ws);
+
+
+   m = width % 4;
+   if (m == 0)
+      msk1 = 8;
+   else
+      msk1 = 1 << (m - 1);		/* mask for first byte of row */
+
+   fg = wc->areaBundle.lColor;
+   bg = ws->winbg;
+   ix = width;
+   iy = 0;
+   m = msk1;
+
+   while (len--) {
+      if (isxdigit(c = *s++)) { 	/* if hexadecimal character */
+	 if (!isdigit(c))		/* fix bottom 4 bits if necessary */
+	    c += 9;
+	 while (m > 0) {		/* set (usually) 4 pixel values */
+	    --ix;
+	    if (c & m) {
+	       GpiSetColor(stdbit,fg);
+	       pt.x = ix + x;
+	       pt.y = ws->pixheight - (iy + y);
+	       GpiSetPel(stdbit,&pt);
+	    }
+	    else if (ch != TCH1) {	/* if zeroes aren't transparent */
+	       GpiSetColor(stdbit,bg);
+	       pt.x = ix + x;
+	       pt.y = ws->pixheight - (iy + y);
+	       GpiSetPel(stdbit,&pt);
+	    }
+	    m >>= 1;
+	    }
+	 if (ix == 0) { 		/* if end of row */
+	    ix = width;
+	    iy++;
+	    m = msk1;
+	    }
+	 else
+	    m = 8;
+	 }
+      }
+   if (ix > 0) {			/* pad final row if incomplete */
+      GpiSetColor(stdbit,bg);
+      pt.y = ws->pixheight - (iy + y);
+      while (ix < width) {
+	       pt.x = ix++ + x;
+	       GpiSetPel(stdbit,&pt);
+      }
+   }
+
+   if (stdwin && !(ws->winState & WS_MIN)) {
+
+       pts[0].x = pts[2].x = x;
+       pts[0].y = pts[2].y = ws->pixheight - (y+hgt);
+       pts[1].x = x+width;
+       pts[1].y = ws->pixheight - y;
+
+       GpiBitBlt(stdwin,stdbit,3,pts,ROP_SRCCOPY, 0UL);
+
+   }
+
+   MutexOff(ws);
+
+   return ret;
+   }
+
+/*
+ * Draw a character-per-pixel image.
+ */
+int strimage(wbp w, int x, int y, int width,
+	     int height, struct palentry *e,
+	     unsigned char *s, word len, int on_icon)
+   {
+
+   POINTL pt;
+   POINTL pts[3];
+
+   int c, v, ret;
+
+   unsigned int r, g, b, ix, iy;
+
+   long colorndx[256], i;
+
+   char tmp[24];
+
+   STDLOCALS(w);
+
+   MutexOn(ws);
+   ret = 0;
+   for( c = 0; c < 256; c++) {
+	if (e[c].used && e[c].valid) {
+	    r = e[c].clr.red;
+	    g = e[c].clr.green;
+	    b = e[c].clr.blue;
+	    sprintf(tmp,"%d,%d,%d",r,g,b);
+	    i = GetColorIndex(tmp,wc->gamma);
+	    if( i < 0) {
+		ret++;
+		if ((0.299 * r + 0.587 * g + 0.114 * b) > 32767)
+		   i = CLR_WHITE;
+		else
+		   i = CLR_BLACK;
+	    }
+	    colorndx[c] = i;
+	}
+	else colorndx[c] = CLR_BLACK;
+    }
+
+   /*
+    * Read the image string and set the pixel values.
+    */
+   ix = iy = 0;
+   while (len--) {
+      c = *s++;
+      v = e[c].valid;
+      if (v) {					/* put char if valid */
+	 GpiSetColor(stdbit,colorndx[c]);
+	 pt.x = ix + x;
+	 pt.y = ws->pixheight - (iy + y);
+	 GpiSetPel(stdbit,&pt);
+      }
+      if (v || c == TCH1 || c == TCH2) {	/* advance if valid or txpt */
+	 if (++ix >= width) {
+	    ix = 0;				/* reset for new row */
+	    iy++;
+	    }
+	 }
+      }
+   if (ix > 0) {			/* pad final row if incomplete */
+      GpiSetColor(stdbit,ws->winbg);
+      pt.y = ws->pixheight - (iy + y);
+      while (ix < width) {
+	 pt.x = ix + x;
+	 GpiSetPel(stdbit,&pt);
+
+      }
+   }
+   if (stdwin && !(ws->winState & WS_MIN)) {
+
+       pts[0].x = pts[2].x = x;
+       pts[0].y = pts[2].y = ws->pixheight - (y+height);
+       pts[1].x = x+width;
+       pts[1].y = ws->pixheight - y;
+
+       GpiBitBlt(stdwin,stdbit,3,pts,ROP_SRCCOPY, 0UL);
+
+   }
+
+   MutexOff(ws);
+
+   return ret;
+   }
+
+/*
+ * Get an image as a string.  (stub)
+ */
+int getimstr(wbp w, int x, int y, int width, int hgt,
+	     struct palentry *ptbl, unsigned char *data)
+   {
+   return 0;
+   }
+
+readimage(wbp w,char *filename,int x, int y, int *status)
+   {
+   HBITMAP hbm;
+   POINTL pt;
+   int width, height;
+   STDLOCALS(w);
+   if (hbm = loadimage(w, filename, &width, &height)) {
+      pt.x = x;
+      pt.y = ws->height - y - height;
+      MutexOn(ws);
+      if (stdwin)
+	 WinDrawBitmap(stdwin, hbm, NULL, &pt, CLR_WHITE, CLR_BLACK, DBM_NORMAL);
+      pt.y = ws->pixheight - y - height;
+      WinDrawBitmap(stdbit, hbm, NULL, &pt, CLR_WHITE, CLR_BLACK, DBM_NORMAL);
+      MutexOff(ws);
+      GpiDeleteBitmap(hbm);
+      *status = 0;
+      return Succeeded;
+      }
+   return Failed;
+   }
+
+int pixmap_open(w, attribs, argc)
+wbp w;
+dptr attribs;
+int argc;
+   {
+   SIZEL size = {0, 0};
+   wcp wc;
+   wsp ws;
+
+   w->context = wc = alc_context(w);
+   w->window = ws = alc_winstate();
+   /*
+    * make the dependencies
+    */
+   if (!AddWindowDep(ws, wc) || !AddContextDep(ws, wc))
+      return Error;
+   /*
+    * build the presentation space and DC for the bitmap
+    */
+   ws->hdcBitmap = DevOpenDC(HInterpAnchorBlock, OD_MEMORY, "*", 0, NULL,
+			     NULLHANDLE);
+   ws->hpsBitmap = GpiCreatePS(HInterpAnchorBlock, ws->hdcBitmap, &size,
+			       PU_PELS | GPIA_ASSOC | GPIT_MICRO);
+   /*
+    * load the default attributes
+    */
+   LoadDefAttrs(w, ws, wc);
+   SETINITIAL(w);
+   return Succeeded;
+   }
+
+int pixmap_init(w)
+wbp w;
+   {
+   wsp ws = w->window;
+   CLRINITIAL(w);
+   ResizeBackingBitmap(ws, ws->width, ws->height);
+   return Succeeded;
+   }
+
+/*
+ * Initialize client for producing pixels from a window, a
+ * no-op under OS/2.
+ */
+int getpixel_init(wbp w,int x, int y, int width, int height)
+   {
+   return Succeeded;
+   }
+
+/*
+ * Return pixel (x,y) from a window
+ */
+int getpixel(wbp w, int x, int y, long *rv, char *s)
+   {
+   ULONG clrindex;
+   int r,g,b;
+   long rgb;
+   double invgamma = 1.0 / w->context->gamma;
+
+   HPS stdbit = w->window->hpsBitmap;
+   POINTL pt;
+   pt.x = x;
+   pt.y = w->window->pixheight - y;
+   clrindex = GpiQueryPel(stdbit, &pt);
+   GpiQueryLogColorTable(stdbit, 0, clrindex, 1, &rgb);
+   r = RED(rgb) * 257;
+   g = GREEN(rgb) * 257;
+   b = BLUE(rgb) * 257;
+   r = 65535 * pow(r/65535.0,invgamma);
+   g = 65535 * pow(g/65535.0,invgamma);
+   b = 65535 * pow(b/65535.0,invgamma);
+   *rv = 1;
+   sprintf(s,"%d,%d,%d",r,g,b);
+   return Succeeded;
+   }
+
+int query_pointer(wbp w,XPoint *pp)
+   {
+   wsp ws = w->window;
+   if (ws->hwnd == NULLHANDLE) return Failed;
+   /*
+    * get the current pointer position
+    */
+   WinQueryPointerPos(HWND_DESKTOP, pp);
+   /*
+    * map the points to window coordinates and flip y by the window's height
+    */
+   WinMapWindowPoints(HWND_DESKTOP, ws->hwnd, pp, 1);
+   pp->y = ws->height - pp->y;
+   /*
+    * save the state
+    */
+   ws->pointerx = pp->x;
+   ws->pointery = pp->y;
+   return Succeeded;
+   }
+
+query_rootpointer(XPoint *pp)
+   {
+   /*
+    * Get the current pointer position, and flip y by the root window's height.
+    */
+   WinQueryPointerPos(HWND_DESKTOP, pp);
+   pp->y = WinQuerySysValue(HWND_DESKTOP, SV_CYSCREEN) - pp->y;
+   }
+
+int seticonimage(w, dp)
+wbp w;
+dptr dp;
+   {
+   tended char *tmp;
+   HBITMAP hbm;
+   wsp ws = w->window;
+   /*
+    * get the preloaded (in another window value) pixmap image
+    */
+   if (is:file(*dp) && (BlkLoc(*dp)->file.status & Fs_Window)) {
+      wbp w2;
+      wsp ws2;
+      ULONG size;
+      BITMAPINFOHEADER2 bmp;
+      PBITMAPINFO2 pbmi;
+      PBYTE data;
+      /*
+       * locate the second window
+       */
+      w2 = (wbp)BlkLoc(*dp)->file.fd;
+      ws2 = w2->window;
+      /*
+       * knock out the previous bitmap and the previous filename
+       */
+      GpiDeleteBitmap(ws->hIconBitmap);
+      free(ws->iconimage);
+      ws->iconimage = NULL;
+      /*
+       * load the bitmap data and create a new bitmap
+       */
+      memset(&bmp, 0, sizeof(BITMAPINFOHEADER2));
+      bmp.cbFix = sizeof(BITMAPINFOHEADER2);
+      GpiQueryBitmapInfoHeader(ws2->hBitmap, &bmp);
+      /*
+       * make the info table
+       */
+      size = sizeof(RGB2) * (1 << (bmp.cPlanes * bmp.cBitCount));
+      pbmi = calloc(sizeof(BITMAPINFO2) + size, 1);
+      pbmi->cbFix = bmp.cbFix;
+      pbmi->cPlanes = bmp.cPlanes;
+      pbmi->cBitCount = bmp.cBitCount;
+      /*
+       * allocate space for the data
+       */
+      size = ((bmp.cx * bmp.cPlanes * bmp.cBitCount) + 31) / 32 * 4 * bmp.cy;
+      data = calloc(size, 1);
+      /*
+       * query the data from the bitmap
+       */
+      GpiQueryBitmapBits(ws2->hpsBitmap, 0, ws2->pixheight, data, pbmi);
+      /*
+       * build the new bitmap
+       */
+      ws->hIconBitmap = GpiCreateBitmap(ws->hpsBitmap, &bmp, CBM_INIT, data, pbmi);
+      /*
+       * free the garbage
+       */
+      free(data);
+      free(pbmi);
+      }
+   /*
+    * get the pixmap file named by x
+    */
+   else if (is:string(*dp)) {
+      int height, width;
+      if (!cnv:C_string(*dp,tmp))
+	 ReturnErrVal(103, *dp, Error);
+      /*
+       * try to load the bitmap
+       */
+      if (hbm = loadimage(w, tmp, &width, &height)) {
+	 GpiDeleteBitmap(ws->hIconBitmap);
+	 ws->hIconBitmap = hbm;
+	 /*
+	  * dup the filename
+	  */
+	 free(ws->iconimage);
+	 ws->iconimage = salloc(tmp);
+	 /*
+	  * if we are iconic, force a redraw
+	  */
+	 if (ws->winState & WS_MIN) WinInvalidateRect(ws->hwndFrame, NULL, TRUE);
+	 }
+      else return Failed;
+      }
+   else
+      return Failed;
+   return Succeeded;
+   }
+
+/*
+ * dumpimage -- write an image to a disk file.
+ * PM version accepts .bmp filenames and rejects others with NoCvt return.
+ * This whole routine needs to be revamped - very hackish.
+ */
+int dumpimage(wbp wb, char *filename, unsigned int x, unsigned int y, unsigned int width,int unsigned height)
+   {
+   FILE *fp;
+   BITMAPINFOHEADER2 bmp;
+   PBITMAPINFOHEADER2 pbmp2;
+   BITMAPARRAYFILEHEADER2 afhdr;
+   BITMAPFILEHEADER2 *fhdr;
+   PBITMAPINFO2 pbmi;
+   int result = Failed;
+   ULONG ctblsize, datasize;
+   unsigned char *tdata, *data, *ptr, *cloc;
+   int lshift, rshift, i, j, startbit, startbyte;
+   unsigned char emask;
+   ULONG bytewidth, twidth;
+   LONG tmp;
+   STDLOCALS(wb);
+
+   if (strcmp(".bmp", filename + strlen(filename) - 4) &&
+       strcmp(".BMP", filename + strlen(filename) - 4))
+	  return NoCvt;
+
+   /*
+    * open the file - binary mode
+    */
+   if (fp = fopen(filename, "wb")) {
+      /*
+       * initialize the header
+       */
+      memset(&afhdr, 0, sizeof(BITMAPARRAYFILEHEADER2));
+      fhdr = &(afhdr.bfh2);
+      pbmp2 = &(fhdr->bmp2);
+      afhdr.cbSize = sizeof(BITMAPARRAYFILEHEADER2);
+      afhdr.usType = BFT_BITMAPARRAY;
+      afhdr.cxDisplay = ScreenWidth;
+      afhdr.cyDisplay = ScreenHeight;
+      /*
+       * get the info about the source bitmap
+       */
+      memset(&bmp, 0, sizeof(BITMAPINFOHEADER2));
+      bmp.cbFix = sizeof(BITMAPINFOHEADER2);
+      GpiQueryBitmapInfoHeader(ws->hBitmap, &bmp);
+
+      /*
+       * make the info (color) table
+       */
+      ctblsize = sizeof(RGB2) * (1 << (bmp.cPlanes * bmp.cBitCount));
+      pbmi = (PBITMAPINFO2)calloc(sizeof(BITMAPINFO2) + ctblsize, 1);
+      pbmi->cbFix = bmp.cbFix;
+      /*
+       * convert it to one plane if different
+       */
+      pbmi->cBitCount = bmp.cBitCount * bmp.cPlanes;
+      pbmi->cPlanes = 1;
+
+      /*
+       * allocate space for the data
+       */
+      twidth = (pbmi->cBitCount * bmp.cx + 31) / 32 * 4;
+      datasize = twidth * height;
+      tdata = (PBYTE)calloc(datasize, 1);
+      /*
+       * query the data from the bitmap
+       */
+      GpiQueryBitmapBits(ws->hpsBitmap, ws->pixheight - y - height, height,
+			 tdata, pbmi);
+      /*
+       * write the header
+       */
+      fhdr->usType = BFT_BMAP;
+      fhdr->cbSize = sizeof(BITMAPFILEHEADER2);
+      fhdr->offBits = afhdr.cbSize + ctblsize;
+      *pbmp2 = *((PBITMAPINFOHEADER2)pbmi);
+      pbmp2->cclrImportant = 0;
+      pbmp2->cbImage = (pbmi->cBitCount * width + 31) / 32 * 4 * height;
+      pbmp2->cx = width;
+      pbmp2->cy = height;
+      fwrite((void *)&afhdr, 1, sizeof(BITMAPARRAYFILEHEADER2), fp);
+      /*
+       * write the color table
+       */
+      fwrite((void *)pbmi->argbColor, 1, ctblsize, fp);
+      /*
+       * write the bitmap data
+       */
+      if (width != bmp.cx) {
+	 /*
+	  * width is different than scanned width - shift.
+	  *
+	  * allocate space for the new bitmap
+	  */
+	 bytewidth = (pbmi->cBitCount * width + 31) / 32 * 4;
+	 datasize = bytewidth * height;
+	 data = (PBYTE)calloc(datasize, 1);
+
+	 /* starting bit in first byte */
+	 startbit = x * pbmi->cBitCount;
+	 /* and the starting byte */
+	 startbyte = startbit / 8;
+	 /* make mask to chop off unneeded bits */
+	 emask = 0xFF << (((tmp = 8 - ((width * pbmi->cBitCount) % 8)) < 8) ? tmp : 0);
+
+	 /*
+	  * figure out how much we need to shift the data so that we can
+	  * make the first pel start at a byte boundary (and thus all
+	  * subsequent bytes also..)
+	  */
+	 lshift = startbit % 8;
+	 rshift = 8 - lshift;
+
+	 for (i = 0; i < height; i++) { /* for every scan line */
+	    /* set the pointer into data to fill */
+	    cloc = data + bytewidth * i;
+	    /* pointer into data to read */
+	    ptr = tdata + startbyte + twidth * i;
+	    /* assemble the bytes */
+	    for (j = 1; j < bytewidth; j++, ptr++, cloc++)
+	      *cloc = (lshift) ? ((*ptr << lshift) | (*(ptr + 1) >> rshift)) : *ptr;
+	    /* if width didn't fall on byte bounds, have to knock some data off */
+	    *cloc = ((*ptr << lshift) & emask);
+	    }
+	 }
+      else {
+	 data = tdata;
+	 tdata = NULL;
+	 } /* End of else - same widths, use the data we scanned */
+      /*
+       * finally do the write in one big sum, and close the file
+       */
+      fwrite((void *)data, 1, datasize, fp);
+      fclose(fp);
+      free(pbmi);
+      free(data);
+      free(tdata);
+      result = Succeeded;
+      }
+   return result;
+   }
+/*
+ * LoadColorTable
+ */
+static PBITMAPINFO2 LoadColorTable(FILE *fp, PBITMAPINFOHEADER2 pbmp,int oflag)
+   {
+   RGB2 *ctbl;
+   RGB *tctbl;
+   PBITMAPINFO2 pbmi;
+   ULONG cbits, ctblsize, nclrs;
+   int i;
+
+   cbits = pbmp->cPlanes * pbmp->cBitCount;
+   nclrs = 1 << cbits;
+   ctblsize = (cbits < 24) ? sizeof(RGB2) * nclrs : 0;
+   pbmi = (PBITMAPINFO2)calloc(sizeof(BITMAPINFO2) + ctblsize, 1);
+   pbmi->cx = pbmp->cx;
+   pbmi->cy = pbmp->cy;
+   pbmi->cbFix = sizeof(BITMAPINFOHEADER2);
+   pbmi->cPlanes = pbmp->cPlanes;
+   pbmi->cBitCount = pbmp->cBitCount;
+   ctbl = pbmi->argbColor;
+   /*
+    * if we are true color, we are done
+    */
+   if (cbits < 24) {
+      /*
+       * if we are not the old form, just read in the table..
+       */
+      if (!oflag)
+	 return (!fread(ctbl, 1, ctblsize, fp)) ? (free(pbmi), NULL) : pbmi;
+      else {
+	 /*
+	  * figure the size of table on disk
+	  */
+	 ctblsize = sizeof(RGB) * nclrs;
+	 tctbl = calloc(ctblsize, 1);
+	 /*
+	  * read the old format table in
+	  */
+	 if (!fread(tctbl, 1, ctblsize, fp))
+	    return (free(pbmi), free(tctbl), NULL);
+	 /*
+	  * run through the colors, moving them to new format
+	  */
+	 for (i = 0; i < nclrs; i++)
+	    memcpy(&ctbl[i], &tctbl[i], sizeof(RGB));
+	 free(tctbl);
+	 }
+      }
+   return pbmi;
+   }
+
+#define FHEADSIZE	((sizeof(ULONG) << 1) + 3 * sizeof(USHORT))
+
+/*
+ * loadimage
+ */
+HBITMAP loadimage(wbp wb, char *filename, int *width, int *height)
+   {
+   FILE *fp;
+   HBITMAP hbm = NULLHANDLE;
+   PBITMAPINFOHEADER2 pbmp2;
+   BITMAPINFOHEADER2 bmp2;
+   PBITMAPINFOHEADER pbmp;
+   PBITMAPINFO2 pbmi;
+   PBYTE data;
+   BITMAPFILEHEADER2 fhdr;
+   BITMAPARRAYFILEHEADER2 afhdr;
+   ULONG offset, defoffset;
+   int found;
+   int oldformat = 0;
+   STDLOCALS(wb);
+
+   /*
+    * zero out the header
+    */
+   memset(&bmp2, 0, sizeof(BITMAPINFOHEADER2));
+   bmp2.cbFix = sizeof(BITMAPINFOHEADER2);
+
+   if (fp = fopen(filename, "rb")) {
+      /*
+       * read the header to figure out what we are dealing with
+       */
+      if (!fread((void *)&fhdr, 1, sizeof(BITMAPFILEHEADER2), fp))
+	 return (fclose(fp), NULLHANDLE);
+      /*
+       * check for a single bitmap in this file
+       */
+      if (fhdr.usType == BFT_BMAP) {
+	 if (fhdr.bmp2.cbFix == sizeof(BITMAPINFOHEADER)) {
+	    oldformat = 1; /* old 1.X format */
+	    pbmp = (PBITMAPINFOHEADER)&(fhdr.bmp2);
+	    }
+	 else if (fhdr.bmp2.cbFix == sizeof(BITMAPINFOHEADER2))
+	    pbmp2 = &(fhdr.bmp2);
+	 else return (fclose(fp), NULLHANDLE);
+	 /*
+	  * reset the file ptr to right after the header - to read clr table
+	  */
+	 fseek(fp, fhdr.bmp2.cbFix + FHEADSIZE, SEEK_SET);
+	 offset = fhdr.offBits;
+	 }
+      /*
+       * check for an array of bitmaps
+       */
+      else if (fhdr.usType == BFT_BITMAPARRAY) {
+	 offset = defoffset = found = 0;
+	 while (!found) {
+	    /*
+	     * read in a header
+	     */
+	    if (fseek(fp, offset, SEEK_SET) ||
+		!fread((void *)&afhdr, sizeof(BITMAPARRAYFILEHEADER2), 1, fp)||
+		afhdr.bfh2.usType != BFT_BMAP)
+	       return (fclose(fp), NULLHANDLE);
+	    /*
+	     * check it for the resolution match - 0 will set the default
+	     */
+	    if (afhdr.cxDisplay==ScreenWidth && afhdr.cyDisplay== ScreenHeight)
+	       found = 1;
+	    else {
+	       /*
+		* res independant, don't match the resolution
+		*/
+	       if (!afhdr.cxDisplay) defoffset = offset;
+	       if (!(offset = afhdr.offNext)) break;
+	       }
+	    }
+	 /*
+	  * check if we got anything, if not read in default
+	  */
+	 if (!found) {
+	    offset = defoffset;
+	    fseek(fp, offset, SEEK_SET);
+	    fread((void *)&afhdr, sizeof(BITMAPARRAYFILEHEADER2), 1, fp);
+	    }
+	 if (afhdr.cbSize == sizeof(BITMAPARRAYFILEHEADER2))
+	    pbmp2 = &(afhdr.bfh2.bmp2);
+	 else if (afhdr.cbSize == sizeof(BITMAPARRAYFILEHEADER)) {
+	    oldformat = 1;
+	    pbmp = (PBITMAPINFOHEADER)&(afhdr.bfh2.bmp2);
+	    /*
+	     * reset the file pointer to right after the header,
+	     * since we read past it
+	     */
+	    fseek(fp, offset + afhdr.cbSize, SEEK_SET);
+	    }
+	 else return (fclose(fp), NULLHANDLE);
+	 offset = afhdr.bfh2.offBits;
+	 }
+      else return (fclose(fp), NULLHANDLE);
+
+      if (oldformat) {
+	 /*
+	  * load the values for the 'old' format bitmap
+	  */
+	 pbmp2 = &bmp2;
+	 pbmp2->cx = pbmp->cx;
+	 pbmp2->cy = pbmp->cy;
+	 pbmp2->cPlanes = pbmp->cPlanes;
+	 pbmp2->cBitCount = pbmp->cBitCount;
+	 pbmp2->cbImage = ((pbmp->cx * pbmp->cBitCount * pbmp->cPlanes) + 31) /
+	    32 * 4 * pbmp->cy;
+	 }
+      if (pbmi = LoadColorTable(fp, pbmp2, oldformat)) {
+	 /*
+	  * store the dimensions for return
+	  */
+	 *width = pbmi->cx;
+	 *height = pbmi->cy;
+	 /*
+	  * set up space for the data
+	  */
+	 data = (PBYTE)calloc(pbmp2->cbImage, 1);
+	 if (data && !fseek(fp, offset, SEEK_SET) &&
+	     fread((void *)data, 1, pbmp2->cbImage, fp))
+	    /*
+	     * build the bitmap compatible with backing bitmap PS
+	     */
+	    hbm = GpiCreateBitmap(stdbit, pbmp2, CBM_INIT, data, pbmi);
+	 free(data);
+	 }
+      free(pbmi);
+
+      fclose(fp);
+    }
+   /*
+    * return the presentation space
+    */
+   return hbm;
+   }
+
+/*
+ * Context unsetting mechanism - disassociates all dependent windows from
+ * various contexts - thus forcing them to 'reload' upon the next use.  This
+ * is a form of lazy updating mechanism.  The primary function, UnsetContext,
+ * goes through the dependency list and calls a helper function on each
+ * window in the dependency list.
+ */
+void UnsetContext(wcp wc, void (*f)(wcp, wsp))
+   {
+   int i, num;
+   wsp ws;
+   if (wc) {
+      num = wc->numDeps;
+      for (i = 0; i < wc->maxDeps && num > 0; i++)
+	 if (ws = wc->depWindows[i]) {
+	    num--;
+	    f(wc, ws);
+	    }
+      }
+   }
+
+/*
+ * Helper functions for UnsetContext remove wc from fields of ws.
+ */
+void UAllContext(wcp wc, wsp ws)
+   {
+   if (ws->lineContext == wc) ws->lineContext = NULL;
+   if (ws->charContext == wc) ws->charContext = NULL;
+   if (ws->areaContext == wc) ws->areaContext = NULL;
+   }
+void UCharContext(wcp wc, wsp ws)
+   {
+   if (ws->charContext == wc) ws->charContext = NULL;
+   }
+void ULineContext(wcp wc, wsp ws)
+   {
+   if (ws->lineContext == wc) ws->lineContext = NULL;
+   }
+void UAreaContext(wcp wc, wsp ws)
+   {
+   if (ws->areaContext == wc) ws->areaContext = NULL;
+   }
+void UImageContext(wcp wc, wsp ws)
+   {
+   if (ws->imageContext == wc) ws->imageContext = NULL;
+   }
+void UClipContext(wcp wc, wsp ws)
+   {
+   if (ws->clipContext == wc) {
+	ws->clipContext = NULL;
+	GpiDestroyRegion(ws->hpsWin,ws->hClipWindow);
+	GpiDestroyRegion(ws->hpsBitmap,ws->hClipBitmap);
+	ws->hClipWindow = NULLHANDLE;
+	ws->hClipBitmap = NULLHANDLE;
+	}
+   }
+
+char *get_mutable_name(wbp w, int mute_index)
+   {
+   return NULL;
+   }
+
+set_mutable(wbp w, int i, char *s)
+   {
+   return Failed;
+   }
+
+void free_mutable(wbp w, int mute_index)
+   {
+   }
+
+int mutable_color(wbp w, dptr argv, int argc, int *retval)
+   {
+   return Failed;
+   }
+
+void freecolor(wbp w, char *s)
+   {
+   }
+
+int walert(wbp w,int volume)
+{
+  STDLOCALS(w);
+  return Failed;
+  }
+#else					/* PresentationManager */
+static char cxc;			/* avoid empty module */
+#endif					/* PresentationManager */

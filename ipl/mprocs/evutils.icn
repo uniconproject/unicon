@@ -1,0 +1,110 @@
+############################################################################
+#
+#	File:     evutils.icn
+#
+#	Subject:  Procedure for eve.icn
+#
+#	Author:   Clinton L. Jeffery
+#
+#	Date:     March 3, 1997
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This may not be the latest version of this file, despite the date.
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+
+#
+# location() - encodes a two-dimensional location in an integer
+#
+procedure location(x, y)
+   return ishift(x, 16) + y
+end
+
+#
+# vertical() - returns the y/line/row component of a location
+#
+procedure vertical(Loc)
+  return iand(Loc, 65535) # 16 least-significant bits
+end
+
+#
+# horizontal - returns the x/column component of a location
+#
+procedure horizontal(Loc)
+  return ishift(Loc, -16) # 16 most-significant bits
+end
+
+#
+# prog_len() return the number of lines in TP
+#  Don't call until EvInit() has been called.
+#
+procedure prog_len()
+   local basename, fname, f, count
+   #
+   # Extract TP's &file keyword
+   #
+   basename := fname := keyword("file", EventSource)
+   if (not (f := open(fname))) & lpath := getenv("LPATH") || " " then {
+      #
+      # Search LPATH for the file if it wasn't in the current directory.
+      #
+      lpath ? {
+	 while dir := tab(find(" ")) do {
+	    if fname := dir || "/" || basename & (f := open(fname)) then break
+	    }
+	 if /f then fail
+	 }
+      }
+   count := 0
+   every !f do count +:= 1
+   close(f)
+   return count
+end
+
+#
+# procedure_name() - return the name of a procedure
+#
+procedure procedure_name(p)
+  return image(p) ? { ="procedure "; tab(0) } # strip off "procedure " prefix
+end
+
+#
+# WColumns(w) - return window width in columns
+#
+procedure WColumns(w)
+   /w := &window
+   return WAttrib(w, "columns")
+end
+
+#
+# WHeight(w) - return window height in pixels
+#
+procedure WHeight(w)
+   /w := &window
+   return WAttrib(w, "height")
+end
+
+#
+# WRows(w) - return window height in rows
+#
+procedure WRows(w)
+   /w := &window
+   return WAttrib(w, "rows")
+end
+
+#
+# WWidth(w) - return window width in pixels
+#
+procedure WWidth(w)
+   /w := &window
+   return WAttrib(w, "width")
+end

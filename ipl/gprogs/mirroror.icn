@@ -1,0 +1,50 @@
+############################################################################
+#
+#	File:     mirroror.icn
+#
+#	Subject:  Program to mirror images given on command line
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     October 31, 1997
+#
+############################################################################
+#
+#  This file is in the public domain.
+#
+############################################################################
+#
+#  To get from one image to another, type "n"; to quit, type "q".
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics.  
+#
+############################################################################
+#
+#  Links:  mirror, wopen
+#
+############################################################################
+
+link mirror
+link wopen
+
+procedure main(args)
+   local name, win
+
+   every name := !args do {
+      WOpen("image=" || name, "canvas=hidden") | {
+         write(&errout, "*** cannot open ", image(name))
+         next
+         }
+      win := mirror(&window)
+      repeat case Event(win) of {
+         "n":  break
+         "q":  exit()
+         }
+      WClose(&window)
+      WClose(win)
+      &window := &null
+      }
+
+end

@@ -1,0 +1,121 @@
+############################################################################
+#
+#	File:     cdialog.icn
+#
+#	Subject:  Some common methods for ivib dialogs
+#
+#	Author:   Robert Parlett
+#
+#	Date:     18 July, 1999
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+link gpxop
+
+class CommonDialog : _Dialog(global_attribs)
+   #
+   # Display an error message
+   #
+   method alert_error(s)
+      InfoDialog(s, "Okay")$show_modal(self)
+      fail
+   end
+
+   method set_attribs(x[])
+      return self$_Dialog.set_attribs_list(global_attribs ||| x)
+   end
+
+   #
+   # Read icon from file s.
+   #
+   method read_icon(s)
+      f := open(s) | return alert_error("Couldn't open file " || s)
+      res := ""
+      while x := read(f) do {
+         x ? {
+            if ="#" then
+               next
+
+            ="\""
+            res ||:= tab(0)
+         }
+
+         if res[-1] == "_" then
+            res[-1] := ""
+         else
+            break
+      }
+      close(f)
+
+      #
+      # Check for reasonably valid image 
+      #
+      if img_height(res) then
+         return res
+      else {
+         if f := open(s, "g", "image="||s, "canvas=hidden") then {
+            res := Capture(f, "c6")
+            close(f)
+            if img_height(res) then return res
+            }
+         return alert_error("Not a valid image")
+         }
+   end
+
+   #
+   # Check that the window attributes in list l are valid.
+   #
+   method check_attribs(l)
+      static test_win, attrib_table
+      initial {
+         test_win := WOpen("canvas=hidden") | stop("couldn't open window")
+         attrib_table := table()
+         every attrib_table["label" | "posx" | "pos" | "posy" | "resize" | "size" | "height" | 
+                            "width" | "lines" | "columns" | "image" | "canvas" | "iconpos" | "iconlabel" | 
+                            "iconimage" | "echo" | "cursor" | "x" | "y" | "row" | "col" | "pointer" | 
+                            "pointerx" | "pointery" | "pointerrow" | "pointercol" | "display" | "depth" | 
+                            "displayheight" | "displaywidth" | "fg" | "bg" | "reverse" | "drawop" | "gamma" | 
+                            "font" | "fheight" | "fwidth" | "ascent" | "descent" | "leading" | "linewidth" | 
+                            "linestyle" | "fillstyle" | "pattern" | "clipx" | "clipy" | "clipw" | "cliph" | 
+                            "dx" | "dy"] := 1
+      }
+
+      every s := !l do {
+         if /attrib_table[s[1]] then
+            return alert_error("Invalid attribute " || s[1])
+         if not(WAttrib(test_win, s[1] || "=" || s[2])) then
+            return alert_error("Invalid value " || s[2] || " for attrib " || s[1])
+      }
+      return
+   end
+
+   initially
+      self$_Dialog.initially()
+      global_attribs := ["bg=light gray", "fg=black", "font=times", "resize=on"]
+end
+############################################################################
+#
+# Extends _Dialog to enable saving of some fields.
+#
+class CDialog : _Dialog : ClassIO()
+   method get_template()
+      return [["Min Width", "min_width"], 
+              ["Min Height", "min_height"], 
+              ["Ticker Rate", "ticker_rate"],
+              ["Attribs", "attribs"]
+              ]
+   end
+end

@@ -1,0 +1,43 @@
+#  This vib interface specification is a working program that responds
+#  to vidget events by printing messages.  Use a text editor to replace
+#  this skeletal program with your own code.  Retain the vib section at
+#  the end and use vib to make any changes to the interface.
+
+link vsetup
+
+procedure main(args)
+   local vidgets, root, paused
+
+   (WOpen ! ui_atts()) | stop("can't open window")
+   vidgets := ui()				# set up vidgets
+   root := vidgets["root"]
+
+   paused := 1					# flag no work to do
+   repeat {
+      # handle any events that are available, or
+      # wait for events if there is no other work to do
+      while (*Pending() > 0) | \paused do {
+         ProcessEvent(root, QuitCheck)
+         }
+      # if <paused> is set null, code can be added here
+      # to perform useful work between checks for input
+      }
+end
+
+procedure menu_cb1(vidget, value)
+   return
+end
+
+#===<<vib:begin>>===	modify using vib; do not remove this marker line
+procedure ui_atts()
+   return ["size=600,377", "bg=gray-white"]
+end
+
+procedure ui(win, cbk)
+return vsetup(win, cbk,
+   [":Sizer:::0,0,600,377:",],
+   ["menu1:Menu:pull::246,145,36,22:Menu",menu_cb1,
+      ["one","two","three"]],
+   )
+end
+#===<<vib:end>>===	end of section maintained by vib

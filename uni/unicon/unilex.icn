@@ -1,0 +1,532 @@
+#
+# A hand-written lex compatible icon lexer.
+#
+
+link escape
+
+#$define debuglex 1
+global yytext, yyin, yytoken #, debuglex
+
+global O, D, L, H, R, FS, IS, W, idchars
+
+# E                       [Ee][+-]?{D}+
+#
+
+record token(tok, s, line, column, filename)
+
+procedure init_csets()
+   O  := '01234567'
+   D  := &digits
+   L  := &letters ++ '_'
+   H  := &digits ++ 'abcdefABCDEF'
+   R  := &digits ++ &letters
+   FS := 'fFlL'
+   IS := 'uUlL'
+   W  := ' \t\v'
+   idchars := L ++ D
+end
+
+$include "ytab_h.icn"
+
+global yylineno, yycolno, yyfilename
+
+#
+# the tokflags will tell you whether the token can start an expression or
+# end an expression, as well as whether a newline was seen since the last
+# token
+#
+global tokflags
+$define Beginner 1
+$define Ender 2
+$define Newline 4
+global lastid
+
+global buffer
+global lastchar
+
+procedure reswords()
+static t
+initial {
+   t := table([Beginner+Ender, IDENT])
+
+   t["break"] := [Beginner+Ender, BREAK]
+   t["by"] := [0, BY]
+   t["case"] := [Beginner, CASE]
+   t["class"] := [0, CLASS]
+   t["create"] := [Beginner, CREATE]
+   t["default"] := [Beginner, DEFAULT]
+   t["do"] := [0, DO]
+   t["else"] := [0, ELSE]
+   t["end"] := [Beginner, END]
+   t["every"] := [Beginner, EVERY]
+   t["fail"] := [Beginner+Ender, FAIL]
+   t["global"] := [0, GLOBAL]
+   t["if"] := [Beginner, IF]
+   t["import"] := [0, IMPORT]
+   t["initial"] := [Beginner, iconINITIAL]
+   t["initially"] := [Ender, INITIALLY]
+   t["invocable"] := [0, INVOCABLE]
+   t["link"] := [0, LINK]
+   t["local"] := [Beginner, LOCAL]
+   t["method"] := [0, METHOD]
+   t["next"] := [Beginner+Ender, NEXT]
+   t["not"] := [Beginner, NOT]
+   t["of"] := [0, OF]
+   t["package"] := [0, PACKAGE]
+   t["procedure"] := [0, PROCEDURE]
+   t["record"] := [0, RECORD]
+   t["repeat"] := [Beginner, REPEAT]
+   t["return"] := [Beginner+Ender, RETURN]
+   t["static"] := [Beginner, STATIC]
+   t["suspend"] := [Beginner+Ender, SUSPEND]
+   t["then"] := [0, THEN]
+   t["to"] := [0, TO]
+   t["until"] := [Beginner, UNTIL]
+   t["while"] := [Beginner, WHILE]
+}
+   return t
+end
+
+procedure lex_error()
+   yyerror("token not recognized")
+end
+
+procedure yylex2()
+static punc_table
+initial {
+   init_csets()
+   reswords := reswords()
+   punc_table := table(lex_error)
+   punc_table["'"] := do_literal
+   punc_table["\""] := do_literal
+   punc_table["!"] := do_bang
+   punc_table["%"] := do_mod
+   punc_table["&"] := do_and
+   punc_table["*"] := do_star
+   punc_table["+"] := do_plus
+   punc_table["-"] := do_minus
+   punc_table["."] := do_dot
+   punc_table["/"] := do_slash
+   punc_table[":"] := do_colon
+   punc_table["<"] := do_less
+   punc_table["="] := do_equal
+   punc_table[">"] := do_greater
+   punc_table["?"] := do_qmark
+   punc_table["@"] := do_at
+   punc_table["\\"] := do_backslash
+   punc_table["^"] := do_caret
+   punc_table["|"] := do_or
+   punc_table["~"] := do_tilde
+   punc_table["("] := do_lparen
+   punc_table[")"] := do_rparen
+   punc_table["["] := do_lbrack
+   punc_table["]"] := do_rbrack
+   punc_table["{"] := do_lbrace
+   punc_table["}"] := do_rbrace
+   punc_table[","] := do_comma
+   punc_table[";"] := do_semi
+   punc_table["$"] := do_dollar
+   every punc_table[!&digits] := do_digits
+   every punc_table["_" | !&letters] := do_letters
+   }
+
+yycolno +:= *yytext
+
+   repeat {
+       if pos(0) then fail
+       if 
+#	   tokflags >= Newline &
+	   ="#" then {
+	       if ="line " then {
+		   if yylineno := integer(tab(many(&digits))) then {
+		       =" \""
+		       yyfilename := tab(find("\"")|0)
+		   }
+	       }
+	       tab(find("\n") | 0)
+	       next
+	   }
+       if ="\n" then {
+	   yylineno +:= 1
+	   yycolno := 1
+	   if tokflags < Newline then
+	       tokflags +:= Newline
+	   next
+       }
+       if tab(any(' ')) then { yycolno +:= 1; next }
+       if tab(any('\v\^l')) then { next }
+       if tab(any('\t')) then {
+	   yycolno +:= 1
+	   while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
+	   next
+       }
+
+       yytext := move(1)
+       return punc_table[yytext]()
+   }
+end
+
+procedure do_letters()
+	  yytext ||:= tab(many(idchars))
+	  x := reswords[yytext]
+	  tokflags +:= x[1]
+	  return x[2]
+end
+
+procedure do_digits()
+	      yytext ||:= tab(many(&digits))
+	      tokflags +:= Beginner+Ender
+	      if yytext ||:= ="." then {
+		  yytext ||:= tab(many(&digits))
+		  if yytext ||:= tab(any('eE')) then {
+		      yytext ||:= ="-"
+		      yytext ||:= tab(many(&digits))
+		  }
+		  return REALLIT
+	      }
+	      else if yytext ||:= tab(any('eE')) then {
+		  yytext ||:= ="-"
+		  yytext ||:= tab(many(&digits))
+		  return REALLIT
+	      }
+	      else {
+		  if yytext ||:= tab(any('rR')) then {
+		      yytext ||:= tab(many(R))
+		  }
+		  return INTLIT
+	      }
+end
+
+procedure do_dollar()
+	      if yytext ||:= ="(" then { tokflags +:= Beginner; return LBRACE }
+	      if yytext ||:= =")" then { tokflags +:= Ender; return RBRACE }
+	      if yytext ||:= ="<" then { tokflags +:= Beginner; return LBRACK }
+	      if yytext ||:= =">" then { tokflags +:= Ender; return RBRACK }
+	      return DOLLAR
+end
+
+procedure do_comma()
+    return COMMA
+end
+
+procedure do_lbrack()
+tokflags +:= Beginner; return LBRACK
+end
+
+procedure do_rbrack()
+tokflags +:= Ender; return RBRACK
+end
+
+procedure do_lbrace()
+tokflags +:= Beginner; return LBRACE
+end
+
+procedure do_rbrace()
+tokflags +:= Ender; return RBRACE
+end
+
+procedure do_semi()
+    return SEMICOL
+end
+
+procedure do_lparen()
+    tokflags +:= Beginner; return LPAREN
+end
+
+procedure do_rparen()
+    tokflags +:= Ender; return RPAREN
+end
+
+procedure do_tilde()
+	      if yytext ||:= ="=" then {
+		  if yytext ||:= ="=" then {
+		      if yytext ||:= ="=" then {
+			  if yytext ||:= =":=" then {return AUGNEQUIV }
+			  tokflags +:= Beginner
+			  return NEQUIV
+		      }
+		      if yytext ||:= =":=" then {return AUGSNE}
+		      tokflags +:= Beginner
+		      return SNE
+		  }
+		  if yytext ||:= =":=" then { return AUGNMNE}
+		  tokflags +:= Beginner
+		  return NMNE
+	      }
+	      tokflags +:= Beginner
+	      return TILDE
+end
+
+procedure do_or()
+	      if yytext ||:= ="|" then {
+		  if yytext ||:= ="|" then {
+		      if yytext ||:= =":=" then{return AUGLCONCAT}
+		      tokflags +:= Beginner
+		      return LCONCAT
+		  }
+		  if yytext ||:= =":=" then { return AUGCONCAT}
+		  tokflags +:= 1
+		  return CONCAT
+	      }
+	      tokflags +:= Beginner
+	      return BAR
+end
+
+procedure do_caret()
+    if yytext ||:= =":=" then {  return AUGCARET }
+    tokflags +:= Beginner
+    return CARET
+end
+
+procedure do_backslash()
+    tokflags+:=Beginner
+    return BACKSLASH
+end
+
+procedure do_at()
+    if yytext ||:= =":=" then { return AUGAT }
+    tokflags +:= Beginner
+    return AT
+end
+
+procedure do_qmark()
+	      if yytext ||:= =":=" then { return AUGQMARK }
+	      tokflags +:= 1
+	      return QMARK
+end
+
+procedure do_equal()
+	      if yytext ||:= ="=" then {
+		  if yytext ||:= ="=" then {
+		      if yytext ||:= =":=" then{return AUGEQUIV}
+		      tokflags +:= Beginner
+		      return EQUIV
+		  }
+		  if yytext ||:= =":=" then { return AUGSEQ }
+		  tokflags +:= Beginner
+		  return SEQ
+	      }
+	      if yytext ||:= =":=" then { return AUGNMEQ }
+	      tokflags +:= Beginner
+	      return NMEQ
+end
+
+procedure do_greater()
+	      if yytext ||:= =":=" then { return AUGNMGT }
+	      if yytext ||:= =">" then {
+		  if yytext ||:= =":=" then { return AUGSGT }
+		  if yytext ||:= ="=" then {
+		      if yytext ||:= =":=" then {return AUGSGE}
+		      return SGE
+		  }
+		  return SGT
+	      }
+	      if yytext ||:= ="=" then {
+		  if yytext ||:= =":=" then { return AUGNMGE }
+		  return NMGE
+	      }
+	      return NMGT
+end
+
+procedure do_less()
+	      if yytext ||:= =":=" then { return AUGNMLT }
+	      if yytext ||:= ="-" then {
+		  if yytext ||:= =">" then { return REVSWAP }
+		  return REVASSIGN
+	      }
+	      if yytext ||:= ="<" then {
+		  if yytext ||:= =":=" then { return AUGSLT }
+		  if yytext ||:= ="=" then {
+		      if yytext ||:= =":=" then {return AUGSLE}
+		      return SLE
+		  }
+		  return SLT
+	      }
+	      if yytext ||:= ="=" then {
+		  if yytext ||:= =":=" then { return AUGNMLE }
+		  return NMLE
+	      }
+	      return NMLT
+end
+
+procedure do_colon()
+	      if yytext ||:= ="=" then {
+		  if yytext ||:= =":" then { return SWAP }
+		  return ASSIGN
+	      }
+	      if yytext ||:= =":" then {
+		  return COLONCOLON
+	      }
+	      return COLON
+end
+
+procedure do_slash()
+    if yytext ||:= =":=" then { return AUGSLASH }
+    tokflags +:= Beginner
+    return SLASH
+end
+
+procedure do_dot()
+    if yytext ||:= tab(many(&digits)) then {
+	tokflags +:= Beginner+Ender
+	return REALLIT
+    }
+    else {
+	tokflags +:= Beginner
+	return DOT
+    }
+end
+
+procedure do_minus()
+    if yytext ||:= =":" then {
+	if yytext ||:= ="=" then { return AUGMINUS}
+	return MCOLON
+    }
+    if yytext ||:= ="-" then {
+	if yytext ||:= =":=" then { return AUGDIFF}
+	return DIFF
+    }
+    tokflags +:= Beginner
+    return MINUS
+end
+
+procedure do_plus()
+	      if yytext ||:= =":" then {
+		  if yytext ||:= ="=" then { return AUGPLUS }
+		  return PCOLON
+	      }
+	      if yytext ||:= ="+" then {
+		  if yytext ||:= =":=" then {return AUGUNION}
+		  return UNION
+	      }
+	      tokflags +:= Beginner
+	      return PLUS
+end
+procedure do_star()
+    if yytext ||:= =":=" then { return AUGSTAR }
+    if yytext ||:= ="*" then {
+	if yytext ||:= =":=" then {return AUGINTER}
+	return INTER
+    }
+    tokflags +:= Beginner
+    return STAR
+end
+
+procedure do_and()
+    if yytext ||:= =":=" then { return AUGAND }
+    tokflags +:= Beginner
+    return AND
+end
+
+procedure do_mod()
+    if yytext ||:= =":=" then { return AUGMOD }
+    return MOD
+end
+
+procedure do_bang()
+    tokflags +:= Beginner
+    return BANG
+end
+
+procedure do_literal()
+	      until yytext ||:= =(yytext[1]) do {
+		  yytext ||:= ="\\"
+		  # need more logic here to eat escape chars
+		  yytext ||:= move(1)
+		  if yytext[-1] == "\n" then {
+		      if not yytext[-2] == "_" then {
+			  write(&errout, "unterminated string constant")
+		      }
+		      else {
+			  yytext := yytext[1:-2]
+			  tab(many(' \t'))
+		      }
+		  }
+	      }
+	      tokflags +:= Beginner + Ender
+	      if yytext[1] == "'" then
+		  return CSETLIT
+	      else return STRINGLIT
+
+end
+
+global fName
+
+global errors
+
+procedure yylex_reinit()
+   yytext := ""
+   yylineno := 0
+   yycolno := 1
+   lastchar := ""
+      if type(yyin) == "file" then
+         buffer := reads(yyin, 1000000)
+      else
+         buffer := yyin
+      tokflags := 0
+end
+
+procedure yylex()
+  static saved_tok, saved_yytext
+  local rv, ender
+  initial {
+      if /buffer then
+	  yylex_reinit()
+     }
+   if /buffer then {
+      if \debuglex then
+	 write("yylex() : 0")
+      return 0
+      }
+  if \saved_tok then {
+    rv := saved_tok
+    saved_tok := &null
+    yytext := saved_yytext
+    yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
+    if \debuglex then
+      write("yylex() : ",tokenstr(rv))
+    return rv
+  }
+  ender := iand(tokflags, Ender)
+  tokflags := 0
+  if *buffer=0 then {
+      buffer := &null
+      if \debuglex then
+	  write("yylex() : EOFX")
+      return EOFX
+     }
+  buffer ? {
+      if rv := yylex2() then {
+	  buffer := tab(0)
+      }
+      else {
+         buffer := &null
+	 yytext := ""
+	 if \debuglex then
+	     write("yylex() : EOFX")
+         return EOFX
+      }
+  }
+  if ender~=0 & iand(tokflags, Beginner)~=0 & iand(tokflags, Newline)~=0 then {
+    saved_tok := rv
+    saved_yytext := yytext
+    yytext := ";"
+    rv := SEMICOL
+    }
+   yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
+   if \debuglex then
+      write("yylex() : ", tokenstr(rv))
+   return rv
+end
+
+
+#procedure main(argv)
+#  local i
+#  fName := argv[1] | stop("usage: unilex filename")
+#  yyin := ""
+#  every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
+#  yylex_reinit()
+
+#  while (i := yylex()) ~=== EOFX do
+#     write(image(i),": ",image(yytext))
+#end

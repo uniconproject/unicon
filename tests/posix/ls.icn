@@ -1,0 +1,23 @@
+
+$include "posix.icn"
+link printf
+
+procedure main()
+   chdir("test-dir")
+   f := open(".") | stop(sys_errstr(&errno), image("test-dir"))
+   L := list()
+   while line := read(f) do
+      push(L, line)
+   every write(format(stat(n := !sort(L)), n))
+end
+
+procedure format(p, name)
+   s := sprintf("%4s %s %3s %8s %s",
+	   p.blocks, p.mode, p.nlink,
+	   p.size, name)
+   
+   s ||:= " -> " || \p.symlink
+
+   return s
+end
+

@@ -1,0 +1,116 @@
+############################################################################
+#
+#	File:     wevents.icn
+#
+#	Subject:  Program to report Icon window events
+#
+#	Author:   Gregg M. Townsend
+#
+#	Date:     October 30, 1995
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#     wevents reports all the events delivered to an Icon window.
+#  Each event produces a single line of output.  The program terminates
+#  after receiving and reporting a ^C, ^D, or DELETE key event.
+#
+#     Each event is reported both in Icon terms and in terms of its
+#  internal representation.  The output fields on each line are:
+#
+#	&interval (interval since previous event, in milliseconds)
+#	&control, &meta, &shift (modifier keys: c, m, or s if pressed)
+#	event returned by Event: keyword name, if any, or else image
+#	&x, &y (usually coordinates, but new size for resize event)
+#
+#	image() of the first value on the event queue
+#	hex dump of the second value (modifier flags and x coordinate)
+#	hex dump of the third value (encoded interval and y coordinate)
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links: hexcvt, options, optwindw
+#
+############################################################################
+
+link hexcvt, options, optwindw
+
+procedure main(args)
+   local w, q, e, xhex, yhex, eimage
+
+   w := optwindow(options(args, winoptions()))
+
+   &error := 1
+   WAttrib(w, "resize=on")
+   &error := 0
+
+   repeat {
+      while (* (q := Pending(w))) = 0 do
+         delay(1)
+      eimage := right(image(q[1]), 10) | "******"
+      xhex := hexstring(q[2], 8) | "********"
+      yhex := hexstring(q[3], 8) | "********"
+      e := Event(w)
+      write(
+         r(&interval, 5), " ",
+         if &control then "c" else "-",
+         if &meta then "m" else "-",
+         if &shift then "s" else "-",
+         right(evname(e), 10),
+         " @", r(&x, 4), ",", l(&y, 6),
+         eimage, "  ",
+         left(xhex, 4), " ", right(xhex, 4), "  ",
+         left(yhex, 4), " ", right(yhex, 4),
+         )
+      if e === ("\^C" | "\^D" | "\177") then
+         break
+         }
+end
+
+
+# evname(e) -- translate e into text representation
+
+procedure evname(e)
+   return case e of {
+      &lpress: "&lpress"
+      &mpress: "&mpress"
+      &rpress: "&rpress"
+      &lrelease: "&lrelease"
+      &mrelease: "&mrelease"
+      &rrelease: "&rrelease"
+      &ldrag: "&ldrag"
+      &mdrag: "&mdrag"
+      &rdrag: "&rdrag"
+      &resize: "&resize"
+      default: image(e)
+      }
+end
+
+
+#  r(v, n) -- right-justify image of v in at least n characters
+
+procedure r(v, n)
+   local s
+   s := image(v)
+   if *s < n then
+      s := right(s, n)
+   return s
+end
+
+
+#  l(v, n) -- left-justify image of v in at least n characters
+
+procedure l(v, n)
+   local s
+   s := image(v)
+   if *s < n then
+      s := left(s, n)
+   return s
+end

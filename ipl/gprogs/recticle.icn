@@ -1,0 +1,92 @@
+############################################################################
+#
+#	File:     recticle.icn
+#
+#	Subject:  Program to draw rectangles recursively
+#
+#	Authors:  Gregg M. Townsend and Ralph E. Griswold
+#
+#	Date:     August 14, 1996
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This program draws filled color rectangles recursively.
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:  colrlist, random, wopen
+#
+############################################################################
+
+link colrlist
+link random
+link wopen
+
+$define MinSide 10	# minimum size of a rectangle side
+$define Gap 3		# gap between rectangles
+$define Bias 20		# bias setting -- affects size choices
+
+procedure main(args)
+   local w, h
+
+   WOpen() | stop("*** cannot open window")
+
+   randomize()
+
+   w := WAttrib("width")
+   h := WAttrib("height")
+
+   rect(Gap, Gap, w - Gap, h - Gap)
+
+   Event()
+
+end
+
+#  rect(x,y,w,h) -- draw rectangle, possibly subdivided, at (x,y)
+
+procedure rect(x, y, w, h)
+   local d
+   static colors
+
+   initial colors := colrplte("c3")
+
+   if d := divide(w < h) then {		# if cut horizontally:
+      rect(x, y, w, d)			#    draw top portion
+      rect(x, y + d, w, h - d)		#    draw bottom portion
+      }
+   else if d := divide(w) then {	# if cut vertically:
+      rect(x, y, d, h)			#    draw left portion
+      rect(x + d, y, w - d, h)		#    draw right portion
+      }
+   else {				# else draw single rect
+      Fg(?colors)	# set random color
+      FillRectangle(x, y, w - Gap, h - Gap)	# draw
+      }
+
+   return
+
+end
+
+
+#  divide(n) -- find division point along length n
+#
+#  Choose and return a division point at least MinSide units from
+#  either end.  Fail if the length is too small to subdivide;
+#  also fail randomly, depending partially on the Bias setting.
+
+procedure divide(n)
+
+   if (n > 2 * MinSide) & (?n > Bias) then
+      return MinSide + ?(n - 2 * MinSide)
+   else
+      fail
+
+end

@@ -1,0 +1,59 @@
+Replied: Fri, 19 May 2000 13:36:52 -0700
+Replied: "Federico Balbi <fbalbi@lonestar.jpl.utsa.edu> phillip"
+Received: from koko.Egr.UNLV.EDU by JIMI.CS.UNLV.EDU id aa04255;
+          16 May 100 12:57 PDT
+Received: (qmail 6236 invoked from network); 16 May 2000 19:56:43 -0000
+Received: from lonestar.jpl.utsa.edu (129.115.120.1)
+  by koko.egr.unlv.edu with SMTP; 16 May 2000 19:56:43 -0000
+Received: from localhost (fbalbi@localhost)
+	by lonestar.jpl.utsa.edu (8.9.1/8.9.1) with ESMTP id OAA05480;
+	Tue, 16 May 2000 14:52:58 -0500 (CDT)
+Date: Tue, 16 May 2000 14:52:58 -0500 (CDT)
+From: Federico Balbi <fbalbi@lonestar.jpl.utsa.edu>
+To: Clinton Jeffery <jeffery@cs.unlv.edu>, 
+    Phillip Thomas <ptho@sis2.nlm.nih.gov>
+Subject: utility
+
+  if you plan to use MySQL w/ Icon I give you this procedure to escape
+strings. In fact, if you do not do it, you can have wrong queries.
+i tested a little bit and it's doing OK. If you find any bugs please do
+let me know.
+
+Federico
+
+# replace special chars with proper escape sequences
+procedure escape(s)
+  idx:=1
+  while idx <= *s do {
+    case s[idx] of {
+      "'": {
+        s[idx]:="\\\'"
+        idx+:=2
+      }
+      "%": {
+        s[idx]:="\%"
+        idx+:=2
+      }
+      "_": {
+        s[idx]:="\_"
+        idx+:=2
+      }
+      char(34): {
+        s[idx]:="\\\""
+        idx+:=2
+      }
+      "\\": {
+        s[idx]:="\\\\"
+        idx+:=2
+      }
+      default: idx+:=1
+    }
+  }
+  return s
+end
+
+----------------------------------------------------------------------------
+ Federico Balbi - University of Texas at San Antonio 
+ e-mail: fbalbi@lonestar.utsa.edu - URL: http://www.geocities.com/fedebalbi 
+
+

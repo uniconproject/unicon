@@ -1,0 +1,22 @@
+procedure main(av)
+   every fn := !av do iol2htm(fn)
+end
+
+procedure iol2htm(filename)
+   f := open(filename) | stop("can't open ", filename)
+   filename[find(".iol") : 0] := ""
+   filename ||:= ".htm"
+   fout := open(filename, "w") | stop("can't write to ", filename)
+   while line := read(f) do {
+       line := transhtml(f,line)
+       write(fout, line)
+       }
+end
+
+procedure transhtml(f,line)
+   rv := ""
+   line ? {
+      rv := tab(0)
+      }
+   return rv
+end

@@ -1,0 +1,2627 @@
+/*
+ * fxposix.ri - posix interface
+ */
+
+/*
+ * Copyright 1997-99 Shamim Mohamed.
+ *
+ * Modification and redistribution is permitted as long as this (and any
+ * other) copyright notices are kept intact.
+ */
+
+#ifndef MultiThread
+struct descrip amperErrno = {D_Integer};
+#endif					/* MultiThread */
+
+#ifdef PosixFns
+extern int errno;
+
+#define String(d, s) do {                               \
+      int len = strlen(s);                              \
+      Protect(StrLoc(d) = alcstr((s), len), runerr(0)); \
+      StrLen(d) = len;                                  \
+} while (0)
+
+
+"sys_errstr() - get the error string corresponding to an &errno value."
+
+function{0,1} sys_errstr(e)
+   if !cnv:C_integer(e) then
+      runerr(101, e)
+   abstract {
+      return string
+      }
+   inline {
+      int len;
+      if (e <= 0 || e > sys_nerr)
+	 fail;
+      String(result, (char *)sys_errlist[e]);
+      return result;
+      }
+end
+
+"getppid() - get parent pid."
+
+function{0,1} getppid()
+   abstract {
+      return integer
+      }
+   body {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      return C_integer (getppid());
+#endif					/* NT */
+      }
+end
+
+"getpid() - get process pid."
+
+function{0,1} getpid()
+   abstract {
+      return integer
+      }
+   inline {
+     IntVal(amperErrno) = 0;
+#if NT
+     return C_integer (_getpid());
+#else					/* NT */
+     return C_integer (getpid());
+#endif					/* NT */
+     }
+end
+
+"link() - create a link to a file."
+
+function{0,1} link(s1, s2)
+   if !cnv:C_string(s1) then
+      runerr(103, s1)
+   if !cnv:C_string(s2) then
+      runerr(103, s2)
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (link(s1, s2) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+         }
+      return nulldesc;
+#endif					/* NT */
+      }
+end
+
+"symlink() - create a symlink to a file."
+
+function{0,1} symlink(s1, s2)
+   if !cnv:C_string(s1) then
+      runerr(103, s1)
+   if !cnv:C_string(s2) then
+      runerr(103, s2)
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (symlink(s1, s2) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+         }
+      return nulldesc;
+#endif					/* NT */
+      }
+end
+
+"readlink() - read a symbolic link."
+
+function{0,1} readlink(s)
+   if !cnv:C_string(s) then
+      runerr(103, s)
+   abstract {
+      return string
+      }
+   body {
+      char ret[NAME_MAX];
+      int len;
+      char *out;
+      long n;
+
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      reserve(Strings, NAME_MAX);
+      Protect(StrLoc(result) = alcstr(NULL, NAME_MAX), runerr(0));
+      if ((len = readlink(s, StrLoc(result), NAME_MAX)) < 0) {
+	 /* Give back the string */
+	 n = DiffPtrs(StrLoc(result),strfree); /* note the deallocation */
+         if (n < 0)
+            EVVal(-n, E_StrDeAlc);
+         else
+            EVVal(n, E_String);
+         strtotal += DiffPtrs(StrLoc(result),strfree);
+         strfree = StrLoc(result);              /* reset free pointer */
+
+	 IntVal(amperErrno) = errno;
+	 fail;
+         }
+
+      /* Return the extra characters at the end */
+      out = StrLoc(result) + len;
+      StrLen(result) = DiffPtrs(out,StrLoc(result));
+      n = DiffPtrs(out,strfree);             /* note the deallocation */
+      if (n < 0)
+	EVVal(-n, E_StrDeAlc);
+      else
+	EVVal(n, E_String);
+      strtotal += DiffPtrs(out,strfree);
+      strfree = out;                         /* give back unused space */
+
+      return result;
+#endif					/* NT */
+      }
+end
+
+"kill() - send a signal to a process."
+
+function{0,1} kill(pid, signal)
+   if !is:string(signal) then
+      if !is:integer(signal) then
+         runerr(170, signal)
+   if !cnv:C_integer(pid) then
+      runerr(101, pid)
+
+   abstract {
+      return null
+      }
+   body {
+      int sig;
+      tended char *signalname;
+     
+      if (is:string(signal)) {
+	 /* Parse signal name */
+         cnv:C_string(signal, signalname);
+	 sig = si_s2i((siptr)signalnames, signalname);
+	 if (sig == -1)
+	    runerr(176, signal);
+         }
+      else {
+         cnv:C_integer(signal, sig);
+	 if (sig < 0 || sig > 50)
+	    runerr(176, signal);
+	 }
+      if (sig == 0) { 
+	 IntVal(amperErrno) = EINVAL; 
+	 fail; 
+      } 
+
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (kill(pid, sig) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+#endif					/* NT */
+      }
+end
+
+"trap() - trap a signal."
+
+function{0,1} trap(nsignal, handler)
+   if !is:string(nsignal) then
+      if !is:integer(nsignal) then
+         runerr(170, nsignal)
+   abstract {
+      return proc
+      }
+   body { 
+      int sig;
+      tended char *signalname;
+        
+      if (is:string(nsignal)) {
+         cnv:C_string(nsignal, signalname);
+	 sig = si_s2i((siptr)signalnames, signalname);
+	 if (sig == -1)
+	    runerr(176, nsignal);
+         }
+      else {
+         cnv:C_integer(nsignal, sig);
+	 if (sig < 0 || sig > 50)
+	    runerr(176, nsignal);
+         }
+      if (sig == 0) { 
+	 IntVal(amperErrno) = EINVAL; 
+	 fail; 
+      } 
+
+#if NT
+      fail;
+#else					/* NT */
+      if (is:null(handler))
+         signal(sig, SIG_DFL);
+      else if (is:proc(handler)) {
+	 struct b_proc *pp = (struct b_proc*)BlkLoc(handler);
+	 if (pp->nparam != 1 && pp->nparam != -1)
+	    runerr(178, handler);
+         signal(sig, signal_dispatcher);
+         }
+      else
+         runerr(106, handler);
+      return register_sig(sig, handler);
+#endif					/* NT */
+      }
+end
+
+"chown() - change the owner of a file."
+
+function{0,1} chown(s, u, g)
+   declare {
+      int i_u, i_g;
+      }
+   type_case u of {
+      string: {
+	 body {
+	    tended char* fname;
+	    cnv:C_string(u, fname);
+	    i_u = get_uid(fname);
+	 }
+      }
+      integer: {
+	 body {
+	    cnv:C_integer(u, i_u);
+	 }
+      }
+      null: {
+	 body {
+	    i_u = -1;
+	 }
+      }
+      default: {
+	 runerr(170, g);
+      }
+   }
+
+   type_case g of {
+      string: {
+	 body {
+	    tended char* gname;
+	    cnv:C_string(g, gname);
+	    i_g = get_gid(gname);
+	 }
+      }
+      integer: {
+	 body {
+	    cnv:C_integer(g, i_g);
+	 }
+      }
+      null: {
+	 body {
+	    i_g = -1;
+	 }
+      }
+      default: {
+ 	 runerr(170, u);
+      }
+   }
+
+   type_case s of {
+      string: {
+         abstract {
+	    return null
+         }
+	 body {
+	    tended char *fname;
+
+	    IntVal(amperErrno) = 0;
+            cnv:C_string(s, fname);
+#if NT
+	    fail;
+#else					/* NT */
+	    if (chown(fname, i_u, i_g) != 0) {
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+	    return nulldesc;
+#endif					/* NT */
+	 }
+      }
+      file: {
+         abstract {
+	    return null
+         }
+	 body {
+	    int fd;
+	    IntVal(amperErrno) = 0;
+	    if ((fd = get_fd(s, 0)) < 0)
+	       runerr(174, s);
+#if NT
+	    fail;
+#else					/* NT */
+	    if (fchown(fd, i_u, i_g) != 0) {
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+	    return nulldesc;
+#endif					/* NT */
+	 }
+      }
+      default:
+	 runerr(109, s)
+      }
+end
+
+"chmod() - change the permission on a file."
+
+function{0,1} chmod(s, m)
+   if !is:string(m) then
+      if !is:integer(m) then
+         runerr(170, m)
+
+   type_case s of {
+      string: {
+ 	 abstract {
+	    return null
+	    }
+	 body {
+	    int i;
+	    tended char *fname, *cmode;
+	    IntVal(amperErrno) = 0;
+            cnv:C_string(s, fname);
+	    if (is:string(m)) {
+	       cnv:C_string(m, cmode);
+	       i = getmodenam(fname, cmode);
+	       if (i == -1) {
+		  IntVal(amperErrno) = errno;
+		  fail;
+		  }
+	       if (i == -2)
+		  runerr(175, m);
+	       }
+	    else {
+	       cnv:C_integer(m, i);
+	       }
+#if NT
+	    if (_chmod(fname, i) != 0) {
+#else					/* NT */
+	    if (chmod(fname, i) != 0) {
+#endif					/* NT */
+	       IntVal(amperErrno) = errno;
+	       fail;
+	    }
+	    return nulldesc;
+	 }
+      }
+      file: {
+	 abstract {
+	    return null
+	    }
+	 body {
+	    tended char *cmode;
+	    int i, fd;
+	    IntVal(amperErrno) = 0;
+	    if (is:string(m)) {
+	       cnv:C_string(m, cmode);
+	       if ((fd = get_fd(s, 0)) < 0)
+		  runerr(174, s);
+	       i = getmodefd(fd, cmode);
+	       if (i == -1) {
+		  IntVal(amperErrno) = errno;
+		  fail;
+	       }
+	       if (i == -2)
+		  runerr(175, m);
+	    }
+	    else
+	       cnv:C_integer(m, i);
+#if NT
+	    fail;
+#else					/* NT */
+	    if (fchmod(fd, i) != 0) {
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+	    return nulldesc;
+#endif					/* NT */
+	 }
+      }
+      default:
+	 runerr(109, s)
+      }
+end
+
+"chroot() - change the root directory."
+
+function{0,1} chroot(d)
+   if !cnv:C_string(d) then
+      runerr(103, d)
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (chroot(d) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+#endif					/* NT */
+      }
+end
+
+"rmdir() - remove an empty directory."
+
+function{0,1} rmdir(s)
+   if !cnv:C_string(s) then
+      runerr(103, s)
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      if (_rmdir(s) != 0) {
+#else					/* NT */
+      if (rmdir(s) != 0) {
+#endif					/* NT */
+	 IntVal(amperErrno) = errno;
+	 fail;
+         }
+      return nulldesc;
+      }
+end
+
+"mkdir() - make a new directory."
+
+function{0,1} mkdir(s, m)
+   if !cnv:C_string(s) then
+      runerr(103, s)
+   if !is:string(m) then
+      if !is:integer(m) then
+	 if !is:null(m) then
+            runerr(170, m)
+
+   abstract {
+      return null
+      }
+   body {
+      tended char *cmode;
+      int mode = 0777;		/* default; will be modified by umask */
+      
+      if (is:string(m)) {
+         cnv:C_string(m, cmode);
+	 mode = getmodenam(0, cmode);
+	 if (mode == -1) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	 }
+	 if (mode == -2)
+	    runerr(175, m);
+      }
+      else {
+         cnv:C_integer(m, mode);
+      }
+
+      IntVal(amperErrno) = 0;
+#if NT
+      if (_mkdir(s) != 0) {		/* in NT, _mkdir don't have mode*/
+#else					/* NT */
+      if (mkdir(s, mode) != 0) {
+#endif					/* NT */
+	 IntVal(amperErrno) = errno;
+	 fail;
+      }
+      return nulldesc;
+      }
+end
+
+"truncate() - truncate a file at a certain position."
+
+function{0,1} truncate(f, l)
+   if !cnv:C_integer(l) then
+      runerr(101, l)
+   type_case f of {
+      string: {
+ 	 abstract {
+	    return null
+	    }
+	 body {
+	    tended char *s;
+		int fd = 0;
+
+	    IntVal(amperErrno) = 0;
+            cnv:C_string(f, s);
+#if NT
+	    if (((fd = _open(s, _O_RDWR | _O_CREAT, _S_IWRITE)) == -1) ||
+		(_chsize(fd, l) != 0)) {
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+	    _close(fd);
+#else					/* NT */
+	    if (truncate(s, l) != 0) {
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+#endif					/* NT */
+	    return nulldesc;
+	 }
+      }
+      file: {
+	 abstract {
+	    return null
+	    }
+	 body {
+	    int fd;
+	    IntVal(amperErrno) = 0;
+
+	    if ((fd = get_fd(f, 0)) < 0)
+	       runerr(174, f);
+#if !NT
+	    if (ftruncate(fd, l) != 0) {
+#else					/* NT */
+	    if (_chsize(fd, l) != 0) {
+#endif					/* NT */
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+	    return nulldesc;
+	 }
+      }
+      default:
+	 runerr(109, f)
+      }
+end
+
+"flock() - apply or remove a lock on a file."
+
+function{0,1} flock(f, cmd)
+   declare {
+      tended char *c;
+   }
+   if !cnv:C_string(cmd, c) then
+      runerr(101, cmd)
+   if !is:file(f) then
+      runerr(105, f)
+   abstract {
+      return null
+      }
+   body {
+
+      int option = 0;
+      int fd, i=0;
+      long flength;
+#if NT
+      while (c[i])
+	 switch (c[i++]) {
+	 case 'x': option |= LK_LOCK; break;
+	 /*
+	 case 's': option |= LOCK_SH; break;
+	 */
+	 case 'b': option |= LK_NBLCK; break;
+	 case 'u': option |= LK_UNLCK; break;
+	 default: runerr(177, cmd);
+	 }
+
+      IntVal(amperErrno) = 0;
+      
+      if ((fd = get_fd(f, 0)) < 0)
+	 runerr(174, f);
+	   
+      if ((flength = _filelength(fd)) < 0)
+	  irunerr(174, (int)flength);
+
+      if (_locking(fd, option, flength) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+      }
+      return nulldesc;
+#endif					/* NT */
+#if defined(BSD) || defined(BSD_4_4_LITE) || defined(IRIS4D) || defined(Linux)
+
+      while (c[i])
+	 switch (c[i++]) {
+	 case 'x': option |= LOCK_EX; break;
+	 case 's': option |= LOCK_SH; break;
+	 case 'b': option |= LOCK_NB; break;
+	 case 'u': option |= LOCK_UN; break;
+	 default: runerr(177, cmd);
+	 }
+
+      IntVal(amperErrno) = 0;
+      
+      if ((fd = get_fd(f, 0)) < 0)
+	 runerr(174, f);
+
+      if (flock(fd, option) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+      }
+      return nulldesc;
+
+#else					/* BSD */
+      fail;
+#endif					/* BSD */
+   }
+end
+
+"fcntl() - control a file."
+
+function{0,1} fcntl(f, action, options)
+   if !is:string(action) then
+      runerr(103, action)
+   if !is:file(f) then
+      runerr(105, f)
+   if !is:string(options) then
+      if !is:integer(options) then
+         runerr(177, options)
+   abstract {
+      return string ++ record ++ integer
+      }
+   body {
+      int fd, cmd, nfields, buflen;
+      tended char *c;
+      static dptr constr;
+#if NT
+      fail;
+#else					/* NT */
+      if ((fd = get_fd(f, 0)) < 0)
+	 runerr(174, f);
+
+      cnv:C_string(action, c);
+
+      switch (*c) {
+	 case 'F': cmd = F_SETFL; break;
+	 case 'f': cmd = F_GETFL; break;
+	 case 'X': cmd = F_SETFD; break;
+	 case 'x': cmd = F_GETFD; break;
+	 case 'L': cmd = F_SETLK; break;
+	 case 'l': cmd = F_GETLK; break;
+	 case 'W': cmd = F_SETLKW; break;
+#ifdef HP
+	   /* Owners not defined on HP */
+#else					/* HP */
+	 case 'O': cmd = F_SETOWN; break;
+	 case 'o': cmd = F_GETOWN; break;
+#endif					/* HP */
+	 default: runerr(177, action);
+      }
+
+      /* Figure out options to use */
+      if (cmd == F_SETLK || cmd == F_GETLK || cmd == F_SETLKW) {
+	 struct flock fl;
+	 tended struct b_record *rp;
+	 tended char *lock;
+	 char *start, *len, *p;
+	 char buf[32];
+
+         cnv:C_string(options, lock);
+	 if ((start = strchr(lock, ',')) == NULL)
+	    runerr(177, options);
+	 *start++ = 0;
+	 if ((len = strchr(start, ',')) == NULL)
+	    runerr(177, options);
+	 *len++ = 0;
+
+	 switch (lock[0]) {
+	 case 'r': fl.l_type = F_RDLCK; break;
+	 case 'w': fl.l_type = F_WRLCK; break;
+	 case 'u': fl.l_type = F_UNLCK; break;
+	 default: runerr(177, options);
+	 }
+	 if (lock[1] != 0)
+	    runerr(177, options);
+
+	 switch(start[0]) {
+	 case '+': 
+	    fl.l_whence = SEEK_CUR;
+	    fl.l_start = strtol(start+1, &p, 10);
+	    break;
+	 case '-':
+	    fl.l_whence = SEEK_END;
+	    fl.l_start = strtol(start+1, &p, 10);
+	    break;
+	 default : 
+	    fl.l_whence = SEEK_SET;
+	    fl.l_start = strtol(start, &p, 10);
+	    break;
+	 }
+	 if (*p != ',')
+	    runerr(177, options);
+
+	 fl.l_len = strtol(len, &p, 10);
+	 if (*p != ',')
+	    runerr(177, options);
+
+	 start[-1] = len[-1] = ',';
+
+	 IntVal(amperErrno) = 0;
+	 if (fcntl(fd, cmd, (int)&fl) < 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	 }
+
+	 p = buf;
+	 switch (fl.l_type) {
+	 case F_RDLCK: *p++ = 'r'; break;
+	 case F_WRLCK: *p++ = 'w'; break;
+	 case F_UNLCK: *p++ = 'u'; break;
+	 }
+	 *p++ = ',';
+	 switch (fl.l_whence) {
+	 case SEEK_CUR: *p++ = '+'; break;
+	 case SEEK_END: *p++ = '-'; break;
+	 }
+
+	 sprintf(p, "%ld,%ld", fl.l_start, fl.l_len);
+
+	 if (!constr)
+	    if (!(constr = rec_structor("posix_lock")))
+	       runerr(171, nulldesc);
+
+	 nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 result.dword = D_Record;
+	 result.vword.bptr = (union block*)rp;
+	 IntVal(rp->fields[1]) = fl.l_pid;
+	 buflen = strlen(buf);
+	 Protect(StrLoc(rp->fields[0]) = alcstr(buf, buflen), runerr(0));
+	 StrLen(rp->fields[0]) = buflen;
+
+	 return result;
+      } else {
+	 /* options should be an int */
+	 int o = 0, retval;
+
+	 if (cmd == F_SETFL) {
+	    tended char *opt;
+	    cnv:C_string(options, opt);
+	    while (*opt)
+	      switch(*opt++) {
+	      case 'd': o |= O_NDELAY; break;
+	      case 'a': o |= O_APPEND; break;
+#if defined(HP) || defined(SUN)
+	      case 's': o |= FASYNC; break;
+#endif
+	      default: runerr(177, options);
+	      }
+	 } else
+	    cnv:C_integer(options, o);
+
+	 IntVal(amperErrno) = 0;
+	 if ((retval = fcntl(fd, cmd, o)) < 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	 }
+
+	 if (cmd == F_GETFL) {
+	    char buf[10], *p = buf;
+	    int buflen;
+	    if (retval & O_APPEND) *p++ = 'a';
+	    if (retval & O_NDELAY) *p++ = 'd';
+#if defined(HP) || defined(SUN)
+	    if (retval & FASYNC) *p++ = 's';
+#endif
+	    *p = 0;
+	    buflen = strlen(buf);
+	    Protect(StrLoc(result) = alcstr(buf, buflen), runerr(0));
+	    StrLen(result) = buflen;
+	    return result;
+
+	 } else
+	    return C_integer retval;
+      }
+#endif					/* NT */
+      }
+end
+
+"utime() - set access and/or modification times on a file."
+
+function{0,1} utime(f, atime, mtime)
+   if !cnv:C_string(f) then
+      runerr(103, f)
+   if !cnv:C_integer(mtime) then
+      runerr(101, mtime)
+   if !cnv:C_integer(atime) then
+      runerr(101, atime)
+   abstract {
+      return null
+      }
+   body {
+#if NT
+#define utime _utime
+#define utimbuf _utimbuf
+#endif					/* NT */
+
+      struct utimbuf t;
+      t.actime = atime;
+      t.modtime = mtime;
+      IntVal(amperErrno) = 0;
+      if (utime(f, &t) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+      }
+end
+
+
+"ioctl() - control a device driver."
+
+function{0,1} ioctl(f, action, options)
+   if !cnv:C_integer(action) then
+      runerr(103, action)
+   if !is:file(f) then
+      runerr(105, f)
+   abstract {
+      return integer
+      }
+   inline {
+      int retval, fd;
+      IntVal(amperErrno) = 0;
+      if ((fd = get_fd(f, 0)) < 0)
+	 runerr(174, f);
+#if NT
+      fail;
+#else					/* NT */
+#ifdef UNICON_IOCTL
+      if ((retval = ioctl(fd, action, options)) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return C_integer retval;
+#else					/* UNICON_IOCTL */
+      runerr(121, f);
+#endif					/* UNICON_IOCTL */
+#endif					/* NT */
+      }
+end
+
+"filepair() - create a connected bidirectional pair of files."
+
+function{0,1} filepair()
+   abstract {
+      return new list(file)
+      }
+   body {
+      int fds[2], i;
+      FILE* fps[2];
+      struct descrip fname;
+      struct b_file *fl;
+      tended struct b_list *lp;
+      tended union block *ep;
+#if NT
+      fail;
+#else					/* NT */
+      IntVal(amperErrno) = 0;
+      if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      /* create a list to put them in */
+      Protect(lp = alclist(2), runerr(0));
+      Protect(ep = (union block *)alclstb(2,(word)0,2), runerr(0));
+      lp->listhead = lp->listtail = ep;
+      ep->lelem.first = 0;
+      ep->lelem.nused = 2;
+
+      /* Create the two file objects and put them into the list */
+      StrLoc(fname) = "filepair";
+      StrLen(fname) = 8;
+      for(i = 0; i < 2; i++) {
+	 fps[i] = fdopen(fds[i], "r");
+	 Protect(fl = alcfile(fps[i], Fs_Write|Fs_Read|Fs_Socket, &fname),
+		 runerr(0));
+	 ep->lelem.lslots[i].dword = D_File;
+	 ep->lelem.lslots[i].vword.bptr = (union block*)fl;
+	 }
+
+      return list(lp);
+#endif					/* NT */
+   }
+end
+
+"pipe() - create a pipe."
+
+function{0,1} pipe()
+   abstract {
+      return new list(file)
+      }
+   body {
+      int fds[2], i;
+      FILE* fps[2];
+      struct descrip fname;
+      struct b_file *fl;
+      tended struct b_list *lp;
+      tended union block *ep;
+
+      IntVal(amperErrno) = 0;
+#if !NT
+      if (pipe(fds) != 0) {
+#else
+      if (_pipe(fds, 4096, O_BINARY |O_NOINHERIT) != 0) {
+#endif					/* NT */
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      /* create a list to put them in */
+      Protect(lp = alclist(2), runerr(0));
+      Protect(ep = (union block *)alclstb(2,(word)0,2), runerr(0));
+      lp->listhead = lp->listtail = ep;
+      ep->lelem.first = 0;
+      ep->lelem.nused = 2;
+
+      /* Create the two file objects and put them into the list */
+      StrLoc(fname) = "pipe";
+      StrLen(fname) = 4;
+      for(i = 0; i < 2; i++) {
+	 fps[i] = fdopen(fds[i], i? "w":"r");
+	 Protect(fl = alcfile(fps[i], (i? Fs_Write:Fs_Read), &fname),
+		 runerr(0));
+	 ep->lelem.lslots[i].dword = D_File;
+	 ep->lelem.lslots[i].vword.bptr = (union block*)fl;
+	 }
+      return list(lp);
+   }
+end
+
+"fork() - spawn a new identical process."
+
+function{0,1} fork()
+   abstract {
+      return integer
+      }
+   inline {
+      int pid;
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if ((pid = fork()) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return C_integer pid;
+#endif					/* NT */
+      }
+end
+
+"fdup() - duplicate a file (including its Unix fd)."
+
+function{0,1} fdup(src, dest)
+   if !is:file(src) then
+      runerr(105, src)
+   if !is:file(dest) then
+      runerr(105, dest)
+   abstract {
+      return null
+      }
+   body {
+      int fd_src, fd_dest, status;
+      char *fmode;
+      FILE *fp;
+
+      if (BlkLoc(src)->file.status == 0)
+	 runerr(179, src);
+
+#ifdef Graphics
+      if (BlkLoc(src)->file.status & Fs_Window)
+	 runerr(105, src);
+      if (BlkLoc(dest)->file.status & Fs_Window)
+	 runerr(105, dest);
+#endif					/* Graphics */
+
+      if ((fd_src = get_fd(src, 0)) < 0)
+	 runerr(174, src);
+
+      if ((fd_dest = get_fd(dest, 0)) < 0)
+	 runerr(174, dest);
+      if (BlkLoc(dest)->file.status != 0)
+	 if (BlkLoc(dest)->file.status & Fs_Pipe)
+#if NT
+	    _pclose(BlkLoc(dest)->file.fd);
+#else					/* NT */
+	    pclose(BlkLoc(dest)->file.fd);
+#endif					/* NT */
+	 else 
+	    fclose(BlkLoc(dest)->file.fd);
+ 
+      IntVal(amperErrno) = 0;
+#if !NT
+      if (dup2(fd_src, fd_dest) < 0) {
+#else					/* NT */
+      if (_dup2(fd_src, fd_dest) < 0) {
+#endif					/* NT */
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      BlkLoc(dest)->file.status = status = BlkLoc(src)->file.status;
+      switch (status & (Fs_Read|Fs_Write)) {
+      case Fs_Read & ~Fs_Write : fmode = "r"; break;
+      case ~Fs_Read & Fs_Write : fmode = "w"; break;
+      case Fs_Read & Fs_Write : fmode = "r+"; break;
+      default: runerr(500); break;
+      }
+      BlkLoc(dest)->file.fd = fp = fdopen(fd_dest, fmode);
+      BlkLoc(dest)->file.fname = BlkLoc(src)->file.fname;
+      return nulldesc;
+      }
+end
+
+"exec() - replace the executing Icon program with a new program."
+
+function{0,1} exec(f, argv[argc])
+   if !cnv:C_string(f) then
+      runerr(103, f)
+   abstract {
+      return null
+      }
+   body {
+      int i;
+      /*
+       * We are subverting the RTT type system here w.r.t. garbage
+       * collection but we're going to be doing an exec() so ...
+       */
+      tended char *p;
+      char *margv[200];		/* We need a different array so we can put
+				   a nil pointer at the end of the list */
+      if (argc > 200)
+    	 runerr(0);
+      IntVal(amperErrno) = 0;
+      for(i = 0; i < argc; i++) {
+         if (!cnv:C_string(argv[i], p))
+	    runerr(103, argv[i]);
+	 margv[i] = p;
+      }
+      margv[i] = 0;
+#if NT
+#define execvp _execvp
+#endif					/* NT */
+
+      if (execvp(f, margv) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+      }
+end
+
+"system() - create a new process, optionally mapping its stdin/stdout/stderr."
+
+function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
+   if !is:file(d_stdin) then
+      if !is:null(d_stdin) then
+	 runerr(105, d_stdin)
+   if !is:file(d_stdout) then
+      if !is:null(d_stdout) then
+	 runerr(105, d_stdout)
+   if !is:file(d_stderr) then
+      if !is:null(d_stderr) then
+	 runerr(105, d_stderr)
+   if !is:list(argv) then
+      if !is:string(argv) then
+         runerr(110, argv)
+   if !is:string(mode) then
+      if !is:integer(mode) then
+	 if !is:file(mode) then
+	    if !is:null(mode) then
+	       runerr(170, mode)
+   abstract {
+      return null ++ integer
+      }
+   body {
+      int i, j, n, fd_0, fd_1, fd_2, i_mode=0, is_argv_str=0, pid;
+      union block *ep, *bp;
+	 
+      /*
+       * We are subverting the RTT type system here w.r.t. garbage
+       * collection but we're going to be doing an exec() so ...
+       */
+      tended char *p;
+      tended char *cmdline;
+      char *margv[200];	/* We need a different array so we can put
+				   a nil pointer at the end of the list */
+      IntVal(amperErrno) = 0;
+      /*	  printf("argc %d\n", argc); fflush(stdout); */
+
+      /* Decode the mode */
+      if (is:integer(mode))
+	 cnv:C_integer(mode, i_mode);
+      else if (is:string(mode)) {
+	 tended char *s_mode;
+         cnv:C_string(mode, s_mode);
+	 i_mode = (strcmp(s_mode, "nowait") == 0);
+      }
+
+      if (is:list(argv)) {
+	 n = 0;
+	 /* Traverse the list */
+	 for (ep = BlkLoc(argv)->list.listhead; ep != NULL;
+	      ep = ep->lelem.listnext) {
+	    for (i = 0; i < ep->lelem.nused; i++) {
+	       dptr f;
+	       j = ep->lelem.first + i;
+	       if (j >= ep->lelem.nslots)
+		  j -= ep->lelem.nslots;
+	       f = &ep->lelem.lslots[j];
+
+	       if (!cnv:C_string((*f), p))
+		  runerr(103, *f);
+	       if (i > 200)
+		  runerr(0);
+	       margv[n++] = p;
+	    }
+	 }
+	 margv[n] = 0;
+      } else if (is:string(argv)) {
+	 is_argv_str = 1;
+         cnv:C_string(argv, cmdline);
+      }
+
+
+#if !NT
+      /* 
+       * We don't use system(3) any more since the program is allowed to
+       * re-map the files even for foreground execution
+       */
+      switch (pid = fork()) {
+      case 0:
+
+	 dup_fds(&d_stdin, &d_stdout, &d_stderr);
+
+	 if (is_argv_str)
+	    execl("/bin/sh", "sh", "-c", cmdline, 0);
+	 else
+	    execvp(margv[0], margv);
+
+	  /*
+	   * If we returned.... this is the child, so failure is no good;
+	   * stop with a runtime error so at least the user will get some
+	   * indication of the problem.
+	   */
+	  IntVal(amperErrno) = errno;
+	  runerr(500);
+	  break;
+      case -1:
+	 fail;
+	 break;
+      default:
+	 if (!i_mode) {
+	    int status;
+	    waitpid(pid, &status, 0);
+	    return C_integer status;
+	 }
+	 else
+	    return C_integer pid;
+      }
+#else					/* NT */
+     /*
+      * We might want to use CreateProcess and pass the file handles
+      * for stdin/stdout/stderr to the child process.  Another candidate
+      * is _execvp().
+      */
+      if (i_mode) {
+         _flushall();
+         i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], margv);
+	 if (i != 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	    }
+	 } else {
+	    /* Sigh... old "system". Collect all args into a string. */
+	    if (is_argv_str) {
+#ifdef MSWindows
+	       i = (C_integer)mswinsystem(cmdline);
+#else					/* MSWindows */
+	       i = (C_integer)system(cmdline);
+#endif					/* MSWindows */
+	       return C_integer i;
+	       }
+	    else {
+	       int i, total = 0, n;
+	       tended char *s;
+	 
+	       i = 0;
+	       while (margv[i]) {
+		  total += strlen(margv[i]) + 1;
+		  i++;
+		  }
+	       n = i-1;
+	       /* We use Icon's allocator, it's the only safe way. */
+	       Protect(s = alcstr(0, total), runerr(0));
+	       p = s;
+	       for (i = 0; i < n; i++) {
+		  strcpy(p, margv[i]);
+		  p += strlen(margv[i]);
+		  *p++ = ' ';
+		  }
+#ifdef MSWindows
+	       i = (C_integer)mswinsystem(s);
+#else					/* MSWindows */
+	       i = (C_integer)system(s);
+#endif					/* MSWindows */
+	       return C_integer i;
+	       }
+	    }
+#endif					/* NT */
+
+      /*NOTREACHED*/
+      return nulldesc;
+   }
+end
+
+"getuid() - get the real user identity."
+
+function{0,1} getuid()
+   abstract {
+      return string
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      struct passwd *pw;
+      char name[12], *user;
+      int u;
+      pw = getpwuid(u = getuid());
+      if (!pw) {
+	 sprintf(name, "%d", u);
+	 user = name;
+	 }
+      else
+	 user = pw->pw_name;
+      String(result, user);
+      return result;
+#endif					/* NT */
+      }
+end
+
+"geteuid() - get the effective user identity."
+
+function{0,1} geteuid()
+   abstract {
+      return string
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      struct passwd *pw;
+      char name[12], *user;
+      int u;
+      pw = getpwuid(u = geteuid());
+      if (!pw) {
+	 sprintf(name, "%d", u);
+	 user = name;
+	 }
+      else
+	 user = pw->pw_name;
+      String(result, user);
+      return result;
+#endif					/* NT */
+      }
+end
+
+"getgid() - get the real group identity."
+
+function{0,1} getgid()
+   abstract {
+      return string
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      struct group *gr;
+      char name[12], *user;
+      int g;
+      gr = getgrgid(g = getgid());
+      if (!gr) {
+	 sprintf(name, "%d", g);
+	 user = name;
+	 }
+      else
+	 user = gr->gr_name;
+      String(result, user);
+      return result;
+#endif					/* NT */
+      }
+end
+
+"getegid() - get the effective group identity."
+
+function{0,1} getegid()
+   abstract {
+      return string
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      struct group *gr;
+      char name[12], *user;
+      int g;
+      gr = getgrgid(g = getegid());
+      if (!gr) {
+	 sprintf(name, "%d", g);
+	 user = name;
+	 }
+      else
+	 user = gr->gr_name;
+      String(result, user);
+      return result;
+#endif					/* NT */
+      }
+end
+
+"setuid() - set the real and/or effective user identity."
+
+function{0,1} setuid(u)
+   if !cnv:C_integer(u) then
+      runerr(101, u)
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (setuid(u) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+#endif					/* NT */
+      }
+end
+
+"setgid() - set the real and/or effective group identity."
+
+function{0,1} setgid(g)
+   if !cnv:C_integer(g) then
+      runerr(101, g)
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (setgid(g) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+#endif					/* NT */
+   }
+end
+
+"getpgrp() - get the process group."
+
+function{0,1} getpgrp()
+   abstract {
+      return integer
+      }
+   inline {
+#if NT
+      fail;
+#else					/* NT */
+      return C_integer getpgrp();
+#endif					/* NT */
+   }
+end
+
+"setpgrp() - set the process group."
+
+function{0,1} setpgrp()
+   abstract {
+      return null
+      }
+   inline {
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (Setpgrp() != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+#endif					/* NT */
+   }
+end
+
+"crypt() - the password encryption function."
+
+function{0,1} crypt(key, salt)
+   if !cnv:C_string(key) then
+      runerr(103, key)
+   if !cnv:C_string(salt) then
+      runerr(103, salt)
+   abstract {
+      return string
+      }
+   inline {
+#ifdef NoCrypt
+      fail;
+#else					/* NoCrypt */
+      String(result, (char*)crypt(key, salt));
+      return result;
+#endif					/* NoCrypt */
+   }
+end
+
+"umask() - set the umask and return the old value."
+
+function{0,1} umask(mask)
+   if !is:integer(mask) then
+      if !is:string(mask) then
+	 if !is:null(mask) then
+	    runerr(170, mask)
+   abstract {
+      return integer ++ string
+      }
+   inline {
+      if (is:integer(mask)) {
+	 int m;
+         cnv:C_integer(mask, m);
+#if NT
+#define umask _umask
+#endif					/* NT */
+	 return C_integer umask(m);
+	 }
+      else if (is:string(mask)) {
+	 /*
+	  * string better be of the form rwxrwxrwx with some dashes
+	  */
+	 tended char *perm;
+	 int i, cmask, oldmask;
+	 char allperms[10];
+
+         cnv:C_string(mask, perm);
+	 strcpy(allperms, "rwxrwxrwx");
+
+	 cmask = 0;
+	 for(i = 0; i < 9; i++) {
+	    cmask = cmask << 1;
+	    if (perm[i] == '-') {
+	       cmask |= 1;
+	    } else if (perm[i] != allperms[i])
+	       runerr(184, mask);
+	 }
+	 oldmask = umask(cmask);
+	 for (i = 0; i < 9; i++) {
+	    if (oldmask & (1 << (8-i)))
+	       allperms[i] = '-';
+	 }
+	 String(result, allperms);
+	 return result;
+      }
+      else {
+	 /* If null, just return the present value of umask */
+	 int oldmask, i;
+	 char allperms[10];
+	 strcpy(allperms, "rwxrwxrwx");
+
+	 oldmask = umask(0);
+	 umask(oldmask);
+	 for (i = 0; i < 9; i++) {
+	    if (oldmask & (1 << (8-i)))
+	       allperms[i] = '-';
+	 }
+	 String(result, allperms);
+	 return result;
+      }
+   }
+end
+
+"wait() - wait for process to terminate or stop."
+"the return value is `status' from the wait(2) manpage."
+
+function{0,1} wait(pid, options)
+   if !def:C_integer(pid, -1) then
+      runerr(101, pid)
+   if !def:C_string(options, "") then 
+      runerr(103, options)
+   abstract {
+      return string;
+      }
+   body {
+      char retval[64];
+      int option = 0, status = 0, wpid, i=0;
+#if !NT
+#if defined(BSD) || defined(Linux) || defined(BSD_4_4_LITE)
+      struct rusage rusage;
+      while(options[i])
+	 switch(options[i++]) {
+	 case 'n' : option |= WNOHANG; break;
+	 case 'u' : option |= WUNTRACED; break;
+	 }
+
+      IntVal(amperErrno) = 0;
+      if ((wpid = wait4(pid, &status, option, &rusage)) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+      }
+
+#else					/* BSD || Linux */
+
+      /* HP and Solaris */
+      if (pid == -1) {
+	 IntVal(amperErrno) = 0;
+	 if ((wpid = wait(&status)) < 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	 }
+      } else {
+	 while(options[i])
+	    switch(options[i++]) {
+	    case 'n' : option |= WNOHANG; break;
+	    case 'u' : option |= WUNTRACED; break;
+	    }
+
+	 IntVal(amperErrno) = 0;
+	 if ((wpid = waitpid(pid, &status, option)) < 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	 }
+      }
+#endif					/* BSD || Linux */
+
+      /* Unpack all the fields */
+      if (WIFSTOPPED(status))
+	 sprintf(retval, "%d stopped:%s", wpid, 
+		 si_i2s((siptr)signalnames, WSTOPSIG(status)));
+
+      else if (WIFSIGNALED(status))
+	 sprintf(retval, "%d terminated:%s", wpid, 
+		 si_i2s((siptr)signalnames, WTERMSIG(status)));
+
+      else if (WIFEXITED(status))
+	 sprintf(retval, "%d exited:%d", wpid, WEXITSTATUS(status));
+      else
+	 sprintf(retval, "???");
+#ifdef Linux
+      if (WIFSIGNALED(status) && status & 0200 )	/* core dump */
+#else
+#if !defined(FreeBSD) && defined(BSD_4_4_LITE) || (defined(BSD) && defined(SUN))
+      if (WIFSIGNALED(status) && ((union __wait*)&status)->w_T.w_Coredump)
+#else
+      if (WCOREDUMP(status))
+#endif
+#endif
+	 strcat(retval, ":core");
+
+#else					/* NT */
+      int termstat;
+
+      while(options[i])
+	 switch(options[i++]) {
+	 case 'n' : option |= _WAIT_CHILD; break;
+	 case 'u' : option |= _WAIT_GRANDCHILD; break;
+	 }
+
+      IntVal(amperErrno) = 0;
+      if ((wpid = _cwait(&termstat, pid, option)) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      sprintf(retval, "%d terminated:%d", wpid, termstat);
+#endif					/* NT */
+
+      String(result, retval);
+      return result;
+   }
+end
+
+#begdef GenTime(name, conv_type, i)
+
+#name "(t) - convert time_t (seconds since Jan 1, 1970 00:00:00) into " conv_type
+
+function{0,1} name(t)
+   if !cnv:C_integer(t) then
+      runerr(101, t)
+   abstract {
+      return string
+   }
+   inline {
+      char *p;
+      int l;
+#if i
+      p = name((time_t *)&t);
+#else
+      p = asctime(gmtime((time_t *)&t));
+#endif
+      l = strlen(p) - 1;
+      reserve(Strings, l);
+      Protect(StrLoc(result) = alcstr(p, l), runerr(0));
+      StrLen(result) = l;
+      return result;
+   }
+end
+#enddef
+
+GenTime(ctime, "ASCII.", 1)
+GenTime(gtime, "UTC.", 0)
+
+"gettimeofday() - get time since the epoch (Jan 1, 1970 00:00:00)."
+
+function{0,1} gettimeofday()
+   abstract {
+      return record
+   }
+   body {
+      struct timeval tp;
+#if NT
+      struct _timeb wtp;
+#endif					/* NT */
+      struct b_record *rp;
+      static dptr constr;
+      int nfields;
+
+      IntVal(amperErrno) = 0;
+#if NT
+      _ftime( &wtp );
+#else					/* NT */
+      if (gettimeofday(&tp, 0) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+#endif					/* NT */
+      if (!constr)
+	 if (!(constr = rec_structor("posix_timeval")))
+	    runerr(171, nulldesc);
+
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      result.dword = D_Record;
+      result.vword.bptr = (union block *)rp;
+#if NT
+      MakeInt(wtp.time, &(rp->fields[0]));
+      MakeInt(wtp.millitm * 1000, &(rp->fields[1]));
+#else					/* NT */
+      MakeInt(tp.tv_sec, &(rp->fields[0]));
+      MakeInt(tp.tv_usec, &(rp->fields[1]));
+#endif					/* NT */
+      return result;
+
+   }
+end
+
+"lstat() - get file status without following symlinks."
+
+function{0,1} lstat(f)
+   if !cnv:C_string(f) then
+      runerr(103, f)
+   abstract {
+      return record
+      }
+   body {
+      struct b_record *rp;
+      struct stat sbuf;
+      static dptr constr;
+      int nfields;
+
+      IntVal(amperErrno) = 0;
+#if NT
+      fail;
+#else					/* NT */
+      if (lstat(f, &sbuf) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+      }
+
+      if (!constr)
+	 if (!(constr = rec_structor("posix_stat")))
+	    runerr(171, nulldesc);
+
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      stat2rec(&sbuf, &result, rp);
+      return result;
+#endif					/* NT */
+   }
+end
+
+"stat() - get file status."
+
+function{0,1} stat(f)
+   type_case f of {
+      string: {
+ 	 abstract {
+	    return record
+	    }
+	 body {
+	    struct b_record *rp;
+#if NT
+	    struct _stat sbuf;
+#else					/* NT */
+	    struct stat sbuf;
+#endif					/* NT */
+	    tended char *fname;
+	    static dptr constr;
+	    int nfields;
+
+            cnv:C_string(f, fname);
+	    IntVal(amperErrno) = 0;
+#if NT
+#define lstat _stat
+#endif
+	    if (lstat(fname, &sbuf) != 0) {
+	       IntVal(amperErrno) = errno;
+	       fail;
+	    }
+	    if (!constr)
+	       if (!(constr = rec_structor("posix_stat")))
+		  runerr(171, nulldesc);
+
+	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	    stat2rec(&sbuf, &result, rp);
+
+#if !NT
+	    if (S_ISLNK(sbuf.st_mode)) {
+	       /* readlink */
+	       char ret[NAME_MAX];
+	       int len;
+	       char *out;
+	       long n;
+
+	       IntVal(amperErrno) = 0;
+
+	       reserve(Strings, NAME_MAX);
+	       Protect(StrLoc(rp->fields[13]) = 
+		       alcstr(NULL, NAME_MAX), runerr(0));
+	       if ((len = readlink(fname, StrLoc(rp->fields[13]), NAME_MAX)) < 0) {
+		  /* Give back the string */
+		  n = DiffPtrs(StrLoc(rp->fields[13]),strfree);
+		  if (n < 0)
+		     EVVal(-n, E_StrDeAlc);
+		  else
+		     EVVal(n, E_String);
+		  strtotal += DiffPtrs(StrLoc(rp->fields[13]),strfree);
+		  /* reset free pointer */
+		  strfree = StrLoc(rp->fields[13]);
+
+		  IntVal(amperErrno) = errno;
+		  fail;
+	       }
+
+	       /* Return the extra characters at the end */
+	       out = StrLoc(rp->fields[13]) + len;
+	       StrLen(rp->fields[13]) = DiffPtrs(out,StrLoc(rp->fields[13]));
+	       n = DiffPtrs(out,strfree);
+	       if (n < 0)
+		  EVVal(-n, E_StrDeAlc);
+	       else
+		  EVVal(n, E_String);
+	       strtotal += DiffPtrs(out,strfree);
+	       strfree = out;
+	    }
+#endif					/* !NT */
+	    return result;
+	 }
+      }
+      file: {
+	 abstract {
+	    return record
+	    }
+	 body {
+	    struct b_record *rp;
+#if NT
+	    struct _stat sbuf;
+#else					/* NT */
+	    struct stat sbuf;
+#endif					/* NT */
+	    static dptr constr;
+	    int nfields, fd;
+
+	    IntVal(amperErrno) = 0;
+	    if ((fd = get_fd(f, 0)) < 0)
+	       runerr(174, f);
+#if NT
+	    if (_fstat(fd, &sbuf) != 0) {
+#else					/* NT */
+	    if (fstat(fd, &sbuf) != 0) {
+#endif					/* NT */
+	       IntVal(amperErrno) = errno;
+	       fail;
+	       }
+	    if (!constr)
+	       if (!(constr = rec_structor("posix_stat")))
+		  runerr(171, nulldesc);
+
+	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	    stat2rec(&sbuf, &result, rp);
+	    return result;
+	 }
+      }
+      default:
+	 runerr(109, f)
+   }
+end
+
+"send() - send a UDP datagram."
+
+function{0,1} send(addr, msg)
+   if !cnv:C_string(addr) then
+      runerr(103, addr)
+   if !cnv:string(msg) then
+      runerr(103, msg)
+   abstract {
+      return null
+      }
+   body {
+      IntVal(amperErrno) = 0;
+      if (!sock_send(addr, StrLoc(msg), StrLen(msg))) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      return nulldesc;
+   }
+end
+
+"receive() - receive a UDP datagram."
+
+function{0,1} receive(f)
+  if !is:file(f) then
+      runerr(105, f)
+   abstract {
+      return record
+      }
+   body {
+      struct b_record *rp;
+      static dptr constr;
+      int nfields;
+      int status, ret;
+      
+      status = BlkLoc(f)->file.status;
+      if (!(status & Fs_Socket))
+	 runerr(181, f);
+
+      if (!constr)
+	 if (!(constr = rec_structor("posix_message")))
+	    runerr(171, nulldesc);
+
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+
+      IntVal(amperErrno) = 0;
+      if ((ret = sock_recv(BlkLoc(f)->file.fd, rp)) == 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      if (ret == -1)
+	 runerr(182, f);
+	 
+      result.dword = D_Record;
+      result.vword.bptr = (union block *)rp;
+
+      return result;
+   }
+end
+
+#if defined(Dbm) || defined(ISQL)
+
+"fetch() - fetch a value from a dbm database."
+
+function{0,1} fetch(d, k)
+   if !is:file(d) then
+      runerr(190, d)
+   abstract {
+      return string
+      }
+   body {
+#ifdef Dbm
+      if (BlkLoc(d)->file.status & Fs_Dbm) {
+	 tended struct descrip dkey;
+	 DBM *db;
+	 datum key, content;
+	 int n;
+
+	 if (!cnv:string(k, dkey))
+	    runerr(103, k);
+	 db = (DBM *)BlkLoc(d)->file.fd;
+	 key.dsize = StrLen(dkey); key.dptr = StrLoc(dkey);
+	 content = dbm_fetch(db, key);
+	 if (content.dptr == NULL)
+	    fail;
+	 Protect(StrLoc(result)=alcstr(content.dptr, content.dsize),runerr(0));
+	 StrLen(result) = content.dsize;
+	 return result;
+	 }
+      else
+#endif					/* Dbm */
+#ifdef ISQL
+      if (BlkLoc(d)->file.status & Fs_ODBC) {
+	    int rv = dbfetch(BlkLoc(d)->file.fd, &result);
+	    if (rv == Succeeded) return result;
+	    else if (rv == Failed) fail;
+	    else runerr(0);
+	 }
+      else
+#endif					/* ISQL */
+	 runerr(190, d);
+      }
+end
+
+#endif				/* DBM */
+
+/* 
+ * Select
+ */
+#define get_unbuf_fd(f) \
+       if (is:file(f)) { \
+	  if (BlkLoc(f)->file.status & Fs_Buff) \
+	    runerr(180, f); \
+	  BlkLoc(f)->file.status |= Fs_Unbuf; \
+	  if ((fd = get_fd(f, Fs_Read|Fs_Socket)) < 0) { \
+	     if (fd == -2) \
+	        runerr(212, f); \
+	     else \
+	        runerr(174, f); \
+	  } \
+       } \
+       else \
+	  runerr(105, f); \
+
+"select() - wait for i/o to be available on files."
+
+function{0,1} select(files[nargs])
+   abstract {
+      return new list(file)
+      }
+   body {
+      struct descrip *dp;
+      int fd, status;
+      fd_set fds;
+      int i, j, k=0, n=0, nset, nset_add=0;
+      struct timeval tv, *ptv = &tv;
+      tended struct b_list *lp = NULL;
+      tended struct b_list *lpargs = NULL;
+      union block *ep, *bp;
+      int timeout = -1, lsize;
+#if 1 /*  NT */
+      tended struct b_list *lws = NULL;
+      tended struct descrip d;
+      dptr f;
+#endif					/* NT */
+#ifdef Graphics
+      wsp ws, ptr;
+#endif					/* Graphics */
+
+      /* Set the fd's in the set */
+      FD_ZERO(&fds);
+
+#if 0 /* NT */
+      if ((lws = emptylist()) == NULL) fail;
+      if ((lp = emptylist()) == NULL) fail;
+      if ((lpargs = emptylist()) == NULL) fail;
+
+
+      for(k=0;k<nargs;k++) {
+      /* Traverse the list */
+      if (!is:list(files[k])) {
+	    f = &files[k];
+
+	    if (is:file(*f)) {
+	       status = BlkLoc(*f)->file.status;
+#ifdef Graphics
+               if (status & Fs_Window) {
+		  d.dword = D_List;
+		  BlkLoc(d) = (union block *)lws;
+		  c_put(&d, f);
+		  }
+	       else 
+#endif					/* Graphics */
+               if (status & Fs_Socket)   {
+	          if ((fd = get_fd(*f, 0)) < 0) {
+		     if (fd == -2)
+		        runerr(212, *f);
+		     else
+		        runerr(174, *f);
+	          }
+	       }
+	    }
+	    else
+	       runerr(105, *f);
+	    if (n < fd)
+	      n = fd;
+	    FD_SET(fd, &fds);
+	 }
+      else
+      for (ep = BlkLoc(files[k])->list.listhead;
+	   BlkType(ep) == T_Lelem;
+	   ep = ep->lelem.listnext) {
+	 for (i = 0; i < ep->lelem.nused; i++) {
+	    dptr f;
+	    j = ep->lelem.first + i;
+	    if (j >= ep->lelem.nslots)
+	       j -= ep->lelem.nslots;
+	    f = &ep->lelem.lslots[j];
+
+	    if (is:file(*f)) {
+	       status = BlkLoc(*f)->file.status;
+#ifdef Graphics
+               if (status & Fs_Window) {
+		  d.dword = D_List;
+		  BlkLoc(d) = (union block *)lws;
+		  c_put(&d, f);
+		  }
+	       else 
+#endif					/* Graphics */
+               if (status & Fs_Socket)   {
+	          if ((fd = get_fd(*f, 0)) < 0) {
+		     if (fd == -2)
+		        runerr(212, *f);
+		     else
+		        runerr(174, *f);
+	          }
+	       }
+	    }
+	    else
+	       runerr(105, *f);
+	    if (n < fd)
+	      n = fd;
+	    FD_SET(fd, &fds);
+	 }	 
+      }
+      }
+      n++;
+      
+      /* Set the tv struct */
+      if (timeout < 0)
+	 ptv = 0;
+      else {
+	 tv.tv_sec = timeout/1000;
+	 tv.tv_usec = (timeout%1000)*1000;
+	 }
+
+      IntVal(amperErrno) = 0;
+#ifdef Graphics
+      if((lp = findactivewindow(lws)) != NULL) {
+         ptv = 0;
+	 }
+#endif					/* Graphics */
+      if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+#ifdef Graphics
+      /*
+       * if our select() could have taken any time, try windows again
+       */
+      if(lp == NULL)
+         lp = findactivewindow(lws);
+#endif					/* Graphics */
+
+      if (lp == NULL) lp = emptylist();
+
+      for(k=0;k<nargs;k++) {
+	 if (!is:list(files[k])){
+	    f = &files[k];
+            status = BlkLoc(*f)->file.status;
+            if (status & Fs_Socket) {
+	       fd = get_fd(*f, Fs_Read);
+	       if (FD_ISSET(fd, &fds)){
+		  d.dword = D_List;
+		  BlkLoc(d) = (union block *)lp;
+		  c_put(&d, f);
+		  }
+	       }
+	    }
+	 else {
+      for (ep = BlkLoc(files[k])->list.listhead;
+	   BlkType(ep) == T_Lelem;
+	   ep = ep->lelem.listnext) {
+	 for (i = 0; i < ep->lelem.nused; i++) {
+	    dptr f;
+	    j = ep->lelem.first + i;
+	    if (j >= ep->lelem.nslots)
+	       j -= ep->lelem.nslots;
+	    f = &ep->lelem.lslots[j];
+            status = BlkLoc(*f)->file.status;
+            if (status & Fs_Socket) {
+	       fd = get_fd(*f, Fs_Read);
+	       if (FD_ISSET(fd, &fds)){
+		  d.dword = D_List;
+		  BlkLoc(d) = (union block *)lp;
+		  c_put(&d, f);
+		  }
+	       }
+	    }
+	 }
+      }
+	 }
+#else					/* NT */
+
+      if ((nargs == 1 || nargs == 2) && is:list(files[0])) {
+	 n = 0;
+	 /* Traverse the list */
+	 for (ep = BlkLoc(files[0])->list.listhead;
+	      BlkType(ep) == T_Lelem;
+	      ep = ep->lelem.listnext) {
+	    for (i = 0; i < ep->lelem.nused; i++) {
+	       dptr f;
+	       j = ep->lelem.first + i;
+	       if (j >= ep->lelem.nslots)
+		  j -= ep->lelem.nslots;
+	       get_unbuf_fd(ep->lelem.lslots[j]);
+	       if (n < fd)
+		  n = fd;
+	       FD_SET(fd, &fds);
+	    }	 
+	 }
+	 n++;
+
+	 if (nargs == 2) {
+	    if (!is:integer(files[1]) && !is:null(files[1]))
+	       runerr(102, files[1]);
+	    if (is:integer(files[1]))
+	       cnv:C_integer(files[1], timeout);
+	 }
+      } else {
+	 /* We have a list of files, possibly with a timeout at the end */
+	 n = 0;
+	 for (i = 0; i < nargs; i++) {
+	    if (i == nargs-1) {
+ 	       if (!is:integer(files[i]) && !is:file(files[i]))
+		  runerr(101, files[i]);
+	       if (is:integer(files[i])) {
+		  cnv:C_integer(files[i], timeout);
+		  break;
+	       }
+	    }
+	    get_unbuf_fd(files[i]);
+
+	    if (n < fd)
+	      n = fd;
+	    FD_SET(fd, &fds);
+	 }
+	 n++;
+      }
+
+      /* Set the tv struct */
+      if (timeout < 0)
+	 ptv = 0;
+      else {
+	 tv.tv_sec = timeout/1000;
+	 tv.tv_usec = (timeout%1000)*1000;
+      }
+
+      IntVal(amperErrno) = 0;
+      if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+      }
+
+
+      /* Allocate a list of n elements */
+      Protect(lp = alclist(nset), runerr(0));
+      Protect(ep = (union block *)alclstb(nset, (word)0, nset), runerr(0));
+      lp->listhead = lp->listtail = ep;
+       
+      dp = ep->lelem.lslots;
+
+      /*
+       * Now we either have to traverse the list of args or the list 
+       * of files
+       */
+
+      if (is:list(files[0])) {
+	for (ep = BlkLoc(files[0])->list.listhead;
+	     BlkType(ep) == T_Lelem;
+	     ep = ep->lelem.listnext)
+	   for (i = 0; i < ep->lelem.nused; i++) {
+	      dptr f;
+	      j = ep->lelem.first + i;
+	      if (j >= ep->lelem.nslots)
+		 j -= ep->lelem.nslots;
+	      f = &ep->lelem.lslots[j];
+	      fd = get_fd(*f, Fs_Read|Fs_Socket);
+	      if (FD_ISSET(fd, &fds))
+		 *dp++ = *f;
+	   }
+      } else
+	 for (i = 0; i < nargs; i++)
+	    if (is:file(files[i])) {
+	       fd = get_fd(files[i], Fs_Read|Fs_Socket);
+	       if (FD_ISSET(fd, &fds))
+		  *dp++ = files[i];
+	    }
+
+#endif					/* NT */
+      Desc_EVValD(lp, E_Lcreate, D_List);
+      return list(lp);
+   }
+end
+
+
+"getpw() - get password file information."
+
+function{0,1} getpw(u)
+
+   declare {
+      struct passwd *pw;
+   }
+   abstract {
+      return record
+   }
+   type_case u of {
+      string: {
+	 body {
+#if NT
+	    fail;
+#else					/* NT */
+	    tended char* name;
+	    cnv:C_string(u, name);
+	    
+	    if ((pw = getpwnam(name)) == NULL)
+	       fail;
+
+	    if (make_pwd(pw, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+      integer: {
+	 body {
+#if NT
+	    fail;
+#else					/* NT */
+	    int uid;
+	    cnv:C_integer(u, uid);
+
+	    if ((pw = getpwuid(uid)) == NULL)
+	       fail;
+
+	    if (make_pwd(pw, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+      null: {
+	 body {
+#if NT
+	    fail;
+#else					/* NT */
+	    if ((pw = getpwent()) == NULL)
+	       fail;
+
+	    if (make_pwd(pw, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+      default: {
+         runerr(170, u)
+      }
+   }
+
+end
+
+"getgr() - get group information."
+
+function{0,1} getgr(g)
+
+   declare {
+      struct group *gr;
+      }
+   abstract {
+      return record
+      }
+   type_case g of {
+      string: {
+	 body {
+	    tended char* name;
+	    cnv:C_string(g, name);
+#if NT
+	    fail;
+#else					/* NT */
+	    if ((gr = getgrnam(name)) == NULL)
+	       fail;
+
+	    if (make_group(gr, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+   integer: {
+	 body {
+	    int gid;
+	    cnv:C_integer(g, gid);
+#if NT
+	    fail;
+#else					/* NT */
+	    if ((gr = getgrgid(gid)) == NULL)
+	       fail;
+
+	    if (make_group(gr, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+   null: {
+	 body {
+#if NT
+	    fail;
+#else					/* NT */
+	    if ((gr = getgrent()) == NULL)
+	       fail;
+
+	    if (make_group(gr, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+   default: {
+         runerr(170, g)
+      }
+   }
+
+end
+
+"gethost() - get host information."
+
+function{0,1} gethost(h)
+   declare {
+      struct hostent *hs;
+   }
+   abstract {
+      return record
+   }
+   type_case h of {
+      string: {
+	 body {
+	    tended char* name;
+	    cnv:C_string(h, name);
+    
+	    if ((hs = gethostbyname(name)) == NULL)
+	       fail;
+	    if (make_host(hs, &result) == 0)
+	       runerr(171, nulldesc);
+
+	    return result;
+	 }
+      }
+      null: {
+	 body {
+#if NT
+	    static struct hostent *hs2;
+	    if (hs2 != NULL) {
+	       hs2 = NULL;
+	       fail;
+	       }
+	    else {
+	       char name[256];
+	       gethostname(name, 256);
+	       if ((hs2 = gethostbyname(name)) == NULL)
+		  fail;
+	       if (make_host(hs2, &result) == 0)
+		  runerr(171, nulldesc);
+	       return result;
+	       }
+#else					/* NT */
+	    if ((hs = gethostent()) == NULL)
+	       fail;
+
+	    if (make_host(hs, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+   default: {
+         runerr(103, h)
+      }
+   }
+end
+
+"getserv() - get network service information."
+
+function{0,1} getserv(s, proto)
+   declare {
+      struct servent *serv;
+   }
+   abstract {
+      return record
+   }
+   type_case s of {
+      string: {
+	 body {
+	    struct servent *serv;
+	    tended char *p;
+	    tended char* name;
+	    p = 0;
+	    cnv:C_string(s, name);
+            if (!is:null(proto))
+	       if (!cnv:C_string(proto, p))
+		  runerr(103, proto);
+  
+	    if (p && !getprotobyname(p))
+	       runerr(183, proto);
+	    if ((serv = getservbyname(name, p)) == NULL)
+	       fail;
+
+	    if (make_serv(serv, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+	 }
+      }
+      integer: {
+	 body {
+	    tended char *p;
+	    int port;
+	    p = 0;
+	    cnv:C_integer(s, port);
+            if (!is:null(proto))
+	       if (!cnv:C_string(proto, p))
+		  runerr(103, proto);
+
+	    if (p && !getprotobyname(p))
+	       runerr(183, proto);
+	    if ((serv = getservbyport(port, p)) == NULL)
+	       fail;
+
+	    if (make_serv(serv, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+	 }
+      }
+      null: {
+	 body {
+#if NT
+	    fail;
+#else					/* NT */
+	    if ((serv = getservent()) == NULL)
+	       fail;
+
+	    if (make_serv(serv, &result) == 0)
+	       runerr(171, nulldesc);
+	    return result;
+#endif					/* NT */
+	 }
+      }
+   default: {
+         runerr(170, s)
+      }
+   }
+end
+
+"setpwent() - reset the password file."
+
+function{0,1} setpwent()
+   abstract {
+      return null
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      setpwent();
+#endif					/* NT */
+      return nulldesc;
+   }
+end
+
+"setgrent() - reset the group file."
+
+function{0,1} setgrent()
+   abstract {
+      return null
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      setgrent();
+      return nulldesc;
+#endif					/* NT */
+   }
+end
+
+"sethostent() - reset host processing."
+
+function{0,1} sethostent(so)
+   if !def:C_integer(so, 1) then
+      runerr(101, so)
+   abstract {
+      return null
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      sethostent(so);
+      return nulldesc;
+#endif					/* NT */
+      }
+end
+
+"setservent() - reset network service entry processing."
+
+function{0,1} setservent(so)
+   if !def:C_integer(so, 1) then
+      runerr(101, so)
+   abstract {
+      return null
+      }
+   body {
+#if NT
+      fail;
+#else					/* NT */
+      setservent(so);
+      return nulldesc;
+#endif					/* NT */
+   }
+end
+
+"sysread() - low level non-blocking read with no buffering."
+
+function{0, 1} sysread(f, i)
+   if !def:C_integer(i, 0) then
+      runerr(101, i)
+
+   if is:null(f) then
+      inline {
+	 f.dword = D_File;
+	 BlkLoc(f) = (union block *)&k_input;
+	 }
+   else if !is:file(f) then
+      runerr(105, f)
+
+   abstract {
+      return string
+      }
+   body {
+      int status, fd;
+      tended struct descrip desc;
+      status = BlkLoc(f)->file.status;
+
+      if (!status || !(status & Fs_Read) 
+#ifdef Graphics
+      || (status & Fs_Window)
+#endif					/* Graphics */
+          )
+	  runerr(212, f);
+
+      if ((fd = get_fd(f, 0)) < 0)
+	 runerr(174, f);
+      
+      if (status & Fs_Buff)
+	 runerr(180, f);
+      BlkLoc(f)->file.status = status;
+      
+      IntVal(amperErrno) = 0;
+      if (u_read(fd, i, &desc) == 0)
+	 fail;
+
+      return desc;
+   }
+end
+
+#else				/* POSIX_FUNCS */
+static char x;			/* avoid empty module */
+#endif				/* POSIX_FUNCS */

@@ -1,0 +1,95 @@
+############################################################################
+#
+#	File:     colormap.icn
+#
+#	Subject:  Program to display palette from color list
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     November 5, 1997
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This program shows the colors given color list files given on the
+#  command line.
+#
+#  The following options are supported:
+#
+#	-c i	number of color cells in a row, default 16
+#	-w i	width of color cell, default 20
+#
+#  colormap will display color lists with more than 256 entries but,
+#  of course, it cannot display more than 256 different colors (if that
+#  many).
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:  colrlist, interact, io, options, wopen
+#
+############################################################################
+
+$define CellWidth 20
+$define Cells 16
+
+link colrlist
+link interact
+link io
+link options
+link wopen
+
+procedure main(args)
+   local i, j, k, clist, depth, opts, width, cells, file, color
+
+   opts := options(args, "c+w+")
+   width := \opts["w"] | CellWidth
+   cells := \opts["c"] | Cells
+
+   every file := !args do {
+      clist := colrlist(file) | {
+         Notice("Cannot open window for " || image(file) || ".")
+         exit()
+         }
+      depth := *clist / cells
+      if *clist % cells ~= 0 then depth +:= 1
+      WOpen("size=" || cells * width || "," || depth * width, "bg=black") |
+         stop("*** cannot open window for ", image(file))
+      every j := 0 to depth - 1 do
+         every i := 0 to Cells - 1 do {
+            color := get(clist) | break break
+            Fg(color) | {
+               Notice("Cannot set foreground to " || image(color) || ".")
+               exit()
+               }
+            FillRectangle(i * width + 1, j * width + 1, width - 1, width - 1)
+            }
+
+      # Fill out rest of window with patterned boxes.
+
+      Bg("dark gray")
+      Fg("black")
+      WAttrib("fillstyle=textured")
+      WAttrib("pattern=checkers")
+
+      every k := i to width - 1 do
+         FillRectangle(k * width + 1, j * width + 1, width - 1, width - 1)
+
+      repeat case Event() of {
+         "n":  break
+         "q":  exit()
+         "s":  {
+            Fg("black")
+            Bg("light gray")
+            snapshot()
+            }
+         }
+      WClose()
+      }
+end

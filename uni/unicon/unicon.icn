@@ -1,0 +1,320 @@
+#
+# unicon.icn - main module for the Unicon OOP preprocessor
+#
+# SYNOPSIS:
+#
+#   unicon prog[.icn] ... [-x args ]
+#   prog
+#
+# FILES:
+#
+#   ./prog.icn                     : Unicon source code
+#   ./uniclass.{dir,pag}           : class/inheritance database
+#
+# SEE ALSO:
+#
+#   "Programming with Unicon", draft manuscript, 460pp.
+#   serves as user's guide and reference manual for Unicon
+#
+### Global variables
+#
+# FILES  : fin = input (.iol) file, fout = output (.icn) file
+# CSETS  : alpha = identifier characters, nonalpha = everything else
+#          alphadot = identifiers + '.'
+#          white = whitespace, nonwhite = everything else
+# TAQUES : classes in this module
+# FLAGS  : comp if we should try to make an executable from args[1]
+#          strict if we should generate paranoic encapsulation protection
+#          loud if we should generate extra console messages
+#          exec if we should run the result after translation
+# LISTS  : links = names of external icon code to link to
+#          imports = names of external classes to import
+#
+global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
+global classes,comp,exec,strict,links,imports,loud,ct,reserved
+global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
+
+global yyout, linkline, translateducode
+
+link basename, io
+
+procedure istop(args[])
+   if push(args, \flog) then {
+       write ! args
+       pop(args)
+       close( flog ) # if close(flog) then @ &main
+       moveto(flogname, widollog)
+   }
+   if \loud then stop ! args
+   else exit(1)
+end
+
+procedure iwrite(args[])
+  if \loud then write ! args
+  if \flog then {
+      if args[1] === &errout then
+	  pop(args)
+      push(args, flog)
+      write ! args
+  }
+  return args[-1]|""
+end
+
+procedure iwrites(args[])
+   if \loud then writes ! args
+   if \flog then {
+       if args[1] === &errout then
+	   pop(args)
+       push(args, flog)
+       writes ! args
+   }
+  return args[-1]|""
+end
+
+#
+# initialize global variables
+#
+procedure initialize()
+  loud     := 1
+  comp     := 0
+  yynerrs  := 0
+  alpha    := &ucase ++ &lcase ++ '_' ++ &digits
+  nonalpha := &cset -- alpha
+  alphadot := alpha ++ '.'
+  white    := ' \t\f\r'
+  nonwhite := &cset -- white
+  classes  := taque()
+  links    := []
+  imports  := []
+  ilinkopt := ""
+  linkline := ""
+  tmpcount := 0
+  reserved := " fi neht esle yreve elihw od ot yb "
+  flogname := tempname("uni",,temppath,5)
+  if widollog := getenv("WIDOLLOG") then flog := open(flogname,"w")
+  sysinitialize()
+end
+
+procedure reinitialize()
+   classes  := taque()
+   imports := []
+   thePackage := &null
+end
+
+procedure main(argv)
+   initialize()
+   if *argv = 0 then istop("usage: unicon files...")
+   EmptyNode := leaf(N_Empty)
+   /yydebug := 0
+
+   every i := 1 to *argv do {
+      if \exec then next            # after -x, args are for execution
+      if argv[i][1] == "-" then {
+	 case argv[i] of {
+	 "-c"   : {
+	    sysok := &null
+	    if comp = 0 then comp := -1        # don't make exe
+	    }
+	 "-quiet"  : loud := &null
+	 "-log"  : {
+	     if (i=1) | (argv[i-1] ~=== "-log") then {
+		 if widollog := argv[i+1] then
+		     /flog := open(flogname, "w")
+		 argv[i+1] := "-log"
+	     }
+	 }
+	 "-version": {
+            iwrite(&version)
+	    return 0
+	    }
+	 "-x"      : exec := i
+	 "-o"      : {
+	     if (i=1) | (argv[i-1] ~=== "-o") then {
+	        exename := " -o " || argv[i+1] || " "
+		argv[i+1] := "-o"
+		}
+	     }
+	 "-y": parseonly := 1
+	 "-G": ilinkopt ||:= argv[i] || " "
+	 default   : icontopt ||:= argv[i] || " "
+         }
+      }
+      else {
+	 fName := argv[i] | stop("usage: unicon file")
+	 if not (map(fName[find(".", fName)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then {
+            fName ||:= ".icn"
+	    }
+
+	 # do not translate .u files
+	 if map(fName[find(".", fName)+1 : 0]) == ("u"|"u1"|"u2") then {
+	     linkline ||:= " " || fName
+	     next
+	 }
+	 else {
+	     # we are gonna translate, and if we link, we remove the .u
+	     ucodefile := basename(fName, ".icn") || ".u"
+	     linkline ||:= " " || ucodefile
+	     /translateducode := []
+	     put(translateducode, ucodefile)
+	 }
+
+	 yyfilename := outfilename := fName
+	 yyin := ""
+	 every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
+         yylex_reinit()
+	 cmd := selecticont()
+	 cmd ||:= " -c "||icontopt||" -O "||fName ||" "
+	 temppath := getenv("TEMP") | "/tmp"
+	 tmpname := tempname("uni",,temppath,5)
+	 yyout := open(tmpname, "w") |
+	     stop("can't open temporary file ",tmpname," for writing")
+#	 yyout := &output
+	 write(yyout, "#line 0 \"", fName, "\"")
+	 iwrites(&errout, "Parsing ", fName ,": ")
+	 rv := yyparse()
+	 if yynerrs = 0 then iwrite(&errout)
+	 close(yyout)
+	 if rv = 0 & yynerrs = 0 & /parseonly then {
+	     rv := mysystem(cmd || tmpname)
+	     if rv ~=== 0 then yynerrs +:= 1
+	     if &features == "Win32" then { # copy icont log to our console
+	        wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
+		every j := 1 to 5 do {
+		    if flog2 := open(wilog) then {
+			while iwrite(&errout, read(flog2))
+			close(flog2)
+			remove(wilog)
+			break
+		    }
+		    delay(1000)
+		}
+	     }
+	 }
+         delay(1000)
+	 remove(tmpname) | iwrite(&errout,"remove ", image(tmpname), " fails")
+	 reinitialize()
+     }
+  }
+  if comp = 0 & yynerrs = 0 & (not find("-E", icontopt)) then {
+      cmd := selecticont()
+      cmd ||:= " "
+      if \exename then cmd ||:= exename
+      cmd ||:= ilinkopt
+      cmd ||:= linkline
+      if \exec then {
+	  every cmd ||:= " " || argv[exec to *argv]
+      }
+      if &features == "Win32" then {
+	  wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
+	  remove(wilog) # remove log prior to executing command
+      }
+      rv := mysystem(cmd)
+      if rv === 0 then {
+# if no errors, and we linked them from source, remove the .u
+	  every remove(!\translateducode)
+      }
+      if &features == "Win32" then { # copy icont log to our console
+	 wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
+	 every j := 1 to 5 do {
+	     if flog2 := open(wilog) then {
+		 while iwrite(&errout, read(flog2))
+		 close(flog2)
+		 remove(wilog)
+		 break
+	     }
+	     delay(1000)
+	 }
+     }
+  }
+   if \flog then {
+       close(flog)
+       moveto(flogname, widollog)
+   }
+end
+#
+# error/warning/message handling
+#
+procedure halt(args[])
+  errsrc()
+  every iwrites(&errout,!args)
+  istop()
+end
+
+procedure warn(args[])
+  errsrc()
+  every iwrites(&errout,!args)
+  iwrite(&errout)
+end
+
+procedure errsrc()
+  iwrites(&errout,"File ",\fName,"; Line ",\fLine,": Unicon/")
+end
+
+procedure writelink(s)
+  write(yyout,"link \"",basename(s,".icn"),"\"")
+end
+procedure trans(argstr, prefix)
+static cmd
+initial {
+   cmd := "icont"
+   if &features == ("Win32" | "Win16") then cmd := "wicont"
+   cmd := mygetenv("ICONT")
+   }
+   if find("iconc", cmd) then return       # iconc --> don't translate
+   return icont(" -c "||argstr, prefix)
+end
+procedure icont(argstr,prefix)
+local myfile
+static trans, logger
+initial {
+   trans := "icont"
+   if &features == ("Win32" | "Win16") then trans := "wicont -s"
+   trans := mygetenv("ICONT")
+   logger := mygetenv("WICONLOG")
+   }
+  if \logger then remove(logger)
+  rv := mysystem((\prefix|"") || trans || icontopt || argstr)
+  if \flog then {
+     if \logger then {
+        if myfile := open(logger) then {
+	    while write(flog, read(myfile))
+	    close(myfile)
+	}
+        }
+     }
+  return rv
+end
+procedure mygetenv(s)
+  return if &features == "environment variables" then getenv(s)
+end
+
+procedure moveto(src, dest)
+   local f1, f2
+   f1 := open(src)
+   f2 := open(dest,"w")
+   while(write(f2,read(f1)))
+   close(f1)
+   close(f2)
+   remove(src)
+end
+
+# find the icont to use. An ICONT variable overrides defaults.
+procedure selecticont()
+local cmd
+   if cmd := mygetenv("ICONT") then { }
+   else if cmd := (&features ? (="Binaries at " & tab(0))) then cmd ||:= "icont"
+   else if &features=="Win32" then cmd := "wicont -s"
+   else
+       cmd := if &features=="MS Windows NT" then "nticont" else "icont"
+   return cmd
+end
+
+
+procedure warning(s)
+   /warnings := 0
+   /errors := 0
+   if warnings + errors = 0 then iwrite(&errout)
+   iwrites(&errout, \fName, ":")
+   iwrite(&errout, yylineno, ": # \"", yytext, "\": ", s)
+   warnings +:= 1
+end

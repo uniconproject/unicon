@@ -1,0 +1,31 @@
+CC = cl
+RM = del
+
+DEFINES = /DHAVE_CONFIG_H /D_LIBTP_
+#CFLAGS = -Wall -Werror -Wno-unused -g $(DEFINES) $(INCLUDES)
+CFLAGS  = $(DEFINES) $(INCLUDES)
+
+SRCS = uri.c uri_file.c uri_fing.c uri_ftp.c uri_http.c uri_pop.c \
+       uri_mail.c uri_schm.c
+
+OBJS = uri.obj uri_file.obj uri_fing.obj uri_ftp.obj uri_http.obj uri_pop.obj \
+       uri_mail.obj uri_schm.obj
+
+#----------------------------------------------------------------------#
+
+liburi.a: $(OBJS)
+
+clean:
+	$(RM) $(OBJS)
+
+distclean: clean
+	$(RM) liburi.a Makefile
+
+uri.obj: uri.c uri.h uri_schm.h
+uri_file.obj: uri_file.c uri.h uri_schm.h
+uri_fing.obj: uri_fing.c uri.h uri_schm.h
+uri_ftp.obj: uri_ftp.c uri.h uri_schm.h
+uri_http.obj: uri_http.c uri.h uri_schm.h
+uri_pop.obj: uri_pop.c uri.h uri_schm.h
+uri_mail.obj: uri_mail.c uri.h uri_schm.h
+uri_schm.obj: uri_schm.c uri_schm.h uri.h

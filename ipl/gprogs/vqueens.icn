@@ -1,0 +1,113 @@
+############################################################################
+#
+#	File:     vqueens.icn
+#
+#	Subject:  Program to display solutions to the n-queens problem
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     May 22, 1996
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  Adapted from a text-display version by Steve Wampler.
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:
+#
+############################################################################
+link options
+link wopen
+
+global solution
+global black_queen, white_queen
+
+$define Edge	 4
+$define Offset  40
+$define Size 44
+
+global queens
+
+procedure main(args)
+   local i, opts, wsize
+
+   opts := options(args,"n+")
+   queens := \opts["n"] | 8
+   if queens <= 0 then stop("-n needs a positive numeric parameter")
+   wsize := queens * Size + 2 * Offset
+
+
+   WOpen("size=" || wsize || "," || wsize, "label=" || queens ||
+      "-queens") | stop("*** cannot open window")
+   black_queen := WOpen("canvas=hidden", "image=bqueen.gif")
+   white_queen := WOpen("canvas=hidden", "image=wqueen.gif")
+
+   solution := list(queens)		# ... and a list of column solutions
+   every q(1)			# start by placing queen in first column
+end
+
+# q(c) - place a queen in column c.
+#
+procedure q(c)
+   local r
+   static up, down, rows
+   initial {
+      up := list(2 * queens - 1, 0)
+      down := list(2 * queens - 1, 0)
+      rows := list(queens, 0)
+      }
+   every 0 = rows[r := 1 to queens] = up[queens+r-c] = down[r+c-1] &
+      rows[r] <- up[queens+r-c] <- down[r+c-1] <- 1        do {
+         solution[c] := r	# record placement.
+         if c = queens then {
+            if  WQuit() then exit() else show()
+            }
+         else q(c + 1)		# try to place next queen.
+         }
+end
+
+# show the solution on a chess board.
+#
+procedure show()
+   local i, j, queen
+
+   WDelay(500)
+   DrawBoard()
+   every i := 1 to *solution do {
+      j := solution[i] 
+      queen := if (i + j) %2 = 0 then black_queen else white_queen
+      CopyArea(queen, &window, , , , , Offset + (i - 1) * Size + 1,
+         Offset + (j - 1) * Size + 1)
+      }
+#  Event()
+
+   return
+
+end
+
+procedure DrawBoard()
+   local i, j
+
+   EraseArea()
+
+   every i := 0 to queens - 1 do
+      every j := 0 to queens - 1 do
+         if (i + j) % 2 = 1 then
+            FillRectangle(Offset + i * Size, Offset + j * Size,
+               Size, Size)
+   DrawRectangle(Offset, Offset, queens * Size, queens * Size)
+   DrawRectangle(Offset - Edge, Offset - Edge,
+      queens * Size + 2 * Edge, queens * Size + 2 * Edge)
+
+   return
+
+end

@@ -1,0 +1,415 @@
+############################################################################
+#
+#	File:     groups.icn
+#
+#	Subject:  
+#
+#	Author:   Robert Parlett
+#
+#	Date:     January, 1999
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   Handle groups of CheckBoxGroups and ButtonGroups
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+############################################################################
+#
+# Superclass for CanvasCheckBoxGroup and CanvasButtonGroup
+#
+class Group : ClassIO(
+   name,                    # Object name           
+   class_name,              # Class name
+   number,                  # Group number
+   var_category,            # Variable category
+   code_gen_flag            # Indicates whether code output yet
+   )
+
+   #
+   # Set object name
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Duplicate (will be extended by subclass)
+   #
+   method dup(c)
+      c.name := self.name
+      c.class_name := self.class_name
+      c.number := self.number
+   end
+
+   #
+   # Set object name
+   #
+   method set_class_name(x)
+      return self.class_name := x
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Name", "name"],
+              ["Number", "number"],
+              ["Class Name", "class_name"]]
+   end
+
+   # 
+   # Generate code; will be called several times so only output
+   # first time.
+   #
+   method gen_code(c)
+      if /self.code_gen_flag then {
+         c$add_var(self.name, var_category)
+         c$line(self.name || " := " || self.class_name || "()")
+         code_gen_flag := 1
+      }
+   end      
+
+   initially
+end
+
+############################################################################
+#
+# Class to represent a CheckBoxGroup on the canvas.
+#
+class CanvasCheckBoxGroup : Group : CheckBoxGroup()
+   #
+   # Class name for code generation
+   #
+   method gen_class_name()
+      return "CheckBoxGroup"
+   end
+
+   #
+   # Instance names for code generation (numbered 1, 2 ...)
+   #
+   method gen_instance_name()
+      return "check_box_group"
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self$Group.get_template() |||
+         [["Which One", "which_one"]]
+   end
+
+   # 
+   # Duplicate object
+   #
+   method dup()
+      c := CanvasCheckBoxGroup()
+      self$Group.dup(c)
+      return c
+   end
+
+   initially
+      self$Group.initially()
+      self$CheckBoxGroup.initially()
+      var_category := 1
+end
+
+############################################################################
+#
+# Class to represent a ButtonGroup on the canvas.
+#
+class CanvasButtonGroup : Group : ButtonGroup()
+   method gen_class_name()
+      return "ButtonGroup"
+   end
+
+   method gen_instance_name()
+      return "button_group"
+   end
+
+   method dup()
+      c := CanvasButtonGroup()
+      self$Group.dup(c)
+      return c
+   end
+
+   initially
+      self$Group.initially()
+      self$ButtonGroup.initially()
+      var_category := 2
+end
+
+############################################################################
+#
+# Superclass for CheckBoxGroupSet and ButtonGroupSet
+#
+class GroupSet : ClassIO(
+   parent_Canvas,           #                     
+   boxes                    # List of the objects.
+   )
+
+   #
+   # Reset code generation flags.
+   #
+   method reset_code_gen_flags()
+      every (!boxes).code_gen_flag := &null
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Parent Canvas", "parent_Canvas"], ["Boxes", "boxes"]]
+   end
+
+   #
+   # Reference to parent canvas.
+   #
+   method set_parent_Canvas(p)
+      return self.parent_Canvas := p
+   end
+
+   method is_empty()
+      return *self.boxes = 0
+   end
+
+   #
+   # String representation of the list is simply a list of
+   # the names.
+   #
+   method string_rep()
+      l := []
+      every put(l, (!self.boxes).name)
+      return l
+   end
+
+   # 
+   # Group i in boxes.
+   #
+   method group_number(i)
+      return self.boxes[i]
+   end
+
+   #
+   # Index of Group c in boxes.
+   #
+   method group_index(c)
+      return c.number
+   end
+
+   initially
+      boxes := []
+end
+
+############################################################################
+#
+# Set of CheckBoxGroups
+#
+class CheckBoxGroupSet : GroupSet()
+   #
+   # Duplicate
+   #
+   method dup(pc)
+      c := CheckBoxGroupSet()
+      c.parent_Canvas := pc
+      c.boxes := []
+      every put(c.boxes, (!self.boxes)$dup())
+      return c
+   end
+
+   #
+   # Add a new CheckBoxGroup
+   #
+   method new()
+      n := CanvasCheckBoxGroup()
+      n$set_name(self.parent_Canvas$get_new_name(n))
+      n$set_class_name(n$gen_class_name())
+      put(boxes, n)
+      n.number := *boxes
+      return n
+   end
+end
+
+############################################################################
+#
+# Set of ButtonGroups, same as for CheckBoxGroupSet
+#
+class ButtonGroupSet : GroupSet()
+   method dup(pc)
+      c := ButtonGroupSet()
+      c.parent_Canvas := pc
+      c.boxes := []
+      every put(c.boxes, (!self.boxes)$dup())
+      return c
+   end
+
+   method new()
+      n := CanvasButtonGroup()
+      n$set_name(self.parent_Canvas$get_new_name(n))
+      n$set_class_name(n$gen_class_name())
+      put(boxes, n)
+      n.number := *boxes
+      return n
+   end
+end
+
+############################################################################
+#
+# Dialog box for configuring GroupSet
+#
+class GroupSetDialog : CommonDialog(
+   c,                       #         
+   okay,                    #            
+   cancel,                  #              
+   apply,                   #             
+   struct,                  #              
+   os,                      #          
+   os_on,                   #             
+   os_off,                  #              
+   col_name,                #                
+   col_class_name,          #
+   okay_result              #
+   )
+
+   method okay_result()
+      return self.okay_result
+   end
+
+   method dialog_event(ev)
+      case ev$get_component() of {
+         struct : if ev$get_code() > 0 then {
+            if i := struct$get_selections()[1] then {
+               new := c.boxes[i]
+               apply$clear_is_shaded()
+               os$set_which_one(os_on)
+               col_name$set_contents(new.name)
+               col_class_name$set_contents(new.class_name)
+            } else {
+               apply$set_is_shaded()
+               os$set_which_one(os_off)
+            }
+         }
+
+         apply :  if ev$get_code() > 0 then {
+            r := c.boxes[struct$get_selections()[1]]
+            r.name := col_name$get_contents()
+            r.class_name := col_class_name$get_contents()
+            struct$set_contents(c$string_rep())
+            struct$clear_selections()
+            apply$set_is_shaded()
+            os$set_which_one(os_off)
+         }
+
+         cancel : if ev$get_code() > 0 then {
+            c.parent_Canvas.parent_Dialog$use_extra_undo()
+            self$dispose()
+         }
+
+         okay :
+            if ev$get_code() > 0 then {
+               self.okay_result := 1
+               self$dispose()
+            }
+      }
+   end
+
+   initially
+      self$CommonDialog.initially()
+
+      object_class_name(c) ? {
+         ="Canvas"
+         label := tab(find("Set")) || " Setup"
+      }
+
+      self$set_attribs("size=605,445", "label=" || label)
+
+      b := Border()
+      b$set_pos("50%", 35)
+      b$set_size("100%-50", 310)
+      b$set_align("c", "t")
+      l := Label()
+      l$set_label(label)
+      b$set_title(l)
+      self$add(b)
+
+      c.parent_Canvas.parent_Dialog$save_extra_undo()
+      struct := TextList()
+      struct$set_size(175, 250)
+      struct$set_pos(25, 25)
+      struct$set_select_one()
+      struct$set_contents(c$string_rep())
+      b$add(struct)
+
+      apply := TextButton()
+      apply$set_label("Apply")
+      apply$set_pos(250, 25)
+      apply$set_is_shaded()
+      b$add(apply)
+
+      os := OverlaySet()
+      os$set_pos(250, 65)
+      os$set_size(280, 200)
+      b$add(os)
+
+      os_off := OverlayItem()
+      os$add(os_off)
+
+      os_on := OverlayItem() 
+      os$add(os_on)
+
+      b := Border()
+      b$set_pos(0, 0)
+      b$set_size("100%", "100%")
+      l := Label()
+      l$set_label("Edit")
+      b$set_title(l)
+      os_on$add(b)
+
+      l := Label()
+      l$set_label("Name")
+      l$set_pos(30, "33%")
+      l$set_align("l", "c")
+      b$add(l)
+
+      col_name := TextField()
+      col_name$set_size(140)
+      col_name$set_pos(110, "33%")
+      col_name$set_align("l", "c")
+      b$add(col_name)
+
+      l := Label()
+      l$set_label("Class Name")
+      l$set_pos(30, "66%")
+      l$set_align("l", "c")
+      b$add(l)
+
+      col_class_name := TextField()
+      col_class_name$set_size(140)
+      col_class_name$set_pos(110, "66%")
+      col_class_name$set_align("l", "c")
+      b$add(col_class_name)
+
+      okay := TextButton()
+      okay$set_pos("33%", "100%-50")
+      okay$set_align("c", "c")
+      okay$set_label("Okay")
+      self$add(okay)
+
+      cancel := TextButton()
+      cancel$set_pos("66%", "100%-50")
+      cancel$set_align("c", "c")
+      cancel$set_label("Cancel")
+      self$add(cancel)
+end
+
+

@@ -1,0 +1,135 @@
+$include "ytab_h.icn"
+
+record treenode(label, children)
+procedure node(label, kids[])
+   return treenode(label, kids)
+end
+procedure leaf(label)
+   return treenode(label)
+end
+
+global thePackage
+
+procedure yyprint(node, pkgprefix)
+   static lasttok
+   case type(node) of {
+      "treenode" : {
+
+	 if node.label == "package" then {
+	     # noop
+	    }
+	 else if node.label == "import" then {
+	    tempp := Package( , node.children[2].s)
+	    every fn := tempp.files.foreach() do {
+	       if map(fn)[-4:0]==".icn" then fn[-4:0] := ""
+	       write(yyout,"\nlink ",image(fn))
+	       outcol := 1
+	       }
+	    }
+         else if node.label == "packageref" then {
+	     yyprint(node.children[1])
+	     writes(yyout, "__")
+	     outcol +:= ((* writes(yyout, node.children[3].s)) + 2)
+	 }
+         else if node.label == "global" then {
+	    yyprint(node.children[1], pkgprefix)
+	    yyprint(node.children[2], (\thePackage).name|&null)
+	    }
+	 else if node.label == "proc" then {
+	    yyprint(node.children[1],pkgprefix)
+	    every yyprint(node.children[2 to 4],pkgprefix)
+	    (node.children[1].fields).coercions()
+	    yyprint(node.children[5],pkgprefix)
+	    yyprint(node.children[6],pkgprefix)
+	    }
+	 else if *node.children > 0 then {
+            every yyprint(!node.children, pkgprefix)
+	    }
+	 else if node.label === "error" then fail
+	 else write("leaf, ", node.label)
+	    }
+      "integer": {
+	 writes(yyout, node); outcol +:= *string(node)
+	 }
+      "string": {
+         node ? {
+	    while writes(yyout, tab(find("\n")+1)) do {
+	       outline+:=1; outcol:=1;
+	       }
+	    node := tab(0)
+	    }
+	 writes(yyout, node); outcol +:= *node
+         }
+      "token": {
+	 if outfilename ~== node.filename | outline > node.line then {
+	    write(yyout,"\n#line ", node.line-1," \"", node.filename,"\"")
+	    outline := node.line
+	    outcol := 1
+	    outfilename := node.filename
+	    }
+
+	 while outline < node.line do {
+	    write(yyout); outline +:= 1; outcol := 1
+	    }
+	 if outcol >= node.column then {
+            # force space between idents and reserved words, and other
+            # deadly combinations (need to add some more)
+            if ((\lasttok).tok = (IDENT|INTLIT) & reswords[node.s][2]~=IDENT) |
+		(((\lasttok).tok = NMLT) & (node.tok = MINUS)) |
+		((\lasttok).tok = node.tok = PLUS) |
+		((\lasttok).tok = node.tok = MINUS) |
+		((reswords[(\lasttok).s][2]~=IDENT) & (node.tok=(IDENT|INTLIT)))|
+	        ((reswords[(\lasttok).s][2]~=IDENT) & (reswords[node.s][2]~=IDENT))
+		   then
+	       writes(yyout, " ")
+	    }
+	 else
+         while outcol < node.column do { writes(yyout, " "); outcol +:= 1 }
+
+	 if \pkgprefix & (node.tok = IDENT) then {
+	     writes(yyout, pkgprefix, "__")
+	     outcol +:= *pkgprefix + 1
+	     thePackage.insertsym(node.s)
+	     }
+	 writes(yyout, node.s)
+	 outcol +:= *node.s
+	 lasttok := node
+	 }
+      "null": { }
+      "declaration__state": {
+	 node.Write(yyout)
+	 }
+      "Class__state": {
+	 node.Write(yyout)
+	 }
+      "argList__state": {
+	 node.Write(yyout)
+	 }
+      default: write("its a ", type(node))
+      }
+end
+
+procedure body_scopeck(node,met)
+ case type(node) of {
+    "treenode": {
+       if node.label === "keyword" then fail
+       else if node.label === "field" then body_scopeck(node.children[1], met)
+       else if *node.children > 0 then
+	  every body_scopeck(!node.children, met)
+       }
+    "token": {
+       if node.tok = IDENT then {
+	  if (\met).Class.ismethod(node.s) | (\met).Class.isfield(node.s) then {
+	     if not met.islocal(node.s) then {
+		node.s := "self." || node.s
+		}
+	     else {
+		}
+	     }
+	  else {
+	      node.s := \ ((\imported)[node.s]) || "__" || node.s
+	     }
+	  }
+       }
+   }
+end

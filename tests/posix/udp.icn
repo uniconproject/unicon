@@ -1,0 +1,25 @@
+$include "posix.icn"
+
+procedure main() 
+
+   if fork() == 0 then {
+      f := open(":1072", "nua") 
+ 
+      if r := receive(f) then { 
+          # Process the request in r.msg - in the case of the time 
+          # service, we don't care what is actually in the message 
+	 send(r.addr, "hello, world!")
+      }
+      exit(0)
+   }
+
+   delay(100)
+   f := open(":1072", "nu") |
+      stop("Open failed: ", sys_errstr(&errno))
+
+   write(f, "")
+   if *select(f, 5000) = 0 then stop("Connection timed out.")
+   r := receive(f)
+   write("Received ", r.msg)
+
+end

@@ -1,0 +1,58 @@
+procedure yyerror(s)
+static statemsg
+initial {
+   statemsg := table("syntax error")
+   statemsg[24] := "semicolon expected"
+   statemsg[37] := "invalid link declaration"
+   statemsg[42] := "method expected"
+   statemsg[73] := "invalid case control expression"
+   statemsg[193] := "missing right parenthesis"
+   statemsg[256] := "missing or invalid second argument to *"
+   statemsg[373] := "illegal assignment in declaration"
+   statemsg[0] := "invalid declaration"
+   statemsg[52] := "missing identifier"
+   statemsg[83] := "invalid until control expression"
+   statemsg[110] := "unclosed list"
+   statemsg[136] := "invalid procedure body"
+   statemsg[420] := "missing right parenthesis"
+   statemsg[39] := "missing parameter list in procedure declaration"
+   statemsg[75] := "invalid every control expression"
+   statemsg[80] := "invalid repeat control expression"
+   statemsg[159] := "missing then?"
+   statemsg[10] := "link list expected"
+   statemsg[23] := "procedure not allowed within a class"
+   statemsg[85] := "invalid argument to unary !"
+   statemsg[268] := "invalid initial expression"
+   statemsg[7] := "unexpected end of file"
+   statemsg[28] := "invalid global declaration"
+   statemsg[46] := "procedure not allowed within a class"
+   statemsg[77] := "invalid if control expression"
+   statemsg[12] := "procedure name expected"
+   statemsg[56] := "parameter name expected"
+   statemsg[74] := "invalid create expression"
+   statemsg[127] := "unclosed list"
+   statemsg[194] := "unclosed list"
+   statemsg[369] := "parenthesis is required for method invocation"
+   statemsg[9] := "invocable list expected"
+   statemsg[84] := "invalid while control expression"
+   statemsg[111] := "invalid compound expression"
+   statemsg[272] := "invalid local declaration"
+   statemsg[251] := "missing or invalid second argument to +"
+   statemsg[259] := "missing or invalid second argument to !"
+   statemsg[277] := "parameter name expected"
+   statemsg[363] := "unclosed parenthesis"
+   }
+
+   /errors := 0
+   if errors = 0 then write(&errout)
+   else if map(s)== "stack underflow. aborting..." then return
+   errors +:= 1
+   if errors > 10 then stop("too many errors, aborting")
+   writes(&errout, \fName, ":")
+   if s == "syntax error" then
+      s := statemsg[statestk[1]]
+   if s == "syntax error" then
+      s ||:= " (" || statestk[1] || ")"
+   write(&errout, yylineno, ": # \"", yytext, "\": ", s)
+   return
+end

@@ -1,0 +1,18 @@
+In order to build the solaris odbc stuff just configure with
+name=sun_gcc_iodbc.  You may (probably) need to edit the *.hdr files to
+specify the location of myodbc/iodbc files (default assumes they are under
+/usr/local/{include/lib/myodbc}), which is how they unpack if you pick
+the binary Solaris distribution from www.mysql.com and install it from
+your root directory (i.e. you are superuser doing a regular install).
+
+After that the make Unicon (or make Icon-icont) should compile.  Be sure
+you have both iodbc and myodbc libraries installed and LD_LIBRARY_PATH
+pointing to them.  Also, you will need a ~/.odbc.ini file similar to
+
+[ntissis4]
+Driver = /homes/csfac/jeffery/v9/src/myodbc/usr/local/lib/libmyodbc-2.50.26.so
+Description = myodbc connection to unicon
+Server=unicon.cs.unlv.edu
+Database=databasename
+
+-Federico Balbi and Clint jeffery@cs.unlv.edu

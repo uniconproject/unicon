@@ -1,0 +1,23 @@
+procedure main()
+  write("connect to NLM...")
+
+  f:=dbopen("nlm","test","federico","")
+
+  l:=dbtables(f)
+  
+  every i:=(1 to *l) do {    
+    r:=l[i]
+    every j:=(1 to *r) do writes("[",r[j],"]")
+    write()
+  }
+  write()
+
+  dbselect(f,"*","")
+  
+  row:=dbfetch(f)
+  every i:=(1 to *row) do writes("[",row[i],"]")
+
+  dbclose(f)
+end
+
+

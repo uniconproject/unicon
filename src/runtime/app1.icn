@@ -1,0 +1,66 @@
+############################################################################
+#
+#	File:     app1.icn
+#
+#	Subject:  Program to ...
+#
+#	Author:   
+#
+#	Date:     October 30, 1997
+#
+############################################################################
+#
+#
+#
+############################################################################
+#
+#  Requires:
+#
+############################################################################
+#
+#  Links: vsetup
+#
+############################################################################
+
+#  This vib interface specification is a working program that responds
+#  to vidget events by printing messages.  Use a text editor to replace
+#  this skeletal program with your own code.  Retain the vib section at
+#  the end and use vib to make any changes to the interface.
+
+link vsetup
+
+procedure main(args)
+   local vidgets, root, paused
+
+   (WOpen ! ui_atts()) | stop("can't open window")
+   vidgets := ui()				# set up vidgets
+   root := vidgets["root"]
+
+   paused := 1					# flag no work to do
+   repeat {
+      # handle any events that are available, or
+      # wait for events if there is no other work to do
+      while (*Pending() > 0) | \paused do {
+         ProcessEvent(root, QuitCheck)
+         }
+      # if <paused> is set null, code can be added here
+      # to perform useful work between checks for input
+      }
+end
+
+procedure button_cb1(vidget, value)
+   return
+end
+
+#===<<vib:begin>>===	modify using vib; do not remove this marker line
+procedure ui_atts()
+   return ["size=600,378", "bg=#C0C0C0"]
+end
+
+procedure ui(win, cbk)
+return vsetup(win, cbk,
+   [":Sizer:::0,0,600,378:",],
+   ["button1:Button:regular::44,63,35,20:push",button_cb1],
+   )
+end
+#===<<vib:end>>===	end of section maintained by vib

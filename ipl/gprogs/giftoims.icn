@@ -1,0 +1,84 @@
+############################################################################
+#
+#	File:     giftoims.icn
+#
+#	Subject:  Program to convert GIF files to image strings
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     March 14, 1995
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This program converts GIF images whose names are given on the command
+#  line to image strings as used by DrawImage().
+#
+#  The image strings are written to files with the basenames of the GIF
+#  files and the suffix "ims".
+#
+#  The following options are supported:
+#
+#	-c s	palette, default "c1"
+#	-l	write Icon literal instead of plain string
+#	-i i	make lines of literals at most i characters long, default 60
+#	-p s	palette to use; default c1.
+#
+#  Note:  A $ sign cannot be the first character of a continued literal --
+#  it would be interpreted as a preprocessor command.
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:  basename, graphics, options
+#
+############################################################################
+
+link basename
+link graphics
+link options
+
+procedure main(args)
+   local file, opts, name, output, literal, length, seg, palette
+
+   opts := options(args, "i+lp:")
+
+   literal := opts["l"]
+   length := \opts["i"] | 60
+   palette := \opts["p"] | "c1"
+
+   every file := !args do {
+      name := basename(file, ".gif") || ".ims"
+      WOpen("canvas=hidden", "image=" || file) | {
+         write(&errout, "**** can't open ", file)
+         next
+         }
+      output := open(name, "w") | {
+         write(&errout, "*** can't write to ", name)
+         next
+         }
+      if /literal then
+         writes(output, Capture(palette))
+      else {
+         image(Capture(palette)) ? {
+            while if any('$') then seg := "\\" || move(length - 1) 
+               else seg := move(length) do
+                  if pos(0) then write(output, seg)
+                  else write(output, seg, "_")
+            if not pos(0) then {
+               if any('$') then writes("\\")
+               }
+            write(output, tab(0))
+            }
+         }
+      close(output)
+      WClose()
+      }
+
+end

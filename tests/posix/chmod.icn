@@ -1,0 +1,15 @@
+
+$include "posix.icn"
+
+procedure main()
+
+   f := open("foo", "w")
+   write(f)
+   close(f)
+   chmod("foo", "+x") | write("Couldn't chmod: ", sys_errstr(&errno))
+   f := open("ls -l foo", "p")
+   s := read(f)
+   write(s[1:11])
+
+   system("rm foo")
+end

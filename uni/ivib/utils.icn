@@ -1,0 +1,80 @@
+############################################################################
+#
+#	File:     utils.icn
+#
+#	Subject:  Utilities for ivib
+#
+#	Author:   Robert Parlett
+#
+#	Date:     January, 1999
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#   Utilities
+#   
+#  
+############################################################################
+#
+#  Links: 
+#
+############################################################################
+
+#
+# Read a flag (&null or 1) value
+#
+procedure flag_read(f)
+   s := read(f) | fail
+   return if *s = 0 then &null else 1
+end
+
+#
+# Read a value which may be &null or have a value
+#
+procedure opt_read(f)
+   (t := read(f) &
+   s := read(f)) | fail
+   return if t == "1" then s else &null
+end
+
+#
+# Write a value which may be &null or have a value
+#
+procedure opt_write(f, s)
+   write(f, if \s then 1 else "&null")
+   write(f, s)
+end
+
+#
+# Generate the elements of l in reverse
+#
+procedure rev(l)
+   suspend l[*l to 1 by -1]
+end
+
+#
+# Minimum of x, y
+#
+procedure min(x, y)
+   return (x > y) | x
+end
+
+#
+# Maximum of x, y
+#
+procedure max(x, y)
+   return (x < y) | x
+end
+
+#
+# Convert a list l to a string representation.
+#
+procedure list2string(l)
+   e := create image(!l)
+   s := @e | ""
+   while s ||:= ", " || @e
+   return s
+end

@@ -1,0 +1,160 @@
+############################################################################
+#
+#	File:     pdae.icn
+#
+#	Subject:  Procedures for programmer-defined argument evaluation
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     January 18, 1994
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#  
+#  These procedures use co-expressions to model the built-in argu-
+#  ment evaluation regime of Icon and also provide new ones.
+#  
+#       Allpar{e1,e2, ...}   parallel evaluation with last result
+#                            used for short sequences
+#  
+#       Extract{e1,e2, ...}  extract results of even-numbered argu-
+#                            ments according to odd-numbered values
+#  
+#       Lifo{e1,e2, ...}     models standard Icon ``lifo'' evalua-
+#                            tion
+#  
+#       Parallel{e1,e2, ...} parallel evaluation terminating on
+#                            shortest sequence
+#  
+#       Reverse{e1,e2, ...}  left-to-right reversal of lifo evalua-
+#                            tion
+#  
+#       Rotate{e1,e2, ...}   parallel evaluation with shorter
+#                            sequences re-evaluated
+#  
+#       Simple{e1,e2, ...}   simple evaluation with only success or
+#                            failure
+#
+#  In all cases, the first argument is "applied".
+#
+#  Comments:
+#
+#     Because of the handling of the scope of local identif-
+#  iers in co-expressions, expressions in programmer-defined argu-
+#  ment evaluation regimes cannot communicate through local identif-
+#  iers.  Some constructions, such as break and return, cannot be
+#  used in arguments to programmer-defined argument evaluation
+#  regimes.
+#  
+############################################################################
+#
+#  Requires:  co-expressions
+#
+############################################################################
+
+procedure Allpar(L)
+   local i, L1, done
+   L1 := list(*L)
+   done := list(*L,1)
+   every i := 1 to *L do L1[i] := @L[i] | fail
+   repeat {
+      suspend L1[1] ! L1[2:0]
+      every i := 1 to *L do
+         if done[i] = 1 then ((L1[i] := @L[i]) | (done[i] := 0))
+      if not(!done = 1) then fail
+       }
+end
+
+procedure Extract(L)
+   local i, j, n, L1
+   L1 := list(*L/2)
+   repeat {
+      i := 1
+      while i < *L do {
+         n := @L[i] | fail
+         every 1 to n do
+            L1[(i + 1)/2] := @L[i + 1] | fail
+         L[i + 1] := ^L[i + 1]
+         i +:= 2
+         }
+      suspend L1[1] ! L1[2:0]
+      }
+end
+
+procedure Lifo(L)
+   local i, L1, ptr
+   L1 := list(*L)
+   ptr := 1
+   repeat {
+      repeat
+         if L1[ptr] := @L[ptr]
+         then {
+            ptr +:= 1
+            (L[ptr] := ^L[ptr]) | break
+            }
+         else if (ptr -:=  1) = 0
+            then fail
+      suspend L1[1] ! L1[2:0]
+      ptr := *L
+      }
+end
+
+procedure Parallel(L)
+   local i, L1
+   L1 := list(*L)
+   repeat {
+      every i := 1 to *L do
+         L1[i] := @L[i] | fail
+      suspend L1[1] ! L1[2:0]
+      }
+end
+
+procedure Reverse(L)
+   local i, L1, ptr
+   L1 := list(*L)
+   ptr := *L
+   repeat {
+      repeat
+         if L1[ptr] := @L[ptr]
+         then {
+            ptr -:= 1
+            (L[ptr] := ^L[ptr]) |
+            break
+            }
+         else if (ptr +:= 1) > *L
+              then fail
+      suspend L1[1] ! L1[2:0]
+      ptr := 1
+      }
+end
+
+procedure Rotate(L)
+   local i, L1, done
+   L1 := list(*L)
+   done := list(*L,1)
+   every i := 1 to *L do L1[i] := @L[i] | fail
+   repeat {
+      suspend L1[1]!L1[2:0]
+      every i := 1 to *L do
+         if not(L1[i] := @L[i]) then {
+            done[i] := 0
+            if !done = 1 then {
+               L[i] := ^L[i]
+               L1[i] := @L[i] | fail
+               }
+            else fail
+            }
+        }
+end
+
+procedure Simple(L)
+   local i, L1
+   L1 := list(*L)
+   every i := 1 to *L do
+      L1[i] := @L[i] | fail
+   return L1[1] ! L1[2:0]
+end
+

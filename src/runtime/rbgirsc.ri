@@ -1,0 +1,28 @@
+/*
+ * File: rxrsc.ri - Borland specific resource allocation/deallocation
+ *
+ * Resources are allocated through a layer of internal management
+ * routines in order to handle aliasing and resource sharing.
+ */
+
+/*
+ * allocate a context.
+ */
+wcp alc_context(wbp w) {
+  wcp wc;
+
+  GRFX_ALLOC(wc, _wcontext);
+  GRFX_LINK(wc, wcntxts);
+  return wc;
+}
+
+/*
+ * allocate a window state structure
+ */
+wsp alc_winstate() {
+  wsp ws;
+  
+  GRFX_ALLOC(ws, _wstate);
+  GRFX_LINK(ws, wstates);
+  return ws;
+}

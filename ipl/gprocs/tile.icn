@@ -1,0 +1,62 @@
+############################################################################
+#
+#	File:     tile.icn
+#
+#	Subject:  Procedure to tile window
+#
+#	Author:   Ralph E. Griswold
+#
+#	Date:     September 23, 1997
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This procedure tiles a portion of win1 over the specified portion
+#  of win2, doubling to reduce the number of copies required.
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+
+procedure tile(			#: tile area with image
+   win1, win2, x1, y1, w1, h1, x2, y2, w2, h2
+   )
+   
+   local w, h
+
+   /win1 := &window
+   /win2 := &window
+   /x1 := 0
+   /y1 := 0
+   /x2 := 0
+   /y2 := 0
+   /w1 := WAttrib(win1, "width")
+   /h1 := WAttrib(win1, "height")
+   /w2 := WAttrib(win2, "width")
+   /h2 := WAttrib(win2, "height")
+
+   if (w1 | h1 | w2 | h2) = 0 then fail
+
+   CopyArea(win1, win2, x1, y1, abs(w1), abs(h1), x2, y2)	# initial copy 
+
+   w := w1
+   h := h1
+
+   while w < w2 do {				# copy and double
+      CopyArea(win2, win2, 0, 0, w, h, w, 0)
+      w *:= 2
+      }
+
+   while h < h2 do {				# copy and double
+      CopyArea(win2, win2, 0, 0, w, h, 0, h)
+      h *:= 2
+      }
+
+   return
+
+end

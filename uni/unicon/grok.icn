@@ -1,0 +1,34 @@
+#line 0 "stdin"
+#line 0 "foo.icn"
+
+
+procedure A_initially(self,z,x)
+
+write("z ", image(z));
+write("x ", image(z));
+end
+record A__state(__s,__m,x,y)
+record A__methods(initially)
+global A__oprec
+procedure A(x,y)
+local self,clone
+initial {
+  if /A__oprec then Ainitialize()
+  }
+  self := A__state(&null,A__oprec,x,y)
+  self.__s := self
+  self.__m.initially(self)
+  return self
+end
+
+procedure Ainitialize()
+  initial A__oprec := A__methods(A_initially)
+end
+
+
+
+procedure main();
+  w := A(1,2);
+  write( w.x );
+  write( w.y );
+end

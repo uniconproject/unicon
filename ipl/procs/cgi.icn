@@ -1,0 +1,297 @@
+############################################################################ 
+#
+#	File:     cgi.icn
+#
+#	Subject:  Procedures for writing CGI scripts
+#
+#	Authors:  Joe Van Meter, Clinton Jeffery, and Federico Balbi
+#
+#	Date:     May 4, 2000
+#
+############################################################################ 
+#
+# This library makes programming cgi programs easier by automatically 
+# checking for title and body procedures.  There are other procedures
+# that do some repetitive things for the programmer.
+#
+############################################################################ 
+
+global cgi			# table of input fields
+
+
+#
+# cgiEcho(file,args[]) - write a file to both HTML stdout and a regular
+#  text file, if one is present
+#
+procedure cgiEcho(f, args[])
+   push(args, f)
+   if type(f) == "file" then {	# if we have a file
+      write ! args		# write to it
+      pop(args)			# and then discard it
+      }
+   put(args, "<br>")		# write HTML
+   write ! args
+end
+
+
+#
+# cgiInput(type, name, values) -
+#
+procedure cgiInput(ty,nam,va)
+   every is := !va do {
+      writes("[<INPUT TYPE=\"",ty,"\" NAME=\"",nam,"\" VALUE=\"",is,"\"")
+      if is===va[1] then
+	  writes(" CHECKED")
+      write(">", is, "]")
+      }
+end
+
+#
+# cgiSelect(name, values)
+# this program with the name and value makes a select box
+#
+procedure cgiSelect(nam, va)
+   write("<SELECT NAME=\"", nam, "\">")
+   every is := !va do {
+      writes("<OPTION" )
+      if is==va[1] then writes(" SELECTED")
+      write(">", is)
+      }
+   write("</SELECT>")
+end
+
+#
+# cgiXYCoord()
+# This procedure is used with a ISMAP to figure out what the x and y coords
+# and if they are between a certain boundry. It returns the value of the 
+# list that was entered.
+# 
+record HMap(value,x1,y1,x2,y2)
+
+procedure cgiXYCoord(hlst)
+   title := hlst[1]
+   getenv("QUERY_STRING") ? {
+      x := tab(find(","))
+      move(1)
+      y := tab(0)
+      }
+   every q := 2 to *hlst do {
+      if (hlst[q].x1 < x < hlst[q].x2) & (hlst[q].y1 < y < hlst[q].y2) then {
+	 title := hlst[q].value
+         }
+      }
+   return title
+end
+
+procedure cgiMyURL()
+   return "http://" || getenv("SERVER_NAME") || getenv("SCRIPT_NAME")
+end
+
+procedure cgiMethGet()
+   if getenv("REQUEST_METHOD")==="GET" then return
+   # else fail
+end
+
+#
+# cgiReadParse()
+# This procedure gets input from either QUERY_STRING or stdin puts the 
+# values with their variable names and returns a table with references
+# from the variables to their values
+#
+
+procedure cgiReadParse()
+static hexen
+initial {
+   hexen := &digits ++ 'ABCDEF'
+   }
+   html := [ ]
+   it := ""
+   cgi := table(0)
+   line := ""
+   if cgiMethGet() then
+      line := getenv("QUERY_STRING")
+   else line := reads(&input, getenv("CONTENT_LENGTH"))
+
+   line ? {
+      while put(html, tab(find("&"))) do {
+	 tab(many('&'))
+         }
+      put(html, tab(0))
+      }
+   every r := 1 to *html do
+      html[r] := map(html[r], "+", " ")
+   every !html ? {
+      # does this really loop multiple times?  If so, what are we
+      # throwing away?
+      while k := tab(find("=")) do
+         tab(many('='))
+      data := tab(0)
+
+      while data ?:= ((tab(find("%")) ||
+		      (move(1) &
+		      (c1 := tab(any(hexen))) & (c2 := tab(any(hexen))) &
+		      cgiHexchar(c1,c2)) ||
+		       tab(0)))
+
+      cgi[k] := data
+      }
+   return cgi
+end
+
+#
+# procedure cgiPrintVariables
+# prints the variables with their value
+#
+
+procedure cgiPrintVariables(in)
+   write("<br>")
+   every X := key(in) do
+      write("<b>",X,"</b> is <i>",in[X],"</i><p>")
+end
+
+procedure cgiError(in)
+   if /in then
+      write("Error: Script ", cgiMyURL(), " encountered fatal error")
+   else { 
+      write("Content-type: text/html\n\n")
+      write("<html><head><title>",in[1],"</title></head>\n")
+      every i := 2 to *in do
+	 write("<p>", in[i], "</p>")
+      write("</body></html>\n")
+      }
+
+end
+
+procedure cgiHexval(c)
+    if any(&digits, c) then return integer(c)
+    if any('ABCDEF', c) then return ord(c) - ord("A") + 10
+end
+
+procedure cgiHexchar(c1,c2)
+    return char(cgiHexval(c1) * 16 + cgiHexval(c2))
+end
+
+#
+# procedure cgiColorToHex
+# if a basic color is entered into the procedure the hex values
+# is returned
+#
+
+procedure cgiColorToHex(s)
+static ColorTbl
+initial {
+   ColorTbl:=table(0)
+   ColorTbl["black"] := "000000"
+   ColorTbl["gray"]  := "666666"
+   ColorTbl["white"] := "ffffff"
+   ColorTbl["pink"]  := "ff0099"
+   ColorTbl["violet"]:= "ffccff"
+   ColorTbl["brown"] := "996633"
+   ColorTbl["red"]   := "ff0000"
+   ColorTbl["orange"]:= "ff9900"
+   ColorTbl["yellow"]:= "ffff33"
+   ColorTbl["green"] := "339933"
+   ColorTbl["cyan"]  := "ff66cc"
+   ColorTbl["blue"]  := "0000ff"
+   ColorTbl["purple"]:= "990099"
+   ColorTbl["magenta"]:="cc0066"
+   }
+
+   if rv := ColorValue(s) then {
+      # unfinished; convert 16-bit decimal values into 8-bits/component hex
+      }
+   return ColorTbl[s]
+end	
+
+#
+# Procedure cgiPrePro
+# This procedure goes through a file writes out 
+# either anything between ALL and the value that are passed into the 
+# procedure.
+#
+
+procedure cgiPrePro(filename,def)
+   AllFlag := 0
+   DefFlag := 0
+   all := "<!-- ALL"
+   look := "<!-- "||def	
+   intext := open(filename)
+   while here:=read(intext) do {
+      if match(all,here) then { 
+	 if AllFlag = 1 then
+	     AllFlag := 0
+	 else {
+	    here := read(intext)
+	    AllFlag := 1
+	    }
+         }
+      if match(look,here) then
+	 if DefFlag = 1 then {
+	    DefFlag := 0
+	    }
+	 else {
+	    DefFlag := 1
+	    here := read(intext)
+	    }
+      if AllFlag = 1 then writes(here)
+      else if DefFlag = 1 then writes(here)
+      }
+end
+
+#
+# cgiRemoteUser(): returns the reported Web user.
+#
+procedure cgiRemoteUser()
+   return getenv("REMOTE_USER")
+end
+
+#
+# Procedure cgiRndImg
+#
+# if a list is passed into the procedure then an img is randomized
+#
+
+procedure cgiRndImg(GifList, AltText)
+   writes("<img src=\"",?GifList,"\"", " alt=\"",AltText,"\"", ">")
+end
+
+procedure cgiOptwindow(opts, args[])
+   if not getenv("DISPLAY") then {
+      /opts["D"] := getenv("REMOTE_ADDR") || ":0"
+      }
+   return optwindow ! push(args, opts)
+end
+
+#
+# procedure main
+#
+# This procedure checks for a title procedure and a body procedure and places 
+# the html headers and tail... it then calls the users cgimain.
+#
+
+procedure main(args)
+   write("Content-type: text/html\n\n")
+   write("<html>")
+   if \cgititle then {
+      write("<title>")
+      write(cgititle(args))
+      write("</title>")
+      }
+   writes("<body")
+   if \cgiBBuilder then {
+      BB := cgiBBuilder(args)
+      writes(" background=\"",BB["background"],"\"")	
+      writes(" bgcolor=\"",BB["bgcolor"],"\"")	
+      writes(" text=\"",BB["text"],"\"")	
+      writes(" link=\"",BB["link"],"\"")	
+      writes(" vlink=\"",BB["vlink"],"\"")	
+      writes(" bgproperties=\"",BB["bgproperties"],"\"")	
+      }
+   write(">")
+   cgiReadParse()
+   cgimain(args)
+   write("</body>")
+   write("</html>")
+end
+
+

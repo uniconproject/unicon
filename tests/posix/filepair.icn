@@ -1,0 +1,61 @@
+$include "posix.icn"
+
+global count
+
+procedure main()
+
+   L1 := filepair() | stop("couldn't open")
+
+   count := 20000
+
+   pid := fork() | stop("Couldn't fork")
+   if pid = 0 then {
+      close(L1[1])
+      child(L1[2])
+   } else {
+      close(L1[2])
+      parent(L1[1])
+   }
+end
+
+
+#
+# The parent gets the lines and checks them for
+# consistency.
+#
+procedure parent(in)
+   # turn non-blocking mode on.
+   fcntl(in, "F", "d")
+
+   i := 0
+   str := ""
+   while i < count do {
+      if s := read(in) then {
+	 j := (s ? integer(tab(many(&digits)))) | -1
+	 if j ~= i then {
+	    write("failed - expected ", i)
+	    break
+	 }
+	 i +:= 1
+      }
+      else
+	 delay(1)
+   }
+   write("parent ending")
+end
+
+#
+# The child just writes lines of random length starting
+# with an integer: 0 xxx, 1 xxx, 2 xxxx etc.
+#
+procedure child(out)
+   i := 0
+   every 1 to count do {
+      s := i || " " || repl("x", ?200)
+
+      write(out, s) | stop("child failed to write")
+
+      i +:= 1
+   }
+
+end

@@ -4063,6 +4063,422 @@ echo "${ECHO_T}failed" >&6
 fi
 
 
+
+
+for ac_func in getrlimit setrlimit
+do
+as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ac_func" >&5
+echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
+if eval "test \"\${$as_ac_var+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $ac_func ();
+char (*f) ();
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+f = $ac_func;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  eval "$as_ac_var=yes"
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+eval "$as_ac_var=no"
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
+if test `eval echo '${'$as_ac_var'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+echo "$as_me:$LINENO: checking whether struct tm is in sys/time.h or time.h" >&5
+echo $ECHO_N "checking whether struct tm is in sys/time.h or time.h... $ECHO_C" >&6
+if test "${ac_cv_struct_tm+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <sys/types.h>
+#include <time.h>
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+struct tm *tp; tp->tm_sec;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_struct_tm=time.h
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_struct_tm=sys/time.h
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_struct_tm" >&5
+echo "${ECHO_T}$ac_cv_struct_tm" >&6
+if test $ac_cv_struct_tm = sys/time.h; then
+
+cat >>confdefs.h <<\_ACEOF
+#define TM_IN_SYS_TIME 1
+_ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking for struct tm.tm_zone" >&5
+echo $ECHO_N "checking for struct tm.tm_zone... $ECHO_C" >&6
+if test "${ac_cv_member_struct_tm_tm_zone+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <sys/types.h>
+#include <$ac_cv_struct_tm>
+
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+static struct tm ac_aggr;
+if (ac_aggr.tm_zone)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_struct_tm_tm_zone=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_member_struct_tm_tm_zone=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_struct_tm_tm_zone" >&5
+echo "${ECHO_T}$ac_cv_member_struct_tm_tm_zone" >&6
+if test $ac_cv_member_struct_tm_tm_zone = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_TM_TM_ZONE 1
+_ACEOF
+
+
+fi
+
+if test "$ac_cv_member_struct_tm_tm_zone" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TM_ZONE 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: checking for tzname" >&5
+echo $ECHO_N "checking for tzname... $ECHO_C" >&6
+if test "${ac_cv_var_tzname+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <time.h>
+#ifndef tzname /* For SGI.  */
+extern char *tzname[]; /* RS6000 and others reject char **tzname.  */
+#endif
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+atoi(*tzname);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_var_tzname=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_var_tzname=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_var_tzname" >&5
+echo "${ECHO_T}$ac_cv_var_tzname" >&6
+  if test $ac_cv_var_tzname = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TZNAME 1
+_ACEOF
+
+  fi
+fi
+
+     echo "$as_me:$LINENO: checking for timezone external" >&5
+echo $ECHO_N "checking for timezone external... $ECHO_C" >&6
+if test "${mb_cv_var_timezone+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <time.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+return (int)timezone;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  mb_cv_var_timezone=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+mb_cv_var_timezone=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+
+fi
+echo "$as_me:$LINENO: result: $mb_cv_var_timezone" >&5
+echo "${ECHO_T}$mb_cv_var_timezone" >&6
+   echo "$as_me:$LINENO: checking for altzone external" >&5
+echo $ECHO_N "checking for altzone external... $ECHO_C" >&6
+if test "${mb_cv_var_altzone+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <time.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+return (int)altzone;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  mb_cv_var_altzone=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+mb_cv_var_altzone=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+
+fi
+echo "$as_me:$LINENO: result: $mb_cv_var_altzone" >&5
+echo "${ECHO_T}$mb_cv_var_altzone" >&6
+   echo "$as_me:$LINENO: checking for daylight external" >&5
+echo $ECHO_N "checking for daylight external... $ECHO_C" >&6
+if test "${mb_cv_var_daylight+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <time.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+return (int)daylight;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  mb_cv_var_daylight=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+mb_cv_var_daylight=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+
+fi
+echo "$as_me:$LINENO: result: $mb_cv_var_daylight" >&5
+echo "${ECHO_T}$mb_cv_var_daylight" >&6
+   if test $mb_cv_var_timezone = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TIMEZONE 1
+_ACEOF
+
+   fi
+   if test $mb_cv_var_altzone = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ALTZONE 1
+_ACEOF
+
+   fi
+   if test $mb_cv_var_daylight = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DAYLIGHT 1
+_ACEOF
+
+   fi
+
 ac_config_files="$ac_config_files Makedefs:Makedefs.in"
 
 ac_config_headers="$ac_config_headers src/h/auto.h:src/h/auto.in"

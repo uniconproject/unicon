@@ -409,10 +409,27 @@ class HttpClient : NetClient(url,
          writes(data_out, s)
    end
 
-   initially
+   method set_one(attr, val)
+      local s, u
+      case attr of {
+         "url": {
+            s := string_val(attr, val)
+            u := URL(s) | stop("Bad URL:" || s)
+            set_url(u)
+         }
+         "data_file": set_data_file(string_val(attr, val))
+         "http_version": set_http_version(string_val(attr, val))
+         "request_type": set_request_type(string_val(attr, val))
+         "retries": set_retries(int_val(attr, val))
+         default: self.NetClient.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
       self.NetClient.initially()
       headers := table()
       timeout := 12000
       retries := 2
       http_version := "1.1"
+      set_fields(a)
 end

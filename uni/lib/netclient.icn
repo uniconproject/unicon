@@ -1,5 +1,5 @@
 #
-# $Id: netclient.icn,v 1.1 2004-06-27 16:19:05 rparlett Exp $
+# $Id: netclient.icn,v 1.2 2004-06-30 10:36:58 rparlett Exp $
 #
 
 package net
@@ -11,7 +11,7 @@ link posix
 # Common base class for a client class which holds a connection to a
 # server and communicates using CRLF-terminated lines.
 #
-class NetClient:Connectable:Error(server, port, connection, sbuff, timeout)
+class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, timeout)
    # 
    # Fail and set the error code, and close the connection.
    # @p
@@ -128,6 +128,15 @@ class NetClient:Connectable:Error(server, port, connection, sbuff, timeout)
       }
       fire("Read string", t)
       return t
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "timeout": set_timeout(int_val(attr, val))
+         "server": set_server(string_val(attr, val))
+         "port": set_port(int_val(attr, val))
+         default : field_error("Unknown attribute " || attr)
+      }
    end
 
    initially()

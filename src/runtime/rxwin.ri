@@ -678,6 +678,10 @@ wbp w;
 	       if (ws->iconic == IconicState)
 		  SETEXPOSED(wb);
 	       break;
+	    case KeyRelease:
+	       if (ws->inputmask & KeyReleaseMask)
+		  handle_keypress(wb, (XKeyEvent *)&event);
+	       break;
 	    case KeyPress:
 	       handle_keypress(wb, (XKeyEvent *)&event);
 	       break;
@@ -1682,16 +1686,20 @@ int setselection(wbp w, char *val)
 int setinputmask(wbp w, char *val)
 {
    wsp ws = w->window;
+   if (strchr(val,'k')) {
+      ws->inputmask |= KeyReleaseMask;
+      }
+   else {
+      ws->inputmask &= ~KeyReleaseMask;
+      }
    if (strchr(val,'m')) {
       ws->inputmask |= PointerMotionMask;
-      if (ws->win)
-	 XSelectInput(ws->display->display, ws->win, ws->inputmask);
       }
    else {
       ws->inputmask &= ~PointerMotionMask;
-      if (ws->win)
-	 XSelectInput(ws->display->display, ws->win, ws->inputmask);
       }
+   if (ws->win)
+      XSelectInput(ws->display->display, ws->win, ws->inputmask);
    return Succeeded;
 }
 

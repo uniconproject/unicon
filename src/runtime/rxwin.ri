@@ -255,12 +255,12 @@ XSelectionEvent *getselectionnotify(wsp ws)
 {
    bar = NULL;
    XSelectInput(ws->display->display, ws->win,
-		ws->inputmask | PropertyChangeMask);
+		XMasks(ws->inputmask | PropertyChangeMask));
    XFlush(ws->display->display);
    while(bar == NULL) {
       handle_misc(ws->display, NULL);
       }
-   XSelectInput(ws->display->display, ws->win, ws->inputmask);
+   XSelectInput(ws->display->display, ws->win, XMasks(ws->inputmask));
    return (XSelectionEvent *)bar;
 }
 
@@ -803,6 +803,11 @@ wbp w;
 	    struct descrip d;
 	    int ret = 0;
 	    if (w && (evwin == w->window->win)) ret = 1;
+            if (ws->inputmask & WindowClosureMask) {
+	       MakeInt(WINDOWCLOSED, &d);
+               qevent(wb->window, &d, 0, 0, 0, 0);
+               return 1;
+               }
 	    SETCLOSED((wbp)wb);
 	    wclose(wb);
 	    MakeInt(WINDOWCLOSED, &d);
@@ -1371,7 +1376,7 @@ int wmap(wbp w)
 	 }
       XSetStandardProperties(stddpy, stdwin, ws->windowlabel, ws->iconlabel,
 			     0,0,0, &size_hints);
-      XSelectInput(stddpy, stdwin, ws->inputmask);
+      XSelectInput(stddpy, stdwin, XMasks(ws->inputmask));
       }
 
    wmhints.input = True;
@@ -1747,8 +1752,15 @@ int setinputmask(wbp w, char *val)
    else {
       ws->inputmask &= ~PointerMotionMask;
       }
+   if (strchr(val,'c')) {
+      ws->inputmask |= WindowClosureMask;
+      }
+   else {
+      ws->inputmask &= ~WindowClosureMask;
+      }
+
    if (ws->win)
-      XSelectInput(ws->display->display, ws->win, ws->inputmask);
+      XSelectInput(ws->display->display, ws->win, XMasks(ws->inputmask));
    return Succeeded;
 }
 
@@ -2625,7 +2637,7 @@ XButtonEvent *event;
    struct descrip d;
 
    if (event->type == MotionNotify) {
-      if (event->state | buttonorder[0]) {
+      if (event->state & buttonorder[0]) {
          if (buttonorder[0] == Button1Mask)
 	    eventcode = MOUSELEFTDRAG;
          else if (buttonorder[0] == Button2Mask)
@@ -2633,7 +2645,7 @@ XButtonEvent *event;
          else
             eventcode = MOUSERIGHTDRAG;
          }
-      else if (event->state | buttonorder[1]) {
+      else if (event->state & buttonorder[1]) {
          if (buttonorder[1] == Button1Mask)
 	    eventcode = MOUSELEFTDRAG;
          else if (buttonorder[1] == Button2Mask)
@@ -2641,7 +2653,7 @@ XButtonEvent *event;
          else
             eventcode = MOUSERIGHTDRAG;
          }
-      else if (event->state | buttonorder[2]) {
+      else if (event->state & buttonorder[2]) {
          if (buttonorder[2] == Button1Mask)
 	    eventcode = MOUSELEFTDRAG;
          else if (buttonorder[2] == Button2Mask)
@@ -2687,6 +2699,7 @@ XButtonEvent *event;
 
    w->window->pointerx = event->x;
    w->window->pointery = event->y;
+
    MakeInt(eventcode,&d);
    qevent(w->window, &d, event->x, event->y, (uword)event->time, event->state);
    }
@@ -3791,7 +3804,7 @@ int x,y;
 				 wd->colors[wc->fg].c, wd->colors[wc->bg].c);
    XSetStandardProperties(stddpy, ws->win, ws->windowlabel,
 			  ws->iconlabel, 0, 0, 0, &size_hints);
-   XSelectInput(stddpy, ws->win, ws->inputmask);
+   XSelectInput(stddpy, ws->win, XMasks(ws->inputmask));
 
    ws->iconwin = XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
 				     ws->iconx, ws->icony, ws->iconw,

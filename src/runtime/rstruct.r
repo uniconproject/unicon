@@ -559,11 +559,6 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
  */
 
 int longest_dr = 0;
-struct b_proc_list {
-   struct b_proc *this;
-   struct b_proc_list *next;
-};
-
 struct b_proc_list **dr_arrays;
 
 struct b_proc *dynrecord(dptr s, dptr fields, int n)

@@ -1,10 +1,6 @@
-RM=-del 
-CP=copy
 BASE=..\..
-UNI=..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-ICON_IPL=$(BASE)\ipl
+include ..\makedefs
+
 CFLAGS= -c -u
 SRC=ui.icn msg_dlg.icn
 OBJ=ui.u

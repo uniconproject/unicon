@@ -1,12 +1,5 @@
-RM=-del
-CP=copy
 BASE=..\..
-UNI=..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-UNIDEP=$(UNI)\unidep\unidep
-ICON_IPL=$(BASE)\ipl
-
+include ..\makedefs
 
 #
 # makefile for constructing ivib

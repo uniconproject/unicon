@@ -1,8 +1,14 @@
 UNICON=unicon
 CP=cp
-ui: ui.icn msg_dlg.u
-	$(UNICON) ui
+CFLAGS= -c -u
+SRC=ui.icn msg_dlg.icn
+OBJ=ui.u
+ui: ui.u msg_dlg.u
+	$(UNICON) ui.u
 	$(CP) ui ../../bin
 
+ui.u: ui.icn
+	$(UNICON) $(CFLAGS) ui
+
 msg_dlg.u: msg_dlg.icn
-	$(UNICON) -c msg_dlg
+	$(UNICON) $(CFLAGS) msg_dlg

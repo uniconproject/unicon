@@ -742,7 +742,7 @@ function{1} DrawLine(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D){
-         double v[MAXXOBJS];  
+         double *v, v2[256];  
          struct descrip f, funcname;
          struct b_list *func;
  
@@ -753,28 +753,28 @@ function{1} DrawLine(argv[argc])
          MakeStr("DrawLine", 8, &funcname);
          c_put(&f, &funcname);
 
+	 if (argc-warg > 256) {
+	    v = calloc(argc-warg, sizeof (double));
+	    if (v == NULL) runerr(305);
+	    }
+	 else v = v2;
+
          /* convert arguments to doubles and put them in the list */
          for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i]))
+            if (!cnv:C_double(argv[warg + i], v[i])) {
+	       if (v != v2) free(v);
                runerr(102, argv[warg+i]);
+	       }
             c_put(&f, &argv[warg+i]);
             }
          c_put(&(w->window->funclist), &f);
+
          /* draw the lines */
-         if (w->context->dim == 2){
-            CheckArgMultiple(2);
-            drawpoly(w, v, argc-warg, GL_LINE_STRIP,2);
-            }
-         if (w->context->dim == 3){
-            CheckArgMultiple(3);
-	 	 drawpoly(w, v, argc-warg, GL_LINE_STRIP,3);
-  	     }
-         if (w->context->dim == 4){
-            CheckArgMultiple(4);
-         	 drawpoly(w, v, argc-warg, GL_LINE_STRIP,4);
-           }
+         CheckArgMultiple(w->context->dim);
+         drawpoly(w, v, argc-warg, GL_LINE_STRIP, w->context->dim);
          glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (v != v2) free(v);
          ReturnWindow;
          }
      else 
@@ -821,7 +821,7 @@ function{1} DrawPoint(argv[argc])
   
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double v[MAXXOBJS];   
+         double *v, v2[256];   
          struct descrip f, funcname;
          struct b_list *func;  
 
@@ -832,30 +832,28 @@ function{1} DrawPoint(argv[argc])
          MakeStr("DrawPoint", 9, &funcname);
          c_put(&f, &funcname);
 
+	 if (argc-warg > 256) {
+	    v = calloc(argc-warg, sizeof (double));
+	    if (v == NULL) runerr(305);
+	    }
+	 else v = v2;
+
          /* convert the arguments and store them in the list */
          for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i]))
+            if (!cnv:C_double(argv[warg + i], v[i])) {
+	       if (v != v2) free(v);
                runerr(102, argv[warg+i]);
+	       }
             c_put(&f, &argv[warg+i]);
-	      }
+	    }
          c_put(&(w->window->funclist), &f);
-         if (w->context->dim == 2){
-            CheckArgMultiple(2);
-            drawpoly(w, v, argc-warg, GL_POINTS, 2);
-            }
-         if (w->context->dim == 3){
-            CheckArgMultiple(3);
-	   	 drawpoly(w, v, argc-warg, GL_POINTS, 3);
-            }
-         if (w->context->dim == 4){
-            CheckArgMultiple(4);
-         	 drawpoly(w, v, argc-warg, GL_POINTS, 4);
-            }
+         CheckArgMultiple(w->context->dim);
+         drawpoly(w, v, argc-warg, GL_POINTS, w->context->dim);
          glFlush();
-         glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
+         glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (v != v2) free(v);
          ReturnWindow;
-	   }
+	 }
       else 
 #endif					/* Graphics3D */
      {
@@ -897,7 +895,7 @@ function{1} DrawPolygon(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double v[MAXXOBJS]; 
+         double *v, v2[256]; 
          struct descrip f, funcname;
          struct b_list *func;
       
@@ -908,32 +906,30 @@ function{1} DrawPolygon(argv[argc])
          MakeStr("DrawPolygon", 11, &funcname);
          c_put(&f, &funcname);
 
+	 if (argc-warg > 256) {
+	    v = calloc(argc-warg, sizeof (double));
+	    if (v == NULL) runerr(305);
+	    }
+	 else v = v2;
+
          /* convert the arguments and put them in the list */
          for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i]))
+            if (!cnv:C_double(argv[warg + i], v[i])) {
+	       if (v != v2) free(v);
                runerr(102, argv[warg+i]);
+	       }
             c_put(&f, &argv[warg+i]);
-	      }
+	    }
          c_put(&(w->window->funclist), &f);
  
          /* draw the polygon */
-         if (w->context->dim == 2){
-            CheckArgMultiple(2);
-	   	 drawpoly(w, v, argc-warg, GL_LINE_LOOP, 2);
-            }
-         if (w->context->dim == 3){
-            CheckArgMultiple(3);
-            drawpoly(w, v, argc-warg, GL_LINE_LOOP, 3);
-            }
-         if (w->context->dim == 4){
-            CheckArgMultiple(4);
-         	 drawpoly(w, v, argc-warg, GL_LINE_LOOP, 4);
-            }
-          glFlush();
-          glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-          ReturnWindow;
-	    }
+         CheckArgMultiple(w->context->dim);
+	 drawpoly(w, v, argc-warg, GL_LINE_LOOP, w->context->dim);
+	 glFlush();
+         glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (v != v2) free(v);
+         ReturnWindow;
+	 }
       else 
 #endif					/* Graphics3D */
      {
@@ -1028,7 +1024,7 @@ function{1} DrawSegment(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double v[MAXXOBJS]; 
+         double *v, v2[256];
          struct descrip f, funcname;
          struct b_list *func;
 
@@ -1039,31 +1035,30 @@ function{1} DrawSegment(argv[argc])
          MakeStr("DrawSegment", 11, &funcname);
          c_put(&f, &funcname);
 
-          /* convert the arguments and save the values in the list */
+	 if (argc-warg > 256) {
+	    v = calloc(argc-warg, sizeof (double));
+	    if (v == NULL) runerr(305);
+	    }
+	 else v = v2;
+
+         /* convert the arguments and save the values in the list */
          for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i]))
+            if (!cnv:C_double(argv[warg + i], v[i])) {
+	       if (v != v2) free(v);
                runerr(102, argv[warg+i]);
+	       }
             c_put(&f, &argv[warg+i]);
 	      }
+
          /* draw the line segments */
          c_put(&(w->window->funclist), &f);
-         if (w->context->dim == 2) {
-            CheckArgMultiple(2);
-	   	 drawpoly(w, v, argc-warg, GL_LINES, 2);
-            }
-    	    if (w->context->dim == 3) {
-            CheckArgMultiple(3);
-            drawpoly(w, v, argc-warg, GL_LINES, 3);
-            }
-          if (w->context->dim == 4) {
-             CheckArgMultiple(4);
-         	  drawpoly(w, v, argc-warg, GL_LINES, 4);
-             }
-	    glFlush();
-    	    glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-	    ReturnWindow;
-	    }
+         CheckArgMultiple(w->context->dim);
+	 drawpoly(w, v, argc-warg, GL_LINES, w->context->dim);
+	 glFlush();
+    	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (v != v2) free(v);
+	 ReturnWindow;
+	 }
        else 
 #endif					/* Graphics3D */
      {
@@ -1412,7 +1407,7 @@ function{1} FillPolygon(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double v[MAXXOBJS];
+         double *v, v2[256];
          struct descrip f, funcname;
          struct b_list *func;
 	   
@@ -1423,35 +1418,34 @@ function{1} FillPolygon(argv[argc])
          MakeStr("FillPolygon", 11, &funcname);
          c_put(&f, &funcname);
 
-         /* convert arugments and put them in the list */
+	 if (argc-warg > 256) {
+	    v = calloc(argc-warg, sizeof (double));
+	    if (v == NULL) runerr(305);
+	    }
+	 else v = v2;
+
+         /* convert arguments and put them in the list */
          for(i = 0; i<argc-warg; i++) {
-            if (!cnv:C_double(argv[warg + i], v[i]))
+            if (!cnv:C_double(argv[warg + i], v[i])) {
+	       if (v != v2) free(v);
                runerr(102, argv[warg+i]);
+               }
             c_put(&f, &argv[warg+i]);
-	      }
+	    }
          /* draw polygons */
          c_put(&(w->window->funclist), &f);
-         if (w->context->dim == 2){
-            CheckArgMultiple(2);
-            drawpoly(w, v, argc-warg, GL_POLYGON, 2); 
-            }
-    	    if (w->context->dim == 3){
-	       CheckArgMultiple(3);
-	       drawpoly(w, v, argc-warg, GL_POLYGON, 3);
-            }
-	    if (w->context->dim == 4){
-	       CheckArgMultiple(4);
- 	       drawpoly(w, v, argc-warg, GL_POLYGON, 4);
-            }
-	    glFlush();
-   	    glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-	    ReturnWindow;
-	   }
-	 else 
+
+         CheckArgMultiple(w->context->dim);
+         drawpoly(w, v, argc-warg, GL_POLYGON, w->context->dim);
+	 glFlush();
+	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (v != v2) free(v);
+	 ReturnWindow;
+	 }
+      else 
 #endif					/* Graphics3D */
       {
-      CheckArgMultiple(2)
+      CheckArgMultiple(2);
 
       /*
        * Allocate space for all the points in a contiguous array,

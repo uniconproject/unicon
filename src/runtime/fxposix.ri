@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.17 2002-08-01 00:07:44 phliar Exp $
+ * $Id: fxposix.ri,v 1.18 2002-08-01 01:03:02 phliar Exp $
  */
 
 /*
@@ -2548,7 +2548,7 @@ function{0, 1} setenv(name, value)
        * non-auto storage! shamim July 2002
        */
 
-      char buf[8192], *p;
+      char buf[8192], *p, *q;
       int n;
       char* sentinel = "unicon-envn59K.D2LlhPL1suOWshRNg";
       int slen;
@@ -2556,16 +2556,20 @@ function{0, 1} setenv(name, value)
       n = snprintf(buf, sizeof(buf), "%s%s=%s", sentinel, name, value);
       if (n > sizeof(buf))
           n = sizeof(buf);              /* Discard string too long */
-      if ((p = malloc(n)) == 0)
+      if ((p = malloc(n + 1)) == 0)
          fail;
       memcpy(p, buf, n);
-      char* q = getenv(name);
-      if (strncmp(q - strlen(name) - slen - 1, sentinel, slen) != 0)
-         q = 0;
+      p[n] = 0;
+      if ((q = getenv(name)) != 0) {
+         q -= strlen(name) + slen + 1;
+         if (strncmp(q, sentinel, slen) != 0)
+            q = 0;
+      }
       if (putenv(p + slen) != 0)
          fail;
       if (q)
          free(q);
+
 #else
 
       /* Tested on OpenBSD 3.1, FreeBSD-4.6, Linux 2.4.18 */

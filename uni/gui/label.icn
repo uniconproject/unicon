@@ -1,5 +1,5 @@
 #
-# $Id: label.icn,v 1.3 2004-11-05 19:24:55 rparlett Exp $
+# $Id: label.icn,v 1.4 2004-11-06 00:28:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -59,7 +59,7 @@ class Label : Component(
          /self.w_spec := TextWidth(self.cwin, label) + 2 * DEFAULT_TEXT_X_SURROUND
          /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
       } else if \self.accepts_focus_flag then {
-         /self.w_spec := TextWidth(self.cwin, label) + 2
+         /self.w_spec := TextWidth(self.cwin, label) + 2 * HIGHLIGHT_TEXT_SPACING
          /self.h_spec := WAttrib(self.cwin, "fheight")
       } else {
          /self.w_spec := TextWidth(self.cwin, label)
@@ -103,7 +103,7 @@ class Label : Component(
 
       if \self.has_focus then {
          DashedRectangle(self.cbwin, self.tx - HIGHLIGHT_TEXT_SPACING, self.y, 
-                         self.tw + HIGHLIGHT_TEXT_SPACING, self.h)
+                         self.tw + 2 * HIGHLIGHT_TEXT_SPACING, self.h)
       }
 
       self.do_shading(self.cbwin)

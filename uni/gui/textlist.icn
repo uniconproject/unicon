@@ -1,5 +1,5 @@
 #
-# $Id: textlist.icn,v 1.2 2004-11-05 19:24:55 rparlett Exp $
+# $Id: textlist.icn,v 1.3 2004-11-06 00:28:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -24,6 +24,14 @@ class TextList : SelectableScrollArea()
       every s := !self.contents do
          mw <:= TextWidth(self.cwin, detab(s))
       return mw + 2 * HIGHLIGHT_TEXT_SPACING
+   end
+
+   method get_view_x_padding()
+      return DEFAULT_TEXT_X_SURROUND - HIGHLIGHT_TEXT_SPACING
+   end
+
+   method get_view_y_padding()
+      return DEFAULT_TEXT_Y_SURROUND
    end
 
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)

@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.10 2004-11-05 19:24:55 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.11 2004-11-06 00:28:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -38,6 +38,14 @@ class EditableTextList : LineBasedScrollArea(
    old_has_region,
    changed
    )
+
+   method get_view_x_padding()
+      return DEFAULT_TEXT_X_SURROUND
+   end
+
+   method get_view_y_padding()
+      return DEFAULT_TEXT_Y_SURROUND
+   end
 
    method get_line_count()
       return *self.contents
@@ -330,7 +338,7 @@ class EditableTextList : LineBasedScrollArea(
 
    method handle_press(e)
       start_handle(e)
-      if ((self.x <= &x < self.x + self.view.w + 2 * SP_X_PADDING) & (self.y  <= &y < self.y + self.view.h + 2 * SP_Y_PADDING)) then {
+      if ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then {
          #
          # Button down in region - move to cursor position.
          #
@@ -365,11 +373,11 @@ class EditableTextList : LineBasedScrollArea(
       if \self.is_held then {
          if &y < self.y then
             direction := "up"
-         else if &y >= self.y + self.view.h + 2 * SP_Y_PADDING then
+         else if &y >= self.y + self.h then
             direction := "down"
          else if &x < self.x then
             direction := "left"
-         else if &x >= self.x + self.view.w + 2 * SP_X_PADDING then
+         else if &x >= self.x + self.w then
             direction := "right"
          else
             direction := &null

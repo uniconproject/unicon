@@ -1,5 +1,5 @@
 #
-# $Id: checkbox.icn,v 1.4 2004-11-05 19:24:55 rparlett Exp $
+# $Id: checkbox.icn,v 1.5 2004-11-06 00:28:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -27,7 +27,7 @@ $include "guih.icn"
 # @ c.set_label("Checkbox")
 # @ self.add(c)
 #
-class CheckBox : Button()
+class CheckBox : Button(tx, tw)
    method into_cbg()
       if self.img_up == img_style("box_up") & self.img_down == img_style("box_down") then
          self.set_imgs(img_style("diamond_up"), img_style("diamond_down"))
@@ -42,8 +42,13 @@ class CheckBox : Button()
       #
       # We give extra border space; this looks better with the focus rectangle.
       #
-      /self.w_spec := TextWidth(self.cwin, self.label) + 2 * self.img_w + HIGHLIGHT_TEXT_SPACING
+      /self.w_spec := TextWidth(self.cwin, self.label) + 
+         self.img_w + DEFAULT_TEXT_X_SURROUND + HIGHLIGHT_TEXT_SPACING
+
       self.Component.resize()
+
+      self.tx := self.x + self.img_w + DEFAULT_TEXT_X_SURROUND
+      self.tw := self.w - self.img_w - DEFAULT_TEXT_X_SURROUND - HIGHLIGHT_TEXT_SPACING
    end
       
    method display(buffer_flag)
@@ -59,11 +64,11 @@ class CheckBox : Button()
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       DrawImageEx(self.cbwin, self.x, self.y + (self.h - img_h) / 2, i)
-      left_string(self.cbwin, self.x + 2 * self.img_w, self.y + self.h / 2, self.label, self.accel)
+      left_string(self.cbwin, self.tx, self.y + self.h / 2, self.label, self.accel)
 
       if /self.no_keyboard_flag & \self.has_focus then {
-         DashedRectangle(self.cbwin, self.x + 2 * self.img_w - HIGHLIGHT_TEXT_SPACING, self.y, 
-                         self.w - 2 * self.img_w + HIGHLIGHT_TEXT_SPACING, self.h)
+         DashedRectangle(self.cbwin, self.tx - HIGHLIGHT_TEXT_SPACING, self.y, 
+                         self.tw + 2 * HIGHLIGHT_TEXT_SPACING, self.h)
       }
 
       self.do_shading(self.cbwin)

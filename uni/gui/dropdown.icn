@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.9 2004-11-05 19:24:55 rparlett Exp $
+# $Id: dropdown.icn,v 1.10 2004-11-06 00:28:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -28,17 +28,17 @@ class DropDownTextList : TextList(drag_flag)
       # 
       # Set the width needed, ensuring within min/max dimensions requested
       #
-      self.w_spec := mw + 2 * SP_X_PADDING
+      self.w_spec := mw + 2 * get_view_x_padding()
       self.w_spec <:= min_w
       self.w_spec >:= max_w
 
       #
       # Set the height needed, checking for presence of HSB
       #
-      if self.w_spec - 2 * SP_X_PADDING >= mw then
-         self.h_spec := *self.contents * fh + 2 * SP_Y_PADDING
+      if self.w_spec - 2 * get_view_x_padding() >= mw then
+         self.h_spec := *self.contents * fh + 2 * get_view_y_padding()
       else
-         self.h_spec := *self.contents * fh + 2 * SP_Y_PADDING + SB_SIZE
+         self.h_spec := *self.contents * fh + 2 * get_view_y_padding() + SB_SIZE
 
       self.h_spec <:= min_h
       self.h_spec >:= max_h

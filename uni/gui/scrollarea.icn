@@ -1,5 +1,5 @@
 #
-# $Id: scrollarea.icn,v 1.4 2004-11-05 19:24:55 rparlett Exp $
+# $Id: scrollarea.icn,v 1.5 2004-11-06 00:28:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -64,6 +64,28 @@ class ScrollArea : Component(
    end
 
    #
+   # For a scrollarea with a border, return the number of pixels
+   # between the left of the component and the view component.
+   #
+   # Different subclasses may override this; by default it returns 
+   # DEFAULT_SP_X_PADDING.
+   #
+   method get_view_x_padding()
+      return DEFAULT_SP_X_PADDING
+   end
+
+   #
+   # For a scrollarea with a border, return the number of pixels
+   # between the top of the component and the view component.
+   #
+   # Different subclasses may override this; by default it returns 
+   # DEFAULT_SP_Y_PADDING.
+   #
+   method get_view_y_padding()
+      return DEFAULT_SP_Y_PADDING
+   end
+
+   #
    # Called on resize, buttons resized, or contents amended
    #
    # @p
@@ -74,9 +96,9 @@ class ScrollArea : Component(
       # Position and size of scrolling region
       #
       if \self.draw_border_flag then {
-         view.set_pos(SP_X_PADDING, SP_Y_PADDING)
-         max_th := self.h - 2 * SP_Y_PADDING
-         max_tw := self.w - 2 * SP_X_PADDING
+         view.set_pos(get_view_x_padding(), get_view_y_padding())
+         max_th := self.h - 2 * get_view_y_padding()
+         max_tw := self.w - 2 * get_view_x_padding()
       } else {
          view.set_pos(0, 0)
          max_th := self.h

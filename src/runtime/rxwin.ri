@@ -4364,7 +4364,6 @@ wbp w;
         }
 
    SETCLOSED(w);
-/*   printf("WWWWWWWWW %p: %d\n", w, ISCLOSED(w)); */
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
       XDestroyWindow(stddpy,stdwin);
@@ -4383,10 +4382,8 @@ wbp w;
       w->window->display->refcount--;
       w->window->display->refcount--;
       free_binding(w);
-/*      printf("ENDDDDDDDDDDDDDD\n"); */
       }
 
-/*   printf("WWWWWWWWW %p: %d\n", w, ISCLOSED(w)); */
    return 0;
    }
 
@@ -4395,66 +4392,60 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    wsp ws;
    int is_3d=0, query;
    struct wbind_list *curr;
-#ifdef XWindows
    wdp wd;
    int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
-#endif					/* XWindows */
 
    if (child_window==2) {
       is_3d = 1;
 
-#ifdef XWindows
-  /* create an opengl window */
-   wd = wp->window->display;
-   if (!glXQueryExtension(wd->display, &query, &query)) {
-      printf("X server has no OpenGL GLX extension");
-      return 0;
+      /*
+       * create an opengl window
+       */
+      wd = wp->window->display;
+      if (!glXQueryExtension(wd->display, &query, &query)) {
+         printf("X server has no OpenGL GLX extension");
+         return 0;
+         }
+
+      if (wd->vis==NULL) {
+         wd->vis = glXChooseVisual(wd->display, wd->screen, L);
+         if (wd->vis == NULL) {
+	    printf("visual failed");
+	    return 0;
+	    }
+	 }
       }
 
-   if (wd->vis==NULL) {
-           wd->vis = glXChooseVisual(wd->display, wd->screen, L);
-           if (wd->vis == NULL) {
-                printf("visual failed");
-                return 0;
-           }
-   }
-#endif					/* XWindows */
-  }
+   if ((w->window = alc_winstate()) == NULL) {
+      free_binding(w);    
+      return 0;
+      }
+   ws = w->window;
+   if (child_window==1) {
+      ws->display = wp->window->display;
+      wp->window->display->refcount++;
+      }
+   else {
+      ws->display = wd;
+      wd->refcount++;
+      }
+   ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
 
-  if 
-((w->window = alc_winstate()) == NULL) {
-    free_binding(w);    
-    return 0;
-  }
-  ws = w->window;
-#ifdef XWindows
-  if (child_window==1) {
-    ws->display = wp->window->display;
-    wp->window->display->refcount++;
-  }
-  else {
-    ws->display = wd;
-    wd->refcount++;
-  }
-  ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
-#endif					/* XWindows */
+   ws->children=NULL;
+   ws->parent = wp;
+   wp->refcount++;
 
-  ws->children=NULL;
-  ws->parent = wp;
-  wp->refcount++;
-
-  curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
-  curr->child = w;
-  curr->next = wp->window->children;
-  wp->window->children = curr;
-  w->refcount++;
+   curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
+   curr->child = w;
+   curr->next = wp->window->children;
+   wp->window->children = curr;
+   w->refcount++;
   
+   ws->listp.dword = D_List;
+   BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
   
-  ws->listp.dword = D_List;
-  BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
-  
-  if ((w->context = alc_context(w)) == NULL) {
-/*      *err_index = -2; */
+   if ((w->context = alc_context(w)) == NULL) {
+      /*      *err_index = -2; */
       free_binding(w);
       return 0;
       }
@@ -4463,10 +4454,8 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
     * some attributes of the context determine window defaults
     */
    ws->height = w->context->font->height * 12;
-   #ifdef XWindows
    ws->width  = w->context->font->fsp->max_bounds.width * 80;
    ws->y = w->context->font->fsp->max_bounds.ascent;
-#endif					/* XWindows */
    ws->x = 0;
    ws->y += w->context->dy;
    ws->x += w->context->dx;
@@ -4478,15 +4467,14 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 
 char my_wmap(wbp w, wbp wp, char child_window)
 {
-#ifdef XWindows
    XWindowAttributes attrs;
    XGCValues gcv;
    unsigned long gcmask =
       GCFont | GCForeground | GCBackground | GCFillStyle | GCCapStyle;
-   struct imgdata *imd;
+   struct imgdata *imd=NULL;
    int i, r;
    int new_pixmap = 0;
-   char *p, *s, sbuf[256];
+   char *p=NULL, *s=NULL, sbuf[256];
    XWMHints wmhints;
    XClassHint clhints;
    XSizeHints size_hints;
@@ -4508,7 +4496,7 @@ char my_wmap(wbp w, wbp wp, char child_window)
 	 }
       else {
 	 ws->pix = XCreatePixmap(wd->display, /* RootWindow(wd->display, wd->vis->screen) */
-                                 wp->window->win,
+                                 wp->window->win ? wp->window->win : wp->window->pix,
 				 ws->width, ws->height,
 				 DefaultDepth(wd->display, wd->screen));
 	 ws->pixwidth = ws->width;
@@ -4522,7 +4510,7 @@ char my_wmap(wbp w, wbp wp, char child_window)
    /*
     * create the X window (or use the DefaultRootWindow if requested)
     */
-   if (ws->iconic != HiddenState) {
+   if (ws->iconic != HiddenState && wp->window->iconic != HiddenState) {
 
       XSetWindowAttributes attr;
       attr.background_pixmap = None;
@@ -4533,10 +4521,11 @@ char my_wmap(wbp w, wbp wp, char child_window)
 #ifdef Graphics3D 
       if (ws->is_3D) {
          attr.colormap = 
-   		        XCreateColormap(wd->display,
-                        wp->window->win, wd->vis->visual, AllocNone);
-         ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(wd->display) :
-		        XCreateWindow (wd->display, wp->window->win, /*DefaultRootWindow(wd->display), */
+	    XCreateColormap(wd->display,
+			    wp->window->win?wp->window->win:wp->window->pix,
+			    wd->vis->visual, AllocNone);
+         ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(wd->display):
+		    XCreateWindow (wd->display, (wp->window->win?wp->window->win:wp->window->pix), /*DefaultRootWindow(wd->display), */
                                   ws->posx < 0 ? 0 : ws->posx, 
 				            ws->posy < 0 ? 0 : ws->posy, 
                                   ws->width,  ws->height, 0, 
@@ -4547,7 +4536,7 @@ char my_wmap(wbp w, wbp wp, char child_window)
 #endif					/* Graphics3D */     
            ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(wd->display) :
 
-		       XCreateSimpleWindow(wd->display, wp->window->win, /*DefaultRootWindow(stddpy), */
+		       XCreateSimpleWindow(wd->display, (wp->window->win?wp->window->win:wp->window->pix), /*DefaultRootWindow(stddpy), */
 				     ws->posx < 0 ? 0 : ws->posx,
 				     ws->posy < 0 ? 0 : ws->posy, ws->width,
 				     ws->height, 1,
@@ -4601,7 +4590,8 @@ char my_wmap(wbp w, wbp wp, char child_window)
       wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
       if (wc->ctx == NULL) 
 	 return 0;
-      glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+      if (w->window->win)
+	 glXMakeCurrent(wd->display, w->window->win, wc->ctx);
       }
 #endif				/* Graphics3D */
 
@@ -4809,7 +4799,6 @@ char my_wmap(wbp w, wbp wp, char child_window)
      glLoadIdentity();
    }
 #endif					/* Graphics3D */
-#endif					/* XWindows */
    return 1;
 }
 

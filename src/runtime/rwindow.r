@@ -3923,8 +3923,12 @@ FILE *OpenConsole()
        *  get the message out.
        */
 #ifdef MultiThread
-      if (!curpstate) curpstate = &rootpstate;
+      if (!curpstate) {
+         curpstate = &rootpstate;
+         rootpstate.eventmask = nulldesc;
+         }
       if (!alclist) curpstate->Alclist = alclist_0;
+      if (!reserve) curpstate->Reserve = reserve_0;
 #endif
       if (!curblock) {
          curstring = (struct region *)malloc(sizeof (struct region));

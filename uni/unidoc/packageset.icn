@@ -1,0 +1,45 @@
+#
+# $Id: packageset.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+class PackageSet(packages)
+   method debug()
+      every e := !sort(packages) do {
+         e[2].debug()
+      }
+   end
+
+   method get_packages_list()
+      local l, e
+      l := []
+      every e := !sort(packages) do
+         put(l, e[2])
+      return l
+   end
+
+   method find_for_name(s)
+      every p := !get_packages_list() do {
+         if c := p.find_class(s) | p.find_other(s) then
+            return c
+      }
+   end
+
+   method get_package(s)
+      if member(packages, s) then
+         return packages[s]
+   end
+
+   method process_package(pi)
+      p := Package(pi, self)
+      insert(packages, p.get_name(), p)
+      p.load_classes()
+      p.process_files()
+   end
+
+   initially
+      self.packages := table()
+end

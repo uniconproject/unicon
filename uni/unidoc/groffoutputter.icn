@@ -1,0 +1,125 @@
+#
+# $Id: groffoutputter.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+class GroffOutputter(output_file, ps)
+   method output()
+      every c := !(!ps.get_packages_list()).get_class_list() do {
+         l := c.get_class_info().get_supers()
+         if *l = 0 then 
+            s := "(none)"
+         else {
+            s := ""
+            every s ||:= !l || " "
+            s := "\\f[HR]" || s || "\\f[R]"
+         }
+         t := c.get_parent_package().get_name()
+         t := "\\f[HR]" || t || "\\f[R]"
+         u := (\c.get_file_pos()).get_file().get_file_name() | "Unknown"
+         u := "\\f[HR]" || u || "\\f[R]"
+         write(output_file, ".HEAD ", c.name, " \"", s, "\"", " \"", t, "\"", " \"", u, "\"")
+         every groff_unbracket(!c.get_comment())
+         every m := !c.get_methods_list() do {
+            write(output_file, ".FUNC_START \"", m.get_full_name(), "\"")
+            every groff_unbracket(!m.get_comment())
+            every el := !sort(m.get_fields()) do
+               groff_fields(el[1], el[2])
+            write(output_file, ".FUNC_END")
+         }
+         every m := !c.get_variables_list() do {
+            write(output_file, ".FUNC_START \"", m.get_name(), "\"")
+            every groff_unbracket(!m.get_comment())
+            every el := !sort(m.get_fields()) do
+               groff_fields(el[1], el[2])
+            write(output_file, ".FUNC_END")
+         }
+      }
+   end
+
+   method groff_fields(key, vals)
+      case key of {
+         "param" : {
+            write(output_file, ".P")
+            write(output_file, "Parameters :")
+            write(output_file, ".LS_SET c")
+            every l := !vals do {
+               l[1] ? {
+                  tab(many(whitespace_cset))
+                  name := tab(many(id_cset))
+                  l[1] := tab(0)
+               }
+               write(output_file, ".LS_ITEM \\f[HR]", name, "\\fR")
+               every groff_unbracket(!l)
+            }
+            write(output_file, ".LS_END")
+         }
+
+         "return" : {
+            write(output_file, ".P")
+            write(output_file, "Returns :")
+            write(output_file, ".P")
+            every groff_unbracket(!vals[1])
+         }
+
+         "example" : {
+            write(output_file, ".P")
+            write(output_file, "Example :")
+            write(output_file, ".ID\n.ft HR")
+            every l := !vals do
+               every write(output_file, l[2 to *l])
+            write(output_file, ".ft R\n.DE")
+         }
+      }
+   end
+
+   method groff_unbracket(s)
+      r := ""
+      s ? {
+         tab(many(whitespace_cset))
+         while r ||:= tab(upto('{')) do {
+            r ||:= "\\f[HR]"
+            move(1)
+            r ||:= tab(upto('}') | 0)
+            move(1)
+            r ||:= "\\fR"
+         }
+         r ||:= tab(0)
+      }
+      if *r = 0 then
+         r := ".P"
+      write(output_file, r)
+   end
+
+   method groff_unbracket2(s)
+      t := ""
+      s ? {
+         tab(many(whitespace_cset))
+         if pos(0) then
+            write(output_file, ".P")
+
+         while t := tab(upto('{')) do {
+            if not pos(1) then
+               write(output_file, t)
+            move(1)
+            obj := tab(upto('}') | 0)
+            move(1)
+            obj ||:= tab(upto(whitespace_cset) | 0)
+            tab(many(whitespace_cset))
+            write(output_file, ".FUNC \"", obj, "\"")
+         }
+         if not pos(0) then
+            write(output_file, tab(0))
+      }
+   end
+
+   initially(ps, t)
+      self.ps := ps
+      if s := \t["o"] then
+         output_file := open(s, "w") | stop("couldn't open output file " || s)
+      else
+         output_file := &output
+end

@@ -1,0 +1,49 @@
+#
+# $Id: main.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+
+link options
+
+global whitespace_cset, id_cset, serial_no_gen
+
+procedure get_next_serial_no()
+   return (serial_no_gen +:= 1)
+end
+
+##
+#  Main procedure.
+#
+procedure main(a)
+   whitespace_cset := ' \t'
+   id_cset := &ucase ++ &lcase ++ '_0987654321'
+   serial_no_gen := 0
+
+   t := options(a, "-a! -html -o: -d!")
+
+   p := PackageSet()
+
+   if \t["a"] then {
+      every p.process_package(!parser::get_all_packages())
+   } else {
+      every s := !a do {
+         pi := parser::load_package_info(s) | stop("Couldn't find package info for package ", s)
+         p.process_package(pi)
+      }
+   }
+
+   if \t["d"] then
+      p.debug()
+
+   if \t["html"] then
+      o := HtmlOutputter(p, t)
+   else
+      o := GroffOutputter(p, t)
+
+   o.output()
+end

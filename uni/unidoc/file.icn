@@ -1,0 +1,52 @@
+#
+# $Id: file.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+##
+#  Class to represent a processed file.
+#
+class File(    
+           serial_no,
+           file_name,
+           referenced_lines
+)
+   method get_serial_no()
+      return serial_no
+   end
+
+   method get_file_name()
+      return file_name
+   end
+
+   method get_title()
+      file_name ? {
+         while tab(upto('/')) do move(1)
+         return tab(0)
+      }
+   end
+
+   #
+   # Succeed iff the given line is referenced by a FilePos
+   #
+   method is_referenced_line(line)
+      return member(referenced_lines, line)
+   end
+
+   #
+   # Create a FilePos which points to the given line number
+   # in this File object.
+   #
+   method create_file_pos(line)
+      insert(referenced_lines, line)
+      return FilePos(self, line)
+   end
+
+   initially(s)
+      referenced_lines := set()
+      self.serial_no := get_next_serial_no()
+      file_name := s
+end

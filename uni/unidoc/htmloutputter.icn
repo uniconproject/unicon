@@ -1,0 +1,486 @@
+#
+# $Id: htmloutputter.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+import lang
+import xml
+
+class HtmlOutputter(output_dir, ps, done_files)
+   method output()
+      local nav
+
+      fname := output_dir || "/index.html"
+      index := open(fname, "w") | stop("Couldn't open ", fname)
+      write(index, "<html>")
+      write(index, "<title>")
+      write(index, "Generated Documentation")
+      write(index, "</title>")
+      write(index, "</head>")
+      write(index, "<frameset cols=\"20%,80%\">")
+      write(index, "<frameset rows=\"30%,70%\">")
+      write(index, "<frame src=\"nav.html\" name=\"navFrame\">")
+      write(index, "<frame src=\"all.html\" name=\"listFrame\">")
+      write(index, "</frameset>")
+      write(index, "<frame src=\"begin.html\" name=\"displayFrame\">")
+      write(index, "</frameset>")
+      write(index, "<noframes>")
+      write(index, "<h2>")
+      write(index, "Frame Alert</h2>")
+      write(index, "<p>")
+      write(index, "This document is designed to be viewed using the frames feature.")
+      write(index, "If you see this message, you are using a non-frame-capable web client.")
+      write(index, "</html>")
+      close(index)
+
+      fname := output_dir || "/nav.html"
+      nav := open(fname, "w") | stop("Couldn't open ", fname)
+      write(nav, "<html><body>")
+      write(nav, "<h1>Packages</h1><p>")
+      write(nav, "<a href=\"all.html\" target=\"listFrame\">All</a><p>")
+      every p := !ps.get_packages_list() do {
+         s := p.get_name()
+         write(nav, "<a href=\"", s || "_list.html" || "\" target=\"listFrame\">", s, "</a><br>")
+         output_package(p)
+      }
+      write(nav, "</body></html>")
+      close(nav)
+
+      all_classes_table := table()
+      all_others_table := table()
+
+      fname := output_dir || "/begin.html"
+      begin := open(fname, "w") | stop("Couldn't open ", fname)
+      write(begin, "<html><body>")
+      write(begin, "<h1>Unidoc generated documentation</h1>")
+      write(begin, "This document is the automatically generate documentation for the following unicon packages.<p>")
+      every p := !ps.get_packages_list() do {
+         s := p.get_name()
+         write(begin, "<a href=\"", s || "_list.html" || "\" target=\"listFrame\">", s, "</a><br>")
+         every c := !p.get_class_list() do {
+            /all_classes_table[c.get_name()] := []
+            put(all_classes_table[c.get_name()], c)
+         }         
+         every c := !p.get_others_list() do {
+            /all_others_table[c.get_name()] := []
+            put(all_others_table[c.get_name()], c)
+         }
+      }
+      write(begin, "</body></html>")
+      close(begin)
+
+      fname := output_dir || "/all.html"
+      all := open(fname, "w") | stop("Couldn't open ", fname)
+
+      write(all, "<html><body>")
+      write(all, "<h1>All packages</h1><p>")
+      write(all, "<h1>Classes</h1><p>")
+      every c := !(!sort(all_classes_table))[2] do {
+         write(all, "<a href=\"", c.get_serial_no() || ".html\" target=\"displayFrame\">", c.get_name(), "</a><br>")
+      }
+      write(all, "<p><h1>Other Symbols</h1><p>")
+      every c := !(!sort(all_others_table))[2] do {
+         write(all, "<a href=\"", c.get_serial_no() || ".html\" target=\"displayFrame\">", c.get_name(), "</a><br>")
+      }
+      close(all)
+   end
+
+   # Output the summary list for one package set
+   method output_package(p)
+      local s, f
+      s := p.get_name()
+      fname := output_dir || "/" || s || "_list.html"
+      f := open(fname, "w") | stop("couldn't open " || fname)
+      write(f, "<html><head><title>", s, "</title></head><body>")
+      write(f, "<h1>Package ", p.get_name(), "</h1><p>")
+      write(f, "<h1>Classes</h1><p>")
+      every c := !p.get_class_list() do {
+         output_class(c)
+         write(f, "<a href=\"", c.get_serial_no() || ".html\" target=\"displayFrame\">", c.get_name(), "</a><br>")
+      }
+      write(f, "<p><h1>Other Symbols</h1><p>")
+      every c := !p.get_others_list() do {
+         output_other(c)
+         write(f, "<a href=\"", c.get_serial_no() || ".html\" target=\"displayFrame\">", c.get_name(), "</a><br>")
+      }
+      close(f)
+   end
+
+   # Output one class description
+   method output_class(c)
+      local s, f, fname, home, mangled, i, ci
+
+      fname := output_dir || "/" || c.get_serial_no() || ".html"
+      f := open(fname, "w") | stop("couldn't open " || fname)
+      write(f, "<html><head><title>", c.get_name(), "</title></head><body>")
+      write(f, "<h1>Class ", c.get_name(), "</h1>")
+      write(f, "<dl>")
+
+      # Superclass list
+      supers := []
+      every s := !c.get_class_info().get_supers() do {
+         if o := get_class(s) then
+            put(supers, "<a href=\"" || o.get_serial_no() || ".html\" target=\"displayFrame\">" || o.get_fq_name() || "</a>")
+         else
+            put(supers, pretty_class(s))
+      }
+      if *supers > 0 then {
+         write(f, "<dt>Superclasses :</dt><dd>")
+         every write(f, !supers, "<br>")
+         write(f, "</dd>")
+      }
+
+      # Subclass list
+      subs := []
+      every p := !ps.get_packages_list() do {
+         every d := !p.get_class_list() do {
+            if !d.get_class_info().get_supers() == c.get_class_info().get_name() then {
+               put(subs, "<a href=\"" || d.get_serial_no() || ".html\">" || d.get_fq_name() || "</a>")
+            }
+         }
+      }
+      if *subs > 0 then {
+         write(f, "<dt>Subclasses :</dt><dd>")
+         every write(f, !subs, "<br>")
+         write(f, "</dd>")
+      }
+
+      s := c.get_parent_package().get_name()
+      write(f, "<dt>Package :</dt><dd><a href=\"", s || "_list.html" || "\" target=\"listFrame\">", s, "</a></dd>")
+      output_file(c.get_file_pos().get_file())
+      write(f, "</dl><p>")
+      if member(c.get_fields(), "p") then {
+         write(f, "Private class, not intended for client creation.")
+      } else {
+         comment_and_fields(f, c)
+      }
+      write(f, "<p>")
+
+      pretty_heading(f, "Class summary")
+      overrides := table()
+      class_methods := set()
+      every insert(class_methods, (!c.get_methods_list()).get_name())
+      do_inherited(f, c.get_class_info(), overrides, set(), class_methods)
+
+      meths := c.get_methods_list()
+      if *meths > 0 then {
+         tbl_start(f, "Methods defined in this class")
+         every m := !meths do {
+            write(f,"<a href=\"#" || m.get_serial_no() || "\">" || m.get_full_name() || "</a>")
+         }
+         tbl_end(f)
+      }
+
+      vars := c.get_variables_list()
+      if *vars > 0 then {
+         tbl_start(f, "Variables defined in this class")
+         every m := !vars do {
+            write(f,"<a href=\"#" || m.get_serial_no() || "\">" || m.get_name() || "</a>")
+         }
+         tbl_end(f)
+      }
+
+      write(f, "<p>")
+
+      if *meths > 0 then {
+         pretty_heading(f, "Method detail")
+         every m := !meths do {
+            write(f, "<a name=\"", m.get_serial_no(), "\"/>")
+            write(f, "<h3>", m.get_full_name(), "</h3>")
+            write(f, "<dl>")
+            if member(overrides, m.get_name()) then {
+               o := overrides[m.get_name()]
+               if string(o) then {
+                  write(f, "<dd>Overrides ", m.get_name(), " in ", pretty_class(o), "</dd>")
+               } else {
+                  mm := o.find_method(m.get_name()) | stop("Internal error")
+                  write(f,"<dd>Overrides <a href=\"" || o.get_serial_no() || ".html#" || mm.get_serial_no() || "\">" || mm.get_full_name() || "</a> in <a href=\"", o.get_serial_no(), ".html\" target=\"displayFrame\">", o.get_fq_name(), "</a></dd>")
+               }
+            }
+            if member(m.get_fields(), "p") then
+               write(f, "<dd>Private method, not intended for client invocation</dd>")
+            else {
+               write(f, "<dd>")
+               comment_and_fields(f, m)
+               write(f, "</dd>")
+            }
+            write(f, "</dl><hr>")
+         }
+      }
+
+      if *vars > 0 then {
+         pretty_heading(f, "Variable detail")
+         every m := !vars do {
+            write(f, "<a name=\"", m.get_serial_no(), "\"/>")
+            write(f, "<h3>", m.get_name(), "</h3>")
+            write(f, "<dl>")
+            if member(m.get_fields(), "p") then
+               write(f, "<dd>Private variable, not intended for client invocation</dd>")
+            else {
+               write(f, "<dd>")
+               comment_and_fields(f, m)
+               write(f, "</dd>")
+            }
+            write(f, "</dl><hr>")
+         }
+      }
+
+      write(f, "</body></html>")
+      close(f)
+   end
+
+   method do_inherited(f, ci, overrides, seen_classes, class_methods)
+      every s := !ci.get_supers() do {
+         if member(seen_classes, s) then
+            next
+         insert(seen_classes, s)
+         if o := get_class(s) then {
+            l := []
+            every x := !o.get_methods_list() do {
+               member(class_methods, x.get_name()) | put(l, x)
+               insert(overrides, x.get_name(), o)
+            }
+            if *l > 0 then {
+               tbl_start(f, "Methods inherited from " || o.get_fq_name())
+               every m := !l do {
+                  write(f,"<a href=\"" || o.get_serial_no() || ".html#" || m.get_serial_no() || "\">" || m.get_full_name() || "</a>")
+               }
+               tbl_end(f)
+            }
+            l := o.get_variables_list()
+            if *l > 0 then {
+               tbl_start(f, "Variables inherited from " || o.get_fq_name())
+               every m := !l do {
+                  write(f,"<a href=\"" || o.get_serial_no() || ".html#" || m.get_serial_no() || "\">" || m.get_name() || "</a>")
+               }
+               tbl_end(f)
+            }
+            do_inherited(f, o.get_class_info(), overrides, seen_classes, class_methods)
+         } else {
+            cj := parser::load_class_info(s) | stop("Couldn't find class info for ", s)   
+            l := []
+            every x := !sort(cj.get_methods()) do {
+               member(class_methods, x) | put(l, x)
+               insert(overrides, x, cj.get_name())
+            }
+            if *l > 0 then {
+               tbl_start(f, "Methods inherited from " || pretty_class(s))
+               every m := !l do {
+                  write(f, m, "()") 
+               }
+               tbl_end(f)
+            }
+            l := sort(cj.get_variables())               
+            if *l > 0 then {
+               tbl_start(f, "Variables inherited from " || pretty_class(s))
+               every m := !l do {
+                  write(f, m) 
+               }
+               tbl_end(f)
+            }
+            do_inherited(f, cj, overrides, seen_classes, class_methods)
+         }
+      }
+   end
+
+   method pretty_heading(f, s)
+      write(f, "<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\" width=\"100%\">")
+      write(f, "<tr bgcolor=\"#ccccff\">")
+      write(f, "<td colspan=1><font size=\"+2\">")
+      write(f, "<b>", s, "</b></font></td>")
+      write(f, "</tr>")
+      write(f, "</table>")
+   end
+
+   #
+   # Convert abc__Def to abc::Def
+   #
+   method pretty_class(s)
+      if i := find("__", s) then
+         s[i:i+2] := "::"
+      return s
+   end
+
+   method tbl_start(f, s)
+      write(f, "<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\" width=\"100%\">")
+      write(f, "<tr bgcolor=\"\#eeeeff\">")
+      write(f, "<td><b>",s,"</b></td></tr>")
+      write(f, "<tr bgcolor=\"white\"><td>")
+   end
+
+   method tbl_end(f)
+      write(f, "</td></tr></table>")
+   end
+
+   method comment_and_fields(f, c)
+      every html_unbracket(f, !c.get_comment(), c)
+      write(f, "<dl>")
+      every el := !sort(c.get_fields()) do
+         html_fields(f, c, el[1], el[2])
+      if \c.get_file_pos() then
+         write(f, "<dt><a href=\"", c.get_file_pos().get_file().get_serial_no() || ".html#", c.get_file_pos().get_line() , "\" target=\"displayFrame\">Source</a></dt>")
+      write(f, "</dl>")
+   end
+
+   #
+   # Return a class from a string in the form "abc__Def".
+   #
+   method get_class(s)
+      return ps.get_package(parser::get_package_name(s)).find_class(parser::get_symbol_name(s))
+   end
+
+   method html_fields(f, c, key, vals)
+      local name
+      case key of {
+         "param" : {
+            write(f, "<dt>Parameters :</dt>")
+            every l := !vals do {
+               l[1] ? {
+                  tab(many(whitespace_cset))
+                  name := tab(many(id_cset))
+                  l[1] := tab(0)
+               }
+               writes(f, "<dd>", name, " - ")
+               every html_unbracket(f, !l, c)
+               write(f, "</dd>")
+            }
+         }
+
+         "return" : {
+            write(f, "<dt>Returns :</dt>")
+            write(f, "<dd>")
+            every html_unbracket(f, !vals[1], c)
+            write(f, "</dd>")
+         }
+
+         "generate" : {
+            write(f, "<dt>Generates :</dt>")
+            write(f, "<dd>")
+            every html_unbracket(f, !vals[1], c)
+            write(f, "</dd>")
+         }
+
+         "fail" : {
+            write(f, "<dt>Fails :</dt>")
+            write(f, "<dd>")
+            every html_unbracket(f, !vals[1], c)
+            write(f, "</dd>")
+         }
+
+         "example" : {
+            write(f, "<dt>Example :</dt><dd><pre>")
+            every l := !vals do
+               every write(f, l[2 to *l])
+            write(f, "</pre></dd>")
+         }
+      }
+   end
+
+   method html_unbracket(f, s, c)
+      local r, t
+      r := ""
+      s ? {
+         tab(many(whitespace_cset))
+         while r ||:= xml_escape(tab(upto('{')), '<>&') do {
+            move(1)
+            t := tab(upto('}') | 0)
+            move(1)
+            r ||:= create_link(t, c, cl)
+         }
+         r ||:= xml_escape(tab(0), '<>&')
+      }
+      if *r = 0 then
+         r := "<p>"
+      write(f, r)
+   end
+
+   #
+   # Get a link (if possible) for the string s.  c is the current comment.
+   #
+   method create_link(s, c)
+      local i
+
+      if i := find("__" | "::", s) then {
+         o := ps.get_package(s[1:i]).find_for_name(s[i+2:0]) | return s
+         # Link to the absolute page
+         return "<a href=\"" || o.get_serial_no() || ".html\" target=\"displayFrame\">" || s || "</a>"
+      } else {
+         #
+         # Get upto opening bracket, so for abc() we search for abc
+         s ? {
+            s1 := tab(upto('(') | 0)
+         }
+
+         o := c.find_for_name(s1) | return s
+
+         if is_instance(o, "Method" | "ClassVar") then {
+            # Link within the parent class's page
+            return "<a href=\"" || o.get_parent_class().get_serial_no() || ".html#" || o.get_serial_no() || "\">" || s || "</a>"
+         } else {
+            # Link to the absolute page
+            return "<a href=\"" || o.get_serial_no() || ".html\" target=\"displayFrame\">" || s || "</a>"
+         }
+      }
+   end
+
+   method output_file(file)
+      local f, fname, line_no
+
+      if member(done_files, file) then
+         return
+      insert(done_files, file)
+
+      fname := output_dir || "/" || file.get_serial_no() || ".html"
+      f := open(fname, "w") | stop("couldn't open " || fname)
+      g := open(file.get_file_name()) | stop("couldn't open " || file.get_file_name())
+
+      write(f, "<html><head><title>", file.get_title(), "</title></head><body><pre>")
+
+      line_no := 0
+      while s := read(g) do {
+         line_no +:= 1
+         if file.is_referenced_line(line_no) then {
+            writes(f, "<a name=\"", line_no, "\"/>")
+         }
+
+         write(f, xml_escape(s, '<>&'))
+      }
+
+      write(f, "</pre></body></html>")
+      close(f)
+      close(g)
+   end
+
+   method output_other(c)
+      local s, f, fname
+      fname := output_dir || "/" || c.serial_no || ".html"
+      f := open(fname, "w") | stop("couldn't open " || fname)
+      write(f, "<html><head><title>", c.get_name(), "</title></head><body>")
+      write(f, "<h1>", c.get_full_name(), "</h1>")
+      write(f, "<dl>")
+      s := c.get_parent_package().get_name()
+      write(f, "<dt>Package :</dt><dd><a href=\"", s || "_list.html" || "\" target=\"listFrame\">", s, "</a></dd>")
+      if \c.get_file_pos() then {
+         output_file(c.get_file_pos().get_file())
+      }
+      write(f, "<dt>Type :</dt><dd>", c.get_form(), "</dd>")
+      write(f, "</dl><p>")
+      if member(c.get_fields(), "p") then {
+         write(f, "Private object, not intended for client use.")
+      } else {
+         comment_and_fields(f, c)
+      }
+      write(f, "<p>")
+      write(f, "</body></html>")
+      close(f)
+   end
+
+   initially(ps, t)
+      self.ps := ps
+      done_files := set()
+      output_dir := \t["o"] | stop("Please specify an output directory")
+end

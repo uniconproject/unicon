@@ -1,0 +1,84 @@
+#
+# $Id: comment.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+##
+#  Class to represent a comment.
+#
+class Comment(
+    serial_no,
+    file_pos,
+    comment,
+    fields
+)
+
+   method get_serial_no()
+      return serial_no
+   end
+
+   method get_file_pos()
+      return file_pos
+   end
+
+   method get_fields()
+      return fields
+   end
+
+   method get_comment()
+      return comment
+   end
+
+   method complete(l, fp)
+      set_comment(l)
+      set_file_pos(fp)
+   end
+
+   method set_file_pos(fp)
+      self.file_pos := fp
+   end
+
+   method set_comment(l)
+      every s := !l do s ? {
+         if (tab(many(' \t')), ="@") then {
+            if key := tab(many(&lcase)) then {
+               val := [tab(0)]
+               /fields[key] := []
+               put(fields[key], val)
+            } else {
+               #
+               # Continuation - add to end of last field.
+               # 
+               # Tab over the first space, if present.
+               =" "
+               put(fields[\key][-1], tab(0))
+            }
+         } else
+            put(comment, tab(0))
+      }
+      #
+      # Strip off any empty lines at the front and beginning of
+      # the comment.
+      #
+      while *comment[1] = 0 do
+         pop(comment)
+      while *comment[-1] = 0 do
+         pull(comment)
+   end
+
+   method debug()
+      write("comment begins")
+      every write(!comment)
+      write("comment ends")
+   end
+
+   abstract method find_for_name(s)
+
+   initially
+      self.serial_no := get_next_serial_no()
+      self.comment := []
+      self.fields := table()
+end

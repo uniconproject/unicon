@@ -1,0 +1,84 @@
+#
+# $Id: class.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+class Class : Comment(name, class_info, methods, variables, parent_package)
+   method get_name()
+      return name
+   end
+
+   method get_fq_name()
+      return parent_package.get_name() || "::" || name
+   end
+
+   method find_for_name(s)
+      if member(methods, s) then
+         return methods[s]
+      if member(variables, s) then
+         return variables[s]
+      if i := parent_package.find_for_name(s) then
+         return i 
+   end
+
+   method find_method(s)
+      if member(methods, s) then
+         return methods[s]
+   end
+
+   method find_variable(s)
+      if member(variables, s) then
+         return variables[s]
+   end
+
+   method get_class_info()
+      return class_info
+   end
+
+   method get_methods_list()
+      local l, e
+      l := []
+      every e := !sort(methods) do
+         put(l, e[2])
+      return l
+   end
+
+   method get_variables_list()
+      local l, e
+      l := []
+      every e := !sort(variables) do
+         put(l, e[2])
+      return l
+   end
+
+   method get_parent_package()
+      return parent_package
+   end
+
+   method debug()
+      write("Class ", class_info.name)
+      every e := !sort(methods) do {
+         e[2].debug()
+      }
+      every e := !sort(variables) do {
+         e[2].debug()
+      }
+   end
+
+   initially(name, ci, pack)
+      self.Comment.initially()
+      self.name := name
+      self.class_info := ci
+      self.parent_package := pack
+      methods := table()
+      variables := table()
+      every e := !ci.get_variables() do {
+         insert(variables, e, ClassVar(e, self))
+      }
+      every e := !ci.get_methods() do {
+         insert(methods, e, Method(e, self))
+      }
+end

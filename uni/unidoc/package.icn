@@ -1,0 +1,140 @@
+#
+# $Id: package.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import parser
+
+class Package(package_info, classes, others, current_class, parent_package_set)
+   method find_for_name(s)
+      return find_class(s) | find_other(s) | parent_package_set.find_for_name(s)
+   end
+
+   method load_classes()
+      every s := !package_info.get_symbols() do {
+         if ci := parser::load_class_info(package_info.name || "__" || s) then {
+            c := Class(s, ci, self)
+            insert(classes, s, c)
+         } else {
+            c := Other(s, self)
+            insert(others, s, c)
+         }
+      }
+   end
+
+   method get_name()
+      return package_info.get_name()
+   end
+
+   method get_package_info()
+      return package_info
+   end
+
+   method get_class_list()
+      local l, e
+      l := []
+      every e := !sort(classes) do
+         put(l, e[2])
+      return l
+   end
+
+   method get_others_list()
+      local l, e
+      l := []
+      every e := !sort(others) do
+         put(l, e[2])
+      return l
+   end
+
+   method find_class(s)
+      if member(classes, s) then
+         return classes[s]
+   end
+
+   method find_other(s)
+      if member(others, s) then
+         return others[s]
+   end
+
+   method process_files()
+      every fn := package_info.get_directory() || !package_info.get_files() do {
+         f := open(fn) | stop("Couldn't open ", fn)
+         process_file(f, fn)
+         close(f)
+      }
+   end
+
+   method process_file(current_file, current_file_name)
+      current_class := in_comment := &null
+      line_no := 0
+
+      # Create a File object which is used to store a reference to
+      # the filename together with an unique id.
+      #
+      file_obj := File(current_file_name)
+      while line := read(current_file) do line ? {
+         line_no +:= 1
+         tab(many(whitespace_cset))
+         if \in_comment then {
+            if ="#" then {
+               tab(many('#'))
+               put(comment_buff, tab(0))
+            } else {
+               maybe_complete(comment_buff, file_obj, in_comment)
+               in_comment := &null
+            }
+         } else {
+            if ="#" then {
+               tab(many('#'))
+               comment_buff := [tab(0)]
+               in_comment := line_no
+            } else
+               maybe_complete([], file_obj, line_no)
+         }
+      }
+   end
+
+   method maybe_complete(comment_buff, file_obj, line_no)
+      if ="class " then {
+         if current_class := find_class(tab(many(id_cset))) then {
+            current_class.complete(comment_buff, file_obj.create_file_pos(line_no))
+         }
+      } else if =("method " | "abstract method ") then {
+         if (s := tab(upto('('))) & (m := (\current_class).find_method(s)) then {
+            m.complete(comment_buff, file_obj.create_file_pos(line_no), s || tab(0))
+         }
+      } else if ="procedure " then {
+         if (s := tab(upto('('))) & (p := find_other(s)) then {
+            p.complete(comment_buff, file_obj.create_file_pos(line_no), "procedure", s || tab(0))
+         }
+      } else if ="global " then {
+         if p := find_other(tab(many(id_cset))) then {
+            p.complete(comment_buff, file_obj.create_file_pos(line_no), "global")
+         }
+      } else if ="record " then {
+         if p := find_other(tab(many(id_cset))) then {
+            p.complete(comment_buff, file_obj.create_file_pos(line_no), "record")
+         }
+      }
+   end
+
+   method debug()
+      write("package ", package_info.name)
+      every e := !sort(classes) do {
+         e[2].debug()
+      }
+      every e := !sort(others) do {
+         e[2].debug()
+      }
+   end
+
+   initially(pi, parent)
+      self.parent_package_set := parent
+      self.package_info := pi
+      self.classes := table()
+      self.others := table()
+end
+

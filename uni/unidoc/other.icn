@@ -1,0 +1,46 @@
+#
+# $Id: other.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+class Other : Comment(name, full_name, parent_package, form)
+   method get_parent_package()
+      return parent_package
+   end
+
+   method get_form()
+      return form
+   end
+
+   method find_for_name(s)
+      return parent_package.find_for_name(s)
+   end
+
+   method complete(l, s, form, full)
+      self.Comment.complete(l, s)
+      self.form := form
+      self.full_name := \full
+   end
+
+   method get_name()
+      return name
+   end
+
+   method get_full_name()
+      return full_name
+   end
+
+   method debug()
+      write("Other ", name)
+   end
+
+   initially(n, p)
+      self.Comment.initially()
+      self.name := n
+      self.full_name := self.name
+      self.parent_package := p
+      self.form := "Unknown"
+end

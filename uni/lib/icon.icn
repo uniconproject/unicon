@@ -1,0 +1,59 @@
+
+#  $Id: icon.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class displays an icon, supplied in Icon image format.  A
+#  border may be requested with {toggle_draw_border()}.
+#
+#  Unless explicitly specified, the size will default to the
+#  image's size, plus a standard surround if a border is
+#  requested.
+#
+class Icon : Component(
+   img,
+   img_w,
+   img_h
+   )
+
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+
+      if \self.draw_border_flag then
+         DrawRaisedRectangle(W, self.x, self.y, self.w, self.h,2)
+
+      DrawImage(W, self.x + (self.w - self.img_w) / 2, self.y + (self.h - self.img_h) / 2, self.img)
+
+      self$do_shading(W)
+      return
+   end
+
+   ##
+   #  Set the image to be displayed.
+   #  @param x  The image to be displayed
+   #
+   method set_img(x)
+      self.img := x
+      self.img_w := img_width(x)
+      self.img_h := img_height(x)
+      self$redisplay()
+      return x
+   end
+
+   method resize()
+      if /self.img then
+         error("no image specified")
+      if \self.draw_border_flag then {
+         /self.w_spec := self.img_w + 2 * DEFAULT_TEXT_X_SURROUND
+         /self.h_spec := self.img_h + 2 * DEFAULT_TEXT_Y_SURROUND
+      } else {
+         /self.w_spec := self.img_w
+         /self.h_spec := self.img_h
+      }
+      self$Component.resize()
+   end
+
+   method handle_event(e)
+      fail
+   end
+end

@@ -1,0 +1,199 @@
+
+#  $Id: _button.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This is the parent class of the button classes, including
+#  checkboxes.
+#
+#  A {Button} produces and {Event} of code {0} when the button is
+#  depressed, and code {1} when it is released.
+#
+#  By default, when a button holds the keyboard focus a dashed
+#  line appears just within the button.  Then, when return is
+#  pressed an event of code {2} is generated.  The method
+#  {_Dialog.set_initial_focus()} can be used to have the button
+#  have the focus when the dialog is first displayed.
+#
+#  Buttons also repeatedly produce an event of -1 whilst they
+#  are held down, rather like a repeating keyboard press.  The
+#  delay between the initial repeat event and subsequent repeat
+#  events is set in the parent dialog (see above).
+#
+class Button : Toggle : Component(
+   is_down,
+   is_held,
+   is_checked_flag,
+   label,
+   img_up,
+   img_down,
+   img_w,
+   img_h,
+   parent_check_box_group,
+   parent_button_group,
+   repeat_delay,
+   no_keyboard_flag,
+   is_checkbox_flag
+   )
+
+   method set_parent_button_group(x)
+      return self.parent_button_group := x
+   end
+
+   ##
+   #  Invoking this method disables the keyboard control over the
+   #  button described above.  No dashed line will ever appear in
+   #  the button display and return will have no effect on the
+   #  button even if it has the focus.
+   #
+   method set_no_keyboard()
+      self.no_keyboard_flag := 1
+      self.accepts_tab_focus_flag := &null
+      return
+   end
+
+   method tick()
+      if dispatcher$curr_time_of_day() > self.repeat_delay then
+         self.parent_Component$handle_notify(_Event(EVENT_BUTTON_HELD, self, -1))
+   end
+
+   method go_down()
+      self.is_down := 1
+      set_ticker(self.parent_Dialog.repeat_rate)
+   end
+
+   method go_up()
+      self.is_down := &null
+      stop_ticker()
+   end
+
+   method handle_event(e)
+   local b
+      if integer(e) = (&lpress | &rpress | &mpress) then {
+         if self$in_region() then {
+            go_down()
+            self.repeat_delay := dispatcher$curr_time_of_day() + self.parent_Dialog.repeat_delay
+            self.is_held := 1
+            every b := !(\self.parent_button_group).buttons do {
+               if b$is_unhidden() then {
+                  b.is_held := 1
+                  b.repeat_delay := self.repeat_delay
+               }
+            }
+            self$display()
+            return _Event(e, self, 0)
+         }
+      } else if integer(e) = (&ldrag | &rdrag | &mdrag) & \self.is_held then {
+         #
+         # Button held down; toggle on/off as it goes over the button
+         #
+         if self$in_region() then {
+            if /self.is_down then {
+               go_down()
+               display()
+            }
+         } else {
+            if \self.is_down then {
+               go_up()
+               display()
+            }
+         }
+      } else if integer(e) = (&lrelease | &rrelease | &mrelease) & \self.is_held then {
+         self.is_held := &null
+         if \self.is_down then {
+            if \self.is_checkbox_flag then {
+               if \self.parent_check_box_group then
+                  self.parent_check_box_group$set_which_one(self)
+               else
+                  self$toggle_is_checked()
+            }
+            #
+            # Released whilst button down; succeed
+            #
+            go_up()
+            self$display()
+            return _Event(e, self, 1)
+         }
+      } else if /self.no_keyboard_flag & \self.has_focus & e == ("\r" | "\l") then {
+         if \self.is_checkbox_flag then {
+            if \self.parent_check_box_group then
+               self.parent_check_box_group$set_which_one(self)
+            else
+               self$toggle_is_checked()
+         }
+         self$display()
+         return _Event(e, self, 2)
+      }
+
+      fail
+   end
+
+   ##
+   #  Set the up/down images (if any) to the strings provided,
+   #  which should be in Icon image format.
+   #  The two images must have the same dimensions.
+   #  @param x   The up image
+   #  @param y   The down image
+   #
+   method set_imgs(x, y)
+      self.img_up := x
+      self.img_w := img_width(x) = img_width(y) | error("Image widths differ")
+      self.img_h := img_height(x) = img_height(y) | error("Image heights differ")
+
+      self.img_down := y
+
+      return
+   end
+
+   ##
+   #  Set the image (if any) to the given string, which should be in Icon image
+   #  format.
+   #  @param x   The image
+   #
+   method set_img(x)
+      self.img_up := self.img_down := x
+      self.img_w := img_width(x)
+      self.img_h := img_height(x)
+      return x
+   end
+
+   ##
+   #  Toggle the checked status of the button.  This method, and
+   #  the following two methods, may be
+   #  inappropriate for non-toggle styles of button.
+   #
+   method toggle_is_checked()
+      self$Toggle.toggle_is_checked()
+      self$redisplay()
+   end
+
+   ##
+   #  Set the status to checked.
+   #
+   method set_is_checked()
+      self$Toggle.set_is_checked()
+      self$redisplay()
+   end
+
+   ##
+   #  Set the status to unchecked.
+   #
+   method clear_is_checked()
+      self$Toggle.clear_is_checked()
+      self$redisplay()
+   end
+
+   ##
+   #  Set the label of the button, if any.
+   #  @param x   The label
+   #
+   method set_label(x)
+      self.label := x
+      self$redisplay()
+      return x
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self.accepts_tab_focus_flag := 1
+      if *argv > 0 then set_fields(argv)
+end

@@ -1,0 +1,80 @@
+
+#  $Id: textbutton.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  A button with a text label.
+#
+#  The size of the button can either be set using {set_size()},
+#  be left to default to a size based on the given label.
+#
+class TextButton : Button(
+   internal_alignment,
+   tx,
+   tw
+   )
+
+   ##
+   #  Set the alignment of the label within the button.  The
+   #  parameter should be either ``l'', ``c'' or ``r'' to set the
+   #  alignment to left, centre or right respectively.  If this
+   #  method is not invoked, then the alignment is centred.
+   #  @param x   The alignment
+   #
+   method set_internal_alignment(x)
+      return self.internal_alignment := x
+   end
+
+   method display(buffer_flag)
+      local cw, yoff
+      yoff := self.y + self.h / 2
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      case self.internal_alignment of {
+         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label)
+         "l" : left_string(self.cbwin, self.tx, yoff, self.label)
+         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
+         default : error("incorrect internal_alignment specifier")
+      }
+
+      if /self.no_keyboard_flag & \self.has_focus then {
+         cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
+         DrawRaisedRectangle(cw, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2,1)
+         Uncouple(cw)
+         }
+
+      if \self.is_down then {
+         cw := Clone(self.cbwin, "drawop=reverse")
+         FillRectangle(cw, self.x, self.y, self.w, self.h)
+         Uncouple(cw)
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+      } else {
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,2)
+         if /self.is_checked_flag then
+            DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,2)
+         else
+            DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+      }
+
+      self$do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+
+      return
+   end
+
+   method resize()
+      if /self.label then
+         error("no label specified")
+      /self.w_spec := TextWidth(self.cwin, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
+      /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND
+      self$Component.resize()
+
+      self.tx := self.x + DEFAULT_TEXT_X_SURROUND
+      self.tw := self.w - 2 *  DEFAULT_TEXT_X_SURROUND
+   end
+
+   initially(argv[])
+      self$Button.initially()
+      self.internal_alignment := "c"
+      if *argv > 0 then set_fields(argv)
+end

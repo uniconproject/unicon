@@ -1,0 +1,208 @@
+
+#  $Id: editlist.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This component functions in the same way as List above, but
+#  the item selected may be edited by the user.  An extra
+#  method is therefore supplied to get the content, as it may
+#  not correspond to an element of the list.
+#
+#  An event is generated with code 0 if an element of the list
+#  is selected, with code 1 if return is pressed, and with
+#  code 2 if the user edits the selected item.
+#
+class EditList : Component : DropDown(
+   b,
+   tf,
+   no_default
+   )
+
+   ##
+   # Set the text field's filter (see {TextField} for details).
+   # @param c  The filter
+   #
+   method set_filter(c)
+      return self.tf$set_filter(c)
+   end
+
+   method firstly()
+      self$Component.firstly()
+      self.b$firstly()
+      self.tf$firstly()
+      if /self.no_default then {
+         #
+         # Initialize textfield to default, neither set_contents nor
+         # set_selection having been called.
+         #
+         tf$set_contents(self.selection_list[self.selection])
+      }
+   end
+
+   method finally()
+      #
+      # Disposed with text list showing, just get rid of it
+      #
+      if \self.tl then {
+         self$close_TextList()
+         self$unique_end()
+      }
+      self$Component.finally()
+      self.b$finally()
+      self.tf$finally()
+   end
+
+   ##
+   #  Return the contents of the selected item (which may have
+   #  been edited).
+   #
+   method get_contents()
+      return self.tf$get_contents()
+   end
+
+   ##
+   #  Set the initial contents of the text to the given string.
+   #
+   method set_contents(x)
+      self.no_default := 1
+      return self.tf$set_contents(x)
+   end
+
+   ##
+   #  Set the selected item.
+   #  @param x   An index into the list of selectable items.
+   #
+   method set_selection(x)
+      self.no_default := 1
+      self.selection := x
+      self.tf$set_contents(self.selection_list[self.selection])
+      return x
+   end
+
+   method resize()
+      local bw
+
+      if /self.selection_list then
+         error("no selection list specified")
+
+      #
+      # Re-sized with text list showing, just get rid of it
+      #
+      if \self.tl then {
+         self$close_TextList()
+         self$unique_end()
+      }
+
+      /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      self$Component.resize()
+
+      bw := self.h - 2 * BORDER_WIDTH
+
+      #
+      # Set button position and size
+      #
+      b$set_pos(self.w - BORDER_WIDTH - bw, BORDER_WIDTH)
+      b$set_size(bw, bw)
+      b$resize()
+
+      #
+      # Set TextField position and size
+      #
+      tf$set_pos(BORDER_WIDTH, BORDER_WIDTH)
+      tf$set_size(self.w - bw - 2 * BORDER_WIDTH,  self.h - 2 * BORDER_WIDTH)
+      tf$resize()
+
+      return
+   end
+
+   method display(buffer_flag)
+      #
+      # Draw text element
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+      #
+      # Draw button and list
+      #
+      self.b$display(1)
+      self.tf$display(1)
+      self$do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   method handle_event(e)
+      if \tl then {
+         if E := b$handle_event(e) then {
+            if E$get_code() = 0 then {
+               #
+               # Button pressed whilst list open; just close
+               #
+               self$close_TextList()
+               self$unique_end(1)
+            } else
+               self.tl.is_held := &null
+         } else if E := tl$handle_event(e) then {
+            if E$get_code() = 1 then {
+               #
+               # Selection in list - close textlist, amend label, return event.
+               #
+               tmp := tl$get_selections()[1]
+               self$close_TextList()
+               self$unique_end(1)
+               if self.selection := \tmp then {
+                  self.tf$set_contents(self.selection_list[self.selection])
+                  return _Event(e, self, 0)
+               }
+            }
+         } else if integer(e) = (&lpress | &rpress | &mpress) & not(tl$in_region()) then {
+            #
+            # Mouse click outside textlist.  Close.
+            #
+            self$close_TextList()
+            self$unique_end()
+         }
+      } else {
+         if b$handle_event(e)$get_code() = 0 then {
+            #
+            # Button pressed whilst no list; open list
+            #
+            self$open_TextList()
+            self.tl.is_held := 1
+            self$unique_start()
+         } else if E := tf$handle_event(e) then
+            return _Event(e, self, 1 + E$get_code())
+      }
+   end
+
+   method final_setup(x, y)
+      self$Component.final_setup(x, y)
+      self.b$final_setup(x, self)
+      self.tf$final_setup(x, self)
+   end
+
+   method in_region()
+      if /self.is_shaded_flag & tf$in_region() then
+         return self
+   end
+
+   method got_focus()
+      self$Component.got_focus()
+      self.tf$got_focus()
+   end
+
+   method lost_focus()
+      self$Component.lost_focus()
+      self.tf$lost_focus()
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self.accepts_tab_focus_flag := 1
+      self.tf := TextField()
+      self.tf$toggle_draw_border()
+      self.b := IconButton()
+      self.b$toggle_draw_border()
+      self.b$set_img(img_style("arrow_down"))
+      self.selection := 1
+      if *argv > 0 then set_fields(argv)
+end

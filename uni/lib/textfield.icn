@@ -1,0 +1,275 @@
+
+#  $Id: textfield.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  A class for a single input line of text.  The text can
+#  scroll within the area specified.  By default, a border
+#  surrounds the text area; this can be turned of by using
+#  {toggle_draw_border()}.
+#
+#  The horizontal size must be set by the {set_size()} method:
+#  there is no default (the vertical size will default, however).
+#
+#  An event is generated when return is pressed (with code 0),
+#  and whenever the contents are changed (with code 1).
+#
+#  @example
+#  @ t := TextField()
+#  @ t$set_pos(50, 250)
+#  @ # Vertical size will default
+#  @ t$set_size(100)
+#  @ t$set_contents("Initial string")
+#  @ self$add(t)
+#
+class TextField : Component(
+   filter,                  # Cset for filtering characters
+   printable,               # The printable characters
+   contents,
+   cursor,
+   leftmost,
+   rightmost,
+   tx,
+   tw,
+   displaychar              # char to print on screen
+   )
+
+   method set_displaychar(c)
+      displaychar := c
+   end
+
+   ##
+   #  Set a filter on the characters allowed to be input to the text field.
+   #  @param c  The cset of permissible characters.
+   #  @example
+   #  @ # Permit only hexadecimal characters as input
+   #  @ set_filter('0987654321abcdefABCDEF')
+   #
+   method set_filter(c)
+      return self.filter := c ** printable
+   end
+
+   ##
+   #  Return the present contents of the text field.
+   #
+   method get_contents()
+      return self.contents
+   end
+
+   method resize()
+      if \self.draw_border_flag then
+         /self.h_spec := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      else
+         /self.h_spec := WAttrib(self.cwin, "fheight")
+      self$Component.resize()
+
+      if \self.draw_border_flag then {
+         self.tx := self.x + DEFAULT_TEXT_X_SURROUND
+         self.tw := self.w - 2 *  DEFAULT_TEXT_X_SURROUND
+      } else {
+         #
+         # Still want an offset for the text so that a click slightly to the left of
+         # the text itself is recognised.  Therefore, just have a slightly smaller surround.
+         #
+         self.tx := self.x + (DEFAULT_TEXT_X_SURROUND - BORDER_WIDTH)
+         self.tw := self.w - 2 * (DEFAULT_TEXT_X_SURROUND - BORDER_WIDTH)
+      }
+   end
+
+   ##
+   #  Set the contents of the field.  If not invoked then
+   #  the initial content is the empty string.
+   #  @param x   The contents
+   #
+   method set_contents(x)
+      self.contents := string(x)
+      self.cursor := *self.contents + 1
+      self.leftmost := 1
+      self$redisplay()
+      return x
+   end
+
+   #
+   # Mouse click - compute new cursor position, re-display
+   #
+   method handle_press()
+   local startx, s
+      #
+      # Space at end for cursor at end of string
+      #
+      s := self.contents || " "
+
+      startx := self.tx
+
+      self.cursor := self.leftmost
+      while (startx + TextWidth(self.cwin, s[self.leftmost:self.cursor + 1]) <= &x) & (self.cursor + 1 < self.rightmost) do
+         self.cursor +:= 1
+
+      self$display()
+   end
+
+   #
+   # Delete
+   #
+   method handle_delete1(e)
+      if self.cursor > 1 then {
+         self.contents[self.cursor - 1] := ""
+         self.cursor -:= 1
+         self$display()
+         return _Event(e, self, 1)
+      }
+   end
+
+   method handle_return(e)
+      return _Event(e, self, 0)
+   end
+
+   method handle_key_right(e)
+      self.cursor := (*self.contents + 1 >= self.cursor + 1)
+      self$display()
+   end
+
+   method handle_key_left(e)
+      self.cursor := (0 < self.cursor - 1)
+      self$display()
+   end
+
+   method handle_delete_line(e)
+      self.contents := ""
+      self.cursor := 1
+      self$display()
+      return _Event(e, self, 1)
+   end
+
+   method handle_delete_2(e)
+      if self.cursor <= *self.contents then {
+         self.contents[self.cursor] := ""
+         self$display()
+         return _Event(e, self, 1)
+      }
+   end
+
+   method handle_start_of_line(e)
+      self.cursor := 1
+      self$display()
+   end
+
+   method handle_end_of_line(e)
+      self.cursor := *self.contents + 1
+      self$display()
+   end
+
+   method handle_default(e)
+      #
+      # Add any printable character at cursor position, and return
+      # event with code 1.
+      #
+      if type(e) == "string" & not(&control | &meta) & any(filter, e) then {
+         if self.cursor = 1 then
+            self.contents := e || self.contents
+         else
+            self.contents[self.cursor - 1] ||:= e
+         self.cursor +:= 1
+         self$display()
+         return _Event(e, self, 1)
+      }
+   end
+
+   method handle_event(e)
+      local code
+
+      return if self$in_region() & (integer(e) = (&lpress | &rpress | &mpress)) then
+         handle_press(e)
+      else if \self.has_focus then {
+         #
+         # Object has focus.  Handle various key presses.
+         #
+         case e of {
+            "\b" : handle_delete1(e)
+            "\r" | "\l": handle_return(e)
+            "\^k" : handle_delete_line(e)
+            Key_Right : handle_key_right(e)
+            Key_Left : handle_key_left(e)
+            "\^a" : handle_start_of_line(e)
+            "\^e" : handle_end_of_line(e)
+            "\d" | "\^d" : handle_delete_2(e)
+            default : handle_default(e)
+         }
+      }
+   end
+
+   method display(buffer_flag)
+      local r, fh, spc, s, cp, cw
+
+      fh := WAttrib(self.cwin, "fheight")
+
+      spc := self.tw
+
+      #
+      # Space at end for cursor at end of string
+      #
+      if \displaychar then
+         s := repl("*", *(self.contents)) || " "
+      else
+         s := self.contents || " "
+
+      #
+      # Initialize left and right markers; only move leftmost if needed
+      #
+      self.leftmost >:= self.cursor
+      self.rightmost := self.cursor + 1
+
+      #
+      # Now pad out left and right markers to fill space
+      #
+      if TextWidth(self.cwin, s[self.leftmost:self.rightmost]) <= spc then {
+         while TextWidth(self.cwin, s[self.leftmost:self.rightmost + 1]) <= spc do
+            self.rightmost +:= 1
+      } else {
+         while TextWidth(self.cwin, s[self.leftmost:self.rightmost]) > spc do
+            self.leftmost +:= 1
+      }
+
+      #
+      # Clear rectangle, set s to string to display
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      s := s[self.leftmost:self.rightmost]
+
+      #
+      # Cursor position within s
+      #
+      cp := self.cursor - self.leftmost + 1
+
+      if \self.draw_border_flag then
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+
+      #
+      # Display s centred vertically in box
+      #
+      left_string(self.cbwin, self.tx, self.y + self.h / 2 , s)
+
+      #
+      # If has focus display box cursor, else display outline cursor
+      #
+      if \self.has_focus then {
+         FillRectangle(self.cbwin, self.tx + TextWidth(self.cwin, s[1:cp]), 1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, s[cp]), fh)
+         cw := Clone(self.cbwin, "drawop=reverse")
+         left_string(cw, self.tx + TextWidth(cw, s[1:cp]), self.y + self.h / 2 , s[cp])
+         Uncouple(cw)
+      } else
+         Rectangle(self.cbwin, self.tx + TextWidth(self.cwin, s[1:cp]), 1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, s[cp]), fh)
+
+      self$do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      filter := printable := cset(&ascii[33:128])
+      self.accepts_tab_focus_flag := 1
+      self$set_contents("")
+      self.draw_border_flag := 1
+      if *argv > 0 then set_fields(argv)
+end

@@ -1,0 +1,212 @@
+
+#  $Id: menubar.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class is the base from which menu systems are created,
+#  other than popup menus.
+#
+#  Menu items are added to this class; they are not separate
+#  components added to the dialog itself.
+#
+#  The default position is (0, 0); the default size is 100% of
+#  the width of the screen and a reasonable height based on the
+#  font specified.
+#
+class MenuBar : Component(
+   which_open,
+   menus
+   )
+
+   ##
+   #  Add the {Menu} c to the {MenuBar}.  This will be one drop down
+   #  menu.  Items are then added to the {Menu}.
+   #  @param c  The {Menu} to add.
+   #
+   method add(c)
+      put(self.menus, c)
+   end
+
+   method finally(was_closed)
+      #
+      # Disposing with menu open - just close menu
+      #
+      if \self.which_open & /was_closed then {
+         self$set_which_open()
+         self$unique_end()
+      }
+      self$Component.finally()
+   end
+
+   method display(buffer_flag)
+   local m
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,1)
+
+      #
+      # Draw the menu options with a raised rectangle around the open menu.  m.label_mid_w gives the space for
+      # the menu label, which includes DEFAULT_TEXT_X_SURROUND either side of the label itself.  m.label_x is the x position, so
+      # m.label_x + DEFAULT_TEXT_X_SURROUND put the string in the centre of its area.
+      #
+      every m := !menus do {
+         if m === \self.which_open then
+            DrawRaisedRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w, self.h - 2 * BORDER_WIDTH,1)
+         left_string(self.cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, m$get_label())
+         if \m.is_shaded_flag then
+            FilterRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w, self.h - 2 * BORDER_WIDTH)
+      }
+      self$do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Determine which of the menu labels is selected, if any.  Assumes y pos already tested and in menu bar.
+   #
+   method which_button()
+   local m
+      every m := !self.menus do {
+         if /m.is_shaded_flag & m.label_x <= &x < m.label_x + m.label_mid_w then
+            return m
+      }
+   end
+
+   #
+   # Set the present open menu to x.  If x null, no menu open.
+   #
+   method set_which_open(x)
+      #
+      # Do nothing if x presently open
+      #
+      if self.which_open ~=== x then {
+         (\self.which_open)$hide()
+         self.which_open := x
+         (\self.which_open)$display()
+         self$display()
+      }
+      return x
+   end
+
+   method handle_event(e)
+   local t, r
+      if self$in_region() then {
+         if integer(e) = (&lpress | &rpress | &mpress) then {
+            if t := which_button() then {
+               #
+               # Pressed on a label - open the menu, starting unique mode if needed.
+               #
+               if /self.which_open then
+                  self$unique_start()
+               if t === self.which_open then {
+                  #
+                  # Clicked on menu already open - close all
+                  #
+                  self$set_which_open()
+                  self$unique_end(1)
+               } else
+                  self$set_which_open(t)
+            } else {
+               self$set_which_open()
+               self$unique_end(1)
+            }
+         } else if integer(e) = (&lrelease | &rrelease | &mrelease) & \self.which_open then {
+            #
+            # Released with menu open.  If not on a label then close menu
+            #
+            if not(t := which_button()) then {
+               self$set_which_open()
+               self$unique_end(1)
+            }
+         } else if integer(e) = (&ldrag | &rdrag | &mdrag) & \self.which_open then {
+            #
+            # Drag onto a label with menu open
+            #
+            if t := which_button() then {
+               if t === self.which_open then
+                  #
+                  # Make present menu blank
+                  #
+                  t$set_which_open()
+               else
+                  self$set_which_open(t)
+            } else
+               #
+               # Drag with menu open, but not on a label, blank present menu leaving
+               # sub menus open
+               #
+               self.which_open$hide_non_menu()
+         }
+      } else if \self.which_open then {
+         #
+         # Not on menu bar, but menu bar open.  Let menu handle event.
+         #
+         r := self.which_open$handle_event(e)
+         case r$get_menu_code() of {
+            FAIL_1 : {
+               #
+               # Fail; don't pass event on to other components.
+               #
+               self$set_which_open()
+               self$unique_end(1)
+               fail
+            }
+            FAIL_2 : {
+               #
+               # Fail and pass event on to other components.
+               #
+               self$set_which_open()
+               self$unique_end()
+               fail
+            }
+            CONTINUE :
+               #
+               # Fail, but keep unique status.
+               #
+               fail
+            SUCCEED : {
+               #
+               # Succeed with event.
+               #
+               self$set_which_open()
+               self$unique_end(1)
+               return r
+            }
+            default : stop("internal error")
+         }
+      }
+   end
+
+   method resize()
+   local m, px
+      #
+      # Re-sized with menu open - just close menu
+      #
+      if \self.which_open then {
+         self$set_which_open()
+         self$unique_end()
+      }
+
+      /self.x_spec := 0
+      /self.y_spec := 0
+      /self.w_spec := "100%"
+      /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND
+      self$Component.resize()
+      #
+      # Compute x, y for each sub-menu
+      #
+      px := self.x + BORDER_WIDTH
+      every m := !self.menus do {
+         m$set_parent_menu_bar(self)
+         m$set_abs_coords(px, self.y + self.h)
+         m$set_label_pos(px, self.y + BORDER_WIDTH)
+         m$set_label_size()
+         px +:= m.label_mid_w
+         m$resize()
+      }
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self.menus := []
+      if *argv > 0 then set_fields(argv)
+end

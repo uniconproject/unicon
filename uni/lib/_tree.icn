@@ -1,0 +1,242 @@
+
+#  $Id: _tree.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  This class represents a tree object.  An {Event} of code 0 is generated when a click down
+#  occurs on a {Node};  of code 1 when the a click up occurs and of code 2 when a node is
+#  expanded/contracted by a click on the small +/- icons.
+#
+class Tree : ScrollArea(
+   root_node,
+   default_bmps,
+   col_w,
+   bmp_w,
+   bmp_h,
+   plus,
+   minus,
+   little_h,
+   little_w
+   )
+
+   method get_line_height()
+      res:= WAttrib(self.cwin, "fheight")
+      #
+      # Ensure the line height is slightly greater than the
+      # bitmap height
+      #
+      res <:= \bmp_h + 4
+      return res
+   end
+
+   method get_max_width()
+      mw := 0
+      every s := !self.contents do
+         mw <:= col_w * s.depth + col_w + TextWidth(self.cwin, s.label)
+      return mw
+   end
+
+   ##
+   #  Expand all the nodes in the {Tree}.
+   #
+   method expand()
+      if \root_node then {
+         sels := object_get_selections()
+         set_no_updates()
+         root_node$expand()
+         set_contents(flatten())
+         object_set_selections(sels)
+         clear_no_updates()
+      }
+   end
+
+   ##
+   #  Set the default bitmaps for each {Node} in the {Tree}.  The parameter should be
+   #  a list of three bitmaps;  see {Node} above for an explanation.
+   #  @param l  The list of bitmaps.
+   #
+   method set_default_bmps(l)
+      return default_bmps := l
+   end
+
+   ##
+   #  Set the root node of the {Tree}.
+   #
+   method set_root_node(r)
+      root_node := r
+      if /r then
+         set_contents([])
+      else {
+         root_node.is_open := 1
+         compute_bmp_wh()
+         sels := object_get_selections()
+         set_no_updates()
+         set_contents(flatten())
+         object_set_selections(sels)
+         clear_no_updates()
+      }
+      return root_node
+   end
+
+   method compute_bmp_wh()
+      bmp_w := bmp_h := 0
+
+      every n := root_node$generate_all_preorder() do {
+         bmps := \n.bmps | default_bmps
+         bmp_w <:= img_width(bmps[1])
+         bmp_w <:= img_width(bmps[2])
+         bmp_w <:= img_width(bmps[3])
+         bmp_h <:= img_height(bmps[1])
+         bmp_h <:= img_height(bmps[2])
+         bmp_h <:= img_height(bmps[3])
+      }
+
+      #
+      # The column width is slightly wider than the bitmap width
+      #
+      col_w := bmp_w + 4
+   end
+
+   ##
+   #  This method returns a flat list of all the {Nodes} in the tree that are
+   #  currently displayed.
+   #  @return  A list of nodes.
+   #
+   method flatten()
+      l := []
+      flatten2(l, root_node, "")
+      return l
+   end
+
+   method flatten2(l, n, dl)
+      n.draw_line := dl
+      n.depth := *dl
+      put(l, n)
+      if \n.is_open then {
+         every sub := n.subnodes[1 to *n.subnodes - 1] do
+            flatten2(l, sub, dl || "y")
+         flatten2(l, n.subnodes[-1], dl || "n")
+      }
+   end
+
+   method handle_press(e)
+      if \ (self.select_one | self.select_many) & (self.tx <= &x < self.tx + self.tw) & (self.ty  <= &y < self.ty + self.th) then {
+         #
+         # Compute line clicked
+         #
+         lno := (&y - self.ty) / self.line_height
+         l := lno + self$get_line()
+
+         if self.which_down := (self$get_last_line() >= l) then {
+            if \self.select_many & (&shift | &control) then {
+               #
+               # Click with shift/ctrl - the state will end here.
+               #
+               if &control then
+                  self.checked[self.which_down] := if /self.checked[self.which_down] then 1 else &null
+               else {
+                  #
+                  # &shift
+                  #
+                  if \self.prev_down then {
+                     if self.prev_down > self.which_down then
+                        every self.checked[self.which_down to self.prev_down] := 1
+                     else
+                        every self.checked[self.prev_down to self.which_down] := 1
+                  } else
+                     self.checked[self.which_down] := 1
+               }
+               self.prev_down := self.which_down
+               self.which_down := &null
+               self$refresh(1)
+               return _Event(e, self, 1)
+            } else {
+               self.checked := list(*self.contents)
+               N := self.contents[which_down]
+               if (*N.subnodes > 0) | \N.always_expandable then {
+                  #
+                  # Check for click on little +/- icon.
+                  #
+                  yp := self.ty + self.line_height / 2 + self.line_height * lno - little_h / 2
+                  xp := self$get_left_pos() + (N.depth - 1) * col_w + little_w / 2
+                  if (xp <= &x < xp + little_w) & (yp <= &y < yp + little_h) then {
+                     #
+                     # Clicking on the little icon ends the sequence, and sets the selection
+                     # to the given node.
+                     #
+                     N.is_open := if /N.is_open then 1 else &null
+                     set_no_updates()
+                     set_contents(flatten())
+                     checked[which_down] := 1
+                     clear_no_updates()
+                     is_held := &null
+                     self.prev_down := self.which_down
+                     self.which_down := &null
+                     return _Event(e, self, 2)
+                  }
+               }
+               #
+               # Normal click down
+               #
+               self.is_held := 1
+               self.checked := list(*self.contents)
+               self$refresh(1)
+               return _Event(e, self, 0)
+            }
+         }
+      }
+   end
+
+   method draw(N, left_pos, yp, i)
+      dashed := Clone(self.cbwin, "pattern=gray", "fillstyle=textured")
+      lp := left_pos
+      every j := 1 to N.depth - 1 do {
+         if N.draw_line[j] == "y" then
+            DrawLine(dashed, lp + col_w / 2, yp - line_height / 2, lp + col_w / 2, yp + line_height / 2)
+         lp +:= col_w
+      }
+      if N.depth > 0 then {
+         if N.draw_line[N.depth] == "y" then
+            DrawLine(dashed, lp + col_w / 2, yp - line_height / 2, lp + col_w / 2, yp + line_height / 2)
+         else
+            DrawLine(dashed, lp + col_w / 2, yp - line_height / 2, lp + col_w / 2, yp)
+
+         DrawLine(dashed, lp + col_w / 2, yp, lp + col_w + col_w / 2, yp)
+
+         lp +:= col_w
+      }
+
+      bmps := \N.bmps | default_bmps
+      if (*N.subnodes = 0) & /N.always_expandable then
+         img := bmps[3]
+      else {
+         if \N.is_open then {
+            img := bmps[2]
+            little := minus
+            if *N.subnodes > 0 then
+               DrawLine(dashed, lp + col_w / 2, yp, lp + col_w / 2, yp + line_height / 2)
+         } else {
+            img := bmps[1]
+            little := plus
+         }
+         EraseArea(self.cbwin, lp - col_w / 2 - little_w / 2, yp - little_h / 2, little_w, little_h)
+         DrawImage(self.cbwin, lp - col_w / 2 - little_w / 2, yp - little_h / 2, little)
+      }
+      DrawImage(self.cbwin, lp + col_w / 2 - bmp_w / 2, yp - bmp_h / 2, img)
+      left_string(self.cbwin, lp + col_w, yp, N.label)
+
+      if \self.checked[i] | i = \self.which_down then
+         FillRectangle(rev, lp + col_w,
+                       yp - self.line_height / 2, TextWidth(self.cbwin, N.label), self.line_height)
+
+      Uncouple(dashed)
+   end
+
+   initially(argv[])
+      self$ScrollArea.initially()
+      plus := img_style("plus")
+      minus := img_style("minus")
+      little_w := img_width(plus)
+      little_h := img_height(plus)
+      default_bmps := [img_style("closed_folder"), img_style("open_folder"), img_style("file")]
+      if *argv > 0 then set_fields(argv)
+end

@@ -1,0 +1,173 @@
+
+#  $Id: toolbar.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  This class is a {Panel} which may have {Component}s added to it
+#  in the normal way.  However, the {Component}s within it will produce
+#  tooltip labels when the mouse cursor is held over them for a short
+#  period of time.   The tooltip strings may be set using the {set_tooltip}
+#  method of {Component}.
+#
+class ToolBar : Panel(
+   last_obj,
+   state,
+   start_time,
+   end_time,
+   start_delay,
+   end_delay,
+   temp_win,
+   temp_x,
+   temp_y,
+   temp_w,
+   temp_h
+   )
+
+   method firstly()
+      self$Panel.firstly()
+      set_ticker(200)
+      state := 5
+   end
+
+   method finally()
+      if state = 2 then
+         hide_label()
+      self$Panel.finally()
+   end
+
+   ##
+   #  Configure the delays used in making the tooltips appear.
+   #  @param x   The starting delay, ie the period before a tooltip appears.
+   #  @param y   The end delay, namely how long the tooltip stays visible.
+   #
+   method set_start_end_delays(x, y)
+      self.start_delay := x
+      self.end_delay := y
+   end
+
+   method show_label(x, y, label)
+      local cw, ww, wh
+
+      ww := WAttrib(self$get_parent_win(), "width")
+      wh := WAttrib(self$get_parent_win(), "height")
+
+      cw := Clone(self.cwin, "bg=pale yellow", "font=sans,10", "fg=black")
+
+      temp_w := TextWidth(cw, label) + 4
+      temp_h := WAttrib(cw, "fheight") +  6
+
+      temp_x := x + 4
+      if temp_x + temp_w > ww then
+         temp_x := 0 <= ww - temp_w
+
+      temp_y := self.y + self.h + 3
+      if temp_y + temp_h > wh then
+         temp_y := 0 <= wh - temp_h
+
+      self.temp_win := WOpen("canvas=hidden", "size=" || temp_w || "," || temp_h)
+      CopyArea(get_parent_win(), temp_win, temp_x, temp_y, temp_w, temp_h, 0, 0)
+      EraseRectangle(cw, temp_x, temp_y, temp_w, temp_h)
+      Rectangle(cw, temp_x, temp_y, temp_w, temp_h)
+      center_string(cw, temp_x + temp_w / 2, temp_y + temp_h / 2, label)
+      Uncouple(cw)
+   end
+
+   method hide_label()
+      CopyArea(temp_win, get_parent_win(), 0, 0, temp_w, temp_h, temp_x, temp_y)
+      WClose(temp_win)
+      temp_win := &null
+   end
+
+   method tick()
+      local obj, x1, y1, s, c, t, in_region
+
+      #
+      # Don't process ticks whilst unique mode on, or toolbar hidden
+      #
+      if \parent_Dialog.unique_flag | is_hidden() then
+         return
+
+      #
+      # If it is blocked, then equivalent to moving outside the toolbar.
+      #
+      if /parent_Dialog.is_blocked_flag then {
+         x1 := WAttrib(self.parent_Dialog.win, "pointerx")
+         y1 := WAttrib(self.parent_Dialog.win, "pointery")
+
+         #
+         # If within toolbar bar area then ...
+         #
+         in_region := ((self.x <= x1 < self.x + self.w) & (self.y  <= y1 < self.y + self.h))
+
+         if \in_region then {
+            #
+            # Work out which object it is over
+            #
+            every c := self$generate_components() do {
+               if \c.tooltip & ((c.x <= x1 < c.x + c.w) & (c.y  <= y1 < c.y + c.h)) then {
+                  obj := c
+                  break
+               }
+            }
+         }
+      }
+
+      t := dispatcher$curr_time_of_day()
+
+      if obj ~=== last_obj then {
+         if /obj then
+            state := if state = 2 then 3 else 4
+         else {
+            if state = 2 then
+               hide_label()
+            start_time := t
+            if state = 5 then
+               start_time +:= start_delay
+            state := 1
+            end_time := start_time + end_delay
+         }
+         last_obj := obj
+      }
+
+      if state = 1 & t >= start_time then {
+         #
+         # Change label.
+         #
+         show_label(x1, y1, c.tooltip)
+         state := 2
+      }
+      if state = 2 & t >= end_time then
+         state := 3
+      if state = 3 then {
+         hide_label()
+         state := 4
+      }
+      if state = 4 & /in_region then
+         state := 5
+   end
+
+   method handle_event(e)
+      if not(integer(e) = (&ldrag | &rdrag | &mdrag)) then {
+         if state = 2 then
+            hide_label()
+
+         state := 5
+      }
+      suspend self$Panel.handle_event(e)
+   end
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if \self.draw_border_flag then
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,2)
+      every (!self.components)$display(1)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+      return
+   end
+
+   initially(argv[])
+      self$Panel.initially()
+      start_delay := 1000
+      end_delay := 3000
+      if *argv > 0 then set_fields(argv)
+end

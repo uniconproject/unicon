@@ -1,0 +1,35 @@
+
+#  $Id: menuseparator.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+
+$define SEPARATOR_HEIGHT 4
+
+##
+#  This is simply a horizontal bar in a {Menu}, for decorative purposes.
+#  It has no methods which the user need invoke.
+#
+class MenuSeparator : MenuComponent()
+   method set_label_size()
+   local cw
+      cw := self.parent_menu_bar.cwin
+      self.label_h := SEPARATOR_HEIGHT + 2 * DEFAULT_TEXT_Y_SURROUND
+      self.label_right_w := 0
+      self.label_left_w := 0
+      self.label_mid_w := 0
+   end
+
+   method select_event(e)
+      return MenuEvent(SUCCEED, e, self, 0)
+   end
+
+   method display_label()
+   local cw
+      cw := self.parent_menu_bar.cbwin
+      DrawRaisedRectangle(cw, self.label_x, self.label_y + (self.label_h - SEPARATOR_HEIGHT) / 2, self.parent_menu.max_label_mid_w + self.parent_menu.max_label_left_w + self.parent_menu.max_label_right_w, SEPARATOR_HEIGHT,1)
+   end
+
+   initially(argv[])
+      self$MenuComponent.initially()
+      self.is_shaded_flag := 1
+      if *argv > 0 then set_fields(argv)
+end

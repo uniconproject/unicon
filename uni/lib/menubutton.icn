@@ -1,0 +1,147 @@
+
+#  $Id: menubutton.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This is similar to {MenuBar}, but holds just a single
+#  drop-down menu, rather than several.  It may be placed anywhere on
+#  the dialog, whereas a {MenuBar} would invariably be placed along the top.
+#
+class MenuButton : Component(
+   menu,
+   img,
+   is_open
+   )
+
+   ##
+   #  Set the menu to be displayed when the component is clicked.
+   #  @param c   The {Menu}.
+   #
+   method set_menu(c)
+      return self.menu := c
+   end
+
+   ##
+   #  Set the image to be displayed in the button.
+   #  @param x   The Icon to be displayed.
+   #
+   method set_img(x)
+      return self.img := x
+   end
+
+   method finally()
+      #
+      # Disposing with menu open - just close menu
+      #
+      if \self.is_open then {
+         self$set_is_open()
+         self$unique_end()
+      }
+      self$Component.finally()
+   end
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,2)
+      left_string(self.cbwin, self.x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, menu$get_label())
+      DrawImage(self.cbwin, self.x + 2 * DEFAULT_TEXT_X_SURROUND + TextWidth(self.cwin, menu$get_label()),  self.y + (self.h - img_height(self.img)) / 2, self.img)
+      self$do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Set the present open menu to x.  If x null, no menu open.
+   #
+   method set_is_open(x)
+      if self.is_open ~=== x then {
+         (\self.is_open)$hide()
+         self.is_open := x
+         (\self.is_open)$display()
+         self$display()
+      }
+      return x
+   end
+
+   method handle_event(e)
+      if /self.is_open then {
+         if integer(e) = (&lpress | &rpress | &mpress) & self$in_region() then {
+            self$unique_start()
+            self$set_is_open(self.menu)
+         }
+      } else {
+         if self$in_region() then {
+            if integer(e) = (&lpress | &rpress | &mpress) then {
+               self$set_is_open()
+               self$unique_end(1)
+               fail
+            } else if integer(e) = (&lrelease | &rrelease | &mrelease) then
+               fail
+         }
+
+         #
+         # Not on menu bar, but menu bar open.  Let menu handle event.
+         #
+         r := self.menu$handle_event(e)
+         case r$get_menu_code() of {
+            FAIL_1 : {
+               #
+               # Fail; don't pass event on to other components.
+               #
+               self$set_is_open()
+               self$unique_end(1)
+               fail
+            }
+            FAIL_2 : {
+               #
+               # Fail and pass event on to other components.
+               #
+               self$set_is_open()
+               self$unique_end()
+               fail
+            }
+            CONTINUE :
+               #
+               # Fail, but keep unique status.
+               #
+               fail
+            SUCCEED : {
+               #
+               # Succeed with event.
+               #
+               self$set_is_open()
+               self$unique_end(1)
+               return r
+            }
+            default : stop("internal error")
+         }
+      }
+   end
+
+   method resize()
+      #
+      # Re-sized with menu open - just close menu
+      #
+      if \self.is_open then {
+         self$set_is_open()
+         self$unique_end()
+      }
+
+      if /self.menu then
+         error("no menu set")
+
+      /self.w_spec := TextWidth(self.cwin, self.menu$get_label()) + 3 * DEFAULT_TEXT_X_SURROUND + img_width(self.img)
+      /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND
+      self$Component.resize()
+
+      self.menu$set_parent_menu_bar(self)
+      self.menu$set_abs_coords(self.x, self.y + self.h)
+      self.menu$set_label_size()
+      self.menu$resize()
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self.img := img_style("arrow_down")
+      if *argv > 0 then set_fields(argv)
+end

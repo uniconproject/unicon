@@ -1,0 +1,236 @@
+
+#  $Id: tabset.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  This class holds the several {TabItems}, and represents a tabbed pane.
+#
+class TabSet : VisibleContainer(
+   which_one,
+   tab_h,
+   lines,
+   line_h,
+   line_break
+   )
+
+   method get_x_reference()
+      return self.x
+   end
+
+   method get_y_reference()
+      return self.y + self.tab_h
+   end
+
+   method get_w_reference()
+      return self.w
+   end
+
+   method get_h_reference()
+      return self.h - self.tab_h
+   end
+
+   method display(buffer_flag)
+      local last_on_a_line
+
+      #
+      # Erase all and display outline of tabbed pane area.
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,2)
+
+      #
+      # Display all tabs.
+      #
+      every (!!self.line_break)$display_tab()
+
+      last_on_a_line := (!self.line_break)[-1] === self.which_one
+
+      #
+      # Display line under tabs.
+      #
+      cw := Clone(self.cbwin)
+      Fg(cw, "pale gray")
+      DrawLine(cw, self.x, self.y + self.tab_h - 2, self.which_one.label_x, self.y + self.tab_h - 2)
+      if /last_on_a_line then
+         DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 2, self.x + self.w - 1, self.y + self.tab_h - 2)
+      Fg(cw, "white")
+      DrawLine(cw, self.x, self.y + self.tab_h - 1, self.which_one.label_x, self.y + self.tab_h - 1)
+      if /last_on_a_line then
+         DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 1, self.x + self.w - 2, self.y + self.tab_h - 1)
+
+      Uncouple(cw)
+
+      #
+      # Display contents of current tab into buffer
+      #
+      which_one$display(1)
+
+      self$do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Determine which tab if any mouse is over.
+   #
+   method which_tab()
+      l := (&y - self.y) / self.line_h + 1
+      every c := !self.line_break[l] do {
+         if c.is_unshaded() & (c.label_x <= &x < c.label_x + c.label_w) then
+            return c
+      }
+   end
+
+   method in_region()
+      return  self.which_one$in_region() | self$Component.in_region()
+   end
+
+   #
+   # Ensure which_one is at front of tab lines
+   #
+   method adjust_lines()
+      l := self.which_one.line_no
+      self.line_break[l] :=: self.line_break[self.lines]
+      every (!self.line_break[l]).line_no := l
+      every (!self.line_break[self.lines]).line_no := self.lines
+   end
+
+   ##
+   #  Set which tab is currently on display.
+   #  @param x  The {TabItem} to be displayed.
+   #
+   method set_which_one(x)
+      if \ (\self.parent_Dialog).is_open then {
+         self.which_one := x
+         self$adjust_lines()
+         self$display()
+      } else
+         self.which_one := x
+
+      return x
+   end
+
+   method handle_event(e)
+      if integer(e) = (&lpress | &rpress | &mpress) & (self.y <= &y < self.y + self.tab_h) then
+         self$set_which_one(which_tab())
+
+      suspend which_one$handle_event(e)
+   end
+
+   method generate_components()
+      suspend self.which_one$generate_components() | self
+   end
+
+   method generate_all_components()
+      suspend (!self.components)$generate_all_components() | self
+   end
+
+   ##
+   #  Add the given TabItem to the TabSet.
+   #
+   method add(c)
+      c$set_parent_tab_set(self)
+      self$VisibleContainer.add(c)
+   end
+
+   #
+   # Break the set of tabs up into lines, given the padding within each tab.
+   # Returns a list each element of which is a list of those tabs on one line.
+   #
+   method how_many_lines(pad)
+      t := 0
+      l := []
+      cl := []
+      every c := !self.components do {
+         lw := TextWidth(self.cwin, c.label) + pad
+         if (t > 0) & (t + lw > self.w) then {
+            #
+            # New line required.
+            #
+            t := 0
+            put(l, cl)
+            cl := []
+         }
+         t +:= lw
+         put(cl, c)
+      }
+      #
+      # Final line, if any
+      #
+      if t > 0 then
+         put(l, cl)
+
+      return l
+   end
+
+   method resize()
+      if *self.components = 0 then
+         error("no TabItems in TabSet")
+
+      every (!self.components)$check_label()
+
+      self$Component.resize()
+
+      #
+      # Determine how many lines for minimum padding.
+      #
+      pad := 2 * DEFAULT_TEXT_X_SURROUND
+      self.lines := *(line_break := how_many_lines(pad))
+
+      self.line_h := WAttrib(self.cwin, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+      self.tab_h :=  self.line_h * self.lines
+
+      #
+      # Expand padding whilst can do so and remain within the original
+      # number of lines.  This should even out the tabs.
+      #
+      if 1 < self.lines < *self.components then {
+         while *(l2 := how_many_lines(pad + X_PADDING_INC)) <= self.lines do {
+            self.line_break := l2
+            pad +:= X_PADDING_INC
+         }
+      }
+
+      #
+      # Finally, space out the tabs on each line to fill up each line.
+      #
+      n := 1
+      every curr_line := !self.line_break do {
+         #
+         # Work out total already used.
+         #
+         t := 0
+         every c := !curr_line do {
+            c.label_w := TextWidth(self.cwin, c.label) + pad
+            c.line_no := n
+            t +:= c.label_w
+         }
+
+         #
+         # Amount to add to each tab.
+         #
+         d := (self.w - t) / *curr_line
+
+         #
+         # Add the amount, compute new total
+         #
+         t := 0
+         every c := !curr_line do {
+            c.label_x := self.x + t
+            c.label_w +:= d
+            t +:= c.label_w
+         }
+
+         #
+         # Add residual amount to rightmost tab.
+         #
+         curr_line[-1].label_w +:= self.w - t
+         n +:= 1
+      }
+
+      every (!self.components)$resize()
+
+      /self.which_one := self.components[1]
+      self$adjust_lines()
+   end
+end

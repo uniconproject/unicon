@@ -1,0 +1,64 @@
+
+#  $Id: checkboxmenuitem.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class encapsulates a check box in a menu.
+#
+#  Several {CheckBoxMenuItems} may be added to a {CheckBoxGroup}
+#  structure to give "radio buttons" within menus.
+#
+class CheckBoxMenuItem : Toggle : MenuComponent(
+   img_up,
+   img_down
+   )
+
+   method into_cbg()
+      if self.img_up == img_style("box_up") & self.img_down == img_style("box_down") then
+         self$set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+   end
+
+   ##
+   #  Set the up and down images to x and y respectively.  The
+   #  default is boxes, unless the component is added to a
+   #  {CheckBoxGroup} in which case the default is diamonds.
+   #
+   method set_imgs(x, y)
+      self.img_up := x
+      self.img_down := y
+      img_width(x) = img_width(y) | error("Image widths differ")
+      img_height(x) = img_height(y) | error("Image heights differ")
+      self$set_img_left(if /self.is_checked_flag then self.img_up else self.img_down)
+      return
+   end
+
+   method toggle_is_checked()
+      self$Toggle.toggle_is_checked()
+      if \self.is_checked_flag then
+         self.img_left := self.img_down
+      else
+         self.img_left := self.img_up
+   end
+
+   method set_is_checked()
+      self$Toggle.set_is_checked()
+      self.img_left := self.img_down
+   end
+
+   method clear_is_checked()
+      self$Toggle.clear_is_checked()
+      self.img_left := self.img_up
+   end
+
+   method select_event(e)
+      if \self.parent_check_box_group then
+         self.parent_check_box_group$set_which_one(self)
+      else
+         self$toggle_is_checked()
+      return MenuEvent(SUCCEED, e, self, 0)
+   end
+
+   initially(argv[])
+      self$MenuComponent.initially()
+      self$set_imgs(img_style("box_up"), img_style("box_down"))
+      if *argv > 0 then set_fields(argv)
+end

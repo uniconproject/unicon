@@ -1,0 +1,69 @@
+
+#  $Id: checkbox.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  An instance of this class is a small button with a label
+#  which is either in an on or off state.  The button is an
+#  Icon image, which may be specified by the user if desired.
+#
+#  The images will default to appropriate values if not specified.
+#
+#  The size will also default if not specified.  The methods
+#  used to control the images, label and check the status are
+#  inherited from the superclasses {Button} and {Toggle}.
+#  @example
+#  @ c := CheckBox()
+#  @ c$set_pos(200, 100)
+#  @ c$set_label("Checkbox")
+#  @ self$add(c)
+#
+class CheckBox : Button()
+   method into_cbg()
+      if self.img_up == img_style("box_up") & self.img_down == img_style("box_down") then
+         self$set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+   end
+
+   method resize()
+      if /self.label then
+         error("no label specified")
+
+      if /self.h_spec := WAttrib(self.cwin, "fheight") then
+         self.h_spec <:= img_h
+      /self.w_spec := TextWidth(self.cwin, self.label) + 2 * self.img_w
+      self$Component.resize()
+   end
+
+   method display(buffer_flag)
+      local cw
+      if \self.is_down then
+         i := if /self.is_checked_flag then img_down else img_up
+      else
+         i := if \self.is_checked_flag then img_down else img_up
+
+      #
+      # Draw image and string centred vertically; image has img_w pixel
+      # to its right
+      #
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawImage(self.cbwin, self.x, self.y + (self.h - img_h) / 2, i)
+      left_string(self.cbwin, self.x + 2 * self.img_w, self.y + self.h / 2, self.label)
+
+      if /self.no_keyboard_flag & \self.has_focus then {
+         cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
+         DrawRaisedRectangle(cw, self.x + 2 * self.img_w, self.y,
+                                 self.w - 2 * self.img_w, self.h,1)
+         Uncouple(cw)
+	 }
+
+      self$do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   initially(argv[])
+      self$Button.initially()
+      self$set_imgs(img_style("box_up"), img_style("box_down"))
+      self.is_checkbox_flag := 1
+      if *argv > 0 then set_fields(argv)
+end

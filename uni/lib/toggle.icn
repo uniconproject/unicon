@@ -1,0 +1,68 @@
+
+#  $Id: toggle.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  This is a class for representing objects which can have an
+#  on-off state, in particular checkboxes, toggle buttons,
+#  and menu checkboxes.
+#
+class Toggle(
+   parent_check_box_group,
+   is_checked_flag
+   )
+
+   ##
+   #  This empty method may be overridden; it is invoked when the
+   #  object is added to a {CheckBoxGroup}.  Note that it is
+   #  overridden by some of the subclasses described below.
+   #
+   method into_cbg()
+   end
+
+   ##
+   #  Set the parent {CheckBoxGroup}.
+   #  @param x   The parent {CheckBoxGroup}.
+   #
+   method set_parent_check_box_group(x)
+      return self.parent_check_box_group := x
+   end
+
+   ##
+   #  Succeed if the object is checked.
+   #
+   method is_checked()
+      return \self.is_checked_flag
+   end
+
+   ##
+   #  Return the status of the object; {1} if the object is checked,
+   #  {&null} otherwise.
+   #
+   method get_status()
+      return self.is_checked_flag
+   end
+
+   ##
+   #  Toggle the status of the object.
+   #
+   method toggle_is_checked()
+      if /self.is_checked_flag then
+         self.is_checked_flag := 1
+      else
+         self.is_checked_flag := &null
+   end
+
+   ##
+   #  Set the status to checked.
+   #
+   method set_is_checked()
+      return self.is_checked_flag := 1
+   end
+
+   ##
+   #  Set the status to unchecked.
+   #
+   method clear_is_checked()
+      self.is_checked_flag := &null
+   end
+end

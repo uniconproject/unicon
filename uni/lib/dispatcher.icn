@@ -1,0 +1,197 @@
+
+#  $Id: dispatcher.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#
+# This class handles Icon events, dispatching them to
+# the appropriate dialog.  It also controls any active Tickers,
+# activating them between events as and when appropriate.
+#
+class Dispatcher(
+   dialogs,
+   tickers,
+   ticker_sleep,
+   ticker_sleep_min,
+   ticker_sleep_max
+   )
+
+   ##
+   #
+   # The single instance of the Dispatcher class.
+   #
+   global dispatcher
+
+   #
+   # Compute the ticker sleep rate.
+   #
+   method compute_ticker_sleep()
+   local n
+      if *tickers = 0 then
+         ticker_sleep := ticker_sleep_max
+      else {
+         #
+         # Get minimum ticker rate
+         #
+         ticker_sleep := &null
+         every n := (!tickers).ticker_rate do
+            (/ticker_sleep := n) | (ticker_sleep >:= n)
+         #
+         # Divide by number of tickers so that tickers with same tick
+         # rate are still scheduled correctly.
+         #
+         ticker_sleep /:= *tickers
+         #
+         # Make between 10 and 50; not too quick to give a busy wait, not
+         # too slow that events are not processed promptly.
+         #
+         ticker_sleep <:= ticker_sleep_min
+         ticker_sleep >:= ticker_sleep_max
+      }
+   end
+
+   #
+   # Time of day
+   #
+   method curr_time_of_day()
+      local t
+      # posix_timeval() # what is this doing here?
+      t := gettimeofday()
+      return t[1] * 1000 + t[2] / 1000
+   end
+
+   #
+   # Delete a ticker
+   #
+   method stop_ticker(d)
+      if \d.ticker_rate then {
+         delete(tickers, d)
+         d.ticker_rate := &null
+         compute_ticker_sleep()
+      }
+   end
+
+   #
+   # Add a ticker, or reset its time to a new value.
+   #
+   method set_ticker(d, n)
+      insert(tickers, d)
+      d.next_tick_time := 0
+      d.ticker_rate := n
+      compute_ticker_sleep()
+   end
+
+   #
+   # Change a ticker's tick rate, to take effect after its
+   # next tick.
+   #
+   method retime_ticker(d, n)
+      d.ticker_rate := n
+      compute_ticker_sleep()
+   end
+
+   #
+   # Sleep for n milliseconds
+   #
+   method sleep(n)
+      select([], \n)
+   end
+
+   #
+   # Schedule a ticker
+   #
+   method ticker_schedule()
+      local curr_time, d, bag
+
+      curr_time := curr_time_of_day()
+      bag := []
+      every d := !tickers do {
+         if curr_time >= d.next_tick_time then
+            put(bag, d)
+      }
+      if d := ?bag then {
+         d$tick()
+         #
+         # We have to take into account the fact that d$tick() may
+         # delete itself as a ticker.
+         #
+         d.next_tick_time := \d.ticker_rate + curr_time_of_day()
+      }
+   end
+
+   #
+   # Add a dialog
+   #
+   method add(d)
+      insert(dialogs, d)
+   end
+
+   #
+   # Delete a dialog
+   #
+   method del(d)
+      delete(dialogs, d)
+   end
+
+   #
+   # Loop until dialog r is closed processing events and tickers.
+   #
+   method message_loop(r)
+      local w, bag, d, e
+
+      while \ ((\r).is_open) do {
+         bag := []
+         every d := !dialogs do {
+            if *Pending(d.win) > 0 then {
+               if /d.is_blocked_flag then
+                  put(bag, d)
+               else {
+                  while *Pending(d.win) > 0 do {
+                     #
+                     # Discard the event and beep in the window.
+                     # A close on a blocked window is a bad situation,
+		     # probably the application should terminate in response
+		     # to a process_event(), but if not,
+                     # use the hidden offscreen window until it is unblocked.
+                     #
+                     e := Event(d.win)
+		     if integer(e) = -11 then {
+			d.win := d.buffer_win
+			d$process_event(e)
+			}
+                     else if not(integer(e) = (&lrelease | &rrelease | &mrelease | &ldrag | &rdrag | &mdrag)) then
+                        Alert(d.win)
+                  }
+               }
+            }
+         }
+         if d := ?bag then {
+            d$process_event(Event(d.win))
+            }
+         else {
+            ticker_schedule()
+            sleep(ticker_sleep)
+         }
+      }
+   end
+
+   #
+   # Return a list of unblocked dialogs.
+   #
+   method list_unblocked()
+      local d, res
+
+      res := []
+      every d := !dialogs do
+         if /d.is_blocked_flag then
+            put(res, d)
+
+      return res
+   end
+
+   initially
+      dialogs := set([])
+      tickers := set([])
+      ticker_sleep_min := 10
+      ticker_sleep_max := 50
+      compute_ticker_sleep()
+end

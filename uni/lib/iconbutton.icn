@@ -1,0 +1,87 @@
+
+#  $Id: iconbutton.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This is a button with an Icon image within it.
+#
+#  There is a useful program in the Icon program library called
+#  {xpmtoims}, which will take an xpm file and output the
+#  equivalent Icon image string, which can then be inserted
+#  into a program.  See also the X window programs sxpm and
+#  pixmap for viewing and editing xpm files respectively.
+#
+#  A border may be requested with {set_draw_border().}
+#
+#  Unless explicitly specified, the size will default to the
+#  image's size, plus a standard surround if a border is
+#  requested.
+#  @example
+#  @ Create a button with a diamond image and a border
+#  @ b := IconButton()
+#  @ b$toggle_draw_border()
+#  @ b$set_img("11,c1,_
+#  @ ~~~~~0~~~~~_
+#  @ ~~~~000~~~~_
+#  @ ~~0000000~~_
+#  @ ~000000000~_
+#  @ ~~0000000~~_
+#  @ ~~~~000~~~~_
+#  @ ~~~~~0~~~~~_
+#  @")
+#
+class IconButton : Button()
+   method display(buffer_flag)
+      local i
+
+      if \self.is_down then
+         i := img_down
+      else
+         i := if \self.is_checked_flag then img_down else img_up
+
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      DrawImage(self.cbwin, self.x + (self.w - self.img_w) / 2, self.y + (self.h - self.img_h) / 2, i)
+      if \self.is_down then {
+         #
+         # Invert the inside of the area
+         #
+         cw := Clone(self.cbwin, "drawop=reverse")
+         FillRectangle(cw, self.x, self.y, self.w, self.h)
+         Uncouple(cw)
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+      } else {
+         if \self.draw_border_flag then {
+            if /self.is_checked_flag then
+	       DrawRaisedRectangle(self.cbwin,self.x, self.y, self.w, self.h,2)
+            else
+	       DrawSunkenRectangle(self.cbwin,self.x, self.y, self.w, self.h,2)
+         }
+      }
+
+      if /self.no_keyboard_flag & \self.has_focus then {
+          cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
+          Rectangle(cw, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1, self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
+         Uncouple(cw)
+      }
+
+      self$do_shading(self.cbwin)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+      return
+   end
+
+   method resize()
+      if /self.img_up | /self.img_down then
+         error("no image specified")
+      if \self.draw_border_flag then {
+         /self.w_spec := self.img_w + 2 * DEFAULT_TEXT_X_SURROUND
+         /self.h_spec := self.img_h + 2 * DEFAULT_TEXT_Y_SURROUND
+      } else {
+         /self.w_spec := self.img_w
+         /self.h_spec := self.img_h
+      }
+      self$Component.resize()
+   end
+
+end

@@ -1,0 +1,586 @@
+
+#  $Id: component.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This is the parent class of all the GUI components.  All of
+#  its methods and variables therefore apply to its sub-classes.
+#
+class Component : Ticker : MetaComponent(
+   ##
+   #  x position as specified by {set_pos()}, eg "50%"
+   #
+   x_spec,
+   ##
+   #  y position as specified by set_pos().
+   #
+   y_spec,
+   ##
+   #  width specifier as specified in set_size(), eg "100%"
+   #
+   w_spec,
+   ##
+   # height specifier as specified in set_size(),
+   #
+   h_spec,
+   ##
+   #  x alignment as specified in set_align(), eg "l".
+   #
+   x_align,
+   ##
+   #  y alignment as specified in set_align(), eg "b".
+   #
+   y_align,
+   ##
+   #  Absolute x position in pixels computed from x_spec and the
+   #  dimensions of the enclosing object or window.
+   #
+   x,
+   ##
+   #  Absolute y position.
+   #
+   y,
+   ##
+   #  Absolute width in pixels computed from w_spec and the
+   #  dimensions of the enclosing object or window.
+   w,
+   ##
+   #  Absolute height in pixels.
+   #
+   h,
+   ##
+   #  The {_Dialog} class instance of which this {Component} is a part.
+   #
+   parent_Dialog,
+   ##
+   #  A list of strings being the Icon graphics attributes, eg
+   #  ["bg=blue", "resize=on"].
+   attribs,
+   ##
+   #  Flag indicating whether the {Component} currently has keyboard
+   #  focus; {&null} means it hasn't.
+   has_focus,
+   ##
+   #  Flag indicating whether the {Component} currently is shaded;
+   #  {&null} means it isn't.
+   is_shaded_flag,
+   ##
+   #  A cloned window created by combining the Dialog's canvas
+   #  with the Component's attributes, so drawing into this window
+   #  will draw straight to the Dialog window with the correct
+   #  attributes.
+   cwin,
+   ##
+   #  A cloned window created by combining a buffer window with
+   #  the {Component's} attributes.  This is used solely for
+   #  double-buffering purposes.
+   cbwin,
+   ##
+   #  Flag indicating whether the {Component} accepts keyboard focus
+   #  by way of the tab key being pressed;  {&null} means it doesn't.
+   accepts_tab_focus_flag,
+   ##
+   #  Flag indicating whether the Component should have a border
+   #  drawn around it; {&null} means no.  Many {Components} (such as
+   #  {TextButtons}) ignore this flag.
+   draw_border_flag,
+   no_updates_count,
+   ##
+   #  Tooltip string for use with {ToolBar} objects.
+   #
+   tooltip,
+   ##
+   #  Reference to enclosing {Component} object.
+   #
+   parent_Component,
+   #
+   # tells whether ordinary tab characters are used by the component;
+   # if not, they shift focus to the next component.  shift-tab should
+   # always shift focus to the next component.
+   #
+   keeps_tabs
+   )
+
+   ##
+   #  Set a tooltip string.  This is presently only used by
+   #  the {Toolbar} class.
+   #
+   method set_tooltip(x)
+      return self.tooltip := x
+   end
+
+   method handle_notify(e)
+      self.parent_Component$handle_notify(e)
+   end
+
+   method set_no_updates()
+      return no_updates_count +:= 1
+   end
+
+   method clear_no_updates()
+      no_updates_count -:= 1
+      redisplay()
+      return no_updates_count
+   end
+
+   method get_x_reference()
+      return self.x
+   end
+
+   method get_y_reference()
+      return self.y
+   end
+
+   method get_w_reference()
+      return self.w
+   end
+
+   method get_h_reference()
+      return self.h
+   end
+
+   method get_cwin_reference()
+      return self.cwin
+   end
+
+   method get_cbwin_reference()
+      return self.cbwin
+   end
+
+   method get_visible_reference()
+      return self
+   end
+
+   method redisplay()
+      if \(\self.parent_Dialog).is_open & (no_updates_count = 0) & is_unhidden() then
+         self$display()
+   end
+
+   method error(s)
+      stop("gui.icn : error processing object " || object_class_name(self) || " : " || s)
+   end
+
+   ##
+   #  Succeed if the component is hidden; for example if it is
+   #  within a tabbed pane not presently visible.
+   #
+   method is_hidden()
+      return self.parent_Component$is_hidden()
+   end
+
+   ##
+   #  Succeed if the component is not hidden.
+   #
+   method is_unhidden()
+      return self.parent_Component$is_unhidden()
+   end
+
+   ##
+   #  Succeeds if the component is shaded; fails otherwise.  A
+   #  shaded component, such as a button, may be displayed
+   #  differently, and will not generate events.
+   #
+   method is_shaded()
+      return \self.is_shaded_flag | self.parent_Component$is_shaded()
+   end
+
+   ##
+   #  Succeed if the component is not shaded.
+   #
+   method is_unshaded()
+      return /self.is_shaded_flag & self.parent_Component$is_unshaded()
+   end
+
+   ##
+   #  Called from a component's {display()} method, this method
+   #  filters the component to give a shaded appearance, if the
+   #  {is_shaded_flag} is set.  {W} is the window to draw into
+   #  (normally {self.cwin}).
+   #
+   method do_shading(W)
+      if is_shaded() then
+         FilterRectangle(W, self.x, self.y, self.w, self.h)
+   end
+
+   method accepts_tab_focus()
+      return is_unshaded() & \self.accepts_tab_focus_flag
+   end
+
+   method unique_start()
+      self.parent_Dialog$set_unique(self)
+   end
+
+   method unique_end(x)
+      self.parent_Dialog$clear_unique(x)
+   end
+
+   ##
+   #  This method is over-ridden by all this class's subclasses.
+   #  It is the method which handles an Icon event e.  It would
+   #  not normally be called by a user program.  It should either
+   #  fail, or return an {_Event} structure.  This will then be
+   #  passed to the  {dialog_event()} method of the dialog.  The
+   #  first two fields of the _Event structure should be the Icon
+   #  event e and the object itself.  The third field is the code,
+   #  which can be any integer.
+   #
+   method handle_event(e)
+      error("handle_event() method must be over-ridden in Component sub-class")
+   end
+
+   ##
+   #  Swap the shaded status of the component.
+   #
+   method toggle_is_shaded()
+      if /self.is_shaded_flag then
+         self.is_shaded_flag := 1
+      else
+         self.is_shaded_flag := &null
+      self$redisplay()
+   end
+
+   ##
+   #  Set the shaded status of the component to shaded.
+   #
+   method set_is_shaded()
+      self.is_shaded_flag := 1
+      self$redisplay()
+   end
+
+   ##
+   #  Set the shaded status of the component to not shaded.
+   #
+   method clear_is_shaded()
+      self.is_shaded_flag := &null
+      self$redisplay()
+   end
+
+   ##
+   #  Toggle whether or not to draw a border around the component.
+   #  Different objects respond differently to this flag being
+   #  set; some ignore it altogether.
+   #
+   method toggle_draw_border()
+      if /self.draw_border_flag then
+         self.draw_border_flag := 1
+      else
+         self.draw_border_flag := &null
+      self$redisplay()
+   end
+
+   ##
+   #  Set the component such that a border is drawn.
+   #
+   method set_draw_border()
+      self.draw_border_flag := 1
+      self$redisplay()
+   end
+
+   ##
+   #  Set the component such that a border is not drawn.
+   #
+   method clear_draw_border()
+      self.draw_border_flag := &null
+      self$redisplay()
+   end
+
+   method set_accepts_tab_focus()
+      return self.accepts_tab_focus_flag := 1
+   end
+
+   method clear_accepts_tab_focus()
+      return self.accepts_tab_focus_flag := &null
+   end
+
+   ##
+   #  This draws, or re-draws, the component in the dialog
+   #  window.
+   #  @param buffer_flag   If this parameter is not null, then
+   #  @ the component is displayed into the buffer window, not
+   #  @ the dialog window (this is used for double-buffering purposes).
+   #
+   method display(buffer_flag)
+      error("display() method must be over-ridden in Component sub-class")
+   end
+
+   ##
+   #  Set the Icon attribs of the component to the given parameter
+   #  @example
+   #  @ w.attrib("font=helvetica", "bg=pale blue")
+   #  @ w.set_attribs("font=helvetica", "bg=pale blue")
+   #
+   method attrib(x[])
+      if *x=1 & type(x[1])=="list" then x := x[1]
+      return set_attribs_list(x)
+   end
+   method set_attribs(x[])
+      return set_attribs_list(x)
+   end
+
+   ##
+   #  Equivalent to {set_attribs()}, above, but takes a list as a
+   #  parameter.
+   #  @param l   The list of attribs.
+   #  @example
+   #  @ w$set_attribs_list(["font=helvetica", "bg=pale blue"])
+   #
+   method set_attribs_list(l)
+      if \ (self.cwin) then { WAttrib ! push(l, self.cwin); pop(l) }
+      if \ (self.cbwin) then { WAttrib ! push(l, self.cbwin); pop(l) }
+      # need to add check, and *replace* attributes if already on the list,
+      # instead of blindly concatenating.
+      return self.attribs |||:= l
+   end
+
+   ##
+   #  Succeeds if the component is not shaded and the values of {&x}
+   #  and {&y} lie within the component.
+   #
+   method in_region()
+      if is_unshaded() & ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then
+         return self
+   end
+
+   ##
+   #  Method called when the component gets the keyboard focus; may be extended.
+   #
+   method got_focus()
+      self.has_focus := 1
+      redisplay()
+   end
+
+   ##
+   #  Return the Icon window of the dialog in which the component resides.
+   #
+   method get_parent_win()
+      return self.parent_Dialog$get_win()
+   end
+
+   method get_parent_buffer_win()
+      return self.parent_Dialog$get_buffer_win()
+   end
+
+   ##
+   #  Method called when the component loses the keyboard focus; may be extended.
+   #
+   method lost_focus()
+      self.has_focus := &null
+      redisplay()
+   end
+
+   ##
+   #  Set the x and y position of the component.  Each coordinate
+   #  can be either an absolute pixel position, or can be given in
+   #  the form of a percentage plus or minus an offset.
+   #  @param x_spec   The x specification.
+   #  @param y_spec   The y specification.
+   #  @example
+   #  @ c$set_pos(100, "25%")
+   #  @ c$set_pos("50%-20", "25%+100")
+   #
+   method set_pos(x_spec, y_spec)
+      self.x_spec := x_spec
+      self.y_spec := y_spec
+      return
+   end
+
+   ##
+   #  Set the size of the component.  The parameters are in the
+   #  same format as for {set_pos()}
+   #  above.  Some components will
+   #  set sensible default sizes, but for others the size must be
+   #  set explicitly.
+   #
+   method set_size(w_spec, h_spec)
+      self.w_spec := w_spec
+      self.h_spec := h_spec
+      return
+   end
+
+   ##
+   #  Set the alignment of the component.  Options for
+   #  {x_align} are ``l'', ``c'' and ``r'', for left, centre, and right
+   #  alignment.  Options for {y_align} are ``t'', ``c'' and ``b'',
+   #  for top centre and bottom alignment.  The default alignment is ``l'', ``t''.
+   #
+   #  @param x_align   The x alignment
+   #  @param y_align   The y alignment
+   #
+   method set_align(x_align, y_align)
+      if x_align == "t" then runerr()
+      self.x_align := x_align
+      self.y_align := y_align
+   end
+
+   method set_abs_coords(x, y)
+      self.x := x
+      self.y := y
+      return
+   end
+
+   method set_abs_size(w, h)
+      self.w := w
+      self.h := h
+      return
+   end
+
+   method final_setup(x, y)
+      self.parent_Dialog := x
+      self.parent_Component := y
+      if self.cwin :=
+         (Clone!([self.parent_Component$get_cwin_reference()]|||self.attribs)) 
+      then {
+         self.cbwin :=
+            (Clone ! ([self.parent_Component$get_cbwin_reference()] |||
+                       self.attribs))
+         }
+      else {
+         write(&errout, "clone failed, discarding attributes:")
+         every write(&errout, "\t", ! self.attribs)
+	 self.cwin := (Clone ! ([self.parent_Component$get_cwin_reference()]))
+         if / (self.cwin) then error("window system resource error")
+         self.cbwin :=(Clone ! ([self.parent_Component$get_cbwin_reference()]))
+         if / (self.cbwin) then error("window system resource error #2")
+         }
+      return x
+   end
+
+   ##
+   #  Returns the dialog holding the component.
+   #
+   method get_parent_Dialog()
+      return self.parent_Dialog
+   end
+
+   ##
+   #  Sets the owning _Dialog of the component.  This method
+   #  needs to be extended for a component which contains other
+   #  components.
+   #
+   #  @param c   The parent dialog.
+   #
+   method set_parent_Dialog(c)
+      return self.parent_Dialog := c
+   end
+
+   ##
+   #  This method may be extended.  It is invoked after the
+   #  position of the object has been computed and the window has
+   #  been opened, but before the object has been displayed in the
+   #  window.
+   #
+   method firstly()
+   end
+
+   ##
+   #  This method may be extended.  It is invoked just before the
+   #  window is closed.
+   #
+   method finally()
+      stop_ticker()
+      Uncouple(\ (self.cwin))
+      Uncouple(\ (self.cbwin))
+      self.cwin := self.cbwin := &null
+      return
+   end
+
+   ##
+   #
+   # Parse a position specification into an absolute value.
+   # @param total   The total value
+   # @param s  The size specifier
+   #
+   method parse_pos(total, s)
+      local pct, off
+      s ? {
+         if pct := 0.01 * tab(upto('%')) then {
+            move(1)
+            if ="-" then
+               off := -integer(tab(0)) | fail
+            else if ="+" then
+               off := integer(tab(0)) | fail
+            else off := 0
+         } else {
+            pct := 0
+            off := integer(tab(0)) | fail
+         }
+      }
+      return integer(pct * total + off)
+   end
+
+   ##
+   #  Compute the absolute positions and sizes from the
+   #  specifications given by {set_pos()} and {set_size()}.
+   #  This method needs to be extended for a component which
+   #  contains other components.
+   #
+   method resize()
+   local wh, ww
+      #
+      # Check for unspecified fields
+      #
+      if /self.x_spec then
+         error("x position unspecified")
+
+      if /self.y_spec then
+         error("y position unspecified")
+
+      if /self.w_spec then
+         error("width unspecified")
+
+      if /self.h_spec then
+         error("height unspecified")
+
+      wh := self.parent_Component$get_h_reference()
+      ww := self.parent_Component$get_w_reference()
+
+      self.x := self.parent_Component$get_x_reference() + parse_pos(ww, self.x_spec) | error("invalid x position specification")
+      self.y := self.parent_Component$get_y_reference() + parse_pos(wh, self.y_spec) | error("invalid y position specification")
+      self.w := parse_pos(ww, self.w_spec) | error("invalid width specification")
+      self.h := parse_pos(wh, self.h_spec) | error("invalid height specification")
+
+      #
+      # Adjust x, y based on alignments
+      #
+      case self.x_align of {
+         "c" : self.x -:= self.w / 2
+         "r" : self.x -:= self.w
+         "l" : &null
+         default :
+            error("\nincorrect x alignment specifier " || image(self.x_align))
+      }
+      case self.y_align of {
+         "c" : self.y -:= self.h / 2
+         "b" : self.y -:= self.h
+         "t" : &null
+         default :
+            error("\nincorrect y alignment specifier " || image(self.y_align))
+      }
+
+      return
+   end
+
+   ##
+   #  Generate all the components that are visible in this
+   #  component (which may be a container).
+   #
+   method generate_components()
+      return self
+   end
+
+   ##
+   #  Generate all the components, including non-visible ones in
+   #  this component.
+   #
+   method generate_all_components()
+      return self
+   end
+
+   initially(argv[])
+      /dispatcher := Dispatcher()
+      self$Ticker.initially()
+      self.attribs := []
+      self.x_align := "l"
+      self.y_align := "t"
+      no_updates_count := 0
+      if *argv > 0 then set_fields(argv)
+end

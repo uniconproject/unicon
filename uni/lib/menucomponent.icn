@@ -1,0 +1,224 @@
+
+#  $Id: menucomponent.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This is the superclass of all the objects that make up the
+#  menu system (other than the top level {Components} of course).
+#
+#  For components that appear in a menu with a label, an
+#  optional left/right string/image can be set.
+#
+class MenuComponent : MetaComponent(
+   x,
+   y,
+   w,
+   h,
+   label,
+   label_x,
+   label_y,
+   label_h,
+   label_left_w,
+   label_right_w,
+   label_mid_w,
+   is_sub_menu_flag,
+   parent_menu_bar,
+   is_shaded_flag,
+   label_left,
+   img_left,
+   img_left_h,
+   img_left_w,
+   label_right,
+   img_right,
+   img_right_h,
+   img_right_w,
+   parent_menu
+   )
+
+   method error(s)
+      stop("gui.icn : error processing object " || object_class_name(self) || " : " || s)
+   end
+
+   method set_parent_menu(x)
+      return self.parent_menu := x
+   end
+
+   ##
+   #  Set the optional left label to the given string.
+   #
+   method set_label_left(x)
+      return self.label_left := x
+   end
+
+   ##
+   #  Set the optional right label to the given string.
+   #
+   method set_label_right(x)
+      return self.label_right := x
+   end
+
+   ##
+   #  Set the optional left image to the given Icon image.
+   #
+   method set_img_left(x)
+      self.img_left := x
+      self.img_left_w := img_width(self.img_left)
+      self.img_left_h := img_height(self.img_left)
+      return x
+   end
+
+   ##
+   #  Set the optional right image to the given Icon image.
+   #
+   method set_img_right(x)
+      self.img_right := x
+      self.img_right_w := img_width(self.img_right)
+      self.img_right_h := img_height(self.img_right)
+      return x
+   end
+
+   method set_abs_coords(x, y)
+      self.x := x
+      self.y := y
+      return
+   end
+
+   method set_abs_size(w, h)
+      self.w := w
+      self.h := h
+      return
+   end
+
+   method is_shaded()
+      return \self.is_shaded_flag
+   end
+
+   ##
+   #  Toggle whether or not the item is shaded.  If it is, it is
+   #  displayed in a filtered way and will not accept input.
+   #
+   method toggle_is_shaded()
+      if /self.is_shaded_flag then
+         self.is_shaded_flag := 1
+      else
+         self.is_shaded_flag := &null
+      if /self.parent_menu then
+         (\self.parent_menu_bar)$redisplay()
+   end
+
+   ##
+   #  Set the shaded status of the component to shaded.
+   #
+   method set_is_shaded()
+      self.is_shaded_flag := 1
+      if /self.parent_menu then
+         (\self.parent_menu_bar)$redisplay()
+   end
+
+   ##
+   #  Set the shaded status of the component to not shaded.
+   #
+   method clear_is_shaded()
+      self.is_shaded_flag := &null
+      if /self.parent_menu then
+         (\self.parent_menu_bar)$redisplay()
+   end
+
+   method set_parent_menu_bar(x)
+      return self.parent_menu_bar := x
+   end
+
+   method is_sub_menu()
+      return \self.is_sub_menu_flag
+   end
+
+   method get_label()
+      return self.label
+   end
+
+   ##
+   #  Set the centre label to the given string.
+   #
+   method set_label(x)
+      return self.label := x
+   end
+
+   method display_label()
+      cw := self.parent_menu_bar.cbwin
+
+      #
+      # Draw the left label or image
+      #
+      if \self.label_left then
+         left_string(cw, self.label_x + DEFAULT_TEXT_X_SURROUND, self.label_y + self.label_h / 2, self.label_left)
+      else if \self.img_left then
+         DrawImage(cw, self.label_x + DEFAULT_TEXT_X_SURROUND, self.label_y + (self.label_h - img_left_h) / 2, img_left)
+
+      #
+      # Draw the right label or image
+      #
+      if \self.label_right then
+         left_string(cw, self.label_x + self.parent_menu.max_label_left_w + self.parent_menu.max_label_mid_w, self.label_y + self.label_h / 2, self.label_right)
+      else if \self.img_right then
+         DrawImage(cw, self.label_x + self.parent_menu.max_label_left_w + self.parent_menu.max_label_mid_w, self.label_y + (self.label_h - img_right_h) / 2, img_right)
+
+      #
+      # Draw the centre label
+      #
+      left_string(cw, self.label_x + self.parent_menu.max_label_left_w + DEFAULT_TEXT_X_SURROUND, self.label_y + self.label_h / 2, self.label)
+
+      #
+      # Filter if shaded
+      #
+      if \self.is_shaded_flag then
+         FilterRectangle(cw, self.label_x, self.label_y, self.parent_menu.max_label_mid_w + self.parent_menu.max_label_left_w + self.parent_menu.max_label_right_w, self.label_h)
+
+   end
+
+   method select_event()
+      error("select event must be  over-ridden in sub-class")
+   end
+
+   method set_label_pos(x, y)
+      self.label_x := x
+      self.label_y := y
+   end
+
+   method set_label_size()
+      cw := self.parent_menu_bar.cwin
+
+      if /self.label then
+         error("no label specified")
+
+      self.label_h := WAttrib(cw, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
+
+      #
+      # Set the left hand sizes; the left hand label has DEFAULT_TEXT_X_SURROUND to its left.
+      #
+      if \self.label_left then
+         self.label_left_w := TextWidth(cw, self.label_left) + DEFAULT_TEXT_X_SURROUND
+      else if \self.img_left then {
+         self.label_left_w :=  self.img_left_w + DEFAULT_TEXT_X_SURROUND
+         self.label_h <:=  self.img_left_h + 2 * DEFAULT_TEXT_Y_SURROUND
+      } else
+         self.label_left_w := 0
+
+      #
+      # Set the right hand sizes; this has DEFAULT_TEXT_X_SURROUND to its right.
+      #
+      if \self.label_right then
+         self.label_right_w := TextWidth(cw, self.label_right) + DEFAULT_TEXT_X_SURROUND
+      else if \self.img_right then {
+         self.label_right_w :=  self.img_right_w + DEFAULT_TEXT_X_SURROUND
+         self.label_h <:=  self.img_right_h + 2 * DEFAULT_TEXT_Y_SURROUND
+      } else
+         self.label_right_w := 0
+
+      #
+      # Space for the string and DEFAULT_TEXT_X_SURROUND either side.
+      #
+      self.label_mid_w := TextWidth(cw, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
+   end
+
+   initially(argv[])
+      if *argv > 0 then set_fields(argv)
+end

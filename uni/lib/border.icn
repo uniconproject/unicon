@@ -1,0 +1,97 @@
+
+#  $Id: border.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class provides decorative borders.  Optionally, a
+#  single other component can be the title of the Border.  This
+#  would normally be a Label object, but it could also be a
+#  CheckBox or an Icon, or whatever is desired.
+#
+#  @example
+#  @ b := Border()
+#  @
+#  @ # Add a Label as the title
+#  @
+#  @ l := Label()
+#  @ l$set_label("Title String")
+#  @ b$set_title(l)
+#  @ self$add(b)
+#
+class Border : Panel(
+   internal_alignment,
+   title_obj,
+   y1,
+   h1
+   )
+
+   ##
+   #  Set the alignment of the title object.  The input string should be
+   #  ``l'', ``c'' or ``r''.
+   #
+   method set_internal_alignment(x)
+      return self.internal_alignment := x
+   end
+
+   ##
+   #  Set the title object to c.
+   #
+   method set_title(c)
+      title_obj := c
+      add(c)
+   end
+
+   method display(buffer_flag)
+   local W
+      W := if /buffer_flag then self.cwin else self.cbwin
+
+      DrawSunkenRectangle(W, self.x, y1, self.w, h1,-1)
+      DrawRaisedRectangle(W, self.x + BORDER_WIDTH, y1 + BORDER_WIDTH, self.w - 2 * BORDER_WIDTH, h1 - 2 * BORDER_WIDTH,1)
+
+      if \title_obj then {
+         case self.internal_alignment of {
+            "c" : EraseRectangle(W, self.x + self.w / 2 - title_obj.w / 2 - BORDER_TEXT_SPACING, y1, title_obj.w + 2 * BORDER_TEXT_SPACING, 2 * BORDER_WIDTH)
+            "l" : EraseRectangle(W, self.x + DEFAULT_TEXT_X_SURROUND, y1, title_obj.w + 2 * BORDER_TEXT_SPACING, 2 * BORDER_WIDTH)
+            "r" : EraseRectangle(W, self.x + self.w - title_obj.w - DEFAULT_TEXT_X_SURROUND - 2 * BORDER_TEXT_SPACING, y1, title_obj.w + 2 * BORDER_TEXT_SPACING, 2 * BORDER_WIDTH)
+         }
+      }
+
+      every (!self.components)$display(buffer_flag)
+      self$do_shading(W)
+   end
+
+   method get_y_reference()
+      return self.y1
+   end
+
+   method get_h_reference()
+      return self.h1
+   end
+
+   method resize()
+      self$Component.resize()
+      y1 := self.y
+      h1 := self.h
+      if \title_obj then {
+         title_obj$set_align(self.internal_alignment, "c")
+         case self.internal_alignment of {
+            "c" : title_obj$set_pos("50%", 0)
+            "l" : title_obj$set_pos(DEFAULT_TEXT_X_SURROUND + BORDER_TEXT_SPACING, 0)
+            "r" : title_obj$set_pos("100%-" || (DEFAULT_TEXT_X_SURROUND + BORDER_TEXT_SPACING), 0)
+            default : error("incorrect internal_alignment specifier")
+         }
+         #
+         # Resize title_obj to work out y1, h1; note that title_obj will be resized again below
+         # using the new y1, h1.
+         #
+         title_obj$resize()
+         y1 := self.y + title_obj.h / 2
+         h1 := self.h - title_obj.h / 2
+      }
+      every (!self.components)$resize()
+   end
+
+   initially(argv[])
+      self$Panel.initially()
+      self.internal_alignment := "l"
+      if *argv > 0 then set_fields(argv)
+end

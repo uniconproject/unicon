@@ -1,0 +1,737 @@
+
+#  $Id: scrollarea.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+
+$define TX_PADDING (DEFAULT_TEXT_X_SURROUND + 3)
+$define TY_PADDING (DEFAULT_TEXT_Y_SURROUND + 3)
+
+##
+#  This class acts as a superclass for any object which wishes
+#  to display several items within a scrollable area.
+#
+class ScrollArea : Component(
+   contents,
+   rev,                     # Cloned reverse field window
+   max_width,
+   tx,
+   ty,
+   tw,
+   th,
+   hsb,
+   vsb,
+   last_refresh_x,
+   last_refresh_y,
+   line_height,
+   checked,
+   select_one,
+   select_many,
+   which_down,
+   going_up,
+   prev_down,
+   is_held,
+   tab_line
+   )
+
+   ##
+   #  Set the data to be displayed.
+   #  @param x  The list of data.
+   #
+   method set_contents(x)
+      self.contents := x
+      #
+      # Expand/contract list if necessary
+      #
+      while *self.checked < *x do put(self.checked)
+      while *self.checked > *x do pull(self.checked)
+
+      compute_and_redisplay()
+      return x
+   end
+
+   ##
+   #  Set the checked (highlighted) lines.
+   #  @param l   A list.  Each element in the list corresponds to an element in
+   #  @ the data.  If the element is not {&null}, the line is checked.
+   #
+   method set_checked(l)
+      return self.checked := l
+   end
+
+   ##
+   #  Get the checked lines.
+   #  @return A list corresponding to the data.  If an element is not {&null}, then
+   #  @ the corresponding line is checked.
+   #
+   method get_checked()
+      return self.checked
+   end
+
+   ##
+   #  Clear the checked selections.
+   #
+   method clear_selections()
+      self.checked := list(*contents)
+      redisplay()
+      return
+   end
+
+   ##
+   # Configure the object so that only one line may be highlighted
+   #
+   method set_select_one()
+      self.select_one := 1
+   end
+
+   ##
+   # Configure the object so that several lines may be highlighted
+   #
+   method set_select_many()
+      self.select_many := 1
+   end
+
+   ##
+   # Return item currently under the clicked cursor
+   # @return The item number
+   #
+   method get_which_down()
+      return \self.which_down
+   end
+
+   ##
+   # Return object currently under the clicked cursor
+   # @return The object
+   #
+   method object_get_which_down()
+      return self.contents[\self.which_down]
+   end
+
+   ##
+   # Return the item previously under the clicked cursor
+   # @return The item number
+   #
+   method get_prev_down()
+      return \self.prev_down
+   end
+
+   ##
+   # Return object currently under the clicked cursor
+   # @return The object
+   #
+   method object_get_prev_down()
+      return self.contents[\self.prev_down]
+   end
+
+   ##
+   #  Return a list of items checked (highlighted)
+   #  @return A list of items currently checked
+   #
+   method get_selections()
+   local r, i
+      r := []
+      every i := 1 to *self.checked do
+         if \self.checked[i] then
+            put(r, i)
+      return r
+   end
+
+   ##
+   #  Return a list of objects checked (highlighted)
+   #  @return A list of objects currently checked
+   #
+   method object_get_selections()
+   local r, i
+      r := []
+      every i := 1 to *self.checked do
+         if \self.checked[i] then
+            put(r, self.contents[i])
+      return r
+   end
+
+   ##
+   #  Set the current selections to the list l, which is a list of
+   #  item numbers.
+   #  @param l   The list of item numbers.
+   #
+   method set_selections(l)
+      self.checked := list(*self.contents)
+      every self.checked[!l] := 1
+      redisplay()
+   end
+
+   ##
+   #  Set the current selections to the list l, which is a list of objects
+   #  @param l  The list of objects.
+   #
+   method object_set_selections(l)
+      self.checked := []
+      every e := !self.contents do
+         put(self.checked, if e === !l then 1 else &null)
+      redisplay()
+   end
+
+   ##
+   #  Return the contents of the {ScrollArea}
+   #
+   method get_contents()
+      return self.contents
+   end
+
+   method finally()
+      self$Component.finally()
+      (\self.vsb)$finally()
+      (\self.hsb)$finally()
+      self.vsb := self.hsb := &null
+   end
+
+   method handle_key_page_up(e)
+   local i
+      if i := (\self.vsb)$get_value() then {
+         self.vsb$set_value(i - self.vsb.page_size)
+         self$refresh()
+      }
+   end
+
+   method handle_key_page_down(e)
+   local i
+      if i := (\self.vsb)$get_value() then {
+         self.vsb$set_value(i + self.vsb.page_size)
+         self$refresh()
+      }
+   end
+
+   method handle_key_up(e)
+   local i
+      if i := (\self.vsb)$get_value() then {
+         self.vsb$set_value(i - 1)
+         self$refresh()
+      }
+   end
+
+   method handle_key_down(e)
+   local i
+      if i := (\self.vsb)$get_value() then {
+         self.vsb$set_value(i + 1)
+         self$refresh()
+      }
+   end
+
+   method handle_key_left(e)
+   local i
+      if i := (\self.hsb)$get_value() then {
+         self.hsb$set_value(i - self.hsb.increment_size)
+         self$refresh()
+      }
+   end
+
+   method handle_key_right(e)
+   local i
+      if i := (\self.hsb)$get_value() then {
+         self.hsb$set_value(i + self.hsb.increment_size)
+         self$refresh()
+      }
+   end
+
+   method handle_key_home(e)
+      if (\self.vsb)$set_value(0) then
+         self$refresh()
+   end
+
+   method handle_key_end(e)
+      if (\self.vsb)$set_value(*self.contents - 1) then
+         self$refresh()
+   end
+
+   method handle_notify(e)
+      if e$get_component() === (\self.vsb | \self.hsb) then
+         self$refresh()
+   end
+
+   method handle_press(e)
+   local l
+      if \ (self.select_one | self.select_many) & (self.tx <= &x < self.tx + self.tw) & (self.ty  <= &y < self.ty + self.th) then {
+         #
+         # Compute line clicked
+         #
+         l := (&y - self.ty) / self.line_height + self$get_line()
+
+         if self.which_down := (self$get_last_line() >= l) then {
+            if \self.select_many & (&shift | &control) then {
+               #
+               # Click with shift/ctrl - the state will end here.
+               #
+               if &control then
+                  self.checked[self.which_down] := if /self.checked[self.which_down] then 1 else &null
+               else {
+                  #
+                  # &shift
+                  #
+                  if \self.prev_down then {
+                     if self.prev_down > self.which_down then
+                        every self.checked[self.which_down to self.prev_down] := 1
+                     else
+                        every self.checked[self.prev_down to self.which_down] := 1
+                  } else
+                     self.checked[self.which_down] := 1
+               }
+               self.prev_down := self.which_down
+               self.which_down := &null
+               self$refresh(1)
+               return _Event(e, self, 1)
+            } else {
+               #
+               # Normal click down
+               #
+               self.is_held := 1
+               self.checked := list(*self.contents)
+               self$refresh(1)
+               return _Event(e, self, 0)
+            }
+         }
+      }
+   end
+
+   method end_state()
+      if \self.is_held then {
+         self.is_held := &null
+         stop_ticker()
+         #
+         # Clear flag, refresh, return event
+         #
+         self.checked := list(*self.contents)
+         self.checked[self.which_down] := 1
+         self.which_down := &null
+         self.prev_down := self.which_down
+         self$refresh(1)
+      }
+   end
+
+   method handle_drag(e)
+      local old_down, l
+
+      if \self.is_held then {
+         #
+         # Mouse drag - save present marked line
+         #
+         old_down := self.which_down
+
+         #
+         # Test for &null which down just to satisfy the drop down list
+         # classes which set is_held manually.  In normal use, which_down
+         # is never &null.
+         #
+         if &y < self.ty then {
+            self.going_up := 1
+            if \self.which_down & /self.ticker_rate then
+               set_ticker(self.parent_Dialog.repeat_rate)
+         } else if &y > self.ty + self.th then {
+            self.going_up := &null
+            if \self.which_down & /self.ticker_rate then
+               set_ticker(self.parent_Dialog.repeat_rate)
+         } else {
+            l := (&y - self.ty) / self.line_height + self$get_line()
+            l >:= self$get_last_line()
+            self.which_down := l
+            stop_ticker()
+         }
+
+         #
+         # Refresh if line changed
+         #
+         if old_down ~=== self.which_down then
+            self$refresh(1)
+      }
+   end
+
+   method tick()
+      if \going_up then {
+         self.which_down := self$get_line() - 1
+         self.which_down <:= 1
+         (\self.vsb)$set_value(self.vsb$get_value() - 1)
+         }
+      else {
+         self.which_down := self$get_last_line() + 1
+         self.which_down >:= *self.contents
+         (\self.vsb)$set_value(self.vsb$get_value() + 1)
+         }
+      self$refresh(1)
+   end
+
+   method handle_release(e)
+      if \self.is_held then {
+         #
+         # Mouse released after being held down.  Clear flag
+         #
+         self.is_held := &null
+         stop_ticker()
+         #
+         # Clear flag, refresh, return event
+         #
+         self.checked := list(*self.contents)
+         self.checked[\self.which_down] := 1
+         self.prev_down := self.which_down
+         self.which_down := &null
+         self$refresh(1)
+         return _Event(e, self, 1)
+         }
+   end
+
+   method handle_event(e)
+      if E := (\self.vsb)$handle_event(e) then {
+         #
+         # Handled by VSB; amend line number and refresh contents
+         #
+         self$refresh()
+         }
+      else if E := (\self.hsb)$handle_event(e) then {
+         #
+         # Handled by HSB; amend left offset and refresh
+         #
+         self$refresh()
+         }
+      else if integer(e) = (&lpress | &rpress | &mpress) then
+         return handle_press(e)
+      else if integer(e) = (&ldrag | &rdrag | &mdrag) then
+         return handle_drag(e)
+      else if integer(e) = (&lrelease | &rrelease | &mrelease) then
+         return handle_release(e)
+      else if \self.has_focus then {
+         case e of {
+            Key_Home : handle_key_home(e)
+            Key_End : handle_key_end(e)
+            Key_PgUp : handle_key_page_up(e)
+            Key_PgDn : handle_key_page_down(e)
+            Key_Up : handle_key_up(e)
+            Key_Down : handle_key_down(e)
+            Key_Left : handle_key_left(e)
+            Key_Right : handle_key_right(e)
+         }
+      }
+   end
+
+   method get_left_pos()
+      return (self.tx - (\self.hsb)$get_value()) | self.tx
+   end
+
+   method get_line()
+      return  ((\self.vsb)$get_value() + 1) | 1
+   end
+
+   method get_last_line()
+   local nlines
+      nlines := (\self.vsb)$get_page_size() | *self.contents
+      return self$get_line() + nlines - 1
+   end
+
+   #
+   # Present page size
+   #
+   method get_page_size()
+      return (\self.vsb)$get_page_size() | *self.contents
+   end
+
+   #
+   # Goto line, pos
+   #
+   method goto_pos(x, y)
+      (\self.vsb)$set_value(\x - 1)
+      (\self.hsb)$set_value(\y)
+      self$redisplay()
+   end
+
+   method compute_and_redisplay()
+      if \ (\self.parent_Dialog).is_open then
+         self$set_internal_fields()
+      self$redisplay()
+   end
+
+   method resize()
+      self$Component.resize()
+      self$set_internal_fields()
+   end
+
+   method get_line_height()
+      return WAttrib(self.cwin, "fheight")
+   end
+
+   method get_max_width()
+   local mw, s
+      mw := 0
+      every s := !self.contents do
+         mw <:= TextWidth(self.cwin, s)
+      return mw
+   end
+
+   #
+   # Called on resize, buttons resized, or contents amended
+   #
+   method set_internal_fields()
+   local max_th, max_tw, min_th, min_tw, need_vsb, need_hsb, new_vsb, new_hsb
+      self.line_height := get_line_height()
+
+      #
+      # Top left of text region
+      #
+      self.tx := self.x + TX_PADDING
+      self.ty := self.y + TY_PADDING
+
+      #
+      # Initialize left_pos field, clear optimizing flags used
+      # in display.
+      #
+      self.last_refresh_x := self.last_refresh_y := &null
+
+      #
+      # Compute maximum width
+      #
+      self.max_width := get_max_width()
+
+      #
+      # Compute max/min heights/widths for text; max if no scroll bar
+      # needed; min otherwise.
+      #
+      max_th := self.h - 2 * TY_PADDING
+      max_tw := self.w - 2 * TX_PADDING
+      min_th := max_th - SB_SIZE
+      min_tw := max_tw - SB_SIZE
+
+      #
+      # Set flags indicating whether scroll bars needed.  0 => definitely not
+      # 1 => yes if opposite scroll bar needed; 2 => definitely yes.
+      #
+      if min_th / self.line_height >= *self.contents then
+         need_vsb := 0
+      else if max_th / self.line_height >= *self.contents then
+         need_vsb := 1
+      else
+         need_vsb := 2
+
+      if min_tw >= self.max_width then
+         need_hsb := 0
+      else if max_tw >= self.max_width then
+         need_hsb := 1
+      else
+         need_hsb := 2
+
+      #
+      # Case analysis on flags to set up correct scroll bars, text width
+      # and height fields.
+      #
+      if (need_vsb < 2) & (need_hsb < 2) then {
+         #
+         # No scroll bars.
+         #
+         self.th := max_th
+         self.tw := max_tw
+         (\self.vsb)$finally()
+         (\self.hsb)$finally()
+         self.vsb := self.hsb := &null
+      } else if (need_hsb + need_vsb > 2) then {
+         #
+         # Two scroll bars.
+         #
+         if /self.vsb := ScrollBar() then
+            new_vsb := 1
+         if /self.hsb := ScrollBar() then {
+            self.hsb$set_is_horizontal()
+            new_hsb := 1
+         }
+
+         self.th := min_th
+         self.tw := min_tw
+
+         self.vsb$set_pos(self.w - SB_SIZE - BORDER_WIDTH, BORDER_WIDTH)
+         self.vsb$set_size(SB_SIZE, self.h - SB_SIZE - BORDER_WIDTH * 2)
+
+         self.hsb$set_pos(BORDER_WIDTH, self.h - SB_SIZE - BORDER_WIDTH)
+         self.hsb$set_size(self.w - SB_SIZE - BORDER_WIDTH * 2, SB_SIZE)
+      } else if (need_hsb = 0) & (need_vsb = 2) then {
+         #
+         # One vertical scroll bar.
+         #
+         if /self.vsb := ScrollBar() then
+            new_vsb := 1
+         (\self.hsb)$finally()
+         self.hsb := &null
+
+         self.th := max_th
+         self.tw := min_tw
+
+         self.vsb$set_pos(self.w - SB_SIZE - BORDER_WIDTH, BORDER_WIDTH)
+         self.vsb$set_size(SB_SIZE, self.h  - BORDER_WIDTH * 2)
+      } else if (need_hsb = 2) & (need_vsb = 0) then {
+         #
+         # One horizontal scroll bar.
+         #
+         if /self.hsb := ScrollBar() then {
+            self.hsb$set_is_horizontal()
+            new_hsb := 1
+         }
+         (\self.vsb)$finally()
+         self.vsb := &null
+
+         self.th := min_th
+         self.tw := max_tw
+
+         self.hsb$set_pos(BORDER_WIDTH, self.h - SB_SIZE - BORDER_WIDTH)
+         self.hsb$set_size(self.w  - BORDER_WIDTH * 2, SB_SIZE)
+      }
+
+      #
+      # Initialize scroll bars.
+      #
+      if \self.vsb then {
+         self.vsb$set_page_size(self.th / self.line_height)
+         self.vsb$set_total_size(*self.contents)
+         if \new_vsb then {
+            self.vsb$set_increment_size(1)
+            self.vsb$set_value(0)
+            self.vsb$final_setup(self$get_parent_Dialog(), self)
+            self.vsb$resize()
+            self.vsb$firstly()
+         } else
+            self.vsb$resize()
+      }
+
+      if \self.hsb then {
+         self.hsb$set_page_size(self.tw)
+         self.hsb$set_total_size(self.max_width)
+         if \new_hsb then {
+            self.hsb$set_increment_size(TextWidth(self.cwin, "m"))
+            self.hsb$set_value(0)
+            self.hsb$final_setup(self$get_parent_Dialog(), self)
+            self.hsb$resize()
+            self.hsb$firstly()
+         } else
+            self.hsb$resize()
+      }
+   end
+
+   #
+   # Re-draw the text area.  Use double-buffering to avoid flicker.
+   #
+   method refresh(redraw)
+   local line, left_pos
+      line := self$get_line()
+      left_pos := self$get_left_pos()
+
+      #
+      # Do nothing unless have to
+      #
+      if /redraw & (\self.last_refresh_x = line) & (\self.last_refresh_y = left_pos) then
+         return
+
+      #
+      # Save present co-ordinates
+      #
+      self.last_refresh_x := line
+      self.last_refresh_y := left_pos
+
+      self$text_area_to_buffer()
+      self$do_shading(self.cbwin)
+
+      #
+      # Copy buffer to window
+      #
+      CopyArea(self.cbwin, self.cwin, self.tx, self.ty, self.tw, self.th, self.tx, self.ty)
+   end
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+      self$text_area_to_buffer()
+
+      (\self.vsb)$display(1)
+      (\self.hsb)$display(1)
+
+      self$do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   ##
+   #  This method is overridden by the subclass to draw the given
+   #  line at the given position
+   #  @param N  The object to be drawn
+   #  @param left_pos  The left position it should be drawn at
+   #  @param yp   The y position it should be drawn at
+   #  @param i   The index into the data corresponding to N
+   #
+   method draw(N, left_pos, yp, i)
+      error("draw() must be overridden in subclass")
+   end
+
+   method text_area_to_buffer()
+   local line, left_pos, nlines, yp, l, i
+      line := self$get_line()
+      left_pos := self$get_left_pos()
+
+      EraseRectangle(self.cbwin, self.tx, self.ty, self.tw, self.th)
+
+      #
+      # Number of lines to draw
+      #
+      nlines := (\self.vsb)$get_page_size() | *self.contents
+
+      Clip(self.cbwin, self.tx, self.ty, self.tw, self.th)
+      rev := Clone(self.cbwin, "drawop=reverse")
+
+      yp := self.ty + self.line_height / 2
+
+      #
+      # Write the lines
+      #
+      every l := self.contents[i := line to line + nlines - 1] do {
+         draw(l, left_pos, yp, i)
+         yp +:= self.line_height
+      }
+
+      Uncouple(rev)
+      rev := &null
+      Clip(self.cbwin)
+      return
+   end
+
+#
+#  method added to support tabs
+#  return the line after the "\t" are replaced with the correct
+#  amount of spaces
+#
+   method actual_line(tab_line)
+   local posx, sblnks, result_line, x12
+   posx := 0
+   sblnks := 0
+
+   result_line := tab_line
+
+   tab_line ? {
+        while x12 := move(1)  do {
+          if x12 == "\t" then {
+             posx := posx + 1
+             result_line :=  handle_tab_texts(posx,result_line)
+             sblnks := sblnks + (8 -  (posx-1)%8)
+             posx := posx + (8 -  (posx-1)%8) - 1
+          }
+          else
+             posx := posx + 1
+        }
+   }
+
+   return result_line
+
+   end
+
+   #
+   #  helper method for actual_line
+   #
+   method handle_tab_texts(posx,result_line)
+   local tablen
+   tablen := repl(" ",8 -  (posx-1)%8) | " "
+   return result_line[1:posx] || tablen || result_line[posx+1:0]
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self$set_accepts_tab_focus()
+      self.checked := []
+      if *argv > 0 then set_fields(argv)
+end

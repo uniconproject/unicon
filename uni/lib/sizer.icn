@@ -1,0 +1,129 @@
+
+#  $Id: sizer.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class provides a component which can be dragged across the
+#  window, allowing panes within the window to be resized.  An {Event} is
+#  generated when the {Sizer} has been dragged and released.  The new position
+#  may then be obtained and the dialog adjusted accordingly.
+#
+#
+class Sizer : Component(
+   is_held,
+   is_horizontal_flag,
+   temp_pointer,
+   temp_win,                #
+   temp_w,
+   temp_h,
+   min,
+   max,
+   drag_offset,
+   curr_pos,
+   start_pos,
+   end_pos
+   )
+
+   ##
+   #  Set the minimum and maximum values for the {Sizer}.  Whether these are
+   #  x or y values depends on the orientation of the {Sizer}.
+   #
+   method set_min_max(min, max)
+      self.min := min
+      self.max := max
+   end
+
+   ##
+   #  Return the current position of the {Sizer}.  This may be invoked to determine
+   #  where the {Sizer} has been dragged to after it has generated an event.
+   #
+   method get_curr_pos()
+      return curr_pos
+   end
+
+   ##
+   #  Get the size of the move during the last drag of the {Sizer}.
+   #
+   method get_delta()
+      return end_pos - start_pos
+   end
+
+   ##
+   #  Configure the {Sizer} to be horizontal; the default is vertical.
+   #
+   method set_is_horizontal()
+      return self.is_horizontal_flag := 1
+   end
+
+   method finally()
+      if \self.is_held then {
+         WClose(self.temp_win)
+         unique_end()
+      }
+      self$Component.finally()
+   end
+
+   method display(buffer_flag)
+      local cw
+      W := if /buffer_flag then self.cwin else self.cbwin
+      if \self.is_held then {
+         CopyArea(temp_win, get_parent_buffer_win(), 0, 0, temp_w, temp_h, 0, 0)
+         cw := Clone(self.cbwin, "linewidth=4", "pattern=gray", "fillstyle=masked")
+         if \is_horizontal_flag then {
+            abs_pos := curr_pos + drag_offset + parent_Component$get_y_reference()
+            DrawLine(cw, x, abs_pos, x + w, abs_pos)
+         } else {
+            abs_pos := curr_pos + drag_offset + parent_Component$get_x_reference()
+            DrawLine(cw, abs_pos, y, abs_pos, y + h)
+         }
+         Uncouple(cw)
+         CopyArea(get_parent_buffer_win(), get_parent_win(), 0, 0, temp_w, temp_h, 0, 0)
+      }
+   end
+
+   method set_curr_pos()
+      if \self.is_horizontal_flag then
+         curr_pos := &y - drag_offset - parent_Component$get_y_reference()
+      else
+         curr_pos := &x - drag_offset - parent_Component$get_x_reference()
+
+      curr_pos <:= min
+      curr_pos >:= max
+      return curr_pos
+   end
+
+   method handle_event(e)
+      if integer(e) = (&lpress | &rpress | &mpress) then {
+         if self$in_region() then {
+            unique_start()
+            self.is_held := 1
+            temp_w := parent_Dialog$get_w_reference()
+            temp_h := parent_Dialog$get_h_reference()
+            self.temp_win := WOpen("canvas=hidden", "size=" || temp_w || "," || temp_h)
+            temp_pointer := WAttrib(get_parent_win(), "pointer")
+            CopyArea(get_parent_win(), temp_win, 0, 0, temp_w, temp_h, 0, 0)
+            if \self.is_horizontal_flag then {
+               drag_offset := &y - self.y
+               WAttrib(get_parent_win(), "pointer=sb v double arrow")
+            } else {
+               drag_offset := &x - self.x
+               WAttrib(get_parent_win(), "pointer=sb h double arrow")
+            }
+            start_pos := set_curr_pos()
+            display()
+         }
+      } else if \self.is_held then {
+         if integer(e) = (&ldrag | &rdrag | &mdrag) then {
+            set_curr_pos()
+            display()
+         } else if integer(e) = (&lrelease | &rrelease | &mrelease) then {
+            self.is_held := &null
+            WAttrib(get_parent_win(), "pointer=" || temp_pointer)
+            end_pos := set_curr_pos()
+            CopyArea(temp_win, get_parent_win(), 0, 0, temp_w, temp_h, 0, 0)
+            WClose(self.temp_win)
+            unique_end()
+            return _Event(e, self, 0)
+         }
+      }
+   end
+end

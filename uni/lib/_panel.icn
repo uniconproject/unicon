@@ -1,0 +1,24 @@
+
+#  $Id: _panel.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  A Panel of components.  This subclass of {VisibleContainer} just
+#  implements the methods {display} and {handle_event}, to display and
+#  forward events to all of its components.
+#
+class Panel : VisibleContainer()
+   method display(buffer_flag)
+      every (!self.components)$display(buffer_flag)
+      return
+   end
+
+   method handle_event(e)
+      local c
+      every c := !self.components do {
+         if /c.is_shaded_flag then
+            suspend c$handle_event(e)
+         if \self.parent_Dialog.unique_flag then
+            break
+      }
+   end
+end

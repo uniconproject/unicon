@@ -1,0 +1,83 @@
+
+#  $Id: tablecolumn.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+
+$define CHANGE_SIZE_BORDER 6
+$define MIN_BUTTON_WIDTH 20
+
+##
+#  This class provides one column within a {Table}, which
+#  displays a table of data.  A column has a label with a
+#  button which produces an event when clicked.  The column may
+#  be expanded or contracted by dragging the right edge of the
+#  button.
+#
+#  The label is set by calling the {set_label(x)} method of the
+#  parent class, {TextButton}.
+#
+class TableColumn : TextButton(
+   parent_table,
+   column_width,
+   change_size_mode,
+   temp_pointer
+   )
+
+   method handle_event(e)
+      if (integer(e) = (&lpress | &rpress | &mpress)) & self$in_region() & (self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then {
+         self.change_size_mode := 1
+         temp_pointer := WAttrib(get_parent_win(), "pointer")
+         WAttrib(get_parent_win(), "pointer=sb h double arrow")
+      } else if \self.change_size_mode & (integer(e) = (&lrelease | &rrelease | &mrelease)) then {
+         WAttrib(get_parent_win(), "pointer=" || temp_pointer)
+         self.column_width := &x - self.x
+         self.column_width <:= MIN_BUTTON_WIDTH
+         self.change_size_mode := &null
+         self.parent_table$set_internal_fields()
+         self.parent_table$display()
+      } else
+         return self$TextButton.handle_event(e)
+   end
+
+   method in_region()
+      return (self.parent_table.tx <= &x < self.parent_table.tx + self.parent_table.tw) & self$TextButton.in_region()
+   end
+
+   ##
+   #  Set the initial width of the column, in pixels; this must be
+   #  specified.
+   #  @param x  The width
+   #
+   method set_column_width(x)
+      return self.column_width := x
+   end
+
+   method set_parent_table(x)
+      return self.parent_table := x
+   end
+
+   method check_width()
+      if /self.column_width then
+         error("no column width specified")
+   end
+
+   method resize()
+      self$set_size(self.column_width, self.parent_table.head_h)
+      self$TextButton.resize()
+      return
+   end
+
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      Clip(W, self.parent_table.tx, self.parent_table.head_y, self.parent_table.tw, self.parent_table.head_h)
+      self$TextButton.display(buffer_flag)
+      cw := Clone(W, "fillstyle=textured", "pattern=lightgray")
+      FillRectangle(cw, self.x + self.w - CHANGE_SIZE_BORDER, self.y + BORDER_WIDTH, CHANGE_SIZE_BORDER - BORDER_WIDTH, self.h - 2 * BORDER_WIDTH)
+      Uncouple(cw)
+      Clip(W)
+   end
+
+   initially(argv[])
+      self$TextButton.initially()
+      self.internal_alignment := "l"
+      if *argv > 0 then set_fields(argv)
+end

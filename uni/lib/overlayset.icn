@@ -1,0 +1,70 @@
+
+#  $Id: overlayset.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class provides a container which contains several {OverlayItems}, only one
+#  of which is visible at a time.
+#
+class OverlaySet : VisibleContainer(
+   which_one              #
+   )
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      #
+      # Display contents of current tab into buffer
+      #
+      which_one$display(1)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   method in_region()
+      return  self.which_one$in_region() | self$Component.in_region()
+   end
+
+   ##
+   #  Set which OverlayItem is currently displayed.  The default is
+   #  the first which was added.
+   #
+   method set_which_one(x)
+      if \ (\self.parent_Dialog).is_open then {
+         self.which_one := x
+         self$display()
+      } else
+         self.which_one := x
+      return x
+   end
+
+   method handle_event(e)
+      suspend which_one$handle_event(e)
+   end
+
+   method generate_components()
+      suspend self.which_one$generate_components() | self
+   end
+
+   method generate_all_components()
+      suspend self.which_one$generate_components() | self
+   end
+
+   ##
+   #  Add the given OverlayItem to the OverlaySet.
+   #
+   method add(c)
+      c$set_parent_overlay_set(self)
+      self$VisibleContainer.add(c)
+   end
+
+   method resize()
+      if *self.components = 0 then
+         error("no OverlayItems in OverlaySet")
+
+      self$Component.resize()
+
+      every (!self.components)$resize()
+      /self.which_one := self.components[1]
+   end
+end

@@ -1,0 +1,136 @@
+
+#  $Id: popupmenu.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This is a popup menu class, namely a menu which pops up under the
+#  cursor under the direction of the program (for example when a right
+#  click has occurred.
+#
+class PopupMenu : Component(
+   menu,
+   is_open
+   )
+
+   ##
+   #  Set the menu to be displayed when the popup is displayed.
+   #  @param c   The {Menu}.
+   #
+   method set_menu(c)
+      return self.menu := c
+   end
+
+   method finally()
+      #
+      # Disposing with menu open - just close menu
+      #
+      if \self.is_open then {
+         self$set_is_open()
+         self$unique_end()
+      }
+      self$Component.finally()
+   end
+
+   method display(buffer_flag)
+   end
+
+   #
+   # Set the present open menu to x.  If x null, no menu open.
+   #
+   method set_is_open(x)
+      if self.is_open ~=== x then {
+         (\self.is_open)$hide()
+         self.is_open := x
+         (\self.is_open)$display()
+         self$display()
+      }
+      return x
+   end
+
+   method handle_event(e)
+      if \self.is_open then {
+         if integer(e) = (&lrelease | &rrelease | &mrelease) & &x = self.x & &y = self.y then
+            fail
+
+         r := self.menu$handle_event(e)
+         case r$get_menu_code() of {
+            FAIL_1 : {
+               #
+               # Fail; don't pass event on to other components.
+               #
+               self$set_is_open()
+               self$unique_end(1)
+               fail
+            }
+            FAIL_2 : {
+               #
+               # Fail and pass event on to other components.
+               #
+               self$set_is_open()
+               self$unique_end()
+               fail
+            }
+            CONTINUE : {
+               #
+               # Fail, but keep unique status.
+               #
+               fail
+            }
+            SUCCEED : {
+               #
+               # Succeed with event.
+               #
+               self$set_is_open()
+               self$unique_end(1)
+               return r
+            }
+            default : stop("internal error")
+         }
+      }
+   end
+
+   method resize()
+      #
+      # Re-sized with menu open - just close menu
+      #
+      if \self.is_open then {
+         self$set_is_open()
+         self$unique_end()
+      }
+
+      if /self.menu then
+         error("no menu set")
+
+      /self.x_spec := 0
+      /self.y_spec := 0
+      self.w_spec := self.h_spec := 0
+      self$Component.resize()
+   end
+
+   ##
+   #  Popup the menu at the current cursor position.
+   #
+   method popup()
+      local W
+      W := self$get_parent_win()
+      self$set_pos(WAttrib(W, "pointerx"), WAttrib(W,"pointery"))
+      self$resize()
+      self.menu$set_parent_menu_bar(self)
+      self.menu$set_abs_coords(self.x, self.y + self.h)
+      self.menu$resize()
+
+      if self.menu.y + self.menu.h > WAttrib(W, "height") then
+         y1 := 0 <= WAttrib(W, "height") - self.menu.h
+      if self.menu.x + self.menu.w > WAttrib(W, "width") then
+         x1 := 0 <= WAttrib(W, "pointerx") - self.menu.w
+
+      if \x1 | \y1 then {
+         /x1 := self.x
+         /y1 := self.y + self.h
+         self.menu$set_abs_coords(x1, y1)
+         self.menu$resize()
+
+      }
+      self$unique_start()
+      self$set_is_open(self.menu)
+   end
+end

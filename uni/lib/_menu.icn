@@ -1,0 +1,280 @@
+
+#  $Id: _menu.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class encapsulates a drop down menu, or a sub-menu.
+#
+#  The left, centre and right labels/images of the elements
+#  within it are formatted within the menu automatically.
+#
+class Menu : SubMenu(
+   max_label_left_w,
+   max_label_mid_w,
+   max_label_right_w,
+   temp_win,
+   which_open,
+   menus
+   )
+
+   method set_parent_menu_bar(x)
+      self$MenuComponent.set_parent_menu_bar(x)
+      every (!self.menus)$set_parent_menu_bar(x)
+      return
+   end
+
+   ##
+   #  Add the given component to the Menu.
+   #
+   method add(c)
+      put(self.menus, c)
+      c$set_parent_menu(self)
+   end
+
+   method get_which_open()
+      return self.which_open
+   end
+
+   method resize()
+   local cw, dy, m
+      cw := self.parent_menu_bar.cwin
+
+      self.h := self.max_label_left_w := self.max_label_right_w := self.max_label_mid_w := 0
+
+      dy := BORDER_WIDTH
+
+      every m := !self.menus do {
+         #
+         # Set x, y of label position for sub items.
+         #
+         m$set_label_pos(self.x + BORDER_WIDTH, self.y + dy)
+         #
+         # Set their label size.
+         #
+         m$set_label_size()
+         #
+         # Increment height; compute maximum label element widths.
+         #
+         self.h +:= m.label_h
+         self.max_label_left_w <:= m.label_left_w
+         self.max_label_right_w <:= m.label_right_w
+         self.max_label_mid_w <:= m.label_mid_w
+
+         dy +:= m.label_h
+      }
+
+      #
+      # Height of object is height of total labels within, plus top and bottom border widths.
+      #
+      self.h +:= 2 * BORDER_WIDTH
+
+      #
+      # Width is total of all maximum label elements, plus left and right border widths.
+      #
+      self.w := self.max_label_left_w + self.max_label_mid_w + self.max_label_right_w + 2 * BORDER_WIDTH
+
+      #
+      # Compute x, y positions of sub-menus and descend recursively.
+      #
+      every m := !self.menus do
+         if m$is_sub_menu() then {
+            m$set_abs_coords(self.x + self.w, m.label_y - BORDER_WIDTH)
+            m$resize()
+         }
+   end
+
+   #
+   # Deduce which label is under pointer, if any
+   #
+   method which_item()
+   local m
+      every m := !self.menus do {
+         if /m.is_shaded_flag & (m.label_y <= &y < m.label_y + m.label_h) then
+            return m
+      }
+   end
+
+   method display()
+   local cw, c
+      if /self.temp_win then {
+         #
+         # Open a temporary area for the menu and copy.
+         #
+         self.temp_win := WOpen("canvas=hidden", "size=" || self.w || "," || self.h)
+         CopyArea(self.parent_menu_bar$get_parent_win(), self.temp_win, self.x, self.y, self.w, self.h, 0, 0)
+      }
+
+      cw := self.parent_menu_bar.cbwin
+
+      #
+      # Clear area and draw rectangle around whole
+      #
+      EraseRectangle(cw, self.x, self.y, self.w, self.h)
+      DrawRaisedRectangle(cw, self.x, self.y, self.w, self.h,1)
+
+      #
+      # Draw individual items, with rectangle around open sub-item
+      #
+      every c := !self.menus do {
+         c$display_label()
+         if c === \self.which_open then
+            DrawRaisedRectangle(cw, c.label_x, c.label_y, self.w - 2 * BORDER_WIDTH, c.label_h,1)
+      }
+      CopyArea(cw, self.parent_menu_bar.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # If the presently selected item is a sub-menu, don't unselect it;
+   # just close any non-sub-menu in it by calling recursively.
+   #
+   method hide_non_menu()
+      if (\self.which_open)$is_sub_menu() then
+         return self.which_open$hide_non_menu()
+      else
+         return self$set_which_open()
+   end
+
+   #
+   # Set the selected sub item to x, whether or not it's a sub-menu
+   #
+   method set_which_open(x)
+      if self.which_open ~=== x then {
+         if (\self.which_open)$is_sub_menu() then
+            self.which_open$hide()
+         self.which_open := x
+         if (\self.which_open)$is_sub_menu() then
+            self.which_open$display()
+         self$display()
+      }
+      return x
+   end
+
+   #
+   # Test whether pointer within label area.  Top and bottom borders are outside this region.
+   #
+   method in_button_region()
+      return (self.x <= &x < self.x + self.w) &  (self.y + BORDER_WIDTH <= &y < self.y + self.h - BORDER_WIDTH)
+   end
+
+   method handle_event(e)
+   local t
+      if self$in_button_region() then {
+         if integer(e) = (&lpress | &rpress | &mpress) then
+            #
+            # Mouse press in region.  Open the item where the pointer is
+            # or set to null (eg if over a shaded item).
+            #
+            self$set_which_open(self$which_item() | &null)
+         else if integer(e) = (&lrelease | &rrelease | &mrelease) then {
+            #
+            # Mouse released over region
+            #
+            if \self.which_open then {
+               #
+               # If item selected and not a sub-menu, return its selected
+               # event.  If sub-menu, this will just stay open.
+               #
+               if not(self.which_open$is_sub_menu()) then
+                  return self.which_open$select_event(e)
+            } else
+               #
+               # Fail completely, don't pass on event.
+               #
+               return MenuEvent(FAIL_1)
+         } else if integer(e) = (&ldrag | &rdrag | &mdrag) then {
+            #
+            # Drag over region.
+            #
+            if t := self$which_item() then {
+               if t === self.which_open then {
+                  #
+                  # Drag over label of open sub-item.  If a menu unselect any
+                  # items, except sub menus.
+                  #
+                  if t$is_sub_menu() then
+                     t$hide_non_menu()
+               } else
+                  #
+                  # Open the selected item.
+                  #
+                  self$set_which_open(t)
+            } else
+               #
+               # Not over an item (eg shaded item).  Clear selection.
+               #
+               self$set_which_open()
+         }
+      } else {
+         #
+         # Not in region.
+         #
+         if integer(e) = (&ldrag | &rdrag | &mdrag) then {
+            if (\self.which_open)$is_sub_menu() then
+               #
+               # Pass event on to open sub menu.
+               #
+               return self.which_open$handle_event(e)
+            else
+               #
+               # Clear present selection, except sub-menus.
+               #
+               self$hide_non_menu()
+         } else if integer(e) = (&lpress | &rpress | &mpress) then {
+            if (\self.which_open)$is_sub_menu() then
+               #
+               # Try open sub-menu.
+               #
+               return self.which_open$handle_event(e)
+            else
+               #
+               # Fail completely, pass on event to other objects.
+               #
+               return MenuEvent(FAIL_2)
+         } else if integer(e) = (&lrelease | &rrelease | &mrelease) then {
+            if (\self.which_open)$is_sub_menu() then
+               #
+               # Try open sub-menu.
+               #
+               return self.which_open$handle_event(e)
+            else
+               #
+               # Fail completely, don't pass on event.
+               #
+               return MenuEvent(FAIL_1)
+         }
+      }
+
+      #
+      # Every branch that doesn't return falls through to here.  Just
+      # wait for next event to come along.
+      #
+      return MenuEvent(CONTINUE)
+   end
+
+   #
+   # Close this menu.
+   #
+   method hide()
+   local cw
+      #
+      # Recursively close open sub-menu.
+      #
+      if (\self.which_open)$is_sub_menu() then
+         self.which_open$hide()
+      self.which_open := &null
+
+      #
+      # Restore window area.
+      #
+      cw := self.parent_menu_bar.cwin
+      EraseRectangle(cw, self.x, self.y, self.w, self.h)
+      CopyArea(self.temp_win, self.parent_menu_bar$get_parent_win(), 0, 0, self.w, self.h, self.x, self.y)
+      WClose(self.temp_win)
+      self.temp_win := &null
+   end
+
+   initially(argv[])
+      self$SubMenu.initially()
+      self.menus := []
+      self$set_img_right(img_style("arrow_right"))
+      if *argv > 0 then set_fields(argv)
+end

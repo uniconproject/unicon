@@ -1,0 +1,30 @@
+
+#  $Id: overlayitem.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class is one "pane" in an {OverlaySet}, which is rather
+#  like a {TabSet} except that there are no tabs, and control
+#  over which pane is displayed is entirely the affair of the
+#  program.
+#
+#  The components inside have their size and position computed
+#  relative to the parent OverlaySet and also inherit the
+#  OverlaySet's windowing attributes.
+#  Components are added using the {add} method of {Container}.
+#
+class OverlayItem : Container(
+   parent_overlay_set
+   )
+
+   method is_hidden()
+      return parent_overlay_set.which_one ~=== self
+   end
+
+   method is_unhidden()
+      return parent_overlay_set.which_one === self
+   end
+
+   method set_parent_overlay_set(x)
+      return self.parent_overlay_set := x
+   end
+end

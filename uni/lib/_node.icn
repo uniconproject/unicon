@@ -1,0 +1,125 @@
+
+#  $Id: _node.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class represents a node in a {Tree} object.
+#
+class Node(
+   label,
+   bmps,
+   always_expandable,
+   depth,
+   is_open,
+   subnodes,
+   draw_line
+   )
+
+   ##
+   #  Generate all the {Nodes} in this subtree, including this {Node},
+   #  in preorder ordering.
+   #
+   method generate_all_preorder()
+      suspend self | (!subnodes)$generate_all_preorder()
+   end
+
+   ##
+   #  Generate all the {Nodes} in this subtree, including this {Node},
+   #  in postorder ordering.
+   #
+   method generate_all_postorder()
+      suspend (!subnodes)$generate_all_postorder() | self
+   end
+
+   ##
+   #  Generate all the open {Nodes} in this subtree, including this {Node},
+   #  in preorder ordering.
+   #
+   method generate_open_preorder()
+      suspend self
+      if \self.is_open then
+         suspend (!subnodes)$generate_open_preorder()
+   end
+
+   ##
+   #  Generate all open {Nodes} in this subtree, including this {Node},
+   #  in postorder ordering.
+   #
+   method generate_open_postorder()
+      if \self.is_open then
+         suspend (!subnodes)$generate_open_postorder()
+      suspend self
+   end
+
+   ##
+   #  Expand all the {Nodes} below this node.
+   #
+   method expand()
+      every n := generate_all_postorder() do
+         if *n.subnodes > 0 then
+            n.is_open := 1
+   end
+
+   ##
+   #  Set the label for this node.
+   #
+   method set_label(x)
+      return self.label := x
+   end
+
+   ##
+   #  Set the bitmaps for this node.  The parameter should provide a list of 3
+   #  bitmaps.  The first is displayed if the {Node} is open and has subnodes, the
+   #  second is displayed if the {Node} is closed and has subnodes, and the third is
+   #  displayed if the node has no subnodes.
+   #  @param x  A list of 3 bitmaps.
+   #
+   method set_bmps(x)
+      return self.bmps := x
+   end
+
+   ##
+   #  Add the given {Node} to this {Node}'s list of subnodes.
+   #  @param  The {Node} to add.
+   #
+   method add(n)
+      return put(subnodes, n)
+   end
+
+   ##
+   #  This configures the {Node} so that it is always treated as though it has subnodes
+   #  for display purposes, event though it may in fact have no subnodes.
+   #
+   method set_always_expandable()
+      return always_expandable := 1
+   end
+
+   ##
+   #  Toggle the opened status of the {Node}.
+   #
+   method toggle_opened()
+      return is_open := if /is_open then 1 else &null
+   end
+
+   ##
+   #  Delete the given {Node} from the subnodes.
+   #
+   method node_delete(n)
+      return node_delete2(self, n)
+   end
+
+   method node_delete2(x, n)
+      every i := 1 to *x.subnodes do {
+         if n === x.subnodes[i] then {
+            x.subnodes := x.subnodes[1 : i] ||| x.subnodes[i + 1 : 0]
+            return
+         } else {
+            if node_delete2(x.subnodes[i], n) then
+               return
+         }
+      }
+   end
+
+   initially(argv[])
+      subnodes := []
+      if *argv > 0 then set_fields(argv)
+end

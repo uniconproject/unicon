@@ -1,0 +1,157 @@
+
+#  $Id: _image.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class loads an image from file and displays it.  The
+#  image should be in GIF format.  A border may be included
+#  with {toggle_draw_border()}.
+#
+#  The size of the area into which the image is drawn must be
+#  set with {set_size()}.
+#
+class Image : Component(
+   filename,
+   scale_up_flag,
+   x_internal_alignment,
+   y_internal_alignment
+   )
+
+   ##
+   #  Set the horizontal and vertical alignment of the image within the
+   #  area of the component; {x} should be ``l'', ``c'' or ``r'', {y} should
+   #  be ``t'', ``c'' or ``b''.  Default is ``c'', ``c''.
+   #
+   method set_internal_alignment(x, y)
+      self.x_internal_alignment := x
+      self.y_internal_alignment := y
+      return
+   end
+
+   #
+   #  Set the name of the file from which to load the image;
+   #  re-display the image from the new file if appropriate.
+   #
+   method set_filename(x)
+      self.filename := x
+      self$redisplay()
+      return x
+   end
+
+   #
+   #  If set, then the image will be scaled up to fit in the space
+   #  specified by {set_size()}.  The image will not be distorted,
+   #  but will be expanded to fill one of the dimensions depending
+   #  on its shape.  If the image is bigger than the specified size
+   #  then it will always be scaled down.
+   #
+   method set_scale_up()
+      return self.scale_up_flag := 1
+   end
+
+   method display(buffer_flag)
+      local imwin, yoff
+      W := if /buffer_flag then self.cwin else self.cbwin
+
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+
+      #
+      # Compute borders; smaller if border needed.
+      #
+      if \self.draw_border_flag then {
+         x1 := self.x + BORDER_WIDTH
+         y1 := self.y + BORDER_WIDTH
+         w1 := self.w - 2 * BORDER_WIDTH
+         h1 := self.h - 2 * BORDER_WIDTH
+         }
+      else {
+         x1 := self.x
+         y1 := self.y
+         w1 := self.w
+         h1 := self.h
+         }
+
+      #
+      # Load the image
+      #
+      if \ImageCache then {
+	 / (cache[filename]) := (open(filename,"g",
+				   "canvas=hidden","image="||\filename) | fail)
+	 imwin := cache[filename]
+	 }
+      else if not(imwin := WOpen("image=" || \self.filename, "canvas=hidden"))
+	 then fail
+#
+#      Uncomment the following lines if your multiple images are using
+#      more than 256 colors and aren't showing properly on X11 systems.
+#
+#      EraseArea(imwin)
+#      ReadImage(imwin, self.filename, 0, 0, "c6")
+      #
+      # Scale the image to the desired size
+      #
+      img_w := WAttrib(imwin, "width")
+      img_h := WAttrib(imwin, "height")
+      aspr := real(img_w) / real(img_h)
+      aspmax := real(w1) / real(h1)
+
+      if /self.scale_up_flag & (img_w <= w1) & (img_h <= h1) then {
+         zoom_w := img_w
+         zoom_h := img_h
+      } else {
+         if aspr > aspmax then {
+            zoom_w := w1
+            zoom_h := integer(w1 / aspr)
+         } else {
+            zoom_w := integer(h1 * aspr)
+            zoom_h := h1
+         }
+      }
+
+      #
+      # Adjust within region as per internal_alignment
+      #
+      case self.y_internal_alignment of {
+         "t" : yoff := 0
+         "b" : yoff := h1 - zoom_h
+         "c" : yoff := (h1 - zoom_h) / 2
+         default : error("incorrect y internal_alignment specifier")
+      }
+
+      case self.x_internal_alignment of {
+         "l" : xoff := 0
+         "r" : xoff := w1 - zoom_w
+         "c" : xoff := (w1 - zoom_w) / 2
+         default : error("incorrect x internal_alignment specifier")
+      }
+
+      zoom_w <:= 1
+      zoom_h <:= 1
+
+      #
+      # Transform and copy image to window.
+      #
+      if \ImageCache then
+         CacheImage(W, x1 + xoff, y1 + yoff, zoom_w, zoom_h, self.filename)
+      else {
+         Zoom(imwin, W,0,0, img_w, img_h, x1 + xoff, y1 + yoff, zoom_w, zoom_h)
+         WClose(imwin)
+	 }
+
+      #
+      # Border if required.
+      #
+      if \self.draw_border_flag then
+         DrawRaisedRectangle(W, x1 + xoff - BORDER_WIDTH, y1 + yoff - BORDER_WIDTH, zoom_w + 2 * BORDER_WIDTH, zoom_h + 2 * BORDER_WIDTH,2)
+      self$do_shading(W)
+
+   end
+
+   method handle_event(e)
+      fail
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self.x_internal_alignment := self.y_internal_alignment := "c"
+      if *argv > 0 then set_fields(argv)
+end

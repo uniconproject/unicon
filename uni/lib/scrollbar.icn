@@ -1,0 +1,449 @@
+
+#  $Id: scrollbar.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+
+$define MIN_BAR_SIZE 8
+
+##
+#  This class provides horizontal and vertical scroll bars.
+#
+#  There are two ways to use a scroll bar.  The first way is to
+#  set a total_size (represented by the whole bar), a page_size
+#  (represented by the draggable button) and an increment_size
+#  (being the amount added/subtracted when the top/bottom
+#  button is pressed).  The value will then range from zero to
+#  (total_size - page_size) inclusive.  An initial value must
+#  be set with the {set_value()} method.
+#  @example
+#  @ vb := ScrollBar()
+#  @ vb$set_pos("85%", "25%")
+#  @ vb$set_size(20, "40%")
+#  @ vb$set_total_size(130)
+#  @ vb$set_page_size(30)
+#  @ vb$set_increment_size(1)
+#  @ vb$set_value(0)
+#  @ self$add(vb)
+#
+#  Alternatively, a scroll bar can be used as a slider which
+#  ranges over a given range of values.  In this case, the
+#  range is set with {set_range()}.  It is still necessary to set
+#  the increment size and the initial value, as above, but
+#  page_size and total_size should not be set.
+#
+#  Real numbers as opposed to integers can be used for the
+#  range settings if desired.
+#  @example
+#  @ vb := ScrollBar()
+#  @ vb$set_pos("85%", "25%")
+#  @ vb$set_size(20, "40%")
+#  @ vb$set_range(2, 25)
+#  @ vb$set_value(10)
+#  @ vb$set_increment_size(1)
+#  @ self$add(vb)
+#
+#  An Event is returned whenever the buttons are pressed or the
+#  bar dragged; the value can be retrieved by get_value().  The
+#  event code (obtainable by {get_code()}) is 1 if the bar has
+#  been dragged, and 0 if either button has been pressed or the
+#  bar released after being dragged.  This fact can be used to
+#  reduce the number of events which are processed by the
+#  user's program - just ignore events with code 1.
+#
+class ScrollBar : Component(
+   value,
+   page_size,
+   increment_size,
+   total_size,
+   hi,
+   lo,
+   bar_area_x,
+   bar_area_y,
+   bar_area_w,
+   bar_area_h,
+   bar_x,
+   bar_y,
+   bar_w,
+   bar_h,
+   bar_down,
+   bar_down_offset,
+   b1,
+   b2,
+   is_horizontal_flag,
+   bar_pos,
+   bar_size,
+   bar_area_pos,
+   bar_area_size,
+   is_range_flag
+   )
+
+   method final_setup(x, y)
+      self$Component.final_setup(x, y)
+      self.b1$final_setup(x, self)
+      self.b2$final_setup(x, self)
+   end
+
+   ##
+   #  Make the scroll bar horizontal (default is vertical).
+   #
+   method set_is_horizontal()
+      return self.is_horizontal_flag := 1
+   end
+
+   ##
+   #  Set the total size which the scroll bar area represents.
+   #  @param x   The total size
+   #
+   method set_total_size(x)
+      return self.total_size := x
+   end
+
+   ##
+   #  Return the total size.
+   #
+   method get_total_size()
+      return self.total_size
+   end
+
+   ##
+   #  Set the size which the bar in the scroll bar area represents.
+   #  @param x   The size.
+   #
+   method set_page_size(x)
+      return self.page_size := x
+   end
+
+   ##
+   #  Get the page size.
+   #
+   method get_page_size()
+      return self.page_size
+   end
+
+   ##
+   #  Get the value.
+   #  @return The value
+   #
+   method get_value()
+      return self.value
+   end
+
+   ##
+   #  Set the value representing the top of the bar in the scroll
+   #  bar.  The value is forced into range if it is not in range already.
+   #  @param x   The value.
+   #
+   method set_value(x)
+      if \(\self.parent_Dialog).is_open then {
+         self$move_value(x)
+         self$set_pos_from_value()
+         self$refresh()
+      } else
+         self.value := x
+      return x
+   end
+
+   ##
+   #  Set the amount to increase the value by when one of the
+   #  buttons is pressed.
+   #  @param x   The increment size.
+   #
+   method set_increment_size(x)
+      return self.increment_size := x
+   end
+
+   ##
+   #  Set the range of the scroll bar.  The values may
+   #  be integer or real.
+   #  @param lo  The lower bound
+   #  @param hi  The upper bound
+   #
+   method set_range(lo, hi)
+      self.is_range_flag := 1
+      self.lo := lo
+      self.hi := hi
+   end
+
+   method firstly()
+      self$Component.firstly()
+      self.b1$firstly()
+      self.b2$firstly()
+   end
+
+   method finally()
+      self$Component.finally()
+      b1$finally()
+      b2$finally()
+   end
+
+   method move_bar_pos(x)
+      self.bar_pos := x
+      self.bar_pos <:= self.bar_area_pos
+      self.bar_pos >:= self.bar_area_pos + self.bar_area_size - self.bar_size
+      if /self.is_horizontal_flag then
+         self.bar_y := self.bar_pos
+      else
+         self.bar_x := self.bar_pos
+   end
+
+   method move_value(x)
+      self.value := x
+      self.value <:= self.lo
+      self.value >:= self.hi
+   end
+
+   method set_pos_from_value()
+      if self.hi ~= self.lo then
+         self$move_bar_pos(self.bar_area_pos + integer(((self$get_value() - self.lo) * (self.bar_area_size - self.bar_size)) / (self.hi - self.lo)))
+      else
+         self$move_bar_pos(self.bar_area_pos)
+   end
+
+   method set_value_from_pos()
+      if self.bar_area_size ~= self.bar_size then
+         self$move_value(self.lo + ((self.hi - self.lo) * (self.bar_pos - self.bar_area_pos)) / (self.bar_area_size - self.bar_size))
+      else
+         self$move_value(self.lo)
+   end
+
+   method handle_notify(e)
+      if e$get_component() === b1 then {
+         #
+         # Button up clicked
+         #
+         self$move_value(self$get_value() - self.increment_size)
+         self$set_pos_from_value()
+      } else if e$get_component() === b2 then {
+         #
+         # Button down clicked
+         #
+         self$move_value(self$get_value() + self.increment_size)
+         self$set_pos_from_value()
+      }
+      #
+      # Re-draw bar
+      #
+      self$refresh()
+      self.parent_Component$handle_notify(_Event(EVENT_SCROLLED, self, 2))
+   end
+
+   method handle_event(e)
+      if b1$handle_event(e)$get_code() = 0 then {
+         #
+         # Button up clicked
+         #
+         self$move_value(self$get_value() - self.increment_size)
+         self$set_pos_from_value()
+      } else if b2$handle_event(e)$get_code() = 0 then {
+         #
+         # Button down clicked
+         #
+         self$move_value(self$get_value() + self.increment_size)
+         self$set_pos_from_value()
+      }
+      else if integer(e) = (&lpress | &rpress | &mpress) & (self.bar_x <= &x < self.bar_x + self.bar_w) & (self.bar_y  <= &y < self.bar_y + self.bar_h) then {
+         #
+         # Click on bar; set flag and save offset between top of bar and pointer position
+         #
+         self.bar_down := 1
+         if /self.is_horizontal_flag then
+            self.bar_down_offset := &y - self.bar_y
+         else
+            self.bar_down_offset := &x - self.bar_x
+      } else if \self.bar_down & (integer(e) = (&lrelease | &rrelease | &mrelease)) then {
+         #
+         # Released; clear flag
+         #
+         self.bar_down := &null
+      } else if \self.bar_down & (integer(e) = (&ldrag | &rdrag | &mdrag)) then {
+         #
+         # Bar dragged; compute new position
+         #
+         if /self.is_horizontal_flag then
+            self$move_bar_pos(&y - self.bar_down_offset)
+         else
+            self$move_bar_pos(&x - self.bar_down_offset)
+         self$set_value_from_pos()
+      }
+      else if integer(e) = (&lpress | &rpress | &mpress) &
+            (self.bar_area_x <= &x < self.bar_area_x + self.bar_area_w) &
+            (self.bar_area_y  <= &y < self.bar_area_y + self.bar_area_h) then {
+         #
+         # click outside bar; treat similar to pgup or pgdn
+         #
+         if /self.is_horizontal_flag then {
+            if &y < self.bar_y then {
+               self$move_bar_pos(self.bar_y-self.bar_h)
+               self$set_value_from_pos()
+               }
+            else if &y > self.bar_y+self.bar_h then {
+               self$move_bar_pos(self.bar_y+self.bar_h)
+               self$set_value_from_pos()
+               }
+            }
+         else {
+            if &x < self.bar_x then {
+               self$move_bar_pos(self.bar_x-self.bar_w)
+               self$set_value_from_pos()
+               }
+            else if &x > self.bar_x+self.bar_w then {
+               self$move_bar_pos(self.bar_x+self.bar_w)
+               self$set_value_from_pos()
+               }
+            }
+
+      } else
+         fail
+
+      #
+      # Re-draw bar
+      #
+      self$refresh()
+      return _Event(e, self, \self.bar_down | 0)
+   end
+
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+
+      #
+      # Draw rectangle around area within which bar moves
+      #
+      if /self.is_horizontal_flag then
+         DrawRaisedRectangle(W, self.x, self.y + self.w, self.w, self.h - 2 * self.w,2)
+      else
+         DrawRaisedRectangle(W, self.x + self.h, self.y, self.w - 2 * self.h, self.h,2)
+
+      #
+      # Display two buttons
+      #
+      b1$display(buffer_flag)
+      b2$display(buffer_flag)
+
+      self$bar_to_win(W)
+      self$do_shading(W)
+   end
+
+   method refresh()
+      self$bar_to_win(self.cbwin)
+      self$do_shading(self.cbwin)
+      CopyArea(self.cbwin, self.cwin, self.bar_area_x, self.bar_area_y, self.bar_area_w, self.bar_area_h, self.bar_area_x, self.bar_area_y)
+   end
+
+   method bar_to_win(W)
+      EraseRectangle(W, self.bar_area_x, self.bar_area_y, self.bar_area_w, self.bar_area_h)
+      DrawRaisedRectangle(W, self.bar_x, self.bar_y, self.bar_w, self.bar_h,2)
+   end
+
+   method resize()
+      self$Component.resize()
+
+      if /self.is_range_flag then {
+         #
+         # Check total size and page size
+         #
+         if /self.total_size then
+            error("total size not set")
+         if /self.page_size then
+            error("page size not set")
+         if self.page_size <= 0 then
+            error("invalid page size")
+         }
+      else {
+         if \self.lo >= \self.hi then
+            error("invalid range")
+         }
+
+      #
+      # Check increment size, value
+      #
+      if /self.increment_size then
+         error("increment size not set")
+      if /self.value then
+         error("value not set")
+
+      if /self.is_horizontal_flag then {
+         #
+         # Compute bar area dimensions
+         #
+         self.bar_x := self.bar_area_x := self.x + BORDER_WIDTH + 2
+         self.bar_area_pos := self.bar_area_y := self.y + self.w + BORDER_WIDTH + 2
+         self.bar_w := self.bar_area_w := self.w - 2 * (BORDER_WIDTH + 2)
+         self.bar_area_size := self.bar_area_h := self.h - 2 * self.w  - 2 * (BORDER_WIDTH + 2)
+
+         #
+         # Set button positions
+         #
+         b1$set_pos(0, 0)
+         b1$set_size(self.w, self.w)
+         b2$set_pos(0, self.h - self.w)
+         b2$set_size(self.w, self.w)
+         b1$set_img(img_style("arrow_up"))
+         b2$set_img(img_style("arrow_down"))
+      } else {
+         self.bar_area_pos := self.bar_area_x := self.x + self.h + BORDER_WIDTH + 2
+         self.bar_y := self.bar_area_y := self.y + BORDER_WIDTH + 2
+         self.bar_area_size := self.bar_area_w := self.w - 2 * self. h - 2 * (BORDER_WIDTH + 2)
+         self.bar_h := self.bar_area_h := self.h - 2 * (BORDER_WIDTH + 2)
+
+         b1$set_pos(0, 0)
+         b1$set_size(self.h, self.h)
+         b2$set_pos(self.w - self.h, 0)
+         b2$set_size(self.h, self.h)
+         b1$set_img(img_style("arrow_left"))
+         b2$set_img(img_style("arrow_right"))
+      }
+
+      if /self.is_range_flag then {
+         #
+         # Not a range; compute lo, hi and bar_size.
+         #
+         self.lo := 0
+         if self.total_size > self.page_size then {
+            self.hi := self.total_size - self.page_size
+            self.bar_size := integer((self.bar_area_size * self.page_size) / self.total_size)
+         } else {
+            #
+            # Total <= page; these settings produce an immovable full size bar.
+            #
+            self.hi := 0
+            self.bar_size := self.bar_area_size
+         }
+      } else {
+         #
+         # Range; set bar size proportional to button size, but leave room if bar_area_size is small.
+         #
+         self.bar_size := (b1.w_spec * 3) / 2
+         self.bar_size >:= self.bar_area_size - 8
+      }
+      #
+      # Ensure bar size in range not less than MIN_BAR_SIZE, but must be within
+      # bar_area_size.
+      #
+      self.bar_size <:= MIN_BAR_SIZE
+      self.bar_size >:= self.bar_area_size
+
+      #
+      # Set bar height/width according to orientation
+      #
+      if /self.is_horizontal_flag then
+         self.bar_h := self.bar_size
+      else
+         self.bar_w := self.bar_size
+
+      b1$resize()
+      b2$resize()
+      self$move_value(self.value)
+      self$set_pos_from_value()
+
+      return
+   end
+
+   initially(argv[])
+      self$Component.initially()
+      self.b1 := IconButton()
+      self.b1$toggle_draw_border()
+      self.b2 := IconButton()
+      self.b2$toggle_draw_border()
+      if *argv > 0 then set_fields(argv)
+end

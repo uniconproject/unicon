@@ -1,0 +1,57 @@
+
+#  $Id: dropdown.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+#
+#  This class is just a superclass of {List} and {EditList} below.
+#
+class DropDown(
+   selection,
+   selection_list,
+   tl,
+   temp_win
+   )
+
+   ##
+   #  Set the list selection items to the list x.
+   #  @param  The list of items
+   #
+   method set_selection_list(x)
+      return self.selection_list := x
+   end
+
+   ##
+   #  Return an integer corresponding to the item in the list
+   #  presently selected.
+   #
+   method get_selection()
+      return self.selection
+   end
+
+   method open_TextList()
+      #
+      # Initialize and open a list, saving window area below in a temp window.
+      #
+      self.tl := TextList()
+      self.tl$set_contents(self.selection_list)
+      self.tl$set_pos(0, self.h)
+      self.tl$final_setup(self$get_parent_Dialog(), self)
+      self.tl$set_ideal_size(self.w, WAttrib(self$get_parent_win(), "width") - self.x - 10, 0, WAttrib(self$get_parent_win(), "height") - self.y - self.h - 10)
+      self.tl$set_select_one()
+      self.tl$resize()
+      self.tl$firstly()
+      self.temp_win := WOpen("canvas=hidden", "size=" || self.tl.w || "," || self.tl.h)
+      CopyArea(self$get_parent_win(), self.temp_win, self.tl.x, self.tl.y, self.tl.w, self.tl.h, 0, 0)
+      self.tl$got_focus()
+   end
+
+   method close_TextList()
+      #
+      # Close list, restore window
+      #
+      self.tl$finally()
+      EraseRectangle(self$get_parent_win(), self.tl.x, self.tl.y, self.tl.w, self.tl.h)
+      CopyArea(self.temp_win, self$get_parent_win(), 0, 0, self.tl.w, self.tl.h, self.tl.x, self.tl.y)
+      WClose(self.temp_win)
+      self.tl := &null
+   end
+end

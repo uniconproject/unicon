@@ -1,0 +1,67 @@
+
+#  $Id: tabitem.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  This class represents a single pane in a {TabSet}.  {Components}
+#  can be added to the {TabItem} using {Container}'s {add} method.
+#  They are then displayed and accept input when that TabItem
+#  is selected.
+#
+#  Components added to the {TabItem} are positioned relative to
+#  the position and size of the parent {TabSet}.  Therefore for
+#  example {set_pos("50%", "50%")} refers to the centre of the
+#  {TabSet} rather than the centre of the screen.  The components
+#  also inherit any window attributes of the {TabSet}, such as
+#  font, colour and so on.
+#
+class TabItem : Container(
+   label,
+   label_x,
+   line_no,
+   label_w,
+   parent_tab_set
+   )
+
+   method set_parent_tab_set(x)
+      return self.parent_tab_set := x
+   end
+
+   ##
+   #  Set the {TabItem}'s label.
+   #
+   method set_label(x)
+      return self.label := x
+   end
+
+   method check_label()
+      if /self.label then
+         error("no label specified")
+   end
+
+   method is_hidden()
+      return parent_tab_set.which_one ~=== self
+   end
+
+   method is_unhidden()
+      return parent_tab_set.which_one === self
+   end
+
+   method display_tab()
+      ypos := (self.line_no - 1) * self.parent_tab_set.line_h + self.parent_tab_set.y
+      cw := Clone(self.parent_tab_set.cbwin)
+      Fg(cw, "black")
+      DrawLine(cw, self.label_x + self.label_w - 1, ypos, self.label_x + self.label_w - 1, ypos + self.parent_tab_set.line_h - 1)
+      DrawLine(cw, self.label_x + self.label_w - 2, ypos + 1, self.label_x + self.label_w - 2, ypos + self.parent_tab_set.line_h - 2)
+      Fg(cw, "pale gray")
+      DrawLine(cw, self.label_x, ypos + self.parent_tab_set.line_h - 1, self.label_x, ypos, self.label_x + self.label_w - 1, ypos)
+      Fg(cw, "white")
+      DrawLine(cw, self.label_x + 1, ypos + self.parent_tab_set.line_h - 2, self.label_x + 1, ypos + 1, self.label_x + self.label_w - 2, ypos  + 1)
+      Uncouple(cw)
+
+      left_string(self.parent_tab_set.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + self.parent_tab_set.line_h / 2, self.label)
+
+      if is_shaded() then
+         FilterRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2, self.label_w - 2, self.parent_tab_set.line_h - 1)
+   end
+
+end

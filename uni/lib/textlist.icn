@@ -1,0 +1,91 @@
+
+#  $Id: textlist.icn,v 1.1 2003-05-31 06:09:04 jeffery Exp $
+
+##
+#  This class displays a list of strings.
+#
+#  mode, then optionally the user can be
+#  allowed to select either one line only, or several lines.
+#
+class TextList : ScrollArea()
+   #
+   # Used by List to determine an appropriate size for the
+   # drop-down list.
+   #
+   method set_ideal_size(min_w, max_w, min_h, max_h)
+      fh := WAttrib(self.cwin, "fheight")
+
+      #
+      # Compute longest line
+      #
+      mw := 0
+      every s := !self.contents do
+         mw <:= TextWidth(self.cwin, s)
+
+      #
+      # Set the width needed, ensuring within min/max dimensions requested
+      #
+      self.w_spec := mw + 2 * TX_PADDING
+      self.w_spec <:= min_w
+      self.w_spec >:= max_w
+
+      #
+      # Set the height needed, checking for presence of HSB
+      #
+      if self.w_spec - 2 * TX_PADDING >= mw then
+         self.h_spec := *self.contents * fh + 2 * TY_PADDING
+      else
+         self.h_spec := *self.contents * fh + 2 * TY_PADDING + SB_SIZE
+
+      self.h_spec <:= min_h
+      self.h_spec >:= max_h
+   end
+
+   method draw(s, left_pos, yp, i)
+      s := actual_line(s)
+
+      left_string(self.cbwin, left_pos, yp, s)
+
+      if \self.checked[i] | i = \self.which_down then
+         FillRectangle(rev, self.tx, yp - self.line_height / 2, self.tw, self.line_height)
+   end
+
+   #
+   #  support for simple text printing
+   #
+   method print_contents(heading,printfile, mode:"c", no_open)
+   local fd, longstring, format_list
+   longstring := ""
+   format_list := []
+   
+   if /no_open then
+   if not (fd := open(printfile, mode)) then
+      fail
+
+   #
+   # Number of lines to draw
+   #
+   line := 1
+   nlines :=  *self.contents
+
+   if \heading then {
+      write(fd) 
+      write(fd, heading)
+      write(fd)
+      }
+
+   #
+   # Write the lines
+   #
+   every l := self.contents[i := line to line + nlines - 1] do {
+      write(fd,self.contents[i]) 
+   }
+
+   writes(fd, "\^L") # emit a page break
+
+   if /no_open then
+      close(fd)
+   return 1
+   end
+
+end

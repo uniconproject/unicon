@@ -1,0 +1,81 @@
+
+#  $Id: checkboxgroup.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+##
+#  This class is simply a container for several objects
+#  which then act together as ``radio buttons''.  The objects
+#  should be subclasses of {Toggle}, but are normally checkboxes.
+#
+#  The set/unset status of objects in a {CheckBoxGroup} should be set
+#  with the {set_which_one} method, not by setting the individual items
+#  directly with their own methods; that would result in confusion.
+#
+#  NB - the objects in the group must be added to both the {CheckBoxGroup}
+#  and the dialog box too; a {CheckBoxGroup} is not a {Container}.
+#
+class CheckBoxGroup(
+   checkboxes,
+   which_one
+   )
+
+   ##
+   #  Set the object which is down according to the integer i.
+   #  If i = 1 then the first object is down, if i = 2 the
+   #  second is down, etc for i = 4, 8, 16.
+   #
+   method set_by_flag(i)
+      j := 1
+      every c := !checkboxes do {
+         if i = j then {
+            self$set_which_one(c)
+            break
+         }
+         j *:= 2
+      }
+   end
+
+   ##
+   #  Returns an integer in the range 1, 2, 4, 8 ... depending
+   #  upon whether the first, second, third etc object is down.
+   #
+   method get_by_flag()
+      i := 1
+      every c := !checkboxes do {
+         if c === self.which_one then
+            return i
+         i *:= 2
+      }
+      return 0
+   end
+
+   ##
+   #  Returns the object is currently down.
+   #
+   method get_which_one()
+      return self.which_one
+   end
+
+   ##
+   #  Add the object to the CheckBoxGroup.
+   #  @param c   The object to add, which must be a subclass of {Toggle}.
+   #
+   method add(c)
+      put(self.checkboxes, c)
+      c$set_parent_check_box_group(self)
+      c$into_cbg()
+   end
+
+   ##
+   #  Set which CheckBox which is down.
+   #  @param x   The object which is down.
+   #
+   method set_which_one(x)
+      (\self.which_one)$toggle_is_checked()
+      x$toggle_is_checked()
+      return self.which_one := x
+   end
+
+   initially(argv[])
+      self.checkboxes := []
+      if *argv > 0 then set_fields(argv)
+end

@@ -1,0 +1,36 @@
+
+#  $Id: buttongroup.icn,v 1.1 2003-05-31 06:09:03 jeffery Exp $
+
+#
+#  This class groups several Buttons together.  Then, when the
+#  mouse is clicked down on one of the Buttons and then dragged
+#  onto another before being released, the other Button will go
+#  "down".  This is the common behaviour for buttons in a bar
+#  along the top of an application.
+#
+#  NB - A Button must be added to the {ButtonGroup} and the
+#  {Dialog} too.
+#  @example
+#  @ bg := ButtonGroup()
+#  @ b := TextButton()
+#  @ b$set_label("Okay")
+#  @ self$add(b)
+#  @ bg$add(b)
+#
+class ButtonGroup(
+   buttons
+   )
+
+   ##
+   #  Add the given {Button} to the {ButtonGroup}.
+   #  @param c   The {Button} to add
+   #
+   method add(c)
+      put(self.buttons, c)
+      c$set_parent_button_group(self)
+   end
+
+   initially(argv[])
+      self.buttons := []
+      if *argv > 0 then set_fields(argv)
+end

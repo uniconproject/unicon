@@ -173,10 +173,10 @@ typedef int clock_t, time_t, fd_set;
    typedef int DIR;
 #endif					/* ReadDirectory */
 
-#if defined(Network) || defined (Messaging)
+#ifdef Messaging
 typedef int size_t;
 typedef long time_t;
-#endif					/* Network */
+#endif					/* Messaging */
 
 #ifdef FAttrib
 typedef unsigned long mode_t;

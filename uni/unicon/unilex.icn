@@ -432,8 +432,10 @@ end
 
 procedure do_literal()
 	      until yytext ||:= =(yytext[1]) do {
-		  yytext ||:= ="\\"
-		  # need more logic here to eat escape chars
+		  if yytext ||:= ="\\" then {
+		     # need more logic here to eat escape chars
+		     yytext ||:= ="^" # \^ is a control-char escape
+		     }
 		  yytext ||:= move(1) | {
 		      if not (yytext[-1]=="_") then {
 		         yyerror("unterminated string constant")

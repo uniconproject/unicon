@@ -9,6 +9,8 @@ UNI=..
 BIN=$(BASE)\bin
 ICONT=$(BIN)\icont
 
+all:	unicon.exe wunicon.exe
+
 unicon.exe: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	set PATH=$(BIN)
 	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u

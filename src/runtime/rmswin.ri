@@ -305,6 +305,12 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    ws->is_3D = wc->is_3D = is_3d;
 #endif					/* Graphics3D */
 
+   if (is_3d) {
+     if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
+     return NULL;
+     ws->funclist.dword = D_List;
+   }
+
    /*
     * process the passed in attributes - by calling wattrib
     */
@@ -327,11 +333,15 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 
    if (ws->posx < 0) ws->posx = 0;
    if (ws->posy < 0) ws->posy = 0;
+   ws->no = 0;
+   ws->children = NULL;
+   ws->parent = NULL;
 
    /*
     * create the window
     */
    winstyles=(ISTITLEBAR(ws)?WS_OVERLAPPEDWINDOW:(WS_DLGFRAME|WS_THICKFRAME));
+   winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
    if (is_3d) winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
    ws->iconwin = CreateWindow( "iconx", ws->windowlabel,
 		   winstyles,
@@ -644,6 +654,8 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    WORD x, y;
    struct descrip d;
    long flags = 0, eventcode;
+   POINT pt;
+   HWND win;
 
    switch(msg) {
    case WM_MOUSEMOVE: /* only called if one of these three cases is true */
@@ -655,7 +667,18 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
 	 eventcode = MOUSEMIDDRAG;
       else eventcode = MOUSEMOVED;
       break;
-   case WM_LBUTTONDOWN:
+   case WM_LBUTTONDOWN: {
+      WORD x, y;
+      x = LOWORD(lp);
+      y = HIWORD(lp);
+      pt.x=x;
+      pt.y=y;
+      win = ChildWindowFromPoint(ws->win,pt);
+      if (win!=NULL) {
+	 SetFocus(win);
+	 return;
+	 }
+      }
       eventcode = MOUSELEFT;
       break;
    case WM_MBUTTONDOWN:
@@ -954,13 +977,51 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
          }
       break;
    /* case WM_QUIT is handled prior to the switch*/
-   case WM_DESTROY:
+   case WM_DESTROY: {
+      wbp tmp_wb, w = wb;
+      wbp p;
+      struct wbind_list *wbl, *t, *b;
+
       if (ws->win == hwnd)
 	 ws->win = NULL;
       if (ws->iconwin == hwnd)
 	 ws->iconwin = NULL;
       SETCLOSED((wbp)wb);
 
+      while (w->window->children) {
+	 tmp_wb = w->window->children->child;
+	 wbl = w->window->children;
+	 w->window->children = w->window->children->next;
+
+	 /* added next line */
+	 /* remove child from parent */
+	 p = tmp_wb->window->parent;
+	 t = p->window->children;
+	 b = NULL;
+	 while (t) {
+	    if (t->child->window==w->window) {
+	       if (b==NULL)
+		  p->window->children = t->next;
+	       else b->next = t->next;
+	       t->next = NULL;
+	       t->child = NULL;
+	       free(t);
+	       break;
+	       }
+	    t = t->next;
+	    }
+	 tmp_wb->window->parent = NULL;
+	 tmp_wb->window->win = (HWND) 0;
+
+	 /* added next line */
+	 SETCLOSED(tmp_wb);
+	 tmp_wb->window->refcount--;
+
+	 w->window->refcount--;
+	 wbl->next=NULL;
+	 free(wbl);
+	 }
+      }
       if (ws->refcount > 0) {
          /*
           * if the application can handle window closure events, do 1
@@ -1010,7 +1071,46 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 int wclose(wbp w)
    {
    wsp ws = w->window;
+   wbp tmp_wb;
+   wbp p;
+   struct wbind_list *wbl, *t, *b;
+   
    if (pollevent() == -1) return -1;
+   while (w->window->children) {
+      tmp_wb = w->window->children->child;
+      wbl = w->window->children;
+      w->window->children = w->window->children->next;
+      tmp_wb->refcount--;
+      tmp_wb->window->parent=NULL;
+      w->refcount--;
+      tmp_wb->window->win = (HWND) 0;
+      /* added next line */
+      SETCLOSED(tmp_wb);
+      wbl->next=NULL;
+      free(wbl);
+      }
+   p = w->window->parent;
+   if (p) {
+      t = p->window->children;
+      b = NULL;
+      while (t) {
+	 if (t->child->window==w->window) {
+           if (b==NULL)
+               p->window->children = t->next;
+           else b->next = t->next;
+           t->next = NULL;
+           t->child = NULL;
+           free(t);
+           w->refcount--;
+           break;
+       }
+       b=t;
+       t = t->next;
+     }   
+     w->window->parent=NULL;
+     p->refcount--;
+   }
+
    if (ws->win && ws->refcount > 1) {
       /*
        * Decrement refcount and negate it to tell the window procedure
@@ -4511,6 +4611,298 @@ char *nativefiledialog(wbp w, char *s1, char *s2, char *s3,
    strcpy(stmp, ofn.lpstrFile);
    strcat(stmp, s3);
    return stmp;
+}
+
+char child_window_stuff(wbp w, wbp wp, char child_window)
+{
+#ifdef MSWindows
+   wsp ws;
+   wcp wc;
+   struct imgdata *imd;
+   char answer[256];
+   int i, r;
+   tended struct b_list *tlp;
+   tended struct descrip attrrslt;
+   HDC hdc, hdc2, hdc3;
+   DWORD winstyles = 0;
+   TEXTMETRIC	metrics;
+   LOGPALETTE logpal[4]; /* really 1 + space for an extra palette entry */
+   HBRUSH brush;
+   HBITMAP oldpix, oldpix2;
+   HFONT oldfont;
+   struct wbind_list *curr;
+   int is_3d=0;
+   
+   if (child_window==2) {
+       is_3d = 1;
+   }
+      /*
+    * allocate a window state, and a context
+    */
+   Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
+   Protect(w->context = alc_context(w), { free_binding(w); return 0; });
+   ws = w->window;
+   CLRTITLEBAR(ws);
+   ws->listp.dword = D_List;
+   BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
+   ws->width = ws->height = 0;
+   wc = w->context;
+
+#ifdef Graphics3D
+   ws->is_3D = wc->is_3D = is_3d;
+#endif					/* Graphics3D */
+
+  ws->children=NULL;
+  ws->parent = wp;
+
+  curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
+  curr->child = w;
+  curr->next = wp->window->children;
+  wp->window->children = curr;
+  w->window->refcount++;
+  wp->window->no++;
+  ws->no = wp->window->no;
+#endif
+  return 1;
+}
+
+char my_wmap(wbp w, wbp wpp, char child_window)
+{
+   wsp ws = w->window;
+   wcp wc = w->context;
+   struct imgdata *imd;
+   int i, r;
+#ifdef MSWindows
+   HDC hdc, hdc2, hdc3;
+   DWORD winstyles = 0;
+   TEXTMETRIC	metrics;
+   LOGPALETTE logpal[4]; /* really 1 + space for an extra palette entry */
+   HBRUSH brush;
+   HBITMAP oldpix, oldpix2;
+   HFONT oldfont;
+   int MAXBYTESPERCHAR;
+   WNDCLASS wcls;
+   WNDCLASS *lpwcls;
+
+ /*
+   if (! winInitialized++) {
+      BORDWIDTH = FRAMEWIDTH * 2; 
+      BORDHEIGHT = TITLEHEIGHT + FRAMEHEIGHT * 2 - 1; 
+      GetCPInfo(CP_ACP, &cpinfo);
+      MAXBYTESPERCHAR = cpinfo.MaxCharSize;
+   }
+*/
+   ws->windowlabel = NULL;
+   ws->iconlabel = NULL;
+
+   if (ws->posx < 0) ws->posx = 0;
+   if (ws->posy < 0) ws->posy = 0;
+
+   lpwcls = (WNDCLASS *) malloc(sizeof(WNDCLASS));
+   if (!GetClassInfo(mswinInstance, "ChildWClass", lpwcls)) {
+     wcls.style = 0;
+     wcls.lpfnWndProc = WndProc;
+     wcls.cbClsExtra = 0;
+     wcls.cbWndExtra = 0;
+     wcls.hInstance  = mswinInstance;
+     wcls.hIcon      = NULL;
+     wcls.hCursor    = NULL;
+     wcls.hbrBackground = GetStockObject(WHITE_BRUSH);
+     wcls.lpszMenuName = NULL;
+     wcls.lpszClassName = "ChildWClass";
+     RegisterClass(&wcls);
+   }
+
+   /*
+    * create the window
+    */
+   winstyles=WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+
+   ws->iconwin = CreateWindow( "ChildWClass", NULL,
+		   winstyles,
+		   ws->posx, ws->posy,
+		   ws->width == 0 ? 400 : ws->width,
+		   ws->height == 0 ? 400: ws->height,
+			       /*		   NULL, NULL, mswinInstance, NULL); */
+		   ws->parent->window->win, (HMENU) (int) ws->no, mswinInstance, NULL);
+   hdc = GetDC(ws->iconwin);
+   if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors == 0)){
+      /* This window is on a device that supports palettes */
+      numColors = 2;
+      logpal[0].palNumEntries = 2;
+      logpal[0].palVersion = 0x300;
+      logpal[0].palPalEntry[0].peFlags = 0;
+      logpal[0].palPalEntry[0].peRed = 0;
+      logpal[0].palPalEntry[0].peGreen = 0;
+      logpal[0].palPalEntry[0].peBlue = 0;
+      logpal[0].palPalEntry[1].peFlags = 0;
+      logpal[0].palPalEntry[1].peRed = 255;
+      logpal[0].palPalEntry[1].peGreen = 255;
+      logpal[0].palPalEntry[1].peBlue = 255;
+      palette = CreatePalette(logpal);
+      if ((scp = malloc(2 * sizeof (struct wcolor))) == NULL) return 0;
+      scp[0].c = RGB(0,0,0);
+      scp[0].type = SHARED;
+      strcpy(scp[0].name, "black");
+      scp[1].c = RGB(255,255,255);
+      scp[1].type = SHARED;
+      strcpy(scp[1].name, "white");
+      }
+   oldfont = SelectObject(hdc, wc->font->font);
+   GetTextMetrics(hdc, &metrics);
+   wc->font->charwidth = dc_maxcharwidth(hdc);
+   SelectObject(hdc, oldfont);
+   ReleaseDC(ws->iconwin, hdc);
+   wc->font->ascent = metrics.tmAscent;
+   wc->font->descent = metrics.tmDescent;
+   /*   wc->font->charwidth = metrics.tmMaxCharWidth; buggy */
+   wc->font->height = metrics.tmHeight;
+   wc->leading = metrics.tmHeight;
+   ws->x = 0;
+   ws->y = ASCENT(w);
+   ws->y += w->context->dy;
+   ws->x += w->context->dx;
+   /*
+    * set the generic window's true default sizes
+    */
+   if (!ws->width || !ws->height) {
+      if (!ws->width) ws->width = FWIDTH(w) * 80;
+      if (!ws->height) ws->height = FHEIGHT(w) * 12;
+      SetWindowPos(ws->iconwin, ws->iconwin,
+		   ws->posx,
+		   ws->posy,
+		   ws->width, ws->height,
+		   SWP_NOZORDER);
+      }
+   if (!ws->pix) {
+      hdc = GetDC(ws->iconwin);
+      ws->pix = CreateCompatibleBitmap(hdc, ws->width, ws->height);
+      ReleaseDC(ws->iconwin, hdc);
+      }
+   if (alc_rgb(w, wc->fg, palette, numColors, scp) == Failed) {
+      return 0;
+      }
+   if (alc_rgb(w, wc->bg, palette, numColors, scp) == Failed) {
+      return 0;
+      }
+   ws->pixwidth = ws->width;
+   ws->pixheight = ws->height;
+
+#ifdef Graphics3D
+   if (wc->is_3D) {
+      hdc = GetDC(ws->iconwin);
+      SetDCPixelFormat(hdc);
+      wc->ctx = wglCreateContext (hdc);
+      wglMakeCurrent (hdc, wc->ctx);
+      ReleaseDC(ws->iconwin, hdc);
+      }
+#endif					/* Graphics3D */
+
+   if (!ISTOBEHIDDEN(ws)) {
+      ws->win = ws->iconwin;
+      ShowWindow(ws->win, ncmdShow);
+      }
+   else ws->win = 0;
+   BringWindowToTop(ws->win);
+   if (ws->initialPix) {
+      hdc = GetDC(ws->iconwin);
+      hdc2 = CreateCompatibleDC(hdc);
+      oldpix = SelectObject(hdc2, ws->pix);
+      hdc3 = CreateCompatibleDC(hdc);
+      oldpix2 = SelectObject(hdc3, ws->initialPix);
+      BitBlt(hdc2, 0, 0, ws->width, ws->height, hdc3, 0, 0, SRCCOPY);
+      if (ws->win)
+         BitBlt(hdc, 0, 0, ws->width, ws->height, hdc3, 0, 0, SRCCOPY);
+      SelectObject(hdc2, oldpix);
+      SelectObject(hdc3, oldpix2);
+      DeleteDC(hdc2);
+      DeleteDC(hdc3);
+      DeleteObject(ws->initialPix);
+      ws->initialPix = (HBITMAP) NULL;
+      }
+   else {
+      /*
+       * initialize the image with the background color
+       */
+      RECT rec;
+      hdc = GetDC(ws->iconwin);
+      hdc2 = CreateCompatibleDC(hdc);
+      oldpix = SelectObject(hdc2, ws->pix);
+      rec.left = rec.top = 0;
+      rec.right = ws->width;
+      rec.bottom = ws->height;
+      if (palette) {
+         SelectPalette(hdc, palette, FALSE);
+         SelectPalette(hdc2, palette, FALSE);
+	 RealizePalette(hdc);
+	 RealizePalette(hdc2);
+	 }
+      brush = CreateBrushIndirect(&(wc->bgbrush));
+      if (ws->win)
+         FillRect(hdc, &rec, brush);
+      FillRect(hdc2, &rec, brush);
+      DeleteObject(brush);
+      SelectObject(hdc2, oldpix);
+      ReleaseDC(ws->iconwin, hdc);
+      DeleteDC(hdc2);
+
+      imd = &ws->initimage;
+      if (imd->width) {
+	 r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
+		      imd->data, (word)imd->width * (word)imd->height, 0);
+	 if (imd->paltbl)
+	    free((pointer)imd->paltbl);
+	 free((pointer)imd->data);
+	 imd->width = 0;
+	 if (r < 0) {
+	    return 0;
+	    }
+	 }
+      }
+   if (ws->win)
+      UpdateWindow(ws->win);
+#ifdef Graphics3D
+   if (child_window==2) {
+
+   /* set defaults for attributes */
+   w->context->eyeupx = w->context->eyeupz = 0.0;
+   w->context->eyeupy = 1.0;
+   w->context->dim = 3;
+   w->context->eyeposx = w->context->eyeposy =  w->context->eyeposz = 0.0;
+   w->context->eyedirx = w->context->eyediry = 0.0;
+   w->context->eyedirz = -100.0;
+   w->context->autogen = 1;
+   w->context->texmode = 0;
+   w->context->numtexcoords = 0;
+   w->context->texName = malloc(16 * sizeof(GLuint));
+   w->context->nalced = 16;
+   w->context->ntextures = 0;
+   w->context->curtexture = -1;
+
+   /* set up the appropriate opengl states */
+   glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
+   glClearColor(RED(w->context->bg)/(GLfloat)255,
+		GREEN(w->context->bg)/(GLfloat)255,
+		BLUE(w->context->bg)/(GLfloat)255, 0.0);
+
+   glGenTextures(16, w->context->texName);
+   glEnable(GL_DEPTH_TEST);
+   glEnable(GL_TEXTURE_GEN_S);
+   glEnable(GL_TEXTURE_GEN_T);
+   glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
+   glEnable(GL_LIGHTING);
+   glEnable(GL_LIGHT0);
+   glEnable(GL_NORMALIZE);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   glMatrixMode(GL_PROJECTION);
+   glLoadIdentity();
+   glFrustum(-0.5, 0.5, -0.5, 0.5, 1.0, 15.0);
+   glMatrixMode(GL_MODELVIEW);
+   glLoadIdentity();
+   }
+#endif
+#endif
+   return 1;
 }
 
 #else                                   /* Graphics */

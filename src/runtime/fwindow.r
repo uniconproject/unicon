@@ -176,15 +176,11 @@ function{1} Clone(argv[argc])
       tended struct descrip sbuf, sbuf2;
       char answer[128];
       char child_window=0;
-      struct child_win {
-        int x, y, w, h;
-      } cw;
 
       OptWindow(w);
       Protect(w2 = alc_wbinding(), runerr(0));
-
       {
-        int f1=0, f2=0, f3=0, f4=0;
+        int f1=0;
         for (n=warg; n<argc; n++) {
           if (!strncmp(StrLoc(argv[n]), "gl", 2))
               f1++;
@@ -218,8 +214,7 @@ function{1} Clone(argv[argc])
 	 if (ISCLOSED((wbp)BlkLoc(argv[warg])->file.fd))
 	    runerr(142,argv[warg]);
          if (child_window) child_window_stuff(w2, w, child_window);
-         else
-   	   Protect(w2->context =
+	 else Protect(w2->context =
 		 clone_context((wbp)BlkLoc(argv[warg])->file.fd), runerr(0));
 	 warg++;
 	 }
@@ -1246,7 +1241,9 @@ function{1} Event(argv[argc])
 	 t = -1;
       else
 	 CnvCInteger(argv[warg], t)
-
+#ifdef MSWindows
+      SetFocus(w->window->win);
+#endif					/* MSWindows */
       d = nulldesc;
       i = wgetevent(w, &d, t);
       if (i == -3) {

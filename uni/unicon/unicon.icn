@@ -201,7 +201,7 @@ procedure main(argv)
 		    if flog2 := open(wilog) then {
 			while iwrite(&errout, read(flog2))
 			close(flog2)
-			remove(wilog)
+			remove(wilog) | write(&errout, wilog, " - wilog B not removed.")
 			break
 		    }
 		    if find("wicont", selecticont()) then
@@ -226,9 +226,11 @@ procedure main(argv)
 	  every cmd ||:= " " || argv[exec to *argv]
       }
       if &features == "Win32" then {
-	  wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
-	  remove(wilog) # remove log prior to executing command
-      }
+	 wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
+ # remove log prior to executing command
+	 if stat(wilog) then
+	    remove(wilog) | write(&errout, wilog, " - stale logfile not removed.")
+         }
       rv := mysystem(cmd)
       if rv === 0 then {
 # if no errors, and we linked them from source, remove the .u
@@ -240,7 +242,7 @@ procedure main(argv)
 	     if flog2 := open(wilog) then {
 		 while iwrite(&errout, read(flog2))
 		 close(flog2)
-		 remove(wilog)
+		 remove(wilog) | write(&errout, wilog, " wilog not removed.")
 		 break
 	     }
 	     delay(1000)
@@ -304,24 +306,22 @@ procedure trans(argstr, prefix)
    if find("iconc", mygetenv("ICONT")) then return # iconc --> don't translate
    return icont(" -c "||argstr, prefix)
 end
+
 procedure icont(argstr,prefix)
 local myfile
 static trans, logger
 initial {
-   trans := "icont"
-   if &features == "Win32" & &features == "console window" then
-       trans := "wicont -s"
-   trans := mygetenv("ICONT")
+   trans := selecticont()
    logger := mygetenv("WICONLOG")
    }
-  if \logger then remove(logger)
+  if \logger then remove(logger) | write(&errout, logger, " - log not removed.")
   rv := mysystem((\prefix|"") || trans || icontopt || argstr)
   if \flog then {
      if \logger then {
         if myfile := open(logger) then {
 	    while write(flog, read(myfile))
 	    close(myfile)
-	}
+	    }
         }
      }
   return rv
@@ -337,20 +337,22 @@ procedure moveto(src, dest)
    while(write(f2,read(f1)))
    close(f1)
    close(f2)
-   remove(src)
+   remove(src) | write(&errout, src, " - src not removed.")
 end
 
 # find the icont to use. An ICONT variable overrides defaults.
 procedure selecticont()
 local cmd
-   if cmd := mygetenv("ICONT") then { }
-   else {
+   if not (cmd := mygetenv("ICONT")) then {
       cmd := (&features ? (="Binaries at " & tab(0))) | ""
       if &features=="Win32" & &features=="console window" then
-         cmd ||:= "wicont -s"
+         cmd ||:= "wicont"
       else
          cmd ||:= "icont"
       }
+   cmd := quotes(cmd)
+   if &features=="Win32" & &features=="console window" then
+      cmd ||:= " -s"
    return cmd
 end
 

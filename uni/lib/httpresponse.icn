@@ -1,0 +1,128 @@
+#
+# $Id: httpresponse.icn,v 1.1 2004-09-12 15:45:09 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package http
+
+import util
+import lang
+
+#
+# This class encapsulates an HTTP response.
+#
+class HttpResponse : Object(url, status, headers, data, data_file)
+   #
+   # Set the url
+   #
+   method set_url(url)
+      self.url := url
+   end
+
+   #
+   # Return the status of the page
+   # @return  The status eg "HTTP/1.1 200 OK"
+   #
+   method get_status()
+      return status
+   end
+
+   #
+   # Set the status
+   #
+   method set_status(s)
+      return status := s
+   end
+
+   #
+   # Succeed iff the status was an HTTP OK status.
+   #
+   method status_okay()
+      return find("200", status)
+   end
+
+   #
+   # Add a response header with the given key, after any existing ones 
+   # with the same key
+   #
+   method add_header(key, val)
+      if headers.member(key) then
+         put(headers.get(key), val)
+      else
+         headers.insert(key, [val])
+   end
+
+   #
+   # A convenience function to get the first header matching the given key, or fail
+   #
+   method get_first_header(key)
+      return get_headers(key)[1]
+   end
+
+   #
+   # Get all the headers for the key, or fail if the key has no headers
+   # @return a list of all the headers for the key.  This will always be
+   # @       a non-empty list.
+   # @fail if no headers for the key have been defined
+   #
+   method get_headers(key)
+      return \headers.get(key)
+   end
+
+   #
+   # Set the data of the response.
+   #
+   method set_data(s)
+      return data :=s 
+   end
+
+   #
+   # Return the data.
+   # @return  A string representing the data (which may be binary data).
+   #
+   method get_data()
+      return data
+   end
+
+   #
+   # Set the data file for responses that save the data in a file,
+   # rather than as part of this object.
+   # @param s the filename.
+   #
+   method set_data_file(s)
+      return data_file := s
+   end
+
+   #
+   # Return the data file for this response, or null if there is no
+   # such file.
+   # @return The filename
+   #
+   method get_data_file()
+      return data_file
+   end
+
+   #
+   # Return a list of strings, created by converting the data into a list of
+   # newline separated strings.
+   # @return   A list of strings.
+   #
+   method get_string_list()
+      res := []
+      data ? {
+         while s := tab(upto('\n')) do {
+            put(res, s)
+            move(1)
+         }
+         if not(pos(0)) then
+            put(res, tab(0))
+      }
+      return res
+   end
+
+   initially
+      headers := ClTable()
+end

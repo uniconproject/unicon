@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.9 2003-02-10 07:20:25 jeffery Exp $
+# $Id: top.mak,v 1.10 2003-04-18 01:08:33 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -190,8 +190,8 @@ Pure:
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
-		cd config/unix; 	$(MAKE) Pure
 		cd uni;			$(MAKE) Clean
+		cd config/unix; 	$(MAKE) Pure
 
 
 

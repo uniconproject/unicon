@@ -295,16 +295,39 @@ keyword{1,*} features
 
       if ((int)strlen(patchpath) > 18) refpath = patchpath+18;
       else if (strlen(refpath)==0) {
-	 refpath = patchpath+18;
 #if MSDOS
 	 if (pathFind("iconx.exe", patchpath+18, MaxPath)) {
+	    refpath = patchpath+18;
 	    patchpath[strlen(patchpath)-strlen("iconx.exe")] = '\0';
 	    }
 #endif					/* MSDOS */
 #if UNIX
 	 if (findonpath("iconx", patchpath+18, MaxPath)) {
+	    refpath = patchpath+18;
 	    patchpath[strlen(patchpath)-strlen("iconx")] = '\0';
 	    }
+	 else {
+	    FILE *f = fopen(StrLoc(kywd_prog), "r");
+	    int c;
+	    /*
+	     * look for iconx in our icode file (could also try the dir
+	     * containing &progname). Should fix to look rather at argv[0]
+	     * or save iconx path from icode when icode is loaded.
+	     */
+	    while ((c = getc(f)) && (c != EOF) && (c != '\n'));
+	    refpath = patchpath+18;
+	    if (fscanf(f, "IXBIN=%s\n", refpath) == 1) {
+	       if(strstr(refpath+strlen(refpath)-5, "iconx"))
+	       refpath[strlen(refpath)-5] = '\0';
+	       /*
+		* Trim prefix letters in front of iconx, if any
+		*/
+	       while ((strlen(refpath)>0) &&
+		      isalpha(refpath[strlen(refpath)-1]))
+	          refpath[strlen(refpath)-1] = '\0';
+	       }
+	    fclose(f);
+            }
 #endif					/* UNIX */
 	 }
 

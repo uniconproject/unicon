@@ -134,8 +134,10 @@ char *findonpath(char *name, char *buf, size_t len) {
          next = ".";
          plen = 1;
          }
-      if (plen + 1 + nlen + 1 > len)
+      if (plen + 1 + nlen + 1 > len) {
+	 *buf = '\0';
          return NULL;
+         }
       memcpy(buf, next, plen);
       buf[plen] = '/';
       strcpy(buf + plen + 1, name);
@@ -147,6 +149,7 @@ char *findonpath(char *name, char *buf, size_t len) {
          return buf;
 #endif
       }
+   *buf = '\0';
    return NULL;
    }
 

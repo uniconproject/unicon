@@ -3567,30 +3567,37 @@ function{1} PopMatrix(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, nfields;
+      int warg = 0, n, nfields, npops, i;
       struct descrip f;  
       tended struct b_record *rp;
       static dptr constr;
 
       OptWindow(w);
 
+      if (argc == warg) npops = 1;
+      else if (!def:C_integer(argv[warg], 1, npops))
+	 runerr(101, argv[warg]);
+
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_popmatrix")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      /* pop matrix from the matrix stack, if possible */
-      if (popmatrix() == Failed)
-         runerr(151);
+      for (i=0; i<npops; i++) {
 
-      /*
-       * create a record of the graphical object and its parameters
-       */
-      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-      f.dword = D_Record;
-      f.vword.bptr = (union block *)rp;
-      MakeStr("PopMatrix", 9, &(rp->fields[0]));
-      c_put(&(w->window->funclist), &f);	
+	 /* pop matrix from the matrix stack, if possible */
+	 if (popmatrix() == Failed)
+	    runerr(151);
+
+	 /*
+	  * create a record of the graphical object and its parameters
+	  */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+	 MakeStr("PopMatrix", 9, &(rp->fields[0]));
+	 c_put(&(w->window->funclist), &f);	
+	 }
       return f;
       }  
 end

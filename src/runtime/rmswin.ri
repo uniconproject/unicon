@@ -464,7 +464,8 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       if (imd->width) {
 	 r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
 		      imd->data, (word)imd->width * (word)imd->height, 0);
-	 free((pointer)imd->paltbl);
+	 if (imd->paltbl)
+	    free((pointer)imd->paltbl);
 	 free((pointer)imd->data);
 	 imd->width = 0;
 	 if (r < 0) {
@@ -2230,8 +2231,8 @@ int on_icon;
    unsigned int iy, tmpw;
    SysColor clrlist[256], xc, palbg;
    char tmp[24];
-   BITMAPINFO *bmi;
-   BITMAPINFOHEADER *bmih;
+   BITMAPINFO *bmi = NULL;
+   BITMAPINFOHEADER *bmih = NULL;
    HBITMAP oldpix = 0;
    STDLOCALS(w);
 
@@ -2255,6 +2256,7 @@ int on_icon;
     * either SetPixel or DIB.  Decide which to use based on whether
     * there are any transparent pixels
     */
+   if (e)
    for (c = 0; c < 256; c++) {
       if (e[c].transpt) anytransparent++;
       if (e[c].used && e[c].valid) {
@@ -2281,32 +2283,42 @@ int on_icon;
     * if transparent characters are not present, blast out a DIB.
     */
    if (anytransparent == 0) {
-      char *buf = malloc(height * (width+4)), *buf2;
-      buf2 = buf;
+      char *buf, *buf2;
       bmih->biSize = sizeof(BITMAPINFOHEADER);
       bmih->biWidth = width;
-      bmih->biHeight = -height;
       bmih->biPlanes = 1;
-      bmih->biBitCount = 8;
       bmih->biCompression = BI_RGB;
       bmih->biSizeImage = 0;
       bmih->biXPelsPerMeter = 0;
       bmih->biYPelsPerMeter = 0;
-      bmih->biClrUsed = 256;
-
-      ix = 0;
-      while (len--) {
-         *buf++ = *s++;
-         if (++ix >= width) {
-            while(ix % 4) {
-               buf++;
-               ix++;
+      if (e) {
+         buf = malloc(height * (width+4));
+         buf2 = buf;
+         bmih->biBitCount = 8;
+         bmih->biClrUsed = 256;
+         bmih->biHeight = -height;
+         ix = 0;
+         while (len--) {
+            *buf++ = *s++;
+            if (++ix >= width) {
+               while(ix % 4) {
+                  buf++;
+                  ix++;
+                  }
+               ix = 0;
                }
-            ix = 0;
             }
-         }
       temppix=CreateDIBitmap(pixdc, bmih, CBM_INIT, buf2, bmi, DIB_RGB_COLORS);
       free(buf2);
+         }
+      else {
+	 buf2 = s;
+         bmih->biBitCount = 24;
+         bmih->biClrUsed = 0;
+         bmih->biHeight = height;
+         temppix=CreateDIBitmap(pixdc, bmih, CBM_INIT, buf2, bmi, 0);
+        }
+
       tempdc = CreateCompatibleDC(stddc);
       oldpix = SelectObject(tempdc, temppix);
       BitBlt(pixdc, x, y, width, height, tempdc, 0, 0, SRCCOPY);

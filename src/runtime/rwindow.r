@@ -1062,7 +1062,7 @@ int readBMP(char *filename, int p, struct imgdata *imd)
   int filesize, dataoffset, width, height, compression, imagesize,
       xpixelsperm, ypixelsperm, colorsused, colorsimportant, numcolors;
   short planes, bitcount;
-  int *colortable;
+  int *colortable = NULL;
   char *rasterdata;
   if ((f = fopen(filename, "rb")) == NULL) return Failed;
   if (((c = getc(f)) != 'B') || ((c = getc(f)) != 'M')) {
@@ -1119,8 +1119,14 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      /* OK, read the whole thing, now what to do with it ? */
      imd->width = width;
      imd->height = height;
-     imd->paltbl = bmp_paltbl(numcolors, colortable);
-     imd->data = bmp_data(width, height, rasterdata);
+     if (colortable) {
+        imd->paltbl = bmp_paltbl(numcolors, colortable);
+        imd->data = bmp_data(width, height, rasterdata);
+        }
+     else {
+        imd->paltbl = NULL;
+        imd->data = rasterdata;
+        }
      return Succeeded;
      }
   fclose(f);

@@ -565,11 +565,17 @@ int *res;				/* pointer to integer result flag */
  */
 
 int longest_dr = 0;
-struct b_proc **dr_arrays;
+struct b_proc_list {
+   struct b_proc *this;
+   struct b_proc_list *next;
+};
+
+struct b_proc_list **dr_arrays;
 
 struct b_proc *dynrecord(dptr s, dptr fields, int n)
    {
       static int NextRecNum;
+      struct b_proc_list *bpelem = NULL;
       struct b_proc *bp = NULL;
       int i, ct=0;
 #if COMPILER
@@ -583,11 +589,16 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
          else {
 	    dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
             if (dr_arrays == NULL) return NULL;
-	    while(longest_dr<n) dr_arrays[longest_dr++ - 1] = NULL;
+	    while(longest_dr<n) {
+	       dr_arrays[longest_dr++] = NULL;
+		}
 	    }
 	 longest_dr = n;
 	 }
-      for(bp = dr_arrays[n-1]; bp && bp->title == T_Proc; bp++, ct++) {
+
+
+      for(bpelem = dr_arrays[n-1]; bpelem; bpelem = bpelem->next, ct++) {
+	 bp = bpelem->this;
 	 for (i=0; i<n; i++)
 	    if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
 	        strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
@@ -597,7 +608,9 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 	 }
 
       if (NextRecNum == 0) NextRecNum = *records+1;
-      bp = (struct b_proc *)malloc(sizeof(struct b_proc) + sizeof(struct descrip) * n);
+
+      bp = (struct b_proc *)malloc(sizeof(struct b_proc) +
+				   sizeof(struct descrip) * n);
       if (bp == NULL) return NULL;
       bp->title = T_Proc;
       bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
@@ -615,15 +628,11 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 	 StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
          }
 
-      if (dr_arrays[n-1] == NULL) dr_arrays[n-1] = bp;
-      else {
-	 dr_arrays[n-1] = realloc(dr_arrays[n-1],
-			    ((ct+1) * sizeof(struct b_proc)) + sizeof (word));
-	 dr_arrays[n-1][ct] = *bp;
-	 dr_arrays[n-1][ct+1].title = 0;
-	 free(bp);
-	 return dr_arrays[n-1]+ct;
-         }
+      bpelem = malloc(sizeof (struct b_proc_list));
+      if (bpelem == NULL) return NULL;
+      bpelem->this = bp;
+      bpelem->next = dr_arrays[n-1];
+      dr_arrays[n-1] = bpelem;
 
       return bp;
 #endif

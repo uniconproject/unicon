@@ -124,7 +124,7 @@ word xnargs;
 
 /*
  * Call_Gen - Call a generator. A C routine associated with the
- *  current opcode is called. When it when it terminates, control is
+ *  current opcode is called. When it terminates, control is
  *  passed to C_rtn_term to deal with the termination condition appropriately.
  */
 #begdef Call_Gen
@@ -208,7 +208,7 @@ dptr clintsrargp;
 static struct descrip unwinder;
 #endif					/* MultiThread */
 
-#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret)
+#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal)
 
 /*
  * The main loop of the interpreter.
@@ -500,16 +500,19 @@ Deliberate Syntax Error
 	    opnd += (word)ipc.opnd;
 	    PutWord(opnd);
 	    PushAVal(opnd);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 	 case Op_Acset: 	/* cset, absolute address */
 	    PushVal(D_Cset);
 	    PushAVal(GetWord);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 	 case Op_Int:		/* integer */
 	    PushVal(D_Integer);
 	    PushVal(GetWord);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 	 case Op_Real:		/* real */
@@ -519,11 +522,13 @@ Deliberate Syntax Error
 	    opnd += (word)ipc.opnd;
 	    PushAVal(opnd);
 	    PutWord(opnd);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 	 case Op_Areal: 	/* real, absolute address */
 	    PushVal(D_Real);
 	    PushAVal(GetWord);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 	 case Op_Str:		/* string */
@@ -538,11 +543,13 @@ Deliberate Syntax Error
 
 	    PutWord(opnd);
 	    PushAVal(opnd);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 	 case Op_Astr:		/* string, absolute address */
 	    PushVal(GetWord);
 	    PushAVal(GetWord);
+	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 
 				/* ---Variable construction--- */
@@ -1898,10 +1905,10 @@ interp_quit:
 #enddef
 
 #ifdef MultiThread
-interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret)
+interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret,E_Literal)
 #else					/* MultiThread */
-interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 #endif					/* MultiThread */
 
 
@@ -2134,6 +2141,7 @@ int event;
    {
    struct progstate *parent = curpstate->parent;
 
+   curpstate->eventcount.vword.integr++;
    StrLen(parent->eventcode) = 1;
    StrLoc(parent->eventcode) = (char *)&allchars[FromAscii(event)&0xFF];
    mt_activate(&(parent->eventcode), NULL,

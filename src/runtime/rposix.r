@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.19 2003-07-11 07:34:47 jeffery Exp $
+ * $Id: rposix.r,v 1.20 2003-07-11 12:07:12 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -677,7 +677,7 @@ char *name;
 	 gl_torus.dword = D_Proc;
 	 gl_torus.vword.bptr = (union block *)dynrecord(&s, fields, 6);
 	 }
-      return &gl_sphere;
+      return &gl_torus;
       }
    else if (!strcmp(name, "gl_cube")) {
       if (is:null(gl_cube)) {

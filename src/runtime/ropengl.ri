@@ -488,15 +488,16 @@ int pushmatrix()
    /* determine the current matrix stack */
    glGetIntegerv(GL_MATRIX_MODE, &params1);
    if (params1 == GL_PROJECTION) {
-
-     /* check the stack depth. If there is already 2
-        matrices on the stack return Failed */ 
+      /*
+       * check the stack depth. If there is already 2
+       * matrices on the stack return Failed
+       */ 
       glGetIntegerv(GL_PROJECTION_STACK_DEPTH, &params2);
       if (params2 < 2)
          glPushMatrix();
       else
-	   return Failed;
-       }
+	 return Failed;
+      }
     
      /* must be the Modelview matrix stack */
    else {
@@ -673,10 +674,10 @@ int traversefunctionlist(wbp w)
 	    disk(r1, r2, a1, a2, x, y, z, (wc->texmode ? wc->autogen : 0));
 	    }
 	 else if (rp->recdesc == BlkLoc(gl_rotate)) {
-	    if (!cnv:C_double(rp->fields[1], r1)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
 	    glRotated(r1, x, y, z);
 	    }
 	 else if (rp->recdesc == BlkLoc(gl_translate)) {
@@ -1723,26 +1724,32 @@ int settexture(wbp w, char* str)
 {
    char* s; 
    char filename[MaxFileName +1];
-   int i; 
-   struct descrip f, funcname;
-   struct b_list *func;
+   int i, nfields;
+   struct descrip f;
    struct descrip d; 
+      tended struct b_record *rp;
+      static dptr constr;
 
-  /* create a list */ 
-   if ((func = alclist(0, MinListSlots)) == NULL) 
+      if (!constr)
+	 if (!(constr = rec_structor("gl_texture")))
+	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      /*
+       * create a record of the graphical object and its parameters
+       */
+      if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
          return Failed;
-   f.dword = D_List; 
-   f.vword.bptr = (union block*) func; 
-   MakeStr("Texture", 7, &funcname); 
-   c_put(&f, &funcname); 
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
+      MakeStr("Texture", 7, &(rp->fields[0])); 
 
    /* to redraw the window we must keep track of the 
       texture name assigned to it by opengl. This name
       is stored in w->context->texName[w->context->ntextures].
       So by remembering w->context->ntextures we can 
       recover the name of the texture */
-   MakeInt(w->context->ntextures, &d);
-   c_put(&f, &d);
+   MakeInt(w->context->ntextures, &(rp->fields[1]));
    c_put(&(w->window->funclist), &f);
    glBindTexture(GL_TEXTURE_2D, w->context->texName[w->context->ntextures]);
    w->context->ntextures++;

@@ -3216,9 +3216,8 @@ function{1} DrawTorus(argv[argc])
       if (w->context->dim == 2) 
          runerr(150);
 
-      if (!constr)
-	 if (!(constr = rec_structor("gl_torus")))
-	    syserr("failed to create opengl record constructor");
+      if (!constr && !(constr = rec_structor("gl_torus")))
+	 syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       for (i = warg; i < argc-warg; i = i + 5) {
@@ -3274,6 +3273,7 @@ function{1} DrawCube(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_cube")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       for(i = warg; i < argc-warg; i = i+4) {
  
@@ -3491,7 +3491,7 @@ function{1} DrawDisk(argv[argc])
 end
 
 /*
- * Rotate(w,x,y,z,angle,...)
+ * Rotate(w,angle,x,y,z,...)
  *
  */
 
@@ -3513,13 +3513,14 @@ function{1} Rotate(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_rotate")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       for(i = warg; i < argc-warg; i = i+4) {
 	 /* convert parameters and perform the rotation */
-         if (!cnv:C_double(argv[i],   x))     runerr(102, argv[i]); 	  
-	 if (!cnv:C_double(argv[i+1], y))     runerr(102, argv[i+1]);
-	 if (!cnv:C_double(argv[i+2], z))     runerr(102, argv[i+2]);
-	 if (!cnv:C_double(argv[i+3], angle)) runerr(102, argv[i+3]);
+         if (!cnv:C_double(argv[i], angle)) runerr(102, argv[i]); 	  
+	 if (!cnv:C_double(argv[i+1], x))   runerr(102, argv[i+1]);
+	 if (!cnv:C_double(argv[i+2], y))   runerr(102, argv[i+2]);
+	 if (!cnv:C_double(argv[i+3], z))   runerr(102, argv[i+3]);
 	 glRotated(angle, x, y, z);
 
 	 /*
@@ -3529,8 +3530,11 @@ function{1} Rotate(argv[argc])
 	 f.dword = D_Record;
 	 f.vword.bptr = (union block *)rp;
          MakeStr("Rotate", 6, &(rp->fields[0]));
-	 for (j = i; j < i+4; j++)
-            rp->fields[1 + j - i] = argv[j];
+	 /* strangeness here preserves name,x,y,z,... field ordering */
+	 rp->fields[4] = argv[i];
+	 rp->fields[1] = argv[i+1];
+	 rp->fields[2] = argv[i+2];
+	 rp->fields[3] = argv[i+3];
          c_put(&(w->window->funclist), &f);
          }
       return f;
@@ -3609,6 +3613,7 @@ function{1} Scale(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_scale")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       for(i = warg; i < argc-warg; i = i+3) {
 
@@ -3653,6 +3658,7 @@ function{1} PopMatrix(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_popmatrix")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       /* pop matrix from the matrix stack, if possible */
       if (popmatrix() == Failed)
@@ -3689,16 +3695,16 @@ function{1} PushMatrix(argv[argc])
  
       OptWindow(w);
 
-      if (!constr)
-	 if (!(constr = rec_structor("gl_pushmatrix")))
-	    syserr("failed to create opengl record constructor");
+      if (!constr && !(constr = rec_structor("gl_pushmatrix")))
+	 syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       /* push a copy of the top matrix, if possible */
       if (pushmatrix() == 0)
 	 runerr(151);
 
       /*
-       * create a record of the graphical object and its parameters
+       * create a record of the graphical object
        */
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
       f.dword = D_Record;
@@ -3730,6 +3736,7 @@ function{1} IdentityMatrix(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_identity")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       /*
        * create a record of the graphical object and its parameters
@@ -3768,6 +3775,7 @@ function{1} MatrixMode(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_matrixmode")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       /*
        * create a record of the graphical object and its parameters
@@ -3821,6 +3829,7 @@ function{1} Texture(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor("gl_texture")))
 	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       /*
        * create a record of the graphical object and its parameters

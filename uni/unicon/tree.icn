@@ -493,7 +493,7 @@ procedure scopecheck_expr(node, local_vars, self_vars)
 				  "Baugsge"|"Baugsgt"|"Baugsle"|"Baugslt"|
 				  "Baugsne"|"Baugques"|"Baugamper"|"Baugact") then {
             every scopecheck_expr(!node.children, local_vars, self_vars)
-	    ckfnasgn(node.children[1])
+	    ckfnasgn(node.children[1], local_vars, self_vars)
          } else
             every scopecheck_expr(!node.children, local_vars, self_vars)
       }
@@ -594,10 +594,11 @@ end
 # check whether x is the name of a function that is accidentally being
 # assigned.  if it is, issue a warning unless a flag has been set.
 #
-procedure ckfnasgn(x)
-
-   if type(x)=="token" & proc(x.s, 0) then
+procedure ckfnasgn(x, locals, selfs)
+   if type(x)=="token" & proc(x.s, 0) &
+       (not member(\locals,x.s)) & (not member(\selfs,x.s)) then {
       warning("Warning: assignment to built-in function "|| x.s,
               x.line, x.filename)
+      }
    return x
 end

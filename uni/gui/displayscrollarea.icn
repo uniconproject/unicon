@@ -1,5 +1,5 @@
 #
-# $Id: displayscrollarea.icn,v 1.4 2004-05-16 09:21:39 rparlett Exp $
+# $Id: displayscrollarea.icn,v 1.5 2004-08-15 16:13:02 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -26,8 +26,15 @@ class DisplayScrollArea : LineBasedScrollArea(contents)
    #
    method set_contents(x)
       self.contents := x
+      contents_changed()
+   end
+
+   #
+   # Call this method if the contents list, previously
+   # set with {set_contents()}, has changed.
+   #
+   method contents_changed()
       compute_and_invalidate()
-      return x
    end
 
    #
@@ -80,13 +87,18 @@ class DisplayScrollArea : LineBasedScrollArea(contents)
    end
 
    method handle_key_home(e)
-      if (\self.vsb).set_value(0) then
+write("1.value=",(\self.vsb).value)
+      if \self.vsb then {
+         self.vsb.set_value(0)
          self.refresh()
+      }
    end
 
    method handle_key_end(e)
-      if (\self.vsb).set_value(get_subject_height() - self.view.h) then
+      if \self.vsb then {
+         self.vsb.set_value(get_subject_height() - self.view.h)
          self.refresh()
+      }
    end
 
    method handle_event(e)

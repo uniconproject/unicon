@@ -309,6 +309,15 @@ function{*} key(t)
 	    fail;
 	    }
 	 }
+      record: {
+	 abstract { return string }
+	 inline {
+	    C_integer i, sz = BlkLoc(t)->record.recdesc->proc.nfields;
+	    for(i=0; i<sz; i++)
+	       suspend BlkLoc(t)->record.recdesc->proc.lnames[i];
+	    fail;
+	    }
+	 }
 #if defined(Dbm) || defined(Messaging)
       file: {
 	 abstract {

@@ -387,10 +387,10 @@ class _Dialog : Container(
    end
 
    ##
-   #  Returns the number of mouse clicks that have occurred
-   #  consecutively, with each click in the sequence being less
-   #  than {double_click_delay} milliseconds apart.  That variable is by default 500
-   #  milliseconds, but it may be configured with {set_double_click_delay().}
+   #  Returns the number of mouse clicks that have occurred consecutively,
+   #  with each click in the sequence being less than {double_click_delay}
+   #  milliseconds apart.  That variable is by default 500  milliseconds,
+   #  but it may be configured with {set_double_click_delay().}
    #
    method get_click_count()
       return self.click_count
@@ -1603,6 +1603,20 @@ class Panel : VisibleContainer()
    end
 end
 
+# a panel on which a background attribute should work
+# The parameter "buffer_flag" just tells it whether to draw directly into the 
+# visible window, or to use its non-visible buffer window instead (this is
+# used for double-buffering).
+
+class FillPanel : Panel()
+   method display(buffer_flag)
+      EraseRectangle(if /buffer_flag then self.cwin else self.cbwin, 
+                     self.x, self.y, self.w, self.h)
+      self.Panel.display(buffer_flag)
+   end
+end
+
+
 ##
 #  This is a class for representing objects which can have an
 #  on-off state, in particular checkboxes, toggle buttons,
@@ -2494,7 +2508,7 @@ class Image : Component(
       #
       if \ImageCache then {
 	 / (cache[filename]) := (open(filename,"g",
-				    "canvas=hidden","image="||filename) | fail)
+				   "canvas=hidden","image="||\filename) | fail)
 	 imwin := cache[filename]
 	 }
       else if not(imwin := WOpen("image=" || \self.filename, "canvas=hidden"))

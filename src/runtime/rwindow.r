@@ -3305,11 +3305,19 @@ char * abuf;
       case A_FWIDTH:
 	 MakeInt(FWIDTH(w), answer);
 	 break;
-      case A_INPUTMASK:
-	 sprintf(abuf,"inputmask=%c",
-		 (w->window->inputmask == 1) ? 'm' : ' ');
+      case A_INPUTMASK: {
+         char *s = abuf;  
+         int mask = w->window->inputmask;
+         if (mask & PointerMotionMask)
+            *s++ = 'm';
+         if (mask & KeyReleaseMask)
+            *s++ = 'k';
+         if (mask & WindowClosureMask)
+            *s++ = 'c';
+         *s = 0;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
+         }
       case A_ROW:
 	 MakeInt(YTOROW(w, ws->y - wc->dy), answer);
 	 break;

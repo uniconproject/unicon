@@ -188,6 +188,7 @@ void		new_context	(int fsig, dptr cargp); /* w/o Coexpr: a stub */
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		outimage	(FILE *f,dptr dp,int noimage);
 struct b_coexpr	*popact		(struct b_coexpr *ce);
+long physicalmemorysize();
 word		prescan		(dptr d);
 int		pstrnmcmp	(struct pstrnm *a,struct pstrnm *b);
 int		pushact		(struct b_coexpr *ce, struct b_coexpr *actvtr);

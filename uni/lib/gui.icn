@@ -4652,23 +4652,209 @@ class EditableTextList : ScrollArea(
    donedrag,
    undolist,
    redolist,
+   wordlist,
+   noedit,
    modified # not the same as "changed"; external needs-to-be-saved flag
    )
+###
+#____________________________________________________________________
+ method reset(x,y)
+ self.has_focus := 1
+ self.cursor_y := y
+ self.cursor_x := x
 
-   method clear_modified()
-      modified := &null
+  EraseRectangle(self.cwin, self.tx, self.ty, self.tw, self.th)
+  self.constrain_line()
+  self$display()
+
+
+  if text_area_to_high_spell(x,y) = 0 then 
+     handle_event(Key_PgDn)
+  else {
+     return [self.cursor_x,self.cursor_y]
+  }
+
+
+  return []
+ end
+
+#________________________________________________________________________
+ method text_area_to_high_spell(cx,cy)
+   local line, left_pos, nlines, yp, l, sx, ex, blank1, tab1,word,spword,nc,tc
+   local r1
+   blank1 := ' '
+   tab1 := '\t'
+   nc := 0
+   alnum := &letters ++ &digits
+   c2 := &letters++&digits
+   c1 := &letters
+   sx := 1
+   ex := 1
+   word := ""
+   spword := ""
+   r1 := ""
+
+   if *wordlist = 0 then
+      return
+
+   spword := wordlist[1]
+   line := self$get_line()
+   left_pos := self$get_left_pos()
+
+   nlines := (\self.vsb)$get_page_size() | *self.contents
+
+   Clip(self.cwin, self.tx, self.ty, self.tw, self.th)
+   yp := self.ty + self.line_height / 2
+      
+   j := cx
+ 
+   every l := self.contents[i := line to self.cursor_y  - 1] do {
+       yp +:= self.line_height
+   }
+   tc := 0
+   nc := 0
+   l := self.contents[self.cursor_y]
+
+  # l := actual_line(l)
+ #  r1 := actual_line(l)
+ #  l := ""
+        
+   every  k := 1 to *r1  do {
+      if any(printable,r1[k]) then 
+          l := l || r1[k]
+   }
+  
+ 
+   while  j <  *l do {
+      if l[j] == !c1 then { 
+           ex := j 
+           ex := many(alnum,l,j)
+           word := l[j:ex]
+           if map(trim(word)) == map(trim(spword)) then {
+              self.cursor_x := ex 
+              i :=   self.cursor_y 
+              EraseRectangle(self.cwin, self.tx, self.ty, self.tw, self.th)
+              self.constrain_line()
+              self$display()
+              left_pos := self$get_left_pos()
+              draw23(l, left_pos, yp, i,j,ex,1)
+              Clip(self.cwin, self.tx, self.ty, self.tw, self.th)
+              return 1
+            }  # if map 
+            j := ex
+      } # if l[j]
+      j := j + 1
+   }  # while
+   
+
+   return 0
+   
    end
+#____________________________________________________________________
+  method text_area_to_high()
+   local line, left_pos, nlines, yp, l, sx, ex, blank1, tab1,word
+   blank1 := ' '
+   tab1 := '\t'
+   comma1 := ','
+   per1 := '.'
+   c2 := &letters++&digits
+   c1 := &ascii--blank1--tab1
+   sx := 1
+   ex := 1
+   word := ""
 
+  if *wordlist = 0 then
+      return
+
+  word := wordlist[1]
+
+  line := self$get_line()
+  left_pos := self$get_left_pos()
+
+   nlines := (\self.vsb)$get_page_size() | *self.contents
+
+   Clip(self.cwin, self.tx, self.ty, self.tw, self.th)
+   yp := self.ty + self.line_height / 2
+   j := 0
+     every l := self.contents[i := line to line + nlines - 1] do {
+        every k := 1 to *wordlist do {
+           j := 0
+           while  j <  *l do {
+             j +:= 1
+             if l[j] == !c1 then { 
+               ex := many(c2,l,j)
+               word := l[j:ex]
+               if map(trim(word)) == map(trim(wordlist[k])) then {
+                 draw23(l, left_pos, yp, i,j,ex)
+                 j := ex
+               
+               }
+            } # if l[j]
+           }  # while
+        } # every *wordlist
+        yp +:= self.line_height
+      }
+ 
+      Clip(self.cwin, self.tx, self.ty, self.tw, self.th)
+     
+   return
+  
+  
+   end
+#___________________________________________________________________
+method draw23(s, left_pos, yp, i,sx,ex,nc)
+local s1, s2, newp, fh, asc, desc, yp2 ,s3 
+   newp := 0
+   s1 := ""
+   s2 := ""
+   s3 := ""
+   fh := WAttrib(self.cwin, "fheight")
+   asc := WAttrib(self.cwin, "ascent")
+   desc := WAttrib(self.cwin, "descent")
+
+   s :=  actual_line(s)
+ 
+   s1 := s[1:sx]
+   s2 := s[sx:ex]
+  
+   newp := left_pos + TextWidth(self.cwin, s1) 
+      
+ #  Fg(self.cwin, "very light gray")
+   Fg(self.cwin, "light violet")
+   yp2 :=  yp + ((WAttrib(self.cwin,"ascent")-
+                      WAttrib(self.cwin,"descent"))/2) - asc
+   FillRectangle(self.cwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+   left_stringr(self.cwin, left_pos, yp, s)
+ 
+   if \nc then
+      self.cursor_x :=  *s1 + *s2
+  
+   end
+#_____________________________________________________________
+
+###
    method set_contents(x)
-   local lst
-
-      modified := &null
+   local lst,k,j,s1,new1,printable
+   printable := cset(&ascii[33:128])
       lst := []
       reset_drag()
       undolist := []
       redolist := []
+      new1 := []
 
-      self.contents := x
+      every j := 1 to *x do {
+        s1 := ""
+        every k := 1 to *x[j] do {
+            if x[j][k] == "\t" then 
+                s1 := s1 || x[j][k]
+            else if any(printable,x[j][k]) then 
+                 s1 := s1 || x[j][k]
+        }
+       
+        put(new1,s1)
+      } 
+
+      self.contents := new1
       if *self.contents = 0 then
          #
          # Must have somewhere for the cursor to go.
@@ -4680,7 +4866,8 @@ class EditableTextList : ScrollArea(
          self.cursor_x := self.cursor_y := 1
          compute_and_redisplay()
       }
-      return x
+    #  return x
+       return new1
    end
 
  
@@ -4782,14 +4969,17 @@ class EditableTextList : ScrollArea(
          #
          self$constrain_cursor()
          self$refresh()
+         text_area_to_high()
       } else if E := (\self.hsb)$handle_event(e) then {
          #
          # Handled by HSB; amend left offset and refresh
          #
          self$constrain_cursor()
          self$refresh()
+         text_area_to_high()
       } else {
         if e === -11 then fail # window closed, nothing to do?
+        if noedit = 1 then return _Event(e, self, 0)
          old_contents_size := *contents
          old_mw := TextWidth(cwin, contents[long_line])
 
@@ -4831,9 +5021,9 @@ class EditableTextList : ScrollArea(
             #
             self$constrain_line()
             self$refresh(1)
+            text_area_to_high()
             return _Event(e, self, 0)
          } else if \changed then {
-            modified := 1
             if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidth(cwin, contents[long_line])) then {
                #
                # Contents changed.  Re-compute all internal fields, ensure on
@@ -4842,9 +5032,11 @@ class EditableTextList : ScrollArea(
                self$set_internal_fields()
                self$constrain_line()
                self$display()
+               text_area_to_high()
             } else {
                self$constrain_line()
                self$refresh(1)
+               text_area_to_high()
             }
             return _Event(e, self, 0)
          }
@@ -5237,6 +5429,7 @@ end
          self$set_internal_fields()
          self$constrain_line()
          self$display()
+         text_area_to_high()
          return
          }      
       }
@@ -5283,6 +5476,7 @@ end
          self.vsb$set_value(i - self.vsb.page_size)
          self$constrain_cursor()
          self$refresh()
+         text_area_to_high()
          }
    end
 
@@ -5293,6 +5487,7 @@ end
          self.vsb$set_value(i + self.vsb.page_size)
          self$constrain_cursor()
          self$refresh()
+         text_area_to_high()
          }
    end
 
@@ -5433,6 +5628,7 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
        self$set_internal_fields()
        self$constrain_line()
        self$display()
+       text_area_to_high()
        return
    }
 
@@ -5474,11 +5670,10 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
    self$set_internal_fields()
    self$constrain_line()
    self$display()
-
+   text_area_to_high()
   end
 
-#
-#  get_selection() - retrieve a highlighted section
+#  method added to retieve a highlighted section swj 
 #  returns a list of strings for Copy
 #
 method get_selection()
@@ -5593,6 +5788,7 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
       self.max_width := get_max_width()
       self$set_internal_fields()
       self$display()
+      text_area_to_high()
       self.has_focus := 1
       return 
       }
@@ -5692,6 +5888,7 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
    self$set_internal_fields()
    self$constrain_line()
    self$display()
+   text_area_to_high()
    self.has_focus := 1
 
 end
@@ -5983,6 +6180,7 @@ local s1, s2, newp, fh, asc, desc, yp2
       }
 end
 
+# 
 #
 #  This method returns the offset(or number of added blanks because
 #  of the tabs) up to the end position. If the use_selfcontents parameter is
@@ -6024,6 +6222,7 @@ end
       return sblnks - numtabs
    end
 
+#  Create a list mapping the cursor postion t
 #  Create a list mapping the cursor postion to the correct position
 #  This allows the cursor to skip over the tab positions and jump
 #  to the next nontab position. If vertical_key is null, then it
@@ -6032,14 +6231,15 @@ end
 #  not need to move forward an extra position just straight up or down.
    
 method map_pos(pos_line, vertical_key) 
-local posx, sblnks, pos_line2, x12, tabpos
-
+local posx, sblnks, pos_line2, x12, tabpos,printable
+   printable := cset(&ascii[33:128])
    posx := 0
    sblnks := 0
    pos_line2 := list(*pos_line,1)
 
    pos_line ? {
       while x12 := move(1) do {
+     
          if x12 == "\t" then {
             posx +:= 1
 
@@ -6051,10 +6251,13 @@ local posx, sblnks, pos_line2, x12, tabpos
          posx +:= (8 -  (posx-1)%8) - 1
          }
        else {
-         posx +:= 1
-         pos_line2[posx] := posx
+        # if any(printable,x12) then { 
+            posx +:= 1
+            pos_line2[posx] := posx
+        # }
          }
       }
+      
    }
 
    return pos_line2
@@ -6098,6 +6301,8 @@ local tablen, seg1, seg2, limit, j, i
       donedrag := 0
       undolist := []
       redolist := []
+      wordlist := []
+      noedit := 0
 end
 
 #
@@ -7792,7 +7997,8 @@ class Table : Component(
    prev_down,
    which_down,
    is_held,
-   going_up
+   going_up,
+   rchecked #swj
    )
 
    ##
@@ -7943,6 +8149,10 @@ class Table : Component(
       return r
    end
 
+   method get_right_selections() #swj
+      return self.rchecked
+   end
+
    ##
    #  Set the current selections to the list l, which is a list of
    #  row numbers.
@@ -7953,6 +8163,8 @@ class Table : Component(
       every self.checked[!l] := 1
       redisplay()
    end
+
+  
 
    method get_last_line()
       nlines := (\self.vsb)$get_page_size() | *self.contents
@@ -8002,6 +8214,39 @@ class Table : Component(
          }
       }
    end
+   
+   method handle_rpress(e)
+      if \ (self.select_one | self.select_many) & (self.tx <= &x < self.tx + self.tw) & (self.ty  <= &y < self.ty + self.th) then {
+         #
+         # Compute line clicked
+         #
+         l := (&y - self.ty) / self.line_height + self$get_line()
+         nlines := (\self.vsb)$get_page_size() | *self.contents
+
+         if self.which_down := (self$get_last_line() >= l) then {
+            if \self.select_many & (&shift | &control) then {
+               #
+               # Click with shift/ctrl - the state will end here.
+               #
+              # self.prev_down := self.which_down
+              # self.which_down := &null
+              # self$refresh(1)
+               self.rchecked := 0
+               return _Event(e, self, 0)
+            } else {
+               #
+               # Normal click down
+               #
+               self.is_held := 1
+               self.rchecked := 1
+               self$refresh(1)
+               return _Event(e, self, 0)
+            }
+         }
+      }
+   end
+
+   
 
    method end_state()
       if \self.is_held then {
@@ -8012,6 +8257,7 @@ class Table : Component(
          #
          self.checked := list(*self.contents)
          self.checked[self.which_down] := 1
+         self.rchecked := self.which_down
          self.which_down := &null
          self.prev_down := self.which_down
          self$refresh(1)
@@ -8081,6 +8327,7 @@ class Table : Component(
          self.checked := list(*self.contents)
          self.checked[self.which_down] := 1
          self.prev_down := self.which_down
+         self.rchecked := self.which_down
          self.which_down := &null
          self$refresh(1)
          return _Event(e, self, 1)
@@ -8168,6 +8415,8 @@ class Table : Component(
          self$refresh()
       } else return if integer(e) = (&lpress | &rpress | &mpress) then
          handle_press(e)
+      else return if integer(e) = (&rpress) then # swj
+         handle_rpress(e)
       else if integer(e) = (&ldrag | &rdrag | &mdrag) then
          handle_drag(e)
       else if integer(e) = (&lrelease | &rrelease | &mrelease) then
@@ -8481,6 +8730,7 @@ class Table : Component(
       self.columns := []
       self$set_accepts_tab_focus()
       self.checked := []
+      self.rchecked := 0
       if *argv > 0 then set_fields(argv)
 end
 

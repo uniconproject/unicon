@@ -39,7 +39,7 @@
 #define Invalid    9999   /* marker */
 
 extern char *progname; /* name of this program: for error messages */
-extern line_cntrl;     /* flag: are line directives needed in the output */
+extern int line_cntrl; /* flag: are line directives needed in the output */
 
 /*
  * whsp_image determines whether the spelling of white space is not retained,

@@ -1159,21 +1159,33 @@ end
  * pe can't be tended, so allocate before, and deallocate if unused.
  * returns: 0 = yes it was inserted, -1 = runtime error, 1 = already there.
  */
-int c_setinsert(union block **pps, dptr pd)
+#begdef C_SETINSERT(ps, pd, res)
 {
-   int res;
    register uword hn;
    union block **pe;
    struct b_selem *ne;			/* does not need to be tended */
-   Protect(ne = alcselem(&nulldesc, (uword)0), return -1);
-   pe = memb(*pps, pd, hn = hash(pd), &res);
-   if (res==0) {
-      ne->setmem = *pd;			/* add new element */
-      ne->hashnum = hn;
-      addmem((struct b_set *)*pps, ne, pe);
+   tended struct descrip d;
+
+   d = *pd;
+   if (ne = alcselem(&nulldesc, (uword)0)) {
+      pe = memb(ps, &d, hn = hash(&d), &res);
+      if (res==0) {
+         ne->setmem = d;			/* add new element */
+         ne->hashnum = hn;
+         addmem((struct b_set *)ps, ne, pe);
+         }
+      else deallocate((union block *)ne);
       }
-   else deallocate((union block *)ne);
-   return res;
+   else res = -1;
+   res = 0;
+}
+#enddef
+
+int c_setinsert(union block **pps, dptr pd)
+{
+   int rv;
+   C_SETINSERT(*pps, pd, rv);
+   return rv;
 }
 
 "set(L) - create a set with members in list L."
@@ -1204,45 +1216,56 @@ function{1} set(x[n])
             }
 
          body {
-            tended union block *pb;
-            register uword hn;
-            dptr pd;
-            struct b_selem *ne;      /* does not need to be tended */
-            int res;
+            tended union block *pb, *ps;
             word i, j;
-            tended union block *ps;
-            union block **pe;
-	    int arg;
+	    int arg, res;
 
 	    /*
 	     * Make a set.
              */
-            ps = hmake(T_Set, (word)0, 0);
-            if (ps == NULL)
+            if (is:list(x[0])) i = BlkLoc(x[0])->list.size;
+            else i = n;
+            ps = hmake(T_Set, (word)0, i);
+            if (ps == NULL) {
                runerr(0);
+               }
 
 	    for (arg = 0; arg < n; arg++) {
 	      if (is:list(x[arg])) {
 		pb = BlkLoc(x[arg]);
+                if(!(reserve(Blocks,
+                     pb->list.size*(2*sizeof(struct b_selem))))){
+                   runerr(0);
+                   }
 		/*
 		 * Chain through each list block and for
 		 *  each element contained in the block
 		 *  insert the element into the set if not there.
 		 */
 		for (pb = pb->list.listhead;
-		     BlkType(pb) == T_Lelem;
+		     pb && (BlkType(pb) == T_Lelem);
 		     pb = pb->lelem.listnext) {
 		  for (i = 0; i < pb->lelem.nused; i++) {
+#ifdef Polling
+            if (!pollctr--) {
+               pollctr = pollevent();
+	       if (pollctr == -1) fatalerr(141, NULL);
+	       }	       
+#endif					/* Polling */
 		    j = pb->lelem.first + i;
 		    if (j >= pb->lelem.nslots)
 		      j -= pb->lelem.nslots;
-		    pd = &pb->lelem.lslots[j];
-		    if (c_setinsert(&ps, pd) == -1) runerr(0);
+		    C_SETINSERT(ps, &pb->lelem.lslots[j], res);
+                    if (res == -1) {
+                       runerr(0);
+                       }
                     }
 		}
 	      }
 	      else {
-		if (c_setinsert(&ps, & (x[arg])) == -1) runerr(0);
+		if (c_setinsert(&ps, & (x[arg])) == -1) {
+                   runerr(0);
+                   }
 	      }
 	    }
 	    Desc_EVValD(ps, E_Screate, D_Set);

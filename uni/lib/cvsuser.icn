@@ -1,0 +1,35 @@
+#
+# $Id: cvsuser.icn,v 1.1 2003-07-07 19:43:21 jeffery Exp $
+#
+
+package cvs
+
+class CvsUser(user, mail)
+   method get_user()
+      return user
+   end
+
+   method get_mail()
+      return mail
+   end
+end
+
+procedure get_cvs_user(name)
+   local cvs_root, s, f
+
+   cvs_root := getenv("CVSROOT") | stop("Couldn't get CVS_ROOT")
+   f := open(cvs_root || "/CVSROOT/users") | stop("Couldn't open users file")
+
+   every s := !f do {
+      s ? {
+         if tab(upto(':')) == name then {
+            move(1)
+            close(f)
+            return CvsUser(name, tab(0))
+         }
+      }
+   }
+
+   close(f)
+end
+

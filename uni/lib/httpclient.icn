@@ -21,7 +21,8 @@ class HttpClient : NetClient(url,
                              retries,
                              length,
                              read,
-                             http_version
+                             http_version,
+                             http_error
                              )
 
    #
@@ -105,15 +106,50 @@ class HttpClient : NetClient(url,
    #
    # This method invokes retrieve_page, but only returns the page if
    # its status was 200 OK - otherwise it fails and sets the failure
-   # reason appropriately.
+   # reason appropriately.  It also handles redirection responses.
    #
    method retrieve()
-      local res
-      res := retrieve_page() | fail
-      if res.status_okay() then
-         return res
-      remove(\data_file)
-      return error(res.get_status())
+      local res, l, redir_set
+      redir_set := set()
+      repeat {
+         http_error := &null
+
+         res := retrieve_page() | fail
+         if res.status_okay() then
+            return res
+
+         remove(\data_file)
+         if find("302"|"303"|"307", res.get_status()) then {
+            #
+            # A redirection, so extract the URL if possible.
+            #
+            l := \res.get_header("Location") | return on_http_error("No Location in a redirect response")
+            if member(redir_set, l) then
+               return on_http_error("Circular redirection detected:" || l)
+            insert(redir_set, l)
+            url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
+            delete(headers, "host")
+         }
+         else
+            return on_http_error(res.get_status())
+      }
+   end
+
+   #
+   # @p
+   method on_http_error(s)
+      http_error := s
+      return error(s)
+   end
+
+   #
+   # After invoking retrieve(), this method can be used to determine
+   # whether a failure was caused by a network failure or an HTTP failure
+   # (for example 404 not found).  In the former case, &null is returned; in
+   # the latter case the error string is returned.
+   #
+   method get_http_error()
+      return http_error
    end
 
    #
@@ -150,7 +186,10 @@ class HttpClient : NetClient(url,
 
          if (i -:= 1) < 0 then {
             fire("Failed")
-            fail
+            if retries = 0 then
+               fail
+            else
+               return error("Gave up after " || (1+retries) || " attempts - last reason:" || get_reason())
          }
 
          fire("Retrying")
@@ -184,7 +223,9 @@ class HttpClient : NetClient(url,
       # Read the response.
       #
       read_headers() | fail
-      read_data() | fail
+
+      if request_type ~=== "HEAD" then
+         read_data() | fail
 
       return result
    end

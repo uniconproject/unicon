@@ -426,13 +426,10 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
  */
 
 #if !THINK_C
-   void main(argc, argv)
+   int main(int argc, char **argv)
 #else                           /* THINK_C */
-   void MacMain(argc,argv)
+   void MacMain(int argc, char **argv)
 #endif                          /* !THINKC_C */
-
-int argc;
-char **argv;
    {
    int nolink = 0;			/* suppress linking? */
    int errors = 0;			/* translator and linker errors */
@@ -940,8 +937,12 @@ char **argv;
 	 strcpy(tmp+strlen(tmp)-4, ".bat");
 	 rename(ofile, tmp);
 
+#ifdef NTGCC
+	 iconx = "iconx.exe";
+#else
 	 if (Gflag) iconx="wiconx.exe";
 	 else iconx = "nticonx.exe";
+#endif
 	 if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
 	    char mesg[80];
 	    sprintf(mesg, "Tried to open %s to build .exe, but couldn't\n",iconx);
@@ -1270,7 +1271,7 @@ static void usage()
    }
 
 /*
- * Return path after appending lib directory.
+ * Return path after appending lib directories.
  */
 static char *libpath(char *prog, char *envname) {
    char buf[1000], *s;
@@ -1280,9 +1281,19 @@ static char *libpath(char *prog, char *envname) {
       strcpy(buf, s);
    else
       strcpy(buf, ".");
-   strcat(buf, ":");
-   strcat(buf, relfile(prog, "/../../ipl/lib"));
-   strcat(buf, ":");
+   if (!strcmp(envname, "IPATH")) {
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/lib"));
+      }
+   else if (!strcmp(envname, "LPATH")) {
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/mincl"));
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/gincl"));
+      strcat(buf, " ");
+      strcat(buf, relfile(prog, "/../../ipl/incl"));
+      }
+   strcat(buf, " ");
    strcat(buf, relfile(prog, "/../../uni/lib"));
    return salloc(buf);
    }

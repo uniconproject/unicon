@@ -39,7 +39,7 @@ Global unsigned int lhsize	Init(128);	/* local hash table */
 /*
  * Variables related to command processing.
  */
-#ifdef MSWindows
+#if defined(MSWindows) && !defined(NTGCC)
 Global char *progname	Init("wicont");	/* program name for diagnostics */
 #else
 Global char *progname	Init("icont");	/* program name for diagnostics */

@@ -1,5 +1,5 @@
 #
-# $Id: tree.icn,v 1.5 2004-11-05 19:24:55 rparlett Exp $
+# $Id: tree.icn,v 1.6 2004-11-11 19:54:28 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -200,13 +200,15 @@ class Tree : SelectableScrollArea(
                   # Clicking on the little icon ends the sequence, and sets the selection
                   # to the given node.
                   #
+                  start_handle(e)
                   N.toggle_expanded()
                   self.last_expanded := N
                   tree_structure_changed()
                   is_held := &null
-                  fire(SELECTION_CHANGED_EVENT, e)
+                  selchange := 1
                   fire(TREE_NODE_EXPANSION_EVENT, e)
-                  return 
+                  end_handle(e)
+                  return
                }
             }
          }

@@ -1,6 +1,6 @@
 RM=rm -f
 UNICON=../unicon/unicon
-COPY=cp
+CP=cp
 BINDIR=../../bin
 #
 # makefile for constructing ivib
@@ -65,7 +65,7 @@ ICONS=$(ICONDIR)/icn1.ico \
 #
 ivib: ivib2 $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
-	$(COPY) ivib$(EXE) $(BINDIR)
+	$(CP) ivib$(EXE) $(BINDIR)
 	@echo Linking complete.
 
 ivib2:

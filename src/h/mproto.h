@@ -63,3 +63,6 @@ void 	lear_sbuf	(struct str_buf *sbuf);
    (struct type *)alloc((unsigned int) sizeof (struct type))
 
 char *relfile	(char *prog, char *mod);
+#if UNIX
+   FILE *pathOpen	(char *fname, char*mode);
+#endif

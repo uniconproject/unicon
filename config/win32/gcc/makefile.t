@@ -21,7 +21,7 @@ TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(
 
 LINKR=          link.$(O) lglob.$(O) lcode.$(O) llex.$(O) lmem.$(O) lsym.$(O) opcode.$(O)
 
-OBJS=           tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
+OBJS=           tmain.$(O) util.$(O) tlocal.$(O) tglobals.$(O) $(TRANS) $(LINKR)
 
 COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		../common/filepart.$(O) ../common/strtbl.$(O)\

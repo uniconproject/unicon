@@ -585,7 +585,7 @@ function{0,1} dbtables(f)
       fail;
     }
 
-    retcode=SQLTables(hstmt, NULL, 0, NULL, 0, NULL, 0, NULL, 0);
+    retcode=SQLTables(hstmt, NULL, 0, NULL, 0, (SQLCHAR *) "%", SQL_NTS, NULL, 0);
 
     if (retcode!=SQL_SUCCESS) {
       odbcerror(fp, TABLES_ERR);

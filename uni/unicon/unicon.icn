@@ -128,11 +128,13 @@ procedure main(argv)
 	    }
 	 "-quiet"  : loud := &null
 	 "-log"  : {
-	     if (i=1) | (argv[i-1] ~=== "-log") then {
-		 if widollog := argv[i+1] then
-		     /flog := open(flogname, "w")
-		 argv[i+1] := "-log"
-	     }
+	    if (i=1) | (argv[i-1] ~=== "-log") then {
+	       if widollog := argv[i+1] then {
+		  /flog := open(flogname, "w") |
+		     write(&errout, "couldn't write log to ",image(flogname))
+		  }
+	       argv[i+1] := "-log"
+	       }
 	 }
 	 "-version": {
             iwrite(&version)
@@ -254,8 +256,9 @@ procedure main(argv)
       moveto(flogname, widollog)
       }
    # Produce a non-zero exit code if there were any errors.
-   if errors + yynerrs > 0 then
+   if errors + yynerrs > 0 then {
       exit(1)
+      }
 end
 #
 # error/warning/message handling

@@ -505,23 +505,18 @@ end
 # Computes the list of directories in the LPATH environment variable.
 #
 procedure preproc_compute_path_list()
-    local result,path_string,path_sep
-    result := []    # FIX ME: compute path list
+    local result,path_string,path_sep, f
+    result := []
 
-   if not (path_string := getenv("LPATH")) then {
-       if binpath := (&features ? (="Binaries at " & tab(0))) then
-	   path_string := binpath || "../uni/lib " ||
-			   binpath || "../ipl/gincl " ||
-			   binpath || "../ipl/mincl " ||
-			   binpath || "../ipl/incl"
-       else if (f := open((binpath:=getpaths()) || ("iconx.exe"|"wiconx.exe"))) then {
-	   close(f)
-	   path_string := binpath || "../uni/lib " ||
-			   binpath || "../ipl/gincl " ||
-			   binpath || "../ipl/mincl " ||
-			   binpath || "../ipl/incl"
+    path_string := getenv("LPATH") | "."
+
+    if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+       ((f := open((binpath:=getpaths()) || ("iconx"|"iconx.exe"|"wiconx.exe")))) then{
+	close(\f)
+	path_string ||:=
+	    " " || binpath || "../uni/lib " || binpath || "../ipl/gincl " ||
+	    binpath || "../ipl/mincl " || binpath || "../ipl/incl"
        }
-   }
 
     if \path_string ~== "" then {
         path_sep := getenv("PATHSEP") | " "

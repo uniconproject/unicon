@@ -225,7 +225,7 @@ class Dispatcher(
    method message_loop(r)
       local w, bag, d, e
 
-      while \r.is_open do {
+      while \ ((\r).is_open) do {
          bag := []
          every d := !dialogs do {
             if *Pending(d.win) > 0 then {
@@ -638,13 +638,12 @@ class _Dialog : Container(
       }
 
       if e === &resize then {
-         delay(100) # ?
-         while *Pending(self.win) > 0 & Pending(self.win)[1] === e do {
+#         delay(25) # merge redundant resizes
+         while Pending(self.win)[1] === e do {
             e := Event(self.win)
-            delay(50)
 	    }
-         nw := WAttrib(self.win, "width")
-         nh := WAttrib(self.win, "height")
+         nw := &x
+         nh := &y
 
          #
          # Don't allow size to fall below minimum.
@@ -1079,8 +1078,12 @@ class Component : Ticker(
    ##
    #  Set the Icon attribs of the component to the given parameter
    #  @example
-   #  @ w$set_attribs("font=helvetica", "bg=pale blue")
+   #  @ w.attrib("font=helvetica", "bg=pale blue")
+   #  @ w.set_attribs("font=helvetica", "bg=pale blue")
    #
+   method attrib(x[])
+      return set_attribs_list(x)
+   end
    method set_attribs(x[])
       return set_attribs_list(x)
    end
@@ -1468,6 +1471,8 @@ class Container : Component(
    end
 
    method resize()
+      if \x_spec & \y_spec & \w_spec & \h_spec then
+         self$Component.resize()
       every (!self.components)$resize()
       return
    end
@@ -2485,7 +2490,7 @@ class Image : Component(
       else if not(imwin := WOpen("image=" || \self.filename, "canvas=hidden"))
 	 then fail
 #
-#      Uncomment the following lines if you're multiple images are using
+#      Uncomment the following lines if your multiple images are using
 #      more than 256 colors and aren't showing properly on X11 systems.
 #
 #      EraseArea(imwin)
@@ -4661,9 +4666,7 @@ class EditableTextList : ScrollArea(
       modified := &null
    end
 
-###
-#____________________________________________________________________
- method reset(x,y)
+ method reset_spell(x,y)
  self.has_focus := 1
  self.cursor_y := y
  self.cursor_x := x
@@ -4673,15 +4676,21 @@ class EditableTextList : ScrollArea(
   self$display()
 
 
-  if text_area_to_high_spell(x,y) = 0 then 
+  if text_area_to_high_spell(x,y) = 0 then {
      handle_event(Key_PgDn)
+     self.has_focus := &null
+  }
   else {
+     self.has_focus := &null
      return [self.cursor_x,self.cursor_y]
+   
   }
 
 
+  
   return []
- end
+ 
+  end
 
 #________________________________________________________________________
  method text_area_to_high_spell(cx,cy)
@@ -4720,14 +4729,13 @@ class EditableTextList : ScrollArea(
    nc := 0
    l := self.contents[self.cursor_y]
 
-  # l := actual_line(l)
- #  r1 := actual_line(l)
- #  l := ""
+   l := actual_line(l)
+ 
         
-   every  k := 1 to *r1  do {
-      if any(printable,r1[k]) then 
-          l := l || r1[k]
-   }
+#   every  k := 1 to *r1  do {
+#      if any(printable,r1[k]) then 
+#          l := l || r1[k]
+#   }
   
  
    while  j <  *l do {
@@ -4757,13 +4765,14 @@ class EditableTextList : ScrollArea(
    end
 #____________________________________________________________________
   method text_area_to_high()
-   local line, left_pos, nlines, yp, l, sx, ex, blank1, tab1,word
+   local line, left_pos, nlines, yp, l, sx, ex, blank1, tab1,word,c1,c2,c3
    blank1 := ' '
    tab1 := '\t'
    comma1 := ','
    per1 := '.'
    c2 := &letters++&digits
    c1 := &ascii--blank1--tab1
+   c3 := &letters
    sx := 1
    ex := 1
    word := ""
@@ -4774,6 +4783,9 @@ class EditableTextList : ScrollArea(
   word := wordlist[1]
 
   line := self$get_line()
+
+ # line := actual_line(line)
+
   left_pos := self$get_left_pos()
 
    nlines := (\self.vsb)$get_page_size() | *self.contents
@@ -4782,12 +4794,15 @@ class EditableTextList : ScrollArea(
    yp := self.ty + self.line_height / 2
    j := 0
      every l := self.contents[i := line to line + nlines - 1] do {
+        l := actual_line(l)
         every k := 1 to *wordlist do {
            j := 0
            while  j <  *l do {
              j +:= 1
-             if l[j] == !c1 then { 
+           #  if l[j] == !c1 then { 
+             if member(c2,l[j]) then { 
                ex := many(c2,l,j)
+             #  ex := many(c1,l,j)
                word := l[j:ex]
                if map(trim(word)) == map(trim(wordlist[k])) then {
                  draw23(l, left_pos, yp, i,j,ex)
@@ -4987,19 +5002,21 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
          text_area_to_high()
       } else {
         if e === -11 then fail # window closed, nothing to do?
-        if noedit = 1 then return _Event(e, self, 0)
-         old_contents_size := *contents
-         old_mw := TextWidth(cwin, contents[long_line])
-
-         changed := moved := &null
-         if integer(e) = (&lpress | &rpress | &mpress) then
-            handle_press(e)
-         else if integer(e) = (&ldrag | &rdrag | &mdrag) then
-            handle_drag(e)
-         else if integer(e) = (&lrelease | &rrelease | &mrelease) then
-            handle_release(e)
-         else if \self.has_focus then {
-            case e of {
+        if self.noedit = 1 then {
+           self.has_focus := &null
+         }
+         else {
+           old_contents_size := *contents
+           old_mw := TextWidth(cwin, contents[long_line])
+           changed := moved := &null
+           if integer(e) = (&lpress | &rpress | &mpress) then
+             handle_press(e)
+           else if integer(e) = (&ldrag | &rdrag | &mdrag) then
+             handle_drag(e)
+           else if integer(e) = (&lrelease | &rrelease | &mrelease) then
+             handle_release(e)
+           else if \self.has_focus then {
+             case e of {
                Key_Home : handle_key_home(e)
                Key_End : handle_key_end(e)
                Key_PgUp : handle_key_page_up(e)
@@ -5014,13 +5031,15 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
                "\^k" : handle_nodefault()
                "\^a" : handle_start_of_line(e)
                "\^e" : handle_end_of_line(e)
-               "\d" | "\^d" :  cut_selection()
+               "\d" | "\^d" :  cut_selection(&null,e)
                "\^x" :  handle_nodefault()
                "\^c" :  handle_nodefault()
                "\^v" :  handle_nodefault()
                default : handle_default(e)
-            }
-         }
+             }
+           }
+
+         }  # noedit = 0  swj
 
          if \moved then {
             #
@@ -5032,7 +5051,6 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
             text_area_to_high()
             return _Event(e, self, 0)
          } else if \changed then {
-            modified := 1
             if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidth(cwin, contents[long_line])) then {
                #
                # Contents changed.  Re-compute all internal fields, ensure on
@@ -5396,7 +5414,12 @@ end
       redolist := []
       if *undolist = 0 then
          return
-   
+    
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+      }
+ 
       self.has_focus := 1
       undo_info  := pull(undolist)
       case undo_info.undo_type of  {
@@ -5415,6 +5438,7 @@ end
          if /no_redo then
             put(redolist,undo_info)
          set_selection(undo_info.undo_list,1)
+         self.has_focus := &null
          return
          }
       "insert_list" : {
@@ -5426,6 +5450,7 @@ end
          if /no_redo then
             put(redolist,undo_info)
          cut_selection(1) 
+         self.has_focus := &null
          return
          }
       "delete_cr" : {
@@ -5439,9 +5464,12 @@ end
          self$constrain_line()
          self$display()
          text_area_to_high()
+         self.has_focus := &null
          return
          }      
       }
+
+   self.has_focus := &null
    end
 
 #
@@ -5456,6 +5484,10 @@ end
       if *redolist = 0 then
          return
 
+      if self.noedit = 1 then {
+        self.has_focus := &null 
+        return
+      }
       rec1 :=  pull(redolist)
       redo := undo_rec("",[],0,0,0,0,"",[],0,0,0,0)
 
@@ -5601,7 +5633,14 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
    s2 := ""
    s := ""
    s3 := ""
-  
+
+ 
+
+ #  if self.noedit = 1 then {
+    #  self.has_focus := &null 
+ #    return
+ #   }
+ 
    if  /slst  | *slst < 0  then
       return
 
@@ -5638,7 +5677,9 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
        self$constrain_line()
        self$display()
        text_area_to_high()
-       return
+       self.has_focus := &null
+       return _Event(e, self, 0)
+     #  return
    }
 
    s := self.contents[self.cursor_y]
@@ -5680,17 +5721,20 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
    self$constrain_line()
    self$display()
    text_area_to_high()
+
+   self.has_focus := &null
+   return _Event(e, self, 0)
   end
 
 #  method added to retieve a highlighted section swj 
 #  returns a list of strings for Copy
-#
+##
 method get_selection()
 local st, lst, l, i, sx
    st := ""
    lst := []
    l := ""
-
+    #  self.has_focus := &null
    #  return just one character if nothing is highlighted  
    if (enddragx = startdragx ) & (enddragy = startdragy) then {
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
@@ -5765,7 +5809,7 @@ local ex, sx, offset, s2
 #  This cut was modeled after Emacs editor and therefore removes
 #  the carriage return at the end of lines so they are merged. 
 #
-method cut_selection(undo)
+method cut_selection(undo,ev)
 local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x 
    l := ""
    lst := []
@@ -5798,7 +5842,8 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
       self$set_internal_fields()
       self$display()
       text_area_to_high()
-      self.has_focus := 1
+      if /ev then 
+        self.has_focus := &null
       return 
       }
  
@@ -5898,7 +5943,8 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
    self$constrain_line()
    self$display()
    text_area_to_high()
-   self.has_focus := 1
+   if /ev then 
+     self.has_focus := &null
 
 end
 
@@ -8172,8 +8218,6 @@ class Table : Component(
       every self.checked[!l] := 1
       redisplay()
    end
-
-  
 
    method get_last_line()
       nlines := (\self.vsb)$get_page_size() | *self.contents

@@ -13,6 +13,7 @@ help:
 	@echo UNIX: Run "make Configure name=system" or "make X-Configure name=system"
 	@echo "   where system is one of those in config/unix."
 	@echo Windows (MSVC): Run "nmake NT-Configure" or "nmake W-Configure".
+	@echo Windows (GCC): Run "nmake NT-Configure-GCC" or "nmake W-Configure-GCC".
 	@echo "   then add the Unicon bin directory to your path."
 	@echo All: after configuration, run "make (or nmake) Unicon".
 
@@ -40,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: Makefile,v 1.2 2001-09-11 08:40:17 jeffery Exp $
+# $Id: Makefile,v 1.3 2001-10-30 08:45:09 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -194,3 +195,11 @@ NT-Configure:
 W-Configure:
 	cd config\win32\msvc
 	w-config
+
+W-Configure-GCC:
+	cd config/win32/gcc && sh w-config.sh
+	echo Run "make Unicon" to build
+
+NT-Configure-GCC:
+	cd config/win32/gcc && sh config.sh
+	echo Run "make Unicon" to build

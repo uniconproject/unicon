@@ -1,0 +1,1086 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Writing CGI Scripts in Icon</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.02Gold (WinNT; I) [Netscape]">
+</HEAD>
+<!--<BODY BACKGROUND="bk101.gif">-->
+
+<P><LINK REV="made" HREF="mailto:jeffery@cs.nmsu.edu"><A NAME="cgi"></A><BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+</P>
+
+<CENTER><P><B>Writing CGI Scripts <BR>
+in Icon</B></P></CENTER>
+
+<CENTER><P><B>Clinton Jeffery and Jonathan Vallejo<BR>
+May 15, 2000<BR>
+Unicon Technical Report UTR-4 </B></P></CENTER>
+
+<P><BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+</P>
+
+<CENTER><P><B>Abstract </B></P></CENTER>
+
+<P><BR>
+CGI scripts are programs that read and write information in order to
+process input forms and generate dynamic content for the world-wide web.
+The Icon programming language is ideal for CGI scripting, since it has
+extraordinary support for string processing. This report describes a library
+that simplifies writing of CGI scripts in Icon. <BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+</P>
+
+<CENTER><P>Department of Computer Science<BR>
+The University of Nevada<BR>
+Las Vegas, NV 89154 </P></CENTER>
+
+<P><BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+</P>
+
+<H2>Introduction</H2>
+
+<P>The Common Gateway Interface, or CGI, is a definition of the means
+by which web servers interact with external programs that assist in processing
+web input and output. CGI scripts are programs that are invoked by a World-Wide
+Web server in order to input data from a user, or provide users with pages
+of dynamically generated content, as opposed to static content found in
+.html files. The standard reference on CGI are available on the Web at
+<A HREF="http://hoohoo.ncsa.uiuc.edu/cgi/">http://hoohoo.ncsa.uiuc.edu/cgi/</A>
+Icon is an ideal language for writing CGI scripts, because of its strong
+text processing capabilities. This technical report describes <TT>cgi.icn</TT>,
+a library of Icon procedures for writing CGI scripts for the World-Wide
+Web. The library was written by Joe van Meter and Clinton Jeffery. This
+is volunteer-ware; we welcome additions and corrections, sent to <A HREF="mailto:jeffery@cs.nmsu.edu">jeffery@cs.nmsu.edu</A>.</P>
+
+<P><TT>cgi.icn</TT> consists of a number of procedures to simplify CGI
+input processing and especially the generation of HTML-tagged output from
+various Icon data structures. To link the library into your program, compile
+it (<TT>icont -c cgi</TT>) and place the statement
+<pre>   link cgi</pre>
+
+at the top of your Icon program prior to compiling it. </P>
+
+
+<H3>Organization of a CGI Script </H3>
+
+<P>CGI scripts are very simple. They process input data supplied by
+the web browser that invoked the script (if any), and then write a new
+web page, in HTML, to their standard output. When using cgi.icn the input
+processing phase is automatically completed before control is passed to
+your program, which is organized around the HTML code that you generate
+in response to the user. In fact, cgi.icn includes a <TT>main()</TT>
+procedure that processes the input and writes HTML header and tail information
+around your program's output. For this reason, when you use cgi.icn,
+you must call your main procedure <TT>cgimain()</TT>. </P>
+
+
+<H3>Processing Input </H3>
+
+<P>The HTTP protocol includes two means of invoking a CGI script, with
+different ways of supplying user input, either from the standard input
+or from a <TT>QUERY_STRING</TT> environment variable. In either case, the
+input is organized as a set of fields that were given names in the HTML
+code from which the CGI script was invoked. For example, an HTML form might
+include a tag such as: </P>
+
+<PRE>   &lt;INPUT TYPE = &quot;text&quot; NAME = &quot;PHONE&quot; SIZE=15&gt;
+</PRE>
+
+<P>which allows input of a string of length up to 15 characters into
+a field named <TT>PHONE</TT>. </P>
+
+<P>After the CGI library processes the input, it provides applications
+with the various fields from the input form in a single Icon global variable,
+a table named <TT>cgi</TT>. The keys of this table are exactly the
+names given in the HTML INPUT tags. The values accessed from the keys are
+the string values supplied by the user. For example, to access the
+PHONE field from the above example, the application could write </P>
+
+<PRE>   cgi[&quot;PHONE&quot;]
+
+
+
+
+
+</PRE>
+
+<H3>Processing Output </H3>
+
+<P>The main task of the CGI script is to generate an HTML file as its
+output, and for this task cgi.icn provides a host of procedures. Typically
+these procedures convert an Icon value into a string, wrapped with an appropriate
+HTML tag in order to format it properly. A typical example is the library
+procedure <TT>cgiSelect(name,values)</TT> which writes an HTML SELECT
+tag for a field named <I>name</I>, which generates a list of radio buttons
+on an HTML form whose labels are given by strings in the second parameter,
+a list of <I>values</I>. An Icon programmer might write </P>
+
+<PRE>   cgiSelect(&quot;GENDER&quot;, [&quot;female&quot;, &quot;male&quot;])
+</PRE>
+
+<P>to generate the HTML </P>
+
+<PRE>&lt;SELECT NAME=&quot;GENDER&quot;&gt;
+&lt;OPTION SELECTED&gt;female
+&lt;OPTION&gt;male
+&lt;/SELECT&gt;
+
+
+
+
+
+</PRE>
+
+<H2>CGI Execution Environment</H2>
+
+CGI scripts don't execute as standalone programs and aren't launched from a
+command-line, they are launched by a web server.  The details of this are
+necessarily dependent on the operating system and web server combination in
+use.  The following examples are based on a typical UNIX Apache server
+installation in which users' HTML files are installed under
+<tt>$HOME/public_html</tt>. Check with your system administrator or web
+server documentation for the specific names and permissions required to
+execute scripts from your web server.  </P>
+
+<P>You need to create a directory under your <TT>public_html</TT>
+directory by the name of <TT>cgi-bin</TT> with the appropriate
+permissions, namely group and other need to have read and execute permissions.
+<strong>Do not give anyone but yourself write permissions!!</strong>
+The following commands will complete the task above. The percent sign
+(<TT>%</TT>) is not part of the comand, it denotes the Unix shell
+prompt. The period in the final command is part of the command and refers
+to the current working directory.</P>
+
+<pre>
+% mkdir cgi-bin
+% cd cgi-bin
+% chmod go+rx . </pre>
+
+<P>Copy the <TT><A HREF="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/unicon/unicon/ipl/procs/cgi.icn">cgi.icn</A></TT>
+library into this directory (Netscape users can just right click on this
+link and save the link as a text file) and compile it (<tt>icont -c cgi</tt>).
+<!--If your System Administrator has installed Icon Program Libraries
+and your <TT>IPATH</TT> environment variable is set, you may be able
+to skip this step.--></P>
+
+<P>Create a form like this one, called <code><A HREF="simple.html">simple.html</A></code>,
+or save a copy of this file by right clicking on the link and saving
+the file as source.  When you have your own CGI script compiled and
+ready to run, you will want to edit the URL in this file to point
+at your copy of the <code>simple.cgi</code> executable. </P>
+
+<PRE>&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;
+A Simple Example&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+ 
+&lt;h1 align=center&gt;
+&lt;b&gt; A Simple Example&lt;/b&gt; &lt;/h1&gt;
+&lt;h1 align=center&gt; &lt;b&gt;
+Using the CGI Icon Library&lt;/b&gt; &lt;/h1&gt;
+ 
+&lt;form method=&quot;GET&quot; action=&quot;/cgi-bin/simple.cgi&quot;&gt;
+ 
+&lt;table&gt;
+&lt;tr&gt;&lt;td&gt;1. Enter your name&lt;/td&gt;
+&lt;td&gt; &lt;input type=&quot;text&quot; name=&quot;name&quot; size=25&gt;
+&lt;/td&gt;&lt;/tr&gt; &lt;br&gt;
+ 
+&lt;tr&gt;&lt;td&gt;2. Enter your Age:&lt;/td&gt;
+&lt;td&gt; &lt;input type=&quot;text&quot; name=&quot;age&quot; size=2&gt; &nbsp;Years Old&lt;/td&gt;
+&lt;/tr&gt;
+ 
+&lt;/table&gt; &lt;table&gt;
+
+&lt;tr&gt;&lt;td&gt;3. Favorite Food&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;pizza&quot;&gt;Pizza&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;burger&quot;&gt;Hamburger&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;taco&quot;&gt;Tacos&lt;/td&gt;
+&lt;/tr&gt;
+ 
+&lt;tr&gt;&lt;td&gt;4. Favorite Color:&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;red&quot;&gt;Red&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;green&quot;&gt;Green&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;blue&quot;&gt;Blue&lt;/td&gt;
+&lt;/tr&gt;
+ 
+&lt;tr&gt;&lt;td&gt;5. Education: &lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;bs&quot;&gt;BS&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;ms&quot;&gt;MS&lt;/td&gt;
+&lt;td align="left"&gt;&lt;input type=&quot;checkbox&quot; Name=&quot;phd&quot;&gt;PHD&lt;/td&gt;
+&lt;/tr&gt;
+ 
+&lt;/table&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;
+Comments:&lt;br&gt; &lt;textarea rows = 5 cols=60 name=&quot;comments&quot;&gt;&lt;/textarea&gt;
+&lt;br&gt; &lt;br&gt;&lt;br&gt;
+&lt;input type=&quot;submit&quot; value=&quot;Submit Data&quot;&gt;
+&lt;input type=&quot;reset&quot; value=&quot;Reset Form&quot;&gt;
+&lt;/form&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+</PRE>
+
+
+<P>To produce the <code>simple.cgi</code> script that is invoked from the
+FORM tag above, save <A HREF="simple.icn"><TT>simple.icn</TT> </A>as
+text (by right clicking your mouse on the link) in your <TT>cgi-bin</TT>
+directory. This file needs to be compiled with the command <TT>icont
+-o simple.cgi simple.icn </TT>(Many web servers are configured so that
+CGI script executables must end with the extension .cgi , Check with your
+System Administrator if the .cgi extension does not work for you.) <BR>
+<BR>
+</P>
+
+<PRE>link cgi      # This links the PRECOMPILED cgi library and makes
+              # those functions availible to you
+ 
+procedure cgimain()  # This is the start of the script
+ 
+host := getenv(&quot;REMOTE_ADDR&quot;)  # This is an example of using the
+                               # Environment Variables to get some information
+ 
+write(&quot;Submitted IP address: &nbsp;&quot;, host,&quot;&lt;br&gt;&quot;)
+ 
+write(&quot;Submitted on: &quot;, &amp;dateline)       #&amp;dateline is an Icon feature
+ </PRE>
+
+<PRE># Example reading form input specified in simple.html line 15
+write(&quot;&lt;br&gt;Hello, &quot;, cgi[&quot;name&quot;],&quot; welcome to the output page.&lt;br&gt;&quot;)
+ 
+write(&quot;Your age is : &quot;, cgi[&quot;age&quot;],&quot;&lt;br&gt;&quot;)
+ 
+write(&quot;And I see you enjoy:&quot;)
+write(if cgi[&quot;pizza&quot;] == &quot;on&quot; then &quot;Pizza&quot; else &quot;&quot;, &quot; &quot;,
+         if cgi[&quot;burger&quot;] == &quot;on&quot; then &quot;Hamburgers&quot; else &quot;&quot;, &quot; &quot;,
+         if cgi[&quot;taco&quot;] == &quot;on&quot; then &quot;Tacos&quot; else &quot;&quot;, &quot; &quot;)
+write(&quot; for your every meal.&lt;br&gt;&quot;)
+ 
+write(&quot;And your favorite color to look at is&quot;)
+write(if cgi[&quot;red&quot;] == &quot;on&quot; then &quot;Red&lt;br&gt;&quot; else &quot;&quot;, &quot; &quot;,
+         if cgi[&quot;green&quot;] == &quot;on&quot; then &quot;Green&lt;br&gt;&quot; else &quot;&quot;, &quot; &quot;,
+         if cgi[&quot;blue&quot;] == &quot;on&quot; then &quot;Blue&lt;br&gt;&quot; else &quot;&quot;, &quot; &quot;)
+ 
+write(&quot;Education: &quot;)
+write(if cgi[&quot;bs&quot;] == &quot;on&quot; then &quot;BS&lt;br&gt;&quot; else &quot;&quot;, &quot; &quot;,
+         if cgi[&quot;ms&quot;] == &quot;on&quot; then &quot;MS&lt;br&gt;&quot; else &quot;&quot;, &quot; &quot;,
+         if cgi[&quot;phd&quot;] == &quot;on&quot; then &quot;PHD&lt;br&gt;&quot; else &quot;&quot;, &quot; &quot;)
+write(&quot;&lt;br&gt;&lt;br&gt;&quot;)
+ 
+write(&quot;Your words of wisdom are:&lt;br&gt;&lt;br&gt;&nbsp;&nbsp;&quot;,cgi[&quot;comments&quot;],&quot;&lt;br&gt;&quot;)
+ 
+write(&quot;&lt;br&gt;&lt;br&gt;&lt;center&gt;If you changed your mind... &quot;)
+write(&quot;&lt;A href=\&quot;simple.html\&quot;&gt; You can always Go Back!&lt;/a&gt;&quot;)
+write(&quot;  fix it  and re submit it!&lt;/center&gt;&lt;br&gt;&lt;br&gt;&quot;)
+ 
+end
+
+
+
+
+
+
+
+
+
+
+</PRE>
+
+<H2><FONT SIZE=+2>Another Simple Example:</FONT></H2>
+
+<P><FONT SIZE=+1>Verification Screen</FONT></P>
+
+<P><FONT SIZE=+1>&nbsp;&nbsp;&nbsp;&nbsp;</FONT>A lot happens in the
+following example script <TT><A HREF="simple2.icn">simple2.icn</A></TT>
+. Use the command <TT>icont -o simple2.cgi simple2.icn</TT> to
+compile. This script uses the cgiEcho() procedure to create a file
+containing the information submitted in the form on the local server. This
+file is then e-mailed to whomever is specified. The second feature of the
+script is that, it creates an HTML document containing the same information
+as the file which was mailed. This script runs off of the same HTML document
+as the previous example, <TT>simple.html</TT>; the only change needed
+is to change the line:</P>
+
+<P><code>&lt;form method=&quot;GET&quot; action=&quot;/cgi-bin/simple.cgi&quot;&gt;</code></P>
+
+<P>to</P>
+
+<P><code>&lt;form method=&quot;GET&quot; action=&quot;/cgi-bin/simple2.cgi&quot;&gt;</code></P>
+<P>within the <code>simple.html</code> document
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;The comments will help explain what is happening.</P>
+
+<PRE>link cgi          # This links the PRECOMPILED cgi library and makes
+                  # those functions available to you
+ 
+procedure cgimain()  # This is the start of the script
+ 
+host := getenv(&quot;REMOTE_HOST&quot;)  # This is an example of using the
+                               # Environment Variables to get some information
+ 
+# The following line opens a file pointed to by f
+# The cgiEcho is used to  output the contents
+# of the subsequent write()'s to both the file pointed to by  f and
+# the screen. (with HTML tags for newlines)  If for some reason the
+# file can not be opened, the script would stop.
+
+f := open(&quot;/tmp/temp.file&quot;, &quot;w&quot;) | stop(&quot;Can't open file &quot;)
+ 
+cgiEcho(f, &quot;Submitted IP address:  &quot;, host,&quot;&quot;)
+cgiEcho(f, &quot;Submitted on: &quot;, &amp;dateline) #This is an Icon feature
+cgiEcho(f, &quot;Hello, &quot;, cgi[&quot;name&quot;],&quot; welcome to the output page.&quot;)
+cgiEcho(f, &quot;Your age is : &quot;, cgi[&quot;age&quot;],&quot;&quot;)
+ 
+cgiEcho(f, &quot;And I see you enjoy:&quot;, if cgi[&quot;pizza&quot;] == &quot;on&quot; then &quot;Pizza&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;burger&quot;] == &quot;on&quot; then &quot;Hamburgers&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;taco&quot;] == &quot;on&quot; then &quot;Tacos&quot; else &quot;&quot;, &quot; &quot;,&quot; for your every meal.&quot;)
+ 
+cgiEcho(f,&quot;And your favorite color is &quot;,if cgi[&quot;red&quot;] == &quot;on&quot; then &quot;Red&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;green&quot;] == &quot;on&quot; then &quot;Green&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;blue&quot;] == &quot;on&quot; then &quot;Blue&quot; else &quot;&quot;, &quot; &quot;)
+ 
+cgiEcho(f,&quot;Education: &quot;,if cgi[&quot;bs&quot;] == &quot;on&quot; then &quot;BS&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;ms&quot;] == &quot;on&quot; then &quot;MS&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;phd&quot;] == &quot;on&quot; then &quot;PHD&quot; else &quot;&quot;, &quot; &quot;)
+
+cgiEcho(f,&quot;&quot;)
+cgiEcho(f,&quot;Your words of wisdom are:  &nbsp;&quot;,cgi[&quot;comments&quot;],&quot;&quot;)
+ 
+write(&quot;&lt;center&gt;If you changed your mind... &quot;)
+write(&quot;&lt;a href=./simple.html&gt; You can always Go Back !&lt;/a&gt;&quot;)
+write(&quot;  fix it  and re submit it!&lt;/center&gt;&quot;)
+ 
+# If you had opened the file and used the cgiEcho() procedure, then you
+# could use this system() call to that file mailed to you. And of course
+# clean up after yourself.
+        system(&quot;cd /tmp; mail jvallejo &lt; temp.file; rm temp.file&quot;)
+end
+</PRE>
+
+
+<p>
+You will have
+to experiment with the above code and the cgi library functions to get
+your scripts working correctly. You might want to get these examples working
+first and then adapt them to your needs.
+
+
+<H2>CGI Library Reference</H2>
+
+<H3><A NAME="cgi"></A>cgi -- table containing input fields </H3>
+
+<P>Library global variable cgi is a table whose keys are the names of
+input fields in the invoking HTML page's form, and whose values are whatever
+the user typed in those input fields. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiInput"></A>cgiInput(type, name, values) -- generate INPUT
+tags </H3>
+
+<P>Generates HTML INPUT tags of a particular <TT>type</TT> with a certain
+<TT>name</TT> for each element of a list of <TT>values</TT>. The first
+value's input tag is CHECKED. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiSelect"></A>cgiSelect(name, values) -- generate SELECT
+tags </H3>
+
+<P>Generates an HTML SELECT tag with a certain <TT>name</TT> and embedded
+OPTION tags for each element of a list of <TT>values</TT>. The first value's
+OPTION tag is SELECTED. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiXYCoord"></A>cgiXYCoord(hlst) : s -- convert XY coordinates
+to corresponding list element </H3>
+
+<P>This procedure is used with a ISMAP to figure out what the x and
+y coords and if they are between a certain boundary. It returns the value
+of the list that was entered. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiMyURL"></A>cgiMyURL() : s -- return the URL for the currently
+executing CGI script </H3>
+
+<P>Return the URL for the current script, as obtained from the SERVER_NAME
+and SCRIPT_NAME environment variables. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiMethGet"></A>cgiMethGet() : -- succeed if the HTTP REQUEST_METHOD
+is a GET, otherwise fail </H3>
+
+<P>Determine whether the script was invoked via GET. Called automatically
+during script initialization prior to <TT>cgimain()</TT>. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiReadParse"></A>cgiReadParse() : T -- read CGI input fields
+</H3>
+
+<P>This procedure gets input from either QUERY_STRING or stdin puts
+the values with their field names and returns a table that maps input field
+names (the keys/indices of the table) to their values. Called automatically
+during script initialization prior to <TT>cgimain()</TT>. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiPrintVariables"></A>cgiPrintVariables(T) -- generate HTML
+for an Icon table </H3>
+
+<P>Prints the keys and values in a table, uses simple HTML formatting.
+</P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiError"></A>cgiError(L) -- generate HTML error message </H3>
+
+<P>Generates an error message consisting of the strings in list L, with
+L[1] as the title and subsequent list elements as paragraphs. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiHexVal"></A>cgiHexVal(c) -- return integer value for hexadecimal
+character c </H3>
+
+<P>Produces a value from 0 to 15 corresponding to a hex char from 0
+to F. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiHexChar"></A>cgiHexChar(c1,c2) -- return char corresponding
+to hex digits </H3>
+
+<P>Produces an 8-bit char value corresponding to two hex digits encoded
+as chars. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiColorToHex"></A>cgiColorToHex(s) : s -- return 24-bit hex
+color values correponding to color name </H3>
+
+<P>Produces a 24-bit hex color value corresponding to a string color
+name. At present, only the colors black, gray, white, pink, violet, brown,
+red, orange, yellow, green, cyan, blue, purple, and magenta are supported.
+</P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiPrePro"></A>cgiPrePro(filename, def) -- return 24-bit hex
+color values correponding to color name </H3>
+
+<P>This procedure selectively copies out parts of a named (HTML) file,
+writing out either anything between ALL and the value that are passed into
+the procedure. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiRndImg"></A>cgiRndImg(L, s) -- write a random embedded
+HTML image from list L </H3>
+
+<P>An HTML IMG tag is generated for a random element of L, which should
+be a list of image filenames. The tag has ALT text given in string s. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiOptwindow"></A>cgiOptwindow(opts, args...) -- open a window
+on server or client's X display </H3>
+
+<P>An attempt is made to open an Icon window, either on the X server
+or else on display :0 of the client's machine (as defined by the IP address
+in REMOTE_ADDR). The Icon window is typically used to generate a .GIF image
+to which a link is embedded in the CGI's output. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="main"></A>main(args...) -- initialize CGI script application
+</H3>
+
+<P>The CGI <TT>main()</TT> procedure generates an HTML header, parses
+the CGI input fields into a global table <TT>cgi</TT>, generates a background
+by calling the user's <TT>cgiBBuilder()</TT> function, if any, and calls
+the user's <TT>cgimain()</TT> function. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgiBBuilder"></A>cgiBBuilder(args...) : T -- generate CGI
+page background </H3>
+
+<P>If the user application defines this function, it should return a
+table which contains keys &quot;background&quot;, &quot;bgcolor&quot;,
+&quot;text&quot;, &quot;link&quot;, &quot;vlink&quot;, &quot;bgproperties&quot;
+with appropriate values to go into the BODY tag and define background color
+and texture for the CGI page. </P>
+
+<P>
+<HR></P>
+
+<H3><A NAME="cgimain"></A>cgimain(args...) -- execute user CGI application
+code </H3>
+
+<P>The CGI application must define procedure <TT>cgimain()</TT>, which
+generates the HTML content body for the client's web page as a result of
+their invoking the CGI script. </P>
+<br>
+<br>
+<br>
+<H2>Appendix A: Example CGI application </H2>
+
+<PRE>############################################################################ 
+#
+#       File:     <A HREF="appform.icn">appform.icn
+</A>#
+#       Subject:  Program: CGI script that processes scholarship applications
+#
+#       Authors:  Clinton Jeffery
+#
+#       Date:     July 11, 1997
+#
+############################################################################ 
+#
+# This program processes a bunch of input fields defined in an on-line
+# scholarship application at <A HREF="scholarform.html">scholarform.html</A><!--was mii.form.shtml--> (<em>Note: this link is broken at present</em>)
+# and from them, generates a latex file which it typesets, prints, and e-mails
+# to the scholarship coordinator.
+#
+############################################################################ 
+
+link cgi
+
+procedure cgimain()
+  every k := key(cgi) do {
+      s := &quot;&quot;
+      cgi[k] ? {
+          while s ||:= tab(upto('#%$&amp;_{}&quot;\\^~|&lt;&gt;-')) do {
+              case c := move(1) of {
+                  &quot;\\&quot;: s ||:= &quot;$\\setminus$&quot;
+                  &quot;^&quot;: s ||:= &quot;$^{\\wedge}$&quot;
+                  &quot;~&quot;: s ||:= &quot;$\\sim$&quot;
+                  &quot;|&quot;: s ||:= &quot;$\\mid$&quot;
+                  &quot;&lt;&quot;: s ||:= &quot;$&lt;$&quot;
+                  &quot;&gt;&quot;: s ||:= &quot;$&gt;$&quot;
+                  &quot;-&quot;: s ||:= &quot;$-$&quot;
+                  default: {
+                      s ||:= &quot;\\&quot;; s ||:= c
+                  }
+              }
+          }
+          s ||:= tab(0)
+          }
+      cgi[k] := s
+  }
+  f := open(&quot;/tmp/appform.tex&quot;, &quot;w&quot;) | stop(&quot;can't open /tmp/appform.tex&quot;)
+
+  write(&quot;Generating typeset copy of application form...&quot;)
+
+  write(f,&quot;\\documentstyle[11pt]{letter}&quot;)
+  write(f,&quot;\\pagestyle{empty}&quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;\\setlength{\\textwidth}{6.6in}&quot;)
+  write(f,&quot;\\setlength{\\textheight}{10in}&quot;)
+  write(f,&quot;\\setlength{\\topmargin}{-.3in}&quot;)
+  write(f,&quot;\\setlength{\\headsep}{0in}&quot;)
+  write(f,&quot;\\setlength{\\oddsidemargin}{0in}&quot;)
+  write(f,&quot;\\baselineskip 13pt&quot;)
+  write(f,&quot;\\begin{document}&quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;\\begin{center}&quot;)
+  write(f,&quot;{\\large\\bf&quot;)
+  if (/ (cgi[&quot;TESTSCORES&quot;])) | trim(string(cgi[&quot;TESTSCORES&quot;])) == &quot;0&quot; then
+     write(f,&quot;NSF Computer Science Scholars and Mentors Program Application&quot;)
+  else
+     write(f,&quot;NSF Summer Computer Science Institute Application&quot;)
+  write(f,&quot;}&quot;)
+  write(f,&quot;\\end{center}&quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;\\begin{tabular}{llll}&quot;)
+  writes(f, &quot;Name: &amp; &quot;, cgi[&quot;NAME&quot;])
+  writes(f,&quot; &amp; Phone: &amp; &quot;, cgi[&quot;PHONE&quot;])
+  write(f,&quot; \\\\&quot;)
+  write(f,&quot;Address: &amp; &quot;, cgi[&quot;ADDRESS1&quot;], &quot; &amp; Social Sec. Number: &amp; &quot;, cgi[&quot;SOC&quot;], &quot; \\\\&quot;)
+  write(f,&quot;\\ &amp; &quot;, cgi[&quot;ADDRESS2&quot;], &quot; &amp; Gender (M/F): &amp; &quot;, cgi[&quot;GENDER&quot;])
+  write(f,&quot;\\end{tabular}&quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;Semester hours completed: Overall &quot;, cgi[&quot;TOTALCREDITS&quot;], &quot; in Computer Science &quot;, cgi[&quot;CSCREDITS&quot;], &quot;\\\\&quot;)
+  write(f,&quot;College GPA:  Overall &quot;, cgi[&quot;COLLEGEGPA&quot;],
+        &quot; in Computer Science courses &quot;, cgi[&quot;CSGPA&quot;],&quot;\\\\&quot;)
+  if (/ (cgi[&quot;TESTSCORES&quot;])) | trim(string(cgi[&quot;TESTSCORES&quot;])) == &quot;0&quot; then
+      write(f,&quot;Are you interested in graduate studies? \\\\&quot;)
+  else
+      write(f,&quot;Are you interested in a CS degree at UTSA?&quot;)
+  write(f, if cgi[&quot;YES&quot;] == &quot;on&quot; then &quot;yes&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;NO&quot;] == &quot;on&quot; then &quot;no&quot; else &quot;&quot;, &quot; &quot;,
+        if cgi[&quot;MAYBE&quot;] == &quot;on&quot; then &quot;maybe&quot; else &quot;&quot;,
+        &quot;\\ \\\\&quot;)
+  write(f,&quot;Present Employer: &quot;, cgi[&quot;EMPLOYER&quot;], &quot; \\\\&quot;)
+  write(f,&quot;Position: &quot;, cgi[&quot;POSITION&quot;], &quot;Hours/week: &quot;, cgi[&quot;HOURS&quot;], &quot; \\\\&quot;)
+  write(f,&quot;If selected for the NSF CS Scholars program, will the scholarship enable you&quot;)
+  write(f,&quot;to quit your present job?  If not, how many hours will you be working? \\\\&quot;)
+  write(f, cgi[&quot;STILLWORKING&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;Educational Background\\\\&quot;)
+  write(f,&quot;High School: List name, dates attended, GPA, graduated?\\\\&quot;)
+  write(f, cgi[&quot;HIGH1&quot;], &quot;\\ \\\\&quot;)
+  write(f, cgi[&quot;HIGH2&quot;], &quot;\\ &quot;)
+  if (/ (cgi[&quot;TESTSCORES&quot;])) | trim(string(cgi[&quot;TESTSCORES&quot;])) == &quot;0&quot; then
+      write(f,&quot; \\\\&quot;)
+  else
+      write(f,&quot;Test Scores: &quot;, cgi[&quot;TESTSCORES&quot;], &quot; \\\\&quot;)
+  write(f,&quot;For each college, list name, dates attended, hours completed, degrees awarded.&quot;)
+  write(f,cgi[&quot;COLL1&quot;], &quot;\\ \\\\&quot;)
+  write(f,cgi[&quot;COLL2&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;\\ \\\\&quot;)
+  write(f,&quot;\\ \\\\&quot;)
+  write(f,&quot;Academic honors, scholarships, fellowships, and assistantships\\\\&quot;)
+  write(f,cgi[&quot;HONOR1&quot;], &quot;\\ \\\\&quot;)
+  write(f,cgi[&quot;HONOR2&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;\\ \\\\&quot;)
+  write(f,&quot;Extracurricular interests: \\hrulefill \\\\&quot;)
+  write(f,cgi[&quot;EXTRA1&quot;], &quot;\\ \\\\&quot;)
+  write(f,cgi[&quot;EXTRA2&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;Memberships in professional organizations: \\hrulefill\\\\&quot;)
+  write(f,cgi[&quot;ORGS1&quot;], &quot;\\ \\\\&quot;)
+  write(f,cgi[&quot;ORGS2&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;Research interests and publications, if any: \\hrulefill \\\\&quot;)
+  write(f,cgi[&quot;RESEARCH1&quot;], &quot;\\ \\\\&quot;)
+  write(f,cgi[&quot;RESEARCH2&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;Military Service or Draft Status: \\hrulefill \\\\&quot;)
+  write(f,cgi[&quot;MIL1&quot;], &quot;\\ \\\\&quot;)
+  write(f,cgi[&quot;MIL2&quot;], &quot;\\ \\\\&quot;)
+  write(f,&quot;Name(s) of at least one person you have asked to complete a confidential&quot;)
+  write(f,&quot;academic reference letter.\\\\&quot;)
+  write(f,&quot;Name \\hfill Address \\hfill Relationship \\\\&quot;)
+  write(f,cgi[&quot;REF1&quot;], &quot;\\ &quot;, cgi[&quot;REFADD1&quot;], &quot;\\ &quot;, cgi[&quot;REFREL1&quot;],&quot;\\\\&quot;)
+  write(f,cgi[&quot;REF2&quot;], &quot;\\ &quot;, cgi[&quot;REFADD2&quot;], &quot;\\ &quot;, cgi[&quot;REFREL2&quot;],&quot;\\\\&quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;On the back of this sheet or an attached letter, please include a {\\em&quot;)
+  write(f,&quot;short\\/} statement of purpose, including information about your background,&quot;)
+  write(f,&quot;major and career interests, and professional goals.&quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;I certify that information provided on this application and supporting&quot;)
+  write(f,&quot;documents is correct and complete to the best of my knowledge. \\\\ \\ &quot;)
+  write(f,&quot;&quot;)
+  write(f,&quot;\\noindent Signature: \\rule{3.5in}{.01in} Date: \\hrulefill&quot;)
+  write(f,&quot;&quot;)
+  write(f, &quot;\\pagebreak&quot;)
+  write(f,&quot;&quot;)
+  write(f, cgi[&quot;INFO&quot;])
+  write(f,&quot;\\end{document}&quot;)
+  close(f)
+  write(&quot;Mailing form to program director...&quot;)
+  system(&quot;cd /tmp; mail jeffery &lt;appform.tex&quot;)
+  write(&quot;Typesetting and Printing hard copy...&quot;)
+  system(&quot;cd /tmp; /usr/local/bin/latex appform &gt;/dev/null 2&gt;/dev/null; /usr/local/bin/dvips -o appform.ps appform &gt;/dev/null 2&gt;/dev/null; /usr/ucb/lpr appform.ps; rm appform.*&quot;)
+  write(&quot;Thank you for applying, &quot;, cgi[&quot;NAME&quot;], &quot;.  Your application has been submitted to jeffery@cs.utsa.edu&quot;)
+end
+</PRE>
+<br>
+<br>
+<br>
+
+<H2>Appendix B: the <TT>cgi.icn</TT> library source </H2>
+
+<PRE>############################################################################ 
+#
+#       File:     <A HREF="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/unicon/unicon/ipl/procs/cgi.icn">cgi.icn
+</A>#
+#       Subject:  Procedures for writing CGI scripts
+#
+#       Authors:  Joe Van Meter and Clinton Jeffery
+#
+#       Date:     August 17, 1996
+#
+############################################################################ 
+#
+# This library makes programming cgi programs easier by automatically 
+# checking for title and body procedures.  There are other procedures
+# that do some repetitive things for the programmer.
+#
+############################################################################ 
+
+global cgi                      # table of input fields
+
+#
+# cgiEcho(file,args[]) - write a file to both HTML stdout and a regular
+#  text file, if one is present
+#
+procedure cgiEcho(f, args[])
+   push(args, f)
+   if type(f) == &quot;file&quot; then {  # if we have a file
+      write ! args              # write to it
+      pop(args)                 # and then discard it
+      }
+   put(args, &quot;&lt;br&gt;&quot;)            # write HTML
+   write ! args
+end
+
+#
+# cgiInput(type, name, values) -
+#
+procedure cgiInput(ty,nam,va)
+   every is := !va do {
+      writes(&quot;[&lt;INPUT TYPE=\&quot;&quot;,ty,&quot;\&quot; NAME=\&quot;&quot;,nam,&quot;\&quot; VALUE=\&quot;&quot;,is,&quot;\&quot;&quot;)
+      if is===va[1] then
+          writes(&quot; CHECKED&quot;)
+      write(&quot;&gt;&quot;, is, &quot;]&quot;)
+      }
+end
+
+#
+# cgiSelect(name, values)
+# this program with the name and value makes a select box
+#
+procedure cgiSelect(nam, va)
+   write(&quot;&lt;SELECT NAME=\&quot;&quot;, nam, &quot;\&quot;&gt;&quot;)
+   every is := !va do {
+      writes(&quot;&lt;OPTION&quot; )
+      if is==va[1] then writes(&quot; SELECTED&quot;)
+      write(&quot;&gt;&quot;, is)
+      }
+   write(&quot;&lt;/SELECT&gt;&quot;)
+end
+
+#
+# cgiXYCoord()
+# This procedure is used with a ISMAP to figure out what the x and y coords
+# and if they are between a certain boundary. It returns the value of the 
+# list that was entered.
+# 
+record HMap(value,x1,y1,x2,y2)
+
+procedure cgiXYCoord(hlst)
+   title := hlst[1]
+   getenv(&quot;QUERY_STRING&quot;) ? {
+      x := tab(find(&quot;,&quot;))
+      move(1)
+      y := tab(0)
+      }
+   every q := 2 to *hlst do {
+      if (hlst[q].x1 &lt; x &lt; hlst[q].x2) &amp; (hlst[q].y1 &lt; y &lt; hlst[q].y2) then {
+         title := hlst[q].value
+         }
+      }
+   return title
+end
+
+procedure cgiMyURL()
+   return &quot;http://&quot; || getenv(&quot;SERVER_NAME&quot;) || getenv(&quot;SCRIPT_NAME&quot;)
+end
+
+procedure cgiMethGet()
+   if (getenv(&quot;REQUEST_METHOD&quot;)===&quot;GET&quot;) then return
+   # else fail
+end
+
+#
+# cgiReadParse()
+# This procedure gets input from either QUERY_STRING or stdin puts the 
+# values with their variable names and returns a table with references
+# from the variables to their values
+#
+
+procedure cgiReadParse()
+static hexen
+initial {
+   hexen := &amp;digits ++ 'ABCDEF'
+   }
+   html := [ ]
+   it := &quot;&quot;
+   cgi := table(0)
+   if cgiMethGet() then
+      line := getenv(&quot;QUERY_STRING&quot;)
+   else line := reads(&amp;input, getenv(&quot;CONTENT_LENGTH&quot;))
+
+   line ? {
+      while put(html, tab(find(&quot;&amp;&quot;))) do {
+         tab(many('&amp;'))
+         }
+      put(html, tab(0))
+      }
+   every r := 1 to *html do
+      html[r] := map(html[r], &quot;+&quot;, &quot; &quot;)
+   every !html ? {
+      # does this really loop multiple times?  If so, what are we
+      # throwing away?
+      while k := tab(find(&quot;=&quot;)) do
+         tab(many('='))
+      data := tab(0)
+
+      while data ?:= ((tab(find(&quot;%&quot;)) ||
+                     (move(1) &amp;
+                      (c1 := tab(any(hexen))) &amp; (c2 := tab(any(hexen))) &amp;
+                      cgiHexchar(c1,c2)) ||
+                       tab(0)))
+
+      cgi[k] := data
+      }
+   return cgi
+end
+
+#
+# procedure cgiPrintVariables
+# prints the variables with their value
+#
+
+procedure cgiPrintVariables(in)
+   write(&quot;&lt;br&gt;&quot;)
+   every X := key(in) do
+      write(&quot;&lt;b&gt;&quot;,X,&quot;&lt;/b&gt; is &lt;i&gt;&quot;,in[X],&quot;&lt;/i&gt;&lt;p&gt;&quot;)
+end
+
+procedure cgiError(in)
+   if /in then
+      write(&quot;Error: Script &quot;, cgiMyURL(), &quot; encountered fatal error&quot;)
+   else { 
+      write(&quot;Content-type: text/html\n\n&quot;)
+      write(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;&quot;,in[1],&quot;&lt;/title&gt;&lt;/head&gt;\n&quot;)
+      every i := 2 to *in do
+         write(&quot;&lt;p&gt;&quot;, in[i], &quot;&lt;/p&gt;&quot;)
+      write(&quot;&lt;/body&gt;&lt;/html&gt;\n&quot;)
+      }
+
+end
+
+procedure cgiHexval(c)
+    if any(&amp;digits, c) then return integer(c)
+    if any('ABCDEF', c) then return ord(c) - ord(&quot;A&quot;) + 10
+end
+
+procedure cgiHexchar(c1,c2)
+    return char(cgiHexval(c1) * 16 + cgiHexval(c2))
+end
+
+#
+# procedure cgiColorToHex
+# if a basic color is entered into the procedure the hex values
+# is returned
+#
+
+procedure cgiColorToHex(s)
+static ColorTbl
+initial {
+   ColorTbl:=table(0)
+   ColorTbl[&quot;black&quot;] := &quot;000000&quot;
+   ColorTbl[&quot;gray&quot;]  := &quot;666666&quot;
+   ColorTbl[&quot;white&quot;] := &quot;ffffff&quot;
+   ColorTbl[&quot;pink&quot;]  := &quot;ff0099&quot;
+   ColorTbl[&quot;violet&quot;]:= &quot;ffccff&quot;
+   ColorTbl[&quot;brown&quot;] := &quot;996633&quot;
+   ColorTbl[&quot;red&quot;]   := &quot;ff0000&quot;
+   ColorTbl[&quot;orange&quot;]:= &quot;ff9900&quot;
+   ColorTbl[&quot;yellow&quot;]:= &quot;ffff33&quot;
+   ColorTbl[&quot;green&quot;] := &quot;339933&quot;
+   ColorTbl[&quot;cyan&quot;]  := &quot;ff66cc&quot;
+   ColorTbl[&quot;blue&quot;]  := &quot;0000ff&quot;
+   ColorTbl[&quot;purple&quot;]:= &quot;990099&quot;
+   ColorTbl[&quot;magenta&quot;]:=&quot;cc0066&quot;
+   }
+
+   if rv := ColorValue(s) then {
+      # unfinished; convert 16-bit decimal values into 8-bits/component hex
+      }
+   return ColorTbl[s]
+end     
+
+#
+# Procedure cgiPrePro
+# This procedure goes through a file writes out 
+# either anything between ALL and the value that are passed into the 
+# procedure.
+#
+
+procedure cgiPrePro(filename,def)
+   AllFlag := 0
+   DefFlag := 0
+   all := &quot;&lt;!-- ALL&quot;
+   look := &quot;&lt;!-- &quot;||def 
+   intext := open(filename)
+   while here:=read(intext) do {
+      if match(all,here) then { 
+         if AllFlag = 1 then
+             AllFlag := 0
+         else {
+            here := read(intext)
+            AllFlag := 1
+            }
+         }
+      if match(look,here) then
+         if DefFlag = 1 then {
+            DefFlag := 0
+            }
+         else {
+            DefFlag := 1
+            here := read(intext)
+            }
+      if AllFlag = 1 then writes(here)
+      else if DefFlag = 1 then writes(here)
+      }
+end
+
+#
+# Procedure cgiRndImg
+#
+# if a list is passed into the procedure then an img is randomized
+#
+
+procedure cgiRndImg(GifList,AltText)
+   writes(&quot;&lt;img src=\&quot;&quot;,?GifList,&quot;\&quot;&quot;, &quot; alt=\&quot;&quot;,AltText,&quot;\&quot;&quot;, &quot;&gt;&quot;)
+end
+
+procedure cgiOptwindow(opts, args[])
+   if not getenv(&quot;DISPLAY&quot;) then {
+      /opts[&quot;D&quot;] := getenv(&quot;REMOTE_ADDR&quot;) || &quot;:0&quot;
+      }
+   return optwindow ! push(args, opts)
+end
+
+#
+# procedure main
+#
+# This procedure checks for a title procedure and a body procedure and places 
+# the html headers and tail... it then calls the users cgimain.
+#
+
+procedure main(args)
+   write(&quot;Content-type: text/html\n\n&quot;)
+   write(&quot;&lt;html&gt;&quot;)
+   if \cgititle then {
+      write(&quot;&lt;title&gt;&quot;)
+      write(cgititle(args))
+      write(&quot;&lt;/title&gt;&quot;)
+      }
+   writes(&quot;&lt;body&quot;)
+   if \cgiBBuilder then {
+      BB := cgiBBuilder(args)
+      writes(&quot; background=\&quot;&quot;,BB[&quot;background&quot;],&quot;\&quot;&quot;)    
+      writes(&quot; bgcolor=\&quot;&quot;,BB[&quot;bgcolor&quot;],&quot;\&quot;&quot;)  
+      writes(&quot; text=\&quot;&quot;,BB[&quot;text&quot;],&quot;\&quot;&quot;)        
+      writes(&quot; link=\&quot;&quot;,BB[&quot;link&quot;],&quot;\&quot;&quot;)        
+      writes(&quot; vlink=\&quot;&quot;,BB[&quot;vlink&quot;],&quot;\&quot;&quot;)      
+      writes(&quot; bgproperties=\&quot;&quot;,BB[&quot;bgproperties&quot;],&quot;\&quot;&quot;)        
+      }
+   write(&quot;&gt;&quot;)
+   cgiReadParse()
+   cgimain(args)
+   write(&quot;&lt;/body&gt;&quot;)
+   write(&quot;&lt;/html&gt;&quot;)
+end
+
+
+
+
+
+<H2>Appendix C: Common CGI Environment Variables</h2>
+
+<P>Much of the <A href="http://hoohoo.ncsa.uiuc.edu/cgi/interface.html">
+official CGI definition</A> consists of a description of a set of
+standard environment variables that are set by the web server as a method
+of passing information to the CGI script. Icon programmers access these
+environment variables using <TT>getenv()</TT>, as in </P>
+
+<PRE>   getenv(&quot;QUERY_STRING&quot;)</PRE>
+
+<P>The following abbreviated summary of the CGI environment variables is
+provided as a convenient reference for Icon programmers so that this
+document can serve as a stand-alone reference for writing CGI
+scripts.  For a complete listing of all of the Environment Variables
+supported by CGI go to <A HREF="http://hoohoo.ncsa.uiuc.edu/cgi/env.html">http://hoohoo.ncsa.uiuc.edu/cgi/env.html</A></P>
+
+<CENTER><TABLE BORDER=1 >
+<TR ALIGN=CENTER VALIGN=BOTTOM>
+<TD WIDTH="50%" HEIGHT="50%"><FONT SIZE=+1>Variable</FONT></TD>
+
+<TD><FONT SIZE=+1>Explanation</FONT></TD>
+</TR>
+
+<TR>
+<TD>CONTENT_LENGTH</TD>
+
+<TD>The length of the ASCII string provided by the method=&quot;POST&quot;</TD>
+</TR>
+
+<TR>
+<TD>QUERY_STRING</TD>
+
+<TD>All of the information which follows the ? in the URL when <BR>
+using method=&quot;GET&quot;. This is the string which holds all of the
+<BR>
+information submitted through the form.</TD>
+</TR>
+
+<TR>
+<TD>REMOTE_ADDR</TD>
+
+<TD>Contains the IP address of the client machine.</TD>
+</TR>
+
+<TR>
+<TD>REMOTE_HOST</TD>
+
+<TD>Contains the hostname of the client machine. Defaults to IP<BR>
+held by REMOTE_ADDR. </TD>
+</TR>
+
+<TR>
+<TD>REQUEST_METHOD</TD>
+
+<TD>Contains &quot;GET&quot; or &quot;POST&quot; depending on which
+<BR>
+method was used.</TD>
+</TR>
+
+<TR>
+<TD>SERVER_NAME</TD>
+
+<TD>The server's hostname, defaults to IP address.</TD>
+</TR>
+</TABLE></CENTER>
+
+
+</BODY>
+</HTML>

@@ -1,0 +1,855 @@
+<HTML><HEAD>
+<TITLE>Version 10 of Unicon for Microsoft Windows</TITLE>
+</HEAD><BODY>
+
+<BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<CENTER>
+<H2>Version 10 of Unicon<br> for Microsoft Windows</h2>
+</CENTER>
+<p>
+<h4><P align="center">
+Clinton L. Jeffery<br>
+February 14, 2002<br>
+Unicon Technical Report #7<br>
+</p></h4>
+
+<BR><BR><BR><BR><BR><BR>
+<H4><P ALIGN="center">Abstract
+			</P></H4>
+<BR>
+This document is your one-stop guide to installing and running the
+Unicon programming language under the Microsoft Windows environment.  It
+serves as the primary reference for the Ui programming environment and
+the Windows-specific language extensions to Unicon.
+
+<br><BR><BR><BR><BR><br><br><br>
+<center><table>
+<tr>
+<td><img src="unilogo.jpg"></td>
+<td>
+http://unicon.sourceforge.net/utr/utr7.htm<br>
+<br>
+Department of Computer Science<br>
+			New Mexico State University<br>
+			Las Cruces, NM 88003
+</td></tr></table></center>
+
+<BR><BR><BR><BR><BR>
+
+<h3> Contents </h3>
+
+<ol>
+<li> <A href="#intro">Introduction</A>
+<li> <A href="#installing">Installing Windows Unicon</A>
+<li> <A href="#running">Running Windows Unicon</A>
+<li> <A href="#testing">Testing the Installation</A>
+<li> <A href="#more">More on Running Unicon</A>
+<li> <A href="#features">Features of Windows Unicon</A>
+<li> <A href="#limitations">Known Bugs and Limitations</A>
+<li> <A href="#trouble">Reporting Problems...or Successes</A>
+</ol>
+
+<h3><A name="intro">1. Introduction</A></h3>
+
+The Microsoft Windows implementation of Version 10 of Unicon runs on 386 or
+higher PCs or PC clones with an operating system that can execute 32-bit
+Windows binaries, including Microsoft Windows 95, 98, Me, NT, 2000, and XP.
+16 MB of RAM is required, and far more MB of RAM is strongly
+recommended.<p>
+
+This implementation of Unicon is an open source project under the GNU
+license; it may be copied and
+used with few restrictions.  The Unicon Project makes no warranties of any kind
+as to the correctness of this material or its suitability for any
+application.  The responsibility for the use of Unicon lies entirely with the
+user.<p>
+
+The basic reference for Version 10 of Unicon is the book
+<u>Programming with Unicon</u> [1].  This book is available from the Unicon
+Project web site at http://unicon.sourceforge.net. The graphics
+facilities are detailed in a separate report [2].
+Windows Unicon and the Ui environment are products of Clinton Jeffery of
+New Mexico State University.  Send requests, and bug reports to
+<code>jeffery@cs.nmsu.edu</code>.  General Unicon language questions can be
+sent to <code>unicon-group@lists.sourceforge.net</code>.
+
+
+
+<h3><A name="installing">2. Installing Windows Unicon</A></h3>
+
+Windows Unicon is distributed as a single (large) executable installer.
+Run <code>setup.exe</code>, prefixed by whatever drive letter and
+path you copied setup.exe into, to install Windows Unicon.
+<p>
+
+During installation, you will be asked for a drive and directory into which
+the Unicon files will be installed, which defaults to
+<code>C:\PROGRAM FILES\WINDOWS UNICON</code>.  Files will be installed into several
+subdirectories of the location you specify.
+Installation also results in the creation
+of a Windows Unicon program group with a set of icons that allow you read
+on-line documentation, uninstall the software, and launch Windows Unicon.  The
+collection of Windows Unicon icons will look something like this:
+<p>
+
+Within the directory that Unicon was installed, the most important subdirectory
+is the <code>bin</code> directory, which contains the Unicon system binaries.
+Several executable binary files are required to use Unicon, including
+the executor and the
+compiler that produces virtual machine code files for the executor.  The
+executor and compiler are normally invoked by the integrated
+development environment called <em>Ui</em> (pronounced "Oui"), a simple
+editor/project builder that provides a visual
+interface to the program development process.  Applications that provide a
+graphical interface are usually constructed by means of a visual interface
+builder called IVIB, a drawing program that generates Unicon code for a
+program's interface.  The following table summarizes the contents of the
+<code>bin</code> directory:
+
+<dl>
+<dt>unicon.exe</dt>
+<dd>Unicon VM compiler</dd>
+<dt>icont.exe</dt>
+<dd>Icon VM compiler</dd>
+<dt>iconx.exe</dt>
+<dd>Icon VM executor</dd>
+<dt>ivib.exe</dt>
+<dd>Improved Visual Interface Builder, constructs graphical user interfaces</dd>
+<dt>ui.exe</dt>
+<dd>Unicon IDE (integrated development environment)</dd>
+<dt>wunicon.exe, wicont.exe, wiconx.exe</dt>
+<dd>Win32 versions, used internally by Ui, do not require a console</dd>
+</dl>
+
+Unicon's <code>bin</code> directory, normally <code>C:\PROGRAM FILES\WINDOWS UNICON\BIN</code>
+should be added to your PATH specification.
+<p>
+
+<h3><A name="running">3. Running Windows Unicon</A></h3>
+
+Windows Unicon is normally used by means of the programming environment, Wi.
+Windows95 and NT users may also invoke the compiler and executor directly
+on the command-line.  This section includes instructions on using the
+programming environment, followed by a brief discussion of the command-line
+tools.
+
+<h4>3.1 Editing, Compiling, and Executing Programs in Ui</h4>
+
+Double-click the Windows Unicon icon to launch <em>Ui</em>, the Unicon IDE
+(integrated development environment).  <em>Ui</em> is written in Unicon and allows you to
+edit, compile, and execute programs from a standard Windows interface. Ui's
+detailed documentation (this file) is accessed on-line through its Help menu.
+To start, you must select the name of a file to edit, in following dialog:
+<p>
+
+<center>
+<img src="utr7/wiopen.gif"> <br>
+Figure 1: Opening a File within Ui
+</center>
+<p>
+
+You can easily select an existing Unicon source file, or name a new one.
+If you click "Open" without choosing a name, you will be given the default
+name of "noname.icn".  Unicon source files generally must use the extension
+<code>.icn</code> and should be plain text files without line numbers or
+other extraneous information.  Editing your program occurs within the main
+<em>Ui</em> window, which might look like this:
+<p>
+
+<center>
+<img src="utr7/wiedit.jpg"> <br>
+Figure 2: Ui's Editing Interface
+</center>
+<p>
+
+The top area shows program source code, while the bottom portion shows
+messages such as compiler errors.  You can change the font and the number
+of lines used to show messages from the Edit menu.
+<p>
+When you are done editing your program, you can save it, compile it, or
+just "make" (save, compile and link an executable) and run your program
+with menu options.  The Arguments command in the Run... menu let's you
+specify any command-line arguments the program should be given when it
+is executed.
+
+<h4> 3.2 Error Handling </h4>
+
+Compile errors result in a message in which the editor highlights
+the line at which the error was detected, like this:
+
+<p>
+
+<center>
+<img src="utr7/comperr.gif"> <br>
+Figure 3: Reporting Compiler Errors in Ui
+</center>
+<p>
+
+Run-time errors also result in a message for which the source line is
+highlighted.  The message for a run-time error includes Unicon's standard
+traceback of procedures from <code>main()</code> to the procedure in which
+the error occurred.  When the error messages get long, you can either
+increase the number of lines for the message window (as was done here) or
+scroll through the message window's entire text using the scrollbar.
+
+<p>
+
+<center>
+<img src="utr7/runerr.gif"> <br>
+Figure 4: A Run-time Error in Ui.  The message window's size is adjustable.
+</center>
+<p>
+
+<h4><A name="projects">3.3 Projects</A></h4>
+
+Ui works on programs comprised of any number of source files.  By default,
+Ui assumes a single file program consisting of the current source file.  If
+you are working on a single-file program, and you open a new
+<code>.icn</code> source file, Ui switches the editor and compile and
+link commands to work on a different program.<p>
+
+Project files are plain text files with extension <code>.icp</code>.  They
+list source files, one file per line.  When you open a project file, Ui goes
+into "project mode", and adds the source files in the project to your File
+menu, allowing you to switch easily between files in the project.  If you
+subsequently open a source file not in the project, Ui asks if you want to
+add that source file to the project, or switch out of project mode and edit
+that file as a separate program.  In general, project files allow you to
+"make" large projects efficiently. Underneath the covers, Ui invokes the
+other Unicon program executables to do the work of compiling and running
+programs, described below.<p>
+
+When Ui "makes" a program executable, it recompiles those modules listed in
+the project file whose modified time is newer than their corresponding
+object files.  On the other hand, Ui knows nothing about link declarations
+embedded in source files, and recompilation will not be triggered by such
+dependencies.  When you use Ui, you should generally use link statements for
+library files (such as Unicon Program Library modules), and use
+<code>.icp</code> files for your own sources. Files listed in the .icp file
+must not also be referenced in a link statement; linking the same module
+twice causes link errors.  For projects, the executable <code>.bat</code>
+that is produced by "make" is named after the first program in the project
+file.
+
+<h4>3.4 Ui Options </h4>
+
+Ui supports command-line options to be passed to wicont
+with the Compiler Options... menu item in the Compile menu.
+Command-line arguments passed to the Unicon program when it is run are
+supplied via the Arguments... menu item in the Run menu.<p>
+
+The font in the edit window can be picked from the Font...
+command in the Edit menu.  The number of lines to use for
+messages can be picked with the Message window... menu item
+in the Edit menu.<p>
+
+The font and message line options, as well as a default window width and
+height, may be specified in a file called <code>WI.INI</code>
+that Ui reads when it starts up.  The file <code>WI.INI</code>
+from the current directory is used, unless a WICONINI environment
+variable is set, in which case it is taken to be the pathname of
+the initialization file that Ui is to use.  An example <code>WI.INI</code>
+file is the following:
+
+<pre>
+width=800
+height=800
+font=times,28
+msglines=3
+</pre>
+
+<h4>3.5 Running Windows Unicon - Command Line Tools</h4>
+
+Command line execution of Unicon programs is similar on many platforms and is
+described in the Unicon Programming Language book and other reports. Windows
+Unicon includes a command-line compiler (unicon) and virtual-machine
+interpreter (iconx) that run from the command-line.
+For example, an Unicon program in the file prog.icn is compiled into
+virtual machine "icode" by the command:
+<pre>
+        unicon prog.icn
+</pre>
+
+<p>
+
+Windows Unicon also includes a compiler (wicont) and virtual-machine
+interpreter (wiconx) that can be invoked from the command-line,
+but are usually invoked by Ui.  These executables, unlike the command-line
+versions, do not require an MS-DOS console window, and thus are useful
+for creating programs like Ui that are launched from a shortcut or menu.
+The instructions below
+refer to icont and iconx, but generally would also be true for wicont
+and wiconx.
+
+The Windows icode files that result of compilation have the extension .exe,
+for example, the above compilation would produce a file prog.exe.  The
+program may then be executed as:
+<pre>
+        prog
+</pre>
+Alternatively, unicon can be instructed to execute the icode file after
+translation by appending a -x to the command line, as in
+<pre>
+        unicon prog.icn -x
+</pre>
+
+If unicon is run with the -x option, the file prog.exe is left and can be
+run subsequently using an explicitly named executor as described above.<p>
+
+The extension .icn is optional on the command line. For example, it is
+sufficient to use
+<pre>
+        unicon prog
+</pre>
+
+
+<h3><A name="testing">4.  Testing the Installation</A></h3>
+
+There are a few programs on the distribution diskette that can be used for
+testing the installation and getting a feel for running Unicon:
+
+<h4>     hello.icn</h4>
+
+This program prints the Unicon version number, time, and date. To run this
+test, launch the Ui program, open file hello.icn, and select the Make
+and Run menu options.  To test the command line tools:
+<pre>
+        unicon hello
+        hello
+</pre>
+Note that this can be done in one step with
+<pre>
+        unicon hello -x
+</pre>
+
+<h4>    roman.icn</h4>
+
+This program converts Arabic numerals to Roman numerals.  To run this
+test, launch the Ui program, open file roman.icn, and select the Make
+and Run menu options.  To test the command line tools:
+<pre>
+        unicon roman -x
+</pre>
+and provide some Arabic numbers from your console.
+<p>
+If these tests work, your installation is probably correct and you should
+have a running version of Windows Unicon.
+
+
+<h3><A name="more">5.  More on Running Unicon</A></h3>
+
+For simple applications, the instructions for running Unicon given in Section
+3 may be adequate. The Unicon compiler supports a variety of options that
+may be useful in special situations. There also are several aspects of
+execution that can be controlled with environment variables.  These are
+listed here. If you are new to Unicon, you may wish to skip this section on
+the first reading but come back to it if you find the need for more control
+over the translation and execution of Unicon programs.
+
+<h4>5.1  Arguments</h4>
+
+Arguments can be passed to the Unicon program by entering them in Ui's
+Arguments... item in the Run menu, or appending them to the command
+line.  Such arguments are passed to the main procedure as a list of strings.
+For example,
+<pre>
+        prog text.dat log.dat
+</pre>
+runs the icode file prog.exe, passing its main procedure a list of two
+strings, "text.dat" and "log.dat".  The program also can be translated and
+run with these arguments with a single command line by putting the arguments
+after the -x:
+<pre>
+        unicon prog -x text.dat log.dat
+</pre>
+These arguments might be the names of files. For example, the main procedure
+might begin as follows:
+
+<pre>
+        procedure main(args)
+           in := open(args[1]) | stop("cannot open file")
+           out := open(args[2], "w") | stop("cannot open file")
+                       .
+                       .
+                       .
+</pre>
+
+<h4>5.2  The Compiler</h4>
+
+The Unicon compiler can accept several Unicon source files at one time.
+When several files are given, they are translated and combined into a single
+icode file whose name is derived from the name of the first file.  For
+example,
+<pre>
+        unicon prog1 prog2
+</pre>
+translates the files prog1.icn and prog2.icn and produces one icode file,
+prog1.exe. In addition to supplying files on the command line, files may be
+linked or included using appropriate commands in the source file.<p>
+
+A name other than the default one for the icode file produced by unicon can
+be specified by using the -o option, followed by the desired name. For
+example,
+<pre>
+        wicont -o probe prog
+</pre>
+produces the icode file named probe.exe rather than prog.exe. <p>
+
+If the -c option is given to unicon, the translator stops before producing
+an icode file and an intermediate ``ucode'' file with the extension .u is
+left for future use (normally they are deleted).  For example,
+<pre>
+        unicon -c prog1
+</pre>
+leaves prog1.u, instead of producing prog1.exe. These ucode
+files can be used in a subsequent unicon command by using the .u name. This
+saves translation time subsequently. For example,
+<pre>
+        wicont prog2 prog1.u
+</pre>
+translates prog2.icn and combines the result with the ucode files from a
+previous translation of prog1.icn.
+Ucode files also can be added to a program using the link declaration.<p>
+
+The informative messages from the translator can be suppressed by using the
+-s option.  Normally, both informative messages and error messages are sent
+to standard error output.<p>
+
+The -t option causes &trace to have an initial value of -1 when the icode
+file is executed.  Normally, &trace has an initial value of 0.<p>
+
+The option -u causes warning messages to be issued for undeclared
+identifiers in the program.
+
+<h4><A name="envvars">5.3  Environment Variables</A></h4>
+
+When an icode file is executed, several environment variables are examined
+to determine execution parameters.  The values assigned to most of these
+variables should be numbers.<p>
+
+Environment variables are particularly useful in adjusting Unicon's storage
+requirements.  Particular care should be taken when changing default values:
+unreasonable values may cause Unicon to malfunction.<p>
+
+The following environment variables can be set to adjust Unicon's execution
+parameters. Their default values are listed in parentheses after the
+environment variable name:
+
+<dl>
+<dt>BLKSIZE (500000)</dt><dd>  This variable determines the size, in bytes, of the
+initial region in which Unicon allocates lists, tables, and other objects.  If
+additional block regions are needed, they may be smaller.</dd>
+
+<dt>COEXPSIZE (2000)</dt><dd> This variable determines the size, in 32-bit words, of
+each co-expression block.</dd>
+
+<dt>ICONFONT (fixed)</dt><dd>  This variable contains the name of the default font used
+by Windows that are opened.  Any fixed-pitch font may be the
+default. Example syntax is:
+<pre>
+      set ICONFONT=Lucida Sans Typewriter
+</pre>
+</dd>
+
+<dt>IPATH (undefined)</dt><dd>  This variable contains a list of directories,
+separated by spaces.  The directories are searched for library files specified
+by link declarations.</dd>
+
+<dt>LPATH (undefined)</dt><dd>  This variable contains a list of directories,
+separated by spaces.  The directories are searched for header files specified
+by preprocessor $include directives.</dd>
+
+<dt>MSTKSIZE (30000)</dt><dd> This variable determines the size, in words,
+of the main interpreter stack.</dd>
+
+<dt>NOERRBUF (undefined)</dt><dd>  If this variable is set, &errout is not buffered.</dd>
+
+<dt>STRSIZE (500000)</dt><dd> This variable determines the size, in bytes, of
+the initial region in which strings are stored. If additional string regions
+are needed, they may be smaller.</dd>
+
+<dt>TRACE (undefined)</dt><dd>  This variable initializes the value of &trace.
+If this variable has a value, it overrides the translation-time -t option.</dd>
+
+<dt>WICONLOG (undefined)</dt><dd>  This variable contains the name of a file to
+which output from wicont and wiconx will be written after their execution
+completes.</dd>
+</dl>
+
+
+<h3><A name="features">6.  Features of Windows Unicon</A></h3>
+
+Windows Unicon supports all the features of Version 10 of Unicon and
+Version 9.4 of Icon, including graphics facilities, with the following
+exceptions and additions:
+
+<ul>
+<li>  Path specifications can be entered using either a / or a \. Examples are:
+<pre>
+                A:\ICON\TEST.ICN
+                A:/ICON/TEST.ICN
+</pre>
+<li> Wildcards are allowed in filename command-line arguments.
+
+<li> Files with extension .icp are treated as command-line argument lists
+     (one argument per line).
+        Set up .icp files for batch jobs, associate .icp extensions with wicont.exe, and you can run the
+        batch job by double-clicking it in the file manager.
+
+<li> wunicon and wicont allow an option -q that causes it to exit on
+     termination without waiting for a user keystroke; this is useful
+     in batch compilation.
+
+<li> system() supports launching Windows applications from inside Unicon.
+
+<li> A console window opens if any of the (non-redirected) standard input,
+	output, or error files is accessed.
+
+<li> .bmp image files are supported for reading and writing.
+</ul>
+
+<h4>6.1  Native Windows User Interface Access</h4>
+
+Version 10 of Windows Unicon provides the following built-in user interface
+components that make use of native Windows features.
+Additions are still being made to this set, and the facilities described
+here being further integrated into the
+Icon Program Library so that they are used automatically in Unicon programs
+that provide a visual interface. This section summarizes features;
+the following section provides a reference guide. <p>
+
+The goal of the native facilities is not to
+provide the entire Windows repertoire, any more than the entire X Window
+repertoire is provided to UNIX users.  Instead, features have been
+chosen that are (1) important to the Windows look and feel,
+(2) general enough to be implementable on other platforms, and
+(3) can co-exist or be integrated with existing IPL facilities.
+<p>
+
+<h4> Menus </h4>
+
+A menu bar is created with a call like:
+<pre>
+   WinMenuBar(W, ["&File", "&Open", "&Save", "E&xit"],
+	      ["&Edit", "C&ut", "&Paste", "C&opy"],
+	      ["&Help", "&About"])
+</pre>
+This function converts approximately the top text line of the window
+into a menu bar.  The appearance of the above example is given
+in Figure 5.  When menu items are selected, they are produced
+as entire strings (such as <code>"&Open"</code>) by Event().
+<p>
+
+<center>
+<img src="utr7/menubar.gif"> <br>
+Figure 5: a Windows menu bar
+</center>
+
+<h4> Scroll Bars </h4>
+
+A scroll bar is created with a call like
+<pre>
+   WinScrollBar(W, "sb_1", x, y, wd, ht)
+</pre>
+This function places a scrollbar with a particular size and position,
+which default to a standard size on the right edge of the window.
+The appearance of a typical scroll bar is illustrated in Figure 6.
+When scroll bar activity takes place, the scroll bar's string id is
+produced (in this case, <code>"sb_1"</code>) by Event(), and
+<code>&x</code> and <code>&y</code> are both set to the scroll bar's
+position.
+<p>
+
+<center>
+<img src="utr7/scrollba.gif"> <br>
+Figure 6: a Windows scroll bar
+</center>
+
+<h4> Buttons </h4>
+
+A button is created with a call like
+<pre>
+   WinButton(W, "hello", x, y, wd, ht)
+</pre>
+This function places a button with a particular size and position.
+The size defaults to a standard size large enough display the
+button's label.
+The appearance of a pair of buttons is illustrated in Figure 7.
+When a button is pressed, the button's string label is
+produced (in this case, <code>"hello"</code>) by Event().
+<p>
+
+<center>
+<img src="utr7/button.gif"> <br>
+Figure 7: a pair of Windows buttons
+</center>
+
+<h4> Common Dialogs </h4>
+
+Several common dialogs are provided for selecting colors, fonts,
+and files to open or save.  These functions return an attribute
+value or a file name.  Examples are illustrated in Figures
+8-11.
+<p>
+
+<center>
+<img src="utr7/colordlg.gif"> <br>
+Figure 8: the Windows color dialog
+</center>
+<p>
+
+<center>
+<img src="utr7/fontdlg.gif"> <br>
+Figure 9: the Windows font dialog
+</center>
+<p>
+
+<center>
+<img src="utr7/opendlg.gif"> <br>
+Figure 10: the Windows open dialog
+</center>
+<p>
+
+<center>
+<img src="utr7/savedlg.gif"> <br>
+Figure 11: the Windows save dialog
+</center>
+
+
+<h4>6.2 Native Windows Facilities Function Reference </h4>
+
+The following features provide a useful subset of the native Windows
+interface in a manner that will allow multi-platform implementation.  The
+primary demonstration of these facilities thusfar is the Windows Unicon
+integrated development environment, wi.
+
+<hr>
+<h4> fattrib(x, s) - get file attribute </h4>
+         fattrib(x, s) returns the value of file attribute s on file or string filename x.  Valid attributes
+         include "size" (in bytes), "status" (permissions string in format rwxrwxrwx), and "mtime"
+         (time last modified).
+
+<hr>
+<h4> WinButton(s, x, y, wd, ht) - install button</h4>
+         WinButton(s, x, y, wd, ht) installs a pushbutton on w with label s.  Whenever the button is
+         clicked, the string label s is placed on the window's event queue.
+<br>
+<br>
+<table>
+<tr>         <td>Defaults: </td> <td> wd	</td> <td>width of text in system font + 10 pixels</td></tr>
+<tr>    <th> </th>   <td>ht</td>	<td>height of text in system font * 7/4</td></tr>
+</table>
+
+<hr>
+<h4> WinColorDialog(s) - select color</h4>
+       WinColorDialog(s) executes the Windows common dialog for color selection
+         with default color s. Returns a string attribute value corresponding to user's selection,
+         or fails if the user selects Cancel. This function is called from the Unicon Program Library
+         procedure of the same name.
+
+<hr>
+<h4> WinEditRegion(s, s2, x, y, wd, ht) - manipulate  edit region</h4>
+
+WinEditRegion(s, s2, x, y, wd, ht) manipulates a Windows edit region named s.
+The operation performed depends on argument s2.  If argument s2 is omitted,
+WinEditRegion(s) returns a string containing the current contents of
+region s.  If s2 is supplied and does not start with a !, it is a string to
+be edited; lines are separated by \r\n.  s2 strings starting with ! are
+commands:
+
+<ul>
+<li>	WinEditRegion(s, "!clear") clears the current selection..
+<li>	WinEditRegion(s, "!copy") copies the current selection.
+<li>	WinEditRegion(s, "!cut") cuts the current selection.
+<li>	WinEditRegion(s, "!paste") pastes the current selection.
+<li>	WinEditRegion(s, "!modified") succeeds if region s has been modified since it was last assigned
+              a value
+<li>	WinEditRegion(s, "!setsel") sets the selection using parameters x and y as indices..
+<li>	WinEditRegion(s, "!undo") undoes the previous operation, if possible.
+</ul>
+
+<hr>
+<h4> WinFontDialog(s) - Execute Windows common dialogs for font selection,</h4>
+         with default font s. Returns a string attribute value corresponding to user's selection,
+         or fails if the user selects Cancel.
+
+<hr>
+<h4> WinMenuBar(w, L1, L2, ...) - install a menu bar on w.</h4>
+
+  Each list, which presently may contain
+        only strings, describes one popup menu on the menu bar.  The first element of the list is the menu's
+        name that appears on the bar.  The remaining elements are the menu options for that popup menu.
+        After a menu bar is installed, Event() returns the strings.  For example, after a call:
+	           WinMenuBar(["File", "Open", "Save"], ["Help", "About"])
+        the menu bar would show File and Help menus, and anytime the user selected the Open, Save, or
+        About menu options, "Open", "Save", or "About" would be queued on the event list.
+        Ampersand is used to specify keyboard shortcuts, as in ["&File", "&Save", "Save &As..."].
+
+<hr>
+<h4> WinOpenDialog(s1,s2,i,s3,j), WinSaveDialog(s1,s2,i,s3,j) -  Execute Windows common dialogs for
+         opening and saving files.</h4>
+
+  These functions are similar to Unicon Program Library procedures with similar
+         names. s1, s2, and  i are the caption, default value, and text entry field size.  s3 and j
+         specify the filter string and its index.  s3 is a string of alternating names and filters, separated and
+         ending in |, of the form "name1|filter1|name2|filter2|...|".  It defaults to "All Files(*.*)|*.*|".
+         j supplies the default extension index within s3; it defaults to first pair in filter string.
+
+        These functions return the file name chosen, rather than assigning it to the global variable
+         dialog_value as the IPL procedures do. They fail if the user selects Cancel.
+
+<hr>
+<h4> WinPlayMedia(w, s1, s2, ...) - play a multimedia resource.</h4>
+
+  String arguments ending in .wav are
+         presumed to be wave sound file names.  Strings ending in .mid or .rmi are presumed to be MIDI
+         files.  All other strings are treated as MCI command strings, and processed by the Windows Media
+         Control Interface.
+
+
+
+<h3><A name="limitations">7.  Known Bugs, Limitations, and Problem Areas</A></h3>
+
+Windows Unicon has a number of limitations inherent to the platform, as well
+as some remaining bugs that may get fixed.
+
+<h4> General </h4>
+
+<ul>
+<li>  The Ui editor cannot edit files greater than approximately 32K bytes--
+	the limit of Windows' edit control.  Larger source files can
+	be edited in another programmer's editor and still translated
+	and linked by Wi, but jumping to translation or runtime errors
+	in such files will not work.  If you have source files &gt;32k you
+	can also break them into smaller pieces, or use Unicon's command
+        line tools.  See <a href="#projects">Section 3.3</A> above.
+
+<li>  Pipes are not supported. A file cannot be opened with the "p" option.
+
+<li>  For files opened in the translated mode, the position produced by seek()
+	may not reflect the actual number of characters written because of the
+	translation of carriage-return/line-feed sequences to
+	line-feed characters.
+
+<li>  system() cannot launch DOS or NT console applications.  Such
+	applications can often be run by launching a command-line
+	interpreter to execute them, as in
+<pre>         system("cmd /C /Q " || command) </pre>
+
+<li>  system() may
+	return before the launched application completes if that application
+	opens no window, closes its main window before its execution is
+	finished, or if several windows are opened shortly after the
+	application is launched.
+
+<li>
+Under Windows 95, the focus does not return to the command line window after
+wicont or an Unicon program executed by wiconx is launched.  Redirecting
+standard input without also redirecting standard output can cause spurious
+runtime errors.  Redirecting standard input from an empty file is not
+detected; it is treated as no redirection and a console window is opened for
+input if the standard input file is read.
+</ul>
+
+<h4>Graphics Facilities</h4>
+
+<ul>
+<li> Attribute linestyle is ignored by Windows when the linewidth is greater
+	than 1; linewidths greater
+        than 1 are always drawn using a solid line style.
+
+<li> Attribute fillstyle does not correctly interpret the value masked.
+	When masked fills are
+        requested, textured fills are performed instead.
+
+<li>  In addition to the standard values "dashed", "striped", "solid",
+	attribute linestyle has values
+        "longdashed", "dashdotted", and "dashdotdotted" corresponding to
+	Windows' standard pen styles
+        for longer dashes and alternating longer and shorter (Icon-standard
+	size) dashes in lines.
+
+<li> Mutable colors do not work unless the window is the active window, and
+	sometimes do not work as expected.
+
+<li> Colors are never freed.
+
+<li> Windows may use dithered colors, resulting in an unattractive appearance
+	in applications where solid colors are expected.  Most colors are
+	dithered on 16-color machines, and color-intensive
+        applications are ugly or unusable on those systems.
+
+<li> References to attributes display, iconpos, iconimage, iconlabel, and
+	visual always fail, as do calls to function Default().
+
+<li> Attribute pointer supports only "arrow", "cross", "ibeam", "uparrow",
+	and "wait", depicted by the following images.  The appearance of
+	these pointers varies slightly on different versions of Windows.
+<table>
+<tr>
+<td><img src="utr7/arrow.gif"></td>
+<td><img src="utr7/cross.gif"></td>
+<td><img src="utr7/ibeam.gif"></td>
+<td><img src="utr7/uparrow.gif"></td>
+<td><img src="utr7/wait.gif"></td>
+</tr>
+</table>
+
+<li> Although some program examples using attribute drawop work, drawop does
+	not work the same way as on other platforms.
+</ul>
+
+
+<h3><A name="trouble">8.  Reporting Problems...or Successes</A></h3>
+
+Problems with Windows Unicon should be noted on a trouble report form
+(TROUBLE.TXT, included with the distribution) and sent to
+
+<pre>
+        Clinton Jeffery
+        Department of Computer Science
+        New Mexico State University
+        Las Cruces, NM 88003
+        U.S.A.
+
+        (505) 646-3480 (voice)
+        (505) 646-1002 (fax)
+        jeffery@cs.nmsu.edu
+</pre>
+
+In order to minimize response times, the preferred method for reporting
+problems is by e-mail.  I would also like to hear suggestions and success
+stories from satisfied users; e-mail is great but letters and postcards are
+even better for this kind of feedback.  Think of TROUBLE.TXT as a
+"registration" for your free software.
+
+
+<h3><A name="acknowledgements">Acknowledgements</A></h3>
+
+Unicon is a superset of and is based on the Icon programming language,
+whose design and implementation was supported, in part, by grants from
+the National Science Foundation. Many people contributed to the Icon
+(and therefore Unicon) implementations.  Most of the credit for coordinating
+Icon's implementation goes to Ralph Griswold. Gregg Townsend has made
+extensive contributions and currently maintains Icon.<p>
+
+Bob Goldberg, Steve Schiavo, and Bryan Ross
+wrote prototype program launchers that inspired the Ui integrated
+development environment.<p>
+
+Much of this work was made possible by support from the National Library of
+Medicine Specialized Information Services division, under the direction of
+Phillip Thomas.
+
+
+<h3><A name="references">References</A></h3>
+
+1.  Clinton Jeffery, Shamim Mohamed, Ray Pereda, and Robert Parlett,
+Programming with Unicon, http://unicon.sourceforge.net/ub/ub.pdf, 2002.
+
+<p>
+
+2.  Gregg M. Townsend, Ralph E. Griswold, and Clinton L. Jeffery, Graphics
+Facilities for the Unicon Programming Language Version 9.3, The Univ. of
+Arizona Icon Project Document IPD281, 1996.
+</BODY></HTML>

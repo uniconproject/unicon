@@ -1,0 +1,216 @@
+<h1>
+Unicon: Frequently Asked Questions
+</h1>
+
+This FAQ has been prepared by Clint Jeffery with input from Brian Rogoff
+and Chris Harris.  Last updated February 3, 2002.
+
+<dl>
+<dt>1. What is Unicon?</dt>
+<dd>Unicon is a "modern dialect" descending
+    from the Icon programming language.  Unicon incorporates numerous new
+    features and extensions to make the Icon language more suitable for a
+    broad range of real-world applications.
+<br><br>
+</dd>
+
+<dt>2. What does the name "Unicon" mean?
+<dd>Version 1 of Unicon referred to a set of UNIX extensions for Icon written
+    by Shamim Mohamed.  More recently the name has been broadened to refer to
+    a unified extended dialect of Icon.  The POSIX system interface
+    has been ported to Windows, and the language also bundles OOP,
+    ODBC database support, and other extensions.
+    It also means: the <em>un</em>Icon.
+</dd><br><br>
+
+<dt>3. Why aren't you calling it Icon Version 10?</dt>
+<dd>The University of Arizona distributes Icon, and they are neither
+    responsible for, nor endorse Unicon.  Do not ask them questions
+    about it.  The current version of Icon is 9.4.  The Icon Project
+    is welcome to incorporate features from Unicon if they wish.
+</dd><br><br>
+
+<dt>4. Is this a hostile takeover attempt?</dt>
+<dd>No.  Icon Project at University of Arizona is unaffected by
+Unicon.  We will cooperate with them on Icon-related matters.
+We did not want to invent a new language at all, but are marketing
+Unicon as a new language at the insistence of the Icon Project.
+<br><br>
+</dd>
+
+<dt>5.  What is Unicon, <em>really</em>?</dt>
+<dd>
+Unicon is a superset of Icon with "looser slots and a higher payback", to
+use Las Vegas terminology.  It adds objects, networking and file systems
+access, execution monitoring and visualization, and an ODBC database
+interface that operates on local files or
+across a network with SQL database servers.  It is portable to (minimally)
+Linux, MS Windows, IRIX and Solaris environments.
+Part or all of Unicon will port readily to other Icon 9.4
+platforms.  <br><br>
+</dd>
+
+<dt>6. What is the motivation for Unicon?</dt>
+<dd>
+
+We wish to develop, improve, and promote Icon-style goal-directed very high
+level languages.  One way to do this is to do a new implementation of an
+existing language; Icon translators into C code and Java code are examples
+of this approach.  Another way to do this is to design a new language that
+is not constrained by the syntax or semantics of an existing language; the
+<A href="http://icon.cs.unlv.edu/godiva">Godiva programming language</A>
+is (to some extent) an example this approach.
+Unicon pursues a third path: that of evolving an existing
+language to support new capabilities in a manner that is as compatible
+and consistent with the original design philosophy as possible.  <br><br>
+
+</dd>
+
+
+<dt>7. What's with the ludicrous slogan "more Icon than Icon"?</dt>
+<dd>
+
+It is a parody of the Tyrell Corporation's slogan from the movie <u>Blade
+Runner</u>.  As one example, Icon provides support in its run-time system for
+type conversions and defaulting of parameters that comprises some of the
+basic character of the language.  Yet at the source-level, writing
+procedures that coerce their parameters is clumsy.  We have extended to the
+source language some constructs discovered in the implementation; this is
+(part of) how Icon was carved out of Snobol4's legacy.  Beyond this minor
+detail, you can view the slogan as a homage to "feature bloat", or conclude
+that the slogan fits the added high level capabilities provided by
+Unicon.
+<br><br>
+
+</dd>
+
+<dt>8. Who is responsible for Unicon?</dt>
+<dd>
+
+At present, Unicon is the creation of Clinton Jeffery and Shamim Mohamed.
+Federico Balbi has contributed an ODBC interface.
+Ray Pereda and Robert Parlett have contributed substantively to the
+programming tools that will be distributed as part of Unicon.
+<br><br>
+
+</dd>
+
+
+<dt>9. Where is the Unicon language definition?</dt>
+<dd>
+
+Unicon is described in a forthcoming book by Clinton Jeffery, Shamim Mohamed,
+Robert Parlett, and Ray Pereda, titled "Programming with Unicon". A PDF format
+draft copy of this book is available on this web site.
+<br><br>
+
+</dd>
+<dt>10. Why aren't Unicon's basic types classes?</dt>
+<dd>
+
+Types that Unicon inherits from Icon will retain compatibility with Icon.
+They may eventually gain class status, meaning they'll have attributes and
+operations, and can be subclassed.
+<br><br>
+</dd>
+
+<dt>11. Why isn't data structure X a built-in?</dt>
+<dd>
+
+The built-in types are widely-used, general-purpose information elements and
+structures.  Every program pays for their presence in the runtime system
+whether they are used or not.  New built-in types may occasionally appear,
+but most data structures will be added as classes.
+<br><br>
+</dd>
+
+<dt>12. Why aren't there abstract classes in Unicon?</dt>
+<dd> There isn't a strong need for these in a dynamically typed language.
+     Robert Parlett has added syntax to support abstract methods; we may
+     at some point add syntax for declaring an abstract class.
+<br><br>
+</dd>
+
+<dt>13. Is there a convention for naming classes and methods?</dt>
+<dd>
+
+The Java/Smalltalk style of capitalizing the first letter of a class name
+and using lower case for method names is endorsed, but not yet mandated or
+universally adhered to in class libraries.
+<br><br>
+</dd>
+
+<dt>14. How compatible is Unicon with Icon?</dt>
+<dd>
+
+Well, it is a superset in principle, but if you get technical you will find
+incompatibilities.  The reserved words added in Unicon are no longer legal
+variable names: words like "class" and "method".  This breaks for example,
+a grand total of 1 of the 223 files in the Icon Program Library procs/
+directory, requiring its variable named "method" to be changed to "Method"
+(or whatever). The Unicon translator
+generates out Icon as an intermediate step; for regular Icon source the
+resulting virtual machine code is almost identical.
+<br><br>
+</dd>
+
+<dt>15. How compatible is Unicon with Idol?</dt>
+<dd>
+
+Pretty compatible, and vastly simpler. The $ syntax is available but not
+required in ordinary invocation.  The full yacc-based parser is more correct
+than the Idol parser.  The file extension changed from .iol to .icn.  No
+ugly idolcode.env/ subdirectory is created. Code from a .icn file is stored
+in a single corresponding .u file.  An accompanying DBM database stores class
+information on a per-directory bases for use in inheritance resolution.  DBM
+databases along the IPATH are searched for superclass information.
+<br><br>
+</dd>
+
+<dt>16. What do I have to do to build Windows Unicon?</dt>
+<dd>
+At present the recommended compiler is GNU C 2.95.2 with the Ming libraries.
+MS Visual C++ 6.0 was used recently, and earlier versions of VC++ would work
+with minor changes (such as, perhaps,
+disabling the ODBC functions).  Other C compilers will require nontrivial
+effort to develop new configuration files under the config/win32 directory,
+comparable to (and possibly starting from) config/win32/gcc or config/win32/msvc.
+<p>
+After you unpack the source files, you have to add the Unicon bin directory
+to your path, or the <code>make</code> or <code>nmake</code> command will
+not build all the way successfully.
+</dd>
+
+<dt>17. How do I build noweb with Windows (Un)Icon?</dt>
+<dd>(provided by Chris Harris)
+<ol>
+<li> Get the noweb distribution and extract all of the Icon files in the
+	icon/ directory.
+<li> Build each one using "nticont <filename>"
+<li> Copy all of the .exe files built in step #2 into your noweb/bin/
+directory.
+<li> Delete old DOS Icon noweb .exe's if you are putting in new Windows .exe's
+</ol>
+</dd>
+
+<dt>18. How can I use an assert() expression in my programs?</dt>
+<dd>assert(expr) is normally written as expr | stop("expr failed...").
+    Unicon does not provide a built-in macro or control structure for assert.
+    If your system supports m4 you can use it to provide an assert() macro,
+    as in the following example provided by Kostas Oikonomou:
+<pre>
+	m4 -D assert='($$1) | stop("Assertion failure on line ", &line, "!")'
+</pre>
+    This filter might work on .m4 files to produce .icn files, or might be
+    used in conjunction with noweb, as in Kostas' example makefile rule below.
+    Note that this example assumes GNU m4, which can process your code
+    without accidentally firing off built-in m4 macros if you supply the
+    --prefix-builtins flag:
+<pre>
+%.icn : %.nw
+	notangle $&lt; | \
+	m4 --prefix-builtins \
+	 -D assert='($$1) | stop("Assertion failure on line ", &line, "!")'\
+	 - &gt; $@
+</pre>
+</dl>

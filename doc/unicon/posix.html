@@ -1,0 +1,1081 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--Converted with LaTeX2HTML 96.1-h (September 30, 1996) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds -->
+<HTML>
+<HEAD>
+<TITLE>Unicon A Posix Interface for the Icon Programming Language</TITLE>
+<META NAME="description" CONTENT="Unicon A Posix Interface for the Icon Programming Language">
+<META NAME="keywords" CONTENT="unicon">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+<LINK REL=STYLESHEET HREF="unicon.css">
+</HEAD>
+<BODY LANG="EN" >
+  <H1 ALIGN=CENTER><I><B><BIG CLASS=XHUGE>Unicon<BR> A Posix Interface<BR> for the<BR> Icon
+Programming Language</I></B></BIG></H1>
+<P ALIGN=CENTER><STRONG><I><BIG CLASS=XLARGE>Shamim Mohamed</BIG><BR> 
+<I>April 25 1997
+</I></I></STRONG></P><P>
+<P ALIGN=CENTER><STRONG><IMG WIDTH=859 HEIGHT=394 ALIGN=BOTTOM ALT="tex2html_wrap957" SRC="img1.gif"></STRONG></P><P>
+<P>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>
+<P>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>&#169;1997 Shamim Mohamed
+</P></DIV>
+<P>
+This document may be reproduced and redistributed freely provided
+it is reproduced in its entirety.
+</P></DIV>
+<P>
+<H1><A NAME="SECTION00010000000000000000">Introduction</A></H1>
+<P>
+The Icon Programming Language[<A HREF="unicon.html#iconbook">1</A>] provides a large set of
+platform-independent facilities for non-numerical processing, graphics
+etc. Icon runs on everything from Unix machines to Amigas and
+Macs. This strong point, its platform independence, is also a weak point:
+it could not offer access
+to the underlying system and so could not be used as a system administration
+and scripting language like Perl[<A HREF="unicon.html#perlbook">2</A>]. This was a great
+disappointment to the author, who has had to write many Perl
+scripts over the years.  While it is true that Perl 
+substitutes for a congolmeration of <TT>sed</TT>, <TT>awk</TT> and shell
+scripts, it does so with some of the worst language features from
+them.
+<P>
+Icon, on the other hand, has always been a good clean language with
+lots of support for high-level control and data structures. If we
+could add the Unix system calls to the language, we would have the
+best of both worlds: a sensible and powerful VHLL as a Unix scripting
+language. Icon even has integrated support for X11 graphics!
+<P>
+This document describes a set of functions that implement access to the
+low-level system facilities. It is based on Unix systems, and as such cannot be
+expected to be fully portable. However it is expected that these functions
+can be ported to any system that conforms more or less to the POSIX
+standard (Unix systems, Windows-NT etc.)
+<P>
+The Unicon package comprises additional functions defined in
+<I>icont</I> and <I>iconx</I>, and
+an include file <I>posix.icn</I> is provided that defines the
+constants and the record types that are required. This file
+should be included by programs desirous of using the Posix interface. It
+links in the icode library <I>posix</I>.
+<P>
+All the common system calls (Section 2 of the Unix manuals) are available
+under the same names. Some of these are already implemented in standard Icon
+(<I>chdir</I>, <I>rename</I>). For system calls that return
+<TT>struct</TT>
+types, a record is created and returned; the components of the record have
+names that are similar to the elements of the <TT>struct</TT>.
+<P>
+Whenever possible, the type system of Icon is used to advantage. For example
+instead of having separate functions <TT>stat</TT> and <TT>fstat</TT>,
+the function <I>stat</I> calls the appropriate system procedure based
+on the type of the argument.
+<P>
+A new keyword <I>&amp;errno</I> has been added to the language.
+If an error occurs during the execution of any of these system functions,
+the function
+will fail and <I>&amp;errno</I> will be set. The string corresponding to
+an error ID is returned by the function <I>sys_errstr</I>. The first
+few errors (<TT>EPERM</TT> to <TT>EPIPE</TT>) seem to be common between systems,
+and these are defined in the header file; <I>&amp;errno</I> can be
+directly compared 
+against constants like <I>ENOENT</I> etc. In general, however, it is
+safer to format the error with the <I>sys_errstr</I> function.
+<P>
+<H2><A NAME="SECTION00011000000000000000">Document Conventions</A></H2>
+<P>
+In this document, Unix system calls and commands are represented with the
+manpage section number and set in a typewriter font,
+thus: <TT>select(2)</TT>; whereas
+Icon names and 
+functions are set in a sans serif font: <I>select()</I>.
+<P>
+<H1><A NAME="SECTION00020000000000000000">Signals</A></H1>
+<P>
+Signals may be trapped or ignored with the <I>trap</I> function. The
+signal argument is passed by name, and may be system dependent, e.g. Linux
+systems don't have a <I>SIGLOST</I>. The signal handler defaults to the
+default provided by the system -- for instance, <I>SIGHUP</I> is
+ignored by default but <I>SIGFPE</I> will cause a core
+dump. See Fig.&nbsp;<A HREF="#signal">1</A> for an example.
+<P>
+<PRE>global oldhandler
+     ...             
+     trap(&quot;SIGFPE&quot;, sig_ignore)
+     oldhandler := signal(&quot;SIGSEGV&quot;, handler)
+     ...
+     trap(&quot;SIGSEGV&quot;, oldhandler)
+end
+
+procedure sig_ignore(s); end
+procedure handler(s)
+     write(&quot;Got signal &quot;, s)
+     oldhandler(s)                  # propagate the signal
+end</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 1: Signal handling
+</P></DIV><H1><A NAME="SECTION00030000000000000000">Forking programs</A></H1>
+<P>
+Programs may be forked in the usual Unix manner of calling <TT>fork(2)</TT>
+and then <TT>exec*(2)</TT>. The function <I>fork</I> behaves exactly as
+the Unix version; <I>exec</I> subsumes all of the Unix <TT>exec*</TT>
+system calls. The first argument is the filename of the program to execute,
+and the remaining arguments are the values of <TT>argv</TT> that the program
+will get, starting with <TT>argv[0]</TT>.
+<PRE>exec(&quot;/bin/echo&quot;, &quot;echo&quot;, &quot;Hello,&quot;, &quot;world!&quot;)</PRE>
+Currently there is no way of passing the environment (<TT>execve</TT> style).
+<P>
+<H2><A NAME="SECTION00031000000000000000">Redirecting I/O Streams</A></H2>
+<P>
+Often, the child process's standard input and output need to switched to
+different files. Icon provides an interface equivalent to <TT>dup2(2)</TT>
+called <I>fdup</I>. Fig.&nbsp;<A HREF="#pipe">2</A> shows pipes and <I>
+fdup</I> being used to redirect a child process' input.
+<P>
+<PRE>L := pipe() | stop(&quot;Couldn't get pipe: &quot;, sys_errstr(&amp;errno))
+if fork() = 0 then {
+     close(L[2])
+     fdup(L[1], &amp;input)
+     exec(...)
+}
+close(L[1])
+write(L[2], ...)                     # write to child's stdin</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 2: A pipe from parent to child
+</P></DIV>
+<P>
+The function <I>filepair</I> is similar to <I>pipe</I>
+except that the connection is bidirectional.
+<P>
+<H1><A NAME="SECTION00040000000000000000">Networking</A></H1>
+<P>
+<H2><A NAME="SECTION00041000000000000000">TCP</A></H2>
+<P>
+Icon provides a much simpler interface to BSD-style sockets.
+Instead of the four different system calls that are required to
+start a TCP/IP server on Unix systems, Icon provides only one--the <I>
+&quot;na&quot;</I> (network accept) flags to <I>open</I>. The first argument to
+<I>open</I>
+is the network address to connect to -- <I>host:port</I> for Internet
+domain connections, and a filename for Unix domain sockets. If the
+address starts with <I>&quot;:&quot;</I> i.e. no host name, the socket is opened
+on the same machine. The returned value from <I>open</I> is a file that
+can be used in <I>select</I> etc. as well as normal reading and writing.
+<P>
+<PRE>procedure main()
+     while f := open(&quot;:1888&quot;, &quot;na&quot;) do
+          if fork() = 0 then {
+               servicerequest(f)
+               exit()
+          } else
+               close(f)
+     (&amp;errno = 0) | stop(&quot;Open failed: &quot;, sys_errstr(&amp;errno))
+end</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 3: An Internet TCP server
+</P></DIV>
+<P>
+<PRE>procedure finger(n)
+     static fserv
+     initial fserv := getserv(&quot;finger&quot;) |
+          stop(&quot;Couldn't get service: &quot;, sys_errstr(&amp;errno))
+
+     n ? {
+          name := n; host := &quot;&quot;
+          name := tab(upto('@')) &amp; =&quot;@&quot; &amp; host := tab(0)
+     }
+     if *host &gt; 0 then write(&quot;[&quot;, host, &quot;]&quot;)
+     
+     f := open(host || &quot;:&quot; || fserv.port, &quot;n&quot;) |
+          stop(&quot;Couldn't open connection: &quot;, sys_errstr(&amp;errno))
+
+     write(f, name) | stop(&quot;Couldn't write: &quot;, sys_errstr(&amp;errno))
+     while line := read(f) do
+          write(line)
+end</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 4: A procedure that implements <TT>finger(1)</TT>
+</P></DIV>
+<P>
+Fig.&nbsp;<A HREF="#server">3</A> shows Icon code
+that implements a simple Internet domain TCP server that listens on
+port 1888.
+To connect to this server, the <I>&quot;n&quot;</I> (network connect) flag is
+used. Fig.&nbsp;<A HREF="#finger">4</A> shows a function that connects to a
+`finger' server.
+<P>
+<H2><A NAME="SECTION00042000000000000000">UDP</A></H2>
+<P>
+UDP networking is  similar to the TCP examples above, except
+that the additional character <I>&quot;u&quot;</I> is passed to
+<I>open</I>. When a call to  <I>writes</I> is made, a message is
+sent to the 
+address that was specified when the socket was
+created. The <I>send</I> function can also be used
+to send a UDP datagram; the difference between using
+<I>send</I> and <I>writes</I> is that the
+latter keeps the socket open between calls, whereas the former
+doesn't. Typically a server might use <I>send</I> because during
+its life it will be sending many datagrams to different addresses, and
+it might reach the system open file limit by using <I>open</I>.
+<P>
+To receive
+a UDP datagram,
+the <I>receive</I> function is used, which returns a record
+with two fields: the <I>addr</I> field contains the address of
+the sender in <I>&quot;host:port&quot;</I> form, and the <I>msg</I>
+field contains the message. See Fig.&nbsp;<A HREF="#udpserver">5</A> for an example
+of a UDP server program, and Fig.&nbsp;<A HREF="#udpclient">6</A> for a UDP client.
+(Note: since UDP is not reliable, the <I>receive</I> in
+Fig.&nbsp;<A HREF="#udpclient">6</A> is guarded with a <I>select</I>, or it might
+hang forever if the reply is lost.)
+<P>
+<PRE>     f := open(&quot;:1025&quot;, &quot;nua&quot;)
+     while r := receive(f) do {
+          # Process the request in r.msg
+          ...
+          send(r.addr, reply)
+     }</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 5: A UDP server
+</P></DIV>
+<P>
+<PRE>procedure main(args)
+   (*args = 1) | stop(&quot;Usage: rdate host&quot;)
+   host := args[1]
+   
+   s := getserv(&quot;daytime&quot;, &quot;udp&quot;)
+   
+   f := open(host||&quot;:&quot;||s.port, &quot;nu&quot;) |
+      stop(&quot;Open failed: &quot;, sys_errstr(&amp;errno))
+
+   writes(f, &quot; &quot;)
+
+   if *select([f], 5000) = 0 then
+      stop(&quot;Connection timed out.&quot;)
+
+   r := receive(f)
+   write(&quot;Time on &quot;, host, &quot; is &quot;, r.msg)
+end</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 6: A UDP client using `daytime'
+</P></DIV><H1><A NAME="SECTION00050000000000000000">The <I>select()</I> system call</A></H1>
+<P>
+The function <I>select()</I> implemented in Icon performs a subset of
+the <TT>select(2)</TT> system call. Only the `read' <TT>fd_set</TT> is passed
+in; no provision is made to wait for exceptions on files or to ensure that
+writes don't block. (For non-blocking writes, use <I>fcntl</I>.)
+It is hoped that this somewhat weaker version of <TT>select</TT> will still be
+usable in the majority of the cases. (Appendix B shows an
+implementation of the <TT>script(1)</TT> command.)
+<P>
+Instead of modifying the sets of file descriptors in place, <I>
+select()</I> returns a list of <I>file</I>s that have data to be read.
+If the timeout expires instead, an empty list is returned.
+Fig.&nbsp;<A HREF="#select">7</A> shows an example of the usage.
+<P>
+<PRE>     while *(L := select([f1, f2, f3], timeout)) = 0 do handle_timeout()
+     (&amp;errno = 0) | stop(&quot;Select failed: &quot;, sys_errstr(&amp;errno))
+
+     every f := !L do {
+          # Dispatch reads pending on f
+          ...
+     }</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 7: Waiting for input on multiple files
+</P></DIV><H2><A NAME="SECTION00051000000000000000">Buffering: A Caveat</A></H2>
+<P>
+Care must be taken that the buffering used by <TT>stdio</TT> does not
+interfere with the files being used with <I>select</I>. Consider this
+code:
+<PRE>     while L := select([f, &amp;window]) do
+          if L[1] === f then
+               c := reads(f, 3)</PRE>
+<P>
+If the string <I>&quot;hello<code>\</code>n&quot;</I> is ready on f and only three
+characters are read from it, <TT>stdio</TT> will read the whole line;
+on the next call to <I>select</I> there is no more data
+available on the Unix file descriptor so select will not return--even
+though the file <I>f</I> still has input <I>&quot;lo<code>\</code>n&quot;</I>
+ready to be read.
+<P>
+The function <I>sysread(f, i)</I>
+performs one <TT>read(2)</TT> call and returns the string,
+bypassing any buffering that <TT>stdio</TT> may be doing. Since the
+unprocessed input is still in the low-level buffers, <I>select</I> will
+work correctly.
+<PRE>     while L := select([f, &amp;window]) do
+          if L[1] === f then
+               c := sysread(f, 3)</PRE>
+<P>
+The first time <I>sysread</I> is called, it will return the
+string <I>&quot;hel&quot;</I>; the subsequent call to <I>select</I>
+finds input still waiting on <I>f</I> so it will return,
+resulting in a value of <I>&quot;lo<code>\</code>n&quot;</I> being read. If
+the size argument is omitted, <I>sysread</I> will read as muchas
+it can without blocking. <em>Important:</em> Do not mix <I>
+sysread</I> with the usual <I>read</I>/<I>reads</I>!
+<P>
+The <TT>script(1)</TT> example (Appendix B) shows the usage of
+<I>select</I> and <I>sysread</I>.
+<P>
+<H1><A NAME="SECTION00060000000000000000">Reading directories</A></H1>
+<P>
+The <I>open</I> function can open directories in the manner of
+<TT>readdir(2)</TT>. They can only be opened for reading, and every
+<I>read</I> returns the name of one entry. Entries are not guaranteed
+to be in any specific order. Fig.&nbsp;<A HREF="#ls">8</A> shows an implementation
+of a simple for of <TT>ls(1)</TT>.
+<P>
+<PRE>procedure main(args)
+     every name := !args do {
+          f := open(name) | stop(sys_errstr(&amp;errno), name)
+          L := list()
+          while line := read(f) do
+               push(L, line)
+          every write(format(lstat(n := !sort(L)), n, name))
+         }
+end
+     
+procedure format(p, name, dir)
+     s := sprintf(&quot;%7s %4s %s %3s %8s %8s %8s %s %s&quot;,
+           p.ino, p.blocks, p.mode, p.nlink,
+           p.uid, p.gid, p.size, p.mtime, name)
+   
+     if p.mode[1] == &quot;l&quot; then
+          s ||:= &quot; -&gt; &quot; || readlink(dir||&quot;/&quot;||name)
+
+     return s
+end</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 8: A program that lists all the files in a directory
+</P></DIV><H1><A NAME="SECTION00070000000000000000">Regular Expressions</A></H1>
+<P>
+The <I>regexp</I> library in the Icon Program Library may be used for
+regular expression searching and search-and-replace operations.
+<P>
+<PRE>link regexp
+     ...
+     result := &quot;&quot;
+     s ? {
+          while j := ReFind(re) do {
+               result ||:= tab(j) || replacement
+               tab(ReMatch(re))
+          }
+          result ||:= tab(0)
+     }</PRE>
+<DIV ALIGN=CENTER><P ALIGN=CENTER>Figure 9: Regular expression search-and-replace
+</P></DIV>
+<P>
+Since the Icon program has access to the operation at a finer grain, more
+complex operations (rather than only search-and-replace) are possible.
+<P>
+<H1><A NAME="SECTION00080000000000000000">Information from System Files</A></H1>
+<P>
+There are four functions that read information from system files: <I>
+getpw</I> to read the password file, <I>getgr</I> for the group file,
+<I>gethost</I> for hostnames and <I>getserv</I> for network
+services. Called with an argument (usually a string) they perform a lookup in
+the system file. When called with no arguments, these functions step through
+the files one entry at a time.
+<P>
+The functions <I>setpwent</I>, <I>setgrent</I>, <I>
+sethostent</I>, <I>setservent</I> do the same things as their Unix
+counterparts, i.e. they reset the file position used by the <I>get*</I>
+routines to the beginning of the file.
+<P>
+They return records whose members are similar to the <TT>struct</TT>s returned
+by the system functions like <TT>getpwuid(2)</TT>, <TT>gethostbyname(2)</TT> etc.
+<P>
+<H1><A NAME="SECTION00090000000000000000">DBM databases</A></H1>
+<P>
+DBM databases may be opened by the <I>open</I> function. The only
+permissible values for the second argument are <I>&quot;d&quot;</I> and
+<I>&quot;dr&quot;</I>, for opening the database read/write and read-only
+respectively.
+<P>
+Values are inserted into the database with <I>insert(d, k, v)</I> and
+are read from it with <I>fetch(d, k)</I>.
+<P>
+<H1><A NAME="SECTION000100000000000000000">Status</A></H1>
+<P>
+Unicon is now in alpha release.  Patches to apply to the Icon 9.3
+Unix distribution are available at:
+<P>
+<A NAME="tex2html1" HREF="ftp://ftp.crl.com/users/sp/spm/unicon-patches.tar.gz">ftp://ftp.crl.com/users/sp/spm/unicon-patches.tar.gz</A>
+<P>
+The Icon source distribution is at:
+<P>
+<A NAME="tex2html2" HREF="ftp://ftp.cs.arizona.edu/icon/packages/unix/unix.tar.gz">ftp://ftp.cs.arizona.edu/icon/packages/unix/unix.tar.gz</A>
+<P>
+Linux 
+(kernel 2.0 ELF, libgdbm 2.0.0, libX11 6.0,
+libdl 1.7.14, libm 5.0.0 and libc 5.2.18) 
+binaries are also available at
+<P>
+<A NAME="tex2html3" HREF="ftp://ftp.crl.com/users/sp/spm/unicon-linux.tar.gz">ftp://ftp.crl.com/users/sp/spm/unicon-linux.tar.gz</A>
+<BR> 
+<A NAME="tex2html4" HREF="ftp://ftp.crl.com/users/sp/spm/icon-9.3-2.i386.rpm">ftp://ftp.crl.com/users/sp/spm/icon-9.3-2.i386.rpm</A>
+<BR> 
+<A NAME="tex2html5" HREF="ftp://ftp.crl.com/users/sp/spm/icon-ipl-9.3-2.i386.rpm">ftp://ftp.crl.com/users/sp/spm/icon-ipl-9.3-2.i386.rpm</A>
+<P>
+Unicon has been ported to these platforms:
+<P>
+<DIV ALIGN=CENTER><P ALIGN=CENTER><TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+Linux 2.0</TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>	gcc 2.7.2, ELF	</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+Solaris 2.4</TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>	SunPro cc *	</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+Solaris 2.5</TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>	SunPro cc	</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+SunOS 4.1.3</TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>	bundled cc **	</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+HPUX 9.03</TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>	bundled cc **	</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+HPUX 10.20 (PA2) </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>	ANSI cc	**	
+</TD></TR>
+</TABLE>
+</P></DIV>
+<P>
+(*) On Solaris 2.4, after a network server [a program that has performed an
+`open(..., &quot;na&quot;)'] has exited, the OS won't allow another server to listen
+on the same port until after a timeout of several minutes.
+<P>
+(**) On SunOS4 and HPUX, bind() always returns EADDRNOTAVAIL - and I
+don't know 
+why. If anyone can help with this, I'd appreciate it!
+<P>
+<H1><A NAME="SECTION000110000000000000000">Acknowledgements</A></H1>
+<P>
+My thanks to Clint Jeffery for the long discussions on the right
+Unix interface, and for inciting me to do commit this act of
+implementation. Thanks also to Ralph Griswold and the Icon Project
+for creating and maintaining a fine language.
+<P>
+And of course thanks to Richard Stallman, Linus Torvalds and a
+cast of millions!
+<P>
+<P><A NAME="SECTIONREF"><H2>References</H2></A><P>
+<DL COMPACT>
+<DT><A NAME="iconbook"><STRONG>1</STRONG></A><DD>
+Ralph Griswold and Madge Griswold.
+<EM>The Icon Programming Language</EM>.
+Peer-To-Peer Communications, San Jose, California, 3d edition, 1997.
+<P>
+<DT><A NAME="perlbook"><STRONG>2</STRONG></A><DD>
+Larry Wall and Randall Schwartz.
+<EM>Programming Perl</EM>.
+O'Reilly and Associates, Sebastopol, California, 1991.
+</DL>
+<P>
+<H1><A NAME="SECTION000130000000000000000">Appendix A: Reference Manual</A></H1>
+<P>
+<H2><A NAME="SECTION000131000000000000000">Additions to pre-existing functions</A></H2>
+<P>
+Some additions have been made to the arguments and functionality of
+these Icon functions:
+<P>
+<DL ><HR><DT><STRONG><I>open(s1, s2) : f</I> -- <I><em>Open a file</em></I></STRONG>
+<DD> <BR> 
+The additional options to <I>open</I> are:
+<P>
+<TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+<I>&quot;na&quot;</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> listen on a TCP network socket </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>&quot;n&quot;</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> connect to a TCP network socket </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>&quot;nau&quot;</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> listen on a UDP network socket </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>&quot;nu&quot;</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> connect to a UDP network socket </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>&quot;d&quot;</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> open a DBM database
+</TD></TR>
+</TABLE>
+
+<P>
+When opening a network socket: the first argument <I>s1</I> is
+the name of the socket to connect to: if of the form <I>
+&quot;s:i&quot;</I>, it is an Internet domain socket on host <I>s</I> and
+port <I>i</I>; otherwise, it's the name of a Unix domain socket.
+If the host name is null, it represents the current host.
+<P>
+For a UDP socket, `connect' means that any writes to
+that file will send a datagram to that address, so that
+the address doesn't have to specified each time. Also,
+<I>read</I> or <I>reads</I> cannot be
+performed on a UDP socket; use <I>receive</I>.
+UDP sockets must be in the INET domain, i.e. the address must have a colon.
+<P>
+For a DBM database, only one modifier character may be used:
+if <I>s1</I> is <I>&quot;dr&quot;</I> it indicates that the
+database should be opened in read-only mode.
+<P>
+<HR><DT><STRONG><I>Event(W, i) : a</I> -- <I><em>return next window event</em></I></STRONG>
+<DD> <BR> 
+The second argument <I>i</I> is a timeout value in
+milliseconds. If the timeout expires before an event is available,
+then <I>Event()</I> fails. The default for <I>i</I>
+signifies that <I>Event()</I> should wait for the
+next window event.
+<P>
+</DL>
+<P>
+<H2><A NAME="SECTION000132000000000000000">New functions</A></H2>
+<P>
+If an error occurs during the execution of these functions, the function
+will fail and <I>&amp;errno</I> will be set. The string corresponding to
+an error ID is returned by the function <I>sys_errstr</I>.
+<P>
+<DL ><HR><DT><STRONG><I>chmod(f, mode)</I> -- <I><em>Change file mode</em></I></STRONG>
+<DD> <BR> 
+Sets the mode of a file <I>f</I> to <I>mode</I>. The <I>
+mode</I> can be an integer mode or a string representing the change to be
+performed. The string is of the form
+<P>
+<I>[ugoa]*[+-=][rwxRWXstugo]*</I>
+<P>
+The first group describes the set of mode bits to be changed: <I>u</I>
+is the owner set, <I>g</I> is the group and <I>o</I> is the group
+`other.' The character <I>a</I> represents all the fields. The
+operator (<I>+-=</I>) describes the operation to be performed:
+<I>+</I> adds a permission, <I>-</I> removes a permission, and
+<I>=</I> sets a permission. The permissions themselves are:
+<P>
+<TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+<I>r</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> read </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>w</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> write </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>x</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> execute </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>R</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> read if any other set already has <I>r</I></TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>W</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> write if any other set already has <I>w</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>X</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> execute if any other set already has <I>x</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>s</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> setuid (if the first part contains <I>u</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+             </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> and/or setgid if the first part contains <I>g</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>t</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> sticky if the first part has <I>o</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>u</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> the <I>u</I> bits on the same file</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>g</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> the <I>g</I> bits on the same file</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>o</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> the <I>o</I> bits on the same file</TD></TR>
+</TABLE>
+
+<P>
+If the first group is missing, then it is treated as <I>a</I>
+<em>except</em> that any bits in the user's <TT>umask</TT> will not be modified
+in the mode.
+<P>
+<HR><DT><STRONG><I>chown(f, u, g)</I> -- <I><em>Change file owner</em></I></STRONG>
+<DD> <BR> 
+Set the owner of a file <I>f</I> to owner <I>u</I> and group
+<I>g</I>. The user and
+group arguments can be numeric ID's or names.
+<P>
+<HR><DT><STRONG><I>chroot(f)</I> -- <I><em>Change root</em></I></STRONG>
+<DD> <BR> 
+Change the root of the filesystem to <I>f</I>.
+<P>
+<HR><DT><STRONG><I>ctime(t) : s</I> -- <I><em>Format a time value into local time</em></I></STRONG>
+<DD> <BR> 
+Converts an integer time - seconds since the epoch, Jan 1, 1970
+00:00:00 - into a string in the local timezone.
+<P>
+<HR><DT><STRONG><I>crypt(s1, s2) : s</I> -- <I><em>Encrypt a password</em></I></STRONG>
+<DD> <BR> 
+Encrypt the password <I>s1</I> with the salt s2.
+(The first two characters of the returned string will be the salt.)
+<P>
+<HR><DT><STRONG><I>exec(f, arg0, arg1, arg2, ...)</I> -- <I><em>Replace the executing Icon program
+with another.</em></I></STRONG>
+<DD> <BR> 
+The current program is replaced by another program <I>f</I>. The
+remaining arguments are passed to the program. Consult the <TT>exec(2)</TT>
+manpages for more details. <em>Warning:</em> <I>f</I> must point to an
+executable program, not to a shell script or Icon program. If you want to
+run those, the first argument to <I>exec</I> should be <TT>/bin/sh</TT>,
+or <TT>iconx</TT>, etc.
+<P>
+<HR><DT><STRONG><I>fetch(d, k) : s</I> -- <I><em>Fetch a value from a dbm database</em></I></STRONG>
+<DD> <BR> 
+Fetch the value corresponding to key <I>k</I> from the dbm database
+<I>d</I>.
+<P>
+<HR><DT><STRONG><I>fcntl(file, cmd, arg)</I> -- <I><em>Miscellaneous operations on opened files</em></I></STRONG>
+<DD> <BR> 
+Perform a number of miscellaneous operations on the open file. See the
+<TT>fcntl(2)</TT> manpage for more details. Directories
+and dbm files cannot be arguments to <I>fcntl</I>.
+<P>
+The following characters are the possible values for <I>cmd</I>:
+<P>
+<TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+<I>f                </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Get  flags (F_SETFL)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>F                </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Set  flags (F_GETFL)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>x                </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Get close-on-exec flags (F_GETFD)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>X                </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Set close-on-exec flag (F_SETFD)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>l                </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Get file lock (F_GETLK)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>L                </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Set file lock (F_SETLK)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>W               </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Set file lock and wait (F_SETLKW)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>o               </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Get file owner or process group (F_GETOWN)</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>O               </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Set file owner or process group (F_SETOWN)</TD></TR>
+</TABLE>
+
+<P>
+In the case of <I>L</I>, the <I>
+arg</I> value should be a string that describes the lock.
+A record will be returned by  F_GETLK:
+<P>
+<I>record posix_lock(value, pid)</I>
+<P>
+The lock string consists of three parts separated by commas: the type of
+lock (<I>r</I>, <I>w</I> or <I>u</I>), the starting position
+and the length. The starting position can be an offset from the beginning of
+the file (e.g. <I>23</I>), end of the file (e.g. <I>-50</I>) or from
+the current position in the file (e.g. <I>+200</I>).  A <I>length</I>
+of 0 means lock till EOF.
+<P>
+The file flags set  by F_SETFL and accessed by 
+F_GETFL are represented by these characters:
+<P>
+<TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+<I>d</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> FNDELAY </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>s</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> FASYNC </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>a</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> FAPPEND
+</TD></TR>
+</TABLE>
+
+<P>
+<HR><DT><STRONG><I>fdup(src, dest)</I> -- <I><em>Copy a file descriptor</em></I></STRONG>
+<DD> <BR> 
+This function provides a functionality similar to the <TT>dup2(2)</TT> system
+call. It only needs to be used when you are concerned about the actual Unix
+file descriptor used, such as just before calling <I>exec</I>. The
+<I>dest</I> file is closed; <I>src</I> is made to have its
+Unix file descriptor; and the second file is replaced by the first.
+<P>
+<HR><DT><STRONG><I>filepair() : L</I> -- <I><em>Create a pair of connected files</em></I></STRONG>
+<DD> <BR> 
+This is analogous to <TT>socketpair(2)</TT> - it returns a list of two
+files, such that writes on one will be available on the other. The
+connection is bi-directional, unlike <I>pipe</I>. The two
+files are indistinguishable. <em>Caution:</em> Typically, the pair is
+created just before a <I>fork</I>; after it, one process should
+close <I>L[1]</I> and the other should close <I>L[2]</I> or
+you will not get proper end-of-file notification.
+<P>
+<HR><DT><STRONG><I>flock(file, op)</I> -- <I><em>Apply or remove a lock on a file</em></I></STRONG>
+<DD> <BR> 
+An advisory lock is applied to the file. Consult the <TT>flock(2)</TT> manpage
+for more details.
+<P>
+The following characters can be used to make up the operation string:
+<P>
+<TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+<I>s </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>     shared lock </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>x </I>  </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>    exclusive lock </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>b </I>   </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>    don't block when locking </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<I>u </I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>    unlock
+</TD></TR>
+</TABLE>
+
+<P>
+Locks cannot be applied to directories or dbm files.
+<P>
+<HR><DT><STRONG><I>fork() : pid</I> -- <I><em>Create a copy of the process.</em></I></STRONG>
+<DD> <BR> 
+This function creates a new process that is identical to the current process
+in all respects except in the return value. The parent gets a return value
+that is the PID of the child, and the child gets 0.
+<P>
+<HR><DT><STRONG><I>getegid() : gid</I> -- <I><em>get group identity</em></I></STRONG>
+<DD> <BR> 
+Get the effective gid of the current process.
+<P>
+<HR><DT><STRONG><I>geteuid() : uid</I> -- <I><em>get user identity</em></I></STRONG>
+<DD> <BR> 
+Get the effective uid of the current process.
+<P>
+<HR><DT><STRONG><I>getgid() : gid</I> -- <I><em>get group identity</em></I></STRONG>
+<DD> <BR> 
+Get the real gid of the current process.
+<P>
+<HR><DT><STRONG><I>getgr(g) : r</I> -- <I><em>Get a group file entry</em></I></STRONG>
+<DD> <BR> 
+Returns a record that contains group file information. If <I>g</I>
+is null,
+each successive call to <I>getgr</I> returns the next entry.
+<I>setgrent</I> resets the sequence to the beginning. <I>g</I> can
+be a numeric gid or a group name.
+<P>
+Return type: <I>
+record posix_group(name, passwd, gid, members)</I>
+<P>
+<HR><DT><STRONG><I>gethost(h) : r</I> -- <I><em>Get a host entry</em></I></STRONG>
+<DD> <BR> 
+Returns a record that contains host information. If <I>h</I>
+is null,
+each successive call to <I>gethost</I> returns the next entry.
+<I>sethostent</I> resets the sequence to the beginning. The aliases and
+addresses are comma separated lists of aliases and addresses (in a.b.c.d
+format) respectively.
+<P>
+Return type: <I>
+record posix_hostent(name, aliases, addresses)</I>
+<P>
+<HR><DT><STRONG><I>getpgrp()</I> -- <I><em>Get the process group</em></I></STRONG>
+<DD> <BR> 
+Returns the process group of the current process.
+<P>
+<HR><DT><STRONG><I>getpid() : pid</I> -- <I><em>get process identity</em></I></STRONG>
+<DD> <BR> 
+Get the pid of the current process.
+<P>
+<HR><DT><STRONG><I>getppid() : pid</I> -- <I><em>get parent's identity</em></I></STRONG>
+<DD> <BR> 
+Get the pid of the parent process.
+<P>
+<HR><DT><STRONG><I>getpw(u) : r</I> -- <I><em>Get a password file entry</em></I></STRONG>
+<DD> <BR> 
+Returns a record that contains password file information. If <I>u</I>
+is null, each successive call to <I>getpw</I> returns the next entry and
+<I>setpwent</I> resets the sequence to the beginning. <I>u</I> can
+be a numeric uid or a user name.
+<P>
+Return type: <I>
+record posix_password(name, passwd, uid, gid, age, comment, gecos, dir, shell)</I>
+<P>
+<HR><DT><STRONG><I>getserv(s1, s2) : r</I> -- <I><em>Get a serv entry</em></I></STRONG>
+<DD> <BR> 
+Returns a record that contains serv information for the service 
+<I>s1</I> using protocol <I>s2</I>. If <I>s1</I>
+is null,
+each successive call to getservent returns the next entry.
+<I>setservent</I> resets the sequence to the beginning.
+<P>
+Return type: <I>
+record posix_servent(name, aliases, port, proto)</I>
+<P>
+If <I>s2</I> is defaulted, it will return the first matching entry.
+<P>
+<HR><DT><STRONG><I>gettimeofday() : r</I> -- <I><em>Return the time of day.</em></I></STRONG>
+<DD> <BR> 
+Returns the current time in seconds and microseconds since the epoch, Jan 1,
+1970 00:00:00. The <I>sec</I>  value may be converted to a date string
+with 
+<I>ctime</I> or <I>gtime</I>.
+<P>
+Return value: <I>record posix_timeval(sec, usec)</I>
+<P>
+<HR><DT><STRONG><I>getuid() : uid</I> -- <I><em>get user identity</em></I></STRONG>
+<DD> <BR> 
+Get the real uid of the current process.
+<P>
+<HR><DT><STRONG><I>gtime(t) : s</I> -- <I><em>Format a time value into UTC</em></I></STRONG>
+<DD> <BR> 
+Converts an integer time - seconds since the epoch, Jan 1, 1970 00:00:00 -
+into a string in UTC.
+<P>
+<HR><DT><STRONG><I>ioctl()</I> -- <I><em>Unimplemented</em></I></STRONG>
+<DD> <BR> 
+Since <TT>ioctl(2)</TT> relies so heavily on opaque pointers to structs, it is
+hard to implement in Icon; accordingly its implementation has been deferred
+till we can figure out what the right use model should be.
+<P>
+Calls to <I>ioctl</I> are inherently not portable. Most ioctl functions
+can be done with <I>system</I>, running programs like <TT>stty(1)</TT> or
+<TT>mt(1)</TT>.
+<P>
+<HR><DT><STRONG><I>lstat(f) : r</I> -- <I><em>Get information about a symlink</em></I></STRONG>
+<DD> <BR> 
+Returns a <I>record</I> with information about the link <I>f</I>.
+(See the entry for <I>stat</I> for more details.)
+Return value: <I>record posix_stat(dev, ino, mode, nlink, uid, gid,
+rdev, size, atime, mtime, ctime, blksize, blocks)</I>
+<P>
+<HR><DT><STRONG><I>link(src, dest)</I> -- <I><em>Make a link</em></I></STRONG>
+<DD> <BR> 
+Make a (hard) link <I>dest</I> that points to <I>src</I>.
+<P>
+<HR><DT><STRONG><I>mkdir(path, mode)</I> -- <I><em>Create a new directory</em></I></STRONG>
+<DD> <BR> 
+Create a new directory named <I>path</I> with a mode of <I>
+mode</I>. The mode can be numeric or a string of the form accepted by
+<I>chmod()</I>.
+<P>
+<HR><DT><STRONG><I>pipe() : L</I> -- <I><em>Create a pipe.</em></I></STRONG>
+<DD> <BR> 
+Create a pipe and return a list of two <I>file</I> objects. The first
+is for reading, the second is for writing.
+<P>
+<HR><DT><STRONG><I>readlink(l) : s</I> -- <I><em>Read a link</em></I></STRONG>
+<DD> <BR> 
+Returns the value of a symbolic link.
+<P>
+<HR><DT><STRONG><I>receive(f) : r</I> -- <I><em>Receive a UDP datagram.</em></I></STRONG>
+<DD> <BR> 
+This function reads a datagram addressed to the port
+associated with <I>f</I>,
+waiting if necessary. The returned value is a record of type
+<I>posix_message(addr, msg)</I>, containing the address of
+the sender and the contents of the message respectively.
+<P>
+<HR><DT><STRONG><I>rmdir(d)</I> -- <I><em>Remove a directory</em></I></STRONG>
+<DD> <BR> 
+Removes an empty directory.
+<P>
+<HR><DT><STRONG><I>select(files, timeout) : L</I> -- <I><em>Select among files</em></I></STRONG>
+<DD> <BR> 
+Wait for a input to become available on a number of files.
+If <I>
+timeout</I> is specified, it is an upper bound on the time elapsed before
+<I>select</I> returns. A timeout of 0 may be specified in which case
+select will return immediately with a list of files on which input is
+currently pending.
+<P>
+<TABLE COLS=3>
+<COL ALIGN=LEFT><COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+Defaults: </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>files</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Wait for timeout to expire and return.</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+</TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>timeout</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Wait forever.
+</TD></TR>
+</TABLE>
+
+<P>
+Directories and dbm files cannot be arguments to <I>select</I>.
+<P>
+<HR><DT><STRONG><I>send(s1, s2)</I> -- <I><em>Send a UDP datagram.</em></I></STRONG>
+<DD> <BR> 
+This function sends a datagram to the address <I>s1</I> with the
+contents <I>s2</I>.
+<P>
+<HR><DT><STRONG><I>setgrent()</I> -- <I><em>Resets the group file</em></I></STRONG>
+<DD> <BR> 
+This function resets and rewinds the pointer to the group file used by
+<I>getgr</I> when called with no arguments.
+<P>
+<HR><DT><STRONG><I>sethostent(stayopen)</I> -- <I><em>Resets the host file</em></I></STRONG>
+<DD> <BR> 
+This function resets and rewinds the pointer to the host file used by
+<I>gethost</I>. The argument defines whether the file should be kept open
+between calls to  <I>gethost</I>; the default is to keep it
+open.
+<P>
+<HR><DT><STRONG><I>setpgrp()</I> -- <I><em>Set the process group</em></I></STRONG>
+<DD> <BR> 
+Sets the process group. This is the equivalent of <TT>setpgrp(0, 0)</TT> on
+BSD systems.
+<P>
+<HR><DT><STRONG><I>setpwent()</I> -- <I><em>Resets the password file</em></I></STRONG>
+<DD> <BR> 
+This function resets and rewinds the pointer to the password file used by
+<I>getpw</I> when called with no arguments.
+<P>
+<HR><DT><STRONG><I>setgid(g)</I> -- <I><em>Set the gid</em></I></STRONG>
+<DD> <BR> 
+Set the gid of the current process to <I>g</I>. Consult the SysV
+<TT>setgid(2)</TT> manpage.
+<P>
+<HR><DT><STRONG><I>setuid(u)</I> -- <I><em>Set the uid</em></I></STRONG>
+<DD> <BR> 
+Set the uid of the current process to <I>u</I>.Consult the SysV
+<TT>setuid(2)</TT> manpage.
+<P>
+<HR><DT><STRONG><I>setservent(stayopen)</I> -- <I><em>Resets the network services file</em></I></STRONG>
+<DD> <BR> 
+This function resets and rewinds the pointer to the srvices file used by
+<I>getserv</I>. The argument defines whether the file should be kept open
+between calls to  <I>getserv</I>; the default is to keep it
+open.
+<P>
+<HR><DT><STRONG><I>stat(f) : r</I> -- <I><em>Get information about a file</em></I></STRONG>
+<DD> <BR> 
+Returns a <I>record</I> with information about the file <I>f</I>
+which may be a path or a <I>file</I> object.
+The times are integers that may be formatted with the <I>ctime</I> and
+<I>mtime</I> functions.
+<P>
+Return value: <I>record posix_stat(dev, ino, mode, nlink, uid, gid,
+rdev, size, atime, mtime, ctime, blksize, blocks)</I>
+<P>
+The <I>mode</I> is a string similar to the output of <TT>ls(1)</TT>. For
+example, <I>&quot;-rwxrwsr-x&quot;</I> represents a plain file with a mode of
+2775 (octal).
+<P>
+<HR><DT><STRONG><I>symlink(src, dest)</I> -- <I><em>Make a symbolic link</em></I></STRONG>
+<DD> <BR> 
+Make a symbolic link <I>dest</I> that points to <I>src</I>.
+<P>
+<HR><DT><STRONG><I>sys_errstr(&amp;errno) : s</I> -- <I><em>Format an error id</em></I></STRONG>
+<DD> <BR> 
+This function returns the string corresponding to the error code. If called
+with an invalid code (negative, or greater than the number of error
+messages) this function fails.
+<P>
+<HR><DT><STRONG><I>trap(s, proc) : proc</I> -- <I><em>Trap or ignore a signal</em></I></STRONG>
+<DD> <BR> 
+Set up a signal handler for the signal <I>s</I> (the name of the
+signal). The old handler (if any) is returned. If <I>proc</I> is
+<I>&amp;null</I>, the signal is reset to its default value.
+<P>
+<em><B>Caveat:</B></em> This is not supported with the compiler!
+<P>
+<HR><DT><STRONG><I>truncate(f, len)</I> -- <I><em>Truncate a file</em></I></STRONG>
+<DD> <BR> 
+Truncate the file <I>f</I> (which may be a path to the file, or a
+<I>file</I> object that points to the file) to be of length <I>
+len</I>.
+<P>
+<HR><DT><STRONG><I>umask(u) : u</I> -- <I><em>Set the file creation mask</em></I></STRONG>
+<DD> <BR> 
+Set the umask of the process to <I>u</I>. The old value of the umask is
+returned.
+<P>
+<HR><DT><STRONG><I>sysread(f, i) : s</I> -- <I><em>Low-level read function</em></I></STRONG>
+<DD> <BR> 
+This function performs a low-level unbuffered read operation of up
+to i characters. If i is omitted, <I>sysread</I> will read all 
+the data that it can without blocking.
+<P>
+Warning: sysread cannot be mixed with read/reads.
+<P>
+<HR><DT><STRONG><I>utime(f, atime, mtime)</I> -- <I><em>Set file modification/access times.</em></I></STRONG>
+<DD> <BR> 
+Set the access time for file <I>f</I> to <I>atime</I> and the
+modification time to <I>mtime</I>. The <I>ctime</I> is set to the
+current time.
+<P>
+<HR><DT><STRONG><I>wait(pid, options) : status</I> -- <I><em>Wait for process 
+to terminate or stop</em></I></STRONG>
+<DD> <BR> 
+The return value is a string that represents the pid and the exit status as
+defined in this table:
+<P>
+<TABLE COLS=2>
+<COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+Unix equivalent </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> example of returned string</TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<TT>WIFSTOPPED(status) </TT> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>&quot;1234 stopped:SIGTSTP&quot;</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<TT>WIFSIGNALLED(status) </TT> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>&quot;1234 terminated:SIGHUP&quot;</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<TT>WIFEXITED(status) </TT> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>&quot;1234 exit:1&quot;</I> </TD></TR>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> 
+<TT>WIFCORE(status) </TT> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>&quot;1234 terminated:SIGSEGV:core&quot;</I>
+</TD></TR>
+</TABLE>
+
+<P>
+Currently the <TT>rusage</TT>
+facility is unimplemented.
+<P>
+<TABLE COLS=3>
+<COL ALIGN=LEFT><COL ALIGN=LEFT><COL ALIGN=LEFT>
+<TR><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP>
+Defaults: </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> <I>pid</I> </TD><TD VALIGN=BASELINE ALIGN=LEFT NOWRAP> Wait for all children
+</TD></TR>
+</TABLE>
+
+</DL>
+<P>
+<H1><A NAME="SECTION000140000000000000000">Appendix B: An example</A></H1>
+<P>
+Here is an example implementation of the BSD <TT>script(1)</TT> command:
+<P>
+<PRE># script: capture a script of a shell session (as in BSD)
+# Usage: script [-a] [filename}
+# filename defaults to &quot;typescript&quot;
+
+$include &quot;posix.icn&quot;
+
+procedure main(L)
+
+   if L[1] == &quot;-a&quot; then {
+      flags := &quot;a&quot;; pop(L)
+   } else
+      flags := &quot;w&quot;
+
+   # Find a pty to use
+   every c1 := !&quot;pqrs&quot; do
+      every c2 := !(&amp;digits || &quot;abcdef&quot;) do
+         if pty := open(&quot;/dev/pty&quot; || c1 || c2, &quot;rw&quot;) then {
+            # Aha!
+            capture(fname := L[1] | &quot;typescript&quot;, pty, c1 || c2, flags)
+            stop(&quot;Script is done, file &quot;, image(fname))
+         }
+   
+   stop(&quot;Couldn't find a pty!&quot;)
+end
+
+procedure capture(scriptfile, pty, name, flags)
+
+   f := open(scriptfile, flags) | stop(&quot;Couldn't open &quot;, image(scriptfile))
+   tty := open(&quot;/dev/tty&quot; || name, &quot;rw&quot;) | stop(&quot;Couldn't open tty!&quot;)
+ 
+   if (child := fork()) = 0 then {
+      # Child: redirect i/o to the pty
+      fdup(tty, &amp;input)
+      fdup(tty, &amp;output)
+      fdup(tty, &amp;errout)
+      shell := getenv(&quot;SHELL&quot;) | &quot;/bin/sh&quot;
+      # Beautify shell's name
+      shell ? {
+         while tab(upto('/')) do move(1)
+         sh := tab(0)
+      }
+      exec(shell, sh, &quot;-i&quot;)
+      stop(&quot;exec error: &quot;, sys_errstr(&amp;errno))
+   }
+
+   # Parent
+   close(tty)
+   system(&quot;stty raw -echo&quot;)
+
+   # Handle input
+   while L := select([pty, &amp;input]) do
+      if L[1] === &amp;input then
+         writes(pty, sysread()) | break
+      else if L[1] === pty then {
+         writes(f, inp := sysread(pty)) | break
+         writes(inp)
+      }
+
+   (&amp;errno = 0) | write(&amp;errout, &quot;Unexpected error: &quot;, sys_errstr(&amp;errno))
+   system(&quot;stty cooked echo&quot;)
+   close(f)
+end</PRE>
+<P>
+<H1><A NAME="SECTION000150000000000000000">  About this document ... </A></H1>
+<P>
+ &#169 1997 Shamim Mohamed<BR> <HR>
+<P><ADDRESS>
+Shamim Mohamed
+</ADDRESS>
+</BODY>
+</HTML>

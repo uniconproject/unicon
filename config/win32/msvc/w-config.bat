@@ -9,13 +9,5 @@ type MAKEFILE.T >>..\..\..\src\icont\makefile
 echo CONSOLE=NOTHING >..\..\..\src\common\makefile
 echo DCONSOLE=dconsole.obj >>..\..\..\src\common\makefile
 type MAKEFILE.CMN >>..\..\..\src\common\makefile
-echo ICONT=..\..\bin\wicont >..\..\..\uni\unicon\makefile
-echo COPY=copy >>..\..\..\uni\unicon\makefile
-echo RM=-del >> ..\..\..\uni\unicon\makefile
-echo EXE=.exe >> ..\..\..\uni\unicon\makefile
-echo BINDIR=..\..\bin >> ..\..\..\uni\unicon\makefile
-echo UNICON=..\unicon\unicon >> ..\..\..\uni\unicon\makefile
-type ..\..\unix\Config\unicon.mak >>..\..\..\uni\unicon\makefile
 echo ICONT=..\..\bin\wicont -s >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile
-call copymk

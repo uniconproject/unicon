@@ -26,11 +26,10 @@ tokens.u : tokens.icn ytab_h.icn
 preproce.u : preproce.icn
 	$(ICONT) -c preproce
 
+# Commented out to avoid bootstrap problem.
+# Uncomment if you modify unigram.y/unigram.icn
 #unigram.u: unigram.icn
-#	$(ICONT) -c unigram
-
-unigram.u: unigram.icn
-	$(UNICON) -c unigram
+#	$(UNICON) -c unigram
 
 # build iyacc, and uncomment these lines, if you change the language grammar
 #unigram.icn : unigram.y ytab_h.icn
@@ -48,8 +47,9 @@ unigram.u: unigram.icn
 yyerror.u: yyerror.icn
 	$(ICONT) -c yyerror
 
-idol.u: idol.icn
-	$(UNICON) -c idol
+# Uncomment if you modify idol.icn
+#idol.u: idol.icn
+#	$(UNICON) -c idol
 
 unix.u: unix.icn
 	$(ICONT) -c unix

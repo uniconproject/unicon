@@ -816,7 +816,7 @@ dptr da, db, dx;
       alen = LEN(LrgInt(da));
       blen = LEN(LrgInt(db));
       if (alen < blen) {
-         MakeInt(0, dx);
+         *dx = zerodesc;
          return Succeeded;
          }
       a = LrgInt(da);
@@ -936,7 +936,7 @@ dptr da, db, dx;
       if (Type(*da) == T_Lrgint) {
 	 if ( b->sign ) {
 	    /* bignum ^ -bignum = 0 */
-	    MakeInt ( 0, dx );
+	    *dx = zerodesc;
 	    return Succeeded;
 	    }
 	 else
@@ -947,20 +947,20 @@ dptr da, db, dx;
 	 /* integer ^ -bignum */
 	 switch ( IntVal ( *da ) ) {
 	    case 1:
-	       MakeInt ( 1, dx );
+	       *dx = onedesc;
 	       return Succeeded;
 	    case -1:
 	       /* Result is +1 / -1, depending on whether *b is even or odd. */
 	       if ( ( b->digits[ b->lsd ] ) & 01 )
 		  MakeInt ( -1, dx );
 	       else
-		  MakeInt ( 1, dx );
+		  *dx = onedesc;
 	       return Succeeded;
 	    case 0:
 	       ReturnErrNum(204,Error);
 	    default:
 	       /* da ^ (negative int) = 0 for all non-special cases */
-	       MakeInt(0, dx);
+	       *dx = zerodesc;
 	       return Succeeded;
 	    }
       else {
@@ -979,7 +979,7 @@ dptr da, db, dx;
 	  * For each bit (most sig to least) in b,
 	  *  for each zero, square the partial result;
 	  *  for each one, square it and multiply it by a */
-	 MakeInt ( 1, dx );
+	 *dx = onedesc;
 	 for ( n = 0; n < blen; ++n ) {
 	    nth_dig = *DIG ( b, n );
 	    for ( mask = 1 << ( NB - 1 ); mask; mask >>= 1 ) {
@@ -1855,10 +1855,10 @@ word i;
          }
       }
    else if (i == 0) {
-      MakeInt(1, dx);
+      *dx = onedesc;
       }
    else {
-      MakeInt(0, dx);
+      *dx = zerodesc;
       }
    return Succeeded;
 }
@@ -1879,7 +1879,7 @@ dptr dx;
       if (a == 0 && i <= 0)             /* 0 ^ negative -> error */
          ReturnErrNum(204,Error);
       if (i == 0) {
-         MakeInt(1, dx);
+         *dx = onedesc;
          return Succeeded;
          }
       if (a == -1) {                    /* -1 ^ [odd,even] -> [-1,+1] */

@@ -1,5 +1,5 @@
 #
-# $Id: code.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: code.icn,v 1.2 2004-05-07 19:27:45 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -7,8 +7,6 @@
 #
 
 import lang
-
-$define MARKER "### Ivib layout ###"
 
 #
 # Record to store a method to generate
@@ -125,7 +123,7 @@ class Code(
          self.main_out(f)
       }
       write(f)
-      write(f, MARKER)
+      write(f, v2_marker)
       writes(f, "#")
       write(f, lang::encode(parent_Canvas)) | write(f,"failed")
       write(f)
@@ -188,11 +186,11 @@ class Code(
       }
 
       #
-      # Get remainder of file, stopping at end-of-file or the ### marker
+      # Get remainder of file, stopping at end-of-file or the ### marker (v1/2)
       #
       part2 := []
 
-      while t := read(f) & t ~== MARKER do {
+      while t := read(f) & t ~== v2_marker & t ~== v1_marker do {
          t ? {
             tab(many(' '))
             if ="method " then
@@ -238,7 +236,7 @@ class Code(
 
       every write(f, !part2)
 
-      write(f, MARKER)
+      write(f, v2_marker)
       writes(f, "#")
       write(f, lang::encode(parent_Canvas))
       close(f)

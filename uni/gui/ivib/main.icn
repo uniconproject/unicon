@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.2 2004-02-27 15:37:06 rparlett Exp $
+# $Id: main.icn,v 1.3 2004-05-07 19:27:45 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -12,6 +12,8 @@ import gui
 
 $include "version.icn"
 $include "guih.icn"
+
+global v1_marker, v2_marker
 
 ############################################################################
 #
@@ -285,7 +287,7 @@ class Main : CommonDialog(
       if *self.args > 0  then {
          s := self.args[1]
          if f := ::open(s) then {
-            c := load_canvas(f) | fail
+            c := load_canvas(f, s) | fail
             c.set_parent_dialog(self)
             c.set_pos(self.canvas.x, self.canvas.y)
             c.set_size(c.w, c.h)
@@ -756,15 +758,36 @@ class Main : CommonDialog(
    #
    # Given a file f, return a Canvas object
    #
-   method load_canvas(f)
+   method load_canvas(f, fname)
       local s
       repeat {
-         s := read(f) | return alert_error("No Ivib layout in " || s)
-         if s == "### Ivib layout ###" then
-            break
+         s := read(f) | return alert_error("No Ivib layout in " || fname)
+         if s == v1_marker then
+            return load_v1(f, fname)
+         if s == v2_marker then
+            return load_v2(f, fname)
       }
-      
-      s := read(f)[2:0] | return alert_error("Misformed Ivib layout in " || s)
+   end
+   
+   #
+   # Load a v1 format layout.
+   #
+   method load_v1(f, fname)
+      local s, c
+      s := read(f)[2:0] | return alert_error("Misformed Ivib layout in " || fname)
+      s := migrate(s) |  return alert_error("Unable to migrate " || s)
+      if not(c := lang::decode(s)) then
+         return alert_error("Invalid file format")
+
+      return c
+   end
+
+   #
+   # Load a v2 format layout.
+   #
+   method load_v2(f, fname)
+      local s, c
+      s := read(f)[2:0] | return alert_error("Misformed Ivib layout in " || fname)
 
       if not(c := lang::decode(s)) then
          return alert_error("Invalid file format")
@@ -786,7 +809,7 @@ class Main : CommonDialog(
       last_icn_dir := fd.get_directory()
       s := fd.get_result() | fail
       f := ::open(s) | return alert_error("Couldn't open " || s)
-      c := load_canvas(f) | fail
+      c := load_canvas(f, s) | fail
       self.clear_undo()
       self.clear_redo()
       c.set_pos(self.canvas.x, self.canvas.y)
@@ -935,6 +958,9 @@ class Main : CommonDialog(
 
    initially
       self.CommonDialog.initially()
+
+      init_globals()
+
       c := Clear(self)
       self.add(c)
 
@@ -1512,4 +1538,9 @@ class AboutDialog : CommonDialog(s1, s2, s3, string1, string2, string3, close_bu
    method component_setup()
       self.setup()
    end
+end
+
+procedure init_globals()
+   v1_marker := "### Ivib layout ###"
+   v2_marker := "### Ivib-v2 layout ##"
 end

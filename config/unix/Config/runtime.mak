@@ -338,7 +338,7 @@ rt.db: $(HDRS)
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`
 
-rt.a: ../common/rswitch.o ../common/long.o ../common/time.o\
+rt.a: ../common/rswitch.o ../common/long.o ../common/time.o ../common/mlocal.o\
       cnv.o data.o def.o errmsg.o fconv.o fload.o fmath.o fmisc.o fmonitr.o \
       fscan.o fstr.o fstranl.o fstruct.o fsys.o fwindow.o init.o invoke.o\
       keyword.o lmisc.o oarith.o oasgn.o ocat.o ocomp.o omisc.o oref.o oset.o\
@@ -347,7 +347,7 @@ rt.a: ../common/rswitch.o ../common/long.o ../common/time.o\
       rposix.o rwindow.o ../common/xwindow.o ../common/alloc.o
 	rm -f rt.a
 	ar qc rt.a `sed 's/$$/.o/' rttfull.lst` ../common/rswitch.o\
-	    ../common/long.o ../common/time.o\
+	    ../common/long.o ../common/time.o ../common/mlocal.o\
 	    ../common/xwindow.o ../common/alloc.o
 	cp rt.a rt.db ../common/dlrgint.o ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)

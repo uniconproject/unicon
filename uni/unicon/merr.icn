@@ -1,23 +1,23 @@
 #
-#	merr.icn 1.1, an error message generator program.
+#	merr.icn 1.2, an error message generator program.
 #
 #	Clinton Jeffery, jeffery@cs.nmsu.edu
 #
-#	11/7/2003
+#	11/16/2004
 #
 #	Maintains the mapping from parse states to error messages.
-#	See http://unicon.sourceforge.net/merr/
+#	See http://unicon.org/merr/
 #
 #	To do: add a command line option for an alternative message format.
 #
 
 global C, att, bison, byacc, make, compile, ofile, target, yyfn, yyln, yytxt
-global calloc
+global calloc, yywritefn
 
 procedure main(argv)
 
    if *argv=0 then
-      stop("usage: merr [-yYB] [-F filename] [-s make] [-o msgfile] compiler [target]")
+      stop("usage: merr [-yYB] [-W writefunc] [-F filename] [-s make] [-o msgfile] compiler [target]")
    ofile := "yyerror.icn"
    yamfile := "meta.err"
    yyfn := "yyfilename"
@@ -34,21 +34,28 @@ procedure main(argv)
 	    "-C": { i +:= 1; calloc := argv[i] }
 	    "--F": { i +:= 1; yyfn := &null }
 	    "-F": { i +:= 1; yyfn := argv[i] }
+	    "-W": { i +:= 1; yywritefn := argv[i] }
 	    "-L": { i +:= 1; yyln := argv[i] }
 	    "-T": { i +:= 1; yytxt := argv[i] }
 	    "-o": { i +:= 1; ofile := argv[i] }
 	    default: {
-		if /compile := argv[i] then
-		    target := (if \C then "m_err.c" else "m_err.icn")
+		if /compile := argv[i] then {
+		   if \C then target := "m_err.c" else target := "m_err.icn"
+		   }
 		else
 		    target := argv[i]
 	    }
 	}
 	i+:= 1
     }
+$ifdef _MS_WINDOWS_NT
+    /compile := ".\\wunicon"
+$else
     /compile := "./unicon"
+$endif
     /make := "make " || compile
     if \C & ofile=="yyerror.icn" then ofile := "yyerror.c"
+    if \C then /yywritefn := "fprintf" else /yywritefn := "write"
     gen()
 
     # now the fun begins: write error-inducing source codes, run them,
@@ -135,10 +142,10 @@ procedure gen(t)
                "   if (strstr(s, \"stack\")) return 0;")
 
       write(f, "   if (__merr_errors++ > 10) {\n",
-	       "      fprintf(stderr, \"too many errors, aborting\");\n",
+	       "      ", yywritefn, "(stderr, \"too many errors, aborting\");\n",
 	       "      exit(__merr_errors); }")
 
-      write(f, "   if(",\yyfn,") fprintf(stderr, \"%s:\", ",\yyfn,");")
+      write(f, "   if(",\yyfn,") ",yywritefn,"(stderr, \"%s:\", ",\yyfn,");")
       write(f, "   if ((!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\"))&&")
       write(f,"         (state>=0 && state<=yymaxstate)) {")
       write(f,"       if (errtab[state].i==1)")
@@ -155,7 +162,7 @@ procedure gen(t)
       write(f, "   if (!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\")){")
       write(f, "      sprintf(sbuf,\"%s (%d;%d)\", s, state, yychar);")
       write(f, "      s=sbuf;\n      }")
-      write(f, "   fprintf(stderr, \"%d: # \\\"%s\\\": %s\\n\", ",yyln,", ",yytxt,", s);")
+      write(f, "   ",yywritefn,"(stderr, \"%d: # \\\"%s\\\": %s\\n\", ",yyln,", ",yytxt,", s);")
       write(f, "   return 0;")
       write(f, "}")
       }
@@ -177,18 +184,17 @@ procedure gen(t)
       write(f, "   __merr_errors := 0")
       write(f, "   }\n")
 
-      write(f, "   if __merr_errors = 0 then write(&errout)")
+      write(f, "   if __merr_errors = 0 then ",yywritefn,"(&errout)")
       write(f, "   else if map(s)== \"stack underflow. aborting...\" then return")
       write(f, "   __merr_errors +:= 1")
       write(f, "   if __merr_errors > 10 then")
-      write(f, "      stop(\"too many errors, aborting\")")
-      write(f, "   writes(&errout, \\fName, \":\")")
+      write(f, "      ",yywritefn,"(\"too many errors, aborting\") & stop()")
       write(f, "   if s == \"syntax error\" then")
       write(f, "      s := t[statestk[1], yychar]")
       write(f, "   if s == \"syntax error\" then {")
       write(f, "      s ||:= \" (\" || statestk[1] ||\";\"|| yychar || \")\"")
       write(f, "      }")
-      write(f, "   write(&errout, ",yyln,", \": # \\\"\", yytext, \"\\\": \", s)")
+      write(f, "   ",yywritefn,"(&errout, \\fName, \":\",",yyln,", \": # \\\"\", yytext, \"\\\": \", s)")
       write(f, "   return")
       write(f, "end")
 }
@@ -206,11 +212,17 @@ procedure generr(t, prog, msg)
     f := open(efile,"w")
     every write(f, !prog) 
     close(f)
-    s := compile ||" "||efile||" 2> err.out"
-    system("cat m_err.c")
+$ifdef _MS_WINDOWS_NT
+    system("command /C type " || target)
+    system("command /C type err.out")
+    s := compile || " -quiet -log err.out " ||efile
+$else
+    system("cat " || target)
     system("cat err.out")
-    system(s)
+    s := compile ||" "||efile||" 2> err.out"
+$endif
 
+    system(s)
     f := open("err.out")
     while ((line := read(f)) &
 	   (not (line ? (tab(find("(")+1), tab(many(&digits)),
@@ -240,6 +252,11 @@ end
 
 procedure unknownstate(s)
     write("unknown state in ", image(s))
+$ifdef _MS_WINDOWS_NT
+    system("command /C type " || efile)
+    system("command /C type err.out")
+$else
     system("cat " || efile)
     system("cat err.out")
+$endif
 end

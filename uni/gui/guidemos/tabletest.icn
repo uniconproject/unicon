@@ -56,6 +56,10 @@ class Untitled : Dialog(t)
       t.set_contents(data)
    end
 
+   method on_table(ev)
+      #write("Table event:", ev.to_string(1))
+   end
+
    method quit_action(ev)
       exit(0)
    end
@@ -64,6 +68,7 @@ class Untitled : Dialog(t)
       local table_column_1, table_column_2, table_column_3, text_button_1
       self.set_attribs("size=300,238", "resize=on")
       t := Table("accel=t", "select_none")
+      t.connect(self, "on_table")
       t.set_table_content(CustomTableContent())
       t.connect(self, "tbl_event")
       t.set_pos("50%", "10")

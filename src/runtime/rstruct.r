@@ -585,23 +585,24 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 	 if (longest_dr==0) {
             dr_arrays = calloc(n, sizeof (struct b_proc *));
             if (dr_arrays == NULL) return NULL;
+	    longest_dr = n;
 	    }
          else {
 	    dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
             if (dr_arrays == NULL) return NULL;
 	    while(longest_dr<n) {
 	       dr_arrays[longest_dr++] = NULL;
-		}
+	       }
 	    }
-	 longest_dr = n;
 	 }
 
-
+      if (n>0)
       for(bpelem = dr_arrays[n-1]; bpelem; bpelem = bpelem->next, ct++) {
 	 bp = bpelem->this;
-	 for (i=0; i<n; i++)
+	 for (i=0; i<n; i++) {
 	    if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
 	        strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
+            }
 	 if(i==n) {
 	    return bp;
 	    }
@@ -619,7 +620,11 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       bp->ndynam = -2;
       bp->recnum = NextRecNum++;
       bp->recid = 1;
-      bp->recname = *s;
+      StrLoc(bp->recname) = malloc(StrLen(*s)+1);
+      strncpy(StrLoc(bp->recname), StrLoc(*s), StrLen(*s));
+      if (StrLoc(bp->recname) == NULL) return NULL;
+      StrLen(bp->recname) = StrLen(*s);
+      StrLoc(bp->recname)[StrLen(*s)] = '\0';
       for(i=0;i<n;i++) {
          StrLen(bp->lnames[i]) = StrLen(fields[i]);
 	 StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
@@ -627,13 +632,11 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 	 strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
 	 StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
          }
-
       bpelem = malloc(sizeof (struct b_proc_list));
       if (bpelem == NULL) return NULL;
       bpelem->this = bp;
       bpelem->next = dr_arrays[n-1];
       dr_arrays[n-1] = bpelem;
-
       return bp;
 #endif
    }

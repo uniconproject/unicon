@@ -53,5 +53,7 @@ Pure:
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
-		cd uni;			$(MAKE) Clean
+		if [ -f uni/Makefile ] ; then \
+			cd uni;			$(MAKE) Clean ;\
+		fi
 		cd config/unix; 	$(MAKE) Pure

@@ -1125,9 +1125,9 @@ int netstatus (char *url, struct netstat *buf)
 int link(char *s1, char *s2)
 {
    int c;
-   FILE *f1 = fopen(s1,"r"), *f2;
+   FILE *f1 = fopen(s1,"rb"), *f2;
    if (f1 == NULL) return -1;
-   f2 = fopen(s2, "w");
+   f2 = fopen(s2, "wb");
    if (f2 == NULL) { fclose(f1); return -1; }
    while ((c = fgetc(f1)) != EOF) fputc(c, f2);
    fclose(f1);

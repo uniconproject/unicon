@@ -164,15 +164,30 @@ char *name;
       }
 
 #if UNIX
-   /* use full pathname for all file references during linking */
-   if (isalpha(file[0])) {
-     char file2[MaxFileName];
-     if (getcwd(file2, PATH_MAX)) {
-       if (file2[strlen(file2)-1] != '/')
+   {
+   char currentdir[1024];
+   char file2[MaxFileName];
+   *currentdir = '\0';
+   /*
+    * use full pathname for all file references during linking.
+    * symlinks can cause different paths to refer to the same file,
+    * so normalize absolute paths via chdir().
+    */
+   if (!isalpha(file[0])) {
+      struct fileparts *fps = fparse(file);
+      getcwd(currentdir, 1024);
+      chdir(fps->dir);
+      sprintf(file, "%s%s", fps->name, fps->ext);
+      }
+
+   if (getcwd(file2, PATH_MAX)) {
+      if (file2[strlen(file2)-1] != '/')
 	 strcat(file2, "/");
-       strcat(file2, file);
-       strcpy(file, file2);
-     }
+      strcat(file2, file);
+      strcpy(file, file2);
+      }
+
+   if (*currentdir) chdir(currentdir);
    }
 #endif
 

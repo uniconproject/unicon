@@ -3,6 +3,7 @@ UNICON=../unicon/unicon
 CP=cp
 BINDIR=../../bin
 export IPATH:=../lib ../../ipl/lib
+export PATH:=$(BINDIR):$(PATH)
 
 #
 # makefile for constructing ivib

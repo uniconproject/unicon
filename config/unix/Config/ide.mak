@@ -7,6 +7,7 @@ CFLAGS= -c -u
 SRC=ui.icn msg_dlg.icn
 OBJ=ui.u
 export IPATH:=../lib ../../ipl/lib
+export PATH:=../../bin:$(PATH)
 
 ui: ui.u msg_dlg.u
 	$(UNICON) ui.u

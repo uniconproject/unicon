@@ -29,8 +29,7 @@ COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 
 ICOBJS=         long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O)
 
-WOBJS=	../wincap/file.obj ../wincap/errors.obj ../wincap/dibutil.obj\
-	../wincap/copy.obj ..\runtime\xrwindow.obj ..\runtime\xrwinsys.obj \
+WOBJS=	..\runtime\xrwindow.obj ..\runtime\xrwinsys.obj \
 	../runtime/xrwinrsc.obj ../common/dconsole.obj
 
 all:            $(ICONT)

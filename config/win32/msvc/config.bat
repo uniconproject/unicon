@@ -40,5 +40,4 @@ del ..\..\..\src\icont\*.obj 2> nul
 del ..\..\..\src\common\*.obj 2> nul
 del ..\..\..\src\runtime\*.obj 2> nul
 copy RTT.LNK ..\..\..\src\rtt
-type MAKEFILE.WCP >..\..\..\src\wincap\makefile
 type makefile.ide > ..\..\..\uni\ide\makefile

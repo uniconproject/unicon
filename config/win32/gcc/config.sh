@@ -4,8 +4,9 @@ cp mkunivib.bat ../../..
 cp gdbm.bat ../../../src/runtime
 cp libtp.bat ../../../src/runtime
 cp makefile.top ../../../makefile
-cp DEFINE.H ../../../src/h
-cp PATH.H ../../../src/h
+cp define.h ../../../src/h
+cp path.h ../../../src/h
+cp auto.h ../../../src/h
 cp RSWITCH.S ../../../src/common
 cp NTICONT.LNK ../../../src/icont
 echo CONSOLE=NTConsole >../../../src/common/makefile
@@ -29,7 +30,7 @@ cat makefile.uni >> ../../../uni/unicon/makefile
 echo RM=-rm > ../../../uni/ivib/makefile
 echo EXE=.exe >> ../../../uni/ivib/makefile
 echo BINDIR=../../bin >> ../../../uni/ivib/makefile
-echo UNICON=../unicon/unicon -G >> ../../../uni/ivib/makefile
+echo UNICON=../unicon/unicon >> ../../../uni/ivib/makefile
 echo CP=cp >> ../../../uni/ivib/makefile
 echo MAKE=make >> ../../../uni/ivib/makefile
 echo IVIB2=ivib2win >> ../../../uni/ivib/makefile
@@ -42,5 +43,4 @@ cat ../../unix/Config/unilib.mak >>../../../uni/lib/makefile
 rm ../../../src/icont/*.o 2> nul
 rm ../../../src/common/*.o 2> nul
 rm ../../../src/runtime/*.o 2> nul
-cat MAKEFILE.WCP >../../../src/wincap/makefile
 echo # noop > ../../../uni/ide/makefile

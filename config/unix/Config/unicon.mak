@@ -6,10 +6,14 @@ UNICON=../unicon/unicon
 ARC=zip
 ARCEXT=zip
 IYACC=../iyacc/iyacc
-ifeq ($(findstring CYGWIN, $(shell uname)),)
-	EXE=
-else
+ifeq ($(findstring WindowsNT, $(shell uname)),WindowsNT)
 	EXE=.exe
+else
+	ifeq ($(findstring CYGWIN, $(shell uname)),)
+		EXE=
+	else
+		EXE=.exe
+	endif
 endif
 export PATH:=$(BIN):$(PATH)
 

@@ -1372,45 +1372,55 @@ function{0,1} reads(f,i)
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
-      if (status & Fs_Socket)  {
-         StrLen(s) = 0;
-	 Maxread = ((i<=MaxReadStr)?i:MaxReadStr);
-	 do {
-	    ws = (SOCKET)fp;
-	    if (bytesread > 0) {
-	       Maxread =
-		  ((i - bytesread <= MaxReadStr)? i - bytesread : MaxReadStr);
-	       }
-	    if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
-	       /*IntVal(amperErrno) = errno; */
-	       if (bytesread == 0)
-		  fail;
-	       else
-		  return s;
-	       }
-	    if (slen == -3) {
-	       fail;
-	       }
-	    if (slen > 0)
-	       bytesread += slen;
-	    rlen = slen < 0 ? (word)MaxReadStr : slen;
+        if (status & Fs_Socket) {
+	    StrLen(s) = 0;
+	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
+	    do {
+	        ws = (SOCKET)fp;
+		if (bytesread > 0) {
+                    if (i - bytesread <= MaxReadStr)
+                        Maxread = i - bytesread;
+                    else
+                        Maxread = MaxReadStr;
+                }
 
-	    Protect(reserve(Strings, rlen), runerr(0));
-	    if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
-	       Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
-	       Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
-	       }
+		if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
+		    /*IntVal(amperErrno) = errno; */
+		    if (bytesread == 0)
+		        fail;
+		    else
+		        return s;
+		}
+		if (slen == -3)
+		    fail;
 
-	    Protect(sp = alcstr(sbuf,rlen), runerr(0));
-	    if (StrLen(s) == 0)
-	       StrLoc(s) = sp;
-	    StrLen(s) += rlen;
+		if (slen > 0)
+		    bytesread += slen;
+		rlen = slen < 0 ? (word)MaxReadStr : slen;
+
+		Protect(reserve(Strings, rlen), runerr(0));
+		if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
+		    Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
+		    Protect((StrLoc(s) =
+                        alcstr(StrLoc(s), StrLen(s))), runerr(0));
+		}
+
+		Protect(sp = alcstr(sbuf, rlen), runerr(0));
+		if (StrLen(s) == 0)
+		    StrLoc(s) = sp;
+		StrLen(s) += rlen;
 	    } while (bytesread < i);
+	    return s;
+	}
 
-	 return s;
-	 }
-      status |= Fs_Buff;
-      BlkLoc(f)->file.status = status;
+        /* This is a hack to fix things for the release. The solution to be
+	 * implemented after release: all I/O is low-level, no stdio. This
+	 * makes the Fs_Buff/Fs_Unbuf go away and select will work -- 
+	 * correctly. */
+        if (strcmp(StrLoc(BlkLoc(f)->file.fname), "pipe") != 0) {
+	    status |= Fs_Buff;
+	    BlkLoc(f)->file.status = status;
+	}
 #endif					/* PosixFns */
 
       if (status & Fs_Writing) {

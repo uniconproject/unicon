@@ -1,238 +1,89 @@
-Colormap wopengl_cm;
-
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
-{
-   FILE *f;
-   wbp w;
-   wsp ws;
-   wdp wd;
-   XVisualInfo * vis;
-   int event, major, minor, error, i, numCmaps;
-   char s[128];
-   Status status;
-   XStandardColormap *standardCmaps;
-			
-   wd = alc_display(NULL);
-   if(glXQueryExtension(wd->display, &error, &event)){
-      printf("GLX is supported\n"); 
-      }
-   else {	
-      printf("GL not supported\n");  return NULL;
-      }	
-   if(glXQueryVersion(wd->display, &major, &minor)){
-	printf("Version major:%d minor:%d\n", major, minor);
-   }
-   vis = wd->vis;
-   if(vis == NULL){
-      printf("null visual\n"); return(NULL);
-   }	
+{   
+    FILE *f;
+    wdp  wd; 
+    wbp  w;
+    wsp  ws;
+    int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
+    int  query; 
  
-/*for true color*/
-   if(vis->class == 4)
-   {
-   printf("display %p root %p vis %p allocAll %d\n",
-	 wd->display, DefaultRootWindow(wd->display), vis->visual, AllocAll);
-   fflush(stdout);
-
-    status = XmuLookupStandardColormap(wd->display,
-      vis->screen, vis->visualid, vis->depth, XA_RGB_DEFAULT_MAP,
-      /* replace */ False, /* retain */ True);
-      printf("XmuLookupStandardColormap %d\n", status);
-    if (status == 1) {
-       printf("XGetRGBcolormaps\n");
-       status = XGetRGBColormaps(wd->display, DefaultRootWindow(wd->display),
-     				  &standardCmaps, &numCmaps, 
-				  XA_RGB_DEFAULT_MAP);
-       if (status == 1) {
-        for (i = 0; i < numCmaps; i++) {
-          if (standardCmaps[i].visualid == vis->visualid) {
-            wopengl_cm = wd->cmap = standardCmaps[i].colormap;
-	    printf("cm = standardCmaps[i].colormap %p\n", wopengl_cm);
-	    XFree(standardCmaps);
-	    printf("XFree\n");
-          }
-        }
-        XFree(standardCmaps);
-	printf("XFree\n");
-      }
+    wd = alc_display(NULL); 
+    if (!glXQueryExtension(wd->display, &query, &query)) {
+	  printf("X server has no OpenGL GLX extension");
+	  return NULL;
     }
-}
-
-   f = wopen(name, lp, attr, n, err_index);
-   if (!f) return NULL;
-   w = (wbp) f;
-   ws = w->window;
-   wd = ws->display;
-
-   w->window->glpix = glXCreateGLXPixmap(wd->display, vis, ws->pix);
-  /* printf("created glpix is %p\n", w->window->glpix);
-   printf("after created pix was %p\n", w->window->pix);
-   printf("after created win was %p\n", w->window->win);*/
-
-   glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
-   glXMakeCurrent(w->window->display->display, w->window->glpix,
-	  	  w->context->ctx);	   
-   w->context->eyeupx = w->context->eyeupy = 0.0;
-   w->context->eyeupz = 1.0;
-   w->context->dim = 3;
-   w->context->eyeposx = w->context->eyeposy =  w->context->eyeposz = 0.0;
-   w->context->eyedirx = w->context->eyediry = 0.0;
-   w->context->eyedirz = -100.0;
-
-   glClearColor(0.0, 0.0, 0.0, 0.0);
-   glClear(GL_COLOR_BUFFER_BIT);
-
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
-   glFrustum(-0.5, 0.5, -0.5, 0.5, 1.0, 15.0);
-   return f;
-}
-
-
-
-/* accpersp starts here */
-
-void accFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, 
-		GLdouble near, GLdouble far, GLdouble pixdx, GLdouble pixdy, 
-		GLdouble eyedx, GLdouble eyedy, GLdouble focus)
-{
-  GLdouble xwsize, ywsize;
-  GLdouble dx, dy;
-  GLint viewport[4];
-  
-  glGetIntegerv(GL_VIEWPORT, viewport);
-  
-  xwsize = right - left;
-  ywsize = top - bottom;
-  
-  dx = -(pixdx *xwsize/(GLdouble) viewport[2] + eyedx*near/focus);
-  dy = -(pixdy *ywsize/(GLdouble) viewport[3] + eyedy*near/focus);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glFrustum(left +dx, right +dx, bottom + dy, top +dy, near, far);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glTranslatef(-eyedx, -eyedy, 0.0);
-}
-
-
-
-void accPerspective(GLdouble fovy, GLdouble aspect, GLdouble near, 
-		    GLdouble far, GLdouble pixdx, GLdouble pixdy, 
-		    GLdouble eyedx, GLdouble eyedy, GLdouble focus)
-{
-  GLdouble fov2, left, right, bottom, top;
-  fov2 = ((fovy*Pi)/180.0)/2.0;
-  
-  top = near /(cos(fov2) /sin(fov2));
-  bottom = -top;
-  right = top*aspect;
-  left = -right;
-  accFrustum(left, right, bottom, top, near, far, pixdx, pixdy, eyedx, eyedy, 
-	     focus);
-}
-
-void displayObjects(void)
-{
-  GLfloat torus_diffuse[] ={0.7, 0.7, 0.0, 1.0};
-  GLfloat cube_diffuse[] = {0.0, 0.7, 0.7, 1.0};
-  GLfloat sphere_diffuse[] = {0.7, 0.0, 0.7, 1.0};
-  GLfloat octa_diffuse[] = {0.7, 0.4, 0.4, 1.0};
-  
-  glPushMatrix();
-  glTranslatef(0.0, 0.0, -5.0);
-  glRotatef(30.0, 1.0, 0.0, 0.0);
-  glPushMatrix();
-  glTranslatef(-0.80, 0.35, 0.0);
-  glRotatef(100.0, 1.0, 0.0, 0.0);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, torus_diffuse);
-  glutSolidTorus(0.275, 0.85, 16, 16);
-  glPopMatrix();
-  
-  glPushMatrix();
-  glTranslatef(-0.75, -0.50, 0.0);
-  glRotatef(45.0, 0.0, 0.0, 1.0);
-  glRotatef(45.0, 1.0, 0.0, 0.0);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, cube_diffuse);
-  glutSolidCube(1.5);
-  glPopMatrix();
-
-  glPushMatrix();
-  glTranslatef(0.75, 0.60, 0.0);
-  glRotatef(30.0, 1.0, 0.0, 0.0);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, sphere_diffuse);
-  glutSolidSphere(1.0, 16, 16);
-  glPopMatrix();
  
-  glPushMatrix();
-  glTranslatef(0.70, -0.90, 0.25);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, octa_diffuse);
-  glutSolidOctahedron();  
-  glPopMatrix();
-  glPopMatrix();
+    wd->vis = glXChooseVisual(wd->display, wd->screen, L);
+    if (wd->vis == NULL) {
+       printf("visual failed");
+	 return NULL;
+    }
+#if 0
+    if (wd->vis->class == TrueColor)
+       printf("yup we are truecolor\n");
+#endif
+    f = wopen(name, lp, attr, n, err_index, 1);
+
+    if (!f) return NULL;
+    w = (wbp) f;
+    ws = w->window;
+    
+    w->context->eyeupx = w->context->eyeupy = 0.0;
+    w->context->eyeupz = 1.0;
+    w->context->dim = 3;
+    w->context->eyeposx = w->context->eyeposy =  w->context->eyeposz = 0.0;
+    w->context->eyedirx = w->context->eyediry = 0.0;
+    w->context->eyedirz = -100.0;
+
+
+
+    
+    /* create an empty list to keep track of function calls */
+ 
+    if ((ws->flist = alclist(0, MinListSlots)) == NULL)
+            return NULL;
+         
+    ws->funclist.dword = D_List;
+    ws->funclist.vword.bptr = (union block *)ws->flist;
+
+    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
+  
+    glClearColor((w->context->bg->r)/(GLfloat)65535, 
+		       (w->context->bg->g)/(GLfloat)65535, 
+                  (w->context->bg->b)/(GLfloat)65535, 0.0);
+  
+     glEnable(GL_DEPTH_TEST);
+
+     glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
+     glEnable(GL_LIGHTING);
+     glEnable(GL_LIGHT0);
+     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+     glMatrixMode(GL_PROJECTION);
+     glLoadIdentity();
+     glFrustum(-0.5, 0.5, -0.5, 0.5, 1.0, 15.0);
+     glMatrixMode(GL_MODELVIEW);
+     glLoadIdentity();     
+     return f;
 }
-
-void mydisplay(void)
-{
-   displayObjects();
-}
-
   
-void myinit(void)
-{
-
-  GLint viewport[4];
-  
-  GLfloat mat_ambient[] = {1.0, 1.0, 1.0, 1.0};
-  GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-  GLfloat light_position[] = {0.0, 0.0, 10.0, 1.0};
-  GLfloat lm_ambient[] = {0.2, 0.2, 0.2, 1.0};
-  
-  glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-  glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-  glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
-  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lm_ambient);
-  
-  glEnable(GL_LIGHTING);
-  glEnable(GL_LIGHT0);
-  glEnable(GL_DEPTH_TEST);
-  glShadeModel(GL_FLAT);
-  
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  glGetIntegerv(GL_VIEWPORT, viewport);
-
-  accPerspective(50.0, (GLdouble)viewport[2]/(GLdouble) viewport[3], 
-		   1.0, 15.0, viewport[1], viewport[1], 
-		   0.0, 0.0, 1.0);
-
-  glPushMatrix();
-  gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-
-}
-
 
 /* code for primatives */
 
 void torus(double radius1, double radius2, double x, double y, double z)
 {
-
   int i, j;
   GLfloat theta, phi, theta1;
   GLfloat cosTheta, sinTheta;
   GLfloat cosTheta1, sinTheta1;
   GLfloat ringDelta, sideDelta;
-  /*GLfloat torus_diffuse[] ={0.7, 0.7, 0.0, 1.0};*/
   GLint rings = 16;
   GLint nsides = 16;
-
 
   glPushMatrix();
 
   glTranslatef(x, y, z);
   glRotatef(130.0, 1.0, 0.0, 0.0);
-/*  glMaterialfv(GL_FRONT, GL_DIFFUSE, torus_diffuse);*/
   ringDelta = 2.0 * M_PI / rings;
   sideDelta = 2.0 * M_PI / nsides;
 
@@ -264,37 +115,31 @@ void torus(double radius1, double radius2, double x, double y, double z)
     sinTheta = sinTheta1;
   }
   glPopMatrix();
+  glFlush();
 }
 
 void cube(double length, double x, double y, double z)
 {  
-  GLfloat cube_diffuse[] = {0.0, 0.7, 0.7, 1.0};
   static GLfloat n[6][3] =
   {
-    {-1.0, 0.0, 0.0},
-    {0.0, 1.0, 0.0},
-    {1.0, 0.0, 0.0},
-    {0.0, -1.0, 0.0},
-    {0.0, 0.0, 1.0},
-    {0.0, 0.0, -1.0}
+    {-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0},{1.0, 0.0, 0.0},
+    {0.0, -1.0, 0.0}, {0.0, 0.0, 1.0},{0.0, 0.0, -1.0}
   };
+  
   static GLint faces[6][4] =
   {
-    {0, 1, 2, 3},
-    {3, 2, 6, 7},
-    {7, 6, 5, 4},
-    {4, 5, 1, 0},
-    {5, 6, 2, 1},
-    {7, 4, 0, 3}
+    {0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
+    {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3}
   };
+
   GLfloat v[8][3];
   GLint i;
 
   glPushMatrix();
+
   glTranslatef(x, y, z);
   glRotatef(45.0, 0.0, 0.0, 1.0);
   glRotatef(45.0, 1.0, 0.0, 0.0);
-/*  glMaterialfv(GL_FRONT, GL_DIFFUSE, cube_diffuse);*/
 
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -length / 2;
   v[4][0] = v[5][0] = v[6][0] = v[7][0] = length / 2;
@@ -320,12 +165,8 @@ void sphere(double radius, double x, double y, double z)
 {
   GLUquadricObj *qobj;
   GLfloat sphere_diffuse[] = {0.7, 0.0, 0.7, 1.0};
-
   glPushMatrix();
   glTranslatef(x, y, z);
-  glRotatef(30.0, 1.0, 0.0, 0.0);
-  /*glMaterialfv(GL_FRONT, GL_DIFFUSE, sphere_diffuse);*/
-
   qobj = gluNewQuadric();
   gluQuadricDrawStyle(qobj, GLU_FILL);
   gluQuadricNormals(qobj,  GLU_SMOOTH); 
@@ -333,7 +174,834 @@ void sphere(double radius, double x, double y, double z)
   glPopMatrix();
 }
 
+void cylinder(double radius1, double radius2, 
+    	        double height, double x,  double y, 
+              double z)
+{
+  GLUquadricObj *qobj;
+  glPushMatrix();
 
+  glTranslatef(x, y, z);
+  glRotated(300.0, 1.0, 0.0, 0.0);
+  qobj = gluNewQuadric();
+  gluQuadricDrawStyle(qobj, GLU_FILL);
+  gluQuadricNormals(qobj,  GLU_SMOOTH); 
+  gluCylinder(qobj, radius1, radius2, height, 15, 5);
+  glPopMatrix();
+}
+
+void disk(double radius1, double radius2, double x, 
+          double y, double z)
+{
+  GLUquadricObj *qobj;
+  glPushMatrix();
+  glTranslatef(x, y, z);
+  qobj = gluNewQuadric();
+  gluQuadricDrawStyle(qobj, GLU_FILL);
+  gluQuadricNormals(qobj,  GLU_SMOOTH); 
+  gluDisk(qobj, radius1, radius2, 20, 4);
+  glPopMatrix();
+}
+
+void partialdisk(double radius1, double radius2,                         double angle1, double angle2, 
+                 double x, double y, double z)
+{
+  GLUquadricObj *qobj;
+  glPushMatrix();
+  glTranslatef(x, y, z);
+  qobj = gluNewQuadric();
+  gluQuadricDrawStyle(qobj, GLU_FILL);
+  gluQuadricNormals(qobj,  GLU_SMOOTH); 
+  gluPartialDisk(qobj, radius1, radius2, 15, 5, 
+                 angle1, angle2);
+  glPopMatrix();
+}
+
+
+int popmatrix()
+{
+   int params1, params2;
+   glGetIntegerv(GL_MATRIX_MODE, &params1);
+   if (params1 == GL_PROJECTION) {
+      glGetIntegerv(GL_PROJECTION_STACK_DEPTH, &params2);
+      if (params2 > 1)
+         glPopMatrix();
+         else
+	      return 0;
+      }
+   else {
+      glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
+	 if (params2 > 1)
+	    glPopMatrix();
+    	 else
+	    return 0;
+      }
+   return 1;
+}
+
+
+int pushmatrix()
+{
+   int params1, params2;
+   glGetIntegerv(GL_MATRIX_MODE, &params1);
+   if (params1 == GL_PROJECTION) {
+      glGetIntegerv(GL_PROJECTION_STACK_DEPTH, &params2);
+	 if (params2 < 2)
+          glPushMatrix();
+       else
+	    return 0;
+       }
+    else {
+       glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
+	  if (params2 < 32)
+		glPushMatrix();	
+        else
+		 return 0;
+        }
+   return 1;
+}
+
+int redraw3D(struct b_list * list, Display *dpy, Window win)
+{
+    GLfloat deflt_ambient[4] = {0.2, 0.2, 0.2, 1.0};
+    GLfloat deflt_diffuse[4] = {0.8, 0.8, 0.8, 1.0};
+    GLfloat deflt_emission[4] = {0.0, 0.0, 0.0, 1.0};
+    GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
+    glClear(GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glMaterialfv(GL_FRONT, GL_AMBIENT, deflt_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, deflt_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, deflt_specular);
+    glMaterialfv(GL_FRONT, GL_EMISSION, deflt_emission);
+    glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
+     if (list)
+       traversefunctionlist(list);
+    glPopMatrix();
+    glXSwapBuffers(dpy, win);	 
+    return 1;
+}
+
+int c_traverse(struct b_list *hp, struct descrip * res, int position)
+{
+   register word i;
+   register struct b_lelem *bp;
+   int j, used;
+
+   /*
+    * Fail if the list is empty.
+    */
+   if (hp->size <= 0)
+      return 0;
+
+   /*
+    * Point bp at the first list block.  If the first block has no
+    *  elements in use, point bp at the next list block.
+    */
+   bp = (struct b_lelem *) hp->listhead;
+   if (bp->nused <= 0) {
+      bp = (struct b_lelem *) bp->listnext;
+      hp->listhead = (union block *) bp;
+      bp->listprev = (union block *) hp;
+      }
+
+   /*
+    * Parse through the list blocks to find the specified element. 
+    */
+   i = bp->first;
+   used = bp->nused;
+   for (j=0; j < position; j++){
+	 if (used <= 1){
+	    bp->listprev = (union block *) hp;
+	    bp = (struct b_lelem *) bp->listnext;
+          used = bp->nused;
+          i = bp->first;
+          } 
+       else {
+	    i++;
+	    used--;
+          }
+       }
+   *res = bp->lslots[i];
+   return 1;
+}
+
+int traversefunctionlist(struct b_list *list)
+{
+   struct descrip flist, fname, var7; 
+   struct descrip var1, var2, var3, var4, var5, var6;
+   struct b_list *funclist;
+   double x, y, z, r1, r2, h, a1, a2;
+   double v[MAXXOBJS];
+   int i, j, dim, k;
+   int elements = list->size;
+   tended char *temp;
+
+   for (i=0; i< elements; i++){
+      c_traverse(list, &flist, i);
+      if (flist.dword == D_List) {
+	    funclist = (struct b_list*)flist.vword.bptr;
+   	    c_traverse (funclist, &fname, 0);
+         }
+      else return 0;
+	if (!strcmp(fname.vword.sptr, "Fg")) {
+	   if(!determinematerial(funclist)) return 0;
+         }
+      else if (!strcmp(fname.vword.sptr, "PopMatrix")) {
+         popmatrix();
+         }
+      else if (!strcmp(fname.vword.sptr, "PushMatrix")) {
+         pushmatrix();
+         }
+      else if (!strcmp(fname.vword.sptr, "LoadIdentity")) {
+         glLoadIdentity();
+         }
+	else if (!strcmp(fname.vword.sptr, "MatrixMode")){
+          c_traverse(funclist, &var1, 1);
+          cnv:C_string(var1, temp);
+          if (!strcmp("modelView", temp))
+              glMatrixMode(GL_MODELVIEW);
+          if (!strcmp("projection", temp))
+              glMatrixMode(GL_PROJECTION);
+}
+
+  	else if(!strcmp(fname.vword.sptr, "DrawPolygon")) { 
+	
+	   c_traverse(funclist, &var1, 1);
+         for (j = 0; j < (funclist->size)-2; j++) {
+            c_traverse(funclist, &var2, j+2);
+ 	       cnv:C_double(var2, v[j]);
+         }
+	   cnv:C_integer(var1, dim);
+         if(dim == 2) { 
+	      glBegin(GL_LINE_LOOP);
+	      for(j = 0; j <  (funclist->size)-2; j+2)
+              glVertex2d(v[j], v[j+1]);
+           glEnd();
+         }
+ 	   if(dim == 3) { 
+	      glBegin(GL_LINE_LOOP);
+	      for(j = 0; j <  (funclist->size)-2; j=j+3)
+              glVertex3d(v[j], v[j+1], v[j+2]);
+           glEnd();
+         }
+ 	   if(dim == 4) { 
+	      glBegin(GL_LINE_LOOP);
+	      for(j = 0; j <  (funclist->size)-2; j+4)
+              glVertex4d(v[j], v[j+1], v[j+2], v[j+3]);
+           glEnd();
+         }
+}
+else if(!strcmp(fname.vword.sptr, "FillPolygon")) { 
+	
+	   c_traverse(funclist, &var1, 1);
+         for (j = 0; j < (funclist->size)-2; j++) {
+            c_traverse(funclist, &var2, j+2);
+ 	       cnv:C_double(var2, v[j]);
+         }
+	   cnv:C_integer(var1, dim);
+         if(dim == 2) { 
+	      glBegin(GL_POLYGON);
+	      for(j = 0; j <  (funclist->size)-2; j+2)
+              glVertex2d(v[j], v[j+1]);
+           glEnd();
+         }
+ 	   if(dim == 3) { 
+	      glBegin(GL_POLYGON );
+	      for(j = 0; j <  (funclist->size)-2; j=j+3)
+              glVertex3d(v[j], v[j+1], v[j+2]);
+           glEnd();
+         }
+ 	   if(dim == 4) { 
+	      glBegin(GL_POLYGON);
+	      for(j = 0; j <  (funclist->size)-2; j+4)
+              glVertex4d(v[j], v[j+1], v[j+2], v[j+3]);
+           glEnd();
+         }
+}
+	else if(!strcmp(fname.vword.sptr, "DrawSegment")) { 
+	
+	   c_traverse(funclist, &var1, 1);
+         for (j = 0; j < (funclist->size)-2; j++) {
+            c_traverse(funclist, &var2, j+2);
+ 	       cnv:C_double(var2, v[j]);
+         }
+	   cnv:C_integer(var1, dim);
+         if(dim == 2) { 
+	      glBegin(GL_LINES);
+	      for(j = 0; j <  (funclist->size)-2; j+2)
+              glVertex2d(v[j], v[j+1]);
+           glEnd();
+         }
+ 	   if(dim == 3) { 
+	      glBegin(GL_LINES);
+	      for(j = 0; j <  (funclist->size)-2; j=j+3)
+              glVertex3d(v[j], v[j+1], v[j+2]);
+           glEnd();
+         }
+ 	   if(dim == 4) { 
+	      glBegin(GL_LINES);
+	      for(j = 0; j <  (funclist->size)-2; j+4)
+              glVertex4d(v[j], v[j+1], v[j+2], v[j+3]);
+           glEnd();
+         }
+}
+	else if(!strcmp(fname.vword.sptr, "DrawLine")) { 
+	   c_traverse(funclist, &var1, 1);
+         for (j = 0; j < (funclist->size)-2; j++) {
+            c_traverse(funclist, &var2, j+2);
+ 	       cnv:C_double(var2, v[j]);
+         }
+	   cnv:C_integer(var1, dim);
+         if(dim == 2) { 
+	      glBegin(GL_LINE_STRIP);
+	      for(j = 0; j <  (funclist->size)-2; j+2)
+              glVertex2d(v[j], v[j+1]);
+           glEnd();
+         }
+ 	   if(dim == 3) { 
+	      glBegin(GL_LINE_STRIP);
+	      for(j = 0; j <  (funclist->size)-2; j=j+3)
+              glVertex3d(v[j], v[j+1], v[j+2]);
+           glEnd();
+         }
+ 	   if(dim == 4) { 
+	      glBegin(GL_LINE_STRIP);
+	      for(j = 0; j <  (funclist->size)-2; j+4)
+              glVertex4d(v[j], v[j+1], v[j+2], v[j+3]);
+           glEnd();
+         }
+}
+
+	else if(!strcmp(fname.vword.sptr, "DrawPoint")) { 
+	   c_traverse(funclist, &var1, 1);
+         for (j = 0; j < (funclist->size)-2; j++) {
+            c_traverse(funclist, &var2, j+2);
+ 	       cnv:C_double(var2, v[j]);
+         }
+	   cnv:C_integer(var1, dim);
+         if(dim == 2) { 
+	      glBegin(GL_POINTS);
+	      for(j = 0; j <  (funclist->size)-2; j+2)
+              glVertex2d(v[j], v[j+1]);
+           glEnd();
+         }
+ 	   if(dim == 3) { 
+	      glBegin(GL_POINTS);
+	      for(j = 0; j <  (funclist->size)-2; j=j+3)
+              glVertex3d(v[j], v[j+1], v[j+2]);
+           glEnd();
+         }
+ 	   if(dim == 4) { 
+	      glBegin(GL_POINTS);
+	      for(j = 0; j <  (funclist->size)-2; j+4)
+              glVertex4d(v[j], v[j+1], v[j+2], v[j+3]);
+           glEnd();
+         }
+}
+      else if (!strcmp(fname.vword.sptr, "Scale")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, x))
+	       return 0;
+	   c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, y))
+	       return 0; 
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, z))
+	       return 0;
+    	   glScaled(x, y, z);
+         }
+	else if(!strcmp(fname.vword.sptr, "Translate")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, x))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, y))
+	    	 return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, z))
+	       return 0;
+	   glTranslated(x, y, z);
+         }
+
+      else if (!strcmp(fname.vword.sptr, "Rotate")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+	   c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, x))
+	       return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, y))
+	       return 0;
+         c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, z))
+	       return 0;
+	   glRotated(r1, x, y, z);
+         }
+      else if (!strcmp(fname.vword.sptr, "DrawTorus")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, r2))
+	       return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, x))
+	      return 0;
+         c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, y))
+	      return 0;
+         c_traverse(funclist, &var5, 5);
+         if (!cnv:C_double(var5, z))
+	       return 0;
+	   torus(r1, r2, x, y, z);
+         }
+      else if (!strcmp(fname.vword.sptr, "DrawCube")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, x))
+	       return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, y))
+	      return 0;
+         c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, z))
+	      return 0;
+	   cube(r1, x, y, z);
+       }
+      else if(!strcmp(fname.vword.sptr, "DrawSphere")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, x))
+	       return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, y))
+	      return 0;
+         c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, z))
+	      return 0;
+	   sphere(r1, x, y, z);
+         }
+      else if(!strcmp(fname.vword.sptr, "DrawCylinder")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, r2))
+	       return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, h))
+	      return 0;
+         c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, x))
+	      return 0;
+	   c_traverse(funclist, &var5, 5);
+         if (!cnv:C_double(var5, y))
+	      return 0;
+         c_traverse(funclist, &var6, 6);
+         if (!cnv:C_double(var6, z))
+	      return 0;
+         cylinder(r1, r2, h, x, y, z);
+         }
+	    else if(!strcmp(fname.vword.sptr, "DrawDisk")) {
+
+	   c_traverse(funclist, &var1, 1);
+   
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, r2))
+	       return 0;
+
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, x))
+	      return 0;
+	   c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, y))
+	      return 0;
+         c_traverse(funclist, &var5, 5);
+         if (!cnv:C_double(var5, z))
+	      return 0;
+         disk(r1, r2, x, y, z);
+         }
+	    else if(!strcmp(fname.vword.sptr, "DrawPartialDisk")) {
+	   c_traverse(funclist, &var1, 1);
+         if (!cnv:C_double(var1, r1))
+	       return 0;
+         c_traverse(funclist, &var2, 2);
+         if (!cnv:C_double(var2, r2))
+	       return 0;
+         c_traverse(funclist, &var3, 3);
+         if (!cnv:C_double(var3, a1))
+	      return 0;
+         c_traverse(funclist, &var4, 4);
+         if (!cnv:C_double(var4, a2))
+	      return 0;
+	   c_traverse(funclist, &var5, 5);
+         if (!cnv:C_double(var5, x))
+	      return 0;
+         c_traverse(funclist, &var6, 6);
+         if (!cnv:C_double(var6, y))
+	      return 0;
+         c_traverse(funclist, &var7, 7);
+         if (!cnv:C_double(var7, z))
+	      return 0;
+         partialdisk(r1, r2, a1, a2, x, y, z);
+         }
+
+   }
+   return 1;
+}
+int determinematerial(struct b_list *list)
+{
+   struct descrip mat, var1, var2, var3;
+   int r, g, b;
+   int i;
+   tended char *temp;
+   GLfloat color[4];
+   c_traverse( list, &mat, 1);
+   if (!cnv:C_string(mat, temp))
+	 return 0;
+   c_traverse( list, &var1, 2);
+   if (!cnv:C_integer(var1, r))
+	 return 0;
+   c_traverse( list, &var2, 3);
+   if (!cnv:C_integer(var2, g))
+	return 0;
+   c_traverse( list, &var3, 4);
+   if (!cnv:C_integer(var3, b))
+	 return 0;
+   color[0] = r/(GLfloat)65535;
+   color[1] = g/(GLfloat)65535;
+   color[2] = b/(GLfloat)65535;
+   color[3] = 1.0;
+   if (!strcmp(temp, "ambient"))
+	glMaterialfv(GL_FRONT, GL_AMBIENT, color); 
+   if (!strcmp(temp, "diffuse"))
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+   if (!strcmp(temp, "specular"))
+	glMaterialfv(GL_FRONT, GL_SPECULAR, color);
+   if (!strcmp(temp, "emission"))
+	glMaterialfv(GL_FRONT, GL_EMISSION, color);
+   if (!strcmp(temp, "none"))
+	glColor3f(color[0], color[1], color[2]);
+   if(!strcmp(temp, "shininess"))
+      glMateriali(GL_FRONT, GL_SHININESS, r);
+   return 1;
+}
+
+int getlight(int light, char* buf)
+{  
+   GLfloat pos[4];
+   GLfloat amb[4];
+   GLfloat diff[4];
+   GLfloat spec[4];
+ 
+   glGetLightfv(GL_LIGHT0 + light, GL_POSITION, pos);
+   glGetLightfv(GL_LIGHT0 + light, GL_AMBIENT, amb);
+   glGetLightfv(GL_LIGHT0 + light, GL_DIFFUSE, diff);
+   glGetLightfv(GL_LIGHT0 + light, GL_SPECULAR, spec);
+ 
+   sprintf(buf, "position %.2f,%.2f,%.2f; ambient %.2f,%.2f,%.2f; diffuse %.2f,%.2f,%.2f; specular %.2f,%.2f,%.2f",  pos[0], pos[1], pos[2], amb[0], amb[1], amb[2],  diff[0], diff[1], diff[2], spec[0], spec[1], spec[2]);
+   return 1;
+}
+
+int getmaterials(char* buf)
+{
+   GLfloat amb[4];
+   GLfloat diff[4];
+   GLfloat spec[4];
+   GLfloat emis[4];
+   GLfloat shine;
+
+   glGetMaterialfv(GL_FRONT, GL_EMISSION, emis);
+   glGetMaterialfv(GL_FRONT, GL_AMBIENT, amb);
+   glGetMaterialfv(GL_FRONT, GL_DIFFUSE, diff);
+   glGetMaterialfv(GL_FRONT, GL_SPECULAR, spec);
+   glGetMaterialfv(GL_FRONT, GL_SHININESS, &shine);
+
+   sprintf(buf, "ambient %.2f,%.2f,%.2f; diffuse %.2f,%.2f,%.2f; specular %.2f,%.2f,%.2f; emission %.2f,%.2f,%.2f; shininess %.2f", amb[0], amb[1], amb[2],  diff[0], diff[1], diff[2], spec[0], spec[1], spec[2], emis[0], emis[1], emis[2], shine);
+   return 1;
+}
+
+int setmaterials(wbp w, char* s)
+{
+   int i = 0;
+   int j = 0;
+   int k;
+   long rd, gr, bl;
+   GLfloat shine;
+   GLfloat color[4];
+   char sbuf1[MaxCvtLen];
+   char sbuf2[MaxCvtLen];
+   struct descrip f, funcname, material, r, b,g;
+   struct b_list *func;
+
+   while(s[i]) {
+      j = 0;
+      k = 0;
+      if ((func = alclist(0, MinListSlots)) == NULL) 
+         return Failed; 
+      f.dword = D_List;     
+      f.vword.bptr = (union block *) func; 
+      MakeStr("Fg", 2, &funcname);
+      c_put(&f, &funcname);  
+      while(isspace(s[i])) i++; 
+	 
+      while(s[i] && isalpha(s[i])) {
+         sbuf1[k] = s[i];
+         i++; k++;         
+	   }
+      sbuf1[k] = '\0'; 
+      if (!strcmp(sbuf1, "ambient")) {
+         while(isspace(s[i])) i++;
+         if(s[i] == '\0') return Failed;
+         while(s[i] != '\0' && s[i] != ';') {
+            sbuf2[j] = s[i];
+            i++; j++;
+	      }
+         sbuf2[j] = '\0';
+         if(parsecolor(w,sbuf2, &rd, &gr, &bl)==Failed)
+            return Failed;
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = 1.0;
+         glMaterialfv(GL_FRONT, GL_AMBIENT, color);
+         MakeStr("ambient", 8, &material);	
+         c_put(&f, &material);  
+	   }
+ 	else if(!strcmp(sbuf1, "diffuse")) {
+	   while(isspace(s[i])) i++;
+  	   if(s[i] == '\0') return Failed;
+	   while(s[i] != '\0' && s[i] != ';') {
+	      sbuf2[j] = s[i];
+	      i++; j++;
+	      }
+	   sbuf2[j] = '\0'; 
+	   if(parsecolor(w,sbuf2, &rd, &gr, &bl)==Failed) 
+            return Failed;
+	   color[0] = rd/(GLfloat)65535;
+	   color[1] = gr/(GLfloat)65535;
+	   color[2] = bl/(GLfloat)65535;
+	   color[3] = 1.0;
+	   glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+	   MakeStr("diffuse", 7, &material);
+	   c_put(&f, &material);  
+	   } 
+      else if (!strcmp(sbuf1, "specular")) {
+         while(isspace(s[i])) i++;
+         if(s[i] == '\0') return Failed;
+         while(s[i] != '\0' && s[i] != ';') {
+	      sbuf2[j] = s[i];
+	      i++; j++;
+	      }
+	   sbuf2[j] = '\0';
+         if(parsecolor(w, sbuf2, &rd, &gr,&bl)==Failed)
+            return Failed;
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = 1.0;
+         glMaterialfv(GL_FRONT, GL_SPECULAR, color);
+         MakeStr("specular", 8, &material);	
+         c_put(&f, &material);  
+	   }    
+      else if(!strcmp(sbuf1, "shininess")) {
+	   while(isspace(s[i])) i++;
+	   if(s[i] == '\0') return Failed;
+ 	   while(s[i] != '\0' && s[i] != ';') {
+	      sbuf2[j] = s[i];
+	      i++; j++;
+	      }
+	   sbuf2[j] = '\0';
+  	   shine = atof(sbuf2);
+    	   glMaterialf(GL_FRONT, GL_SHININESS, shine);
+         MakeStr("shininess", 9, &material);		
+	   c_put(&f, &material); 
+    	   rd = shine;
+	   gr = 0;
+   	   bl = 0;
+	  }
+      else if(!strcmp(sbuf1, "emission")) {
+	   while(isspace(s[i])) i++;
+   	   if(s[i] == '\0') return Failed;
+	   while(s[i] != '\0' && s[i] != ';') {
+	      sbuf2[j] = s[i];
+	      i++; j++;
+	      }
+	   sbuf2[j] = '\0';
+    	   if(parsecolor(w, sbuf2, &rd, &gr,&bl)==Failed) 
+    	      return Failed;
+	   color[0] = rd/(GLfloat)65535;
+	   color[1] = gr/(GLfloat)65535;
+	   color[2] = bl/(GLfloat)65535;
+	   color[3] = 1.0;
+	   glMaterialfv(GL_FRONT, GL_EMISSION, color);
+         MakeStr("emission", 8, &material);
+	   c_put(&f, &material);  
+        }
+      else {
+	   if(setfg(w, s) == Failed) return Failed;
+	   rd = w->context->fg->r;
+	   gr = w->context->fg->g;
+   	   bl = w->context->fg->b;
+ 	   glColor3f(rd/(GLfloat)65535, 
+                	 gr/(GLfloat)65535, bl/(GLfloat)65535);
+         MakeStr("none", 4, &material);
+	   c_put(&f, &material);  
+        }
+      MakeInt(rd, &r);
+      c_put(&f, &r);
+      MakeInt(gr, &g);
+      c_put(&f, &g);
+      MakeInt(bl, &b);
+      c_put(&f, &b);
+      c_put(&(w->window->funclist), &f);	        
+      if(s[i] != '\0' && s[i] != ';') return Failed;
+      i++;
+     }   
+   return Succeeded;
+}
+
+
+int setlight(wbp w, char* s, int light)
+{
+   char* s2, *s3 = NULL;
+   GLboolean params;
+   int i, j;
+   GLfloat color[4];
+   long rd, gr, bl;
+   s2 = s;
+printf("setlight %s\n", s); fflush(stdout);
+   while(isspace(*s2)) s2++;
+   if (!strncmp(s2, "on", 2)) {
+      glGetBooleanv(light, &params);
+      if (!params)
+         glEnable(light);
+      s2 = s2+2;
+      if(*s2 != ',' && *s2 != '\0') return Failed;
+      if(*s2 == ',') s2++;
+      }
+   if (!strncmp(s2, "off", 3)) {
+	 glGetBooleanv(light, &params);
+	 if (params)
+          glDisable(light);
+       s2 = s2 + 3;
+	 if(*s2 != ',' && *s2 != '\0') return Failed;
+       if(*s2 == ',') s2++;
+      }
+printf("setlight s2 %s\n", s2); fflush(stdout);
+   while(*s2 != '\0'){
+      while(isspace(*s2)) s2++;     
+printf("...setlight s2 %s\n", s2); fflush(stdout);
+      if (!strncmp(s2, "ambient", 7)) {
+         s2 = s2 + 7;
+         i = 0;
+         if(*s2 == '\0') return Failed;
+	 s3 = strdup(s2);
+         while(s2[i] != '\0' && s2[i] != ';') {
+            s3[i] = s2[i];
+            i++;
+            }
+         s3[i] = '\0';
+printf("before parsecolor s2 %s\n", s2); fflush(stdout);
+	 if(parsecolor(w, s3, &rd, &gr, &bl) ==Failed)
+	    return Failed; 
+printf("after parsecolor s2 %s\n", s2); fflush(stdout);
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = 1.0;
+         glLightfv(light, GL_AMBIENT, color);
+         s2 = s2 + i;
+	 if(*s2 != ';' && *s2 != '\0') return Failed;
+	 if(*s2 != '\0') s2++;
+         }
+      else if (!strncmp(s2, "diffuse", 7)) {
+         s2 = s2 + 7;
+         i = 0;
+         if(*s2 == '\0') return Failed;
+	 s3 = strdup(s2);
+         while(s2[i] != '\0' && s2[i] != ';') {
+            s3[i] = s2[i];
+            i++;
+            }
+         s3[i] = '\0';
+         if(parsecolor(w, s3, &rd, &gr, &bl) == Failed)
+	      return Failed;
+         color[0] = rd/(GLfloat)65535;
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = 1.0; 
+         glLightfv(light, GL_DIFFUSE, color);
+         s2 = s2 + i;  
+         if(*s2 != ';' && *s2 != '\0') return Failed;
+         if(*s2 != '\0') s2++;
+         }
+      else if (!strncmp(s2, "specular", 8)) {
+         s2 = s2 + 8;
+         i = 0;  
+         if(*s2 == '\0') return Failed;
+	 s3 = strdup(s2);
+         while(s2[i] != '\0' && s2[i] != ';') {
+            s3[i] = s2[i];
+            i++;
+            }
+         s3[i] = '\0';
+         if (parsecolor(w, s3, &rd, &gr, &bl)==Failed)
+            return Failed;
+         color[0] = rd/(GLfloat)65535; 
+         color[1] = gr/(GLfloat)65535;
+         color[2] = bl/(GLfloat)65535;
+         color[3] = 1.0;
+         glLightfv(light, GL_SPECULAR, color);
+         s2 = s2 + i;   
+         if(*s2 != ';' && *s2 != '\0') return Failed;
+         if(*s2 != '\0') s2++;
+         }
+	if (!strncmp(s2, "position", 8)) {
+         s2 = s2 + 8;
+	   for (j = 0; j < 2; j++) {
+           while(isspace(*s2)) s2++;
+           i = 0;
+           if(*s2 == '\0') return Failed;
+           while(s2[i] != '\0' && s2[i] != ',') {
+              s3[i] = s2[i];
+              i++;
+              }
+           s3[i] = '\0';
+           color[j] = atof(s3);	  
+           s2 = s2 + i;
+           if(*s2 != ',') return Failed;
+           s2++;
+           }
+         while(isspace(*s2)) s2++;
+         if(*s2 == '\0') return Failed;
+         while(s2[i] != '\0' && s2[i] != ';') {
+            s3[i] = s2[i];
+            i++;
+            }
+         s3[i] = '\0';
+         color[2] = atof(s3);
+         color[3] = 0.0;
+         s2 = s2  + i;
+         if(*s2 != ';' && *s2 != '\0') return Failed;
+         if(*s2 != '\0') s2++;
+         glLightfv(light, GL_POSITION, color);
+         }
+      }
+      redraw3D(w->window->flist, 
+               w->window->display->display, 
+               w->window->win);
+      return Succeeded;
+}
 
 int setdim(wbp w, char* s)
 {
@@ -424,6 +1092,15 @@ int seteyedir(wbp w, char *s)
 	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
 }
 
+int setlightingmodel(wbp w, char *s)
+{
+   char *s2, tmp[32];
+   
+   s2 = s;
+   while (isspace(*s2)) s2++;
+   return 0;
+ 
+}
 
 int seteyeup(wbp w, char *s)
 {

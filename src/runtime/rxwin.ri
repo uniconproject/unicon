@@ -11,8 +11,6 @@
  */
 XSizeHints size_hints;
 
-extern Colormap wopengl_cm;
-
 /*
  * function prototypes
  */
@@ -1009,7 +1007,7 @@ wbp w;
  *  -1  : ordinary failure
  *  -2  : out of memory
  */
-FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int is_3d)
    {
    wbp w;
    wsp ws;
@@ -1021,7 +1019,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    tended struct descrip attrrslt;
 
    tlp = lp;
-
    for(i=0;i<n;i++) {
       if (is:string(attr[i]) &&
 	  (StrLen(attr[i])>8) &&
@@ -1047,19 +1044,23 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
       return NULL;
       }
    ws = w->window;
-   ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
+
+   ws->vis = DefaultVisual(ws->display->display, ws->display->screen); 
+
+
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *)tlp;
 
    /*
     * some attributes of the display and window are used in the context
     */
+	
    if ((w->context = alc_context(w)) == NULL) {
       *err_index = -2;
       free_binding(w);
       return NULL;
       }
-
+	
    /*
     * some attributes of the context determine window defaults
     */
@@ -1069,7 +1070,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    ws->x = 0;
    ws->y += w->context->dy;
    ws->x += w->context->dx;
-
+#ifdef Graphics3D
+   w->context->is_3D = ws->is_3D = is_3d;
+#endif					/* Graphics3D */
+	
    /*
     * Loop through any remaining arguments.
     */
@@ -1098,13 +1102,12 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 	 return NULL;
 	 }
       }
-
    if ((i = wmap(w)) != Succeeded) {
       if (i == Failed) *err_index = -1;
       else *err_index = 0;
       return NULL;
       }
-
+	
    if (ws->win) {
       Atom WMDeleteWindow = XInternAtom(ws->display->display, "WM_DELETE_WINDOW", True);
       XSetWMProtocols(ws->display->display, ws->win, &WMDeleteWindow, 1);
@@ -1178,6 +1181,7 @@ int wmap(wbp w)
    char *p, *s;
    XWMHints wmhints;
    XClassHint clhints;
+
    STDLOCALS(w);
 
    /*
@@ -1201,40 +1205,44 @@ int wmap(wbp w)
       stdpix = ws->pix;
       }
 
+
    /*
     * create the X window (or use the DefaultRootWindow if requested)
     */
    if (ws->iconic != HiddenState) {
+
       XSetWindowAttributes attr;
       attr.background_pixmap = None;
       attr.background_pixel = wc->bg->c;
       attr.border_pixel = wc->fg->c;
-#ifdef Graphics3D
-      attr.colormap = wopengl_cm;
-#endif					/* Graphics3D */
-      attr.event_mask = StructureNotifyMask | ExposureMask;
-      ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
+	attr.event_mask = StructureNotifyMask | ExposureMask;
+ 
+#ifdef Graphics3D 
+      if (ws->is_3D && Fs_Window3D) {   
+         attr.colormap = 
+   				 XCreateColormap(wd->display, RootWindow(wd->display, wd->vis->screen), wd->vis->visual, AllocNone);
+         ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
+		        XCreateWindow (stddpy, DefaultRootWindow(stddpy), 
+                                  ws->posx < 0 ? 0 : ws->posx, 
+				            ws->posy < 0 ? 0 : ws->posy, 
+                                  ws->width,  ws->height, 0, 
+				           wd->vis->depth, InputOutput, wd->vis->visual, 
+				           CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
+	}
+	else
+#endif					/* Graphics3D */     
+           ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
 
-#if 1
-		 XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
+		       XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
 				     ws->posx < 0 ? 0 : ws->posx,
 				     ws->posy < 0 ? 0 : ws->posy, ws->width,
 				     ws->height, 1, wc->fg->c, wc->bg->c));
-#else
-		 XCreateWindow(stddpy,
-			       DefaultRootWindow(stddpy),
-			       ws->posx < 0 ? 0 : ws->posx,
-			       ws->posy < 0 ? 0 : ws->posy,
-			       ws->width, ws->height, 0,
-			       DefaultDepth(stddpy, wd->screen),
-			       InputOutput,
-			       DefaultVisual(stddpy, wd->screen),
-			       CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
-#endif
-      if (ws->win == (Window) NULL)
+
+    if (ws->win == (Window) NULL)
 	 return Failed;
       stdwin = ws->win;
       XClearWindow(stddpy, stdwin);
+
       }
 
    /*
@@ -1274,16 +1282,13 @@ int wmap(wbp w)
       XChangeGC(stddpy, stdgc, gcmask, &gcv);
 
 #ifdef Graphics3D
-   wc->ctx = glXCreateContext(wd->display, wd->vis, None, True);
-   if (w->window->isdirect = glXIsDirect(wd->display, wc->ctx)) {
-      fprintf(stderr, "yup, its direct\n"); fflush(stderr);
-      } 
-   else {
-      fprintf(stderr, "nope, its not direct\n"); fflush(stderr);
-      }
-   glXMakeCurrent(wd->display, w->window->win, wc->ctx);
-   
-#endif
+   if (wc->is_3D &&  Fs_Window3D) {
+      wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
+      if (wc->ctx == NULL) 
+	   return Failed;
+      glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+   }
+#endif				/* Graphics3D */
  
    if (wc->clipw >= 0)
       setclip(w);
@@ -1386,8 +1391,10 @@ int wmap(wbp w)
    clhints.res_class = "IconProg";
    XSetClassHint(stddpy, stdwin, &clhints);
 
-   if (wd->cmap != DefaultColormap(stddpy,wd->screen)) /* ? */
+   if (wd->cmap != DefaultColormap(stddpy,wd->screen)) { /* ? */
+printf("is this code happening?\n");
       XSetWindowColormap(stddpy, stdwin, wd->cmap);
+}
    XSync(stddpy, False);
 
    if (ws->iconic != RootState) {
@@ -2086,7 +2093,6 @@ char *s;
    {
    wclrp cp;
    STDLOCALS(w);
-
    Protect(cp = alc_color(w,s), return Failed);
    wc->fg = cp;
    return resetfg(w);
@@ -2421,6 +2427,13 @@ XExposeEvent *event;
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy,stdgc,wc->drawop);
 /* end of " if its a 3D window " */
+
+#ifdef Graphics3D
+       if (w->context->is_3D && Fs_Window3D){
+ 	     redraw3D(w->window->flist, w->window->display->display, w->window->win);
+       }
+#endif                        /* Graphics3D */
+
       }
    return returnval;
    }
@@ -2527,7 +2540,9 @@ XConfigureEvent *event;
    if (! resizePixmap(w, event->width, event->height)) return 0;
 
 #ifdef Graphics3D
-   glViewport(0, 0, (GLsizei)event->width, (GLsizei) event->height);
+   if (ws->is_3D && Fs_Window3D) {
+      glViewport(0, 0, (GLsizei)event->width, (GLsizei) event->height);
+   }
 #endif					/* Graphics3D */
 
    /*

@@ -355,6 +355,11 @@ struct errtab errtab[] = {
    147, "window attribute cannot be read or written as requested",
 #endif					/* Graphics */
 
+#ifdef Graphics3D                 /* Graphics3D */
+   150,  "drawing a 3D object while in 2D mode",
+   151,  "pushed/popped too many matrices",
+#endif                            /* Graphics3D */
+
 #ifdef FAttrib
    160, "cannot open file",
    161, "bad file attribute",

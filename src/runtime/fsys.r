@@ -839,7 +839,7 @@ Deliberate Syntax Error
 	    f = (FILE *)wopengl(fnamestr, hp, attr, n, &err_index);
 	 else
 #endif					/* Graphics3D */
-	    f = (FILE *)wopen(fnamestr, hp, attr, n, &err_index);
+	    f = (FILE *)wopen(fnamestr, hp, attr, n, &err_index,0);
 
 	 if (f == NULL) {
 	    if (err_index >= 0) runerr(145, attr[err_index]);

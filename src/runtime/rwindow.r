@@ -682,6 +682,18 @@ long *r, *g, *b;
       *r = dr;
       *g = dg;
       *b = db;
+
+#ifdef Graphics3D
+      if (w->context->is_3D && Fs_Window3D) {
+         if(dr>=0 && dr<=1.0 && dg>=0 && dg<=1.0 && db>=0 && db<=1.0){
+		*r = dr * 65535;
+	      *g = dg * 65535;
+           *b = db * 65535;
+ 	     return Succeeded;
+}
+}
+#endif;
+
       if (*r>=0 && *r<=65535 && *g>=0 && *g<=65535 && *b>=0 && *b<=65535)
          return Succeeded;
       else
@@ -2344,8 +2356,32 @@ char * abuf;
 	 break;
       case A_EYEDIR:
    	 AttemptAttr(seteyedir(w, val));
-	/* code to write eyedir attribute */
 	 break;
+	case A_LIGHT: case A_LIGHT0:
+	 AttemptAttr(setlight(w, val, GL_LIGHT0)); 
+	 break;
+	case A_LIGHT1:
+	 AttemptAttr(setlight(w, val, GL_LIGHT1));
+	 break;
+	case A_LIGHT2:
+        AttemptAttr(setlight(w, val, GL_LIGHT2));
+	 break;
+	case A_LIGHT3:
+       AttemptAttr( setlight(w, val, GL_LIGHT3));
+	 break;
+	case A_LIGHT4: 
+       AttemptAttr(setlight(w, val, GL_LIGHT4));
+	 break;
+	case A_LIGHT5: 
+        AttemptAttr(setlight(w, val, GL_LIGHT5));
+	 break;
+	case A_LIGHT6:  
+        AttemptAttr(setlight(w, val, GL_LIGHT6));
+	 break;
+	case A_LIGHT7: 
+       AttemptAttr( setlight(w, val, GL_LIGHT7));
+	 break;
+
 #endif					/* Graphics3D */
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
@@ -2699,6 +2735,39 @@ char * abuf;
 	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyedirx, wc->eyediry, wc->eyedirz);
 	MakeStr(abuf, strlen(abuf), answer);
 	break;
+ 	case A_LIGHT:
+	case A_LIGHT0:
+	  getlight(0, abuf);
+	  MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT1:
+        getlight(1, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT2:
+        getlight(2, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT3:
+        getlight(3, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT4:
+        getlight(4, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT5:
+        getlight(5, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT6:
+        getlight(6, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
+	case A_LIGHT7:
+        getlight(7, abuf);
+        MakeStr(abuf, strlen(abuf), answer);
+        break;
 #endif					/* Graphics3D */
       case A_VISUAL:
 	 if (getvisual(w, abuf) == Failed) return Failed;
@@ -2769,7 +2838,12 @@ char * abuf;
 	    break;
 	    }
 	 break;
-      case A_FG:
+      case A_FG:      
+#ifdef Graphics3D  
+ 	 if (w->context->is_3D && Fs_Window3D) 	
+         getmaterials(abuf);
+       else 
+#endif
 	 getfg(w, abuf);
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break; 
@@ -3278,7 +3352,7 @@ FILE *OpenConsole()
       ConsoleTitle[StrLen(kywd_prog)] = '\0';
       strcat(ConsoleTitle, " - console");
 
-      ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx);
+      ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
       k_input.fd = ConsoleBinding;
       k_output.fd = ConsoleBinding;
       k_errout.fd = ConsoleBinding;
@@ -3457,6 +3531,15 @@ stringint attribs[] = {
    {"inputmask",	A_INPUTMASK},
    {"label",		A_LABEL},
    {"leading",		A_LEADING},
+   {"light",	 	A_LIGHT},
+   {"light0",	 	A_LIGHT0},
+   {"light1",	 	A_LIGHT1},
+   {"light2",	 	A_LIGHT2},
+   {"light3",	 	A_LIGHT3},
+   {"light4",	 	A_LIGHT4},
+   {"light5",	 	A_LIGHT5},
+   {"light6",	 	A_LIGHT6},
+   {"light7",	 	A_LIGHT7},
    {"lines",		A_LINES},
    {"linestyle",	A_LINESTYLE},
    {"linewidth",	A_LINEWIDTH},

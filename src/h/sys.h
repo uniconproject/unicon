@@ -211,7 +211,7 @@
       #include "decw$include:Xatom.h"
 
       #ifdef HaveXpmFormat
-         #include <xpm.h>
+         #include "../xpm/xpm.h"
       #endif				/* HaveXpmFormat */
 
       #undef UNIX
@@ -219,12 +219,24 @@
    #else				/* VMS */
       #undef VMS
 
+#ifdef Redhat71
+/* due to a header bug, we must commit a preemptive first strike of Xosdefs */
+#include <X11/Xosdefs.h>
+
+#ifdef X_WCHAR
+#undef X_WCHAR
+#endif
+#ifdef X_NOT_STDC_ENV
+#undef X_NOT_STDC_ENV
+#endif
+#endif					/* Redhat71 */
+
       #ifdef HaveXpmFormat
 #if !AMIGA
 #define AMIGA_ZERO
 #undef AMIGA
 #endif					/* !AMIGA */
-         #include <X11/xpm.h>
+         #include "../xpm/xpm.h"
 #ifdef AMIGA_ZERO
 #define AMIGA 0
 #endif					/* !AMIGA */

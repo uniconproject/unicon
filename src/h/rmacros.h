@@ -49,13 +49,13 @@
 #endif					/* Graphics */
    
 #define Fs_Untrans    01000	/* untranslated mode file */
+#define Fs_Directory  02000	/* reading a directory */
 
 #ifdef Dbm
-   #define Fs_Dbm       02000		/* a dbm file */
+   #define Fs_Dbm       04000		/* a dbm file */
 #endif					/* Dbm */
 
 #ifdef PosixFns
-   #define Fs_Dir	04000		/* readdir will be used */
    #define Fs_Socket    010000
    #define Fs_Buff      020000
    #define Fs_Unbuf     040000
@@ -810,6 +810,11 @@
    #endif				/* MICROSOFT ... */
 #endif					/* MSDOS */
 
+#if NT
+#ifndef S_ISDIR
+#define S_ISDIR(mod) ((mod) & _S_IFDIR)
+#endif					/* no S_ISDIR */
+#endif					/* NT */
 
 #ifdef ISQL                             /* ODBC support */
 

@@ -105,8 +105,10 @@ char *  make_mode		(mode_t st_mode);
 #endif					/* UNIX */
 #if MSDOS
 char *  make_mode		(unsigned short st_mode);
+#ifndef NTGCC
 int	strcasecmp		(char *s1, char *s2);
 int	strncasecmp		(char *s1, char *s2, int n);
+#endif					/* NTGCC */
 #endif					/* MSDOS */
 #endif					/* FAttrib */
 union block	**memb		(union block *pb,dptr x,uword hn, int *res);
@@ -213,8 +215,10 @@ void		xmfree		(void);
    #ifdef FAttrib
       #if MSDOS
          char *make_mode(unsigned short st_mode);
+#ifndef NTGCC
          int strcasecmp(char *s1, char *s2);
          int strncasecmp(char *s1, char *s2, int n);
+#endif					/* NTGCC */
       #endif				/* MSDOS */
    #endif				/* FAttrib */
 #endif					/* MSWindows */
@@ -256,7 +260,7 @@ void		xmfree		(void);
    int	wattrib		(wbp w, char *s, long len, dptr answer, char *abuf);
    int	wgetche		(wbp w, dptr res);
    int	wgetchne	(wbp w, dptr res);
-   int	wgetevent	(wbp w, dptr res,int t);
+   int	wgetevent	(wbp w, dptr res, int t);
    int	wgetstrg	(char *s, long maxlen, FILE *f);
    void	wgoto		(wbp w, int row, int col);
    int	wlongread	(char *s, int elsize, int nelem, FILE *f);
@@ -594,6 +598,7 @@ int	fixtrap		(void);
 int	get_name	(dptr dp1, dptr dp2);
 int	getch		(void);
 int	getche		(void);
+double	getdbl		(dptr dp);
 int	getimage	(dptr dp1, dptr dp2);
 int	getstrg		(char *buf, int maxi, struct b_file *fbp);
 void	hgrow		(union block *bp);
@@ -637,8 +642,10 @@ int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
 int get_uid			(char *name);
 int get_gid			(char *name);
+#if !NT
 dptr make_pwd			(struct passwd *pw, dptr result);
 dptr make_group			(struct group *pw, dptr result);
+#endif					/* NT */
 dptr make_host			(struct hostent *pw, dptr result);
 dptr make_serv			(struct servent *pw, dptr result);
 FILE *sock_listen		(char *s, int udp);

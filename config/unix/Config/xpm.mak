@@ -4,6 +4,9 @@
 # This file is a simplification of XPM's standard Makefile
 #
 
+include ../../../Makedefs
+DEFINES = $(XPMDEFS)
+
 MAKE = make
 RM = rm -f
 CP = cp

@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.7 2002-07-23 19:26:13 phliar Exp $
+# $Id: top.mak,v 1.8 2002-11-09 20:39:55 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -69,7 +69,7 @@ Status:
 Unicon:		Icont
 		cd ipl/lib; $(MAKE)
 		cd uni/unicon; $(MAKE) unicon
-		cd uni/ivib; PATH=${PATH}:${PWD}/bin $(MAKE) ivib
+		cd uni/ivib; PATH=${PWD}/bin:${PATH} $(MAKE) ivib
 
 # The interpreter: icont and iconx.
 

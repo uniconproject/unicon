@@ -83,6 +83,13 @@ miconx:
 	$(RM) ..\h\define.h
 	move define.bak ..\h\define.h
 
+nticonx.dll: nticonx ximain.c
+	cl -c -DDLLICONX ximain.c
+	link @dlliconx.lnk
+	cl -c ximain.c
+	cl /MD -c nticonx.c
+	link nticonx.obj nticonx.lib /subsystem:console /out:nticonxd.exe
+
 nticonx: $(OBJS)
 	link @iconx.lnk
 	copy nticonx.exe ..\..\bin

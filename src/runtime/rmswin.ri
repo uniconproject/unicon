@@ -253,6 +253,7 @@ int mswinsystem(char *s)
 	else strcpy(cmd, argv[0]);
       if (cmd[strlen(cmd)-1] == '\"') cmd[strlen(cmd)-1] = '\0';
       rv = _spawnvp(_P_WAIT, cmd, argv);
+      for(i=0; i<argc; i++) free(argv[i]);
       free(argv);
       return rv;
 }
@@ -1021,11 +1022,13 @@ char *s;
 int n;
    {
    XPoint pt;
-   HBRUSH hb;
+   HFONT oldfont, oldfont2;
+   HBRUSH hb, oldbrush, oldbrush2;
    XRectangle rect;
    STDLOCALS(w);
 
-   STDFONT;
+   if(stdwin)oldfont=SelectObject(stddc, wc->font->font);
+   oldfont2=SelectObject(pixdc,wc->font->font);
    rect.left = ws->x; rect.right = ws->x + dc_textwidth(pixdc, s, n);
    rect.top = ws->y - ASCENT(w); rect.bottom = ws->y + DESCENT(w);
 
@@ -1051,7 +1054,9 @@ int n;
       TextOut(pixdc, ws->x, ws->y - ASCENT(w), s, n);
       }
    ws->x += dc_textwidth(pixdc, s, n);
-   
+
+   if (stdwin) SelectObject(stddc, oldfont);
+   SelectObject(pixdc, oldfont2);
    FREE_STDLOCALS(w);
    }
 /*
@@ -2997,9 +3002,11 @@ int setselection(wbp w, dptr val)
  */
 void drawstrng(wbinding *wb, int x, int y, char *s, int slen)
    {
+   HFONT oldfont, oldfont2;
    STDLOCALS(wb);
 
-   STDFONT;
+   if(stdwin)oldfont=SelectObject(stddc, wc->font->font);
+   oldfont2=SelectObject(pixdc,wc->font->font);
    if (stdwin) {
       SetBkMode(stddc, TRANSPARENT);
       if (wc->fg != RGB(0, 0, 0)) SetTextColor(stddc, PALCLR(wc->fg));
@@ -3011,6 +3018,8 @@ void drawstrng(wbinding *wb, int x, int y, char *s, int slen)
    if (wc->bg != RGB(255, 255, 255)) SetBkColor(pixdc, PALCLR(wc->bg));
    TextOut(pixdc, x, y - ASCENT(wb), s, slen);
  
+   if (stdwin) SelectObject(stddc, oldfont);
+   SelectObject(pixdc, oldfont2);
    FREE_STDLOCALS(wb);
    return;
    }

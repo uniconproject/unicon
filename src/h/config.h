@@ -146,6 +146,10 @@
    #undef Eve
 #endif					/* NoCoexpr */
 
+#ifndef NoEventMon
+#define EventMon
+#endif
+
 #if COMPILER
    #undef Eve
    #undef MultiThread

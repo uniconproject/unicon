@@ -18,7 +18,7 @@ struct b_file	*alcfile_1	(FILE *fd,int status,dptr name);
 union block	*alchash_0	(int tcode);
 union block	*alchash_1	(int tcode);
 struct b_slots	*alcsegment_0	(word nslots);
-struct b_slots	*alcsegment_0	(word nslots);
+struct b_slots	*alcsegment_1	(word nslots);
 struct b_list	*alclist_raw_0	(uword size, uword nslots);
 struct b_list	*alclist_raw_1	(uword size, uword nslots);
 struct b_list	*alclist_0	(uword size, uword nslots);
@@ -805,6 +805,6 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n);
 FILE   *isql_open (char *, dptr, dptr, dptr);
 int     dbclose(struct ISQLFile *);
 int     dbfetch(struct ISQLFile *, dptr);
-void    odbcerror               (int errornum);
+void    odbcerror               (struct ISQLFile *fp, int errornum);
 void    qalloc                  (struct ISQLFile *f, long n); /* query space alloc */
 #endif					/* ISQL */

@@ -1397,7 +1397,6 @@ int brace;
                 *  is returned.
                 */
                if (iconx_flg) {
-#ifdef EventMon
 		  switch (op_type) {
 		  case TokFunction:
 		     prt_str(
@@ -1415,11 +1414,6 @@ int brace;
 		       "if ((signal = interp(G_Csusp, r_args)) != A_Resume) {",
 			     indent);
 		  }
-#else					/* EventMon */
-		  prt_str(
-		    "if ((signal = interp(G_Csusp, r_args)) != A_Resume) {",
-			  indent);
-#endif					/* EventMon */
 		  }
                else {
                   prt_str("if (r_s_cont == (continuation)NULL) {", indent);

@@ -52,6 +52,7 @@ deps.out: ;
 	$(UNICON) -c $*
 
 ivib.exe: $(UFILES)
+	set IPATH=$(UNI)\lib $(UNI)\gui $(ICON_IPL)\lib
 	set PATH=$(BIN)
 	$(UNICON) -o ivib linkfiles.icn
 	$(CP) ivib.exe $(BIN)\ivib-v2.exe

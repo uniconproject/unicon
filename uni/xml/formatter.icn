@@ -1,5 +1,5 @@
 #
-# $Id: formatter.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+# $Id: formatter.icn,v 1.2 2004-01-17 11:37:23 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -52,17 +52,19 @@ procedure xml_escape(s, c)
    local r 
 
    r := ""
-   s ? {
-      while r ||:= tab(upto(c)) do {
-         r ||:= case ch := move(1) of {
-            "&" : "&amp;"
-            "<" : "&lt;"
-            ">" : "&gt;"
-            "\"" : "&quot;"
-            default : "&#" || ord(ch) || ";"
-         }
-      } 
-      r ||:= tab(0)
+   s ? repeat {
+      r ||:= tab(upto(c) | 0)
+
+      if pos(0) then
+         break
+
+      r ||:= case ch := move(1) of {
+         "&" : "&amp;"
+         "<" : "&lt;"
+         ">" : "&gt;"
+         "\"" : "&quot;"
+         default : "&#" || ord(ch) || ";"
+      }
    }
    return r
 end

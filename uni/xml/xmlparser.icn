@@ -1,5 +1,5 @@
 #
-# $Id: xmlparser.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+# $Id: xmlparser.icn,v 1.2 2004-01-17 11:37:23 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -8,7 +8,9 @@
 
 package xml
 
-link scan, hexcvt
+import util
+
+link scan
 
 global xml_space, xml_char, xml_letter, xml_name_start, xml_name_char, xml_pubid_char
 
@@ -18,19 +20,18 @@ global xml_space, xml_char, xml_letter, xml_name_start, xml_name_char, xml_pubid
 class Diversion(id, subject, pos)
 end
 
-class XmlParser : Parser(doc,
-                         resolver, 
-                         error_handler,
-                         err_string,
-                         current_divert_id,
-                         divert_stack,
-                         in_ext_subset,
-                         dtd_insert_shown_error,
-                         do_namespaces_flag,
-                         preserve_insignificant_whitespace_flag,
-                         preserve_comments_flag,
-                         validate_flag
-                         )
+class XmlParser : Parser : Error(doc,
+                                  resolver, 
+                                  error_handler,
+                                  current_divert_id,
+                                  divert_stack,
+                                  in_ext_subset,
+                                  dtd_insert_shown_error,
+                                  do_namespaces_flag,
+                                  preserve_insignificant_whitespace_flag,
+                                  preserve_comments_flag,
+                                  validate_flag
+                                  )
    #
    # Set the resolver
    #
@@ -125,7 +126,7 @@ class XmlParser : Parser(doc,
       }
 
       # Catch-all
-      if \err_string then
+      if \reason then
          fail
 
       validate_docname()
@@ -1411,7 +1412,7 @@ class XmlParser : Parser(doc,
          c := &digits ++ 'abcdefABCDEF' 
          any(c) | return err(c || " expected")
          digs := tab(many(c)) 
-         i := hex(digs) | 63
+         i := format_string_to_int(digs, 16) | 63
       } else {
          c := &digits
          any(c) | return err(c || " expected")
@@ -1926,7 +1927,7 @@ class XmlParser : Parser(doc,
    method warn(s)
       local stack
       # No warnings after a fatal error.
-      if \err_string then 
+      if \reason then 
          fail
 
       stack := copy(divert_stack)
@@ -1947,7 +1948,7 @@ class XmlParser : Parser(doc,
          fail
 
       # None after a fatal error.
-      if \err_string then 
+      if \reason then 
          fail
 
       stack := copy(divert_stack)
@@ -1964,13 +1965,13 @@ class XmlParser : Parser(doc,
       local stack
 
       # Ensure only one fatal error is ever sent.
-      if \err_string then 
+      if \reason then 
          fail
 
+      error(s)
       stack := copy(divert_stack)
       push(stack, Diversion(current_divert_id, &subject, &pos))
       error_handler.fatal_error(s, stack)
-      err_string := s
       fail
    end
 
@@ -1986,14 +1987,6 @@ class XmlParser : Parser(doc,
    #
    method get_error_handler()
       return self.error_handler
-   end
-
-   #
-   # Return the error string passed to the error handler on the last fatal error.
-   #
-   # @p
-   method get_err()
-      return err_string
    end
 
    #

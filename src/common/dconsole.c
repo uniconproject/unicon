@@ -8,14 +8,19 @@
 #ifdef ConsoleWindow
 
 FILE *ConsoleBinding = NULL;
+
 #ifdef MultiThread
+
 struct progstate rootpstate;
+
 struct progstate *curpstate = &rootpstate;
+
 #else
 struct region *curstring, *curblock;
 struct b_file  k_errout = {T_File, NULL, Fs_Write};	/* &errout */
 struct b_file  k_input = {T_File, NULL, Fs_Read|Fs_Window};	/* &input */
 struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
+
 struct descrip kywd_prog;		/* &progname */
 struct descrip kywd_err = {D_Integer};  /* &error */
 int t_errornumber = 0;			/* tentative k_errornumber value */
@@ -164,9 +169,12 @@ char *alcstr(char *s, int len)
  */
 
 #ifdef MultiThread
+
 void initalloc(word codesize, struct progstate *p)
+
 #else
 void initalloc(word codesize)
+
 #endif
    {
    static char dummy[1];	/* dummy static region */
@@ -950,6 +958,7 @@ int i;
 }
 
 
+#ifndef NTGCC
 int strncasecmp(char *s1, char *s2, int n)
 {
    int i, j;
@@ -961,4 +970,5 @@ int strncasecmp(char *s1, char *s2, int n)
    return 0;
 }
 
+#endif					/* NTGCC */
 #endif					/* ConsoleWindow */

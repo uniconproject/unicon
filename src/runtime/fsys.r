@@ -570,6 +570,8 @@ Deliberate Syntax Error
       if (!cnv:C_string(fname, fnamestr))
 	 runerr(103,fname);
 
+      if (strlen(fnamestr) != StrLen(fname)) fail;
+
       status = 0;
 
 #ifdef Network
@@ -1554,8 +1556,19 @@ function{0,1} remove(s)
       }
 
    inline {
-      if (remove(s) != 0)
+      if (remove(s) != 0) {
+#ifdef PosixFns
+	 IntVal(amperErrno) = 0;
+#if NT
+#define rmdir _rmdir
+#endif					/* NT */
+	 if (rmdir(s) != 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+            }
+#endif					/* PosixFns */
 	 fail;
+         }
       return nulldesc;
       }
 end

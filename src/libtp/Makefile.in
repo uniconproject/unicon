@@ -82,8 +82,13 @@ Makefile: Makefile.in config.status
 config.status: $(srcdir)/configure 
 	$(SHELL) ./config.status --recheck
 
-$(srcdir)/configure: $(srcdir)/configure.in
-	cd $(srcdir) && $(AUTOHEADER) && $(AUTOCONF)
+#
+# Uncomment the following dependency if you have autoconf and wish to change
+# the configure.in.  Its commented out because not all platforms have autoconf.
+#
+
+# $(srcdir)/configure: $(srcdir)/configure.in
+#	cd $(srcdir) && $(AUTOHEADER) && $(AUTOCONF)
 
 tp.o: tp.c config.h tp.h util.h uri/uri.h
 tpdunix.o: tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h

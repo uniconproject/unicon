@@ -1,0 +1,70 @@
+################################################################
+#
+#   File:         icbbutton.icn
+#
+#   Subject:  SubClass of Icon Button
+#
+#   Author:   Nolan Clayton
+#
+#   Date:       May 25, 04
+#
+################################################################
+
+
+$include "guih.icn"
+
+
+#
+# class icb Button: Used to overide the display method.
+#
+class icbButton : IconButton()
+
+   #
+   # Display Method: The only modification is the bevel widths are changed
+   # to 1 instead of 2.
+   #
+   method display(buffer_flag)
+      local i, cw
+
+      if \self.is_down then  i := img_down
+      else  i := if \self.is_checked_flag then img_down else img_up
+
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawImage(self.cbwin, self.x + (self.w - self.img_w) / 2, self.y + (self.h - self.img_h) / 2, i)
+
+      if \self.is_down then {
+         #
+         # Invert the inside of the area
+	 #
+         cw := Clone(self.cbwin, "drawop=reverse")
+         FillRectangle(cw, self.x, self.y, self.w, self.h)
+         Uncouple(cw)
+         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-1)
+         }
+      else {
+         if \self.draw_border_flag then {
+            if /self.is_checked_flag then
+               DrawRaisedRectangle(self.cbwin,self.x, self.y, self.w, self.h,1)
+            else
+               DrawSunkenRectangle(self.cbwin,self.x, self.y, self.w, self.h,1)
+         }
+      }
+      
+      if /self.no_keyboard_flag & \self.has_focus then {
+         cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
+
+         Rectangle(cw, self.x + BORDER_WIDTH + 1, self.y + BORDER_WIDTH + 1,
+                   self.w - 2 * BORDER_WIDTH - 2, self.h - 2 * BORDER_WIDTH - 2)
+
+         Uncouple(cw)
+      }
+      
+      self$do_shading(self.cbwin)
+      
+      if /buffer_flag then  CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+      return
+   end
+   
+   initially()
+         self$IconButton.initially()
+end

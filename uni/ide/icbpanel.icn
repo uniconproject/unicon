@@ -1,0 +1,40 @@
+################################################################
+#
+#   File:         icbpanel.icn
+#
+#   Subject:  Sub Class of Fill Panel
+#
+#   Author:   Nolan Clayton
+#
+#   Date:       May 25, 04
+#
+################################################################
+
+
+
+#################################################################
+#class icb Panel: Used to overide the display method of Fill Panel and Panel.
+#    a panel on which a background attribute should work
+#    The parameter "buffer_flag" just tells it whether to draw directly into the 
+#    visible window, or to use its non-visible buffer window instead (this is
+#    used for double-buffering).
+#################################################################
+class icbPanel : FillPanel()
+   method display(buffer_flag)
+      local tmpwin, oldfg
+
+      tmpwin := if /buffer_flag then self.cwin else self.cbwin
+      EraseRectangle(tmpwin, self.x, self.y, self.w, self.h)
+      
+      ######################################
+      #Color Unused Area a lighter color.
+      oldfg := Fg(tmpwin)
+      self.set_attribs("fg=greyish white")
+      FillRectangle(tmpwin, self.x, self.y , self.w, self.h)
+      self.set_attribs("fg="||oldfg)
+       
+      every (!self.components).display(buffer_flag)
+      return
+   end
+
+end

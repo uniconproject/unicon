@@ -1,0 +1,65 @@
+################################################################
+#
+#   File:         editortabitem.icn
+#
+#   Subject:  Sub Class of Tab Item.
+#
+#   Author:   Nolan Clayton
+#
+#   Date:       May 25, 2004     
+#
+################################################################
+
+
+$include "guih.icn"
+
+#################################################################
+# class Editor Tab Item: Used only to overide the display tab method.
+#################################################################
+class EditorTabItem : TabItem( )
+   
+   method get_label()
+      return self.label
+   end
+   
+   method display_tab()
+      local xpw, pslh, updown, ypos, cw
+      
+      ypos := (self.line_no - 1) * self.parent_tab_set.line_h + self.parent_tab_set.y
+      cw := Clone(self.parent_tab_set.cbwin)
+
+      xpw := self.label_x + self.label_w
+      pslh := self.parent_tab_set.line_h
+      
+      Fg(cw, "black")
+      DrawLine(cw, xpw - 1, ypos, xpw - 1, ypos + pslh - 1)
+      DrawLine(cw, xpw - 2, ypos + 1, xpw - 2, ypos + pslh - 2)
+      DrawLine(cw, self.label_x, ypos + pslh - 1, self.label_x, ypos, xpw - 1, ypos)
+      
+      Fg(cw, "white")
+      DrawLine(cw, self.label_x + 1, ypos + pslh - 2, self.label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
+      Uncouple(cw)
+      
+      #################################################################
+      #These  4 rectangles give the tabs a nice look
+      self.parent_tab_set.set_attribs("fg=white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 + (pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 2)
+      self.parent_tab_set.set_attribs("fg=pale greyish white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2  +(pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 4)
+      self.parent_tab_set.set_attribs("fg=light greyish white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) /2 )
+      self.parent_tab_set.set_attribs("fg=greyish white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) / 4)
+
+      self.parent_tab_set.set_attribs("fg=black")
+      left_string(self.parent_tab_set.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + pslh / 2, self.label)
+      
+      if is_shaded() then
+         FilterRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2, self.label_w - 2, pslh - 1)
+      
+   end
+   
+   initially
+      self$TabItem.initially()
+
+end

@@ -1,0 +1,356 @@
+
+#  buffertextlist.icn - modified editabletextlist
+
+#
+#  A scrollable editable text area.  An {Event} is generated whenever the
+#  contents are changed by the user.
+#
+
+$include "guih.icn"
+
+class BufferTextList : EditableTextList(
+   highlightcolor,
+   autoindent,
+   scroll_y
+   )
+   
+   #
+   method handle_event(e)
+      local old_contents_size, old_mw, E
+      
+      if E := (\self.vsb).handle_event(e) then {
+         #
+         # Handled by VSB; amend line number and refresh contents
+         #
+         self.constrain_cursor()
+         self.refresh()
+         text_area_to_high()
+      } else if E := (\self.hsb).handle_event(e) then {
+         #
+         # Handled by HSB; amend left offset and refresh
+         #
+         self.constrain_cursor()
+         self.refresh()
+         text_area_to_high()
+      } else {
+         if e === -11 then fail # window closed, nothing to do?
+         old_contents_size := *contents
+         old_mw := TextWidth(cwin, contents[long_line])
+         changed := moved := &null
+         if integer(e) = (&lpress ) then
+            handle_press(e)
+         else if integer(e) = (&ldrag ) then
+            handle_drag(e)
+         else if integer(e) = &mpress then
+            simulate_wheelbutton()
+         else if integer(e) = (&lrelease ) then
+            handle_release(e)
+         else if \self.has_focus then {
+            
+            case e of {
+               Key_Home : handle_key_home(e)
+               Key_End : handle_key_end(e)
+               Key_PgUp : handle_key_page_up(e)
+               Key_PgDn : handle_key_page_down(e)
+               Key_Up : handle_key_up(e)
+               Key_Down : handle_key_down(e)
+               Key_Left :    handle_key_left(e)
+               Key_Right : handle_key_right(e)
+               "\t" : handle_tab_text(e)
+               "\b" : handle_delete_1(e)
+               "\r" | "\l": handle_return(e)
+               "\^k" : handle_nodefault()
+               "\^a" : handle_start_of_line(e)
+               "\^e" : handle_end_of_line(e)
+               "\d" | "\^d" :  cut_selection(&null,e)
+               "\^x" :  handle_nodefault()
+               "\^c" :  handle_nodefault()
+               "\^v" :  handle_nodefault()
+               # "\^s" :  handle_stringsearch()
+               default : handle_default(e)
+            }
+         }
+
+         if \moved then {
+            #
+            # Cursor moved.  Make sure still on screen; update scrollbars,
+            # and refresh text.
+            #
+            self.constrain_line()
+            self.refresh(1)
+            text_area_to_high()
+            return _Event(e, self, 0)
+         } else if \changed then {
+            if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidth(cwin, contents[long_line])) then {
+               #
+               # Contents changed.  Re-compute all internal fields, ensure on
+               # screen and re-display whole object.
+               #
+               self.set_internal_fields()
+               self.constrain_line()
+               self.display()
+               #               text_area_to_high()
+            } else {
+               self.constrain_line()
+               self.refresh(1)
+               text_area_to_high()
+            }
+            return _Event(e, self, 0)
+         }
+      }
+   end
+
+   #
+   method get_left_pos()
+      local lineno_space
+      lineno_space :=0
+      # if \pegasus.line_no then
+      lineno_space := TextWidth(cwin,*contents) +3
+      return    (lineno_space + ((self.tx - (\self.hsb).get_value()) | self.tx ))
+   end
+
+   #
+   method handle_return(e, undo)
+      local offset, s, newcursor_x,j1, undo_info, i, str
+
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+      }
+      reset_drag()
+      offset := 0
+      offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+      s := self.contents[self.cursor_y]
+      newcursor_x := self.cursor_x - offset
+
+      #undo 
+      if /undo then  {
+         redolist := []
+         undo_info := undo_rec("insert",[e],self.cursor_x,self.cursor_y,0,0,"delete_cr",[e],self.cursor_x,self.cursor_y,0,0)
+         put(undolist,undo_info)
+      }
+      
+      self.contents[self.cursor_y] := s[1:newcursor_x]
+      self.contents := self.contents[1:cursor_y + 1] ||| [s[newcursor_x:0]] |||
+         self.contents[cursor_y + 1:0]
+
+      if long_line = self.cursor_y then
+         long_line := &null
+      else if long_line > self.cursor_y then
+         long_line +:= 1
+
+      self.cursor_y +:= 1
+      self.cursor_x := 1
+      changed := 1
+
+      if \autoindent then{ 
+	 str := contents[cursor_y - 1]
+	 i := 1
+
+         while i < *str + 1  do {	    
+            case str[i] of { 
+               " "     : handle_default(" ")
+               "\t"    : handle_tab_text("\t")
+               default : i := *str +2
+               }
+            i +:= 1
+	    }
+        }
+   end
+   
+
+   #Added Editable Textlist version of draw
+   method draw(s, left_pos, yp, i)
+      local s1, s2, newp, fh, asc, desc, yp2  
+      newp := 0
+      s1 := ""
+      s2 := ""
+      fh := WAttrib(self.cbwin, "fheight")
+      asc := WAttrib(self.cbwin, "ascent")
+      desc := WAttrib(self.cbwin, "descent")
+
+      s :=  actual_line(s)
+      
+      #  if no vertical drag just current line
+      if (i = startdragy) & (startdragy = enddragy)  then {
+         if startdragx < enddragx then {   # forward drag
+            s1 := s[1:startdragx]
+            s2 := s[startdragx:enddragx]
+            newp := left_pos + TextWidth(self.cbwin, s1)
+         }
+
+         if startdragx > enddragx then {    # backward drag
+            s1 := s[1:enddragx+1]
+            s2 := s[enddragx+1:startdragx]
+            newp := left_pos + TextWidth(self.cbwin, s1)
+         }
+
+         Fg(self.cbwin, highlightcolor)
+         yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+                        WAttrib(self.cbwin,"descent"))/2) - asc
+         FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+      }
+
+      #  if drag on current line and a vertical drag
+      #  for forward drag need to get whole line for backward
+      #  need to get line up to start of drag
+
+      if i = startdragy then {
+         if i <  enddragy then {  # for forward drag get the whole line
+            s1 := s[1:startdragx]
+            s2 :=  s[startdragx:0]
+            newp := left_pos + TextWidth(self.cbwin, s1)
+         }
+         if i > enddragy then { # reverse drag get the 1st part to start x
+            if startdragx  >= *s then
+               s2 := s 
+            else
+               s2 := s[1:startdragx]
+            newp := left_pos
+         }
+         Fg(self.cbwin, highlightcolor)
+         yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")- WAttrib(self.cbwin,"descent"))/2) - asc
+         FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+      }
+      
+      ##################################################
+      #  for the last endragy line  on vertical drag
+      if i = enddragy then {
+         if i > startdragy then { # for forward drag
+            if enddragx > *s then
+               s2 := s[1:*s+1]
+            else
+               s2 := s[1:enddragx]
+            newp := left_pos
+         }
+         if i < startdragy then { # for reverse drag
+            if enddragx <= *s then {
+               s1 := s[1:enddragx+1]
+               s2 := s[enddragx+1:0]
+               newp := left_pos + TextWidth(self.cbwin, s1)
+            }
+         }
+         Fg(self.cbwin, highlightcolor)
+         yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+                        WAttrib(self.cbwin,"descent"))/2) - asc
+         FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+      }
+
+      #
+      #  fill in all the lines in between
+      #  for forward drag         OR       for reverse drag
+      if (i < enddragy & i > startdragy) | (i > enddragy & i < startdragy)  then {
+         Fg(self.cbwin, highlightcolor)
+         yp2 :=  yp + ((WAttrib(self.cbwin,"ascent") -
+                        WAttrib(self.cbwin,"descent"))/2) - asc
+         FillRectangle(self.cbwin,left_pos, yp2, TextWidth(self.cwin, s), fh)
+      }
+
+      #  if \pegasus.line_no then {
+      Fg(self.cbwin, "pale greyish white")
+      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+                     WAttrib(self.cbwin,"descent"))/2) - asc
+      FillRectangle(self.cbwin, left_pos - TextWidth(self.cwin, *contents) - 3, yp2, TextWidth(self.cwin, *contents), fh)
+      Fg(self.cbwin, "weak greyish blue")
+      left_string(self.cbwin, left_pos - TextWidth(self.cwin, i) - 3 , yp, i)
+      #  }
+      
+      left_stringr(self.cbwin, left_pos, yp, s)
+
+      
+      ########################################
+      #cursor is a BLOCK OR a rectangle
+      Fg(self.cbwin, "0,52428,65535")
+      if i = \self.cursor_y then {
+         s ||:= " "
+         
+         if \self.has_focus then {
+            FillRectangle(rev, left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]),
+                          1 + yp - self.line_height / 2, TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+
+         }
+         else {
+            Rectangle(self.cbwin, left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]),
+                      1 + yp - self.line_height / 2, TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+         }
+      }
+      
+   end
+   
+
+   #
+   # I am not finished with this method - nclayton
+   #
+   method handle_stringsearch(s)
+      local dlg
+      if /s then  {
+         dlg := name_dlg()
+         dlg.msg := "Enter Search String: "
+         dlg.show_modal()
+         s := dlg.get_result() | fail
+      }
+
+      write(s)
+      
+   end
+
+   #
+   method toggle_autoindent()
+      if \autoindent then  autoindent:= &null
+      else autoindent := 1
+   end
+   
+
+   #Not a very good simulation !!!
+   method simulate_wheelbutton()
+
+      if \self.has_focus then {
+         scroll_y := &y
+
+         while Event() === &mdrag do {
+            
+            if &y > scroll_y then {
+               handle_key_down()
+               handle_key_down()
+               handle_key_down()
+            }
+
+            if &y < scroll_y  then {
+               handle_key_up()
+               handle_key_up()
+               handle_key_up()
+            }
+            
+            self.constrain_line()
+            self.refresh(1)
+            text_area_to_high()
+            
+         }
+      }
+      
+   end
+   
+
+   #like emacs hl-line-mode
+   method hl_line_mode()
+   end
+   
+   #
+   method highlight_line(i)
+      if /i  then i := 1
+      if not(*contents >=  i > 1) then i := 1
+      cursor_y := i
+      startdragy := enddragy := i
+      startdragx := 1
+      enddragx   := *contents[i] +1
+      self.constrain_line()
+      self.refresh(1)
+      text_area_to_high()
+   end
+   
+   initially
+      self$EditableTextList.initially()
+      highlightcolor := "65535,65535,52428"
+      autoindent := &null
+      scroll_y := 1
+end

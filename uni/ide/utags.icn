@@ -1,0 +1,165 @@
+################################################################
+#
+#   File:         utags.icn
+#
+#   Subject:   Parse File and Generate Nodes for Class Browser Tree 
+#
+#   Author:   Nolan Clayton
+#
+#   Date:       May 26, 04
+#
+################################################################
+
+
+
+##########################################################
+# Utags Proc: 
+procedure utags(contents, parentfile) 
+   local line, lineno,  outlines, notid, word 
+   
+   notid := &cset -- &ucase -- &digits -- &lcase -- '_'
+
+   
+   lineno := 1
+   outlines   := []      
+   
+   every line := !contents do {
+      line[upto('#',line):0] := ""
+      line ? {
+         tab(many(' ')) 
+         
+         if ="procedure" then 
+            if any(notid) then put(outlines, Tag("procedure", getword(), lineno, parentfile) )
+                     
+         if ="class" then 
+            if any(notid) then put(outlines, Tag("class", getword(), lineno, parentfile) )
+         
+         if ="method" then 
+            if any(notid) then outlines[*outlines].add( Tag("method", getword(), lineno, parentfile)  )
+
+         if ="initially" then 
+            if any(notid) then outlines[*outlines].add( Tag("initially", "initially", lineno, parentfile)  ) 
+         
+         if ="link" then 
+            if any(notid) then every  word := getword()  do
+               put(outlines, Tag("link", word, lineno, parentfile) )
+         
+         if ="$include" then 
+            if any(notid) then every  word := getword()  do
+               put(outlines, Tag("$include", word, lineno, parentfile) )
+
+         if ="package" then 
+            if any(notid) then every  word := getword()  do
+               put(outlines, Tag("package", word, lineno, parentfile) )
+         
+         }
+         lineno +:= 1
+   }
+   
+   return outlines
+   
+end
+
+
+#######################################################
+# pocedures' names are self explanitory.  Taken from itags.
+#######################################################
+
+procedure getword()
+   local word
+   static letts, ids
+   initial {
+        letts := &ucase ++ &lcase ++'('
+        ids :=&ucase ++ &lcase ++ &digits ++ '_'++'.'
+     }
+   
+   while tab(upto(letts)) do {
+      word := tab(many(ids))
+      suspend word
+   }
+   
+end
+
+
+
+
+
+#################################################################
+# Stand Alone Version
+#         Uncomment The Lines Below...
+#################################################################
+#
+# global Tags
+#
+# procedure main(args)
+#    local i, lines, d, name, l, temp
+   
+#    Tags := []
+#    lines := []
+#    l := []
+   
+#    while *args > 0 do {
+#       name := pop(args)
+#       i  := open(  name,"r")
+ 
+#       while put( lines, read(i))
+#       close(i)
+#       l := utags(lines)
+
+#       temp := Tag("file",name, 0)
+#       every  i :=  ! l do temp.add(i) 
+
+#       put( Tags, temp)
+#       lines := []
+#    }
+
+ 
+   
+#    d := dialog()
+#    d.show_modal()
+   
+# end
+
+
+# class dialog : _Dialog(class_browser)
+
+#    method handle_class_browser(ev)
+#       class_browser$flatten()
+#    end
+
+#    method handle_default(ev)
+#    end
+      
+#    method dialog_event(ev)
+#       case ev.get_component() of {
+#          class_browser : handle_class_browser(ev)
+#          default : handle_default(ev)
+#       }
+#    end
+   
+#    method setup()
+#       local nodes, names, i, j
+      
+
+#       self.set_attribs("size=500,600", "bg=pale gray")
+#       self.min_width  := 200
+#       self.min_height := 200
+      
+#       class_browser := ClassBrowser()
+#       class_browser$set_pos("5", "5")
+#       class_browser$set_size("100%-10", "100%-10")
+#       class_browser$set_attribs("bg=white","font=sans,18","label=Unicon Class File Browser", "resize=on")
+      
+#       class_browser$filltree(Tags)
+#       self$add(class_browser)
+      
+#    end
+   
+#    method component_setup()
+#       self.setup()
+#    end
+
+#    initially
+#       self$_Dialog.initially()
+# end
+

@@ -137,6 +137,10 @@ extern struct b_real realzero;		/* real zero block */
    extern int n_globals;		/* number of global variables */
    extern int n_statics;		/* number of static variables */
    extern struct b_coexpr *mainhead;	/* &main */
+
+#ifdef PosixFns
+extern struct descrip amperErrno;
+#endif					/* PosixFns */
 #endif					/* MultiThread */
 
 /* dynamic record types */
@@ -226,9 +230,6 @@ extern stringint attribs[], drawops[];
    extern clock_t starttime;		/* start time in milliseconds */
 
    #ifndef MultiThread
-#ifdef PosixFns
-extern struct descrip amperErrno;
-#endif					/* PosixFns */
       extern struct descrip kywd_xwin[];
       extern struct descrip lastEventWin;
       extern int lastEvFWidth, lastEvLeading, lastEvAscent;

@@ -137,7 +137,7 @@ procedure main(argv)
 	 "-x"      : exec := i
 	 "-o"      : {
 	     if (i=1) | (argv[i-1] ~=== "-o") then {
-	        exename := " -o " || argv[i+1] || " "
+	        exename := " -o " || quotes(argv[i+1]) || " "
 		argv[i+1] := "-o"
 		}
 	     }
@@ -155,13 +155,13 @@ procedure main(argv)
 
 	 # do not translate .u files
 	 if map(fName[find(".", fName)+1 : 0]) == ("u"|"u1"|"u2") then {
-	     linkline ||:= " " || fName
+	     linkline ||:= " " || quotes(fName)
 	     next
 	 }
 	 else {
 	     # we are gonna translate, and if we link, we remove the .u
 	     ucodefile := basename(fName, ".icn") || ".u"
-	     linkline ||:= " " || ucodefile
+	     linkline ||:= " " || quotes(ucodefile)
 	     /translateducode := []
 	     put(translateducode, ucodefile)
 	 }
@@ -171,7 +171,7 @@ procedure main(argv)
 	 every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
          yylex_reinit()
 	 cmd := selecticont()
-	 cmd ||:= " -c "||icontopt||" -O "||fName ||" "
+	 cmd ||:= " -c "||icontopt||" -O "|| quotes(fName) ||" "
 	 if /yydbg then {
 	    temppath := getenv("TEMP") | "/tmp"
 	    tmpname := tempname("uni",,temppath,5)
@@ -357,4 +357,9 @@ procedure warning(s, lineno, filenam)
    iwrites(&errout, \(filenam|fName), ":")
    iwrite(&errout, \lineno|yylineno, ": # \"", yytext, "\": ", s)
    warnings +:= 1
+end
+
+procedure quotes(s)
+   if find(" ", s) then s := "\"" || s || "\""
+   return s
 end

@@ -63,7 +63,7 @@ Makefiles:
 		echo "CP=cp" >> ../../../uni/ivib/makefile
 		echo "BINDIR=../../bin" >> ../../../uni/ivib/makefile
 		cat ../Config/ivib.mak >> ../../../uni/ivib/makefile
-		cat ../Config/ipllib.mak >> ../../../ipl/lib/makefile
+		cp ../Config/ipllib.mak ../../../ipl/lib/makefile
 		cp ../Config/ide.mak ../../../uni/ide/makefile
 
 Localcode:

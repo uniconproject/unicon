@@ -133,7 +133,14 @@ void detectRedirection()
 }
 #endif					/* ConsoleWindow */
 
-int CmdParamToArgv(char *s, char ***avp)
+/*
+ * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
+ * Called for both input processing (e.g. in WinMain()) and in output
+ * (e.g. in mswinsystem()).  Behavior differs in that output does not
+ * remove double quotes from quoted arguments, otherwise receiving process
+ * (if a win32 process) would lose quotedness.
+ */
+int CmdParamToArgv(char *s, char ***avp, int dequote)
    {
    char tmp[MaxPath], dir[MaxPath];
    char *t, *t2;
@@ -187,14 +194,19 @@ int CmdParamToArgv(char *s, char ***avp)
 	    }
 #endif					/* ConsoleWindow */
 	 case '"': {
-	    char *t3 = ++t2;			/* skip " */
+	    char *t3, c = '\0';
+	    if (dequote) t3 = ++t2;			/* skip " */
+	    else t3 = t2++;
 
             while (*t2 && (*t2 != '"')) t2++;
-            if (*t2)
+	    if (*t2 && !dequote) t2++;
+            if (c = *t2) {
 	       *t2++ = '\0';
+	       }
 	    *avp = realloc(*avp, (rv + 2) * sizeof (char *));
 	    (*avp)[rv++] = salloc(t3);
             (*avp)[rv] = NULL;
+	    if(!dequote && c) *--t2 = c;
 
 	    break;
 	    }
@@ -303,7 +315,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    mswinInstance = hInstance;
    ncmdShow = nCmdShow;
 
-   argc = CmdParamToArgv(GetCommandLine(), &argv);
+   argc = CmdParamToArgv(GetCommandLine(), &argv, 1);
    MSStartup(hInstance, hPrevInstance);
    if (setjmp(mark_sj) == 0)
       iconx(argc,argv);

@@ -3414,7 +3414,13 @@ stringint attribs[] = {
  */
 
 #else					/* Graphics */
-static char junk;		/* avoid empty module */
+
+/*
+ * Stubs to prevent dynamic loader from rejecting cfunc library of IPL.
+ */
+int palnum(dptr *d)					{ return 0; }
+char *rgbkey(int p, double r, double g, double b)	{ return 0; }
+
 #endif					/* Graphics */
 
 #if defined(Graphics) || defined(PosixFns)

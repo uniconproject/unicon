@@ -1,5 +1,5 @@
 #
-# $Id: infodialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: infodialog.icn,v 1.2 2004-05-08 19:08:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -11,28 +11,53 @@ $include "guih.icn"
 
 #############################################################################
 #
-# Dialog with string and one button
-#
-class InfoDialog : CommonDialog(str, okay_str, okay)
-   method init_dialog()
-      self.set_focus(okay)
+# A simple dialog to output a multi-line message.
+#     
+class InfoDialog : CommonDialog(lines, 
+                                title,
+                                width,
+                                button_text,
+                                alignment,
+                                spacing,
+                                close_button)
+   method init_dialog(ev)
+      set_focus(close_button)
    end
 
-   initially
-      self$CommonDialog.initially()
-      /okay_str := "Okay"
-      self.set_attribs("size=300,150", "label=Information")
+   method component_setup()
+      local p, s, l, y
 
-      l := Label()
-      l.set_pos("50%", 50)
-      l.set_label(str)
-      l.set_align("c", "t")
-      self.add(l)
+      /spacing := 20
+      /width := 320
+      /alignment := "c"
+      /button_text := "Close"
 
-      okay := TextButton()
-      okay.connect(self, "dispose", ACTION_EVENT)
-      okay.set_label(okay_str)
-      okay.set_pos("50%", "100%-30")
-      okay.set_align("c", "c")
-      self.add(okay)
+      self.set_attribs("size=" || width || "," || 90 + *lines * spacing, 
+                       "label=" || title)
+      close_button := TextButton()
+      close_button.set_pos("50%", "100%-30")
+      close_button.set_align("c", "c")
+      close_button.set_internal_alignment("c")
+      close_button.set_label(button_text)
+      close_button.connect(self, "dispose", ACTION_EVENT)
+      self.add(close_button)
+      p := Panel()
+      p.set_pos(0, 0)
+      p.set_size("100%", "100%-60")
+      y := 20 + spacing / 2
+      every s := !lines do {
+         l := Label()
+         if alignment == "c" then {
+            l.set_align("c", "c")
+            l.set_pos("50%", y)
+         } else {
+            l.set_align("l", "c")
+            l.set_pos(15, y)
+         }
+         l.set_label(s)
+         p.add(l)
+         y +:= spacing
+      }
+      self.add(p)
+   end
 end

@@ -41,8 +41,8 @@ unigram.u: unigram.icn
 #	mv unigram.icn unigram.iol
 #	idol -c unigram.iol
 
-yyerror.icn: unigram.icn
-	merr unicon
+#yyerror.icn: unigram.icn
+#	merr unicon
 
 yyerror.u: yyerror.icn
 	$(ICONT) -c yyerror

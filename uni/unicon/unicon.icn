@@ -326,12 +326,13 @@ end
 
 procedure moveto(src, dest)
    local f1, f2
-   f1 := open(src)
-   f2 := open(dest,"w")
+   f1 := open(src) | { write(&errout, src, " - cannot be opened for reading"); fail }
+   f2 := open(dest,"w") | { write(&errout, dest, " - cannot be opened for writing"); fail }
    while(write(f2,read(f1)))
    close(f1)
    close(f2)
    remove(src) | write(&errout, src, " - src not removed.")
+   return
 end
 
 # find the icont to use. An ICONT variable overrides defaults.

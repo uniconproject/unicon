@@ -112,9 +112,10 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glEnd();
            }
          else {
-            /* there must be at least the same
-              number of texture coordinate pairs as
-              there are vertices. If not fail */
+            /*
+             * There must be at least the same number of texture coordinate
+             * pairs as there are vertices. If not, fail.
+             */
             if (num/2 > wc->numtexcoords/2)
                return Failed;
             glBegin(type);
@@ -285,8 +286,6 @@ void cube(double length, double x, double y, double z, int gen)
   glPushMatrix();
 
   glTranslatef(x, y, z);
-  glRotatef(45.0, 0.0, 0.0, 1.0);
-  glRotatef(45.0, 1.0, 0.0, 0.0);
 
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -length / 2;
   v[4][0] = v[5][0] = v[6][0] = v[7][0] = length / 2;
@@ -369,7 +368,7 @@ void cylinder(double radius1, double radius2, double height,
    /* translate to the specified x,y, and z */
    glPushMatrix();
    glTranslatef(x, y, z);
-   glRotated(300.0, 1.0, 0.0, 0.0); /* is this really needed */
+   glRotated(270.0, 1.0, 0.0, 0.0); /* is this really needed */
    qobj = gluNewQuadric();
 
    gluQuadricDrawStyle(qobj, GLU_FILL);
@@ -1180,6 +1179,7 @@ int setmaterials(wbp w, char* s)
       /* otherwise set the current foreground color; treat as diffuse */
       else {
 	 if(setfg(w, s) == Failed) return Failed;
+	 i = strlen(s);
 	 rd = RED(w->context->fg);
 	 gr = GREEN(w->context->fg);
    	 bl = BLUE(w->context->fg);
@@ -1208,7 +1208,8 @@ int setmaterials(wbp w, char* s)
 
       /* fail if string is not in the correct format */
       if(s[i] != '\0' && s[i] != ';') return Failed;
-      i++;
+      if (s[i])
+         i++;
      }
    return Succeeded;
 }

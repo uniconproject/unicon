@@ -1395,12 +1395,16 @@ function{0,1} cofail(CE)
       }
    if is:null(CE) then
       body {
+#ifdef Coexpr
 	 struct b_coexpr *ce = topact((struct b_coexpr *)BlkLoc(k_current));
 	 if (ce != NULL) {
 	    CE.dword = D_Coexpr;
 	    BlkLoc(CE) = (union block *)ce;
 	    }
 	 else runerr(118,CE);
+#else					/* Coexpr */
+	runerr(118, CE);
+#endif					/* Coexpr */
 	 }
    else if !is:coexpr(CE) then
       runerr(118,CE)
@@ -2020,7 +2024,11 @@ function{*} keyword(keyname,ce)
 	 return C_integer allRegions;
 	 }
       else if (strcmp(kname,"source") == 0) {
+#ifdef Coexpr
 	 return coexpr(topact((struct b_coexpr *)BlkLoc(BlkLoc(d)->coexpr.program->K_current)));
+#else					/* Coexpr */
+	fail;
+#endif					/* Coexpr */
 /*
 	 if (BlkLoc(d)->coexpr.es_actstk)
 	    return coexpr(topact((struct b_coexpr *)BlkLoc(d)));

@@ -3805,9 +3805,8 @@ function{1} Texture(argv[argc])
       if (argc - warg < 1)/* missing texture source */
          runerr(103);	
 
-      if (!constr)
-	 if (!(constr = rec_structor3d("gl_texture")))
-	    syserr("failed to create opengl record constructor");
+      if (!constr && !(constr = rec_structor3d("gl_texture")))
+	 syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
       /*
@@ -3840,7 +3839,7 @@ function{1} Texture(argv[argc])
 
 	 /* convert the window into a texture */
          if (w2->context->is_3D)
-             texwindow3D(w, w2);
+            texwindow3D(w, w2);
          else
             texwindow2D(w2); 
          return f;
@@ -3943,15 +3942,8 @@ function{1} Texcoord(argv[argc])
 	    wc->autogen = 0; 
 	    wc->numtexcoords = 0;
 	    for (i = warg; i < argc-warg; i++) {
-	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords]))
+	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords++]))
 		  runerr(102, argv[i]);
-#ifdef Double
-	       *((struct size_dbl *) &(BlkLoc(argv[i])->realblk.realval)) =
-		  *((struct size_dbl *) & (wc->texcoords[wc->numtexcoords++]));
-#else
-	       BlkLoc(argv[i])->realblk.realval =
-		  wc->texcoords[wc->numtexcoords++];
-#endif
 	       c_put(&f, &argv[i]);
 	       }
 	    }

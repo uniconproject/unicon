@@ -641,13 +641,12 @@ int c_traverse(struct b_list *hp, struct descrip * res, int position)
    used = bp->nused;
    for (j=0; j < position; j++){
       if (used <= 1){
-	 bp->listprev = (union block *) hp;
 	 bp = (struct b_lelem *) bp->listnext;
          used = bp->nused;
          i = bp->first;
          }
       else {
-	 i++;
+	 if (i++ >= bp->nslots) i = 0;
 	 used--;
          }
       }
@@ -655,29 +654,80 @@ int c_traverse(struct b_list *hp, struct descrip * res, int position)
    return 1;
 }
 
+/*
+ * traverse the given list and write its contents from subscript m through n,
+ * which must be reals, to a C array of doubles.  Replaces a loop of calls to
+ * c_traverse().
+ */
+int c_realarray(struct b_list *hp, int m,int n, double *a)
+{
+   register word i;
+   tended struct b_lelem *bp;
+   int j, used;
+
+   /*
+    * Fail if the list is not big enough (caller should check this first)
+    */
+   if (hp->size < n)
+      return 0;
+
+   /*
+    * Point bp at the first list block.  If the first block has no
+    *  elements in use, point bp at the next list block.
+    */
+   bp = (struct b_lelem *) hp->listhead;
+   if (bp->nused <= 0) {
+      bp = (struct b_lelem *) bp->listnext;
+      hp->listhead = (union block *) bp;
+      bp->listprev = (union block *) hp;
+      }
+
+   /*
+    * Parse through the list blocks to find the specified element.
+    */
+   i = bp->first;
+   used = bp->nused;
+   for (j=0; j < n; j++){
+      if (j >= (m-1)) {
+         if (!cnv:real(bp->lslots[i], bp->lslots[i])) return 0;
+	 a[j-(m-1)] = BlkLoc(bp->lslots[i])->realblk.realval;
+	 }
+      if (used <= 1){
+	 bp = (struct b_lelem *) bp->listnext;
+         used = bp->nused;
+         i = bp->first;
+         }
+      else {
+	 if (i++ >= bp->nslots) i = 0;
+	 used--;
+         }
+      }
+   return 1;
+}
+
 /* traverse the list of functions and redraw the scene */
 int traversefunctionlist(wbp w)
 {
-   struct descrip flist, fname;
-   struct descrip var1, var2, var3, var4, var5, var6, var7;
-   struct b_list *funclist;
-   struct b_list *list = (struct b_list *)w->window->funclist.vword.bptr;
    wcp wc = w->context;
+   wsp ws = w->window;
    double x, y, z, r1, r2, h, a1, a2;
    double *v, v2[256];
    C_integer num, dim;
    int i, j;
-   int elements = list->size;
+   tended struct descrip flist, fname, var1, var2;
+   tended struct b_list *funclist;
    tended char *temp;
    tended struct b_record *rp;
+   int elements;
 
+   elements = ws->funclist.vword.bptr->list.size;
    makecurrent(w);
    /*
     * The ith element of the list is a list with information
     * about the function call made on the window.
     */
    for (i=0; i< elements; i++) {
-      c_traverse(list, &flist, i);
+      c_traverse((struct b_list *)ws->funclist.vword.bptr, &flist, i);
       if (flist.dword == D_Record) {
 	 rp = (struct b_record *)BlkLoc(flist);
 	 if (!strcmp(StrLoc(rp->fields[0]), "DrawTorus")) {
@@ -795,21 +845,22 @@ free_v_and_fail:
       /* WAttrib("dim=...") */
       else if(!strcmp(fname.vword.sptr, "dim")) {
 	 c_traverse(funclist, &var1, 1);
-    	 cnv:C_integer(var1, dim);
+    	 if ((!cnv:C_integer(var1, dim))||(dim<1)||(dim>3))
+	    goto free_v_and_fail;
          wc->dim = dim;
          }
 
       /* WAttrib("linewidth=...") */
       else if(!strcmp(fname.vword.sptr, "linewidth")) {
          c_traverse(funclist, &var1, 1);
-         cnv:C_integer(var1, num);
+         if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 	 setlinewidth(w, num);
          glLineWidth(num);
       }
       /* WAttrib("texmode=...") */
       else if(!strcmp(fname.vword.sptr, "texmode")) {
          c_traverse(funclist, &var1, 1);
-         cnv:C_integer(var1, num);
+         if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 
          /* texturing is on */
          if (num) {
@@ -832,7 +883,7 @@ free_v_and_fail:
 	  * first element tells us if opengl generates texture coordinates
 	  */
          c_traverse(funclist, &var1, 1);
-         cnv:C_integer(var1, num);
+         if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
          if (num) {
             glEnable(GL_TEXTURE_GEN_S);
             glEnable(GL_TEXTURE_GEN_T);
@@ -845,12 +896,17 @@ free_v_and_fail:
             glDisable(GL_TEXTURE_GEN_T);
             wc->autogen = 0;
 
+	   if (wc->ntexcoordsalced < funclist->size-2) {
+	      printf("need to grow ntexcooords alced %d need %d\n",
+		     wc->ntexcoordsalced, funclist->size-2);
+	      goto free_v_and_fail;
+	      }
+
            /* traverse the list and set the texture coordinates */
-            for (j = 0; j < (funclist->size)-2; j++) {
-               c_traverse(funclist, &var2, j+2);
-               cnv:C_double(var2, wc->texcoords[j]);
-              }
-            wc->numtexcoords = j;
+           if(!c_realarray(funclist, 3, funclist->size, wc->texcoords)){
+	      goto free_v_and_fail;
+	      }
+           wc->numtexcoords = funclist->size-2;
            }
          }
 
@@ -860,7 +916,7 @@ free_v_and_fail:
          /* element in position 1 is the dim attribute */
          for (j = 0; j < (funclist->size)-1; j++) {
             c_traverse(funclist, &var2, j+1);
-            cnv:C_double(var2, v[j]);
+            if(!cnv:C_double(var2, v[j])) goto free_v_and_fail;
          }
 
         /* call drawpoly with GL_LINE_LOOP to get a polygon */
@@ -871,7 +927,7 @@ free_v_and_fail:
       else if(!strcmp(fname.vword.sptr, "FillPolygon")) {
 	 for (j = 0; j < (funclist->size)-1; j++) {
             c_traverse(funclist, &var2, j+1);
-            cnv:C_double(var2, v[j]);
+            if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
             }
 	  /* drawpoly with GL_POLYGON will give filled polygons */
          drawpoly(w, v, (funclist->size)-1, GL_POLYGON, wc->dim);
@@ -881,7 +937,7 @@ free_v_and_fail:
        else if(!strcmp(fname.vword.sptr, "DrawSegment")) {
           for (j = 0; j < (funclist->size)-1; j++) {
              c_traverse(funclist, &var2, j+1);
-             cnv:C_double(var2, v[j]);
+             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
              }
           drawpoly(w, v, (funclist->size)-1, GL_LINES, wc->dim);
           }
@@ -890,7 +946,7 @@ free_v_and_fail:
        else if(!strcmp(fname.vword.sptr, "DrawLine")) {
           for (j = 0; j < (funclist->size)-1; j++) {
              c_traverse(funclist, &var2, j+1);
-             cnv:C_double(var2, v[j]);
+             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
            }
           drawpoly(w, v, (funclist->size)-1, GL_LINE_STRIP, wc->dim);
          }
@@ -899,12 +955,10 @@ free_v_and_fail:
        else if(!strcmp(fname.vword.sptr, "DrawPoint")) {
           for (j = 0; j < (funclist->size)-1; j++) {
              c_traverse(funclist, &var2, j+1);
-             cnv:C_double(var2, v[j]);
+             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
             }
           drawpoly(w, v, (funclist->size)-1, GL_POINTS, wc->dim);
          }
-
-
 
      if (v!=v2) free(v);
      }
@@ -1478,13 +1532,13 @@ int settexmode(wbp w, char* s)
 /* set texture coordinates */
 int settexcoords(wbp w, char* s)
 {
+   double r;
    char* s2 = s;
    char s3[MaxCvtLen];
-   char s4[MaxCvtLen];
    int j, i =0;
-   struct descrip f, funcname;
-   struct b_list *func;
-   struct descrip mode, val, test;
+   tended struct descrip f = nulldesc, val = nulldesc;
+   struct descrip funcname, mode;
+   tended struct b_list *func;
    makecurrent(w);
 
    /* create a list */
@@ -1521,7 +1575,7 @@ int settexcoords(wbp w, char* s)
       j = w->context->numtexcoords = 0;
       w->context->autogen = 0;
 
-      /* must turn of automatic texture generateion */
+      /* must turn off automatic texture generation */
       if (glIsEnabled(GL_TEXTURE_GEN_S))
          glDisable(GL_TEXTURE_GEN_S);
       if (glIsEnabled(GL_TEXTURE_GEN_T))
@@ -1534,9 +1588,6 @@ int settexcoords(wbp w, char* s)
            }
          s3[i]='\0';
         /* create a list element for the coordinate */
-         val.dword = strlen(s3);
-         val.vword.sptr = strdup(s3);
-         c_put(&f, &val);
 	 if (j >= w->context->ntexcoordsalced) {
 	    w->context->texcoords = realloc(w->context->texcoords,
 					    (w->context->ntexcoordsalced + 1+
@@ -1545,11 +1596,21 @@ int settexcoords(wbp w, char* s)
 	       return Failed;
 	    w->context->ntexcoordsalced += (strlen(s)/2);
 	    }
-         w->context->texcoords[j] = atof(s3);
+         w->context->texcoords[j] = r = atof(s3);
+         BlkLoc(val) = (union block *)alcreal(r);
+         val.dword = D_Real;
+         c_put(&f, &val);
          j++;
-         s2++;
-         i=0;
-        }
+         if(*s2 == ',') {
+	    s2++;
+	    i=0;
+	    }
+         else break;
+         }
+      /* Number of texture coordinates must be even */
+      if (BlkLoc(f)->list.size % 2) {
+	 return Error;
+	 }
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
       c_put(&(w->window->funclist), &f);

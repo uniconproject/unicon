@@ -124,8 +124,10 @@ gdbm_open (file, block_size, flags, mode, fatal_func)
     {
       dbf->fast_write = FALSE;
     }
-  
+
 #ifdef NTGCC
+#define BINARY(x) (x|_O_BINARY)
+#elif __WIN32__
 #define BINARY(x) (x|_O_BINARY)
 #else
 #define BINARY(x) (x)

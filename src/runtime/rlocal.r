@@ -522,8 +522,7 @@ static char *strdup (const char *str)
 {
 	char *p = malloc(strlen(str)+1);
 
-	if (p == NULL)
-	{
+	if (p == NULL) {
 		fprintf(stderr,"Not enough memory to save string\n");
 		exit(1);
 	}

@@ -1799,8 +1799,12 @@ struct node *n;
          }
       }
    prt_str("}\n", IndentInc);
-   if (fclose(out_file) != 0)
-      err2("cannot close ", cname);
+   if (rmlst_empty_p() == 0) {
+      if (fclose(out_file) != 0)
+         err2("cannot close ", cname);
+      else
+         markrmlst(out_file);
+      }
    put_c_fl(cname, 1);
 
    /*

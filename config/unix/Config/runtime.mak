@@ -543,7 +543,7 @@ rgfxsys.o: rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`
 
-rmsg.o: rmsg.r $(HDRS) ../h/messaging.h
+rmsg.o: rmsg.r $(HDRS) ../h/messagin.h
 	../../bin/rtt rmsg.r
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`

@@ -1,6 +1,8 @@
 sh config.sh
 cp makefile.wop ../../../makefile
 cp wdefine.h ../../../src/h/define.h
+echo top: unicon wunicon >../../../uni/unicon/makefile
+cat makefile.uni >>../../../uni/unicon/makefile
 echo ICONX=wiconx >../../../src/runtime/makefile
 echo CONSOLE=NOTHING >>../../../src/runtime/makefile
 cat MAKEFILE.RUN >>../../../src/runtime/makefile

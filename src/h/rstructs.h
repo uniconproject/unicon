@@ -475,7 +475,7 @@ struct progstate {
    int (*Cplist)(dptr, dptr, word, word);
    int (*Cpset)(dptr, dptr, word);
    int (*Cptable)(dptr, dptr, word);
-   int (*EVstralc)(word);
+   void (*EVstralc)(word);
    int (*Interp)(int,dptr);
    int (*Cnvcset)(dptr,dptr);
    int (*Cnvint)(dptr,dptr);
@@ -483,7 +483,7 @@ struct progstate {
    int (*Cnvstr)(dptr,dptr);
    int (*Cnvtcset)(struct b_cset *,dptr,dptr);
    int (*Cnvtstr)(char *,dptr,dptr);
-   int (*Deref)(dptr,dptr);
+   void (*Deref)(dptr,dptr);
    struct b_bignum * (*Alcbignum)(word);
    struct b_cset * (*Alccset)();
    struct b_file * (*Alcfile)(FILE*,int,dptr);
@@ -496,7 +496,7 @@ struct progstate {
    struct b_record *(*Alcrecd)(int, union block *);
    struct b_refresh *(*Alcrefresh)(word *, int, int);
    struct b_selem *(*Alcselem)(dptr, uword);
-   struct b_selem *(*Alcstr)(char *, word);
+   char *(*Alcstr)(char *, word);
    struct b_tvsubs *(*Alcsubs)(word, word, dptr);
    struct b_telem *(*Alctelem)(void);
    struct b_tvtbl *(*Alctvtbl)(dptr, dptr, uword);

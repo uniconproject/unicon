@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.3 2004-01-25 23:04:35 rparlett Exp $
+# $Id: component.icn,v 1.4 2004-05-09 20:04:05 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -271,6 +271,42 @@ class Component : Ticker : SetFields (
             c.handle_event(e)
          if /self.parent_dialog.is_open | \self.parent_dialog.unique_flag then
             break
+      }
+   end
+
+   #
+   # Invoke handle_event and some basic icon events.
+   #
+   method do_handle_event(e)
+      #
+      # Let the component handle the event
+      #
+      handle_event(e)
+
+      #
+      # Generate basic events
+      #
+      if e === (&lpress | &rpress | &mpress) then {
+         fire_icon_events_on_mouse(MOUSE_PRESS_EVENT, e)
+      } else if e === (&ldrag | &rdrag | &mdrag) then {
+         fire_icon_events_on_mouse(MOUSE_DRAG_EVENT, e)
+      } else if e === -12 then {
+         fire_icon_events_on_mouse(MOUSE_MOTION_EVENT, e)
+      } else if e === (&lrelease | &rrelease | &mrelease) then {
+         fire_icon_events_on_mouse(MOUSE_RELEASE_EVENT, e)
+      } else {
+         create_event_and_fire(ICON_EVENT, e)
+      }
+   end
+
+   # @p
+   method fire_icon_events_on_mouse(p, e)
+      local sub
+      if in_region() & is_unhidden() then {
+         every sub := !children do {
+            sub.fire_icon_events_on_mouse(p, e)
+         }
+         create_event_and_fire(p, e)
       }
    end
 
@@ -684,6 +720,18 @@ class Component : Ticker : SetFields (
    end
 
    #
+   # Succeed iff all of the components rooted at this component are valid.
+   #
+   method all_valid()
+      local c
+      every c := generate_components() do {
+         if /c.valid then
+            fail
+      }
+      return
+   end
+
+   #
    # Validate the component, which means displaying it and setting the valid flag
    #
    method validate()
@@ -693,8 +741,16 @@ class Component : Ticker : SetFields (
       if /self.valid then {
          self.display()
          every generate_components().valid := 1
+         child_validated(self)
       } else
          every (!self.children).validate()
+   end
+
+   #
+   # This is invoked when a child component has been validated.
+   #
+   method child_validated(c)
+      (\parent).child_validated(c)
    end
 
    #

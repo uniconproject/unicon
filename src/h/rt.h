@@ -24,10 +24,6 @@
 #include "../h/posix.h"
 #endif					/* PosixFns */
 
-#ifdef Network
-#include "../h/url.h"
-#endif					/* Network */
-
 #ifdef Messaging
 #include "../h/messagin.h"
 #endif                                  /* Messaging */

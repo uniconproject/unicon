@@ -143,7 +143,7 @@ procedure main(argv)
 	     }
 	 "-y": parseonly := 1
 	 "-yydbg": parseonly := yydbg := 1
-	 "-G": ilinkopt ||:= argv[i] || " "
+	 "-G"|"-B": ilinkopt ||:= argv[i] || " "
 	 default   : icontopt ||:= argv[i] || " "
          }
       }
@@ -350,11 +350,11 @@ local cmd
 end
 
 
-procedure warning(s)
+procedure warning(s, lineno, filenam)
    /warnings := 0
    /errors := 0
    if warnings + errors = 0 then iwrite(&errout)
-   iwrites(&errout, \fName, ":")
-   iwrite(&errout, yylineno, ": # \"", yytext, "\": ", s)
+   iwrites(&errout, \(filenam|fName), ":")
+   iwrite(&errout, \lineno|yylineno, ": # \"", yytext, "\": ", s)
    warnings +:= 1
 end

@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.3 2004-01-25 22:58:03 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -8,6 +8,9 @@
 
 package gui
 link graphics
+
+import undo
+import lang
 
 $include "guih.icn"
 
@@ -24,9 +27,13 @@ class EditableTextList : LineBasedScrollArea(
    mark_y,                  #
    direction,               #
    is_held,
-   changed,                 #
    long_line,               #
-   moved                    #
+   undo_manager,
+   old_contents_size,
+   old_mw,
+   old_cursor_x,
+   old_cursor_y,
+   changed
    )
 
    method get_line_count()
@@ -51,6 +58,7 @@ class EditableTextList : LineBasedScrollArea(
          self.cursor_x := self.cursor_y := 1
          compute_and_invalidate()
       }
+      undo_manager.clear()
       return x
    end
 
@@ -120,47 +128,65 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method handle_cut(e)
+      start_handle(e)
       if has_region() then {
          get_clipboard().set_content(get_region())
-         delete_region()
+         delete_region(e)
       }
+      end_handle(e)
    end
 
    method handle_copy(e)
+      start_handle(e)
       if has_region() then {
          get_clipboard().set_content(get_region())
       }
+      end_handle(e)
+   end
+
+   method can_undo()
+      return undo_manager.can_undo()
+   end
+
+   method can_redo()
+      return undo_manager.can_redo()
+   end
+
+   method get_pasteable_clipboard()
+      local x, t, s, c
+      x := get_clipboard().get_content()
+      t := string(x) | fail
+      # Apply the filter to the string to paste
+      s := ""
+      every c := !t do {
+         if member(printable, c) then
+            s ||:= c
+      }
+      if *s = 0 then
+         fail
+      return s
    end
 
    method handle_paste(e)
-      local x
-      x := get_clipboard().get_content()
-      if s := string(x) then {
-         if has_region() then
-            delete_region()
-         clear_mark()
-         changed := 1
-         long_line := &null
+      local s, ce, ed
 
-         s ? repeat {
-            t := tab(upto('\n') | 0)
-            if any('\n') then {
-               nl := self.contents[self.cursor_y][self.cursor_x:0]
-               self.contents[self.cursor_y] := self.contents[self.cursor_y][1:self.cursor_x] || t
-               if self.cursor_y = *self.contents then
-                  put(self.contents, nl)
-               else
-                  insert(self.contents, self.cursor_y + 1, nl)
-               self.cursor_y +:= 1
-               self.cursor_x := 1
-               move(1)
-            } else {
-               self.contents[self.cursor_y] := self.contents[self.cursor_y][1:self.cursor_x] || t || self.contents[self.cursor_y][self.cursor_x:0]
-               self.cursor_x +:= *t
-               break
-            }
+      start_handle(e)
+      if s := get_pasteable_clipboard() then {
+         ce := CompoundEdit()
+
+         if has_region() then {
+            ed := EditableTextListDeleteRegionEdit(self)
+            ed.redo()
+            ce.add_edit(ed)
          }
+         ed := EditableTextListPasteEdit(self, s)
+         ed.redo()
+         ce.add_edit(ed)
+
+         undo_manager.add_edit(ce)
+         changed := 1
       }
+      end_handle(e)
    end
 
    method on_vsb()
@@ -173,14 +199,44 @@ class EditableTextList : LineBasedScrollArea(
       self.refresh()
    end
 
+   method start_handle()
+      old_contents_size := *contents
+      old_mw := TextWidthEx(cwin, contents[long_line])
+      old_cursor_x := cursor_x
+      old_cursor_y := cursor_y
+      changed := &null
+   end
+
+   method end_handle(e)
+      if \changed then {
+         if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidthEx(cwin, contents[long_line])) then {
+            #
+            # Contents changed.  Re-compute all internal fields, ensure on
+            # screen and re-display whole object.
+            #
+            self.set_internal_fields()
+            self.constrain_line()
+            self.invalidate()
+         } else {
+            self.constrain_line()
+            self.refresh(1)
+         }
+         create_event_and_fire(CONTENT_CHANGED_EVENT, e)
+      }
+
+      if (cursor_x ~= old_cursor_x) | (cursor_y ~= old_cursor_y) then {
+         if /changed then {
+            self.constrain_line()
+            self.refresh(1)
+         }
+         create_event_and_fire(CURSOR_MOVED_EVENT, e)
+      }
+   end
+
    method handle_event(e)
       (\self.vsb).handle_event(e)
       (\self.hsb).handle_event(e)
 
-      old_contents_size := *contents
-      old_mw := TextWidthEx(cwin, contents[long_line])
-
-      changed := moved := &null
       if e === (&lpress | &rpress | &mpress) then
          handle_press(e)
       else if e === (&ldrag | &rdrag | &mdrag) then
@@ -197,40 +253,19 @@ class EditableTextList : LineBasedScrollArea(
             Key_Down : handle_key_down(e)
             Key_Left : handle_key_left(e)
             Key_Right : handle_key_right(e)
-            "\b" : handle_delete_1(e)
+            "\b" : handle_delete_left(e)
             "\r" | "\l": handle_return(e)
             "\^k" : handle_delete_line(e)
             "\^a" : handle_select_all(e)
             "\^e" : handle_end_of_line(e)
-            "\d" | "\^d" : handle_delete_2(e)
-            "\^x" :  handle_cut()
-            "\^c" :  handle_copy()
-            "\^v" :  handle_paste()
+            "\d" | "\^d" : handle_delete_right(e)
+            "\^x" :  handle_cut(e)
+            "\^c" :  handle_copy(e)
+            "\^v" :  handle_paste(e)
+            "\^z" :  handle_undo(e)
+            "\^y" :  handle_redo(e)
             default : handle_default(e)
          }
-      }
-
-      if \moved then {
-         #
-         # Cursor moved.  Make sure still on screen; update scrollbars,
-         # and refresh text.
-         #
-         self.constrain_line()
-         self.refresh(1)
-      } else if \changed then {
-         if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidthEx(cwin, contents[long_line])) then {
-            #
-            # Contents changed.  Re-compute all internal fields, ensure on
-            # screen and re-display whole object.
-            #
-            self.set_internal_fields()
-            self.constrain_line()
-            self.invalidate()
-         } else {
-            self.constrain_line()
-            self.refresh(1)
-         }
-         create_event_and_fire(CONTENT_CHANGED_EVENT, e)
       }
    end
 
@@ -264,6 +299,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method handle_press(e)
+      start_handle(e)
       if ((self.x <= &x < self.x + self.view.w + 2 * TX_PADDING) & (self.y  <= &y < self.y + self.view.h + 2 * TY_PADDING)) then {
          #
          # Button down in region - move to cursor position.
@@ -272,12 +308,30 @@ class EditableTextList : LineBasedScrollArea(
          self.mark_y := self.cursor_y
          self.mark_x := self.cursor_x
          self.is_held := 1
-
-         moved := 1
       }
+      end_handle(e)
+   end
+
+   method handle_undo(e)
+      start_handle(e)
+      if undo_manager.can_undo() then {
+         undo_manager.undo()
+         changed := 1
+      }
+      end_handle(e)
+   end
+
+   method handle_redo(e)
+      start_handle(e)
+      if undo_manager.can_redo() then {
+         undo_manager.redo()
+         changed := 1
+      }
+      end_handle(e)
    end
 
    method handle_drag(e)
+      start_handle(e)
       if \self.is_held then {
          if &y < self.y then
             direction := "up"
@@ -293,29 +347,30 @@ class EditableTextList : LineBasedScrollArea(
          if /direction then {
             stop_ticker()
             set_cursor_from_pos()
-            moved := 1
          } else {
             if /self.ticker_rate then
                set_ticker(30)
          }
       }
+      end_handle(e)
    end
 
    method tick()
-      local moved, l, s
+      local l, s
+
+      start_handle(e)
+
       case self.direction of {
          "up" : {
             l := self.get_first_line() - 1
             if l > 0 then {
                self.set_cursor_y(l) 
-               moved := 1
             }
          }
          "down" : {
             l := self.get_last_line() + 1
             if l <= *self.contents then {
                self.set_cursor_y(l) 
-               moved := 1
             }
          }
          "left" : {
@@ -323,7 +378,6 @@ class EditableTextList : LineBasedScrollArea(
             s := self.contents[self.cursor_y] || " "
             while (self.cursor_x > 1) & TextWidthEx(self.cwin, s, 1, self.cursor_x) >= self.view.x - l do {
                self.cursor_x -:= 1
-               moved := 1
             }
          }
          "right" : {
@@ -331,18 +385,14 @@ class EditableTextList : LineBasedScrollArea(
             s := self.contents[self.cursor_y] || " "
             while (self.cursor_x < *s) & TextWidthEx(self.cwin, s, 1, self.cursor_x) < self.view.x - l + self.view.w do {
                self.cursor_x +:= 1
-               moved := 1
             }
          }
-            
       }
-      if \moved then {
-         self.constrain_line()
-         self.refresh(1)
-      }
+      end_handle(e)
    end
 
    method handle_release(e)
+      start_handle(e)
       if \self.is_held then {
          #
          # Mouse released after being held down.  Clear flag.  If there
@@ -354,6 +404,7 @@ class EditableTextList : LineBasedScrollArea(
          has_region() | clear_mark()
          stop_ticker()
       }
+      end_handle(e)
    end
 
    method keyboard_mark()
@@ -365,50 +416,58 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method handle_start_of_line(e)
+      start_handle(e)
       keyboard_mark()
       cursor_x := 1
-      moved := 1
+      end_handle(e)
    end
 
    method handle_end_of_line(e)
+      start_handle(e)
       keyboard_mark()
       cursor_x := *contents[cursor_y] + 1
-      moved := 1
+      end_handle(e)
    end
 
    method handle_key_up(e)
+      start_handle(e)
       keyboard_mark()
-      if self.set_cursor_y(0 < self.cursor_y - 1) then
-         moved := 1
+      self.set_cursor_y(0 < self.cursor_y - 1)
+      end_handle(e)
    end
 
    method handle_key_home(e)
+      start_handle(e)
       keyboard_mark()
       cursor_y := cursor_x := 1
-      moved := 1
+      end_handle(e)
    end
 
    method handle_key_end(e)
+      start_handle(e)
       keyboard_mark()
       cursor_y := *contents
       cursor_x := *contents[cursor_y] + 1
-      moved := 1
+      end_handle(e)
    end
 
    method handle_select_all(e)
+      start_handle(e)
       mark_x := mark_y := 1
       cursor_y := *contents
       cursor_x := *contents[cursor_y] + 1
-      moved := 1
+      end_handle(e)
    end
 
    method handle_key_down(e)
+      start_handle(e)
       keyboard_mark()
-      if self.set_cursor_y(*self.contents >= self.cursor_y + 1) then
-         moved := 1
+      self.set_cursor_y(*self.contents >= self.cursor_y + 1)
+      end_handle(e)
    end
 
    method handle_key_left(e)
+      start_handle(e)
       keyboard_mark()
       if self.cursor_x = 1 then {
          if self.cursor_y > 1 then {
@@ -417,10 +476,11 @@ class EditableTextList : LineBasedScrollArea(
          }
       } else
          self.cursor_x -:= 1
-         moved := 1
+      end_handle(e)
    end
 
    method handle_key_right(e)
+      start_handle(e)
       keyboard_mark()
       if self.cursor_x = *self.contents[self.cursor_y] + 1 then {
          if self.cursor_y < *self.contents then {
@@ -429,38 +489,41 @@ class EditableTextList : LineBasedScrollArea(
          }
       } else
          self.cursor_x +:= 1
-         moved := 1
+      end_handle(e)
    end
 
    method handle_key_page_up(e)
+      start_handle(e)
       keyboard_mark()
       if i := (\self.vsb).get_value() then {
          self.vsb.set_value(i - self.vsb.page_size) 
          self.constrain_cursor()
          self.refresh()
       }
+      end_handle(e)
    end
 
    method handle_key_page_down(e)
+      start_handle(e)
       keyboard_mark()
       if i := (\self.vsb).get_value() then {
          self.vsb.set_value(i + self.vsb.page_size) 
          self.constrain_cursor()
          self.refresh()
       }
+      end_handle(e)
    end
 
    method handle_delete_line(e)
-      if cursor_y < *self.contents then {
-         self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
-         if long_line = self.cursor_y then
-            long_line := &null
-         else if long_line > self.cursor_y then
-            long_line -:= 1
-         clear_mark()
+      local ed
+      start_handle(e)
+      if (cursor_y < *self.contents) | (*self.contents[cursor_y] > 0) then {
+         ed := EditableTextListDeleteLineEdit(self)
+         undo_manager.add_edit(ed)
+         ed.redo()
          changed := 1
-         cursor_x := 1
       }
+      end_handle(e)
    end
 
    method get_region()
@@ -486,111 +549,83 @@ class EditableTextList : LineBasedScrollArea(
       return r
    end
 
-   method delete_region()
-      if self.mark_y < self.cursor_y then {
-         self.contents[self.mark_y] := self.contents[self.mark_y][1:self.mark_x] || self.contents[self.cursor_y][self.cursor_x:0] 
-         every self.mark_y + 1 to self.cursor_y do
-            delete(self.contents, self.mark_y + 1)
-         self.cursor_x := self.mark_x
-         self.cursor_y := self.mark_y
-         long_line := &null
-      } else if self.mark_y > self.cursor_y then {
-         self.contents[self.cursor_y] := self.contents[self.cursor_y][1:self.cursor_x] || self.contents[self.mark_y][self.mark_x:0] 
-         every self.cursor_y + 1 to self.mark_y do
-            delete(self.contents, self.cursor_y + 1)
-         long_line := &null
-      } else {
-         # mark_y = cursor_y
-         if self.mark_x < self.cursor_x then {
-            self.contents[self.cursor_y][self.mark_x:self.cursor_x] := ""
-            self.cursor_x := self.mark_x
-         } else {
-            self.contents[self.cursor_y][self.cursor_x:self.mark_x] := ""
-         }
-      }
+   method delete_region(e)
+      local ed 
+      ed := EditableTextListDeleteRegionEdit(self)
+      undo_manager.add_edit(ed)
+      ed.redo()
       changed := 1
-      clear_mark()
    end
 
-   method handle_delete_1(e)
+   method handle_delete_left(e)
+      local ed
+
+      start_handle(e)
       if has_region() then {
-         delete_region()
+         delete_region(e)
       } else {
-         #
-         # Delete
-         #
-         if self.cursor_x = 1 then {
-            if self.cursor_y > 1 then {
-               self.cursor_x := *self.contents[self.cursor_y - 1] + 1
-               self.contents[self.cursor_y - 1] ||:= self.contents[self.cursor_y]
-               self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
-               self.cursor_y -:= 1
-               changed := 1
-               long_line := &null
-            }
-         } else {
-            # self.cursor_x > 1
-            self.contents[self.cursor_y][self.cursor_x - 1] := ""
-            self.cursor_x -:= 1
+         if (self.cursor_x > 1) | (self.cursor_y > 1) then {
+            ed := EditableTextListDeleteLeftEdit(self)
+            undo_manager.add_edit(ed)
+            ed.redo()
             changed := 1
          }
-         clear_mark()
       }
+      end_handle(e)
    end
 
-   method handle_delete_2(e)
+   method handle_delete_right(e)
+      local ed
+
+      start_handle(e)
       if has_region() then {
-         delete_region()
+         delete_region(e)
       } else {
-         #
-         # Delete
-         #
-         if self.cursor_x = *contents[cursor_y] + 1 then {
-            if self.cursor_y < *contents then {
-               self.contents[self.cursor_y] ||:= self.contents[self.cursor_y + 1]
-               self.contents := self.contents[1:self.cursor_y + 1] ||| self.contents[self.cursor_y + 2 : 0]
-               changed := 1
-               long_line := &null
-            }
-         } else {
-            # Cursor not at end of line
-            self.contents[self.cursor_y][self.cursor_x] := ""
+         if (self.cursor_x <= *contents[cursor_y]) | (self.cursor_y < *contents) then {
+            ed := EditableTextListDeleteRightEdit(self)
+            undo_manager.add_edit(ed)
+            ed.redo()
             changed := 1
          }
-         clear_mark()
       }
+      end_handle(e)
    end
 
    method handle_return(e)
-      s := self.contents[self.cursor_y]
-      self.contents[self.cursor_y] := s[1:self.cursor_x]
-      self.contents := self.contents[1:cursor_y + 1] ||| [s[self.cursor_x:0]] ||| self.contents[cursor_y + 1:0]
-      if long_line = self.cursor_y then
-         long_line := &null
-      else if long_line > self.cursor_y then
-         long_line +:= 1
-         
-      self.cursor_y +:= 1
-      self.cursor_x := 1
-
+      local ed
+      start_handle(e)
+      ed := EditableTextListReturnEdit(self)
+      undo_manager.add_edit(ed)
+      ed.redo()
       changed := 1
+      end_handle(e)
    end
 
    method handle_default(e)
+      local ce, ed
+
+      start_handle(e)
       # 
       # Add any printable character at cursor position
       #
       if type(e) == "string" & not(&control | &meta) & any(printable, e) then {
-         clear_mark()
-         if self.cursor_x = 1 then
-            self.contents[self.cursor_y] := e || self.contents[self.cursor_y]
-         else
-            self.contents[self.cursor_y][self.cursor_x - 1] ||:= e
-         self.cursor_x +:= 1
+         if has_region() then {
+            ce := CompoundEdit()
+            ed := EditableTextListDeleteRegionEdit(self)
+            ed.redo()
+            ce.add_edit(ed)
+            ed := EditableTextListDefaultEdit(self, e)
+            ed.redo()
+            ce.add_edit(ed)
+            undo_manager.add_edit(ce)
+         } else {
+            ed := EditableTextListDefaultEdit(self, e)
+            ed.redo()
+            undo_manager.add_edit(ed)
+         }
          changed := 1
-         if TextWidthEx(cwin, self.contents[self.cursor_y]) > TextWidthEx(cwin, self.contents[long_line]) then
-            long_line := self.cursor_y
       }
+      end_handle(e)
    end
 
    method resize()
@@ -701,6 +736,11 @@ class EditableTextList : LineBasedScrollArea(
       return WAttrib(self.cwin, "fheight")
    end
 
+   method keeps(e)
+      # This component keeps all events.
+      return
+   end
+
    method get_subject_width()
       if /long_line then {
          mw := TextWidthEx(cwin, contents[1])
@@ -722,8 +762,288 @@ class EditableTextList : LineBasedScrollArea(
 
    initially(a[])
       self.LineBasedScrollArea.initially()
+      undo_manager := UndoManager()
       printable := cset(&cset[33:0]) ++ '\t'
       self.cursor_x := self.cursor_y := 1
-      self.keeps_tabs := 1
       set_fields(a)
+end
+
+class EditableTextListEdit:UndoableEdit(parent,
+                                        cursor_x, 
+                                        cursor_y,
+                                        mark_x,
+                                        mark_y,
+                                        long_line
+                                        )
+   method redo()
+      restore()
+      self.redo_impl()
+   end
+
+   method undo()
+      self.undo_impl()
+      restore()
+   end
+
+   abstract method redo_impl()
+   abstract method undo_impl()
+
+   method save()
+      self.cursor_x := parent.cursor_x
+      self.cursor_y := parent.cursor_y
+      self.mark_x := parent.mark_x
+      self.mark_y := parent.mark_y
+      self.long_line := parent.long_line
+   end
+
+   method restore()
+      parent.cursor_x := self.cursor_x
+      parent.cursor_y := self.cursor_y
+      parent.mark_x := self.mark_x
+      parent.mark_y := self.mark_y
+      parent.long_line := self.long_line
+   end
+
+   initially(parent)
+      self.parent := parent
+      save()
+end
+
+class EditableTextListDefaultEdit:EditableTextListEdit(s)
+   method add_edit(other)
+      if is_instance(other, "gui__EditableTextListDefaultEdit") &
+         (other.cursor_y = self.cursor_y) &
+         (other.cursor_x = self.cursor_x + *s) then {
+            s ||:= other.s
+            return
+      }
+   end
+
+   method redo_impl()      
+      if parent.cursor_x = 1 then
+         parent.contents[parent.cursor_y] := s || parent.contents[parent.cursor_y]
+      else
+         parent.contents[parent.cursor_y][parent.cursor_x - 1] ||:= s
+      parent.cursor_x +:= *s
+      if TextWidthEx(parent.cwin, parent.contents[parent.cursor_y]) > 
+         TextWidthEx(parent.cwin, parent.contents[\parent.long_line]) then
+         parent.long_line := parent.cursor_y
+      parent.clear_mark()
+   end
+
+   method undo_impl()
+      parent.contents[self.cursor_y][self.cursor_x +: *s] := ""
+   end
+
+   initially(parent, e)
+      self.EditableTextListEdit.initially(parent)
+      self.s := e
+end
+
+class EditableTextListReturnEdit:EditableTextListEdit()
+   method redo_impl()
+      local s
+      s := parent.contents[parent.cursor_y]
+      parent.contents[parent.cursor_y] := s[1:parent.cursor_x]
+      parent.contents := parent.contents[1:parent.cursor_y + 1] ||| [s[parent.cursor_x:0]] ||| parent.contents[parent.cursor_y + 1:0]
+      if parent.long_line = parent.cursor_y then
+         parent.long_line := &null
+      else if parent.long_line > parent.cursor_y then
+         parent.long_line +:= 1
+         
+      parent.cursor_y +:= 1
+      parent.cursor_x := 1
+   end
+
+   method undo_impl()
+      parent.contents[self.cursor_y] ||:= parent.contents[self.cursor_y + 1]
+      delete(parent.contents, self.cursor_y + 1)
+   end
+
+   initially(parent)
+      self.EditableTextListEdit.initially(parent)
+end
+
+class EditableTextListDeleteRightEdit:EditableTextListEdit(ch)
+   method redo_impl()
+      if parent.cursor_x = *parent.contents[parent.cursor_y] + 1 then {
+         # We know cursor_y < *contents from the handle method above.
+         parent.contents[parent.cursor_y] ||:= parent.contents[parent.cursor_y + 1]
+         parent.contents := parent.contents[1:parent.cursor_y + 1] ||| parent.contents[parent.cursor_y + 2 : 0]
+         parent.long_line := &null
+      } else {
+         # Cursor not at end of line
+         ch := parent.contents[parent.cursor_y][parent.cursor_x]
+         parent.contents[parent.cursor_y][parent.cursor_x] := ""
+      }
+      parent.clear_mark()
+   end
+
+   method undo_impl()
+      local t
+      if /ch then {
+         t := parent.contents[self.cursor_y][self.cursor_x:0]
+         parent.contents[self.cursor_y][self.cursor_x:0] := ""
+         insert(parent.contents, self.cursor_y + 1, t)
+      } else {
+         if self.cursor_x >  *parent.contents[self.cursor_y] then
+            parent.contents[self.cursor_y] ||:= ch
+         else
+            parent.contents[self.cursor_y][self.cursor_x] := ch || parent.contents[self.cursor_y][self.cursor_x]
+      }
+   end
+
+   initially(parent)
+      self.EditableTextListEdit.initially(parent)
+end
+
+class EditableTextListDeleteLeftEdit:EditableTextListEdit(ch, cut)
+   method redo_impl()
+      if parent.cursor_x = 1 then {
+         # We know parent.cursor_y > 1 from the handle method
+         cut := parent.cursor_x := *parent.contents[parent.cursor_y - 1] + 1
+         parent.contents[parent.cursor_y - 1] ||:= parent.contents[parent.cursor_y]
+         parent.contents := parent.contents[1:parent.cursor_y] ||| parent.contents[parent.cursor_y + 1 : 0]
+         parent.cursor_y -:= 1
+         parent.long_line := &null
+      } else {
+         # parent.cursor_x > 1
+         ch := parent.contents[parent.cursor_y][parent.cursor_x - 1]
+         parent.contents[parent.cursor_y][parent.cursor_x - 1] := ""
+         parent.cursor_x -:= 1
+      }
+      parent.clear_mark()
+   end
+
+   method undo_impl()
+      local t
+      if /ch then {
+         t :=  parent.contents[self.cursor_y - 1][cut:0]
+         parent.contents[self.cursor_y - 1][cut:0] := ""
+         insert(parent.contents, self.cursor_y, t)
+      } else {
+         if self.cursor_x - 1 > *parent.contents[self.cursor_y] then
+            parent.contents[self.cursor_y] ||:= ch
+         else 
+            parent.contents[self.cursor_y][self.cursor_x - 1] := ch || parent.contents[self.cursor_y][self.cursor_x - 1]
+      }
+   end
+
+   initially(parent)
+      self.EditableTextListEdit.initially(parent)
+end
+
+class EditableTextListDeleteLineEdit:EditableTextListEdit(s)
+   method redo_impl()
+      s := parent.contents[parent.cursor_y]
+      if parent.cursor_y = *parent.contents then
+         parent.contents[parent.cursor_y] := ""
+      else
+         delete(parent.contents, parent.cursor_y)
+      if parent.long_line = parent.cursor_y then
+         parent.long_line := &null
+      else if parent.long_line > parent.cursor_y then
+         parent.long_line -:= 1
+      parent.cursor_x := 1
+      parent.clear_mark()
+   end
+
+   method undo_impl()
+      if self.cursor_y = *parent.contents then
+         parent.contents[self.cursor_y] := s
+      else
+         insert(parent.contents, self.cursor_y, s)
+   end
+
+   initially(parent)
+      self.EditableTextListEdit.initially(parent)
+end
+
+class EditableTextListDeleteRegionEdit:EditableTextListEdit(l, pos)
+   method redo_impl()
+      l := []
+      if parent.mark_y < parent.cursor_y then {
+         pos := parent.mark_y
+         put(l, parent.contents[parent.mark_y])
+         parent.contents[parent.mark_y] := parent.contents[parent.mark_y][1:parent.mark_x] || parent.contents[parent.cursor_y][parent.cursor_x:0] 
+         every parent.mark_y + 1 to parent.cursor_y do {
+            put(l, parent.contents[parent.mark_y + 1])
+            delete(parent.contents, parent.mark_y + 1)
+         }
+         parent.cursor_x := parent.mark_x
+         parent.cursor_y := parent.mark_y
+         parent.long_line := &null
+      } else if parent.mark_y > parent.cursor_y then {
+         pos := parent.cursor_y
+         put(l,  parent.contents[parent.cursor_y])
+         parent.contents[parent.cursor_y] := parent.contents[parent.cursor_y][1:parent.cursor_x] || parent.contents[parent.mark_y][parent.mark_x:0] 
+         every parent.cursor_y + 1 to parent.mark_y do {
+            put(l, parent.contents[parent.cursor_y + 1])
+            delete(parent.contents, parent.cursor_y + 1)
+         }
+         parent.long_line := &null
+      } else {
+         # parent.mark_y = cursor_y
+         pos := parent.cursor_y
+         put(l, parent.contents[parent.cursor_y])
+         if parent.mark_x < parent.cursor_x then {
+            parent.contents[parent.cursor_y][parent.mark_x:parent.cursor_x] := ""
+            parent.cursor_x := parent.mark_x
+         } else {
+            parent.contents[parent.cursor_y][parent.cursor_x:parent.mark_x] := ""
+         }
+      }
+      parent.clear_mark()
+   end
+
+   method undo_impl()
+      delete(parent.contents, pos)
+      if pos > *parent.contents then
+         while put(parent.contents, pop(l))
+      else
+         while insert(parent.contents, pos, pull(l))
+   end
+
+   initially(parent)
+      self.EditableTextListEdit.initially(parent)
+end
+
+class EditableTextListPasteEdit:EditableTextListEdit(s, pre, n)
+   method redo_impl()
+      local t, nl
+
+      n := 0
+      pre := parent.contents[parent.cursor_y]
+
+      s ? repeat {
+         t := tab(upto('\n') | 0)
+         if any('\n') then {
+            nl := parent.contents[parent.cursor_y][parent.cursor_x:0]
+            parent.contents[parent.cursor_y] := parent.contents[parent.cursor_y][1:parent.cursor_x] || t
+            if parent.cursor_y = *parent.contents then
+               put(parent.contents, nl)
+            else
+               insert(parent.contents, parent.cursor_y + 1, nl)
+            n +:= 1
+            parent.cursor_y +:= 1
+            parent.cursor_x := 1
+            move(1)
+         } else {
+            parent.contents[parent.cursor_y] := parent.contents[parent.cursor_y][1:parent.cursor_x] || t || parent.contents[parent.cursor_y][parent.cursor_x:0]
+            parent.cursor_x +:= *t
+            break
+         }
+      }
+      parent.long_line := &null
+   end
+
+   method undo_impl()
+      parent.contents[self.cursor_y] := pre
+      every 1 to n do
+         delete(parent.contents, self.cursor_y + 1)
+   end
+
+   initially(parent, s)
+      self.EditableTextListEdit.initially(parent)
+      self.s := s
 end

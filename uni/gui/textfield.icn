@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: textfield.icn,v 1.3 2004-01-25 22:58:01 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -8,6 +8,9 @@
 
 package gui
 link graphics
+
+import undo
+import lang
 
 $include "guih.icn"
 
@@ -43,7 +46,10 @@ class TextField : Component(
    rightmost,               #                 
    tx,                      #          
    tw,                      #
-   displaychar              # char to print on screen
+   displaychar,             # char to print on screen
+   undo_manager,
+   old_cursor,
+   changed
    )
 
    #
@@ -99,21 +105,39 @@ class TextField : Component(
    method set_contents(x)
       self.contents := string(x)
       self.cursor := *self.contents + 1
-      self.mark := &null
+      clear_mark()
       self.leftmost := 1
       self.invalidate()
+      undo_manager.clear()
       return x
+   end
+
+   method start_handle(e)
+      old_cursor := cursor
+      changed := &null
+   end
+
+   method end_handle(e)
+      if \changed then {
+         self.invalidate()
+         create_event_and_fire(CONTENT_CHANGED_EVENT, e)
+      }
+      if old_cursor ~= cursor then {
+         self.invalidate()
+         create_event_and_fire(CURSOR_MOVED_EVENT, e)
+      }
    end
 
    #      
    # Mouse click - compute new cursor position, re-display
    #
    # @p
-   method handle_press()
+   method handle_press(e)
+      start_handle(e)
       in_region() | fail
       self.mark := self.cursor := whereis_x()
       self.is_held := 1
-      self.invalidate()
+      end_handle(e)
    end
 
    method whereis_x()
@@ -131,6 +155,8 @@ class TextField : Component(
 
    method handle_drag(e)
       local p
+
+      start_handle(e)
       if \self.is_held then {
          p := self.cursor
 
@@ -147,13 +173,12 @@ class TextField : Component(
             self.cursor := whereis_x()
             stop_ticker()
          }
-
-         if p ~= self.cursor then 
-            invalidate()
       }
+      end_handle(e)
    end
 
    method tick()
+      start_handle()
       if \going_left then {
          self.cursor := self.leftmost - 1
          self.cursor <:= 1
@@ -161,10 +186,11 @@ class TextField : Component(
          self.cursor := self.rightmost
          self.cursor >:= (*self.contents + 1)
       }
-      self.invalidate()
+      end_handle()
    end
 
    method handle_release(e)
+      start_handle(e)
       if \self.is_held then {
          #
          # Mouse released after being held down.  Clear flag
@@ -172,24 +198,31 @@ class TextField : Component(
          self.is_held := &null
          stop_ticker()
       }
+      end_handle(e)
+   end
+
+   method clear_mark()
+      self.mark := &null
    end
 
    #
    # Delete
    #
    # @p
-   method handle_delete1()
-      if has_region() then
-         delete_region()
-      else if self.cursor > 1 then {
-         self.contents[self.cursor - 1] := ""
-         self.cursor -:= 1
-         self.mark := &null
-      } else
-         fail
+   method handle_delete_left(e)
+      local ed
 
-      self.invalidate()
-      create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+      start_handle(e)
+      if has_region() then
+         delete_region(e)
+      else if self.cursor > 1 then {
+         ed := TextFieldDeleteLeftEdit(self)
+         ed.redo()
+         undo_manager.add_edit(ed)
+         clear_mark()
+         changed := 1
+      }
+      end_handle(e)
    end
 
    method handle_return(e)
@@ -204,108 +237,174 @@ class TextField : Component(
    end
 
    method handle_key_right(e)
+      start_handle(e)
       keyboard_mark()
       self.cursor := (*self.contents + 1 >= self.cursor + 1)
-      self.invalidate()
+      end_handle(e)
    end
 
    method handle_key_left(e)
+      start_handle(e)
       keyboard_mark()
       self.cursor := (0 < self.cursor - 1)
-      self.invalidate()
+      end_handle(e)
    end
 
    method handle_delete_line(e)
-      self.contents := ""
-      self.cursor := 1
-      self.mark := &null
-      self.invalidate()
-      create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+      local ed
+
+      start_handle(e)
+      ed := TextFieldDeleteLineEdit(self)
+      ed.redo()
+      undo_manager.add_edit(ed)
+      clear_mark()
+      changed := 1
+      end_handle(e)
    end
 
-   method handle_delete_2(e)
+   method handle_delete_right(e)
+      local ed
+
+      start_handle(e)
       if has_region() then
-         delete_region()
+         delete_region(e)
       else if self.cursor <= *self.contents then {
-         self.contents[self.cursor] := ""
-         self.mark := &null
-      } else
-         fail
-      
-      self.invalidate()
-      create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+         ed := TextFieldDeleteRightEdit(self)
+         ed.redo()
+         undo_manager.add_edit(ed)
+         clear_mark()
+         changed := 1
+      }
+      end_handle(e)
    end
 
    method handle_select_all(e)
-      self.cursor := *self.contents + 1
-      self.mark := 1
-      self.invalidate()
+      start_handle(e)
+      if *self.contents > 0 then {
+         self.cursor := *self.contents + 1
+         self.mark := 1
+      }
+      end_handle(e)
    end
 
    method handle_end_of_line(e)
+      start_handle(e)
       keyboard_mark()
       self.cursor := *self.contents + 1
-      self.invalidate()
+      end_handle(e)
    end
 
    method handle_start_of_line(e)
+      start_handle(e)
       keyboard_mark()
       self.cursor := 1
-      self.invalidate()
+      end_handle(e)
    end
 
    method handle_cut(e)
+      start_handle(e)
       if has_region() then {
          get_clipboard().set_content(get_region())
-         delete_region()
-         self.invalidate()
-         create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+         delete_region(e)
       }
+      end_handle(e)
    end
 
    method handle_copy(e)
+      start_handle(e)
       if has_region() then {
          get_clipboard().set_content(get_region())
       }
+      end_handle(e)
+   end
+
+   method keeps(e)
+      return e === (Key_Left | Key_Right)
+   end
+
+   method get_pasteable_clipboard()
+      local x, t, s, c
+      x := get_clipboard().get_content()
+      t := string(x) | fail
+      # Apply the filter to the string to paste
+      s := ""
+      every c := !t do {
+         if member(filter, c) then
+            s ||:= c
+      }
+      if *s = 0 then
+         fail
+      return s
    end
 
    method handle_paste(e)
-      local x, s, t, c
-      x := get_clipboard().get_content()
-      if t := string(x) then {
-         if has_region() then
-            delete_region()
-         self.mark := &null
-         # Apply the filter to the string to paste
-         s := ""
-         every c := !t do {
-            if member(filter, c) then
-               s ||:= c
+      local s, ce, ed
+      start_handle(e)
+
+      if s := get_pasteable_clipboard() then {
+         ce := CompoundEdit()
+         if has_region() then {
+            ed := TextFieldDeleteRegionEdit(self)
+            ed.redo()
+            ce.add_edit(ed)
          }
-         self.contents := self.contents[1:self.cursor] || s || self.contents[self.cursor:0]
-         self.cursor +:= *s
-         self.invalidate()
-         create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+         clear_mark()
+         ed := TextFieldPasteEdit(self, s)
+         ed.redo()
+         ce.add_edit(ed)
+
+         undo_manager.add_edit(ce)
+
+         changed := 1
       }
+      end_handle(e)
    end
 
    method handle_default(e)
+      local ce, ed
+
+      start_handle(e)
       # 
-      # Add any printable character at cursor position, and return
-      # event with code 1.
+      # Add any printable character at cursor position
       #
       if type(e) == "string" & not(&control | &meta) & any(filter, e) then {
-         if has_region() then
-            delete_region()
-         if self.cursor = 1 then
-            self.contents := e || self.contents
-         else
-            self.contents[self.cursor - 1] ||:= e
-         self.cursor +:= 1
-         self.mark := &null
-         self.invalidate()
-         create_event_and_fire(TEXTFIELD_CHANGED_EVENT, e)
+         if has_region() then {
+            ce := CompoundEdit()
+            ed := TextFieldDeleteRegionEdit(self)
+            ed.redo()
+            ce.add_edit(ed)
+            clear_mark()
+            ed := TextFieldDefaultEdit(self, e)
+            ed.redo()
+            ce.add_edit(ed)
+            undo_manager.add_edit(ce)
+         } else {
+            ed := TextFieldDefaultEdit(self, e)
+            ed.redo()
+            undo_manager.add_edit(ed)
+         }
+
+         changed := 1
       }
+      end_handle(e)
+   end
+
+   method handle_undo()
+      start_handle(e)
+      if undo_manager.can_undo() then {
+         undo_manager.undo()
+         changed := 1
+      }
+      end_handle(e)
+   end
+
+   method handle_redo()
+      start_handle(e)
+      if undo_manager.can_redo() then {
+         undo_manager.redo()
+         changed := 1
+      }
+      end_handle(e)
    end
 
    method handle_event(e)
@@ -322,17 +421,19 @@ class TextField : Component(
          # Object has focus.  Handle various key presses.
          #
          return case e of {
-            "\b" : handle_delete1(e)
+            "\b" : handle_delete_left(e)
             "\r" | "\l": handle_return(e)
             "\^k" : handle_delete_line(e)
             Key_Right : handle_key_right(e)
             Key_Left : handle_key_left(e)
             "\^a" : handle_select_all(e)
             "\^e" : handle_end_of_line(e)
-            "\d" | "\^d" : handle_delete_2(e)
+            "\d" | "\^d" : handle_delete_right(e)
             "\^x" :  handle_cut()
             "\^c" :  handle_copy()
             "\^v" :  handle_paste()
+            "\^z" :  handle_undo()
+            "\^y" :  handle_redo()
             default : handle_default(e)
          }
       }
@@ -346,14 +447,13 @@ class TextField : Component(
       }
    end
 
-   method delete_region()
-      if self.mark < self.cursor then {
-         self.contents[self.mark:self.cursor] := ""
-         self.cursor := self.mark
-      } else {
-         self.contents[self.cursor:self.mark] := ""
-      }
-      self.mark := &null
+   method delete_region(e)
+      local ed
+      ed := TextFieldDeleteRegionEdit(self)
+      ed.redo()
+      undo_manager.add_edit(ed)
+      clear_mark()
+      changed := 1
    end
 
    method has_region()
@@ -369,14 +469,13 @@ class TextField : Component(
    end
 
    method lost_focus(e)
-      self.mark := &null
+      clear_mark()
       self.Component.lost_focus(e)
    end
 
    method display(buffer_flag)
       local r
 
-      #write("cursor=",cursor," mark=",mark," rm=",rightmost," lm=",leftmost)
       fh := WAttrib(self.cwin, "fheight")
 
       spc := self.tw
@@ -482,9 +581,158 @@ class TextField : Component(
 
    initially(a[])
       self.Component.initially()
+      undo_manager := UndoManager()
       filter := printable := cset(&cset[33:0])
       self.accepts_focus_flag := 1
       self.set_contents("")
       self.draw_border_flag := 1
       set_fields(a)
 end
+
+class TextFieldEdit:UndoableEdit(parent,
+                                 cursor, 
+                                 mark)
+   method redo()
+      restore()
+      self.redo_impl()
+   end
+
+   method undo()
+      self.undo_impl()
+      restore()
+   end
+
+   abstract method redo_impl()
+   abstract method undo_impl()
+
+   method save()
+      self.cursor := parent.cursor
+      self.mark := parent.mark
+   end
+
+   method restore()
+      parent.cursor := self.cursor
+      parent.mark := self.mark
+   end
+
+   initially(parent)
+      self.parent := parent
+      save()
+end
+
+class TextFieldDeleteRightEdit:TextFieldEdit(ch)
+   method redo_impl()
+      ch := parent.contents[parent.cursor]
+      parent.contents[parent.cursor] := ""
+   end
+
+   method undo_impl()
+      if self.cursor > *parent.contents then
+         parent.contents ||:= ch
+      else
+         parent.contents[self.cursor] := ch || parent.contents[self.cursor]
+   end
+
+   initially(parent)
+      self.TextFieldEdit.initially(parent)
+end
+
+class TextFieldDeleteLeftEdit:TextFieldEdit(ch)
+   method redo_impl()
+      ch := parent.contents[parent.cursor - 1]
+      parent.contents[parent.cursor - 1] := ""
+      parent.cursor -:= 1
+   end
+
+   method undo_impl()
+      if self.cursor - 1 > *parent.contents then
+         parent.contents ||:= ch
+      else
+         parent.contents[self.cursor - 1] := ch || parent.contents[self.cursor - 1]
+   end
+
+   initially(parent)
+      self.TextFieldEdit.initially(parent)
+end
+
+class TextFieldDeleteRegionEdit:TextFieldEdit(pre)
+   method redo_impl()
+      if parent.mark < parent.cursor then {
+         pre := parent.contents[parent.mark:parent.cursor]
+         parent.contents[parent.mark:parent.cursor] := ""
+         parent.cursor := parent.mark
+      } else {
+         pre := parent.contents[parent.cursor:parent.mark]
+         parent.contents[parent.cursor:parent.mark] := ""
+      }
+   end
+
+   method undo_impl()
+      if self.mark < self.cursor then {
+         parent.contents := parent.contents[1:self.mark] || pre || parent.contents[self.mark:0]
+      } else {
+         parent.contents := parent.contents[1:self.cursor] || pre || parent.contents[self.cursor:0]
+      }
+   end
+
+   initially(parent)
+      self.TextFieldEdit.initially(parent)
+end
+
+class TextFieldPasteEdit:TextFieldEdit(s)
+   method redo_impl()
+      parent.contents := parent.contents[1:parent.cursor] || s || parent.contents[parent.cursor:0]
+      parent.cursor +:= *s
+   end
+
+   method undo_impl()
+      parent.contents[self.cursor +: *s] := ""
+   end
+
+   initially(parent, s)
+      self.TextFieldEdit.initially(parent)
+      self.s := s
+end
+
+class TextFieldDefaultEdit:TextFieldEdit(s)
+   method add_edit(other)
+      if is_instance(other, "gui__TextFieldDefaultEdit") &
+         (other.cursor = self.cursor + *s) then {
+            s ||:= other.s
+            return
+      }
+   end
+
+   method redo_impl()
+      if parent.cursor = 1 then
+         parent.contents := s || parent.contents
+      else
+         parent.contents[parent.cursor - 1] ||:= s
+      parent.cursor +:= *s
+      parent.clear_mark()
+   end
+
+   method undo_impl()
+      parent.contents[self.cursor +: *s] := ""
+   end
+
+   initially(parent, e)
+      self.TextFieldEdit.initially(parent)
+      s := e
+end
+
+class TextFieldDeleteLineEdit:TextFieldEdit(pre)
+   method redo_impl()
+      pre := parent.contents
+      parent.contents := ""
+      parent.cursor := 1
+   end
+
+   method undo_impl()
+      parent.contents := pre
+   end
+
+   initially(parent)
+      self.TextFieldEdit.initially(parent)
+end
+

@@ -978,16 +978,12 @@ Deliberate Syntax Error
    if (noerrbuf)
       setbuf(stderr, NULL);
    else {
-#ifdef MSWindows
-      char buf[BUFSIZ];
-#else					/* MSWindows */
-      char *buf;
-
-      buf = (char *)malloc((msize)BUFSIZ);
+#ifndef MSWindows
+      char *buf = (char *)malloc((msize)BUFSIZ);
       if (buf == NULL)
 	 fatalerr(305, NULL);
-#endif					/* MSWindows */
       setbuf(stderr, buf);
+#endif					/* MSWindows */
       }
 #endif					/* !HIGHC_386 */
 #endif					/* MSDOS */

@@ -274,6 +274,22 @@ extern struct descrip amperErrno;
       extern char *ConsoleStringBufPtr;
    #endif				/* ConsoleWindow */
 
+#ifdef Graphics3D
+   extern struct descrip gl_torus;
+   extern struct descrip gl_cube;
+   extern struct descrip gl_sphere;
+   extern struct descrip gl_cylinder;
+   extern struct descrip gl_disk;
+   extern struct descrip gl_rotate;
+   extern struct descrip gl_translate;
+   extern struct descrip gl_scale;
+   extern struct descrip gl_popmatrix;
+   extern struct descrip gl_pushmatrix;
+   extern struct descrip gl_identity;
+   extern struct descrip gl_matrixmode;
+   extern struct descrip gl_texture;
+#endif
+
 #endif					/* Graphics */
 
 #ifdef PosixFns

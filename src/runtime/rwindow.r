@@ -2915,39 +2915,39 @@ char * abuf;
       case A_EYEDIR:
    	 AttemptAttr(seteyedir(w, val));
 	 break;
-	case A_LIGHT: case A_LIGHT0:
+      case A_LIGHT: case A_LIGHT0:
 	 AttemptAttr(setlight(w, val, GL_LIGHT0));
 	 break;
-	case A_LIGHT1:
+      case A_LIGHT1:
 	 AttemptAttr(setlight(w, val, GL_LIGHT1));
 	 break;
-	case A_LIGHT2:
-        AttemptAttr(setlight(w, val, GL_LIGHT2));
+      case A_LIGHT2:
+	 AttemptAttr(setlight(w, val, GL_LIGHT2));
 	 break;
-	case A_LIGHT3:
-       AttemptAttr( setlight(w, val, GL_LIGHT3));
+      case A_LIGHT3:
+	 AttemptAttr( setlight(w, val, GL_LIGHT3));
 	 break;
-	case A_LIGHT4:
-       AttemptAttr(setlight(w, val, GL_LIGHT4));
+      case A_LIGHT4:
+	 AttemptAttr(setlight(w, val, GL_LIGHT4));
 	 break;
-	case A_LIGHT5:
-        AttemptAttr(setlight(w, val, GL_LIGHT5));
+      case A_LIGHT5:
+	 AttemptAttr(setlight(w, val, GL_LIGHT5));
 	 break;
-	case A_LIGHT6:
-        AttemptAttr(setlight(w, val, GL_LIGHT6));
+      case A_LIGHT6:
+	 AttemptAttr(setlight(w, val, GL_LIGHT6));
 	 break;
-	case A_LIGHT7:
-       AttemptAttr( setlight(w, val, GL_LIGHT7));
+      case A_LIGHT7:
+	 AttemptAttr( setlight(w, val, GL_LIGHT7));
 	 break;
-	case A_TEXTURE:
-        AttemptAttr(settexture(w, val)); 
-       break;
+      case A_TEXTURE:
+	 AttemptAttr(settexture(w, StrLoc(d), StrLen(d))); 
+	 break;
       case A_TEXCOORD:
-	  AttemptAttr(settexcoords(w, val));
-        break;
+	 AttemptAttr(settexcoords(w, val));
+	 break;
       case A_TEXMODE:
-	  AttemptAttr(settexmode(w, val)); 
-        break;
+	 AttemptAttr(settexmode(w, val)); 
+	 break;
 #endif					/* Graphics3D */
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
@@ -2992,7 +2992,7 @@ char * abuf;
          }
       case A_TITLEBAR: {
 	 int on_off;
-         if (w->window->pix != NULL) return Failed;
+         if (w->window->pix != 0) return Failed;
 	 if (strcmp(val, "on") & strcmp(val, "off"))
 	    return Failed;
          if (ATOBOOL(val)) {

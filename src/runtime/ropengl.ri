@@ -3,6 +3,7 @@
  *     opengl support routines
  */
 int texture(int width, int height, GLubyte *tex, int texmode);
+wtp lookup_texture_byname(wbp w, char *name, int len, int type);
 
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
@@ -46,7 +47,11 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    w->context->texmode = 0;
    w->context->numtexcoords = 0;
    w->context->texName = malloc(16 * sizeof(GLuint));
+   if (w->context->texName == NULL) return NULL;
    w->context->nalced = 16;
+   w->context->texcoords = malloc(256 * sizeof (double));
+   if (w->context->texcoords == NULL) return NULL;
+   w->context->ntexcoordsalced = 256;
    w->context->ntextures = 0;
    w->context->curtexture = -1;
 
@@ -155,9 +160,10 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glEnd();
            }
          else {
-            /* if there are not the same number of
-               texture coordinate pairs  as there are
-               vertices, fail */
+            /*
+	     * If there are not the same number of texture coordinate pairs
+	     * as there are vertices, fail.
+	     */
             if (num/3 > wc->numtexcoords/2)
               return Failed;
             glBegin(type);
@@ -189,9 +195,11 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
               glVertex4d(v[i], v[i+1], v[i+2], v[i+3]);
             glEnd();
            }
-          else {
-         /* fail if the number of vertices is more than
-             the number of texture coordinate pairs */
+	 else {
+	    /*
+	     * fail if the number of vertices is more than
+	     * the number of texture coordinate pairs
+	     */
             if (num/4 > wc->numtexcoords/2)
                return Failed;
             glBegin(type);
@@ -645,7 +653,8 @@ int traversefunctionlist(wbp w)
    wcp wc = w->context;
    double x, y, z, r1, r2, h, a1, a2;
    double *v, v2[256];
-   int i, j, dim, num;
+   C_integer num, dim;
+   int i, j;
    int elements = list->size;
    tended char *temp;
    tended struct b_record *rp;
@@ -806,8 +815,9 @@ free_v_and_fail:
 
       /* Texcoord() or WAttrib("texcoord=...") */
       else if(!strcmp(fname.vword.sptr, "Texcoord")) {
-         /* first element tells us if opengl generates
-            texture coordinates */
+         /*
+	  * first element tells us if opengl generates texture coordinates
+	  */
          c_traverse(funclist, &var1, 1);
          cnv:C_integer(var1, num);
          if (num) {
@@ -822,8 +832,7 @@ free_v_and_fail:
             glDisable(GL_TEXTURE_GEN_T);
             wc->autogen = 0;
 
-           /* traverse the list and set the texture
-                 coordinates */
+           /* traverse the list and set the texture coordinates */
             for (j = 0; j < (funclist->size)-2; j++) {
                c_traverse(funclist, &var2, j+2);
                cnv:C_double(var2, wc->texcoords[j]);
@@ -893,7 +902,7 @@ free_v_and_fail:
 int determinematerial(struct b_list *list)
 {
    struct descrip mat, var1, var2, var3;
-   int r, g, b, i;
+   C_integer r, g, b;
    tended char *temp;
    GLfloat color[4];
 
@@ -1501,7 +1510,14 @@ int settexcoords(wbp w, char* s)
          val.dword = strlen(s3);
          val.vword.sptr = strdup(s3);
          c_put(&f, &val);
-	 if (j >= MAXTEXCOORDS) return Failed;
+	 if (j >= w->context->ntexcoordsalced) {
+	    w->context->texcoords = realloc(w->context->texcoords,
+					    (w->context->ntexcoordsalced +
+					     strlen(s2)/2) * sizeof(double));
+	    if (w->context->texcoords == NULL)
+	       return Failed;
+	    w->context->ntexcoordsalced += (strlen(s2)/2);
+	    }
          w->context->texcoords[j] = atof(s3);
          j++;
          s2++;
@@ -1768,16 +1784,17 @@ int seteye(wbp w, char *s)
 }
 
 /* set a texture */
-int settexture(wbp w, char* str)
+int settexture(wbp w, char* str, int len)
 {
    wcp wc = w->context;
    char* s;
-   char filename[MaxFileName +1];
    int i, nfields;
    struct descrip f;
    struct descrip d;
    tended struct b_record *rp;
    static dptr constr;
+   wtp wt;
+   int ttype;
 
    if (!constr &&  !(constr = rec_structor3d("gl_texture")))
       syserr("failed to create opengl record constructor");
@@ -1792,33 +1809,26 @@ int settexture(wbp w, char* str)
    f.vword.bptr = (union block *)rp;
    MakeStr("Texture", 7, &(rp->fields[0])); 
 
-   /*
-    * To redraw the window we must keep track of the texture name assigned
-    * to it by opengl. This name is stored in wc->texName[wc->ntextures].
-    * So by remembering wc->ntextures we can recover the name of the texture.
-    */
-   MakeInt(wc->ntextures, &(rp->fields[1]));
-   c_put(&(w->window->funclist), &f);
-   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
-   wc->curtexture = wc->ntextures;
-   wc->ntextures++;
-   if (wc->ntextures > wc->nalced) {
-      wc->nalced *= 2;
-      wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
-      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
-      }
-
    s=str;
    while(isspace(*s)) s++;
    while(isdigit(*s)) s++;
    while(isspace(*s)) s++;
    if (*s == ',')  /* must be an image string */
-      i = imagestr(w, str);
-   else  {  /* it is a file name */
-      strncpy(filename, str, MaxFileName);
-      filename[MaxFileName] = '\0';
-      i = fileimage(w, filename);
-      }
+      ttype = 3;
+   else		  /* it is a file name */
+      ttype = 1;
+
+   wt = lookup_texture_byname(w, str, len, ttype);
+   if (wt == NULL) return Failed;
+
+   /*
+    * To redraw the window we must keep track of the "texture name" assigned
+    * to it by opengl. This name is stored in wc->texName[wc->ntextures].
+    * So by remembering wc->ntextures we can recover the name of the texture.
+    */
+   MakeInt(wc->curtexture, &(rp->fields[1]));
+   c_put(&(w->window->funclist), &f);
+
    if (i == Succeeded)
       return Succeeded;
    else
@@ -2397,4 +2407,59 @@ dptr rec_structor3d(char *name)
 #endif					/* Graphics3D */
 
    return 0;
+}
+
+wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
+{
+   char filename[MaxFileName +1];
+   wcp wc = w->context;
+   wtp wt = wc->textures, wt2;
+   int i;
+   while (wt) {
+      if (wt->textype == ttype) {
+	 switch (ttype) {
+	 case 1: /* file */
+	    if ((StrLen(wt->d) == len) && strncmp(StrLoc(wt->d),name,len)==0) {
+	       wc->curtexture = wt->texindex;
+	       return wt;
+	       }
+	    break;
+	 case 2: /* window */
+	    break;
+	 case 3: /* string */
+	    break;
+	    }
+	 }
+      wt = wt->next;
+      }
+   GRFX_ALLOC(wt2, _wtexture);
+   wt2->textype = ttype;
+   StrLoc(wt2->d) = strdup(name);
+   StrLen(wt2->d) = len;
+
+   wt2->next = wc->textures;
+   if (wc->textures) {
+      wc->textures->previous = wt2;
+      }
+   wc->textures = wt2;
+
+   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+   wc->curtexture = wt2->texindex = wc->ntextures;
+   wc->ntextures++;
+   if (wc->ntextures > wc->nalced) {
+      wc->nalced *= 2;
+      wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
+      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
+      }
+
+   if (ttype == 3)
+      i = imagestr(w, name);
+   else {
+      strncpy(filename, name, MaxFileName);
+      filename[MaxFileName] = '\0';
+      i = fileimage(w, filename);
+      }
+   if (i == Succeeded)
+      return wt2;
+   else return NULL;
 }

@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.6 2004-05-09 20:03:17 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.7 2004-05-16 09:21:39 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -651,7 +651,7 @@ class EditableTextList : LineBasedScrollArea(
       self.constrain_line()
    end
 
-   method draw(subject_x, subject_y)
+   method draw(subject_x, subject_y, vx, vy, vw, vh)
       local rev, first_line, last_line, xp, yp, i
 
       #
@@ -664,12 +664,12 @@ class EditableTextList : LineBasedScrollArea(
       #
       # Where to draw them
       #
-      yp := self.view.y + self.line_height / 2
+      yp := vy + self.line_height / 2
 
       #
       # Left offset
       #
-      xp := self.view.x - subject_x
+      xp := vx - subject_x
 
       rev := Clone(self.cbwin, "drawop=reverse")
 

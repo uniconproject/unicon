@@ -3,7 +3,7 @@
  * Initialization, termination, and such.
  * Contents: readhdr, init/icon_init, envset, env_err, env_int,
  *  fpe_trap, inttrag, segvtrap, error, syserr, c_exit, err,
- *  fatalerr, pstrnmcmp, datainit, [loadicode, savepstate, loadpstate]
+ *  fatalerr, pstrnmcmp, datainit, [loadicode]
  */
 
 #if !COMPILER
@@ -671,6 +671,8 @@ char *argv[];
    rootpstate.List_ser  = 1;
    rootpstate.Set_ser   = 1;
    rootpstate.Table_ser = 1;
+   rootpstate.Kywd_time_elsewhere = 0;
+   rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
 
@@ -1936,6 +1938,9 @@ C_integer bs, ss, stk;
    pstate->List_ser = 1;
    pstate->Set_ser = 1;
    pstate->Table_ser = 1;
+
+   pstate->Kywd_time_elsewhere = millisec();
+   pstate->Kywd_time_out = 0;
 
    pstate->stringtotal = pstate->blocktotal =
    pstate->colltot     = pstate->collstat   =

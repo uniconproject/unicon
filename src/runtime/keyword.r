@@ -624,7 +624,14 @@ keyword{1} time
       return integer
       }
    inline {
+#ifdef MultiThread
+      /*
+       * &time in this program = total time - time spent in other programs
+       */
+      return C_integer millisec() - curpstate->Kywd_time_elsewhere;
+#else					/* MultiThread */
       return C_integer millisec();
+#endif					/* MultiThread */
       }
 end
 

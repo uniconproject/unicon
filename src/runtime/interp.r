@@ -2073,7 +2073,6 @@ register struct b_coexpr *ncp;
 {
    register struct b_coexpr *ccp = (struct b_coexpr *)BlkLoc(k_current);
    int first, rv;
-
    dptr savedtvalloc = NULL;
 
    /*
@@ -2101,7 +2100,12 @@ register struct b_coexpr *ncp;
      savedtvalloc = ccp->tvalloc;
    }
 
+   ccp->program->Kywd_time_out = millisec();
+
    rv = co_chng(ncp, tvalp, rslt, A_MTEvent, first);
+
+   ccp->program->Kywd_time_elsewhere +=
+      millisec() - ccp->program->Kywd_time_out;
 
    if ((savedtvalloc != NULL) && (savedtvalloc != ccp->tvalloc)) {
 #if 0

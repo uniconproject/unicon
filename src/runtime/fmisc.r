@@ -194,8 +194,9 @@ function{1} copy(x)
             }
       table: {
          body {
-	    if (cptable(&x, &result, BlkLoc(x)->table.size) == Error)
+	    if (cptable(&x, &result, BlkLoc(x)->table.size) == Error) {
 	       runerr(0);
+	       }
 	    return result;
             }
          }
@@ -2047,7 +2048,13 @@ function{*} keyword(keyname,ce)
 	 return kywdsubj(&(p->ksub));
 	 }
       else if (strcmp(kname,"time") == 0) {
-	 return C_integer millisec(); /* need to subtract out monitor time */
+	 /*
+	  * &time in this program = total time - time spent in other programs
+	  */
+	 if (p != curpstate)
+	    return C_integer p->Kywd_time_out - p->Kywd_time_elsewhere;
+	 else
+	    return C_integer millisec() - p->Kywd_time_elsewhere;
 	 }
       else if (strcmp(kname,"trace") == 0) {
 	 return kywdint(&(p->Kywd_trc));

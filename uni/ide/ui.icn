@@ -52,8 +52,7 @@ global  targs, browser, docpath, xargs, icodename, wiconlog,
 
 global tmp
 
-class dialog : _Dialog(
-                       message_menu, classb_menu, window_menu,
+class dialog : _Dialog(message_menu, classb_menu, window_menu,
                        ViewClassNormal_menu_item, ViewClass50_menu_item, ViewClass100_menu_item,
                        ViewMsgNormal_menu_item, ViewMsg50_menu_item, ViewMsg100_menu_item,
                        ViewShowHide_menu_item, ViewFilesClass_menu_item,
@@ -765,7 +764,7 @@ $endif
          }
 
 $ifdef _UNIX
-      system("unicon -quiet " || " -o " || quotes(icodename) || " " || targs || " " || arglist || " &> "|| wiconlog, lst, 1)
+      system("unicon -quiet " || " -o " || quotes(icodename) || " " || targs || " " || arglist || " > "|| wiconlog || " 2>&1", lst, 1)
 $else
          system("wunicon -quiet -log " || quotes(wiconlog) ||
                 " -o " || quotes(icodename) || " " || targs || " " || arglist,

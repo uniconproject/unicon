@@ -2,11 +2,11 @@
 #
 #	File:     gallery.icn
 #
-#	Subject:  Program to display many .gif/.xpm files at once
+#	Subject:  Program to display many images at once
 #
 #	Author:   Gregg M. Townsend
 #
-#	Date:     August 1, 1996
+#	Date:     May 29, 2001
 #
 ############################################################################
 #
@@ -16,22 +16,33 @@
 #
 #  Usage:  gallery [-{gc}n] [-{whs}nnn] [-{rmtud}] file...
 #
-#  Gallery displays multiple image files in a single window.  GIF and
-#  XPM formats are always supported.  Raw-mode PPM files are supported
-#  if the loadfunc() library is available.  JPEG, PPM, and RLE formats
-#  are also available under Unix if the necessary conversion utilities
-#  are available in the job's search path.
+#  Gallery displays multiple images in a single window.  The images
+#  are shrunken by resampling and tiled in columns or rows.
 #
-#  When the window fills, a circle in the lower right corner indicates
-#  that you can press return for the next window.  A square appears there
-#  when there are no more images; press Q to exit.
+#  GIF and XPM format images are always supported.  JPEG format is
+#  supported when built by Jcon.  Raw-mode PPM files are supported
+#  if the v9 loadfunc() library is available.  JPEG, PPM, and RLE
+#  formats are also available under Unix if the necessary conversion
+#  utilities are available in the shell search path.
+#
+#  When the window fills, diagonal lines in the extreme corners of the
+#  window indicate that you can press Enter for the next screenful.
+#  Solid triangles appear when there are no more images; press Q to exit.
+#
+#  At either of those pauses, the clicking the left mouse button on an
+#  image displays a popup window with information about the image.  A
+#  second click dismisses the popup, as does the space bar or Enter key.
+#  The right mouse button activates the same popup momentarily until
+#  the button is released.
 #
 #  -cn or -gn selects the color palette used; -c6 is the default.
 #  (However, -g30 may look better even for color images.)
+#  The color palette is ignored when built by Jcon.
 #
 #  -wnnn sets the maximum width for displaying an image;
 #  -hnnn sets the maximum height.  -snnn sets both.
-#  By default, sizes are set to fit all images in a single window.
+#  By default, sizes are chosen automatically, subject to a minimum
+#  size of 32x32, to allow all images to fit in a single window.
 #
 #  -r arranges images in rows instead of columns.
 #  -m maximizes the window size before displaying images.
@@ -50,11 +61,17 @@
 ############################################################################
 
 
+#  TO DO:
+#
+#  improve prompts -- something more obvious & intuitive
+
+
 link graphics
 link imscolor
 link options
 link io
 link random
+
 
 $undef _DYNAMIC_LOADING		# delete this to enable direct PPM reading
 
@@ -70,6 +87,8 @@ $define MinWidth 32		# minimum width if auto-scaled
 $define MinHeight 32		# minimum height if auto-scaled
 
 
+record area(fname, x, y, w, h, iw, ih)
+
 global opts			# command options
 global tempname			# temporary file name
 
@@ -78,18 +97,20 @@ global pal			# selected palette (if any)
 global ww, wh, fh, fw		# window dimensions
 global maxw, maxh		# maximum size of displayed image
 
+global areas			# areas used for display
+
 
 
 procedure main(args)
-   local cw, ch, bigh, bigw, x, y, w, h, aspr, aspmax, horz
-   local fname, f, tw, s, nchars, nlines, imwin
+   local cw, ch, bigh, bigw, x, y, w, h, gg, aspr, aspmax, horz
+   local fname, label, f, tw, s, nchars, nlines, imwin, e
 
    # generate a random name for the temporary file
    randomize()
    tempname := "/tmp/gal" || right(?99999, 5, "0") || ".tmp"
 
    # open the window and process options
-   Window("size=800,500", "bg=grayish-white", "font=sans,8", args)
+   Window("size=800,500", "bg=pale gray", "font=sans,8", args)
    opts := options(args, "g+c+w+h+s+rmtud")
    if \opts["m"] then
       WAttrib("canvas=maximal")
@@ -124,6 +145,7 @@ procedure main(args)
    # Display the files.
    x := y := Gap
    bigw := bigh := 0
+   areas := list()
    every fname := !args do {
 
       close(\f)
@@ -141,7 +163,7 @@ procedure main(args)
 
       # Read the image, full sized, into a scratch canvas
       if not (imwin := rdimage(fname, f)) then
-	 { write(&errout, fname, ": can't decode"); next }
+         { write(&errout, fname, ": can't decode"); next }
 
       # Scale the image to the desired size
       w := WAttrib(imwin, "width")
@@ -149,15 +171,15 @@ procedure main(args)
       aspr := real(w) / real(h)
       if w > maxw | h > maxh then {
          if aspr > aspmax then {
-	    w := maxw
+            w := maxw
             h := maxw / aspr
-	    }
+            }
          else {
             w := maxh * aspr
-	    h := maxh
-	    }
-	 w <:= 1
-	 h <:= 1
+            h := maxh
+            }
+         w <:= 1
+         h <:= 1
          Zoom(imwin, , , , , , , w, h)
          }
 
@@ -166,44 +188,51 @@ procedure main(args)
          fname ? {
             while tab(upto('/') + 1)
             ="cache"
-            fname := tab(upto('.') | 0)
+            label := tab(upto('.') | 0)
             }
+      else
+         label := fname
 
       # Calculate the area needed for display
       cw := w					# cell width
       if /opts["u"] then
-         cw <:= TextWidth(fname)		# ensure room for label
+         cw <:= TextWidth(label)		# ensure room for label
       ch := h + fh				# cell height
 
       # Place the new image on a new row or new window if needed.
       if x + cw > ww | y + ch > wh then {	# if row or column is full
 
-	 if /opts["r"] then {
+         if /opts["r"] then {
             x +:= bigw + Gap			# start new column
             y := Gap
-	    bigw := 0
-	    }
-	 else {
+            bigw := 0
+            }
+         else {
             x := Gap				# start new row
             y +:= bigh + Gap
-	    bigh := 0
-	    }
+            bigh := 0
+            }
 
          if x + cw > ww | y + ch > wh then {
-	    # no room for new row or column
-	    pause()				# wait for OK
+            # no room for new row or column
+            pause()				# wait for OK
             EraseArea()				# clear the window
             ww := WAttrib("width")
             wh := WAttrib("height")
             x := y := Gap
-	    bigw := bigh := 0
+            bigw := bigh := 0
+            areas := list()
             }
          }
 
       # Draw the image and its label.
       CopyArea(imwin, &window, 0, 0, w, h, x, y)
       if /opts["u"] then
-         DrawString(x, y + h + fh - WAttrib("descent"), fname)
+         DrawString(x, y + h + fh - WAttrib("descent"), label)
+
+      # Record the space it occupies
+      put(areas, area(fname, x - Gap / 2, y - Gap / 2, w + Gap, h + fh + Gap,
+         WAttrib(imwin, "width"), WAttrib(imwin, "height")))
 
       # Move on to next position.
       if /opts["r"] then
@@ -217,9 +246,20 @@ procedure main(args)
    # All images have been displayed.  Wait for "q" before exiting.
    close(\f)
    close(\imwin)
-   FillRectangle(ww - 2.5 * Gap, wh - 2.5 * Gap, 2 * Gap, 2 * Gap)
-   FillRectangle(1, 1, 2 * Gap, 2 * Gap)
-   WDone()				# await final "q"
+
+   w := WAttrib("width")
+   h := WAttrib("height")
+   gg := 2 * Gap - 1
+   FillPolygon(0, 0, 0, gg - 1, gg - 1, 0)
+   FillPolygon(0, h, 0, h - gg, gg - 1, h - 1)
+   FillPolygon(w, 0, w - gg, 0, w - 1, gg - 1)
+   FillPolygon(w, h, w - gg, h - 1, w - 1, h - gg)
+
+
+   while e := Event() do case e of {		# wait for event
+      QuitEvents():		exit()		# quit on "q" etc
+      &lpress | &rpress:	info(e)		# display info about image
+      }
 end
 
 
@@ -241,7 +281,7 @@ procedure layout(n)
    maxh <:= MinHeight
 
    if \opts["d"] then
-      write(&errout, "npix=", *n, " aspf=", aspf, " nhigh=", nhigh,
+      write(&errout, "npix=", n, " aspf=", aspf, " nhigh=", nhigh,
          " nwide=", nwide, " maxh=", maxh, " maxw=", maxw)
    return
 end
@@ -251,17 +291,93 @@ end
 ## pause() -- wait for clearance to start a new window
 
 procedure pause()
-   local e
+   local w, h, gg, e
 
    while *Pending() > 0 do		# consume and ignore older events
       Event()
-   FillCircle(Gap, Gap, Gap, Gap)
-   FillCircle(WAttrib("width") - Gap, WAttrib("height") - Gap, Gap)
-					# post circle to indicate wait
-   while e := Event() do case e of {
-      QuitEvents():	exit()		# quit on "q" etc
-      !" \t\r\n":	break		# continue on "\r" etc
+
+   w := WAttrib("width")
+   h := WAttrib("height")
+   gg := 2 * Gap - 1
+   DrawLine(0, gg - 1, gg - 1, 0)	# draw diagonals to indicate pause
+   DrawLine(0, h - gg, gg - 1, h - 1)
+   DrawLine(w - gg, 0, w - 1, gg - 1)
+   DrawLine(w - gg, h - 1, w - 1, h - gg)
+
+   while e := Event() do case e of {		# wait for event
+      QuitEvents():		exit()		# quit on "q" etc
+      !" \t\r\n":		break		# continue on "\r" etc
+      &lpress | &rpress:	info(e)		# display info about image
       }
+   return
+end
+
+
+
+## info(event) -- display info about image under the mouse
+
+$define InfoMargin 10	# margin around image
+$define InfoHeight 80	# text area height
+$define InfoWidth 300	# text area width
+
+procedure info(e)
+   local a, w, h, wmin, wmax, hmax
+
+   wmin := InfoWidth + 2 * InfoMargin
+   wmax := WAttrib("width") - 4 * InfoMargin
+   hmax := WAttrib("height") - 5 * InfoMargin - InfoHeight
+
+   every a := !areas do
+      if InBounds(a.x, a.y, a.w, a.h) then {
+         w := a.iw
+         h := a.ih
+         if w >:= wmax then
+            h := a.ih * w / a.iw
+         if h >:= hmax then
+            w := a.iw * h / a.ih
+         wmin <:= w + 2 * InfoMargin
+         Popup(, , wmin, h + InfoHeight + 3 * InfoMargin, popinfo, a, e, w, h)
+         break
+         }
+   return
+end
+
+
+
+##  popinfo(area, event, w, h) -- display info in the popup
+#
+#   if event was &rpress, wait for &rrelease
+#   otherwise wait for &lpress, Enter, or space to dismiss
+
+procedure popinfo(a, e, w, h)
+   local f, i, n, x, y
+
+   f := open(a.fname)
+   seek(f, 0)
+   n := where(f)
+   seek(f, 1)
+   i := rdimage(a.fname, f) | fail
+
+   x := (WAttrib("clipw") - w) / 2
+   y := InfoMargin
+   Zoom(i, &window, , , , , x, y, w, h)
+
+   Font("sans,bold,12")
+   WAttrib("leading=16")
+   GotoXY(0, InfoMargin + h + InfoMargin + WAttrib("ascent"))
+   WWrite("    ", a.fname)
+   WWrite("    ", a.iw, " x ", a.ih, " pixels")
+   WWrite("    ", n, " bytes")
+   WWrite("    ", iformat(f), " format")
+
+   if e === &rpress then
+      until Event() === &rrelease		# dismiss upon button release
+   else {
+      until Event() === &lrelease		# consume matching release
+      until Event() === &lrelease | !" \n\r"	# wait for dismissal
+   }
+
+   WClose(i)
    return
 end
 
@@ -270,27 +386,35 @@ end
 ## rdimage(fname, f) -- read image into scratch window
 
 procedure rdimage(fname, f)
+   return case iformat(f) of {
+      "GIF":		gifread(f, fname, pal)
+      "JPEG":		jpegread(f, fname, pal)
+      "PBM" | "PGM":	pnmread(f, fname, pal)
+      "PPM":		ppmread(f, fname, pal)
+      "RLE":		rleread(f, fname, pal)
+      "XPM":		xpmread(f, fname, pal)
+      }
+end
+
+
+
+## iformat(f) -- return image format of file f
+
+procedure iformat(f)
    local s
 
+   seek(f, 1)
    s := reads(f, 1024) | fail
    seek(f, 1)
    s ? {
-      if ="GIF8" then
-         return gifread(f, fname, pal)
-      else if ="\xFF\xD8\xFF\xE0" then
-         return jpegread(f, fname, pal)
-$ifdef _DYNAMIC_LOADING
-      else if ="P6" then
-         return ppmread(f, fname, pal)
-$endif
-      else if ="P" & any('123456') then
-         return pnmread(f, fname, pal)
-      else if ="\x52\xCC" then
-         return rleread(f, fname, pal)
-      else if find("XPM") then
-         return xpmread(f, fname, pal)
-      else
-	 fail
+      if ="GIF8"		then return "GIF"
+      if ="\xFF\xD8\xFF"	then return "JPEG"
+      if =("P1" | "P4")		then return "PBM"
+      if =("P2" | "P5")		then return "PGM"
+      if =("P3" | "P6")		then return "PPM"
+      if ="\x52\xCC"		then return "RLE"
+      if find("XPM")		then return "XPM"
+      fail
       }
 end
 
@@ -323,6 +447,10 @@ end
 procedure gifread(f, fname, pal)
    local w, h, win
 
+$ifdef _JAVA		# no palettes, no problem
+   return WOpen("canvas=hidden", "bg=" || WAttrib("bg"), "image=" || fname)
+$else
+
    (reads(f, 10) | fail) ? {		# read header
       ="GIF8" | fail
       move(2)
@@ -335,6 +463,8 @@ procedure gifread(f, fname, pal)
       return win
    close(win)
    fail
+
+$endif
 end
 
 
@@ -342,13 +472,33 @@ end
 ## jpegread(f, fname, pal) -- read JPEG image
 
 procedure jpegread(f, fname, pal)
+
+$ifdef _JAVA
+   return WOpen("canvas=hidden", "bg=" || WAttrib("bg"), "image=" || fname)
+$else
    needprog("djpeg") | fail
    return filter("djpeg -g 2>/dev/null", fname, pal)
+$endif
+
 end
 
 
 
-## pnmread(f, fname, pal) -- read PPM/PGM/PBM image
+## ppmread(f, fname, pal) -- read PPM file
+
+procedure ppmread(f, fname, pal)
+
+$ifdef _DYNAMIC_LOADING
+   return rawppm(f, fname, pal) | pnmread(f, fname, pal)
+$else
+   return pnmread(f, fname, pal)
+$endif
+
+end
+
+
+
+## pnmread(f, fname, pal) -- read PPM/PGM/PBM image by spawning converter
 
 procedure pnmread(f, fname, pal)
    needprog("ppmquant") | fail
@@ -358,9 +508,11 @@ end
 
 
 
-## ppmread(f, fname, pal) -- read raw-mode PPM file f, named fname
+$ifdef _DYNAMIC_LOADING
 
-procedure ppmread(f, fname, pal)
+## rawppm(f, fname, pal) -- read raw-mode PPM file f, named fname
+
+procedure rawppm(f, fname, pal)
    local w, h, s, win
 
    s := ""
@@ -371,6 +523,8 @@ procedure ppmread(f, fname, pal)
    DrawImage(win, 0, 0, ppmimage(s, pal, ""))
    return win
 end
+
+$endif  # _DYNAMIC_LOADING
 
 
 

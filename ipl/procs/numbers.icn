@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     July 3, 2000
+#	Date:     June 10, 2001
 #
 ############################################################################
 #
@@ -44,7 +44,7 @@
 #			positions decimal point at i in real number r in
 #			field of width j.
 #
-#	digprod(i)	produce of digits of i
+#	digprod(i)	product of digits of i
 #
 #	digred(i)	reduction of number by adding digits until one digit is
 #			reached.
@@ -86,7 +86,7 @@
 #
 #	lcm(i, j)	returns the least common multiple of i and j.
 #
-#	lcml | L	returns the least common multiple of the integers
+#	lcml ! L	returns the least common multiple of the integers
 #			in the list L.
 #
 #	mantissa(r)	mantissa (fractional part) of r.
@@ -97,7 +97,7 @@
 #
 #	mdr(i)		multiplicative digital root of i
 #
-#	min | L		produces minimum of numbers in L.	
+#	min ! L		produces minimum of numbers in L.	
 #
 #	mod1(i, m)	residue for 1-based indexing.
 #
@@ -109,6 +109,8 @@
 #	roman(i)	converts i to Roman numerals.
 #
 #	round(r)	returns nearest integer to r.
+#
+#	sigma(i)	synonym for digroot(i)
 #
 #	sign(r)		returns sign of r.
 #
@@ -122,10 +124,11 @@
 #
 ############################################################################
 #
-#	Links:  strings
+#	Links:  factors, strings
 #	
 ############################################################################
 
+link factors
 link strings
 
 procedure adp(i)		#: additive digital persistence
@@ -200,34 +203,26 @@ procedure commas(s)		#: insert commas in number
 end
 
 procedure decimal(i, j)		#: decimal expansion of rational
-   local head, result, remainders, count
+   local head, tail, numers, count
 
    head := (i / j) || "."
-
-   result := ""
-
-   remainders := table()
+   tail := ""
+   numers := table()
 
    i %:= j
-   i *:= 10
-
    count := 0
 
    while i > 0 do {
-      count +:= 1
-      result ||:= i / j
-      i %:= j
-      if member(remainders, i) then {	# been here; done that
-         result ?:=  {
-            move(remainders[i] - 1) || "[" || tab(-1) || "]"
-            }
-         break
-         }
-      else insert(remainders, i, count)
+      numers[i] := count
       i *:= 10
+      tail ||:= i / j
+      i %:= j
+      if \numers[i] then	# been here; done that
+	 return head || (tail ? (move(numers[i]) || "[" || tab(0) || "]"))
+      count +:= 1
       }
 
-   return head || result
+   return head || tail
 
 end
 
@@ -259,6 +254,8 @@ procedure digred(i)		#: sum digits of integer repeated to one digit
 end
 
 procedure digroot(i)		#: digital root
+
+   if i = 0 then return 1
 
    i %:= 9
    
@@ -329,7 +326,7 @@ procedure div(i, j)		#: real division
 end
 
 procedure fix(i, j, w, d)	#: format real number
-   local r, int, dec
+   local r, int, dec, sign
 
    /j := 1
    /w := 8
@@ -600,6 +597,14 @@ end
 procedure round(r)		#: round real
 
    if r > 0 then return integer(r + 0.5) else return -integer(0.5 - r)
+
+end
+
+procedure sigma(i)		#: synonym for digroot()
+
+   sigma := digroot
+
+   return sigma(i)
 
 end
 

@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     September 12, 1997
+#	Date:     December 18, 1997
 #
 ############################################################################
 #
@@ -22,7 +22,7 @@
 #		  image file names given on command line
 #	-w i	window width, default 640
 #	-h i	window height, default 480
-#	-g r	gamma; default to default
+#	-g r	gamma; default to Icon default
 #	-m	manual mode; wait for event before going to next image
 #	-a i	automatic mode (default); hold pane for i seconds, default 2
 #	-l	list names of files on standard output
@@ -30,6 +30,7 @@
 #	-n s	prefix for image names, default "paper"
 #	-b	fill window with black at end and hold for event
 #	-v	size for video recording, 342x240; overrides other settings
+#	-M	mirror image before tiling
 #
 #  In the case of the -m option for images, if the event is a letter, the
 #  letter, a colon, and current image name is printed to standard output.
@@ -42,24 +43,26 @@
 #
 ############################################################################
 #
-#  Links:  imsutils, options, tiler, xio
+#  Links:  imsutils, mirror, options, tiler, xio
 #
 ############################################################################
 
 link imsutils
+link mirror
 link options
 link tiler
 link xio
 
 procedure main(args)
    local opts, w, h, hold, names, name, prefix, images, count, number
-   local lines, ims, bad, Hold, background, e, gamma
+   local lines, ims, bad, Hold, mir, background, e, gamma, tmp1, tmp2
 
    Hold := Event
 
-   opts := options(args, "w+h+g.ma+lisn:bv")
+   opts := options(args, "w+h+g.ma+lisn:bvM")
    w := \opts["w"] | 640
    h := \opts["h"] | 480
+   mir := \opts["M"]
    if \opts["v"] then {			# size for video recording
       w := 320
       h := 240
@@ -75,7 +78,7 @@ procedure main(args)
    number := 0
    count := -1
 
-   WOpen("size=" || w || "," || h, "fillstyle=opaquepatterned", "bg=black") |
+   WOpen("size=" || w || "," || h, "fillstyle=textured") |
       stop("*** cannot open window")
    WAttrib("gamma="|| \opts["g"])
 
@@ -97,7 +100,16 @@ procedure main(args)
          }
       }
    else {
-      every tileimg(&window, name := !args) do {
+      every name := !args do {
+         WAttrib("label=" || name)
+         if \mir then {
+            tmp1 := WOpen("image=" || name, "canvas=hidden")
+            tmp2 := mirror(tmp1)
+            tile(tmp2, &window)
+            WClose(tmp1)
+            WClose(tmp2)
+            }
+         else tileimg(&window, name)
          if \names then write(name)
          if \images then WriteImage(prefix || right(count +:= 1, 3, "0") ||
             ".gif")

@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     October 10, 1997
+#	Date:     February 16, 1999
 #
 ############################################################################
 #
@@ -65,6 +65,7 @@ global reset				# nonnull when view area needs resetting
 
 record circle(off1, off2, radius, color)
 
+$define DelayFactor	200
 $define DensityMax	100
 
 $define SliderMax	10.0		# shared knowledge
@@ -79,6 +80,7 @@ procedure main()
 end
 
 procedure init()
+   local s
 
    randomize()
 
@@ -88,7 +90,7 @@ procedure init()
    size := vidgets["region"].uw
    if vidgets["region"].uh ~= size then stop("*** improper interface layout")
 
-   delay := 0
+   delay := 0.5
    density := DensityMax / 2.0
    max_radius := SliderMax			# scaled later
    min_radius := SliderMin
@@ -97,14 +99,16 @@ procedure init()
    draw_proc := FillCircle
 
    colors := []
-   every put(colors, PaletteColor("c1", !PaletteChars("c1")))
+   s := PaletteChars("c3") -- PaletteGrays("c3")
+   every put(colors, PaletteColor("c3", !s))
 
    pause := vidgets["pause"]
 
+   VSetState(pause, 1)
    VSetState(vidgets["density"], (density / DensityMax) * SliderMax)
    VSetState(vidgets["delay"], delay)
-   VSetState(vidgets["min_radius"], min_radius)
-   VSetState(vidgets["max_radius"], max_radius)
+   VSetState(vidgets["min_radius"], min_radius * 2)
+   VSetState(vidgets["max_radius"], max_radius / 2)
    VSetState(vidgets["shape"], "discs")
 
 #  Get graphics context for drawing.
@@ -216,7 +220,7 @@ end
 
 procedure delay_cb(vidget, value)
 
-   delay := value * 200
+   delay := value * DelayFactor
 
    return
 
@@ -298,15 +302,15 @@ end
 
 #===<<vib:begin>>===	modify using vib; do not remove this marker line
 procedure ui_atts()
-   return ["size=600,455", "bg=gray-white", "label=kaleido"]
+   return ["size=600,455", "bg=pale gray", "label=kaleido"]
 end
 
 procedure ui(win, cbk)
 return vsetup(win, cbk,
    [":Sizer:::0,0,600,455:kaleido",],
-   ["delay:Slider:h:1:42,120,100,15:1.0,0.0,0.0",delay_cb],
+   ["delay:Slider:h:1:42,120,100,15:1.0,0.0,0.5",delay_cb],
    ["density:Slider:h:1:42,180,100,15:0.0,10.0,10.0",density_cb],
-   ["file:Menu:pull::12,3,36,21:File",file_cb,
+   ["file:Menu:pull::3,1,36,21:File",file_cb,
       ["snapshot @S","quit     @Q"]],
    ["label01:Label:::13,180,21,13:min",],
    ["label02:Label:::152,180,21,13:max",],
@@ -320,14 +324,14 @@ return vsetup(win, cbk,
    ["lbl_max_radius:Label:::43,280,98,13:maximum radius",],
    ["lbl_min_radius:Label:::44,220,98,13:minimum radius",],
    ["lbl_speed:Label:::74,100,35,13:speed",],
-   ["line:Line:::0,30,600,30:",],
+   ["line:Line:::0,22,600,22:",],
    ["max_radius:Slider:h:1:42,300,100,15:0.0,10.0,10.0",max_radius_cb],
    ["min_radius:Slider:h:1:42,240,100,15:0.0,10.0,1.0",min_radius_cb],
    ["pause:Button:regular:1:33,55,45,20:pause",],
    ["reset:Button:regular::111,55,45,20:reset",reset_cb],
    ["shape:Choice::2:66,359,64,42:",shape_cb,
       ["discs","rings"]],
-   ["region:Rect:raised::187,42,400,400:",],
+   ["region:Rect:raised::187,40,400,400:",],
    )
 end
 #===<<vib:end>>===	end of section maintained by vib

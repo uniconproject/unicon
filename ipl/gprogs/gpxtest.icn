@@ -6,7 +6,7 @@
 #
 #	Author:   Gregg M. Townsend
 #
-#	Date:     July 2, 1996
+#	Date:     August 1, 1998
 #
 ############################################################################
 #
@@ -69,7 +69,8 @@ procedure main(args)
    local x, y
 
    # Start with a medium window; shrink, test defaults, grow.
-   Window("size=300,300", args)
+   Window("size=300,300", "bg=light-weak-reddish-yellow", args)
+   VSetFont()
 
    # The following sequence *should* have no permanent effect
    WAttrib("drawop=xor", "fillstyle=masked", "pattern=checkers", "linewidth=5")
@@ -85,7 +86,7 @@ procedure main(args)
 
    # Make a simple background.
    if WAttrib("depth") > 1 then
-      Fg("35000,35000,65000")
+      Fg("44000,39000,24000")
    every y := (3 * CELL / 2) to (2 * HEIGHT) by 7 do
       DrawLine(0, y, 2 * y, 0)
    Fg("#000")
@@ -217,7 +218,7 @@ procedure attribs()
       WAttrib("displayheight") | "????", "x", WAttrib("depth") | "??", ")") 
    every a := "gamma" | "pointer" do
       WWrite(a, "=", WAttrib(a) | "[FAILED]")
-   WWrite("std font=", f)
+   WWrite("vfont=", f)
    WWrite("  (", cw, "x", ch, ", +", cl, ")")
 end
 
@@ -402,11 +403,12 @@ end
 procedure gamma()
    local g
 
-   GotoXY(0, -HALF + WAttrib("leading"))
-   every g := &null | 1.0 | 1.6 | 2.5 | 4.0 | 6.2 do {
+   GotoXY(0, -HALF + WAttrib("leading") - WAttrib("descent"))
+   every g := &null | 1.0 | 1.5 | 2.2 | 3.3 | 5.0 | 7.5 do {
       Shade("gray")
       WAttrib("gamma=" || \g)
-      FillRectangle(-4, WAttrib("y"), -HALF, -WAttrib("fheight"))
+      FillRectangle(-4, WAttrib("y") + WAttrib("descent"),
+         -HALF, -WAttrib("leading"))
       Shade("black")
       WWrite(WAttrib("gamma"))
       }
@@ -453,11 +455,13 @@ end
 #  Tests custom patterns in hex and decimal forms; tests fillstyle=masked.
 
 procedure patts()
-   local i, j, s, x, y
+   local i, j, s, w
 
    WAttrib("linewidth=4")
    DrawCircle(0, 0, 0.38 * CELL)	# circle should persist after patts
    WAttrib("linewidth=1")
+   Translate(-HALF, -HALF)
+   w := (CELL + 2) / 3;
 
    WAttrib("fillstyle=masked")
    s := ["8,#01552B552B552BFF", "8,#020E070420E07040",
@@ -468,9 +472,7 @@ procedure patts()
    every i := 0 to 2 do
       every j := 0 to 2 do {
          WAttrib("pattern=" || s[3 * i + j + 1])
-         x := -HALF + j * CELL / 3
-         y := -HALF + i * CELL / 3
-         FillRectangle(x, y, CELL / 3, CELL / 3)
+         FillRectangle(w * j, w * i, w, w)
          }
 end
 
@@ -497,7 +499,7 @@ procedure rainbow()
    FillRectangle()
    WAttrib("fillstyle=solid")
    r := 20
-   l := ["pink", "pale orange", "light yellow", "pale green", "very light blue",
+   l := ["pink", "pale orange", "light yellow", "pale green", "pale blue",
          "light bluish violet", " pale violet"]
    WAttrib("linewidth=3")
    every Fg(!l) do

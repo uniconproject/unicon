@@ -1,5 +1,5 @@
 # Annotated debugging commands for the demo debugging session.
-# $Id: demo.cmd,v 1.1.1.1 2001-05-05 08:44:38 jeffery Exp $
+# $Id: demo.cmd,v 1.2 2001-09-04 22:50:17 jeffery Exp $
 #
 # After seeing the 'automatic' debugging session you may want to repeat
 # some of the commands manually in a new interactive session.

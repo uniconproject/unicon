@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     September 12, 1997
+#	Date:     May 2, 2001
 #
 ############################################################################
 #
@@ -14,19 +14,20 @@
 #
 ############################################################################
 #
-#  This is a barebones version of a display of Moire patterns.
-#  It has deliberately been left simple and free of options so
-#  that the basic idea is clear and so that it can be used as the basis of
-#  more capable versions.
+#  This program displays moire patterns.
 #
-#  A palette name can be given on the command line, as in
+#  The following options are supported:
 #
-#	moire g16
-#
-#  The default palette is c6.
+#	-g	run continuously; ignore user events; default: process user
+#		  events
+#	-i i	initial size, default 50
+#	-k i	increment, default 1
+#	-l i	limit on number of iterations, default 2 ^ 10
+#	-p s	palette, default "c2"
+#	-s i	size of window (width/height); default 256
 #
 #  This program is based on material given in "FractalVision",
-#  Dick Oliver, Sams Publishing, 1992.
+#  Dick Oliver, Sams Publishing, 1992, pp. 185-190.
 #
 ############################################################################
 #
@@ -34,54 +35,63 @@
 #
 ############################################################################
 #
-#  Links:  colrlist, interact,  wopen
+#  Links:  colrlist, interact, options, wopen
 #
 ############################################################################
 
 link colrlist
 link interact
+link options
 link wopen
 
 procedure main(args)
-   local extent, size, cx, cy, colors, ncolors, a, x, i, y, j, c, palette
+   local extent, size, colors, ncolors, k, x, i, y, j, c, palette
+   local opts, init, incr, limit, run
 
-   palette := args[1] | "c6"
-   extent := 300
+   opts := options(args, "gs+p:i+k+l+")
+
+   palette := \opts["p"] | "c2"
+   extent := \opts["s"] | 256
+   init := \opts["i"] | 50
+   incr := \opts["k"] | 1
+   limit := \opts["l"] | (2 ^ 10)
+   run := opts["g"]
+
    size := extent / 2
 
-   WOpen("label=moire", "height=" || extent, "width=" || extent) |
-      stop("*** cannot open window")
+   WOpen("label=moire", "height=" || extent, "width=" || extent,
+      "dx=" ||  size, "dy=" || size, "bg=light gray") |
+         ExitNotice("Cannot open window.")
 
-   cx := cy := extent / 2
-
-   colors := colrplte(palette) | stop("*** invalid palette")
+   colors := colrplte(palette) | ExitNotice("Invalid palette.")
    ncolors := *colors
 
-   every a := 100 to 200 do {
-      x := a
+   every k := seq(init, incr) \ limit do {
+      x := k
       every i := 0 to size do {
          y := x
          every j := i to size do {
-            c := colors[ishift(x ^ 2 + y ^ 2, -10) % ncolors + 1]
+            c := colors[?ncolors]
             Fg(c)
             DrawPoint(
-               cx + i, cy + j,
-               cx + j, cy + i,
-               cx + j, cy - i,
-               cx + i, cy - j,
-               cx - i, cy - j,
-               cx - j, cy - i,
-               cx - j, cy + i,
-               cx - i, cy + j
+               i, j,
+               j, i,
+               j, -i,
+               i, -j,
+               -i, -j,
+               -j, -i,
+               -j, i,
+               -i, j
                )
-            y +:= a
+            y +:= k
             }
-         x +:= a
+         x +:= k
          }
-      while case Event() of {
+      Fg("black")
+      if /run then repeat case Event() of {
          "q":   exit()
          "s":   snapshot()
-         "c":   break
+         "n":   break
          }
       }
 

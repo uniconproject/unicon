@@ -6,7 +6,7 @@
 #
 #	Authors:  Ralph E. Griswold and Gregg M. Townsend
 #
-#	Date:     June 12, 1999
+#	Date:     June 11, 2001
 #
 ############################################################################
 #
@@ -17,12 +17,12 @@
 #  This file contains procedures related to factorization and prime
 #  numbers.
 #
-#	divisors(n)	generators the divisors of n.
+#	divisors(n)	generates the divisors of n.
 #
 #	factorial(n)	returns n!.  It fails if n is less than 0.
 #
-#	factors(i, j)	returns a list containing the factors of i limited
-#			to maximum value j; default, no limit.
+#	factors(i, j)	returns a list containing the prime factors of i
+#			limited to maximum value j; default, no limit.
 #
 #	genfactors(i, j)
 #			like factors(), except factors are generated as
@@ -51,6 +51,8 @@
 #	sfactors(i, j)	as factors(i, j), except output is in string form
 #			with exponents for repeated factors
 #
+#	squarefree(i)	succeeds if i is square free
+#
 ############################################################################
 #
 #  Notes:  Some of these procedures are not fast enough for extensive work.
@@ -59,7 +61,7 @@
 #
 ############################################################################
 #
-#  Requires:  Large-integer arithmetic and prime.lst for primel().
+#  Requires: Large-integer arithmetic; prime.lst for primel() and primorial().
 #
 ############################################################################
 #
@@ -70,32 +72,28 @@
 link io
 link numbers
 
-procedure divisors(i)		#: divisors of integer
-   local divs, count, j, k
+procedure divisors(n)			#: generate the divisors of n
+   local d, dlist
 
-   i := integer(i)
-
-   divs := set(factors(i))
-   delete(divs, 1)
-   delete(divs, i)
-
-   count := *divs
-
-   repeat {
-      every j := !divs do
-         every k := j * !divs do
-            if i % k = 0 then insert(divs, k)
-      if count = *divs then break else count := *divs
+   dlist := []
+   every d := seq() do {
+      if d * d >= n then
+         break
+      if n % d = 0 then {
+         push(dlist, d)
+         suspend d
+         }
       }
-
-   suspend !sort(divs)
+   if d * d = n then
+      suspend d
+   suspend n / !dlist
 
 end
 
-procedure factorial(n)		#: factorial
+procedure factorial(n)			#: return n! (n factorial)
    local i
 
-   n := integer(n) | fail
+   n := integer(n) | runerr(101, n)
 
    if n < 0 then fail
 
@@ -107,40 +105,19 @@ procedure factorial(n)		#: factorial
 
 end
 
-procedure factors(i, j)		#: factors of integer
-   local facts, p
+procedure factors(i, j)			#: return list of factors
+   local facts
 
-   i := integer(i)
-
-   /j := i / 2
-
-   facts := []
-
-### needs optimizations
-
-   every p := prime() do {
-      if p > j | p * p > i then break
-      while i % p = 0 do {
-         put(facts, p)
-         i /:= p
-         }
-      if i = 1 then break
-      }
-
-   if i > 1 then put(facts, i)
-
+   every put(facts := [], genfactors(i, j))
    return facts
 
 end
 
-procedure genfactors(i, j)		#: generate factors of integer
+procedure genfactors(i, j)		#: generate prime factors of integer
    local p
 
-   i := integer(i)
-
-   /j := i / 2
-
-### needs optimizations
+   i := integer(i) | runerr(101, i)
+   /j := i
 
    every p := prime() do {
       if p > j | p * p > i then break
@@ -150,13 +127,14 @@ procedure genfactors(i, j)		#: generate factors of integer
          }
       if i = 1 then break
       }
+   if i > 1 then suspend i
 
 end
 
 procedure gfactorial(n, i)		#: generalized factorial
    local j
 
-   n := integer(n) | fail
+   n := integer(n) | runerr(101, n)
    i := integer(i) | 1
 
    if n < 0 then fail
@@ -173,25 +151,26 @@ procedure gfactorial(n, i)		#: generalized factorial
 
 end
 
-procedure pfactors(i)		#: primes that divide integer
+procedure pfactors(i)			#: primes that divide integer
    local facts, p
 
+   i := integer(i) | runerr(101, i)
    facts := []
-
-### needs optimizations
-
    every p := prime() do {
       if p > i then break
-      if i % p = 0 then
+      if i % p = 0 then {
          put(facts, p)
+         while i % p = 0 do
+            i /:= p
+         }
       }
 
    return facts
 
 end
 
-procedure ispower(i, j)		#: test for integer power
-  local k, n
+procedure ispower(i, j)			#: test for integer power
+   local k, n
 
    k := (n := round(i ^ (1.0 / j))) ^ j
    if k = i then return n else fail
@@ -202,21 +181,19 @@ end
 #  is about the worst possible.  It is inappropriate for all but small
 #  numbers.
 
-procedure isprime(n)		#: test for primality
-   local p, limit
+procedure isprime(n)			#: test for primality
+   local p
 
-   if n = 1 then fail		# 1 is not a prime
-
-   limit := sqrt(real(n))	# may get integer overflow
-
+   n := integer(n) | runerr(101, n)
+   if n <= 1 then fail		# 1 is not a prime
    every p := prime() do {
-      if p >= n then return n
+      if p * p > n then return n
       if n % p = 0 then fail
       }
 
 end
 
-procedure nxtprime(n)		#: next prime beyond n
+procedure nxtprime(n)			#: next prime beyond n
    local d
    static step, div
 
@@ -232,22 +209,19 @@ procedure nxtprime(n)		#: next prime beyond n
    repeat {
       n +:= step[n % 30 + 1]		# step past multiples of 2, 3, 5
       every (d := !div) | |put(div, d := nxtprime(d)) do {  # get test divisors
-	 if n % d = 0 then		# if composite, try a larger candidate
-	    break
-	 if d * d > n then		# if not divisible up to sqrt, is prime
-	    return n
-	 }
+         if n % d = 0 then		# if composite, try a larger candidate
+            break
+         if d * d > n then		# if not divisible up to sqrt, is prime
+            return n
+         }
       }
 
 end
 
-procedure prdecomp(i)		#: prime decomposition
+procedure prdecomp(i)			#: prime decomposition
    local decomp, count, p
 
    decomp := []
-
-### needs optimizations
-
    every p := prime() do {
       count := 0
       while i % p = 0 do {
@@ -262,7 +236,7 @@ procedure prdecomp(i)		#: prime decomposition
 
 end
 
-procedure prime()		#: generate primes
+procedure prime()			#: generate primes
    local i, k
 
    suspend 2 | ((i := seq(3, 2)) & (not(i = (k := (3 to sqrt(i) by 2)) *
@@ -270,7 +244,7 @@ procedure prime()		#: generate primes
 
 end
 
-procedure primel()		#: primes from list
+procedure primel()			#: primes from list
    local pfile
 
    pfile := dopen("primes.lst") | stop("*** cannot open primes.lst")
@@ -300,7 +274,7 @@ procedure primorial(i, j)		#: product of primes
 
 end
 
-procedure sfactors(i, j)
+procedure sfactors(i, j)		# return factors in string form
    local facts, result, term, nterm, count
 
    facts := factors(i, j)
@@ -324,5 +298,14 @@ procedure sfactors(i, j)
    else result ||:= " " || term
 
    return result[2:0]
+
+end
+
+procedure squarefree(n)			#: test for square-free number
+   local facts
+
+   facts := factors(n)
+
+   if *facts = *set(facts) then return n else fail
 
 end

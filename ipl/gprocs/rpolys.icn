@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     September 25, 1993
+#	Date:     March 24, 1999
 #
 ############################################################################
 #
@@ -14,18 +14,25 @@
 #
 ############################################################################
 #
-# Draw a regular polygon with the specified number of vertices and
-# radius, centered at cx and cy.
+# Generate points for a regular polygon with the specified number of
+# vertices and radius, centered at cx and cy.  The offset angle is theta;
+# default 0.
+#
+############################################################################
+#
+#  Links:  gobject
 #
 ############################################################################
 
-procedure rpoly(cx, cy, radius, vertices) 
-   local theta, incr, i
+link gobject
+
+procedure rpoly(cx, cy, radius, vertices, theta)	#: generate polygon points
+   local incr, i
 
    incr := 2 * &pi / vertices
-   theta := 0			# starting angle
+   /theta := 0			# starting angle
 
-   every i := 0 to vertices do {
+   every i := 1 to vertices do {
       suspend Point(cx + radius * cos(theta), cy + radius * sin(theta))
       theta +:= incr
       }

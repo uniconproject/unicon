@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     November 21, 1996
+#	Date:     May 2, 2001
 #
 ############################################################################
 #
@@ -20,8 +20,9 @@
 #  smallest tile for the repeat (by "eye-balling").
 #
 #  Another interesting use of this program is to produce striped patterns by
-#  selecting a row or column of an image as a one-character tile.  Sometimes
-#  a few rows or columns give an interesting "fabric" effect.
+#  selecting a row or column of an image to get a tile that is one character
+#  wide.  Sometimes a few rows or columns give an interesting "fabric"
+#  effect.
 #
 #  The following features are provided through keyboard shortcuts,
 #  the File menu, and in some cases, on-board buttons:
@@ -36,9 +37,20 @@
 #  Buttons provide for setting and adjusting the selection in various
 #  ways.
 #
+#  In the drawing mode, the mouse can be used to make a selection by
+#  dragging from one corner to another.  When the mouse is released,
+#  the action depends on the user keypress:
+#
+#	"r"	return the selection
+#	"n"	try again
+#	"q"	exit drawing mode
+#
+#  Typing "q" is the only way to get out of the drawing mode.  It can be
+#  done whether or not there is a selection.
+#
 #  Notes:
 #
-#	The selection starts as a single pixel in the upper-left corner
+#	The selection starts as a single pixel in the upper-left corner.
 #	The repeat window can be resized by the user.
 #
 ############################################################################
@@ -47,16 +59,15 @@
 #
 #	show current selection
 #	file-system navigation
-#	width and height setting should take into account the current
-#         origin
 #	chained selection dialogs for large numbers of files
 #	  *or* scrolling line dialog
-#	improve error checking	-:
 #	add flips, rotations, and other transformations (using external
 #	  utilities)
 #	allow images of types other than GIF
 #	
 #  Bugs:
+#	width and height setting should take into account the current
+#         origin
 #	edit in system menu is bogus (bug is in interact.icn)
 #
 #	
@@ -66,13 +77,13 @@
 #
 ############################################################################
 #
-#  Links:   io, grecords, interact, select, tile
+#  Links:   grecords, interact, io, select, tile
 #
 ############################################################################
 
-link io
 link grecords
 link interact
+link io
 link select
 link tile
 
@@ -101,6 +112,7 @@ global current		# current selection
 
 $define PosX	"posx=10"
 $define PosY	"posy=10"
+
 procedure main()
    local atts
 
@@ -127,7 +139,7 @@ procedure auto_cb(vidget, value)
   auto := value
 
   if \auto then {
-      if OpenDialog("Specify profix for auto-saving:") == "Cancel" then fail
+      if OpenDialog("Specify prefix for auto-saving:") == "Cancel" then fail
       prefix := dialog_value
       count := -1		# initial count less 1
       }
@@ -148,24 +160,24 @@ procedure change_cb(vidget)
 
    check(
       case vidget.s of {
-         "h +":         current.h <- current.h + 1
-         "h -":         current.h <- current.h - 1
-         "w +":         current.w <- current.w + 1
-         "w -":         current.w <- current.w - 1
-         "w + h +":     current.h <- current.h + 1 & current.w <- current.w + 1
-         "w - h -":     current.h <- current.h - 1 & current.w <- current.w - 1
-         "h max":       current.h <- hmax
-         "w max":       current.w <- wmax
-         "w h max":     current.h <- hmax & current.w <- wmax
-         "x +":         current.x <- current.x + 1
-         "x -":         current.x <- current.x - 1
-         "y +":         current.y <- current.y + 1
-         "y -":         current.y <- current.y - 1
-         "x + y +":     current.x <- current.x + 1 & current.y <- current.y + 1
-         "y - x -":     current.y <- current.y - 1 & current.x <- current.x - 1
-         "x 1/2":       current.x <- wmax / 2
-         "y 1/2":       current.y <- hmax / 2
-         "x y 1/2":     current.x <- wmax / 2 & current.y <- hmax / 2
+         "h +":       current.h <- current.h + 1
+         "h -":       current.h <- current.h - 1
+         "w +":       current.w <- current.w + 1
+         "w -":       current.w <- current.w - 1
+         "w + h +":   current.h <- current.h + 1 & current.w <- current.w + 1
+         "w - h -":   current.h <- current.h - 1 & current.w <- current.w - 1
+         "h max":     current.h <- hmax
+         "w max":     current.w <- wmax
+         "w h max":   current.h <- hmax & current.w <- wmax
+         "x +":       current.x <- current.x + 1
+         "x -":       current.x <- current.x - 1
+         "y +":       current.y <- current.y + 1
+         "y -":       current.y <- current.y - 1
+         "x + y +":   current.x <- current.x + 1 & current.y <- current.y + 1
+         "y - x -":   current.y <- current.y - 1 & current.x <- current.x - 1
+         "x 1/2":     current.x <- wmax / 2
+         "y 1/2":     current.y <- hmax / 2
+         "x y 1/2":   current.x <- wmax / 2 & current.y <- hmax / 2
          }
      ) | fail
 
@@ -179,8 +191,7 @@ end
 
 procedure check()
 
-   if
-      (0 <= current.h <= hmax) &
+   if (0 <= current.h <= hmax) &
       (0 <= current.w <= wmax) &
       (0 <= current.x <= hmax) &
       (0 <= current.y <= wmax)
@@ -193,11 +204,13 @@ end
 
 #  Copy hidden source window to a visible window.
 
-procedure copy_source()
+$define Margin 20
+
+procedure copy_source(label)
 
    screen := WOpen("size=" || WAttrib(source, "width") || "," ||
-      WAttrib(source, "height"), "posx=" || posx, "posy=" || posy) |
-         ExitNotice("Cannot open image window")
+      WAttrib(source, "height"), "posx=" || posx, "posy=" || posy,
+        "label=" || label) | ExitNotice("Cannot open image window")
 
    CopyArea(source, screen)
 
@@ -205,6 +218,9 @@ procedure copy_source()
 
    wmax := WAttrib(source, "width")
    hmax := WAttrib(source, "height")
+
+   WAttrib(pattern, "width=" || (WAttrib(screen, "width") + Margin))
+   WAttrib(pattern, "height=" || (WAttrib(screen, "height") + Margin))
 
    reset_cb()
 
@@ -220,14 +236,15 @@ procedure draw_cb(vidget, value)
    if /value then return
 
    if /source then {
-      Notice("No source image yet.")
+      Notice("No source image.")
       SetVidget(draw, &null)
       fail
       }
 
-   expose(source)
+   expose(screen)
 
-   while current := select(screen) do show()
+   while current := select(screen) do
+      show()
 
    SetVidget(draw, &null)
 
@@ -266,7 +283,7 @@ procedure get_image()
          Notice("Can't open " || dialog_value || ".")
          next
          }
-      copy_source()
+      copy_source(dialog_value)
       wmax := WAttrib(source, "width")
       hmax := WAttrib(source, "height")
       break
@@ -283,6 +300,8 @@ $define Offset1	32
 $define Offset2	82
 
 #  Initialize the program
+
+$define MinSize 600
 
 procedure init()
    local iheight
@@ -331,7 +350,7 @@ procedure pick()
          Notice("Cannot open " || dialog_value || ".")
          next
          }
-      copy_source()
+      copy_source(dialog_value)
       break
       }
 
@@ -399,8 +418,7 @@ procedure set_cb()
    repeat {
       if TextDialog("Set values:",
          ["x", "y", "w", "h"],
-         [
-            current.x,
+         [  current.x,
             current.y,
             current.w,
             current.h
@@ -455,7 +473,7 @@ procedure show()
       sy := text.ay
       }
 
-   if /source then return FailNotice("No source image yet.")
+   if /source then return FailNotice("No source image.")
 
    tile(source, pattern, current.x, current.y, current.w, current.h)
 
@@ -480,7 +498,7 @@ end
 procedure snap()
 
    return snapshot(\source, current.x, current.y, current.w, current.h) |
-     FailNotice("No source image yet.")
+     FailNotice("No source image.")
 
 end
 

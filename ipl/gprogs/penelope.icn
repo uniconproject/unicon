@@ -6,7 +6,7 @@
 #
 #	Authors:  Ralph E. Griswold and Gregg M. Townsend
 #
-#	Date:     November 21, 1996
+#	Date:     May 25, 2001
 #
 ############################################################################
 #
@@ -15,8 +15,9 @@
 ############################################################################
 #
 #  This application provides a variety of facilities for creating and
-#  editing graphic pattern specifications.  See IPD234 for a complete
-#  description.
+#  editing graphic pattern specifications.  For a complete description,
+#  see IPD234:
+#	http://www.cs.arizona.edu/icon/docs/ipd234.htm
 #
 ############################################################################
 #
@@ -24,11 +25,11 @@
 #
 ############################################################################
 #
-#  Links: isort, patxform, vdialog, vsetup, dialog, wopen, xcompat
+#  Links: sort, patxform, vdialog, vsetup, dialog, wopen, xcompat
 #
 ############################################################################
 
-link isort
+link sort
 link patxform
 link vdialog
 link vsetup
@@ -188,17 +189,18 @@ end
 
 #  file menu
 
-procedure file_cb(vidget, menu)
+procedure file_cb(vidget, value)
 
-   case menu[1] of {
-      "load (@L)":   return load()
-      "save (@S)":   return save()
-      "save as":     return save_as()
-      "read (@R)":   return read_tile()
-      "write (@W)":  return write_tile()
-      "quit (@Q)":   return quit()
-      default: Notice("Unsupported menu item")
+   case value[1] of {
+      "load  @L"  :  load()
+      "save  @S"  :  save()
+      "save as"   :  save_as()
+      "read  @R"  :  read_tile()
+      "write @W"  :  write_tile()
+      "quit  @Q"  :  quit()
       }
+
+   return
 
 end
 
@@ -211,10 +213,8 @@ procedure grid_cb(vidget, e)
       j := (&x - GridXoff) / cellsize
       i := (&y - GridYoff) / cellsize
       if j < 0 | j >= hbits | i < 0 | i >= vbits then return
-
       if e === (&lpress | &ldrag) then setbit(i, j, "1")
       else setbit(i, j, "0")
-
       tile_touched := 1
       }
 
@@ -224,32 +224,24 @@ end
 
 #  list menu
 
-procedure list_cb(vidget, menu)
+procedure list_cb(vidget, value)
    local i
 
-   case menu[1] of {
-      "clear":  {			# should request confirmation
+   case value[1] of {
+      "clear"    :  {			# should request confirmation
          plist := [pattrec(blank_pat, "")]
          }
-      "reverse": {
+      "reverse"  :  {
          every i := 1 to *plist / 2 do
             plist[i] :=: plist[-i]
          }
-      "sort": {
+      "sort"     :  {
          refresh_tile()
-         plist := isort(plist, case menu[2] of {
+         plist := isort(plist, case value[2] of {
             "by size":    tile_size
             "by bits":    tile_bits
             "by notes":   tile_note
-            default:      {
-               Notice("Unsupported sort option")
-               fail
-               }
             })
-         }
-      default:  {
-         Notice("Unsupported list item")
-         fail
          }
       }
 
@@ -269,7 +261,7 @@ end
 procedure logo_cb(vidgets, event)
 
    if event === (&lpress | &mpress | &rpress) then
-      Notice("Penelope", "Version 1.0",
+      Notice("Penelope", "Version 1.1",
          "Ralph E. Griswold and Gregg M. Townsend")
 
    return
@@ -278,13 +270,12 @@ end
 
 #  note menu
 
-procedure note_cb(vidget, menu)
+procedure note_cb(vidget, value)
    local result, note, i
 
-   case menu[1] of {
-      "edit (@E)":   edit_tile()
-      "find (@F)":   find_tile()
-      default:       Notice("Unsupported edit operation")
+   case value[1] of {
+      "edit @E"  :  edit_tile()
+      "find @F"  :  find_tile()
       }
 
    return
@@ -319,38 +310,38 @@ end
 
 #  tile menu
 
-procedure tile_cb(vidget, menu)
+procedure tile_cb(vidget, value)
    local result
 
-   case menu[1] of {
-      "next (@N)":        next_tile()
-      "previous (@P)":    previous_tile()
-      "goto (@G)":        goto_tile()
-      "first":             {
+   case value[1] of {
+      "next     @N"  :  next_tile()
+      "previous @P"  :  previous_tile()
+      "goto     @G"  :  goto_tile()
+      "first"        :  {
          refresh_tile()
          pindex := 1
          rows := pat2rows(plist[pindex].tile)
          tile_touched := 1
          return setup()
          }
-      "last":             {
+      "last"         :  {
          refresh_tile()
          pindex := *plist
          rows := pat2rows(plist[pindex].tile)
          tile_touched := 1
          return setup()
          }
-      "copy (@C)":      copy_tile()
-      "revert":           {
+      "copy     C"  :  copy_tile()
+      "revert"      :  {
          rows := pat2rows(plist[pindex].tile)
          return setup()
          }
-      "delete (@D)":      delete_tile()
-      "new":              {
+      "delete   D"  :  delete_tile()
+      "new"         :  {
          case Dialog("New:", ["width", "height"], [*rows[1], *rows], 3,
             ["Okay", "Cancel"]) of {
-               "Cancel":  fail
-               "Okay":   {
+               "Cancel"  :  fail
+               "Okay"    :   {
                   icheck(dialog_value) | fail
                   refresh_tile()
                   rows := list(dialog_value[2], repl("0", dialog_value[1]))
@@ -361,11 +352,7 @@ procedure tile_cb(vidget, menu)
                   }
             }
          }
-      "info (@I)": tile_info()
-      default:            {
-         Notice("Unsupported action")
-         fail
-         }
+      "info     I"  :  tile_info()
       }
 
    return
@@ -374,31 +361,23 @@ end
 
 #  view menu
 
-procedure view_cb(vidget, menu)
+procedure view_cb(vidget, value)
    static old_mode, old_zoom
 
    old_mode := mode
    old_zoom := zoom
 
-   case menu[1] of {
-      "pattern":   mode := 1
-      "tile":      mode := &null
-      "tile zoom": {
+   case value[1] of {
+      "pattern"    :  mode := 1
+      "tile"       :  mode := &null
+      "tile zoom"  :  {
          mode := &null
-         case menu[2] of {
-            "1:1":   zoom := 1
-            "2:1":   zoom := 2
-            "4:1":   zoom := 4
-            "8:1":   zoom := 8
-            default: {
-               Notice("Error in zoom sub-menu")
-               fail
-               }
+         case value[2] of {
+            "1:1"  :  zoom := 1
+            "2:1"  :  zoom := 2
+            "4:1"  :  zoom := 4
+            "8:1"  :  zoom := 8
             }
-        }
-      default:      {
-         Notice("Unsupported view operation")
-         fail
          }
       }
 
@@ -512,7 +491,7 @@ procedure drawpat()
       EraseArea(PattXoff - 1, PattYoff - 1, PattWidth + 2, PattHeight + 2)
       DrawRectangle(bordergc, PattXoff - 1, PattYoff - 1, 
          (*rows[1] * zoom) + 1, (*rows * zoom) + 1)
-      XDrawRows(viewgc, PattXoff, PattYoff, rows, zoom)
+      DrawRows(viewgc, PattXoff, PattYoff, rows, zoom)
       }
    return
 
@@ -766,9 +745,9 @@ procedure load()
             loadname := dialog_value
             if input := open(loadname) then break
             else {
-                &trace := -1
-                Notice("Can't open " || loadname)
-                }
+               Notice("Can't open " || loadname)
+               next
+               }
             }
          "Cancel":  fail
          }
@@ -1060,21 +1039,21 @@ end
 
 procedure shortcuts(e)
 
-   case map(e) of {
-      &meta & "e":  edit_tile()
-      &meta & "f":  find_tile()
-      &meta & "w":  write_tile()
-      &meta & "q":  return quit()
-      &meta & "i":  tile_info()
-      &meta & "n":  next_tile()
-      &meta & "s":  save()
-      &meta & "l":  load()
-      &meta & "p":  previous_tile()
-      &meta & "g":  goto_tile()
-      &meta & "r":  read_tile()
-      &meta & "c":  copy_tile()
-      &meta & "d":  delete_tile()
-      &meta & "u":  undo_xform()
+   if &meta then case map(e) of {
+      "c"  :  copy_tile()
+      "d"  :  delete_tile()
+      "e"  :  edit_tile()
+      "f"  :  find_tile()
+      "g"  :  goto_tile()
+      "i"  :  tile_info()
+      "l"  :  load()
+      "n"  :  next_tile()
+      "p"  :  previous_tile()
+      "q"  :  return quit()
+      "r"  :  read_tile()
+      "s"  :  save()
+      "u"  :  undo_xform()
+      "w"  :  write_tile()
       }
 
    return
@@ -1241,36 +1220,37 @@ procedure xform(col, row)
 
 end
 
-#===<<xie:begin>>===	edit using xie; do not remove this marker line
+#===<<vib:begin>>===	modify using vib; do not remove this marker line
+procedure ui_atts()
+   return ["size=730,420", "bg=pale gray", "label=Penelope"]
+end
+
 procedure ui(win, cbk)
 return vsetup(win, cbk,
-   [":Sizer:lucidasanstypewriter-bold-12::721,411,9,9:Penelope",],
-   ["line1:Line:solid:1:1,31,729,31:",],
-   ["line2:Line:solid:1:133,32,133,420:",],
-   ["line3:Line:solid:1:426,32,426,420:",],
-   ["line4:Line:solid:1:80,0,80,32:",],
-   ["line5:Line:solid:1:160,0,160,32:",],
-   ["line6:Line:solid:1:240,0,240,32:",],
-   ["line7:Line:solid:1:400,0,400,32:",],
-   ["line8:Line:solid:1:320,0,320,32:",],
-   ["logo:Rect::0:26,373,32,32:",logo_cb],
-   ["grid:Rect::1:153,64,251,256:",grid_cb],
-   ["xform:Rect::1:26,57,58,256:",xform_cb],
-   ["symmet:Rect::1:155,363,74,42:",symmet_cb],
-   ["file:Menu:pull::19,5,50,21:file",file_cb,
-      ["load (@L)","save (@S)","save as","read (@R)","write (@W)","quit (@Q)"]],
-   ["tile:Menu:pull::99,5,50,21:tile",tile_cb,
-      ["next (@N)","previous (@P)","first","last","goto (@G)","delete (@D)","revert","copy (@C)","new","info (@I)"]],
-   ["list:Menu:pull::180,5,50,21:list",list_cb,
+   [":Sizer:::0,0,730,420:Penelope",],
+   ["file:Menu:pull::0,1,36,21:file",file_cb,
+      ["load  @L","save  @S","save as","read  @R","write @W",
+      "quit  @Q"]],
+   ["line1:Line:::1,22,729,22:",],
+   ["line2:Line:::133,32,133,420:",],
+   ["line3:Line:::427,22,427,419:",],
+   ["list:Menu:pull::73,1,36,21:list",list_cb,
       ["clear","reverse","delete range","sort",
          ["by size","by bits","by notes"]]],
-   ["view:Menu:pull::259,5,50,21:view",view_cb,
+   ["note:Menu:pull::145,1,36,21:note",note_cb,
+      ["edit @E","find @F"]],
+   ["symmetries:Label:::156,338,70,13:symmetries",],
+   ["tile:Menu:pull::37,1,36,21:tile",tile_cb,
+      ["next     @N","previous @P","first","last","goto     @G",
+      "delete   @D","revert","copy     @C","new","info     @I"]],
+   ["transformations:Label:::8,32,105,13:transformations",],
+   ["view:Menu:pull::110,1,36,21:view",view_cb,
       ["pattern","tile","tile zoom",
          ["1:1","2:1","4:1","8:1"]]],
-   ["note:Menu:pull::340,5,50,21:note",note_cb,
-      ["edit (@E)","find (@F)"]],
-   ["transformations:Message:::8,38,105,13:transformations",],
-   ["symmetries:Message:::158,338,70,13:symmetries",],
+   ["logo:Rect:invisible::26,373,32,32:",logo_cb],
+   ["symmet:Rect:grooved::155,363,74,42:",symmet_cb],
+   ["xform:Rect:grooved::26,57,58,256:",xform_cb],
+   ["grid:Rect:grooved::153,64,251,256:",grid_cb],
    )
 end
-#===<<xie:end>>===	end of section edited by xie
+#===<<vib:end>>===	end of section maintained by vib

@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     September 23, 1997
+#	Date:     September 29, 1997
 #
 ############################################################################
 #
@@ -23,38 +23,40 @@
 #
 ############################################################################
 
-procedure tile(			#: tile area with image
-   win1, win2, x1, y1, w1, h1, x2, y2, w2, h2
-   )
-   
-   local w, h
+procedure tile(win1, win2, x1, y1, w1, h1)	#: tile area with image
+   local w, h, wmax, hmax
 
    /win1 := &window
    /win2 := &window
    /x1 := 0
    /y1 := 0
-   /x2 := 0
-   /y2 := 0
    /w1 := WAttrib(win1, "width")
    /h1 := WAttrib(win1, "height")
-   /w2 := WAttrib(win2, "width")
-   /h2 := WAttrib(win2, "height")
+   wmax := WAttrib(win2, "width")
+   hmax := WAttrib(win2, "height")
 
-   if (w1 | h1 | w2 | h2) = 0 then fail
+   if (w1 | h1) = 0 then fail
 
-   CopyArea(win1, win2, x1, y1, abs(w1), abs(h1), x2, y2)	# initial copy 
-
-   w := w1
-   h := h1
-
-   while w < w2 do {				# copy and double
-      CopyArea(win2, win2, 0, 0, w, h, w, 0)
-      w *:= 2
+   if w1 < 0 then {
+      w1 := -w1
+      x1 -:= w1
       }
 
-   while h < h2 do {				# copy and double
-      CopyArea(win2, win2, 0, 0, w, h, 0, h)
-      h *:= 2
+   if h1 < 0 then {
+      h1 := -h1
+      y1 -:= h1
+      }
+
+   CopyArea(win1, win2, x1, y1, w1, h1)		# initial copy 
+
+   while w1 < wmax do {				# copy and double
+      CopyArea(win2, win2, 0, 0, w1, h1, w1, 0)
+      w1 *:= 2
+      }
+
+   while h1 < hmax do {				# copy and double
+      CopyArea(win2, win2, 0, 0, w1, h1, 0, h1)
+      h1 *:= 2
       }
 
    return

@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     August 14, 1996
+#	Date:     June 10, 1999
 #
 ############################################################################
 #
@@ -26,8 +26,8 @@
 #	-r i	number of rows, default 7 for -P, otherwise 10
 #	-c i	number of columns, default 6 for -P, otherwise 12
 #	-n s	number pages using s as a prefix
-#	-w i	width of area for tile
-#	-h i	height of area for file
+#	-w i	width of area for tile; default 48 unless -P
+#	-h i	height of area for file; default 48 unless -P
 #	-d	add date line
 #
 ############################################################################
@@ -36,7 +36,7 @@
 #
 ############################################################################
 #
-#  Links:  options, patutils, xio, xutils, win, xcompat
+#  Links:  options, patutils, xio, xutils, graphics, xcompat
 #
 ############################################################################
 
@@ -44,14 +44,13 @@ link options
 link patutils
 link xio
 link xutils
-link win
+link graphics
 link xcompat
 
 procedure main(args)
    local x, y, w, h, pattern, count, page, opts, images, auto, unseen, foot
    local rows, cols, prefix, bfont, nfont, dims, areaw, areah, signal, poff
    local date, HGap, VGap, patterns
-
 
    opts := options(args, "Pi:aup+r+c+w+h+n:d")
 
@@ -87,9 +86,9 @@ procedure main(args)
       if \foot then h +:= 20			# space for page number
       }
 
-
-   if /unseen then win(w, h) else &window := XBind(, , "width=" || w,
-      "height=" || h)
+   WOpen("width=" || w, "height=" || h, "canvas=hidden") |
+      stop("*** cannot open window")
+   if /unseen then WAttrib("canvas=normal")
 
    if \patterns then WAttrib("fillstyle=textured")
 
@@ -140,8 +139,7 @@ procedure main(args)
                poff := (HGap + areaw - tiledim(pattern).w) / 3
                DrawImage(x + poff, y + VGap / 2, pattern)
                WFlush()
-               GotoXY(x + poff, y + areah + VGap / 3)
-               WWrites(center(count, 6))
+               CenterString(x + poff * 2, y + areah + VGap / 3, count)
                }
             x +:= areaw + HGap
             }
@@ -159,7 +157,7 @@ procedure main(args)
          Font(bfont | "6x10" | "fixed")		# restore body font
          }
       if /auto & /unseen then signal := Event()
-      WriteImage(\images || right(page, 2, "0") || ".xbm")
+      WriteImage(\images || right(page, 2, "0") || ".gif")
       if signal === "q" then exit()
       }
 
@@ -171,7 +169,7 @@ procedure main(args)
       GotoXY(w - TextWidth(date), h - 5)
       WWrites(date)
       }
-   WriteImage(\images || right(page, 2, "0") || ".xbm")
+   WriteImage(\images || right(page, 2, "0") || ".gif")
    if /auto then WDone()
 
 end

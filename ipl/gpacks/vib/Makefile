@@ -3,7 +3,7 @@ EXE=.exe
 SHELL=/bin/sh
 
 ICONT = nticont
-IFLAGS = -us -G
+IFLAGS = -us
 ITRAN = $(ICONT) $(IFLAGS)
 
 OBJ = vib.u vibbttn.u vibedit.u vibfile.u vibglbl.u \
@@ -69,6 +69,9 @@ ipd doc: ipd265.ps
 ipd265.ps:	ipd265.bibl fig1.ps fig2.ps
 	bib -t stdn -p /r/che/usr/ralph/docs/reg.index <ipd265.bibl | \
 	    psfig | psroff -t >ipd265.ps
+
+Iexe:	vib
+	cp vib ../../iexe/
 
 clean Clean:
 	rm -f vib *.ps *.u[12] app vibpro* core busy dlog

@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     November 5, 1997
+#	Date:     November 17, 1997
 #
 ############################################################################
 #
@@ -16,11 +16,6 @@
 #
 #  This program shows the colors given color list files given on the
 #  command line.
-#
-#  The following options are supported:
-#
-#	-c i	number of color cells in a row, default 16
-#	-w i	width of color cell, default 20
 #
 #  colormap will display color lists with more than 256 entries but,
 #  of course, it cannot display more than 256 different colors (if that
@@ -32,7 +27,7 @@
 #
 ############################################################################
 #
-#  Links:  colrlist, interact, io, options, wopen
+#  Links:  colrlist, drawcolr, interact, io, vsetup
 #
 ############################################################################
 
@@ -40,56 +35,85 @@ $define CellWidth 20
 $define Cells 16
 
 link colrlist
+link drawcolr
 link interact
 link io
-link options
-link wopen
+link vsetup
 
-procedure main(args)
-   local i, j, k, clist, depth, opts, width, cells, file, color
+global colors
 
-   opts := options(args, "c+w+")
-   width := \opts["w"] | CellWidth
-   cells := \opts["c"] | Cells
+procedure main()
+   local vidgets
 
-   every file := !args do {
-      clist := colrlist(file) | {
-         Notice("Cannot open window for " || image(file) || ".")
-         exit()
-         }
-      depth := *clist / cells
-      if *clist % cells ~= 0 then depth +:= 1
-      WOpen("size=" || cells * width || "," || depth * width, "bg=black") |
-         stop("*** cannot open window for ", image(file))
-      every j := 0 to depth - 1 do
-         every i := 0 to Cells - 1 do {
-            color := get(clist) | break break
-            Fg(color) | {
-               Notice("Cannot set foreground to " || image(color) || ".")
-               exit()
-               }
-            FillRectangle(i * width + 1, j * width + 1, width - 1, width - 1)
-            }
+   vidgets := ui()
 
-      # Fill out rest of window with patterned boxes.
+   GetEvents(vidgets["root"], , shortcuts)
 
-      Bg("dark gray")
-      Fg("black")
-      WAttrib("fillstyle=textured")
-      WAttrib("pattern=checkers")
-
-      every k := i to width - 1 do
-         FillRectangle(k * width + 1, j * width + 1, width - 1, width - 1)
-
-      repeat case Event() of {
-         "n":  break
-         "q":  exit()
-         "s":  {
-            Fg("black")
-            Bg("light gray")
-            snapshot()
-            }
-         }
-      WClose()
-      }
 end
+
+procedure file_cb(vidgets, value)
+
+   case value[1] of {
+      "load     @L":  load_colors()
+      "snapshot @S":  snapshot(colors)
+      "quit     @Q":  exit()
+      }
+
+   return
+
+end
+
+procedure reload_cb()
+
+   return
+
+end
+
+procedure load_colors()
+   local clist
+   static file
+
+   initial file := ""
+
+   repeat {
+      if OpenDialog("Specify color list file:", file) == "Cancel" then fail
+      clist := colrlist(dialog_value) | {
+         Notice("Cannot process color list " || image(dialog_value) || ".")
+         next
+         }
+      WClose(\colors)
+      colors := draw_colors(clist)
+      Raise()
+      return
+      }
+
+end
+
+procedure shortcuts(e)
+
+  if &meta then case map(e) of {
+     "l":  load_colors()
+     "q":  exit()
+     "r":  reload_cb()
+     "s":  snapshot()
+     }
+
+   return
+
+end
+
+#===<<vib:begin>>===	modify using vib; do not remove this marker line
+procedure ui_atts()
+   return ["size=197,288", "bg=gray-white"]
+end
+
+procedure ui(win, cbk)
+return vsetup(win, cbk,
+   [":Sizer:::0,0,197,288:",],
+   ["file:Menu:pull::1,0,36,21:File",file_cb,
+      ["load     @L","snapshot @S","quit     @Q"]],
+   ["line1:Line:::0,24,197,24:",],
+   ["reload:Button:regular::26,56,49,20:reload",reload_cb],
+   )
+end
+#===<<vib:end>>===	end of section maintained by vib

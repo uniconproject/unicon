@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     October 31, 1997
+#	Date:     February 2, 1999
 #
 ############################################################################
 #
@@ -14,18 +14,20 @@
 #
 ############################################################################
 #
-#  To get from one image to another, type "n"; to quit, type "q".
+#  To get from one image to another, type "n"; to quit, type "q". "s"
+#  produces a snapshot and "w" writes the name of the file.
 #
 ############################################################################
 #
-#  Requires:  Version 9 graphics.  
+#  Requires:  Version 9 graphics  
 #
 ############################################################################
 #
-#  Links:  mirror, wopen
+#  Links:  interact, mirror, wopen
 #
 ############################################################################
 
+link interact
 link mirror
 link wopen
 
@@ -38,9 +40,12 @@ procedure main(args)
          next
          }
       win := mirror(&window)
+      WAttrib(win, "canvas=normal", "label=" || name)
       repeat case Event(win) of {
          "n":  break
+         "s":  snapshot(win)
          "q":  exit()
+         "w":  write(name)		# write out file name
          }
       WClose(&window)
       WClose(win)

@@ -7,7 +7,7 @@
 #
 #	Author:   Gregg M. Townsend
 #
-#	Date:     November 21, 1996
+#	Date:     June 9, 2001
 #
 ############################################################################
 #
@@ -61,6 +61,9 @@ int fpoll(int argc, descriptor *argv)	/*: await data from file */
    /* there's no legal way to do this in C; we cheat */
 #ifdef __linux
    if (f->_IO_read_ptr < f->_IO_read_end)
+      RetArg(1);
+#elif __bsdi__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__
+   if (f->_r > 0)
       RetArg(1);
 #else
    if (f->_cnt > 0)

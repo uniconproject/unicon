@@ -6,7 +6,7 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     June 28, 1997
+#	Date:     June 21, 1999
 #
 ############################################################################
 #
@@ -28,14 +28,12 @@
 #  In addition to rules, there are keywords that describe the system and how
 #  to draw it.  These include the "axiom" on which rewriting is started and
 #  optionally the angle in degrees between successive lines (default 90).
-#  The keyword "name" is the first line of the 0L-system.  Other keywords
-#  may be present, but are ignored.
+#  Other keywords may be present, but are ignored.
 #
 #  Keywords are followed by a colon.
 #
 #    An example 0L-system is:
 #
-#	name:dragon
 #	X->-FX++FY-
 #	Y->+FX--FY+
 #	F->
@@ -55,7 +53,6 @@
 #  by rewriting. Thus, the example above can be expressed more concisely
 #  as
 #
-#	name:dragon
 #	X->-FX++FY-
 #	Y->+FX--FY+
 #	F->
@@ -64,7 +61,6 @@
 #
 #  The recognized keywords are:
 #
-#	name	name of L-system
 #	axiom	axiom for generation
 #	angle	angular increment for turns
 #	length	segment length
@@ -90,7 +86,6 @@
 #
 #  The command-line options are:
 #
-#	-n s	name of 0L-system, default first one
 #	-g i	number of generations, default 3
 #	-l i	length of line segments, default 5
 #	-a i	angular increment in degrees (overrides angle given in
@@ -100,9 +95,15 @@
 #	-x i	initial x position, default mid-window
 #	-y i	initial y position, default mid-window
 #	-W	write out string instead of drawing
-#	-s	take snapshot of image in <name>.gif
+#	-s	take snapshot of image.
 #	-d i	delay in milliseconds between symbol interpretations;
 #		  default 0
+#
+#  NOTE:  The name option that supported multiple L-Systems in
+#         one file has been eliminated on the grounds that it
+#         introduced too much complexity in use.
+#
+############################################################################
 #
 #  References:
 #
@@ -134,24 +135,14 @@ link wopen
 
 procedure main(args)
    local line, gener, axiom, angle, opts, i, s, c, symbol, rewrite
-   local allchars, rhs, value, spec, x, y, length, w, h, name, delay
+   local allchars, rhs, value, spec, x, y, length, w, h, delay, name
 
    rewrite := table()
    allchars := ''			# cset of all rhs characters
  
-   opts := options(args,"n:g+l+a+w+h+x+y+Wsd+")
+   opts := options(args,"g+l+a+w+h+x+y+Wsd+")
 
-   if name := \opts["n"] then {
-      while line := read() | stop("*** 0L-system not found") do
-         line ? {
-            if ="name:" & =name & pos(0) then break
-            }
-      }
-   else {
-      read() ? {			# no name specified; discard name line
-         ="name:"
-         } 
-      } | stop("*** malformed file")
+   rhs := ''
 
    while line := read() do
       line ? {
@@ -174,8 +165,7 @@ procedure main(args)
                "comment":  &null		# ignore comments
                "length":   length := value   
                "gener":    gener := value   
-               "name":     break		# new 0L-system
-               default:    write(&errout, "unknown keyword: ", spec)
+               "name":     name := value
                }				# ignore others
             }
          else write(&errout, "malformed input: ", tab(0))
@@ -204,6 +194,7 @@ procedure main(args)
    /x := 0
    /y := 0
    /delay := 0
+   /name := "intitled"
 
    if /axiom then stop("*** no axiom")
 
@@ -212,7 +203,7 @@ procedure main(args)
       "dy=" || (h / 2)) | stop("*** cannot open window")
       linddraw(x, y, axiom, rewrite, length, angle, gener, delay)
       if \opts["s"] then WriteImage(name || ".gif")
-      Event()
+      WDone()
       }
    else {
       every writes(lindgen(!axiom, rewrite, gener))

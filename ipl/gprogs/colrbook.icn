@@ -6,7 +6,7 @@
 #
 #	Author:   Gregg M. Townsend
 #
-#	Date:     September 4, 1997
+#	Date:     December 1, 1997
 #
 ############################################################################
 #
@@ -80,7 +80,7 @@ procedure main(args)
          x := leftx + dx * i - cw
          y := HEADER + dy * j - ch
          BevelRectangle(x, y, cw, ch, -BevelWidth)
-	 fillargs[ij] := [cwin, x + BevelWidth, y + BevelWidth,
+         fillargs[ij] := [cwin, x + BevelWidth, y + BevelWidth,
             cw - 2 * BevelWidth, ch - 2 * BevelWidth]
          if Fg(cwin, colrs[ij] := NewColor("gray")) then	# may fail
             FillRectangle ! fillargs[ij]
@@ -119,7 +119,7 @@ procedure hueclick(win, arg, x, y)
             EraseArea(m, m - TSIZ / 2, TSIZ + 1, h + TSIZ)
             y := m - HGAP + integer((n - 0.5) * (h + HGAP) / *huelist)
             BevelTriangle(m + TSIZ / 2, y, TSIZ / 2, "e")
-	    setcolor(hue)
+            setcolor(hue)
             EraseArea(LEFT, m + h - FOOTER, w, FOOTER + m)
             CenterString(LEFT + (w - LEFT + m)/2, m + h + m/2 - FOOTER/2, hue)
             }
@@ -136,18 +136,18 @@ procedure setcolor(hue)
 
    every i := 1 to *sats do
       every j := 1 to *lgts do {
-	 ij := i || j
-	 prefix := lgts[j] || " " || sats[i] || " "
-	 if not Color(cwin, \colrs[ij], prefix || hue) then {
-	    # no mutable color was allocated;
-	    # free old static color, preserving grays (used for decoration)
-	    # also preserving labeling colors ("medium vivid")
-	    if \prev ~== "black" & \prev ~== "gray" & \prev ~== "white" then
-	       FreeColor(cwin, ("medium vivid " ~== prefix) || \prev)
-	    Fg(cwin, prefix || hue)
-	    FillRectangle ! fillargs[ij]
-	    }
-	 }
+         ij := i || j
+         prefix := lgts[j] || " " || sats[i] || " "
+         if not Color(cwin, \colrs[ij], prefix || hue) then {
+            # no mutable color was allocated;
+            # free old static color, preserving grays (used for decoration)
+            # also preserving labeling colors ("medium vivid")
+            if \prev ~== "black" & \prev ~== "gray" & \prev ~== "white" then
+               FreeColor(cwin, ("medium vivid " ~== prefix) || \prev)
+            Fg(cwin, prefix || hue)
+            FillRectangle ! fillargs[ij]
+            }
+         }
 
    prev := hue
    return

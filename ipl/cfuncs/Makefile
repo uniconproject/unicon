@@ -1,24 +1,29 @@
-#  Makefile for dynamically loaded C function library
+#  Makefile for the dynamically loaded C function library.
 #
 #  If building with the compiler (instead of the interpreter)
 #  use the "-fs" option to avoid problems.
 
-SHELL = /bin/sh
-
-FUNCLIB = libcfunc.so
+include ../../Makedefs
 
 ICONT = icont
 IFLAGS = -us
 ITRAN = $(ICONT) $(IFLAGS)
 
+FUNCLIB = libcfunc.so
+
 CC = cc
 CFLAGS = -O -w
 
+.SUFFIXES: .c .o
+.c.o:			; $(CC) $(CFLAGS) $(CFDYN) -c $<
+
 FUNCS = bitcount.o files.o fpoll.o internal.o lgconv.o osf.o \
 	pack.o ppm.o process.o tconnect.o
+CSRC = bitcount.c files.c fpoll.c internal.c lgconv.c osf.c \
+	pack.c ppm.c process.c tconnect.c
 
 
-default:	cfunc.u2 $(FUNCLIB)
+default:	cfunc.u $(FUNCLIB)
 
 # library
 $(FUNCLIB):	$(FUNCS) mklib.sh
@@ -26,9 +31,9 @@ $(FUNCLIB):	$(FUNCS) mklib.sh
 $(FUNCS):	icall.h
 
 # Icon interface
-cfunc.u2:	cfunc.icn
-		$(ITRAN) -c cfunc.icn
-cfunc.icn:	$(FUNCS) mkfunc.sh
+cfunc.u:	cfunc.icn
+		$(ICONT) $(IFLAGS) -c cfunc.icn
+cfunc.icn:	$(CSRC) mkfunc.sh
 		sh mkfunc.sh $(FUNCLIB) $(FUNCS) >cfunc.icn
 
 

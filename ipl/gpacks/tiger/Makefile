@@ -10,7 +10,7 @@ SCRIPTS = tgrsort tgrstats tgrclean
 
 
 .SUFFIXES:	.icn
-.icn:		; IPATH="../procs $$IPATH" $(IC) $(IFLAGS) $<
+.icn:		; $(IC) $(IFLAGS) $<
 
 
 
@@ -23,9 +23,9 @@ test:
 install:	$(PROGS) $(SCRIPTS)
 		cp $(PROGS) $(SCRIPTS) $(DEST)
 
+Iexe:		
+		$(MAKE) DEST=../../iexe install
 
-$(PROGS):	../procs/built
 
-
-clean:		
+clean Clean:		
 		rm -f $(PROGS) *.u[12] *.out*

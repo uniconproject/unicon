@@ -2,7 +2,8 @@
 #
 # Unix Makefile for installing itweak and running a sample debugging session.
 #
-# $Id: Makefile,v 1.1.1.1 2001-05-05 08:44:33 jeffery Exp $
+# $Id: Makefile,v 1.2 2001-09-04 22:50:17 jeffery Exp $
+# updated 4-aug-2000/gmt
 #
 # 'make' or 'make install'
 # does the necessary compilations to get the itweak package ready to use.
@@ -56,7 +57,7 @@
 #
 ############################################################################ 
 
-ICONT=icont
+ICONT=icont -s
 ITWEAK=itweak
 
 
@@ -90,7 +91,7 @@ options.u1 : options.icn
 ##### 'sample' targets: the debugging stuff
 
 sample-debug :
-	make -f $(MAKEFILE) sample DEBUG=$(SAMPLE_INIT)
+	$(MAKE) -f $(MAKEFILE) sample DEBUG=$(SAMPLE_INIT)
 
 $(SAMPLE_INIT) : ipxref.u1 options.u1
 	@echo '*** This is how the program files are tweaked...'
@@ -100,7 +101,7 @@ $(SAMPLE_INIT) : ipxref.u1 options.u1
 
 sample-clean :
 	rm -f ipxref.u? options.u?
-	make -f $(MAKEFILE) sample
+	$(MAKE) -f $(MAKEFILE) sample
 
 ##### demo session
 
@@ -112,3 +113,13 @@ demo : sample-debug
 	@echo '-------------- session start --------------------------'
 	@(DBG_INPUT=$(CMD); export DBG_INPUT; sample ipxref.icn)
 	@echo '-------------- session end ----------------------------'
+
+##### build executable and copy to ../../iexe
+##### (nothing done in this case because the executable doesn't stand alone)
+
+Iexe :
+
+##### cleanup
+
+Clean :
+	rm -f $(ITWEAK) *.u[12]

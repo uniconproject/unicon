@@ -6,17 +6,15 @@
 #
 #	Author:   Ralph E. Griswold
 #
-#	Date:     November 8, 1994
-#
-############################################################################
-#
-#   This file is in the public domain.
+#	Date:     December 18, 1997
 #
 ############################################################################
 #
 #  tileimg(win, image) tiles win with copies of image.
 #
 #  tileims(win, ims) tiles win with copies of the image specified by ims
+#
+#  Note that tileimg() uses the gamma value of win.
 #
 ############################################################################
 #
@@ -31,10 +29,11 @@
 link imutils
 link tile
 
-procedure tileimg(win, img)
+procedure tileimg(win, img)		#: tile image
    local hidden
 
-   hidden := WOpen("canvas=hidden", "image=" || img) | {
+   hidden := WOpen("canvas=hidden", "image=" || img, "gamma=" ||
+      WAttrib(win, "gamma")) | {
       write(&errout, "*** cannot open image ", img)
       fail
       }
@@ -47,16 +46,19 @@ procedure tileimg(win, img)
 
 end
 
-procedure tileims(win, ims)
+procedure tileims(win, ims)		#: tile image string
    local w, h
 
    w := imswidth(ims)
    h := imsheight(ims)
 
    if ims ? {
-      tab(many(&digits)) & =",#" & Pattern(ims)
-      } then				# if a valid pattern
-      FillRectangle()
+      tab(many(&digits)) & =",#"
+      } then {
+         WAttrib(win, "pattern=" || ims)
+         WAttrib(win, "fillstyle=textured")
+         FillRectangle(win)
+         }
    
    else {
       DrawImage(win, 0, 0, ims) | fail

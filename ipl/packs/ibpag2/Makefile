@@ -23,10 +23,9 @@ LIBDIR = /usr/local/lib/icon/data
 #
 # Name of your icon compiler and compiler flags.
 #
-ICONC = /usr/icon/v8/bin/icont
-IFLAGS = -u #-Sc 400 -Sg 400 -Si 2000 -Sn 4000 -SF 40
+ICONC = icont
+IFLAGS = -u -s #-Sc 400 -Sg 400 -Si 2000 -Sn 4000 -SF 40
 
-SHELL = /bin/sh
 SHAR = /usr/local/bin/shar
 COMPRESS = /usr/bin/compress
 # COMPRESS = /usr/local/bin/gzip
@@ -94,10 +93,15 @@ install: all
 	@echo "Done installing."
 	@echo ""
 
+#  Build executable and copy to ../../iexe.
+#  Nothing done in this case because the executable doesn't stand alone.
+Iexe:	
+
+
 #
 # Cleanup
 #
 clean:
 	-rm -f *~ #*# core *.u[12] $(PROGNAME).output
-clobber: clean
-	-rm $(PROGNAME)
+Clean clobber: clean
+	-rm -f $(PROGNAME)

@@ -161,6 +161,7 @@ procedure load_strings(f)
       ",":	(n <:= *l) | put(l, &null)
       " ":	next			# whitespace: do nothing
       "\t":	next
+      "\r":	next
       "\n":	next
       "[":	put(l, load_strings(f))	# nested list
 
@@ -176,7 +177,7 @@ procedure load_strings(f)
 
       default: {			# anything else: consume to separator
          s := c
-         while (c := reads(f, 1)) & not upto(',] \t\n', c) do
+         while (c := reads(f, 1)) & not upto(',] \t\r\n', c) do
             s ||:= c
          put(l, s)
          if c == "]" then
@@ -465,7 +466,7 @@ procedure prototype()
       line := read(f)
       close(f)
       if \line & not (line ? =PTITLE) then {
-         Notice("Cannot create protype file " || PROTOFILE || ":",
+         Notice("Cannot create prototype file " || PROTOFILE || ":",
             "it already contains something that is not a VIB prototype")
          fail
          }
@@ -474,10 +475,10 @@ procedure prototype()
    # write source file
    if save_session(PROTOFILE, 1) then {
       # translate and execute
-      WAttrib("pointer=watch")
+      WAttrib("pointer=" || ("wait" | "watch"))
       system(BUILDPROTO)
       remove(PROTOFILE)
-      WAttrib("pointer=top left arrow")
+      WAttrib("pointer=" || ("left ptr" | "arrow"))
       system(EXECPROTO)
       }
 end
@@ -586,7 +587,7 @@ every write(f, ![
 end
 
 ############################################################################
-# dlog_prototype() writes a header for a dialog protyping run.
+# dlog_prototype() writes a header for a dialog prototyping run.
 ############################################################################
 procedure dlog_prototype(f, id)
    write(f, PTITLE)

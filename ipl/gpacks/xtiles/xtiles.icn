@@ -2,7 +2,8 @@
 
 # tiles puzzle
 
-# $Id: xtiles.icn,v 1.1.1.1 2001-05-05 08:43:37 jeffery Exp $
+# $Id: xtiles.icn,v 1.2 2001-09-04 22:39:45 jeffery Exp $
+# minor mods 2000/12/23 gmt
 
 link graphics
 
@@ -627,15 +628,15 @@ end
 
 procedure usage()
 	return "Usage: X-Tiles [-v] [-h] _
-[-bw] [-pastel] [-reduced] [-darker] [-lighter]_
-[size] [columns] [lines] [seed] [bg]"
+[-bw] [-pastel] [-reduced] [-darker] [-lighter] _
+[colors] [columns] [lines] [seed] [bg]"
 end
 
 
 procedure whoami()
-# $Id: xtiles.icn,v 1.1.1.1 2001-05-05 08:43:37 jeffery Exp $
+# $Id: xtiles.icn,v 1.2 2001-09-04 22:39:45 jeffery Exp $
 	name := ""
-	"$Id: xtiles.icn,v 1.1.1.1 2001-05-05 08:43:37 jeffery Exp $" ? 
+	"$Id: xtiles.icn,v 1.2 2001-09-04 22:39:45 jeffery Exp $" ? 
 		{
 		="$Id: "
 		name ||:= tab(find(".icn,v"))
@@ -740,8 +741,9 @@ procedure main(L)
 			{
 			last_random := &random
 			best_score := &null
-			write("Playing tiles ", r, " ", n, " ", m, " ", &random)
 			}
+		writes("Playing tiles ", r, " ", n, " ", m, " ",
+		   left(&random, 12))
 
 		new_game(r)
 		lasti := &null
@@ -830,6 +832,7 @@ procedure main(L)
 						prompt := "End "
 
 					write_score(prompt||score)
+					write("  Final score ", score)
 					last := user_entry()
 					if last == "u" then
 						{
@@ -867,6 +870,7 @@ procedure main(L)
 				if (e == ("o" | "y" | "q")) then 
 					{
 					last := "q"
+					write()
 					break
 					}
 				else

@@ -17,10 +17,6 @@
 #  This procedure is based on the UNIX basename(1) utility.  It strips off
 #  any path information and removes the specified suffix, if present.
 #
-#  If no suffix is provided, the portion of the name up to the first
-#  "." is returned if you $define OLD_STYLE, otherwise it works as in
-#  the  UNIX utility basename(1).
-#
 #  It should work under UNIX, MS-DOS, and the Macintosh.
 #
 ############################################################################
@@ -30,13 +26,8 @@ procedure basename(name, suffix)	#: base name of file
 
    name ? {
       every i := upto('/\\:')
-      tab(integer(i) + 1)		# get rid of path, if any
-      while tab ( upto('/\\:') + 1 )  # get rid of path, if any
+      tab(integer(i) + 1)       	  # get rid of path, if any
       if ( base := tab ( -*\suffix ) ) & =suffix then return base
-$ifdef OLD_STYLE
-      else return tab ( find ( "." ) | 0 )
-$else    # OLD_STYLE
       else return tab ( 0 )
-$endif   # OLD_STYLE
       }
 end

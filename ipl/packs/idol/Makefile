@@ -2,13 +2,22 @@
 # Sample makefile for compiling Idol
 #
 idol: idol.iol idolmain.u1 unix.u1 idolboot
-	idolboot idol unix.u1 idolmain.u1
+	./idolboot idol unix.u1 idolmain.u1
 
 idolboot: idolboot.icn unix.u1
-	icont -Sr1000 -SF30 -Si1000 -Sn3000 idolboot unix.u1
+	icont -s idolboot unix.u1
 
 unix.u1: unix.icn
-	icont -c unix
+	icont -s -c unix
 
 idolmain.u1: idolmain.icn
-	icont -c idolmain
+	icont -s -c idolmain
+
+
+#  Build executable and copy to ../../iexe.
+#  (Nothing done in this case because the executable doesn't stand alone.)
+Iexe:
+
+
+Clean:
+	rm -rf *.u[12] idol idolboot idolmain unix idolcode.env

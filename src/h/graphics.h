@@ -142,6 +142,9 @@
 #define CLRMINPENDW(w)  ((w)->bits &= ~2048)
 #endif					/* PresentationManager */
 
+#define ISTITLEBAR(ws) ((ws)->bits & 8192)
+#define SETTITLEBAR(ws) ((ws)->bits |= 8192)
+#define CLRTITLEBAR(ws) ((ws)->bits &= ~8192)
 
 
 /*
@@ -612,7 +615,9 @@ typedef struct
 #define A_EYEDIR        63
 #define A_EYEUP         64
 
-#define NUMATTRIBS	64
+#define A_TITLEBAR	65
+
+#define NUMATTRIBS	65
 
 #define XICONSLEEP	20 /* milliseconds */
 

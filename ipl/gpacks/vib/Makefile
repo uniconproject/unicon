@@ -1,5 +1,4 @@
 #  Makefile for vib, the Visual Interface Builder
-EXE=.exe
 SHELL=/bin/sh
 
 ICONT = icont
@@ -14,7 +13,7 @@ OBJ = vib.u vibbttn.u vibedit.u vibfile.u vibglbl.u \
 	giftoppm $< | ppmtopgm | pnmtops -scale .75 >$@
 
 vib:	$(OBJ)
-	$(ITRAN) -o vib$(EXE) $(OBJ)
+	$(ITRAN) -o vib $(OBJ)
 
 vib.u: vib.icn
 	$(ITRAN) -c vib.icn

@@ -14,21 +14,21 @@
 #begdef MissingGraphicsFunc(funcname)
 "an unavailable graphics function"
 function{} funcname()
-   runerr(403)
+   runerr(121)
 end
 #enddef
 
 #begdef MissingGraphicsFunc1(funcname)
 "an unavailable graphics function"
 function{} funcname(x)
-   runerr(403)
+   runerr(121)
 end
 #enddef
 
 #begdef MissingGraphicsFuncV(funcname)
 "an unavailable graphics function"
 function{0} funcname(argv[warg])
-   runerr(403)
+   runerr(121)
 end
 #enddef
 
@@ -1474,6 +1474,7 @@ function{0,1} PaletteChars(argv[argc])
             else
                return string(-n, (char *)allchars);
          }
+      fail; /* NOTREACHED */ /* avoid spurious rtt warning message */
       }
 end
 
@@ -2004,9 +2005,12 @@ function{*} WAttrib(argv[argc])
 		  }
                /*
                 * Convert the argument to a string
+		* The code can't handle very long attributes, so check length.
                 */
                if (!cnv:tmp_string(argv[n], sbuf)) 
                   runerr(109, argv[n]);
+	       if (StrLen(sbuf) > 8100)
+		  runerr(145, argv[n]);
                /*
                 * Read/write the attribute
                 */
@@ -2161,11 +2165,20 @@ function{0,1} WriteImage(argv[argc])
 
       /*
        * clip image to window, and fail if zero-sized.
+       * (the casts to long are necessary to avoid unsigned comparison.)
        */
-      if (x < 0)  x = 0;
-      if (y < 0)  y = 0;
-      if (x + width > w->window->width)    width = w->window->width - x;
-      if (y + height > w->window->height)  height = w->window->height - y;
+      if (x < 0) {
+	 width += x;
+	 x = 0;
+         }
+      if (y < 0) {
+	 height += y;
+	 y = 0;
+         }
+      if (x + width > (long) w->window->width)
+	 width = w->window->width - x;
+      if (y + height > (long) w->window->height)
+	 height = w->window->height - y;
       if (width <= 0 || height <= 0)
 	 fail;
 

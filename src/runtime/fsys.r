@@ -323,10 +323,9 @@ function{1} close(f)
       }
 
    body {
-      FILE *fp;
-
-      fp = BlkLoc(f)->file.fd;
-      if (BlkLoc(f)->file.status == 0) return f;
+      FILE *fp = BlkLoc(f)->file.fd;
+      int status = BlkLoc(f)->file.status;
+      if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
       /*
        * Close f, using fclose, pclose, closedir, or wclose as appropriate.
@@ -339,28 +338,28 @@ function{1} close(f)
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
-#if NT
       if (BlkLoc(f)->file.status & Fs_Socket) {
 	 BlkLoc(f)->file.status = 0;
+#if NT
 	 return C_integer closesocket((SOCKET)fp);
-	 }
 #else					/* NT */
-      if (BlkLoc(f)->file.status & Fs_Dir) {
+	 return C_integer close((int)fp);
+#endif					/* NT */
+	 }
+#endif					/* PosixFns */
+
+#ifdef ReadDirectory
+      if (BlkLoc(f)->file.status & Fs_Directory) {
 	 BlkLoc(f)->file.status = 0;
 	 closedir((DIR *)fp);
 	 return f;
          }
-      else if (BlkLoc(f)->file.status & Fs_Socket) {
-	 BlkLoc(f)->file.status = 0;
-	 return C_integer close((int)fp);
-	 }
-#endif					/* NT */
-#endif					/* PosixFns */
+#endif					/* ReadDirectory */
 
 #ifdef ISQL
       if (BlkLoc(f)->file.status & Fs_ODBC) {
 	 BlkLoc(f)->file.status = 0;
-	 if (dbclose(fp)) fail;
+	 if (dbclose((struct ISQLfile *)fp)) fail;
 	 return C_integer 0;
 	 }
 #endif					/* ISQL */
@@ -393,8 +392,10 @@ function{1} close(f)
 #endif					/* Graphics */
 
 #if NT
+#ifndef NTGCC
 #define pclose _pclose
 #define popen _popen
+#endif					/* NTGCC */
 #endif					/* NT */
 
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
@@ -1002,20 +1003,14 @@ Deliberate Syntax Error
 	    /*
 	     * check and see if the file was actually a directory
 	     */
-#if !NT
 	    if (S_ISDIR(st.st_mode)) {
 	       if (status & Fs_Write)
 		  runerr(173, fname);
 	       else {
+#if !NT
 		  f = (FILE *)opendir(fnamestr);
-		  status |= Fs_Dir;
-		  }
-	       }
+		  status |= Fs_Directory;
 #else					/* !NT */
-	    if (st.st_mode & _S_IFDIR) {
-	       if (status & Fs_Write)
-		  runerr(173, fname);
-	       else {
 		  char tempbuf[512];
 		  strcpy(tempbuf, fnamestr);
 		  if (tempbuf[strlen(tempbuf)-1] != '\\')
@@ -1034,9 +1029,9 @@ Deliberate Syntax Error
 		     fflush(f);
 		     fseek(f, 0, SEEK_SET);
 		     }
+#endif					/* NT */
 		  }  
 	       }
-#endif					/* NT */
 	    else {
 	       f = fopen(fnamestr, mode); 
 	       }
@@ -1065,11 +1060,9 @@ Deliberate Syntax Error
 	     * check and see if the file was actually a directory
 	     */
             struct stat fs;
-            int rv;
 
-            rv = stat(fnamestr, &fs);
-            if (rv == -1) fail;
-	    if (fs.st_mode & _S_IFDIR) {
+            if (stat(fnamestr, &fs) == -1) fail;
+	    if (S_ISDIR(fs.st_mode)) {
 	       strcpy(tempbuf, fnamestr);
 	       if (tempbuf[strlen(tempbuf)-1] != '\\')
 	          strcat(tempbuf, "\\");
@@ -1129,8 +1122,6 @@ Deliberate Syntax Error
 	 }
 #endif					/* Graphics */
 
-/* fprintf(stderr, "returned a file\n"); */
-
       return file(fl);
       }
 end
@@ -1162,9 +1153,7 @@ function{0,1} read(f)
       tended struct descrip s;
       FILE *fp;
 #ifdef PosixFns
-#if 1 /* NT */
       SOCKET ws;
-#endif					/* NT */
 #endif					/* PosixFns */
 
       /*
@@ -1176,7 +1165,6 @@ function{0,1} read(f)
 	 runerr(212, f);
 
 #ifdef PosixFns
-#if 1 /* NT */
        if (status & Fs_Socket) {
 	  StrLen(s) = 0;
           do {
@@ -1203,28 +1191,25 @@ function{0,1} read(f)
 	     StrLen(s) += rlen;
 	     if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
 	     else {
-/*	        FILE *f = fopen("delete.me","a");
-		fprintf(f,"got sock_getstrg but its not a line\n");
-		fclose(f); */
+		/* no newline to trim; EOF? */
 		}
 	     }
 	  while (slen > 0);
 
          return s;
-		}
-#else
+	  }
+
       /* 
        * well.... switching from unbuffered to buffered actually works so
        * we will allow it except for sockets.
        */
       if (status & Fs_Unbuf) {
 	 if (status & Fs_Socket)
-	    runerr(180, f);
+	    runerr(1048, f);
 	 status &= ~Fs_Unbuf;
-      }
-#endif					/* NT */
-      status |= Fs_Buff;
-      BlkLoc(f)->file.status = status;
+	 status |= Fs_Buff;
+	 BlkLoc(f)->file.status = status;
+	 }
 #endif					/* PosixFns */
 
       if (status & Fs_Writing) {
@@ -1260,9 +1245,9 @@ function{0,1} read(f)
 	    slen = wgetstrg(sbuf,MaxReadStr,fp);
 	    if (slen == -1)
 	       runerr(141);
-	    if (slen == -2)
+	    else if (slen == -2)
 	       runerr(143);
-	    if (slen == -3)
+	    else if (slen == -3)
                fail;
 	    }
 	 else
@@ -1270,7 +1255,7 @@ function{0,1} read(f)
 
 #ifdef PosixFns
 #if !NT
-	  if (status & Fs_Dir) {
+	  if (status & Fs_Directory) {
 	     struct dirent *d;
 	     char *s, *p=sbuf;
 	     IntVal(amperErrno) = 0;
@@ -1347,14 +1332,12 @@ function{0,1} reads(f,i)
       }
 
    body {
-#if 1 /* NT */
       register word slen, rlen;
       register char *sp;
       static char sbuf[MaxReadStr];
       SOCKET ws;
       int bytesread = 0;
       int Maxread = 0;
-#endif					/* NT */
       long tally, nbytes;
       int status;
       FILE *fp;
@@ -1391,14 +1374,14 @@ function{0,1} reads(f,i)
 #endif                                  /* Messaging */	       
 
 #ifdef PosixFns     
-#if 1 /* NT */
       if (status & Fs_Socket)  {
          StrLen(s) = 0;
 	 Maxread = ((i<=MaxReadStr)?i:MaxReadStr);
 	 do {
 	    ws = (SOCKET)fp;
 	    if (bytesread > 0) {
-	       Maxread = ((i - bytesread <= MaxReadStr)? i - bytesread : MaxReadStr);
+	       Maxread =
+		  ((i - bytesread <= MaxReadStr)? i - bytesread : MaxReadStr);
 	       }
 	    if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
 	       /*IntVal(amperErrno) = errno; */
@@ -1425,7 +1408,6 @@ function{0,1} reads(f,i)
 
 	 return s;
 	 }
-#endif					/*NT*/
       status |= Fs_Buff;
       BlkLoc(f)->file.status = status;
 #endif					/* PosixFns */
@@ -1450,7 +1432,7 @@ function{0,1} reads(f,i)
 #endif					/* ConsoleWindow */
 
 #ifdef PosixFns
-       if (status & Fs_Dir)
+       if (status & Fs_Directory)
 	   runerr(174, f);
 #endif					/* PosixFns */
 
@@ -1669,10 +1651,10 @@ function{0,1} seek(f,o)
       if (BlkLoc(f)->file.status == 0)
 	 fail;
 
-#ifdef PosixFns
-      if (BlkLoc(f)->file.status & Fs_Dir)
+#ifdef ReadDirectory
+      if (BlkLoc(f)->file.status & Fs_Directory)
 	 fail;
-#endif					/* PosixFns */
+#endif					/* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
@@ -1763,9 +1745,6 @@ function{1} system(s, o)
       pollctr++;
 #endif					/* Graphics */
 
-#if 0 /*def MSWindows - try out spawnvp() under win32 */
-      i = (C_integer)mswinsystem(s);
-#else					/* MSWindows */
 #if NT
       if (o == 0)   { /* nowait, or 0, for second argument */
          cmdname = strtok(s, " ");
@@ -1781,7 +1760,6 @@ function{1} system(s, o)
       else
 #endif					/*NT*/
       i = (C_integer)system(s);
-#endif					/* MSWindows */
 
       return C_integer i;
       }
@@ -1807,8 +1785,13 @@ function{0,1} where(f)
 
       fd = BlkLoc(f)->file.fd;
 
-      if ((BlkLoc(f)->file.status == 0))
+      if (BlkLoc(f)->file.status == 0)
 	 fail;
+
+#ifdef ReadDirectory
+      if ((BlkLoc(f)->file.status & Fs_Directory) != 0)
+         fail;
+#endif					/* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
@@ -2339,6 +2322,7 @@ end
 
 #if NT
 #ifdef MSWindows
+#ifndef NTGCC
 char *getenv(char *s)
 {
 static char tmp[1537];
@@ -2347,6 +2331,7 @@ rv = GetEnvironmentVariable(s, tmp, 1536);
 if (rv > 0) return tmp;
 return NULL;
 }
+#endif					/* NTGCC */
 #endif					/* MSWindows */
 
 int nt_chdir(char *s)
@@ -2386,20 +2371,29 @@ function{1} flush(f)
       }
 
    body {
-      FILE *fp;
-      fp = BlkLoc(f)->file.fd;
+      FILE *fp = BlkLoc(f)->file.fd;
+      int status = BlkLoc(f)->file.status;
+
+      /*
+       * File types for which no flushing is possible, or is a no-op.
+       */
+      if (((status & (Fs_Read | Fs_Write)) == 0)	/* if already closed */
+#ifdef ReadDirectory
+	  || (status & Fs_Directory)
+#endif					/* ReadDirectory */
+#ifdef PosixFns
+	  || (status & Fs_Socket)
+#endif					/* PosixFns */
+	  )
+	 return f;
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
 
-#ifndef PresentationManager
-      if (BlkLoc(f)->file.status & Fs_Window)
+      if (status & Fs_Window)
 	 wflush((wbp)fp);
       else
-#else
-       if (!(BlkLoc(f)->file.status & Fs_Window))
-#endif					/* PresentationManager */
 #endif					/* Graphics */
 	 fflush(fp);
 

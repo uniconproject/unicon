@@ -272,12 +272,27 @@ keyword{1,*} features
       return string
       }
    body {
-#include "../h/path.h"
       static char patchpath[MaxPath+18] = "%PatchStringHere->";
-      char *refpath;
+#ifdef RefPath
+      char *refpath = RefPath;
+#else					/* RefPath */
+      char *refpath = "";
+#endif					/* RefPath */
 
       if ((int)strlen(patchpath) > 18) refpath = patchpath+18;
-      else refpath = RefPath;
+      else if (strlen(refpath)==0) {
+	 refpath = patchpath+18;
+#if MSDOS
+	 if (pathFind("iconx.exe", patchpath+18, MaxPath)) {
+	    patchpath[strlen(patchpath)-strlen("iconx.exe")] = '\0';
+	    }
+#endif					/* MSDOS */
+#if UNIX
+	 if (findonpath("iconx", patchpath+18, MaxPath)) {
+	    patchpath[strlen(patchpath)-strlen("iconx")] = '\0';
+	    }
+#endif					/* UNIX */
+	 }
 
 #if COMPILER
 #define Feature(guard,sym,kwval) if ((guard) && (kwval)) suspend C_string kwval;

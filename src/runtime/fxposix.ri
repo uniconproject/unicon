@@ -191,12 +191,12 @@ function{0,1} kill(pid, signal)
          cnv:C_string(signal, signalname);
 	 sig = si_s2i((siptr)signalnames, signalname);
 	 if (sig == -1)
-	    runerr(176, signal);
+	    runerr(1043, signal);
          }
       else {
          cnv:C_integer(signal, sig);
 	 if (sig < 0 || sig > 50)
-	    runerr(176, signal);
+	    runerr(1043, signal);
 	 }
       if (sig == 0) { 
 	 IntVal(amperErrno) = EINVAL; 
@@ -233,12 +233,12 @@ function{0,1} trap(nsignal, handler)
          cnv:C_string(nsignal, signalname);
 	 sig = si_s2i((siptr)signalnames, signalname);
 	 if (sig == -1)
-	    runerr(176, nsignal);
+	    runerr(1043, nsignal);
          }
       else {
          cnv:C_integer(nsignal, sig);
 	 if (sig < 0 || sig > 50)
-	    runerr(176, nsignal);
+	    runerr(1043, nsignal);
          }
       if (sig == 0) { 
 	 IntVal(amperErrno) = EINVAL; 
@@ -253,7 +253,7 @@ function{0,1} trap(nsignal, handler)
       else if (is:proc(handler)) {
 	 struct b_proc *pp = (struct b_proc*)BlkLoc(handler);
 	 if (pp->nparam != 1 && pp->nparam != -1)
-	    runerr(178, handler);
+	    runerr(172, handler);
          signal(sig, signal_dispatcher);
          }
       else
@@ -386,7 +386,7 @@ function{0,1} chmod(s, m)
 		  fail;
 		  }
 	       if (i == -2)
-		  runerr(175, m);
+		  runerr(1045, m);
 	       }
 	    else {
 	       cnv:C_integer(m, i);
@@ -420,7 +420,7 @@ function{0,1} chmod(s, m)
 		  fail;
 	       }
 	       if (i == -2)
-		  runerr(175, m);
+		  runerr(1045, m);
 	    }
 	    else
 	       cnv:C_integer(m, i);
@@ -509,7 +509,7 @@ function{0,1} mkdir(s, m)
 	    fail;
 	 }
 	 if (mode == -2)
-	    runerr(175, m);
+	    runerr(1045, m);
       }
       else {
          cnv:C_integer(m, mode);
@@ -612,8 +612,10 @@ function{0,1} flock(f, cmd)
 	 case 's': option |= LOCK_SH; break;
 	 */
 	 case 'b': option |= LK_NBLCK; break;
+#ifndef NTGCC
 	 case 'u': option |= LK_UNLCK; break;
-	 default: runerr(177, cmd);
+#endif					/* NTGCC */
+	 default: runerr(1044, cmd);
 	 }
 
       IntVal(amperErrno) = 0;
@@ -628,6 +630,7 @@ function{0,1} flock(f, cmd)
 	 IntVal(amperErrno) = errno;
 	 fail;
       }
+      return nulldesc;
 #endif					/* NT */
 #if defined(BSD) || defined(BSD_4_4_LITE) || defined(IRIS4D) || defined(Linux)
 
@@ -637,8 +640,8 @@ function{0,1} flock(f, cmd)
 	 case 's': option |= LOCK_SH; break;
 	 case 'b': option |= LOCK_NB; break;
 	 case 'u': option |= LOCK_UN; break;
-	 default: runerr(177, cmd);
-	 }
+	 default: runerr(1044, cmd);
+     }
 
       IntVal(amperErrno) = 0;
       
@@ -665,7 +668,7 @@ function{0,1} fcntl(f, action, options)
       runerr(105, f)
    if !is:string(options) then
       if !is:integer(options) then
-         runerr(177, options)
+         runerr(1044, options)
    abstract {
       return string ++ record ++ integer
       }
@@ -695,7 +698,7 @@ function{0,1} fcntl(f, action, options)
 	 case 'O': cmd = F_SETOWN; break;
 	 case 'o': cmd = F_GETOWN; break;
 #endif					/* HP */
-	 default: runerr(177, action);
+	 default: runerr(1044, action);
       }
 
       /* Figure out options to use */
@@ -708,20 +711,20 @@ function{0,1} fcntl(f, action, options)
 
          cnv:C_string(options, lock);
 	 if ((start = strchr(lock, ',')) == NULL)
-	    runerr(177, options);
+	    runerr(1044, options);
 	 *start++ = 0;
 	 if ((len = strchr(start, ',')) == NULL)
-	    runerr(177, options);
+	    runerr(1044, options);
 	 *len++ = 0;
 
 	 switch (lock[0]) {
 	 case 'r': fl.l_type = F_RDLCK; break;
 	 case 'w': fl.l_type = F_WRLCK; break;
 	 case 'u': fl.l_type = F_UNLCK; break;
-	 default: runerr(177, options);
+	 default: runerr(1044, options);
 	 }
 	 if (lock[1] != 0)
-	    runerr(177, options);
+	    runerr(1044, options);
 
 	 switch(start[0]) {
 	 case '+': 
@@ -738,11 +741,11 @@ function{0,1} fcntl(f, action, options)
 	    break;
 	 }
 	 if (*p != ',')
-	    runerr(177, options);
+	    runerr(1044, options);
 
 	 fl.l_len = strtol(len, &p, 10);
 	 if (*p != ',')
-	    runerr(177, options);
+	    runerr(1044, options);
 
 	 start[-1] = len[-1] = ',';
 
@@ -768,7 +771,7 @@ function{0,1} fcntl(f, action, options)
 
 	 if (!constr)
 	    if (!(constr = rec_structor("posix_lock")))
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 
 	 nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -794,7 +797,7 @@ function{0,1} fcntl(f, action, options)
 #if defined(HP) || defined(SUN)
 	      case 's': o |= FASYNC; break;
 #endif
-	      default: runerr(177, options);
+	      default: runerr(1044, options);
 	      }
 	 } else
 	    cnv:C_integer(options, o);
@@ -1013,7 +1016,7 @@ function{0,1} fdup(src, dest)
       FILE *fp;
 
       if (BlkLoc(src)->file.status == 0)
-	 runerr(179, src);
+	 runerr(1042, src);
 
 #ifdef Graphics
       if (BlkLoc(src)->file.status & Fs_Window)
@@ -1218,7 +1221,8 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    IntVal(amperErrno) = errno;
 	    fail;
 	    }
-	 } else {
+         }
+      else {
 	    /* Sigh... old "system". Collect all args into a string. */
 	    if (is_argv_str) {
 #ifdef MSWindows
@@ -1501,7 +1505,7 @@ function{0,1} umask(mask)
 	    if (perm[i] == '-') {
 	       cmask |= 1;
 	    } else if (perm[i] != allperms[i])
-	       runerr(184, mask);
+	       runerr(1046, mask);
 	 }
 	 oldmask = umask(cmask);
 	 for (i = 0; i < 9; i++) {
@@ -1684,7 +1688,7 @@ function{0,1} gettimeofday()
 #endif					/* NT */
       if (!constr)
 	 if (!(constr = rec_structor("posix_timeval")))
-	    runerr(171, nulldesc);
+	    syserr("failed to create posix record constructor");
 
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -1727,7 +1731,7 @@ function{0,1} lstat(f)
 
       if (!constr)
 	 if (!(constr = rec_structor("posix_stat")))
-	    runerr(171, nulldesc);
+	    syserr("failed to create posix record constructor");
 
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -1767,7 +1771,7 @@ function{0,1} stat(f)
 	    }
 	    if (!constr)
 	       if (!(constr = rec_structor("posix_stat")))
-		  runerr(171, nulldesc);
+		  syserr("failed to create posix record constructor");
 
 	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -1843,7 +1847,7 @@ function{0,1} stat(f)
 	       }
 	    if (!constr)
 	       if (!(constr = rec_structor("posix_stat")))
-		  runerr(171, nulldesc);
+		  syserr("failed to create posix record constructor");
 
 	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -1892,11 +1896,11 @@ function{0,1} receive(f)
       
       status = BlkLoc(f)->file.status;
       if (!(status & Fs_Socket))
-	 runerr(181, f);
+	 runerr(175, f);
 
       if (!constr)
 	 if (!(constr = rec_structor("posix_message")))
-	    runerr(171, nulldesc);
+	    syserr("failed to create posix record constructor");
 
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -1907,7 +1911,7 @@ function{0,1} receive(f)
 	 fail;
 	 }
       if (ret == -1)
-	 runerr(182, f);
+	 runerr(171, f);
 	 
       result.dword = D_Record;
       result.vword.bptr = (union block *)rp;
@@ -1965,20 +1969,58 @@ end
 /* 
  * Select
  */
-#define get_unbuf_fd(f) \
-       if (is:file(f)) { \
-	  if (BlkLoc(f)->file.status & Fs_Buff) \
-	    runerr(180, f); \
-	  BlkLoc(f)->file.status |= Fs_Unbuf; \
-	  if ((fd = get_fd(f, Fs_Read|Fs_Socket)) < 0) { \
-	     if (fd == -2) \
-	        runerr(212, f); \
-	     else \
-	        runerr(174, f); \
-	  } \
-       } \
-       else \
-	  runerr(105, f); \
+int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
+		      struct descrip *lwdp)
+{
+   int fd, status;
+   if (is:file(*f)) {
+      status = BlkLoc(*f)->file.status;
+#if UNIX
+      if (status & Fs_Buff) return 1048;
+      BlkLoc(*f)->file.status |= Fs_Unbuf;
+#endif					/* UNIX */
+#if NT
+#ifdef Graphics
+      if (status & Fs_Window)
+	 c_put(lwdp, f);
+      else 
+#endif					/* Graphics */
+#endif					/* NT */
+      if ((fd = get_fd(*f, Fs_Read|Fs_Socket)) < 0) {
+	 if (fd == -2)
+	    return 212;
+	 else
+	   return 174;
+         }
+      }
+   else
+      return 105;
+
+   if (*n < fd)
+      *n = fd;
+   FD_SET(fd, fdsp);
+   return 0;
+}
+
+void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
+{
+   int fd, status = BlkLoc(*f)->file.status;
+   wbp w;
+#if NT
+   if ((status & Fs_Socket) == 0) return;
+#endif					/* NT */
+   fd = get_fd(*f, Fs_Read|Fs_Socket);
+   if (FD_ISSET(fd, fdsp)
+#if !NT
+       && (((status & Fs_Window) == 0) ||
+	((w = (wbp)(BlkLoc(*f)->file.fd)) &&
+	 ((BlkLoc(w->window->listp))->list.size > 0)))
+#endif					/* NT */
+       ) {
+      c_put(ldp, f);
+     }
+}
+
 
 "select() - wait for i/o to be available on files."
 
@@ -1987,113 +2029,68 @@ function{0,1} select(files[nargs])
       return new list(file)
       }
    body {
-      struct descrip *dp;
-      int fd, status;
+      int rv, status, timeout = -1;
       fd_set fds;
       int i, j, k=0, n=0, nset, nset_add=0;
       struct timeval tv, *ptv = &tv;
       tended struct b_list *lp = NULL;
-      tended struct b_list *lpargs = NULL;
-      union block *ep, *bp;
-      int timeout = -1, lsize;
+      union block *ep;
+      tended struct descrip d = nulldesc;
+      tended struct descrip d2 = nulldesc;
+      dptr f;
 #if NT
       tended struct b_list *lws = NULL;
-      tended struct descrip d;
-      dptr f;
-#endif					/* NT */
-#ifdef Graphics
-      wsp ws, ptr;
-#endif					/* Graphics */
-
-#if NT
-do {
-     n = 0;
 #endif					/* NT */
 
-      /* Set the fd's in the set */
-      FD_ZERO(&fds);
+      /*
+       * Unicon select() repeats until a timeout or real result.
+       * GUI activity requires periodic service while select() waits.
+       */
+      do {
+	 n = 0;
+	 FD_ZERO(&fds);			/* Set the fd's in the set */
 
 #if NT
-      if ((lws = emptylist()) == NULL) fail;
-      if ((lp = emptylist()) == NULL) fail;
-      if ((lpargs = emptylist()) == NULL) fail;
+	 if ((lws = emptylist()) == NULL) fail;
+	 d2.dword = D_List;
+	 BlkLoc(d2) = (union block *)lws;
+#endif
 
-      for(k=0;k<nargs;k++) {
-      /* Traverse the list */
-      if (!is:list(files[k])) {
-	    f = &files[k];
-
-	    if (is:file(*f)) {
-	       status = BlkLoc(*f)->file.status;
-#ifdef Graphics
-               if (status & Fs_Window) {
-		  d.dword = D_List;
-		  BlkLoc(d) = (union block *)lws;
-		  c_put(&d, f);
-		  }
-	       else 
-#endif					/* Graphics */
-               if (status & Fs_Socket)   {
-	          if ((fd = get_fd(*f, 0)) < 0) {
-		     if (fd == -2)
-		        runerr(212, *f);
-		     else
-		        runerr(174, *f);
-		     }
-		  else {
-		     if (n < fd)
-			n = fd;
-		     FD_SET(fd, &fds);
-		     }
-		  }
-	       }
-	    else
-	       runerr(105, *f);
-	 }
-      else
-      for (ep = BlkLoc(files[k])->list.listhead;
-	   BlkType(ep) == T_Lelem;
-	   ep = ep->lelem.listnext) {
-	 for (i = 0; i < ep->lelem.nused; i++) {
-	    dptr f;
-	    j = ep->lelem.first + i;
-	    if (j >= ep->lelem.nslots)
-	       j -= ep->lelem.nslots;
-	    f = &ep->lelem.lslots[j];
-
-	    if (is:file(*f)) {
-	       status = BlkLoc(*f)->file.status;
-#ifdef Graphics
-               if (status & Fs_Window) {
-		  d.dword = D_List;
-		  BlkLoc(d) = (union block *)lws;
-		  c_put(&d, f);
-		  }
-	       else 
-#endif					/* Graphics */
-               if (status & Fs_Socket)   {
-	          if ((fd = get_fd(*f, 0)) < 0) {
-		     if (fd == -2)
-		        runerr(212, *f);
-		     else
-		        runerr(174, *f);
+	 for(k=0;k<nargs;k++) {
+	    /* Traverse the list, build fd_set of sockets */
+	    if (!is:list(files[k])) {
+	       if (rv = set_if_selectable(files+k, &fds, &n, &d2))
+		  runerr(rv, files[k]);
+	       else {
+		  if ((k+1 == nargs) && is:integer(files[k]))
+		     cnv:C_integer(files[k], timeout);
+		  else
+		     runerr(105, *f);
 	          }
 	       }
-	    }
 	    else
-	       runerr(105, *f);
-	    if (n < fd)
-	      n = fd;
-	    FD_SET(fd, &fds);
-	 }	 
-      }
-      }
-      n++;
+	       for (ep = BlkLoc(files[k])->list.listhead;
+		    BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
+		  for (i = 0; i < ep->lelem.nused; i++) {
+		     j = ep->lelem.first + i;
+		     if (j >= ep->lelem.nslots)
+		        j -= ep->lelem.nslots;
+		     f = &ep->lelem.lslots[j];
+		     if (rv = set_if_selectable(f, &fds, &n, &d2))
+			runerr(rv, *f);
+		     }
+	          }
+	    }
+         n++;
       
       /* Set the tv struct */
       if (timeout < 0) {
+#if NT
 	 tv.tv_sec = 0;
-         tv.tv_usec = 100000;
+         tv.tv_usec = 50000;
+#else
+	 ptv = 0;
+#endif
          }
       else {
 	 tv.tv_sec = timeout/1000;
@@ -2101,162 +2098,68 @@ do {
 	 }
 
       IntVal(amperErrno) = 0;
+
+#if NT
 #ifdef Graphics
       if((lp = findactivewindow(lws)) != NULL) {
+	 d.dword = D_List;
+	 BlkLoc(d) = (union block *) lp;
          tv.tv_sec = tv.tv_usec = 0;
 	 }
 #endif					/* Graphics */
+#endif					/* NT */
+
       if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
 	 IntVal(amperErrno) = errno;
          if (errno!=0)
 	    fail;
 	 }
+
+#if UNIX
+      pollevent();
+#endif
+
+#if NT
 #ifdef Graphics
       /*
        * if our select() could have taken any time, try windows again
        */
-      if(lp == NULL) {
-         lp = findactivewindow(lws);
+      if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
+	 d.dword = D_List;
+	 BlkLoc(d) = (union block *) lp;
          }
 #endif					/* Graphics */
+#endif					/* NT */
 
-     } while((timeout < 0) && (lp==NULL) && (nset<=0));
-
-      if (lp == NULL) lp = emptylist();
+      if (lp == NULL) {
+	 if ((lp = emptylist()) == NULL) fail;
+         }
+      else {
+         d.dword = D_List;
+         BlkLoc(d) = (union block *)lp;
+         }
 
       for(k=0;k<nargs;k++) {
-	 if (!is:list(files[k])){
-            status = BlkLoc(files[k])->file.status;
-            if (status & Fs_Socket) {
-	       fd = get_fd(files[k], Fs_Read);
-	       if (FD_ISSET(fd, &fds)){
-		  d.dword = D_List;
-		  BlkLoc(d) = (union block *)lp;
-		  c_put(&d, &files[k]);
-		  }
-	       }
+	 if (is:file(files[k])){
+	    post_if_ready(&d, files+k, &fds);
 	    }
+         else if (is:integer(files[k])) {/* timeout */}
 	 else {
             for (ep = BlkLoc(files[k])->list.listhead;
 	         BlkType(ep) == T_Lelem;
 	         ep = ep->lelem.listnext) {
 	       for (i = 0; i < ep->lelem.nused; i++) {
-	          dptr f;
 	          j = ep->lelem.first + i;
 	          if (j >= ep->lelem.nslots)
 	             j -= ep->lelem.nslots;
 	          f = &ep->lelem.lslots[j];
-                  status = BlkLoc(*f)->file.status;
-                  if (status & Fs_Socket) {
-	             fd = get_fd(*f, Fs_Read);
-	          if (FD_ISSET(fd, &fds)){
-		     d.dword = D_List;
-		     BlkLoc(d) = (union block *)lp;
-		     c_put(&d, f);
-		     }
-	          }
+		  post_if_ready(&d, f, &fds);
 	       }
 	    }
           }
 	 }
-#else					/* NT */
+      } while ((timeout < 0) && (BlkLoc(d)->list.size == 0));
 
-      if ((nargs == 1 || nargs == 2) && is:list(files[0])) {
-	 n = 0;
-	 /* Traverse the list */
-	 for (ep = BlkLoc(files[0])->list.listhead;
-	      BlkType(ep) == T_Lelem;
-	      ep = ep->lelem.listnext) {
-	    for (i = 0; i < ep->lelem.nused; i++) {
-	       dptr f;
-	       j = ep->lelem.first + i;
-	       if (j >= ep->lelem.nslots)
-		  j -= ep->lelem.nslots;
-	       get_unbuf_fd(ep->lelem.lslots[j]);
-	       if (n < fd)
-		  n = fd;
-	       FD_SET(fd, &fds);
-	    }	 
-	 }
-	 n++;
-
-	 if (nargs == 2) {
-	    if (!is:integer(files[1]) && !is:null(files[1]))
-	       runerr(102, files[1]);
-	    if (is:integer(files[1]))
-	       cnv:C_integer(files[1], timeout);
-	 }
-      } else {
-	 /* We have a list of files, possibly with a timeout at the end */
-	 n = 0;
-	 for (i = 0; i < nargs; i++) {
-	    if (i == nargs-1) {
- 	       if (!is:integer(files[i]) && !is:file(files[i]))
-		  runerr(101, files[i]);
-	       if (is:integer(files[i])) {
-		  cnv:C_integer(files[i], timeout);
-		  break;
-	       }
-	    }
-	    get_unbuf_fd(files[i]);
-
-	    if (n < fd)
-	      n = fd;
-	    FD_SET(fd, &fds);
-	 }
-	 n++;
-      }
-
-      /* Set the tv struct */
-      if (timeout < 0)
-	 ptv = 0;
-      else {
-	 tv.tv_sec = timeout/1000;
-	 tv.tv_usec = (timeout%1000)*1000;
-      }
-
-      IntVal(amperErrno) = 0;
-      if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
-	 IntVal(amperErrno) = errno;
-	 fail;
-      }
-
-
-      /* Allocate a list of n elements */
-      Protect(lp = alclist(nset), runerr(0));
-      Protect(ep = (union block *)alclstb(nset, (word)0, nset), runerr(0));
-      lp->listhead = lp->listtail = ep;
-       
-      dp = ep->lelem.lslots;
-
-      /*
-       * Now we either have to traverse the list of args or the list 
-       * of files
-       */
-
-      if (is:list(files[0])) {
-	for (ep = BlkLoc(files[0])->list.listhead;
-	     BlkType(ep) == T_Lelem;
-	     ep = ep->lelem.listnext)
-	   for (i = 0; i < ep->lelem.nused; i++) {
-	      dptr f;
-	      j = ep->lelem.first + i;
-	      if (j >= ep->lelem.nslots)
-		 j -= ep->lelem.nslots;
-	      f = &ep->lelem.lslots[j];
-	      fd = get_fd(*f, Fs_Read|Fs_Socket);
-	      if (FD_ISSET(fd, &fds))
-		 *dp++ = *f;
-	   }
-      } else
-	 for (i = 0; i < nargs; i++)
-	    if (is:file(files[i])) {
-	       fd = get_fd(files[i], Fs_Read|Fs_Socket);
-	       if (FD_ISSET(fd, &fds))
-		  *dp++ = files[i];
-	    }
-
-#endif					/* NT */
       Desc_EVValD(lp, E_Lcreate, D_List);
       return list(lp);
    }
@@ -2286,7 +2189,7 @@ function{0,1} getpw(u)
 	       fail;
 
 	    if (make_pwd(pw, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2303,7 +2206,7 @@ function{0,1} getpw(u)
 	       fail;
 
 	    if (make_pwd(pw, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2317,7 +2220,7 @@ function{0,1} getpw(u)
 	       fail;
 
 	    if (make_pwd(pw, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2351,7 +2254,7 @@ function{0,1} getgr(g)
 	       fail;
 
 	    if (make_group(gr, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2367,7 +2270,7 @@ function{0,1} getgr(g)
 	       fail;
 
 	    if (make_group(gr, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2381,7 +2284,7 @@ function{0,1} getgr(g)
 	       fail;
 
 	    if (make_group(gr, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2411,7 +2314,7 @@ function{0,1} gethost(h)
 	    if ((hs = gethostbyname(name)) == NULL)
 	       fail;
 	    if (make_host(hs, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 
 	    return result;
 	 }
@@ -2430,7 +2333,7 @@ function{0,1} gethost(h)
 	       if ((hs2 = gethostbyname(name)) == NULL)
 		  fail;
 	       if (make_host(hs2, &result) == 0)
-		  runerr(171, nulldesc);
+		  syserr("failed to create posix record constructor");
 	       return result;
 	       }
 #else					/* NT */
@@ -2438,7 +2341,7 @@ function{0,1} gethost(h)
 	       fail;
 
 	    if (make_host(hs, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2471,12 +2374,12 @@ function{0,1} getserv(s, proto)
 		  runerr(103, proto);
   
 	    if (p && !getprotobyname(p))
-	       runerr(183, proto);
+	       runerr(1047, proto);
 	    if ((serv = getservbyname(name, p)) == NULL)
 	       fail;
 
 	    if (make_serv(serv, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 	 }
       }
@@ -2491,12 +2394,12 @@ function{0,1} getserv(s, proto)
 		  runerr(103, proto);
 
 	    if (p && !getprotobyname(p))
-	       runerr(183, proto);
+	       runerr(1047, proto);
 	    if ((serv = getservbyport(port, p)) == NULL)
 	       fail;
 
 	    if (make_serv(serv, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 	 }
       }
@@ -2509,7 +2412,7 @@ function{0,1} getserv(s, proto)
 	       fail;
 
 	    if (make_serv(serv, &result) == 0)
-	       runerr(171, nulldesc);
+	       syserr("failed to create posix record constructor");
 	    return result;
 #endif					/* NT */
 	 }
@@ -2621,7 +2524,7 @@ function{0, 1} sysread(f, i)
 	 runerr(174, f);
       
       if (status & Fs_Buff)
-	 runerr(180, f);
+	 runerr(1048, f);
       BlkLoc(f)->file.status = status;
       
       IntVal(amperErrno) = 0;

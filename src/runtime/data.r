@@ -362,21 +362,16 @@ struct errtab errtab[] = {
 #endif					/* FAttrib */
 
 #ifdef PosixFns
+   /*
+    * PosixFns errors related to incorrect usage are here; PosixFns errors
+    * that result from failed system calls appear below with numbers > 1000.
+    */
    170, "string or integer expected",
-   171, "posix header file not included",
-   172, "posix record overridden by global value",
-   173, "directory opened for writing",
-   174, "directory or database invalid as file",
-   175, "invalid mode string",
-   176, "invalid signal",
-   177, "invalid operation to flock/fcntl",
-   178, "invalid procedure type",
-   179, "fdup of closed file",
-   180, "low-level read or select mixed with buffered read",
-   181, "not a network connection",
-   182, "not a UDP socket",
-   183, "invalid protocol name",
-   184, "invalid permission string for umask",
+   171, "UDP socket expected",
+   172, "signal handler procedure must take one argument",
+   173, "cannot open directory for writing",
+   174, "invalid file operation on directory or database",
+   175, "network connection expected",
 #endif					/* PosixFns */
 
 #ifdef Dbm
@@ -418,16 +413,22 @@ struct errtab errtab[] = {
    401, "co-expressions not implemented",
 #endif					/* Coexpr */
    402, "program not compiled with debugging option",
-   403, "graphics facilities are not available in this virtual machine",
 
    500, "program malfunction",		/* for use by runerr() */
    600, "vidget usage error",		/* yeah! */
 #ifdef PosixFns
    1040, "socket error",		 
    1041, "cannot initialize network library",
+   1042, "fdup of closed file",
+   1043, "invalid signal",
+   1044, "invalid operation to flock/fcntl",
+   1045, "invalid mode string",
+   1046, "invalid permission string for umask",
+   1047, "invalid protocol name",
+   1048, "low-level read or select mixed with buffered read",
 #endif					/* PosixFns */
 #ifdef ISQL
-   1100, "not an ODBC file",
+   1100, "ODBC connection expected",
 #endif					/* ISQL */
 
 #ifdef Messaging

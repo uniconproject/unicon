@@ -91,14 +91,10 @@ Global char *ofile	Init(NULL);	/* name of linker output file */
 Global char *iconxloc;			/* path to iconx */
 Global long hdrsize;			/* size of iconx header */
 
-#if NT
 #if defined(MSWindows) && defined(MSVC)
 Global int Gflag	Init(1);	/* -G: enable graphics (write wiconx)*/
 #else					/* MSWindows && MSVC */
 Global int Gflag	Init(0);	/* -G: enable graphics (write wiconx)*/
 #endif					/* MSWindows && MSVC */
-#endif					/* NT */
 
-#if HAVE_LIBZ
 Global int Zflag	Init(1);	/* -Z disables icode-gz compression */
-#endif					/* HAVE_LIBZ */

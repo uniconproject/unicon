@@ -760,6 +760,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    case WM_LBUTTONUP:   case WM_RBUTTONUP:   case WM_MBUTTONUP:
       handle_mouse(wb,msg,wp,lp);
       return 0;
+#ifdef WM_MOUSEWHEEL
    case WM_MOUSEWHEEL:
       if (0 /* ws->inputmask & MouseWheelMask */) {
          }
@@ -782,6 +783,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             }
          }
       return 0;
+#endif   		/* WM_MOUSEWHEEL */
    case WM_KEYUP:
       if (ws->inputmask & KeyReleaseMask) handle_keypress(wb, msg, wp, lp, 0);
       return 0;

@@ -182,6 +182,10 @@ typedef long time_t;
 typedef unsigned long mode_t;
 #endif					/* FAttrib */
 
+#ifdef Compress
+typedef int gzFile;
+#endif					/* Compress */
+
 #ifdef Messaging
 typedef int MFile;
 typedef int Tp_t;
@@ -200,6 +204,10 @@ typedef int HMODULE, WSADATA, WORD, HANDLE;
 typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
 #endif
 #endif					/* NT */
+
+#ifdef JPEG
+typedef int j_common_ptr, JSAMPARRAY, JSAMPROW;
+#endif					/* JPEG */
 
 #ifdef PosixFns
 typedef int SOCKET;
@@ -412,7 +420,7 @@ typedef int siptr, stringint, inst;
 #endif					/* Graphics */
  
 #ifdef Graphics3D
-   typedef int GLdouble, GLint, GLfloat, GLsizei, Status, XStandardColormap;
-   typedef int XWindowChanges, GLboolean;
-   typedef int XMappingEvent, GLUquadricObj;
+   typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean;
+   typedef int XWindowChanges, XStandardColormap, XMappingEvent;
+   typedef int GLXContext, GLUquadricObj, GLubyte;
 #endif					/* Graphics3D */

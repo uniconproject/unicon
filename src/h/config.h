@@ -251,9 +251,12 @@
    #define ConsoleWindow 1
 #endif					/* PresentationManager */
 
-#if defined(HAVE_LIBX11) && !defined(NoGraphics)
+/*
+ * Turn on graphics by default if available?  Not a good idea yet.
+#if defined(HAVE_LIBX11) && (HAVE_LIBX11!=0) && !defined(NoGraphics)
 #define Graphics 1
 #endif
+*/
 
 #ifdef Graphics
    #ifndef NoXpmFormat

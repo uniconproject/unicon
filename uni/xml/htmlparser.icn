@@ -1,5 +1,5 @@
 #
-# $Id: htmlparser.icn,v 1.2 2004-04-18 14:20:19 rparlett Exp $
+# $Id: htmlparser.icn,v 1.3 2005-02-18 21:10:54 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -155,11 +155,11 @@ class HtmlParser : Parser(doc)
          print_debug("Parsing node ", start_tag.name)
 
       if start_tag.name == "PLAINTEXT" then
-         put(res.children, "" ~== remove_entities(tab(0)))
+         res.add_child("" ~== remove_entities(tab(0)))
       else if not(start_tag.is_empty() | 
                   html_is_standalone_tag(start_tag.name)) then {
          repeat {
-            put(res.children, "" ~== remove_entities(move_to_node()))
+            res.add_child("" ~== remove_entities(move_to_node()))
             if pos(0) then
                break
 
@@ -193,7 +193,7 @@ class HtmlParser : Parser(doc)
                   if \debug then
                      print_debug("Skipping closing tag", node.to_string())
                } else {
-                  put(res.children, n := parse_element(node, res))
+                  res.add_child(n := parse_element(node, res))
                   if \debug then 
                      print_debug("Adding node ", n.to_string() || " to" || start_tag.to_string())
                }
@@ -201,7 +201,7 @@ class HtmlParser : Parser(doc)
                #
                # It's either a coment, or something else; just add it to the list of children
                #
-               put(res.children, node)
+               res.add_child(node)
             }            
          }
       }
@@ -228,7 +228,6 @@ class HtmlParser : Parser(doc)
             move(1)
          } else
             s := tab(many(valchars)) | break
-         #put(res.comments, remove_entities(s))
       }
       return res
    end

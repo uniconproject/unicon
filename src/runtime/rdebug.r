@@ -338,6 +338,11 @@ int get_name(dptr dp1,dptr dp0)
 	       }
             }
          else {
+	    if (is:string(*dp1) || (!is:variable(*dp1))) {  /* non-variable! */
+	       StrLen(*dp0) = 14;
+	       StrLoc(*dp0) = "(non-variable)";
+	       return Failed;
+	       }
             /*
              * Must be an element of a structure.
              */
@@ -623,7 +628,9 @@ register int n;
 #include "../h/opdefs.h"
 
 
+#ifndef MultiThread
 extern struct descrip value_tmp;		/* argument of Op_Apply */
+#endif						/* MultiThread */
 extern struct b_proc *opblks[];
 
 

@@ -1,5 +1,5 @@
 # Generated automatically from Makefile.in by configure.
-CC = gcc
+include ../../../Makedefs
 RM = rm -f
 AR = ar
 RANLIB = ranlib
@@ -20,7 +20,7 @@ all: liburi.a
 
 liburi.a: $(OBJS)
 	$(RM) $@
-	$(SHTOOL) arx -C $(AR) rc $@ $(OBJS) $(LIBS)
+	$(SHTOOL) arx -C $(AR) rc $@ $(OBJS)
 	$(RANLIB) $@
 
 clean:

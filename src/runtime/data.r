@@ -358,6 +358,9 @@ struct errtab errtab[] = {
 #ifdef Graphics3D                 /* Graphics3D */
    150,  "drawing a 3D object while in 2D mode",
    151,  "pushed/popped too many matrices",
+   152,  "modelview or projection expected",
+   153,  "texture not in correct format",
+   154,  "must have an even number of texture coordinates",
 #endif                            /* Graphics3D */
 
 #ifdef FAttrib

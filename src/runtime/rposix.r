@@ -193,11 +193,11 @@ int get_fd(file, errmask)
 struct descrip file;
 unsigned int errmask;
 {
-   int status, fd;
+   int status;
 
    status = BlkLoc(file)->file.status;
    /* Check it's opened for reading, or it's a window */
-   if ((status & Fs_Dir)
+   if ((status & Fs_Directory)
 #ifdef Dbm
        || (status & Fs_Dbm)
 #endif
@@ -207,7 +207,8 @@ unsigned int errmask;
 #ifdef Graphics
    if (status & Fs_Window)
 #ifdef XWindows
-     fd = XConnectionNumber(((wbp)(BlkLoc(file)->file.fd))->window->display->display);
+     return XConnectionNumber(((wbp)(BlkLoc(file)->file.fd))->
+				      window->display->display);
 #else
      return -1;
 #endif
@@ -216,18 +217,15 @@ unsigned int errmask;
    if (errmask && !(status & errmask))
       return -2;
    else
+
 #if NT
 #define fileno _fileno
 #endif					/* NT */
 
-#if 1
       if (status & Fs_Socket)
-	 fd = (int)(BlkLoc(file)->file.fd);
+	 return (int)(BlkLoc(file)->file.fd);
       else
-#endif
-      fd = fileno(BlkLoc(file)->file.fd);
-
-   return fd;
+	 return fileno(BlkLoc(file)->file.fd);
 }
 
 
@@ -800,8 +798,11 @@ FILE *sock_connect(char *fn, int is_udp)
       memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
       len = sizeof(saddr_in);
       sa = (struct sockaddr *) &saddr_in;
-   } else {
-#if !NT
+      }
+   else { /* UNIX domain socket */
+#if NT
+      return 0;
+#else					/* NT */
       if (is_udp || (s = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
 	 return 0;
       saddr_un.sun_family = AF_UNIX;
@@ -1080,6 +1081,7 @@ int fd;
    nsock++;
 }
 
+#if !NT
 dptr make_pwd(pw, result)
 struct passwd *pw;
 dptr result;
@@ -1096,7 +1098,6 @@ dptr result;
 
    result->dword = D_Record;
    result->vword.bptr = (union block *)rp;
-#if !NT
    String(rp->fields[0], pw->pw_name);
    String(rp->fields[1], pw->pw_passwd);
    rp->fields[2].dword = rp->fields[3].dword = D_Integer;
@@ -1105,9 +1106,9 @@ dptr result;
    String(rp->fields[4], pw->pw_gecos);
    String(rp->fields[5], pw->pw_dir);
    String(rp->fields[6], pw->pw_shell);
-#endif					/* !NT */
    return result;
 }
+#endif					/* !NT */
 
 void catstrs(ptrs, d)
 char **ptrs;
@@ -1140,6 +1141,7 @@ dptr d;
    strfree = p;                         /* give back unused space */
 }
 
+#if !NT
 dptr make_group(gr, result)
 struct group *gr;
 dptr result;
@@ -1156,16 +1158,15 @@ dptr result;
 
    result->dword = D_Record;
    result->vword.bptr = (union block *)rp;
-#if !NT
    String(rp->fields[0], gr->gr_name);
    String(rp->fields[1], gr->gr_passwd);
    rp->fields[2].dword = D_Integer;
    IntVal(rp->fields[2]) = gr->gr_gid;
    
    catstrs(gr->gr_mem, &rp->fields[3]);
-#endif					/* !NT */
    return result;
 }
+#endif					/* !NT */
 
 dptr make_serv(s, result)
 struct servent *s;
@@ -1240,7 +1241,6 @@ struct hostent *hs;
       EVVal(n, E_String);
    strtotal += DiffPtrs(p,strfree);
    strfree = p;                         /* give back unused space */
-
 
    return result;
 }

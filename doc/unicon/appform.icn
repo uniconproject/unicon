@@ -1,0 +1,146 @@
+############################################################################ 
+#
+#       File:     appform.icn
+#
+#       Subject:  Program: CGI script that processes scholarship applications
+#
+#       Authors:  Clinton Jeffery
+#
+#       Date:     July 11, 1997
+#
+############################################################################ 
+#
+# This program processes a bunch of input fields defined in an on-line
+# scholarship application at http://www.cs.utsa.edu/scholarships/mii.form.shtml
+# and from them, generates a latex file which it typesets, prints, and e-mails
+# to the scholarship coordinator.
+#
+############################################################################ 
+
+link cgi
+
+procedure cgimain()
+  every k := key(cgi) do {
+      s := ""
+      cgi[k] ? {
+          while s ||:= tab(upto('#%$&_{}"\\^~|<>-')) do {
+              case c := move(1) of {
+                  "\\": s ||:= "$\\setminus$"
+                  "^": s ||:= "$^{\\wedge}$"
+                  "~": s ||:= "$\\sim$"
+                  "|": s ||:= "$\\mid$"
+                  "<": s ||:= "$<$"
+                  ">": s ||:= "$>$"
+                  "-": s ||:= "$-$"
+                  default: {
+                      s ||:= "\\"; s ||:= c
+                  }
+              }
+          }
+          s ||:= tab(0)
+      }
+      cgi[k] := s
+  }
+  f := open("/tmp/appform.tex", "w") | stop("can't open /tmp/appform.tex")
+
+  write("Generating typeset copy of application form...")
+
+  write(f,"\\documentstyle[11pt]{letter}")
+  write(f,"\\pagestyle{empty}")
+  write(f,"")
+  write(f,"\\setlength{\\textwidth}{6.6in}")
+  write(f,"\\setlength{\\textheight}{10in}")
+  write(f,"\\setlength{\\topmargin}{-.3in}")
+  write(f,"\\setlength{\\headsep}{0in}")
+  write(f,"\\setlength{\\oddsidemargin}{0in}")
+  write(f,"\\baselineskip 13pt")
+  write(f,"\\begin{document}")
+  write(f,"")
+  write(f,"\\begin{center}")
+  write(f,"{\\large\\bf")
+  if (/ (cgi["TESTSCORES"])) | trim(string(cgi["TESTSCORES"])) == "0" then
+     write(f,"NSF Computer Science Scholars and Mentors Program Application")
+  else
+     write(f,"NSF Summer Computer Science Institute Application")
+  write(f,"}")
+  write(f,"\\end{center}")
+  write(f,"")
+  write(f,"\\begin{tabular}{llll}")
+  writes(f, "Name: & ", cgi["NAME"])
+  writes(f," & Phone: & ", cgi["PHONE"])
+  write(f," \\\\")
+  write(f,"Address: & ", cgi["ADDRESS1"], " & Social Sec. Number: & ", cgi["SOC"], " \\\\")
+  write(f,"\\ & ", cgi["ADDRESS2"], " & Gender (M/F): & ", cgi["GENDER"])
+  write(f,"\\end{tabular}")
+  write(f,"")
+  write(f,"Semester hours completed: Overall ", cgi["TOTALCREDITS"], " in Computer Science ", cgi["CSCREDITS"], "\\\\")
+  write(f,"College GPA:  Overall ", cgi["COLLEGEGPA"],
+        " in Computer Science courses ", cgi["CSGPA"],"\\\\")
+  if (/ (cgi["TESTSCORES"])) | trim(string(cgi["TESTSCORES"])) == "0" then
+      write(f,"Are you interested in graduate studies? \\\\")
+  else
+      write(f,"Are you interested in a CS degree at UTSA?")
+  write(f, if cgi["YES"] == "on" then "yes" else "", " ",
+        if cgi["NO"] == "on" then "no" else "", " ",
+        if cgi["MAYBE"] == "on" then "maybe" else "",
+        "\\ \\\\")
+  write(f,"Present Employer: ", cgi["EMPLOYER"], " \\\\")
+  write(f,"Position: ", cgi["POSITION"], "Hours/week: ", cgi["HOURS"], " \\\\")
+  write(f,"If selected for the NSF CS Scholars program, will the scholarship enable you")
+  write(f,"to quit your present job?  If not, how many hours will you be working? \\\\")
+  write(f, cgi["STILLWORKING"], "\\ \\\\")
+  write(f,"Educational Background\\\\")
+  write(f,"High School: List name, dates attended, GPA, graduated?\\\\")
+  write(f, cgi["HIGH1"], "\\ \\\\")
+  write(f, cgi["HIGH2"], "\\ ")
+  if (/ (cgi["TESTSCORES"])) | trim(string(cgi["TESTSCORES"])) == "0" then
+      write(f," \\\\")
+  else
+      write(f,"Test Scores: ", cgi["TESTSCORES"], " \\\\")
+  write(f,"For each college, list name, dates attended, hours completed, degrees awarded.")
+  write(f,cgi["COLL1"], "\\ \\\\")
+  write(f,cgi["COLL2"], "\\ \\\\")
+  write(f,"\\ \\\\")
+  write(f,"\\ \\\\")
+  write(f,"Academic honors, scholarships, fellowships, and assistantships\\\\")
+  write(f,cgi["HONOR1"], "\\ \\\\")
+  write(f,cgi["HONOR2"], "\\ \\\\")
+  write(f,"\\ \\\\")
+  write(f,"Extracurricular interests: \\hrulefill \\\\")
+  write(f,cgi["EXTRA1"], "\\ \\\\")
+  write(f,cgi["EXTRA2"], "\\ \\\\")
+  write(f,"Memberships in professional organizations: \\hrulefill\\\\")
+  write(f,cgi["ORGS1"], "\\ \\\\")
+  write(f,cgi["ORGS2"], "\\ \\\\")
+  write(f,"Research interests and publications, if any: \\hrulefill \\\\")
+  write(f,cgi["RESEARCH1"], "\\ \\\\")
+  write(f,cgi["RESEARCH2"], "\\ \\\\")
+  write(f,"Military Service or Draft Status: \\hrulefill \\\\")
+  write(f,cgi["MIL1"], "\\ \\\\")
+  write(f,cgi["MIL2"], "\\ \\\\")
+  write(f,"Name(s) of at least one person you have asked to complete a confidential")
+  write(f,"academic reference letter.\\\\")
+  write(f,"Name \\hfill Address \\hfill Relationship \\\\")
+  write(f,cgi["REF1"], "\\ ", cgi["REFADD1"], "\\ ", cgi["REFREL1"],"\\\\")
+  write(f,cgi["REF2"], "\\ ", cgi["REFADD2"], "\\ ", cgi["REFREL2"],"\\\\")
+  write(f,"")
+  write(f,"On the back of this sheet or an attached letter, please include a {\\em")
+  write(f,"short\\/} statement of purpose, including information about your background,")
+  write(f,"major and career interests, and professional goals.")
+  write(f,"")
+  write(f,"I certify that information provided on this application and supporting")
+  write(f,"documents is correct and complete to the best of my knowledge. \\\\ \\ ")
+  write(f,"")
+  write(f,"\\noindent Signature: \\rule{3.5in}{.01in} Date: \\hrulefill")
+  write(f,"")
+  write(f, "\\pagebreak")
+  write(f,"")
+  write(f, cgi["INFO"])
+  write(f,"\\end{document}")
+  close(f)
+  write("Mailing form to program director...")
+  system("cd /tmp; mail jeffery <appform.tex")
+  write("Typesetting and Printing hard copy...")
+  system("cd /tmp; /usr/local/bin/latex appform >/dev/null 2>/dev/null; /usr/local/bin/dvips -o appform.ps appform >/dev/null 2>/dev/null; /usr/ucb/lpr appform.ps; rm appform.*")
+  write("Thank you for applying, ", cgi["NAME"], ".  Your application has been submitted to jeffery@cs.utsa.edu")
+end

@@ -1,0 +1,44 @@
+link cgi          # This links the PRECOMPILED cgi library and makes
+                  # those functions available to you
+ 
+procedure cgimain()  # This is the start of the script
+ 
+host := getenv("REMOTE_HOST")  # This is an example of using the
+                               # Environment Variables to get some information
+ 
+# The following line opens a file pointed to by f
+# The cgiEcho is used to  output the contents
+# of the subsequent write()'s to both the file pointed to by  f and
+# the screen. (with HTML tags for newlines)  If for some reason the
+# file can not be opened, the script would stop.
+ 
+
+f := open("/tmp/temp.file", "w") | stop("Can't open file ")
+ 
+cgiEcho(f, "Submitted IP address:  ", host,"")
+ 
+cgiEcho(f,"Submitted on: ", &dateline) #This is an Icon feature
+ 
+cgiEcho(f,"Hello, ", cgi["name"]," welcome to the output page.")
+ 
+cgiEcho(f,"Your age is : ", cgi["age"],"")
+ 
+cgiEcho(f,"And I see you enjoy:", if cgi["pizza"] == "on" then "Pizza" else "", " ", if cgi["burger"] == "on" then "Hamburgers" else "", " ", if cgi["taco"] == "on" then "Tacos" else "", " "," for your every meal.")
+ 
+cgiEcho(f,"And your favorite color to look at is",if cgi["red"] == "on" then "Red" else "", " ", if cgi["green"] == "on" then "Green" else "", " ", if cgi["blue"] == "on" then "Blue" else "", " ")
+ 
+cgiEcho(f,"Education: ",if cgi["bs"] == "on" then "BS" else "", " ", if cgi["ms"] == "on" then "MS" else "", " ", if cgi["phd"] == "on" then "PHD" else "", " ")
+
+cgiEcho(f,"")
+ 
+cgiEcho(f,"Your words of wisdom are:   ",cgi["comments"],"")
+ 
+write("<center>If you changed your mind... ")
+write("<a href=./simple.html> You can always Go Back !</a>")
+write("  fix it  and re submit it!</center>")
+ 
+# If you had opened the file and used the cgiEcho() procedure, then you
+# could use this system() call to that file mailed to you. And of course
+# clean up after yourself.
+        system("cd /tmp; mail jvallejo < temp.file; rm temp.file")
+end

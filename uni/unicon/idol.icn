@@ -295,8 +295,12 @@ class Class : declaration (supers,
 	    writes(f," : ",superstr)
     writes(f,"(")
 
-    if s~=="class" & ("initially" == (m := (methods$foreach()))$name()) &
-       (m.fields ~=== EmptyNode) then {
+    if s~=="class" &
+       ((("initially" == (m := (methods$foreach()))$name()) &
+       (m.fields ~=== EmptyNode)) |
+       (((mn := !(self.imethods)).ident == "initially") &
+        (m := classes.lookup(mn.Class).methods.lookup("initially")) &
+        (m.fields ~=== EmptyNode)) ) then {
        yyprint(m.fields)
        }
     else {
@@ -431,8 +435,12 @@ class Class : declaration (supers,
     #
     writes(f,"  self := ",nam,"__state(&null,",nam,"__oprec")
 
-    if ("initially" == (m := (methods$foreach()))$name()) &
-       (m.fields ~=== EmptyNode) then {
+    if (("initially" == (m := (methods$foreach()))$name()) &
+       (m.fields ~=== EmptyNode)) |
+   (((mn := !(self.imethods)).ident == "initially") &
+    (m := classes.lookup(mn.Class).methods.lookup("initially")) &
+    (m.fields ~=== EmptyNode))
+   then {
        yyprint(")\n  self.__s := self\n")
        if \ (m.fields.varg) then {
           m.fields.String()[1:-2] ? {

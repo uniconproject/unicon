@@ -253,7 +253,7 @@ void expand_proj(int *argc, char ***argv)
 
 #ifndef NTConsole
 #ifdef MSWindows
-void icont(int argc, char **argv);
+int icont(int argc, char **argv);
 #define int_PASCAL int PASCAL
 #define LRESULT_CALLBACK LRESULT CALLBACK
 #undef lstrlen
@@ -583,12 +583,6 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			 );
 
 #ifdef ConsoleWindow
-   if ((int)strlen(patchpath) <= 18) {
-      free(iconxloc);
-      iconxloc = (char *)alloc((unsigned)strlen(refpath) + 7);
-      strcpy(iconxloc, refpath);
-      strcat(iconxloc, "wiconx");
-      }
    expand_proj(&argc, &argv);
 #endif					/* ConsoleWindow */
 
@@ -948,11 +942,12 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       iconx = "iconx";
 #endif
 #if NT
-#ifdef NTGCC
-      iconx = "iconx.exe";
-#else					/* NTGCC */
       if (Gflag) iconx="wiconx.exe";
-      else iconx = "nticonx.exe";
+      else
+#ifdef NTGCC
+         iconx = "iconx.exe";
+#else					/* NTGCC */
+         iconx = "nticonx.exe";
 #endif					/* NTGCC */
 #endif					/* NT */
       if ((f = pathOpen(iconx, ReadBinary)) == NULL) {

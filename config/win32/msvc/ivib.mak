@@ -95,8 +95,7 @@ ivib.exe: $(UFILES)
 
 .SUFFIXES : .icn .u
 .icn.u:
-#	#set IPATH=$(UNI)\lib $(ICON_IPL)\lib
-	set IPATH=c:\tmp\unicon\uni\lib $(ICON_IPL)\lib
+	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
 	set LPATH=$(ICON_IPL)\incl $(ICON_IPL)\gincl
 	set PATH=$(BIN)
 	$(UNICON) -c $*

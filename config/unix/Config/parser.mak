@@ -26,10 +26,7 @@ deps.out: ;
 unigram.icn : unigram.y ytab_h.icn
 	$(IYACC) -i unigram.y
 
-showtree : showtree.u
-	$(UNICON) -o showtree showtree.u
-
-showdb : showdb.u
-	$(UNICON) -o showdb showdb.u
+%: %.u
+	$(UNICON) -o $@ $*
 
 include deps.out

@@ -3004,7 +3004,7 @@ char * abuf;
 	     return Failed;  
           }
        else 
-#endif                               /* Graphics3D */
+#endif					/* Graphics3D */
 	    if (setfg(w, val) != Succeeded) return Failed;
 	    }
 	 break;
@@ -3245,36 +3245,36 @@ char * abuf;
 	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyedirx, wc->eyediry, wc->eyedirz);
 	MakeStr(abuf, strlen(abuf), answer);
 	break;
- 	case A_LIGHT:
-	case A_LIGHT0:
+      case A_LIGHT:
+      case A_LIGHT0:
 	  getlight(0, abuf);
 	  MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT1:
+      case A_LIGHT1:
         getlight(1, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT2:
+      case A_LIGHT2:
         getlight(2, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT3:
+      case A_LIGHT3:
         getlight(3, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT4:
+      case A_LIGHT4:
         getlight(4, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT5:
+      case A_LIGHT5:
         getlight(5, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT6:
+      case A_LIGHT6:
         getlight(6, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
-	case A_LIGHT7:
+      case A_LIGHT7:
         getlight(7, abuf);
         MakeStr(abuf, strlen(abuf), answer);
         break;
@@ -3285,8 +3285,9 @@ char * abuf;
         MakeInt(w->context->texmode, answer);
         break;
       case A_TEXCOORD:
+	strcpy(abuf, "auto");
         if (wc->autogen) 
-           MakeStr("auto", 4, answer); 
+           MakeStr(abuf, 4, answer); 
         else
            gettexcoords(w, abuf); 
         break;

@@ -2202,7 +2202,7 @@ function{*} WAttrib(argv[argc])
    body {
       wbp w, wsave;
       word n;
-      tended struct descrip sbuf, sbuf2;
+      tended struct descrip sbuf, sbuf2 = nulldesc;
       char answer[4096];
       int  pass, config = 0;
       int warg = 0;

@@ -6,6 +6,7 @@
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {   
    FILE *f;
+   wdp  wd; 
    wbp  w;
    wsp  ws;
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
@@ -15,7 +16,9 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    /* create an opengl window */
 #ifdef XWindows
    int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
-   wdp wd = alc_display(NULL); 
+ 
+  /* create an opengl window */
+   wd = alc_display(NULL); 
    if (!glXQueryExtension(wd->display, &query, &query)) {
       printf("X server has no OpenGL GLX extension");
       return NULL;
@@ -32,7 +35,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    w = (wbp) f;
    ws = w->window;
 
-   /* set defaults for attributes */ 
+  /* set defaults for attributes */ 
    w->context->eyeupx = w->context->eyeupz = 0.0;
    w->context->eyeupy = 1.0;
    w->context->dim = 3;
@@ -52,9 +55,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
    /* set up the appropriate opengl states */
    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
-   glClearColor(RED(w->context->bg)/(GLfloat)256,   
-		GREEN(w->context->bg)/(GLfloat)256, 
-		BLUE(w->context->bg)/(GLfloat)256, 0.0);
+   glClearColor(RED(w->context->bg)/(GLfloat)255,
+		GREEN(w->context->bg)/(GLfloat)255,
+		BLUE(w->context->bg)/(GLfloat)255, 0.0);
+  
    glGenTextures(10, w->context->texName);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_TEXTURE_GEN_S);
@@ -83,10 +87,11 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 {
    int i, j; 
  
-   /* must reset the current normal vector */
+ /* must reset the current normal vector */
    glNormal3f(0.0, 0.0, 1.0);
+ 
 
-   /* each vertex has an x-coordinate and a y-coordinate */
+  /* each vertex has an x-coordinate and a y-coordinate */
    if (dim == 2){
 
       /* no texturing */
@@ -134,7 +139,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
          for (i = 0; i < num; i=i+3) 
             glVertex3d(v[i], v[i+1], v[i+2]);
          glEnd();
-	 }
+       }
       else {
 
    /* opengl should generate the texture coordinate */
@@ -515,6 +520,7 @@ int pushmatrix()
    specifed list */
 int redraw3D(wbp w)
 {
+
     GLfloat deflt_ambient[4] = {0.2, 0.2, 0.2, 1.0};
     GLfloat deflt_diffuse[4] = {0.8, 0.8, 0.8, 1.0};
     GLfloat deflt_emission[4] = {0.0, 0.0, 0.0, 1.0};
@@ -608,7 +614,7 @@ int traversefunctionlist(wbp w)
    struct descrip flist, fname; 
    struct descrip var1, var2, var3, var4, var5, var6, var7;
    struct b_list *funclist;
-   struct b_list *list = w->window->flist; 
+   struct b_list *list = w->window->flist;
    wcp wc = w->context;
    double x, y, z, r1, r2, h, a1, a2;
    double v[MAXXOBJS];
@@ -652,11 +658,9 @@ int traversefunctionlist(wbp w)
       else if(!strcmp(fname.vword.sptr, "linewidth")) {
          c_traverse(funclist, &var1, 1);
          cnv:C_integer(var1, num);    
-         setlinewidth(w, num);
+	 setlinewidth(w, num);
          glLineWidth(num);
       }
-
-     
       /* WAttrib("texmode=...") */
       else if(!strcmp(fname.vword.sptr, "texmode")) {
          c_traverse(funclist, &var1, 1);
@@ -741,7 +745,7 @@ int traversefunctionlist(wbp w)
      
       /* FillPolygon() */
       else if(!strcmp(fname.vword.sptr, "FillPolygon")) {
-            for (j = 0; j < (funclist->size)-1; j++) {
+	 for (j = 0; j < (funclist->size)-1; j++) {
             c_traverse(funclist, &var2, j+1);
             cnv:C_double(var2, v[j]);
             }
@@ -755,7 +759,7 @@ int traversefunctionlist(wbp w)
              c_traverse(funclist, &var2, j+1);
              cnv:C_double(var2, v[j]);
              }
-          drawpoly(w, v, (funclist->size)-1, GL_LINES,wc->dim); 
+          drawpoly(w, v, (funclist->size)-1, GL_LINES, wc->dim);
           }
 
        /* DrawLine() */
@@ -764,11 +768,11 @@ int traversefunctionlist(wbp w)
              c_traverse(funclist, &var2, j+1);
              cnv:C_double(var2, v[j]);
            }
-          drawpoly(w, v, (funclist->size)-1, GL_LINE_STRIP, wc->dim);         
+          drawpoly(w, v, (funclist->size)-1, GL_LINE_STRIP, wc->dim);
          }
 
        /* DrawPoint() */
-       else if(!strcmp(fname.vword.sptr, "DrawPoint")) { 
+       else if(!strcmp(fname.vword.sptr, "DrawPoint")) {
           for (j = 0; j < (funclist->size)-1; j++) {
              c_traverse(funclist, &var2, j+1);
              cnv:C_double(var2, v[j]);
@@ -1091,6 +1095,7 @@ int setlinewidth3D(wbp w, LONG linewid)
  */
 int setmaterials(wbp w, char* s)
 {
+   wdp wd = w->window->display;
    int k, j, i = 0;
    long rd, gr, bl;
    GLfloat shine;
@@ -1229,7 +1234,7 @@ int setmaterials(wbp w, char* s)
 	   color[2] = bl/(GLfloat)65535;
 	   color[3] = 1.0;
 
-	   /* set the emission color */
+       /* set the emission color */
 	   glMaterialfv(GL_FRONT, GL_EMISSION, color);
          MakeStr("emission", 8, &material);
 	   c_put(&f, &material);  
@@ -1241,17 +1246,17 @@ int setmaterials(wbp w, char* s)
 	   rd = RED(w->context->fg);
 	   gr = GREEN(w->context->fg);
    	   bl = BLUE(w->context->fg);
- 	   glColor3f(rd/(GLfloat)255, 
+ 	   glColor3f(rd/(GLfloat)255,
                 	 gr/(GLfloat)255, bl/(GLfloat)255);
          MakeStr("none", 4, &material);
 	   c_put(&f, &material);  
         }
       /* put material property values on the list */
-      MakeInt(rd * 257, &r);
+      MakeInt(rd, &r);
       c_put(&f, &r);
-      MakeInt(gr * 257, &g);
+      MakeInt(gr, &g);
       c_put(&f, &g);
-      MakeInt(bl * 257, &b);
+      MakeInt(bl, &b);
       c_put(&f, &b);
       c_put(&(w->window->funclist), &f);
 
@@ -1498,7 +1503,7 @@ int settexcoords(wbp w, char* s)
  
    while(isspace(*s2)) s2++;
 
- /* check if we need to generate texutre coordinates */
+ /* check if we need to generate texture coordinates */
    if (!strcmp(s2, "auto")){
       w->context->autogen = 1; 
       if (!glIsEnabled(GL_TEXTURE_GEN_S))
@@ -1561,6 +1566,7 @@ int seteyepos(wbp w, char *s)
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) 
       return Error;
    wc->eyeposx = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1571,6 +1577,7 @@ int seteyepos(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeposy = atof(s2);
+ 
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1581,6 +1588,7 @@ int seteyepos(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeposz = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1588,14 +1596,10 @@ int seteyepos(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    if (*s2) return Error;
-   /* glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();*/
-    printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
-   
+ 
    gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
 	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
-   redraw3D(w); 
+   redraw3D(w);
    return Succeeded; 
 }
  
@@ -1604,10 +1608,12 @@ int seteyedir(wbp w, char *s)
 {
    char *s2 = s;
    wcp wc = w->context;
+
    while (isspace(*s2)) s2++;
    /* find the x-coordinate of eyedir */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyedirx = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1618,6 +1624,7 @@ int seteyedir(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyediry= atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1628,6 +1635,7 @@ int seteyedir(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyedirz = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1647,12 +1655,14 @@ int seteyeup(wbp w, char *s)
 {
    char *s2 = s;
    wcp wc = w->context;
+
    while (isspace(*s2)) s2++;
 
    /* set the x-coordinate of eyeyp */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) 
       return Error;
    wc->eyeupx = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1664,6 +1674,7 @@ int seteyeup(wbp w, char *s)
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) 
       return Error;
    wc->eyeupy= atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1676,6 +1687,7 @@ int seteyeup(wbp w, char *s)
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) 
       return Error;
    wc->eyeupz = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1685,7 +1697,7 @@ int seteyeup(wbp w, char *s)
    if (*s2) return Error;
    gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
 	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
-   redraw3D(w); 
+   redraw3D(w);
    return Succeeded; 
 }
 
@@ -1696,11 +1708,13 @@ int seteye(wbp w, char *s)
 {
    char *s2 = s;
    wcp wc = w->context;
+
    while (isspace(*s2)) s2++;
 
    /* set the eyepos attribute */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeposx = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1710,6 +1724,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeposy = atof(s2);
+   
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1719,6 +1734,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeposz = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1729,6 +1745,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyedirx = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1738,6 +1755,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyediry= atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1747,6 +1765,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyedirz = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1759,6 +1778,7 @@ int seteye(wbp w, char *s)
    while (isspace(*s2)) s2++;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeupx = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1768,6 +1788,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeupy= atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1777,6 +1798,7 @@ int seteye(wbp w, char *s)
    if (*s2++ != ',') return Error;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
    wc->eyeupz = atof(s2);
+
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
    if (*s2 == '.') {
@@ -1786,7 +1808,7 @@ int seteye(wbp w, char *s)
    if (*s2) return Error;
    gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
 	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
-  redraw3D(w);
+   redraw3D(w);
    return Succeeded; 
 
 }
@@ -1980,6 +2002,7 @@ int fileimage(wbp w, char* filename)
    a format accepted by opengl */ 
 int textureimg(wbp w, int width, int height, struct palentry *e, unsigned char *s, word len)
 {
+   wdp wd = w->window->display;
    int c, v, i;
    unsigned int ix, iy; 
    GLubyte tex[height][width][3];
@@ -2030,6 +2053,7 @@ int textureimg(wbp w, int width, int height, struct palentry *e, unsigned char *
 /* convert a bi-level image into an opengl texture */
 int bltex(wbp w, int width, int height, int ch, char *s, word len)
 {
+   wdp wd = w->window->display;
    unsigned int m, msk1, c, ix, iy;
    int r, b, g, i;
    GLubyte tex[height][width][3]; 
@@ -2057,9 +2081,9 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 	       tex[iy][ix][2] = b;
             }
 	    else if (ch != TCH1) {
-	       r = (GLint)RED(w->context->fg);
-	       g = (GLint)GREEN(w->context->fg);
- 	       b = (GLint)BLUE(w->context->fg);
+    	       r = (GLint)RED(w->context->bg);
+	       g = (GLint)GREEN(w->context->bg);
+  	       b = (GLint)BLUE(w->context->bg);
 	       tex[iy][ix][0] = r; 
 	       tex[iy][ix][1] = g;
 	       tex[iy][ix][2] = b;
@@ -2091,7 +2115,7 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 	return Succeeded; 
    else 
      return Failed; 
-} 
+}
 
 
 /* check if a number is a power of two */

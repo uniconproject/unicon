@@ -285,6 +285,7 @@ static char *canonize(char *path) {
    return path;			/* return result */
 }
 
+#if !MSDOS
 FILE *pathOpen(char *fname, char *mode)
 {
    char tmp[256];
@@ -294,6 +295,7 @@ FILE *pathOpen(char *fname, char *mode)
       }
    return NULL;
 }
+#endif
 
 /*
  * Return path after appending lib directories.

@@ -1,5 +1,5 @@
 #
-# $Id: button.icn,v 1.4 2004-09-18 18:44:58 rparlett Exp $
+# $Id: button.icn,v 1.5 2004-11-11 15:16:33 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -44,7 +44,7 @@ class Button : Toggle : Component(
    parent_button_group,     #                           
    repeat_delay,
    no_keyboard_flag,        #
-   is_checkbox_flag
+   toggles_flag
    )
 
    method set_parent_button_group(x)
@@ -132,7 +132,7 @@ class Button : Toggle : Component(
    end
 
    method on_action(e)
-      if \self.is_checkbox_flag then {
+      if \self.toggles_flag then {
          if \self.parent_check_box_group then
             self.parent_check_box_group.set_which_one(self)
          else
@@ -222,6 +222,29 @@ class Button : Toggle : Component(
    end
 
    #
+   # Set the button so that when it is pressed, it toggles
+   # between two states, as indicated by the is_checked
+   # flag.
+   #
+   # Instances of Checkbox have this flag on by default, but 
+   # TextButton and IconButton do not.  When the flag is on,
+   # the latter classes indicate their checked status by
+   # showing the button as being "down".
+   #
+   method set_toggles()
+      self.toggles_flag := 1
+      self.invalidate()
+   end
+
+   #
+   # Clear the toggles flag.
+   #
+   method clear_toggles()
+      self.toggles_flag := &null
+      self.invalidate()
+   end
+
+   #
    # Set the label of the button, if any.
    # @param x   The label
    #
@@ -239,6 +262,11 @@ class Button : Toggle : Component(
                set_is_checked()
             else
                clear_is_checked()
+         "toggles" :
+            if test_flag(attr, val) then
+               set_toggles()
+            else
+               clear_toggles()
          "no_keyboard" :
             if test_flag(attr, val) then
                set_no_keyboard()

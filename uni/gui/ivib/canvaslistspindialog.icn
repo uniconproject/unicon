@@ -1,0 +1,102 @@
+#
+# $Id: canvaslistspindialog.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasListSpinDialog : CanvasComponentDialog(
+   c,                       #         
+   selection_list,          #                      
+   set_selection,           #                     
+   selection,               #                 
+   group,                   #             
+   default_setting          #
+   )
+
+   method on_okay()
+      #
+      # Validate
+      #
+      if (group.get_which_one() === set_selection) & not(integer(selection.get_contents())) then
+         return alert_error("Selection is non-integer")
+
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_selection_list(selection_list.get_contents())
+      case group.get_which_one() of {
+         set_selection : c.set_selection(integer(selection.get_contents()))
+         default_setting : c.set_selection(1)
+      }
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_set_selection()
+      selection.clear_is_shaded()
+   end
+
+   method on_default_setting()
+      c.set_selection(1)
+      selection.set_is_shaded()
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      selection_list := EditableTextList()
+      selection_list.set_size(150, "100%-50")
+      selection_list.set_pos(25, 25)
+      selection_list.set_contents(copy(c.selection_list))
+      p.add(selection_list)
+
+      group := CheckBoxGroup()
+
+      set_selection := CheckBox()
+      set_selection.connect(self, "on_set_selection", ACTION_EVENT)
+      set_selection.set_label("Set selection")
+      set_selection.set_pos(200, 35)
+      set_selection.set_align("l", "c")
+      p.add(set_selection)
+      group.add(set_selection)
+
+      selection := TextField()
+      selection.set_size(100)
+      selection.set_pos(350, 35)
+      selection.set_align("l", "c")
+      selection.set_contents(c.selection)
+      p.add(selection)
+
+      default_setting := CheckBox()
+      default_setting.connect(self, "on_default_setting", ACTION_EVENT)
+      default_setting.set_label("Default")
+      default_setting.set_pos(200, 85)
+      default_setting.set_align("l", "c")
+      p.add(default_setting)
+      group.add(default_setting)
+
+      if c.selection ~= 1 then {
+         group.set_which_one(set_selection)
+      } else {
+         group.set_which_one(default_setting)
+         selection.set_is_shaded()
+      }
+
+end

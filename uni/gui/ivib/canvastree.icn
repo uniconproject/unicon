@@ -1,0 +1,112 @@
+#
+# $Id: canvastree.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Tree on the canvas.
+#
+class CanvasTree : CanvasComponent : Tree()
+   #
+   # Default minimum width for the object
+   #
+   method min_width()
+      return 65
+   end
+
+   #
+   # Default minimum height for the object
+   #
+   method min_height()
+      return 65
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      if \self.select_one then
+         c.line(self.name || ".set_select_one()")
+      if \self.select_many then
+         c.line(self.name || ".set_select_many()")
+      if \self.show_root then
+         c.line(self.name || ".set_show_root()")
+      if \self.show_root_handles then
+         c.line(self.name || ".set_show_root_handles()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.select_one := self.select_one
+      c.select_many := self.select_many
+      c.show_root := self.show_root
+      c.show_root_handles := self.show_root_handles
+      c.tree_structure_changed()
+   end
+
+   method post_decode()
+      tree_structure_changed()
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTree()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTree()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Select One", "select_one"],
+          ["Select Many", "select_many"],
+          ["Show Root Handles", "show_root_handles"],
+          ["Show Root", "show_root"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTreeDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Tree.initially()
+      self.class_name := "Tree"
+      self.import_name := "gui"
+      self.name := "tree"
+      n := Node("label=Cat")
+      n2 := Node("label=Sat")
+      n2.add(Node("label=On"))
+      n.add(n2)
+      n.add(Node("label=Mat"))
+      set_root_node(n)
+end

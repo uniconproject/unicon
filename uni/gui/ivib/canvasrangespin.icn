@@ -1,0 +1,92 @@
+#
+# $Id: canvasrangespin.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a RangeSpin on the canvas.
+#
+class CanvasRangeSpin : CanvasComponent : RangeSpin(value)
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      local s
+      self.CanvasComponent.gen_code(c)
+      if \self.lo | \self.hi then {
+         s := name || ".set_range(" || (\self.lo|"&null") || ", " ||
+            (\self.hi|"&null") || ")" 
+         c.line(s)
+      }
+      
+      c.line(name || ".set_value(" || value || ")")
+      c.line(name || ".set_increment_size(" || self.increment_size || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_range(self.lo, self.hi)
+      c.value := self.value
+      c.set_value(c.get_value())
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasRangeSpin()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasRangeSpin()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   method post_decode()
+      set_value(value)
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [
+          ["Hi", "hi"],
+          ["Lo", "lo"],
+          ["Increment Size", "increment_size"],
+          ["Value", "value"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasRangeSpinDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.RangeSpin.initially()
+      self.class_name := "RangeSpin"
+      self.import_name := "gui"
+      self.name := "range_spin"
+end

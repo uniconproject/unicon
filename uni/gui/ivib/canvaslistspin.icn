@@ -1,0 +1,79 @@
+#
+# $Id: canvaslistspin.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a ListSpin on the canvas.
+#
+class CanvasListSpin : CanvasComponent : ListSpin()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_selection_list([" || list2string(self.selection_list) || "])")
+      if self.selection ~= 1 then
+         c.line(name || ".set_selection(" || self.selection || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_selection_list(copy(self.selection_list))
+      c.set_selection(self.selection)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasListSpin()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasListSpin()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [
+          ["Selection", "selection"],
+          ["Selection List", "selection_list"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasListSpinDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.ListSpin.initially()
+      self.class_name := "ListSpin"
+      self.import_name := "gui"
+      self.name := "list_spin"
+end

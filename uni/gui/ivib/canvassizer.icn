@@ -1,0 +1,96 @@
+#
+# $Id: canvassizer.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Sizer on the canvas.
+#
+class CanvasSizer : CanvasComponent : Sizer()
+   #
+   # Overrides CanvasComponent.min_height()
+   #
+   method min_height()
+      return 3
+   end
+
+   #
+   # Overrides CanvasComponent.min_width()
+   #
+   method min_width()
+      return 3
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      if \self.is_horizontal_flag then
+         c.line(name || ".set_is_horizontal()")
+   end
+
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      Rectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.is_horizontal_flag := self.is_horizontal_flag
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasSizer()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasSizer()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Is horizontal flag", "is_horizontal_flag"]]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasSizerDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Sizer.initially()
+      self.class_name := "Sizer"
+      self.import_name := "gui"
+      self.name := "sizer"
+end

@@ -1,0 +1,215 @@
+#
+# $Id: canvassliderdialog.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasSliderDialog : CanvasComponentDialog(
+   c,                       #         
+   hi, 
+   value,
+   increment_size,
+   lo, 
+   snaps, 
+   labels, 
+   snaps_flag,
+   labels_flag,
+   ticks, 
+   ticks_flag
+   )
+
+   method on_okay()
+      local hi_val, lo_val, init_val, ticks_val, labels_val, snaps_val, incr_val
+
+      hi_val := numeric(hi.get_contents()) | return alert_error("Hi is not numeric")
+      lo_val := numeric(lo.get_contents()) | return alert_error("Lo is not numeric")
+      init_val := numeric(value.get_contents()) | return alert_error("Init value is not numeric")
+      incr_val := numeric(increment_size.get_contents()) | return alert_error("Increment is not numeric")
+
+      if ticks_flag.is_checked() then 
+         ticks_val := numeric(ticks.get_contents()) | return alert_error("Ticks is not numeric")
+
+      if labels_flag.is_checked() then 
+         labels_val := numeric(labels.get_contents()) | return alert_error("Labels is not numeric")
+
+      if snaps_flag.is_checked() then 
+         snaps_val := numeric(snaps.get_contents()) | return alert_error("Snaps is not numeric")
+
+      if init_val < \lo_val | init_val > \hi_val then
+         return alert_error("Init value is outside range")
+
+      self.validate_input() | fail
+      self.set_vals(c)
+
+      c.set_range(lo_val, hi_val)
+      c.set_value(init_val)
+      c.set_increment_size(incr_val)
+      c.set_ticks(ticks_val)
+      c.set_labels(labels_val)
+      c.set_snaps(snaps_val)
+
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_labels_flag(ev)
+      labels.toggle_is_shaded()
+   end
+
+   method on_ticks_flag(ev)
+      ticks.toggle_is_shaded()
+   end
+
+   method on_snaps_flag(ev)
+      snaps.toggle_is_shaded()
+   end
+
+   initially
+      local l, l3, l4, l5
+
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      l3 := Label()
+      l3.set_pos(25, 41)
+      l3.set_align("l", "c")
+      l3.set_internal_alignment("l")
+      l3.set_label("Low")
+      p.add(l3)
+      lo := TextField()
+      lo.set_pos(92, 41)
+      lo.set_size("93", )
+      lo.set_align("l", "c")
+      lo.set_draw_border()
+      lo.set_contents("")
+      p.add(lo)
+      l4 := Label()
+      l4.set_pos("25", "76")
+      l4.set_align("l", "c")
+      l4.set_internal_alignment("l")
+      l4.set_label("High")
+      p.add(l4)
+      hi := TextField()
+      hi.set_pos(92, 76)
+      hi.set_size("93", )
+      hi.set_align("l", "c")
+      hi.set_draw_border()
+      hi.set_contents("")
+      p.add(hi)
+      l := Label()
+      l.set_pos(25, 111)
+      l.set_align("l", "c")
+      l.set_internal_alignment("l")
+      l.set_label("Value")
+      p.add(l)
+      value := TextField()
+      value.set_pos(92, 111)
+      value.set_size("93", )
+      value.set_align("l", "c")
+      value.set_draw_border()
+      value.set_contents("")
+      p.add(value)
+      l5 := Label()
+      l5.set_pos(25, "146")
+      l5.set_align("l", "c")
+      l5.set_internal_alignment("l")
+      l5.set_label("Increment")
+      p.add(l5)
+      increment_size := TextField()
+      increment_size.set_pos(92, "146")
+      increment_size.set_size("93", )
+      increment_size.set_align("l", "c")
+      increment_size.set_draw_border()
+      increment_size.set_contents("")
+      p.add(increment_size)
+      ticks_flag := CheckBox()
+      ticks_flag.set_pos(242, 41)
+      ticks_flag.set_align("l", "c")
+      ticks_flag.connect(self, "on_ticks_flag", ACTION_EVENT)
+      ticks_flag.set_label("Ticks")
+      p.add(ticks_flag)
+      ticks := TextField()
+      ticks.set_pos(315, 41)
+      ticks.set_size("93", )
+      ticks.set_align("l", "c")
+      ticks.set_draw_border()
+      ticks.set_contents("")
+      p.add(ticks)
+      labels_flag := CheckBox()
+      labels_flag.set_pos(242, 76)
+      labels_flag.set_align("l", "c")
+      labels_flag.connect(self, "on_labels_flag", ACTION_EVENT)
+      labels_flag.set_label("Labels")
+      p.add(labels_flag)
+      labels := TextField()
+      labels.set_pos(315, 76)
+      labels.set_size("93", )
+      labels.set_align("l", "c")
+      labels.set_draw_border()
+      labels.set_contents("")
+      p.add(labels)
+      snaps_flag := CheckBox()
+      snaps_flag.set_pos(242, 111)
+      snaps_flag.set_align("l", "c")
+      snaps_flag.connect(self, "on_snaps_flag", ACTION_EVENT)
+      snaps_flag.set_label("Snaps")
+      p.add(snaps_flag)
+      snaps := TextField()
+      snaps.set_pos(315, 111)
+      snaps.set_size("93", )
+      snaps.set_align("l", "c")
+      snaps.set_draw_border()
+      snaps.set_contents("")
+      p.add(snaps)
+
+      lo.set_filter(&digits ++ '.-')
+      hi.set_filter(&digits ++ '.-')
+      value.set_filter(&digits ++ '.-')
+      ticks.set_filter(&digits ++ '.-')
+      labels.set_filter(&digits ++ '.-')
+      snaps.set_filter(&digits ++ '.-')
+      increment_size.set_filter(&digits ++ '.-')
+
+      hi.set_contents(c.hi)
+      lo.set_contents(c.lo)
+      value.set_contents(c.value)
+      increment_size.set_contents(c.increment_size)
+
+      if /c.ticks then {
+         ticks.set_is_shaded()
+      } else {
+         ticks_flag.set_is_checked()
+         ticks.set_contents(c.ticks)
+      }
+
+      if /c.labels then {
+         labels.set_is_shaded()
+      } else {
+         labels_flag.set_is_checked()
+         labels.set_contents(c.labels)
+      }
+
+      if /c.snaps then {
+         snaps.set_is_shaded()
+      } else {
+         snaps_flag.set_is_checked()
+         snaps.set_contents(c.snaps)
+      }
+end

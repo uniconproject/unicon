@@ -1,0 +1,150 @@
+#
+# $Id: canvasrangespindialog.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasRangeSpinDialog : CanvasComponentDialog(
+   c,                       #         
+   hi, 
+   hi_flag, 
+   value,
+   lo, 
+   lo_flag,
+   increment_size
+   )
+
+   method on_okay()
+      local hi_val, lo_val, inc_val, init_val
+
+      if hi_flag.is_checked() then 
+         hi_val := numeric(hi.get_contents()) | return alert_error("Hi is not numeric")
+
+      if lo_flag.is_checked() then 
+         lo_val := numeric(lo.get_contents()) | return alert_error("Lo is not numeric")
+
+      inc_val := numeric(increment_size.get_contents()) | return alert_error("Increment is not numeric")
+      init_val := numeric(value.get_contents()) | return alert_error("Init value is not numeric")
+
+      if init_val < \lo_val | init_val > \hi_val then
+         return alert_error("Init value is outside range")
+
+      self.validate_input() | fail
+      self.set_vals(c)
+
+      c.hi := hi_val
+      c.lo := lo_val
+      c.increment_size := inc_val
+      c.set_value(init_val)
+      c.value := init_val
+
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_hi_flag(ev)
+      hi.toggle_is_shaded()
+   end
+
+   method on_lo_flag(ev)
+      lo.toggle_is_shaded()
+   end
+
+   initially
+      local l, l2
+
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      lo_flag := CheckBox()
+      lo_flag.set_pos(107, 37)
+      lo_flag.set_align("l", "c")
+      lo_flag.connect(self, "on_lo_flag", ACTION_EVENT)
+      lo_flag.set_label("Low")
+      p.add(lo_flag)
+      lo := TextField()
+      lo.set_pos(202, 37)
+      lo.set_size("93", )
+      lo.set_align("l", "c")
+      lo.set_draw_border()
+      lo.set_contents("")
+      p.add(lo)
+      hi_flag := CheckBox()
+      hi_flag.set_pos(107, 73)
+      hi_flag.set_align("l", "c")
+      hi_flag.connect(self, "on_hi_flag", ACTION_EVENT)
+      hi_flag.set_label("High")
+      p.add(hi_flag)
+      hi := TextField()
+      hi.set_pos(202, 73)
+      hi.set_size("93", )
+      hi.set_align("l", "c")
+      hi.set_draw_border()
+      hi.set_contents("")
+      p.add(hi)
+      l := Label()
+      l.set_pos(107, 109)
+      l.set_align("l", "c")
+      l.set_internal_alignment("l")
+      l.set_label("Value")
+      p.add(l)
+      value := TextField()
+      value.set_pos(202, 109)
+      value.set_size("93", )
+      value.set_align("l", "c")
+      value.set_draw_border()
+      value.set_contents("")
+      p.add(value)
+      l2 := Label()
+      l2.set_pos(107, 145)
+      l2.set_align("l", "c")
+      l2.set_internal_alignment("l")
+      l2.set_label("Increment")
+      p.add(l2)
+      increment_size := TextField()
+      increment_size.set_pos(202, 145)
+      increment_size.set_size("93", )
+      increment_size.set_align("l", "c")
+      increment_size.set_draw_border()
+      increment_size.set_contents("")
+      p.add(increment_size)
+
+      lo.set_filter(&digits ++ '.-')
+      hi.set_filter(&digits ++ '.-')
+      increment_size.set_filter(&digits ++ '.-')
+      value.set_filter(&digits ++ '.-')
+
+      if /c.hi then {
+         hi.set_is_shaded()
+      } else {
+         hi_flag.set_is_checked()
+         hi.set_contents(c.hi)
+      }
+
+      if /c.lo then {
+         lo.set_is_shaded()
+      } else {
+         lo_flag.set_is_checked()
+         lo.set_contents(c.lo)
+      }
+
+      value.set_contents(c.value)
+      increment_size.set_contents(c.increment_size)
+end

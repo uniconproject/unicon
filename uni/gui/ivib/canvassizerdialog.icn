@@ -1,0 +1,34 @@
+#
+# $Id: canvassizerdialog.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+############################################################################
+#
+#
+#
+class CanvasSizerDialog : CanvasComponentDialog(
+   c                       #         
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self.setup(c)
+      if \c.is_horizontal_flag then
+         set_w_default.set_is_shaded()
+      else
+         set_h_default.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+end

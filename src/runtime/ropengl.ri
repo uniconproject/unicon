@@ -416,8 +416,10 @@ void disk(double radius1, double radius2, double angle1, double angle2,
       }
 
    /* draw a disk */
-   gluPartialDisk(qobj, radius1, radius2, 15, 5,
-                  angle1, angle2);
+   if (angle2 < 360.0)
+      gluPartialDisk(qobj, radius1, radius2, 15, 5, angle1, angle2);
+   else
+      gluDisk(qobj, radius1, radius2, 15, 5);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -495,6 +497,34 @@ int pushmatrix()
           return Failed;
         }
    return Succeeded;
+}
+
+/*
+ * push matrix and return a descriptor for a corresponding record
+ */
+int pushmatrix_rd(wbp w, dptr f)
+{
+   static dptr constr;
+   int nfields;
+   tended struct b_record *rp;
+
+   if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
+      syserr("failed to create opengl record constructor");
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   /* push a copy of the top matrix, if possible */
+   if (pushmatrix() == 0)
+      return 151;
+
+   /*
+    * create a record of the graphical object
+    */
+   Protect(rp = alcrecd(nfields, BlkLoc(*constr)), return -1);
+   f->dword = D_Record;
+   f->vword.bptr = (union block *)rp;
+   MakeStr("PushMatrix", 10 ,&(rp->fields[0]));
+   c_put(&(w->window->funclist), f);
+   return 0;
 }
 
 
@@ -713,7 +743,9 @@ int traversefunctionlist(wbp w)
 	 funclist = (struct b_list*)flist.vword.bptr;
    	 c_traverse (funclist, &fname, 0);
          }
-      else return Failed;
+      else {
+	 return Failed;
+	 }
 
       if (funclist->size-1 > 256) {
 	 v = calloc(funclist->size, sizeof (double));
@@ -2135,6 +2167,114 @@ int texture(int width, int height, GLubyte ***tex)
    return Succeeded;
 }
 
+/*
+ * do a translation
+ * return -i for runerr 102 on arg i; return 1 for runerr(0) on alloc failure
+ */
+int translate(wbp w, dptr argv, int i, dptr f)
+{
+   static dptr constr;
+   double coords[3];
+   int j, nfields;
+   tended struct b_record *rp;
+
+   if (!constr)
+      if (!(constr = rec_structor3d("gl_translate")))
+	 syserr("failed to create opengl record constructor");
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   /*
+    * convert parameters and perform the translation
+    */
+   for (j=0; j<3; j++)
+      if (!cnv:C_double(argv[i+j], coords[j])) return (-(i+j)-1);
+   glTranslated(coords[0], coords[1], coords[2]);
+
+   /*
+    * Create a record of the graphical object and its parameters
+    */
+   Protect(rp = alcrecd(nfields, BlkLoc(*constr)), return 1);
+   f->dword = D_Record;
+   f->vword.bptr = (union block *)rp;
+   MakeStr("Translate", 9, &(rp->fields[0]));
+   for (j = i; j < i+3; j++)
+      rp->fields[1 + j - i] = argv[j];
+   c_put(&(w->window->funclist), f);
+   return 0;
+}
+
+/*
+ * do a rotation
+ * return -i for runerr 102 on arg i; return 1 for runerr(0) on alloc failure
+ */
+int rotate(wbp w, dptr argv, int i, dptr f)
+{
+   int nfields, j;
+   double coords[4];
+   static dptr constr;
+   tended struct b_record *rp;
+
+   if (!constr)
+      if (!(constr = rec_structor3d("gl_rotate")))
+	 syserr("failed to create opengl record constructor");
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   /* convert parameters and perform the rotation */
+   for (j=0; j < 4; j++)
+      if (!cnv:C_double(argv[i+j], coords[j])) return (-(i+j)-1);
+   glRotated(coords[0], coords[1], coords[2], coords[3]);
+
+   /*
+    * create a record of the graphical object and its parameters
+    */
+   Protect(rp = alcrecd(nfields, BlkLoc(*constr)), return 1);
+   f->dword = D_Record;
+   f->vword.bptr = (union block *)rp;
+   MakeStr("Rotate", 6, &(rp->fields[0]));
+   /* strangeness here preserves name,x,y,z,... field ordering */
+   rp->fields[4] = argv[i];
+   rp->fields[1] = argv[i+1];
+   rp->fields[2] = argv[i+2];
+   rp->fields[3] = argv[i+3];
+   c_put(&(w->window->funclist), f);
+   return 0;
+}
+
+/*
+ * do a translation
+ * return -i for runerr 102 on arg i; return 1 for runerr(0) on alloc failure
+ */
+int scale(wbp w, dptr argv, int i, dptr f)
+{
+   int nfields, j;
+   double coords[3];
+   static dptr constr;
+   tended struct b_record *rp;
+
+   if (!constr)
+      if (!(constr = rec_structor3d("gl_scale")))
+	 syserr("failed to create opengl record constructor");
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   /*
+    * convert parameters and perform scaling
+    */
+   for(j=0; j<3; j++)
+      if (!cnv:C_double(argv[i+j], coords[j])) return -(i+j)-1;
+   glScaled(coords[0], coords[1], coords[2]);
+
+   /*
+    * create a record of the graphical object and its parameters
+    */
+   Protect(rp = alcrecd(nfields, BlkLoc(*constr)), return 1);
+   f->dword = D_Record;
+   f->vword.bptr = (union block *)rp;
+   MakeStr("Scale", 5, &(rp->fields[0]));
+   for (j = i; j < i+3; j++)
+      rp->fields[1 + j - i] = argv[j];
+   c_put(&(w->window->funclist), f);
+   return 0;
+}
 
 /*
  * For each 3D graphics operation, there is a descriptor that

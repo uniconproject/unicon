@@ -3442,7 +3442,7 @@ function{1} DrawDisk(argv[argc])
 	 rp->fields[4] = argv[i+3];
 	 rp->fields[5] = argv[i+4];
 
-	 if (i+4 >= argc-warg) {
+	 if (i+5 >= argc) {
 	    a1 = 0.0;
 	    MakeInt(0, &(rp->fields[6]));
 	    }
@@ -3451,7 +3451,7 @@ function{1} DrawDisk(argv[argc])
 	    rp->fields[6] = argv[i+5];
 	    }
 
-	 if (i+5 >= argc-warg) {
+	 if (i+6 >= argc) {
 	    a2 = 360;
             MakeInt(360, &(rp->fields[7])); 
 	    }
@@ -3485,37 +3485,15 @@ function{1} Rotate(argv[argc])
       double x, y, z, angle;
       struct descrip f;
       tended struct b_record *rp;
-      static dptr constr;
 
       OptWindow(w);
       CheckArgMultiple(4);
 
-      if (!constr)
-	 if (!(constr = rec_structor3d("gl_rotate")))
-	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
-
-      for(i = warg; i < argc; i += 4) {
-	 /* convert parameters and perform the rotation */
-         if (!cnv:C_double(argv[i], angle)) runerr(102, argv[i]); 	  
-	 if (!cnv:C_double(argv[i+1], x))   runerr(102, argv[i+1]);
-	 if (!cnv:C_double(argv[i+2], y))   runerr(102, argv[i+2]);
-	 if (!cnv:C_double(argv[i+3], z))   runerr(102, argv[i+3]);
-	 glRotated(angle, x, y, z);
-
-	 /*
-	  * create a record of the graphical object and its parameters
-	  */
-	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-	 f.dword = D_Record;
-	 f.vword.bptr = (union block *)rp;
-         MakeStr("Rotate", 6, &(rp->fields[0]));
-	 /* strangeness here preserves name,x,y,z,... field ordering */
-	 rp->fields[4] = argv[i];
-	 rp->fields[1] = argv[i+1];
-	 rp->fields[2] = argv[i+2];
-	 rp->fields[3] = argv[i+3];
-         c_put(&(w->window->funclist), &f);
+      for(i = warg; i < argc-warg; i = i+4) {
+	 if (j = rotate(w, argv, i, &f)) {
+	    if (j == 1) runerr(0);
+	    else runerr(102, argv[-j-1]);
+	    }
          }
       return f;
     }
@@ -3529,41 +3507,21 @@ end
 "Translate(argv[]){1} - translates objects"
 
 function{1} Translate(argv[argc])
-    abstract{ return record }
-    body {
+   abstract{ return record }
+   body {
       wbp w;
-      int warg = 0, n, i, j, nfields;
-      double x, y, z;
+      int warg = 0, i, j, n;
       struct descrip f;
       static dptr constr;
-      tended struct b_record *rp;
 
       OptWindow(w);
       CheckArgMultiple(3);
 
-      if (!constr)
-	 if (!(constr = rec_structor3d("gl_translate")))
-	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
-
-      for(i = warg; i < argc; i += 3) {
-
-	 /*convert parameters and perform the translation */
-         if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);	
-         if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
-         glTranslated(x, y, z);
-
-	 /*
-	  * create a record of the graphical object and its parameters
-	  */
-	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-	 f.dword = D_Record;
-	 f.vword.bptr = (union block *)rp;
-         MakeStr("Translate", 9, &(rp->fields[0]));
-         for (j = i; j < i+3; j++)
-            rp->fields[1 + j - i] = argv[j];
-         c_put(&(w->window->funclist), &f);
+      for(i = warg; i < argc-warg; i = i+3) {
+	 if (j = translate(w, argv, i, &f)) {
+	    if (j == 1) runerr(0);
+	    else runerr(102, argv[-j-1]);
+	    }
          }
       return f;
    }
@@ -3578,41 +3536,21 @@ end
 "Scale(argv[]){1} - scales objects"
 
 function{1} Scale(argv[argc])
-    abstract{ return record }
-    body {
+   abstract{ return record }
+   body {
       wbp w;
-      int warg = 0, n, i, j, nfields;
+      int warg = 0, n, i, j;
       double x, y, z;
-      struct descrip f;
-      tended struct b_record *rp;
-      static dptr constr;
+      struct descrip f = nulldesc;
 
       OptWindow(w);
       CheckArgMultiple(3);
 
-      if (!constr)
-	 if (!(constr = rec_structor3d("gl_scale")))
-	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
-
-      for(i = warg; i < argc; i += 3) {
-
-	 /* convert parameters and perform scaling */
-	 if (!cnv:C_double(argv[i], x))	  runerr(102, argv[i]);
-	 if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
-	 if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
-	 glScaled(x, y, z);
-
-	 /*
-	  * create a record of the graphical object and its parameters
-	  */
-	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-	 f.dword = D_Record;
-	 f.vword.bptr = (union block *)rp;
-	 MakeStr("Scale", 5, &(rp->fields[0]));
-	 for (j = i; j < i+3; j++)
-	    rp->fields[1 + j - i] = argv[j];
-	 c_put(&(w->window->funclist), &f);	
+      for(i = warg; i < argc-warg; i = i+3) {
+	 if (j=scale(w, argv, i, &f)) {
+	    if (j == 1) runerr(0);
+	    else runerr(102, argv[-j-1]);
+	    }
 	 }
       return f;
       }
@@ -3696,9 +3634,97 @@ function{1} PushMatrix(argv[argc])
 end
     
 
+"PushTranslate(argv[]){1} - push a copy of the top matrix onto the matrix stack and apply translations"
+
+function{2} PushTranslate(argv[argc])
+abstract { return record }
+body {
+      wbp w;
+      int warg = 0, i, j, n;
+      struct descrip f, f2;
+ 
+      OptWindow(w);
+      CheckArgMultiple(3);
+
+      if (j = pushmatrix_rd(w, &f)) {
+	 if (j == 151) runerr(j);
+	 else if (j == -1) runerr(0);
+	 }
+
+      for(i = warg; i < argc-warg; i = i+3) {
+	 if (j = translate(w, argv, i, &f2)) {
+	    if (j == 1) runerr(0);
+	    else runerr(102, argv[-j-1]);
+	    }
+         }
+
+      suspend f;
+      return f2;
+      }
+end
+
+
+"PushRotate(argv[]){1} - push a copy of the top matrix onto the matrix stack and apply rotations"
+
+function{2} PushRotate(argv[argc])
+abstract { return record }
+body {
+      wbp w;
+      int warg = 0, i, j, n;
+      struct descrip f, f2;
+ 
+      OptWindow(w);
+      CheckArgMultiple(4);
+
+      if (j = pushmatrix_rd(w, &f)) {
+	 if (j == 151) runerr(j);
+	 else if (j == -1) runerr(0);
+	 }
+
+      for(i = warg; i < argc-warg; i = i+4) {
+	 if (j = rotate(w, argv, i, &f2)) {
+	    if (j == 1) runerr(0);
+	    else runerr(102, argv[-j-1]);
+	    }
+         }
+
+      suspend f;
+      return f2;
+      }
+end
+
+
+"PushScale(argv[]){1} - push a copy of the top matrix onto the matrix stack and apply scales"
+
+function{2} PushScale(argv[argc])
+abstract { return record }
+body {
+      wbp w;
+      int warg = 0, i, j, n;
+      struct descrip f, f2;
+ 
+      OptWindow(w);
+      CheckArgMultiple(3);
+
+      if (j = pushmatrix_rd(w, &f)) {
+	 if (j == 151) runerr(j);
+	 else if (j == -1) runerr(0);
+	 }
+
+      for(i = warg; i < argc-warg; i = i+3) {
+	 if (j = scale(w, argv, i, &f2)) {
+	    if (j == 1) runerr(0);
+	    else runerr(102, argv[-j-1]);
+	    }
+         }
+
+      suspend f;
+      return f2;
+      }
+end
+
 /*
  * IdentityMatrix(w)
- *
  */
 "IdentityMatrix(argv[]){1} - change the top matrix to the identity"
 
@@ -4007,6 +4033,9 @@ MissingGraphicsFuncV(DrawCylinder)
 MissingGraphicsFuncV(DrawDisk)
 MissingGraphicsFuncV(DrawPartialDisk)
 MissingGraphicsFuncV(PushMatrix)
+MissingGraphicsFuncV(PushRotate)
+MissingGraphicsFuncV(PushScale)
+MissingGraphicsFuncV(PushTranslate)
 MissingGraphicsFuncV(PopMatrix)
 MissingGraphicsFuncV(IdentityMatrix)
 MissingGraphicsFuncV(MatrixMode)

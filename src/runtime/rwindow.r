@@ -3642,8 +3642,10 @@ char * abuf;
 	 }
       case A_PATTERN: {
 	 s = w->context->patternname;
-	 if (s != NULL)
-	    MakeStr(s, strlen(s), answer);
+	 if (s != NULL) {
+	    strcpy(abuf, s);
+	    MakeStr(abuf, strlen(s), answer);
+	    }
 	 else
 	    MakeStr("black", 5, answer);
 	 break;

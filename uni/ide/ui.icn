@@ -54,9 +54,20 @@ WAttrib("selection=" || large_str)
     return large_str
 end
 
-###############################################################################
+#
+# defextension(s) - return s, append default extension if needed
+#
+method defextension(s)
+   s ? {
+      if tab(find(".")+1) & (tab(many(&letters++&digits))|"") & pos(0) then
+	 return s
+      else return s ||:= ".icn"
+   }
+end
+
+#
 # get list from clipboard
-###############################################################################
+#
 
 method get_list_from_clipboard()
     local large_str, l, str
@@ -139,6 +150,12 @@ $endif
       return
   }    
    
+  if find(".icp", map(filename)) then { # open project
+     project := filename
+     updateproject()
+     }
+   else filename := defextension(filename)
+
   file := open(filename, "b") | {
       MsgBox.set_contents(["Could not open file: " || filename])
       return

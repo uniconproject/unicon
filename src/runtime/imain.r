@@ -73,7 +73,7 @@ int NoOptions = 0;
  * End of operating-system specific code.
  */
 
-extern set_up;
+extern int set_up;
 
 /*
  * A number of important variables follow.
@@ -98,6 +98,7 @@ int mterm = Op_Quit;
 FILE *finredir, *fouredir, *ferredir;
 
 #ifdef MSWindows
+#ifdef ConsoleWindow
 void detectRedirection()
 {
    struct stat sb;
@@ -130,7 +131,7 @@ void detectRedirection()
    else {					/* unable to identify stdout */
      }
 }
-
+#endif					/* ConsoleWindow */
 
 int CmdParamToArgv(char *s, char ***avp)
    {
@@ -144,12 +145,15 @@ int CmdParamToArgv(char *s, char ***avp)
    *avp = malloc(2 * sizeof(char *));
    (*avp)[rv] = NULL;
 
+#ifdef ConsoleWindow
    detectRedirection();
+#endif					/* ConsoleWindow */
 
    while (*t2) {
       while (*t2 && isspace(*t2)) t2++;
       switch (*t2) {
 	 case '\0': break;
+#ifdef ConsoleWindow
 	 case '<': case '>': {
 	    /*
 	     * perform file redirection; this is for Windows 3.1
@@ -181,6 +185,7 @@ int CmdParamToArgv(char *s, char ***avp)
 	       }
 	    break;
 	    }
+#endif					/* ConsoleWindow */
 	 case '"': {
 	    char *t3 = ++t2;			/* skip " */
 
@@ -307,6 +312,9 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    free(argv);
    wfreersc();
    xmfree();
+#ifdef NTGCC
+   _exit(0);
+#endif					/* NTGCC */
    return 0;
 }
 #define main iconx
@@ -380,7 +388,11 @@ StringHandle textHandle;
 
 void MacMain (argc, argv)
 #else					/* MacGraph */
+#ifdef DLLICONX
+#passthru void __declspec(dllexport) iconx_entry(argc, argv)
+#else					/* DLLICONX */
 void main(argc, argv)
+#endif					/* DLLICONX */
 #endif					/* MacGraph */
 #endif					/* OS2 */
 int argc;
@@ -523,6 +535,19 @@ char **argv;
 #endif					/* MultiThread */
 
    ipc.opnd = NULL;
+
+#if UNIX
+   /*
+    *  Append to FPATH the bin directory from which iconx was executed.
+    */
+   {
+      char *p, *q, buf[1000];
+      p = getenv("FPATH");
+      q = relfile(argv[0], "/..");
+      sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
+      putenv(buf);
+      }
+#endif
 
    /*
     * Setup Icon interface.  It's done this way to avoid duplication

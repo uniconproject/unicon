@@ -4,8 +4,8 @@ include ../makedefs
 .PHONY: all clean deps
 
 UFILES=border.u button.u buttongroup.u checkbox.u checkboxgroup.u \
-	checkboxmenuitem.u circulate.u clipboard.u component.u \
-	dialog.u dispatcher.u displayscrollarea.u dndhandler.u \
+	checkboxmenuitem.u circulate.u clipboard.u component.u componentscrollarea.u \
+	dialog.u dispatcher.u drawscrollarea.u displayscrollarea.u dndhandler.u \
 	drag.u dropdown.u editabletextlist.u editlist.u editspin.u \
 	event.u filedialog.u filterlistener.u guiprocs.u \
 	icon.u iconbutton.u image.u label.u line.u \

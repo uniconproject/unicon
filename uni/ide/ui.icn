@@ -239,6 +239,20 @@ end
    end
 
    method handle_exit_menu_item(ev)
+      if EditBox.changed then {
+      case SelectDialog(current_file || " is modified, save it?",,,
+		 ["Yes", "Save As", "No", "Cancel"]) of {
+	 "Yes": {
+	    handle_savefile(current_file)
+	    }
+	 "Save As": {
+	    handle_saveas_menu_item()
+	    }
+	 "Cancel": {
+	    fail
+	    }
+	 }
+          }
       dispose()
    end
 
@@ -246,6 +260,7 @@ end
 method handle_compile_menu_item(ev)
 local command, str, compile_options, log1
 local lst
+   MsgBox.set_contents([""])
    lst := []
 
    if /current_file then { # current file null
@@ -440,8 +455,23 @@ end
          close(log1)
          remove(fn)
          MsgBox.set_contents(lst)
-         break
-         }
+         every s := !lst do s ? {
+            write("trying ", &subject)
+            if (fn := tab(many(&letters++&digits++'./-'))) &
+                =":" &
+                ln := integer(tab(many(&digits))) &
+                = ":" then {
+                if map(fn) ~== map(current_file) then
+                   if not handle_openfile( , fn) then return
+                if 1 <= ln <= *(EditBox.contents) then {
+                   EditBox.cursor_y := ln; EditBox.cursor_x := 1
+                   EditBox.constrain_line()
+                   EditBox.refresh(1)
+                   }
+                break break
+                }
+}
+}
       else {
          MsgBox$set_contents(["Can't open logfile "||fn || ": "||i])
          }
@@ -450,10 +480,13 @@ end
 
    method handle_make_exec_menu_item(ev)
 #      save()
+      MsgBox.set_contents([""])
       complink()
    end
 
    method handle_compile_options_menu_item(ev)
+      if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
+	 targs := dialog_value[1]
    end
 
    method handle_run_menu_item(ev)
@@ -465,14 +498,16 @@ end
       }
    else {
       }
+
    if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP || icodename
+   cmd := icodename || " " || xargs
 $ifdef _UNIX
-      if system(icodename || " " || xargs || " &> " || wiconlog, L) then {
-$else
-      if system(icodename || " " || xargs, L) then {# hope WICONLOG does trick?
+   cmd ||:= " &> " || wiconlog
 $endif
-	 showanyerror(wiconlog, L, 1)
-	 }
+   if system(cmd, L) then {# hope WICONLOG does trick?
+
+      showanyerror(wiconlog, L, 1)
+      }
       else {
 	 s := "system(" || icodename || " " || xargs ||
 		") failed.  Is the PATH setup to run this?"

@@ -775,7 +775,7 @@ function{1} DrawLine(argv[argc])
          glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
-         ReturnWindow;
+         return f;
          }
      else 
 #endif					/* Graphics3D */
@@ -852,7 +852,7 @@ function{1} DrawPoint(argv[argc])
          glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
-         ReturnWindow;
+         return f;
 	 }
       else 
 #endif					/* Graphics3D */
@@ -928,7 +928,7 @@ function{1} DrawPolygon(argv[argc])
 	 glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
-         ReturnWindow;
+         return f;
 	 }
       else 
 #endif					/* Graphics3D */
@@ -1057,9 +1057,9 @@ function{1} DrawSegment(argv[argc])
 	 glFlush();
     	 glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
-	 ReturnWindow;
+	 return f;
 	 }
-       else 
+       else
 #endif					/* Graphics3D */
      {
 
@@ -1137,20 +1137,18 @@ function{1} EraseArea(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-        /*
-	 * allocate a new list for functions
-	 */
+	 /*
+	  * allocate a new list for functions
+	  */
          Protect(w->window->flist = alclist(0, MinListSlots), runerr(0));
 	 w->window->funclist.vword.bptr = (union block *)w->window->flist;
          glClearColor(RED(w->context->bg)/(GLfloat)256,
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
-         glXSwapBuffers(w->window->display->display, 
-                    w->window->win);
+         glXSwapBuffers(w->window->display->display, w->window->win);
          ReturnWindow;
-        }
-       
+	 }
 #endif                                /* Graphics3D */
 
       for (i = warg; i < argc || i == warg; i += 4) {
@@ -1440,7 +1438,7 @@ function{1} FillPolygon(argv[argc])
 	 glFlush();
 	 glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
-	 ReturnWindow;
+	 return f;
 	 }
       else 
 #endif					/* Graphics3D */
@@ -3177,60 +3175,76 @@ MissingGraphicsFuncV(WinSaveDialog)
 #if defined(Graphics) && defined(Graphics3D)
 
 /*
+ * For each 3D graphics operation, there is a descriptor that
+ * holds the record constructor for that type of primitive.
+ */
+
+struct descrip gl_torus = {D_Null};
+struct descrip gl_cube = {D_Null};
+struct descrip gl_sphere = {D_Null};
+struct descrip gl_cylinder = {D_Null};
+struct descrip gl_disk = {D_Null};
+struct descrip gl_rotate = {D_Null};
+struct descrip gl_translate = {D_Null};
+struct descrip gl_scale = {D_Null};
+struct descrip gl_popmatrix = {D_Null};
+struct descrip gl_pushmatrix = {D_Null};
+struct descrip gl_identity = {D_Null};
+struct descrip gl_matrixmode = {D_Null};
+struct descrip gl_texture = {D_Null};
+
+/*
  * DrawTorus(w,x,y,z,radius1,radius2,...)
  *
  */
 "DrawTorus(argv[]) - draw a torus"
 
 function{1} DrawTorus(argv[argc])
-   abstract{ return file }
+   abstract{ return record }
    body {
       wbp w;
-      int n, i, j, warg = 0;
+      int n, i, j, warg = 0, nfields;
       double r1, r2, x, y, z;
-      struct descrip f, funcname;
-      struct b_list *func;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
       OptWindow(w);
       CheckArgMultiple(5);
 	
-	/* tori are not allowed in a 2-dim space */
+      /* tori are not allowed in a 2-dim space */
       if (w->context->dim == 2) 
          runerr(150);
+
+      if (!constr)
+	 if (!(constr = rec_structor("gl_torus")))
+	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
       for (i = warg; i < argc-warg; i = i + 5) {
 
-	   /* create a list */	   
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawTorus", 9, &funcname);
-         c_put(&f, &funcname);
+	 /* convert parameters and draw torus*/
+         if (!cnv:C_double(argv[i], x))    runerr(102, argv[i]);  
+         if (!cnv:C_double(argv[i+1], y))  runerr(102, argv[i+1]);
+         if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
+         if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
+         if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
+	 torus(r1, r2, x, y, z, (w->context->texmode ? w->context->autogen:0));
 
-	   /* convert parameters and draw torus*/
-         if (!cnv:C_double(argv[i], x))
-		  runerr(102, argv[i]);  
-         if (!cnv:C_double(argv[i+1], y))
-		  runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], z))
-		  runerr(102, argv[i+2]);
-         if (!cnv:C_double(argv[i+3], r1))
-		  runerr(102, argv[i+3]);
-         if (!cnv:C_double(argv[i+4], r2))
-		  runerr(102, argv[i+4]);
-         if (w->context->texmode)
-            torus(r1, r2, x, y, z, w->context->autogen);         else 
-            torus(r1, r2, x, y, z, 0);
-
-	   /* put paramenters in list */
+	 /* create a record of the graphical object */	   
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+         MakeStr("DrawTorus", 9, &(rp->fields[0])); /* r.name */
          for(j = i; j < i + 5; j++)
- 	       c_put(&f, &argv[j]);
+	    rp->fields[1 + j-i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
    
 	/* Since we are using double buffers, swap */
       glXSwapBuffers(w->window->display->display, 
                      w->window->win);
-      ReturnWindow;
+      return f;
    }
 end
 
@@ -3241,55 +3255,51 @@ end
 "DrawCube(argv[]){1} - draw a cube"
 
 function{1} DrawCube(argv[argc])
-    abstract{ return file }
-    body {
-	wbp w;
-	int n, i, j, warg = 0;
-	double l, x, y, z;
-   	struct descrip f, funcname;
-   	struct b_list *func;
-   
-	OptWindow(w);		
-	CheckArgMultiple(4);
+   abstract{ return record }
+   body {
+      wbp w;
+      int n, i, j, warg = 0, nfields;
+      double l, x, y, z;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
-	/* Cubes are not 2-dim objects */
+      OptWindow(w);		
+      CheckArgMultiple(4);
+
+      /* Cubes are not 2-dim objects */
       if (w->context->dim == 2) 
-	    runerr(150);	
+	 runerr(150);	
+
+      if (!constr)
+	 if (!(constr = rec_structor("gl_cube")))
+	    syserr("failed to create opengl record constructor");
+
       for(i = warg; i < argc-warg; i = i+4) {
  
-	   /* Create a list for the function */
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawCube", 8, &funcname);
-         c_put(&f, &funcname);
-
-	    /* convert parameters and draw a cube */
-         if (!cnv:C_double(argv[i], x))
-		  runerr(102, argv[i]);
-         if (!cnv:C_double(argv[i+1], y))
-		  runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], z))
-		  runerr(102, argv[i+2]);
-         if (!cnv:C_double(argv[i+3], l))
-		  runerr(102, argv[i+3]);  
-         if (w->context->texmode)
-            cube(l, x, y, z, w->context->autogen);
-         else 
-            cube(l, x, y, z, 0);
+	 /* convert parameters and draw a cube */
+         if (!cnv:C_double(argv[i], x))	  runerr(102, argv[i]);
+         if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
+         if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
+         if (!cnv:C_double(argv[i+3], l)) runerr(102, argv[i+3]);  
+	 cube(l, x, y, z, (w->context->texmode?w->context->autogen:0));
         
-  
-	    /* put parameters in the function list */
+	 /*
+	  * create a record of the graphical object and its parameters
+	  */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+         MakeStr("DrawCube", 8, &(rp->fields[0]));
          for(j = i; j < i + 4; j++)
-            c_put(&f, &argv[j]);
+            rp->fields[1 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
 
-	  /* swap buffers, since we are double buffered */
-       glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-       ReturnWindow;
-    }
+      /* swap buffers, since we are double buffered */
+      glXSwapBuffers(w->window->display->display, w->window->win);
+      return f;
+      }
 end
 
 
@@ -3299,56 +3309,53 @@ end
  */
 "DrawSphere(argv[]){1} - draw a sphere"
 
-function{1} DrawSphere(argv[argc])
-    abstract{ return file }
-    body {
-    	wbp w;
-	int warg = 0;
-	int n, i, j;
-	double r, x, y, z;
-    	struct descrip f, funcname;
-   	struct b_list *func;
+function{*} DrawSphere(argv[argc])
+   abstract{ return record }
+   body {
+      wbp w;
+      int warg = 0, n, i, j, nfields;
+      double r, x, y, z;
+      tended struct b_record *rp;
+      struct descrip f;
+      static dptr constr;
 
-	OptWindow(w);
-	CheckArgMultiple(4);
+      OptWindow(w);
+      CheckArgMultiple(4);
 
-	/* sphere cannot be drawn in a 2-dim scene */
-   	if (w->context->dim == 2)
-	   runerr(150);
+      /* sphere cannot be drawn in a 2-dim scene */
+      if (w->context->dim == 2) runerr(150);
 
-	for(i = warg; i < argc-warg; i = i+4) {
+      if (!constr)
+	 if (!(constr = rec_structor("gl_sphere")))
+	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-        /* create a list for the function */
-	   Protect(func = alclist(0, MinListSlots), runerr(0));   
-  	   f.dword = D_List;
-   	   f.vword.bptr = (union block *) func; 
-    	   MakeStr("DrawSphere", 10, &funcname);
-    	   c_put(&f, &funcname);
+      for(i = warg; i < argc-warg; i = i+4) {
 
-	   /* convert parameters and draw a sphere */
-	   if (!cnv:C_double(argv[i], x))
-		 runerr(102, argv[i]);
-	   if (!cnv:C_double(argv[i+1], y))
-		 runerr(102, argv[i+1]);    	
-	   if (!cnv:C_double(argv[i+2], z))
-		 runerr(102, argv[i+2]);
-	   if (!cnv:C_double(argv[i+3], r))
-		 runerr(102, argv[i+3]); 
-	   if (w->context->texmode)
- 	      sphere(r, x, y, z, w->context->autogen);
-         else 
-        	sphere(r, x, y, z, 0);
+	 /* convert parameters and draw a sphere */
+	 if (!cnv:C_double(argv[i], x))    runerr(102, argv[i]);
+	 if (!cnv:C_double(argv[i+1], y))  runerr(102, argv[i+1]);
+	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
+	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
+	 sphere(r, x, y, z, (w->context->texmode?w->context->autogen:0));
 
-	  /* put parameter in the list for the function */
-    	   for(j = i; j < i + 4; j++)
-  	      c_put(&f, &argv[j]);
-         c_put(&(w->window->funclist), &f);
-         }
+	 /* create a record of the graphical object */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+	 MakeStr("DrawSphere", 10, &(rp->fields[0])); /* r.name */
+
+	 /* put parameter in the list for the function */
+	 rp->fields[1] = argv[i];
+	 rp->fields[2] = argv[i+1];
+	 rp->fields[3] = argv[i+2];
+	 rp->fields[4] = argv[i+3];
+	 c_put(&(w->window->funclist), &f);
+	 }
 
 	/* swap buffers */
-      glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-      ReturnWindow;
+	glXSwapBuffers(w->window->display->display, w->window->win);
+	return f;
     }
 end
 
@@ -3360,58 +3367,52 @@ end
 "DrawCylinder(argv[]){1} - draw a cylinder"
 
 function{1} DrawCylinder(argv[argc])
-    abstract{ return file }
-    body {
-    	wbp w;
-	int warg = 0;
-	int n, i, j;
-	double r1, r2, h, x, y, z;
-  	struct descrip f, funcname;
-  	struct b_list *func;
+   abstract{ return record }
+   body {
+      wbp w;
+      int warg = 0, n, i, j, nfields;
+      double r1, r2, h, x, y, z;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
-	OptWindow(w);
-	CheckArgMultiple(6);
+      OptWindow(w);
+      CheckArgMultiple(6);
 
-	/* cylinders cannot be used in a 2-dim scene */
-      if (w->context->dim == 2)
-	   runerr(150);
- 	for(i = warg; i < argc-warg; i = i+6) {
- 
-	   /* create a list */
-         Protect(func = alclist(0, MinListSlots), runerr(0));       
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawCylinder", 12, &funcname);
-         c_put(&f, &funcname);
+      /* cylinders cannot be used in a 2-dim scene */
+      if (w->context->dim == 2) runerr(150);
 
-	   /* convert parameters and draw a cylinder */
-	   if (!cnv:C_double(argv[i], x))
-		 runerr(102, argv[i]);
-         if (!cnv:C_double(argv[i+1], y))
-		 runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], z))
-		 runerr(102, argv[i+2]);
-    	   if (!cnv:C_double(argv[i+3], h))
-		 runerr(102, argv[i+3]);  
-	   if (!cnv:C_double(argv[i+4], r1))
-		 runerr(102, argv[i+4]);
-	   if (!cnv:C_double(argv[i+5], r2))
-		 runerr(102, argv[i+5]);
-         if (w->context->texmode)
-            cylinder(r1, r2, h, x, y, z, w->context->autogen);
-         else 
-            cylinder(r1, r2, h, x, y, z, 0);
+      if (!constr)
+	 if (!(constr = rec_structor("gl_cylinder")))
+	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      for(i = warg; i < argc-warg; i = i+6) {
+
+	 /* convert parameters and draw a cylinder */
+	 if (!cnv:C_double(argv[i], x))    runerr(102, argv[i]);
+         if (!cnv:C_double(argv[i+1], y))  runerr(102, argv[i+1]);
+         if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
+	 if (!cnv:C_double(argv[i+3], h))  runerr(102, argv[i+3]);  
+	 if (!cnv:C_double(argv[i+4], r1)) runerr(102, argv[i+4]);
+	 if (!cnv:C_double(argv[i+5], r2)) runerr(102, argv[i+5]);
+	 cylinder(r1, r2, h,x,y,z,(w->context->texmode?w->context->autogen:0));
+
+	 /* create a record of the graphical object */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+         f.dword = D_Record;
+         f.vword.bptr = (union block *) rp;
+         MakeStr("DrawCylinder", 12, &(rp->fields[0])); /* r.name */
 
 	   /* put parameters in the list */
          for(j = i; j < i + 6; j++)
-  	      c_put(&f, &argv[j]);
+	    rp->fields[1 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
 
-	/* swap buffers */
-      glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-      ReturnWindow;
+      /* swap buffers */
+      glXSwapBuffers(w->window->display->display, w->window->win);
+      return f;
    }
 end
 
@@ -3424,69 +3425,69 @@ end
 "DrawDisk(argv[]){1} - draw a disk"
 
 function{1} DrawDisk(argv[argc])
-    abstract{ return file }
-    body {
-  	wbp w;
-	int warg = 0;
-	int n, j, i;
-	double r1, r2, a1, a2, x, y, z;
-  	struct descrip f, funcname, start, sweep;
-    	struct b_list *func;
+   abstract{ return record }
+   body {
+      wbp w;
+      int warg = 0, n, j, i, nfields;
+      double r1, r2, a1, a2, x, y, z;
+      struct descrip f;
+      static dptr constr;
+      tended struct b_record *rp;
 
-	OptWindow(w);
-	for (i = warg; i < argc-warg; i = i+7) {
-           Protect(func = alclist(0, MinListSlots), runerr(0));
-           f.dword = D_List;
-           f.vword.bptr = (union block *) func; 
-           MakeStr("DrawDisk", 8, &funcname);
-           c_put(&f, &funcname);
-	   if (argc-warg <= i+3)
-	      runerr(146);
-           if (!cnv:C_double(argv[i], x))
-              runerr(102, argv[i]);
-           c_put (&f, &argv[i]);
-	   if (!cnv:C_double(argv[i+1], y))
-	      runerr(102, argv[i+1]);
-           c_put(&f, &argv[i+1]);
-	   if (!cnv:C_double(argv[i+2], z))
-	      runerr(102, argv[i+2]);
-           c_put(&f, &argv[i+2]);
-	   if (!cnv:C_double(argv[i+3], r1))
-	      runerr(102, argv[i+3]);
-           c_put(&f, &argv[i+3]);
-	   if (!cnv:C_double(argv[i+4], r2))
-	      runerr(102, argv[i+4]);
-	   c_put(&f, &argv[i+4]);
-	   if (i+4 >= argc-warg) {
-	      a1 = 0.0;
-              MakeInt(0, &start); 
-              c_put(&f, &start);
-             }
-	   else 	{
-           if (!cnv:C_double(argv[i+5],a1))
-	         runerr(102, argv[i+5]);
-           c_put(&f, &argv[i+5]); 
-        }
- 	   if (i+5 >=argc-warg){
-	      a2 = 360;
-            MakeInt(360, &sweep); 
-            c_put(&f, &sweep);
-             }
-	    else {
-		 if (!cnv:C_double(argv[i+6], a2)) 
-	          runerr(102, argv[i+6]);	
-            c_put(&f, &argv[i+6]);
-          }
-          if (w->context->texmode)
-             disk(r1, r2, a1, a2, x, y, z, w->context->autogen);
-         else
-             disk(r1, r2, a1, a2, x, y, z, 0);
+      OptWindow(w);
+
+      if (!constr)
+	 if (!(constr = rec_structor("gl_disk")))
+	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      for (i = warg; i < argc-warg; i = i+7) {
+	 if (argc-warg <= i+3)
+	    runerr(146);
+
+	 /* create a record of the graphical object */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+	 MakeStr("DrawDisk", 8, &(rp->fields[0])); /* r.name */
+
+	 if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);
+	 if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
+	 if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
+	 if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
+	 if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
+	 rp->fields[1] = argv[i];
+	 rp->fields[2] = argv[i+1];
+	 rp->fields[3] = argv[i+2];
+	 rp->fields[4] = argv[i+3];
+	 rp->fields[5] = argv[i+4];
+
+	 if (i+4 >= argc-warg) {
+	    a1 = 0.0;
+	    MakeInt(0, &(rp->fields[6]));
+	    }
+	 else {
+	    if (!cnv:C_double(argv[i+5],a1)) runerr(102, argv[i+5]);
+	    rp->fields[6] = argv[i+5];
+	    }
+
+	 if (i+5 >= argc-warg) {
+	    a2 = 360;
+            MakeInt(360, &(rp->fields[7])); 
+	    }
+	 else {
+	    if (!cnv:C_double(argv[i+6], a2)) runerr(102, argv[i+6]);
+	    rp->fields[7] = argv[i+6];
+	    }
+
+	 disk(r1, r2, a1, a2, x, y, z,
+	      (w->context->texmode ? w->context->autogen : 0));
          c_put(&(w->window->funclist), &f);
         }
-        glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-        ReturnWindow;
-   }
+
+      glXSwapBuffers(w->window->display->display, w->window->win);
+      return f;
+      }
 end
 
 /*
@@ -3497,42 +3498,42 @@ end
 "Rotate(argv[]){1} - rotates objects"
 
 function{1} Rotate(argv[argc])
-    abstract{ return file }
+    abstract{ return record }
     body {
       wbp w;
-      int warg = 0;
-      int n, i, j;
+      int warg = 0, n, i, j, nfields;
       double x, y, z, angle;
-      struct descrip f, funcname;
-      struct b_list *func;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
       OptWindow(w);
       CheckArgMultiple(4);
+
+      if (!constr)
+	 if (!(constr = rec_structor("gl_rotate")))
+	    syserr("failed to create opengl record constructor");
+
       for(i = warg; i < argc-warg; i = i+4) {
-	   /* create a list */
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("Rotate", 6, &funcname);
-         c_put(&f, &funcname);
-
 	 /* convert parameters and perform the rotation */
-         if (!cnv:C_double(argv[i], angle))
-		 runerr(102, argv[i]); 	  
-	   if (!cnv:C_double(argv[i+1], x))
-	 	 runerr(102, argv[i+1]);
-	   if (!cnv:C_double(argv[i+2], y))
-		 runerr(102, argv[i+2]);
-	   if (!cnv:C_double(argv[i+3], z))
-		 runerr(102, argv[i+3]);
-   	   glRotated(angle, x, y, z);
+         if (!cnv:C_double(argv[i],   x))     runerr(102, argv[i]); 	  
+	 if (!cnv:C_double(argv[i+1], y))     runerr(102, argv[i+1]);
+	 if (!cnv:C_double(argv[i+2], z))     runerr(102, argv[i+2]);
+	 if (!cnv:C_double(argv[i+3], angle)) runerr(102, argv[i+3]);
+	 glRotated(angle, x, y, z);
 
-       /* put parameters in the list */
-  	   for (j = i; j < i+4; j++)
-            c_put(&f, &argv[j]);
+	 /*
+	  * create a record of the graphical object and its parameters
+	  */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+         MakeStr("Rotate", 6, &(rp->fields[0]));
+	 for (j = i; j < i+4; j++)
+            rp->fields[1 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
-      ReturnWindow;
+      return f;
     }
 end
 
@@ -3544,41 +3545,43 @@ end
 "Translate(argv[]){1} - translates objects"
 
 function{1} Translate(argv[argc])
-    abstract{ return file }
+    abstract{ return record }
     body {
       wbp w;
-      int warg = 0;
-      int n, i, j;
+      int warg = 0, n, i, j, nfields;
       double x, y, z;
-      struct b_list *func;
-      struct descrip f,funcname;
+      struct descrip f;
+      static dptr constr;
+      tended struct b_record *rp;
 
       OptWindow(w);
       CheckArgMultiple(3);
+
+      if (!constr)
+	 if (!(constr = rec_structor("gl_translate")))
+	    syserr("failed to create opengl record constructor");
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
       for(i = warg; i < argc-warg; i = i+3) {
 
-	   /* create a list */
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 	  
-         MakeStr("Translate", 9, &funcname);
-         c_put(&f, &funcname);	
-
-    /*convert parameters and perform the translateion*/
-         if (!cnv:C_double(argv[i], x))
-		 runerr(102, argv[i]);	
-         if (!cnv:C_double(argv[i+1], y))
-		 runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], z))
-		 runerr(102, argv[i+2]);	
+	 /*convert parameters and perform the translation */
+         if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);	
+         if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
+         if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
          glTranslated(x, y, z);
 
-  	  /* place parameters in the list */
+	 /*
+	  * create a record of the graphical object and its parameters
+	  */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+         MakeStr("Translate", 9, &(rp->fields[0]));
          for (j = i; j < i+3; j++)
-            c_put(&f, &argv[j]);
+            rp->fields[1 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
-      ReturnWindow;
+      return f;
    }
 end
 
@@ -3591,44 +3594,43 @@ end
 "Scale(argv[]){1} - scales objects"
 
 function{1} Scale(argv[argc])
-    abstract{ return file }
+    abstract{ return record }
     body {
       wbp w;
-      int warg = 0;
-      int n, i, j;
+      int warg = 0, n, i, j, nfields;
       double x, y, z;
-      struct b_list *func;
-      struct descrip f, funcname;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
       OptWindow(w);
       CheckArgMultiple(3);
+
+      if (!constr)
+	 if (!(constr = rec_structor("gl_scale")))
+	    syserr("failed to create opengl record constructor");
+
       for(i = warg; i < argc-warg; i = i+3) {
 
-	   /* create list */
-	    Protect(func = alclist(0, MinListSlots), runerr(0));
-          f.dword = D_List;
-          f.vword.bptr = (union block *) func; 
-          MakeStr("Scale", 5, &funcname);
-          c_put(&f, &funcname);
+	 /* convert parameters and perform scaling */
+	 if (!cnv:C_double(argv[i], x))	  runerr(102, argv[i]);
+	 if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
+	 if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
+	 glScaled(x, y, z);
 
-	    /* convert parameters and perform scaling */
-          if (!cnv:C_double(argv[i], x))
-		  runerr(102, argv[i]);	
-          if (!cnv:C_double(argv[i+1], y))
-		  runerr(102, argv[i+1]);
-          if (!cnv:C_double(argv[i+2], z))
-		  runerr(102, argv[i+2]);	
-	    glScaled(x, y, z);
-
-	    /* put parameter in the list */
-	    for (j = i; j < i+3; j++)
-             c_put(&f, &argv[j]);
-  
-	    /* put list in the list of functions */
-          c_put(&(w->window->funclist), &f);	
-          }
-       ReturnWindow;
-    }
+	 /*
+	  * create a record of the graphical object and its parameters
+	  */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+	 MakeStr("Scale", 5, &(rp->fields[0]));
+	 for (j = i; j < i+3; j++)
+	    rp->fields[1 + j - i] = argv[j];
+	 c_put(&(w->window->funclist), &f);	
+	 }
+      return f;
+      }
 end
 
 /*
@@ -3638,30 +3640,33 @@ end
 "PopMatrix(argv[]){1} - pop the matrix stack"
 
 function{1} PopMatrix(argv[argc])
-    abstract{ return file }
-    body {
-	wbp w;
-	int warg = 0;
-	int n;
- 	struct descrip f, funcname;  
-	struct b_list *func;
+   abstract{ return record }
+   body {
+      wbp w;
+      int warg = 0, n, nfields;
+      struct descrip f;  
+      tended struct b_record *rp;
+      static dptr constr;
 
-    	OptWindow(w);
+      OptWindow(w);
 
-	/* create a list */	
- 	Protect(func = alclist(0, MinListSlots), runerr(0));
-      f.dword = D_List;
-      f.vword.bptr = (union block *) func; 
-      MakeStr("PopMatrix", 9, &funcname);
-      c_put(&f, &funcname);	
+      if (!constr)
+	 if (!(constr = rec_structor("gl_popmatrix")))
+	    syserr("failed to create opengl record constructor");
 
-    /* pop matrix from the matrix stack, if possible */
+      /* pop matrix from the matrix stack, if possible */
       if (popmatrix() == Failed)
          runerr(151);
 
-	/* put list in the list of functions */
+      /*
+       * create a record of the graphical object and its parameters
+       */
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
+      MakeStr("PopMatrix", 9, &(rp->fields[0]));
       c_put(&(w->window->funclist), &f);	
-      ReturnWindow;
+      return f;
       }  
 end
 
@@ -3674,29 +3679,34 @@ end
 "PushMatrix(argv[]){1} - push a copy of the top matrix onto the matrix stack"
 
 function{1} PushMatrix(argv[argc])
-    abstract{ return file }
-    body {
-	wbp w;
-	int warg = 0;
-	int n;
-	struct descrip f, funcname;
-	struct b_list *func;
+   abstract{ return record }
+   body {
+      wbp w;
+      int warg = 0, n, nfields;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
  
-	OptWindow(w);
+      OptWindow(w);
 
-	/* create a list */
-	Protect(func = alclist(0, MinListSlots), runerr(0));
-  	f.dword = D_List;
-   	f.vword.bptr = (union block *) func; 
-    	MakeStr("PushMatrix", 10 ,&funcname);
-   	c_put(&f, &funcname);
+      if (!constr)
+	 if (!(constr = rec_structor("gl_pushmatrix")))
+	    syserr("failed to create opengl record constructor");
 
-	/* push a copy of the top matrix, if possible */
+      /* push a copy of the top matrix, if possible */
       if (pushmatrix() == 0)
-	   runerr(151);
-	c_put(&(w->window->funclist), &f);	
-	ReturnWindow;
-    }  
+	 runerr(151);
+
+      /*
+       * create a record of the graphical object and its parameters
+       */
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
+      MakeStr("PushMatrix", 10 ,&(rp->fields[0]));
+      c_put(&(w->window->funclist), &f);	
+      return f;
+      }
 end
     
 
@@ -3707,26 +3717,32 @@ end
 "IdentityMatrix(argv[]){1} - change the top matrix to the identity"
 
 function{1} IdentityMatrix(argv[argc])
-     abstract{ return file }
-     body {
-       wbp w;
-       int warg = 0;
-       int n;	 
-       struct descrip f, funcname;
-       struct b_list *func;	
-	 OptWindow(w);
+   abstract { return record }
+   body {
+      wbp w;
+      int warg = 0, n, nfields;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
-      /* create list */
-	 Protect(func = alclist(0, MinListSlots), runerr(0));
-  	 f.dword = D_List;
-    	 f.vword.bptr = (union block *) func;    
-       MakeStr("LoadIdentity", 12, &funcname);
-       c_put(&f, &funcname);
-	 c_put(&(w->window->funclist), &f);
+      OptWindow(w);
 
-	/* load identity matrix */
- 	 glLoadIdentity();
-       ReturnWindow;
+      if (!constr)
+	 if (!(constr = rec_structor("gl_identity")))
+	    syserr("failed to create opengl record constructor");
+
+      /*
+       * create a record of the graphical object and its parameters
+       */
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
+      MakeStr("LoadIdentity", 12, &(rp->fields[0]));
+      c_put(&(w->window->funclist), &f);
+
+      /* load identity matrix */
+      glLoadIdentity();
+      return f;
    }
 end
 
@@ -3738,41 +3754,45 @@ end
 "MatrixMode(argv[]){1} - use the matrix stack specified by s"
 
 function{1} MatrixMode(argv[argc])
-     abstract{ return file }
-     body {     
-       wbp w; 
-       int warg = 0; 
-       int n;
-       tended char* temp;
-       struct descrip f, funcname;
-       struct b_list *func;
+   abstract { return record }
+   body {
+      wbp w; 
+      int warg = 0, n, nfields;
+      tended char* temp;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
             
-	 OptWindow(w);
+      OptWindow(w);
   	
-	 /* create a list */
-	 Protect(func = alclist(0, MinListSlots), runerr(0));
-    	 f.dword = D_List;
-  	 f.vword.bptr = (union block *) func; 
-	 MakeStr("MatrixMode", 10, &funcname);
-       c_put(&f, &funcname);
+      if (!constr)
+	 if (!(constr = rec_structor("gl_matrixmode")))
+	    syserr("failed to create opengl record constructor");
 
-       /* convert parameter */	
-       if (!cnv:C_string(argv[warg],temp))
-          runerr(103,argv[warg]); 
+      /*
+       * create a record of the graphical object and its parameters
+       */
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
+      MakeStr("MatrixMode", 10, &(rp->fields[0]));
 
-    /* check the value of s and switch matrix stacks */
-	 if (!strcmp("modelview", temp))
-          glMatrixMode(GL_MODELVIEW);	
-       else if (!strcmp("projection", temp))
-          glMatrixMode(GL_PROJECTION);
-       else 
+      /* convert parameter */	
+      if (!cnv:C_string(argv[warg],temp)) runerr(103,argv[warg]); 
+
+      /* check the value of s and switch matrix stacks */
+      if (!strcmp("modelview", temp))
+	 glMatrixMode(GL_MODELVIEW);	
+      else if (!strcmp("projection", temp))
+	 glMatrixMode(GL_PROJECTION);
+      else 
          runerr(152, argv[warg]);
 
-	/* put parameter in the list */
-       c_put(&f, &argv[warg]);
-       c_put(&(w->window->funclist), &f);
-       ReturnWindow;
-   }
+      /* put parameter in the list */
+      rp->fields[1] = argv[warg];
+      c_put(&(w->window->funclist), &f);
+      return f;
+      }
 end
 
 /* 
@@ -3783,100 +3803,100 @@ end
 "Texture(argv[]){1} - apply the texture defined by the string s or use the window w2 as a texture "
 
 function{1} Texture(argv[argc])
-   abstract{ return file }
+   abstract{ return record }
    body {
       wbp w, w2;
-      int warg = 0;
+      int warg = 0, nfields;
       unsigned char *s;
       char filename[MaxFileName + 1];
       tended char* tmp;
-      struct descrip f, funcname;
-      struct b_list *func;
-      struct descrip num; 
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
 
       OptWindow(w);
       if (argc - warg < 1)/* missing texture source */
          runerr(103);	
 
-   /* create a list */ 
-      Protect(func = alclist(0, MinListSlots), runerr(0));
-      f.dword = D_List; 
-      f.vword.bptr = (union block*) func; 
-      MakeStr("Texture", 7, &funcname); 
-      c_put(&f, &funcname);      
+      if (!constr)
+	 if (!(constr = rec_structor("gl_texture")))
+	    syserr("failed to create opengl record constructor");
 
-    /* to redraw a texture we must know the texture name 
-       assign by opengl. this name is stored in 
-       w->context->texName[w->context->ntexture]. so we put
-       w->context->ntexture in the list */
-      MakeInt(w->context->ntextures, (&num));
-      c_put(&f, &num); 
+      /*
+       * create a record of the graphical object and its parameters
+       */
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
+      MakeStr("Texture", 7, &(rp->fields[0])); 
+
+      /*
+       * to redraw a texture we must know the texture name assigned by opengl
+       * This name is stored in w->context->texName[w->context->ntexture]. so
+       * we put w->context->ntexture in the list.
+       */
+      MakeInt(w->context->ntextures, &(rp->fields[1]));
       c_put(&(w->window->funclist), &f);
-
-      glBindTexture(GL_TEXTURE_2D, w->context->texName[w->context->ntextures]);  
+      glBindTexture(GL_TEXTURE_2D, w->context->texName[w->context->ntextures]);
       w->context->ntextures++;
-     	
   
-     /* check if the source is another window */
+      /* check if the source is another window */
       if (argc>warg && is:file(argv[warg])) {
-	   if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
-	      runerr(140,argv[warg]);
-	   if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
-	      runerr(142,argv[warg]);
-	   w2 = (wbp)BlkLoc(argv[warg])->file.fd;
-	   if (ISCLOSED(w2))
-	      runerr(142,argv[warg]);
+	 if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+	    runerr(140,argv[warg]);
+	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
+	    runerr(142,argv[warg]);
+	 w2 = (wbp)BlkLoc(argv[warg])->file.fd;
+	 if (ISCLOSED(w2))
+	    runerr(142,argv[warg]);
 
-	   /* convert the window into a texture */
+	 /* convert the window into a texture */
          if (w2->context->is_3D)
              texwindow3D(w, w2);
          else
             texwindow2D(w2); 
-         ReturnWindow;
+         return f;
 	 }
 
-     /* otherwise it must be a string */
-     if (!cnv:C_string(argv[warg], tmp))
-        runerr(103, argv[warg]);
-     s = tmp;
-     while(isspace(*s)) s++;
-     while(isdigit(*s)) s++;
-     while(isspace(*s)) s++; 
+      /* otherwise it must be a string */
+      if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
+      s = tmp;
+      while(isspace(*s)) s++;
+      while(isdigit(*s)) s++;
+      while(isspace(*s)) s++; 
 
-     if (*s == ',') { /* must be an image string */ 
-        if (imagestr(w, tmp) != Succeeded)
-	      runerr(153, argv[warg]);
-        }
-     else  {  /* it is a file name */
-        strncpy(filename, tmp, MaxFileName);
-        filename[MaxFileName] = '\0';
-        if (fileimage(w, filename) != Succeeded)
-           runerr(153, argv[warg]);
+      if (*s == ',') { /* must be an image string */
+	 if (imagestr(w, tmp) != Succeeded)
+	    runerr(153, argv[warg]);
+	 }
+      else {  /* it is a file name */
+	 strncpy(filename, tmp, MaxFileName);
+	 filename[MaxFileName] = '\0';
+	 if (fileimage(w, filename) != Succeeded)
+	    runerr(153, argv[warg]);
+	 }
+      return f; 
       }
-
-	ReturnWindow; 
-   }
 end
 
 
 /* 
  * Texcoord (w, s) or Texture (w, L) 
- * 
  */
 
 "Texcoord(argv[]){1} - set texture coordinate to those defined by the string s or the list L "
 
 function{1} Texcoord(argv[argc])
-   abstract{ return file }
+   abstract { return list }
    body {
       wbp w;
       wcp wc;
       int i, warg = 0;
       char filename[MaxFileName + 1];
       tended char* tmp;
-      struct descrip f, funcname;
-      struct b_list *func, *coords;
-      struct descrip mode, val; 
+      tended struct descrip f, funcname, mode, val;
+      tended struct b_list *func, *coords;
+
       OptWindow(w);
 
       wc = w->context;
@@ -3952,8 +3972,8 @@ function{1} Texcoord(argv[argc])
       if (wc->numtexcoords % 2  != 0)
 	   runerr(154);
       c_put(&(w->window->funclist), &f);
-	ReturnWindow; 
-   }
+      return f; 
+      }
 end
 
 /* 

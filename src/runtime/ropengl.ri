@@ -515,8 +515,9 @@ int pushmatrix()
 
 /* functions needed to implement redrawing of windows */
 
-/* redraws a opengl window by traversing the 
-   specifed list */
+/*
+ * redraws a opengl window by traversing the specifed list
+ */
 int redraw3D(wbp w)
 {
 
@@ -620,11 +621,102 @@ int traversefunctionlist(wbp w)
    int i, j, dim, num;
    int elements = list->size;
    tended char *temp;
+   tended struct b_record *rp;
 
-  /* the ith element of the list is a list with information
-     about the function call made on the window. */
+   /*
+    * The ith element of the list is a list with information
+    * about the function call made on the window.
+    */
    for (i=0; i< elements; i++) {
       c_traverse(list, &flist, i);
+      if (flist.dword == D_Record) {
+	 rp = (struct b_record *)BlkLoc(flist);
+	 if (rp->recdesc == BlkLoc(gl_torus)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[5], r2)) goto free_v_and_fail;
+	    torus(r1, r2, x, y, z, (wc->texmode ? wc->autogen : 0));
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_cube)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
+	    cube(r1, x, y, z, (wc->texmode ? wc->autogen : 0));
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_sphere)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
+	    sphere(r1, x, y, z, (wc->texmode ? wc->autogen : 0));
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_cylinder)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], h))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[5], r1)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[6], r2)) goto free_v_and_fail;
+	    cylinder(r1,r2,h,x,y,z, (wc->texmode ? wc->autogen : 0));
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_disk)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[5], r2)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[6], a1)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[7], a2)) goto free_v_and_fail;
+	    disk(r1, r2, a1, a2, x, y, z, (wc->texmode ? wc->autogen : 0));
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_rotate)) {
+	    if (!cnv:C_double(rp->fields[1], r1)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], z))  goto free_v_and_fail;
+	    glRotated(r1, x, y, z);
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_translate)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    glTranslated(x, y, z);
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_scale)) {
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
+	    glScaled(x, y, z);
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_popmatrix)) {
+	    popmatrix();
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_pushmatrix)) {
+	    pushmatrix();
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_identity)) {
+	    glLoadIdentity();
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_matrixmode)) {
+	    if (!cnv:C_string(rp->fields[1], temp)) goto free_v_and_fail;
+	    if (!strcmp("modelView", temp)) glMatrixMode(GL_MODELVIEW);
+	    if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
+	    }
+	 else if (rp->recdesc == BlkLoc(gl_texture)) {
+	    /*
+	     * lookup the name of the texture and bind it
+             * the objects using glBindTexture()
+	     */
+	    if (!cnv:C_integer(rp->fields[1], num)) goto free_v_and_fail;
+	    glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
+	    }
+
+	 else return Failed;
+	 continue;
+	 }
       if (flist.dword == D_List) {
 	 funclist = (struct b_list*)flist.vword.bptr;
    	 c_traverse (funclist, &fname, 0);
@@ -646,16 +738,6 @@ free_v_and_fail:
 	      }
          }
 
-      /* Texture() or WAttrib("texture=...") */
-      else if(!strcmp(fname.vword.sptr, "Texture")) {
-
-          /* get the name of the texture and bind it
-             the objects using glBindTexture()  */
-         c_traverse(funclist, &var1, 1);
-         cnv:C_integer(var1, num);
-         glBindTexture(GL_TEXTURE_2D, wc->texName[num]); 
-       }
- 
       /* WAttrib("dim=...") */
       else if(!strcmp(fname.vword.sptr, "dim")) {
 	 c_traverse(funclist, &var1, 1);
@@ -717,27 +799,6 @@ free_v_and_fail:
            }
          }
       
-       /* PopMatrix() */ 
-      else if (!strcmp(fname.vword.sptr, "PopMatrix")) 
-         popmatrix();
-
-      /* PushMatrix() */
-      else if (!strcmp(fname.vword.sptr, "PushMatrix")) 
-         pushmatrix();
-
-      /* LoadIdentity() */
-      else if (!strcmp(fname.vword.sptr, "LoadIdentity")) 
-         glLoadIdentity();
-    
-      /* MatrixMode() */
-      else if (!strcmp(fname.vword.sptr, "MatrixMode")) {
-         c_traverse(funclist, &var1, 1);
-         cnv:C_string(var1, temp);
-         if (!strcmp("modelView", temp))
-            glMatrixMode(GL_MODELVIEW);
-         if (!strcmp("projection", temp))
-            glMatrixMode(GL_PROJECTION);
-         }
 
       /* DrawPolygon() */
       else if(!strcmp(fname.vword.sptr, "DrawPolygon")) {
@@ -788,175 +849,8 @@ free_v_and_fail:
           drawpoly(w, v, (funclist->size)-1, GL_POINTS, wc->dim);
          }
 
-       /* Scale() */
-       else if (!strcmp(fname.vword.sptr, "Scale")) {
-          /* traverse the list and convert each element */
-          c_traverse(funclist, &var1, 1);
-          if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-          c_traverse(funclist, &var2, 2);
-          if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-          c_traverse(funclist, &var3, 3);
-          if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-          glScaled(x, y, z);
-         }
 
-       /* Translate() */
- 	 else if(!strcmp(fname.vword.sptr, "Translate")) {
-          /* traverse the list and convert each element */
-          c_traverse(funclist, &var1, 1);
-          if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-          c_traverse(funclist, &var2, 2);
-          if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-          c_traverse(funclist, &var3, 3);
-          if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-    	    glTranslated(x, y, z);
-         }
 
-       /* Rotate() */
-      else if (!strcmp(fname.vword.sptr, "Rotate")) {
-         /* traverse the list and convert each element */
-	   c_traverse(funclist, &var1, 1);
-         if (!cnv:C_double(var1, r1))
-             goto free_v_and_fail;
-	   c_traverse(funclist, &var2, 2);
-         if (!cnv:C_double(var2, x))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var3, 3);
-         if (!cnv:C_double(var3, y))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var4, 4);
-         if (!cnv:C_double(var4, z))
-             goto free_v_and_fail;
-	   glRotated(r1, x, y, z);
-         }
-
-       /* DrawTorus() */
-      else if (!strcmp(fname.vword.sptr, "DrawTorus")) {
-         /* traverse the list and convert each element */
-	   c_traverse(funclist, &var1, 1);
-         if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var2, 2);
-         if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var3, 3);
-         if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var4, 4);
-         if (!cnv:C_double(var4, r1))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var5, 5);
-         if (!cnv:C_double(var5, r2))
-             goto free_v_and_fail;
-
-         /* draw a torus */
-         if (wc->texmode)
-      	 torus(r1, r2, x, y, z, wc->autogen);
-         else 
-            torus(r1, r2, x, y, z, 0); 
-         }
-   
-        /* DrawCube() */
-      else if (!strcmp(fname.vword.sptr, "DrawCube")) {
-         /* traverse the list and convert each element */
-	   c_traverse(funclist, &var1, 1);
-         if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var2, 2);
-         if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var3, 3);
-         if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var4, 4);
-         if (!cnv:C_double(var4, r1))
-             goto free_v_and_fail;
-         if (wc->texmode) 
-            cube(r1, x, y, z, wc->autogen);
-         else 
-       	 cube(r1, x, y, z, 0);}
-       
-       /* DrawSphere() */
-      else if(!strcmp(fname.vword.sptr, "DrawSphere")) {
-         c_traverse(funclist, &var1, 1);
-         if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var2, 2);
-         if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var3, 3);
-         if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var4, 4);
-         if (!cnv:C_double(var4, r1))
-             goto free_v_and_fail;
-         if (wc->texmode)
-            sphere(r1, x, y, z, wc->autogen); 
-         else 
-        	 sphere(r1, x, y, z, 0);
-         }
-
-       /* DrawCylinder() */
-      else if(!strcmp(fname.vword.sptr, "DrawCylinder")) {
-        /* traverse the list and convert each element */
-	   c_traverse(funclist, &var1, 1);
-         if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var2, 2);
-         if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var3, 3);
-         if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var4, 4);
-         if (!cnv:C_double(var4, h))
-             goto free_v_and_fail;
-	   c_traverse(funclist, &var5, 5);
-         if (!cnv:C_double(var5, r1))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var6, 6);
-         if (!cnv:C_double(var6, r2))
-             goto free_v_and_fail;
-         if (wc->texmode)
-            cylinder(r1, r2, h, x, y, z, wc->autogen);
-         else 
-            cylinder(r1, r2, h, x, y, z, 0);
-         }
-
-	 else if(!strcmp(fname.vword.sptr, "DrawDisk")) {
-        /* traverse the list and convert each element */
-	   c_traverse(funclist, &var1, 1);
-         if (!cnv:C_double(var1, x))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var2, 2);
-         if (!cnv:C_double(var2, y))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var3, 3);
-         if (!cnv:C_double(var3, z))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var4, 4);
-         if (!cnv:C_double(var4, r1))
-             goto free_v_and_fail;
-	   c_traverse(funclist, &var5, 5);
-         if (!cnv:C_double(var5, r2))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var6, 6);
-         if (!cnv:C_double(var6, a1))
-             goto free_v_and_fail;
-         c_traverse(funclist, &var7, 7);
-         if (!cnv:C_double(var7, a2))
-             goto free_v_and_fail;
-	    if (wc->texmode)
-             disk(r1, r2, a1, a2, x, y, z, wc->autogen);
-         else 
-             disk(r1, r2, a1, a2, x, y, z, 0);
-         }
      if (v!=v2) free(v);
      }
    return Succeeded;
@@ -1417,8 +1311,8 @@ int setlight(wbp w, char* s, int light)
          glLightfv(light, GL_POSITION, color);
          }
       }
-      /* the lighting on the scene has changed, we
-         must redraw the window */
+
+      /* the lighting on the scene has changed, we must redraw the window */
       redraw3D(w);
       return Succeeded;
 }

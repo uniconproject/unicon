@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.18 2003-07-11 07:05:40 jeffery Exp $
+ * $Id: rposix.r,v 1.19 2003-07-11 07:34:47 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -664,6 +664,161 @@ char *name;
 	 posix_stat.vword.bptr = (union block *)dynrecord(&s, fields, 14);
 	 }
       return &posix_stat;
+      }
+   else if (!strcmp(name, "gl_torus")) {
+      if (is:null(gl_torus)) {
+	 AsgnCStr(s, "gl_torus");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 AsgnCStr(fields[4], "r1");
+	 AsgnCStr(fields[5], "r2");
+	 gl_torus.dword = D_Proc;
+	 gl_torus.vword.bptr = (union block *)dynrecord(&s, fields, 6);
+	 }
+      return &gl_sphere;
+      }
+   else if (!strcmp(name, "gl_cube")) {
+      if (is:null(gl_cube)) {
+	 AsgnCStr(s, "gl_cube");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 AsgnCStr(fields[4], "length");
+	 gl_cube.dword = D_Proc;
+	 gl_cube.vword.bptr = (union block *)dynrecord(&s, fields, 5);
+	 }
+      return &gl_cube;
+      }
+   else if (!strcmp(name, "gl_sphere")) {
+      if (is:null(gl_sphere)) {
+	 AsgnCStr(s, "gl_sphere");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 AsgnCStr(fields[4], "r");
+	 gl_sphere.dword = D_Proc;
+	 gl_sphere.vword.bptr = (union block *)dynrecord(&s, fields, 5);
+	 }
+      return &gl_sphere;
+      }
+   else if (!strcmp(name, "gl_cylinder")) {
+      if (is:null(gl_cylinder)) {
+	 AsgnCStr(s, "gl_cylinder");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 AsgnCStr(fields[4], "height");
+	 AsgnCStr(fields[5], "radius1");
+	 AsgnCStr(fields[6], "radius2");
+	 gl_cylinder.dword = D_Proc;
+	 gl_cylinder.vword.bptr = (union block *)dynrecord(&s, fields, 7);
+	 }
+      return &gl_cylinder;
+      }
+   else if (!strcmp(name, "gl_disk")) {
+      if (is:null(gl_disk)) {
+	 AsgnCStr(s, "gl_disk");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 AsgnCStr(fields[4], "radius1");
+	 AsgnCStr(fields[5], "radius2");
+	 AsgnCStr(fields[6], "angle1");
+	 AsgnCStr(fields[7], "angle2");
+	 gl_disk.dword = D_Proc;
+	 gl_disk.vword.bptr = (union block *)dynrecord(&s, fields, 8);
+	 }
+      return &gl_disk;
+      }
+   else if (!strcmp(name, "gl_rotate")) {
+      if (is:null(gl_rotate)) {
+	 AsgnCStr(s, "gl_rotate");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 AsgnCStr(fields[4], "angle");
+	 gl_rotate.dword = D_Proc;
+	 gl_rotate.vword.bptr = (union block *)dynrecord(&s, fields, 5);
+	 }
+      return &gl_rotate;
+      }
+   else if (!strcmp(name, "gl_translate")) {
+      if (is:null(gl_translate)) {
+	 AsgnCStr(s, "gl_translate");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 gl_translate.dword = D_Proc;
+	 gl_translate.vword.bptr = (union block *)dynrecord(&s, fields, 4);
+	 }
+      return &gl_translate;
+      }
+   else if (!strcmp(name, "gl_scale")) {
+      if (is:null(gl_scale)) {
+	 AsgnCStr(s, "gl_scale");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "x");
+	 AsgnCStr(fields[2], "y");
+	 AsgnCStr(fields[3], "z");
+	 gl_scale.dword = D_Proc;
+	 gl_scale.vword.bptr = (union block *)dynrecord(&s, fields, 4);
+	 }
+      return &gl_scale;
+      }
+   else if (!strcmp(name, "gl_popmatrix")) {
+      if (is:null(gl_popmatrix)) {
+	 AsgnCStr(s, "gl_popmatrix");
+	 AsgnCStr(fields[0], "name");
+	 gl_popmatrix.dword = D_Proc;
+	 gl_popmatrix.vword.bptr = (union block *)dynrecord(&s, fields, 1);
+	 }
+      return &gl_popmatrix;
+      }
+   else if (!strcmp(name, "gl_pushmatrix")) {
+      if (is:null(gl_pushmatrix)) {
+	 AsgnCStr(s, "gl_pushmatrix");
+	 AsgnCStr(fields[0], "name");
+	 gl_pushmatrix.dword = D_Proc;
+	 gl_pushmatrix.vword.bptr = (union block *)dynrecord(&s, fields, 1);
+	 }
+      return &gl_pushmatrix;
+      }
+   else if (!strcmp(name, "gl_identity")) {
+      if (is:null(gl_identity)) {
+	 AsgnCStr(s, "gl_identity");
+	 AsgnCStr(fields[0], "name");
+	 gl_identity.dword = D_Proc;
+	 gl_identity.vword.bptr = (union block *)dynrecord(&s, fields, 1);
+	 }
+      return &gl_identity;
+      }
+   else if (!strcmp(name, "gl_matrixmode")) {
+      if (is:null(gl_matrixmode)) {
+	 AsgnCStr(s, "gl_matrixmode");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "mode");
+	 gl_matrixmode.dword = D_Proc;
+	 gl_matrixmode.vword.bptr = (union block *)dynrecord(&s, fields, 2);
+	 }
+      return &gl_matrixmode;
+      }
+   else if (!strcmp(name, "gl_texture")) {
+      if (is:null(gl_texture)) {
+	 AsgnCStr(s, "gl_texture");
+	 AsgnCStr(fields[0], "name");
+	 AsgnCStr(fields[1], "texture_handle");
+	 gl_texture.dword = D_Proc;
+	 gl_texture.vword.bptr = (union block *)dynrecord(&s, fields, 2);
+	 }
+      return &gl_texture;
       }
 
    /*

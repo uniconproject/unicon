@@ -1,0 +1,139 @@
+#
+# $Id: class.icn,v 1.1 2003-08-20 16:18:23 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package lang
+
+global lang_class_table
+
+#
+# Get the Class corresponding to the given class name
+#
+procedure get_class_for_name(name)
+   /lang_class_table := table()
+
+   if not(x := \lang_class_table[name]) then {
+      x := Class()
+      x.init(name) | fail
+      lang_class_table[name] := x
+   }
+
+   return x
+end
+
+#
+# This class provides information about a Unicon class.
+#
+class Class(name, 
+            methods, 
+            methods_map, 
+            variables, 
+            state_instance, 
+            oprec, 
+            supers, 
+            implemented_classes)
+
+   #
+   # Return the name of the class
+   #
+   method get_name()
+      return name
+   end
+
+   #
+   # Return the methods of the class, as a list
+   #
+   method get_methods()
+      return methods
+   end
+
+   #
+   # Get the method with the given method name, or fail if there
+   # is no such method.
+   #
+   method get_method(s)
+      if member(methods_map, s) then
+         return methods_map[s]
+   end
+
+   #
+   # Return a list of the names of the parent classes, in the order they were
+   # encountered in the record definition.
+   #
+   method get_supers()
+      return supers
+   end
+
+   #
+   # Get a set of the names of the implemented classes of this class (including this
+   # class itself).
+   #
+   method get_implemented_classes()
+      return implemented_classes
+   end
+
+   #
+   # Return the variable names of the class, in the order they would appear
+   # in an instance
+   #
+   method get_variables()
+      return variables
+   end
+
+   method init(n)
+      local i, v, s, p, m
+
+      self.name := n
+      self.methods := []
+      self.supers := []
+      self.methods_map := table()
+
+      #
+      # Initialize the class
+      #
+      p := proc(name || "initialize") | fail
+      p()
+
+      #
+      # Get the oprec
+      #
+      self.oprec := variable(name || "__oprec") | fail
+   
+      every i := 1 to *self.oprec do {
+         ::name(self.oprec[i]) ? {
+            tab(upto('.'))
+            move(1)
+            s := tab(0)
+         }
+         
+         v := self.oprec[i]
+         if type(v) == "procedure" then {
+            imgv := image(v)
+            cname := imgv[11+:*imgv-*s-11]
+            m := Method(v, s, cname)
+            put(methods, m)
+            insert(methods_map, s, m)
+         } else {
+            put(supers, s)
+         }
+      }
+
+      p := proc(name || "__state") | fail
+      state_instance := p()
+      variables := []
+      every ::name(state_instance[3 to *state_instance]) ? {
+         tab(upto('.'))
+         move(1)
+         put(variables, tab(0))
+      }
+
+      implemented_classes := set(supers)
+      insert(implemented_classes, name)
+
+      return
+   end
+end

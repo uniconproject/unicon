@@ -1,0 +1,60 @@
+#
+# $Id: money.icn,v 1.1 2003-08-20 16:18:23 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package util
+
+import lang
+
+#
+# This class represents monetary units efficiently stored as integers.
+#
+class Money : Object(units)
+   #
+   # Return a string representation
+   #
+   method to_string()
+      return self.units / 100 || "." || right(abs(self.units % 100), 2, "0")
+   end
+
+   #
+   # Return a right justified string representation.
+   # @param w  The field width (default 9).
+   #
+   method to_right_string(w)
+      /w := 9
+      return right(self.to_string(), w)
+   end
+
+   #
+   # Get the base representation, which is an integer
+   #
+   method get_units()
+      return self.units
+   end
+
+   #
+   # Set the base representation
+   #
+   method set_units(n)
+      return self.units := n
+   end
+
+   #
+   # Set the value from a string.
+   #
+   method parse(s)
+      local pounds, r
+      s ? {
+         if pounds := tab(upto('.')) then
+            r := integer(p) * 100 + integer(2(move(1), tab(0))) 
+         else
+            r := integer(tab(0)) * 100
+      }
+      return set_units(\r)
+   end
+end

@@ -1,5 +1,5 @@
 #
-# $Id: rangespin.icn,v 1.3 2004-11-11 19:53:42 rparlett Exp $
+# $Id: rangespin.icn,v 1.4 2004-11-13 20:26:05 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -14,13 +14,13 @@ $include "guih.icn"
 #
 # This is a Spin for numeric values, optionally within a fixed range.
 #
-class RangeSpin : EditSpin(lo, hi, increment)
+class RangeSpin : EditSpin(lo, hi, increment_size)
    method do_increment()
-      set_value(get_value() + self.increment)
+      set_value(get_value() + self.increment_size)
    end
 
    method do_decrement()
-      set_value(get_value() - self.increment)
+      set_value(get_value() - self.increment_size)
    end
 
    #
@@ -47,8 +47,8 @@ class RangeSpin : EditSpin(lo, hi, increment)
    #
    # Set the increment, ie the amount moved up/down by the buttons.
    #
-   method set_increment(x)
-      self.increment := x
+   method set_increment_size(x)
+      self.increment_size := x
    end
 
    method on_tf(ev)
@@ -73,7 +73,7 @@ class RangeSpin : EditSpin(lo, hi, increment)
    method set_one(attr, val)
       case attr of {
          "value" : set_value(numeric_val(attr, val))
-         "increment" : set_increment(numeric_val(attr, val))
+         "increment_size" : set_increment_size(numeric_val(attr, val))
          "range" : set_range!numeric_vals(attr, val, 2)
          default: self.Spin.set_one(attr, val)
       }
@@ -82,6 +82,6 @@ class RangeSpin : EditSpin(lo, hi, increment)
    initially(a[])
       self.EditSpin.initially()
       tf.set_filter(&digits ++ '.-')
-      self.increment := 1
+      self.increment_size := 1
       set_fields(a)
 end

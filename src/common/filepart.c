@@ -116,9 +116,10 @@ char *buf, *path, *name, *extn;
       path = DefPath;
    s = path;
 
-   while ((s = pathelem(s, pbuf)) != 0)		/* for each path element */
+   while ((s = pathelem(s, pbuf)) != 0) {	/* for each path element */
       if (tryfile(buf, pbuf, name, extn))	/* look for file */
          return buf;
+   }
    return NULL;				/* return NULL if no file found */
    }
 
@@ -136,11 +137,21 @@ char *s, *buf;
       s++;
    if (!*s)
       return NULL;
-   while ((c = *s) != '\0' && !strchr(PathSep, c)) {
-      *buf++ = c;
-      s++;
-      }
 
+   if (*s == '"') {
+     s++;
+     while ((c = *s) != '\0' && (c != '"')) {
+      *buf++ = c;
+       s++;
+     }
+     s++;
+   }
+   else {
+     while ((c = *s) != '\0' && !strchr(PathSep, c)) {
+       *buf++ = c;
+       s++;
+     }
+   }
 #ifdef FileSep
    /*
     * We have to append a path separator here.
@@ -469,9 +480,8 @@ int pathFind(char target[], char buf[], int n)
          ++path;
       if (i == 0)			/* skip empty fragments in PATH */
          continue;
-      if (i > 0 && buf[i - 1] != '/' && buf[i - 1] != '\\' &&
-         buf[i - 1] != ':')
-            buf[i++] = '/';
+      if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
+            buf[i++] = '\\';
       strcpy(buf + i, target);
       res = stat(buf, &sbuf);
       /* exclude directories (and any other nasties) from selection */

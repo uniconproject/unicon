@@ -300,6 +300,13 @@ FILE *pathOpen(char *fname, char *mode)
 }
 #endif
 
+void quotestrcat(char *buf, char *s)
+{
+   if (strchr(s, ' ')) strcat(buf, "\"");
+   strcat(buf, s);
+   if (strchr(s, ' ')) strcat(buf, "\"");
+}
+
 /*
  * Return path after appending lib directories.
  */
@@ -313,18 +320,18 @@ char *libpath(char *prog, char *envname) {
       strcpy(buf, ".");
    if (!strcmp(envname, "IPATH")) {
       strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/lib"));
-      }
+      quotestrcat(buf, relfile(prog, "/../../ipl/lib"));
+     }
    else if (!strcmp(envname, "LPATH")) {
       strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/mincl"));
+      quotestrcat(buf, relfile(prog, "/../../ipl/mincl"));
       strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/gincl"));
+      quotestrcat(buf, relfile(prog, "/../../ipl/gincl"));
       strcat(buf, " ");
-      strcat(buf, relfile(prog, "/../../ipl/incl"));
+      quotestrcat(buf, relfile(prog, "/../../ipl/incl"));
       }
    strcat(buf, " ");
-   strcat(buf, relfile(prog, "/../../uni/lib"));
+   quotestrcat(buf, relfile(prog, "/../../uni/lib"));
    return salloc(buf);
    }
 

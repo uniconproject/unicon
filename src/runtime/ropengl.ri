@@ -609,7 +609,7 @@ int redraw3D(wbp w)
 }
 
 /*
- * traverse the given list and looked to the element in given by position
+ * traverse a list and produce the element given by position
  */
 int c_traverse(struct b_list *hp, struct descrip * res, int position)
 {
@@ -656,10 +656,11 @@ int c_traverse(struct b_list *hp, struct descrip * res, int position)
 
 /*
  * traverse the given list and write its contents from subscript m through n,
- * which must be reals, to a C array of doubles.  Replaces a loop of calls to
- * c_traverse().
+ * which must be reals, to a C array of doubles.  m and n are 1-based
+ * subscripts.
+ * Replaces a loop of calls to c_traverse().
  */
-int c_realarray(struct b_list *hp, int m,int n, double *a)
+int c_realarray(struct b_list *hp, int m, int n, double *a)
 {
    register word i;
    tended struct b_lelem *bp;
@@ -2040,6 +2041,7 @@ int fileimage(wbp w, char* filename)
    else {
      i = SCREENDEPTH(w);
      i = i / 8;
+#if HAVE_LIBJPEG
      r = readJPEG(filename, i, &im);
 
      if (r == Succeeded) {
@@ -2047,13 +2049,14 @@ int fileimage(wbp w, char* filename)
         case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
                         (word)im.width*(word)im.height);
                 break;
-        case 2: i = texture_16img(w, im);
-                break;
+        case 2: /* i = texture_16img(w, im);
+                break; */
         case 3: i = texture_24img(w, im);
                 break;
         }
       }
      else
+#endif					/* HAVE_JPEG */
          r = readimage(w, filename, 0, 0, &status);
     }
    if (i == Succeeded)

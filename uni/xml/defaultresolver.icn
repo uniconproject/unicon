@@ -1,5 +1,5 @@
 #
-# $Id: defaultresolver.icn,v 1.2 2004-06-30 10:37:26 rparlett Exp $
+# $Id: defaultresolver.icn,v 1.3 2004-10-03 15:13:39 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -109,15 +109,16 @@ class DefaultResolver : Resolver(public_mapping, uri_cache, cache_uris_flag)
    end
 
    method get_http(sys_id)
-      local hc, url, hp
+      local hc, url, hp, hr
 
       hc := HttpClient()
       url := URL()
+      url.parse(sys_id) | return error(url)
 
-      url.parse(sys_id) | fail
-      hc.set_url(url)
+      hr := HttpRequest()
+      hr.set_url(url)
 
-      hp := hc.retrieve() | fail
+      hp := hc.retrieve(hr) | return error(hc)
 
       return hp.get_data()
    end

@@ -187,7 +187,7 @@ char *buf, *dir, *name, *extn;
 
 /*
  * fparse - break a file name down into component parts.
- *  Result is a pointer to a struct of static pointers good until the next call.
+ * Result is a pointer to a struct of static pointers good until the next call.
  */
 struct fileparts *fparse(s)
 char *s;
@@ -198,9 +198,6 @@ char *s;
    char *p, *q;
 
 #if ARM
-   static char buf[MaxFileName+2];
-   static struct fileparts fp;
-   char *p;
    char *ext = 0;
    char *extend = 0;
    char *dirend = 0;
@@ -497,9 +494,7 @@ int pathFind(char target[], char buf[], int n)
 
 
 #if MSDOS || OS2
-FILE *pathOpen(fname, mode)
-   char *fname;
-   char *mode;
+FILE *pathOpen(char *fname, char *mode)
    {
 #if OS2
    char buf[260 + 1];

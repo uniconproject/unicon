@@ -86,17 +86,18 @@ static char *findexe(char *name, char *buf, size_t len) {
 #endif
        )
       strcpy(buf, name);
-   else if (findonpath(name, buf, len) == NULL) 
-      return NULL;
+   else if (findonpath(name, buf, len) == NULL) {
+      strcpy(buf, name);
+      }
 
    /* if path is not absolute, prepend working directory */
 #if MSDOS
    if (! (isalpha(buf[0]) && buf[1] == ':'))
-#endif
+#endif					/* MSDOS */
    if ((buf[0] != '/')
 #if MSDOS
        && (buf[0] != '\\')
-#endif
+#endif					/* MSDOS */
    ) {
       n = strlen(buf) + 1;
       memmove(buf + len - n, buf, n);

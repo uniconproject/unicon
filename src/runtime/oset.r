@@ -225,7 +225,7 @@ operator{1} ++ union(x,y)
          tended union block *dstp;
          tended struct b_slots *seg;
          tended struct b_selem *ep;
-         struct b_selem *np;
+         tended struct b_selem *np;
          union block **hook;
 
          /*
@@ -240,13 +240,18 @@ operator{1} ++ union(x,y)
           * Copy x and ensure there's room for *x + *y elements.
           */
          if (cpset(&x, &result, BlkLoc(x)->set.size + BlkLoc(y)->set.size)
-            == Error)
+            == Error) {
             runerr(0);
+            }
+
+         if(!(reserve(Blocks,BlkLoc(y)->set.size*(2*sizeof(struct b_selem))))){
+            runerr(0);
+            }
          /*
           * Copy each element from y into the result, if not already there.
 	  *
-	  * np always has a new element ready for use.  We get one in advance,
-	  *  and stay one ahead, because hook can't be tended.
+	  * np always has a new element ready for use.  We get one in
+	  *  advance, and stay one ahead, because hook can't be tended.
           */
          dstp = BlkLoc(result);
          Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
@@ -265,8 +270,9 @@ operator{1} ++ union(x,y)
                   }
                }
 	 deallocate((union block *)np);
-         if (TooCrowded(dstp))		/* if the union got too big, enlarge */
+         if (TooCrowded(dstp)) {	/* if the union got too big, enlarge */
             hgrow(dstp);
+            }
          return result;
 	 }
       }

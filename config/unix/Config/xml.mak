@@ -1,29 +1,27 @@
 BASE=../..
-UNI=..
-BIN=$(BASE)/bin
-RM=rm -f
-UNICON=$(UNI)/unicon/unicon
-UNIDEP=$(UNI)/unidep/unidep
-ICON_IPL=$(BASE)/ipl
-export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
+include ../makedefs
 
 .PHONY: all clean deps
 
-all: libs testhtml testxml testpatterns testvalid testnotwf testinvalid globaldemo createdemo
+UFILES=attlist.u attributedef.u canonicalxmlformatter.u cdata.u \
+	comment.u contentspec.u defaulterrorhandler.u defaultresolver.u \
+	doctype.u document.u element.u elementdecl.u entitydef.u \
+	errorhandler.u externalid.u formatter.u globalname.u htmldocument.u \
+	htmlelement.u htmlformatter.u htmlparser.u node.u notationdecl.u \
+	parser.u processinginstruction.u resolver.u xmldecl.u xmldocument.u \
+	xmlelement.u xmlformatter.u xmlparser.u
+
+PROGS=testhtml testxml testpatterns testvalid \
+	testnotwf testinvalid globaldemo createdemo
+
+all: $(UFILES) $(PROGS)
 
 clean:
-	$(RM) testhtml testxml testpatterns testvalid testnotwf \
-		testinvalid globaldemo createdemo *.u uniclass.dir uniclass.pag 
+	$(RM) $(PROGS) *.u uniclass.dir uniclass.pag 
 
 deps:
-	$(UNIDEP) *.icn -p libs -f deps.out -nb
+	$(UNIDEP) *.icn -f deps.out -nb
 
 deps.out: ;
-
-%.u: %.icn
-	$(UNICON) -c $*
-
-%: %.u
-	$(UNICON) -o $@ $<
 
 include deps.out

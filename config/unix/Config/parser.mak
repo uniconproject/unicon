@@ -1,32 +1,29 @@
 BASE=../..
-UNI=..
-BIN=$(BASE)/bin
-RM=rm -f
-UNICON=$(UNI)/unicon/unicon
-UNIDEP=$(UNI)/unidep/unidep
+include ../makedefs
+
 IYACC=$(UNI)/iyacc/iyacc
-ICON_IPL=$(BASE)/ipl
-export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
 .PHONY: all clean deps
 
-all: libs showtree showdb
+UFILES=classinfo.u databaseinfo.u packageinfo.u parsedclass.u \
+	parsedfunction.u parsedinitiallymethod.u parsedmethod.u \
+	parsedobject.u parsedprocedure.u parsedprogram.u \
+	parsedrecord.u parser.u preproce.u unigram.u \
+	unilex.u ytab_h.u
+
+PROGS=showtree showdb
+
+all: $(UFILES) $(PROGS)
 
 clean:
-	$(RM) showtree showdb unigram.icn *.u uniclass.dir uniclass.pag 
+	$(RM) $(PROGS) unigram.icn *.u uniclass.dir uniclass.pag 
 
 deps:
-	$(UNIDEP) *.icn -p libs -f deps.out -nb
+	$(UNIDEP) *.icn -f deps.out -nb
 
 deps.out: ;
 
-%.u: %.icn
-	$(UNICON) -c $*
-
 unigram.icn : unigram.y ytab_h.icn
 	$(IYACC) -i unigram.y
-
-%: %.u
-	$(UNICON) -o $@ $<
 
 include deps.out

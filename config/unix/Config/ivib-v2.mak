@@ -1,13 +1,5 @@
 BASE=../../..
-UNI=../..
-BIN=$(BASE)/bin
-RM=rm -f
-CP=cp
-UNICON=$(UNI)/unicon/unicon
-UNIDEP=$(UNI)/unidep/unidep
-ICON_IPL=$(BASE)/ipl
-export IPATH:=$(UNI)/lib $(UNI)/gui $(ICON_IPL)/lib
-export LPATH:=$(UNI)/gui $(ICON_IPL)/incl
+include ../../makedefs
 
 ICONDIR=icon
 
@@ -83,9 +75,6 @@ deps:
 	$(UNIDEP) *.icn -f deps.out -nb
 
 deps.out: ;
-
-%.u: %.icn
-	$(UNICON) -c $*
 
 ivib: $(UFILES)
 	$(UNICON) -o ivib linkfiles.icn

@@ -69,6 +69,8 @@ Makefiles:
 		cp guidemos.mak ../../../uni/gui/guidemos/makefile
 		cp ivib-v2.mak ../../../uni/gui/ivib/makefile
 		cp uni-top.mak ../../../uni/Makefile
+		cp iyacc.mak ../../../uni/iyacc/Makefile
+		cp uni-makedefs ../../../uni/makedefs
 
 Localcode:
 		cp define.h ../../../src/h

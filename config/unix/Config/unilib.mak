@@ -1,20 +1,7 @@
-RM=rm -f
 BASE=../..
-UNI=..
-UNICON=$(UNI)/unicon/unicon
-UNIDEP=$(UNI)/unidep/unidep
-ICON_IPL=$(BASE)/ipl
-export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
-export LPATH:=$(ICON_IPL)/incl $(ICON_IPL)/gincl
+include ../makedefs
 
 .PHONY: all clean deps
-
-#
-# It isn't possible to use libs as the target because some of the .icn files
-# are included into gui.icn - they would be compiled twice leading to link
-# errors ("inconsistent redeclaration") on usage.  So the ufiles have to 
-# be listed out manually.
-#
 
 UFILES=gui.u file_dlg.u font_dlg.u db.u \
  address.u base64handler.u basicclasscoding.u class.u classcoding.u \
@@ -30,17 +17,14 @@ UFILES=gui.u file_dlg.u font_dlg.u db.u \
 all: $(UFILES)
 
 deps:
-	$(UNIDEP) *.icn -p libs -nb -f deps.out
+	$(UNIDEP) *.icn -nb -f deps.out
 
 deps.out: ;
 
-clean Clean:
+clean:
 	$(RM) *.u uniclass.dir uniclass.pag
 
 tar:
 	tar zcvf guifiles.tgz gui.icn makefile *.icn
-
-%.u: %.icn
-	$(UNICON) -c $*
 
 include deps.out

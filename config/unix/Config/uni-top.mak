@@ -16,7 +16,7 @@ clean Clean:
 	make -C iyacc Clean
 	make -C unicon Clean
 	make -C ivib Clean
-	make -C lib Clean
+	make -C lib clean
 	make -C gui clean
 	make -C gui/ivib clean
 	make -C xml clean

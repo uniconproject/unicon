@@ -12,7 +12,7 @@ Samples-icont:
 
 Clean:
 		rm -rf local/*
-		mkdir local
+		mkdir -p local
 		touch local/.placeholder
 
 # Entries beyond this point are for use at Arizona only.

@@ -1,5 +1,5 @@
 #
-# $Id: checkbox.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: checkbox.icn,v 1.2 2004-01-25 23:04:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -35,7 +35,7 @@ class CheckBox : Button()
 
    method resize()
       if /self.label then
-         error("no label specified")
+         fatal("no label specified")
 
       if /self.h_spec := WAttrib(self.cwin, "fheight") then
          self.h_spec <:= img_h
@@ -56,7 +56,7 @@ class CheckBox : Button()
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       DrawImage(self.cbwin, self.x, self.y + (self.h - img_h) / 2, i)
-      left_string(self.cbwin, self.x + 2 * self.img_w, self.y + self.h / 2, self.label)
+      left_string(self.cbwin, self.x + 2 * self.img_w, self.y + self.h / 2, self.label, self.accel)
 
       if /self.no_keyboard_flag & \self.has_focus then {
          cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")

@@ -1,5 +1,5 @@
 #
-# $Id: popupmenu.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: popupmenu.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -57,12 +57,21 @@ class PopupMenu : Component(
       return x
    end
 
+   method go_right()
+   end
+
+   method go_left()
+   end
+
+   method make_partial()
+      set_which_open()
+      self.unique_end()
+   end
+
    method handle_event(e)
       if \self.is_open then {
-         if e === (&lrelease | &rrelease | &mrelease) & &x = self.x & &y = self.y then
-            fail
-
-         self.menu.handle_event(e)
+         if not(e === (&lrelease | &rrelease | &mrelease) & &x = self.x & &y = self.y) then
+            self.menu.handle_event(e)
       } 
    end
 
@@ -76,7 +85,7 @@ class PopupMenu : Component(
       }
 
       if /self.menu then
-         error("no menu set")
+         fatal("no menu set")
 
       /self.x_spec := 0
       /self.y_spec := 0

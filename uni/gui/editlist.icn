@@ -1,5 +1,5 @@
 #
-# $Id: editlist.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: editlist.icn,v 1.2 2004-01-25 23:04:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,6 +10,18 @@ package gui
 link graphics
 
 $include "guih.icn"
+
+class EditListTextField:TextField()
+   method handle_event(e)
+      if \self.has_focus then {
+         if e === Key_Up then
+            parent.go_up(e)
+         else if e === Key_Down then 
+            parent.go_down(e)
+      }
+      self.TextField.handle_event(e)
+   end
+end
 
 #
 # This component functions in the same way as List above, but
@@ -61,22 +73,16 @@ class EditList : DropDown(
       return self.tf.set_contents(x)
    end
 
-   #
-   # Set the selected item.
-   # @param x   An index into the list of selectable items.
-   #
-   method set_selection(x)
+   method apply_selection()
       self.no_default := 1
-      self.selection := x
       self.tf.set_contents(self.selection_list[self.selection])
-      return x
    end
 
    method resize()
       local bw
 
       if /self.selection_list then
-         error("no selection list specified")
+         fatal("no selection list specified")
 
       #
       # Re-sized with text list showing, just get rid of it
@@ -130,20 +136,6 @@ class EditList : DropDown(
       fire_event(ev)
    end
 
-   method on_textlist_selection()
-      local tmp
-      #
-      # Selection in list - close textlist, amend label, return event.
-      #
-      tmp := tl.get_selections()[1]
-      self.close_textlist()
-      self.unique_end(1)  
-      if self.selection := \tmp then {
-         self.tf.set_contents(self.selection_list[self.selection])
-         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
-      }
-   end
-
    method set_one(attr, val)
       case attr of {
          "selection" : set_selection(int_val(attr, val))
@@ -153,9 +145,22 @@ class EditList : DropDown(
       }
    end
 
+   #
+   # Manage our own focus/accelerator handling so that the textfield always gets the focus.
+   #
+   method find_focus()
+      if self.is_unshaded() & self.in_region() & self.is_unhidden() then
+         return tf
+   end
+
+   method find_accel(e)
+      if self.Component.find_accel(e) then
+         return tf
+   end
+
    initially(a[])
       self.DropDown.initially()
-      self.tf := TextField()
+      self.tf := EditListTextField()
       self.tf.set_parent(self)
       self.tf.connect(self, "on_textfield")
       self.tf.toggle_draw_border()

@@ -1,5 +1,5 @@
 #
-# $Id: spin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: spin.icn,v 1.2 2004-01-25 23:04:37 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -17,25 +17,33 @@ $include "guih.icn"
 #
 class Spin : Component(up, down)
    #
-   # This method must be overridden to do something to the textfield when the
+   # This method must be overridden to do something to the component when the
    # up button is pressed.
    #
    abstract method do_increment()
 
    #
-   # This method must be overridden to do something to the textfield when the
+   # This method must be overridden to do something to the component when the
    # down button is pressed.
    #
    abstract method do_decrement()
 
    method on_up(ev)
-      do_increment()
-      create_event_and_fire(SELECTION_CHANGED_EVENT, ev.get_param())
+      go_up(ev.get_param())
    end
 
    method on_down(ev)
+      go_down(ev.get_param())
+   end
+
+   method go_up(e)
+      do_increment()
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+   end
+
+   method go_down(ev)
       do_decrement()
-      create_event_and_fire(SELECTION_CHANGED_EVENT, ev.get_param())
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
    end
    
    initially()

@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: dialog.icn,v 1.3 2004-01-25 23:04:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -198,8 +198,8 @@ class Dialog : Component(
    end
 
    method open_win()
-      self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs)) | error("couldn't open window")
-      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | error("couldn't open window")
+      self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs)) | fatal("couldn't open window")
+      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fatal("couldn't open window")
       return
    end
 
@@ -363,19 +363,24 @@ class Dialog : Component(
    # Normal event processing - not dnd or unique
    # @p
    method process_normal(e)
+      local c
+
       if e === (&lpress | &rpress | &mpress) then {
          if c := self.find_focus() then
             self.set_focus(c, e)
-         else
-            self.clear_focus(e)
+      }
+
+      if &meta & type(e) == "string" then {
+         if c := self.find_accel(e) then
+            c.handle_accel(e)
       }
 
       do_handle_event(self, e)
 
-      if (string(e) == "\t") & ( /self.focus | /self.focus.keeps_tabs) then {
+      if (e === ("\t" | Key_Right)) & ( /self.focus | not(self.focus.keeps(e))) then {
          if c := find_next_focus() then
             self.set_focus(c, e)
-      } else if e === Shift_Tab & ( /self.focus | /self.focus.keeps_tabs) then {
+      } else if e === (Shift_Tab | Key_Left) & ( /self.focus | not(self.focus.keeps(e))) then {
          if c := find_previous_focus() then
             self.set_focus(c, e)
       }

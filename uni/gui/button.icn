@@ -1,5 +1,5 @@
 #
-# $Id: button.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: button.icn,v 1.3 2004-01-25 23:04:34 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -124,23 +124,37 @@ class Button : Toggle : Component(
       if \self.is_held then {
          self.is_held := &null
          if \self.is_down then {
-            if \self.is_checkbox_flag then {
-               if \self.parent_check_box_group then
-                  self.parent_check_box_group.set_which_one(self)
-               else
-                  self.toggle_is_checked()
-            }
-            #
-            # Released whilst button down; succeed
-            #
             go_up()
-            self.invalidate()
             create_event_and_fire(BUTTON_RELEASE_EVENT, e)
-            create_event_and_fire(ACTION_EVENT, e)
+            on_action(e)
          }
       }
    end
-   
+
+   method on_action(e)
+      if \self.is_checkbox_flag then {
+         if \self.parent_check_box_group then
+            self.parent_check_box_group.set_which_one(self)
+         else
+            self.toggle_is_checked()
+      }
+      self.invalidate()
+      create_event_and_fire(ACTION_EVENT, e)
+   end
+
+   method handle_accel(e)
+      self.parent_dialog.set_focus(self, e)
+      on_action(e)
+   end
+
+   method handle_default(e)
+      if \self.has_focus then {
+         if /self.no_keyboard_flag & e == ("\r" | "\l" | " ") then {
+            on_action(e)
+         }
+      }
+   end
+
    method handle_event(e)
       if e === (&lpress | &rpress | &mpress) then {
          handle_press(e)
@@ -148,18 +162,8 @@ class Button : Toggle : Component(
          handle_drag(e)
       } else if e === (&lrelease | &rrelease | &mrelease) then {
          handle_release(e)
-      } else if \self.has_focus then {
-         if /self.no_keyboard_flag & e == ("\r" | "\l") then {
-            if \self.is_checkbox_flag then {
-               if \self.parent_check_box_group then
-                  self.parent_check_box_group.set_which_one(self)
-               else
-                  self.toggle_is_checked()
-            }
-            self.invalidate()
-            create_event_and_fire(ACTION_EVENT, e)
-         }
-      }
+      } else 
+         handle_default(e)
    end
 
    #
@@ -171,8 +175,8 @@ class Button : Toggle : Component(
    #
    method set_imgs(x, y)
       self.img_up := x
-      self.img_w := img_width(x) = img_width(y) | error("Image widths differ")
-      self.img_h := img_height(x) = img_height(y) | error("Image heights differ")
+      self.img_w := img_width(x) = img_width(y) | fatal("Image widths differ")
+      self.img_h := img_height(x) = img_height(y) | fatal("Image heights differ")
 
       self.img_down := y
 

@@ -1,5 +1,5 @@
 #
-# $Id: staticspin.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: staticspin.icn,v 1.2 2004-01-25 23:04:52 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,6 +10,17 @@ package gui
 link graphics
 
 $include "guih.icn"
+
+class SpinLabel:Label()
+   method handle_event(e)
+      if \self.has_focus then {
+         if e === Key_Up then
+            parent.go_up(e)
+         else if e === Key_Down then 
+            parent.go_down(e)
+      }
+   end
+end
 
 #
 # This class is the base class for non-editable spin components which use
@@ -59,8 +70,22 @@ class StaticSpin : Spin(lab)
          CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
+   #
+   # Manage our own focus/accelerator handling so that the textfield always gets the focus.
+   #
+   method find_focus()
+      if self.is_unshaded() & self.in_region() & self.is_unhidden() then
+         return lab
+   end
+
+   method find_accel(e)
+      if self.Component.find_accel(e) then
+         return lab
+   end
+
    initially()
       self.Spin.initially()
-      self.lab := Label()
+      self.lab := SpinLabel()
+      self.lab.set_accepts_focus()
       self.add(lab)
 end

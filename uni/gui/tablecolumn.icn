@@ -1,5 +1,5 @@
 #
-# $Id: tablecolumn.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: tablecolumn.icn,v 1.3 2004-01-25 23:04:54 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -26,7 +26,7 @@ $define MIN_BUTTON_WIDTH 20
 #
 class TableColumn : TextButton(
    column_width,  
-   is_held,       
+   is_resizing,       
    pointer_flag
    )
 
@@ -62,13 +62,14 @@ class TableColumn : TextButton(
          if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & 
             self.in_region() then {
             if(self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then {
-               self.is_held := 1
+               self.is_resizing := 1
                pointer_on()
+               write("on!")
             }
             else
                self.TextButton.handle_event(e)
          }
-      } else if \self.is_held then {
+      } else if \self.is_resizing then {
          if e === (&ldrag | &rdrag | &mdrag) then {
             self.column_width := &x - self.x
             self.column_width <:= MIN_BUTTON_WIDTH
@@ -76,7 +77,7 @@ class TableColumn : TextButton(
             self.parent.parent.table_content.set_internal_fields()
             self.parent.parent.invalidate()
          } else if e === (&lrelease | &rrelease | &mrelease) then {
-            self.is_held := &null
+            self.is_resizing := &null
             pointer_off()
          }
       } else
@@ -94,7 +95,7 @@ class TableColumn : TextButton(
 
    method check_width()
       if /self.column_width then
-         error("no column width specified")
+         fatal("no column width specified")
    end
 
    method display(buffer_flag)
@@ -115,7 +116,7 @@ class TableColumn : TextButton(
          "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label)
          "l" : left_string(self.cbwin, self.tx, yoff, self.label)
          "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
-         default : error("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+         default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
       }         
 
       if \self.is_down then {

@@ -1,5 +1,5 @@
 #
-# $Id: menucomponent.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: menucomponent.icn,v 1.3 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -39,11 +39,12 @@ class MenuComponent : SetFields : Object(
    img_right,               #                 
    img_right_h,             #                   
    img_right_w,             #                   
-   parent,             #
-   event_listener_list
+   parent,                  #
+   event_listener_list,
+   accel
    )
 
-   method error(s)
+   method fatal(s)
       stop("gui : error whilst processing object " || lang::get_class_name(self) || " : " || s)
    end
 
@@ -178,7 +179,7 @@ class MenuComponent : SetFields : Object(
       #  
       # Draw the centre label
       #
-      left_string(cw, self.label_x + lw + DEFAULT_TEXT_X_SURROUND, self.label_y + self.label_h / 2, self.label)
+      left_string(cw, self.label_x + lw + DEFAULT_TEXT_X_SURROUND, self.label_y + self.label_h / 2, self.label, self.accel)
 
       #
       # Filter if shaded
@@ -186,6 +187,21 @@ class MenuComponent : SetFields : Object(
       if \self.is_shaded_flag then
          FilterRectangle(cw, self.label_x, self.label_y, mw + lw + rw, self.label_h)
 
+   end
+
+   #
+   # Set the mnemonic key, which will be used with the Alt key to provide keyboard
+   # shortcuts.
+   #
+   method set_accel(k)
+      self.accel := k
+   end
+
+   #
+   # Get the mnemonic key.
+   #
+   method get_accel()
+      return self.accel
    end
 
    #
@@ -219,7 +235,7 @@ class MenuComponent : SetFields : Object(
       cw := self.parent_component.cwin
 
       if /self.label then
-         error("no label specified")
+         fatal("no label specified")
 
       self.label_h := WAttrib(cw, "fheight") + 2 * DEFAULT_TEXT_Y_SURROUND
 
@@ -277,12 +293,13 @@ class MenuComponent : SetFields : Object(
          "label" : set_label(string_val(attr, val))
          "label_left" : set_label_left(string_val(attr, val))
          "label_right" : set_label_right(string_val(attr, val))
+         "accel" : set_accel(string_val(attr, val))
          "is_shaded" : 
             if test_flag(attr, val) then
                set_is_shaded()
             else
                clear_is_shaded()
-         default : error("Unknown attribute " || attr)
+         default : field_error("Unknown attribute " || attr)
       }
    end
 

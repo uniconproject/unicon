@@ -1,5 +1,5 @@
 #
-# $Id: image.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: image.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -164,14 +164,14 @@ class Image : Component(
          "t" : yoff := 0
          "b" : yoff := h1 - zoom_h
          "c" : yoff := (h1 - zoom_h) / 2
-         default : error("incorrect y internal_alignment specifier: " || image(self.y_internal_alignment))
+         default : fatal("incorrect y internal_alignment specifier: " || image(self.y_internal_alignment))
       }
 
       case self.x_internal_alignment of {
          "l" : xoff := 0
          "r" : xoff := w1 - zoom_w
          "c" : xoff := (w1 - zoom_w) / 2
-         default : error("incorrect x internal_alignment specifier: " || image(self.x_internal_alignment))
+         default : fatal("incorrect x internal_alignment specifier: " || image(self.x_internal_alignment))
       }
 
       zoom_w <:= 1
@@ -184,7 +184,7 @@ class Image : Component(
          else
             Zoom(imwin, W, 0, 0, img_w, img_h, x1 + xoff, y1 + yoff, zoom_w, zoom_h)
       } else {
-         zc := WOpen("size=" || zoom_w || "," || zoom_h, "canvas=hidden") | error("Couldn't open temp window")
+         zc := WOpen("size=" || zoom_w || "," || zoom_h, "canvas=hidden") | fatal("Couldn't open temp window")
          Zoom(imwin, zc, 0, 0, img_w, img_h, 0, 0, zoom_w, zoom_h)
          insert(zoom_cache, filename, zc)
          CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)

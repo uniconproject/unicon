@@ -1,5 +1,5 @@
 #
-# $Id: circulate.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: circulate.icn,v 1.3 2004-01-25 23:04:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,6 +10,17 @@ package gui
 link graphics
 
 $include "guih.icn"
+
+class CirculateLabel:Label()
+   method handle_event(e)
+      if \self.has_focus then {
+         if e === Key_Up then
+            parent.go_up(e)
+         else if e === Key_Down then 
+            parent.go_down(e)
+      }
+   end
+end
 
 #
 # Selection from a list
@@ -77,12 +88,13 @@ class Circulate : Component(selection, selection_list, b, l)
    #
    # @p
    method display(buffer_flag)
-      W := if /buffer_flag then self.cwin else self.cbwin
-      EraseRectangle(W, self.x, self.y, self.w, self.h)
-      DrawSunkenRectangle(W, self.x, self.y, self.w, self.h)
-      l.display(buffer_flag)
-      b.display(buffer_flag)
-      self.do_shading(W)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      l.display(1)
+      b.display(1)
+      self.do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
    #
@@ -90,7 +102,19 @@ class Circulate : Component(selection, selection_list, b, l)
    #
    # @p
    method on_button_pressed(ev)
-      self.set_selection(1 + self.selection % *self.selection_list)
+      go_up(ev.get_param())
+   end
+
+   method go_up(e)
+      if self.selection = 1 then
+         set_selection(*self.selection_list)
+      else
+         self.set_selection(self.selection - 1)
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+   end
+
+   method go_down(ev)
+      set_selection(1 + self.selection % *self.selection_list)
       create_event_and_fire(SELECTION_CHANGED_EVENT, e)
    end
 
@@ -102,12 +126,27 @@ class Circulate : Component(selection, selection_list, b, l)
       }
    end
 
+   #
+   # Manage our own focus/accelerator handling so that the label always gets the focus.
+   #
+   method find_focus()
+      if self.is_unshaded() & self.in_region() & self.is_unhidden() then
+         return l
+   end
+
+   method find_accel(e)
+      if self.Component.find_accel(e) then
+         return l
+   end
+
    initially(a[]) 
       self.Component.initially()
-      self.l := Label()
+      self.l := CirculateLabel()
       self.l.clear_draw_border()
+      self.l.set_accepts_focus()
       add(self.l)
       self.b := IconButton()
+      self.b.clear_accepts_focus()
       self.b.connect(self, "on_button_pressed", ACTION_EVENT)
       add(self.b)
       b.set_draw_border()

@@ -1,5 +1,5 @@
 #
-# $Id: list.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: list.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -11,6 +11,17 @@ link graphics
 
 
 $include "guih.icn"
+
+class ListLabel:Label()
+   method handle_event(e)
+      if \self.has_focus then {
+         if e === Key_Up then
+            parent.go_up(e)
+         else if e === Key_Down then 
+            parent.go_down(e)
+      }
+   end
+end
 
 #
 #
@@ -34,15 +45,9 @@ class List : DropDown(
    constant_label           #
    )
 
-   #
-   # Set the selected item.
-   # @param x   An index into the list of selectable items.
-   #
-   method set_selection(x)
-     self.selection := x
+   method apply_selection()
      self.l.set_label(\self.constant_label | self.selection_list[self.selection])
      self.invalidate()
-     return x
    end
 
    #
@@ -62,7 +67,7 @@ class List : DropDown(
       local bw
 
       if /self.selection_list then
-         error("no selection list specified")
+         fatal("no selection list specified")
 
       #
       # Re-sized with text list showing, just get rid of it
@@ -111,21 +116,6 @@ class List : DropDown(
          CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
-   method on_textlist_selection()
-      local tmp
-      #
-      # Selection in list - close textlist, amend label, return event.
-      #
-      tmp := tl.get_selections()[1]
-      self.close_textlist()
-      self.unique_end(1)  
-      if self.selection := \tmp then {
-         if /self.constant_label then
-            self.l.set_label(self.selection_list[self.selection])
-         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
-      }
-   end
-
    method set_one(attr, val)
       case attr of {
          "selection" : set_selection(int_val(attr, val))
@@ -134,11 +124,24 @@ class List : DropDown(
       }
    end
 
+   #
+   # Manage our own focus/accelerator handling so that the label always gets the focus.
+   #
+   method find_focus()
+      if self.is_unshaded() & self.in_region() & self.is_unhidden() then
+         return l
+   end
+
+   method find_accel(e)
+      if self.Component.find_accel(e) then
+         return l
+   end
+
    initially(a[])
       self.DropDown.initially()
-      self.l := Label()
+      self.l := ListLabel()
       self.l.set_label("")
-      self.l.set_parent(self)
+      self.l.set_accepts_focus()
       self.add(l)
       set_fields(a)
 end

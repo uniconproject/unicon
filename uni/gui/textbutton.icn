@@ -1,5 +1,5 @@
 #
-# $Id: textbutton.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: textbutton.icn,v 1.2 2004-01-25 23:04:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -40,10 +40,10 @@ class TextButton : Button(
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
       case self.internal_alignment of {
-         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label)
-         "l" : left_string(self.cbwin, self.tx, yoff, self.label)
-         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
-         default : error("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label, self.accel)
+         "l" : left_string(self.cbwin, self.tx, yoff, self.label, self.accel)
+         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label, self.accel)
+         default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
       }         
 
       if /self.no_keyboard_flag & \self.has_focus then {
@@ -74,7 +74,7 @@ class TextButton : Button(
 
    method resize()
       if /self.label then
-         error("no label specified")
+         fatal("no label specified")
       /self.w_spec := TextWidth(self.cwin, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
       /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND
       self.Component.resize()

@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: dropdown.icn,v 1.3 2004-01-25 23:04:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -80,14 +80,20 @@ class DropDown : Component(
    end
 
    #
+   # Set the selected item.
+   # @param x   An index into the list of selectable items.
+   #
+   method set_selection(x)
+      self.selection := x
+      apply_selection()
+   end
+
+   #
    # Return an integer corresponding to the item in the list
    # presently selected.
    #
    method get_selection()
       return self.selection
-   end
-
-   method on_textlist()
    end
 
    method on_button(ev)
@@ -114,7 +120,36 @@ class DropDown : Component(
       }
    end
 
-   abstract method on_textlist_selection()
+   method on_textlist_selection()
+      local tmp
+      #
+      # Selection in list - close textlist, amend label, return event.
+      #
+      tmp := tl.get_selections()[1]
+      self.close_textlist()
+      self.unique_end(1)  
+      go_to(\tmp)
+   end
+
+   method go_up(e)
+      if self.selection = 1 then
+         set_selection(*self.selection_list)
+      else
+         self.set_selection(self.selection - 1)
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+   end
+
+   method go_down(e)
+      set_selection(1 + self.selection % *self.selection_list)
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+   end
+
+   method go_to(x)
+      set_selection(x)
+      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+   end
+
+   abstract method apply_selection()
 
    method open_textlist()
       local lno
@@ -127,6 +162,7 @@ class DropDown : Component(
       self.tl.set_pos(0, self.h)
       self.tl.set_parent(self)
       self.tl.set_draggable_cursor()
+      self.tl.set_motion_cursor()
       self.tl.final_setup(self.get_parent_dialog())
       self.tl.set_ideal_size(self.w, WAttrib(self.get_parent_win(), "width") - self.x - 10, 0, WAttrib(self.get_parent_win(), "height") - self.y - self.h - 10)
       self.tl.set_select_one()

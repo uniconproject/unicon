@@ -1,5 +1,5 @@
 #
-# $Id: guiprocs.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: guiprocs.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -146,21 +146,24 @@ procedure FilterRectangle(W, x, y, w, h)
    Uncouple(cw)
 end
 
-procedure left_string(win, x, y, s)
+procedure left_string(win, x, y, s, k)
+   local i
+
    y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
-   return DrawString(win, x, y, s)
+   DrawString(win, x, y, s)
+   if i := upto(\k, map(s)) then {
+      x1 := x + TextWidth(win, s[1:i])
+      y1 := y + WAttrib(win, "descent") - 1
+      DrawLine(win, x1, y1, x1 + TextWidth(win, s[i]), y1)
+   }
 end
 
-procedure center_string(win, x, y, s)
-   x -:= TextWidth(win, s) / 2
-   y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
-   return DrawString(win, x, y, s)
+procedure center_string(win, x, y, s, k)
+   left_string(win, x - TextWidth(win, s) / 2, y, s, k)
 end
 
-procedure right_string(win, x, y, s) 
-   x -:= TextWidth(win, s)
-   y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
-   return DrawString(win, x, y, s)
+procedure right_string(win, x, y, s, k) 
+   left_string(win, x - TextWidth(win, s), y, s, k)
 end
 
 procedure img_width(s)

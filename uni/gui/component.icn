@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: component.icn,v 1.3 2004-01-25 23:04:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -104,12 +104,6 @@ class Component : Ticker : SetFields (
    #
    parent,
    #
-   # Tells whether ordinary tab characters are used by the component;
-   # if not, they shift focus to the next component.  shift-tab should
-   # always shift focus to the next component.
-   #
-   keeps_tabs,
-   #
    # List of child components
    #
    children,
@@ -124,7 +118,11 @@ class Component : Ticker : SetFields (
    #
    # Flag indicating whether component is up-to-date on the screen
    #
-   valid
+   valid,
+   #
+   # Mnemonic key for keyboard accelerators.
+   #
+   accel
    )
 
    #
@@ -177,8 +175,16 @@ class Component : Ticker : SetFields (
       return self.cbwin
    end
 
-   method error(s)
+   method fatal(s)
       stop("gui : error whilst processing object " || lang::get_class_name(self) || " : " || s)
+   end
+
+   #
+   # This method can be overridden to succeed if the component should keep
+   # an event rather than allow it to be used by the parent dialog to move
+   # the focus between c
+   #
+   method keeps(e)
    end
 
    #
@@ -242,6 +248,16 @@ class Component : Ticker : SetFields (
    #
    method unique_end(x)
       self.parent_dialog.clear_unique(x)
+   end
+
+   #
+   # Handle the component's keyboard accelerator key.  By
+   # default, this requests the keyboard focus (if the
+   # component is configured to accept it).
+   #
+   method handle_accel(e)
+      if \accepts_focus_flag then
+         self.parent_dialog.set_focus(self, e)
    end
 
    #
@@ -460,6 +476,21 @@ class Component : Ticker : SetFields (
    end
 
    #
+   # Set the accelerator key, which will be used with the Alt
+   # key to provide keyboard accelerators.
+   #
+   method set_accel(k)
+      self.accel := k
+   end
+
+   #
+   # Get the accelerator key, if any.
+   #
+   method get_accel()
+      return self.accel
+   end
+
+   #
    # Get the component's parent component.
    #
    method get_parent()
@@ -479,7 +510,7 @@ class Component : Ticker : SetFields (
    method final_setup(x)
       self.parent_dialog := x
       if /self.parent then
-         error("incorrect ancestry (parent null)")
+         fatal("incorrect ancestry (parent null)")
       self.cwin := (Clone ! ([self.parent.get_cwin_reference()] ||| self.attribs))
       self.cbwin := (Clone ! ([self.parent.get_cbwin_reference()] ||| self.attribs))
       every (!self.children).final_setup(x)
@@ -573,24 +604,24 @@ class Component : Ticker : SetFields (
       # Check for unspecified fields
       #
       if /self.x_spec then
-         error("x position unspecified")
+         fatal("x position unspecified")
 
       if /self.y_spec then
-         error("y position unspecified")
+         fatal("y position unspecified")
 
       if /self.w_spec then
-         error("width unspecified")
+         fatal("width unspecified")
 
       if /self.h_spec then
-         error("height unspecified")
+         fatal("height unspecified")
 
       wh := self.parent.get_h_reference()
       ww := self.parent.get_w_reference()
 
-      self.x := self.parent.get_x_reference() + parse_pos(ww, self.x_spec) | error("invalid x position specification: " || image(self.x_spec))
-      self.y := self.parent.get_y_reference() + parse_pos(wh, self.y_spec) | error("invalid y position specification: " || image(self.y_spec))
-      self.w := parse_pos(ww, self.w_spec) | error("invalid width specification: " || image(self.w_spec))
-      self.h := parse_pos(wh, self.h_spec) | error("invalid height specification: " || image(self.h_spec))
+      self.x := self.parent.get_x_reference() + parse_pos(ww, self.x_spec) | fatal("invalid x position specification: " || image(self.x_spec))
+      self.y := self.parent.get_y_reference() + parse_pos(wh, self.y_spec) | fatal("invalid y position specification: " || image(self.y_spec))
+      self.w := parse_pos(ww, self.w_spec) | fatal("invalid width specification: " || image(self.w_spec))
+      self.h := parse_pos(wh, self.h_spec) | fatal("invalid height specification: " || image(self.h_spec))
 
       #
       # Adjust x, y based on alignments
@@ -599,13 +630,13 @@ class Component : Ticker : SetFields (
          "c" : self.x -:= self.w / 2
          "r" : self.x -:= self.w
          "l" : &null
-         default : error("incorrect x alignment specifier: " || image(self.x_align))
+         default : fatal("incorrect x alignment specifier: " || image(self.x_align))
       }
       case self.y_align of {
          "c" : self.y -:= self.h / 2
          "b" : self.y -:= self.h
          "t" : &null
-         default : error("incorrect y alignment specifier: " || image(self.y_align))
+         default : fatal("incorrect y alignment specifier: " || image(self.y_align))
       }
    end
 
@@ -627,6 +658,20 @@ class Component : Ticker : SetFields (
             return f
       }
       if self.is_unshaded() & self.in_region() & self.accepts_focus() & self.is_unhidden() then
+         return self
+   end
+
+   #
+   # Search for a component with the matching accelerator key within
+   # components rooted at this component.
+   #
+   method find_accel(e)
+      local c, f
+      every c := !self.children do {
+         if f := c.find_accel(e) then
+            return f
+      }
+      if self.accel === e & self.is_unshaded() & self.is_unhidden() then
          return self
    end
 
@@ -824,11 +869,12 @@ class Component : Ticker : SetFields (
          "pos" : set_pos!string_vals(attr, val)
          "size" : set_size!string_vals(attr, val)
          "align" : set_align!string_vals(attr, val)
+         "accel" : set_accel(string_val(attr, val))
          default : {
             if is_attrib(attr) then
                set_attribs(as_attrib(attr, val))
             else
-               error("Unknown attribute " || attr)
+               field_error("Unknown attribute " || attr)
          }
       }
    end

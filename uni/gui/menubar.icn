@@ -1,5 +1,5 @@
 #
-# $Id: menubar.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: menubar.icn,v 1.3 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -24,8 +24,9 @@ $include "guih.icn"
 # font specified.
 #
 class MenuBar : Component(
-   which_open,              #                  
-   menus                    #
+   which_highlight,      #                  
+   which_open,           #
+   menus                 #
    )
 
    #
@@ -39,10 +40,10 @@ class MenuBar : Component(
 
    method finally()
       #
-      # Disposing with menu open - just close menu
+      # Disposing whilst active - close.
       #
-      if \self.which_open then {
-         self.set_which_open()
+      if \self.which_highlight then {
+         self.set_which_highlight()
          self.unique_end()
       }
       self.Component.finally()
@@ -58,9 +59,9 @@ class MenuBar : Component(
       # m.label_x + DEFAULT_TEXT_X_SURROUND put the string in the centre of its area.
       #
       every m := !menus do {
-         if m === \self.which_open then
+         if m === \self.which_highlight then
             DrawRaisedRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w, self.h - 2 * BORDER_WIDTH)
-         left_string(self.cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, m.get_label())
+         left_string(self.cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, m.get_label(), m.get_accel())
          if \m.is_shaded_flag then
             FilterRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w, self.h - 2 * BORDER_WIDTH)
       }
@@ -89,46 +90,205 @@ class MenuBar : Component(
       #
       # Do nothing if x presently open
       #
-      if self.which_open ~=== x then {
+      if (self.which_open ~=== x) | (self.which_highlight ~=== x) then {
+         # Hide any existing visible submenu
          (\self.which_open).hide()
-         self.which_open := x
+         self.which_highlight := self.which_open := x
+         # If it's visible, display it
          (\self.which_open).display()
          self.invalidate()
       }
       return x
    end
 
-   method handle_event(e)
-      if self.in_region() then {
-         if e === (&lpress | &rpress | &mpress) then {
-            if t := which_button() then {
-               #
-               # Pressed on a label - open the menu, starting unique mode if needed.
-               #
-               if /self.which_open then
-                  self.unique_start()
-             
-               if t === self.which_open then {
-                  #
-                  # Clicked on menu already open - close all
-                  #
-                  self.set_which_open()
-                  self.unique_end(1)
-               } else
-                  self.set_which_open(t)
-            } else {
-               self.set_which_open()
-               self.unique_end(1)
+   #
+   # Set the present highlight to x.
+   #
+   # @p
+   method set_which_highlight(x)
+      #
+      # Do nothing if x presently open
+      #
+      if (self.which_highlight ~=== x) | \self.which_open then {
+         # Hide any existing visible submenu
+         (\self.which_open).hide()
+         self.which_highlight := x
+         self.which_open := &null
+         self.invalidate()
+      }
+      return x
+   end
+
+   method handle_key_do(e)
+      local m
+
+      if \self.which_highlight then {
+         self.set_which_highlight()
+         self.unique_end(1)
+         return
+      }
+
+      every m := !menus do {
+         if not(m.is_shaded()) then {
+            self.unique_start()
+            set_which_highlight(m)
+            return
+         }
+      }
+   end
+
+   method handle_key_left(e)
+      if \self.which_open then
+         self.which_highlight.handle_event(e)
+      else if \self.which_highlight then
+         go_left()
+   end
+
+   method handle_key_right(e)
+      if \self.which_open then
+         self.which_highlight.handle_event(e)
+      else if \self.which_highlight then
+         go_right()
+   end
+
+   method handle_key_down(e)
+      if \self.which_open then
+         self.which_highlight.handle_event(e)
+      else if \self.which_highlight then {
+         set_which_open(self.which_highlight)
+         self.which_highlight.cursor_on()
+      }
+   end
+
+   method make_partial()
+      set_which_highlight(self.which_highlight)
+   end
+
+   method handle_key_escape(e)
+      if \self.which_open then
+         self.which_highlight.handle_event(e)
+      else if \self.which_highlight then {
+         self.set_which_highlight()
+         self.unique_end()
+      }
+   end
+
+   method handle_default(e)
+      local m
+
+      if \self.which_open then
+         self.which_highlight.handle_event(e)
+      else if /self.which_highlight then {
+         if &meta & m := find_key(e) then {
+            self.unique_start()
+            set_which_open(m)
+            m.cursor_on()
+         }
+      } else {
+         if m := find_key(e) then {
+            set_which_open(m)
+            m.cursor_on()
+         }
+      }
+   end
+
+   method find_key(k)
+      local m
+      every m := !menus do {
+         if m.accel === k & not(m.is_shaded()) then
+            return m
+      }
+   end
+
+   method go_right()
+      local m, t, first
+      every m := !menus do {
+         if not(m.is_shaded()) then {
+            if /self.which_highlight | \t then {
+               first := m
+               break
             }
-         } else if e === (&lrelease | &rrelease | &mrelease) & \self.which_open then {
+            /first := m
+         }
+         if m === which_highlight then
+            t := m
+      }
+      if \first then {
+         if \self.which_open then {
+            set_which_open(first)
+            self.which_open.cursor_on()
+         } else
+            set_which_highlight(first)
+      }
+   end
+
+   method go_left()
+      local m, last
+
+      every m := !menus do {
+         if \last & m === which_highlight then
+            break
+         m.is_shaded() | (last := m)
+      }
+      if \last then {
+         if \self.which_open then {
+            set_which_open(last)
+            self.which_open.cursor_on()
+         } else
+            set_which_highlight(last)
+      }
+   end
+
+   method handle_press(e)
+      if self.in_region() then {
+         if t := which_button() then {
             #
-            # Released with menu open.  If not on a label then close menu
+            # Pressed on a label - open the menu, starting unique mode if needed.
             #
-            if not(t := which_button()) then {               
-               self.set_which_open()
-               self.unique_end(1)
-            }                  
-         } else if e === (-12 | &ldrag | &rdrag | &mdrag) & \self.which_open then {
+            if /self.which_highlight then
+               self.unique_start()
+ 
+            #
+            # Open t, possibly just toggling the partial_flag.
+            #
+            if (t === which_highlight) & \self.which_open then
+               set_which_highlight(t)
+            else
+               set_which_open(t)
+         } else {
+            self.set_which_highlight()
+            self.unique_end(1)
+         }
+      } else {
+         if \self.which_open then
+            which_highlight.handle_event(e)
+         else {
+            #
+            # Clicked outside the region with no submenu - close.
+            #
+            self.set_which_highlight()
+            self.unique_end(1)
+         }
+      }
+   end
+
+   method handle_release(e)
+      if self.in_region() & \self.which_highlight then {
+         #
+         # Released with menu open.  If not on a label then close
+         #
+         if not(t := which_button()) then {               
+            self.set_which_highlight()
+            self.unique_end(1)
+         }            
+      } else {
+         (\self.which_open).handle_event(e)
+      }
+   end
+
+   method handle_drag(e)
+      if \self.which_highlight then {
+         if self.in_region() then {
             #
             # Drag onto a label with menu open
             #
@@ -138,29 +298,55 @@ class MenuBar : Component(
                   # Make present menu blank, except a sub menu
                   #
                   t.drag_off()
-               else 
-                  self.set_which_open(t)
+               else {
+                  #
+                  # Open the menu, maintaining the partial_flag
+                  #
+                  if /self.which_open then
+                     self.set_which_highlight(t)
+                  else
+                     self.set_which_open(t)
+               }
             } else 
                #
                # Drag with menu open, but not on a label, blank present menu leaving
                # sub menus open
                #
-               self.which_open.drag_off()
+               (\self.which_open).drag_off()
+         } else if \self.which_open then
+            self.which_open.handle_event(e)
+         else if e = -12 then {
+            self.set_which_highlight()
+            self.unique_end()
          }
-      } else if \self.which_open then {
-         #
-         # Not on menu bar, but menu bar open.  Let menu handle event.
-         #
-         self.which_open.handle_event(e)
-      } 
+      }
+   end
+
+   method handle_event(e)
+      if e === (&lpress | &rpress | &mpress) then {
+         handle_press(e)
+      } else if e === (&lrelease | &rrelease | &mrelease) then {
+         handle_release(e)
+      } else if e === (-12 | &ldrag | &rdrag | &mdrag) then {
+         handle_drag(e)
+      } else {
+         case e of {
+            Key_Down | " " | "\r": handle_key_down(e)
+            Key_Right: handle_key_right(e)
+            Key_Left: handle_key_left(e)
+            Key_Do: handle_key_do(e)
+            "\e" : handle_key_escape(e)
+            default: handle_default(e)
+         }
+      }
    end
 
    method resize()
       #
       # Re-sized with menu open - just close menu
       #
-      if \self.which_open then {
-         self.set_which_open()
+      if \self.which_highlight then {
+         self.set_which_highlight()
          self.unique_end()
       }
 

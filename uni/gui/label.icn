@@ -1,5 +1,5 @@
 #
-# $Id: label.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: label.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -19,7 +19,8 @@ class Label : Component(
    label,                   #             
    internal_alignment,      #                          
    tx,                      #          
-   tw                       #
+   tw,                      #
+   linked_accel
    )
 
    #
@@ -42,9 +43,17 @@ class Label : Component(
       return x
    end
 
+   #
+   # Link this label to a component; the label will be displayed
+   # with the component's accelerator key underlined.
+   #
+   method set_linked_accel(c)
+      self.linked_accel :=c
+   end
+
    method resize()
       if /self.label then
-         error("no label specified")
+         fatal("no label specified")
 
       if \self.draw_border_flag then {
          /self.w_spec := TextWidth(self.cwin, label) + 2 * DEFAULT_TEXT_X_SURROUND
@@ -65,21 +74,29 @@ class Label : Component(
    end
 
    method display(buffer_flag)
+      local yoff, key
+
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
       yoff := self.y + self.h / 2
-
+      key := (\linked_accel).accel
+      #write("yoff=",yoff,",","h=",self.h,",","fheight=",WAttrib(self.cwin, "fheight"),",","ascent=",WAttrib(self.cwin, "ascent"),",","descent=",WAttrib(self.cwin, "descent"))
       if \self.draw_border_flag then
          DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
       Clip(self.cbwin, self.tx, self.y, self.tw, self.h)
 
       case self.internal_alignment of {
-         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label)
-         "l" : left_string(self.cbwin, self.tx, yoff, self.label)
-         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label)
-         default : error("incorrect internal_alignment specifier: " || image(self.internal_alignment))
+         "c" : center_string(self.cbwin, self.tx + self.tw / 2, yoff, self.label, key)
+         "l" : left_string(self.cbwin, self.tx, yoff, self.label, key)
+         "r" : right_string(self.cbwin, self.tx + self.tw, yoff, self.label, key)
+         default : fatal("incorrect internal_alignment specifier: " || image(self.internal_alignment))
       }         
+      if \self.has_focus then {
+         cw := Clone(self.cbwin, "pattern=gray", "fillstyle=masked")
+         Rectangle(cw, self.x, self.y, self.w, self.h)
+         Uncouple(cw)
+      }
 
       Clip(self.cbwin)
       self.do_shading(self.cbwin)

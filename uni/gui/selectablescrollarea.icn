@@ -1,5 +1,5 @@
 #
-# $Id: selectablescrollarea.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: selectablescrollarea.icn,v 1.3 2004-01-25 23:04:37 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -26,6 +26,7 @@ class SelectableScrollArea : LineBasedScrollArea(
    is_held,
    highlight,
    draggable_cursor,
+   motion_cursor,
    selection_on_key_moves
    )
 
@@ -104,6 +105,20 @@ class SelectableScrollArea : LineBasedScrollArea(
    #
    method clear_draggable_cursor()
       self.draggable_cursor := &null
+   end
+
+   #
+   # Configure the object so that mouse motion moves the cursor.
+   #
+   method set_motion_cursor()
+      self.motion_cursor := 1
+   end
+
+   #
+   # Configure the object so that mouse motion doesn't move the cursor
+   #
+   method clear_motion_cursor()
+      self.motion_cursor := &null
    end
 
    #
@@ -424,6 +439,18 @@ class SelectableScrollArea : LineBasedScrollArea(
       }
    end
 
+   method handle_move(e)
+      local l
+      if \self.motion_cursor & /self.is_held & self.view.in_region() then {
+         l := (&y - self.view.y) / self.line_height + self.get_first_line()
+         l >:= self.get_last_line()
+         if self.cursor ~= l then {
+            self.cursor := l
+            self.refresh(1)
+         }            
+      }
+   end
+
    method handle_drag(e)
       local old_down, l
 
@@ -513,6 +540,8 @@ class SelectableScrollArea : LineBasedScrollArea(
          handle_press(e)
       else if e === (&ldrag) then
          handle_drag(e)
+      else if e === -12 then
+         handle_move(e)
       else if e === (&lrelease | &rrelease | &mrelease) then
          handle_release(e)
       else if \self.has_focus then {
@@ -528,6 +557,10 @@ class SelectableScrollArea : LineBasedScrollArea(
             "\r" | "\l": handle_return(e)
          }
       }
+   end
+
+   method keeps(e)
+      return e === (Key_Left | Key_Right | Key_Up | Key_Down)
    end
 
    method object_get_gesture_selections()
@@ -615,6 +648,11 @@ class SelectableScrollArea : LineBasedScrollArea(
                set_draggable_cursor()
             else
                clear_draggable_cursor()
+         "motion_cursor" :
+            if test_flag(attr, val) then
+               set_motion_cursor()
+            else
+               clear_motion_cursor()
          "selection_on_key_moves" :
             if test_flag(attr, val) then
                set_selection_on_key_moves()

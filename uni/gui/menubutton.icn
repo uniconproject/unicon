@@ -1,5 +1,5 @@
 #
-# $Id: menubutton.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: menubutton.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -53,7 +53,7 @@ class MenuButton : Component(
    method display(buffer_flag)
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      left_string(self.cbwin, self.x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, menu.get_label())
+      left_string(self.cbwin, self.x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, menu.get_label(), menu.get_accel())
       DrawImage(self.cbwin, self.x + 2 * DEFAULT_TEXT_X_SURROUND + TextWidth(self.cwin, menu.get_label()),  self.y + (self.h - img_height(self.img)) / 2, self.img)
       self.do_shading(self.cbwin)
 
@@ -75,27 +75,60 @@ class MenuButton : Component(
       return x
    end
 
-   method handle_event(e)
+   method go_right()
+   end
+
+   method go_left()
+   end
+
+   method make_partial()
+      set_which_open()
+      self.unique_end()
+   end
+
+   method handle_press(e)
       if /self.is_open then {
-         if e === (&lpress | &rpress | &mpress) & self.in_region() then {
+         if self.in_region() then {
             self.unique_start()
             self.set_which_open(self.menu)
          }
       } else {
          if self.in_region() then {
-            if e === (&lpress | &rpress | &mpress) then {
-               self.set_which_open()
-               self.unique_end(1)
-               fail
-            } else if e === (&lrelease | &rrelease | &mrelease) then
-               fail
+            self.set_which_open()
+            self.unique_end(1)
+         } else {
+            self.menu.handle_event(e)
          }
+      }
+   end
 
+   method handle_release(e)
+      if \self.is_open & not(in_region()) then
+         self.menu.handle_event(e)
+   end
+
+   method handle_default(e)
+      if /self.is_open then {
+         if &meta & self.menu.accel === e then {
+            self.unique_start()
+            self.set_which_open(self.menu)
+            self.menu.cursor_on()
+         }
+      } else {
          #
-         # Not on menu bar, but menu bar open.  Let menu handle event.
+         # Menu bar open.  Let menu handle event.
          #
          self.menu.handle_event(e)
-      } 
+      }
+   end
+
+   method handle_event(e)
+      if e === (&lpress | &rpress | &mpress) then 
+         handle_press(e)
+      else if e === (&lrelease | &rrelease | &mrelease) then 
+         handle_release(e)
+      else 
+         handle_default(e)
    end
 
    method resize()
@@ -108,7 +141,7 @@ class MenuButton : Component(
       }
 
       if /self.menu then
-         error("no menu set")
+         fatal("no menu set")
 
       /self.w_spec := TextWidth(self.cwin, self.menu.get_label()) + 3 * DEFAULT_TEXT_X_SURROUND + img_width(self.img)
       /self.h_spec := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND

@@ -1147,18 +1147,10 @@ function{1} EraseArea(argv[argc])
 	 */
          Protect(w->window->flist = alclist(0, MinListSlots), runerr(0));
 	 w->window->funclist.vword.bptr = (union block *)w->window->flist;
-#ifdef XWindows
-         glClearColor((w->context->bg->r)/(GLfloat)65535,
-               (w->context->bg->g)/(GLfloat)65535, 
-               (w->context->bg->b)/(GLfloat)65535, 0.0);
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
-#endif					/* XWindows */
-#ifdef MSWindows
          glClearColor(RED(w->context->bg)/(GLfloat)256,
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
-#endif					/* XWindows */
          glXSwapBuffers(w->window->display->display, 
                     w->window->win);
          ReturnWindow;

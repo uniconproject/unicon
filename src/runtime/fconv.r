@@ -116,7 +116,7 @@ function{0,1} string(x[n])
       return string ++ empty_type
       }
    body {
-      int i, len;
+      int i, j, len;
       char *tmp, *s, *s2;
       tended struct descrip t;
       if (n == 0)
@@ -153,11 +153,11 @@ function{0,1} string(x[n])
 	    s = tmp;
 	    s2 = StrLoc(t);
 	    len = StrLen(t);
-	    for (i = 0; i < len; i++)
+	    for (j = 0; j < len; j++)
 	       *s++ = *s2++;
 	    s2 = StrLoc(x[i]);
 	    len = StrLen(x[i]);
-	    for (i = 0; i < len; i++)
+	    for (j = 0; j < len; j++)
 	       *s++ = *s2++;
 	    StrLoc(t) = tmp;
 	    StrLen(t) += len;

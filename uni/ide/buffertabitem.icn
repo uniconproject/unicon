@@ -1,0 +1,179 @@
+################################################################
+#
+#   File:         buffertabitem.icn
+#
+#   Subject:  SubClass TabItem
+#
+#   Author:   Nolan Clayton
+#
+#   Date:       May 26, 2004
+#
+################################################################
+
+$include "guih.icn"
+
+
+
+#
+#  class BufferTabItem:  Overide Display method and add an extra attribute. 
+#
+
+class BufferTabItem : TabItem(
+   filename  # The Complete filename of the TabItem (c:\Unicon ....).
+   )
+   
+   method setfilename(x)
+      self.set_label(if \x then file_name (x) else " ")
+      return self.filename := x
+   end
+   
+   method get_label()
+      return self.label
+   end
+
+   method set_label(x)
+      return self.label := x
+   end
+   
+   method getfilename()
+      return self.filename
+   end
+
+   
+   #################################################################
+   # Display Tab Method:  Draw Tabs to Match the Editor's Theme.
+   method display_tab()
+      local xpw, pslh, updown, ypos, cw
+      
+      ypos := (self.line_no - 1) * self.parent_tab_set.line_h + self.parent_tab_set.y
+      cw := Clone(self.parent_tab_set.cbwin)
+
+      xpw := self.label_x + self.label_w
+      pslh := self.parent_tab_set.line_h
+      
+      Fg(cw, "black")
+      DrawLine(cw, xpw - 1, ypos, xpw - 1, ypos + pslh - 1)
+      DrawLine(cw, xpw - 2, ypos + 1, xpw - 2, ypos + pslh - 2)
+      DrawLine(cw, self.label_x, ypos + pslh - 1, self.label_x, ypos, xpw - 1, ypos)
+      
+      Fg(cw, "white")
+      DrawLine(cw, self.label_x + 1, ypos + pslh - 2, self.label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
+      Uncouple(cw)
+
+      
+      #################################################################
+      #These  4 rectangles give the tabs a nice look
+      self.parent_tab_set.set_attribs("fg=white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 + (pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 2)
+      self.parent_tab_set.set_attribs("fg=pale greyish white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2  +(pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 4)
+      self.parent_tab_set.set_attribs("fg=light greyish white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) /2 )
+      self.parent_tab_set.set_attribs("fg=greyish white")
+      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) / 4)
+          
+      updown := -1
+      if parent_tab_set.which_one === self then  updown :=1
+
+      self.parent_tab_set.set_attribs("fg=pale grey")
+      BevelRoundedRectangle(self.parent_tab_set.cbwin, self.label_x+DEFAULT_TEXT_X_SURROUND -1,
+                            ypos-6 + pslh/ 2,  TextWidth(self.parent_tab_set.cbwin, self.label),  3+(pslh - 2) / 2, updown)
+      
+      self.parent_tab_set.set_attribs("fg=black")
+      left_string(self.parent_tab_set.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + pslh / 2, self.label)
+      
+      if is_shaded() then
+         FilterRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2, self.label_w - 2, pslh - 1)
+      
+   end
+   
+   initially
+      self$TabItem.initially()
+      filename := &null
+end
+
+
+
+#################################################################
+# Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle to be used for a TabItem.
+procedure BevelRoundedRectangle(win, x, y, w, h, bw)	
+   local b, upper, lower, xx, yy, r, a, cx, cy, cw, cr, oldfg1, oldfg2 
+   static type
+
+   initial type := proc("type", 0)	# protect attractive name
+
+   if bw >= 0 then  {
+      FillRectangle(win,x, y, w, h)
+      FillCircle(win,x, y + (h/2), h/2 -1)
+      FillCircle(win,x +w , y + (h/2), h/2 -1)
+   }
+   
+   if type(win) ~== "window" then
+      return BevelRectangle((\&window | runerr(140)), win, x, y, w, h)
+   b := bev_lookup(win)
+
+   
+   /x := -WAttrib(win, "dx")
+   /y := -WAttrib(win, "dy")
+   /w := WAttrib(win, "width") - (x + WAttrib(win, "dx"))
+   /h := WAttrib(win, "height") - (y + WAttrib(win, "dy"))
+
+   if w < 0 then
+      x -:= (w := -w)
+   if h < 0 then
+      y -:= (h := -h)
+
+
+  oldfg1:= Fg(b.hilite)
+  oldfg2:= Fg(b.shadow)
+
+   
+   r := (h/2) -.5    # the minus .5 make the cirlce fit perfect at the ends of the rectangle 
+   /bw := 2
+   if bw >= 0 then {
+      upper := b.hilite
+      lower := b.shadow
+      Fg(b.hilite,"white")
+      Fg(b.shadow,"dark grey")
+      
+   }
+
+ else {
+      upper := b.shadow
+      lower := b.hilite
+      bw := -bw
+      Fg(b.hilite,"white")
+      Fg(b.shadow,"dark grey")
+      
+      
+   }
+   
+   xx := x + w
+   yy := y + h
+   a := -&pi /2
+
+   cx := x
+   cy := y
+   cw := w
+   cr := r
+   
+   FillRectangle(lower, x, yy, w, -bw )
+   
+   while (bw -:= 1) >= 0 do {
+      DrawLine(upper, x, y, xx -:= 1 , y)
+      DrawCircle(upper, cx+1, cy+cr, r, a + &pi, &pi)
+      DrawCircle(lower, cx+cw-1, cy+cr, r, a, &pi)
+     
+      r -:= 1
+      x +:= 1
+      y +:= 1
+  
+   }   
+
+   Fg(b.hilite,oldfg1)
+   Fg(b.shadow,oldfg2)
+   
+   return win
+end
+
+

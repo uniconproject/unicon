@@ -77,6 +77,20 @@ Global int noexe	Init(0);	/* -i: stop with .ICX file */
 Global int Dflag	Init(0);	/* -L: linker debug (write .ux file) */
 #endif					/* DeBugLinker */
 
+/*
+ * Files and related globals.
+ */
+Global char *lpath;			/* search path for $include */
+Global char *ipath;			/* search path for linking */
+
+Global FILE *codefile	Init(0);	/* current ucode output file */
+Global FILE *globfile	Init(0);	/* current global table output file */
+
+Global char *ofile	Init(NULL);	/* name of linker output file */
+
+Global char *iconxloc;			/* path to iconx */
+Global long hdrsize;			/* size of iconx header */
+
 #if NT
 #ifdef MSWindows
 Global int Gflag	Init(1);	/* -G: enable graphics (write wiconx)*/
@@ -84,12 +98,3 @@ Global int Gflag	Init(1);	/* -G: enable graphics (write wiconx)*/
 Global int Gflag	Init(0);	/* -G: enable graphics (write wiconx)*/
 #endif					/* MSWindows */
 #endif					/* NT */
-
-/*
- * Files and related globals.
- */
-Global FILE *codefile	Init(0);	/* current ucode output file */
-Global FILE *globfile	Init(0);	/* current global table output file */
-
-Global char *iconxloc;			/* path to iconx */
-Global long hdrsize;			/* size of iconx header */

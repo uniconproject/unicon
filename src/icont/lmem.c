@@ -5,7 +5,6 @@
 #include "link.h"
 #include "tproto.h"
 #include "tglobals.h"
-#include "../h/path.h"
 
 /*
  * Prototypes.
@@ -46,8 +45,6 @@ struct fentry *lflast;		/* last field table entry */
 struct gentry *lgfirst;		/* first global table entry */
 struct gentry *lglast;		/* last global table entry */
 
-static char *ipath;		/* path for iconx */
-
 #ifdef MultipleRuns
    extern word pc;
    extern int fatals;
@@ -66,55 +63,6 @@ void linit()
    struct fentry **fp;
 
    llfiles = NULL;		/* Zero queue of files to link. */
-
-   ipath = getenv(IPATH);	/* remains null if unspecified */
-#if MSDOS || UNIX
-   if (ipath == NULL) {
-      char *bp = strdup(iconxloc);
-      if (strchr(bp, '/') || strchr(bp, '\\')) {
-	 char *send = bp+strlen(bp)-1;
-	 while (*send != '/' && *send != '\\') *send-- = '\0';
-	 }
-      else {
-	 /* iconxloc has no useful path for us */
-	 bp = "";
-         }
-#if NT
-      if (strlen(bp)==0) {
-	 char buf[256];
-#ifdef MSWindows
-	 bp = "wiconx.exe";
-#else					/* MSWindows */
-	 bp = "nticonx.exe";
-#endif					/* MSWindows */
-	 if (pathFind(bp, buf, 255)) {
-	     char *s;
-	     s = buf + strlen(buf) - strlen(bp);
-	     *s = '\0';
-	     bp = buf;
-	    }
-	 else {
-	    bp = ""; /* no IPATH, binpath, iconx not on path */
-	    }
-	 }
-#endif					/* NT */
-      if (strlen(bp)>0) {
-	 ipath = malloc((strlen(bp) + strlen("../ipl/lib")) * 2 + 2);
-	 strcpy(ipath, bp);
-#if MSDOS
-	 strcat(ipath, "..\\ipl\\lib ");
-	 strcat(ipath, bp);
-	 strcat(ipath, "..\\uni\\lib");
-#endif					/* MSDOS */
-#if UNIX
-	 strcat(ipath, "../ipl/lib ");
-	 strcat(ipath, bp);
-	 strcat(ipath, "../uni/lib");
-#endif					/* UNIX */
-	 }
-      /* free(bp); if you can figure out whether it was malloced */
-      }
-#endif					/* MSDOS || UNIX */
 
    /*
     * Allocate the various data structures that are used by the linker.

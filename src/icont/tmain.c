@@ -5,6 +5,7 @@
 #include "../h/gsupport.h"
 #include "../h/version.h"
 #include "tproto.h"
+#include "tglobals.h"
 
 #if SCCX_MX
    #include "../h/filepat.h"
@@ -69,6 +70,7 @@
 static	void	execute	(char *ofile,char *efile,char * *args);
 static	void	rmfiles (char **p);
 static	void	usage (void);
+static char *libpath (char *prog, char *envname);
 
 #if AMIGA && __SASC
    extern void PostClip(char *file, int line, int number, char *text);
@@ -163,36 +165,9 @@ static	void	usage (void);
  *  Define global variables.
  */
 
-#define Global
-#define Init(v) = v
-#include "tglobals.h"
-
-char *ofile = NULL;			/* linker output file name */
 char *pofile = NULL;			/* piped input file name */
 
 char patchpath[MaxPath+18] = "%PatchStringHere->";
-
-/*
- * The following code is operating-system dependent [@tmain.02].  Definition
- *  of refpath.
- */
-
-#if PORT
-   /* something is needed */
-   Deliberate Syntax Error
-#endif					/* PORT */
-
-#if UNIX || AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || OS2 || VM
-   char *refpath = RefPath;
-#endif					/* UNIX ... */
-
-#if VMS
-   char *refpath = "ICON_BIN:";
-#endif					/* VMS */
-
-/*
- * End of operating-system specific code.
- */
 
 /*
  * getopt() variables
@@ -596,19 +571,9 @@ char **argv;
 #endif					/* MACINTOSH */
 
    if ((int)strlen(patchpath) > 18)
-      iconxloc = patchpath+18;
-   else {
-      iconxloc = (char *)alloc((unsigned)strlen(refpath) + 8);
-      strcpy(iconxloc, refpath);
-#if NT
-#ifdef MSWindows
-      strcat(iconxloc, "w");		/* wiconx */
-#else					/* MSWindows */
-      strcat(iconxloc, "nt");		/* nticonx */
-#endif					/* MSWindows */
-#endif					/* NT */
-      strcat(iconxloc, "iconx");
-      }
+      iconxloc = patchpath+18;	/* use stated iconx path if patched */
+   else
+      iconxloc = relfile(argv[0], "/../iconx");
 
 #ifdef ConsoleWindow
    if ((int)strlen(patchpath) <= 18) {
@@ -621,9 +586,10 @@ char **argv;
 #endif					/* ConsoleWindow */
 
    /*
-    * Process options.
+    * Process options.  NOTE: Keep Usage definition in sync with getopt() call.
     */
-   while ((c = getopt(argc,argv,IconOptions)) != EOF)
+   #define Usage "[-cstuE] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
+   while ((c = getopt(argc,argv, "ce:f:o:stuv:EL")) != EOF)
       switch (c) {
          case 'C':			/* Ignore: compiler only */
             break;
@@ -875,16 +841,15 @@ char **argv;
       usage();				/* error -- no files named */
 
    /*
-    * Round hash table sizes to next power of two, and set masks for hashing.
+    * Initialize globals.
     */
-   lchsize = round2(lchsize);  cmask = lchsize - 1;
-   fhsize = round2(fhsize);  fmask = fhsize - 1;
-   ghsize = round2(ghsize);  gmask = ghsize - 1;
-   ihsize = round2(ihsize);  imask = ihsize - 1;
-   lhsize = round2(lhsize);  lmask = lhsize - 1;
+   initglob();				/* general global initialization */
+
+   ipath = libpath(argv[0], "IPATH");	/* set library search paths */
+   lpath = libpath(argv[0], "LPATH");
 
    /*
-    * Translate .icn files to make .u1 and .u2 files.
+    * Translate .icn files to make .u files.
     */
    if (tptr > tfiles) {
       if (!pponly)
@@ -1310,16 +1275,26 @@ char **p;
  */
 static void usage()
    {
-
-#if MVS || VM
-   fprintf(stderr,"usage: %s %s file ... <-x args>\n", progname, TUsage);
-#elif MPW
-   fprintf(stderr,"usage: %s %s file ...\n", progname, TUsage);
-#else
-   fprintf(stderr,"usage: %s %s file ... [-x args]\n", progname, TUsage);
-#endif
-
+   fprintf(stderr,"usage: %s %s file ... [-x args]\n", progname, Usage);
    exit(EXIT_FAILURE);
+   }
+
+/*
+ * Return path after appending lib directory.
+ */
+static char *libpath(char *prog, char *envname) {
+   char buf[1000], *s;
+
+   s = getenv(envname);
+   if (s != NULL)
+      strcpy(buf, s);
+   else
+      strcpy(buf, ".");
+   strcat(buf, ":");
+   strcat(buf, relfile(prog, "/../../ipl/lib"));
+   strcat(buf, ":");
+   strcat(buf, relfile(prog, "/../../uni/lib"));
+   return salloc(buf);
    }
 
 

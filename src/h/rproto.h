@@ -156,7 +156,7 @@ union block	*hgnext		(union block*b,struct hgstate*s,union block *e);
 union block	*hmake		(int tcode,word nslots,word nelem);
 void		icon_init	(char *name, int *argcp, char *argv[]);
 void		iconhost	(char *hostname);
-int		idelay		(int n); 
+int		idelay		(int n);
 #ifdef MultiThread
 int		interp_0	(int fsig,dptr cargp);
 int		interp_1	(int fsig,dptr cargp);
@@ -328,6 +328,9 @@ void		xmfree		(void);
    int	parsepattern	(char *s, int len, int *w, int *nbits, C_integer *bits);
    void	qevent		(wsp ws, dptr e, int x, int y, uword t, long f);
    int	readGIF		(char *fname, int p, struct imgdata *d);
+#ifdef JPEG
+   int	readJPEG	(char *fname, int p, struct imgdata *d);
+#endif					/* JPEG */
    int	rectargs	(wbp w, int argc, dptr argv, int i,
    			   word *px, word *py, word *pw, word *ph);
    char	*rgbkey		(int p, double r, double g, double b);
@@ -345,8 +348,10 @@ void		xmfree		(void);
    void	wputstr		(wbp w, char *s, int len);
    int	writeGIF	(wbp w, char *filename,
    			  int x, int y, int width, int height);
+   int	writeBMP	(wbp w, char *filename,
+   			  int x, int y, int width, int height);
    int	xyrowcol	(dptr dx);
-   
+
    /*
     * graphics implementation routines supplied for each platform
     * (excluding those defined as macros for X-windows)
@@ -392,7 +397,7 @@ void		xmfree		(void);
    int	lowerWindow	(wbp w);
    int	mutable_color	(wbp w, dptr argv, int ac, int *retval);
    int	nativecolor	(wbp w, char *s, long *r, long *g, long *b);
-   
+
    #ifndef PresentationManager
       /* Exclude those functions defined as macros */
       int pollevent	(void);
@@ -400,7 +405,7 @@ void		xmfree		(void);
       void wflush	(wbp w);
 #endif
    #endif				/* PresentationManager */
-   
+
    int	query_pointer	(wbp w, XPoint *pp);
    int	query_rootpointer (XPoint *pp);
    int	raiseWindow	(wbp w);
@@ -446,14 +451,14 @@ void		xmfree		(void);
    void	wsync		(wbp w);
 #endif					/* MSWindows */
    void	xdis		(wbp w, char *s, int n);
-   
+
    #ifdef ConsoleWindow
       FILE* OpenConsole		(void);
       int   Consolefprintf	(FILE *file, const char *format, ...);
       int   Consoleputc		(int c, FILE *file);
       int   Consolefflush	(FILE *file);
    #endif				/* ConsoleWindow */
-   
+
    #ifdef MacGraph
       /*
        * Implementation routines specific to Macintosh
@@ -483,16 +488,16 @@ void		xmfree		(void);
          { 0x303C, 0x0305, 0xAA68 };
       pascal OSErr SetDialogTracksCursor (DialogPtr theDialog, Boolean tracks) =
          { 0x303C, 0x0306, 0xAA68 };
-      
+
       void drawarcs(wbinding *wb, XArc *arcs, int narcs);
-      void drawlines(wbinding *wb, XPoint *points, int npoints);  
-      void drawpoints(wbinding *wb, XPoint *points, int npoints);  
+      void drawlines(wbinding *wb, XPoint *points, int npoints);
+      void drawpoints(wbinding *wb, XPoint *points, int npoints);
       void drawrectangles(wbp wb, XRectangle *recs, int nrecs);
       void drawsegments(wbinding *wb, XSegment *segs, int nsegs);
       void fillarcs(wbp wb, XArc *arcs, int narcs);
-      void fillpolygon(wbp wb, XPoint *pts, int npts);  
+      void fillpolygon(wbp wb, XPoint *pts, int npts);
    #endif				/* MacGraph */
-   
+
    #ifdef XWindows
       /*
        * Implementation routines specific to X-Windows
@@ -503,7 +508,7 @@ void		xmfree		(void);
       int	resetfg			(wbp w);
       int	setfgrgb		(wbp w, int r, int g, int b);
       int	setbgrgb		(wbp w, int r, int g, int b);
-      
+
       XColor	xcolor			(wbp w, LinearColor clr);
       LinearColor	lcolor		(wbp w, XColor color);
       int	pixmap_open		(wbp w, dptr attribs, int argc);
@@ -531,7 +536,7 @@ void		xmfree		(void);
       void postcursor(wbp);
       void scrubcursor(wbp);
    #endif				/* XWindows */
-   
+
    #ifdef MSWindows
       /*
        * Implementation routines specific to MS Windows
@@ -567,9 +572,9 @@ void		xmfree		(void);
       void drawsegments(wbinding *wb, XSegment *segs, int nsegs);
       void drawstrng(wbinding *wb, int x, int y, char *s, int slen);
       void unsetclip(wbp w);
-      
+
    #endif				/* MSWindows */
-   
+
    #ifdef PresentationManager
       /*
        * Implementation routines specific to OS/2 Presentation Manager
@@ -587,14 +592,14 @@ void		xmfree		(void);
       int LoadFont(wbp wb, char *family, LONG attr, ULONG fontsize);
       void FreeIdTable(void);
       void FreeLocalID(LONG id);
-      
+
       /* -- not needed because of macro definitions
       void SetCharContext(wbp wb, wsp ws, wcp wc);
       void SetAreaContext(wbp wb, wsp ws, wcp wc);
       void SetLineContext(wbp wb, wsp ws, wcp wc);
       void SetImageContext(wbp wb, wsp ws, wcp wc);
          -- */
-      
+
       void SetClipContext(wbp wb, wsp ws, wcp wc);
       void UnsetContext(wcp wc, void (*f)(wcp, wsp));
       void UCharContext(wcp wc, wsp ws);
@@ -628,20 +633,20 @@ void		xmfree		(void);
       FILE *PMOpenConsole(void);
       void UpdateCursorConfig(wsp ws, wcp wc);
       void UpdateCursorPos(wsp ws, wcp wc);
-      
+
    #endif				/* PresentationManager */
-   
+
    #ifdef NAS
    /*
     * Audio support via NAS 1.2.4
     */
 
       short int PauseFlow  ( AudioComponentType *AuDev );
-      short int StopFlow   ( AudioComponentType *AuDev ); 
-      short int ResumeFlow ( AudioComponentType *AuDev ); 
-      short int InitAudio  ( AudioComponentType *AuDev ); 
+      short int StopFlow   ( AudioComponentType *AuDev );
+      short int ResumeFlow ( AudioComponentType *AuDev );
+      short int InitAudio  ( AudioComponentType *AuDev );
       short int SetVolume  ( AudioComponentType *AuDev );
-      short int GetVolume  ( AudioComponentType *AuDev ); 
+      short int GetVolume  ( AudioComponentType *AuDev );
       short int OpenAudio  ( AudioComponentType *AuDev, char *AudioDeviceName);
       short int CloseAudio ( AudioComponentType *AuDev );
       short int IsAudioInUse ( AudioComponentType *AuDev );
@@ -766,7 +771,7 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    int	xdisp			(struct p_frame *fp, dptr dp, int n, FILE *f);
 
 #else					/* COMPILER */
-   
+
 #ifdef MultiThread
    struct b_refresh *alcrefresh_0(word *e, int nl, int nt);
    struct b_refresh *alcrefresh_1(word *e, int nl, int nt);
@@ -781,7 +786,7 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    void	strace			(dptr dp, dptr rval);
    void	tracebk			(struct pf_marker *lcl_pfp, dptr argp);
    int	xdisp			(struct pf_marker *fp, dptr dp, int n, FILE *f);
-   
+
    #define Fargs dptr cargp
    int	Obscan			(int nargs, Fargs);
    int	Ocreate			(word *entryp, Fargs);
@@ -796,7 +801,7 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    #else				/* MultiThread */
       void	initalloc	(word codesize);
    #endif				/* MultiThread */
-   
+
 #endif					/* COMPILER */
 
 /* dynamic records */

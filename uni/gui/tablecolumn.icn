@@ -1,5 +1,5 @@
 #
-# $Id: tablecolumn.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: tablecolumn.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -25,28 +25,60 @@ $define MIN_BUTTON_WIDTH 20
 # parent class, {TextButton}.
 #
 class TableColumn : TextButton(
-   column_width,            #                    
-   change_size_mode         #                        
+   column_width,  
+   is_held,       
+   pointer_flag
    )
 
+   #
+   # Change the pointer to be the double arrow (unless it is already).
+   # @p
+   method pointer_on()
+      if /pointer_flag then {
+         get_parent_dialog().change_pointer("sb h double arrow")
+         pointer_flag := 1
+      }
+   end
+
+   #
+   # Reset the pointer if needed.
+   #
+   method pointer_off()
+      if \pointer_flag then {
+         get_parent_dialog().restore_pointer()
+         pointer_flag := &null
+      }
+   end
+
    method handle_event(e)
-      if e === (&lpress | &rpress | &mpress) then {
-         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & self.in_region() then {
+      if e === -12 then {
+         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & 
+            self.in_region() &
+            (self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then
+            pointer_on()
+         else
+            pointer_off()
+      } else if e === (&lpress | &rpress | &mpress) then {
+         if (self.parent.button_x <= &x < self.parent.button_x + self.parent.button_w) & 
+            self.in_region() then {
             if(self.x + self.w - CHANGE_SIZE_BORDER <= &x < self.x + self.w) then {
-               self.change_size_mode := 1
-               get_parent_dialog().change_pointer("sb h double arrow")
+               self.is_held := 1
+               pointer_on()
             }
             else
                self.TextButton.handle_event(e)
          }
-      } else if \self.change_size_mode & (e === (&lrelease | &rrelease | &mrelease)) then {
-         get_parent_dialog().restore_pointer()
-         self.column_width := &x - self.x
-         self.column_width <:= MIN_BUTTON_WIDTH
-         self.change_size_mode := &null
-         self.parent.resize()
-         self.parent.parent.table_content.set_internal_fields()
-         self.parent.parent.invalidate()
+      } else if \self.is_held then {
+         if e === (&ldrag | &rdrag | &mdrag) then {
+            self.column_width := &x - self.x
+            self.column_width <:= MIN_BUTTON_WIDTH
+            self.parent.resize()
+            self.parent.parent.table_content.set_internal_fields()
+            self.parent.parent.invalidate()
+         } else if e === (&lrelease | &rrelease | &mrelease) then {
+            self.is_held := &null
+            pointer_off()
+         }
       } else
          self.TextButton.handle_event(e)
    end

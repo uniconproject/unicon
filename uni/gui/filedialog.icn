@@ -1,5 +1,5 @@
 #
-# $Id: filedialog.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: filedialog.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -35,16 +35,8 @@ class FileDialog : Dialog(
    dlist,                   # TextList of directories            
    flist,                   # TextList of files            
    okay,                    #            
-   cancel,                  #              
-   extra_attribs            # Custom attributes
+   cancel                   #              
    )
-
-   #
-   # Provide extra attributes for the dialog.
-   #
-   method set_extra_attribs(l)
-      return self.extra_attribs := l
-   end
 
    #
    # Get the directory part of the result
@@ -136,13 +128,11 @@ class FileDialog : Dialog(
       #
       # Update directory and file lists.
       #
-      l1 := []
-      l2 := []
-      get_directory_list(s, l1, l2)
-      dlist.set_contents(l1)
+      l := get_directory_list(s)
+      dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
-      flist.set_contents(l2)
+      flist.set_contents(l[2])
       flist.goto_pos(1, 0)
       flist.clear_selections()
       file.set_contents("")
@@ -159,14 +149,12 @@ class FileDialog : Dialog(
       #
       # Return pressed in directory TextField; update lists.
       #
-      l1 := []
-      l2 := []
       dir.set_contents(s := self.get_std_dir())
-      get_directory_list(s, l1, l2)
-      dlist.set_contents(l1)
+      l := get_directory_list(s)
+      dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
-      flist.set_contents(l2)
+      flist.set_contents(l[2])
       flist.goto_pos(1, 0)
       flist.clear_selections()
       file.set_contents("")
@@ -191,82 +179,56 @@ class FileDialog : Dialog(
 
       if (init_dir[-1] ~== PATHCHAR) then init_dir ||:= PATHCHAR
 
-      self.set_attribs_list(["size=420,370", "resize=on"] ||| self.extra_attribs)
-
-      l := Label()
-      l.set_label("Directory")
-      l.set_pos(25, 25)
-      l.set_align("l", "c")
-      self.add(l)
+      self.add(Label("pos=25,25", "align=l,c", "label=Directory"))
       
-      dir := TextField()
+      dir := TextField("pos=100,25", "size=100%-150", "align=l,c")
       dir.connect(self, "on_dir", ACTION_EVENT)
-      dir.set_pos(100, 25)
-      dir.set_size("100%-150")
-      dir.set_align("l", "c")
       dir.set_contents(init_dir)
       self.add(dir)
 
-      l := Label()
-      l.set_label("File")
-      l.set_pos(25, 75)
-      l.set_align("l", "c")
-      self.add(l)
+      self.add(Label("pos=25,75", "align=l,c", "label=File"))
 
-      file := TextField()
+      file := TextField("pos=100,75", "size=100%-150", "align=l,c")
       file.connect(self, "on_file", ACTION_EVENT)
-      file.set_pos(100, 75)
-      file.set_size("100%-150")
-      file.set_align("l", "c")
       file.set_contents(init_file)
       self.add(file)
 
-      l1 := [] 
-      l2 := []
-      get_directory_list(init_dir, l1, l2)
+      l := get_directory_list(init_dir)
 
-      dlist := TextList()
+      dlist := TextList("pos=25,110", "size=50%-38,100%-170", "select_one", "selection_on_key_moves=f")
       dlist.connect(self, "on_dlist", SELECTION_CHANGED_EVENT)
-      dlist.set_select_one()
-      dlist.set_pos(25, 110)
-      dlist.set_size("50%-38", "100%-170")
-      dlist.set_contents(l1)
-      dlist.set_no_selection_on_key_moves()
+      dlist.set_contents(l[1])
       self.add(dlist)
 
-      flist := TextList()
+      flist := TextList("pos=50%+12,110", "size=50%-38,100%-170", "select_one", "selection_on_key_moves=f")
       flist.connect(self, "on_flist", SELECTION_CHANGED_EVENT)
-      flist.set_select_one()
-      flist.set_pos("50%+12", 110)
-      flist.set_size("50%-38", "100%-170")
-      flist.set_contents(l2)
-      flist.set_no_selection_on_key_moves()
+      flist.set_contents(l[2])
       self.add(flist)
 
-      okay := TextButton()
+      okay := TextButton("pos=33%,100%-30", "align=c,c", "label=Okay")
       okay.connect(self, "on_okay", ACTION_EVENT)
-      okay.set_label("Okay")
-      okay.set_pos("33%", "100%-30")
-      okay.set_align("c", "c")
       self.add(okay)
 
-      cancel := TextButton()
+      cancel := TextButton("pos=66%,100%-30", "align=c,c", "label=Cancel")
       cancel.connect(self, "dispose", ACTION_EVENT)
-      cancel.set_label("Cancel")
-      cancel.set_pos("66%", "100%-30")
-      cancel.set_align("c", "c")
       self.add(cancel)
    end
 
-   initially
+   initially(a[])
       self.Dialog.initially()
-      self.extra_attribs := []
+      #
+      # Set attrib before calling set_fields, so these settings can
+      # be overridden.
+      #
+      attrib("size=420,370", "resize=on", "label=Select File")
+      set_fields(a)
 end
 
 #
 # Read a directory.
 #
-procedure get_directory_list(s, dir_list, file_list)
+procedure get_directory_list(s)
+   local dir_list, file_list
    /fatal_error := stop
 $ifdef _MS_WINDOWS_NT
    s := map(s,"/","\\")
@@ -281,18 +243,21 @@ $endif
        fail
    }
    if not (s[-1] == PATHCHAR) then s ||:= PATHCHAR
+   dir_list := []
+   file_list := []
    while s2 := read(p) do {
       sr := stat(s||s2) | {
           write(&errout, "get_directory_list: can't stat ", image(s2))
           fail
-      }
+       }
       if sr.mode[1] == "d" then
          put(dir_list, s2 || PATHCHAR)
       else
          put(file_list, s2)
-      }
+   }
    close(p)
-   return
+
+   return [sort(dir_list), sort(file_list)]
 end
  
 #

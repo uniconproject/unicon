@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: dropdown.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -134,7 +134,7 @@ class DropDown : Component(
       self.tl.firstly()
       self.temp_win := WOpen("canvas=hidden", "size=" || self.tl.w || "," || self.tl.h)
       CopyArea(self.get_parent_win(), self.temp_win, self.tl.x, self.tl.y, self.tl.w, self.tl.h, 0, 0)
-      self.tl.set_no_selection_on_key_moves()
+      self.tl.clear_selection_on_key_moves()
       self.tl.set_cursor(self.selection)
       lno := self.selection - self.tl.get_max_lines() / 2
       lno <:= 1
@@ -185,6 +185,7 @@ class DropDown : Component(
    method set_one(attr, val)
       case attr of {
          "selection_list" : set_selection_list(val)
+         default: self.Component.set_one(attr, val)
       }
    end
 

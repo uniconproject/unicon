@@ -1,5 +1,5 @@
 #
-# $Id: linebasedscrollarea.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: linebasedscrollarea.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -98,7 +98,7 @@ class LineBasedScrollArea : ScrollArea(
    #
    method get_line_under_pointer()
       local l
-      if (self.view.x <= &x < self.view.x + self.view.w) & (self.view.y  <= &y < self.view.y + self.view.h) then {
+      if view.in_region() then {
          l := (&y - self.view.y) / self.line_height + self.get_first_line()
          if l <= self.get_last_line() then
             return l

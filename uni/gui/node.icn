@@ -1,5 +1,5 @@
 #
-# $Id: node.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: node.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -9,18 +9,19 @@
 package gui
 link graphics
 import lang
+import util
 
 $include "guih.icn"
 
 #
 # This class represents a node in a {Tree} object.
 #
-class Node : Object(
+class Node : SetFields : Object(
    label,
    bmps,
-   always_expandable,
+   always_expandable_flag,
    depth,
-   is_open,
+   is_expanded_flag,
    subnodes,
    draw_line,
    parent_node
@@ -48,7 +49,7 @@ class Node : Object(
    #
    method generate_open_preorder()
       suspend self
-      if \self.is_open then
+      if \self.is_expanded_flag then
          suspend (!subnodes).generate_open_preorder()
    end
 
@@ -57,7 +58,7 @@ class Node : Object(
    # in postorder ordering.
    #
    method generate_open_postorder()
-      if \self.is_open then
+      if \self.is_expanded_flag then
          suspend (!subnodes).generate_open_postorder()
       suspend self
    end
@@ -68,7 +69,7 @@ class Node : Object(
    method expand()
       every n := generate_all_postorder() do
          if *n.subnodes > 0 then
-            n.is_open := 1
+            n.is_expanded_flag := 1
    end
 
    #
@@ -124,14 +125,35 @@ class Node : Object(
    # for display purposes, event though it may in fact have no subnodes.
    #
    method set_always_expandable()
-      return always_expandable := 1
+      return always_expandable_flag := 1
+   end
+
+   #
+   # This turns off the always_expandable feature (the default).
+   #
+   method clear_always_expandable()
+      return always_expandable_flag := &null
    end
 
    #
    # Toggle the opened status of the {Node}.
    #
-   method toggle_opened()
-      return is_open := if /is_open then 1 else &null
+   method toggle_expanded()
+      return is_expanded_flag := if /is_expanded_flag then 1 else &null
+   end
+
+   #
+   # Succeed iff the node is opened
+   #
+   method is_expanded()
+      return \is_expanded_flag
+   end
+
+   #
+   # Clear all the subnodes
+   #
+   method clear_children()
+      subnodes := []
    end
 
    #
@@ -146,6 +168,19 @@ class Node : Object(
       }
    end
 
-   initially
+   method set_one(attr, val)
+      case attr of {
+         "label" : set_label(string_val(attr, val))
+         "always_expandable" :
+            if test_flag(attr, val) then
+               set_always_expandable() 
+            else
+               clear_always_expandable()
+         default : error("Unknown attribute " || attr)
+      }
+   end
+
+   initially(a[])
       subnodes := []
+      set_fields(a)
 end

@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: dialog.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -198,7 +198,7 @@ class Dialog : Component(
    end
 
    method open_win()
-      self.win := (WOpen ! self.attribs) | error("couldn't open window")
+      self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs)) | error("couldn't open window")
       self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | error("couldn't open window")
       return
    end
@@ -324,118 +324,186 @@ class Dialog : Component(
    end
 
    method process_event(e)
-      if e === (&lpress | &rpress | &mpress) then {
-         t := dispatcher.curr_time_of_day()
-         if e = \prev_event & prev_x = &x & prev_y = &y & (t - prev_time < double_click_delay) then
-            click_count +:= 1
-         else
-            click_count := 1
+      if e === -11 then {
+         create_event_and_fire(CLOSE_BUTTON_EVENT, e)
+      }
 
-         prev_event := e
-         prev_time := t
-         prev_x := &x
-         prev_y := &y
+      if e === (&lpress | &rpress | &mpress) then {
+         check_click_count(e)
       }
 
       if e === &resize then {
-         consume_same(e)
-         nw := WAttrib(self.win, "width")
-         nh := WAttrib(self.win, "height")
-         #write("size=",nw,",",nh)
-         #
-         # Don't allow size to fall below minimum.
-         #
-         if nw <:= \self.min_width then
-            WAttrib(self.win, "width=" || nw)
-
-         if nh <:= \self.min_height then
-            WAttrib(self.win, "height=" || nh)
-
-         #
-         # Resize buffer canvas
-         #
-         WAttrib(self.buffer_win, "width=" || nw)
-         WAttrib(self.buffer_win, "height=" || nh)
-         EraseArea(self.win, 0, 0, nw, nh)
-         self.resize()
+         handle_resize(e)
       }
 
       if \self.unique_flag then {
-         #
-         # Unique mode
-         #
+         process_unique(e)
 
-         if e === (&ldrag | &rdrag | &mdrag) then
-            consume_same(e)
-         self.unique_flag.handle_event(e)
          if /self.is_open then
             return
       }
 
       if /self.unique_flag & /self.re_process_flag then {
-         #
-         # Non-unique mode
-         #
+         if /self.curr_drag then 
+            check_dnd(e)
 
-         if e === (&ldrag | &rdrag | &mdrag) then {
-            # Note the position of the start of a drag
-            /self.drag_gesture_x := &x
-            /self.drag_gesture_y := &y
-            consume_same(e)
-            if /self.tried_drag &
-               (abs(&x - self.drag_gesture_x) > 3 |
-                abs(&y - self.drag_gesture_y) > 3 ) then {
-                   # Try to begin a drag.
-                   self.curr_drag := self.invoke_can_drag(e) 
-                   self.tried_drag := 1
-                   if \self.curr_drag then {
-                      change_pointer("exchange")
-                   }
-                }
-         } else
-            self.tried_drag := self.drag_gesture_x := self.drag_gesture_y := &null
+         if \self.curr_drag then
+            process_dnd(e)
+         else
+            process_normal(e)
 
-         if \self.curr_drag then {
-            #
-            # Drag & drop mode
-            #
-            if e === (&ldrag | &rdrag | &mdrag) then {
-               if self.invoke_drag_event(self.curr_drag) then
-                  WAttrib(self.win, "pointer=hand2")
-               else
-                  WAttrib(self.win, "pointer=exchange")
-            } else if e === (&lrelease | &rrelease | &mrelease) then {
-               if c := self.invoke_can_drop(self.curr_drag) then
-                  self.curr_drag.get_source().invoke_end_drag(self.curr_drag, c)
-               self.curr_drag := &null
-               self.invoke_drag_reset()
-               restore_pointer()
-            }
-         } else {
-            #
-            # Normal mode
-            #
-            if e === (&lpress | &rpress | &mpress) then {
-               if c := self.find_focus() then
-                  self.set_focus(c, e)
-               else
-                  self.clear_focus(e)
-            }
-            
-            self.handle_event(e)
-            if /self.is_open then
-               return
-
-            if (string(e) == "\t") & ( /self.focus | /self.focus.keeps_tabs) then {
-               if c := find_next_focus() then
-                  self.set_focus(c, e)
-            } else if e === Shift_Tab & ( /self.focus | /self.focus.keeps_tabs) then {
-               if c := find_previous_focus() then
-                  self.set_focus(c, e)
-            }
-         }
+         if /self.is_open then
+            return
       }
+
       self.re_process_flag := &null
+   end
+
+   #
+   # Normal event processing - not dnd or unique
+   # @p
+   method process_normal(e)
+      if e === (&lpress | &rpress | &mpress) then {
+         if c := self.find_focus() then
+            self.set_focus(c, e)
+         else
+            self.clear_focus(e)
+      }
+
+      do_handle_event(self, e)
+
+      if (string(e) == "\t") & ( /self.focus | /self.focus.keeps_tabs) then {
+         if c := find_next_focus() then
+            self.set_focus(c, e)
+      } else if e === Shift_Tab & ( /self.focus | /self.focus.keeps_tabs) then {
+         if c := find_previous_focus() then
+            self.set_focus(c, e)
+      }
+
+   end
+
+   #
+   # Drag & drop mode processing
+   # @p
+   method process_dnd(e)
+      if e === (&ldrag | &rdrag | &mdrag) then {
+         if self.invoke_drag_event(self.curr_drag) then
+            WAttrib(self.win, "pointer=hand2")
+         else
+            WAttrib(self.win, "pointer=exchange")
+      } else if e === (&lrelease | &rrelease | &mrelease) then {
+         if c := self.invoke_can_drop(self.curr_drag) then
+            self.curr_drag.get_source().invoke_end_drag(self.curr_drag, c)
+         self.curr_drag := &null
+         self.invoke_drag_reset()
+         restore_pointer()
+      }
+   end
+
+   #
+   # Process a unique-mode event
+   # @p
+   method process_unique(e)
+      do_handle_event(self.unique_flag, e)
+   end
+
+   #
+   # Check whether we should start a dnd (by setting curr_drag)
+   # @p
+   method check_dnd(e)
+      if e === (&ldrag | &rdrag | &mdrag) then {
+         # Note the position of the start of a drag
+         /self.drag_gesture_x := &x
+         /self.drag_gesture_y := &y
+         if /self.tried_drag &
+            (abs(&x - self.drag_gesture_x) > 3 |
+             abs(&y - self.drag_gesture_y) > 3 ) then {
+                # Try to begin a drag.
+                self.curr_drag := self.invoke_can_drag(e) 
+                self.tried_drag := 1
+                if \self.curr_drag then {
+                   change_pointer("exchange")
+                }
+             }
+      } else
+         self.tried_drag := self.drag_gesture_x := self.drag_gesture_y := &null
+   end
+
+   #
+   # Process a resize 
+   # @p
+   method handle_resize(e)
+      consume_same(e)
+      nw := WAttrib(self.win, "width")
+      nh := WAttrib(self.win, "height")
+      #
+      # Don't allow size to fall below minimum.
+      #
+      if nw <:= \self.min_width then
+         WAttrib(self.win, "width=" || nw)
+
+      if nh <:= \self.min_height then
+         WAttrib(self.win, "height=" || nh)
+
+      #
+      # Resize buffer canvas
+      #
+      WAttrib(self.buffer_win, "width=" || nw)
+      WAttrib(self.buffer_win, "height=" || nh)
+      EraseArea(self.win, 0, 0, nw, nh)
+      self.resize()
+   end
+
+   #
+   # Maybe increment the click count
+   # @p
+   method check_click_count(e)
+      local t
+
+      t := dispatcher.curr_time_of_day()
+      if e = \prev_event & prev_x = &x & prev_y = &y & (t - prev_time < double_click_delay) then
+         click_count +:= 1
+      else
+         click_count := 1
+
+      prev_event := e
+      prev_time := t
+      prev_x := &x
+      prev_y := &y
+   end
+
+   # @p
+   method do_handle_event(c, e)
+      #
+      # Let the component handle the event
+      #
+      c.handle_event(e)
+
+      #
+      # Generate basic events
+      #
+      if e === (&lpress | &rpress | &mpress) then {
+         fire_icon_events_on_mouse(c, MOUSE_PRESS_EVENT, e)
+      } else if e === (&ldrag | &rdrag | &mdrag) then {
+         fire_icon_events_on_mouse(c, MOUSE_DRAG_EVENT, e)
+      } else if e === -12 then {
+         fire_icon_events_on_mouse(c, MOUSE_MOTION_EVENT, e)
+      } else if e === (&lrelease | &rrelease | &mrelease) then {
+         fire_icon_events_on_mouse(c, MOUSE_RELEASE_EVENT, e)
+      } else {
+         c.create_event_and_fire(ICON_EVENT, e)
+      }
+   end
+
+   # @p
+   method fire_icon_events_on_mouse(c, p, e)
+      local sub
+      if c.in_region() & c.is_unhidden() then {
+         every sub := !c.children do {
+            fire_icon_events_on_mouse(sub, p, e)
+         }
+         c.create_event_and_fire(p, e)
+      }
    end
 
    method get_focus_list()
@@ -500,6 +568,11 @@ class Dialog : Component(
          "repeat_delay" : set_repeat_delay(int_val(attr, val))
          "repeat_rate" : set_repeat_rate(int_val(attr, val))
          "min_size" : set_min_size!int_vals(attr, val)
+         #
+         # For a dialog, interpret pos and size as Icon attributes, not set_pos 
+         # and set_size method invocations.
+         #
+         "pos" | "size" : set_attribs(as_attrib(attr, val))
          default: self.Component.set_one(attr, val)
       }
    end

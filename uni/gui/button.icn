@@ -1,5 +1,5 @@
 #
-# $Id: button.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: button.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -84,23 +84,25 @@ class Button : Toggle : Component(
       self.is_down := &null
       stop_ticker()
    end
-      
-   method handle_event(e)
-      if e === (&lpress | &rpress | &mpress) then {
-         if self.in_region() then {
-            go_down()
-            self.repeat_delay := dispatcher.curr_time_of_day() + self.parent_dialog.repeat_delay
-            self.is_held := 1
-            every b := !(\self.parent_button_group).buttons do {
-               if b.is_unhidden() then {
-                  b.is_held := 1
-                  b.repeat_delay := self.repeat_delay
-               }
+
+   method handle_press(e)
+      if self.in_region() then {
+         go_down()
+         self.repeat_delay := dispatcher.curr_time_of_day() + self.parent_dialog.repeat_delay
+         self.is_held := 1
+         every b := !(\self.parent_button_group).buttons do {
+            if b.is_unhidden() then {
+               b.is_held := 1
+               b.repeat_delay := self.repeat_delay
             }
-            self.invalidate()
-            create_event_and_fire(BUTTON_PRESS_EVENT, e)
          }
-      } else if e === (&ldrag | &rdrag | &mdrag) & \self.is_held then {
+         self.invalidate()
+         create_event_and_fire(BUTTON_PRESS_EVENT, e)
+      }
+   end
+
+   method handle_drag(e)
+      if \self.is_held then {
          #
          # Button held down; toggle on/off as it goes over the button 
          #
@@ -115,7 +117,11 @@ class Button : Toggle : Component(
                invalidate()
             }
          }
-      } else if e === (&lrelease | &rrelease | &mrelease) & \self.is_held then {
+      }
+   end
+
+   method handle_release(e)
+      if \self.is_held then {
          self.is_held := &null
          if \self.is_down then {
             if \self.is_checkbox_flag then {
@@ -132,15 +138,27 @@ class Button : Toggle : Component(
             create_event_and_fire(BUTTON_RELEASE_EVENT, e)
             create_event_and_fire(ACTION_EVENT, e)
          }
-      } else if /self.no_keyboard_flag & \self.has_focus & e == ("\r" | "\l") then {
-         if \self.is_checkbox_flag then {
-            if \self.parent_check_box_group then
-               self.parent_check_box_group.set_which_one(self)
-            else
-               self.toggle_is_checked()
+      }
+   end
+   
+   method handle_event(e)
+      if e === (&lpress | &rpress | &mpress) then {
+         handle_press(e)
+      } else if e === (&ldrag | &rdrag | &mdrag) then {
+         handle_drag(e)
+      } else if e === (&lrelease | &rrelease | &mrelease) then {
+         handle_release(e)
+      } else if \self.has_focus then {
+         if /self.no_keyboard_flag & e == ("\r" | "\l") then {
+            if \self.is_checkbox_flag then {
+               if \self.parent_check_box_group then
+                  self.parent_check_box_group.set_which_one(self)
+               else
+                  self.toggle_is_checked()
+            }
+            self.invalidate()
+            create_event_and_fire(ACTION_EVENT, e)
          }
-         self.invalidate()
-         create_event_and_fire(ACTION_EVENT, e)
       }
    end
 

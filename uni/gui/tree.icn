@@ -1,5 +1,5 @@
 #
-# $Id: tree.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: tree.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -75,7 +75,7 @@ class Tree : SelectableScrollArea(
       if /r then
          set_contents([])
       else {
-         root_node.is_open := 1
+         root_node.is_expanded_flag := 1
          compute_bmp_wh()
          set_contents(flatten())
          set_selections([])
@@ -176,7 +176,7 @@ class Tree : SelectableScrollArea(
       n.draw_line := dl
       n.depth := *dl
       put(l, n)
-      if \n.is_open then {
+      if n.is_expanded() then {
          every sub := n.subnodes[1 to *n.subnodes - 1] do 
             flatten2(l, sub, dl || "f")
          flatten2(l, n.subnodes[-1], dl || "u")
@@ -189,7 +189,7 @@ class Tree : SelectableScrollArea(
          l := lno + self.get_first_line()
          if l <= self.get_last_line() then {
             N := self.contents[l]
-            if (N.depth > 0) & (*N.subnodes > 0) | \N.always_expandable then {
+            if (N.depth > 0) & (*N.subnodes > 0) | \N.always_expandable_flag then {
                #
                # Check for click on little +/- icon.
                #
@@ -200,7 +200,7 @@ class Tree : SelectableScrollArea(
                   # Clicking on the little icon ends the sequence, and sets the selection
                   # to the given node.
                   #
-                  N.is_open := if /N.is_open then 1 else &null
+                  N.toggle_expanded()
                   self.last_expanded := N
                   tree_structure_changed()
                   is_held := &null
@@ -244,10 +244,10 @@ class Tree : SelectableScrollArea(
       }
 
       bmps := \N.bmps | default_bmps
-      if (*N.subnodes = 0) & /N.always_expandable then
+      if (*N.subnodes = 0) & /N.always_expandable_flag then
          img := bmps[3]
       else {
-         if \N.is_open then {
+         if N.is_expanded() then {
             img := bmps[2]
             little := minus
             if *N.subnodes > 0 then

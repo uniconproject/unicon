@@ -1,5 +1,5 @@
 #
-# $Id: selectablescrollarea.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: selectablescrollarea.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -26,7 +26,7 @@ class SelectableScrollArea : LineBasedScrollArea(
    is_held,
    highlight,
    draggable_cursor,
-   no_selection_on_key_moves
+   selection_on_key_moves
    )
 
    method get_line_count()
@@ -44,14 +44,23 @@ class SelectableScrollArea : LineBasedScrollArea(
       #
       while *self.checked < *x do put(self.checked)
       while *self.checked > *x do pull(self.checked)
-      if *x = 0 then
+
+      constrain_cursor()
+
+      compute_and_invalidate()
+      return x
+   end
+
+   #
+   # Keep the cursor within the bounds of the contents.
+   # @p
+   method constrain_cursor()
+      if *self.contents = 0 then
          self.cursor := &null
       else {
          /self.cursor := 1
-         \self.cursor >:= *x
+         \self.cursor >:= *self.contents
       }
-      compute_and_invalidate()
-      return x
    end
 
    #
@@ -91,11 +100,26 @@ class SelectableScrollArea : LineBasedScrollArea(
    end
 
    #
+   # Configure the object so that drags don't move the cursor
+   #
+   method clear_draggable_cursor()
+      self.draggable_cursor := &null
+   end
+
+   #
    # Configure the object so that moving the cursor via the keyboard does not
    # alter the selection.
    #
-   method set_no_selection_on_key_moves()
-      self.no_selection_on_key_moves := 1
+   method clear_selection_on_key_moves()
+      self.selection_on_key_moves := &null
+   end
+
+   #
+   # Configure the object so that moving the cursor via the keyboard does
+   # alter the selection (the default behaviour).
+   #
+   method set_selection_on_key_moves()
+      self.selection_on_key_moves := 1
    end
 
    #
@@ -218,18 +242,17 @@ class SelectableScrollArea : LineBasedScrollArea(
    end
 
    #
-   # Set the cursor to the given object
+   # Set the cursor to the given object.  Has no effect if o is not
+   # in the contents list.
    #
    method object_set_cursor(o)
       local i
-      #self.cursor := &null
       every i := 1 to *self.contents do {
          if self.contents[i] === o then {
-            self.cursor := i
+            set_cursor(i)
             break
          }
       }
-      invalidate()
    end
 
    #
@@ -256,8 +279,9 @@ class SelectableScrollArea : LineBasedScrollArea(
          delete(self.contents, l[i] - i + 1)
          delete(self.checked, l[i] - i + 1)
       }
-      # Keep cursor in range
-      \self.cursor >:= *self.contents
+
+      constrain_cursor()
+
       compute_and_invalidate()
    end
 
@@ -315,7 +339,7 @@ class SelectableScrollArea : LineBasedScrollArea(
       row <:= 1
       row >:= *self.contents
       self.cursor := self.prev_cursor := row
-      if /self.no_selection_on_key_moves & (\self.select_one | \self.select_many) then {
+      if \self.selection_on_key_moves & (\self.select_one | \self.select_many) then {
          if not (&shift & \select_many) then
             self.checked := list(*self.contents)
          self.checked[self.cursor] := 1
@@ -332,8 +356,6 @@ class SelectableScrollArea : LineBasedScrollArea(
 
       if \selchange then
          create_event_and_fire(SELECTION_CHANGED_EVENT, e)
-
-      create_event_and_fire(SELECTION_KEY_EVENT, e)
    end
 
    method handle_return(e)
@@ -394,14 +416,11 @@ class SelectableScrollArea : LineBasedScrollArea(
 
    method handle_press(e)
       local l
-      if (self.view.x <= &x < self.view.x + self.view.w) & (self.view.y  <= &y < self.view.y + self.view.h) then {
-         if l := get_line_under_pointer() then {
-            self.prev_cursor := self.cursor
-            self.cursor := l
-            self.is_held := 1
-            self.refresh(1)
-            create_event_and_fire(SELECTION_DOWN_EVENT, e)
-         }
+      if l := get_line_under_pointer() then {
+         self.prev_cursor := self.cursor
+         self.cursor := l
+         self.is_held := 1
+         self.refresh(1)
       }
    end
 
@@ -483,7 +502,6 @@ class SelectableScrollArea : LineBasedScrollArea(
             self.refresh(1)
             create_event_and_fire(SELECTION_CHANGED_EVENT, e)
          }
-         create_event_and_fire(SELECTION_UP_EVENT, e)
       }
    end
 
@@ -513,6 +531,7 @@ class SelectableScrollArea : LineBasedScrollArea(
    end
 
    method object_get_gesture_selections()
+      \self.cursor | fail
       if \self.checked[self.cursor] then
          return object_get_selections()
       else
@@ -520,6 +539,7 @@ class SelectableScrollArea : LineBasedScrollArea(
    end
 
    method get_gesture_selections()
+      \self.cursor | fail
       if \self.checked[self.cursor] then
          return get_selections()
       else
@@ -584,6 +604,26 @@ class SelectableScrollArea : LineBasedScrollArea(
       rev := &null
    end
 
+   method set_one(attr, val)
+      case attr of {
+         "contents" : set_contents(val)
+         "select_one" : set_select_one()
+         "select_many" : set_select_many()
+         "select_none" : set_select_none()
+         "draggable_cursor" :
+            if test_flag(attr, val) then
+               set_draggable_cursor()
+            else
+               clear_draggable_cursor()
+         "selection_on_key_moves" :
+            if test_flag(attr, val) then
+               set_selection_on_key_moves()
+            else
+               clear_selection_on_key_moves()
+         default: self.Component.set_one(attr, val)
+      }
+   end
+
    #
    # This method is overridden by the subclass to draw the given 
    # line at the given position
@@ -601,4 +641,5 @@ class SelectableScrollArea : LineBasedScrollArea(
       self.checked := []
       self.cursor := &null
       self.contents := []
+      self.selection_on_key_moves := 1
 end

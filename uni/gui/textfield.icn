@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: textfield.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -388,7 +388,6 @@ class TextField : Component(
          s := repl(displaychar, *(self.contents)) || " "
       else
          s := self.contents || " "
-
       #
       # Initialize left and right markers; only move leftmost if needed
       #
@@ -401,6 +400,9 @@ class TextField : Component(
       if TextWidth(self.cwin, s[self.leftmost:self.rightmost]) <= spc then {
          while TextWidth(self.cwin, s[self.leftmost:self.rightmost + 1]) <= spc do
             self.rightmost +:= 1
+         while (self.leftmost > 1) & 
+            TextWidth(self.cwin, s[self.leftmost - 1:self.rightmost]) <= spc do
+            self.leftmost -:= 1
       } else {
          while TextWidth(self.cwin, s[self.leftmost:self.rightmost]) > spc do
             self.leftmost +:= 1
@@ -480,7 +482,7 @@ class TextField : Component(
 
    initially(a[])
       self.Component.initially()
-      filter := printable := cset(&ascii[33:128])
+      filter := printable := cset(&cset[33:0])
       self.accepts_focus_flag := 1
       self.set_contents("")
       self.draw_border_flag := 1

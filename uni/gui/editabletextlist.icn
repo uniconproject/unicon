@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: editabletextlist.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -225,7 +225,7 @@ class EditableTextList : LineBasedScrollArea(
             #
             self.set_internal_fields()
             self.constrain_line()
-            self.display()
+            self.invalidate()
          } else {
             self.constrain_line()
             self.refresh(1)
@@ -253,10 +253,6 @@ class EditableTextList : LineBasedScrollArea(
          i+:= 1
 
       self.cursor_x := i
-   end
-
-   method get_leftmost_visible()
-
    end
 
    method clear_mark()
@@ -349,9 +345,13 @@ class EditableTextList : LineBasedScrollArea(
    method handle_release(e)
       if \self.is_held then {
          #
-         # Mouse released after being held down.  Clear flag
+         # Mouse released after being held down.  Clear flag.  If there
+         # is no region (mouse released where it was pressed), then clear
+         # the mark.  This prevents selecting when using the scrollbars
+         # after release.
          #
          self.is_held := &null
+         has_region() | clear_mark()
          stop_ticker()
       }
    end
@@ -722,7 +722,7 @@ class EditableTextList : LineBasedScrollArea(
 
    initially(a[])
       self.LineBasedScrollArea.initially()
-      printable := cset(&ascii[33:128]) ++ '\t'
+      printable := cset(&cset[33:0]) ++ '\t'
       self.cursor_x := self.cursor_y := 1
       self.keeps_tabs := 1
       set_fields(a)

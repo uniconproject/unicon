@@ -1,5 +1,5 @@
 #
-# $Id: sizer.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: sizer.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -29,7 +29,8 @@ class Sizer : Component(
    drag_offset,
    curr_pos,
    start_pos,
-   end_pos
+   end_pos,
+   pointer_flag
    )
 
    #
@@ -107,8 +108,36 @@ class Sizer : Component(
       return curr_pos
    end
 
+   #
+   # Change the pointer to be the double arrow (unless it is already).
+   # @p
+   method pointer_on()
+      if /pointer_flag then {
+         if \self.is_horizontal_flag then
+            get_parent_dialog().change_pointer("sb v double arrow")
+         else
+            get_parent_dialog().change_pointer("sb h double arrow")
+         pointer_flag := 1
+      }
+   end
+
+   #
+   # Reset the pointer if needed.
+   #
+   method pointer_off()
+      if \pointer_flag then {
+         get_parent_dialog().restore_pointer()
+         pointer_flag := &null
+      }
+   end
+
    method handle_event(e)
-      if e === (&lpress | &rpress | &mpress) then {
+      if e === -12 then {
+         if self.in_region() then
+            pointer_on()
+         else
+            pointer_off()
+      } else if e === (&lpress | &rpress | &mpress) then {
          if self.in_region() then {
             unique_start()
             self.is_held := 1
@@ -118,11 +147,10 @@ class Sizer : Component(
             CopyArea(get_parent_win(), temp_win, 0, 0, temp_w, temp_h, 0, 0)
             if \self.is_horizontal_flag then {
                drag_offset := &y - self.y
-               get_parent_dialog().change_pointer("sb v double arrow")
             } else {
                drag_offset := &x - self.x
-               get_parent_dialog().change_pointer("sb h double arrow")
             }
+            pointer_on()
             start_pos := set_curr_pos()
             self.invalidate()
          }
@@ -132,7 +160,7 @@ class Sizer : Component(
             self.invalidate()
          } else if e === (&lrelease | &rrelease | &mrelease) then {
             self.is_held := &null
-            get_parent_dialog().restore_pointer()
+            pointer_off()
             end_pos := set_curr_pos()
             CopyArea(temp_win, get_parent_win(), 0, 0, temp_w, temp_h, 0, 0)
             WClose(self.temp_win)

@@ -1,5 +1,5 @@
 #
-# $Id: circulate.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: circulate.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -16,15 +16,22 @@ $include "guih.icn"
 #
 class Circulate : Component(selection, selection_list, b, l)
    #
-   # Some methods to set/get the selection data. 
+   # Set the list from which selections are made.
    #
-
+   # @param x the list of selection strings
+   #
    method set_selection_list(x)
       self.selection_list := x
       self.set_selection(1)
       return x
    end
 
+   #
+   # Set the selection to the given index into the selection
+   # list.
+   #
+   # @param x an index into the selection list
+   #
    method set_selection(x)
       self.selection := x
       self.l.set_label(self.selection_list[self.selection])
@@ -32,6 +39,11 @@ class Circulate : Component(selection, selection_list, b, l)
       return x
    end
 
+   #
+   # Return the current selection, as an index in the selection list.
+   #
+   # @return an integer, being the current selection
+   #
    method get_selection()
       return self.selection
    end
@@ -73,6 +85,10 @@ class Circulate : Component(selection, selection_list, b, l)
       self.do_shading(W)
    end
 
+   #
+   # The handler for the button - move the selection forward.
+   #
+   # @p
    method on_button_pressed(ev)
       self.set_selection(1 + self.selection % *self.selection_list)
       create_event_and_fire(SELECTION_CHANGED_EVENT, e)
@@ -89,11 +105,9 @@ class Circulate : Component(selection, selection_list, b, l)
    initially(a[]) 
       self.Component.initially()
       self.l := Label()
-      self.l.set_parent(self)
       self.l.clear_draw_border()
       add(self.l)
       self.b := IconButton()
-      self.b.set_parent(self)
       self.b.connect(self, "on_button_pressed", ACTION_EVENT)
       add(self.b)
       b.set_draw_border()

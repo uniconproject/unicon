@@ -3,7 +3,11 @@ every x do { }
 }
 end
 ::: too many closing curly braces
-
+procedure main()
+  y := X(1)
+  z := "a","b"
+end
+::: semicolon or operator expected
 global::: unexpected end of file
 global x y::: invalid global declaration
 global x, , y::: missing identifier
@@ -153,10 +157,6 @@ procedure main(); {
 end
 ::: missing operator or unbalanced parenthesis/bracket
 procedure p()
-local l := []
-end
-::: illegal assignment in declaration
-procedure p()
 if \a.b | (\a.b & c(e) == "\t" then {
 end
 ::: unclosed parenthesis
@@ -182,7 +182,7 @@ end
 procedure main()
    while x do { x
 end
-::: a while loop is missing } somewhere before "end"
+::: a loop is missing } somewhere before "end"
 procedure p()
 initial {
   if foo then {
@@ -205,3 +205,18 @@ procedure main()
    l. := foo
 end
 ::: field name expected
+procedure p(x:["list"]); end
+::: parameter modifier must be a (atomic) literal or a convertor
+class A()
+method m()
+write()
+local g
+end
+end
+::: expression expected, or need to move declaration to top of procedure or method
+class C x )
+end
+::: left parenthesis expected to start class fieldlist
+class C { x )
+end
+::: fieldlist starts with left *parenthesis*, not curly brace!

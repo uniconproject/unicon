@@ -110,6 +110,15 @@ global bev_table
 record bev_record(shadow, hilite)
 
 
+procedure BevelDispose(win)
+local b
+    if b := \bev_table[win] then {
+	Uncouple(b.hilite)
+	Uncouple(b.shadow)
+	delete(bev_table, win)
+    }
+end
+
 #  BevelReset(win) -- set/reset colors for beveling
 #
 #  Called automatically the first time a beveling procedure is called;
@@ -122,11 +131,7 @@ procedure BevelReset(win)	#: set colors for beveled drawing
    /win := &window
    /bev_table := table()
 
-   if b := \bev_table[win] then {
-      Uncouple(b.hilite)
-      Uncouple(b.shadow)
-      b := &null
-      }
+   BevelDispose(win)
 
    if WAttrib(win, "depth") >= 4 then {
 

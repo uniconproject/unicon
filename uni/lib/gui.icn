@@ -4618,11 +4618,12 @@ class TextList : ScrollArea()
    #
    #  support for simple text printing
    #
-   method print_contents(heading,printfile, mode:"c")
+   method print_contents(heading,printfile, mode:"c", no_open)
    local fd, longstring, format_list
    longstring := ""
    format_list := []
    
+   if /no_open then
    if not (fd := open(printfile, mode)) then
       fail
 
@@ -4632,9 +4633,12 @@ class TextList : ScrollArea()
    line := 1
    nlines :=  *self.contents
 
-   write(fd) 
-   write(fd,heading)
-   write(fd)          
+   if \heading then {
+      write(fd) 
+      write(fd, heading)
+      write(fd)
+      }
+
    #
    # Write the lines
    #
@@ -4644,7 +4648,8 @@ class TextList : ScrollArea()
 
    writes(fd, "\^L") # emit a page break
 
-   close(fd)
+   if /no_open then
+      close(fd)
    return 1
    end
 
@@ -4693,14 +4698,30 @@ class EditableTextList : ScrollArea(
   else {
      self.has_focus := &null
      return [self.cursor_x,self.cursor_y]
-   
-  }
-
-
-  
-  return []
+      }
+   return []
  
   end
+
+   #
+   method display(buffer_flag)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h,-2)
+      self$text_area_to_buffer()
+
+   #   if *wordlist > 0 then
+   #      text_area_to_high()
+
+      (\self.vsb)$display(1)
+      (\self.hsb)$display(1)
+
+      self$do_shading(self.cbwin)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+
+      if *wordlist > 0 then
+         text_area_to_high()
+   end
 
 #________________________________________________________________________
  method text_area_to_high_spell(cx,cy)
@@ -4831,7 +4852,8 @@ class EditableTextList : ScrollArea(
         yp +:= self.line_height
       }
  
-      Clip(self.cwin, self.tx, self.ty, self.tw, self.th)
+#      Clip(self.cwin, self.tx, self.ty, self.tw, self.th)
+       Clip(self.cwin)
      
    return
   
@@ -5018,10 +5040,6 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
          text_area_to_high()
       } else {
         if e === -11 then fail # window closed, nothing to do?
-        if self.noedit = 1 then {
-           changed := moved := has_focus := &null
-         }
-         else {
            old_contents_size := *contents
            old_mw := TextWidth(cwin, contents[long_line])
            changed := moved := &null
@@ -5055,8 +5073,6 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
              }
            }
 
-         }  # noedit = 0  swj
-
          if \moved then {
             #
             # Cursor moved.  Make sure still on screen; update scrollbars,
@@ -5075,7 +5091,7 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
                self$set_internal_fields()
                self$constrain_line()
                self$display()
-               text_area_to_high()
+#               text_area_to_high()
             } else {
                self$constrain_line()
                self$refresh(1)
@@ -5121,6 +5137,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
    end
 
    method handle_start_of_line(e)
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       cursor_x := 1
       moved := 1
@@ -5128,6 +5148,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
 
    method handle_end_of_line(e)
    local s
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       s := actual_line(contents[cursor_y])
       cursor_x := *s + 1
@@ -5226,6 +5250,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
    end
 
    method handle_delete_line(e)
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       if cursor_y < *self.contents then 
          self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
@@ -5245,6 +5273,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
       #
       # Delete backspace delete
       #
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       offset := 0
       posn := 0
@@ -5303,6 +5335,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
       #
       # Delete
       #
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       offset := 0
 
@@ -5329,7 +5365,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
 
    method handle_return(e, undo)
    local offset, s, newcursor_x,j1, undo_info
-    
+     if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
@@ -5362,7 +5401,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
 #
    method handle_tab_text(e, undo)
    local offset, undo_info
-     
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
@@ -5391,7 +5433,10 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
       #
       # Add any printable character at cursor position
       #
-      
+      if self.noedit = 1 then {
+         self.has_focus := &null 
+         return
+         }
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
@@ -5479,7 +5524,7 @@ end
          self$set_internal_fields()
          self$constrain_line()
          self$display()
-         text_area_to_high()
+#         text_area_to_high()
          self.has_focus := &null
          return
          }      
@@ -5634,7 +5679,11 @@ end
 # added to prevent reset of drag positions when ^x,^c,^v 
 #
 method handle_nodefault()
-  return
+   if self.noedit = 1 then {
+      self.has_focus := &null 
+      return
+      }
+   return
 end
 
 #
@@ -5650,13 +5699,6 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
    s := ""
    s3 := ""
 
- 
-
- #  if self.noedit = 1 then {
-    #  self.has_focus := &null 
- #    return
- #   }
- 
    if  /slst  | *slst < 0  then
       return
 
@@ -5692,7 +5734,7 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
        self$set_internal_fields()
        self$constrain_line()
        self$display()
-       text_area_to_high()
+#       text_area_to_high()
        self.has_focus := &null
        return _Event(e, self, 0)
      #  return
@@ -5736,7 +5778,7 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
    self$set_internal_fields()
    self$constrain_line()
    self$display()
-   text_area_to_high()
+#   text_area_to_high()
 
    self.has_focus := &null
    return _Event(e, self, 0)
@@ -5833,6 +5875,10 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
    flag2 := ["n"] # If both the first and last line are A then we insert a cr
    cutlst := []   # If both the first and last line are P then we delete a cr to merge
    offset := 0
+   if self.noedit = 1 then {
+      self.has_focus := &null
+      return
+      }
   
    #
    #  keep starting and ending drag positions because they will be reset
@@ -5857,7 +5903,7 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
       self.max_width := get_max_width()
       self$set_internal_fields()
       self$display()
-      text_area_to_high()
+#      text_area_to_high()
       if /ev then 
         self.has_focus := &null
       return 
@@ -5958,7 +6004,7 @@ local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x
    self$set_internal_fields()
    self$constrain_line()
    self$display()
-   text_area_to_high()
+#   text_area_to_high()
    if /ev then 
      self.has_focus := &null
 

@@ -1,0 +1,1 @@
+#define NTConsole 1

@@ -1197,7 +1197,7 @@ int rchar(int with_echo)
    tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
 
    if (n == 1)				/* if read succeeded */
-      return c;
+      return c & 0xFF;
    else
       return -1;
 }

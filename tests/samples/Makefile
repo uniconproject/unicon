@@ -11,7 +11,8 @@ Samples-icont:
 		sh Test-icont
 
 Clean:
-		rm -f local/*
+		rm -rf local/*
+		mkdir local
 		touch local/.placeholder
 
 # Entries beyond this point are for use at Arizona only.

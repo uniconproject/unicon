@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.15 2005-01-13 20:57:40 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.16 2005-03-15 18:46:09 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -31,11 +31,15 @@ class EditableTextList : LineBasedScrollArea(
    is_held,
    long_line,               #
    undo_manager,
-   old_contents_size,
+   old_view_list_size,
    old_mw,
    old_cursor_x,
    old_cursor_y,
    old_has_region,
+   view_list,
+   tab_width,
+   wrap_mode,
+   line_splitter,
    changed
    )
 
@@ -48,7 +52,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method get_line_count()
-      return *self.contents
+      return *self.view_list
    end
 
    method get_contents()
@@ -76,11 +80,13 @@ class EditableTextList : LineBasedScrollArea(
          #
          self.contents := [""]
 
+      clear_view_list()
       clear_mark()
       if \ (\self.parent_dialog).is_open then {
-         long_line := &null
-         self.cursor_x := self.cursor_y := 1
+         self.cursor_y >:= *self.contents
+         self.cursor_x >:= *self.contents[self.cursor_y] + 1
          compute_and_invalidate()
+         constrain_line()
       }
       undo_manager.clear()
    end
@@ -94,10 +100,10 @@ class EditableTextList : LineBasedScrollArea(
 
       # Search for the nearest x position on the new line corresponding to
       # the current x position.
-      d := TextWidthEx(self.cwin, self.contents[cursor_y], 1, self.cursor_x)
+      d := TextWidthEx(self.cwin, self.contents[cursor_y], 1, self.cursor_x, self.tab_width)
       dest := self.contents[n]
       i := 1
-      while (i <= *dest) & (TextWidthEx(self.cwin, dest, 1, i) < d) do
+      while (i <= *dest) & (TextWidthEx(self.cwin, dest, 1, i, self.tab_width) < d) do
          i +:= 1
 
       self.cursor_x := i
@@ -112,20 +118,35 @@ class EditableTextList : LineBasedScrollArea(
    #     
    # @p
    method constrain_cursor()
-      if self.cursor_y < self.get_first_line() then
-         self.set_cursor_y(self.get_first_line())
-      else if self.cursor_y >= self.get_first_line() + self.get_max_lines() then
-         self.set_cursor_y(self.get_first_line() + self.get_max_lines() - 1)
+      local vi, v
 
-      s := self.contents[self.cursor_y] || " "
-      i := TextWidthEx(self.cwin, s, 1, self.cursor_x)
-      j := i + TextWidthEx(self.cwin, s, self.cursor_x)
+      vi := get_view_list_index()
+
+      if vi < self.get_first_line() then {
+         v := view_list[self.get_first_line()]
+         self.cursor_y := v.index
+         self.cursor_x := v.first
+      }
+      else if vi >= self.get_first_line() + self.get_max_lines() then {
+         v := view_list[self.get_first_line() + self.get_max_lines() - 1]
+         self.cursor_y := v.index
+         self.cursor_x := v.first
+      }
+      else {
+         v := view_list[vi]
+      }
+
+      s := v.str
+      i := TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, self.tab_width)
+      j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
       l := self.get_left_pos()
       if self.view.x - l > i then {
-         while (self.cursor_x < *s) & (TextWidthEx(self.cwin, s, 1, self.cursor_x) < self.view.x - l) do
+         while (self.cursor_x - v.first + 1 < *s) & 
+            (TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, self.tab_width) < self.view.x - l) do
             self.cursor_x +:= 1
       } else if self.view.x - l + self.view.w < j then {
-         while (self.cursor_x > 1) & TextWidthEx(self.cwin, s, 1, self.cursor_x + 1) > self.view.x - l + self.view.w do
+         while (self.cursor_x - v.first + 1 > 1) & 
+            TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 2, self.tab_width) > self.view.x - l + self.view.w do
             self.cursor_x -:= 1
       }
    end
@@ -135,14 +156,19 @@ class EditableTextList : LineBasedScrollArea(
    #
    # @p
    method constrain_line()
-      if self.cursor_y < self.get_first_line() then
-         self.vsb.set_value(self.line_height * (self.cursor_y - 1))
-      else if self.cursor_y > self.get_last_line() then
-         self.vsb.set_value(self.line_height * (self.cursor_y - self.get_max_lines()))
+      local vi, v, s, i, j, l
 
-      s := self.contents[self.cursor_y] || " "
-      i := TextWidthEx(self.cwin, s, 1, self.cursor_x)
-      j := i + TextWidthEx(self.cwin, s, self.cursor_x)
+      vi := get_view_list_index()
+
+      if vi < self.get_first_line() then
+         self.vsb.set_value(self.line_height * (vi - 1))
+      else if vi > self.get_last_line() then
+         self.vsb.set_value(self.line_height * (vi - self.get_max_lines()))
+
+      v := self.view_list[vi]
+      s := v.str
+      i := TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, self.tab_width)
+      j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
       l := self.get_left_pos()
       if self.view.x - l > i then
          self.hsb.set_value(i)
@@ -227,8 +253,8 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method start_handle()
-      old_contents_size := *contents
-      old_mw := TextWidthEx(cwin, contents[long_line])
+      old_view_list_size := *view_list
+      old_mw := long_line.tw
       old_cursor_x := cursor_x
       old_cursor_y := cursor_y
       old_has_region := has_region() | &null
@@ -238,7 +264,8 @@ class EditableTextList : LineBasedScrollArea(
    method end_handle(e)
       local hr, moved
       if \changed then {
-         if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidthEx(cwin, contents[long_line])) then {
+         if (*view_list ~= old_view_list_size) | 
+            (old_mw ~= long_line.tw) then {
             #
             # Contents changed.  Re-compute all internal fields, ensure on
             # screen and re-display whole object.
@@ -317,20 +344,22 @@ class EditableTextList : LineBasedScrollArea(
    #
    # @p
    method set_cursor_from_pos()
-      local l, nlines, s, i
+      local l, nlines, s, i, v
       l := (&y - self.view.y) / self.line_height
       nlines := self.get_curr_lines()
       l <:= 0
       l >:= nlines - 1
-      self.cursor_y := l + self.get_first_line()
 
-      s := self.contents[self.cursor_y] || " "
+      v := self.view_list[l + self.get_first_line()]
+      self.cursor_y := v.index
+
+      s := v.str
       i := 1
       l := self.get_left_pos()
-      while (i < *s) & (TextWidthEx(self.cwin, s, 1, i + 1) < &x - l) do
+      while (i < *s) & (TextWidthEx(self.cwin, s, 1, i + 1, self.tab_width) < &x - l) do
          i+:= 1
 
-      self.cursor_x := i
+      self.cursor_x := v.first + i - 1
    end
 
    method clear_mark()
@@ -399,34 +428,42 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method tick()
-      local l, s
+      local l, s, v, vi
 
       start_handle(e)
 
+      vi := get_view_list_index()
+
       case self.direction of {
          "up" : {
-            l := self.get_first_line() - 1
-            if l > 0 then {
-               self.set_cursor_y(l) 
+            if vi > 1 then {
+               v := view_list[vi - 1]
+               self.cursor_y := v.index
+               self.cursor_x := v.first
             }
          }
          "down" : {
-            l := self.get_last_line() + 1
-            if l <= *self.contents then {
-               self.set_cursor_y(l) 
+            if vi < *view_list then {
+               v := view_list[vi + 1]
+               self.cursor_y := v.index
+               self.cursor_x := v.first
             }
          }
          "left" : {
+            v := view_list[vi]
             l := self.get_left_pos()
-            s := self.contents[self.cursor_y] || " "
-            while (self.cursor_x > 1) & TextWidthEx(self.cwin, s, 1, self.cursor_x) >= self.view.x - l do {
+            s := v.str
+            while (self.cursor_x - v.first + 1 > 1) & 
+               TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, self.tab_width) >= self.view.x - l do {
                self.cursor_x -:= 1
             }
          }
          "right" : {
+            v := view_list[vi]
             l := self.get_left_pos()
-            s := self.contents[self.cursor_y] || " "
-            while (self.cursor_x < *s) & TextWidthEx(self.cwin, s, 1, self.cursor_x) < self.view.x - l + self.view.w do {
+            s := v.str
+            while (self.cursor_x - v.first + 1 < *s) & 
+               TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, self.tab_width) < self.view.x - l + self.view.w do {
                self.cursor_x +:= 1
             }
          }
@@ -672,8 +709,23 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method resize()
+      if wrap_mode == "width" then
+         clear_view_list()
+
       self.ScrollArea.resize()
       self.constrain_line()
+   end
+
+   method set_internal_fields()
+      local had_vsb
+      
+      had_vsb := self.vsb
+      self.ScrollArea.set_internal_fields()
+
+      if wrap_mode == "width" & had_vsb ~=== self.vsb then {
+         create_view_list()
+         set_internal_fields()
+      }
    end
 
    method draw(subject_x, subject_y, vx, vy, vw, vh)
@@ -712,61 +764,90 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method draw_line(xp, yp, i, rev)
-      local s, off1, off2
+      local si, s, off, off1, off2, v, r
 
-      s := self.contents[i]
+      v := self.view_list[i]
+      s := v.str
+      si := self.cursor_x - v.first + 1
 
-      left_string(self.cbwin, xp, yp, detab(s))
-
-      if i = \self.cursor_y then {
-         s ||:= " "
+      left_string(self.cbwin, xp, yp, detab(s, self.tab_width + 1))
+      if (v.index = \self.cursor_y) & (v.first <= \self.cursor_x <= v.last) then {
          if \self.has_focus then {
             cw := Clone(self.cbwin, "bg=red", "fg=white")
-            off := TextWidthEx(self.cbwin, s, 1, self.cursor_x)
-            EraseRectangle(cw, xp + off, 1 + yp - self.line_height / 2, CharWidth(self.cbwin, s[self.cursor_x]), self.line_height)
-            if s[self.cursor_x] ~== "\t" then
-               left_string(cw, xp + off, yp, s[self.cursor_x])
+            off := TextWidthEx(self.cbwin, s, 1, si, self.tab_width)
+            EraseRectangle(cw, xp + off, 1 + yp - self.line_height / 2, 
+                           CharWidth(self.cbwin, s[si]), self.line_height)
+            if s[si] ~== "\t" then
+               left_string(cw, xp + off, yp, s[si])
             Uncouple(cw)
          } else {
             cw := Clone(self.cbwin, "fg=red")
-            Rectangle(cw, xp + TextWidthEx(self.cbwin, s, 1, self.cursor_x), 1 + yp - self.line_height / 2, CharWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+            Rectangle(cw, 
+                      xp + TextWidthEx(self.cbwin, s, 1, si, self.tab_width), 
+                      1 + yp - self.line_height / 2, 
+                      CharWidth(self.cbwin, s[si]), 
+                      self.line_height)
             Uncouple(cw)
          }
       }
 
       if \self.mark_y then {
-         if (self.mark_y < i < self.cursor_y) | (self.mark_y > i > self.cursor_y) then {
+         if (self.mark_y < v.index < self.cursor_y) | (self.mark_y > v.index > self.cursor_y) then {
             # Whole line selected
-            off1 := 0
-            off2 := TextWidthEx(self.cbwin, s)
-         } else if i = self.mark_y = self.cursor_y then {
-            # Part of line 
+            r := [v.first, v.last]
+         } else if v.index = self.mark_y = self.cursor_y then {
+            # Part of line
             if self.mark_x < self.cursor_x then {
-               off1 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
-               off2 := TextWidthEx(self.cbwin, s, 1, self.cursor_x)
-            } else if self.mark_x > self.cursor_x then {
-               off1 := TextWidthEx(self.cbwin, s, 1, self.cursor_x + 1)
-               off2 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
+               r := range(v.first, v.last, self.mark_x, self.cursor_x)
             }
-         } else if i = self.mark_y then {
+            else if self.mark_x > self.cursor_x then {
+               r := range(v.first, v.last, self.cursor_x + 1 , self.mark_x)
+            }
+         } else if v.index = self.mark_y then {
             if self.mark_y < self.cursor_y then {
-               off1 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
-               off2 := TextWidthEx(self.cbwin, s)
+               r := range(v.first, v.last, self.mark_x, *self.contents[v.index] + 1)
             } else {
-               off1 := 0
-               off2 := TextWidthEx(self.cbwin, s, 1, self.mark_x)
+               r := range(v.first, v.last, 1, self.mark_x)
             }
-         } else if i = self.cursor_y then {
+         } else if v.index = self.cursor_y then {
             if self.mark_y > self.cursor_y then {
-               off1 := TextWidthEx(self.cbwin, s, 1, self.cursor_x + 1)
-               off2 := TextWidthEx(self.cbwin, s)
+               r := range(v.first, v.last, self.cursor_x + 1, *self.contents[v.index] + 1)
             } else {
-               off1 := 0
-               off2 := TextWidthEx(self.cbwin, s, 1, self.cursor_x)
+               r := range(v.first, v.last, 1, self.cursor_x)
             }
          }
-         if \off1 then
+         if \r then {
+            off1 := TextWidthEx(self.cbwin, s, 1, r[1] - v.first + 1, self.tab_width)
+            off2 := TextWidthEx(self.cbwin, s, 1, r[2] - v.first + 1, self.tab_width)
             FillRectangle(rev, xp + off1, 1 + yp - self.line_height / 2,  off2 - off1, self.line_height)
+         }
+      }
+   end
+   
+   #
+   # Return the intersection of the range f1-t1 and f2-t2, or
+   # fail if the ranges don't intersect.  Example:
+   # range(2,20,10,30) = [10,20]
+   # @p
+   method range(f1, t1, f2, t2)
+      if f1 < f2 then {
+         if t1 >= f2 then {
+            if t1 >= t2 then {
+               return [f2, t2]
+            }
+            else {
+               return [f2, t1]
+            }
+         }
+      } else {
+         if f1 <= t2 then {
+            if t1 >= t2 then {
+               return [f1, t2]
+            }
+            else {
+               return [f1, t1]
+            }
+         }
       }
    end
 
@@ -785,19 +866,166 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method get_subject_width()
-      if /long_line then {
-         mw := TextWidthEx(cwin, contents[1])
-         long_line := 1
-         every i := 2 to *self.contents do
-            if mw <:= TextWidthEx(cwin, contents[i]) then
-               long_line := i
-      } else
-         mw := TextWidthEx(self.cwin, contents[long_line])
-      return mw + TextWidthEx(self.cwin, " ")
+      if /view_list then
+         create_view_list()
+      return self.long_line.tw
+   end
+
+   #
+   # Return the index into view_list containing the
+   # content position x, y.  Binary search is used.
+   # @p
+   method get_view_list_index(x, y)
+      local i, j
+
+      /x := self.cursor_x
+      /y := self.cursor_y
+      i := 1
+      j := *view_list
+
+      while i <= j do {
+         mid := (i+j) / 2
+         v := view_list[mid]
+         if (v.index = y) & (v.first <= x <= v.last) then
+            return mid
+         if (v.index < y) | (v.index = y & v.last < x) then
+            i := mid + 1
+         else
+            j := mid - 1
+      }
+   end
+
+   #
+   # Create the view_list from the contents.
+   # @p
+   method create_view_list()
+      local s, i, pos, j, p
+
+      view_list := []
+      every i := 1 to *self.contents do {
+         pos := 1
+         s := self.contents[i] || " "
+         every j := line_splitter.split(s) do {
+            p := s[pos:j]
+            put(view_list, ViewLine(i, p, pos, j - 1, 
+                                    TextWidthEx(self.cwin, p,,, self.tab_width)))
+            pos := j
+         }
+      }
+
+      find_long_line()
+   end
+
+   #
+   # Clear the view list, forcing it to be re-created next
+   # time it's needed.
+   # @p
+   method clear_view_list()
+      view_list := long_line := &null
+   end
+
+   #
+   # Run through the view list looking for the longest line.
+   # @p
+   method find_long_line()
+      local v
+      long_line := view_list[1]
+      every v := !view_list do {
+         if v.tw > long_line.tw then
+            long_line := v
+      }
+   end
+
+   #
+   # Update the view list, given that the contents have changed.
+   # This takes care to minimize the work that has to be done.  The
+   # first param is an index into the contents list.  The second param
+   # indicates some view_list lines corresponding to those beginning
+   # with index should be removed; the third param says that some should
+   # be added.
+   #
+   method update_view_list(index, del, add)
+      local vi, i, pos, j, v, p
+
+      vi := get_view_list_index(1, index)
+
+      while view_list[vi].index <= index + del - 1 do {
+         if view_list[vi] === long_line then
+            long_line := &null
+         delete(view_list, vi)
+      }
+
+      if /long_line then
+         find_long_line()
+
+      every i := index to index + add - 1 do {
+         pos := 1
+         s := self.contents[i] || " "
+         every j := line_splitter.split(s) do {
+            p := s[pos:j]
+            v := ViewLine(i, p, pos, j - 1, TextWidthEx(self.cwin, p,,, self.tab_width))
+
+            if vi > *view_list then
+               put(view_list, v)
+            else
+               insert(view_list, vi, v)
+
+            if /long_line | (v.tw > long_line.tw) then
+               long_line := v
+            pos := j
+            vi +:= 1
+         }
+      }
+
+      #
+      # Adjust index values
+      #
+      if del ~= add then
+         every view_list[vi to *view_list].index +:= (add - del)
+   end
+
+   #
+   # Set the word-wrap mode, which should be one of the following
+   # values :-
+   #
+   # &null, "false", "off", "no", meaning don't do word-wrap (the default).
+   #
+   # an integer (eg 20), meaning wrap at that line length.
+   #
+   # "width", meaning wrap at the width of the component.
+   #
+   method set_wrap_mode(s)
+      local wc
+      self.wrap_mode := s
+      if /s | s == ("" | "false" | "off" | "no") then
+         line_splitter := DefaultLineSplitter(self)
+      else if wc := integer(s) then
+         line_splitter := ColumnLineSplitter(self, wc)
+      else if s == "width" then
+         line_splitter := WidthLineSplitter(self)
+      else
+         field_error("Bad wrap mode:" || s)
+
+      clear_view_list()
+      if \ (\self.parent_dialog).is_open then {
+         compute_and_invalidate()
+         constrain_line()
+      }
+   end
+
+   #
+   # Set the tab width to use.  Default is eight chars.
+   #
+   method set_tab_width(n)
+      self.tab_width := n
+      clear_view_list()
+      compute_and_invalidate()
    end
 
    method set_one(attr, val)
       case attr of {
+         "wrap_mode": set_wrap_mode(string_val(attr, val))
+         "tab_width": set_tab_width(int_val(attr, val))
          "contents" : set_contents(val)
          default: self.LineBasedScrollArea.set_one(attr, val)
       }
@@ -808,16 +1036,27 @@ class EditableTextList : LineBasedScrollArea(
       self.set_accepts_focus()
       undo_manager := UndoManager()
       printable := cset(&cset[33:0]) ++ '\t\n'
+      tab_width := 8
+      set_wrap_mode("off")
       self.cursor_x := self.cursor_y := 1
       set_fields(a)
+end
+
+class ViewLine:Object(index, 
+                      str,
+                      first, 
+                      last,
+                      tw)
+   method to_string()
+      return "ViewLine(" || index || "," || str || "," || first || "," || last || ")"
+   end
 end
 
 class EditableTextListEdit:UndoableEdit(parent,
                                         cursor_x, 
                                         cursor_y,
                                         mark_x,
-                                        mark_y,
-                                        long_line
+                                        mark_y
                                         )
    method redo()
       restore()
@@ -837,7 +1076,6 @@ class EditableTextListEdit:UndoableEdit(parent,
       self.cursor_y := parent.cursor_y
       self.mark_x := parent.mark_x
       self.mark_y := parent.mark_y
-      self.long_line := parent.long_line
    end
 
    method restore()
@@ -845,7 +1083,6 @@ class EditableTextListEdit:UndoableEdit(parent,
       parent.cursor_y := self.cursor_y
       parent.mark_x := self.mark_x
       parent.mark_y := self.mark_y
-      parent.long_line := self.long_line
    end
 
    initially(parent)
@@ -869,14 +1106,13 @@ class EditableTextListDefaultEdit:EditableTextListEdit(s)
       else
          parent.contents[parent.cursor_y][parent.cursor_x - 1] ||:= s
       parent.cursor_x +:= *s
-      if TextWidthEx(parent.cwin, parent.contents[parent.cursor_y]) > 
-         TextWidthEx(parent.cwin, parent.contents[\parent.long_line]) then
-         parent.long_line := parent.cursor_y
       parent.clear_mark()
+      parent.update_view_list(parent.cursor_y, 1, 1)
    end
 
    method undo_impl()
       parent.contents[self.cursor_y][self.cursor_x +: *s] := ""
+      parent.update_view_list(parent.cursor_y, 1, 1)
    end
 
    initially(parent, e)
@@ -890,10 +1126,7 @@ class EditableTextListReturnEdit:EditableTextListEdit()
       s := parent.contents[parent.cursor_y]
       parent.contents[parent.cursor_y] := s[1:parent.cursor_x]
       parent.contents := parent.contents[1:parent.cursor_y + 1] ||| [s[parent.cursor_x:0]] ||| parent.contents[parent.cursor_y + 1:0]
-      if parent.long_line = parent.cursor_y then
-         parent.long_line := &null
-      else if parent.long_line > parent.cursor_y then
-         parent.long_line +:= 1
+      parent.update_view_list(parent.cursor_y, 1, 2)
          
       parent.cursor_y +:= 1
       parent.cursor_x := 1
@@ -902,6 +1135,7 @@ class EditableTextListReturnEdit:EditableTextListEdit()
    method undo_impl()
       parent.contents[self.cursor_y] ||:= parent.contents[self.cursor_y + 1]
       delete(parent.contents, self.cursor_y + 1)
+      parent.update_view_list(self.cursor_y, 2, 1)
    end
 
    initially(parent)
@@ -914,11 +1148,12 @@ class EditableTextListDeleteRightEdit:EditableTextListEdit(ch)
          # We know cursor_y < *contents from the handle method above.
          parent.contents[parent.cursor_y] ||:= parent.contents[parent.cursor_y + 1]
          parent.contents := parent.contents[1:parent.cursor_y + 1] ||| parent.contents[parent.cursor_y + 2 : 0]
-         parent.long_line := &null
+         parent.update_view_list(parent.cursor_y, 2, 1)
       } else {
          # Cursor not at end of line
          ch := parent.contents[parent.cursor_y][parent.cursor_x]
          parent.contents[parent.cursor_y][parent.cursor_x] := ""
+         parent.update_view_list(parent.cursor_y, 1, 1)
       }
       parent.clear_mark()
    end
@@ -929,11 +1164,13 @@ class EditableTextListDeleteRightEdit:EditableTextListEdit(ch)
          t := parent.contents[self.cursor_y][self.cursor_x:0]
          parent.contents[self.cursor_y][self.cursor_x:0] := ""
          insert(parent.contents, self.cursor_y + 1, t)
+         parent.update_view_list(self.cursor_y, 1, 2)
       } else {
          if self.cursor_x >  *parent.contents[self.cursor_y] then
             parent.contents[self.cursor_y] ||:= ch
          else
             parent.contents[self.cursor_y][self.cursor_x] := ch || parent.contents[self.cursor_y][self.cursor_x]
+         parent.update_view_list(self.cursor_y, 1, 1)
       }
    end
 
@@ -948,13 +1185,14 @@ class EditableTextListDeleteLeftEdit:EditableTextListEdit(ch, cut)
          cut := parent.cursor_x := *parent.contents[parent.cursor_y - 1] + 1
          parent.contents[parent.cursor_y - 1] ||:= parent.contents[parent.cursor_y]
          parent.contents := parent.contents[1:parent.cursor_y] ||| parent.contents[parent.cursor_y + 1 : 0]
+         parent.update_view_list(parent.cursor_y - 1, 2, 1)
          parent.cursor_y -:= 1
-         parent.long_line := &null
       } else {
          # parent.cursor_x > 1
          ch := parent.contents[parent.cursor_y][parent.cursor_x - 1]
          parent.contents[parent.cursor_y][parent.cursor_x - 1] := ""
          parent.cursor_x -:= 1
+         parent.update_view_list(parent.cursor_y, 1, 1)
       }
       parent.clear_mark()
    end
@@ -965,11 +1203,13 @@ class EditableTextListDeleteLeftEdit:EditableTextListEdit(ch, cut)
          t :=  parent.contents[self.cursor_y - 1][cut:0]
          parent.contents[self.cursor_y - 1][cut:0] := ""
          insert(parent.contents, self.cursor_y, t)
+         parent.update_view_list(self.cursor_y - 1, 1, 2)
       } else {
          if self.cursor_x - 1 > *parent.contents[self.cursor_y] then
             parent.contents[self.cursor_y] ||:= ch
          else 
             parent.contents[self.cursor_y][self.cursor_x - 1] := ch || parent.contents[self.cursor_y][self.cursor_x - 1]
+         parent.update_view_list(self.cursor_y, 1, 1)
       }
    end
 
@@ -980,23 +1220,25 @@ end
 class EditableTextListDeleteLineEdit:EditableTextListEdit(s)
    method redo_impl()
       s := parent.contents[parent.cursor_y]
-      if parent.cursor_y = *parent.contents then
+      if parent.cursor_y = *parent.contents then {
          parent.contents[parent.cursor_y] := ""
-      else
+         parent.update_view_list(parent.cursor_y, 1, 1)
+      } else {
          delete(parent.contents, parent.cursor_y)
-      if parent.long_line = parent.cursor_y then
-         parent.long_line := &null
-      else if parent.long_line > parent.cursor_y then
-         parent.long_line -:= 1
+         parent.update_view_list(parent.cursor_y, 1, 0)
+      }
       parent.cursor_x := 1
       parent.clear_mark()
    end
 
    method undo_impl()
-      if self.cursor_y = *parent.contents then
+      if self.cursor_y = *parent.contents then {
          parent.contents[self.cursor_y] := s
-      else
+         parent.update_view_list(self.cursor_y, 1, 1)
+      } else {
          insert(parent.contents, self.cursor_y, s)
+         parent.update_view_list(self.cursor_y, 0, 1)
+      }
    end
 
    initially(parent)
@@ -1016,7 +1258,6 @@ class EditableTextListDeleteRegionEdit:EditableTextListEdit(l, pos)
          }
          parent.cursor_x := parent.mark_x
          parent.cursor_y := parent.mark_y
-         parent.long_line := &null
       } else if parent.mark_y > parent.cursor_y then {
          pos := parent.cursor_y
          put(l,  parent.contents[parent.cursor_y])
@@ -1025,7 +1266,6 @@ class EditableTextListDeleteRegionEdit:EditableTextListEdit(l, pos)
             put(l, parent.contents[parent.cursor_y + 1])
             delete(parent.contents, parent.cursor_y + 1)
          }
-         parent.long_line := &null
       } else {
          # parent.mark_y = cursor_y
          pos := parent.cursor_y
@@ -1037,15 +1277,19 @@ class EditableTextListDeleteRegionEdit:EditableTextListEdit(l, pos)
             parent.contents[parent.cursor_y][parent.cursor_x:parent.mark_x] := ""
          }
       }
+      parent.update_view_list(pos, *l, 1)
       parent.clear_mark()
    end
 
    method undo_impl()
+      local n
+      n := *l
       delete(parent.contents, pos)
       if pos > *parent.contents then
          while put(parent.contents, pop(l))
       else
          while insert(parent.contents, pos, pull(l))
+      parent.update_view_list(pos, 1, n)
    end
 
    initially(parent)
@@ -1078,16 +1322,103 @@ class EditableTextListPasteEdit:EditableTextListEdit(s, pre, n)
             break
          }
       }
-      parent.long_line := &null
+      parent.update_view_list(self.cursor_y, 1, n + 1)
    end
 
    method undo_impl()
       parent.contents[self.cursor_y] := pre
       every 1 to n do
          delete(parent.contents, self.cursor_y + 1)
+      parent.update_view_list(self.cursor_y, n + 1, 1)
    end
 
    initially(parent, s)
       self.EditableTextListEdit.initially(parent)
       self.s := s
+end
+
+class LineSplitter(parent)
+   abstract method split(s)
+
+   initially(parent)
+      self.parent := parent
+end
+
+class ColumnLineSplitter:LineSplitter(wrap_col)
+   method split(s)
+      local ch, ds, p
+
+      ds := ""
+      s ? {
+         while ch := move(1) do {
+            ds ||:= ch
+            if *detab(ds, parent.tab_width + 1) > wrap_col then {
+               ds[-1] := ""
+               move(-1)
+               if upto('\t ', ds) then {
+                  while any(~'\t ', ds[-1]) do {
+                     ds[-1] := ""
+                     move(-1)
+                  }
+               }
+               p := &pos
+               suspend p
+               ds := ""
+            }
+
+         }
+         if p ~=== &pos then
+            suspend .&pos
+      }
+   end
+
+   initially(parent, wrap_col)
+      self.LineSplitter.initially(parent)
+      self.wrap_col := wrap_col
+end
+
+class DefaultLineSplitter()
+   method split(s)
+      return *s + 1
+   end
+end
+
+class WidthLineSplitter:LineSplitter()
+   method split(s)
+      local ch, ds, p, width
+
+      if \parent.draw_border_flag then {
+         width := parent.w - 2 * parent.get_view_x_padding()
+      } else {
+         width := parent.w
+      }         
+      if \parent.vsb then
+         width -:= SB_SIZE
+
+      ds := ""
+      s ? {
+         while ch := move(1) do {
+            ds ||:= ch
+            if TextWidthEx(parent.cwin, ds,,, parent.tab_width) > width then {
+               ds[-1] := ""
+               move(-1)
+               if upto(' ', ds) then {
+                  while any(~' ', ds[-1]) do {
+                     ds[-1] := ""
+                     move(-1)
+                  }
+               }
+               p := &pos
+               suspend p
+               ds := ""
+            }
+
+         }
+         if p ~=== &pos then
+            suspend .&pos
+      }
+   end
+
+   initially(parent)
+      self.LineSplitter.initially(parent)
 end

@@ -1,5 +1,5 @@
 #
-# $Id: editor.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+# $Id: editor.icn,v 1.2 2005-03-15 18:46:27 rparlett Exp $
 #
 
 import gui
@@ -38,6 +38,22 @@ class Editor : Dialog(curr_file_name, text, text_menu_item_1, text_menu_item_2, 
       fd.show_modal()
       if s := fd.get_result() then
          load(s)
+   end
+
+   method handle_ww_off(ev)
+      text.set_wrap_mode("off")
+   end
+
+   method handle_ww_width(ev)
+      text.set_wrap_mode("width")
+   end
+
+   method handle_ww_40(ev)
+      text.set_wrap_mode(40)
+   end
+
+   method handle_ww_80(ev)
+      text.set_wrap_mode(80)
    end
 
    method init_dialog(ev)
@@ -103,6 +119,28 @@ class Editor : Dialog(curr_file_name, text, text_menu_item_1, text_menu_item_2, 
       redo_item.connect(text, "handle_redo", ACTION_EVENT)
       menu_2.add(redo_item)
       menu_bar_1.add(menu_2)
+
+      cbg := CheckBoxGroup()
+      menu_3 := Menu("label=Wrap", "accel=w")
+      ww_off_item := CheckBoxMenuItem("label=Off")
+      ww_off_item.connect(self, "handle_ww_off", ACTION_EVENT)
+      cbg.add(ww_off_item)
+      menu_3.add(ww_off_item)
+      ww_width_item := CheckBoxMenuItem("label=Width")
+      ww_width_item.connect(self, "handle_ww_width", ACTION_EVENT)
+      cbg.add(ww_width_item)
+      menu_3.add(ww_width_item)
+      ww_40_item := CheckBoxMenuItem("label=40 chars")
+      ww_40_item.connect(self, "handle_ww_40", ACTION_EVENT)
+      cbg.add(ww_40_item)
+      menu_3.add(ww_40_item)
+      ww_80_item := CheckBoxMenuItem("label=80 chars")
+      ww_80_item.connect(self, "handle_ww_80", ACTION_EVENT)
+      cbg.add(ww_80_item)
+      menu_3.add(ww_80_item)
+      cbg.set_which_one(ww_off_item)
+
+      menu_bar_1.add(menu_3)
 
       self.add(menu_bar_1)
 

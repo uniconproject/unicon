@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.16 2005-03-15 18:46:09 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.17 2005-03-16 00:53:33 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -876,7 +876,7 @@ class EditableTextList : LineBasedScrollArea(
    # content position x, y.  Binary search is used.
    # @p
    method get_view_list_index(x, y)
-      local i, j
+      local i, j, mid, v
 
       /x := self.cursor_x
       /y := self.cursor_y
@@ -1402,8 +1402,8 @@ class WidthLineSplitter:LineSplitter()
             if TextWidthEx(parent.cwin, ds,,, parent.tab_width) > width then {
                ds[-1] := ""
                move(-1)
-               if upto(' ', ds) then {
-                  while any(~' ', ds[-1]) do {
+               if upto('\t ', ds) then {
+                  while any(~'\t ', ds[-1]) do {
                      ds[-1] := ""
                      move(-1)
                   }

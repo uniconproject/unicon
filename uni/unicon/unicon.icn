@@ -296,13 +296,7 @@ procedure writelink(dir, s)
    write(yyout,"link \"",canonize(dir),map(s,"\\","/"),"\"")
 end
 procedure trans(argstr, prefix)
-static cmd
-initial {
-   cmd := "icont"
-   if &features == "Win32" & &features=="console window" then cmd := "wicont"
-   cmd := mygetenv("ICONT")
-   }
-   if find("iconc", cmd) then return       # iconc --> don't translate
+   if find("iconc", mygetenv("ICONT")) then return # iconc --> don't translate
    return icont(" -c "||argstr, prefix)
 end
 procedure icont(argstr,prefix)
@@ -345,11 +339,13 @@ end
 procedure selecticont()
 local cmd
    if cmd := mygetenv("ICONT") then { }
-   else if cmd := (&features ? (="Binaries at " & tab(0))) then cmd ||:= "icont"
-   else if &features=="Win32" & &features=="console window" then
-       cmd := "wicont -s"
-   else
-       cmd := if &features=="MS Windows NT" then "nticont" else "icont"
+   else {
+      cmd := (&features ? (="Binaries at " & tab(0))) | ""
+      if &features=="Win32" & &features=="console window" then
+         cmd ||:= "wicont -s"
+      else
+         cmd ||:= "icont"
+      }
    return cmd
 end
 

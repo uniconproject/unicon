@@ -175,14 +175,14 @@ int first;
 	 break;
       case A_Coact:
          EVValX(ncp,E_Coact);
-	 if (!is:null(curpstate->eventmask)) {
+	 if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
 	 break;
       case A_Coret:
          EVValX(ncp,E_Coret);
-	 if (!is:null(curpstate->eventmask)) {
+	 if (!is:null(curpstate->eventmask) && ncp->program == curpstate) {
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }

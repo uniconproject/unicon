@@ -750,6 +750,10 @@ Deliberate Syntax Error
 #define Graphics3D 1
 #endif					/* HAVE_LIBGL */
 
+#ifndef Graphics
+#undef Graphics3D
+#endif					/* Graphics */
+
 #if HAVE_LIBIODBC
 #define ISQL 1
 #endif					/* HAVE_LIBIODBC */

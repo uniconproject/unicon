@@ -1,13 +1,5 @@
 BASE=../..
-UNI=..
-BIN=$(BASE)/bin
-RM=rm -f
-CP=cp
-UNICON=$(UNI)/unicon/unicon
-UNIDEP=$(UNI)/unidep/unidep
-ICON_IPL=$(BASE)/ipl
-export IPATH:=$(UNI)/lib $(UNI)/xml $(UNI)/parser $(ICON_IPL)/lib
-export LPATH:=$(ICON_IPL)/incl
+include ../makedefs
 
 all:	ivibmigrate
 

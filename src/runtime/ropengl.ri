@@ -68,6 +68,8 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
    glGenTextures(16, w->context->texName);
    glEnable(GL_DEPTH_TEST);
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glEnable(GL_TEXTURE_GEN_S);
    glEnable(GL_TEXTURE_GEN_T);
    glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
@@ -901,8 +903,8 @@ free_v_and_fail:
 /* traverse the given list and set material properties */
 int determinematerial(struct b_list *list)
 {
-   struct descrip mat, var1, var2, var3;
-   C_integer r, g, b;
+   struct descrip mat, var1, var2, var3, var4;
+   C_integer r, g, b, a;
    tended char *temp;
    GLfloat color[4];
 
@@ -924,13 +926,18 @@ int determinematerial(struct b_list *list)
    c_traverse( list, &var3, 4);
    if (!cnv:C_integer(var3, b))
 	 return Failed;
+   c_traverse( list, &var4, 5);
+   if (!cnv:C_integer(var4, a))
+	 return Failed;
 
-   /* must convert from an integer between 0 and 65535
-      to a float between 0.0 and 0.0 */
+   /*
+    * must convert from an integer between 0 and 65535
+    * to a float between 0.0 and 0.0
+    */
    color[0] = r/(GLfloat)65535;
    color[1] = g/(GLfloat)65535;
    color[2] = b/(GLfloat)65535;
-   color[3] = 1.0;  /* alpha value */
+   color[3] = a/(GLfloat)65535;  /* alpha value */
 
   /* set the material property */
    if (!strcmp(temp, "ambient"))
@@ -949,7 +956,7 @@ int determinematerial(struct b_list *list)
     * current foreground color to r, g, b
     */
    if (!strcmp(temp, "none")) {
-      glColor3f(color[0], color[1], color[2]);
+      glColor4f(color[0], color[1], color[2], color[3]);
       }
 
    return Succeeded;
@@ -1045,12 +1052,12 @@ int setmaterials(wbp w, char* s)
    wdp wd = w->window->display;
 #endif					/* XWindows */
    int k, j, i = 0;
-   long rd, gr, bl;
+   long rd, gr, bl, al;
    GLfloat shine;
    GLfloat color[4];
    char sbuf1[MaxCvtLen];
    char sbuf2[MaxCvtLen];
-   struct descrip f, funcname, material, r, b,g;
+   struct descrip f, funcname, material, r, b, g, a;
    struct b_list *func;
 
    while(s[i]) {
@@ -1065,8 +1072,9 @@ int setmaterials(wbp w, char* s)
       MakeStr("Fg", 2, &funcname);
       c_put(&f, &funcname);
 
-     /* parse the string to determine the material
-        property and its value */
+     /*
+      * parse the string to determine the material property and its value
+      */
       while(isspace(s[i])) i++;
       while(s[i] && isalpha(s[i])) {
          sbuf1[k] = s[i];
@@ -1084,12 +1092,12 @@ int setmaterials(wbp w, char* s)
 	      }
          sbuf2[j] = '\0';
          /* determine the icon color */
-         if(parsecolor(w,sbuf2, &rd, &gr, &bl)== Failed)
+         if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)== Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
-         color[3] = 1.0; /* alpha value */
+         color[3] = al/(GLfloat)65535; /* alpha value */
 
          /* set the property */
          glMaterialfv(GL_FRONT, GL_AMBIENT, color);
@@ -1106,13 +1114,13 @@ int setmaterials(wbp w, char* s)
 	      }
 	   sbuf2[j] = '\0';
          /* determine the appropriate icon color */
-	   if(parsecolor(w,sbuf2, &rd, &gr, &bl)==Failed)
+	   if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)==Failed)
             return Failed;
          /* convert values to floats between 0.0 and 1.0 */
 	   color[0] = rd/(GLfloat)65535;
 	   color[1] = gr/(GLfloat)65535;
 	   color[2] = bl/(GLfloat)65535;
-	   color[3] = 1.0;
+	   color[3] = al/(GLfloat)65535;
 
          /* set the property */
 	   glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
@@ -1131,12 +1139,12 @@ int setmaterials(wbp w, char* s)
 	   sbuf2[j] = '\0';
          /* determine the icon color and convert to a
              float between 0.0 and 1.0 */
-         if(parsecolor(w, sbuf2, &rd, &gr,&bl)==Failed)
+         if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
-         color[3] = 1.0;
+         color[3] = al/(GLfloat)65535;
 
          /* set the property */
          glMaterialfv(GL_FRONT, GL_SPECULAR, color);
@@ -1175,12 +1183,12 @@ int setmaterials(wbp w, char* s)
 
         /* determine the r, g, b value and convert them
            to floats between 0.0 and 1.0 */
-    	   if(parsecolor(w, sbuf2, &rd, &gr,&bl)==Failed)
+    	   if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
     	      return Failed;
 	   color[0] = rd/(GLfloat)65535;
 	   color[1] = gr/(GLfloat)65535;
 	   color[2] = bl/(GLfloat)65535;
-	   color[3] = 1.0;
+	   color[3] = al/(GLfloat)65535;
 
        /* set the emission color */
 	   glMaterialfv(GL_FRONT, GL_EMISSION, color);
@@ -1191,22 +1199,17 @@ int setmaterials(wbp w, char* s)
       /* otherwise set the current foreground color; treat as diffuse */
       else {
 	 if(setfg(w, s) == Failed) return Failed;
+         if(parsecolor(w, s, &rd, &gr, &bl, &al)==Failed)
+            return Failed;
 	 i = strlen(s);
-	 rd = RED(w->context->fg);
-	 gr = GREEN(w->context->fg);
-   	 bl = BLUE(w->context->fg);
-	 color[0] = rd/(GLfloat)255;
-	 color[1] = gr/(GLfloat)255;
-	 color[2] = bl/(GLfloat)255;
-	 color[3] = 1.0;
- 	 glColor3f(color[0], color[1], color[2]);
+	 color[0] = rd/(GLfloat)65535;
+	 color[1] = gr/(GLfloat)65535;
+	 color[2] = bl/(GLfloat)65535;
+	 color[3] = al/(GLfloat)65535;
+ 	 glColor4f(color[0], color[1], color[2], color[3]);
 	 glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
          MakeStr("diffuse", 7, &material);
 	 c_put(&f, &material);
-	 /* hey, but when this goes on the list it needs to be a 16-bitter */
-	 rd *= 257;
-	 gr *= 257;
-	 bl *= 257;
          }
 
       /* put material property values on the list */
@@ -1216,6 +1219,8 @@ int setmaterials(wbp w, char* s)
       c_put(&f, &g);
       MakeInt(bl, &b);
       c_put(&f, &b);
+      MakeInt(al, &a);
+      c_put(&f, &a);
       c_put(&(w->window->funclist), &f);
 
       /* fail if string is not in the correct format */
@@ -1236,7 +1241,7 @@ int setlight(wbp w, char* s, int light)
    GLboolean params;
    int i, j;
    GLfloat color[4];
-   long rd, gr, bl;
+   long rd, gr, bl, al;
    while(isspace(*s2)) s2++;
 
    /* turn on a light */
@@ -1274,14 +1279,15 @@ int setlight(wbp w, char* s, int light)
             }
          s3[i] = '\0';
          /* determine the r, g, b values */
-         if(parsecolor(w, s3, &rd, &gr, &bl) ==Failed)
+         if(parsecolor(w, s3, &rd, &gr, &bl, &al) ==Failed)
 	      return Failed;
          /* convert from an integer between 0 and
             65535 to a float between 0.0 and 1.0 */
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
-         color[3] = 1.0;
+         color[3] = al/(GLfloat)65535;
+
          /* set the ambient light value */
          glLightfv(light, GL_AMBIENT, color);
          s2 = s2 + i;
@@ -1300,12 +1306,13 @@ int setlight(wbp w, char* s, int light)
          s3[i] = '\0';
          /* convert the icon r, g, b values to floats
             between 0.0 and 1.0 */
-         if(parsecolor(w, s3, &rd, &gr, &bl) == Failed)
+         if(parsecolor(w, s3, &rd, &gr, &bl,&al) == Failed)
 	      return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
-         color[3] = 1.0;
+         color[3] = al/(GLfloat)65535;
+
          /* set the diffuse value of the light */
          glLightfv(light, GL_DIFFUSE, color);
          s2 = s2 + i;
@@ -1323,12 +1330,12 @@ int setlight(wbp w, char* s, int light)
             }
          s3[i] = '\0';
          /* convert to appropriate values */
-         if (parsecolor(w, s3, &rd, &gr, &bl)==Failed)
+         if (parsecolor(w, s3, &rd, &gr, &bl, &al)==Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
-         color[3] = 1.0;
+         color[3] = al/(GLfloat)65535;
          glLightfv(light, GL_SPECULAR, color);
          s2 = s2 + i;
          if(*s2 != ';' && *s2 != '\0') return Failed;
@@ -1438,10 +1445,12 @@ int settexmode(wbp w, char* s)
    else
       return Error;
 
-   if ((oldtexmode == 0) && (wc->texmode != 0))
+   if ((oldtexmode == 0) && (wc->texmode != 0)) {
       glEnable(GL_TEXTURE_2D);
-   else if ((oldtexmode != 0) && (wc->texmode == 0))
+      }
+   else if ((oldtexmode != 0) && (wc->texmode == 0)) {
       glDisable(GL_TEXTURE_2D);
+      }
 
    MakeInt(wc->texmode, &mode);
    c_put(&f, &mode);

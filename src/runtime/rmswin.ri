@@ -1779,9 +1779,9 @@ int alc_rgb(wbp w, SysColor rgb)
  */
 int setfg(wbp w, char *val)
    {
-   long r, g, b;
+   long r, g, b, a;
    wcp wc = w->context;
-   if (parsecolor(w, val, &r, &g, &b) == Succeeded) {
+   if (parsecolor(w, val, &r, &g, &b, &a) == Succeeded) {
       wc->fg = mscolor(w, r, g, b);
       if (alc_rgb(w, wc->fg) == Failed) return Failed;
       if (!wc->fgname) wc->fgname = salloc(val);
@@ -1805,9 +1805,9 @@ int setfg(wbp w, char *val)
  */
 int setbg(wbp w, char *val)
    {
-   long r, g, b;
+   long r, g, b, a;
    wcp wc = w->context;
-   if (parsecolor(w, val, &r, &g, &b) == Succeeded) {
+   if (parsecolor(w, val, &r, &g, &b, &a) == Succeeded) {
       wc->bg = mscolor(w, r, g, b);
       if (alc_rgb(w, wc->bg) == Failed) return Failed;
       if (!wc->bgname) wc->bgname = salloc(val);
@@ -2728,14 +2728,14 @@ char *get_mutable_name(wbp w, int mute_index)
 
 int set_mutable(wbp w, int i, char *s)
    {
-   long r, g, b;
+   long r, g, b, a;
    UINT rv;
    PALETTEENTRY pe;
    if (palette == 0) return Failed;
 
    {
    STDLOCALS(w);
-   if (parsecolor(w, s, &r, &g, &b) != Succeeded) {
+   if (parsecolor(w, s, &r, &g, &b, &a) != Succeeded) {
       FREE_STDLOCALS(w);
       return Failed;                        /* invalid color specification */
       }
@@ -2765,7 +2765,7 @@ void free_mutable(wbp w, int mute_index)
  */
 int mutable_color(wbp w, dptr argv, int argc, int *retval)
    {
-   long r, g, b;
+   long r, g, b, a;
    tended char *str;
    LOGPALETTE lp;
    {
@@ -2815,7 +2815,7 @@ int mutable_color(wbp w, dptr argv, int argc, int *retval)
             FREE_STDLOCALS(w);
 	    ReturnErrVal(103,argv[0], Error);
 	    }
-	 if (parsecolor(w, str, &r, &g, &b) != Succeeded) {
+	 if (parsecolor(w, str, &r, &g, &b, &a) != Succeeded) {
 	    /* reduce logical palette size and count */
             FREE_STDLOCALS(w);
 	    numColors--;

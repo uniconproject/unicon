@@ -3058,6 +3058,7 @@ int *retval;
    char *colorname;
    tended char  *str;
    int i;
+   long alpha;
    {
    STDLOCALS(w);
 
@@ -3122,7 +3123,7 @@ int *retval;
 	 if (!cnv:C_string(argv[0],str)) {
 	    ReturnErrVal(103,argv[0], Error);
 	    }
-         if (parsecolor(w, str, &clr.red, &clr.green, &clr.blue) != Succeeded) {
+         if (parsecolor(w, str, &clr.red, &clr.green, &clr.blue, &alpha) != Succeeded) {
             free_xcolor(w, pixels[0]);
 	    return Failed;                   /* invalid color specification */
 	    }
@@ -3166,10 +3167,11 @@ int i;
 char *s;
    {
    LinearColor clr;
+   long alpha;
    XColor colorcell;
    wdp dp = w->window->display;
 
-   if (parsecolor(w, s, &clr.red, &clr.green, &clr.blue) != Succeeded)
+   if (parsecolor(w, s, &clr.red, &clr.green, &clr.blue, &alpha) != Succeeded)
       return Failed;                        /* invalid color specification */
    colorcell = xcolor(w, clr);
    colorcell.pixel = -i - 1;
@@ -3202,11 +3204,11 @@ char *s;
    {
    wdp dp;
    Display *d;
-   int i;
+   long i, alpha;
    LinearColor clr;
    XColor color;
 
-   if (parsecolor(w, s, &clr.red, &clr.green, &clr.blue) != Succeeded)
+   if (parsecolor(w, s, &clr.red, &clr.green, &clr.blue, &alpha) != Succeeded)
       return;
    dp = w->window->display;
    d = dp->display;

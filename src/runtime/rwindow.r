@@ -5,7 +5,7 @@
 
 #ifdef Graphics
 
-static	int	colorphrase	(char *buf, long *r, long *g, long *b);
+static	int	colorphrase    (char *buf, long *r, long *g, long *b, long *a);
 static	double	rgbval		(double n1, double n2, double hue);
 
 static	int	setpos          (wbp w, char *s);
@@ -607,7 +607,7 @@ typedef struct {	/* color name entry */
 } colrname;
 
 typedef struct {	/* arbitrary lookup entry */
-   char word[10];	/* word */
+   char word[15];	/* word */
    char val;		/* value, as percentage */
 } colrmod;
 
@@ -645,6 +645,14 @@ static colrmod sattable[] = {			/* saturation levels */
    { "weak",      25 },
    };
 
+static colrmod transptable[] = {		/* transparency levels */
+   { "opaque",  100 },
+   { "subtranslucent",  75 },
+   { "subtransparent",  25 },
+   { "translucent",  50 },
+   { "transparent",  5 },
+   };
+
 #ifdef Graphics3D
 static char *texturetable[] = {
    "brick",
@@ -673,11 +681,11 @@ static char *texturetable[] = {
    "wood",
    };
 
-static int texturephrase(char *buf, long *r, long *g, long *b);
+static int texturephrase(char *buf, long *r, long *g, long *b, long *a);
 #endif					/* Graphics3D */
 
 /*
- *  parsecolor(w, s, &r, &g, &b) - parse a color specification
+ *  parsecolor(w, s, &r, &g, &b, &a) - parse a color specification
  *
  *  parsecolor interprets a color specification and produces r/g/b values
  *  scaled linearly from 0 to 65535.  parsecolor returns Succeeded or Failed.
@@ -685,31 +693,44 @@ static int texturephrase(char *buf, long *r, long *g, long *b);
  *  An Icon color specification can be any of the forms
  *
  *     #rgb			(hexadecimal digits)
+ *     #rgba
  *     #rrggbb
- *     #rrrgggbbb
+ *     #rrggbbaa
+ *     #rrrgggbbb		(note: no 3 digit rrrgggbbbaaa)
  *     #rrrrggggbbbb
+ *     #rrrrggggbbbbaaaa
  *     nnnnn,nnnnn,nnnnn	(integers 0 - 65535)
  *     <Icon color phrase>
  *     <native color spec>
  */
 
-int parsecolor(w, buf, r, g, b)
+int parsecolor(w, buf, r, g, b, a)
 wbp w;
 char *buf;
-long *r, *g, *b;
+long *r, *g, *b, *a;
    {
    int len, mul, texture;
    char *fmt, c;
-   double dr, dg, db;
+   double dr, dg, db, da = 1.0;
 
    *r = *g = *b = 0L;
+   *a = 65535;
 
    /* trim leading spaces */
    while (isspace(*buf))
       buf++;
 
-   /* try interpreting as three comma-separated integers */
+#ifdef Graphics3D
+   /* try interpreting as four comma-separated numbers */
+   if (sscanf(buf, "%lf,%lf,%lf,%lf%c", &dr, &dg, &db, &da, &c) == 4) {
+      *a = da;
+      goto RGBnums;
+      }
+#endif					/* Graphics3D */
+
+   /* try interpreting as three comma-separated numbers */
    if (sscanf(buf, "%lf,%lf,%lf%c", &dr, &dg, &db, &c) == 3) {
+RGBnums:
       *r = dr;
       *g = dg;
       *b = db;
@@ -720,6 +741,7 @@ long *r, *g, *b;
 	    *r = dr * 65535;
 	    *g = dg * 65535;
 	    *b = db * 65535;
+	    *a = da * 65535;
 	    return Succeeded;
 	    }
 	 }
@@ -737,13 +759,21 @@ long *r, *g, *b;
       for (len = 0; isalnum(buf[len]); len++);
       switch (len) {
          case  3:  fmt = "%1x%1x%1x%c";  mul = 0x1111;  break;
+         case  4:  fmt = "%1x%1x%1x%1x%c";  mul = 0x1111;  break;
          case  6:  fmt = "%2x%2x%2x%c";  mul = 0x0101;  break;
+         case  8:  fmt = "%2x%2x%2x%2x%c";  mul = 0x0101;  break;
          case  9:  fmt = "%3x%3x%3x%c";  mul = 0x0010;  break;
          case 12:  fmt = "%4x%4x%4x%c";  mul = 0x0001;  break;
+         case 16:  fmt = "%4x%4x%4x%4x%c";  mul = 0x0001;  break;
          default:  return Failed;
       }
-      if (sscanf(buf, fmt, r, g, b, &c) != 3)
-         return Failed;
+      if ((len == 4) || (len == 8) || (len == 16)) {
+         if (sscanf(buf, fmt, r, g, b, a, &c) != 4)
+            return Failed;
+	 *a *= mul;
+         }
+      else if (sscanf(buf, fmt, r, g, b, &c) != 3)
+            return Failed;
       *r *= mul;
       *g *= mul;
       *b *= mul;
@@ -751,14 +781,14 @@ long *r, *g, *b;
       }
 
 #ifdef Graphics3D
-   if (texture = texturephrase(buf, r, g, b)) {
+   if (texture = texturephrase(buf, r, g, b, a)) {
       return Failed; /* not handling textures yet */
       }
    else
 #endif					/* Graphics3D */
 
    /* try interpreting as a color phrase or as a native color spec */
-   if (colorphrase(buf, r, g, b) || nativecolor(w, buf, r, g, b))
+   if (colorphrase(buf, r, g, b, a) || nativecolor(w, buf, r, g, b))
       return Succeeded;
    else
       return Failed;
@@ -773,9 +803,9 @@ int mystrcmp(char *s1, char *s2)
 /*
  * texturephrase(s, &r, &g, &b, &texture) -- parse Unicon colored texture
  */
-static int texturephrase(buf, r, g, b)
+static int texturephrase(buf, r, g, b, a)
 char *buf; 
-long *r, *g, *b;
+long *r, *g, *b, *a;
    {
    char buf2[128];
    char *p, *p2;
@@ -798,7 +828,7 @@ long *r, *g, *b;
       if (p != buf2) {
 	 p--;
 	 *p = '\0';
-	 if (colorphrase(buf2, r, g, b)) return texture;
+	 if (colorphrase(buf2, r, g, b, a)) return texture;
 	 else return 0;
 	 }
       else return -texture;
@@ -808,16 +838,17 @@ long *r, *g, *b;
 #endif					/* Graphics3D */
 
 /*
- *  colorphrase(s, &r, &g, &b) -- parse Icon color phrase.
+ *  colorphrase(s, &r, &g, &b, &a) -- parse Icon color phrase.
  *
- *  An Icon color phrase matches the pattern
+ *  A Unicon color phrase matches the pattern
  *
- *                               weak
- *                  pale         moderate
- *                  light        strong
- *          [[very] medium ]   [ vivid    ]   [color[ish]]   color
- *                  dark 
- *                  deep
+ *   transparent
+ *   subtransparent                           weak
+ *   translucent                 pale         moderate
+ *   subtranslucent              light        strong
+ * [ opaque     ]        [[very] medium ]   [ vivid    ]   [color[ish]]   color
+ *                               dark 
+ *                               deep
  *
  *  where "color" is any of:
  *
@@ -826,6 +857,7 @@ long *r, *g, *b;
  *
  *  A single space or hyphen separates each word from its neighbor.  The
  *  default lightness is "medium", and the default saturation is "vivid".
+ *  The default diaphaneity is "opaque".
  *
  *  "pale" means "very light"; "deep" means "very dark".
  *
@@ -835,15 +867,16 @@ long *r, *g, *b;
  *	IEEE Computer Graphics & Applications, May 1982
  */
 
-static int colorphrase(buf, r, g, b)
+static int colorphrase(buf, r, g, b, a)
 char *buf; 
-long *r, *g, *b;
+long *r, *g, *b, *a;
    {
    int len, very;
    char c, *p, *ebuf, cbuffer[MAXCOLORNAME];
-   float lgt, sat, blend, bl2, m1, m2;
+   float lgt, sat, blend, bl2, m1, m2, alpha;
    float h1, l1, s1, h2, l2, s2, r2, g2, b2;
 
+   alpha = 1.0;
    lgt = -1.0;				/* default no lightness mod */
    sat =  1.0;				/* default vivid saturation */
    len = strlen(buf);
@@ -865,6 +898,21 @@ long *r, *g, *b;
 
    buf = cbuffer;
    ebuf = buf + len;
+
+   /* check for diaphaneity adjective */
+   p = qsearch(buf, (char *)transptable,
+      ElemCount(transptable), ElemSize(transptable), strcmp);
+
+   if (p) {
+      /* skip past word */
+      buf += strlen(buf) + 1;
+      if (buf >= ebuf)
+         return 0;
+      /* save diaphaneity value, but ignore "opaque" */
+      if ((((colrmod *)p) -> val) != 100)
+         alpha = ((colrmod *)p) -> val / 100.0;
+      }
+
    /* check for "very" */
    if (strcmp(buf, "very") == 0) {
       very = 1;
@@ -988,6 +1036,7 @@ long *r, *g, *b;
    *r = 65535 * r2;
    *g = 65535 * g2;
    *b = 65535 * b2;
+   *a = 65535 * alpha;
 
    return 1;
    }
@@ -4088,16 +4137,15 @@ char set_child_window(wbp wb2, wbp wb, int child_window)
 {
    wsp ws = wb->window;
    wsp ws2 = wb2->window;
-   Display *display;
    int screen_num;
    int query;
    
+#ifdef XWindows
    if (child_window==1) {
       ws2->display = ws->display;
       ws2->display->refcount++;
    }
    else {
-#ifdef XWindows
       wdp wd = alc_display(NULL);
       int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
 
@@ -4111,22 +4159,24 @@ char set_child_window(wbp wb2, wbp wb, int child_window)
         return 0;
       }
       wb2->window->display = wd;
-#endif					/* XWindows */
    }
+#endif					/* XWindows */
    return 1;
 }
 
 
 char child_window_stuff(wbp w, wbp wp, char child_window)
 {
-  wsp ws;
-  wdp wd;
-  int is_3d=0, query;
-  int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
-  struct wbind_list *curr;
+   wsp ws;
+   int is_3d=0, query;
+   struct wbind_list *curr;
+#ifdef XWindows
+   wdp wd;
+   int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+#endif					/* XWindows */
 
-  if (child_window==2) {
-   is_3d = 1;
+   if (child_window==2) {
+      is_3d = 1;
 
 #ifdef XWindows
   /* create an opengl window */
@@ -4143,17 +4193,17 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
                 return 0;
            }
    }
-
-   
-#endif		             	/* XWindows */
+#endif					/* XWindows */
   }
 
-  if ((w->window = alc_winstate()) == NULL) {
+  if 
+((w->window = alc_winstate()) == NULL) {
 /*    *err_index = -2; */
     free_binding(w);
     return 0;
   }
   ws = w->window;
+#ifdef XWindows
   if (child_window==1) {
     ws->display = wp->window->display;
     wp->window->display->refcount++;
@@ -4163,6 +4213,7 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
     wd->refcount++;
   }
   ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
+#endif					/* XWindows */
 
   ws->children=NULL;
   ws->parent = wp;
@@ -4187,8 +4238,10 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
     * some attributes of the context determine window defaults
     */
    ws->height = w->context->font->height * 12;
+#ifdef XWindows
    ws->width  = w->context->font->fsp->max_bounds.width * 80;
    ws->y = w->context->font->fsp->max_bounds.ascent;
+#endif					/* XWindows */
    ws->x = 0;
    ws->y += w->context->dy;
    ws->x += w->context->dx;
@@ -4200,6 +4253,7 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 
 char my_wmap(wbp w, wbp wp, char child_window)
 {
+#ifdef XWindows
    XWindowAttributes attrs;
    XGCValues gcv;
    unsigned long gcmask =
@@ -4530,6 +4584,7 @@ char my_wmap(wbp w, wbp wp, char child_window)
      glLoadIdentity();
    }
 #endif					/* Graphics3D */
+#endif					/* XWindows */
    return 1;
 }
 

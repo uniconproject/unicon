@@ -326,7 +326,7 @@ void detectRedirection();
    char *getselection(wbp w, char *buf);
    struct palentry *palsetup(int p);
    int	palnum		(dptr d);
-   int	parsecolor	(wbp w, char *s, long *r, long *g, long *b);
+   int	parsecolor	(wbp w, char *s, long *r, long *g, long *b, long *a);
    int	parsefont	(char *s, char *fam, int *sty, int *sz);
    int	parsegeometry	(char *buf, SHORT *x, SHORT *y, SHORT *w, SHORT *h);
    int	parsepattern	(char *s, int len, int *w, int *nbits, C_integer *bits);

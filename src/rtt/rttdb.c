@@ -193,7 +193,7 @@ char *srcname;
     * See if the source file is already in the dependancy section of
     *  the data base.
     */
-   hashval = (unsigned)srcname % DHSize;
+   hashval = (unsigned int)(unsigned long)srcname % DHSize;
    for (sfile = dhash[hashval]; sfile != NULL && sfile->name != srcname;
         sfile = sfile->next)
       ;

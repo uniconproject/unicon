@@ -47,6 +47,8 @@ var->title = t_code;
    var->blksize = size;\
    }
 
+struct descrip onedesc = {D_Integer,1};	/* integer 1 */
+struct descrip zerodesc = {D_Integer,0};	/* integer 0 */
 struct descrip nulldesc = {D_Null};	/* null value */
 struct descrip nullptr =
    {F_Ptr | F_Nqual};	                /* descriptor with null block pointer */

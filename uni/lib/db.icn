@@ -18,17 +18,17 @@ end
 
 
 procedure dbdelete(db, filter)
-   if not (/filter := "") then filter := " WHERE " || filter
-   if t := (image(db) ? { tab(find(":")+1) & tab(0) }) then
-      return sql(db, "DELETE FROM " || blah blah || filter)
+#   if not (/filter := "") then filter := " WHERE " || filter
+#   if t := (image(db) ? { tab(find(":")+1) & tab(0) }) then
+#      return sql(db, "DELETE FROM " || blah blah || filter)
 end
 
 procedure dbinsert(db, rec)
    s := "INSERT INTO " || t || "("
-   every k := key(rec) do { s || := k; s||:= "," }
+   every k := key(rec) do { s ||:= k; s||:= "," }
    s := s[1:-1] # delete trailing comma?
    s ||:= ") VALUES ("
-   every k := key(rec) do { s || := rec[k]; s||:= "," }
+   every k := key(rec) do { s ||:= rec[k]; s||:= "," }
    s := s[1:-1] # delete trailing comma?
    s ||:= ")"
    return dbsql(db, s)

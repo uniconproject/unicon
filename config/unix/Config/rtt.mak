@@ -6,7 +6,7 @@ include ../../Makedefs
 MAKE = make
 
 ROBJS = rttparse.o rttmain.o rttlex.o rttsym.o rttnode.o rttout.o rttmisc.o\
-	  rttdb.o rttinlin.o rttilc.o
+	  rttdb.o rttinlin.o rttilc.o yyerror.o
 
 PP_DIR = ../preproc/
 P_DOT_H = $(PP_DIR)preproc.h $(PP_DIR)pproto.h ltoken.h ../h/mproto.h\

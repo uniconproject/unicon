@@ -3,12 +3,12 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 1.0
+AppVerName=Windows Unicon Version 1.1
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
 AppUpdatesURL=http://unicon.sourceforge.net
-DefaultDirName={pf}\Unicon
+DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
 AlwaysCreateUninstallIcon=yes

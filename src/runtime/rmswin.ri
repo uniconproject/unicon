@@ -3042,24 +3042,23 @@ int setselection(wbp w, dptr val)
  */
 void drawstrng(wbinding *wb, int x, int y, char *s, int slen)
    {
-   HFONT oldfont, oldfont2;
+   HFONT oldfont;
    STDLOCALS(wb);
 
-   if(stdwin)oldfont=SelectObject(stddc, wc->font->font);
-   oldfont2=SelectObject(pixdc,wc->font->font);
    if (stdwin) {
+      oldfont=SelectObject(stddc, wc->font->font);
       SetBkMode(stddc, TRANSPARENT);
-      if (wc->fg != RGB(0, 0, 0)) SetTextColor(stddc, PALCLR(wc->fg));
-      if (wc->bg != RGB(255, 255, 255)) SetBkColor(stddc, PALCLR(wc->bg));
+      SetTextColor(stddc, PALCLR(wc->fg));
+      SetBkColor(stddc, PALCLR(wc->bg));
       TextOut(stddc, x, y - ASCENT(wb), s, slen);
+      SelectObject(stddc, oldfont);
       }
+   oldfont=SelectObject(pixdc,wc->font->font);
    SetBkMode(pixdc, TRANSPARENT);
-   if (wc->fg != RGB(0, 0, 0)) SetTextColor(pixdc, PALCLR(wc->fg));
-   if (wc->bg != RGB(255, 255, 255)) SetBkColor(pixdc, PALCLR(wc->bg));
+   SetTextColor(pixdc, PALCLR(wc->fg));
+   SetBkColor(pixdc, PALCLR(wc->bg));
    TextOut(pixdc, x, y - ASCENT(wb), s, slen);
- 
-   if (stdwin) SelectObject(stddc, oldfont);
-   SelectObject(pixdc, oldfont2);
+   SelectObject(pixdc, oldfont);
    FREE_STDLOCALS(wb);
    return;
    }
@@ -3384,6 +3383,39 @@ wbp w;
 	 getenv("ICONFONT"));
    wc->leading = wc2->leading;
    setfont(&tmp, &(wc2->font->name));
+
+#ifdef Graphics3D
+   wc->is_3D = wc2->is_3D;
+   if(wc->is_3D) {
+      HDC hdc;
+      wc->eyeupx = wc2->eyeupx;
+      wc->eyeupy = wc2->eyeupy;
+      wc->eyeupz = wc2->eyeupz;
+      wc->dim = wc2->dim;
+      wc->eyeposx = wc2->eyeposx;
+      wc->eyeposy = wc2->eyeposy;
+      wc->eyeposz = wc2->eyeposz;
+      wc->eyedirx = wc2->eyedirx;
+      wc->eyediry = wc2->eyediry;
+      wc->eyedirz = wc2->eyedirz;
+      wc->autogen = wc2->autogen;
+      wc->texmode = wc2->texmode;
+      wc->numtexcoords = wc2->numtexcoords;
+      wc->ntextures = wc2->ntextures;
+      for (i=0; i<wc->numtexcoords; i++) wc->texcoords[i] = wc2->texcoords[i];
+      for (i=0; i<256; i++) wc->texName[i] = wc2->texName[i];
+#if 0
+      hdc = GetDC(ws->iconwin);
+      SetDCPixelFormat(hdc);
+      wc->ctx = wglCreateContext(hdc);
+      wglMakeCurrent(hdc, wc->ctx);
+      /* additional code to set values in new context */
+      ReleaseDC(ws->iconwin, hdc);
+#else
+      wc->ctx = wc2->ctx;
+#endif
+      }
+#endif					/* Graphics3D */
 
    GRFX_LINK(wc, wcntxts);
    return wc;

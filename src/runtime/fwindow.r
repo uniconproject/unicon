@@ -3175,25 +3175,6 @@ MissingGraphicsFuncV(WinSaveDialog)
 #if defined(Graphics) && defined(Graphics3D)
 
 /*
- * For each 3D graphics operation, there is a descriptor that
- * holds the record constructor for that type of primitive.
- */
-
-struct descrip gl_torus = {D_Null};
-struct descrip gl_cube = {D_Null};
-struct descrip gl_sphere = {D_Null};
-struct descrip gl_cylinder = {D_Null};
-struct descrip gl_disk = {D_Null};
-struct descrip gl_rotate = {D_Null};
-struct descrip gl_translate = {D_Null};
-struct descrip gl_scale = {D_Null};
-struct descrip gl_popmatrix = {D_Null};
-struct descrip gl_pushmatrix = {D_Null};
-struct descrip gl_identity = {D_Null};
-struct descrip gl_matrixmode = {D_Null};
-struct descrip gl_texture = {D_Null};
-
-/*
  * DrawTorus(w,x,y,z,radius1,radius2,...)
  *
  */
@@ -3216,7 +3197,7 @@ function{1} DrawTorus(argv[argc])
       if (w->context->dim == 2) 
          runerr(150);
 
-      if (!constr && !(constr = rec_structor("gl_torus")))
+      if (!constr && !(constr = rec_structor3d("gl_torus")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3271,7 +3252,7 @@ function{1} DrawCube(argv[argc])
 	 runerr(150);	
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_cube")))
+	 if (!(constr = rec_structor3d("gl_cube")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3326,7 +3307,7 @@ function{*} DrawSphere(argv[argc])
       if (w->context->dim == 2) runerr(150);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_sphere")))
+	 if (!(constr = rec_structor3d("gl_sphere")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3383,7 +3364,7 @@ function{1} DrawCylinder(argv[argc])
       if (w->context->dim == 2) runerr(150);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_cylinder")))
+	 if (!(constr = rec_structor3d("gl_cylinder")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3437,7 +3418,7 @@ function{1} DrawDisk(argv[argc])
       OptWindow(w);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_disk")))
+	 if (!(constr = rec_structor3d("gl_disk")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3511,7 +3492,7 @@ function{1} Rotate(argv[argc])
       CheckArgMultiple(4);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_rotate")))
+	 if (!(constr = rec_structor3d("gl_rotate")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3562,7 +3543,7 @@ function{1} Translate(argv[argc])
       CheckArgMultiple(3);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_translate")))
+	 if (!(constr = rec_structor3d("gl_translate")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3611,7 +3592,7 @@ function{1} Scale(argv[argc])
       CheckArgMultiple(3);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_scale")))
+	 if (!(constr = rec_structor3d("gl_scale")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3656,7 +3637,7 @@ function{1} PopMatrix(argv[argc])
       OptWindow(w);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_popmatrix")))
+	 if (!(constr = rec_structor3d("gl_popmatrix")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3695,7 +3676,7 @@ function{1} PushMatrix(argv[argc])
  
       OptWindow(w);
 
-      if (!constr && !(constr = rec_structor("gl_pushmatrix")))
+      if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3734,7 +3715,7 @@ function{1} IdentityMatrix(argv[argc])
       OptWindow(w);
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_identity")))
+	 if (!(constr = rec_structor3d("gl_identity")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3773,7 +3754,7 @@ function{1} MatrixMode(argv[argc])
       OptWindow(w);
   	
       if (!constr)
-	 if (!(constr = rec_structor("gl_matrixmode")))
+	 if (!(constr = rec_structor3d("gl_matrixmode")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
@@ -3827,7 +3808,7 @@ function{1} Texture(argv[argc])
          runerr(103);	
 
       if (!constr)
-	 if (!(constr = rec_structor("gl_texture")))
+	 if (!(constr = rec_structor3d("gl_texture")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 

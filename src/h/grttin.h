@@ -390,35 +390,38 @@ typedef int siptr, stringint, inst;
    
 #endif					/* Graphics */
 
-   /*
-    * calloc to make sure uninit'd entries are zeroed.
-    */
-   #begdef GRFX_ALLOC(var,type)
-      do {
-         var = (struct type *)calloc(1, sizeof(struct type));
-         if (var == NULL) ReturnErrNum(305, NULL);
-         var->refcount = 1;
-      } while(0)
-   #enddef				/* GRFX_ALLOC */
+/*
+ * GRFX_ALLOC* family of macros used for static allocations.
+ * Not really specific to Graphics any more, also used by databases.
+ *
+ * calloc to make sure uninit'd entries are zeroed.
+ */
+#begdef GRFX_ALLOC(var,type)
+   do {
+      var = (struct type *)calloc(1, sizeof(struct type));
+      if (var == NULL) ReturnErrNum(305, NULL);
+      var->refcount = 1;
+   } while(0)
+#enddef				/* GRFX_ALLOC */
    
-   #begdef GRFX_LINK(var, chain)
-      do {
-         var->next = chain;
-         var->previous = NULL;
-         if (chain) chain->previous = var;
-         chain = var;
-      } while(0)
-   #enddef				/* GRFX_LINK */
+#begdef GRFX_LINK(var, chain)
+   do {
+      var->next = chain;
+      var->previous = NULL;
+      if (chain) chain->previous = var;
+      chain = var;
+   } while(0)
+#enddef				/* GRFX_LINK */
    
-   #begdef GRFX_UNLINK(var, chain)
-      do {
-         if (var->previous) var->previous->next = var->next;
-         else chain = var->next;
-         if (var->next) var->next->previous = var->previous;
-         free(var);
-      } while(0)
-   #enddef				/* GRFX_UNLINK */
- 
+#begdef GRFX_UNLINK(var, chain)
+   do {
+      if (var->previous) var->previous->next = var->next;
+      else chain = var->next;
+      if (var->next) var->next->previous = var->previous;
+      free(var);
+   } while(0)
+#enddef				/* GRFX_UNLINK */
+
 #ifdef Graphics3D
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean;
    typedef int XWindowChanges, XStandardColormap, XMappingEvent;

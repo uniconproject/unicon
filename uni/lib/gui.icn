@@ -31,7 +31,8 @@ $include "posix.icn"
 
 $define SB_SIZE 22
 
-##
+record undo_rec(undo_type, undo_list, undo_x, undo_y, undoend_x, undoend_y, redo_type, redo_list, redo_x, redo_y, redoend_x, redoend_y)
+
 #
 # A class for an object with a ticker.
 # This class should be subclassed by a class that wishes to
@@ -4626,7 +4627,7 @@ class TextList : ScrollArea()
 
 end
 
-##
+#
 #  A scrollable editable text area.  An {Event} is generated whenever the
 #  contents are changed by the user.
 #
@@ -4641,10 +4642,19 @@ class EditableTextList : ScrollArea(
    enddragx,
    startdragy,
    enddragy,
-   donedrag
+   donedrag,
+   undolist,
+   redolist
    )
 
    method set_contents(x)
+   local lst
+
+      lst := []
+      reset_drag()
+      undolist := []
+      redolist := []
+
       self.contents := x
       if *self.contents = 0 then
          #
@@ -4669,7 +4679,6 @@ class EditableTextList : ScrollArea(
       #
       # Constrain x within new line
       #
-#      self.cursor_x >:= *self.contents[self.cursor_y] + 1
       self.cursor_x >:= *(actual_line(self.contents[self.cursor_y])) + 1
       return n
    end
@@ -4712,9 +4721,9 @@ class EditableTextList : ScrollArea(
          self.vsb$set_value(self.cursor_y - 1)
       else if self.cursor_y >= self$get_line() + (\self.vsb)$get_page_size() then
          self.vsb$set_value(self.cursor_y - self.vsb$get_page_size())
-   
+
       s := self.contents[self.cursor_y]
-      
+
 #     use the actual line with the tab offsets to test position swj
       s :=  actual_line(s) || " "
 
@@ -4767,8 +4776,7 @@ class EditableTextList : ScrollArea(
          self$constrain_cursor()
          self$refresh()
       } else {
-       #  write(image(e))
-         if e === -11 then fail # window closed, nothing to do?
+        if e === -11 then fail # window closed, nothing to do?
          old_contents_size := *contents
          old_mw := TextWidth(cwin, contents[long_line])
 
@@ -4792,14 +4800,14 @@ class EditableTextList : ScrollArea(
                "\t" : handle_tab_text(e)
                "\b" : handle_delete_1(e)
                "\r" | "\l": handle_return(e)
-               "\^k" : handle_delete_line(e)
+               "\^k" : handle_nodefault()
                "\^a" : handle_start_of_line(e)
                "\^e" : handle_end_of_line(e)
                "\d" | "\^d" :  cut_selection()
                "\^x" :  handle_nodefault()
                "\^c" :  handle_nodefault()
                "\^v" :  handle_nodefault()
-	       default : handle_default(e)
+               default : handle_default(e)
             }
          }
 
@@ -4935,7 +4943,7 @@ class EditableTextList : ScrollArea(
             }
          }
       else {
-        # self.cursor_x > 1
+         # self.cursor_x > 1
          offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
          posn := self.cursor_x  - offset - 1
          if self.contents[self.cursor_y][self.cursor_x  - offset - 1] == "\t" then  {
@@ -4970,64 +4978,90 @@ class EditableTextList : ScrollArea(
 
    method handle_delete_line(e)
       reset_drag()
-      if cursor_y < *self.contents then {
+      if cursor_y < *self.contents then 
          self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
+      else
+         self.contents := self.contents[1:self.cursor_y] ||| [""]
 
-         if long_line = self.cursor_y then
-            long_line := &null
-         else if long_line > self.cursor_y then
-            long_line -:= 1
-         changed := 1
-         cursor_x := 1
-      }
+      if long_line = self.cursor_y then
+         long_line := &null
+      else if long_line > self.cursor_y then
+         long_line -:= 1
+      changed := 1
+      cursor_x := 1
    end
 
-   method handle_delete_1(e)
-   local posn, offset
+   method handle_delete_1(e, undo)
+   local posn, offset, cutlst, undo_del, eolx
       #
       # Delete backspace delete
       #
       reset_drag()
       offset := 0
       posn := 0
+      cutlst := []
+
       if self.cursor_x = 1 then {
          if self.cursor_y > 1 then {
             self.cursor_x := *(actual_line(self.contents[self.cursor_y - 1])) + 1
 
+            if /undo then {
+               redolist := []
+               undo_del := undo_rec("delete_cr",["\r"],self.cursor_x,self.cursor_y-1,0,0,"insert",[],self.cursor_x,self.cursor_y-1,0,0)
+               put(undolist,undo_del)
+               }
             self.contents[self.cursor_y - 1] ||:= self.contents[self.cursor_y]
             self.contents := self.contents[1:self.cursor_y] ||| self.contents[self.cursor_y + 1 : 0]
             self.cursor_y -:= 1
             changed := 1
             long_line := &null
+            }
          }
-      } else {
-         # self.cursor_x > 1
+      else {  # self.cursor_x > 1
          offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
          posn := self.cursor_x  - offset - 1
          if self.contents[self.cursor_y][self.cursor_x  - offset - 1] == "\t" then  {
+            put(cutlst, self.contents[self.cursor_y][self.cursor_x  - offset - 1]) 
+
             self.contents[self.cursor_y][self.cursor_x  - offset - 1] := ""
             offset := offset_pos(self.contents[self.cursor_y],posn,1)
             self.cursor_x :=  posn + offset
-         }
-         else {
+
+            if /undo then {
+               redolist := []
+               undo_del := undo_rec("delete_list",cutlst,self.cursor_x,self.cursor_y,0,0,"insert",[],self.cursor_x,self.cursor_y,0,0)
+               put(undolist,undo_del)
+               }
+            } 
+         else { # contents ~= "\t"
+
+           if /undo then {
+              put(cutlst, self.contents[self.cursor_y][self.cursor_x  - offset - 1]) 
+              undo_del := undo_rec("delete_list",cutlst,self.cursor_x-1,self.cursor_y,0,0,"insert",[],self.cursor_x-1,self.cursor_y,0,0)
+              put(undolist,undo_del)
+              }
            self.contents[self.cursor_y][self.cursor_x  - offset - 1] := ""
            self.cursor_x -:= 1
-         }
+           }
          changed := 1
          if long_line = self.cursor_y then
            long_line := &null
       }
    end
 
-   method handle_delete_2(e)
+   method handle_delete_2(e, no_offset)
    local newcursor_x, offset
       #
       # Delete
       #
       reset_drag()
       offset := 0
-      offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+
+      if /no_offset then 
+         offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+
       newcursor_x := self.cursor_x - offset
+
       if newcursor_x = *contents[cursor_y] + 1 then {
          if self.cursor_y < *contents then {
             self.contents[self.cursor_y] ||:= self.contents[self.cursor_y + 1]
@@ -5044,13 +5078,22 @@ class EditableTextList : ScrollArea(
       }
    end
 
-   method handle_return(e)
-   local offset, s, newcursor_x
+   method handle_return(e, undo)
+   local offset, s, newcursor_x,j1, undo_info
+    
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
       s := self.contents[self.cursor_y]
       newcursor_x := self.cursor_x - offset
+
+#undo 
+      if /undo then  {
+         redolist := []
+         undo_info := undo_rec("insert",[e],self.cursor_x,self.cursor_y,0,0,"delete_cr",[e],self.cursor_x,self.cursor_y,0,0)
+            put(undolist,undo_info)
+      }
+  
       self.contents[self.cursor_y] := s[1:newcursor_x]
       self.contents := self.contents[1:cursor_y + 1] ||| [s[newcursor_x:0]] |||
                          self.contents[cursor_y + 1:0]
@@ -5065,14 +5108,21 @@ class EditableTextList : ScrollArea(
       changed := 1
    end
 
-   #
-   # Add tab character at cursor position and tab cursor
-   #
-   method handle_tab_text(e)
-   local offset 
+#
+# Add tab character at cursor position and tab cursor
+#
+   method handle_tab_text(e, undo)
+   local offset, undo_info
+     
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+
+      if /undo then  {
+         redolist := []
+         undo_info := undo_rec("insert",[e],self.cursor_x,self.cursor_y,0,0,"delete_list",[e],self.cursor_x,self.cursor_y,0,0)
+         put(undolist,undo_info)
+         }
 
       if self.cursor_x = 1 then
          self.contents[self.cursor_y] := e || self.contents[self.cursor_y]
@@ -5087,8 +5137,8 @@ class EditableTextList : ScrollArea(
             long_line := self.cursor_y
    end
 
-   method handle_default(e,cntl)
-   local offset
+   method handle_default(e, cntl, undo)
+   local offset, undo_info
       #
       # Add any printable character at cursor position
       #
@@ -5099,9 +5149,16 @@ class EditableTextList : ScrollArea(
 
       if /cntl &  type(e) == "string" & &control then
          return 
-
+        
+   #  if type(e) == "string" & not(&control | &meta) & any(printable, e) then {
       if type(e) == "string" & not(&meta) & any(printable, e) then {
 
+         if /undo then  {
+            redolist := []
+            undo_info := undo_rec("insert",[e],self.cursor_x,self.cursor_y,0,0,"delete_list",[e],self.cursor_x,self.cursor_y,0,0)
+            put(undolist,undo_info)
+            }
+   
          if self.cursor_x = 1 then
             self.contents[self.cursor_y] := e || self.contents[self.cursor_y]
          else
@@ -5112,6 +5169,97 @@ class EditableTextList : ScrollArea(
          if TextWidth(cwin, self.contents[self.cursor_y]) > TextWidth(cwin, self.contents[long_line]) then
             long_line := self.cursor_y
       }
+end
+
+#
+# The undo list is built for each event. This method gets the last
+# item off the list and undos it using the same routines. A non-null
+# parameter is passed to cut_selection, set_selection, and handle_return 
+# so that these undo actions are not put back on the undo list. 
+#
+   method handle_undo(e, no_redo)
+      redolist := []
+      if *undolist = 0 then
+         return
+   
+      self.has_focus := 1
+      undo_info  := pull(undolist)
+      case undo_info.undo_type of  {
+      "insert" : { 
+         reset_drag()
+         self.cursor_x :=  undo_info.undo_x
+         self.cursor_y :=  undo_info.undo_y
+         if /no_redo then
+            put(redolist,undo_info)
+         cut_selection(1) # delete don't build undo
+         }
+      "delete_list" : {
+         reset_drag() #
+         self.cursor_x := undo_info.undo_x 
+         self.cursor_y := undo_info.undo_y 
+         if /no_redo then
+            put(redolist,undo_info)
+         set_selection(undo_info.undo_list,1)
+         return
+         }
+      "insert_list" : {
+         reset_drag()
+         startdragx := undo_info.undo_x
+         startdragy :=  undo_info.undo_y
+         enddragx :=  undo_info.undoend_x
+         enddragy := undo_info.undoend_y
+         if /no_redo then
+            put(redolist,undo_info)
+         cut_selection(1) 
+         return
+         }
+      "delete_cr" : {
+         reset_drag()
+         self.cursor_x := undo_info.undo_x 
+         self.cursor_y := undo_info.undo_y 
+         if /no_redo then
+            put(redolist,undo_info)
+         handle_return("\r",1)
+         self$set_internal_fields()
+         self$constrain_line()
+         self$display()
+         return
+         }      
+      }
+   end
+
+#
+# Redo the last undo. Only one redo allowed.
+# Undo puts the last undo on the redolist so redo pulls
+# it off and calls undo with a parameter no_redo so the
+# redo does not get put on the redolist again.
+#
+   method handle_redo(e)
+   local rec1,redo
+
+      if *redolist = 0 then
+         return
+
+      rec1 :=  pull(redolist)
+      redo := undo_rec("",[],0,0,0,0,"",[],0,0,0,0)
+
+      redo.undo_type :=  rec1.redo_type
+      redo.undo_list := rec1.redo_list
+      redo.undo_x := rec1.redo_x
+      redo.undo_y := rec1.redo_y
+      redo.undoend_x := rec1.redoend_x
+      redo.undoend_y := rec1.redoend_y
+
+      redo.redo_type :=  ""
+      redo.redo_list := []
+      redo.redo_x := 0
+      redo.redo_y := 0
+      redo.redoend_x := 0
+      redo.redoend_y := 0
+
+      put(undolist,rec1)
+      put(undolist,redo)
+      handle_undo(e,1)
    end
 
    method handle_key_page_up(e)
@@ -5188,23 +5336,22 @@ class EditableTextList : ScrollArea(
 
 #     create a mapping for the cursor to skip over the tabs
         sa := map_pos(self.contents[self.cursor_y] || " ")
-
+    
         self.cursor_x := 1
         l := self$get_left_pos()
         while (self.cursor_x < *s) & (TextWidth(self.cwin, s[1:self.cursor_x + 1]) < &x - l)
         do {
            self.cursor_x := sa[self.cursor_x] + 1
            if self.cursor_x = *s + 1  then {
-              if self.cursor_y < *self.contents then {
+             if self.cursor_y < *self.contents then {
                  self.cursor_y +:= 1
                  s1 := actual_line(self.contents[self.cursor_y]) || " "
                  self.cursor_x := *s1
-                 }
               }
+            }
           }  # while
 
- #    self.hsb$set_value(self.cursor_x)
-
+  
       if donedrag = 0 then {
          startdragx := self.cursor_x
          startdragy := self.cursor_y
@@ -5216,131 +5363,182 @@ class EditableTextList : ScrollArea(
        moved := 1
        } # if in region
    end
+
 #
 # added to prevent reset of drag positions when ^x,^c,^v 
 #
 method handle_nodefault()
   return
 end
+
 #
 #  method added to support paste
 #  parameter s is a list of strings
 #
-method set_selection(s)
-local stng, j, k
+method set_selection(slst, undo)
+local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcursor_x,undo_info,s3 
    self.has_focus := 1
-#  stng := ""
+   stng := ""
+   slast := ""
+   s2 := ""
+   s := ""
+   s3 := ""
+  
+   if  /slst  | *slst < 0  then
+      return
 
-   every j := 1 to *s do {
-      stng := s[j]
+   offset := 0
+   offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+   
+   if /undo then {
+      redolist := []
+      undo := 1 # do not build list in handle_default because built here
+      if *slst > 1 then {
+         endy := self.cursor_y  + *slst - 1 
+         slast :=  actual_line(slst[*slst])  # size of last string in list
+         endx := *slast + 1 # one more for drag
+         }
+      else {  # one line need to get the position in whole line for the tabs
+         endy := self.cursor_y
+         s := self.contents[self.cursor_y]
+         newcursor_x := self.cursor_x - offset
+         s3 := s[1:newcursor_x] || slst[1]
+         slast :=  actual_line(s3)  # size of last string in list
+         endx :=  *slast + 1
+         }
+      undo_info := undo_rec("insert_list",[],self.cursor_x,self.cursor_y,endx,endy,"delete_list",slst,self.cursor_x,self.cursor_y,0,0)
+      put(undolist,undo_info)
+   }
+
+   stng := slst[1]
+   if *slst = 1 & *stng = 1 then {
+      if stng == "\t" then 
+         handle_tab_text(stng,undo)
+       else
+          handle_default(stng,1,undo)
+       self$set_internal_fields()
+       self$constrain_line()
+       self$display()
+       return
+   }
+
+   s := self.contents[self.cursor_y]
+   oldcursor_x := self.cursor_x
+   oldcursor_y := self.cursor_y
+   newcursor_x := self.cursor_x - offset
+     
+   self.contents[self.cursor_y] := s[1:newcursor_x] || stng 
+   s2 :=  s[newcursor_x:0]
+
+   self.contents := self.contents[1:cursor_y + 1] ||| self.contents[cursor_y + 1:0]
+
+   self.cursor_y +:= 1
+   self.cursor_x := 1
       
-      every k := 1 to *stng do {
-         if stng[k] == "\t" then 
-            handle_tab_text(stng[k])
-         else  
-            handle_default(stng[k],1)
-         }
-
-      if  j = *s   then {   # if end of list then  display
-         self$set_internal_fields()
-         self$constrain_line()
-         self$display()
-         }
-      else {   # add carriage return      
-         handle_event("\r")
-         }
+   every j := 2 to *slst  do {
+      stng := slst[j]
+      s :=  self.contents[self.cursor_y]
+      if self.cursor_y > *self.contents then
+         put(self.contents,stng)
+      else {
+         self.contents[self.cursor_y] :=  stng
+         self.contents := self.contents[1:cursor_y + 1]|||[s]|||self.contents[cursor_y + 1:0]
       }
-   self.has_focus := &null
-end
+      self.cursor_y +:= 1
+      self.cursor_x := 1
+   }
+  
+   self.cursor_y  := self.cursor_y -  1
+   self.contents[self.cursor_y] :=  self.contents[self.cursor_y] || s2
 
-#
-# method added to retieve a highlighted section swj 
-# returns a list of strings for Copy
+   long_line := &null
+
+   reset_drag()
+
+   self.cursor_y :=  oldcursor_y 
+   self.cursor_x :=  oldcursor_x
+   self$set_internal_fields()
+   self$constrain_line()
+   self$display()
+
+  end
+
+#  method added to retieve a highlighted section swj 
+#  returns a list of strings for Copy
 #
 method get_selection()
-local st, lst, l, i
+local st, lst, l, i, sx
    st := ""
    lst := []
    l := ""
 
-   # return just one character if nothing is highlighted  
+   #  return just one character if nothing is highlighted  
    if (enddragx = startdragx ) & (enddragy = startdragy) then {
-      l := self.contents[enddragy]
-      st := l[startdragx:startdragx + 1]
+      offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+      sx := self.cursor_x - offset
+      l := self.contents[self.cursor_y]
+      st := l[sx:sx + 1]
       put(lst,st)
-      return(lst) 
+      return lst
       }
-
-   every l := self.contents[i := 1 to *self.contents] do {
+   every l := self.contents[i := 1 to 1 + *self.contents - 1] do {
       st := get_region(i)
-      if *st > 0 then 
+      if \st then
          put(lst,st)
       } 
-   return lst
-end
+      return lst
+   end
 
 #
-# returns the string that is highlighted for each line of self.contents
-# i is line number or y position
+#  returns the string that is highlighted for each line of self.contents
+#  s is the line of self.contents and i is line number or y position
 # 
 method get_region(i)
 local ex, sx, offset, s2
-
    s2 := ""
-   offset := offset_pos(self.contents[self.cursor_y],startdragx)
+   offset := offset_pos(self.contents[i],startdragx)
    sx := startdragx - offset
-   offset := offset_pos(self.contents[self.cursor_y],enddragx)
+   offset := offset_pos(self.contents[i],enddragx)
    ex := enddragx - offset
 
    #  if no vertical drag just current line
    if (i = startdragy) & (startdragy = enddragy) then {
-      if startdragx < enddragx then	# forward drag
-         return self.contents[i][sx:ex]
-      if startdragx > enddragx then	# backward drag
-         return self.contents[i][ex+1:sx+1]
+      if startdragx < enddragx then    # forward drag
+         return self.contents[i][sx:ex] 
+      if startdragx > enddragx then    # backward drag
+         return self.contents[i][ex:sx]
       }
 
-   # if drag on current line and a vertical drag
-   # for forward drag need to get whole line for backward
-   # need to get line up to start of drag
+   #  if drag on current line and a vertical drag
+   #  for forward drag need to get whole line for backward
+   #  need to get line up to start of drag
 
    if i = startdragy then {
-      if i < enddragy then	# for forward drag get the whole line
-         return self.contents[i][sx:0]
-      if i > enddragy then {	# reverse drag get the 1st part to start x
-         if sx + 1 > *(self.contents[i]) then
-            return self.contents[i][1:sx]
-         else
-            return self.contents[i][1:sx+1]
-         }
+      if i < enddragy then     # for forward drag get the whole line
+         return self.contents[i][sx:*(self.contents[i])+1]
+      if  i > enddragy  then  # reverse drag get the 1st part to start x
+         return self.contents[i][1:sx]
       }
 
    # for the last endragy line  on vertical drag
 
    if i = enddragy then {
-      if i > startdragy then {	# for forward drag
-         if ex > *(self.contents[i]) then
-            return self.contents[i][1:*(self.contents[i])+1]
-         else
-            return self.contents[i][1:ex+1]
-         }
-      if i < startdragy then {	# for reverse drag
-         if ex <= *(self.contents[i]) then
+      if i > startdragy then  # for forward drag
+         return self.contents[i][1:ex]
+      if i < startdragy then  # for reverse drag
+         if ex <=  *(self.contents[i]) then 
             return self.contents[i][ex:0]
-         }
       }
 
-   # fill in all the lines in between
-
-   # for forward drag         
-   if i < enddragy & i > startdragy then {
+   #  fill in all the lines in between
+   #  for forward drag         
+   if i < enddragy & i > startdragy then  #  for forward drag     
       return self.contents[i]
-      }
-   if i > enddragy & i < startdragy then {  # reverse
+   if i > enddragy & i < startdragy then  # reverse
       return self.contents[i]
-      }
-   return "" 
-end
+  
+   return
+   end
 
 #
 #  This method added to support Cut
@@ -5348,23 +5546,34 @@ end
 #  This cut was modeled after Emacs editor and therefore removes
 #  the carriage return at the end of lines so they are merged. 
 #
-method cut_selection()
-local l, lst, ex, ey, sx, sy, i, flag1, starty, endy
-
+method cut_selection(undo)
+local l, lst, ex, ey, sx, sy, i, flag1,flag2, undo_info, offset, newcursor_x 
    l := ""
    lst := []
-   flag1 := []
-   put(flag1,"n")	# flag to handle carriage return delete
-
-   # keep starting and ending drag positions because they will be reset
-   # when handle_delete_2 and handle_delete etc are called.
+   flag1 := ["n"] # flags to indicate if A all or P partial cut of line
+   flag2 := ["n"] # If both the first and last line are A then we insert a cr
+   cutlst := []   # If both the first and last line are P then we delete a cr to merge
+   offset := 0
+  
+   #
+   #  keep starting and ending drag positions because they will be reset
+   #  when handle_delete_2 and handle_delete_line etc are called.
+   #
    ex := enddragx 
    ey := enddragy
    sx := startdragx
    sy := startdragy
-
+   
    # No drag just delete character under the cursor
    if (enddragx = startdragx ) & (enddragy = startdragy) then {
+      if /undo then {
+         redolist := []
+         offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
+         newcursor_x := self.cursor_x-offset
+         put(cutlst,self.contents[self.cursor_y][newcursor_x]) 
+         undo_info := undo_rec("delete_list",cutlst,self.cursor_x,self.cursor_y,0,0,"insert",[],newcursor_x,self.cursor_y,0,0)
+         put(undolist,undo_info)
+         }
       handle_delete_2("\d")
       self.max_width := get_max_width()
       self$set_internal_fields()
@@ -5372,197 +5581,275 @@ local l, lst, ex, ey, sx, sy, i, flag1, starty, endy
       self.has_focus := 1
       return 
       }
+ 
+   if /undo then {
+      redolist := []
+      cutlst :=  get_selection()
+      if sy = ey then 
+         if ex > sx then {      # forward
+            undo_info := undo_rec("delete_list",cutlst,sx,sy,0,0,"insert_list",[],sx,sy,ex,ey)
+            put(undolist,undo_info)
+            }
+         else {               # bottom to top drag
+           undo_info := undo_rec("delete_list",cutlst,ex,ey,0,0,"insert_list",[],ex,ey,sx,sy)
+           put(undolist,undo_info)
+           }
+      else if ey > sy then {     # top to bottom drag
+         undo_info := undo_rec("delete_list",cutlst,sx,sy,0,0,"insert_list",[],sx,sy,ex,ey)
+         put(undolist,undo_info)
+         }
+      else if ey < sy then {       # bottom to top drag
+         undo_info := undo_rec("delete_list",cutlst,ex,ey,0,0,"insert_list",[],ex,ey,sx,sy)
+         put(undolist,undo_info)
+         }
+      }
 
-   if sy = ey then {					# only horizontal drag
+   undo := 1
+   if sy = ey then {         # only horizontal drag
       l := self.contents[sy] 
       i := sy
-      get_cutregion_1_line(i, sx, ex)
+      get_cutregion_1_line(i, sx, ex,undo,flag1)
       }
    else {
-      l := self.contents[sy]		# cut line from start of drag
-      get_cutregion_first_last(l, sy, ex, ey, sx, sy, flag1)
-      l := self.contents[ey]		# cut line from end of drag
-      get_cutregion_first_last(l, ey, ex, ey, sx, sy, flag1)
-      if ey > sy then {			# top to bottom drag
-         starty := sy
-         endy   := ey
+      if ey > sy then {       # top to bottom drag
+         i := ey
+         get_cutregion_last(i, ex, ey, sx, sy, flag2)
+         # go through next loop bottom up because lines are deleted
+         i := ey - 1 
+         while i > sy do {
+            l := self.contents[i] 
+            get_cutregion_mid(l, i, ex, ey, sx, sy)
+            i := i - 1
+            }
+         i := sy
+         get_cutregion_first(i, ex, ey, sx, sy, flag1)
+         if flag1[1] == "P" &  flag2[1] == "P"  then # P (Partial) lines cut merge
+            get_cutregion_cr(i, ex, ey, sx, sy)
+         if flag1[1] == "A" &  flag2[1] == "A"  then {# A All of lines cut add cr
+            self.cursor_y := sy
+            self.cursor_x := 1 
+            handle_return("\r",undo)
+            self.cursor_y := sy
+            self.cursor_x := 1 
+            } 
          }
-      else {				# bottom to top drag
-         starty := ey
-         endy   := sy
-         }
+      else { # bottom to top drag
+         i := sy  # cut line from start of drag
+         get_cutregion_last(i, ex, ey, sx, sy, flag2)
+         i := sy - 1
+         while i > ey do {
+            l := self.contents[i] 
+            get_cutregion_mid(l, i, ex, ey, sx, sy)
+            self.max_width := get_max_width()
+            i := i - 1
+            }
+         i := ey   # cut line from end of drag
+         get_cutregion_first(i, ex, ey, sx, sy, flag1)
+         if flag1[1] == "P" &  flag2[1] == "P"  then # P (Partial) lines cut merge
+            get_cutregion_cr(i, ex, ey, sx, sy)
+         if flag1[1] == "A" &  flag2[1] == "A"  then {# A All of lines cut add cr
+            self.cursor_y := ey
+            self.cursor_x := 1 
+            handle_return("\r",undo)
+            self.cursor_y := ey
+            self.cursor_x := 1 
+            } 
+         } # bottom to top drag
+      }# end else ey > sy
 
-      # go through next loop bottom up because lines are deleted
-      i := endy - 1 
-      while i > starty do {
-         l := self.contents[i] 
-         get_cutregion_mid(l, i, ex, ey, sx, sy)
-         self.max_width := get_max_width()
-         i := i - 1
-         }
-
-      # delete carriage return on first line if flag set as Emacs editor
-      if flag1[1] == "y" then {
-         l := self.contents[sy] 
-         get_cutregion_cr(l, sy, ex, ey, sx, sy)
-         l := self.contents[ey] 
-         get_cutregion_cr(l, ey, ex, ey, sx, sy)
-         }
-      }# end else
-
-   if ey >= sy then {       # top to bottom drag
-      self.cursor_y := sy
+   if ey = sy then {
+      self.cursor_y := sy 
+      if sx > ex then         # reverse drag
+         self.cursor_x := ex
+      else 
+         self.cursor_x := sx
+      }
+   if ey > sy then {       # top to bottom drag
+      self.cursor_y := sy 
       self.cursor_x := sx
       }
-   else {
-      self.cursor_y := ey
+   if ey < sy then {        # bottom to top drag
+      self.cursor_y := ey 
       self.cursor_x := ex
-      } 
- 
+      }
+
+   reset_drag()
    self$set_internal_fields()
+   self$constrain_line()
    self$display()
    self.has_focus := 1
+
 end
 
 #
 #  method to cut the lines in the middle of the highlighted region
 #
 method get_cutregion_mid(s, i, ex, ey, sx, sy)
-# fill in all the lines in between
    s :=  actual_line(s)
    self.cursor_y := i
    self.cursor_x := ex 
-
-  # for forward drag         
-  if i < ey & i > sy then {
+     
+   if i < ey & i > sy then { # for forward drag     
       handle_delete_line("\^k")
+      self.max_width := get_max_width()
       return 
-  }
-  if i > ey & i < sy then {  # reverse drag
+      }
+   if i > ey & i < sy then {  # reverse drag
       handle_delete_line("\^k")
+      self.max_width := get_max_width()
       return 
-  }
-end
+      }
+   end
 
 #
-# cut on just one line no vertical drag
+#  method to cut on just one line no vertical drag
 #
-method get_cutregion_1_line(i, sx, ex)
-local j
+method get_cutregion_1_line(i, sx, ex,undo,flag1)
+local j, offset
+
    j := 0
    self.cursor_y := i
+   offset := offset_pos(self.contents[self.cursor_y],sx)
+   sx := sx - offset
+   offset := offset_pos(self.contents[self.cursor_y],ex)
+   ex := ex - offset
 
-#  if no vertical drag just current line
+   #  if no vertical drag just current line
    if sx < ex then {   # forward drag
       every j := sx to ex - 1 do {
          self.cursor_x := sx
-         handle_delete_2("\d")
+         handle_delete_2("\d",1)
          self.max_width := get_max_width()
-	 }
+         }
+      return
       }
-
    if sx > ex then {    # backward drag
-      every j := ex to sx do {
-         self.cursor_x := ex 
-         handle_delete_2("\d")
-         self.max_width := get_max_width()
-	 }
+      every j := ex to sx - 1 do {
+          self.cursor_x := ex 
+          handle_delete_2("\d",1)
+          self.max_width := get_max_width()
+          }
       }
-end
+   end
 
-#
 #  method to cut the highlighted regions of the first and last lines
-#  when more than one line is highlighted
+#  when more than one line is highlighted 
 #  set flag1 if drag on last line does not include the entire line.
 #  This will indicate that the carriage return on the previous line
 #  must be deleted so the lines will be merged and will behave like
 #  the Emacs Editor.
-#
-method get_cutregion_first_last(s,i, ex, ey, sx, sy, flag1)
-local j
-
+   method get_cutregion_first(i, ex, ey, sx, sy, flag2)
+   local j
    j := 0
-   s :=  actual_line(s)
+   
    self.cursor_y := i
+   s  := self.contents[self.cursor_y] 
+  
+#  if drag on current line and a vertical drag
+#  for forward drag need to get whole line for backward
+#  need to get line up to start of drag
 
+   if sy < ey then {  # for forward drag get the whole line
+      offset := offset_pos(self.contents[self.cursor_y],sx)
+      sx := sx - offset
+      if sx = 1 then {
+         handle_delete_line("\^k")
+         self.max_width := get_max_width()
+         flag2[1] := "A"  # All of line cut
+         return 
+         }
+      every j := sx to *s do {
+         self.cursor_x := sx
+         handle_delete_2("\d",1)
+         self.max_width := get_max_width()
+         }
+      flag2[1] := "P"     # part of line cut
+      return 
+      }
+   if sy > ey then { # reverse drag get the 1st part to start x
+      offset := offset_pos(self.contents[self.cursor_y],ex)
+      ex := ex - offset
+      if ex = 1 then {
+         handle_delete_line("\^k")
+         self.max_width := get_max_width()
+         flag2[1] := "A"  # all of line cut
+         return 
+         }
+      every j := ex to *s do {
+         self.cursor_x := ex 
+         handle_delete_2("\d",1)
+         self.max_width := get_max_width()
+         }
+      flag2[1] := "P"   # part of line cut
+      return 
+      }
+   end
+
+method get_cutregion_last(i,ex, ey, sx, sy, flag1)
+local j,offset
+   j := 0
+   offset := 0
+ 
+   self.cursor_y := i
+   s  := self.contents[self.cursor_y]
+ 
+   if ey > sy then { # for forward drag
+      offset := offset_pos(self.contents[self.cursor_y],ex)
+      ex := ex - offset
+      if ex >= *s then {
+         handle_delete_line("\^k")
+         self.max_width := get_max_width()
+         flag1[1] := "A"
+         return 
+         }
+      every j := 1 to ex - 1 do {
+         self.cursor_x := 1
+         handle_delete_2("\d",1)
+         self.max_width := get_max_width()
+         flag1[1] := "P"
+         }
+      return
+      }
+
+   if ey < sy then { # for reverse drag
+      offset := offset_pos(self.contents[self.cursor_y],sx)
+      sx := sx - offset
+      if sx >= *s then {
+         handle_delete_line("\^k")
+         self.max_width := get_max_width()
+         flag1[1] := "A"
+         return 
+         }
+      every j := 1 to sx - 1 do {
+         self.cursor_x := 1
+         handle_delete_2("\d",1)
+         self.max_width := get_max_width()
+         }
+      flag1[1] := "P"
+      }
+   return 
+end
+
+#
+#  method to remove carriage return on the line before(forward drag)
+#  or after(backward drag). This will merge the two lines. 
+#
+method get_cutregion_cr(i, ex, ey, sx, sy)
+local s
+
+   self.cursor_y := i
+   s  := self.contents[self.cursor_y]  
+   s :=  actual_line(s)
+
+   if *s = 0 then
+      return
+  
 # if drag on current line and a vertical drag
 # for forward drag need to get whole line for backward
 # need to get line up to start of drag
 
    if i = sy then {
-      if i <  ey then {  # for forward drag get the whole line
-         every j := sx to *s do {
-            self.cursor_x := sx
-            handle_delete_2("\d")
-            self.max_width := get_max_width()
-            }
-         return 
-         }
-
-      if  i >  ey  then { # reverse drag get the 1st part to start x
-         if sx >= *s then  { # last position for cursor
-            every j := 1 to sx + 1 do {
-               self.cursor_x := 1
-               handle_delete_2("\d")
-               self.max_width := get_max_width()
-               } 
-            }
-         else 
-            every j := 1 to sx - 1 do {
-               self.cursor_x := 1
-               handle_delete_2("\d")
-               self.max_width := get_max_width()
-               }
-         return 
-         }
-      }
-
-# for the last endragy line  on vertical drag
-
-   if i = ey then {
-      if i > sy then { # for forward drag
-         if ex >= *s then  # last character or beyond 
-            every j :=  1 to *s + 1 do {
-               self.cursor_x := 1
-               handle_delete_2("\d")
-               self.max_width := get_max_width()
-               }
-         else {					# ended before last character
-            flag1[1] := "y"
-            every j := 1 to ex - 1 do {
-               self.cursor_x := 1
-               handle_delete_2("\d")
-               self.max_width := get_max_width()
-               }
-            }
-         }
-      if i < sy then { # for reverse drag
-         flag1[1] := "y"
-         every j := ex to *s do {
-            self.cursor_x := ex 
-            handle_delete_2("\d")
-            self.max_width := get_max_width()
-            }
-         }
-      return 
-      }
-end
-
-#
-#  method to remove carriage return on the line before(forward drag)
-#  or after(backward drag). This makes the cut behave like Emacs editor 
-#
-method get_cutregion_cr(s,i, ex, ey, sx, sy)
-
-   s :=  actual_line(s)
-   self.cursor_y := i
-
-   # if drag on current line and a vertical drag
-   # for forward drag need to get whole line for backward
-   # need to get line up to start of drag
-
-   if i = sy then {
-      if i <  ey then {  # for forward drag get the whole line
+      if i < ey then {  # for forward drag get the whole line
          self.cursor_x := *s + 1
          handle_delete_2("\d")
          self.max_width := get_max_width()
@@ -5578,24 +5865,24 @@ method get_cutregion_cr(s,i, ex, ey, sx, sy)
          }
       return 
       }
-end
+   end
 
 #
-#  Editable Textlist version of draw
+#  Added Editable Textlist version of draw
 #
 method draw(s, left_pos, yp, i)
 local s1, s2, newp, fh, asc, desc, yp2  
-
    newp := 0
    s1 := ""
    s2 := ""
    fh := WAttrib(self.cbwin, "fheight")
    asc := WAttrib(self.cbwin, "ascent")
    desc := WAttrib(self.cbwin, "descent")
+
    s :=  actual_line(s)
 
 #  if no vertical drag just current line
-   if (i = startdragy) & (startdragy = enddragy) then {
+   if (i = startdragy) & (startdragy = enddragy)  then {
       if startdragx < enddragx then {   # forward drag
          s1 := s[1:startdragx]
          s2 := s[startdragx:enddragx]
@@ -5610,103 +5897,76 @@ local s1, s2, newp, fh, asc, desc, yp2
 
       Fg(self.cbwin, "light gray")
       yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
-		     WAttrib(self.cbwin,"descent"))/2) - asc
+                      WAttrib(self.cbwin,"descent"))/2) - asc
       FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
       }
 
-   # if drag on current line and a vertical drag
-   # for forward drag need to get whole line for backward
-   # need to get line up to start of drag
+#  if drag on current line and a vertical drag
+#  for forward drag need to get whole line for backward
+#  need to get line up to start of drag
 
    if i = startdragy then {
-      if i < enddragy then {  # for forward drag get the whole line
+      if i <  enddragy then {  # for forward drag get the whole line
          s1 := s[1:startdragx]
          s2 :=  s[startdragx:0]
          newp := left_pos + TextWidth(self.cbwin, s1)
          }
-      if i > enddragy then { # reverse drag get the 1st part to start x
-         if startdragx >= *s then
-            s2 := s 
-         else
-            s2 := s[1:startdragx]
-         newp := left_pos
-         }
-
-      Fg(self.cbwin, "light gray")
-      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
-		     WAttrib(self.cbwin,"descent"))/2) - asc
-      FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+   if i > enddragy then { # reverse drag get the 1st part to start x
+      if startdragx  >= *s then
+         s2 := s 
+      else
+         s2 := s[1:startdragx]
+      newp := left_pos
       }
+   Fg(self.cbwin, "light gray")
+   yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")- WAttrib(self.cbwin,"descent"))/2) - asc
+   FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+   }
 
-   # for the last endragy line  on vertical drag
-
+   #  for the last endragy line  on vertical drag
    if i = enddragy then {
-      if i > startdragy then { # for forward drag
-         if enddragx > *s then
-            s2 := s[1:*s+1]
-         else
-            s2 := s[1:enddragx]
-         newp := left_pos
-         }
-      if i < startdragy then { # for reverse drag
-         if enddragx <= *s then {
-            s1 := s[1:enddragx+1]
-            s2 := s[enddragx+1:0]
-            newp := left_pos + TextWidth(self.cbwin, s1)
-            }
-         }
-      Fg(self.cbwin, "light gray")
-      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+     if i > startdragy then { # for forward drag
+        if enddragx > *s then
+           s2 := s[1:*s+1]
+        else
+           s2 := s[1:enddragx]
+        newp := left_pos
+     }
+     if i < startdragy then { # for reverse drag
+        if enddragx <= *s then {
+           s1 := s[1:enddragx+1]
+           s2 := s[enddragx+1:0]
+           newp := left_pos + TextWidth(self.cbwin, s1)
+           }
+        }
+     Fg(self.cbwin, "light gray")
+     yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
                     WAttrib(self.cbwin,"descent"))/2) - asc
-      FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
-      }
+     FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+     }
 
-   # fill in all the lines in between
-
-          # for forward drag         OR       for reverse drag
-   if (i < enddragy & i > startdragy) | (i > enddragy & i < startdragy) then {
+   #  fill in all the lines in between
+   #  for forward drag         OR       for reverse drag
+   if (i < enddragy & i > startdragy) | (i > enddragy & i < startdragy)  then {
       Fg(self.cbwin, "light gray")
       yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
                     WAttrib(self.cbwin,"descent"))/2) - asc
       FillRectangle(self.cbwin,left_pos, yp2, TextWidth(self.cwin, s), fh)
       }
-
    left_stringr(self.cbwin, left_pos, yp, s)
 
-   #
    #  cursor is a BLOCK OR a rectangle
-   #
    if i = \self.cursor_y then {
       s ||:= " "
       if \self.has_focus then {
-         FillRectangle(rev,
-		       left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]),
-		       1 + yp - self.line_height / 2,
-		       TextWidth(self.cbwin, s[self.cursor_x]),
-		       self.line_height)
+         FillRectangle(rev, left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]), 1 + yp - self.line_height / 2, TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+
          }
       else {
-         Rectangle(self.cbwin,
-		   left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]),
-		   1 + yp - self.line_height / 2,
-		   TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+         Rectangle(self.cbwin, left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]), 1 + yp - self.line_height / 2, TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
          }
       }
-   end
-
-   method get_max_width()
-      if /long_line then {
-         mw := TextWidth(cwin, actual_line(contents[1]))
-         long_line := 1
-         every i := 2 to *self.contents do
-            if mw <:= TextWidth(cwin, actual_line(contents[i])) then
-               long_line := i
-         }
-      else
-         mw := TextWidth(self.cwin, actual_line(contents[long_line]))
-
-      return mw + TextWidth(self.cwin, " ")
-   end
+end
 
 #
 #  This method returns the offset(or number of added blanks because
@@ -5716,81 +5976,80 @@ local s1, s2, newp, fh, asc, desc, yp2
 #  If  use_selfcontents is not null, then the number of blanks that would be  
 #  inserted up to the position (endpos) in self.contents is returned. 
 #  
-method offset_pos(tab_line,endpos,use_selfcontents)
-local posx, sblnks, linepos, numtabs, x12
+   method offset_pos(tab_line,endpos,use_selfcontents)  
+   local posx, sblnks, linepos, numtabs, x12
    posx := 0
    sblnks := 0
    linepos := 0
    numtabs := 0
-
+ 
    tab_line ? {
-      while x12 := move(1)  do {
+      while x12 := move(1) do {
          linepos := linepos + 1
          if /use_selfcontents then {
-            if posx == endpos - 1  then # stop at pos in the line displayed
+            if posx == endpos - 1  then # stop at the position in the line displayed
                return sblnks - numtabs
             } 
          else {
-            if linepos == endpos  then  # stop where at endpos in self.contents
+            if linepos == endpos  then  # stop where at endpos in self.contents 
                return  sblnks - numtabs
-            } 
-
-          if x12 == "\t" then {
-              numtabs := numtabs + 1
-              posx := posx + 1
-              sblnks := sblnks + (8 -  (posx-1)%8)
-              posx := posx + (8 -  (posx-1)%8) - 1
-          }
+             }
+         if x12 == "\t" then {
+            numtabs +:= 1
+            posx +:= 1
+            sblnks +:= 8 - (posx-1)%8
+            posx +:= (8 -  (posx-1)%8) - 1
+            }
          else
-             posx := posx + 1
-       }
-    }
+            posx +:= 1
+         } # while
+      }
 
-#  subtract numtabs the positions "\t" since we already counted them
-
-   return sblnks - numtabs
+      #  subtract numtabs the positions "\t" since we already counted them
+      return sblnks - numtabs
    end
 
-#
 #  Create a list mapping the cursor postion to the correct position
 #  This allows the cursor to skip over the tab positions and jump
 #  to the next nontab position. If vertical_key is null, then it
 #  is a horizantal jump and needs to move an extra position. If the
 #  vertical_key is not null, then it is a vertical jump and it does
-#  not need to move forward an extra position just straight up or down.   
-#
-   method map_pos(pos_line,vertical_key)
-   local posx, sblnks, pos_line2, x12, tabpos
+#  not need to move forward an extra position just straight up or down.
+   
+method map_pos(pos_line, vertical_key) 
+local posx, sblnks, pos_line2, x12, tabpos
+
    posx := 0
    sblnks := 0
-
    pos_line2 := list(*pos_line,1)
 
    pos_line ? {
-      while x12 := move(1)  do {
+      while x12 := move(1) do {
          if x12 == "\t" then {
-            posx := posx + 1
-            if /vertical_key then
-               tabpos := posx + 8 -  (posx-1)%8 - 1
-            else
-               tabpos := posx + 8 -  (posx-1)%8
-            pos_line2 :=  handle_map_pos(posx,pos_line2,tabpos)
-            posx := posx + (8 -  (posx-1)%8) - 1
-            }
-         else {
-            posx := posx + 1
-            pos_line2[posx] := posx
-            }
+            posx +:= 1
+
+         if /vertical_key then
+            tabpos := posx + 8 -  (posx-1)%8 - 1
+         else
+            tabpos := posx + 8 -  (posx-1)%8
+         pos_line2 :=  handle_map_pos(posx,pos_line2,tabpos)
+         posx +:= (8 -  (posx-1)%8) - 1
+         }
+       else {
+         posx +:= 1
+         pos_line2[posx] := posx
          }
       }
+   }
+
    return pos_line2
    end
 
 #
 # helper method for map_pos
-#
-   method handle_map_pos(posx,pos_line2,tabpos)
-   local tablen, seg1, seg2, limit, j, i
+method handle_map_pos(posx, pos_line2, tabpos)
+local tablen, seg1, seg2, limit, j, i
+
    tablen := []
    seg1 := []
    seg2 := []
@@ -5809,24 +6068,24 @@ local posx, sblnks, linepos, numtabs, x12
 
    pos_line2 := seg1 ||| tablen ||| seg2
    return pos_line2
-
    end
 
-   initially(argv[])
+   initially
       self$ScrollArea.initially()
       printable := cset(&ascii[33:128])
       self.cursor_x := self.cursor_y := 1
       self.keeps_tabs := 1
       accepts_tab_focus_flag := &null
-      startdragx := 0
-      enddragx := 0
-      startdragy := 0
-      enddragy := 0
+      startdragx := 1
+      enddragx := 1
+      startdragy := 1
+      enddragy := 1
       donedrag := 0
-      if *argv > 0 then set_fields(argv)
+      undolist := []
+      redolist := []
 end
 
-##
+#
 #  This class is just a superclass of {List} and {EditList} below.
 #
 class DropDown(

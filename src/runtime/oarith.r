@@ -79,7 +79,7 @@ end
 #begdef Divide(x,y)
 {
    if (y == 0)
-      runerr(201);
+      runerr(201);  /* divide fix */
 
    irslt = div3(x,y);
    if (over_flow) {

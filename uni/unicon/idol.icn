@@ -874,17 +874,17 @@ procedure fetchspec(name)
 	 }
       close(f)
       }
-   if not (ipath := getenv("IPATH")) then {
-       if binpath := (&features ? (="Binaries at " & tab(0))) then { }
-       else if (f := open((binpath:=getpaths()) || ("nticonx.exe"|"wiconx.exe"))) then {
-	   close(f)
-           }
-       ipath := "\"" || binpath || "../ipl/lib\" \"" || binpath||"../uni/lib\""
-   }
+   ipath := getenv("IPATH") | ""
+   if binpath := (&features ? (="Binaries at " & tab(0))) then { }
+   else if (f := open((binpath:=getpaths()) || ("nticonx.exe"|"wiconx.exe"|"iconx"))) then {
+	close(f)
+        }
+   ipath ||:= " \"" || binpath || "../ipl/lib\" \"" || binpath||"../uni/lib\" \"" || binpath || "../uni/gui\""
 
    if \ipath then {
       ipath ? {
          dir := ""
+	 tab(many(' '))
 	 while dir ||:= tab(many(nonwhite)) do {
 	    if *dir>0 & dir[1]=="\"" & dir[-1] ~== "\"" then {
 		dir ||:= tab(many(' \t')) | { fail }

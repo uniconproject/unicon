@@ -45,6 +45,143 @@ function{0,1} event(x,y,ce)
       }
 end
 
+void assign_event_functions(struct progstate *p, struct descrip cs)
+{
+   p->eventmask = cs;
+
+   /*
+    * Most instrumentation functions depend on a single event.
+    */
+   p->Cplist =
+      ((Testb((word)ToAscii(E_Lcreate), cs)) ? cplist_1 : cplist_0);
+   p->Cpset =
+      ((Testb((word)ToAscii(E_Screate), cs)) ? cpset_1 : cpset_0);
+   p->Cptable =
+      ((Testb((word)ToAscii(E_Tcreate), cs)) ? cptable_1 : cptable_0);
+   p->Deref =
+      ((Testb((word)ToAscii(E_Deref), cs)) ? deref_1 : deref_0);
+   p->Alcbignum =
+      ((Testb((word)ToAscii(E_Lrgint),cs)) ? alcbignum_1:alcbignum_0);
+   p->Alccset =
+      ((Testb((word)ToAscii(E_Cset), cs)) ? alccset_1 : alccset_0);
+   p->Alcfile =
+      ((Testb((word)ToAscii(E_File), cs)) ? alcfile_1 : alcfile_0);
+   p->Alcsegment =
+      ((Testb((word)ToAscii(E_Slots), cs)) ? alcsegment_1 : alcsegment_0);
+   p->Alcreal =
+      ((Testb((word)ToAscii(E_Real), cs)) ? alcreal_1 : alcreal_0);
+   p->Alcrecd =
+      ((Testb((word)ToAscii(E_Record), cs)) ? alcrecd_1 : alcrecd_0);
+   p->Alcrefresh =
+      ((Testb((word)ToAscii(E_Refresh), cs)) ? alcrefresh_1 : alcrefresh_0);
+   p->Alcselem =
+      ((Testb((word)ToAscii(E_Selem), cs)) ? alcselem_1 : alcselem_0);
+   p->Alcstr =
+      ((Testb((word)ToAscii(E_String), cs)) ? alcstr_1 : alcstr_0);
+   p->Alcsubs =
+      ((Testb((word)ToAscii(E_Tvsubs), cs)) ? alcsubs_1 : alcsubs_0);
+   p->Alctelem =
+      ((Testb((word)ToAscii(E_Telem), cs)) ? alctelem_1 : alctelem_0);
+   p->Alctvtbl =
+      ((Testb((word)ToAscii(E_Tvtbl), cs)) ? alctvtbl_1 : alctvtbl_0);
+   p->Deallocate =
+      ((Testb((word)ToAscii(E_BlkDeAlc), cs)) ? deallocate_1 : deallocate_0);
+
+   /*
+    * A few functions enable more than one event code.
+    */
+   p->EVstralc =
+      (((Testb((word)ToAscii(E_String), cs)) ||
+	(Testb((word)ToAscii(E_StrDeAlc), cs)))
+       ? EVStrAlc_1 : EVStrAlc_0);
+   p->Alchash =
+      (((Testb((word)ToAscii(E_Table), cs)) ||
+	(Testb((word)ToAscii(E_Set), cs)))
+       ? alchash_1 : alchash_0);
+   p->Reserve =
+      (((Testb((word)ToAscii(E_TenureString), cs)) ||
+	(Testb((word)ToAscii(E_TenureBlock), cs)))
+       ? reserve_1 : reserve_0);
+
+   /*
+    * Multiple functions all triggered by same events
+    */
+   if ((Testb((word)ToAscii(E_List), cs)) ||
+       (Testb((word)ToAscii(E_Lelem), cs))) {
+      p->Alclist_raw = alclist_raw_1;
+      p->Alclist = alclist_1;
+      p->Alclstb = alclstb_1;
+      }
+   else {
+      p->Alclist_raw = alclist_raw_0;
+      p->Alclist = alclist_0;
+      p->Alclstb = alclstb_0;
+      }
+
+   if ((Testb((word)ToAscii(E_Aconv), cs)) ||
+       (Testb((word)ToAscii(E_Tconv), cs)) ||
+       (Testb((word)ToAscii(E_Nconv), cs)) ||
+       (Testb((word)ToAscii(E_Sconv), cs)) ||
+       (Testb((word)ToAscii(E_Fconv), cs))) {
+
+      p->Cnvcset = cnv_cset_1;
+      p->Cnvint = cnv_int_1;
+      p->Cnvreal = cnv_real_1;
+      p->Cnvstr = cnv_str_1;
+      p->Cnvtcset = cnv_tcset_1;
+      p->Cnvtstr = cnv_tstr_1;
+      }
+   else {
+      p->Cnvcset = cnv_cset_0;
+      p->Cnvint = cnv_int_0;
+      p->Cnvreal = cnv_real_0;
+      p->Cnvstr = cnv_str_0;
+      p->Cnvtcset = cnv_tcset_0;
+      p->Cnvtstr = cnv_tstr_0;
+      }
+
+   /*
+    * interp() is the monster case:
+    * We should replace 30 membership tests with a cset intersection.
+    * Heck, we should redo the event codes so any bit in one
+    * particular word means: "use the instrumented interp".
+    */
+   if (Testb((word)ToAscii(E_Intcall), cs) ||
+       Testb((word)ToAscii(E_Stack), cs) ||
+       Testb((word)ToAscii(E_Fsusp), cs) ||
+       Testb((word)ToAscii(E_Osusp), cs) ||
+       Testb((word)ToAscii(E_Bsusp), cs) ||
+       Testb((word)ToAscii(E_Ocall), cs) ||
+       Testb((word)ToAscii(E_Ofail), cs) ||
+       Testb((word)ToAscii(E_Tick), cs) ||
+       Testb((word)ToAscii(E_Line), cs) ||
+       Testb((word)ToAscii(E_Loc), cs) ||
+       Testb((word)ToAscii(E_Opcode), cs) ||
+       Testb((word)ToAscii(E_Fcall), cs) ||
+       Testb((word)ToAscii(E_Prem), cs) ||
+       Testb((word)ToAscii(E_Erem), cs) ||
+       Testb((word)ToAscii(E_Intret), cs) ||
+       Testb((word)ToAscii(E_Psusp), cs) ||
+       Testb((word)ToAscii(E_Ssusp), cs) ||
+       Testb((word)ToAscii(E_Pret), cs) ||
+       Testb((word)ToAscii(E_Efail), cs) ||
+       Testb((word)ToAscii(E_Sresum), cs) ||
+       Testb((word)ToAscii(E_Fresum), cs) ||
+       Testb((word)ToAscii(E_Oresum), cs) ||
+       Testb((word)ToAscii(E_Eresum), cs) ||
+       Testb((word)ToAscii(E_Presum), cs) ||
+       Testb((word)ToAscii(E_Pfail), cs) ||
+       Testb((word)ToAscii(E_Ffail), cs) ||
+       Testb((word)ToAscii(E_Frem), cs) ||
+       Testb((word)ToAscii(E_Orem), cs) ||
+       Testb((word)ToAscii(E_Fret), cs) ||
+       Testb((word)ToAscii(E_Oret), cs)
+       )
+      p->Interp = interp_1;
+   else
+      p->Interp = interp_0;
+}
+
 /*
  * EvGet(c) - user function for reading event streams.
  * EvGet returns the code of the matched token.  These keywords are also set:
@@ -76,138 +213,7 @@ function{0,1} EvGet(cs,flag)
       p = BlkLoc(curpstate->eventsource)->coexpr.program;
       if (p->parent == curpstate) {
 	 if (BlkLoc(p->eventmask) != BlkLoc(cs)) {
-	    p->eventmask = cs;
-
-	    /*
-	     * Most instrumentation functions depend on a single event.
-	     */
-	    p->Cplist =
-	       ((Testb((word)ToAscii(E_Lcreate), cs)) ? cplist_1 : cplist_0);
-	    p->Cpset =
-	       ((Testb((word)ToAscii(E_Screate), cs)) ? cpset_1 : cpset_0);
-	    p->Cptable =
-	       ((Testb((word)ToAscii(E_Tcreate), cs)) ? cptable_1 : cptable_0);
-	    p->Deref =
-	       ((Testb((word)ToAscii(E_Deref), cs)) ? deref_1 : deref_0);
-	    p->Alcbignum =
-	       ((Testb((word)ToAscii(E_Lrgint),cs)) ? alcbignum_1:alcbignum_0);
-	    p->Alccset =
-	       ((Testb((word)ToAscii(E_Cset), cs)) ? alccset_1 : alccset_0);
-	    p->Alcfile =
-	       ((Testb((word)ToAscii(E_File), cs)) ? alcfile_1 : alcfile_0);
-	    p->Alcsegment =
-	       ((Testb((word)ToAscii(E_Slots), cs)) ? alcsegment_1 : alcsegment_0);
-	    p->Alcreal =
-	       ((Testb((word)ToAscii(E_Real), cs)) ? alcreal_1 : alcreal_0);
-	    p->Alcrecd =
-	       ((Testb((word)ToAscii(E_Record), cs)) ? alcrecd_1 : alcrecd_0);
-	    p->Alcrefresh =
-	       ((Testb((word)ToAscii(E_Refresh), cs)) ? alcrefresh_1 : alcrefresh_0);
-	    p->Alcselem =
-	       ((Testb((word)ToAscii(E_Selem), cs)) ? alcselem_1 : alcselem_0);
-	    p->Alcstr =
-	       ((Testb((word)ToAscii(E_String), cs)) ? alcstr_1 : alcstr_0);
-	    p->Alcsubs =
-	       ((Testb((word)ToAscii(E_Tvsubs), cs)) ? alcsubs_1 : alcsubs_0);
-	    p->Alctelem =
-	       ((Testb((word)ToAscii(E_Telem), cs)) ? alctelem_1 : alctelem_0);
-	    p->Alctvtbl =
-	       ((Testb((word)ToAscii(E_Tvtbl), cs)) ? alctvtbl_1 : alctvtbl_0);
-	    p->Deallocate =
-	       ((Testb((word)ToAscii(E_BlkDeAlc), cs)) ? deallocate_1 : deallocate_0);
-
-	    /*
-	     * A few functions enable more than one event code.
-	     */
-	    p->EVstralc =
-	       (((Testb((word)ToAscii(E_String), cs)) ||
-		 (Testb((word)ToAscii(E_StrDeAlc), cs)))
-		? EVStrAlc_1 : EVStrAlc_0);
-	    p->Alchash =
-	       (((Testb((word)ToAscii(E_Table), cs)) ||
-		 (Testb((word)ToAscii(E_Set), cs)))
-		 ? alchash_1 : alchash_0);
-	    p->Reserve =
-	       (((Testb((word)ToAscii(E_TenureString), cs)) ||
-		 (Testb((word)ToAscii(E_TenureBlock), cs)))
-		 ? reserve_1 : reserve_0);
-
-	    /*
-	     * Multiple functions all triggered by same events
-	     */
-	    if ((Testb((word)ToAscii(E_List), cs)) ||
-		(Testb((word)ToAscii(E_Lelem), cs))) {
-	       p->Alclist_raw = alclist_raw_1;
-	       p->Alclist = alclist_1;
-	       p->Alclstb = alclstb_1;
-	       }
-	    else {
-	       p->Alclist_raw = alclist_raw_0;
-	       p->Alclist = alclist_0;
-	       p->Alclstb = alclstb_0;
-	       }
-
-	    if ((Testb((word)ToAscii(E_Aconv), cs)) ||
-		(Testb((word)ToAscii(E_Tconv), cs)) ||
-		(Testb((word)ToAscii(E_Nconv), cs)) ||
-		(Testb((word)ToAscii(E_Sconv), cs)) ||
-		(Testb((word)ToAscii(E_Fconv), cs))) {
-	       p->Cnvcset = cnv_cset_1;
-	       p->Cnvint = cnv_int_1;
-	       p->Cnvreal = cnv_real_1;
-	       p->Cnvstr = cnv_str_1;
-	       p->Cnvtcset = cnv_tcset_1;
-	       p->Cnvtstr = cnv_tstr_1;
-	       }
-	    else {
-	       p->Cnvcset = cnv_cset_0;
-	       p->Cnvint = cnv_int_0;
-	       p->Cnvreal = cnv_real_0;
-	       p->Cnvstr = cnv_str_0;
-	       p->Cnvtcset = cnv_tcset_0;
-	       p->Cnvtstr = cnv_tstr_0;
-	       }
-
-	    /*
-	     * interp() is the monster case:
-	     * We should replace 30 membership tests with a cset intersection.
-	     * Heck, we should redo the event codes so any bit in one
-	     * particular word means: "use the instrumented interp".
-	     */
-	    if (Testb((word)ToAscii(E_Intcall), cs) ||
-		Testb((word)ToAscii(E_Stack), cs) ||
-		Testb((word)ToAscii(E_Fsusp), cs) ||
-		Testb((word)ToAscii(E_Osusp), cs) ||
-		Testb((word)ToAscii(E_Bsusp), cs) ||
-		Testb((word)ToAscii(E_Ocall), cs) ||
-		Testb((word)ToAscii(E_Ofail), cs) ||
-		Testb((word)ToAscii(E_Tick), cs) ||
-		Testb((word)ToAscii(E_Line), cs) ||
-		Testb((word)ToAscii(E_Loc), cs) ||
-		Testb((word)ToAscii(E_Opcode), cs) ||
-		Testb((word)ToAscii(E_Fcall), cs) ||
-		Testb((word)ToAscii(E_Prem), cs) ||
-		Testb((word)ToAscii(E_Erem), cs) ||
-		Testb((word)ToAscii(E_Intret), cs) ||
-		Testb((word)ToAscii(E_Psusp), cs) ||
-		Testb((word)ToAscii(E_Ssusp), cs) ||
-		Testb((word)ToAscii(E_Pret), cs) ||
-		Testb((word)ToAscii(E_Efail), cs) ||
-		Testb((word)ToAscii(E_Sresum), cs) ||
-		Testb((word)ToAscii(E_Fresum), cs) ||
-		Testb((word)ToAscii(E_Oresum), cs) ||
-		Testb((word)ToAscii(E_Eresum), cs) ||
-		Testb((word)ToAscii(E_Presum), cs) ||
-		Testb((word)ToAscii(E_Pfail), cs) ||
-		Testb((word)ToAscii(E_Ffail), cs) ||
-		Testb((word)ToAscii(E_Frem), cs) ||
-		Testb((word)ToAscii(E_Orem), cs) ||
-		Testb((word)ToAscii(E_Fret), cs) ||
-		Testb((word)ToAscii(E_Oret), cs)
-		)
-	       p->Interp = interp_1;
-	    else
-	       p->Interp = interp_0;
+	    assign_event_functions(p, cs);
 	    }
 	 }
 

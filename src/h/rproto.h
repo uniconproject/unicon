@@ -35,6 +35,7 @@ struct b_telem	*alctelem_0	(void);
 struct b_telem	*alctelem_1	(void);
 struct b_tvtbl	*alctvtbl_0	(dptr tbl,dptr ref,uword hashnum);
 struct b_tvtbl	*alctvtbl_1	(dptr tbl,dptr ref,uword hashnum);
+void assign_event_functions(struct progstate *p, struct descrip cs);
 #else					/* MultiThread */
 struct b_cset	*alccset	(void);
 struct b_file	*alcfile	(FILE *fd,int status,dptr name);

@@ -1551,6 +1551,7 @@ function{1,*} paramnames(ce,i)
    else if is:proc(ce) then inline {
       int j;
       struct b_proc *cproc = (struct b_proc *)BlkLoc(ce);
+      /* do built-ins (nparam < 0) have readable parameter names? maybe not.*/
       for(j = 0; j < cproc->nparam; j++) {
 	 result = cproc->lnames[j];
 	 suspend result;
@@ -1816,7 +1817,12 @@ function{1} eventmask(ce,cs,vmask)
          return cset
          }
       body {
-         ((struct b_coexpr *)BlkLoc(ce))->program->eventmask = cs;
+	 struct progstate *p = ((struct b_coexpr *)BlkLoc(ce))->program;
+	 if (BlkLoc(cs) != BlkLoc(p->eventmask)) {
+	    p->eventmask = cs;
+	    assign_event_functions(p, cs);
+	    }
+
 	 if (!is:null(vmask)) {
             if (!is:table(vmask)) runerr(124,vmask);
 	    ((struct b_coexpr *)BlkLoc(ce))->program->valuemask = vmask;

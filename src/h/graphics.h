@@ -324,6 +324,25 @@ typedef struct _lclIdentifier {
 #endif					/* PresentationManager */
 
 /*
+ * Texture management requires that we be able to lookup and reuse
+ * existing textures, as well as support dynamic window-based textures.
+ */
+#ifdef Graphics3D
+typedef struct _wtexture {
+   int		refcount;
+   int		serial;			/* serial # */
+   struct _wtexture *previous, *next;
+   int          textype;	/* 1 = file, 2 = window (descrip), 3 = string*/
+   struct descrip d;
+   struct {			/* if type = 1, we store file attributes */
+      int           size;
+      int          timestamp;
+      } fattr;
+   int       texindex;
+   } wtexture, *wtp;
+#endif					/* Graphics3D */
+
+/*
  * "Context" comprises the graphics context, and the font (i.e. text context).
  * Foreground and background colors (pointers into the display color table)
  * are stored here to reduce the number of window system queries.
@@ -378,8 +397,6 @@ typedef struct _wcontext {
 
 #ifdef Graphics3D
 
-#define MAXTEXCOORDS 256 /* change this to be dynamic */
-
 #ifdef XWindows
   GLXContext    ctx;			   /* context for "gl" windows */
 #endif					/* XWindows */
@@ -394,12 +411,14 @@ typedef struct _wcontext {
   
   int           autogen;  /* flag to automatically generate texture coordinate */
   int           texmode;    /* textures on or off */
-  int           numtexcoords;  /* number of texture coordinate */
-  double        texcoords[MAXTEXCOORDS]; /* texture coordinates */
-  int ntextures;			/* number actually used */
+  int           numtexcoords;           /* # of texture coordinates used */
+  int           ntexcoordsalced;      /* # of texture coordinates alloced */
+  double        *texcoords;             /* texture coordinates */
+  int ntextures;			/* # textures actually used */
   int curtexture;			/* subscript of current texture */
   int nalced;				/* number allocated */
   GLuint *texName;			/* array of GL textures */
+  wtp textures;				/* textures */
 
 #endif					/* Graphics3D */
 } wcontext, *wcp;

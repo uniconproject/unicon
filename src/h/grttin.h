@@ -246,7 +246,7 @@ typedef int siptr, stringint, inst;
  * graphics
  */
 #ifdef Graphics
-   typedef int wbp, wsp, wcp, wdp, wclrp, wfp;
+   typedef int wbp, wsp, wcp, wdp, wclrp, wfp, wtp;
    typedef int wbinding, wstate, wcontext, wfont;
    typedef int XRectangle, XPoint, XSegment, XArc, SysColor, LinearColor;
    typedef int LONG, SHORT;

@@ -23,7 +23,7 @@ struct token *one_tok;          /* token for literal 1 */
 /*
  * IsWhSp(c) - true if c is a white space character.
  */
-#define IsWhSp(c) (c == ' ' || c == '\n' || c == '\t' || c == '\v' || c == '\f')
+#define IsWhSp(c) (c == ' ' || c == '\n' || c == '\t' || c == '\v' || c == '\f' || c == '\r')
 
 /*
  * AdvChar() - advance to next character from buffer, filling the buffer

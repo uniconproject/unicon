@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: Makefile,v 1.3 2001-10-30 08:45:09 jeffery Exp $
+# $Id: Makefile,v 1.4 2001-11-28 07:53:26 phliar Exp $
 
 
 # Configure the code for a specific system.
@@ -113,12 +113,12 @@ Install:
 		test -d $D/doc || mkdir $D/doc
 		test -d $D/man || mkdir $D/man
 		test -d $D/man/man1 || mkdir $D/man/man1
-		cp README $D
-		cp bin/[a-qs-z]* $D/bin
-		rm -f $D/bin/libXpm*
-		cp lib/*.* $D/lib
-		cp doc/*.* $D/doc
-		cp man/man1/icont.1 $D/man/man1
+		-cp README $D
+		-cp bin/[a-qs-z]* $D/bin
+		-rm -f $D/bin/libXpm*
+		-cp ipl/lib/*.* $D/lib
+		-cp doc/*.* $D/doc
+		-cp man/man1/icont.1 $D/man/man1
 
 
 # Bundle up for binary distribution.
@@ -135,7 +135,7 @@ Package:
 #
 # Tests.
 
-Test    Test-icont:	; cd tests; $(MAKE) Test
+Test    Test-icont:	; cd tests; $(MAKE) Test; cd ../posix; $(MAKE) Test
 Samples Samples-icont:	; cd tests; $(MAKE) Samples
 
 Test-iconc:		; cd tests; $(MAKE) Test-iconc

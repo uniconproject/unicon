@@ -170,6 +170,10 @@ typedef int clock_t, time_t, fd_set;
    typedef int FINDDATA_T;
 #endif					/* WildCards */
 
+#ifdef ReadDirectory
+   typedef int DIR;
+#endif					/* ReadDirectory */
+
 #if defined(Network) || defined (Messaging)
 typedef int size_t;
 typedef long time_t;
@@ -193,7 +197,7 @@ typedef int jmp_buf;
 
 #if NT
 typedef int HMODULE, WSADATA, WORD;
-#endif
+#endif					/* NT */
 
 #ifdef PosixFns
 typedef int SOCKET;
@@ -316,18 +320,16 @@ typedef int siptr, stringint, inst;
    /*
     * Convenience macros to make up for RTL's long-windedness.
     */
-   #begdef CnvShortInt(desc, s, max)
+   #begdef CnvShortInt(desc, s, max, min, type)
 	{
-	struct descrip tmp;
-	if (!cnv:integer(desc,tmp)) runerr(101,desc);
-	if ((tmp.dword != D_Integer) || (IntVal(tmp) > max))
-	   MakeInt(max, &tmp);
-	s = (short) IntVal(tmp);
+	C_integer tmp;
+	if (!cnv:C_integer(desc,tmp) || tmp > max || tmp < min)
+	   runerr(101,desc);
+	s = (type) tmp;
 	}
    #enddef				/* CnvShortInt */
-   
-   #define CnvCShort(d,s) CnvShortInt(d,s,32767)
-   #define CnvCUShort(d,s) CnvShortInt(d,s,65535)
+   #define CnvCShort(desc, s) CnvShortInt(desc, s, 0x7FFF, -0x8000, short)
+   #define CnvCUShort(desc, s) CnvShortInt(desc, s, 0xFFFF, 0, unsigned short)
    
    #define CnvCInteger(d,i) \
      if (!cnv:C_integer(d,i)) runerr(101,d);

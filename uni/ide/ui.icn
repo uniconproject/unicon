@@ -4,9 +4,9 @@
 #
 #	Subject:  Unicon IDE, an integrated programming environment
 #
-#	Authors:  Clinton Jeffery and Susie Jeffery
+#	Authors:  Clinton Jeffery, Susie Jeffery
 #
-#	Date:     September 29, 2002
+#	Date:     July 6, 2004
 #
 ############################################################################
 #
@@ -24,247 +24,243 @@
 #
 ############################################################################
 #
-#  Links:  graphics
+#  Links:  graphics, io, font_dlg
 #
 ############################################################################
 
 link file_dlg
-link msg_dlg
 link font_dlg
 link graphics
 link io
 link getpaths
 $ifdef _UNIX
-$define PATHSEP "/"
+   $define PATHSEP "/"
 $else # implies Windows for now
-$define PATHSEP "\\"
+   $define PATHSEP "\\"
 $endif
-global current_file, targs, browser, docpath, xargs, icodename, wiconlog,
-	project,
-	findstr,
-	foundline,
-	foundcol,
-	height,
-	width,
-	font,
-	fontheight,
-	msglines,
-	linebreak,
-	ui_ini
+global targs, browser, docpath, xargs, icodename, wiconlog,
+   project,
+   findstr,
+   foundline,
+   foundcol,
+   height,
+   width,
+   font,
+   fontheight,
+   msglines,
+   linebreak,
+   ui_ini,
+   current_file
 
 global tmp
 class dialog : _Dialog(new_menu_item, openfile, print_menu_item, save_menu_item, saveas_menu_item, ivib_menu_item, exit_menu_item, copy_menu_item, cut_menu_item, paste_menu_item,EditBox,MsgBox,find_menu_item,replace_menu_item,goto_menu_item,matchparen_menu_item,undo_menu_item,editconfig_menu_item,font_menu_item,saveoptions_menu_item,make_exec_menu_item,compile_menu_item,compile_options_menu_item,run_menu_item,run_arg_menu_item,project_add_menu_item,help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,help_ivib,help_iconfaq,help_uniconfaq,browse_local,browse_net,help_icon_reference,help_unicon_reference, file_menu,select_all_menu_item,message_window_size,unix_newlines,dos_newlines)
-###############################################################################
-# copy to clipboard
-###############################################################################
 
-method copy_to_clipboard(l)
-    local large_str, i
-    if /l | *l = 0 then fail
-    large_str := l[1]
-    every i := 2 to *l do large_str ||:= "\n" || l[i]
-#    write(
-WAttrib("selection=" || large_str)
-#)
-    return large_str
-end
+   #
+   # copy to clipboard
+   #
+   method copy_to_clipboard(l)
+   local large_str, i
+      if /l | *l = 0 then fail
+      large_str := l[1]
+      every i := 2 to *l do large_str ||:= "\n" || l[i]
+      WAttrib(self.win,"selection=" || large_str)
+      return large_str
+   end
 
-#
-# get list from clipboard
-#
-
-method get_list_from_clipboard()
-    local large_str, l, str
-    large_str := WAttrib("selection")
-    if /large_str then fail
-    l := []
-    large_str ? {
-       while put(l, tab(upto("\n"))) do move(1)
-       put(l, tab(0))
-    }
-    return l
-end
+   #
+   # get list from clipboard
+   #
+   method get_list_from_clipboard()
+   local large_str, l, str
+      large_str := WAttrib(self.win, "selection")
+      if /large_str then fail
+      l := []
+      large_str ? {
+         while put(l, tab(upto("\n"))) do move(1)
+         put(l, tab(0))
+         }
+      return l
+   end
 	
-#
-method handle_copy_menu_item(ev)
-local copylst
-copylst := []
-  copylst := EditBox.get_selection() #copy it
-  tmp := EditBox.get_selection() #copy it
-#  copy_to_clipboard(copylst)
+   #
+   method handle_copy_menu_item(ev)
+   local copylst
+      copylst := []
+      copylst := EditBox.get_selection() #copy it
+      tmp := EditBox.get_selection() #copy it
+      #  copy_to_clipboard(copylst)
+   end
+
+   method handle_cut_menu_item(ev)
+   local cutlst
+      cutlst := []
+      cutlst := EditBox.get_selection() #copy it
+
+      tmp := EditBox.get_selection() #copy it
+      #  copy_to_clipboard(cutlst)
+
+      EditBox.cut_selection()
+   end
+
+   method handle_paste_menu_item(ev)
+   local s
+      s := []
+      EditBox.set_selection(tmp)
+
+      #  s := get_list_from_clipboard()
+      #  EditBox.set_selection(s)
 end
 
-method handle_cut_menu_item(ev)
-local cutlst
-cutlst := []
-  cutlst := EditBox.get_selection() #copy it
+   #
+   method handle_new_menu_item(ev)
+   local results_list, mb  
+      if \current_file then  {
+         prompt_save()
+         current_file := &null
+         self.set_attribs("label=Ui editing: (untitled)")
+         WAttrib(\ (self.win), "label=Ui editing: (untitled)")
+         }
+      results_list := []
+      EditBox.set_contents(results_list)
+   end
 
-  tmp := EditBox.get_selection() #copy it
-#  copy_to_clipboard(cutlst)
+   method handle_openfile(ev, filename)
+   local line, L, nchars, fd, file
 
-  EditBox.cut_selection()
-end
+      # check if current file is modified & if so, prompt to save
+      prompt_save()
 
-method handle_paste_menu_item(ev)
-local s
-s := []
-
-  EditBox.set_selection(tmp)
-
-
-#  s := get_list_from_clipboard()
-#  EditBox.set_selection(s)
-
-end
-#
-#############################################################################
-method handle_new_menu_item(ev)
-  local results_list, mb  
-  if \current_file then  {
-     prompt_save()
-     current_file := &null
-     self.set_attribs("label=Ui editing: (untitled)")
-     WAttrib(\ (self.win), "label=Ui editing: (untitled)")
-     }
-  results_list := []
-  EditBox.set_contents(results_list)
-end
-
-method handle_openfile(ev, filename)
-  local line, L, nchars, fd, file
-
-   # check if current file is modified & if so, prompt to save
-   prompt_save()
-
-   if /filename then {
+      if /filename then {
 $ifdef _UNIX
-      fd := FileDialog()
-      fd.set_extra_attribs(["label=Select File to Edit"])
-      fd.show_modal(self)
-      filename := fd.get_result() | fail
+         fd := FileDialog()
+         fd.set_extra_attribs(["label=Select File to Edit"])
+         fd.show_modal(self)
+         filename := fd.get_result() | fail
 $else
-      filename := WinOpenDialog(self.win, "Select File to Edit", "", 50) | fail
+         filename := WinOpenDialog(self.win,"Select File to Edit","",50) | fail
 $endif
-      }
-  if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-      MsgBox$set_label(["Enter File Name"])
-      return
-  }    
+         }
+     if /filename | filename=="" | filename[-1]==("\\"|"/") then {
+        MsgBox$set_label(["Enter File Name"])
+        return
+        }    
    
-  if  map(filename)[-4:0] == ".icp" then { # open project
-     project := filename
-     updateproject()
-     }
-   else filename := defextension(filename)
+      if  map(filename)[-4:0] == ".icp" then { # open project
+         project := filename
+         updateproject()
+         }
+      else filename := defextension(filename)
 
-  file := open(filename, "ru") | {
-     MsgBox.set_contents(["Could not open file: " || filename])
-     return
-     }
+      file := open(filename, "ru") | {
+         MsgBox.set_contents(["Could not open file: " || filename])
+         return
+         }
 
-  MsgBox.set_contents(["Reading "||filename||"..."])
+      MsgBox.set_contents(["Reading "||filename||"..."])
 
-  L := []
-  nchars := 0
-  while line := read(file) do { put(L, line); nchars +:= *line + 1 }
+      L := []
+      nchars := 0
+      while line := read(file) do { put(L, line); nchars +:= *line + 1 }
          
-  EditBox.set_contents(L)
-  MsgBox.set_contents(["opened " || filename || ", " || *L || " lines, " ||
-		       nchars || " characters"])
-  self.set_attribs("label=Ui editing: " || filename)
-  WAttrib(\ (self.win), "label=Ui editing: " || filename)
-  current_file := filename    
-end
+      EditBox.set_contents(L)
+      MsgBox.set_contents(["opened " || filename || ", " || *L || " lines, " ||
+			   nchars || " characters"])
+      self.set_attribs("label=Ui editing: " || filename)
+      WAttrib(\ (self.win), "label=Ui editing: " || filename)
+      current_file := filename    
+   end
 
-method handle_print_menu_item(ev)
-   MsgBox.set_contents(["Sorry, no printing yet."])
-end
+   method handle_print_menu_item(ev)
+      MsgBox.set_contents(["Sorry, no printing yet."])
+   end
 
-method handle_save_file(filename)  
-local file, l, line
+   method handle_save_file(filename)  
+   local file, l, line
 
-   l := EditBox.get_contents() | []
-   file := open(filename, "cu") | {
-      MsgBox.set_contents([filename || ": failure to open for writing."])
-      fail
-      }
+      l := EditBox.get_contents() | []
+      file := open(filename, "cu") | {
+         MsgBox.set_contents([filename || ": failure to open for writing."])
+         fail
+         }
 
-   every line := !l do {
-     line := trim(line, '\^m')
-     if linebreak == "CRLF" then write(file, line, "\^m")
-     else
-        write(file, line)
-     }
-   close(file)
+      every line := !l do {
+         line := trim(line, '\^m')
+         if linebreak == "CRLF" then write(file, line, "\^m")
+         else
+            write(file, line)
+         }
+      close(file)
 
-   MsgBox.set_contents([filename || " saved."])
-   EditBox.clear_modified()
-   if map(filename[-4:0]) == ".icp" then updateproject()
-end
+      MsgBox.set_contents([filename || " saved."])
+      EditBox.clear_modified()
+      if map(filename[-4:0]) == ".icp" then updateproject()
+   end
 
-#
-method handle_save_menu_item(ev)
-   if /current_file then {
-      handle_saveas_menu_item(ev)
-      return
-      }
-   handle_save_file(current_file)
-end
+   #
+   method handle_save_menu_item(ev)
+      if /current_file then {
+         handle_saveas_menu_item(ev)
+         return
+         }
+      handle_save_file(current_file)
+   end
 
-
-method handle_saveas_menu_item(ev)
+   method handle_saveas_menu_item(ev)
    local fd, filename, foo
 
 $ifdef _UNIX
-   fd := FileDialog()
-   fd.set_extra_attribs(["label=Save file As:"])
-   fd.show_modal(self)
-   filename := fd.get_result() | fail
+      fd := FileDialog()
+      fd.set_extra_attribs(["label=Save file As:"])
+      fd.show_modal(self)
+      filename := fd.get_result() | fail
 $else
-   filename := WinSaveDialog(self.win, "Save file As:", "", 50) | fail
-   if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
+      filename := WinSaveDialog(self.win, "Save file As:", "", 50) | fail
+      if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
 $endif
 
-   if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-      MsgBox$set_contents(["Enter File Name to save"])
-      return
-      }    
-   filename := defextension(filename)
+      if /filename | filename=="" | filename[-1]==("\\"|"/") then {
+         MsgBox.set_contents(["Enter File Name to save"])
+         return
+         }    
+      filename := defextension(filename)
 
-   if \project then {
-      # Resolve absolute versus relative paths and not add absolute
-      # if relative is already in the project.  Brute force version in place.
-      if (not find(map(filename), map(("" | (chdir() || PATHSEP)) || (!file_menu.menus).get_label()))) & find(".icn"|".u",filename) then {
-         foo := TextMenuItem()
-         foo.set_label(filename)
-         file_menu.add(foo)
-         self.resize()			# recalc with new components in place
-	 }
-      }
+      if \project then {
+         # Resolve absolute versus relative paths and not add absolute if
+         # relative is already in the project.  Brute force version in place.
+         if (not find(map(filename),
+		      map(("" | (chdir() || PATHSEP)) ||
+			  (!file_menu.menus).get_label()))) &
+	     find(".icn"|".u",filename) then {
+            foo := TextMenuItem()
+            foo.set_label(filename)
+            file_menu.add(foo)
+            self.resize()		# recalc with new components in place
+	    }
+         }
 
-   /current_file := filename
-   handle_save_file(filename)
+      /current_file := filename
+      handle_save_file(filename)
 
-   if find(".icp", map(filename)) then { # open project
-      project := filename
-      updateproject()
-      }
-   setlabel()
-end
+      if find(".icp", map(filename)) then { # open project
+         project := filename
+         updateproject()
+         }
+      setlabel()
+   end
 
-method handle_ivib_menu_item(ev)
+   method handle_ivib_menu_item(ev)
    local L := []
-   prompt_save()
-   /current_file := "untitled_ivibsession"
-   system("ivib " || current_file, L) | write("system failed")
-   MsgBox.set_contents(L)
-   handle_openfile( , current_file)
-end
+      prompt_save()
+      /current_file := "untitled_ivibsession"
+      system("ivib " || current_file, L) | write("system failed")
+      MsgBox.set_contents(L)
+      handle_openfile( , current_file)
+   end
 
-method prompt_save()
-   if \ (EditBox.modified) then {
-      case SelectDialog((\current_file|"File") || " is modified, save it?",,,
-		 ["Yes", "Save As", "No", "Cancel"]) of {
+   method prompt_save()
+      if \ (EditBox.modified) then {
+         case SelectDialog((\current_file|"File")|| " is modified, save it?",,,
+			   ["Yes", "Save As", "No", "Cancel"]) of {
 	 "Yes": {
 	    if \current_file then handle_save_file(current_file)
 	    else handle_saveas_menu_item()
@@ -277,80 +273,82 @@ method prompt_save()
 	    }
 	 }
       }
-end
+   end
 
-method handle_exit_menu_item(ev)
-   prompt_save()
-   dispose()
-end
+   method handle_exit_menu_item(ev)
+      prompt_save()
+      dispose()
+   end
 
 
-method handle_compile_menu_item(ev)
-local command, str, compile_options, log1, lst
-   MsgBox.set_contents([""])
-   lst := []
+   method handle_compile_menu_item(ev)
+   local command, str, compile_options, log1, lst
 
-   if /current_file then { # current file null
-      MsgBox$set_contents(["Open a file to compile "])
-      return
-      }
-   /targs := ""
+      MsgBox.set_contents([""])
+      lst := []
+
+      if /current_file then { # current file null
+         MsgBox.set_contents(["Open a file to compile "])
+         return
+         }
+      /targs := ""
  
 $ifdef _UNIX
-   system("unicon -c -quiet " || " " || targs || " " ||
-	  comp1file(current_file) || " &> " || wiconlog, lst, 1)
+      system("unicon -c -quiet " || " " || targs || " " ||
+	     comp1file(current_file) || " &> " || wiconlog, lst, 1)
 $else
-   system("wunicon -c -quiet -log " || quotes(wiconlog) || " " || targs ||
-	  " " || comp1file(current_file), lst, 1)
+      system("wunicon -c -quiet -log " || quotes(wiconlog) || " " || targs ||
+	     " " || comp1file(current_file), lst, 1)
 $endif
 
-   showanyerror(wiconlog, lst)
-end
+      showanyerror(wiconlog, lst)
+   end
 
-method quotes(s)
-   if find(" ", s) then s := "\"" || s || "\""
-   return s
-end
+   method quotes(s)
+      if find(" ", s) then s := "\"" || s || "\""
+      return s
+   end
 
-method comp1file(s)
+   method comp1file(s)
    local extended
-   if find(".u", map(s)) then return ""  # do not compile .u files
-   s[find(".icn", map(s)) : 0] := "" # truncate extension
-   # check file attributes; if .u exists and is newer, use it.
-   if newer(s||".u", s||".icn") then fail
-   extended := s || ".icn"
-#   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
-   return quotes(extended)
-end
+      if find(".u", map(s)) then return ""  # do not compile .u files
+      s[find(".icn", map(s)) : 0] := "" # truncate extension
 
-method system(s, lst, apnd)
+      # check file attributes; if .u exists and is newer, use it.
+      if newer(s||".u", s||".icn") then fail
+      extended := s || ".icn"
+      #   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
+      return quotes(extended)
+   end
+
+   method system(s, lst, apnd)
    local rv
   
-   /lst := []
-   if /apnd then while pop(lst)
-   put(lst,s)
-   WAttrib("pointer=wait")
-   rv := proc("system", 0)(s)
-   WAttrib("pointer=arrow")
+      /lst := []
+      if /apnd then while pop(lst)
+      put(lst,s)
+      WAttrib("pointer=wait")
+      rv := proc("system", 0)(s)
+      WAttrib("pointer=arrow")
 #   if not find("&", s) then
 #       put(lst,".....finished")
     #  appendmessage("...finished", 1)
-   if \rv then return rv
-end
+      if \rv then return rv
+   end
 
-method handle_default(ev)
-   if ev.event === &resize then {
-      width := &x
-      height := &y
-      }
-   else {
-      x := ev.get_component()
-      if find("TextMenuItem", type(x)) then {
-         # unidentified text menu item, must be a file to open
-         handle_openfile(ev, x.get_label())
+   method handle_default(ev)
+      if ev.event === &resize then {
+         width := &x
+         height := &y
          }
-      }
-end
+      else {
+         x := ev.get_component()
+         if find("TextMenuItem", type(x)) then {
+            # unidentified text menu item, must be a file to open
+            handle_openfile(ev, x.get_label())
+            }
+         }
+   end
 
    method dialog_event(ev)
       case ev.get_component() of {
@@ -471,7 +469,7 @@ end
    end
 
    method handle_editconfig_menu_item(ev)
-     Notice("don't even remember what editconfig is supposed to do")
+      Notice("don't even remember what editconfig is supposed to do")
    end
 
    method handle_font_menu_item(ev)
@@ -498,7 +496,6 @@ method handle_saveoptions_menu_item(ev)
       # can't write ui.ini, save options fails
       }
 end
-
 
 method complink()
    local x, arglist, lst := [], logf, i, s
@@ -562,7 +559,8 @@ $endif
       }
 
 $ifdef _UNIX
-      system("unicon -quiet " || " -o " || quotes(icodename) || " " || targs || " " || arglist || " &> "|| wiconlog, lst, 1)
+      system("unicon -quiet " || " -o " || quotes(icodename) || " " ||
+	     targs || " " || arglist || " &> "|| wiconlog, lst, 1)
 $else
       system("wunicon -quiet -log " || quotes(wiconlog) ||
 	     " -o " || quotes(icodename) || " " || targs || " " || arglist,
@@ -606,7 +604,7 @@ end
          MsgBox.set_contents(lst)
          }
       }
-end
+   end
 
    method handle_make_exec_menu_item(ev)
 #      save()
@@ -753,7 +751,7 @@ $endif
 	 }
       close(f)
       }
-end
+   end
 
    method handle_select_all_menu_item(ev)
       EditBox.select_all()

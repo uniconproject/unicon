@@ -614,6 +614,12 @@ dptr s, d;
    register union block **ep;
    int res;
 
+#ifdef EventMon
+   if (!is:null(curpstate->eventmask) &&
+       Testb((word)ToAscii(E_Deref), curpstate->eventmask))
+      EVVariable(s, E_Deref);
+#endif
+
    if (!is:variable(*s)) {
       *d = *s;
       }

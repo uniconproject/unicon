@@ -134,6 +134,7 @@
 
 #define E_Assign	'\347'		/* Assignment */
 #define	E_Value		'\350'		/* Value assigned */
+#define E_Deref		'\363'		/* Dereference */
 
 
    /*
@@ -141,6 +142,7 @@
     */
 
 #define E_Ssasgn	'\354'		/* Sub-string assignment */
+
    /*
     * Interpreter stack events
     */

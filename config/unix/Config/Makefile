@@ -64,6 +64,7 @@ Makefiles:
 		echo "BINDIR=../../bin" >> ../../../uni/ivib/makefile
 		cat ../Config/ivib.mak >> ../../../uni/ivib/makefile
 		cat ../Config/ipllib.mak >> ../../../ipl/lib/makefile
+		cp ../Config/ide.mak ../../../uni/ide/makefile
 
 Localcode:
 		cp define.h ../../../src/h

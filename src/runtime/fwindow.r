@@ -811,8 +811,8 @@ function{1} DrawPolygon(argv[argc])
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w....status & Fs_Window3D){
-	 double v[argc-warg];
+      if (w->window->glpix){
+	 double v[MAXXOBJS];
 	 for(i = 0; i<argc-warg; i++){
 	    if(!cnv:C_double(argv[warg + i], v[i]))
 	       runerr(102, argv[warg+i]);
@@ -1246,7 +1246,8 @@ function{1} FillPolygon(argv[argc])
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (Fs_Window3D) {
+      if (w->window->glpix) {
+        double v[MAXXOBJS];
 	for(i = 0; i<argc-warg; i++){
 	   if(!cnv:C_double(argv[warg + i], v[i]))
               runerr(102, argv[warg+i]);

@@ -34,6 +34,7 @@ Clean:
 		rm -f ../../../src/common/rswitch.[csS]
 
 Makefiles:
+		cp ../Config/top.mak ../../../Makefile
 		cat ../Config/rtt.mak \
 		   > ../../../src/rtt/Makefile
 		cat ../Config/common.mak \

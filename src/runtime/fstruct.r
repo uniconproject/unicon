@@ -811,7 +811,7 @@ dptr val;
 {
    register word i;
    register struct b_lelem *bp; /* does not need to be tended */
-   static two = 2;		/* some compilers generate bad code for
+   static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
    /*
     * Point bp at the first list-element block.
@@ -893,7 +893,7 @@ function{1} push(x, vals[n])
       dptr dp;
       register word i, val, num;
       register struct b_lelem *bp; /* does not need to be tended */
-      static two = 2;		/* some compilers generate bad code for
+      static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 
       if (n == 0) {
@@ -987,7 +987,7 @@ struct descrip *val;
 {
    register word i;
    register struct b_lelem *bp;  /* does not need to be tended */
-   static two = 2;		/* some compilers generate bad code for
+   static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 
    /*
@@ -1070,7 +1070,7 @@ function{1} put(x, vals[n])
       dptr dp;
       register word i, val, num;
       register struct b_lelem *bp;  /* does not need to be tended */
-      static two = 2;		/* some compilers generate bad code for
+      static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
       if (n == 0) {
 	 dp = &nulldesc;

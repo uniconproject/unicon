@@ -13,7 +13,7 @@ help:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.1.1.1 2001-05-05 08:36:36 jeffery Exp $
+# $Id: top.mak,v 1.2 2001-09-18 22:04:27 jeffery Exp $
 
 #
 # Configure the code for a specific system.
@@ -21,14 +21,12 @@ help:
 
 Configure:
 		make Clean
-		echo '#define BinPath' \"`pwd`/bin/\" >src/h/path.h
 		cp config/unix/Common/Makefile config/unix/$(name)
 		cd config/unix/$(name);	$(MAKE) 
 		rm -f config/unix/$(name)/Makefile
 
 X-Configure:
 		make Clean
-		echo '#define BinPath' \"`pwd`/bin/\" >src/h/path.h
 		cp config/unix/Common/Makefile config/unix/$(name)
 		cd config/unix/$(name);	$(MAKE) X-Icon
 		rm -f config/unix/$(name)/Makefile

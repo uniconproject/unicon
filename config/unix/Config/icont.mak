@@ -1,4 +1,6 @@
-MAKE=make
+#  Makefile for the Icon translator, icont.
+
+include ../../Makedefs
 
 TRANS=		trans.o tcode.o tlex.o lnklist.o tparse.o tsym.o tmem.o tree.o
 
@@ -29,7 +31,7 @@ $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
 
 $(COBJS):	../h/mproto.h
 
-tmain.o:	tglobals.h ../h/path.h
+tmain.o:	tglobals.h
 util.o:		tglobals.h tree.h ../h/fdefs.h
 
 # translator files

@@ -1,3 +1,7 @@
+#  Makefile for the (Un)Icon run-time system.
+
+include ../../Makedefs
+
 MAKE=make
 RM=rm -f
 

@@ -24,7 +24,7 @@ Setup-X-Icon: Setup
 		echo "XPM=xpm" >> ../../../src/runtime/Makefile
 		cat runtime.hdr ../Config/runtime.mak \
 		   >> ../../../src/runtime/Makefile
-		cat xpm.hdr ../Config/xpm.mak \
+		cat ../Config/xpm.mak \
 		   > ../../../src/xpm/lib/Makefile
 		echo "XPM=xpm" > ../../../src/iconc/Makefile
 		cat iconc.hdr ../Config/iconc.mak \
@@ -34,18 +34,20 @@ Clean:
 		rm -f ../../../src/common/rswitch.[csS]
 
 Makefiles:
-		cat rtt.hdr ../Config/rtt.mak \
+		cat ../Config/rtt.mak \
 		   > ../../../src/rtt/Makefile
-		cat common.hdr ../Config/common.mak \
+		cat ../Config/common.mak \
 		   > ../../../src/common/Makefile
-		cat iconc.hdr ../Config/iconc.mak \
+		cat ../Config/iconc.mak \
 		   > ../../../src/iconc/Makefile
-		cat preproc.hdr ../Config/preproc.mak \
+		cat ../Config/preproc.mak \
 		   > ../../../src/preproc/Makefile
-		cat icont.hdr ../Config/icont.mak \
+		cat ../Config/icont.mak \
 		   > ../../../src/icont/Makefile
-		cat runtime.hdr ../Config/runtime.mak \
+		cat ../Config/runtime.mak \
 		   > ../../../src/runtime/Makefile
+		cat ../Config/xpm.mak \
+		   > ../../../src/xpm/lib/Makefile
 		echo "ICONT=../../bin/icont" > ../../../uni/unicon/makefile
 		echo "COPY=cp" >> ../../../uni/unicon/makefile
 		echo "RM=rm -f" >> ../../../uni/unicon/makefile

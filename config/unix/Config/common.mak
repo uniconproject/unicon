@@ -1,4 +1,5 @@
-MAKE = make
+include ../../Makedefs
+
 
 OBJS=	long.o getopt.o time.o filepart.o identify.o strtbl.o rtdb.o\
 	mlocal.o literals.o rswitch.o alloc.o\
@@ -25,7 +26,7 @@ xpm:
 	cp ../xpm/lib/libXpm.a ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/libXpm.a)
 
-$(OBJS): ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h  ../h/path.h\
+$(OBJS): ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
 
 identify.o: ../h/version.h

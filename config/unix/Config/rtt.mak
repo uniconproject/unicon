@@ -1,3 +1,8 @@
+#  Makefile for the Icon run-time translator, rtt,
+#  which is used to build the Icon run-time system.
+
+include ../../Makedefs
+
 MAKE = make
 
 ROBJS = rttparse.o rttmain.o rttlex.o rttsym.o rttnode.o rttout.o rttmisc.o\
@@ -37,9 +42,8 @@ library:	$(OBJ)
 $(ROBJS): rtt.h rtt1.h rttproto.h $(P_DOT_H)
 
 rttdb.o: ../h/version.h
-rttparse.o : ../h/gsupport.h ../h/path.h ../h/config.h ../h/cstructs.h \
+rttparse.o : ../h/gsupport.h ../h/config.h ../h/cstructs.h \
 	../h/proto.h ../h/typedefs.h ../h/cpuconf.h ../h/define.h
-rttmain.o : ../h/path.h
 
 pout.o: $(PP_DIR)pout.c $(P_DOT_H)
 	$(CC) -c $(CFLAGS) $(PP_DIR)pout.c 

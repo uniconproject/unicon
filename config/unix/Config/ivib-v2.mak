@@ -45,6 +45,9 @@ ICONS=$(ICONDIR)/icn1.icon \
       $(ICONDIR)/icn32.icon \
       $(ICONDIR)/icon.icon
 
+#
+# NB The file linkfiles.icn must be kept in synch with this list.
+#
 UFILES=attribtab.u basiccanvascomponentui.u buttongroupset.u canvas.u canvasborder.u \
 canvasborderdialog.u canvasborderui.u canvasbutton.u canvasbuttondialog.u canvasbuttongroup.u \
 canvascheckbox.u canvascheckboxdialog.u canvascheckboxgroup.u canvascheckboxmenuedit.u canvascheckboxmenuitem.u \
@@ -85,7 +88,7 @@ deps.out: ;
 	$(UNICON) -c $*
 
 ivib: $(UFILES)
-	$(UNICON) -o ivib $(UFILES)
+	$(UNICON) -o ivib linkfiles.icn
 	$(CP) ivib $(BIN)/ivib-v2
 
 .PHONY: icons cleanicons

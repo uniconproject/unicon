@@ -41,7 +41,7 @@ continuation succ_cont;
          RunErr(106, &callee);
       return (*(proc)->ccode)(nargs, args, rslt, succ_cont);
       }
-   else if (is:record(callee)) {
+   else if (is:record(callee)) { /* possible future support for culling */
       RunErr(106, &callee);
       }
    else {

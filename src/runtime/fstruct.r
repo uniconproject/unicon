@@ -1201,7 +1201,7 @@ function{1} set(x[n])
 
       default: {
          abstract {
-            return new set(store[type(l).lst_elem])
+            return new set(store[type(x).lst_elem]) /* should be anything */
             }
 
          body {

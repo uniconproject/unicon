@@ -1295,8 +1295,10 @@ Eret_uw:
 	     */
 	    struct b_proc *rproc;
 	    rproc = (struct b_proc *)BlkLoc(*glbl_argp);
-#if e_prem || e_erem
+#ifdef MultiThread
             oldargp = *glbl_argp;
+#endif					/* MultiThread */
+#if e_prem || e_erem
 	    ExInterp;
             vanq_proc(efp, gfp);
 	    EntInterp;

@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.13 2001-12-14 02:57:59 phliar Exp $
+ * $Id: rposix.r,v 1.14 2001-12-14 03:53:12 phliar Exp $
  */
 
 #ifdef PosixFns
@@ -852,8 +852,8 @@ char *addr;
 int is_udp;
 {
    int fd, s, len, fromlen;
-   struct sockaddr *sa, from;
-   struct sockaddr_in saddr_in;
+   struct sockaddr *sa;
+   struct sockaddr_in saddr_in, from;
    struct sockaddr_un saddr_un;
 
    char hostname[MAXHOSTNAMELEN];
@@ -956,7 +956,7 @@ int is_udp;
       return (FILE *)s;
 
    fromlen = sizeof(from);
-   if (!(fd = accept(s, &from, &fromlen)) < 0)
+   if (!(fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
       return 0;
 
    return (FILE *)fd;
@@ -970,16 +970,17 @@ int sock_name(FILE* sock, char* addr, char* addrbuf, int bufsize)
    struct sockaddr_in conn;
    int addrlen = sizeof(conn);
 
-   if ((s = sock_get(addr)) < 0)
+   if (sock_get(addr) < 0)
       /* This is not a socket we know anything about */
       return 0;
 
    /* Otherwise we can construct a name for it and put in the string */
-   getpeername(s, (struct sockaddr*) &conn, &addrlen);
+   if (getpeername(s, (struct sockaddr*) &conn, &addrlen) < 0)
+       return 0;
    if (addrlen != sizeof(conn))
       return 0;
    len = snprintf(addrbuf, bufsize, "%s:%s:%d", addr,
-                  inet_ntoa(conn.sin_addr), ntohs(conn.sin_port));
+                  inet_ntoa(conn.sin_addr), (int) ntohs(conn.sin_port));
 
    return len;
 }

@@ -1,9 +1,10 @@
 RM=rm -f
-base = $(shell dirname `pwd`)
-UNICON=$(base)/unicon/unicon
-UNIDEP=$(base)/unidep/unidep
-export ICON_IPL:=$(shell dirname $(base))/ipl
-export IPATH:=$(base)/lib $(ICON_IPL)/lib
+BASE=../..
+UNI=..
+UNICON=$(UNI)/unicon/unicon
+UNIDEP=$(UNI)/unidep/unidep
+export ICON_IPL:=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 export LPATH:=$(ICON_IPL)/incl $(ICON_IPL)/gincl
 
 RPFILES= border.icn buttongroup.icn _button.icn checkboxgroup.icn \

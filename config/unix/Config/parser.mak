@@ -1,10 +1,12 @@
-base = $(shell dirname `pwd`)
+BASE=../..
+UNI=..
+BIN=$(BASE)/bin
 RM=rm -f
-UNICON=$(base)/unicon/unicon
-UNIDEP=$(base)/unidep/unidep
-IYACC=$(base)/iyacc/iyacc
-export ICON_IPL:=$(shell dirname $(base))/ipl
-export IPATH:=$(base)/lib $(ICON_IPL)/lib
+UNICON=$(UNI)/unicon/unicon
+UNIDEP=$(UNI)/unidep/unidep
+IYACC=$(UNI)/iyacc/iyacc
+export ICON_IPL:=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
 .PHONY: all clean deps
 

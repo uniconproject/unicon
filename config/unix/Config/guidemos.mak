@@ -1,10 +1,11 @@
-base = $(shell dirname `dirname \`pwd\``)
+BASE=../../..
+UNI=../..
 RM=rm -f
-UNICON=$(base)/unicon/unicon
-UNIDEP=$(base)/unidep/unidep
-export ICON_IPL:=$(shell dirname $(base))/ipl
-export IPATH:=$(base)/lib $(base)/gui $(ICON_IPL)/lib
-export LPATH:=$(base)/gui $(ICON_IPL)/incl
+UNICON=$(UNI)/unicon/unicon
+UNIDEP=$(UNI)/unidep/unidep
+export ICON_IPL:=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(UNI)/gui $(ICON_IPL)/lib
+export LPATH:=$(UNI)/gui $(ICON_IPL)/incl
 
 PROGS=lines editor multi tickdemo explorer secondtest menudemo demo palette tabs testdialog toolbar \
       listtest texttest tabletest editlisttest dndtest sliders spinners getweb fillpanel \

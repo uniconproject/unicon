@@ -1,7 +1,8 @@
-base = $(shell dirname `pwd`)
+BASE=../..
+UNI=..
 CP=cp
 RM=rm -f
-UNICON=$(base)/unicon/unicon
+UNICON=$(UNI)/unicon/unicon
 CFLAGS= -c -u
 SRC=ui.icn msg_dlg.icn
 OBJ=ui.u

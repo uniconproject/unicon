@@ -1,10 +1,13 @@
-base = $(shell dirname `pwd`)
+BASE=../..
+UNI=..
+BIN=$(BASE)/bin
 RM=rm -f
-UNICON=$(base)/unicon/unicon
-UNIDEP=$(base)/unidep/unidep
-export ICON_IPL:=$(shell dirname $(base))/ipl
-export IPATH:=$(base)/lib $(base)/parser $(ICON_IPL)/lib
-ufiles = filearg.u  fileargclass.u  main.u  symbolinfo.u  symboltable.u  util.u
+CP=cp
+UNICON=$(UNI)/unicon/unicon
+UNIDEP=$(UNI)/unidep/unidep
+export ICON_IPL:=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(UNI)/parser $(ICON_IPL)/lib
+UFILES = filearg.u  fileargclass.u  main.u  symbolinfo.u  symboltable.u  util.u
 
 .PHONY: all clean deps
 
@@ -21,8 +24,8 @@ deps:
 
 deps.out: ;
 
-unidep: $(ufiles)
-	$(UNICON) -o unidep $(ufiles)
-	cp unidep ../../bin
+unidep: $(UFILES)
+	$(UNICON) -o unidep $(UFILES)
+	$(CP) unidep $(BIN)
 
 include deps.out

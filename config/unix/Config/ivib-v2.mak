@@ -1,10 +1,13 @@
+BASE=../../..
+UNI=../..
+BIN=$(BASE)/bin
 RM=rm -f
-base = $(shell dirname `dirname \`pwd\``)
-UNICON=$(base)/unicon/unicon
-UNIDEP=$(base)/unidep/unidep
-export ICON_IPL:=$(shell dirname $(base))/ipl
-export IPATH:=$(base)/lib $(base)/gui $(ICON_IPL)/lib
-export LPATH:=$(base)/gui $(ICON_IPL)/incl
+CP=cp
+UNICON=$(UNI)/unicon/unicon
+UNIDEP=$(UNI)/unidep/unidep
+export ICON_IPL:=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(UNI)/gui $(ICON_IPL)/lib
+export LPATH:=$(UNI)/gui $(ICON_IPL)/incl
 
 ICONDIR=icon
 
@@ -42,7 +45,7 @@ ICONS=$(ICONDIR)/icn1.icon \
       $(ICONDIR)/icn32.icon \
       $(ICONDIR)/icon.icon
 
-ufiles=attribtab.u basiccanvascomponentui.u buttongroupset.u canvas.u canvasborder.u \
+UFILES=attribtab.u basiccanvascomponentui.u buttongroupset.u canvas.u canvasborder.u \
 canvasborderdialog.u canvasborderui.u canvasbutton.u canvasbuttondialog.u canvasbuttongroup.u \
 canvascheckbox.u canvascheckboxdialog.u canvascheckboxgroup.u canvascheckboxmenuedit.u canvascheckboxmenuitem.u \
 canvascheckboxui.u canvascomponent.u canvascomponentdialog.u canvascomponentui.u canvascustom.u \
@@ -81,9 +84,9 @@ deps.out: ;
 %.u: %.icn
 	$(UNICON) -c $*
 
-ivib: $(ufiles)
-	$(UNICON) -o ivib $(ufiles)
-	cp ivib ../../../bin/ivib-v2
+ivib: $(UFILES)
+	$(UNICON) -o ivib $(UFILES)
+	$(CP) ivib $(BIN)/ivib-v2
 
 .PHONY: icons
 icons: $(ICONS)
@@ -95,8 +98,7 @@ cleanicons:
 
 # Program to translate xpm to Icon image format.
 $(ICONDIR)/xpmtoims: $(ICONDIR)/xpmtoims.icn
-	cd $(ICONDIR) && \
-	$(UNICON) xpmtoims.icn
+	$(UNICON) -o $(ICONDIR)/xpmtoims $(ICONDIR)/xpmtoims.icn
 
 
 # Rule to translate xpm to icon image format.

@@ -540,6 +540,7 @@ int noimage;
           *  "procedure name"
           *  "function name"
           *  "record constructor name"
+          *  "class constructor name"
           *
           * Note that the number of dynamic locals is used to determine
           *  what type of "procedure" is at hand.
@@ -550,6 +551,7 @@ int noimage;
             default:  type = "procedure"; break;
             case -1:  type = "function"; break;
             case -2:  type = "record constructor"; break;
+	    case -3:  type = "class constructor"; break;
             }
          fprintf(f, "%s ", type);
          while (i-- > 0)
@@ -1515,6 +1517,7 @@ dptr dp1, dp2;
           *  "procedure name"
           *  "function name"
           *  "record constructor name"
+	  *  "class constructor name"
           *
           * Note that the number of dynamic locals is used to determine
           *  what type of "procedure" is at hand.
@@ -1526,6 +1529,7 @@ dptr dp1, dp2;
             default:  type = "procedure "; outlen = 10; break;
             case -1:  type = "function "; outlen = 9; break;
             case -2:  type = "record constructor "; outlen = 19; break;
+	    case -3:  type = "class constructor "; outlen = 18; break;
             }
          Protect(t = alcstr(type, outlen), return Error);
          StrLoc(*dp2) = t;

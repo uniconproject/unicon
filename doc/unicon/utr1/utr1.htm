@@ -1,0 +1,1102 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>ODBC Interface</TITLE>
+</HEAD>
+<BODY>
+
+<B><FONT SIZE=4><P ALIGN="CENTER">An ODBC Interface for the</P>
+<P ALIGN="CENTER">Unicon Programming Language</P>
+</B></FONT>
+<P ALIGN="CENTER">Federico Balbi and Clinton L. Jeffery</P>
+<P ALIGN="CENTER">Unicon Technical Report #1a</P>
+<P ALIGN="CENTER">January 11, 2000</P>
+
+<P ALIGN="CENTER"><IMG SRC="Image3.jpg" WIDTH=239 HEIGHT=147></P>
+
+<P>                                                               <B>Abstract</P>
+</B>
+<P>The implementation of an ODBC interface for the Unicon language allows programmers to interface their applications to local and remote database management systems with a high level of interoperability and SQL language support.</P>
+
+<P>&nbsp;</P>
+<P ALIGN="CENTER">
+Department of Computer Science<BR>
+University of Nevada, Las Vegas<BR>
+Las Vegas, NV 89154<br>
+<P ALIGN="CENTER"></P>
+<P ALIGN="CENTER">
+Division of Computer Science<BR>
+The University of Texas at San Antonio<BR>
+San Antonio, TX 78255</P>
+<P ALIGN="CENTER"></P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">&nbsp;</P>
+<P ALIGN="CENTER">This work sponsored in part by the National Library of Medicine, through ORISE.</P>
+
+<B><P>Introduction</P>
+</B>
+<P>The Unicon ODBC interface consists of a data type and a set of new functions to enable Unicon programs to access database management systems (DBMS). The standard language to retrieve and manipulate data in a DBMS is the structured query language SQL, but in Unicon the ODBC function set allows programmers to interact with a database with minimum knowledge of SQL.</P>
+
+<B><P>&nbsp;</P>
+<P>Overview</P>
+</B>
+<P>ODBC is a programming interface (API) to access local and remote database management systems. ODBC is a de facto industry standard and works on many different operating systems and programming languages. It shields programmers from the complexity of different databases and the communications software used to access the data. ODBC defines an object called a &quot;data source&quot; that is referenced by name and maps its name to the exact location of data (network software, server name, database name and user information if needed).</P>
+<B>
+</B><FONT SIZE=2><P>&nbsp;</P>
+</FONT><B><P>&nbsp;</P>
+<P>&nbsp;</P>
+<P>ODBC Architecture</P>
+</B>
+<P>ODBC allows multiple applications to access to multiple data sources using an architecture that consists of several layers:</P>
+
+
+<UL>
+<LI>A Driver Manager to add, configure and remove different DBMS drivers.</LI>
+<LI>A set of drivers that implement the ODBC API for a particular DBMS.</LI>
+<LI>Networking software to allow network access to the database.</LI>
+<LI>The DBMS.</LI></UL>
+
+
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<P><IMG SRC="Image4.gif" WIDTH=462 HEIGHT=198></P>
+<P>Applications call ODBC functions. The Driver Manager decides which driver is needed and loads it into memory. After this the Driver Manager routes ODBC calls to the driver.</P>
+<P>The minimum capability required from a driver is to be able to connect to a server, send SQL statements and retrieve the results. What is important is that the Driver Manager hides all the details related to the server so the application does not need to know if the data is on a local file, a network file server or a remote host.</P>
+
+<P>&nbsp;</P>
+<B><P>Client/Server Model</P>
+</B>
+<P>ODBC was designed to work with the client/server model in order to satisfy the following requirements:</P>
+
+
+<UL>
+<LI>A standard application programming interface.</LI>
+<LI>Access to the particular features of any DBMS.</LI>
+<LI>Performance comparable to DBMS native API.</LI></UL>
+
+
+<P>&nbsp;</P>
+<FONT SIZE=2><P><IMG SRC="Image5.gif" WIDTH=560 HEIGHT=491></P>
+</FONT><B>
+<P>ODBC Installation</P>
+</B>
+<P>After deciding which DBMS an application is going to use it is necessary to install its related ODBC driver to let the application establish a connection with the DBMS.</P>
+<P>For our ODBC tests we decided to use MySQL. MySQL is a free SQL server downloadable at <A HREF="http://www.mysql.org/">www.mysql.org</A> and available for most popular platforms. We tested both Linux and Sun/Solaris version. MySQL comes with MyODBC, the ODBC driver for the server, and it can be downloaded at the same web site. There are driver versions both for Unix and Windows.</P>
+<P>   MyODBC comes with a standard Windows setup.exe program. At one point during setup you have to physically click on MyODBC within a list-box to install successfully, but otherwise installation is uneventful. If installation is successful, when you are finished you will be able to see your MySQL data source(s) from the ODBC Data Sources control within the Windows Control Panel.</P>
+
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<FONT SIZE=2><P><IMG SRC="Image6.gif" WIDTH=529 HEIGHT=211></P>
+</FONT><I><P ALIGN="CENTER">The Control Panel windows</P>
+</I>
+<P>&nbsp;</P>
+<FONT SIZE=2><P><IMG SRC="Image7.gif" WIDTH=461 HEIGHT=377></P>
+</FONT><I><P ALIGN="CENTER">The Driver Manager</P>
+</I>
+<P>&nbsp;</P>
+<P>This control comprises the main interface of the ODBC Driver Manager. The ODBC Driver Manager lists the ODBC drivers installed for different DBMSes. We can add new drivers, remove or configure existing ones within this control. The MyODBC setup program automatically adds and configures the driver in the Driver Manager’s driver list.</P>
+<P>After installing MyODBC we can open the Driver Manager and take a look at the different configuration parameters.</P>
+
+<P ALIGN="CENTER">&nbsp;</P>
+<I><P ALIGN="CENTER"><IMG SRC="Image8.gif" WIDTH=452 HEIGHT=482>MyODBC configuration</P>
+</I><FONT SIZE=2>
+</FONT><P>&nbsp;</P>
+<P>MyODBC configuration panel has the following fields:</P>
+
+
+<UL>
+<B><LI>Windows DSN name</B>: DSN stands for Data Source Name and it contains the alias that we will use in our applications to reference a particular database.</LI></UL>
+
+
+
+<UL>
+<B><LI>MySQL host</B>: is contains the Internet domain name or IP address of the server we want to connect to.</LI></UL>
+
+
+
+<UL>
+<B><LI>MySQL database name</B>: name of the database that this data source refers to.</LI></UL>
+
+
+
+<UL>
+<B><LI>User</B>: database user name. For better security this field can be left empty and specified within an application.</LI></UL>
+
+
+
+<UL>
+<B><LI>Password</B>: database user password. For security this field can be also left empty and specified during application runtime.</LI></UL>
+
+
+
+<UL>
+<B><LI>Port</B>: this field is the port where MySQL server listens for connection. If left empty the default value is 3306.</LI></UL>
+
+
+
+<UL>
+<B><LI>SQL command on connect</B>: this field can contain an SQL command that is executed when the application first connects to the server.</LI></UL>
+
+
+<P>&nbsp;</P>
+<P>All the other check-boxes are driver options. Of particular note are the following options:</P>
+
+
+<UL>
+<B><LI>Trace MyODBC</B>: traces the driver activity on a log file C:\MYODBC.TXT. This is useful to find errors within an application.</LI></UL>
+
+
+
+<UL>
+<B><LI>Use compressed protocol</B>: this option enables data compression in order to speed up data transfer on slow connections. This is recommended on fast computers.</LI></UL>
+
+
+
+<UL>
+<B><LI>Read options from C:\my.cnf</B>: this option lets the driver read a particular configuration from a file. This helps administrators to easily configure several client machines by including c:\my.cnf in the application distribution.</LI></UL>
+
+<B>
+<P>&nbsp;</P>
+<P>Unicon ODBC Interface</P>
+</B>
+<P>Unicon ODBC interface (<I>IODBC</I>) is a set of built-in functions that allow an easy way to write database applications without knowledge of SQL or the particular DBMS used.</P>
+
+<P>The function set can be divided in five main groups:</P>
+
+
+<UL>
+<B><LI>Connection</B>: handle Unicon connection with a DBMS.</LI></UL>
+
+
+
+<UL>
+<B><LI>Catalog or information</B>: used to retrieve information about drivers, databases and tables (for example driver capabilities, database organization, tables description).</LI></UL>
+
+
+
+<UL>
+<B><LI>Data retrieval</B>: to load data from a DBMS to Unicon data structures.</LI></UL>
+
+
+
+<UL>
+<B><LI>Data manipulation</B>: to modify information stored in a DBMS, like insert, delete and update table rows.</LI></UL>
+
+
+
+<UL>
+<B><LI>General/SQL</B>: to interact directly with the DBMS using SQL commands. This can be used to send arbitrary SQL commands including extensions particular to a specific DBMS implementation.</LI></UL>
+
+
+<P>A synopsis of these functions is given below. They are described in detail towards the end of this document.</P>
+
+<U><P>Connection</P>
+</U>
+
+<UL>
+<I><LI>dbopen</I>: opens a connection to the database server and the specified table.</LI>
+<I><LI>dbclose</I>: closes a table and the related database connection.</LI></UL>
+
+
+<U><P>Catalog</P>
+</U>
+
+<UL>
+<I><LI>dbcolumns</I>: gets information about a specific table columns.</LI>
+<I><LI>dbdriver</I>: gets information about a specific ODBC driver in use.</LI>
+<I><LI>dbkeys</I>: gets information about a particular table primary keys.</LI>
+<I><LI>dbproduct</I>: gets information about the DBMS product the in use.</LI>
+<I><LI>dbtables</I>: get information about a tables that belong to a specified database.</LI></UL>
+
+
+<U><P>Data Retrieval</P>
+</U><FONT SIZE=2>
+
+<UL>
+</FONT><I><LI>dbfetch</I>: fetches a row from a rowset.</LI>
+<I><LI>dbselect</I>: selects a rowset from a database.</LI></UL>
+
+
+<U><P>Data Manipulation</P>
+</U><FONT SIZE=2>
+
+<UL>
+</FONT><I><LI>dbdelete</I>: deletes one or more rows of a database.</LI>
+<I><LI>dbinsert</I>: insert a row in a database.</LI>
+<I><LI>dbupdate</I>: update a database row.</LI></UL>
+
+
+<U><P>General/SQL</P>
+</U><FONT SIZE=2>
+
+<UL>
+</FONT><I><LI>dbsql</I>: sends an SQL command string to the server for execution.</LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>An Example Phonebook Application</P>
+</B>
+<P>A typical database application performs the following tasks:</P>
+
+
+<UL>
+<LI>Connects to a database</LI>
+<LI>Processes database information</LI>
+<LI>Disconnects from the database</LI></UL>
+
+
+<P>This section presents a simple Unicon phonebook application that takes advantage of the ODBC interface and work with MySQL server. The example will show how to use the main IODBC functions in order to connect, read and write data on a DBMS.</P>
+
+<P>&nbsp;</P>
+<P>Our application will have the following menu:</P>
+
+
+<UL>
+<LI>Insert a phone number</LI>
+<LI>Delete a phone number</LI>
+<LI>Modify a phone number</LI>
+<LI>List phone number in database</LI></UL>
+
+
+<P>Note that this application assumes a preexisting database server. a user account on that server, and a table on the server has been created to store the phone book information. Let’s create a <B>phones</B> table on our server with the following columns:</P>
+
+<P ALIGN="CENTER"><CENTER><TABLE BORDER CELLSPACING=1 CELLPADDING=7 WIDTH=519>
+<TR><TD WIDTH="52%" VALIGN="TOP">
+<B><P ALIGN="CENTER">Column Name</B></TD>
+<TD WIDTH="48%" VALIGN="TOP">
+<B><P ALIGN="CENTER">Type</B></TD>
+</TR>
+<TR><TD WIDTH="52%" VALIGN="TOP">
+<P>Name (KEY)</TD>
+<TD WIDTH="48%" VALIGN="TOP">
+<P>VARCHAR(40)</TD>
+</TR>
+<TR><TD WIDTH="52%" VALIGN="TOP">
+<P>Phone</TD>
+<TD WIDTH="48%" VALIGN="TOP">
+<P>VARCHAR(12)</TD>
+</TR>
+<TR><TD WIDTH="52%" VALIGN="TOP">
+<P>Address</TD>
+<TD WIDTH="48%" VALIGN="TOP">
+<P>VARCHAR(60)</TD>
+</TR>
+</TABLE>
+</CENTER></P>
+
+
+<P>We could create such a table within the application by appropriate Unicon ODBC calls, but perhaps it is more typical for such database administration tasks to be performed separately by a database administrator. From our server machine we invoke the mysql client program to talk to the SQL server:</P>
+
+<FONT FACE="Courier" SIZE=3><P>
+[fbalbi@icon bin]$ ./mysql -ufbalbi -p mysql<br>
+Enter password:<br>
+Reading table information for completion of table and column names<br>
+You can turn off this feature to get a quicker startup with -A<br>
+Welcome to the MySQL monitor.  Commands end with ; or \g.<br>
+Your MySQL connection id is 96 to server version: 3.22.15-gamma<br>
+   <br>
+<P>Type 'help' for help.</P>
+</FONT>
+<P>Now let's create the example table with the column <B>Name</B> as primary key:</P>
+<FONT FACE="Courier">
+<P>mysql&gt; <B>create table phones (name varchar(40) primary key, phone varchar(12), address varchar(60));</P>
+</B><P>Query OK, 0 rows affected (0.04 sec)</P>
+
+<P>mysql&gt; <B>describe phones;</P>
+</B>
+<PRE>+---------+-------------+------+-----+---------+-------+
+| Field   | Type        | Null | Key | Default | Extra |
++---------+-------------+------+-----+---------+-------+
+| name    | varchar(40) |      | PRI |         |       |
+| phone   | varchar(12) | YES  |     | NULL    |       |
+| address | varchar(60) | YES  |     | NULL    |       |
++---------+-------------+------+-----+---------+-------+
+3 rows in set (0.01 sec)</PRE>
+</FONT>
+<P>Now the table is properly created and empty, in fact the following select commands returns an empty set:</P>
+
+<FONT FACE="Courier"><P>mysql&gt; <B>select * from phones;</P>
+</B><P>Empty set (0.00 sec)</P>
+</FONT>
+<P>Here the full list of our phonebook application. As an exercise, you may wish to consider how you would extend this application to include the above table-creation task as another menu option. Hint: the function dbsql() may come in handy.</P>
+
+<FONT FACE="Courier"><PRE># global variables
+
+global db
+global user, password
+
+record person(name, phone, address) # database row
+
+procedure main() # main program
+  write("*** IODBC phonebook ***\n\n")
+  login() # get user name and password
+  # connect to mysql data source and open table "phones"
+  db := <B>dbopen</B>("mysql", "phones", user, password)
+
+  if &amp;errornumber~=0 then { # error during login
+    write(&amp;errortext)
+  }
+  else {
+    getdbinfo() # print database information
+    repeat {
+      menu() # print menu options 
+      option := read()
+
+      case option of {
+        "i": insertphone()
+        "d": deletephone()
+        "u": updatephone()
+        "l": listphones()
+        "q": break
+        default: write("*** wrong selection ***")
+      }
+    }
+    <B>dbclose</B>(db) # close table and database connection
+  }
+  write("bye")
+end
+
+#
+# user information
+#
+procedure login()
+  writes("user: ")
+  user := read()
+  writes("password: ")
+  password := read()
+end
+
+&nbsp;
+#
+# get database name and version
+#
+procedure getdbinfo()
+  info := <B>dbproduct</B>(db)
+  write("\nDBMS: ", info["name"])
+  write("version: ", info["ver"])
+end
+
+#
+# display menu options
+#
+procedure menu()
+  write("\nI)nsert")
+  write("D)elete")
+  write("U)pdate")
+  write("L)ist")
+  write("Q)uit\n")
+end
+
+#
+# insert a new record
+#
+procedure insertphone()
+  writes("name: ")
+  name := read()
+  writes("phone: ")
+  ph := read()
+  writes("address: ")
+  addr := read()
+  row := person(name, ph, addr)
+  <B>dbinsert</B>(db, row) # insert row into database
+  if &amp;errornumber~= 0 then
+    write("*** couldn't insert person ***")
+end
+
+&nbsp;
+#
+# remove a record 
+#
+procedure deletephone()
+   writes("name to remove: ")
+   name := read()
+
+   # delete row with specified name column
+   <B>dbdelete</B>(db, "name='"||name||"'")
+end
+
+#
+# update a record
+#
+procedure updatephone()
+  writes("name to update: ")
+  name := read()
+
+  # select all columns of rows with specified name column
+  <B>dbselect</B>(db,"*","name='"||name||"'")
+
+  if (row:=dbfetch(db)) then { # data found
+    writes("phone (",row["phone"],"): ")
+    row["phone"]:=read()
+    writes("address (",row["address"],"): ")
+    row["address"]:=read()
+
+    <B>dbupdate</B>(db, row) # update row on server
+  }
+  else write("\n\n*** person not found ***")
+end
+
+#
+# list all people in the database
+#
+procedure listphones()
+<B>  dbselect</B>(db,"*","") # select all columns and all rows
+
+  while(row:=<B>dbfetch</B>(db)) do { # while data found
+ 
+    # write row fields
+    every i:=(1 to *row) do writes("[",row[i],"]")
+
+    write()
+  }
+end</pre>
+
+</FONT><B><P>Unicon ODBC Implementation Notes</P>
+</B>
+<P>The implementation of the ODBC interface includes changes to several files of the Unicon runtime system, as well as the addition of a new file for the new functions that were added.</P>
+
+<U><P>New files</P>
+</U><FONT SIZE=2>
+
+<UL>
+</FONT><B><LI>FDB.R</B>: This is the main file of IODBC. It contains the Unicon ODBC function set implementation. It is written in standard C with RTT extensions.</LI>
+
+<B><LI>RDB.R</B>: contains the C implementation of odbcerror function that is widely called in FDB.R.</LI></UL>
+
+
+<U><P>Modified files</P>
+</U>
+
+<UL>
+<LI>RPROTO.H: contains odbcerror function definition.</LI>
+<LI>OMISC.R: &quot;*&quot; operator implementation for ODBC file type.</LI>
+<LI>FDEFS.H: ODBC function definitions.</LI>
+<LI>DATA.R: runerr error code for ODBC file mismatch.</LI>
+<LI>RSTRUCTS.H: ISQLFile definition (ODBC connection type).</LI>
+<LI>REXTERNS.H: ISQLEnv extern definition.</LI>
+<LI>RMACROS.H: Fs_ODBC file status flag and ODBC error codes.</LI>
+<LI>SYS.H: VisualC++ ODBC header files inclusion (windows.h and sqlext.h).</LI>
+<LI>INIT.R: ODBC Environment structure release.</LI>
+<LI>DEFINE.H: ISQL symbol definition for conditional compilation.</LI>
+<LI>GRTTIN.H: new ODBC types definitions.</LI>
+<LI>MAKEFILE.RUN: Runtime system makefile (FDB.R and RDB.R definitions added)</LI>
+<LI>ICONX.LNK: Link file (XFDB.OBJ and XRDB.OBJ definitions added)</LI></UL>
+
+<B>
+<P>ISQLFile type</P>
+</B><FONT SIZE=2>
+</FONT><P>In Unicon an ODBC connection to a database is similar to a file operation. Internally this is represented by the following C structure:</P>
+<FONT SIZE=2>
+</FONT><FONT FACE="Courier"><PRE>#ifdef ISQL             /* ODBC support      */
+  struct ISQLFile {     /* SQL file          */
+    SQLHDBC hdbc;       /* connection handle */
+    SQLHSTMT hstmt;     /* statement handle  */
+    char *tablename;
+  };
+#endif</PRE>
+</FONT>
+<P>The field <I>hdbc</I> is used to keep the connection information associated to a particular ISQLFile file. <I>hstmt</I> is the statement structure that saves the results or dataset returned by an ODBC operation. The design of the interface is table oriented, which means that for each table we open a new connection. The field <I>tablename</I> stores the name of the table the ODBC file is referring to.</P>
+<P>In the future we will consider the possibility to associate a file to a database. This would let us open a connection for each database and share the same connection for each table within the same database. In this way we can open a file and use more than a table.</P>
+
+<P>Actually when <I>dbopen(DSN,table,user,password)</I> is called Unicon allocates an ISQLFile object and initializes the structure fields in the following way:</P>
+
+
+<UL>
+<I><LI>hdbc</I> is related to the DSN specified in <I>dbopen()</LI>
+<LI>hstmt</I> is related to <I>hdbc</LI>
+<LI>*tablename</I> contains the table name specified in <I>dbopen()</LI></UL>
+
+</I>
+<B><FONT SIZE=4><P>IODBC Function Reference</P>
+</B></FONT><FONT SIZE=2>
+</FONT><B><U><FONT SIZE=4><P>dbclose()</P>
+</B></U></FONT>
+<B><P>Description</B>: closes an ODBC file</P>
+
+<B><P>Syntax</B>: dbclose(f)</P>
+
+<B><P>Parameters</P>
+
+<UL>
+<LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example</P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+  # open table "mytable" in mydb datasource name defined in
+  # ODBC Data Sources (see Windows 9x Control Panel folder)
+  # using username "federico" and password "mypassword"
+
+  db:=<B>dbopen</B>("mydb","mytable","federico","mypassword")
+  
+  # 
+  # program body
+  #
+
+  <B>dbclose</B>(db) # close table and disconnect
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dbcolumns() </P>
+</B></U></FONT>
+<B><P>Description: </B>returns the list of column information related to f</P>
+
+<B><P>Syntax:</B> dbcolumns(f)</P>
+
+<B><P>Parameters</P>
+
+<UL>
+<LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<B><P>Return Type</B>: list of records with the following string fields: </P>
+
+
+<UL>
+<B><LI>catalog</B>: catalog name </LI>
+<B><LI>schema</B>: schema name </LI>
+<B><LI>tablename</B>: table name </LI>
+<B><LI>colname</B>: column name </LI>
+<B><LI>datatype</B>: SQL data type </LI>
+<B><LI>typename</B>: data source-dependent data type name </LI>
+<B><LI>colsize</B>: if <B>datatype</B> is SQL_CHAR or SQL_VARCHAR this columns contains the maximum length in characters of the column </LI>
+<B><LI>buflen</B>: length in bytes of data transferred on a fetch operation </LI>
+<B><LI>decdigits</B>: the total number of significant digits to the right of the decimal point </LI>
+<B><LI>numprecradix</B>: for numeric data types either 10 or 2. If it is 10, the values in <B>columnsize</B> and <B>decimaldigits</B> give the number of decimal digits allowed for the column. If it is 2, the values in <B>columnsize</B> and decimal digits give the number of bits allowed in the column </LI>
+<B><LI>nullable</B>: 0 if the column could not include NULL values; 1 if the columns accept NULL values; 2 if it is not known whether the column accepts NULL values.</LI>
+<B><LI>remarks</B>: a description of the column </LI>
+</UL>
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+  f:=<B>dbopen</B>("mysql","test","federico","") # open table
+  colinfo:=<B>dbcolumns</B>(f) # get columns information
+  write("column info\n")
+
+  every i:=(1 to *colinfo) do { # for each column
+    writes("col #",i,": ")
+    every j:=(1 to *colinfo[i]) do # write column’s info
+      writes("[",colinfo[i][j],"]")
+    write()
+  }
+  write()
+  <B>dbclose</B>(f) # close table and connection to the database
+end</PRE>
+</FONT><B><U><FONT SIZE=5>
+</FONT><FONT SIZE=4><P>dbdelete()</P>
+</B></U></FONT>
+<B><P>Description</B>: removes one or more rows from a database table</P>
+
+<B><P>Syntax</B>: dbdelete(f [, [criteria]])</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI>
+<B><LI>criteria</B>: search condition string </LI></UL>
+
+
+<B><P>Note</B>: if <I>criteria</I> parameter is omitted dbdelete() is going to empty the table.</P>
+
+<FONT FACE="Courier"><P>dbdelete(f)  # to empty table f (dangerous!)</P>
+<P>dbdelete(f,) # equivalent to dbdelete(f)</P>
+</FONT>
+<B><P>Code Example</P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ f:=<B>dbopen</B>("mysql","test","fbalbi","mypass") # open table test
+
+ <B>dbdelete</B>(f,"id=25") # delete row(s) with column id=25
+
+ <B>dbclose</B>(f) # close table
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=5><P>dbdriver() </P>
+</B></U></FONT>
+<B><P>Description</B>: returns information about the driver being used </P>
+
+<B><P>Syntax</B>: dbdriver(f)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<B><P>Return Type</B>: Record with the following string fields: </P>
+
+
+<UL>
+<B><LI>"name"</B>: filename of the driver used to access the data source.</LI>
+<B><LI>"ver"</B>: version of the driver and, optionally a description of the driver.</LI>
+<B><LI>"odbcver"</B>: version of ODBC that the driver supports.</LI>
+<B><LI>"dsn"</B>: A caracter string with the data source name used during connection.</LI>
+<B><LI> connections</B>: maximum number of active connections that the driver can support (zero for no specified limit or if the limit is unknown).</LI>
+<B><LI>statements</B>: maximum number of statements that the driver can support for a connection (zero for no specified limit or if the limit is unknown).</LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ f:=<B>dbopen</B>("mydb","mytable","fbalbi","") # open mytable
+
+ dinfo:=<B>dbdriver</B>(f) # get driver information record
+
+ write("driver name     : ", dinfo["name"])
+ write("driver version  : ", dinfo["ver"])
+ write("driver ODBC ver : ", dinfo["odbcver"])
+ write("connections     : ", dinfo["connections"])
+ write("statements      : ", dinfo["statements"])
+ write("data source name: ", dinfo["dsn"])
+
+ <B>dbclose</B>(f) # close table
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dbfetch()</P>
+</B></U></FONT>
+<B><P>Description</B>: fetches and returns a row from a rowset</P>
+
+<B><P>Syntax</B>: dbfetch(f)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<B><P>Return Type</B>: record with fields names equal to the selected table columns (see dbselect for column selection) </P>
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ f:=<B>dbopen</B>("mydb","mytable","fbalbi","mypass")
+
+ # select 3 existing columns from table mytable and
+ # "", "*": all rows are selected
+ # (see dbselect link for more information)
+
+ <B>dbselect</B>(f, "id, name, amt","")
+
+ # *f = number of selected rows
+ # may not work with some DBMS
+
+ write(*f, " row(s) selected")
+
+ write("\nrow values")
+
+ # dbfetch returns a record
+ # fields name are the columns names selected with dbselect
+ # in case of "" or "*" all columns are selected
+ # in this example we can reference fields using row["id"],
+ # row["name"] and row["amt"]
+
+ while (row:=<B>dbfetch</B>(f)) do { # while rows to retrieve
+   every col:=(1 to *row) do  # for each col of row
+     writes("[",row[col],"]") # write row field
+   write()
+ }
+
+ <B>dbclose</B>(f) # close table
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dbinsert()</P>
+</B></U></FONT>
+<B><P>Description</B>: insert a row into a database table</P>
+
+<B><P>Syntax</B>: dbinsert(f, rec)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI>
+<B><LI>rec</B>: row to insert </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>record article(id,title,abstract) # define database row
+
+procedure main()
+  db:=<B>dbopen</B>("nlm","articles","fede","passwd") # open table
+
+  # set new row value
+  row:=article(1,"Unicon ODBC","ODBC in Unicon is FUN!") 
+
+  <B>dbinsert</B>(db, row) # insert row into database
+
+  <B>dbclose</B>(db) # close table
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dbkeys()</P>
+</B></U></FONT>
+<B><P>Description</B>: returns information about the primary key columns </P>
+
+<B><P>Syntax</B>: dbkeys(f)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<B><P>Return Type</B>: list of records with the following string fields: </P>
+
+<UL>
+<B><LI>col</B>: column name.</LI>
+<B><LI>seq</B>: sequence number.</LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example</P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ f:=dbopen("mydb","user","fbalbi","passwd") # open table
+
+ write(*f, " row(s) selected")
+
+ write("\ntable keys")
+
+ krec:=<B>dbkeys</B>(f) # retrieve primary key information
+
+ every i:=(1 to *krec) do {
+   r:=krec[i]
+   write("[", r["col"], "]") # print key name
+ }
+
+ dbclose(f) # close table
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dblimits()</P>
+</B></U></FONT>
+<B><P>Description</B>: returns information about the limits applied for identifiers and clauses in SQL statements.</P>
+<B>
+<P>Syntax</B>: dblimits(f)</P>
+
+<B><P>Return Type:</B> record with the following string fields:</P>
+
+
+<UL>
+<LI>"<B>maxbinlitlen</B>": maximum length of a binary literal in an SQL statement. if there is no maximum length or the length is unknown, this value is set to zero.</LI>
+<LI>"<B>maxcharlitlen</B>": maximum length of a character literal in an SQL statement. if there is no maximum length or the length is unknown, this value is set to zero.</LI>
+<LI>"<B>maxcolnamelen</B>": maximum length of a column name in the data source. if there is no maximum length or the length is unknown, this value is set to zero.</LI>
+<LI>"<B>maxgroupbycols</B>": maximum number of columns allowed in a GROUP BY clause. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxorderbycols</B>": maximum number of columns allowed in a ORDER BY clause. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxindexcols</B>": maximum number of columns allowed in an index. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxselectcols</B>": maximum number of columns allowed in a SELECT list. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxtblcols</B>": maximum number of columns allowed in a table. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxcursnamelen</B>": maximum name length of a cursor name in the data source. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxindexsize</B>": maximum number of bytes allowed in the combined fields of an index. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxownnamelen</B>": maximum length of an owner name in the data source. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxprocnamelen</B>": maximum length of a procedure name in the data source. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxqualnamelen</B>": maximum length of a qualifier name in the data source. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxrowsize</B>": maximum length of a single row in a table. If there is no specified limit or the limit is unknown, this value is set to zero.</LI>
+<LI>"<B>maxrowsizelong</B>": a character string: "Y" if the maximum row size returned for the "maxrowize" information type includes the length of all SQL_LONGVARCHAR and SQL_LONGVARBINARY columns in the row; "N" otherwise.</LI>
+<LI>"<B>maxstmtlen</B>": maximum lenght (number of characters, including white space) of an SQL statement. If there is no maximum length or the length is unknown, this value is set to zero.</LI>
+<LI>"<B>maxtblnamelen</B>": maximum length of a table name in the data source. If there is no maximum length or the length is unknown, this value is set to zero.</LI>
+<LI>"<B>maxselecttbls</B>": maximum number of tables allowed in the FROM clause of a SELECT statement. If there is no maximum length or the length is unknown, this value is set to zero.</LI>
+<LI>"<B>maxusernamelen</B>": maximum length of a user name in the data source. If there is no maximum length or the length is unknown, this value is set to zero.</LI></UL>
+
+
+<B><P>Code Example</P>
+<U>
+</B></U><FONT FACE="Courier"><PRE>procedure main()
+ f:=dbopen("mydb","mytable","fbalbi","") # open mytable
+
+ dbl:=<B>dblimits</B>(f) # get DBMS limits information
+
+ # print out all DBMS limits
+ every i:=(1 to *dbl) do write(dbl[i])
+
+ dbclose(f) # close table
+end</PRE>
+</FONT><B><U><FONT SIZE=5>
+</FONT><FONT SIZE=4><P>dbopen()</P>
+</B></U></FONT>
+<B><P>Description</B>: connects to a database, opens a table and returns the associated ODBC file.</P>
+
+<B><P>Syntax</B>: dbopen(db, table, user, password)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>db</B>: Data Source Name string (defined in ODBC Manager) </LI>
+<B><LI>table</B>: database table string</LI>
+<B><LI>user</B>: database user string</LI>
+<B><LI>password</B>: user password string </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+  # open "mytable" in mydb data source name defined in
+  # ODBC Data Sources (see Windows 9x Control Panel folder)
+  # using username "federico" and password "mypassword"
+
+  db:=<B>dbopen</B>("mydb","mytable","federico","password")
+  
+  # 
+  # program body
+  #
+
+  <B>dbclose</B>(db) # close table and disconnect
+end</PRE>
+</FONT><B><U><FONT FACE="Courier" SIZE=5>
+</FONT><FONT SIZE=4><P>dbproduct()</P>
+</B></U></FONT>
+<B><P>Description</B>: returns information about the DBMS accessed by the driver </P>
+
+<B><P>Syntax</B>: dbproduct(f)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<B><P>Return Type</B>: record with the following string fields: </P>
+
+<UL>
+<B><LI>name</B>: DBMS product name </LI>
+<B><LI>ver</B>: DBMS version </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B><FONT FACE="Courier">
+<PRE>procedure main()
+ f:=<B>dbopen</B>("mydb","test","fbalbi","mypasswd") # open table
+
+ p:=<B>dbproduct</B>(f) # get DBMS product information
+
+ write("product name: ", p["name"]) # print product name
+ write("product ver : ", p["ver"])  # print product version
+
+ <B>dbclose</B>(f) # close table
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dbselect()</P>
+</B></U></FONT>
+<B><P>Description</B>: selects a rowset from a table</P>
+
+<B><P>Syntax</B>: dbselect(f [, [columns] [, [criteria] [, [order]]]])</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI>
+<B><LI>columns</B>: list of columns to retrieve. If columns is "*" or a null string or not specified all columns in the table are selected. </LI>
+<B><LI>criteria</B>: search condition string. If criteria is a null string or not specified all rows are selected.</LI>
+<B><LI>order</B>: column(s) by which the result set will be sorted.</LI></UL>
+
+
+<B><P>Examples</P>
+</B><P>Suppose we want to perform the following SQL queries on table f:</P>
+
+<FONT FACE="Courier"><P>SELECT * FROM f</P>
+</FONT>
+<P>Using dbselect() we can do this in several ways:</P>
+
+<FONT FACE="Courier"><PRE>dbselect(f,"*")
+dbselect(f,"")
+dbselect(f,,,)
+dbselect(f)</PRE>
+</FONT>
+<FONT FACE="Courier"><P>SELECT name FROM f</P>
+</FONT>
+<P>can be written using dbselect() as: </P>
+
+<FONT FACE="Courier"><PRE>dbselect(f,"name")
+dbselect(f,"name",,)</PRE>
+
+<P>SELECT name FROM f ORDER BY id</P>
+</FONT>
+<P>is equivalent to: </P>
+
+<FONT FACE="Courier"><PRE>dbselect(f,"name",,"id")
+dbselect(f,"name","","id")</PRE>
+
+<P>SELECT id, name FROM f WHERE id &gt; 100 ORDER BY name</P>
+</FONT>
+<P>would be written as: </P>
+
+<FONT FACE="Courier"><P>dbselect(f,"id,name","id &gt; 100","name")</P>
+</FONT><B>
+<P>Code Example</P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ f:=dbopen("mysql","test","fbalbi","passwd") # open table
+
+ # select columns 'name', 'id', 'amt' from test
+ # rowset is made of rows with name='Fred'
+ # and order the rowset by due date
+
+ r:=<B>dbselect</B>(f,"id,name,amt,paid,due","name='Fred'","due")
+
+ write(*f, " row(s) selected") # may not work on some DBMS
+
+ rec:=dbfetch(f) # retrieve first record in the rowset
+
+ every i:=(1 to *rec) do  # write record fields values
+   write("[", rec[i], "]")
+
+ dbclose(f) # close table
+end</PRE>
+</FONT><B><U><FONT SIZE=4><P>dbsql()</B></FONT></P>
+</U>
+<B><P>Description</B>: submits an SQL query using the connection opened by f</P>
+
+<B><P>Syntax</B>: dbsql(f, query)</P>
+
+<B><P>Parameters:</P>
+
+<UL>
+<LI>f</B>: ODBC file previously opened with dbopen() </LI>
+<B><LI>query</B>: SQL statement string </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ # connect to DBMS and open table
+
+ db:=<B>dbopen</B>("personnel_db","table","manager","passwd")
+
+ # prepare SQL query string to create an employees table
+ # of 5 columns
+
+ query := "CREATE TABLE employees (id INTEGER PRIMARY KEY,
+           name VARCHAR(40), phone VARCHAR(12), DOB DATE,
+           pay FLOAT)"
+
+ # dbsql needs an opened connection in order to work;
+ # that's why we have to open an existing table associated
+ # to db. This requirement will be avoided on next IODBC
+ # versions
+
+ <B>dbsql</B>(db, query) # execute query
+
+ <B>dbclose</B>(db) # close
+end</PRE>
+</FONT>
+<B><U><FONT SIZE=4><P>dbtables()</P>
+</B></U></FONT>
+<B><P>Description</B>: returns a list of records with information about tables stored the database related to f</P>
+
+<B><P>Syntax</B>: dbtables(f)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI></UL>
+
+
+<B><P>Return Type</B>: list of records with the following string fields: </P>
+
+<UL>
+<B><LI>qualifier</B>: table qualifier </LI>
+<B><LI>owner</B>: table owner </LI>
+<B><LI>name</B>: table name </LI>
+<B><LI>type</B>: table type </LI>
+<B><LI>remarks</B>: table remarks </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+
+  # get current database tables information 
+  
+  f:=<B>dbopen</B>("mysql","test","fbalbi","xxxxxxxx")
+  
+  tablelist:=<B>dbtables</B>(f)
+
+  # write number of tables
+  write("size list = ", *tablelist) 
+
+  every i:=(1 to *tablelist) do { # for each table
+    r:=tablelist[i]
+
+    # print table information fields
+    every j:=(1 to *r) do writes("[",r[j],"]") 
+    write()
+  }
+
+  <B>dbclose</B>(f) # close table
+end</PRE>
+</FONT>
+<P>&nbsp;</P>
+<B><U><FONT SIZE=4><P>dbupdate()</P>
+</B></U></FONT>
+<B><P>Description</B>: update a database table row</P>
+
+<B><P>Syntax</B>: dbupdate(f, rec)</P>
+
+<B><P>Parameters</B>: </P>
+
+<UL>
+<B><LI>f</B>: ODBC file previously opened with dbopen() </LI>
+<B><LI>rec</B>: table row to update </LI></UL>
+
+
+<P>&nbsp;</P>
+<B><P>Code Example </P>
+</B>
+<FONT FACE="Courier"><PRE>procedure main()
+ f:=<B>dbopen</B>("mydb","mytable","fbalbi","xxxx") # open mytable
+
+ # select columns id, amt
+ # select row where id&lt;6
+
+ r:=<B>dbselect</B>(f, "id, amt", "id&lt;6")
+
+ write(*f, " row(s) selected")
+
+ write("\nrow values")
+
+ while (row:=<B>dbfetch</B>(f)) do { # for each row in the rowset
+   # update amt field value
+
+   row["amt"]+:=1000.0
+
+   # update database row
+
+   dbupdate(f, row)
+ }
+
+ <B>dbclose</B>(f) # close table
+end</PRE>
+</FONT>
+<P>&nbsp;</P>
+<B><FONT SIZE=4><P>References</P>
+</B></FONT>
+<OL>
+
+<LI>Kyle Geiger. Inside ODBC. Microsoft Press, Redmond, Washington, 1995.</LI>
+<LI>Roger E. Sanders. ODBC 3.5 Developer’s Guide. McGraw-Hill, 1998.</LI>
+<LI>Microsoft ODBC 2.0 Programmer’s Reference Guide. Microsoft Press, Redmond, Washington, 1994.</LI>
+<LI>Microsoft ODBC 3.0 Programmer’s Reference. Microsoft Press, Redmond, Washington, 1997.</LI>
+<LI>Ralph E. Griswold, Madge T.Griswold. The Icon Programming Language, 3<SUP>rd</SUP> ed.. Peer-to-Peer Communications, San Jose, 1997.</LI>
+<LI>Ralph E. Griswold. The Implementation of the Icon Programming Language. Princeton University Press, 1986.</LI>
+<LI>Clinton Jeffery, Shamim Mohamed, Ray Pereda, and Robert Parlett. Programming with Unicon. Draft manuscript from http://icon.cs.unlv.edu.</LI>
+<LI>MySQL Reference Manual for version 3.23.2-alpha. From http://www.mysql.org</LI></OL>
+
+</BODY>
+</HTML>

@@ -714,9 +714,17 @@ Deliberate Syntax Error
    #define DirectExecution
 #endif					/* Header */
 
-#ifdef NoLibz
+#ifdef NoLIBZ
 #define HAVE_LIBZ 0
-#endif					/* NoLibz */
+#endif					/* NoLIBZ */
+
+#ifdef NoJPEG
+#define HAVE_LIBJPEG 0
+#endif					/* NoJPEG */
+
+#ifdef NoGL
+#define HAVE_LIBGL 0
+#endif					/* NoGL */
 
 #ifndef HAVE_LIBZ
 #define HAVE_LIBZ 0
@@ -725,6 +733,14 @@ Deliberate Syntax Error
 #ifndef HAVE_LIBJPEG
 #define HAVE_LIBJPEG 0
 #endif					/* HAVE_LIBJPEG */
+
+#ifndef HAVE_LIBGL
+#define HAVE_LIBGL 0
+#endif					/* HAVE_LIBJPEG */
+
+#if HAVE_LIBGL
+#define Graphics3D 1
+#endif					/* HAVE_LIBGL */
 
 
 /*

@@ -46,8 +46,7 @@ global menu,
 	findstr,
 	findpos,
 	wiconlog,
-	wi_ini,
-	widollog
+	wi_ini
 
 #
 # appendmessage(s) - add message to end of message window contents
@@ -65,93 +64,31 @@ end
 # compile() - compile targets, show errors (if WICONLOG is set)
 #
 procedure compile()
-#   if idol1file(filnam) then
-#      if not idolt(filnam) then fail
     system("wunicon -c -quiet -log " || wiconlog || " " || targs || " " || comp1file(filnam), log)
     log := readin(wiconlog)
     showanyerror(log)
 end
 
-# produce a string to compile file s, only if it is needed
-procedure idol1file(s)
-   local ext
-if find("util.iol",map(s)) then Notice(s)
-   s := defextension(s)
-   if find(".u", map(s)) then fail  # do not idol-translate .u files
-   if find(".icn", map(s)) then fail  # do not idol-translate .icn files
-   if not (ext := ((".iol"|".htm") == map(s[-4:0]))) then fail
-   s[-4 : 0] := ""    # truncate extension
-   # check file attributes; if .icn exists and is newer, use it.
-   if newer(s || ".icn", s || ext) then fail
-   return s || ext
+procedure quotes(s)
+   if find(" ", s) then s := "\"" || s || "\""
+   return s
 end
 
 procedure comp1file(s)
+   local extended
    if find(".u", map(s)) then return ""  # do not compile .u files
-   s[find(".iol"|".htm"|".icn", map(s)) : 0] := "" # truncate extension
+   s[find(".icn", map(s)) : 0] := "" # truncate extension
    # check file attributes; if .u2 exists and is newer, use it.
-   if newer(s||".u2", s||".icn") then {
-      return s || ".u2"
-      }
-   return s || ".icn"
-end
-
-procedure idolt(args[])
-   local j
-   s := "idol -quiet -c "
-   log := ""
-   every x := !args do {
-      if remove(\widollog) then { }
-      else write("remove ", image(widollog), " failed")
-
-      system(s || x)
-
-      if \widollog then {
-	  every j := 1 to 5 do {
-	      if f := open(widollog) then {
-		  close(f)
-		  log ||:= readin(\widollog)
-		  message(log)
-		  break
-	      }
-	      delay(1000)
-	  }
-      }
-  }
-   if \widollog then {
-      if showanyerror("idol translation finished") then fail
-      }
-   else
-      appendmessage("set WIDOLLOG for better error reporting; see Wi Help")
-
-# if idol -c *.iol worked correctly, we could do this:
-#   every s ||:= " " || !args
-#   system(s)
-# but at present, it doesn't.
-   return
+   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
+   return quotes(extended)
 end
 
 procedure complink()
    local x
    if /project then {
-      if idol1file(filnam) then
-         if not idolt(filnam) then fail
       arglist := comp1file(filnam)
       }
    else {
-      # idol-translate all Idol sources that need it
-      arglist := []
-      i := 1
-      while menu[1][i] ~== "E&xit" do i +:= 1
-      i +:= 1
-      while menu[1][i] do {
-         if idl := idol1file(menu[1][i]) then put(arglist, idl)
-         i +:= 1
-         }
-      if *arglist > 0 then {
-         if not (idolt ! arglist) then fail
-         log := 1
-         }
 
       # compile all project sources that need it (in one step)
       arglist := ""
@@ -184,7 +121,7 @@ procedure complink()
       i +:= 1
       while menu[1][i] do {
 	 s := menu[1][i]
-         s[find(".icn"|".iol"|".htm", map(s)) : 0] := ".u"
+         s[find(".icn", map(s)) : 0] := ".u"
 	 if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
 	 arglist ||:= s
 	 arglist ||:= " "
@@ -192,14 +129,10 @@ procedure complink()
 	 }
       }
 
-      system("wunicon -quiet -log " || wiconlog || " -o " || icodename || " " || targs || " " || arglist, log)
+      system("wunicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, log)
       s := readin(wiconlog)
       remove(wiconlog)
       showanyerror(s)
-end
-
-procedure idolflag()
-   if find(".iol", map(filnam|!menu[1])) then return
 end
 
 #
@@ -209,7 +142,7 @@ procedure defextension(s)
    s ? {
       if tab(find(".")+1) & (tab(many(&letters++&digits))|"") & pos(0) then
 	 return s
-      else return s ||:= (if idolflag() then ".iol" else ".icn")
+      else return s ||:= ".icn"
    }
 end
 
@@ -241,7 +174,6 @@ end
 procedure main(av)
     temppath := getenv("TEMP") | "/tmp"
     wiconlog := tempname("wu",,temppath,5)
-   widollog := getenv("WIDOLLOG")
    wi_ini   := getenv("WICONINI") | "wi.ini"
    xargs := ""
    targs := ""
@@ -406,8 +338,6 @@ procedure mainloop()
 	   }
 	"&Run": run()
 	"E&xit" : exit(0)
-	"I&dol Reference":
-	   system("winhelp idol.hlp &")
 	"Icon &Language Reference":
 	   system("winhelp iconref.hlp &")
 	"Icon &Graphics Facilities Reference":
@@ -479,7 +409,7 @@ if map(s1|s2) == "util.icn" then Notice("s1 " || s1 || " t1 "||t1)
    t2 := stat(s2).mtime | fail
 if map(s1|s2) == "util.icn" then Notice("s2 " || s2 || " t2 "||t2)
    return t1 - t2 # or something like that
-$if 0
+$ifdef NOTDEF
    t1 ? {
       tab(many(&letters))
       =" "
@@ -590,7 +520,7 @@ procedure openfile(s)
 	 }
       else {
 	 icodename := filnam
-         icodename[find(".icn"|".iol"|".htm", map(icodename)) : 0] := ""
+         icodename[find(".icn", map(icodename)) : 0] := ""
 	 }
       }
       if s := readin(filnam) then {
@@ -746,16 +676,14 @@ procedure fileextensions()
    static eL
    initial {
       eL := [
-	"Icon Sources(*.icn)|*.icn",
-	"Icon Projects(*.icp)|*.icp",
-	"Idol Sources(*.iol)|*.iol",
-	"Idol Web Sources(*.htm)|*.htm",
+	"Unicon Sources(*.icn)|*.icn",
+	"Unicon Projects(*.icp)|*.icp",
 	"All Files(*.*)|*.*"
 	]
       }
 
    /filnam := "noname.icn"
-   if (s := map(filnam[-4:0])) == (".icp" | ".iol" | ".htm") then {
+   if (s := map(filnam[-4:0])) == ".icp" then {
       while not find(s, eL[1]) do put(eL, get(eL))
       }
 
@@ -768,11 +696,15 @@ procedure saveas()
    if s := WinSaveDialog("Save File As...", ,50, fileextensions()) then {
       s := defextension(s)
       if \project then {
-	 if (not find(s, !menu[1])) & find(".iol"|".icn"|".u",s) then {
+	 if (not find(s, !menu[1])) & find(".icn"|".u",s) then {
 	    put(menu[1], s)
 	    WinMenuBar ! menu
 	    }
 	 }
+      if match(icodename, filnam) then {
+	 icodename := s
+         icodename[find(".icn", map(icodename)) : 0] := ""
+      }
       filnam := s
       save(1)
       if find(".icp", map(filnam)) then { # open project

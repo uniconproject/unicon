@@ -231,17 +231,6 @@ void scanrefs()
          if (gp->g_flag & F_Record)
             gp->g_procid = ++nrecords;
 
-	 /*
-	  * If this is an execution monitor it will want to run miconx.
-	  * Look for EvGet().
-	  */
-	 if (!Mflag &&
-	     (gp->g_flag & F_Builtin) &&
-	     isupper((&lsspace[gp->g_name])[0]) &&
-	     !strcmp("EvGet", &lsspace[gp->g_name])) {
-	    Mflag = 1;
-	    }
-
 #if NT
 #ifndef NTGCC
 	 /*

@@ -384,7 +384,7 @@ char *outname;
       "[ -x $IXLCL ] && exec $IXLCL $0 ${1+\"$@\"}",
       "[ -x $IXBIN ] && exec $IXBIN $0 ${1+\"$@\"}",
       "exec ",
-      (Mflag ? "miconx" : "iconx"),
+      "iconx",
       " $0 ${1+\"$@\"}",
       "[executable Icon binary follows]");
    strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8));

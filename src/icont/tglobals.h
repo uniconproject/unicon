@@ -98,5 +98,3 @@ Global int Gflag	Init(1);	/* -G: enable graphics (write wiconx)*/
 Global int Gflag	Init(0);	/* -G: enable graphics (write wiconx)*/
 #endif					/* MSWindows && MSVC */
 #endif					/* NT */
-
-Global int Mflag	Init(0);	/* is this an execution monitor? */

@@ -136,6 +136,10 @@
    Feature(1, "_GRAPHICS", "graphics")
 #endif					/* Graphics */
 
+#ifdef Graphics3D
+   Feature(1, "_3D_GRAPHICS", "3D graphics")
+#endif					/* Graphics */
+
 #ifdef XWindows
    Feature(1, "_X_WINDOW_SYSTEM", "X Windows")
 #endif					/* XWindows */

@@ -410,3 +410,9 @@ typedef int siptr, stringint, inst;
    #enddef				/* GRFX_UNLINK */
    
 #endif					/* Graphics */
+ 
+#ifdef Graphics3D
+   typedef int GLdouble, GLint, GLfloat, GLsizei, Status, XStandardColormap;
+   typedef int XSetWindowAttributes, XWindowChanges;
+   typedef int XMappingEvent, GLUquadricObj;
+#endif					/* Graphics3D */

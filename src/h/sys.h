@@ -313,3 +313,12 @@
 #undef putc
 #define putc Consoleputc
 #endif					/* ConsoleWindow */
+
+#ifdef Graphics3D
+#include <GL/gl.h>
+#include <GL/glx.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
+deliberate syntax error
+#include "/home/ugrad6/nmartine/opengl/glut-3.7/lib/glut/glutint.h"
+#endif					/* Graphics3D */

@@ -665,6 +665,15 @@ Deliberate Syntax Error
 	       fail;
 #endif					/* Graphics */
 
+	    case 'l':
+	    case 'L':
+#ifdef Graphics
+	       status |= Fs_Window3D;
+	       continue;
+#else					/* Graphics */
+	       fail;
+#endif					/* Graphics */
+
 
 	    case 'd':
 	    case 'D':
@@ -825,7 +834,12 @@ Deliberate Syntax Error
 	       runerr(109, attr[j]);
 	    }
 
-	 f = (FILE *)wopen(fnamestr, hp, attr, n, &err_index);
+	 if (status & Fs_Window3D) {
+	    f = (FILE *)wopengl(fnamestr, hp, attr, n, &err_index);
+	    }
+	 else {
+	    f = (FILE *)wopen(fnamestr, hp, attr, n, &err_index, NULL);
+	    }
 	 if (f == NULL) {
 	    if (err_index >= 0) runerr(145, attr[err_index]);
 	    else if (err_index == -1) fail;

@@ -269,6 +269,9 @@ typedef struct _wdisplay {
   int		screen;
   int		numFonts;
   wfp		fonts;
+#ifdef Graphics3D
+  XVisualInfo  *vis;
+#endif					/* Graphics3D */
 #ifdef NAS
   AudioComponentType audio;
 #endif					/* NAS */
@@ -361,6 +364,14 @@ typedef struct _wcontext {
   char		*fgname, *bgname;
   int		leading, bkmode;
 #endif					/* MSWindows*/
+
+#ifdef Graphics3D
+  GLXContext	ctx;
+  int           dim;
+  double        eyeupx, eyeupy, eyeupz;
+  double        eyedirx, eyediry, eyedirz;
+  double        eyeposx, eyeposy, eyeposz;
+#endif
 } wcontext, *wcp;
 
 /*
@@ -489,6 +500,11 @@ typedef struct _wstate {
   int           nChildren;
   childcontrol *child;
 #endif					/* MSWindows */
+#ifdef Graphics3D
+  int		isdirect;		/* do we need this? */
+  GLXWindow	glwin;
+  GLXPixmap	glpix;
+#endif
 } wstate, *wsp;
 
 /*
@@ -589,7 +605,14 @@ typedef struct
 #define A_Y		57
 #define A_SELECTION	59
 
-#define NUMATTRIBS	59
+/* 3D attributes */
+#define A_DIM           60
+#define A_EYE           61
+#define A_EYEPOS        62
+#define A_EYEDIR        63
+#define A_EYEUP         64
+
+#define NUMATTRIBS	64
 
 #define XICONSLEEP	20 /* milliseconds */
 

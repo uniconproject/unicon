@@ -2329,6 +2329,22 @@ char * abuf;
 	 if (setwidth(w, new_width) == Failed) return Failed;
 	 break;
          }
+      case A_DIM:
+	 AttemptAttr(setdim(w, val));
+	 break;
+      case A_EYE:
+	 AttemptAttr(seteye(w, val));
+	 break;
+      case A_EYEPOS:
+	 AttemptAttr(seteyepos(w, val));
+	 break;
+      case A_EYEUP:
+	 AttemptAttr(seteyeup(w, val));
+	 break;
+      case A_EYEDIR:
+   	 AttemptAttr(seteyedir(w, val));
+	/* code to write eyedir attribute */
+	 break;
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
@@ -2646,6 +2662,27 @@ char * abuf;
       case A_IMAGE:
          ReturnErrNum(147, Error);
          break;
+      case A_DIM:
+	 MakeInt(wc->dim, answer);
+	 break;
+      case A_EYE:
+	 sprintf(abuf,"%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+		 wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, 
+		 wc->eyediry, wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+      case A_EYEPOS:
+ 	 sprintf(abuf,"%.2f,%.2f,%.2f", wc->eyeposx, wc->eyeposy, wc->eyeposz);
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+      case A_EYEUP:
+ 	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyeupx, wc->eyeupy, wc->eyeupz);
+	MakeStr(abuf, strlen(abuf), answer);
+	break;
+      case A_EYEDIR:
+	sprintf(abuf, "%.2f,%.2f,%.2f", wc->eyedirx, wc->eyediry, wc->eyedirz);
+	MakeStr(abuf, strlen(abuf), answer);
+	break;
       case A_VISUAL:
 	 if (getvisual(w, abuf) == Failed) return Failed;
 	 MakeStr(abuf, strlen(abuf), answer);
@@ -3374,6 +3411,7 @@ stringint attribs[] = {
    {"cursor",		A_CURSOR},
    {"depth",		A_DEPTH},
    {"descent",		A_DESCENT},
+   {"dim",		A_DIM},
    {"display",		A_DISPLAY},
    {"displayheight",	A_DISPLAYHEIGHT},
    {"displaywidth",	A_DISPLAYWIDTH},
@@ -3381,6 +3419,10 @@ stringint attribs[] = {
    {"dx",		A_DX},
    {"dy",		A_DY},
    {"echo",		A_ECHO},
+   {"eye",		A_EYE},
+   {"eyedir",		A_EYEDIR},
+   {"eyepos",		A_EYEPOS},
+   {"eyeup",		A_EYEUP},
    {"fg",		A_FG},
    {"fheight",		A_FHEIGHT},
    {"fillstyle",	A_FILLSTYLE},

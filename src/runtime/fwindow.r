@@ -809,6 +809,41 @@ function{1} DrawPolygon(argv[argc])
       XPoint points[MAXXOBJS];
 
       OptWindow(w);
+
+#ifdef Graphics3D
+      if (w....status & Fs_Window3D){
+	 double v[argc-warg];
+	 for(i = 0; i<argc-warg; i++){
+	    if(!cnv:C_double(argv[warg + i], v[i]))
+	       runerr(102, argv[warg+i]);
+	    }
+ 	if(w->context->dim == 2){
+	   CheckArgMultiple(2);
+	   glBegin(GL_LINE_LOOP);
+           for(i=0; i<argc-warg; i= i+2)
+	      glVertex2d(v[i], v[i+1]);
+	   glEnd();
+           }
+    	if(w->context->dim == 3){
+	   CheckArgMultiple(3);
+	   glBegin(GL_LINE_LOOP);
+           for(i=0; i<argc-warg; i= i+3)
+	      glVertex3d(v[i], v[i+1], v[i+2]);
+	   glEnd();
+           }
+	if(w->context->dim == 4){
+	   CheckArgMultiple(4);
+           glBegin(GL_LINE_LOOP);
+           for(i=0; i<argc-warg; i= i+4)
+	      glVertex4d(v[i], v[i+1], v[i+2], v[i+3]);
+	   glEnd();
+           }
+	glFlush();
+	ReturnWindow;
+	}
+
+#endif					/* Graphics3D */
+
       CheckArgMultiple(2);
 
       dx = w->context->dx;
@@ -1074,6 +1109,11 @@ function{0,1} Fg(argv[argc])
 	       runerr(103,argv[warg]);
 	    if(setfg(w, tmp) == Failed) fail;
 	    }
+	 if (w.....status & Fs_Window3D){
+	    glColor3f((w->context->fg->r)/(GLfloat)65535, 
+		      (w->context->fg->g)/(GLfloat)65535, 
+		      (w->context->fg->b)/(GLfloat)65535);
+	    }
          }
 
       /*
@@ -1202,26 +1242,56 @@ function{1} FillPolygon(argv[argc])
 
       OptWindow(w);
 
-      CheckArgMultiple(2)
+      if (Fs_Window3D){
+	for(i = 0; i<argc-warg; i++){
+	   if(!cnv:C_double(argv[warg + i], v[i]))
+              runerr(102, argv[warg+i]);
+	   }
+ 	if(w->context->dim == 2){
+	   CheckArgMultiple(2);
+	   glBegin(GL_POLYGON);
+           for(i=0; i<argc-warg; i= i+2)
+	      glVertex2d(v[i], v[i+1]);
+	   glEnd();
+           }
+    	if(w->context->dim == 3){
+	   CheckArgMultiple(3);
+	   glBegin(GL_POLYGON);
+           for(i=0; i<argc-warg; i= i+3)
+	      glVertex3d(v[i], v[i+1], v[i+2]);
+	   glEnd();
+           }
+	if(w->context->dim == 4){
+	   CheckArgMultiple(4);
+           glBegin(GL_POLYGON);
+           for(i=0; i<argc-warg; i= i+4)
+	      glVertex4d(v[i], v[i+1], v[i+2], v[i+3]);
+	   glEnd();
+           }
+	glFlush();
+	}
+      else {
+	 CheckArgMultiple(2)
 
-      /*
-       * Allocate space for all the points in a contiguous array,
-       * because a FillPolygon must be performed in a single call.
-       */
-      n = argc>>1;
-      Protect(points = (XPoint *)malloc(sizeof(XPoint) * n), runerr(305));
-      dx = w->context->dx;
-      dy = w->context->dy;
-      for(i=0; i < n; i++) {
-	 int base = warg + i * 2;
-         CnvCShort(argv[base], points[i].x);
-         CnvCShort(argv[base + 1], points[i].y);
-	 points[i].x += dx;
-         points[i].y += dy;
-         }
-      fillpolygon(w, points, n);
-      free(points);
-      ReturnWindow;
+         /*
+	  * Allocate space for all the points in a contiguous array,
+	  * because a FillPolygon must be performed in a single call.
+	  */
+	 n = argc>>1;
+	 Protect(points = (XPoint *)malloc(sizeof(XPoint) * n), runerr(305));
+	 dx = w->context->dx;
+	 dy = w->context->dy;
+	 for(i=0; i < n; i++) {
+	    int base = warg + i * 2;
+	    CnvCShort(argv[base], points[i].x);
+	    CnvCShort(argv[base + 1], points[i].y);
+	    points[i].x += dx;
+	    points[i].y += dy;
+	    }
+	 fillpolygon(w, points, n);
+	 free(points);
+	 ReturnWindow;
+	 }
       }
 end
 
@@ -2845,6 +2915,99 @@ MissingGraphicsFuncV(WinOpenDialog)
 MissingGraphicsFuncV(WinSelectDialog)
 MissingGraphicsFuncV(WinSaveDialog)
 #endif					/* MSWindows */
+
+
+
+
+"a sample GL function"
+function{1} Accpersp(argv[argc])
+   abstract{ return file }
+   body {
+	wbp w;
+	int warg = 0;
+	OptWindow(w);
+	myinit();
+	mydisplay();
+        ReturnWindow;
+     }
+end
+
+
+"DrawTorus(x){1} - draw a torus"
+
+function{1} DrawTorus(argv[argc])
+   abstract{ return file }
+   body {
+	wbp w;
+	int n;
+	int warg = 0;
+	double r1, r2, x, y, z;
+	OptWindow(w);
+	CheckArgMultiple(5);
+	printf("torus warg %d\n", warg);
+	if(!cnv:C_double(argv[warg], r1))
+		runerr(102, argv[warg]);
+	if(!cnv:C_double(argv[warg+1], r2))
+		runerr(102, argv[warg+1]);
+	if(!cnv:C_double(argv[warg+2], x))
+		runerr(102, argv[warg+2]);
+	if(!cnv:C_double(argv[warg+3], y))
+		runerr(102, argv[warg+3]);
+	if(!cnv:C_double(argv[warg+4], z))
+		runerr(102, argv[warg+4]);
+	torus(r1, r2, x, y, z);
+        ReturnWindow;
+     }
+end
+
+
+function{1} DrawCube(argv[argc])
+    abstract{ return file }
+    body {
+        wbp w;
+	int n;
+	int warg = 0;
+	double l, x, y, z;
+	OptWindow(w);	
+	CheckArgMultiple(4);
+	if(!cnv:C_double(argv[warg], l))
+		runerr(102, argv[warg]);
+
+	if(!cnv:C_double(argv[warg+1], x))
+		runerr(102, argv[warg+1]);
+	
+	if(!cnv:C_double(argv[warg+2], y))
+		runerr(102, argv[warg+2]);
+
+	if(!cnv:C_double(argv[warg+3], z))
+		fail;
+        cube(l, x, y, z);
+        ReturnWindow;
+    }
+end
+
+
+function{1} DrawSphere(argv[argc])
+    abstract{ return file }
+    body {
+        wbp w;
+	int warg = 0;
+	int n;
+	double r, x, y, z;
+	OptWindow(w);
+	CheckArgMultiple(4);	
+	if(!cnv:C_double(argv[warg], r))
+		runerr(102, argv[warg]);
+	if(!cnv:C_double(argv[warg+1], x))
+		runerr(102, argv[warg+1]);	
+	if(!cnv:C_double(argv[warg+2], y))
+		runerr(102, argv[warg+2]);
+	if(!cnv:C_double(argv[warg+3], z))
+		runerr(102, argv[warg+3]);	
+        sphere(r, x, y, z);
+        ReturnWindow;
+    }
+end
 
 #else					/* Graphics */
 

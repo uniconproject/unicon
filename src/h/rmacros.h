@@ -75,6 +75,10 @@
    #define Fs_Messaging 0400000
 #endif                                  /* Messaging */
 
+#ifdef Graphics3D
+   #define Fs_Window3D   01000000	/* reading/writing on a window */
+#endif					/* Graphics3D */
+
 #ifdef Graphics
    #define XKey_Window 0
    #define XKey_Fg 1

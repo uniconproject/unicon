@@ -28,7 +28,7 @@ static XImage *	     getximage	      (wbp w, int x, int y,
 void              moveWindow       (wbp w, int x, int y);
 int                  setdisplay       (wbp w, char *s);
 void              makeIcon         (wbp w, int x, int y);
-int		     wmap	      (wbp w);
+int		     wmap	      (wbp w, Colormap cm);
 Pixmap		     loadimage	      (wbp w, char *filename, unsigned int *height, unsigned int *width, int atorigin, int *status);
 void unsetclip (wbp w);
 
@@ -1007,11 +1007,7 @@ wbp w;
  *  -1  : ordinary failure
  *  -2  : out of memory
  */
-FILE *wopen(name, lp, attr, n, err_index)
-char *name;
-struct b_list *lp;
-dptr attr;
-int n, *err_index;
+FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, Colormap cm)
    {
    wbp w;
    wsp ws;
@@ -1101,7 +1097,7 @@ int n, *err_index;
 	 }
       }
 
-   if ((i = wmap(w)) != Succeeded) {
+   if ((i = wmap(w, cm)) != Succeeded) {
       if (i == Failed) *err_index = -1;
       else *err_index = 0;
       return NULL;
@@ -1168,8 +1164,7 @@ int x, y;		/* current mouse position */
  *  If a window, cause the window to actually become visible on the screen.
  *  returns Succeeded, Failed, or Error
  */
-int wmap(w)
-wbp w;
+int wmap(wbp w, Colormap cm)
    {
    XWindowAttributes attrs;
    XGCValues gcv;
@@ -1208,11 +1203,30 @@ wbp w;
     * create the X window (or use the DefaultRootWindow if requested)
     */
    if (ws->iconic != HiddenState) {
+      XSetWindowAttributes attr;
+      attr.background_pixmap = None;
+      attr.background_pixel = wc->bg->c;
+      attr.border_pixel = wc->fg->c;
+      attr.colormap = cm;
+      attr.event_mask = StructureNotifyMask | ExposureMask;
       ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
+
+#if 0
 		 XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
 				     ws->posx < 0 ? 0 : ws->posx,
 				     ws->posy < 0 ? 0 : ws->posy, ws->width,
 				     ws->height, 1, wc->fg->c, wc->bg->c));
+#else
+		 XCreateWindow(stddpy,
+			       DefaultRootWindow(stddpy),
+			       ws->posx < 0 ? 0 : ws->posx,
+			       ws->posy < 0 ? 0 : ws->posy,
+			       ws->width, ws->height, 0,
+			       DefaultDepth(stddpy, wd->screen),
+			       InputOutput,
+			       DefaultVisual(stddpy, wd->screen),
+			       CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
+#endif
       if (ws->win == (Window) NULL)
 	 return Failed;
       stdwin = ws->win;
@@ -1255,6 +1269,18 @@ wbp w;
    else
       XChangeGC(stddpy, stdgc, gcmask, &gcv);
 
+#ifdef Graphics3D
+   wc->ctx = glXCreateContext(wd->display, wd->vis, None, True);
+   if (w->window->isdirect = glXIsDirect(wd->display, wc->ctx)) {
+      fprintf(stderr, "yup, its direct\n"); fflush(stderr);
+      } 
+   else {
+      fprintf(stderr, "nope, its not direct\n"); fflush(stderr);
+      }
+   glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+   
+#endif
+ 
    if (wc->clipw >= 0)
       setclip(w);
 
@@ -1356,8 +1382,9 @@ wbp w;
    clhints.res_class = "IconProg";
    XSetClassHint(stddpy, stdwin, &clhints);
 
-   if (wd->cmap != DefaultColormap(stddpy,wd->screen))
+   if (wd->cmap != DefaultColormap(stddpy,wd->screen)) /* ? */
       XSetWindowColormap(stddpy, stdwin, wd->cmap);
+   XSync(stddpy, False);
 
    if (ws->iconic != RootState) {
       CLREXPOSED(w);
@@ -1723,7 +1750,7 @@ char *s;
 	 if (ws->iconic != IconicState) {
 #ifdef Iconify
 	    if (ws->win == (Window) NULL) {
-	       wmap(w);
+	       wmap(w, NULL);
 	       }
 	    XIconifyWindow(ws->display->display, ws->win, ws->display->screen);
 	    XSync(stddpy, False);
@@ -1750,7 +1777,7 @@ char *s;
 	    ws->iconic = NormalState;
 	    ws->initialPix = ws->pix;
 	    ws->pix = (Window) NULL;
-	    wmap(w);
+	    wmap(w, NULL);
 	    }
 	 else if (ws->iconic == IconicState) {
 	    XMapWindow(stddpy, stdwin);
@@ -1780,7 +1807,7 @@ char *s;
 	       ws->iconic = MaximizedState;
 	       ws->initialPix = ws->pix;
 	       ws->pix = (Window) NULL;
-	       wmap(w);
+	       wmap(w, NULL);
 	       }
 	    else if (ws->iconic == IconicState) {
 	       XMapWindow(stddpy, stdwin);
@@ -2378,6 +2405,7 @@ XExposeEvent *event;
    returnval = ISEXPOSED(w);
    SETEXPOSED(w);
    if (stdwin && !ISZOMBIE(w)) {
+/* if its a 3D window, do we skip this part ?? */
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy, stdgc, GXcopy);
       if (wc->clipw >= 0)
@@ -2388,6 +2416,7 @@ XExposeEvent *event;
 	 setclip(w);
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy,stdgc,wc->drawop);
+/* end of " if its a 3D window " */
       }
    return returnval;
    }
@@ -2492,6 +2521,10 @@ XConfigureEvent *event;
    ws->height = event->height;
 
    if (! resizePixmap(w, event->width, event->height)) return 0;
+
+#ifdef Graphics3D
+   glViewport(0, 0, (GLsizei)event->width, (GLsizei) event->height);
+#endif					/* Graphics3D */
 
    /*
     * The initial configure event generates no Icon-level "events"

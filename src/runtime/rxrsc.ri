@@ -335,6 +335,11 @@ char *s;
    double g;
    wdp wd;
    XColor color;
+#ifdef Graphics3D
+  int list[] = {GLX_RGBA, GLX_RED_SIZE, 1,  GLX_GREEN_SIZE, 1,
+		GLX_BLUE_SIZE, 1, GLX_DEPTH_SIZE, 1, GLX_ACCUM_RED_SIZE,
+		1, GLX_ACCUM_GREEN_SIZE, 1, GLX_ACCUM_BLUE_SIZE, 1, None};
+#endif
 
    if (s == NULL) s = getenv("DISPLAY");
    if (s == NULL) s = "";
@@ -356,6 +361,9 @@ char *s;
       }
    wd->screen = DefaultScreen(wd->display);
    wd->cmap = DefaultColormap(wd->display, wd->screen);
+#ifdef Graphics3D
+   wd->vis = glXChooseVisual(wd->display, wd->screen, list);
+#endif
 
    /*
     * Color slots 0 and 1 are permanently reserved for black and white

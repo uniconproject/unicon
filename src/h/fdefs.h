@@ -335,3 +335,9 @@ FncDef(fetch,2)
   FncDef(sql,2)
   FncDef(dbtables,1)
 #endif					/* ISQL */
+
+#ifdef Graphics3D
+  FncDefV(DrawTorus)
+  FncDefV(DrawCube)
+  FncDefV(DrawSphere)
+#endif					/* Graphics3D */

@@ -22,6 +22,10 @@
 #include "rmswin.ri"
 #endif  				/* MSWindows */
 
+#ifdef Graphics3D
+#include "ropengl.ri"
+#endif
+
 #else					/* Graphics */
 static char junk;		/* avoid empty module */
 #endif					/* Graphics */

@@ -12,7 +12,7 @@
  *  These are the only two entries that change any more.
  */
 #define VersionNumber "11.0 (beta)"
-#define VersionDate "May 23, 2003"
+#define VersionDate "May 24, 2003"
 
 /*
  * Version number to insure format of data base matches version of iconc
@@ -42,35 +42,71 @@
    
    #define UVersion "U9.0.00"
    
-   #ifdef FieldTableCompression
+   #if HAVE_LIBZ
+
+       #ifdef FieldTableCompression
+
+	  #if IntBits == 16
+	     #define IVersion "I9.U.00FT/16Z"
+	  #endif				/* IntBits == 16 */
+
+	  #if IntBits == 32
+	     #define IVersion "I9.U.00FT/32Z"
+	  #endif				/* IntBits == 32 */
+
+	  #if IntBits == 64
+	     #define IVersion "I9.U.00FT/64Z"
+	  #endif				/* IntBits == 64 */
+
+       #else				/* FieldTableCompression */
+
+	  #if IntBits == 16
+	     #define IVersion "I9.U.00/16Z"
+	  #endif				/* IntBits == 16 */
+
+	  #if IntBits == 32
+	     #define IVersion "I9.U.00/32Z"
+	  #endif				/* IntBits == 32 */
+
+	  #if IntBits == 64
+	     #define IVersion "I9.U.00/64Z"
+	  #endif				/* IntBits == 64 */
+
+       #endif				/* FieldTableCompression */
+
+   #else				/* HAVE_LIBZ */
    
-      #if IntBits == 16
-         #define IVersion "I9.U.00FT/16"
-      #endif				/* IntBits == 16 */
+       #ifdef FieldTableCompression
+
+	  #if IntBits == 16
+	     #define IVersion "I9.U.00FT/16"
+	  #endif				/* IntBits == 16 */
+
+	  #if IntBits == 32
+	     #define IVersion "I9.U.00FT/32"
+	  #endif				/* IntBits == 32 */
+
+	  #if IntBits == 64
+	     #define IVersion "I9.U.00FT/64"
+	  #endif				/* IntBits == 64 */
+
+       #else				/* FieldTableCompression */
+
+	  #if IntBits == 16
+	     #define IVersion "I9.U.00/16"
+	  #endif				/* IntBits == 16 */
+
+	  #if IntBits == 32
+	     #define IVersion "I9.U.00/32"
+	  #endif				/* IntBits == 32 */
+
+	  #if IntBits == 64
+	     #define IVersion "I9.U.00/64"
+	  #endif				/* IntBits == 64 */
+
+       #endif				/* FieldTableCompression */
    
-      #if IntBits == 32
-         #define IVersion "I9.U.00FT/32"
-      #endif				/* IntBits == 32 */
-   
-      #if IntBits == 64
-         #define IVersion "I9.U.00FT/64"
-      #endif				/* IntBits == 64 */
-   
-   #else				/* FieldTableCompression */
-   
-      #if IntBits == 16
-         #define IVersion "I9.U.00/16"
-      #endif				/* IntBits == 16 */
-   
-      #if IntBits == 32
-         #define IVersion "I9.U.00/32"
-      #endif				/* IntBits == 32 */
-   
-      #if IntBits == 64
-         #define IVersion "I9.U.00/64"
-      #endif				/* IntBits == 64 */
-   
-   #endif				/* FieldTableCompression */
+   #endif				/* HAVE_LIBZ */ 
 
 #endif					/* COMPILER */
 

@@ -182,9 +182,9 @@ typedef long time_t;
 typedef unsigned long mode_t;
 #endif					/* FAttrib */
 
-#ifdef Compress
+#if HAVE_LIBZ
 typedef int gzFile;
-#endif					/* Compress */
+#endif					/* HAVE_LIBZ */
 
 #ifdef Messaging
 typedef int MFile;
@@ -205,9 +205,9 @@ typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
 #endif
 #endif					/* NT */
 
-#ifdef JPEG
+#if HAVE_LIBJPEG
 typedef int j_common_ptr, JSAMPARRAY, JSAMPROW;
-#endif					/* JPEG */
+#endif					/* HAVE_LIBJPEG */
 
 #ifdef PosixFns
 typedef int SOCKET;

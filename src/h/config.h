@@ -37,6 +37,14 @@
  */
 
 /*
+ * If define.h does not specify NoAuto, supplement config info with
+ * autoconf-generated symbols.
+ */
+#ifndef NoAuto
+#include "../h/auto.h"
+#endif					/* NoAuto */
+
+/*
  * If COMPILER is not defined, code for the interpreter is compiled.
  */
 
@@ -134,6 +142,11 @@
    #undef HaveProfil
    #define HaveProfil
 #endif					/* NoProfil */
+
+#ifndef NoMessaging
+   #undef Messaging
+   #define Messaging
+#endif					/* Messaging */
 
 /*
  *  Execution monitoring is not supported under the compiler,
@@ -700,6 +713,19 @@ Deliberate Syntax Error
    #undef DirectExecution
    #define DirectExecution
 #endif					/* Header */
+
+#ifdef NoLibz
+#define HAVE_LIBZ 0
+#endif					/* NoLibz */
+
+#ifndef HAVE_LIBZ
+#define HAVE_LIBZ 0
+#endif					/* HAVE_LIBZ */
+
+#ifndef HAVE_LIBJPEG
+#define HAVE_LIBJPEG 0
+#endif					/* HAVE_LIBJPEG */
+
 
 /*
  *  Vsizeof is for use with variable-sized (i.e., indefinite)

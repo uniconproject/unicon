@@ -18,11 +18,11 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef JPEG
+#if HAVE_LIBJPEG
 #include "jpeglib.h"
 #include "jerror.h"
 #include <setjmp.h>
-#endif					/* JPEG */
+#endif					/* HAVE_LIBJPEG */
 
 /*
  * Operating-system-dependent includes.
@@ -326,7 +326,7 @@
 #include <GL/glu.h>
 #endif					/* Graphics3D */
 
-#ifdef Compress
+#if HAVE_LIBZ
 			
 #  ifdef STDC
 #    define OF(args)  args
@@ -336,4 +336,4 @@
 
 #include <zlib.h>
 
-#endif					/* Compress */
+#endif					/* HAVE_LIBZ */

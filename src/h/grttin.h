@@ -413,6 +413,6 @@ typedef int siptr, stringint, inst;
  
 #ifdef Graphics3D
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, XStandardColormap;
-   typedef int XWindowChanges;
+   typedef int XWindowChanges, GLboolean;
    typedef int XMappingEvent, GLUquadricObj;
 #endif					/* Graphics3D */

@@ -440,7 +440,7 @@ void		xmfree		(void);
    void	wflush		(wbp w);
 #endif
    int	wgetq		(wbp w, dptr res, int t);
-   FILE	*wopen		(char *nm, struct b_list *hp, dptr attr, int n, int *e);
+   FILE	*wopen		(char *nm, struct b_list *hp, dptr attr, int n, int *e, int is_3d);
    int	wputc		(int ci, wbp w);
 #ifndef MSWindows
    void	wsync		(wbp w);

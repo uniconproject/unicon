@@ -369,8 +369,9 @@ typedef struct _wcontext {
 #endif					/* MSWindows*/
 
 #ifdef Graphics3D
-  GLXContext	ctx;
+  GLXContext    ctx;
   int           dim;
+  int           is_3D;         
   double        eyeupx, eyeupy, eyeupz;
   double        eyedirx, eyediry, eyedirz;
   double        eyeposx, eyeposy, eyeposz;
@@ -505,8 +506,12 @@ typedef struct _wstate {
 #endif					/* MSWindows */
 #ifdef Graphics3D
   int		isdirect;		/* do we need this? */
+  int            is_3D;
+  int            numlights;
   GLXWindow	glwin;
   GLXPixmap	glpix;
+  struct b_list  *flist;       /* icon list of 3D functions*/
+  struct descrip funclist;    /* descriptor to hold list*/
 #endif
 } wstate, *wsp;
 
@@ -614,10 +619,19 @@ typedef struct
 #define A_EYEPOS        62
 #define A_EYEDIR        63
 #define A_EYEUP         64
+#define A_LIGHT         65
+#define A_LIGHT0        66
+#define A_LIGHT1        67
+#define A_LIGHT2        68
+#define A_LIGHT3        69
+#define A_LIGHT4        70
+#define A_LIGHT5        71
+#define A_LIGHT6        72
+#define A_LIGHT7        73
 
-#define A_TITLEBAR	65
+#define A_TITLEBAR	74
 
-#define NUMATTRIBS	65
+#define NUMATTRIBS	74
 
 #define XICONSLEEP	20 /* milliseconds */
 

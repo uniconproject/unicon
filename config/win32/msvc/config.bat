@@ -20,8 +20,8 @@ copy makefile.dbm ..\..\..\src\gdbm\makefile
 mkdir ..\..\..\ipl\lib
 echo ICONT=..\..\bin\icont >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile
-del ..\..\..\src\icont\*.obj 2> nul
-del ..\..\..\src\common\*.obj 2> nul
-del ..\..\..\src\runtime\*.obj 2> nul
+del ..\..\..\src\icont\*.obj
+del ..\..\..\src\common\*.obj
+del ..\..\..\src\runtime\*.obj
 copy RTT.LNK ..\..\..\src\rtt
 call copymk

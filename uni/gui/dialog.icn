@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.4 2004-05-09 20:04:05 rparlett Exp $
+# $Id: dialog.icn,v 1.5 2004-05-15 19:17:29 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -190,11 +190,11 @@ class Dialog : Component(
       Enqueue(self.win, &resize)      
    end
 
-   method final_setup()
+   method init()
       self.parent_dialog := self
       self.cwin := Clone(self.win)
       self.cbwin := Clone(self.buffer_win)
-      every (!self.children).final_setup(self)
+      every (!self.children).init()
    end
 
    method open_win()
@@ -299,7 +299,7 @@ class Dialog : Component(
    method show()
       self.component_setup()
       self.open_win()
-      self.final_setup(self)
+      self.init()
       self.resize()
       self.firstly()
       self.is_open := 1

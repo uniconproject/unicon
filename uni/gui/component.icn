@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.5 2004-05-10 13:57:44 rparlett Exp $
+# $Id: component.icn,v 1.6 2004-05-15 19:17:29 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -174,6 +174,13 @@ class Component : Ticker : SetFields (
    #
    method get_cbwin_reference()
       return self.cbwin
+   end
+
+   #
+   # The parent dialog, as seen by a child component.
+   #
+   method get_parent_dialog_reference()
+      return self.parent_dialog
    end
 
    method fatal(s)
@@ -464,7 +471,6 @@ class Component : Ticker : SetFields (
    method set_pos(x_spec, y_spec)
       self.x_spec := x_spec
       self.y_spec := y_spec
-      return
    end
 
    #
@@ -477,7 +483,6 @@ class Component : Ticker : SetFields (
    method set_size(w_spec, h_spec)
       self.w_spec := w_spec
       self.h_spec := h_spec
-      return
    end
 
    #
@@ -500,7 +505,6 @@ class Component : Ticker : SetFields (
    method set_abs_coords(x, y)
       self.x := x
       self.y := y
-      return
    end
 
    #
@@ -509,7 +513,6 @@ class Component : Ticker : SetFields (
    method set_abs_size(w, h)
       self.w := w
       self.h := h
-      return
    end
 
    #
@@ -542,15 +545,16 @@ class Component : Ticker : SetFields (
    end
 
    #
-   # Complete the final setup before display by setting the parent Dialog to x
+   # Complete the final setup before display by initializing the parent
+   # dialog reference and creating the cloned windows.
    #
-   method final_setup(x)
-      self.parent_dialog := x
+   method init()
       if /self.parent then
          fatal("incorrect ancestry (parent null)")
+      self.parent_dialog := self.parent.get_parent_dialog_reference()
       self.cwin := (Clone ! ([self.parent.get_cwin_reference()] ||| self.attribs))
       self.cbwin := (Clone ! ([self.parent.get_cbwin_reference()] ||| self.attribs))
-      every (!self.children).final_setup(x)
+      every (!self.children).init()
    end
 
    #
@@ -756,16 +760,22 @@ class Component : Ticker : SetFields (
 
    #
    # Add the {Component} to the list of children.
-   # @param c   The {Component} to add.
    #
-   method add(c)
-      put(self.children, c)
+   # @param c   The {Component} to add.
+   # @param i   The index to add at; if omitted then the new component
+   # @          is appended to the end.
+   #
+   method add(c, i)
+      if /i then 
+         put(self.children, c)
+      else
+         self.children := self.children[1 : i] ||| [c] ||| self.children[i : 0]
       c.parent := self
    end
 
    #
    # Remove the {Component} from the list of children.
-   # @param c   The {Component} to add.
+   # @param c   The {Component} to remove.
    #
    method remove(c)
       local i
@@ -778,22 +788,10 @@ class Component : Ticker : SetFields (
    end
 
    #
-   # Add the {Component} to the {Container}, but at the front of the list of
-   # contained elements.
-   # @param c   The {Component} to add.
+   # Succeed iff the component is in a dialog which is open.
    #
-   method add_front(c)
-      push(self.children, c)
-      c.parent := self
-   end
-
-   #
-   # Set the list of {Components} in this {Container}.
-   # @param x   The list of {Components}.
-   #
-   method set_children(x)
-      self.children := x
-      every (!x).parent := self
+   method is_dialog_open()
+      return \ (\self.parent_dialog).is_open
    end
 
    #

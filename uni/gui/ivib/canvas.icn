@@ -1,5 +1,5 @@
 #
-# $Id: canvas.icn,v 1.2 2004-02-27 15:37:46 rparlett Exp $
+# $Id: canvas.icn,v 1.3 2004-05-15 19:17:38 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -89,6 +89,10 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method get_name()
       return self.name
+   end
+
+   method get_parent_dialog_reference()
+      return dialog_struct
    end
 
    #
@@ -207,7 +211,7 @@ class Canvas : Component : SelectiveClassCoding(
          c.x_spec :=  c.get_x_alignment_offset() + 10 + 7 * (copy_count % 4) + t.x - t.parent.get_x_reference()
          c.y_spec :=  c.get_y_alignment_offset() + 10 + 7 * (copy_count % 4) + t.y - t.parent.get_y_reference()
          c.set_parent(t.parent)
-         c.final_setup(self.dialog_struct)
+         c.init()
          c.resize()
          c.firstly()
          #
@@ -741,7 +745,7 @@ class Canvas : Component : SelectiveClassCoding(
       self.firstly()
       every c := !items do {
          c.set_parent(self)
-         c.final_setup(self.dialog_struct, self)
+         c.init()
          c.resize()
          c.firstly()
       }

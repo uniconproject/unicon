@@ -1,5 +1,5 @@
 #
-# $Id: scrollarea.icn,v 1.2 2004-05-09 20:02:21 rparlett Exp $
+# $Id: scrollarea.icn,v 1.3 2004-05-15 19:17:29 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -45,7 +45,7 @@ class ScrollArea : Component(
    # Recompute the scrollbars and redisplay the object.
    #
    method compute_and_invalidate()
-      if \ (\self.parent_dialog).is_open then
+      if is_dialog_open() then
          self.set_internal_fields()
       self.invalidate()
    end
@@ -210,7 +210,7 @@ class ScrollArea : Component(
             every self.vsb.connect(self, "on_vsb", SCROLLBAR_PRESSED_EVENT | SCROLLBAR_DRAGGED_EVENT)
             self.vsb.set_value(0)
             self.add(self.vsb)
-            self.vsb.final_setup(self.get_parent_dialog())
+            self.vsb.init()
             self.vsb.resize()
             self.vsb.firstly()
          } else
@@ -228,7 +228,7 @@ class ScrollArea : Component(
             every self.hsb.connect(self, "on_hsb", SCROLLBAR_PRESSED_EVENT | SCROLLBAR_DRAGGED_EVENT)
             self.hsb.set_value(0)
             self.add(self.hsb)
-            self.hsb.final_setup(self.get_parent_dialog())
+            self.hsb.init()
             self.hsb.resize()
             self.hsb.firstly()
          } else

@@ -1,5 +1,5 @@
 #
-# $Id: menu.icn,v 1.4 2004-05-09 20:00:11 rparlett Exp $
+# $Id: menu.icn,v 1.5 2004-05-15 19:17:29 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -38,8 +38,15 @@ class Menu : SubMenu(
    #
    # Add the given component to the Menu.
    #
-   method add(c)
-      put(self.children, c)
+   # @param c   The {Component} to add.
+   # @param i   The index to add at; if omitted then the new component
+   # @          is appended to the end.
+   #
+   method add(c, i)
+      if /i then 
+         put(self.children, c)
+      else
+         self.children := self.children[1 : i] ||| [c] ||| self.children[i : 0]
       c.set_parent(self)
    end
 

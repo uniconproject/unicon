@@ -1,5 +1,5 @@
 #
-# $Id: componentscrollarea.icn,v 1.1 2004-05-09 20:01:08 rparlett Exp $
+# $Id: componentscrollarea.icn,v 1.2 2004-05-15 19:17:29 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -75,9 +75,14 @@ class ComponentScrollAreaView : Component(inner,
       add(inner)
    end
 
-   method final_setup(x)
+   method inner_resized()
+      inner_w := inner.w
+      inner_h := inner.h
+   end
+
+   method init()
       self.temp_win := (WOpen ! (["canvas=hidden"] ||| self.attribs))
-      self.Component.final_setup(x)
+      self.Component.init()
    end
 
    method finally()
@@ -99,6 +104,11 @@ end
 class ComponentScrollArea : ScrollArea()
    method set_inner(inner)
       view.set_inner(inner)
+   end
+
+   method inner_resized()
+      view.inner_resized()
+      compute_and_invalidate()
    end
 
    method get_subject_width()

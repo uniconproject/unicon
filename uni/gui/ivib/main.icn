@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.5 2004-05-09 10:59:03 rparlett Exp $
+# $Id: main.icn,v 1.6 2004-05-15 19:17:38 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -389,7 +389,7 @@ class Main : CommonDialog(
       # Setup rest of fields in new canvas.
       #
       self.canvas.set_parent(self)
-      self.canvas.final_setup(self)
+      self.canvas.init()
       self.canvas.restore()
 
       if *self.canvas.selections > 0 then
@@ -740,7 +740,7 @@ class Main : CommonDialog(
       #
       d := c.dup(self.canvas, self.canvas)
       d.set_parent(self.canvas)
-      d.final_setup(self.canvas.dialog_struct)
+      d.init()
       d.resize()
       d.firstly()
 
@@ -900,7 +900,7 @@ class Main : CommonDialog(
       self.canvas.new()
       self.canvas.set_size(orig_canvas_width, orig_canvas_height)
       self.canvas.set_parent(self)
-      self.canvas.final_setup(self)
+      self.canvas.init()
       self.canvas.restore()
       self.canvas.erase_and_display()
       self.canvas.update_pos_label()
@@ -928,7 +928,7 @@ class Main : CommonDialog(
       c.set_align("l", "t")
       c.set_parent_Canvas(self.canvas)
       c.set_parent(self.canvas)
-      c.final_setup(self.canvas.dialog_struct)
+      c.init()
       c.resize()
       c.firstly()
       self.canvas.add(c)

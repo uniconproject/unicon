@@ -1,5 +1,5 @@
 #
-# $Id: canvascomponent.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvascomponent.icn,v 1.2 2004-05-15 19:17:38 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -35,6 +35,10 @@ class CanvasComponent : SelectiveClassCoding(
    class_variable,          # Non-null if the component should have a class variable
    event_handlers           # List of event, handler pairs
    )
+
+   method get_parent_dialog_reference()
+      return self.parent_Canvas.dialog_struct
+   end
 
    #
    # An adjustment to add to the object's absolute x position,
@@ -293,7 +297,7 @@ class CanvasComponent : SelectiveClassCoding(
    method reset(x)
       self.finally()
       self.set_parent(x)
-      self.final_setup(self.parent_Canvas.dialog_struct)
+      self.init()
       self.reset_size()
       self.resize()
       self.firstly()

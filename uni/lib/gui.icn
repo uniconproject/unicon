@@ -1472,7 +1472,7 @@ class Container : Component(
    end
 
    method resize()
-      if \x_spec & \y_spec & \w_spec & \h_spec then
+      if string(x_spec) & \y_spec & \w_spec & \h_spec then
          self$Component.resize()
       every (!self.components)$resize()
       return
@@ -4801,7 +4801,7 @@ class EditableTextList : ScrollArea(
            while  j <  *l do {
              j +:= 1
              if wordlist[k][1] == "'" then {
-                if j := find(wordlist[k][2:0],l,j) then {
+                if j := find(map(wordlist[k][2:0]),map(l),j) then {
                    ex := j + *(wordlist[k][2:0])
                    draw23(l, left_pos, yp, i,j,ex)
                    j := ex 
@@ -5010,7 +5010,7 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
       } else {
         if e === -11 then fail # window closed, nothing to do?
         if self.noedit = 1 then {
-           changed := moved := self.has_focus := &null
+           changed := moved := has_focus := &null
          }
          else {
            old_contents_size := *contents

@@ -1,5 +1,5 @@
 #
-# $Id: netclient.icn,v 1.4 2004-10-02 17:25:24 rparlett Exp $
+# $Id: netclient.icn,v 1.5 2004-10-10 17:45:20 rparlett Exp $
 #
 
 package net
@@ -41,7 +41,7 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
       fire("Connecting", "Connecting to " || s)
 
       if not(connection := ::open(s, "n", timeout)) then {
-         if &errno = EINTR then
+         if &errno = 0 then
             return error("Timed out connecting to " || s)
          else
             return error("Couldn't connect to " || s)

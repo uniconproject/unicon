@@ -848,6 +848,10 @@ void gentables()
    struct fentry *fp;
    struct rentry *rp;
    struct header hdr;
+#ifdef NativeObjects
+   int found__m=0;
+   char classname[1000]={0};
+#endif					/* NativeObjects */
 
 #if MVS
    FILE *toutfile;		/* temporary file for icode output */
@@ -871,6 +875,30 @@ void gentables()
       if ((gp->g_flag & F_Record) && gp->g_procid > 0) {
          s = &lsspace[gp->g_name];
          gp->g_pc = pc;
+
+#ifdef NativeObjects
+   /*
+    * When __m is present as the last field of a record, it is assumed
+    * to be a class and hence its ndynam is changed to -3 and nfields
+    * is decremented by one. It still writes out the descriptor for the
+    * last field, this extra space is later utilized for storing descriptor
+    * for method vector record.
+    */
+   found__m=0;
+   i=gp->g_nargs-1;
+
+   for (fp = lffirst; fp != NULL; fp = fp->f_nextentry) {
+
+      for (rp = fp->f_rlist; rp!= NULL; rp=rp->r_link) {
+         if (rp->r_gp == gp && rp->r_fnum == i) {
+            if(0==strcmp("__m",&lsspace[fp->f_name]))
+               found__m=1;
+         }
+      }
+   }
+
+   if(!found__m) {
+#endif					/* NativeObjects */
 
 #ifdef DeBugLinker
          if (Dflag) {
@@ -897,6 +925,42 @@ void gentables()
          outword(1);			/* serial number */
          outword(strlen(s));		/* name of record: size and offset */
          outword(gp->g_name);
+
+#ifdef NativeObjects
+   }
+   else {
+      char *begin,*end;
+#ifdef DeBugLinker
+      if (Dflag) {
+	 fprintf(dbgfile, "%ld:\n", pc);
+	 fprintf(dbgfile, "\t%d\n", T_Proc);
+	 fprintf(dbgfile, "\t%d\n", RkBlkSize(gp));
+	 fprintf(dbgfile, "\t_mkrec\n");
+	 fprintf(dbgfile, "\t%d\n", gp->g_nargs-1);
+	 fprintf(dbgfile, "\t-3\n");
+	 fprintf(dbgfile, "\t%d\n", gp->g_procid);
+	 fprintf(dbgfile, "\t1\n");
+	 fprintf(dbgfile, "\t%d\tS+%ld\t\t\t# %s\n", (int)strlen(s),
+		 (long)gp->g_name, s);
+         }
+#endif					/* DeBugLinker */
+
+         outword(T_Proc);		/* type code */
+         outword(RkBlkSize(gp));
+         outword(0);			/* entry point (filled in by interp)*/
+	 /*
+	  * number of fields is decremented by one because __m is a reserved
+	  * field but it is still written so that it can later used for
+	  * storing pointer to method vector.
+	  */
+         outword(gp->g_nargs-1);
+         outword(-3);			/* class method vector indicator */
+         outword(gp->g_procid);		/* record id */
+         outword(1);			/* serial number */
+         outword(strlen(s));		/* name of record: size and offset */
+         outword(gp->g_name);
+      }
+#endif					/* NativeObjects */
 
          for (i=0;i<gp->g_nargs;i++) {	/* field names (filled in by interp) */
             int foundit = 0;
@@ -940,6 +1004,22 @@ void gentables()
             }
          }
       }
+
+#ifdef NativeObjects
+   /*
+    * Change all __m to -1.
+    */
+
+   for(fp = lffirst; fp != NULL; fp = fp->f_nextentry) {
+      s = &lsspace[fp->f_name];
+      if(0 == strcmp(s,"__m")) {
+         for(rp = fp->f_rlist;rp != NULL;rp = rp->r_link)
+              rp->r_fnum=-1;
+
+         break;
+      }
+   }
+#endif					/* NativeObjects */
 
    /*
     * Output record/field table.

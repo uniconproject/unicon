@@ -199,7 +199,7 @@ typedef int jmp_buf;
 #endif                                  /* Messaging */
 
 #if NT
-typedef int HMODULE, WSADATA, WORD, HANDLE;
+typedef int HMODULE, WSADATA, WORD, HANDLE, MEMORYSTATUS;
 #ifdef NTGCC
 typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
 #endif

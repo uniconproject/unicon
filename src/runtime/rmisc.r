@@ -360,7 +360,6 @@ dptr dp;
 	 case T_Proc:
 	    dp = &(BlkLoc(*dp)->proc.pname);
 	    goto hashstring;
-	    break;
 
          default:
             /*
@@ -488,7 +487,7 @@ int noimage;
 	       fprintf(f, "inet(");
                }
             else
-	    if (BlkLoc(*dp)->file.status & Fs_Dir) {
+	    if (BlkLoc(*dp)->file.status & Fs_Directory) {
 	       fprintf(f, "directory(");
                }
 	    else
@@ -1153,7 +1152,7 @@ word *ipc;
    extern word *records;
 #endif					/* MultiThread */
 
-   static two = 2;	/* some compilers generate bad code for division
+   static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
    if (!InRange(code,ipc,ecode))
@@ -1187,7 +1186,7 @@ int line;
    extern struct ipc_line *ilines, *elines;
 #endif					/* MultiThread */
 
-   static two = 2;	/* some compilers generate bad code for division
+   static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
    base = ilines;
@@ -1227,7 +1226,7 @@ word *ipc;
    fflush(stderr);
    c_exit(EXIT_FAILURE);
    /*NOTREACHED*/
-   return 0;
+   return 0;  /* avoid compiler warning */
 }
 #endif					/* !COMPILER */
 
@@ -1819,6 +1818,8 @@ word a, b;
    return a * b;
 }
 
+/* MinLong / -1 overflows; need div3 too */
+
 word mod3(a, b)
 word a, b;
 {
@@ -1863,7 +1864,7 @@ word a, b;
    return ( a - mod3 ( a, b ) ) / b;
 }
 
-/* MinLong / -1 overflows */
+/* MinLong / -1 overflows; need div3 too */
 
 word neg(a)
 word a;
@@ -1991,6 +1992,7 @@ word *high;
    }
 
 #if MSDOS
+#ifndef NTGCC
 int strcasecmp(char *s1, char *s2)
 {
    while (*s1 && *s2) {
@@ -2011,4 +2013,5 @@ int strncasecmp(char *s1, char *s2, int n)
       }
    return 0;
 }
+#endif					/* NTGCC */
 #endif					/* MSDOS */

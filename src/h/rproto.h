@@ -288,6 +288,9 @@ void		xmfree		(void);
 #endif                                  /* MVS || VM */
 
 #ifdef MSWindows
+#ifdef ConsoleWindow
+void detectRedirection();
+#endif
    #ifdef FAttrib
       #if MSDOS
          char *make_mode(unsigned short st_mode);

@@ -11,9 +11,6 @@ ITRAN = $(ICONT) $(IFLAGS)
 
 FUNCLIB = libcfunc.so
 
-CC = cc
-CFLAGS = -O -w
-
 .SUFFIXES: .c .o
 .c.o:			; $(CC) $(CFLAGS) $(CFDYN) -c $<
 

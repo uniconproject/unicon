@@ -27,6 +27,6 @@ unigram.icn : unigram.y ytab_h.icn
 	$(IYACC) -i unigram.y
 
 %: %.u
-	$(UNICON) -o $@ $*
+	$(UNICON) -o $@ $<
 
 include deps.out

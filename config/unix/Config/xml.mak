@@ -24,6 +24,6 @@ deps.out: ;
 	$(UNICON) -c $*
 
 %: %.u
-	$(UNICON) -o $@ $*
+	$(UNICON) -o $@ $<
 
 include deps.out

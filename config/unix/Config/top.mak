@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.12 2004-02-13 16:35:01 rparlett Exp $
+# $Id: top.mak,v 1.13 2004-02-15 18:22:43 rparlett Exp $
 
 
 # Configure the code for a specific system.
@@ -185,7 +185,9 @@ Clean:
 		touch Makedefs
 		rm -rf icon.*
 		cd src;			$(MAKE) Clean
-		cd uni;			$(MAKE) Clean
+		if [ -f uni/Makefile ] ; then \
+			cd uni;			$(MAKE) Clean ;\
+		fi
 		cd tests;		$(MAKE) Clean
 
 Pure:
@@ -194,7 +196,9 @@ Pure:
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
-		cd uni;			$(MAKE) Clean
+		if [ -f uni/Makefile ] ; then \
+			cd uni;			$(MAKE) Clean ;\
+		fi
 		cd config/unix; 	$(MAKE) Pure
 
 

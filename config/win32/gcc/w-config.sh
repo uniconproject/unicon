@@ -1,4 +1,5 @@
 sh config.sh
+cp makefile.wop ../../../makefile
 cp wdefine.h ../../../src/h/define.h
 echo ICONX=wiconx >../../../src/runtime/makefile
 echo CONSOLE=NOTHING >>../../../src/runtime/makefile

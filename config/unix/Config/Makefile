@@ -49,13 +49,8 @@ Makefiles:
 		   > ../../../src/runtime/Makefile
 		cat ../Config/xpm.mak \
 		   > ../../../src/xpm/lib/Makefile
-		echo "ICONT=../../bin/icont" > ../../../uni/unicon/makefile
-		echo "CP=cp" >> ../../../uni/unicon/makefile
-		echo "RM=rm -f" >> ../../../uni/unicon/makefile
-		echo "BINDIR=../../bin" >> ../../../uni/unicon/makefile
-		echo "UNICON=../unicon/unicon" >> ../../../uni/unicon/makefile
-		cat ../Config/unicon.mak >> ../../../uni/unicon/makefile
-		-mkdir ../../../ipl/lib
+		-mkdir -p ../../../ipl/lib
+		cp unicon.mak ../../../uni/unicon/makefile
 		cp ipllib.mak ../../../ipl/lib/makefile
 		cp ide.mak ../../../uni/ide/makefile
 		cp ivib.mak ../../../uni/ivib/makefile

@@ -1,3 +1,8 @@
+ICONT=../../bin/icont
+CP=cp
+RM=rm -f
+BINDIR=../../bin
+UNICON=../unicon/unicon
 ARC=zip
 ARCEXT=zip
 IYACC=../iyacc/iyacc

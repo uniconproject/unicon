@@ -4656,6 +4656,11 @@ class EditableTextList : ScrollArea(
    noedit,
    modified # not the same as "changed"; external needs-to-be-saved flag
    )
+
+   method clear_modified()
+      modified := &null
+   end
+
 ###
 #____________________________________________________________________
  method reset(x,y)
@@ -4834,8 +4839,11 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
 
 ###
    method set_contents(x)
-   local lst,k,j,s1,new1,printable
-   printable := cset(&ascii[33:128])
+   static printable
+   local lst,k,j,s1,new1
+   initial { printable := cset(&ascii[33:128]) }
+
+      modified := &null
       lst := []
       reset_drag()
       undolist := []
@@ -5024,6 +5032,7 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
             text_area_to_high()
             return _Event(e, self, 0)
          } else if \changed then {
+            modified := 1
             if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidth(cwin, contents[long_line])) then {
                #
                # Contents changed.  Re-compute all internal fields, ensure on

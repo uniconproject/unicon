@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.6 2001-11-28 07:56:59 phliar Exp $
+ * $Id: fxposix.ri,v 1.7 2001-11-28 11:38:41 jeffery Exp $
  */
 
 /*
@@ -2061,14 +2061,11 @@ function{0,1} select(files[nargs])
 	 for(k=0;k<nargs;k++) {
 	    /* Traverse the list, build fd_set of sockets */
 	    if (!is:list(files[k])) {
-	       if (rv = set_if_selectable(files+k, &fds, &n, &d2))
-		  runerr(rv, files[k]);
-	       else {
-		  if ((k+1 == nargs) && is:integer(files[k]))
-		     cnv:C_integer(files[k], timeout);
-		  else
-		     runerr(105, *f);
-	          }
+	       if ((k+1 == nargs) && is:integer(files[k]))
+		  cnv:C_integer(files[k], timeout);
+	       else
+		  if (rv = set_if_selectable(files+k, &fds, &n, &d2))
+		     runerr(rv, files[k]);
 	       }
 	    else
 	       for (ep = BlkLoc(files[k])->list.listhead;

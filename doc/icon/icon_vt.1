@@ -1,0 +1,93 @@
+.co \" IPD246a: Manual page for Version 9 icon_vt(1)
+.ds M \fH
+.de Ds
+.nf
+.in +.5i
+.ft H
+.sp
+..
+.de De
+.ft R
+.in -.5i
+.fi
+.sp
+..
+.TH ICON_VT 1 "30 October 1995" "IPD246a"
+.SH NAME
+icon_vt \- construct Icon variant translator system
+.SH SYNOPSIS
+\*Micon_vt\fR
+.SH DESCRIPTION
+An Icon variant translator system is a facility for constructing
+preprocessors for variants of Icon.
+.PP
+To set up a variant translator system, a new directory should
+be created solely for its use; otherwise
+files may be accidentally destroyed by the set-up process.
+For the purpose of example, suppose this directory is
+named \*Mvt\fR. The set-up process consists of
+.Ds
+mkdir vt
+cd vt
+icon_vt
+.De
+Note that \*Micon_vt\fR must be run in the area in which the variant
+translator system is to be built.
+.PP
+The shell script \*Micon_vt\fR constructs two subdirectories:
+\*Mh\fR and \*Mitran\fR. The subdirectory \*Mh\fR
+contains header files that are needed in C routines. The subdirectory
+\*Mitran\fR contains the translator proper.
+.PP
+The main directory in which \*Micon_vt\fR is run contains a \*MMakefile\fR
+and auxiliary files needed to construct a variant translator, which is
+named \*Mvitran\fR.
+The two files \*Mvariant.defs\fR and \*Mvariant.c\fR initially are
+placeholders.
+It is in these files that the variant is described by macro specifications
+and any needed C support routines.
+A \fImake\fR in this directory produces a translator, \*Mvitran\fR.
+If \*Mvariant.def\fR and \*Mvariant.c\fR are left empty, the result is
+an identity translator.
+.PP
+If the input syntax of the variant
+translator is different from that of Icon, it is
+necessary to modify the Icon grammar, which is
+in \*Mitran/icon_g.c\fR.
+.SH OPTIONS
+.TP 4
+\fH\-m\fR
+Preprocess each \fH.icn\fR source file
+with the \fIm4\^(1)\fR
+macro processor.
+.TP
+\fH\-s\fR
+Suppress informative messages.
+Normally, both informative messages and error messages are sent
+to standard error output.
+.TP
+\fH\-P\fR
+Suppress \fH#line\fR directives in the output. This option may
+be necessary to prevent \fH#line\fR directives from occurring in
+places that result in syntactically incorrect output.
+.SH FILES
+.ta 1i
+.nf
+\*Mv9/vtran\fR	code for building personalized interpreters
+.fi
+.SH SEE ALSO
+icont(1)
+.LP
+\fIVariant Translators for Version 9 of Icon\fR, Ralph E.
+Griswold, IPD245, Department of Computer Science,
+The University of Arizona, 1995.
+.LP
+\fIBuilding Source-Code Processors for Icon\fR, Ralph E.
+Griswold, IPD263, Department of Computer Science,
+The University of Arizona, 1995.
+.LP
+\fIThe Icon Programming Language\fR,
+Ralph E. Griswold and Madge T. Griswold,
+Prentice-Hall Inc., second edition,
+Englewood Cliffs, New Jersey,
+1990.

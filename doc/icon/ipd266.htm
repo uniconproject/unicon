@@ -1,0 +1,537 @@
+<HTML>
+<!-- status: complete, but needs to be reprinted for correction -->
+<HEAD>
+    <TITLE>An Overview of the Icon Programming Language; Version 9</TITLE>
+</HEAD>
+<BODY>
+<H2>An Overview of the Icon Programming Language; Version 9</H2>
+Ralph E. Griswold<BR>
+<BR>
+<TABLE><TR VALIGN="TOP"><TD><IMG SRC="../bluelogo.gif" WIDTH="130" HEIGHT=
+"130" ALIGN=bottom NATURALSIZEFLAG="3"></TD><TD> Department of Computer
+Science<BR>
+The University of Arizona<BR>
+Tucson, Arizona <BR>
+<BR>
+IPD266a<BR>
+March 2, 1996 <BR>
+http://www.cs.arizona.edu/icon/docs/ipd266.htm</TD></TR></TABLE><BR>
+<HR>
+<H3>1. Introduction</H3>
+Icon is a high-level programming language with extensive facilities for
+processing strings and structures. Icon has several novel features, including
+expressions that may produce sequences of results, goal-directed evaluation
+that automatically searches for a successful result, and string scanning
+that allows operations on strings to be formulated at a high conceptual
+level. Icon also provides high-level graphics facilities.<BR>
+<BR>
+Icon emphasizes high-level string processing and a design philosophy that
+allows ease of programming and short, concise programs. Storage allocation
+and garbage collection are automatic in Icon, and there are few restrictions
+on the sizes of objects. Strings, lists, and other structures are created
+during program execution and their size does not need to be known when a
+program is written. Values are converted to expected types automatically;
+for example, numeral strings read in as input can be used in numerical computations
+without explicit conversion. Icon has an expression-based syntax with reserved
+words; in appearance, Icon programs resemble those of Pascal and C.<BR>
+Although Icon has extensive facilities for processing strings and structures,
+it also has a full repertoire of computational facilities. It is suitable
+for a wide variety of applications. Some examples are: 
+<UL>
+<LI>text analysis 
+<LI>text editing 
+<LI>document formatting 
+<LI>artificial intelligence 
+<LI>expert systems 
+<LI>rapid prototyping 
+<LI>symbolic mathematics 
+<LI>text generation 
+<LI>data laundry 
+</UL>
+There are public-domain implementations of Icon for the Macintosh, MS-DOS,
+many UNIX systems, and VAX/VMS. The remainder of this report briefly describes
+the highlights of Icon. For a complete description, see References 1 and
+2. 
+<H3>2. Expression Evaluation</H3>
+<H4>2.1 Conditional Expressions</H4>
+In Icon there are conditional expressions that may succeed and produce a
+result, or may fail and not produce any result. An example is the comparison
+operation 
+<BLOCKQUOTE>
+<PRE>i &gt; j</PRE>
+</BLOCKQUOTE>
+which succeeds (and produces the value of <CODE>j</CODE>) provided that
+the value of <CODE>i</CODE> is greater than the value of <CODE>j</CODE>,
+but fails otherwise. Similarly, 
+<BLOCKQUOTE>
+<PRE>i &gt; j &gt; k</PRE>
+</BLOCKQUOTE>
+succeeds if the value of <CODE>j</CODE> is between <CODE>i</CODE> and <CODE>k</CODE>.<BR>
+<BR>
+The success or failure of conditional operations is used instead of Boolean
+values to drive control structures in Icon. An example is 
+<BLOCKQUOTE>
+<PRE>if i &gt; j then k := i else k := j</PRE>
+</BLOCKQUOTE>
+which assigns the value of <CODE>i</CODE> to <CODE>k</CODE> if the value
+of <CODE>i</CODE> is greater than the value of <CODE>j</CODE>, but assigns
+the value of <CODE>j</CODE> to <CODE>k</CODE> otherwise.<BR>
+<BR>
+The usefulness of the concepts of success and failure is illustrated by
+<CODE>find(s1,s2)</CODE>, which fails if <CODE>s1</CODE> does not occur
+as a substring of <CODE>s2</CODE>. Thus 
+<BLOCKQUOTE>
+<PRE>if i := find(&quot;or&quot;,line) then write(i)</PRE>
+</BLOCKQUOTE>
+writes the position at which <CODE>&quot;or&quot;</CODE> occurs in <CODE>line</CODE>,
+if it occurs, but does not write a value if it does not occur.<BR>
+<BR>
+Many expressions in Icon are conditional. An example is <CODE>read(),</CODE>
+which produces the next line from the input file, but fails when the end
+of the file is reached. The following expression is typical of programming
+in Icon and illustrates the integration of conditional expressions and conventional
+control structures: 
+<BLOCKQUOTE>
+<PRE>while line := read() do
+   write(line)</PRE>
+</BLOCKQUOTE>
+This expression copies the input file to the output file.<BR>
+<BR>
+If an argument of a function fails, the function is not called, and the
+function call fails as well. This &quot;inheritance&quot; of failure allows
+the concise formulation of many programming tasks. Omitting the optional
+<CODE>do</CODE> clause in <CODE>while-do</CODE>, the previous expression
+can be rewritten as 
+<BLOCKQUOTE>
+<PRE>while write(read()) </PRE>
+</BLOCKQUOTE>
+<H4>2.2 Generators</H4>
+In some situations, an expression may be capable of producing more than
+one result. Consider 
+<BLOCKQUOTE>
+<PRE>sentence := &quot;Store it in the neighboring harbor&quot; 
+find(&quot;or&quot;, sentence)</PRE>
+</BLOCKQUOTE>
+Here <CODE>&quot;or&quot;</CODE> occurs in <CODE>sentence</CODE> at positions
+3, 23, and 33. Most programming languages treat this situation by selecting
+one of the positions, such as the first, as the result of the expression.
+In Icon, such an expression is a generator and is capable of producing all
+three positions.<BR>
+<BR>
+The results that a generator produces depend on context. In a situation
+where only one result is needed, the first is produced, as in 
+<BLOCKQUOTE>
+<PRE>i := find(&quot;or&quot;, sentence)</PRE>
+</BLOCKQUOTE>
+which assigns the value 3 to <CODE>i</CODE>.<BR>
+<BR>
+If the result produced by a generator does not lead to the success of an
+enclosing expression, however, the generator is resumed to produce another
+value. An example is 
+<BLOCKQUOTE>
+<PRE>if (i := find(&quot;or&quot;, sentence)) &gt; 5 then write(i)</PRE>
+</BLOCKQUOTE>
+Here the first result produced by the generator, 3, is assigned to <CODE>i</CODE>,
+but this value is not greater than 5 and the comparison operation fails.
+At this point, the generator is resumed and produces the second position,
+23, which is greater than 5. The comparison operation then succeeds and
+the value 23 is written. Because of the inheritance of failure and the fact
+that comparison operations return the value of their right argument, this
+expression can be written in the following more compact form: 
+<BLOCKQUOTE>
+<PRE>write(5 &lt; find(&quot;or&quot;, sentence))</PRE>
+</BLOCKQUOTE>
+Goal-directed evaluation is inherent in the expression evaluation mechanism
+of Icon and can be used in arbitrarily complicated situations. For example,
+<BLOCKQUOTE>
+<PRE>find(&quot;or&quot;, sentence1) = find(&quot;and&quot;, sentence2)</PRE>
+</BLOCKQUOTE>
+succeeds if <CODE>&quot;or&quot;</CODE> occurs in <CODE>sentence1</CODE>
+at the same position as <CODE>&quot;and&quot;</CODE> occurs in <CODE>sentence2</CODE>.<BR>
+<BR>
+A generator can be resumed repeatedly to produce all its results by using
+the <CODE>every-do</CODE> control structure. An example is 
+<BLOCKQUOTE>
+<PRE>every i := find(&quot;or&quot;, sentence)
+   do write(i)</PRE>
+</BLOCKQUOTE>
+which writes all the positions at which <CODE>&quot;or&quot;</CODE> occurs
+in <CODE>sentence</CODE>. For the example above, these are 3, 23, and 33.<BR>
+<BR>
+Generation is inherited like failure, and this expression can be written
+more concisely by omitting the optional do clause: 
+<BLOCKQUOTE>
+<PRE>every write(find(&quot;or&quot;, sentence))</PRE>
+</BLOCKQUOTE>
+There are several built-in generators in Icon. One of the most frequently
+used of these is 
+<BLOCKQUOTE>
+<PRE>i to j</PRE>
+</BLOCKQUOTE>
+which generates the integers from <CODE>i</CODE> to <CODE>j</CODE>. This
+generator can be combined with <CODE>every-do</CODE> to formulate the traditional
+for-style control structure: 
+<BLOCKQUOTE>
+<PRE>every k := i to j do
+   f(k)</PRE>
+</BLOCKQUOTE>
+Note that this expression can be written more compactly as 
+<BLOCKQUOTE>
+<PRE>every f(i to j)</PRE>
+</BLOCKQUOTE>
+There are several other control structures related to generation. One is
+alternation, 
+<BLOCKQUOTE>
+<PRE>expr1 | expr2</PRE>
+</BLOCKQUOTE>
+which generates the results of <CODE>expr1</CODE> followed by the results
+of <CODE>expr2</CODE>. Thus 
+<BLOCKQUOTE>
+<PRE>every write(find(&quot;or&quot;, sentence1) |
+   find(&quot;or&quot;, sentence2))</PRE>
+</BLOCKQUOTE>
+writes the positions of <CODE>&quot;or&quot;</CODE> in <CODE>sentence1</CODE>
+followed by the positions of <CODE>&quot;or&quot;</CODE> in <CODE>sentence2</CODE>.
+Again, this sentence can be written more compactly by using alternation
+in the second argument of <CODE>find()</CODE>: 
+<BLOCKQUOTE>
+<PRE>every write(find(&quot;or&quot;, sentence1 | sentence2))</PRE>
+</BLOCKQUOTE>
+Another use of alternation is illustrated by 
+<BLOCKQUOTE>
+<PRE>(i | j | k) = (0 | 1)</PRE>
+</BLOCKQUOTE>
+which succeeds if any of <CODE>i</CODE>, <CODE>j</CODE>, or <CODE>k</CODE>
+has the value 0 or 1.<BR>
+<BR>
+Procedures can be used to add generators to Icon's built-in repertoire.
+For example, 
+<BLOCKQUOTE>
+<PRE>procedure findodd(s1, s2)
+   every i := find(s1, s2) do
+      if i % 2 = 1 then suspend i
+end</PRE>
+</BLOCKQUOTE>
+is a procedure that generates the odd-valued positions at which <CODE>s1</CODE>
+occurs in <CODE>s2</CODE>. The <CODE>suspend</CODE> control structure returns
+a value from the procedure, but leaves it in suspension so that it can be
+resumed for another value. When the loop terminates, control flows off the
+end of the procedure without producing another value. 
+<H3>3. String Scanning</H3>
+For complicated operations, the bookkeeping involved in keeping track of
+positions in strings becomes burdensome and error prone. Icon has a string
+scanning facility that is manages positions automatically. Attention is
+focused on a current position in a string as it is examined by a sequence
+of operations.<BR>
+<BR>
+The string scanning operation has the form 
+<BLOCKQUOTE>
+<PRE>s ? <I>expr</I></PRE>
+</BLOCKQUOTE>
+where <CODE>s</CODE> is the <I>subject string</I> to be examined and <I><CODE>expr</CODE></I>
+is an expression that performs the examination. A position in the subject,
+which starts at 1, is the focus of examination.<BR>
+<BR>
+<I>Matching functions</I> change this position. One matching function, <CODE>move(i)</CODE>,
+moves the position by <CODE>i</CODE> and produces the substring of the subject
+between the previous and new positions. If the position cannot be moved
+by the specified amount (because the subject is not long enough), <CODE>move(i)</CODE>
+fails. A simple example is 
+<BLOCKQUOTE>
+<PRE>line ? while write(move(2))</PRE>
+</BLOCKQUOTE>
+which writes successive two-character substrings of <CODE>line</CODE>, stopping
+when there are no more characters.<BR>
+<BR>
+Another matching function is <CODE>tab(i)</CODE>, which sets the position
+in the subject to <CODE>i</CODE> and also returns the substring of the subject
+between the previous and new positions. For example, 
+<BLOCKQUOTE>
+<PRE>line ? if tab(10) then write(tab(0))</PRE>
+</BLOCKQUOTE>
+first sets the position in the subject to 10 and then to the end of the
+subject, writing the remaining characters. Note that no value is written
+if the subject is not long enough.<BR>
+<BR>
+String analysis functions such as <CODE>find()</CODE> can be used in string
+scanning. In this context, the string that they operate on is not specified
+and is taken to be the subject. For example, 
+<BLOCKQUOTE>
+<PRE>line ? while write(tab(find(&quot;or&quot;)))
+   do move(2)</PRE>
+</BLOCKQUOTE>
+writes all the substrings of line prior to occurrences of <CODE>&quot;or&quot;</CODE>.
+Note that <CODE>find()</CODE> produces a position, which is then used by
+<CODE>tab()</CODE> to change the position and produce the desired substring.
+The <CODE>move(2)</CODE> skips the <CODE>&quot;or&quot;</CODE> that is found.<BR>
+<BR>
+Another example of the use of string analysis functions in scanning is 
+<BLOCKQUOTE>
+<PRE>line ? while tab(upto(&amp;letters)) do
+   write(tab(many(&amp;letters)))</PRE>
+</BLOCKQUOTE>
+which writes all the words in <CODE>line</CODE>.<BR>
+<BR>
+As illustrated in the examples above, any expression may occur in the scanning
+expression. 
+<H3>4. Structures</H3>
+Icon supports several kinds of structures with different organizations and
+access methods. Lists are linear structures that can be accessed both by
+position and by stack and queue functions. Sets are collections of arbitrary
+values with no implied ordering. Tables provide an associative lookup mechanism.
+<H4>4.1 Lists</H4>
+While strings are sequences of characters, lists in Icon are sequences of
+values of arbitrary types. Lists are created by enclosing the lists of values
+in brackets. An example is 
+<BLOCKQUOTE>
+<PRE>car1 := [&quot;buick&quot;, &quot;skylark&quot;,  1978, 2450]</PRE>
+</BLOCKQUOTE>
+in which the list <CODE>car1</CODE> has four values, two of which are strings
+and two of which are integers. Note that the values in a list need not all
+be of the same type. In fact, any kind of value can occur in a list -- even
+another list, as in 
+<BLOCKQUOTE>
+<PRE>inventory := [car1, car2, car3, car4]</PRE>
+</BLOCKQUOTE>
+Lists also can be created by 
+<BLOCKQUOTE>
+<PRE>L := list(i, x)</PRE>
+</BLOCKQUOTE>
+which creates a list of <CODE>i</CODE> values, each of which has the value
+<CODE>x</CODE>.<BR>
+<BR>
+The values in a list can be referenced by position. Thus, 
+<BLOCKQUOTE>
+<PRE>car1[4] := 2400</PRE>
+</BLOCKQUOTE>
+changes the last value in <CODE>car1</CODE> to 2400. A reference that is
+out of the range of the list fails. For example, 
+<BLOCKQUOTE>
+<PRE>write(car1[5])</PRE>
+</BLOCKQUOTE>
+fails.<BR>
+<BR>
+The values in a list <CODE>L</CODE> are generated by <CODE>!L</CODE>. Thus
+<BLOCKQUOTE>
+<PRE>every write(!L)</PRE>
+</BLOCKQUOTE>
+writes all the values in <CODE>L</CODE>.<BR>
+<BR>
+Lists can be manipulated like stacks and queues. The function <CODE>push(L,
+x)</CODE> adds the value of <CODE>x</CODE> to the left end of the list <CODE>L</CODE>,
+automatically increasing the size of <CODE>L</CODE> by one. Similarly, <CODE>pop(L)</CODE>
+removes the leftmost value from <CODE>L</CODE>, automatically decreasing
+the size of <CODE>L</CODE> by one, and produces the removed value. 
+<H4>4.2 Sets</H4>
+A set is a collection of values. An empty set is created by <CODE>set()</CODE>.
+Alternatively, <CODE>set(L)</CODE> produces a set with the values in the
+list <CODE>L</CODE>. For example, 
+<BLOCKQUOTE>
+<PRE>S := set([1, &quot;abc&quot;, []])</PRE>
+</BLOCKQUOTE>
+assigns to <CODE>S</CODE> a set that contains the integer 1, the string
+<CODE>&quot;abc&quot;</CODE>, and an empty list.<BR>
+<BR>
+The set operations of union, intersection, and difference are provided.
+The function<CODE> member(S, x)</CODE> succeeds if <CODE>x</CODE> is a member
+of the set <CODE>S</CODE> but fails otherwise. The function <CODE>insert(S,
+x)</CODE> adds <CODE>x</CODE> to the set <CODE>S</CODE>, while <CODE>delete(S,
+x)</CODE> removes <CODE>x</CODE> from <CODE>S</CODE>. A value only can occur
+once in a set, so <CODE>insert(S, x)</CODE> has no effect if <CODE>x</CODE>
+is already in <CODE>S</CODE>. <CODE>!S</CODE> generates the members of <CODE>S</CODE>.<BR>
+<BR>
+A simple example of the use of sets is given by the following segment of
+code, which lists all the different words that appear in the input file:
+<BLOCKQUOTE>
+<PRE>words := set()
+while line := read() do
+   line ? while tab(upto(&amp;letters)) do
+      insert(words, tab(many(&amp;letters)))
+every write(!words)</PRE>
+</BLOCKQUOTE>
+<H4>4.3 Tables</H4>
+Tables are sets of pairs each of which consists of a key and a corresponding
+value. The key and its corresponding value may be of any type, and the value
+for any key can be looked up automatically. Thus, tables provide a form
+of associative access in contrast with the positional access to values in
+lists.<BR>
+<BR>
+A table is created by an expression such as 
+<BLOCKQUOTE>
+<PRE>symbols := table(0)</PRE>
+</BLOCKQUOTE>
+which assigns to <CODE>symbols</CODE> a table with the default value 0.
+The default value is used for keys that are not assigned another value.
+Subsequently, <CODE>symbols</CODE> can be referenced by any key, such as
+<BLOCKQUOTE>
+<PRE>symbols[&quot;there&quot;] := 1</PRE>
+</BLOCKQUOTE>
+which assigns the value 1 to the key <CODE>&quot;there&quot;</CODE> in <CODE>symbols</CODE>.<BR>
+<BR>
+Tables grow automatically as new keys are added. For example, the following
+program segment produces a table containing a count of the words that appear
+in the input file: 
+<BLOCKQUOTE>
+<PRE>words := table(0)
+while line := read() do
+   line ? while tab(upto(&amp;letters)) do
+      words[tab(many(&amp;letters))] +:= 1</PRE>
+</BLOCKQUOTE>
+Here the default value for each word is 0, as given in <CODE>table(0)</CODE>,
+and <CODE>+:=</CODE> is an augmented assignment operation used to increment
+the values. There are augmented assignment operations for all binary operators.<BR>
+<BR>
+A list can be obtained from a table <CODE>T</CODE> by the function <CODE>sort(T,
+1)</CODE>. The form of the list depends on the value of <CODE>i</CODE>.
+For example, if <CODE>i</CODE> is 3, the list contains alternate keys and
+their corresponding values in <CODE>T</CODE>. For example, 
+<BLOCKQUOTE>
+<PRE>wordlist := sort(words, 3)
+while write(pop(wordlist), &quot; : &quot;, pop(wordlist))</PRE>
+</BLOCKQUOTE>
+writes the words and their counts from the table <CODE>words</CODE>. 
+<H3>5. Graphics Facilities</H3>
+Icon supports high-level graphics facilities: 
+<UL>
+<LI>Windows can be opened and closed as desired. 
+<LI>Text can be written to windows in a variety of type faces and sizes,
+including proportional-width faces. 
+<LI>Characters from the keyboards can be processed as they are typed. 
+<LI>Points, lines, polygons, circles, ares, and smooth curves can be freely
+mixed with text. 
+<LI>Colors can be used for both text and graphics. 
+<LI>Image files can be read and written. 
+</UL>
+For more information, see Reference 3. 
+<H3>6. An Example</H3>
+The following program, which produces a concordance of the words from an
+input file, illustrates typical Icon programming techniques. Although not
+all the features in this program are described in previous sections, the
+general idea should be clear. 
+<BLOCKQUOTE>
+<PRE>global uses, lineno, width
+
+procedure main(args)
+   width := 15                # width of word field
+   uses := table()
+   lineno := 0
+   every tabulate(words())    # tabulate all citations
+   output()                   # print the citations
+end
+
+#  Add line number to citations for word
+#
+procedure tabulate(word)
+   /uses[word] := set()
+   insert(uses[word], lineno)
+   return
+end
+
+#  Generate words
+#
+procedure words()
+   while line := read() do {
+      lineno +:= 1
+      write(right(lineno, 6), &quot;  &quot;, line)
+      map(line) ? while tab(upto(&amp;letters)) do {
+         s := tab(many(&amp;letters))
+         if *s &gt;= 3 then suspend s# skip short words
+         }
+      }
+end
+
+#  Print the results
+#
+procedure output()
+   write()                    # blank line
+   uses := sort(uses, 3)      # sort citations
+   while word := get(uses) do {
+      line := &quot;&quot;
+      numbers := sort(get(uses))
+      while line ||:= get(numbers) || &quot;, &quot;
+      write(left(word, width), line[1:-2])
+      }
+end</PRE>
+</BLOCKQUOTE>
+The program reads a line, writes it out with an identifying line number,
+and processes every word in the line. Words less than three characters long
+are considered to be &quot;noise&quot; and are discarded. A table, <CODE>uses</CODE>,
+is keyed by the words. Every key has a corresponding set of line numbers.
+The first time a word is encountered, a new set is created for it. The line
+number is inserted in any event. Since a value can be in a set only once,
+duplicate line numbers are suppressed automatically.<BR>
+<BR>
+After all the input has been read, the table of words is sorted by key.
+Each corresponding set of line numbers is sorted and the line numbers are
+appended to the line to be written.<BR>
+<BR>
+For example, if the input file is 
+<BLOCKQUOTE>
+<PRE>           On the Future!-how it tells
+           Of the rapture that impells
+          To the swinging and the ringing
+           Of the bells, bells, bells-
+        Of the bells, bells, bells, bells,
+                  Bells, bells, bells-
+    To the rhyming and the chiming of the bells!</PRE>
+</BLOCKQUOTE>
+the output is 
+<BLOCKQUOTE>
+<PRE>      1           On the Future!-how it tells
+      2           Of the rapture that impells
+      3          To the swinging and the ringing
+      4           Of the bells, bells, bells-
+      5        Of the bells, bells, bells, bells,
+      6                  Bells, bells, bells-
+      7    To the rhyming and the chiming of the bells!
+
+and       3, 7
+bells     4, 5, 6, 7
+chiming   7
+future    1
+how       1
+impells   2
+rapture   2
+rhyming   7
+ringing   3
+swinging  3
+tells     1
+that      2
+the       1, 2, 3, 4, 5, 7</PRE>
+</BLOCKQUOTE>
+<H4>More information</H4>
+For more information about Icon, contact 
+<BLOCKQUOTE>Icon Project<BR>
+Department of Computer Science<BR>
+The University of Arizona<BR>
+P.O. Box 210077<BR>
+Tucson, AZ 85721-0077<BR>
+U.S.A.<BR>
+<BR>
+(520) 621-6613 (voice)<BR>
+<BR>
+(520) 621-4246 (fax)<BR>
+<BR>
+<A HREF="mailto:icon-project@cs.arizona.edu">icon-project@cs.arizona.edu</A></BLOCKQUOTE>
+<H4>Acknowledgement</H4>
+Icon was designed by the the author in collaboration with Dave Hanson, Tim
+Korb, Cary Coutant, and Steve Wampler. Many other persons have contributed
+to its development. The current implementation is based on the work of Cary
+Coutant and Steve Wampler with recent contributions by Bill Mitchell, Janalee
+O'Bagy, Gregg Townsend, Ken Walker, and Clint Jeffery. 
+<H4>References</H4>
+1. R. E. Griswold and M. T. Griswold,<CODE> </CODE><I>The Icon Programming
+Language</I>, Prentice-Hall, Inc., Englewood Cliffs, NJ, second edition,
+1990.<BR>
+<BR>
+2. R. E. Griswold, C. L. Jeffery and G. M. Townsend,<CODE> </CODE><I>Version 9.3
+of the Icon Programming Language</I>, The Univ. of Arizona Icon Project
+Document <A HREF="ipd278.htm">IPD278</A>, 1995.<BR>
+<BR>
+3. G. M. Townsend, R. E. Griswold and C. L. Jeffery,<CODE> </CODE><I>Graphics
+Facilities for the Icon Programming Language; Version 9.3</I>, The Univ.
+of Arizona Icon Project Document <A HREF="ipd281.htm">IPD281</A>, 1995.<BR>
+<BR>
+<HR><A HREF="../index.htm">Icon home page</A> 
+</BODY>
+</HTML>

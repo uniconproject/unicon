@@ -2912,7 +2912,7 @@ char * abuf;
          }
       case A_TITLEBAR: {
 	 int on_off;
-         if (w->window->pix != (Pixmap)NULL) return Failed;
+         if (w->window->pix != NULL) return Failed;
 	 if (strcmp(val, "on") & strcmp(val, "off"))
 	    return Failed;
          if (ATOBOOL(val)) {

@@ -2073,27 +2073,28 @@ int texwindow3D(wbp w1, wbp w2)
    int height = ws->height;
    int i;
    GLubyte tex[height][width][3];
-   if (powertwo(width) > 0)
-       return Failed;
-   if (powertwo(height) > 0)
+   if ((powertwo(width) > 0) || (powertwo(height) > 0))
        return Failed;
 
    /* change the current context to w2's context */
 #ifdef XWindows
-   glXMakeCurrent(w2->window->display->display, w2->window->win, w2->context->ctx);
+   glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
    glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
+    i = texture(width, height, tex);
 #endif					/* XWindows */
 #ifdef MSWindows
-{
-HDC stddc = CreateWinDC(w1);
+   {
+   HDC stddc = CreateWinDC(w2);
    wglMakeCurrent(stddc, w2->context->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
+   ReleaseDC(ws->iconwin, stddc);
+   stddc = CreateWinDC(w1);
    wglMakeCurrent(stddc, w1->context->ctx);
-ReleaseDC(w1->window->iconwin, stddc);
-}
+   i = texture(width, height, tex);
+   ReleaseDC(w1->window->iconwin, stddc);
+   }
 #endif					/* MSWindows */
-    i = texture(width, height, tex);
     if (i == Succeeded)
        return Succeeded;
     else
@@ -2104,9 +2105,7 @@ ReleaseDC(w1->window->iconwin, stddc);
 int texture(int width, int height, GLubyte ***tex)
 {
    /* make sure texture is a power of two */
-   if (powertwo(width) > 0)
-       return Failed;
-   if (powertwo(height) > 0)
+   if ((powertwo(width) > 0) || (powertwo(height) > 0))
        return Failed;
    glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex);
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

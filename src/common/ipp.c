@@ -15,7 +15,7 @@
  *	$error [text]
  *
  *  Entry points are
- *	ppinit(fname,m4flag) -- open input file
+ *	ppinit(fname,inclpath,m4flag) -- open input file
  *	ppdef(s,v) -- "$define s v", or "$undef s" if v is a null pointer
  *	ppch() -- return next preprocessed character
  *	ppecho() -- preprocess to stdout (for icont/iconc -E)
@@ -111,20 +111,18 @@ static char *blim;			/* limit of all chars */
 
 static cdefn *cbin[HTBINS];		/* hash bins for defn table */
 
-static char *lpath;			/* LPATH for finding source files */
+char *lpath;				/* LPATH for finding source files */
 
 static int ifdepth;			/* depth of $if nesting */
 
 extern int tfatals, nocode;		/* provided by icont, iconc */
 
 /*
- * ppinit(fname, m4) -- initialize preprocessor to read from fname.
+ * ppinit(fname, inclpath, m4) -- initialize preprocessor to read from fname.
  *
  *  Returns 1 if successful, 0 if open failed.
  */
-int ppinit(fname, m4)
-char *fname;
-int m4;
+int ppinit(char *fname, char *inclpath, int m4)
    {
    int i;
    cdefn *d, *n;
@@ -149,55 +147,7 @@ int m4;
    /*
     * initialize variables and open source file 
     */
-   lpath = getenv("LPATH");
-#if MSDOS || UNIX
-   if (lpath == NULL) {
-      char *bp = BinPath, buf[256];
-#if NT
-      if (strlen(bp)==0) {
-#ifdef MSWindows
-	 bp = "wiconx.exe";
-#else					/* MSWindows */
-	 bp = "nticonx.exe";
-#endif					/* MSWindows */
-	 if (pathFind(bp, buf, 255)) {
-	     char *s;
-	     s = buf + strlen(buf) - strlen(bp);
-	     *s = '\0';
-	     bp = buf;
-	    }
-	 else {
-	    bp = ""; /* no IPATH, binpath, iconx not on path */
-	    }
-	 }
-#endif					/* NT */
-      if (strlen(bp) > 0) {
-	 lpath = malloc((strlen(bp) + strlen("../ipl/gincl") + 1) * 3);
-	 strcpy(lpath, bp);
-#if MSDOS
-	 strcat(lpath, "..\\ipl\\mincl ");
-#endif					/* MSDOS */
-#if UNIX
-	 strcat(lpath, "../ipl/mincl ");
-#endif					/* UNIX */
-	 strcat(lpath, bp);
-#if MSDOS
-	 strcat(lpath, "..\\ipl\\gincl ");
-#endif					/* MSDOS */
-#if UNIX
-	 strcat(lpath, "../ipl/gincl ");
-#endif					/* UNIX */
-	 strcat(lpath, bp);
-#if MSDOS
-	 strcat(lpath, "..\\ipl\\incl");
-#endif					/* MSDOS */
-#if UNIX
-	 strcat(lpath, "../ipl/incl");
-#endif					/* UNIX */
-	 }
-      }
-#endif					/* MSDOS || UNIX */
-
+   lpath = inclpath;
    curfile = &nofile;			/* init file struct pointer */
    return ppopen(fname, m4);		/* open main source file */
    }

@@ -116,6 +116,10 @@
    #define PosixFns
 #endif					/* NoPosixFns */
 
+#ifdef PosixFns
+#define ReadDirectory
+#endif					/* PosixFns */
+
 #ifndef NoCoexpr
    #undef Coexpr
    #define Coexpr
@@ -269,7 +273,7 @@
    #endif				/* NoIconify */
 
    #ifndef ICONC_XLIB
-      #define ICONC_XLIB "-lX11"
+      #define ICONC_XLIB "-L/usr/X11R6/lib -lX11"
    #endif				/* ICONC_XLIB */
 
    #ifdef ConsoleWindow
@@ -371,7 +375,7 @@
 #ifndef KeyboardFncs
    #if UNIX
       #ifndef NoKeyboardFncs
-         #define KeyboardFncs
+	 #define KeyboardFncs
       #endif				/* NoKeyboardFncs */
    #endif				/* UNIX */
 #endif					/* KeyboardFncs */
@@ -613,10 +617,6 @@ Deliberate Syntax Error
    #define PPDirectives {"passthru", PpKeep},
 #endif					/* PPDirectives */
 
-#ifndef NoRanlib
-   #define Ranlib
-#endif					/* NoRanlib */
-
 #ifndef EventMon
    #if IntBits == 16
       #define NoSrcColumnInfo
@@ -696,97 +696,6 @@ Deliberate Syntax Error
    #endif				/* USuffix */
 
 #endif					/* COMPILER */
-
-#ifndef IconOptions
-
-   #if AMIGA
-      #define IconOptions "C:ELS:TVce:f:n:o:p:r:stuv:x"
-   #endif				/* AMIGA */
-
-   #if ARM || MPW || UNIX || VMS
-      #define IconOptions "C:ELS:TVce:f:mn:o:O:p:r:stuv:x"
-   #endif				/* ARM || MPW || UNIX || VMS */
-
-   #if THINK_C
-      #define IconOptions "C:ELS:XITVce:f:mn:o:p:r:stuv:x"
-   #endif				/* THINK_C */
-
-   #if MSDOS
-      #ifdef MSWindows
-         #define IconOptions "C:EGLS:XITVce:f:mn:o:O:p:qr:stuv:x"
-      #else				/* MSWindows */
-         #if SCCX_MX
-            #define IconOptions "C:ELS:AXITVce:f:mn:o:p:r:stuv:x"
-         #else				/* SCCX_MX */
-#if NT
-            #define IconOptions "C:EGLS:XITVce:f:mn:o:O:p:r:stuv:x"
-#else					/* NT */
-            #define IconOptions "C:ELS:XITVce:f:mn:o:p:r:stuv:x"
-#endif					/* NT */
-         #endif				/* SCCX_MX */
-      #endif				/* MSWindows */
-   #endif				/* MSDOS */
-
-   #if OS2
-      #define IconOptions "C:ELS:TVce:f:in:o:p:r:stuv:x"
-   #endif				/* OS2 */
-
-#endif					/* IconOptions */
-
-#if EBCDIC
-   #define CUsage "<-C C-comp> <-T> <-c> <-f{adelns}> <-n{acest}>\n\
- <-o ofile> <-p C-opts> <-r runtime> <-s> <-t> <-u> <-v i>"
-#else                                   /* EBCDIC */
-   #ifndef CUsage
-      #if UNIX
-#define CUsage "[-C C-comp] [-E] [-T] [-c] [-f{adelns}] [-m] [-n{acest}]\n\
- [-o ofile] [-p C-opts] [-r runtime] [-s] [-t] [-u] [-v i]"
-   #else				/* UNIX */
-#define CUsage "[-C C-comp] [-E] [-T] [-c] [-f{adelns}] [-n{acest}]\n\
- [-o ofile] [-p C-opts] [-r runtime] [-s] [-t] [-u] [-v i]"
-      #endif				/* UNIX */
-   #endif				/* CUsage */
-#endif					/* EBCDIC */
-
-#ifndef TUsage
-
-   #if EBCDIC
-      #define TUsage "<-cstu> <-fs> <-e efile> <-o ofile>"
-   #endif				/* EBCDIC */
-
-   #if AMIGA
-      #define TUsage "[-cstuE] [-fs] [-e efile] [-o ofile]"
-   #endif				/* AMIGA */
-
-   #if ARM || UNIX
-      #define TUsage "[-cmstuE] [-fs] [-e efile] [-o ofile]"
-   #endif				/* ARM || UNIX */
-
-   #if MPW
-      #define TUsage "[-cstuE] [-fs] [-e efile] [-o ofile]"
-   #endif				/* MPW */
-
-   #if THINK_C
-      #define TUsage "[-cmstuE] [-fs] [-e efile] [-o ofile]"
-   #endif				/* THINK_C */
-
-   #if OS2
-      #define TUsage "[-cistuEI] [-fs] [-e efile] [-o ofile]"
-   #endif				/* OS2 */
-
-   #if MVS || VM
-      #define TUsage "<-cstuE> <-fs> <-e efile> <-o ofile>"
-   #endif				/* MVS || VM */
-
-   #if MSDOS
-      #if SCCX_MX
-         #define TUsage "[-cstuAEIX] [-fs] [-e efile] [-o ofile]"
-      #else				/* SCCX_MX */
-         #define TUsage "[-cstuEIX] [-fs] [-e efile] [-o ofile]"
-      #endif				/* SCCX_MX */
-   #endif				/* MSDOS */
-
-#endif					/* TUsage */
 
 #if UNIX
    #undef Header

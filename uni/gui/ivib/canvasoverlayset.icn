@@ -1,5 +1,5 @@
 #
-# $Id: canvasoverlayset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvasoverlayset.icn,v 1.2 2004-11-13 14:33:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -112,11 +112,18 @@ class CanvasOverlaySet : CanvasComponent : OverlaySet()
    end
 
    method display(buffer_flag)
-      self.OverlaySet.display(buffer_flag)
-      W := if /buffer_flag then self.cwin else self.cbwin
-      Rectangle(W, self.x, self.y, self.w, self.h)
-      center_string(W, self.x + self.w / 2, self.y + 10, "<OverlaySet>")
-      self.do_shading(W)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+      Rectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      center_string(self.cbwin, self.x + self.w / 2, self.y + 10, "<OverlaySet>")
+
+      #
+      # Display contents of current tab into buffer
+      #
+      which_one.display(1)
+
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
    method string_rep()

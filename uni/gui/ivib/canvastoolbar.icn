@@ -1,5 +1,5 @@
 #
-# $Id: canvastoolbar.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvastoolbar.icn,v 1.2 2004-11-13 14:33:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -50,11 +50,15 @@ class CanvasToolBar : CanvasPanel : ToolBar()
    end
 
    method display(buffer_flag)
-      self.ToolBar.display(buffer_flag)
-      W := if /buffer_flag then self.cwin else self.cbwin
-      Rectangle(W, self.x, self.y, self.w, self.h)
-      center_string(W, self.x + self.w / 2, self.y + 10, "<ToolBar>")
-      self.do_shading(W)
+      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if \self.draw_border_flag then
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      else
+         Rectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      center_string(self.cbwin, self.x + self.w / 2, self.y + 10, "<ToolBar>")
+      every (!self.children).display(1)
+      if /buffer_flag then
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
    initially

@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.7 2004-06-27 16:20:28 rparlett Exp $
+# $Id: main.icn,v 1.8 2004-11-13 14:33:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -140,6 +140,7 @@ class Main : CommonDialog(
    mdelete,                 # Delete items
    mcopy,                   # Copy item
    mdialog,                 # Open item dialog box.
+   sel_up,                  # Move selection up
    undo,                    # Undo
    redo,                    # Redo
    centre_vert,             # Centre vertically command
@@ -1177,6 +1178,12 @@ class Main : CommonDialog(
       mdialog.set_accel("i")
       selections_menu.add(mdialog)
 
+      sel_up := TextMenuItem()
+      sel_up.set_label("Select up")
+      sel_up.set_accel("u")
+      sel_up.set_label_right("Ctrl-u")
+      selections_menu.add(sel_up)
+
       component_save := TextMenuItem()
       component_save.set_label("Save")
       component_save.set_accel("s")
@@ -1427,6 +1434,7 @@ class Main : CommonDialog(
       popup_dialog_dialog.connect(self, "op_preferences", ACTION_EVENT)
       preferences.connect(self, "op_preferences", ACTION_EVENT)
       mdialog.connect(self, "op_dialog", ACTION_EVENT)
+      sel_up.connect(self, "op_select_up", ACTION_EVENT)
       popup_component_dialog.connect(self, "op_dialog", ACTION_EVENT)
       component_save.connect(self, "op_component_save", ACTION_EVENT)
       popup_component_save.connect(self, "op_component_save", ACTION_EVENT)
@@ -1477,7 +1485,7 @@ class Preferences : CommonDialog(c, okay, cancel, undo_size)
    end
 
    initially
-      self$CommonDialog.initially()
+      self.CommonDialog.initially()
       self.set_attribs("size=460,300", "label=Program Preferences")
 
       b := Border()

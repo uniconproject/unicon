@@ -1,5 +1,5 @@
 #
-# $Id: canvas.icn,v 1.3 2004-05-15 19:17:38 rparlett Exp $
+# $Id: canvas.icn,v 1.4 2004-11-13 14:33:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -1140,7 +1140,7 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Select this object.
          #
-         self.select(moving)
+         self.select(moving, if &control then 1 else &null)
 
          #
          # Save for possible push onto undo list.
@@ -1457,7 +1457,7 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method handle_rpress()
       if i := self.which_cursor_over() then {
-         self.select(i)
+         self.select(i, if &control then 1 else &null)
          self.invalidate()
          if not(&control) then
             self.parent_dialog.popup_component.popup()
@@ -1553,9 +1553,9 @@ class Canvas : Component : SelectiveClassCoding(
    #
    # Select c
    #
-   method select(c)
+   method select(c, add)
       self.parent_dialog.clear_selection_options()
-      if &control then {
+      if \add then {
          if not(c === !selections) then
             put(selections, c)
          /selected := c

@@ -1491,19 +1491,15 @@ void closelogfile()
       fclose(flog);
 
       /*
-       * try to rename, then try to copy to the permanent file name
+       * write/append temporary log to the permanent logfile name
        */
-      i = rename(tmplognam, lognam);
-      if (i != 0) {
-         if ((flog = fopen(tmplognam, "r")) &&
-	    (flog2 = fopen(lognam, "w"))) {
-	    while ((i = getc(flog)) != EOF)
-	       putc(i, flog2);
-	    fclose(flog);
-	    fclose(flog2);
-	    remove(tmplognam);
-            }
-	 }
+      if ((flog = fopen(tmplognam, "r")) && (flog2 = fopen(lognam, "a"))) {
+	 while ((i = getc(flog)) != EOF)
+	    putc(i, flog2);
+	 fclose(flog);
+	 fclose(flog2);
+	 remove(tmplognam);
+         }
 
       free(lognam);
       flog = NULL;

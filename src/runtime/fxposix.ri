@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.27 2004-10-10 07:25:43 jeffery Exp $
+ * $Id: fxposix.ri,v 1.28 2004-11-05 04:46:28 jeffery Exp $
  */
 
 /*
@@ -2049,15 +2049,17 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
       if (status & Fs_Buff) return 1048;
       BlkLoc(*f)->file.status |= Fs_Unbuf;
 #endif					/* UNIX */
-#if NT
+
 #ifdef Graphics
+      /*
+       * windows are handled separately from sockets in select()
+       */
       if (status & Fs_Window) {
 	 c_put(lwdp, f);
 	 return 0;
-         }
+	 }
       else 
 #endif					/* Graphics */
-#endif					/* NT */
       if ((fd = get_fd(*f, Fs_Read|Fs_Socket)) < 0) {
 	 if (fd == -2)
 	    return 212;
@@ -2180,7 +2182,6 @@ function{0,1} select(files[nargs])
       errno = 0;
       IntVal(amperErrno) = 0;
 
-#if NT
 #ifdef Graphics
       if((lp = findactivewindow(lws)) != NULL) {
 	 d.dword = D_List;
@@ -2188,7 +2189,6 @@ function{0,1} select(files[nargs])
          tv.tv_sec = tv.tv_usec = 0;
 	 }
 #endif					/* Graphics */
-#endif					/* NT */
 
       if (n) {
          if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
@@ -2206,15 +2206,13 @@ function{0,1} select(files[nargs])
 	 pollevent();
 #endif
 
-#if NT
-	 /*
-	  * if our select() could have taken any time, try windows again
-	  */
-	 if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
-	    d.dword = D_List;
-	    BlkLoc(d) = (union block *) lp;
-	    }
-#endif					/* NT */
+      /*
+       * if our select() could have taken any time, try windows again
+       */
+      if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
+	 d.dword = D_List;
+	 BlkLoc(d) = (union block *) lp;
+         }
 #endif					/* Graphics */
 	 }
 

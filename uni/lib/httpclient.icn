@@ -226,9 +226,22 @@ class HttpClient : NetClient(url,
 
       if request_type ~=== "HEAD" then
          read_data() | fail
+      else
+         maybe_close()
 
       return result
    end
+
+   #
+   # @p
+   method maybe_close()
+      #
+      # Close if told to do so.
+      #
+      if map(\result.get_header("connection")) == "close" then
+         close()
+   end
+
 
    #
    # @p
@@ -373,11 +386,7 @@ class HttpClient : NetClient(url,
             break
       }
 
-      #
-      # Close if told to do so.
-      #
-      if map(\result.get_header("connection")) == "close" then
-         close()
+      maybe_close()
 
       return
    end
@@ -416,11 +425,7 @@ class HttpClient : NetClient(url,
          add_some(s)
       }
 
-      #
-      # Close if told to do so.
-      #
-      if map(\result.get_header("connection")) == "close" then
-         close()
+      maybe_close()
 
       return
    end

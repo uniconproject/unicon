@@ -336,7 +336,6 @@ FncDef(fetch,2)
   FncDef(dbtables,1)
 #endif					/* ISQL */
 
-#ifdef Graphics3D
   FncDefV(DrawTorus)
   FncDefV(DrawCube)
   FncDefV(DrawSphere)
@@ -353,4 +352,3 @@ FncDef(fetch,2)
   FncDefV(Texcoord)
   FncDefV(Refresh)
   FncDefV(WindowContents)
-#endif					/* Graphics3D */

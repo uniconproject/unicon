@@ -385,8 +385,8 @@ typedef struct _wcontext {
   int           ntextures;  /* the number of textures in the scene */
   int           texmode;   /* texutres on or off */
   int           numtexcoords;  /* number of texture coordinate */
-  double        texcoords[MAXXOBJS]; /* texture coordinates */
-  GLuint        texName[MAXXOBJS];  /* array to store opengl texture name */
+  double        texcoords[256]; /* texture coordinates */
+  GLuint        texName[256];  /* array to store opengl texture name */
 
 #endif					/* Graphics3D */
 } wcontext, *wcp;

@@ -33,6 +33,7 @@ link msg_dlg
 link font_dlg
 link graphics
 link io
+link getpaths
 $ifdef _UNIX
 $define PATHSEP "/"
 $else # implies Windows for now
@@ -997,8 +998,12 @@ procedure ui_initialize()
    if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
    xargs := ""
 $ifdef _UNIX
-    browser := getenv("BROWSER") | "netscape"
-    # should check to see if browser is on the path
+    every browser := getenv("BROWSER") | "netscape" | "mozilla"| "opera" do {
+	if stat(getpaths() || browser) then {
+	    write("found browser ", browser)
+	    break
+	} else browser := &null
+    }
 $else
    (browser := "\"" || WinAssociate("HTM") || "\"" ) |
        write(

@@ -106,12 +106,8 @@ void linit()
     */
    pc = 0;				/* In lcode.c	*/
    nrecords = 0;			/* In lglob.c	*/
-
-   #ifdef EventMon
-      colmno = 0;			/* In link.c	*/
-   #endif				/* EventMon */
-
    lineno = 0;				/* In link.c	*/
+   colmno = 0;				/* In link.c	*/
    fatals = 0;				/* In link.c	*/
    nlflag = 0;				/* In llex.c	*/
    lstatics = 0;			/* In lsym.c	*/

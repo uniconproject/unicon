@@ -1043,11 +1043,7 @@ nodeptr n;
 void tcodeinit()
    {
    lastfiln = NULL;
-
-   #ifdef EventMon
-      lastcol = 0;
-   #endif				/* EventMon */
-
+   lastcol = 0;
    }
 #endif					/* Multiple Runs */
 

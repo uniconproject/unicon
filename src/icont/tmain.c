@@ -571,15 +571,11 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       iconxloc = patchpath+18;	/* use stated iconx path if patched */
    else
       iconxloc = relfile(argv[0],
-#ifdef MSVC
-#ifdef MSWindows
+#if defined(MSVC) && defined(MSWindows)
 			 "/../wiconx"
 #else					/* MSWindows */
-			 "/../nticonx"
-#endif					/* MSWindows */
-#else					/* MSVC */
 			 "/../iconx"
-#endif					/* MSVC */
+#endif					/* MSVC && MSWindows */
 			 );
 
 #ifdef ConsoleWindow
@@ -944,11 +940,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #if NT
       if (Gflag) iconx="wiconx.exe";
       else
-#ifdef NTGCC
          iconx = "iconx.exe";
-#else					/* NTGCC */
-         iconx = "nticonx.exe";
-#endif					/* NTGCC */
 #endif					/* NT */
       if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
 	 char mesg[80];

@@ -553,14 +553,49 @@ int *res;				/* pointer to integer result flag */
    return lp;
    }
 
+/*
+ * dynamic records code.  originally this just did a malloc and returned it,
+ * but the memory leak implied by this behavior was significant since this
+ * function gets called every fetch.  So now it stores an array of pointers
+ * to arrays of procedure blocks, and returns an existing procedure block
+ * when it finds one with identical fields **need to match record name also.
+ * Array subscript == #of fields-1, so you are searching among all dynamic
+ * records with the same number of fields to try and find a match. May need
+ * to make this smarter someday.
+ */
+
+int longest_dr = 0;
+struct b_proc **dr_arrays;
+
 struct b_proc *dynrecord(dptr s, dptr fields, int n)
    {
       static int NextRecNum;
       struct b_proc *bp = NULL;
-      int i;
+      int i, ct=0;
 #if COMPILER
       return NULL;
 #else
+      if (n > longest_dr) {
+	 if (longest_dr==0) {
+            dr_arrays = calloc(n, sizeof (struct b_proc *));
+            if (dr_arrays == NULL) return NULL;
+	    }
+         else {
+	    dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
+            if (dr_arrays == NULL) return NULL;
+	    while(longest_dr<n) dr_arrays[longest_dr++ - 1] = NULL;
+	    }
+	 longest_dr = n;
+	 }
+      for(bp = dr_arrays[n-1]; bp && bp->title == T_Proc; bp++, ct++) {
+	 for (i=0; i<n; i++)
+	    if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
+	        strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
+	 if(i==n) {
+	    return bp;
+	    }
+	 }
+
       if (NextRecNum == 0) NextRecNum = *records+1;
       bp = (struct b_proc *)malloc(sizeof(struct b_proc) + sizeof(struct descrip) * n);
       if (bp == NULL) return NULL;
@@ -572,7 +607,24 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       bp->recnum = NextRecNum++;
       bp->recid = 1;
       bp->recname = *s;
-      for(i=0;i<n;i++) bp->lnames[i] = fields[i];
+      for(i=0;i<n;i++) {
+         StrLen(bp->lnames[i]) = StrLen(fields[i]);
+	 StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
+	 if (StrLoc(bp->lnames[i]) == NULL) return NULL;
+	 strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
+	 StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
+         }
+
+      if (dr_arrays[n-1] == NULL) dr_arrays[n-1] = bp;
+      else {
+	 dr_arrays[n-1] = realloc(dr_arrays[n-1],
+			    ((ct+1) * sizeof(struct b_proc)) + sizeof (word));
+	 dr_arrays[n-1][ct] = *bp;
+	 dr_arrays[n-1][ct+1].title = 0;
+	 free(bp);
+	 return dr_arrays[n-1]+ct;
+         }
+
       return bp;
 #endif
    }

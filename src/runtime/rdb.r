@@ -100,35 +100,29 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 
 int dbfetch(struct ISQLFile *fp, dptr pR)
 {
-    UWORD i, p;
-    int rc;
+   UWORD i, p, orig;
+   int rc;
+   SWORD numcols, colsize;
+   SDWORD colsz, len;  /* SQLGetData() wants an SDWORD */
+   char buff[BUFF_SZ*2]; /* data buffer */
+   UCHAR colname[MAX_COL_NAME+1];
+   SWORD SQLType, scale, nullable;
+   UDWORD typesize;
+   struct descrip fieldname[MAXTABLECOLS];
 
-    SWORD numcols;
-    SWORD colsize;
-    SDWORD colsz;  /* SQLGetData() wants an SDWORD */
-    SDWORD len;
+   /* record structures */
+   tended struct descrip rectypename=emptystr;
+   tended struct b_record *r;
+   struct b_proc *proc;
 
-    char buff[BUFF_SZ]; /* data buffer */
-
-    UCHAR colname[MAX_COL_NAME];
-    SWORD SQLType;
-    UDWORD typesize;
-    SWORD scale;
-    SWORD nullable;
-
-    struct descrip fieldname[MAXTABLECOLS];
-
-    /* record structures */
-    tended struct descrip rectypename=emptystr;
-    tended struct b_record *r;
-    struct b_proc *proc;
-
-
-    /* num columns in table */
-    if (SQLNumResultCols(fp->hstmt, &numcols)!=SQL_SUCCESS) {
+   /* num columns in table */
+   if (SQLNumResultCols(fp->hstmt, &numcols)!=SQL_SUCCESS) {
       odbcerror(fp, NUM_RESULT_COLS_ERR);
       return Failed;
       }
+
+   Protect(reserve(Strings, MAX_COL_NAME * numcols), return Error);
+   Protect(reserve(Blocks, sizeof (struct b_record)+(numcols-1)*sizeof(struct descrip)), return Error);
 
     /* record field names */
     for (i=1; i<=numcols; i++) {
@@ -142,14 +136,27 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
       }
 
       len=strlen(colname);
-      StrLoc(fieldname[p])=alcstr(colname, len);
-      StrLen(fieldname[p])=len;
+      StrLoc(fieldname[p]) = alcstr(colname, len);
+      StrLen(fieldname[p]) = len;
     }
 
     /* allocate record */
 
-    proc=dynrecord(&rectypename, fieldname, numcols);
+    proc = dynrecord(&rectypename, fieldname, numcols);
+    if (proc==NULL) {
+       t_errornumber = 305;
+       t_errorvalue = nulldesc;
+       t_have_val = 0;
+       return Error;
+       }
+
     r = alcrecd(numcols, (union block *)proc);
+    if (r==NULL) {
+       t_errornumber = 307;
+       t_errorvalue = nulldesc;
+       t_have_val = 0;
+       return Error;
+       }
     pR->dword=D_Record;
     pR->vword.bptr=(union block *) r;
 
@@ -189,6 +196,12 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 
           /* allocate column */
           StrLoc(r->fields[p])=colsz>0?alcstr(NULL, colsz):"";
+          if (StrLoc(r->fields[p])==NULL) {
+             t_errornumber = 306;
+             t_errorvalue = nulldesc;
+             t_have_val = 0;
+             return Error;
+             }
           StrLen(r->fields[p])=colsz>0?colsz:0;
 
           /* copy buffer to column */
@@ -202,7 +215,6 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
                           StrLoc(r->fields[p])+len, BUFF_SZ, &colsz);
             len+=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
 	    }
-
           break;
 
         case SQL_BIT:
@@ -241,7 +253,6 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
                           StrLoc(r->fields[p])+len, BUFF_SZ, &colsz);
             len+=colsz>BUFF_SZ?BUFF_SZ-1:colsz;
 	    }
-
           break;
 	  } /* switch */
 

@@ -1525,9 +1525,9 @@ long physicalmemorysize()
 #endif					/* UNIX */
 #if NT
    MEMORYSTATUSEX ms;
-   if (GlobalMemoryStatusEx(&ms)) {
-      return ms.ullTotalPhys;
-      }
-#endif					/* NT */
+   GlobalMemoryStatusEx(&ms);
+   return ms.ullTotalPhys;
+#else					/* NT */
    return 0;
+#endif					/* NT */
 }

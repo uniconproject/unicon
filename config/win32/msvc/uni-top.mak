@@ -24,7 +24,7 @@ all :
 	cd ..\ide 
 	nmake
 
-clean Clean:
+clean:
 	cd iyacc
 	nmake Clean 
 	cd ..\unicon

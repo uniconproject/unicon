@@ -1,6 +1,6 @@
 /*
  *  File: ropengl.ri
- *     opengl support routines
+ *     3D facilities OpenGL support routines
  */
 int texture(int width, int height, GLubyte *tex, int texmode);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type);
@@ -10,6 +10,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    FILE *f;
    wbp  w;
    wsp  ws;
+   wcp  wc;
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
    int  query;
    int major, minor;
@@ -35,25 +36,24 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    if (!f) return NULL;
    w = (wbp) f;
    ws = w->window;
+   wc = w->context;
 
   /* set defaults for attributes */
-   w->context->eyeupx = w->context->eyeupz = 0.0;
-   w->context->eyeupy = 1.0;
-   w->context->dim = 3;
-   w->context->eyeposx = w->context->eyeposy =  w->context->eyeposz = 0.0;
-   w->context->eyedirx = w->context->eyediry = 0.0;
-   w->context->eyedirz = -100.0;
-   w->context->autogen = 1;
-   w->context->texmode = 0;
-   w->context->numtexcoords = 0;
-   w->context->texName = malloc(16 * sizeof(GLuint));
-   if (w->context->texName == NULL) return NULL;
-   w->context->nalced = 16;
-   w->context->texcoords = malloc(256 * sizeof (double));
-   if (w->context->texcoords == NULL) return NULL;
-   w->context->ntexcoordsalced = 256;
-   w->context->ntextures = 0;
-   w->context->curtexture = -1;
+   wc->eyeupx = wc->eyeupz = 0.0;
+   wc->eyeupy = 1.0;
+   wc->dim = 3;
+   wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
+   wc->eyedirz = -100.0;
+   wc->autogen = 1;
+   wc->texmode = wc->numtexcoords = 0;
+   wc->texName = malloc(16 * sizeof(GLuint));
+   if (wc->texName == NULL) return NULL;
+   wc->nalced = 16;
+   wc->texcoords = malloc(256 * sizeof (double));
+   if (wc->texcoords == NULL) return NULL;
+   wc->ntexcoordsalced = 256;
+   wc->ntextures = 0;
+   wc->curtexture = -1;
 
    /* create an empty list for list of function calls */
    if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
@@ -62,11 +62,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
    /* set up the appropriate opengl states */
    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
-   glClearColor(RED(w->context->bg)/(GLfloat)255,
-		GREEN(w->context->bg)/(GLfloat)255,
-		BLUE(w->context->bg)/(GLfloat)255, 0.0);
+   glClearColor(RED(wc->bg)/(GLfloat)255, GREEN(wc->bg)/(GLfloat)255,
+		BLUE(wc->bg)/(GLfloat)255, 0.0);
 
-   glGenTextures(16, w->context->texName);
+   glGenTextures(16, wc->texName);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -79,20 +78,22 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width, 0.125 * ws->height / ws->width, 0.25, 50000.0);
+   glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
+	     0.125 * ws->height / ws->width, 0.25, 50000.0);
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    return f;
 }
 
 
-/* code for primitives -- polygon, lines, points,
-   segments, filled polygons, tori, spheres, cubes,
-   cylinders, and disks.  */
+/*
+ * code for primitives -- polygon, lines, points, segments, filled polygons,
+ * tori, spheres, cubes, cylinders, and disks.
+ */
 
-/* drawpoly() - draws polygons, lines, points, segments,
-   and filled polygons */
-
+/*
+ * drawpoly() - draws polygons, lines, points, segments, and filled polygons
+ */
 int drawpoly(wbp w, double* v, int num, int type, int dim)
 {
    int i, j;
@@ -151,7 +152,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
        }
       else {
 
-   /* opengl should generate the texture coordinate */
+	 /* opengl should generate the texture coordinate */
          if (wc->autogen){
 
             glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
@@ -282,74 +283,71 @@ void torus(double radius1, double radius2, double x,double y, double z,int gen)
 /* draw a cube */
 void cube(double length, double x, double y, double z, int gen)
 {
-  static GLfloat n[6][3] =
-  {
-    {-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0},{1.0, 0.0, 0.0},
-    {0.0, -1.0, 0.0}, {0.0, 0.0, 1.0},{0.0, 0.0, -1.0}
-  };
+   static GLfloat n[6][3] = {
+      {-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0},{1.0, 0.0, 0.0},
+      {0.0, -1.0, 0.0}, {0.0, 0.0, 1.0},{0.0, 0.0, -1.0}
+      };
 
-  static GLint faces[6][4] =
-  {
-    {0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
-    {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3}
-  };
+   static GLint faces[6][4] = {
+      {0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
+      {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3}
+      };
 
-  GLfloat v[8][3];
-  GLint i;
+   GLfloat v[8][3], len_div_2 = length / 2;
+   GLint i;
 
    glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &i);
-  glPushMatrix();
+   glPushMatrix();
    glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &i);
 
-  glTranslatef(x, y, z);
+   glTranslatef(x, y, z);
 
-  v[0][0] = v[1][0] = v[2][0] = v[3][0] = -length / 2;
-  v[4][0] = v[5][0] = v[6][0] = v[7][0] = length / 2;
-  v[0][1] = v[1][1] = v[4][1] = v[5][1] = -length / 2;
-  v[2][1] = v[3][1] = v[6][1] = v[7][1] = length / 2;
-  v[0][2] = v[3][2] = v[4][2] = v[7][2] = -length / 2;
-  v[1][2] = v[2][2] = v[5][2] = v[6][2] = length / 2;
+   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -len_div_2;
+   v[4][0] = v[5][0] = v[6][0] = v[7][0] = len_div_2;
+   v[0][1] = v[1][1] = v[4][1] = v[5][1] = -len_div_2;
+   v[2][1] = v[3][1] = v[6][1] = v[7][1] = len_div_2;
+   v[0][2] = v[3][2] = v[4][2] = v[7][2] = -len_div_2;
+   v[1][2] = v[2][2] = v[5][2] = v[6][2] = len_div_2;
 
-  /* set default coordinates if needed */
+   /* set default coordinates if needed */
 
-  if (gen == 1) {
-     glDisable(GL_TEXTURE_GEN_S);
-     glDisable(GL_TEXTURE_GEN_T);
-     for (i = 5; i >= 0; i--) {
-       glBegin(GL_QUADS);
-       glNormal3fv(&n[i][0]);
-       glTexCoord2f(0.0, 0.0);
-       glVertex3fv(&v[faces[i][0]][0]);
-       glTexCoord2f(0.0, 1.0);
-       glVertex3fv(&v[faces[i][1]][0]);
-       glTexCoord2f(1.0, 1.0);
-       glVertex3fv(&v[faces[i][2]][0]);
-       glTexCoord2f(1.0, 0.0);
-       glVertex3fv(&v[faces[i][3]][0]);
-       glEnd();
-       }
+   if (gen == 1) {
+      glDisable(GL_TEXTURE_GEN_S);
+      glDisable(GL_TEXTURE_GEN_T);
+      for (i = 5; i >= 0; i--) {
+	 glBegin(GL_QUADS);
+	 glNormal3fv(&n[i][0]);
+	 glTexCoord2f(0.0, 0.0);
+	 glVertex3fv(&v[faces[i][0]][0]);
+	 glTexCoord2f(0.0, 1.0);
+	 glVertex3fv(&v[faces[i][1]][0]);
+	 glTexCoord2f(1.0, 1.0);
+	 glVertex3fv(&v[faces[i][2]][0]);
+	 glTexCoord2f(1.0, 0.0);
+	 glVertex3fv(&v[faces[i][3]][0]);
+	 glEnd();
+	 }
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
-    }
-  else {
-     for (i = 5; i >= 0; i--) {
-       glBegin(GL_QUADS);
-       glNormal3fv(&n[i][0]);
-       glVertex3fv(&v[faces[i][0]][0]);
-       glVertex3fv(&v[faces[i][1]][0]);
-       glVertex3fv(&v[faces[i][2]][0]);
-       glVertex3fv(&v[faces[i][3]][0]);
-       glEnd();
-       }
-     }
-     glPopMatrix();
+      }
+   else {
+      for (i = 5; i >= 0; i--) {
+	 glBegin(GL_QUADS);
+	 glNormal3fv(&n[i][0]);
+	 glVertex3fv(&v[faces[i][0]][0]);
+	 glVertex3fv(&v[faces[i][1]][0]);
+	 glVertex3fv(&v[faces[i][2]][0]);
+	 glVertex3fv(&v[faces[i][3]][0]);
+	 glEnd();
+	 }
+      }
+   glPopMatrix();
 }
 
-/* helper function to draw a sphere. This routine makes
-   use of the glu library */
-
-void sphere(double radius, double x, double y,
-              double z, int gen)
+/*
+ * draw a sphere. This routine makes use of the glu library
+ */
+void sphere(double radius, double x, double y, double z, int gen)
 {
    GLUquadricObj *qobj;
    glPushMatrix();
@@ -358,57 +356,61 @@ void sphere(double radius, double x, double y,
    gluQuadricDrawStyle(qobj, GLU_FILL);
    gluQuadricNormals(qobj,  GLU_SMOOTH);
 
-  /* use the glu texture coordinates if texcoord ="auto" */
+   /* use the glu texture coordinates if texcoord ="auto" */
    if (gen == 1){
       glDisable(GL_TEXTURE_GEN_S);
       glDisable(GL_TEXTURE_GEN_T);
       gluQuadricTexture(qobj, GL_TRUE);
-     }
+      }
    gluSphere(qobj, radius, 15, 10);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
-     }
+      }
    glPopMatrix();
 }
 
 
 /*
- * helper function to draw cylinders. makes use of the glu library
+ * draw a cylinder. makes use of the glu library.
  */
 void cylinder(double radius1, double radius2, double height,
               double x,  double y, double z, int gen)
 {
    GLUquadricObj *qobj;
 
-   /* translate to the specified x,y, and z */
+   /*
+    * translate to the specified x,y, and z
+    */
    glPushMatrix();
    glTranslatef(x, y, z);
-   glRotated(270.0, 1.0, 0.0, 0.0); /* rotate so cylinder points "up" by default */
+   /*
+    * rotate so cylinder points "up" by default
+    */
+   glRotated(270.0, 1.0, 0.0, 0.0);
    qobj = gluNewQuadric();
 
    gluQuadricDrawStyle(qobj, GLU_FILL);
    gluQuadricNormals(qobj,  GLU_SMOOTH);
 
-  /* if needed generate texture coordinates */
+   /* if needed generate texture coordinates */
    if (gen == 1){
       glDisable(GL_TEXTURE_GEN_S);
       glDisable(GL_TEXTURE_GEN_T);
       gluQuadricTexture(qobj, GL_TRUE);
      }
-  /* draw the cylinder */
+   /* draw the cylinder */
    gluCylinder(qobj, radius1, radius2, height, 15, 5);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
      }
    glPopMatrix();
-
 }
 
-/* routine to draw a disk. specifing angle1 and
-    angle2, give a partial disk */
-
+/*
+ * draw a disk. angle2 < 360 degrees specifies a partial disk
+ */
 void disk(double radius1, double radius2, double angle1, double angle2,
           double x, double y, double z, int gen)
 {
@@ -451,7 +453,7 @@ int popmatrix()
 {
    int params1, params2;
 
-  /* determine what is the current matrix stack */
+   /* determine what is the current matrix stack */
    glGetIntegerv(GL_MATRIX_MODE, &params1);
    if (params1 == GL_PROJECTION) {
       /*
@@ -465,9 +467,9 @@ int popmatrix()
 	 return Failed;
       }
 
-      /* we must be the Modelview stack */
    else {
       /*
+       * We are using the Modelview stack (what about texture stack?).
        * check to see if there is more than one
        * matrix on the stack. if not return Failed
        */
@@ -503,17 +505,16 @@ int pushmatrix()
 	 return Failed;
       }
 
-     /* must be the Modelview matrix stack */
    else {
-
-       /* if the stack depth is greater than 32,
-          return Failed */
-       glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
-       if (params2 < 32)
-          glPushMatrix();
-       else
-          return Failed;
-        }
+      /* must be the Modelview matrix stack
+       * if the stack depth is greater than 32, fail
+       */
+      glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
+      if (params2 < 32)
+	 glPushMatrix();
+      else
+	 return Failed;
+      }
    return Succeeded;
 }
 
@@ -548,7 +549,9 @@ int pushmatrix_rd(wbp w, dptr f)
 }
 
 
-/* functions needed to implement redrawing of windows */
+/*
+ * Functions that implement redrawing of windows.
+ */
 
 /*
  * redraws a opengl window by traversing the specifed list
@@ -562,11 +565,6 @@ int redraw3D(wbp w)
    GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
 
    makecurrent(w);
-
-#if 0
-   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
-	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
-#endif
 
    /*
     * reset the defaults for those objects that used them
@@ -586,16 +584,16 @@ int redraw3D(wbp w)
 
    setlinewidth(w, 1);
    glLineWidth(1.0);
-   w->context->dim = 3;
+   wc->dim = 3;
 
-   if (!w->context->autogen) {
+   if (!wc->autogen) {
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
-      w->context->autogen = 1;
+      wc->autogen = 1;
       }
-   if (w->context->texmode) {
+   if (wc->texmode) {
       glDisable(GL_TEXTURE_2D);
-      w->context->texmode = 0;
+      wc->texmode = 0;
       }
 
    if (w->window->funclist.vword.bptr != NULL) {
@@ -618,9 +616,9 @@ int c_traverse(struct b_list *hp, struct descrip * res, int position)
    int j, used;
 
    /*
-    * Fail if the list is empty.
+    * Fail if the list is not big enough.
     */
-   if (hp->size <= 0)
+   if (hp->size < position)
       return 0;
 
    /*
@@ -657,13 +655,13 @@ int c_traverse(struct b_list *hp, struct descrip * res, int position)
 /*
  * traverse the given list and write its contents from subscript m through n,
  * which must be reals, to a C array of doubles.  m and n are 1-based
- * subscripts.
- * Replaces a loop of calls to c_traverse().
+ * subscripts. Replaces a loop of calls to c_traverse().
  */
 int c_realarray(struct b_list *hp, int m, int n, double *a)
 {
    register word i;
    tended struct b_lelem *bp;
+   tended struct descrip d;
    int j, used;
 
    /*
@@ -690,8 +688,10 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
    used = bp->nused;
    for (j=0; j < n; j++){
       if (j >= (m-1)) {
-         if (!cnv:real(bp->lslots[i], bp->lslots[i])) return 0;
-	 a[j-(m-1)] = BlkLoc(bp->lslots[i])->realblk.realval;
+	 d = bp->lslots[i];
+         if (!cnv:real(d, d)) return 0;
+	 bp->lslots[i] = d;
+	 a[j-(m-1)] = BlkLoc(d)->realblk.realval;
 	 }
       if (used <= 1){
 	 bp = (struct b_lelem *) bp->listnext;
@@ -706,22 +706,57 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
    return 1;
 }
 
-/* traverse the list of functions and redraw the scene */
+#define	REDRAW_CUBE 16
+#define	REDRAW_CYLINDER 32
+#define	REDRAW_DISK 48
+#define	REDRAW_SPHERE 64
+#define	REDRAW_TORUS 80
+#define	REDRAW_IDENTITY 96
+#define	REDRAW_MATRIXMODE 112
+#define	REDRAW_POPMATRIX 128
+#define	REDRAW_PUSHMATRIX 144
+#define	REDRAW_ROTATE 160
+#define	REDRAW_SCALE 176
+#define	REDRAW_TEXTURE 192
+#define	REDRAW_TRANSLATE 208
+
+/*
+ * Map 3D redrawing names to which switch case to use, and how many
+ * real number arguments to convert.
+ */
+stringint redraw3Dnames[] = {
+   { 0,			13 },		/* number of entries */
+   { "DrawCube",	REDRAW_CUBE | 4 },
+   { "DrawCylinder",	REDRAW_CYLINDER | 6},
+   { "DrawDisk",	REDRAW_DISK | 7 },
+   { "DrawSphere",	REDRAW_SPHERE | 4 },
+   { "DrawTorus",	REDRAW_TORUS | 5},
+   { "Identity",	REDRAW_IDENTITY },
+   { "MatrixMode",	REDRAW_MATRIXMODE },
+   { "PopMatrix",	REDRAW_POPMATRIX },
+   { "PushMatrix",	REDRAW_PUSHMATRIX },
+   { "Rotate",		REDRAW_ROTATE | 4 },
+   { "Scale",		REDRAW_SCALE | 3 },
+   { "Texture",		REDRAW_TEXTURE },
+   { "Translate",	REDRAW_TRANSLATE | 3 },
+   };
+
+/*
+ * Traverse the list of functions and redraw the scene.
+ */
 int traversefunctionlist(wbp w)
 {
    wcp wc = w->context;
    wsp ws = w->window;
-   double x, y, z, r1, r2, h, a1, a2;
-   double *v, v2[256];
+   double x, y, z, r1, r2, h, a1, a2, *v, v2[256];
    C_integer num, dim;
-   int i, j;
+   int i, j, tmp;
    tended struct descrip flist, fname, var1, var2;
    tended struct b_list *funclist;
    tended char *temp;
    tended struct b_record *rp;
-   int elements;
+   int elements = ws->funclist.vword.bptr->list.size;
 
-   elements = ws->funclist.vword.bptr->list.size;
    makecurrent(w);
    /*
     * The ith element of the list is a list with information
@@ -729,83 +764,58 @@ int traversefunctionlist(wbp w)
     */
    for (i=0; i< elements; i++) {
       c_traverse((struct b_list *)ws->funclist.vword.bptr, &flist, i);
-      if (flist.dword == D_Record) {
+      if (is:record(flist)) {
+	 fname = BlkLoc(flist)->record.fields[0];
 	 rp = (struct b_record *)BlkLoc(flist);
-	 if (!strcmp(StrLoc(rp->fields[0]), "DrawTorus")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[5], r2)) goto free_v_and_fail;
-	    torus(r1, r2, x, y, z, (wc->texmode ? wc->autogen : 0));
+	 tmp = si_s2i(redraw3Dnames, StrLoc(fname));
+	 if (tmp == -1) {
+	    return Failed; /* probably should runerr on this */
 	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawCube")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
-	    cube(r1, x, y, z, (wc->texmode ? wc->autogen : 0));
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawSphere")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
-	    sphere(r1, x, y, z, (wc->texmode ? wc->autogen : 0));
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawCylinder")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], h))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[5], r1)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[6], r2)) goto free_v_and_fail;
-	    cylinder(r1,r2,h,x,y,z, (wc->texmode ? wc->autogen : 0));
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"DrawDisk")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[5], r2)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[6], a1)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[7], a2)) goto free_v_and_fail;
-	    disk(r1, r2, a1, a2, x, y, z, (wc->texmode ? wc->autogen : 0));
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"Rotate")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], r1)) goto free_v_and_fail;
-	    glRotated(r1, x, y, z);
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"Translate")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    glTranslated(x, y, z);
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"Scale")) {
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;
-	    glScaled(x, y, z);
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"PopMatrix")) {
+	 for (j=0; j < (tmp&7); j++)
+	    if (!cnv:C_double(rp->fields[j+1], v[j])) goto free_v_and_fail;
+
+	 switch(tmp & ~0xf) {
+	 case REDRAW_TORUS:
+	    torus(v[3], v[4], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	    break;
+	 case REDRAW_CUBE:
+	    cube(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	    break;
+	 case REDRAW_SPHERE:
+	    sphere(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	    break;
+	 case REDRAW_CYLINDER:
+	    cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
+		     (wc->texmode?wc->autogen:0));
+	    break;
+	 case REDRAW_DISK:
+	    disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
+		 (wc->texmode?wc->autogen:0));
+	    break;
+	 case REDRAW_ROTATE:
+	    glRotated(v[3], v[0], v[1], v[2]);
+	    break;
+	 case REDRAW_TRANSLATE:
+	    glTranslated(v[0], v[1], v[2]);
+	    break;
+	 case REDRAW_SCALE:
+	    glScaled(v[0], v[1], v[2]);
+	    break;
+	 case REDRAW_POPMATRIX:
 	    if (popmatrix() != Succeeded) goto free_v_and_fail;
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"PushMatrix")) {
+	    break;
+	 case REDRAW_PUSHMATRIX:
 	    if (pushmatrix() != Succeeded) goto free_v_and_fail;
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"Identity")) {
+	    break;
+	 case REDRAW_IDENTITY:
 	    glLoadIdentity();
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"MatrixMode")) {
+	    break;
+	 case REDRAW_MATRIXMODE:
 	    if (!cnv:C_string(rp->fields[1], temp)) goto free_v_and_fail;
 	    if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
-	    if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
-	    }
-	 else if (!strcmp(StrLoc(rp->fields[0]),"Texture")) {
+	    else if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
+	    break;
+	 case REDRAW_TEXTURE:
 	    /*
 	     * lookup the name of the texture and bind it
              * the objects using glBindTexture()
@@ -814,10 +824,10 @@ int traversefunctionlist(wbp w)
 	    glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
 	    if (wc->texmode)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
+	    break;
+	 default:
+            goto free_v_and_fail;
 	    }
-	 else {
-            return Failed;
-            }
 	 continue;
 	 }
       if (flist.dword == D_List) {
@@ -966,34 +976,36 @@ free_v_and_fail:
    return Succeeded;
 }
 
-/* traverse the given list and set material properties */
+/*
+ * traverse the given list and set material properties
+ */
 int determinematerial(struct b_list *list)
 {
-   struct descrip mat, var1, var2, var3, var4;
+   struct descrip d;
    C_integer r, g, b, a;
    tended char *temp;
    GLfloat color[4];
 
-   /* convert the elements of the list to the
-    * appropriate type. The first element is a string
-    * which give the material property. the last three
-    * elements should be the r, g, b value of that
-    * property */
+   /*
+    * Convert the elements of the list to the appropriate type. The first
+    * element is a string which give the material property. the last three
+    * elements should be the r, g, b value of that property
+    */
 
-   c_traverse( list, &mat, 1);
-   if (!cnv:C_string(mat, temp))
+   c_traverse( list, &d, 1);
+   if (!cnv:C_string(d, temp))
 	 return Failed;
-   c_traverse( list, &var1, 2);
-   if (!cnv:C_integer(var1, r))
+   c_traverse( list, &d, 2);
+   if (!cnv:C_integer(d, r))
 	 return Failed;
-   c_traverse( list, &var2, 3);
-   if (!cnv:C_integer(var2, g))
+   c_traverse( list, &d, 3);
+   if (!cnv:C_integer(d, g))
 	return Failed;
-   c_traverse( list, &var3, 4);
-   if (!cnv:C_integer(var3, b))
+   c_traverse( list, &d, 4);
+   if (!cnv:C_integer(d, b))
 	 return Failed;
-   c_traverse( list, &var4, 5);
-   if (!cnv:C_integer(var4, a))
+   c_traverse( list, &d, 5);
+   if (!cnv:C_integer(d, a))
 	 return Failed;
 
    /*
@@ -1008,13 +1020,13 @@ int determinematerial(struct b_list *list)
   /* set the material property */
    if (!strcmp(temp, "ambient"))
 	glMaterialfv(GL_FRONT, GL_AMBIENT, color);
-   if (!strcmp(temp, "diffuse"))
+   else if (!strcmp(temp, "diffuse"))
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
-   if (!strcmp(temp, "specular"))
+   else if (!strcmp(temp, "specular"))
 	glMaterialfv(GL_FRONT, GL_SPECULAR, color);
-   if (!strcmp(temp, "emission"))
+   else if (!strcmp(temp, "emission"))
 	glMaterialfv(GL_FRONT, GL_EMISSION, color);
-   if(!strcmp(temp, "shininess"))
+   else if(!strcmp(temp, "shininess"))
       glMateriali(GL_FRONT, GL_SHININESS, r);
 
    /*
@@ -1084,7 +1096,6 @@ int gettexcoords(wbp w, char *buf)
 /* set the linewidth */
 int setlinewidth3D(wbp w, LONG linewid)
 {
-
    struct descrip f, funcname, width;
    struct b_list *func;
 
@@ -1131,7 +1142,7 @@ int setmaterials(wbp w, char* s)
       j = 0;
       k = 0;
 
-    /* create a list element for each material property */
+      /* create a list element for each material property */
       if ((func = alclist(0, MinListSlots)) == NULL)
          return Failed;
       f.dword = D_List;
@@ -1149,7 +1160,7 @@ int setmaterials(wbp w, char* s)
 	   }
       sbuf1[k] = '\0';
 
-     /* ambient */
+      /* ambient */
       if (!strcmp(sbuf1, "ambient")) {
          while(isspace(s[i])) i++;
          if(s[i] == '\0') return Failed;
@@ -1171,41 +1182,46 @@ int setmaterials(wbp w, char* s)
          MakeStr("ambient", 7, &material);
          c_put(&f, &material);
 	   }
-     /* diffuse */
- 	else if(!strcmp(sbuf1, "diffuse")) {
-	   while(isspace(s[i])) i++;
-  	   if(s[i] == '\0') return Failed;
-	   while(s[i] != '\0' && s[i] != ';') {
-	      sbuf2[j] = s[i];
-	      i++; j++;
-	      }
-	   sbuf2[j] = '\0';
+
+      /* diffuse */
+      else if(!strcmp(sbuf1, "diffuse")) {
+	 while(isspace(s[i])) i++;
+	 if(s[i] == '\0') return Failed;
+	 while(s[i] != '\0' && s[i] != ';') {
+	    sbuf2[j] = s[i];
+	    i++; j++;
+	    }
+	 sbuf2[j] = '\0';
+
          /* determine the appropriate icon color */
-	   if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)==Failed)
+	 if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)==Failed)
             return Failed;
+
          /* convert values to floats between 0.0 and 1.0 */
-	   color[0] = rd/(GLfloat)65535;
-	   color[1] = gr/(GLfloat)65535;
-	   color[2] = bl/(GLfloat)65535;
-	   color[3] = al/(GLfloat)65535;
+	 color[0] = rd/(GLfloat)65535;
+	 color[1] = gr/(GLfloat)65535;
+	 color[2] = bl/(GLfloat)65535;
+	 color[3] = al/(GLfloat)65535;
 
          /* set the property */
-	   glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
-	   MakeStr("diffuse", 7, &material);
-	   c_put(&f, &material);
-	   }
+	 glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+	 MakeStr("diffuse", 7, &material);
+	 c_put(&f, &material);
+	 }
 
       /* specular */
       else if (!strcmp(sbuf1, "specular")) {
          while(isspace(s[i])) i++;
          if(s[i] == '\0') return Failed;
          while(s[i] != '\0' && s[i] != ';') {
-	      sbuf2[j] = s[i];
-	      i++; j++;
-	      }
-	   sbuf2[j] = '\0';
-         /* determine the icon color and convert to a
-             float between 0.0 and 1.0 */
+	    sbuf2[j] = s[i];
+	    i++; j++;
+	    }
+	 sbuf2[j] = '\0';
+
+         /*
+	  * determine the icon color and convert to a float between 0.0 and 1.0
+	  */
          if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
@@ -1217,51 +1233,52 @@ int setmaterials(wbp w, char* s)
          glMaterialfv(GL_FRONT, GL_SPECULAR, color);
          MakeStr("specular", 8, &material);	
          c_put(&f, &material);
-	   }
+	 }
 
       /* shininess */
       else if(!strcmp(sbuf1, "shininess")) {
-	   while(isspace(s[i])) i++;
-	   if(s[i] == '\0') return Failed;
- 	   while(s[i] != '\0' && s[i] != ';') {
-	      sbuf2[j] = s[i];
-	      i++; j++;
-	      }
-	   sbuf2[j] = '\0';
-        /* shininess is a single value */
-  	   shine = atof(sbuf2);
-        /* set shininess value */
-    	   glMaterialf(GL_FRONT, GL_SHININESS, shine);
+	 while(isspace(s[i])) i++;
+	 if(s[i] == '\0') return Failed;
+	 while(s[i] != '\0' && s[i] != ';') {
+	    sbuf2[j] = s[i];
+	    i++; j++;
+	    }
+	 sbuf2[j] = '\0';
+
+	 /* set the shininess */
+	 shine = atof(sbuf2);
+	 glMaterialf(GL_FRONT, GL_SHININESS, shine);
          MakeStr("shininess", 9, &material);		
-	   c_put(&f, &material);
-    	   rd = shine;
-	   gr = 0;
-   	   bl = 0;
-	  }
+	 c_put(&f, &material);
+	 rd = shine;
+	 gr = 0;
+	 bl = 0;
+	 }
       /* emission */
       else if(!strcmp(sbuf1, "emission")) {
-	   while(isspace(s[i])) i++;
-   	   if(s[i] == '\0') return Failed;
-	   while(s[i] != '\0' && s[i] != ';') {
-	      sbuf2[j] = s[i];
-	      i++; j++;
-	      }
-	   sbuf2[j] = '\0';
+	 while(isspace(s[i])) i++;
+	 if(s[i] == '\0') return Failed;
+	 while(s[i] != '\0' && s[i] != ';') {
+	    sbuf2[j] = s[i];
+	    i++; j++;
+	    }
+	 sbuf2[j] = '\0';
 
-        /* determine the r, g, b value and convert them
-           to floats between 0.0 and 1.0 */
-    	   if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
-    	      return Failed;
-	   color[0] = rd/(GLfloat)65535;
-	   color[1] = gr/(GLfloat)65535;
-	   color[2] = bl/(GLfloat)65535;
-	   color[3] = al/(GLfloat)65535;
+	 /*
+	  * determine r, g, b and convert them to floats between 0.0 and 1.0
+	  */
+	 if(parsecolor(w, sbuf2, &rd, &gr,&bl,&al)==Failed)
+	    return Failed;
+	 color[0] = rd/(GLfloat)65535;
+	 color[1] = gr/(GLfloat)65535;
+	 color[2] = bl/(GLfloat)65535;
+	 color[3] = al/(GLfloat)65535;
 
-       /* set the emission color */
-	   glMaterialfv(GL_FRONT, GL_EMISSION, color);
+	 /* set the emission color */
+	 glMaterialfv(GL_FRONT, GL_EMISSION, color);
          MakeStr("emission", 8, &material);
-	   c_put(&f, &material);
-        }
+	 c_put(&f, &material);
+	 }
 
       /* otherwise set the current foreground color; treat as diffuse */
       else {
@@ -1299,8 +1316,10 @@ int setmaterials(wbp w, char* s)
 }
 
 
-/* set the lighting properties (position, ambient,
-   diffuse, specular, and "on" or "off")of a light */
+/*
+ * set the lighting properties (position, ambient,
+ * diffuse, specular, and "on" or "off")of a light
+ */
 int setlight(wbp w, char* s, int light)
 {
    char* s2 = s;
@@ -1348,11 +1367,13 @@ int setlight(wbp w, char* s, int light)
             i++;
             }
          s3[i] = '\0';
-         /* determine the r, g, b values */
+         /*
+	  * Determine the r, g, b values. Convert from an integer between
+	  * 0 and 65535 to a float between 0.0 and 1.0
+	  */
          if(parsecolor(w, s3, &rd, &gr, &bl, &al) ==Failed)
 	      return Failed;
-         /* convert from an integer between 0 and
-            65535 to a float between 0.0 and 1.0 */
+
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
          color[2] = bl/(GLfloat)65535;
@@ -1361,11 +1382,12 @@ int setlight(wbp w, char* s, int light)
          /* set the ambient light value */
          glLightfv(light, GL_AMBIENT, color);
          s2 = s2 + i;
-	   if(*s2 != ';' && *s2 != '\0') return Failed;
-	   if(*s2 != '\0') s2++;
+	 if(*s2 != ';' && *s2 != '\0') return Failed;
+	 if(*s2 != '\0') s2++;
          }
-     /* set the diffuse lighting values */
-	if (!strncmp(s2, "diffuse", 7)) {
+
+      /* set the diffuse lighting values */
+      if (!strncmp(s2, "diffuse", 7)) {
          s2 = s2 + 7;
          i = 0;
          if(*s2 == '\0') return Failed;
@@ -1491,7 +1513,7 @@ int settexmode(wbp w, char* s)
    makecurrent(w);
     /* create a list */
    if ((func = alclist(0, MinListSlots)) == NULL)
-         return Failed;
+      return Failed;
    f.dword = D_List;
    f.vword.bptr = (union block*) func;
    MakeStr("texmode", 7, &funcname);
@@ -1565,7 +1587,7 @@ int settexcoords(wbp w, char* s)
       c_put(&f, &mode);
       c_put(&(w->window->funclist), &f);
       return Succeeded;
-     }
+      }
 
    /*
     * otherwise a string of texture coordinates should be given
@@ -2439,8 +2461,8 @@ int scale(wbp w, dptr argv, int i, dptr f)
 /*
  * For each 3D graphics operation, there is a descriptor that
  * holds the record constructor for that type of primitive.
- * The first field is named "name"; for > 1 field, their names are in an array.
- * If fields > 2, then fields 2-4 are named "x", "y", "z"
+ * The first field is named "name"; for > 1 field, their names are in
+ * an array. If fields > 2, then fields 2-4 are named "x", "y", "z".
  */
 struct descrip gl_torus = {D_Null};
 struct descrip gl_cube = {D_Null};

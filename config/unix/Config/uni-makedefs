@@ -1,0 +1,19 @@
+UNI=$(BASE)/uni
+BIN=$(BASE)/bin
+RM=rm -f
+CP=cp
+UNICON=$(UNI)/unicon/unicon
+UNIDEP=$(UNI)/unidep/unidep
+ICON_IPL=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(UNI)/gui $(UNI)/parser $(UNI)/xml $(ICON_IPL)/lib
+export LPATH:=$(UNI)/gui $(ICON_IPL)/incl
+
+%: %.icn
+	$(UNICON) $<
+
+%.u: %.icn
+	$(UNICON) -c $<
+
+%: %.u
+	$(UNICON) -o $@ $<
+

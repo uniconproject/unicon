@@ -12,3 +12,5 @@ copy ivib.mak ..\..\..\uni\ivib\makefile
 copy uni-top.mak ..\..\..\uni\Makefile
 copy iyacc.mak ..\..\..\uni\iyacc\Makefile
 copy unicon.mak ..\..\..\uni\unicon\makefile
+copy uni-makedefs ..\..\..\uni\makedefs
+

@@ -1,11 +1,5 @@
-RM=-del 
-CP=copy
 BASE=..\..\..
-UNI=..\..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-UNIDEP=$(UNI)\unidep\unidep
-ICON_IPL=$(BASE)\ipl
+include ..\..\makedefs
 
 UFILES=attribtab.u basiccanvascomponentui.u buttongroupset.u canvas.u canvasborder.u \
 canvasborderdialog.u canvasborderui.u canvasbutton.u canvasbuttondialog.u canvasbuttongroup.u \
@@ -38,18 +32,6 @@ clean:
 	$(RM) *.u 
 	$(RM) uniclass.dir 
 	$(RM) uniclass.pag
-
-deps:
-	$(UNIDEP) *.icn -f deps.out -nb
-
-deps.out: ;
-
-.SUFFIXES : .icn .u
-.icn.u:
-	set IPATH=$(UNI)\lib $(UNI)\gui $(ICON_IPL)\lib
-	set LPATH=$(ICON_IPL)\incl $(ICON_IPL)\gincl
-	set PATH=$(BIN)
-	$(UNICON) -c $*
 
 ivib.exe: $(UFILES)
 	set IPATH=$(UNI)\lib $(UNI)\gui $(ICON_IPL)\lib

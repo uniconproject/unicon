@@ -1,11 +1,5 @@
-RM=-del 
-CP=copy
 BASE=..\..
-UNI=..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-UNIDEP=$(UNI)\unidep\unidep
-ICON_IPL=$(BASE)\ipl
+include ..\makedefs
 
 UFILES=gui.u file_dlg.u font_dlg.u db.u \
  address.u base64handler.u basicclasscoding.u class.u classcoding.u \
@@ -20,21 +14,9 @@ UFILES=gui.u file_dlg.u font_dlg.u db.u \
 
 all: $(UFILES)
 
-deps:
-	$(UNIDEP) *.icn -p libs -nb -f deps.out
-
-deps.out: ;
-
 clean:
 	$(RM) *.u 
 	$(RM) uniclass.dir 
 	$(RM) uniclass.pag
-
-.SUFFIXES : .icn .u
-.icn.u:
-	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
-	set LPATH=$(ICON_IPL)\incl $(ICON_IPL)\gincl
-	set PATH=$(BIN)
-	$(UNICON) -c $*
 
 include deps.out

@@ -1,11 +1,5 @@
-RM=-del 
-CP=copy
 BASE=..\..
-UNI=..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-UNIDEP=$(UNI)\unidep\unidep
-ICON_IPL=$(BASE)\ipl
+include ..\makedefs
 
 UFILES = filearg.u fileargclass.u main.u symbolinfo.u symboltable.u util.u
 
@@ -16,17 +10,6 @@ clean:
 	$(RM) *.u 
 	$(RM) uniclass.dir 
 	$(RM) uniclass.pag
-
-.SUFFIXES : .icn .u
-.icn.u:
-	set IPATH=$(UNI)\lib $(UNI)\parser $(ICON_IPL)\lib
-	set PATH=$(BIN)
-	$(UNICON) -c $*
-
-deps:
-	$(UNIDEP) *.icn -f deps.out -nb
-
-deps.out: ;
 
 unidep.exe: $(UFILES)
 	set IPATH=$(UNI)\lib $(UNI)\parser $(ICON_IPL)\lib

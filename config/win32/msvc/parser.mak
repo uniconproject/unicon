@@ -1,14 +1,17 @@
-RM=-del 
-CP=copy
 BASE=..\..
-UNI=..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-UNIDEP=$(UNI)\unidep\unidep
-ICON_IPL=$(BASE)\ipl
+include ..\makedefs
+
 IYACC=$(UNI)\iyacc\iyacc
 
-all: libs showtree.exe showdb.exe
+UFILES=classinfo.u databaseinfo.u packageinfo.u parsedclass.u \
+	parsedfunction.u parsedinitiallymethod.u parsedmethod.u \
+	parsedobject.u parsedprocedure.u parsedprogram.u \
+	parsedrecord.u parser.u preproce.u unigram.u \
+	unilex.u ytab_h.u
+
+PROGS=showtree.exe showdb.exe
+
+all: $(UFILES) $(PROGS)
 
 clean:
 	$(RM) showtree.exe
@@ -17,25 +20,7 @@ clean:
 	$(RM) uniclass.dir 
 	$(RM) uniclass.pag
 
-deps:
-	$(UNIDEP) *.icn -p libs -f deps.out -nb
-
-deps.out: ;
-
-.SUFFIXES : .icn .u
-.icn.u:
-	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
-	set PATH=$(BIN)
-	$(UNICON) -c $*
-
 unigram.icn : unigram.y ytab_h.icn
 	$(IYACC) -i unigram.y
-
-
-.SUFFIXES : .u .exe
-.u.exe:
-	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
-	set PATH=$(BIN)
-	$(UNICON) -o $@ $<
 
 include deps.out

@@ -1,11 +1,5 @@
-RM=-del 
-CP=copy
 BASE=..\..\..
-UNI=..\..
-BIN=$(BASE)\bin
-UNICON=$(UNI)\unicon\unicon
-UNIDEP=$(UNI)\unidep\unidep
-ICON_IPL=$(BASE)\ipl
+include ..\..\makedefs
 
 PROGS=lines.exe editor.exe multi.exe tickdemo.exe explorer.exe secondtest.exe menudemo.exe \
 	demo.exe palette.exe tabs.exe testdialog.exe toolbar.exe \
@@ -18,10 +12,3 @@ all: $(PROGS)
 clean: 
 	$(RM) uniclass.dir
 	$(RM) uniclass.pag
-
-.SUFFIXES : .icn .exe
-.icn.exe:
-	set IPATH=$(UNI)\lib $(UNI)\gui $(ICON_IPL)\lib
-	set LPATH=$(ICON_IPL)\incl $(ICON_IPL)\gincl
-	set PATH=$(BIN)
-	$(UNICON) $<

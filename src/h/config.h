@@ -726,6 +726,10 @@ Deliberate Syntax Error
 #define HAVE_LIBGL 0
 #endif					/* NoGL */
 
+#ifdef NoODBC
+#define HAVE_LIBIODBC 0
+#endif					/* NoODBC */
+
 #ifndef HAVE_LIBZ
 #define HAVE_LIBZ 0
 #endif					/* HAVE_LIBZ */
@@ -738,9 +742,17 @@ Deliberate Syntax Error
 #define HAVE_LIBGL 0
 #endif					/* HAVE_LIBJPEG */
 
+#ifndef HAVE_LIBIODBC
+#define HAVE_LIBIODBC 0
+#endif					/* HAVE_LIBIODBC */
+
 #if HAVE_LIBGL
 #define Graphics3D 1
 #endif					/* HAVE_LIBGL */
+
+#if HAVE_LIBIODBC
+#define ISQL 1
+#endif					/* HAVE_LIBIODBC */
 
 
 /*

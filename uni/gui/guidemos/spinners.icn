@@ -6,25 +6,25 @@ class Untitled : Dialog(spin1,spin2,spin3)
       self.setup()
       spin1.set_range(0.0,1.0)
       spin1.set_value(0.5)
-      spin1.set_increment(0.1)
-      spin1.connect(self, "on_spin1")
+      spin1.set_increment_size(0.1)
+      spin1.connect(self, "on_spin1", SELECTION_CHANGED_EVENT)
       spin2.set_selection_list(["red","yellow","green","blue","pink"])
       spin2.set_selection(2)
-      spin2.connect(self, "on_spin2")
+      spin2.connect(self, "on_spin2", SELECTION_CHANGED_EVENT)
       spin3.set_range(1,100)
       spin3.set_value(30)
-      spin3.connect(self, "on_spin3")
+      spin3.connect(self, "on_spin3", SELECTION_CHANGED_EVENT)
    end
 
-   method on_spin1()
+   method on_spin1(ev)
       write("spin1=", spin1.get_value())
    end
 
-   method on_spin2()
+   method on_spin2(ev)
       write("spin2=", spin2.get_selection())
    end
 
-   method on_spin3()
+   method on_spin3(ev)
       write("spin3=", spin3.get_value())
    end
 

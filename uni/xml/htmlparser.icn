@@ -1,5 +1,5 @@
 #
-# $Id: htmlparser.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+# $Id: htmlparser.icn,v 1.2 2004-04-18 14:20:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,7 +10,7 @@ package xml
 
 global idintro, idchars, keychars, valchars, delim
 
-class Tag : Node(name, closed, attributes)
+class Tag : Node(name, closed, attributes, empty)
    #
    # Set the name of the tag, which is converted to upper case.  Any
    # leading "/" should be omitted.
@@ -38,6 +38,20 @@ class Tag : Node(name, closed, attributes)
    #
    method set_closed()
       return closed := 1
+   end
+
+   #
+   # Succeed if the tag is an empty tag, ie of the form <tag/>.
+   #
+   method is_empty()
+      return \empty
+   end
+
+   #
+   # Indicate that the tag is an empty tag.
+   #
+   method set_empty()
+      return empty := 1
    end
 
    #
@@ -142,7 +156,8 @@ class HtmlParser : Parser(doc)
 
       if start_tag.name == "PLAINTEXT" then
          put(res.children, "" ~== remove_entities(tab(0)))
-      else if not(html_is_standalone_tag(start_tag.name)) then {
+      else if not(start_tag.is_empty() | 
+                  html_is_standalone_tag(start_tag.name)) then {
          repeat {
             put(res.children, "" ~== remove_entities(move_to_node()))
             if pos(0) then
@@ -247,9 +262,14 @@ class HtmlParser : Parser(doc)
          res.set_closed()
       res.set_name(any(idintro) & tab(many(idchars))) | fail
       repeat {
-         tab(upto(keychars ++ '>'))
+         tab(upto(keychars ++ '/>'))
+         if ="/>" then {
+            res.set_empty()
+            break
+         }
          if =">" then
             break
+
          key := tab(many(keychars)) | break
 
          tab(upto(valchars ++ '>='))

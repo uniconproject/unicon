@@ -290,6 +290,7 @@ classhead : CLASS IDENT supers LPAREN arglist RPAREN {
    $$.tag := $1
    $$.unmangled_name := $2.s
    $$.name := package_mangled_symbol($2.s)
+   if proc($$.name, 0) then warning("Warning: class " || $$.name || " overrides the built-in function")
    classes.insert($$, $$.name)
    $$.supers_node := $3
    $$.fields := $5

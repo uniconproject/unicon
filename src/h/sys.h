@@ -114,7 +114,6 @@
       #endif					/* PosixFns */
       #include <mmsystem.h>
       #include <process.h>
-      #include "../wincap/dibutil.h"
    #else					/* MSWindows */
       #if NT
       #ifndef PATH_MAX

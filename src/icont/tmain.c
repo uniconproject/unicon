@@ -259,7 +259,6 @@ int icont(int argc, char **argv);
 #undef lstrlen
 #include <windows.h>
 #define lstrlen longstrlen
-#include "../wincap/dibutil.h"
 
 int CmdParamToArgv(char *s, char ***avp)
    {
@@ -606,11 +605,9 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
             break;
 
-#if NT
 	 case 'G':			/* -G: enable graphics */
 	    Gflag = 1;
 	    break;
-#endif					/* NT */
 
          case 'S':			/* -S */
             fprintf(stderr, "Warning, -S option is obsolete\n");
@@ -842,6 +839,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       }
 
    *tptr = *lptr = *rptr = NULL;	/* terminate filename lists */
+
    if (lptr == lfiles)
       usage();				/* error -- no files named */
 

@@ -1402,7 +1402,9 @@ int settexcoords(wbp w, char* s)
 
    while(isspace(*s2)) s2++;
 
- /* check if we need to generate texture coordinates */
+   /*
+    * check if we need to generate texture coordinates
+    */
    if (!strcmp(s2, "auto")){
       w->context->autogen = 1;
       if (!glIsEnabled(GL_TEXTURE_GEN_S))
@@ -1415,8 +1417,9 @@ int settexcoords(wbp w, char* s)
       return Succeeded;
      }
 
-  /* otherwise a string of texture coordinate
-     should be given */
+   /*
+    * otherwise a string of texture coordinates should be given
+    */
    else if(isdigit(*s2)) {
       MakeInt(0, &mode);
       c_put(&f, &mode);
@@ -1439,6 +1442,7 @@ int settexcoords(wbp w, char* s)
          val.dword = strlen(s3);
          val.vword.sptr = strdup(s3);
          c_put(&f, &val);
+	 if (j >= MAXTEXCOORDS) return Failed;
          w->context->texcoords[j] = atof(s3);
          j++;
          s2++;

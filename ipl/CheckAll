@@ -1,0 +1,98 @@
+#!/bin/ksh -p
+#
+#  CheckAll -- Test-build all IPL components and run other sanity checks
+#
+#  Assumes that there are binaries of Icon in ../bin
+
+
+#  Combine stderr with stdout so both can be redirected together.
+exec 2>&1
+
+
+#  Set minimal path needed.  (Not all systems have all these directories.)
+V9BIN=`cd ../bin; pwd`
+export PATH=$V9BIN:/usr/xpg4/bin:/usr/ccs/bin:/bin:/usr/bin
+
+#  List timestamp of icont we'll be using
+ls -l $V9BIN/icont || exit
+
+#  Use default Icon options
+unset BLKSIZE STRSIZE MSTKSIZE COEXPSIZE TRACE NOERRBUF FPATH IPATH LPATH
+
+#  Clean out old versions of compiled procedures
+rm -f */*.u[12]
+
+#  Diagnose duplicate filenames among procs and among progs.
+#  (We allow one proc and one prog to have the same filename.)
+for t in procs progs; do
+    ls *$t/*.icn |
+    sed 's=.*/==' |
+    sort |
+    uniq -c |
+    grep -v ' 1' |
+    while read n f; do
+        echo "   DUPLICATE NAME:" *$t/$f
+    done
+done
+
+
+#  Start by building procedures, including cfuncs, needed by programs
+#  Use only include-files guaranteed to be present with each part of library
+
+(echo cfuncs:; cd cfuncs; LPATH=                            make -s cfunc.u2)
+(echo procs:;  cd procs;  LPATH="../incl"                   icont -usc *icn)
+(echo gprocs:; cd gprocs; LPATH="../incl ../gincl"          icont -usc *icn)
+# (echo mprocs:; cd mprocs; LPATH="../incl ../gincl ../mincl" icont -usc *icn)
+
+
+#  Check for undeclared identifiers or insufficient links in the core modules.
+echo core modules:
+(cd procs;  IPATH=         icont -o ../xxx -us -fs core.u2)
+(cd gprocs; IPATH=../procs icont -o ../xxx -us -fs graphics.u2)
+
+#  Check linkages for procedure files, ignoring most undeclared identifiers.
+
+IPATH=./cfuncs
+rm -f xxx
+for d in procs gprocs; do
+    export IPATH="$IPATH ./$d"
+    echo $d linkage:
+    for f in `cd $d; ls *.icn`; do
+	b=${f%.icn}
+	# allow undeclared identifiers in main() for use with code generators
+	(icont -o xxx -us -fs $b.u2 2>&1  ||  echo "   -- failed in $b.u2") |
+	    grep -v ': undeclared identifier, procedure main'
+    done
+done
+rm -f xxx
+
+
+#  Define function for silent compilation, echoing name only on error
+function compile {  icont -us $1  ||  echo "   -- failed in $1";  }
+
+#  Build programs from "bipl" portion, using only "bipl" library.
+#  (For a better check, should really build using non-graphics version of Icon.)
+export LPATH="../incl"
+export IPATH="../procs ../cfuncs"
+(echo progs:; cd progs;  for f in *.icn; do compile $f; done)
+
+#  Build programs from "gipl" portion of distribution
+export LPATH="../incl  ../gincl"
+export IPATH="../procs ../cfuncs ../gprocs"
+(echo gprogs:; cd gprogs;  for f in *.icn; do compile $f; done)
+
+# Skip mprogs, which requires a specially build MT-Icon version 
+# export LPATH="../incl  ../gincl  ../mincl"
+# export IPATH="../procs ../cfuncs ../gprocs ../mprocs"
+# (echo mprogs:; cd mprogs;  for f in *.icn; do compile $f; done)
+
+
+#  Test-build all the packages
+#  Allow use of graphics within packs, because one loadfunc example needs it
+
+export LPATH="../../incl ../../gincl"
+export IPATH="../../cfuncs ../../procs ../../gprocs"
+for d in *packs/[a-z]*; do
+    echo $d:
+    (cd $d; make -s Clean; make -s)
+done

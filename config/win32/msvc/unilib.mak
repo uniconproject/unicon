@@ -11,7 +11,7 @@ UFILES=gui.u file_dlg.u font_dlg.u db.u \
  popclient.u process.u qsort.u quotedprintablehandler.u rfc822parser.u runnable.u \
  selectiveclasscoding.u sem.u setfields.u shm.u smtpclient.u str_util.u stringbuff.u \
  texthandler.u time.u timezone.u typehandler.u undoableedit.u undomanager.u url.u \
- event.u
+ event.u md5.u
 
 all: $(UFILES)
 

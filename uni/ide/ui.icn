@@ -6,12 +6,12 @@
 #
 #	Authors:  Clinton Jeffery and Susie Jeffery
 #
-#	Date:     February 14, 2002
+#	Date:     September 29, 2002
 #
 ############################################################################
 #
-#  This program provides a simple development environment for Unicon.
-#  It is gradually gaining features and usability.
+#  This program provides a simple multi-platform development environment
+#  for Unicon.  It is gradually gaining features and usability.
 #
 #  To do:
 #	keyboard shortcuts
@@ -36,7 +36,18 @@ $define PATHSEP "/"
 $else # implies Windows for now
 $define PATHSEP "\\"
 $endif
-global current_file, targs, browser, docpath, xargs, icodename, wiconlog
+global current_file, targs, browser, docpath, xargs, icodename, wiconlog,
+	findstr,
+	foundline,
+	foundcol,
+	height,
+	width,
+	font,
+	fontheight,
+	msglines,
+	linebreak,
+	ui_ini
+
 global tmp
 class dialog : _Dialog(new_menu_item, openfile, print_menu_item, save_menu_item, saveas_menu_item, ivib_menu_item, exit_menu_item, copy_menu_item, cut_menu_item, paste_menu_item,EditBox,MsgBox,find_menu_item,replace_menu_item,goto_menu_item,matchparen_menu_item,undo_menu_item,editconfig_menu_item,font_menu_item,saveoptions_menu_item,make_exec_menu_item,compile_menu_item,compile_options_menu_item,run_menu_item,run_arg_menu_item,project_add_menu_item,help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,help_ivib,help_iconfaq,help_uniconfaq,browse_local,browse_net,help_icon_reference,help_unicon_reference)
 ###############################################################################
@@ -52,17 +63,6 @@ method copy_to_clipboard(l)
 WAttrib("selection=" || large_str)
 #)
     return large_str
-end
-
-#
-# defextension(s) - return s, append default extension if needed
-#
-method defextension(s)
-   s ? {
-      if tab(find(".")+1) & (tab(many(&letters++&digits))|"") & pos(0) then
-	 return s
-      else return s ||:= ".icn"
-   }
 end
 
 #
@@ -120,12 +120,13 @@ method handle_new_menu_item(ev)
      mb := MsgDialog()
 #    mb.set_extra_attribs(["label=Warning:"])
      mb.msglabel  := "Save "||current_file||"?"
-#    mb.MsgBox$set_label("Hi")
      mb.show_modal()
      if mb.yes = 1 then 
         handle_save_file(current_file)
      current_file := &null
-  }
+     self.set_attribs("label=Ui editing: (untitled)")
+     WAttrib(\ (self.win), "label=Ui editing: (untitled)")
+     }
   results_list := []
   EditBox.set_contents(results_list)
 end
@@ -133,7 +134,8 @@ end
 method handle_openfile(ev, filename)
   local line, L, nchars, fd, file
 
-   ### need to check if current file is modified & prompt to save!!!
+   # check if current file is modified & if so, prompt to save
+   prompt_save()
 
    if /filename then {
 $ifdef _UNIX
@@ -157,17 +159,14 @@ $endif
    else filename := defextension(filename)
 
   file := open(filename, "b") | {
-      MsgBox.set_contents(["Could not open file: " || filename])
-      return
-  }
+     MsgBox.set_contents(["Could not open file: " || filename])
+     return
+     }
 
   MsgBox.set_contents(["Reading "||filename||"..."])
 
- # file_named_flag := 1
- # file_linked_flag := &null
- # file_compiled_flag := &null
-
-  L := []; nchars := 0
+  L := []
+  nchars := 0
   while line := read(file) do { put(L, line); nchars +:= *line + 1 }
          
   EditBox.set_contents(L)
@@ -179,71 +178,71 @@ $endif
 end
 
 method handle_print_menu_item(ev)
+   MsgBox.set_contents(["Sorry, no printing yet."])
 end
-#
-#
 
 method handle_save_file(filename)  
 local file, l
-l := []
 
-  l := EditBox.get_contents()
+   l := EditBox.get_contents() | []
+   file := open(filename, "c") | {
+      MsgBox.set_contents([filename || ": failure to open for writing."])
+      fail
+      }
 
-  file := open(filename, "c") | {
-     MsgBox.set_contents([filename || ": open failure."])
-     fail
-  }
+   every write(file, !l)
+   close(file)
 
-  every write(file, !l)
-  close(file)
-
-  MsgBox.set_contents([filename || " saved."])
+   MsgBox.set_contents([filename || " saved."])
+   EditBox.clear_modified()
 end
-#
+
 #
 method handle_save_menu_item(ev)
-
-  if /current_file then {
+   if /current_file then {
       handle_saveas_menu_item(ev)
       return
-  }
-  handle_save_file(current_file)
+      }
+   handle_save_file(current_file)
 end
 
 
 method handle_saveas_menu_item(ev)
-  local fd, filename
+   local fd, filename
 
 $ifdef _UNIX
-  fd := FileDialog()
-  fd.set_extra_attribs(["label=Save file As:"])
-  fd.show_modal(self)
-  filename := fd.get_result() | fail
+   fd := FileDialog()
+   fd.set_extra_attribs(["label=Save file As:"])
+   fd.show_modal(self)
+   filename := fd.get_result() | fail
 $else
    filename := WinSaveDialog(self.win, "Save file As:", "", 50) | fail
    if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
 $endif
 
-  if /filename | filename=="" | filename[-1]==("\\"|"/") then {
+   if /filename | filename=="" | filename[-1]==("\\"|"/") then {
       MsgBox$set_contents(["Enter File Name to save"])
       return
-  }    
-  /current_file := filename
-  handle_save_file(filename)
+      }    
+   /current_file := filename
+   handle_save_file(filename)
 end
 
-   method handle_ivib_menu_item(ev)
-     handle_openfile( , current_file)
-     system("ivib " || current_file) | write("system failed")
-     handle_openfile( , current_file)
-   end
+method handle_ivib_menu_item(ev)
+   L := []
+   prompt_save()
+   system("ivib " || current_file, L) | write("system failed")
+   MsgBox.set_contents(L)
+   handle_openfile( , current_file)
+end
 
-   method handle_exit_menu_item(ev)
-      if EditBox.changed then {
-      case SelectDialog((\current_file|"file") || " is modified, save it?",,,
+method prompt_save()
+   if \ (EditBox.modified) then {
+      case SelectDialog((\current_file|"File") || " is modified, save it?",,,
 		 ["Yes", "Save As", "No", "Cancel"]) of {
 	 "Yes": {
-	    handle_save_menu_item(ev)
+	    if \current_file then handle_save_file(current_file)
+	    else handle_saveas_menu_item()
 	    }
 	 "Save As": {
 	    handle_saveas_menu_item()
@@ -252,14 +251,17 @@ end
 	    fail
 	    }
 	 }
-          }
-      dispose()
-   end
+      }
+end
+
+method handle_exit_menu_item(ev)
+   prompt_save()
+   dispose()
+end
 
 
 method handle_compile_menu_item(ev)
-local command, str, compile_options, log1
-local lst
+local command, str, compile_options, log1, lst
    MsgBox.set_contents([""])
    lst := []
 
@@ -293,9 +295,11 @@ method comp1file(s)
    extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
    return quotes(extended)
 end
+
 method system(s, lst, apnd)
    local rv
   
+   /lst := []
    if /apnd then while pop(lst)
    put(lst,s)
    WAttrib("pointer=wait")
@@ -307,9 +311,12 @@ method system(s, lst, apnd)
    if \rv then return rv
 end
 
-#
-   method handle_default(ev)
-   end
+method handle_default(ev)
+   if ev.event === &resize then {
+      width := &x
+      height := &y
+      }
+end
 
    method dialog_event(ev)
       case ev.get_component() of {
@@ -356,6 +363,7 @@ end
    end
 
    method init_dialog()
+      if \current_file then handle_openfile( , current_file)
    end
 
    method end_dialog()
@@ -367,13 +375,51 @@ end
    method handle_MsgBox(ev)
    end
 
+   method findstring(s)
+      L := EditBox.get_contents()
+      foundline := &null
+      startcol := EditBox.cursor_x
+      i := EditBox.cursor_y
+      while L[i] do {
+         if j := find(s, L[i], startcol) then {
+            foundline := i
+            foundcol := j
+            goto_line(i)
+            return
+            }
+         i +:= 1
+         startcol := 1
+         }
+   end
+
    method handle_find_menu_item(ev)
+      if TextDialog("Enter string to seek: ",,xargs,60)=="Okay" then {
+	 findstr := dialog_value[1]
+	 findstring(findstr)
+	 }
    end
 
    method handle_replace_menu_item(ev)
+      if TextDialog("Replace what with what: ",,
+		    [(\findstr | ""),""],60)=="Okay" then {
+	 wu_replace(dialog_value[1], dialog_value[2])
+	 }
+   end
+
+   method goto_line(ln)
+      if 1 <= ln <= *(EditBox.contents) then {
+         EditBox.cursor_y := ln
+         EditBox.cursor_x := 1
+         EditBox.constrain_line()
+         EditBox.refresh(1)
+         }
+      else write("nonexistent line number " || ln)
    end
 
    method handle_goto_menu_item(ev)
+      if TextDialog("Go to line: ",,"",6)=="Okay" then {
+         goto_line(integer(dialog_value[1]))
+         }
    end
 
    method handle_matchparen_menu_item(ev)
@@ -386,16 +432,44 @@ end
    end
 
    method handle_font_menu_item(ev)
+      /font := Font()
+      if font := WinFontDialog(font) then {
+         EditBox.set_attribs("font=" || font) | write("setattribs failed")
+         MsgBox.set_attribs("font=" || font) | write("setattribs failed")
+         EditBox.compute_and_redisplay()
+         MsgBox.compute_and_redisplay()
+         }
    end
 
-   method handle_saveoptions_menu_item(ev)
-   end
+method handle_saveoptions_menu_item(ev)
+   local f
+   if f := open(ui_ini,"w") then {
+      write(f, "width=",width,"\n",
+		"height=",height,"\n",
+		"msglines=",msglines,"\n",
+		"font=",font,"\n",
+		"linebreak=",linebreak)
+      }
+   else {
+      }
+end
 
-   method complink()
+
+method complink()
    local x, arglist, lst, logf, i, s
    lst := []
    /targs := ""
    if /project then {
+      if /current_file then {
+         handle_saveas_menu_item(ev)
+         if /current_file then {
+            MsgBox.set_contents(["No filename specified."])
+            fail
+            }
+         }
+      else {
+         if \ (EditBox.modified) then handle_save_file(current_file)
+         }
       arglist := comp1file(current_file)
       icodename := current_file
       icodename[find(".icn", map(icodename)) : 0] := ""
@@ -456,27 +530,29 @@ end
          remove(fn)
          MsgBox.set_contents(lst)
          every s := !lst do s ? {
-            write("trying ", &subject)
-            if (fn := tab(many(&letters++&digits++'./-'))) &
+            if (fn := ((tab(any(&letters))||=":")|"") || tab(many(&letters++&digits++'.\\/-'))) &
                 =":" &
                 ln := integer(tab(many(&digits))) &
                 = ":" then {
-                if map(fn) ~== map(current_file) then
-                   if not handle_openfile( , fn) then return
-                if 1 <= ln <= *(EditBox.contents) then {
-                   EditBox.cursor_y := ln; EditBox.cursor_x := 1
-                   EditBox.constrain_line()
-                   EditBox.refresh(1)
+                if map(fn) ~== map(current_file) then {
+                   if not handle_openfile( , fn) then {
+                      put(MsgBox.contents,"[switch to file with error failed]")
+                      MsgBox.set_contents(MsgBox.contents)
+                      return
+                      }
                    }
-                break break
+                goto_line(ln)
+                return
                 }
-}
-}
+            }
+         return # 
+         }
       else {
-         MsgBox$set_contents(["Can't open logfile "||fn || ": "||i])
+         put(lst, "Can't open logfile " || fn || ": " || i)
+         MsgBox.set_contents(lst)
          }
       }
-   end
+end
 
    method handle_make_exec_menu_item(ev)
 #      save()
@@ -491,18 +567,19 @@ end
 
    method handle_run_menu_item(ev)
    local L
-   L := []
-   if /project then {
-      icodename := current_file
-      icodename[find(".icn", map(icodename)) : 0] := ""
-      }
-   else {
-      }
 
+   complink()
+   L := copy(MsgBox.contents)
+
+$ifndef _UNIX
+   if not (any(&letters,icodename) & (icodename[2]==":")) then
+$endif
    if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP || icodename
    cmd := icodename || " " || xargs
 $ifdef _UNIX
    cmd ||:= " &> " || wiconlog
+$else
+   cmd := "wiconx " || cmd
 $endif
    if system(cmd, L) then {# hope WICONLOG does trick?
 
@@ -525,11 +602,11 @@ $endif
 
    method handle_help_about(ev)
       Notice(&version,
-			   "Unicon IDE 0.1",
-			   "Clint and Susie Jeffery",
-			   "jeffery@cs.nmsu.edu",
-			   "Department of Computer Science",
-			   "New Mexico State University")
+		   "Unicon IDE 0.2",
+		   "Clint and Susie Jeffery",
+		   "jeffery@cs.nmsu.edu",
+		   "Department of Computer Science",
+		   "New Mexico State University")
    end
 
    method handle_help(filename, URL)
@@ -548,8 +625,9 @@ $ifdef _UNIX
         remove("ui.err")
 	}
 $else
-      s := \browser[2:-1] || " " || URL
-      proc("system",0)(s,,,,1)
+      proc("system",0)(\browser || " " || URL) # || " &")
+#      s := \browser[2:-1] || " " || URL
+#      proc("system",0)(s,,,,1)
 $endif
    end
 
@@ -607,7 +685,8 @@ $endif
 
    method setup()
       local menu_bar_1, file_menu, edit_menu, options_menu, compile_menu, run_menu, project_menu, help_menu, help_language, menu_8
-      self.set_attribs("size=667,448", "bg=pale gray", "label=Unicon IDE")
+      self.set_attribs("size="||width||","||height, "bg=pale gray",
+		       "label=Unicon IDE", "resize=on")
       menu_bar_1 := MenuBar()
       menu_bar_1$set_pos("0", "0")
       menu_bar_1$set_attribs("font=sans,15")
@@ -748,18 +827,18 @@ $endif
       menu_bar_1$add(help_menu)
       self$add(menu_bar_1)
       EditBox := EditableTextList()
-      EditBox$set_pos(5, 30)
-      EditBox$set_size(657, 294)
+      EditBox$set_pos("5", "30")
+      EditBox$set_size("100%-10", "100%-152")
       EditBox$set_attribs("bg=white")
       EditBox$set_contents([""])
       self$add(EditBox)
       MsgBox := TextList()
-      MsgBox$set_pos("5", "329")
-      MsgBox$set_size("657", "112")
+      MsgBox$set_pos("5", "100%-117")
+      MsgBox$set_size("100%-10", "112")
       MsgBox$set_attribs("bg=white")
       MsgBox$set_contents([""])
       self$add(MsgBox)
-      if \current_file then handle_openfile(, current_file)
+      EditBox.got_focus()			# start cursor in the edit box
    end
 
    method component_setup()
@@ -778,7 +857,42 @@ procedure set_docpath()
 end
 
 procedure ui_initialize()
+   local f
+   ui_ini := getenv("UNICONINI") | "ui.ini"
+   height := 400
+   width := 600
+   msglines := 7
+   font := "sans,15"
+   linebreak := "CRLF"
+   if f := open(ui_ini) then {
+      while line := read(f) do {
+	 line ? {
+	    if ="msglines" then {
+	       tab(upto(&digits))
+	       msglines := integer(tab(many(&digits)))
+	       }
+	    else if ="height" then {
+	       tab(upto(&digits))
+	       height := integer(tab(many(&digits)))
+	       }
+	    else if ="width" then {
+	       tab(upto(&digits))
+	       width := integer(tab(many(&digits)))
+	       }
+	    else if ="font" then {
+	       tab(many('= \t'))
+	       font := tab(0)
+	       }
+	    else if ="linebreak" then {
+	       tab(many('= \t'))
+	       linebreak := tab(0)
+	       }
+	    }
+	 }
+      close(f)
+      }
    wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
+   if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
    xargs := ""
 $ifdef _UNIX
     browser := getenv("BROWSER") | "netscape"
@@ -798,7 +912,7 @@ procedure main(argv)
    d := dialog()
    # load file from command line argument, if any; add options etc.
    if *argv>0 then
-      current_file := argv[1]
+      current_file := defextension(argv[1])
    d.show_modal()
 end
 
@@ -810,8 +924,20 @@ procedure newer(s1, s2)
    return t1 - t2 > 0 # or something like that
 end
 
+#
+# defextension(s) - return s, append default extension if needed
+#
+procedure defextension(s)
+   s ? {
+      if tab(find(".")+1) & (tab(many(&letters++&digits))|"") & pos(0) then
+	 return s
+      else return s ||:= ".icn"
+   }
+end
+
+
 
 
 
 ### Ivib layout ###
-#class|Canvas|16|Name Table|table|integer|0|5|string|editable_text_list|integer|1|string|menu|integer|9|string|menu_bar|integer|1|string|text_list|integer|1|string|text_menu_item|integer|41|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Interpose|null|Gen Main|integer|1|Gen Methods|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|list|2|string|bg=pale gray|string|label=Unicon IDE|Name|string|dialog|Width|integer|667|Height|integer|448|Items|list|3|class|CanvasMenuBar|22|Parent Canvas|1|Name|string|menu_bar_1|Var Category|integer|2|Class Name|string|MenuBar|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|0|Y Spec|string|0|W Spec|string|100%|H Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|font=sans,15|Tooltip|null|Menus|list|7|class|CanvasMenu|14|Name|string|file_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|File|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|7|class|CanvasTextMenuItem|13|Name|string|new_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|New|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|openfile|Class Name|string|TextMenuItem|Var Category|null|Label|string|Open|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|print_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Print|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|save_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|saveas_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save As|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|ivib_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Ivib|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|exit_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Exit|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|edit_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Edit|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|8|class|CanvasTextMenuItem|13|Name|string|copy_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Copy|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|cut_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Cut|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|paste_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Paste|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|find_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Find ^F|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|replace_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Replace|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|goto_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Go To Line #|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|matchparen_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Match Parenthesis|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|undo_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Undo|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|options_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|5|class|CanvasTextMenuItem|13|Name|string|editconfig_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Edit config|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|browse_local|Class Name|string|TextMenuItem|Var Category|null|Label|string|Browse Help Locally|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|browse_net|Class Name|string|TextMenuItem|Var Category|null|Label|string|Browse Help from Web|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|font_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Font...|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|saveoptions_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|compile_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Compile|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|3|class|CanvasTextMenuItem|13|Name|string|make_exec_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Make executable|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|compile_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Compile only|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|compile_options_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Compile options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|run_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Run|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|run_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Run program|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|run_arg_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Run arguments|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|project_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Project|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|1|class|CanvasTextMenuItem|13|Name|string|project_add_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Add files|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|help_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Help|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|8|class|CanvasTextMenuItem|13|Name|string|help_prog_env|Class Name|string|TextMenuItem|Var Category|null|Label|string|UI Programming Environment|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_tutorial|Class Name|string|TextMenuItem|Var Category|null|Label|string|Tutorial Overview|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|help_language|Class Name|string|Menu|Var Category|integer|2|Label|string|Language References|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|help_icon_reference|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_unicon_reference|Class Name|string|TextMenuItem|Var Category|null|Label|string|Unicon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_graphics|Class Name|string|TextMenuItem|Var Category|null|Label|string|Graphics Reference|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_ipl|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon Program Library|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_ivib|Class Name|string|TextMenuItem|Var Category|null|Label|string|IVIB Interface Builder|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|menu_8|Class Name|string|Menu|Var Category|integer|2|Label|string|Frequently Asked Questions|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|help_iconfaq|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_uniconfaq|Class Name|string|TextMenuItem|Var Category|null|Label|string|Unicon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_about|Class Name|string|TextMenuItem|Var Category|null|Label|string|About|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasEditableTextList|22|Parent Canvas|1|Name|string|EditBox|Var Category|null|Class Name|string|EditableTextList|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|5|Y Spec|integer|30|W Spec|integer|657|H Spec|integer|294|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Contents|list|1|string||class|CanvasTextList|25|Parent Canvas|1|Name|string|MsgBox|Var Category|null|Class Name|string|TextList|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|5|Y Spec|string|329|W Spec|string|657|H Spec|string|112|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Select One|null|Select Many|null|Checked|list|1|null|Contents|list|1|string||Initial Focus|null|
+#class|Canvas|16|Name Table|table|integer|0|5|string|editable_text_list|integer|1|string|menu|integer|9|string|menu_bar|integer|1|string|text_list|integer|1|string|text_menu_item|integer|41|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Interpose|null|Gen Main|integer|1|Gen Methods|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|list|3|string|bg=pale gray|string|label=Unicon IDE|string|resize=on|Name|string|dialog|Width|integer|600|Height|integer|400|Items|list|3|class|CanvasMenuBar|22|Parent Canvas|1|Name|string|menu_bar_1|Var Category|integer|2|Class Name|string|MenuBar|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|0|Y Spec|string|0|W Spec|string|100%|H Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|font=sans,15|Tooltip|null|Menus|list|7|class|CanvasMenu|14|Name|string|file_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|File|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|7|class|CanvasTextMenuItem|13|Name|string|new_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|New|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|openfile|Class Name|string|TextMenuItem|Var Category|null|Label|string|Open|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|print_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Print|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|save_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|saveas_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save As|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|ivib_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Ivib|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|exit_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Exit|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|edit_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Edit|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|8|class|CanvasTextMenuItem|13|Name|string|copy_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Copy|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|cut_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Cut|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|paste_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Paste|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|find_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Find ^F|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|replace_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Replace|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|goto_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Go To Line #|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|matchparen_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Match Parenthesis|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|undo_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Undo|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|options_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|5|class|CanvasTextMenuItem|13|Name|string|editconfig_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Edit config|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|browse_local|Class Name|string|TextMenuItem|Var Category|null|Label|string|Browse Help Locally|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|browse_net|Class Name|string|TextMenuItem|Var Category|null|Label|string|Browse Help from Web|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|font_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Font...|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|saveoptions_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|compile_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Compile|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|3|class|CanvasTextMenuItem|13|Name|string|make_exec_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Make executable|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|compile_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Compile only|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|compile_options_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Compile options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|run_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Run|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|run_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Run program|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|run_arg_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Run arguments|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|project_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Project|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|1|class|CanvasTextMenuItem|13|Name|string|project_add_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Add files|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|help_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Help|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|8|class|CanvasTextMenuItem|13|Name|string|help_prog_env|Class Name|string|TextMenuItem|Var Category|null|Label|string|UI Programming Environment|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_tutorial|Class Name|string|TextMenuItem|Var Category|null|Label|string|Tutorial Overview|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|help_language|Class Name|string|Menu|Var Category|integer|2|Label|string|Language References|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|help_icon_reference|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_unicon_reference|Class Name|string|TextMenuItem|Var Category|null|Label|string|Unicon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_graphics|Class Name|string|TextMenuItem|Var Category|null|Label|string|Graphics Reference|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_ipl|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon Program Library|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_ivib|Class Name|string|TextMenuItem|Var Category|null|Label|string|IVIB Interface Builder|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|menu_8|Class Name|string|Menu|Var Category|integer|2|Label|string|Frequently Asked Questions|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|help_iconfaq|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_uniconfaq|Class Name|string|TextMenuItem|Var Category|null|Label|string|Unicon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_about|Class Name|string|TextMenuItem|Var Category|null|Label|string|About|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasEditableTextList|22|Parent Canvas|1|Name|string|EditBox|Var Category|null|Class Name|string|EditableTextList|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|5|Y Spec|string|30|W Spec|string|100%-10|H Spec|string|100%-152|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Contents|list|1|string||class|CanvasTextList|25|Parent Canvas|1|Name|string|MsgBox|Var Category|null|Class Name|string|TextList|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|5|Y Spec|string|100%-117|W Spec|string|100%-10|H Spec|string|112|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Select One|null|Select Many|null|Checked|list|1|null|Contents|list|1|string||Initial Focus|null|

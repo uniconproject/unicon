@@ -26,7 +26,7 @@ deps:
 deps.out: ;
 
 unidoc: $(UFILES)
-	$(UNICON) -o unidoc $(UFILES)
+	$(UNICON) -o unidoc linkfiles.icn
 	$(CP) unidoc $(BIN)
 
 include deps.out

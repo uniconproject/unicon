@@ -811,9 +811,8 @@ int *ip;
       }
 #endif					/* ExecImages */
 
-#if NT
    /*
-    * if we didn't start with nticonx.exe or wiconx.exe, backup one
+    * if we didn't start with *iconx[.exe], backup one
     * so that our icode filename is argv[1].
     */
    {
@@ -827,37 +826,18 @@ int *ip;
       len++;
       }
 
+   if (len > 4 && !strcmp(tmp+len-4, ".exe")) {len-=4; tmp[len] = '\0'; }
+
    /*
     * if argv[0] is not a reference to our interpreter, take it as the
     * name of the icode file, and back up for it.
     */
-#if NT
-   if (!((len == 6 && !strcmp(tmp+len-6, "wiconx")) ||
-         (len > 6 && !strcmp(tmp+len-7, "\\wiconx")) ||
-         (len == 10 && !strcmp(tmp+len-10, "wiconx.exe")) ||
-         (len > 10 && !strcmp(tmp+len-11, "\\wiconx.exe")) ||
-
-         (len == 8 && !strcmp(tmp+len-8, "mnticonx")) ||
-         (len > 8 && !strcmp(tmp+len-9, "\\mnticonx")) ||
-         (len == 12 && !strcmp(tmp+len-12, "mnticonx.exe")) ||
-         (len > 12 && !strcmp(tmp+len-13, "\\mnticonx.exe")) ||
-
-         (len == 7 && !strcmp(tmp+len-7, "mwiconx")) ||
-         (len > 7 && !strcmp(tmp+len-8, "\\mwiconx")) ||
-         (len == 11 && !strcmp(tmp+len-11, "mwiconx.exe")) ||
-         (len > 11 && !strcmp(tmp+len-12, "\\mwiconx.exe")) ||
-
-         (len == 7 && !strcmp(tmp+len-7, "nticonx")) ||
-         (len > 7 && !strcmp(tmp+len-8, "\\nticonx")) ||
-         (len == 11 && !strcmp(tmp+len-11, "nticonx.exe")) ||
-         (len > 11 && !strcmp(tmp+len-12, "\\nticonx.exe")))) {
-#endif					/* NT */
+   if (!(len >= 5 && !strcmp(tmp+len-5, "iconx"))) {
       argv--;
       argc++;
       (*ip)--;
       }
    }
-#endif					/* NT */
 
 #ifdef MaxLevel
    maxilevel = 0;

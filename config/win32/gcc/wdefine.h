@@ -21,9 +21,8 @@
 
 #define MSDOS 1
 #define StandardC
-#define Double
 #define ZERODIVIDE
-#define QSortFncCast int (*)(const char *,const char *)
+#define QSortFncCast int (*)(const void *,const void *)
 
 /* #define Eve */
 #define PosixFns

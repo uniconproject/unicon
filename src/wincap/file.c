@@ -93,7 +93,6 @@ HDIB LoadDIB(LPSTR lpFileName)
    }
    else
    {
-      DIBError(ERR_FILENOTFOUND);
       SetCursor(LoadCursor(NULL, IDC_ARROW));
       return NULL;
    }

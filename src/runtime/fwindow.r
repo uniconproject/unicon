@@ -817,6 +817,7 @@ function{1} DrawLine(argv[argc])
          glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
+         redraw3D(w); /* workaround an apparent render/update bug */
          return f;
          }
      else 
@@ -894,6 +895,7 @@ function{1} DrawPoint(argv[argc])
          glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
+         redraw3D(w); /* workaround an apparent render/update bug */
          return f;
 	 }
       else 
@@ -970,6 +972,7 @@ function{1} DrawPolygon(argv[argc])
 	 glFlush();
          glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
+         redraw3D(w); /* workaround an apparent render/update bug */
          return f;
 	 }
       else 
@@ -1099,6 +1102,7 @@ function{1} DrawSegment(argv[argc])
 	 glFlush();
     	 glXSwapBuffers(w->window->display->display, w->window->win);
 	 if (v != v2) free(v);
+	 redraw3D(w);
 	 return f;
 	 }
        else

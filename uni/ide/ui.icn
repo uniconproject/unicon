@@ -252,10 +252,23 @@ $endif
       set_focus(CurrentEditBox())
    end
 
+# $define lpr "lpr -Plex3normal"
+$define lpr "enscript -b \" \" -1 -Plex3normal"
+
    #
    # Print Menu Item Method
    #
    method handle_print_menu_item(ev)
+      local f, L, line
+      L := CurrentEditBox().get_contents() | []
+      if f := open(lpr, "pw") then {
+	  every line := !L do {
+	      line := trim(line, '\^m')
+	      write(f, line)
+	  }
+	  close(f)
+      }
+      else
       MsgBox.set_contents(["Sorry, no printing yet."])
    end
    
@@ -344,8 +357,9 @@ $endif
    method handle_ivib_menu_item(ev)
       local L := []
       prompt_save()
-      if /CurrentTabItem().getfilename() then
-         CurrentTabItem().setfilename("untitled_ivibsession")
+      if /CurrentTabItem().getfilename() then {
+         CurrentTabItem().setfilename("untitled_ivibsession.icn")
+         }
       system("ivib " || CurrentTabItem().getfilename(), L) | write("system failed")
       MsgBox.set_contents(L)
       handle_openfile( , CurrentTabItem().getfilename())
@@ -585,6 +599,9 @@ $endif
             foundline := i
             foundcol := j
             goto_line(i)
+	    CurrentEditBox().cursor_x := j + *s
+	    CurrentEditBox().constrain_line()
+	    CurrentEditBox().refresh(1)
             return
          }
          i +:= 1
@@ -596,7 +613,8 @@ $endif
    # Find Menu Item Method
    #
    method handle_find_menu_item(ev)
-      if TextDialog("Enter string to seek: ",,xargs,60)=="Okay" then {
+      /findstr := ""
+      if TextDialog("Enter string to seek: ",,findstr,60)=="Okay" then {
          findstr := dialog_value[1]
          findstring(findstr)
          }

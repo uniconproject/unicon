@@ -141,7 +141,9 @@ class dialog : _Dialog(
    method handle_new_menu_item(ev)
       FileTabSet.new_tabitem()  
       CurrentEditBox().set_contents([""])
+      CurrentEditBox().set_attribs("font=" || \font)
       CurrentTabItem().setfilename(&null)
+      set_focus(CurrentEditBox())
    end
 
    #
@@ -214,6 +216,7 @@ $endif
       
       FileTabSet.new_tabitem()  
       CurrentEditBox().set_contents(L)
+      CurrentEditBox().set_attribs("font=" || \font)
 
       FileBrowser.addreplace(L, tab_label, 0)
       
@@ -648,12 +651,18 @@ $endif
    # Font Menu Item Method
    #
    method handle_font_menu_item(ev)
+   local c
       /font := Font()
       if font := fontdialog(font) then {
-         CurrentEditBox().set_attribs("font=" || font) | write("setattribs failed")
-         MsgBox.set_attribs("font=" || font) | write("setattribs failed")
-         CurrentEditBox().compute_and_redisplay()
-         MsgBox.compute_and_redisplay()
+         if MsgBox.set_attribs("font=" || font) then {
+	     MsgBox.compute_and_redisplay()
+	     every c := (!(CurrentTabItem().components)) do {
+		c.set_attribs("font=" || font)
+		c.compute_and_redisplay()
+		write("set font for ", image(c))
+	        }
+	    }
+	 else MsgBox.set_contents(["set font failed"])
          }
    end
 

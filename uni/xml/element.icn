@@ -1,5 +1,5 @@
 #
-# $Id: element.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+# $Id: element.icn,v 1.2 2004-04-18 14:22:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -11,7 +11,7 @@ package xml
 #
 # Represents an element in the document.
 #
-class Element : Node(name, attributes, empty)
+class Element : Node(name, attributes)
    #
    # Set the name of the tag
    #
@@ -78,6 +78,24 @@ class Element : Node(name, attributes, empty)
       every n := !children do
          if not(string(n)) & n.get_type() == "element" & (/s | n.get_name() == s) then
             suspend n
+   end
+
+   #
+   # Return the nth sub-element matching the given tag; if the tag is
+   # omitted just return the nth sub-element.
+   #
+   # @param n the index to look for; 1 being the first.
+   # @param s the name of the sub-element.
+   # @fail if there is no such element.
+   #
+   method get_nth_element(n, s)
+      local i, x
+      i := 1
+      every x := search_children(s) do {
+         if i = n then
+            return x
+         i +:= 1
+      }
    end
 
    #

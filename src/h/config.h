@@ -251,6 +251,10 @@
    #define ConsoleWindow 1
 #endif					/* PresentationManager */
 
+#if defined(HAVE_LIBX11) && !defined(NoGraphics)
+#define Graphics 1
+#endif
+
 #ifdef Graphics
    #ifndef NoXpmFormat
       #if UNIX

@@ -9,10 +9,7 @@
  *  the bucket chain.
  */
 
-void addmem(ps,pe,pl)
-union block **pl;
-struct b_set *ps;
-struct b_selem *pe;
+void addmem(struct b_set *ps,struct b_selem *pe,union block **pl)
    {
    ps->size++;
    if (*pl != NULL )
@@ -511,16 +508,13 @@ union block *bp;
    }
 
 /*
- * memb - sets res flag to 1 if x is a member of a set or table, or to 0 if not.
+ * memb - sets res flag to 1 if x is a member of a set or table, 0 if not.
  *  Returns a pointer to the word which points to the element, or which
  *  would point to it if it were there.
+ *  int *res is a pointer to integer result flag.
  */
 
-union block **memb(pb, x, hn, res)
-union block *pb;
-dptr x;
-register uword hn;
-int *res;				/* pointer to integer result flag */
+union block **memb(union block *pb, dptr x, uword hn, int *res)
    {
    struct b_set *ps;
    register union block **lp;

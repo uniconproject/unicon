@@ -605,17 +605,20 @@ void Mstartreading(struct MFile* mf)
 
 int Mclose(struct MFile* mf)
 {
-   /* Make sure the request is closed */
-   if (MFIN(mf, WRITING)) {
+  if (mf->state != CLOSED) { /* duh, skip this part if already closed */
+
+    /* Make sure the request is closed */
+    if (MFIN(mf, WRITING)) {
       Mstartreading(mf);
       }
-      
-   if (strcmp(mf->tp->uri.scheme, "pop") == 0) {
+    if (strcmp(mf->tp->uri.scheme, "pop") == 0) {
       Mpop_freelist(mf);
       }
 
-   tp_freeresp(mf->tp, mf->resp);
-   tp_free(mf->tp);
+    tp_freeresp(mf->tp, mf->resp);
+    tp_free(mf->tp);
+    }
+
    free(mf);
    return 1;
 }

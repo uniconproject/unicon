@@ -108,10 +108,70 @@ initial {
    it := ""
    cgi := table(0)
    line := ""
+
+   ct := getenv("CONTENT_TYPE")
+   cl := getenv("CONTENT_LENGTH")
+   if match("multipart/form-data;", ct) then {
+      ct ? {
+	 tab(find("boundary=") + 9)
+	 boundary := "--" || tab(0)
+         }
+   content := reads(&input, cl)
+   content ? {
+      while tab(find(boundary)) do {
+	  tab(find("\n")+1)
+	  while match("Content-") do {
+	      line := tab(find("\n"))
+	      move(1)
+	      line ? {
+		  s := tab(many(&letters++'-')) | stop("bogons")
+		  case s of {
+		  "Content-Disposition": {
+		      move (2)
+		      if ="form-data; " then {
+			  if ="name=" then {
+			      if delim := ="\"" then {
+				 nam := tab(find("\""))
+				 ="\""
+				 if nam == "file" then {
+				    ="; "
+				    if ="filename=" then {
+				       if delim := ="\"" then {
+					  filename := tab(find("\""))
+					  cgi["filename"] := filename
+					  }
+				       }
+				    }
+			         }
+			      }
+		           }
+		  }
+		  "Content-Type": {
+			}
+		  default: cgiEcho("eh? ", line)
+	      }
+	      }
+	  }
+	  #if it didn't match "Content-" its not header any more, skip a line
+	  tab(find("\n")+1)
+	  # then grab rest
+	  value := tab(find(boundary)) | stop("incomplete value")
+	  if value[-1] == "\n" then value[-1] := ""
+	  if value[-1] == "\r" then value[-1] := ""
+	  if \nam then cgi[\nam] := value
+	  if match(boundary || "--") then {
+	      break
+	      }
+	  else if match(boundary) then { # no terminating --
+	      next
+	      }
+      }
+  }
+  }
+else {
    if cgiMethGet() then
       line := getenv("QUERY_STRING")
    else line := reads(&input, getenv("CONTENT_LENGTH"))
-
    line ? {
       while put(html, tab(find("&"))) do {
 	 tab(many('&'))
@@ -136,6 +196,7 @@ initial {
       if member(cgi, k) then cgi[k] ||:= "," || data
       else cgi[k] := data
       }
+}
    return cgi
 end
 

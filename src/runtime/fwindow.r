@@ -3449,7 +3449,7 @@ function{1} DrawDisk(argv[argc])
 
 	 if (i+5 >= argc) {
 	    a1 = 0.0;
-	    MakeInt(0, &(rp->fields[6]));
+	    rp->fields[6] = zerodesc;
 	    }
 	 else {
 	    if (!cnv:C_double(argv[i+5],a1)) runerr(102, argv[i+5]);
@@ -3999,7 +3999,7 @@ function{1} Texcoord(argv[argc])
             glDisable(GL_TEXTURE_GEN_S);
          if (glIsEnabled(GL_TEXTURE_GEN_T))
             glDisable(GL_TEXTURE_GEN_T); 
-         MakeInt(0, &mode); 
+         mode = zerodesc;
          c_put(&f, &mode);
          wc->autogen = 0; 
          wc->numtexcoords = 0;
@@ -4024,7 +4024,7 @@ function{1} Texcoord(argv[argc])
 		  glEnable(GL_TEXTURE_GEN_S);
 	       if (!glIsEnabled(GL_TEXTURE_GEN_T))
 		  glEnable(GL_TEXTURE_GEN_T); 
-	       MakeInt(1, &mode); 
+	       mode = onedesc;
 	       c_put(&f, &mode);
 	       }
 	    else fail;
@@ -4035,7 +4035,7 @@ function{1} Texcoord(argv[argc])
 	       glDisable(GL_TEXTURE_GEN_S);
 	    if (glIsEnabled(GL_TEXTURE_GEN_T))
 	       glDisable(GL_TEXTURE_GEN_T); 
-	    MakeInt(0, &mode); 
+	    mode = zerodesc;
 	    c_put(&f, &mode);
 	    wc->autogen = 0; 
 	    wc->numtexcoords = 0;

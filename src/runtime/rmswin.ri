@@ -760,6 +760,28 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    case WM_LBUTTONUP:   case WM_RBUTTONUP:   case WM_MBUTTONUP:
       handle_mouse(wb,msg,wp,lp);
       return 0;
+   case WM_MOUSEWHEEL:
+      if (0 /* ws->inputmask & MouseWheelMask */) {
+         }
+      else {
+	 /* turn this into a pgup or pgdn */
+	 short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
+	 int i;
+
+         if (wp2 > 0) { /* page ups */
+	    while (wp2 > 0) {
+	       handle_keypress(wb, WM_KEYDOWN, VK_PRIOR, lp, 0);
+	       wp2 -= 120;
+               }
+            }
+         else { /* page downs */
+	    while (wp2 < 0) {
+	       handle_keypress(wb, msg, VK_NEXT, lp, 0);
+	       wp2 += 120;
+               }
+            }
+         }
+      return 0;
    case WM_KEYUP:
       if (ws->inputmask & KeyReleaseMask) handle_keypress(wb, msg, wp, lp, 0);
       return 0;
@@ -1354,7 +1376,7 @@ int on;
 
 HFONT findfont(char *family, int size, int flags, int ansi)
 {
-   int weight;
+   int charset, weight;
    char slant, spacing;
 
    if (size < 0) size = DEFAULTFONTSIZE;
@@ -1377,14 +1399,30 @@ HFONT findfont(char *family, int size, int flags, int ansi)
    else
       slant = 0;
 
+   if (flags & FONTFLAG_LATIN1)
+      charset = ANSI_CHARSET;
+   else if (flags & FONTFLAG_LATIN2)
+      charset = EASTEUROPE_CHARSET;
+   else if (flags & FONTFLAG_CYRILLIC)
+      charset = RUSSIAN_CHARSET;
+   else if (flags & FONTFLAG_ARABIC)
+      charset = ARABIC_CHARSET;
+   else if (flags & FONTFLAG_GREEK)
+      charset = GREEK_CHARSET;
+   else if (flags & FONTFLAG_HEBREW)
+      charset = HEBREW_CHARSET;
+   else if (flags & FONTFLAG_LATIN6)
+      charset = ANSI_CHARSET;
+   else
+      charset = (ansi && (MAXBYTESPERCHAR==1)) ? ANSI_CHARSET:DEFAULT_CHARSET;
+
    if (flags & FONTFLAG_PROPORTIONAL)
       spacing = VARIABLE_PITCH;
    else if (flags & FONTFLAG_MONO)
       spacing = FIXED_PITCH;
    else spacing = DEFAULT_PITCH;
 
-   return CreateFont(size, 0, 0, 0, weight, slant, 0, 0,
-		(ansi && (MAXBYTESPERCHAR==1)) ? ANSI_CHARSET:DEFAULT_CHARSET,
+   return CreateFont(size, 0, 0, 0, weight, slant, 0, 0, charset,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 		spacing, family);
 }

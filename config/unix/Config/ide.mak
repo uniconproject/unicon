@@ -5,18 +5,15 @@ include ../makedefs
 export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
 CFLAGS= -c -u
-SRC=ui.icn msg_dlg.icn
-OBJ=ui.u
+SRC=ui.icn main.icn
+OBJ=ui.u main.u
 
-ui: ui.u msg_dlg.u
-	$(UNICON) ui.u 
+ui: ui.u main.u
+	$(UNICON) ui.u main.u
 	$(CP) ui$(EXE) ../../bin
 
 ui.u: ui.icn
 	$(UNICON) $(CFLAGS) ui
-
-msg_dlg.u: msg_dlg.icn
-	$(UNICON) $(CFLAGS) msg_dlg
 
 clean:
 	$(RM) *.u uniclass.dir uniclass.pag 

@@ -1,4 +1,5 @@
 base = $(shell dirname `pwd`)
+export ICON_IPL:=$(shell dirname $(base))/ipl
 export IPATH:=$(base)/lib $(ICON_IPL)/lib
 
 all: libs testhtml testxml testpatterns testvalid testnotwf testinvalid globaldemo createdemo

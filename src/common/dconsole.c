@@ -98,16 +98,29 @@ dptr v;
    err_msg(n, v);
    }
 
-struct b_list *alclist(size, nslots)
-uword size;
+struct b_list *alclist(uword size, uword nslots)
    {
    register struct b_list *blk;
+   register struct b_lelem *lblk;
+   register word i;
+
+   if (!reserve(Blocks, (word)(sizeof(struct b_list) + sizeof (struct b_lelem)
+      + (nslots - 1) * sizeof(struct descrip)))) return NULL;
    AlcFixBlk(blk, b_list, T_List)
+   AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
    blk->id = list_ser++;
-   if ((blk->listhead = blk->listtail = alclstb(nslots, (word)0, size))==NULL)
-      return NULL;
-   blk->listhead->listprev = blk->listhead->listnext = blk;
+   blk->listhead = blk->listtail = (union block *)lblk;
+
+   lblk->nslots = nslots;
+   lblk->first = 0;
+   lblk->nused = size;
+   lblk->listprev = lblk->listnext = (union block *)blk;
+   /*
+    * Set all elements beyond size to &null.
+    */
+   for (i = size; i < nslots; i++)
+      lblk->lslots[i] = nulldesc;
    return blk;
    }
 

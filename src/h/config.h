@@ -254,8 +254,8 @@
 #ifdef Graphics
    #ifndef NoXpmFormat
       #if UNIX
-         #undef HaveXpmFormat
-         #define HaveXpmFormat
+         #undef HAVE_LIBXPM
+         #define HAVE_LIBXPM
       #endif				/* UNIX */
    #endif				/* NoXpmFormat */
 

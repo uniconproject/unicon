@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.10 2001-12-12 07:51:19 phliar Exp $
+ * $Id: rposix.r,v 1.11 2001-12-13 06:34:48 phliar Exp $
  */
 
 #ifdef PosixFns
@@ -752,6 +752,9 @@ FILE *sock_connect(char *fn, int is_udp)
    char *host = fname;
    static struct hostent he;
 
+   struct sockaddr_un saddr_un;
+   int pathbuf_len = sizeof(saddr_un.sun_path);
+
    memset(&saddr_in, 0, sizeof(saddr_in));
    strncpy(fname, fn, sizeof(fname));
    if ((p = strchr(fname, ':')) != 0) {
@@ -814,8 +817,6 @@ FILE *sock_connect(char *fn, int is_udp)
 #if NT
       return 0;
 #else
-      struct sockaddr_un saddr_un;
-      int pathbuf_len = sizeof(saddr_un.sun_path);
 #endif
       if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	 return 0;
@@ -852,6 +853,7 @@ int is_udp;
    int fd, s, len, fromlen;
    struct sockaddr *sa, from;
    struct sockaddr_in saddr_in;
+   struct sockaddr_un saddr_un;
 
    char hostname[MAXHOSTNAMELEN];
    struct hostent *hp;
@@ -923,7 +925,6 @@ int is_udp;
 #if NT
          return 0;
 #else
-         struct sockaddr_un saddr_un;
 #endif
 	 if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	    return 0;

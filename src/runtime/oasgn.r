@@ -18,7 +18,7 @@
    body {
       if (!is:null(curpstate->eventmask) &&
          Testb((word)ToAscii(E_Assign), curpstate->eventmask)) {
-            EVAsgn(&x);
+            EVVariable(&x, E_Assign);
 	    }
       }
 #endif					/* EventMon */

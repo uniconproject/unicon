@@ -250,11 +250,7 @@
 #endif					/* MaxAbrSize */
 
 #ifndef MStackSize
-   #ifdef MultiThread
-      #define MStackSize 20000		/* size of the main stack in words */
-   #else				/* MultiThread */
-      #define MStackSize 10000		/* size of the main stack in words */
-   #endif				/* MultiThread */
+      #define MStackSize 30000		/* size of the main stack in words */
 #endif					/* MStackSize */
 
 #ifndef StackSize

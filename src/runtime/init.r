@@ -9,7 +9,11 @@
 #if !COMPILER
 #include "../h/header.h"
 
+#if HAVE_LIBZ
+static int readhdr	(char *name, struct header *hdr);
+#else					/* HAVE_LIBZ */
 static	FILE	*readhdr	(char *name, struct header *hdr);
+#endif					/* HAVE_LIBZ */
 #endif					/* !COMPILER */
 
 #if SCCX_MX
@@ -240,14 +244,58 @@ extern int first_time;
 #endif					/* COMPILER */
 
 #if !COMPILER
+#if HAVE_LIBZ
+
+int fdgets(int fd, char *buf, size_t count) 
+{
+  int i;
+  char *temp;
+  temp=buf;
+  for (i=0;i<count;i++) {
+    if (read(fd,temp,1)==-1) {
+      return -1;
+    }
+    if (*temp==EOF)  /* end of the file */
+      break;
+    if (*temp=='\n') { /* new line */
+      i++;
+      break;
+    }
+    temp++;
+  }
+  buf[i]='\0';
+  return i;
+}
+
+
+int dgetc(int fd) {
+  int rv;
+  unsigned char c;
+  rv = read(fd,&c,1);
+  if (rv == -1)
+    return -1;
+  else if (rv == 0) return EOF;
+  else {
+    return c;
+    }
+}
+
+#endif					/* HAVE_LIBZ */
+
+
 /*
  * Open the icode file and read the header.
  * Used by icon_init() as well as MultiThread's loadicode()
  */
+#if HAVE_LIBZ
+static int readhdr(name,hdr)
+#else					/* HAVE_LIBZ */
 static FILE *readhdr(name,hdr)
+#endif					/* HAVE_LIBZ */
 char *name;
 struct header *hdr;
    {
+   int fdname = -1;
    FILE *fname = NULL;
    int n;
 
@@ -326,7 +374,13 @@ struct header *hdr;
 #if MSDOS || OS2
       fname = pathOpen(tname,ReadBinary);	/* try to find path */
 #else					/* MSDOS || OS2 */
+
+   #if HAVE_LIBZ
+      fdname = open(tname,O_RDONLY);
+   #else					/* HAVE_LIBZ */
       fname = fopen(tname, ReadBinary);
+   #endif					/* HAVE_LIBZ */
+
 #endif					/* MSDOS || OS2 */
 
 #if NT
@@ -347,20 +401,35 @@ struct header *hdr;
 
       }
 
+#if HAVE_LIBZ
+   if (fdname == -1)			/* try the name as given */
+#else					/* HAVE_LIBZ */
    if (fname == NULL)			/* try the name as given */
+#endif					/* HAVE_LIBZ */
 
 #if MSDOS || OS2
       fname = pathOpen(name, ReadBinary);
 #else					/* MSDOS || OS2 */
+
+   #if HAVE_LIBZ
+      fdname = open(name, O_RDONLY);
+   #else					/* HAVE_LIBZ */
       fname = fopen(name, ReadBinary);
+   #endif					/* HAVE_LIBZ */
+
 #endif					/* MSDOS || OS2 */
 
 #if MSDOS
       } /* end if (n >= 4 && !stricmp(".exe", name + n - 4)) */
 #endif					/* MSDOS */
 
+#if HAVE_LIBZ
+   if (fdname == -1)
+      return -1;
+#else					/* HAVE_LIBZ */
    if (fname == NULL)
       return NULL;
+#endif					/* HAVE_LIBZ */
 
    {
    static char errmsg[] = "can't read interpreter file header";
@@ -388,21 +457,38 @@ struct header *hdr;
    char buf[200];
 
    for (;;) {
+#if HAVE_LIBZ
+      if (fdgets(fdname, buf, sizeof(buf)-1) ==-1)
+	 error(name, errmsg);
+#else					/* HAVE_LIBZ */
       if (fgets(buf, sizeof buf-1, fname) == NULL)
 	 error(name, errmsg);
+#endif					/* HAVE_LIBZ */
+
 #if NT
       if (strncmp(buf, "rem [executable Icon binary follows]", 36) == 0)
 #else					/* NT */
       if (strncmp(buf, "[executable Icon binary follows]", 32) == 0)
 #endif					/* NT */
-	 break;
+         break;
       }
 
+#if HAVE_LIBZ
+   while ((n = dgetc(fdname)) != EOF && n != '\f')	/* read thru \f\n\0 */
+      ;
+   dgetc(fdname);
+   dgetc(fdname);
+#else					/* HAVE_LIBZ */
    while ((n = getc(fname)) != EOF && n != '\f')	/* read thru \f\n\0 */
       ;
    getc(fname);
    getc(fname);
+#endif					/* HAVE_LIBZ */
+
 #else					/* ShellHeader */
+#if HAVE_LIBZ
+deliberate syntax errror
+#endif					/* HAVE_LIBZ */
    if (fseek(fname, (long)MaxHeader, 0) == -1)
       error(name, errmsg);
 #endif					/* ShellHeader */
@@ -439,14 +525,23 @@ struct header *hdr;
    }
 #endif                                  /* MSDOS && !NT */
 
+#if HAVE_LIBZ
+   if (read(fdname,(char *)hdr, sizeof(*hdr)) != sizeof(*hdr))
+#else					/* HAVE_LIBZ */
    if (fread((char *)hdr, sizeof(char), sizeof(*hdr), fname) != sizeof(*hdr))
+#endif					/* HAVE_LIBZ  */
       error(name, errmsg);
    }
 
+#if HAVE_LIBZ
+   return fdname;
+#else					/* HAVE_LIBZ  */
    return fname;
+#endif					/* HAVE_LIBZ  */
    }
 #endif
 
+
 /*
  * init/icon_init - initialize memory and prepare for Icon execution.
  */
@@ -469,8 +564,9 @@ char *argv[];
 
    {
 #if !COMPILER
+   int fdname = -1;
    FILE *fname = NULL;
-   word cbread, longread();
+   word cbread, longread(), gzlongread();
 #endif					/* COMPILER */
 
 #if OS2
@@ -715,8 +811,15 @@ Deliberate Syntax Error
    if (use_resource)
 	memcpy(&hdr,icoderes,sizeof(hdr));
    else {
+
+#if HAVE_LIBZ
+       fdname = readhdr(name,&hdr);
+       if (fdname == -1) {
+#else					/* HAVE_LIBZ */
        fname = readhdr(name,&hdr);
        if (fname == NULL) {
+#endif					/* HAVE_LIBZ */
+
 #ifdef PresentationManager
 	   ConsoleFlags |= OutputToBuf;
 	   fprintf(stderr, "Cannot locate the icode file: %s.\n", name);
@@ -726,8 +829,13 @@ Deliberate Syntax Error
 #endif					/* PresentationManager */
        }
 #else					/* OS2 */
+#if HAVE_LIBZ
+   fdname = readhdr(name,&hdr);
+   if (fdname == -1) {
+#else					/* HAVE_LIBZ */
    fname = readhdr(name,&hdr);
    if (fname == NULL) {
+#endif					/* HAVE_LIBZ */
       error(name, "cannot open interpreter file");
 #endif					/* OS2 */
       }
@@ -857,9 +965,26 @@ Deliberate Syntax Error
 #if !COMPILER
 /*
  * Make sure the version number of the icode matches the interpreter version.
+ *
+ * check for hdr.config == IVersion followed by a Z!
+ *
+ * if version says to decompress, call gzdopen and read interpretable code
+ * using gzread, else... call fdopen and use following code pretty much as-is
  */
 
-   if (strcmp((char *)hdr.config,IVersion)) {
+#if HAVE_LIBZ
+if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
+   fname= gzdopen(fdname,"r");
+   }
+else {
+   fname= fdopen(fdname,"r");
+   }
+#endif					/* HAVE_LIBZ */
+
+   if (strncmp((char *)hdr.config,IVersion, strlen(IVersion)) ||
+       ((((char *)hdr.config)[strlen(IVersion)]) &&
+	strcmp(((char *)hdr.config)+strlen(IVersion), "Z"))
+       ) {
 #ifdef PresentationManager
       ConsoleFlags |= OutputToBuf;
       fprintf(stderr, "Icode version mismatch in \'%s\':\n", name);
@@ -878,6 +1003,10 @@ Deliberate Syntax Error
    /*
     * Read the interpretable code and data into memory.
     */
+
+#if HAVE_LIBZ
+ if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
+
 #if OS2
    if (use_resource) {
 	memcpy(code,icoderes+sizeof(hdr),hdr.hsize);
@@ -885,7 +1014,42 @@ Deliberate Syntax Error
 	if (modhandle) DosFreeModule(modhandle);
    }
    else {
-       if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
+       if ((cbread = gzlongread(code, sizeof(char), (long)hdr.hsize, fname)) !=
+	  hdr.hsize) {
+#ifdef PresentationManager
+	  ConsoleFlags |= OutputToBuf;
+	  fprintf(stderr, "Invalid icode file: %s.\n", name);
+	  fprintf(stderr,"Could only read %ld (of %ld) bytes of code.\n",
+		  (long)cbread, (long)hdr.hsize);
+	  error(NULL, NULL);
+#else					/* PresentationManager */
+	  fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
+	    (long)hdr.hsize,(long)cbread);
+	  error(name, "bad icode file");
+#endif					/* PresentationManager */
+	  }
+       gzclose(fname);
+       }
+#else					/* OS2 */
+   if ((cbread = gzlongread(code, sizeof(char), (long)hdr.hsize, fname)) !=
+      hdr.hsize) {
+      fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
+	(long)hdr.hsize,(long)cbread);
+      error(name, "bad icode file");
+      }
+   gzclose(fname);
+#endif					/* OS2 */
+  }
+  else  {        /* Don't need to decompress */
+
+#if OS2
+   if (use_resource) {
+	memcpy(code,icoderes+sizeof(hdr),hdr.hsize);
+	DosFreeResource(icoderes);
+	if (modhandle) DosFreeModule(modhandle);
+   }
+   else {
+      if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
 	  hdr.hsize) {
 #ifdef PresentationManager
 	  ConsoleFlags |= OutputToBuf;
@@ -900,7 +1064,7 @@ Deliberate Syntax Error
 #endif					/* PresentationManager */
 	  }
        fclose(fname);
-    }
+   }
 #else					/* OS2 */
    if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
       hdr.hsize) {
@@ -910,6 +1074,47 @@ Deliberate Syntax Error
       }
    fclose(fname);
 #endif					/* OS2 */
+}
+  
+#else					/* HAVE_LIBZ */
+
+#if OS2
+   if (use_resource) {
+	memcpy(code,icoderes+sizeof(hdr),hdr.hsize);
+	DosFreeResource(icoderes);
+	if (modhandle) DosFreeModule(modhandle);
+   }
+   else {
+      if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
+	  hdr.hsize) {
+#ifdef PresentationManager
+	  ConsoleFlags |= OutputToBuf;
+	  fprintf(stderr, "Invalid icode file: %s.\n", name);
+	  fprintf(stderr,"Could only read %ld (of %ld) bytes of code.\n",
+		  (long)cbread, (long)hdr.hsize);
+	  error(NULL, NULL);
+#else					/* PresentationManager */
+	  fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
+	    (long)hdr.hsize,(long)cbread);
+	  error(name, "bad icode file");
+#endif					/* PresentationManager */
+	  }
+       fclose(fname);
+   }
+#else					/* OS2 */
+   if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
+      hdr.hsize) {
+      fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
+	(long)hdr.hsize,(long)cbread);
+      error(name, "bad icode file");
+      }
+   fclose(fname);
+#endif					/* OS2 */
+
+#endif					/* HAVE_LIBZ */
+  
+/* this is the end of yonggang's compressed icode else-branch ! */
+
 
 #endif					/* !COMPILER */
 
@@ -1613,16 +1818,24 @@ C_integer bs, ss, stk;
    struct b_coexpr *coexp;
    struct progstate *pstate;
    struct header hdr;
+#if HAVE_LIBZ
+   int fdname;
+#endif					/* HAVE_LIBZ */
    FILE *fname = NULL;
    word cbread, longread();
 
    /*
     * open the icode file and read the header
     */
+#if HAVE_LIBZ
+   fdname = readhdr(name,&hdr);
+   if (fdname== -1)
+       return NULL;
+#else					/* HAVE_LIBZ */
    fname = readhdr(name,&hdr);
    if (fname == NULL)
       return NULL;
-
+#endif					/* HAVE_LIBZ */
    /*
     * Allocate memory for icode and the struct that describes it
     */
@@ -1792,8 +2005,12 @@ C_integer bs, ss, stk;
 
    /*
     * Make sure the version number of the icode matches the interpreter version
+    * The string must equal IVersion or IVersion || "Z".
     */
-   if (strcmp((char *)hdr.config,IVersion)) {
+   if (strncmp((char *)hdr.config,IVersion, strlen(IVersion)) ||
+       ((((char *)hdr.config)[strlen(IVersion)]) &&
+	strcmp(((char *)hdr.config)+strlen(IVersion), "Z"))
+       ) {
       fprintf(stderr,"icode version mismatch in %s\n", name);
       fprintf(stderr,"\ticode version: %s\n",(char *)hdr.config);
       fprintf(stderr,"\texpected version: %s\n",IVersion);
@@ -1803,6 +2020,20 @@ C_integer bs, ss, stk;
    /*
     * Read the interpretable code and data into memory.
     */
+
+#if HAVE_LIBZ
+ if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
+   fname= gzdopen(fdname,"r");
+   if ((cbread = gzlongread(pstate->Code, sizeof(char), (long)hdr.hsize, fname))
+       != hdr.hsize) {
+      fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
+	(long)hdr.hsize,(long)cbread);
+      error(name, "can't read interpreter code");
+      }
+   gzclose(fname);
+   }
+ else {       
+   fname= fdopen(fdname,"r");
    if ((cbread = longread(pstate->Code, sizeof(char), (long)hdr.hsize, fname))
        != hdr.hsize) {
       fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
@@ -1810,6 +2041,17 @@ C_integer bs, ss, stk;
       error(name, "can't read interpreter code");
       }
    fclose(fname);
+   }
+#else					/* HAVE_LIBZ */
+
+   if ((cbread = longread(pstate->Code, sizeof(char), (long)hdr.hsize, fname))
+       != hdr.hsize) {
+      fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
+	(long)hdr.hsize,(long)cbread);
+      error(name, "can't read interpreter code");
+      }
+   fclose(fname);
+#endif					/* HAVE_LIBZ */
 
    /*
     * Resolve references from icode to run-time system.

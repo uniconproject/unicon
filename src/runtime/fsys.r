@@ -358,6 +358,14 @@ function{1} close(f)
 #endif
 #endif					/* ReadDirectory */
 
+#if HAVE_LIBZ
+      if (BlkLoc(f)->file.status & Fs_Compress) {
+	 BlkLoc(f)->file.status = 0;
+	 if (gzclose((gzFile) fp)) fail;
+	 return C_integer 0;
+	 }
+#endif					/* HAVE_LIBZ */
+
 #ifdef ISQL
       if (BlkLoc(f)->file.status & Fs_ODBC) {
 	 BlkLoc(f)->file.status = 0;
@@ -714,6 +722,17 @@ Deliberate Syntax Error
 	       fail;
 #endif 					/* ISQL */
 
+            case 'z':
+	    case 'Z':
+
+#if HAVE_LIBZ      
+	       status |= Fs_Compress;
+
+               continue; 
+#else					/* HAVE_LIBZ */
+               fail; 
+#endif					/* HAVE_LIBZ */
+
 
 
 	    default:
@@ -982,6 +1001,15 @@ Deliberate Syntax Error
       }
       else
 #endif					/* DBM */
+
+#if HAVE_LIBZ
+      if (status & Fs_Compress) {
+         /*add new code here*/
+         f = (FILE *)gzopen(fnamestr, mode);
+         }
+      else 
+#endif					/* HAVE_LIBZ */
+
 
 #ifdef PosixFns
       {
@@ -1286,6 +1314,34 @@ function{0,1} read(f)
 #endif
 #endif					/* PosixFns */
 
+
+#if HAVE_LIBZ
+        /*
+	 * Read a line from a compressed file
+	 */
+	if (status & Fs_Compress) {
+            
+            if (gzeof(fp)) fail;
+
+            if (gzgets((gzFile)fp,sbuf,MaxReadStr+1) == Z_NULL) {
+	       runerr(214);
+               }
+
+	    slen = strlen(sbuf);
+
+            if (slen==MaxReadStr && sbuf[slen-1]!='\n') slen = -2;
+	    else if (sbuf[slen-1] == '\n') {
+               sbuf[slen-1] = '\0';
+               slen--;
+               }
+           
+	    }
+           
+	else 
+#endif					/* HAVE_LIBZ */
+
+
+
 #ifdef RecordIO
 	 if ((slen = (status & Fs_Record ? getrec(sbuf, MaxReadStr, fp) :
 					   getstrg(sbuf, MaxReadStr, &BlkLoc(f)->file)))
@@ -1508,6 +1564,21 @@ function{0,1} reads(f,i)
       Protect(StrLoc(s) = alcstr(NULL, i), runerr(0));
       StrLen(s) = 0;
 
+#if HAVE_LIBZ
+      /*
+       * Read characters from a compressed file
+       */
+      if (status & Fs_Compress) {
+	 if (gzeof(fp)) fail;
+	 slen = gzread((gzFile)fp,StrLoc(s),i);
+	 if (slen == 0)
+	    fail;
+	 else if (slen == -1)
+	    runerr(214);
+	 return string(slen, StrLoc(s));
+	 }
+#endif					/* HAVE_LIBZ */
+
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
@@ -1522,6 +1593,7 @@ function{0,1} reads(f,i)
 	 }
       else
 #endif					/* Graphics */
+
       tally = longread(StrLoc(s),sizeof(char),i,fp);
 
       if (tally == 0)
@@ -1693,6 +1765,18 @@ function{0,1} seek(f,o)
 	}
 #endif					/* Network */
 
+#if HAVE_LIBZ
+        if ( BlkLoc(f)->file.status & Fs_Compress) {
+            if (o<0)
+               fail;
+            else
+               if (gzseek(fd, o - 1, SEEK_SET)==-1)
+                   fail;
+               else
+                   return f;        
+             }
+#endif                                 /* HAVE_LIBZ */
+
       if (o > 0) {
 /* fseek returns a non-zero value on error for CSET2, not -1 */
 #if CSET2
@@ -1701,7 +1785,9 @@ function{0,1} seek(f,o)
 	 if (fseek(fd, o - 1, SEEK_SET) == -1)
 #endif					/* CSET2 */
 	    fail;
+
 	 }
+
       else {
 
 #if CSET2
@@ -1724,6 +1810,7 @@ function{0,1} seek(f,o)
 	 if (fseek(fd, o, SEEK_END) == -1)
 	    fail;
 #endif					/* CSET2 */
+
 	 }
       BlkLoc(f)->file.status &= ~(Fs_Reading | Fs_Writing);
       return f;
@@ -1883,6 +1970,21 @@ end
       wputc('\n',(wbp)f);
    else
 #endif					/* Graphics */
+
+
+#if HAVE_LIBZ
+   
+   if (status & Fs_Compress) {
+     
+      if (gzputc((gzFile)f,'\n')==-1) {
+          fflush(stdout);
+          runerr(214);
+          }
+      }
+   else
+#endif					/* HAVE_LIBZ */
+
+
 #ifdef RecordIO
       if (!(status & Fs_Record)) {
 #endif					/* RecordIO */
@@ -1941,9 +2043,26 @@ end
 #ifdef PosixFns
       if (!(status & Fs_Socket)) {
 #endif					/* PosixFns */
-      if (ferror(f))
-	 runerr(214);
-      fflush(f);
+
+#if HAVE_LIBZ
+      if (status & Fs_Compress) {
+
+       /*if (ferror(f))
+	    runerr(214);
+         gzflush(f, Z_SYNC_FLUSH);  */
+         }
+      else{
+         if (ferror(f))
+	    runerr(214);
+         fflush(f);
+      }
+#else					/* HAVE_LIBZ */
+         if (ferror(f))
+	    runerr(214);
+         fflush(f);
+      
+#endif					/* HAVE_LIBZ */
+
 #ifdef PosixFns
       }
 #endif					/* PosixFns */
@@ -2072,6 +2191,20 @@ function {1} name(x[nargs])
 			  }
 		     else {
 #endif					/* Graphics */
+
+
+#if HAVE_LIBZ
+                     if (status & Fs_Compress) {
+                       
+			if (gzputc(f,'\n')==-1)
+                            runerr(214);
+/*			gzflush(f,4); */
+			  }
+		     else {
+                          }
+#endif					/* HAVE_LIBZ */
+
+
 #ifdef RecordIO
 			if (status & Fs_Record)
 			   flushrec(f);
@@ -2174,6 +2307,17 @@ function {1} name(x[nargs])
 		     wputstr((wbp)f, StrLoc(t), StrLen(t));
 		  else
 #endif					/* Graphics */
+
+
+#if HAVE_LIBZ
+	          if (status & Fs_Compress){
+                     if (gzputs(f, StrLoc(t))==-1) 
+			runerr(214);
+                     }
+		  else
+#endif					/* HAVE_LIBZ */
+
+
 #ifdef RecordIO
 		     if ((status & Fs_Record ? putrec(f, &t) :
 					     putstr(f, &t)) == Failed)

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.21 2002-11-28 11:49:20 jeffery Exp $
+ * $Id: fxposix.ri,v 1.22 2003-05-24 11:32:56 jeffery Exp $
  */
 
 /*
@@ -544,6 +544,7 @@ function{0,1} truncate(f, l)
 
 	    IntVal(amperErrno) = 0;
             cnv:C_string(f, s);
+
 #if NT
 	    if (((fd = _open(s, _O_RDWR | _O_CREAT, _S_IWRITE)) == -1) ||
 		(_chsize(fd, l) != 0)) {
@@ -567,6 +568,12 @@ function{0,1} truncate(f, l)
 	 body {
 	    int fd;
 	    IntVal(amperErrno) = 0;
+
+#if HAVE_LIBZ 
+            if (BlkLoc(f)->file.status & Fs_Compress) {
+               fail;
+               }
+#endif					/* HAVE_LIBZ */
 
 	    if ((fd = get_fd(f, 0)) < 0)
 	       runerr(174, f);
@@ -600,6 +607,13 @@ function{0,1} flock(f, cmd)
       int option = 0;
       int fd, i=0;
       long flength;
+
+#if HAVE_LIBZ 
+      if (BlkLoc(f)->file.status & Fs_Compress) {
+         fail;
+         }
+#endif					/* HAVE_LIBZ */
+
 #if NT
       while (c[i])
 	 switch (c[i++]) {
@@ -672,6 +686,13 @@ function{0,1} fcntl(f, action, options)
       int fd, cmd, nfields, buflen;
       tended char *c;
       static dptr constr;
+
+#if HAVE_LIBZ 
+      if (BlkLoc(f)->file.status & Fs_Compress) {
+         fail;
+         }
+#endif					/* HAVE_LIBZ */
+
 #if NT
       fail;
 #else					/* NT */
@@ -870,6 +891,13 @@ function{0,1} ioctl(f, action, options)
       IntVal(amperErrno) = 0;
       if ((fd = get_fd(f, 0)) < 0)
 	 runerr(174, f);
+
+#if HAVE_LIBZ 
+      if (BlkLoc(f)->file.status & Fs_Compress) {
+         fail;
+         }
+#endif					/* HAVE_LIBZ */
+
 #if NT
       fail;
 #else					/* NT */
@@ -1823,6 +1851,12 @@ function{0,1} stat(f)
 	    static dptr constr;
 	    int nfields, fd;
 
+#if HAVE_LIBZ 
+            if (BlkLoc(f)->file.status & Fs_Compress) {
+               fail;
+               }
+#endif					/* HAVE_LIBZ */
+
 	    IntVal(amperErrno) = 0;
 	    if ((fd = get_fd(f, 0)) < 0)
 	       runerr(174, f);
@@ -2065,6 +2099,7 @@ function{0,1} select(files[nargs])
        * Unicon select() repeats until a timeout or real result.
        * GUI activity requires periodic service while select() waits.
        */
+
       do {
 	 n = 0;
 	 FD_ZERO(&fds);			/* Set the fd's in the set */
@@ -2155,7 +2190,14 @@ function{0,1} select(files[nargs])
 
 
       for(k=0;k<nargs;k++) {
-	 if (is:file(files[k])){
+	 if (is:file(files[k])) {
+
+#if HAVE_LIBZ
+           if (BlkLoc(files[k])->file.status & Fs_Compress) { 
+               fail;
+               }
+#endif					/* HAVE_LIBZ */
+
 	    post_if_ready(&d, files+k, &fds);
 	    }
          else if (is:integer(files[k])) {/* timeout */}
@@ -2168,7 +2210,14 @@ function{0,1} select(files[nargs])
 	          if (j >= ep->lelem.nslots)
 	             j -= ep->lelem.nslots;
 	          f = &ep->lelem.lslots[j];
-		  post_if_ready(&d, f, &fds);
+		  if (is:file(*f)) {
+#if HAVE_LIBZ
+		     if (BlkLoc(files[k])->file.status & Fs_Compress) { 
+	                fail;
+	                }
+#endif					/* HAVE_LIBZ */
+		     post_if_ready(&d, f, &fds);
+		     }
 	       }
 	    }
           }

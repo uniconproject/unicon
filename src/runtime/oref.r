@@ -169,6 +169,23 @@ operator{*} ! bang(underef x -> dx)
                   else
 #endif					/* Graphics */
 
+#if HAVE_LIBZ
+                  if (status & Fs_Compress) {
+	              if (gzeof(fd)) fail;
+                      if (gzgets((gzFile)fd,sbuf,MaxCvtLen+1) == Z_NULL) {
+	                  runerr(214);
+                         }
+	             slen = strlen(sbuf);
+                     if (slen==MaxCvtLen && sbuf[slen-1]!='\n') slen = -2;
+                     else if (sbuf[slen-1] == '\n') {
+                        sbuf[slen-1] = '\0';
+                        slen--;
+                        }
+	             }
+                  else
+#endif					/* HAVE_LIBZ */
+
+
 #ifdef ReadDirectory
 #if !NT
           	  if (status & Fs_Directory) {

@@ -372,6 +372,55 @@ long len;
    return tally;
    }
 
+
+#if HAVE_LIBZ
+/*
+ * Read a long string in shorter parts from a comressed file. 
+ * (Standard read may not handle long strings.)
+ */
+word gzlongread(s,width,len,fd)
+FILE *fd;
+int width;
+char *s;
+long len;
+{
+   tended char *ts = s;
+   long tally = 0;
+   long n = 0;
+
+#if NT
+   /*
+    * Under NT/MSVC++, ftell() used in Icon where() returns bad answers
+    * after a wlongread().  We work around it here by fseeking after fread.
+    */
+   long pos = ftell(fd);
+#endif					/* NT */
+
+#ifdef XWindows
+   if (isatty(fileno(fd))) wflushall();
+#endif					/* XWindows */
+
+   while (len > 0) {
+      n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
+      if (n <= 0) {
+#if NT
+         gzseek(fd, pos + tally, SEEK_SET);
+#endif					/* NT */
+         return tally;
+	 }
+      tally += n;
+      ts += n;
+      len -= n;
+      }
+#if NT
+   gzseek(fd, pos + tally, SEEK_SET);
+#endif					/* NT */
+   return tally;
+   }
+
+#endif					/* HAVE_LIBZ */
+
+
 #ifdef RecordIO
 /*
  * Write string referenced by descriptor d, avoiding a record break.

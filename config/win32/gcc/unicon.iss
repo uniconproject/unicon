@@ -8,8 +8,8 @@ AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
 AppUpdatesURL=http://unicon.sourceforge.net
-DefaultDirName={pf}\Windows Unicon
-DefaultGroupName=Windows Unicon
+DefaultDirName={pf}\Unicon
+DefaultGroupName=Unicon
 AllowNoIcons=yes
 AlwaysCreateUninstallIcon=yes
 ; uncomment the following line if you want your installation to run on NT 3.51 too.

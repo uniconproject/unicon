@@ -1,5 +1,5 @@
 #
-# $Id: attribtab.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: attribtab.icn,v 1.2 2004-08-15 16:14:21 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -26,7 +26,7 @@ class AttribTab : TabItem(
       # Add a new value to the attributes table.
       #
       put(contents, ["Edit", "me"])
-      tbl.set_contents(contents)
+      tbl.contents_changed()
       tbl.goto_pos(*contents, 0)
       tbl.set_selections([*contents])
       tbl.set_cursor(*contents)
@@ -78,7 +78,7 @@ class AttribTab : TabItem(
       #
       i := tbl.get_selections()[1]
       contents[i] := [attrib.get_contents(), value.get_contents()]
-      tbl.set_contents(contents)
+      tbl.contents_changed()
       tbl.clear_selections()
       attrib.set_is_shaded()
       value.set_is_shaded()

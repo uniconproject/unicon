@@ -1,5 +1,5 @@
 #
-# $Id: selectablescrollarea.icn,v 1.7 2004-05-16 09:21:39 rparlett Exp $
+# $Id: selectablescrollarea.icn,v 1.8 2004-08-15 16:14:21 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -42,16 +42,23 @@ class SelectableScrollArea : LineBasedScrollArea(
    #
    method set_contents(x)
       self.contents := x
+      contents_changed()
+   end
+
+   #
+   # Call this method if the contents list, previously
+   # set with {set_contents()}, has changed.
+   #
+   method contents_changed()
       #
       # Expand/contract list if necessary
       #
-      while *self.checked < *x do put(self.checked)
-      while *self.checked > *x do pull(self.checked)
+      while *self.checked < *self.contents do put(self.checked)
+      while *self.checked > *self.contents do pull(self.checked)
 
       constrain_cursor()
 
       compute_and_invalidate()
-      return x
    end
 
    #

@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.7 2004-05-16 09:21:39 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.8 2004-08-15 16:14:20 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -47,8 +47,21 @@ class EditableTextList : LineBasedScrollArea(
       return self.contents
    end
 
+   #
+   # Set the contents of the component.
+   #
+   # @param x the contents, as a list of strings
+   #
    method set_contents(x)
       self.contents := x
+      contents_changed()
+   end
+
+   #
+   # Call this method if the contents list, previously
+   # set with {set_contents()}, has changed.
+   #
+   method contents_changed()
       if *self.contents = 0 then
          #
          # Must have somewhere for the cursor to go.
@@ -62,7 +75,6 @@ class EditableTextList : LineBasedScrollArea(
          compute_and_invalidate()
       }
       undo_manager.clear()
-      return x
    end
 
    #

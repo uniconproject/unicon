@@ -33,10 +33,10 @@ link graphics
 link io
 $ifdef _UNIX
 $define PATHSEP "/"
-$else
+$else # implies Windows for now
 $define PATHSEP "\\"
 $endif
-global current_file, targs, browser, docpath
+global current_file, targs, browser, docpath, xargs, icodename, wiconlog
 global tmp
 class dialog : _Dialog(new_menu_item, openfile, print_menu_item, save_menu_item, saveas_menu_item, ivib_menu_item, exit_menu_item, copy_menu_item, cut_menu_item, paste_menu_item,EditBox,MsgBox,find_menu_item,replace_menu_item,goto_menu_item,matchparen_menu_item,undo_menu_item,editconfig_menu_item,font_menu_item,saveoptions_menu_item,make_exec_menu_item,compile_menu_item,compile_options_menu_item,run_menu_item,run_arg_menu_item,project_add_menu_item,help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,help_ivib,help_iconfaq,help_uniconfaq,browse_local,browse_net,help_icon_reference,help_unicon_reference)
 ###############################################################################
@@ -244,9 +244,8 @@ end
 
 
 method handle_compile_menu_item(ev)
-local command, str, compile_options, wiconlog, log1
+local command, str, compile_options, log1
 local lst
-   wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
    lst := []
 
    if /current_file then { # current file null
@@ -255,15 +254,14 @@ local lst
       }
    /targs := ""
  
-   system(
 $ifdef _UNIX
-   "unicon" ||
+   system("unicon -c -quiet " || " " || targs || " " ||
+	  comp1file(current_file) || " &> " || wiconlog, lst, 1)
 $else
-   "wunicon" ||
-$endif
-      " -c -quiet -log " || wiconlog || " " || targs || " " ||
+   system("wunicon -c -quiet -log " || wiconlog || " " || targs || " " ||
 	  comp1file(current_file), lst, 1)
- 
+$endif
+
    showanyerror(wiconlog, lst)
 end
 
@@ -379,10 +377,9 @@ end
    end
 
    method complink()
-   local x, arglist, lst, logf, wiconlog, icodename, i, s
+   local x, arglist, lst, logf, i, s
    lst := []
    /targs := ""
-   wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
    if /project then {
       arglist := comp1file(current_file)
       icodename := current_file
@@ -401,7 +398,13 @@ end
 	 i +:= 1
 	 }
       if find(".icn", arglist) then {
-	 system("wunicon -quiet -log " || wiconlog || " -c " || targs || " " || arglist, lst, 1)
+$ifdef _UNIX
+	 system("unicon -quiet " || " -c " || targs ||
+		" " || arglist || " &> " || wiconlog, lst, 1)
+$else
+	 system("wunicon -quiet -log " || wiconlog || " -c " || targs ||
+		" " || arglist, lst, 1)
+$endif
          showanyerror(wiconlog, lst)
      }
 
@@ -420,7 +423,11 @@ end
 	 }
       }
 
+$ifdef _UNIX
+      system("unicon -quiet " || " -o " || quotes(icodename) || " " || targs || " " || arglist || " &> "|| wiconlog, lst, 1)
+$else
       system("wunicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, lst, 1)
+$endif
       showanyerror(wiconlog, lst)
 end
 
@@ -450,9 +457,32 @@ end
    end
 
    method handle_run_menu_item(ev)
+   local L
+   L := []
+   if /project then {
+      icodename := current_file
+      icodename[find(".icn", map(icodename)) : 0] := ""
+      }
+   else {
+      }
+   if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP || icodename
+$ifdef _UNIX
+      if system(icodename || " " || xargs || " &> " || wiconlog, L) then {
+$else
+      if system(icodename || " " || xargs, L) then {# hope WICONLOG does trick?
+$endif
+	 showanyerror(wiconlog, L, 1)
+	 }
+      else {
+	 s := "system(" || icodename || " " || xargs ||
+		") failed.  Is the PATH setup to run this?"
+         showanyerror(s, [], 0)
+	 }
    end
 
    method handle_run_arg_menu_item(ev)
+      if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
+         xargs := dialog_value[1]
    end
 
    method handle_project_add_menu_item(ev)
@@ -712,6 +742,8 @@ procedure set_docpath()
 end
 
 procedure ui_initialize()
+   wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
+   xargs := ""
 $ifdef _UNIX
     browser := getenv("BROWSER") | "netscape"
     # should check to see if browser is on the path

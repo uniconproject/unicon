@@ -15,7 +15,7 @@
 
 /* use gcc to compile generated code */
 #define CComp "gcc"
-#define COpts "-I/usr/openwin/include -ldl"
+#define COpts "-I/usr/openwin/include -ldl -lm -lXpm -lgdbm -ltp -lsocket -lnsl"
 
 #define NEED_UTIME
 

@@ -951,7 +951,7 @@ int n_cbuf;
    fprintf(inclfile, "      struct tend_desc *previous;\n");
    fprintf(inclfile, "      int num;\n");
    fprintf(inclfile, "      struct descrip d[%d];\n", MinOne(ntend));
-   fprintf(inclfile, "      } tend;\n");
+   fprintf(inclfile, "      } t;\n");
 
    if (line_info) {       /* must be true if debug_info is true */
       fprintf(inclfile, "   struct debug debug;\n");

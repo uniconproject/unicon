@@ -4974,13 +4974,11 @@ struct argtyps *argtyps;
  *  If the type consists of a single named variable, return its symbol
  *  table entry through the parameter "single".
  */
-int varsubtyp(typ, single)
 #ifdef OptimizeType
-struct typinfo *typ;
+int varsubtyp(struct typinfo *typ, struct lentry **single)
 #else					/* OptimizeType */
-unsigned int *typ;
+int varsubtyp(unsigned int *typ, struct lentry **single)
 #endif					/* OptimizeType */
-struct lentry **single;
    {
    struct store *stv_stor;
    int subtypes;

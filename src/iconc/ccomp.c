@@ -141,23 +141,30 @@ char *exename;
  *  Construct the command line to do the compilation.
  */
 
-#if PORT
-   /* something is needed */
-Deliberate Syntax Error
-#endif						/* PORT */
-
-#if AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || VM || OS2
+#if PORT || AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || VM || OS2
    /* something may be needed */
 Deliberate Syntax Error
-#endif						/* AMIGA || ... */
+#endif						/* PORT || AMIGA || ... */
 
 #if UNIX
 
-#ifdef Graphics
    lib_sz += strlen(" -L") +
-             strlen(refpath) +
-	     strlen(" -lXpm ");
+             strlen(refpath);
+
+#ifdef Messaging
+   lib_sz += strlen(" -ltp ");
+   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/libtp");
+#endif
+
+#ifdef Dbm
+   lib_sz += strlen(" -lgdbm ");
+   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/gdbm");
+#endif
+
+#ifdef Graphics
+   lib_sz += strlen(" -lXpm ");
    lib_sz += strlen(ICONC_XLIB);
+   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
 #endif						/* Graphics */
 
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
@@ -166,6 +173,21 @@ Deliberate Syntax Error
    s = buf + cmd_sz;
    *s++ = ' ';
    strcpy(s, c_opts);
+#ifdef Messaging
+   strcat(s, " -I");
+   strcat(s, refpath);
+   strcat(s, "../src/libtp");
+#endif
+#ifdef Dbm
+   strcat(s, " -I");
+   strcat(s, refpath);
+   strcat(s, "../src/gdbm");
+#endif
+#ifdef Graphics
+   strcat(s, " -I");
+   strcat(s, refpath);
+   strcat(s, "../src/xpm");
+#endif
    s += opt_sz;
    *s++ = ' ';
    strcpy(s, ExeFlag);
@@ -187,13 +209,22 @@ Deliberate Syntax Error
       s += l->nm_sz;
       }
 
-#ifdef Graphics
    strcpy(s," -L");
    strcat(s, refpath);
+
+#ifdef Messaging
+   strcat(s, " -ltp ");
+#endif
+
+#ifdef Dbm
+   strcat(s, " -lgdbm ");
+#endif
+
+#ifdef Graphics
    strcat(s," -lXpm ");
    strcat(s, ICONC_XLIB);
-   s += strlen(s);
 #endif						/* Graphics */
+   s += strlen(s);
 
    strcpy(s, LinkLibs);
 

@@ -71,9 +71,9 @@ canvashlineui.u  canvasline.u  canvaslinedialog.u  canvasvlineui.u
 
 .PHONY: all clean deps
 
-all: icons ivib
+all: ivib
 
-clean:	cleanicons
+clean:
 	$(RM) ivib *.u uniclass.dir uniclass.pag 
 
 deps:
@@ -88,7 +88,7 @@ ivib: $(UFILES)
 	$(UNICON) -o ivib $(UFILES)
 	$(CP) ivib $(BIN)/ivib-v2
 
-.PHONY: icons
+.PHONY: icons cleanicons
 icons: $(ICONS)
 
 cleanicons:

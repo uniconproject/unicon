@@ -5,17 +5,17 @@ UFILES = filearg.u fileargclass.u main.u symbolinfo.u symboltable.u util.u
 
 .PHONY: all clean deps
 
-all: unidep
+all: unidep$(EXE)
 
 clean:
-	$(RM) unidep *.u uniclass.dir uniclass.pag 
+	$(RM) unidep$(EXE) *.u uniclass.dir uniclass.pag 
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb
 
 deps.out: ;
 
-unidep: $(UFILES)
+unidep$(EXE): $(UFILES)
 	$(UNICON) -o unidep $(UFILES)
 	$(CP) unidep$(EXE) $(BIN)
 

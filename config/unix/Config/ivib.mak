@@ -62,7 +62,7 @@ ICONS=$(ICONDIR)/icn1.ico \
 #
 # Linking
 #
-ivib: $(UFILES)
+ivib$(EXE): $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
 	$(CP) ivib$(EXE) $(BIN)
 	@echo Linking complete.
@@ -110,4 +110,4 @@ encode.u : encode.icn
 	$(UNICON) -c $?
 
 Clean:
-	$(RM) -f *.u uniclass.dir uniclass.pag
+	$(RM) -f ivib$(EXE) *.u uniclass.dir uniclass.pag

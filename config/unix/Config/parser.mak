@@ -11,7 +11,7 @@ UFILES=classinfo.u databaseinfo.u packageinfo.u parsedclass.u \
 	parsedrecord.u parser.u preproce.u unigram.u \
 	unilex.u ytab_h.u
 
-PROGS=showtree showdb
+PROGS=showtree$(EXE) showdb$(EXE)
 
 all: $(UFILES) $(PROGS)
 

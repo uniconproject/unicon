@@ -5,17 +5,17 @@ UFILES = class.u  classvar.u  comment.u  groffoutputter.u  htmloutputter.u  main
 
 .PHONY: all clean deps
 
-all: unidoc
+all: unidoc$(EXE)
 
 clean:
-	$(RM) *.u uniclass.dir uniclass.pag unidoc
+	$(RM) *.u uniclass.dir uniclass.pag unidoc$(EXE)
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb
 
 deps.out: ;
 
-unidoc: $(UFILES)
+unidoc$(EXE): $(UFILES)
 	$(UNICON) -o unidoc linkfiles.icn
 	$(CP) unidoc$(EXE) $(BIN)
 

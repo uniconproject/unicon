@@ -1,9 +1,13 @@
 BASE=../../..
 include ../../makedefs
 
-PROGS=lines editor multi tickdemo explorer secondtest menudemo demo palette tabs testdialog toolbar \
-      listtest texttest tabletest editlisttest dndtest sliders spinners getweb fillpanel \
-      filedialogtest sieve ticks leak textsize
+PROGS=lines$(EXE) editor$(EXE) multi$(EXE) tickdemo$(EXE) explorer$(EXE) \
+	secondtest$(EXE) menudemo$(EXE) demo$(EXE) palette$(EXE) tabs$(EXE) \
+	testdialog$(EXE) toolbar$(EXE) listtest$(EXE) texttest$(EXE) tabletest$(EXE) \
+	editlisttest$(EXE) dndtest$(EXE) sliders$(EXE) spinners$(EXE) getweb$(EXE) \
+	fillpanel$(EXE) filedialogtest$(EXE) sieve$(EXE) ticks$(EXE) leak$(EXE) \
+	textsize$(EXE)
+
 all: $(PROGS)
 
 clean: 

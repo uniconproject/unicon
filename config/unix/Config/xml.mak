@@ -11,8 +11,8 @@ UFILES=attlist.u attributedef.u canonicalxmlformatter.u cdata.u \
 	parser.u processinginstruction.u resolver.u xmldecl.u xmldocument.u \
 	xmlelement.u xmlformatter.u xmlparser.u
 
-PROGS=testhtml testxml testpatterns testvalid \
-	testnotwf testinvalid globaldemo createdemo
+PROGS=testhtml$(EXE) testxml$(EXE) testpatterns$(EXE) testvalid$(EXE) \
+	testnotwf$(EXE) testinvalid$(EXE) globaldemo$(EXE) createdemo$(EXE)
 
 all: $(UFILES) $(PROGS)
 

@@ -66,17 +66,17 @@ canvashlineui.u  canvasline.u  canvaslinedialog.u  canvasvlineui.u
 
 .PHONY: all clean deps
 
-all: ivib
+all: ivib$(EXE)
 
 clean:
-	$(RM) ivib *.u uniclass.dir uniclass.pag 
+	$(RM) ivib$(EXE) *.u uniclass.dir uniclass.pag 
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb
 
 deps.out: ;
 
-ivib: $(UFILES)
+ivib$(EXE): $(UFILES)
 	$(UNICON) -o ivib linkfiles.icn
 	$(CP) ivib$(EXE) $(BIN)/ivib-v2$(EXE)
 

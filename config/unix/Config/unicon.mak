@@ -6,18 +6,19 @@ UNICON=../unicon/unicon
 ARC=zip
 ARCEXT=zip
 IYACC=../iyacc/iyacc
-ifeq ("$(OSTYPE)", "cygwin")
-	EXE=.exe
-else
+ifeq ($(findstring CYGWIN, $(shell uname)),)
 	EXE=
+else
+	EXE=.exe
 endif
+export PATH:=$(BIN):$(PATH)
 
-unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
+unicon$(EXE): unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
 	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
-wunicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
+wunicon$(EXE): unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) -G -o wunicon.exe unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
 	$(CP) wunicon$(EXE) $(BIN)
 
@@ -71,4 +72,4 @@ unix.u: unix.icn
 #
 
 Clean:
-	$(RM) unicon uniclass.dir uniclass.pag
+	$(RM) unicon$(EXE) uniclass.dir uniclass.pag

@@ -1,12 +1,12 @@
 BASE=../..
 include ../makedefs
 
-all:	ivibmigrate
+all:	ivibmigrate$(EXE)
 
 clean:	
-	$(RM) ivibmigrate \
+	$(RM) ivibmigrate$(EXE) \
               *.u uniclass.dir uniclass.pag 
 
-ivibmigrate : ivibmigrate.icn
+ivibmigrate$(EXE) : ivibmigrate.icn
 	$(UNICON) ivibmigrate.icn
 	$(CP) ivibmigrate$(EXE) $(BIN)

@@ -124,10 +124,6 @@
 
    Feature(1, "_SYSTEM_FUNCTION", "system function")
 
-#ifdef Network
-   Feature(1, "_NETWORK", "network")
-#endif					/* Network */
-
 #ifdef Messaging
    Feature(1, "_MESSAGING", "messaging")
 #endif                                  /* Messaging */
@@ -162,3 +158,15 @@
 #ifdef DosFncs
    Feature(1, "_DOS_FUNCTIONS", "MS-DOS extensions")
 #endif					/* DosFncs */
+
+#if HAVE_LIBZ
+   Feature(1, "_LIBZ_COMPRESSION", "libz file compression")
+#endif					/* HAVE_LIBZ */
+
+#if HAVE_LIBJEG
+   Feature(1, "_JPEG", "JPEG images")
+#endif					/* HAVE_LIBJPEG */
+
+#ifdef ISQL
+   Feature(1, "_SQL", "SQL via ODBC")
+#endif					/* ISQL */

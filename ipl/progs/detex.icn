@@ -123,10 +123,13 @@ procedure deline(s)
 	command := tab(many(&letters))
 	case command of {
 	    "item": {
-		move(1) # past [
-		body := tab(upto(']'))
-		move(1)
-		return body || tab(0)
+		if ="[" then { # if we are a {description}
+		    body := tab(upto(']'))
+		    move(1)
+		    return body || tab(0)
+		}
+		else
+		    return tab(0)
 	    }
 	    "bibitem": {
 		body := tab(upto(']')+1)
@@ -162,7 +165,7 @@ procedure debrace(s)
 
     s ||:= " "
 
-    while i := find("{\\em "|"{\\tt ",s) do {
+    while i := find("{\\"||("em"|"tt"|"sf"|"bf")||" ",s) do {
 	j := &null
 	every j := bal(&cset,'{','}',s,i,0) \ 2
 	if \j then {

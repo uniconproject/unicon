@@ -67,6 +67,7 @@ procedure main ()
    write(where(f))
    write(image(reads(f,1)))
    write(where(f))
+   close(f)
 
 # test ord() and char(), and print messages if wrong results
 
@@ -89,8 +90,21 @@ procedure main ()
 
 #  test getenv()
 
-   write(getenv("HOME") | write("getenv failed"))
-   write(getenv("foo") | write("getenv failed"))
+   write("getenv $HOME ", if getenv("HOME") then "succeeded" else "failed")
+   write("getenv $FOOBAR ", if getenv("FOOBAR") then "succeeded" else "failed")
+
+#  test open(directory)
+
+   f := open(".") | stop("can't open `.'")
+   fset := set()
+   # try three kinds of reading in rotation
+   while insert(fset, read(f)) do {
+      insert(fset, !f)			# note just one per loop pass
+      insert(fset, reads(f, 25))	# assumes no name longer than 25
+      }
+   every s := ![".", "..", "Makefile", "recent.icn", "recogn.dat", "nope"] do
+      if member(fset, s) then
+         write("found file: ", s)
 
 #  test sorting
 

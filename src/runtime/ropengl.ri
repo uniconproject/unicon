@@ -6,7 +6,6 @@
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {   
    FILE *f;
-   wdp  wd; 
    wbp  w;
    wsp  ws;
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
@@ -18,7 +17,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
  
   /* create an opengl window */
-   wd = alc_display(NULL); 
+   wdp wd = alc_display(NULL); 
    if (!glXQueryExtension(wd->display, &query, &query)) {
       printf("X server has no OpenGL GLX extension");
       return NULL;
@@ -1095,7 +1094,9 @@ int setlinewidth3D(wbp w, LONG linewid)
  */
 int setmaterials(wbp w, char* s)
 {
+#ifdef XWindows
    wdp wd = w->window->display;
+#endif					/* XWindows */
    int k, j, i = 0;
    long rd, gr, bl;
    GLfloat shine;
@@ -2000,9 +2001,12 @@ int fileimage(wbp w, char* filename)
 
 /* converts the icon representation of an image into
    a format accepted by opengl */ 
-int textureimg(wbp w, int width, int height, struct palentry *e, unsigned char *s, word len)
+int textureimg(wbp w, int width, int height,
+               struct palentry *e, unsigned char *s, word len)
 {
+#ifdef XWindows
    wdp wd = w->window->display;
+#endif					/* XWindows */
    int c, v, i;
    unsigned int ix, iy; 
    GLubyte tex[height][width][3];
@@ -2053,7 +2057,9 @@ int textureimg(wbp w, int width, int height, struct palentry *e, unsigned char *
 /* convert a bi-level image into an opengl texture */
 int bltex(wbp w, int width, int height, int ch, char *s, word len)
 {
+#ifdef XWindows
    wdp wd = w->window->display;
+#endif					/* XWindows */
    unsigned int m, msk1, c, ix, iy;
    int r, b, g, i;
    GLubyte tex[height][width][3]; 

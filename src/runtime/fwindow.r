@@ -3222,8 +3222,7 @@ function{1} DrawTorus(argv[argc])
          }
    
 	/* Since we are using double buffers, swap */
-      glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
+      glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
    }
 end

@@ -3170,6 +3170,9 @@ FILE *OpenConsole()
        *  failure during program startup; allocate enough memory to
        *  get the message out.
        */
+#ifdef MultiThread
+      if (!curpstate) curpstate = &rootpstate;
+#endif
       if (!curblock) {
          curstring = (struct region *)malloc(sizeof (struct region));
          curblock = (struct region *)malloc(sizeof (struct region));
@@ -3209,6 +3212,7 @@ FILE *OpenConsole()
       strncpy(ConsoleTitle, StrLoc(kywd_prog), StrLen(kywd_prog));
       ConsoleTitle[StrLen(kywd_prog)] = '\0';
       strcat(ConsoleTitle, " - console");
+
       ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx);
       k_input.fd = ConsoleBinding;
       k_output.fd = ConsoleBinding;
@@ -3232,8 +3236,8 @@ int Consolefprintf(FILE *file, const char *format, ...)
      retval = vsprintf(ConsoleStringBufPtr, format, list);
      ConsoleStringBufPtr += max(retval, 0);
      }
-   else if ((file == stdout && !(ConsoleFlags & StdOutRedirect)) ||
-       (file == stderr && !(ConsoleFlags & StdErrRedirect))) {
+   else if (((file == stdout) && !(ConsoleFlags & StdOutRedirect)) ||
+       ((file == stderr) && !(ConsoleFlags & StdErrRedirect))) {
       console = (wbp)OpenConsole();
       if (console == NULL) return 0;
       if ((retval = vsprintf(ConsoleStringBuf, format, list)) > 0) {

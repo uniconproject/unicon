@@ -922,7 +922,6 @@ static void add_resource(int id, int type) {
 
    if (!inited) {
       struct sigaction sigact;
-      struct sigaction sigign;
 
       // Signals to handle
       sigact.sa_handler = handler;
@@ -1011,5 +1010,3 @@ static void handler(int signo) {
    cleanup();
    exit(1);
 }
-
-

@@ -580,8 +580,19 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag)
     yyprint(")\n")
     if /abstract_flag then {
        yyprint(locals)
-       yyprint(initl)
+       if exists_statlists(locals) then {
+	  yyprint("\ninitial {")
+          if initl ~=== EmptyNode then { # append into existing initial
+	     yyprint(initl.children[2])
+	     yyprint(";\n")
+	     }
+          yystalists(locals)
+	  yyprint("\n}\n")
+          }
+       else
+          yyprint(initl)
        (\fields).coercions()
+       yyvarlists(locals)
        yyprint(procbody)
        if name=="initially" then
           writes(f, "\n      return")
@@ -706,8 +717,15 @@ class idTaque : taque(punc)
       case type(node) of {
 	 "treenode": {
 	    if *node.children > 0 then {
-		if node.label==("arg2"|"arg3"|"arg4") then {
+		if node.label == ("arg2"|"arg3"|"arg4") then {
 		    insert(node, node.children[1].s)
+		    }
+                else if node.label == "varlist2" then {
+                    insert(node, node.children[1].s)
+		    }
+                else if node.label==("varlist3"|"varlist4") then {
+                    traverse(node.children[1])
+                    insert(node, node.children[3].s)
 		    }
 		else
 		    every traverse(!node.children)

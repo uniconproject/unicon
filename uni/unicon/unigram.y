@@ -276,21 +276,34 @@ optsemi : { $$ := EmptyNode } ;
 
 cl: classhead SEMICOL END {
    $$ := $1
+   if $3 ~=== EmptyNode then {
+      if $3.label == "locals3" then
+         yyerror("static class variables not yet implemented")
+      # splice in any class locals into the field list
+      $$.fields.traverse($3)
+      }
    $$.methods := methodstaque(&null, $$)
    }
-   | classhead methods optsemi initiallysection END {
+   | classhead optsemi clocals methods optsemi initiallysection END {
    $$ := $1
-   if $4 ~=== EmptyNode then
-      $2 := node("methods", $2, $4)
-   $$.methods := methodstaque($2, $$)
+   if $3 ~=== EmptyNode then {
+      if $3.label == "locals3" then
+         yyerror("static class variables not yet implemented")
+      # splice in any class locals into the field list
+      $$.fields.traverse($3)
+      }
+   if $6 ~=== EmptyNode then
+      $4 := node("methods", $4, $6)
+   $$.methods := methodstaque($4, $$)
    } ;
 
-classhead : CLASS IDENT supers LPAREN arglist RPAREN {
+classhead : CLASS IDENT supers LPAREN carglist RPAREN {
    $$ := Class()
    $$.tag := $1
    $$.unmangled_name := $2.s
    $$.name := package_mangled_symbol($2.s)
-   if proc($$.name, 0) then warning("Warning: class " || $$.name || " overrides the built-in function")
+   if proc($$.name, 0) then
+      warning("Warning: class "|| $$.name ||" overrides the built-in function")
    classes.insert($$, $$.name)
    $$.supers_node := $3
    $$.fields := $5
@@ -382,27 +395,52 @@ methhead: METHOD IDENT LPAREN arglist RPAREN {
 		$$ := Method( , , , , , $2.s, $4, $1.s, $3, $5)
 		} ;
 
+
 arglist	: { $$ := argList( , , &null) } ;
 	| parmlist { $$ := argList( , , $1) } ;
 	| parmlist LBRACK RBRACK { $$ := argList("[]" , , $1) } ;
+
+carglist: { $$ := argList( , , &null) } ;
+	| cparmlist { $$ := argList( , , $1) } ;
+	| cparmlist LBRACK RBRACK { $$ := argList("[]" , , $1) } ;
 
 
 idlist	: IDENT ;
 	| idlist COMMA IDENT { $$ := node("idlist", $1,$2,$3) } ;
 
+varlist	: IDENT ;
+	| IDENT ASSIGN expr1 { $$ := node("varlist2", $1, $2, $3)}
+	| varlist COMMA IDENT { $$ := node("varlist3", $1, $2, $3)}
+	| varlist COMMA IDENT ASSIGN expr1 { $$ := node("varlist4",$1,$2,$3,$4,$5)};
+
+stalist	: IDENT ;
+	| IDENT ASSIGN expr1 { $$ := node("stalist2", $1, $2, $3)}
+	| stalist COMMA IDENT { $$ := node("stalist3", $1, $2, $3)}
+	| stalist COMMA IDENT ASSIGN expr1 { $$ := node("stalist4",$1,$2,$3,$4,$5)};
+
 parmlist: arg ;
 	| parmlist COMMA arg { $$ := node("parmlist", $1,$2,$3) } ;
+
+cparmlist: carg ;
+	| cparmlist COMMA carg { $$ := node("parmlist", $1,$2,$3) } ;
 
 arg	: IDENT ;
 	| IDENT COLON IDENT { $$ := node("arg2", $1, $2, $3) } ;
 	| IDENT COLON literal { $$ := node("arg3", $1, $2, $3) } ;
 	| IDENT COLON IDENT COLON literal { $$ := node("arg4", $1, $2, $3, $4, $5) } ;
 
-locals	: { $$ := EmptyNode;} ;
-	| locals retention idlist SEMICOL { $$ := node("locals2", $1,$2,$3,";");} ;
+carg	: priv arg { $$ := $2 };
 
-retention: LOCAL ;
-	| STATIC ;
+priv: { $$ := EmptyNode;} ;
+	| PLUS  ;
+	| MINUS ; 
+
+clocals	: { $$ := EmptyNode;} ;
+	| clocals LOCAL varlist optsemi { $$ := node("locals2", $1,$2,$3,";");} ;
+
+locals	: { $$ := EmptyNode;} ;
+	| locals LOCAL varlist SEMICOL { $$ := node("locals2", $1,$2,$3,";");} ;
+	| locals STATIC stalist SEMICOL { $$ := node("locals3", $1,$2,$3,";");} ;
 
 initial	: { $$ := EmptyNode } ;
 	| iconINITIAL expr SEMICOL {

@@ -189,7 +189,13 @@ function{1} Clone(argv[argc])
           if (!strncmp(StrLoc(argv[n]), "gl", 2))
               f1++;
         }
-        if (f1==1) child_window=2;
+        if (f1==1) {
+#ifdef Graphics3D
+	   child_window=2;
+#else					/* Graphics3D */
+	   runerr(150, argv[n]);
+#endif					/* Graphics3D */
+	   }
         else {
           for (n=warg; n<argc; n++) {
             if (!strncmp(StrLoc(argv[n]), "g", 1))
@@ -4586,6 +4592,7 @@ char my_wmap(wbp w, wbp wp, char child_window)
      XSetWMProtocols(ws->display->display, ws->win, &WMDeleteWindow, 1);
    }
    
+#ifdef Graphics3D
    if (child_window==2) {
       /* set defaults for attributes */
      w->context->eyeupx = w->context->eyeupz = 0.0;
@@ -4629,5 +4636,6 @@ char my_wmap(wbp w, wbp wp, char child_window)
      glMatrixMode(GL_MODELVIEW);
      glLoadIdentity();
    }
+#endif					/* Graphics3D */
    return 1;
 }

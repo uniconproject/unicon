@@ -325,7 +325,7 @@ int get_name(dp1,dp0)
                      i += blkptr->lelem.nused;
                      }
                   sprintf(sbuf,"list_%d[%ld]",
-			  (long)blkptr->lelem.listprev->list.id, i);
+			  (long)blkptr->lelem.listprev->list.id, (long)i);
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return Error);
                   StrLen(*dp0) = i;
@@ -587,7 +587,7 @@ register int n;
 #include "../h/opdefs.h"
 
 
-extern struct b_list value_tmp;		/* argument of Op_Apply */
+extern struct descrip value_tmp;		/* argument of Op_Apply */
 extern struct b_proc *opblks[];
 
 
@@ -700,7 +700,7 @@ static void ttrace()
       case Op_Apply:
          outimage(stderr, xargp++, 0);
          fprintf(stderr," ! ");
-         outimage(stderr, (dptr)&value_tmp, 0);
+         outimage(stderr, &value_tmp, 0);
          break;
 
       case Op_Create:

@@ -557,7 +557,7 @@ char *name;
 {
    int i;
    struct descrip s;
-   struct descrip fields[13];
+   struct descrip fields[14];
 
    if (!strcmp(name, "posix_lock")) {
       if (is:null(posix_lock)) {
@@ -655,8 +655,9 @@ char *name;
 	 AsgnCStr(fields[10], "ctime");
 	 AsgnCStr(fields[11], "blksize");
 	 AsgnCStr(fields[12], "blocks");
+	 AsgnCStr(fields[13], "symlink");
 	 posix_stat.dword = D_Proc;
-	 posix_stat.vword.bptr = (union block *)dynrecord(&s, fields, 13);
+	 posix_stat.vword.bptr = (union block *)dynrecord(&s, fields, 14);
 	 }
       return &posix_stat;
       }

@@ -1,4 +1,6 @@
 void            addrmlst     (char *fname, FILE *f);
+void		markrmlst    (FILE *closefile);
+int		rmlst_empty_p ();
 void            advance_tok  (struct token **tp);
 int                chk_eq_sign  (void);
 long               conditional  (struct token **tp, struct token *trigger);

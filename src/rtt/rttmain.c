@@ -568,8 +568,17 @@ char *src_file;
       prologue(); /* output standard comments and preprocessor directives */
       yyparse();  /* translate the input */
       fprintf(out_file, "\n");
-      if (fclose(out_file) != 0)
+      if (rmlst_empty_p()) {
+	/* error already occurred, can't try to close this file;
+	 * it is already closed.
+	 */
+      }
+      else if (fclose(out_file) != 0)
          err2("cannot close ", cname);
+      else {
+	/* can't close it again if we remove it to due an error */
+	markrmlst(out_file);
+      }
 
       /*
        * For the Compiler, note the name of the "primary" output file

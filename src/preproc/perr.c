@@ -150,8 +150,21 @@ FILE *f;
 static void rm_files()
    {
    while (file_lst != NULL) {
-      fclose ( file_lst->file );
+      if (file_lst->file != NULL)
+         fclose ( file_lst->file );
       remove(file_lst->name);
       file_lst = file_lst->next;
       }
    }
+
+void markrmlst(FILE *closefile)
+{
+  struct finfo_lst *f = file_lst;
+  for(f=file_lst;f!=NULL;f=f->next)
+    if (f->file == closefile) f->file = NULL;
+}
+
+int rmlst_empty_p()
+{
+  return file_lst == NULL;
+}

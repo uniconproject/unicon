@@ -3445,8 +3445,13 @@ struct node *n;
 
       ForceNl();
       prt_str("}\n", IndentInc);
-      if (fclose(out_file) != 0)
+      if (rmlst_empty_p()) {
+      }
+      else if (fclose(out_file) != 0)
          err2("cannot close ", cname);
+      else {
+	markrmlst(out_file);
+      }
       put_c_fl(cname, 1);  /* note name of output file for operation */
       }
 

@@ -13,7 +13,8 @@ struct astkblk	*alcactiv	(void);
 struct b_cset	*alccset	(void);
 struct b_file	*alcfile	(FILE *fd,int status,dptr name);
 union block	*alchash	(int tcode);
-struct b_list	*alclist	(uword size);
+struct b_list	*alclist	(uword size, uword nslots);
+struct b_list	*alclist_raw	(uword size, uword nslots);
 struct b_lelem	*alclstb	(uword nslots,uword first,uword nused);
 struct b_real	*alcreal	(double val);
 struct b_slots	*alcsegment	(word nslots);
@@ -72,7 +73,6 @@ int		dp_pnmcmp	(struct pstrnm *pne,dptr dp);
 void		drunerr		(int n, double v);
 void		dumpact		(struct b_coexpr *ce);
 struct b_proc * dynrecord	(dptr s, dptr fields, int n);
-struct b_list *emptylist();
 void		env_int	(char *name,word *variable,int non_neg, uword limit);
 int		equiv		(dptr dp1,dptr dp2);
 int		err		(void);
@@ -151,7 +151,7 @@ void		xmfree		(void);
 #endif					/* MultiThread */
 
 #ifdef EventMon
-   void EVAsgn	(dptr dx);
+   void EVVariable(dptr dx, int eventcode);
 #endif					/* EventMon */
 
 #ifdef ExternalFunctions

@@ -1,5 +1,5 @@
 procedure yyerror(s)
-static t
+static t, __merr_errors
 initial {
    t := table(table("syntax error"))
    t[0] := table("invalid declaration")
@@ -15,9 +15,12 @@ initial {
    t[188] := table("unclosed parenthesis")
    t[41] := table("method expected")
    t[62] := table("invalid case control expression")
+   t[130] := table("missing fieldname or right parenthesis")
    t[151] := table("missing \"of\" in case expression")
    t[72] := table("invalid until control expression")
-   t[135] := table("missing comma or unclosed class fieldlist")
+   t[135] := table("missing comma or unclosed class field arguments")
+   t[135,282] := "unclosed class field arguments"
+   t[135,257] := "missing comma or unclosed class field arguments"
    t[245] := table("missing operand after ||")
    t[245,307] := "missing operand after ||"
    t[245,317] := "illegal space inside ||:="
@@ -35,10 +38,11 @@ initial {
    t[66] := table("invalid if control expression")
    t[265] := table("invalid local declaration")
    t[375] := table("missing \"do\" or some such keyword earlier, or expected a comma or right brace here")
+   t[118] := table("missing operator or \"do\" keyword")
    t[39] := table("missing parameter list in procedure declaration")
    t[191] := table("missing operator or unbalanced parenthesis/bracket")
    t[259] := table("field name expected")
-   t[301] := table("a loop is missing } somewhere before \"end\"")
+   t[301] := table("missing } somewhere before \"end\"")
    t[23] := table("procedure not allowed within a class")
    t[107] := table("too many closing curly braces")
    t[107,365] := "semicolon or operator expected"
@@ -72,13 +76,14 @@ initial {
    t[278] := table("parameter name expected")
    t[435] := table("malformed case expression")
    t[63] := table("invalid create expression")
+   __merr_errors := 0
    }
 
-   /errors := 0
-   if errors = 0 then iwrite(&errout)
+   if __merr_errors = 0 then iwrite(&errout)
    else if map(s)== "stack underflow. aborting..." then return
-   errors +:= 1
-   if errors > 10 then istop("too many errors, aborting")
+   __merr_errors +:= 1
+   if __merr_errors > 10 then
+      istop("too many errors, aborting")
    iwrites(&errout, \fName, ":")
    if s == "syntax error" then
       s := t[statestk[1], yychar]

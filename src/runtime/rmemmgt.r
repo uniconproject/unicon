@@ -451,7 +451,7 @@ int region;
 	      markblock(&(ws->listp));
 #ifdef Graphics3D
          if (is:list(ws->funclist))
-		markblock(&(ws->funclist));
+	    markblock(&(ws->funclist));
 #endif                            /* Graphics3D */
         }
    }

@@ -94,7 +94,9 @@ int is_iconcolor;
 	    return NULL;
 	 (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
 	 *sizColors *= 2;
-printf("reallocated to %d\n", *sizColors);
+	 /*
+	  * reallocated color table to *sizColors
+	  */
          }
 
       if (!XAllocColor(stddpy, wd->cmap, &color)) {
@@ -120,6 +122,7 @@ printf("reallocated to %d\n", *sizColors);
       }
    else {
       /* color is found, alias it and put it in the window color table */
+      static lastfound; /* exploit locality to speedup someday */
       int k;
       for(k=0; k < *numColors; k++){
          if ((*theColors)[k] == i) {
@@ -150,8 +153,10 @@ wdp wd;
 			   wd->sizColors * 2 * sizeof (struct wcolor));
       if (wd->colors == NULL) return 0;
       for(i=wd->sizColors;i<wd->sizColors*2;i++) wd->colors[i].refcount=0;
-printf("reallocating wd->colors to %d\n", wd->sizColors * 2);
       wd->sizColors *= 2;
+      /*
+       * reallocated color table to wd->sizColors
+       */
       }
    if (j == wd->numColors)
       wd->numColors++;

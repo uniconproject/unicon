@@ -1,5 +1,5 @@
 #
-# $Id: utils.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: utils.icn,v 1.2 2005-01-28 10:16:53 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -58,10 +58,12 @@ end
 # Convert a list l to a string representation.
 #
 procedure list2string(l)
-   e := create image(!l)
-   s := @e | ""
-   while s ||:= ", " || @e
-   return s
+   local s
+   s := ""
+   every x := image(!l) do
+      s ||:= ", " || x
+
+   return s[3:0] | ""
 end
 
 #

@@ -1,0 +1,45 @@
+procedure main()
+   L := []
+   macros := table()
+   seen_perper := 0
+   seen_percur := 0
+   every line := !&input do {
+      if match("%%", line) then {
+	  seen_perper +:= 1
+      }
+      else if match("%{", line) then {
+	  seen_percur +:= 1
+#	  line := line[3:0]
+      }
+      else if match("%}", line) then {
+	  if seen_percur<1 then stop("malformed .l file in: ", image(line))
+	  seen_percur -:= 1
+#	  line := line[3:0]
+      }
+      else
+      if seen_perper=0 then {
+	  if seen_percur=0 then {
+	      line ? {
+		  if nam := tab(many(&letters++&digits)) then {
+		      tab(many(' \t'))
+		      if def := tab(0) then {
+#			  write("defining ", nam, " -> ", def)
+			  macros[nam] := def
+			  line := ""
+		      }
+		  }
+	      }
+	  }
+      }
+      else if seen_perper = 1 then {
+
+	 while i := find("{", line) &
+	       match(k := key(macros),line,i+1) &
+	       line[i+*k+1]=="}" do
+	    line[i +: *k+2] := macros[k]
+
+      }
+      put(L, line)
+   }
+   every write(!L)
+end

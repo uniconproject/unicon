@@ -364,7 +364,9 @@ void		xmfree		(void);
    int	wgetq		(wbp w, dptr res, int t);
    FILE	*wopen		(char *nm, struct b_list *hp, dptr attr, int n, int *e);
    int	wputc		(int ci, wbp w);
+#ifndef MSWindows
    void	wsync		(wbp w);
+#endif					/* MSWindows */
    void	xdis		(wbp w, char *s, int n);
    
    #ifdef ConsoleWindow

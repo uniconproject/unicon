@@ -594,8 +594,8 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    /*
     * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
-   #define Usage "[-cstuE] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
-   while ((c = getopt(argc,argv, "ce:f:o:O:stuv:EL")) != EOF)
+   #define Usage "[-cstuEG] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
+   while ((c = getopt(argc,argv, "ce:f:o:O:stuGv:EL")) != EOF)
       switch (c) {
          case 'C':			/* Ignore: compiler only */
             break;

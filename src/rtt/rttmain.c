@@ -58,8 +58,8 @@ char *rt_path = "::h:rt.h";
 #endif					/* MACINTOSH */
 
 #if MSDOS || OS2
-char *grttin_path = "..\\h\\grttin.h";
-char *rt_path = "..\\h\\rt.h";
+char *grttin_path = "..\\src\\h\\grttin.h";
+char *rt_path = "..\\src\\h\\rt.h";
 #endif					/* MSDOS || OS2 */
 
 #if MVS

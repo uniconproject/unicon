@@ -1,3 +1,5 @@
+#ifndef FILEPAT_H
+#define FILEPAT_H
 /*
  * Typedefs and macros for filename wildcard expansion on some systems.
  *  The definitions provided here are:
@@ -76,3 +78,4 @@ typedef struct _find_t FINDDATA_T;
 Deliberate Syntax Error                 /* Give it some thought */
 #endif                                  /* PORT */
 #endif					/* WildCards */
+#endif

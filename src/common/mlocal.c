@@ -59,7 +59,7 @@ char *relfile(char *prog, char *mod) {
        ||(mod[strlen(mod)-1] == '\\')
 #endif
        )
-      sprintf(buf+strlen(buf), "%c", mod[strlen(mod)-1]);/* append to result */
+      sprintf(buf+strlen(buf), "%c", FILESEP);/* append to result */
    return salloc(buf);			/* return allocated string */
    }
 

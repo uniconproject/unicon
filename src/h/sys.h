@@ -90,6 +90,9 @@
    #include <sys/types.h>
    #include <sys/stat.h>
    #include <fcntl.h>
+#ifdef NTGCC
+   #include <dirent.h>
+#endif					/* NTGCC */
    
    #ifdef MSWindows
       #define int_PASCAL int PASCAL

@@ -38,6 +38,10 @@
 #include "gdbmdefs.h"
 #include "gdbmerrno.h"
 
+#ifdef NTGCC
+#define ftruncate _chsize
+#endif					/* NTGCC */
+
 /* Initialize dbm system.  FILE is a pointer to the file name.  If the file
    has a size of zero bytes, a file initialization procedure is performed,
    setting up the initial structure in the file.  BLOCK_SIZE is used during

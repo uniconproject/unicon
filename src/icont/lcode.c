@@ -941,9 +941,6 @@ void gentables()
          }
       }
 
-#define DebugLinker
-#define Dflag 1
-#define dbgfile stderr
    /*
     * Output record/field table.
     */
@@ -971,7 +968,6 @@ void gentables()
    else hdr.FtabWidth = 1;
    }
 
-printf("field width %d\n", hdr.FtabWidth);
 
 {
    int counter = 0, f_num, first, begin, end, entries;
@@ -985,8 +981,6 @@ printf("field width %d\n", hdr.FtabWidth);
    for (fp = lffirst; fp != NULL; fp = fp->f_nextentry)
       hdr.Nfields++;
 
-printf("nfields %d nrecords %d\n", hdr.Nfields, nrecords);
-
    entries = hdr.Nfields * nrecords / 4 + 1;
    f_tabp = malloc (entries * sizeof (int));
    for (i = 0; i < entries; i++)
@@ -996,7 +990,6 @@ printf("nfields %d nrecords %d\n", hdr.Nfields, nrecords);
    bytes = nrecords / 8;
    if (nrecords % 8 != 0)
       bytes++;
-printf("bytes %d\n", bytes);
    f_bm = calloc (hdr.Nfields, bytes);
 
    f_row = malloc (nrecords * sizeof (int));
@@ -1151,8 +1144,6 @@ printf("bytes %d\n", bytes);
       if (Dflag)
          fprintf (dbgfile, "\t%d\n", f_fo[i]);
 #endif					/* DeBugLinker */
-      fprintf(stderr, "field offsets:\n");
-         fprintf (stderr, "\t%d %d\n", i, f_fo[i]);
       if (hdr.FoffWidth == 1) {
 	 outchar(f_fo[i]);
 	 }

@@ -1,17 +1,12 @@
+#  Makefile for iyacc, the Icon-enabled version of Berkeley YACC
+
+include ../../Makedefs
+
 DEST	      = .
-
 HDRS	      = defs.h
-
-CFLAGS	      = -O -DNDEBUG
-
 LDFLAGS	      =
-
 LIBS	      =
-
-CC            = cc
-
-LINKER	      = cc
-
+LINKER	      = $(CC)
 MAKEFILE      = Makefile
 
 OBJS	      = closure.o \

@@ -156,7 +156,7 @@ $endif
      }
    else filename := defextension(filename)
 
-  file := open(filename, "b") | {
+  file := open(filename, "ru") | {
      MsgBox.set_contents(["Could not open file: " || filename])
      return
      }
@@ -254,6 +254,7 @@ end
 method handle_ivib_menu_item(ev)
    local L := []
    prompt_save()
+   /current_file := "untitled_ivibsession"
    system("ivib " || current_file, L) | write("system failed")
    MsgBox.set_contents(L)
    handle_openfile( , current_file)
@@ -298,8 +299,8 @@ $ifdef _UNIX
    system("unicon -c -quiet " || " " || targs || " " ||
 	  comp1file(current_file) || " &> " || wiconlog, lst, 1)
 $else
-   system("wunicon -c -quiet -log " || wiconlog || " " || targs || " " ||
-	  comp1file(current_file), lst, 1)
+   system("wunicon -c -quiet -log " || quotes(wiconlog) || " " || targs ||
+	  " " || comp1file(current_file), lst, 1)
 $endif
 
    showanyerror(wiconlog, lst)
@@ -330,8 +331,8 @@ method system(s, lst, apnd)
    WAttrib("pointer=wait")
    rv := proc("system", 0)(s)
    WAttrib("pointer=arrow")
-   if not find("&", s) then
-       put(lst,".....finished")
+#   if not find("&", s) then
+#       put(lst,".....finished")
     #  appendmessage("...finished", 1)
    if \rv then return rv
 end
@@ -512,7 +513,12 @@ method complink()
       if \ (EditBox.modified) then handle_save_file(current_file)
       }
    if /project then {
-      arglist := comp1file(current_file)
+      if not (arglist := comp1file(current_file)) then {
+         s := current_file
+         s[find(".icn", map(s)) : 0] := ".u"
+	 if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
+	 arglist := quotes(s)
+         }
       icodename := current_file
       icodename[find(".icn", map(icodename)) : 0] := ""
       }
@@ -533,8 +539,8 @@ $ifdef _UNIX
 	 system("unicon -quiet " || " -c " || targs ||
 		" " || arglist || " &> " || wiconlog, lst, 1)
 $else
-	 system("wunicon -quiet -log " || wiconlog || " -c " || targs ||
-		" " || arglist, lst, 1)
+	 system("wunicon -quiet -log " || quotes(wiconlog) ||
+		" -c " || targs || " " || arglist, lst, 1)
 $endif
          showanyerror(wiconlog, lst)
          }
@@ -557,7 +563,9 @@ $endif
 $ifdef _UNIX
       system("unicon -quiet " || " -o " || quotes(icodename) || " " || targs || " " || arglist || " &> "|| wiconlog, lst, 1)
 $else
-      system("wunicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, lst, 1)
+      system("wunicon -quiet -log " || quotes(wiconlog) ||
+	     " -o " || quotes(icodename) || " " || targs || " " || arglist,
+	     lst, 1)
 $endif
       showanyerror(wiconlog, lst)
 end
@@ -566,13 +574,16 @@ end
    local log1, i, s, ln
    every i := 1 to 5 do {
       delay(800)
-      if log1 := open(fn, "b") then {
-         while put(lst, read(log1))
+      if log1 := open(fn, "r") then {
+         while put(lst, read(log1)) do {
+	 }
          close(log1)
          remove(fn)
          MsgBox.set_contents(lst)
+         if ( \ (MsgBox.vsb)).set_value(*lst - MsgBox.vsb.page_size) then
+            MsgBox.refresh()
          every s := !lst do s ? {
-            if (fn := ((tab(any(&letters))||=":")|"") || tab(many(&letters++&digits++'.\\/-'))) &
+            if (fn := ((tab(any(&letters))||=":")|"") || tab(many(&letters++&digits++' .\\/-'))) &
                 =":" &
                 ln := integer(tab(many(&digits))) &
                 = ":" then {

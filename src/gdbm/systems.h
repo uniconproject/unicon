@@ -140,7 +140,11 @@
 
 /* Do we have fsync? */
 #if !HAVE_FSYNC
+#ifdef MSDOS
+#define fsync(f)
+#else
 #define fsync(f) {sync(); sync();}
+#endif
 #endif
 
 /* Default block size.  Some systems do not have blocksize in their

@@ -1,5 +1,5 @@
 #
-# $Id: sizer.icn,v 1.5 2004-11-13 20:27:03 rparlett Exp $
+# $Id: sizer.icn,v 1.6 2004-11-13 23:40:17 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -24,8 +24,8 @@ class Sizer : Component(
    temp_win,                #
    temp_w,
    temp_h,
-   min,
-   max,
+   lo,
+   hi,
    drag_offset,
    curr_pos,
    start_pos,
@@ -37,9 +37,9 @@ class Sizer : Component(
    # Set the minimum and maximum values for the {Sizer}.  Whether these are
    # x or y values depends on the orientation of the {Sizer}.
    #
-   method set_min_max(min, max)
-      self.min := min
-      self.max := max
+   method set_range(lo, hi)
+      self.lo := lo
+      self.hi := hi
    end
 
    #
@@ -81,7 +81,7 @@ class Sizer : Component(
 
    method display(buffer_flag)
       local cw
-      W := if /buffer_flag then self.cwin else self.cbwin
+
       if \self.is_held then {
          CopyArea(temp_win, cbwin, 0, 0, temp_w, temp_h, 0, 0)
          cw := Clone(self.cbwin, "linewidth=4", "pattern=gray", "fillstyle=masked")
@@ -94,6 +94,12 @@ class Sizer : Component(
          }
          Uncouple(cw)
          CopyArea(get_parent_buffer_win(), get_parent_win(), 0, 0, temp_w, temp_h, 0, 0)
+      } else {
+         EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h, 1)
+         self.do_shading(self.cbwin)
+         if /buffer_flag then
+            CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
       }
    end
 
@@ -103,8 +109,8 @@ class Sizer : Component(
       else
          curr_pos := &x - drag_offset - parent.get_x_reference()
 
-      curr_pos <:= min
-      curr_pos >:= max
+      curr_pos <:= \lo
+      curr_pos >:= \hi
       return curr_pos
    end
 
@@ -184,6 +190,7 @@ class Sizer : Component(
             set_is_horizontal()
          else
             clear_is_horizontal()
+         "range" : set_range!int_vals(attr, val)
          default: self.Component.set_one(attr, val)
       }
    end

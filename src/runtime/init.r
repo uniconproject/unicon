@@ -61,9 +61,9 @@ int use_resource = 0;			/* Set to TRUE if using a resource */
 int stubexe;				/* TRUE if resource attached to executable */
 #endif					/* OS2 */
 
-#if ARM || ATARI_ST || MACINTOSH || MVS || VM || UNIX || VMS
+#if ARM || MACINTOSH || MVS || VM || UNIX || VMS
    /* nothing needed */
-#endif					/* ARM || ATARI_ST || MACINTOSH ... */
+#endif					/* ARM || MACINTOSH ... */
 
 /*
  * End of operating-system specific code.
@@ -102,7 +102,9 @@ char *prog_name;			/* name of icode file */
 
 int line_info;				/* flag: line information is available */
 char *file_name = NULL;			/* source file for current execution point */
+#ifndef MultiThread
 int line_num = 0;			/* line number for current execution point */
+#endif					/* MultiThread */
 struct b_proc *op_tbl;			/* operators available for string invocation */
 
 extern struct errtab errtab[];		/* error numbers and messages */
@@ -575,6 +577,36 @@ char *argv[];
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
 
+   rootpstate.Cplist = cplist_0;
+   rootpstate.Cpset = cpset_0;
+   rootpstate.Cptable = cptable_0;
+   rootpstate.EVstralc = EVStrAlc_0;
+   rootpstate.Interp = interp_0;
+   rootpstate.Cnvcset = cnv_cset_0;
+   rootpstate.Cnvint = cnv_int_0;
+   rootpstate.Cnvreal = cnv_real_0;
+   rootpstate.Cnvstr = cnv_str_0;
+   rootpstate.Cnvtcset = cnv_tcset_0;
+   rootpstate.Cnvtstr = cnv_tstr_0;
+   rootpstate.Deref = deref_0;
+   rootpstate.Alcbignum = alcbignum_0;
+   rootpstate.Alccset = alccset_0;
+   rootpstate.Alcfile = alcfile_0;
+   rootpstate.Alchash = alchash_0;
+   rootpstate.Alcsegment = alcsegment_0;
+   rootpstate.Alclist_raw = alclist_raw_0;
+   rootpstate.Alclist = alclist_0;
+   rootpstate.Alclstb = alclstb_0;
+   rootpstate.Alcreal = alcreal_0;
+   rootpstate.Alcrecd = alcrecd_0;
+   rootpstate.Alcrefresh = alcrefresh_0;
+   rootpstate.Alcselem = alcselem_0;
+   rootpstate.Alcstr = alcstr_0;
+   rootpstate.Alcsubs = alcsubs_0;
+   rootpstate.Alctelem = alctelem_0;
+   rootpstate.Alctvtbl = alctvtbl_0;
+   rootpstate.Deallocate = deallocate_0;
+   rootpstate.Reserve = reserve_0;
 #else					/* MultiThread */
 
    curstring = &rootstring;
@@ -616,9 +648,6 @@ Deliberate Syntax Error
    signal(SIGSEGV, SigFncCast segvtrap);
 #endif					/* ARM */
 
-#if ATARI_ST
-#endif					/* ATARI_ST */
-
 #if MACINTOSH
 #if MPW
    {
@@ -652,19 +681,7 @@ Deliberate Syntax Error
 
 #if UNIX || VMS
    signal(SIGSEGV, SigFncCast segvtrap);
-#ifdef PYRAMID
-   {
-   struct sigvec a;
-
-   a.sv_handler = fpetrap;
-   a.sv_mask = 0;
-   a.sv_onstack = 0;
-   sigvec(SIGFPE, &a, 0);
-   sigsetmask(1 << SIGFPE);
-   }
-#else					/* PYRAMID */
    signal(SIGFPE, SigFncCast fpetrap);
-#endif					/* PYRAMID */
 #endif					/* UNIX || VMS */
 
 /*
@@ -727,20 +744,8 @@ Deliberate Syntax Error
     * Convert stack sizes from words to bytes.
     */
 
-#ifndef SCO_XENIX
    stksize *= WordSize;
    mstksize *= WordSize;
-#else					/* SCO_XENIX */
-   /*
-    * This is a work-around for bad generated code for *= (as above)
-    *  produced by the SCO XENIX C Compiler for the large memory model.
-    *  It relies on the fact that WordSize is 4.
-    */
-   stksize += stksize;
-   stksize += stksize;
-   mstksize += mstksize;
-   mstksize += mstksize;
-#endif					/* SCO_XENIX */
 
 #if IntBits == 16
    if (mstksize > MaxBlock)
@@ -911,9 +916,9 @@ Deliberate Syntax Error
     * Initialize the event monitoring system, if configured.
     */
 
-#ifdef EventMon
+#ifdef MultiThread
    EVInit();
-#endif					/* EventMon */
+#endif					/* MultiThread */
 
    /*
     * Check command line for redirected standard I/O.
@@ -958,7 +963,7 @@ Deliberate Syntax Error
    /* not done */
 #endif					/* AMIGA */
 
-#if ARM || ATARI_ST || MACINTOSH || UNIX || OS2 || VMS
+#if ARM || MACINTOSH || UNIX || OS2 || VMS
 
 
    if (noerrbuf)
@@ -971,7 +976,7 @@ Deliberate Syntax Error
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
       }
-#endif					/* ARM || ATARI_ST || MACINTOSH ... */
+#endif					/* ARM || MACINTOSH ... */
 
 #if MSDOS
 #if !HIGHC_386
@@ -1045,9 +1050,9 @@ Deliberate Syntax Error
    if (WBmstksize != 0 && WBmstksize <= (uword) MaxUnsigned) mstksize = WBmstksize; 
 #endif					/* AMIGA */
 
-#if ARM || ATARI_ST || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if ARM || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* ARM || ATARI_ST || ... */
+#endif					/* ARM || ... */
 
 /*
  * End of operating-system specific code.
@@ -1065,9 +1070,9 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ATARI_ST || MACINTOSH
+#if AMIGA || MACINTOSH
    /* can't handle */
-#endif					/* AMIGA || ATARI_ST || ... */
+#endif					/* AMIGA || ... */
 
 #if ARM || OS2
       signal(SIGSEGV, SIG_DFL);
@@ -1309,17 +1314,16 @@ int i;
    char *msg = "Strike any key to close console...";
 #endif					/* ConsoleWindow */
 
-#ifdef ISQL                             /* ODBC */
+#ifdef ISQL
    if (ISQLEnv!=NULL) {
       SQLFreeEnv(ISQLEnv);  /* release ODBC environment */
       }
-#endif                                  /* ODBC */
+#endif                                  /* ISQL */
 
-#ifdef EventMon
-   if (curpstate != NULL) {
+#if E_Exit
+   if (curpstate != NULL)
       EVVal((word)i, E_Exit);
-      }
-#endif					/* EventMon */
+#endif					/* E_Exit */
 #ifdef MultiThread
    if (curpstate != NULL && curpstate->parent != NULL) {
       /* might want to get to the lterm somehow, instead */
@@ -1532,16 +1536,13 @@ void datainit()
    StrLoc(ucase) = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
    IntVal(zerodesc) = 0;
 
-#ifdef EventMon
-/*
- *  Initialization needed for event monitoring
- */
-
+#ifdef MultiThread
+   /*
+    *  Initialization needed for event monitoring
+    */
    BlkLoc(csetdesc) = (union block *)&fullcs;
    BlkLoc(rzerodesc) = (union block *)&realzero;
-
-#endif					/* EventMon */
-
+#endif					/* MultiThread */
 
    maps2 = nulldesc;
    maps3 = nulldesc;
@@ -1652,9 +1653,7 @@ C_integer bs, ss, stk;
    StrLoc(pstate->ksub) = "";
    MakeInt(hdr.trace, &(pstate->Kywd_trc));
 
-#ifdef EventMon
-   pstate->Linenum = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
-#endif						/* EventMon */
+   pstate->Line_num = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
    pstate->Lastop = 0;
    /*
     * might want to override from TRACE environment variable here.
@@ -1757,6 +1756,37 @@ C_integer bs, ss, stk;
    pstate->K_errout = *theError;
    pstate->K_input  = *theInput;
    pstate->K_output = *theOutput;
+
+   pstate->Cplist = cplist_0;
+   pstate->Cpset = cpset_0;
+   pstate->Cptable = cptable_0;
+   pstate->EVstralc = EVStrAlc_0;
+   pstate->Interp = interp_0;
+   pstate->Cnvcset = cnv_cset_0;
+   pstate->Cnvint = cnv_int_0;
+   pstate->Cnvreal = cnv_real_0;
+   pstate->Cnvstr = cnv_str_0;
+   pstate->Cnvtcset = cnv_tcset_0;
+   pstate->Cnvtstr = cnv_tstr_0;
+   pstate->Deref = deref_0;
+   pstate->Alcbignum = alcbignum_0;
+   pstate->Alccset = alccset_0;
+   pstate->Alcfile = alcfile_0;
+   pstate->Alchash = alchash_0;
+   pstate->Alcsegment = alcsegment_0;
+   pstate->Alclist_raw = alclist_raw_0;
+   pstate->Alclist = alclist_0;
+   pstate->Alclstb = alclstb_0;
+   pstate->Alcreal = alcreal_0;
+   pstate->Alcrecd = alcrecd_0;
+   pstate->Alcrefresh = alcrefresh_0;
+   pstate->Alcselem = alcselem_0;
+   pstate->Alcstr = alcstr_0;
+   pstate->Alcsubs = alcsubs_0;
+   pstate->Alctelem = alctelem_0;
+   pstate->Alctvtbl = alctvtbl_0;
+   pstate->Deallocate = deallocate_0;
+   pstate->Reserve = reserve_0;
 
    /*
     * Make sure the version number of the icode matches the interpreter version

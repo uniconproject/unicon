@@ -1717,15 +1717,11 @@ function{3} Pixel(argv[argc])
                suspend lastval;		/* memory leak on vanquish */
 #else					/* COMPILER */
 	       /*
-		* suspend, but free up imem if vanquished; RTL workaround
-		* Needs implementing under the compiler.
+		* suspend, but free up imem if vanquished; RTL workaround.
+		* Needs implementing under the compiler iconc.
 		*/
 	       r_args[0] = lastval;
-#ifdef EventMon
 	       if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {
-#else					/* EventMon */
-	       if ((signal = interp(G_Csusp, r_args)) != A_Resume) {
-#endif					/* EventMon */
 		  tend = r_tend.previous;
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);
@@ -1743,11 +1739,7 @@ function{3} Pixel(argv[argc])
 		*/
 	       r_args[0].dword = D_Integer;
 	       r_args[0].vword.integr = rv;
-#ifdef EventMon
 	       if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {
-#else					/* EventMon */
-	       if ((signal = interp(G_Csusp, r_args)) != A_Resume) {
-#endif					/* EventMon */
 		  tend = r_tend.previous;
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);

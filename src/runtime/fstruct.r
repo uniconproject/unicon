@@ -807,7 +807,7 @@ void c_push(l, val)
 dptr l;
 dptr val;
 {
-   register word i;
+   register word i = 0;
    register struct b_lelem *bp; /* does not need to be tended */
    static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
@@ -815,10 +815,6 @@ dptr val;
     * Point bp at the first list-element block.
     */
    bp = (struct b_lelem *) BlkLoc(*l)->list.listhead;
-
-#ifdef EventMon 	/* initialize i so it's 0 if first list-element */
-   i = 0;			/* block isn't full */
-#endif				/* EventMon */
 
    /*
     * If the first list-element block is full, allocate a new
@@ -911,9 +907,10 @@ function{1} push(x, vals[n])
 	 hp = (struct b_list *) BlkLoc(x);
 	 bp = (struct b_lelem *) hp->listhead;
 
-#ifdef EventMon 	/* initialize i so it's 0 if first list-element */
+	 /*
+	  * Initialize i so it's 0 if first list-element.
+	  */
 	 i = 0;			/* block isn't full */
-#endif				/* EventMon */
 
 	 /*
 	  * If the first list-element block is full, allocate a new
@@ -981,7 +978,7 @@ end
  */
 void c_put(struct descrip *l, struct descrip *val)
 {
-   register word i;
+   register word i = 0;
    register struct b_lelem *bp;  /* does not need to be tended */
    static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
@@ -992,10 +989,6 @@ void c_put(struct descrip *l, struct descrip *val)
     */
    bp = (struct b_lelem *) BlkLoc(*l)->list.listtail;
    
-#ifdef EventMon 	/* initialize i so it's 0 if last list-element */
-   i = 0;			/* block isn't full */
-#endif				/* EventMon */
-
    /*
     * If the last list-element block is full, allocate a new
     *  list-element block, make it the last list-element block,
@@ -1086,9 +1079,7 @@ function{1} put(x, vals[n])
 	 hp = (struct b_list *)BlkLoc(x);
 	 bp = (struct b_lelem *) hp->listtail;
    
-#ifdef EventMon 	/* initialize i so it's 0 if last list-element */
 	 i = 0;			/* block isn't full */
-#endif				/* EventMon */
 
 	 /*
 	  * If the last list-element block is full, allocate a new

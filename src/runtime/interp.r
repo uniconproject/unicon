@@ -12,12 +12,9 @@ extern word istart[4]; extern int mterm;
 /*
  * Prototypes for static functions.
  */
-#ifdef EventMon
 static struct ef_marker *vanq_bound (struct ef_marker *efp_v,
                                       struct gf_marker *gfp_v);
-static void           vanq_proc (struct ef_marker *efp_v,
-                                     struct gf_marker *gfp_v);
-#endif					/* EventMon */
+static void vanq_proc (struct ef_marker *efp_v, struct gf_marker *gfp_v);
 
 /*
  * The following code is operating-system dependent [@interp.01]. Declarations.
@@ -33,9 +30,9 @@ extern int chkbreak;
 #endif					/* LATTICE */
 #endif					/* AMIGA */
 
-#if ARM || ATARI_ST || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if ARM || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing needed */
-#endif					/* ARM || ATARI_ST || ... */
+#endif					/* ARM || ... */
 
 /*
  * End of operating-system specific code.
@@ -54,13 +51,13 @@ inst ipc;			/* Interpreter program counter */
 word *sp = NULL;		/* Stack pointer */
 
 
-#ifdef EventMon
+#if UNIX && E_Tick
 extern union { 			/* clock ticker -- keep in sync w/ fmonitor.r */
    unsigned short s[16];	/* 16 counters */
    unsigned long l[8];		/* 8 longs are easier to check */
 } ticker;
 extern unsigned long oldtick;	/* previous sum of the two longs */
-#endif					/* EventMon */
+#endif					/* UNIX && E_Tick */
 
 
 int ilevel;			/* Depth of recursion in interp() */
@@ -78,23 +75,21 @@ word xnargs;
  * Macros for use inside the main loop of the interpreter.
  */
 
-#ifdef EventMon
 #define E_Misc    -1
 #define E_Operator 0
 #define E_Function 1
-#endif					/* EventMon */
 
 /*
  * Setup_Op sets things up for a call to the C function for an operator.
- *  InterpEVValD expands to nothing if EventMon is not defined.
  */
-#begdef Setup_Op(nargs)
-#ifdef EventMon
+#begdef Setup_Op(nargs,e)
+#ifdef MultiThread
    lastev = E_Operator;
    value_tmp.dword = D_Proc;
    value_tmp.vword.bptr = (union block *)&op_tbl[lastop - 1];
-   InterpEVValD(&value_tmp, E_Ocall);
-#endif					/* EventMon */
+   lastdesc = value_tmp;
+   InterpEVValD(&value_tmp, e);
+#endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
    ExInterp;
@@ -106,9 +101,9 @@ word xnargs;
  *  operators.
  */
 #begdef Setup_Arg(nargs)
-#ifdef EventMon
+#ifdef MultiThread
    lastev = E_Misc;
-#endif					/* EventMon */
+#endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
    ExInterp;
@@ -116,17 +111,15 @@ word xnargs;
 
 #begdef Call_Cond
    if ((*(optab[lastop]))(rargp) == A_Resume) {
-#ifdef EventMon
-     InterpEVVal((word)-1, E_Ofail);
-#endif					/* EventMon */
+     InterpEVValD(&lastdesc, e_ofail);
      goto efail_noev;
    }
    rsp = (word *) rargp + 1;
-#ifdef EventMon
+#ifdef MultiThread
    goto return_term;
-#else					/* EventMon */
+#else					/* MultiThread */
    break;
-#endif					/* EventMon */
+#endif					/* MultiThread */
 #enddef					/* Call_Cond */
 
 /*
@@ -191,9 +184,9 @@ word xnargs;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ARM || ATARI_ST || MACINTOSH || MVS || UNIX || VM || VMS
+#if AMIGA || ARM || MACINTOSH || MVS || UNIX || VM || VMS
 #define PushAVal(x) PushVal(x)
-#endif					/* AMIGA || ARM || ATARI_ST || ... */
+#endif					/* AMIGA || ARM || ... */
 
 #if MSDOS || OS2
 #if HIGHC_386 || ZTC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
@@ -211,12 +204,16 @@ Deliberate Syntax Error
  */
 dptr clintsrargp;
 
+#ifdef MultiThread
+static struct descrip unwinder;
+#endif					/* MultiThread */
+
+#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret)
+
 /*
  * The main loop of the interpreter.
  */
-int interp(fsig,cargp)
-int fsig;
-dptr cargp;
+int interp_x(int fsig,dptr cargp)
    {
    register word opnd;
    register word *rsp;
@@ -230,18 +227,17 @@ dptr cargp;
    extern int (*optab[])();
    extern int (*keytab[])();
    struct b_proc *bproc;
-#ifdef EventMon
+#ifdef MultiThread
    int lastev = E_Misc;
-#endif					/* EventMon */
+   struct descrip lastdesc = nulldesc;
+#endif					/* MultiThread */
 
 #ifdef TallyOpt
    extern word tallybin[];
 #endif					/* TallyOpt */
 
-#ifdef EventMon
-   EVVal(fsig, E_Intcall);
-   EVVal(DiffPtrs(sp, stack), E_Stack);
-#endif					/* EventMon */
+   EVVal(fsig, e_intcall);
+   EVVal(DiffPtrs(sp, stack), e_stack);
 
 #ifndef MultiThread
    /*
@@ -264,18 +260,23 @@ dptr cargp;
 
    EntInterp;
 
-#ifdef EventMon
    switch (fsig) {
-   case G_Csusp:
-   case G_Fsusp:
-   case G_Osusp:
-      value_tmp = *(dptr)(rsp - 1);	/* argument */
+   case G_Csusp: case G_Fsusp: case G_Osusp:
+#if 0
+      value_tmp = *(dptr)(rsp - 1);	/* argument? */
+#else
+      value_tmp = cargp[0];
+#endif
       Deref(value_tmp);
-      InterpEVValD(&value_tmp,
-		   (fsig == G_Fsusp)?E_Fsusp:(fsig == G_Osusp?E_Osusp:E_Bsusp));
-#else					/* EventMon */
-   if (fsig == G_Csusp) {
-#endif					/* EventMon */
+      if (fsig == G_Fsusp) {
+	 InterpEVValD(&value_tmp, e_fsusp);
+	 }
+      else if (fsig == G_Osusp) {
+	 InterpEVValD(&value_tmp, e_osusp);
+	 }
+      else {
+	 InterpEVValD(&value_tmp, e_bsusp);
+	 }
 
       oldsp = rsp;
 
@@ -318,13 +319,29 @@ dptr cargp;
 
    for (;;) {
 
-#ifdef EventMon
-#if UNIX
+#if UNIX && e_tick
       if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
-	  ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick)
-	 InterpEVTick();
-#endif					/* UNIX */
+	  ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {
+	 /*
+	  * Record a Tick event reflecting a clock advance.
+	  *
+	  *  The interpreter main loop has detected a change in the
+	  *  profile counters. This means that the system clock has
+	  *  ticked.  Record an event and update the records.
+	  */
+	 word sum, nticks;
+	 ExInterp;
+	 oldtick = ticker.l[0] + ticker.l[1];
+	 sum = ticker.s[0] + ticker.s[1] + ticker.s[2] + ticker.s[3];
+	 nticks = sum - oldsum;
+	 EVVal(nticks, e_tick);
+	 oldsum = sum;
+	 EntInterp;
+	 }
+#endif					/* UNIX && e_tick */
 
+
+#if e_line || e_loc
    /*
     * Location change events are generated by checking to see if the opcode
     *  has changed indices in the "line number" (now line + column) table;
@@ -333,8 +350,15 @@ dptr cargp;
     *  Further optimization here is planned.
     */
    if (!is:null(curpstate->eventmask) && (
-       Testb((word)ToAscii(E_Loc), curpstate->eventmask) ||
+#if e_loc
+       Testb((word)ToAscii(E_Loc), curpstate->eventmask)
+#if e_line
+	 ||
+#endif
+#endif
+#if e_line
        Testb((word)ToAscii(E_Line), curpstate->eventmask)
+#endif
        )) {
 
       if (InRange(code, ipc.opnd, ecode)) {
@@ -344,17 +368,14 @@ dptr cargp;
 	if (!current_line_ptr ||
 	    current_line_ptr->ipc > ipc_offset ||
 	    current_line_ptr[1].ipc <= ipc_offset) {
-#ifdef LineCodes
-#ifdef Polling
+#if defined(LineCodes) && defined(Polling)
             if (!pollctr--) {
 	       ExInterp;
                pollctr = pollevent();
 	       EntInterp;
 	       if (pollctr == -1) fatalerr(141, NULL);
 	       }	       
-#endif					/* Polling */
-#endif				/* LineCodes */
-
+#endif					/* LineCodes && Polling */
 
 	    if(current_line_ptr &&
 	       current_line_ptr + 2 < elines &&
@@ -376,23 +397,27 @@ dptr cargp;
 		     }
 		  }
 	       }
-	    linenum = current_line_ptr->line;
-            temp_no = linenum & 65535;
+	    line_num = current_line_ptr->line;
+            temp_no = line_num & 65535;
             if ((lastline & 65535) != temp_no) {
+#if e_line
                if (Testb((word)ToAscii(E_Line), curpstate->eventmask))
                      if (temp_no)
-                        InterpEVVal(temp_no, E_Line);
+                        InterpEVVal(temp_no, e_line);
+#endif
 	       }
-	    if (lastline != linenum) {
-	       lastline = linenum;
+	    if (lastline != line_num) {
+	       lastline = line_num;
+#if e_loc
 	       if (Testb((word)ToAscii(E_Loc), curpstate->eventmask) &&
 		   current_line_ptr->line >> 16)
-		  InterpEVVal(current_line_ptr->line, E_Loc);
+		  InterpEVVal(current_line_ptr->line, e_loc);
+#endif
 	       }
 	    }
 	}
       }
-#endif					/* EventMon */
+#endif					/* E_Line || E_Loc */
 
       lastop = GetOp;		/* Instruction fetch */
 
@@ -419,9 +444,9 @@ Deliberate Syntax Error
 #endif					/* LATTICE */
 #endif					/* AMIGA */
 
-#if ARM || ATARI_ST || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if ARM || MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* ARM || ATARI_ST || ... */
+#endif					/* ARM || ... */
 
 #if MACINTOSH
 #if MPW
@@ -441,7 +466,7 @@ Deliberate Syntax Error
  * End of operating-system specific code.
  */
 
-#ifdef EventMon
+#if e_opcode
       /*
        * If we've asked for ALL opcode events, or specifically for this one
        * generate an MT-style event.
@@ -455,7 +480,7 @@ Deliberate Syntax Error
 	 actparent(E_Opcode);
 	 EntInterp
 	 }
-#endif					/* EventMon */
+#endif					/* E_Opcode */
 
       switch ((int)lastop) {		/*
 				 * Switch on opcode.  The cases are
@@ -568,35 +593,35 @@ Deliberate Syntax Error
 	 case Op_Number:	/* +e */
 	 case Op_Refresh:	/* ^e */
 	 case Op_Size:		/* *e */
-	    Setup_Op(1);
+	    Setup_Op(1, e_ocall);
 	    DerefArg(1);
 	    Call_Cond;
 
 	 case Op_Value: 	/* .e */
-            Setup_Op(1);
+            Setup_Op(1, e_ocall);
             DerefArg(1);
             Call_Cond;
 
 	 case Op_Nonnull:	/* \e */
 	 case Op_Null:		/* /e */
-	    Setup_Op(1);
+	    Setup_Op(1, e_ocall);
 	    Call_Cond;
 
 	 case Op_Random:	/* ?e */
 	    PushNull;
-	    Setup_Op(2)
+	    Setup_Op(2, e_ocall)
 	    Call_Cond
 
 				/* Generative unary operators */
 
 	 case Op_Tabmat:	/* =e */
-	    Setup_Op(1);
+	    Setup_Op(1, e_ocall);
 	    DerefArg(1);
 	    Call_Gen;
 
 	 case Op_Bang:		/* !e */
 	    PushNull;
-	    Setup_Op(2);
+	    Setup_Op(2, e_ocall);
 	    Call_Gen;
 
 				/* Binary operators */
@@ -626,45 +651,45 @@ Deliberate Syntax Error
 	 case Op_Numle: 	/* e1 <= e2 */
 	 case Op_Numne: 	/* e1 ~= e2 */
 	 case Op_Numlt: 	/* e1 < e2 */
-	    Setup_Op(2);
+	    Setup_Op(2, e_ocall);
 	    DerefArg(1);
 	    DerefArg(2);
 	    Call_Cond;
 
 	 case Op_Asgn:		/* e1 := e2 */
-	    Setup_Op(2);
+	    Setup_Op(2, e_ocall);
 	    Call_Cond;
 
 	 case Op_Swap:		/* e1 :=: e2 */
 	    PushNull;
-	    Setup_Op(3);
+	    Setup_Op(3, e_ocall);
 	    Call_Cond;
 
 	 case Op_Subsc: 	/* e1[e2] */
 	    PushNull;
-	    Setup_Op(3);
+	    Setup_Op(3, e_ocall);
 	    Call_Cond;
 				/* Generative binary operators */
 
 	 case Op_Rasgn: 	/* e1 <- e2 */
-	    Setup_Op(2);
+	    Setup_Op(2, e_ocall);
 	    Call_Gen;
 
 	 case Op_Rswap: 	/* e1 <-> e2 */
 	    PushNull;
-	    Setup_Op(3);
+	    Setup_Op(3, e_ocall);
 	    Call_Gen;
 
 				/* Conditional ternary operators */
 
 	 case Op_Sect:		/* e1[e2:e3] */
 	    PushNull;
-	    Setup_Op(4);
+	    Setup_Op(4, e_ocall);
 	    Call_Cond;
 				/* Generative ternary operators */
 
 	 case Op_Toby:		/* e1 to e2 by e3 */
-	    Setup_Op(3);
+	    Setup_Op(3, e_ocall);
 	    DerefArg(1);
 	    DerefArg(2);
 	    DerefArg(3);
@@ -691,37 +716,29 @@ Deliberate Syntax Error
          case Op_Colm:		/* source column number */
             {
             word loc;
-#ifdef EventMon
+#if e_loc
             column = GetWord;
             loc = column;
             loc <<= (WordBits >> 1);	/* column in high-order part */
-            loc += linenum;
+            loc += line_num;
             InterpEVVal(loc, E_Loc);
-#endif					/* EventMon */
+#endif					/* E_Loc */
 
             break;
             }
 
          case Op_Line:		/* source line number */
 
-#ifdef LineCodes
-#ifdef Polling
+#if defined(LineCodes) && defined(Polling)
             if (!pollctr--) {
 	       ExInterp;
                pollctr = pollevent();
 	       EntInterp;
 	       if (pollctr == -1) fatalerr(141, NULL);
 	       }	       
-#endif					/* Polling */
-
-
-#endif				/* LineCodes */
-
-#ifdef EventMon
-            linenum = GetWord;
-            lastline = linenum;
-#endif					/* EventMon */
-
+#endif					/* LineCodes && Polling */
+            line_num = GetWord;
+            lastline = line_num;
             break;
 
 				/* ---String Scanning--- */
@@ -833,10 +850,11 @@ invokej:
 	          }	       
 #endif					/* Polling */
 
-#ifdef EventMon
+#ifdef MultiThread
 	       lastev = E_Function;
-	       InterpEVValD(rargp, E_Fcall);
-#endif					/* EventMon */
+	       lastdesc = *rargp;
+	       InterpEVValD(rargp, e_fcall);
+#endif					/* MultiThread */
 
 	       bproc = (struct b_proc *)BlkLoc(*rargp);
 
@@ -897,17 +915,18 @@ invokej:
 	 case Op_Llist: 	/* construct list */
 	    opnd = GetWord;
 
-#ifdef EventMon
-            lastev = E_Operator;
+#ifdef MultiThread
             value_tmp.dword = D_Proc;
             value_tmp.vword.bptr = (union block *)&mt_llist;
-            InterpEVValD(&value_tmp, E_Ocall);
+            lastev = E_Operator;
+	    lastdesc = value_tmp;
+            InterpEVValD(&value_tmp, e_ocall);
             rargp = (dptr)(rsp - 1) - opnd;
             xargp = rargp;
             ExInterp;
-#else					/* EventMon */
+#else					/* MultiThread */
 	    Setup_Arg(opnd);
-#endif					/* EventMon */
+#endif					/* MultiThread */
 
 	    {
 	    int i;
@@ -956,11 +975,11 @@ mark0:
 
 	 case Op_Unmark:	/* remove expression frame */
 
-#ifdef EventMon
+#if e_prem || e_erem
 	    ExInterp;
             vanq_bound(efp, gfp);
 	    EntInterp;
-#endif					/* EventMon */
+#endif					/* E_Prem || E_Erem */
 
 	    gfp = efp->ef_gfp;
 	    rsp = (word *)efp - 1;
@@ -971,14 +990,9 @@ mark0:
 Unmark_uw:
 	    if (efp->ef_ilevel < ilevel) {
 	       --ilevel;
-
 	       ExInterp;
-
-#ifdef EventMon
-	       EVVal(A_Unmark_uw, E_Intret);
-               EVVal(DiffPtrs(sp, stack), E_Stack);
-#endif					/* EventMon */
-
+	       EVVal(A_Unmark_uw, e_intret);
+               EVVal(DiffPtrs(sp, stack), e_stack);
 	       return A_Unmark_uw;
 	       }
 
@@ -1088,11 +1102,11 @@ Unmark_uw:
 		*/
 	       *lval = *(dptr)(rsp - 1);
 
-#ifdef EventMon
+#if e_prem || e_erem
 	       ExInterp;
                vanq_bound(efp, gfp);
 	       EntInterp;
-#endif					/* EventMon */
+#endif					/* E_Prem || E_Erem */
 
 	       gfp = efp->ef_gfp;
 
@@ -1104,12 +1118,8 @@ Lsusp_uw:
 	       if (efp->ef_ilevel < ilevel) {
 		  --ilevel;
 		  ExInterp;
-
-#ifdef EventMon
-                  EVVal(A_Lsusp_uw, E_Intret);
-                  EVVal(DiffPtrs(sp, stack), E_Stack);
-#endif					/* EventMon */
-
+                  EVVal(A_Lsusp_uw, e_intret);
+                  EVVal(DiffPtrs(sp, stack), e_stack);
 		  return A_Lsusp_uw;
 		  }
 	       rsp = (word *)efp - 1;
@@ -1132,11 +1142,11 @@ Lsusp_uw:
             dptr svalp;
 	    struct b_proc *sproc;
 
-#ifdef EventMon
+#if e_psusp
             value_tmp = *(dptr)(rsp - 1);	/* argument */
             Deref(value_tmp);
             InterpEVValD(&value_tmp, E_Psusp);
-#endif					/* EventMon */
+#endif					/* E_Psusp */
 
 	    svalp = (dptr)(rsp - 1);
 	    if (Var(*svalp)) {
@@ -1197,11 +1207,7 @@ Lsusp_uw:
 	     *	a saved state, switch environments.
 	     */
 	    if (pfp->pf_scan != NULL) {
-
-#ifdef EventMon
-	       InterpEVValD(&k_subject, E_Ssusp);
-#endif					/* EventMon */
-
+	       InterpEVValD(&k_subject, e_ssusp);
 	       tmp = k_subject;
 	       k_subject = *pfp->pf_scan;
 	       *pfp->pf_scan = tmp;
@@ -1256,12 +1262,8 @@ Eret_uw:
 	    if (efp->ef_ilevel < ilevel) {
 	       --ilevel;
 	       ExInterp;
-
-#ifdef EventMon
-               EVVal(A_Eret_uw, E_Intret);
-               EVVal(DiffPtrs(sp, stack), E_Stack);
-#endif					/* EventMon */
-
+               EVVal(A_Eret_uw, e_intret);
+               EVVal(DiffPtrs(sp, stack), e_stack);
 	       return A_Eret_uw;
 	       }
 	    rsp = (word *)efp - 1;
@@ -1272,10 +1274,9 @@ Eret_uw:
 
 
 	 case Op_Pret: {	/* return from procedure */
-#ifdef EventMon
+#ifdef MultiThread
 	   struct descrip oldargp;
-	   static struct descrip unwinder;
-#endif					/* EventMon */
+#endif					/* MultiThread */
 
 	    /*
 	     * An Icon procedure is returning a value.	Determine if the
@@ -1287,13 +1288,13 @@ Eret_uw:
 	     */
 	    struct b_proc *rproc;
 	    rproc = (struct b_proc *)BlkLoc(*glbl_argp);
-#ifdef EventMon
+#if e_prem || e_erem
             oldargp = *glbl_argp;
 	    ExInterp;
             vanq_proc(efp, gfp);
 	    EntInterp;
 	    /* used to InterpEVValD(argp,E_Pret); here */
-#endif					/* EventMon */
+#endif					/* E_Prem || E_Erem */
 
 	    *glbl_argp = *(dptr)(rsp - 1);
 	    if (Var(*glbl_argp)) {
@@ -1312,19 +1313,18 @@ Pret_uw:
 	       --ilevel;
 	       ExInterp;
 
-#ifdef EventMon
-               EVVal(A_Pret_uw, E_Intret);
-               EVVal(DiffPtrs(sp, stack), E_Stack);
+               EVVal(A_Pret_uw, e_intret);
+               EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef MultiThread
 	       unwinder = oldargp;
-#endif					/* EventMon */
-
+#endif					/* MultiThread */
 	       return A_Pret_uw;
 	       }
 	   
-#ifdef EventMon
+#ifdef MultiThread
 	   if (!is:proc(oldargp) && is:proc(unwinder))
 	      oldargp = unwinder;
-#endif					/* EventMon */
+#endif					/* MultiThread */
 	    rsp = (word *)glbl_argp + 1;
 	    efp = pfp->pf_efp;
 	    gfp = pfp->pf_gfp;
@@ -1341,11 +1341,11 @@ Pret_uw:
 	       syserr("return to another program state not implemented");
 #endif
 	       }
-#ifdef EventMon
+#if e_pret
             value_tmp = *(dptr)(rsp - 1);	/* argument */
             Deref(value_tmp);
             InterpEVValD(&value_tmp, E_Pret);
-#endif					/* EventMon */
+#endif					/* E_Pret */
 #endif					/* MultiThread */
 	    break;
 	    }
@@ -1354,9 +1354,7 @@ Pret_uw:
 
 	 case Op_Efail:
 efail:
-#ifdef EventMon
-            InterpEVVal((word)-1, E_Efail);
-#endif					/* EventMon */
+            InterpEVVal((word)-1, e_efail);
 efail_noev:
 	    /*
 	     * Failure has occurred in the current expression frame.
@@ -1428,10 +1426,7 @@ efail_noev:
 		     tmp = *(pfp->pf_scan + 1);
 		     IntVal(*(pfp->pf_scan + 1)) = k_pos;
 		     k_pos = IntVal(tmp);
-
-#ifdef EventMon
-		     InterpEVValD(&k_subject, E_Sresum);
-#endif					/* EventMon */
+		     InterpEVValD(&k_subject, e_sresum);
 		     }
 
 #ifdef MultiThread
@@ -1452,41 +1447,36 @@ efail_noev:
 		  }
 
 	       switch (type) {
-
-#ifdef EventMon
 		  case G_Fsusp:
-                     InterpEVVal((word)0, E_Fresum);
-		     --ilevel;
 		     ExInterp;
-                     EVVal(A_Resume, E_Intret);
-                     EVVal(DiffPtrs(sp, stack), E_Stack);
+                     EVVal((word)0, e_fresum);
+		     --ilevel;
+                     EVVal(A_Resume, e_intret);
+                     EVVal(DiffPtrs(sp, stack), e_stack);
 		     return A_Resume;
 
 		  case G_Osusp:
-                     InterpEVVal((word)0, E_Oresum);
-		     --ilevel;
 		     ExInterp;
-                     EVVal(A_Resume, E_Intret);
-                     EVVal(DiffPtrs(sp, stack), E_Stack);
+                     EVVal((word)0, e_oresum);
+		     --ilevel;
+                     EVVal(A_Resume, e_intret);
+                     EVVal(DiffPtrs(sp, stack), e_stack);
 		     return A_Resume;
-#endif					/* EventMon */
 
 		  case G_Csusp:
-                     InterpEVVal((word)0, E_Eresum);
-		     --ilevel;
 		     ExInterp;
-#ifdef EventMon
-                     EVVal(A_Resume, E_Intret);
-                     EVVal(DiffPtrs(sp, stack), E_Stack);
-#endif					/* EventMon */
+                     EVVal((word)0, e_eresum);
+		     --ilevel;
+                     EVVal(A_Resume, e_intret);
+                     EVVal(DiffPtrs(sp, stack), e_stack);
 		     return A_Resume;
 
 		  case G_Esusp:
-                     InterpEVVal((word)0, E_Eresum);
+                     InterpEVVal((word)0, e_eresum);
 		     goto efail_noev;
 
 		  case G_Psusp:		/* resuming a procedure */
-                     InterpEVValD(glbl_argp, E_Presum);
+                     InterpEVValD(glbl_argp, e_presum);
 		     break;
 		  }
 
@@ -1495,12 +1485,14 @@ efail_noev:
 
 	 case Op_Pfail: {	/* fail from procedure */
 
-#ifdef EventMon
+#if e_pfail || e_prem || e_erem
 	    ExInterp;
+#if e_prem || e_erem
             vanq_proc(efp, gfp);
-            EVValD(glbl_argp, E_Pfail);
+#endif					/* E_Prem || E_Erem */
+            EVValD(glbl_argp, e_pfail);
 	    EntInterp;
-#endif					/* EventMon */
+#endif					/* E_Pfail || E_Prem || E_Erem */
 
 	    /*
 	     * An Icon procedure is failing.  Generate tracing message if
@@ -1519,10 +1511,8 @@ Pfail_uw:
 	    if (pfp->pf_ilevel < ilevel) {
 	       --ilevel;
 	       ExInterp;
-#ifdef EventMon
-               EVVal(A_Pfail_uw, E_Intret);
-               EVVal(DiffPtrs(sp, stack), E_Stack);
-#endif					/* EventMon */
+               EVVal(A_Pfail_uw, e_intret);
+               EVVal(DiffPtrs(sp, stack), e_stack);
 	       return A_Pfail_uw;
 	       }
 	    efp = pfp->pf_efp;
@@ -1794,72 +1784,105 @@ C_rtn_term:
 	 switch (signal) {
 
 	    case A_Resume:
-#ifdef EventMon
-	       if ((lastev == E_Function) || (lastev == E_Operator)) {
-		  InterpEVVal((word)-1,
-			      ((lastev == E_Function)? E_Ffail : E_Ofail));
-		  lastev = E_Misc;
-		  }
-#endif					/* EventMon */
+#ifdef MultiThread
+	    if (lastev == E_Function) {
+	       InterpEVValD(&lastdesc, e_ffail);
+	       lastev = E_Misc;
+	       }
+	    else if (lastev == E_Operator) {
+	       InterpEVValD(&lastdesc, e_ofail);
+	       lastev = E_Misc;
+	       }
+#endif					/* MultiThread */
 	       goto efail_noev;
 
 	    case A_Unmark_uw:		/* unwind for unmark */
-#ifdef EventMon
-	       if ((lastev == E_Function) || (lastev == E_Operator)) {
-		  InterpEVVal((word)0, ((lastev==E_Function) ? E_Frem:E_Orem));
+#ifdef MultiThread
+	       if (lastev == E_Function) {
+		  InterpEVValD(&lastdesc, e_frem);
 		  lastev = E_Misc;
 		  }
-#endif					/* EventMon */
+	       else if (lastev == E_Operator) {
+		  InterpEVValD(&lastdesc, e_orem);
+		  lastev = E_Misc;
+		  }
+#endif					/* MultiThread */
 	       goto Unmark_uw;
 
 	    case A_Lsusp_uw:		/* unwind for lsusp */
-#ifdef EventMon
-	       if ((lastev == E_Function) || (lastev == E_Operator)) {
-		  InterpEVVal((word)0, ((lastev==E_Function) ? E_Frem:E_Orem));
+#ifdef MultiThread
+	       if (lastev == E_Function) {
+		  InterpEVValD(&lastdesc, e_frem);
 		  lastev = E_Misc;
 		  }
-#endif					/* EventMon */
+	       else if (lastev == E_Operator) {
+		  InterpEVValD(&lastdesc, e_orem);
+		  lastev = E_Misc;
+		  }
+#endif					/* MultiThread */
 	       goto Lsusp_uw;
 
 	    case A_Eret_uw:		/* unwind for eret */
-#ifdef EventMon
-	       if ((lastev == E_Function) || (lastev == E_Operator)) {
-		  InterpEVVal((word)0, ((lastev==E_Function) ? E_Frem:E_Orem));
+#ifdef MultiThread
+	       if (lastev == E_Function) {
+		  InterpEVValD(&lastdesc, e_frem);
 		  lastev = E_Misc;
 		  }
-#endif					/* EventMon */
+	       else if (lastev == E_Operator) {
+		  InterpEVValD(&lastdesc, e_orem);
+		  lastev = E_Misc;
+		  }
+#endif					/* MultiThread */
 	       goto Eret_uw;
 
 	    case A_Pret_uw:		/* unwind for pret */
-#ifdef EventMon
-	       if ((lastev == E_Function) || (lastev == E_Operator)) {
-		  InterpEVVal((word)0, ((lastev==E_Function) ? E_Frem:E_Orem));
+#ifdef MultiThread
+	       if (lastev == E_Function) {
+		  InterpEVVal(&lastdesc, e_frem);
 		  lastev = E_Misc;
 		  }
-#endif					/* EventMon */
+	       else if (lastev == E_Operator) {
+		  InterpEVVal(&lastdesc, e_orem);
+		  lastev = E_Misc;
+		  }
+#endif					/* MultiThread */
 	       goto Pret_uw;
 
 	    case A_Pfail_uw:		/* unwind for pfail */
-#ifdef EventMon
-	       if ((lastev == E_Function) || (lastev == E_Operator)) {
-		  InterpEVVal((word)0, ((lastev==E_Function) ? E_Frem:E_Orem));
+#ifdef MultiThread
+	       if (lastev == E_Function) {
+		  InterpEVValD(&lastdesc, e_frem);
 		  lastev = E_Misc;
 		  }
-#endif					/* EventMon */
+	       else if (lastev == E_Operator) {
+		  InterpEVValD(&lastdesc, e_orem);
+		  lastev = E_Misc;
+		  }
+#endif					/* MultiThread */
 	       goto Pfail_uw;
 	    }
 
 	 rsp = (word *)rargp + 1;	/* set rsp to result */
 
-#ifdef EventMon
+#ifdef MultiThread
 return_term:
-         value_tmp = *(dptr)(rsp - 1);	/* argument */
-         Deref(value_tmp);
-         if ((lastev == E_Function) || (lastev == E_Operator)) {
-	    InterpEVValD(&value_tmp, ((lastev == E_Function) ? E_Fret:E_Oret));
+         if (lastev == E_Function) {
+#if e_fret
+	    value_tmp = *(dptr)(rsp - 1);	/* argument */
+	    Deref(value_tmp);
+	    InterpEVValD(&value_tmp, e_fret);
+#endif					/* E_Fret */
 	    lastev = E_Misc;
 	    }
-#endif					/* EventMon */
+         else if (lastev == E_Operator) {
+#if e_oret
+	    value_tmp = *(dptr)(rsp - 1);	/* argument */
+	    Deref(value_tmp);
+	    InterpEVValD(&value_tmp, e_oret);
+#endif					/* E_Oret */
+	    lastev = E_Misc;
+	    }
+#endif					/* MultiThread */
 
 	 continue;
 	 }
@@ -1872,6 +1895,15 @@ interp_quit:
    /*NOTREACHED*/
    return 0;	/* avoid gcc warning */
    }
+#enddef
+
+#ifdef MultiThread
+interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret)
+#else					/* MultiThread */
+interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+#endif					/* MultiThread */
+
 
 #ifdef StackPic
 /*
@@ -1883,9 +1915,9 @@ interp_quit:
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ATARI_ST || MACINTOSH || MVS || VM || VMS
+#if AMIGA || MACINTOSH || MVS || VM || VMS
    /* not included */
-#endif					/* AMIGA || ATARI_ST || ... */
+#endif					/* AMIGA || ... */
 
 #if ARM
 void stkdump(op)
@@ -1962,7 +1994,7 @@ void stkdump(op)
  */
 #endif					/* StackPic */
 
-#ifdef EventMon
+#if E_Prem || E_Erem
 /*
  * vanq_proc - monitor the removal of suspended operations from within
  *   a procedure.
@@ -2021,7 +2053,7 @@ struct gf_marker *gfp_v;
 
    return efp_v;
    }
-#endif					/* EventMon */
+#endif					/* E_Prem || E_Erem */
 
 #ifdef MultiThread
 /*
@@ -2036,6 +2068,7 @@ register struct b_coexpr *ncp;
    int first, rv;
 
    dptr savedtvalloc = NULL;
+
    /*
     * Set activator in new co-expression.
     */
@@ -2073,8 +2106,7 @@ register struct b_coexpr *ncp;
    /*
     * flush any accumulated ticks
     */
-#ifdef EventMon
-#if UNIX
+#if UNIX && E_Tick
    if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
        ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {
       word sum, nticks;
@@ -2088,8 +2120,7 @@ register struct b_coexpr *ncp;
       nticks = sum - oldsum;
       oldsum = sum;
       }
-#endif					/* UNIX */
-#endif					/* EventMon */
+#endif					/* UNIX && E_Tick */
 
    return rv;
 }

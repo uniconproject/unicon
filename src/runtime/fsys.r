@@ -4,9 +4,9 @@
  *  [save], seek, stop, system, where, write, writes, [getch, getche, kbhit]
  */
 
-#if MICROSOFT || SCO_XENIX
+#if MICROSOFT
 #define BadCode
-#endif					/* MICROSOFT || SCO_XENIX */
+#endif					/* MICROSOFT */
 
 #ifdef XENIX_386
 #define register
@@ -35,9 +35,9 @@ extern FILE *popen(const char *, const char *);
 extern int pclose(FILE *);
 #endif AMIGA                            /* AMIGA */
 
-#if ATARI_ST || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* ATARI_ST || MSDOS ... */
+#endif					/* MSDOS ... */
 
 #if MACINTOSH && MPW
 extern int MPWFlush(FILE *f);
@@ -544,9 +544,9 @@ function{0,1} open(fname, spec)
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || OS2 || VM
+#if AMIGA || MACINTOSH || MSDOS || MVS || OS2 || VM
    /* nothing is needed */
-#endif					/* AMIGA || ATARI_ST || ... */
+#endif					/* AMIGA || ... */
 
 #if ARM
       extern FILE *popen(const char *, const char *);
@@ -571,7 +571,9 @@ Deliberate Syntax Error
       if (!cnv:C_string(fname, fnamestr))
 	 runerr(103,fname);
 
-      if (strlen(fnamestr) != StrLen(fname)) fail;
+      if (strlen(fnamestr) != StrLen(fname)) {
+	 fail;
+	 }
 
       status = 0;
 
@@ -587,6 +589,7 @@ Deliberate Syntax Error
        */
       s = StrLoc(spec);
       slen = StrLen(spec);
+
       for (i = 0; i < slen; i++) {
 	 switch (*s++) {
 	    case 'a':
@@ -754,14 +757,6 @@ Deliberate Syntax Error
 	 mode[1] = '+';
 #endif					/* AMIGA || ARM || UNIX || VMS */
 
-#if ATARI_ST
-      if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
-	 mode[1] = '+';
-	 mode[2] = ((status & Fs_Untrans) != 0) ? 'b' : 'a';
-	 }
-      else mode[1] = ((status & Fs_Untrans) != 0) ? 'b' : 'a';
-#endif					/* ATARI_ST */
-   
 #if MACINTOSH
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
          mode[1] = '+';
@@ -850,7 +845,7 @@ Deliberate Syntax Error
 		  register int a;
 		  char *buf[4192];
 		  tended char *tmps;
-		  
+
 		  /* Check attributes (stolen from above) */
 		  for (a=0; a<n; a++) {
 		     if (is:null(attr[a])) {
@@ -1480,32 +1475,6 @@ function{0,1} reads(f,i)
       Protect(StrLoc(s) = alcstr(NULL, i), runerr(0));
       StrLen(s) = 0;
 
-#if AMIGA
-#if LATTICE
-      /*
-       * The following code is special for Lattice 4.0 -- it was different
-       *  for Lattice 3.10.  It probably won't work correctly with other
-       *  C compilers.
-       */
-      if (IsInteractive(_ufbs[fileno(fp)].ufbfh)) {
-	 if ((i = read(fileno(fp),StrLoc(s),i)) <= 0)
-	    fail;
-	 StrLen(s) = i;
-	 /*
-	  * We may not have used the entire amount of storage we reserved.
-	  */
-	 nbytes = DiffPtrs(StrLoc(s) + i, strfree);
-	 if (nbytes < 0)
-	    EVVal(-nbytes, E_StrDeAlc);
-	 else
-	    EVVal(nbytes, E_String);
-	 strtotal += nbytes;
-	 strfree = StrLoc(s) + i;
-	 return s;
-	 }
-#endif					/* LATTICE */
-#endif					/* AMIGA */
-
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
@@ -1529,10 +1498,7 @@ function{0,1} reads(f,i)
        * We may not have used the entire amount of storage we reserved.
        */
       nbytes = DiffPtrs(StrLoc(s) + tally, strfree);
-      if (nbytes < 0)
-         EVVal(-nbytes, E_StrDeAlc);
-      else
-         EVVal(nbytes, E_String);
+      EVStrAlc(nbytes);
       strtotal += nbytes;
       strfree = StrLoc(s) + tally;
       return s;
@@ -2317,7 +2283,7 @@ function{0,1} chdir(s)
 #if ARM || MACINTOSH || MVS || VM
       runerr(121);
 #endif                                  /* ARM || MACINTOSH ... */
-#if AMIGA || ATARI_ST || MSDOS || OS2 || UNIX || VMS || NT
+#if AMIGA || MSDOS || OS2 || UNIX || VMS || NT
 
       char path[PATH_MAX];
       int len;

@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.16 2002-03-21 19:20:46 jeffery Exp $
+ * $Id: rposix.r,v 1.17 2002-06-13 19:57:52 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1187,9 +1187,7 @@ dptr result;
 }
 #endif					/* !NT */
 
-void catstrs(ptrs, d)
-char **ptrs;
-dptr d;
+void catstrs(char **ptrs, dptr d)
 {
    int nmem = 0, i, n;
    char *p;
@@ -1210,11 +1208,8 @@ dptr d;
 
    StrLen(*d) = DiffPtrs(p,StrLoc(*d));
    n = DiffPtrs(p,strfree);             /* note the deallocation */
-   if (n < 0)
-      EVVal(-n, E_StrDeAlc);
-   else
-      EVVal(n, E_String);
-   strtotal += DiffPtrs(p,strfree);
+   EVStrAlc(n);
+   strtotal += n;
    strfree = p;                         /* give back unused space */
 }
 
@@ -1312,11 +1307,8 @@ struct hostent *hs;
 
    StrLen(rp->fields[2]) = DiffPtrs(p,StrLoc(rp->fields[2]));
    n = DiffPtrs(p,strfree);             /* note the deallocation */
-   if (n < 0)
-      EVVal(-n, E_StrDeAlc);
-   else
-      EVVal(n, E_String);
-   strtotal += DiffPtrs(p,strfree);
+   EVStrAlc(n);
+   strtotal += n;
    strfree = p;                         /* give back unused space */
 
    return result;
@@ -1471,10 +1463,7 @@ dptr d;
        * We may not have used the entire amount of storage we reserved.
        */
       nbytes = DiffPtrs(StrLoc(*d) + tally, strfree);
-      if (nbytes < 0)
-         EVVal(-nbytes, E_StrDeAlc);
-      else
-         EVVal(nbytes, E_String);
+      EVStrAlc(nbytes);
       strtotal += nbytes;
       strfree = StrLoc(*d) + tally;
    } else {
@@ -1510,13 +1499,9 @@ dptr d;
 	 if (tally < bufsize) {
 	    /* We're done; return unused storage */
 	    nbytes = DiffPtrs(StrLoc(*d) + total, strfree);
-	    if (nbytes < 0)
-	       EVVal(-nbytes, E_StrDeAlc);
-	    else
-	       EVVal(nbytes, E_String);
+	    EVStrAlc(nbytes);
 	    strtotal += nbytes;
 	    strfree = StrLoc(*d) + total;
-
 	    break;
 	 }
 	 i++;

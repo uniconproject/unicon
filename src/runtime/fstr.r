@@ -214,11 +214,8 @@ function{1} detab(s,i[n])
          return result;
       else {
 	 long n = DiffPtrs(StrLoc(result),strfree); /* note deallocation */
-	 if (n < 0)
-	    EVVal(-n, E_StrDeAlc);
-	 else
-	    EVVal(n, E_String);
-	 strtotal += DiffPtrs(StrLoc(result),strfree);
+	 EVStrAlc(n);
+	 strtotal += n;
          strfree = StrLoc(result);		/* reset the free pointer */
          return s;				/* return original string */
          }
@@ -337,21 +334,15 @@ function{1} entab(s,i[n])
 	 long n;
          StrLen(result) = DiffPtrs(out,StrLoc(result));
 	 n = DiffPtrs(out,strfree);		/* note the deallocation */
-	 if (n < 0)
-	    EVVal(-n, E_StrDeAlc);
-	 else
-	    EVVal(n, E_String);
-	 strtotal += DiffPtrs(out,strfree);
+	 EVStrAlc(n);
+	 strtotal += n;
          strfree = out;				/* give back unused space */
          return result;				/* return new string */
          }
       else {
 	 long n = DiffPtrs(StrLoc(result),strfree); /* note the deallocation */
-	 if (n < 0)
-	    EVVal(-n, E_StrDeAlc);
-	 else
-	    EVVal(n, E_String);
-	 strtotal += DiffPtrs(StrLoc(result),strfree);
+	 EVStrAlc(n);
+	 strtotal += n;
          strfree = StrLoc(result);		/* reset free pointer */
          return s;				/* return original string */
 	 }

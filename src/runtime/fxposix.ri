@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.14 2002-03-22 16:40:47 jeffery Exp $
+ * $Id: fxposix.ri,v 1.15 2002-06-13 19:57:52 jeffery Exp $
  */
 
 /*
@@ -152,11 +152,8 @@ function{0,1} readlink(s)
       if ((len = readlink(s, StrLoc(result), NAME_MAX)) < 0) {
 	 /* Give back the string */
 	 n = DiffPtrs(StrLoc(result),strfree); /* note the deallocation */
-         if (n < 0)
-            EVVal(-n, E_StrDeAlc);
-         else
-            EVVal(n, E_String);
-         strtotal += DiffPtrs(StrLoc(result),strfree);
+	 EVStrAlc(n);
+         strtotal += n;
          strfree = StrLoc(result);              /* reset free pointer */
 
 	 IntVal(amperErrno) = errno;
@@ -167,11 +164,8 @@ function{0,1} readlink(s)
       out = StrLoc(result) + len;
       StrLen(result) = DiffPtrs(out,StrLoc(result));
       n = DiffPtrs(out,strfree);             /* note the deallocation */
-      if (n < 0)
-	EVVal(-n, E_StrDeAlc);
-      else
-	EVVal(n, E_String);
-      strtotal += DiffPtrs(out,strfree);
+      EVStrAlc(n);
+      strtotal += n;
       strfree = out;                         /* give back unused space */
 
       return result;
@@ -1771,10 +1765,7 @@ function{0,1} stat(f)
 	       if ((len = readlink(fname, StrLoc(rp->fields[13]), NAME_MAX)) < 0) {
 		  /* Give back the string */
 		  n = DiffPtrs(StrLoc(rp->fields[13]),strfree);
-		  if (n < 0)
-		     EVVal(-n, E_StrDeAlc);
-		  else
-		     EVVal(n, E_String);
+		  EVStrAlc(n);
 		  strtotal += DiffPtrs(StrLoc(rp->fields[13]),strfree);
 		  /* reset free pointer */
 		  strfree = StrLoc(rp->fields[13]);
@@ -1787,11 +1778,8 @@ function{0,1} stat(f)
 	       out = StrLoc(rp->fields[13]) + len;
 	       StrLen(rp->fields[13]) = DiffPtrs(out,StrLoc(rp->fields[13]));
 	       n = DiffPtrs(out,strfree);
-	       if (n < 0)
-		  EVVal(-n, E_StrDeAlc);
-	       else
-		  EVVal(n, E_String);
-	       strtotal += DiffPtrs(out,strfree);
+	       EVStrAlc(n);
+	       strtotal += n;
 	       strfree = out;
 	    }
 #endif					/* !NT */
@@ -1949,11 +1937,8 @@ function{0,1} fetch(d, k)
 		  for(i=0; i<nf; i++) {
 		     if (len == StrLen(bp2->proc.lnames[i]) &&
 			 !strncmp(loc, StrLoc(bp2->proc.lnames[i]), len)) {
-#ifdef EventMon
 			EVValD(&result, E_Rref);
-			MakeInt(i+1, &eventdesc);
-			EVValD(&eventdesc, E_Rsub);
-#endif					/* EventMon */
+			EVVal(i+1, E_Rsub);
 
 			/*
 			 * Found the field, return a pointer to it.

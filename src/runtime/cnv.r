@@ -14,9 +14,6 @@
  * Assumed: the C compiler must handle assignments of C integers to
  * C double variables and vice-versa.  Hopefully production C compilers
  * have managed to eliminate bugs related to these assignments.
- *
- * Note: calls beginning with EV are empty macros unless EventMon
- * is defined.
  */
 
 #if !EBCDIC
@@ -214,23 +211,23 @@ dptr d;
    return 1;
    }
 
+#begdef cnv_cset_macro(f,e_aconv,e_tconv,e_nconv,e_sconv,e_fconv)
 /*
  * cnv_cset - cnv:cset(*s, *d), convert to a cset
  */
-int cnv_cset(s, d)
-dptr s, d;
+int f(dptr s, dptr d)
    {
    tended struct descrip str;
    char sbuf[MaxCvtLen];
    register C_integer l;
    register char *s1;        /* does not need to be tended */
 
-   EVValD(s, E_Aconv);
-   EVValD(&csetdesc, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&csetdesc, e_tconv);
 
    if (is:cset(*s)) {
       *d = *s;
-      EVValD(s, E_Nconv);
+      EVValD(s, e_nconv);
       return 1;
       }
    /*
@@ -245,14 +242,22 @@ dptr s, d;
          Setb(*s1, *d);
 	 s1++;
          }
-      EVValD(d, E_Sconv);
+      EVValD(d, e_sconv);
       return 1;
       }
    else {
-      EVValD(s, E_Fconv);
+      EVValD(s, e_fconv);
       return 0;
       }
   }
+#enddef
+
+#ifdef MultiThread
+cnv_cset_macro(cnv_cset_0,0,0,0,0,0)
+cnv_cset_macro(cnv_cset_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
+#else					/* MultiThread */
+cnv_cset_macro(cnv_cset,0,0,0,0,0)
+#endif					/* MultiThread */
 
 /*
  * cnv_ec_int - cnv:(exact)C_integer(*s, *d), convert to an exact C integer
@@ -357,10 +362,11 @@ dptr s, d;
       }
    }
 
+#begdef cnv_int_macro(f,e_aconv,e_tconv,e_nconv,e_fconv,e_sconv)
 /*
  * cnv_int - cnv:integer(*s, *d), convert to integer
  */
-int cnv_int(s, d)
+int f(s, d)
 dptr s, d;
    {
 
@@ -372,13 +378,13 @@ dptr s, d;
    char sbuf[MaxCvtLen];
    union numeric numrc;
 
-   EVValD(s, E_Aconv);
-   EVValD(&zerodesc, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&zerodesc, e_tconv);
 
    type_case *s of {
       integer: {
          *d = *s;
-         EVValD(s, E_Nconv);
+         EVValD(s, e_nconv);
          return 1;
          }
       real: {
@@ -388,20 +394,20 @@ dptr s, d;
 
 #ifdef LargeInts
             if (realtobig(s, d) == Succeeded) {
-               EVValD(d, E_Sconv);
+               EVValD(d, e_sconv);
                return 1;
                }
             else {
-               EVValD(s, E_Fconv);
+               EVValD(s, e_fconv);
                return 0;
                }
 #else					/* LargeInts */
-            EVValD(s, E_Fconv);
+            EVValD(s, e_fconv);
             return 0;
 #endif					/* LargeInts */
 	    }
          MakeInt((word)dbl,d);
-         EVValD(d, E_Sconv);
+         EVValD(d, e_sconv);
          return 1;
          }
       string: {
@@ -412,7 +418,7 @@ dptr s, d;
         s = &cnvstr;
         }
       default: {
-         EVValD(s, E_Fconv);
+         EVValD(s, e_fconv);
          return 0;
          }
       }
@@ -426,13 +432,13 @@ dptr s, d;
       case T_Lrgint:
          d->dword = D_Lrgint;
 	 BlkLoc(*d) = (union block *)numrc.big;
-         EVValD(d, E_Sconv);
+         EVValD(d, e_sconv);
 	 return 1;
 #endif					/* LargeInts */
 
       case T_Integer:
          MakeInt(numrc.integer,d);
-         EVValD(d, E_Sconv);
+         EVValD(d, e_sconv);
          return 1;
       case T_Real: {
          double dbl = numrc.real;
@@ -440,65 +446,82 @@ dptr s, d;
 
 #ifdef LargeInts
             if (realtobig(s, d) == Succeeded) {
-               EVValD(d, E_Sconv);
+               EVValD(d, e_sconv);
                return 1;
                }
             else {
-               EVValD(s, E_Fconv);
+               EVValD(s, e_fconv);
                return 0;
                }
 #else					/* LargeInts */
-            EVValD(s, E_Fconv);
+            EVValD(s, e_fconv);
             return 0;
 #endif					/* LargeInts */
 	    }
          MakeInt((word)dbl,d);
-         EVValD(d, E_Sconv);
+         EVValD(d, e_sconv);
          return 1;
          }
       default:
-         EVValD(s, E_Fconv);
+         EVValD(s, e_fconv);
          return 0;
       }
    }
+#enddef
 
+#ifdef MultiThread
+cnv_int_macro(cnv_int_0,0,0,0,0,0)
+cnv_int_macro(cnv_int_1,E_Aconv,E_Tconv,E_Nconv,E_Fconv,E_Sconv)
+#else					/* MultiThread */
+cnv_int_macro(cnv_int,0,0,0,0,0)
+#endif					/* MultiThread */
+
+#begdef cnv_real_macro(f,e_aconv,e_tconv,e_sconv,e_fconv)
 /*
  * cnv_real - cnv:real(*s, *d), convert to real
  */
-int cnv_real(s, d)
-dptr s, d;
+int f(dptr s, dptr d)
    {
    double dbl;
 
-   EVValD(s, E_Aconv);
-   EVValD(&rzerodesc, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&rzerodesc, e_tconv);
 
    if (cnv_c_dbl(s, &dbl)) {
       Protect(BlkLoc(*d) = (union block *)alcreal(dbl), fatalerr(0,NULL));
       d->dword = D_Real;
-      EVValD(d, E_Sconv);
+      EVValD(d, e_sconv);
       return 1;
       }
    else
-      EVValD(s, E_Fconv);
+      EVValD(s, e_fconv);
       return 0;
    }
+#enddef
 
+#ifdef MultiThread
+cnv_real_macro(cnv_real_0,0,0,0,0)
+cnv_real_macro(cnv_real_1,E_Aconv,E_Tconv,E_Sconv,E_Fconv)
+#else					/* MultiThread */
+cnv_real_macro(cnv_real,0,0,0,0)
+#endif					/* MultiThread */
+
+
+#begdef cnv_str_macro(f, e_aconv, e_tconv, e_nconv, e_sconf, e_fconv)
 /*
  * cnv_str - cnv:string(*s, *d), convert to a string
  */
-int cnv_str(s, d)
-dptr s, d;
+int f(dptr s, dptr d)
    {
    char sbuf[MaxCvtLen];
 
-   EVValD(s, E_Aconv);
-   EVValD(&emptystr, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&emptystr, e_tconv);
 
    type_case *s of {
       string: {
          *d = *s;
-         EVValD(s, E_Nconv);
+         EVValD(s, e_nconv);
          return 1;
          }
       integer: {
@@ -525,33 +548,40 @@ dptr s, d;
       cset:
          cstos(BlkLoc(*s)->cset.bits, d, sbuf);
       default: {
-         EVValD(s, E_Fconv);
+         EVValD(s, e_fconv);
          return 0;
          }
       }
    Protect(StrLoc(*d) = alcstr(StrLoc(*d), StrLen(*d)), fatalerr(0,NULL));
-   EVValD(d, E_Sconv);
+   EVValD(d, e_sconv);
    return 1;
    }
+#enddef
 
+#ifdef MultiThread
+cnv_str_macro(cnv_str_0,0,0,0,0,0)
+cnv_str_macro(cnv_str_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
+#else					/* MultiThread */
+cnv_str_macro(cnv_str,0,0,0,0,0)
+#endif					/* MultiThread */
+
+#begdef cnv_tcset_macro(f, e_aconv, e_tconv, e_nconv, e_sconv, e_fconv)
 /*
  * cnv_tcset - cnv:tmp_cset(*s, *d), convert to a temporary cset
  */
-int cnv_tcset(cbuf, s, d)
-struct b_cset *cbuf;
-dptr s, d;
+int f(struct b_cset *cbuf, dptr s, dptr d)
    {
    struct descrip tmpstr;
    char sbuf[MaxCvtLen];
    register char *s1;
    C_integer l;
 
-   EVValD(s, E_Aconv);
-   EVValD(&csetdesc, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&csetdesc, e_tconv);
 
    if (is:cset(*s)) {
       *d = *s;
-      EVValD(s, E_Nconv);
+      EVValD(s, e_nconv);
       return 1;
       }
    if (tmp_str(sbuf, s, &tmpstr)) {
@@ -565,46 +595,60 @@ dptr s, d;
          Setb(*s1, *d);
 	 s1++;
          }
-      EVValD(d, E_Sconv);
+      EVValD(d, e_sconv);
       return 1;
       }
    else {
-      EVValD(s, E_Fconv);
+      EVValD(s, e_fconv);
       return 0;
       }
    }
+#enddef
 
+#ifdef MultiThread
+cnv_tcset_macro(cnv_tcset_0,0,0,0,0,0)
+cnv_tcset_macro(cnv_tcset_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
+#else					/* MultiThread */
+cnv_tcset_macro(cnv_tcset,0,0,0,0,0)
+#endif					/* MultiThread */
+
+#begdef cnv_tstr_macro(f,e_aconv,e_tconv,e_nconv,e_sconv,e_fconv)
 /*
  * cnv_tstr - cnv:tmp_string(*s, *d), convert to a temporary string
  */
-int cnv_tstr(sbuf, s, d)
-char *sbuf;
-dptr s;
-dptr d;
+int f(char *sbuf, dptr s, dptr d)
    {
-   EVValD(s, E_Aconv);
-   EVValD(&emptystr, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&emptystr, e_tconv);
 
    if (is:string(*s)) {
       *d = *s;
-      EVValD(s, E_Nconv);
+      EVValD(s, e_nconv);
       return 1;
       }
    else if (tmp_str(sbuf, s, d)) {
-      EVValD(d, E_Sconv);
+      EVValD(d, e_sconv);
       return 1;
       }
    else {
-      EVValD(s, E_Fconv);
+      EVValD(s, e_fconv);
       return 0;
       }
    }
+#enddef
 
+#ifdef MultiThread
+cnv_tstr_macro(cnv_tstr_0,0,0,0,0,0)
+cnv_tstr_macro(cnv_tstr_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
+#else					/* MultiThread */
+cnv_tstr_macro(cnv_tstr,0,0,0,0,0)
+#endif					/* MultiThread */
+
+#begdef deref_macro(f, e_deref)
 /*
  * deref - dereference a descriptor.
  */
-void deref(s, d)
-dptr s, d;
+void f(dptr s, dptr d)
    {
    /*
     * no allocation is done, so nothing need be tended.
@@ -614,11 +658,7 @@ dptr s, d;
    register union block **ep;
    int res;
 
-#ifdef EventMon
-   if (!is:null(curpstate->eventmask) &&
-       Testb((word)ToAscii(E_Deref), curpstate->eventmask))
-      EVVariable(s, E_Deref);
-#endif
+   EVVar(s, e_deref);
 
    if (!is:variable(*s)) {
       *d = *s;
@@ -694,6 +734,14 @@ dptr s, d;
          *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
       }
    }
+#enddef
+
+#ifdef MultiThread
+deref_macro(deref_0,0)
+deref_macro(deref_1,E_Deref)
+#else					/* MultiThread */
+deref_macro(deref,0)
+#endif					/* MultiThread */
 
 /*
  * getdbl - return as a double the value inside a real block.

@@ -13,7 +13,9 @@ extern int err_conv;		/* flag: error conversion is supported */
 extern int dodump;		/* termination dump */
 extern int line_info;		/* flag: line information is available */
 extern char *file_name;		/* source file for current execution point */
+#ifndef MultiThread
 extern int line_num;		/* line number for current execution point */
+#endif					/* MultiThread */
 
 extern unsigned char allchars[];/* array for making one-character strings */
 extern char *blkname[];		/* print names for block types. */
@@ -69,15 +71,13 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
    extern int pollctr;
 #endif					/* Polling */
 
-#ifdef EventMon
-   extern char typech[];
-   extern word oldsum;
-   extern struct descrip csetdesc;	/* cset descriptor */
-   extern struct descrip eventdesc;	/* event descriptor */
-   extern struct b_iproc mt_llist;
-   extern struct descrip rzerodesc;	/* real descriptor */
-   extern struct b_real realzero;	/* real zero block */
-#endif					/* EventMon */
+extern char typech[];
+extern word oldsum;
+extern struct descrip csetdesc;		/* cset descriptor */
+extern struct descrip eventdesc;	/* event descriptor */
+extern struct b_iproc mt_llist;
+extern struct descrip rzerodesc;	/* real descriptor */
+extern struct b_real realzero;		/* real zero block */
 
 #ifdef DosFncs
    extern char *zptr;

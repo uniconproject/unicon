@@ -38,12 +38,10 @@ operator{*} ! bang(underef x -> dx)
             return type(dx).lst_elem
 	    }
          inline {
-
-#ifdef EventMon
+#if E_Lsub
             word xi = 0;
-
+#endif					/* E_Lsub */
             EVValD(&dx, E_Lbang);
-#endif					/* EventMon */
 
             /*
              * x is a list.  Chain through each list element block and for
@@ -58,10 +56,10 @@ operator{*} ! bang(underef x -> dx)
                   if (j >= ep->lelem.nslots)
                      j -= ep->lelem.nslots;
 
-#ifdef EventMon
-                  MakeInt(++xi, &eventdesc);
-                  EVValD(&eventdesc, E_Lsub);
-#endif					/* EventMon */
+#if E_Lsub
+		  ++xi;
+		  EVVal(xi, E_Lsub);
+#endif					/* E_Lsub */
 
                   suspend struct_var(&ep->lelem.lslots[j], ep);
                   }
@@ -288,20 +286,11 @@ operator{*} ! bang(underef x -> dx)
              * a variable pointing to each one.
              */
 
-#ifdef EventMon
-            word xi = 0;
-
             EVValD(&dx, E_Rbang);
-#endif					/* EventMon */
 
             j = BlkLoc(dx)->record.recdesc->proc.nfields;
             for (i = 0; i < j; i++) {
-
-#ifdef EventMon
-                  MakeInt(++xi, &eventdesc);
-                  EVValD(&eventdesc, E_Rsub);
-#endif					/* EventMon */
-
+	       EVVal(i+1, E_Rsub);
                suspend struct_var(&BlkLoc(dx)->record.fields[i], 
                   (struct b_record *)BlkLoc(dx));
                }
@@ -433,11 +422,8 @@ operator{0,1} ? random(underef x -> dx)
             rval *= val;
             i = (word)rval + 1;
 
-#ifdef EventMon
             EVValD(&dx, E_Lrand);
-            MakeInt(i, &eventdesc);
-            EVValD(&eventdesc, E_Lsub);
-#endif					/* EventMon */
+            EVVal(i, E_Lsub);
 
             j = 1;
             /*
@@ -486,12 +472,8 @@ operator{0,1} ? random(underef x -> dx)
             rval *= val;
             n = (word)rval + 1;
 
-#ifdef EventMon
             EVValD(&dx, E_Trand);
-            MakeInt(n, &eventdesc);
-            EVValD(&eventdesc, E_Tsub);
-#endif					/* EventMon */
-
+            EVVal(n, E_Tsub);
 
             /*
              * Walk down the hash chains to find and return the nth element
@@ -533,10 +515,7 @@ operator{0,1} ? random(underef x -> dx)
             rval *= val;
             n = (word)rval + 1;
 
-#ifdef EventMon
             EVValD(&dx, E_Srand);
-            MakeInt(n, &eventdesc);
-#endif					/* EventMon */
 
             /*
              * Walk down the hash chains to find and return the nth element.
@@ -544,8 +523,10 @@ operator{0,1} ? random(underef x -> dx)
             for (i = 0; i < HSegs && (seg = bp->table.hdir[i]) != NULL; i++)
                for (j = segsize[i] - 1; j >= 0; j--)
                   for (ep = seg->hslots[j]; ep != NULL; ep = ep->telem.clink)
-                     if (--n <= 0)
+                     if (--n <= 0) {
+			EVValD(&ep->selem.setmem, E_Selem);
                         return ep->selem.setmem;
+			}
             syserr("set reference out of bounds in random");
             }
          }
@@ -574,13 +555,8 @@ operator{0,1} ? random(underef x -> dx)
              */
             rval = RandVal;
             rval *= val;
-
-#ifdef EventMon
             EVValD(&dx, E_Rrand);
-            MakeInt(rval + 1, &eventdesc);
-            EVValD(&eventdesc, E_Rsub);
-#endif					/* EventMon */
-
+            EVVal(rval + 1, E_Rsub);
             return struct_var(&rec->fields[(word)rval], rec);
             }
          }
@@ -868,11 +844,8 @@ operator{0,1} [] subsc(underef x -> dx,y)
             register union block *bp; /* doesn't need to be tended */
             struct b_list *lp;        /* doesn't need to be tended */
 
-#ifdef EventMon
             EVValD(&dx, E_Lref);
-            MakeInt(y, &eventdesc);
-            EVValD(&eventdesc, E_Lsub);
-#endif					/* EventMon */
+            EVVal(y, E_Lsub);
 
 	    /*
 	     * Make sure that subscript y is in range.
@@ -956,11 +929,8 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  if (len == StrLen(bp2->proc.lnames[i]) &&
 		      !strncmp(loc, StrLoc(bp2->proc.lnames[i]), len)) {
 
-#ifdef EventMon
 		     EVValD(&dx, E_Rref);
-		     MakeInt(i+1, &eventdesc);
-		     EVValD(&eventdesc, E_Rsub);
-#endif					/* EventMon */
+		     EVVal(i+1, E_Rsub);
 
 		     /*
 		      * Found the field, return a pointer to it.
@@ -981,11 +951,8 @@ operator{0,1} [] subsc(underef x -> dx,y)
             if (i == CvtFail || i > bp->record.recdesc->proc.nfields)
                fail;
 
-#ifdef EventMon
             EVValD(&dx, E_Rref);
-            MakeInt(i, &eventdesc);
-            EVValD(&eventdesc, E_Rsub);
-#endif					/* EventMon */
+            EVVal(i, E_Rsub);
 
             /*
              * Locate the appropriate field and return a pointer to it.

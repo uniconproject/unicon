@@ -718,12 +718,10 @@
          #define xmod_meta (curpstate->Xmod_Meta)
       #endif				/* Graphics */
       
-      #ifdef EventMon
-         #define linenum  (curpstate->Linenum)
-         #define column   (curpstate->Column)
-         #define lastline (curpstate->Lastline)
-         #define lastcol  (curpstate->Lastcol)
-      #endif				/* EventMon */
+      #define line_num  (curpstate->Line_num)
+      #define column   (curpstate->Column)
+      #define lastline (curpstate->Lastline)
+      #define lastcol  (curpstate->Lastcol)
       
       #define coexp_ser (curpstate->Coexp_ser)
       #define list_ser  (curpstate->List_ser)
@@ -760,10 +758,45 @@
       #define k_input       (curpstate->K_input)
       #define k_output      (curpstate->K_output)
       
+      #define cplist	    (curpstate->Cplist)
+      #define cpset	    (curpstate->Cpset)
+      #define cptable	    (curpstate->Cptable)
+      #define EVStrAlc	    (curpstate->EVstralc)
+      #define interp	    (curpstate->Interp)
+      #define cnv_cset	    (curpstate->Cnvcset)
+      #define cnv_int	    (curpstate->Cnvint)
+      #define cnv_real	    (curpstate->Cnvreal)
+      #define cnv_str	    (curpstate->Cnvstr)
+      #define cnv_tcset	    (curpstate->Cnvtcset)
+      #define cnv_tstr	    (curpstate->Cnvtstr)
+      #define deref	    (curpstate->Deref)
+      #define alcbignum	    (curpstate->Alcbignum)
+      #define alccset	    (curpstate->Alccset)
+      #define alcfile	    (curpstate->Alcfile)
+      #define alchash	    (curpstate->Alchash)
+      #define alcsegment    (curpstate->Alcsegment)
+      #define alclist_raw   (curpstate->Alclist_raw)
+      #define alclist	    (curpstate->Alclist)
+      #define alclstb	    (curpstate->Alclstb)
+      #define alcreal	    (curpstate->Alcreal)
+      #define alcrecd	    (curpstate->Alcrecd)
+      #define alcrefresh    (curpstate->Alcrefresh)
+      #define alcselem      (curpstate->Alcselem)
+      #define alcstr        (curpstate->Alcstr)
+      #define alcsubs       (curpstate->Alcsubs)
+      #define alctelem      (curpstate->Alctelem)
+      #define alctvtbl      (curpstate->Alctvtbl)
+      #define deallocate    (curpstate->Deallocate)
+      #define reserve       (curpstate->Reserve)
+
       #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); }
    #endif				/* MultiThread */
    
 #endif					/* COMPILER */
+
+#if COMPILER || !defined(MultiThread)
+   #define EVStrAlc(n)
+#endif
 
 /*
  * Constants controlling expression evaluation.

@@ -1807,12 +1807,7 @@ function{1} eventmask(ce,cs,vmask)
          return cset++null
          }
       inline {
-#ifdef EventMon
          return BlkLoc(ce)->coexpr.program->eventmask;
-#else					/* EventMon */
-	 syserr("monitoring is not available using this virtual machine");
-	 fail;
-#endif					/* EventMon */
          }
       }
    else if !cnv:cset(cs) then runerr(104,cs)
@@ -1821,39 +1816,45 @@ function{1} eventmask(ce,cs,vmask)
          return cset
          }
       body {
-#ifdef EventMon
          ((struct b_coexpr *)BlkLoc(ce))->program->eventmask = cs;
 	 if (!is:null(vmask)) {
             if (!is:table(vmask)) runerr(124,vmask);
 	    ((struct b_coexpr *)BlkLoc(ce))->program->valuemask = vmask;
 	    }
          return cs;
-#else					/* EventMon */
-	 syserr("monitoring is not available using this virtual machine");
-	 fail;
-#endif					/* EventMon */
          }
       }
 end
-#endif					/* EventMon */
+#endif					/* MultiThread */
+
 
 
 "globalnames(ce) - produce the names of identifiers global to ce"
 
 function{*} globalnames(ce)
+#ifdef MultiThread
    declare {
       struct progstate *ps;
       }
+#endif					/* MultiThread */
    abstract {
       return string
       }
+#ifdef MultiThread
    if is:null(ce) then inline { ps = curpstate; }
    else if is:coexpr(ce) then
       inline { ps = BlkLoc(ce)->coexpr.program; }
    else runerr(118,ce)
+#else					/* MultiThread */
+   if not (is:null(ce) || is:coexpr(ce)) runerr(118, ce)
+#endif					/* MultiThread */
    body {
       struct descrip *dp;
+#ifdef MultiThread
       for (dp = ps->Gnames; dp != ps->Egnames; dp++) {
+#else					/* MultiThread */
+      for (dp = gnames; dp != egnames; dp++) {
+#endif					/* MultiThread */
          suspend *dp;
          }
       fail;
@@ -2073,13 +2074,8 @@ function{1} opmask(ce,cs)
          return cset++null
          }
       body {
-#ifdef EventMon
          result = BlkLoc(ce)->coexpr.program->opcodemask;
          return result;
-#else					/* EventMon */
-	 syserr("monitoring is not available using this virtual machine");
-	 fail;
-#endif					/* EventMon */
          }
       }
    else if !cnv:cset(cs) then runerr(104,cs)
@@ -2088,13 +2084,8 @@ function{1} opmask(ce,cs)
          return cset
          }
       body {
-#ifdef EventMon
          ((struct b_coexpr *)BlkLoc(ce))->program->opcodemask = cs;
          return cs;
-#else					/* EventMon */
-	 syserr("monitoring is not available using this virtual machine");
-	 fail;
-#endif					/* EventMon */
          }
       }
 end

@@ -69,13 +69,11 @@ word i, j;
    }
 
 
+#begdef cplist_macro(f, e)
 /*
  * cplist(dp1,dp2,i,j) - copy sublist dp1[i:j] into dp2.
  */
-
-int cplist(dp1, dp2, i, j)
-dptr dp1, dp2;
-word i, j;
+int f(dptr dp1, dptr dp2, word i, word j)
    {
    word size, nslots;
    tended struct b_list *lp2;
@@ -95,31 +93,54 @@ word i, j;
     */
    dp2->dword = D_List;
    BlkLoc(*dp2) = (union block *) lp2;
-   EVValD(dp2, E_Lcreate);
+   EVValD(dp2, e);
    return Succeeded;
    }
+#enddef
+
+#ifdef MultiThread
+cplist_macro(cplist_0, 0)
+cplist_macro(cplist_1, E_Lcreate)
+#else					/* MultiThread */
+cplist_macro(cplist, 0)
+#endif					/* MultiThread */
+
 
+#begdef cpset_macro(f, e)
 /*
  * cpset(dp1,dp2,n) - copy set dp1 to dp2, reserving memory for n entries.
  */
-int cpset(dp1, dp2, n)
-dptr dp1, dp2;
-word n;
+int f(dptr dp1, dptr dp2, word n)
    {
    int i = cphash(dp1, dp2, n, T_Set);
-   EVValD(dp2, E_Screate);
+   EVValD(dp2, e);
    return i;
    }
+#enddef
 
-int cptable(dp1, dp2, n)
-dptr dp1, dp2;
-word n;
+#ifdef MultiThread
+cpset_macro(cpset_0, 0)
+cpset_macro(cpset_1, E_Screate)
+#else					/* MultiThread */
+cpset_macro(cpset, 0)
+#endif					/* MultiThread */
+
+#begdef cptable_macro(f, e)
+int f(dptr dp1, dptr dp2, word n)
    {
    int i = cphash(dp1, dp2, n, T_Table);
    BlkLoc(*dp2)->table.defvalue = BlkLoc(*dp1)->table.defvalue;
-   EVValD(dp2, E_Tcreate);
+   EVValD(dp2, e);
    return i;
    }
+#enddef
+
+#ifdef MultiThread
+cptable_macro(cptable_0, 0)
+cptable_macro(cptable_1, E_Tcreate)
+#else					/* MultiThread */
+cptable_macro(cptable, 0)
+#endif					/* MultiThread */
 
 int cphash(dp1, dp2, n, tcode)
 dptr dp1, dp2;
@@ -556,7 +577,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 #endif
    }
 
-#ifdef EventMon
+#ifdef MultiThread
 
 int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    {
@@ -564,7 +585,6 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    uword hn;
    union block **foo, **bar;
    struct descrip d;
-   printf("looking up value mask\n");
    MakeInt(evcode, &d);
    hn = hash(&d);
    foo = memb(BlkLoc(p->valuemask), &d, hn, &rv);
@@ -580,4 +600,4 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
       return 1;
       }
    }
-#endif					/* EventMon */
+#endif					/* MultiThread */

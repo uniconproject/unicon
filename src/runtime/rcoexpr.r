@@ -166,7 +166,7 @@ int first;
    ccp = (struct b_coexpr *)BlkLoc(k_current);
 
 #if !COMPILER
-#ifdef EventMon
+#ifdef MultiThread
    switch(swtch_typ) {
       /*
        * A_MTEvent does not generate an event.
@@ -195,7 +195,7 @@ int first;
 	    }
 	 break;
       }
-#endif        				/* EventMon */
+#endif        				/* MultiThread */
 #endif					/* COMPILER */
 
    /*
@@ -245,9 +245,9 @@ int first;
    if (debug_info)
 #endif					/* COMPILER */
       if (k_trace)
-#ifdef EventMon
+#ifdef MultiThread
 	 if (swtch_typ != A_MTEvent)
-#endif					/* EventMon */
+#endif					/* MultiThread */
          cotrace(ccp, ncp, swtch_typ, valloc);
 
    /*
@@ -280,13 +280,13 @@ int first;
    coexpr_fnc = ncp->fnc;
 #endif					/* COMPILER */
 
-#ifdef EventMon
+#ifdef MultiThread
    /*
     * From here on out, A_MTEvent looks like a A_Coact.
     */
    if (swtch_typ == A_MTEvent)
       swtch_typ = A_Coact;
-#endif					/* EventMon */
+#endif					/* MultiThread */
 
    coexp_act = swtch_typ;
    coswitch(ccp->cstate, ncp->cstate,first);

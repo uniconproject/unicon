@@ -138,9 +138,9 @@ continuation succ_cont;
 
 #else					/* COMPILER */
 
-#ifdef EventMon
-#include "../h/opdefs.h"
-#endif					/* EventMon */
+#if E_Ecall
+#include "../h/opdefs.h"		/* for Op_Invoke eventvalue */
+#endif					/* E_Ecall */
 
 
 /*
@@ -154,11 +154,6 @@ int nargs, *n;
    register dptr newargp;
    register word *newsp = sp;
    tended struct descrip arg_sv;
-
-#ifdef SCO_XENIX
-   register dptr p;
-#endif					/* SCO_XENIX */
-
    register word i;
    struct b_proc *proc;
    int nparam;
@@ -192,12 +187,7 @@ int nargs, *n;
          if (i == CvtFail || i > nargs)
             return I_Fail;
 
-#ifdef SCO_XENIX
-         p = newargp + i;
-         newargp[0] = *p;
-#else					/* SCO_XENIX */
          newargp[0] = newargp[i];
-#endif					/* SCO_XENIX */
 
          sp = (word *)newargp + 1;
          return I_Continue;

@@ -434,9 +434,7 @@ struct progstate {
       struct descrip Kywd_xwin[2];			/* &window + ... */
    #endif				/* Graphics */
    
-   #ifdef EventMon
-      word Linenum, Column, Lastline, Lastcol;
-   #endif				/* EventMon */
+   word Line_num, Column, Lastline, Lastcol;
 
    word Coexp_ser;			/* this program's serial numbers */
    word List_ser;
@@ -470,6 +468,40 @@ struct progstate {
    struct b_file K_errout;
    struct b_file K_input;
    struct b_file K_output;
+
+   /*
+    * Function Instrumentation Fields.
+    */
+   int (*Cplist)(dptr, dptr, word, word);
+   int (*Cpset)(dptr, dptr, word);
+   int (*Cptable)(dptr, dptr, word);
+   int (*EVstralc)(word);
+   int (*Interp)(int,dptr);
+   int (*Cnvcset)(dptr,dptr);
+   int (*Cnvint)(dptr,dptr);
+   int (*Cnvreal)(dptr,dptr);
+   int (*Cnvstr)(dptr,dptr);
+   int (*Cnvtcset)(struct b_cset *,dptr,dptr);
+   int (*Cnvtstr)(char *,dptr,dptr);
+   int (*Deref)(dptr,dptr);
+   struct b_bignum * (*Alcbignum)(word);
+   struct b_cset * (*Alccset)();
+   struct b_file * (*Alcfile)(FILE*,int,dptr);
+   union block * (*Alchash)(int);
+   struct b_slots * (*Alcsegment)(word);
+   struct b_list *(*Alclist_raw)(uword,uword);
+   struct b_list *(*Alclist)(uword,uword);
+   struct b_lelem *(*Alclstb)(uword,uword,uword);
+   struct b_real *(*Alcreal)(double);
+   struct b_record *(*Alcrecd)(int, union block *);
+   struct b_refresh *(*Alcrefresh)(word *, int, int);
+   struct b_selem *(*Alcselem)(dptr, uword);
+   struct b_selem *(*Alcstr)(char *, word);
+   struct b_tvsubs *(*Alcsubs)(word, word, dptr);
+   struct b_telem *(*Alctelem)(void);
+   struct b_tvtbl *(*Alctvtbl)(dptr, dptr, uword);
+   void (*Deallocate)(union block *);
+   char * (*Reserve)(int, word);
    };
 
 #endif					/* MultiThread */

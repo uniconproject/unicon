@@ -14,10 +14,10 @@ LibDcl(field,2,".")
    register word fnum;
    tended struct b_record *rp;
    register dptr dp;
+   register union block *bptr;
    extern dptr clintsrargp;
 
 #ifdef MultiThread
-   register union block *bptr;
    struct progstate *thisprog = curpstate, *progtouse;
 #else					/* MultiThread */
    extern int *ftabp;
@@ -372,12 +372,12 @@ LibDcl(bscan,2,"?")
 
    rc = interp(G_Csusp,cargp);
 
-#ifdef EventMon
+#if E_Srem || E_Sfail
    if (rc != A_Resume)
       EVValD(&Arg1, E_Srem);
    else
       EVValD(&Arg1, E_Sfail);
-#endif					/* EventMon */
+#endif					/* E_Srem || E_Sfail */
 
    if (pfp != cur_pfp)
       return rc;
@@ -474,10 +474,10 @@ LibDcl(escan,1,"escan")
    k_subject = *VarLoc(Arg1);
    *VarLoc(Arg1) = tmp;
 
-#ifdef EventMon
+#if E_Sresum
    if (rc == A_Resume)
       EVValD(&k_subject, E_Sresum);
-#endif					/* EventMon */
+#endif					/* E_Sresum */
 
    tmp = *(VarLoc(Arg1) + 1);
    IntVal(*(VarLoc(Arg1) + 1)) = k_pos;

@@ -1,12 +1,14 @@
 /*
  *  fmonitr.r -- event, EvGet
  *
- *   This file contains event monitoring code, used only if EventMon
- *   (event monitoring) is defined.  Event monitoring normally is
- *   not enabled in iconx, and is enabled in miconx.
+ *   This file contains execution monitoring code, used only if EventMon
+ *   (event monitoring) or some of its constituent events is defined.
+ *   There used to be a separate virtual machine with all events defined,
+ *   but the current setup allows specific events to be defined, and the
+ *   source is moving towards a setup in which monitoring is unified into
+ *   the main virtual machine.
  *
- *   The built-in functions are defined for all MultiThread interpreters,
- *   but they fail with a runtime error if Event Monitoring is not enabled.
+ *   The built-in functions are defined for all MultiThread interpreters.
  *
  *   When EventMon is undefined, most of the "MMxxxx" and "EVxxxx"
  *   entry points are defined as null macros in monitor.h.  See
@@ -23,7 +25,6 @@
 
 function{0,1} event(x,y,ce)
    body {
-#ifdef EventMon
       struct progstate *dest;
 
       if (is:null(x)) {
@@ -41,10 +42,6 @@ function{0,1} event(x,y,ce)
          fail;
          }
        return result;
-#else					/* EventMon */
-      syserr("monitoring is not available using this virtual machine");
-      fail;
-#endif					/* EventMon */
       }
 end
 
@@ -63,7 +60,6 @@ function{0,1} EvGet(cs,flag)
       runerr(104,cs)
 
    body {
-#ifdef EventMon
       register int c;
       tended struct descrip dummy;
       struct progstate *p;
@@ -78,8 +74,70 @@ function{0,1} EvGet(cs,flag)
        * If our event source is a child of ours, assign its event mask.
        */
       p = BlkLoc(curpstate->eventsource)->coexpr.program;
-      if (p->parent == curpstate)
-	 p->eventmask = cs;
+      if (p->parent == curpstate) {
+	 if (BlkLoc(p->eventmask) != BlkLoc(cs)) {
+	    p->eventmask = cs;
+
+	    /*
+	     * Most instrumentation functions depend on a single event.
+	     */
+	    p->Cplist =
+	       ((Testb((word)ToAscii(E_Lcreate), cs)) ? cplist_1 : cplist_0);
+	    p->Cpset =
+	       ((Testb((word)ToAscii(E_Screate), cs)) ? cpset_1 : cpset_0);
+	    p->Cptable =
+	       ((Testb((word)ToAscii(E_Tcreate), cs)) ? cptable_1 : cptable_0);
+
+	    /*
+	     * A few functions enable more than one event code.
+	     */
+	    p->EVstralc =
+	       (((Testb((word)ToAscii(E_String), cs)) ||
+		 (Testb((word)ToAscii(E_StrDeAlc), cs)))
+		? EVStrAlc_1 : EVStrAlc_0);
+
+	    /*
+	     * interp() is the monster case:
+	     * We should replace 30 membership tests with a cset intersection.
+	     * Heck, we should redo the event codes so any bit in one
+	     * particular word means: "use the instrumented interp".
+	     */
+	    if (Testb((word)ToAscii(E_Intcall), cs) ||
+		Testb((word)ToAscii(E_Stack), cs) ||
+		Testb((word)ToAscii(E_Fsusp), cs) ||
+		Testb((word)ToAscii(E_Osusp), cs) ||
+		Testb((word)ToAscii(E_Bsusp), cs) ||
+		Testb((word)ToAscii(E_Ocall), cs) ||
+		Testb((word)ToAscii(E_Ofail), cs) ||
+		Testb((word)ToAscii(E_Tick), cs) ||
+		Testb((word)ToAscii(E_Line), cs) ||
+		Testb((word)ToAscii(E_Loc), cs) ||
+		Testb((word)ToAscii(E_Opcode), cs) ||
+		Testb((word)ToAscii(E_Fcall), cs) ||
+		Testb((word)ToAscii(E_Prem), cs) ||
+		Testb((word)ToAscii(E_Erem), cs) ||
+		Testb((word)ToAscii(E_Intret), cs) ||
+		Testb((word)ToAscii(E_Psusp), cs) ||
+		Testb((word)ToAscii(E_Ssusp), cs) ||
+		Testb((word)ToAscii(E_Pret), cs) ||
+		Testb((word)ToAscii(E_Efail), cs) ||
+		Testb((word)ToAscii(E_Sresum), cs) ||
+		Testb((word)ToAscii(E_Fresum), cs) ||
+		Testb((word)ToAscii(E_Oresum), cs) ||
+		Testb((word)ToAscii(E_Eresum), cs) ||
+		Testb((word)ToAscii(E_Presum), cs) ||
+		Testb((word)ToAscii(E_Pfail), cs) ||
+		Testb((word)ToAscii(E_Ffail), cs) ||
+		Testb((word)ToAscii(E_Frem), cs) ||
+		Testb((word)ToAscii(E_Orem), cs) ||
+		Testb((word)ToAscii(E_Fret), cs) ||
+		Testb((word)ToAscii(E_Oret), cs)
+		)
+	       p->Interp = interp_1;
+	    else
+	       p->Interp = interp_0;
+	    }
+	 }
 
 #ifdef Graphics
       if (Testb((word)ToAscii(E_MXevent), cs) &&
@@ -128,6 +186,7 @@ function{0,1} EvGet(cs,flag)
 	    else continue;
 	    }
 
+#if E_Cofail || E_Coret
 	 switch(*StrLoc(curpstate->eventcode)) {
 	 case E_Cofail: case E_Coret: {
 	    if (BlkLoc(curpstate->eventsource)->coexpr.id == 1) {
@@ -135,17 +194,12 @@ function{0,1} EvGet(cs,flag)
 	       }
 	    }
 	    }
+#endif					/* E_Cofail || E_Coret */
 
 	 return curpstate->eventcode;
 	 }
-#else					/* EventMon */
-      syserr("monitoring is not available using this virtual machine");
-      fail;
-#endif					/* EventMon */
       }
 end
-
-#ifdef EventMon
 
 /*
  * Prototypes.
@@ -160,11 +214,13 @@ char typech[MaxType+1];	/* output character for each type */
 
 int noMTevents;			/* don't produce events in EVAsgn */
 
+#ifdef HaveProfil
 union { 			/* clock ticker -- keep in sync w/ interp.r */
    unsigned short s[16];	/* four counters */
    unsigned long l[8];		/* two longs are easier to check */
 } ticker;
 unsigned long oldtick;		/* previous sum of the two longs */
+#endif					/* HaveProfil */
 
 #if UNIX
 /*
@@ -173,7 +229,6 @@ unsigned long oldtick;		/* previous sum of the two longs */
 word oldsum = 0;
 #endif					/* UNIX */
 
-#ifdef MultiThread
 
 static char scopechars[] = "+:^-";
 
@@ -187,6 +242,15 @@ void EVVariable(dptr dx, int eventcode)
    dptr procname;
    struct progstate *parent = curpstate->parent;
    struct region *rp = curpstate->stringregion;
+
+   if (dx == glbl_argp) {
+      /*
+       * we are dereferencing a result, glbl_argp is not the procedure.
+       * is this a stable state to leave the TP in?
+       */
+      actparent(eventcode);
+      return;
+      }
 
 #if COMPILER
    procname = &(PFDebug(*pfp)->proc->pname);
@@ -202,16 +266,23 @@ void EVVariable(dptr dx, int eventcode)
    i = get_name(dx,&(parent->eventval));
 
    if (i == GlobalName) {
-      if (reserve(Strings, StrLen(parent->eventval) + 1) == NULL)
+      if (reserve(Strings, StrLen(parent->eventval) + 1) == NULL) {
+	 fprintf(stderr, "failed to reserve %d bytes for global\n",
+		 StrLen(parent->eventval)+1);
 	 syserr("monitoring out-of-memory error");
+	 }
       StrLoc(parent->eventval) =
 	 alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
       alcstr("+",1);
       StrLen(parent->eventval)++;
       }
-   else if (i == StaticName || i == LocalName || i == ParamName) {
-      if (!reserve(Strings, StrLen(parent->eventval) + StrLen(*procname) + 1))
+   else if ((i == StaticName) || (i == LocalName) || (i == ParamName)) {
+      if (!reserve(Strings, StrLen(parent->eventval) + StrLen(*procname) + 1)) {
+	 fprintf(stderr,"failed to reserve %d bytes for %d, %d+%d\n",
+		StrLen(parent->eventval)+StrLen(*procname)+1, i,
+		 StrLen(parent->eventval), StrLen(*procname));
 	 syserr("monitoring out-of-memory error");
+	 }
       StrLoc(parent->eventval) =
 	 alcstr(StrLoc(parent->eventval), StrLen(parent->eventval));
       alcstr(scopechars+i,1);
@@ -220,6 +291,7 @@ void EVVariable(dptr dx, int eventcode)
       }
    else if (i == Error) {
       noMTevents--;
+      syserr("get_name failed in EVVariable");
       return; /* should be more violent than this */
       }
 
@@ -229,9 +301,6 @@ void EVVariable(dptr dx, int eventcode)
    actparent(eventcode);
 }
 
-
-
-#endif					/* MultiThread */
 
 /*
  *  EVInit() - initialization.
@@ -318,14 +387,27 @@ void mmrefresh()
        Testb((word)ToAscii(E_EndCollect), curpstate->eventmask)) {
       for (p = blkbase; p < blkfree; p += n) {
 	 n = BlkSize(p);
-	 EVVal(n, typech[(int)BlkType(p)]);	/* block region */
+#if E_Lrgint || E_Real || E_Cset || E_File || E_Record || E_Tvsubs || E_External || E_List || E_Lelem || E_Table || E_Telem || E_Tvtbl || E_Set || E_Selem || E_Slots || E_Coexpr || E_Refresh
+	 RealEVVal(n, typech[(int)BlkType(p)]);	/* block region */
+#endif					/* instrument allocation events */
 	 }
       EVVal(DiffPtrs(strfree, strbase), E_String);	/* string region */
       }
    }
-
 
-#endif					/* EventMon */
+
+void EVStrAlc_0(word n) { ; }
+
+void EVStrAlc_1(word n)
+{
+   if (n < 0) {
+      EVVal(-n, E_StrDeAlc);
+      }
+   else {
+      EVVal(n, E_String);
+      }
+}
+
 
 #else					/* MultiThread */
 static char xjunk;			/* avoid empty module */

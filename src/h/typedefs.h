@@ -2,7 +2,7 @@
  * Type for an externally findable & setable integer, used by "setsize". CS
  */
 
-#ifdef SCCX_MX
+#if SCCX_MX
    typedef union {
       char magicText[4];
       int  value;

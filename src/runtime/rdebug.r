@@ -152,11 +152,11 @@ char *pfile;
    fflush(stderr);
    }
 
+
 /*
  * get_name -- function to get print name of variable.
  */
-int get_name(dp1,dp0)
-   dptr dp1, dp0;
+int get_name(dptr dp1,dptr dp0)
    {
    dptr dp, varptr;
    tended union block *blkptr;
@@ -283,7 +283,9 @@ int get_name(dp1,dp0)
       default:
          if (Offset(*dp1) == 0) {
             /*
-             * Must be a named variable.
+             * Must(?) be a named variable.
+	     * (When used internally, could be reference to nameless
+	     * temporary stack variables as occurs for string scanning).
              */
             dp = VarLoc(*dp1);		 /* get address of variable */
             if (InRange(globals,dp,eglobals)) {
@@ -306,8 +308,12 @@ int get_name(dp1,dp0)
                *dp0 = proc->lnames[dp - loc1 + abs((int)proc->nparam)];
 	       return LocalName;
                }
-            else
-               syserr("name: cannot determine variable name");
+            else {
+	       StrLen(*dp0) = 6;
+	       StrLoc(*dp0) = "(temp)";
+	       return Failed;
+/*               syserr("name: cannot determine variable name"); */
+	       }
             }
          else {
             /*
@@ -348,11 +354,13 @@ int get_name(dp1,dp0)
                       return Error;
                   break;
                default:		/* none of the above */
-#ifdef EventMon
-                  *dp0 = emptystr;
-#else                                   /* EventMon */
+#ifdef MultiThread
+		  StrLen(*dp0) = 8;
+		  StrLoc(*dp0) = "(struct)";
+		  return Failed;
+#else
                   syserr("name: invalid structure reference");
-#endif                                  /* EventMon */
+#endif                                  /* MultiThread */
 
                }
            }

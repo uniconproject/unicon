@@ -6,12 +6,14 @@
 
 struct b_proc Bnoproc;
 
-#ifdef EventMon
+#ifdef MultiThread
+/*
+ * A procedure block for list construction, used by event monitoring.
+ */
 struct b_iproc mt_llist = {
    6, (sizeof(struct b_proc) - sizeof(struct descrip)), Ollist,
    0, -1,  0, 0, {sizeof( "[...]")-1, "[...]"}};
-#endif					/* EventMon */
-
+#endif					/* MultiThread */
 
 /*
  * External declarations for function blocks.
@@ -233,14 +235,8 @@ struct b_file  k_errout = {T_File, NULL, Fs_Write};	/* &errout */
 struct b_file  k_input = {T_File, NULL, Fs_Read};	/* &input */
 struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
 #endif					/* ConsoleWindow */
-#endif					/* MultiThread */
 
-#ifdef EventMon
-/*
- *  Real block needed for event monitoring.
- */
-struct b_real realzero = {T_Real, 0.0};
-#endif					/* EventMon */
+#endif					/* MultiThread */
 
 /*
  * Keyword variables.
@@ -281,14 +277,18 @@ struct descrip onedesc = {D_Integer};	/* integer 1 */
 struct descrip ucase;			/* string of uppercase letters */
 struct descrip zerodesc = {D_Integer};	/* integer 0 */
 
-#ifdef EventMon
+#ifdef MultiThread
 /*
  * Descriptors used by event monitoring.
  */
 struct descrip csetdesc = {D_Cset};
 struct descrip eventdesc;
 struct descrip rzerodesc = {D_Real};
-#endif					/* EventMon */
+/*
+ *  Real block needed for event monitoring.
+ */
+struct b_real realzero = {T_Real, 0.0};
+#endif					/* MultiThread */
 
 /*
  * An array of all characters for use in making one-character strings.

@@ -152,13 +152,6 @@
    #undef EventMon
 #endif					/* COMPILER */
 
-#ifdef Eve
-   #undef EventMon
-   #undef MultiThread
-   #define EventMon
-   #define MultiThread
-#endif					/* Eve */
-
 #ifndef NoStrInvoke
    #undef StrInvoke
    #define StrInvoke
@@ -612,12 +605,6 @@ Deliberate Syntax Error
 #ifndef PPDirectives
    #define PPDirectives {"passthru", PpKeep},
 #endif					/* PPDirectives */
-
-#ifndef EventMon
-   #if IntBits == 16
-      #define NoSrcColumnInfo
-   #endif				/* IntBits == 16 */
-#endif					/* EventMon */
 
 #ifndef NoSrcColumnInfo
    #define SrcColumnInfo

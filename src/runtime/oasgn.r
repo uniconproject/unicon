@@ -14,14 +14,9 @@
  */
 #begdef GeneralAsgn(x, y)
 
-#ifdef EventMon
    body {
-      if (!is:null(curpstate->eventmask) &&
-         Testb((word)ToAscii(E_Assign), curpstate->eventmask)) {
-            EVVariable(&x, E_Assign);
-	    }
+      EVVar(&x, E_Assign);
       }
-#endif					/* EventMon */
 
    type_case x of {
       tvsubs: {
@@ -132,11 +127,11 @@
          }
       }
 
-#ifdef EventMon
+#if E_Value
    body {
       EVValD(&y, E_Value);
       }
-#endif					/* EventMon */
+#endif					/* E_Value */
 
 #enddef
 

@@ -46,11 +46,6 @@ dptr *equallist;                /* end of qualifier list */
 
 int qualfail;                   /* flag: qualifier list overflow */
 
-/*
- *
- * Note: function calls beginning with "MM" are just empty macros
- * unless EventMon is defined.
- */
 
 /*
  * Allocated block size table (sizes given in bytes).  A size of -1 is used
@@ -345,10 +340,10 @@ int region;
    {
    struct b_coexpr *cp;
 
-#ifdef EventMon
+#if E_Collect
    if (!noMTevents)
       EVVal((word)region,E_Collect);
-#endif					/* EventMon */
+#endif					/* E_Collect */
 
    switch (region) {
       case Static:
@@ -494,12 +489,12 @@ int region;
       }
    }
 
-#ifdef EventMon
+#if E_Lrgint || E_Real || E_Cset || E_File || E_Record || E_Tvsubs || E_External || E_List || E_Lelem || E_Table || E_Telem || E_Tvtbl || E_Set || E_Selem || E_Slots || E_Coexpr || E_Refresh || E_String
    if (!noMTevents) {
       mmrefresh();
       EVValD(&nulldesc, E_EndCollect);
       }
-#endif					/* EventMon */
+#endif					/* instrument allocation events */
 
    return 1;
    }

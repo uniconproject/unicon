@@ -294,10 +294,6 @@ FncDef(fetch,2)
    FncDefV(WinOpenDialog)
    FncDefV(WinSaveDialog)
    FncDefV(WinSelectDialog)
-   #ifdef FAttrib
-      FncDefV(fattrib)
-   #endif				/* FAttrib */
-
 
 #ifdef MultiThread
    /*
@@ -317,22 +313,16 @@ FncDef(fetch,2)
    FncDef(parent,1)
    FncDef(keyword,2)
 
-/*
- * Event processing functions.  Formerly under #ifdef EventMon, but now any
- * MultiThread icont believes in them; disable at runtime in non EventMon
- * versions of iconx.
- */
+   /*
+    * Event processing functions.  These won't get you very far if no
+    * events have been instrumented.
+    */
    FncDef(EvGet,2)
    FncDef(event,3)
    FncDef(eventmask,2)
    FncDef(opmask,2)
 
 #endif					/* MultiThread */
-
-/* subsumed by Unicon ? */
-#ifdef FAttrib
-FncDefV(fattrib)
-#endif					/* FAttrib */
 
 /* SQL/ODBC database support */
 #ifdef ISQL

@@ -24,22 +24,11 @@ word table_ser = 1;	/* serial numbers for tables */
  */
 #begdef AlcBlk(var, struct_nm, t_code, nbytes)
 {
-#ifdef MultiThread
-   EVVal((word)nbytes, typech[t_code]);
-#endif					/* MultiThread */
-
    /*
     * Ensure that there is enough room in the block region.
     */
    if (DiffPtrs(blkend,blkfree) < nbytes && !reserve(Blocks, nbytes))
       return NULL;
-
-   /*
-    * If monitoring, show the allocation.
-    */
-#ifndef MultiThread
-   EVVal((word)nbytes, typech[t_code]);
-#endif
 
    /*
     * Decrement the free space in the block region by the number of bytes
@@ -64,11 +53,7 @@ word table_ser = 1;	/* serial numbers for tables */
  */
 #begdef AlcVarBlk(var, struct_nm, t_code, n_desc)
    {
-#ifdef EventMon
    uword size;
-#else					/* EventMon */
-   register uword size;
-#endif					/* EventMon */
 
    /*
     * Variable size blocks are declared with one descriptor, thus
@@ -106,12 +91,12 @@ struct astkblk *alcactiv()
    }
 
 #ifdef LargeInts
+#begdef alcbignum_macro(f,e_lrgint)
 /*
  * alcbignum - allocate an n-digit bignum in the block region
  */
 
-struct b_bignum *alcbignum(n)
-word n;
+struct b_bignum *f(word n)
    {
    register struct b_bignum *blk;
    register uword size;
@@ -119,12 +104,23 @@ word n;
    size = sizeof(struct b_bignum) + ((n - 1) * sizeof(DIGIT));
    /* ensure whole number of words allocated */
    size = (size + WordSize - 1) & -WordSize;
+
+   EVVal((word)size, e_lrgint);
+
    AlcBlk(blk, b_bignum, T_Lrgint, size);
    blk->blksize = size;
    blk->msd = blk->sign = 0;
    blk->lsd = n - 1;
    return blk;
    }
+#enddef
+#ifdef MultiThread
+alcbignum_macro(alcbignum_0,0)
+alcbignum_macro(alcbignum_1,E_Lrgint)
+#else					/* MultiThread */
+alcbignum_macro(alcbignum,0)
+#endif					/* MultiThread */
+
 #endif					/* LargeInts */
 
 /*
@@ -248,15 +244,17 @@ struct b_coexpr *alccoexp()
    }
 #endif					/* COMPILER */
 
+#begdef alccset_macro(f, e_cset)
 /*
  * alccset - allocate a cset in the block region.
  */
 
-struct b_cset *alccset()
+struct b_cset *f()
    {
    register struct b_cset *blk;
    register int i;
 
+   EVVal(sizeof (struct b_cset), e_cset);
    AlcFixBlk(blk, b_cset, T_Cset)
    blk->size = -1;              /* flag size as not yet computed */
 
@@ -267,43 +265,60 @@ struct b_cset *alccset()
      blk->bits[i] = 0;
    return blk;
    }
+#enddef
+#ifdef MultiThread
+alccset_macro(alccset_0,0)
+alccset_macro(alccset_1,E_Cset)
+#else					/* MultiThread */
+alccset_macro(alccset,0)
+#endif					/* MultiThread */
+
 
+#begdef alcfile_macro(f, e_file)
 /*
  * alcfile - allocate a file block in the block region.
  */
 
-struct b_file *alcfile(fd, status, name)
-FILE *fd;
-int status;
-dptr name;
+struct b_file *f(FILE *fd, int status, dptr name)
    {
    tended struct descrip tname = *name;
    register struct b_file *blk;
 
+   EVVal(sizeof (struct b_file), e_file);
    AlcFixBlk(blk, b_file, T_File)
    blk->fd = fd;
    blk->status = status;
    blk->fname = tname;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alcfile_macro(alcfile_0,0)
+alcfile_macro(alcfile_1,E_File)
+#else					/* MultiThread */
+alcfile_macro(alcfile,0)
+#endif					/* MultiThread */
 
+#begdef alchash_macro(f, e_table, e_set)
 /*
  * alchash - allocate a hashed structure (set or table header) in the block
  *  region.
  */
-union block *alchash(tcode)
-int tcode;
+union block *f(int tcode)
    {
    register int i;
    register struct b_set *ps;
    register struct b_table *pt;
 
    if (tcode == T_Table) {
+      EVVal(sizeof(struct b_table), e_table);
       AlcFixBlk(pt, b_table, T_Table);
       ps = (struct b_set *)pt;
       ps->id = table_ser++;
       }
    else {	/* tcode == T_Set */
+      EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
       ps->id = set_ser++;
       }
@@ -313,25 +328,43 @@ int tcode;
       ps->hdir[i] = NULL;
    return (union block *)ps;
    }
+#enddef
+
+#ifdef MultiThread
+alchash_macro(alchash_0,0,0)
+alchash_macro(alchash_1,E_Table,E_Set)
+#else					/* MultiThread */
+alchash_macro(alchash,0,0)
+#endif					/* MultiThread */
 
+#begdef alcsegment_macro(f,e_slots)
 /*
  * alcsegment - allocate a slot block in the block region.
  */
 
-struct b_slots *alcsegment(nslots)
-word nslots;
+struct b_slots *f(word nslots)
    {
    uword size;
    register struct b_slots *blk;
 
    size = sizeof(struct b_slots) + WordSize * (nslots - HSlots);
+   EVVal(size, e_slots);
    AlcBlk(blk, b_slots, T_Slots, size);
    blk->blksize = size;
    while (--nslots >= 0)
       blk->hslots[nslots] = NULL;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alcsegment_macro(alcsegment_0,0)
+alcsegment_macro(alcsegment_1,E_Slots)
+#else					/* MultiThread */
+alcsegment_macro(alcsegment,0)
+#endif					/* MultiThread */
 
+#begdef alclist_raw_macro(f,e_list,e_lelem)
 /*
  * alclist - allocate a list header block in the block region.
  *  A corresponding list element block is also allocated.
@@ -342,8 +375,7 @@ word nslots;
  * the caller, who promises to initialize first n==size slots w/o allocating.
  */
 
-struct b_list *alclist_raw(size, nslots)
-uword size, nslots;
+struct b_list *f(uword size, uword nslots)
    {
    register struct b_list *blk;
    register struct b_lelem *lblk;
@@ -351,6 +383,8 @@ uword size, nslots;
 
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + sizeof (struct b_lelem)
       + (nslots - 1) * sizeof(struct descrip)))) return NULL;
+   EVVal(sizeof (struct b_list), e_list);
+   EVVal(sizeof (struct b_lelem) + (nslots-1) * sizeof(struct descrip), e_lelem);
    AlcFixBlk(blk, b_list, T_List)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
@@ -368,31 +402,59 @@ uword size, nslots;
       lblk->lslots[i] = nulldesc;
    return blk;
    }
+#enddef
 
-struct b_list *alclist(size, nslots)
-uword size, nslots;
+#ifdef MultiThread
+alclist_raw_macro(alclist_raw_0,0,0)
+alclist_raw_macro(alclist_raw_1,E_List,E_Lelem)
+#else					/* MultiThread */
+alclist_raw_macro(alclist_raw,0,0)
+#endif					/* MultiThread */
+
+#begdef alclist_macro(f,e_list,e_lelem)
+
+struct b_list *f(uword size, uword nslots)
 {
-   register word i;
-   register struct b_list *blk = alclist_raw(size, nslots);
+   register word i = sizeof(struct b_lelem)+(nslots-1)*sizeof(struct descrip);
+   register struct b_list *blk;
    register struct b_lelem *lblk;
 
-   if (!blk) return NULL;
-   lblk = (struct b_lelem *)blk->listhead;
+   if (!reserve(Blocks, (word)(sizeof(struct b_list) + i))) return NULL;
+   EVVal(sizeof (struct b_list), e_list);
+   EVVal(i, e_lelem);
+   AlcFixBlk(blk, b_list, T_List)
+   AlcBlk(lblk, b_lelem, T_Lelem, i)
+   blk->size = size;
+   blk->id = list_ser++;
+   blk->listhead = blk->listtail = (union block *)lblk;
 
+   lblk->blksize = i;
+   lblk->nslots = nslots;
+   lblk->first = 0;
+   lblk->nused = size;
+   lblk->listprev = lblk->listnext = (union block *)blk;
    /*
-    * Set any additional elements to &null.
+    * Set all elements to &null.
     */
-   for (i = 0; i < size; i++)
-      blk->listhead->lelem.lslots[i] = nulldesc;
+   for (i = 0; i < nslots; i++)
+      lblk->lslots[i] = nulldesc;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alclist_macro(alclist_0,0,0)
+alclist_macro(alclist_1,E_List,E_Lelem)
+#else					/* MultiThread */
+alclist_macro(alclist,0,0)
+#endif					/* MultiThread */
 
+#begdef alclstb_macro(f,t_lelem)
 /*
  * alclstb - allocate a list element block in the block region.
  */
 
-struct b_lelem *alclstb(nslots, first, nused)
-uword nslots, first, nused;
+struct b_lelem *f(uword nslots, uword first, uword nused)
    {
    register struct b_lelem *blk;
    register word i;
@@ -410,16 +472,25 @@ uword nslots, first, nused;
       blk->lslots[i] = nulldesc;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alclstb_macro(alclstb_0,0)
+alclstb_macro(alclstb_1,E_Lelem)
+#else					/* MultiThread */
+alclstb_macro(alclstb,0)
+#endif					/* MultiThread */
 
+#begdef alcreal_macro(f,e_real)
 /*
  * alcreal - allocate a real value in the block region.
  */
 
-struct b_real *alcreal(val)
-double val;
+struct b_real *f(double val)
    {
    register struct b_real *blk;
 
+   EVVal(sizeof (struct b_real), e_real);
    AlcFixBlk(blk, b_real, T_Real)
 
 #ifdef Double
@@ -436,23 +507,39 @@ double val;
 
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alcreal_macro(alcreal_0,0)
+alcreal_macro(alcreal_1,E_Real)
+#else					/* MultiThread */
+alcreal_macro(alcreal,0)
+#endif					/* MultiThread */
 
+#begdef alcrecd_macro(f,e_record)
 /*
  * alcrecd - allocate record with nflds fields in the block region.
  */
 
-struct b_record *alcrecd(nflds, recptr)
-int nflds;
-union block *recptr;
+struct b_record *f(int nflds, union block *recptr)
    {
    tended union block *trecptr = recptr;
    register struct b_record *blk;
 
+   EVVal(sizeof(struct b_record) + (nflds-1)*sizeof(struct descrip),e_record);
    AlcVarBlk(blk, b_record, T_Record, nflds)
    blk->recdesc = trecptr;
    blk->id = (((struct b_proc *)recptr)->recid)++;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alcrecd_macro(alcrecd_0,0)
+alcrecd_macro(alcrecd_1,E_Record)
+#else					/* MultiThread */
+alcrecd_macro(alcrecd,0)
+#endif					/* MultiThread */
 
 /*
  * alcrefresh - allocate a co-expression refresh block.
@@ -475,9 +562,9 @@ int wrk_sz;
    return blk;
    }
 #else					/* COMPILER */
-struct b_refresh *alcrefresh(entryx, na, nl)
-word *entryx;
-int na, nl;
+#begdef alcrefresh_macro(f,e_refresh)
+
+struct b_refresh *f(word *entryx, int na, int nl)
    {
    struct b_refresh *blk;
 
@@ -486,34 +573,48 @@ int na, nl;
    blk->numlocals = nl;
    return blk;
    }
+
+#enddef
+
+#ifdef MultiThread
+alcrefresh_macro(alcrefresh_0,0)
+alcrefresh_macro(alcrefresh_1,E_Refresh)
+#else					/* MultiThread */
+alcrefresh_macro(alcrefresh,0)
+#endif					/* MultiThread */
 #endif					/* COMPILER */
 
+#begdef alcselem_macro(f,e_selem)
 /*
  * alcselem - allocate a set element block.
  */
-
-struct b_selem *alcselem(mbr,hn)
-uword hn;
-dptr mbr;
-
+struct b_selem *f(dptr mbr,uword hn)
    {
    tended struct descrip tmbr = *mbr;
    register struct b_selem *blk;
 
+   EVVal(sizeof(struct b_selem), e_selem);
    AlcFixBlk(blk, b_selem, T_Selem)
    blk->clink = NULL;
    blk->setmem = tmbr;
    blk->hashnum = hn;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alcselem_macro(alcselem_0,0)
+alcselem_macro(alcselem_1,E_Selem)
+#else					/* MultiThread */
+alcselem_macro(alcselem,0)
+#endif					/* MultiThread */
 
+#begdef alcstr_macro(f,e_string)
 /*
  * alcstr - allocate a string in the string space.
  */
 
-char *alcstr(s, slen)
-register char *s;
-register word slen;
+char *f(register char *s, register word slen)
    {
    tended struct descrip ts;
    register char *d;
@@ -522,10 +623,10 @@ register word slen;
 #ifdef MultiThread
    StrLen(ts) = slen;
    StrLoc(ts) = s;
-#ifdef EventMon
+#if E_String
    if (!noMTevents)
-#endif					/* EventMon */
-      EVVal(slen, E_String);
+      EVVal(slen, e_string);
+#endif					/* E_String */
    s = StrLoc(ts);
 #endif					/* MultiThread */
 
@@ -558,67 +659,101 @@ register word slen;
    strfree = d;
    return ofree;
    }
+#enddef
+
+#ifdef MultiThread
+alcstr_macro(alcstr_0,0)
+alcstr_macro(alcstr_1,E_String)
+#else					/* MultiThread */
+alcstr_macro(alcstr,0)
+#endif					/* MultiThread */
 
+#begdef alcsubs_macro(f, e_tvsubs)
 /*
  * alcsubs - allocate a substring trapped variable in the block region.
  */
 
-struct b_tvsubs *alcsubs(len, pos, var)
-word len, pos;
-dptr var;
+struct b_tvsubs *f(word len, word pos, dptr var)
    {
    tended struct descrip tvar = *var;
    register struct b_tvsubs *blk;
 
+   EVVal(sizeof(struct b_tvsubs), e_tvsubs);
    AlcFixBlk(blk, b_tvsubs, T_Tvsubs)
    blk->sslen = len;
    blk->sspos = pos;
    blk->ssvar = tvar;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alcsubs_macro(alcsubs_0,0)
+alcsubs_macro(alcsubs_1,E_Tvsubs)
+#else					/* MultiThread */
+alcsubs_macro(alcsubs,0)
+#endif					/* MultiThread */
 
+#begdef alctelem_macro(f, e_telem)
 /*
  * alctelem - allocate a table element block in the block region.
  */
 
-struct b_telem *alctelem()
+struct b_telem *f()
    {
    register struct b_telem *blk;
 
+   EVVal(sizeof (struct b_telem), e_telem);
    AlcFixBlk(blk, b_telem, T_Telem)
    blk->hashnum = 0;
    blk->clink = NULL;
    blk->tref = nulldesc;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alctelem_macro(alctelem_0,0)
+alctelem_macro(alctelem_1,E_Telem)
+#else					/* MultiThread */
+alctelem_macro(alctelem,0)
+#endif					/* MultiThread */
 
+#begdef alctvtbl_macro(f,e_tvtbl)
 /*
  * alctvtbl - allocate a table element trapped variable block in the block
  *  region.
  */
 
-struct b_tvtbl *alctvtbl(tbl, ref, hashnum)
-register dptr tbl, ref;
-uword hashnum;
+struct b_tvtbl *f(register dptr tbl, register dptr ref, uword hashnum)
    {
    tended struct descrip ttbl = *tbl;
    tended struct descrip tref = *ref;
    register struct b_tvtbl *blk;
 
+   EVVal(sizeof (struct b_tvtbl), e_tvtbl);
    AlcFixBlk(blk, b_tvtbl, T_Tvtbl)
    blk->hashnum = hashnum;
    blk->clink = BlkLoc(ttbl);
    blk->tref = tref;
    return blk;
    }
+#enddef
+
+#ifdef MultiThread
+alctvtbl_macro(alctvtbl_0,0)
+alctvtbl_macro(alctvtbl_1,E_Tvtbl)
+#else					/* MultiThread */
+alctvtbl_macro(alctvtbl,0)
+#endif					/* MultiThread */
 
+#begdef deallocate_macro(f,e_blkdealc)
 /*
  * deallocate - return a block to the heap.
  *
  *  The block must be the one that is at the very end of a block region.
  */
-void deallocate (bp)
-union block *bp;
+void f (union block *bp)
 {
    word nbytes;
    struct region *rp;
@@ -635,9 +770,18 @@ union block *bp;
       syserr ("deallocation botch");
    rp->free = (char *)bp;
    blktotal -= nbytes;
-   EVVal(nbytes, E_BlkDeAlc);
+   EVVal(nbytes, e_blkdealc);
 }
+#enddef
+
+#ifdef MultiThread
+deallocate_macro(deallocate_0,0)
+deallocate_macro(deallocate_1,E_BlkDeAlc)
+#else					/* MultiThread */
+deallocate_macro(deallocate,0)
+#endif					/* MultiThread */
 
+#begdef reserve_macro(f,e_tenurestring,e_tenureblock)
 /*
  * reserve -- ensure space in either string or block region.
  *
@@ -653,9 +797,7 @@ union block *bp;
  *  10. give up and signal error.
  */
 
-char *reserve(region, nbytes)
-int region;
-word nbytes;
+char *f(int region, word nbytes)
 {
    struct region **pcurr, *curr, *rp;
    word want, newsize;
@@ -720,16 +862,16 @@ word nbytes;
       if (curr->Gprev) curr->Gprev->Gnext = rp;
       curr->Gprev = rp;
       *pcurr = rp;
-#ifdef EventMon
+#if e_tenurestring || e_tenureblock
       if (!noMTevents) {
          if (region == Strings) {
-            EVVal(rp->size, E_TenureString);
+            EVVal(rp->size, e_tenurestring);
             }
          else {
-            EVVal(rp->size, E_TenureBlock);
+            EVVal(rp->size, e_tenureblock);
             }
          }
-#endif					/* EventMon */
+#endif					/* e_tenurestring || e_tenureblock */
       return rp->free;
       }
 
@@ -760,6 +902,14 @@ word nbytes;
    else
       ReturnErrNum(306, 0);
 }
+#enddef
+
+#ifdef MultiThread
+reserve_macro(reserve_0,0,0)
+reserve_macro(reserve_1,E_TenureString,E_TenureBlock)
+#else					/* MultiThread */
+reserve_macro(reserve,0,0)
+#endif					/* MultiThread */
 
 /*
  * findgap - search region chain for a region having at least nbytes available

@@ -71,11 +71,7 @@ keyword{1} column
       }
    inline {
 #ifdef MultiThread
-#ifdef EventMon
       return C_integer findcol(ipc.opnd);
-#else					/* EventMon */
-      fail;
-#endif					/* EventMon */
 #else
       fail;
 #endif					/* MultiThread */

@@ -724,18 +724,22 @@ Deliberate Syntax Error
 #endif					/* Header */
 
 #ifdef NoLIBZ
+#undef HAVE_LIBZ
 #define HAVE_LIBZ 0
 #endif					/* NoLIBZ */
 
 #ifdef NoJPEG
+#undef HAVE_LIBJPEG
 #define HAVE_LIBJPEG 0
 #endif					/* NoJPEG */
 
 #ifdef NoGL
+#undef HAVE_LIBGL
 #define HAVE_LIBGL 0
 #endif					/* NoGL */
 
 #ifdef NoODBC
+#undef HAVE_LIBIODBC
 #define HAVE_LIBIODBC 0
 #define HAVE_LIBODBC 0
 #endif					/* NoODBC */

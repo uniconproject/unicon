@@ -66,7 +66,7 @@ ivib$(EXE): ivib
 
 ivib: $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
-	$(CP) ivib$(EXE) $(BIN)
+	$(CP) ivib$(EXE) $(BIN)/ivib-v1$(EXE)
 	@echo Linking complete.
 
 #

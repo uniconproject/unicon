@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.20 2002-08-17 08:47:18 jeffery Exp $
+ * $Id: fxposix.ri,v 1.21 2002-11-28 11:49:20 jeffery Exp $
  */
 
 /*
@@ -1109,10 +1109,10 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
        */
       tended char *p;
       tended char *cmdline;
-      char *margv[200];	/* We need a different array so we can put
+      int margvsize = 256;
+      char **margv=NULL;	/* We need a different array so we can put
 				   a nil pointer at the end of the list */
       IntVal(amperErrno) = 0;
-      /*	  printf("argc %d\n", argc); fflush(stdout); */
 
       /* Decode the mode */
       if (is:integer(mode))
@@ -1124,6 +1124,8 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       }
 
       if (is:list(argv)) {
+         margv = (char **)malloc(256 * sizeof(char *));
+         if (margv == NULL) runerr(305);
 	 n = 0;
 	 /* Traverse the list */
 	 for (ep = BlkLoc(argv)->list.listhead; BlkType(ep) == T_Lelem;
@@ -1140,10 +1142,16 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       if (i > 200)
 		  runerr(0);
 	       margv[n++] = p;
+               if (n >= margvsize-1) {
+	          margvsize += margvsize;
+                  margv = (char **)realloc(margv,margvsize * sizeof(char *));
+                  if (margv == NULL) runerr(305);
+                  }
 	    }
 	 }
 	 margv[n] = 0;
-      } else if (is:string(argv)) {
+         }
+      else if (is:string(argv)) {
 	 is_argv_str = 1;
          cnv:C_string(argv, cmdline);
       }
@@ -1161,8 +1169,10 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
 	 if (is_argv_str)
 	    execl("/bin/sh", "sh", "-c", cmdline, 0);
-	 else
+	 else {
 	    execvp(margv[0], margv);
+	    free(margv);
+            }
 
 	  /*
 	   * If we returned.... this is the child, so failure is no good;
@@ -1173,16 +1183,19 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	  runerr(500);
 	  break;
       case -1:
+         if (margv) free(margv);
 	 fail;
 	 break;
       default:
+         if (margv) free(margv);
 	 if (!i_mode) {
 	    int status;
 	    waitpid(pid, &status, 0);
 	    return C_integer status;
 	 }
-	 else
+	 else {
 	    return C_integer pid;
+            }
       }
 #else					/* NT */
      /*
@@ -1198,8 +1211,10 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    argc = CmdParamToArgv(cmdline, &garbage, 0);
 	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], garbage);
 	    }
-	 else
+	 else {
 	    i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], margv);
+	    free(margv);
+            }
 	 if (i != 0) {
 	    IntVal(amperErrno) = errno;
 	    fail;
@@ -1238,6 +1253,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 #else					/* MSWindows */
 	       i = (C_integer)system(s);
 #endif					/* MSWindows */
+	       free(margv);
 	       return C_integer i;
 	       }
 	    }

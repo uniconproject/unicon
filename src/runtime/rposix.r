@@ -1,9 +1,13 @@
 
 /*
- * Copyright 1997-9 Shamim Mohamed.
+ * Copyright 1997-2001 Shamim Mohamed.
  *
  * Modification and redistribution is permitted as long as this (and any
- * other) copyright notices are kept intact.
+ * other) copyright notices are kept intact. If you make any changes,
+ * please add a short note here with your name and what changes were
+ * made.
+ *
+ * $Id: rposix.r,v 1.9 2001-12-12 07:00:39 phliar Exp $
  */
 
 #ifdef PosixFns
@@ -680,6 +684,8 @@ char *name;
 /* 
  * Sockets
  *
+ * IMPORTANT NOTE: IPv6 (AF_INET6) is NOT implemented.
+ *
  * There are two routines that are provided (via open()) - connect (for a
  * client) and listen (for servers). 
  * 
@@ -703,7 +709,10 @@ char *name;
  * As for address family to be used, we guess that from the address - if it
  * contains a ':' (host:port) then it is an AF_INET socket; otherwise an
  * AF_UNIX socket. For AF_INET sockets, a missing 'host' component implies a
- * connection is to be made on the same machine.
+ * connection is to be made to the same machine. In the case of a listening
+ * socket, a missing 'host' means listen on every interface available (i.e.
+ * INADDR_ANY) otherwise it specifies the interface to listen on. It is an
+ * error for this interface to not be on the local host (obviously).
  *
  * For clients, the setup is much simpler; just create the socket and call
  * connect, which returns an fd. We do both in the one procedure "connect".
@@ -712,6 +721,10 @@ char *name;
  * and for sock_connect it's basically the same except that it must be
  * AF_INET.
  *
+ * Implementation note: we blithely return an fd (which is an int) in a FILE*
+ * to be stored in the descriptor. This is wrong, wrong, wrong. We need to
+ * add another type which appears to be an Icon file but instead of storing
+ * a FILE* it stores an int.
  */
 
 static int sock_get (char *);
@@ -738,15 +751,12 @@ FILE *sock_connect(char *fn, int is_udp)
    struct sockaddr_in saddr_in;
    char *host = fname;
    static struct hostent he;
-   static char ip[4], *(pip[2]);
-   int iip[4];
-#if !NT
-   struct sockaddr_un saddr_un;
-#endif					/* !NT */
 
    memset(&saddr_in, 0, sizeof(saddr_in));
    strncpy(fname, fn, sizeof(fname));
    if ((p = strchr(fname, ':')) != 0) {
+      /* inet domain socket */
+
       int port = atoi(p+1);
       char hostname[MAXHOSTNAMELEN];
       struct hostent *hp;
@@ -767,22 +777,17 @@ FILE *sock_connect(char *fn, int is_udp)
 	    return 0;
  	}
 	WINSOCK_INITIAL = 1;
-   }
-#endif					/*NT*/
-      if (*host == 0) {
-	 /* localhost */
-	gethostname(hostname, sizeof(hostname));
-	host = hostname;
       }
-      /* try for an IP number, then try for a name */
-      if (sscanf(host, "%d.%d.%d.%d", iip, iip+1, iip+2, iip+3) == 4) {
-	 hp = &he;
-	 ip[0] = iip[0]; ip[1] = iip[1]; ip[2] = iip[2]; ip[3] = iip[3];
-	 pip[0] = ip;
-	 he.h_addr_list = pip;
-	 he.h_length = 4;
-	 }
-      else if ((hp = gethostbyname(host)) == NULL) {
+#endif					/*NT*/
+
+      if (*host == 0) {
+          /* localhost - should we use gethostname() or "localhost"? SPM */
+/*          gethostname(hostname, sizeof(hostname));*/
+	  strncpy(hostname, "localhost", sizeof(hostname));
+          host = hostname;
+      }
+
+      if ((hp = gethostbyname(host)) == NULL) {
 	 return 0;
 	 }
 
@@ -790,29 +795,36 @@ FILE *sock_connect(char *fn, int is_udp)
       *p = ':';
       
       if (is_udp) {
-	 if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) return 0;
+	 if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0) return 0;
       } else {
-	 if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) return 0;
+	 if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0) return 0;
       }
+
+      saddr_in.sin_len = len = sizeof(struct sockaddr_in);
       saddr_in.sin_family = AF_INET;
       saddr_in.sin_port = htons((u_short)port);
       memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
-      len = sizeof(saddr_in);
       sa = (struct sockaddr *) &saddr_in;
       }
-   else { /* UNIX domain socket */
+
+   else {
+      /* UNIX domain socket */
 #if NT
       return 0;
-#else					/* NT */
-      if (is_udp || (s = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+#else
+      struct sockaddr_un saddr_un;
+      int pathbuf_len = sizeof(saddr_un.sun_path);
+#endif
+      if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	 return 0;
       saddr_un.sun_family = AF_UNIX;
-      strncpy(saddr_un.sun_path, fname, sizeof(saddr_un.sun_path));
-      if (strlen(fname) > sizeof(saddr_un.sun_path))
-	saddr_un.sun_path[sizeof(saddr_un.sun_path) - 1] = 0;
-      len = sizeof(saddr_un.sun_family) + strlen(saddr_un.sun_path);
+      strncpy(saddr_un.sun_path, fname, pathbuf_len);
+      /* NUL-terminate just in case.... */
+      saddr_un.sun_path[pathbuf_len - 1] = 0;
+      saddr_un.sun_len = len =
+          sizeof(saddr_un.sun_len) + sizeof(saddr_un.sun_family) +
+          strlen(saddr_un.sun_path);
       sa = (struct sockaddr*) &saddr_un;
-#endif					/* NT */
    }
 
    /* We don't connect UDP sockets but always use sendto(2). */
@@ -822,9 +834,10 @@ FILE *sock_connect(char *fn, int is_udp)
       return (FILE *)s;
       }
 
-   if (connect(s, sa, len) < 0)
+   if (connect(s, sa, len) < 0) {
+      close(s);
       return 0;
-
+   }
    return (FILE *)s;
 }
 
@@ -835,9 +848,6 @@ int is_udp;
    int fd, s, len, fromlen;
    struct sockaddr *sa, from;
    struct sockaddr_in saddr_in;
-#if !NT
-   struct sockaddr_un saddr_un;
-#endif					/* !NT */
 
    char hostname[MAXHOSTNAMELEN];
    struct hostent *hp;
@@ -846,11 +856,14 @@ int is_udp;
    if ((s = sock_get(addr)) < 0) {
      char *p;
 
+     /*
+      * If the first argument is just a name, it's a unix domain socket.
+      * If there's a : then it's host:port except if the host part is
+      * empty, it means on any interface.
+      */
+
      if ((p=strchr(addr, ':')) != NULL) {
-	 if (*addr != ':') {
-	    errno = EACCES;
-	    return 0;
-	    }
+
 #if NT
         if (!WINSOCK_INITIAL)   {
             werr = WSAStartup( wVersionRequested, &wsaData );
@@ -864,44 +877,60 @@ int is_udp;
         }
 #endif					/*NT*/
 
-        gethostname(hostname, sizeof(hostname));
-
-	if ((hp = gethostbyname(hostname)) == NULL)
-	   return 0;
-
-	/* XXX do we need to set the local host info when we're listening? */
-
-	if (is_udp) {
-	    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	       return 0;
-	 } else
-	    if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	       return 0;
-	 saddr_in.sin_family = AF_INET;
-	 if (is_udp)
+        if (*addr == ':')
             saddr_in.sin_addr.s_addr = INADDR_ANY;
-	 saddr_in.sin_port = htons((u_short)atoi(addr+1));
-	 if (saddr_in.sin_port == 0) {
-	    errno = ENXIO;
-	    return 0;
-	    }
+        else {
+            /* XXX this part is still broken */
+ 
+            /* Get the interface to listen on */
+            *p = 0;
+            strncpy(hostname, addr, sizeof(hostname)-1);
+            *p = ':';
 
-	 memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
-	 sa = (struct sockaddr*) &saddr_in;
-	 len = sizeof(saddr_in);
-      } else {
-#if !NT
-	 if (is_udp || (s = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+            /* Remember, gethostbyname(2) takes names as well as IPv4 & IPv6 */
+            if ((hp = gethostbyname(hostname)) == NULL)
+                return 0;
+ 
+            memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
+            }
+
+        saddr_in.sin_len = len = sizeof(struct sockaddr_in);
+        saddr_in.sin_family = AF_INET;
+        saddr_in.sin_port = htons((u_short)atoi(p+1));
+        if (saddr_in.sin_port == 0) {
+           errno = ENXIO;
+           return 0;
+           }
+
+        if (is_udp) {
+            if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
+                return 0;
+        } else
+            if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0)
+                return 0;
+
+        sa = (struct sockaddr*) &saddr_in;
+      }
+      else {
+         /* unix domain socket */
+          int pathbuf_len;
+#if NT
+         return 0;
+#else
+         struct sockaddr_un saddr_un;
+#endif
+	 if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	    return 0;
 
+         pathbuf_len = sizeof(saddr_un.sun_path);
 	 saddr_un.sun_family = AF_UNIX;
-	 strncpy(saddr_un.sun_path, addr, sizeof(saddr_un.sun_path));
-	 if (strlen(addr) > sizeof(saddr_un.sun_path))
-	    saddr_un.sun_path[sizeof(saddr_un.sun_path) - 1] = 0;
-	 len = sizeof(saddr_un.sun_family) + strlen(saddr_un.sun_path);
+	 strncpy(saddr_un.sun_path, addr, pathbuf_len);
+         saddr_un.sun_path[pathbuf_len - 1] = 0;
+	 saddr_un.sun_len = len =
+             sizeof(saddr_un.sun_len) + sizeof(saddr_un.sun_family) +
+             strlen(saddr_un.sun_path);
 	 (void) unlink(saddr_un.sun_path);
 	 sa = (struct sockaddr*) &saddr_un;
-#endif					/* NT */
       }
       if (bind(s, sa, len) < 0) {
 	 return 0;
@@ -922,6 +951,7 @@ int is_udp;
    return (FILE *)fd;
 }
 
+/* Used by function send(): in other words, create a socket, send, close it */
 int sock_send(char *adr, char *msg, int msglen)
 {
    struct sockaddr_in saddr_in;
@@ -953,7 +983,9 @@ int sock_send(char *adr, char *msg, int msglen)
 
    if (*host == 0) {
       /* localhost */
-      gethostname(hostname, sizeof(hostname));
+      /* localhost - should we use gethostname() or "localhost"? SPM */
+/*          gethostname(hostname, sizeof(hostname));*/
+      strncpy(hostname, "localhost", sizeof(hostname));
       host = hostname;
    }
    if ((hp = gethostbyname(host)) == NULL)
@@ -962,9 +994,10 @@ int sock_send(char *adr, char *msg, int msglen)
    /* Restore the argument just in case */
    *p = ':';
       
-   if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+   if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
       return 0;
 
+   saddr_in.sin_len = len = sizeof(saddr_in);
    saddr_in.sin_family = AF_INET;
    saddr_in.sin_port = htons((u_short)port);
    memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
@@ -978,6 +1011,7 @@ int sock_send(char *adr, char *msg, int msglen)
    return 1;
 }
 
+/* Used by function receive() to receive a UDP datagram into a record */
 int sock_recv(f, rp)
 FILE *f;
 struct b_record *rp;

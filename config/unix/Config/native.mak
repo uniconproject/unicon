@@ -1,6 +1,5 @@
 BASE=../..
-# For now, this must be GCC v2.
-GCC=/usr/bin/gcc
+GCC=gcc
 GCC_OPTS =
 
 .PHONY: all clean
@@ -12,16 +11,17 @@ clean :
 
 ipc.o : ipc.c
 	$(GCC)  -fPIC -O2 \
-		-I/usr/include \
 		-I$(BASE)/src/h \
+		-I- \
 		-I$(BASE)/src/gdbm \
 		-I$(BASE)/src/libtp \
 		-c ipc.c
 
 nativeutils.o : nativeutils.c
 	$(GCC)  -fPIC -O2 \
-		-I/usr/include \
 		-I$(BASE)/src/h \
+		-I- \
+		-I. \
 		-I$(BASE)/src/gdbm \
 		-I$(BASE)/src/libtp \
 		-c nativeutils.c

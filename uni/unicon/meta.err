@@ -116,7 +116,7 @@ end
 class c()
 method m(); ["help!" end
 end
-::: unclosed list
+::: missing operator or closing bracket
 class c()
 method m();end
 procedure p();end
@@ -137,10 +137,21 @@ hello
 end
 ::: missing then
 procedure p()
+if 1) {
+hello
+}
+end
+::: spurious close-parenthesis
+procedure p()
 write(p()
 hello
 end
 ::: unclosed parenthesis
+procedure main(); {
+	 | x)
+    }
+end
+::: missing operator or unbalanced parenthesis/bracket
 procedure p()
 local l := []
 end
@@ -190,3 +201,7 @@ class c() method m(); if x + &1press then p()
 ::: bad keyword name or bogus & precedes this token
 class c() method m() if
 ::: a ; or \n is missing between method header and body
+procedure main()
+   l. := foo
+end
+::: field name expected

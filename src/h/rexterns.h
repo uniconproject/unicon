@@ -60,7 +60,8 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
  */
 
 #ifdef ISQL
-  extern HENV ISQLEnv;
+   extern HENV ISQLEnv;
+   extern struct ISQLFile *isqlfiles;
 #endif
 
 #ifdef FncTrace

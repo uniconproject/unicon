@@ -38,3 +38,12 @@ W-Configure-GCC:
 NT-Configure-GCC:
 		cd config/win32/gcc && sh config.sh
 		echo Run "make Unicon" to build
+
+Pure:
+		touch Makedefs
+		rm -rf icon.* bin/[a-z]* lib/[a-z]*
+		cd ipl;			$(MAKE) Pure
+		cd src;			$(MAKE) Pure
+		cd tests;		$(MAKE) Pure
+		cd config/unix; 	$(MAKE) Pure
+		cd uni;			$(MAKE) Clean

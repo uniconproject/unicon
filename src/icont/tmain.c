@@ -586,7 +586,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
    #define Usage "[-cBstuEG] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
-   while ((c = getopt(argc,argv, "cBe:f:o:O:stuGv:EL")) != EOF)
+   while ((c = getopt(argc,argv, "cBe:f:o:O:stuGv:ELZ")) != EOF)
       switch (c) {
 	 case 'B':
 	    bundleiconx = 1;
@@ -701,6 +701,11 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             if (verbose == 0)
                silent = 1;
             break;
+         case 'Z':
+	    /* add flag to say "don't compress". noop unless HAVE_LIBZ */
+	    Zflag = 0;
+	    break;
+
          default:
          case 'x':			/* -x illegal until after file list */
             usage();
@@ -918,6 +923,18 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
    report("Linking");
    errors = ilink(lfiles,ofile);	/* link .u files to make icode file */
+
+#if HAVE_LIBZ
+   /*
+    * we have linked together a bunch of files to make an icode,
+    * now call file_comp() to compress it
+    */
+   if (Zflag) {
+      if (file_comp(ofile)) {
+	 report("error during icode compression\n");
+	 }
+      }
+#endif					/* HAVE_LIBZ */
 
 #if NT
    if (!bundleiconx)

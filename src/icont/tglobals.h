@@ -98,3 +98,7 @@ Global int Gflag	Init(1);	/* -G: enable graphics (write wiconx)*/
 Global int Gflag	Init(0);	/* -G: enable graphics (write wiconx)*/
 #endif					/* MSWindows && MSVC */
 #endif					/* NT */
+
+#if HAVE_LIBZ
+Global int Zflag	Init(1);	/* -Z disables icode-gz compression */
+#endif					/* HAVE_LIBZ */

@@ -11,18 +11,6 @@
 #include <stdio.h>
 #endif
 
-#if IntBits != WordBits
-   typedef long int word;
-   typedef unsigned long int uword;
-#else					/* IntBits != WordBits */
-   typedef int word;
-   #ifdef CDC_VXVE
-      typedef uword;
-   #else				/* CDC_VXVE */
-      typedef unsigned int uword;
-   #endif				/* CDC_VXVE */
-#endif					/* IntBits != WordBits */
-
 #include "../h/header.h"
 
 #ifdef MAIN

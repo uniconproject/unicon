@@ -71,18 +71,17 @@ int file_comp(char *filename) {
     putc(getc(finput),foutput);
 
     if (fread((char *)hdr, sizeof(char), sizeof(*hdr), finput) != sizeof(*hdr)) {
-      printf("Can't read the header!\n");
+      fprintf(stderr, "gz compressor can't read the header, compression\n");
       return 1;
     }
     
     cf=(char *)hdr->config;
-    printf("Config: %s\n", cf);  /* for test */
     if (strchr(cf, 'Z')==NULL)
-      strcat(cf,"Z");
+       strcat(cf,"Z");
     else {
-      printf("The file already has a compressed sign in its header!\n");
-      return 0;
-    }
+       /* icode already compressed, no-op */
+       return 0;
+       }
     
     
     /* write the modified header into a new file */
@@ -101,7 +100,10 @@ int file_comp(char *filename) {
     }
     
     
-    /* read the rest of the target file and write the compressed data into the new file*/
+    /*
+     * read the rest of the target file and write the compressed data into
+     * the new file
+     */
     
     while((c=fgetc(finput))!=EOF) {
       gzputc(f,c);
@@ -115,6 +117,16 @@ int file_comp(char *filename) {
     fclose(finput);
     gzclose(f);
     
+  if (unlink(filename)) {
+     fprintf(stderr, "can't remove old %s, compressed version left in %s\n",
+	     filename, newfname);
+     return 1;
+     }
+  if (rename(newfname, filename)) {
+     fprintf(stderr, "can't rename compressed %s back to %s\n",
+	     newfname, filename);
+     }
+
   return 0;
 }
 

@@ -2024,6 +2024,7 @@ int fileimage(wbp w, char* filename)
 {
    int r, i, nwidth, nheight;
    int status;
+   word l;
    struct imgdata im;
    r = readGIF(filename, 0, &im);
 
@@ -2037,7 +2038,23 @@ int fileimage(wbp w, char* filename)
      }
    /* not a gif file */
    else {
-     r = readimage(w, filename, 0, 0, &status);
+     i = SCREENDEPTH(w);
+     i = i / 8;
+     r = readJPEG(filename, i, &im);
+
+     if (r == Succeeded) {
+        switch (i) {
+        case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
+                        (word)im.width*(word)im.height);
+                break;
+        case 2: i = texture_16img(w, im);
+                break;
+        case 3: i = texture_24img(w, im);
+                break;
+        }
+      }
+     else
+         r = readimage(w, filename, 0, 0, &status);
     }
    if (i == Succeeded)
 	 return Succeeded;
@@ -2557,4 +2574,113 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
    if (i == Succeeded)
       return wt2;
    else return NULL;
+}
+
+int texture_24img(wbp w, struct imgdata im)
+{
+#ifdef XWindows
+   wdp wd = w->window->display;
+#endif					/* XWindows */
+   int width=im.width, height=im.height;
+   word len;
+   int c, v, i;
+   unsigned char *t;
+   unsigned int ix = 0, iy = height -1;
+   GLubyte *tex = (GLubyte *)malloc(im.height * im.width * 3);
+
+   width = im.width;
+   len = (word)im.width * (word)im.height;
+   makecurrent(w);
+   if (tex == NULL) return Failed;
+
+   /*
+    * convert string s into an array that can be used by opengl as a texture.
+    * we must start at height=height-1 and width=0 to make this look right
+    */
+
+   t = im.data;
+   while (len--) {
+         /* r,g,b component must be between 0 and 256 */
+      tex[(iy*width+ix)*3+0] = t[0];
+      tex[(iy*width+ix)*3+1] = t[1];
+      tex[(iy*width+ix)*3+2] = t[2];
+      t = t+3;
+      if (++ix >= width) {
+         ix = 0;	
+ 	/* reset for new row */
+         iy--;
+      }
+    }
+    if (ix > 0) {	/* pad final row if incomplete */
+         while (ix < width) {
+            tex[(iy*width+ix)*3+0] = (GLint)RED(w->context->bg);
+            tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
+            tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
+            ix++;
+           }
+	 }
+
+   /* set the texture */
+   i = texture(width, height, (GLubyte *)tex, w->context->texmode);
+
+   free(tex);
+
+   if (i == Succeeded)
+      return Succeeded;
+   else
+      return Failed;
+}
+
+int texture_16img(wbp w, struct imgdata im)
+{
+#ifdef XWindows
+   wdp wd = w->window->display;
+#endif					/* XWindows */
+   int width=im.width, height=im.height;
+   word len;
+   int c, v, i;
+   unsigned char *t;
+   unsigned int ix = 0, iy = height -1;
+   GLubyte *tex = (GLubyte *)malloc(height * width * 3);
+
+   len = (word)im.width * (word)im.height;
+   makecurrent(w);
+   if (tex == NULL) return Failed;
+
+   /*
+    * convert string s into an array that can be used by opengl as a texture.
+    * we must start at height=height-1 and width=0 to make this look right
+    */
+
+   t = im.data;
+   while (len--) {
+         /* r,g,b component must be between 0 and 256 */
+      tex[(iy*width+ix)*3+0] = t[0] && 0xF8;
+      tex[(iy*width+ix)*3+1] = t[1] && 0xF8;
+      tex[(iy*width+ix)*3+2] = t[2] && 0xF8;
+      t = t+3;
+      if (++ix >= width) {
+         ix = 0;	
+ 	/* reset for new row */
+         iy--;
+      }
+   }
+   if (ix > 0) {	/* pad final row if incomplete */
+         while (ix < width) {
+            tex[(iy*width+ix)*3+0] = (GLint)RED(w->context->bg);
+            tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
+            tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
+            ix++;
+           }
+    }
+
+   /* set the texture */
+   i = texture(width, height, (GLubyte *)tex, w->context->texmode);
+
+   free(tex);
+
+   if (i == Succeeded)
+      return Succeeded;
+   else
+      return Failed;
 }

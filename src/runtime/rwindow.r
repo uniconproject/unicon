@@ -1701,7 +1701,7 @@ static int jpegread(char *filename, int p);
 int readJPEG(char *filename, int p, struct imgdata *imd)
 {
    int r;
-   r = jpegread(filename, 1);			/* read image */
+   r = jpegread(filename, p);			/* read image */
    if (r == Failed) return Failed;
 
    imd->width = gf_width;		/* set return variables */
@@ -1753,6 +1753,9 @@ static int jpegread(char *filename, int p)
       cinfo.quantize_colors = TRUE;
       cinfo.desired_number_of_colors = 254;
       }
+   else { 
+        cinfo.quantize_colors = FALSE;
+   }
 
    /* Start decompression */
 
@@ -1780,7 +1783,7 @@ static int jpegread(char *filename, int p)
 	 }
       }
 
-   if (p == 1)
+/*   if (p == 1) */
       gf_string = calloc(jpg_space=row_stride*cinfo.output_height,
 			 sizeof(unsigned char));
 	
@@ -1791,11 +1794,11 @@ static int jpegread(char *filename, int p)
       ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
    j = 0;
    while (cinfo.output_scanline < cinfo.output_height) {
-      k = 0;
+/*      k = 0; */
       (void) jpeg_read_scanlines(&cinfo, buffer, 1);
 
       for (i=0; i<row_stride; i++) {
-	 if (p == 1)   /* 8bit color */
+/*	 if (p == 1) */   /* 8bit color */
 	    gf_string[j*row_stride+i] = buffer[0][i];
 	 }
       j += 1;

@@ -65,13 +65,10 @@ iconx: $(OBJS) $(WOBJS) $(COBJS)
 	$(CC) -Xlinker --stack -Xlinker 768000 -o iconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
 	cp iconx.exe ../../bin
 
-#	$(link) /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(guilibs) -out:wiconx.exe
-#	copy wiconx.exe ..\..\bin
-
 miconx:
 	-$(RM) *.$(O)
 	cp ../h/define.h define.bak
-	cp ../../config/win32/gcc/mdefine.h ../h/define.h
+	cat ../../config/win32/gcc/eventmon.h >>../h/define.h
 	$(MAKE) $(ICONX)
 	-$(RM) m$(ICONX).exe
 	mv $(ICONX).exe m$(ICONX).exe
@@ -80,7 +77,14 @@ miconx:
 	-$(RM) ..\h\define.h
 	mv define.bak ../h/define.h
 
-nticonx: $(OBJS)
+nticonx:
+	-$(RM) *.$(O)
+	cp ../../config/win32/gcc/wdefine.h ../h/define.h
+	cat ../../config/win32/gcc/ntconsole.h >>../h/define.h
+	$(MAKE) iconx
+	-$(RM) *.$(O)
+	cp ../../config/win32/gcc/define.h ../h/define.h
+	$(MAKE) $(OBJS)
 	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
 	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
 	gcc -Xlinker --stack -Xlinker 768000 -o nticonx.exe $(OBJS) ..\libtp\libtp.a -lkernel32 -lwinmm -lwsock32 -lodbc32 ../gdbm/libgdbm.a

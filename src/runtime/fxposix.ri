@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.29 2004-12-16 11:41:42 jeffery Exp $
+ * $Id: fxposix.ri,v 1.30 2004-12-17 09:50:26 jeffery Exp $
  */
 
 /*
@@ -2120,9 +2120,13 @@ function{0,1} select(files[nargs])
       return new list(file)
       }
    body {
+      int rv, status, timeout = -1, acc_time = 0, check_time, clocks;
+#if UNIX
       struct tms t;
-      int base_time = times(&t), acc_time = 0, check_time, clocks;
-      int rv, status, timeout = -1, ctps = sysconf(_SC_CLK_TCK);
+      int base_time = times(&t), ctps = sysconf(_SC_CLK_TCK);
+#else					/* UNIX */
+      int base_time = clock(), ctps = CLOCKS_PER_SEC;
+#endif					/* UNIX */
       fd_set fds;
       int i, j, k=0, n=0, nset, nset_add=0;
       struct timeval tv, *ptv = &tv;
@@ -2300,7 +2304,11 @@ function{0,1} select(files[nargs])
 	  * try to handle overflow.  More ifdef's will be needed here
 	  * if times() return value doesn't work on some systems.
 	  */
+#if UNIX
 	 clocks = times(&t);
+#else					/* UNIX */
+	 clocks = clock();
+#endif					/* UNIX */
 	 if (clocks > base_time) {
 	    acc_time = clocks - base_time;
 	    check_time = acc_time;

@@ -24,7 +24,7 @@ LibDcl(field,2,".")
    #ifdef FieldTableCompression
       extern int *fo;
       extern unsigned char *focp;
-      extern short *fosp;
+      extern unsigned short *fosp;
       extern char *bm;
    #endif				/* FieldTableCompression */
    extern word *records;
@@ -96,8 +96,8 @@ linearsearch:
 #endif					/* MultiThread */
 
 #ifdef FieldTableCompression
-#define FO(i) ((foffwidth==1)?focp[i]:((foffwidth==2)?fosp[i]:fo[i]))
-#define FTAB(i) ((ftabwidth==1)?ftabcp[i]:((ftabwidth==2)?ftabsp[i]:ftabp[i]))
+#define FO(i) ((foffwidth==1)?(focp[i]&255L):((foffwidth==2)?(fosp[i]&65535L):fo[i]))
+#define FTAB(i) ((ftabwidth==1)?(ftabcp[i]&255L):((ftabwidth==2)?(ftabsp[i]&65535L):ftabp[i]))
 
       fnum = FTAB(FO(IntVal(Arg2)) + (rp->recdesc->proc.recnum - 1));
 

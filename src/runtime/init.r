@@ -201,7 +201,7 @@ int *ftabp;				/* pointer to record/field table */
 word ftabwidth;				/* field table entry width */
 word foffwidth;				/* field offset entry width */
 unsigned char *ftabcp, *focp;		/* pointers to record/field table */
-short *ftabsp, *fosp;			/* pointers to record/field table */
+unsigned short *ftabsp, *fosp;		/* pointers to record/field table */
 
 int *fo;				/* field offset (row in field table) */
 char *bm;				/* bitmap array of valid field bits */
@@ -772,7 +772,7 @@ Deliberate Syntax Error
 #ifdef FieldTableCompression
    fo = (int *)(code + hdr.Fo);
    focp = (unsigned char *)(fo);
-   fosp = (short *)(fo);
+   fosp = (unsigned short *)(fo);
    if (hdr.FoffWidth == 1) {
       bm = (char *)(focp + hdr.Nfields);
       }
@@ -785,7 +785,7 @@ Deliberate Syntax Error
    ftabwidth = hdr.FtabWidth;
    foffwidth = hdr.FoffWidth;
    ftabcp = (unsigned char *)(code + hdr.Ftab);
-   ftabsp = (short *)(code + hdr.Ftab);
+   ftabsp = (unsigned short *)(code + hdr.Ftab);
 #endif					/* FieldTableCompression */
    fnames = (dptr)(code + hdr.Fnames);
    globals = efnames = (dptr)(code + hdr.Globals);
@@ -1673,7 +1673,7 @@ C_integer bs, ss, stk;
 #ifdef FieldTableCompression
    pstate->Fo = (int *)(pstate->Code + hdr.Fo);
    pstate->Focp =   (unsigned char *)(pstate->Fo);
-   pstate->Fosp =   (short *)(pstate->Fo);
+   pstate->Fosp =   (unsigned short *)(pstate->Fo);
    pstate->Foffwidth = hdr.FoffWidth;
    if (hdr.FoffWidth == 1) {
       pstate->Bm = (char *)(pstate->Focp + hdr.Nfields);
@@ -1686,7 +1686,7 @@ C_integer bs, ss, stk;
    pstate->Ftabwidth= hdr.FtabWidth;
    pstate->Foffwidth = hdr.FoffWidth;
    pstate->Ftabcp   = (unsigned char *)(pstate->Code + hdr.Ftab);
-   pstate->Ftabsp   = (short *)(pstate->Code + hdr.Ftab);
+   pstate->Ftabsp   = (unsigned short *)(pstate->Code + hdr.Ftab);
 #endif					/* FieldTableCompression */
    pstate->Fnames  = (dptr)(pstate->Code + hdr.Fnames);
    pstate->Globals = pstate->Efnames = (dptr)(pstate->Code + hdr.Globals);

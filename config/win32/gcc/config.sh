@@ -1,6 +1,6 @@
 mkdir ../../../bin
-cp Icon-icont.bat ../../..
-cp Unicon-Ivib.bat ../../..
+cp mkicont.bat ../../..
+cp mkunivib.bat ../../..
 cp gdbm.bat ../../../src/runtime
 cp libtp.bat ../../../src/runtime
 cp makefile.top ../../../makefile

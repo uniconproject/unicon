@@ -1,0 +1,128 @@
+#
+# $Id: msg.icn,v 1.1 2003-07-07 19:47:29 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+$define LIB "uniipclib.so"
+
+package ipc
+
+import lang
+import util
+
+#
+# This class provides an inter process messaging facility.  The implementation requires
+# the accompanying C library uniipclib.so to be on the library path.
+#
+# Instances of this class should not be created directly, but rather using the factory
+# procedures {open_public_msg}, {create_public_msg} and {create_private_msg}
+#
+class Msg(id)
+   #
+   # Send the given object.  The object may be an arbitrary Icon structure, and will be
+   # encoded into a string by the {encode()} procedure.  As such, if the encoded object
+   # contains a class then that class must subclass {ClassCoding}
+   #
+   method send(o)
+      static f
+      initial {
+         f := loadfunc(LIB, "msg_send")
+      }
+      f(id, lang::encode(o))
+   end
+
+   #
+   # Receive an object from the queue, waiting if necessary.
+   #
+   method receive()
+      static f
+      initial {
+         f := loadfunc(LIB, "msg_receive")
+      }
+      return lang::decode(f(id))
+   end
+
+   #
+   # Attempt to get an object from the queue, failing if one is not
+   # ready immediately.
+   #
+   method attempt()
+      static f
+      initial {
+         f := loadfunc(LIB, "msg_receive_nowait")
+      }
+      return lang::decode(f(id))
+   end
+
+   #
+   # Poll the queue for an object for t milliseconds.  If an object is
+   # not received within that time, fail, otherwise return it.
+   #
+   method poll(t)
+      local c, o
+      c := util::curr_time_millis()
+      repeat {
+         if o := attempt() then
+            return o
+         if util::curr_time_millis() - c > t then
+            fail
+         util::sleep(50)
+      }
+   end
+
+   #
+   # Clean up the resources used by the queue.  This should be called by
+   # the parent process after the queue is no longer needed.
+   #
+   method remove()
+      static f
+      initial {
+         f := loadfunc(LIB, "msg_remove")
+      }
+      f(id)
+   end
+
+   #
+   # Return the underlying id of the queue.
+   #
+   method get_id()
+      return id
+   end
+end
+
+#
+# Get an existing public queue with the given key, or fail
+# if no such queue exists.
+#
+procedure open_public_msg(key)
+   static f
+   initial {
+      f := loadfunc(LIB, "msg_open_public")
+   }
+   return Msg(f(key))
+end
+
+#
+# Create a new public queue with the given key
+#
+procedure create_public_msg(key)
+   static f
+   initial {
+      f := loadfunc(LIB, "msg_create_public")
+   }
+   return Msg(f(key))
+end
+
+#
+# Create a new private queue
+#
+procedure create_private_msg()
+   static f
+   initial {
+      f := loadfunc(LIB, "msg_create_private")
+   }
+   return Msg(f())
+end

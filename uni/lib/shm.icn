@@ -1,0 +1,100 @@
+#
+# $Id: shm.icn,v 1.1 2003-07-07 19:47:29 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+$define LIB "uniipclib.so"
+
+package ipc
+
+import lang
+
+#
+# This class provides an inter process shared variable facility.  The implementation requires
+# the accompanying C library uniipclib.so to be on the library path.
+#
+# Instances of this class should not be created directly, but rather using the factory
+# procedures {open_public_shm}, {create_public_shm} and {create_private_shm}
+#
+class Shm(id)
+   #
+   # Set the value to the given object.  The object may be an arbitrary
+   # Icon structure, and will be encoded into a string by the {encode()}
+   # procedure.  As such, if the encoded object contains a class then
+   # that class must subclass {ClassCoding}
+   #
+   method set_value(o)
+      static f
+      initial {
+         f := loadfunc(LIB, "shm_set_value")
+      }
+      f(id, lang::encode(o))
+   end
+
+   #
+   # Get the value of the object.
+   #
+   method get_value()
+      static f
+      initial {
+         f := loadfunc(LIB, "shm_get_value")
+      }
+      return lang::decode(f(id))
+   end
+
+   #
+   # Clean up the resources used by the variable.  This should be called by
+   # the parent process after the shared variable is no longer needed.
+   #
+   method remove()
+      static f
+      initial {
+         f := loadfunc(LIB, "shm_remove")
+      }
+      f(id)
+   end
+
+   #
+   # Return the underlying id of the shared variable.
+   #
+   method get_id()
+      return id
+   end
+end
+
+#
+# Get an existing public shared variable with the given key, or fail
+# if no such shared variable exists.
+#
+procedure open_public_shm(key)
+   static f
+   initial {
+      f := loadfunc(LIB, "shm_open_public")
+   }
+   return Shm(f(key))
+end
+
+#
+# Create a new public shared variable with the given key and initial value
+#
+procedure create_public_shm(key, o)
+   static f
+   initial {
+      f := loadfunc(LIB, "shm_create_public")
+   }
+   return Shm(f(key, lang::encode(o)))
+end
+
+#
+# Create a new private shared variable with the given initial value
+#
+procedure create_private_shm(o)
+   static f
+   initial {
+      f := loadfunc(LIB, "shm_create_private")
+   }
+   return Shm(f(lang::encode(o)))
+end

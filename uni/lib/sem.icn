@@ -1,0 +1,165 @@
+#
+# $Id: sem.icn,v 1.1 2003-07-07 19:47:29 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+$define LIB "uniipclib.so"
+
+package ipc
+
+import util
+
+#
+# This class provides a semaphore facility.  The implementation requires
+# the accompanying C library uniipclib.so to be on the library path.
+#
+# Instances of this class should not be created directly, but rather using the factory
+# procedures {open_public_sem}, {create_public_sem} and {create_private_sem}
+#
+class Sem(id)
+   #
+   # Set the value of the semaphore to x
+   #
+   method set_value(x)
+      static f
+      initial {
+         f := loadfunc(LIB, "sem_set_value")
+      }
+      f(id, x)
+   end
+
+   #
+   # Get the current semaphore value.
+   #
+   method get_value()
+      static f
+      initial {
+         f := loadfunc(LIB, "sem_get_value")
+      }
+      return f(id)
+   end
+
+   #
+   # Perform the wait operation, defined as {semop(-1)}
+   #
+   method wait()
+      semop(-1)
+   end
+
+   #
+   # Attempt a wait, defined as {semop_nowait(-1)}
+   #
+   method attempt()
+      return semop_nowait(-1)
+   end
+
+   #
+   # Perform the signal operation, defined as {semop(1)}
+   #
+   method signal()
+      semop(1)
+   end
+
+   #
+   # Perform a semop on the underlying sempahore.  If n is >0 then n is
+   # added to the value.  If it is <0 then the process is suspended until
+   # the value is >= abs(n), then abs(n) is subtracted.  If n is zero,
+   # then the process suspends until the semaphore value is zero.
+   #
+   method semop(n)
+      static f
+      initial {
+         f := loadfunc(LIB, "sem_semop")
+      }
+      f(id, n)
+   end
+
+   # 
+   # Peform a semop with the IPC_NOWAIT flag set.  This is the same as
+   # {semop()}, but instead of suspending the call will fail.
+   #
+   method semop_nowait(n)
+      static f
+      initial {
+         f := loadfunc(LIB, "sem_semop_nowait")
+      }
+      return f(id, n)
+   end
+
+   # 
+   # Repeatedly peform {semop_nowait()}, sleeping for a short period between each try
+   # until t milliseconds or {semop_nowait()} succeeds.  Fails on a timeout; otherwise
+   # succeeds.
+   # @param n the parameter to semop_nowait
+   # @param t the timeout in milliseconds.
+   #
+   method semop_poll(n, t)
+      local c
+      c := util::curr_time_millis()
+      repeat {
+         if semop_nowait(n) then
+            return 
+         if util::curr_time_millis() - c > t then
+            fail
+         util::sleep(50)
+      }
+   end
+
+   #
+   # Clean up the resources used by the semaphore.  This should be called by
+   # the parent process after the semaphore is no longer needed.
+   #
+   method remove()
+      static f
+      initial {
+         f := loadfunc(LIB, "sem_remove")
+      }
+      f(id)
+   end
+
+   #
+   # Return the underlying id of the semaphore.
+   #
+   method get_id()
+      return id
+   end
+end
+
+#
+# Get an existing public semaphore with the given key, or fail
+# if no such semaphore exists.
+#
+procedure open_public_sem(key)
+   static f
+   initial {
+      f := loadfunc(LIB, "sem_open_public")
+   }
+   return Sem(f(key))
+end
+
+#
+# Create a new public semaphore with the given key and initial value
+#
+procedure create_public_sem(key, val)
+   static f
+   initial {
+      f := loadfunc(LIB, "sem_create_public")
+   }
+   /val := 1
+   return Sem(f(key, val))
+end
+
+#
+# Create a new private semaphore with the given initial value
+#
+procedure create_private_sem(val)
+   static f
+   initial {
+      f := loadfunc(LIB, "sem_create_private")
+   }
+   /val := 1
+   return Sem(f(val))
+end

@@ -43,7 +43,7 @@ FILE *fd;
    }
 #endif					/* RecordIO */
 
-#ifdef PosixFns /* NT */
+#ifdef PosixFns
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR -1
 #endif
@@ -570,9 +570,9 @@ int n;
 #endif                                  /* __SASC */
 #endif					/* AMIGA */
 
-#if PORT || ARM || ATARI_ST || MVS || VM
+#if PORT || ARM || MVS || VM
    return Failed;
-#endif					/* PORT || ARM || ATARI_ST ... */
+#endif					/* PORT || ARM || ... */
 
    /*
     * End of operating-system dependent code.

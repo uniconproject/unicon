@@ -311,7 +311,7 @@ void c_put(l,val)
 struct descrip *l;
 struct descrip *val;
 {
-   register word i;
+   register word i=0;
    register struct b_lelem *bp;  /* does not need to be tended */
    static two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
@@ -321,10 +321,6 @@ struct descrip *val;
     *  list-element block.
     */
    bp = (struct b_lelem *) BlkLoc(*l)->list.listtail;
-   
-#ifdef EventMon 	/* initialize i so it's 0 if last list-element */
-   i = 0;			/* block isn't full */
-#endif				/* EventMon */
 
    /*
     * If the last list-element block is full, allocate a new

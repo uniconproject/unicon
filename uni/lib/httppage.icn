@@ -1,5 +1,5 @@
 #
-# $Id: httppage.icn,v 1.2 2004-02-12 17:07:55 rparlett Exp $
+# $Id: httppage.icn,v 1.3 2004-06-27 16:19:05 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -34,6 +34,13 @@ class HttpPage : Object : SelectiveClassCoding(url, status, header, data, data_f
    end
 
    #
+   # Set the status
+   #
+   method set_status(s)
+      return status := s
+   end
+
+   #
    # Succeed iff the status was an HTTP OK status.
    #
    method status_okay()
@@ -46,8 +53,22 @@ class HttpPage : Object : SelectiveClassCoding(url, status, header, data, data_f
    # @ values are the corresponding header values.  The keys will always
    # @ be in lower case.
    #
-   method get_header()
+   method get_headers()
       return header
+   end
+
+   #
+   # Return an individual header entry
+   #
+   method get_header(key)
+      return header[map(key)]
+   end
+
+   #
+   # Set the data of the page.
+   #
+   method set_data(s)
+      return data :=s 
    end
 
    #
@@ -135,4 +156,7 @@ class HttpPage : Object : SelectiveClassCoding(url, status, header, data, data_f
          data := tab(0)
       }
    end
+
+   initially
+      header := table()
 end

@@ -1,0 +1,136 @@
+#
+# $Id: netclient.icn,v 1.1 2004-06-27 16:19:05 rparlett Exp $
+#
+
+package net
+
+import util
+link posix
+
+#
+# Common base class for a client class which holds a connection to a
+# server and communicates using CRLF-terminated lines.
+#
+class NetClient:Connectable:Error(server, port, connection, sbuff, timeout)
+   # 
+   # Fail and set the error code, and close the connection.
+   # @p
+   method error_and_close(a)
+      error(a)
+      close()
+   end
+
+   #
+   # Set the timeout in ms to use.  If a figure of zero, or &null, is given (the default)
+   # then no timeout will be used.
+   #
+   method set_timeout(timeout)
+      return self.timeout := timeout
+   end
+
+   #
+   # Open the connection.
+   #
+   method open()
+      close() | fail
+      fire("Connecting", "Connecting to " || server || ":" || port)
+      connection := socket_connect(server, port, timeout) | 
+         return error("Couldn't connect to " || server || ": errno=" || &errno)
+      sbuff := ""
+      fire("Connected")
+      return connection
+   end
+
+   #
+   # Close the connection
+   #
+   method close()
+      if \connection then {
+         ::close(connection) | return error("Failed to close connection")
+         fire("Closed")
+         connection := &null
+      }
+      return
+   end
+
+   #
+   # Set the server to use
+   #
+   method set_server(s)
+      server := s
+   end
+
+   #
+   # Set the port.
+   #
+   method set_port(n)
+      port := n
+   end
+
+   #
+   # Write the given string to the connection.
+   #
+   method write_str(s)
+      fire("Sending string", s)
+      return socket_send(connection, s, timeout) | 
+         error("Failed to send on connection: errno=" || &errno)
+   end
+
+   #
+   # Write a single line to the connection, appending CRLF to the output stream.
+   # @p
+   method write_line(s)
+      /s := ""
+      fire("Sending line", s)
+      return socket_send(connection, s || "\r\n", timeout) | 
+         error("Failed to send on connection: errno=" || &errno)
+   end
+
+   #
+   # Read a single line from the connection, and return it.
+   # @p
+   method read_line()
+      local line
+
+      repeat {
+         #
+         # Look for a line and if found return it.
+         #
+         sbuff ? {
+            if line := tab(find("\r\n")) then {
+               move(2)
+               sbuff := tab(0)
+               fire("Read line", line)
+               return line
+            }
+         }
+         sbuff ||:= socket_recv(connection, 1024, timeout) | 
+            return error("Failed to recv on connection: errno=" || &errno)
+      }
+   end
+
+   #
+   # Read up to len bytes on the connection.
+   #
+   method read_str(len)
+      local t
+      #
+      # Use the line buffer if it has anything in it.
+      #
+      if *sbuff > 0 then {
+         sbuff ? {
+            t := move(len) | tab(0)
+            sbuff := tab(0)
+         }
+      } else {
+         t := socket_recv(connection, len, timeout) | 
+            return error("Failed to recv on connection: errno=" || &errno)
+      }
+      fire("Read string", t)
+      return t
+   end
+
+   initially()
+      self.Connectable.initially()
+      sbuff := ""
+end

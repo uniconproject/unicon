@@ -2,22 +2,51 @@ package http
 
 import util
 import lang
+import net
+
+$include "posix.icn"
 
 #
-# A very simple http client with no timeout or retries.
+# An http client
 #
-class HttpClient : Error(                                      
-                 url,
-                 post_data,
-                 headers,
-                 request_type
-                 )
+class HttpClient : NetClient(url,
+                             result,
+                             open_url,
+                             post_data,
+                             headers,
+                             request_type,
+                             data_file,
+                             data_out,
+                             string_buff,
+                             retries,
+                             length,
+                             read,
+                             http_version
+                             )
 
    #
    # Set the desired url
    #
    method set_url(url)
+      headers := table()
       return self.url := url
+   end
+
+   #
+   # Set a filename to send the data part of the response to.  If not
+   # set then the data forms part of the HttpPage object returned.
+   #
+   # @param s the name of the file.
+   #
+   method set_data_file(s)
+      return data_file := s
+   end
+
+   #
+   # Set the http version to use; by default "1.0"
+   #
+   method set_http_version(s)
+      return http_version := s
    end
 
    #
@@ -47,11 +76,30 @@ class HttpClient : Error(
       return headers[map(key)] := value
    end
 
-   method write_headers(f)
+   #
+   # @p
+   method write_headers()
       every e := !sort(headers) do {
          e[1][1] := map(e[1][1], &lcase, &ucase)
-         write(f, e[1], ": ", e[2])
+         write_line(e[1] || ": " || e[2]) | fail
       }
+      return
+   end
+
+   #
+   # Set the number of retries to use.  The default is two.
+   #
+   method set_retries(retries)
+      return self.retries := retries
+   end
+
+   #
+   # Setup a temporary file for the {GetHttpProcessControl} object to use
+   # as a data file.  On success, this will be returned as a field in the
+   # {HttpPage} object.
+   #
+   method set_use_temporary_data_file()
+      set_data_file("/tmp/gethttp." || curr_time_millis() || ".bin")
    end
 
    #
@@ -64,7 +112,52 @@ class HttpClient : Error(
       res := retrieve_page() | fail
       if res.status_okay() then
          return res
+      remove(\data_file)
       return error(res.get_status())
+   end
+
+   #
+   # @p
+   method maybe_open()
+      if /connection | /open_url | open_url.get_address() ~== url.get_address() |
+         open_url.get_port() ~= url.get_port() then 
+      {
+         close()
+         set_server(url.get_address())
+         set_port(url.get_port())
+         open() | fail
+         open_url := url.clone()
+      }
+      return
+   end
+
+   #
+   # Retrieve the given url.  A {HttpPage} object is returned upon success.
+   # Failure occurs if the url could not be retrieved.
+   #
+   method retrieve_page()
+      local i, res
+
+      i := retries
+      repeat {
+         if res := tryone() then {
+            fire("Complete")
+            return res
+         }
+
+         remove(\data_file)
+         close()
+
+         if &errno ~= EINTR then {
+            fire("Failed")
+            fail
+         }
+
+         fire("Timeout")
+         if (i -:= 1) < 0 then
+            fail
+         fire("Retrying")
+      }
    end
 
    #
@@ -72,22 +165,47 @@ class HttpClient : Error(
    # Retrieve the given url.  A {HttpPage} object is returned upon success.
    # Failure occurs if the url could not be retrieved.
    #
-   method retrieve_page()
-      local f, s, res, string_buff
+   method tryone()
+      #
+      # Open the connection
+      #
+      maybe_open() | fail
 
-      if not(f := url.open()) then
-         return error("Couldn't connect to " || url.get_address())
+      #
+      # Write the request
+      #
+      write_request() | fail
 
-      /headers["user-agent"] :=  "gethttp.iol [en] (" || &host || ")"
+      #
+      # Create a result
+      #
+      result := HttpPage()
+      result.set_url(url)
+      result.set_status(read_line()) | fail
+
+      #
+      # Read the response.
+      #
+      read_headers() | fail
+      read_data() | fail
+
+      return result
+   end
+
+   #
+   # @p
+   method write_request()
+      /headers["user-agent"] :=  "gethttp.icn [en] (" || &host || ")"
       /headers["host"] := url.get_address()
+      /headers["connection"] := "Keep-Alive"
 
       s := \request_type | if \post_data then "POST" else "GET"
 
-      write(f, s, " ", url.get_file(), " HTTP/1.0")
+      write_line(s || " " || url.get_file() || " HTTP/" || http_version) | fail
 
       if /post_data then {
-         write_headers(f)
-         write(f)
+         write_headers() | fail
+         write_line() | fail
       } else {
          #
          # Add the post data, convert from table if necessary
@@ -107,27 +225,197 @@ class HttpClient : Error(
             /headers["content-type"] := "application/x-www-form-urlencoded"
          }
          headers["content-length"] := *s
-         write_headers(f)
-         write(f)
-         writes(f, s)
+         write_headers() | fail
+         write_line() | fail
+         write_str(s) | fail
       }
 
-      flush(f)
+      return
+   end
 
-      string_buff := StringBuff()
-      while s := sysread(f, 1024) do
+   #
+   # @p
+   method read_headers()
+      local s, key, val
+      repeat {
+         s := read_line() | fail
+         if *s = 0 then
+            break
+         s ? {
+            #
+            # A continuation line starts with a space or a tab.
+            #
+            if any(' \t') then
+               result.get_header(\key) ||:= tab(0)
+            else {
+               key := tab(upto(':') | 0)
+               =": "
+               val := tab(0)
+               result.get_header(key) := val
+            }
+         }
+      }
+      return
+   end
+
+   #
+   # @p
+   method read_data()
+      #
+      # Set up either a data file or a string buffer.
+      #
+      if /data_file then
+         string_buff := StringBuff()
+      else
+         data_out := ::open(data_file, "w") | stop("Couldn't open ", data_file)
+
+      if not read_data_impl() then {
+         if \data_file then
+            ::close(\data_out)
+         fail
+      }
+
+      #
+      # Close the result
+      #
+      if /data_file then 
+         result.set_data(string_buff.get_string())
+      else {
+         ::close(\data_out)
+         result.set_data_file(data_file)
+      }
+
+      return
+   end
+
+   #
+   # @p
+   method read_data_impl()
+      self.length := integer(result.get_header("content-length")) | &null
+      self.read := 0
+
+      #
+      # Read the data.
+      #
+      if map(\result.get_header("transfer-encoding")) == "chunked" then
+         return read_chunked()
+      else if /length then
+         return read_to_eof()
+      else
+         return read_length()
+   end
+
+   #
+   # @p
+   method read_chunked()
+      local l, chunk, s
+      repeat {
+         l := read_line() | fail
+         l ? {
+            chunk := integer("16r" || tab(many('0987654321abcdefABCDEF'))) |
+               return error("Expected chunk-length specifier; got " || l)
+         }
+         if chunk = 0 then
+            break
+         while chunk > 0 do {
+            s := read_str(min(1024, chunk)) | fail
+            add_some(s)
+            chunk -:= *s
+         }
+         l := read_line() | fail
+         if *l > 0 then
+            return error("Expected empty line at end of chunk")
+      }
+      #
+      # Read any trailing lines, upto an empty line.
+      #
+      repeat {
+         l := read_line() | fail
+         if *l = 0 then
+            break
+      }
+
+      #
+      # Close if told to do so.
+      #
+      if map(\result.get_header("connection")) == "close" then
+         close()
+
+      return
+   end
+
+   #
+   # @p
+   method read_to_eof()
+      #
+      # No content length.  Read until eof, then close.
+      #
+      while s := read_str(1024) do
+         add_some(s)
+
+      #
+      # Check for errors that may have caused read_str to fail.
+      #
+      if &errno ~= 0 then {
+         close()
+         fail
+      }
+
+      close()
+
+      return
+   end
+
+   #
+   # @p
+   method read_length()
+      #
+      # Got a content length.  Read len bytes and leave the connection
+      # open - unless told to close it.
+      #
+      while self.read < length do {
+         s := read_str(min(1024, length - self.read)) | fail
+         add_some(s)
+      }
+
+      #
+      # Close if told to do so.
+      #
+      if map(\result.get_header("connection")) == "close" then
+         close()
+
+      return
+   end
+
+   #
+   # Return the length of the current download, or &null if unknown
+   #
+   method get_length()
+      return self.length
+   end
+
+   #
+   # Return the number of bytes read so far.
+   #
+   method get_read()
+      return self.read
+   end
+
+   #
+   # @p
+   method add_some(s)
+      self.read +:= *s
+      fire("Progress")
+      if /data_file then
          string_buff.add(s)
-      close(f)
-
-      res := HttpPage()
-      res.set_url(url)
-      res.parse(string_buff.get_string())
-
-      return res
+      else
+         writes(data_out, s)
    end
 
    initially
+      self.NetClient.initially()
       headers := table()
+      timeout := 12000
+      retries := 2
+      http_version := "1.1"
 end
-
-                 

@@ -1,10 +1,12 @@
 #
-# $Id: popclient.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+# $Id: popclient.icn,v 1.2 2004-06-27 16:19:05 rparlett Exp $
 #
 
 package mail
 
-class PopClient:MailClient(username, password)
+import net
+
+class PopClient:NetClient(username, password)
    #
    # Flag the given message for deletion
    # @param n the message number
@@ -174,7 +176,6 @@ class PopClient:MailClient(username, password)
    # @p
    method send_command(msg)
       write_line(msg)
-      flush()
       return read_response()
    end
 
@@ -219,7 +220,7 @@ class PopClient:MailClient(username, password)
    end
 
    initially(a[])
-      self.MailClient.initially()
+      self.NetClient.initially()
       port := 110
       server := "localhost"
 end

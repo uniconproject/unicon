@@ -1,10 +1,12 @@
 #
-# $Id: smtpclient.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+# $Id: smtpclient.icn,v 1.2 2004-06-27 16:19:05 rparlett Exp $
 #
 
 package mail
 
-class SmtpClient:MailClient(hostname, sent_helo)
+import net
+
+class SmtpClient:NetClient(hostname, sent_helo)
    method set_hostname(s)
       hostname := s
    end
@@ -77,7 +79,6 @@ class SmtpClient:MailClient(hostname, sent_helo)
          write("Sending ", msg)
 
       write_line(msg)
-      flush()
 
       if \logging then
          write("Expecting ", reply)
@@ -156,7 +157,7 @@ class SmtpClient:MailClient(hostname, sent_helo)
    end
 
    initially(a[])
-      self.MailClient.initially()
+      self.NetClient.initially()
       port := 25
       server := "localhost"
 end

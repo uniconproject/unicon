@@ -1,5 +1,5 @@
 #
-# $Id: code.icn,v 1.3 2004-05-08 19:09:32 rparlett Exp $
+# $Id: code.icn,v 1.4 2004-11-11 20:06:09 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -250,16 +250,6 @@ class Code(
                   s[&pos - 1] ||:= t
                }
             }
-
-            #
-            # V1->2 upgrade: add a comment indicating this method is redundant
-            #
-            if p := &pos & ="method dialog_event(ev)" & pos(0) then {
-               t := repl(" ", p - 1)
-               write(f, t, "# (ivib-v2) This method is no longer invoked by the framework")
-               write(f, t, "# (ivib-v2) and may be deleted.")
-               s ||:= " "
-            }
             write(f, s)
          }
       }
@@ -343,7 +333,11 @@ class Code(
          if count > 0 then
             write(f)
          write(f, indent1, "method " || rec.name || "(" || rec.params || ")")
-         every write(f, indent2, !rec.body)
+         # The method handle_v2_events is a special case...
+         if rec.name == "handle_v2_events" then
+            write(f, indent2, "dialog_event(V2TOV1(", rec.params, "))")
+         else
+            every write(f, indent2, !rec.body)
          write(f, indent1, "end")
          count +:= 1
       } 

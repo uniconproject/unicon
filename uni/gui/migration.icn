@@ -1,0 +1,102 @@
+package gui
+
+import lang
+
+$include "guih.icn"
+
+class _Event:Object(event, component, code)
+   method get_event()
+      return self.event
+   end
+
+   method get_code()
+      return self.code
+   end
+
+   method get_component()
+      return self.component
+   end
+end
+
+procedure V2TOV1(ev)
+   local code
+   
+   if ev.get_param() === -12 then
+      fail
+
+   if lang::is_instance(ev.get_source(), "gui__Button") then {
+      code := case ev.get_type() of {
+         BUTTON_PRESS_EVENT : 0
+         BUTTON_RELEASE_EVENT : 1
+         BUTTON_HELD_EVENT : -1
+         ev.get_param() == ("\r"|"\l") &
+         ACTION_EVENT : 2
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__TextField") then {
+      code := case ev.get_type() of {
+         CONTENT_CHANGED_EVENT : 1
+         ACTION_EVENT : 0
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__ScrollBar") then {
+      code := case ev.get_type() of {
+         SCROLLBAR_PRESSED_EVENT : 0
+         SCROLLBAR_DRAGGED_EVENT : 1
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__Tree") then {
+      code := case ev.get_type() of {
+         CURSOR_MOVED_EVENT : 0
+         SELECTION_CHANGED_EVENT : 1
+         TREE_NODE_EXPANSION_EVENT : 2
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__SelectableScrollArea") then {
+      code := case ev.get_type() of {
+         CURSOR_MOVED_EVENT : 0
+         SELECTION_CHANGED_EVENT : 1
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__Table") then {
+      code := case ev.get_type() of {
+         CURSOR_MOVED_EVENT : 0
+         SELECTION_CHANGED_EVENT : 1
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__EditableTextList") then {
+      code := case ev.get_type() of {
+         CURSOR_MOVED_EVENT |
+         CONTENT_CHANGED_EVENT |
+         SELECTION_CHANGED_EVENT : 0
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__List") then {
+      code := case ev.get_type() of {
+         SELECTION_CHANGED_EVENT : 0
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__EditList") then {
+      code := case ev.get_type() of {
+         SELECTION_CHANGED_EVENT : 0
+         CONTENT_CHANGED_EVENT : 2
+         default: fail
+      }
+   }
+   else if lang::is_instance(ev.get_source(), "gui__MenuComponent") then {
+      code := case ev.get_type() of {
+         ACTION_EVENT : 0
+         default: fail
+      }
+   }
+
+   return _Event(ev.param, ev.source, code)
+end

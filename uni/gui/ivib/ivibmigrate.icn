@@ -1,5 +1,5 @@
 #
-# $Id: ivibmigrate.icn,v 1.1 2004-05-07 19:27:45 rparlett Exp $
+# $Id: ivibmigrate.icn,v 1.2 2004-11-11 20:06:09 rparlett Exp $
 #
 
 #
@@ -7,6 +7,7 @@
 #
 
 import lang
+import gui
 
 #
 # An action to apply to a field of a class
@@ -194,6 +195,25 @@ class CustomEncode : Encode()
    end
 end
 
+global convert_icon_table
+
+class ConvertIconAction:Action()
+   method apply(decode, proxy, key, val)
+      if member(convert_icon_table, val) then
+         val := convert_icon_table[val]
+      proxy.add(key, val)
+   end
+
+   initially()
+      initial {
+         convert_icon_table := table()
+         insert(convert_icon_table, old_img_style("box_up"), img_style("box_up"))
+         insert(convert_icon_table, old_img_style("box_down"), img_style("box_down"))
+         insert(convert_icon_table, old_img_style("diamond_up"), img_style("diamond_up"))
+         insert(convert_icon_table, old_img_style("diamond_down"), img_style("diamond_down"))
+      }
+end
+
 #
 # Convert event handling
 #
@@ -202,7 +222,7 @@ class VarCategoryAction:Action()
       case val of {
          &null : {
             proxy.add("Class Variable", 1)
-            proxy.add("Event Handlers", [["ACTION_EVENT", "handle_" || proxy.get_value("Name")]])
+            proxy.add("Event Handlers", [["&null", "handle_v2_events"]])
          }
          1 :
             proxy.add("Class Variable", 1)
@@ -230,7 +250,7 @@ class MenuVarCategoryAction:Action()
       case val of {
          &null : {
             proxy.add("Class Variable", 1)
-            proxy.add("Event Method", "handle_" || proxy.get_value("Name"))
+            proxy.add("Event Method", "handle_v2_events")
          }
          1 :
             proxy.add("Class Variable", 1)
@@ -273,6 +293,7 @@ procedure create_converterset()
    c.add_action("Gen Methods", RemoveAction())
    c.add_extra(AddAction("SuperClass Name", "Dialog"))
    c.add_extra(AddAction("Import Name", "gui"))
+   c.add_extra(AddAction("Event Handlers", [["&null", "handle_v2_events"]]))
    cs.add(c)
 
    c := create_cc_converter("CanvasBorder")
@@ -287,6 +308,8 @@ procedure create_converterset()
    cs.add(c)
 
    c := create_cc_converter("CanvasCheckBox")
+   c.add_action("Img Up", ConvertIconAction())
+   c.add_action("Img Down", ConvertIconAction())
    cs.add(c)
 
    c := Converter("CanvasCheckBoxGroup")
@@ -294,6 +317,8 @@ procedure create_converterset()
    cs.add(c)
 
    c := create_cmc_converter("CanvasCheckBoxMenuItem")
+   c.add_action("Img Up", ConvertIconAction())
+   c.add_action("Img Down", ConvertIconAction())
    cs.add(c)
 
    c := create_cc_converter("CanvasCustom")
@@ -401,4 +426,65 @@ procedure migrate(s)
    e := CustomEncode()
    e.encode(o)
    return e.get_string()
+end
+
+procedure old_img_style(s)
+   return case s of {
+      "box_up" :
+"11,g2,_
+11111111111_
+11111111110_
+11~~~~~~~00_
+11~~~~~~~00_
+11~~~~~~~00_
+11~~~~~~~00_
+11~~~~~~~00_
+11~~~~~~~00_
+11~~~~~~~00_
+11000000000_
+10000000000_
+"
+         "box_down" :
+"11,g2,_
+00000000001_
+00000000011_
+00000000011_
+00000000011_
+00000000011_
+00000000011_
+00000000011_
+00000000011_
+00000000011_
+01111111111_
+11111111111_
+"
+      "diamond_up" :
+"11,g5,_
+~~~~~4~~~~~_
+~~~~444~~~~_
+~~~44~44~~~_
+~~44~~~44~~_
+~44~~~~~44~_
+44~~~~~~~44_
+~00~~~~~00~_
+~~00~~~00~~_
+~~~00~00~~~_
+~~~~000~~~~_
+~~~~~0~~~~~_
+"
+         "diamond_down" :
+"11,g5,_
+~~~~~0~~~~~_
+~~~~000~~~~_
+~~~00000~~~_
+~~0000000~~_
+~000000000~_
+00000000000_
+~440000044~_
+~~4400044~~_
+~~~44044~~~_
+~~~~444~~~~_
+~~~~~4~~~~~_
+"
+   }
 end

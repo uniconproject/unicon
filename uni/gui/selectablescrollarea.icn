@@ -1,5 +1,5 @@
 #
-# $Id: selectablescrollarea.icn,v 1.8 2004-08-15 16:14:21 rparlett Exp $
+# $Id: selectablescrollarea.icn,v 1.9 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -389,10 +389,10 @@ class SelectableScrollArea : LineBasedScrollArea(
    # @p
    method end_handle(e)
       if self.cursor ~=== self.old_cursor then
-         create_event_and_fire(CURSOR_MOVED_EVENT, e)
+         fire(CURSOR_MOVED_EVENT, e)
 
       if \selchange then
-         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+         fire(SELECTION_CHANGED_EVENT, e)
    end
 
    method handle_return(e)
@@ -507,12 +507,10 @@ class SelectableScrollArea : LineBasedScrollArea(
 
          if &y < self.view.y then {
             self.going_up := 1
-            if /self.ticker_rate then
-               set_ticker(30)
+            is_ticking() | set_ticker(30)
          } else if &y > self.view.y + self.view.h then {
             self.going_up := &null
-            if /self.ticker_rate then
-               set_ticker(30)
+            is_ticking() | set_ticker(30)
          } else {
             l := (&y - self.view.y) / self.line_height + self.get_first_line()
             l >:= self.get_last_line()

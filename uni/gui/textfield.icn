@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.6 2004-02-21 16:49:08 rparlett Exp $
+# $Id: textfield.icn,v 1.7 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -125,12 +125,12 @@ class TextField : Component(
       local hr, moved
       if \changed then {
          self.invalidate()
-         create_event_and_fire(CONTENT_CHANGED_EVENT, e)
+         fire(CONTENT_CHANGED_EVENT, e)
       }
       if old_cursor ~= cursor then {
          moved := 1
          self.invalidate()
-         create_event_and_fire(CURSOR_MOVED_EVENT, e)
+         fire(CURSOR_MOVED_EVENT, e)
       }
       #
       # Deduce a region change from looking for a change in whether there
@@ -141,7 +141,7 @@ class TextField : Component(
       if (/old_has_region & \hr) | (\old_has_region & /hr) |
          (\hr & (\moved | \changed)) then 
       {
-         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+         fire(SELECTION_CHANGED_EVENT, e)
       }
    end
 
@@ -180,12 +180,10 @@ class TextField : Component(
          # Start ticking if to the left/right, otherwise stop ticking
          if &x < self.tx then {
             self.going_left := 1
-            if /self.ticker_rate then
-               set_ticker(30)
+            is_ticking() | set_ticker(30)
          } else if &x > self.tx + self.tw then {
             self.going_left := &null
-            if /self.ticker_rate then
-               set_ticker(30)
+            is_ticking() | set_ticker(30)
          } else {
             self.cursor := whereis_x()
             stop_ticker()
@@ -243,7 +241,7 @@ class TextField : Component(
    end
 
    method handle_return(e)
-      create_event_and_fire(ACTION_EVENT, e)
+      fire(ACTION_EVENT, e)
    end
 
    method keyboard_mark()

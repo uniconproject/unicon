@@ -1,5 +1,5 @@
 #
-# $Id: ticker.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: ticker.icn,v 1.3 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -9,7 +9,7 @@
 package gui
 link graphics
 import lang
-
+import util
 
 $include "guih.icn"
 
@@ -20,31 +20,34 @@ $include "guih.icn"
 # have a ticker facility, namely implement a method that is
 # called repeatedly at set intervals.
 #
-class Ticker : Object(
+class Ticker : Object : Connectable(
    ticker_rate,             # Ticker rate
    next_tick_time           # Time of next tick
    )
 
    #
-   # This method should be overridden by the subclass.  It will
-   # be called repeatedly.
+   # This method is called repeatedly by the dispatcher.  It
+   # fires off events to its listeners.
    #
-   abstract method tick()
+   method tick()
+      fire("tick")
+   end
 
    #
    # Start the ticker process, with the {tick()}
    # method being invoked approximately every {n} milliseconds.
    #
    # @param n   the ticker interval in milliseconds.
+   # @param d   the initial delay, if any (default 0)
    #
-   method set_ticker(n)
-      dispatcher.set_ticker(self, n)
+   method start(n, d)
+      dispatcher.start_ticker(self, n, d)
    end
 
    #
    # Stop the ticker.
    #
-   method stop_ticker()
+   method stop()
       dispatcher.stop_ticker(self)
    end
 
@@ -52,7 +55,7 @@ class Ticker : Object(
    # Change the interval of the ticker
    # @param n   the new interval.
    #
-   method retime_ticker(n)
+   method retime(n)
       dispatcher.retime_ticker(self, n)
    end
 
@@ -62,7 +65,4 @@ class Ticker : Object(
    method is_ticking()
       return \ticker_rate
    end
-
-   initially
-      /dispatcher := Dispatcher()
 end

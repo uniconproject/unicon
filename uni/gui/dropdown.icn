@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.7 2004-05-15 19:17:29 rparlett Exp $
+# $Id: dropdown.icn,v 1.8 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -135,17 +135,17 @@ class DropDown : Component(
          set_selection(*self.selection_list)
       else
          self.set_selection(self.selection - 1)
-      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+      fire(SELECTION_CHANGED_EVENT, e)
    end
 
    method go_down(e)
       set_selection(1 + self.selection % *self.selection_list)
-      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+      fire(SELECTION_CHANGED_EVENT, e)
    end
 
    method go_to(x)
       set_selection(x)
-      create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+      fire(SELECTION_CHANGED_EVENT, e)
    end
 
    abstract method apply_selection()

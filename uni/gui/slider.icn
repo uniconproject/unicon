@@ -1,5 +1,5 @@
 #
-# $Id: slider.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: slider.icn,v 1.2 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -209,17 +209,17 @@ class Slider : Component(
             self.slider_down_offset := &y - self.slider_pos
          else
             self.slider_down_offset := &x - self.slider_pos
-         create_event_and_fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)     
       } else if (/self.is_horizontal_flag & (self.slider_area.x <= &x < self.slider_area.x + self.slider_area.w) & (self.slider_area.y  <= &y < self.slider_area.slider_y)) | ((self.slider_area.y <= &y < self.slider_area.y + self.slider_area.h) & (self.slider_area.x  <= &x < self.slider_area.slider_x)) then {
          self.move_value(self.get_value() - self.increment_size)
          self.set_pos_from_value()
          start_paging(1)
-         create_event_and_fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)     
       } else  if (/self.is_horizontal_flag & (self.slider_area.x <= &x < self.slider_area.x + self.slider_area.w) & ( self.slider_area.slider_y + self.slider_area.slider_h  <= &y <  self.slider_area.y + self.slider_area.h)) | ((self.slider_area.y <= &y < self.slider_area.y + self.slider_area.h) & ( self.slider_area.slider_x + self.slider_area.slider_w  <= &x <  self.slider_area.x + self.slider_area.w)) then {
          self.move_value(self.get_value() + self.increment_size)
          self.set_pos_from_value()
          start_paging(2)
-         create_event_and_fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)     
       }
    end
 
@@ -233,7 +233,7 @@ class Slider : Component(
             self.value +:= self.snaps / 2
             self.set_value(self.value - (self.value % snaps))
          }
-         create_event_and_fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)     
       } else if \self.is_paging then
          stop_paging()
    end
@@ -245,7 +245,7 @@ class Slider : Component(
          else
             self.move_value(self.get_value() + self.increment_size)
          self.set_pos_from_value()
-         create_event_and_fire(SLIDER_PRESSED_EVENT, e)     
+         fire(SLIDER_PRESSED_EVENT, e)     
       }
    end
 
@@ -269,7 +269,7 @@ class Slider : Component(
       else
          self.move_slider_pos(&x - self.slider_down_offset)
       self.set_value_from_pos()
-      create_event_and_fire(SLIDER_DRAGGED_EVENT, e)     
+      fire(SLIDER_DRAGGED_EVENT, e)     
    end
 
    method handle_event(e)

@@ -1,5 +1,5 @@
 #
-# $Id: scrollbar.icn,v 1.2 2004-01-25 23:04:36 rparlett Exp $
+# $Id: scrollbar.icn,v 1.3 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -228,17 +228,17 @@ class ScrollBar : Component(
             self.bar_down_offset := &y - self.bar_area.bar_y
          else
             self.bar_down_offset := &x - self.bar_area.bar_x
-         create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)     
       } else if (/self.is_horizontal_flag & (self.bar_area.x <= &x < self.bar_area.x + self.bar_area.w) & (self.bar_area.y  <= &y < self.bar_area.bar_y)) | ((self.bar_area.y <= &y < self.bar_area.y + self.bar_area.h) & (self.bar_area.x  <= &x < self.bar_area.bar_x)) then {
          self.move_value(self.get_value() - self.page_size)
          self.set_pos_from_value()
          start_paging(1)
-         create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)     
       } else  if (/self.is_horizontal_flag & (self.bar_area.x <= &x < self.bar_area.x + self.bar_area.w) & ( self.bar_area.bar_y + self.bar_area.bar_h  <= &y <  self.bar_area.y + self.bar_area.h)) | ((self.bar_area.y <= &y < self.bar_area.y + self.bar_area.h) & ( self.bar_area.bar_x + self.bar_area.bar_w  <= &x <  self.bar_area.x + self.bar_area.w)) then {
          self.move_value(self.get_value() + self.page_size)
          self.set_pos_from_value()
          start_paging(2)
-         create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)     
       }
    end
 
@@ -248,7 +248,7 @@ class ScrollBar : Component(
          # Released; clear flag
          #
          self.bar_down := &null
-         create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)     
       } else if \self.is_paging then
          stop_paging()
    end
@@ -260,7 +260,7 @@ class ScrollBar : Component(
          else
             self.move_value(self.get_value() + self.page_size)
          self.set_pos_from_value()
-         create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+         fire(SCROLLBAR_PRESSED_EVENT, e)     
       }
    end
 
@@ -281,7 +281,7 @@ class ScrollBar : Component(
       #
       self.move_value(self.get_value() - self.increment_size)
       self.set_pos_from_value()
-      create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+      fire(SCROLLBAR_PRESSED_EVENT, e)     
    end
 
    method handle_button_down()
@@ -290,7 +290,7 @@ class ScrollBar : Component(
       #
       self.move_value(self.get_value() + self.increment_size)
       self.set_pos_from_value()
-      create_event_and_fire(SCROLLBAR_PRESSED_EVENT, e)     
+      fire(SCROLLBAR_PRESSED_EVENT, e)     
    end
 
    method handle_drag()
@@ -302,7 +302,7 @@ class ScrollBar : Component(
       else
          self.move_bar_pos(&x - self.bar_down_offset)
       self.set_value_from_pos()
-      create_event_and_fire(SCROLLBAR_DRAGGED_EVENT, e)     
+      fire(SCROLLBAR_DRAGGED_EVENT, e)     
    end
 
    method handle_event(e)

@@ -1,5 +1,5 @@
 #
-# $Id: ticks.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+# $Id: ticks.icn,v 1.2 2004-09-18 18:45:17 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -13,20 +13,16 @@ $include "guih.icn"
 # Define some tickers...
 #
 
-class FirstTicker : Ticker()
-   method tick()
+class SomeDialog:Dialog()
+   method tick1()
       write("First ticker")
    end
-end
 
-class SecondTicker : Ticker()
-   method tick()
+   method tick2()
       write("Second ticker")
    end
-end
 
-class ThirdTicker : Ticker()
-   method tick()
+   method tick3()
       write("Third ticker")
    end
 end
@@ -35,22 +31,27 @@ procedure main()
    local t1, t2, t3
 
    #
-   # Create the tickers and set their times
-   #
-   t1 := FirstTicker()
-   t2 := SecondTicker()
-   t3 := ThirdTicker()
-
-   t1.set_ticker(500)
-   t2.set_ticker(1000)
-   t3.set_ticker(2000)
-
-   #
    # Create a trivial Dialog - this will get an event loop
    # running which will schedule the tickers.
    #
-   d := Dialog()
+   d := SomeDialog()
    d.attrib("size=100,100")
    d.connect(d, "dispose", CLOSE_BUTTON_EVENT)
+
+   #
+   # Create the tickers and set their times
+   #
+   t1 := Ticker()
+   t1.connect(d, "tick1")
+   t1.start(500, 7000)
+
+   t2 := Ticker()
+   t2.connect(d, "tick2")
+   t2.start(1000)
+
+   t3 := Ticker()
+   t3.connect(d, "tick3")
+   t3.start(2000)
+
    d.show_modal()
 end

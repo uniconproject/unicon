@@ -1,5 +1,5 @@
 #
-# $Id: dispatcher.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: dispatcher.icn,v 1.3 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -74,10 +74,10 @@ class Dispatcher : Object(
    # Delete a ticker
    #
    # @p
-   method stop_ticker(d)
-      if \d.ticker_rate then {
-         delete(tickers, d)
-         d.ticker_rate := &null
+   method stop_ticker(t)
+      if \t.ticker_rate then {
+         delete(tickers, t)
+         t.ticker_rate := &null
          compute_idle_sleep()
       }
    end
@@ -86,10 +86,13 @@ class Dispatcher : Object(
    # Add a ticker, or reset its time to a new value.
    # 
    # @p
-   method set_ticker(d, n)
-      insert(tickers, d)
-      d.next_tick_time := 0
-      d.ticker_rate := n
+   method start_ticker(t, n, d)
+      insert(tickers, t)
+      if /d then
+         t.next_tick_time := 0
+      else
+         t.next_tick_time := curr_time_of_day() + d
+      t.ticker_rate := n
       compute_idle_sleep()
    end
 
@@ -98,8 +101,8 @@ class Dispatcher : Object(
    # next tick.
    # 
    # @p
-   method retime_ticker(d, n)
-      d.ticker_rate := n
+   method retime_ticker(t, n)
+      t.ticker_rate := n
       compute_idle_sleep()
    end
 

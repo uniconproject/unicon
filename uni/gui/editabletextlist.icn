@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.8 2004-08-15 16:14:20 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.9 2004-09-18 18:44:58 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -238,7 +238,7 @@ class EditableTextList : LineBasedScrollArea(
             self.constrain_line()
             self.refresh(1)
          }
-         create_event_and_fire(CONTENT_CHANGED_EVENT, e)
+         fire(CONTENT_CHANGED_EVENT, e)
       }
 
       if (cursor_x ~= old_cursor_x) | (cursor_y ~= old_cursor_y) then {
@@ -247,7 +247,7 @@ class EditableTextList : LineBasedScrollArea(
             self.constrain_line()
             self.refresh(1)
          }
-         create_event_and_fire(CURSOR_MOVED_EVENT, e)
+         fire(CURSOR_MOVED_EVENT, e)
       }
 
       #
@@ -259,7 +259,7 @@ class EditableTextList : LineBasedScrollArea(
       if (/old_has_region & \hr) | (\old_has_region & /hr) |
          (\hr & (\moved | \changed)) then 
       {
-         create_event_and_fire(SELECTION_CHANGED_EVENT, e)
+         fire(SELECTION_CHANGED_EVENT, e)
       }
    end
 
@@ -378,8 +378,7 @@ class EditableTextList : LineBasedScrollArea(
             stop_ticker()
             set_cursor_from_pos()
          } else {
-            if /self.ticker_rate then
-               set_ticker(30)
+            is_ticking() | set_ticker(30)
          }
       }
       end_handle(e)

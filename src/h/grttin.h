@@ -426,6 +426,7 @@ typedef int siptr, stringint, inst;
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean;
    typedef int XWindowChanges, XStandardColormap, XMappingEvent;
    typedef int GLXContext, GLUquadricObj, GLubyte, GLuint;
+   typedef int GLXFBConfig, GLXWindow;
 #ifdef MSWindows
    typedef int HGLRC, PIXELFORMATDESCRIPTOR;
 #endif

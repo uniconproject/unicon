@@ -485,8 +485,6 @@ typedef struct _wstate {
   Boolean   visible;
 #endif					/* MacGraph */
 #ifdef XWindows
-  GLXWindow     glwin;
-  GLXFBConfig   *gfbc;
   wdp		display;
   Window	win;			/* X window */
   Pixmap	pix;			/* current screen state */
@@ -559,6 +557,8 @@ typedef struct _wstate {
   int            is_3D;        /* flag for 3D windows */
 
   struct descrip funclist;    /* descriptor to hold list of 3d functions */
+  GLXWindow     glwin;
+  GLXFBConfig   *gfbc;
 #endif
 } wstate, *wsp;
 

@@ -60,8 +60,8 @@ wiconx: iconx
 	cp iconx.exe ../../bin/wiconx.exe
 
 iconx: $(OBJS) $(WOBJS) $(COBJS)
-	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
-	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
+	command /C libtp
+	command /C gdbm
 	$(CC) -Xlinker --stack -Xlinker 768000 -o iconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
 	cp iconx.exe ../../bin
 

@@ -1,5 +1,8 @@
 mkdir ../../../bin
 cp Icon-icont.bat ../../..
+cp Unicon-Ivib.bat ../../..
+cp gdbm.bat ../../../src/runtime
+cp libtp.bat ../../../src/runtime
 cp makefile.top ../../../makefile
 cp DEFINE.H ../../../src/h
 cp PATH.H ../../../src/h
@@ -11,12 +14,12 @@ cat makefile.cmn >>../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile
 echo ICONX=nticonx >../../../src/runtime/makefile
 cat MAKEFILE.RUN >>../../../src/runtime/makefile
-echo ICONT=nticont >../../../src/icont/makefile
+echo ICONT=icont >../../../src/icont/makefile
 echo CONSOLE=NTConsole >>../../../src/icont/makefile
 cat MAKEFILE.T >>../../../src/icont/makefile
-echo ICONT=../../bin/nticont >../../../ipl/lib/makefile
+echo ICONT=../../bin/icont >../../../ipl/lib/makefile
 cat makefile.ipl >> ../../../ipl/lib/makefile
-echo ICONT=../../bin/nticont >../../../uni/unicon/makefile
+echo ICONT=../../bin/icont >../../../uni/unicon/makefile
 echo CP=cp >>../../../uni/unicon/makefile
 echo RM=-rm >> ../../../uni/unicon/makefile
 echo EXE=.exe >> ../../../uni/unicon/makefile

@@ -25,7 +25,7 @@ OBJS=           tmain.$(O) util.$(O) tlocal.$(O) tglobals.$(O) $(TRANS) $(LINKR)
 
 COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		../common/filepart.$(O) ../common/strtbl.$(O)\
-		../common/ipp.$(O)
+		../common/mlocal.$(O) ../common/ipp.$(O)
 
 ICOBJS=   long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O)
 

@@ -48,7 +48,7 @@ gdbm_sync (dbf)
 
 }
 
-#ifdef NTGCC
+#ifdef NT
 void fsync(int i)
 {
   fflush(NULL); fflush(NULL);

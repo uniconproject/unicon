@@ -230,6 +230,13 @@ push_avail_block (dbf)
 
   /* Split the header block. */
   temp = (avail_block *) alloca (av_size);
+#ifdef MSDOS
+  if (temp == (avail_block *) 0)
+    {
+      fprintf (stderr, "Error: alloca() failed in gdbm (%s).\n", __FILE__);
+      exit (-2);
+    }
+#endif /* MSDOS */
   /* Set the size to be correct AFTER the pop_avail_block. */
   temp->size = dbf->header->avail.size;
   temp->count = 0;

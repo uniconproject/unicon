@@ -61,7 +61,9 @@ typedef void *pointer;
 typedef char *pointer;
 #endif
 
+#ifndef NULL
 #define	NULL	0
+#endif
 
 /* Define STACK_DIRECTION if you know the direction of stack
    growth for your system; otherwise it will be automatically

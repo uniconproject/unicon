@@ -340,6 +340,16 @@ int region;
    {
    struct b_coexpr *cp;
 
+#if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
+   struct rlimit rl;
+
+   getrlimit(RLIMIT_STACK , &rl);
+   if (rl.rlim_cur < curpstate->blockregion->size) {
+      rl.rlim_cur = curpstate->blockregion->size;
+      setrlimit(RLIMIT_STACK , &rl);
+      }
+#endif
+
 #if E_Collect
    if (!noMTevents)
       EVVal((word)region,E_Collect);
@@ -1489,3 +1499,35 @@ void blkdump()
    fprintf(stderr,"end of block region.\n");
    }
 #endif                                  /* DeBugIconx */
+
+
+long physicalmemorysize()
+{
+   char buf[80], *p;
+   long i;
+#if UNIX
+   FILE *f = fopen("/proc/meminfo", "r");
+   if (f) {
+      while (fgets(buf, 80, f)) {
+	 if (!strncmp("MemTotal: ", buf, strlen("MemTotal: "))) {
+	    p = buf+strlen("MemTotal: ");
+	    while (isspace(*p)) p++;
+	    i = atol(p);
+	    while (isdigit(*p)) p++;
+	    while (isspace(*p)) p++;
+	    if (!strncmp(p, "kB",2)) i *= 1024;
+	    else if (!strncmp(p, "MB", 2)) i *= 1024 * 1024;
+	    return i;
+	    }
+	 }
+      fclose(f);
+      }
+#endif					/* UNIX */
+#if NT
+   MEMORYSTATUSEX ms;
+   if (GlobalMemoryStatusEx(&ms)) {
+      return ms.ullTotalPhys;
+      }
+#endif					/* NT */
+   return 0;
+}

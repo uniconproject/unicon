@@ -714,6 +714,17 @@ char *argv[];
 
    rootstring.size = MaxStrSpace;
    rootblock.size  = MaxAbrSize;
+
+   { long l, onepercent;
+     if (l = physicalmemorysize()) {
+	onepercent = l / 100;
+	if (rootstring.size < onepercent) rootstring.size = onepercent;
+	if (rootblock.size < onepercent) rootblock.size = onepercent;
+printf("physicalmemorysize is %ld\n", l);
+printf("set initial heaps to %ld,%ld\n", rootstring.size, rootblock.size);
+	}
+     }
+
 #endif					/* COMPILER */
 
 #if !COMPILER

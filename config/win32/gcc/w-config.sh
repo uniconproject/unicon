@@ -11,7 +11,6 @@ echo CONSOLE=NOTHING >>../../../src/icont/makefile
 echo DCONSOLE=../common/dconsole.o >>../../../src/icont/makefile
 cat MAKEFILE.T >>../../../src/icont/makefile
 cat MAKEFILE.CMN >>../../../src/common/makefile
-cat MAKEFILE.WCP >../../../src/wincap/makefile
 echo ICONT=../../bin/icont >../../../uni/unicon/makefile
 echo CP=cp >>../../../uni/unicon/makefile
 echo RM=-rm >> ../../../uni/unicon/makefile

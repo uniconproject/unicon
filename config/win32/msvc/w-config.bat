@@ -9,7 +9,6 @@ type MAKEFILE.T >>..\..\..\src\icont\makefile
 echo CONSOLE=NOTHING >..\..\..\src\common\makefile
 echo DCONSOLE=dconsole.obj >>..\..\..\src\common\makefile
 type MAKEFILE.CMN >>..\..\..\src\common\makefile
-type MAKEFILE.WCP >..\..\..\src\wincap\makefile
 echo ICONT=..\..\bin\wicont >..\..\..\uni\unicon\makefile
 echo COPY=copy >>..\..\..\uni\unicon\makefile
 echo RM=-del >> ..\..\..\uni\unicon\makefile

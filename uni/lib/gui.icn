@@ -111,6 +111,7 @@ class Dispatcher(
    # Compute the ticker sleep rate.
    #
    method compute_ticker_sleep()
+   local n
       if *tickers = 0 then
          ticker_sleep := ticker_sleep_max
       else {
@@ -221,7 +222,7 @@ class Dispatcher(
    # Loop until dialog r is closed processing events and tickers.
    #
    method message_loop(r)
-      local w, bag, d
+      local w, bag, d, e
 
       while \r.is_open do {
          bag := []
@@ -233,9 +234,17 @@ class Dispatcher(
                   while *Pending(d.win) > 0 do {
                      #
                      # Discard the event and beep in the window.
+                     # A close on a blocked window is a bad situation,
+		     # probably the application should terminate in response
+		     # to a process_event(), but if not,
+                     # use the hidden offscreen window until it is unblocked.
                      #
                      e := Event(d.win)
-                     if not(integer(e) = (&lrelease | &rrelease | &mrelease | &ldrag | &rdrag | &mdrag)) then
+		     if integer(e) = -11 then {
+			d.win := d.buffer_win
+			d$process_event(e)
+			}
+                     else if not(integer(e) = (&lrelease | &rrelease | &mrelease | &ldrag | &rdrag | &mdrag)) then
                         Alert(d.win)
                   }
                }
@@ -458,6 +467,7 @@ class _Dialog : Container(
    #  @ needed.
    #
    method show_modal(d)
+   local l
       self$show()
       if \d then {
          insert(d.child_dialogs, self)
@@ -467,7 +477,10 @@ class _Dialog : Container(
       every (!l)$block()
       dispatcher$add(self)
       dispatcher$message_loop(self)
-      every (!l)$unblock()
+      every x := !l do {
+         if x.win ~=== x.buffer_win then
+            x$unblock()
+         }
    end
 
    method get_cbwin_reference()
@@ -605,6 +618,7 @@ class _Dialog : Container(
    end
 
    method process_event(e)
+   local res, found, c, wrap, nw, nh, t 
       if integer(e) = -11 then {
          dispose(1)
          }
@@ -1156,6 +1170,7 @@ class Component : Ticker(
    #  @param y_align   The y alignment
    #
    method set_align(x_align, y_align)
+      if x_align == "t" then runerr()
       self.x_align := x_align
       self.y_align := y_align
    end
@@ -1263,6 +1278,7 @@ class Component : Ticker(
    #  contains other components.
    #
    method resize()
+   local wh, ww
       #
       # Check for unspecified fields
       #
@@ -1828,6 +1844,7 @@ class Button : Toggle : Component(
    end
 
    method handle_event(e)
+   local b
       if integer(e) = (&lpress | &rpress | &mpress) then {
          if self$in_region() then {
             go_down()
@@ -2049,7 +2066,7 @@ class TextButton : Button(
    end
 
    method display(buffer_flag)
-      local cw
+      local cw, yoff
       yoff := self.y + self.h / 2
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
@@ -2324,6 +2341,7 @@ class Label : Component(
    end
 
    method display(buffer_flag)
+   local yoff
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
       yoff := self.y + self.h / 2
@@ -2405,7 +2423,7 @@ class Image : Component(
    end
 
    method display(buffer_flag)
-      local imwin
+      local imwin, yoff
       W := if /buffer_flag then self.cwin else self.cbwin
 
       EraseRectangle(W, self.x, self.y, self.w, self.h)
@@ -2593,6 +2611,7 @@ class TextField : Component(
    # Mouse click - compute new cursor position, re-display
    #
    method handle_press()
+   local startx, s
       #
       # Space at end for cursor at end of string
       #
@@ -2610,7 +2629,7 @@ class TextField : Component(
    #
    # Delete
    #
-   method handle_delete1()
+   method handle_delete1(e)
       if self.cursor > 1 then {
          self.contents[self.cursor - 1] := ""
          self.cursor -:= 1
@@ -2698,7 +2717,7 @@ class TextField : Component(
    end
 
    method display(buffer_flag)
-      local r
+      local r, fh, spc, s, cp, cw
 
       fh := WAttrib(self.cwin, "fheight")
 
@@ -2814,6 +2833,7 @@ class Border : Panel(
    end
 
    method display(buffer_flag)
+   local W
       W := if /buffer_flag then self.cwin else self.cbwin
 
       DrawSunkenRectangle(W, self.x, y1, self.w, h1,-1)
@@ -3209,6 +3229,34 @@ class ScrollBar : Component(
          else
             self$move_bar_pos(&x - self.bar_down_offset)
          self$set_value_from_pos()
+      }
+      else if integer(e) = (&lpress | &rpress | &mpress) &
+            (self.bar_area_x <= &x < self.bar_area_x + self.bar_area_w) &
+            (self.bar_area_y  <= &y < self.bar_area_y + self.bar_area_h) then {
+         #
+         # click outside bar; treat similar to pgup or pgdn
+         #
+         if /self.is_horizontal_flag then {
+            if &y < self.bar_y then {
+               self$move_bar_pos(self.bar_y-self.bar_h)
+               self$set_value_from_pos()
+               }
+            else if &y > self.bar_y+self.bar_h then {
+               self$move_bar_pos(self.bar_y+self.bar_h)
+               self$set_value_from_pos()
+               }
+            }
+         else {
+            if &x < self.bar_x then {
+               self$move_bar_pos(self.bar_x-self.bar_w)
+               self$set_value_from_pos()
+               }
+            else if &x > self.bar_x+self.bar_w then {
+               self$move_bar_pos(self.bar_x+self.bar_w)
+               self$set_value_from_pos()
+               }
+            }
+
       } else
          fail
 
@@ -3489,6 +3537,7 @@ class ScrollArea : Component(
    #  @return A list of items currently checked
    #
    method get_selections()
+   local r, i
       r := []
       every i := 1 to *self.checked do
          if \self.checked[i] then
@@ -3501,6 +3550,7 @@ class ScrollArea : Component(
    #  @return A list of objects currently checked
    #
    method object_get_selections()
+   local r, i
       r := []
       every i := 1 to *self.checked do
          if \self.checked[i] then
@@ -3545,6 +3595,7 @@ class ScrollArea : Component(
    end
 
    method handle_key_page_up(e)
+   local i
       if i := (\self.vsb)$get_value() then {
          self.vsb$set_value(i - self.vsb.page_size)
          self$refresh()
@@ -3552,6 +3603,7 @@ class ScrollArea : Component(
    end
 
    method handle_key_page_down(e)
+   local i
       if i := (\self.vsb)$get_value() then {
          self.vsb$set_value(i + self.vsb.page_size)
          self$refresh()
@@ -3559,6 +3611,7 @@ class ScrollArea : Component(
    end
 
    method handle_key_up(e)
+   local i
       if i := (\self.vsb)$get_value() then {
          self.vsb$set_value(i - 1)
          self$refresh()
@@ -3566,6 +3619,7 @@ class ScrollArea : Component(
    end
 
    method handle_key_down(e)
+   local i
       if i := (\self.vsb)$get_value() then {
          self.vsb$set_value(i + 1)
          self$refresh()
@@ -3573,6 +3627,7 @@ class ScrollArea : Component(
    end
 
    method handle_key_left(e)
+   local i
       if i := (\self.hsb)$get_value() then {
          self.hsb$set_value(i - self.hsb.increment_size)
          self$refresh()
@@ -3580,6 +3635,7 @@ class ScrollArea : Component(
    end
 
    method handle_key_right(e)
+   local i
       if i := (\self.hsb)$get_value() then {
          self.hsb$set_value(i + self.hsb.increment_size)
          self$refresh()
@@ -3602,6 +3658,7 @@ class ScrollArea : Component(
    end
 
    method handle_press(e)
+   local l
       if \ (self.select_one | self.select_many) & (self.tx <= &x < self.tx + self.tw) & (self.ty  <= &y < self.ty + self.th) then {
          #
          # Compute line clicked
@@ -3768,6 +3825,7 @@ class ScrollArea : Component(
    end
 
    method get_last_line()
+   local nlines
       nlines := (\self.vsb)$get_page_size() | *self.contents
       return self$get_line() + nlines - 1
    end
@@ -3804,6 +3862,7 @@ class ScrollArea : Component(
    end
 
    method get_max_width()
+   local mw, s
       mw := 0
       every s := !self.contents do
          mw <:= TextWidth(self.cwin, s)
@@ -3814,6 +3873,7 @@ class ScrollArea : Component(
    # Called on resize, buttons resized, or contents amended
    #
    method set_internal_fields()
+   local max_th, max_tw, min_th, min_tw, need_vsb, need_hsb, new_vsb, new_hsb
       self.line_height := get_line_height()
 
       #
@@ -3958,6 +4018,7 @@ class ScrollArea : Component(
    # Re-draw the text area.  Use double-buffering to avoid flicker.
    #
    method refresh(redraw)
+   local line, left_pos
       line := self$get_line()
       left_pos := self$get_left_pos()
 
@@ -4008,6 +4069,7 @@ class ScrollArea : Component(
    end
 
    method text_area_to_buffer()
+   local line, left_pos, nlines, yp, l, i
       line := self$get_line()
       left_pos := self$get_left_pos()
 
@@ -4038,21 +4100,22 @@ class ScrollArea : Component(
    end
 
 #
+#  method added to support tabs
 #  return the line after the "\t" are replaced with the correct
 #  amount of spaces
 #
-   method actual_line(tab_line)  #swj
+   method actual_line(tab_line)
+   local posx, sblnks, result_line, x12
    posx := 0
    sblnks := 0
 
-   tab_line2 := repl(" ",*tab_line)
-   tab_line2 := tab_line
+   result_line := tab_line
 
    tab_line ? {
         while x12 := move(1)  do {
           if x12 == "\t" then {
              posx := posx + 1
-             tab_line2 :=  handle_tab_texts(posx,tab_line2)
+             result_line :=  handle_tab_texts(posx,result_line)
              sblnks := sblnks + (8 -  (posx-1)%8)
              posx := posx + (8 -  (posx-1)%8) - 1
           }
@@ -4061,25 +4124,17 @@ class ScrollArea : Component(
         }
    }
 
-   return tab_line2
+   return result_line
 
    end
 
-##
-#  helper method for actual_line
-###
-   method handle_tab_texts(posx,tab_line2)  #swj
-   tablen := " "
-   seg1 := ""
-   seg2 := ""
-
-
-   tablen := repl(" ",8 -  (posx-1)%8)
-   seg1 := tab_line2[1:posx]
-   seg2 := tab_line2[posx+1:0]
-   tab_line2 := seg1 || tablen || seg2
-
-   return tab_line2
+   #
+   #  helper method for actual_line
+   #
+   method handle_tab_texts(posx,result_line)
+   local tablen
+   tablen := repl(" ",8 -  (posx-1)%8) | " "
+   return result_line[1:posx] || tablen || result_line[posx+1:0]
    end
 
    initially(argv[])
@@ -4493,13 +4548,47 @@ class TextList : ScrollArea()
    end
 
    method draw(s, left_pos, yp, i)
-      s :=  actual_line(s)
+      s := actual_line(s)
 
       left_string(self.cbwin, left_pos, yp, s)
 
       if \self.checked[i] | i = \self.which_down then
          FillRectangle(rev, self.tx, yp - self.line_height / 2, self.tw, self.line_height)
    end
+
+   #
+   #  support for simple text printing
+   #
+   method print_contents(heading,printfile, mode:"c")
+   local fd, longstring, format_list
+   longstring := ""
+   format_list := []
+   
+   if not (fd := open(printfile, mode)) then
+      fail
+
+   #
+   # Number of lines to draw
+   #
+   line := 1
+   nlines :=  *self.contents
+
+   write(fd) 
+   write(fd,heading)
+   write(fd)          
+   #
+   # Write the lines
+   #
+   every l := self.contents[i := line to line + nlines - 1] do {
+      write(fd,self.contents[i]) 
+   }
+
+   writes(fd, "\^L") # emit a page break
+
+   close(fd)
+   return 1
+   end
+
 end
 
 ##
@@ -4555,6 +4644,7 @@ class EditableTextList : ScrollArea(
    # be possible if cursor at end of line to the left of the text area.
    #
    method constrain_cursor()
+   local s, i, j, l
       if self.cursor_y < self$get_line() then
          self$set_cursor_y(self$get_line())
       else if self.cursor_y >= self$get_line() + (\self.vsb)$get_page_size() then
@@ -4581,8 +4671,7 @@ class EditableTextList : ScrollArea(
    # Move the text area displayed so that the cursor is on the screen.
    #
    method constrain_line()
-
-      
+   local s, i, j, l
 
       if self.cursor_y < self$get_line() then
          self.vsb$set_value(self.cursor_y - 1)
@@ -4604,6 +4693,23 @@ class EditableTextList : ScrollArea(
          self.hsb$set_value(j - self.tw)
    end
 
+#
+#  get_max_width() allows for the actual line with the tabs
+#
+   method get_max_width()
+   local mw, i
+      if /long_line then {
+         mw := TextWidth(cwin, actual_line(contents[1]))
+         long_line := 1
+         every i := 2 to *self.contents do
+            if mw <:= TextWidth(cwin, actual_line(contents[i])) then
+               long_line := i
+      } else
+         mw := TextWidth(self.cwin, actual_line(contents[long_line]))
+
+      return mw + TextWidth(self.cwin, " ")
+   end
+
    method handle_notify(e)
       if e$get_component() === (\self.vsb | \self.hsb) then {
          self$constrain_cursor()
@@ -4612,6 +4718,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_event(e)
+   local old_contents_size, old_mw
       if E := (\self.vsb)$handle_event(e) then {
          #
          # Handled by VSB; amend line number and refresh contents
@@ -4653,8 +4760,11 @@ class EditableTextList : ScrollArea(
                "\^k" : handle_delete_line(e)
                "\^a" : handle_start_of_line(e)
                "\^e" : handle_end_of_line(e)
-               "\d" | "\^d" : handle_delete_2(e)
-               default : handle_default(e)
+               "\d" | "\^d" :  cut_selection()
+               "\^x" :  handle_nodefault()
+               "\^c" :  handle_nodefault()
+               "\^v" :  handle_nodefault()
+	       default : handle_default(e)
             }
          }
 
@@ -4685,6 +4795,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_press(e)
+   local l, nlines, s, sa
       if ((self.x <= &x < self.x + self.tw + 2 * TX_PADDING) & (self.y  <= &y < self.y + self.th + 2 * TY_PADDING)) then {
 
          reset_drag()
@@ -4709,8 +4820,6 @@ class EditableTextList : ScrollArea(
          # create a mapping for the cursor to skip over the tabs
          sa := map_pos(self.contents[self.cursor_y] || " ")
 
-         put(sa,sa[*sa]+1)
-
          self.cursor_x := 1
          l := self$get_left_pos()
          while (self.cursor_x < *s) & (TextWidth(self.cwin, s[1:self.cursor_x + 1]) < &x - l) do
@@ -4726,6 +4835,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_end_of_line(e)
+   local s
       reset_drag()
       s := actual_line(contents[cursor_y])
       cursor_x := *s + 1
@@ -4733,6 +4843,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_key_up(e)
+   local sa
       reset_drag()
       if  self.cursor_y - 1 > 0 then
          self.cursor_y := self.cursor_y - 1
@@ -4741,8 +4852,7 @@ class EditableTextList : ScrollArea(
       if  self.cursor_x > *(actual_line(self.contents[self.cursor_y])) + 1 then
          self.cursor_x :=  *(actual_line(self.contents[self.cursor_y])) + 1
       else {
-         sa := map_pos2(self.contents[self.cursor_y] || " ")
-         put(sa,sa[*sa]+1)
+         sa := map_pos(self.contents[self.cursor_y] || " ",1)
          self.cursor_x := sa[self.cursor_x]
          }
       moved := 1
@@ -4755,6 +4865,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_key_end(e)
+   local s
       reset_drag()
       cursor_y := *contents
       s := actual_line(contents[cursor_y])
@@ -4763,23 +4874,23 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_key_down(e)
+   local sa
       reset_drag()
       if  self.cursor_y + 1 <= *self.contents then
          self.cursor_y := self.cursor_y + 1
       else
          return
-      if  self.cursor_x > *self.contents[self.cursor_y] + 1 then
-         self.cursor_x := *self.contents[self.cursor_y] + 1
+      if  self.cursor_x > *(actual_line(self.contents[self.cursor_y])) + 1 then
+         self.cursor_x := *(actual_line(self.contents[self.cursor_y])) + 1
       else {
-         sa := map_pos2(self.contents[self.cursor_y] || " ")
-         put(sa,sa[*sa]+1)
+         sa := map_pos(self.contents[self.cursor_y] || " ",1)
          self.cursor_x := sa[self.cursor_x]
          }
       moved := 1
    end
 
    method handle_key_left(e)
-      local posn
+      local posn, offset, s
       reset_drag()
       if self.cursor_x = 1 then {
          if self.cursor_y > 1 then {
@@ -4793,7 +4904,7 @@ class EditableTextList : ScrollArea(
          offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
          posn := self.cursor_x  - offset - 1
          if self.contents[self.cursor_y][self.cursor_x  - offset - 1] == "\t" then  {
-            offset := offset_pos2(self.contents[self.cursor_y],posn)
+            offset := offset_pos(self.contents[self.cursor_y],posn,1)
             self.cursor_x :=  posn + offset
          }
          else {
@@ -4804,6 +4915,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_key_right(e)
+   local s, sa
       reset_drag()
       s := self.contents[self.cursor_y]
       s :=  actual_line(s)
@@ -4816,7 +4928,6 @@ class EditableTextList : ScrollArea(
          }
       else {
          sa := map_pos(self.contents[self.cursor_y] || " ")
-         put(sa,sa[*sa]+1)
          self.cursor_x := sa[self.cursor_x] + 1
          }
       moved := 1
@@ -4837,7 +4948,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_delete_1(e)
-   local posn
+   local posn, offset
       #
       # Delete backspace delete
       #
@@ -4860,7 +4971,7 @@ class EditableTextList : ScrollArea(
          posn := self.cursor_x  - offset - 1
          if self.contents[self.cursor_y][self.cursor_x  - offset - 1] == "\t" then  {
             self.contents[self.cursor_y][self.cursor_x  - offset - 1] := ""
-            offset := offset_pos2(self.contents[self.cursor_y],posn)
+            offset := offset_pos(self.contents[self.cursor_y],posn,1)
             self.cursor_x :=  posn + offset
          }
          else {
@@ -4874,6 +4985,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_delete_2(e)
+   local newcursor_x, offset
       #
       # Delete
       #
@@ -4898,6 +5010,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_return(e)
+   local offset, s, newcursor_x
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
@@ -4917,10 +5030,11 @@ class EditableTextList : ScrollArea(
       changed := 1
    end
 
+   #
+   # Add tab character at cursor position and tab cursor
+   #
    method handle_tab_text(e)
-      #
-      # Add any printable character at cursor position
-      #
+   local offset 
       reset_drag()
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
@@ -4938,7 +5052,8 @@ class EditableTextList : ScrollArea(
             long_line := self.cursor_y
    end
 
-   method handle_default(e)
+   method handle_default(e,cntl)
+   local offset
       #
       # Add any printable character at cursor position
       #
@@ -4947,10 +5062,10 @@ class EditableTextList : ScrollArea(
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
 
-      if type(e) == "string" & not(&control | &meta) & any(printable, e) then {
+      if /cntl &  type(e) == &control then
+         return 
 
-         #  if (e == "\n" ) then 
-         # write("in default2")
+      if type(e) == "string" & not(&meta) & any(printable, e) then {
 
          if self.cursor_x = 1 then
             self.contents[self.cursor_y] := e || self.contents[self.cursor_y]
@@ -4965,6 +5080,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_key_page_up(e)
+   local i
       reset_drag()
       if i := (\self.vsb)$get_value() then {
          self.vsb$set_value(i - self.vsb.page_size)
@@ -4974,6 +5090,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_key_page_down(e)
+   local i
       reset_drag()
       if i := (\self.vsb)$get_value() then {
          self.vsb$set_value(i + self.vsb.page_size)
@@ -5001,6 +5118,7 @@ class EditableTextList : ScrollArea(
    end
 
    method handle_drag(e)
+   local l, nlines, s, sa, s1
 
       if ((self.x <= &x < self.x + self.tw + 2 * TX_PADDING) &
             (self.y  <= &y < self.y + self.th + 2 * TY_PADDING)) then {
@@ -5011,14 +5129,8 @@ class EditableTextList : ScrollArea(
          l := (&y - self.ty) / self.line_height
          nlines := self$get_page_size()
 
-     #    l <:= 0
-     #    l >:= nlines - 1
-
-         if l < 0 then
-            l := 0
-
-         if l > nlines - 1 then
-            l := nlines - 1
+         l <:= 0
+         l >:= nlines - 1
 
          self.cursor_y := l + self$get_line()
 
@@ -5041,7 +5153,6 @@ class EditableTextList : ScrollArea(
 
 #     create a mapping for the cursor to skip over the tabs
         sa := map_pos(self.contents[self.cursor_y] || " ")
-        put(sa,sa[*sa]+1)
 
         self.cursor_x := 1
         l := self$get_left_pos()
@@ -5071,458 +5182,483 @@ class EditableTextList : ScrollArea(
        } # if in region
    end
 #
-########################################
-method set_selection(s)
-  self.has_focus := 1
-
-  every j := 1 to *s do {
-    if j < *s then
-      stng := s[j] || "\n"
-    else
-      stng := s[j]
-
-  every i := 1 to *stng do
-     handle_event(stng[i])
-  }
-
-  self.has_focus := &null
-
-
+# added to prevent reset of drag positions when ^x,^c,^v 
+#
+method handle_nodefault()
+  return
 end
-####################
-  method get_selection()
-  local st, lst, l
-  st := ""
-  lst := []
-  l := ""
+#
+#  method added to support paste
+#  parameter s is a list of strings
+#
+method set_selection(s)
+local stng, j, k
+   self.has_focus := 1
+#  stng := ""
 
+   every j := 1 to *s do {
+      stng := s[j]
+      
+      every k := 1 to *stng do {
+         if stng[k] == "\t" then 
+            handle_tab_text(stng[k])
+         else  
+            handle_default(stng[k],1)
+         }
 
+      if  j = *s   then {   # if end of list then  display
+         self$set_internal_fields()
+         self$constrain_line()
+         self$display()
+         }
+      else {   # add carriage return      
+         handle_event("\r")
+         }
+      }
+   self.has_focus := &null
+end
+
+#
+# method added to retieve a highlighted section swj 
+# returns a list of strings for Copy
+#
+method get_selection()
+local st, lst, l, i
+   st := ""
+   lst := []
+   l := ""
+
+   # return just one character if nothing is highlighted  
    if (enddragx = startdragx ) & (enddragy = startdragy) then {
       l := self.contents[enddragy]
       st := l[startdragx:startdragx + 1]
       put(lst,st)
       return(lst) 
-   }
-
-  
-  line := 1
-  nlines :=  *self.contents
-     
-  every l := self.contents[i := line to line + nlines - 1] do {
-     st := get_region(l, i)
-     if *st > 0 then 
-       put(lst,st)
-  } 
-
-  return(lst) 
-
-  end
-
-method get_region(s, i)
-  s2 := ""
-   
-  s :=  actual_line(s)
-
-
-#  if no vertical drag just current line
-  if ( i = startdragy) & (startdragy = enddragy)  then {
-      if startdragx < enddragx then {   # forward drag
-         s2 := s[startdragx:enddragx]
       }
 
-      if startdragx > enddragx then {    # backward drag
-         s2 := s[enddragx+1:startdragx + 1]
-      }
-      return s2
-  }
-# if drag on current line and a vertical drag
-# for forward drag need to get whole line for backward
-# need to get line up to start of drag
+   every l := self.contents[i := 1 to *self.contents] do {
+      st := get_region(i)
+      if *st > 0 then 
+         put(lst,st)
+      } 
 
-
-  if ( i = startdragy  )  then {
-    if i <  enddragy then {  # for forward drag get the whole line
-       s2 :=  s[startdragx:0]
-       return s2
-       
-    }
-    if  i >  enddragy  then { # reverse drag get the 1st part to start x
-        if startdragx + 1 > *s then
-            s2 := s[1:startdragx]
-         else
-            s2 := s[1:startdragx+1]
-         return s2
-    }
-
-  }
-
-# for the last endragy line  on vertical drag
-
-
-  if (i = enddragy)  then {
-     if (i >  startdragy )  then { # for forward drag
-        if enddragx > *s then
-           s2 := s[1:*s+1]
-        else
-            s2 := s[1:enddragx+1]
-     }
-     if ( i <  startdragy )  then { # for reverse drag
-        if enddragx <= *s then {
-           s2 := s[enddragx+1:0]
-        }
-     }
-     return s2
-  }
-
-# fill in all the lines in between
-
-  # for forward drag         
-  if (i < enddragy & i > startdragy)   then {
-      return s
-  }
-  if (i > enddragy & i < startdragy) then {  # reverse
-     return s
-  }
-  return "" 
+  return lst
 end
-###############################
+
+#
+# returns the string that is highlighted for each line of self.contents
+# i is line number or y position
+# 
+method get_region(i)
+local ex, sx, offset, s2
+
+   s2 := ""
+   offset := offset_pos(self.contents[self.cursor_y],startdragx)
+   sx := startdragx - offset
+   offset := offset_pos(self.contents[self.cursor_y],enddragx)
+   ex := enddragx - offset
+
+   #  if no vertical drag just current line
+   if (i = startdragy) & (startdragy = enddragy) then {
+      if startdragx < enddragx then	# forward drag
+         return self.contents[i][sx:ex]
+      if startdragx > enddragx then	# backward drag
+         return self.contents[i][ex+1:sx+1]
+      }
+
+   # if drag on current line and a vertical drag
+   # for forward drag need to get whole line for backward
+   # need to get line up to start of drag
+
+   if i = startdragy then {
+      if i < enddragy then	# for forward drag get the whole line
+         return self.contents[i][sx:0]
+      if i > enddragy then {	# reverse drag get the 1st part to start x
+         if sx + 1 > *(self.contents[i]) then
+            return self.contents[i][1:sx]
+         else
+            return self.contents[i][1:sx+1]
+         }
+      }
+
+   # for the last endragy line  on vertical drag
+
+   if i = enddragy then {
+      if i > startdragy then {	# for forward drag
+         if ex > *(self.contents[i]) then
+            return self.contents[i][1:*(self.contents[i])+1]
+         else
+            return self.contents[i][1:ex+1]
+         }
+      if i < startdragy then {	# for reverse drag
+         if ex <= *(self.contents[i]) then
+            return self.contents[i][ex:0]
+         }
+      }
+
+   # fill in all the lines in between
+
+   # for forward drag         
+   if i < enddragy & i > startdragy then {
+      return self.contents[i]
+      }
+   if i > enddragy & i < startdragy then {  # reverse
+      return self.contents[i]
+      }
+   return "" 
+end
+
+#
+#  This method added to support Cut
+#  It removes the highlighted region from self.contents
+#  This cut was modeled after Emacs editor and therefore removes
+#  the carriage return at the end of lines so they are merged. 
+#
 method cut_selection()
-  local l, lst, ex, ey, sx, sy, i, flag1, starty, endy
-  l := ""
-  lst := []
-  flag1 := []
-  put(flag1,"n")
+local l, lst, ex, ey, sx, sy, i, flag1, starty, endy
 
-  self.has_focus := 1
-  ex := enddragx 
-  ey := enddragy
-  sx := startdragx
-  sy := startdragy
+   l := ""
+   lst := []
+   flag1 := []
+   put(flag1,"n")	# flag to handle carriage return delete
 
-  # No drag just delete character under the cursor
-  if (enddragx = startdragx ) & (enddragy = startdragy) then {
-      # self.cursor_x := startdragx
+   # keep starting and ending drag positions because they will be reset
+   # when handle_delete_2 and handle_delete etc are called.
+   ex := enddragx 
+   ey := enddragy
+   sx := startdragx
+   sy := startdragy
+
+   # No drag just delete character under the cursor
+   if (enddragx = startdragx ) & (enddragy = startdragy) then {
       handle_delete_2("\d")
       self.max_width := get_max_width()
       self$set_internal_fields()
       self$display()
-      self.has_focus := &null
+      self.has_focus := 1
       return 
-  }
+      }
 
-  if  (sy = ey)  then { 
-        l := self.contents[sy] 
-        i := sy
-        get_cutregion1(l, i, ex, ey, sx, sy)
-        }
-  else {
-        l := self.contents[sy] 
-        get_cutregion(l, sy, ex, ey, sx, sy, flag1)
-    
-        l := self.contents[ey]  
-        get_cutregion(l, ey, ex, ey, sx, sy, flag1)
-    
-        if ey > sy then  {
-          starty := sy
-          endy   := ey }
-        else {   
-          starty := ey
-          endy   := sy }
-
-       # go through next loop bottom up because lines are deleted
-        i := endy - 1 
-        while ( i > starty ) do {
-            l := self.contents[i] 
-            get_cutregionm(l, i, ex, ey, sx, sy)
-            self.max_width := get_max_width()
-            i := i - 1
-        }
-
-       # delete carriage return on first line if flag set
-        if flag1[1] == "y" then {
-          l := self.contents[sy] 
-          get_cutregioncr(l, sy, ex, ey, sx, sy)
-          l := self.contents[ey] 
-          get_cutregioncr(l, ey, ex, ey, sx, sy)
+   if sy = ey then {					# only horizontal drag
+      l := self.contents[sy] 
+      i := sy
+      get_cutregion_1_line(i, sx, ex)
+      }
+   else {
+      l := self.contents[sy]		# cut line from start of drag
+      get_cutregion_first_last(l, sy, ex, ey, sx, sy, flag1)
+      l := self.contents[ey]		# cut line from end of drag
+      get_cutregion_first_last(l, ey, ex, ey, sx, sy, flag1)
+      if ey > sy then {			# top to bottom drag
+         starty := sy
+         endy   := ey
          }
-     
-       }# end else
+      else {				# bottom to top drag
+         starty := ey
+         endy   := sy
+         }
 
-  self.cursor_y := ey 
-  self.cursor_x := ex 
+      # go through next loop bottom up because lines are deleted
+      i := endy - 1 
+      while i > starty do {
+         l := self.contents[i] 
+         get_cutregion_mid(l, i, ex, ey, sx, sy)
+         self.max_width := get_max_width()
+         i := i - 1
+         }
+
+      # delete carriage return on first line if flag set as Emacs editor
+      if flag1[1] == "y" then {
+         l := self.contents[sy] 
+         get_cutregion_cr(l, sy, ex, ey, sx, sy)
+         l := self.contents[ey] 
+         get_cutregion_cr(l, ey, ex, ey, sx, sy)
+         }
+      }# end else
+
+   if ey >= sy then {       # top to bottom drag
+      self.cursor_y := sy
+      self.cursor_x := sx
+      }
+   else {
+      self.cursor_y := ey
+      self.cursor_x := ex
+      } 
  
-  self$set_internal_fields()
-  self$display()
-   
-  self.has_focus := &null
-
+   self$set_internal_fields()
+   self$display()
+   self.has_focus := 1
 end
-method get_cutregionm(s, i, ex, ey, sx, sy)
+
+#
+#  method to cut the lines in the middle of the highlighted region
+#
+method get_cutregion_mid(s, i, ex, ey, sx, sy)
 # fill in all the lines in between
    s :=  actual_line(s)
    self.cursor_y := i
    self.cursor_x := ex 
 
   # for forward drag         
-  if (i < ey & i > sy)   then {
+  if i < ey & i > sy then {
       handle_delete_line("\^k")
       return 
   }
-  if (i > ey & i < sy) then {  # reverse
+  if i > ey & i < sy then {  # reverse drag
       handle_delete_line("\^k")
       return 
   }
 end
+
 #
 # cut on just one line no vertical drag
-method get_cutregion1(s, i, ex, ey, sx, sy)
-  local j
-  j := 0
-
-  
-  s :=  actual_line(s)
-  self.cursor_y := i
+#
+method get_cutregion_1_line(i, sx, ex)
+local j
+   j := 0
+   self.cursor_y := i
 
 #  if no vertical drag just current line
-  if ( i = sy) & (sy = ey)  then {
-      if sx < ex then {   # forward drag
-          every j := sx to ex - 1 do {
-             self.cursor_x := sx
-             handle_delete_2("\d")
-             self.max_width := get_max_width()
-          }
-            
+   if sx < ex then {   # forward drag
+      every j := sx to ex - 1 do {
+         self.cursor_x := sx
+         handle_delete_2("\d")
+         self.max_width := get_max_width()
+	 }
       }
 
-      if sx > ex then {    # backward drag
-          every j := ex  to sx  do {
-             self.cursor_x := ex 
-             handle_delete_2("\d")
-             self.max_width := get_max_width()
-          }
+   if sx > ex then {    # backward drag
+      every j := ex to sx do {
+         self.cursor_x := ex 
+         handle_delete_2("\d")
+         self.max_width := get_max_width()
+	 }
       }
-      return 
-  }
-
 end
-method get_cutregion(s,i, ex, ey, sx, sy, flag1)
-  local j
-  j := 0
-    
-  s :=  actual_line(s)
-  self.cursor_y := i
+
+#
+#  method to cut the highlighted regions of the first and last lines
+#  when more than one line is highlighted
+#  set flag1 if drag on last line does not include the entire line.
+#  This will indicate that the carriage return on the previous line
+#  must be deleted so the lines will be merged and will behave like
+#  the Emacs Editor.
+#
+method get_cutregion_first_last(s,i, ex, ey, sx, sy, flag1)
+local j
+
+   j := 0
+   s :=  actual_line(s)
+   self.cursor_y := i
 
 # if drag on current line and a vertical drag
 # for forward drag need to get whole line for backward
 # need to get line up to start of drag
 
+   if i = sy then {
+      if i <  ey then {  # for forward drag get the whole line
+         every j := sx to *s do {
+            self.cursor_x := sx
+            handle_delete_2("\d")
+            self.max_width := get_max_width()
+            }
+         return 
+         }
 
-  if ( i = sy  )  then {
-    if i <  ey then {  # for forward drag get the whole line
-       every j :=  sx to *s   do {
-          self.cursor_x := sx
-          handle_delete_2("\d")
-          self.max_width := get_max_width()
-       }
-       return 
-       
-    }
-    if  i >  ey  then { # reverse drag get the 1st part to start x
-          if sx >= *s then  { # last position for cursor
-             every j :=  1 to sx + 1   do {
+      if  i >  ey  then { # reverse drag get the 1st part to start x
+         if sx >= *s then  { # last position for cursor
+            every j := 1 to sx + 1 do {
                self.cursor_x := 1
                handle_delete_2("\d")
                self.max_width := get_max_width()
-            } 
-          }
-          else 
-          every j :=  1 to sx - 1  do {
-              self.cursor_x := 1
-              handle_delete_2("\d")
-              self.max_width := get_max_width()
+               } 
             }
-       return 
-    }
-
-  }
+         else 
+            every j := 1 to sx - 1 do {
+               self.cursor_x := 1
+               handle_delete_2("\d")
+               self.max_width := get_max_width()
+               }
+         return 
+         }
+      }
 
 # for the last endragy line  on vertical drag
 
-  if (i = ey)  then {
-     if (i >  sy )  then { # for forward drag
+   if i = ey then {
+      if i > sy then { # for forward drag
          if ex >= *s then  # last character or beyond 
             every j :=  1 to *s + 1 do {
                self.cursor_x := 1
                handle_delete_2("\d")
                self.max_width := get_max_width()
-            }
-        else {
-             flag1[1] := "y"
-             every j :=  1 to ex - 1  do {
+               }
+         else {					# ended before last character
+            flag1[1] := "y"
+            every j := 1 to ex - 1 do {
                self.cursor_x := 1
                handle_delete_2("\d")
                self.max_width := get_max_width()
-             }
-        }
-     }
-     if ( i <  sy )  then { # for reverse drag
+               }
+            }
+         }
+      if i < sy then { # for reverse drag
          flag1[1] := "y"
-         every j :=  ex  to *s  do {
+         every j := ex to *s do {
             self.cursor_x := ex 
             handle_delete_2("\d")
             self.max_width := get_max_width()
+            }
          }
-     }
-     return 
-  }
-
-
- 
+      return 
+      }
 end
-method get_cutregioncr(s,i, ex, ey, sx, sy)
-  local j
-  j := 0
-  
-  s :=  actual_line(s)
-  self.cursor_y := i
 
-
-# if drag on current line and a vertical drag
-# for forward drag need to get whole line for backward
-# need to get line up to start of drag
-
-
-  if ( i = sy  )  then {
-    if i <  ey then {  # for forward drag get the whole line
-        self.cursor_x := *s + 1
-        handle_delete_2("\d")
-        self.max_width := get_max_width()
-        return 
-    }
-  }
-
-  if (i = ey)  then {
-    if ( i <  sy )  then { # for reverse drag
-        self.cursor_x := *s + 1 
-        handle_delete_2("\d")
-        self.max_width := get_max_width()
-     }
-     return 
-  }
-
-
-end
-###############################
-###########################################
 #
-   method draw(s, left_pos, yp, i)
+#  method to remove carriage return on the line before(forward drag)
+#  or after(backward drag). This makes the cut behave like Emacs editor 
+#
+method get_cutregion_cr(s,i, ex, ey, sx, sy)
+
+   s :=  actual_line(s)
+   self.cursor_y := i
+
+   # if drag on current line and a vertical drag
+   # for forward drag need to get whole line for backward
+   # need to get line up to start of drag
+
+   if i = sy then {
+      if i <  ey then {  # for forward drag get the whole line
+         self.cursor_x := *s + 1
+         handle_delete_2("\d")
+         self.max_width := get_max_width()
+         return 
+         }
+      }
+
+   if i = ey then {
+      if i < sy then { # for reverse drag
+         self.cursor_x := *s + 1 
+         handle_delete_2("\d")
+         self.max_width := get_max_width()
+         }
+      return 
+      }
+end
+
+#
+#  Editable Textlist version of draw
+#
+method draw(s, left_pos, yp, i)
+local s1, s2, newp, fh, asc, desc, yp2  
+
    newp := 0
    s1 := ""
    s2 := ""
-   
    fh := WAttrib(self.cbwin, "fheight")
    asc := WAttrib(self.cbwin, "ascent")
    desc := WAttrib(self.cbwin, "descent")
-
    s :=  actual_line(s)
 
-
 #  if no vertical drag just current line
-  if ( i = startdragy) & (startdragy = enddragy)  then {
+   if (i = startdragy) & (startdragy = enddragy) then {
       if startdragx < enddragx then {   # forward drag
-          s1 := s[1:startdragx]
-          s2 := s[startdragx:enddragx]
-          newp := left_pos + TextWidth(self.cbwin, s1)
-      }
+         s1 := s[1:startdragx]
+         s2 := s[startdragx:enddragx]
+         newp := left_pos + TextWidth(self.cbwin, s1)
+         }
 
       if startdragx > enddragx then {    # backward drag
-          s1 := s[1:enddragx+1]
-          s2 := s[enddragx+1:startdragx]
-          newp := left_pos + TextWidth(self.cbwin, s1)
-       }
+         s1 := s[1:enddragx+1]
+         s2 := s[enddragx+1:startdragx]
+         newp := left_pos + TextWidth(self.cbwin, s1)
+         }
 
-       Fg(self.cbwin, "light gray")
-       yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
-                      WAttrib(self.cbwin,"descent"))/2) - asc
-       FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
-  }
+      Fg(self.cbwin, "light gray")
+      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+		     WAttrib(self.cbwin,"descent"))/2) - asc
+      FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+      }
 
-# if drag on current line and a vertical drag
-# for forward drag need to get whole line for backward
-# need to get line up to start of drag
+   # if drag on current line and a vertical drag
+   # for forward drag need to get whole line for backward
+   # need to get line up to start of drag
 
-
-  if ( i = startdragy  )  then {
-    if i <  enddragy then {  # for forward drag get the whole line
-       s1 := s[1:startdragx]
-       s2 :=  s[startdragx:0]
-       newp := left_pos + TextWidth(self.cbwin, s1)
-    }
-    if  i >  enddragy  then { # reverse drag get the 1st part to start x
-        if startdragx  >= *s   then
+   if i = startdragy then {
+      if i < enddragy then {  # for forward drag get the whole line
+         s1 := s[1:startdragx]
+         s2 :=  s[startdragx:0]
+         newp := left_pos + TextWidth(self.cbwin, s1)
+         }
+      if i > enddragy then { # reverse drag get the 1st part to start x
+         if startdragx >= *s then
             s2 := s 
-        else
+         else
             s2 := s[1:startdragx]
-        newp := left_pos
-    }
+         newp := left_pos
+         }
 
-    Fg(self.cbwin, "light gray")
-    yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-                                          WAttrib(self.cbwin,"descent"))/2) - asc
-    FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
-  }
+      Fg(self.cbwin, "light gray")
+      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+		     WAttrib(self.cbwin,"descent"))/2) - asc
+      FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+      }
 
-# for the last endragy line  on vertical drag
+   # for the last endragy line  on vertical drag
 
-
-  if (i = enddragy)  then {
-     if (i >  startdragy )  then { # for forward drag
-        if enddragx > *s then
-           s2 := s[1:*s+1]
-        else
-           s2 := s[1:enddragx]
-        newp := left_pos
-     }
-     if ( i <  startdragy )  then { # for reverse drag
-        if enddragx <= *s then {
-           s1 := s[1:enddragx+1]
-           s2 := s[enddragx+1:0]
-           newp := left_pos + TextWidth(self.cbwin, s1)
-        }
-     }
-     Fg(self.cbwin, "light gray")
-     yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+   if i = enddragy then {
+      if i > startdragy then { # for forward drag
+         if enddragx > *s then
+            s2 := s[1:*s+1]
+         else
+            s2 := s[1:enddragx]
+         newp := left_pos
+         }
+      if i < startdragy then { # for reverse drag
+         if enddragx <= *s then {
+            s1 := s[1:enddragx+1]
+            s2 := s[enddragx+1:0]
+            newp := left_pos + TextWidth(self.cbwin, s1)
+            }
+         }
+      Fg(self.cbwin, "light gray")
+      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
                     WAttrib(self.cbwin,"descent"))/2) - asc
-     FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
-  }
+      FillRectangle(self.cbwin,newp, yp2, TextWidth(self.cwin, s2), fh)
+      }
 
-# fill in all the lines in between
+   # fill in all the lines in between
 
           # for forward drag         OR       for reverse drag
-  if (i < enddragy & i > startdragy) | (i > enddragy & i < startdragy)  then {
-     Fg(self.cbwin, "light gray")
-     yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
+   if (i < enddragy & i > startdragy) | (i > enddragy & i < startdragy) then {
+      Fg(self.cbwin, "light gray")
+      yp2 :=  yp + ((WAttrib(self.cbwin,"ascent")-
                     WAttrib(self.cbwin,"descent"))/2) - asc
-     FillRectangle(self.cbwin,left_pos, yp2, TextWidth(self.cwin, s), fh)
-  }
+      FillRectangle(self.cbwin,left_pos, yp2, TextWidth(self.cwin, s), fh)
+      }
 
+   left_stringr(self.cbwin, left_pos, yp, s)
 
-  left_stringr(self.cbwin, left_pos, yp, s)
-
-###############################
-#  cursor is a BLOCK OR a rectangle
-###
-      if i = \self.cursor_y then {
-        s ||:= " "
-        if \self.has_focus then {
-          FillRectangle(rev, left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]), 1 + yp - self.line_height / 2, TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
-
+   #
+   #  cursor is a BLOCK OR a rectangle
+   #
+   if i = \self.cursor_y then {
+      s ||:= " "
+      if \self.has_focus then {
+         FillRectangle(rev,
+		       left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]),
+		       1 + yp - self.line_height / 2,
+		       TextWidth(self.cbwin, s[self.cursor_x]),
+		       self.line_height)
          }
-         else {
-            Rectangle(self.cbwin, left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]), 1 + yp - self.line_height / 2, TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
+      else {
+         Rectangle(self.cbwin,
+		   left_pos + TextWidth(self.cbwin, s[1:self.cursor_x]),
+		   1 + yp - self.line_height / 2,
+		   TextWidth(self.cbwin, s[self.cursor_x]), self.line_height)
          }
       }
    end
- 
 
    method get_max_width()
       if /long_line then {
@@ -5531,29 +5667,40 @@ end
          every i := 2 to *self.contents do
             if mw <:= TextWidth(cwin, actual_line(contents[i])) then
                long_line := i
-      } else
+         }
+      else
          mw := TextWidth(self.cwin, actual_line(contents[long_line]))
 
       return mw + TextWidth(self.cwin, " ")
    end
 
 #
-#  This method returns the offset( or number of added blanks because
-#  of the tabs) up to the end position which is the cursor position
-##
-    method offset_pos(tab_line,endpos)  #swj
-    posx := 0
-    sblnks := 0
-    linepos := 0
-    numtabs := 0
+#  This method returns the offset(or number of added blanks because
+#  of the tabs) up to the end position. If the use_selfcontents parameter is
+#  null then the number of blanks up to the position (endpos) in the
+#  actual line (the line with the blanks that is displayed) is returned.
+#  If  use_selfcontents is not null, then the number of blanks that would be  
+#  inserted up to the position (endpos) in self.contents is returned. 
+#  
+method offset_pos(tab_line,endpos,use_selfcontents)
+local posx, sblnks, linepos, numtabs, x12
+   posx := 0
+   sblnks := 0
+   linepos := 0
+   numtabs := 0
 
-    tab_line ? {
-       while x12 := move(1)  do {
-          linepos := linepos + 1
-          if posx == endpos - 1 then {   # stop at the position in the line with tab offsets
-              sblnks := sblnks - numtabs
-              return sblnks
-          }
+   tab_line ? {
+      while x12 := move(1)  do {
+         linepos := linepos + 1
+         if /use_selfcontents then {
+            if posx == endpos - 1  then # stop at pos in the line displayed
+               return sblnks - numtabs
+            } 
+         else {
+            if linepos == endpos  then  # stop where at endpos in self.contents
+               return  sblnks - numtabs
+            } 
+
           if x12 == "\t" then {
               numtabs := numtabs + 1
               posx := posx + 1
@@ -5567,143 +5714,61 @@ end
 
 #  subtract numtabs the positions "\t" since we already counted them
 
-   sblnks := sblnks - numtabs
-
-   return sblnks
+   return sblnks - numtabs
    end
-####
+
 #
-#  This method returns the offset( or number of added blanks because
-#  of the tabs) up to the end position which is the position in
-#  the line before the blanks were added. (the actual position in
-#  self.contents.
-##
-    method offset_pos2(tab_line,endpos)  #swj
-    posx := 0
-    sblnks := 0
-    linepos := 0
-    numtabs := 0
-
-    tab_line ? {
-       while x12 := move(1)  do {
-          linepos := linepos + 1
-          if linepos == endpos  then {   # stop at the tab_line position
-              sblnks := sblnks - numtabs
-              return sblnks
-          }
-          if x12 == "\t" then {
-              numtabs +:= 1
-              posx +:= 1
-              sblnks +:= (8 -  (posx-1)%8)
-              posx +:= (8 - (posx-1)%8) - 1
-          }
-         else
-             posx +:= 1
-       }
-    }
-   sblnks -:= numtabs
-   return sblnks
-   end
-
-###
 #  Create a list mapping the cursor postion to the correct position
 #  This allows the cursor to skip over the tab positions and jump
-#  to the next nontab position
-####
-   method map_pos(pos_line)  #swj
+#  to the next nontab position. If vertical_key is null, then it
+#  is a horizantal jump and needs to move an extra position. If the
+#  vertical_key is not null, then it is a vertical jump and it does
+#  not need to move forward an extra position just straight up or down.   
+#
+   method map_pos(pos_line,vertical_key)
+   local posx, sblnks, pos_line2, x12, tabpos
    posx := 0
    sblnks := 0
 
    pos_line2 := list(*pos_line,1)
 
    pos_line ? {
-       while x12 := move(1)  do {
-          if x12 == "\t" then {
-              posx := posx + 1
-              pos_line2 :=  handle_map_pos(posx,pos_line2)
-              posx := posx + (8 -  (posx-1)%8) - 1
-          }
-          else {
-               posx := posx + 1
-               pos_line2[posx] := posx
-          }
-       }
-   }
-
+      while x12 := move(1)  do {
+         if x12 == "\t" then {
+            posx := posx + 1
+            if /vertical_key then
+               tabpos := posx + 8 -  (posx-1)%8 - 1
+            else
+               tabpos := posx + 8 -  (posx-1)%8
+            pos_line2 :=  handle_map_pos(posx,pos_line2,tabpos)
+            posx := posx + (8 -  (posx-1)%8) - 1
+            }
+         else {
+            posx := posx + 1
+            pos_line2[posx] := posx
+            }
+         }
+      }
    return pos_line2
-  end
-
-###
-   method handle_map_pos(posx,pos_line2)  #swj
-   tablen := []
-   seg1 := []
-   seg2 := []
-
-   tabpos := posx + 8 -  (posx-1)%8 - 1
-   limit := 8 - (posx-1)%8
-   j := 0
-   while (j < limit)  do {
-         put(tablen,tabpos)
-         j := j + 1
-    }
-
-    seg1 := pos_line2[1:posx]
-
-   every i := posx + 1 to *pos_line2 do
-     put(seg2,pos_line2[i])
-
-   pos_line2 := seg1 ||| tablen ||| seg2
-   return pos_line2
-
    end
-###
-###
-#  Create a list mapping the cursor postion to the correct position
-#  This allows the cursor to skip over the tab positions and jump
-#  to the next nontab position
-####
-   method map_pos2(pos_line)  #swj
-   posx := 0
-   sblnks := 0
 
-   pos_line2 := list(*pos_line,1)
-
-   pos_line ? {
-       while x12 := move(1)  do {
-          if x12 == "\t" then {
-              posx := posx + 1
-              pos_line2 :=  handle_map_pos2(posx,pos_line2)
-              posx := posx + (8 -  (posx-1)%8) - 1
-          }
-          else {
-               posx := posx + 1
-               pos_line2[posx] := posx
-          }
-       }
-   }
-
-
-   return pos_line2
-  end
-###
-# another method for mapping arrow keys exactly the same as handle_map_pos
-# except the tab jump position is one more because it doesn't get
-# incremented for arrow keys
-###
-   method handle_map_pos2(posx,pos_line2)  #swj
+#
+# helper method for map_pos
+#
+   method handle_map_pos(posx,pos_line2,tabpos)
+   local tablen, seg1, seg2, limit, j, i
    tablen := []
    seg1 := []
    seg2 := []
-   tabpos := posx + 8 -  (posx-1)%8
+
    limit := 8 - (posx-1)%8
-
    j := 0
-   while (j < limit)  do {
-         put(tablen,tabpos)
-         j := j + 1
-    }
+   while j < limit do {
+      put(tablen,tabpos)
+      j +:= 1
+      }
 
-    seg1 := pos_line2[1:posx]
+   seg1 := pos_line2[1:posx]
 
    every i := posx + 1 to *pos_line2 do
      put(seg2,pos_line2[i])
@@ -6485,6 +6550,7 @@ class MenuBar : Component(
    end
 
    method display(buffer_flag)
+   local m
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,1)
 
@@ -6510,6 +6576,7 @@ class MenuBar : Component(
    # Determine which of the menu labels is selected, if any.  Assumes y pos already tested and in menu bar.
    #
    method which_button()
+   local m
       every m := !self.menus do {
          if /m.is_shaded_flag & m.label_x <= &x < m.label_x + m.label_mid_w then
             return m
@@ -6533,6 +6600,7 @@ class MenuBar : Component(
    end
 
    method handle_event(e)
+   local t, r
       if self$in_region() then {
          if integer(e) = (&lpress | &rpress | &mpress) then {
             if t := which_button() then {
@@ -6621,6 +6689,7 @@ class MenuBar : Component(
    end
 
    method resize()
+   local m, px
       #
       # Re-sized with menu open - just close menu
       #
@@ -6957,6 +7026,7 @@ class Menu : SubMenu(
    end
 
    method resize()
+   local cw, dy, m
       cw := self.parent_menu_bar.cwin
 
       self.h := self.max_label_left_w := self.max_label_right_w := self.max_label_mid_w := 0
@@ -7007,6 +7077,7 @@ class Menu : SubMenu(
    # Deduce which label is under pointer, if any
    #
    method which_item()
+   local m
       every m := !self.menus do {
          if /m.is_shaded_flag & (m.label_y <= &y < m.label_y + m.label_h) then
             return m
@@ -7014,6 +7085,7 @@ class Menu : SubMenu(
    end
 
    method display()
+   local cw, c
       if /self.temp_win then {
          #
          # Open a temporary area for the menu and copy.
@@ -7075,6 +7147,7 @@ class Menu : SubMenu(
    end
 
    method handle_event(e)
+   local t
       if self$in_button_region() then {
          if integer(e) = (&lpress | &rpress | &mpress) then
             #
@@ -7172,6 +7245,7 @@ class Menu : SubMenu(
    # Close this menu.
    #
    method hide()
+   local cw
       #
       # Recursively close open sub-menu.
       #
@@ -7280,6 +7354,7 @@ $define SEPARATOR_HEIGHT 4
 #
 class MenuSeparator : MenuComponent()
    method set_label_size()
+   local cw
       cw := self.parent_menu_bar.cwin
       self.label_h := SEPARATOR_HEIGHT + 2 * DEFAULT_TEXT_Y_SURROUND
       self.label_right_w := 0
@@ -7292,6 +7367,7 @@ class MenuSeparator : MenuComponent()
    end
 
    method display_label()
+   local cw
       cw := self.parent_menu_bar.cbwin
       DrawRaisedRectangle(cw, self.label_x, self.label_y + (self.label_h - SEPARATOR_HEIGHT) / 2, self.parent_menu.max_label_mid_w + self.parent_menu.max_label_left_w + self.parent_menu.max_label_right_w, SEPARATOR_HEIGHT,1)
    end
@@ -8749,11 +8825,13 @@ procedure left_string(win, x, y, s)
 end
 
 procedure left_stringr(win, x, y, s)
+local rv
    y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
    Fg(win, "black")
    rv := DrawString(win, x, y, s)
    return rv
 end
+
 procedure left_stringg(win, x, y, s)
    y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
    oldfg := Fg(win)
@@ -8790,6 +8868,7 @@ procedure img_width(s)
 end
 
 procedure img_height(s)
+local w
    s ? {
       w := integer(tab(upto(',')))
       move(1)

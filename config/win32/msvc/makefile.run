@@ -53,8 +53,6 @@ interp_all:
 	$(RM) *.obj
         $(MAKE) lib
 	cd ..\runtime
-	$(RM) miconx.exe
-	$(MAKE) miconx
 	$(MAKE) $(ICONX)
 
 MYGUILIBS=libc.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib
@@ -70,29 +68,16 @@ wiconx: $(OBJS)
 	$(link) /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(guilibs) -out:wiconx.exe
 	copy wiconx.exe ..\..\bin
 
-miconx:
-	$(RM) *.obj
-	copy ..\h\define.h define.bak
-	echo #undef EventMon >> ..\h\define.h
-	echo #define EventMon 1 >> ..\h\define.h
-	$(MAKE) $(ICONX)
-	$(RM) m$(ICONX).exe
-	move $(ICONX).exe m$(ICONX).exe
-	copy m$(ICONX).exe ..\..\bin
-	$(RM) *.obj
-	$(RM) ..\h\define.h
-	move define.bak ..\h\define.h
-
-nticonx.dll: nticonx ximain.c
+iconx.dll: iconx ximain.c
 	cl -c -DDLLICONX ximain.c
 	link @dlliconx.lnk
 	cl -c ximain.c
 	cl /MD -c nticonx.c
-	link nticonx.obj nticonx.lib /subsystem:console /out:nticonxd.exe
+	link nticonx.obj iconx.lib /subsystem:console /out:iconxd.exe
 
-nticonx: $(OBJS)
+iconx: $(OBJS)
 	link @iconx.lnk
-	copy nticonx.exe ..\..\bin
+	copy iconx.exe ..\..\bin
 
 xcnv.$(O): cnv.r $(HDRS)
 	$(RTT) -x cnv.r

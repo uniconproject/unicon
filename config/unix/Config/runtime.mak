@@ -38,26 +38,12 @@ OBJS=	$(XOBJS) $(COBJS)
 
 interp_all:
 	cd ../common; $(MAKE) $(ICOBJS) $(XPM) $(GDBM) $(LIBTP)
-	$(RM) miconx
-	$(MAKE) miconx
 	$(MAKE) iconx
 
 iconx: $(OBJS)
 	$(CC) $(RLINK) -o iconx  $(OBJS) $(XL) $(RLIBS)
 	cp iconx ../../bin
 	strip ../../bin/iconx
-
-miconx:
-	rm -f *.o
-	cp ../h/define.h define.bak
-	echo "#undef EventMon" >> ../h/define.h
-	echo "#define EventMon" >> ../h/define.h
-	make iconx
-	mv iconx miconx
-	cp miconx ../../bin
-	strip ../../bin/miconx
-	rm *.o
-	mv define.bak ../h/define.h
 
 xcnv.o: cnv.r $(HDRS)
 	../../bin/rtt -x cnv.r

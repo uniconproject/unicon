@@ -47,8 +47,6 @@ ICOBJS=	long.$(O) time.$(O) save.$(O) rswitch.$(O) redirerr.$(O) xwindow.$(O) al
 OBJS=	$(XOBJS) $(COBJS)
 
 interp_all: $(COBJS) $(WOBJS)
-	-$(RM) miconx.exe
-	$(MAKE) miconx
 	$(MAKE) $(ICONX)
 
 MYGUILIBS= -lkernel32 -luser32 -lgdi32 -lcomdlg32
@@ -64,18 +62,6 @@ iconx: $(OBJS) $(WOBJS) $(COBJS)
 	command /C gdbm
 	$(CC) -Xlinker --stack -Xlinker 768000 -o iconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
 	cp iconx.exe ../../bin
-
-miconx:
-	-$(RM) *.$(O)
-	cp ../h/define.h define.bak
-	cat ../../config/win32/gcc/eventmon.h >>../h/define.h
-	$(MAKE) $(ICONX)
-	-$(RM) m$(ICONX).exe
-	mv $(ICONX).exe m$(ICONX).exe
-	cp m$(ICONX).exe ../../bin
-	-$(RM) *.$(O)
-	-$(RM) ..\h\define.h
-	mv define.bak ../h/define.h
 
 nticonx:
 	-$(RM) *.$(O)

@@ -2197,6 +2197,39 @@ end
 
 #ifdef MSWindows
 
+"WinAssociate(ext) - return the application associated with an extension"
+
+function{0,1} WinAssociate(ext)
+   if !is:string(ext) then runerr(103, ext)
+   abstract {
+      return string
+      }
+   body {
+      FILE *f;
+      char fname[MAX_PATH];
+      char buf[MAX_PATH];
+      char *s = getenv("TEMP");
+      int l;
+
+      if (!s) strcpy(fname, ".\\");
+      else strcpy(fname, s);
+      if (fname[strlen(fname)-1] != '\\') strcat(fname, "\\");
+      strcat(fname, "t.");
+      fname[strlen(fname)+StrLen(ext)] = '\0';
+      strncat(fname, StrLoc(ext), StrLen(ext));
+      f = fopen(fname, "w");
+      fclose(f);
+      if (FindExecutable(fname, NULL, buf) < 32) {
+         unlink(fname);
+         fail;
+         }
+      unlink(fname);
+      l = strlen(buf);
+      Protect(s = alcstr(buf, l),runerr(0));
+      return string(l, s);
+      }
+end
+
 "WinPlayMedia(w,x[]) - play a multimedia resource"
 
 function{0,1} WinPlayMedia(argv[argc])
@@ -2870,6 +2903,7 @@ MissingGraphicsFuncV(WDefault)
 MissingGraphicsFuncV(WFlush)
 MissingGraphicsFuncV(WriteImage)
 MissingGraphicsFunc1(WSync)
+MissingGraphicsFunc1(WinAssociate)
 MissingGraphicsFuncV(WinPlayMedia)
 MissingGraphicsFuncV(WinButton)
 MissingGraphicsFuncV(WinScrollBar)

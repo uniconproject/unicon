@@ -283,6 +283,7 @@ FncDef(fetch,2)
    FncDef(WSync,1)
    FncDefV(WriteImage)
 
+   FncDef(WinAssociate, 1)
    FncDefV(WinPlayMedia)
    FncDefV(WinEditRegion)
    FncDefV(WinButton)

@@ -1,5 +1,5 @@
 #
-# $Id: guiprocs.icn,v 1.4 2004-05-09 20:02:42 rparlett Exp $
+# $Id: guiprocs.icn,v 1.5 2004-05-09 21:10:48 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -21,8 +21,19 @@ procedure EraseRectangle(W, x, y, w, h)
       h +:= y
       y := 0
    }
-      
+
    return EraseArea(W, x, y, w, h)
+end
+
+procedure DrawImageEx(W, x, y, i)
+   #
+   # This gets round a bug whereby painting an image
+   # in a -ve location (off screen) takes a really long
+   # time (it should be a no-op of course).
+   #
+   if x + img_width(i) < 0 & y + img_height(i) < 0 then
+      return
+   DrawImage(W, x, y, i)
 end
 
 procedure Rectangle(W, x, y, w, h)

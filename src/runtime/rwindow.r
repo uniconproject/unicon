@@ -1188,14 +1188,6 @@ int p;
    if (!(gf_paltbl=(struct palentry *)malloc(256 * sizeof(struct palentry))))
       return Failed;
 
-#ifdef Network
-        if ( is_url(filename) == 1 ) {
-	   if ( (gf_f = netopen(filename, "rb")) == NULL)
-	      return Failed;
-	   }
-        else
-#endif					/* Network */
-
 #ifdef MSWindows
 	   if ((gf_f = fopen(filename, "rb")) == NULL)
 #else					/* MSWindows */
@@ -1586,14 +1578,6 @@ static int jpegread(char *filename, int p)
    int row_stride;
    int i,j,k;
    gf_f = NULL;
-
-#ifdef Network
-   if ( is_url(filename) == 1 ) {
-      if ( (gf_f = netopen(filename, "rb")) == NULL)
-	 return Failed;
-      }
-   else
-#endif					/* Network */
 
 #ifdef MSWindows
       if ((gf_f = fopen(filename, "rb")) == NULL)

@@ -363,12 +363,6 @@ struct errtab errtab[] = {
    154,  "must have an even number of texture coordinates",
 #endif                            /* Graphics3D */
 
-#ifdef FAttrib
-   160, "cannot open file",
-   161, "bad file attribute",
-   162, "cannot open socket",
-#endif					/* FAttrib */
-
 #ifdef PosixFns
    /*
     * PosixFns errors related to incorrect usage are here; PosixFns errors

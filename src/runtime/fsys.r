@@ -100,217 +100,6 @@ int is_url(char *s)
    return 0;
 }
 
-#ifdef FAttrib
-
-"fattrib(str, att) - get the attribute of a file "
-
-function{*} fattrib (fname, att[argc])
-
-   if !cnv:C_string(fname) then
-        runerr(103, fname)
-
-   abstract {
-      return string ++ integer
-      }
-
-   body {
-      tended char *s;
-      struct stat fs;
-#if UNIX
-      struct passwd *pwnam;
-      struct group  *grnam;
-#endif					/* UNIX */
-#if NT
-      HFILE hf;
-      OFSTRUCT of;
-      FILETIME ft1,ft2,ft3;
-      SYSTEMTIME st;
-#endif					/* NT */
-      int fd, i;
-      char *retval;
-      char *temp;
-      long l;
-
-#ifdef Network
-      struct netstat info;
-
-      if ( is_url(fname) == 1 ) {		/* remote files */
-         if ( netstatus(fname, &info) < 0 ) fail;
-         switch ( info.flag ) {
-         case FILE_FLAG:               /* URL scheme is "file:" */
-         for(i=0; i<argc; i++) {
-            if (!cnv:C_string(att[i], s)) {
-               runerr(103, att[i]);
-               }
-            if ( !strcasecmp("size", s) )
-               suspend C_integer(info.u.fbuf.st_size);
-            else if ( !strcasecmp("status", s) ) {
-               temp = make_mode (info.u.fbuf.st_mode);
-	       l = strlen(temp);
-               Protect(retval = alcstr(temp,l), runerr(0));
-               free(temp);
-               suspend string(l,retval);
-               }
-#if UNIX
-            else if ( !strcasecmp("owner", s) ) {
-               pwnam = getpwuid (info.u.fbuf.st_uid);
-	       temp = pwnam->pw_name;
-	       l = strlen(temp);
-	       if (temp[l-1] == '\n') l--;
-	       Protect(retval = alcstr(temp, l), runerr(0));
-               suspend string (l, retval);
-               }
-            else if ( !strcasecmp("group", s) ) {
-               grnam = getgrgid (info.u.fbuf.st_gid);
-	       temp = grnam->gr_name;
-	       l = strlen(temp);
-	       if (temp[l-1] == '\n') l--;
-	       Protect(retval = alcstr(temp, l), runerr(0));
-               suspend string (l, retval);
-               }
-#endif					/* UNIX */
-            else if ( !strcasecmp("m_time", s) ) {
-	       temp = ctime(&(info.u.fbuf.st_mtime));
-	       l = strlen(temp);
-	       if (temp[l-1] == '\n') l--;
-	       Protect(retval = alcstr(temp, l), runerr(0));
-               suspend string (l, retval);
-	       }
-            else if ( !strcasecmp("a_time", s) ) {
-	       temp = ctime(&(info.u.fbuf.st_atime));
-	       l = strlen(temp);
-	       if (temp[l-1] == '\n') l--;
-	       Protect(retval = alcstr(temp, l), runerr(0));
-               suspend string (l, retval);
-	       }
-            else if ( !strcasecmp("c_time", s) ) {
-	       temp = ctime(&(info.u.fbuf.st_ctime));
-	       l = strlen(temp);
-	       if (temp[l-1] == '\n') l--;
-	       Protect(retval = alcstr(temp, l), runerr(0));
-               suspend string (l, retval);
-	       }
-            else {
-               runerr(161);
-               }
-      }
-fail;
-
-            case HTTP_FLAG:       /* URL scheme is "http", "ftp", "gopher", etc */
-
-for(i=0; i<argc; i++) {
-      if (!cnv:C_string(att[i], s)) {
-        runerr(103, att[i]);
-	}
-
-            if ( !strcasecmp("size", s) )
-               suspend C_integer(info.u.hbuf.length);
-            else if ( !strcasecmp("status", s) )
-               switch (info.u.hbuf.scode){
-               case 200:
-               case 201:
-               case 202:
-               case 204:
-               case 304:
-                  suspend C_string ("nr");
-		  break;
-               case 301:
-               case 302:
-                  if ( (temp=info.u.hbuf.location) == NULL ) fail;
-		  l = strlen(temp);
-                  Protect(retval = alcstr(temp,l), runerr(0));
-                  free(temp);
-                  suspend string(l, retval);
-		  break;
-               default:
-                  fail;
-                  }
-            else if ( !strcasecmp("m_time", s) ) {
-               if ( (temp=info.u.hbuf.last_mod) == NULL ) fail;
-               l = strlen(temp);
-               Protect(retval = alcstr(temp,l), runerr(0));
-               free(temp);
-               suspend string(l,retval);
-               }
-            else if (!strcasecmp("content_type", s)) {
-	       l = strlen(info.u.hbuf.type);
-	       Protect (retval = alcstr(info.u.hbuf.type, l), runerr(0));
-	       suspend string(l, retval);
-	       }
-            else {
-               runerr(161);
-               }
-	    }
-	    fail;
-            }
-         }
-      else if ( is_url(fname) == 0 ) {                     /* local files */
-#endif					/* Network */
-         if ( stat(fname, &fs) == -1 )
-            fail;
-	 for(i=0; i<argc; i++) {
-	    if (!cnv:C_string(att[i], s)) {
-	       runerr(103, att[i]);
-	       }
-	    if ( !strcasecmp("size", s) ) {
-	       suspend C_integer(fs.st_size);
-	       }
-	    else if ( !strcasecmp("status", s) ) {
-	       temp = make_mode (fs.st_mode);
-	       l = strlen(temp);
-	       Protect(retval = alcstr(temp,l), runerr(0));
-	       free(temp);
-	       suspend string(l, retval);
-	       }
-#if UNIX
-         else if ( !strcasecmp("owner", s) ) {
-            pwnam = getpwuid (fs.st_uid);
-	    temp = pwnam->pw_name;
-	    l = strlen(temp);
-	    Protect(temp = alcstr(temp, l), runerr(0));
-            suspend string (l, temp);
-            }
-         else if ( !strcasecmp("group", s) ) {
-            grnam = getgrgid (fs.st_gid);
-	    temp = grnam->gr_name;
-	    l = strlen(temp);
-	    Protect(temp = alcstr(temp, l), runerr(0));
-            suspend string (l, temp);
-            }
-#endif					/* UNIX */
-         else if ( !strcasecmp("m_time", s) ) {
-	    temp = ctime(&(fs.st_mtime));
-	    l = strlen(temp);
-  	    if (temp[l-1] == '\n') l--;
-	    Protect(temp = alcstr(temp, l), runerr(0));
-            suspend string(l, temp);
-            }
-         else if ( !strcasecmp("a_time", s) ) {
-	    temp = ctime(&(fs.st_atime));
-	    l = strlen(temp);
-  	    if (temp[l-1] == '\n') l--;
-	    Protect(temp = alcstr(temp, l), runerr(0));
-            suspend string(l, temp);
-            }
-         else if ( !strcasecmp("c_time", s) ) {
-	    temp = ctime(&(fs.st_ctime));
-	    l = strlen(temp);
-  	    if (temp[l-1] == '\n') l--;
-	    Protect(temp = alcstr(temp, l), runerr(0));
-            suspend string(l, temp);
-            }
-         else {
-            runerr(161);
-            }
-      }
-#ifdef Network
-      }
-#endif					/* Network */
-      fail;
-   }
-end
-#endif					/* FAttrib */
-
 "close(f) - close file f."
 
 function{1} close(f)
@@ -562,7 +351,7 @@ Deliberate Syntax Error
 #endif					/* ARM */
 
 #ifdef PosixFns
-      int is_udp = 0;
+      int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
 #endif					/* PosixFns */
 
 #if OS2 || UNIX || VMS || NT
@@ -584,12 +373,6 @@ Deliberate Syntax Error
 	 }
 
       status = 0;
-
-#ifdef Network
-     if (is_url(fnamestr) == 1) {
-	status |= Fs_Network;
-	}
-#endif					/* Network */
 
       /*
        * Scan spec, setting appropriate bits in status.  Produce a
@@ -646,7 +429,7 @@ Deliberate Syntax Error
 	    case 'u':
 	    case 'U':
 #ifdef PosixFns
-	       is_udp = 1;
+	       is_udp_or_listener = 1;
 #endif					/* PosixFns */
 	       if ((status & Fs_Socket)==0)
 		  status |= Fs_Untrans;
@@ -675,9 +458,18 @@ Deliberate Syntax Error
 
 	    case 'l':
 	    case 'L':
+#ifdef PosixFns
+	       if (status & Fs_Socket) {
+		  status |= Fs_Listen | Fs_Append;
+		  is_udp_or_listener = 2;
+		  continue;
+		  }
+#endif					/* PosixFns */
 #ifdef Graphics3D
-	       status |= Fs_Window3D;
-	       continue;
+	       if (status & Fs_Window) {
+		  status |= Fs_Window3D;
+		  continue;
+		  }
 #else					/* Graphics3D */
 	       fail;
 #endif					/* Graphics3D */
@@ -963,16 +755,6 @@ Deliberate Syntax Error
    else
 #endif					/* ISQL */
 
-#ifdef Network
-   if (status & Fs_Network) {
-      f = (FILE *) netopen(fnamestr, mode);
-      }
-   else if ( is_url(fnamestr) == 2 ) {
-      f = (FILE *) socketopen(fnamestr, mode);
-      }
-   else	
-#endif					/* Network */
-
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
       if (status & Fs_Pipe) {
 	 if (status != (Fs_Read|Fs_Pipe) && status != (Fs_Write|Fs_Pipe))
@@ -1015,17 +797,22 @@ Deliberate Syntax Error
       {
 	 if (status & Fs_Socket) {
 	    /* The only allowed values for flags are "n" and "na" */
-	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf))
+	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen))
 	       runerr(209, spec);
 	    if (status & Fs_Append) {
 	       /* "na" => listen for connections */
-	       f = sock_listen(fnamestr, is_udp);
+	       f = sock_listen(fnamestr, is_udp_or_listener);
 	    } else {
 	       /* connect to a port */
-	       f = sock_connect(fnamestr, is_udp);
+	       f = sock_connect(fnamestr, is_udp_or_listener);
 	    }
-	    /* read/reads is not allowed on a UDP socket, only receive */
-	    if (is_udp)
+	    /*
+	     * read/reads is not allowed on a listener socket, only select
+	     * read/reads is not allowed on a UDP socket, only receive
+	     */
+	    if (is_udp_or_listener == 2)
+	       status = Fs_Socket | Fs_Listen;
+	    else if (is_udp_or_listener == 1)
 	       status = Fs_Socket | Fs_Write;
 	    else
 	       status = Fs_Socket | Fs_Read | Fs_Write;
@@ -1758,13 +1545,6 @@ function{0,1} seek(f,o)
 #endif					/* Graphics */
 
 
-#ifdef Network
-	if ( BlkLoc(f)->file.status & Fs_Network ) {
-	   fprintf(stderr, "network seek() not yet implemented\n");
-	   fail;
-	}
-#endif					/* Network */
-
 #if HAVE_LIBZ
         if ( BlkLoc(f)->file.status & Fs_Compress) {
             if (o<0)
@@ -1908,13 +1688,6 @@ function{0,1} where(f)
       if (BlkLoc(f)->file.status & Fs_Window)
 	 fail;
 #endif					/* Graphics */
-
-#ifdef Network
-      if ( BlkLoc(f)->file.status & Fs_Network ) {
-	 fprintf(stderr, "network where() not yet implemented\n");
-	 fail;
-	 }
-#endif 					/* Network */
 
       pos = ftell(fd) + 1;
       if (pos == 0)

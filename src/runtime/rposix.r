@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.17 2002-06-13 19:57:52 jeffery Exp $
+ * $Id: rposix.r,v 1.18 2003-07-11 07:05:40 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -850,9 +850,14 @@ FILE *sock_connect(char *fn, int is_udp)
    return (FILE *)s;
 }
 
-FILE *sock_listen(addr, is_udp)
+/*
+ * Although this function is named "listen", it opens all incoming sockets,
+ * including UDP sockets and non-blocking "listener" sockets on which a
+ * later select() may turn up an accept.
+ */
+FILE *sock_listen(addr, is_udp_or_listener)
 char *addr;
-int is_udp;
+int is_udp_or_listener;
 {
    int fd, s, len, fromlen;
    struct sockaddr *sa;
@@ -917,12 +922,14 @@ int is_udp;
            return 0;
            }
 
-        if (is_udp) {
+        if (is_udp_or_listener == 1) {
             if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
                 return 0;
-        } else
+           }
+	else {
             if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0)
                 return 0;
+	    }
 
         sa = (struct sockaddr*) &saddr_in;
       }
@@ -933,7 +940,8 @@ int is_udp;
 #endif
 #if UNIX
          int pathbuf_len;
-	 if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
+	 if ((is_udp_or_listener==1) ||
+	     (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	    return 0;
 
          pathbuf_len = sizeof(saddr_un.sun_path);
@@ -952,17 +960,17 @@ int is_udp;
       if (bind(s, sa, len) < 0) {
 	 return 0;
 	 }
-      if (!is_udp && listen(s, SOMAXCONN) < 0)
+      if (is_udp_or_listener!=1 && listen(s, SOMAXCONN) < 0)
 	 return 0;
       /* Save s for future calls to listen */
       sock_put(addr, s);
    }
     
-   if (is_udp)
+   if (is_udp_or_listener)
       return (FILE *)s;
 
    fromlen = sizeof(from);
-   if (!(fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
+   if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
       return 0;
 
    return (FILE *)fd;

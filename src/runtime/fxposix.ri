@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.22 2003-05-24 11:32:56 jeffery Exp $
+ * $Id: fxposix.ri,v 1.23 2003-07-11 07:05:40 jeffery Exp $
  */
 
 /*
@@ -2055,7 +2055,8 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
 
 void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 {
-   int fd, status = BlkLoc(*f)->file.status;
+   int fd, fromlen, status = BlkLoc(*f)->file.status;
+   struct sockaddr_in from;
 #ifdef Graphics
    wbp w;
 #endif					/* Graphics */
@@ -2072,8 +2073,18 @@ void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 #endif					/* Graphics */
 #endif					/* NT */
        ) {
+      /*
+       * If its a listener socket, convert it to the new connection.
+       */
+      if (status & Fs_Listen) {
+	 fromlen = sizeof(from);
+	 if ((fd = accept(fd, (struct sockaddr *)&from, &fromlen)) < 0)
+	    return;
+	 BlkLoc(*f)->file.fd = (FILE *)fd;
+	 BlkLoc(*f)->file.status = Fs_Socket | Fs_Read | Fs_Write;
+	 }
       c_put(ldp, f);
-     }
+      }
 }
 
 

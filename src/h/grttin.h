@@ -191,12 +191,13 @@ typedef int URI;
 typedef int jmp_buf;
 #endif                                  /* Messaging */
 
+#if NT
+typedef int HMODULE, WSADATA, WORD;
+#endif
+
 #ifdef PosixFns
 typedef int SOCKET;
 typedef int u_short;
-#ifdef NT
-typedef int WSADATA, WORD;
-#endif					/* NT */
 typedef int fd_set;
 extern int amperErrno;
 struct timeval {
@@ -282,7 +283,7 @@ typedef int siptr, stringint, inst;
       typedef int int_PASCAL, LRESULT_CALLBACK, MSG, BYTE, WORD, DWORD;
       typedef int HINSTANCE, HGLOBAL, HANDLE, HPEN, HBRUSH, HRGN;
       typedef int LPSTR, HBITMAP, WNDCLASS, PAINTSTRUCT, POINT, RECT;
-      typedef int HWND, HDC, UINT, WPARAM, LPARAM, SIZE, HMODULE;
+      typedef int HWND, HDC, UINT, WPARAM, LPARAM, SIZE;
       typedef int COLORREF, HFONT, LOGFONT, TEXTMETRIC, FONTENUMPROC, FARPROC;
       typedef int LOGPALETTE, HPALETTE, PALETTEENTRY, HCURSOR, BITMAP, HDIB;
       typedef int va_list, LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS;

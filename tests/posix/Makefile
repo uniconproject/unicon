@@ -5,7 +5,7 @@ what:
 		@echo "what do you want to make?"
 
 
-test-posix:
+Test:
 		sh Test-icont icont
 
 

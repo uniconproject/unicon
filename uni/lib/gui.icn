@@ -1323,13 +1323,34 @@ class Component : Ticker(
       return self
    end
 
-   initially
+   method set_fields(L)
+      every s := !L do {
+         s ? {
+            (attr := tab(find("="))) &
+            ="=" &
+            (val := tab(0))
+            }
+         if find(",", val) then {
+	    vals := []
+	    val ? {
+		while put(vals, tab(find(","))) do move(1)
+		put(vals, tab(0))
+		}
+	    self.__m["set_" || attr] ! (push(vals, self))
+	    }
+	 else
+	    self.__m["set_" || attr] (self, val)
+         }
+   end
+
+   initially(argv[])
       /dispatcher := Dispatcher()
       self$Ticker.initially()
       self.attribs := []
       self.x_align := "l"
       self.y_align := "t"
       no_updates_count := 0
+      if *argv > 0 then set_fields(argv)
 end
 
 #
@@ -1444,9 +1465,10 @@ class Container : Component(
       return (!self.components)$in_region()
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.components := []
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -1518,9 +1540,10 @@ class VisibleContainer : Component(
       return
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.components := []
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -1929,9 +1952,10 @@ class Button : Toggle : Component(
       return x
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.accepts_tab_focus_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -1994,10 +2018,11 @@ class CheckBox : Button()
          CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
-   initially
+   initially(argv[])
       self$Button.initially()
       self$set_imgs(img_style("box_up"), img_style("box_down"))
       self.is_checkbox_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -2072,9 +2097,10 @@ class TextButton : Button(
       self.tw := self.w - 2 *  DEFAULT_TEXT_X_SURROUND
    end
 
-   initially
+   initially(argv[])
       self$Button.initially()
       self.internal_alignment := "c"
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -2169,9 +2195,10 @@ end
 #  of two states, like a check box.
 #
 class ToggleTextButton : TextButton()
-   initially
+   initially(argv[])
       self$TextButton.initially()
       self.is_checkbox_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -2179,9 +2206,10 @@ end
 #  {IconButton}.
 #
 class ToggleIconButton : IconButton()
-   initially
+   initially(argv[])
       self$IconButton.initially()
       self.is_checkbox_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 
@@ -2323,9 +2351,10 @@ class Label : Component(
       fail
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.internal_alignment := "l"
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -2467,9 +2496,10 @@ class Image : Component(
       fail
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.x_internal_alignment := self.y_internal_alignment := "c"
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -2735,12 +2765,13 @@ class TextField : Component(
          CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       filter := printable := cset(&ascii[33:128])
       self.accepts_tab_focus_flag := 1
       self$set_contents("")
       self.draw_border_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -2831,9 +2862,10 @@ class Border : Panel(
       every (!self.components)$resize()
    end
 
-   initially
+   initially(argv[])
       self$Panel.initially()
       self.internal_alignment := "l"
+      if *argv > 0 then set_fields(argv)
 end
 
 
@@ -2911,8 +2943,9 @@ class CheckBoxGroup(
       return self.which_one := x
    end
 
-   initially
+   initially(argv[])
       self.checkboxes := []
+      if *argv > 0 then set_fields(argv)
 end
 
 $define MIN_BAR_SIZE 8
@@ -3323,12 +3356,13 @@ class ScrollBar : Component(
       return
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.b1 := IconButton()
       self.b1$toggle_draw_border()
       self.b2 := IconButton()
       self.b2$toggle_draw_border()
+      if *argv > 0 then set_fields(argv)
 end
 
 $define TX_PADDING (DEFAULT_TEXT_X_SURROUND + 3)
@@ -4048,10 +4082,11 @@ class ScrollArea : Component(
    return tab_line2
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self$set_accepts_tab_focus()
       self.checked := []
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -4172,8 +4207,9 @@ class Node(
       }
    end
 
-   initially
+   initially(argv[])
       subnodes := []
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -4406,13 +4442,14 @@ class Tree : ScrollArea(
       Uncouple(dashed)
    end
 
-   initially
+   initially(argv[])
       self$ScrollArea.initially()
       plus := img_style("plus")
       minus := img_style("minus")
       little_w := img_width(plus)
       little_h := img_height(plus)
       default_bmps := [img_style("closed_folder"), img_style("open_folder"), img_style("file")]
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -5676,7 +5713,7 @@ end
 
    end
 
-   initially
+   initially(argv[])
       self$ScrollArea.initially()
       printable := cset(&ascii[33:128])
       self.cursor_x := self.cursor_y := 1
@@ -5687,6 +5724,7 @@ end
       startdragy := 0
       enddragy := 0
       donedrag := 0
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -5912,7 +5950,7 @@ class List : Component : DropDown(
       self.l$final_setup(x, self)
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.l := Label()
       self.l$set_label("")
@@ -5920,6 +5958,7 @@ class List : Component : DropDown(
       self.b$toggle_draw_border()
       self.b$set_img(img_style("arrow_down"))
       self.selection := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -6116,7 +6155,7 @@ class EditList : Component : DropDown(
       self.tf$lost_focus()
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.accepts_tab_focus_flag := 1
       self.tf := TextField()
@@ -6125,6 +6164,7 @@ class EditList : Component : DropDown(
       self.b$toggle_draw_border()
       self.b$set_img(img_style("arrow_down"))
       self.selection := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 
@@ -6267,9 +6307,10 @@ class MenuButton : Component(
       self.menu$resize()
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.img := img_style("arrow_down")
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -6607,9 +6648,10 @@ class MenuBar : Component(
       }
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.menus := []
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -6846,8 +6888,8 @@ class MenuComponent(
       self.label_mid_w := TextWidth(cw, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
    end
 
-   initially
-
+   initially(argv[])
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -6875,9 +6917,10 @@ class SubMenu : MenuComponent()
       error("hide() method must be over-ridden in SubMenu sub-class")
    end
 
-   initially
+   initially(argv[])
       self$MenuComponent.initially()
       self.is_sub_menu_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -7146,10 +7189,11 @@ class Menu : SubMenu(
       self.temp_win := &null
    end
 
-   initially
+   initially(argv[])
       self$SubMenu.initially()
       self.menus := []
       self$set_img_right(img_style("arrow_right"))
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -7222,9 +7266,10 @@ class CheckBoxMenuItem : Toggle : MenuComponent(
       return MenuEvent(SUCCEED, e, self, 0)
    end
 
-   initially
+   initially(argv[])
       self$MenuComponent.initially()
       self$set_imgs(img_style("box_up"), img_style("box_down"))
+      if *argv > 0 then set_fields(argv)
 end
 
 $define SEPARATOR_HEIGHT 4
@@ -7251,9 +7296,10 @@ class MenuSeparator : MenuComponent()
       DrawRaisedRectangle(cw, self.label_x, self.label_y + (self.label_h - SEPARATOR_HEIGHT) / 2, self.parent_menu.max_label_mid_w + self.parent_menu.max_label_left_w + self.parent_menu.max_label_right_w, SEPARATOR_HEIGHT,1)
    end
 
-   initially
+   initially(argv[])
       self$MenuComponent.initially()
       self.is_shaded_flag := 1
+      if *argv > 0 then set_fields(argv)
 end
 
 $define CHANGE_SIZE_BORDER 6
@@ -7330,9 +7376,10 @@ class TableColumn : TextButton(
       Clip(W)
    end
 
-   initially
+   initially(argv[])
       self$TextButton.initially()
       self.internal_alignment := "l"
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -8045,11 +8092,12 @@ class Table : Component(
       Uncouple(rev)
    end
 
-   initially
+   initially(argv[])
       self$Component.initially()
       self.columns := []
       self$set_accepts_tab_focus()
       self.checked := []
+      if *argv > 0 then set_fields(argv)
 end
 
 ##
@@ -8081,8 +8129,9 @@ class ButtonGroup(
       c$set_parent_button_group(self)
    end
 
-   initially
+   initially(argv[])
       self.buttons := []
+      if *argv > 0 then set_fields(argv)
 end
 
 
@@ -8649,10 +8698,11 @@ class ToolBar : Panel(
       return
    end
 
-   initially
+   initially(argv[])
       self$Panel.initially()
       start_delay := 1000
       end_delay := 3000
+      if *argv > 0 then set_fields(argv)
 end
 
 procedure EraseRectangle(W, x, y, w, h)

@@ -433,9 +433,26 @@ class Class : declaration (supers,
     if ("initially" == (m := (methods$foreach()))$name()) &
        (m.fields ~=== EmptyNode) then {
        yyprint(")\n  self.__s := self\n")
-       writes(f,"  self.__m.initially(self,")
-       yyprint(m.fields)
-       yyprint(")\n")
+       if \ (m.fields.varg) then {
+          m.fields.String()[1:-2] ? {
+	     if find(",") then {
+                 writes(f,"  self.__m.initially!([self,")
+                 while writes(f,tab(find(","))) do {
+		    move(1)   # if last was nonfinal write it
+		    if find(",") then writes(f,",")
+		    }
+	         writes(f, "]|||", tab(0),")")
+                 }
+             else {
+		write(f,"  self.__m.initially!(push(", tab(0), ",self))")
+                  }
+	     }
+	  }
+      else {
+          writes(f,"  self.__m.initially(self,")
+          yyprint(m.fields)
+          yyprint(")\n")
+          }
        }
     else {
        every writes(f,",",fields$foreach())

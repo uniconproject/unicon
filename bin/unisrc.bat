@@ -2,6 +2,7 @@ cd \unicon\v
 del uni.zip
 zip -r uni.zip Makefile README
 zip -r uni.zip src\Makefile src\h\*.h
+zip -r uni.zip bin\unisrc.*
 zip -r uni.zip src\icont\*.c src\icont\*.h src\icont\*.icn src\icont\Makefile
 zip -r uni.zip src\common\*.c src\common\*.h src\common\*.icn src\common\Makefile
 zip -r uni.zip src\iconc\*.c src\iconc\*.h src\iconc\*.icn src\iconc\Makefile
@@ -13,12 +14,13 @@ zip -r uni.zip src\gdbm\*.c src\gdbm\*.h src\gdbm\gdbm.mak src\gdbm\configure.in
 zip -r uni.zip src\wincap\*.c src\wincap\*.h src\wincap\Makefile
 zip -r uni.zip uni\ivib\*.icn uni\ivib\makefile uni\ivib\icon\i*.*
 zip -r uni.zip uni\ivib\icon\x*.* uni\ivib\docs uni\ivib\demos
-zip -r uni.zip uni\Makefile uni\docs uni\ide uni\lib\*.icn uni\lib\makefile
+zip -r uni.zip uni\Makefile uni\docs uni\ide\*.icn uni\ide\makefile uni\lib\*.icn uni\lib\makefile
 zip -r uni.zip uni\iyacc\*.c uni\iyacc\*.h uni\iyacc\Makefile
 zip -r uni.zip uni\iyacc\test\Makefile uni\iyacc\test\calc.* uni\iyacc\test\make.bat uni\iyacc\test\makefile.win
 zip -r uni.zip uni\unicon\*.icn uni\unicon\Makefile uni\unicon\*.y
-uni\unicon\unigram.u uni\unicon\idol.u
-zip -r uni.zip config\nt\msvc
+zip -r uni.zip uni\unicon\unigram.u uni\unicon\idol.u
+zip -r uni.zip config\win32\msvc
+zip -r uni.zip config\win32\gcc
 zip -r uni.zip ipl\README ipl\Translate-icont
 zip -r uni.zip ipl\cfuncs\*.c ipl\cfuncs\*.h ipl\cfuncs\*.sh ipl\cfuncs\Makefile ipl\cfuncs\README
 zip -r uni.zip ipl\data\README ipl\data\*.??? ipl\data\header

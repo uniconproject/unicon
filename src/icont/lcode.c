@@ -895,7 +895,7 @@ void gentables()
                found__m=1;
          }
       }
-   }
+    }
 
    if(!found__m) {
 #endif					/* NativeObjects */
@@ -963,7 +963,9 @@ void gentables()
 #endif					/* NativeObjects */
 
          for (i=0;i<gp->g_nargs;i++) {	/* field names (filled in by interp) */
+#ifdef DeBugLinker
             int foundit = 0;
+#endif					/* DeBugLinker */
             /*
              * Find the field list entry corresponding to field i in
              * record gp, then write out a descriptor for it.
@@ -971,6 +973,7 @@ void gentables()
             for (fp = lffirst; fp != NULL; fp = fp->f_nextentry) {
                for (rp = fp->f_rlist; rp!= NULL; rp=rp->r_link) {
                   if (rp->r_gp == gp && rp->r_fnum == i) {
+#ifdef DeBugLinker
                      if (foundit) {
                         /*
                          * This internal error should never occur
@@ -980,18 +983,19 @@ void gentables()
                         fflush(stderr);
                         exit(1);
                         }
-#ifdef DeBugLinker
                      if (Dflag)
                         fprintf(dbgfile, "\t%d\tS+%ld\t\t\t# %s\n",
                            (int)strlen(&lsspace[fp->f_name]),
                            fp->f_name, &lsspace[fp->f_name]);
+                     foundit++;
 #endif					/* DeBugLinker */
                      outword(strlen(&lsspace[fp->f_name]));
                      outword(fp->f_name);
-                     foundit++;
+		     goto FOUNDIT;
                      }
                   }
                }
+#ifdef DeBugLinker
             if (!foundit) {
                /*
                 * This internal error should never occur
@@ -1001,6 +1005,9 @@ void gentables()
                fflush(stderr);
                exit(1);
                }
+#endif					/* DeBugLinker */
+	 FOUNDIT: /* skipped out of the two inner for-loops */
+	    ;
             }
          }
       }

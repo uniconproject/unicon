@@ -18,9 +18,7 @@ extern struct errtab errtab[];		/* error numbers and messages */
  * err_msg - print run-time error message, performing trace back if required.
  *  This function underlies the rtt runerr() construct.
  */
-void err_msg(n, v)
-int n;
-dptr v;
+void err_msg(int n, dptr v)
 {
    register struct errtab *p;
 #ifdef PresentationManager

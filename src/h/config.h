@@ -676,6 +676,8 @@ Deliberate Syntax Error
    #undef MultiThread		/* no way -- interpreter only */
    #undef EventMon		/* presently not supported in the compiler */
    #undef ExecImages		/* interpreter only */
+   #undef HAVE_IODBC		/* ODBC interpreter only until dynamic */
+   #undef ISQL			/* records get added to the compiler */
 
 #else					/* COMPILER */
 
@@ -764,7 +766,6 @@ Deliberate Syntax Error
 #if HAVE_LIBIODBC
 #define ISQL 1
 #endif					/* HAVE_LIBIODBC */
-
 
 /*
  *  Vsizeof is for use with variable-sized (i.e., indefinite)

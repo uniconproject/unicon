@@ -17,39 +17,19 @@ static void add_tdef (char *name);
 /*
  * refpath is used to locate the standard include files for the Icon.
  *  run-time system. If patchpath has been patched in the binary of rtt,
- *  the string was patched in is used for refpath.
+ *  the string that was patched in is used for refpath.
  */
 char patchpath[MaxPath+18] = "%PatchStringHere->";
 
-/*
- * The following code is operating-system dependent [@rttmain.01].  Definition
- *  of refpath.
- */
-
-#if PORT
-   /* something is needed */
-Deliberate Syntax Error
-#endif					/* PORT */
-
-#if AMIGA || ATARI_ST || MACINTOSH || MSDOS || OS2 || UNIX
+#ifdef RefPath
 char *refpath = RefPath;
-#endif					/* AMIGA || ... ... */
-
-#if MVS || VM
+#else					/* RefPath */
 char *refpath = "";
+#endif					/* RefPath */
+
 #if MVS
 char *src_file_nm;
 #endif                                  /* MVS */
-#endif                                  /* MVS || VM */
-
-#if VMS
-char *refpath = "ICON_BIN:";
-#endif					/* VMS */
-
-/*
- * End of operating-system specific code.
- */
-
 
 /*
  * The following code is operating-system dependent [@rttmain.02].
@@ -134,7 +114,7 @@ static char *curlst_nm = "rttcur.lst";
 static FILE *curlst;
 static char *cur_src;
 
-extern line_cntrl;
+extern int line_cntrl;
 
 /*
  * tdefnm is used to construct a list of identifiers that
@@ -278,6 +258,8 @@ char **argv;
     */
    if ((int)strlen(patchpath) > 18)
       refpath = patchpath+18;
+   else if (strlen(refpath)==0)
+      refpath = relfile(argv[0], "/../");
 
    /*
     * Initialize the string table and indicate that File must be treated
@@ -473,7 +455,7 @@ char *src_file;
    struct tdefnm *td;
    struct token *t;
    static char *test_largeints = "#ifdef LargeInts\nyes\n#endif\n";
-   static first_time = 1;
+   static int first_time = 1;
 
    cur_src = src_file;
 

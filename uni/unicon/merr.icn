@@ -9,7 +9,8 @@
 #	See http://unicon.sourceforge.net/merr/
 #
 
-global C, att, bison, byacc, make, compile, ofile, target
+global C, att, bison, byacc, make, compile, ofile, target, yyfn, yyln, yytxt
+global calloc
 
 procedure main(argv)
 
@@ -17,13 +18,21 @@ procedure main(argv)
 	stop("usage: merr [-yYB] [-s make] [-o msgfile] compiler [target]")
     ofile := "yyerror.icn"
     yamfile := "meta.err"
+    yyfn := "yyfilename"
+    yyln := "yylineno"
+    yytxt := "yytext"
+    calloc := "calloc"
     i := 1
     while i<= *argv do {
 	case argv[i] of {
 	    "-Y": { C := att := "yy_state" }
 	    "-B": { C := bison := "yystate" }
 	    "-y": { C := byacc := 1 }
-	    "-s": { i+:=1; make := argv[i] }
+	    "-s": { i +:= 1; make := argv[i] }
+	    "-C": { i +:= 1; calloc := argv[i] }
+	    "-F": { i +:= 1; yyfn := argv[i] }
+	    "-L": { i +:= 1; yyln := argv[i] }
+	    "-T": { i +:= 1; yytxt := argv[i] }
 	    "-o": { i +:= 1; ofile := argv[i] }
 	    default: {
 		if /compile := argv[i] then
@@ -63,11 +72,16 @@ end
 
 procedure gen(t)
 
-    f := open(ofile, "w")
+    f := open(ofile, "w") | stop("can't write ", image(ofile))
     if \C then {
 	if /byacc then {
-	    f2 := open("yyerror.h", "w")
-	    write(f2, "extern void _yyerror(const char *, int);")
+	    if find("/", ofile) then {
+		every i := find("/", ofile)
+		f2 := open(ofile[1:i+1] || "yyerror.h", "w")
+	        }
+	    else
+		f2 := open("yyerror.h", "w")
+	    write(f2, "extern int _yyerror(char *, int);")
 	    write(f2, "#define yyerror(s) _yyerror(s, ", \att | bison, ")")
 	    close(f2)
 	    }
@@ -81,14 +95,14 @@ procedure gen(t)
 	        "      char *msg;\n",
 	        "      struct errtable *p;\n",
 	        "      } u;\n",
-	        "   } errtab[", maxstate+1, "];")
+	        "   } errtab[", if maxstate<0 then 1 else maxstate+1, "];")
 
-	write(f, "int yyerror_init()\n{")
+	write(f, "void yyerror_init()\n{")
 
 	every k := key(\t) do {
 	    write(f, "   errtab[",k,"].i = ", *t[k], ";")
 	    if *t[k] > 1 then {
-		write(f, "   errtab[",k,"].u.p = calloc(1,",*t[k]+1," * sizeof(struct errtable));")
+		write(f, "   errtab[",k,"].u.p = (struct errtable *)",calloc,"(1,",*t[k]+1," * sizeof(struct errtable));")
 		write(f, "   errtab[",k,"].u.p[0].u.msg = ", image(t[k,10000000000]),";")
 		j := 1
 		every k2 := key(t[k]) do {
@@ -102,11 +116,12 @@ procedure gen(t)
 	}
       write(f, "}\n")
 
-      write(f,"extern int errors;\n",
-	      "extern char *yyfilename, yytext[];\n",
-	      "extern int yychar, yylineno;\n")
+      write(f,"int __merr_errors;\n",
+	      "extern int yychar, ",yyln,";\n")
+      if yyfn=="yyfilename" then write(f,"extern char *yyfilename;\n")
+      if yytxt=="yytext" then write(f,"extern char yytext[];\n")
 
-      if byacc then
+      if \byacc then
           write(f, "extern short *yyssp;\n\n",
 		   "int yyerror(char *s)\n{\n   int state = *yyssp;")
       else
@@ -117,32 +132,34 @@ procedure gen(t)
       write(f, "   if (! yyerror_isinitialized++) yyerror_init();\n",
                "   if (strstr(s, \"stack\")) return 0;")
 
-      write(f, "   if (errors++ > 10) {\n",
+      write(f, "   if (__merr_errors++ > 10) {\n",
 	       "      fprintf(stderr, \"too many errors, aborting\");\n",
-	       "      exit(errors); }")
+	       "      exit(__merr_errors); }")
 
-      write(f, "   if(yyfilename) fprintf(stderr, \"%s:\", yyfilename);")
+      write(f, "   if(",yyfn,") fprintf(stderr, \"%s:\", ",yyfn,");")
       write(f, "   if ((!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\"))&&")
-      write(f,"         (state>=0 && state<=yymaxstate))")
+      write(f,"         (state>=0 && state<=yymaxstate)) {")
       write(f,"       if (errtab[state].i==1)")
       write(f, "         s = errtab[state].u.msg;")
       write(f,"       else {")
       write(f,"          for(i=1;i<=errtab[state].i;i++)")
       write(f,"             if(yychar == errtab[state].u.p[i].i) {")
       write(f,"                s=errtab[state].u.p[i].u.msg;break;}")
-      write(f,"          if(i>errtab[state].i)s=errtab[state].u.p[0].u.msg;")
+      write(f,"          if(i>errtab[state].i && errtab[state].i > 0)")
+      write(f,"             s=errtab[state].u.p[0].u.msg;")
       write(f,"          }")
+      write(f,"       }")
 
       write(f, "   if (!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\")){")
       write(f, "      sprintf(sbuf,\"%s (%d;%d)\", s, state, yychar);")
       write(f, "      s=sbuf;\n      }")
-      write(f, "   fprintf(stderr, \"%d: # \\\"%s\\\": %s\\n\", yylineno, yytext, s);")
+      write(f, "   fprintf(stderr, \"%d: # \\\"%s\\\": %s\\n\", ",yyln,", ",yytxt,", s);")
       write(f, "   return 0;")
       write(f, "}")
       }
    else {
       write(f,"procedure yyerror(s)\n",
-	      "static t\n",
+	      "static t, __merr_errors\n",
 	      "initial {\n",
 	      "   t := table(table(\"syntax error\"))")
       every k := key(\t) do {
@@ -155,20 +172,21 @@ procedure gen(t)
 	  else
 	      write(f,"   t[",k,"] := table(",image(t[k,10000000000]),")")
       }
+      write(f, "   __merr_errors := 0")
       write(f, "   }\n")
 
-      write(f, "   /errors := 0")
-      write(f, "   if errors = 0 then write(&errout)")
+      write(f, "   if __merr_errors = 0 then write(&errout)")
       write(f, "   else if map(s)== \"stack underflow. aborting...\" then return")
-      write(f, "   errors +:= 1")
-      write(f, "   if errors > 10 then stop(\"too many errors, aborting\")")
+      write(f, "   __merr_errors +:= 1")
+      write(f, "   if __merr_errors > 10 then")
+      write(f, "      stop(\"too many errors, aborting\")")
       write(f, "   writes(&errout, \\fName, \":\")")
       write(f, "   if s == \"syntax error\" then")
       write(f, "      s := t[statestk[1], yychar]")
       write(f, "   if s == \"syntax error\" then {")
       write(f, "      s ||:= \" (\" || statestk[1] ||\";\"|| yychar || \")\"")
       write(f, "      }")
-      write(f, "   write(&errout, yylineno, \": # \\\"\", yytext, \"\\\": \", s)")
+      write(f, "   write(&errout, ",yyln,", \": # \\\"\", yytext, \"\\\": \", s)")
       write(f, "   return")
       write(f, "end")
 }
@@ -177,6 +195,8 @@ close(f)
 system(make)
 
 end
+
+global efile
 
 procedure generr(t, prog, msg)
 
@@ -189,9 +209,13 @@ write(s)
     system(s)
 
     f := open("err.out")
-    line := read(f)
-    if (*line = 0) | (line?(="Parsing ",tab(find(":")+1),tab(many(' \t.')),pos(0))) then
-	line := read(f) | stop("no error in ",efile)
+    while ((line := read(f)) &
+	   (not (line ? (tab(find("(")+1), tab(many(&digits)),
+			=";", tab(many(&digits)), =")"))))
+
+    if (not (line ? (tab(find("(")+1), tab(many(&digits)),
+			=";", tab(many(&digits)), =")"))) then
+	stop("no error in ",efile)
     line2 := line
     while line ?:= (tab(find(":")+1) & tab(0))
     if *trim(line) = 0 then stop("bad line ", image(line))
@@ -213,6 +237,6 @@ end
 
 procedure unknownstate(s)
     write("unknown state in ", image(s))
-    system("cat err.icn")
+    system("cat " || efile)
     system("cat err.out")
 end

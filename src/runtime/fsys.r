@@ -1378,7 +1378,10 @@ function{0,1} reads(f,i)
 	       }
 	    if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
 	       /*IntVal(amperErrno) = errno; */
-	       fail;
+	       if (bytesread == 0)
+		  fail;
+	       else
+		  return s;
 	       }
 	    if (slen == -3) {
 	       fail;

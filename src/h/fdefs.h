@@ -197,6 +197,7 @@ FncDef(setservent,1)
 FncDef(sysread,2)
 FncDef(send,2)
 FncDef(receive,1)
+FncDef(setenv,2)
 #endif					/* PosixFns */
 
 #ifdef PosixFns

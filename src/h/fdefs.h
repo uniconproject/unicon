@@ -349,6 +349,8 @@ FncDef(fetch,2)
   FncDefV(MatrixMode)
   FncDefV(DrawCylinder)
   FncDefV(DrawDisk)
-  FncDefV(DrawPartialDisk)
-
+  FncDefV(Texture)
+  FncDefV(Texcoord)
+  FncDefV(Refresh)
+  FncDefV(WindowContents)
 #endif					/* Graphics3D */

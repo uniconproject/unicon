@@ -205,10 +205,9 @@ unsigned int errmask;
      return -1;
 
 #ifdef Graphics
-#ifdef XWindows
    if (status & Fs_Window)
+#ifdef XWindows
      fd = XConnectionNumber(((wbp)(BlkLoc(file)->file.fd))->window->display->display);
-   else
 #else
      return -1;
 #endif
@@ -1020,10 +1019,10 @@ struct b_record *rp;
    hp = gethostbyaddr((char *)&saddr_in.sin_addr,
 	 sizeof(saddr_in.sin_addr), saddr_in.sin_family);
    if (hp != NULL)
-     sprintf(buf, "%s:%d", hp->h_name, ntohs(saddr_in.sin_port));
+      sprintf(buf, "%s:%d", hp->h_name, ntohs(saddr_in.sin_port));
    else { /* Note: does not work for IPv6 addresses */
-     unsigned int addr = ntohl(saddr_in.sin_addr.s_addr);
-     sprintf(buf, "%d.%d.%d.%d:%d",
+      unsigned int addr = ntohl(saddr_in.sin_addr.s_addr);
+      sprintf(buf, "%d.%d.%d.%d:%d",
 	     (addr & 0xff000000) >> 24, (addr & 0xff0000)   >> 16,
 	     (addr & 0xff00)     >>  8, (addr & 0xff),
 	     ntohs(saddr_in.sin_port));
@@ -1471,12 +1470,11 @@ struct b_list *findactivewindow(struct b_list *lws)
    static LONG next = 0;
    LONG i, j;
    union block *ep;
-   wsp ptr, ws, stdws = NULL;
+   wsp ptr, ws;
    tended struct descrip d;
    extern FILE *ConsoleBinding;
 
    d = nulldesc;
-   if (ConsoleBinding) stdws = ((wbp)ConsoleBinding)->window;
    /*
    * Check for any new pending events.
    */
@@ -1487,7 +1485,7 @@ struct b_list *findactivewindow(struct b_list *lws)
    /*
     * go through listed windows, looking for those with events pending
     */
-   for (ep = (union block *)lws; BlkType(ep) == T_Lelem;
+   for (ep = (union block *)(lws->listhead); BlkType(ep) == T_Lelem;
 	ep = ep->lelem.listnext) {
       for (i = 0; i < ep->lelem.nused; i++) {
 	 dptr f;
@@ -1495,7 +1493,9 @@ struct b_list *findactivewindow(struct b_list *lws)
 	 if (j >= ep->lelem.nslots)
 	    j -= ep->lelem.nslots;
 	 f = &ep->lelem.lslots[j];
-	 if (BlkLoc(*f)->list.size > 0) {
+         if (!(is:file(*f) && BlkLoc(*f)->file.status & Fs_Window))
+            syserr("internal error calling findactivewindow()");
+	 if (BlkLoc(((wbp)(BlkLoc(*f)->file.fd))->window->listp)->list.size > 0) {
 	    if (is:null(d)) {
 	       BlkLoc(d) = (union block *)emptylist();
 	       d.dword = D_List;

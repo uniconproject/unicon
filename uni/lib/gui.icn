@@ -638,9 +638,10 @@ class _Dialog : Container(
       }
 
       if e === &resize then {
-#         delay(25) # merge redundant resizes
+#         delay(25) # merge redundant resize events
          while Pending(self.win)[1] === e do {
             e := Event(self.win)
+#            delay(50)
 	    }
          nw := &x
          nh := &y
@@ -4799,17 +4800,23 @@ class EditableTextList : ScrollArea(
            j := 0
            while  j <  *l do {
              j +:= 1
-           #  if l[j] == !c1 then { 
+             if wordlist[k][1] == "'" then {
+                if j := find(wordlist[k][2:0],l,j) then {
+                   ex := j + *(wordlist[k][2:0])
+                   draw23(l, left_pos, yp, i,j,ex)
+                   j := ex 
+                }
+            }
+            else {
              if member(c2,l[j]) then { 
                ex := many(c2,l,j)
-             #  ex := many(c1,l,j)
                word := l[j:ex]
                if map(trim(word)) == map(trim(wordlist[k])) then {
                  draw23(l, left_pos, yp, i,j,ex)
                  j := ex
-               
                }
             } # if l[j]
+           }
            }  # while
         } # every *wordlist
         yp +:= self.line_height
@@ -5003,7 +5010,7 @@ local s1, s2, newp, fh, asc, desc, yp2 ,s3
       } else {
         if e === -11 then fail # window closed, nothing to do?
         if self.noedit = 1 then {
-           self.has_focus := &null
+           changed := moved := self.has_focus := &null
          }
          else {
            old_contents_size := *contents

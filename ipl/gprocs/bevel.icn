@@ -119,6 +119,15 @@ local b
     }
 end
 
+procedure BevelDisposeAll()
+local b
+    every b := !sort(\bev_table) do {
+	Uncouple(b[2].hilite)
+	Uncouple(b[2].shadow)
+    }
+    bev_table := &null
+end
+
 #  BevelReset(win) -- set/reset colors for beveling
 #
 #  Called automatically the first time a beveling procedure is called;
@@ -165,7 +174,6 @@ procedure BevelReset(win)	#: set colors for beveled drawing
       hilite := Clone(shadow, "fillstyle=textured", "pattern=gray")
       b := bev_record(shadow, hilite)
       }
-
    bev_table[win] := bev_record(shadow, hilite)
    return win
 end
@@ -176,11 +184,18 @@ end
 #  (Internal procedure)
 
 procedure bev_lookup(win)
-   local b, dx, dy
+   local b, attr, t
    b := \(\bev_table)[win] | bev_table[BevelReset(win)]
-   dx := "dx=" || WAttrib(win, "dx")
-   dy := "dy=" || WAttrib(win, "dy")
-   every WAttrib(b.shadow | b.hilite, dx, dy)
+
+   # Ensure the shadow and hilite windows have the same values for
+   # some selected attributes.
+   every attr := "dx" | "dy" | "clipx" | "clipy" | "clipw" | "cliph" do {
+      t := WAttrib(win, attr) 
+      if t ~=== WAttrib(b.shadow, attr) then {
+         /t := ""
+         every WAttrib(b.shadow | b.hilite, attr || "=" || t)
+         }
+      }
    return b
 end
 

@@ -366,11 +366,20 @@ procedure components(s,separator)	#: get components of file name
 end
 
 procedure dopen(s)			#: open file on DPATH
-   local file, paths, path
+   local file, paths, path, binpath, f
 
    if file := open(s) then return file		# look in current directory
 
-   paths := getenv("DPATH") | fail
+   paths := getenv("DPATH") | "."
+       
+   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+      ((f := open((binpath:=getpaths()) ||
+		  ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
+      close(\f)
+      paths ||:= " " || binpath || "../ipl/gdata " ||
+	    binpath || "../ipl/mdata " || binpath || "../ipl/data"
+      }
+
 
    s := "/" || s				# platform-specific
 

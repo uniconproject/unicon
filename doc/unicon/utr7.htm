@@ -9,7 +9,7 @@
 <p>
 <h4><P align="center">
 Clinton L. Jeffery<br>
-February 14, 2002<br>
+June 28, 2002<br>
 Unicon Technical Report #7<br>
 </p></h4>
 
@@ -68,10 +68,14 @@ The basic reference for Version 10 of Unicon is the book
 <u>Programming with Unicon</u> [1].  This book is available from the Unicon
 Project web site at http://unicon.sourceforge.net. The graphics
 facilities are detailed in a separate report [2].
-Windows Unicon and the Ui environment are products of Clinton Jeffery of
+Windows Unicon and the Ui environment are open source products based on
+the volunteer work of many people; final responsibility for this release
+rests with Clinton Jeffery of
 New Mexico State University.  Send requests, and bug reports to
 <code>jeffery@cs.nmsu.edu</code>.  General Unicon language questions can be
-sent to <code>unicon-group@lists.sourceforge.net</code>.
+sent to <code>unicon-group@lists.sourceforge.net</code>, which is a
+moderated low-volume mailing list (only list members can post messages
+to the list).
 
 
 
@@ -84,8 +88,8 @@ path you copied setup.exe into, to install Windows Unicon.
 
 During installation, you will be asked for a drive and directory into which
 the Unicon files will be installed, which defaults to
-<code>C:\PROGRAM FILES\WINDOWS UNICON</code>.  Files will be installed into several
-subdirectories of the location you specify.
+<code>C:\PROGRAM FILES\WINDOWS UNICON</code>.  Files will be installed into
+several subdirectories of the location you specify.
 Installation also results in the creation
 of a Windows Unicon program group with a set of icons that allow you read
 on-line documentation, uninstall the software, and launch Windows Unicon.  The
@@ -98,7 +102,7 @@ Several executable binary files are required to use Unicon, including
 the executor and the
 compiler that produces virtual machine code files for the executor.  The
 executor and compiler are normally invoked by the integrated
-development environment called <em>Ui</em> (pronounced "Oui"), a simple
+development environment called <em>Ui</em>, a simple
 editor/project builder that provides a visual
 interface to the program development process.  Applications that provide a
 graphical interface are usually constructed by means of a visual interface
@@ -121,24 +125,29 @@ program's interface.  The following table summarizes the contents of the
 <dd>Win32 versions, used internally by Ui, do not require a console</dd>
 </dl>
 
-Unicon's <code>bin</code> directory, normally <code>C:\PROGRAM FILES\WINDOWS UNICON\BIN</code>
-should be added to your PATH specification.
+Important: Unicon's <code>bin</code> directory, normally
+<code>C:\PROGRAM FILES\WINDOWS UNICON\BIN</code>
+usually must be added to your PATH specification. This
+is done through the Control Panel, or the autoexec.bat
+file, depending on your version of Windows.
 <p>
 
 <h3><A name="running">3. Running Windows Unicon</A></h3>
 
-Windows Unicon is normally used by means of the programming environment, Wi.
-Windows95 and NT users may also invoke the compiler and executor directly
-on the command-line.  This section includes instructions on using the
+Windows Unicon is often used by means of the programming environment, Ui.
+You may also invoke the compiler and run programs directly from
+the command-line.  This section includes instructions on using the
 programming environment, followed by a brief discussion of the command-line
 tools.
 
 <h4>3.1 Editing, Compiling, and Executing Programs in Ui</h4>
 
 Double-click the Windows Unicon icon to launch <em>Ui</em>, the Unicon IDE
-(integrated development environment).  <em>Ui</em> is written in Unicon and allows you to
-edit, compile, and execute programs from a standard Windows interface. Ui's
-detailed documentation (this file) is accessed on-line through its Help menu.
+(integrated development environment).  <em>Ui</em> is written in Unicon and
+allows you to edit, compile, and execute programs from a graphic user
+interface. Ui is designed to run the same on UNIX and Linux as it does on
+Windows. Ui's documentation (this file) may be accessed on-line through
+its Help menu.
 To start, you must select the name of a file to edit, in following dialog:
 <p>
 
@@ -270,6 +279,13 @@ virtual machine "icode" by the command:
         unicon prog.icn
 </pre>
 
+The extension .icn is optional on the command line, since the compiler
+assumes the .icn extension by default. For example, it is
+sufficient to use
+<pre>
+        unicon prog
+</pre>
+
 <p>
 
 Windows Unicon also includes a compiler (wicont) and virtual-machine
@@ -282,8 +298,8 @@ refer to icont and iconx, but generally would also be true for wicont
 and wiconx.
 
 The Windows icode files that result of compilation have the extension .exe,
-for example, the above compilation would produce a file prog.exe.  The
-program may then be executed as:
+for example, the above compilation would produce a file <code>prog.exe</code>.
+The program may then be executed as:
 <pre>
         prog
 </pre>
@@ -296,17 +312,12 @@ translation by appending a -x to the command line, as in
 If unicon is run with the -x option, the file prog.exe is left and can be
 run subsequently using an explicitly named executor as described above.<p>
 
-The extension .icn is optional on the command line. For example, it is
-sufficient to use
-<pre>
-        unicon prog
-</pre>
-
 
 <h3><A name="testing">4.  Testing the Installation</A></h3>
 
-There are a few programs on the distribution diskette that can be used for
-testing the installation and getting a feel for running Unicon:
+There are a few programs included in the distribution that can be used for
+testing the installation and getting a feel for running Unicon.  They live
+in a subdirectory tests\samples under the Unicon installation directory.
 
 <h4>     hello.icn</h4>
 
@@ -391,7 +402,7 @@ A name other than the default one for the icode file produced by unicon can
 be specified by using the -o option, followed by the desired name. For
 example,
 <pre>
-        wicont -o probe prog
+        unicon -o probe prog
 </pre>
 produces the icode file named probe.exe rather than prog.exe. <p>
 
@@ -405,7 +416,7 @@ leaves prog1.u, instead of producing prog1.exe. These ucode
 files can be used in a subsequent unicon command by using the .u name. This
 saves translation time subsequently. For example,
 <pre>
-        wicont prog2 prog1.u
+        unicon prog2 prog1.u
 </pre>
 translates prog2.icn and combines the result with the ucode files from a
 previous translation of prog1.icn.
@@ -618,17 +629,20 @@ Figure 11: the Windows save dialog
 
 <h4>6.2 Native Windows Facilities Function Reference </h4>
 
-The following features provide a useful subset of the native Windows
-interface in a manner that will allow multi-platform implementation.  The
-primary demonstration of these facilities thusfar is the Windows Unicon
-integrated development environment, wi.
+The following functions provide a small but useful subset of the
+native Windows interface.  They are useful mainly for applications
+that require a native look and feel, and since they are nonportable,
+they are deprecated.  Graphical interfaces are best created for Unicon
+applications using the Improved Visual Interface Builder and its GUI
+class library.
+
 
 <hr>
 <h4> fattrib(x, s) - get file attribute </h4>
-         fattrib(x, s) returns the value of file attribute s on file or string filename x.  Valid attributes
-         include "size" (in bytes), "status" (permissions string in format rwxrwxrwx), and "mtime"
-         (time last modified).
-
+	This Windows Icon function is subsumed by <code>stat()</code> and
+	is no longer built-in.
+	You can add the library declaration "link fattrib" to your
+	program if you don't want to change your fattrib() calls.
 <hr>
 <h4> WinButton(s, x, y, wd, ht) - install button</h4>
          WinButton(s, x, y, wd, ht) installs a pushbutton on w with label s.  Whenever the button is
@@ -651,6 +665,7 @@ integrated development environment, wi.
 <h4> WinEditRegion(s, s2, x, y, wd, ht) - manipulate  edit region</h4>
 
 WinEditRegion(s, s2, x, y, wd, ht) manipulates a Windows edit region named s.
+This flexible editor is limited to text that is < 32Kbytes in length.
 The operation performed depends on argument s2.  If argument s2 is omitted,
 WinEditRegion(s) returns a string containing the current contents of
 region s.  If s2 is supplied and does not start with a !, it is a string to
@@ -716,15 +731,9 @@ as some remaining bugs that may get fixed.
 <h4> General </h4>
 
 <ul>
-<li>  The Ui editor cannot edit files greater than approximately 32K bytes--
-	the limit of Windows' edit control.  Larger source files can
-	be edited in another programmer's editor and still translated
-	and linked by Wi, but jumping to translation or runtime errors
-	in such files will not work.  If you have source files &gt;32k you
-	can also break them into smaller pieces, or use Unicon's command
-        line tools.  See <a href="#projects">Section 3.3</A> above.
-
-<li>  Pipes are not supported. A file cannot be opened with the "p" option.
+<li>  Pipes are not well-supported. Some versions of Windows are more
+	functional than others, but in general, mode "p" file I/O
+	should not be relied upon.
 
 <li>  For files opened in the translated mode, the position produced by seek()
 	may not reflect the actual number of characters written because of the
@@ -776,7 +785,8 @@ input if the standard input file is read.
 
 <li> Windows may use dithered colors, resulting in an unattractive appearance
 	in applications where solid colors are expected.  Most colors are
-	dithered on 16-color machines, and color-intensive
+	dithered on (now vanishingly rare, but still in use) 16-color
+	machines (not 16-bit color: 16-color), and color-intensive
         applications are ugly or unusable on those systems.
 
 <li> References to attributes display, iconpos, iconimage, iconlabel, and
@@ -833,9 +843,8 @@ the National Science Foundation. Many people contributed to the Icon
 Icon's implementation goes to Ralph Griswold. Gregg Townsend has made
 extensive contributions and currently maintains Icon.<p>
 
-Bob Goldberg, Steve Schiavo, and Bryan Ross
-wrote prototype program launchers that inspired the Ui integrated
-development environment.<p>
+Bob Goldberg, Steve Schiavo, and Bryan Ross wrote prototype program
+launchers that inspired the Ui integrated development environment.<p>
 
 Much of this work was made possible by support from the National Library of
 Medicine Specialized Information Services division, under the direction of

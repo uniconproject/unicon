@@ -1,5 +1,5 @@
 #
-# $Id: table.icn,v 1.8 2004-11-07 10:54:08 rparlett Exp $
+# $Id: table.icn,v 1.9 2004-11-11 20:01:54 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -333,10 +333,9 @@ class Table : Component(
          CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
-   method on_table_content(e)
-      # Change the source to point to self rather than table_content.
-      e.set_source(self)
-      fire_event(e)
+   method on_table_content(ev)
+      # Fire the event with self as source.
+      fire(ev.get_type(), ev)
    end
 
    #
@@ -365,7 +364,8 @@ class Table : Component(
    method set_table_content(tc)
       self.remove(\self.table_content)
       self.table_content := tc
-      self.table_content.connect(self, "on_table_content")
+      every self.table_content.connect(self, "on_table_content",
+                                       CURSOR_MOVED_EVENT | SELECTION_CHANGED_EVENT)
       self.add(table_content)
    end
 

@@ -1,0 +1,728 @@
+###########################################################################
+#
+#	File:     ui.icn
+#
+#	Subject:  Unicon IDE, an integrated programming environment
+#
+#	Authors:  Clinton Jeffery and Susie Jeffery
+#
+#	Date:     February 14, 2002
+#
+############################################################################
+#
+#  This program provides a simple development environment for Unicon.
+#  It is gradually gaining features and usability.
+#
+#  To do:
+#	keyboard shortcuts
+#	multiple edit regions.
+#	
+############################################################################
+#
+#  Requires:  graphics
+#
+############################################################################
+#
+#  Links:  graphics
+#
+############################################################################
+
+link file_dlg
+link msg_dlg
+link graphics
+link io
+$ifdef _UNIX
+$define PATHSEP "/"
+$else
+$define PATHSEP "\\"
+$endif
+global current_file, targs, browser, docpath
+global tmp
+class dialog : _Dialog(new_menu_item, openfile, print_menu_item, save_menu_item, saveas_menu_item, ivib_menu_item, exit_menu_item, copy_menu_item, cut_menu_item, paste_menu_item,EditBox,MsgBox,find_menu_item,replace_menu_item,goto_menu_item,matchparen_menu_item,undo_menu_item,editconfig_menu_item,font_menu_item,saveoptions_menu_item,make_exec_menu_item,compile_menu_item,compile_options_menu_item,run_menu_item,run_arg_menu_item,project_add_menu_item,help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,help_ivib,help_iconfaq,help_uniconfaq,browse_local,browse_net,help_icon_reference,help_unicon_reference)
+###############################################################################
+# copy to clipboard
+###############################################################################
+
+method copy_to_clipboard(l)
+    local large_str, i
+    if /l | *l = 0 then fail
+    large_str := l[1]
+    every i := 2 to *l do large_str ||:= "\n" || l[i]
+#    write(
+WAttrib("selection=" || large_str)
+#)
+    return large_str
+end
+
+###############################################################################
+# get list from clipboard
+###############################################################################
+
+method get_list_from_clipboard()
+    local large_str, l, str
+    large_str := WAttrib("selection")
+    if /large_str then fail
+    l := []
+    large_str ? {
+       while put(l, tab(upto("\n"))) do move(1)
+       put(l, tab(0))
+    }
+    return l
+end
+	
+#
+method handle_copy_menu_item(ev)
+local copylst
+copylst := []
+  copylst := EditBox.get_selection() #copy it
+  tmp := EditBox.get_selection() #copy it
+#  copy_to_clipboard(copylst)
+end
+
+method handle_cut_menu_item(ev)
+local cutlst
+cutlst := []
+  cutlst := EditBox.get_selection() #copy it
+
+  tmp := EditBox.get_selection() #copy it
+#  copy_to_clipboard(cutlst)
+
+  EditBox.cut_selection()
+end
+
+method handle_paste_menu_item(ev)
+local s
+s := []
+
+  EditBox.set_selection(tmp)
+
+
+#  s := get_list_from_clipboard()
+#  EditBox.set_selection(s)
+
+end
+#
+#############################################################################
+method handle_new_menu_item(ev)
+  local results_list, mb  
+  if \current_file then  {
+     mb := MsgDialog()
+#    mb.set_extra_attribs(["label=Warning:"])
+     mb.msglabel  := "Save "||current_file||"?"
+#    mb.MsgBox$set_label("Hi")
+     mb.show_modal()
+     if mb.yes = 1 then 
+        handle_save_file(current_file)
+     current_file := &null
+  }
+  results_list := []
+  EditBox.set_contents(results_list)
+end
+
+method handle_openfile(ev, filename)
+  local line, L, nchars, fd, file
+
+   ### need to check if current file is modified & prompt to save!!!
+
+   if /filename then {
+$ifdef _UNIX
+      fd := FileDialog()
+      fd.set_extra_attribs(["label=Select File to Edit"])
+      fd.show_modal(self)
+      filename := fd.get_result() | fail
+$else
+      filename := WinOpenDialog(self.win, "Select File to Edit", "", 50) | fail
+$endif
+      }
+  if /filename | filename=="" | filename[-1]==("\\"|"/") then {
+      MsgBox$set_label(["Enter File Name"])
+      return
+  }    
+   
+  file := open(filename, "b") | {
+      MsgBox.set_contents(["Could not open file: " || filename])
+      return
+  }
+
+  MsgBox.set_contents(["Reading "||filename||"..."])
+
+ # file_named_flag := 1
+ # file_linked_flag := &null
+ # file_compiled_flag := &null
+
+  L := []; nchars := 0
+  while line := read(file) do { put(L, line); nchars +:= *line + 1 }
+         
+  EditBox.set_contents(L)
+  MsgBox.set_contents(["opened " || filename || ", " || *L || " lines, " ||
+		       nchars || " characters"])
+  self.set_attribs("label=Ui editing: " || filename)
+  WAttrib(self.win, "label=Ui editing: " || filename)
+  current_file := filename    
+end
+
+method handle_print_menu_item(ev)
+end
+#
+#
+
+method handle_save_file(filename)  
+local file, l
+l := []
+
+  l := EditBox.get_contents()
+
+  file := open(filename, "c") | {
+     MsgBox.set_contents([filename || ": open failure."])
+     fail
+  }
+
+  every write(file, !l)
+  close(file)
+
+  MsgBox.set_contents([filename || " saved."])
+end
+#
+#
+method handle_save_menu_item(ev)
+
+  if /current_file then {
+      handle_saveas_menu_item(ev)
+      return
+  }
+  handle_save_file(current_file)
+end
+
+
+method handle_saveas_menu_item(ev)
+  local fd, filename
+
+$ifdef _UNIX
+  fd := FileDialog()
+  fd.set_extra_attribs(["label=Save file As:"])
+  fd.show_modal(self)
+  filename := fd.get_result() | fail
+$else
+   filename := WinSaveDialog(self.win, "Save file As:", "", 50) | fail
+   if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
+$endif
+
+  if /filename | filename=="" | filename[-1]==("\\"|"/") then {
+      MsgBox$set_contents(["Enter File Name to save"])
+      return
+  }    
+  /current_file := filename
+  handle_save_file(filename)
+end
+
+   method handle_ivib_menu_item(ev)
+     handle_openfile( , current_file)
+     system("ivib " || current_file) | write("system failed")
+     handle_openfile( , current_file)
+   end
+
+   method handle_exit_menu_item(ev)
+      dispose()
+   end
+
+
+method handle_compile_menu_item(ev)
+local command, str, compile_options, wiconlog, log1
+local lst
+   wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
+   lst := []
+
+   if /current_file then { # current file null
+      MsgBox$set_contents(["Open a file to compile "])
+      return
+      }
+   /targs := ""
+ 
+   system(
+$ifdef _UNIX
+   "unicon" ||
+$else
+   "wunicon" ||
+$endif
+      " -c -quiet -log " || wiconlog || " " || targs || " " ||
+	  comp1file(current_file), lst, 1)
+ 
+   showanyerror(wiconlog, lst)
+end
+
+method quotes(s)
+   if find(" ", s) then s := "\"" || s || "\""
+   return s
+end
+
+method comp1file(s)
+   local extended
+   if find(".u", map(s)) then return ""  # do not compile .u files
+   s[find(".icn", map(s)) : 0] := "" # truncate extension
+   # check file attributes; if .u exists and is newer, use it.
+   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
+   return quotes(extended)
+end
+method system(s, lst, apnd)
+   local rv
+  
+   if /apnd then while pop(lst)
+   put(lst,s)
+   WAttrib("pointer=wait")
+   rv := proc("system", 0)(s)
+   WAttrib("pointer=arrow")
+   if not find("&", s) then
+       put(lst,".....finished")
+    #  appendmessage("...finished", 1)
+   if \rv then return rv
+end
+
+#
+   method handle_default(ev)
+   end
+
+   method dialog_event(ev)
+      case ev.get_component() of {
+         help_icon_reference : handle_help_icon_reference(ev)
+         help_unicon_reference : handle_help_unicon_reference(ev)
+         browse_local : handle_browse_local(ev)
+         browse_net : handle_browse_net(ev)
+         help_iconfaq : handle_help_iconfaq(ev)
+         help_uniconfaq : handle_help_uniconfaq(ev)
+         help_prog_env : handle_help_prog_env(ev)
+         help_tutorial : handle_help_tutorial(ev)
+         help_graphics : handle_help_graphics(ev)
+         help_ipl : handle_help_ipl(ev)
+         help_ivib : handle_help_ivib(ev)
+         help_about : handle_help_about(ev)
+         project_add_menu_item : handle_project_add_menu_item(ev)
+         make_exec_menu_item : handle_make_exec_menu_item(ev)
+         compile_menu_item : handle_compile_menu_item(ev)
+         compile_options_menu_item : handle_compile_options_menu_item(ev)
+         run_menu_item : handle_run_menu_item(ev)
+         run_arg_menu_item : handle_run_arg_menu_item(ev)
+         editconfig_menu_item : handle_editconfig_menu_item(ev)
+         font_menu_item : handle_font_menu_item(ev)
+         saveoptions_menu_item : handle_saveoptions_menu_item(ev)
+         find_menu_item : handle_find_menu_item(ev)
+         replace_menu_item : handle_replace_menu_item(ev)
+         goto_menu_item : handle_goto_menu_item(ev)
+         matchparen_menu_item : handle_matchparen_menu_item(ev)
+         undo_menu_item : handle_undo_menu_item(ev)
+         EditBox : handle_EditBox(ev)
+         MsgBox : handle_MsgBox(ev)
+         new_menu_item : handle_new_menu_item(ev)
+         openfile : handle_openfile(ev)
+         print_menu_item : handle_print_menu_item(ev)
+         save_menu_item : handle_save_menu_item(ev)
+         saveas_menu_item : handle_saveas_menu_item(ev)
+         ivib_menu_item : handle_ivib_menu_item(ev)
+         exit_menu_item : handle_exit_menu_item(ev)
+         copy_menu_item : handle_copy_menu_item(ev)
+         cut_menu_item : handle_cut_menu_item(ev)
+         paste_menu_item : handle_paste_menu_item(ev)
+         default : handle_default(ev)
+      }
+   end
+
+   method init_dialog()
+   current_file := &null
+   end
+
+   method end_dialog()
+   end
+
+   method handle_EditBox(ev)
+   end
+
+   method handle_MsgBox(ev)
+   end
+
+   method handle_find_menu_item(ev)
+   end
+
+   method handle_replace_menu_item(ev)
+   end
+
+   method handle_goto_menu_item(ev)
+   end
+
+   method handle_matchparen_menu_item(ev)
+   end
+
+   method handle_undo_menu_item(ev)
+   end
+
+   method handle_editconfig_menu_item(ev)
+   end
+
+   method handle_font_menu_item(ev)
+   end
+
+   method handle_saveoptions_menu_item(ev)
+   end
+
+   method complink()
+   local x, arglist, lst, logf, wiconlog, icodename
+   lst := []
+   /targs := ""
+   wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
+   if /project then {
+      arglist := comp1file(current_file)
+      icodename := current_file
+      icodename[find(".icn", map(icodename)) : 0] := ""
+      }
+   else {
+      # compile all project sources that need it (in one step)
+      # this part makes no sense under ui.icn yet
+      arglist := ""
+      i := 1
+      while menu[1][i] ~== "E&xit" do i +:= 1
+      i +:= 1
+      while menu[1][i] do {
+	 arglist ||:= comp1file(menu[1][i])
+	 arglist ||:= " "
+	 i +:= 1
+	 }
+      if find(".icn", arglist) then {
+	 system("wunicon -quiet -log " || wiconlog || " -c " || targs || " " || arglist, lst, 1)
+         showanyerror(wiconlog, lst)
+     }
+
+      # build a list of all the files to be linked together
+      arglist := ""
+      i := 1
+      while menu[1][i] ~== "E&xit" do i +:= 1
+      i +:= 1
+      while menu[1][i] do {
+	 s := menu[1][i]
+         s[find(".icn", map(s)) : 0] := ".u"
+	 if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
+	 arglist ||:= s
+	 arglist ||:= " "
+	 i +:= 1
+	 }
+      }
+
+      system("wunicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, lst, 1)
+      showanyerror(wiconlog, lst)
+end
+
+   method showanyerror(fn, lst)
+   local log1, i
+   every i := 1 to 5 do {
+      delay(800)
+      if log1 := open(fn, "b") then {
+         while put(lst, read(log1))
+         close(log1)
+         remove(fn)
+         MsgBox.set_contents(lst)
+         break
+         }
+      else {
+         MsgBox$set_contents(["Can't open logfile "||fn || ": "||i])
+         }
+      }
+   end
+
+   method handle_make_exec_menu_item(ev)
+#      save()
+      complink()
+   end
+
+   method handle_compile_options_menu_item(ev)
+   end
+
+   method handle_run_menu_item(ev)
+   end
+
+   method handle_run_arg_menu_item(ev)
+   end
+
+   method handle_project_add_menu_item(ev)
+   end
+
+   method handle_help_about(ev)
+      Notice(&version,
+			   "Unicon IDE 0.1",
+			   "Clint and Susie Jeffery",
+			   "jeffery@cs.nmsu.edu",
+			   "Department of Computer Science",
+			   "New Mexico State University")
+   end
+
+   method handle_help(filename, URL)
+   local URL2, f
+      if \docpath then
+         URL := "file://" || map(\docpath || filename,"/",PATHSEP)
+$ifdef _UNIX
+      if find("netscape", \browser) then
+         URL2 := " -remote 'openURL(" || URL || ")'"
+      proc("system",0)(\browser || " " || URL2 || " &>ui.err &")
+      delay(800)
+      if f := open("ui.err") then {
+        if find("not running", read(f)) then
+           proc("system",0)(\browser || " " || URL || " &>ui.err &")
+        close(f)
+        remove("ui.err")
+	}
+$else
+      proc("system",0)(\browser || " " || URL || " &")
+$endif
+   end
+
+   method handle_help_prog_env(ev)
+      handle_help("doc/unicon/utr7.htm",
+		  "http://www.cs.arizona.edu/icon/docs/ipd271.htm")
+   end
+
+   method handle_help_tutorial(ev)
+      handle_help("doc/icon/ipd266.htm",
+		  "http://www.cs.arizona.edu/icon/docs/ipd266.htm")
+   end
+
+   method handle_help_icon_reference(ev)
+     handle_help("doc/icon/ipd266.htm",
+         "http://www.cs.arizona.edu/icon/refernce/ref.htm")
+   end
+
+   method handle_help_unicon_reference(ev)
+     handle_help("doc/unicon/ub.pdf","http://unicon.sourceforge.net/ub/ub.pdf")
+   end
+
+   method handle_help_graphics(ev)
+      handle_help("doc/icon/ipd281.pdf",
+		  "http://www.cs.arizona.edu/icon/docs/ipd281.htm")
+   end
+
+   method handle_help_ipl(ev)
+      handle_help("doc/icon/ipd283.htm",
+		  "http://www.cs.arizona.edu/icon/docs/ipd283.htm")
+   end
+
+   method handle_help_ivib(ev)
+      handle_help("doc/unicon/utr6.html",
+		  "http://unicon.sourceforge.net/utr/utr6.html")
+   end
+
+   method handle_help_iconfaq(ev)
+      handle_help("doc/icon/faq.htm",
+		  "http://www.cs.arizona.edu/icon/faq.htm")
+   end
+
+   method handle_help_uniconfaq(ev)
+      handle_help("doc/unicon/faq.html",
+		  "http://unicon.sourceforge.net/faq.html")
+   end
+
+   method handle_browse_local(ev)
+      set_docpath()
+   end
+
+   method handle_browse_net(ev)
+      docpath := &null
+   end
+
+   method setup()
+      local menu_bar_1, file_menu, edit_menu, options_menu, compile_menu, run_menu, project_menu, help_menu, help_language, menu_8
+      self.set_attribs("size=667,448", "bg=pale gray", "label=Unicon IDE")
+      menu_bar_1 := MenuBar()
+      menu_bar_1$set_pos("0", "0")
+      menu_bar_1$set_attribs("font=sans,15")
+      file_menu := Menu()
+      file_menu$set_label("File")
+      new_menu_item := TextMenuItem()
+      new_menu_item$set_label("New")
+      file_menu$add(new_menu_item)
+      openfile := TextMenuItem()
+      openfile$set_label("Open")
+      file_menu$add(openfile)
+      print_menu_item := TextMenuItem()
+      print_menu_item$set_label("Print")
+      file_menu$add(print_menu_item)
+      save_menu_item := TextMenuItem()
+      save_menu_item$set_label("Save")
+      file_menu$add(save_menu_item)
+      saveas_menu_item := TextMenuItem()
+      saveas_menu_item$set_label("Save As")
+      file_menu$add(saveas_menu_item)
+      ivib_menu_item := TextMenuItem()
+      ivib_menu_item$set_label("Ivib")
+      file_menu$add(ivib_menu_item)
+      exit_menu_item := TextMenuItem()
+      exit_menu_item$set_label("Exit")
+      file_menu$add(exit_menu_item)
+      menu_bar_1$add(file_menu)
+      edit_menu := Menu()
+      edit_menu$set_label("Edit")
+      copy_menu_item := TextMenuItem()
+      copy_menu_item$set_label("Copy")
+      edit_menu$add(copy_menu_item)
+      cut_menu_item := TextMenuItem()
+      cut_menu_item$set_label("Cut")
+      edit_menu$add(cut_menu_item)
+      paste_menu_item := TextMenuItem()
+      paste_menu_item$set_label("Paste")
+      edit_menu$add(paste_menu_item)
+      find_menu_item := TextMenuItem()
+      find_menu_item$set_label("Find ^F")
+      edit_menu$add(find_menu_item)
+      replace_menu_item := TextMenuItem()
+      replace_menu_item$set_label("Replace")
+      edit_menu$add(replace_menu_item)
+      goto_menu_item := TextMenuItem()
+      goto_menu_item$set_label("Go To Line #")
+      edit_menu$add(goto_menu_item)
+      matchparen_menu_item := TextMenuItem()
+      matchparen_menu_item$set_label("Match Parenthesis")
+      edit_menu$add(matchparen_menu_item)
+      undo_menu_item := TextMenuItem()
+      undo_menu_item$set_label("Undo")
+      edit_menu$add(undo_menu_item)
+      menu_bar_1$add(edit_menu)
+      options_menu := Menu()
+      options_menu$set_label("Options")
+      editconfig_menu_item := TextMenuItem()
+      editconfig_menu_item$set_label("Edit config")
+      options_menu$add(editconfig_menu_item)
+      browse_local := TextMenuItem()
+      browse_local$set_label("Browse Help Locally")
+      options_menu$add(browse_local)
+      browse_net := TextMenuItem()
+      browse_net$set_label("Browse Help from Web")
+      options_menu$add(browse_net)
+      font_menu_item := TextMenuItem()
+      font_menu_item$set_label("Font...")
+      options_menu$add(font_menu_item)
+      saveoptions_menu_item := TextMenuItem()
+      saveoptions_menu_item$set_label("Save options")
+      options_menu$add(saveoptions_menu_item)
+      menu_bar_1$add(options_menu)
+      compile_menu := Menu()
+      compile_menu$set_label("Compile")
+      make_exec_menu_item := TextMenuItem()
+      make_exec_menu_item$set_label("Make executable")
+      compile_menu$add(make_exec_menu_item)
+      compile_menu_item := TextMenuItem()
+      compile_menu_item$set_label("Compile only")
+      compile_menu$add(compile_menu_item)
+      compile_options_menu_item := TextMenuItem()
+      compile_options_menu_item$set_label("Compile options")
+      compile_menu$add(compile_options_menu_item)
+      menu_bar_1$add(compile_menu)
+      run_menu := Menu()
+      run_menu$set_label("Run")
+      run_menu_item := TextMenuItem()
+      run_menu_item$set_label("Run program")
+      run_menu$add(run_menu_item)
+      run_arg_menu_item := TextMenuItem()
+      run_arg_menu_item$set_label("Run arguments")
+      run_menu$add(run_arg_menu_item)
+      menu_bar_1$add(run_menu)
+      project_menu := Menu()
+      project_menu$set_label("Project")
+      project_add_menu_item := TextMenuItem()
+      project_add_menu_item$set_label("Add files")
+      project_menu$add(project_add_menu_item)
+      menu_bar_1$add(project_menu)
+      help_menu := Menu()
+      help_menu$set_label("Help")
+      help_prog_env := TextMenuItem()
+      help_prog_env$set_label("UI Programming Environment")
+      help_menu$add(help_prog_env)
+      help_tutorial := TextMenuItem()
+      help_tutorial$set_label("Tutorial Overview")
+      help_menu$add(help_tutorial)
+      help_language := Menu()
+      help_language$set_label("Language References")
+      help_icon_reference := TextMenuItem()
+      help_icon_reference$set_label("Icon")
+      help_language$add(help_icon_reference)
+      help_unicon_reference := TextMenuItem()
+      help_unicon_reference$set_label("Unicon")
+      help_language$add(help_unicon_reference)
+      help_menu$add(help_language)
+      help_graphics := TextMenuItem()
+      help_graphics$set_label("Graphics Reference")
+      help_menu$add(help_graphics)
+      help_ipl := TextMenuItem()
+      help_ipl$set_label("Icon Program Library")
+      help_menu$add(help_ipl)
+      help_ivib := TextMenuItem()
+      help_ivib$set_label("IVIB Interface Builder")
+      help_menu$add(help_ivib)
+      menu_8 := Menu()
+      menu_8$set_label("Frequently Asked Questions")
+      help_iconfaq := TextMenuItem()
+      help_iconfaq$set_label("Icon")
+      menu_8$add(help_iconfaq)
+      help_uniconfaq := TextMenuItem()
+      help_uniconfaq$set_label("Unicon")
+      menu_8$add(help_uniconfaq)
+      help_menu$add(menu_8)
+      help_about := TextMenuItem()
+      help_about$set_label("About")
+      help_menu$add(help_about)
+      menu_bar_1$add(help_menu)
+      self$add(menu_bar_1)
+      EditBox := EditableTextList()
+      EditBox$set_pos(5, 30)
+      EditBox$set_size(657, 294)
+      EditBox$set_attribs("bg=white")
+      EditBox$set_contents([""])
+      self$add(EditBox)
+      MsgBox := TextList()
+      MsgBox$set_pos("5", "329")
+      MsgBox$set_size("657", "112")
+      MsgBox$set_attribs("bg=white")
+      MsgBox$set_contents([""])
+      self$add(MsgBox)
+   end
+
+   method component_setup()
+      self.setup()
+   end
+
+   initially
+      self$_Dialog.initially()
+end
+
+procedure set_docpath()
+   match("Binaries at ", docpath := &features) | write("What, no binaries?")
+   docpath ?:= (="Binaries at " & tab(0))
+   if map(docpath[-4:0])==("bin/"|"bin\\") then docpath[-4:0] := ""
+   else write("eh?")
+end
+
+procedure ui_initialize()
+$ifdef _UNIX
+    browser := getenv("BROWSER") | "netscape"
+    # should check to see if browser is on the path
+$else
+   (browser := "\"" || WinAssociate("HTM") || "\"" ) |
+       write(
+       "What, no browser?  Unicon's online help won't be readable until you\n_
+	associate an HTML reader application with the HTM file extension.\n")
+$endif
+   set_docpath()
+end
+
+procedure main(argv)
+# figure out how to load file from command line argument
+   ui_initialize()
+   dialog().show_modal()
+end
+
+# is t1 newer than t2?
+procedure newer(s1, s2)
+   local t1, t2
+   t1 := stat(s1).mtime | fail
+   t2 := stat(s2).mtime | fail
+   return t1 - t2 > 0 # or something like that
+end
+
+
+
+
+### Ivib layout ###
+#class|Canvas|16|Name Table|table|integer|0|5|string|editable_text_list|integer|1|string|menu|integer|9|string|menu_bar|integer|1|string|text_list|integer|1|string|text_menu_item|integer|41|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Interpose|null|Gen Main|integer|1|Gen Methods|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|list|2|string|bg=pale gray|string|label=Unicon IDE|Name|string|dialog|Width|integer|667|Height|integer|448|Items|list|3|class|CanvasMenuBar|22|Parent Canvas|1|Name|string|menu_bar_1|Var Category|integer|2|Class Name|string|MenuBar|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|0|Y Spec|string|0|W Spec|string|100%|H Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|font=sans,15|Tooltip|null|Menus|list|7|class|CanvasMenu|14|Name|string|file_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|File|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|7|class|CanvasTextMenuItem|13|Name|string|new_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|New|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|openfile|Class Name|string|TextMenuItem|Var Category|null|Label|string|Open|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|print_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Print|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|save_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|saveas_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save As|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|ivib_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Ivib|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|exit_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Exit|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|edit_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Edit|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|8|class|CanvasTextMenuItem|13|Name|string|copy_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Copy|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|cut_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Cut|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|paste_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Paste|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|find_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Find ^F|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|replace_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Replace|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|goto_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Go To Line #|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|matchparen_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Match Parenthesis|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|undo_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Undo|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|options_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|5|class|CanvasTextMenuItem|13|Name|string|editconfig_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Edit config|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|browse_local|Class Name|string|TextMenuItem|Var Category|null|Label|string|Browse Help Locally|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|browse_net|Class Name|string|TextMenuItem|Var Category|null|Label|string|Browse Help from Web|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|font_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Font...|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|saveoptions_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Save options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|compile_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Compile|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|3|class|CanvasTextMenuItem|13|Name|string|make_exec_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Make executable|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|compile_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Compile only|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|compile_options_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Compile options|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|run_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Run|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|run_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Run program|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|run_arg_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Run arguments|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|project_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Project|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|1|class|CanvasTextMenuItem|13|Name|string|project_add_menu_item|Class Name|string|TextMenuItem|Var Category|null|Label|string|Add files|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|help_menu|Class Name|string|Menu|Var Category|integer|2|Label|string|Help|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|8|class|CanvasTextMenuItem|13|Name|string|help_prog_env|Class Name|string|TextMenuItem|Var Category|null|Label|string|UI Programming Environment|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_tutorial|Class Name|string|TextMenuItem|Var Category|null|Label|string|Tutorial Overview|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|help_language|Class Name|string|Menu|Var Category|integer|2|Label|string|Language References|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|help_icon_reference|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_unicon_reference|Class Name|string|TextMenuItem|Var Category|null|Label|string|Unicon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_graphics|Class Name|string|TextMenuItem|Var Category|null|Label|string|Graphics Reference|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_ipl|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon Program Library|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_ivib|Class Name|string|TextMenuItem|Var Category|null|Label|string|IVIB Interface Builder|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasMenu|14|Name|string|menu_8|Class Name|string|Menu|Var Category|integer|2|Label|string|Frequently Asked Questions|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Height|integer|9|Menus|list|2|class|CanvasTextMenuItem|13|Name|string|help_iconfaq|Class Name|string|TextMenuItem|Var Category|null|Label|string|Icon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_uniconfaq|Class Name|string|TextMenuItem|Var Category|null|Label|string|Unicon|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasTextMenuItem|13|Name|string|help_about|Class Name|string|TextMenuItem|Var Category|null|Label|string|About|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|null|Img Right Height|null|class|CanvasEditableTextList|22|Parent Canvas|1|Name|string|EditBox|Var Category|null|Class Name|string|EditableTextList|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|5|Y Spec|integer|30|W Spec|integer|657|H Spec|integer|294|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Contents|list|1|string||class|CanvasTextList|25|Parent Canvas|1|Name|string|MsgBox|Var Category|null|Class Name|string|TextList|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|5|Y Spec|string|329|W Spec|string|657|H Spec|string|112|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Select One|null|Select Many|null|Checked|list|1|null|Contents|list|1|string||Initial Focus|null|

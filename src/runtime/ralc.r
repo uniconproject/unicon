@@ -196,18 +196,26 @@ struct b_coexpr *alccoexp()
 
 #ifdef MultiThread
    if (icodesize > 0) {
+#ifdef ATTM32
+Deliberate Syntax Error
+#else					/* ATTM32 */
       ep = (struct b_coexpr *)
 	calloc(1, (msize)(stacksize + icodesize +
 			  sizeof(struct progstate) + sizeof(struct b_coexpr)));
+#endif					/* ATTM32 */
       }
    else
 #endif					/* MultiThread */
       {
+#ifdef ATTM32
+   ep = (struct b_coexpr *)coexp_salloc(); /* 3B2/15/4000 stack */
+#else                                   /* ATTM32 */
    ep = (struct b_coexpr *)malloc((msize)stksize);
+#endif                                  /* ATTM32 */
    }
 
    /*
-    * If malloc failed or if there have been too many co-expression allocations
+    * If malloc failed or there have been too many co-expression allocations
     * since a collection, attempt to free some co-expression blocks and retry.
     */
 
@@ -216,13 +224,21 @@ struct b_coexpr *alccoexp()
 
 #ifdef MultiThread
       if (icodesize>0) {
+#ifdef ATTM32
+Deliberate Syntax Error
+#else					/* ATTM32 */
          ep = (struct b_coexpr *)
 	    malloc((msize)(mstksize+icodesize+sizeof(struct progstate)));
+#endif					/* ATTM32 */
          }
       else
 #endif					/* MultiThread */
 
+#ifdef ATTM32
+	 ep = (struct b_coexpr *)coexp_salloc(); /* 3B2/15/4000 stack */
+#else                                   /* ATTM32 */
          ep = (struct b_coexpr *)malloc((msize)stksize);
+#endif                                  /* ATTM32 */
       }
    if (ep == NULL)
       ReturnErrNum(305, NULL);

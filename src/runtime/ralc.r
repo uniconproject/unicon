@@ -966,8 +966,6 @@ word nbytes,stdsize;
             rp->end = rp->base + rp->size;
             return rp;
             }
-         else {
-            }
          rp->size = (rp->size + nbytes)/2 - 1;
          }
       while (rp->size >= minSize);

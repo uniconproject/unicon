@@ -1,5 +1,5 @@
 #
-# $Id: table.icn,v 1.6 2004-11-06 17:45:45 rparlett Exp $
+# $Id: table.icn,v 1.7 2004-11-06 20:58:22 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -30,38 +30,46 @@ class TableContent : SelectableScrollArea()
    end
 
    #
-   # Draw an individual column's data.  This could be over-ridden to give
-   # a custom table with data other than strings.
+   # Draw an individual column for one row's data.  This could
+   # be over-ridden to give a custom table with data 
+   # other than strings.
    #
-   # @param col the {TableColumn} object
-   # @param data the data extracted from the current row of {contents}
-   # @param yp the y position to draw at.
+   # @param row the row number to draw
+   # @param col the column number to draw
+   # @param cx the x position of the cell
+   # @param cy the y position of the cell
+   # @param cw the width of the cell
+   # @param ch the height of the cell
    #
-   method draw_col(col, data, yp)
-      local x1, w1, clip_x1, clip_x2
-
-      x1 := col.x + DEFAULT_TEXT_X_SURROUND
-      w1 := col.w - 2 * DEFAULT_TEXT_X_SURROUND
-      clip_x1 := x1
-      clip_x1 <:= self.view.x
-      clip_x2 := x1 + w1
-      clip_x2 >:= self.view.x + self.view.w
-
-      Clip(self.cbwin, clip_x1, self.view.y, clip_x2 - clip_x1, self.view.h)
-      case col.internal_alignment of {
-         "r" :          right_string(self.cbwin, x1 + w1, yp, data)
-         "c" :          center_string(self.cbwin, x1 + w1 / 2, yp, data)
-         "l" :          left_string(self.cbwin, x1, yp, data)
+   method draw_cell(row, col, cx, cy, cw, ch)
+      local s
+      s := get_contents()[row][col]
+      case get_column(col).internal_alignment of {
+         "r" :          right_string(self.cbwin, cx + cw, cy, s)
+         "c" :          center_string(self.cbwin, cx + cw / 2, cy, s)
+         "l" :          left_string(self.cbwin, cx, cy, s)
       }
-      Clip(self.cbwin)
+   end
+
+   method get_column(n)
+      return parent.table_header.children[n]
    end
 
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
-      local j, l, cols
+      local j, l, cols, x1, w1, clip_x1, clip_x2, col
       l := self.contents[i]
       cols := parent.table_header.children
       every j := 1 to *cols do {
-         draw_col(cols[j], l[j], yp)
+         col := cols[j]
+         x1 := col.x + DEFAULT_TEXT_X_SURROUND
+         w1 := col.w - 2 * DEFAULT_TEXT_X_SURROUND
+         clip_x1 := x1
+         clip_x1 <:= self.view.x
+         clip_x2 := x1 + w1
+         clip_x2 >:= self.view.x + self.view.w
+         Clip(self.cbwin, clip_x1, self.view.y, clip_x2 - clip_x1, self.view.h)
+         draw_cell(i, j, x1, yp, w1, self.line_height)
+         Clip(self.cbwin)
       }
       if \selection_cw then
          FillRectangle(selection_cw, self.view.x, yp - self.line_height / 2, self.view.w, self.line_height)
@@ -132,6 +140,13 @@ class Table : Component(
    #
    method set_header_height(x)
       return self.head_h := x
+   end
+
+   #
+   # Return the nth {TableColumn}.
+   #
+   method get_column(n)
+      return table_header.children[n]
    end
 
    method get_contents()

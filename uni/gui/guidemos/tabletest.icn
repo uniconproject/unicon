@@ -2,6 +2,41 @@ import util
 import gui
 $include "guih.icn"
 
+class CustomTableContent : TableContent()
+   method get_line_height()
+      return 20
+   end
+
+   method draw_cell(row, col, cx, cy, cw, ch)
+      local d, i
+      d := contents[row, col]
+      if col = 1 then {
+         i := if d == "y" then img_style("box_down") else img_style("box_up")
+         DrawImageEx(self.cbwin, cx, cy - img_height(i)/2 , i)
+      } else {
+         left_string(self.cbwin, cx, cy, contents[row,col])
+      }
+   end
+
+   method mouse_up()
+      local l
+      if l := get_line_under_pointer() then {
+         contents[l, 1] := if contents[l, 1] == "y" then "n" else "y"
+         contents_changed()
+      }
+   end
+
+   initially()
+      self.TableContent.initially()
+      connect(self, "mouse_up", MOUSE_RELEASE_EVENT)
+end
+
+class CustomTable : Table()
+   method create_content()
+      return CustomTableContent()
+   end
+end
+
 class Untitled : Dialog(t)
    method component_setup()
       self.setup()
@@ -11,14 +46,14 @@ class Untitled : Dialog(t)
    end
 
    method tbl_event(e)
-      write("tbl event ", e.get_type()) 
+      #write("tbl event ", e.get_type()) 
    end
 
    method init_dialog()
-      data := [["pug315",1040, "Smith, R"], ["1345pug",1049, "Jones, L"], ["pu415g",984, "Wilson, R"], ["epug",3789, "Mainwaring, C"],
-               ["pug36",849, "Smith, J"], ["p1345ug",4857, "Parlett, R"], ["p1345ug",298, "Williams, J"], ["pqwerug",938, "Higgins, A"],
-               ["pug135",938, "Clinton, B"], ["p13451345ug",874, "Major, J"], ["p1435ug",2894, "Nixon, R"], ["puqwerg",398, "Blair, A"],
-               ["pug1345",939, "Napoleon, B"], ["pu1345g",398, "Amin, I"], ["pug",938, "Rogers, R"], ["pug",928, "Smith, A"]]
+      data := [["y",1040, "Smith, R"], ["n",1049, "Jones, L"], ["n",984, "Wilson, R"], ["y",3789, "Mainwaring, C"],
+               ["y",849, "Smith, J"], ["n",4857, "Parlett, R"], ["n",298, "Williams, J"], ["n",938, "Higgins, A"],
+               ["n",938, "Clinton, B"], ["y",874, "Major, J"], ["n",2894, "Nixon, R"], ["n",398, "Blair, A"],
+               ["n",939, "Napoleon, B"], ["y",398, "Amin, I"], ["n",938, "Rogers, R"], ["n",928, "Smith, A"]]
 
       t.set_contents(data)
    end
@@ -29,18 +64,17 @@ class Untitled : Dialog(t)
 
    method setup()
       local table_column_1, table_column_2, table_column_3, text_button_1
-      self.set_attribs("size=198,238", "resize=on")
-      t := Table("accel=t")
+      self.set_attribs("size=300,238", "resize=on")
+      t := CustomTable("accel=t", "select_none")
       t.connect(self, "tbl_event")
       t.set_pos("50%", "10")
       t.set_size("100%-40", "100%-75")
       t.set_align("c", "t")
-      t.set_select_one()
       t.set_contents([])
       table_column_1 := TableColumn()
       table_column_1.set_label("Col1")
       table_column_1.set_internal_alignment("l")
-      table_column_1.set_column_width(75)
+      table_column_1.set_column_width(50)
       t.add_column(table_column_1)
       table_column_2 := TableColumn()
       table_column_2.set_label("Col2")

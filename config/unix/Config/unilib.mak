@@ -11,4 +11,4 @@ file_dlg.u : file_dlg.icn gui.u
 	$(UNICON) -c file_dlg
 
 Clean:
-	$(RM) *.u?
+	$(RM) *.u uniclass.dir uniclass.pag

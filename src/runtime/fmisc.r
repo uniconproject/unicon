@@ -11,7 +11,7 @@
 
 "args(x,i) - produce number of arguments for procedure x."
 
-function{1} args(x,i)
+function{0,1} args(x,i)
 
    if is:proc(x) then {
       abstract { return integer }
@@ -21,13 +21,26 @@ function{1} args(x,i)
       runerr(106, x)
    else if is:null(i) then {
       abstract { return integer }
-      inline { return C_integer BlkLoc(x)->coexpr.program->Xnargs; }
+      inline {
+#ifdef MultiThread
+	 return C_integer BlkLoc(x)->coexpr.program->Xnargs;
+#else
+	 fail;
+#endif					/* MultiThread */
+	 }
       }
    else if !cnv:integer(i) then
       runerr(103, i)
    else {
       abstract { return any_value }
-      inline { return BlkLoc(x)->coexpr.program->Xargp[IntVal(i)]; }
+      inline {
+#ifdef MultiThread
+         if (IntVal(i) >= BlkLoc(x)->coexpr.program->Xnargs) fail;
+	 return BlkLoc(x)->coexpr.program->Xargp[IntVal(i)];
+#else
+	 fail;
+#endif					/* MultiThread */
+	 }
       }
 end
 
@@ -1831,7 +1844,7 @@ function{1} eventmask(ce,cs,vmask)
 
 	 if (!is:null(vmask)) {
             if (!is:table(vmask)) runerr(124,vmask);
-	    ((struct b_coexpr *)BlkLoc(ce))->program->valuemask = vmask;
+	    BlkLoc(ce)->coexpr.program->valuemask = vmask;
 	    }
          return cs;
          }

@@ -1,4 +1,4 @@
-mkdir ../../../bin
+mkdir -p ../../../bin
 cp mkicont.bat ../../..
 cp mkunivib.bat ../../..
 cp gdbm.bat ../../../src/runtime
@@ -18,28 +18,25 @@ cat MAKEFILE.RUN >>../../../src/runtime/makefile
 echo ICONT=icont >../../../src/icont/makefile
 echo CONSOLE=NTConsole >>../../../src/icont/makefile
 cat MAKEFILE.T >>../../../src/icont/makefile
+mkdir -p ../../../ipl/lib
 echo ICONT=../../bin/icont >../../../ipl/lib/makefile
 cat makefile.ipl >> ../../../ipl/lib/makefile
-echo ICONT=../../bin/icont >../../../uni/unicon/makefile
-echo CP=cp >>../../../uni/unicon/makefile
-echo RM=-rm >> ../../../uni/unicon/makefile
-echo EXE=.exe >> ../../../uni/unicon/makefile
-echo BINDIR=../../bin >> ../../../uni/unicon/makefile
-echo UNICON=../unicon/unicon >> ../../../uni/unicon/makefile
-cat makefile.uni >> ../../../uni/unicon/makefile
-echo RM=-rm > ../../../uni/ivib/makefile
-echo EXE=.exe >> ../../../uni/ivib/makefile
-echo BINDIR=../../bin >> ../../../uni/ivib/makefile
-echo UNICON=../unicon/unicon >> ../../../uni/ivib/makefile
-echo CP=cp >> ../../../uni/ivib/makefile
-echo MAKE=make >> ../../../uni/ivib/makefile
-echo IVIB2=ivib2win >> ../../../uni/ivib/makefile
-cat makefile.ivb >>../../../uni/ivib/makefile
-echo RM=-rm > ../../../uni/lib/makefile
-echo EXE=.exe >> ../../../uni/lib/makefile
-echo BINDIR=../../bin >> ../../../uni/lib/makefile
-echo UNICON=../unicon/unicon >> ../../../uni/lib/makefile
-cat ../../unix/Config/unilib.mak >>../../../uni/lib/makefile
+cp ../../unix/Config/ipllib.mak ../../../ipl/lib/makefile
+cp ../../unix/Config/ide.mak ../../../uni/ide/makefile
+cp ../../unix/Config/ivib.mak ../../../uni/ivib/makefile
+cp ../../unix/Config/unilib.mak ../../../uni/lib/makefile
+cp ../../unix/Config/unicon.mak ../../../uni/unicon/makefile
+cp ../../unix/Config/xml.mak ../../../uni/xml/makefile
+cp ../../unix/Config/unidep.mak ../../../uni/unidep/makefile
+cp ../../unix/Config/unidoc.mak ../../../uni/unidoc/makefile
+cp ../../unix/Config/parser.mak ../../../uni/parser/makefile
+cp ../../unix/Config/util.mak ../../../uni/util/makefile
+cp ../../unix/Config/gui.mak ../../../uni/gui/makefile
+cp ../../unix/Config/guidemos.mak ../../../uni/gui/guidemos/makefile
+cp ../../unix/Config/ivib-v2.mak ../../../uni/gui/ivib/makefile
+cp ../../unix/Config/uni-top.mak ../../../uni/Makefile
+cp ../../unix/Config/uni-makedefs ../../../uni/makedefs
+cp iyacc.mak ../../../uni/iyacc/Makefile
 rm ../../../src/icont/*.o 2> nul
 rm ../../../src/common/*.o 2> nul
 rm ../../../src/runtime/*.o 2> nul

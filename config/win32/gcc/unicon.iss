@@ -46,6 +46,12 @@ Source: "\unicon\ipl\mincl\*.*"; DestDir: "{app}\ipl\mincl"; CopyMode: alwaysove
 Source: "\unicon\ipl\mdata\*.*"; DestDir: "{app}\ipl\mdata"; CopyMode: alwaysoverwrite
 Source: "\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; CopyMode: alwaysoverwrite
 Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\*.icn"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\*.u"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\makefile"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\ivib\icon\*.*"; DestDir: "{app}\uni\gui\ivib\icon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
@@ -54,6 +60,8 @@ Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; CopyMode: a
 Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\xml\*.*"; DestDir: "{app}\uni\xml"; CopyMode: alwaysoverwrite
 
 [INI]
 Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.sourceforge.net"

@@ -386,7 +386,7 @@ struct ipc_line {
  * many global structures.
  */
 struct progstate {
-   long hsize;				/* size of the icode */
+   long hsize;				/* size of icode, 0 = C|Python|... */
    struct progstate *parent;
    struct descrip parentdesc;		/* implicit "&parent" */
    struct descrip eventmask;		/* implicit "&eventmask" */

@@ -3117,9 +3117,10 @@ char * abuf;
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
 #ifdef Graphics3D  
- 	 if (w->context->is_3D)
+ 	 if (w->context->is_3D) {
             if (setlinewidth3D(w, tmp) == Error)
 	       return Failed;
+	    }
          else 
 #endif					/* Graphics3D */
 	 if (setlinewidth(w, tmp) == Error)

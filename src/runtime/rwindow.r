@@ -2215,18 +2215,18 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    quality = 95;
 
    for ( i = 0, j=0; j < len; i = i + 3, j++) {
-   	gf_string_pixcolor[i] = paltbl[gf_string[j]].clr.red;
-	gf_string_pixcolor[i+1] = paltbl[gf_string[j]].clr.green;
-	gf_string_pixcolor[i+2] = paltbl[gf_string[j]].clr.blue;
-	}
+      gf_string_pixcolor[i] = paltbl[gf_string[j]].clr.red;
+      gf_string_pixcolor[i+1] = paltbl[gf_string[j]].clr.green;
+      gf_string_pixcolor[i+2] = paltbl[gf_string[j]].clr.blue;
+      }
 
    cinfo.err = jpeg_std_error(&jerr);
    jpeg_create_compress(&cinfo);
 
    if ((gf_f = fopen(filename,"wb")) == NULL) {
-     fprintf(stderr, "can't open file" );
-     exit(1);
-   }
+      fprintf(stderr, "can't open file" );
+      exit(1);
+      }
 
    jpeg_stdio_dest(&cinfo, gf_f);
 
@@ -2244,16 +2244,16 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    row_stride = cinfo.image_width *3;	/* JSAMPLEs per row in image_buffer */
 
    while (cinfo.next_scanline < cinfo.image_height) {
-     	row_pointer[0] = & gf_string_pixcolor[cinfo.next_scanline*row_stride];
-     	(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
-  	}
+      row_pointer[0] = & gf_string_pixcolor[cinfo.next_scanline*row_stride];
+      (void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+      }
 
    jpeg_finish_compress(&cinfo);
    fclose(gf_f);
    gf_f = NULL;
    jpeg_destroy_compress(&cinfo);
-
- }  /* end of jpegwrite*/
+   return Succeeded;
+ }
 
 #endif					/* HAVE_LIBJPEG */
 

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.18 2002-08-01 01:03:02 phliar Exp $
+ * $Id: fxposix.ri,v 1.19 2002-08-01 01:47:18 phliar Exp $
  */
 
 /*
@@ -2545,20 +2545,26 @@ function{0, 1} setenv(name, value)
 
       /*
        * WARNING! I don't know if other systems require putenv with
-       * non-auto storage! shamim July 2002
+       * non-auto storage! If there are, they should be added to this
+       * section.
+       *
+       * putenv(3C) needs a string that's "name=value". We malloc() the
+       * the string for this; if there's another call to putenv(3C)
+       * with the same value, the old string is no longer needed. What
+       * we do is store a sentinel in front of the name=value section;
+       * before calling putenv we call getenv and see if it's a string
+       * we allocated for a previous putenv by looking for the sentinel.
+       * If it is we can free it.                  -- shamim July 2002
        */
 
-      char buf[8192], *p, *q;
-      int n;
-      char* sentinel = "unicon-envn59K.D2LlhPL1suOWshRNg";
-      int slen;
-      slen = strlen(sentinel);
-      n = snprintf(buf, sizeof(buf), "%s%s=%s", sentinel, name, value);
-      if (n > sizeof(buf))
-          n = sizeof(buf);              /* Discard string too long */
+      char *p, *q;
+      char* sentinel = "n59KxD2LlhPL1suOWsNg";
+      int slen = strlen(sentinel);
+      int n = slen + strlen(name) + strlen(value) + 1;
+
       if ((p = malloc(n + 1)) == 0)
          fail;
-      memcpy(p, buf, n);
+      snprintf(p, n+1, "%s%s=%s", sentinel, name, value);
       p[n] = 0;
       if ((q = getenv(name)) != 0) {
          q -= strlen(name) + slen + 1;

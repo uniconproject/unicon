@@ -26,6 +26,7 @@
 extern void closelogfile();
 #endif					/* ConsoleWindow */
 void wfreersc();
+void SetDCPixelFormat(HDC h);
 int alc_rgb(wbp w, SysColor rgb);
 int numRealized;
 
@@ -271,6 +272,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    tended struct b_list *tlp;
    tended struct descrip attrrslt;
    HDC hdc, hdc2, hdc3;
+   DWORD winstyles = 0;
    TEXTMETRIC	metrics;
    LOGPALETTE logpal[4]; /* really 1 + space for an extra palette entry */
    HBRUSH brush;
@@ -328,8 +330,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    /*
     * create the window
     */
+   winstyles=(ISTITLEBAR(ws)?WS_OVERLAPPEDWINDOW:(WS_DLGFRAME|WS_THICKFRAME));
+   if (is_3d) winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
    ws->iconwin = CreateWindow( "iconx", ws->windowlabel,
-		   (ISTITLEBAR(ws)?WS_OVERLAPPEDWINDOW:(WS_DLGFRAME|WS_THICKFRAME)),
+		   winstyles,
 		   ws->posx, ws->posy,
 		   ws->width == 0 ? 400 : ws->width + BORDWIDTH,
 		   ws->height == 0 ? 400: ws->height + BORDHEIGHT + 1,
@@ -401,6 +405,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 #ifdef Graphics3D
    if (wc->is_3D) {
       hdc = GetDC(ws->iconwin);
+      SetDCPixelFormat(hdc);
       wc->ctx = wglCreateContext (hdc);
       wglMakeCurrent (hdc, wc->ctx);
       ReleaseDC(ws->iconwin, hdc);
@@ -509,6 +514,12 @@ int handle_config(wbp w, UINT msg, WPARAM wp, LPARAM lp)
 
    ws->width = neww;
    ws->height = newh;
+   if(ws->is_3D) {
+      HDC tmpdc = GetDC(ws->iconwin);
+      wglMakeCurrent(tmpdc, w->context->ctx);
+      glViewport(0, 0, (GLsizei)neww, (GLsizei) newh);
+      ReleaseDC(ws->iconwin, tmpdc);
+      }
    if (! resizePixmap(w, ws->width, ws->height)) return 0;
    if (!ISEXPOSED(w)) {
       SETEXPOSED(w);
@@ -698,6 +709,17 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    else
    switch(msg) {
    case WM_PAINT:
+      if (wb->window->is_3D) {
+         HDC hdc = CreateWinDC(wb);
+         /* render scene */
+         redraw3D(wb);
+         /* swap buffers */
+         SwapBuffers(hdc);
+         /* validate rect */
+         ValidateRect(hwnd, NULL);
+         ReleaseDC(hwnd, hdc);
+         }
+      else {
       hdc = BeginPaint(hwnd, &ps);
       GetClientRect(hwnd, &rect);
       if (IsIconic(hwnd)) {
@@ -717,6 +739,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	 DeleteDC(hdc2);
 	 }
       EndPaint(hwnd, &ps);
+      }
       return 0;
    case WM_MOUSEMOVE:
       if (ws->curcursor)
@@ -913,6 +936,11 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 #ifdef ConsoleWindow
             closelogfile();
 #endif					/* ConsoleWindow */
+            if(ws->is_3D) {
+               wglMakeCurrent(0, NULL);
+               wglDeleteContext(wb->context->ctx);
+               wb->context->ctx = NULL;
+               }
 	    PostQuitMessage(0);
 	    return 0;
 	    }
@@ -3766,6 +3794,24 @@ int resizePixmap(wbp w, int width, int height)
    return 1;
    }
 
+void SetDCPixelFormat(HDC h)
+{
+   PIXELFORMATDESCRIPTOR pfd;
+   int iFormat;
+
+   ZeroMemory( &pfd, sizeof( pfd ) );
+   pfd.nSize = sizeof( pfd );
+   pfd.nVersion = 1;
+   pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
+                    PFD_DOUBLEBUFFER;
+   pfd.iPixelType = PFD_TYPE_RGBA;
+   pfd.cColorBits = 24;
+   pfd.cDepthBits = 16;
+   pfd.iLayerType = PFD_MAIN_PLANE;
+   iFormat = ChoosePixelFormat( h, &pfd );
+   SetPixelFormat( h, iFormat, &pfd );
+}
+
 /*
  * CreateWinDC - create a device context for drawing on the window
  *  In addition, select objects specified by flags.
@@ -3789,23 +3835,10 @@ HDC CreateWinDC(wbp w)
       SelectClipRgn(hdc, wc->cliprgn);
       }
 /*   wc->ctx = wglCreateContext (hdc); */
-   wglMakeCurrent (hdc, wc->ctx);
 
-{
-PIXELFORMATDESCRIPTOR pfd;
-int iFormat;
-ZeroMemory( &pfd, sizeof( pfd ) );
-pfd.nSize = sizeof( pfd );
-pfd.nVersion = 1;
-pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
-              PFD_DOUBLEBUFFER;
-pfd.iPixelType = PFD_TYPE_RGBA;
-pfd.cColorBits = 24;
-pfd.cDepthBits = 16;
-pfd.iLayerType = PFD_MAIN_PLANE;
-iFormat = ChoosePixelFormat( hdc, &pfd );
-SetPixelFormat( hdc, iFormat, &pfd );
-}
+   if (w->context->is_3D) {
+      wglMakeCurrent (hdc, wc->ctx);
+      }
 
    return hdc;
    }

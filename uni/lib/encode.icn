@@ -1,98 +1,85 @@
-############################################################################
 #
-#	File:     encode.icn
+# $Id: encode.icn,v 1.2 2004-02-12 17:07:55 rparlett Exp $
 #
-#	Subject:  Encoding/Decoding objects
+# This file is in the public domain.
 #
-#	Author:   Robert Parlett
+# Author: Robert Parlett (parlett@dial.pipex.com)
 #
-#	Date:     14 July, 1999
-#
-############################################################################
-#
-#   This file is in the public domain.
-#
-############################################################################
-#  
-#  Encode and Decode arbitrary Icon objects into strings.
-#  
-############################################################################
-#
-#  Links:
-#
-############################################################################
 
-class Encode(
+package lang
+
+import util
+
+#  Together with decode.icn, these functions provide a way to encode
+# and decode arbitrary objects to and from strings.  Class instances
+# are handled specially, in that the instance must define how it is
+# to be encoded/decoded by implementing the methods in {ClassCoding}.
+# The {SelectiveClassCoding} class provides a flexible implementation of these
+# methods, allowing selected member variables to be saved using
+# independent tags.  This allows the class to change considerably and
+# still be backward-compatible with old encodings.
+#
+# @example
+# @ import lang
+# @ ...
+# @ obj := ... any object ...
+# @ s := lang::encode(obj)
+# @ # s is now a string representation of obj
+# @ obj2 := lang::decode(s)
+# @ # now obj and obj2 should have the same value
+#
+
+#
+# Return a string, being the encoded representation of the given object.
+#
+procedure encode(o)
+   local e
+   e := Encode()
+   e.encode(o)
+   return e.get_string()
+end
+
+#
+# This class is used to encode arbitrary objects into strings.
+#
+# Classes to be encoded must subclass ClassCoding, which allows specification
+# of how to encode a class instance.
+#
+class Encode : Object(
    tag_count,
    seen,
-   buff_list,        # A list of strings used on encode because of Icon's
-                     # inefficiency in catenating very long strings.
-   buff
+   string_buff
    )
 
+   method get_string()
+      return string_buff.get_string("|")
+   end
+
    method encode_string(s)
+      local buff
       static printable
       initial
          printable := cset(&ascii[33:128]) -- '|\\'
 
-      res := ""
+      buff := StringBuff()
       s ? {
          repeat {
-            res ||:= tab(many(printable))
+            buff.add(tab(many(printable)))
             if pos(0) then
-               return res
-            res ||:= "\\" || right(ord(move(1)), 3, "0")
+               return buff.get_string()
+            buff.add("\\" || right(ord(move(1)), 3, "0"))
          }
       }	 
    end
 
-   method decode_string(s)
-      static esc
-      initial
-         esc := ~'\\'
-
-      res := ""
-      s ? {
-         repeat {
-            res ||:= tab(many(esc))
-            if pos(0) then
-               return res
-            move(1)
-            res ||:= char(move(3))
-         }
-      }
+   method encode_record(o)
+      line_out(lang::get_name(o))
+      line_out(*o)
+      seen[o] := (tag_count +:= 1)
+      every encode(!o)
    end
 
    method encode(o)
-      local s
-      tag_count := 0
-      seen := table()
-      buff_list := []
-      encode1(o)
-      #
-      # Now catenate all the strings.  This is efficient because of an
-      # Icon optimization, which applies in a loop such as this.
-      #
-      s := ""
-      every s ||:= (!buff_list) || "|"
-      return s
-   end
-
-   method encode_record(o, im, ty)
-      line_out(ty)
-      line_out(*o)
-      seen[o] := (tag_count +:= 1)
-      every encode1(!o)
-   end
-
-   #
-   # Encode a class as its record representation.
-   #
-   method encode_class(o, im, ty)
-      return encode_record(o, im, ty)
-   end
-
-   method encode1(o)
       local im, ty
 
       if i := \seen[o] then {
@@ -100,262 +87,69 @@ class Encode(
          return
       }
 
-      im := image(o)
-      ty := type(o)
+      ty := lang::get_type(o)
+      line_out(ty)
+      case ty of {
+         "class" :
+            encode_class(o)
 
-      if match("record ", im) then {
-         if find("__state", im) then {
-            line_out("class")
-            encode_class(o, im, ty)
-         } else {
-            line_out("record")
-            encode_record(o, im, ty)
-         }
-      } else {
-         line_out(ty)
-         case ty of {
-            "procedure" : {
-               im ? {
-                  ="procedure "
-                  line_out(tab(0))
-               }
-            }
+         "record" :
+            encode_record(o)
 
-            "null" :
-               &null
+         "procedure" :
+            line_out(lang::get_name(o))
 
-            "string" :
-               line_out(encode_string(o))
+         "null" :
+            &null
 
-            "cset" :
-               line_out(encode_string(string(o)))
+         "string" :
+            line_out(encode_string(o))
 
-            "integer" |
+         "cset" :
+            line_out(encode_string(string(o)))
+
+         "integer" |
             "real" :
-               line_out(string(o))
+            line_out(string(o))
 
-            "set" |
+         "set" |
             "list" : {
                line_out(*o)
                seen[o] := (tag_count +:= 1)
-               every encode1(!o)
+               every encode(!o)
             }
-
-            "table" : {
-               seen[o] := (tag_count +:= 1)
-               encode1(o[[]])
-               pairs := sort(o)
-               line_out(*pairs)
-               every encode1(!!pairs)
-            }
-
-            default : 
-               &null
-
-         }
-      }
-   end
-
-   #
-   # Ideally we would use buff ||:= "s" || "|" here, but it is too slow.  So we
-   # put the string into a list and create the result all at once, when an Icon
-   # optimization applies.
-   #
-   method line_out(s)
-      put(buff_list, s)
-   end
-
-   method line_in()
-      buff ? {
-         if s := tab(upto('|')) then {
-            move(1)
-            buff := tab(0)
-            return s
-         }
-      }
-   end
-
-   method decode(s)
-      tag_count := 0
-      seen := table()
-      buff := s
-      return decode1()
-   end
-
-   method decode_record()
-      (rname := line_in() &
-       n := integer(line_in())) | fail
-      res := proc(rname)()
-      seen[tag_count +:= 1] := res
-      every i := 1 to n do
-         res[i] := decode1() | fail
-      
-      return res
-   end
-
-   method decode_class()
-      return decode_record()
-   end
-
-   method decode1()
-      local i, p, n, rname, key
-
-      t := line_in() | fail
-
-      if i := integer(t) then
-         return \seen[i]
-
-      case t of {
-         "null" :
-            return
-
-         "procedure" :
-            return proc(line_in())
-
-         "record" :
-            return decode_record()
-
-         "class" :
-            return decode_class()
-
-         "string" :
-            return decode_string(line_in())
-
-         "integer" :
-            return integer(line_in())
-
-         "real" :
-            return real(line_in())
-
-         "cset" :
-            return cset(decode_string(line_in()))
-
-         "list" : {
-            n := integer(line_in()) | fail
-            res := []
-            seen[tag_count +:= 1] := res
-            every 1 to n do 
-               put(res, decode1()) | fail
-            return res
-         }
-
-         "set" : {
-            n := integer(line_in()) | fail
-            res := set([])
-            seen[tag_count +:= 1] := res
-            every 1 to n do 
-               insert(res, decode1()) | fail
-            return res
-         }
 
          "table" : {
-            def := decode1() | fail
-            res := table(def)
-            n := integer(line_in()) | fail
-            seen[tag_count +:= 1] := res
-            every 1 to n do {
-               (key := decode1() &
-               val := decode1()) | fail
-               res[key] := val
-            }
-            return res
-         }            
+            seen[o] := (tag_count +:= 1)
+            encode(o[[]])
+            pairs := sort(o)
+            line_out(*pairs)
+            every encode(!!pairs)
+         }
 
-         default :
-            return []
-      }            
+         default : 
+            &null
+
+      }
    end
-end
 
-class ClassEncode : Encode()
-   method encode_class(o, im, ty)
+   method line_out(s)
+      string_buff.add(s)
+   end
+
+   method encode_class(o)
       local cname, t, m, e
 
-      cname := (ty ? tab(find("__state"))) | stop("invalid class name")
+      cname := lang::get_class_name(o) | stop("invalid class name")
       line_out(cname)
       seen[o] := (tag_count +:= 1)
-      o$pre_encode()
-      t := o$get_template()
-      m := o$get_map()
-      line_out(*t)
-      every e := !t do {
-         line_out(e[1])
-         encode1(o[m[e[1]]])
-      }
+
+      o.pre_encode()
+      o.encode_obj(self)
    end
 
-   method decode_class()
-      local res, cname, n, e, t, m, v, f
-
-      (cname := line_in() &
-       n := integer(line_in())) | fail
-
-      #
-      # Create an instance
-      #
-      res := proc(cname)()
-      seen[tag_count +:= 1] := res
-
-      t := res$get_template()
-      m := res$get_map()
-
-      #
-      # Set up any defaults specified
-      #
-      every e := !t do 
-         res[m[e[1]]] := e[3]
-
-      every 1 to n do {
-         (f := line_in() &
-         v := decode1()) | fail
-         res[\m[f]] := v
-      }
-
-      res$post_decode()
-
-      return res
-   end
+   initially()
+      tag_count := 0
+      seen := table()
+      string_buff := StringBuff()
 end
-
-class ClassIO(map)
-   method get_map()
-      local i, fields, e
-
-      if \map then
-         return map
-
-      #
-      # Create a table mapping class member names to record indices.
-      #
-      fields := table()
-      every i := 3 to *self do {
-         name(self[i]) ? {
-            tab(upto('.'))
-            move(1)
-            fields[tab(0)] := i
-         }
-      }
-
-      #
-      # Create a table mapping field names to record indices.  Check
-      # for duplicate names and non-existent variable names.
-      #
-      map := table()
-      t := self$get_template()
-      every e := !t do
-         /map[e[1]] := \fields[e[2]] | stop("invalid template")
-
-      return map
-   end
-
-   method get_template()
-      stop("get_template() must be overridden in subclass")
-   end
-
-   method pre_encode()
-   end
-
-   method post_decode()
-   end
-end
-

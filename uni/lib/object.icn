@@ -1,5 +1,5 @@
 #
-# $Id: object.icn,v 1.1 2003-08-20 16:18:23 jeffery Exp $
+# $Id: object.icn,v 1.2 2004-02-12 17:07:56 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,25 +10,31 @@ package lang
 
 class Object()
    #
-   # Return a string encoding of the object.
-   #
-   method encode()
-      return lang::encode(self)
-   end
-
-   #
    # Clone the object.
    #
-   method clone()
-      return lang::clone(self)
+   method clone(seen)
+      return lang::object_clone(self, seen)
    end
 
    #
    # Return a string representation of the oject.
    #
-   method to_string(n)
-      /n := 1
-      return lang::to_string(self, 1)
+   method to_string(depth, seen)
+      return lang::object_to_string(self, depth, seen)
+   end
+
+   #
+   # Test equality of this object with another
+   #
+   method equals(other, seen)
+      return lang::object_equals(self, other, seen)
+   end
+
+   #
+   # Return a hash code for the object
+   #
+   method hash_code(depth, seen)
+      return lang::object_hash_code(self, depth, seen)
    end
 
    #
@@ -50,13 +56,6 @@ class Object()
    #
    method get_class()
       return lang::get_class(self)
-   end
-
-   #
-   # Test equality of this object with another
-   #
-   method equals(other)
-      return lang::equals(self, other)
    end
 
    #

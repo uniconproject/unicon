@@ -1,0 +1,142 @@
+#
+# $Id: selectiveclasscoding.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package lang
+
+#
+# An implementation of {ClassCoding}.  The subclass
+# must override the method {get_template()} to return a list of
+# pairs.  The first element of each pair is an arbitrary string used
+# to identify the field; the second element is the name of the field.
+#
+# @example
+# @   # This will save the three fields {increment_size}, {value} and {is_range_flag}.
+# @   method get_template()
+# @      return  [
+# @          ["Increment Size", "increment_size"],
+# @          ["Value", "value"],
+# @          ["Is Range Flag", "is_range_flag"]]
+# @   end
+#
+# The programmer may change the name of the field afterwards; for example {value} may
+# be re-named {initial_value}, and the data would still be restored correctly.
+#
+# Alternatively, any of the pairs may be a string field name, in which the label
+# is the field name itself.  This does not permit the field name to change without
+# rendering the encoded string invalid.
+#
+class SelectiveClassCoding : ClassCoding()
+   method encode_obj(e)
+      local t, m, x
+
+      t := self.load_template()
+      m := self.load_map()
+      e.line_out(*t)
+      every x := !t do {
+         e.line_out(x[1])
+         e.encode(self[m[x[1]]])
+      }
+   end
+
+   method decode_obj(e)
+      local n, t, m, x, v, f
+
+      n := integer(e.line_in()) | fail
+      t := self.load_template()
+      m := self.load_map()
+
+      #
+      # Set up any defaults specified
+      #
+      every x := !t do 
+         self[m[x[1]]] := x[3]
+
+      every 1 to n do {
+         (f := e.line_in() &
+          v := e.decode()) | fail
+         self[\m[f]] := v
+      }
+      return
+   end
+
+   #
+   # Get the template for this class, using caching for efficiency.
+   #
+   # @p
+   method load_template()
+      local t
+      static template_cache
+      initial {
+         template_cache := table()
+      }
+
+      class_name := lang::get_class_name(self)
+
+      if member(template_cache, class_name) then
+         return template_cache[class_name]
+
+      t := get_template()
+
+      # Convert any single string elements to pairs.
+      every i := 1 to *t do {
+         if type(t[i]) == "string" then
+            t[i] := [t[i], t[i]]
+      }
+
+      insert(template_cache, class_name, t)
+
+      return t
+   end
+
+   #
+   # Get the map for this class, using caching for efficiency.
+   #
+   # @p
+   method load_map()
+      local i, fields, e, class_name, map
+      static map_cache
+      initial {
+         map_cache := table()
+      }
+
+      class_name := lang::get_class_name(self)
+
+      if member(map_cache, class_name) then
+         return map_cache[class_name]
+
+      #
+      # Create a table mapping class member names to record indices.
+      #
+      fields := table()
+      i := 3
+      every s := lang::generate_member_names(self) do {
+         fields[s] := i
+         i +:= 1
+      }
+
+      #
+      # Create a table mapping field names to record indices.  Check
+      # for duplicate names and non-existent variable names.
+      #
+      map := table()
+      t := self.load_template()
+      every e := !t do
+         /map[e[1]] := \fields[e[2]] | stop("invalid template")
+
+      insert(map_cache, class_name, map)
+
+      return map
+   end
+
+   #
+   # This method must be overridden by a subclass to return the field
+   # template (see above).
+   #
+   abstract method get_template()
+end
+

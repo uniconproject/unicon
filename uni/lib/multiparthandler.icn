@@ -1,0 +1,81 @@
+#
+# $Id: multiparthandler.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+#
+
+package mail
+
+class MultipartHandler : TypeHandler()
+   method can_handle(ct)
+      return map(ct.get_type()) == "multipart"
+   end
+   
+   method convert_to_object(m, data)
+      local s, res, b, ct
+
+      res := Multipart()
+
+      ct := m.get_content_type()
+
+      b := "\r\n--" || ct.get_unquoted_parameter("boundary")
+      if /b then
+         return error("Missing boundary parameter")
+
+      data ? {
+         s := tab(find(b)) | return error("Missing boundary")
+         res.set_preamble(b)
+         =b
+         repeat {
+            if ="--\r\n" then
+               break
+
+            ="\r\n" | return error("Unexpected char after boundary")
+
+            data := tab(find(b)) | return error("Boundary not found")
+            =b
+            sm := Message()
+            sm.parse(data) | return error(sm)
+            res.add_part(sm)
+         }
+         res.set_epilogue(tab(0))
+      }
+
+      return res
+   end
+
+   method convert_from_object(m, obj)
+      local b, s, ct
+
+      b := generate_boundary(obj.get_parts())
+      
+      ct := m.get_content_type()
+
+      #
+      # Install the boundary param into the message.
+      #
+      ct.set_parameter("boundary", "\"" || b || "\"")
+      m.set_content_type(ct)
+
+      s := obj.get_preamble()
+      every e := !obj.get_parts() do {
+         s ||:= "\r\n--" || b || "\r\n" || e.to_rfc822()
+      }
+      s ||:= "\r\n--" || b || "--\r\n" || obj.get_epilogue()
+
+      return s
+   end
+
+   # @p
+   method generate_boundary(l)
+      static id
+      initial id := 1
+
+      repeat {
+         b := "boundary" || id
+         if find(b, (!l).get_content()) then
+            id +:= 1
+         else
+            return b
+      }
+   end
+end
+

@@ -1,0 +1,120 @@
+#
+# $Id: setfields.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+#
+
+package util
+
+import lang
+
+class SetFields()
+   method test_flag(attr, val)
+      if map(val[1]) == ("y" | "yes" | "t" | "true") then
+         return
+      if map(val[1]) == ("n" | "no" | "f" | "false") then
+         fail
+      field_error("Attribute " || attr || " needs a single boolean parameter")
+   end
+
+   method as_attrib(attr, val) 
+      local s, e
+      s := ""
+      every e := !val do {
+         if *s > 0 then 
+            s ||:= ","
+         s ||:= e
+      }
+      return attr || "=" || s
+   end
+
+   method int_val(attr, val)
+      return /val[1] | integer(val[1]) | field_error("Attribute " || attr || " needs a single integer parameter")
+   end
+
+   method int_vals(attr, val, n)
+      local i
+      if *val < \n then
+         field_error("Attribute " || attr || " needs " || n || " parameters")
+      every i := 1 to *val do {
+         val[i] := /val[i] | integer(val[i]) | field_error("Attribute " || attr || " needs integer parameters")
+      }
+      return val
+   end
+
+   method numeric_val(attr, val)
+      return /val[1] | numeric(val[1]) | field_error("Attribute " || attr || " needs a single numeric parameter")
+   end
+
+   method numeric_vals(attr, val, n)
+      local i
+      if *val < \n then
+         field_error("Attribute " || attr || " needs " || n || " parameters")
+      every i := 1 to *val do {
+         val[i] := /val[i] | numeric(val[i]) | field_error("Attribute " || attr || " needs numeric parameters")
+      }
+      return val
+   end
+
+   method cset_val(attr, val)
+      return /val[1] | cset(val[1]) | field_error("Attribute " || attr || " needs a single cset parameter")
+   end
+
+   method string_val(attr, val)
+      return val[1] | field_error("Attribute " || attr || " needs a single string parameter")
+   end
+
+   method string_vals(attr, val, n)
+      if *val < \n then
+         field_error("Attribute " || attr || " needs " || n || " parameters")
+      return val
+   end
+
+   method attrib(a[])
+      set_fields(a)
+   end
+
+   method set_fields(l)
+      local s, t, attr, val, vals
+      every s := !l do {
+         s ? {
+            if attr := tab(find("=")) then {
+               ="="
+               vals := []
+               tab(0) ? {
+                  while t := tab(find(",")) do {
+                     if *t = 0 then
+                        put(vals, &null)
+                     else
+                        put(vals,t )
+                     move(1)
+                  }
+                  t := tab(0)
+                  if *t = 0 then
+                     put(vals, &null)
+                  else
+                     put(vals,t )
+               }
+            } else {
+               attr := s
+               vals := []
+            }
+         }
+         self.set_one(attr, vals)
+      }
+   end
+
+   #
+   # This must be implemented to set a single field.
+   # @param attr the field
+   # @param val the value
+   #
+   abstract method set_one(attr, val)
+
+   #
+   # Invoked on a field setup error: stop with an error.  This is
+   # always a fatal error.
+   # @param s the error message
+   #
+   method field_error(s)
+      stop("setfields : error in " || lang::get_class_name(self) || " : " || s)
+   end
+end

@@ -1,0 +1,52 @@
+#
+# $Id: multipart.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+#
+
+package mail
+
+import util
+
+#
+# This class represents a multipart content
+#
+class Multipart : Error(preamble, parts, epilogue)
+   #
+   # Get the preamble
+   #
+   method get_preamble()
+      return preamble
+   end
+
+   #
+   # Set the preamble
+   #
+   method set_preamble(s)
+      preamble := s
+   end
+
+   #
+   # Get the epilogue
+   #
+   method get_epilogue()
+      return epilogue
+   end
+
+   #
+   # Set the epilogue
+   #
+   method set_epilogue(s)
+      epilogue := s
+   end
+
+   method get_parts()
+      return parts
+   end
+
+   method add_part(m)
+      put(parts, m)
+   end
+
+   initially(a[])
+      preamble := epilogue := ""
+      parts := []
+end

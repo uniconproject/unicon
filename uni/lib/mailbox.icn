@@ -1,30 +1,16 @@
-############################################################################
 #
-#	File:     mailbox.icn
+# $Id: mailbox.icn,v 1.2 2004-02-12 17:07:55 rparlett Exp $
 #
-#	Subject:  E-mail mailbox class
-#
-#	Author:   Robert Parlett
-#
-#	Date:     14 April, 2002
-#
-############################################################################
-#
-#   This file is in the public domain.
-#
-############################################################################
-#
-#   This file provides a class for e-mail boxes.
-#
-############################################################################
 
 package mail
+
+import util
 
 #
 # This class represents an internet Address, which
 # may be parsed in accordance with RFC822.
 #
-class Mailbox : Address(local_part, domain, phrase, route)
+class Mailbox : Address : Error(local_part, domain, phrase, route)
    method get_local_part() 
       return local_part
    end
@@ -81,7 +67,9 @@ class Mailbox : Address(local_part, domain, phrase, route)
    end
 
    method parse(s)
-      return s ? mail::parse_mailbox(self)
+      local p
+      p := mail::RFC822Parser()
+      return p.parse_mailbox(s, self) | error(p)
    end   
 
    method generate_mailboxes()
@@ -106,6 +94,6 @@ procedure mailbox_list_to_string(l)
       if *s > 0 then
          s ||:= ","
       s ||:= e.to_rfc822()
-      }
+   }
    return s
 end

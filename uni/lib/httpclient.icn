@@ -6,21 +6,12 @@ import lang
 #
 # A very simple http client with no timeout or retries.
 #
-class HttpClient(                                      
+class HttpClient : Error(                                      
                  url,
                  post_data,
                  headers,
-                 request_type,
-                 reason
+                 request_type
                  )
-
-   method error(s)
-      reason := s
-   end
-
-   method get_reason()
-      return reason
-   end
 
    #
    # Set the desired url
@@ -63,7 +54,25 @@ class HttpClient(
       }
    end
 
+   #
+   # This method invokes retrieve_page, but only returns the page if
+   # its status was 200 OK - otherwise it fails and sets the failure
+   # reason appropriately.
+   #
    method retrieve()
+      local res
+      res := retrieve_page() | fail
+      if res.status_okay() then
+         return res
+      return error(res.get_status())
+   end
+
+   #
+   #
+   # Retrieve the given url.  A {HttpPage} object is returned upon success.
+   # Failure occurs if the url could not be retrieved.
+   #
+   method retrieve_page()
       local f, s, res, string_buff
 
       if not(f := url.open()) then
@@ -106,7 +115,7 @@ class HttpClient(
       flush(f)
 
       string_buff := StringBuff()
-      while s := reads(f, 1024) do
+      while s := sysread(f, 1024) do
          string_buff.add(s)
       close(f)
 

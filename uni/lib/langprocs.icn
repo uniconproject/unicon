@@ -1,5 +1,5 @@
 #
-# $Id: langprocs.icn,v 1.1 2003-08-20 16:18:23 jeffery Exp $
+# $Id: langprocs.icn,v 1.2 2004-02-12 17:07:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -78,7 +78,7 @@ end
 # @example
 # @ x := [1, 2 ,3]
 # @ write(image(x))
-# @ write(Class(x).get_id())
+# @ write(get_id(x))
 # @
 # @ Output:
 # @ list_5(3)
@@ -152,7 +152,7 @@ procedure cast(object, other)
       other[\t[s]] := object[i]
       i +:= 1
    }
-   return o
+   return other
 end
 
 #
@@ -163,60 +163,94 @@ procedure is_instance(obj, name)
 end
 
 #
+# The default behaviour for Object.equals
+#
+procedure object_equals(obj, other, seen)
+   local i
+
+   /seen := table()
+   /seen[obj] := set()
+   insert(seen[obj], other)
+   get_type(other) == "class" | fail
+   get_name(obj) == get_name(other) | fail
+   if *obj ~= *other then
+      fail
+   every i := 1 to *obj do
+      equals(obj[i], other[i], seen) | fail
+   return
+end
+
+#
 # Compare this object with another by recursively comparing all
 # members of the object.
 #
-procedure equals(object, other)
-   local seen
-   seen := table()
-   return equals1(object, other, seen)
-end
-
-procedure equals1(x, y, seen)
+procedure equals(x, y, seen)
    local cx, cy, i
 
-   if \seen[x] then
+   /seen := table()
+
+   if member(\seen[x], y) then
       return
 
-   if (get_type(x) ~== get_type(y)) | (get_name(x) ~== get_name(y)) then
+   if get_type(x) ~== get_type(y) then
       fail
 
    case get_type(x) of {
-      "class" | "record" | "list" : {
-         seen[x] := 1
+      "class" : {
+         /seen[x] := set()
+         insert(seen[x], y)
+
+         #
+         # If x subclasses Object, use its .equals method.
+         #
+         if is_instance(x, "lang__Object") then
+            return x.equals(y, seen)
+         else
+            return object_equals(x, y, seen)
+      }
+
+      "record" : {
+         /seen[x] := set()
+         insert(seen[x], y)
+         get_name(x) == get_name(y) | fail
          if *x ~= *y then
             fail
          every i := 1 to *x do
-            equals1(x[i], y[i], seen) | fail
+            equals(x[i], y[i], seen) | fail
+         return
+      }
+
+      "list" : {
+         /seen[x] := set()
+         insert(seen[x], y)
+         if *x ~= *y then
+            fail
+         every i := 1 to *x do
+            equals(x[i], y[i], seen) | fail
          return
       }
 
       "set" : {
-         seen[x] := 1
+         /seen[x] := set()
+         insert(seen[x], y)
          if *x ~= *y then
             fail
-         return equals1(sort(x), sort(y), seen)
+         return equals(sort(x), sort(y), seen)
       }
 
       "table" : {
-         seen[x] := 1
-         equals1(x[[]], y[[]]) | fail
-         return equals1(sort(x), sort(y), seen)
+         /seen[x] := set()
+         insert(seen[x], y)
+         equals(x[[]], y[[]]) | fail
+         return equals(sort(x), sort(y), seen)
       }
 
-      default : 
+      default : {
+         if get_name(x) ~== get_name(y) then
+            fail
          return x === y
+      }
    }
-end
-
-#
-# Return a hash code for this object.  For any two objects for which {equals} indicates
-# equality, the returned hash code should be the same.
-#
-procedure hash_code(object)
-   local seen
-   seen := table()
-   return hash_code1(object, 3, seen)
 end
 
 procedure hash_string(s)
@@ -226,29 +260,57 @@ procedure hash_string(s)
    return n 
 end
 
-procedure hash_code1(x, depth, seen)
+#
+# The default behaviour for Object.hash_code
+#
+procedure object_hash_code(o, depth, seen)
+   local n
+   /seen := table()
+   /depth := 3
+   seen[o] := 1
+   n := 0
+   every n +:= hash_code(!o \ 10, depth - 1, seen)
+   return n
+end
+
+#
+# Return a hash code for this object.  For any two objects for which {equals} indicates
+# equality, the returned hash code should be the same.
+#
+procedure hash_code(x, depth, seen)
    local cx, cy, i, n
 
+   /seen := table()
+   /depth := 3
+   
    if (depth = 0) | \seen[x] then
       return 0
    
    n := 0
 
    case get_type(x) of {
-      "class" | "record" | "list" : {
+      "class" : {
          seen[x] := 1
-         every n +:= hash_code1(!x \ 10, depth - 1, seen)
+         if is_instance(x, "lang__Object") then
+            return x.hash_code(depth, seen)
+         else
+            return object_hash_code(x, depth, seen)
+      }
+
+      "record" | "list" : {
+         seen[x] := 1
+         every n +:= hash_code(!x \ 10, depth - 1, seen)
       }
 
       "set" : {
          seen[x] := 1
-         every n +:= hash_code1(!sort(x) \ 10, depth - 1, seen)
+         every n +:= hash_code(!sort(x) \ 10, depth - 1, seen)
       }
 
       "table" : {
          seen[x] := 1
-         n +:= hash_code1(x[[]], depth - 1, seen)
-         every n +:= hash_code1(!sort(x) \ 10, depth - 1, seen)
+         n +:= hash_code(x[[]], depth - 1, seen)
+         every n +:= hash_code(!sort(x) \ 10, depth - 1, seen)
       }
       
       "string" :
@@ -270,16 +332,26 @@ procedure hash_code1(x, depth, seen)
 end
 
 #
-# Clone the given object
+# The default behaviour for Object.clone
 #
-procedure clone(object)
-   local seen
-   seen := table()
-   return clone1(object, seen)
+procedure object_clone(o, seen)
+   local res, i
+
+   /seen := table()
+   res := proc(get_name(o))()
+   seen[o] := res
+   every i := 1 to *o do
+      res[i] := clone(o[i], seen)
+   return res
 end
 
-procedure clone1(o, seen)
-   local c, e, ty, res
+#
+# Clone the given object
+#
+procedure clone(o, seen)
+   local c, e, ty, res, t
+
+   /seen := table()
 
    if res := \seen[o] then
       return res
@@ -287,33 +359,42 @@ procedure clone1(o, seen)
    ty := get_type(o)
 
    case ty of {
-      "class" | "record" : {
+      "class" : {
+         if is_instance(o, "lang__Object") then {
+            t := o.clone(seen)
+            seen[o] := t
+            return t
+         } else
+            return object_clone(o, seen)
+      }
+
+      "record" : {
          res := proc(get_name(o))()
          seen[o] := res
          every i := 1 to *o do
-            res[i] := clone1(o[i], seen)
+            res[i] := clone(o[i], seen)
          return res
       }
 
       "set" : {
          res := set([])
          seen[o] := res
-         every insert(res, clone1(!o, seen))
+         every insert(res, clone(!o, seen))
          return res
       }
 
       "list" : {
          res := []
          seen[o] := res
-         every put(res, clone1(!o, seen))
+         every put(res, clone(!o, seen))
          return res
       }
 
       "table" : {
-         res := table(clone1(o[[]], seen))
+         res := table(clone(o[[]], seen))
          seen[o] := res
          every e := !sort(o) do
-            res[clone1(e[1], seen)] := clone1(e[2], seen)
+            res[clone(e[1], seen)] := clone(e[2], seen)
          return res
       }
 
@@ -323,30 +404,53 @@ procedure clone1(o, seen)
 end
 
 #
+# The default behaviour for Object.to_string
+#
+procedure object_to_string(o, depth, seen)
+   local i, s, string_buff
+
+   /seen := table()
+   /depth := -1
+   seen[o] := 1
+   string_buff := StringBuff()
+
+   string_buff.add(get_type(o) || " " || get_name(o) || "<" || get_id(o) || ">")
+   if depth ~= 0 then {
+      string_buff.add("(")
+      i := 3
+      every s := generate_member_names(o) do {
+         string_buff.add(s || "=")
+         string_buff.add(to_string(o[i], depth - 1, seen))
+         string_buff.add(";")
+         i +:= 1
+      }
+      string_buff.drop_last(";")
+      string_buff.add(")")
+   }
+
+   return string_buff.get_string()
+end
+
+#
 # Convert the object to string ,descending structures to the given depth
 #
 # @param o       The object to be converted.
 # @param depth   The depth of recursion; default is all levels
 #
-procedure to_string(object, depth)
-   local seen, string_buff
-   seen := table()
-   /depth := -1
-   string_buff := StringBuff()
-   to_string1(object, depth, seen, string_buff)
-   return string_buff.get_string()
-end
+procedure to_string(o, depth, seen)
+   local ty, string_buff
 
-procedure to_string1(o, depth, seen, string_buff)
-   local ty
+   /seen := table()
+   /depth := -1
 
    if \seen[o] then {
       if s := get_name(o) then
-         string_buff.add("ref " || get_type(o) || " " || s || "<" || get_id(o) || ">")
+         return "ref " || get_type(o) || " " || s || "<" || get_id(o) || ">"
       else
-         string_buff.add("ref " || get_type(o) || "<" || get_id(o) || ">")
-      return
+         return "ref " || get_type(o) || "<" || get_id(o) || ">"
    }
+
+   string_buff := StringBuff()
 
    ty := get_type(o)
 
@@ -359,7 +463,7 @@ procedure to_string1(o, depth, seen, string_buff)
             i := 1
             every s := generate_record_names(o) do {
                string_buff.add(s || "=")
-               to_string1(o[i], depth - 1, seen, string_buff)
+               string_buff.add(to_string(o[i], depth - 1, seen))
                string_buff.add(";")
                i +:= 1
             }
@@ -371,19 +475,10 @@ procedure to_string1(o, depth, seen, string_buff)
       "class" : {
          seen[o] := 1
 
-         string_buff.add(ty || " " || get_name(o) || "<" || get_id(o) || ">")
-         if depth ~= 0 then {
-            string_buff.add("(")
-            i := 3
-            every s := generate_member_names(o) do {
-               string_buff.add(s || "=")
-               to_string1(o[i], depth - 1, seen, string_buff)
-               string_buff.add(";")
-               i +:= 1
-            }
-            string_buff.drop_last(";")
-            string_buff.add(")")
-         }
+         if is_instance(o, "lang__Object") then
+            string_buff.add(o.to_string(depth, seen))
+         else 
+            string_buff.add(object_to_string(o, depth, seen))
       }
 
       "procedure" :
@@ -410,7 +505,7 @@ procedure to_string1(o, depth, seen, string_buff)
          if depth ~= 0 then {
             string_buff.add("{")
             every e := !o do {
-               to_string1(e, depth - 1, seen, string_buff)
+               string_buff.add(to_string(e, depth - 1, seen))
                string_buff.add(", ")
             }
             string_buff.drop_last(", ")
@@ -424,7 +519,7 @@ procedure to_string1(o, depth, seen, string_buff)
          if depth ~= 0 then {
             string_buff.add("[")
             every e := !o do {
-               to_string1(e, depth - 1, seen, string_buff)
+               string_buff.add(to_string(e, depth - 1, seen))
                string_buff.add(", ")
             }
             string_buff.drop_last(", ")
@@ -437,13 +532,13 @@ procedure to_string1(o, depth, seen, string_buff)
          string_buff.add(ty || "<" || get_id(o) || ">")
          if depth ~= 0 then {
             string_buff.add("def=")
-            to_string1(o[[]], depth - 1, seen, string_buff)
+            string_buff.add(to_string(o[[]], depth - 1, seen))
             pairs := sort(o)
             string_buff.add("[")
             every e := !pairs do {
-               to_string1(e[1], depth - 1, seen, string_buff)
+               string_buff.add(to_string(e[1], depth - 1, seen))
                string_buff.add("=")
-               to_string1(e[2], depth - 1, seen, string_buff)
+               string_buff.add(to_string(e[2], depth - 1, seen))
                string_buff.add(";")
             }
             string_buff.drop_last(";")
@@ -465,6 +560,7 @@ procedure to_string1(o, depth, seen, string_buff)
 
       default : 
          string_buff.add("unknown type")
-
    }
+
+   return string_buff.get_string()
 end

@@ -1,0 +1,95 @@
+#
+# $Id: contenttype.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+
+package mail
+
+import util
+
+#
+# This class represents a content type
+#
+class ContentType:Error(type, subtype, parameters)
+   #
+   # Set type type
+   #
+   method set_type(t)
+      self.type := t
+   end
+
+   #
+   # Get the type
+   #
+   method get_type()
+      return type
+   end
+
+   #
+   # Set subtype subtype
+   #
+   method set_subtype(s)
+      self.subtype := s
+   end
+
+   #
+   # Get the subtype
+   #
+   method get_subtype()
+      return subtype
+   end
+
+   #
+   # Get the parameter for the given key.  If the parameter is quoted, then
+   # the quotes are removed.
+   #
+   # @param key the key
+   method get_unquoted_parameter(key)
+      local s
+      parameters.member(key) | fail
+      s := parameters.get(key)
+      if any('\"', s) then
+         return s[2:-1]
+      else
+         return s
+   end
+
+   #
+   # Get the parameter for the given key.
+   #
+   # @param key the key
+   method get_unqouted_parameter(key)
+      if parameters.member(key) then
+         return parameters.get(key)
+   end
+
+
+   #
+   #
+   # Set the parameter to the given value
+   # @param key the key
+   # @param value the value
+   method set_parameter(key, value)
+      parameters.insert(key, value)
+   end
+
+   method parse(s)
+      local p
+      p := mail::RFC822Parser()
+      return p.parse_content_type(s, self) | error(p)
+   end   
+
+   method to_rfc1521()
+      s := type || "/" || subtype
+      every e := !parameters.sort() do
+         s ||:= " ; " || e[1] || "=" || e[2]
+      return s
+   end
+
+   initially(a[])
+      parameters := ClTable()
+      if (*a = 1) & (::type(a[1]) == "string") then {
+         parse(a[1]) | fail
+      }
+end
+
+

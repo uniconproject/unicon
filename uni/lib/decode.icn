@@ -1,0 +1,165 @@
+#
+# $Id: decode.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package lang
+
+import util
+
+#
+# Recreate an object from the encoded string.
+#
+procedure decode(s)
+   local d
+   d := Decode(s)
+   return d.decode()
+end
+
+#
+# This class is used to decode a string created by the encode process, and
+# reproduce the object.
+#
+# Classes to be decoded must subclass ClassCoding, which allows specification
+# of how to recreate the class instance.
+#
+class Decode : Object(
+   tag_count,
+   seen,
+   buff
+   )
+
+   method decode_string(s)
+      local buff
+      static esc
+      initial
+         esc := ~'\\'
+
+      buff := StringBuff()
+      s ? {
+         repeat {
+            buff.add(tab(many(esc)))
+            if pos(0) then
+               return buff.get_string()
+            move(1)
+            buff.add(char(move(3)))
+         }
+      }
+   end
+
+   method line_in()
+      buff ? {
+         if s := tab(upto('|')) then {
+            move(1)
+            buff := tab(0)
+            return s
+         }
+      }
+   end
+
+   method decode_record()
+      (rname := line_in() &
+       n := integer(line_in())) | fail
+      res := proc(rname)()
+      seen[tag_count +:= 1] := res
+      every i := 1 to n do
+         res[i] := decode() | fail
+      
+      return res
+   end
+
+   method decode()
+      local i, p, n, rname
+
+      t := line_in() | fail
+
+      if i := integer(t) then
+         return \seen[i]
+
+      case t of {
+         "null" :
+            return
+
+         "procedure" :
+            return proc(line_in())
+
+         "record" :
+            return decode_record()
+
+         "class" :
+            return decode_class()
+
+         "string" :
+            return decode_string(line_in())
+
+         "integer" :
+            return integer(line_in())
+
+         "real" :
+            return real(line_in())
+
+         "cset" :
+            return cset(decode_string(line_in()))
+
+         "list" : {
+            n := integer(line_in()) | fail
+            res := []
+            seen[tag_count +:= 1] := res
+            every 1 to n do 
+               put(res, decode()) | fail
+            return res
+         }
+
+         "set" : {
+            n := integer(line_in()) | fail
+            res := set([])
+            seen[tag_count +:= 1] := res
+            every 1 to n do 
+               insert(res, decode()) | fail
+            return res
+         }
+
+         "table" : {
+            def := decode() | fail
+            res := table(def)
+            n := integer(line_in()) | fail
+            seen[tag_count +:= 1] := res
+            every 1 to n do {
+               (key := decode() &
+               val := decode()) | fail
+               res[key] := val
+            }
+            return res
+         }            
+
+         default :
+            return []
+      }            
+   end
+
+   method decode_class()
+      local res, cname, n, e, t, m, v, f
+
+      cname := line_in() | fail
+
+      #
+      # Create an instance
+      #
+      p := proc(cname) | fail
+      res := p()
+      seen[tag_count +:= 1] := res
+
+      res.decode_obj(self) | fail
+      res.post_decode()
+
+      return res
+   end
+
+   initially(s)
+      tag_count := 0
+      seen := table()
+      buff := s
+end

@@ -1,5 +1,5 @@
 #
-# $Id: httppage.icn,v 1.1 2003-07-07 19:50:46 jeffery Exp $
+# $Id: httppage.icn,v 1.2 2004-02-12 17:07:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -13,9 +13,9 @@ import lang
 #
 # This class encapsulates a page of data retrieved over http.
 #
-class HttpPage : Object : SelectiveClassCoding(url, status, header, data)
+class HttpPage : Object : SelectiveClassCoding(url, status, header, data, data_file)
    method get_template()
-      return ["url", "status", "header", "data"]
+      return ["url", "status", "header", "data", "data_file"]
    end
 
    #
@@ -34,6 +34,13 @@ class HttpPage : Object : SelectiveClassCoding(url, status, header, data)
    end
 
    #
+   # Succeed iff the status was an HTTP OK status.
+   #
+   method status_okay()
+      return find("200", status)
+   end
+
+   #
    # Return the header data of the page.
    # @return  A table.  The keys are the fields of the header and the
    # @ values are the corresponding header values.  The keys will always
@@ -49,6 +56,24 @@ class HttpPage : Object : SelectiveClassCoding(url, status, header, data)
    #
    method get_data()
       return data
+   end
+
+   #
+   # Set the data file for pages that save the data in a file,
+   # rather than as part of this object.
+   # @param s the filename.
+   #
+   method set_data_file(s)
+      return data_file := s
+   end
+
+   #
+   # Return the data file for this page, or null if there is no
+   # such file.
+   # @return The filename
+   #
+   method get_data_file()
+      return data_file
    end
 
    #

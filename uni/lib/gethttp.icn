@@ -1,5 +1,5 @@
 #
-# $Id: gethttp.icn,v 1.1 2003-07-07 19:50:46 jeffery Exp $
+# $Id: gethttp.icn,v 1.2 2004-02-12 17:07:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -9,108 +9,301 @@
 package http
 
 import util
-import lang
 import ipc
 
 $include "gethttpincl.icn"
 
 #
-# A convenient class to control a {GetHttpProcessControl} process, to obtain
-# a web page.  It is appropriate for use in a non-gui environment, as the {retrieve}
-# method will block for some time (it will return eventually however, as long as
-# a non-zero timeout is used).  In a GUI environment, it may well be more appropriate to
-# create a {GetHttpProcessControl} directly, and poll it during the {tick} method.
+# This class creates instances of {GetHttpProcess} as appropriate to
+# retrieve the given URL.  It handles timeouts and retries.
 #
-class GetHttp : Object(p, verbose_flag)
+class GetHttp : Error(data_file,
+                      url,
+                      post_data,
+                      headers,
+                      request_type,
+                      timeout,
+                      retries,
+                      string_buff,
+                      header,
+                      header_done,
+                      data_out,
+                      smq,
+                      http_process,
+                      last_reason,
+                      part_line,
+                      verbose_flag 
+                      )
+
    #
-   # Set the desired url in the {GetHttpProcessControl} object being used.
+   # Set the desired url
    #
    method set_url(url)
-      p.set_url(url)
+      return self.url := url
    end
 
    #
-   # Set the CGI parameter data in the {GetHttpProcessControl} object being used.
+   # Set a filename to send the data part of the response to.  If not
+   # set then the data forms part of the HttpPage object sent at
+   # the end.
    #
-   method set_post_data(cgi)
-      p.set_post_data(cgi)
+   # @param s the name of the file.
+   #
+   method set_data_file(s)
+      return data_file := s
+   end
+
+   #
+   # Set the data to be used in a POST request.
+   #
+   # @param   post_data    The data to use this may either be a string, in
+   # @        which case it represents raw data, or it may be
+   # @        be a table in which case it represents a table of
+   # @        cgi parameters, which will be converted appropriately.
+   #
+   method set_post_data(post_data)
+      return self.post_data := post_data
+   end
+
+   #
+   # Set the request type.  The default is {GET}, unless post data is set, in which
+   # case the default is {POST}.
+   #
+   method set_request_type(request_type)
+      return self.request_type := request_type
+   end
+
+   #
+   # Set a header variable to the desired value.
+   #
+   method set_header(key, value)
+      return headers[map(key)] := value
    end
 
    #
    # Write the headers to file f
    #
    method write_headers(f)
-      p.write_headers(f)
+      every e := !sort(headers) do {
+         e[1][1] := map(e[1][1], &lcase, &ucase)
+         write(f, e[1], ": ", e[2])
+      }
    end
 
    #
-   # Set the header key, value in the {GetHttpProcessControl} object being used.
-   #
-   method set_header(key, value)
-      p.set_header(key, value)
-   end
-
-   #
-   #  Set the desired timeout in the {GetHttpProcessControl} object being used.
+   # Set the timeout to use.  The default is 12s.  If a figure of zero is given,
+   # then no timeout will be used.
    #
    method set_timeout(timeout)
-      p.set_timeout(timeout)
+      return self.timeout := timeout
    end
 
    #
-   # Set the desired number of retries in the {GetHttpProcessControl} object being used.
+   # Set the number of retries to use.  The default is two.
    #
    method set_retries(retries)
-      p.set_retries(retries)
+      return self.retries := retries
    end
 
    #
    # Indicate that status messages should be printed; useful for debugging.
    #
    method set_verbose()
-      verbose_flag := 1
+      self.verbose_flag := 1
+   end
+
+   #
+   # Setup a temporary file for the {GetHttpProcessControl} object to use
+   # as a data file.  On success, this will be returned as a field in the
+   # {HttpPage} object.
+   #
+   method set_use_temporary_data_file()
+      set_data_file("/tmp/gethttp." || curr_time_millis() || ".bin")
+   end
+
+   #
+   # This method invokes retrieve_page, but only returns the page if
+   # its status was 200 OK - otherwise it fails and sets the failure
+   # reason appropriately.
+   #
+   method retrieve()
+      local res
+      res := retrieve_page() | fail
+      if res.status_okay() then
+         return res
+      remove(\data_file)
+      return error(res.get_status())
    end
 
    #
    # Retrieve the given url.  A {HttpPage} object is returned upon success.
    # Failure occurs if the url could not be retrieved.
    #
-   method retrieve()
-      local r, res, smq
+   method retrieve_page()
+      local i, res
 
-      smq := ipc::create_private_msg()
-      p.set_mq(smq)
-      p.start()
+      i := retries
       repeat {
-         if not(r := smq.receive()) then
-            break
-         if not(integer(r)) then {
-            res := r
-            break
-         }
+         event(STARTED)
 
-         if \verbose_flag then {
-            if r = WAITING then {
-               writes(".")
-               part_line := 1
-            } else {
-               if \part_line then {
-                  write()
-                  part_line := &null
-               }
-               write("Status: ", decode_code(r))
-            }
+         if res := tryone() then {
+            return res
          }
-
-         if r = FAILED then
+         if (i -:= 1) < 0 then
             break
+
+         event(RETRYING)
       }
-      p.join()
-      smq.remove()
-      return \res
+
+      event(FAILED)
+
+      return error(last_reason)
    end
-   
+
+   #
+   # This method is invoked whenever a progress event has occurred.  By
+   # default it just notes any failure reason and possibly outputs some
+   # progess info (if in verbose mode).
+   #
+   method event(r)
+      if r = (NO_CONNECT | TIMEOUT) then
+         last_reason := decode_code(r)
+
+      if \verbose_flag then {
+         if r = WAITING then {
+            writes(".")
+            part_line := 1
+         } else {
+            if \part_line then {
+               write()
+               part_line := &null
+            }
+            write("Status: ", decode_code(r))
+         }
+      }
+   end
+
+   #
+   # Try once to retrieve the page.
+   # 
+   # @p
+   method tryone()
+      local ok
+
+      #
+      # Prepare: create an HttpProcess with an interproces queue
+      # for communication.
+      #
+      smq := ipc::create_private_msg()
+      http_process := GetHttpProcess()
+      http_process.set_mq(smq)
+      http_process.set_parent(self)
+      http_process.start()
+
+      #
+      # Set up either a data file or a string buffer.
+      #
+      if /data_file then
+         string_buff := StringBuff()
+      else {
+         header := ""
+         header_done := &null
+         data_out := open(data_file, "w") | stop("Couldn't open ", data_file)
+      }
+
+      ok := do_attempt()
+
+      #
+      # Cleanup the resources.
+      #
+      http_process.join()
+      smq.remove()
+      close(\data_out)
+
+      if /ok then {
+         remove(\data_file)
+         fail
+      }
+
+      #
+      # Construct the result from the data
+      #
+      res := HttpPage()
+      res.set_url(url)
+      if /data_file then {
+         res.parse(string_buff.get_string())
+      } else {
+         res.parse(header)
+         res.set_data_file(data_file)
+         close(data_out)
+      }
+
+      return res
+   end
+
+   #
+   # @p
+   method do_attempt()
+      local r
+
+      repeat {
+         if not(r := smq.poll(timeout)) then {
+            event(TIMEOUT)
+            http_process.stop()
+            fail
+         }
+
+         if r === NO_CONNECT then {
+            event(NO_CONNECT)
+            fail
+         }
+         if r === DONE then {
+            event(DONE)
+            return 1
+         }
+         event(WAITING)
+
+         add_some(r)
+      }
+   end
+
+   #
+   # @p
+   method add_some(r)
+      if /data_file then
+         string_buff.add(r)
+      else {
+         if /header_done then {
+            header ||:= r
+            if i := find("\r\n\r\n", header) + 4 then {
+               writes(data_out, header[i:0])
+               header := header[1:i]
+               header_done := 1
+            }
+         } else 
+            writes(data_out, r)
+      }
+   end
+
    initially
-      p := GetHttpControlProcess()
+      headers := table()
+      timeout := 12000
+      retries := 2
 end
- 
+
+#
+# Decode one of the integer communication codes returned into
+# a string.
+#
+procedure decode_code(n)
+   return case n of {
+      NO_CONNECT : "Couldn't connect"   
+      DONE : "Done"         
+      TIMEOUT : "Timeout"      
+      WAITING : "Waiting"      
+      STARTED : "Started"      
+      FAILED : "Failed"    
+      RETRYING : "Retrying"
+   }
+end
+

@@ -1,0 +1,22 @@
+#
+# $Id: mailmisc.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+
+package mail
+
+global type_handlers, encoding_handlers
+
+procedure get_all_type_handlers()
+   initial {
+      type_handlers := [mail::MultipartHandler(), mail::TextHandler(), mail::MessageHandler()]
+   }
+   return type_handlers
+end
+
+procedure get_all_encoding_handlers()
+   initial {
+      encoding_handlers := [mail::NoOpHandler(), mail::Base64Handler(), mail::QuotedPrintableHandler()]
+   }
+   return encoding_handlers
+end
+

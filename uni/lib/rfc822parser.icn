@@ -1,0 +1,676 @@
+#
+# $Id: rfc822parser.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+#
+
+package mail
+
+link scan, caseless
+
+import util
+
+global ctl_char, space, specials, atom_char, ctext_char, field_name_chars,
+       qtext_char, dtext_char, lwsp_char, days, months, tz_chars, tspecials, atom_char_1521
+
+#
+# Initialize the parser
+# @p
+procedure init_parser()
+   ctl_char := &ascii[1:33] ++ &ascii[128]
+   space := ' '
+   specials := '()<>@,;:\\\".[]'
+   atom_char := &ascii -- ctl_char -- space -- specials
+   qtext_char := &ascii -- '\"\\\r'
+   dtext_char := &ascii -- '[]\\\r'
+   ctext_char := &ascii -- '()\\\r'
+   field_name_chars := &ascii -- ctl_char -- space -- ':'
+   lwsp_char := ' \t'
+   days := ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+   months := ["Jan", "Feb",  "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+   tz_chars := '+-' ++ &digits ++ &ucase
+   # RCF 1521 defs
+   tspecials := '()<>@,;:\\\"/[]?='
+   atom_char_1521 := &ascii -- ctl_char -- space -- tspecials
+end
+
+class RFC822Parser : Error()
+   #
+   # The first four parse objects are the fundamental lexical components, other
+   # than inidividual special characters (see rfc822).  Therefore, they must
+   # be preceded by a call to next_token, to move the position to the correct
+   # point to parse them.
+   #
+
+   method parse_error(s)
+      return error("Error parsing '" || &subject || "': " || s)
+   end
+
+   #
+   # qtext = <any CHAR excepting <">, "\" & CR, and including 
+   #         linear-white-space>
+   # quoted-pair =  "\" CHAR
+   # quoted-string = <"> *(qtext/quoted-pair) <">
+   #
+   # Must be preceded by a call to next_token()
+   #
+   method parse_quoted_string()
+      local res
+
+      res := move(1)
+      repeat {
+         if any('\\') then {
+            res ||:= move(2) | return parse_error("Unterminated quoted string")
+         } else if any(qtext_char) then
+            res ||:= tab(many(qtext_char))
+         else if any('\"') then {
+            return res || move(1)
+         } else
+            # Missing closing quote or illegal char
+            return parse_error("Missing closing quote or illegal char")
+      }
+   end
+
+   #
+   # atom        =  1*<any CHAR except specials, SPACE and CTLs>
+   # ie one or more atom_char
+   #
+   # Must be preceded by a call to next_token()
+   #
+   method parse_atom()
+      return tab(many(atom_char))
+   end
+
+   #
+   # domain-literal =  "[" *(dtext / quoted-pair) "]"
+   # dtext =  <any CHAR excluding "[","]", "\" & CR>
+   #
+   # Must be preceded by a call to next_token()
+   #
+   method parse_domain_literal()
+      local res
+      res := move(1)
+      repeat {
+         if any('\\') then
+            res ||:= move(2) | return parse_error("Premature end of field")
+         else if any(dtext_char) then
+            res ||:= tab(many(dtext_char))
+         else if any(']') then 
+            return res || move(1)
+         else
+            # Missing closing ] or illegal char
+            return parse_error("Missing closing ] or illegal char")
+      }
+   end
+
+   #
+   # comment     =  "(" *(ctext / quoted-pair / comment) ")"
+   #
+   method parse_comment()
+      local res
+      res := move(1)
+      repeat {
+         if any('\\') then
+            res ||:= move(2) | return parse_error("Premature end of field")
+         else if any(ctext_char) then
+            res ||:= tab(many(ctext_char))
+         else if any('(') then
+            res ||:= parse_comment() | fail
+         else if any(')') then 
+            return res || move(1)
+         else
+            # Missing closing ) or illegal char
+            return parse_error("Missing closing ) or illegal char")
+      }
+   end
+
+   method next_token()
+      repeat {
+         tab(many(lwsp_char))
+         if any('(') then
+            parse_comment() | fail
+         else
+            return
+      }
+   end
+
+   #
+   # word =  atom / quoted-string
+   #
+   method parse_word() 
+      next_token() | fail
+      if any('\"') then
+         return parse_quoted_string()
+      else
+         return parse_atom()
+   end
+
+   #
+   # local-part  =  word *("." word)             
+   #
+   method parse_local_part()
+      local res
+
+      res := parse_word() | fail
+      
+      while res ||:= ="." do
+         res ||:= parse_word() | fail
+
+      return res
+   end
+
+   #
+   # domain      =  sub-domain *("." sub-domain)
+   #
+   method parse_domain()
+      local res
+
+      res := parse_sub_domain() | fail
+
+      while res ||:= ="." do
+         res ||:= parse_sub_domain() | fail
+
+      return res
+   end
+
+   #
+   # sub-domain  =  domain-ref / domain-literal
+   # domain-ref  =  atom
+   #
+   method parse_sub_domain()
+      next_token() | fail
+      if any('[') then
+         return parse_domain_literal()
+      else
+         return parse_atom()
+   end
+
+   #
+   # phrase =  1*word
+   # 
+   # In fact this is parsed as just "*word".  This allows
+   # parsing of mailboxes such as, for example "<rparlett@xyz.com>" and
+   # groups such as :joe@soap.com;
+   #
+   method parse_phrase()
+      local res
+      res := ""
+      next_token() | fail
+      while any('\"' | atom_char) do {
+         # Single spaces between words
+         if *res > 0 then
+            res ||:= " "
+         res ||:= parse_word() | fail
+         next_token() | fail
+      }
+
+      # Strictly, this would be :-
+      # if *res > 0 then
+      #   return res
+
+      return res
+   end
+
+   #
+   # addr_spec = local-part "@" domain
+   #
+   method parse_addr_spec(mb)
+      mb.local_part := parse_local_part() | fail
+      next_token() | fail
+      ="@" | return parse_error("@ expected")
+      mb.domain := parse_domain() | fail
+      return
+   end
+
+   #
+   # route       =  1#("@" domain) ":" 
+   # where 1#X means '(X *("," X))' 
+   #
+   method parse_route(mb)
+      mb.route := []
+      repeat {
+         next_token() | fail
+         ="@" | return parse_error("@ expected")
+         put(mb.route, parse_domain()) | fail
+         next_token() | fail
+         ="," | break
+         next_token() | fail
+      }
+      next_token() | fail
+      =":" | return parse_error(": expected")
+      return
+   end
+
+   #
+   # route-addr  =  "<" [route] addr-spec ">"
+   #
+   method parse_route_addr(mb)
+      ="<" | return parse_error("< expected")
+      next_token() | fail
+      if any('@') then
+         parse_route(mb) | fail
+      else
+         mb.route := []
+      next_token() | fail
+      parse_addr_spec(mb) | fail
+      next_token() | fail
+      =">" | return parse_error("> expected")
+      return
+   end
+
+   #
+   # mailbox = addr-spec | phrase route-addr
+   #
+   method parse_mailbox_impl(mb)
+      /mb := Mailbox()
+      #
+      # The lookahead is complex, so try parsing as a simple address
+      # first, and if that fails try the more complex alternative.
+      #
+      x := &pos
+      if parse_addr_spec(mb) then {
+         mb.phrase := ""
+         mb.route := []
+      } else {
+         tab(x)
+         mb.phrase := parse_phrase() | fail
+         parse_route_addr(mb) | fail
+      }
+
+      return mb
+   end
+
+   #
+   # group =  phrase ":" [#mailbox] ";"
+   # #X means empty or X,X,X...
+   #    
+   method parse_group_impl(group)
+      local mb
+
+      /group := Group()
+      group.phrase := parse_phrase() | fail
+      group.mailboxes := []
+      next_token() | fail
+      =":" | return parse_error(": expected")
+
+      next_token() | fail
+      if any(';') then # empty group
+         move(1)
+      else {
+         repeat {
+            mb := parse_mailbox_impl() | fail
+            put(group.mailboxes, mb)
+            next_token() | fail
+            ="," | break
+         }
+         =";" | return parse_error("; expected")
+      }
+
+      return group
+   end
+
+   method parse_mailbox_or_group()
+      local x, a
+
+      x := &pos
+      if a := parse_mailbox_impl() then
+         return a
+      tab(x)
+
+      return parse_group_impl()
+   end
+
+   method parse_address_list_impl(can_be_empty)
+      local l
+      l := []
+
+      if \can_be_empty then {
+         next_token() | fail
+         if pos(0) then
+            return l
+      }
+
+      repeat {
+         put(l, parse_mailbox_or_group()) | fail
+         next_token() | fail
+         ="," | return l
+      }
+   end
+
+   method parse_mailbox_list_impl(can_be_empty)
+      local l
+      l := []
+
+      if \can_be_empty then {
+         next_token() | fail
+         if pos(0) then
+            return l
+      }
+
+      repeat {
+         put(l, parse_mailbox_impl()) | fail
+         next_token() | fail
+         ="," | return l
+      }
+   end
+
+   #
+   # month =  "Jan"  /  "Feb" /  "Mar"  /  "Apr" /  "May"  /  "Jun" /  
+   #         "Jul"  /  "Aug" /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+   #
+   method parse_month()
+      local i
+      next_token() | fail
+      every i := 1 to *months do
+         if =months[i] then
+            return i
+   end
+
+   method parse_day()
+      local s
+      next_token() | fail
+      s := tab(many(&digits)) | return parse_error("digit expected")
+      if *s <= 2 then
+         return integer(s)
+      return parse_error("invalid day: " || s)
+   end
+
+   method parse_year()
+      local s
+      next_token() | fail
+      s := tab(many(&digits)) | return parse_error("digit expected")
+      if *s = (2 | 4) then
+         return integer(s)
+      return parse_error("invalid year: " || s)
+   end
+
+   method parse_2dig()
+      local s
+      next_token() | fail
+      s := tab(many(&digits)) | return parse_error("digit expected")
+      if *s = 2 then
+         return integer(s)
+      return parse_error("2 digit field expected")
+   end
+
+   method parse_zone()
+      next_token() | fail
+      tab(upto(tz_chars)) | return parse_error("Expected tz char")
+      return tab(many(tz_chars)) | return parse_error("Expected tz char")
+   end
+
+   #
+   # date-time = [ day "," ] date time
+   # day =  "Mon"  / "Tue" /  "Wed"  / "Thu"/  "Fri"  / "Sat" /  "Sun"
+   # date =  1*2DIGIT month 2DIGIT        
+   # time =  hour zone                    
+   # hour =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
+   #
+   method parse_date_time_impl()
+      local d, m, y, h, s, t
+
+      t := Time()
+
+      next_token() | fail
+      if =(!days) then {
+         next_token() | fail
+         ="," | return parse_error(", expected")
+      }
+      d := parse_day() | fail
+      m := parse_month() | fail
+      y := parse_year() | fail
+
+      hh := parse_2dig() | fail
+      next_token() | fail
+      =":" | return parse_error(": expected")
+      mm := parse_2dig() | fail
+      next_token() | fail
+      if any(':') then {
+         move(1)
+         ss := parse_2dig() | fail
+      } else
+         ss := 0
+
+      s := parse_zone() | fail
+      zz := get_known_timezone(s) | Timezone(0, s)
+
+      t.set_fields(y, m, d, hh, mm, ss, zz)
+
+      return t
+   end
+
+   #
+   # field           =    field-name ":" [field-body] CRLF
+   # field-name      =  1*<any CHAR, excluding CTLs, SPACE, and ":">
+   # field-body      =   *text [CRLF LWSP-char field-body]
+   #
+   method parse_field_impl(message)
+      local f, v
+      next_token() | fail
+      f := tab(many(field_name_chars)) | return parse_error("Expect fieldname chars")
+      next_token() | fail
+      =":" | return parse_error(": expected")
+      next_token() | fail
+      v := tab(0)
+      message.add_header(f, v)
+      return
+   end
+
+   #
+   # encoding := "Content-Transfer-Encoding" ":" mechanism
+   #
+   # mechanism :=     "7bit"  ;  case-insensitive
+   #               / "quoted-printable"
+   #               / "base64"
+   #               / "8bit"
+   #               / "binary"
+   #               / x-token
+   #
+   method parse_content_transfer_encoding_impl()
+      local s
+
+      if s := tab(matchcl("7bit"|"quoted-printable"|"base64"|"8bit"|"binary")) then {
+         return s
+      }
+
+      if match("X-"|"x-") then
+         return parse_extension_token()
+
+      return parse_error("Unknown encoding")
+   end
+
+   #
+   # type :=          "application"     / "audio"
+   #               / "image"           / "message"
+   #               / "multipart"  / "text"
+   #               / "video"           / extension-token
+   #               ; All values case-insensitive
+   #
+   method parse_type()
+      local s
+
+      if s := tab(matchcl("application"|"audio"|"image"|"message"|"multipart"|"text"|"video")) then {
+         return s
+      }
+
+      if match("X-"|"x-") then
+         return parse_extension_token()
+
+      return parse_error("Unknown type")
+   end
+
+   #
+   # disposition-type := "inline"
+   #                       / "attachment"
+   #                       / extension-token
+   #                       ; values are not case-sensitive
+   method parse_disposition_type()
+      local s
+
+      if s := tab(matchcl("inline"|"attachment")) then {
+         return s
+      }
+
+      if match("X-"|"x-") then
+         return parse_extension_token()
+
+      return parse_error("Unknown Content-disposition type")
+   end
+
+   #
+   # extension-token :=  x-token / iana-token
+   #
+   #     iana-token := <a publicly-defined extension token,
+   #               registered with IANA, as specified in
+   #               appendix E>
+   #
+   #     x-token := <The two characters "X-" or "x-" followed, with
+   #                 no intervening white space, by any token>
+   #
+   method parse_extension_token()
+      s := =("X-"|"x-") | return parse_error("X- or x- expected")
+      return s || parse_token_1521()
+   end
+
+   #
+   # token  :=  1*<any (ASCII) CHAR except SPACE, CTLs,
+   # or tspecials>
+   #
+   # tspecials :=  "(" / ")" / "<" / ">" / "@"
+   #             /  "," / ";" / ":" / "\" / <">
+   #             /  "/" / "[" / "]" / "?" / "="
+   #            ; Must be in quoted-string,
+   #            ; to use within parameter values
+   #
+   method parse_token_1521()
+      return tab(many(atom_char_1521))
+   end
+
+   #
+   # content  :=   "Content-Type"  ":"  type  "/"  subtype  *(";"
+   #  parameter)
+   #            ; case-insensitive matching of type and subtype
+   # parameter := attribute "=" value
+   #
+   #  attribute := token   ; case-insensitive
+   #
+   #  value := token / quoted-string
+   #
+   method parse_content_type_impl(ct)
+      local ty, key, val
+
+      next_token() | fail
+
+      /ct := ContentType()
+
+      ty := parse_type() | fail
+      next_token() | fail
+      ="/" | return parse_error("/ expected")
+      next_token() | fail
+      st := parse_token_1521() | fail
+
+      ct.set_type(ty)
+      ct.set_subtype(st)
+
+      repeat {
+         next_token() | fail
+         =";" | break
+         next_token() | fail
+         key := parse_token_1521() | fail
+         next_token() | fail
+         ="=" | return parse_error("= expected")
+         next_token() | fail
+         if any('\"') then
+            val :=  parse_quoted_string() | fail
+         else
+            val := parse_token_1521() | fail
+
+         ct.set_parameter(key, val)
+      }
+
+      return ct
+   end
+
+   #
+   # disposition := "Content-Disposition" ":"
+   #                    disposition-type
+   #                    *(";" disposition-parm)
+   #
+   #     disposition-type := "inline"
+   #                       / "attachment"
+   #                       / extension-token
+   #                       ; values are not case-sensitive
+   #
+   #     disposition-parm := filename-parm / parameter
+   #
+   #     filename-parm := "filename" "=" value;
+   #
+   method parse_content_disposition_impl(cd)
+      local ty, key, val
+
+      next_token() | fail
+
+      /cd := ContentDisposition()
+
+      ty := parse_disposition_type() | fail
+
+      cd.set_type(ty)
+
+      repeat {
+         next_token() | fail
+         =";" | break
+         next_token() | fail
+         key := parse_token_1521() | fail
+         next_token() | fail
+         ="=" | return parse_error("= expected")
+         next_token() | fail
+         if any('\"') then
+            val :=  parse_quoted_string() | fail
+         else
+            val := parse_token_1521() | fail
+
+         cd.set_parameter(key, val)
+      }
+
+      return cd
+   end
+
+   method parse_mailbox(s, mb)
+      return s ? parse_mailbox_impl(mb)
+   end
+
+   method parse_group(s, group)
+      return s ? parse_group_impl(group)
+   end
+
+   method parse_address_list(s, can_be_empty)
+      return s ? parse_address_list_impl(can_be_empty)
+   end
+
+   method parse_mailbox_list(s, can_be_empty)
+      return s ? parse_mailbox_list_impl(can_be_empty)
+   end
+
+   method parse_date_time(s)
+      return s ? parse_date_time_impl()
+   end
+
+   method parse_field(s, message)
+      return s ? parse_field_impl(message)
+   end
+
+   method parse_content_type(s, ct)
+      return s ? parse_content_type_impl(ct)
+   end
+
+   method parse_content_disposition(s, ct)
+      return s ? parse_content_disposition_impl(ct)
+   end
+
+   method parse_content_transfer_encoding(s)
+      return s ? parse_content_transfer_encoding_impl()
+   end
+
+   initially()
+      initial {
+         init_parser()
+      }
+end

@@ -1,0 +1,56 @@
+#
+# $Id: stringbuff.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package util
+
+#
+# This class is a way around Icon's inefficiency in concatenating long
+# strings.  It creates a list of strings which it then concatenates all at
+# once in a loop which takes advantage of an Icon optimization.
+#
+class StringBuff(buff)
+   #
+   # Get the buffer list of strings.
+   #
+   method get_buff()
+      return buff
+   end
+
+   #
+   # Add the string to the buffer list.
+   #
+   method add(s)
+      return put(buff, s)
+   end
+
+   #
+   # Get the string catenation of the strings in the buffer.
+   # @param sep  A separator to add between the strings (default is the empty
+   # @           string.
+   #
+   method get_string(sep)
+      s := ""
+      /sep := ""
+      every s ||:= !buff || sep
+      return s
+   end
+
+   #
+   # Discard the last element of the buffer if it equals the given string.
+   #
+   method drop_last(s)
+      if buff[-1] == s then
+         pull(buff)
+   end
+
+   initially
+      buff := []
+end
+
+      
+

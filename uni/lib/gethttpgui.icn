@@ -1,0 +1,36 @@
+#
+# $Id: gethttpgui.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package http
+
+import lang
+
+$include "gethttpincl.icn"
+
+class GetHttpGui : GetHttp : Process(mq)
+   #
+   # Set the message queue to send results to.
+   #
+   method set_mq(mq)
+      self.mq := mq
+   end
+
+   #
+   # Override event to forward to the mq.
+   #
+   method event(r)
+      self.GetHttp.event(r)
+      self.mq.send(r)
+   end
+
+   method run()
+      local res
+      if res := retrieve_page() then
+         mq.send(res)
+   end
+end

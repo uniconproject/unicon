@@ -1,0 +1,225 @@
+#
+# $Id: popclient.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+#
+
+package mail
+
+class PopClient:MailClient(username, password)
+   #
+   # Flag the given message for deletion
+   # @param n the message number
+   #
+   method dele(n)
+      send_command("DELE " || n) | fail
+   end
+
+   #
+   # Set the username for the session
+   #
+   method set_username(s)
+      username := s
+   end
+
+   #
+   # Set the password for the session
+   #
+   method set_password(s)
+      password := s
+   end
+
+   #
+   # Open a connection; should be followed by {login()}
+   #
+   method connect()
+      local s
+      open() | fail
+      read_response() | fail
+      return connection
+   end
+
+   #
+   # Authenticate the username, password combination
+   #
+   method login()
+      send_command("USER " || username) | fail
+      send_command("PASS " || password) | fail
+      return
+   end
+
+   #
+   # Disconnect using the QUIT command
+   #
+   method disconnect()
+      send_command("QUIT") | fail
+      close() | fail
+      return
+   end
+
+   #
+   # Send the RSET command
+   #
+   method rset()
+      send_command("RSET") | fail
+      return
+   end
+
+   #
+   # Retrieve the given message; the result is a {Message} object
+   #
+   method retr(n)
+      local l, m, s
+      send_command("RETR " || n) | fail
+      l := read_multi_lines() | fail
+
+      s := ""
+      every s ||:= !l || "\r\n"
+
+      m := Message()
+      m.parse(s) | return error(m)
+
+      return m
+   end
+
+   #
+   # Return a table of integer to integer mappings, of message numbers
+   # to sizes.
+   #
+   # @param n optionally return only this message number
+   #
+   method list(n)
+      local l, r, num, size
+
+      r := table()
+      
+      if /n then {
+         send_command("LIST") | fail
+         l := read_multi_lines() | fail
+         every s := !l do {
+            s ? {
+               num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+               =" "
+               size := integer(tab(many(&digits))) | return error("Bad list: " || s)
+            }
+            insert(r, num, size)
+         }
+      }
+      else {
+         s := send_command("LIST " || n) | fail
+         s ? {
+            num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+            =" "
+            size := integer(tab(many(&digits))) | return error("Bad list: " || s)
+         }
+         insert(r, num, size)
+      }
+
+      return r
+   end
+
+   #
+   # Return a table of integer to integer mappings, of message numbers
+   # to unique ids, using the UIDL command.
+   #
+   # @param n optionally return only this message number
+   #
+   method uidl(n)
+      local l, r, num, id
+
+      r := table()
+      
+      if /n then {
+         send_command("UIDL") | fail
+         l := read_multi_lines() | fail
+         every s := !l do {
+            s ? {
+               num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+               =" "
+               id := tab(0)
+            }
+            insert(r, num, id)
+         }
+      }
+      else {
+         s := send_command("UIDL " || n) | fail
+         s ? {
+            num := integer(tab(many(&digits))) | return error("Bad list: " || s)
+            =" "
+            id := tab(0)
+         }
+         insert(r, num, id)
+      }
+
+      return r
+   end
+
+   #
+   # Read a multi-line response, ended with a "."
+   # @p
+   method read_multi_lines()
+      local l, s
+      l := []
+      repeat {
+         s := read_line() | fail
+         if s[1:3] == ".." then
+            s[1:3] := "."
+         if s == "." then
+            break
+         put(l, s)
+      }
+      return l
+   end
+
+   #
+   # Send a single command
+   # @p
+   method send_command(msg)
+      write_line(msg)
+      flush()
+      return read_response()
+   end
+
+   #
+   # Return a two-item list being the number of messages followed by the
+   # total size, obtained using the STAT command.
+   #
+   method stat()
+      local s, num_messages, total_size
+
+      s := send_command("STAT") | fail
+      s ? {
+         num_messages := integer(tab(many(&digits))) | return error("Bad stat listing: " || s)
+         =" "
+         total_size := integer(tab(many(&digits))) | return error("Bad stat listing: " || s)
+      }
+
+      return [num_messages, total_size]
+   end
+
+   #
+   # Read a response line (+OK or -ERR)
+   # @p
+   method read_response()
+      local s
+
+      s := read_line() | return error_and_close("Unexpected EOF from server")
+
+      s ? {
+         if ="+OK" then {
+            =" "
+            return tab(0)
+         }
+
+         if ="-ERR" then {
+            =" "
+            return error_and_close("Got an error: " || tab(0))
+         }
+      }
+
+      return error_and_close("Got an unrecognized response: " || s)
+   end
+
+   initially(a[])
+      self.MailClient.initially()
+      port := 110
+      server := "localhost"
+end

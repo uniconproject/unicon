@@ -1,0 +1,48 @@
+#
+# $Id: cltable.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+
+package util
+
+#
+# This class represents a caseless table()
+#
+class ClTable(lookup, names)
+   method insert(key, val)
+      ::insert(lookup, map(key), val)
+      ::insert(names, map(key), key)
+   end
+
+   method member(key)
+      return ::member(lookup, map(key))
+   end
+
+   method delete(key)
+      ::delete(lookup, map(key))
+      ::delete(names, map(key))
+   end
+   
+   method get(key)
+      return lookup[map(key)]
+   end
+
+   method sort()
+      local l
+      l := ::sort(lookup)
+      every e := !l do
+         e[1] := names[e[1]]
+      return l
+   end
+
+   method keys()
+      local e
+      every e := !::sort(names) do {
+         suspend e[2]
+      }
+   end
+
+   initially()
+      lookup := table()
+      names := table()
+end
+

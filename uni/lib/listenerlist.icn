@@ -1,0 +1,30 @@
+#
+# $Id: listenerlist.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package util
+
+#
+# A simple list of listeners.  The only requirement is that
+# the listeners be instances of the Listener class.
+#
+class ListenerList(listeners)
+   method add_listener(l)
+      put(listeners, l)
+   end
+
+   method fire(event)
+      every (!listeners).fire(event)
+   end
+
+   method remove_listener(l)
+      delete(listeners, l)
+   end
+
+   initially()
+      listeners := []
+end

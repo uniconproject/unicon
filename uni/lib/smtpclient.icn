@@ -1,0 +1,162 @@
+#
+# $Id: smtpclient.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+#
+
+package mail
+
+class SmtpClient:MailClient(hostname, sent_helo)
+   method set_hostname(s)
+      hostname := s
+   end
+
+   method connect()
+      local s
+      open() | fail
+      sent_helo := &null
+      s := read_response() | fail
+      if not(s[1:4] == "220") then
+         return error_and_close("Failed to get initial 220:" || s)
+      return connection
+   end
+
+   method disconnect()
+      send_command("QUIT", 221) | fail
+      close() | fail
+      return
+   end
+
+   method send_message(m)
+      local s
+
+      if /sent_helo then {
+         send_command("EHLO " || hostname, 250) | fail
+         sent_helo := 1
+      } else
+         send_command("RSET", 250)
+
+      l := m.get_from() | return error("Invalid From address in message")
+      if *l = 0 then
+         return error("No From address in message")
+      send_command("MAIL FROM: " || smtp_address(l[1]), 250) | fail
+
+      l := get_all_mailboxes(m.get_to()) | return error("Invalid To address in message")
+      if *l = 0 then
+         return error("No To address in message")
+      every mb := !l do 
+         send_command("RCPT TO: " || smtp_address(mb), 250)  | fail
+
+      send_command("DATA", 354) | fail
+      send_headers(m) | fail
+
+      #
+      # Transform the content to change any . starting a line to ..
+      #
+      s := ""
+      m.get_content() ? {
+         if ="." then {
+            s ||:= ".."
+         }
+         while s ||:= tab(find("\r\n.")) do {
+            move(3)
+            s ||:= "\r\n.."
+         }
+         s ||:= tab(0)
+      }
+      write_line(s)
+      send_command(".", 250) | fail
+
+      return
+   end
+
+   method smtp_address(mb)
+      return "<" || mb.get_local_part() || "@" || mb.get_domain() || ">"
+   end
+
+   method send_command(msg, reply)
+      if \logging then
+         write("Sending ", msg)
+
+      write_line(msg)
+      flush()
+
+      if \logging then
+         write("Expecting ", reply)
+
+      s := read_response() | fail
+
+      rc := integer(s[1:4]) | return error("Couldn't get return code")
+      return (rc = reply) | error("Server responded " || s)
+   end
+
+   method read_response()
+      local s, t
+
+      t := ""
+      repeat {
+         s := read_line() | fail
+
+         t ||:= s || "\n"
+
+         if not(s[4] == "-") then
+            return t
+      }         
+   end
+
+   # Output the first header with the key only
+   # @p
+   method send_first_header(m, key)
+      write_line(key || ": " || m.get_first_header(key))
+   end
+
+   # Output all the headers with the key only, as separate header lines
+   # @p
+   method send_headers_list(m, key)
+      every write_line(key || ": " || !m.get_headers(key))
+   end
+
+   # Output all the headers for the key catenated together
+   # @p
+   method send_catenated_header(m, key)
+      write_line(key || ": " || m.get_catenated_headers(key))
+   end
+
+   method send_headers(m)
+      static rfc822_headers
+      initial {
+         rfc822_headers := set(["date", "resent-date", "return-path", "received", "sender", "from", "reply-to", "resent-sender", "resent-from", "resent-reply-to", "to", "resent-to", "cc", "resent-cc", "bcc", "resent-bcc", "message-id", "resent-message-id", "in-reply-to", "references", "keywords", "subject", "comments", "encrypted"])
+      }
+
+      send_first_header(m, "Resent-Date")
+      send_first_header(m, "Sender")
+      send_first_header(m, "From")
+      send_catenated_header(m, "Reply-To")
+      send_first_header(m, "Resent-Sender")
+      send_catenated_header(m, "Resent-From")
+      send_catenated_header(m, "Resent-Reply-To")
+      send_catenated_header(m, "To")
+      send_catenated_header(m, "Resent-To")
+      send_catenated_header(m, "cc")
+      send_catenated_header(m, "Resent-cc")
+      send_catenated_header(m, "bcc")
+      send_catenated_header(m, "Resent-bcc")
+      send_first_header(m, "Resent-Message-ID")
+      send_first_header(m, "In-Reply-To")
+      send_first_header(m, "References")
+      send_first_header(m, "Keywords")
+      send_first_header(m, "Subject")
+      send_first_header(m, "Comments")
+      send_first_header(m, "Encrypted")
+
+      every x := map(m.headers.keys()) do {
+         if not member(rfc822_headers, x) then 
+            send_headers_list(m, x)
+      }
+
+      return
+   end
+
+   initially(a[])
+      self.MailClient.initially()
+      port := 25
+      server := "localhost"
+end

@@ -1,0 +1,45 @@
+#
+# $Id: texthandler.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+#
+
+package mail
+
+class TextHandler : TypeHandler()
+   method can_handle(ct)
+      return map(ct.get_type()) == "text"
+   end
+   
+   method convert_to_object(m, data)
+      local res
+
+      #
+      # Convert from canonical form (CRLF) to local form (\n)
+      #
+      res := ""
+      data ? repeat {
+         res ||:= tab(find("\r\n") | 0)
+         if pos(0) then
+            break
+         move(2)
+         res ||:= "\n"
+      }
+      return res
+   end
+
+   method convert_from_object(m, obj)
+      local res
+
+      #
+      # Convert from local form to canonical form (CRLF)
+      #
+      res := ""
+      obj ? repeat {
+         res ||:= tab(upto('\n') | 0)
+         if pos(0) then
+            break
+         move(1)
+         res ||:= "\r\n"
+      }
+      return res
+   end
+end

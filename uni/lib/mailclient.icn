@@ -1,0 +1,104 @@
+#
+# $Id: mailclient.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+
+package mail
+
+import util
+
+#
+# Common base class for a client class which holds a connection to a
+# server and communicates using CRLF-terminated lines.
+#
+class MailClient:Error(server, port, loggin, connection, sbuff)
+   # 
+   # Fail and set the error code, and close the connection.
+   # @p
+   method error_and_close(a)
+      error(a)
+      close()
+   end
+
+   #
+   # Open the connection.
+   #
+   method open()
+      close() | fail
+      connection := ::open(server || ":" || port, "n") | return error("Couldn't connect to " || server)
+      return connection
+   end
+
+   #
+   # Close the connection
+   #
+   method close()
+      if \connection then {
+         ::close(connection) | return error("Failed to close connection")
+         connection := &null
+      }
+      return
+   end
+
+   #
+   # Set the server to use
+   #
+   method set_server(s)
+      server := s
+   end
+
+   #
+   # Set the port.
+   #
+   method set_port(n)
+      port := n
+   end
+
+   #
+   # Set the logging flag.
+   #
+   method set_logging(x)
+      logging := x
+   end
+
+   #
+   # Flush the connection.
+   #
+   method flush()
+      ::flush(connection)
+   end
+
+   #
+   # Write a single line to the connection, appending CRLF to the output stream.
+   # @p
+   method write_line(s)
+      if \logging then
+         write("Sending ", s)
+      writes(connection, s, "\r\n")
+   end
+
+   #
+   # Read a single line from the connection, and return it.
+   # @p
+   method read_line()
+      local line
+
+      repeat {
+         #
+         # Look for a line and if found return it.
+         #
+         sbuff ? {
+            if line := tab(find("\r\n")) then {
+               move(2)
+               sbuff := tab(0)
+               if \logging then
+                  write("Got ", line)
+               return line
+            }
+         }
+         sbuff ||:= sysread(connection, 1024) | return error("Unexpected EOF on connection")
+      }
+   end
+
+   initially()
+      sbuff := ""
+end

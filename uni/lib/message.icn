@@ -1,62 +1,15 @@
-############################################################################
 #
-#	File:     message.icn
+# $Id: message.icn,v 1.2 2004-02-12 17:07:56 rparlett Exp $
 #
-#	Subject:  E-mail message class
-#
-#	Author:   Robert Parlett
-#
-#	Date:     14 April, 2002
-#
-############################################################################
-#
-#   This file is in the public domain.
-#
-############################################################################
-#
-#   This file provides a class for e-mail messages.
-#
-############################################################################
 
 package mail
+
+import util
 
 #
 # This class represents an email message
 #
-class Message(headers, content)
-   #
-   # Read headers from the file f, which should be opened already, and
-   # will not be closed.
-   # 
-   method read_headers(f)
-      local s, t, k, v
-      headers := table()
-      repeat {
-         s := read(f) | fail
-         if *s = 0 then
-            return
-         if /t then  # first line
-            t := s
-         else if any(' ', s) then  { # continuation line
-            s ? {
-               tab(many(' '))
-               t ||:= " " || tab(0)
-            }
-         } else {
-            t ? parse_field(self) | fail
-            t := s
-         }
-      }
-   end
-
-   #
-   # Read body from the file f; this should come after read_headers
-   #
-   method read_content(f)
-      content := ""
-      every content ||:= !f || "\n"
-   end
-
+class Message:Error(headers, content, parser)
    #
    # Set the content
    #
@@ -72,38 +25,255 @@ class Message(headers, content)
    end
 
    #
+   # Get the decoded content, based on the Content-Transfer-Encoding attribute.
+   #
+   method get_decoded_content()
+      local h
+
+      #
+      # Get the handler
+      #
+      h := get_encoding_handler() | fail
+
+      #
+      # Use the handler to convert the data.
+      #
+      return h.decode_data(self, content) | error(h)
+   end
+
+   #
+   # Set the decoded content.  The content itself will then be set based on the
+   # Content-Transfer-Encoding.
+   #
+   method set_decoded_content(s)
+      local h
+
+      #
+      # Get the handler
+      #
+      h := get_encoding_handler() | fail
+
+      #
+      # Use the handler to convert the data.
+      #
+      return content := h.encode_data(self, s) | error(h)
+   end
+
+   #
+   # Retrieve an object representation of the decoded data, based on
+   # the Content-Type attribute.
+   #
+   method get_content_object()
+      local data, h
+
+      data := get_decoded_content() | fail
+
+      #
+      # Get the handler
+      #
+      h := get_type_handler() | fail
+
+      #
+      # Use the handler to convert the data.
+      #
+      return h.convert_to_object(self, data) | error(h)
+   end
+
+   #
+   # Set the content from the given object, which must be consistent
+   # with the Content-Type specified in the message.
+   #
+   method set_content_object(o)
+      local data, h
+
+      #
+      # Get the handler
+      #
+      h := get_type_handler() | fail
+
+      data := h.convert_from_object(self, o) | return error(h)
+
+      return set_decoded_content(data)
+   end
+
+   #
+   # Helper to get the specified encoding, or the standard default.
+   # @p
+   method get_actual_content_transfer_encoding()
+      if has_header("Content-Transfer-Encoding") then
+         return get_content_transfer_encoding()
+      else
+         return "7bit"
+   end
+
+   #
+   # Helper to get the specified content type, or the standard default.
+   # @p
+   method get_actual_content_type()
+      if has_header("Content-Type") then
+         return get_content_type()
+      else
+         return ContentType("text/plain")
+   end
+
+   #
+   # Helper to get the appropriate encoding handler
+   # @p
+   method get_encoding_handler()
+      local enc, e
+      enc := get_actual_content_transfer_encoding()
+      every e := !get_all_encoding_handlers() do {
+         if e.can_handle(enc) then
+            return e
+      }
+      return error("Unknown or unhandled encoding")
+   end
+
+   #
+   # Helper to get the appropriate type handler
+   #
+   method get_type_handler()
+      local ct, e
+      ct := get_actual_content_type()
+      every e := !get_all_type_handlers() do {
+         if e.can_handle(ct) then
+            return e
+      }
+      return error("Unknown or unhandled content type")
+   end
+
+   #
+   # Return a string representation of the message in RFC822 format.
+   # 
+   method to_rfc822()
+      local s
+      s := ""
+      every h := !headers.sort() do {
+         every s ||:= fold(h[1] || ": " || !h[2]) || "\r\n"
+      }
+      s ||:= "\r\n" || content
+
+      return s
+   end
+
+   #
+   # Fold a line into several CRLF lines of <= 78 chars
+   # @p
+   method fold(s)
+      local res, l, t
+
+      # Drop trailing w/s
+      while any(' \t', s[-1]) do
+         s[-1] := ""
+
+      # Check for simple quick case
+      if *s <= 78 then
+         return s
+
+      res := ""
+      # l is the current line
+      l := ""
+      s ? repeat {
+         #
+         # Get a block of text being w/s followed by non-ws eg
+         #             "   here"
+         #
+         t := tab(many(' \t')) | ""
+         t ||:= tab(upto(' \t') | 0)
+         if *l + *t > 78 then {
+            # Too big, so start a new line.
+            res := fold1(res, l)
+            l := t
+         } else {
+            # Not too big, so continue this line.
+            l ||:= t
+         }
+         if pos(0) then {
+            # Add any remainder.
+            return fold1(res, l)
+         }
+      }
+   end
+
+   #
+   # @p
+   method fold1(res, l)
+      if *l > 0 then {
+         if *res > 0 then {
+            res ||:= "\r\n"
+         }
+         res ||:= l
+      }
+      return res
+   end
+
+   #
    # Show the header table (useful debug)
    #
    method show_headers()
       local h
       every h := !sort(headers) do {
-         write(h[1], ":")
-         every write("          ", !h[2])
+         every write(h[1], ": ", !h[2])
       }
    end
 
    #
-   # Get the first header matching the given key, or fail
+   # Debug output function
    #
-   method get_first_header(key)
-      return (\headers[key])[1]
+   method show_message()
+      show_headers()
+      write()
+      write(content)
    end
 
    #
-   # Get all the headers for the key, as a list
+   # Parse the given raw data into the message data structures.
    #
-   method get_headers_list(key)
-      return \headers[key] | []
+   method parse(data)
+      data ? {
+         while s := tab(find("\r\n")) do {
+            move(2)
+            while any(' \t') do {
+               s ||:= tab(many(' \t'))
+               s ||:= tab(find("\r\n")) | return error("Unexpected end of message")
+               move(2)
+            }
+            if *s = 0 then {
+               content := tab(0)
+               return
+            }
+            parser.parse_field(s, self) | return error(parser)
+         }
+         return error("Unexpected end of message")
+      }
+   end
+
+   #
+   # A convenience function to get the first header matching the given key, or fail
+   #
+   method get_first_header(key)
+      return get_headers(key)[1]
+   end
+
+   #
+   # Get all the headers for the key, or fail if the key has no headers
+   # @return a list of all the headers for the key.  This will always be
+   # @       a non-empty list.
+   # @fail if no headers for the key have been defined
+   #
+   method get_headers(key)
+      return \headers.get(key) | error("No such header: " || key)
    end
 
    #
    # Get all the headers matching the given key as a string separated
-   # by the given delimter, which defaults to ","
+   # by the given delimeter, which defaults to ","
+   # @fail if there is no header with the given key
    #
    method get_catenated_headers(key, delim)
       local s
 
-      l := \headers[key] | fail
+      l := get_headers(key) | fail
 
       /delim := ","
 
@@ -118,13 +288,33 @@ class Message(headers, content)
    end
 
    #
+   # Turn the given parameter into a delim-separated list of addresses.  The
+   # param is either an {Address} or a list of {Address}es.
+   # @p
+   method catenate_addresses(a, delim)
+      local s
+      if type(a) == "list" then {
+         s := ""
+         every e := !a do {
+            if *s > 0 then 
+               s ||:= delim
+            s ||:= e
+         }
+         return s
+      }
+      else {
+         return a.to_rfc822()
+      }
+   end
+
+   #
    # Add a header with the given key, after any existing ones with the same key
    #
    method add_header(key, val)
-      if member(headers, key) then
-         put(headers[key], val)
+      if headers.member(key) then
+         put(headers.get(key), val)
       else
-         headers[key] := [val]
+         headers.insert(key, [val])
    end
 
    #
@@ -132,167 +322,453 @@ class Message(headers, content)
    # are removed.
    #
    method set_header(key, val)
-      headers[key] := [val]
+      headers.insert(key, [val])
    end
 
    #
    # Unset the header(s) for the given key
    #
    method unset_header(key)
-      delete(headers, key)
+      headers.delete(key)
    end
 
+   #
+   # Succeed iff there is a header with the given key.
+   #
+   method has_header(key)
+      return headers.member(key)
+   end
+
+   #
+   # Get the "Date" header as a {Time} object.
+   # @fail if the "Date" header is absent or cannot be parsed.
+   # @return a {Time} instance
+   #
    method get_date()
-      return get_first_header("Date") ? parse_date_time()
+      local s
+      s := get_first_header("Date") | fail
+      return parser.parse_date_time(s) | error(parser)
    end
 
+   #
+   # Set the "Date" header from the given {Time} object.
+   # @param t the {Time} from which to set the date field.
+   #
    method set_date(t)
       set_header("Date", t.to_rfc822())
    end
 
+   #
+   # Get the "To" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "To" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_to()
-      return get_catenated_headers("To") ? parse_address_list()
+      local s
+      s := get_catenated_headers("To") | fail
+      return parser.parse_address_list(s) | error(parser)
    end
 
+   #
+   # Set the "To" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "To"
+   # headers, use {add_to}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_to(a)
-      set_header("To", a.to_rfc822())
+      set_header("To", catenate_addresses(a))
    end
 
+   #
+   # Add a "To" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_to(a)
-      add_header("To", a.to_rfc822())
+      add_header("To", catenate_addresses(a))
    end
 
+   #
+   # Get the "Reply-To" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "Reply-To" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_reply_to()
-      return get_catenated_headers("Reply-To") ? parse_address_list(1)
+      local s
+      s := get_catenated_headers("Reply-To") | fail
+      return parser.parse_address_list(s, 1) | error(parser)
    end
 
+   #
+   # Set the "Reply-To" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "Reply-To"
+   # headers, use {add_reply_to}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_reply_to(a)
-      set_header("Reply-To", a.to_rfc822())
+      set_header("Reply-To", catenate_addresses(a))
    end
 
+   #
+   # Add a "Reply-To" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_reply_to(a)
-      add_header("Reply-To", a.to_rfc822())
+      add_header("Reply-To", catenate_addresses(a))
    end
 
+   #
+   # Get the "Resent-To" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "Resent-To" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_resent_to()
-      return get_catenated_headers("Resent-To") ? parse_address_list()
+      local s
+      s := get_catenated_headers("Resent-To") | fail
+      return parser.parse_address_list(s) | error(parser)
    end
 
+   #
+   # Set the "Resent-To" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "Resent-To"
+   # headers, use {add_resent_to}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_resent_to(a)
-      set_header("Resent-To", a.to_rfc822())
+      set_header("Resent-To", catenate_addresses(a))
    end
 
+   #
+   # Add a "Resent-To" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_resent_to(a)
-      add_header("Resent-To", a.to_rfc822())
+      add_header("Resent-To", catenate_addresses(a))
    end
 
+   #
+   # Get the "cc" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "bcc" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_cc()
-      return get_catenated_headers("cc") ? parse_address_list()
+      local s
+      s := get_catenated_headers("cc") | fail
+      return parser.parse_address_list(s) | error(parser)
    end
 
+   #
+   # Set the "cc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "cc"
+   # headers, use {add_cc}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_cc(a)
-      set_header("cc", a.to_rfc822())
+      set_header("cc", catenate_addresses(a))
    end
 
+   #
+   # Add a "cc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_cc(a)
-      add_header("cc", a.to_rfc822())
+      add_header("cc", catenate_addresses(a))
    end
 
+   #
+   # Get the "Resent-cc" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "Resent-cc" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_resent_cc()
-      return get_catenated_headers("Resent-cc") ? parse_address_list()
+      local s
+      s := get_catenated_headers("Resent-cc") | fail
+      return parser.parse_address_list(s) | error(parser)
    end
 
+   #
+   # Set the "Resent-cc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "Resent-cc"
+   # headers, use {add_resent_cc}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_resent_cc(a)
-      set_header("Resent-cc", a.to_rfc822())
+      set_header("Resent-cc", catenate_addresses(a))
    end
 
+   #
+   # Add a "Resent-cc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_resent_cc(a)
-      add_header("Resent-cc", a.to_rfc822())
+      add_header("Resent-cc", catenate_addresses(a))
    end
 
+   #
+   # Get the "bcc" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "bcc" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_bcc()
-      return get_catenated_headers("bcc") ? parse_address_list(1)
+      local s
+      s := get_catenated_headers("bcc") | fail
+      return parser.parse_address_list(s, 1) | error(parser)
    end
 
+   #
+   # Set the "bcc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "bcc"
+   # headers, use {add_bcc}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_bcc(a)
-      set_header("bcc", a.to_rfc822())
+      set_header("bcc", catenate_addresses(a))
    end
 
+   #
+   # Add a "bcc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_bcc(a)
-      add_header("bcc", a.to_rfc822())
+      add_header("bcc", catenate_addresses(a))
    end
 
+   #
+   # Get the "Resent-bcc" header(s) as a list of {Address} instances.
+   # @return a list of {Address} instances
+   # @fail if the "Reset-bcc" header is absent or cannot be parsed as a 
+   # @     list of {Address}es
+   #
    method get_resent_bcc()
-      return get_catenated_headers("Resent-bcc") ? parse_address_list(1)
+      local s
+      s := get_catenated_headers("Resent-bcc") | fail
+      return parser.parse_address_list(s, 1) | error(parser)
    end
 
+   #
+   # Set the "Resent-bcc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.  To add further "Resent-bcc"
+   # headers, use {add_resent_bcc}.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method set_resent_bcc(a)
-      set_header("Resent-bcc", a.to_rfc822())
+      set_header("Resent-bcc", catenate_addresses(a))
    end
 
+   #
+   # Add a "Resent-bcc" header from the given parameter, which may be either
+   # a single {Address}, or a list of several {Address}es.
+   # @param a an {Address} or a list of {Address}es.
+   #
    method add_resent_bcc(a)
-      add_header("Resent-bcc", a.to_rfc822())
+      add_header("Resent-bcc", catenate_addresses(a))
    end
 
+   #
+   # Get the "From" header(s) as a list of {Mailbox} instances.
+   # @return a list of {Mailbox} instances
+   # @fail if the "From" header is absent or cannot be parsed as a 
+   # @     list of {Mailbox}es
+   #
    method get_from()
-      return get_catenated_headers("From") ? parse_mailbox_list()
+      local s
+      s := get_catenated_headers("From") | fail
+      return parser.parse_mailbox_list(s) | error(parser)
    end
 
+   #
+   # Set the "From" header from the given parameter, which may be either
+   # a single {Mailbox}, or a list of several {Mailbox}es.  To add further "From"
+   # headers, use {add_from}.
+   # @param a an {Mailbox} or a list of {Mailbox}es.
+   #
    method set_from(m)
-      set_header("From", m.to_rfc822())
+      set_header("From", catenate_addresses(m))
    end
 
+   #
+   # Add a "From" header from the given parameter, which may be either
+   # a single {Mailbox}, or a list of several {Mailbox}es.
+   # @param a an {Mailbox} or a list of {Mailbox}es.
+   #
    method add_from(m)
-      add_header("From", m.to_rfc822())
+      add_header("From", catenate_addresses(m))
    end
 
+   #
+   # Get the "Sender" header as a {Mailbox} instance.
+   # @return a {Mailbox}
+   # @fail if the "Sender" header is absent or cannot be parsed as a 
+   # @     {Mailbox}
+   #
    method get_sender()
-      return get_first_header("Sender") ? parse_mailbox()
+      local s
+      s := get_first_header("Sender") | fail
+      return parser.parse_mailbox(s) | error(parser)
    end
 
+   #
+   # Set the "Sender" header from the given {Mailbox} instance.
+   # @param m a {Mailbox}
+   #
    method set_sender(m)
       set_header("Sender", m.to_rfc822())
    end
 
+   #
+   # Add a "Resent-From" header from the given parameter, which may be either
+   # a single {Mailbox}, or a list of several {Mailbox}es.
+   # @param a an {Mailbox} or a list of {Mailbox}es.
+   #
    method get_resent_from()
-      return get_catenated_headers("Resent-From") ? parse_mailbox_list()
+      local s
+      s := get_catenated_headers("Resent-From") | fail
+      return parser.parse_mailbox_list(s) | error(parser)
    end
 
+   #
+   # Set the "Resent-From" header from the given parameter, which may be either
+   # a single {Mailbox}, or a list of several {Mailbox}es.  To add further "Resent-From"
+   # headers, use {add_resent_from}.
+   # @param a an {Mailbox} or a list of {Mailbox}es.
+   #
    method set_resent_from(m)
-      set_header("Resent-From", m.to_rfc822())
+      set_header("Resent-From", catenate_addresses(m))
    end
 
+   #
+   # Add a "Resent-From" header from the given parameter, which may be either
+   # a single {Mailbox}, or a list of several {Mailbox}es.
+   # @param a an {Mailbox} or a list of {Mailbox}es.
+   #
    method add_resent_from(m)
-      add_header("Resent-From", m.to_rfc822())
+      add_header("Resent-From", catenate_addresses(m))
    end
 
+   #
+   # Get the "Resent-Sender" header as a {Mailbox} instance.
+   # @return a {Mailbox}
+   # @fail if the "Resent-Sender" header is absent or cannot be parsed as a 
+   # @     {Mailbox}
+   #
    method get_resent_sender()
-      return get_first_header("Resent-Sender") ? parse_mailbox()
+      local s
+      s := get_first_header("Resent-Sender") | fail
+      return parser.parse_mailbox(s) | error(parser)
    end
 
+   #
+   # Set the "Resent-Sender" header from the given {Mailbox} instance.
+   # @param m a {Mailbox}
+   #
    method set_resent_sender(m)
       set_header("Resent-Sender", m.to_rfc822())
    end
 
+   #
+   # Get the "Resent-Date" header as a {Time} instance.
+   # @return a {Time}
+   #
    method get_resent_date()
-      return get_first_header("Resent-Date") ? parse_date_time()
+      local s
+      s := get_first_header("Resent-Date") | fail
+      return parser.parse_date_time(s) | error(parser)
    end
 
+   #
+   # Set the "Resent-Date" header from the given {Time} instance.
+   # @param t a {Time}
+   #
    method set_resent_date(t)
       set_header("Resent-Date", t.to_rfc822())
    end
 
+   #
+   # Get the "Content-Type" header as a {ContentType} intance.
+   # @return a {ContentType}
+   # @fail if the "Content-Type" header is absent or cannot be parsed.
+   #
+   method get_content_type()
+      local s
+      s := get_first_header("Content-Type") | fail
+      return parser.parse_content_type(s) | error(parser)
+   end
+
+   #
+   # Set the "ContentType" header from a {ContentType} instance.
+   # @param ct a {ContentType}
+   #
+   method set_content_type(ct)
+      set_header("Content-Type", ct.to_rfc1521())
+   end
+
+   #
+   # Get the "Content-Disposition" header as a {ContentDisposition} intance.
+   # @return a {ContentDisposition}
+   # @fail if the "Content-Disposition" header is absent or cannot be parsed.
+   #
+   method get_content_disposition()
+      local s
+      s := get_first_header("Content-Disposition") | fail
+      return parser.parse_content_disposition(s) | error(parser)
+   end
+
+   #
+   # Set the "ContentDisposition" header from a {ContentDisposition} instance.
+   # @param cd a {ContentDisposition}
+   #
+   method set_content_disposition(cd)
+      set_header("Content-Disposition", cd.to_rfc1521())
+   end
+
+   #
+   # Get the "Content-Transfer-Encoding" field, as a string, or fail if it is
+   # an invalid value.
+   # @return a string
+   #
+   method get_content_transfer_encoding()
+      local s
+      s := get_first_header("Content-Transfer-Encoding") | fail
+      return parser.parse_content_transfer_encoding(s) | error(parser)
+   end
+
+   #
+   # Set the "Content-Transfer-Encoding" from the given string.
+   #
+   method set_content_transfer_encoding(s)
+      set_header("Content-Transfer-Encoding", s)
+   end
+
+   #
+   # Set the subject to the given string.
+   # @param s a string
+   #
    method set_subject(s)
       set_header("Subject", s)
    end
 
+   #
+   # Get the subject
+   #
    method get_subject()
       return get_first_header("Subject")
    end
 
    initially(a[])
-      headers := table()
+      headers := ClTable()
       content := ""
+      parser := RFC822Parser()
 end
 
 #

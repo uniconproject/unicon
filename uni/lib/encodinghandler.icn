@@ -1,0 +1,36 @@
+#
+# $Id: encodinghandler.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+#
+
+package mail
+
+import util
+
+#
+# Handles the conversion from decoded content to an object
+#
+class EncodingHandler:Error()
+   #
+   # Succeed if this object can handle the given encoding
+   #
+   # @param enc the encoding (a string, eg "7bit")
+   #
+   abstract method can_handle(enc)
+
+   #
+   # Decode the given data
+   #
+   # @param m the {Message}
+   # @param data the source data (a string)
+   #
+   abstract method decode_data(m, data)
+
+   #
+   # Create string data from the given object
+   #
+   # @param m the {Message}
+   # @param data the raw data (a string)
+   #
+   abstract method encode_data(m, data)
+end
+

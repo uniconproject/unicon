@@ -1,0 +1,85 @@
+#
+# $Id: undomanager.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package undo
+
+#
+# UndoManager is a CompoundEdit.  Until it is closed it allows undos and redos
+# within its list of edits, moving a pointer into the list appropriately.
+#
+# Once closed, it behaves just like a closed CompoundEdit.
+#
+class UndoManager:CompoundEdit(limit, index)
+   method redo()
+      if \closed then
+         return self.CompoundEdit.redo(other)
+      if index <= *l then {
+         l[index].redo()
+         index +:= 1
+      }
+   end
+
+   method undo()
+      if \closed then
+         return self.CompoundEdit.undo()
+      if index > 1 then {
+         index -:= 1
+         l[index].undo()
+      }
+   end
+
+   method get_limit()
+      return limit
+   end
+
+   method set_limit(limit)
+      self.limit := limit
+   end
+
+   method add_edit(other)
+      if \closed then
+         return self.CompoundEdit.add_edit(other)
+
+      while *l >= index do
+         pull(l)
+
+      if not l[-1].add_edit(other) then {
+         put(l, other)
+         index +:= 1
+      }
+
+      while (*l > limit) & (index > 1) do {
+         index -:= 1
+         pop(l)
+      }
+   end
+
+   #
+   # Succeed if there is an event to undo
+   #
+   method can_undo()
+      return (index > 1) & (*l > 0)
+   end
+
+   #
+   # Succeed if there is an event to redo
+   #
+   method can_redo()
+      return (index <= *l) & (*l > 0)
+   end
+
+   method clear()
+      self.CompoundEdit.clear()
+      self.index := 1
+   end
+
+   initially(limit)
+      self.CompoundEdit.initially()
+      self.limit := \limit | 100
+      self.index := 1
+end

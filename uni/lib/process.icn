@@ -1,0 +1,78 @@
+#
+# $Id: process.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+$include "posix.icn"
+
+package lang
+
+#
+# This class is a convenient way of creating a sub-process in a program,
+#
+class Process : Runnable(
+   pid,
+   runnable
+   )
+
+   #
+   # Called by the parent process to start the child
+   #
+   method start()
+      pid := fork() | stop("Couldn't fork")
+      if pid = 0 then {
+         invoke_run()
+         exit(0)
+      }
+   end
+   
+   #
+   # Called by the parent.  The method waits for the child to terminate,
+   # and then closes the pipes.
+   #
+   method join()
+      wait(pid)
+      return
+   end
+
+   #
+   # Called by the parent to kill the child.  Then the {join} method is invoked.
+   #
+   method stop()
+      kill(pid, "SIGTERM")
+      join()
+   end
+
+   #
+   # Sleep for n milliseconds.
+   #
+   method sleep(n)
+      return select([], \n)
+   end
+
+   #
+   # Invoke the code of the process.
+   #
+   # @p
+   method invoke_run()
+      if /self.runnable then
+         self.run()
+      else
+         self.runnable.run()
+   end
+
+   ## 
+   # Set the runnable object as the code body of the process.
+   #
+   # @p
+   method set_runnable(r)
+      self.runnable := r
+   end
+
+   initially(r)
+      self.runnable := r
+end
+

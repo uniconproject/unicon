@@ -183,7 +183,7 @@
    #if IntBits == 16
       #define HSegs	  6
    #else				/* IntBits */
-      #define HSegs	 10
+      #define HSegs	 12
    #endif				/* IntBits */
 #endif					/* HSegs */
 

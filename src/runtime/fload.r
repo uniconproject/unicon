@@ -230,9 +230,9 @@ dptr dargv;
 
 #if NT
 struct rtentrypts {
-  int (*cnv_int)(dptr, dptr);
+  int (*Cnv_int)(dptr, dptr);
 } rtentryvector;
-rtentryvector.cnv_int = cnv_int;
+rtentryvector.Cnv_int = cnv_int_0;
 #endif
 
    blk = (struct b_proc *)dargv[0].vword.bptr;	/* proc block address */

@@ -2211,7 +2211,7 @@ function{0,1} WinAssociate(ext)
       strncat(fname, StrLoc(ext), StrLen(ext));
       f = fopen(fname, "w");
       fclose(f);
-      if (FindExecutable(fname, NULL, buf) < 32) {
+      if ((int)(FindExecutable(fname, NULL, buf)) < 32) {
          unlink(fname);
          fail;
          }

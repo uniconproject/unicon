@@ -56,6 +56,72 @@ fi
 
 ])
 
+AC_DEFUN([CHECK_XLIB],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if xlib is wanted)
+AC_ARG_WITH(xlib,
+[  --with-xlib=DIR root directory path of xlib installation [defaults to
+          /usr/X11 or /usr/X11R6 or /usr/openwin if not found in /usr/X11]
+  --without-xlib to disable xlib usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  XLIB_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+XLIB_HOME=/usr/X11
+if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+then
+        XLIB_HOME=/usr/X11R6
+	if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+	then
+	        XLIB_HOME=/usr/openwin
+	fi
+fi
+])
+
+#
+# Locate Xlib, if wanted
+#
+if test -n "${XLIB_HOME}"
+then
+        XLIB_OLD_LDFLAGS=$LDFLAGS
+        XLIB_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${XLIB_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${XLIB_HOME}/include"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(X11, XAllocColorCells, [xlib_cv_libx=yes], [xlib_cv_libx=no])
+        AC_CHECK_HEADER(X11/Xlib.h, [xlib_cv_xlib_h=yes], [xlib_cv_xlib_h=no])
+        AC_CHECK_HEADER(X11/Xos.h, [xlib_cv_xos_h=yes], [xlib_cv_xos_h=no])
+        AC_CHECK_HEADER(X11/Xutil.h, [xlib_cv_xutil_h=yes], [xlib_cv_xutil_h=no])
+        AC_CHECK_HEADER(X11/Xatom.h, [xlib_cv_xatom_h=yes], [xlib_cv_xatom_h=no])
+        AC_LANG_RESTORE
+        if test "$xlib_cv_libx" = "yes" -a "$xlib_cv_xlib_h" = "yes" -a "$xlib_cv_xos_h" = "yes" -a "$xlib_cv_xutil_h" = "yes" -a "$xlib_cv_xatom_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                AC_CHECK_LIB(X11, XAllocColorCells)
+                AC_MSG_CHECKING(xlib in ${XLIB_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(xlib in ${XLIB_HOME})
+                LDFLAGS="$XLIB_OLD_LDFLAGS"
+                CPPFLAGS="$XLIB_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+
+])
+
+
 AC_DEFUN([CHECK_JPEG],
 #
 # Handle user hints
@@ -228,6 +294,7 @@ then
         AC_LANG_SAVE
         AC_LANG_C
         AC_CHECK_LIB(iodbc, SQLAllocConnect, [odbc_cv_libiodbc=yes], [odbc_cv_libiodbc=no])
+        AC_CHECK_LIB(odbc, SQLAllocConnect, [odbc_cv_libodbc=yes], [odbc_cv_libodbc=no])
         AC_CHECK_HEADER(sqlext.h, [odbc_cv_sqlext_h=yes], [odbc_cv_sqlext_h=no])
         AC_LANG_RESTORE
         if test "$odbc_cv_libiodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
@@ -239,6 +306,15 @@ then
                 AC_MSG_CHECKING(odbc in ${ODBC_HOME})
                 AC_MSG_RESULT(ok)
         else
+        if test "$odbc_cv_libodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+                AC_CHECK_LIB(odbc, SQLAllocConnect)
+                AC_MSG_CHECKING(odbc in ${ODBC_HOME})
+                AC_MSG_RESULT(ok)
+        else
                 #
                 # If either header or library was not found, revert and bomb
                 #
@@ -246,6 +322,7 @@ then
                 LDFLAGS="$ODBC_OLD_LDFLAGS"
                 CPPFLAGS="$ODBC_OLD_CPPFLAGS"
                 AC_MSG_RESULT(failed)
+        fi
         fi
 fi
 
@@ -280,4 +357,28 @@ AC_DEFUN([AC_VAR_TIMEZONE_EXTERNALS],
       AC_DEFINE([HAVE_DAYLIGHT], 1,
               [Define if you have the external `daylight' variable.])
    fi
+])
+
+AC_DEFUN(AC_CHECK_GLOBAL,
+[for ac_global in $1
+do
+   ac_tr_global=HAVE_`echo $ac_global | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+   AC_MSG_CHECKING([for global variable ${ac_global}])
+   AC_CACHE_VAL(ac_cv_global_$ac_global,
+   [
+    AC_TRY_LINK(dnl
+    [/* no includes */],
+    [ extern long int $ac_global;  exit((int)$ac_global)],
+    eval "ac_cv_global_${ac_global}=yes",
+    eval "ac_cv_global_${ac_global}=no"
+    )
+dnl   ]
+   )
+  if eval "test \"`echo '$ac_cv_global_'$ac_global`\" = yes"; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE_UNQUOTED($ac_tr_global)
+  else
+    AC_MSG_RESULT(no)
+  fi
+done
 ])

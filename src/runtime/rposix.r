@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.9 2001-12-12 07:00:39 phliar Exp $
+ * $Id: rposix.r,v 1.10 2001-12-12 07:51:19 phliar Exp $
  */
 
 #ifdef PosixFns
@@ -800,7 +800,9 @@ FILE *sock_connect(char *fn, int is_udp)
 	 if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0) return 0;
       }
 
+#ifdef BSD_4_4_LITE
       saddr_in.sin_len = len = sizeof(struct sockaddr_in);
+#endif
       saddr_in.sin_family = AF_INET;
       saddr_in.sin_port = htons((u_short)port);
       memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
@@ -821,9 +823,11 @@ FILE *sock_connect(char *fn, int is_udp)
       strncpy(saddr_un.sun_path, fname, pathbuf_len);
       /* NUL-terminate just in case.... */
       saddr_un.sun_path[pathbuf_len - 1] = 0;
-      saddr_un.sun_len = len =
-          sizeof(saddr_un.sun_len) + sizeof(saddr_un.sun_family) +
-          strlen(saddr_un.sun_path);
+      len = sizeof(saddr_un.sun_family) + strlen(saddr_un.sun_path);
+#ifdef BSD_4_4_LITE
+      len += sizeof(saddr_un.sun_len);
+      saddr_un.sun_len = len;
+#endif
       sa = (struct sockaddr*) &saddr_un;
    }
 
@@ -894,7 +898,9 @@ int is_udp;
             memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
             }
 
+#ifdef BSD_4_4_LITE
         saddr_in.sin_len = len = sizeof(struct sockaddr_in);
+#endif
         saddr_in.sin_family = AF_INET;
         saddr_in.sin_port = htons((u_short)atoi(p+1));
         if (saddr_in.sin_port == 0) {
@@ -926,9 +932,11 @@ int is_udp;
 	 saddr_un.sun_family = AF_UNIX;
 	 strncpy(saddr_un.sun_path, addr, pathbuf_len);
          saddr_un.sun_path[pathbuf_len - 1] = 0;
-	 saddr_un.sun_len = len =
-             sizeof(saddr_un.sun_len) + sizeof(saddr_un.sun_family) +
-             strlen(saddr_un.sun_path);
+         len = sizeof(saddr_un.sun_family) + strlen(saddr_un.sun_path);
+#ifdef BSD_4_4_LITE
+         len += sizeof(saddr_un.sun_len);
+	 saddr_un.sun_len = len;
+#endif
 	 (void) unlink(saddr_un.sun_path);
 	 sa = (struct sockaddr*) &saddr_un;
       }
@@ -997,7 +1005,9 @@ int sock_send(char *adr, char *msg, int msglen)
    if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
       return 0;
 
+#ifdef BSD_4_4_LITE
    saddr_in.sin_len = len = sizeof(saddr_in);
+#endif
    saddr_in.sin_family = AF_INET;
    saddr_in.sin_port = htons((u_short)port);
    memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);

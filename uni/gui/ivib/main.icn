@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.6 2004-05-15 19:17:38 rparlett Exp $
+# $Id: main.icn,v 1.7 2004-06-27 16:20:28 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -96,10 +96,9 @@ end
 #
 # This listens for actions to either the menu/button object creation items.
 #
-class ObjectActionListener : Listener(main, object_ui) 
-   method fire(event)
-      if event.get_type() === ACTION_EVENT then
-         main.create_in_canvas(object_ui)
+class ObjectActionListener(main, object_ui) 
+   method on_event(event)
+      main.create_in_canvas(object_ui)
    end
 end
 
@@ -1223,10 +1222,10 @@ class Main : CommonDialog(
       every ui := !uis do {
          listener := ObjectActionListener(self, ui)
          mi := ui.add_to_menu(objects_menu)
-         mi.add_event_listener(listener)
+         mi.connect(listener, "on_event", ACTION_EVENT)
          if ui_button := ui.get_button() then {
             tb.add_button(ui_button)
-            ui_button.add_event_listener(listener)
+            ui_button.connect(listener, "on_event", ACTION_EVENT)
          }
       }
 

@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.6 2004-05-15 19:17:29 rparlett Exp $
+# $Id: component.icn,v 1.7 2004-06-27 16:20:28 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -17,7 +17,7 @@ $include "guih.icn"
 # This is the parent class of all the GUI components.  All of
 # its methods and variables therefore apply to its sub-classes.
 #
-class Component : Ticker : SetFields (
+class Component : Ticker : SetFields : Connectable(
    #
    # x position as specified by {set_pos()}, eg "50%"
    #                        
@@ -107,10 +107,6 @@ class Component : Ticker : SetFields (
    # List of child components
    #
    children,
-   #
-   # The list of Event listeners
-   #
-   event_listener_list,
    #
    # Flag indicating whether component is up-to-date on the screen
    #
@@ -806,44 +802,7 @@ class Component : Ticker : SetFields (
    # Helper method to create and fire an Event object from the given parameters.
    #
    method create_event_and_fire(type, param)
-      local e
-      if /type then stop("null type to create_event_and_fire")
-      e := Event(self, type, param)
-      fire_event(e)
-      return e
-   end
-
-   #
-   # Fire an Event to the Event listeners.
-   #
-   method fire_event(ev)
-      event_listener_list.fire(ev)
-   end
-
-   #
-   # Add an Event listener
-   #
-   method add_event_listener(l)
-      event_listener_list.add_listener(l)
-   end
-
-   #
-   # Convenience method to create and add a FilterListener as
-   # an event listener.
-   # @return the FilterListener created and added.
-   #
-   method connect(cl, meth, ev)
-      local l
-      l := FilterListener(cl, meth, ev)
-      add_event_listener(l)
-      return l
-   end
-
-   #
-   # Remove an Event listener
-   #
-   method remove_event_listener(l)
-      event_listener_list.remove_listener(l)
+      return fire(type, param)
    end
 
    #
@@ -1023,7 +982,7 @@ class Component : Ticker : SetFields (
 
    initially()
       self.Ticker.initially()
-      self.event_listener_list := ListenerList()
+      self.Connectable.initially()
       self.attribs := []
       self.children := []
       self.x_align := "l"

@@ -1,5 +1,5 @@
 #
-# $Id: menucomponent.icn,v 1.4 2004-05-09 21:10:48 rparlett Exp $
+# $Id: menucomponent.icn,v 1.5 2004-06-27 16:20:28 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -20,7 +20,7 @@ $include "guih.icn"
 # item.  The functionality of an actual menu is in the subclass,
 # {SubMenu}.
 #
-class MenuComponent : SetFields : Object(
+class MenuComponent : SetFields : Connectable: Object(
    label,                   #             
    label_x,                 #               
    label_y,                 #               
@@ -40,7 +40,6 @@ class MenuComponent : SetFields : Object(
    img_right_h,             #                   
    img_right_w,             #                   
    parent,                  #
-   event_listener_list,
    accel
    )
 
@@ -225,7 +224,7 @@ class MenuComponent : SetFields : Object(
    #
    method succeed(ev)
       close_all(1)
-      event_listener_list.fire(Event(self, ACTION_EVENT, ev))
+      fire(ACTION_EVENT, ev)
    end
 
    #
@@ -267,27 +266,6 @@ class MenuComponent : SetFields : Object(
       self.label_mid_w := TextWidth(cw, self.label) + 2 * DEFAULT_TEXT_X_SURROUND
    end
 
-   #
-   # Add an Event listener
-   #
-   method add_event_listener(l)
-      event_listener_list.add_listener(l)
-   end
-
-   #
-   # Convenience method to create and add a FilterListener
-   #
-   method connect(cl, meth, ev)
-      add_event_listener(FilterListener(cl, meth, ev))
-   end
-
-   #
-   # Remove an Event listener
-   #
-   method remove_event_listener(l)
-      event_listener_list.remove_listener(l)
-   end
-
    method set_one(attr, val)
       case attr of {
          "label" : set_label(string_val(attr, val))
@@ -304,5 +282,5 @@ class MenuComponent : SetFields : Object(
    end
 
    initially()
-      event_listener_list := ListenerList()
+      self.Connectable.initially()
 end

@@ -60,4 +60,4 @@ unix.u: unix.icn
 #
 
 Clean:
-	$(RM) uniclass.dir uniclass.pag
+	$(RM) unicon uniclass.dir uniclass.pag

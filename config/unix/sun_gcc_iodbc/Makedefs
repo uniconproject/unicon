@@ -1,0 +1,24 @@
+#  Makefile definitions from config/unix/sun_gcc
+
+#  CC       C compiler
+#  CFLAGS   flags for building C files
+#  CFDYN    additional flags for dynamic functions
+#  RLINK    flags for linking run-time system
+#  RLIBS    libraries to link with run-time system
+#  XLIBS    libraries to link for graphics
+#  XPMDEFS  definitions for building XPM library
+
+CC = gcc
+# tell where myodbc has been installed, e.g. MYODBC=../myodbc; default empty
+MYODBC=
+CFLAGS= -O -I../xpm -I../gdbm -I../libtp -I$(MYODBC)/usr/local/include -I/usr/openwin/include
+CFDYN = -fPIC
+RLINK = -L../../bin
+RLIBS = -lm -lgdbm -ltp -lsocket -lnsl -ldl  -L$(MYODBC)/usr/local/lib -liodbc
+XLIBS = -L /usr/openwin/lib -Xlinker -R/usr/openwin/lib -lXpm -lX11
+XPMDEFS = -DZPIPE -DSYSV
+XPM=xpm
+GDBM=gdbm
+LIBTP=libtp
+# Graphics enabled
+XL = -L../../bin -lXpm $(XLIBS)

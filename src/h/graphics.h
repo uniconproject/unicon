@@ -273,7 +273,8 @@ typedef struct _wdisplay {
   AudioComponentType audio;
 #endif					/* NAS */
   int           numColors;		/* allocated color info */
-  struct wcolor	colors[DMAXCOLORS];
+  int		sizColors;		/* # elements of alloc. color array */
+  struct wcolor	*colors;
   Cursor	cursors[NUMCURSORSYMS];
   struct _wdisplay *previous, *next;
 } *wdp;
@@ -428,6 +429,7 @@ typedef struct _wstate {
   Pixmap	initialPix;		/* an initial image to display */
   Window        iconwin;		/* icon window */
   Pixmap	iconpix;		/* icon pixmap */
+  Visual	*vis;
   int		normalx, normaly;	/* pos to remember when maximized */
   int		normalw, normalh;	/* size to remember when maximized */
   int           numColors;		/* allocated color info */

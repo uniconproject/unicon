@@ -1,0 +1,116 @@
+#
+# $Id: gethttp.icn,v 1.1 2003-07-07 19:50:46 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package http
+
+import util
+import lang
+import ipc
+
+$include "gethttpincl.icn"
+
+#
+# A convenient class to control a {GetHttpProcessControl} process, to obtain
+# a web page.  It is appropriate for use in a non-gui environment, as the {retrieve}
+# method will block for some time (it will return eventually however, as long as
+# a non-zero timeout is used).  In a GUI environment, it may well be more appropriate to
+# create a {GetHttpProcessControl} directly, and poll it during the {tick} method.
+#
+class GetHttp : Object(p, verbose_flag)
+   #
+   # Set the desired url in the {GetHttpProcessControl} object being used.
+   #
+   method set_url(url)
+      p.set_url(url)
+   end
+
+   #
+   # Set the CGI parameter data in the {GetHttpProcessControl} object being used.
+   #
+   method set_post_data(cgi)
+      p.set_post_data(cgi)
+   end
+
+   #
+   # Write the headers to file f
+   #
+   method write_headers(f)
+      p.write_headers(f)
+   end
+
+   #
+   # Set the header key, value in the {GetHttpProcessControl} object being used.
+   #
+   method set_header(key, value)
+      p.set_header(key, value)
+   end
+
+   #
+   #  Set the desired timeout in the {GetHttpProcessControl} object being used.
+   #
+   method set_timeout(timeout)
+      p.set_timeout(timeout)
+   end
+
+   #
+   # Set the desired number of retries in the {GetHttpProcessControl} object being used.
+   #
+   method set_retries(retries)
+      p.set_retries(retries)
+   end
+
+   #
+   # Indicate that status messages should be printed; useful for debugging.
+   #
+   method set_verbose()
+      verbose_flag := 1
+   end
+
+   #
+   # Retrieve the given url.  A {HttpPage} object is returned upon success.
+   # Failure occurs if the url could not be retrieved.
+   #
+   method retrieve()
+      local r, res, smq
+
+      smq := ipc::create_private_msg()
+      p.set_mq(smq)
+      p.start()
+      repeat {
+         if not(r := smq.receive()) then
+            break
+         if not(integer(r)) then {
+            res := r
+            break
+         }
+
+         if \verbose_flag then {
+            if r = WAITING then {
+               writes(".")
+               part_line := 1
+            } else {
+               if \part_line then {
+                  write()
+                  part_line := &null
+               }
+               write("Status: ", decode_code(r))
+            }
+         }
+
+         if r = FAILED then
+            break
+      }
+      p.join()
+      smq.remove()
+      return \res
+   end
+   
+   initially
+      p := GetHttpControlProcess()
+end
+ 

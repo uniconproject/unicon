@@ -1,0 +1,113 @@
+#
+# $Id: httppage.icn,v 1.1 2003-07-07 19:50:46 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package http
+
+import lang
+
+#
+# This class encapsulates a page of data retrieved over http.
+#
+class HttpPage : Object : SelectiveClassCoding(url, status, header, data)
+   method get_template()
+      return ["url", "status", "header", "data"]
+   end
+
+   #
+   # Set the url
+   #
+   method set_url(url)
+      self.url := url
+   end
+
+   #
+   # Return the status of the page
+   # @return  The status eg "HTTP/1.1 200 OK"
+   #
+   method get_status()
+      return status
+   end
+
+   #
+   # Return the header data of the page.
+   # @return  A table.  The keys are the fields of the header and the
+   # @ values are the corresponding header values.  The keys will always
+   # @ be in lower case.
+   #
+   method get_header()
+      return header
+   end
+
+   #
+   # Return the data.
+   # @return  A string representing the data (which may be binary data).
+   #
+   method get_data()
+      return data
+   end
+
+   #
+   # Return a list of strings, created by converting the data into a list of
+   # newline separated strings.
+   # @return   A list of strings.
+   #
+   method get_string_list()
+      res := []
+      data ? {
+         while s := tab(upto('\n')) do {
+            put(res, s)
+            move(1)
+         }
+         if not(pos(0)) then
+            put(res, tab(0))
+      }
+      return res
+   end
+
+   #
+   # Parse the given string s into status, header and data fields.   The string s
+   # represents a retrieved page, and may contain binary data.
+   # @param s   The data string.
+   #
+   method parse(s)
+      local key
+
+      header := table()
+      s ? {
+         status := tab(upto('\n') | 0)
+         if status[-1] == "\r" then
+            status[-1] := ""
+         move(1)
+         repeat {
+            line := tab(upto('\n') | 0)
+            move(1)
+
+            if line[-1] == "\r" then
+               line[-1] := ""
+
+            if *line = 0 then
+               break
+
+            line ? {
+               #
+               # A continuation line starts with a space or a tab.
+               #
+               if any(' \t') then
+                  header[map(\key)] ||:= tab(0)
+               else {
+                  key := tab(upto(':') | 0)
+                  =": "
+                  val := tab(0)
+                  header[map(key)] := val
+               }
+            }
+         }
+         data := tab(0)
+      }
+   end
+end

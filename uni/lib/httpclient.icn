@@ -1,0 +1,124 @@
+package http
+
+import util
+import lang
+
+#
+# A very simple http client with no timeout or retries.
+#
+class HttpClient(                                      
+                 url,
+                 post_data,
+                 headers,
+                 request_type,
+                 reason
+                 )
+
+   method error(s)
+      reason := s
+   end
+
+   method get_reason()
+      return reason
+   end
+
+   #
+   # Set the desired url
+   #
+   method set_url(url)
+      return self.url := url
+   end
+
+   #
+   # Set the data to be used in a POST request.
+   #
+   # @param   post_data    The data to use this may either be a string, in
+   # @        which case it represents raw data, or it may be
+   # @        be a table in which case it represents a table of
+   # @        cgi parameters, which will be converted appropriately.
+   #
+   method set_post_data(post_data)
+      return self.post_data := post_data
+   end
+
+   #
+   # Set the request type.  The default is {GET}, unless post data is set, in which
+   # case the default is {POST}.
+   #
+   method set_request_type(request_type)
+      return self.request_type := request_type
+   end
+
+   #
+   # Set a header variable to the desired value.
+   #
+   method set_header(key, value)
+      return headers[map(key)] := value
+   end
+
+   method write_headers(f)
+      every e := !sort(headers) do {
+         e[1][1] := map(e[1][1], &lcase, &ucase)
+         write(f, e[1], ": ", e[2])
+      }
+   end
+
+   method retrieve()
+      local f, s, res, string_buff
+
+      if not(f := url.open()) then
+         return error("Couldn't connect to " || url.get_address())
+
+      /headers["user-agent"] :=  "gethttp.iol [en] (" || &host || ")"
+      /headers["host"] := url.get_address()
+
+      s := \request_type | if \post_data then "POST" else "GET"
+
+      write(f, s, " ", url.get_file(), " HTTP/1.0")
+
+      if /post_data then {
+         write_headers(f)
+         write(f)
+      } else {
+         #
+         # Add the post data, convert from table if necessary
+         #
+         if lang::get_type(post_data) == "table" then {
+            #
+            # Convert from table in exactly the same way as for a GET parameter string.
+            # In this case always use the standard content-type encoding.
+            #
+            s := URL().make_cgi_string(post_data)
+            headers["content-type"] := "application/x-www-form-urlencoded"
+         } else {
+            #
+            # Allow user content-type encoding if specified for this arbitrary data.
+            #
+            s := post_data
+            /headers["content-type"] := "application/x-www-form-urlencoded"
+         }
+         headers["content-length"] := *s
+         write_headers(f)
+         write(f)
+         writes(f, s)
+      }
+
+      flush(f)
+
+      string_buff := StringBuff()
+      while s := reads(f, 1024) do
+         string_buff.add(s)
+      close(f)
+
+      res := HttpPage()
+      res.set_url(url)
+      res.parse(string_buff.get_string())
+
+      return res
+   end
+
+   initially
+      headers := table()
+end
+
+                 

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.26 2004-06-30 18:21:10 jeffery Exp $
+ * $Id: fxposix.ri,v 1.27 2004-10-10 07:25:43 jeffery Exp $
  */
 
 /*
@@ -1754,7 +1754,11 @@ function{0,1} lstat(f)
       }
    body {
       struct b_record *rp;
+#if NT
+      struct _stat sbuf;
+#else					/* NT */
       struct stat sbuf;
+#endif					/* NT */
       static dptr constr;
       int nfields;
 
@@ -2047,8 +2051,10 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
 #endif					/* UNIX */
 #if NT
 #ifdef Graphics
-      if (status & Fs_Window)
+      if (status & Fs_Window) {
 	 c_put(lwdp, f);
+	 return 0;
+         }
       else 
 #endif					/* Graphics */
 #endif					/* NT */
@@ -2062,8 +2068,8 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n,
    else
       return 105;
 
-   if (*n < fd)
-      *n = fd;
+   if (*n < fd + 1)
+      *n = fd + 1;
    FD_SET(fd, fdsp);
    return 0;
 }
@@ -2156,7 +2162,6 @@ function{0,1} select(files[nargs])
 		     }
 	          }
 	    }
-         n++;
       
       /* Set the tv struct */
       if (timeout < 0) {
@@ -2185,27 +2190,33 @@ function{0,1} select(files[nargs])
 #endif					/* Graphics */
 #endif					/* NT */
 
-      if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
-	 IntVal(amperErrno) = errno;
-         if (errno!=0)
-	    fail;
-	 }
+      if (n) {
+         if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
+#if NT
+	    IntVal(amperErrno) = WSAGetLastError();
+#else
+	    IntVal(amperErrno) = errno;
+#endif
+	    if (IntVal(amperErrno) !=0 )
+	       fail;
+	    }
 
 #ifdef Graphics
 #if UNIX
-      pollevent();
+	 pollevent();
 #endif
 
 #if NT
-      /*
-       * if our select() could have taken any time, try windows again
-       */
-      if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
-	 d.dword = D_List;
-	 BlkLoc(d) = (union block *) lp;
-         }
+	 /*
+	  * if our select() could have taken any time, try windows again
+	  */
+	 if ((lp == NULL) && ((lp = findactivewindow(lws)) != NULL)) {
+	    d.dword = D_List;
+	    BlkLoc(d) = (union block *) lp;
+	    }
 #endif					/* NT */
 #endif					/* Graphics */
+	 }
 
       if (lp == NULL) {
 	 if ((lp = alclist(0, MinListSlots)) == NULL) fail;

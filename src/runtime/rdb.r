@@ -8,6 +8,8 @@
 #define BUFF_SZ      32768      /* 32Kb buffer size for C/S data transfer */
 #define MAX_COL_NAME   128      /* max column name length    */
 
+struct ISQLFile *isqlfiles;
+
 int dbclose(struct ISQLFile *fp)
 {
     if (SQLFreeStmt(fp->hstmt, SQL_DROP)!=SQL_SUCCESS) {
@@ -36,14 +38,15 @@ int dbclose(struct ISQLFile *fp)
        }
     fp->qsize = 0;        /* reset query buffer sz  */
 
-    free(fp);             /* release file structure */
+    GRFX_UNLINK(fp, isqlfiles);
     return 0;
 }
 
 FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 {
-   struct ISQLFile *fp = (struct ISQLFile *) calloc(1,sizeof(struct ISQLFile));
-   if (fp == NULL) return NULL;
+   struct ISQLFile *fp = NULL;
+
+   GRFX_ALLOC(fp, ISQLFile);
 
    /* initialize DB connection and statement handlers */
    fp->hdbc = SQL_NULL_HDBC;
@@ -53,6 +56,8 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
       ISQLEnv=SQL_NULL_HENV;
       if (SQLAllocEnv(&ISQLEnv)!=SQL_SUCCESS) {
 	 odbcerror(fp, ALLOC_ENV_ERR);
+isql_open_fail:
+         free(fp);
 	 return 0;
 	 }
 
@@ -64,7 +69,7 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 
    if (SQLAllocConnect(ISQLEnv, &(fp->hdbc))!=SQL_SUCCESS) {
       odbcerror(fp, ALLOC_CONNECT_ERR);
-      return 0;
+      goto isql_open_fail;
       }
 
    if (SQLConnect(fp->hdbc,
@@ -73,17 +78,23 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 		  StrLoc(*password), (SQLSMALLINT)StrLen(*password)) ==
        SQL_ERROR){
       odbcerror(fp, CONNECT_ERR);
-      return 0;
+failed_connect:
+      SQLFreeConnect(fp->hdbc);
+      goto isql_open_fail;
       }
 
    if (SQLAllocStmt(fp->hdbc, &(fp->hstmt))!=SQL_SUCCESS) {
       odbcerror(fp, ALLOC_STMT_ERR);
-      return 0;
+      goto failed_connect;
       }
 
    if (table) { /* allocate space for table name */
-      fp->tablename=malloc(StrLen(*table)+1);
-      if (fp->tablename == NULL) { return 0; }
+      if ((fp->tablename=malloc(StrLen(*table)+1)) == NULL) {
+          if (SQLFreeStmt(fp->hstmt, SQL_DROP)!=SQL_SUCCESS) {
+             odbcerror(fp, FREE_STMT_ERR);
+             }
+         goto failed_connect;
+         }
       strncpy(fp->tablename, StrLoc(*table), StrLen(*table));
       fp->tablename[StrLen(*table)]='\0';
       }
@@ -92,6 +103,7 @@ FILE *isql_open(char *db, dptr table, dptr user, dptr password)
    /* empty query buffer */
    fp->query=NULL;
    fp->qsize=0;
+   GRFX_LINK(fp, isqlfiles);
    return (FILE *) fp;
    }
 

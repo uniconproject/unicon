@@ -276,7 +276,8 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
          lognam = "winicon.log";
       }
    remove(lognam);
-   lognam = strdup(lognam);
+   if (getenv("WICONLOG")!=NULL)
+      lognam = strdup(lognam);
    tnam = _tempnam("C:\\TEMP", "wx");
    strcpy(tmplognam, tnam);
    flog = fopen(tnam, "w");
@@ -1054,8 +1055,7 @@ int *ip;
 /*
  * Free malloc-ed memory; the main regions then co-expressions.  Note:
  *  this is only correct if all allocation is done by routines that are
- *  compatible with free() -- which may not be the case if Allocreg()
- *  in rmemfix.c is defined to be other than malloc().
+ *  compatible with free() -- which may not be the case for all memory.
  */
 
 void xmfree()
@@ -1063,8 +1063,11 @@ void xmfree()
    register struct b_coexpr **ep, *xep;
    register struct astkblk *abp, *xabp;
 
-   if (mainhead != (struct b_coexpr *)NULL)
-      free((pointer)mainhead->es_actstk);	/* activation block for &main */
+   if (mainhead == NULL) return;	/* already xmfreed */
+   free((pointer)mainhead->es_actstk);	/* activation block for &main */
+   mainhead->es_actstk = NULL;
+   mainhead = NULL;
+
    free((pointer)code);			/* icode */
    code = NULL;
    free((pointer)stack);		/* interpreter stack */

@@ -282,7 +282,6 @@ int dgetc(int fd) {
 
 #endif					/* HAVE_LIBZ */
 
-
 /*
  * Open the icode file and read the header.
  * Used by icon_init() as well as MultiThread's loadicode()
@@ -539,6 +538,35 @@ deliberate syntax errror
    return fname;
 #endif					/* HAVE_LIBZ  */
    }
+
+/*
+ * Make sure the version number of the icode matches the interpreter version.
+ * The string must equal IVersion or IVersion || "Z".
+ */
+void check_version(struct header *hdr, char *name,
+#if HAVE_LIBZ
+   int fdname
+#else
+   FILE *fname
+#endif
+   )
+{
+   if (strncmp((char *)hdr->config,IVersion, strlen(IVersion)) ||
+       ((((char *)hdr->config)[strlen(IVersion)]) &&
+	strcmp(((char *)hdr->config)+strlen(IVersion), "Z"))
+       ) {
+      fprintf(stderr,"icode version mismatch in %s\n", name);
+      fprintf(stderr,"\ticode version: %s\n",(char *)hdr->config);
+      fprintf(stderr,"\texpected version: %s\n",IVersion);
+#if HAVE_LIBZ
+      close(fdname);
+#else					/* HAVE_LIBZ */
+      fclose(fname);
+#endif					/* HAVE_LIBZ */
+      error(name, "cannot run");
+      }
+}
+
 #endif
 
 
@@ -974,11 +1002,13 @@ Deliberate Syntax Error
    k_current = k_main;
 
 #if !COMPILER
+#if HAVE_LIBZ
+   check_version(&hdr, name, fdname);
+#else
+   check_version(&hdr, name, fname);
+#endif
+
 /*
- * Make sure the version number of the icode matches the interpreter version.
- *
- * check for hdr.config == IVersion followed by a Z!
- *
  * if version says to decompress, call gzdopen and read interpretable code
  * using gzread, else... call fdopen and use following code pretty much as-is
  */
@@ -991,25 +1021,6 @@ else {
    fname= fdopen(fdname,"r");
    }
 #endif					/* HAVE_LIBZ */
-
-   if (strncmp((char *)hdr.config,IVersion, strlen(IVersion)) ||
-       ((((char *)hdr.config)[strlen(IVersion)]) &&
-	strcmp(((char *)hdr.config)+strlen(IVersion), "Z"))
-       ) {
-#ifdef PresentationManager
-      ConsoleFlags |= OutputToBuf;
-      fprintf(stderr, "Icode version mismatch in \'%s\':\n", name);
-      fprintf(stderr, "    actual version: %s\n",(char *)hdr.config);
-      fprintf(stderr, "    expected version: %s\n",IVersion);
-      fprintf(stderr, "Execution of \'%s\' cannot proceed.", name);
-      error(NULL, NULL);
-#else					/* PresentationManager */
-      fprintf(stderr,"icode version mismatch in %s\n", name);
-      fprintf(stderr,"\ticode version: %s\n",(char *)hdr.config);
-      fprintf(stderr,"\texpected version: %s\n",IVersion);
-      error(name, "cannot run");
-#endif					/* PresentationManager */
-      }
 
    /*
     * Read the interpretable code and data into memory.
@@ -1490,11 +1501,11 @@ char *s;
    }
 
 #ifdef ConsoleWindow
+extern char *lognam;
+extern char tmplognam[];
 void closelogfile()
 {
    if (flog) {
-      extern char *lognam;
-      extern char tmplognam[];
       FILE *flog2;
       int i;
       fclose(flog);
@@ -1510,8 +1521,14 @@ void closelogfile()
 	 remove(tmplognam);
          }
 
-      free(lognam);
       flog = NULL;
+      }
+   /*
+    * if it is not the ultimate default logfile name, free malloc'ed memory
+    */
+   if ((getenv("WICONLOG")!=NULL) || strcmp(lognam, "winicon.log")) {
+      free(lognam);
+      lognam = NULL;
       }
 }
 #endif					/* ConsoleWindow */
@@ -1526,12 +1543,6 @@ int i;
 #ifdef ConsoleWindow
    char *msg = "Strike any key to close console...";
 #endif					/* ConsoleWindow */
-
-#ifdef ISQL
-   if (ISQLEnv!=NULL) {
-      SQLFreeEnv(ISQLEnv);  /* release ODBC environment */
-      }
-#endif                                  /* ISQL */
 
 #if E_Exit
    if (curpstate != NULL)
@@ -1563,21 +1574,12 @@ int i;
    if (k_dump && set_up) {
       fprintf(stderr,"\nTermination dump:\n\n");
       fflush(stderr);
-      fprintf(stderr,"co-expression #%ld(%ld)\n",
+       fprintf(stderr,"co-expression #%ld(%ld)\n",
 	 (long)BlkLoc(k_current)->coexpr.id,
 	 (long)BlkLoc(k_current)->coexpr.size);
       fflush(stderr);
       xdisp(pfp,glbl_argp,k_level,stderr);
       }
-
-#ifdef MultipleRuns
-   /*
-    * Free allocated memory so application can continue.
-    */
-
-   xmfree();
-#endif					/* MultipleRuns */
-
 
 #ifdef ConsoleWindow
    /*
@@ -1604,6 +1606,48 @@ int i;
    closelogfile();
 
 #endif					/* ConsoleWindow */
+
+#if defined(MultipleRuns)
+   /*
+    * Free allocated memory so application can continue.
+    */
+   xmfree();
+#endif					/* MultipleRuns */
+
+#if MSDOS /* add others who need to free their resources here */
+#ifdef ISQL
+   /*
+    * close ODBC connections left open
+    */
+   while (isqlfiles != NULL) {
+      dbclose(isqlfiles);
+      }
+   if (ISQLEnv!=NULL) {
+      SQLFreeEnv(ISQLEnv);  /* release ODBC environment */
+      }
+#endif					/* ISQL */
+   /*
+    * free dynamic record types
+    */
+   if(dr_arrays) {
+      int i, j;
+      struct b_proc_list *bpelem, *to_free;
+      for(i=0;i<longest_dr;i++) {
+         if (dr_arrays[i] != NULL) {
+	    for(bpelem = dr_arrays[i]; bpelem; ) {
+	       free(StrLoc(bpelem->this->recname));
+	       for(j=0;j<bpelem->this->nparam;j++)
+	          free(StrLoc(bpelem->this->lnames[j]));
+	       free(bpelem->this);
+	       to_free = bpelem;
+	       bpelem = bpelem->next;
+	       free(to_free);
+               }
+            }
+         }
+      free(dr_arrays);
+      }
+#endif
 
 #ifdef MSWindows
    PostQuitMessage(0);
@@ -1846,8 +1890,8 @@ C_integer bs, ss, stk;
    /*
     * Allocate memory for icode and the struct that describes it
     */
-     Protect(coexp = alccoexp(hdr.hsize, stk),
-      { fprintf(stderr,"can't malloc new icode region\n");c_exit(EXIT_FAILURE);});
+   Protect(coexp = alccoexp(hdr.hsize, stk),
+    {fprintf(stderr,"can't malloc new icode region\n");c_exit(EXIT_FAILURE);});
 
    pstate = coexp->program;
    /*
@@ -2013,26 +2057,18 @@ C_integer bs, ss, stk;
    pstate->Deallocate = deallocate_0;
    pstate->Reserve = reserve_0;
 
-   /*
-    * Make sure the version number of the icode matches the interpreter version
-    * The string must equal IVersion or IVersion || "Z".
-    */
-   if (strncmp((char *)hdr.config,IVersion, strlen(IVersion)) ||
-       ((((char *)hdr.config)[strlen(IVersion)]) &&
-	strcmp(((char *)hdr.config)+strlen(IVersion), "Z"))
-       ) {
-      fprintf(stderr,"icode version mismatch in %s\n", name);
-      fprintf(stderr,"\ticode version: %s\n",(char *)hdr.config);
-      fprintf(stderr,"\texpected version: %s\n",IVersion);
-      error(name, "cannot run");
-      }
+#if HAVE_LIBZ
+   check_version(&hdr, name, fdname);
+#else
+   check_version(&hdr, name, fname);
+#endif
 
    /*
     * Read the interpretable code and data into memory.
     */
 
 #if HAVE_LIBZ
- if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
+   if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
    fname= gzdopen(fdname,"r");
    if ((cbread = gzlongread(pstate->Code, sizeof(char), (long)hdr.hsize, fname))
        != hdr.hsize) {

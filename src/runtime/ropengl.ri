@@ -1,0 +1,560 @@
+FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
+{
+   FILE *f;
+   wbp w;
+   wsp ws;
+   wdp wd;
+   XVisualInfo * vis;
+   int event, major, minor, error, i, numCmaps;
+   char s[128];
+   Status status;
+   XStandardColormap *standardCmaps;
+   Colormap cm;
+			
+   wd = alc_display(NULL);
+   if(glXQueryExtension(wd->display, &error, &event)){
+      printf("GLX is supported\n"); 
+      }
+   else {	
+      printf("GL not supported\n");  return NULL;
+      }	
+   if(glXQueryVersion(wd->display, &major, &minor)){
+	printf("Version major:%d minor:%d\n", major, minor);
+   }
+   vis = wd->vis;
+   if(vis == NULL){
+      printf("null visual\n"); return(NULL);
+   }	
+ 
+/*for true color*/
+   if(vis->class == 4)
+   {
+   printf("display %p root %p vis %p allocAll %d\n",
+	 wd->display, DefaultRootWindow(wd->display), vis->visual, AllocAll);
+   fflush(stdout);
+
+    status = XmuLookupStandardColormap(wd->display,
+      vis->screen, vis->visualid, vis->depth, XA_RGB_DEFAULT_MAP,
+      /* replace */ False, /* retain */ True);
+      printf("XmuLookupStandardColormap %d\n", status);
+    if (status == 1) {
+       printf("XGetRGBcolormaps\n");
+       status = XGetRGBColormaps(wd->display, DefaultRootWindow(wd->display),
+     				  &standardCmaps, &numCmaps, 
+				  XA_RGB_DEFAULT_MAP);
+       if (status == 1) {
+        for (i = 0; i < numCmaps; i++) {
+          if (standardCmaps[i].visualid == vis->visualid) {
+            cm = wd->cmap = standardCmaps[i].colormap;
+	    printf("cm = standardCmaps[i].colormap %p\n", cm);
+	    XFree(standardCmaps);
+	    printf("XFree\n");
+          }
+        }
+        XFree(standardCmaps);
+	printf("XFree\n");
+      }
+    }
+}
+
+   f = wopen(name, lp, attr, n, err_index, cm);
+   if (!f) return NULL;
+   w = (wbp) f;
+   ws = w->window;
+   wd = ws->display;
+
+   w->window->glpix = glXCreateGLXPixmap(wd->display, vis, ws->pix);
+  /* printf("created glpix is %p\n", w->window->glpix);
+   printf("after created pix was %p\n", w->window->pix);
+   printf("after created win was %p\n", w->window->win);*/
+
+   glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
+   glXMakeCurrent(w->window->display->display, w->window->glpix,
+	  	  w->context->ctx);	   
+   w->context->eyeupx = w->context->eyeupy = 0.0;
+   w->context->eyeupz = 1.0;
+   w->context->dim = 3;
+   w->context->eyeposx = w->context->eyeposy =  w->context->eyeposz = 0.0;
+   w->context->eyedirx = w->context->eyediry = 0.0;
+   w->context->eyedirz = -100.0;
+
+   glClearColor(0.0, 0.0, 0.0, 0.0);
+   glClear(GL_COLOR_BUFFER_BIT);
+
+   glMatrixMode(GL_PROJECTION);
+   glLoadIdentity();
+   glFrustum(-0.5, 0.5, -0.5, 0.5, 1.0, 15.0);
+   return f;
+}
+
+
+
+/* accpersp starts here */
+
+void accFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, 
+		GLdouble near, GLdouble far, GLdouble pixdx, GLdouble pixdy, 
+		GLdouble eyedx, GLdouble eyedy, GLdouble focus)
+{
+  GLdouble xwsize, ywsize;
+  GLdouble dx, dy;
+  GLint viewport[4];
+  
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  
+  xwsize = right - left;
+  ywsize = top - bottom;
+  
+  dx = -(pixdx *xwsize/(GLdouble) viewport[2] + eyedx*near/focus);
+  dy = -(pixdy *ywsize/(GLdouble) viewport[3] + eyedy*near/focus);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glFrustum(left +dx, right +dx, bottom + dy, top +dy, near, far);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glTranslatef(-eyedx, -eyedy, 0.0);
+}
+
+
+
+void accPerspective(GLdouble fovy, GLdouble aspect, GLdouble near, 
+		    GLdouble far, GLdouble pixdx, GLdouble pixdy, 
+		    GLdouble eyedx, GLdouble eyedy, GLdouble focus)
+{
+  GLdouble fov2, left, right, bottom, top;
+  fov2 = ((fovy*Pi)/180.0)/2.0;
+  
+  top = near /(cos(fov2) /sin(fov2));
+  bottom = -top;
+  right = top*aspect;
+  left = -right;
+  accFrustum(left, right, bottom, top, near, far, pixdx, pixdy, eyedx, eyedy, 
+	     focus);
+}
+
+void displayObjects(void)
+{
+  GLfloat torus_diffuse[] ={0.7, 0.7, 0.0, 1.0};
+  GLfloat cube_diffuse[] = {0.0, 0.7, 0.7, 1.0};
+  GLfloat sphere_diffuse[] = {0.7, 0.0, 0.7, 1.0};
+  GLfloat octa_diffuse[] = {0.7, 0.4, 0.4, 1.0};
+  
+  glPushMatrix();
+  glTranslatef(0.0, 0.0, -5.0);
+  glRotatef(30.0, 1.0, 0.0, 0.0);
+  glPushMatrix();
+  glTranslatef(-0.80, 0.35, 0.0);
+  glRotatef(100.0, 1.0, 0.0, 0.0);
+  glMaterialfv(GL_FRONT, GL_DIFFUSE, torus_diffuse);
+  glutSolidTorus(0.275, 0.85, 16, 16);
+  glPopMatrix();
+  
+  glPushMatrix();
+  glTranslatef(-0.75, -0.50, 0.0);
+  glRotatef(45.0, 0.0, 0.0, 1.0);
+  glRotatef(45.0, 1.0, 0.0, 0.0);
+  glMaterialfv(GL_FRONT, GL_DIFFUSE, cube_diffuse);
+  glutSolidCube(1.5);
+  glPopMatrix();
+
+  glPushMatrix();
+  glTranslatef(0.75, 0.60, 0.0);
+  glRotatef(30.0, 1.0, 0.0, 0.0);
+  glMaterialfv(GL_FRONT, GL_DIFFUSE, sphere_diffuse);
+  glutSolidSphere(1.0, 16, 16);
+  glPopMatrix();
+ 
+  glPushMatrix();
+  glTranslatef(0.70, -0.90, 0.25);
+  glMaterialfv(GL_FRONT, GL_DIFFUSE, octa_diffuse);
+  glutSolidOctahedron();  
+  glPopMatrix();
+  glPopMatrix();
+}
+
+void mydisplay(void)
+{
+   displayObjects();
+}
+
+  
+void myinit(void)
+{
+
+  GLint viewport[4];
+  
+  GLfloat mat_ambient[] = {1.0, 1.0, 1.0, 1.0};
+  GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+  GLfloat light_position[] = {0.0, 0.0, 10.0, 1.0};
+  GLfloat lm_ambient[] = {0.2, 0.2, 0.2, 1.0};
+  
+  glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+  glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+  glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
+  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lm_ambient);
+  
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_DEPTH_TEST);
+  glShadeModel(GL_FLAT);
+  
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+  glGetIntegerv(GL_VIEWPORT, viewport);
+
+  accPerspective(50.0, (GLdouble)viewport[2]/(GLdouble) viewport[3], 
+		   1.0, 15.0, viewport[1], viewport[1], 
+		   0.0, 0.0, 1.0);
+
+  glPushMatrix();
+  gluLookAt(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
+}
+
+
+/* code for primatives */
+
+void torus(double radius1, double radius2, double x, double y, double z)
+{
+
+  int i, j;
+  GLfloat theta, phi, theta1;
+  GLfloat cosTheta, sinTheta;
+  GLfloat cosTheta1, sinTheta1;
+  GLfloat ringDelta, sideDelta;
+  /*GLfloat torus_diffuse[] ={0.7, 0.7, 0.0, 1.0};*/
+  GLint rings = 16;
+  GLint nsides = 16;
+
+
+  glPushMatrix();
+
+  glTranslatef(x, y, z);
+  glRotatef(130.0, 1.0, 0.0, 0.0);
+/*  glMaterialfv(GL_FRONT, GL_DIFFUSE, torus_diffuse);*/
+  ringDelta = 2.0 * M_PI / rings;
+  sideDelta = 2.0 * M_PI / nsides;
+
+  theta = 0.0;
+  cosTheta = 1.0;
+  sinTheta = 0.0;
+  for (i = rings - 1; i >= 0; i--) {
+    theta1 = theta + ringDelta;
+    cosTheta1 = cos(theta1);
+    sinTheta1 = sin(theta1);
+    glBegin(GL_QUAD_STRIP);
+    phi = 0.0;
+    for (j = nsides; j >= 0; j--) {
+      GLfloat cosPhi, sinPhi, dist;
+
+      phi += sideDelta;
+      cosPhi = cos(phi);
+      sinPhi = sin(phi);
+      dist = radius2 + radius1 * cosPhi;
+
+      glNormal3f(cosTheta1 * cosPhi, -sinTheta1 * cosPhi, sinPhi);
+      glVertex3f(cosTheta1 * dist, -sinTheta1 * dist, radius1 * sinPhi);
+      glNormal3f(cosTheta * cosPhi, -sinTheta * cosPhi, sinPhi);
+      glVertex3f(cosTheta * dist, -sinTheta * dist,  radius1 * sinPhi);
+    }
+    glEnd();
+    theta = theta1;
+    cosTheta = cosTheta1;
+    sinTheta = sinTheta1;
+  }
+  glPopMatrix();
+}
+
+void cube(double length, double x, double y, double z)
+{  
+  GLfloat cube_diffuse[] = {0.0, 0.7, 0.7, 1.0};
+  static GLfloat n[6][3] =
+  {
+    {-1.0, 0.0, 0.0},
+    {0.0, 1.0, 0.0},
+    {1.0, 0.0, 0.0},
+    {0.0, -1.0, 0.0},
+    {0.0, 0.0, 1.0},
+    {0.0, 0.0, -1.0}
+  };
+  static GLint faces[6][4] =
+  {
+    {0, 1, 2, 3},
+    {3, 2, 6, 7},
+    {7, 6, 5, 4},
+    {4, 5, 1, 0},
+    {5, 6, 2, 1},
+    {7, 4, 0, 3}
+  };
+  GLfloat v[8][3];
+  GLint i;
+
+  glPushMatrix();
+  glTranslatef(x, y, z);
+  glRotatef(45.0, 0.0, 0.0, 1.0);
+  glRotatef(45.0, 1.0, 0.0, 0.0);
+/*  glMaterialfv(GL_FRONT, GL_DIFFUSE, cube_diffuse);*/
+
+  v[0][0] = v[1][0] = v[2][0] = v[3][0] = -length / 2;
+  v[4][0] = v[5][0] = v[6][0] = v[7][0] = length / 2;
+  v[0][1] = v[1][1] = v[4][1] = v[5][1] = -length / 2;
+  v[2][1] = v[3][1] = v[6][1] = v[7][1] = length / 2;
+  v[0][2] = v[3][2] = v[4][2] = v[7][2] = -length / 2;
+  v[1][2] = v[2][2] = v[5][2] = v[6][2] = length / 2;
+
+  for (i = 5; i >= 0; i--) {
+    glBegin(GL_QUADS);
+    glNormal3fv(&n[i][0]);
+    glVertex3fv(&v[faces[i][0]][0]);
+    glVertex3fv(&v[faces[i][1]][0]);
+    glVertex3fv(&v[faces[i][2]][0]);
+    glVertex3fv(&v[faces[i][3]][0]);
+    glEnd();
+  }
+  glPopMatrix();
+}
+
+
+void sphere(double radius, double x, double y, double z)
+{
+  GLUquadricObj *qobj;
+  GLfloat sphere_diffuse[] = {0.7, 0.0, 0.7, 1.0};
+
+  glPushMatrix();
+  glTranslatef(x, y, z);
+  glRotatef(30.0, 1.0, 0.0, 0.0);
+  /*glMaterialfv(GL_FRONT, GL_DIFFUSE, sphere_diffuse);*/
+
+  qobj = gluNewQuadric();
+  gluQuadricDrawStyle(qobj, GLU_FILL);
+  gluQuadricNormals(qobj,  GLU_SMOOTH); 
+  gluSphere(qobj, radius, 15, 10);
+  glPopMatrix();
+}
+
+
+
+int setdim(wbp w, char* s)
+{
+   int dim;
+   dim = atoi(s);
+   if (dim < 1 | dim > 4)    
+      return Error;
+   w->context->dim = dim;
+   return Succeeded;
+}
+
+
+int seteyepos(wbp w, char *s)
+{
+	
+   char *s2;
+   wcp wc = w->context;
+
+   s2 = s;
+   while (isspace(*s2)) s2++;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeposx = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeposy = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeposz = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2) return Error;
+   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
+	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+}
+
+int seteyedir(wbp w, char *s)
+{
+	
+   char *s2, tmp[32];
+   wcp wc = w->context;
+
+   s2 = s;
+   while (isspace(*s2)) s2++;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyedirx = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyediry= atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyedirz = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2) return Error;
+   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
+	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+}
+
+
+int seteyeup(wbp w, char *s)
+{
+	
+   char *s2, tmp[32];
+   wcp wc = w->context;
+
+   s2 = s;
+   while (isspace(*s2)) s2++;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeupx = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeupy= atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeupz = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2) return Error;
+   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
+	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+}
+
+
+
+int seteye(wbp w, char *s)
+{
+   char *s2;
+   wcp wc = w->context;
+
+   s2 = s;
+   while (isspace(*s2)) s2++;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeposx = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeposy = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeposz = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyedirx = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyediry= atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyedirz = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   while (isspace(*s2)) s2++;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeupx = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeupy= atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2++ != ',') return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   wc->eyeupz = atof(s2);
+   if (*s2 == '-') s2++;
+   while (isdigit(*s2)) s2++;
+   if (*s2 == '.') {
+      s2++;
+      while (isdigit(*s2)) s2++;
+      }
+   if (*s2) return Error;
+   gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
+	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+}
+

@@ -2,8 +2,8 @@
  * cnv.r -- Conversion routines:
  *
  * cnv_c_dbl, cnv_c_int, cnv_c_str, cnv_cset, cnv_ec_int,
- * cnv_eint, cnv_int, cnv_real, cnv_str, cnv_tcset, cnv_tstr, deref
- * strprc, bi_strprc
+ * cnv_eint, cnv_int, cnv_real, cnv_str, cnv_tcset, cnv_tstr, deref,
+ * getdbl, strprc, bi_strprc
  *
  * Service routines: itos, ston, radix, cvpos
  *
@@ -646,9 +646,8 @@ dptr s, d;
          ep = memb(bp->tvtbl.clink,&bp->tvtbl.tref,bp->tvtbl.hashnum,&res);
          if (res == 1)
             *d = (*ep)->telem.tval;			/* found; use value */
-         else {
+         else
             *d = bp->tvtbl.clink->table.defvalue;	/* nope; use default */
-	    }
          }
 
       kywdint:
@@ -665,6 +664,17 @@ dptr s, d;
           */
          *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
       }
+   }
+
+/*
+ * getdbl - return as a double the value inside a real block.
+ */
+double getdbl(dp) 
+dptr dp;
+   {
+   double d;
+   GetReal(dp, d);
+   return d;
    }
 
 /*
@@ -1115,6 +1125,8 @@ register long len;
    return (len + p + 1);
    }
 
+double dblZero = 0.0;
+
 /*
  * rtos - convert the real number n into a string using s as a buffer and
  *  making a descriptor for the resulting string.
@@ -1125,7 +1137,7 @@ dptr dp;
 char *s;
    {
    s++; 				/* leave room for leading zero */
-   sprintf(s, "%.*g", Precision, n + 0.0);  /* format string; +0.0 avoids -0 */
+   sprintf(s, "%.*g", Precision, n + dblZero);   /* format, avoiding -0 */
 
    /*
     * Now clean up possible messes.

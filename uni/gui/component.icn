@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.10 2005-01-06 12:08:34 rparlett Exp $
+# $Id: component.icn,v 1.11 2005-01-31 10:04:22 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -549,9 +549,34 @@ class Component : Object : SetFields : Connectable(
    method init()
       if /self.parent then
          fatal("incorrect ancestry (parent null)")
-      self.parent_dialog := self.parent.get_parent_dialog_reference()
-      self.cwin := (Clone ! ([self.parent.get_cwin_reference()] ||| self.attribs))
-      self.cbwin := (Clone ! ([self.parent.get_cbwin_reference()] ||| self.attribs))
+      parent_dialog := parent.get_parent_dialog_reference()
+      if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
+	 cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
+	 }
+      else {
+	 # Clone failed, what to do?  Try to drop a single
+	 # attribute, as that will identify which one is hurting us.
+	 every i := 1 to *attribs do {
+	    p := pop(attribs)
+	    if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
+	       write(&errout, "clone failed, had to discard attribute ", image(p))
+	       break
+	       }
+	    push(attribs, p)
+	    }
+	 if /cwin then {
+	    write(&errout, "clone failed, discarding attributes:")
+	    every write(&errout, "\t", ! attribs)
+	    cwin := Clone(parent.get_cwin_reference())
+	    if /cwin then error("multiple bad attributes")
+	    cbwin := Clone(parent.get_cbwin_reference())
+	    if /cbwin then error("bad cbwin, multiple bad attributes")
+	    }
+	 else {
+	    cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
+	    if /cbwin then error("bad cbwin, not sure why")
+	    }
+	 }
       every (!self.children).init()
    end
 

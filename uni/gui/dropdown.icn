@@ -1,5 +1,5 @@
 #
-# $Id: dropdown.icn,v 1.4 2004-02-12 16:45:24 rparlett Exp $
+# $Id: dropdown.icn,v 1.5 2004-05-09 20:00:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -168,7 +168,7 @@ class DropDown : Component(
       self.tl.resize()
       self.tl.firstly()
       self.temp_win := WOpen("canvas=hidden", "size=" || self.tl.w || "," || self.tl.h)
-      CopyArea(self.get_parent_win(), self.temp_win, self.tl.x, self.tl.y, self.tl.w, self.tl.h, 0, 0)
+      CopyArea(self.cwin, self.temp_win, self.tl.x, self.tl.y, self.tl.w, self.tl.h, 0, 0)
       self.tl.clear_selection_on_key_moves()
       self.tl.set_cursor(self.selection)
       lno := self.selection - self.tl.get_max_lines() / 2
@@ -184,7 +184,7 @@ class DropDown : Component(
       #
       self.tl.finally()
       EraseRectangle(self.get_parent_win(), self.tl.x, self.tl.y, self.tl.w, self.tl.h)
-      CopyArea(self.temp_win, self.get_parent_win(), 0, 0, self.tl.w, self.tl.h, self.tl.x, self.tl.y)
+      CopyArea(self.temp_win, self.cwin, 0, 0, self.tl.w, self.tl.h, self.tl.x, self.tl.y)
       WClose(self.temp_win)
       self.remove(tl)
       self.tl := &null

@@ -1,5 +1,5 @@
 #
-# $Id: menu.icn,v 1.3 2004-01-25 23:04:36 rparlett Exp $
+# $Id: menu.icn,v 1.4 2004-05-09 20:00:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -111,7 +111,7 @@ class Menu : SubMenu(
          # Open a temporary area for the menu and copy.
          #
          self.temp_win := WOpen("canvas=hidden", "size=" || self.w || "," || self.h)
-         CopyArea(self.parent_component.get_parent_win(), self.temp_win, self.x, self.y, self.w, self.h, 0, 0)
+         CopyArea(self.parent_component.cwin, self.temp_win, self.x, self.y, self.w, self.h, 0, 0)
       }
 
       cw := self.parent_component.cbwin
@@ -443,7 +443,7 @@ class Menu : SubMenu(
       #
       cw := self.parent_component.cwin
       EraseRectangle(cw, self.x, self.y, self.w, self.h)
-      CopyArea(self.temp_win, self.parent_component.get_parent_win(), 0, 0, self.w, self.h, self.x, self.y)
+      CopyArea(self.temp_win, self.parent_component.cwin, 0, 0, self.w, self.h, self.x, self.y)
       WClose(self.temp_win)
       self.temp_win := &null
    end

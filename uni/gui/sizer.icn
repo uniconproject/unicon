@@ -1,5 +1,5 @@
 #
-# $Id: sizer.icn,v 1.2 2004-01-12 20:17:42 rparlett Exp $
+# $Id: sizer.icn,v 1.3 2004-05-09 20:00:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -83,7 +83,7 @@ class Sizer : Component(
       local cw
       W := if /buffer_flag then self.cwin else self.cbwin
       if \self.is_held then {
-         CopyArea(temp_win, get_parent_buffer_win(), 0, 0, temp_w, temp_h, 0, 0)
+         CopyArea(temp_win, cbwin, 0, 0, temp_w, temp_h, 0, 0)
          cw := Clone(self.cbwin, "linewidth=4", "pattern=gray", "fillstyle=masked")
          if \is_horizontal_flag then {
             abs_pos := curr_pos + drag_offset + parent.get_y_reference()
@@ -144,7 +144,7 @@ class Sizer : Component(
             temp_w := parent_dialog.get_w_reference() 
             temp_h := parent_dialog.get_h_reference() 
             self.temp_win := WOpen("canvas=hidden", "size=" || temp_w || "," || temp_h)
-            CopyArea(get_parent_win(), temp_win, 0, 0, temp_w, temp_h, 0, 0)
+            CopyArea(cwin, temp_win, 0, 0, temp_w, temp_h, 0, 0)
             if \self.is_horizontal_flag then {
                drag_offset := &y - self.y
             } else {
@@ -162,7 +162,7 @@ class Sizer : Component(
             self.is_held := &null
             pointer_off()
             end_pos := set_curr_pos()
-            CopyArea(temp_win, get_parent_win(), 0, 0, temp_w, temp_h, 0, 0)
+            CopyArea(temp_win, cwin, 0, 0, temp_w, temp_h, 0, 0)
             WClose(self.temp_win)
             unique_end()
             create_event_and_fire(SIZER_RELEASED_EVENT, e)

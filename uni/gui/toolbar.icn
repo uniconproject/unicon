@@ -1,5 +1,5 @@
 #
-# $Id: toolbar.icn,v 1.2 2004-02-12 16:45:24 rparlett Exp $
+# $Id: toolbar.icn,v 1.3 2004-05-09 20:00:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -74,7 +74,7 @@ class ToolBar : Panel(
          temp_y := 0 <= wh - temp_h
 
       self.temp_win := WOpen("canvas=hidden", "size=" || temp_w || "," || temp_h)
-      CopyArea(get_parent_win(), temp_win, temp_x, temp_y, temp_w, temp_h, 0, 0)
+      CopyArea(cwin, temp_win, temp_x, temp_y, temp_w, temp_h, 0, 0)
       EraseRectangle(cw, temp_x, temp_y, temp_w, temp_h)
       Rectangle(cw, temp_x, temp_y, temp_w, temp_h)
       center_string(cw, temp_x + temp_w / 2, temp_y + temp_h / 2, label)
@@ -82,7 +82,7 @@ class ToolBar : Panel(
    end
 
    method hide_label()
-      CopyArea(temp_win, get_parent_win(), 0, 0, temp_w, temp_h, temp_x, temp_y)
+      CopyArea(temp_win, cwin, 0, 0, temp_w, temp_h, temp_x, temp_y)
       WClose(temp_win)
       temp_win := &null
    end

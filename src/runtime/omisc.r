@@ -293,7 +293,7 @@ operator{*} ... to(from, to)
             }
          inline {
             tended struct descrip d1, d2;
-	    MakeInt(1, &d1);
+	    d1 = onedesc;
             for ( ; bigcmp(&from, &to)<=0; from=d2) {
                suspend from;
 	       bigadd(&from, &d1, &d2);
@@ -325,7 +325,6 @@ operator{1} [...] llist(elems[n])
    body {
       tended struct b_list *hp;
       register word i;
-      register struct b_lelem *bp;  /* need not be tended */
       word nslots;
 
       nslots = n;
@@ -336,13 +335,11 @@ operator{1} [...] llist(elems[n])
        * Allocate the list and a list block.
        */
       Protect(hp = alclist_raw(n, nslots), runerr(0));
-      bp = (struct b_lelem *)hp->listhead;
    
       /*
        * Assign each argument to a list element.
        */
-      for (i = 0; i < n; i++)
-         bp->lslots[i] = elems[i];
+      memmove(hp->listhead->lelem.lslots, elems, n * sizeof(struct descrip));
 
 /*  Not quite right -- should be after list() returns in case it fails */
       Desc_EVValD(hp, E_Lcreate, D_List);
@@ -350,4 +347,3 @@ operator{1} [...] llist(elems[n])
       return list(hp);
       }
 end
-

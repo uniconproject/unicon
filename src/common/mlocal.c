@@ -279,13 +279,25 @@ static char *canonize(char *path) {
    if (out == path)
       *out++ = '.';			/* change null path to "." */
    *out++ = '\0';
-
 #if MSDOS
    while(strchr(path, '/')) *strchr(path, '/') = '\\';
 #endif
-
    return path;			/* return result */
-   }
+}
+
+FILE *pathOpen(char *fname, char *mode)
+{
+   char tmp[256];
+   char *s = findexe(fname, tmp, 255);
+   if (s) {
+      return fopen(tmp, mode);
+      }
+   return NULL;
+}
+
+#else                                  /* UNIX */
+
+static char junk;		/* avoid empty module */
 
 #endif					/* UNIX */
 

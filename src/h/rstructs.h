@@ -89,6 +89,8 @@ struct b_file {			/* file block */
     long qsize;                 /* SQL query buffer size */
     char *tablename;
     struct b_proc *proc;	/* current record constructor procedure */
+    int refcount;
+    struct ISQLFile *previous, *next; /* links, so we can find & free these*/
   };
 
 #endif					/* ISQL */

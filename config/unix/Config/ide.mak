@@ -5,11 +5,17 @@ include ../makedefs
 export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
 CFLAGS= -c -u
-SRC=ui.icn main.icn
-OBJ=ui.u main.u
+SRC=main.icn ui.icn filedlg.icn imgs.icn utags.icn classbrowser.icn \
+	whitemenu.icn buffertabset.icn buffertabitem.icn editortabitem.icn \
+	buffertextlist.icn icbbutton.icn whitemenubar.icn icbpanel.icn \
+	templates.icn definitions.icn
 
-ui: ui.u main.u
-	$(UNICON) ui.u main.u
+OBJ=ui.u filedlg.u main.u imgs.u utags.u classbrowser.u whitemenu.u \
+	buffertabset.u  buffertabitem.u editortabitem.u buffertextlist.u \
+	icbbutton.u whitemenubar.u icbpanel.u templates.u definitions.u
+
+ui: $(OBJ)
+	$(UNICON) -o ui $(OBJ)
 	$(CP) ui$(EXE) ../../bin
 
 ui.u: ui.icn

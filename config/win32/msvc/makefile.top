@@ -1,7 +1,21 @@
 # top-level Icon makefile, configured for Windows NT
 Top:
-	@echo Run "nmake NT-Configure" or "nmake W-Configure" to configure sources
-	@echo Run "nmake Unicon" to build everything
+	@echo To configure sources:
+	@echo    MSVC: "nmake NT-Configure" or "nmake W-Configure"
+	@echo    GCC: "make NT-Configure-GCC" or "make W-Configure-GCC"
+	@echo Then run "[n]make Unicon" to build everything
+
+W-Configure-GCC:
+	cd config/win32/gcc && sh w-config.sh
+	echo Run "make Unicon" to build
+
+GL-Configure-GCC:
+	cd config/win32/gcc && sh gl-config.sh
+	echo Run "make Unicon" to build
+
+NT-Configure-GCC:
+	cd config/win32/gcc && sh config.sh
+	echo Run "make Unicon" to build
 
 NT-Configure:
 	cd config\win32\msvc

@@ -376,14 +376,16 @@ char *outname;
     *  of "$@" by some shells in the absence of any arguments.
     *  Thanks to the Unix-haters handbook for this trick.
     */
-   sprintf(script, "%s\n%s%-72s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n",
+   sprintf(script, "%s\n%s%-72s\n%s\n\n%s\n%s\n%s\n%s%s%s\n\n%s\n",
       "#!/bin/sh",
       "IXBIN=", iconxloc,
       "IXLCL=`echo $0 | sed 's=[^/]*$=iconx='`",
       "[ -n \"$ICONX\" ] && exec \"$ICONX\" $0 ${1+\"$@\"}",
       "[ -x $IXLCL ] && exec $IXLCL $0 ${1+\"$@\"}",
       "[ -x $IXBIN ] && exec $IXBIN $0 ${1+\"$@\"}",
-      "exec iconx $0 ${1+\"$@\"}",
+      "exec ",
+      (Mflag ? "miconx" : "iconx"),
+      " $0 ${1+\"$@\"}",
       "[executable Icon binary follows]");
    strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8));
    hdrsize = strlen(script) + 1;	/* length includes \0 at end */

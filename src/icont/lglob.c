@@ -230,7 +230,20 @@ void scanrefs()
          gp->g_index = n++;
          if (gp->g_flag & F_Record)
             gp->g_procid = ++nrecords;
+
+	 /*
+	  * If this is an execution monitor it will want to run miconx.
+	  * Look for EvGet().
+	  */
+	 if (!Mflag &&
+	     (gp->g_flag & F_Builtin) &&
+	     isupper((&lsspace[gp->g_name])[0]) &&
+	     !strcmp("EvGet", &lsspace[gp->g_name])) {
+	    Mflag = 1;
+	    }
+
 #if NT
+#ifndef NTGCC
 	 /*
 	  * NT distinguishes between graphics and non-graphics VM's.
 	  * If this is a graphics application we want the graphics VM.
@@ -242,6 +255,7 @@ void scanrefs()
 	     strcmp("EvGet", &lsspace[gp->g_name])) {
 	    Gflag = 1;
 	    }
+#endif					/* NTGCC */
 #endif					/* NT */
          gpp = &gp->g_next;
          }

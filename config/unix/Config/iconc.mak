@@ -1,6 +1,5 @@
 #  Makefile for the Icon compiler, iconc.
 #
-#  This may need some fixing.
 
 include ../../Makedefs
 
@@ -35,6 +34,9 @@ $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 		ccode.h cglobals.h cproto.h csym.h ctrans.h ctree.h
 
 $(COBJS):	../h/mproto.h
+
+ccomp.o:	ccomp.c
+		$(CC) $(CFLAGS) -DICONC_XLIB="\"$(LIBS)\"" -c ccomp.c
 
 ccode.o:	../h/lexdef.h ctoken.h
 chkinv.o:	ctoken.h

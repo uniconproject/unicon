@@ -302,7 +302,7 @@ xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri
 #
 
 comp_all:
-	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o
+	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o $(XPM) $(GDBM) $(LIBTP)
 	$(MAKE) db_lib
 
 db_lib: rt.db rt.a

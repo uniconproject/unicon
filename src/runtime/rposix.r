@@ -741,6 +741,7 @@ FILE *sock_connect(char *fn, int is_udp)
    char *host = fname;
    static struct hostent he;
    static char ip[4], *(pip[2]);
+   int iip[4];
 #if !NT
    struct sockaddr_un saddr_un;
 #endif					/* !NT */
@@ -776,8 +777,9 @@ FILE *sock_connect(char *fn, int is_udp)
 	host = hostname;
       }
       /* try for an IP number, then try for a name */
-      if (sscanf(host, "%d.%d.%d.%d", ip, ip+1, ip+2, ip+3) == 4) {
+      if (sscanf(host, "%d.%d.%d.%d", iip, iip+1, iip+2, iip+3) == 4) {
 	 hp = &he;
+	 ip[0] = iip[0]; ip[1] = iip[1]; ip[2] = iip[2]; ip[3] = iip[3];
 	 pip[0] = ip;
 	 he.h_addr_list = pip;
 	 he.h_length = 4;

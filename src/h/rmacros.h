@@ -76,8 +76,12 @@
 #endif                                  /* Messaging */
 
 #ifdef Graphics3D
-   #define Fs_Window3D   01000000	/* reading/writing on a window */
+   #define Fs_Window3D  01000000	/* reading/writing on a window */
 #endif					/* Graphics3D */
+
+#ifdef Compress
+   #define Fs_Compress  02000000	/* reading/writing compressed file */
+#endif					/* Compress */
 
 #ifdef Graphics
    #define XKey_Window 0

@@ -8,7 +8,7 @@
 FncDef(abs,1)
 FncDef(acos,1)
 FncDef(any,4)
-FncDef(args,1)
+FncDef(args,2)
 FncDef(asin,1)
 FncDef(atan,2)
 FncDef(bal,6)

@@ -381,6 +381,7 @@ struct progstate {
    struct descrip parentdesc;		/* implicit "&parent" */
    struct descrip eventmask;		/* implicit "&eventmask" */
    struct descrip opcodemask;		/* implicit "&opcodemask" */
+   struct descrip eventcount;		/* implicit "&eventcount" */
    struct descrip valuemask;
    struct descrip eventcode;		/* &eventcode */
    struct descrip eventval;		/* &eventval */

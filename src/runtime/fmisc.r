@@ -9,18 +9,25 @@
 #include "../h/opdefs.h"
 #endif					/* !COMPILER */
 
-"args(p) - produce number of arguments for procedure p."
+"args(x,i) - produce number of arguments for procedure x."
 
-function{1} args(x)
+function{1} args(x,i)
 
-   if !is:proc(x) then
-      runerr(106, x)
-
-   abstract {
-      return integer
+   if is:proc(x) then {
+      abstract { return integer }
+      inline { return C_integer ((struct b_proc *)BlkLoc(x))->nparam; }
       }
-   inline {
-      return C_integer ((struct b_proc *)BlkLoc(x))->nparam;
+   else if !is:coexpr(x) then
+      runerr(106, x)
+   else if is:null(i) then {
+      abstract { return integer }
+      inline { return C_integer BlkLoc(x)->coexpr.program->Xnargs; }
+      }
+   else if !cnv:integer(i) then
+      runerr(103, i)
+   else {
+      abstract { return any_value }
+      inline { return BlkLoc(x)->coexpr.program->Xargp[IntVal(i)]; }
       }
 end
 
@@ -1399,10 +1406,9 @@ function{*} fieldnames(r)
       }
    if !is:record(r) then runerr(107,r)
    body {
-      int i;
-      for(i=0;i<BlkLoc(r)->record.recdesc->proc.nfields;i++) {
+      int i, sz = BlkLoc(r)->record.recdesc->proc.nfields;
+      for(i=0;i<sz;i++)
 	 suspend BlkLoc(r)->record.recdesc->proc.lnames[i];
-         }
       fail;
       }
 end
@@ -1930,6 +1936,9 @@ function{*} keyword(keyname,ce)
       else if (strcmp(kname,"eventcode") == 0) {
 	 return kywdevent(&(p->eventcode));
 	 }
+      else if (strcmp(kname,"eventcount") == 0) {
+	 return kywdevent(&(p->eventcount));
+	 }
       else if (strcmp(kname,"eventsource") == 0) {
 	 return kywdevent(&(p->eventsource));
 	 }
@@ -2023,6 +2032,9 @@ function{*} keyword(keyname,ce)
 	 }
       else if (strcmp(kname,"subject") == 0) {
 	 return kywdsubj(&(p->ksub));
+	 }
+      else if (strcmp(kname,"time") == 0) {
+	 return C_integer millisec(); /* need to subtract out monitor time */
 	 }
       else if (strcmp(kname,"trace") == 0) {
 	 return kywdint(&(p->Kywd_trc));

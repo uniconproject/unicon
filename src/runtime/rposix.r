@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.24 2004-10-10 16:26:14 rparlett Exp $
+ * $Id: rposix.r,v 1.25 2004-12-05 07:03:45 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1668,7 +1668,6 @@ void dup_fds(dptr d_stdin, dptr d_stdout, dptr d_stderr)
 }
 
 
-#if 1 /* NT */
 #ifdef Graphics
 /*
  * Get a window that has an event pending (queued)
@@ -1716,5 +1715,4 @@ struct b_list *findactivewindow(struct b_list *lws)
    return (struct b_list *)BlkLoc(d);
 }   
 #endif					/* Graphics */
-#endif					/* NT */
 #endif					/* PosixFns */

@@ -276,12 +276,6 @@ optsemi : { $$ := EmptyNode } ;
 
 cl: classhead SEMICOL END {
    $$ := $1
-   if $3 ~=== EmptyNode then {
-      if $3.label == "locals3" then
-         yyerror("static class variables not yet implemented")
-      # splice in any class locals into the field list
-      $$.fields.traverse($3)
-      }
    $$.methods := methodstaque(&null, $$)
    }
    | classhead optsemi clocals methods optsemi initiallysection END {

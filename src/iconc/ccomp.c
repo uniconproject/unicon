@@ -239,9 +239,9 @@ Deliberate Syntax Error
 #if VMS
 
 #ifdef Graphics
-#ifdef HaveXpmFormat
+#ifdef HAVE_LIBXPM
    lib_sz += strlen(refpath) + strlen("Xpm/lib,");
-#endif						/* HaveXpmFormat */
+#endif						/* HAVE_LIBXPM */
    lib_sz += 1 + strlen(refpath) + strlen("X11.opt/opt");
 #endif						/* Graphics */
 
@@ -277,10 +277,10 @@ Deliberate Syntax Error
       }
 #ifdef Graphics
    strcat(s, ",");
-#ifdef HaveXpmFormat
+#ifdef HAVE_LIBXPM
    strcat(s, refpath);
    strcat(s, "Xpm/lib,");
-#endif						/* HaveXpmFormat */
+#endif						/* HAVE_LIBXPM */
    strcat(s, refpath);
    strcat(s, "X11.opt/opt");
 #endif						/* Graphics */

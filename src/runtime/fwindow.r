@@ -3201,7 +3201,7 @@ function{1} DrawTorus(argv[argc])
 	 syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for (i = warg; i < argc-warg; i = i + 5) {
+      for (i = warg; i < argc; i += 5) {
 
 	 /* convert parameters and draw torus*/
          if (!cnv:C_double(argv[i], x))    runerr(102, argv[i]);  
@@ -3255,7 +3255,7 @@ function{1} DrawCube(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for(i = warg; i < argc-warg; i = i+4) {
+      for(i = warg; i < argc; i += 4) {
  
 	 /* convert parameters and draw a cube */
          if (!cnv:C_double(argv[i], x))	  runerr(102, argv[i]);
@@ -3310,7 +3310,7 @@ function{*} DrawSphere(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for(i = warg; i < argc-warg; i = i+4) {
+      for(i = warg; i < argc; i += 4) {
 
 	 /* convert parameters and draw a sphere */
 	 if (!cnv:C_double(argv[i], x))    runerr(102, argv[i]);
@@ -3367,7 +3367,7 @@ function{1} DrawCylinder(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for(i = warg; i < argc-warg; i = i+6) {
+      for(i = warg; i < argc; i += 6) {
 
 	 /* convert parameters and draw a cylinder */
 	 if (!cnv:C_double(argv[i], x))    runerr(102, argv[i]);
@@ -3421,7 +3421,7 @@ function{1} DrawDisk(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for (i = warg; i < argc-warg; i = i+7) {
+      for (i = warg; i < argc; i += 7) {
 	 if (argc-warg <= i+3)
 	    runerr(146);
 
@@ -3495,7 +3495,7 @@ function{1} Rotate(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for(i = warg; i < argc-warg; i = i+4) {
+      for(i = warg; i < argc; i += 4) {
 	 /* convert parameters and perform the rotation */
          if (!cnv:C_double(argv[i], angle)) runerr(102, argv[i]); 	  
 	 if (!cnv:C_double(argv[i+1], x))   runerr(102, argv[i+1]);
@@ -3546,7 +3546,7 @@ function{1} Translate(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for(i = warg; i < argc-warg; i = i+3) {
+      for(i = warg; i < argc; i += 3) {
 
 	 /*convert parameters and perform the translation */
          if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);	
@@ -3595,7 +3595,7 @@ function{1} Scale(argv[argc])
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      for(i = warg; i < argc-warg; i = i+3) {
+      for(i = warg; i < argc; i += 3) {
 
 	 /* convert parameters and perform scaling */
 	 if (!cnv:C_double(argv[i], x))	  runerr(102, argv[i]);
@@ -3908,6 +3908,7 @@ function{1} Texcoord(argv[argc])
          wc->autogen = 0; 
          wc->numtexcoords = 0;
          coords = (struct b_list*) argv[argc-warg].vword.bptr;
+	 if (coords->size > MAXTEXCOORDS) fail;
          for (i = 0; i < coords->size; i++) {
             c_traverse(coords, &val, i); 
             if (!cnv:C_double(val, wc->texcoords[i]))
@@ -3930,6 +3931,7 @@ function{1} Texcoord(argv[argc])
 	       MakeInt(1, &mode); 
 	       c_put(&f, &mode);
 	       }
+	    else fail;
 	    }
 	 /* the arguments are texture coordinates */
 	 else {
@@ -3941,7 +3943,8 @@ function{1} Texcoord(argv[argc])
 	    c_put(&f, &mode);
 	    wc->autogen = 0; 
 	    wc->numtexcoords = 0;
-	    for (i = warg; i < argc-warg; i++) {
+	    if (argc - warg > MAXTEXCOORDS) fail;
+	    for (i = warg; i < argc; i++) {
 	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords++]))
 		  runerr(102, argv[i]);
 	       c_put(&f, &argv[i]);
@@ -3949,8 +3952,9 @@ function{1} Texcoord(argv[argc])
 	    }
 	 }
       /* there must be an even number of arguments */
-      if (wc->numtexcoords % 2  != 0)
-	   runerr(154);
+      if (wc->numtexcoords % 2  != 0) {
+	 runerr(154);
+         }
       c_put(&(w->window->funclist), &f);
       return f; 
       }

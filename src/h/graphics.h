@@ -557,8 +557,6 @@ typedef struct _wstate {
   int            is_3D;        /* flag for 3D windows */
 
   struct descrip funclist;    /* descriptor to hold list of 3d functions */
-  GLXWindow     glwin;
-  GLXFBConfig   *gfbc;
 #endif
 } wstate, *wsp;
 

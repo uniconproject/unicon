@@ -1,5 +1,5 @@
 #
-# idol.iol -- core Idol-translator classes
+# idol.icn -- core Idol-translator classes
 
 $include "ytab_h.icn"
 
@@ -81,7 +81,7 @@ procedure import_class(node)
    else if node.tok = (IDENT|STRINGLIT) then {
        tempp := Package(node.s)
        if /tempp.dir then {
-          yyerror("Unable to import package " || node.s)
+          uni_error("Unable to import package " || node.s)
           }
        tempp.add_imported()
    }
@@ -647,7 +647,10 @@ procedure methodstaque(node, cl, taq)
 	    }
          "Method__state": {
 	    node.Class := cl
-	    taq$insert(node, node$name())
+	    if not (taq$insert(node, node$name())) then {
+	       uni_error("method " || node$name() ||
+		       " redeclared in " || cl.name)
+	       }
 	    }
 	 "null": { }
 	 "token": {

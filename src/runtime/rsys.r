@@ -1225,7 +1225,7 @@ FILE *popen (const char* cmd, const char *mode)
   strncpy(app_name, q, p - q );
   app_name[p - q] = '\0';
   pname[0] = '\0';
-#ifdef TRACE
+#ifdef __TRACE
   fprintf(stderr, "popen: app_name = %s\n", app_name);
 #endif
 
@@ -1238,7 +1238,7 @@ FILE *popen (const char* cmd, const char *mode)
                    pname,       /* Address of destination buffer */
                    &fp)         /* File part of app_name */
       != 0) {
-#ifdef TRACE
+#ifdef __TRACE
       fprintf(stderr, "%s found with suffix %s\n", app_name, *s);
 #endif
       new_cmd = strdup(cmd);
@@ -1250,7 +1250,7 @@ FILE *popen (const char* cmd, const char *mode)
   }
   if (go_on == 0) {
     /* the app_name was not found */
-#ifdef TRACE
+#ifdef __TRACE
     fprintf(stderr, "%s not found, concatenating comspec\n", app_name);
 #endif
     new_cmd = malloc(strlen(getenv("CONSPEC"))+4+strlen(cmd)+1);
@@ -1260,7 +1260,7 @@ FILE *popen (const char* cmd, const char *mode)
   }
   else {
   }
-#ifdef TRACE
+#ifdef __TRACE
   fprintf(stderr, "popen: app_name = %s\n", app_name);
   fprintf(stderr, "popen: cmd_line = %s\n", new_cmd);
 #endif

@@ -805,9 +805,9 @@ Deliberate Syntax Error
 	    } else {
 	       C_integer timeout = 0;
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
-	       if (n > 0) {
-	          if (!cnv:C_integer(attr[0], timeout))
-	             runerr(101, attr[0]);
+	       if (n > 0 && !is:null(attr[0])) {
+                  if (!cnv:C_integer(attr[0], timeout))
+                     runerr(101, attr[0]);
                }
 #endif
 	       /* connect to a port */

@@ -948,6 +948,9 @@ void scrubcursor(wbp w)
 int wclose(w)
 wbp w;
    {
+   wbp tmp_wb;
+   struct wbind_list *wbl;
+
    STDLOCALS(w);
 
    XSync(stddpy, False);
@@ -956,6 +959,24 @@ wbp w;
    /*
     * Force window to close (turn into a pixmap)
     */
+
+   while (w->window->children) {
+      tmp_wb = w->window->children->child;
+      wbl = w->window->children;
+      w->window->children = w->window->children->next;
+
+      /* added next line */
+      tmp_wb->window->parent = NULL;
+      tmp_wb->window->win = (Window) 0;
+
+/* added next line */
+      SETCLOSED(tmp_wb);
+      tmp_wb->window->refcount--;
+
+      w->window->refcount--;
+      wbl->next=NULL;
+      free(wbl);
+      }
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
       XDestroyWindow(stddpy,stdwin);
@@ -1061,6 +1082,8 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 
    ws->vis = DefaultVisual(ws->display->display, ws->display->screen); 
 
+   w->window->children=NULL;
+   w->window->parent = NULL;
 
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *)tlp;
@@ -1087,7 +1110,12 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 #ifdef Graphics3D
    w->context->is_3D = ws->is_3D = is_3d;
 #endif					/* Graphics3D */
-
+    if (is_3d) {
+   /* create an empty list for list of function calls */
+       if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
+           return NULL;
+       ws->funclist.dword = D_List;
+    }
    /*
     * Loop through any remaining arguments.
     */
@@ -1306,7 +1334,7 @@ int wmap(wbp w)
       glXMakeCurrent(wd->display, w->window->win, wc->ctx);
       }
 #endif				/* Graphics3D */
- 
+
    if (wc->clipw >= 0)
       setclip(w);
 

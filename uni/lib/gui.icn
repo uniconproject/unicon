@@ -930,7 +930,7 @@ class Component : Ticker(
    end
 
    method error(s)
-      stop("gui.icn : error whilst processing object " || object_class_name(self) || " : " || s)
+      stop("gui.icn : error processing object " || object_class_name(self) || " : " || s)
    end
 
    ##
@@ -2438,7 +2438,7 @@ class Image : Component(
       return
    end
 
-   ##
+   #
    #  Set the name of the file from which to load the image;
    #  re-display the image from the new file if appropriate.
    #
@@ -2448,7 +2448,7 @@ class Image : Component(
       return x
    end
 
-   ##
+   #
    #  If set, then the image will be scaled up to fit in the space
    #  specified by {set_size()}.  The image will not be distorted,
    #  but will be expanded to fill one of the dimensions depending
@@ -2473,12 +2473,13 @@ class Image : Component(
          y1 := self.y + BORDER_WIDTH
          w1 := self.w - 2 * BORDER_WIDTH
          h1 := self.h - 2 * BORDER_WIDTH
-      } else {
+         }
+      else {
          x1 := self.x
          y1 := self.y
          w1 := self.w
          h1 := self.h
-      }
+         }
 
       #
       # Load the image
@@ -3360,10 +3361,11 @@ class ScrollBar : Component(
             error("page size not set")
          if self.page_size <= 0 then
             error("invalid page size")
-      } else {
+         }
+      else {
          if \self.lo >= \self.hi then
             error("invalid range")
-      }
+         }
 
       #
       # Check increment size, value
@@ -4675,7 +4677,6 @@ class EditableTextList : ScrollArea(
   EraseRectangle(self.cwin, self.tx, self.ty, self.tw, self.th)
   self.constrain_line()
   self$display()
-
 
   if text_area_to_high_spell(x,y) = 0 then {
      handle_event(Key_PgDn)
@@ -7348,7 +7349,7 @@ class MenuComponent(
    )
 
    method error(s)
-      stop("gui.icn : error whilst processing object " || object_class_name(self) || " : " || s)
+      stop("gui.icn : error processing object " || object_class_name(self) || " : " || s)
    end
 
    method set_parent_menu(x)
@@ -8060,6 +8061,8 @@ class Table : Component(
    which_down,
    is_held,
    going_up,
+   highlight_lst,
+   highlight_lst2, # temporary quick fix for 2 colors
    rchecked #swj
    )
 
@@ -8740,7 +8743,17 @@ class Table : Component(
 
 
    method text_area_to_buffer()
-      local rev
+      local rev,h_set,h_set2
+
+      if *\highlight_lst > 0 then
+         h_set := set(highlight_lst)
+      else
+         h_set := set() 
+
+      if *\highlight_lst2 > 0 then
+         h_set2 := set(highlight_lst2)
+      else
+         h_set2 := set()  
 
       line := self$get_line()
       left_pos := self$get_left_pos()
@@ -8759,6 +8772,11 @@ class Table : Component(
       # Write the lines
       #
       every l := self.contents[i := line to line + nlines - 1] do {
+         if  member(h_set, i) then
+            WAttrib(self.cbwin, "fg=red")
+         else if member(h_set2, i) then
+            WAttrib(self.cbwin, "fg=blue") # swj
+
          every j := 1 to *self.columns do {
             x1 := self.columns[j].x + DEFAULT_TEXT_X_SURROUND
             w1 := self.columns[j].w - 2 * DEFAULT_TEXT_X_SURROUND
@@ -8768,16 +8786,24 @@ class Table : Component(
             clip_x2 >:= self.tx + self.tw
 
             Clip(self.cbwin, clip_x1, self.ty, clip_x2 - clip_x1, self.th)
+
+           
             case self.columns[j].internal_alignment of {
-               "r" :          right_string(self.cbwin, x1 + w1, yp, l[j])
-               "c" :          center_string(self.cbwin, x1 + w1 / 2, yp, l[j])
-               "l" :          left_string(self.cbwin, x1, yp, l[j])
+               "r" : right_string(self.cbwin, x1 + w1, yp, l[j])
+               "c" : center_string(self.cbwin, x1 + w1 / 2, yp, l[j])
+               "l" : left_string(self.cbwin, x1, yp, l[j]) 
             }
             Clip(self.cbwin)
          }
+         WAttrib(self.cbwin, "fg=black")
 
-         if \self.checked[i] | i = \self.which_down then
+         if \self.checked[i] | i = \self.which_down then {
+          if member(h_set,i) then
+            WAttrib(rev, "fg=pale cyan") # swj
+          else if member(h_set2,i) then
+            WAttrib(rev, "fg=pale cyan") # swj
             FillRectangle(rev, self.tx, yp - self.line_height / 2, self.tw, self.line_height)
+         }
 
          yp +:= self.line_height
       }
@@ -8791,9 +8817,12 @@ class Table : Component(
       self$set_accepts_tab_focus()
       self.checked := []
       self.rchecked := 0
+      highlight_lst := []
+      highlight_lst2 := []
       if *argv > 0 then set_fields(argv)
 end
 
+   
 ##
 #  This class groups several Buttons together.  Then, when the
 #  mouse is clicked down on one of the Buttons and then dragged

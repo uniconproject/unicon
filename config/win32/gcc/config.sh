@@ -8,7 +8,6 @@ cp DEFINE.H ../../../src/h
 cp PATH.H ../../../src/h
 cp RSWITCH.S ../../../src/common
 cp NTICONT.LNK ../../../src/icont
-cp ICONX.LNK ../../../src/runtime
 echo CONSOLE=NTConsole >../../../src/common/makefile
 cat makefile.cmn >>../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile

@@ -1,0 +1,46 @@
+#
+# $Id: testnotwf.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import xml
+
+class LocalErrorHandler : ErrorHandler()
+   method fatal_error(msg, stack)
+   end
+
+   method validity_error(msg, stack)
+   end
+
+   method warning(msg, stack)
+   end
+end
+
+procedure main(a)
+   p := XmlParser()
+   p.set_error_handler(LocalErrorHandler())
+   p.clear_do_namespaces()
+
+   *a = 1 | stop("usage: testnotwf source")
+   f := open(a[1]) | stop("couldnt open" || a[1])
+   s := ""
+   while s ||:= reads(f, 1000)
+   close(f)
+
+   if d := p.parse(s) then {
+      write("A not-wf case parsed successfully : ", a[1])
+      write("there were ", d.validity_errors, " validitiy errors")
+      write("Parsed:")
+      write(s)
+      write("Failure")
+      write("End===============================================================")
+      exit(1)
+   } else {
+      exit(0)
+   }
+
+end
+

@@ -1,0 +1,73 @@
+#
+# $Id: attributedef.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This class represents a single attribute definition.
+#
+# def_type is CDATA for a string type
+#            ID, IDREF, IDREFS, ENTITY, ENTITIES, NMTOKEN, NMTOKENS for a tokenized type
+#            NOTATION for an enumerated notation type
+#            ENUMERATION for an enumerated type
+# def_set is the set of enumerations for NOTATION/ENUMERATION types.
+# default_decl is #REQUIRED, #IMPLIED or #FIXED, or null
+# default_value is the default value, or null; can only be non-null when 
+#                 default_decl is #FIXED or null
+# in_ext_subset  indicates whether this declaration occurred in the external DTD subset;
+#                needed for validation.
+#
+class AttributeDef(def_type, 
+                   def_set, 
+                   default_decl, 
+                   default_value,
+                   in_ext_subset)
+   #
+   # Return the def_type
+   #
+   method get_def_type()
+      return def_type
+   end
+
+   #
+   # Return the def_set
+   #
+   method get_def_set()
+      return def_set
+   end
+
+   #
+   # Return the default_decl
+   #
+   method get_default_decl()
+      return default_decl
+   end
+
+   #
+   # Return the default_value
+   #
+   method get_default_value()
+      return default_value
+   end
+
+   #
+   # Returns a string representation of this object.
+   #
+   method to_string()
+      local s
+      s := def_type
+      if \def_set then {
+         s ||:= " ("
+         every s ||:= (!def_set) || " "
+         s ||:= ") "
+      }
+      s ||:= \default_decl
+      s ||:= " " || \default_value
+      return s
+   end
+end

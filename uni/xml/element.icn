@@ -1,0 +1,114 @@
+#
+# $Id: element.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# Represents an element in the document.
+#
+class Element : Node(name, attributes, empty)
+   #
+   # Set the name of the tag
+   #
+   method set_name(s)
+      return name := s
+   end
+
+   #
+   # Return the name of the element
+   #
+   method get_name(s)
+      return name
+   end
+
+   #
+   # Return the attributes map for this tag.
+   #
+   method get_attributes()
+      return attributes
+   end
+
+   #
+   # Set an attribute for this tag.
+   #
+   method set_attribute(key, value)
+      return attributes[key] := value
+   end
+
+   #
+   # Return the attribute for this tag, or &null if none specified.
+   #
+   method get_attribute(key)
+      return attributes[key]
+   end
+
+   #
+   # Returns "element"
+   #
+   method get_type()
+      return "element"
+   end
+
+   #
+   # Search for all the {Elements} with the given tag name, recursively
+   # traversing the entire tree based at this node.
+   #
+   # @param s the name of the sub-elements.
+   #
+   method search_tree(s)
+      local n
+      every n := generate_nodes() do
+         if n.get_type() == "element" & (/s | n.get_name() == s) then
+            suspend n
+   end
+
+   #
+   # Generate the elements under this element, with the given name.  If name
+   # is omitted, generate all the elements.
+   #
+   # @param s the name of the sub-elements.
+   #
+   method search_children(s)
+      local n
+      every n := !children do
+         if not(string(n)) & n.get_type() == "element" & (/s | n.get_name() == s) then
+            suspend n
+   end
+
+   #
+   # Print the structure to the given file
+   #
+   method print_structure(f, indent, flags)
+      local s, x, i
+      /f := &output
+      /indent := 0
+      i := repl(" ", indent * 5)
+      write(f, i || "Tag : <" || self.name || ">")
+      s := ""
+      every x := !sort(self.attributes) do {
+         s ||:= x[1] || "=" || image(x[2]) || " "
+      }
+      write(f, i || "Attributes : " || s)
+      write(f, i || "Contents :")
+      every j := 1 to *children do {
+         writes(i || j || ":")
+         e := children[j]
+         if string(e) then
+            write(f, image(e))
+         else {
+            write(f)
+            e.print_structure(f, indent + 1, flags)
+         }
+      }
+      write(f, i, "End of tag : </", self.name, ">")
+   end
+
+   initially()
+      self.Node.initially()
+      self.attributes := table()
+end

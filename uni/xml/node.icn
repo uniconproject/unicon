@@ -1,0 +1,188 @@
+#
+# $Id: node.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+import lang
+
+#
+# This is the base class for all objects in the document, including
+# the document itself.
+#
+class Node : Object(parent, children)
+   #
+   # Return the parent Node of this Node
+   #
+   method get_parent()
+      return parent
+   end
+
+   #
+   # Return the children of this node.
+   #
+   method get_children()
+      return children
+   end
+
+   #
+   # Add a child at the given pos.  If pos is not specified, the
+   # child is appended to the end.
+   #
+   # @param obj - either a string or a Node subclass
+   # @param pos - the pos to insert
+   #
+   method add_child(obj, pos)
+      if /pos then
+         put(children, obj)
+      else
+         insert(children, pos, obj)
+      if not string(obj) then
+         obj.parent := self
+      return obj
+   end
+
+   #
+   # Add a string at the given pos.  If pos is not specified, the
+   # child is appended to the end.
+   #
+   # This differs from the above {add_child()} method in that adjacent
+   # strings will be compacted together to form one longer string.
+   #
+   # @param s - a string
+   # @param pos - the pos to insert
+   #
+   method add_string(s, pos)
+      if /pos then {
+         if string(children[-1]) then
+            children[-1] ||:= s
+         else
+            put(children, s)
+      } else {
+         if string(children[pos - 1]) then
+            children[pos - 1] ||:= s
+         else if string(children[pos]) then
+            children[pos] := s || children[pos]
+         else
+            insert(children, pos, s)
+      }
+      return s
+   end
+
+   #
+   # Generate all the nodes in this {Node}
+   #
+   method generate_nodes()
+      suspend self
+      every e := !children do
+         if not(string(e)) then
+            suspend e.generate_nodes()
+   end
+
+   #
+   # Return a string describing the type of the node.
+   #
+   abstract method get_type()
+
+   #
+   # Clean out any whitespace-only strings from the children list.
+   #
+   method remove_whitespace_children()
+      self.children := get_children_no_whitespace()
+   end
+
+   #
+   # Get a copy list of the children elements, but with any whitespace strings elements
+   # removed.  This leaves the children list intact.
+   #
+   method get_children_no_whitespace()
+      local l, e
+      l := []
+      every e := !children do {
+         if not(string(e) & (many(xml::xml_space, e) = *e + 1)) then
+            put(l, e)
+      }
+      return l
+   end
+
+   #
+   # Just like {get_children_no_whitespace()}, but this trims any string children
+   # left in the list.
+   #
+   method get_trimmed_children()
+      local l, e
+      l := []
+      every e := !get_children_no_whitespace() do {
+         if string(e) then
+            e := do_trim(e)
+         put(l, e)
+      }
+      return l
+   end
+
+   #
+   # Get the string content of the node, which is the catenation of
+   # all the string children.
+   #
+   method get_string_content()
+      local s, e
+      s := ""
+      every e := !self.children do {
+         s ||:= string(e)
+      }
+      return s
+   end
+
+   #
+   # Get the trimmed string content of the node, which is the catenation of
+   # all the trimmed string children.
+   #
+   method get_trimmed_string_content()
+      local s, e
+      s := ""
+      every e := !self.children do {
+         s ||:= do_trim(string(e))
+      }
+      return s
+   end
+
+   #
+   # Print the structure to the given file, for debugging.
+   #
+   method print_structure(f, indent, flags)
+      /f := &output
+      /indent := 0
+      i := repl(" ", indent * 5)
+      write(f, i || to_string())
+      every j := 1 to *children do {
+         writes(i || j || ":")
+         e := children[j]
+         if string(e) then
+            write(f, image(e))
+         else {
+            write(f)
+            e.print_structure(f, indent + 1, flags)
+         }
+      }
+   end
+
+   #
+   # Trim xml::xml_space chars from both ends of the given element
+   #
+   method do_trim(s)
+      s ? {
+         tab(many(xml::xml_space))
+         return trim(tab(0), xml::xml_space)
+      }
+   end
+
+   initially()
+      initial {
+         xml::init_xml_globals()
+      }
+      self.children := []
+end

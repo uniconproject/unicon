@@ -1,0 +1,104 @@
+#
+# $Id: testpatterns.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import xml
+
+global p
+
+procedure main()
+   p := XmlParser()
+
+   test("(a,b,c)", 
+        ["abc"], 
+        ["ab", "xy", ""])
+
+
+   test("(a|b|c|d)", 
+        ["a","b","c","d"], 
+        ["ab", "xy", ""])
+
+   test("(a|b|c|d)*", 
+        ["","abcddababab","cccccc","dddbababbad"], 
+        ["abx", "xy", "aaaax"])
+
+   test("(a,b?,c)", 
+        ["abc","ac"], 
+        ["ab", "xy", ""])
+
+   test("(a,(x|y),c)", 
+        ["axc","ayc"], 
+        ["ab", "ac", ""])
+
+   test("(a*)*", 
+        ["aaa","a","aa",""], 
+        ["adb", "xy", "z"])
+
+   test("(a*)+", 
+        ["aaa","a","aa",""], 
+        ["adb", "xy", "z"])
+
+   test("(a+)", 
+        ["aaa","a","aa"], 
+        ["adb", "xy", "z",""])
+
+   test("(a*,b*)", 
+        ["aaabb","a","b","", "aab"], 
+        ["adb", "xy", "z"])
+
+   test("(a*,b+)*", 
+        ["bbb","","b","abbabbbbbbabbbbabbab", "ab"], 
+        ["bbbbbaabbbbaaadb", "xy", "z"])
+
+   test("(x*,a,x*,b,x*,c,x*)", 
+        ["xxabxxxxc"],
+        ["bbbbbaabbbbaaadb", "xy", "z"])
+
+   test("(x*,x,x,x,x*)", 
+        ["xxx","xxxx","xxxxx"],
+        ["", "x", "xx", "z"])
+
+   test("((a|b),(a|d),(a|e))", 
+        ["aaa","ade","ada"], 
+        ["adb", "xy", "z",""])
+
+   write("yeehaa whee dogiie")
+end
+
+procedure do_match(spec, l)
+   return spec.pattern_match(l,1) = *l
+end
+
+procedure test(pat, l1, l2)
+   local spec
+   spec := (pat ? p.parse_content_spec() ) | stop("Couldnt parse : " || pat)
+   spec.print_structure()
+   write(spec.to_string())
+   every x := !l1 do {
+      l := convert(x)
+      do_match(spec,l) | stop("couldnt match " , x)
+   }
+
+   every x := !l2 do {
+      l := convert(x)
+      if do_match(spec,l) then
+         stop("DID match " , x)
+   }
+
+   write("=----------------------=")
+end
+
+# eg "xyz" -> ["x","y","z"]
+procedure convert(s)
+   res := []
+   every put(res, !s)
+   return res
+end
+
+
+
+

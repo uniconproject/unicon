@@ -1,0 +1,49 @@
+import xml
+
+$define SOAP_ENV_URI "http://schemas.xmlsoap.org/soap/envelope/"
+$define XSI_URI "http://www.w3.org/1999/XMLSchema-instance"
+$define NAMESP_URI "http://tapestry/fs"
+
+procedure main()
+   s := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" ||
+      "<SOAP-ENV:Envelope\n" ||
+      "xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\"\n" ||
+      "xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\"\n" ||
+      "xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" ||
+      "xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\"\n" ||
+      "SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" ||
+      "<SOAP-ENV:Body>\n" ||
+      "<namesp:query xmlns:namesp=\"http://tapestry/fs\">\n" ||
+      "<value1 xsi:type=\"xsd:string\">*</value1>\n" ||
+      "<value2 xsi:type=\"xsd:string\">host = 'tapestry.home.net'</value2>\n" ||
+      "<value3 xsi:type=\"xsd:string\">time DESC</value3>\n" ||
+      "</namesp:query>\n" ||
+      "</SOAP-ENV:Body>\n" ||
+      "</SOAP-ENV:Envelope>"
+
+   p := XmlParser()
+   p.get_error_handler().set_level(1)  # Fatal only
+
+   d := p.parse(s) | stop("Couldn't parse")
+
+   r := d.get_root_element()
+
+   #
+   # These could be static constants
+   #
+   encoding_style_name := GlobalName("encodingStyle", SOAP_ENV_URI)
+   body_name := GlobalName("Body", SOAP_ENV_URI)
+   query_name := GlobalName("query", NAMESP_URI)
+   type_name := GlobalName("type", XSI_URI)
+
+   write("Encoding style=", image(r.get_attribute_global_name(encoding_style_name)))
+
+   body := r.search_children_global_name(body_name) | stop("No body")
+   query := body.search_children_global_name(query_name) | stop("No query")
+
+   every child := query.search_children() do {
+      write("Child ", child.get_global_name().to_string(), 
+            " type=", image(child.get_attribute_global_name(type_name)),
+            " text=", image(child.get_string_content()))
+   }
+end

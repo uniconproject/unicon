@@ -1,0 +1,35 @@
+#
+# $Id: htmlelement.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+class HtmlElement : Element()
+   #
+   # Set the name of the element, which is converted to upper case.
+   #
+   method set_name(s) 
+      self.Element.set_name(map(s, &lcase, &ucase))
+   end
+
+   #
+   # Return the attribute for this element
+   #
+   method get_attribute(key)
+      return self.Element.get_attribute(map(key, &lcase, &ucase))
+   end
+
+   #
+   # Set an attribute for this element.
+   #
+   method set_attribute(key, value)
+      return self.Element.set_attribute(map(key, &lcase, &ucase))
+   end
+
+   initially()
+      self.Element.initially()
+end

@@ -1,0 +1,185 @@
+#
+# $Id: xmldocument.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# An XML document.
+#
+class XmlDocument : Document(
+                             parameter_entities,
+                             general_entities,
+                             element_declarations,
+                             notation_declarations,
+                             attribute_lists,
+                             id_attribute_values,
+                             id_attribute_refs,
+                             validity_errors,
+                             warnings,
+                             standalone
+                             )
+
+   #
+   # Get the number of validity errors during parsing
+   #
+   method get_validity_errors()
+      return validity_errors
+   end
+
+   #
+   # Get the number of warnings during parsing
+   #
+   method get_warnings()
+      return warnings
+   end
+
+   #
+   # Fail iff this is a standalone document
+   #
+   method is_standalone()
+      return \standalone
+   end
+
+   #
+   # Debug function: Dump the entity definitions.
+   #
+   method show_entities()
+      write("--- Parameter entities")
+      every x := !sort(parameter_entities) do {
+         write(x[1], " -> ",x[2].to_string())
+      }
+      write()
+      write("--- General entities")
+      every x := !sort(general_entities) do  {
+         write(x[1], " -> ",x[2].to_string())
+      }
+      write()
+   end
+
+   #
+   # Debug function: Dump the element declarations
+   #
+   method show_element_declarations() 
+      write("--- Element declarations")
+      every x := !sort(element_declarations) do  {
+         write(x[1], " -> ", x[2].to_string())
+      }
+      write()
+   end
+
+   #
+   # Debug function: Dump the notation declarations
+   #
+   method show_notation_declarations() 
+      write("--- Notation declarations")
+      every x := !sort(notation_declarations) do  {
+         write(x[1], " -> ", x[2].to_string())
+      }
+      write()
+   end
+
+   #
+   # Debug function: Dump the attribute declarations
+   #
+   method show_attribute_lists() 
+      write("--- Attribute lists")
+      every x := !sort(attribute_lists) do  {
+         write(x[1], " -> ")
+         every y := !sort(x[2].attribute_defs) do
+            write("       ", y[1], " -> ", y[2].to_string())
+      }
+      write()
+   end
+
+   #
+   # Debug function: Show the ID attribute values
+   #
+   method show_id_attributes()
+      write("--- ID Attributes")
+      every x := !sort(id_attribute_values) do 
+         write(x)
+   end
+
+   #
+   # Return the parameter_entities.  This is a table mapping names to
+   # EntityDef objects.
+   #
+   method get_parameter_entities()
+      return parameter_entities
+   end
+
+   #
+   # Return the general_entities.  This is a table mapping names to
+   # EntityDef objects.
+   #
+   method get_general_entities()
+      return general_entities
+   end
+
+   #
+   # Return the element_declarations.  This is a table mapping names to
+   # ContentSpec objects, ie the root of the parsed regular expression.
+   #
+   method get_element_declarations()
+      return element_declarations
+   end
+
+   #
+   # Return the notation_declarations.  A table mapping names to 
+   # NotationDecl objects.
+   #
+   method get_notation_declarations()
+      return notation_declarations
+   end
+
+   #
+   # Return the attribute_lists.  A table mapping element names to AttList objects.
+   #
+   method get_attribute_lists()
+      return attribute_lists
+   end
+
+   #
+   # Return the id_attribute_values.  A set of all the ID attribute values 
+   # encountered during parsing
+   #
+   method get_id_attribute_values()
+      return id_attribute_values
+   end
+
+   #
+   # Return the id_attribute_refs.  A set of all the IDREF(S) attribute values
+   # encountered during parsing
+   #
+   method get_id_attribute_ref()
+      return id_attribute_refs
+   end
+
+   method to_string()
+      return "Document[]"
+   end
+
+   initially()
+      self.Document.initially()
+      parameter_entities := table()
+      general_entities := table()
+      # The predefined entities.  Note that the values are in each case valid content.
+      # The chars "&" and "<" on their own would not be valid content.
+      insert(general_entities, "lt", EntityDef("&#60;"))
+      insert(general_entities, "gt", EntityDef(">"))
+      insert(general_entities, "amp", EntityDef("&#38;"))
+      insert(general_entities, "apos", EntityDef("\'"))
+      insert(general_entities, "quot", EntityDef("\""))
+      element_declarations := table()
+      notation_declarations := table()
+      attribute_lists := table()
+      id_attribute_values := set()
+      id_attribute_refs := set()
+      validity_errors := 0
+      warnings := 0
+end

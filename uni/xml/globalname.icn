@@ -1,0 +1,52 @@
+#
+# $Id: globalname.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This class represents a global name, ie one which has been
+# created using XML namespaces.   It has two parts, a local_name and
+# a URI.  The URI is &null if the global name is the same as
+# the local name.
+#
+# For example with the XML fragment
+#
+#   <SOAP-ENV:Envelope
+#      mlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+#
+# the global name of the element would be the instance
+#
+# GlobalName("Envelope", "http://schemas.xmlsoap.org/soap/envelope/")
+#
+class GlobalName(local_name, uri)
+   #
+   # Return the original tag local_name
+   # 
+   method get_local_name()
+      return local_name
+   end
+
+   #
+   # Return the URI obtained during namespace processing.  For a global name
+   # which is just a local name, then this is &null.
+   #
+   method get_uri()
+      return uri
+   end
+
+   method equals(other)
+      return other.local_name === self.local_name & other.uri === self.uri
+   end
+
+   method to_string()
+      if /uri then
+         return local_name
+      else
+         return "GlobalName[" || local_name || "," || uri || "]"
+   end
+end

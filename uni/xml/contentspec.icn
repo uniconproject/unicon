@@ -1,0 +1,158 @@
+#
+# $Id: contentspec.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This class represents a node in the parse tree of a content specification,
+# as contained in an <!ELEMENT ..> declaration.  The parsed tree represents
+# the regular expression used to validate content elements.  Each node
+# contains an op and two args.
+#
+class ContentSpec(op, arg1, arg2, is_mixed_flag)
+   #
+   # Print the structure to the given file.  For debugging.
+   #
+   method print_structure(f, indent)
+      /f := &output
+      /indent := 0
+      i := repl(" ", indent * 5)
+      write(f, i || "Op : ", op)
+      j := 1
+      every e:= \arg1 | \arg2 do {
+         writes(i || j || ":")
+         if string(e) then
+            write(f, image(e))
+         else {
+            write(f)
+            e.print_structure(f, indent + 1)
+         }
+         j +:= 1
+      }
+   end
+
+   #
+   # Match the given Element with the pattern whose root is this object.
+   #
+   method pattern_match_element(el)
+      local t
+      #
+      # Create a list to match the pattern against.  The list contains
+      # values of &null for character portions, and strings being element names
+      # otherwise.
+      #
+      t := []
+      every x := !el.children do {
+         if string(x) then {
+            /t[-1] | put(t)
+         } else {
+            if x.get_type() == "element" then
+               put(t, x.name)
+            else if x.get_type() == "cdata" then
+               /t[-1] | put(t)
+         }
+      }
+      return *t = pattern_match(t, 1)
+   end
+
+   method is_mixed()
+      return \self.is_mixed_flag
+   end
+
+   method isnt_mixed()
+      return /self.is_mixed_flag
+   end
+
+   #
+   # The recursive element of pattern matching, called by the above.  It returns
+   # the sequence of initial matches of the pattern in subject, starting from pos.
+   #
+   method pattern_match(subject, pos)
+      local x
+      case op of {
+         "ANY" :
+            return *subject - pos + 1
+
+         "EMPTY" :
+            return 0
+
+         "#PCDATA" : {
+            if /subject[pos] then
+               return 1
+            else
+               return 0
+         }
+
+         "name" : {
+            if subject[pos] === arg1 then
+               return 1
+         }
+
+         "," : {
+            every x := arg1.pattern_match(subject, pos) do {
+               suspend x + arg2.pattern_match(subject, pos + x)
+            }
+         }
+
+         "|" : {
+            suspend (arg1 | arg2).pattern_match(subject, pos)
+         }
+
+         "*" : {
+            suspend 0
+            every x := arg1.pattern_match(subject, pos) do {
+               if x > 0 then
+                  suspend x + self.pattern_match(subject, pos + x)
+            }
+         }
+
+         "+" : {
+            every x := arg1.pattern_match(subject, pos) do {
+               suspend x 
+               if x > 0 then
+                  suspend x + self.pattern_match(subject, pos + x)
+            }
+         }
+
+         "?" : {
+            suspend 0 | arg1.pattern_match(subject, pos)
+         }
+
+      }
+   end
+
+   #
+   # Get a string representation of this object.
+   #
+   method to_string()
+      local s
+      case op of {
+         "ANY" | "EMPTY" | "#PCDATA" :
+            return op
+
+         "name" :
+            return arg1
+
+         "," | "|" : {
+            s := ""
+            x := self
+            repeat {
+               s ||:= x.arg1.to_string()
+               s ||:= op
+               if x.arg2.op ~== op then
+                  break
+               x := x.arg2
+            }
+            return "(" || s || x.arg2.to_string() || ")"
+         }
+
+         "+" | "*" | "?" : 
+            return arg1.to_string() || op
+      }
+   end
+end

@@ -1,0 +1,61 @@
+#
+# $Id: doctype.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This represents the DocumentType declaration.
+#
+class DocType : Node(name, external_id)
+   #
+   # Get the name
+   #
+   method get_name()
+      return name
+   end
+
+   #
+   # Set the name
+   #
+   method set_name(s)
+      return name := s
+   end
+
+   #
+   # Get the ExternalID declared, if any
+   #
+   method get_external_id()
+      return external_id
+   end
+
+   #
+   # Set the external ID as an ExternalID object.
+   #
+   method set_external_id(x)
+      return external_id := x
+   end
+
+   #
+   # Returns "doctype"
+   #
+   method get_type()
+      return "doctype"
+   end
+
+   #
+   # Get a string representation of this object.
+   #
+   method to_string() 
+      local s
+      s := (\external_id).to_string() | image(external_id)
+      return "DocType[" || image(name) || "," || s || "]"
+   end
+   
+   initially()
+      self.Node.initially()
+end

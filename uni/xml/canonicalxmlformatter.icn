@@ -1,0 +1,83 @@
+#
+# $Id: canonicalxmlformatter.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This is a formatter for outputting XML documents in canonical form, which
+# is used for testing purposes.
+#
+class CanonicalXmlFormatter : XmlFormatter()
+   method format_cdata(n, level)
+      return xml_escape(n.content, '\n\r\t&<>\"')
+   end
+
+   method format_document(n, level)
+      local s, el
+      s := ""
+      every el := !n.children do {
+         if el.get_type() == ("doctype" | "pi" | "element") then
+            s ||:= format(el, level + 1)
+      }
+      return s
+   end
+
+   method format_doctype(n, level)
+      local s, x
+
+      if *n.parent.notation_declarations = 0 then
+         return ""
+      
+      s := "<!DOCTYPE " || n.name
+      s ||:= " [\n"
+      every x := !sort(n.parent.notation_declarations) do {
+         s ||:= "<!NOTATION " || x[1] || " "
+         if \x[2].public_id then
+            s ||:= "PUBLIC \'" || x[2].public_id || "\'"
+         else {
+            if \x[2].external_id.public_id then
+               s ||:= "PUBLIC \'" || x[2].external_id.public_id || "\' \'" || x[2].external_id.system_id || "\'"
+            else
+               s ||:= "SYSTEM \'" || x[2].external_id.system_id || "\'"
+         }
+         s ||:= ">\n"
+      }
+      return s || "]>\n"
+   end
+
+   method format_element(n, level)
+      local s, x, e
+
+      s := "<" || n.name
+      if *n.attributes > 0 then {
+         s ||:= " "
+         every x := !sort(n.attributes) do {
+            s ||:= x[1] || "=\"" || xml_escape(x[2], '\n\r\t&<>\"') || "\" "
+         }
+         s[-1] := ""
+      }
+      s ||:= ">"
+      every e := !n.children do {
+         if string(e) then
+            s ||:= xml_escape(e, '\n\r\t&<>\"')
+         else if e.get_type() ~== "comment" then
+            s ||:= format(e, level + 1)
+      }
+      s ||:= "</" || n.name || ">"
+
+      return s
+   end
+
+   method format_pi(n, level)
+      local s
+      s := "<?" || n.target || " "
+      if \n.content then
+         s ||:= n.content
+      return s || "?>"
+   end
+end

@@ -1,0 +1,51 @@
+#
+# $Id: entitydef.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# Represents the definition of an entity.
+#
+class EntityDef(str,
+                external_id, 
+                notation,
+                in_ext_subset)
+
+   #
+   # Get the string value; returns null for an external entity.
+   #
+   method get_string()
+      return str
+   end
+
+   #
+   # Get the ExternalID declared; returns null for an iternal entity.
+   #
+   method get_external_id()
+      return external_id
+   end
+
+   #
+   # Get the NOTATION declaration (if any).   This indicates that this
+   # is an unparsed entity.
+   #
+   method get_notation()
+      return notation
+   end
+
+   #
+   # Get a string representation of this object.
+   #
+   method to_string()
+      if \str then
+         return str
+      s := external_id.to_string()
+      s ||:= " NOTATION " || \notation
+      return s
+   end
+end

@@ -1,0 +1,68 @@
+#
+# $Id: formatter.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This is an abstract base class for Formatters, which take a Document
+# object (or a Node within a Document), and output that document to a
+# string.
+#
+class Formatter()
+   method format(n, level)
+      /level := 0
+
+      if string(n) then
+         return format_content(s, level)
+
+      return case n.get_type() of {
+         "doctype" : format_doctype(n, level)
+         "comment" : format_comment(n, level)
+         "pi" : format_pi(n, level)
+         "element" : format_element(n, level)
+         "cdata" : format_cdata(n, level)
+         "document": format_document(n, level)
+         "xmldecl": format_xmldecl(n, level)
+      }
+   end
+
+   abstract method format_document(n, level)
+
+   abstract method format_content(s, level)
+
+   abstract method format_doctype(n, level)
+
+   abstract method format_comment(n, level)
+
+   abstract method format_pi(n, level)
+
+   abstract method format_element(n, level)
+
+   abstract method format_cdata(n, level)
+
+   abstract method format_xmldecl(n, level)
+end
+
+procedure xml_escape(s, c)
+   local r 
+
+   r := ""
+   s ? {
+      while r ||:= tab(upto(c)) do {
+         r ||:= case ch := move(1) of {
+            "&" : "&amp;"
+            "<" : "&lt;"
+            ">" : "&gt;"
+            "\"" : "&quot;"
+            default : "&#" || ord(ch) || ";"
+         }
+      } 
+      r ||:= tab(0)
+   }
+   return r
+end

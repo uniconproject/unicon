@@ -1,0 +1,69 @@
+#
+# $Id: htmlformatter.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# A formatter for outputting HTML documents
+#
+class HtmlFormatter : Formatter()
+   method format_document(n, level)
+      local s
+      s := ""
+      every s ||:= format(!n.children, level + 1) || "\n"
+      return s
+   end
+
+   method format_content(s, level)
+      return s
+   end
+
+   method format_doctype(n, level)
+      local s, t, x
+      s := "<!DOCTYPE "
+      s ||:= \n.name
+      x := n.external_id
+      if \x then {
+         if \x.public_id then
+            s ||:= " PUBLIC \"" || x.public_id || "\" \"" || x.system_id || "\""
+         else
+            s ||:= " SYSTEM \"" || x.system_id || "\""
+      }
+      return s || ">"
+   end
+
+   method format_comment(n, level)
+      return "<!--" || n.comment || "-->"
+   end
+
+   method format_element(n, level)
+      local s, l
+
+      s := "<" || n.name
+
+      every l := !sort(n.attributes) do {
+         if \l[2] then
+            s ||:= " " || l[1] || "=\"" || xml_escape(l[2], '&<>\"') || "\""
+         else
+            s ||:= " " || l[1]
+      }
+
+      s ||:= ">"
+
+      every e := !n.children do {
+         if string(e) then
+            s ||:= xml_escape(e, '&<>\"')
+         else
+            s ||:= format(e, level + 1)
+      }
+
+      if not(xml::html_is_standalone_tag(n.name)) then
+         s ||:= "</" || n.name || ">"
+      return s
+   end
+end

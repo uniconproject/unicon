@@ -1,0 +1,34 @@
+import xml
+
+procedure main()
+   fmt := XmlFormatter()
+   fmt.set_indent(2)
+
+   d := XmlDocument()
+
+   decl := XmlDecl()
+   decl.set_version("1.0")
+   decl.set_encoding("ISO-8859-1")
+   d.add_child(decl)
+
+   dt := DocType()
+   dt.set_name("tag")
+   dt.set_external_id(ExternalID("my-systemid", "my-publicid"))
+   d.add_child(dt)
+
+   el := XmlElement()
+   el.set_name("tag")
+   el.set_attribute("first", "val")
+
+   el2 := XmlElement()
+   el2.set_name("innerTag")
+   el2.set_attribute("second", "val")
+   el2.add_child("here is some text content")
+
+   el.add_child(el2)
+
+   d.add_child(el)
+
+   writes(fmt.format(d))
+
+end

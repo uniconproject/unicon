@@ -1,0 +1,76 @@
+#
+# $Id: defaulterrorhandler.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# The default error handler prints errors to the given output file.
+#
+class DefaultErrorHandler : ErrorHandler(out_file, level)
+   #
+   # Set the output file
+   #
+   method set_out_file(x)
+      return self.out_file := x
+   end
+
+   #
+   # Set the level to use :-
+   #
+   # 0 - no output
+   # 1 - fatal only
+   # 2 - fatal + validity
+   # 3 - fatal + validity + warning
+   #
+   # The default is 3
+   #
+   method set_level(n)
+      self.level := n
+   end
+
+   method fatal_error(msg, stack)
+      msg_impl(msg, stack, 1, "Fatal error")
+   end
+
+   method validity_error(msg, stack)
+      msg_impl(msg, stack, 2, "Validity error")
+   end
+
+   method warning(msg, stack)
+      msg_impl(msg, stack, 3, "Warning")
+   end
+
+   #
+   # @p
+   method msg_impl(msg, stack, n, pre)
+      if level < n then
+         return
+      writes(out_file, pre , ": ", msg)
+      if \stack then {
+         write(out_file, " at:")
+         show_stack(stack)
+      }
+   end
+
+   method show_stack(stack)
+      local x, i, t
+      every x := !stack do {
+         if \x.id then {
+            t := x.subject[1:x.pos]
+            i := 1
+            every find("\n", t) do
+               i +:= 1
+            write(out_file, x.id || ": " || i)
+         }
+      }
+   end
+
+   initially()
+      out_file := &output
+      level := 3
+end

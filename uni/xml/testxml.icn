@@ -1,0 +1,80 @@
+#
+# $Id: testxml.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import xml
+
+link options
+
+procedure main(a)
+   if *a = 0 then {
+      write("Usage: testxml [FILE]... [OPTIONS]")
+      write("Test parse FILE(s)")
+      write("  -g                      Show global names")
+      write("  -nc                     Don't preserve comments")
+      write("  -nv                     Don't validate")
+      write("  -fnw                    Format output with no whitespace")
+      write("  -ftt                    Format output with text trim")
+      write("  -far                    Format output as read")
+      write("  -fi INT                 Format output with given indent")
+      exit(0)
+   }
+
+   p := XmlParser()
+
+   fmt := XmlFormatter()
+
+   t := options(a, "-g!-nc!-nv!-fnw!-fi+-ftt!-far!")
+
+   if \t["nv"] then
+      p.clear_validate()
+
+   if \t["nc"] then
+      p.clear_preserve_comments()
+
+   if /t["g"] then
+      p.clear_do_namespaces()
+
+   #
+   # Setup formatter options
+   #
+   if \t["fnw"] then
+      fmt.set_no_whitespace()
+   if \t["ftt"] then
+      fmt.set_text_trim()
+   if \t["far"] then
+      fmt.set_as_read()
+   fmt.set_indent(\t["fi"])
+
+
+   every e := !a do {
+      f := open(e) | stop("couldnt open" || e)
+      s := ""
+      every s ||:= !f || "\n"
+      close(f)
+      write("--- Parsing ", e)
+      if d := p.parse(s) then {
+         write("--- Parsing complete.  Document was well-formed")
+         write("--- Formatted input")
+         write(fmt.format(d))
+         write("--- Document structure")
+         if \t["g"] then
+            d.print_structure(,,1)
+         else
+            d.print_structure()
+         d.show_entities()
+         d.show_element_declarations()
+         d.show_notation_declarations()
+         d.show_attribute_lists()
+         d.show_id_attributes()
+      } else {
+         write("--- Parsing failed: ", p.get_err())
+      }
+
+   }
+end
+

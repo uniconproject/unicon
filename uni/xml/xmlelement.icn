@@ -1,0 +1,175 @@
+#
+# $Id: xmlelement.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This class represents an element in an XML document.  It has extra
+# attributes and methods to deal with XML namespaces.
+#
+# For example, given the document
+#
+#   <?xml version="1.0" ?>
+#   <top xmlns:nsid="http://an.url.com">
+#     <nsid:inner nsid:attr="val"/>
+#   </top>
+#
+# If n is the XmlElement representing the <top> element, then its
+# global name is GlobalName("top") (ie the same as its local name).  The inner
+# XmlElement however, has a global name of 
+#
+#    GlobalName("inner", "http://an.url.com"),
+#
+# and a single attribute with key 
+#
+#    GlobalName("attr", "http://an.url.com").
+#
+# The original parsed name and attribute table are still available
+# via the methods in the superclass Element.  For example, get_name()
+# for the inner XmlElement returns "nsid:inner".   
+#
+class XmlElement : Element(
+                           whitespace_children,
+                           global_name, 
+                           attributes_global_name, 
+                           namespace_declarations, 
+                           xml_space_preserve)
+   #
+   # Set the global (namespace-aware) name.  The global
+   # name should be a {GlobalName} instance.
+   #
+   # @param s a {GlobalName} instance representing the global name.
+   #
+   method set_global_name(s)
+      global_name := s
+   end
+
+   #
+   # Succeed iff the parser applied the xml:space="preserve" feature
+   # when parsing this element.
+   #
+   method xml_space_preserved()
+      return \self.xml_space_preserve
+   end
+
+   #
+   # Get whitespace children.  During validation, the parser may remove insignificant
+   # whitespace from the children list.  This method will always give the original list
+   # including whitespace.  If no whitespace was removed, this list will be identical
+   # to the children list.
+   #
+   method get_whitespace_children()
+      return whitespace_children
+   end
+
+   #
+   #
+   # Return the table of namespace declarations for this element.  The table
+   # will be a map of prefixes to URI's.
+   #
+   method get_namespace_declarations()
+      return namespace_declarations
+   end
+
+   #
+   # Get the global name, which will be a {GlobalName} instance.
+   #
+   # @return a {GlobalName} instance representing the global name.
+   #
+   method get_global_name()
+      return global_name
+   end
+
+   #
+   # Return the global name attributes map for this tag.  This will
+   # be a table of {GlobalName} instances to values.
+   #
+   method get_attributes_global_name()
+      return attributes_global_name
+   end
+
+   #
+   # Return the attribute for this tag, or &null if none specified, based on
+   # the given {GlobalName}.
+   #
+   # @param gn the {GlobalName} instance representing the global name
+   #
+   method get_attribute_global_name(gn)
+      #
+      # Unfortunately we have to iterate through because the GlobalNames
+      # are stored in the map by identity.
+      #
+      every e := key(attributes_global_name) do {
+         if e.equals(gn) then
+            return attributes_global_name[e]
+      }
+      return 
+   end
+
+   #
+   # Search for all the {Elements} with the given tag name, recursively
+   # traversing the entire tree based at this node.
+   #
+   # @param s a {GlobalName}, being the name of the sub-elements
+   #
+   method search_tree_global_name(s)
+      local n
+      every n := generate_nodes() do
+         if n.get_type() == "element" & (/s | n.get_global_name().equals(s)) then
+            suspend n
+   end
+
+   #
+   # Generate the elements under this element, with the given name.  If name
+   # is omitted, generate all the elements.
+   #
+   # @param s a {GlobalName}, being the name of the sub-elements
+   #
+   method search_children_global_name(s)
+      local n
+      every n := !children do
+         if not(string(n)) & n.get_type() == "element" & (/s | n.get_global_name().equals(s)) then
+            suspend n
+   end
+
+   method print_structure(f, indent, flags)
+      local s, x, i
+
+      if /flags then {
+         self.Element.print_structure(f, indent, flags)
+         return
+      }
+
+      /f := &output
+      /indent := 0
+      i := repl(" ", indent * 5)
+      write(f, i || "Tag : <" || self.global_name.to_string() || ">")
+      s := ""
+      every x := !sort(self.attributes_global_name) do {
+         s ||:= x[1].to_string() || "=" || image(x[2]) || " "
+      }
+      write(f, i || "Attributes : " || s)
+      write(f, i || "Contents :")
+      every j := 1 to *children do {
+         writes(i || j || ":")
+         e := children[j]
+         if string(e) then
+            write(f, image(e))
+         else {
+            write(f)
+            e.print_structure(f, indent + 1, flags)
+         }
+      }
+      write(f, i, "End of tag : </", self.global_name.to_string(), ">")
+   end
+
+   initially()
+      self.Element.initially()
+      attributes_global_name := table()
+      namespace_declarations := table()
+end

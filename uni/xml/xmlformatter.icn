@@ -1,0 +1,175 @@
+#
+# $Id: xmlformatter.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# A formatter for XML documents.  The default formatter behaviour is to output the
+# string content as held in the children array (this may or may not have had whitespace
+# removed depending on whether validation against a DTD occured), and without
+# indentation.
+#
+class XmlFormatter : Formatter(indent, no_whitespace, text_trim, as_read)
+   #
+   # Ensure that each opening element appears with an indent of n chars.  Whitespace
+   # will be inserted as appropriate.  By default, no indentation is done.
+   #
+   method set_indent(n)
+      indent := n
+   end
+
+   #
+   # Configure the formatter so that whitespace-only string content will be discarded.
+   #
+   method set_no_whitespace()
+      no_whitespace := 1
+   end
+
+   #
+   # Clear the no_whitespace option (the default).
+   #
+   method clear_no_whitespace()
+      no_whitespace := &null
+   end
+
+   #
+   # Configure the formatter so that whitespace-only string content will be discarded,
+   # and in addition any other string content will be trimmed at both ends.
+   #
+   method set_text_trim()
+      text_trim := 1
+   end
+
+   #
+   # Clear the text_trim option (the default).
+   #
+   method clear_text_trim()
+      text_trim := &null
+   end
+
+   #
+   # Configure the formatter so that the string content will be output as read from
+   # the input; ie the formatter uses the whitespace_children list rather than the children
+   # list.
+   #
+   method set_as_read()
+      as_read := 1
+   end
+
+   #
+   # Clear the as_read option (the default).
+   #
+   method clear_as_read()
+      as_read := &null
+   end
+
+   method format_document(n, level)
+      local s
+      s := ""
+      every s ||:= format(!n.children, level + 1) || "\n"
+      return s
+   end
+
+   method format_content(s, level)
+      return s
+   end
+
+   method format_doctype(n, level)
+      local s, t, x
+      s := "<!DOCTYPE "
+      s ||:= \n.name
+      x := n.external_id
+      if \x then {
+         if \x.public_id then
+            s ||:= " PUBLIC \"" || x.public_id || "\" \"" || x.system_id || "\""
+         else
+            s ||:= " SYSTEM \"" || x.system_id || "\""
+      }
+      return s || ">"
+   end
+
+   method format_comment(n, level)
+      return "<!--" || n.comment || "-->"
+   end
+
+   method format_pi(n, level)
+      local s
+      s := "<?" || n.target
+      if \n.content then
+         s ||:= " " || n.content 
+      return s || "?>"
+   end
+
+   method format_element(n, level)
+      local s, istr1, istr2
+
+      if \indent then {
+         istr1 := "\n" || repl(" ", indent * level)
+         istr2 := "\n" || repl(" ", indent * (level - 1))
+      }
+
+      s := "<" || n.name
+      if *n.attributes > 0 then {
+         s ||:= " "
+         every x := !sort(n.attributes) do {
+            s ||:= x[1] || "=\"" || xml_escape(x[2], '&<>\"') || "\" "
+         }
+      }
+      if *n.children = 0 then
+         s ||:= "/>"
+      else {
+         s ||:= ">"
+         l := get_children(n)
+         if *l = 1 & string(l[1]) then {
+            s ||:= xml_escape(l[1], '&<>\"')
+         } else {
+            every e := !l do {
+               if \indent then {
+                  s ||:= istr1
+               }
+               if string(e) then
+                  s ||:= xml_escape(e, '&<>\"')
+               else
+                  s ||:= format(e, level + 1)
+            }
+            if \indent then {
+               s ||:= istr2
+            }
+         }
+         s ||:= "</" || n.name || ">"
+      }
+      return s
+   end
+
+   method get_children(el)
+      if \as_read then
+         return \el.whitespace_children | el.children
+      if \no_whitespace then
+         return el.get_children_no_whitespace()
+      if \text_trim then {
+         return el.get_trimmed_children()
+      }
+      return el.children
+   end
+
+   method format_cdata(n, level)
+      return "<![CDATA[" || n.content || "]]>"
+   end
+
+   method format_xmldecl(n, level)
+      local s
+      s := "<?xml "
+      if \n.version then
+         s ||:= "version='" || n.version || "' "
+      if \n.encoding then
+         s ||:= "encoding='" || n.encoding || "' "
+      if \n.standalone then
+         s ||:= "standalone='" || n.standalone || "' "
+      return s || "?>"
+   end
+end

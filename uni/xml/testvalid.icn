@@ -1,0 +1,63 @@
+#
+# $Id: testvalid.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import xml
+
+class LocalErrorHandler : DefaultErrorHandler()
+   method validity_error(msg, stack)
+   end
+
+   method warning(msg, stack)
+   end
+end
+
+procedure main(a)
+   fmt := CanonicalXmlFormatter()
+   p := XmlParser()
+   p.set_error_handler(LocalErrorHandler())
+   p.set_preserve_insignificant_whitespace()
+   p.clear_do_namespaces()
+
+   *a > 0 | stop("usage: testcase source [output]")
+
+   f := open(a[1]) | stop("couldnt open" || a[1])
+   s := ""
+   every s ||:= !f || "\n"
+   close(f)
+
+   if d := p.parse(s) then {
+      if *a = 1 then 
+         exit(0)
+
+      f := open(a[2]) | stop("couldnt open" || a[2])
+      t := ""
+      while t ||:= reads(f, 1000)
+      close(f)
+
+      x := fmt.format(d)
+      if x == t then
+         exit(0)
+
+      write("Testcase : ", a[1])
+      write("Parsed:")
+      write(image(x))
+      write("Test:")
+      write(image(t))
+      write("Failure")
+      write("End===============================================================")
+      exit(1)
+   } else {
+      write("Couldn't parse case ", a[1], ":")
+      write(s)
+      write("Failure")
+      write("End===============================================================")
+      exit(1)
+   }
+
+end
+

@@ -1,0 +1,27 @@
+#
+# $Id: testhtml.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import xml
+
+procedure main(a)
+   p := HtmlParser()
+
+   fmt := HtmlFormatter()
+
+   every e := !a do {
+      f := open(e) | stop("couldnt open" || e)
+      s := ""
+      every s ||:= !f
+      close(f)
+      d := p.parse(s) | stop("couldnt parse " || e)
+      write(fmt.format(d))
+      d.print_structure()
+      write("------------")
+   }
+end
+

@@ -1,0 +1,73 @@
+#
+# $Id: testinvalid.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import xml
+
+class LocalErrorHandler : ErrorHandler()
+   method fatal_error(msg, stack)
+   end
+
+   method validity_error(msg, stack)
+   end
+
+   method warning(msg, stack)
+   end
+end
+
+procedure main(a)
+   fmt := CanonicalXmlFormatter()
+   p := XmlParser()
+   p.set_error_handler(LocalErrorHandler())
+   p.set_preserve_insignificant_whitespace()
+   p.clear_do_namespaces()
+
+   *a > 0 | stop("usage: testcase source [output]")
+
+   f := open(a[1]) | stop("couldnt open" || a[1])
+   s := ""   
+   while s ||:= reads(f, 1000)
+   close(f)
+
+   if d := p.parse(s) then {
+      if d.validity_errors = 0 then {
+         write("Testcase : ", a[1], " unexpectedly parsed with no validity errors")
+         write(s)
+         write("Failure")
+         write("End===============================================================")
+         exit(1)
+      } else {
+         if *a = 1 then {
+            # Okay, parse with validity errors no further checking
+            exit(0)
+         }
+
+         f := open(a[2]) | stop("couldnt open" || a[2])
+         t := ""
+         while t ||:= reads(f, 1000)
+         close(f)
+
+         x := fmt.format(d)
+         if x == t then
+            exit(0)
+
+         write("Testcase : ", a[1], " parsed with validity errors, but didn't compare to out version")
+         write("Parsed:")
+         write(x)
+         write("Test:")
+         write(t)
+         write("Failure")
+         write("End===============================================================")
+         exit(1)
+      }
+   } else {
+      # Okay if it didn't parse
+      exit(0)
+   }
+
+end
+

@@ -1,0 +1,46 @@
+#
+# $Id: attlist.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# Represent the attribute constraints for one element type.
+#
+class AttList(attribute_defs, has_id)
+   #
+   # Returns a string representation of this object.
+   #
+   method to_string()
+      s := "AttList " || " "
+      every x := !sort(attribute_defs) do {
+         s ||:= x[1] || " " || x[2].to_string() || " "
+      }
+      return s
+   end
+
+   #
+   # Return the attribute_defs for this AttList, being a table mapping attribute names
+   # to AttributeDef objects.
+   #
+   method get_attribute_defs()
+      return attribute_defs
+   end
+
+   #
+   # Add an attribute def; called during parsing.
+   #
+   method add_attribute_def(name, def) 
+      insert(attribute_defs, name, def)
+      if \def.def_type == "ID" then
+         has_id := 1
+   end
+
+   initially
+      attribute_defs := table()
+      required_set := set()
+end

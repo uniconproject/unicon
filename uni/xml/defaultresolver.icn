@@ -1,0 +1,129 @@
+#
+# $Id: defaultresolver.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+import http, util
+
+
+#
+# The default resolver resolves from a URL or the local file system.
+#
+# If the system id begins with "http://", it is treated as a web URL, and
+# loaded over the network.  
+#
+# If it begins with "file://", then it is treated as a
+# local file (for an absolute path on Unix like systems, that would be
+# three forward slashes at the start : "file:///tmp/file.dtd").
+#
+# Otherwise, the system id is treated as a filename.
+#
+class DefaultResolver : Resolver(public_mapping, uri_cache, cache_uris_flag)
+   #
+   # Set a mapping from a public id to an alternative URI.  The alternative URI
+   # will then be loaded when the public id is encountered, rather than the
+   # given system id.  The alternative may be a simple filename if desired.
+   #
+   # @example 
+   # @  set_public_mapping("-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN", 
+   # @                     "/tmp/web-app_2_3.dtd")
+   # @param pub_id the public id
+   # @param uri the alternative uri
+   #
+   method set_public_mapping(pub_id, uri)
+      insert(public_mapping, pub_id, uri)
+   end
+
+   #
+   # Configure the resolver so that it remembers URIs internally to save getting them
+   # more than once.  This is on by default.
+   #
+   method set_cache_uris()
+      self.cache_uris_flag := 1
+   end
+
+   #
+   # Turn off the caching feature.
+   #
+   method clear_cache_uris()
+      self.cache_uris_flag := &null
+   end
+
+   #
+   # Cache an individual system id (URI) to the given value.
+   #
+   method cache_uri(sys_id, val)
+      insert(uri_cache, sys_id, val)
+   end
+
+   method resolve(external_id)
+      local sys_id, res
+
+      #
+      # Try to map from the public id (if any) to an alternative URI
+      #
+      if member(public_mapping, external_id.get_public_id()) then
+         sys_id := public_mapping[external_id.get_public_id()]
+      else
+         sys_id := external_id.get_system_id()
+
+      #
+      # Try the cache.
+      #
+      if \cache_uris_flag & member(uri_cache, sys_id) then
+         return uri_cache[sys_id]
+
+      res := resolve_impl(sys_id) | fail
+
+      #
+      # Cache if appropriate
+      #
+      if \cache_uris_flag then
+         cache_uri(sys_id, res)
+
+      return res
+   end
+
+   method resolve_impl(sys_id)
+      if match("http://", sys_id) then
+         return get_http(sys_id)
+
+      if match("file://", sys_id) then
+         return get_local(sys_id[8:0])
+
+      return get_local(sys_id)
+   end
+
+   method get_local(sys_id)
+      local res, f
+      f := open(sys_id, "r") | fail
+      res := ""
+      while res ||:= reads(f, 1000)
+      close(f)
+      return res
+   end
+
+   method get_http(sys_id)
+      local hc, url, hp
+
+      hc := HttpClient()
+      url := URL()
+
+      url.parse(sys_id) | fail
+      hc.set_url(url)
+
+      hp := hc.retrieve() | fail
+
+      return hp.get_data()
+   end
+
+   initially
+      public_mapping := table()
+      uri_cache := table()
+      cache_uris_flag := 1
+end

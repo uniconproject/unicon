@@ -1,0 +1,59 @@
+#
+# $Id: processinginstruction.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package xml
+
+#
+# This class represents a processing instruction in the document.
+#
+class ProcessingInstruction : Node(target, content)
+   #
+   # Return the target
+   #
+   method get_target()
+      return target
+   end
+
+   #
+   # Set the target
+   #
+   method set_target(target)
+      self.target := target
+   end
+
+   #
+   # Get the content, ie everything in the PI other than the target.
+   #
+   method get_content()
+      return content
+   end
+
+   #
+   # Set the content
+   #
+   method set_content(content)
+      self.content := content
+   end
+
+   #
+   # Returns "pi"
+   #
+   method get_type()
+      return "pi"
+   end
+
+   #
+   # Get a string representation of this object.
+   #
+   method to_string()
+      return "ProcessInstruction[" || image(target) || "," || image(content) || "]"
+   end
+
+   initially()
+      self.Node.initially()
+end

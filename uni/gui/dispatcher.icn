@@ -1,5 +1,5 @@
 #
-# $Id: dispatcher.icn,v 1.4 2004-12-10 19:05:47 rparlett Exp $
+# $Id: dispatcher.icn,v 1.5 2005-01-06 08:56:37 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -163,7 +163,8 @@ class Dispatcher : Object(
       local d, bag
       bag := []
       every d := !dialogs do {
-         if d.needs_validate() then
+         # check if dialog supports validation, for backward compatibility
+         if d["all_valid"] & d.needs_validate() then
             put(bag, d)
       }
       if d := ?bag then {

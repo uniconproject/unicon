@@ -269,13 +269,31 @@ procedure errsrc()
   iwrites(&errout,"File ",\fName,"; Line ",\fLine,": Unicon/")
 end
 
+procedure canonize(path)
+   notslash := &cset -- '/'
+   path := map(path, "\\", "/")
+   rv := ""
+   path ? {
+      if rv ||:= tab(any(&letters)) || =":" then drive:=2 else drive:=0
+      rv ||:= tab(many('/'))
+      while component := tab(many(notslash)) do {
+	 if ="/../" then component := ""
+	 rv ||:= component
+	 rv ||:= ="/"
+         }
+      rv ||:= tab(0)
+   }
+   rv[drive:0] := map(rv[drive:0])
+   return rv
+end
+
 procedure writelink(dir, s)
    if map(s[-4:0]) == ".icn" then
       s[-4:0] := ""
-   if dir == ("." || ("" | "/" | "\\")) then dir := ""
-   else if dir[-1] ~== PATHCHAR then
+   if dir == ("." || ("" | "/" | "\\")) then dir := chdir()
+   if dir[-1] ~== PATHCHAR then
       dir ||:= PATHCHAR
-   write(yyout,"link \"",map(dir,"\\","/"),map(s,"\\","/"),"\"")
+   write(yyout,"link \"",canonize(dir),map(s,"\\","/"),"\"")
 end
 procedure trans(argstr, prefix)
 static cmd

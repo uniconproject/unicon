@@ -1256,7 +1256,7 @@ class Component : Ticker(
    method parse_pos(total, s)
       local pct, off
       s ? {
-         if pct := real(0.01 * tab(upto('%'))) then {
+         if pct := 0.01 * tab(upto('%')) then {
             move(1)
             if ="-" then
                off := -integer(tab(0)) | fail
@@ -5097,7 +5097,7 @@ class EditableTextList : ScrollArea(
       offset := 0
       offset := offset_pos(self.contents[self.cursor_y],self.cursor_x)
 
-      if /cntl &  type(e) == &control then
+      if /cntl &  type(e) == "string" & &control then
          return 
 
       if type(e) == "string" & not(&meta) & any(printable, e) then {

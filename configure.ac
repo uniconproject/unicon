@@ -1,0 +1,6 @@
+AC_INIT([Unicon],[11.0],[jeffery@cs.nmsu.edu])
+AC_CONFIG_SRCDIR([src/runtime/imain.r])
+CHECK_ZLIB()
+CHECK_JPEG()
+AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
+AC_OUTPUT

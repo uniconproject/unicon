@@ -18,11 +18,13 @@ help:
 Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
+		sh ./configure
 		@echo Now remember to add unicon/bin to your path
 
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
+		sh ./configure
 		@echo Now remember to add unicon/bin to your path
 
 NT-Configure:

@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.10 2003-04-18 01:08:33 jeffery Exp $
+# $Id: top.mak,v 1.11 2003-05-24 09:16:57 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -49,10 +49,12 @@ config/unix/$(name)/status src/h/define.h:
 Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
+		sh ./configure
 
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
+		sh ./configure
 
 
 # Get the status information for a specific system.

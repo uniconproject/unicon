@@ -115,7 +115,9 @@ end
 
 procedure main(argv)
    initialize()
-   if *argv = 0 then istop("usage: unicon files...")
+   if *argv = 0 then
+      istop("usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [o ofile]\n",
+	    "   [-version] [-v i] file... [-x args]")
    EmptyNode := leaf(N_Empty)
    /yydebug := 0
 
@@ -165,7 +167,11 @@ procedure main(argv)
 	     }
 	 "-y": parseonly := 1
 	 "-yydbg": parseonly := yydbg := 1
-	 "-G"|"-B": ilinkopt ||:= argv[i] || " "
+	 "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
+	 "-v" : {
+	      ilinkopt ||:= argv[i] || " " || integer(argv[i+1]) || " "
+	      argv[i+1] := "-v"
+	      }
 	 "-M" : merrflag := 1
 	 default   : icontopt ||:= argv[i] || " "
          }

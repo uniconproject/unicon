@@ -36,3 +36,4 @@
 #endif					/* Messaging */
 #define LoadFunc
 #define FieldTableCompression 1
+#define Graphics3D

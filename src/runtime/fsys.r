@@ -803,8 +803,15 @@ Deliberate Syntax Error
 	       /* "na" => listen for connections */
 	       f = sock_listen(fnamestr, is_udp_or_listener);
 	    } else {
+	       C_integer timeout = 0;
+#if defined(Graphics) || defined(Messaging) || defined(ISQL)
+	       if (n > 0) {
+	          if (!cnv:C_integer(attr[0], timeout))
+	             runerr(101, attr[0]);
+               }
+#endif
 	       /* connect to a port */
-	       f = sock_connect(fnamestr, is_udp_or_listener);
+	       f = sock_connect(fnamestr, is_udp_or_listener, timeout);
 	    }
 	    /*
 	     * read/reads is not allowed on a listener socket, only select

@@ -1,0 +1,111 @@
+############################################################################
+#
+#	File:     mailbox.icn
+#
+#	Subject:  E-mail mailbox class
+#
+#	Author:   Robert Parlett
+#
+#	Date:     14 April, 2002
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#   This file provides a class for e-mail boxes.
+#
+############################################################################
+
+package mail
+
+#
+# This class represents an internet Address, which
+# may be parsed in accordance with RFC822.
+#
+class Mailbox : Address(local_part, domain, phrase, route)
+   method get_local_part() 
+      return local_part
+   end
+
+   method set_local_part(x)
+      local_part := x
+   end
+
+   method get_domain()
+      return domain
+   end
+   
+   method set_domain(x)
+      domain := x
+   end
+
+   method get_phrase() 
+      return phrase
+   end
+
+   method set_phrase(x)
+      phrase := x
+   end
+
+   method get_route() 
+      return route
+   end
+
+   method set_route(x)
+      route := x
+   end
+
+   method to_rfc822()
+      local res, addr
+
+      addr := local_part || "@" || domain
+
+      if *(phrase | route) > 0 then {
+         if *phrase > 0 then
+            res := phrase || " <"
+         else
+            res := "<"
+         if *route > 0 then {
+            every res ||:= "@" || !route
+            res ||:= ": "
+         }
+         return res || addr || ">"
+      } else
+         return addr
+   end
+
+   method to_string()
+      return to_rfc822()
+   end
+
+   method parse(s)
+      return s ? mail::parse_mailbox(self)
+   end   
+
+   method generate_mailboxes()
+      return self
+   end
+
+   initially(a[])
+      if *a = 1 then
+         parse(a[1]) | fail
+      else if *a >= 2 then {
+         local_part := a[1]
+         domain := a[2]
+         phrase := a[3] | ""
+         route := a[4] | []
+      }
+end
+
+procedure mailbox_list_to_string(l)
+   local s
+   s := ""
+   every e := !l do {
+      if *s > 0 then
+         s ||:= ","
+      s ||:= e.to_rfc822()
+      }
+   return s
+end

@@ -1,0 +1,475 @@
+############################################################################
+#
+#	File:     rfc822pr.icn
+#
+#	Subject:  RFC 822 e-mail header parsing
+#
+#	Author:   Robert Parlett
+#
+#	Date:     15 April, 2002
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#   This file provides a class for e-mail messages.
+#
+############################################################################
+
+package mail
+
+link scan
+
+import util
+
+global ctl_char, space, specials, atom_char, ctext_char, field_name_chars,
+       qtext_char, dtext_char, lwsp_char, days, months, tz_chars
+
+#
+# Initialize the parser
+# @p
+procedure init_parser()
+   ctl_char := &ascii[1:33] ++ &ascii[128]
+   space := ' '
+   specials := '()<>@,;:\\\".[]'
+   atom_char := &ascii -- ctl_char -- space -- specials
+   qtext_char := &ascii -- '\"\\\r'
+   dtext_char := &ascii -- '[]\\\r'
+   ctext_char := &ascii -- '()\\\r'
+   field_name_chars := &ascii -- ctl_char -- space -- ':'
+   lwsp_char := ' \t'
+   days := ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+   months := ["Jan", "Feb",  "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+   tz_chars := '+-' ++ &digits ++ &ucase
+end
+
+#
+# The first four parse objects are the fundamental lexical components, other
+# than inidividual special characters (see rfc822).  Therefore, they must
+# be preceded by a call to next_token, to move the position to the correct
+# point to parse them.
+#
+
+#
+# qtext = <any CHAR excepting <">, "\" & CR, and including 
+#         linear-white-space>
+# quoted-pair =  "\" CHAR
+# quoted-string = <"> *(qtext/quoted-pair) <">
+#
+# Must be preceded by a call to next_token()
+#
+procedure parse_quoted_string()
+   local res
+
+   res := move(1)
+   repeat {
+      if any('\\') then {
+         res ||:= move(2) | fail
+      } else if any(qtext_char) then
+         res ||:= tab(many(qtext_char))
+      else if any('\"') then {
+         return res || move(1)
+      } else
+         # Missing closing quote or illegal char
+         fail
+   }
+end
+
+#
+# atom        =  1*<any CHAR except specials, SPACE and CTLs>
+# ie one or more atom_char
+#
+# Must be preceded by a call to next_token()
+#
+procedure parse_atom()
+   return tab(many(atom_char))
+end
+
+#
+# domain-literal =  "[" *(dtext / quoted-pair) "]"
+# dtext =  <any CHAR excluding "[","]", "\" & CR>
+#
+# Must be preceded by a call to next_token()
+#
+procedure parse_domain_literal()
+   local res
+   res := move(1)
+   repeat {
+      if any('\\') then
+         res ||:= move(2) | fail
+      else if any(dtext_char) then
+         res ||:= tab(many(dtext_char))
+      else if any(']') then 
+         return res || move(1)
+      else
+         # Missing closing ] or illegal char
+         fail
+   }
+end
+
+#
+# comment     =  "(" *(ctext / quoted-pair / comment) ")"
+#
+procedure parse_comment()
+   local res
+   res := move(1)
+   repeat {
+      if any('\\') then
+         res ||:= move(2) | fail
+      else if any(ctext_char) then
+         res ||:= tab(many(ctext_char))
+      else if any('(') then
+         res ||:= parse_comment() | fail
+      else if any(')') then 
+         return res || move(1)
+      else
+         # Missing closing ) or illegal char
+         fail
+   }
+end
+
+procedure next_token()
+   repeat {
+      tab(many(lwsp_char))
+      if any('(') then
+         parse_comment() | fail
+      else
+         return
+   }
+end
+
+#
+# word =  atom / quoted-string
+#
+procedure parse_word() 
+   next_token() | fail
+   if any('\"') then
+      return parse_quoted_string()
+   else
+      return parse_atom()
+end
+
+#
+# local-part  =  word *("." word)             
+#
+procedure parse_local_part()
+   local res
+
+   res := parse_word() | fail
+   
+   while res ||:= ="." do
+      res ||:= parse_word() | fail
+
+   return res
+end
+
+#
+# domain      =  sub-domain *("." sub-domain)
+#
+procedure parse_domain()
+   local res
+
+   res := parse_sub_domain() | fail
+
+   while res ||:= ="." do
+      res ||:= parse_sub_domain() | fail
+
+   return res
+end
+
+#
+# sub-domain  =  domain-ref / domain-literal
+# domain-ref  =  atom
+#
+procedure parse_sub_domain()
+   next_token() | fail
+   if any('[') then
+      return parse_domain_literal()
+   else
+      return parse_atom()
+end
+
+#
+# phrase =  1*word
+# 
+# In fact this is parsed as just "*word".  This allows
+# parsing of mailboxes such as, for example "<rparlett@xyz.com>" and
+# groups such as :joe@soap.com;
+#
+procedure parse_phrase()
+   local res
+   res := ""
+   next_token() | fail
+   while any('\"' | atom_char) do {
+      # Single spaces between words
+      if *res > 0 then
+         res ||:= " "
+      res ||:= parse_word() | fail
+      next_token() | fail
+   }
+
+   # Strictly, this would be :-
+   # if *res > 0 then
+   #   return res
+
+   return res
+end
+
+#
+# addr_spec = local-part "@" domain
+#
+procedure parse_addr_spec(mb)
+   mb.local_part := parse_local_part() | fail
+   next_token() | fail
+   ="@" | fail
+   mb.domain := parse_domain() | fail
+   return
+end
+
+#
+# route       =  1#("@" domain) ":" 
+# where 1#X means '(X *("," X))' 
+#
+procedure parse_route(mb)
+   mb.route := []
+   repeat {
+      next_token() | fail
+      ="@" | fail
+      put(mb.route, parse_domain()) | fail
+      next_token() | fail
+      ="," | break
+      next_token() | fail
+   }
+   next_token() | fail
+   =":" | fail
+   return
+end
+
+#
+# route-addr  =  "<" [route] addr-spec ">"
+#
+procedure parse_route_addr(mb)
+   ="<" | fail
+   next_token() | fail
+   if any('@') then
+      parse_route(mb) | fail
+   else
+      mb.route := []
+   next_token() | fail
+   parse_addr_spec(mb) | fail
+   next_token() | fail
+   =">" | fail
+   return
+end
+
+#
+# mailbox = addr-spec | phrase route-addr
+#
+procedure parse_mailbox(mb)
+   initial {
+      init_parser()
+   }
+
+   /mb := Mailbox()
+   #
+   # The lookahead is complex, so try parsing as a simple address
+   # first, and if that fails try the more complex alternative.
+   #
+   x := &pos
+   if parse_addr_spec(mb) then {
+      mb.phrase := ""
+      mb.route := []
+   } else {
+      tab(x)
+      mb.phrase := parse_phrase() | fail
+      parse_route_addr(mb) | fail
+   }
+
+   return mb
+end
+
+#
+# group =  phrase ":" [#mailbox] ";"
+# #X means empty or X,X,X...
+#    
+procedure parse_group(group)
+   local mb
+
+   initial {
+      init_parser()
+   }
+
+   /group := Group()
+   group.phrase := parse_phrase() | fail
+   group.mailboxes := []
+   next_token() | fail
+   =":" | fail
+
+   next_token() | fail
+   if any(';') then # empty group
+      move(1)
+   else {
+      repeat {
+         mb := parse_mailbox() | fail
+         put(group.mailboxes, mb)
+         next_token() | fail
+         ="," | break
+      }
+      =";" | fail
+   }
+
+   return group
+end
+
+procedure parse_mailbox_or_group()
+   local x, a
+
+   x := &pos
+   if a := parse_mailbox() then
+      return a
+   tab(x)
+
+   return parse_group()
+end
+
+procedure parse_address_list(can_be_empty)
+   local l
+   l := []
+
+   if \can_be_empty then {
+      next_token() | fail
+      if pos(0) then
+         return l
+   }
+
+   repeat {
+      put(l, parse_mailbox_or_group()) | fail
+      next_token() | fail
+      ="," | return l
+   }
+end
+
+procedure parse_mailbox_list(can_be_empty)
+   local l
+   l := []
+
+   if \can_be_empty then {
+      next_token() | fail
+      if pos(0) then
+         return l
+   }
+
+   repeat {
+      put(l, parse_mailbox()) | fail
+      next_token() | fail
+      ="," | return l
+   }
+end
+
+#
+# month =  "Jan"  /  "Feb" /  "Mar"  /  "Apr" /  "May"  /  "Jun" /  
+#         "Jul"  /  "Aug" /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+#
+procedure parse_month()
+   local i
+   next_token() | fail
+   every i := 1 to *months do
+      if =months[i] then
+         return i
+end
+
+procedure parse_day()
+   local s
+   next_token() | fail
+   s := tab(many(&digits)) | fail
+   if *s <= 2 then
+      return integer(s)
+   fail
+end
+
+procedure parse_year()
+   local s
+   next_token() | fail
+   s := tab(many(&digits)) | fail
+   if *s = (2 | 4) then
+      return integer(s)
+   fail
+end
+
+procedure parse_2dig()
+   local s
+   next_token() | fail
+   s := tab(many(&digits)) | fail
+   if *s = 2 then
+      return integer(s)
+   fail
+end
+
+procedure parse_zone()
+   next_token() | fail
+   tab(upto(tz_chars)) | fail
+   return tab(many(tz_chars)) | fail
+end
+
+#
+# date-time = [ day "," ] date time
+# day =  "Mon"  / "Tue" /  "Wed"  / "Thu"/  "Fri"  / "Sat" /  "Sun"
+# date =  1*2DIGIT month 2DIGIT        
+# time =  hour zone                    
+# hour =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
+#
+procedure parse_date_time()
+   local d, m, y, h, s, t
+
+   initial {
+      init_parser()
+   }
+
+   t := Time()
+
+   next_token() | fail
+   if =(!days) then {
+      next_token() | fail
+      ="," | fail
+   }
+   d := parse_day() | fail
+   m := parse_month() | fail
+   y := parse_year() | fail
+
+   hh := parse_2dig() | fail
+   next_token() | fail
+   =":" | fail
+   mm := parse_2dig() | fail
+   next_token() | fail
+   if any(':') then {
+      move(1)
+      ss := parse_2dig() | fail
+   } else
+      ss := 0
+
+   s := parse_zone() | fail
+   zz := get_known_timezone(s) | Timezone(0, s)
+
+   t.set_fields(y, m, d, hh, mm, ss, zz)
+
+   return t
+end
+
+#
+# field           =    field-name ":" [field-body] CRLF
+# field-name      =  1*<any CHAR, excluding CTLs, SPACE, and ":">
+# field-body      =   *text [CRLF LWSP-char field-body]
+#
+procedure parse_field(message)
+   local f, v
+   next_token() | fail
+   f := tab(many(field_name_chars)) | fail
+   next_token() | fail
+   =":" | fail
+   next_token() | fail
+   v := tab(0)
+   message.add_header(f, v)
+   return
+end

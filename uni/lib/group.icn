@@ -1,0 +1,77 @@
+############################################################################
+#
+#	File:     group.icn
+#
+#	Subject:  E-mail group class
+#
+#	Author:   Robert Parlett
+#
+#	Date:     14 April, 2002
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#   This file provides a class for e-mail groups.
+#
+############################################################################
+
+package mail
+
+#
+# This class represents a group, which is a phrase, plus
+# zero or more mailboxes.
+#
+class Group : Address(mailboxes, phrase)
+   method get_phrase() 
+      return phrase
+   end
+
+   method set_phrase(x)
+      phrase := x
+   end
+
+   method get_mailboxes() 
+      return mailboxes
+   end
+
+   method set_mailboxes(x)
+      mailboxes := x
+   end
+
+   method add_mailbox(x)
+      put(mailboxes, x)
+   end
+
+   method to_rfc822()
+      local tmp
+
+      tmp := ""
+      every tmp ||:= (!mailboxes).to_rfc822() || ", "
+      tmp[-2:0] := ""
+
+      if *phrase > 0 then
+         return phrase || ": " || tmp || " ;"
+      else
+         return ": " || tmp || " ;"
+   end
+
+   method parse(s)
+      return s ? mail::parse_group(self)
+   end   
+
+   method generate_mailboxes()
+      suspend !mailboxes
+   end
+
+   initially(a[])
+      if (*a = 1) & (type(a[1]) == "string") then
+         parse(a[1]) | fail
+      else {
+         mailboxes := a[1] | []
+         phrase := a[2] | ""
+      }
+end
+

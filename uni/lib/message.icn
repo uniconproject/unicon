@@ -1,0 +1,307 @@
+############################################################################
+#
+#	File:     message.icn
+#
+#	Subject:  E-mail message class
+#
+#	Author:   Robert Parlett
+#
+#	Date:     14 April, 2002
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#   This file provides a class for e-mail messages.
+#
+############################################################################
+
+package mail
+
+#
+# This class represents an email message
+#
+class Message(headers, content)
+   #
+   # Read headers from the file f, which should be opened already, and
+   # will not be closed.
+   # 
+   method read_headers(f)
+      local s, t, k, v
+      headers := table()
+      repeat {
+         s := read(f) | fail
+         if *s = 0 then
+            return
+         if /t then  # first line
+            t := s
+         else if any(' ', s) then  { # continuation line
+            s ? {
+               tab(many(' '))
+               t ||:= " " || tab(0)
+            }
+         } else {
+            t ? parse_field(self) | fail
+            t := s
+         }
+      }
+   end
+
+   #
+   # Read body from the file f; this should come after read_headers
+   #
+   method read_content(f)
+      content := ""
+      every content ||:= !f || "\n"
+   end
+
+   #
+   # Set the content
+   #
+   method set_content(s)
+      self.content := s
+   end
+
+   #
+   # Get the content
+   #
+   method get_content()
+      return content
+   end
+
+   #
+   # Show the header table (useful debug)
+   #
+   method show_headers()
+      local h
+      every h := !sort(headers) do {
+         write(h[1], ":")
+         every write("          ", !h[2])
+      }
+   end
+
+   #
+   # Get the first header matching the given key, or fail
+   #
+   method get_first_header(key)
+      return (\headers[key])[1]
+   end
+
+   #
+   # Get all the headers for the key, as a list
+   #
+   method get_headers_list(key)
+      return \headers[key] | []
+   end
+
+   #
+   # Get all the headers matching the given key as a string separated
+   # by the given delimter, which defaults to ","
+   #
+   method get_catenated_headers(key, delim)
+      local s
+
+      l := \headers[key] | fail
+
+      /delim := ","
+
+      s := ""
+      every e := !l do {
+         if *s > 0 then 
+            s ||:= delim
+         s ||:= e
+      }
+
+      return s
+   end
+
+   #
+   # Add a header with the given key, after any existing ones with the same key
+   #
+   method add_header(key, val)
+      if member(headers, key) then
+         put(headers[key], val)
+      else
+         headers[key] := [val]
+   end
+
+   #
+   # Set a header with the given key; any existing headers with the same key
+   # are removed.
+   #
+   method set_header(key, val)
+      headers[key] := [val]
+   end
+
+   #
+   # Unset the header(s) for the given key
+   #
+   method unset_header(key)
+      delete(headers, key)
+   end
+
+   method get_date()
+      return get_first_header("Date") ? parse_date_time()
+   end
+
+   method set_date(t)
+      set_header("Date", t.to_rfc822())
+   end
+
+   method get_to()
+      return get_catenated_headers("To") ? parse_address_list()
+   end
+
+   method set_to(a)
+      set_header("To", a.to_rfc822())
+   end
+
+   method add_to(a)
+      add_header("To", a.to_rfc822())
+   end
+
+   method get_reply_to()
+      return get_catenated_headers("Reply-To") ? parse_address_list(1)
+   end
+
+   method set_reply_to(a)
+      set_header("Reply-To", a.to_rfc822())
+   end
+
+   method add_reply_to(a)
+      add_header("Reply-To", a.to_rfc822())
+   end
+
+   method get_resent_to()
+      return get_catenated_headers("Resent-To") ? parse_address_list()
+   end
+
+   method set_resent_to(a)
+      set_header("Resent-To", a.to_rfc822())
+   end
+
+   method add_resent_to(a)
+      add_header("Resent-To", a.to_rfc822())
+   end
+
+   method get_cc()
+      return get_catenated_headers("cc") ? parse_address_list()
+   end
+
+   method set_cc(a)
+      set_header("cc", a.to_rfc822())
+   end
+
+   method add_cc(a)
+      add_header("cc", a.to_rfc822())
+   end
+
+   method get_resent_cc()
+      return get_catenated_headers("Resent-cc") ? parse_address_list()
+   end
+
+   method set_resent_cc(a)
+      set_header("Resent-cc", a.to_rfc822())
+   end
+
+   method add_resent_cc(a)
+      add_header("Resent-cc", a.to_rfc822())
+   end
+
+   method get_bcc()
+      return get_catenated_headers("bcc") ? parse_address_list(1)
+   end
+
+   method set_bcc(a)
+      set_header("bcc", a.to_rfc822())
+   end
+
+   method add_bcc(a)
+      add_header("bcc", a.to_rfc822())
+   end
+
+   method get_resent_bcc()
+      return get_catenated_headers("Resent-bcc") ? parse_address_list(1)
+   end
+
+   method set_resent_bcc(a)
+      set_header("Resent-bcc", a.to_rfc822())
+   end
+
+   method add_resent_bcc(a)
+      add_header("Resent-bcc", a.to_rfc822())
+   end
+
+   method get_from()
+      return get_catenated_headers("From") ? parse_mailbox_list()
+   end
+
+   method set_from(m)
+      set_header("From", m.to_rfc822())
+   end
+
+   method add_from(m)
+      add_header("From", m.to_rfc822())
+   end
+
+   method get_sender()
+      return get_first_header("Sender") ? parse_mailbox()
+   end
+
+   method set_sender(m)
+      set_header("Sender", m.to_rfc822())
+   end
+
+   method get_resent_from()
+      return get_catenated_headers("Resent-From") ? parse_mailbox_list()
+   end
+
+   method set_resent_from(m)
+      set_header("Resent-From", m.to_rfc822())
+   end
+
+   method add_resent_from(m)
+      add_header("Resent-From", m.to_rfc822())
+   end
+
+   method get_resent_sender()
+      return get_first_header("Resent-Sender") ? parse_mailbox()
+   end
+
+   method set_resent_sender(m)
+      set_header("Resent-Sender", m.to_rfc822())
+   end
+
+   method get_resent_date()
+      return get_first_header("Resent-Date") ? parse_date_time()
+   end
+
+   method set_resent_date(t)
+      set_header("Resent-Date", t.to_rfc822())
+   end
+
+   method set_subject(s)
+      set_header("Subject", s)
+   end
+
+   method get_subject()
+      return get_first_header("Subject")
+   end
+
+   initially(a[])
+      headers := table()
+      content := ""
+end
+
+#
+# Utility to get all the mailboxes from a list of Addresses, which will
+# contain either Mailboxes or Groups.
+#
+procedure get_all_mailboxes(l)
+   local res
+   res := []
+   every put(res, (!l).generate_mailboxes())
+   return res
+end

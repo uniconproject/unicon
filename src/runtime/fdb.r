@@ -102,7 +102,7 @@ function{0,1} dbcolumns(f,table_name)
     fp=FDESC(f); /* file descriptor */
 
     if (is:null(table_name) && (fp->tablename != NULL)) {
-       MakeStr(fp->tablename, strlen(f->tablename), &table_name);
+       MakeStr(fp->tablename, strlen(fp->tablename), &table_name);
        }
     else if (!Qual(table_name)) runerr(103, table_name);
 
@@ -331,7 +331,7 @@ function{1} dbkeys(f, table_name)
     fp=FDESC(f); /* file descriptor */
       
     if (is:null(table_name) && (fp->tablename != NULL)) {
-       MakeStr(fp->tablename, strlen(f->tablename), &table_name);
+       MakeStr(fp->tablename, strlen(fp->tablename), &table_name);
        }
     else if (!Qual(table_name)) runerr(103, table_name);
 

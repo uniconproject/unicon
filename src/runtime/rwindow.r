@@ -644,6 +644,37 @@ static colrmod sattable[] = {			/* saturation levels */
    { "vivid",    100 },
    { "weak",      25 },
    };
+
+#ifdef Graphics3D
+static char *texturetable[] = {
+   "brick",
+   "carpet",
+   "cloth",
+   "clouds",
+   "concrete",
+   "dirt",
+   "glass",
+   "grass",
+   "grill",
+   "hair",
+   "iron",
+   "marble",
+   "metal",
+   "leaf",
+   "leather",
+   "plastic",
+   "sand",
+   "skin",
+   "sky"
+   "snow",
+   "stone",
+   "tile",
+   "water",
+   "wood",
+   };
+
+static int texturephrase(char *buf, long *r, long *g, long *b);
+#endif					/* Graphics3D */
 
 /*
  *  parsecolor(w, s, &r, &g, &b) - parse a color specification
@@ -667,7 +698,7 @@ wbp w;
 char *buf;
 long *r, *g, *b;
    {
-   int len, mul;
+   int len, mul, texture;
    char *fmt, c;
    double dr, dg, db;
 
@@ -719,6 +750,13 @@ long *r, *g, *b;
       return Succeeded;
       }
 
+#ifdef Graphics3D
+   if (texture = texturephrase(buf, r, g, b)) {
+      return Failed; /* not handling textures yet */
+      }
+   else
+#endif					/* Graphics3D */
+
    /* try interpreting as a color phrase or as a native color spec */
    if (colorphrase(buf, r, g, b) || nativecolor(w, buf, r, g, b))
       return Succeeded;
@@ -726,6 +764,49 @@ long *r, *g, *b;
       return Failed;
    }
 
+#ifdef Graphics3D
+int mystrcmp(char *s1, char *s2)
+{
+   return strcmp(*(char **)s1, s2);
+}
+
+/*
+ * texturephrase(s, &r, &g, &b, &texture) -- parse Unicon colored texture
+ */
+static int texturephrase(buf, r, g, b)
+char *buf; 
+long *r, *g, *b;
+   {
+   char buf2[128];
+   char *p, *p2;
+   int texture;
+
+   if (strlen(buf) > 127) return 0;
+   strcpy(buf2, buf);
+   p = buf2+strlen(buf2)-1;
+   while (*p == ' ' || *p == '\t') *p-- = '\0';
+   p = buf2;
+   while ((p2 = strchr(p, ' ')) || (p2 = strchr(p, '\t'))) p = p2+1;
+   /*
+    * p is at this point the last word in the texture phrase, see
+    * if it is a texture.
+    */
+   p2 = qsearch(p, (char *)texturetable,
+		ElemCount(texturetable), ElemSize(texturetable), mystrcmp);
+   if (p2) {
+      texture = ((char **)p2 - texturetable) + 1;
+      if (p != buf2) {
+	 p--;
+	 *p = '\0';
+	 if (colorphrase(buf2, r, g, b)) return texture;
+	 else return 0;
+	 }
+      else return -texture;
+      }
+   return 0;
+   }
+#endif					/* Graphics3D */
+
 /*
  *  colorphrase(s, &r, &g, &b) -- parse Icon color phrase.
  *
@@ -1035,16 +1116,18 @@ struct palentry *bmp_paltbl(int n, int *colortable)
  * Construct Icon-style imgdata from BMP-style rasterdata.
  * Only trick we know about so far is to reverse rows so first row is bottom
  */
-unsigned char * bmp_data(int width, int height, char * rasterdata)
+unsigned char * bmp_data(int width, int height, int bpp, char * rasterdata)
 {
 int i;
-char *tmp = malloc(width);
+int rowbytes = width * bpp;
+char *tmp = malloc(rowbytes);
 
 if (tmp==NULL) return NULL;
 for(i=0;i<height/2;i++) {
-   memmove(tmp, rasterdata + (i * width), width);
-   memmove(rasterdata + (i * width), rasterdata + (height-i-1) * width, width);
-   memmove(rasterdata + (height-i-1) * width, tmp, width);
+   memmove(tmp, rasterdata + (i * rowbytes), rowbytes);
+   memmove(rasterdata + (i * rowbytes),
+	   rasterdata + (height-i-1) * rowbytes, rowbytes);
+   memmove(rasterdata + (height-i-1) * rowbytes, tmp, rowbytes);
    }
 free(tmp);
 return (unsigned char *)rasterdata;
@@ -1121,11 +1204,11 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      imd->height = height;
      if (colortable) {
         imd->paltbl = bmp_paltbl(numcolors, colortable);
-        imd->data = bmp_data(width, height, rasterdata);
+        imd->data = bmp_data(width, height, 1, rasterdata);
         }
      else {
         imd->paltbl = NULL;
-        imd->data = rasterdata;
+        imd->data = bmp_data(width, height, 3, rasterdata);
         }
      return Succeeded;
      }
@@ -1756,7 +1839,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
       c[3] = 0;
       if (fwrite(c, 4, 1, gf_f) < 1) return Failed;
       }
-   if (bmp_data(width, height, gf_string) == NULL) return Error;
+   if (bmp_data(width, height, 1, gf_string) == NULL) return Error;
    if (fwrite(gf_string, width, height, gf_f) < height) return Failed;
    return Succeeded;
 }

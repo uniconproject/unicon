@@ -3,5 +3,6 @@ all:
 	cd ..; sh Translate-icont
 
 Cfun:
-	cd ../cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont; cp cfunc.u ../lib
+	cd ../cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont
+	-cd ../cfuncs; cp cfunc.u ../lib
 	-cd ../cfuncs; cp libcfunc.so ../../bin

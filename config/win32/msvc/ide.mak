@@ -1,22 +1,32 @@
-BASE=../..
+RM=-del 
+CP=copy
+BASE=..\..
 UNI=..
-CP=cp
-RM=rm -f
-UNICON=$(UNI)/unicon/unicon
+BIN=$(BASE)\bin
+UNICON=$(UNI)\unicon\unicon
+ICON_IPL=$(BASE)\ipl
 CFLAGS= -c -u
 SRC=ui.icn msg_dlg.icn
 OBJ=ui.u
-export IPATH:=../lib ../../ipl/lib
 
-ui: ui.u msg_dlg.u
+ui.exe: ui.u msg_dlg.u
+	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
+	set PATH=$(BIN)
 	$(UNICON) ui.u
-	$(CP) ui ../../bin
+	$(CP) ui.exe $(BIN)
 
 ui.u: ui.icn
+	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
+	set PATH=$(BIN)
 	$(UNICON) $(CFLAGS) ui
 
 msg_dlg.u: msg_dlg.icn
+	set IPATH=$(UNI)\lib $(ICON_IPL)\lib
+	set PATH=$(BIN)
 	$(UNICON) $(CFLAGS) msg_dlg
 
 clean:
-	$(RM) *.u uniclass.dir uniclass.pag 
+	$(RM) *.u 
+	$(RM) uniclass.dir 
+	$(RM) uniclass.pag
+	$(RM) ui.exe

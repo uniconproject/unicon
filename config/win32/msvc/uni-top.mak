@@ -21,8 +21,8 @@ all :
 	nmake
 	cd ..\unidoc 
 	nmake
-#	cd ..\ide 
-#	nmake
+	cd ..\ide 
+	nmake
 
 clean Clean:
 	cd iyacc

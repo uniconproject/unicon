@@ -341,7 +341,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
     * create the window
     */
    winstyles=(ISTITLEBAR(ws)?WS_OVERLAPPEDWINDOW:(WS_DLGFRAME|WS_THICKFRAME));
-   winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE;
+   winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+   if (!ISTOBEHIDDEN(ws))
+      winstyles |= WS_VISIBLE;
    if (is_3d) winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
    ws->iconwin = CreateWindow( "iconx", ws->windowlabel,
 		   winstyles,

@@ -68,6 +68,7 @@ Makefiles:
 		cp ../Config/ide.mak ../../../uni/ide/makefile
 		cp ../Config/xml.mak ../../../uni/xml/makefile
 		cp ../Config/unidep.mak ../../../uni/unidep/makefile
+		cp ../Config/unidoc.mak ../../../uni/unidoc/makefile
 		cp ../Config/parser.mak ../../../uni/parser/makefile
 		cp ../Config/util.mak ../../../uni/util/makefile
 		cp ../Config/gui.mak ../../../uni/gui/makefile

@@ -29,6 +29,9 @@ all :
 	-if [ -f util/makefile ] ; then \
 		make -C util ; \
 	fi
+	-if [ -f unidoc/makefile ] ; then \
+		make -C unidoc ; \
+	fi
 	-if [ -f ide/makefile ] ; then \
 		make -C ide ; \
 	fi
@@ -63,6 +66,9 @@ clean Clean:
 	fi
 	-if [ -f util/makefile ] ; then \
 		make -C util clean ; \
+	fi
+	-if [ -f unidoc/makefile ] ; then \
+		make -C unidoc clean ; \
 	fi
 	-if [ -f ide/makefile ] ; then \
 		make -C ide clean ; \

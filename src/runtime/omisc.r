@@ -96,7 +96,7 @@ operator{1} * size(x)
 	 struct ISQLFile *fp;
 	 int status;
 	 int rc;
-	 int numrows;
+	 SQLLEN numrows;
 
 	 status = BlkLoc(x)->file.status;
 

@@ -197,6 +197,9 @@ typedef int jmp_buf;
 
 #if NT
 typedef int HMODULE, WSADATA, WORD;
+#ifdef NTGCC
+typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
+#endif
 #endif					/* NT */
 
 #ifdef PosixFns
@@ -221,28 +224,11 @@ typedef struct {
 #endif					/* Dbm */
 
 #ifdef ISQL                             /* ODBC */
-  typedef int LPSTR;
-  typedef int HENV;
-  typedef int HDBC;
-  typedef int HSTMT;
-  typedef int ISQLFile;
-  typedef int PTR;
-  typedef int SQLPOINTER;
-  typedef int SWORD;
-  typedef int SDWORD;
-  typedef int UWORD;
-  typedef int UDWORD;
-  typedef int UCHAR;
-  typedef int SQLUSMALLINT;
-  typedef int SQLSMALLINT;
-  typedef int SQLHSTMT;
-  typedef int SQLHBDC;    /* 3.0 */
-  typedef int SQLHENV;    /* 3.0 */
-  typedef int SQLCHAR;    /* 3.0 */
-  typedef int SQLINTEGER; /* 3.0 */
-  typedef int SQLUINTEGER;
-  typedef int SQLRETURN;
-  typedef int RETCODE;
+  typedef int LPSTR, HENV, HDBC, HSTMT, ISQLFile, PTR, SQLPOINTER;
+  typedef int SWORD, SDWORD, UWORD, UDWORD, UCHAR;
+  typedef int SQLUSMALLINT, SQLSMALLINT, SQLHSTMT;
+  typedef int SQLUINTEGER, SQLRETURN, RETCODE, SQLLEN;
+  typedef int SQLHBDC, SQLHENV, SQLCHAR, SQLINTEGER; /* 3.0 */
 #endif					/* ISQL */
 
 # if defined(Graphics) || defined(PosixFns)

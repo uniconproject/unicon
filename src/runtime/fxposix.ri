@@ -1,5 +1,7 @@
 /*
  * fxposix.ri - posix interface
+ *
+ * $Id: fxposix.ri,v 1.6 2001-11-28 07:56:59 phliar Exp $
  */
 
 /*
@@ -1602,10 +1604,10 @@ function{0,1} wait(pid, options)
 #ifdef Linux
       if (WIFSIGNALED(status) && status & 0200 )	/* core dump */
 #else
-#if !defined(FreeBSD) && defined(BSD_4_4_LITE) || (defined(BSD) && defined(SUN))
+#if defined(BSD) && defined(SUN)
       if (WIFSIGNALED(status) && ((union __wait*)&status)->w_T.w_Coredump)
 #else
-      if (WCOREDUMP(status))
+      if (WIFSIGNALED(status) && WCOREDUMP(status))
 #endif
 #endif
 	 strcat(retval, ":core");

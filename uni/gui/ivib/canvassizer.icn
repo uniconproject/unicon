@@ -1,5 +1,5 @@
 #
-# $Id: canvassizer.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+# $Id: canvassizer.icn,v 1.2 2004-11-13 23:41:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -33,16 +33,13 @@ class CanvasSizer : CanvasComponent : Sizer()
    #
    method gen_code(c)
       self.CanvasComponent.gen_code(c)
+      if \self.lo | \self.hi then {
+         s := name || ".set_range(" || (\self.lo|"&null") || ", " ||
+            (\self.hi|"&null") || ")" 
+         c.line(s)
+      }
       if \self.is_horizontal_flag then
          c.line(name || ".set_is_horizontal()")
-   end
-
-   method display(buffer_flag)
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      Rectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      self.do_shading(self.cbwin)
-      if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
    #
@@ -50,6 +47,8 @@ class CanvasSizer : CanvasComponent : Sizer()
    #
    method cp_fields(c)
       c.is_horizontal_flag := self.is_horizontal_flag
+      c.lo := self.lo
+      c.hi := self.hi
    end
 
    #
@@ -77,7 +76,11 @@ class CanvasSizer : CanvasComponent : Sizer()
    #
    method get_template()
       return self.CanvasComponent.get_template() ||| 
-         [["Is horizontal flag", "is_horizontal_flag"]]
+         [
+          ["Lo", "lo"],
+          ["Hi", "hi"],
+          ["Is horizontal flag", "is_horizontal_flag"]
+          ]
    end
 
    #

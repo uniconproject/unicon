@@ -1,31 +1,110 @@
 #
-# $Id: canvassizerdialog.icn,v 1.1 2004-11-13 20:29:58 rparlett Exp $
+# $Id: canvassizerdialog.icn,v 1.2 2004-11-13 23:41:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
 
+import gui
+
+$include "guih.icn"
 
 ############################################################################
 #
 #
 #
 class CanvasSizerDialog : CanvasComponentDialog(
-   c                       #         
+   c,
+   lo,
+   hi,
+   lo_flag,
+   hi_flag
    )
 
    method on_okay()
+      local lo_val, hi_val
+
+      if lo_flag.is_checked() then
+         lo_val := integer(lo.get_contents()) | return alert_error("Lo is not integer")
+      if hi_flag.is_checked() then
+         hi_val := integer(hi.get_contents()) | return alert_error("Hi is not integer")
+      if \lo_val & \hi_val then
+         lo_val < hi_val | return alert_error("Lo must be less than hi")
+
       self.validate_input() | fail
       self.set_vals(c)
+
+      c.set_range(lo_val, hi_val)
+
       c.reset(c.parent)
       self.okay_result := 1
       self.dispose()
    end
 
+   method on_hi_flag(ev)
+      hi.toggle_is_shaded()
+   end
+
+   method on_lo_flag(ev)
+      lo.toggle_is_shaded()
+   end
+
    initially
-      internal_alignment_list := ["c", "l", "r"]
+      local l, l2
+
       self.setup(c)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      lo_flag := CheckBox()
+      lo_flag.set_pos("119", "88")
+      lo_flag.set_align("l", "c")
+      lo_flag.connect(self, "on_lo_flag", ACTION_EVENT)
+      lo_flag.set_toggles()
+      lo_flag.set_label("Low")
+      p.add(lo_flag)
+      lo := TextField()
+      lo.set_pos("202", "88")
+      lo.set_size("93", )
+      lo.set_align("l", "c")
+      lo.set_draw_border()
+      lo.set_contents("")
+      p.add(lo)
+      hi_flag := CheckBox()
+      hi_flag.set_pos("119", "128")
+      hi_flag.set_align("l", "c")
+      hi_flag.connect(self, "on_hi_flag", ACTION_EVENT)
+      hi_flag.set_toggles()
+      hi_flag.set_label("High")
+      p.add(hi_flag)
+      hi := TextField()
+      hi.set_pos("202", "128")
+      hi.set_size("93", )
+      hi.set_align("l", "c")
+      hi.set_draw_border()
+      hi.set_contents("")
+      p.add(hi)
+
+      lo.set_filter(&digits)
+      hi.set_filter(&digits)
+
+      if /c.lo then {
+         lo.set_is_shaded()
+      } else {
+         lo_flag.set_is_checked()
+         lo.set_contents(c.lo)
+      }
+
+      if /c.hi then {
+         hi.set_is_shaded()
+      } else {
+         hi_flag.set_is_checked()
+         hi.set_contents(c.hi)
+      }
+
       if \c.is_horizontal_flag then
          set_w_default.set_is_shaded()
       else

@@ -1249,6 +1249,8 @@ struct hostent *hs;
  * Calling Icon from C (iconx)
  */
 
+#if !COMPILER
+
 /* No provision for resumption */
 static word *callproc, ibuf[100];
 static dptr call(proc, args, nargs)
@@ -1303,6 +1305,7 @@ int nargs;
    else
       return ret;
 }
+#endif					/* !COMPILER */
 
 /*
  * Signals and trapping
@@ -1354,7 +1357,7 @@ int sig;
    StrLoc(val) = p;
 
 #if COMPILER
-   Syntax error COMPILER
+   syserr("signal handlers are not supported by iconc");
 #else
    (void) call(proc, &val, 1);
 #endif

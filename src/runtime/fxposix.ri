@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.7 2001-11-28 11:38:41 jeffery Exp $
+ * $Id: fxposix.ri,v 1.8 2001-12-12 21:20:50 jeffery Exp $
  */
 
 /*
@@ -16,6 +16,14 @@ struct descrip amperErrno = {D_Integer};
 #endif					/* MultiThread */
 
 #ifdef PosixFns
+#if NT
+#define ftruncate _chsize
+#define pclose _pclose
+#define dup2 _dup2
+#define execvp _execvp
+#define fstat _fstat
+#endif					/* NT */
+
 extern int errno;
 
 #define String(d, s) do {                               \
@@ -66,11 +74,10 @@ function{0,1} getpid()
       }
    inline {
      IntVal(amperErrno) = 0;
-#if NT
-     return C_integer (_getpid());
-#else					/* NT */
+#ifdef NT
+#define getpid _getpid
+#endif
      return C_integer (getpid());
-#endif					/* NT */
      }
 end
 
@@ -394,10 +401,9 @@ function{0,1} chmod(s, m)
 	       cnv:C_integer(m, i);
 	       }
 #if NT
-	    if (_chmod(fname, i) != 0) {
-#else					/* NT */
+#define chmod _chmod
+#endif
 	    if (chmod(fname, i) != 0) {
-#endif					/* NT */
 	       IntVal(amperErrno) = errno;
 	       fail;
 	    }
@@ -475,10 +481,9 @@ function{0,1} rmdir(s)
    inline {
       IntVal(amperErrno) = 0;
 #if NT
-      if (_rmdir(s) != 0) {
-#else					/* NT */
+#define rmdir _rmdir
+#endif
       if (rmdir(s) != 0) {
-#endif					/* NT */
 	 IntVal(amperErrno) = errno;
 	 fail;
          }
@@ -519,10 +524,9 @@ function{0,1} mkdir(s, m)
 
       IntVal(amperErrno) = 0;
 #if NT
-      if (_mkdir(s) != 0) {		/* in NT, _mkdir don't have mode*/
-#else					/* NT */
+#define mkdir(s,mode) _mkdir(s)		/* in NT, _mkdir don't have mode*/
+#endif
       if (mkdir(s, mode) != 0) {
-#endif					/* NT */
 	 IntVal(amperErrno) = errno;
 	 fail;
       }
@@ -572,11 +576,7 @@ function{0,1} truncate(f, l)
 
 	    if ((fd = get_fd(f, 0)) < 0)
 	       runerr(174, f);
-#if !NT
 	    if (ftruncate(fd, l) != 0) {
-#else					/* NT */
-	    if (_chsize(fd, l) != 0) {
-#endif					/* NT */
 	       IntVal(amperErrno) = errno;
 	       fail;
 	       }
@@ -847,8 +847,7 @@ function{0,1} utime(f, atime, mtime)
 #if NT
 #define utime _utime
 #define utimbuf _utimbuf
-#endif					/* NT */
-
+#endif
       struct utimbuf t;
       t.actime = atime;
       t.modtime = mtime;
@@ -952,11 +951,10 @@ function{0,1} pipe()
       tended union block *ep;
 
       IntVal(amperErrno) = 0;
-#if !NT
+#if NT
+#define pipe(x) _pipe(x, 4096, O_BINARY|O_NOINHERIT)
+#endif
       if (pipe(fds) != 0) {
-#else
-      if (_pipe(fds, 4096, O_BINARY |O_NOINHERIT) != 0) {
-#endif					/* NT */
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
@@ -1034,20 +1032,12 @@ function{0,1} fdup(src, dest)
 	 runerr(174, dest);
       if (BlkLoc(dest)->file.status != 0)
 	 if (BlkLoc(dest)->file.status & Fs_Pipe)
-#if NT
-	    _pclose(BlkLoc(dest)->file.fd);
-#else					/* NT */
 	    pclose(BlkLoc(dest)->file.fd);
-#endif					/* NT */
 	 else 
 	    fclose(BlkLoc(dest)->file.fd);
  
       IntVal(amperErrno) = 0;
-#if !NT
       if (dup2(fd_src, fd_dest) < 0) {
-#else					/* NT */
-      if (_dup2(fd_src, fd_dest) < 0) {
-#endif					/* NT */
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
@@ -1090,10 +1080,6 @@ function{0,1} exec(f, argv[argc])
 	 margv[i] = p;
       }
       margv[i] = 0;
-#if NT
-#define execvp _execvp
-#endif					/* NT */
-
       if (execvp(f, margv) != 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
@@ -1487,7 +1473,7 @@ function{0,1} umask(mask)
          cnv:C_integer(mask, m);
 #if NT
 #define umask _umask
-#endif					/* NT */
+#endif
 	 return C_integer umask(m);
 	 }
       else if (is:string(mask)) {
@@ -1724,8 +1710,8 @@ function{0,1} lstat(f)
 
       IntVal(amperErrno) = 0;
 #if NT
-      fail;
-#else					/* NT */
+#define lstat _stat
+#endif					/* NT */
       if (lstat(f, &sbuf) != 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
@@ -1739,7 +1725,6 @@ function{0,1} lstat(f)
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
       stat2rec(&sbuf, &result, rp);
       return result;
-#endif					/* NT */
    }
 end
 
@@ -1764,9 +1749,6 @@ function{0,1} stat(f)
 
             cnv:C_string(f, fname);
 	    IntVal(amperErrno) = 0;
-#if NT
-#define lstat _stat
-#endif
 	    if (lstat(fname, &sbuf) != 0) {
 	       IntVal(amperErrno) = errno;
 	       fail;
@@ -1839,11 +1821,7 @@ function{0,1} stat(f)
 	    IntVal(amperErrno) = 0;
 	    if ((fd = get_fd(f, 0)) < 0)
 	       runerr(174, f);
-#if NT
-	    if (_fstat(fd, &sbuf) != 0) {
-#else					/* NT */
 	    if (fstat(fd, &sbuf) != 0) {
-#endif					/* NT */
 	       IntVal(amperErrno) = errno;
 	       fail;
 	       }
@@ -2040,9 +2018,7 @@ function{0,1} select(files[nargs])
       tended struct descrip d = nulldesc;
       tended struct descrip d2 = nulldesc;
       dptr f;
-#if NT
       tended struct b_list *lws = NULL;
-#endif					/* NT */
 
       /*
        * Unicon select() repeats until a timeout or real result.
@@ -2052,11 +2028,9 @@ function{0,1} select(files[nargs])
 	 n = 0;
 	 FD_ZERO(&fds);			/* Set the fd's in the set */
 
-#if NT
 	 if ((lws = emptylist()) == NULL) fail;
 	 d2.dword = D_List;
 	 BlkLoc(d2) = (union block *)lws;
-#endif
 
 	 for(k=0;k<nargs;k++) {
 	    /* Traverse the list, build fd_set of sockets */
@@ -2133,10 +2107,10 @@ function{0,1} select(files[nargs])
       if (lp == NULL) {
 	 if ((lp = emptylist()) == NULL) fail;
          }
-      else {
-         d.dword = D_List;
-         BlkLoc(d) = (union block *)lp;
-         }
+
+      d.dword = D_List;
+      BlkLoc(d) = (union block *)lp;
+
 
       for(k=0;k<nargs;k++) {
 	 if (is:file(files[k])){

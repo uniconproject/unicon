@@ -6,7 +6,7 @@ CPU=i386
 LDFLAGS=
 CC=gcc
 # -g for debugging, -Os to minimize space...
-CFLAGS=-D_X86_ -DWIN32 -DMSNT -DNTConsole -Os -I../gdbm -I../libtp
+CFLAGS=-D_X86_ -DWIN32 -DMSNT -D$(CONSOLE) -Os -I../gdbm -I../libtp
 MAKE=make
 RTT=../../bin/rtt
 O=o
@@ -53,11 +53,11 @@ interp_all: $(COBJS) $(WOBJS)
 
 MYGUILIBS= -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
-# add $(linkdebug) after /STACK:40000 for debugging
-
-wiconx: iconx
-	cp iconx.exe wiconx.exe
-	cp iconx.exe ../../bin/wiconx.exe
+wiconx: $(OBJS) $(WOBJS) $(COBJS)
+	command /C libtp
+	command /C gdbm
+	$(CC) -mwindows -Xlinker --stack -Xlinker 768000 -o wiconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
+	cp wiconx.exe ../../bin/wiconx.exe
 
 iconx: $(OBJS) $(WOBJS) $(COBJS)
 	command /C libtp

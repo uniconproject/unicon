@@ -7,7 +7,7 @@ CC=gcc
 LD=ld
 # /Ox for maximum optimzation, /Zi for debugging...
 #CFLAGS= /D_X86_ /DWIN32 /Ox /D$(CONSOLE) /I..\gdbm /I..\libtp
-CFLAGS= -D_X86_ -DWIN32 -O -DNTConsole -I../gdbm -I../libtp
+CFLAGS= -D_X86_ -DWIN32 -O -D$(CONSOLE) -I../gdbm -I../libtp
 HFLAGS=
 LDFLAGS=
 LIBS=
@@ -35,19 +35,23 @@ WOBJS=	../wincap/file.$(O) ../wincap/errors.$(O) ../wincap/dibutil.$(O)\
 
 all:            icont
 
-CONSOLE=NTConsole
-
 icont:        $(OBJS) common
 	gcc -o icont.exe $(OBJS) $(COBJS)
 	$(CP) icont.exe ../../bin
 
-wicont:		icont
-	$(CP) icont.exe ../../bin/wicont.exe
+wicont:
+	$(RM) tmain.$(O)
+	$(RM) link.$(O)
+	make wicont2
 
 # add $(linkdebug) after $(link) for debugging
 MYGUILIBS= -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
-common: $(COBJS)
+wicont2: $(OBJS) common
+	gcc -o wicont.exe -mwindows $(guiflags) $(OBJS) $(COBJS) $(WOBJS) -lwinmm $(MYGUILIBS)
+	$(CP) wicont.exe ../../bin
+
+common: $(COBJS) $(DCONSOLE)
 
 #	cd ../common && $(MAKE) $(ICOBJS) CONSOLE=$(CONSOLE) DCONSOLE=$(DCONSOLE)
 

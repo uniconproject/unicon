@@ -12,7 +12,6 @@
 #define Header header
 #define NT 1
 #define NTGCC 1
-#define NTConsole 1
 #define ShellHeader
 
 #define index strchr
@@ -39,3 +38,4 @@
 #define LoadFunc
 #define MSWindows
 #define FAttrib 1
+#define FieldTableCompression 1

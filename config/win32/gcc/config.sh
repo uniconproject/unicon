@@ -13,6 +13,7 @@ echo CONSOLE=NTConsole >../../../src/common/makefile
 cat makefile.cmn >>../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile
 echo ICONX=nticonx >../../../src/runtime/makefile
+echo CONSOLE=NTConsole >>../../../src/runtime/makefile
 cat MAKEFILE.RUN >>../../../src/runtime/makefile
 echo ICONT=icont >../../../src/icont/makefile
 echo CONSOLE=NTConsole >>../../../src/icont/makefile
@@ -25,7 +26,7 @@ echo RM=-rm >> ../../../uni/unicon/makefile
 echo EXE=.exe >> ../../../uni/unicon/makefile
 echo BINDIR=../../bin >> ../../../uni/unicon/makefile
 echo UNICON=../unicon/unicon >> ../../../uni/unicon/makefile
-cat makefile.uni >>../../../uni/unicon/makefile
+cat makefile.uni >> ../../../uni/unicon/makefile
 echo RM=-rm > ../../../uni/ivib/makefile
 echo EXE=.exe >> ../../../uni/ivib/makefile
 echo BINDIR=../../bin >> ../../../uni/ivib/makefile
@@ -42,6 +43,5 @@ cat ../../unix/Config/unilib.mak >>../../../uni/lib/makefile
 rm ../../../src/icont/*.o 2> nul
 rm ../../../src/common/*.o 2> nul
 rm ../../../src/runtime/*.o 2> nul
-cp RTT.LNK ../../../src/rtt
 cat MAKEFILE.WCP >../../../src/wincap/makefile
 echo # noop > ../../../uni/ide/makefile

@@ -36,3 +36,4 @@
 #define ssize_t signed
 #endif					/* Messaging */
 #define LoadFunc
+#define FieldTableCompression 1

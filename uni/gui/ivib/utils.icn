@@ -1,5 +1,5 @@
 #
-# $Id: utils.icn,v 1.2 2005-01-28 10:16:53 jeffery Exp $
+# $Id: utils.icn,v 1.3 2005-02-11 13:51:38 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -7,6 +7,8 @@
 #
 
 import gui
+
+link gpxop, imscolor
 
 #
 # Read a flag (&null or 1) value
@@ -70,7 +72,48 @@ end
 # Read icon from file s.  dialog is an instance of CommonDialog
 #
 procedure util_read_icon(dialog, s)
+   if map(s)[-4:0] == ".gif" then
+      return read_gif_icon(dialog, s)
+   else if map(s)[-4:0] == ".xpm" then
+      return read_xpm_icon(dialog, s)
+   else
+      return read_string_icon(dialog, s)
+end
+
+#
+# Read a standard gif icon.
+#
+procedure read_gif_icon(dialog, s)
+   local w, raw, len
+
+   w := WOpen("canvas=hidden", "image=" || s) | return dialog.alert_error("Couldn't open file " || s)
+   raw := Capture(w, "c6")
+   WClose(w)
+
+   return raw
+end
+
+#
+# Read an xpm icon.
+#
+procedure read_xpm_icon(dialog, s)
+   local f, raw
+
    f := open(s) | return dialog.alert_error("Couldn't open file " || s)
+   raw := XPMImage(f, "c6")
+   close(f)
+
+   return raw
+end
+
+#
+# Read a standard Icon string formatted icon.
+#
+procedure read_string_icon(dialog, s)
+   local res, x, f
+
+   f := open(s) | return dialog.alert_error("Couldn't open file " || s)
+
    res := ""
    while x := read(f) do {
       x ? {
@@ -86,6 +129,8 @@ procedure util_read_icon(dialog, s)
       else
          break
    }
+
+   close(f)
 
    #
    # Check for reasonably valid image 

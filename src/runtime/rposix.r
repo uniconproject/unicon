@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.14 2001-12-14 03:53:12 phliar Exp $
+ * $Id: rposix.r,v 1.15 2002-01-26 09:56:38 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -752,8 +752,10 @@ FILE *sock_connect(char *fn, int is_udp)
    char *host = fname;
    static struct hostent he;
 
+#if UNIX
    struct sockaddr_un saddr_un;
    int pathbuf_len = sizeof(saddr_un.sun_path);
+#endif					/* UNIX */
 
    memset(&saddr_in, 0, sizeof(saddr_in));
    strncpy(fname, fn, sizeof(fname));
@@ -817,8 +819,8 @@ FILE *sock_connect(char *fn, int is_udp)
       /* UNIX domain socket */
 #if NT
       return 0;
-#else
 #endif
+#if UNIX
       if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	 return 0;
       saddr_un.sun_family = AF_UNIX;
@@ -831,6 +833,7 @@ FILE *sock_connect(char *fn, int is_udp)
       saddr_un.sun_len = len;
 #endif
       sa = (struct sockaddr*) &saddr_un;
+#endif					/* UNIX */
    }
 
    /* We don't connect UDP sockets but always use sendto(2). */
@@ -854,7 +857,9 @@ int is_udp;
    int fd, s, len, fromlen;
    struct sockaddr *sa;
    struct sockaddr_in saddr_in, from;
+#if UNIX
    struct sockaddr_un saddr_un;
+#endif					/* UNIX */
 
    char hostname[MAXHOSTNAMELEN];
    struct hostent *hp;
@@ -923,11 +928,11 @@ int is_udp;
       }
       else {
          /* unix domain socket */
-          int pathbuf_len;
 #if NT
          return 0;
-#else
 #endif
+#if UNIX
+         int pathbuf_len;
 	 if (is_udp || (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	    return 0;
 
@@ -942,6 +947,7 @@ int is_udp;
 #endif
 	 (void) unlink(saddr_un.sun_path);
 	 sa = (struct sockaddr*) &saddr_un;
+#endif					/* UNIX */
       }
       if (bind(s, sa, len) < 0) {
 	 return 0;

@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.17 2005-03-16 00:53:33 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.18 2005-03-25 11:01:18 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -709,7 +709,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method resize()
-      if wrap_mode == "width" then
+      if \wrap_mode == "width" then
          clear_view_list()
 
       self.ScrollArea.resize()
@@ -720,9 +720,13 @@ class EditableTextList : LineBasedScrollArea(
       local had_vsb
       
       had_vsb := self.vsb
+
+      if /view_list then
+         create_view_list()
+
       self.ScrollArea.set_internal_fields()
 
-      if wrap_mode == "width" & had_vsb ~=== self.vsb then {
+      if \wrap_mode == "width" & had_vsb ~=== self.vsb then {
          create_view_list()
          set_internal_fields()
       }
@@ -866,8 +870,6 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method get_subject_width()
-      if /view_list then
-         create_view_list()
       return self.long_line.tw
    end
 
@@ -1019,7 +1021,10 @@ class EditableTextList : LineBasedScrollArea(
    method set_tab_width(n)
       self.tab_width := n
       clear_view_list()
-      compute_and_invalidate()
+      if \ (\self.parent_dialog).is_open then {
+         compute_and_invalidate()
+         constrain_line()
+      }
    end
 
    method set_one(attr, val)
@@ -1353,8 +1358,10 @@ class ColumnLineSplitter:LineSplitter(wrap_col)
          while ch := move(1) do {
             ds ||:= ch
             if *detab(ds, parent.tab_width + 1) > wrap_col then {
-               ds[-1] := ""
-               move(-1)
+               if *ds > 1 then {
+                  ds[-1] := ""
+                  move(-1)
+               }
                if upto('\t ', ds) then {
                   while any(~'\t ', ds[-1]) do {
                      ds[-1] := ""
@@ -1400,8 +1407,10 @@ class WidthLineSplitter:LineSplitter()
          while ch := move(1) do {
             ds ||:= ch
             if TextWidthEx(parent.cwin, ds,,, parent.tab_width) > width then {
-               ds[-1] := ""
-               move(-1)
+               if *ds > 1 then {
+                  ds[-1] := ""
+                  move(-1)
+               }
                if upto('\t ', ds) then {
                   while any(~'\t ', ds[-1]) do {
                      ds[-1] := ""

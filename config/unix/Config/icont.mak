@@ -5,7 +5,7 @@ include ../../Makedefs
 TRANS=		trans.o tcode.o tlex.o lnklist.o tparse.o tsym.o tmem.o \
 		 tree.o tglobals.o
 
-LINKR=		link.o lglob.o lcode.o llex.o lmem.o lsym.o opcode.o
+LINKR=		link.o lglob.o lcode.o llex.o lmem.o lsym.o opcode.o lcompres.o
 
 OBJS=		tmain.o util.o tlocal.o $(TRANS) $(LINKR)
 
@@ -59,7 +59,7 @@ llex.o:		tglobals.h opcode.h ../h/opdefs.h
 lmem.o:		tglobals.h
 lsym.o:		tglobals.h
 opcode.o:	opcode.h ../h/opdefs.h
-
+lcompres.o:	tglobals.h ../h/header.h
 
 
 #  The following sections are commented out because they do not need to be

@@ -748,6 +748,7 @@
       
       #define xargp     (curpstate->Xargp)
       #define xnargs    (curpstate->Xnargs)
+      #define value_tmp (curpstate->Value_tmp)
       
       #define k_current     (curpstate->K_current)
       #define k_errornumber (curpstate->K_errornumber)

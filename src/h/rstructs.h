@@ -468,6 +468,7 @@ struct progstate {
 
    dptr Xargp;
    word Xnargs;
+   struct descrip Value_tmp;
 
    struct descrip K_current;
    int K_errornumber;

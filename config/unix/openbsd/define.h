@@ -11,3 +11,4 @@
 #define SysOpt
 
 #define COpts "-O2 -L/usr/X11R6/lib -I/usr/X11R6/include"
+#define NEED_UTIME

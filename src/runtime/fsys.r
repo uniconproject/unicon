@@ -2306,8 +2306,10 @@ function{0,1} chdir(s)
    }
    body {
 #if NT
+#ifndef NTGCC
 #define chdir nt_chdir
 #passthru #include <direct.h>
+#endif
 #endif
 
 #if PORT
@@ -2356,10 +2358,12 @@ return NULL;
 #endif					/* NTGCC */
 #endif					/* MSWindows */
 
+#ifndef NTGCC
 int nt_chdir(char *s)
 {
     return chdir(s);
 }
+#endif
 #endif					/* NT */
 
 "delay(i) - delay for i milliseconds."

@@ -55,26 +55,20 @@ Makefiles:
 		echo "BINDIR=../../bin" >> ../../../uni/unicon/makefile
 		echo "UNICON=../unicon/unicon" >> ../../../uni/unicon/makefile
 		cat ../Config/unicon.mak >> ../../../uni/unicon/makefile
-		echo "RM=rm -f" > ../../../uni/lib/makefile
-		echo "UNICON=../unicon/unicon" >> ../../../uni/lib/makefile
-		cat ../Config/unilib.mak >> ../../../uni/lib/makefile
-		echo "RM=rm -f" > ../../../uni/ivib/makefile
-		echo "UNICON=../unicon/unicon" >> ../../../uni/ivib/makefile
-		echo "CP=cp" >> ../../../uni/ivib/makefile
-		echo "BINDIR=../../bin" >> ../../../uni/ivib/makefile
-		cat ../Config/ivib.mak >> ../../../uni/ivib/makefile
 		-mkdir ../../../ipl/lib
-		cp ../Config/ipllib.mak ../../../ipl/lib/makefile
-		cp ../Config/ide.mak ../../../uni/ide/makefile
-		cp ../Config/xml.mak ../../../uni/xml/makefile
-		cp ../Config/unidep.mak ../../../uni/unidep/makefile
-		cp ../Config/unidoc.mak ../../../uni/unidoc/makefile
-		cp ../Config/parser.mak ../../../uni/parser/makefile
-		cp ../Config/util.mak ../../../uni/util/makefile
-		cp ../Config/gui.mak ../../../uni/gui/makefile
-		cp ../Config/guidemos.mak ../../../uni/gui/guidemos/makefile
-		cp ../Config/ivib-v2.mak ../../../uni/gui/ivib/makefile
-		cp ../Config/uni-top.mak ../../../uni/Makefile
+		cp ipllib.mak ../../../ipl/lib/makefile
+		cp ide.mak ../../../uni/ide/makefile
+		cp ivib.mak ../../../uni/ivib/makefile
+		cp unilib.mak ../../../uni/lib/makefile
+		cp xml.mak ../../../uni/xml/makefile
+		cp unidep.mak ../../../uni/unidep/makefile
+		cp unidoc.mak ../../../uni/unidoc/makefile
+		cp parser.mak ../../../uni/parser/makefile
+		cp util.mak ../../../uni/util/makefile
+		cp gui.mak ../../../uni/gui/makefile
+		cp guidemos.mak ../../../uni/gui/guidemos/makefile
+		cp ivib-v2.mak ../../../uni/gui/ivib/makefile
+		cp uni-top.mak ../../../uni/Makefile
 
 Localcode:
 		cp define.h ../../../src/h

@@ -1134,17 +1134,22 @@ int setmaterials(wbp w, char* s)
 	   c_put(&f, &material);
         }
 
-     /* otherwise set the current forground color */
+      /* otherwise set the current foreground color; treat as diffuse */
       else {
-	   if(setfg(w, s) == Failed) return Failed;
-	   rd = RED(w->context->fg);
-	   gr = GREEN(w->context->fg);
-   	   bl = BLUE(w->context->fg);
- 	   glColor3f(rd/(GLfloat)255,
-                	 gr/(GLfloat)255, bl/(GLfloat)255);
-         MakeStr("none", 4, &material);
-	   c_put(&f, &material);
-        }
+	 if(setfg(w, s) == Failed) return Failed;
+	 rd = RED(w->context->fg);
+	 gr = GREEN(w->context->fg);
+   	 bl = BLUE(w->context->fg);
+	 color[0] = rd/(GLfloat)255;
+	 color[1] = gr/(GLfloat)255;
+	 color[2] = bl/(GLfloat)255;
+	 color[3] = 1.0;
+ 	 glColor3f(color[0], color[1], color[2]);
+	 glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+         MakeStr("diffuse", 7, &material);
+	 c_put(&f, &material);
+         }
+
       /* put material property values on the list */
       MakeInt(rd, &r);
       c_put(&f, &r);
@@ -1868,7 +1873,8 @@ int fileimage(wbp w, char* filename)
       nwidth = powertwo(im.width);
       nheight = powertwo(im.height);
       if (nwidth == 0 && nheight == 0)
-         i = textureimg(w, im.width, im.height, im.paltbl, im.data, (word)im.width*(word)im.height);
+         i = textureimg(w, im.width, im.height, im.paltbl, im.data,
+                        (word)im.width*(word)im.height);
       else
          return Failed;
 
@@ -1876,9 +1882,8 @@ int fileimage(wbp w, char* filename)
 	 what are those cases ? ... look at ReadImage */
      }
    /* not a gif file */
-   else{
+   else {
      r = readimage(w, filename, 0, 0, &status);
-
     }
    if (i == Succeeded)
 	 return Succeeded;

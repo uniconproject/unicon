@@ -715,7 +715,7 @@ long *r, *g, *b;
       *b = db;
 
 #ifdef Graphics3D
-      if (w->context->is_3D) {
+      if (w && w->context->is_3D) {
 	 if (dr>=0 && dr<=1.0 && dg>=0 && dg<=1.0 && db>=0 && db<=1.0) {
 	    *r = dr * 65535;
 	    *g = dg * 65535;

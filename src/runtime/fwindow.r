@@ -4,10 +4,12 @@
  * Contents: Active, Bg, Color, CopyArea, Couple,
  *  DrawArc, DrawCircle, DrawCurve, DrawImage, DrawLine,
  *  DrawSegment, DrawPoint, DrawPolygon, DrawString,
- *  DrawRectangle, EraseArea, Event, Fg, FillArc, FillCircle,
+ *  DrawRectangle, DrawTorus, DrawCylinder, DrawDisk, DrawCube, 
+ *  DrawSphere,  EraseArea, Event, Fg, FillArc, FillCircle,
  *  FillRectangle, FillPolygon, Font, FreeColor, GotoRC, GotoXY,
  *  NewColor, Pattern, PaletteChars, PaletteColor, PaletteKey,
- *  Pending, QueryPointer, ReadImage, TextWidth, Uncouple,
+ *  Pending, PopMatrix, PushMatrix, QueryPointer, ReadImage, Rotate,
+ *  Scale, Translate, TextWidth, Texture, Texcoord, Uncouple,
  *  WAttrib, WDefault, WFlush, WSync, WriteImage
  */
 
@@ -739,48 +741,40 @@ function{1} DrawLine(argv[argc])
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w->context->is_3D && Fs_Window3D){
+      if (w->context->is_3D){
          double v[MAXXOBJS];  
-         struct descrip f, funcname, dim;
+         struct descrip f, funcname;
          struct b_list *func;
+ 
+         /* create a list to keep track of function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawLine", 8, &funcname);
          c_put(&f, &funcname);
-         MakeInt((w->context->dim), (&dim));
-         c_put(&f, &dim);
 
+         /* convert arguments to doubles and put them in the list */
          for (i = 0; i<argc-warg; i++){
             if (!cnv:C_double(argv[warg + i], v[i]))
                runerr(102, argv[warg+i]);
             c_put(&f, &argv[warg+i]);
             }
          c_put(&(w->window->funclist), &f);
+         /* draw the lines */
          if (w->context->dim == 2){
             CheckArgMultiple(2);
-	   	 glBegin(GL_LINE_STRIP);
-         	 for (i=0; i<argc-warg; i= i+2)
-               glVertex2d(v[i], v[i+1]);
-	   	 glEnd();
+            drawpoly(w, v, argc-warg, GL_LINE_STRIP,2);
             }
          if (w->context->dim == 3){
             CheckArgMultiple(3);
-	   	 glBegin(GL_LINE_STRIP);
-         	 for (i=0; i<argc-warg; i= i+3)
-               glVertex3d(v[i], v[i+1], v[i+2]);
-	   	 glEnd();
-            }
+	 	 drawpoly(w, v, argc-warg, GL_LINE_STRIP,3);
+  	     }
          if (w->context->dim == 4){
             CheckArgMultiple(4);
-         	 glBegin(GL_LINE_STRIP);
-         	 for (i=0; i<argc-warg; i= i+4)
-               glVertex4d(v[i], v[i+1], v[i+2],v[i+3]);
-	    	 glEnd();
-            }
+         	 drawpoly(w, v, argc-warg, GL_LINE_STRIP,4);
+           }
          glFlush();
-         glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
+         glXSwapBuffers(w->window->display->display, w->window->win);
          ReturnWindow;
          }
      else 
@@ -826,17 +820,19 @@ function{1} DrawPoint(argv[argc])
       OptWindow(w);
   
 #ifdef Graphics3D
-      if (w->context->is_3D && Fs_Window3D){
+      if (w->context->is_3D) {
          double v[MAXXOBJS];   
-         struct descrip f, funcname, dim;
-         struct b_list *func;
+         struct descrip f, funcname;
+         struct b_list *func;  
+
+         /* create a list to store function information */
          Protect(func = alclist(0, MinListSlots), runerr(0)); 
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawPoint", 9, &funcname);
          c_put(&f, &funcname);
-         MakeInt((w->context->dim), (&dim));
-         c_put(&f, &dim);
+
+         /* convert the arguments and store them in the list */
          for (i = 0; i<argc-warg; i++){
             if (!cnv:C_double(argv[warg + i], v[i]))
                runerr(102, argv[warg+i]);
@@ -845,24 +841,15 @@ function{1} DrawPoint(argv[argc])
          c_put(&(w->window->funclist), &f);
          if (w->context->dim == 2){
             CheckArgMultiple(2);
-	   	 glBegin(GL_POINTS);
-         	 for (i=0; i<argc-warg; i= i+2)
-               glVertex2d(v[i], v[i+1]);
-	   	 glEnd();
+            drawpoly(w, v, argc-warg, GL_POINTS, 2);
             }
          if (w->context->dim == 3){
             CheckArgMultiple(3);
-	   	 glBegin(GL_POINTS);
-         	 for (i=0; i<argc-warg; i= i+3)
-               glVertex3d(v[i], v[i+1], v[i+2]);
-	   	 glEnd();
+	   	 drawpoly(w, v, argc-warg, GL_POINTS, 3);
             }
          if (w->context->dim == 4){
             CheckArgMultiple(4);
-         	 glBegin(GL_POINTS);
-         	 for (i=0; i<argc-warg; i= i+4)
-	          glVertex4d(v[i], v[i+1], v[i+2],v[i+3]);
-	    	 glEnd();
+         	 drawpoly(w, v, argc-warg, GL_POINTS, 4);
             }
          glFlush();
          glXSwapBuffers(w->window->display->display, 
@@ -906,48 +893,41 @@ function{1} DrawPolygon(argv[argc])
       wbp w;
       int i, j, n, base, dx, dy, warg = 0;
       XPoint points[MAXXOBJS];
-
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w->context->is_3D && Fs_Window3D){
+      if (w->context->is_3D) {
          double v[MAXXOBJS]; 
-         struct descrip f, funcname, dim;
+         struct descrip f, funcname;
          struct b_list *func;
       
+         /* create a list for function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));  
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawPolygon", 11, &funcname);
          c_put(&f, &funcname);
-         MakeInt((w->context->dim), (&dim));
-         c_put(&f, &dim);
+
+         /* convert the arguments and put them in the list */
          for (i = 0; i<argc-warg; i++){
             if (!cnv:C_double(argv[warg + i], v[i]))
                runerr(102, argv[warg+i]);
             c_put(&f, &argv[warg+i]);
 	      }
          c_put(&(w->window->funclist), &f);
+ 
+         /* draw the polygon */
          if (w->context->dim == 2){
             CheckArgMultiple(2);
-	   	 glBegin(GL_LINE_LOOP);
-         	 for (i=0; i<argc-warg; i= i+2)
-               glVertex2d(v[i], v[i+1]);
-	   	 glEnd();
+	   	 drawpoly(w, v, argc-warg, GL_LINE_LOOP, 2);
             }
          if (w->context->dim == 3){
             CheckArgMultiple(3);
-	   	 glBegin(GL_LINE_LOOP);
-         	 for(i=0; i<argc-warg; i= i+3)
-               glVertex3d(v[i], v[i+1], v[i+2]);
-	   	 glEnd();
+            drawpoly(w, v, argc-warg, GL_LINE_LOOP, 3);
             }
          if (w->context->dim == 4){
             CheckArgMultiple(4);
-         	 glBegin(GL_LINE_LOOP);
-         	 for(i=0; i<argc-warg; i= i+4)
-	          glVertex4d(v[i], v[i+1], v[i+2],v[i+3]);
-	    	 glEnd();
+         	 drawpoly(w, v, argc-warg, GL_LINE_LOOP, 4);
             }
           glFlush();
           glXSwapBuffers(w->window->display->display, 
@@ -1047,43 +1027,37 @@ function{1} DrawSegment(argv[argc])
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w->context->is_3D && Fs_Window3D){
+      if (w->context->is_3D) {
          double v[MAXXOBJS]; 
-         struct descrip f, funcname, dim;
+         struct descrip f, funcname;
          struct b_list *func;
+
+         /* create a list for function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawSegment", 11, &funcname);
          c_put(&f, &funcname);
-         MakeInt((w->context->dim), (&dim));
-         c_put(&f, &dim);
+
+          /* convert the arguments and save the values in the list */
          for (i = 0; i<argc-warg; i++){
             if (!cnv:C_double(argv[warg + i], v[i]))
                runerr(102, argv[warg+i]);
             c_put(&f, &argv[warg+i]);
 	      }
+         /* draw the line segments */
          c_put(&(w->window->funclist), &f);
          if (w->context->dim == 2) {
             CheckArgMultiple(2);
-	   	 glBegin(GL_LINES);
-         	 for (i=0; i<argc-warg; i= i+2)
-               glVertex2d(v[i], v[i+1]);
-	   	 glEnd();
+	   	 drawpoly(w, v, argc-warg, GL_LINES, 2);
             }
     	    if (w->context->dim == 3) {
             CheckArgMultiple(3);
-	   	 glBegin(GL_LINES);
-         	 for(i=0; i<argc-warg; i= i+3)
-               glVertex3d(v[i], v[i+1], v[i+2]);
-	   	 glEnd();
+            drawpoly(w, v, argc-warg, GL_LINES, 3);
             }
           if (w->context->dim == 4) {
              CheckArgMultiple(4);
-         	  glBegin(GL_LINES);
-         	  for(i=0; i<argc-warg; i= i+4)
-	           glVertex4d(v[i], v[i+1],v[i+2],v[i+3]);
-	    	  glEnd();
+         	  drawpoly(w, v, argc-warg, GL_LINES, 4);
              }
 	    glFlush();
     	    glXSwapBuffers(w->window->display->display, 
@@ -1165,6 +1139,24 @@ function{1} EraseArea(argv[argc])
       int warg = 0, i, r;
       C_integer x, y, width, height;
       OptWindow(w);
+
+#ifdef Graphics3D
+      if (w->context->is_3D) {
+
+        /* allocate a new list for functions */
+         Protect(w->window->flist = alclist(0, MinListSlots), runerr(0));            
+	   w->window->funclist.vword.bptr = (union block *)w->window->flist;
+         glClearColor((w->context->bg->r)/(GLfloat)65535,
+               (w->context->bg->g)/(GLfloat)65535, 
+               (w->context->bg->b)/(GLfloat)65535, 0.0);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+         glXSwapBuffers(w->window->display->display, 
+                    w->window->win);
+         
+         ReturnWindow;
+        }
+       
+#endif                                /* Graphics3D */
 
       for (i = warg; i < argc || i == warg; i += 4) {
          r = rectargs(w, argc, argv, i, &x, &y, &width, &height);
@@ -1276,9 +1268,9 @@ function{0,1} Fg(argv[argc])
 	    if (!cnv:C_string(argv[warg], tmp))
 	       runerr(103,argv[warg]);
 #ifdef Graphics3D  
-
- 	    if (w->context->is_3D && Fs_Window3D) {	
-	       if(setmaterials(w, tmp) == Failed) fail; 
+	    if (w->context->is_3D) {
+             /* set the material properties */
+             if(setmaterials(w, tmp) == Failed) fail; 
             }
 	    else
 #endif
@@ -1294,7 +1286,7 @@ function{0,1} Fg(argv[argc])
       getfg(w, sbuf1);
 
 #ifdef Graphics3D  
- 	if (w->context->is_3D && Fs_Window3D) 	
+      if (w->context->is_3D)
          getmaterials(sbuf1); 
 #endif
       len = strlen(sbuf1);
@@ -1413,50 +1405,43 @@ function{1} FillPolygon(argv[argc])
       }
    body {
       wbp w;
-      int i, n, warg = 0;
+      int i, j, n, warg = 0;
       XPoint *points;
       int dx, dy;
       OptWindow(w);
 
 #ifdef Graphics3D
-      if (w->context->is_3D && Fs_Window3D) {
+      if (w->context->is_3D) {
          double v[MAXXOBJS];
-         struct descrip f, funcname, dim;
+         struct descrip f, funcname;
          struct b_list *func;
+	   
+         /* create a list to save function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("FillPolygon", 11, &funcname);
          c_put(&f, &funcname);
-         MakeInt((w->context->dim), (&dim));
-         c_put(&f, &dim);
 
+         /* convert arugments and put them in the list */
          for(i = 0; i<argc-warg; i++) {
             if (!cnv:C_double(argv[warg + i], v[i]))
                runerr(102, argv[warg+i]);
             c_put(&f, &argv[warg+i]);
 	      }
+         /* draw polygons */
          c_put(&(w->window->funclist), &f);
          if (w->context->dim == 2){
             CheckArgMultiple(2);
-            glBegin(GL_POLYGON);
-            for(i=0; i<argc-warg; i= i+2)
-               glVertex2d(v[i], v[i+1]);
-            glEnd();
+            drawpoly(w, v, argc-warg, GL_POLYGON, 2); 
             }
     	    if (w->context->dim == 3){
 	       CheckArgMultiple(3);
-	       glBegin(GL_POLYGON);
-	       for (i=0; i<argc-warg; i= i+3)
-	          glVertex3d(v[i], v[i+1], v[i+2]);
-	       glEnd();
+	       drawpoly(w, v, argc-warg, GL_POLYGON, 3);
             }
 	    if (w->context->dim == 4){
 	       CheckArgMultiple(4);
- 	       glBegin(GL_POLYGON);
-	       for (i=0; i<argc-warg; i= i+4)
-	          glVertex4d(v[i], v[i+1], v[i+2],v[i+3]);
-	       glEnd();
+ 	       drawpoly(w, v, argc-warg, GL_POLYGON, 4);
             }
 	    glFlush();
    	    glXSwapBuffers(w->window->display->display, 
@@ -1971,6 +1956,7 @@ function{3} Pixel(argv[argc])
       for (j=y; j < y + height; j++) {
          for (i=x; i < x + width; i++) {
             getpixel(w, i, j, &rv, strout, &imem);
+	
             slen = strlen(strout);
             if (rv >= 0) {
 	       int signal;
@@ -2117,6 +2103,7 @@ function{0,1} ReadImage(argv[argc])
        * If that doesn't work, try platform-dependent image reading code.
        */
       r = readGIF(filename, p, &imd);
+      if (r != Succeeded) r = readBMP(filename, p, &imd);
       if (r == Succeeded) {
          status = strimage(w, x, y, imd.width, imd.height, imd.paltbl,
 			   imd.data, (word)imd.width * (word)imd.height, 0);
@@ -2225,6 +2212,7 @@ function{*} WAttrib(argv[argc])
       /*
        * Loop through the arguments.
        */
+
       for (pass = 1; pass <= 2; pass++) {
 	 w = wsave;
 	 if (config && pass == 2) {
@@ -2270,14 +2258,17 @@ function{*} WAttrib(argv[argc])
                 * Read/write the attribute
                 */
                if (pass == 1) {
+            
 		  char *tmp_s = StrLoc(sbuf);
-		  char *tmp_s2 = StrLoc(sbuf) + StrLen(sbuf);
+		  char *tmp_s2 = StrLoc(sbuf) + StrLen(sbuf); 
 		  for ( ; tmp_s < tmp_s2; tmp_s++)
 		     if (*tmp_s == '=') break;
 		  if (tmp_s < tmp_s2) {
 		     /*
 		      * pass 1: perform attribute assignments
-		      */
+		      */  
+
+
 		     switch (wattrib(w, StrLoc(sbuf), StrLen(sbuf),
 				     &sbuf2, answer)) {
 		     case Failed:
@@ -2287,6 +2278,8 @@ function{*} WAttrib(argv[argc])
 		        argv[n] = nulldesc;
 		        continue;
 		     case Error: runerr(0, argv[n]);
+               
+
 		     }
 		     if (StrLen(sbuf) > 4) {
 			if (!strncmp(StrLoc(sbuf), "pos=", 4)) config |= 1;
@@ -2445,6 +2438,15 @@ function{0,1} WriteImage(argv[argc])
        * if the file name s does not specify a platform-dependent format.
        */
       r = dumpimage(w, s, x, y, width, height);
+#if HAVE_LIBJPEG
+      if ((r == NoCvt) &&
+	  (strcmp(s + strlen(s)-4, ".jpg")==0 ||
+          (strcmp(s + strlen(s)-4, ".JPG")==0))) {
+	 r = writeJPEG(w, s, x, y, width, height);
+         }
+#endif					/* HAVE_LIBJPEG */
+      if (r == NoCvt)
+         r = writeBMP(w, s, x, y, width, height);
       if (r == NoCvt)
          r = writeGIF(w, s, x, y, width, height);
       if (r != Succeeded)
@@ -3115,7 +3117,12 @@ MissingGraphicsFuncV(WinSaveDialog)
 
 #ifdef Graphics3D
 
-"DrawTorus(x){1} - draw a torus"
+
+/*
+ * DrawTorus(w,x,y,z,radius1,radius2,...)
+ *
+ */
+"DrawTorus(argv[]) - draw a torus"
 
 function{1} DrawTorus(argv[argc])
    abstract{ return file }
@@ -3128,35 +3135,52 @@ function{1} DrawTorus(argv[argc])
 
       OptWindow(w);
       CheckArgMultiple(5);
-      if (w->context->dim == 2)
+	
+	/* tori are not allowed in a 2-dim space */
+      if (w->context->dim == 2) 
          runerr(150);
       for (i = warg; i < argc-warg; i = i + 5) {
+
+	   /* create a list */	   
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawTorus", 9, &funcname);
          c_put(&f, &funcname);
 
-         if (!cnv:C_double(argv[i], r1))
+	   /* convert parameters and draw torus*/
+         if (!cnv:C_double(argv[i], x))
 		  runerr(102, argv[i]);  
-         if (!cnv:C_double(argv[i+1], r2))
+         if (!cnv:C_double(argv[i+1], y))
 		  runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], x))
+         if (!cnv:C_double(argv[i+2], z))
 		  runerr(102, argv[i+2]);
-         if (!cnv:C_double(argv[i+3], y))
+         if (!cnv:C_double(argv[i+3], r1))
 		  runerr(102, argv[i+3]);
-         if (!cnv:C_double(argv[i+4], z))
+         if (!cnv:C_double(argv[i+4], r2))
 		  runerr(102, argv[i+4]);
+         if (w->context->texmode)
+            torus(r1, r2, x, y, z, w->context->autogen);         else 
+            torus(r1, r2, x, y, z, 0);
+
+	   /* put paramenters in list */
          for(j = i; j < i + 5; j++)
-            c_put(&f, &argv[j]);
-         torus(r1, r2, x, y, z);
+ 	       c_put(&f, &argv[j]);
          c_put(&(w->window->funclist), &f);
          }
+   
+	/* Since we are using double buffers, swap */
       glXSwapBuffers(w->window->display->display, 
                      w->window->win);
       ReturnWindow;
    }
 end
+
+/*
+ * DrawCube(w,x,y,z,length,...)
+ *
+ */
+"DrawCube(argv[]){1} - draw a cube"
 
 function{1} DrawCube(argv[argc])
     abstract{ return file }
@@ -3169,33 +3193,53 @@ function{1} DrawCube(argv[argc])
    
 	OptWindow(w);		
 	CheckArgMultiple(4);
+
+	/* Cubes are not 2-dim objects */
       if (w->context->dim == 2) 
 	    runerr(150);	
       for(i = warg; i < argc-warg; i = i+4) {
+ 
+	   /* Create a list for the function */
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawCube", 8, &funcname);
          c_put(&f, &funcname);
-         if (!cnv:C_double(argv[i], l))
+
+	    /* convert parameters and draw a cube */
+         if (!cnv:C_double(argv[i], x))
 		  runerr(102, argv[i]);
-         if (!cnv:C_double(argv[i+1], x))
+         if (!cnv:C_double(argv[i+1], y))
 		  runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], y))
+         if (!cnv:C_double(argv[i+2], z))
 		  runerr(102, argv[i+2]);
-         if (!cnv:C_double(argv[i+3], z))
-		  runerr(102, argv[i+3]);     
-         cube(l, x, y, z);
+         if (!cnv:C_double(argv[i+3], l))
+		  runerr(102, argv[i+3]);  
+         if (w->context->texmode)
+            cube(l, x, y, z, w->context->autogen);
+         else 
+            cube(l, x, y, z, 0);
+        
+  
+	    /* put parameters in the function list */
          for(j = i; j < i + 4; j++)
             c_put(&f, &argv[j]);
          c_put(&(w->window->funclist), &f);
          }
+
+	  /* swap buffers, since we are double buffered */
        glXSwapBuffers(w->window->display->display, 
                      w->window->win);
        ReturnWindow;
     }
 end
 
+
+/*
+ * DrawSphere(w,x,y,z,radius,...)
+ *
+ */
+"DrawSphere(argv[]){1} - draw a sphere"
 
 function{1} DrawSphere(argv[argc])
     abstract{ return file }
@@ -3209,32 +3253,53 @@ function{1} DrawSphere(argv[argc])
 
 	OptWindow(w);
 	CheckArgMultiple(4);
+
+	/* sphere cannot be drawn in a 2-dim scene */
    	if (w->context->dim == 2)
 	   runerr(150);
+
 	for(i = warg; i < argc-warg; i = i+4) {
+
+        /* create a list for the function */
 	   Protect(func = alclist(0, MinListSlots), runerr(0));   
   	   f.dword = D_List;
    	   f.vword.bptr = (union block *) func; 
     	   MakeStr("DrawSphere", 10, &funcname);
     	   c_put(&f, &funcname);
-	   if (!cnv:C_double(argv[i], r))
+
+	   /* convert parameters and draw a sphere */
+	   if (!cnv:C_double(argv[i], x))
 		 runerr(102, argv[i]);
-	   if (!cnv:C_double(argv[i+1], x))
+	   if (!cnv:C_double(argv[i+1], y))
 		 runerr(102, argv[i+1]);    	
-	   if (!cnv:C_double(argv[i+2], y))
+	   if (!cnv:C_double(argv[i+2], z))
 		 runerr(102, argv[i+2]);
-	   if (!cnv:C_double(argv[i+3], z))
-		 runerr(102, argv[i+3]); 	
-    	   sphere(r, x, y, z);
+	   if (!cnv:C_double(argv[i+3], r))
+		 runerr(102, argv[i+3]); 
+	   if (w->context->texmode)
+ 	      sphere(r, x, y, z, w->context->autogen);
+         else 
+        	sphere(r, x, y, z, 0);
+
+	  /* put parameter in the list for the function */
     	   for(j = i; j < i + 4; j++)
   	      c_put(&f, &argv[j]);
          c_put(&(w->window->funclist), &f);
          }
+
+	/* swap buffers */
       glXSwapBuffers(w->window->display->display, 
                      w->window->win);
       ReturnWindow;
     }
 end
+
+
+/*
+ * DrawCylinder(w,x,y,z,height,radius1,radius2,...)
+ *
+ */
+"DrawCylinder(argv[]){1} - draw a cylinder"
 
 function{1} DrawCylinder(argv[argc])
     abstract{ return file }
@@ -3248,119 +3313,130 @@ function{1} DrawCylinder(argv[argc])
 
 	OptWindow(w);
 	CheckArgMultiple(6);
+
+	/* cylinders cannot be used in a 2-dim scene */
       if (w->context->dim == 2)
 	   runerr(150);
  	for(i = warg; i < argc-warg; i = i+6) {
+ 
+	   /* create a list */
          Protect(func = alclist(0, MinListSlots), runerr(0));       
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
-         MakeStr("DrawCylinder", 13, &funcname);
+         MakeStr("DrawCylinder", 12, &funcname);
          c_put(&f, &funcname);
-	   if (!cnv:C_double(argv[i], r1))
+
+	   /* convert parameters and draw a cylinder */
+	   if (!cnv:C_double(argv[i], x))
 		 runerr(102, argv[i]);
-         if (!cnv:C_double(argv[i+1], r2))
+         if (!cnv:C_double(argv[i+1], y))
 		 runerr(102, argv[i+1]);
-         if (!cnv:C_double(argv[i+2], h))
+         if (!cnv:C_double(argv[i+2], z))
 		 runerr(102, argv[i+2]);
-    	   if (!cnv:C_double(argv[i+3], x))
+    	   if (!cnv:C_double(argv[i+3], h))
 		 runerr(102, argv[i+3]);  
-	   if (!cnv:C_double(argv[i+4], y))
+	   if (!cnv:C_double(argv[i+4], r1))
 		 runerr(102, argv[i+4]);
-	   if (!cnv:C_double(argv[i+5], z))
+	   if (!cnv:C_double(argv[i+5], r2))
 		 runerr(102, argv[i+5]);
-         cylinder(r1, r2, h, x, y, z);
+         if (w->context->texmode)
+            cylinder(r1, r2, h, x, y, z, w->context->autogen);
+         else 
+            cylinder(r1, r2, h, x, y, z, 0);
+
+	   /* put parameters in the list */
          for(j = i; j < i + 6; j++)
   	      c_put(&f, &argv[j]);
          c_put(&(w->window->funclist), &f);
          }
+
+	/* swap buffers */
       glXSwapBuffers(w->window->display->display, 
                      w->window->win);
       ReturnWindow;
    }
 end
 
+
+/*
+ * DrawDisk(w,x,y,z,radius1,radius2,...)
+ *
+ */
+
+"DrawDisk(argv[]){1} - draw a disk"
+
 function{1} DrawDisk(argv[argc])
-    abstract{ return file }
-    body {  
-	wbp w;
-	int warg = 0;
-	int n, i, j;
-	double r1, r2, x, y, z;
- 	struct descrip f, funcname;
-  	struct b_list *func;
-
-	OptWindow(w);
-	CheckArgMultiple(5);
-  	for(i = warg; i < argc-warg; i = i+5) {
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawDisk", 8, &funcname);
-         c_put(&f, &funcname);
-
-	   if(!cnv:C_double(argv[i], r1))
-		runerr(102, argv[i]);
-	   if(!cnv:C_double(argv[i+1], r2))
-		runerr(102, argv[i+1]);
-	   if(!cnv:C_double(argv[i+2], x))
-		runerr(102, argv[i+2]);	
-	   if(!cnv:C_double(argv[i+3], y))
-		runerr(102, argv[i+3]);
-	   if(!cnv:C_double(argv[i+4], z))
-		runerr(102, argv[i+4]);	
-         for(j = i; j < i + 5; j++)
-            c_put(&f, &argv[j]);
-         disk(r1, r2, x, y, z);
-         c_put(&(w->window->funclist), &f);
-         }
-      glXSwapBuffers(w->window->display->display, 
-                     w->window->win);
-      ReturnWindow;
-    } 
-end
-
-function{1} DrawPartialDisk(argv[argc])
     abstract{ return file }
     body {
   	wbp w;
 	int warg = 0;
 	int n, j, i;
 	double r1, r2, a1, a2, x, y, z;
-  	struct descrip f, funcname;
+  	struct descrip f, funcname, start, sweep;
     	struct b_list *func;
 
 	OptWindow(w);
-	CheckArgMultiple(7);
-	for(i = warg; i < argc-warg; i = i+7) {
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawPartialDisk", 15, &funcname);
-         c_put(&f, &funcname);
-         if (!cnv:C_double(argv[i], r1))
-		 runerr(102, argv[i]);
-	   if (!cnv:C_double(argv[i+1], r2))
-		 runerr(102, argv[i+1]);
-	   if (!cnv:C_double(argv[i+2], a1))
-		 runerr(102, argv[i+2]);
-	   if (!cnv:C_double(argv[i+3], a2))
-		 runerr(102, argv[i+3]);
-	   if (!cnv:C_double(argv[i+4], x))
-		 runerr(102, argv[i+4]);	
-	   if (!cnv:C_double(argv[i+5], y))
-		 runerr(102, argv[i+5]);
-	   if (!cnv:C_double(argv[i+6], z))
-		 runerr(102, argv[i+6]);	
-         partialdisk(r1, r2, a1, a2, x, y, z);
-         for(j = i; j < i+7; j++)
-            c_put(&f, &argv[j]);
+	for (i = warg; i < argc-warg; i = i+7) {
+           Protect(func = alclist(0, MinListSlots), runerr(0));
+           f.dword = D_List;
+           f.vword.bptr = (union block *) func; 
+           MakeStr("DrawDisk", 8, &funcname);
+           c_put(&f, &funcname);
+	   if (argc-warg <= i+3)
+	      runerr(146);
+           if (!cnv:C_double(argv[i], x))
+              runerr(102, argv[i]);
+           c_put (&f, &argv[i]);
+	   if (!cnv:C_double(argv[i+1], y))
+	      runerr(102, argv[i+1]);
+           c_put(&f, &argv[i+1]);
+	   if (!cnv:C_double(argv[i+2], z))
+	      runerr(102, argv[i+2]);
+           c_put(&f, &argv[i+2]);
+	   if (!cnv:C_double(argv[i+3], r1))
+	      runerr(102, argv[i+3]);
+           c_put(&f, &argv[i+3]);
+	   if (!cnv:C_double(argv[i+4], r2))
+	      runerr(102, argv[i+4]);
+	   c_put(&f, &argv[i+4]);
+	   if (i+4 >= argc-warg) {
+	      a1 = 0.0;
+              MakeInt(0, &start); 
+              c_put(&f, &start);
+             }
+	   else 	{
+           if (!cnv:C_double(argv[i+5],a1))
+	         runerr(102, argv[i+5]);
+           c_put(&f, &argv[i+5]); 
+        }
+ 	   if (i+5 >=argc-warg){
+	      a2 = 360;
+            MakeInt(360, &sweep); 
+            c_put(&f, &sweep);
+             }
+	    else {
+		 if (!cnv:C_double(argv[i+6], a2)) 
+	          runerr(102, argv[i+6]);	
+            c_put(&f, &argv[i+6]);
+          }
+          if (w->context->texmode)
+             disk(r1, r2, a1, a2, x, y, z, w->context->autogen);
+         else
+             disk(r1, r2, a1, a2, x, y, z, 0);
          c_put(&(w->window->funclist), &f);
-         }
-      glXSwapBuffers(w->window->display->display, 
+        }
+        glXSwapBuffers(w->window->display->display, 
                      w->window->win);
-      ReturnWindow;
+        ReturnWindow;
    }
 end
+
+/*
+ * Rotate(w,x,y,z,angle,...)
+ *
+ */
+
+"Rotate(argv[]){1} - rotates objects"
 
 function{1} Rotate(argv[argc])
     abstract{ return file }
@@ -3375,11 +3451,14 @@ function{1} Rotate(argv[argc])
       OptWindow(w);
       CheckArgMultiple(4);
       for(i = warg; i < argc-warg; i = i+4) {
+	   /* create a list */
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("Rotate", 6, &funcname);
          c_put(&f, &funcname);
+
+	 /* convert parameters and perform the rotation */
          if (!cnv:C_double(argv[i], angle))
 		 runerr(102, argv[i]); 	  
 	   if (!cnv:C_double(argv[i+1], x))
@@ -3389,6 +3468,8 @@ function{1} Rotate(argv[argc])
 	   if (!cnv:C_double(argv[i+3], z))
 		 runerr(102, argv[i+3]);
    	   glRotated(angle, x, y, z);
+
+       /* put parameters in the list */
   	   for (j = i; j < i+4; j++)
             c_put(&f, &argv[j]);
          c_put(&(w->window->funclist), &f);
@@ -3396,6 +3477,13 @@ function{1} Rotate(argv[argc])
       ReturnWindow;
     }
 end
+
+
+/*
+ * Translate(w,x,y,z,...)
+ *
+ */
+"Translate(argv[]){1} - translates objects"
 
 function{1} Translate(argv[argc])
     abstract{ return file }
@@ -3410,11 +3498,15 @@ function{1} Translate(argv[argc])
       OptWindow(w);
       CheckArgMultiple(3);
       for(i = warg; i < argc-warg; i = i+3) {
+
+	   /* create a list */
          Protect(func = alclist(0, MinListSlots), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 	  
          MakeStr("Translate", 9, &funcname);
          c_put(&f, &funcname);	
+
+    /*convert parameters and perform the translateion*/
          if (!cnv:C_double(argv[i], x))
 		 runerr(102, argv[i]);	
          if (!cnv:C_double(argv[i+1], y))
@@ -3422,6 +3514,8 @@ function{1} Translate(argv[argc])
          if (!cnv:C_double(argv[i+2], z))
 		 runerr(102, argv[i+2]);	
          glTranslated(x, y, z);
+
+  	  /* place parameters in the list */
          for (j = i; j < i+3; j++)
             c_put(&f, &argv[j]);
          c_put(&(w->window->funclist), &f);
@@ -3429,6 +3523,14 @@ function{1} Translate(argv[argc])
       ReturnWindow;
    }
 end
+
+
+/*
+ * Scale(w,x,y,z,...)
+ *
+ */
+
+"Scale(argv[]){1} - scales objects"
 
 function{1} Scale(argv[argc])
     abstract{ return file }
@@ -3443,11 +3545,15 @@ function{1} Scale(argv[argc])
       OptWindow(w);
       CheckArgMultiple(3);
       for(i = warg; i < argc-warg; i = i+3) {
+
+	   /* create list */
 	    Protect(func = alclist(0, MinListSlots), runerr(0));
           f.dword = D_List;
           f.vword.bptr = (union block *) func; 
           MakeStr("Scale", 5, &funcname);
-          c_put(&f, &funcname);	
+          c_put(&f, &funcname);
+
+	    /* convert parameters and perform scaling */
           if (!cnv:C_double(argv[i], x))
 		  runerr(102, argv[i]);	
           if (!cnv:C_double(argv[i+1], y))
@@ -3455,14 +3561,23 @@ function{1} Scale(argv[argc])
           if (!cnv:C_double(argv[i+2], z))
 		  runerr(102, argv[i+2]);	
 	    glScaled(x, y, z);
+
+	    /* put parameter in the list */
 	    for (j = i; j < i+3; j++)
              c_put(&f, &argv[j]);
+  
+	    /* put list in the list of functions */
           c_put(&(w->window->funclist), &f);	
           }
        ReturnWindow;
     }
 end
-     
+
+/*
+ * PopMatrix(w)
+ *
+ */
+"PopMatrix(argv[]){1} - pop the matrix stack"
 
 function{1} PopMatrix(argv[argc])
     abstract{ return file }
@@ -3472,19 +3587,33 @@ function{1} PopMatrix(argv[argc])
 	int n;
  	struct descrip f, funcname;  
 	struct b_list *func;
+
     	OptWindow(w);
-	
+
+	/* create a list */	
  	Protect(func = alclist(0, MinListSlots), runerr(0));
       f.dword = D_List;
       f.vword.bptr = (union block *) func; 
       MakeStr("PopMatrix", 9, &funcname);
       c_put(&f, &funcname);	
-      if (!popmatrix())
+
+    /* pop matrix from the matrix stack, if possible */
+      if (popmatrix() == Failed)
          runerr(151);
+
+	/* put list in the list of functions */
       c_put(&(w->window->funclist), &f);	
       ReturnWindow;
       }  
 end
+
+
+/*
+ * PushMatrix(w)
+ *
+ */
+
+"PushMatrix(argv[]){1} - push a copy of the top matrix onto the matrix stack"
 
 function{1} PushMatrix(argv[argc])
     abstract{ return file }
@@ -3496,17 +3625,28 @@ function{1} PushMatrix(argv[argc])
 	struct b_list *func;
  
 	OptWindow(w);
+
+	/* create a list */
 	Protect(func = alclist(0, MinListSlots), runerr(0));
   	f.dword = D_List;
    	f.vword.bptr = (union block *) func; 
     	MakeStr("PushMatrix", 10 ,&funcname);
-   	c_put(&f, &funcname);	
-	if (pushmatrix() == 0)
+   	c_put(&f, &funcname);
+
+	/* push a copy of the top matrix, if possible */
+      if (pushmatrix() == 0)
 	   runerr(151);
 	c_put(&(w->window->funclist), &f);	
 	ReturnWindow;
     }  
 end
+    
+
+/*
+ * IdentityMatrix(w)
+ *
+ */
+"IdentityMatrix(argv[]){1} - change the top matrix to the identity"
 
 function{1} IdentityMatrix(argv[argc])
      abstract{ return file }
@@ -3515,21 +3655,29 @@ function{1} IdentityMatrix(argv[argc])
        int warg = 0;
        int n;	 
        struct descrip f, funcname;
-       struct b_list *func;
-	
+       struct b_list *func;	
 	 OptWindow(w);
+
+      /* create list */
 	 Protect(func = alclist(0, MinListSlots), runerr(0));
   	 f.dword = D_List;
     	 f.vword.bptr = (union block *) func;    
        MakeStr("LoadIdentity", 12, &funcname);
-       c_put(&f, &funcname);	
-	 if (pushmatrix() == 0)
-	    runerr(151);
+       c_put(&f, &funcname);
 	 c_put(&(w->window->funclist), &f);
+
+	/* load identity matrix */
  	 glLoadIdentity();
        ReturnWindow;
    }
 end
+
+
+/*
+ * MatrixMode(w, s)
+ *
+ */
+"MatrixMode(argv[]){1} - use the matrix stack specified by s"
 
 function{1} MatrixMode(argv[argc])
      abstract{ return file }
@@ -3542,23 +3690,244 @@ function{1} MatrixMode(argv[argc])
        struct b_list *func;
             
 	 OptWindow(w);
+  	
+	 /* create a list */
 	 Protect(func = alclist(0, MinListSlots), runerr(0));
     	 f.dword = D_List;
   	 f.vword.bptr = (union block *) func; 
 	 MakeStr("MatrixMode", 10, &funcname);
-       c_put(&f, &funcname);	
+       c_put(&f, &funcname);
+
+       /* convert parameter */	
        if (!cnv:C_string(argv[warg],temp))
-          runerr(103,argv[warg]);
-      
+          runerr(103,argv[warg]); 
+
+    /* check the value of s and switch matrix stacks */
 	 if (!strcmp("modelview", temp))
           glMatrixMode(GL_MODELVIEW);	
        else if (!strcmp("projection", temp))
           glMatrixMode(GL_PROJECTION);
        else 
          runerr(152, argv[warg]);
+
+	/* put parameter in the list */
        c_put(&f, &argv[warg]);
        c_put(&(w->window->funclist), &f);
        ReturnWindow;
+   }
+end
+
+/* 
+ * Texture (w, s) or Texture (w1, w2) 
+ * 
+ */
+
+"Texture(argv[]){1} - apply the texture defined by the string s or use the window w2 as a texture "
+
+function{1} Texture(argv[argc])
+   abstract{ return file }
+   body {
+      wbp w, w2;
+      int warg = 0;
+      unsigned char *s;
+      char filename[MaxFileName + 1];
+      tended char* tmp;
+      struct descrip f, funcname;
+      struct b_list *func;
+      struct descrip num; 
+
+      OptWindow(w);
+      if (argc - warg < 1)/* missing texture source */
+         runerr(103);	
+
+   /* create a list */ 
+      Protect(func = alclist(0, MinListSlots), runerr(0));
+      f.dword = D_List; 
+      f.vword.bptr = (union block*) func; 
+      MakeStr("Texture", 7, &funcname); 
+      c_put(&f, &funcname);      
+
+    /* to redraw a texture we must know the texture name 
+       assign by opengl. this name is stored in 
+       w->context->texName[w->context->ntexture]. so we put
+       w->context->ntexture in the list */
+      MakeInt(w->context->ntextures, (&num));
+      c_put(&f, &num); 
+      c_put(&(w->window->funclist), &f);
+
+      glBindTexture(GL_TEXTURE_2D, w->context->texName[w->context->ntextures]);  
+      w->context->ntextures++;
+     	
+  
+     /* check if the source is another window */
+      if (argc>warg && is:file(argv[warg])) {
+	   if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+	      runerr(140,argv[warg]);
+	   if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
+	      runerr(142,argv[warg]);
+	   w2 = (wbp)BlkLoc(argv[warg])->file.fd;
+	   if (ISCLOSED(w2))
+	      runerr(142,argv[warg]);
+
+	   /* convert the window into a texture */
+         if (w2->context->is_3D)
+             texwindow3D(w, w2);
+         else
+            texwindow2D(w2); 
+         ReturnWindow;
+	 }
+
+     /* otherwise it must be a string */
+     if (!cnv:C_string(argv[warg], tmp))
+        runerr(103, argv[warg]);
+     s = tmp;
+     while(isspace(*s)) s++;
+     while(isdigit(*s)) s++;
+     while(isspace(*s)) s++; 
+
+     if (*s == ',') { /* must be an image string */ 
+        if (imagestr(w, tmp) != Succeeded)
+	      runerr(153, argv[warg]);
+        }
+     else  {  /* it is a file name */
+        strncpy(filename, tmp, MaxFileName);
+        filename[MaxFileName] = '\0';
+        if (fileimage(w, filename) != Succeeded)
+           runerr(153, argv[warg]);
+      }
+
+	ReturnWindow; 
+   }
+end
+
+
+/* 
+ * Texcoord (w, s) or Texture (w, L) 
+ * 
+ */
+
+"Texcoord(argv[]){1} - set texture coordinate to those defined by the string s or the list L "
+
+function{1} Texcoord(argv[argc])
+   abstract{ return file }
+   body {
+      wbp w;
+      wcp wc;
+      int i, warg = 0;
+      char filename[MaxFileName + 1];
+      tended char* tmp;
+      struct descrip f, funcname;
+      struct b_list *func, *coords;
+      struct descrip mode, val; 
+      OptWindow(w);
+
+      wc = w->context;
+      if (argc-warg < 1) /* missing the texture coordinates */
+	 runerr(103);
+
+      /* create a list */ 
+      Protect(func = alclist(0, MinListSlots), runerr(0));
+      f.dword = D_List; 
+      f.vword.bptr = (union block*) func; 
+      MakeStr("Texcoord", 8, &funcname); 
+      c_put(&f, &funcname);
+     
+      /* check if the argument is a list */
+      if (argv[argc-warg].dword == D_List) {
+         if (glIsEnabled(GL_TEXTURE_GEN_S))
+            glDisable(GL_TEXTURE_GEN_S);
+         if (glIsEnabled(GL_TEXTURE_GEN_T))
+            glDisable(GL_TEXTURE_GEN_T); 
+         MakeInt(0, &mode); 
+         c_put(&f, &mode);
+         wc->autogen = 0; 
+         wc->numtexcoords = 0;
+         coords = (struct b_list*) argv[argc-warg].vword.bptr;
+         for (i = 0; i < coords->size; i++) {
+            c_traverse(coords, &val, i); 
+            if (!cnv:C_double(val, wc->texcoords[i]))
+               runerr(102, val);
+            c_put(&f, &val);
+            wc->numtexcoords++;
+	    }
+	 }
+      else {
+	 if (argc-warg == 1) { /* probably "auto" */
+	    if (!cnv:C_string(argv[warg], tmp))
+	       runerr(103, argv[warg]); 
+	    if (!strcmp(tmp, "auto")){
+	       wc->autogen = 1;
+	       wc->numtexcoords = 0;
+	       if (!glIsEnabled(GL_TEXTURE_GEN_S))
+		  glEnable(GL_TEXTURE_GEN_S);
+	       if (!glIsEnabled(GL_TEXTURE_GEN_T))
+		  glEnable(GL_TEXTURE_GEN_T); 
+	       MakeInt(1, &mode); 
+	       c_put(&f, &mode);
+	       }
+	    }
+	 /* the arguments are texture coordinates */
+	 else {
+	    if (glIsEnabled(GL_TEXTURE_GEN_S))
+	       glDisable(GL_TEXTURE_GEN_S);
+	    if (glIsEnabled(GL_TEXTURE_GEN_T))
+	       glDisable(GL_TEXTURE_GEN_T); 
+	    MakeInt(0, &mode); 
+	    c_put(&f, &mode);
+	    wc->autogen = 0; 
+	    wc->numtexcoords = 0;
+	    for (i = warg; i < argc-warg; i++) {
+	       if (!cnv:real(argv[i]))
+		  runerr(102, argv[i]);
+	       GetReal(argv+i, wc->texcoords[wc->numtexcoords++]);
+	       c_put(&f, &argv[i]);
+	       }
+	    }
+	 }
+      /* there must be an even number of arguments */
+      if (wc->numtexcoords % 2  != 0)
+	   runerr(154);
+      c_put(&(w->window->funclist), &f);
+	ReturnWindow; 
+   }
+end
+
+/* 
+ * Refresh(w) 
+ */
+
+"Refresh(argv[]){1} - redraws the window"
+
+function{1} Refresh(argv[argc])
+   abstract{ return file }
+   body {
+      wbp w;
+      int i, warg = 0;
+      OptWindow(w);
+
+      redraw3D(w);
+      ReturnWindow; 
+
+   }
+end
+
+/* 
+ * WindowContents(w) 
+ * 
+ */
+
+"WindowContents(argv[]){1} - returns an Icon list of lists, which contains all objects drawn on window"
+
+function{1} WindowContents(argv[argc])
+   abstract{ return list }
+   body {
+      wbp w;
+      int i, warg = 0;
+      OptWindow(w);
+
+      
+      return w->window->funclist; 
+
    }
 end
 
@@ -3576,7 +3945,10 @@ MissingGraphicsFuncV(MatrixMode)
 MissingGraphicsFuncV(Scale)
 MissingGraphicsFuncV(Rotate)
 MissingGraphicsFuncV(Translate)
-
+MissingGraphicsFuncV(Texture)
+MissingGraphicsFuncV(Texcoord)
+MissingGraphicsFuncV(Refresh)
+MissingGraphicsFuncV(WindowContents)
 #endif					/* Graphics3D */
 
 #else					/* Graphics */

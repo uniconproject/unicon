@@ -27,7 +27,8 @@ int is_iconcolor;
    XColor color;
    int i;
    int *numColors;
-   short *theColors;
+   int *sizColors;
+   short **theColors;
    STDLOCALS(w);
 
    /*
@@ -42,17 +43,21 @@ int is_iconcolor;
       if (ws->iconColors == NULL) {
 	 ws->iconColors = (short *)calloc(WMAXCOLORS, sizeof(short));
 	 if (ws->iconColors == NULL) return NULL;
+	 ws->siziColors = WMAXCOLORS;
 	 }
       numColors = &(ws->numiColors);
-      theColors = ws->iconColors;
+      sizColors = &(ws->siziColors);
+      theColors = &(ws->iconColors);
       }
    else {
       if (ws->theColors == NULL) {
-	 ws->theColors = (short *)calloc(WMAXCOLORS, sizeof(short));
+	 ws->theColors = (short *)calloc(WMAXCOLORS*2, sizeof(short));
 	 if (ws->theColors == NULL) return NULL;
+	 ws->sizColors = WMAXCOLORS*2;
 	 }
       numColors = &(ws->numColors);
-      theColors = ws->theColors;
+      sizColors = &(ws->sizColors);
+      theColors = &(ws->theColors);
       }
 
    /*
@@ -84,8 +89,12 @@ int is_iconcolor;
        * color not found, must allocate
        * first verify there is room in window color table.
        */
-      if (*numColors == WMAXCOLORS) {
-	 return NULL;
+      if (*numColors >= *sizColors-1) {
+	 if (*numColors >= 2 << DefaultDepth(wd->display, wd->screen))
+	    return NULL;
+	 (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
+	 *sizColors *= 2;
+printf("reallocated to %d\n", *sizColors);
          }
 
       if (!XAllocColor(stddpy, wd->cmap, &color)) {
@@ -94,7 +103,6 @@ int is_iconcolor;
 	     !XAllocColor(stddpy, wd->cmap, &color))
             return NULL;
          }
-
       j = alc_centry(wd);
       if (j == 0)
          return NULL;
@@ -107,20 +115,20 @@ int is_iconcolor;
       wd->colors[j].b = b;
       wd->colors[j].c = color.pixel;
       wd->colors[j].type = SHARED;
-      theColors[(*numColors)++] = j;
+      (*theColors)[(*numColors)++] = j;
       return &(wd->colors[j]);
       }
    else {
       /* color is found, alias it and put it in the window color table */
       int k;
       for(k=0; k < *numColors; k++){
-         if (theColors[k] == i) {
+         if ((*theColors)[k] == i) {
 	    /* already there, no further action needed */
 	    return &(wd->colors[i]);
             }
          }
       wd->colors[i].refcount++;
-      theColors[(*numColors)++] = i;
+      (*theColors)[(*numColors)++] = i;
       return &(wd->colors[i]);
       }
    }
@@ -131,13 +139,20 @@ int is_iconcolor;
 int alc_centry(wd)
 wdp wd;
 {
-   int j;
+   int i, j;
 
-   for (j = 2; j < DMAXCOLORS; j++)
+   for (j = 2; j < wd->sizColors; j++)
       if (wd->colors[j].refcount == 0)
 	 break;
-   if (j == DMAXCOLORS)
-      return 0;
+   if (j >= wd->sizColors-1) {
+      if (j >= 2 << DefaultDepth(wd->display, wd->screen)) return 0;
+      wd->colors = realloc(wd->colors,
+			   wd->sizColors * 2 * sizeof (struct wcolor));
+      if (wd->colors == NULL) return 0;
+      for(i=wd->sizColors;i<wd->sizColors*2;i++) wd->colors[i].refcount=0;
+printf("reallocating wd->colors to %d\n", wd->sizColors * 2);
+      wd->sizColors *= 2;
+      }
    if (j == wd->numColors)
       wd->numColors++;
    else if (j > wd->numColors)
@@ -262,8 +277,8 @@ int extent;
       /*
        * don't free fg, bg, or mutable color
        */
-      if (((extent==0) && (&(wd->colors[j]) == w->context->fg)) ||
-	  ((extent==0) && (&(wd->colors[j]) == w->context->bg)) ||
+      if (((extent==0) && (j == w->context->fg)) ||
+	  ((extent==0) && (j == w->context->bg)) ||
 	  (wd->colors[j].type == MUTABLE)) {
 	     theColors[numSaved++] = j;
 	     continue;
@@ -276,8 +291,7 @@ int extent;
       {
       wcp wc; int numhits = 0;
       for(wc=wcntxts; wc; wc=wc->next) {
-	 if ((wc->fg == &(wd->colors[j])) ||
-	     (wc->bg == &(wd->colors[j]))) {
+	 if ((wc->fg == j) || (wc->bg == j)) {
 	    if (numhits == 0)
 	       theColors[numSaved++] = j;
 	    numhits++;
@@ -388,9 +402,7 @@ char *s;
       wd->colors[1].c = color.pixel;
    else
       wd->colors[1].c = WhitePixel(wd->display,wd->screen);
-
    wd->numColors = 2;
-   for (i=2; i < DMAXCOLORS; i++) wd->colors[i].refcount = 0;
 
    /*
     * Set the default gamma correction value for windows that are
@@ -789,10 +801,10 @@ wbp w;
    wc->serial = ++context_serial;
    wc->display = wd;
    wd->refcount++;
-   wc->fg = &(wd->colors[0]);
-   wc->fg->refcount++;
-   wc->bg = &(wd->colors[1]);
-   wc->bg->refcount++;
+   wd->colors[0].refcount++;
+   wc->fg = 0;
+   wd->colors[1].refcount++;
+   wc->bg = 1;
    wc->font = wd->fonts;
    wc->leading = wd->fonts->height;
    wc->drawop = GXcopy;
@@ -812,12 +824,14 @@ wcp clone_context(w)
 wbp w;
    {
    wcp wc, rv;
+   wdp wd;
    XGCValues gcv;
    XRectangle rec;
    unsigned long gcmask = GCFont | GCForeground | GCBackground |
 		GCFillStyle | GCCapStyle | GCLineWidth | GCLineStyle;
 
    wc = w->context;
+   wd = w->context->display;
    Protect(rv = alc_context(w), return NULL);
 
    rv->dx = wc->dx;
@@ -827,9 +841,9 @@ wbp w;
    rv->clipw = wc->clipw;
    rv->cliph = wc->cliph;
    rv->fg = wc->fg;
-   rv->fg->refcount++;
+   wd->colors[rv->fg].refcount++;
    rv->bg = wc->bg;
-   rv->bg->refcount++;
+   wd->colors[rv->bg].refcount++;
    rv->font = wc->font;
    rv->font->refcount++;
    rv->fillstyle = wc->fillstyle;
@@ -840,10 +854,10 @@ wbp w;
    rv->bits = wc->bits;
 
    if (ISXORREVERSE(w))
-      gcv.foreground = rv->fg->c ^ rv->bg->c;
+      gcv.foreground = wd->colors[rv->fg].c ^ wd->colors[rv->bg].c;
    else
-      gcv.foreground = rv->fg->c;
-   gcv.background = rv->bg->c;
+      gcv.foreground = wd->colors[rv->fg].c;
+   gcv.background = wd->colors[rv->bg].c;
    gcv.font       = rv->font->fsp->fid;
    gcv.line_style = rv->linestyle;
    gcv.line_width = rv->linewidth;
@@ -921,6 +935,7 @@ wcp wc;
    if(wc->refcount == 0) {
       if (wc->gc != NULL)
 	 XFreeGC(wc->display->display, wc->gc);
+      /* free color references to fg and bg? */
       free_display(wc->display);
       GRFX_UNLINK(wc, wcntxts);
       }

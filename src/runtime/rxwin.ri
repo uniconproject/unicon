@@ -534,14 +534,16 @@ wbp w;
 	  * (cf. eraseArea()).
 	  */
 	 if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, GXcopy);
-	 XSetForeground(stddpy, stdgc, wc->bg->c);
+	 XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
 	 XClearArea(stddpy, stdwin,
 		    ws->x, ws->y-wc->font->fsp->max_bounds.ascent,
 		    width-ws->x, lh, False);
 	 XFillRectangle(stddpy, stdpix, stdgc,
 			ws->x, ws->y - wc->font->fsp->max_bounds.ascent,
 			width - ws->x, lh);
-	 XSetForeground(stddpy, stdgc,wc->fg->c^(ISXORREVERSE(w)?wc->bg->c:0));
+	 XSetForeground(stddpy, stdgc,
+			wd->colors[wc->fg].c^(ISXORREVERSE(w)?
+					      wd->colors[wc->bg].c:0));
 	 if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, wc->drawop);
          }
       ws->y += lh;
@@ -559,10 +561,11 @@ wbp w;
 		   0, over,			/* x, y */
 		   width, height - over,	/* w, h */
 		   0, 0);			/* dstx,dsty */
-	 XSetForeground(stddpy, stdgc, wc->bg->c);
+	 XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
 	 XFillRectangle(stddpy, stdpix, stdgc,
 		   0, height - over, width, over);
-	 XSetForeground(stddpy, stdgc,wc->fg->c^(ISXORREVERSE(w)?wc->bg->c:0));
+	 XSetForeground(stddpy, stdgc,wd->colors[wc->fg].c^(ISXORREVERSE(w)?
+							    wd->colors[wc->bg].c:0));
 	 if (stdwin)
 	    XCopyArea(stddpy, stdpix, stdwin, stdgc, 0, 0, width, height, 0,0);
 	 if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, wc->drawop);
@@ -657,9 +660,12 @@ wbp w;
       for (wb = wbndngs; wb; wb=wb->next) {
 	 ws = wb->window;
 
-	 if ((ws->display == wd) &&
-	     ((ws->win == evwin) || (ws->iconwin == evwin) ||
-	      (ws->pix == evwin) || (ws->initialPix == evwin))) break;
+	 if (ws->display == wd) {
+	    if (ws->win == evwin) break;
+	    if (ws->iconwin == evwin) break;
+	    if (ws->pix == evwin) break;
+	    if (ws->initialPix == evwin) break;
+	    }
          }
       if (!wb) continue;
       if (evwin == ws->iconwin) {
@@ -908,7 +914,7 @@ void postcursor(wbp w)
 
    if (!ISCURSORON(w) || !stdwin) return;
    if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, GXcopy);
-   if (ISXORREVERSE(w)) XSetForeground(stddpy, stdgc, wc->fg->c);
+   if (ISXORREVERSE(w)) XSetForeground(stddpy, stdgc, wd->colors[wc->fg].c);
 
    /* Draw only on window, not on backing pixmap */
    XFillRectangle(stddpy, stdwin, stdgc, ws->x, ws->y, FWIDTH(w), DESCENT(w));
@@ -925,7 +931,8 @@ void scrubcursor(wbp w)
       ws->x, ws->y, FWIDTH(w), DESCENT(w), ws->x, ws->y);
 
    if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, wc->drawop);
-   if (ISXORREVERSE(w)) XSetForeground(stddpy, stdgc, wc->fg->c ^ wc->bg->c);
+   if (ISXORREVERSE(w)) XSetForeground(stddpy, stdgc,
+				       wd->colors[wc->fg].c ^ wd->colors[wc->bg].c);
    }
 
 /*
@@ -957,7 +964,8 @@ wbp w;
    else {
       free_xcolors(w, 2);
       free_xcolors(w, 1);
-      free_window(ws);
+/*      free_window(ws);  */
+      free_binding(w);
       }
 
    return 0;
@@ -1073,7 +1081,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 #ifdef Graphics3D
    w->context->is_3D = ws->is_3D = is_3d;
 #endif					/* Graphics3D */
-	
+
    /*
     * Loop through any remaining arguments.
     */
@@ -1154,8 +1162,9 @@ int x, y;		/* current mouse position */
 
    /* create the icon window */
    ws->iconwin = XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy), x, y,
-				     ws->iconw, ws->iconh, 2, wc->fg->c,
-				     wc->bg->c);
+				     ws->iconw, ws->iconh, 2,
+				     wd->colors[wc->fg].c,
+				     wd->colors[wc->bg].c);
 
    /* select events for the icon window */
    XSelectInput(stddpy, ws->iconwin,
@@ -1213,12 +1222,12 @@ int wmap(wbp w)
 
       XSetWindowAttributes attr;
       attr.background_pixmap = None;
-      attr.background_pixel = wc->bg->c;
-      attr.border_pixel = wc->fg->c;
+      attr.background_pixel = wd->colors[wc->bg].c;
+      attr.border_pixel = wd->colors[wc->fg].c;
 	attr.event_mask = StructureNotifyMask | ExposureMask;
  
 #ifdef Graphics3D 
-      if (ws->is_3D && Fs_Window3D) {   
+      if (ws->is_3D) {
          attr.colormap = 
    				 XCreateColormap(wd->display, RootWindow(wd->display, wd->vis->screen), wd->vis->visual, AllocNone);
          ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
@@ -1236,7 +1245,9 @@ int wmap(wbp w)
 		       XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
 				     ws->posx < 0 ? 0 : ws->posx,
 				     ws->posy < 0 ? 0 : ws->posy, ws->width,
-				     ws->height, 1, wc->fg->c, wc->bg->c));
+				     ws->height, 1,
+					   wd->colors[wc->fg].c,
+					   wd->colors[wc->bg].c));
 
     if (ws->win == (Window) NULL)
 	 return Failed;
@@ -1249,8 +1260,8 @@ int wmap(wbp w)
     * before creating the graphics context, construct a description
     * of any non-default initial graphics context values.
     */
-   gcv.foreground = wc->fg->c ^ (ISXORREVERSE(w) ? wc->bg->c : 0);
-   gcv.background = wc->bg->c;
+   gcv.foreground = wd->colors[wc->fg].c ^ (ISXORREVERSE(w) ? wd->colors[wc->bg].c : 0);
+   gcv.background = wd->colors[wc->bg].c;
    gcv.font       = wc->font->fsp->fid;
    if (wc->fillstyle)
       gcv.fill_style = wc->fillstyle;
@@ -1282,21 +1293,22 @@ int wmap(wbp w)
       XChangeGC(stddpy, stdgc, gcmask, &gcv);
 
 #ifdef Graphics3D
-   if (wc->is_3D &&  Fs_Window3D) {
+   if (wc->is_3D) {
       wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
       if (wc->ctx == NULL) 
-	   return Failed;
+	 return Failed;
       glXMakeCurrent(wd->display, w->window->win, wc->ctx);
-   }
+      }
 #endif				/* Graphics3D */
  
    if (wc->clipw >= 0)
       setclip(w);
 
    if (new_pixmap) {
-      XSetForeground(stddpy, stdgc, wc->bg->c);
+      XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
       XFillRectangle(stddpy, ws->pix, stdgc, 0, 0, ws->width, ws->height);
-      XSetForeground(stddpy, stdgc, wc->fg->c ^(ISXORREVERSE(w)?wc->bg->c:0));
+      XSetForeground(stddpy, stdgc,
+		     wd->colors[wc->fg].c ^(ISXORREVERSE(w)?wd->colors[wc->bg].c:0));
       }
 
    imd = &ws->initimage;
@@ -1392,7 +1404,6 @@ int wmap(wbp w)
    XSetClassHint(stddpy, stdwin, &clhints);
 
    if (wd->cmap != DefaultColormap(stddpy,wd->screen)) { /* ? */
-printf("is this code happening?\n");
       XSetWindowColormap(stddpy, stdwin, wd->cmap);
 }
    XSync(stddpy, False);
@@ -1627,14 +1638,15 @@ char *val;
 	 SETXORREVERSE(w);
 	 wc->drawop = GXxor;
 	 if (stdgc)
-	    XSetForeground(stddpy, stdgc, wc->fg->c ^ wc->bg->c);
+	    XSetForeground(stddpy, stdgc,
+			   wd->colors[wc->fg].c ^ wd->colors[wc->bg].c);
 	 }
       }
    else {
       if (ISXORREVERSE(w)) {
 	 CLRXORREVERSE(w);
 	 if (stdgc)
-	    XSetForeground(stddpy, stdgc, wc->fg->c);
+	    XSetForeground(stddpy, stdgc, wd->colors[wc->fg].c);
 	 }
       wc->drawop = si_s2i(drawops,val);
       if (wc->drawop == -1) { wc->drawop = GXcopy; return Error; }
@@ -2078,9 +2090,10 @@ int resetfg(w)
 wbp w;
    {
    wcp wc = w->context;
+   wdp wd = wc->display;
    if (wc->gc != NULL)
       XSetForeground(wc->display->display, wc->gc,
-		     wc->fg->c ^ (ISXORREVERSE(w) ? wc->bg->c : 0));
+		     wd->colors[wc->fg].c ^ (ISXORREVERSE(w) ? wd->colors[wc->bg].c : 0));
    return Succeeded;
    }
 
@@ -2092,9 +2105,10 @@ wbp w;
 char *s;
    {
    wclrp cp;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wdp wd = w->window->display;
    Protect(cp = alc_color(w,s), return Failed);
-   wc->fg = cp;
+   wc->fg = (cp - wd->colors);
    return resetfg(w);
    }
 
@@ -2129,7 +2143,7 @@ int fg;
       if (wd->colors[i].type == MUTABLE && wd->colors[i].c == -fg - 1)
 	 break;
    if (i == DMAXCOLORS) return Failed;
-   wc->fg = &(wd->colors[i]);
+   wc->fg = i;
    return resetfg(w);
    }
 
@@ -2141,13 +2155,14 @@ wbp w;
 char *s;
    {
    wclrp cp;
-   STDLOCALS(w);
-
+   wcp wc = w->context;
+   wdp wd = w->window->display;
+   GC stdgc = wc->gc;
+   Display *stddpy = wd->display;
    Protect(cp = alc_color(w,s), return Failed);
-   wc->bg = cp;
-
+   wc->bg = (cp - wd->colors);
    if (stdgc != NULL)
-      XSetBackground(stddpy, stdgc, wc->bg->c);
+      XSetBackground(stddpy, stdgc, cp->c);
    return ISXORREVERSE(w) ? resetfg(w) : Succeeded;
    }
 
@@ -2182,9 +2197,9 @@ int bg;
       if (wd->colors[i].type == MUTABLE && wd->colors[i].c == -bg - 1)
 	 break;
    if (i == DMAXCOLORS) return Failed;
-   wc->bg = &(wd->colors[i]);
+   wc->bg = i;
    if (stdgc != NULL)
-      XSetBackground(stddpy, stdgc, wc->bg->c);
+      XSetBackground(stddpy, stdgc, wd->colors[wc->bg].c);
    return ISXORREVERSE(w) ? resetfg(w) : Succeeded;
    }
 
@@ -2195,9 +2210,11 @@ int setgamma(w, gamma)
 wbp w;
 double gamma;
    {
-   w->context->gamma = gamma;
-   setfg(w, w->context->fg->name);	/* reinterpret current Fg/Bg spec */
-   setbg(w, w->context->bg->name);
+   wcp wc = w->context;
+   wdp wd = w->window->display;
+   wc->gamma = gamma;
+   setfg(w, wd->colors[wc->fg].name);	/* reinterpret current Fg/Bg spec */
+   setbg(w, wd->colors[wc->bg].name);
    return Succeeded;
    }
 
@@ -2217,8 +2234,8 @@ char *s;
 
    Protect(d = alc_display(s), return 0);
    w->window->display = d;
-   w->context->fg = &(d->colors[0]);
-   w->context->bg = &(d->colors[1]);
+   w->context->fg = 0;
+   w->context->bg = 1;
    w->context->font = d->fonts;
    return Succeeded;
    }
@@ -2246,15 +2263,15 @@ char *val;
 void toggle_fgbg(w)
 wbp w;
 {
-   wclrp tmp;
+   int tmp;
    STDLOCALS(w);
    tmp = wc->fg;
    wc->fg = wc->bg;
    wc->bg = tmp;
    if (stdpix) {
       XSetForeground(stddpy, stdgc,
-		     wc->fg->c ^ (ISXORREVERSE(w)?wc->bg->c:0));
-      XSetBackground(stddpy, stdgc, wc->bg->c);
+		     wd->colors[wc->fg].c ^ (ISXORREVERSE(w)?wd->colors[wc->bg].c:0));
+      XSetBackground(stddpy, stdgc, wd->colors[wc->bg].c);
       }
 }
 
@@ -2312,14 +2329,14 @@ void getfg(w, answer)
 wbp w;
 char *answer;
 {
-   sprintf(answer, "%s", w->context->fg->name);
+   sprintf(answer, "%s", w->window->display->colors[w->context->fg].name);
 }
 
 void getbg(w, answer)
 wbp w;
 char *answer;
 {
-   sprintf(answer, "%s", w->context->bg->name);
+   sprintf(answer, "%s", w->window->display->colors[w->context->bg].name);
 }
 
 void getlinestyle(w, answer)
@@ -2429,9 +2446,9 @@ XExposeEvent *event;
 /* end of " if its a 3D window " */
 
 #ifdef Graphics3D
-       if (w->context->is_3D && Fs_Window3D){
- 	     redraw3D(w->window->flist, w->window->display->display, w->window->win);
-       }
+       if (w->context->is_3D) {
+	  redraw3D(w);
+	  }
 #endif                        /* Graphics3D */
 
       }
@@ -2474,7 +2491,7 @@ int height;
        * pixmap gets initialized including areas not in the old pixmap.
        * The window is redrawn.
        */
-      XSetForeground(stddpy, stdgc, wc->bg->c);
+      XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy, stdgc, GXcopy);
       if (wc->fillstyle != FillSolid)
@@ -2492,7 +2509,8 @@ int height;
 	 if (stdwin != (Window) NULL)
 	    XFillRectangle(stddpy, stdwin, stdgc, 0, y, x, height - y);
          }
-      XSetForeground(stddpy, stdgc, wc->fg->c ^ (ISXORREVERSE(w)?wc->bg->c:0));
+      XSetForeground(stddpy, stdgc,
+		     wd->colors[wc->fg].c ^ (ISXORREVERSE(w)?wd->colors[wc->bg].c:0));
       XCopyArea(stddpy, stdpix, p, stdgc, 0, 0, x, y, 0, 0);
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy,stdgc,wc->drawop);
@@ -2540,9 +2558,9 @@ XConfigureEvent *event;
    if (! resizePixmap(w, event->width, event->height)) return 0;
 
 #ifdef Graphics3D
-   if (ws->is_3D && Fs_Window3D) {
+   if (ws->is_3D) {
       glViewport(0, 0, (GLsizei)event->width, (GLsizei) event->height);
-   }
+      }
 #endif					/* Graphics3D */
 
    /*
@@ -2717,11 +2735,12 @@ int x, y, width, height;
    /*
     * fill the rectangle with the background color
     */
-   XSetForeground(stddpy, stdgc, wc->bg->c);
+   XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
    if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, GXcopy);
    if (wc->fillstyle != FillSolid) XSetFillStyle(stddpy, stdgc, FillSolid);
    RENDER4(XFillRectangle, x, y, width, height);
-   XSetForeground(stddpy, stdgc, wc->fg->c ^ (ISXORREVERSE(w)?wc->bg->c:0));
+   XSetForeground(stddpy, stdgc,
+		  wd->colors[wc->fg].c ^ (ISXORREVERSE(w)?wd->colors[wc->bg].c:0));
    if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, wc->drawop);
    if (wc->fillstyle != FillSolid) XSetFillStyle(stddpy, stdgc, wc->fillstyle);
 
@@ -2797,7 +2816,7 @@ int x, y, width, height, x2, y2;
 	    }
 	 }
       XSetForeground(stddpy, stdgc,
-		     wc->fg->c ^ (ISXORREVERSE(w2) ? wc->bg->c : 0));
+		     wd->colors[wc->fg].c ^ (ISXORREVERSE(w2) ? wd->colors[wc->bg].c : 0));
       XSetFunction(stddpy, stdgc, wc->drawop);
       XSync(stddpy,False);
       XDestroyImage(xim);
@@ -2816,7 +2835,7 @@ int x, y, width, height, x2, y2;
 	       }
 	 copy_colors(w, w2);
 	 }
-      XSetForeground(stddpy, stdgc, wc->bg->c);
+      XSetForeground(stddpy, stdgc, wd->colors[wc->bg].c);
       XSetFunction(stddpy, stdgc, GXcopy);
 
       if (x+width<0 || y+height<0 || x>=ws1->pixwidth || y>=ws1->pixheight) {
@@ -2868,7 +2887,8 @@ int x, y, width, height, x2, y2;
 	    RENDER4(XFillRectangle, x2, y2+height, width, bpad);
 	 }
 
-      XSetForeground(stddpy,stdgc,wc->fg->c^(ISXORREVERSE(w2) ? wc->bg->c :0));
+      XSetForeground(stddpy,stdgc,
+		     wd->colors[wc->fg].c^(ISXORREVERSE(w2) ? wd->colors[wc->bg].c :0));
       XSetFunction(stddpy, stdgc, wc->drawop);
       }
    return Succeeded;
@@ -3168,8 +3188,8 @@ word len;
    else
       msk1 = 1 << (m - 1);		/* mask for first byte of row */
 
-   fg = wc->fg->c;
-   bg = wc->bg->c;
+   fg = wd->colors[wc->fg].c;
+   bg = wd->colors[wc->bg].c;
    ix = width;
    iy = 0;
    m = msk1;
@@ -3221,9 +3241,10 @@ int on_icon;
    {
    int c, v, ret, trans;
    unsigned int r, g, b, ix, iy;
-   wclrp cp, cparray[256];
-   char tmp[24];
    XImage *im;
+   wclrp cp;
+   int ciarray[256];
+   char tmp[32];
    STDLOCALS(w);
 
    /*
@@ -3254,7 +3275,7 @@ int on_icon;
             else
                cp = alc_rgb(w, "black", 0, 0, 0, 0);
             }
-         cparray[c] = cp;
+         ciarray[c] = cp-wd->colors;
          }
 
    /*
@@ -3265,18 +3286,18 @@ int on_icon;
       c = *s++;
       v = e[c].valid;
       if (v)				/* put char if valid */
-         XPutPixel(im, ix, iy, cparray[c]->c);
-      if (v || e[c].transpt) {		/* advance if valid or transparent */
+         XPutPixel(im, ix, iy, wd->colors[ciarray[c]].c);
+      if (v || e[c].transpt) { 		/* advance if valid or transparent */
          if (++ix >= width) {
             ix = 0;			/* reset for new row */
             iy++;
             }
          }
       }
-   if (ix > 0)				/* pad final row if incomplete */
+   if (ix > 0) {			/* pad final row if incomplete */
       while (ix < width)
-         XPutPixel(im, ix++, iy, wc->bg->c);
-
+         XPutPixel(im, ix++, iy, wd->colors[wc->bg].c);
+      }
    /*
     * Put it on the screen.
     */
@@ -3479,7 +3500,6 @@ struct imgmem *imem;
       imem->im = NULL;
       return Succeeded;
       }
-
    imem->im = XGetImage(stddpy, stdpix,
 			imem->x, imem->y, imem->width, imem->height,
 		  (1 << DefaultDepth(stddpy, wd->screen))-1, XYPixmap);
@@ -3511,11 +3531,13 @@ struct imgmem *imem;
    LinearColor clr;
    wclrp cp;
    unsigned long c;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wdp wd = w->window->display;
+   Display *stddpy = wd->display; 
 
    if (x < imem->x || x >= imem->x + imem->width ||
        y < imem->y || y >= imem->y + imem->height)
-      c = colorcell.pixel = wc->bg->c;
+      c = colorcell.pixel = wd->colors[wc->bg].c;
    else
       c = colorcell.pixel = XGetPixel(imem->im, x - imem->x, y - imem->y);
    *rv = 0xff000000;
@@ -3748,14 +3770,17 @@ int x,y;
 
    ws->win = XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
 				 ws->posx, ws->posy, ws->width,
-				 ws->height, 4, wc->fg->c, wc->bg->c);
+				 ws->height, 4,
+				 wd->colors[wc->fg].c, wd->colors[wc->bg].c);
    XSetStandardProperties(stddpy, ws->win, ws->windowlabel,
 			  ws->iconlabel, 0, 0, 0, &size_hints);
    XSelectInput(stddpy, ws->win, ws->inputmask);
 
    ws->iconwin = XCreateSimpleWindow(stddpy, DefaultRootWindow(stddpy),
 				     ws->iconx, ws->icony, ws->iconw,
-				     ws->iconh, 2, wc->fg->c, wc->bg->c);
+				     ws->iconh, 2,
+				     wd->colors[wc->fg].c,
+				     wd->colors[wc->bg].c);
    XSelectInput(stddpy, ws->iconwin,
 		ExposureMask | KeyPressMask | ButtonPressMask);
 
@@ -4102,8 +4127,8 @@ int *status;
       }
 
    if (stdgc == NULL) {
-      gcv.foreground = wc->fg->c;
-      gcv.background = wc->bg->c;
+      gcv.foreground = wd->colors[wc->fg].c;
+      gcv.background = wd->colors[wc->bg].c;
       gcv.font       = wc->font->fsp->fid;
       wc->gc = XCreateGC(stddpy, p2, gcmask, &gcv);
       stdgc = wc->gc;

@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.12 2001-12-13 07:07:49 phliar Exp $
+ * $Id: rposix.r,v 1.13 2001-12-14 02:57:59 phliar Exp $
  */
 
 #ifdef PosixFns
@@ -962,6 +962,27 @@ int is_udp;
    return (FILE *)fd;
 }
 
+/* Used for image() of connected sockets */
+int sock_name(FILE* sock, char* addr, char* addrbuf, int bufsize)
+{
+   int s = (int) sock;
+   int len;
+   struct sockaddr_in conn;
+   int addrlen = sizeof(conn);
+
+   if ((s = sock_get(addr)) < 0)
+      /* This is not a socket we know anything about */
+      return 0;
+
+   /* Otherwise we can construct a name for it and put in the string */
+   getpeername(s, (struct sockaddr*) &conn, &addrlen);
+   if (addrlen != sizeof(conn))
+      return 0;
+   len = snprintf(addrbuf, bufsize, "%s:%s:%d", addr,
+                  inet_ntoa(conn.sin_addr), ntohs(conn.sin_port));
+
+   return len;
+}
 /* Used by function send(): in other words, create a socket, send, close it */
 int sock_send(char *adr, char *msg, int msglen)
 {

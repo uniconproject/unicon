@@ -1451,6 +1451,7 @@ dptr dp1, dp2;
              *	file(nm) where nm is the argument originally given to
              *	open.
              */
+             char namebuf[100];		/* scratch space */
 #ifdef Graphics
 	    if (BlkLoc(source)->file.status & Fs_Window) {
 	       if ((BlkLoc(source)->file.status != Fs_Window) &&
@@ -1461,7 +1462,7 @@ dptr dp1, dp2;
 		       ((wbp)BlkLoc(source)->file.fd)->window->serial,
 		       ((wbp)BlkLoc(source)->file.fd)->context->serial
 		       );
-}
+                }
 		else {
                   len = 0;
                   Protect (reserve(Strings, (len << 2) + 16), return Error);
@@ -1473,8 +1474,20 @@ dptr dp1, dp2;
 	       }
 	    else {
 #endif					/* Graphics */
+#ifdef PosixFns
+               if (BlkLoc(source)->file.status & Fs_Socket) {
+                   s = namebuf;
+                   len = sock_name(BlkLoc(source)->file.fd,
+                                 StrLoc(BlkLoc(source)->file.fname),
+                                 namebuf, sizeof(namebuf));
+               }
+               else {
+#endif 					/* PosixFns */
                s = StrLoc(BlkLoc(source)->file.fname);
                len = StrLen(BlkLoc(source)->file.fname);
+#ifdef PosixFns
+               }
+#endif 					/* PosixFns */
                Protect (reserve(Strings, (len << 2) + 12), return Error);
 	       Protect(t = alcstr("file(", (word)(5)), return Error);
 	       StrLoc(*dp2) = t;

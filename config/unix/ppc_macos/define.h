@@ -3,5 +3,6 @@
  */
 
 #define UNIX 1
+#define NEED_UTIME
 /* LoadFunc not implemented */
 

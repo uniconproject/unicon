@@ -163,6 +163,25 @@ char *name;
       quitf(buf, name);
       }
 
+#if MSDOS
+   if (file[0] == '\\' || file[0] == '/' ||
+       (isalpha(file[0]) && file[1] == ':')) {
+     ;
+   }
+   else {
+     char file2[MaxFileName];
+     if (getcwd(file2, PATH_MAX)) {
+       if (file2[strlen(file2)-1] != '/' &&
+	   file2[strlen(file2)-1] != '\\' )
+	 strcat(file2, "/");
+       strcat(file2, file);
+       strcpy(file, file2);
+        }
+   }
+
+   while(strchr(file, '\\')) *(strchr(file,'\\')) = '/';
+#endif					/* MSDOS */
+
    nlf = alclfile(file);
    if (llfiles == NULL) {
       llfiles = nlf;

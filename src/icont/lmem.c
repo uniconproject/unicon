@@ -152,6 +152,7 @@ char *name;
    {
    struct lfile *nlf, *p;
    char file[MaxFileName];
+   int i;
 
    if (!pathfind(file, ipath, name, U1Suffix) &&
        !pathfind(file, ipath, name, USuffix)) {
@@ -208,6 +209,8 @@ char *name;
    }
 
    while(strchr(file, '\\')) *(strchr(file,'\\')) = '/';
+   for (i=0; file[i]; i++)
+     if (isupper(file[i])) file[i] = tolower(file[i]);
 #endif					/* MSDOS */
 
    nlf = alclfile(file);

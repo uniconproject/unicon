@@ -1,10 +1,12 @@
 #
-# $Id: groffoutputter.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+# $Id: groffoutputter.icn,v 1.2 2004-02-27 16:27:39 rparlett Exp $
 #
 # This file is in the public domain.
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+
+link strings
 
 class GroffOutputter(output_file, ps)
    method output()
@@ -78,7 +80,7 @@ class GroffOutputter(output_file, ps)
 
    method groff_unbracket(s)
       r := ""
-      s ? {
+      replace(s, "\\", "\\\\") ? {
          tab(many(whitespace_cset))
          while r ||:= tab(upto('{')) do {
             r ||:= "\\f[HR]"
@@ -92,28 +94,6 @@ class GroffOutputter(output_file, ps)
       if *r = 0 then
          r := ".P"
       write(output_file, r)
-   end
-
-   method groff_unbracket2(s)
-      t := ""
-      s ? {
-         tab(many(whitespace_cset))
-         if pos(0) then
-            write(output_file, ".P")
-
-         while t := tab(upto('{')) do {
-            if not pos(1) then
-               write(output_file, t)
-            move(1)
-            obj := tab(upto('}') | 0)
-            move(1)
-            obj ||:= tab(upto(whitespace_cset) | 0)
-            tab(many(whitespace_cset))
-            write(output_file, ".FUNC \"", obj, "\"")
-         }
-         if not pos(0) then
-            write(output_file, tab(0))
-      }
    end
 
    initially(ps, t)

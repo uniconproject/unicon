@@ -37,6 +37,7 @@ $else # implies Windows for now
 $define PATHSEP "\\"
 $endif
 global current_file, targs, browser, docpath, xargs, icodename, wiconlog,
+	project,
 	findstr,
 	foundline,
 	foundcol,
@@ -49,7 +50,7 @@ global current_file, targs, browser, docpath, xargs, icodename, wiconlog,
 	ui_ini
 
 global tmp
-class dialog : _Dialog(new_menu_item, openfile, print_menu_item, save_menu_item, saveas_menu_item, ivib_menu_item, exit_menu_item, copy_menu_item, cut_menu_item, paste_menu_item,EditBox,MsgBox,find_menu_item,replace_menu_item,goto_menu_item,matchparen_menu_item,undo_menu_item,editconfig_menu_item,font_menu_item,saveoptions_menu_item,make_exec_menu_item,compile_menu_item,compile_options_menu_item,run_menu_item,run_arg_menu_item,project_add_menu_item,help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,help_ivib,help_iconfaq,help_uniconfaq,browse_local,browse_net,help_icon_reference,help_unicon_reference)
+class dialog : _Dialog(new_menu_item, openfile, print_menu_item, save_menu_item, saveas_menu_item, ivib_menu_item, exit_menu_item, copy_menu_item, cut_menu_item, paste_menu_item,EditBox,MsgBox,find_menu_item,replace_menu_item,goto_menu_item,matchparen_menu_item,undo_menu_item,editconfig_menu_item,font_menu_item,saveoptions_menu_item,make_exec_menu_item,compile_menu_item,compile_options_menu_item,run_menu_item,run_arg_menu_item,project_add_menu_item,help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,help_ivib,help_iconfaq,help_uniconfaq,browse_local,browse_net,help_icon_reference,help_unicon_reference, file_menu)
 ###############################################################################
 # copy to clipboard
 ###############################################################################
@@ -117,12 +118,7 @@ end
 method handle_new_menu_item(ev)
   local results_list, mb  
   if \current_file then  {
-     mb := MsgDialog()
-#    mb.set_extra_attribs(["label=Warning:"])
-     mb.msglabel  := "Save "||current_file||"?"
-     mb.show_modal()
-     if mb.yes = 1 then 
-        handle_save_file(current_file)
+     prompt_save()
      current_file := &null
      self.set_attribs("label=Ui editing: (untitled)")
      WAttrib(\ (self.win), "label=Ui editing: (untitled)")
@@ -152,7 +148,7 @@ $endif
       return
   }    
    
-  if find(".icp", map(filename)) then { # open project
+  if  map(filename)[-4:0] == ".icp" then { # open project
      project := filename
      updateproject()
      }
@@ -195,6 +191,7 @@ local file, l
 
    MsgBox.set_contents([filename || " saved."])
    EditBox.clear_modified()
+   if map(filename[-4:0]) == ".icp" then updateproject()
 end
 
 #
@@ -224,8 +221,27 @@ $endif
       MsgBox$set_contents(["Enter File Name to save"])
       return
       }    
+   filename := defextension(filename)
+
+   if \project then {
+      # Resolve absolute versus relative paths and not add absolute
+      # if relative is already in the project.  Brute force version in place.
+      if (not find(map(filename), map(("" | (chdir() || PATHSEP)) || (!file_menu.menus).get_label()))) & find(".icn"|".u",filename) then {
+         foo := TextMenuItem()
+         foo.set_label(filename)
+         file_menu.add(foo)
+         self.resize()			# recalc with new components in place
+	 }
+      }
+
    /current_file := filename
    handle_save_file(filename)
+
+   if find(".icp", map(filename)) then { # open project
+      project := filename
+      updateproject()
+      }
+   setlabel()
 end
 
 method handle_ivib_menu_item(ev)
@@ -292,7 +308,9 @@ method comp1file(s)
    if find(".u", map(s)) then return ""  # do not compile .u files
    s[find(".icn", map(s)) : 0] := "" # truncate extension
    # check file attributes; if .u exists and is newer, use it.
-   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
+   if newer(s||".u", s||".icn") then fail
+   extended := s || ".icn"
+#   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
    return quotes(extended)
 end
 
@@ -315,6 +333,13 @@ method handle_default(ev)
    if ev.event === &resize then {
       width := &x
       height := &y
+      }
+   else {
+      x := ev.get_component()
+      if find("TextMenuItem", type(x)) then {
+         # unidentified text menu item, must be a file to open
+         handle_openfile(ev, x.get_label())
+         }
       }
 end
 
@@ -459,34 +484,34 @@ method complink()
    local x, arglist, lst, logf, i, s
    lst := []
    /targs := ""
-   if /project then {
+   if /current_file then {
+      handle_saveas_menu_item(ev)
       if /current_file then {
-         handle_saveas_menu_item(ev)
-         if /current_file then {
-            MsgBox.set_contents(["No filename specified."])
-            fail
-            }
+         MsgBox.set_contents(["No filename specified."])
+         fail
          }
-      else {
-         if \ (EditBox.modified) then handle_save_file(current_file)
-         }
+      }
+   else {
+      if \ (EditBox.modified) then handle_save_file(current_file)
+      }
+   if /project then {
       arglist := comp1file(current_file)
       icodename := current_file
       icodename[find(".icn", map(icodename)) : 0] := ""
       }
    else {
       # compile all project sources that need it (in one step)
-      # this part makes no sense under ui.icn yet
+      # this part is untested under ui.icn yet
       arglist := ""
       i := 1
-      while menu[1][i] ~== "E&xit" do i +:= 1
+      while file_menu.menus[i].get_label() ~== "Exit" do i +:= 1
       i +:= 1
-      while menu[1][i] do {
-	 arglist ||:= comp1file(menu[1][i])
-	 arglist ||:= " "
+      while file_menu.menus[i] do {
+	 if arglist ||:= comp1file(file_menu.menus[i].get_label()) then
+	    arglist ||:= " "
 	 i +:= 1
 	 }
-      if find(".icn", arglist) then {
+      if find(".icn", \arglist) then {
 $ifdef _UNIX
 	 system("unicon -quiet " || " -c " || targs ||
 		" " || arglist || " &> " || wiconlog, lst, 1)
@@ -495,15 +520,15 @@ $else
 		" " || arglist, lst, 1)
 $endif
          showanyerror(wiconlog, lst)
-     }
+         }
 
       # build a list of all the files to be linked together
       arglist := ""
       i := 1
-      while menu[1][i] ~== "E&xit" do i +:= 1
+      while file_menu.menus[i].get_label() ~== "Exit" do i +:= 1
       i +:= 1
-      while menu[1][i] do {
-	 s := menu[1][i]
+      while file_menu.menus[i] do {
+	 s := file_menu.menus[i].get_label()
          s[find(".icn", map(s)) : 0] := ".u"
 	 if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
 	 arglist ||:= s
@@ -683,8 +708,26 @@ $endif
       docpath := &null
    end
 
+   method updateproject()
+   local f, s
+   while file_menu.menus[-1].get_label() ~== "Exit" do pull(file_menu.menus)
+   icodename := project
+   icodename[find(".icp", map(icodename)) : 0] := ""
+   if f := open(project) then {
+      while s := trim(read(f), '\^m') do {
+         foo := TextMenuItem()
+         foo.set_label(defextension(s))
+         file_menu.add(foo)
+         self.resize()			# recalc with new components in place
+	 }
+      close(f)
+      }
+end
+
+
+
    method setup()
-      local menu_bar_1, file_menu, edit_menu, options_menu, compile_menu, run_menu, project_menu, help_menu, help_language, menu_8
+      local menu_bar_1, edit_menu, options_menu, compile_menu, run_menu, project_menu, help_menu, help_language, menu_8
       self.set_attribs("size="||width||","||height, "bg=pale gray",
 		       "label=Unicon IDE", "resize=on")
       menu_bar_1 := MenuBar()
@@ -935,7 +978,12 @@ procedure defextension(s)
    }
 end
 
-
+procedure setlabel()
+   if \project then
+      WAttrib(\ &window, "label=Ui project: " || project || " editing: " || current_file)
+   else
+      WAttrib(\ &window, "label=Ui editing: " || current_file)
+end
 
 
 

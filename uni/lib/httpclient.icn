@@ -1,5 +1,5 @@
 #
-# $Id: httpclient.icn,v 1.9 2004-09-05 16:08:38 rparlett Exp $
+# $Id: httpclient.icn,v 1.10 2004-09-12 15:43:18 rparlett Exp $
 #
 
 package http
@@ -14,26 +14,26 @@ $include "posix.icn"
 global token_char
 
 #
+# Little helper class to store cookie details
+#
+class Cookie:Object(name, value, expires, domain, path, secure)
+end
+
+#
 # An http client
 #
-class HttpClient : NetClient(url,
+class HttpClient : NetClient(request,
                              result,
                              open_url,
-                             post_data,
-                             headers,
-                             request_type,
-                             data_file,
                              data_out,
-                             string_buff,
                              retries,
                              length,
+                             string_buff,
                              read,
                              http_version,
                              http_error,
-                             username,
-                             password,
+                             keep_alive_flag,
                              user_agent,
-                             referer,
                              redir_set, 
                              auth_req_count,
                              auth_scheme,
@@ -45,56 +45,14 @@ class HttpClient : NetClient(url,
                              ha1,
                              qop,
                              realm,
-                             last_method,
-                             last_uri,
-                             last_post_data
+                             cookies
                              )
-
-   #
-   # Set the desired url.  NB: setting the URL clears any custom header
-   # fields that may have been set.  They must be set again using
-   # {set_header()}.
-   #
-   method set_url(url)
-      headers := table()
-      return self.url := url
-   end
-
-   #
-   # Set a filename to send the data part of the response to.  If not
-   # set then the data forms part of the HttpPage object returned.
-   #
-   # @param s the name of the file.
-   #
-   method set_data_file(s)
-      return data_file := s
-   end
 
    #
    # Set the http version to use; by default "1.0"
    #
    method set_http_version(s)
       return http_version := s
-   end
-
-   #
-   # Set the data to be used in a POST request.
-   #
-   # @param   post_data    The data to use this may either be a string, in
-   # @        which case it represents raw data, or it may be
-   # @        be a table in which case it represents a table of
-   # @        cgi parameters, which will be converted appropriately.
-   #
-   method set_post_data(post_data)
-      return self.post_data := post_data
-   end
-
-   #
-   # Set the request type.  The default is {GET}, unless post data is set, in which
-   # case the default is {POST}.
-   #
-   method set_request_type(request_type)
-      return self.request_type := request_type
    end
 
    #
@@ -105,39 +63,28 @@ class HttpClient : NetClient(url,
    end
 
    #
-   # Set the referer page.
+   # Configure the client to use the keep-alive feature (the
+   # default).
    #
-   method set_referer(s)
-      return self.referer := s
+   method set_keep_alive()
+      self.keep_alive_flag := 1
    end
 
    #
-   # Set the username to use for authentication
+   # Configure the client to NOT use the keep-alive feature.
    #
-   method set_username(s)
-      return self.username := s
-   end
-
-   #
-   # Set the password to use for authentication
-   #
-   method set_password(s)
-      return self.password := s
-   end
-
-   #
-   # Set a header variable to the desired value.
-   #
-   method set_header(key, value)
-      return headers[map(key)] := value
+   method clear_keep_alive()
+      self.keep_alive_flag := &null
    end
 
    #
    # @p
-   method write_headers()
-      every e := !sort(headers) do {
+   method write_request_headers()
+      local e, v
+      every e := !request.headers.sort() do {
          e[1][1] := map(e[1][1], &lcase, &ucase)
-         write_line(e[1] || ": " || e[2]) | fail
+         every v := !e[2] do
+            write_line(e[1] || ": " || v) | fail
       }
       return
    end
@@ -150,21 +97,13 @@ class HttpClient : NetClient(url,
    end
 
    #
-   # Setup a temporary file for the {GetHttpProcessControl} object to use
-   # as a data file.  On success, this will be returned as a field in the
-   # {HttpPage} object.
-   #
-   method set_use_temporary_data_file()
-      set_data_file("/tmp/gethttp." || curr_time_millis() || ".bin")
-   end
-
-   #
    # This method invokes retrieve_page, but only returns the page if
    # its status was 200 OK - otherwise it fails and sets the failure
    # reason appropriately.  It also handles redirection and authentication
    # request responses.
    #
-   method retrieve()
+   method retrieve(request)
+      self.request := request.clone()
       auth_req_count := 0
       redir_set := set()
       repeat {
@@ -174,11 +113,11 @@ class HttpClient : NetClient(url,
          if find("200"|"206", result.get_status()) then
             return result
 
-         remove(\data_file)
+         remove(\request.data_file)
 
          if find("401", result.get_status()) then
             handle_authentication() | fail
-         else if find("302"|"303"|"307", result.get_status()) then
+         else if find("301"|"302"|"303"|"307", result.get_status()) then
             handle_redirect() | fail
          else
             return on_http_error(result.get_status())
@@ -192,11 +131,16 @@ class HttpClient : NetClient(url,
       #
       # A redirection, so extract the URL if possible.
       #
-      l := \result.get_header("Location") | return on_http_error("No Location in a redirect response")
+      l := result.get_first_header("Location") | return on_http_error("No Location in a redirect response")
       if member(redir_set, l) then
          return on_http_error("Circular redirection detected:" || l)
       insert(redir_set, l)
-      url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
+      request.url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
+      # On a redirect, the method is always GET, regardless of the original method.
+      request.the_method := "GET"
+      request.post_data := &null
+      request.unset_header("content-length")
+      request.unset_header("content-type")
       auth_req_count := 0
       return
    end
@@ -205,14 +149,14 @@ class HttpClient : NetClient(url,
    # @p
    method handle_authentication()
       local s, t
-      if /(username | password) then
+      if /(request.username | request.password) then
          return on_http_error("Authentication requested - please set username, password")
 
       if auth_req_count > 0 then
          return on_http_error("Failed to authenticate - correct username, password")
       auth_req_count +:= 1
 
-      s := \result.get_header("www-authenticate") | 
+      s := result.get_first_header("www-authenticate") | 
          return on_http_error("No WWW-Authenticate in a 401 response")
 
       t := parse_generic_header(s)
@@ -233,9 +177,9 @@ class HttpClient : NetClient(url,
    method setup_basic_authentication(t)
       local b64h, s
       b64h := Base64Handler()
-      # Strip of any \r\n in result.
+      # Strip off any \r\n in result.
       s := ""
-      b64h.encode_data(&null, username || ":" || password) ? repeat {
+      b64h.encode_data(&null, request.username || ":" || request.password) ? repeat {
          s ||:= tab(find("\r\n") | 0)
          if pos(0) then
             break
@@ -264,7 +208,7 @@ class HttpClient : NetClient(url,
       # Calculate HA1
       #
       md5 := MD5()
-      md5.update(unq(username) || ":" || unq(realm) || ":" || password)
+      md5.update(unq(request.username) || ":" || unq(realm) || ":" || request.password)
       if map(unq(algorithm)) == "md5-sess" then {
          md5.update(":" || unq(nonce) || ":" || unq(cnonce))
       }
@@ -292,11 +236,11 @@ class HttpClient : NetClient(url,
       #
       # Calculate HA2
       #
-      md5.update(last_method || ":" || last_uri)
+      md5.update(request.the_method || ":" || request.url.get_file())
       if \qop == "auth-int" then {
          # Calculate H(entity)
          t := MD5()
-         t.update(last_post_data)
+         t.update(\request.post_data)
          hentity := t.final_str()
          md5.update(":" || hentity)
       }
@@ -309,10 +253,10 @@ class HttpClient : NetClient(url,
 
       md5.update(ha2)
 
-      h := "Digest username=\"" || username || "\",\r\n\t" ||
+      h := "Digest username=\"" || request.username || "\",\r\n\t" ||
          "realm=" || realm || ",\r\n\t" ||
          "nonce=" || nonce || ",\r\n\t" ||
-         "uri=\"" || last_uri || "\",\r\n\t"
+         "uri=\"" || request.url.get_file() || "\",\r\n\t"
       if \qop then {
          h ||:= "qop=" || qop || ",\r\n\t" ||
             "nc=" || nc || ",\r\n\t" ||
@@ -348,7 +292,7 @@ class HttpClient : NetClient(url,
             if any('\"') then
                v := parse_quoted_string()
             else
-               v := tab(many(token_char))
+               v := tab(many(token_char)) | ""
          } else
             v := &null
          insert(t, k, v)
@@ -396,6 +340,108 @@ class HttpClient : NetClient(url,
 
    #
    # @p
+   method parse_cookie_string(s)
+      local c, k, v
+
+      s ? repeat {
+         tab(upto(token_char)) | break
+         k := tab(many(token_char))
+         if ="=" then {
+            if any('\"') then
+               v := parse_quoted_string()
+            else
+               v := tab(upto(';') | 0)
+         } else
+            v := &null
+         if /c then {
+            c := Cookie()
+            c.name := k
+            c.value := v
+         } else {
+            case map(k) of {
+               "expires" : c.expires := v
+               "path" : c.path := v
+               "domain" : c.domain := v
+               "secure" : secure := 1
+            }
+         }
+      }
+
+      return \c
+   end
+
+   #
+   # Store any cookie values in the current page's header.
+   # @p
+   method store_cookies()
+      local c, domain, paths, path, e, vals
+
+      every s := !result.get_headers("set-cookie") do {
+         if c := parse_cookie_string(s) then {
+            domain := map(\c.domain | request.url.get_address())
+            if member(cookies, domain) then 
+               paths := cookies[domain]
+            else {
+               paths := table()
+               insert(cookies, domain, paths)
+            }
+
+            path := \c.path | request.url.get_file()
+
+            if member(paths, path) then
+               vals := paths[path]
+            else {
+               vals := ClTable()
+               insert(paths, path, vals)
+            }
+            vals.insert(c.name, c)
+         }
+      }
+   end
+
+   #
+   # @p
+   method create_cookie_header()
+      local s, t, e, f, g, host, path, c
+
+      host := map(request.url.get_address())
+      path := request.url.get_file()
+      s := ""
+      every e := !sort(cookies) do {
+         if host[0-:*e[1]] == e[1] then {
+            every f := !reverse(sort(e[2])) do {
+               if match(f[1], path) then {
+                  every c := (!f[2].sort())[2] do {
+                     if *s > 0 then
+                        s ||:= "; "
+                     s ||:= c.name
+                     s ||:= "=" || \c.value
+                  }
+               }
+            }
+         }
+      }
+      return s
+   end
+
+   #
+   # Useful debug function
+   # @p
+   method dump_cookies()
+      local c, e, f, g
+      every e := !sort(cookies) do {
+         write("domain:", e[1])
+         every f := !reverse(sort(e[2])) do {
+            write("\tpath:", f[1])
+            every c := (!f[2].sort())[2] do {
+               write("\t\t", c.to_string())
+            }
+         }
+      }
+   end
+
+   #
+   # @p
    method on_http_error(s)
       http_error := s
       return error(s)
@@ -414,20 +460,20 @@ class HttpClient : NetClient(url,
    #
    # @p
    method maybe_open()
-      if /connection | /open_url | open_url.get_address() ~== url.get_address() |
-         open_url.get_port() ~= url.get_port() then 
+      if /connection | /open_url | open_url.get_address() ~== request.url.get_address() |
+         open_url.get_port() ~= request.url.get_port() then 
       {
          close()
-         set_server(url.get_address())
-         set_port(url.get_port())
+         set_server(request.url.get_address())
+         set_port(request.url.get_port())
          open() | fail
-         open_url := url.clone()
+         open_url := request.url.clone()
       }
       return
    end
 
    #
-   # Retrieve the given url.  A {HttpPage} object is returned upon success.
+   # Retrieve the given url.  A {HttpResponse} object is returned upon success.
    # Failure occurs if the url could not be retrieved.
    #
    method retrieve_page()
@@ -439,6 +485,7 @@ class HttpClient : NetClient(url,
 
       repeat {
          if tryone() then {
+            store_cookies()
             fire("Complete")
             return result
          }
@@ -446,7 +493,7 @@ class HttpClient : NetClient(url,
          close()
 
          if (i -:= 1) < 0 then {
-            remove(\data_file)
+            remove(\request.data_file)
             fire("Failed")
             if retries = 0 then
                fail
@@ -460,7 +507,7 @@ class HttpClient : NetClient(url,
 
    #
    #
-   # Retrieve the given url.  A {HttpPage} object is returned upon success.
+   # Retrieve the given url.  A {HttpResponse} object is returned upon success.
    # Failure occurs if the url could not be retrieved.
    #
    method tryone()
@@ -477,8 +524,8 @@ class HttpClient : NetClient(url,
       #
       # Create a result
       #
-      result := HttpPage()
-      result.set_url(url)
+      result := HttpResponse()
+      result.set_url(request.url)
       result.set_status(read_line()) | fail
 
       #
@@ -486,7 +533,7 @@ class HttpClient : NetClient(url,
       #
       read_headers() | fail
 
-      if request_type ~=== "HEAD" then
+      if request.the_method ~=== "HEAD" then
          read_data() | fail
       else
          maybe_close()
@@ -500,56 +547,41 @@ class HttpClient : NetClient(url,
       #
       # Close if told to do so.
       #
-      if map(\result.get_header("connection")) == "close" then
+      if map(result.get_first_header("connection")) == "close" then
          close()
    end
 
    #
    # @p
    method write_request()
-      headers["user-agent"] :=  user_agent
-      headers["host"] := url.get_address()
-      headers["referer"] := \referer
-      /headers["connection"] := "Keep-Alive"
+      request.set_header("user-agent", user_agent)
+      request.set_header("host", request.url.get_address())
+      request.set_header("referer", \request.referer)
+      request.unset_header("cookie")
+      request.set_header("cookie", create_cookie_header())
+
+      if \keep_alive_flag then
+         request.set_header("connection", "Keep-Alive")
 
       if \self.read > 0 then
-         headers["range"] := "bytes=" || self.read || "-"
+         request.set_header("range", "bytes=" || self.read || "-")
       else
-         delete(headers, "range")
+         request.unset_header("range")
 
-      last_method := \request_type | if \post_data then "POST" else "GET"
-      last_uri := url.get_file()
+      write_line(request.the_method || " " || request.url.get_file() || 
+                 " HTTP/" || http_version) | fail
 
-      write_line(last_method || " " || last_uri || " HTTP/" || http_version) | fail
-
-      if /post_data then {
-         last_post_data := ""
-         headers["authorization"] := create_authorization_header()
-         write_headers() | fail
+      if /request.post_data then {
+         request.set_header("authorization", create_authorization_header())
+         write_request_headers() | fail
          write_line() | fail
       } else {
-         #
-         # Add the post data, convert from table if necessary
-         #
-         if lang::get_type(post_data) == "table" then {
-            #
-            # Convert from table in exactly the same way as for a GET parameter string.
-            # In this case always use the standard content-type encoding.
-            #
-            last_post_data := URL().make_cgi_string(post_data)
-            headers["content-type"] := "application/x-www-form-urlencoded"
-         } else {
-            #
-            # Allow user content-type encoding if specified for this arbitrary data.
-            #
-            last_post_data := post_data
-            /headers["content-type"] := "application/x-www-form-urlencoded"
-         }
-         headers["content-length"] := *last_post_data
-         headers["authorization"] := create_authorization_header()
-         write_headers() | fail
+         request.set_header("content-type", request.content_type)
+         request.set_header("content-length", *request.post_data)
+         request.set_header("authorization", create_authorization_header())
+         write_request_headers() | fail
          write_line() | fail
-         write_str(last_post_data) | fail
+         write_str(request.post_data) | fail
       }
 
       return
@@ -561,19 +593,23 @@ class HttpClient : NetClient(url,
       local s, key, val
       repeat {
          s := read_line() | fail
-         if *s = 0 then
+         if *s = 0 then {
+            # Add last header (if any).
+            result.add_header(\key, val)
             break
+         }
          s ? {
             #
             # A continuation line starts with a space or a tab.
             #
             if any(' \t') then
-               result.get_header(\key) ||:= tab(0)
+               val ||:= tab(0)
             else {
+               # Add current header and start a new one.
+               result.add_header(\key, val)
                key := tab(upto(':') | 0)
                =": "
                val := tab(0)
-               result.get_header(key) := val
             }
          }
       }
@@ -588,24 +624,24 @@ class HttpClient : NetClient(url,
          # Continue a partial read.  The self.read and self.length values
          # continue from the previous attempt.
          #
-         if \data_file then
-            data_out := ::open(data_file, "a") | stop("Couldn't open ", data_file)
+         if \request.data_file then
+            data_out := ::open(request.data_file, "a") | stop("Couldn't open ", request.data_file)
       } else {
          #
          # Set up either a new data file or a string buffer, and reset
          # the self.read and self.length values.
          #
-         if /data_file then
+         if /request.data_file then
             string_buff := StringBuff()
          else
-            data_out := ::open(data_file, "w") | stop("Couldn't open ", data_file)
+            data_out := ::open(request.data_file, "w") | stop("Couldn't open ", request.data_file)
 
-         self.length := integer(result.get_header("content-length")) | &null
+         self.length := integer(result.get_first_header("content-length")) | &null
          self.read := 0
       }
 
       if not read_data_impl() then {
-         if \data_file then
+         if \request.data_file then
             ::close(\data_out)
          fail
       }
@@ -613,11 +649,11 @@ class HttpClient : NetClient(url,
       #
       # Close the result
       #
-      if /data_file then 
+      if /request.data_file then 
          result.set_data(string_buff.get_string())
       else {
          ::close(\data_out)
-         result.set_data_file(data_file)
+         result.set_data_file(request.data_file)
       }
 
       return
@@ -629,7 +665,7 @@ class HttpClient : NetClient(url,
       #
       # Read the data.
       #
-      if map(\result.get_header("transfer-encoding")) == "chunked" then
+      if map(result.get_first_header("transfer-encoding")) == "chunked" then
          return read_chunked()
       else if /length then
          return read_to_eof()
@@ -730,7 +766,7 @@ class HttpClient : NetClient(url,
    method add_some(s)
       self.read +:= *s
       fire("Progress")
-      if /data_file then
+      if /request.data_file then
          string_buff.add(s)
       else
          writes(data_out, s)
@@ -739,15 +775,13 @@ class HttpClient : NetClient(url,
    method set_one(attr, val)
       local s, u
       case attr of {
-         "url": {
-            s := string_val(attr, val)
-            u := URL(s) | stop("Bad URL:" || s)
-            set_url(u)
-         }
-         "data_file": set_data_file(string_val(attr, val))
          "http_version": set_http_version(string_val(attr, val))
-         "request_type": set_request_type(string_val(attr, val))
          "retries": set_retries(int_val(attr, val))
+         "keep_alive" :
+            if test_flag(attr, val) then
+               set_keep_alive()
+            else
+               clear_keep_alive()
          default: self.NetClient.set_one(attr, val)
       }
    end
@@ -757,8 +791,9 @@ class HttpClient : NetClient(url,
          token_char := &ascii[33:128] -- '()<>@,;:\\\"/[]?={} \t'
       }
       self.NetClient.initially()
-      headers := table()
+      cookies := table()
       timeout := 12000
+      keep_alive_flag := 1
       retries := 2
       http_version := "1.1"
       user_agent := "gethttp.icn [en] (" || &host || ")"

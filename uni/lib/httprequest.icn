@@ -1,0 +1,157 @@
+#
+# $Id: httprequest.icn,v 1.1 2004-09-12 15:43:18 rparlett Exp $
+#
+
+package http
+
+import util
+import net
+import lang
+
+#
+# Encapsulate one request to {HttpClient}.
+#
+class HttpRequest:SetFields:Object(url,
+                                   headers,
+                                   post_data,
+                                   the_method,
+                                   data_file,
+                                   username,
+                                   password,
+                                   referer,
+                                   content_type)
+
+   #
+   # Set the desired url.
+   #
+   method set_url(url)
+      return self.url := url
+   end
+
+   #
+   # Set a filename to send the data part of the response to.  If not
+   # set then the data forms part of the HttpPage object returned.
+   #
+   # @param s the name of the file.
+   #
+   method set_data_file(s)
+      return data_file := s
+   end
+
+   #
+   # Add a request header with the given key, after any existing ones 
+   # with the same key
+   #
+   method add_header(key, val)
+      if headers.member(key) then
+         put(headers.get(key), val)
+      else
+         headers.insert(key, [val])
+   end
+
+   #
+   # Set a request header with the given key; any existing headers with 
+   # the same key are removed.
+   #
+   method set_header(key, val)
+      headers.insert(key, [val])
+   end
+
+   #
+   # Unset the header(s) for the given key
+   #
+   method unset_header(key)
+      headers.delete(key)
+   end
+
+   #
+   # Set the data to be used in a POST request, and set the method to "POST".
+   #
+   # @param   post_data    A string
+   #
+   method set_post_data(post_data)
+      set_method("POST")
+      return self.post_data := post_data
+   end
+
+   #
+   # Convenience method to set the post data from a table
+   # which represents html form post data.  The content type
+   # is set appropriately too.
+   #
+   method set_html_form_data(t)
+      set_post_data(URL().make_cgi_string(t))
+      set_content_type("application/x-www-form-urlencoded")
+   end
+
+   #
+   # Set the content type of the post data.
+   #
+   method set_content_type(content_type)
+      return self.content_type := content_type
+   end
+
+   #
+   # Set the request method type.  The default is {GET}, unless post data is set, in which
+   # case the default is {POST}.
+   #
+   method set_method(the_method)
+      return self.the_method := the_method
+   end
+
+   #
+   # Set the referer page.
+   #
+   method set_referer(s)
+      return self.referer := s
+   end
+
+   #
+   # Set the username to use for authentication
+   #
+   method set_username(s)
+      return self.username := s
+   end
+
+   #
+   # Set the password to use for authentication
+   #
+   method set_password(s)
+      return self.password := s
+   end
+
+   #
+   # Setup a temporary file for the {HttpClient} object to use
+   # as a data file.  On success, this will be returned as a field in the
+   # {HttpPage} object.
+   #
+   method set_use_temporary_data_file()
+      set_data_file("/tmp/httpclient." || curr_time_millis() || ".bin")
+   end
+
+   method set_one(attr, val)
+      local s, u
+      case attr of {
+         "url": {
+            s := string_val(attr, val)
+            u := URL(s) | stop("Bad URL:" || s)
+            set_url(u)
+         }
+         "data_file": set_data_file(string_val(attr, val))
+         "method": set_method(string_val(attr, val))
+         "referer": set_referer(string_val(attr, val))
+         "username": set_username(string_val(attr, val))
+         "password": set_password(string_val(attr, val))
+         "content_type": set_content_type(string_val(attr, val))
+         "post_data": set_post_data(string_val(attr, val))
+         default: self.NetClient.set_one(attr, val)
+      }
+   end
+
+   initially(a[])
+      headers := ClTable()
+      the_method := "GET"
+      set_fields(a)
+end
+
+

@@ -1067,7 +1067,10 @@ void gentables()
 
 #ifdef FieldTableCompression
       inserted = 0;
-      pointer = first_avail;
+      /*
+       * to avoid a negative field table offset, pointer must be >= begin
+       */
+      pointer = (first_avail > begin) ? first_avail : begin;
       while (!inserted) {
          inserted = 1;
          for (i = begin; i <= end; i++) {

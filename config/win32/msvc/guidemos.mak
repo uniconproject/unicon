@@ -5,7 +5,8 @@ PROGS=lines.exe editor.exe multi.exe tickdemo.exe explorer.exe secondtest.exe me
 	demo.exe palette.exe tabs.exe testdialog.exe toolbar.exe \
 	listtest.exe texttest.exe tabletest.exe editlisttest.exe dndtest.exe \
 	sliders.exe spinners.exe getweb.exe fillpanel.exe \
-	filedialogtest.exe sieve.exe ticks.exe leak.exe textsize.exe
+	filedialogtest.exe sieve.exe ticks.exe leak.exe textsize.exe \
+	componentscrollareatest.exe
 
 all: $(PROGS)
 

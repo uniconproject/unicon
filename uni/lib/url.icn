@@ -1,5 +1,5 @@
 #
-# $Id: url.icn,v 1.3 2004-06-30 10:37:26 rparlett Exp $
+# $Id: url.icn,v 1.4 2004-10-02 17:25:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -201,8 +201,7 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref, 
    #
    method parse(s)
       s ? {
-         set_protocol(tab(find("://")) | "http")
-         ="://"
+         set_protocol(1(tab(many(&lcase ++ &ucase)), ="://") | "http")
          set_address(tab(upto(':/') | 0))
 
          if =":" then {

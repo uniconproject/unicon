@@ -1,5 +1,5 @@
 #
-# $Id: httpclient.icn,v 1.10 2004-09-12 15:43:18 rparlett Exp $
+# $Id: httpclient.icn,v 1.11 2004-10-02 17:25:24 rparlett Exp $
 #
 
 package http
@@ -127,20 +127,34 @@ class HttpClient : NetClient(request,
    #
    # @p
    method handle_redirect()
-      local l
+      local l, s
       #
       # A redirection, so extract the URL if possible.
       #
       l := result.get_first_header("Location") | return on_http_error("No Location in a redirect response")
-      if member(redir_set, l) then
-         return on_http_error("Circular redirection detected:" || l)
-      insert(redir_set, l)
-      request.url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
-      # On a redirect, the method is always GET, regardless of the original method.
-      request.the_method := "GET"
-      request.post_data := &null
-      request.unset_header("content-length")
-      request.unset_header("content-type")
+      if match("http://", l) then
+         request.url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
+      else
+         #
+         # It shouldn't be a relative URL, but that seems to be
+         # commonplace.
+         #
+         request.url.set_relative(l)
+      
+      s := request.url.to_string()
+      if member(redir_set, s) then
+         return on_http_error("Circular redirection detected:" || s)
+      insert(redir_set, s)
+
+      #
+      # On a redirect, a POST becomes a GET.
+      #
+      if request.the_method == "POST" then {
+         request.the_method := "GET"
+         request.post_data := &null
+         request.unset_header("content-length")
+         request.unset_header("content-type")
+      }
       auth_req_count := 0
       return
    end
@@ -341,7 +355,7 @@ class HttpClient : NetClient(request,
    #
    # @p
    method parse_cookie_string(s)
-      local c, k, v
+      local c, k, v, t
 
       s ? repeat {
          tab(upto(token_char)) | break
@@ -359,7 +373,11 @@ class HttpClient : NetClient(request,
             c.value := v
          } else {
             case map(k) of {
-               "expires" : c.expires := v
+               "expires" : {
+                  t := Time()
+                  if t.parse(v, "EEE, dd-MMM-yyyy hh:mm:ss zzz") then
+                     c.expires := t
+               }
                "path" : c.path := v
                "domain" : c.domain := v
                "secure" : secure := 1
@@ -402,26 +420,32 @@ class HttpClient : NetClient(request,
    #
    # @p
    method create_cookie_header()
-      local s, t, e, f, g, host, path, c
+      local s, e, f, host, path, c, now
 
       host := map(request.url.get_address())
       path := request.url.get_file()
+      now := Time()
+      now.set_current_time()
       s := ""
       every e := !sort(cookies) do {
          if host[0-:*e[1]] == e[1] then {
             every f := !reverse(sort(e[2])) do {
                if match(f[1], path) then {
                   every c := (!f[2].sort())[2] do {
-                     if *s > 0 then
-                        s ||:= "; "
-                     s ||:= c.name
-                     s ||:= "=" || \c.value
+                     if /c.expires | c.expires.after(now) then {
+                        if *s > 0 then
+                           s ||:= "; "
+                        s ||:= c.name
+                        s ||:= "=" || \c.value
+                     }
                   }
                }
             }
          }
       }
-      return s
+
+      if *s > 0 then
+         return s
    end
 
    #
@@ -776,6 +800,7 @@ class HttpClient : NetClient(request,
       local s, u
       case attr of {
          "http_version": set_http_version(string_val(attr, val))
+         "user_agent": set_user_agent(string_val(attr, val))
          "retries": set_retries(int_val(attr, val))
          "keep_alive" :
             if test_flag(attr, val) then
@@ -796,6 +821,6 @@ class HttpClient : NetClient(request,
       keep_alive_flag := 1
       retries := 2
       http_version := "1.1"
-      user_agent := "gethttp.icn [en] (" || &host || ")"
+      user_agent := "httpclient.icn [en] (" || &host || ")"
       set_fields(a)
 end

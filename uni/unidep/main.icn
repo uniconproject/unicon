@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.2 2004-02-13 16:33:45 rparlett Exp $
+# $Id: main.icn,v 1.3 2004-02-15 01:24:37 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -89,6 +89,16 @@ procedure main(a)
 end
 
 #
+# Find the FileArg with the given filename, or fail.
+#
+procedure find_filearg(file)
+   every e := !all_fileargs do {
+      if e.file == file then
+         return e
+   }
+end
+
+#
 # Output the list of lines to the file s.
 #
 procedure output_to(s, lines)
@@ -128,8 +138,8 @@ procedure usage()
    write(&errout, "-f        specify name of makefile; - means stdout")
    write(&errout, "-p        specify a project target name, which will")
    write(&errout, "          depend on all input files")
-   write(&errout, "-xi       produce dependencies to include files with")
-   write(&errout, "          absolute filenames")
+   write(&errout, "-xi       produce dependencies to include files outside")
+   write(&errout, "          of the set of input files")
    write(&errout, "-xs       produce dependencies to files outside the")
    write(&errout, "          set of input files which contain inherited")
    write(&errout, "          superclasses.")

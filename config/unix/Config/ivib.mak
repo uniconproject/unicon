@@ -1,9 +1,5 @@
-RM=rm -f
-UNICON=../unicon/unicon
-CP=cp
-BINDIR=../../bin
-export IPATH:=../lib ../../ipl/lib
-export PATH:=$(BINDIR):$(PATH)
+BASE=../..
+include ../makedefs
 
 #
 # makefile for constructing ivib
@@ -68,7 +64,7 @@ ICONS=$(ICONDIR)/icn1.ico \
 #
 ivib: $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
-	$(CP) ivib$(EXE) $(BINDIR)
+	$(CP) ivib$(EXE) $(BIN)
 	@echo Linking complete.
 
 #

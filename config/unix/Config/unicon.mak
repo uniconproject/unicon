@@ -1,20 +1,27 @@
 ICONT=../../bin/icont
 CP=cp
 RM=rm -f
-BINDIR=../../bin
+BIN=../../bin
 UNICON=../unicon/unicon
 ARC=zip
 ARCEXT=zip
 IYACC=../iyacc/iyacc
+ifeq ("$(OSTYPE)", "cygwin")
+	EXE=.exe
+else
+	EXE=
+endif
 
 unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
-	$(CP) unicon$(EXE) $(BINDIR)
+	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
 wunicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) -G -o wunicon.exe unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
-	$(CP) wunicon$(EXE) $(BINDIR)
+	$(CP) wunicon$(EXE) $(BIN)
+
+%.u: %.icn
 
 unicon.u : unicon.icn
 	$(ICONT) -c unicon

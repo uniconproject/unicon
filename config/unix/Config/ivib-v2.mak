@@ -78,7 +78,7 @@ deps.out: ;
 
 ivib: $(UFILES)
 	$(UNICON) -o ivib linkfiles.icn
-	$(CP) ivib $(BIN)/ivib-v2
+	$(CP) ivib$(EXE) $(BIN)/ivib-v2$(EXE)
 
 .PHONY: icons cleanicons
 icons: $(ICONS)

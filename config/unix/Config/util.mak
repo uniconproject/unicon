@@ -9,4 +9,4 @@ clean:
 
 ivibmigrate : ivibmigrate.icn
 	$(UNICON) ivibmigrate.icn
-	$(CP) ivibmigrate $(BIN)
+	$(CP) ivibmigrate$(EXE) $(BIN)

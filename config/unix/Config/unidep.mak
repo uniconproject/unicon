@@ -17,6 +17,6 @@ deps.out: ;
 
 unidep: $(UFILES)
 	$(UNICON) -o unidep $(UFILES)
-	$(CP) unidep $(BIN)
+	$(CP) unidep$(EXE) $(BIN)
 
 include deps.out

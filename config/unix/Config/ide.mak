@@ -1,17 +1,16 @@
 BASE=../..
-UNI=..
-CP=cp
-RM=rm -f
-UNICON=$(UNI)/unicon/unicon
+include ../makedefs
+
+# Avoid picking up a link to dialog in ../gui
+export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
+
 CFLAGS= -c -u
 SRC=ui.icn msg_dlg.icn
 OBJ=ui.u
-export IPATH:=../lib ../../ipl/lib
-export PATH:=../../bin:$(PATH)
 
 ui: ui.u msg_dlg.u
-	$(UNICON) ui.u
-	$(CP) ui ../../bin
+	$(UNICON) ui.u 
+	$(CP) ui$(EXE) ../../bin
 
 ui.u: ui.icn
 	$(UNICON) $(CFLAGS) ui

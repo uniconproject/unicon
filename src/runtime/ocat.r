@@ -89,7 +89,7 @@ operator{1} ||| lconcat(x, y)
       size3 = size1 + size2;
 
       Protect(bp1 = (struct b_list *)alclist_raw(size3, size3), runerr(0));
-      lp1 = bp1->listhead;
+      lp1 = (struct b_lelem *) (bp1->listhead);
 
       /*
        * Make a copy of both lists in adjacent slots.

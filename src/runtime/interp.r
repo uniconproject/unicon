@@ -61,7 +61,9 @@ extern unsigned long oldtick;	/* previous sum of the two longs */
 
 
 int ilevel;			/* Depth of recursion in interp() */
+#ifndef MultiThread
 struct descrip value_tmp;	/* list argument to Op_Apply */
+#endif					/* MultiThread */
 struct descrip eret_tmp;	/* eret value during unwinding */
 
 int coexp_act;			/* last co-expression action */
@@ -769,7 +771,7 @@ Deliberate Syntax Error
 
 				/* ---Other Language Operations--- */
 
-         case Op_Apply: {	/* apply */
+         case Op_Apply: {	/* apply, a.k.a. binary bang */
             union block *bp;
             int i, j;
 
@@ -817,7 +819,6 @@ Deliberate Syntax Error
                   }
 
                default: {		/* illegal type for invocation */
-
                   xargp = (dptr)(rsp - 3);
                   err_msg(126, &value_tmp);
                   goto efail;

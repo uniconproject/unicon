@@ -1754,8 +1754,9 @@ int settexture(wbp w, char* str)
       return Failed;
 }
 
-/* convert a icon image string into a useable
-   opengl texture */
+/*
+ * convert a icon image string into a useable opengl texture
+ */
 int imagestr(wbp w, char* str)
 {
    struct palentry *e;
@@ -1781,10 +1782,6 @@ int imagestr(wbp w, char* str)
    if (s >= z)			     /* if end of string */
 	 return Failed;
 
-   /* if the width is not a power of two fail */
-   if(powertwo(width) > 0) return Failed;
-
-
  /* Check for a bilevel format */
    if ((c = *s) == '#' || c == '~') {
       s++;
@@ -1800,8 +1797,7 @@ int imagestr(wbp w, char* str)
       if (nchars % row != 0)
          return Failed;
       height = nchars / row;
-      if (powertwo(height) > 0)
-         return Failed;
+
       i = bltex(w, width, height, c, s, (word)(z - s));
       if (i == Succeeded)
 	   return Succeeded;
@@ -1848,10 +1844,7 @@ int imagestr(wbp w, char* str)
    /* Create the texture */
 
    height = nchars/width;
-   /* if the height is not a power of two
-      return failed */
-   if (powertwo(height) > 0)
-      return Failed;
+
    i = textureimg(w, width, height, e, s, (word)(z-s));
    if (i == Succeeded)
       return Succeeded;
@@ -1869,14 +1862,8 @@ int fileimage(wbp w, char* filename)
 
    /* a gif file */
    if (r == Succeeded){
-      /* check to make sure the image is a power of two */
-      nwidth = powertwo(im.width);
-      nheight = powertwo(im.height);
-      if (nwidth == 0 && nheight == 0)
-         i = textureimg(w, im.width, im.height, im.paltbl, im.data,
-                        (word)im.width*(word)im.height);
-      else
-         return Failed;
+      i = textureimg(w, im.width, im.height, im.paltbl, im.data,
+                     (word)im.width*(word)im.height);
 
    /* we need to handle other cases beside gif...
 	 what are those cases ? ... look at ReadImage */
@@ -1892,8 +1879,10 @@ int fileimage(wbp w, char* filename)
 }
 
 
-/* converts the icon representation of an image into
-   a format accepted by opengl */
+/*
+ * converts the icon representation of an image into
+ * a format accepted by opengl
+ */
 int textureimg(wbp w, int width, int height,
                struct palentry *e, unsigned char *s, word len)
 {
@@ -1905,16 +1894,17 @@ int textureimg(wbp w, int width, int height,
    GLubyte tex[height][width][3];
 
    ix = 0; iy = height-1;
-   /* convert the string s into an array that can be used
-      by opengl as a texture */
-   /* we must start at height=height-1 and width=0 to make this
-      look right */
+
+   /*
+    * convert string s into an array that can be used by opengl as a texture.
+    * we must start at height=height-1 and width=0 to make this look right
+    */
 
    while (len--) {
       c = *s++;
       v = e[c].valid;
       if (v) {
-         /* r,g,b componet must be between 0 and 256 */
+         /* r,g,b component must be between 0 and 256 */
 	   tex[iy][ix][0] = e[c].clr.red/256;
 	   tex[iy][ix][1] = e[c].clr.green/256;
  	   tex[iy][ix][2] = e[c].clr.blue/256;
@@ -1932,19 +1922,22 @@ int textureimg(wbp w, int width, int height,
             }
          }
       }
-      if (ix > 0)	/* pad final row if incomplete */
+      if (ix > 0) {	/* pad final row if incomplete */
          while (ix < width) {
             tex[iy][ix][0] = (GLint)RED(w->context->bg);
             tex[iy][ix][1] = (GLint)GREEN(w->context->bg);
             tex[iy][ix][2] = (GLint)BLUE(w->context->bg);
             ix++;
            }
-      /* set the texture */
-      i = texture(width, height, tex);
-      if (i == Succeeded)
-         return Succeeded;
-      else
-         return Failed;
+	 }
+
+   /* set the texture */
+   i = texture(width, height, tex);
+
+   if (i == Succeeded)
+      return Succeeded;
+   else
+      return Failed;
 }
 
 /* convert a bi-level image into an opengl texture */
@@ -2078,8 +2071,6 @@ int texwindow3D(wbp w1, wbp w2)
    int height = ws->height;
    int i;
    GLubyte tex[height][width][3];
-   if ((powertwo(width) > 0) || (powertwo(height) > 0))
-       return Failed;
 
    /* change the current context to w2's context */
 #ifdef XWindows
@@ -2109,10 +2100,28 @@ int texwindow3D(wbp w1, wbp w2)
 /* apply a texture to a scene */
 int texture(int width, int height, GLubyte ***tex)
 {
-   /* make sure texture is a power of two */
-   if ((powertwo(width) > 0) || (powertwo(height) > 0))
-       return Failed;
-   glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, tex);
+   GLubyte ***tex2;
+
+   /* if not a power of two, scale image to closest power of two */
+   if (powertwo(width) || powertwo(height)) {
+      int neww=1, newh=1, rv;
+      while (neww * 2 < width) neww *= 2;
+      while (newh * 2 < height) newh *= 2;
+      tex2 = (GLubyte ***) malloc(neww * newh * 3);
+      if (tex2 == NULL) return Failed;
+      rv = gluScaleImage(GL_RGB, width, height, GL_UNSIGNED_BYTE, tex,
+			 neww, newh, GL_UNSIGNED_BYTE, tex2);
+      if (rv) { free(tex2); return Failed; }
+      width = neww;
+      height = newh;
+      }
+   else tex2 = tex;
+
+   glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB,
+		GL_UNSIGNED_BYTE, tex2);
+
+   if (tex2 != tex) free(tex2);
+
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

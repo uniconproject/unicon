@@ -23,6 +23,10 @@ case "$SYS" in
       ld -shared -expect_unresolved '*' -o $LIBNAME "$@" -lc;;
    Linux*|BSD/OS*|OpenBSD*)
       gcc -shared -o $LIBNAME -fPIC "$@";;
+   Darwin*)
+      cc -shared -o $LIBNAME -fPIC "$@";;
+      echo 1>&2 "No loadfunc() under OS X yet. Continuing."
+      exit 0;;
    FreeBSD*)
       ld -Bshareable -o $LIBNAME "$@" -lc;;
    *)

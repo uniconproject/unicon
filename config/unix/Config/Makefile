@@ -62,6 +62,7 @@ Makefiles:
 		echo "COPY=cp" >> ../../../uni/ivib/makefile
 		echo "BINDIR=../../bin" >> ../../../uni/ivib/makefile
 		cat ../Config/ivib.mak >> ../../../uni/ivib/makefile
+		cat ../Config/ipllib.mak >> ../../../ipl/lib/makefile
 
 Localcode:
 		cp define.h ../../../src/h

@@ -17,16 +17,15 @@ struct b_coexpr *sblkp;
    syserr("co_init() called, but co-expressions not implemented");
 #else					/* Coexpr */
    register word *newsp;
-   register struct b_refresh *rblkp;
    register dptr dp, dsp;
    int frame_size;
    word stack_strt;
    int na, nl, nt, i;
-
    /*
     * Get pointer to refresh block.
     */
-   rblkp = (struct b_refresh *)BlkLoc(sblkp->freshblk);
+   struct b_refresh *rblkp = (struct b_refresh *)BlkLoc(sblkp->freshblk);
+
 
 #if COMPILER
    na = rblkp->nargs;                /* number of arguments */
@@ -159,11 +158,10 @@ int first;
 #ifndef Coexpr
    syserr("co_chng() called, but co-expressions not implemented");
 #else        				/* Coexpr */
-   register struct b_coexpr *ccp;
    static int coexp_act;     /* used to pass signal across activations */
                              /* back to whomever activates, if they care */
 
-   ccp = (struct b_coexpr *)BlkLoc(k_current);
+   register struct b_coexpr *ccp = (struct b_coexpr *)BlkLoc(k_current);
 
 #if !COMPILER
 #ifdef MultiThread

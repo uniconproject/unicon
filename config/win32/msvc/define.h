@@ -11,6 +11,7 @@
  */
 #define Header header
 #define NT 1
+#define MSVC 1
 #define ShellHeader
 
 #define index strchr

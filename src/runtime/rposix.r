@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.22 2004-07-03 12:24:08 rparlett Exp $
+ * $Id: rposix.r,v 1.23 2004-10-09 12:17:54 rparlett Exp $
  */
 
 #ifdef PosixFns
@@ -758,7 +758,9 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
    struct sockaddr_in saddr_in;
    char *host = fname;
    static struct hostent he;
+#if UNIX
    static struct sigaction sigact;
+#endif					/* UNIX */
 
 #if UNIX
    struct sockaddr_un saddr_un;
@@ -852,6 +854,7 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
       return (FILE *)s;
       }
 
+#if UNIX
    if (timeout > 0) {
       /* Set up a timeout alarm handler */
       sigact.sa_handler = on_alarm;
@@ -861,11 +864,14 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
       /* alarm() takes seconds not millis... */
       alarm(timeout % 1000 ? 1 + timeout / 1000 : timeout / 1000);
    }
+#endif					/* UNIX */
 
    rc = connect(s, sa, len);
 
+#if UNIX
    if (timeout > 0)
       alarm(0);
+#endif					/* UNIX */
 
    if (rc < 0) {
       close(s);

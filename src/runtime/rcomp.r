@@ -94,14 +94,25 @@ dptr dp1, dp2;
 #ifdef Graphics
 	 if (BlkLoc(*dp1)->file.status & Fs_Window) {
 	    wbp w = (wbp) BlkLoc(*dp1)->file.fd;
-	    StrLoc(s1) = w->window->windowlabel;
-	    StrLen(s1) = strlen(w->window->windowlabel);
+	    if (w->window) {
+	       StrLoc(s1) = w->window->windowlabel;
+	       StrLen(s1) = strlen(w->window->windowlabel);
+               } else {
+	       StrLoc(s1) = "";
+	       StrLen(s1) = 0;
+               } 
 	    ps1 = &s1;
 	    }
 	 if (BlkLoc(*dp2)->file.status & Fs_Window) {
 	    wbp w = (wbp) BlkLoc(*dp2)->file.fd;
-	    StrLoc(s2) = w->window->windowlabel;
-	    StrLen(s2) = strlen(w->window->windowlabel);
+	    if (w->window) {
+	       StrLoc(s2) = w->window->windowlabel;
+	       StrLen(s2) = strlen(w->window->windowlabel);
+               }
+	       else {
+	       StrLoc(s2) = "";
+	       StrLen(s2) = 0;
+               }
 	    ps2 = &s2;
 	    }
 #endif					/* Graphics */

@@ -26,10 +26,6 @@
    Feature(1, "_ACORN", "Acorn Archimedes")
 #endif					/* ARM */
 
-#if ATARI_ST
-   Feature(1, "_ATARI", "Atari ST")
-#endif					/* ATARI_ST */
-
 #if VM
    Feature(1, "_CMS", "CMS")
 #endif					/* VM */
@@ -45,11 +41,7 @@
 #if NT
    Feature(1, "_MS_WINDOWS_NT", "MS Windows NT")
 #else					/* NT */
-#if BORLAND_286
-   Feature(1, "_MSDOS_286", "MS-DOS/286")
-#else					/* BORLAND_286 */
    Feature(1, "_MSDOS", "MS-DOS")
-#endif					/* BORLAND_286 */
 #endif					/* NT */
 #endif					/* INTEL_386 || HIGHC_386 ... */
 #endif					/* MSDOS */
@@ -140,10 +132,6 @@
    Feature(1, "_MESSAGING", "messaging")
 #endif                                  /* Messaging */
 
-#ifdef FAttrib
-   Feature(1, "_FATTRIB", "file attributes")
-#endif					/* FAttrib */
-
 #ifdef Graphics
    Feature(1, "_GRAPHICS", "graphics")
 #endif					/* Graphics */
@@ -156,8 +144,6 @@
    Feature(1, "_MS_WINDOWS", "MS Windows")
 #if NT
    Feature(1, "_WIN32", "Win32")
-#else					/* NT */
-   Feature(1, "_WIN16", "Win16")
 #endif					/* NT */
 #endif					/* MSWindows */
 

@@ -6,6 +6,7 @@ CHECK_OPENGL()
 CHECK_ODBC()
 AC_CHECK_FUNCS(getrlimit setrlimit)
 AC_VAR_TIMEZONE_EXTERNALS()
+AC_STRUCT_TIMEZONE()
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
 AC_OUTPUT

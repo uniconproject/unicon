@@ -51,10 +51,12 @@ keyword{2} clock
       offset_hrs = tz_sec/3600;
       if (ct->tm_isdst) offset_hrs--;
 
-#if defined(SUN) || defined(NTGCC) || defined(HAVE_TIMEZONE)
+#if defined(SUN) || defined(NTGCC) || defined(HAVE_TZNAME)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
-#else
+#elsif defined(HAVE_STRUCT_TM_TM_ZONE)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);
+#else
+      sprintf(sbuf, "UTC%+d (unknown timezone)", offset_hrs);
 #endif
 
       i = strlen(sbuf);
@@ -185,10 +187,12 @@ keyword{2} dateline
 
       offset_hrs = tz_sec/3600;
       if (ct->tm_isdst) offset_hrs--;
-#if defined(SUN) || defined(NTGCC) || defined(HAVE_TIMEZONE)
+#if defined(SUN) || defined(NTGCC) || defined(HAVE_TZNAME)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
-#else
+#elsif defined(HAVE_STRUCT_TM_TM_ZONE)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);
+#else
+      sprintf(sbuf, "UTC%+d (unknown timezone)", offset_hrs);
 #endif
       i = strlen(sbuf);
       Protect(tmp = alcstr(sbuf, i), runerr(0));

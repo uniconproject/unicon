@@ -33,7 +33,7 @@ WOBJS=	../wincap/file.$(O) ../wincap/errors.$(O) ../wincap/dibutil.$(O)\
 	../wincap/copy.$(O) ..\runtime\xrwindow.$(O) ..\runtime\xrwinsys.$(O) \
 	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
 
-all:            icont
+all:            $(ICONT)
 
 icont:        $(OBJS) common
 	gcc -o icont.exe $(OBJS) $(COBJS)

@@ -150,9 +150,9 @@ keyword{1} dateline
          if (hour < 1)
             hour += 12;
          }
-      sprintf(sbuf, "%s, %s %d, %d  %d:%02d %s", day[ct->tm_wday],
+      sprintf(sbuf, "%s, %s %d, %d  %d:%02d %s UTC%c%d", day[ct->tm_wday],
          month[ct->tm_mon], ct->tm_mday, 1900 + ct->tm_year, hour,
-	 ct->tm_min, merid);
+	 ct->tm_min, merid, timezone < 0 ? '+' : '-', timezone/3600);
        i = strlen(sbuf);
        Protect(tmp = alcstr(sbuf, i), runerr(0));
        return string(i, tmp);

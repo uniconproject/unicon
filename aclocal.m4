@@ -189,3 +189,64 @@ then
 fi
 
 ])
+
+
+
+
+AC_DEFUN([CHECK_ODBC],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if odbc is wanted)
+AC_ARG_WITH(odbc,
+[  --with-odbc=DIR root directory path of odbc installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-odbc to disable odbc usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  ODBC_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+ODBC_HOME=/usr/local
+if test ! -f "${ODBC_HOME}/include/sqlext.h"
+then
+        ODBC_HOME=/usr
+fi
+])
+
+#
+# Locate ODBC, if wanted
+#
+if test -n "${ODBC_HOME}"
+then
+        ODBC_OLD_LDFLAGS=$LDFLAGS
+        ODBC_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${ODBC_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${ODBC_HOME}/include"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(iodbc, SQLAllocConnect, [odbc_cv_libiodbc=yes], [odbc_cv_libiodbc=no])
+        AC_CHECK_HEADER(sqlext.h, [odbc_cv_sqlext_h=yes], [odbc_cv_sqlext_h=no])
+        AC_LANG_RESTORE
+        if test "$odbc_cv_libiodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+                AC_CHECK_LIB(iodbc, SQLAllocConnect)
+                AC_MSG_CHECKING(odbc in ${ODBC_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(odbc in ${ODBC_HOME})
+                LDFLAGS="$ODBC_OLD_LDFLAGS"
+                CPPFLAGS="$ODBC_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+
+])

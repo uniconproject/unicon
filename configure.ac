@@ -3,6 +3,7 @@ AC_CONFIG_SRCDIR([src/runtime/imain.r])
 CHECK_ZLIB()
 CHECK_JPEG()
 CHECK_OPENGL()
+CHECK_ODBC()
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
 AC_OUTPUT

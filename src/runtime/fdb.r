@@ -70,9 +70,10 @@ function{0,1} dbcolumns(f,table_name)
     HSTMT hstmt;
     
     static struct descrip colnames[] = {
-       {7,"catalog"}, {6,"schema"}, {9,"tablename"}, {7,"colname"},
-       {8,"datatype"}, {8,"typename"}, {7,"colsize"}, {6,"buflen"},
-       {9,"decdigits"}, {12,"numprecradix"}, {8,"nullable"}, {7,"remarks"}
+       {7,(word)"catalog"}, {6,(word)"schema"}, {9,(word)"tablename"},
+       {7,(word)"colname"}, {8,(word)"datatype"}, {8,(word)"typename"},
+       {7,(word)"colsize"}, {6,(word)"buflen"}, {9,(word)"decdigits"},
+       {12,(word)"numprecradix"}, {8,(word)"nullable"}, {7,(word)"remarks"}
        };
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
@@ -124,8 +125,8 @@ function{0,1} dbcolumns(f,table_name)
     L.vword.bptr=(union block *) hp;
 
     /* create record fields definition */
-    if (!proc)
-       proc=dynrecord(&rectypename, colnames, DBCOLNCOLS);
+    if (proc == NULL)
+       proc = dynrecord(&rectypename, colnames, DBCOLNCOLS);
 
     while (SQLFetch(hstmt)==SQL_SUCCESS) {
 
@@ -176,6 +177,9 @@ function{0,1} dbcolumns(f,table_name)
       /* REMARKS (varchar) */
       StrLoc(r->fields[11])=cbRemarks>0?alcstr(szRemarks, cbRemarks):"";
       StrLen(r->fields[11])=cbRemarks>0?cbRemarks:0;
+      if (StrLoc(r->fields[11]) == NULL) {
+         runerr(306);
+         }
 
       c_put(&L, &R);
     }
@@ -204,8 +208,6 @@ function {0,1} dbdriver(f)
     char sbuf[256];
     struct ISQLFile *fp;
 
-    struct descrip field[DBDRVNCOLS]; /* field names */
-    
     /* record structures */
     tended struct descrip R;
     tended struct descrip rectypename=emptystr;
@@ -213,8 +215,9 @@ function {0,1} dbdriver(f)
     short i;
 
     /* unicon field names */
-    static char *colname[DBDRVNCOLS]={
-       "name", "ver", "odbcver", "connections", "statements", "dsn"};
+    static struct descrip colnames[]={
+       {4,(word)"name"}, {3,(word)"ver"}, {7,(word)"odbcver"},
+       {11,(word)"connections"}, {10,(word)"statements"}, {3,(word)"dsn"}};
                                
     /* SQLGetInfo() information requested */
     static int  sql_parm[DBDRVNCOLS]={SQL_DRIVER_NAME, SQL_DRIVER_VER,
@@ -228,16 +231,11 @@ function {0,1} dbdriver(f)
       runerr(NOT_ODBC_FILE_ERR, f);
       }
     fp=FDESC(f); /* file descriptor */
+    fp->proc = NULL;
 
-    /* record field names */
-    
     /* allocate record */
     if (proc == NULL) {
-       for (i=0; i<DBDRVNCOLS; i++) {
-          StrLoc(field[i])=colname[i];
-          StrLen(field[i])=strlen(colname[i]);
-          }
-       proc = dynrecord(&rectypename, field, DBDRVNCOLS);
+       proc = dynrecord(&rectypename, colnames, DBDRVNCOLS);
        }
     r = alcrecd(DBDRVNCOLS, (union block *)proc);
     R.dword=D_Record;
@@ -246,8 +244,10 @@ function {0,1} dbdriver(f)
     for (i=0; i<DBDRVNCOLS; i++) {
       if (is_str[i]) { /* result is a string */
         SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], sbuf, 255, &len);
-        StrLen(r->fields[i])=len;
         StrLoc(r->fields[i])=alcstr(sbuf, len);
+        StrLen(r->fields[i])=len;
+        if (StrLoc(r->fields[i]) == NULL)
+           runerr(306);
       }
       else { /* result is a number */
         SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i],
@@ -273,11 +273,10 @@ function{1} dbkeys(f, table_name)
   body {
 
     /* record declarations */
-    struct descrip fieldname[DBKEYSNCOLS]; /* record field names */
     tended struct descrip R;
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
-    struct b_proc *proc;
+    static struct b_proc *proc;
 
     /* list declarations */
     tended struct descrip L;
@@ -295,14 +294,14 @@ function{1} dbkeys(f, table_name)
 
     short i;
     
-    char *colname[DBKEYSNCOLS]={"col", "seq"};
-    
+    static struct descrip colnames[]={{3,(word)"col"}, {3,(word)"seq"}};
     
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC mode */
       runerr(NOT_ODBC_FILE_ERR, f);
     }
 
     fp=FDESC(f); /* file descriptor */
+    fp->proc = NULL;
       
     if (is:null(table_name) && (fp->tablename != NULL)) {
        MakeStr(fp->tablename, strlen(fp->tablename), &table_name);
@@ -334,19 +333,14 @@ function{1} dbkeys(f, table_name)
     L.vword.bptr=(union block *) hp;
 
     /* create record fields definition */
-    
-    for (i=0; i<DBKEYSNCOLS; i++) {
-      StrLoc(fieldname[i])=colname[i];
-      StrLen(fieldname[i])=strlen(colname[i]);
-    }
+    if (proc == NULL)
+       proc=dynrecord(&rectypename, colnames, DBKEYSNCOLS);
     
 
     /* populate list with column info */
 
     while (SQLFetch(hstmt)==SQL_SUCCESS) {
-
       /* allocate record */
-      proc=dynrecord(&rectypename, fieldname, DBKEYSNCOLS);
       r = alcrecd(DBKEYSNCOLS, (union block *)proc);
       R.dword=D_Record;
       R.vword.bptr=(union block *) r;
@@ -354,6 +348,7 @@ function{1} dbkeys(f, table_name)
       /* key column (varchar) */
       StrLoc(r->fields[0])=cbPkCol>0?alcstr(szPkCol, cbPkCol):"";
       StrLen(r->fields[0])=cbPkCol>0?cbPkCol:0;
+      if (StrLoc(r->fields[0]) == NULL) runerr(306);
           
       /* key sequence (integer) */
       MakeInt(iKeySeq, &(r->fields[1]));
@@ -383,25 +378,24 @@ function {0,1} dblimits(f)
   body {  
     SWORD len;
     UWORD result;
-    
     struct ISQLFile *fp;
-
-    struct descrip field[DBLIMITSNCOLS]; /* field names */
-    
-    /* record structures */
     tended struct descrip R;
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
-    struct b_proc *proc;
-
+    static struct b_proc *proc;
+    char sbuf[256];
     short i;
     
-    static char *colname[DBLIMITSNCOLS]={"maxbinlitlen", "maxcharlitlen",
-         "maxcolnamelen",  "maxgroupbycols", "maxorderbycols", "maxindexcols",
-         "maxselectcols",  "maxtblcols",     "maxcursnamelen", "maxindexsize",
-         "maxownnamelen",  "maxprocnamelen", "maxqualnamelen", "maxrowsize",
-         "maxrowsizelong", "maxstmtlen",     "maxtblnamelen",  "maxselecttbls",
-         "maxusernamelen"};
+    static struct descrip colnames[]={{12,(word)"maxbinlitlen"},
+         {13,(word)"maxcharlitlen"}, {13,(word)"maxcolnamelen"},
+         {14,(word)"maxgroupbycols"}, {14,(word)"maxorderbycols"},
+         {12,(word)"maxindexcols"}, {13,(word)"maxselectcols"},
+         {10,(word)"maxtblcols"}, {14,(word)"maxcursnamelen"},
+         {12,(word)"maxindexsize"}, {13,(word)"maxownnamelen"},
+         {14,(word)"maxprocnamelen"}, {14,(word)"maxqualnamelen"},
+         {10,(word)"maxrowsize"}, {14,(word)"maxrowsizelong"},
+         {10,(word)"maxstmtlen"}, {13,(word)"maxtblnamelen"},
+         {13,(word)"maxselecttbls"}, {14,(word)"maxusernamelen"}};
 
     static int sql_parm[DBLIMITSNCOLS]={SQL_MAX_BINARY_LITERAL_LEN,
         SQL_MAX_CHAR_LITERAL_LEN, SQL_MAX_COLUMN_NAME_LEN,
@@ -420,23 +414,22 @@ function {0,1} dblimits(f)
       runerr(NOT_ODBC_FILE_ERR, f);
       }
     fp=FDESC(f); /* file descriptor */
+    fp->proc = NULL;
 
-    /* record field names */
-    for (i=0; i<DBLIMITSNCOLS; i++) {
-      StrLoc(field[i])=colname[i];
-      StrLen(field[i])=strlen(colname[i]);
-    }
+    /* create record type */
+    if (proc == NULL)
+       proc=dynrecord(&rectypename, colnames, DBLIMITSNCOLS);
 
     /* allocate record */
-    proc=dynrecord(&rectypename, field, DBLIMITSNCOLS);
     r = alcrecd(DBLIMITSNCOLS, (union block *)proc);
     R.dword=D_Record;
     R.vword.bptr=(union block *) r;
 
     for (i=0; i<DBLIMITSNCOLS; i++) {
       if (is_str[i]) {
-        StrLoc(r->fields[i])=alcstr(NULL,255);
-        SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], StrLoc(r->fields[i]), 255, &len);
+        SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], sbuf, 255, &len);
+        StrLoc(r->fields[i])=alcstr(sbuf,len);
+        if (StrLoc(r->fields[i]) == NULL) runerr(306);
         StrLen(r->fields[i])=len;
       }
       else {
@@ -462,7 +455,6 @@ function {0,1} dbproduct(f)
    body {
       SWORD len;
       struct ISQLFile *fp;
-      struct descrip field[DBPRODNCOLS];
       char sbuf[256];    
 
       /* record structures */
@@ -471,7 +463,7 @@ function {0,1} dbproduct(f)
       tended struct b_record *r;
       static struct b_proc *proc;
       short i;
-      static char *colname[DBPRODNCOLS]={"name", "ver"};
+      static struct descrip colnames[]={{4,(word)"name"}, {3,(word)"ver"}};
       static int sql_parm[DBPRODNCOLS]={SQL_DBMS_NAME, SQL_DBMS_VER};
 
       if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
@@ -479,22 +471,20 @@ function {0,1} dbproduct(f)
          }
 
       fp=FDESC(f); /* file descriptor */
+      fp->proc = NULL;
 
       /* allocate record */
-      if (proc == NULL) {
-         for (i=0; i<DBPRODNCOLS; i++) {
-            StrLoc(field[i])=colname[i];
-            StrLen(field[i])=strlen(colname[i]);
-            }
-         proc = (struct b_proc *)dynrecord(&rectypename, field, DBPRODNCOLS);
-         }
+      if (proc == NULL)
+         proc = (struct b_proc *)dynrecord(&rectypename, colnames,DBPRODNCOLS);
+
       r = alcrecd(DBPRODNCOLS, (union block *)proc);
       R.dword=D_Record;
       R.vword.bptr=(union block *) r;
       for (i=0; i<DBPRODNCOLS; i++) {
          SQLGetInfo(fp->hdbc, (SQLUSMALLINT)sql_parm[i], sbuf, 255, &len);
-         StrLen(r->fields[i])=len;
          StrLoc(r->fields[i])=alcstr(sbuf, len);
+         if (StrLoc(r->fields[i]) == NULL) runerr(306);
+         StrLen(r->fields[i])=len;
          }
       return R;
       }
@@ -523,6 +513,7 @@ function{0,1} sql(f, query)
     }
     
     fp=FDESC(f);
+    fp->proc = NULL;
 
     SQLFreeStmt(fp->hstmt, SQL_CLOSE);
 
@@ -548,13 +539,10 @@ function{0,1} dbtables(f)
 
   body {
 
-    /* record declarations */
-    struct descrip fieldname[DBTBLNCOLS]; /* record field names */
-
     tended struct descrip R;
     tended struct descrip rectypename=emptystr;
     tended struct b_record *r;
-    struct b_proc *proc;
+    static struct b_proc *proc;
     
     /* file declarations */
     struct ISQLFile *fp;
@@ -579,8 +567,9 @@ function{0,1} dbtables(f)
     
     short i;
     
-    static char *colname[DBTBLNCOLS]={
-      "qualifier", "owner", "name", "type","remarks"
+    static struct descrip colnames[]={
+      {9,(word)"qualifier"}, {5,(word)"owner"}, {4,(word)"name"},
+      {4,(word)"type"}, {7,(word)"remarks"}
     };
 
 
@@ -589,6 +578,7 @@ function{0,1} dbtables(f)
     }
 
     fp=FDESC(f); /* file descriptor */
+    fp->proc = NULL;
 
     if (SQLAllocStmt(fp->hdbc, &hstmt)!=SQL_SUCCESS) {
       odbcerror(fp, ALLOC_STMT_ERR);
@@ -616,31 +606,31 @@ function{0,1} dbtables(f)
     L.dword=D_List;
     L.vword.bptr=(union block *) hp;
 
-    /* create record fields definition */
-
-    for (i=0; i<DBTBLNCOLS; i++) {
-      StrLoc(fieldname[i])=colname[i];
-      StrLen(fieldname[i])=strlen(colname[i]);
-    }
-    
+    /* create record type */
+    if (proc == NULL)
+       proc=dynrecord(&rectypename, colnames, DBTBLNCOLS);
     
     while (SQLFetch(hstmt)==SQL_SUCCESS) {
       /* allocate record */
-      proc=dynrecord(&rectypename, fieldname, DBTBLNCOLS);
       r = alcrecd(DBTBLNCOLS, (union block *)proc);
       R.dword=D_Record;
       R.vword.bptr=(union block *) r;
 
       /* fill fields */
       StrLoc(r->fields[0])=cbQualif>0?alcstr(szTblQualif,cbQualif):"";
+      if (StrLoc(r->fields[0]) == NULL) runerr(306);
       StrLen(r->fields[0])=cbQualif>0?cbQualif:0;
       StrLoc(r->fields[1])=cbOwner>0?alcstr(szTblOwner,cbOwner):"";
+      if (StrLoc(r->fields[1]) == NULL) runerr(306);
       StrLen(r->fields[1])=cbOwner>0?cbOwner:0;
       StrLoc(r->fields[2])=cbName>0?alcstr(szTblName,cbName):"";
+      if (StrLoc(r->fields[2]) == NULL) runerr(306);
       StrLen(r->fields[2])=cbName>0?cbName:0;
       StrLoc(r->fields[3])=cbType>0?alcstr(szTblType,cbType):"";
+      if (StrLoc(r->fields[3]) == NULL) runerr(306);
       StrLen(r->fields[3])=cbType>0?cbType:0;
       StrLoc(r->fields[4])=cbRemarks>0?alcstr(szRemarks,cbRemarks):"";
+      if (StrLoc(r->fields[4]) == NULL) runerr(306);
       StrLen(r->fields[4])=cbRemarks>0?cbRemarks:0;
       
       c_put(&L, &R);

@@ -1,5 +1,5 @@
 #
-# $Id: tree.icn,v 1.6 2004-11-11 19:54:28 rparlett Exp $
+# $Id: tree.icn,v 1.7 2004-11-13 20:49:23 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -163,10 +163,14 @@ class Tree : SelectableScrollArea(
          else
             flatten2(l, root_node, "")
       } else {
-         flatten2(l, root_node.subnodes[1], "d")
-         every sub := root_node.subnodes[2 to *root_node.subnodes - 1] do 
-            flatten2(l, sub, "f")
-         flatten2(l, root_node.subnodes[-1], "u")
+         if *root_node.subnodes = 1 then {
+            flatten2(l, root_node.subnodes[1], "n")
+         } else {
+            flatten2(l, root_node.subnodes[1], "d")
+            every sub := root_node.subnodes[2 to *root_node.subnodes - 1] do 
+               flatten2(l, sub, "f")
+            flatten2(l, root_node.subnodes[-1], "u")
+         }
       }
 
       return l

@@ -737,6 +737,7 @@ Deliberate Syntax Error
 
 #ifdef NoODBC
 #define HAVE_LIBIODBC 0
+#define HAVE_LIBODBC 0
 #endif					/* NoODBC */
 
 #ifndef HAVE_LIBZ
@@ -754,6 +755,9 @@ Deliberate Syntax Error
 #ifndef HAVE_LIBIODBC
 #define HAVE_LIBIODBC 0
 #endif					/* HAVE_LIBIODBC */
+#ifndef HAVE_LIBODBC
+#define HAVE_LIBODBC 0
+#endif					/* HAVE_LIBODBC */
 
 #if HAVE_LIBGL
 #define Graphics3D 1
@@ -763,7 +767,7 @@ Deliberate Syntax Error
 #undef Graphics3D
 #endif					/* Graphics */
 
-#if HAVE_LIBIODBC
+#if HAVE_LIBIODBC || HAVE_LIBODBC
 #define ISQL 1
 #endif					/* HAVE_LIBIODBC */
 

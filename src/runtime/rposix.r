@@ -1019,7 +1019,16 @@ struct b_record *rp;
 
    hp = gethostbyaddr((char *)&saddr_in.sin_addr,
 	 sizeof(saddr_in.sin_addr), saddr_in.sin_family);
-   sprintf(buf, "%s:%d", hp->h_name, ntohs(saddr_in.sin_port));
+   if (hp != NULL)
+     sprintf(buf, "%s:%d", hp->h_name, ntohs(saddr_in.sin_port));
+   else { /* Note: does not work for IPv6 addresses */
+     unsigned int addr = ntohl(saddr_in.sin_addr.s_addr);
+     sprintf(buf, "%d.%d.%d.%d:%d",
+	     (addr & 0xff000000) >> 24, (addr & 0xff0000)   >> 16,
+	     (addr & 0xff00)     >>  8, (addr & 0xff),
+	     ntohs(saddr_in.sin_port));
+      }
+
    String(rp->fields[0], buf);
 
    return 1;

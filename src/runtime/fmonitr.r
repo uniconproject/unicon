@@ -440,11 +440,12 @@ void EVInit()
     *  four bins.  One of these four bins will be incremented every system
     *  clock tick (typically 4 to 20 ms).
     *
-    *  Take your local profil(2) man page with a grain of salt.  All the systems
-    *  we tested really maintain 16-bit counters despite what the man pages say.
+    *  Take your local profil(2) man page with a grain of salt.  All the
+    *  systems we tested really maintain 16-bit counters despite what the
+    *  man pages say.
     *  Some also say that a scale factor of two maps everything to one counter;
-    *  that is believed to be a no-longer-correct statement dating from the days
-    *  when the maximum program size was 64K.
+    *  that is believed to be a no-longer-correct statement dating from the
+    *  days when the maximum program size was 64K.
     *
     *  The reference to EVInit below just obtains an arbitrary address within
     *  the text segment.

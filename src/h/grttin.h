@@ -388,6 +388,8 @@ typedef int siptr, stringint, inst;
    }
    #enddef				/* CheckArgMultiple */
    
+#endif					/* Graphics */
+
    /*
     * calloc to make sure uninit'd entries are zeroed.
     */
@@ -416,8 +418,6 @@ typedef int siptr, stringint, inst;
          free(var);
       } while(0)
    #enddef				/* GRFX_UNLINK */
-   
-#endif					/* Graphics */
  
 #ifdef Graphics3D
    typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean;

@@ -14,6 +14,7 @@
 #  for Unicon.  It is gradually gaining features and usability.
 #
 #  To do:
+#	replace TextDialog() and Notice() with gui.icn equivalents
 #	keyboard shortcuts
 #	multiple edit regions.
 #	
@@ -616,7 +617,7 @@ $ifndef _UNIX
    if not (any(&letters,icodename) & (icodename[2]==":")) then
 $endif
    if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP || icodename
-   cmd := icodename || " " || xargs
+   cmd := quotes(icodename) || " " || xargs
 $ifdef _UNIX
    cmd ||:= " &> " || wiconlog
 $else
@@ -938,10 +939,11 @@ end
 end
 
 procedure set_docpath()
-   match("Binaries at ", docpath := &features) | write("What, no binaries?")
+   match("Binaries at ", docpath := &features) |
+       Notice("What, no binaries?  Have you added Unicon's bin directory to your path?")
    docpath ?:= (="Binaries at " & tab(0))
    if map(docpath[-4:0])==("bin/"|"bin\\") then docpath[-4:0] := ""
-   else write("eh?")
+   else write("did not find expected Unicon binaries in a bin/ directory")
 end
 
 procedure ui_initialize()

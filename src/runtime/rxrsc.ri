@@ -920,6 +920,18 @@ wsp ws;
 	 while (ws->win != (Window) NULL)
 	    if (pollevent() == -1) return -1;
 	 }
+      else {
+         /*
+          * There was no XDestroyWindow, so it is necessary
+          * to free the Pixmap here, as it won't be freed via
+          * a DestroyNotify event.
+          */
+         if (ws->pix != (Pixmap) NULL) {
+            Display *d = ws->display->display;
+            XFreePixmap(d, ws->pix);
+            ws->pix = (Pixmap) NULL;
+            }
+         }
       GRFX_UNLINK(ws, wstates);
       }
    return 0;

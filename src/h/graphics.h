@@ -339,7 +339,7 @@ typedef struct _wcontext {
 #ifdef XWindows
   wdp		display;
   GC		gc;			/* X graphics context */
-  wclrp		fg, bg;
+  int		fg, bg;
   int		linestyle;
   int		linewidth;
   int		leading;		/* inter-line leading */
@@ -369,13 +369,21 @@ typedef struct _wcontext {
 #endif					/* MSWindows*/
 
 #ifdef Graphics3D
-  GLXContext    ctx;
-  int           dim;
-  int           is_3D;         
-  double        eyeupx, eyeupy, eyeupz;
-  double        eyedirx, eyediry, eyedirz;
-  double        eyeposx, eyeposy, eyeposz;
-#endif
+  GLXContext    ctx;			   /* context for "gl" windows */
+  int           dim;			   /* # of coordinates per vertex */
+  int           is_3D;			   /* flag for 3D windows */
+  double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
+  double        eyedirx, eyediry, eyedirz; /* eye direction vector */
+  double        eyeposx, eyeposy, eyeposz; /* eye position */
+  
+  int           autogen;  /* flag to automatically generate texture coordinate */
+  int           ntextures;  /* the number of textures in the scene */
+  int           texmode;   /* texutres on or off */
+  int           numtexcoords;  /* number of texture coordinate */
+  double        texcoords[MAXXOBJS]; /* texture coordinates */
+  GLuint        texName[MAXXOBJS];  /* array to store opengl texture name */
+
+#endif					/* Graphics3D */
 } wcontext, *wcp;
 
 /*
@@ -447,9 +455,11 @@ typedef struct _wstate {
   Visual	*vis;
   int		normalx, normaly;	/* pos to remember when maximized */
   int		normalw, normalh;	/* size to remember when maximized */
-  int           numColors;		/* allocated color info */
+  int           numColors;		/* allocated (used) color info */
+  int           sizColors;		/* malloced size of theColors */
   short		*theColors;		/* indices into display color table */
   int           numiColors;		/* allocated color info for the icon */
+  int           siziColors;		/* malloced size of iconColors */
   short		*iconColors;		/* indices into display color table */
   char *selectiondata;
   int		iconic;			/* window state; icon, window or root*/
@@ -505,11 +515,8 @@ typedef struct _wstate {
   childcontrol *child;
 #endif					/* MSWindows */
 #ifdef Graphics3D
-  int		isdirect;		/* do we need this? */
-  int            is_3D;
-  int            numlights;
-  GLXWindow	glwin;
-  GLXPixmap	glpix;
+  int            is_3D;        /* flag for 3D windows */
+
   struct b_list  *flist;       /* icon list of 3D functions*/
   struct descrip funclist;    /* descriptor to hold list*/
 #endif
@@ -628,10 +635,13 @@ typedef struct
 #define A_LIGHT5        71
 #define A_LIGHT6        72
 #define A_LIGHT7        73
+#define A_TEXTURE       74
+#define A_TEXMODE       75
+#define A_TEXCOORD      76
 
-#define A_TITLEBAR	74
+#define A_TITLEBAR      77
 
-#define NUMATTRIBS	74
+#define NUMATTRIBS	77
 
 #define XICONSLEEP	20 /* milliseconds */
 

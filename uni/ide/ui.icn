@@ -206,7 +206,7 @@ end
 
 
 method handle_saveas_menu_item(ev)
-   local fd, filename
+   local fd, filename, foo
 
 $ifdef _UNIX
    fd := FileDialog()
@@ -246,7 +246,7 @@ $endif
 end
 
 method handle_ivib_menu_item(ev)
-   L := []
+   local L := []
    prompt_save()
    system("ivib " || current_file, L) | write("system failed")
    MsgBox.set_contents(L)
@@ -402,10 +402,11 @@ end
    end
 
    method findstring(s)
+      local L, startcol, i, j
       L := EditBox.get_contents()
-      foundline := &null
       startcol := EditBox.cursor_x
       i := EditBox.cursor_y
+      foundline := &null
       while L[i] do {
          if j := find(s, L[i], startcol) then {
             foundline := i
@@ -428,7 +429,8 @@ end
    method handle_replace_menu_item(ev)
       if TextDialog("Replace what with what: ",,
 		    [(\findstr | ""),""],60)=="Okay" then {
-	 wu_replace(dialog_value[1], dialog_value[2])
+	 Notice("replace is not implemented yet")
+	 # wu_replace(dialog_value[1], dialog_value[2])
 	 }
    end
 
@@ -482,11 +484,10 @@ end
 
 
 method complink()
-   local x, arglist, lst, logf, i, s
-   lst := []
+   local x, arglist, lst := [], logf, i, s
    /targs := ""
    if /current_file then {
-      handle_saveas_menu_item(ev)
+      handle_saveas_menu_item()
       if /current_file then {
          MsgBox.set_contents(["No filename specified."])
          fail
@@ -547,7 +548,7 @@ $endif
 end
 
    method showanyerror(fn, lst)
-   local log1, i
+   local log1, i, s, ln
    every i := 1 to 5 do {
       delay(800)
       if log1 := open(fn, "b") then {
@@ -592,7 +593,7 @@ end
    end
 
    method handle_run_menu_item(ev)
-   local L
+   local L, cmd, s
 
    complink()
    L := copy(MsgBox.contents)
@@ -710,7 +711,7 @@ $endif
    end
 
    method updateproject()
-   local f, s
+   local f, s, foo
    while file_menu.menus[-1].get_label() ~== "Exit" do pull(file_menu.menus)
    icodename := project
    icodename[find(".icp", map(icodename)) : 0] := ""
@@ -901,7 +902,7 @@ procedure set_docpath()
 end
 
 procedure ui_initialize()
-   local f
+   local f, line
    ui_ini := getenv("UNICONINI") | "ui.ini"
    height := 400
    width := 600

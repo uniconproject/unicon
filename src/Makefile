@@ -16,6 +16,7 @@ Clean Pure:
 	cd libtp;	rm -f *.o *.a config.cache
 	cd libtp/uri;	rm -f *.o *.a
 	cd libtp/tests;	rm -f *.o *.a
+	cd gdbm;        rm -f *.o *.a
 # force full runtime system rebuild
 	touch h/define.h
 

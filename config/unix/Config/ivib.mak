@@ -62,7 +62,9 @@ ICONS=$(ICONDIR)/icn1.ico \
 #
 # Linking
 #
-ivib$(EXE): $(UFILES)
+ivib$(EXE): ivib
+
+ivib: $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
 	$(CP) ivib$(EXE) $(BIN)
 	@echo Linking complete.

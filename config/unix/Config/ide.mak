@@ -14,6 +14,8 @@ OBJ=ui.u filedlg.u main.u imgs.u utags.u classbrowser.u whitemenu.u \
 	buffertabset.u  buffertabitem.u editortabitem.u buffertextlist.u \
 	icbbutton.u whitemenubar.u icbpanel.u templates.u definitions.u
 
+ui$(EXE): ui
+
 ui: $(OBJ)
 	$(UNICON) -o ui $(OBJ)
 	$(CP) ui$(EXE) ../../bin

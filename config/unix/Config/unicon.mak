@@ -17,12 +17,16 @@ else
 endif
 export PATH:=$(BIN):$(PATH)
 
-unicon$(EXE): unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
+unicon$(EXE): unicon
+
+unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
 	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
-wunicon$(EXE): unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
+wunicon$(EXE): wunicon
+
+wunicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) -G -o wunicon.exe unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
 	$(CP) wunicon$(EXE) $(BIN)
 

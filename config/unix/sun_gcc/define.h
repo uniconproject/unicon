@@ -4,6 +4,7 @@
 
 #define UNIX 1
 #define SUN
+#define INTMAIN /* int main() */
 
 #define LoadFunc
 #define SysOpt

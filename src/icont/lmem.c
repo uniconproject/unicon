@@ -210,6 +210,34 @@ char *name;
    while(strchr(file, '\\')) *(strchr(file,'\\')) = '/';
    for (i=0; file[i]; i++)
      if (isupper(file[i])) file[i] = tolower(file[i]);
+
+   /*
+    * This removes ".." and "." sections from the path.  For
+    * example "c:/a/b/../c/d" -> "c:/a/c/d"
+    */
+   {
+      char *p = file;
+      char *q = p;
+
+      while (*p) {
+	 if (*p == '/' && *(p+1) == '.') {
+	    if (*(p+2) == '.') {
+	       p += 3;
+	       if (q > file) {
+		  --q;
+		  while (q > file && *q != '/')
+		     --q;
+	       }
+	    }
+	    else {
+	       p += 2;
+	    }
+	 } else
+	    *q++ = *p++;
+      }
+      *q = 0;
+   }
+
 #endif					/* MSDOS */
 
    nlf = alclfile(file);

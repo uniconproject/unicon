@@ -12,7 +12,7 @@ int	getlist	(struct b_lelem *bp,unsigned int *vals, int limit);
 
 "Int86(a) - perform an interrupt"
 
-#if MICROSOFT || TURBO || ZTC_386 || BORLAND_286 || BORLAND_386 || SCCX_MX
+#if MICROSOFT || TURBO || ZTC_386 || BORLAND_386 || SCCX_MX
 function{1} Int86(a)
    /*
     * Make sure that a is a list
@@ -62,7 +62,7 @@ function{1} Int86(a)
        inreg.x.si = vals[5];
        inreg.x.di = vals[6];
        segread(&insreg);
-#if BORLAND_286 || BORLAND_386
+#if BORLAND_386
        /*
         * Only set segment registers if caller provided a non-zero value.
         * This probably should be done for all protected-mode versions, and
@@ -75,7 +75,7 @@ function{1} Int86(a)
           insreg.es = vals[7];
        if (vals[8])
           insreg.ds = vals[8];
-#endif					/* BORLAND_286 || BORLAND_386 */
+#endif					/* BORLAND_386 */
 
    /*  flag = int86x(flag,&inreg,&outreg,&insreg); */
 

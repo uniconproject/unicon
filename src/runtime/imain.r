@@ -64,10 +64,10 @@ int NoOptions = 0;
 #endif					/* MPW */
 #endif					/* MACINTOSH */
 
-#if ARM || ATARI_ST || MSDOS || MVS || VM || OS2 || UNIX\
+#if ARM || MSDOS || MVS || VM || OS2 || UNIX\
    || VMS
    /* nothing needed */
-#endif					/* ARM || ATARI_ST ... */
+#endif					/* ARM || ... */
 
 /*
  * End of operating-system specific code.
@@ -498,19 +498,6 @@ char **argv;
     ctrlbrk = dos_get_ctrl_break();
     dos_set_ctrl_break(1);   /* Ensure proper Ctrl-C operation */
 #endif  /* SCCX_MX */
-
-#if AMIGA
-#if AZTEC_C
-   struct Process *FindTask();
-   struct Process *Process = FindTask(0L);
-   ULONG stacksize = *((ULONG *)Process->pr_ReturnAddr);
-
-   if (stacksize < ICONXMINSTACK) {
-      fprintf(stderr,"Iconx needs \"stack %d\" to run\n",ICONXMINSTACK);
-      exit(-1);
-      }
-#endif					/* AZTEC_C */
-#endif					/* AMIGA */
 
 #if SASC
    quiet(1);                    /* suppress C library diagnostics */

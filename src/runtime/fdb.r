@@ -16,7 +16,7 @@
  * dbselect, dbsql, dbtables, dbupdate
  */
 
-#ifdef ISQL                     /* ODBC support */
+#ifdef ISQL
 
 SQLHENV ISQLEnv=NULL;           /* global environment variable */
 

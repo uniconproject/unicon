@@ -165,6 +165,7 @@ static char *libpath (char *prog, char *envname);
  */
 
 char *pofile = NULL;			/* piped input file name */
+int bundleiconx = 0;
 
 char patchpath[MaxPath+18] = "%PatchStringHere->";
 
@@ -594,9 +595,12 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    /*
     * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
-   #define Usage "[-cstuEG] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
-   while ((c = getopt(argc,argv, "ce:f:o:O:stuGv:EL")) != EOF)
+   #define Usage "[-cBstuEG] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
+   while ((c = getopt(argc,argv, "cBe:f:o:O:stuGv:EL")) != EOF)
       switch (c) {
+	 case 'B':
+	    bundleiconx = 1;
+            break;
          case 'C':			/* Ignore: compiler only */
             break;
          case 'E':			/* -E: preprocess only */
@@ -926,51 +930,58 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    errors = ilink(lfiles,ofile);	/* link .u files to make icode file */
 
 #if NT
-   if (errors == 0) {
-      if (!stricmp(".exe", ofile+strlen(ofile)-4)) {
-	 FILE *f, *f2;
-	 char tmp[MaxPath], tmp2[MaxPath], *iconx;
-	 /*
-	  * if we generated a .exe, rename it and then prepend wiconx
-	  */
-	 strcpy(tmp, ofile);
-	 strcpy(tmp+strlen(tmp)-4, ".bat");
-	 rename(ofile, tmp);
-
-#ifdef NTGCC
-	 iconx = "iconx.exe";
-#else
-	 if (Gflag) iconx="wiconx.exe";
-	 else iconx = "nticonx.exe";
+   if (!bundleiconx)
+      bundleiconx = !stricmp(".exe", ofile+strlen(ofile)-4);
 #endif
-	 if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
-	    char mesg[80];
-	    sprintf(mesg, "Tried to open %s to build .exe, but couldn't\n",iconx);
-	    report(mesg);
+
+   /*
+    * prepend iconx if we generated an executable and specified to bundle
+    */
+   if (!errors && bundleiconx) {
+      FILE *f, *f2;
+      char tmp[MaxPath], tmp2[MaxPath], *iconx;
+      strcpy(tmp, ofile);
+      strcpy(tmp+strlen(tmp)-4, ".bat");
+      rename(ofile, tmp);
+
+#if UNIX
+      iconx = "iconx";
+#endif
+#if NT
+#ifdef NTGCC
+      iconx = "iconx.exe";
+#else					/* NTGCC */
+      if (Gflag) iconx="wiconx.exe";
+      else iconx = "nticonx.exe";
+#endif					/* NTGCC */
+#endif					/* NT */
+      if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
+	 char mesg[80];
+	 sprintf(mesg,"Tried to open %s to build .exe, but couldn't\n",iconx);
+	 report(mesg);
+	 errors++;
+	 }
+      else {
+	 f2 = fopen(ofile, WriteBinary);
+	 while ((c = fgetc(f)) != EOF) {
+	    fputc(c, f2);
+	    }
+	 fclose(f);
+	 if ((f = fopen(tmp, ReadBinary)) == NULL) {
+	    report("tried to read .bat to append to .exe, but couldn't\n");
 	    errors++;
 	    }
 	 else {
-	    f2 = fopen(ofile, WriteBinary);
 	    while ((c = fgetc(f)) != EOF) {
 	       fputc(c, f2);
 	       }
 	    fclose(f);
-	    if ((f = fopen(tmp, ReadBinary)) == NULL) {
-	       report("tried to read .bat to append to .exe, but couldn't\n");
-	       errors++;
-	       }
-	    else {
-	       while ((c = fgetc(f)) != EOF) {
-		  fputc(c, f2);
-		  }
-	       fclose(f);
-	       }
-	    fclose(f2);
-	    unlink(tmp);
 	    }
+	 fclose(f2);
+	 setexe(ofile);
+	 unlink(tmp);
 	 }
       }
-#endif					/* NT */
 
    /*
     * Finish by removing intermediate files.

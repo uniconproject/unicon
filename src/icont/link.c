@@ -26,7 +26,7 @@
  * Prototype.
  */
 
-static	void	setexe	(char *fname);
+void	setexe	(char *fname);
 
 
 /*
@@ -565,7 +565,7 @@ char *s1, *s2;
  * setexe - mark the output file as executable
  */
 
-static void setexe(fname)
+void setexe(fname)
 char *fname;
    {
 

@@ -469,6 +469,8 @@ typedef struct _wstate {
   int		eQfront, eQback;
   char		*cursorname;
   struct descrip filep, listp;		/* icon values for this window */
+  struct wbind_list *children;
+  struct _wbinding *parent;
 #ifdef MacGraph
   WindowPtr theWindow;      /* pointer to the window */
   PicHandle windowPic;      /* handle to backing pixmap */
@@ -483,6 +485,8 @@ typedef struct _wstate {
   Boolean   visible;
 #endif					/* MacGraph */
 #ifdef XWindows
+  GLXWindow     glwin;
+  GLXFBConfig   *gfbc;
   wdp		display;
   Window	win;			/* X window */
   Pixmap	pix;			/* current screen state */
@@ -570,6 +574,11 @@ typedef struct _wbinding {
   wcp context;
   wsp window;
 } wbinding, *wbp;
+
+struct wbind_list {
+  struct _wbinding *child;
+  struct wbind_list *next;
+};
 
 #ifdef MacGraph
 typedef struct  

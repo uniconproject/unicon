@@ -539,6 +539,13 @@ void detectRedirection();
       void	wflushall		(void);
       void postcursor(wbp);
       void scrubcursor(wbp);
+
+/* For creating child windows for 3D graphics */
+
+
+char child_window_stuff(wbp w, wbp wp, char child_window);
+char my_wmap(wbp w, wbp wp, char child_window);
+
    #endif				/* XWindows */
 
    #ifdef MSWindows

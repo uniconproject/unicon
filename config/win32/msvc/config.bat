@@ -3,6 +3,7 @@ copy makefile.top ..\..\..\makefile
 copy DEFINE.H ..\..\..\src\h
 copy PATH.H ..\..\..\src\h
 copy auto.h ..\..\..\src\h
+copy autogdbm.h ..\..\..\src\gdbm\autoconf.h
 copy RSWITCH.C ..\..\..\src\common
 rem copy RSWITCH.ASM ..\..\..\src\common
 copy ICONT.LNK ..\..\..\src\icont
@@ -15,6 +16,7 @@ type MAKEFILE.RUN >>..\..\..\src\runtime\makefile
 echo ICONT=icont >..\..\..\src\icont\makefile
 echo CONSOLE=NTConsole >>..\..\..\src\icont\makefile
 type MAKEFILE.T >>..\..\..\src\icont\makefile
+copy makefile.dbm ..\..\..\src\gdbm\makefile
 echo ICONT=..\..\bin\icont >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile
 echo ICONT=..\..\bin\icont >..\..\..\uni\unicon\makefile

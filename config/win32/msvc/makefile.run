@@ -59,8 +59,10 @@ wiconx: $(OBJS)
         $(MAKE) $(ICOBJS) $(XPM)
         cd ..\libtp
         $(MAKE) /f makefile.win libtp.lib
+	cd ..\gdbm
+	$(MAKE) gdbm.lib
         cd ..\runtime
-	$(link) /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(guilibs) -out:wiconx.exe
+	$(link) /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib shell32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(guilibs) -out:wiconx.exe
 	copy wiconx.exe ..\..\bin
 
 iconx.dll: iconx ximain.c
@@ -71,6 +73,9 @@ iconx.dll: iconx ximain.c
 	link nticonx.obj iconx.lib /subsystem:console /out:iconxd.exe
 
 iconx: $(OBJS)
+	cd ..\gdbm
+	$(MAKE) gdbm.lib
+	cd ..\runtime
 	link @iconx.lnk
 	copy iconx.exe ..\..\bin
 
@@ -289,7 +294,7 @@ xrgfxsys.$(O): rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c xrgfxsys.c
 	$(RM) xrgfxsys.c
 
-xrwinsys.$(O): rwinsys.r $(HDRS) $(GRAPHICSHDRS) rmswin.ri
+xrwinsys.$(O): rwinsys.r $(HDRS) $(GRAPHICSHDRS) rmswin.ri ropengl.ri
 	$(RTT) -x rwinsys.r
 	$(CC) $(CFLAGS) -c xrwinsys.c
 	$(RM) xrwinsys.c

@@ -727,6 +727,8 @@ void	varargs		(dptr argp, int nargs, dptr rslt);
    struct b_coexpr *alccoexp (void);
 #endif					/* MultiThread */
 
+dptr rec_structinate(dptr dp, char *name, int nfields, char *a[]);
+
 #ifdef PosixFns
 #if NT
 void stat2rec			(struct _stat *st, dptr dp, struct b_record *rp);
@@ -734,6 +736,7 @@ void stat2rec			(struct _stat *st, dptr dp, struct b_record *rp);
 void stat2rec			(struct stat *st, dptr dp, struct b_record *rp);
 #endif					/* NT */
 dptr rec_structor		(char *s);
+dptr rec_structor3d		(char *s);
 FILE *sock_connect		(char *s, int udp);
 int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);

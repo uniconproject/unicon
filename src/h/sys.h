@@ -218,9 +218,9 @@
       #include "decw$include:Xos.h"
       #include "decw$include:Xatom.h"
 
-      #ifdef HaveXpmFormat
+      #ifdef HAVE_LIBXPM
          #include "../xpm/xpm.h"
-      #endif				/* HaveXpmFormat */
+      #endif				/* HAVE_LIBXPM */
 
       #undef UNIX
       #define UNIX 0
@@ -239,7 +239,7 @@
 #endif
 #endif					/* Redhat71 */
 
-      #ifdef HaveXpmFormat
+      #ifdef HAVE_LIBXPM
 #if !AMIGA
 #define AMIGA_ZERO
 #undef AMIGA
@@ -248,9 +248,9 @@
 #ifdef AMIGA_ZERO
 #define AMIGA 0
 #endif					/* !AMIGA */
-      #else				/* HaveXpmFormat */
+      #else				/* HAVE_LIBXPM */
          #include <X11/Xlib.h>
-      #endif				/* HaveXpmFormat */
+      #endif				/* HAVE_LIBXPM */
 
       #include <X11/Xutil.h>
       #include <X11/Xos.h>

@@ -102,6 +102,7 @@ Tpresponse_t* httpend(Tp_t* tp)
   char header[8192];
   size_t nread;
   size_t nleft;
+  int i;
 
   TPLEAVE(tp, WRITING);
 
@@ -123,7 +124,12 @@ Tpresponse_t* httpend(Tp_t* tp)
   }
 
   disc->readlnf(buf, sizeof(buf), disc);
-  sscanf(buf, "%*[0-9].%*[0-9] %d %n", &(resp->sc), &nread);
+  /*
+   * Manpage for sscanf says %n fills in an int, not a size_t.
+   */
+  sscanf(buf, "%*[0-9].%*[0-9] %d %n", &(resp->sc), &i);
+  nread = i;
+
   resp->msg = _tptrimnewline(_tpastrcpy(buf+nread, disc));
 
   header[0] = '\0';

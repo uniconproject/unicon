@@ -1,10 +1,17 @@
+#
+# $Id: httpclient.icn,v 1.9 2004-09-05 16:08:38 rparlett Exp $
+#
+
 package http
 
 import util
 import lang
 import net
+import mail
 
 $include "posix.icn"
+
+global token_char
 
 #
 # An http client
@@ -22,11 +29,31 @@ class HttpClient : NetClient(url,
                              length,
                              read,
                              http_version,
-                             http_error
+                             http_error,
+                             username,
+                             password,
+                             user_agent,
+                             referer,
+                             redir_set, 
+                             auth_req_count,
+                             auth_scheme,
+                             basic_auth_header,
+                             nonce,
+                             nonce_count,
+                             cnonce,
+                             opaque,
+                             ha1,
+                             qop,
+                             realm,
+                             last_method,
+                             last_uri,
+                             last_post_data
                              )
 
    #
-   # Set the desired url
+   # Set the desired url.  NB: setting the URL clears any custom header
+   # fields that may have been set.  They must be set again using
+   # {set_header()}.
    #
    method set_url(url)
       headers := table()
@@ -71,6 +98,34 @@ class HttpClient : NetClient(url,
    end
 
    #
+   # Set the user-agent identification
+   #
+   method set_user_agent(s)
+      return self.user_agent := s
+   end
+
+   #
+   # Set the referer page.
+   #
+   method set_referer(s)
+      return self.referer := s
+   end
+
+   #
+   # Set the username to use for authentication
+   #
+   method set_username(s)
+      return self.username := s
+   end
+
+   #
+   # Set the password to use for authentication
+   #
+   method set_password(s)
+      return self.password := s
+   end
+
+   #
    # Set a header variable to the desired value.
    #
    method set_header(key, value)
@@ -106,10 +161,11 @@ class HttpClient : NetClient(url,
    #
    # This method invokes retrieve_page, but only returns the page if
    # its status was 200 OK - otherwise it fails and sets the failure
-   # reason appropriately.  It also handles redirection responses.
+   # reason appropriately.  It also handles redirection and authentication
+   # request responses.
    #
    method retrieve()
-      local l, redir_set
+      auth_req_count := 0
       redir_set := set()
       repeat {
          http_error := &null
@@ -119,20 +175,223 @@ class HttpClient : NetClient(url,
             return result
 
          remove(\data_file)
-         if find("302"|"303"|"307", result.get_status()) then {
-            #
-            # A redirection, so extract the URL if possible.
-            #
-            l := \result.get_header("Location") | return on_http_error("No Location in a redirect response")
-            if member(redir_set, l) then
-               return on_http_error("Circular redirection detected:" || l)
-            insert(redir_set, l)
-            url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
-            delete(headers, "host")
-         }
+
+         if find("401", result.get_status()) then
+            handle_authentication() | fail
+         else if find("302"|"303"|"307", result.get_status()) then
+            handle_redirect() | fail
          else
             return on_http_error(result.get_status())
       }
+   end
+
+   #
+   # @p
+   method handle_redirect()
+      local l
+      #
+      # A redirection, so extract the URL if possible.
+      #
+      l := \result.get_header("Location") | return on_http_error("No Location in a redirect response")
+      if member(redir_set, l) then
+         return on_http_error("Circular redirection detected:" || l)
+      insert(redir_set, l)
+      url := URL(l) | return on_http_error("Invalid Location in a redirect response:" || l)
+      auth_req_count := 0
+      return
+   end
+
+   #
+   # @p
+   method handle_authentication()
+      local s, t
+      if /(username | password) then
+         return on_http_error("Authentication requested - please set username, password")
+
+      if auth_req_count > 0 then
+         return on_http_error("Failed to authenticate - correct username, password")
+      auth_req_count +:= 1
+
+      s := \result.get_header("www-authenticate") | 
+         return on_http_error("No WWW-Authenticate in a 401 response")
+
+      t := parse_generic_header(s)
+      if member(t, "Basic") then {
+         auth_scheme := "Basic"
+         return setup_basic_authentication()
+      }
+      if member(t, "Digest") then {
+         auth_scheme := "Digest"
+         return setup_digest_authentication()
+      }
+
+      return on_http_error("WWW-Authenticate header contained unknown authentication method.")
+   end
+
+   #
+   # @p
+   method setup_basic_authentication(t)
+      local b64h, s
+      b64h := Base64Handler()
+      # Strip of any \r\n in result.
+      s := ""
+      b64h.encode_data(&null, username || ":" || password) ? repeat {
+         s ||:= tab(find("\r\n") | 0)
+         if pos(0) then
+            break
+         move(2)
+      }
+      basic_auth_header := "Basic " || s
+      return
+   end
+
+   #
+   # @p
+   method setup_digest_authentication(t)
+      local algorithm, md5, qop_options
+
+      self.realm := \t["realm"] | 
+         return on_http_error("WWW-Authenticate digest header didn't contain a realm")
+      self.nonce := \t["nonce"] | 
+         return on_http_error("WWW-Authenticate digest header didn't contain a nonce")
+      self.opaque := t["opaque"] 
+
+      algorithm := \t["algorithm"] | "MD5"
+      self.nonce_count := 0
+      self.cnonce := "0a4f113b"
+      
+      #
+      # Calculate HA1
+      #
+      md5 := MD5()
+      md5.update(unq(username) || ":" || unq(realm) || ":" || password)
+      if map(unq(algorithm)) == "md5-sess" then {
+         md5.update(":" || unq(nonce) || ":" || unq(cnonce))
+      }
+      self.ha1 := md5.final_str()
+
+      #
+      # Get the available qop values and select a qop.
+      #
+      qop_options := set()
+      \t["qop"] ? {
+         while(tab(upto(token_char))) do 
+            insert(qop_options, map(tab(many(token_char))))
+      }
+      self.qop := member(qop_options, "auth-int" | "auth") | &null
+   end
+
+   #
+   # @p
+   method create_digest_authorization_header()
+      local md5, nc, h
+
+      self.nonce_count +:= 1
+      nc := map(format_int_to_string(self.nonce_count, 16, 8))
+      md5 := MD5()
+      #
+      # Calculate HA2
+      #
+      md5.update(last_method || ":" || last_uri)
+      if \qop == "auth-int" then {
+         # Calculate H(entity)
+         t := MD5()
+         t.update(last_post_data)
+         hentity := t.final_str()
+         md5.update(":" || hentity)
+      }
+
+      ha2 := md5.final_str()
+
+      md5.update(ha1 || ":" || unq(nonce) || ":")
+      if \self.qop then
+         md5.update(nc || ":" || unq(cnonce) || ":" || unq(qop) || ":")
+
+      md5.update(ha2)
+
+      h := "Digest username=\"" || username || "\",\r\n\t" ||
+         "realm=" || realm || ",\r\n\t" ||
+         "nonce=" || nonce || ",\r\n\t" ||
+         "uri=\"" || last_uri || "\",\r\n\t"
+      if \qop then {
+         h ||:= "qop=" || qop || ",\r\n\t" ||
+            "nc=" || nc || ",\r\n\t" ||
+            "cnonce=" || cnonce || ",\r\n\t"
+      }
+      if \opaque then
+         h ||:= "opaque=" || opaque || ",\r\n\t"
+      h ||:= "response=\"" || md5.final_str() || "\""
+
+      return h
+   end
+
+   #
+   # @p
+   method unq(s)
+      if s[1] == "\"" then 
+         s[1] := ""
+      if s[-1] == "\"" then 
+         s[-1] := ""
+      return s
+   end
+
+   #
+   # @p
+   method parse_generic_header(s)
+      local t, k, v
+
+      t := table()
+      s ? repeat {
+         tab(upto(token_char)) | break
+         k := tab(many(token_char))
+         if ="=" then {
+            if any('\"') then
+               v := parse_quoted_string()
+            else
+               v := tab(many(token_char))
+         } else
+            v := &null
+         insert(t, k, v)
+      }
+      return t
+   end
+
+   #
+   # @p
+   method parse_quoted_string()
+      local res
+      res := ""
+      res ||:= ="\""
+      repeat {
+         res ||:= tab(upto('\\\"') | 0)
+         if pos(0) then
+            break
+         if res ||:= ="\"" then
+            break
+         if any('\\') then {
+            res ||:= move(2)
+         }
+      }
+      return res
+   end
+
+   #
+   # @p
+   method create_authorization_header()
+      case auth_scheme of {
+         "Basic":
+            return create_basic_authorization_header()
+         "Digest":
+            return create_digest_authorization_header()
+         default:
+            fail
+      }
+   end
+
+   #
+   # @p
+   method create_basic_authorization_header()
+      return basic_auth_header
    end
 
    #
@@ -248,19 +507,24 @@ class HttpClient : NetClient(url,
    #
    # @p
    method write_request()
-      /headers["user-agent"] :=  "gethttp.icn [en] (" || &host || ")"
-      /headers["host"] := url.get_address()
+      headers["user-agent"] :=  user_agent
+      headers["host"] := url.get_address()
+      headers["referer"] := \referer
       /headers["connection"] := "Keep-Alive"
+
       if \self.read > 0 then
          headers["range"] := "bytes=" || self.read || "-"
       else
          delete(headers, "range")
 
-      s := \request_type | if \post_data then "POST" else "GET"
+      last_method := \request_type | if \post_data then "POST" else "GET"
+      last_uri := url.get_file()
 
-      write_line(s || " " || url.get_file() || " HTTP/" || http_version) | fail
+      write_line(last_method || " " || last_uri || " HTTP/" || http_version) | fail
 
       if /post_data then {
+         last_post_data := ""
+         headers["authorization"] := create_authorization_header()
          write_headers() | fail
          write_line() | fail
       } else {
@@ -272,19 +536,20 @@ class HttpClient : NetClient(url,
             # Convert from table in exactly the same way as for a GET parameter string.
             # In this case always use the standard content-type encoding.
             #
-            s := URL().make_cgi_string(post_data)
+            last_post_data := URL().make_cgi_string(post_data)
             headers["content-type"] := "application/x-www-form-urlencoded"
          } else {
             #
             # Allow user content-type encoding if specified for this arbitrary data.
             #
-            s := post_data
+            last_post_data := post_data
             /headers["content-type"] := "application/x-www-form-urlencoded"
          }
-         headers["content-length"] := *s
+         headers["content-length"] := *last_post_data
+         headers["authorization"] := create_authorization_header()
          write_headers() | fail
          write_line() | fail
-         write_str(s) | fail
+         write_str(last_post_data) | fail
       }
 
       return
@@ -488,10 +753,14 @@ class HttpClient : NetClient(url,
    end
 
    initially(a[])
+      initial {
+         token_char := &ascii[33:128] -- '()<>@,;:\\\"/[]?={} \t'
+      }
       self.NetClient.initially()
       headers := table()
       timeout := 12000
       retries := 2
       http_version := "1.1"
+      user_agent := "gethttp.icn [en] (" || &host || ")"
       set_fields(a)
 end

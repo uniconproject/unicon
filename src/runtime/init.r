@@ -1799,6 +1799,13 @@ struct progstate *findprogramforblock(union block *p)
 {
    struct b_coexpr *ce = stklist;
    struct progstate *tmpp;
+
+   if ((p == BlkLoc(posix_lock)) || (p == BlkLoc(posix_timeval)) ||
+       (p == BlkLoc(posix_stat)) || (p == BlkLoc(posix_message)) ||
+       (p == BlkLoc(posix_passwd)) || (p == BlkLoc(posix_group)) ||
+       (p == BlkLoc(posix_servent)) || (p == BlkLoc(posix_hostent)))
+      return curpstate;
+
    while (ce != NULL) {
       tmpp = ce->program;
       if (InRange(tmpp->Code, p, tmpp->Elines)) {

@@ -53,32 +53,21 @@ LibDcl(field,2,".")
    rp = (struct b_record *) BlkLoc(Arg1);
 
    bptr = rp->recdesc;
-#ifdef MultiThread
-   /* 
-    * If this record type is from another program, we will use its
-    * field table, else use ours.
-    */
-   if (!InRange(records, bptr, ftabp)) {
-      progtouse = findprogramforblock(bptr);
-      if (progtouse == NULL) syserr("unidentified alien record type\n");
-      }
-   else
-      progtouse = curpstate;
-#endif					/* MultiThread */
 
    if (IntVal(Arg2) < 0) {
       int i;
-      int nfields = bptr->proc.nfields;
+      int nfields;
       /*
        * Look up the field number by a brute force search through
-       * the record constructor's field names.
+       * the record constructor's field names, do not use field table!
+       * The correct efnames to use is the one in which the icode was
+       * compiled, i.e. the current program state, not necessarily
+       * the same as the program in which the record was created.
        */
-#ifdef MultiThread
-      Arg0 = progtouse->Efnames[IntVal(Arg2)];
-#else					/* MultiThread */
       Arg0 = efnames[IntVal(Arg2)];
-#endif					/* MultiThread */
 
+linearsearch:
+      nfields = bptr->proc.nfields;
       for (i=0;i<nfields;i++){
 	 if ((StrLen(Arg0) == StrLen(bptr->proc.lnames[i])) &&
 	     !strncmp(StrLoc(Arg0), StrLoc(bptr->proc.lnames[i]),StrLen(Arg0)))
@@ -90,6 +79,18 @@ LibDcl(field,2,".")
    else {
 
 #ifdef MultiThread
+      /* 
+       * If this record type is from another program, we would like to use
+       * its field table, not ours.  But, the field # we have is from
+       * the current program, we may need to translate it, eh?
+       */
+      if (!InRange(records, bptr, ftabp)) {
+         Arg0 = fnames[IntVal(Arg2)];
+         goto linearsearch;
+         }
+      else
+         progtouse = curpstate;
+
       /* use the correct field table */
       ENTERPSTATE(progtouse);
 #endif					/* MultiThread */

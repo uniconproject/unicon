@@ -741,7 +741,7 @@ void stat2rec			(struct stat *st, dptr dp, struct b_record *rp);
 #endif					/* NT */
 dptr rec_structor		(char *s);
 dptr rec_structor3d		(char *s);
-FILE *sock_connect		(char *s, int udp);
+FILE *sock_connect		(char *s, int udp, int timeout);
 int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
 int get_uid			(char *name);

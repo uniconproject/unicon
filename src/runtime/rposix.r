@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.21 2003-07-20 06:35:26 jeffery Exp $
+ * $Id: rposix.r,v 1.22 2004-07-03 12:24:08 rparlett Exp $
  */
 
 #ifdef PosixFns
@@ -743,20 +743,29 @@ struct sockaddr_in saddrs[128];
 #define MAXHOSTNAMELEN 32
 #endif					/* MAXHOSTNAMELEN */
 
-FILE *sock_connect(char *fn, int is_udp)
+/*
+ * Empty handler for connection alarm signals (used for timeouts).
+ */
+static void on_alarm(int x) 
 {
-   int fd, s, len, fromlen;
+}
+
+FILE *sock_connect(char *fn, int is_udp, int timeout)
+{
+   int rc, fd, s, len, fromlen;
    struct sockaddr *sa, from;
    char *p, fname[BUFSIZ];
    struct sockaddr_in saddr_in;
    char *host = fname;
    static struct hostent he;
+   static struct sigaction sigact;
 
 #if UNIX
    struct sockaddr_un saddr_un;
    int pathbuf_len = sizeof(saddr_un.sun_path);
 #endif					/* UNIX */
 
+   errno = 0;
    memset(&saddr_in, 0, sizeof(saddr_in));
    strncpy(fname, fn, sizeof(fname));
    if ((p = strchr(fname, ':')) != 0) {
@@ -843,10 +852,26 @@ FILE *sock_connect(char *fn, int is_udp)
       return (FILE *)s;
       }
 
-   if (connect(s, sa, len) < 0) {
+   if (timeout > 0) {
+      /* Set up a timeout alarm handler */
+      sigact.sa_handler = on_alarm;
+      sigact.sa_flags = 0;
+      sigfillset(&sigact.sa_mask);
+      sigaction(SIGALRM, &sigact, 0);
+      /* alarm() takes seconds not millis... */
+      alarm(timeout % 1000 ? 1 + timeout / 1000 : timeout / 1000);
+   }
+
+   rc = connect(s, sa, len);
+
+   if (timeout > 0)
+      alarm(0);
+
+   if (rc < 0) {
       close(s);
       return 0;
    }
+
    return (FILE *)s;
 }
 

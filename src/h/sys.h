@@ -18,6 +18,12 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef JPEG
+#include "jpeglib.h"
+#include "jerror.h"
+#include <setjmp.h>
+#endif					/* JPEG */
+
 /*
  * Operating-system-dependent includes.
  */
@@ -93,7 +99,7 @@
 #ifdef NTGCC
    #include <dirent.h>
 #endif					/* NTGCC */
-   
+
    #ifdef MSWindows
       #define int_PASCAL int PASCAL
       #define LRESULT_CALLBACK LRESULT CALLBACK
@@ -124,11 +130,11 @@
       #endif					/* NT */
    #endif				/* MSWindows */
    #include <setjmp.h>
-   #define Type(d) (int)((d).dword & TypeMask) 
+   #define Type(d) (int)((d).dword & TypeMask)
    #undef lst1
    #undef lst2
 #endif					/* MSDOS */
-	   
+
 
 #if MVS || VM
    #ifdef RecordIO
@@ -319,3 +325,15 @@
 #include <GL/glx.h>
 #include <GL/glu.h>
 #endif					/* Graphics3D */
+
+#ifdef Compress
+			
+#  ifdef STDC
+#    define OF(args)  args
+#  else
+#    define OF(args)  ()
+#  endif
+
+#include <zlib.h>
+
+#endif					/* Compress */

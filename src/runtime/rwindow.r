@@ -2588,13 +2588,20 @@ double r, g, b;
  * mapping from recognized style attributes to flag values
  */
 stringint fontwords[] = {
-   { 0,			17 },		/* number of entries */
+   { 0,			24 },		/* number of entries */
+   { "arabic",		FONTATT_CHARSET | FONTFLAG_ARABIC },
    { "bold",		FONTATT_WEIGHT	| FONTFLAG_BOLD },
    { "condensed",	FONTATT_WIDTH	| FONTFLAG_CONDENSED },
+   { "cyrillic",	FONTATT_CHARSET | FONTFLAG_CYRILLIC },
    { "demi",		FONTATT_WEIGHT	| FONTFLAG_DEMI },
    { "demibold",	FONTATT_WEIGHT	| FONTFLAG_DEMI | FONTFLAG_BOLD },
    { "extended",	FONTATT_WIDTH	| FONTFLAG_EXTENDED },
+   { "greek",		FONTATT_CHARSET | FONTFLAG_GREEK },
+   { "hebrew",		FONTATT_CHARSET | FONTFLAG_HEBREW },
    { "italic",		FONTATT_SLANT	| FONTFLAG_ITALIC },
+   { "latin1",		FONTATT_CHARSET | FONTFLAG_LATIN1 },
+   { "latin2",		FONTATT_CHARSET | FONTFLAG_LATIN2 },
+   { "latin6",		FONTATT_CHARSET | FONTFLAG_LATIN6 },
    { "light",		FONTATT_WEIGHT	| FONTFLAG_LIGHT },
    { "medium",		FONTATT_WEIGHT	| FONTFLAG_MEDIUM },
    { "mono",		FONTATT_SPACING	| FONTFLAG_MONO },

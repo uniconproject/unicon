@@ -549,6 +549,7 @@ int fd, t;
 int idelay(n)
 int n;
    {
+   if (n <= 0) return Succeeded; /* delay < 0 = no delay */
 
 /*
  * The following code is operating-system dependent [@fsys.01].
@@ -573,11 +574,13 @@ int n;
 #endif                                   /* SASC */
 
 #if UNIX
+   {
    struct timeval t;
    t.tv_sec = n / 1000;
    t.tv_usec = (n % 1000) * 1000;
    select(1, NULL, NULL, NULL, &t);
    return Succeeded;
+   }
 #endif					/* UNIX */
 
 #if MSDOS

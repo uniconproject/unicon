@@ -209,12 +209,11 @@ function{1} Clone(argv[argc])
 
       Protect(BlkLoc(result) =
 	      (union block *)alcfile((FILE *)w2,
-		 Fs_Window|Fs_Read|Fs_Write| (
+				     Fs_Window|Fs_Read|Fs_Write
 #ifdef Graphics3D
-					      w->context->is_3D?Fs_Window3D:
+				      | (w->context->is_3D?Fs_Window3D:0)
 #endif					/* Graphics3D */
-					      0),
-				      &emptystr),runerr(0));
+				   , &emptystr),runerr(0));
       result.dword = D_File;
       return result;
       }

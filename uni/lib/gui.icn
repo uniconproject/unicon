@@ -1079,10 +1079,10 @@ class Component : Ticker(
    ##
    #  Set the Icon attribs of the component to the given parameter
    #  @example
-   #  @ w$set_attribs_list(["font=helvetica", "bg=pale blue"])
+   #  @ w$set_attribs("font=helvetica", "bg=pale blue")
    #
    method set_attribs(x[])
-      return self.attribs |||:= x
+      return set_attribs_list(x)
    end
 
    ##
@@ -1093,6 +1093,10 @@ class Component : Ticker(
    #  @ w$set_attribs_list(["font=helvetica", "bg=pale blue"])
    #
    method set_attribs_list(l)
+      if \ (self.cwin) then { WAttrib ! push(l, self.cwin); pop(l) }
+      if \ (self.cbwin) then { WAttrib ! push(l, self.cbwin); pop(l) }
+      # need to add check, and *replace* attributes if already on the list,
+      # instead of blindly concatenating.
       return self.attribs |||:= l
    end
 
@@ -3794,11 +3798,12 @@ class ScrollArea : Component(
          self.which_down := self$get_line() - 1
          self.which_down <:= 1
          (\self.vsb)$set_value(self.vsb$get_value() - 1)
-      } else {
+         }
+      else {
          self.which_down := self$get_last_line() + 1
          self.which_down >:= *self.contents
          (\self.vsb)$set_value(self.vsb$get_value() + 1)
-      }
+         }
       self$refresh(1)
    end
 
@@ -3818,7 +3823,7 @@ class ScrollArea : Component(
          self.which_down := &null
          self$refresh(1)
          return _Event(e, self, 1)
-      }
+         }
    end
 
    method handle_event(e)
@@ -3827,12 +3832,14 @@ class ScrollArea : Component(
          # Handled by VSB; amend line number and refresh contents
          #
          self$refresh()
-      } else if E := (\self.hsb)$handle_event(e) then {
+         }
+      else if E := (\self.hsb)$handle_event(e) then {
          #
          # Handled by HSB; amend left offset and refresh
          #
          self$refresh()
-      } else if integer(e) = (&lpress | &rpress | &mpress) then
+         }
+      else if integer(e) = (&lpress | &rpress | &mpress) then
          return handle_press(e)
       else if integer(e) = (&ldrag | &rdrag | &mdrag) then
          return handle_drag(e)
@@ -4644,12 +4651,18 @@ class EditableTextList : ScrollArea(
    enddragy,
    donedrag,
    undolist,
-   redolist
+   redolist,
+   modified # not the same as "changed"; external needs-to-be-saved flag
    )
+
+   method clear_modified()
+      modified := &null
+   end
 
    method set_contents(x)
    local lst
 
+      modified := &null
       lst := []
       reset_drag()
       undolist := []
@@ -4820,6 +4833,7 @@ class EditableTextList : ScrollArea(
             self$refresh(1)
             return _Event(e, self, 0)
          } else if \changed then {
+            modified := 1
             if (*contents ~= old_contents_size) | /long_line | (old_mw ~= TextWidth(cwin, contents[long_line])) then {
                #
                # Contents changed.  Re-compute all internal fields, ensure on
@@ -5463,7 +5477,8 @@ local stng,j,k,endx,endy,endpos,offset,slast,newcursor_x,s,s2,oldcursor_y,oldcur
 
   end
 
-#  method added to retieve a highlighted section swj 
+#
+#  get_selection() - retrieve a highlighted section
 #  returns a list of strings for Copy
 #
 method get_selection()

@@ -48,10 +48,9 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    w->context->ntextures = 0;
 
    /* create an empty list for list of function calls */
-   if ((ws->flist = alclist(0, MinListSlots)) == NULL)
+   if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
       return NULL;
    ws->funclist.dword = D_List;
-   ws->funclist.vword.bptr = (union block *)ws->flist;
 
    /* set up the appropriate opengl states */
    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
@@ -542,8 +541,10 @@ int redraw3D(wbp w)
    GLfloat deflt_emission[4] = {0.0, 0.0, 0.0, 1.0};
    GLfloat deflt_specular[4] = {0.0, 0.0, 0.0, 1.0};
 
+#if 0
    gluLookAt(wc->eyeposx, wc->eyeposy, wc->eyeposz, wc->eyedirx, wc->eyediry,
 	     wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
+#endif
 
    /*
     * reset the defaults for those objects that used them
@@ -575,9 +576,11 @@ int redraw3D(wbp w)
       w->context->texmode = 0;
       }
 
-   if (w->window->flist)
+   if (w->window->funclist.vword.bptr != NULL) {
       if (traversefunctionlist(w) == Failed)
          return Failed;
+      }
+
    glPopMatrix();
    glXSwapBuffers(w->window->display->display, w->window->win);
    return Succeeded;
@@ -636,7 +639,7 @@ int traversefunctionlist(wbp w)
    struct descrip flist, fname;
    struct descrip var1, var2, var3, var4, var5, var6, var7;
    struct b_list *funclist;
-   struct b_list *list = w->window->flist;
+   struct b_list *list = (struct b_list *)w->window->funclist.vword.bptr;
    wcp wc = w->context;
    double x, y, z, r1, r2, h, a1, a2;
    double *v, v2[256];
@@ -734,6 +737,8 @@ int traversefunctionlist(wbp w)
 	     */
 	    if (!cnv:C_integer(rp->fields[1], num)) goto free_v_and_fail;
 	    glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
+	    if (wc->texmode)
+	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	    }
 	 else {
             return Failed;
@@ -787,7 +792,7 @@ free_v_and_fail:
             if (wc->texmode == 0)
 	       glEnable(GL_TEXTURE_2D);
 
-            wc->texmode = num;
+           wc->texmode = num;
            }
          /* texturing is off */
          else {
@@ -928,10 +933,13 @@ int determinematerial(struct b_list *list)
    if(!strcmp(temp, "shininess"))
       glMateriali(GL_FRONT, GL_SHININESS, r);
 
-  /* if it is not a material property, change the
-     current forground color to r, g, b */
-   if (!strcmp(temp, "none"))
-	glColor3f(color[0], color[1], color[2]);
+   /*
+    * if it is not a material property, change the
+    * current foreground color to r, g, b
+    */
+   if (!strcmp(temp, "none")) {
+      glColor3f(color[0], color[1], color[2]);
+      }
 
    return Succeeded;
 }
@@ -1183,6 +1191,10 @@ int setmaterials(wbp w, char* s)
 	 glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
          MakeStr("diffuse", 7, &material);
 	 c_put(&f, &material);
+	 /* hey, but when this goes on the list it needs to be a 16-bitter */
+	 rd *= 257;
+	 gr *= 257;
+	 bl *= 257;
          }
 
       /* put material property values on the list */
@@ -1746,7 +1758,8 @@ int seteye(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    if (*s2) return Error;
-   redraw3D(w);
+   if (redraw3D(w) == Failed)
+      return Failed;
    return Succeeded;
 }
 
@@ -1937,10 +1950,10 @@ int textureimg(wbp w, int width, int height,
    wdp wd = w->window->display;
 #endif					/* XWindows */
    int c, v, i;
-   unsigned int ix, iy;
-   GLubyte tex[height][width][3];
+   unsigned int ix = 0, iy = height -1;
+   GLubyte *tex = (GLubyte *)malloc(height * width * 3);
 
-   ix = 0; iy = height-1;
+   if (tex == NULL) return Failed;
 
    /*
     * convert string s into an array that can be used by opengl as a texture.
@@ -1952,15 +1965,15 @@ int textureimg(wbp w, int width, int height,
       v = e[c].valid;
       if (v) {
          /* r,g,b component must be between 0 and 256 */
-	   tex[iy][ix][0] = e[c].clr.red/256;
-	   tex[iy][ix][1] = e[c].clr.green/256;
- 	   tex[iy][ix][2] = e[c].clr.blue/256;
+	   tex[(iy*width+ix)*3+0] = e[c].clr.red/256;
+	   tex[(iy*width+ix)*3+1] = e[c].clr.green/256;
+ 	   tex[(iy*width+ix)*3+2] = e[c].clr.blue/256;
         }
       if (v || e[c].transpt) {		/* advance if valid or transparent */
 	   if (e[c].transpt) { /* if transparent use background color */
-            tex[iy][ix][0] = (GLint)RED(w->context->bg);
-            tex[iy][ix][1] = (GLint)GREEN(w->context->bg);
-            tex[iy][ix][2] = (GLint)BLUE(w->context->bg);
+            tex[(iy*width+ix)*3+0] = (GLint)RED(w->context->bg);
+            tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
+            tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
          }
          if (++ix >= width) {
             ix = 0;	
@@ -1971,15 +1984,17 @@ int textureimg(wbp w, int width, int height,
       }
       if (ix > 0) {	/* pad final row if incomplete */
          while (ix < width) {
-            tex[iy][ix][0] = (GLint)RED(w->context->bg);
-            tex[iy][ix][1] = (GLint)GREEN(w->context->bg);
-            tex[iy][ix][2] = (GLint)BLUE(w->context->bg);
+            tex[(iy*width+ix)*3+0] = (GLint)RED(w->context->bg);
+            tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
+            tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
             ix++;
            }
 	 }
 
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
+
+   free(tex);
 
    if (i == Succeeded)
       return Succeeded;

@@ -1140,8 +1140,8 @@ function{1} EraseArea(argv[argc])
 	 /*
 	  * allocate a new list for functions
 	  */
-         Protect(w->window->flist = alclist(0, MinListSlots), runerr(0));
-	 w->window->funclist.vword.bptr = (union block *)w->window->flist;
+         Protect(w->window->funclist.vword.bptr = (union block *)alclist(0, MinListSlots), runerr(0));
+	 
          glClearColor(RED(w->context->bg)/(GLfloat)256,
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);

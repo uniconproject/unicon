@@ -3289,7 +3289,7 @@ end
  */
 "DrawSphere(argv[]){1} - draw a sphere"
 
-function{*} DrawSphere(argv[argc])
+function{1} DrawSphere(argv[argc])
    abstract{ return record }
    body {
       wbp w;

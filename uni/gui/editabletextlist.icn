@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.13 2004-11-10 22:28:34 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.14 2004-11-11 20:00:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -212,14 +212,18 @@ class EditableTextList : LineBasedScrollArea(
       end_handle(e)
    end
 
-   method on_vsb()
+   method on_vsb(ev)
+      start_handle()
       self.constrain_cursor()
       self.refresh()
+      end_handle(ev)
    end
 
-   method on_hsb()
+   method on_hsb(ev)
+      start_handle()
       self.constrain_cursor()
       self.refresh()
+      end_handle(ev)
    end
 
    method start_handle()
@@ -803,7 +807,7 @@ class EditableTextList : LineBasedScrollArea(
       self.LineBasedScrollArea.initially()
       self.set_accepts_focus()
       undo_manager := UndoManager()
-      printable := cset(&cset[33:0]) ++ '\t'
+      printable := cset(&cset[33:0]) ++ '\t\n'
       self.cursor_x := self.cursor_y := 1
       set_fields(a)
 end
@@ -1054,7 +1058,7 @@ class EditableTextListPasteEdit:EditableTextListEdit(s, pre, n)
 
       n := 0
       pre := parent.contents[parent.cursor_y]
-
+write("s=",image(s))
       s ? repeat {
          t := tab(upto('\n') | 0)
          if any('\n') then {

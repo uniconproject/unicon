@@ -24,20 +24,28 @@ keyword{4} allocated
 end
 
 "&clock - a string consisting of the current time of day"
-keyword{1} clock
+keyword{2} clock
    abstract {
       return string
       }
    inline {
+      int i;
       time_t t;
       struct tm *ct;
-      char sbuf[9], *tmp;
+      char sbuf[128], *tmp;
 
       time(&t);
       ct = localtime(&t);
       sprintf(sbuf,"%02d:%02d:%02d", ct->tm_hour, ct->tm_min, ct->tm_sec);
       Protect(tmp = alcstr(sbuf,(word)8), runerr(0));
-      return string(8, tmp);
+      suspend string(8, tmp);
+
+      sprintf(sbuf, "UTC%c%d %s", timezone < 0 ? '+' : '-', timezone/3600,
+         ct->tm_isdst > 0 ? tzname[1] : tzname[0]);
+      i = strlen(sbuf);
+      Protect(tmp = alcstr(sbuf, i), runerr(0));
+      suspend string(i, tmp);
+      fail;
       }
 end
 
@@ -118,7 +126,7 @@ keyword{1} now
 end
 
 "&dateline - current date and time"
-keyword{1} dateline
+keyword{2} dateline
    abstract {
       return string
       }
@@ -150,13 +158,19 @@ keyword{1} dateline
          if (hour < 1)
             hour += 12;
          }
-      sprintf(sbuf, "%s, %s %d, %d  %d:%02d %s UTC%c%d", day[ct->tm_wday],
-         month[ct->tm_mon], ct->tm_mday, 1900 + ct->tm_year, hour,
-	 ct->tm_min, merid, timezone < 0 ? '+' : '-', timezone/3600);
-       i = strlen(sbuf);
-       Protect(tmp = alcstr(sbuf, i), runerr(0));
-       return string(i, tmp);
-       }
+      sprintf(sbuf, "%s, %s %d, %d  %d:%02d %s", day[ct->tm_wday],
+         month[ct->tm_mon], ct->tm_mday, 1900 + ct->tm_year, hour, ct->tm_min, merid);
+      i = strlen(sbuf);
+      Protect(tmp = alcstr(sbuf, i), runerr(0));
+      suspend string(i, tmp);
+
+      sprintf(sbuf, "UTC%c%d %s", timezone < 0 ? '+' : '-', timezone/3600,
+         ct->tm_isdst > 0 ? tzname[1] : tzname[0]);
+      i = strlen(sbuf);
+      Protect(tmp = alcstr(sbuf, i), runerr(0));
+      suspend string(i, tmp);
+      fail;
+      }
 end
 
 "&digits - a cset consisting of the 10 decimal digits"

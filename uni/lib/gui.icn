@@ -775,11 +775,38 @@ class _Dialog : Container(
       self.repeat_rate := 100
 end
 
+#
+# Abstract parent of Component and MenuComponent
+#
+class MetaComponent()
+
+   method set_fields(L)
+      every s := !L do {
+         s ? {
+            (attr := tab(find("="))) &
+            ="=" &
+            (val := tab(0))
+            }
+         if find(",", val) then {
+	    vals := []
+	    val ? {
+	       while put(vals, tab(find(","))) do move(1)
+	       put(vals, tab(0))
+	       }
+	    self.__m["set_" || attr] ! (push(vals, self))
+	    }
+	 else
+	    self.__m["set_" || attr] (self, val)
+	 }
+   end
+
+end
+
 ##
 #  This is the parent class of all the GUI components.  All of
 #  its methods and variables therefore apply to its sub-classes.
 #
-class Component : Ticker(
+class Component : Ticker : MetaComponent(
    ##
    #  x position as specified by {set_pos()}, eg "50%"
    #
@@ -1346,26 +1373,6 @@ class Component : Ticker(
    #
    method generate_all_components()
       return self
-   end
-
-   method set_fields(L)
-      every s := !L do {
-         s ? {
-            (attr := tab(find("="))) &
-            ="=" &
-            (val := tab(0))
-            }
-         if find(",", val) then {
-	    vals := []
-	    val ? {
-	       while put(vals, tab(find(","))) do move(1)
-	       put(vals, tab(0))
-	       }
-	    self.__m["set_" || attr] ! (push(vals, self))
-	    }
-	 else
-	    self.__m["set_" || attr] (self, val)
-	 }
    end
 
    initially(argv[])
@@ -7322,7 +7329,7 @@ end
 #  For components that appear in a menu with a label, an
 #  optional left/right string/image can be set.
 #
-class MenuComponent(
+class MenuComponent : MetaComponent(
    x,
    y,
    w,
@@ -8822,8 +8829,7 @@ class Table : Component(
       if *argv > 0 then set_fields(argv)
 end
 
-   
-##
+#
 #  This class groups several Buttons together.  Then, when the
 #  mouse is clicked down on one of the Buttons and then dragged
 #  onto another before being released, the other Button will go

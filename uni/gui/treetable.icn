@@ -1,0 +1,131 @@
+#
+# $Id: treetable.icn,v 1.1 2004-11-19 16:21:42 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+package gui
+link graphics
+
+$include "guih.icn"
+
+#
+# A node in a {TreeTable}.  It provides the column data
+# for the extra (non-tree) columns.  For example if
+# the TreeTable's columns were named A, B, C, then a
+# {TreeTableNode} might be created as follows :-
+#
+# @example
+# @ n := TreeTableNode("label=Col A label")
+# @ n.set_col_data(["Col B data", "Col C data"])
+#
+class TreeTableNode:Node(col_data)
+   #
+   # Set the column data to fill the columns 2 onwards.
+   #
+   method set_col_data(l)
+      self.col_data := l
+   end
+
+   #
+   # Get the data for column number c, where c ranges
+   # from 2 up; fails if not available.
+   #
+   method get_col(c)
+      return (\self.col_data)[c - 1]
+   end
+
+   initially(a[])
+      self.Node.initially()
+      set_fields(a)
+end
+
+#
+# This class provides the table content for a TreeTable.  It extends
+# Tree, and uses that class's methods for event handling and drawing
+# of the first column.
+#
+class TreeTableContent:Tree()
+   method get_subject_width()
+      subject_width := 0
+      every subject_width +:= (!parent.table_header.children).column_width
+      return subject_width
+   end
+
+   method refresh(redraw)
+      # Need to resize buttons because of the horizontal scroll bar moving.
+      parent.table_header.resize()
+      parent.table_header.invalidate()
+      self.ScrollArea.refresh(redraw)
+   end
+
+   #
+   # Draw an individual column for one row's data.  This could
+   # be over-ridden to give a custom table with data 
+   # other than strings.
+   #
+   # @param row the row number to draw
+   # @param col the column number to draw
+   # @param cx the x position of the cell
+   # @param cy the y position of the cell
+   # @param cw the width of the cell
+   # @param ch the height of the cell
+   #
+   method draw_cell(row, col, cx, cy, cw, ch)
+      local s, l 
+
+      s := self.contents[row].get_col(col) | fail
+      case get_column(col).internal_alignment of {
+         "r" :          right_string(self.cbwin, cx + cw, cy, s)
+         "c" :          center_string(self.cbwin, cx + cw / 2, cy, s)
+         "l" :          left_string(self.cbwin, cx, cy, s)
+      }
+   end
+
+   method get_column(n)
+      return parent.table_header.children[n]
+   end
+
+   method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
+      local j, l, cols, x1, w1, clip_x1, clip_x2, col
+      N := self.contents[i]
+      cols := parent.table_header.children
+      every j := 1 to *cols do {
+         col := cols[j]
+         if j = 1 then {
+            # The tree column has slightly different bounds.
+            x1 := col.x
+            w1 := col.w - DEFAULT_TEXT_X_SURROUND
+         } else {
+            x1 := col.x + DEFAULT_TEXT_X_SURROUND
+            w1 := col.w - 2 * DEFAULT_TEXT_X_SURROUND
+         }
+         clip_x1 := x1
+         clip_x1 <:= self.view.x
+         clip_x2 := x1 + w1
+         clip_x2 >:= self.view.x + self.view.w
+         Clip(self.cbwin, clip_x1, self.view.y, clip_x2 - clip_x1, self.view.h)
+         if j = 1 then
+            self.Tree.draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
+         else
+            draw_cell(i, j, x1, yp, w1, self.line_height)
+         Clip(self.cbwin)
+      }
+   end
+end
+
+#
+# A {TreeTable} is a {Table} where the first column is
+# a Tree.  The data for the component is provided as
+# a tree of {TreeTableNode}s.
+#
+# See the example program ttexplorer.icn for one in use.
+#
+class TreeTable:Table()
+   initially(a[])
+      self.Table.initially()
+      set_table_content(TreeTableContent())
+      set_fields(a)
+end

@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.23 2004-10-09 12:17:54 rparlett Exp $
+ * $Id: rposix.r,v 1.24 2004-10-10 16:26:14 rparlett Exp $
  */
 
 #ifdef PosixFns
@@ -743,16 +743,9 @@ struct sockaddr_in saddrs[128];
 #define MAXHOSTNAMELEN 32
 #endif					/* MAXHOSTNAMELEN */
 
-/*
- * Empty handler for connection alarm signals (used for timeouts).
- */
-static void on_alarm(int x) 
-{
-}
-
 FILE *sock_connect(char *fn, int is_udp, int timeout)
 {
-   int rc, fd, s, len, fromlen;
+   int imode, saveflags, rc, fd, s, len, fromlen;
    struct sockaddr *sa, from;
    char *p, fname[BUFSIZ];
    struct sockaddr_in saddr_in;
@@ -854,24 +847,135 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
       return (FILE *)s;
       }
 
-#if UNIX
    if (timeout > 0) {
-      /* Set up a timeout alarm handler */
-      sigact.sa_handler = on_alarm;
-      sigact.sa_flags = 0;
-      sigfillset(&sigact.sa_mask);
-      sigaction(SIGALRM, &sigact, 0);
-      /* alarm() takes seconds not millis... */
-      alarm(timeout % 1000 ? 1 + timeout / 1000 : timeout / 1000);
-   }
+#if UNIX
+      /* Save existing flags for restore later */
+      saveflags = fcntl(s, F_GETFL, 0);
+      if (saveflags < 0) {
+         close(s);
+         return 0;
+      }
+      /* Turn on non-blocking flag - this will make connect
+         return immediately.  */
+      if (fcntl(s, F_SETFL, saveflags|O_NONBLOCK) < 0) {
+         close(s);
+         return 0;
+      }
 #endif					/* UNIX */
+#if NT
+      /* Turn on non-blocking flag - this will make connect
+         return immediately.  */
+      int imode = 1;
+      if (ioctlsocket(s, FIONBIO, &imode) < 0) {
+         errno = WSAGetLastError();      
+         closesocket(s);
+         return 0;
+      }
+#endif					/* NT */
+   }
 
    rc = connect(s, sa, len);
 
+   if (timeout > 0) {
 #if UNIX
-   if (timeout > 0)
-      alarm(0);
+      /* Reset the old flags, but avoiding overwriting the value of errno */
+      int connect_err = errno;
+      if (fcntl(s, F_SETFL, saveflags) < 0) {
+         close(s);
+         return 0;
+      }
+      errno = connect_err;
+
+      if (rc < 0 && errno == EINPROGRESS) {
+         /* The connect is in progress, so select() must be used to wait. */
+         fd_set ws, es;
+         struct timeval tv;
+         int sc, cc, cclen;
+
+         tv.tv_sec = timeout / 1000;
+         tv.tv_usec = 1000 * (timeout % 1000);
+         FD_ZERO(&ws);
+         FD_SET(s, &ws);
+         FD_ZERO(&es);
+         FD_SET(s, &es);
+         errno = 0;
+         sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);      
+         /* A result of 0 means timeout; in this case errno will be zero too,
+            and that can be used to distinguish from another error condition. */
+         if (sc <= 0) {
+            close(s);
+            return 0;
+         }
+
+         /* Get the error code of the connect */
+         cclen = sizeof(cc);
+         if (getsockopt(s, SOL_SOCKET, SO_ERROR, &cc, &cclen) < 0) {
+            close(s);
+            return 0;
+         }         
+
+         if (cc != 0) {
+            /* There was an error, so set errno and fail */
+            errno = cc;
+            close(s);
+            return 0;
+         }         
+
+         return (FILE *)s;
+      }
 #endif					/* UNIX */
+#if NT
+      /* Turn off non-blocking flag */
+      int connect_err = WSAGetLastError();
+      int imode = 0;
+      if (ioctlsocket(s, FIONBIO, &imode) < 0) {
+         errno = WSAGetLastError();      
+         closesocket(s);
+         return 0;
+      }
+      errno = connect_err;
+
+      if (rc < 0 && errno == WSAEWOULDBLOCK) {
+         /* The connect is in progress, so select() must be used to wait. */
+         fd_set ws, es;
+         struct timeval tv;
+         int sc, cc, cclen;
+
+         tv.tv_sec = timeout / 1000;
+         tv.tv_usec = 1000 * (timeout % 1000);
+         FD_ZERO(&ws);
+         FD_SET(s, &ws);
+         FD_ZERO(&es);
+         FD_SET(s, &es);
+         WSASetLastError(0);
+         sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);      
+         /* A result of 0 means timeout; in this case WSAGetLastError() will return zero,
+            and that can be used to distinguish from another error condition. */
+         if (sc <= 0) {
+            errno = WSAGetLastError();      
+            closesocket(s);
+            return 0;
+         }
+
+         /* Get the error code of the connect */
+         cclen = sizeof(cc);
+         if (getsockopt(s, SOL_SOCKET, SO_ERROR, (char*)&cc, &cclen) < 0) {
+            errno = WSAGetLastError();      
+            closesocket(s);
+            return 0;
+         }         
+
+         if (cc != 0) {
+            /* There was an error, so set errno and fail */
+            errno = cc;
+            closesocket(s);
+            return 0;
+         }         
+
+         return (FILE *)s;
+      }
+#endif					/* NT */
+   }
 
    if (rc < 0) {
       close(s);

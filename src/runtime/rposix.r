@@ -812,14 +812,12 @@ FILE *sock_connect(char *fn, int is_udp)
 #endif					/* NT */
    }
 
-#if 0
    /* We don't connect UDP sockets but always use sendto(2). */
    if (is_udp) {
       /* save the sockaddr struct */
       saddrs[s] = saddr_in;
       return (FILE *)s;
       }
-#endif					/* NT */
 
    if (connect(s, sa, len) < 0)
       return 0;

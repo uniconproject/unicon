@@ -138,6 +138,10 @@ extern struct b_real realzero;		/* real zero block */
    extern struct b_coexpr *mainhead;	/* &main */
 #endif					/* MultiThread */
 
+/* dynamic record types */
+extern int longest_dr;
+extern struct b_proc_list **dr_arrays;
+
 /*
  * Externals that differ between compiler and interpreter.
  */

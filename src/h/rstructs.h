@@ -44,6 +44,13 @@ typedef struct si_ *siptr;
 
 #endif					/* Graphics || PosixFns */
 
+/*
+ * structure supporting dynamic record types
+ */
+struct b_proc_list {
+   struct b_proc *this;
+   struct b_proc_list *next;
+};
 
 #ifdef LargeInts
 struct b_bignum {		/* large integer block */

@@ -121,25 +121,30 @@ gdbm_open (file, block_size, flags, mode, fatal_func)
       dbf->fast_write = FALSE;
     }
   
+#ifdef NTGCC
+#define BINARY(x) (x|_O_BINARY)
+#else
+#define BINARY(x) (x)
+#endif
   /* Open the file. */
   need_trunc = FALSE;
   if (flags == GDBM_READER)
     {
-      dbf->desc = open (dbf->name, O_RDONLY, 0);
+      dbf->desc = open (dbf->name, BINARY(O_RDONLY), 0);
     }
   else if (flags == GDBM_WRITER)
     {
-      dbf->desc = open (dbf->name, O_RDWR, 0);
+      dbf->desc = open (dbf->name, BINARY(O_RDWR), 0);
     }
   else if (flags == GDBM_NEWDB)
     {
-      dbf->desc = open (dbf->name, O_RDWR|O_CREAT, mode);
+      dbf->desc = open (dbf->name, BINARY(O_RDWR|O_CREAT), mode);
       flags = GDBM_WRITER;
       need_trunc = TRUE;
     }
   else
     {
-      dbf->desc = open (dbf->name, O_RDWR|O_CREAT, mode);
+      dbf->desc = open (dbf->name, BINARY(O_RDWR|O_CREAT), mode);
       flags = GDBM_WRITER;
     }
   if (dbf->desc < 0)

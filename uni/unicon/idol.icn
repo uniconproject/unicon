@@ -665,6 +665,13 @@ class taque : Table (l)
        return
        }
   end
+  method Put(x,key)
+    /self.l := []
+    if self$Table.insert(x,key) then {
+       put(self.l,x)
+       return
+       }
+  end
   method foreach()
     if \self.l then every suspend !self.l
   end
@@ -819,6 +826,8 @@ end
 # find a class specification, along the IPATH if necessary
 #
 procedure fetchspec(name)
+   static nonwhite
+   nonwhite := &cset -- ' \t'
    if f := open(env,"dr") then {
       if s := fetch(f, name) then {
 	 close(f)
@@ -837,26 +846,33 @@ procedure fetchspec(name)
       close(f)
       }
    if not (ipath := getenv("IPATH")) then {
-       if binpath := (&features ? (="Binaries at " & tab(0))) then
-	   ipath := binpath || "../ipl/lib " || binpath || "../uni/lib"
+       if binpath := (&features ? (="Binaries at " & tab(0))) then { }
        else if (f := open((binpath:=getpaths()) || ("nticonx.exe"|"wiconx.exe"))) then {
 	   close(f)
-	   ipath := binpath || "../ipl/lib " || binpath || "../uni/lib"
            }
+       ipath := "\"" || binpath || "../ipl/lib\" \"" || binpath||"../uni/lib\""
    }
 
    if \ipath then {
       ipath ? {
-	 while dir := tab(many(&cset--' \t')) do {
-	    if f := open(dir || "/" || env, "dr") then {
-	       if s := fetch(f, name) then {
-		  close(f); return db_entry(dir, s) }
-	       close(f)
+         dir := ""
+	 while dir ||:= tab(many(nonwhite)) do {
+	    if *dir>0 & dir[1]=="\"" & dir[-1] ~== "\"" then {
+		dir ||:= tab(many(' \t')) | { fail }
 	       }
-	    tab(many(' \t'))
+	    else {
+		if dir[1]==dir[-1]=="\"" then dir := dir[2:-1]
+		if f := open(dir || "/" || env, "dr") then {
+		    if s := fetch(f, name) then {
+			close(f); return db_entry(dir, s) }
+		    close(f)
+		}
+		tab(many(' \t'))
+		dir := ""
 	    }
-	 }
-      }
+	}
+     }
+  }
 end
 
 #

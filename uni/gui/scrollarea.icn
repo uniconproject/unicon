@@ -1,5 +1,5 @@
 #
-# $Id: scrollarea.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: scrollarea.icn,v 1.2 2004-05-09 20:02:21 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,24 +10,6 @@ package gui
 link graphics
 
 $include "guih.icn"
-
-#
-# This is the part of the component displaying the underlying object.
-#
-# @p
-class View : Component()
-   method display(buffer_flag)
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      # Clipping on self.cbwin doesn't seem to work okay, so clip on the parent.  A bug
-      # in the graphics code perhaps.
-      Clip(self.parent.cbwin, self.x, self.y, self.w, self.h)
-      parent.draw(parent.get_areax(), parent.get_areay(), self.x, self.y, self.w, self.h)
-      Clip(self.parent.cbwin)
-      self.do_shading(self.cbwin)
-      if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
-   end
-end
 
 #
 # This is a base class for displaying an arbitrarily large object
@@ -225,7 +207,7 @@ class ScrollArea : Component(
          self.vsb.set_total_size(subject_height)
          if \new_vsb then {
             self.vsb.set_increment_size(get_subject_vertical_increment())
-            self.vsb.connect(self, "on_vsb")
+            every self.vsb.connect(self, "on_vsb", SCROLLBAR_PRESSED_EVENT | SCROLLBAR_DRAGGED_EVENT)
             self.vsb.set_value(0)
             self.add(self.vsb)
             self.vsb.final_setup(self.get_parent_dialog())
@@ -243,7 +225,7 @@ class ScrollArea : Component(
          self.hsb.set_total_size(subject_width)
          if \new_hsb then {
             self.hsb.set_increment_size(get_subject_horizontal_increment())
-            self.hsb.connect(self, "on_hsb")
+            every self.hsb.connect(self, "on_hsb", SCROLLBAR_PRESSED_EVENT | SCROLLBAR_DRAGGED_EVENT)
             self.hsb.set_value(0)
             self.add(self.hsb)
             self.hsb.final_setup(self.get_parent_dialog())
@@ -255,7 +237,7 @@ class ScrollArea : Component(
    end
 
    #
-   # Re-draw the text area.  Use double-buffering to avoid flicker.
+   # Re-draw the view area.
    #
    # @p
    method refresh(redraw)
@@ -314,15 +296,13 @@ class ScrollArea : Component(
    abstract method get_subject_horizontal_increment()
 
    #
-   # Draw the object at its offset subject_x, subject_y, into self.cbwin
-   # at x, y, with size w, h.
+   # Create the view component
    #
-   abstract method draw(subject_x, subject_y, x, y, w, h)
+   abstract method create_view()
 
    initially()
       self.Component.initially()
-      self.set_accepts_focus()
       self.set_draw_border()
-      self.view := View()
+      self.view := create_view()
       add(view)
 end

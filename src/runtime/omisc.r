@@ -96,7 +96,11 @@ operator{1} * size(x)
 	 struct ISQLFile *fp;
 	 int status;
 	 int rc;
+#if UNIX
+	 SQLINTEGER numrows;
+#else					/* UNIX */
 	 SQLLEN numrows;
+#endif					/* UNIX */
 
 	 status = BlkLoc(x)->file.status;
 

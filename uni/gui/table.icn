@@ -1,5 +1,5 @@
 #
-# $Id: table.icn,v 1.5 2004-11-06 00:28:13 rparlett Exp $
+# $Id: table.icn,v 1.6 2004-11-06 17:45:45 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -29,25 +29,39 @@ class TableContent : SelectableScrollArea()
       self.ScrollArea.refresh(redraw)
    end
 
+   #
+   # Draw an individual column's data.  This could be over-ridden to give
+   # a custom table with data other than strings.
+   #
+   # @param col the {TableColumn} object
+   # @param data the data extracted from the current row of {contents}
+   # @param yp the y position to draw at.
+   #
+   method draw_col(col, data, yp)
+      local x1, w1, clip_x1, clip_x2
+
+      x1 := col.x + DEFAULT_TEXT_X_SURROUND
+      w1 := col.w - 2 * DEFAULT_TEXT_X_SURROUND
+      clip_x1 := x1
+      clip_x1 <:= self.view.x
+      clip_x2 := x1 + w1
+      clip_x2 >:= self.view.x + self.view.w
+
+      Clip(self.cbwin, clip_x1, self.view.y, clip_x2 - clip_x1, self.view.h)
+      case col.internal_alignment of {
+         "r" :          right_string(self.cbwin, x1 + w1, yp, data)
+         "c" :          center_string(self.cbwin, x1 + w1 / 2, yp, data)
+         "l" :          left_string(self.cbwin, x1, yp, data)
+      }
+      Clip(self.cbwin)
+   end
+
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
-      local j, x1, w1, l, cols
+      local j, l, cols
       l := self.contents[i]
       cols := parent.table_header.children
       every j := 1 to *cols do {
-         x1 := cols[j].x + DEFAULT_TEXT_X_SURROUND
-         w1 := cols[j].w - 2 * DEFAULT_TEXT_X_SURROUND
-         clip_x1 := x1
-         clip_x1 <:= self.view.x
-         clip_x2 := x1 + w1
-         clip_x2 >:= self.view.x + self.view.w
-
-         Clip(self.cbwin, clip_x1, self.view.y, clip_x2 - clip_x1, self.view.h)
-         case cols[j].internal_alignment of {
-            "r" :          right_string(self.cbwin, x1 + w1, yp, l[j])
-            "c" :          center_string(self.cbwin, x1 + w1 / 2, yp, l[j])
-            "l" :          left_string(self.cbwin, x1, yp, l[j])
-         }
-         Clip(self.cbwin)
+         draw_col(cols[j], l[j], yp)
       }
       if \selection_cw then
          FillRectangle(selection_cw, self.view.x, yp - self.line_height / 2, self.view.w, self.line_height)

@@ -38,7 +38,7 @@ global yydbg, yyout, linkline, translateducode, imported, imported_classes
 link basename, io
 
 $define MERRADDRESS "jeffery@cs.nmsu.edu"
-global merrflag, merraddress
+global merrflag, merraddress, uni_predefs
 
 $ifdef _MS_WINDOWS_NT
 $define PATHCHAR "\\"
@@ -100,6 +100,7 @@ procedure initialize()
   reserved := " fi neht esle yreve elihw od ot yb "
   flogname := tempname("uni",,temppath,5)
   if widollog := getenv("WIDOLLOG") then flog := open(flogname,"w")
+  uni_predefs := predefs()
   sysinitialize()
 end
 
@@ -121,6 +122,21 @@ procedure main(argv)
    every i := 1 to *argv do {
       if \exec then next            # after -x, args are for execution
       if argv[i][1] == "-" then {
+	 if match("-D", argv[i]) then {
+	    argv[i] ? {
+	       move(2)
+	       if sym := tab(find("=")) then {
+		  move(1)
+		  def := tab(0)
+		  }
+	       else {
+		  sym := tab(0)
+		  def := "1"
+		  }
+	       uni_predefs[sym] := def
+	       }
+	    }
+	 else
 	 case argv[i] of {
 	 "-c"   : {
 	    sysok := &null
@@ -175,7 +191,7 @@ procedure main(argv)
 
 	 yyfilename := outfilename := fName
 	 yyin := ""
-	 every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
+	 every yyin ||:= preprocessor(fName, uni_predefs) do yyin ||:= "\n"
          yylex_reinit()
 	 cmd := selecticont()
 	 cmd ||:= " -c "||icontopt||" -O "|| quotes(fName) ||" "
@@ -277,8 +293,7 @@ end
 # Canonize a path.  This involves :-
 #   - lower-casing the name (Windows only)
 #   - changing backslashes to forward slashes (Windows)
-#   - expanding non-absolute paths to absolute ones
-#     using chdir()
+#   - expanding non-absolute paths to absolute ones using chdir()
 #   - adding a trailing /
 #   - removing any ".." or "." directories
 #

@@ -29,13 +29,10 @@ keyword{2} clock
       return string
       }
    inline {
-      int i;
+      int i, tz_sec, offset_hrs;
       time_t t;
       struct tm *ct;
       char sbuf[128], *tmp;
-
-      int tz_sec;
-      int offset_hrs;
 
       time(&t);
       ct = localtime(&t);

@@ -72,9 +72,9 @@ int stubexe;				/* TRUE if resource attached to executable */
 char *prog_name;			/* name of icode file */
 
 #if !COMPILER
-#define OpDef(p,n,s,u) int Cat(O,p) (dptr cargp);
-#include "../h/odefs.h"
-#undef OpDef
+#passthru #define OpDef(p,n,s,u) int Cat(O,p) (dptr cargp);
+#passthru #include "../h/odefs.h"
+#passthru #undef OpDef
 
 /*
  * External declarations for operator blocks.
@@ -1186,6 +1186,13 @@ void inttrap()
  */
 void segvtrap()
    {
+   static int n = 0;
+
+   if (n != 0) {			/* only try traceback once */
+      fprintf(stderr, "[Traceback failed]\n");
+      exit(1);
+      }
+   n++;
 
 #if MVS || VM
 #if SASC
@@ -1502,9 +1509,8 @@ void datainit()
    if (!(ConsoleFlags & StdOutRedirect))
       k_output.status = Fs_Write | Fs_Window;
    else
-#else					/* Console Window */
-      k_output.status = Fs_Write;
 #endif					/* Console Window */
+      k_output.status = Fs_Write;
 
    IntVal(kywd_pos) = 1;
    IntVal(kywd_ran) = 0;

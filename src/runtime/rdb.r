@@ -6,7 +6,7 @@
  *
  */
  
-#ifdef ISQL /* ODBC support */
+#ifdef ISQL
 
 #define BUFF_SZ      32768      /* 32Kb buffer size for C/S data transfer */
 #define MAX_COL_NAME    64      /* max column name length    */

@@ -3960,7 +3960,7 @@ unsigned int x, y, height, width;
    else if (!strcmp(".xpm", filename + strlen(filename) - 4) ||
        !strcmp(".XPM", filename + strlen(filename) - 4) ||
        !strcmp(".xpm.Z", filename + strlen(filename) - 6)) {
-#ifdef HaveXpmFormat
+#ifdef HAVE_LIBXPM
       /*
        * Could optimize by calling XpmWriteFileFromPixmap directly on the
        * stdpix...
@@ -3978,7 +3978,7 @@ unsigned int x, y, height, width;
 
       if (status == XpmSuccess)
          return Succeeded;
-#endif					/* HaveXpmFormat */
+#endif					/* HAVE_LIBXPM */
       return Failed;
       }
    else
@@ -4041,9 +4041,7 @@ int *status;
 			 DefaultDepth(stddpy,DefaultScreen(stddpy)));
       }
    else {				/* isxbm == 0 => .xpm file */
-#ifndef HaveXpmFormat
-      return NULL;
-#else					/* HaveXpmFormat */
+#ifdef HAVE_LIBXPM
       XpmAttributes a;
       XColor color;
       LinearColor clr;
@@ -4119,7 +4117,9 @@ int *status;
 	    ws->theColors[ws->numColors++] = j;
 	    }
          }
-#endif					/* HaveXpmFormat */
+#else					/* HAVE_LIBXPM */
+      return NULL;
+#endif					/* HAVE_LIBXPM */
       }
 
    if (p2 == (Pixmap) NULL) {

@@ -1,0 +1,31 @@
+#
+# $Id: canvascustomdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+$include "guih.icn"
+
+
+############################################################################
+#
+# Dialog for configuring a CanvasCustom
+#
+class CanvasCustomDialog : CanvasComponentDialog(
+   c                        # The CanvasCustom being configured
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      self.setup(c)
+      self.set_attribs("size=540,400", "label=" || label)
+end

@@ -1,0 +1,108 @@
+#
+# $Id: canvasbutton.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+
+
+############################################################################
+#
+# Class for representing Buttons.
+# 
+class CanvasButton : CanvasComponent()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      (\self.parent_button_group).gen_code(c)
+      (\self.parent_check_box_group).gen_code(c)
+      #
+      # Extend superclass method
+      #
+      self.CanvasComponent.gen_code(c)
+      #
+      # Add the code
+      #
+      if \self.no_keyboard_flag then
+         c.line(name || ".set_no_keyboard()")
+      if \self.parent_button_group then
+         c.line(self.parent_button_group.name || ".add(" || name || ")")
+
+      if \self.parent_check_box_group then
+         c.line(self.parent_check_box_group.name || ".add(" || name || ")")
+
+      if \self.is_checked_flag then {
+         if \self.parent_check_box_group then
+            c.line(self.parent_check_box_group.name || ".set_which_one(" || name || ")")
+         else
+            c.line(name || ".set_is_checked()")
+      }         
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["No Keyboard", "no_keyboard_flag"],
+          ["Img Up", "img_up"],
+          ["Img Down", "img_down"],
+          ["Img Width", "img_w"],
+          ["Img Height", "img_h"],
+          ["Is Checked Flag", "is_checked_flag"],
+          ["Is Checkbox Flag", "is_checkbox_flag"],
+          ["Parent CheckBoxGroup", "parent_check_box_group"],
+          ["Parent Button Group", "parent_button_group"]
+         ]
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.label := self.label
+      c.no_keyboard_flag := self.no_keyboard_flag
+      c.set_imgs(\self.img_up, \self.img_down)
+      if \self.parent_check_box_group then
+         c.set_parent_check_box_group((\c.parent_Canvas).checkbox_groups.boxes[self.parent_check_box_group.number])
+      if \self.parent_button_group then
+         c.set_parent_button_group((\c.parent_Canvas).button_groups.boxes[self.parent_button_group.number])
+      # If a checked box in a cbg is copied then the copy will not
+      # be checked.
+      #
+      if \self.is_checked_flag & /c.parent_check_box_group then
+         c.set_is_checked()
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(c, pc)
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      if \self.is_checked_flag then {
+         if \c.parent_check_box_group then
+            c.parent_check_box_group.which_one := c
+         c.set_is_checked()
+      }         
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp(c)
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.is_button_subclass := 1
+end

@@ -1,0 +1,119 @@
+#
+# $Id: canvasmenu.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasMenu : CanvasMenuComponent : Menu()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasMenuComponent.gen_code(c)
+      if \self.label_left then
+         c.line(name || ".set_label_left(" || image(self.label_left) || ")")
+      else if \self.img_left then
+         c.line(name || ".set_img_left(" || image(self.img_left) || ")")
+
+      if \self.label_right then
+         c.line(name || ".set_label_right(" || image(self.label_right) || ")")
+      else if \self.img_right ~== img_style("arrow_right") then
+         c.line(name || ".set_img_right(" || image(self.img_right) || ")")
+      every i := !self.children do {
+         i.gen_code(c)
+         c.line(self.name || ".add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasMenu()
+      self.CanvasMenuComponent.cp(c, mb)
+      every c.add((!self.children).cp(c.parent_component))
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasMenu()
+      self.CanvasMenuComponent.dup(c, mb)
+      every c.add((!self.children).dup(c.parent_component))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasMenuComponent.get_template() ||| 
+         [["Children", "children"]
+         ]
+   end
+
+   #
+   # Insert object x into the menu at position i.
+   #
+   method insert(x, i)
+      self.children := self.children[1 : i] ||| [x] ||| self.children[i : 0]
+      x.parent_component := self.parent_component
+   end
+
+   #
+   # Delete the i'th menu item
+   #
+   method delete(i)
+      self.children := self.children[1 : i] ||| self.children[i + 1 : 0]
+   end
+
+   #
+   # Add the menu's string representation into s.
+   #
+   method set_string_rep(s, level, parent, i)
+      local sub
+      put(s, MenuTreeNode(level, parent, i))
+      put(s, MenuTreeNode(level, parent, i, self))
+      every sub := self.children[i := 1 to *self.children] do {
+         if sub.is_sub_menu() then 
+            sub.set_string_rep(s, level + 1, self, i)
+         else {
+            put(s, MenuTreeNode(level + 1, self, i))
+            put(s, MenuTreeNode(level + 1, self, i, sub))
+         }
+      }
+      put(s, MenuTreeNode(level + 1, self, *self.children + 1))
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      return self.label
+   end
+
+   initially
+      self.CanvasMenuComponent.initially()
+      self.Menu.initially()
+      #class_variable := 1
+      self.class_name := "Menu"
+      self.import_name := "gui"
+      self.name := "menu"
+end

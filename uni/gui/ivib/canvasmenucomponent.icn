@@ -1,0 +1,133 @@
+#
+# $Id: canvasmenucomponent.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import lang
+
+
+############################################################################
+#
+#
+#
+class CanvasMenuComponent : SelectiveClassCoding(
+   name, 
+   class_name, 
+   import_name,             # Name of import file
+   class_variable,          # Non-null if the component should have a class variable
+   event_method            # Name of action listener method, or &null if none
+   )
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c.line(name || " := " || self.class_name || "()")
+
+      if \self.label then
+         c.line(name || ".set_label(" || image(self.label) || ")")
+     
+      if \self.is_shaded_flag then
+         c.line(name || ".set_is_shaded()")
+
+      if \self.accel then
+         c.line(name || ".set_accel(" || image(self.accel) || ")")
+
+      if \self.event_method then {
+         c.line(name || ".add_event_listener(MethodListener(self, \"" || self.event_method || "\", ACTION_EVENT))")
+         c.add_method(self.event_method, "ev")
+         c.add_import("gui")
+      }
+
+      c.add_var(name, class_variable)
+      c.add_import(self.import_name)
+   end    
+
+   #
+   # Set the object name
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Set the class name
+   #
+   method set_class_name(x)
+      return self.class_name := x
+   end
+
+   #
+   # Set the import name
+   #
+   method set_import_name(x)
+      return self.import_name := x
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.name := self.name
+      c.class_name := self.class_name
+      c.import_name := self.import_name
+      c.accel := self.accel
+      c.label := self.label
+      c.label_left := self.label_left
+      c.label_right := self.label_right
+      c.set_img_left(\self.img_left)
+      c.set_img_right(\self.img_right)
+      c.class_variable := self.class_variable
+      c.event_method := self.event_method
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(c, mb)
+      c.set_parent_component(mb)
+      self.CanvasMenuComponent.cp_fields(c)
+      return c
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(c, mb)
+      c.set_parent_component(mb)
+      self.CanvasMenuComponent.cp_fields(c)
+      c.name := self.parent_component.parent_Canvas.get_new_name(c.name)
+      c.event_method := self.parent_component.parent_Canvas.get_new_name(\c.event_method)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [
+              ["Name", "name"],
+              ["Class Name", "class_name"],
+              ["Import Name", "import_name"],
+              ["Accel", "accel"],
+              ["Label", "label"],
+              ["Label Left", "label_left"],
+              ["Label Right", "label_right"],
+              ["Is shaded", "is_shaded_flag"],
+              ["Img Left", "img_left"],
+              ["Img Left Width", "img_left_w"],
+              ["Img Left Height", "img_left_h"],
+              ["Img Right", "img_right"],
+              ["Img Right Width", "img_right_w"],
+              ["Img Right Height", "img_right_h"],
+              ["Event Method", "event_method"],
+              ["Class Variable", "class_variable"]
+              ]
+   end
+
+   initially
+
+end

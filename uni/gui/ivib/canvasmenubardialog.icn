@@ -1,0 +1,308 @@
+#
+# $Id: canvasmenubardialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+import lang
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasMenuBarDialog : CanvasComponentDialog(
+   c,                       #         
+   add_label,               #                 
+   add_menu,                #                
+   add_separator,           #                     
+   add_checkbox,            #                    
+   delete,                  #              
+   edit,                    #            
+   struct,                  #              
+   select_rec,              #                  
+   new_cbg,                 #               
+   icon,                    #            
+   browse                   #
+   )
+
+   #
+   # Insert new into tree, update string representation.
+   #
+   method update(new)
+      local nl
+
+      select_rec.parent.insert(new, select_rec.index)
+      c.set_string_rep()
+      #
+      # Compute line in which new insertion goes.
+      #
+      nl := struct.get_selections()[1]
+      if /select_rec.owner then nl +:= 1
+      struct.set_contents(c.get_string_rep())
+      #
+      # Move line down if necessary to ensure new addition on page.
+      #
+      line := struct.get_first_line()
+      nlines := struct.get_curr_lines()
+      if nl > line + nlines - 1 then
+         line := nl - nlines + 1
+      else if nl < line then
+         line := nl
+      struct.goto_pos(line)
+      #
+      # Make new insertion selected and move cursor there
+      #
+      struct.set_selections([nl])
+      struct.set_cursor(nl)
+
+      #
+      # Set select_rec to inserted record.
+      #
+      select_rec := struct.get_rec(nl)
+
+      #
+      # Clear two buttons for editing/deleting
+      #
+      edit.clear_is_shaded()
+      delete.clear_is_shaded()
+      add_menu.clear_is_shaded()
+   end
+
+   method on_struct()
+      l := struct.get_selections()
+      if *l = 1 then {
+         select_rec := struct.get_rec(l[1])
+         if c === select_rec.parent then {
+            add_label.set_is_shaded()
+            add_separator.set_is_shaded()
+            add_checkbox.set_is_shaded()
+            if lang::get_class_name(c) == "CanvasMenuButton" then 
+               add_menu.set_is_shaded()
+            else
+               add_menu.clear_is_shaded()
+         } else {
+            add_label.clear_is_shaded()
+            add_separator.clear_is_shaded()
+            add_checkbox.clear_is_shaded()
+            add_menu.clear_is_shaded()
+         }
+         if \select_rec.owner then {
+            edit.clear_is_shaded()
+            if lang::get_class_name(c) == "CanvasMenuButton" & c.menu === select_rec.owner then
+               delete.set_is_shaded()
+            else
+               delete.clear_is_shaded()
+         } else {
+            delete.set_is_shaded()
+            edit.set_is_shaded()
+         }
+      } else
+         every (add_menu | add_label | add_separator | add_checkbox | delete | edit).set_is_shaded()
+
+      every e := struct.get_rec(!l) do {
+         if not(lang::get_class_name(\e.owner) == "CanvasCheckBoxMenuItem") then {
+            flag := 1
+            break
+         }
+      }
+      if *l = 0 | \flag then
+         new_cbg.set_is_shaded()
+      else
+         new_cbg.clear_is_shaded()
+   end
+
+   method on_new_cbg()
+      #
+      # Should only have been selected if get_rec(!l) are all CanvasCheckBox
+      #
+      l := struct.get_selections()
+      n := c.parent_Canvas.checkbox_groups.new()
+      every e := struct.get_rec(!l) do {
+         e.owner.set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+         e.owner.set_parent_check_box_group(n)
+         e.owner.clear_is_checked()
+      }
+      c.set_string_rep()
+      struct.set_contents(c.get_string_rep())
+      struct.clear_selections()
+      every (new_cbg | add_menu | add_label | add_separator | add_checkbox | delete | edit).set_is_shaded()
+   end
+
+
+   method on_add_label()
+      new := CanvasTextMenuItem()
+      new.set_name(c.parent_Canvas.get_new_name(new.name))
+      new.set_label("Edit me")
+      update(new)
+      new_cbg.set_is_shaded()
+   end
+
+   method on_add_menu()
+      new := CanvasMenu()
+      new.set_name(c.parent_Canvas.get_new_name(new.name))
+      new.set_label("Edit me")
+      update(new)
+      new_cbg.set_is_shaded()
+   end
+
+   method on_add_separator()
+      new := CanvasMenuSeparator()
+      new.set_name(c.parent_Canvas.get_new_name(new.name))
+      update(new)
+      new_cbg.set_is_shaded()
+   end
+
+   method on_add_checkbox()
+      new := CanvasCheckBoxMenuItem()
+      new.set_name(c.parent_Canvas.get_new_name(new.name))
+      new.set_label("Edit me")
+      update(new)
+      new_cbg.clear_is_shaded()
+   end
+
+   method on_edit()
+      case lang::get_class_name(select_rec.owner) of {
+         "CanvasMenu" | "CanvasTextMenuItem" : CanvasMenuComponentDialog(select_rec.owner).show_modal(self)
+         "CanvasCheckBoxMenuItem" : CanvasCheckBoxMenuEdit(select_rec.owner).show_modal(self)
+         "CanvasMenuSeparator" : CanvasMenuSeparatorEdit(select_rec.owner).show_modal(self)
+      }
+      c.set_string_rep()
+      struct.set_contents(c.get_string_rep())
+   end
+
+   method on_delete()
+      select_rec.parent.delete(select_rec.index)
+      c.set_string_rep()
+      struct.set_contents(c.get_string_rep())
+      struct.clear_selections()
+      every (new_cbg | add_menu | add_label | add_separator | add_checkbox | delete | edit).set_is_shaded()
+   end
+
+   method on_cancel()
+      c.parent_Canvas.parent_dialog.use_extra_undo()
+      self.dispose()
+   end
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.reset(c.parent)
+      self.okay_result := 1
+      if lang::get_class_name(c) == "CanvasMenuButton" then
+         c.set_img(self.icon.img)
+      self.dispose()
+   end
+
+   method on_browse()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if s := util_read_icon(self, fd.get_result()) then
+         self.icon.set_img(s)
+   end
+
+   initially
+      self.setup(c)
+      draw_border.set_is_shaded()
+
+      self.set_attribs("size=540,400", "label=" || label)
+
+      c.parent_Canvas.parent_dialog.save_extra_undo()
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      struct := MenuTree()
+      struct.connect(self, "on_struct", SELECTION_CHANGED_EVENT)
+      c.set_string_rep()
+      struct.set_size(250, "100%-50")
+      struct.set_pos(25, 25)
+      struct.set_contents(c.get_string_rep())
+      struct.set_select_many()
+      p.add(struct)
+
+      add_label := TextButton()
+      add_label.connect(self, "on_add_label", ACTION_EVENT)
+      add_label.set_label("Add label")
+      add_label.set_pos(390, 50)
+      add_label.set_is_shaded()
+      add_label.set_align("c", "t")
+      p.add(add_label)
+
+      add_separator := TextButton()
+      add_separator.connect(self, "on_add_separator", ACTION_EVENT)
+      add_separator.set_label("Add separator")
+      add_separator.set_pos(390, 80)
+      add_separator.set_is_shaded()
+      add_separator.set_align("c", "t")
+      p.add(add_separator)
+ 
+      add_menu := TextButton()
+      add_menu.connect(self, "on_add_menu", ACTION_EVENT)
+      add_menu.set_label("Add Menu")
+      add_menu.set_pos(390, 110)
+      add_menu.set_align("c", "t")
+      add_menu.set_is_shaded()
+      p.add(add_menu)
+     
+      add_checkbox := TextButton()
+      add_checkbox.connect(self, "on_add_checkbox", ACTION_EVENT)
+      add_checkbox.set_label("Add checkbox")
+      add_checkbox.set_pos(390, 140)
+      add_checkbox.set_is_shaded()
+      add_checkbox.set_align("c", "t")
+      p.add(add_checkbox)
+
+      delete := TextButton()
+      delete.connect(self, "on_delete", ACTION_EVENT)
+      delete.set_label("Delete")
+      delete.set_pos(390, 170)
+      delete.set_is_shaded()
+      delete.set_align("c", "t")
+      p.add(delete)
+
+      edit := TextButton()
+      edit.connect(self, "on_edit", ACTION_EVENT)
+      edit.set_label("Edit")
+      edit.set_pos(390, 200)
+      edit.set_is_shaded()
+      edit.set_align("c", "t")
+      p.add(edit)
+
+      new_cbg := TextButton()
+      new_cbg.connect(self, "on_new_cbg", ACTION_EVENT)
+      new_cbg.set_label("CheckBoxGroup")
+      new_cbg.set_pos(390, 230)
+      new_cbg.set_is_shaded()
+      new_cbg.set_align("c", "t")
+      p.add(new_cbg)
+
+      if lang::get_class_name(c) == "CanvasMenuButton" then {
+         p := TabItem()
+         add_tab(p)
+         p.set_label("Icon")
+
+         icon := Icon()
+         icon.toggle_draw_border()
+         icon.set_pos(100, 100)
+         icon.set_size(40, 40)
+         icon.set_align("l", "c")
+         icon.set_img(c.img)
+         p.add(icon)
+
+         browse := TextButton()
+         browse.connect(self, "on_browse", ACTION_EVENT)
+         browse.set_label("Browse...")
+         browse.set_pos(160, 100)
+         browse.set_align("l", "c")
+         p.add(browse)
+      }
+
+end

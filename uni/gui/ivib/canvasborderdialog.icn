@@ -1,0 +1,60 @@
+#
+# $Id: canvasborderdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasBorderDialog : CanvasComponentDialog(
+   c,                       #         
+   internal_alignment,      #                          
+   internal_alignment_list  #
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_internal_alignment(internal_alignment_list[internal_alignment.get_selection()])
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self.setup(c)
+      draw_border.set_is_shaded()
+      set_w_default.set_is_shaded()
+      set_h_default.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      p.set_label("General")
+      add_tab_at_front(p)
+
+      l := Label()
+      l.set_label("Label alignment : ")
+      l.set_pos(50, "50%")
+      l.set_align("l", "c")
+      p.add(l)
+
+      internal_alignment := List()
+      internal_alignment.set_pos(200, "50%")
+      internal_alignment.set_size(50)
+      internal_alignment.set_align("l", "c")
+      internal_alignment.set_selection_list(internal_alignment_list)
+      internal_alignment.set_selection(case c.internal_alignment of {
+           "c" : 1
+           "l" : 2
+           "r" : 3 })
+
+      p.add(internal_alignment)
+end

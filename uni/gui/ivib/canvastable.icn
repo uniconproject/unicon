@@ -1,0 +1,138 @@
+#
+# $Id: canvastable.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Table on the canvas.
+#
+class CanvasTable : CanvasComponent : Table(select_one, select_many, columns)
+   #
+   # Default minimum width for the object
+   #
+   method min_width()
+      return 65
+   end
+
+   #
+   # Default minimum height for the object
+   #
+   method min_height()
+      return 65
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      if \self.select_one then
+         c.line(self.name || ".set_select_one()")
+      if \self.select_many then
+         c.line(self.name || ".set_select_many()")
+      c.line(self.name || ".set_contents([])")
+
+      every i := !self.get_columns() do {
+         i.gen_code(c)
+         c.line(self.name || ".add_column(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.select_one := self.select_one
+      c.select_many := self.select_many
+      c.set_contents([])
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTable()
+      self.CanvasComponent.cp(c)
+      every c.add_column((!self.get_columns()).cp())
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTable()
+      self.CanvasComponent.dup(c, pc)
+      every c.add_column((!self.get_columns()).dup(pc))
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Select One", "select_one"],
+          ["Select Many", "select_many"],
+          ["Columns", "columns"]
+         ]
+   end
+
+   #
+   # Use a temporary variable to store the columns, then add them
+   # all afterwards.  This is needed since in the Table class, the columns
+   # are the children of the TableHeader component, which is not
+   # encodeable itself.
+   #
+
+   method pre_encode()
+      self.columns := get_columns()
+   end
+
+   method post_decode()
+      every add_column(!self.columns)
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self.CanvasComponent.reset_size()
+      #
+      # Ensure button heights default on resize()
+      #
+      self.head_h := &null
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTableDialog(self)
+   end
+
+   method string_rep()
+      l := []
+      every c := !self.get_columns() do
+         put(l, [c.label, c.column_width, c.internal_alignment])
+      put(l, ["", "", ""])
+      return l
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Table.initially()
+      self.set_contents([])
+      self.class_name := "Table"
+      self.import_name := "gui"
+      self.name := "table"
+end

@@ -1,0 +1,37 @@
+#
+# $Id: checkboxgroupset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+
+############################################################################
+#
+# Set of CheckBoxGroups
+#
+class CheckBoxGroupSet : GroupSet()
+   #
+   # Duplicate
+   #
+   method dup(pc)
+      c := CheckBoxGroupSet()
+      c.parent_Canvas := pc
+      c.boxes := []
+      every put(c.boxes, (!self.boxes).dup())
+      return c
+   end
+
+   #
+   # Add a new CheckBoxGroup
+   #
+   method new()
+      n := CanvasCheckBoxGroup()
+      n.set_name(self.parent_Canvas.get_new_name(n.name))
+      put(boxes, n)
+      n.number := *boxes
+      return n
+   end
+end

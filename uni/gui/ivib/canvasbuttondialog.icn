@@ -1,0 +1,270 @@
+#
+# $Id: canvasbuttondialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasButtonDialog : CanvasComponentDialog(
+   label_str,               #                 
+   button_group_list,       #                  
+   in_checkbox_group,       #                          
+   browse_up,               #                     
+   browse_down,             #                     
+   icon_up,
+   icon_down,
+   keyboard,                #                
+   checkbox_group_list,     #                  
+   in_button_group,         #
+   button_tab_set,
+   tab_basic,
+   tab_groups,
+   tab_images,
+   label_label,
+   cp_img,
+   initially_checked        #
+   )
+
+   method validate_input()
+      self.CanvasComponentDialog.validate_input() | fail
+      if not tab_images.is_shaded() then {
+         if img_width(icon_up.img) ~= img_width(icon_down.img) then
+            return alert_error("Image widths differ")
+
+         if img_height(icon_up.img) ~= img_height(icon_down.img) then
+            return alert_error("Image heights differ")
+      }
+      return
+   end
+      
+   method set_vals(c)
+      self.CanvasComponentDialog.set_vals(c)
+      if not tab_images.is_shaded() then
+         c.set_imgs(icon_up.img, icon_down.img)
+
+      if not label_str.is_shaded() then
+         c.set_label(label_str.get_contents())
+
+      #
+      # If in cbg and on, turn off, since may go out of cbg or into
+      # a different one.
+      #
+      if (\c.parent_check_box_group).which_one === c then
+         c.parent_check_box_group.which_one := &null                 
+
+      if in_checkbox_group.is_checked() then {
+         #
+         # Put in cbg.
+         #
+         c.set_parent_check_box_group(c.parent_Canvas.checkbox_groups.group_number(checkbox_group_list.get_selection()))
+         if initially_checked.is_checked() then {
+            #      
+            # Turn off current one on, if any; turn self on.
+            #
+            (\c.parent_check_box_group.which_one).is_checked_flag := &null
+            c.parent_check_box_group.which_one := c
+         }
+      } else
+         c.parent_check_box_group := &null
+
+      #
+      # Set checked flag
+      #
+      c.is_checked_flag := initially_checked.get_status()
+
+      c.no_keyboard_flag := keyboard.get_status()
+      c.set_parent_button_group(if in_button_group.is_checked() then c.parent_Canvas.button_groups.group_number(button_group_list.get_selection()) else &null)
+   end
+
+   method on_browse_up()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if s := util_read_icon(self, fd.get_result()) then
+         self.icon_up.set_img(s)
+   end
+
+   method on_browse_down()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if s := util_read_icon(self, fd.get_result()) then
+         self.icon_down.set_img(s)
+   end
+
+   method on_cp_img()
+      self.icon_down.set_img(self.icon_up.img)
+   end
+
+   method on_in_button_group()
+      button_group_list.toggle_is_shaded()
+   end
+
+   method on_in_checkbox_group()
+      checkbox_group_list.toggle_is_shaded()
+   end
+
+   method setup(c)
+      local panel_1, border_2, panel_2, border_3
+      self.CanvasComponentDialog.setup(c)
+
+      tab_basic := TabItem("label=General", "accel=g")
+      label_label := Label()
+      label_label.set_pos(50, 40)
+      label_label.set_align("l", "c")
+      label_label.set_label("Label")
+      tab_basic.add(label_label)
+      label_str := TextField()
+      label_str.set_align("l", "c")
+      label_str.set_pos("200", "40")
+      label_str.set_size("200", )
+      label_str.set_draw_border()
+      label_str.set_contents(\c.label)
+      tab_basic.add(label_str)
+      keyboard := CheckBox()
+      keyboard.set_align("l", "c")
+      keyboard.set_pos("50", "80")
+      keyboard.set_label("No keyboard input")
+      if \c.no_keyboard_flag then
+         keyboard.set_is_checked()
+      tab_basic.add(keyboard)
+      initially_checked := CheckBox()
+      initially_checked.set_align("l", "c")
+      initially_checked.set_pos(50, 120)
+      initially_checked.set_label("Initially checked")
+      tab_basic.add(initially_checked)
+      add_tab_at_front(tab_basic)
+
+      tab_groups := TabItem("label=Groups", "accel=r")
+      button_group_list := List()
+      button_group_list.set_pos("189", 35)
+      button_group_list.set_size("175", )
+      button_group_list.set_selection_list(c.parent_Canvas.button_groups.string_rep())
+      tab_groups.add(button_group_list)
+      in_button_group := CheckBox()
+      in_button_group.connect(self, "on_in_button_group", ACTION_EVENT)
+      in_button_group.set_pos(40, 40)
+      in_button_group.set_label("Button Group")
+      tab_groups.add(in_button_group)
+      in_checkbox_group := CheckBox()
+      in_checkbox_group.connect(self, "on_in_checkbox_group", ACTION_EVENT)
+      in_checkbox_group.set_pos(40, 100)
+      in_checkbox_group.set_label("CheckBox Group")
+      tab_groups.add(in_checkbox_group)
+      checkbox_group_list := List()
+      checkbox_group_list.set_pos("189", "95")
+      checkbox_group_list.set_size("175", )
+      checkbox_group_list.set_selection_list(c.parent_Canvas.checkbox_groups.string_rep())
+      tab_groups.add(checkbox_group_list)
+      add_tab(tab_groups)
+      
+      tab_images := TabItem("label=Images", "accel=i")
+      panel_1 := Border()
+      panel_1.set_pos("100%-50", "50%")
+      panel_1.set_size("50%-100", "100%-25")
+      panel_1.set_align("r", "c")
+      if \c.img_down then {
+         icon_down := Icon()
+         icon_down.set_pos("50%", "33%")
+         icon_down.set_size("75", "62")
+         icon_down.set_align("c", "c")
+         icon_down.set_draw_border()
+         icon_down.set_img(c.img_down)
+         panel_1.add(icon_down)
+      }
+      label_3 := Label()
+      label_3.set_pos(10, 0)
+      label_3.set_internal_alignment("l")
+      label_3.set_label("Down")
+      panel_1.set_title(label_3)
+      browse_down := TextButton()
+      browse_down.connect(self, "on_browse_down", ACTION_EVENT)
+      browse_down.set_pos("50%", "75%")
+      browse_down.set_align("c", "c")
+      browse_down.set_internal_alignment("c")
+      browse_down.set_label("Browse...")
+      panel_1.add(browse_down)
+      tab_images.add(panel_1)
+      panel_2 := Border()
+      panel_2.set_pos("50", "50%")
+      panel_2.set_size("50%-100", "100%-25")
+      panel_2.set_align("l", "c")
+      if \c.img_up then {
+         icon_up := Icon()
+         icon_up.set_pos("50%", "33%")
+         icon_up.set_size("75", "62")
+         icon_up.set_align("c", "c")
+         icon_up.set_draw_border()
+         icon_up.set_img(c.img_up)
+         panel_2.add(icon_up)
+      }
+      label_4 := Label()
+      label_4.set_pos(10, 0)
+      label_4.set_internal_alignment("l")
+      label_4.set_label("Up")
+      panel_2.set_title(label_4)
+      browse_up := TextButton()
+      browse_up.connect(self, "on_browse_up", ACTION_EVENT)
+      browse_up.set_pos("50%", "75%")
+      browse_up.set_align("c", "c")
+      browse_up.set_internal_alignment("c")
+      browse_up.set_label("Browse...")
+      panel_2.add(browse_up)
+      tab_images.add(panel_2)
+      cp_img := TextButton()
+      cp_img.connect(self, "on_cp_img", ACTION_EVENT)
+      cp_img.set_pos("50%", "50%")
+      cp_img.set_align("c", "c")
+      cp_img.set_internal_alignment("c")
+      cp_img.set_label("Copy ->")
+      tab_images.add(cp_img)
+      add_tab(tab_images)
+
+      self.set_attribs("size=540,400", "label=" || label)
+
+      checkbox_group_list.set_selection_list(c.parent_Canvas.checkbox_groups.string_rep())
+
+      if c.parent_Canvas.checkbox_groups.is_empty() then {
+         in_checkbox_group.set_is_shaded()
+         checkbox_group_list.set_is_shaded()
+         if c.is_checked() then
+            initially_checked.set_is_checked()
+      } else {
+         if \c.parent_check_box_group then {
+            in_checkbox_group.set_is_checked()
+            checkbox_group_list.set_selection(c.parent_Canvas.checkbox_groups.group_index(c.parent_check_box_group))
+            if c === c.parent_check_box_group.which_one then
+               initially_checked.set_is_checked()
+         } else  {
+            checkbox_group_list.set_is_shaded()
+            if c.is_checked() then
+               initially_checked.set_is_checked()
+         }
+      }
+
+      if c.parent_Canvas.button_groups.is_empty() then {
+         in_button_group.set_is_shaded()
+         button_group_list.set_is_shaded()
+      } else {
+         if \c.parent_button_group then {
+            in_button_group.set_is_checked()
+            button_group_list.set_selection(c.parent_Canvas.button_groups.group_index(c.parent_button_group))
+         } else 
+            button_group_list.set_is_shaded()
+      }
+
+   end
+end

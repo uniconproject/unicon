@@ -1,0 +1,70 @@
+#
+# $Id: canvasicondialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasIconDialog : CanvasComponentDialog(
+   c,                       #         
+   browse,                  #              
+   icon                     #
+   )
+
+   method on_browse()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if s := util_read_icon(self, fd.get_result()) then 
+         self.icon.set_img(s)
+   end
+   
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_img(self.icon.img)
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      self.setup(c)
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      p.set_label("General")
+      add_tab_at_front(p)
+
+      l := Label()
+      l.set_label("Icon : ")
+      l.set_pos(50, "50%")
+      l.set_align("l", "c")
+      p.add(l)
+      
+      icon := Icon()
+      icon.toggle_draw_border()
+      icon.set_pos(100, "50%")
+      icon.set_size(80, 80)
+      icon.set_align("l", "c")
+      icon.set_img(c.img)
+      p.add(icon)
+
+      browse := TextButton()
+      browse.connect(self, "on_browse", ACTION_EVENT)
+      browse.set_label("Browse...")
+      browse.set_pos(250, "50%")
+      browse.set_align("l", "c")
+      p.add(browse)
+end

@@ -1,0 +1,107 @@
+#
+# $Id: canvasoverlayitem.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a OverlayItem on the canvas.
+#
+class CanvasOverlayItem : CanvasComponent : OverlayItem()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c.add_var(self.name, &null)
+      c.add_import(self.import_name)
+      c.line(name || " := " || self.class_name || "()")
+      every i := !self.children do {
+         i.gen_code(c)
+         c.line(self.name || ".add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasOverlayItem()
+      self.CanvasComponent.cp(c)
+      every c.add((!self.children).cp())
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasOverlayItem()
+      self.CanvasComponent.dup(c, pc)
+      every c.add((!self.children).dup(pc))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Children", "children"],
+          ["Parent OverlaySet", "parent"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return parent.dialog()
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      every (!self.children).reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.children do
+         if o := e.inside(c) then
+            return o
+
+      if (c ~=== self) & (self.parent.x <= c.x < self.parent.x + self.parent.w) & (self.parent.y <= c.y < self.parent.y + self.parent.h) & (self.parent.x <= c.x + c.w <= self.parent.x + self.parent.w) & (self.parent.y <= c.y + c.h <= self.parent.y + self.parent.h) then
+         return self
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.children) do
+         if o := e.which_cursor_over() then
+            return o
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.OverlayItem.initially()
+      self.class_name := "OverlayItem"
+      self.import_name := "gui"
+      self.name := "overlay_item"
+end

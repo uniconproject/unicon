@@ -1,0 +1,55 @@
+#
+# $Id: choicedialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+$include "guih.icn"
+
+#############################################################################
+#
+# Dialog with string and two buttons
+#     
+class ChoiceDialog : CommonDialog(str, okay_str, cancel_str, okay, cancel, res)
+   method result()
+      return \self.res
+   end
+
+   method init_dialog()
+      self.set_focus(okay)
+   end
+
+   method on_okay()
+      res := 1
+      self.dispose()
+   end
+
+   initially
+      self$CommonDialog.initially()
+      /okay_str := "Okay"
+      /cancel_str := "Cancel"
+      self.set_attribs("size=300,150", "label=Choice")
+
+      l := Label()
+      l.set_pos("50%", 50)
+      l.set_label(str)
+      l.set_align("c", "t")
+      self.add(l)
+
+      okay := TextButton()
+      okay.connect(self, "on_okay", ACTION_EVENT)
+      okay.set_label(okay_str)
+      okay.set_pos("33%", 100)
+      okay.set_align("c", "t")
+      self.add(okay)
+
+      cancel := TextButton()
+      cancel.connect(self, "dispose", ACTION_EVENT)
+      cancel.set_label(cancel_str)
+      cancel.set_pos("66%", 100)
+      cancel.set_align("c", "t")
+      self.add(cancel)
+end

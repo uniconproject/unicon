@@ -1,0 +1,179 @@
+#
+# $Id: eventtab.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+import lang
+
+$include "guih.icn"
+
+class EventTab : TabItem(
+                         tbl,
+                         add,                 # Buttons              
+                         delete,              #                  
+                         apply,               #                 
+                         contents,            # Table contents
+                         event,
+                         handler,
+                         name_field
+                         )
+
+   method on_add()
+      #
+      # Add a new value to the attributes table.
+      #
+      put(contents, ["ACTION_EVENT", "on_" || name_field.get_contents()])
+      tbl.set_contents(contents)
+      tbl.goto_pos(*contents, 0)
+      tbl.set_selections([*contents])
+      tbl.set_cursor(*contents)
+      event.set_contents(contents[-1][1])
+      handler.set_contents(contents[-1][2])
+      event.clear_is_shaded()
+      handler.clear_is_shaded()
+      delete.clear_is_shaded()
+      apply.clear_is_shaded()
+   end
+
+   method on_tbl()
+      #
+      # Line in the table clicked - copy the line to the edit area.
+      #
+      if i := tbl.get_selections()[1] then {
+         event.set_contents(contents[i][1])
+         handler.set_contents(contents[i][2])
+         event.clear_is_shaded()
+         handler.clear_is_shaded()
+         delete.clear_is_shaded()
+         apply.clear_is_shaded()
+      } else {
+         event.set_is_shaded()
+         handler.set_is_shaded()
+         delete.set_is_shaded()
+         apply.set_is_shaded()
+      }
+   end
+
+   method on_delete()
+      #
+      # Delete a line from the table.
+      #
+      i := tbl.get_selections()[1]
+      contents := contents[1 : i] ||| contents[i + 1 : 0]
+      tbl.set_contents(contents)
+      tbl.clear_selections()
+      event.set_is_shaded()
+      handler.set_is_shaded()
+      delete.set_is_shaded()
+      apply.set_is_shaded()
+   end
+
+   method on_apply()
+      #
+      # Copy the edited item back to the table. 
+      #
+      i := tbl.get_selections()[1]
+      contents[i] := [event.get_contents(), handler.get_contents()]
+      tbl.set_contents(contents)
+      tbl.clear_selections()
+      event.set_is_shaded()
+      handler.set_is_shaded()
+      delete.set_is_shaded()
+      apply.set_is_shaded()
+   end
+
+   method get_contents()
+      return contents
+   end
+
+   initially(l, name_field)
+      self.TabItem.initially("label=Events", "accel=e")
+
+      self.name_field := name_field
+      self.contents := \l | []
+      tbl := Table()
+      tbl.connect(self, "on_tbl", SELECTION_CHANGED_EVENT)
+      tbl.set_select_one()
+      tbl.set_pos("50%", 30)
+      tbl.set_size("100%-75", "100%-150")
+      tbl.set_align("c", "t")
+      tbl.set_contents(contents)
+      self.Component.add(tbl)
+
+      c1 := TableColumn()
+      c1.set_column_width(100)
+      c1.set_label("Event")
+      tbl.add_column(c1)
+
+      c2 := TableColumn()
+      c2.set_column_width(200)
+      c2.set_label("Handler")
+      tbl.add_column(c2)
+
+      event :=  EditList()
+      event.set_pos("50%-10", "100%-80")
+      event.set_align("r", "c")
+      event.set_size("50%-48")
+      event.set_is_shaded()
+      l := ["&null",
+            "ICON_EVENT",
+            "BUTTON_RELEASE_EVENT",
+            "BUTTON_PRESS_EVENT",
+            "BUTTON_HELD_EVENT",
+            "SCROLLBAR_PRESSED_EVENT",
+            "SCROLLBAR_DRAGGED_EVENT",
+            "SELECTION_CHANGED_EVENT",
+            "CONTENT_CHANGED_EVENT",
+            "CURSOR_MOVED_EVENT",
+            "ACTION_EVENT",
+            "TREE_NODE_EXPANSION_EVENT",
+            "SIZER_RELEASED_EVENT",
+            "MOUSE_PRESS_EVENT",
+            "MOUSE_DRAG_EVENT",
+            "MOUSE_RELEASE_EVENT",
+            "KEY_PRESS_EVENT",
+            "SELECTION_MULTI_EVENT",
+            "SELECTION_DOWN_EVENT",
+            "SELECTION_UP_EVENT",
+            "SELECTION_KEY_EVENT",
+            "CLOSE_BUTTON_EVENT"
+            ]
+      event.set_selection_list(l)
+      self.Component.add(event)
+
+      handler := TextField()
+      handler.set_pos("50%+10", "100%-80")
+      handler.set_align("l", "c")
+      handler.set_size("50%-48")
+      handler.set_is_shaded()
+      handler.connect(self, "on_apply", ACTION_EVENT)
+      self.Component.add(handler)
+
+      add := TextButton()
+      add.connect(self, "on_add", ACTION_EVENT)
+      add.set_pos("25%", "100%-40")
+      add.set_align("c", "c")
+      add.set_label("Add")
+      self.Component.add(add)
+
+      delete := TextButton()
+      delete.connect(self, "on_delete", ACTION_EVENT)
+      delete.set_pos("50%", "100%-40")
+      delete.set_align("c", "c")
+      delete.set_label("Delete")
+      delete.set_is_shaded()
+      self.Component.add(delete)
+
+      apply := TextButton()
+      apply.connect(self, "on_apply", ACTION_EVENT)
+      apply.set_pos("75%", "100%-40")
+      apply.set_align("c", "c")
+      apply.set_label("Apply")
+      apply.set_is_shaded()
+      self.Component.add(apply)
+
+end

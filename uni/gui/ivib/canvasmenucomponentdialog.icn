@@ -1,0 +1,326 @@
+#
+# $Id: canvasmenucomponentdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasMenuComponentDialog : MenuComponentEdit(
+   c,                       #         
+   label,                   #             
+   left_icon,               #                 
+   browse_left,             #                   
+   left_label,              #                  
+   use_left_label,          #                      
+   use_left_icon,           #                     
+   use_left_neither,        #                        
+   img_left,                #                
+   cbg_left,                #                
+   right_icon,              #                  
+   browse_right,            #                    
+   right_label,             #                   
+   use_right_label,         #                       
+   use_right_icon,          #                      
+   use_right_neither,       #                         
+   img_right,               #                 
+   cbg_right,               #                 
+   shaded,                  #
+   accel_flag,              # Accel on/off
+   accel                    # TextField - accel
+   )
+
+   method on_cancel()
+      self.dispose()
+   end
+
+   method on_accel_flag()
+      accel.toggle_is_shaded()
+   end
+
+   method on_okay()
+      self.set_vals(c)
+      c.is_shaded_flag := shaded.get_status()
+      c.label := label.get_contents()
+      c.accel := if accel_flag.is_checked() then accel.get_contents() else &null
+
+      case cbg_left.get_which_one() of {
+         use_left_label : {
+            c.img_left := &null
+            c.set_label_left(left_label.get_contents())
+         }
+         
+         use_left_icon : {
+            c.set_img_left(self.img_left)
+            c.label_left := &null
+         }
+         
+         use_left_neither : {
+            c.img_left := c.label_left := &null
+         }
+      }
+      
+      case cbg_right.get_which_one() of {
+         use_right_label : {
+            c.img_right := &null
+            c.set_label_right(right_label.get_contents())
+         }
+         
+         use_right_icon : {
+            c.set_img_right(self.img_right)
+            c.label_right := &null
+         }
+         
+         use_right_neither : {
+            c.img_right := c.label_right := &null
+         }
+      }
+      self.dispose()
+   end
+
+   method on_use_left_label()
+      left_icon.set_is_shaded()
+      browse_left.set_is_shaded()
+      left_label.clear_is_shaded()
+   end
+
+   method on_use_left_icon()
+      left_icon.clear_is_shaded()
+      browse_left.clear_is_shaded()
+      left_label.set_is_shaded()
+   end
+
+   method on_use_left_neither()
+      left_icon.set_is_shaded()
+      browse_left.set_is_shaded()
+      left_label.set_is_shaded()
+   end
+
+   method on_browse_left()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if self.img_left := util_read_icon(self, fd.get_result()) then 
+         left_icon.set_img(self.img_left)
+   end
+
+   method on_use_right_label()
+      right_icon.set_is_shaded()
+      browse_right.set_is_shaded()
+      right_label.clear_is_shaded()
+   end
+
+   method on_use_right_icon()
+      right_icon.clear_is_shaded()
+      browse_right.clear_is_shaded()
+      right_label.set_is_shaded()
+   end
+
+   method on_use_right_neither()
+      right_icon.set_is_shaded()
+      browse_right.set_is_shaded()
+      right_label.set_is_shaded()
+   end
+
+   method on_browse_right()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if self.img_right := util_read_icon(self, fd.get_result()) then 
+         right_icon.set_img(self.img_right)
+   end
+
+   initially
+      self.MenuComponentEdit.initially()
+      self.setup(c)
+
+      self.set_attribs("size=540,400", "label=" || label)
+
+      main_panel := TabItem()
+      add_tab_at_front(main_panel)
+      main_panel.set_label("General")
+
+      l := Label()
+      l.set_label("Label : ")
+      l.set_pos(50, 40)
+      l.set_align("l", "c")
+      main_panel.add(l)
+
+      label := TextField()
+      label.set_pos(200, 40)
+      label.set_size(200)
+      label.set_align("l", "c")
+      label.set_contents(c.label)
+      main_panel.add(label)
+
+      shaded := CheckBox()
+      shaded.set_label("Is shaded")
+      shaded.set_pos(50, 80)
+      shaded.set_align("l", "c")
+      if \c.is_shaded_flag then
+         shaded.set_is_checked()
+      main_panel.add(shaded)
+
+      accel := TextField()
+      accel.set_size(125)
+      accel.set_pos("200", "120")
+      accel.set_align("l", "c")
+      main_panel.add(accel)
+
+      accel_flag := CheckBox()
+      accel_flag.connect(self, "on_accel_flag", ACTION_EVENT)
+      accel_flag.set_label("Set Accelerator")
+      accel_flag.set_pos("50", "120")
+      accel_flag.set_align("l", "c")
+      if /c.accel then
+         accel.set_is_shaded()
+      else  {
+         accel_flag.set_is_checked()
+         accel.set_contents(c.accel)
+      }
+      main_panel.add(accel_flag)
+
+      p_left := TabItem()
+      add_tab(p_left)
+      p_left.set_label("Left label")
+
+      cbg_left := CheckBoxGroup()
+
+      use_left_label := CheckBox()
+      use_left_label.connect(self, "on_use_left_label", ACTION_EVENT)
+      use_left_label.set_pos(50, "25%")
+      use_left_label.set_label("Use label")
+      use_left_label.set_align("l", "c")
+      p_left.add(use_left_label)
+      cbg_left.add(use_left_label)
+
+      left_label := TextField()
+      left_label.set_size(100)
+      left_label.set_pos(150, "25%")
+      left_label.set_align("l", "c")
+      left_label.set_is_shaded()
+      left_label.set_contents(\c.label_left)
+      p_left.add(left_label)
+      
+      use_left_icon := CheckBox()
+      use_left_icon .connect(self, "on_use_left_icon", ACTION_EVENT)
+      use_left_icon.set_pos(50, "50%")
+      use_left_icon.set_label("Use Icon")
+      use_left_icon.set_align("l", "c")
+      p_left.add(use_left_icon)
+      cbg_left.add(use_left_icon)
+
+      left_icon := Icon()
+      left_icon.set_pos(150, "50%")
+      left_icon.set_size(40, 40)
+      left_icon.set_align("l", "c")
+      left_icon.set_is_shaded()
+      left_icon.toggle_draw_border()
+      self.img_left := \c.img_left | "1,c1,~"
+      left_icon.set_img(self.img_left)
+      p_left.add(left_icon)
+
+      browse_left := TextButton() 
+      browse_left .connect(self, "on_browse_left", ACTION_EVENT)
+      browse_left.set_label("Browse...")
+      browse_left.set_pos(250, "50%")
+      browse_left.set_is_shaded()
+      browse_left.set_align("l", "c")
+      p_left.add(browse_left)
+
+      use_left_neither := CheckBox()
+      use_left_neither .connect(self, "on_use_left_neither", ACTION_EVENT)
+      use_left_neither.set_pos(50, "75%")
+      use_left_neither.set_label("Leave blank")
+      use_left_neither.set_align("l", "c")
+      p_left.add(use_left_neither)
+      cbg_left.add(use_left_neither)
+
+      if \c.label_left then {
+         cbg_left.set_which_one(use_left_label)
+         left_label.clear_is_shaded()
+      } else if \c.img_left then {
+         cbg_left.set_which_one(use_left_icon)
+         left_icon.clear_is_shaded()
+         browse_left.clear_is_shaded()
+      } else
+         cbg_left.set_which_one(use_left_neither)
+
+      p_right := TabItem()
+      add_tab(p_right)
+      p_right.set_label("Right label")
+
+      cbg_right := CheckBoxGroup()
+
+      use_right_label := CheckBox()
+      use_right_label .connect(self, "on_use_right_label", ACTION_EVENT)
+      use_right_label.set_pos(50, "25%")
+      use_right_label.set_label("Use label")
+      use_right_label.set_align("l", "c")
+      p_right.add(use_right_label)
+      cbg_right.add(use_right_label)
+
+      right_label := TextField()
+      right_label.set_size(100)
+      right_label.set_pos(150, "25%")
+      right_label.set_align("l", "c")
+      right_label.set_is_shaded()
+      right_label.set_contents(\c.label_right)
+      p_right.add(right_label)
+      
+      use_right_icon := CheckBox()
+      use_right_icon .connect(self, "on_use_right_icon", ACTION_EVENT)
+      use_right_icon.set_pos(50, "50%")
+      use_right_icon.set_label("Use Icon")
+      use_right_icon.set_align("l", "c")
+      p_right.add(use_right_icon)
+      cbg_right.add(use_right_icon)
+
+      right_icon := Icon()
+      right_icon.set_pos(150, "50%")
+      right_icon.set_size(40, 40)
+      right_icon.set_align("l", "c")
+      right_icon.set_is_shaded()
+      right_icon.toggle_draw_border()
+      self.img_right := \c.img_right | "1,c1,~"
+      right_icon.set_img(self.img_right)
+      p_right.add(right_icon)
+
+      browse_right := TextButton() 
+      browse_right .connect(self, "on_browse_right", ACTION_EVENT)
+      browse_right.set_label("Browse...")
+      browse_right.set_pos(250, "50%")
+      browse_right.set_is_shaded()
+      browse_right.set_align("l", "c")
+      p_right.add(browse_right)
+
+      use_right_neither := CheckBox()
+      use_right_neither .connect(self, "on_use_right_neither", ACTION_EVENT)
+      use_right_neither.set_pos(50, "75%")
+      use_right_neither.set_label("Leave blank")
+      use_right_neither.set_align("l", "c")
+      p_right.add(use_right_neither)
+      cbg_right.add(use_right_neither)
+
+      if \c.label_right then {
+         cbg_right.set_which_one(use_right_label)
+         right_label.clear_is_shaded()
+      } else if \c.img_right then {
+         cbg_right.set_which_one(use_right_icon)
+         right_icon.clear_is_shaded()
+         browse_right.clear_is_shaded()
+      } else
+         cbg_right.set_which_one(use_right_neither)
+
+end

@@ -1,0 +1,84 @@
+#
+# $Id: canvaslabel.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Label on the canvas.
+#
+class CanvasLabel : CanvasComponent : Label()
+   #
+   # Overrides CanvasComponent.min_height()
+   #
+   method min_height()
+      return 13
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_internal_alignment(" || image(self.internal_alignment) || ")")
+      c.line(name || ".set_label(" || image(self.label) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.label := self.label
+      c.internal_alignment := self.internal_alignment
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasLabel()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasLabel()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["Internal Align", "internal_alignment"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasLabelDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Label.initially()
+      self.class_name := "Label"
+      self.import_name := "gui"
+      self.name := "label"
+end

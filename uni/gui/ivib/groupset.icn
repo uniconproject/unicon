@@ -1,0 +1,72 @@
+#
+# $Id: groupset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import lang
+
+
+############################################################################
+#
+# Superclass for CheckBoxGroupSet and ButtonGroupSet
+#
+class GroupSet : SelectiveClassCoding(
+   parent_Canvas,           #                     
+   boxes                    # List of the objects.
+   )
+
+   #
+   # Reset code generation flags.
+   #
+   method reset_code_gen_flags()
+      every (!boxes).code_gen_flag := &null
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Parent Canvas", "parent_Canvas"], ["Boxes", "boxes"]]
+   end
+
+   #
+   # Reference to parent canvas.
+   #
+   method set_parent_Canvas(p)
+      return self.parent_Canvas := p
+   end
+
+   method is_empty()
+      return *self.boxes = 0
+   end
+
+   #
+   # String representation of the list is simply a list of
+   # the names.
+   #
+   method string_rep()
+      l := []
+      every put(l, (!self.boxes).name)
+      return l
+   end
+
+   # 
+   # Group i in boxes.
+   #
+   method group_number(i)
+      return self.boxes[i]
+   end
+
+   #
+   # Index of Group c in boxes.
+   #
+   method group_index(c)
+      return c.number
+   end
+
+   initially
+      boxes := []
+end

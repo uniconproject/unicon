@@ -1,0 +1,110 @@
+#
+# $Id: canvasmenubar.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a MenuBar on the canvas.
+#
+class CanvasMenuBar : CanvasComponent : MenuBar(
+   string_rep               #                  
+   )
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      every i := !self.menus do {
+         i.gen_code(c)
+         c.line(self.name || ".add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasMenuBar()
+      self.CanvasComponent.cp(c)
+      every c.add((!self.menus).cp(c))
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasMenuBar()
+      self.CanvasComponent.dup(c, pc)
+      every c.add((!self.menus).dup(c))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Menus", "menus"]
+         ]
+   end
+
+   #
+   # Delete the i'th menu item
+   #
+   method delete(i)
+      self.menus := self.menus[1 : i] ||| self.menus[i + 1 : 0]
+   end
+
+   #
+   # Insert object x into the menu at position i.
+   #
+   method insert(x, i)
+      self.menus := self.menus[1 : i] ||| [x] ||| self.menus[i : 0]
+      x.parent_component := self
+   end
+
+   #
+   # Set the menu bar's string representation.
+   #
+   method set_string_rep()
+      local sub
+      string_rep := []
+      every sub := self.menus[i := 1 to *self.menus] do 
+         sub.set_string_rep(string_rep, 1, self, i)
+      put(string_rep, MenuTreeNode(1, self, *self.menus + 1))
+   end
+
+   method get_string_rep()
+      return self.string_rep      
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasMenuBarDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.MenuBar.initially()
+      #class_variable := 1
+      self.class_name := "MenuBar"
+      self.import_name := "gui"
+      self.name := "menu_bar"
+end

@@ -1,0 +1,70 @@
+#
+# $Id: menutree.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+$define SPACING 25
+
+class MenuTree : SelectableScrollArea()
+   method get_line_height()
+      return WAttrib(self.cwin, "fheight")
+   end
+
+   method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
+      local dashed, s
+
+      s := contents[i]
+
+      dashed := Clone(self.cbwin, "pattern=gray", "fillstyle=textured")
+      lp := xp
+      every 1 to s.depth do {
+         DrawLine(dashed, lp + SPACING / 2, yp - line_height / 2, lp + SPACING / 2, yp + line_height / 2)
+         
+         lp +:= SPACING
+      }
+      if \s.owner then {
+         if contents[i + 1].depth > s.depth then
+            DrawLine(dashed, lp + SPACING / 2, yp, lp + SPACING / 2, yp + line_height / 2)
+
+         DrawLine(dashed, lp - SPACING / 2, yp, lp + SPACING, yp)
+         lp +:= SPACING
+         left_string(self.cbwin, lp, yp, s.owner.get_string_label())
+      }
+
+      if \selection_cw then
+         FillRectangle(selection_cw, self.view.x, yp - self.line_height / 2, self.view.w, self.line_height)
+
+      if \cursor_cw then 
+         Rectangle(cursor_cw, self.view.x, yp - self.line_height / 2, self.view.w, self.line_height)
+
+      Uncouple(dashed)
+   end
+
+   method get_rec(n)
+      return contents[n]
+   end
+
+   method get_subject_width()
+      local ww, mw
+
+      mw := 0
+      every s := !self.contents do {
+         ww := SPACING * s.depth
+         if \s.owner then
+            ww +:= 2 * SPACING + TextWidth(self.cwin, s.owner.get_string_label())
+         mw <:= ww
+      }
+      return mw
+   end
+
+   initially
+      self.SelectableScrollArea.initially()
+      self.set_draggable_cursor()
+
+end

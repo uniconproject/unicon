@@ -1,0 +1,67 @@
+#
+# $Id: canvastoolbar.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a ToolBar on the canvas.
+#
+class CanvasToolBar : CanvasPanel : ToolBar()
+   # 
+   # Override to stop the Ticker starting.
+   #
+   method firstly()
+      self.Panel.firstly()
+      state := 5
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasToolBar()
+      self.CanvasComponent.cp(c)
+      every put(c.children, (!self.children).cp())
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasToolBar()
+      self.CanvasComponent.dup(c, pc)
+      every put(c.children, (!self.children).dup(pc))
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasToolBarDialog(self)
+   end
+
+   method display(buffer_flag)
+      self.ToolBar.display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      Rectangle(W, self.x, self.y, self.w, self.h)
+      center_string(W, self.x + self.w / 2, self.y + 10, "<ToolBar>")
+      self.do_shading(W)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.ToolBar.initially()
+      #class_variable := 1
+      self.class_name := "ToolBar"
+      self.import_name := "gui"
+      self.name := "toolbar"
+end

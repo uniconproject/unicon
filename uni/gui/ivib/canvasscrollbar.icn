@@ -1,0 +1,98 @@
+#
+# $Id: canvasscrollbar.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+      
+############################################################################
+#
+# Class for representing a ScrollBar on the canvas.Class for a ScrollBar on the canvas.
+#
+class CanvasScrollBar : CanvasComponent : ScrollBar()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_value(" || self.value || ")")
+      c.line(name || ".set_increment_size(" || self.increment_size || ")")
+      if \self.is_range_flag then
+         c.line(name || ".set_range(" || self.lo || ", " || self.hi || ")")
+      else {
+         c.line(name || ".set_total_size(" || self.total_size || ")")
+         c.line(name || ".set_page_size(" || self.page_size || ")")
+      }
+      if \self.is_horizontal_flag then
+         c.line(name || ".set_is_horizontal()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.increment_size := self.increment_size
+      c.value := self.value
+      c.is_range_flag := self.is_range_flag
+      c.is_horizontal_flag := self.is_horizontal_flag
+      c.lo := self.lo
+      c.hi := self.hi
+      c.page_size := self.page_size
+      c.total_size := self.total_size
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasScrollBar()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasScrollBar()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [
+          ["Increment Size", "increment_size"],
+          ["Value", "value"],
+          ["Is Range Flag", "is_range_flag"],
+          ["Is Horizontal Flag", "is_horizontal_flag"],
+          ["Lo", "lo"],
+          ["Hi", "hi"],
+          ["Page Size", "page_size"],
+          ["Total Size", "total_size"]
+         ]
+   end
+                                                      
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasScrollBarDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.ScrollBar.initially()
+      self.class_name := "ScrollBar"
+      self.import_name := "gui"
+      self.name := "scroll_bar"
+end

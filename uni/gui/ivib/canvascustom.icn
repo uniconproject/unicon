@@ -1,0 +1,55 @@
+#
+# $Id: canvascustom.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+
+############################################################################
+#
+# Class for representing a Custom on the canvas.
+# 
+class CanvasCustom : CanvasComponent : Custom()
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+ 
+   # 
+   # Duplicate object
+   #
+   method dup(pc)
+      c := CanvasCustom()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp()
+      c := CanvasCustom()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasCustomDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Custom.initially()
+      self.class_name := "Custom"
+      self.import_name := "gui"
+      self.name := "custom"
+end

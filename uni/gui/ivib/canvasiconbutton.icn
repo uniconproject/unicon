@@ -1,0 +1,60 @@
+#
+# $Id: canvasiconbutton.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a IconButton on the canvas.
+#
+class CanvasIconButton : CanvasButton : IconButton()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasButton.gen_code(c)
+
+      if self.img_up == self.img_down then
+         c.line(name || ".set_img(" || image(self.img_up) || ")")
+      else
+         c.line(name || ".set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
+   end
+
+   # 
+   # Duplicate object
+   #
+   method dup(pc)
+      c := CanvasIconButton()
+      self.CanvasButton.dup(c, pc)
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp()
+      c := CanvasIconButton()
+      self.CanvasButton.cp(c)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasIconButtonDialog(self)
+   end
+
+   initially
+      self.CanvasButton.initially()
+      self.IconButton.initially()
+      self.class_name := "IconButton"
+      self.import_name := "gui"
+      self.name := "icon_button"
+end

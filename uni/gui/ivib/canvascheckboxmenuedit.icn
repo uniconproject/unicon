@@ -1,0 +1,373 @@
+#
+# $Id: canvascheckboxmenuedit.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+import gui
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasCheckBoxMenuEdit : MenuComponentEdit(
+   c,                       #         
+   tab_basic,
+   tab_images,
+   browse_up,               #                     
+   browse_down,             #                     
+   icon_up,
+   icon_down,
+   cp_img,
+   label,                   #             
+   right_icon,              #                  
+   browse_right,            #                    
+   right_label,             #                   
+   use_right_label,         #                       
+   use_right_icon,          #                      
+   use_right_neither,       #                         
+   img_right,               #                 
+   cbg_right,               #                 
+   shaded,                  #              
+   browse_custom,           #                     
+   group_list,              #                  
+   in_checkbox_group,       #                          
+   initially_checked        #
+   )
+
+   method on_in_checkbox_group()
+      group_list.toggle_is_shaded()
+      if in_checkbox_group.is_checked() then {
+         if self.icon_up.img == img_style("box_up") & self.icon_down.img == img_style("box_down") then {
+            self.icon_up.set_img(img_style("diamond_up"))
+            self.icon_down.set_img(img_style("diamond_down"))
+         }
+      } else {
+         if self.icon_up.img == img_style("diamond_up") & self.icon_down.img == img_style("diamond_down") then {
+            self.icon_up.set_img(img_style("box_up"))
+            self.icon_down.set_img(img_style("box_down"))
+         }
+      }
+   end
+   
+   method on_browse_up()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if s := util_read_icon(self, fd.get_result()) then
+         self.icon_up.set_img(s)
+   end
+
+   method on_browse_down()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if s := util_read_icon(self, fd.get_result()) then
+         self.icon_down.set_img(s)
+   end
+
+   method on_cp_img()
+      self.icon_down.set_img(self.icon_up.img)
+   end
+
+   method on_cancel()
+      self.dispose()
+   end
+
+   method on_okay()
+      if img_width(icon_up.img) ~= img_width(icon_down.img) then
+         return alert_error("Up/down image widths differ")
+      
+      if img_height(icon_up.img) ~= img_height(icon_down.img) then
+         return alert_error("Up/down image heights differ")
+
+      self.set_vals(c)
+      c.is_shaded_flag := shaded.get_status()
+      c.label := label.get_contents()
+
+      #
+      # If in cbg and on, turn off, since may go out of cbg or into
+      # a different one.
+      #
+      if (\c.parent_check_box_group).which_one === c then
+         c.parent_check_box_group.which_one := &null                 
+
+      if in_checkbox_group.is_checked() then {
+         #
+         # Put in cbg.
+         #
+         c.set_parent_check_box_group(c.parent_component.parent_Canvas.checkbox_groups.group_number(group_list.get_selection()))
+         if initially_checked.is_checked() then {
+            #      
+            # Turn off current one on, if any; turn self on.
+            #
+            (\c.parent_check_box_group.which_one).is_checked_flag := &null
+            c.parent_check_box_group.which_one := c
+         }
+      } else
+         c.parent_check_box_group := &null
+
+      #
+      # Set checked flag
+      #
+      c.is_checked_flag := initially_checked.get_status()
+
+      c.set_imgs(icon_up.img, icon_down.img)
+
+      case cbg_right.get_which_one() of {
+         use_right_label : {
+            c.img_right := &null
+            c.set_label_right(right_label.get_contents())
+         }
+         
+         use_right_icon : {
+            c.set_img_right(self.img_right)
+            c.label_right := &null
+         }
+         
+         use_right_neither : {
+            c.img_right := c.label_right := &null
+         }
+      }
+      self.dispose()
+   end
+
+   method on_use_right_label()
+      right_icon.set_is_shaded()
+      browse_right.set_is_shaded()
+      right_label.clear_is_shaded()
+   end
+
+   method on_use_right_icon()
+      right_icon.clear_is_shaded()
+      browse_right.clear_is_shaded()
+      right_label.set_is_shaded()
+   end
+
+   method on_use_right_neither()
+      right_icon.set_is_shaded()
+      browse_right.set_is_shaded()
+      right_label.set_is_shaded()
+   end
+
+   method on_browse_right()
+      fd := FileDialog()
+      fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
+      fd.set_fields(global_attribs)
+      fd.show_modal(self)
+      self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir := fd.get_directory()
+      if self.img_right := util_read_icon(self, fd.get_result()) then 
+         right_icon.set_img(self.img_right)
+   end
+
+   initially
+      self.MenuComponentEdit.initially()
+      self.setup(c)
+      self.set_attribs("size=540,400", "label=" || label)
+      img_up := c.img_up
+      img_down := c.img_down
+
+      main_panel := TabItem()
+      add_tab_at_front(main_panel)
+      main_panel.set_label("General")
+
+      l := Label()
+      l.set_label("Label : ")
+      l.set_pos(50, 40)
+      l.set_align("l", "c")
+      main_panel.add(l)
+
+      label := TextField()
+      label.set_pos(200, 40)
+      label.set_size(200)
+      label.set_align("l", "c")
+      label.set_contents(c.label)
+      main_panel.add(label)
+
+      in_checkbox_group := CheckBox()
+      in_checkbox_group.connect(self, "on_in_checkbox_group", ACTION_EVENT)
+      in_checkbox_group.set_label("CheckBox Group")
+      in_checkbox_group.set_pos("50", 80)
+      in_checkbox_group.set_align("l", "c")
+      main_panel.add(in_checkbox_group)
+
+      group_list := List()
+      group_list.set_pos(200, 80)
+      group_list.set_size(200)
+      group_list.set_align("l", "c")
+      group_list.set_selection_list(c.parent_component.parent_Canvas.checkbox_groups.string_rep())
+      main_panel.add(group_list)
+
+      initially_checked := CheckBox()
+      initially_checked.set_label("Initially checked")
+      initially_checked.set_pos(50, 120)
+      initially_checked.set_align("l", "c")
+      main_panel.add(initially_checked)
+
+      shaded := CheckBox()
+      shaded.set_label("Is shaded")
+      shaded.set_pos(50, 160)
+      shaded.set_align("l", "c")
+      if \c.is_shaded_flag then
+         shaded.set_is_checked()
+      main_panel.add(shaded)
+
+      if c.parent_component.parent_Canvas.checkbox_groups.is_empty() then {
+         in_checkbox_group.set_is_shaded()
+         group_list.set_is_shaded()
+         if c.is_checked() then
+            initially_checked.set_is_checked()
+      } else {
+         if \c.parent_check_box_group then {
+            in_checkbox_group.set_is_checked()
+            group_list.set_selection(c.parent_component.parent_Canvas.checkbox_groups.group_index(c.parent_check_box_group))
+            if c === c.parent_check_box_group.which_one then
+               initially_checked.set_is_checked()
+         } else  {
+            group_list.set_is_shaded()
+            if c.is_checked() then
+               initially_checked.set_is_checked()
+         }
+      }
+
+      tab_images := TabItem()
+      add_tab(tab_images)
+      tab_images.set_label("Up/Down Images")
+
+      panel_1 := Border()
+      panel_1.set_pos("100%-50", "50%")
+      panel_1.set_size("50%-100", "100%-50")
+      panel_1.set_align("r", "c")
+      if \c.img_down then {
+         icon_down := Icon()
+         icon_down.set_pos("50%", "33%")
+         icon_down.set_size("40", "40")
+         icon_down.set_align("c", "c")
+         icon_down.set_draw_border()
+         icon_down.set_img(c.img_down)
+         panel_1.add(icon_down)
+      }
+      label_3 := Label()
+      label_3.set_pos(10, 0)
+      label_3.set_internal_alignment("l")
+      label_3.set_label("Down")
+      panel_1.set_title(label_3)
+
+      browse_down := TextButton()
+      browse_down.connect(self, "on_browse_down", ACTION_EVENT)
+      browse_down.set_pos("50%", "75%")
+      browse_down.set_align("c", "c")
+      browse_down.set_internal_alignment("c")
+      browse_down.set_label("Browse...")
+      panel_1.add(browse_down)
+      tab_images.add(panel_1)
+      panel_2 := Border()
+      panel_2.set_pos("50", "50%")
+      panel_2.set_size("50%-100", "100%-50")
+      panel_2.set_align("l", "c")
+      if \c.img_up then {
+         icon_up := Icon()
+         icon_up.set_pos("50%", "33%")
+         icon_up.set_size("40", "40")
+         icon_up.set_align("c", "c")
+         icon_up.set_draw_border()
+         icon_up.set_img(c.img_up)
+         panel_2.add(icon_up)
+      }
+      label_4 := Label()
+      label_4.set_pos(10, 0)
+      label_4.set_internal_alignment("l")
+      label_4.set_label("Up")
+      panel_2.set_title(label_4)
+
+      browse_up := TextButton()
+      browse_up.connect(self, "on_browse_up", ACTION_EVENT)
+      browse_up.set_pos("50%", "75%")
+      browse_up.set_align("c", "c")
+      browse_up.set_internal_alignment("c")
+      browse_up.set_label("Browse...")
+      panel_2.add(browse_up)
+      tab_images.add(panel_2)
+      cp_img := TextButton()
+      cp_img.connect(self, "on_cp_img", ACTION_EVENT)
+      cp_img.set_pos("50%", "50%")
+      cp_img.set_align("c", "c")
+      cp_img.set_internal_alignment("c")
+      cp_img.set_label("Copy ->")
+      tab_images.add(cp_img)
+
+      p_right := TabItem()
+      add_tab(p_right)
+      p_right.set_label("Right label")
+
+      cbg_right := CheckBoxGroup()
+
+      use_right_label := CheckBox()
+      use_right_label.connect(self, "on_use_right_label", ACTION_EVENT)
+      use_right_label.set_pos(50, "25%")
+      use_right_label.set_label("Use label")
+      use_right_label.set_align("l", "c")
+      p_right.add(use_right_label)
+      cbg_right.add(use_right_label)
+
+      right_label := TextField()
+      right_label.set_size(100)
+      right_label.set_pos(150, "25%")
+      right_label.set_align("l", "c")
+      right_label.set_is_shaded()
+      right_label.set_contents(\c.label_right)
+      p_right.add(right_label)
+      
+      use_right_icon := CheckBox()
+      use_right_icon.connect(self, "on_use_right_icon", ACTION_EVENT)
+      use_right_icon.set_pos(50, "50%")
+      use_right_icon.set_label("Use Icon")
+      use_right_icon.set_align("l", "c")
+      p_right.add(use_right_icon)
+      cbg_right.add(use_right_icon)
+
+      right_icon := Icon()
+      right_icon.set_pos(150, "50%")
+      right_icon.set_size(40, 40)
+      right_icon.set_align("l", "c")
+      right_icon.set_is_shaded()
+      right_icon.toggle_draw_border()
+      self.img_right := \c.img_right | "1,c1,~"
+      right_icon.set_img(self.img_right)
+      p_right.add(right_icon)
+
+      browse_right := TextButton() 
+      browse_right.connect(self, "on_browse_right", ACTION_EVENT)
+      browse_right.set_label("Browse...")
+      browse_right.set_pos(250, "50%")
+      browse_right.set_is_shaded()
+      browse_right.set_align("l", "c")
+      p_right.add(browse_right)
+
+      use_right_neither := CheckBox()
+      use_right_neither.connect(self, "on_use_right_neither", ACTION_EVENT)
+      use_right_neither.set_pos(50, "75%")
+      use_right_neither.set_label("Leave blank")
+      use_right_neither.set_align("l", "c")
+      p_right.add(use_right_neither)
+      cbg_right.add(use_right_neither)
+
+      if \c.label_right then {
+         cbg_right.set_which_one(use_right_label)
+         right_label.clear_is_shaded()
+      } else if \c.img_right then {
+         cbg_right.set_which_one(use_right_icon)
+         right_icon.clear_is_shaded()
+         browse_right.clear_is_shaded()
+      } else
+         cbg_right.set_which_one(use_right_neither)
+
+end

@@ -1,0 +1,201 @@
+#
+# $Id: canvasoverlaysetdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasOverlaySetDialog : CanvasComponentDialog(
+   c,                       #         
+   add_col,                 #               
+   delete,                  #              
+   apply,                   #             
+   struct,                  #              
+   os,                      #          
+   os_on,                   #             
+   os_off,                  #              
+   col_name,                #                
+   which_one                #
+   )
+
+   method on_struct()
+      if i := struct.get_selections()[1] & i <= *c.children then {
+         new := c.children[i]
+         if *c.children > 1 then
+            delete.clear_is_shaded()
+         apply.clear_is_shaded()
+         which_one.clear_is_shaded()
+         os.set_which_one(os_on)
+         col_name.set_contents(new.name)
+      } else {
+         apply.set_is_shaded()
+         which_one.set_is_shaded()
+         delete.set_is_shaded()
+         os.set_which_one(os_off)
+      }
+   end
+
+   method on_add_col()
+      new := CanvasOverlayItem()
+      new.set_name(c.parent_Canvas.get_new_name(new.name))
+      new.set_parent(c)
+      new.final_setup(c.parent_dialog)
+      new.set_parent_Canvas(c.parent_Canvas)
+      l := struct.get_selections()
+      nl := l[1]
+      if *l = 0 | nl > *c.children then {
+         put(c.children, new)
+         struct.set_contents(c.string_rep())
+         struct.goto_pos(*c.children)                             
+         struct.set_selections([*c.children])
+         struct.set_cursor(*c.children)
+      } else {
+         c.children := c.children[1:nl] ||| [new] ||| c.children[nl:0]
+         struct.set_contents(c.string_rep())      
+         line := struct.get_first_line()
+         nlines := struct.get_curr_lines()
+         if nl > line + nlines - 1 then
+            line := nl - nlines + 1
+         else if nl < line then
+            line := nl
+         struct.goto_pos(line)
+         struct.set_selections([nl])
+         struct.set_cursor(nl)
+      }                              
+      delete.clear_is_shaded()
+      apply.clear_is_shaded()
+      which_one.clear_is_shaded()
+      os.set_which_one(os_on)
+      col_name.set_contents(new.name)
+   end
+
+   method on_apply()
+      r := c.children[struct.get_selections()[1]]
+      r.set_name(col_name.get_contents())
+      struct.set_contents(c.string_rep())
+      struct.clear_selections()
+      which_one.set_is_shaded()
+      delete.set_is_shaded()
+      apply.set_is_shaded()
+      os.set_which_one(os_off)
+   end
+
+   method on_delete()
+      i := struct.get_selections()[1]
+      if c.which_one === c.children[i] then
+         c.which_one := c.children[i + 1 | i - 1]
+      c.children[i].finally()
+      c.children := c.children[1:i] ||| c.children[i + 1:0]
+      struct.set_contents(c.string_rep())
+      struct.clear_selections()
+      delete.set_is_shaded()
+      which_one.set_is_shaded()
+      apply.set_is_shaded()
+      os.set_which_one(os_off)
+   end
+
+   method on_cancel()
+      c.parent_Canvas.parent_dialog.use_extra_undo()
+      self.dispose()
+   end
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_which_one()
+      c.which_one := c.children[struct.get_selections()[1]]
+      struct.set_contents(c.string_rep())
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      set_h_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+      c.parent_Canvas.parent_dialog.save_extra_undo()
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      struct := TextList()
+      struct.connect(self, "on_struct", SELECTION_CHANGED_EVENT)
+      struct.set_size(175, "100%-50")
+      struct.set_pos(25, 25)
+      struct.set_select_one()
+      struct.set_contents(c.string_rep())
+      p.add(struct)
+
+      add_col := TextButton()
+      add_col.connect(self, "on_add_col", ACTION_EVENT)
+      add_col.set_label("Add")
+      add_col.set_pos(225, 25)
+      p.add(add_col)
+
+      delete := TextButton()
+      delete.connect(self, "on_delete", ACTION_EVENT)
+      delete.set_label("Delete")
+      delete.set_pos(280, 25)
+      delete.set_is_shaded()
+      p.add(delete)
+
+      apply := TextButton()
+      apply.connect(self, "on_apply", ACTION_EVENT)
+      apply.set_label("Apply")
+      apply.set_pos(345, 25)
+      apply.set_is_shaded()
+      p.add(apply)
+
+      which_one := TextButton()
+      which_one.connect(self, "on_which_one", ACTION_EVENT)
+      which_one.set_label("Which")
+      which_one.set_pos(400, 25)
+      which_one.set_is_shaded()
+      p.add(which_one)
+
+      os := OverlaySet()
+      os.set_pos(225, 60)
+      os.set_size("100%-250", "100%-85")
+      p.add(os)
+
+      os_off := OverlayItem()
+      os.add(os_off)
+
+      os_on := OverlayItem() 
+      os.add(os_on)
+
+      b := Border()
+      b.set_pos(0, 0)
+      b.set_size("100%", "100%")
+      l := Label()
+      l.set_label("Edit")
+      b.set_title(l)
+      os_on.add(b)
+
+      l := Label()
+      l.set_label("Name :")
+      l.set_pos(20, "50%")
+      l.set_align("l", "c")
+      b.add(l)
+
+      col_name := TextField()
+      col_name.set_size(125)
+      col_name.set_pos(70, "50%")
+      col_name.set_align("l", "c")
+      b.add(col_name)
+
+end

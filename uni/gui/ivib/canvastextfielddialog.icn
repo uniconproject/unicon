@@ -1,0 +1,61 @@
+#
+# $Id: canvastextfielddialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasTextFieldDialog : CanvasComponentDialog(c, contents, filter)
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_contents(contents.get_contents())
+      c.filter_str := filter.get_contents()
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      p.set_label("General")
+      add_tab_at_front(p)
+
+      l := Label()
+      l.set_label("Initial contents : ")
+      l.set_pos(50, "33%")
+      l.set_align("l", "c")
+      p.add(l)
+      
+      contents := TextField()
+      contents.set_pos(170, "33%")
+      contents.set_size(100)
+      contents.set_align("l", "c")
+      contents.set_contents(c.contents)
+      p.add(contents)
+
+      l := Label()
+      l.set_label("Filter : ")
+      l.set_pos(50, "66%")
+      l.set_align("l", "c")
+      p.add(l)
+      
+      filter := TextField()
+      filter.set_pos(170, "66%")
+      filter.set_size(100)
+      filter.set_align("l", "c")
+      filter.set_contents(c.filter_str)
+      p.add(filter)
+end

@@ -1,0 +1,40 @@
+#
+# $Id: canvascheckboxgroup.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class to represent a CheckBoxGroup on the canvas.
+#
+class CanvasCheckBoxGroup : Group : CheckBoxGroup()
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.Group.get_template() |||
+         [["Which One", "which_one"]]
+   end
+
+   # 
+   # Duplicate object
+   #
+   method dup()
+      c := CanvasCheckBoxGroup()
+      self.Group.dup(c)
+      return c
+   end
+
+   initially
+      self.Group.initially()
+      self.CheckBoxGroup.initially()
+      self.class_name := "CheckBoxGroup"
+      self.import_name := "gui"
+      self.name := "check_box_group"
+end

@@ -1,0 +1,114 @@
+#
+# $Id: canvascheckboxmenuitem.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasCheckBoxMenuItem : CanvasMenuComponent : CheckBoxMenuItem()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      (\self.parent_check_box_group).gen_code(c)
+      self.CanvasMenuComponent.gen_code(c)
+      if not((/self.parent_check_box_group & self.img_up == img_style("box_up") & self.img_down == img_style("box_down")) | 
+             (\self.parent_check_box_group & self.img_up == img_style("diamond_up") & self.img_down == img_style("diamond_down"))) then
+         c.line(name || ".set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
+      if \self.label_right then
+         c.line(name || ".set_label_right(" || image(self.label_right) || ")")
+      else if \self.img_right then
+         c.line(name || ".set_img_right(" || image(self.img_right) || ")")
+
+      if \self.parent_check_box_group then
+         c.line(self.parent_check_box_group.name || ".add(" || name || ")")
+
+      if \self.is_checked_flag then {
+         if \self.parent_check_box_group then
+            c.line(self.parent_check_box_group.name || ".set_which_one(" || name || ")")
+         else
+            c.line(name || ".set_is_checked()")
+      }         
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_imgs(self.img_up, self.img_down)
+      if \self.parent_check_box_group then
+         c.set_parent_check_box_group((\c.parent_component.parent_Canvas).checkbox_groups.boxes[self.parent_check_box_group.number])
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasCheckBoxMenuItem()
+      self.CanvasMenuComponent.cp(c, mb)
+      self.cp_fields(c)
+      #
+      # If a checked box in a cbg is copied then the copy will not
+      # be checked.
+      #
+      if \self.is_checked_flag then {
+         if /c.parent_check_box_group then
+            c.set_is_checked()
+      }         
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasCheckBoxMenuItem()
+      self.CanvasMenuComponent.dup(c, mb)
+      self.cp_fields(c)
+      if \self.is_checked_flag then {
+         if \c.parent_check_box_group then
+            c.parent_check_box_group.which_one := c
+         c.set_is_checked()
+      }         
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasMenuComponent.get_template() ||| 
+         [["Img Up", "img_up"],
+          ["Img Down", "img_down"],
+          ["Is Checked Flag", "is_checked_flag"],
+          ["Parent CheckBoxGroup", "parent_check_box_group"]
+         ]
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      s := self.label || "(Check)"
+      if \self.parent_check_box_group then
+         s ||:= " G"
+      if self.is_checked() then
+         s ||:= " X"
+      return s
+   end
+
+   initially
+      self.CanvasMenuComponent.initially()
+      self.CheckBoxMenuItem.initially()
+      self.class_name := "CheckBoxMenuItem"
+      self.import_name := "gui"
+      self.name := "check_box_menu_item"
+end

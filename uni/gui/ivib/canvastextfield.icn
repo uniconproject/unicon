@@ -1,0 +1,85 @@
+#
+# $Id: canvastextfield.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a TextField on the canvas.
+#
+class CanvasTextField : CanvasComponent : TextField(
+   filter_str       
+   )
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_contents(" || image(self.contents) || ")")
+      if *\filter_str > 0 then
+         c.line(name || ".set_filter(" || image(cset(self.filter_str)) || ")")
+
+      if /self.draw_border_flag then
+         c.line(name || ".clear_draw_border()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_contents(self.get_contents())
+      c.filter_str := self.filter_str
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTextField()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTextField()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Contents", "contents"],
+          ["Filter String", "filter_str"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTextFieldDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.TextField.initially()
+      filter_str := ""
+      self.class_name := "TextField"
+      self.import_name := "gui"
+      self.name := "text_field"
+end

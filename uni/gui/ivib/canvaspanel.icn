@@ -1,0 +1,117 @@
+#
+# $Id: canvaspanel.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Panel on the canvas.
+#
+class CanvasPanel : CanvasComponent : Panel()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      every i := !self.children do {
+         i.gen_code(c)
+         c.line(self.name || ".add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasPanel()
+      self.CanvasComponent.cp(c)
+      every c.add((!self.children).cp())
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasPanel()
+      self.CanvasComponent.dup(c, pc)
+      every c.add((!self.children).dup(pc))
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Children", "children"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self.CanvasComponent.reset_size()
+      every (!self.children).reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.children do
+         if o := e.inside(c) then
+            return o
+
+      if (c ~=== self) & (self.x <= c.x < self.x + self.w) & (self.y <= c.y < self.y + self.h) & (self.x <= c.x + c.w <= self.x + self.w) & (self.y <= c.y + c.h <= self.y + self.h) then
+         return self
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.children) do
+         if o := e.which_cursor_over() then
+            return o
+
+      if (self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h) then
+         return self
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasPanelDialog(self)
+   end
+
+   method display(buffer_flag)
+      self.Panel.display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      Rectangle(W, self.x, self.y, self.w, self.h)
+      center_string(W, self.x + self.w / 2, self.y + 10, "<Panel>")
+      self.do_shading(W)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Panel.initially()
+      #class_variable := 1
+      self.class_name := "Panel"
+      self.import_name := "gui"
+      self.name := "panel"
+end

@@ -1,0 +1,96 @@
+#
+# $Id: canvasimagedialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasImageDialog : CanvasComponentDialog(c, filename, internal_align_spec, scale_up)
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_filename("" ~== filename.get_contents())
+      if scale_up.is_checked() then
+         c.scale_up_flag := 1
+      else
+         c.scale_up_flag := &null
+      case internal_align_spec.get_selection() of {
+         1 : c.set_internal_alignment("l", "t")
+         2 : c.set_internal_alignment("l", "c")
+         3 : c.set_internal_alignment("l", "b")
+         4 : c.set_internal_alignment("c", "t")
+         5 : c.set_internal_alignment("c", "c")
+         6 : c.set_internal_alignment("c", "b")
+         7 : c.set_internal_alignment("r", "t")
+         8 : c.set_internal_alignment("r", "c")
+         9 : c.set_internal_alignment("r", "b")
+      }
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      set_h_default.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      p.set_label("General")
+      add_tab_at_front(p)
+
+      l := Label()
+      l.set_label("Image filename : ")
+      l.set_pos(200, "66%")
+      l.set_align("l", "c")
+      p.add(l)
+      
+      filename := TextField()
+      filename.set_pos(320, "66%")
+      filename.set_size(100)
+      filename.set_align("l", "c")
+      filename.set_contents(c.filename)
+      p.add(filename)
+
+      scale_up := CheckBox()
+      scale_up.set_label("Scale up image")
+      scale_up.set_pos(50, "66%")
+      scale_up.set_align("l", "c")
+      if \c.scale_up_flag then
+         scale_up.toggle_is_checked()
+      p.add(scale_up)
+
+      l := Label()
+      l.set_label("Internal alignment : ")
+      l.set_pos(50, "33%")
+      l.set_align("l", "c")
+      p.add(l)
+
+      internal_align_spec := List()
+      internal_align_spec.set_pos(180, "33%")
+      internal_align_spec.set_size(75)
+      internal_align_spec.set_align("l", "c")
+      internal_align_spec.set_selection_list(align_list)
+      internal_align_spec.set_selection(case c.x_internal_alignment || c.y_internal_alignment of {
+           "lt" : 1
+           "lc" : 2
+           "lb" : 3
+           "ct" : 4
+           "cc" : 5
+           "cb" : 6
+           "rt" : 7
+           "rc" : 8 
+           "rb" : 9 })
+
+      p.add(internal_align_spec)
+    
+end

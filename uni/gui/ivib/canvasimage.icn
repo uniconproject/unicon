@@ -1,0 +1,97 @@
+#
+# $Id: canvasimage.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Image on the canvas.
+#
+class CanvasImage : CanvasComponent : Image()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      s := \self.filename | ""
+      c.line(name || ".set_filename(" || image(s) || ")")
+      c.line(name || ".set_internal_alignment(" || image(self.x_internal_alignment) || ", " || image(y_internal_alignment) || ")")
+
+      if \self.scale_up_flag then
+         c.line(name || ".set_scale_up()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_filename(self.filename)
+      c.set_internal_alignment(self.x_internal_alignment, y_internal_alignment)
+      c.scale_up_flag := self.scale_up_flag
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasImage()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasImage()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["File name", "filename"],
+          ["X Internal Alignment", "x_internal_alignment"],
+          ["Y Internal Alignment", "y_internal_alignment"],
+          ["Scale Up Flag", "scale_up_flag"]
+         ]
+   end
+
+   #
+   # Overrides Image.display() 
+   #
+   method display(buffer_flag)
+      if \self.filename then
+         self.Image.display(buffer_flag)
+      else {
+         W := if /buffer_flag then self.cwin else self.cbwin
+         Rectangle(W, self.x, self.y, self.w, self.h)
+         center_string(W, self.x + self.w / 2, self.y + 10, "<Image>")
+      }
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasImageDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Image.initially()
+      self.class_name := "Image"
+      self.import_name := "gui"
+      self.name := "image"
+end

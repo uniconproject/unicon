@@ -1,0 +1,81 @@
+#
+# $Id: canvaslist.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a List on the canvas.
+#
+class CanvasList : CanvasComponent : List()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_constant_label(" || image(\self.constant_label) || ")")
+      c.line(name || ".set_selection_list([" || list2string(self.selection_list) || "])")
+      if self.selection ~= 1 then
+         c.line(name || ".set_selection(" || self.selection || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.constant_label := self.constant_label
+      c.set_selection_list(copy(self.selection_list))
+      c.set_selection(self.selection)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasList()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasList()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Constant Label", "constant_label"],
+          ["Selection", "selection"],
+          ["Selection List", "selection_list"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasListDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.List.initially()
+      self.class_name := "List"
+      self.import_name := "gui"
+      self.name := "list"
+end

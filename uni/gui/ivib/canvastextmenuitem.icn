@@ -1,0 +1,70 @@
+#
+# $Id: canvastextmenuitem.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasTextMenuItem : CanvasMenuComponent : TextMenuItem()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasMenuComponent.gen_code(c)
+      if \self.label_left then
+         c.line(name || ".set_label_left(" || image(self.label_left) || ")")
+      else if \self.img_left then
+         c.line(name || ".set_img_left(" || image(self.img_left) || ")")
+
+      if \self.label_right then
+         c.line(name || ".set_label_right(" || image(self.label_right) || ")")
+      else if \self.img_right then
+         c.line(name || ".set_img_right(" || image(self.img_right) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp(mb)
+      c := CanvasTextMenuItem()
+      self.CanvasMenuComponent.cp(c, mb)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(mb)
+      c := CanvasTextMenuItem()
+      self.CanvasMenuComponent.dup(c, mb)
+      return c
+   end
+
+   #
+   # Get a label for the menu bar display.
+   #
+   method get_string_label()
+      return self.label || "(Txt)"
+   end
+
+   initially
+      self.CanvasMenuComponent.initially()
+      self.TextMenuItem.initially()
+      self.class_name := "TextMenuItem"
+      self.import_name := "gui"
+      self.name := "text_menu_item"
+end

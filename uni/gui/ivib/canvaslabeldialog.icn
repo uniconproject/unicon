@@ -1,0 +1,72 @@
+#
+# $Id: canvaslabeldialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasLabelDialog : CanvasComponentDialog(
+   c,                       #         
+   label_str,               #                 
+   internal_alignment,      #                          
+   internal_alignment_list  #
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_label(label_str.get_contents())
+      c.set_internal_alignment(internal_alignment_list[internal_alignment.get_selection()])
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self.setup(c)
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      p.set_label("General")
+      add_tab_at_front(p)
+
+      l := Label()
+      l.set_label("Label : ")
+      l.set_pos(50, "33%")
+      l.set_align("l", "c")
+      p.add(l)
+      
+      label_str := TextField()
+      label_str.set_pos(200, "33%")
+      label_str.set_size(100)
+      label_str.set_align("l", "c")
+      label_str.set_contents(c.label)
+      p.add(label_str)
+
+      l := Label()
+      l.set_label("Internal alignment : ")
+      l.set_pos(50, "66%")
+      l.set_align("l", "c")
+      p.add(l)
+
+      internal_alignment := List()
+      internal_alignment.set_pos(200, "66%")
+      internal_alignment.set_size(50)
+      internal_alignment.set_align("l", "c")
+      internal_alignment.set_selection_list(internal_alignment_list)
+      internal_alignment.set_selection(case c.internal_alignment of {
+           "c" : 1
+           "l" : 2
+           "r" : 3 })
+
+      p.add(internal_alignment)
+end

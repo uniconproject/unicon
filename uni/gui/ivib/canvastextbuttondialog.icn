@@ -1,0 +1,54 @@
+#
+# $Id: canvastextbuttondialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasTextButtonDialog : CanvasButtonDialog(
+   c,                                                  
+   internal_alignment,      #                          
+   internal_alignment_list
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_internal_alignment(internal_alignment_list[internal_alignment.get_selection()])
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      internal_alignment_list := ["c", "l", "r"]
+      self.setup(c)
+      l := Label()
+      l.set_label("Label alignment : ")
+      l.set_pos("50", "160")
+      l.set_align("l", "c")
+      tab_basic.add(l)
+      internal_alignment := List()
+      internal_alignment.set_pos("200", "160")
+      internal_alignment.set_size(50)
+      internal_alignment.set_align("l", "c")
+      internal_alignment.set_selection_list(internal_alignment_list)
+      internal_alignment.set_selection(case c.internal_alignment of {
+           "c" : 1
+           "l" : 2
+           "r" : 3 })
+
+      tab_basic.add(internal_alignment)
+      tab_images.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+end

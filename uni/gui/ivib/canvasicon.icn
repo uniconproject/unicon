@@ -1,0 +1,76 @@
+#
+# $Id: canvasicon.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Icon on the canvas.
+#
+class CanvasIcon : CanvasComponent : Icon()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_img(" || image(self.img) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_img(self.img)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasIcon()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasIcon()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Img", "img"],
+          ["Img Width", "img_w"],
+          ["Img Height", "img_h"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasIconDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Icon.initially()
+      self.class_name := "Icon"
+      self.import_name := "gui"
+      self.name := "icon"
+end

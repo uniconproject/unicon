@@ -1,0 +1,114 @@
+#
+# $Id: canvastabitem.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a TabItem on the canvas.
+#
+class CanvasTabItem : CanvasComponent : TabItem()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c.add_var(self.name, &null)
+      c.add_import(self.import_name)
+      c.line(name || " := " || self.class_name || "()")
+      c.line(name || ".set_label(" || image(self.label) || ")")
+      if \self.is_shaded_flag then
+         c.line(name || ".set_is_shaded()")
+      every i := !self.children do {
+         i.gen_code(c)
+         c.line(self.name || ".add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_label(self.label)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTabItem()
+      self.CanvasComponent.cp(c)
+      every c.add((!self.children).cp())
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTabItem()
+      self.CanvasComponent.dup(c, pc)
+      every c.add((!self.children).dup(pc))
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Label", "label"],
+          ["Parent TabSet", "parent"],
+          ["Children", "children"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      every (!self.children).reset_size()
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return parent.dialog()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.children do
+         if o := e.inside(c) then
+            return o
+
+      if (c ~=== self) & (self.parent.x <= c.x < self.parent.x + self.parent.w) & (self.parent.y <= c.y < self.parent.y + self.parent.h) & (self.parent.x <= c.x + c.w <= self.parent.x + self.parent.w) & (self.parent.y <= c.y + c.h <= self.parent.y + self.parent.h) then
+         return self
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.children) do
+         if o := e.which_cursor_over() then
+            return o
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.TabItem.initially()
+      self.class_name := "TabItem"
+      self.import_name := "gui"
+      self.name := "tab_item"
+end

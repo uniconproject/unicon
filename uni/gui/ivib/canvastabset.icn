@@ -1,0 +1,132 @@
+#
+# $Id: canvastabset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a TabSet on the canvas.
+#
+class CanvasTabSet : CanvasComponent : TabSet()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      every i := !self.children do {
+         i.gen_code(c)
+         c.line(self.name || ".add(" || i.name || ")")
+      }
+      c.line(self.name || ".set_which_one(" || self.which_one.name || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTabSet()
+      self.CanvasComponent.cp(c)
+      every e := !self.children do {
+         e1 := e.cp()
+         c.add(e1)
+         if self.which_one === e then
+            c.set_which_one(e1)
+      }
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTabSet()
+      self.CanvasComponent.dup(c, pc)
+      every e := !self.children do {
+         e1 := e.dup(pc)
+         c.add(e1)
+         if self.which_one === e then
+            c.set_which_one(e1)
+      }
+      return c
+   end
+      
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Children", "children"],
+          ["Which One", "which_one"]
+         ]
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self.CanvasComponent.reset_size()
+      every (!self.children).reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      return (c ~=== self) & self.which_one.inside(c)
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      #
+      # If over one of the objects in the current item, return it.
+      #
+      if o := self.which_one.which_cursor_over() then
+         return o
+
+      #
+      # Otherwise, see if within the present TabSet.
+      #
+      if ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then
+         return self
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTabSetDialog(self)
+   end
+
+   method string_rep()
+      l := []
+      every c := !self.children do {
+         s := c.name
+         if c === self.which_one then
+            s ||:= "*"
+         put(l, s)
+      }
+      put(l, "")
+      return l
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.TabSet.initially()
+      self.class_name := "TabSet"
+      self.import_name := "gui"
+      self.name := "tab_set"
+end

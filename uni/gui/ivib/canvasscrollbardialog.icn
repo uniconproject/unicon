@@ -1,0 +1,169 @@
+#
+# $Id: canvasscrollbardialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+$include "guih.icn"
+
+############################################################################
+#
+# Dialog box for a CanvasScrollBar
+#
+class CanvasScrollBarDialog : CanvasComponentDialog(
+   c,                       # The object being configured
+   slider,                  #              
+   total_size,              #                  
+   page_size,               #                 
+   increment_size,          #                      
+   range_from,              #                  
+   range_to,                #                
+   initial_value            #
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      #
+      # Check valid numeric fields
+      #
+      numeric(increment_size.get_contents()) | return alert_error("Increment size is non-numeric")
+      numeric(initial_value.get_contents()) | return alert_error("Initial value is non-numeric")
+      if slider.is_checked() then {
+         numeric(range_from.get_contents()) | return alert_error("Range from is non-numeric")
+         numeric(range_to.get_contents()) | return alert_error("Range to is non-numeric")
+      } else {
+         numeric(page_size.get_contents()) | return alert_error("Page size is non-numeric")
+         numeric(total_size.get_contents()) | return alert_error("Total size is non-numeric")
+      }
+      c.set_increment_size(numeric(increment_size.get_contents()))
+      c.set_value(numeric(initial_value.get_contents()))
+      if slider.is_checked() then
+         c.set_range(numeric(range_from.get_contents()), numeric(range_to.get_contents()))
+      else {
+         c.set_page_size(numeric(page_size.get_contents()))
+         c.set_total_size(numeric(total_size.get_contents()))
+         c.is_range_flag := &null
+         c.reconfigure()
+      }
+
+      self.set_vals(c)
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_slider()
+      page_size.toggle_is_shaded()
+      total_size.toggle_is_shaded()
+      range_from.toggle_is_shaded()
+      range_to.toggle_is_shaded()
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      set_h_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      p.set_label("General")
+      add_tab_at_front(p)
+
+      slider := CheckBox()
+      slider.connect(self, "on_slider", ACTION_EVENT)
+      slider.set_pos(50, 50)
+      slider.set_align("l", "c")
+      slider.set_label("Slider")
+      p.add(slider)
+
+      l := Label()
+      l.set_label("Increment size : ")
+      l.set_pos(150, 50)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      increment_size := TextField()
+      increment_size.set_pos(250, 50)
+      increment_size.set_size(100)
+      increment_size.set_align("l", "c")
+      increment_size.set_contents(c.increment_size)
+      p.add(increment_size)
+
+      l := Label()
+      l.set_label("Page size : ")
+      l.set_pos(50, 100)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      page_size := TextField()
+      page_size.set_pos(125, 100)
+      page_size.set_size(100)
+      page_size.set_align("l", "c")
+      p.add(page_size)
+
+      l := Label()
+      l.set_label("Total size : ")
+      l.set_pos(250, 100)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      total_size := TextField()
+      total_size.set_pos(325, 100)
+      total_size.set_size(100)
+      total_size.set_align("l", "c")
+      p.add(total_size)
+
+      l := Label()
+      l.set_label("Range from : ")
+      l.set_pos(50, 150)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      range_from := TextField()
+      range_from.set_pos(125, 150)
+      range_from.set_size(100)
+      range_from.set_align("l", "c")
+      p.add(range_from)
+
+      l := Label()
+      l.set_label("Range to : ")
+      l.set_pos(250, 150)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      range_to := TextField()
+      range_to.set_pos(325, 150)
+      range_to.set_size(100)
+      range_to.set_align("l", "c")
+      p.add(range_to)
+
+      if \c.is_range_flag then {
+         range_from.set_contents(c.lo)
+         range_to.set_contents(c.hi)
+         slider.set_is_checked()
+         page_size.set_is_shaded()
+         total_size.set_is_shaded()
+      } else {
+         page_size.set_contents(c.page_size)
+         total_size.set_contents(c.total_size)
+         range_from.set_is_shaded()
+         range_to.set_is_shaded()
+      }
+
+      l := Label()
+      l.set_label("Initial value : ")
+      l.set_pos(50, 200)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      initial_value := TextField()
+      initial_value.set_pos(125, 200)
+      initial_value.set_size(100)
+      initial_value.set_align("l", "c")
+      initial_value.set_contents(c.get_value())
+      p.add(initial_value)
+end

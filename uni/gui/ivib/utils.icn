@@ -1,0 +1,123 @@
+#
+# $Id: utils.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+#
+# Read a flag (&null or 1) value
+#
+procedure flag_read(f)
+   s := read(f) | fail
+   return if *s = 0 then &null else 1
+end
+
+#
+# Read a value which may be &null or have a value
+#
+procedure opt_read(f)
+   (t := read(f) &
+   s := read(f)) | fail
+   return if t == "1" then s else &null
+end
+
+#
+# Write a value which may be &null or have a value
+#
+procedure opt_write(f, s)
+   write(f, if \s then 1 else "&null")
+   write(f, s)
+end
+
+#
+# Generate the elements of l in reverse
+#
+procedure rev(l)
+   suspend l[*l to 1 by -1]
+end
+
+#
+# Minimum of x, y
+#
+procedure min(x, y)
+   return (x > y) | x
+end
+
+#
+# Maximum of x, y
+#
+procedure max(x, y)
+   return (x < y) | x
+end
+
+#
+# Convert a list l to a string representation.
+#
+procedure list2string(l)
+   e := create image(!l)
+   s := @e | ""
+   while s ||:= ", " || @e
+   return s
+end
+
+#
+# Read icon from file s.  dialog is an instance of CommonDialog
+#
+procedure util_read_icon(dialog, s)
+   f := open(s) | return dialog.alert_error("Couldn't open file " || s)
+   res := ""
+   while x := read(f) do {
+      x ? {
+         if ="#" then
+            next
+
+         ="\""
+         res ||:= tab(0)
+      }
+
+      if res[-1] == "_" then
+         res[-1] := ""
+      else
+         break
+   }
+
+   #
+   # Check for reasonably valid image 
+   #
+   if img_height(res) then
+      return res
+   else   
+      return dialog.alert_error("Not a valid image")
+end
+
+#
+# Check that the window attributes in list l are valid.
+#
+procedure util_check_attribs(dialog, l)
+   static test_win, attrib_table
+   initial {
+      test_win := WOpen("canvas=hidden") | stop("couldn't open window")
+      attrib_table := table()
+      every attrib_table["label" | "posx" | "pos" | "posy" | "resize" | "size" | "height" | 
+                         "width" | "lines" | "columns" | "image" | "canvas" | "iconpos" | "iconlabel" | 
+                         "iconimage" | "echo" | "cursor" | "x" | "y" | "row" | "col" | "pointer" | 
+                         "pointerx" | "pointery" | "pointerrow" | "pointercol" | "display" | "depth" | 
+                         "displayheight" | "displaywidth" | "fg" | "bg" | "reverse" | "drawop" | "gamma" | 
+                         "font" | "fheight" | "fwidth" | "ascent" | "descent" | "leading" | "linewidth" | 
+                         "linestyle" | "fillstyle" | "pattern" | "clipx" | "clipy" | "clipw" | "cliph" | 
+                         "dx" | "dy"] := 1
+   }
+
+   every s := !l do {
+      if /attrib_table[s[1]] then
+         return dialog.alert_error("Invalid attribute " || s[1])
+      if not(WAttrib(test_win, s[1] || "=" || s[2])) then
+         return dialog.alert_error("Invalid value " || s[2] || " for attrib " || s[1])
+   }
+   return
+end
+

@@ -1,0 +1,31 @@
+#
+# $Id: buttongroupset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+
+############################################################################
+#
+# Set of ButtonGroups, same as for CheckBoxGroupSet
+#
+class ButtonGroupSet : GroupSet()
+   method dup(pc)
+      c := ButtonGroupSet()
+      c.parent_Canvas := pc
+      c.boxes := []
+      every put(c.boxes, (!self.boxes).dup())
+      return c
+   end
+
+   method new()
+      n := CanvasButtonGroup()
+      n.set_name(self.parent_Canvas.get_new_name(n.name))
+      put(boxes, n)
+      n.number := *boxes
+      return n
+   end
+end

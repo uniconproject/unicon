@@ -1,0 +1,95 @@
+#
+# $Id: canvasmenubutton.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a MenuButton on the canvas.
+#
+class CanvasMenuButton : CanvasComponent : MenuButton(
+   string_rep               #                  
+   )
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      if self.img ~=== img_style("arrow_down") then
+         c.line(name || ".set_img(" || image(self.img) || ")")
+      self.menu.gen_code(c)
+      c.line(self.name || ".set_menu(" || self.menu.name || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.set_img(self.img)
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasMenuButton()
+      self.CanvasComponent.cp(c)
+      c.set_menu(self.menu.cp(c))
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasMenuButton()
+      self.CanvasComponent.dup(c, pc)
+      c.set_menu(self.menu.dup(c))
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Img", "img"],
+          ["Menu", "menu"]
+         ]
+   end
+
+   method set_string_rep()
+      local sub
+      string_rep := []
+      self.menu.set_string_rep(string_rep, 1, self, 1)
+      put(string_rep, MenuTreeNode(1, self, 2))
+   end
+
+   method get_string_rep()
+      return self.string_rep      
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasMenuBarDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.MenuButton.initially()
+      #class_variable := 1
+      self.class_name := "MenuButton"
+      self.import_name := "gui"
+      self.name := "menu_button"
+end

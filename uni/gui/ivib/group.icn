@@ -1,0 +1,83 @@
+#
+# $Id: group.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import lang
+
+
+############################################################################
+#
+# Superclass for CanvasCheckBoxGroup and CanvasButtonGroup
+#
+class Group : SelectiveClassCoding(
+   name,                    # Object name           
+   class_name,              # Class name
+   import_name,             # Name of import file
+   number,                  # Group number
+   class_variable,          # Variable category
+   code_gen_flag            # Indicates whether code output yet
+   )
+
+   #
+   # Set object name
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Duplicate (will be extended by subclass)
+   #
+   method dup(c)
+      c.name := self.name
+      c.class_name := self.class_name
+      c.import_name := self.import_name
+      c.number := self.number
+      c.class_variable := self.class_variable
+   end
+
+   #
+   # Set object name
+   #
+   method set_class_name(x)
+      return self.class_name := x
+   end
+
+   #
+   # Set import name
+   #
+   method set_import_name(x)
+      return self.import_name := x
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Name", "name"],
+              ["Number", "number"],
+              ["Class Name", "class_name"],
+              ["Import Name", "import_name"],
+              ["Class Variable", "class_variable"]
+              ]
+   end
+
+   # 
+   # Generate code; will be called several times so only output
+   # first time.
+   #
+   method gen_code(c)
+      if /self.code_gen_flag then {
+         c.add_var(self.name, class_variable)
+         c.line(self.name || " := " || self.class_name || "()")
+         c.add_import(self.import_name)
+         code_gen_flag := 1
+      }
+   end      
+
+   initially
+end

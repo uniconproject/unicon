@@ -1,0 +1,2039 @@
+#
+# $Id: canvas.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import lang
+import gui
+
+
+$include "keysyms.icn"
+$include "guih.icn"
+
+#
+# Constant definitions.
+#
+
+# Length of resize line at bottom right corner
+$define RSW      12       
+
+# Width of the border around the Canvas.
+$define EDGE      4
+
+#
+# Temporary window for double buffering.  This is really a static member
+# of Canvas.
+#
+global Canvas_temp_win
+
+#
+# Canvas class.
+#
+class Canvas : Component : SelectiveClassCoding(
+                                   superclass_name,         # Class name of superclass
+                                   import_name,             # Name of import file
+                                   items,                   # List of the CanvasComponents on the Canvas
+                                   selections,              # Items currently selected
+                                   selected,                # Item currently selected and highlighted
+                                   is_held,                 # Flag indicating whether left button held over item
+                                   drag_x_offset,           # Offsets used for smooth dragging
+                                   drag_y_offset, 
+                                   resize_mode,             # Flag indicating how an item is being resized/moved
+                                   button_groups,           # Set of ButtonGroup objects (see groups.iol)
+                                   checkbox_groups,         # Set of CheckBoxGroup objects
+                                   dialog_struct,           # A _Dialog object corresponding to the Canvas
+                                   is_resizing,             # Flag indicating Canvas being resized
+                                   new_file_flag,           # Flag indicating if filename is a new file (ie provided
+                                                            # via the command line, but didn't exist).
+                                   filename,                # File name of Canvas
+                                   modified,                # Flag indicating whether is modified
+                                   moving,                  # Item being moved
+                                   tmp_dup,                 # Temporary undo variable
+                                   orig_x,                  # Original pos/size of an item being resized/moved
+                                   orig_y, 
+                                   orig_w, 
+                                   orig_h, 
+                                   orig_x_spec,             # Original pos/size spec of an item being resized/moved
+                                   orig_y_spec, 
+                                   orig_w_spec, 
+                                   orig_h_spec, 
+                                   x_new,                   # New pos/size spec of an item being resized/moved
+                                   y_new,
+                                   h_new,
+                                   w_new,
+                                   arrow_flag,              # Flag for co-ordinating undo on keypad movement
+                                   initial_focus,           # Component which will have intitial focus in dialog
+                                   name,                    # Class name of Canvas
+                                   name_table,              # Table for generating default object names.
+                                   gen_main,                # Flags regarding code generation options.
+                                   gen_component_setup,
+                                   gen_initially,
+                                   gen_init_dialog,
+                                   gen_indent,
+                                   clear_borders_flag,      # Flag, used on display()
+                                   event_handlers           # List of event, handler pairs
+                                   )
+
+   #
+   # Set the class name, ie the name of the Dialog class in the generated  code
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Return the name
+   #
+   method get_name()
+      return self.name
+   end
+
+   #
+   # Return the list of event handlers
+   #
+   method get_event_handlers()
+      return event_handlers
+   end
+
+   #
+   # Display an error message
+   #
+   method alert_error(s)
+      return self.parent_dialog.alert_error(s)
+   end
+
+   #
+   # Update the position label.
+   #
+   method update_pos_label()
+      if \self.selected then
+         self.parent_dialog.pos_label.set_label(self.selected.x_spec || "," || self.selected.y_spec || " : " || self.selected.w_spec || "," || self.selected.h_spec)
+      else
+         self.parent_dialog.pos_label.set_label("")
+   end
+
+   #
+   #
+   # Determine whether all selections are in the same container.
+   #
+   method same_container()
+      c := selected.parent
+      every e := !self.selections do
+         if e.parent ~=== c then
+            return alert_error("Selections must be in same container")
+      return
+   end
+
+   #
+   # Check whether something is selected.
+   #
+   method something_selected()
+      if *self.selections = 0 then {
+         self.parent_dialog.info_label.set_label("Nothing selected")
+         fail
+      }
+      return
+   end
+
+   #
+   # Clear the current selections.
+   #
+   method clear_selections()
+      self.parent_dialog.shade_selection_options()
+      self.parent_dialog.pos_label.set_label("")
+      self.reset_selections()
+   end
+
+   #
+   # Reset the selection variables
+   #
+   method reset_selections()
+      selections := []
+      selected := &null
+   end
+
+   #
+   # Move the selection up one level
+   #
+   method select_up()
+      something_selected() | fail
+      if selected.parent ~=== self then {
+         select(selected.parent)
+         invalidate()
+      }
+   end
+
+   #
+   # Save the component
+   #
+   method component_save()
+      something_selected() | fail
+
+      fd := FileDialog()
+      fd.set_fields(parent_dialog.global_attribs)
+      fd.show_modal(parent_dialog)
+
+      s := fd.get_result() | fail
+      f := ::open(s, "w") | return alert_error("Couldn't open " || s)
+
+      c := self.selected.dup()
+
+      write(f, lang::encode(c))
+
+      close(f)
+   end
+
+   #
+   # Copy all the current selections.
+   #
+   method copy_selections()
+      static copy_count
+      initial copy_count := 0
+
+      something_selected() | fail
+
+      self.parent_dialog.push_undo()
+
+      every t := !selections do {
+         c := t.cp()
+         #
+         # Set pos of new object. 
+         #           
+         c.w := t.w
+         c.h := t.h
+         c.x_spec :=  c.get_x_alignment_offset() + 10 + 7 * (copy_count % 4) + t.x - t.parent.get_x_reference()
+         c.y_spec :=  c.get_y_alignment_offset() + 10 + 7 * (copy_count % 4) + t.y - t.parent.get_y_reference()
+         c.set_parent(t.parent)
+         c.final_setup(self.dialog_struct)
+         c.resize()
+         c.firstly()
+         #
+         # Add to the owning list (may be canvas or a container object).
+         #
+         c.parent.add(c)
+      }
+
+      self.set_modified()
+      copy_count +:= 1
+      self.invalidate()
+   end
+
+   #
+   # Centre all the current selections horizontally.
+   #
+   method centre_horiz_selections()
+      something_selected() | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.x_spec := "50%"
+         e.x_align := "c"
+         e.x_fixed := 1
+         e.resize()
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Centre all the current selections vertically.
+   #
+   method centre_vert_selections()
+      something_selected() | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.y_spec := "50%"
+         e.y_align := "c"
+         e.y_fixed := 1
+         e.resize()
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Align the selections horizontally with the highlighted item.
+   #
+   method align_horiz_selections()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.x_spec := selected.x_spec
+         e.x_align := selected.x_align
+         e.x_fixed := selected.x_fixed
+         e.resize()
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Align the selections vertically with the highlighted item.
+   #
+   method align_vert_selections()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.y_spec := selected.y_spec
+         e.y_align := selected.y_align
+         e.y_fixed := selected.y_fixed
+         e.resize()
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Equalize the selections' widths
+   #
+   method equalize_width_selections()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.w_spec := selected.w_spec
+         e.w_fixed := selected.w_fixed
+         e.w_default := selected.w_default 
+         e.resize()
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Equalize the selections' heights
+   #
+   method equalize_height_selections()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.h_spec := selected.h_spec
+         e.h_fixed := selected.h_fixed
+         e.h_default := selected.h_default 
+         e.resize()
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Lay out selections end-to-end
+   #
+   method end_to_end_selections_horizontally()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      x1 := selected.x - selected.parent.get_x_reference() + selected.w
+
+      every e := self.selections[2 to *self.selections] do {
+         e.x_spec := x1
+         e.x_align := "l"
+         e.resize()
+         x1 +:= e.w
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Lay out selections end-to-end
+   #
+   method end_to_end_selections_vertically()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      y1 := selected.y - selected.parent.get_y_reference() + selected.h
+
+      every e := self.selections[2 to *self.selections] do {
+         e.y_spec := y1
+         e.y_align := "t"
+         e.resize()
+         y1 +:= e.h
+      }
+      self.set_modified()
+
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Copy attributes from first selected to others
+   #
+   method copy_attribs()
+      something_selected() | fail
+
+      self.parent_dialog.push_undo()
+
+      every e := !self.selections do {
+         e.attribs := selected.attribs
+         e.reset(e.parent)
+      }
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Place the selected items in a grid (see also grid.iol).
+   #
+   method grid_selections()
+      local rows, cols
+
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      #
+      # Construct two GridSets.  Each item will go into each set.
+      #
+      rows := GridSet("v")
+      cols := GridSet("h")
+
+      every e := !self.selections do {
+         #
+         # Create a GridElement from the element.
+         #
+         el := GridElement(e)
+         #
+         # Put it into both GridSets.
+         #
+         rows.enter(el)
+         cols.enter(el)
+      }
+
+      #
+      # Shuffle things about into lines.
+      #
+      rows.equalize_lines()
+      cols.equalize_lines()
+
+      #
+      # Resize all the items; update display.
+      #
+      every (!self.selections).resize()
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Reorder the items in the selection order.
+   #
+   method reorder_selections()
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      if selected.parent === self then {
+         every i := 1 to *selections do {
+            every j := i to *items do {
+               if items[j] === selections[i] then {
+                  items[i] :=: items[j]
+                  break
+               }
+            }
+         }
+      } else
+         selected.parent.reorder()
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+   
+   #
+   # Even-space the selections horizontally.
+   #
+   method even_selections_horizontally()
+      local l
+
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      if *self.selections = 1 then 
+         return
+
+      #
+      # Construct a ComponentSort
+      #
+      l := HComponentSort()
+      every l.enter(!self.selections)
+
+      r := l.get_sorted_elements()
+
+      every i := 1 to *r do
+         r[i].c.x_spec := r[1].abs_x_spec + ((i - 1) * ((r[-1].abs_x_spec - r[1].abs_x_spec))) / (*r - 1)
+
+      #
+      # Resize all the items; update display.
+      #
+      every (!self.selections).resize()
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Even-space the selections vertically.
+   #
+   method even_selections_vertically()
+      local l
+
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      if *self.selections = 1 then 
+         return
+
+      #
+      # Construct a ComponentSort
+      #
+      l := VComponentSort()
+      every l.enter(!self.selections)
+      r := l.get_sorted_elements()
+
+      every i := 1 to *r do
+         r[i].c.y_spec := r[1].abs_y_spec + ((i - 1) * ((r[-1].abs_y_spec - r[1].abs_y_spec))) / (*r - 1)
+
+      #
+      # Resize all the items; update display.
+      #
+      every (!self.selections).resize()
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Even-space the selections horizontally in the container.
+   #
+   method even_selections_container_horizontally()
+      local l
+
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      #
+      # Construct a ComponentSort
+      #
+      l := HComponentSort()
+      every l.enter(!self.selections)
+      r := l.get_sorted_elements()
+
+      every i := 1 to *r do {
+         r[i].c.x_spec := ((100 * (2 * i - 1)) / (2 * *r)) || "%"
+         r[i].c.x_align := "c"
+         r[i].c.x_fixed := 1
+      }
+
+      #
+      # Resize all the items; update display.
+      #
+      every (!self.selections).resize()
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Even-space the selections vertically in the container.
+   #
+   method even_selections_container_vertically()
+      local l
+
+      (something_selected() & same_container()) | fail
+
+      self.parent_dialog.push_undo()
+
+      #
+      # Construct a ComponentSort
+      #
+      l := VComponentSort()
+      every l.enter(!self.selections)
+      r := l.get_sorted_elements()
+
+      every i := 1 to *r do {
+         r[i].c.y_spec := ((100 * (2 * i - 1)) / (2 * *r)) || "%"
+         r[i].c.y_align := "c"
+         r[i].c.y_fixed := 1
+      }
+
+      #
+      # Resize all the items; update display.
+      #
+      every (!self.selections).resize()
+
+      self.set_modified()
+      self.update_pos_label()
+      self.invalidate()
+   end
+
+   #
+   # Get a hopefully unique name based on the given root.
+   #
+   method get_new_name(cn)
+      while any(&digits ++ "_", cn[-1]) do
+         cn := cn[1:-1]
+
+      cn ||:= "_" || (name_table[cn] +:= 1)
+
+      return cn
+   end      
+
+   #
+   # Generate code output (see also code.iol).
+   #
+   method gen_code()
+      local p
+
+      #
+      # Create a Code object to contain the generated code.
+      #
+      c := Code()
+      c.set_parent_Canvas(self)
+
+      #
+      # Reset flags for button groups and checkbox groups.
+      #
+      self.button_groups.reset_code_gen_flags()
+      self.checkbox_groups.reset_code_gen_flags()
+
+      #
+      # Generate code for all the items.
+      #
+      every i := !self.items do {
+         i.gen_code(c)
+         c.line("self.add(" || i.name || ")")
+      }
+
+      every p := !(\self.event_handlers) do {
+         c.line("self.connect(self, \"" || p[2] || "\", " || p[1] || ")")
+         c.add_method(p[2], "ev")
+         c.add_import("gui")
+      }
+
+      c.add_import(self.import_name)
+
+      return c
+   end
+   
+   #
+   # Minimum width of canvas.
+   #
+   method min_width()
+      return 20
+   end
+
+   #
+   # Minimum height of canvas.
+   #
+   method min_height()
+      return 20
+   end
+
+   #
+   # Called if the canvas has been modified. 
+   #
+   method set_modified()
+      self.modified := 1
+      self.parent_dialog.set_filename_label()
+   end
+
+   #
+   # The canvas is no longer modified, ie it has been saved.
+   #
+   method clear_modified()
+      self.modified := &null
+      self.parent_dialog.set_filename_label()
+   end
+
+   #
+   # Set the filename.
+   #
+   method set_filename(s)
+      self.filename := s
+      self.parent_dialog.set_filename_label()
+   end
+   
+   #
+   # Reset fields to an original state.
+   #
+   method new()
+      self.reset_selections()
+      gen_main := gen_component_setup := gen_initially := gen_init_dialog := 1
+      self.gen_indent := 3
+      self.name_table := table(0)
+      self.name := "Untitled"
+      self.superclass_name := "Dialog"
+      self.import_name := "gui"
+      self.selected := &null
+      self.items := []
+      self.button_groups := ButtonGroupSet()
+      self.button_groups.set_parent_Canvas(self)
+      self.checkbox_groups := CheckBoxGroupSet()
+      self.checkbox_groups.set_parent_Canvas(self)
+      self.dialog_struct := CDialog()
+   end
+
+   method get_template()
+      return [["Name Table", "name_table"],
+              ["SuperClass Name", "superclass_name"],
+              ["Import Name", "import_name"],
+              ["Button Groups", "button_groups"],
+              ["Checkbox Groups", "checkbox_groups"],
+              ["Gen Indent", "gen_indent"],
+              ["Gen Main", "gen_main"],
+              ["Gen Component Setup", "gen_component_setup"],
+              ["Gen Init Dialog", "gen_init_dialog"],
+              ["Gen Initially", "gen_initially"],
+              ["Dialog Struct", "dialog_struct"],
+              ["Name", "name"],
+              ["Width", "w"],
+              ["Height", "h"],
+              ["Items", "items"],
+              ["Initial Focus", "initial_focus"],
+              ["Event Handlers", "event_handlers"]
+              ]
+   end
+
+   #
+   # Restore a fresh tree (from Load or Undo) with fields.
+   #
+   method restore()
+      self.resize()
+      self.firstly()
+      every c := !items do {
+         c.set_parent(self)
+         c.final_setup(self.dialog_struct, self)
+         c.resize()
+         c.firstly()
+      }
+   end
+
+   #
+   # Erase the area and re-display.
+   #
+   method erase_and_display()
+      clear_borders_flag := 1
+      invalidate()
+   end
+
+   #
+   # Return a copy of the Canvas.
+   #
+   method dup()
+      c := Canvas()
+      c.parent_dialog := self.parent_dialog
+      c.button_groups := self.button_groups.dup(c)
+      c.checkbox_groups := self.checkbox_groups.dup(c)
+      c.gen_indent := self.gen_indent
+      c.gen_main := self.gen_main
+      c.gen_component_setup := self.gen_component_setup
+      c.gen_init_dialog := self.gen_init_dialog
+      c.gen_initially := self.gen_initially
+      c.name_table := copy(self.name_table)
+      c.filename := self.filename
+      c.new_file_flag := self.new_file_flag
+      c.modified := self.modified
+      c.dialog_struct := CDialog()
+      c.dialog_struct.min_width := self.dialog_struct.min_width
+      c.dialog_struct.min_height := self.dialog_struct.min_height
+      c.dialog_struct.ticker_rate := self.dialog_struct.ticker_rate
+      c.dialog_struct.attribs := copy(self.dialog_struct.attribs)
+      c.name := self.name
+      c.superclass_name := self.superclass_name
+      c.import_name := self.import_name
+      c.event_handlers := copy(\self.event_handlers)
+      c.set_pos(self.x, self.y)
+      c.set_size(self.w, self.h)
+      # 
+      # Copy the items.
+      #
+      c.items := []
+      c.selections := []
+      every put(c.items, (!self.items).dup(c))
+
+      return c
+   end
+
+   # 
+   # Open the preferences dialog.
+   #
+   method dialog()
+      return CanvasPreferencesDialog(self)
+   end
+
+   #
+   # Called once upon initialization of a canvas.
+   #
+   method firstly()
+      self.Component.firstly()
+      self.reset_windows()
+   end
+
+   #
+   # Called on resize - resize temporary window.
+   #
+   method resize()
+      self.Component.resize()
+      WAttrib(Canvas_temp_win, "size=" || self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE || "," || self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE)
+   end
+
+   #
+   # Reset the cloned and buffer windows created by gui.iol to match the Canvas's
+   # own attributes, rather than the program's.
+   #  
+   method reset_windows()
+      local t1, t2
+      Uncouple(self.cwin)
+      Uncouple(self.cbwin)
+      t1 := Couple(self.get_parent_win(), Canvas_temp_win)
+      t2 := Couple(self.get_parent_buffer_win(), Canvas_temp_win)
+      self.cwin := (Clone ! ([t1] ||| self.dialog_struct.attribs))
+      self.cbwin := (Clone ! ([t2] ||| self.dialog_struct.attribs))
+      Uncouple(t1)
+      Uncouple(t2)
+      # 
+      # The above will change the main window's pointer if this attrib is set
+      # in its attrib list; so reset the pointer to normal just in case it's
+      # changed.
+      #
+      WAttrib(self.get_parent_win(), "pointer=top left arrow", "label=Ivib")
+   end
+
+   #
+   # Display the canvas.
+   #
+   method display(buffer_flag)
+      #
+      # This is a flag to indicate whether to clear the area outside the current canvas size.
+      #
+      if \clear_borders_flag then {
+         #
+         # This flag is on at the end of a canvas drag. Erase area
+         # between right and bottom edge of canvas and edge of window.
+         #
+         EraseArea(self.parent_dialog.win, self.x + self.w + EDGE, self.y - EDGE, self.parent_dialog.get_w_reference(), self.parent_dialog.get_h_reference())
+         EraseArea(self.parent_dialog.win, self.x - EDGE, self.y + self.h + EDGE, self.parent_dialog.get_w_reference(), self.parent_dialog.get_h_reference())
+         clear_borders_flag := &null
+      } 
+
+      if \self.is_held then {
+         # 
+         # During a drag of a component
+         #
+
+         #
+         # Copy saved original to buffer. 
+         #
+         CopyArea(Canvas_temp_win, self.cbwin, 0, 0, self.w, self.h, self.x, self.y)
+         #
+         # Highlight moving object
+         #
+         moving.do_highlight(self.cbwin)
+         #
+         # Display from buffer.
+         #        
+         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+      } else if \self.is_resizing then {
+         #
+         # Resizing whole canvas.
+         #
+
+         #
+         # Copy saved original to buffer.
+         #
+         CopyArea(Canvas_temp_win, self.cbwin, 0, 0, self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE, self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE, self.x - EDGE, self.y - EDGE)
+
+         #
+         # Draw outline of new Canvas into buffer.
+         #
+         cw := Clone(self.cbwin, "linestyle=dashed")
+         Rectangle(cw, self.x - EDGE, self.y - EDGE, self.w + 2 * EDGE, self.h + 2 * EDGE)
+         Uncouple(cw)
+         
+         #
+         # Copy buffer to display.
+         #
+         CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE, self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE, self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE, self.x - EDGE, self.y - EDGE)
+      } else {
+         #
+         # Normal display
+         #
+
+         EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
+         #
+         # Draw and highlight the items.
+         #
+         every (!items).display(1)
+         every (!selections).do_highlight(self.cbwin)
+
+         #
+         # Draw the border.
+         #
+         cw := Clone(self.cbwin, "fg=black")
+         every i := 1 to EDGE do
+            Rectangle(cw, self.x - i , self.y - i, self.w + 2 * i, self.h + 2 *i)
+
+         #
+         # Draw the resizing corner in the bottom right hand corner.
+         #
+         WAttrib(cw, "fg=red")
+         every i := 1 to EDGE do
+            DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 + i, self.x + self.w - 1 + i, self.y + self.h - 1 + i, self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
+
+         Uncouple(cw)
+
+         if /buffer_flag then
+            CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE, self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE, self.y - EDGE)
+         #self.update_pos_label()
+      }
+   end
+
+   #
+   # Return whether the pointer is on the resize corner in the bottom right hand corner.
+   #
+   method in_resize_corner()
+      return ((self.x + self.w <= &x < self.x + self.w + EDGE) & (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) | ((self.x + self.w + EDGE - RSW <= &x < self.x + self.w + EDGE) & (self.y + self.h <= &y < self.y + self.h + EDGE)) 
+   end
+
+   #
+   # Handle event - just pass onto other methods.
+   #
+   method handle_event(e)
+      if e === (Key_Up | Key_Down | Key_Left | Key_Right) then
+         handle_key_move(e) 
+      else {
+         case e of {
+            &lpress : handle_lpress()
+            &ldrag : handle_ldrag()         
+            &lrelease : handle_lrelease()
+            &rpress : handle_rpress()
+         }
+         self.arrow_flag := &null
+      }
+   end
+
+   method handle_key_move(e)
+      something_selected() | fail
+
+      moving := selected
+      #
+      # Save original pos and size.
+      #
+      orig_x := moving.x
+      orig_y := moving.y
+      orig_w := moving.w
+      orig_h := moving.h
+      x_new := orig_x_spec := moving.x_spec
+      y_new := orig_y_spec := moving.y_spec
+      w_new := orig_w_spec := moving.w_spec
+      h_new := orig_h_spec := moving.h_spec
+
+      if &shift then {
+         case e of {
+            Key_Up : resize_down(orig_y + orig_h - 1)
+            Key_Down : resize_down(orig_y + orig_h + 1)
+            Key_Left : resize_right(orig_x + orig_w - 1)
+            Key_Right : resize_right(orig_x + orig_w + 1)
+         }
+      } else {
+         case e of {
+            Key_Up : move_vertically(orig_y - 1)
+            Key_Down : move_vertically(orig_y + 1)
+            Key_Left : move_horizontally(orig_x - 1)
+            Key_Right : move_horizontally(orig_x + 1)
+         }
+      }
+
+      if orig_x_spec ~== x_new | orig_y_spec ~== y_new | orig_w_spec ~== w_new | orig_h_spec ~== h_new then {
+         if /self.arrow_flag then {
+            self.parent_dialog.push_undo()
+            self.arrow_flag := 1
+         }
+         self.set_modified()
+
+         if orig_w_spec ~== w_new then
+            moving.w_default := &null
+         
+         if orig_h_spec ~== h_new then
+            moving.h_default := &null
+
+         moving.set_pos(x_new, y_new)         
+         moving.set_size(w_new, h_new)
+         moving.resize() 
+         self.check_inside()
+         self.update_pos_label()
+         invalidate()
+      }
+   end
+
+   method move_vertically(y1)
+      if /moving.y_fixed then {
+         y1 <:= self.y
+         y1 >:= self.y + self.h - orig_h
+         y_new := moving.get_y_alignment_offset() + y1 - moving.parent.get_y_reference()
+      }
+   end
+
+   method move_horizontally(x1)
+      if /moving.x_fixed then {
+         x1 <:= self.x
+         x1 >:= self.x + self.w - orig_w
+         x_new := moving.get_x_alignment_offset() + x1 - moving.parent.get_x_reference()
+      }
+   end
+
+   method resize_up(y1)
+      if /moving.h_fixed then {
+         if moving.y_align == "c" then {
+            y1 <:= max(self.y, orig_y - (self.y + self.h - orig_y - orig_h))
+            y1 >:= orig_y + (orig_h - moving.min_height()) / 2
+            h_new := orig_h + 2 * (orig_y - y1)
+         } else if /moving.y_fixed  | moving.y_align ~== "t" then {
+            y1 <:= self.y
+            y1 >:= orig_y + orig_h - moving.min_height()
+            h_new := orig_h + (orig_y - y1)
+            if moving.y_align == "t" then
+               y_new := y1 - moving.parent.get_y_reference()
+         }
+      }
+   end
+
+   method resize_down(y1)
+      if /moving.h_fixed then {
+         if moving.y_align == "c" then {
+            y1 >:= min(self.y + self.h, orig_y + orig_h + (orig_y - self.y))
+            y1 <:= orig_y + orig_h - (orig_h - moving.min_height()) / 2
+            h_new := orig_h + 2 * (y1 - (orig_y + orig_h))
+         }  else if /moving.y_fixed | moving.y_align ~== "b" then {
+            y1 >:= self.y + self.h 
+            y1 <:= orig_y + + moving.min_height()
+            h_new := orig_h + (y1 - (orig_y + orig_h))
+            if moving.y_align == "b" then
+               y_new := y1 - moving.parent.get_y_reference()
+         }
+      }
+   end
+
+   method resize_right(x1)
+      if /moving.w_fixed then {
+         if moving.x_align == "c" then {
+            x1 >:= min(self.x + self.w, orig_x + orig_w + (orig_x - self.x))
+            x1 <:= orig_x + orig_w - (orig_w - moving.min_width()) / 2
+            w_new := orig_w + 2 * (x1 - (orig_x + orig_w))
+         } else if /moving.x_fixed | moving.x_align ~== "r" then {
+            x1 >:= self.x + self.w 
+            x1 <:= orig_x + + moving.min_width()
+            w_new := orig_w + (x1 - (orig_x + orig_w))
+            if moving.x_align == "r" then
+               x_new := x1 - moving.parent.get_x_reference()
+         }
+      }
+
+   end
+
+   method resize_left(x1)
+      if /moving.w_fixed then {
+         if moving.x_align == "c" then {
+            #
+            # x won't change; work out new width. 
+            #
+            x1 <:= max(self.x, orig_x - (self.x + self.w - orig_x - orig_w))
+            x1 >:= orig_x + (orig_w - moving.min_width()) / 2
+            w_new := orig_w + 2 * (orig_x - x1)
+         } else if /moving.x_fixed | moving.x_align ~== "l" then {
+            #
+            # Work out new width, and if appropriate x.
+            #
+            x1 <:= self.x
+            x1 >:= orig_x + orig_w - moving.min_width()
+            w_new := orig_w + (orig_x - x1)
+            if moving.x_align == "l"  then
+               x_new := x1 - moving.parent.get_x_reference()
+         }
+      }
+   end
+
+   method check_inside()
+      local obj
+
+      #
+      # Compute which object the moving item is in (may be canvas itself
+      # if not in anything else).
+      #
+      obj := self.inside(moving)
+
+      #
+      # If already in obj then inform the containing object
+      #
+      if moving.parent === obj then
+         moving.parent.still_inside(moving)
+      else {
+         #
+         # Not in old container.  Post a message.
+         #
+         self.parent_dialog.info_label.set_label(if obj === self then "Placed back in canvas" else "Placed inside container")
+
+         #
+         # Take it out of the one it's currently in ...
+         #
+         moving.parent.place_outside(moving)
+
+         #
+         # ... and put it in the new one.
+         #
+         obj.place_inside(moving)            
+      } 
+   end
+
+   #
+   # Handle left button press.
+   #
+   method handle_lpress()
+      #
+      # If the cursor is over an object...
+      #
+      if moving := self.which_cursor_over() then {
+         #
+         # Select this object.
+         #
+         self.select(moving)
+
+         #
+         # Save for possible push onto undo list.
+         #
+         self.tmp_dup := self.dup()
+
+         #
+         # Reset flags.
+         #
+         self.is_held := 1
+
+         #
+         # Determine which corner the cursor is over; resize_mode null implies
+         # moving not resizing.
+         #
+         self.resize_mode := moving.in_resize_region()
+
+         #
+         # Display into buffer
+         #
+         self.invalidate()
+
+         #
+         # Set up the offsets depending on what we're doing; also change
+         # the pointer to an appropriate image.
+         #
+         case self.resize_mode of {
+            #
+            # Resizing from top left corner
+            #
+            1 : {
+               WAttrib(self.get_parent_win(), "pointer=top left corner")
+               self.drag_x_offset := &x - moving.x
+               self.drag_y_offset := &y - moving.y
+            }
+            #
+            # Resizing from top right corner
+            #
+            2 : {
+               WAttrib(self.get_parent_win(), "pointer=top right corner")
+               self.drag_x_offset := &x - (moving.x + moving.w)
+               self.drag_y_offset := &y - moving.y
+            }
+            #
+            # Resizing from bottom left corner
+            #
+            3 : {
+               WAttrib(self.get_parent_win(), "pointer=bottom left corner")
+               self.drag_x_offset := &x - moving.x
+               self.drag_y_offset := &y - (moving.y + moving.h)
+            }
+            #
+            # Resizing from bottom right corner
+            #
+            4 : {
+               WAttrib(self.get_parent_win(), "pointer=bottom right corner")
+               self.drag_x_offset := &x - (moving.x + moving.w)
+               self.drag_y_offset := &y - (moving.y + moving.h)
+            }                              
+            #
+            # Moving, not resizing.
+            #
+            &null : {
+               WAttrib(self.get_parent_win(), "pointer=fleur")
+               self.drag_x_offset := &x - moving.x
+               self.drag_y_offset := &y - moving.y
+            }
+         }
+         
+         #
+         # Save original pos and size.
+         #
+         orig_x := moving.x
+         orig_y := moving.y
+         orig_w := moving.w
+         orig_h := moving.h
+         orig_x_spec := moving.x_spec
+         orig_y_spec := moving.y_spec
+         orig_w_spec := moving.w_spec
+         orig_h_spec := moving.h_spec
+
+         #
+         # Copy present screen to Canvas_temp_win
+         #
+         CopyArea(self.cwin, Canvas_temp_win, self.x, self.y, self.w, self.h, 0, 0)
+      } else if in_resize_corner() then {
+         #
+         # Save for possible push onto undo list.
+         #
+         self.tmp_dup := self.dup()
+
+         #
+         # Save current size.
+         #
+         orig_w := self.w
+         orig_h := self.h
+
+         #
+         # The cursor is over the canvas's resize corner.
+         #
+         self.is_resizing := 1
+
+         #
+         # Set mouse cursor.
+         #
+         WAttrib(self.get_parent_win(), "pointer=bottom right corner")
+
+         #
+         # Copy present screen to Canvas_temp_win
+         #
+         CopyArea(self.cwin, Canvas_temp_win, self.x - EDGE, self.y - EDGE, self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE, self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE, 0, 0)
+
+         #
+         # Set offsets.
+         #
+         self.drag_x_offset := &x - (self.x + self.w)
+         self.drag_y_offset := &y - (self.y + self.h)
+      } else if self.in_region() then {
+         #
+         # Not over anything but in canvas.  De-select all.
+         #
+         self.clear_selections()
+         self.invalidate()
+      }
+   end
+
+   #
+   # Mouse left drag.
+   #
+   method handle_ldrag()
+      if \self.is_held then {
+         #
+         # Moving or resizing an object.
+         #
+
+         #
+         # Adjust cursor position using offsets.
+         #
+         x1 := &x - self.drag_x_offset
+         y1 := &y - self.drag_y_offset
+
+         #
+         # Default new positions are current positions.
+         #
+         x_new := moving.x_spec
+         y_new := moving.y_spec
+         w_new := moving.w_spec
+         h_new := moving.h_spec
+
+         #
+         # Calculate new x position and width
+         #  
+         case self.resize_mode of {
+            #
+            # Resizing x from left hand side of object.
+            #
+            1 | 3 : resize_left(x1)
+
+            #
+            # Resizing x from right hand side of object.
+            #
+            2 | 4 : resize_right(x1)
+
+            #
+            # Moving
+            #
+            default : move_horizontally(x1)
+         }   
+
+         #
+         # Calculate new y position and height
+         #  
+         case self.resize_mode of {
+            #
+            # Resizing y from top of object.
+            #
+            1 | 2 : resize_up(y1)
+            
+            #
+            # Resizing y from bottom
+            #
+            3 | 4 : resize_down(y1)
+            
+            #
+            # Moving
+            #
+            default : move_vertically(y1)
+         }
+
+         #
+         # Move the moving object to new position.
+         #
+         moving.set_pos(x_new, y_new)         
+         moving.set_size(w_new, h_new)
+         moving.Component.resize()
+
+         #
+         # Update position label.
+         #
+         self.update_pos_label()
+
+         self.invalidate()
+      } else if \self.is_resizing then {
+         #
+         # Resizing whole canvas.
+         #
+
+         #
+         # Compute adjust x, y cursor position.
+         #
+         x1 := &x - self.drag_x_offset
+         y1 := &y - self.drag_y_offset
+
+         #
+         # Adjust within acceptable range.
+         #
+         x1 >:= self.get_parent_dialog().get_w_reference() - EDGE
+         x1 <:= self.x + self.min_width()
+         y1 >:= self.get_parent_dialog().get_h_reference() - EDGE
+         y1 <:= self.y + self.min_height()
+
+         w_new := x1 - self.x
+         h_new := y1 - self.y
+
+         #
+         # Resize.
+         #
+         self.set_size(w_new, h_new)
+         self.Component.resize()
+
+         self.invalidate()
+      }
+   end
+
+   # 
+   # Left button released.
+   #
+   method handle_lrelease()
+      if \self.is_held then {
+         if orig_x_spec ~== moving.x_spec | orig_y_spec ~== moving.y_spec | orig_w_spec ~== moving.w_spec | orig_h_spec ~== moving.h_spec then {
+            self.parent_dialog.push_onto_undo(self.tmp_dup)            
+            self.set_modified()
+
+            if orig_w_spec ~== moving.w_spec then
+               moving.w_default := &null
+            
+            if orig_h_spec ~== moving.h_spec then
+               moving.h_default := &null
+
+            #
+            # Resize.
+            #
+            moving.resize()
+
+            #
+            # Check whether object moved in/out of container.
+            #
+            self.check_inside()
+         }
+         #
+         # Resizing or moving an object.
+         #
+
+         # 
+         # Reset the pointer to normal.
+         #
+         WAttrib(self.get_parent_win(), "pointer=top left arrow")
+
+         #
+         # Clear flags.
+         #
+         is_held := resize_mode := &null
+
+         #
+         # Redisplay canvas & label
+         #
+         self.update_pos_label()
+         self.invalidate()
+      } else if \self.is_resizing then {
+         # 
+         # Finished resizing whole canvas.
+         #
+         if orig_w ~= self.w | orig_h ~= self.h then {         
+            self.parent_dialog.push_onto_undo(self.tmp_dup)            
+            self.set_modified()
+         }
+
+         #
+         # Clear flag.
+         #
+         is_resizing := &null
+
+         # 
+         # Reset the pointer to normal.
+         #
+         WAttrib(self.get_parent_win(), "pointer=top left arrow")
+
+         #
+         # Resize, reset all objects, and redisplay canvas.
+         #
+         self.resize()
+         every (!self.items).reset(self)
+
+         # 
+         # Redisplay after erasing any rubbish outside the new area
+         #
+         self.erase_and_display()
+      }
+   end
+
+   #
+   # Handle right button press.  Same as left button press, but without
+   # the resizing or moving functionality.
+   #
+   method handle_rpress()
+      if i := self.which_cursor_over() then {
+         self.select(i)
+         self.invalidate()
+         if not(&control) then
+            self.parent_dialog.popup_component.popup()
+      } else if self.in_region() then {
+         self.clear_selections()
+         self.invalidate()
+         if not(&control) then
+            self.parent_dialog.popup_dialog.popup()
+      }
+   end
+
+   #
+   # Fix the selected objects
+   #
+   method fix()
+      self.parent_dialog.push_undo()
+      every e := !self.selections do
+         e.y_fixed := e.x_fixed := e.h_fixed := e.w_fixed := 1
+      self.set_modified()
+   end
+
+   #
+   # Unfix the selected objects. 
+   #
+   method unfix()
+      self.parent_dialog.push_undo()
+      every e := !self.selections do
+         e.y_fixed := e.x_fixed := e.h_fixed := e.w_fixed := &null
+      self.set_modified()
+   end
+
+   #
+   # Which object is the item c in?
+   #
+   method inside(c)
+      every e := !items do
+         if o := e.inside(c) then
+            return o
+      #
+      # Not in any other item, therefore in Canvas itself.
+      #
+      return self
+   end
+
+   #
+   # Place c back into the Canvas
+   #
+   method place_inside(c)
+      #
+      # Add it to list of items.
+      #
+      self.add(c)
+
+      #
+      # Set c's x and y position, and set size to the current absolute size.
+      #
+      c.x_spec := c.get_x_alignment_offset() + c.x - self.get_x_reference()
+      c.y_spec := c.get_y_alignment_offset() + c.y - self.get_y_reference()
+      c.w_spec := c.w
+      c.h_spec := c.h
+
+      #
+      # Reset c
+      #
+      c.reset(self)
+   end
+
+   #
+   # Place c outside the canvas.
+   #
+   method place_outside(c)
+      #
+      # Search for c and delete it from the items list.
+      #
+      every i := 1 to *items do
+         if c === items[i] then
+            return items := items[1 : i] ||| items[i + 1 : 0]
+   end
+
+   #
+   # Called during a move within the container, used for example in Border class.
+   #
+   method still_inside(c)
+   end
+
+   # 
+   # Add c to the list of items.
+   #
+   method add(c)
+      put(items, c) 
+   end
+
+   #
+   # Select c
+   #
+   method select(c)
+      self.parent_dialog.clear_selection_options()
+      if &control then {
+         if not(c === !selections) then
+            put(selections, c)
+         /selected := c
+      } else {
+         selected := c
+         selections := [c]
+      }
+
+      self.update_pos_label()
+
+      return
+   end
+
+   #
+   # Which item, if any, is the cursor over?
+   #
+   method which_cursor_over()
+      if self.in_region() then {
+         #
+         # Search in reverse order so that the item displayed on top
+         # will be found first.
+         #
+         every i := rev(self.items) do
+            if o := i.which_cursor_over() then
+               return o
+      }
+   end
+
+   #
+   # Operation to create a CheckBoxGroup from the current selections.
+   #
+   method selections_to_cbg()
+      something_selected() | fail
+
+      #
+      # Check all selections are CheckBoxes.
+      #
+      every e := !selections do {
+         if /e.is_button_subclass then
+            return alert_error("You can only have subclasses of Button in a CheckBoxGroup")
+      }
+
+      self.parent_dialog.push_undo()
+
+      #
+      # Create a new group
+      #
+      n := checkbox_groups.new()
+
+      #
+      # For all selections...
+      #
+      every e := !selections do {
+         #
+         # Set the object's check_box_group field.
+         #
+         e.set_parent_check_box_group(n)
+
+         #
+         # If it's checked, clear it.
+         #
+         e.clear_is_checked()
+
+         #
+         # Reset the element as the size may have changed.
+         #
+         e.reset(e.parent)
+      }
+
+      self.set_modified()
+
+      #
+      # As we may have changed the size of the objects, we must re-display whole.
+      #
+      self.invalidate()
+   end
+
+   #
+   # Operation to create a ButtonGroup from the current selections.
+   #
+   method selections_to_bg()
+      something_selected() | fail
+
+      #
+      # Check all selections are buttons.
+      #
+      every e := !selections do {
+         if /e.is_button_subclass then
+            return alert_error("You can only have subclasses of Button in a ButtonGroup")
+      }
+
+      self.parent_dialog.push_undo()
+
+      #
+      # Create a new button group.   
+      #
+      n := button_groups.new()
+
+      #
+      # Set all the selections' pointers to the new group.
+      #
+      every e := !selections do
+         e.set_parent_button_group(n)
+
+      self.set_modified()
+   end
+
+   #
+   # Operation to delete the current selections.
+   #
+   method delete_selections()
+      something_selected() | fail
+
+      self.parent_dialog.push_undo()
+
+      #
+      # For all selections...
+      #
+      every e := !selections do
+         if \e.cbwin then {
+            #
+            # Take it out of its container, effectively disconnecting it.
+            #
+            e.parent.place_outside(e)
+
+            #
+            # Dispose of its assets.
+            #
+            e.finally()
+         }
+
+
+      #
+      # Clear selections. 
+      #
+      self.clear_selections()
+
+      self.set_modified()
+
+      #
+      # Re-display.
+      #
+      self.invalidate()
+   end
+
+   initially 
+      initial
+         Canvas_temp_win := WOpen("canvas=hidden")
+
+      self.Component.initially()
+      self.new()
+end
+
+#############################################################################
+#
+# Preferences for Canvas.
+#     
+class CanvasPreferencesDialog : CommonDialog(
+                                             c,                       # The object being edited
+                                             okay,                    # Okay button
+                                             cancel,                  # Cancel button
+                                             has_ticker,              # Checkbox + rate
+                                             text_ticker_rate,
+                                             set_min_w,               # Checkbox
+                                             min_w_spec,              # TextField
+                                             set_min_h,               # Checkbox
+                                             min_h_spec,              # TextField
+                                             w_spec,                  # TextField
+                                             h_spec,                  # TextField
+                                             okay_result,             # Flag indicating result
+                                             name,                    # TextField - object name
+                                             superclass_name,         # TextField - superclass name
+                                             import_name,             # TextField - import name
+                                             tabset,                  # TabSet
+                                             pos_tab,                 # Size/position tab
+                                             methods_tab,             # Code generation tab
+                                             attrib_tab,              # Attrib tab
+                                             gen_main,                # CheckBoxes for code generation flags
+                                             gen_component_setup,
+                                             gen_init_dialog,
+                                             gen_initially,
+                                             gen_indent,
+                                             event_tab                # Event tab
+                                             )
+
+   #
+   # Get the result
+   #  
+   method get_okay_result()
+      return self.okay_result
+   end
+
+   method on_set_min_w() 
+      min_w_spec.toggle_is_shaded()
+   end
+
+   method on_set_min_h()
+      min_h_spec.toggle_is_shaded()
+   end
+
+   method on_cancel()
+      c.parent_dialog.use_extra_undo()
+      self.dispose()
+   end
+
+   method on_has_ticker()
+      text_ticker_rate.toggle_is_shaded()
+   end
+   
+   method on_okay()
+      # 
+      # Validate data
+      #
+      if set_min_w.is_checked() & not(integer(min_w_spec.get_contents())) then
+         return alert_error("Min width not integer")
+      if set_min_h.is_checked() & not(integer(min_h_spec.get_contents())) then
+         return alert_error("Min height not integer")
+      integer(self.gen_indent.get_contents()) | return alert_error("Indent not integer")
+      integer(w_spec.get_contents()) | return alert_error("Invalid width")
+      integer(h_spec.get_contents()) | return alert_error("Invalid height")
+      util_check_attribs(self, attrib_tab.get_contents()) | fail
+
+      #
+      # Set some values.
+      #
+      if has_ticker.is_checked() then
+         c.dialog_struct.ticker_rate := integer(text_ticker_rate.get_contents()) | return alert_error("ticker rate not integer")
+      else
+         c.dialog_struct.ticker_rate := &null
+
+      c.dialog_struct.min_width := if set_min_w.is_checked() then integer(min_w_spec.get_contents()) else &null
+      c.dialog_struct.min_height := if set_min_h.is_checked() then integer(min_h_spec.get_contents()) else &null
+
+      #
+      # Set the attribs list.
+      #
+      c.dialog_struct.attribs := []
+      every pair := !attrib_tab.get_contents() do
+         put(c.dialog_struct.attribs, pair[1] || "=" || pair[2])
+      c.event_handlers := event_tab.get_contents()
+      c.gen_main := if self.gen_main.is_checked() then 1 else &null
+      c.gen_component_setup := if self.gen_component_setup.is_checked() then 1 else &null
+      c.gen_init_dialog := if self.gen_init_dialog.is_checked() then 1 else &null
+      c.gen_initially := if self.gen_initially.is_checked() then 1 else &null
+      c.gen_indent := integer(self.gen_indent.get_contents()) 
+      c.set_size(w_spec.get_contents(), h_spec.get_contents())
+      c.resize()
+      c.reset_windows()
+      c.set_name(name.get_contents())
+      c.superclass_name := self.superclass_name.get_contents()
+      c.import_name := self.import_name.get_contents()
+      every (!c.items).reset(c)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      self.CommonDialog.initially()
+      c.parent_dialog.save_extra_undo()
+      label := "Dialog Preferences"
+      self.set_attribs("size=500,400", "label=" || label)
+
+      tabset := TabSet()
+      tabset.set_pos("50%", 25)
+      tabset.set_size("100%-50", "100%-85")
+      tabset.set_align("c", "t")
+      add(tabset)
+
+      pos_tab := TabItem()
+      pos_tab.set_label("Size")
+      tabset.add(pos_tab)
+
+      set_min_w := CheckBox()
+      set_min_w.set_label("Min W : ")
+      set_min_w.set_pos(50, 40)
+      set_min_w.set_align("l", "c")
+      set_min_w.connect(self, "on_set_min_w", ACTION_EVENT)
+      pos_tab.add(set_min_w)
+
+      min_w_spec := TextField()
+      min_w_spec.set_pos(200, 40)
+      min_w_spec.set_size(130)
+      min_w_spec.set_align("l", "c")
+      if \c.dialog_struct.min_width then {
+         min_w_spec.set_contents(c.dialog_struct.min_width)
+         set_min_w.set_is_checked()
+      } else {
+         min_w_spec.set_is_shaded()
+         min_w_spec.set_contents(c.w)
+      }
+      pos_tab.add(min_w_spec)
+
+      set_min_h := CheckBox()
+      set_min_h.set_label("Min H : ")
+      set_min_h.set_pos(50,  80)
+      set_min_h.set_align("l", "c")
+      set_min_h.connect(self, "on_set_min_h", ACTION_EVENT)
+      pos_tab.add(set_min_h)
+
+      min_h_spec := TextField()
+      min_h_spec.set_pos(200,  80)
+      min_h_spec.set_size(130)
+      min_h_spec.set_align("l", "c")
+      if \c.dialog_struct.min_height then {
+         min_h_spec.set_contents(c.dialog_struct.min_height)
+         set_min_h.set_is_checked()
+      } else {
+         min_h_spec.set_is_shaded()
+         min_h_spec.set_contents(c.h)
+      } 
+      pos_tab.add(min_h_spec)
+
+      l := Label()
+      l.set_label("W : ")
+      l.set_pos(50, 120)
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      w_spec := TextField()
+      w_spec.set_pos(200, 120)
+      w_spec.set_size(130)
+      w_spec.set_align("l", "c")
+      w_spec.set_contents(c.w)
+      pos_tab.add(w_spec)
+
+      l := Label()
+      l.set_label("H : ")
+      l.set_pos(50, 160)
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      h_spec := TextField()
+      h_spec.set_pos(200, 160)
+      h_spec.set_size(130)
+      h_spec.set_align("l", "c")
+      h_spec.set_contents(c.h)
+      pos_tab.add(h_spec)
+
+      ll := []
+      every s := !c.dialog_struct.attribs do {
+         s ? {
+            a := tab(upto('='))
+            move(1)
+            l := tab(0)
+         }
+         put(ll, [a, l])
+      }
+      self.attrib_tab := AttribTab(ll)
+      tabset.add(self.attrib_tab)
+
+      methods_tab := TabItem()
+      methods_tab.set_label("Methods")
+      tabset.add(methods_tab)
+
+      gen_main := CheckBox()
+      gen_main.set_label("Generate main() procedure")
+      gen_main.set_pos(50, 40)
+      gen_main.set_align("l", "c")
+      methods_tab.add(gen_main)
+
+      gen_component_setup := CheckBox()
+      gen_component_setup.set_label("Generate component_setup() method")
+      gen_component_setup.set_pos(50, 80)
+      gen_component_setup.set_align("l", "c")
+      methods_tab.add(gen_component_setup)
+
+      gen_init_dialog := CheckBox()
+      gen_init_dialog.set_label("Generate init_dialog() & end_dialog() methods")
+      gen_init_dialog.set_pos(50, 120)
+      gen_init_dialog.set_align("l", "c")
+      methods_tab.add(gen_init_dialog)
+
+      gen_initially := CheckBox()
+      gen_initially.set_label("Generate initially method")
+      gen_initially.set_pos(50, 160)
+      gen_initially.set_align("l", "c")
+      methods_tab.add(gen_initially)
+
+      if \c.gen_main then
+         gen_main.set_is_checked()
+
+      if \c.gen_component_setup then
+         gen_component_setup.set_is_checked()
+
+      if \c.gen_init_dialog then
+         gen_init_dialog.set_is_checked()
+
+      if \c.gen_initially then
+         gen_initially.set_is_checked()
+
+
+      l := Label()
+      l.set_label("Indent")
+      l.set_pos(50, 200)
+      l.set_align("l", "c")
+      methods_tab.add(l)
+
+      gen_indent := TextField()
+      gen_indent.set_size(50)
+      gen_indent.set_pos(150, 200)
+      gen_indent.set_align("l", "c")
+      methods_tab.add(gen_indent)
+      gen_indent.set_contents(c.gen_indent)
+      
+      code_tab := TabItem()
+      code_tab.set_label("Code")
+      tabset.add(code_tab)
+
+      l := Label()
+      l.set_label("Name")
+      l.set_pos(50, 40)
+      l.set_align("l", "c")
+      code_tab.add(l)
+
+      name := TextField()
+      name.set_size(200)
+      name.set_pos(200, 40)
+      name.set_align("l", "c")
+      code_tab.add(name)
+
+      name.set_contents(c.name)
+
+      text_ticker_rate := TextField()
+      text_ticker_rate.set_size(200)
+      text_ticker_rate.set_pos(200, 80)
+      text_ticker_rate.set_align("l", "c")
+      code_tab.add(text_ticker_rate)
+
+      has_ticker := CheckBox()
+      has_ticker.connect(self, "on_has_ticker", ACTION_EVENT)
+      has_ticker.set_label("Has ticker at rate")
+      has_ticker.set_pos(50, 80)
+      has_ticker.set_align("l", "c")
+      if \c.dialog_struct.ticker_rate then {
+         has_ticker.set_is_checked()
+         text_ticker_rate.set_contents(string(c.dialog_struct.ticker_rate))
+      } else
+         text_ticker_rate.set_is_shaded()
+
+      code_tab.add(has_ticker)
+
+      l := Label()
+      l.set_label("Import")
+      l.set_pos(50, "160")
+      l.set_align("l", "c")
+      code_tab.add(l)
+
+      self.import_name := TextField()
+      self.import_name.set_size(200)
+      self.import_name.set_pos("200", "160")
+      self.import_name.set_align("l", "c")
+      code_tab.add(self.import_name)
+      self.import_name.set_contents(c.import_name)
+
+      l := Label()
+      l.set_label("Superclass")
+      l.set_pos("50", "120")
+      l.set_align("l", "c")
+      code_tab.add(l)
+
+      self.superclass_name := TextField()
+      self.superclass_name.set_size(200)
+      self.superclass_name.set_pos("200", "120")
+      self.superclass_name.set_align("l", "c")
+      code_tab.add(self.superclass_name)
+      self.superclass_name.set_contents(c.superclass_name)
+
+      event_tab := EventTab(c.event_handlers, name)
+      tabset.add(event_tab)
+
+      okay := TextButton()
+      okay.connect(self, "on_okay", ACTION_EVENT)
+      okay.set_pos("33%", "100%-30")
+      okay.set_align("c", "c")
+      okay.set_label("Okay")
+      self.add(okay)
+
+      cancel := TextButton()
+      cancel.connect(self, "on_cancel", ACTION_EVENT)
+      cancel.set_pos("66%", "100%-30")
+      cancel.set_align("c", "c")
+      cancel.set_label("Cancel")
+      self.add(cancel)
+end
+

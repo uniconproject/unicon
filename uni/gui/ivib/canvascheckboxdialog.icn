@@ -1,0 +1,48 @@
+#
+# $Id: canvascheckboxdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+
+import gui
+$include "guih.icn"
+
+
+############################################################################
+#
+#
+#
+class CanvasCheckBoxDialog : CanvasButtonDialog(
+   c
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_in_checkbox_group()
+      self.CanvasButtonDialog.on_in_checkbox_group()
+      if in_checkbox_group.is_checked() then {
+         if self.icon_up.img == img_style("box_up") & self.icon_down.img == img_style("box_down") then {
+            self.icon_up.set_img(img_style("diamond_up"))
+            self.icon_down.set_img(img_style("diamond_down"))
+         }
+      } else {
+         if self.icon_up.img == img_style("diamond_up") & self.icon_down.img == img_style("diamond_down") then {
+            self.icon_up.set_img(img_style("box_up"))
+            self.icon_down.set_img(img_style("box_down"))
+         }
+      }
+   end
+
+   initially
+      self.setup(c)
+      self.set_attribs("size=540,400", "label=" || label)
+end

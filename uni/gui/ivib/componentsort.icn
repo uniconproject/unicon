@@ -1,0 +1,31 @@
+#
+# $Id: componentsort.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import util
+
+
+############################################################################
+#
+# A class for sorting GridElements.
+#
+class ComponentSort : Comparator(
+   elements
+   )
+
+   method enter(c)
+      put(elements, GridElement(c))
+   end
+
+   method get_sorted_elements()
+      util::qsort(elements, self)
+      return elements
+   end
+
+   initially
+      elements := []
+end

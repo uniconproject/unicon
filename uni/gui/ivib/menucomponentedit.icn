@@ -1,0 +1,177 @@
+#
+# $Id: menucomponentedit.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+import lang
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class MenuComponentEdit : CommonDialog(
+   name,                    #            
+   class_name,              # Class name
+   import_name,             # TextField - import name
+   okay,                    #            
+   cancel,                  #              
+   label,                   # Dialog title
+   tabset,
+   code_tab,
+   var_category0,           # Checkboxes for variable category
+   var_category1,           #  
+   var_category_cbg,        #
+   event_flag,
+   event_method
+   )
+
+   method on_event_flag()
+      event_method.toggle_is_shaded()
+      if not(event_method.is_shaded()) & *event_method.get_contents() = 0 then
+         event_method.set_contents("on_" || name.get_contents())
+   end
+
+   #
+   # Add the tab to the TabSet
+   #
+   method add_tab(t) 
+      tabset.add(t)
+   end
+
+   #
+   # Add the tab to the TabSet, as the first item
+   #
+   method add_tab_at_front(t) 
+      tabset.add_front(t)
+   end
+
+   method setup(c)
+      lang::get_class_name(c) ? {
+         ="Canvas"
+         label := tab(0) || " Setup"
+      }
+
+      okay := TextButton()
+      okay.connect(self, "on_okay", ACTION_EVENT)
+      okay.set_pos("33%", "100%-30")
+      okay.set_align("c", "c")
+      okay.set_label("Okay")
+      self.add(okay)
+
+      cancel := TextButton()
+      cancel.connect(self, "on_cancel", ACTION_EVENT)
+      cancel.set_pos("66%", "100%-30")
+      cancel.set_align("c", "c")
+      cancel.set_label("Cancel")
+      self.add(cancel)
+
+      tabset := TabSet()
+      tabset.set_pos("50%", 25)
+      tabset.set_size("100%-50", "100%-85")
+      tabset.set_align("c", "t")
+      add(tabset)
+
+      code_tab := TabItem()
+      code_tab.set_label("Code")
+      tabset.add(code_tab)
+
+      event_method := TextField()
+      event_method.set_size(200)
+      event_method.set_pos("200", "40")
+      event_method.set_align("l", "c")
+      code_tab.add(event_method)
+
+      event_flag := CheckBox()
+      event_flag.connect(self, "on_event_flag", ACTION_EVENT)
+      event_flag.set_label("Event handler")
+      event_flag.set_pos("50", "40")
+      event_flag.set_align("l", "c")
+      if /c.event_method then
+         event_method.set_is_shaded()
+      else  {
+         event_flag.set_is_checked()
+         event_method.set_contents(c.event_method)
+      }
+      code_tab.add(event_flag)
+
+      var_category_cbg := CheckBoxGroup()
+
+      var_category0 := CheckBox()
+      var_category0.set_label("Class variable")
+      var_category0.set_pos("50", "80")
+      var_category0.set_align("l", "c")
+      var_category_cbg.add(var_category0)
+      code_tab.add(var_category0)
+
+      var_category1 := CheckBox()
+      var_category1.set_label("Local setup variable")
+      var_category1.set_pos("200", "80")
+      var_category1.set_align("l", "c")
+      var_category_cbg.add(var_category1)
+      code_tab.add(var_category1)
+
+      if \c.class_variable then
+         var_category_cbg.set_which_one(var_category0)
+      else
+         var_category_cbg.set_which_one(var_category1)
+
+      l := Label()
+      l.set_label("Import")
+      l.set_pos(50, "120")
+      l.set_align("l", "c")
+      code_tab.add(l)
+
+      self.import_name := TextField()
+      self.import_name.set_size(200)
+      self.import_name.set_pos("200", "120")
+      self.import_name.set_align("l", "c")
+      code_tab.add(self.import_name)
+      self.import_name.set_contents(c.import_name)
+
+      l := Label()
+      l.set_label("Object name")
+      l.set_pos(50, 160)
+      l.set_align("l", "c")
+      code_tab.add(l)
+
+      name := TextField()
+      name.set_size(200)
+      name.set_pos(200, 160)
+      name.set_align("l", "c")
+      code_tab.add(name)
+
+      name.set_contents(c.name)
+
+      l := Label()
+      l.set_label("Class name")
+      l.set_pos(50, 200)
+      l.set_align("l", "c")
+      code_tab.add(l)
+
+      self.class_name := TextField()
+      self.class_name.set_size(200)
+      self.class_name.set_pos(200, 200)
+      self.class_name.set_align("l", "c")
+      code_tab.add(self.class_name)
+
+      self.class_name.set_contents(c.class_name)
+
+   end
+
+   method set_vals(c)
+      c.set_name(name.get_contents())
+      c.set_class_name(self.class_name.get_contents())
+      c.set_import_name(self.import_name.get_contents())
+
+      c.event_method := if event_flag.is_checked() then event_method.get_contents() else &null
+      c.class_variable := case var_category_cbg.get_which_one() of {
+         var_category0 : 1
+         var_category1 : &null
+      }
+   end
+end

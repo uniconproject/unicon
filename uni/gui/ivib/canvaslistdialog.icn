@@ -1,0 +1,136 @@
+#
+# $Id: canvaslistdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasListDialog : CanvasComponentDialog(
+   c,                       #         
+   selection_list,          #                      
+   set_selection,           #                     
+   selection,               #                 
+   use_constant_label,      #                          
+   constant_label,          #                      
+   group,                   #             
+   default_setting          #
+   )
+
+   method on_okay()
+      #
+      # Validate
+      #
+      if (group.get_which_one() === set_selection) & not(integer(selection.get_contents())) then
+         return alert_error("Selection is non-integer")
+
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_selection_list(selection_list.get_contents())
+
+      c.constant_label := &null
+      c.selection := 1
+      case group.get_which_one() of {
+         use_constant_label : c.set_constant_label(constant_label.get_contents())
+         set_selection : c.set_selection(integer(selection.get_contents()))
+         default_setting : c.set_selection(1)
+      }
+      c.l.set_label(\c.constant_label | c.selection_list[c.selection])
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_use_constant_label()
+      selection.set_is_shaded()
+      constant_label.clear_is_shaded() 
+   end
+
+   method on_set_selection()
+      selection.clear_is_shaded()
+      constant_label.set_is_shaded() 
+   end
+
+   method on_default_setting()
+      c.set_selection(1)
+      selection.set_is_shaded()
+      constant_label.set_is_shaded() 
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      selection_list := EditableTextList()
+      selection_list.set_size(150, "100%-50")
+      selection_list.set_pos(25, 25)
+      selection_list.set_contents(copy(c.selection_list))
+      p.add(selection_list)
+
+      group := CheckBoxGroup()
+
+      set_selection := CheckBox()
+      set_selection.connect(self, "on_set_selection", ACTION_EVENT)
+      set_selection.set_label("Set selection")
+      set_selection.set_pos(200, 35)
+      set_selection.set_align("l", "c")
+      p.add(set_selection)
+      group.add(set_selection)
+
+      selection := TextField()
+      selection.set_size(100)
+      selection.set_pos(350, 35)
+      selection.set_align("l", "c")
+      selection.set_contents(c.selection)
+      p.add(selection)
+
+      use_constant_label := CheckBox()
+      use_constant_label.connect(self, "on_use_constant_label", ACTION_EVENT)
+      use_constant_label.set_label("Set constant_label")
+      use_constant_label.set_pos(200, 85)
+      use_constant_label.set_align("l", "c")
+      p.add(use_constant_label)
+      group.add(use_constant_label)
+
+      constant_label := TextField()
+      constant_label.set_size(100)
+      constant_label.set_pos(350, 85)
+      constant_label.set_align("l", "c")
+      p.add(constant_label)
+
+      default_setting := CheckBox()
+      default_setting.connect(self, "on_default_setting", ACTION_EVENT)
+      default_setting.set_label("Default")
+      default_setting.set_pos(200, 135)
+      default_setting.set_align("l", "c")
+      p.add(default_setting)
+      group.add(default_setting)
+
+      if \c.constant_label then {
+         group.set_which_one(use_constant_label)
+         constant_label.set_contents(c.constant_label)
+         selection.set_is_shaded()
+      } else if c.selection ~= 1 then {
+         group.set_which_one(set_selection)
+         constant_label.set_is_shaded()
+      } else {
+         group.set_which_one(default_setting)
+         selection.set_is_shaded()
+         constant_label.set_is_shaded()
+      }
+
+end

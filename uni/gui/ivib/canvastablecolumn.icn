@@ -1,0 +1,75 @@
+#
+# $Id: canvastablecolumn.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a TableColumn on the canvas.
+#
+class CanvasTableColumn : CanvasComponent : TableColumn()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      c.add_var(self.name, &null)
+      c.add_import(self.import_name)
+      c.line(name || " := " || self.class_name || "()")
+      c.line(name || ".set_label(" || image(self.label) || ")")
+      c.line(name || ".set_internal_alignment(" || image(self.internal_alignment) || ")")
+      c.line(name || ".set_column_width(" || self.column_width || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.label := self.label
+      c.column_width := self.column_width
+      c.internal_alignment := self.internal_alignment
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTableColumn()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTableColumn()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Name", "name"],
+              ["Label", "label"],
+              ["Column Width", "column_width"],
+              ["Internal Alignment", "internal_alignment"]
+              ]
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.TableColumn.initially()
+      self.class_name := "TableColumn"
+      self.import_name := "gui"
+      self.name := "table_column"
+end

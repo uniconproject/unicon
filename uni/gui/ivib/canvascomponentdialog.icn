@@ -1,0 +1,492 @@
+#
+# $Id: canvascomponentdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+import lang
+
+$include "guih.icn"
+
+############################################################################
+#
+# Parent class for all CanvasComponent configuration dialogs.
+#
+class CanvasComponentDialog : CommonDialog(
+   size_list,               # List of sizes to select from
+   align_list,              # List of alignments   
+   x_spec,                  # EditLists for pos & size
+   y_spec,                  #              
+   w_spec,                  #              
+   h_spec,                  #              
+   set_w_default,           # CheckBoxes                     
+   set_h_default,           #                     
+   align_spec,              # List for align specification                 
+   draw_border,             # CheckBoxes                  
+   shaded,                  #              
+   name,                    # TextField - object name           
+   class_name,              # TextField - class name
+   import_name,             # TextField - import name
+   tooltip_flag,            # Tooltip on/off
+   tooltip,                 # TextField - tooltip
+   accel_flag,              # Accel on/off
+   accel,                   # TextField - accel
+   okay,                    # Buttons           
+   cancel,                  #              
+   pos_tab,                 # Tabs in TabSet              
+   name_tab,                #                 
+   other_tab,               #                 
+   code_tab,                #
+   tabset,                  #                  
+   set_x_fixed,             # CheckBoxes to fix pos/size                  
+   set_y_fixed,             #                   
+   set_w_fixed,             #                   
+   set_h_fixed,             #                   
+   var_category0,           # Checkboxes for variable category
+   var_category1,           #  
+   var_category_cbg,        #
+   has_initial_focus,       # CheckBox                        
+   attrib_tab,              # Attribs tab
+   event_tab,               # Event tab
+   label,                   # Dialog title
+   okay_result              # Result flag
+   )
+
+   #
+   # Get result flag
+   #
+   method get_okay_result()
+      return self.okay_result
+   end
+
+   method on_set_w_default()
+      w_spec.toggle_is_shaded()
+   end
+
+   method on_set_h_default()
+      h_spec.toggle_is_shaded()
+   end
+
+   method on_tooltip_flag()
+      tooltip.toggle_is_shaded()
+   end
+
+   method on_accel_flag()
+      accel.toggle_is_shaded()
+   end
+
+   method on_cancel()
+      self.dispose()
+   end
+
+   abstract method on_okay()
+
+   #
+   # Add the tab to the TabSet
+   #
+   method add_tab(t) 
+      tabset.add(t)
+   end
+
+   #
+   # Add the tab to the TabSet, as the first item
+   #
+   method add_tab_at_front(t) 
+      tabset.add_front(t)
+   end
+
+   #
+   # Set up the dialog fields.  This will be called from the initially method
+   # of subclasses.
+   #
+   method setup(c)
+      self.CommonDialog.initially()
+
+      size_list := ["0", "20%", "25%", "33%", "40%", "50%", "66%", "75%", "80%", "100%"]
+      align_list := ["(l, t)", "(l, c)", "(l, b)", "(c, t)", "(c, c)", "(c, b)", "(r, t)", "(r, c)", "(r, b)"]
+
+      lang::get_class_name(c) ? {
+         ="Canvas"
+         label := tab(0) || " Setup"
+      }
+
+      tabset := TabSet()
+      tabset.set_pos("50%", 25)
+      tabset.set_size("100%-50", "100%-85")
+      tabset.set_align("c", "t")
+      add(tabset)
+
+      pos_tab := TabItem("label=Pos & Size", "accel=p")
+      tabset.add(pos_tab)
+
+      l := Label()
+      l.set_label("X : ")
+      l.set_pos(50, "40")
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      x_spec := EditList()
+      x_spec.set_pos(80, "40")
+      x_spec.set_size(130)
+      x_spec.set_align("l", "c")
+      x_spec.set_selection_list(size_list)
+      x_spec.set_contents(c.x_spec)
+      pos_tab.add(x_spec)
+
+      set_x_fixed := CheckBox()
+      set_x_fixed.set_label("Fix")
+      set_x_fixed.set_pos(230, "40")
+      set_x_fixed.set_align("l", "c")
+      if \c.x_fixed then
+         set_x_fixed.set_is_checked()
+      pos_tab.add(set_x_fixed)
+
+      l := Label()
+      l.set_label("Alignment : ")
+      l.set_pos(300, "40")
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      align_spec := List()
+      align_spec.set_pos(375, "40")
+      align_spec.set_size(75)
+      align_spec.set_align("l", "c")
+      align_spec.set_selection_list(align_list)
+      align_spec.set_selection(case c.x_align || c.y_align of {
+           "lt" : 1
+           "lc" : 2
+           "lb" : 3
+           "ct" : 4
+           "cc" : 5
+           "cb" : 6
+           "rt" : 7
+           "rc" : 8 
+           "rb" : 9 })
+
+      pos_tab.add(align_spec)
+
+      l := Label()
+      l.set_label("Y : ")
+      l.set_pos(50, "80")
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      y_spec := EditList()
+      y_spec.set_pos(80, "80")
+      y_spec.set_size(130)
+      y_spec.set_align("l", "c")
+      y_spec.set_selection_list(size_list)
+      y_spec.set_contents(c.y_spec)
+      pos_tab.add(y_spec)
+
+      set_y_fixed := CheckBox()
+      set_y_fixed.set_label("Fix")
+      set_y_fixed.set_pos(230, "80")
+      set_y_fixed.set_align("l", "c")
+      if \c.y_fixed then
+         set_y_fixed.set_is_checked()
+      pos_tab.add(set_y_fixed)
+
+      l := Label()
+      l.set_label("W : ")
+      l.set_pos(50, "120")
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      w_spec := EditList()
+      w_spec.set_pos(80, "120")
+      w_spec.set_size(130)
+      w_spec.set_align("l", "c")
+      w_spec.set_selection_list(size_list)
+      w_spec.set_contents(c.w_spec)
+      pos_tab.add(w_spec)
+
+      set_w_fixed := CheckBox()
+      set_w_fixed.set_label("Fix")
+      set_w_fixed.set_pos(230, "120")
+      set_w_fixed.set_align("l", "c")
+      if \c.w_fixed then
+         set_w_fixed.set_is_checked()
+      pos_tab.add(set_w_fixed)
+
+      set_w_default := CheckBox()
+      set_w_default.connect(self, "on_set_w_default", ACTION_EVENT)
+      set_w_default.set_label("Use default")
+      set_w_default.set_pos(300, "120")
+      set_w_default.set_align("l", "c")
+      if \c.w_default then {
+         set_w_default.set_is_checked()
+         w_spec.set_is_shaded()
+      }
+      pos_tab.add(set_w_default)
+
+      l := Label()
+      l.set_label("H : ")
+      l.set_pos(50, "160")
+      l.set_align("l", "c")
+      pos_tab.add(l)
+
+      h_spec := EditList()
+      h_spec.set_pos(80, "160")
+      h_spec.set_size(130)
+      h_spec.set_align("l", "c")
+      h_spec.set_selection_list(size_list)
+      h_spec.set_contents(c.h_spec)
+      pos_tab.add(h_spec)
+
+      set_h_fixed := CheckBox()
+      set_h_fixed.set_label("Fix")
+      set_h_fixed.set_pos(230, "160")
+      set_h_fixed.set_align("l", "c")
+      if \c.h_fixed then
+         set_h_fixed.set_is_checked()
+      pos_tab.add(set_h_fixed)
+
+      set_h_default := CheckBox()
+      set_h_default.connect(self, "on_set_h_default", ACTION_EVENT)
+      set_h_default.set_label("Use default")
+      set_h_default.set_pos(300, "160")
+      set_h_default.set_align("l", "c")
+      if \c.h_default then {
+         set_h_default.set_is_checked()
+         h_spec.set_is_shaded()
+      }
+      pos_tab.add(set_h_default)
+
+      #
+      # Parse the object's attributes into a list of pairs for
+      # the table contents.
+      #
+      ll := []
+      every s := !c.attribs do {
+         s ? {
+             a := tab(upto('='))
+             move(1)
+             l := tab(0)
+         }
+         put(ll, [a, l])
+      }
+      self.attrib_tab := AttribTab(ll)
+      tabset.add(self.attrib_tab)
+
+      name_tab := TabItem("label=Name", "accel=n")
+      tabset.add(name_tab)
+      l := Label()
+      l.set_label("Import")
+      l.set_pos(50, "40")
+      l.set_align("l", "c")
+      name_tab.add(l)
+
+      self.import_name := TextField()
+      self.import_name.set_size(200)
+      self.import_name.set_pos("200", "40")
+      self.import_name.set_align("l", "c")
+      name_tab.add(self.import_name)
+      self.import_name.set_contents(c.import_name)
+
+      l := Label()
+      l.set_label("Name")
+      l.set_pos(50, "80")
+      l.set_align("l", "c")
+      name_tab.add(l)
+
+      name := TextField()
+      name.set_size(200)
+      name.set_pos(200, "80")
+      name.set_align("l", "c")
+      name_tab.add(name)
+      name.set_contents(c.name)
+
+      l := Label()
+      l.set_label("Class")
+      l.set_pos("50", "120")
+      l.set_align("l", "c")
+      name_tab.add(l)
+
+      self.class_name := TextField()
+      self.class_name.set_size(200)
+      self.class_name.set_pos("200", "120")
+      self.class_name.set_align("l", "c")
+      name_tab.add(self.class_name)
+      self.class_name.set_contents(c.class_name)
+
+      other_tab := TabItem("label=Other", "accel=o")
+      tabset.add(other_tab)
+
+      tooltip := TextField()
+      tooltip.set_size(125)
+      tooltip.set_pos("200", "40")
+      tooltip.set_align("l", "c")
+      other_tab.add(tooltip)
+
+      tooltip_flag := CheckBox()
+      tooltip_flag.connect(self, "on_tooltip_flag", ACTION_EVENT)
+      tooltip_flag.set_label("Set Tooltip")
+      tooltip_flag.set_pos("50", "40")
+      tooltip_flag.set_align("l", "c")
+      if /c.tooltip then
+         tooltip.set_is_shaded()
+      else  {
+         tooltip_flag.set_is_checked()
+         tooltip.set_contents(c.tooltip)
+      }
+      other_tab.add(tooltip_flag)
+
+      accel := TextField()
+      accel.set_size(125)
+      accel.set_pos("200", "80")
+      accel.set_align("l", "c")
+      other_tab.add(accel)
+
+      accel_flag := CheckBox()
+      accel_flag.connect(self, "on_accel_flag", ACTION_EVENT)
+      accel_flag.set_label("Set Accelerator")
+      accel_flag.set_pos("50", "80")
+      accel_flag.set_align("l", "c")
+      if /c.accel then
+         accel.set_is_shaded()
+      else  {
+         accel_flag.set_is_checked()
+         accel.set_contents(c.accel)
+      }
+      other_tab.add(accel_flag)
+      draw_border := CheckBox()
+      draw_border.set_label("Draw Border")
+      draw_border.set_pos(50, 160)
+      draw_border.set_align("l", "c")
+      if \c.draw_border_flag then
+         draw_border.set_is_checked()
+      other_tab.add(draw_border)
+
+      shaded := CheckBox()
+      shaded.set_label("Is shaded")
+      shaded.set_pos(200, 160)
+      shaded.set_align("l", "c")
+      if \c.is_shaded_flag then
+         shaded.set_is_checked()
+      other_tab.add(shaded)
+
+      has_initial_focus := CheckBox()
+      has_initial_focus.set_label("Has initial focus")
+      has_initial_focus.set_pos(350, 160)
+      has_initial_focus.set_align("l", "c")
+      if c.parent_Canvas.initial_focus === c then
+         has_initial_focus.set_is_checked()
+      other_tab.add(has_initial_focus)
+
+      var_category_cbg := CheckBoxGroup()
+
+      var_category0 := CheckBox()
+      var_category0.set_label("Class variable")
+      var_category0.set_pos("50", "120")
+      var_category0.set_align("l", "c")
+      var_category_cbg.add(var_category0)
+      other_tab.add(var_category0)
+
+      var_category1 := CheckBox()
+      var_category1.set_label("Local setup variable")
+      var_category1.set_pos("200", "120")
+      var_category1.set_align("l", "c")
+      var_category_cbg.add(var_category1)
+      other_tab.add(var_category1)
+
+      if \c.class_variable then
+         var_category_cbg.set_which_one(var_category0)
+      else
+         var_category_cbg.set_which_one(var_category1)
+
+      event_tab := EventTab(copy(c.event_handlers), name)
+      tabset.add(event_tab)
+
+      okay := TextButton()
+      okay.connect(self, "on_okay", ACTION_EVENT)
+      okay.set_pos("33%", "100%-30")
+      okay.set_align("c", "c")
+      okay.set_label("Okay")
+      self.add(okay)
+
+      cancel := TextButton()
+      cancel.connect(self, "on_cancel", ACTION_EVENT)
+      cancel.set_pos("66%", "100%-30")
+      cancel.set_align("c", "c")
+      cancel.set_label("Cancel")
+      self.add(cancel)
+   end
+
+   #
+   # Validate data
+   #
+   method validate_input()
+      util_check_attribs(self, attrib_tab.get_contents()) | fail
+      parse_pos(0, x_spec.get_contents()) | return alert_error("Invalid x specification")
+      parse_pos(0, y_spec.get_contents()) | return alert_error("Invalid y specification")
+      parse_pos(0, w_spec.get_contents()) | return alert_error("Invalid w specification")
+      parse_pos(0, h_spec.get_contents()) | return alert_error("Invalid h specification")
+      return
+   end
+
+   #
+   # Copy the fields back to c; called by subclass.
+   #
+   method set_vals(c)
+      c.x_spec := x_spec.get_contents()
+      c.y_spec := y_spec.get_contents()
+
+      c.w_default := set_w_default.get_status()
+      c.h_default := set_h_default.get_status()
+
+      c.w_spec := if /c.w_default then w_spec.get_contents() else &null
+      c.h_spec := if /c.h_default then h_spec.get_contents() else &null
+
+      c.x_fixed := set_x_fixed.get_status()
+      c.y_fixed := set_y_fixed.get_status()
+      c.w_fixed := set_w_fixed.get_status()
+      c.h_fixed := set_h_fixed.get_status()
+      c.is_shaded_flag := shaded.get_status()
+      c.draw_border_flag := draw_border.get_status()
+      c.tooltip := if tooltip_flag.is_checked() then tooltip.get_contents() else &null
+      c.accel := if accel_flag.is_checked() then accel.get_contents() else &null
+      if has_initial_focus.is_checked() then
+         c.parent_Canvas.initial_focus := c
+      else {
+         #
+         # Clear if already set to this object
+         #
+         if c.parent_Canvas.initial_focus === c then
+            c.parent_Canvas.initial_focus := &null
+      }
+
+      c.name := name.get_contents()
+      c.class_name := self.class_name.get_contents()
+      c.import_name := self.import_name.get_contents()
+
+      case align_spec.get_selection() of {
+         1 : c.set_align("l", "t")
+         2 : c.set_align("l", "c")
+         3 : c.set_align("l", "b")
+         4 : c.set_align("c", "t")
+         5 : c.set_align("c", "c")
+         6 : c.set_align("c", "b")
+         7 : c.set_align("r", "t")
+         8 : c.set_align("r", "c")
+         9 : c.set_align("r", "b")
+      }
+
+      c.class_variable := case var_category_cbg.get_which_one() of {
+         var_category0 : 1
+         var_category1 : &null
+      }
+
+      #
+      # Build the attribs list.
+      #
+      c.attribs := []
+      every pair := !attrib_tab.get_contents() do
+         put(c.attribs, pair[1] || "=" || pair[2])
+
+      c.event_handlers := event_tab.get_contents()
+   end
+end

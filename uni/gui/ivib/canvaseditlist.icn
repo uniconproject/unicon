@@ -1,0 +1,113 @@
+#
+# $Id: canvaseditlist.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a EditList on the canvas.
+#
+class CanvasEditList : CanvasComponent : EditList(
+   tmp, 
+   filter_str
+   )
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+
+      s := self.get_contents()
+      t := self.selection
+      c.line(name || ".set_selection_list([" || list2string(self.selection_list) || "])")
+
+      if s ~== self.selection_list[t] then
+         c.line(name || ".set_contents(" || image(s) || ")")
+      else if t ~= 1 then
+         c.line(name || ".set_selection(" || self.selection || ")")
+
+      if *\filter_str > 0 then
+         c.line(name || ".set_filter(" || image(cset(self.filter_str)) || ")")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      s := self.get_contents()
+      t := self.selection
+      c.set_selection_list(copy(self.selection_list))
+
+      if s ~== self.selection_list[t] then
+         c.set_contents(s)
+      else if t ~= 1 then
+         c.set_selection(t)
+      c.filter_str := self.filter_str
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasEditList()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasEditList()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+      
+   #
+   # I/o template.  The tmp field is necessary to save/set the
+   # contents of the tf (TextField) structure.
+   #
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Contents", "tmp"],
+          ["Selection", "selection"],
+          ["Selection List", "selection_list"],
+          ["Filter String", "filter_str"]
+         ]
+   end
+
+   method pre_encode()
+      tmp := get_contents()
+   end
+
+   method post_decode()
+      set_contents(tmp)
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasEditListDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.EditList.initially()
+      filter_str := ""
+      self.class_name := "EditList"
+      self.import_name := "gui"
+      self.name := "edit_list"
+end

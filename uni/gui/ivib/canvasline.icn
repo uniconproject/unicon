@@ -1,0 +1,88 @@
+#
+# $Id: canvasline.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a Line on the canvas.
+#
+class CanvasLine : CanvasComponent : Line()
+   #
+   # Overrides CanvasComponent.min_height()
+   #
+   method min_height()
+      return 3
+   end
+
+   #
+   # Overrides CanvasComponent.min_width()
+   #
+   method min_width()
+      return 3
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      if \self.is_vertical_flag then
+         c.line(name || ".set_is_vertical()")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.is_vertical_flag := self.is_vertical_flag
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasLine()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasLine()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Is vertical flag", "is_vertical_flag"]]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasLineDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Line.initially()
+      self.class_name := "Line"
+      self.import_name := "gui"
+      self.name := "line"
+end

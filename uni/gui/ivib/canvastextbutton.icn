@@ -1,0 +1,73 @@
+#
+# $Id: canvastextbutton.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasTextButton : CanvasButton : TextButton()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasButton.gen_code(c)
+      c.line(name || ".set_label(" || image(self.label) || ")")
+      c.line(name || ".set_internal_alignment(" || image(self.internal_alignment) || ")")
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasButton.get_template() ||| 
+         [["Internal Align", "internal_alignment"]]
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      self.CanvasButton.cp_fields(c)
+      c.internal_alignment := self.internal_alignment
+   end
+
+   # 
+   # Duplicate object
+   #
+   method dup(pc)
+      c := CanvasTextButton()
+      self.CanvasButton.dup(c, pc)
+      return c
+   end
+
+   #
+   # Copy object
+   #
+   method cp()
+      c := CanvasTextButton()
+      self.CanvasButton.cp(c)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTextButtonDialog(self)
+   end
+
+   initially
+      self.CanvasButton.initially()
+      self.TextButton.initially()
+      self.class_name := "TextButton"
+      self.import_name := "gui"
+      self.name := "text_button"
+end

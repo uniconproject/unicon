@@ -1,0 +1,361 @@
+#
+# $Id: code.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import lang
+
+$define MARKER "### Ivib layout ###"
+
+#
+# Record to store a method to generate
+#
+record a_method(name, params, body)
+
+############################################################################
+#
+# Class to process code generation
+#
+class Code(
+           class_vars,              # Class variables which have methods             
+           local_vars,              # Variables local to the setup method             
+           imports,                 # Set of import declarations
+           methods,                 # Methods to be generated, a table of names->a_method records
+           code,                    # List of strings to generate in the setup method           
+           parent_Canvas,           #                     
+           indent1,                 # Spaces for indentation              
+           indent2,                 #
+           indent3,                 #
+           indent4                  #
+           )
+
+   #
+   # Display an error message
+   #
+   method alert_error(s)
+      return self.parent_Canvas.alert_error(s)
+   end
+
+   method set_parent_Canvas(c)
+      self.parent_Canvas := c
+      self.indent1 := repl(" ", self.parent_Canvas.gen_indent)
+      self.indent2 := repl(" ", 2 * self.parent_Canvas.gen_indent)
+      self.indent3 := repl(" ", 3 * self.parent_Canvas.gen_indent)
+      self.indent4 := repl(" ", 4 * self.parent_Canvas.gen_indent)
+      return c
+   end
+
+   #
+   # Add a line of code to the setup method.
+   #
+   method line(s)
+      put(code, s)
+   end
+
+   #
+   # Add a variable to the given list.
+   #
+   method add_var(s, class_variable)
+      if \class_variable then
+         put(class_vars, s)
+      else
+         put(local_vars, s)
+   end
+
+   #
+   # Add a method to the methods list
+   #
+   method add_method(name, params, body)
+      /params := ""
+      /body := []
+      methods[name] := a_method(name, params, body)
+   end
+
+   #
+   # Add a import to the set of imports
+   #
+   method add_import(l)
+      insert(imports, l)
+   end
+
+   #
+   # Add setup methods from the canvas setup
+   #
+   method add_setup_methods()
+      if \self.parent_Canvas.gen_init_dialog then {
+         add_method("init_dialog")
+         add_method("end_dialog")
+      }
+
+      if \self.parent_Canvas.gen_component_setup then {
+         add_method("component_setup", "", ["self.setup()"])
+      }
+
+      if \self.parent_Canvas.dialog_struct.ticker_rate then {
+         add_method("tick")
+      }
+   end
+
+   #
+   # Output the code to file called s.
+   #
+   method output_code(s)
+      f := open(s, "w") | return alert_error("Couldn't open " || s)
+
+      if self.imports_out(f) then
+         write(f)
+
+      self.header_out(f)
+
+      add_setup_methods()
+      if self.methods_out(f) then
+         write(f)
+      self.setup_out(f)
+
+      if \self.parent_Canvas.gen_initially then {
+         write(f)
+         self.initially_out(f)
+      }
+      write(f, "end")
+      if \self.parent_Canvas.gen_main then {
+         write(f)
+         self.main_out(f)
+      }
+      write(f)
+      write(f, MARKER)
+      writes(f, "#")
+      write(f, lang::encode(parent_Canvas)) | write(f,"failed")
+      write(f)
+      close(f)
+      return
+   end
+
+   #
+   # Interpose code to already existing file named s.
+   #
+   method interpose_code(s)
+      static idchars
+      local existing_fields
+      initial idchars := &letters++&digits++"_"
+
+      existing_fields := set()
+
+      add_setup_methods()
+
+      f := open(s) | return alert_error("Couldn't open " || s)
+
+      #
+      # Save contents up to setup() method
+      #
+      part1 := []
+      repeat {
+         t := read(f) | return alert_error("Couldn't find setup method")
+         t ? {
+            tab(many(' '))
+            if ="class " & tab(many(idchars)) & = " : Dialog(" then {
+               while insert(existing_fields, tab(many(idchars))) do {
+                  tab(many(', '))
+               }
+            }
+            else if ="method " then {
+               tab(many(' '))
+               method_name := tab(many(idchars))
+               if method_name == "setup" then
+                  break
+               delete(methods, method_name)
+            }
+            else if ="import " then {
+               while tab(upto(idchars)) do
+                  delete(imports, tab(many(idchars)))
+            }
+         }
+         put(part1, t)         
+      }
+
+      #
+      # Skip over old setup method
+      #
+      repeat {
+         t := read(f) | return alert_error("Unexpected eof in setup method")
+         t ? {
+            tab(many(' '))
+            if tab(0) == "end" then
+               break
+         }
+      }
+
+      #
+      # Get remainder of file, stopping at end-of-file or the ### marker
+      #
+      part2 := []
+
+      while t := read(f) & t ~== MARKER do {
+         t ? {
+            tab(many(' '))
+            if ="method " then
+               delete(methods, tab(many(idchars)))
+         }
+         put(part2, t)
+      }
+      close(f)
+
+      #
+      # Re-create file
+      #
+      f := open(s, "w") | return alert_error("Couldn't open " || s)
+
+      #
+      # Output any new imports
+      #
+      imports_out(f)
+
+      every s := !part1 do {
+         s ? {
+            tab(many(' '))
+            if ="class " & (cl := tab(many(idchars))) & = " : Dialog(" then {
+               if cl ~== self.parent_Canvas.name then {
+		  s[7 +: *cl] := self.parent_Canvas.name
+               }
+               every id := !(self.class_vars) do {
+                  if not member(existing_fields, id) then {
+                     if s[-2:0] == "()" then
+                        s[-1] := id || ")"
+                     else
+                        s[-1] := "," || id || ")"
+                  }
+               }
+            }
+            write(f, s)
+         }
+      }
+
+      if self.methods_out(f) then
+         write(f)
+      self.setup_out(f)
+
+      every write(f, !part2)
+
+      write(f, MARKER)
+      writes(f, "#")
+      write(f, lang::encode(parent_Canvas))
+      close(f)
+      return
+   end
+
+   #
+   # Generate the import declaration.  Fails if no import is output.
+   #
+   method imports_out(f)
+      local s
+      if *imports = 0 then
+         fail
+      every write(f, "import " || !imports)
+      if "gui" == !imports then
+         write(f, "$include \"guih.icn\"")
+      return
+   end
+
+   #
+   # Generate the head of the dialog.
+   #
+   method header_out(f)
+      s := "class " || self.parent_Canvas.name || " : " || self.parent_Canvas.superclass_name || "("
+      e := create !self.class_vars
+      s ||:= @e
+      while s ||:= ", " || @e
+      write(f, s || ")")
+   end
+
+   #
+   # Generate the methods.  Fails if no methods are output.
+   #
+   method methods_out(f)
+      local rec, count
+      if *methods = 0 then
+         fail
+      count := 0
+      every rec := (!sort(methods))[2] do {
+         if count > 0 then
+            write(f)
+         write(f, indent1, "method " || rec.name || "(" || rec.params || ")")
+         every write(f, indent2, !rec.body)
+         write(f, indent1, "end")
+         count +:= 1
+      } 
+      return
+   end
+
+   #
+   # Generate the setup() method with the code.
+   #
+   method setup_out(f)
+      write(f, indent1, "method setup()")
+
+      #
+      # Local variables.
+      #
+      if *local_vars > 0 then {
+         e := create !local_vars
+         s := "local " || @e
+         while s ||:= ", " || @e
+         write(f, indent2, s)
+      }
+
+      #
+      # Dialog attribs.
+      #
+      l := ["size=" || self.parent_Canvas.w || "," || self.parent_Canvas.h] ||| self.parent_Canvas.dialog_struct.attribs
+      write(f, indent2, "self.set_attribs(", list2string(l), ")")
+      #
+      # Minimum size.
+      #
+      if \ (self.parent_Canvas.dialog_struct.min_width | self.parent_Canvas.dialog_struct.min_height) then {
+         s := indent2 || "self.set_min_size("
+         s ||:= \self.parent_Canvas.dialog_struct.min_width
+         s ||:= ", "
+         s ||:= \self.parent_Canvas.dialog_struct.min_height
+         s ||:= ")"
+         write(f, s)
+      }
+      #
+      # Ticker
+      #
+      if \self.parent_Canvas.dialog_struct.ticker_rate then
+         write(f, indent2, "self.set_ticker(", self.parent_Canvas.dialog_struct.ticker_rate, ")")
+      #
+      # Insert the code already generated by the components.
+      every write(f, indent2, !code)
+
+      write(f, indent1, "end")
+   end
+
+   method initially_out(f)
+      write(f, indent1, "initially")
+      write(f, indent2, "self.Dialog.initially()")
+      if /self.parent_Canvas.gen_component_setup then
+         write(f, indent2, "self.setup()")
+   end
+
+   #
+   # Generate a main procedure. 
+   #
+   method main_out(f)
+      write(f, "procedure main()")
+      write(f, indent1, "local d")
+      write(f, indent1, "d := ", self.parent_Canvas.name, "()")
+      if /self.parent_Canvas.gen_component_setup & /self.parent_Canvas.gen_initially then
+         write(f, indent1, "d.setup()")
+      write(f, indent1, "d.show_modal()")
+      write(f, "end")
+   end
+
+   initially
+      class_vars := []
+      local_vars := []
+      code := []
+      methods := table()
+      imports := set()
+end

@@ -1,0 +1,71 @@
+#
+# $Id: canvascheckbox.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a CheckBox on the canvas.
+#
+class CanvasCheckBox : CanvasButton : CheckBox()
+   method set_parent_check_box_group(x)
+      #
+      # Set the images to the standard diamonds, unless custom images already set.
+      #  
+      if self.img_up == img_style("box_up") & self.img_down == img_style("box_down") then 
+         self.set_imgs(img_style("diamond_up"), img_style("diamond_down"))
+
+      self.CheckBox.set_parent_check_box_group(x)
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasButton.gen_code(c)
+
+      c.line(name || ".set_label(" || image(self.label) || ")")
+      if not((/self.parent_check_box_group & self.img_up == img_style("box_up") & self.img_down == img_style("box_down")) | 
+             (\self.parent_check_box_group & self.img_up == img_style("diamond_up") & self.img_down == img_style("diamond_down"))) then
+         c.line(name || ".set_imgs(" || image(self.img_up) || ", " || image(self.img_down) || ")")
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasCheckBox()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasCheckBox()
+      self.CanvasButton.dup(c, pc)
+      return c
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasCheckBoxDialog(self)
+   end
+
+   initially
+      self.CanvasButton.initially()
+      self.CheckBox.initially()
+      self.class_name := "CheckBox"
+      self.import_name := "gui"
+      self.name := "check_box"
+end

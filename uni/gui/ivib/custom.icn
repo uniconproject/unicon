@@ -1,0 +1,34 @@
+#
+# $Id: custom.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Represents an unknown user defined component
+#
+class Custom : Component()
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      EraseRectangle(W, self.x, self.y, self.w, self.h)
+      Rectangle(W, self.x, self.y, self.w, self.h)
+      center_string(W, self.x + self.w / 2, self.y + 10, "<" || self.class_name || ">")
+      self.do_shading(W)
+   end
+
+   method resize()
+      /self.w_spec := 100
+      /self.h_spec := 100
+      self.Component.resize()
+   end
+
+   method handle_event(e)
+      fail
+   end
+end

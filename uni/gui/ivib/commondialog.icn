@@ -1,0 +1,27 @@
+#
+# $Id: commondialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+class CommonDialog : Dialog(global_attribs)
+   #
+   # Display an error message
+   #
+   method alert_error(s)
+      InfoDialog(s, "Okay").show_modal(self)
+      fail
+   end
+
+   method set_attribs(x[])
+      return self.Dialog.set_attribs_list(global_attribs ||| x)
+   end
+
+   initially
+      self.Dialog.initially()
+      global_attribs := ["bg=light gray", "fg=black", "font=serif", "resize=on"]
+end

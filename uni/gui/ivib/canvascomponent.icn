@@ -1,0 +1,442 @@
+#
+# $Id: canvascomponent.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import lang
+import gui
+
+$include "guih.icn"
+
+#
+# Constants defining resizing corner sizes.
+$define RSW 12
+$define RST 3
+
+############################################################################
+#
+# Parent class for a all components.
+#
+class CanvasComponent : SelectiveClassCoding(
+   parent_Canvas,           # Link to owning Canvas object
+   name,                    # Object name
+   class_name,              # Class name of object
+   import_name,             # Name of import file
+   is_button_subclass,      # Set if subclass of CanvasButton
+   x_fixed,                 # Flags - is position/size fixed
+   y_fixed,                 #
+   w_fixed,                 #
+   h_fixed,                 #
+   w_default,               # Flags - if on size defaults 
+   h_default,               #
+   class_variable,          # Non-null if the component should have a class variable
+   event_handlers           # List of event, handler pairs
+   )
+
+   #
+   # An adjustment to add to the object's absolute x position,
+   # depending upon its alignment.
+   # 
+   method get_x_alignment_offset()
+      return case self.x_align of {
+         "l" : 0
+         "c" : self.w / 2
+         "r" : self.w
+      }
+   end
+
+   # 
+   # As above, for the y value.
+   #
+   method get_y_alignment_offset()
+      return case self.y_align of {
+         "t" : 0
+         "c" : self.h / 2
+         "b" : self.h
+      }
+   end
+
+   #
+   # Unfix an object's position.
+   #
+   method unfix()
+      self.x_fixed := self.y_fixed := &null
+   end
+
+   #
+   # Get the class_variable flag; 1 if it is a class variable, &null if not
+   #
+   method get_class_variable()
+      return self.class_variable
+   end
+
+   #
+   # Set the object's name.
+   #
+   method set_name(x)
+      return self.name := x
+   end
+
+   #
+   # Get the object's name
+   #
+   method get_name()
+      return self.name
+   end
+
+   #
+   # Return the list of event handlers
+   #
+   method get_event_handlers()
+      return event_handlers
+   end
+
+   #
+   # Set the object's class name.
+   #
+   method set_class_name(x)
+      return self.class_name := x
+   end
+
+   #
+   # Get the object's class name
+   #
+   method get_class_name()
+      return self.class_name
+   end
+
+   #
+   # Set the object's import name.
+   #
+   method set_import_name(x)
+      return self.import_name := x
+   end
+
+   #
+   # Get the object's import name
+   #
+   method get_import_name()
+      return self.import_name
+   end
+
+   #
+   # Generate the code into the Code object c.
+   #
+   method gen_code(c)
+      c.line(name || " := " || self.class_name || "()")
+
+      c.line(name || ".set_pos(" || image(self.x_spec) || ", " || image(self.y_spec) || ")")
+      if /self.w_default | /self.h_default then {
+         t := name || ".set_size("
+         if /self.w_default then
+            t ||:= image(self.w_spec)
+         t ||:= ", "
+         if /self.h_default then
+            t ||:= image(self.h_spec)
+         t ||:= ")"
+         c.line(t)
+      }
+
+      #
+      # Output alignment unless using default of "l", "t"
+      #
+      if not(self.x_align == "l" & self.y_align == "t") then
+         c.line(name || ".set_align(" || image(self.x_align) || ", " || image(self.y_align) || ")")
+
+      if \self.draw_border_flag then
+         c.line(name || ".set_draw_border()")
+
+      if \self.is_shaded_flag then
+         c.line(name || ".set_is_shaded()")
+
+      if *self.attribs > 0 then
+         c.line(name || ".set_attribs(" || list2string(self.attribs) || ")")
+
+      if \self.tooltip then
+         c.line(name || ".set_tooltip(" || image(self.tooltip) || ")")
+
+      if \self.accel then
+         c.line(name || ".set_accel(" || image(self.accel) || ")")
+
+      if self === self.parent_Canvas.initial_focus then
+         c.line("self.set_focus(" || self.name || ")")
+
+      every p := !(\self.event_handlers) do {
+         c.line(name || ".connect(self, \"" || p[2] || "\", " || p[1] || ")")
+         c.add_method(p[2], "ev")
+         c.add_import("gui")
+      }
+
+      c.add_var(name, class_variable)
+      c.add_import(self.import_name)
+   end
+
+   #
+   # Duplicate c (this will be extended by subclasses).
+   #
+   method dup(c, pc)
+      c.set_parent_Canvas(pc)
+
+      if \self.parent_Canvas & \pc then {
+         if self === self.parent_Canvas.selected then
+            pc.selected := c
+         if self === !self.parent_Canvas.selections then
+            put(pc.selections, c)
+         if self === self.parent_Canvas.initial_focus then
+            pc.initial_focus := c
+      }
+      self.CanvasComponent.cp_fields(c)
+      return c
+   end
+
+   #
+   # Copy c (this will also be extended by subclasses).
+   #
+   method cp(c)
+      c.set_parent_Canvas(self.parent_Canvas)
+
+      self.CanvasComponent.cp_fields(c)
+
+      #
+      # A copy has a new name.
+      #
+      c.name := self.parent_Canvas.get_new_name(c.name)
+      #
+      # ..and new method names.
+      #
+      every el := !(\c.event_handlers) do
+         el[2] := self.parent_Canvas.get_new_name(el[2])
+
+      return c
+   end
+
+   #
+   # Copy the fields from self to c.
+   #
+   method cp_fields(c)
+      c.name := self.name
+      c.class_name := self.class_name
+      c.import_name := self.import_name
+      c.x_fixed := self.x_fixed
+      c.y_fixed := self.y_fixed
+      c.w_fixed := self.w_fixed
+      c.h_fixed := self.h_fixed
+      c.w_default := self.w_default
+      c.h_default := self.h_default
+      c.x_spec := self.x_spec
+      c.y_spec := self.y_spec
+      c.w_spec := self.w_spec
+      c.h_spec := self.h_spec
+      c.x_align := self.x_align
+      c.y_align := self.y_align
+      c.is_shaded_flag := self.is_shaded_flag
+      c.draw_border_flag := self.draw_border_flag
+      c.tooltip := self.tooltip
+      c.accel := self.accel
+      c.class_variable := self.class_variable
+      c.attribs := copy(self.attribs)
+      c.event_handlers := copy(\self.event_handlers)
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return [["Parent Canvas", "parent_Canvas"],
+              ["Name", "name"],
+              ["Class Name", "class_name"],
+              ["Import Name", "import_name"],
+              ["X Fix", "x_fixed"],
+              ["Y Fix", "y_fixed"],
+              ["W Fix", "w_fixed"],
+              ["H Fix", "h_fixed"],
+              ["W Default", "w_default"],
+              ["H Default", "h_default"],
+              ["X Spec", "x_spec"],
+              ["Y Spec", "y_spec"],
+              ["W Spec", "w_spec"],
+              ["H Spec", "h_spec"],
+              ["X Align", "x_align"],
+              ["Y Align", "y_align"],
+              ["Is shaded", "is_shaded_flag"],
+              ["Is Button Subclass", "is_button_subclass"],
+              ["Draw Border", "draw_border_flag"],
+              ["Attribs", "attribs"],
+              ["Tooltip", "tooltip"],
+              ["Accel", "accel"],
+              ["Event Handlers", "event_handlers"],
+              ["Class Variable", "class_variable"],
+              ["Parent Component", "parent"]
+             ]
+   end
+
+   #
+   # Default minimum width for the object
+   #
+   method min_width()
+      return 20
+   end
+
+   #
+   # Default minimum height for the object
+   #
+   method min_height()
+      return 20
+   end
+
+   #
+   # Reset an object, ie finalize it and set it up again afresh.
+   #
+   method reset(x)
+      self.finally()
+      self.set_parent(x)
+      self.final_setup(self.parent_Canvas.dialog_struct)
+      self.reset_size()
+      self.resize()
+      self.firstly()
+   end
+
+   #
+   # Reset the two size specs to null if the right flags are set.
+   #
+   method reset_size()
+      if \self.w_default then self.w_spec := &null
+      if \self.h_default then self.h_spec := &null
+   end
+
+   #
+   # Is obj inside this object?
+   #
+   method inside(obj)
+      fail
+   end
+
+   #
+   # Highlight the given object.
+   #
+   method do_highlight(W)
+      cw := Clone(W, "linestyle=dashed")
+      Rectangle(cw, self.x - RST, self.y - RST, self.w + 2 * RST, self.h + 2 * RST)
+
+      WAttrib(cw, "linestyle=solid")
+      if self === self.parent_Canvas.selected then
+         WAttrib(cw, "fg=red")
+
+      every i := 0 to RST - 1 do {
+         DrawLine(cw, self.x + i, self.y + RSW, self.x + i, self.y + i, self.x + RSW, self.y + i)
+
+         DrawLine(cw, self.x + self.w - 1 - RSW, self.y + i, self.x + self.w - 1 - i, self.y + i, self.x + self.w - 1 - i, self.y + RSW)
+
+         DrawLine(cw, self.x + i, self.y + self.h - 1  - RSW, self.x + i, self.y + self.h - 1 - i, self.x + RSW, self.y + self.h - 1 - i)
+
+
+         DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 - i, self.x + self.w - 1 - i, self.y + self.h - 1 - i, self.x + self.w - 1 - i, self.y + self.h - 1 - RSW)
+
+      }
+      Uncouple(cw)
+   end
+
+   #
+   # Set the parent canvas.
+   #
+   method set_parent_Canvas(p)
+      return self.parent_Canvas := p
+   end
+
+   #
+   # Is the cursor on the resize corners?
+   #
+   method in_resize_region()
+      if ((self.x <= &x < self.x + RSW) & (self.y <= &y < self.y + RST)) | ((self.x <= &x < self.x + RST) & (self.y <= &y < self.y + RSW)) then
+         return 1       # Top left
+
+      if ((self.x + self.w - RSW <= &x < self.x + self.w) & (self.y <= &y < self.y + RST)) | ((self.x + self.w - RST <= &x < self.x + self.w) & (self.y <= &y < self.y + RSW)) then
+         return 2       # Top right
+
+      if ((self.x <= &x < self.x + RSW) & (self.y + self.h - RST <= &y < self.y + self.h)) | ((self.x <= &x < self.x + RST) & (self.y + self.h - RSW <= &y < self.y + self.h)) then
+         return 3       # Bottom left
+
+      if ((self.x + self.w - RSW <= &x < self.x + self.w) & (self.y + self.h - RST <= &y < self.y + self.h)) | ((self.x + self.w - RST <= &x < self.x + self.w) & (self.y + self.h - RSW <= &y < self.y + self.h)) then
+         return 4       # Bottom right
+
+      fail
+   end
+
+   #
+   # If the cursor is over the object, return it.  This will be over-ridden for
+   # container subclasses.
+   #
+   method which_cursor_over()
+      if ((self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)) then
+         return self
+   end
+
+   #
+   # Place object c inside the container subclass
+   #
+   method place_inside(c)
+      #
+      # Add c to the object.
+      #
+      self.add(c)      
+
+      #
+      # Set c's x and y position, and set size to the current absolute size.
+      #
+      c.x_spec := c.get_x_alignment_offset() + c.x - self.get_x_reference()
+      c.y_spec := c.get_y_alignment_offset() + c.y - self.get_y_reference()
+      c.w_spec := c.w
+      c.h_spec := c.h
+
+      #
+      # Reset c.
+      #
+      c.reset(self)
+
+      #
+      # Resize
+      #
+      self.resize()
+   end
+
+   #
+   # Remove object c from the container.
+   #
+   method place_outside(c)
+      every i := 1 to *self.children do
+         if c === self.children[i] then {
+            self.children := self.children[1 : i] ||| self.children[i + 1 : 0]
+            break
+         }
+      #
+      # Resize
+      #
+      self.resize()
+   end
+
+   #
+   # Called during a move within the container, used for example in Border class.
+   #
+   method still_inside(c)
+   end
+
+   #
+   # Reorder selections
+   #
+   method reorder()
+      every i := 1 to *self.parent_Canvas.selections do {
+         every j := i to *self.children do {
+            if self.children[j] === self.parent_Canvas.selections[i] then {
+               self.children[i] :=: self.children[j]
+               break
+            }
+         }
+      }
+   end
+
+   initially
+
+end

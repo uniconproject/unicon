@@ -1,0 +1,99 @@
+#
+# $Id: canvastextlist.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+# Class for representing a TextList on the canvas.
+#
+class CanvasTextList : CanvasComponent : TextList()
+   method min_height()
+      # need a smart calculation font height + borders + scrollbar
+      # for now based on constants in gui.icn, guiconst.icn we go with
+      # 14 + 8*2 + 22
+      return 52
+   end
+ 
+   method min_width()
+      # need a smart calculation font height + borders + scrollbar
+      # for now based on constants in gui.icn, guiconst.icn we go with
+      # 14 + 5*2 + 22
+      return 46
+   end
+
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+
+      if \self.select_one then
+         c.line(name || ".set_select_one()")
+      if \self.select_many then
+         c.line(name || ".set_select_many()")
+
+      c.line(name || ".set_contents([" || list2string(self.contents) || "])")
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.select_one := self.select_one
+      c.select_many := self.select_many
+      c.set_contents(copy(self.contents))
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasTextList()
+      self.CanvasComponent.cp(c)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasTextList()
+      self.CanvasComponent.dup(c, pc)
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Select One", "select_one"],
+          ["Select Many", "select_many"],
+          ["Checked", "checked"],
+          ["Contents", "contents"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasTextListDialog(self)
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.TextList.initially()
+      self.class_name := "TextList"
+      self.import_name := "gui"
+      self.name := "text_list"
+end

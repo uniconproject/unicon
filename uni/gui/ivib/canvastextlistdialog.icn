@@ -1,0 +1,64 @@
+#
+# $Id: canvastextlistdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+############################################################################
+#
+#
+#
+class CanvasTextListDialog : CanvasComponentDialog(
+   c,                       #         
+   contents,                #                
+   select_group             #
+   )
+
+   method on_okay()
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_contents(contents.get_contents())
+      c.select_one := c.select_many := &null
+      case select_group.get_selection() of {
+         2 :  c.set_select_one()
+         3 :  c.set_select_many()
+      }
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      set_h_default.set_is_shaded()
+      #draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      contents := EditableTextList()
+      contents.set_size(200, "100%-50")
+      contents.set_pos(25, 25)
+      contents.set_contents(copy(c.get_contents()))
+      p.add(contents)
+
+      select_group := List()
+      select_group.set_selection_list(["No selection", "Select one", "Select many"])
+      select_group.set_size(120)
+      select_group.set_pos(250, 25)
+      p.add(select_group)
+
+      if \c.select_one then
+         select_group.set_selection(2)
+      else if \c.select_many then
+         select_group.set_selection(3)
+
+end

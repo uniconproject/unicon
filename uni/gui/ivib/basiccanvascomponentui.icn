@@ -1,0 +1,53 @@
+#
+# $Id: basiccanvascomponentui.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+class BasicCanvasComponentUI : CanvasComponentUI(category, name, icon)
+   method add_to_menu(m)
+      local s, menu_item
+
+      menu_item := TextMenuItem()
+      menu_item.set_label(name)
+
+      find_submenu(m).add(menu_item)
+
+      return menu_item
+   end
+
+   method find_submenu(m)
+      local s, n
+      # Search for an existing one
+      every s := !m.children do
+         if s.get_label() == category then
+            return s
+
+      # Create a new one
+      n := Menu()
+      n.set_label(category)
+      m.add(n)
+      return n
+   end
+
+   method get_button() 
+      local b
+      if /icon then
+         fail
+      b := IconButton()
+      b.set_img(icon)
+      b.set_tooltip(name)
+
+      return b
+   end
+
+   initially(category, name, icon)
+      self.category := category
+      self.name := name
+      self.icon := icon
+end

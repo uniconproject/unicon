@@ -1,0 +1,161 @@
+#
+# $Id: canvasborder.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+
+
+$define INSIDE_BOX 30
+$include "guih.icn"
+
+############################################################################
+#
+# Class for representing a Borde on the canvas.
+#
+class CanvasBorder : CanvasComponent : Border()
+   #
+   # Generate code into Code object c.
+   #
+   method gen_code(c)
+      self.CanvasComponent.gen_code(c)
+      c.line(name || ".set_internal_alignment(" || image(self.internal_alignment) || ")")
+      every i := !self.children do {
+         i.gen_code(c)
+         if i === self.title_obj then
+            c.line(self.name || ".set_title(" || i.name || ")")
+         else
+            c.line(self.name || ".add(" || i.name || ")")
+      }
+   end
+
+   #
+   # Copy fields from self to c.
+   #
+   method cp_fields(c)
+      c.internal_alignment := self.internal_alignment
+   end
+
+   #
+   # Copy object.
+   #
+   method cp()
+      c := CanvasBorder() 
+      self.CanvasComponent.cp(c)
+      every e := !self.children do {
+         c.add(e.cp())
+         if e === self.title_obj then
+            c.title_obj := c.children[-1]
+      }
+      self.cp_fields(c)
+      return c
+   end
+
+   #
+   # Duplicate object.
+   #
+   method dup(pc)
+      c := CanvasBorder()
+      self.CanvasComponent.dup(c, pc)
+      every e := !self.children do {
+         c.add(e.dup(pc))
+         if e === self.title_obj then
+            c.title_obj := c.children[-1]
+      }
+      self.cp_fields(c)
+      return c
+   end
+
+   method place_inside(c)
+      if (self.x + self.w - INSIDE_BOX <= c.x < self.x + self.w) & (self.y + self.h - INSIDE_BOX <= c.y < self.y + self.h) & /title_obj then
+         self.title_obj := c
+      self.CanvasComponent.place_inside(c)
+   end
+
+   method place_outside(c)
+      if c === self.title_obj then
+         self.title_obj := &null
+      self.CanvasComponent.place_outside(c)
+   end
+
+   method still_inside(c)
+      if c === self.title_obj then
+         self.title_obj := &null
+      if (self.x + self.w - INSIDE_BOX <= c.x < self.x + self.w) & (self.y + self.h - INSIDE_BOX <= c.y < self.y + self.h) & /title_obj then
+         self.title_obj := c
+      self.CanvasComponent.still_inside(c)
+      self.resize()
+   end
+
+   #
+   # Return the I/O template.
+   #
+   method get_template()
+      return self.CanvasComponent.get_template() ||| 
+         [["Internal Alignment", "internal_alignment"],
+          ["Children", "children"],
+          ["Title Obj", "title_obj"]
+         ]
+   end
+
+   #
+   # Open the configuration dialog box.
+   #
+   method dialog()
+      return CanvasBorderDialog(self)
+   end
+
+   #
+   # Overrides CanvasComponent.which_cursor_over() 
+   #
+   method which_cursor_over()
+      every e := rev(self.children) do
+         if o := e.which_cursor_over() then
+            return o
+
+      if (self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h) then
+         return self
+   end
+
+   #
+   # Overrides Border.display()
+   #
+   method display(buffer_flag)
+      W := if /buffer_flag then self.cwin else self.cbwin
+      self.Border.display(buffer_flag)
+      cw := Clone(W, "linestyle=dashed")
+      Rectangle(cw, self.x + self.w - INSIDE_BOX, self.y + self.h - INSIDE_BOX, INSIDE_BOX - BORDER_WIDTH, INSIDE_BOX- BORDER_WIDTH)
+      Uncouple(cw)
+   end
+
+   #
+   # Overrides CanvasComponent.reset_size()
+   #
+   method reset_size()
+      self.CanvasComponent.reset_size()
+      every (!self.children).reset_size()
+   end
+
+   #
+   # Overrides CanvasComponent.inside()
+   #
+   method inside(c)
+      every e := !self.children do
+         if o := e.inside(c) then
+            return o
+
+      if (c ~=== self) & (((self.x + self.w - INSIDE_BOX <= c.x < self.x + self.w) & (self.y + self.h - INSIDE_BOX <= c.y < self.y + self.h) & /title_obj) | ((self.x <= c.x < self.x + self.w) & (self.y <= c.y < self.y + self.h) & (self.x <= c.x + c.w <= self.x + self.w) & (self.y <= c.y + c.h <= self.y + self.h))) then 
+         return self
+   end
+
+   initially
+      self.CanvasComponent.initially()
+      self.Border.initially()
+      #class_variable := 1
+      self.class_name := "Border"
+      self.import_name := "gui"
+      self.name := "border"
+end

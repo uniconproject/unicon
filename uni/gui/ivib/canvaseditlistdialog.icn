@@ -1,0 +1,146 @@
+#
+# $Id: canvaseditlistdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+$include "guih.icn"
+
+############################################################################
+#
+#
+#
+class CanvasEditListDialog : CanvasComponentDialog(
+   c,                       #         
+   selection_list,          #                      
+   set_selection,           #                     
+   selection,               #                 
+   set_initial_text,        #                        
+   initial_text,            #                    
+   group,                   #             
+   filter,                  #
+   default_setting          #
+   )
+
+   method on_okay()
+      #
+      # Validate
+      #
+      if (group.get_which_one() === set_selection) & not(integer(selection.get_contents())) then
+         return alert_error("Selection is non-integer")
+
+      self.validate_input() | fail
+      self.set_vals(c)
+      c.set_selection_list(selection_list.get_contents())
+      case group.get_which_one() of {
+         set_initial_text : c.set_contents(initial_text.get_contents())
+         set_selection : c.set_selection(integer(selection.get_contents()))
+         default_setting : c.set_contents(c.selection_list[1])
+      }
+      c.filter_str := filter.get_contents()
+      c.reset(c.parent)
+      self.okay_result := 1
+      self.dispose()
+   end
+
+   method on_set_initial_text()
+      selection.set_is_shaded()
+      initial_text.clear_is_shaded() 
+   end
+
+   method on_set_selection()
+      selection.clear_is_shaded()
+      initial_text.set_is_shaded() 
+   end
+
+   method on_default_setting()
+      c.set_selection(1)
+      selection.set_is_shaded()
+      initial_text.set_is_shaded() 
+   end
+
+   initially
+      self.setup(c)
+      set_w_default.set_is_shaded()
+      draw_border.set_is_shaded()
+      self.set_attribs("size=540,400", "label=" || label)
+
+      p := TabItem()
+      add_tab_at_front(p)
+      p.set_label("General")
+
+      selection_list := EditableTextList()
+      selection_list.set_size(150, "100%-50")
+      selection_list.set_pos(25, 25)
+      selection_list.set_contents(copy(c.selection_list))
+      p.add(selection_list)
+
+      group := CheckBoxGroup()
+
+      set_selection := CheckBox()
+      set_selection.connect(self, "on_set_selection", ACTION_EVENT)
+      set_selection.set_label("Set selection")
+      set_selection.set_pos(200, 35)
+      set_selection.set_align("l", "c")
+      p.add(set_selection)
+      group.add(set_selection)
+
+      selection := TextField()
+      selection.set_size(100)
+      selection.set_pos(350, 35)
+      selection.set_align("l", "c")
+      selection.set_contents(c.selection)
+      p.add(selection)
+
+      set_initial_text := CheckBox()
+      set_initial_text.connect(self, "on_set_initial_text", ACTION_EVENT)
+      set_initial_text.set_label("Set initial_text")
+      set_initial_text.set_pos(200, 85)
+      set_initial_text.set_align("l", "c")
+      p.add(set_initial_text)
+      group.add(set_initial_text)
+
+      initial_text := TextField()
+      initial_text.set_size(100)
+      initial_text.set_pos(350, 85)
+      initial_text.set_align("l", "c")
+      initial_text.set_contents(c.get_contents())
+      p.add(initial_text)
+
+      default_setting := CheckBox()
+      default_setting.connect(self, "on_default_setting", ACTION_EVENT)
+      default_setting.set_label("Default")
+      default_setting.set_pos(200, 135)
+      default_setting.set_align("l", "c")
+      p.add(default_setting)
+      group.add(default_setting)
+
+      if c.get_contents() ~== c.selection_list[c.selection] then {
+         group.set_which_one(set_initial_text)
+         selection.set_is_shaded()
+      } else if c.selection ~= 1 then {
+         group.set_which_one(set_selection)
+         initial_text.set_is_shaded()
+      } else {
+         group.set_which_one(default_setting)
+         selection.set_is_shaded()
+         initial_text.set_is_shaded()
+      }
+
+      l := Label()
+      l.set_label("Filter : ")
+      l.set_pos(200, 185)
+      l.set_align("l", "c")
+      p.add(l)
+      
+      filter := TextField()
+      filter.set_pos(350, 185)
+      filter.set_size(100)
+      filter.set_align("l", "c")
+      filter.set_contents(c.filter_str)
+      p.add(filter)
+
+end

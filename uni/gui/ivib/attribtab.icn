@@ -1,0 +1,154 @@
+#
+# $Id: attribtab.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+#
+# This file is in the public domain.
+#
+# Author: Robert Parlett (parlett@dial.pipex.com)
+#
+
+import gui
+import lang
+
+$include "guih.icn"
+
+class AttribTab : TabItem(
+                         tbl,
+                         add,                 # Buttons              
+                         delete,              #                  
+                         apply,               #                 
+                         contents,            # Table contents
+                         attrib,
+                         value
+                         )
+
+   method on_add()
+      #
+      # Add a new value to the attributes table.
+      #
+      put(contents, ["Edit", "me"])
+      tbl.set_contents(contents)
+      tbl.goto_pos(*contents, 0)
+      tbl.set_selections([*contents])
+      tbl.set_cursor(*contents)
+      attrib.set_contents(contents[-1][1])
+      value.set_contents(contents[-1][2])
+      attrib.clear_is_shaded()
+      value.clear_is_shaded()
+      delete.clear_is_shaded()
+      apply.clear_is_shaded()
+      get_parent_dialog().set_focus(attrib, "\t")
+   end
+
+   method on_tbl()
+      #
+      # Line in the table clicked - copy the line to the edit area.
+      #
+      if i := tbl.get_selections()[1] then {
+         attrib.set_contents(contents[i][1])
+         value.set_contents(contents[i][2])
+         attrib.clear_is_shaded()
+         value.clear_is_shaded()
+         delete.clear_is_shaded()
+         apply.clear_is_shaded()
+      } else {
+         attrib.set_is_shaded()
+         value.set_is_shaded()
+         delete.set_is_shaded()
+         apply.set_is_shaded()
+      }
+   end
+
+   method on_delete()
+      #
+      # Delete a line from the table.
+      #
+      i := tbl.get_selections()[1]
+      contents := contents[1 : i] ||| contents[i + 1 : 0]
+      tbl.set_contents(contents)
+      tbl.clear_selections()
+      attrib.set_is_shaded()
+      value.set_is_shaded()
+      delete.set_is_shaded()
+      apply.set_is_shaded()
+   end
+
+   method on_apply()
+      #
+      # Copy the edited item back to the table. 
+      #
+      i := tbl.get_selections()[1]
+      contents[i] := [attrib.get_contents(), value.get_contents()]
+      tbl.set_contents(contents)
+      tbl.clear_selections()
+      attrib.set_is_shaded()
+      value.set_is_shaded()
+      delete.set_is_shaded()
+      apply.set_is_shaded()
+   end
+
+   method get_contents()
+      return contents
+   end
+
+   initially(l)
+      self.TabItem.initially("label=Attribs", "accel=a")
+
+      self.contents := \l | []
+      tbl := Table()
+      tbl.connect(self, "on_tbl", SELECTION_CHANGED_EVENT)
+      tbl.set_select_one()
+      tbl.set_pos("50%", 30)
+      tbl.set_size("100%-75", "100%-150")
+      tbl.set_align("c", "t")
+      tbl.set_contents(contents)
+      self.Component.add(tbl)
+
+      c1 := TableColumn()
+      c1.set_column_width(100)
+      c1.set_label("Attrib")
+      tbl.add_column(c1)
+
+      c2 := TableColumn()
+      c2.set_column_width(200)
+      c2.set_label("Value")
+      tbl.add_column(c2)
+
+      attrib := TextField()
+      attrib.set_pos("50%-140", "100%-80")
+      attrib.set_align("l", "c")
+      attrib.set_size(95)
+      attrib.set_is_shaded()
+      self.Component.add(attrib)
+
+      value := TextField()
+      value.set_pos("50%-40", "100%-80")
+      value.set_align("l", "c")
+      value.set_size(175)
+      value.set_is_shaded()
+      value.connect(self, "on_apply", ACTION_EVENT)
+      self.Component.add(value)
+
+      add := TextButton()
+      add.connect(self, "on_add", ACTION_EVENT)
+      add.set_pos("25%", "100%-40")
+      add.set_align("c", "c")
+      add.set_label("Add")
+      self.Component.add(add)
+
+      delete := TextButton()
+      delete.connect(self, "on_delete", ACTION_EVENT)
+      delete.set_pos("50%", "100%-40")
+      delete.set_align("c", "c")
+      delete.set_label("Delete")
+      delete.set_is_shaded()
+      self.Component.add(delete)
+
+      apply := TextButton()
+      apply.connect(self, "on_apply", ACTION_EVENT)
+      apply.set_pos("75%", "100%-40")
+      apply.set_align("c", "c")
+      apply.set_label("Apply")
+      apply.set_is_shaded()
+      self.Component.add(apply)
+
+end

@@ -147,11 +147,11 @@ procedure yyprint(node)
 	 if outcol >= node.column then {
             # force space between idents and reserved words, and other
             # deadly combinations (need to add some more)
-            if ((\lasttok).tok = (IDENT|INTLIT) & reswords[node.s][2]~=IDENT)|
+            if ((\lasttok).tok = (IDENT|INTLIT|REALLIT) & reswords[node.s][2]~=IDENT)|
 		(((\lasttok).tok = NMLT) & (node.tok = MINUS)) |
 		((\lasttok).tok = node.tok = PLUS) |
 		((\lasttok).tok = node.tok = MINUS) |
-		((reswords[(\lasttok).s][2]~=IDENT) & (node.tok=(IDENT|INTLIT)))|
+		((reswords[(\lasttok).s][2]~=IDENT) & (node.tok=(IDENT|INTLIT|REALLIT)))|
 	        ((reswords[(\lasttok).s][2]~=IDENT) & (reswords[node.s][2]~=IDENT))
 		   then
 	       writes(yyout, " ")

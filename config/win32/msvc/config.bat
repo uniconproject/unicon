@@ -4,19 +4,19 @@ copy DEFINE.H ..\..\..\src\h
 copy PATH.H ..\..\..\src\h
 copy RSWITCH.C ..\..\..\src\common
 rem copy RSWITCH.ASM ..\..\..\src\common
-copy NTICONT.LNK ..\..\..\src\icont
+copy ICONT.LNK ..\..\..\src\icont
 copy ICONX.LNK ..\..\..\src\runtime
 echo CONSOLE=NTConsole >..\..\..\src\common\makefile
 type MAKEFILE.CMN >>..\..\..\src\common\makefile
 copy MAKEFILE.RTT ..\..\..\src\rtt\makefile
-echo ICONX=nticonx >..\..\..\src\runtime\makefile
+echo ICONX=iconx >..\..\..\src\runtime\makefile
 type MAKEFILE.RUN >>..\..\..\src\runtime\makefile
-echo ICONT=nticont >..\..\..\src\icont\makefile
+echo ICONT=icont >..\..\..\src\icont\makefile
 echo CONSOLE=NTConsole >>..\..\..\src\icont\makefile
 type MAKEFILE.T >>..\..\..\src\icont\makefile
-echo ICONT=..\..\bin\nticont >..\..\..\ipl\lib\makefile
+echo ICONT=..\..\bin\icont >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile
-echo ICONT=..\..\bin\nticont >..\..\..\uni\unicon\makefile
+echo ICONT=..\..\bin\icont >..\..\..\uni\unicon\makefile
 echo COPY=copy >>..\..\..\uni\unicon\makefile
 echo RM=-del >> ..\..\..\uni\unicon\makefile
 echo EXE=.exe >> ..\..\..\uni\unicon\makefile
@@ -41,4 +41,4 @@ del ..\..\..\src\common\*.obj 2> nul
 del ..\..\..\src\runtime\*.obj 2> nul
 copy RTT.LNK ..\..\..\src\rtt
 type MAKEFILE.WCP >..\..\..\src\wincap\makefile
-echo # noop > ..\..\..\uni\ide\makefile
+type makefile.ide > ..\..\..\uni\ide\makefile

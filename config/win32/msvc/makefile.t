@@ -35,14 +35,14 @@ WOBJS=	../wincap/file.obj ../wincap/errors.obj ../wincap/dibutil.obj\
 
 all:            $(ICONT)
 
-nticont:
+icont:
 		$(RM) tmain.obj 2> nul
 		$(RM) link.obj 2> nul
-		$(MAKE) nticont2 CONSOLE=NTConsole DCONSOLE=
+		$(MAKE) icont2 CONSOLE=NTConsole DCONSOLE=
 
-nticont2:        $(OBJS) common
-		link @nticont.lnk
-		copy nticont.exe ..\..\bin
+icont2:        $(OBJS) common
+		link @icont.lnk
+		copy icont.exe ..\..\bin
 
 wicont:
 		$(RM) tmain.obj
@@ -53,11 +53,6 @@ wicont:
 
 wicont2: $(OBJS) common
 		$(link) $(guiflags) $(OBJS) $(COBJS) $(WOBJS) winmm.lib $(guilibs) -out:wicont.exe
-		copy wicont.exe ..\..\bin
-
-wicont16: $(OBJS) common
-		$(CC) $(CFLAGS) -c tmain.c
-		link @wicont16.lnk
 		copy wicont.exe ..\..\bin
 
 linkit:
@@ -108,11 +103,6 @@ opcode.$(O):    opcode.h ../h/opdefs.h
 ixhdr.exe:      ixhdr.$(O)
 		link32 @ixhdr.lnk
 		copy ixhdr.exe ..\..\bin
-
-#nticont: nticont.exe
-
-#nticont.exe:   nticont.obj
-#               link32 -subsystem:console nticont.obj libc.lib kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB -out:nticont.exe
 
 # header file for executables
 iconx.hdr:      ixhdr.$(O)

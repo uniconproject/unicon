@@ -17,6 +17,5 @@ echo EXE=.exe >> ..\..\..\uni\unicon\makefile
 echo BINDIR=..\..\bin >> ..\..\..\uni\unicon\makefile
 echo UNICON=..\unicon\unicon >> ..\..\..\uni\unicon\makefile
 type ..\..\unix\Config\unicon.mak >>..\..\..\uni\unicon\makefile
-type makefile.ide > ..\..\..\uni\ide\makefile
 echo ICONT=..\..\bin\wicont -s >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile

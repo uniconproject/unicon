@@ -1,14 +1,15 @@
 ARC=zip
 ARCEXT=zip
 IYACC=..\iyacc\iyacc
+UFILES= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
 
-unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u errmsg.u
-	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u errmsg.u
+unicon: $(UFILES)
+	$(ICONT) $(UFILES)
 	$(COPY) unicon$(EXE) $(BINDIR)
 
-wunicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u errmsg.u
-	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u errmsg.u
-	$(COPY) unicon$(EXE) $(BINDIR)\wunicon.exe
+wunicon: $(UFILES)
+	$(ICONT) -G -o wunicon.exe $(UFILES)
+	copy wunicon.exe ..\..\bin\wunicon.exe
 
 unicon.u : unicon.icn
 	$(ICONT) -c unicon
@@ -41,8 +42,8 @@ unigram.u: unigram.icn
 #	mv unigram.icn unigram.iol
 #	idol -c unigram.iol
 
-errmsg.u: errmsg.icn
-	$(ICONT) -c errmsg
+yyerror.u: yyerror.icn
+	$(ICONT) -c yyerror
 
 idol.u: idol.icn
 	$(UNICON) -c idol

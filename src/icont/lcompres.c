@@ -127,6 +127,8 @@ int file_comp(char *filename) {
 	     newfname, filename);
      }
 
+  setexe(filename);
+
   return 0;
 }
 

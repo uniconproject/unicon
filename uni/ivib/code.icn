@@ -128,15 +128,23 @@ class Code(
          t ? {
              tab(many(' '))
              if ="class " & tab(many(idchars)) & = " : _Dialog(" then {
-                while insert(existing_fields, tab(many(idchars))) do {
+                repeat {
                    tab(many(' '))
-                   =","
+                   if =")" then break
+                   else if ="#" | (&pos = *&subject+1) then {
+	              put(part1, t)         
+                      t := &subject := read(f)
+                      next
+		      }
+		   if not insert(existing_fields, tab(many(idchars))) then
+		      break
                    tab(many(' '))
-                   }
-                }
+		   =","
+		   }
+		}
              if ="method setup(" then
                 break
-         }
+	 }
          put(part1, t)         
       }
       #
@@ -167,8 +175,12 @@ class Code(
 		  s[7 +: *cl] := self.parent_Canvas.name
 		  }
                every id := !(self.vars_0 | self.vars_1) do
-                  if not member(existing_fields, id) then
-                     s[-1] := "," || id || ")"
+                  if not member(existing_fields, id) then {
+		      if &pos == (* &subject + 1) then
+			 s ||:= id || ","
+		      else
+		         s[&pos] := id || "," || s[&pos]
+		      }
                }
             write(f, s)
 

@@ -2,14 +2,16 @@
 
 include ../../Makedefs
 
-TRANS=		trans.o tcode.o tlex.o lnklist.o tparse.o tsym.o tmem.o tree.o
+TRANS=		trans.o tcode.o tlex.o lnklist.o tparse.o tsym.o tmem.o \
+		 tree.o tglobals.o
 
 LINKR=		link.o lglob.o lcode.o llex.o lmem.o lsym.o opcode.o
 
 OBJS=		tmain.o util.o tlocal.o $(TRANS) $(LINKR)
 
 COBJS=		../common/long.o ../common/getopt.o ../common/alloc.o \
-		   ../common/filepart.o ../common/strtbl.o ../common/ipp.o
+		   ../common/filepart.o ../common/strtbl.o ../common/ipp.o \
+		   ../common/mlocal.o
 
 ICOBJS=		long.o getopt.o alloc.o filepart.o strtbl.o ipp.o
 

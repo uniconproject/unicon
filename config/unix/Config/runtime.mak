@@ -43,7 +43,7 @@ interp_all:
 	$(MAKE) iconx
 
 iconx: $(OBJS)
-	$(CC) $(LDFLAGS) -o iconx  $(OBJS) $(XPMLIB) $(XLIB) $(LIBS)
+	$(CC) $(LDFLAGS) -o iconx  $(OBJS) $(XL) $(RLIBS)
 	cp iconx ../../bin
 	strip ../../bin/iconx
 

@@ -41,9 +41,9 @@ dlrgint.o: ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
 
 xwindow.o: ../h/graphics.h ../h/xwin.h
 
-rswitch.o: $(RSWITCH)
-	$(CC) -c $(OFLAGS) $(RSWITCH)
-
+rswitch.o: FORCE
+	$(CC) -c rswitch.[cs]
+FORCE:
 
 #  The following section is needed if changes are made to the Icon grammar,
 #  but it is not run as part of the normal installation process.  If it is

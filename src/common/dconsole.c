@@ -98,7 +98,7 @@ dptr v;
    err_msg(n, v);
    }
 
-struct b_list *alclist(uword size, uword nslots)
+struct b_list *alclist_0(uword size, uword nslots)
    {
    register struct b_list *blk;
    register struct b_lelem *lblk;
@@ -126,8 +126,7 @@ struct b_list *alclist(uword size, uword nslots)
  * alclstb - allocate a list element block in the block region.
  */
 
-struct b_lelem *alclstb(nslots, first, nused)
-uword nslots, first, nused;
+struct b_lelem *alclstb_0(uword nslots, uword first, uword nused)
    {
    register struct b_lelem *blk;
    register word i, size;
@@ -147,8 +146,7 @@ uword nslots, first, nused;
    }
 
 
-struct b_real *alcreal(val)
-double val;
+struct b_real *alcreal_0(double val)
    {
    register struct b_real *blk;
 
@@ -169,7 +167,7 @@ double val;
    return blk;
    }
 
-char *alcstr(char *s, int len)
+char *alcstr_0(char *s, int len)
 {
    register char *s1;
 

@@ -1,5 +1,5 @@
 procedure dbopen(dsn,table,user,password)
-   return open(dsn,"q",table,user,password)
+   return open(dsn,"o",table,user,password)
 end
 
 procedure dbfetch(db)
@@ -12,4 +12,42 @@ end
 
 procedure dbsql(db,sql)
    return sql(db,sql)
+end
+
+### unfinished implementations of former built-ins below here
+
+
+procedure dbdelete(db, filter)
+   if not (/filter := "") then filter := " WHERE " || filter
+   if t := (image(db) ? { tab(find(":")+1) & tab(0) }) then
+      return sql(db, "DELETE FROM " || blah blah || filter)
+end
+
+procedure dbinsert(db, rec)
+   s := "INSERT INTO " || t || "("
+   every k := key(rec) do { s || := k; s||:= "," }
+   s := s[1:-1] # delete trailing comma?
+   s ||:= ") VALUES ("
+   every k := key(rec) do { s || := rec[k]; s||:= "," }
+   s := s[1:-1] # delete trailing comma?
+   s ||:= ")"
+   return dbsql(db, s)
+
+end
+
+procedure dbselect(db, cols, filter, order)
+  /cols := "*"
+  s := "SELECT " || cols || " FROM " || tabl
+  s ||:= " WHERE " || \filter
+  # ok to omit order
+  s ||:= " ORDER BY " || \order
+  return sql(db, s)
+end
+
+procedure dbupdate(f, rec)
+  s := "UPDATE " || tabl || " SET "
+  # c1=..., c2=... # fieldnames=values,
+  s ||:= " WHERE "
+  # k1=... AND K2=...
+  return sql(db, s)
 end

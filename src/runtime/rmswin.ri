@@ -515,12 +515,14 @@ int handle_config(wbp w, UINT msg, WPARAM wp, LPARAM lp)
 
    ws->width = neww;
    ws->height = newh;
+#ifdef Graphics3D
    if(ws->is_3D) {
       HDC tmpdc = GetDC(ws->iconwin);
       wglMakeCurrent(tmpdc, w->context->ctx);
       glViewport(0, 0, (GLsizei)neww, (GLsizei) newh);
       ReleaseDC(ws->iconwin, tmpdc);
       }
+#endif					/* Graphics3D */
    if (! resizePixmap(w, ws->width, ws->height)) return 0;
    if (!ISEXPOSED(w)) {
       SETEXPOSED(w);
@@ -710,6 +712,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    else
    switch(msg) {
    case WM_PAINT:
+#ifdef Graphics3D
       if (wb->window->is_3D) {
          HDC hdc = CreateWinDC(wb);
          /* render scene */
@@ -721,6 +724,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
          ReleaseDC(hwnd, hdc);
          }
       else {
+#endif					/* Graphics3D */
       hdc = BeginPaint(hwnd, &ps);
       GetClientRect(hwnd, &rect);
       if (IsIconic(hwnd)) {
@@ -740,7 +744,9 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	 DeleteDC(hdc2);
 	 }
       EndPaint(hwnd, &ps);
+#ifdef Graphics3D
       }
+#endif					/* Graphics3D */
       return 0;
    case WM_MOUSEMOVE:
       if (ws->curcursor)
@@ -937,11 +943,13 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 #ifdef ConsoleWindow
             closelogfile();
 #endif					/* ConsoleWindow */
+#ifdef Graphics3D
             if(ws->is_3D) {
                wglMakeCurrent(0, NULL);
                wglDeleteContext(wb->context->ctx);
                wb->context->ctx = NULL;
                }
+#endif					/* Graphics3D */
 	    PostQuitMessage(0);
 	    return 0;
 	    }
@@ -3805,6 +3813,7 @@ int resizePixmap(wbp w, int width, int height)
    return 1;
    }
 
+#ifdef Graphics3D
 void SetDCPixelFormat(HDC h)
 {
    PIXELFORMATDESCRIPTOR pfd;
@@ -3822,6 +3831,7 @@ void SetDCPixelFormat(HDC h)
    iFormat = ChoosePixelFormat( h, &pfd );
    SetPixelFormat( h, iFormat, &pfd );
 }
+#endif					/* Graphics3D */
 
 /*
  * CreateWinDC - create a device context for drawing on the window
@@ -3845,11 +3855,13 @@ HDC CreateWinDC(wbp w)
    if (wc->clipw >= 0){
       SelectClipRgn(hdc, wc->cliprgn);
       }
-/*   wc->ctx = wglCreateContext (hdc); */
 
+#ifdef Graphics3D
+/*   wc->ctx = wglCreateContext (hdc); */
    if (w->context->is_3D) {
       wglMakeCurrent (hdc, wc->ctx);
       }
+#endif					/* Graphics3D */
 
    return hdc;
    }

@@ -22,6 +22,9 @@
  */
 #ifdef Graphics
 
+#ifdef ConsoleWindow
+extern void closelogfile();
+#endif					/* ConsoleWindow */
 void wfreersc();
 int alc_rgb(wbp w, SysColor rgb);
 int numRealized;
@@ -249,14 +252,12 @@ int mswinsystem(char *s)
     * and wait for _P_WAIT.  At the moment, this gives no indication of
     * actually working; the program is launched but we don't wait for it.
     */
-#if 1
    if (!iswin31) {
       argc = CmdParamToArgv(s, &argv);
       rv = _spawnvp(_P_WAIT, s3, argv);
       free(argv);
       return rv;
       }
-#endif
 
    /*
     * this remaining code is a colossal kludge to support waiting for
@@ -715,17 +716,13 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    for (wb = wbndngs; wb; wb=wb->next) {
       ws = wb->window;
 
-#if 0
-      if (((ws->win == hwnd) || (ws->iconwin == hwnd) ||
-	   (ws->pix == hwnd) || (ws->initialPix == hwnd))) break;
-#else
       if ((ws->win == hwnd) || (ws->iconwin == hwnd)) break;
-#endif
       }
    if (msg == WM_QUIT) {
-      extern void closelogfile();
       wfreersc();
+#ifdef ConsoleWindow
       closelogfile();
+#endif					/* ConsoleWindow */
       }
    else if (!wb) {
       /* 
@@ -948,7 +945,9 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	    qevent(ws ,&d, 0, 0, 0, 0);
             }
          else { /* terminate on unhandled unexpected window closure */
+#ifdef ConsoleWindow
             closelogfile();
+#endif					/* ConsoleWindow */
 	    PostQuitMessage(0);
 	    return 0;
 	    }
@@ -959,9 +958,11 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       if (BlkLoc(lastEventWin))
          BlkLoc(lastEventWin)->file.status &= ~(Fs_Write);
 
+#ifdef ConsoleWindow
       if (ConsoleBinding && (ws == ((wbp)ConsoleBinding)->window)) {
          ConsoleBinding = 0;
          }
+#endif					/* ConsoleWindow */
       break;
    case MM_MCINOTIFY:
       mciSendCommand(LOWORD(lp), MCI_CLOSE, 0, (DWORD)NULL);
@@ -2089,38 +2090,6 @@ int x, y, width, height, x2, y2;
             bpad = y + height - ws1->pixheight;
             height -= bpad;
             }
-#if 0
-      if (x < 0) { /* fill pixels to left of source canvas with source bg */
-         r.left = x2; r.top = y2; r.right = x2 -x; r.bottom = y2 + height;
-         if (stdwin)
-            FillRect(stddc, &r, hb);
-         FillRect(pixdc, &r, hb);
-         x = 0;
-         }
-      if (x + width > ws1->pixwidth) { /* fill pixels to right of source */
-         r.left = x2 + ws1->pixwidth - x; r.top = y2;
-         r.right = x2 + width ; r.bottom = y2 + height;
-         if (stdwin)
-            FillRect(stddc, &r, hb);
-         FillRect(pixdc, &r, hb);
-         width = ws1->pixwidth - x;
-         }
-      if (y < 0) { /* fill pixels above source canvas with source bg */
-         r.left = x2; r.top = y2; r.right = x2 + width; r.bottom = y2 - y;
-         if (stdwin)
-            FillRect(stddc, &r, hb);
-         FillRect(pixdc, &r, hb);
-         y = 0;
-         }
-      if (y + height > ws1->pixheight) { /* fill pixels below source */
-         r.left = x2; r.top = y2 + ws1->pixheight - y;
-         r.right = x2 + width; r.bottom = y2 + height;
-         if (stdwin)
-            FillRect(stddc, &r, hb);
-         FillRect(pixdc, &r, hb);
-         height = ws1->pixheight - y;
-         }
-#endif      
       if (stdwin)
          BitBlt(stddc, x2, y2, width, height, srcpixdc, x, y, SRCCOPY);
       BitBlt(pixdc, x2, y2, width, height, srcpixdc, x, y, SRCCOPY);

@@ -17,6 +17,7 @@ echo ICONT=icont >..\..\..\src\icont\makefile
 echo CONSOLE=NTConsole >>..\..\..\src\icont\makefile
 type MAKEFILE.T >>..\..\..\src\icont\makefile
 copy makefile.dbm ..\..\..\src\gdbm\makefile
+mkdir ..\..\..\ipl\lib
 echo ICONT=..\..\bin\icont >..\..\..\ipl\lib\makefile
 type makefile.ipl >> ..\..\..\ipl\lib\makefile
 echo ICONT=..\..\bin\icont >..\..\..\uni\unicon\makefile

@@ -371,7 +371,7 @@ void cylinder(double radius1, double radius2, double height,
    /* translate to the specified x,y, and z */
    glPushMatrix();
    glTranslatef(x, y, z);
-   glRotated(270.0, 1.0, 0.0, 0.0); /* is this really needed */
+   glRotated(270.0, 1.0, 0.0, 0.0); /* rotate so cylinder points "up" by default */
    qobj = gluNewQuadric();
 
    gluQuadricDrawStyle(qobj, GLU_FILL);
@@ -1470,7 +1470,7 @@ int settexcoords(wbp w, char* s)
          glEnable(GL_TEXTURE_GEN_S);
       if (!glIsEnabled(GL_TEXTURE_GEN_T))
          glEnable(GL_TEXTURE_GEN_T);
-      MakeInt(1, &mode);
+      mode = onedesc;
       c_put(&f, &mode);
       c_put(&(w->window->funclist), &f);
       return Succeeded;
@@ -1480,7 +1480,7 @@ int settexcoords(wbp w, char* s)
     * otherwise a string of texture coordinates should be given
     */
    else if(isdigit(*s2)) {
-      MakeInt(0, &mode);
+      mode = zerodesc;
       c_put(&f, &mode);
       j = w->context->numtexcoords = 0;
       w->context->autogen = 0;

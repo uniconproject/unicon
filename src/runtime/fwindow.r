@@ -2841,6 +2841,7 @@ function{0,1} WinSaveDialog(argv[argc])
       }
 end
 #else
+MissingGraphicsFunc1(WinAssociate)
 MissingGraphicsFuncV(WinPlayMedia)
 MissingGraphicsFuncV(WinButton)
 MissingGraphicsFuncV(WinScrollBar)

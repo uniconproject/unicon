@@ -6,11 +6,11 @@ CPU=i386
 LDFLAGS=
 CC=gcc
 # /Zi for debugging, /O1 to minimize space... Ray recommends /O6 + others
-CFLAGS=-D_X86_ -DWIN32 -DMSNT -g -I../gdbm -I../libtp
+CFLAGS=-D_X86_ -DWIN32 -DMSNT -DNTConsole -g -I../gdbm -I../libtp
 MAKE=make
 RTT=../../bin/rtt
 O=o
-RM=-rm
+RM=rm
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -46,10 +46,8 @@ ICOBJS=	long.$(O) time.$(O) save.$(O) rswitch.$(O) redirerr.$(O) xwindow.$(O) al
 
 OBJS=	$(XOBJS) $(COBJS)
 
-interp_all:
-	cd ../common && $(RM) *.$(O) && $(MAKE) $(ICOBJS) $(XPM)
-	cd ../wincap && $(RM) *.$(O) && $(MAKE) lib
-	$(RM) miconx.exe
+interp_all: $(COBJS) $(WOBJS)
+	-$(RM) miconx.exe
 	$(MAKE) miconx
 	$(MAKE) $(ICONX)
 
@@ -57,26 +55,30 @@ MYGUILIBS= -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
 # add $(linkdebug) after /STACK:40000 for debugging
 
-wiconx: $(OBJS) $(WOBJS)
-	cd ../common && $(MAKE) $(ICOBJS) $(XPM)
+wiconx: iconx
+	cp iconx.exe wiconx.exe
+	cp iconx.exe ../../bin/wiconx.exe
+
+iconx: $(OBJS) $(WOBJS) $(COBJS)
 	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
-	$(CC) -Xlinker --stack -Xlinker 768000 -o wiconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
-	cp wiconx.exe ../../bin
+	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
+	$(CC) -Xlinker --stack -Xlinker 768000 -o iconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
+	cp iconx.exe ../../bin
 
 #	$(link) /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(guilibs) -out:wiconx.exe
 #	copy wiconx.exe ..\..\bin
 
 miconx:
-	$(RM) *.$(O)
+	-$(RM) *.$(O)
 	cp ../h/define.h define.bak
 	echo #undef EventMon >> ../h/define.h
 	echo #define EventMon 1 >> ../h/define.h
 	$(MAKE) $(ICONX)
-	$(RM) m$(ICONX).exe
+	-$(RM) m$(ICONX).exe
 	mv $(ICONX).exe m$(ICONX).exe
 	cp m$(ICONX).exe ../../bin
-	$(RM) *.$(O)
-	$(RM) ..\h\define.h
+	-$(RM) *.$(O)
+	-$(RM) ..\h\define.h
 	mv define.bak ../h/define.h
 
 nticonx: $(OBJS)

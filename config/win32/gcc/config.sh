@@ -28,7 +28,7 @@ echo EXE=.exe >> ../../../uni/ivib/makefile
 echo BINDIR=../../bin >> ../../../uni/ivib/makefile
 echo UNICON=../unicon/unicon -G >> ../../../uni/ivib/makefile
 echo CP=cp >> ../../../uni/ivib/makefile
-echo MAKE=nmake >> ../../../uni/ivib/makefile
+echo MAKE=make >> ../../../uni/ivib/makefile
 echo IVIB2=ivib2win >> ../../../uni/ivib/makefile
 cat makefile.ivb >>../../../uni/ivib/makefile
 echo RM=-rm > ../../../uni/lib/makefile

@@ -1,4 +1,3 @@
-DCONSOLE=../common/dconsole.o
 OS=NT
 ENV=WIN32
 CPU=i386
@@ -8,7 +7,7 @@ CC=gcc
 LD=ld
 # /Ox for maximum optimzation, /Zi for debugging...
 #CFLAGS= /D_X86_ /DWIN32 /Ox /D$(CONSOLE) /I..\gdbm /I..\libtp
-CFLAGS= -D_X86_ -DWIN32 -O -D$(CONSOLE) -I../gdbm -I../libtp
+CFLAGS= -D_X86_ -DWIN32 -O -DNTConsole -I../gdbm -I../libtp
 HFLAGS=
 LDFLAGS=
 LIBS=

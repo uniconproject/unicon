@@ -1,8 +1,10 @@
 # Makefile for WINCAP
 # Copyright (c) 1991 Microsoft Corporation. All rights reserved.
 
-OBJS = wincap.obj dialogs.obj file.obj errors.obj  \
-    dibutil.obj copy.obj print.obj
+O=o
+
+OBJS = wincap.$(O) dialogs.$(O) file.$(O) errors.$(O)  \
+    dibutil.$(O) copy.$(O) print.$(O)
 
 APP_compile = -c -AS -Gsw -Zipe -W3 -Od
 APP_link = /CO /NOD /NOE
@@ -11,22 +13,22 @@ lib: $(OBJS)
 
 all: wincap.exe
 
-.c.obj:
-    cl -c /D_X86_ /DWIN32 /DMSNT /O1 $*.c
+.c.$(O):
+    cc -c -D_X86_ -DWIN32 -DMSNT $*.c
 
-wincap.obj: wincap.c wincap.h dialogs.h dibapi.h
+wincap.$(O): wincap.c wincap.h dialogs.h dibapi.h
 
-dialogs.obj: dialogs.c dialogs.h
+dialogs.$(O): dialogs.c dialogs.h
 
-file.obj: file.c dibapi.h
+file.$(O): file.c dibapi.h
 
-errors.obj: errors.c errors.h
+errors.$(O): errors.c errors.h
 
-dibutil.obj: dibutil.c dibutil.h
+dibutil.$(O): dibutil.c dibutil.h
 
-copy.obj: copy.c dibapi.h
+copy.$(O): copy.c dibapi.h
 
-print.obj: print.c dibapi.h dialogs.h
+print.$(O): print.c dibapi.h dialogs.h
 
 wincap.res: $*.rc wincap.h dialogs.h dialogs.dlg wincap.rc dibapi.h wincap.ico
      rc -r $*.rc

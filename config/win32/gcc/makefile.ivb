@@ -3,7 +3,7 @@
 #
 
 ICONDIR=icon
-SWITCHAR=\\
+SWITCHAR=/
 
 LIBFILES=..$(SWITCHAR)lib$(SWITCHAR)qsort.u \
       ..$(SWITCHAR)lib$(SWITCHAR)gui.u \
@@ -60,18 +60,13 @@ ICONS=$(ICONDIR)$(SWITCHAR)icn1.ico \
 #
 # Linking
 #
-ivib: $(IVIB2) $(UFILES)
+ivib: ivib2 $(UFILES)
 	$(UNICON) -o ivib $(UFILES) $(LIBFILES)
-	$(COPY) ivib$(EXE) $(BINDIR)
+	$(CP) ivib$(EXE) $(BINDIR)
 	@echo Linking complete.
 
 ivib2:
 	cd ..$(SWITCHAR)lib; make
-
-ivib2win:
-	cd ..\lib
-	$(MAKE)
-	cd ..\ivib
 
 #
 # Program to translate xpm to Icon image format.

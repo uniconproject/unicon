@@ -25,7 +25,7 @@
 
 function{0,1} event(x,y,ce)
    body {
-      struct progstate *dest;
+      struct progstate *dest = NULL;
 
       if (is:null(x)) {
 	 x = curpstate->eventcode;
@@ -204,7 +204,7 @@ function{0,1} EvGet(cs,vmask,flag)
    body {
       register int c;
       tended struct descrip dummy;
-      struct progstate *p;
+      struct progstate *p = NULL;
 
       /*
        * Be sure an eventsource is available
@@ -324,7 +324,7 @@ static char scopechars[] = "+:^-";
 void EVVariable(dptr dx, int eventcode)
 {
    int i;
-   dptr procname;
+   dptr procname = NULL;
    struct progstate *parent = curpstate->parent;
    struct region *rp = curpstate->stringregion;
 
@@ -374,10 +374,11 @@ void EVVariable(dptr dx, int eventcode)
       alcstr(StrLoc(*procname), StrLen(*procname));
       StrLen(parent->eventval) += StrLen(*procname) + 1;
       }
+   else if (i == Failed) {
+      /* parent->eventval = *dx; */
+      }
    else if (i == Error) {
-      noMTevents--;
-      syserr("get_name failed in EVVariable");
-      return; /* should be more violent than this */
+      syserr("get_name error in EVVariable");
       }
 
    parent->stringregion = curpstate->stringregion;
@@ -454,6 +455,7 @@ void EVInit()
    profil(ticker.s, sizeof(ticker.s), (int) EVInit & ~0x3FFFF, 2);
 #endif					/* HaveProfil*/
 #endif					/* UNIX */
+
    }
 
 /*
@@ -462,7 +464,7 @@ void EVInit()
 
 void mmrefresh()
    {
-   char *p;
+   char *p = NULL;
    word n;
 
    /*

@@ -10,6 +10,9 @@ link getpaths
 global fin,fout,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha,reserved
 global classes,comp,exec,strict,links,imports,loud,compiles,ct,tmpcount
 
+# classspec database (DBM) entry
+record db_entry(dir, entry)
+
 #
 # Abstract class for objects resulting from parsing lines of the form
 #   tag name ( field1 , field2, ... )
@@ -47,14 +50,7 @@ class declaration(name,fields,tag,lptoken,rptoken)
   #
   method Write(f)
       yyprint(tag)
-
-      if \thePackage then {
-         writes(f, " ",thePackage.name,"__",name.s)
-         thePackage.insertsym(name.s)
-         }
-      else
-         yyprint(name)
-
+      yyprint(name)
       yyprint(lptoken)
       yyprint(fields)
       yyprint(rptoken)
@@ -79,18 +75,15 @@ procedure import_class(node)
    local s
    /imported := table()
    if type(node)=="treenode" & node.label=="lnklist" then {
-      import_class(node.children[1], node.children[3])
+      import_class(node.children[1])
+      import_class(node.children[3])
       }
-   if node.tok = (IDENT|STRINGLIT) then {
-       tempp := Package( , node.s)
-       every s := tempp.fields.foreach() do {
-	   if member(imported, s) then {
-	       yyerror(s || " is imported multiple times")
-	   }
-	   else {
-	       imported[s] := node.s
-	   }
-       }
+   else if node.tok = (IDENT|STRINGLIT) then {
+       tempp := Package(node.s)
+       if /tempp.dir then {
+          yyerror("Unable to import package " || node.s)
+          }
+       tempp.add_imported()
    }
 end
 
@@ -101,7 +94,35 @@ end
 # is the list of source files that are linked in when that package is
 # imported.
 #
-class Package : declaration(files)
+class Package : declaration(files, dir, classes)
+   #
+   # Add to the two global tables of imported symbols from this package's
+   # set of symbols.
+   #
+   method add_imported()
+      local s, f
+
+      if /dir then
+         return
+      
+      f := open(dir || "/uniclass", "dr") | stop("Couldn't re-open uniclass db in " || dir)
+      every s := fields.foreach() do {
+         if member(imported, s) then
+             put(imported[s], self.name)
+          else {
+             imported[s] := [self.name]
+          }
+
+         if fetch(f, self.name || "__" || s) then {
+            if member(imported_classes, s) then
+               put(imported_classes[s], self.name)
+            else {
+               imported_classes[s] := [self.name]
+            }
+         }
+      }
+      close(f)
+   end
    method Read(line)
       self$declaration.Read(line)
       self.files := idTaque(":")
@@ -125,17 +146,17 @@ class Package : declaration(files)
          }
       else write(sym, " is already in Package ", name)
    end
+   method containssym(sym)
+       return \fields.lookup(sym)
+   end
    method String()
       s := self$declaration.String()
-write("s1 ", s)
       fs := files.String()
       if *fs > 0 then fs := " : " || fs
       s := s[1: (*tag + *name + 2)] || fs || s[*tag+*name+2:0]
-write("s ", s, " fs, ", fs)
       return s
    end
    method writespec()
-write("writing spec")
    if \name & (f := open(env,"d")) then {
       insert(f, name, String())
       close(f)
@@ -143,17 +164,12 @@ write("writing spec")
       }
    stop("can't write package spec for ", image(name))
    end
-   method fetchspec()
-   local s
-   if /name then return
-   if f := open(env,"dr") then {
-      s := fetch(f, name)
-      close(f)
-      return \s
+initially(name)
+   self.name := name
+   if dbe := fetchspec(self.name) then {
+      Read(dbe.entry)
+      self.dir := dbe.dir
       }
-   end
-initially
-   Read(fetchspec())
    /tag := "package"
    /fields := classFields()
 end
@@ -170,7 +186,10 @@ class Class : declaration (supers,
 			   imethods,
 			   ifields,
 			   glob,
-			   linkfile)
+			   linkfile,
+			   dir,
+			   unmangled_name,
+			   supers_node)
 
   method ismethod(id)
      if \ (self.methods$lookup(id)) | (!\self.imethods).ident == id then
@@ -248,11 +267,6 @@ class Class : declaration (supers,
   method isvarg(s)
     if self.fields$isvarg(s) then return s
   end
-  method scopeck()
-    every m := self$foreachmethod() do {
-      m$scopeck(self)
-      }
-  end
   method transitive_closure()
     count := supers$size()
     while count > 0 do {
@@ -276,12 +290,7 @@ class Class : declaration (supers,
   # otherwise, write as a constructor
   #
   method writedecl(f,s)
-    if \thePackage then {
-       writes(f, s, " ",thePackage.name,"__",self.name)
-       thePackage.insertsym(self.name)
-       }
-    else
-       writes(f, s," ",self.name)
+    writes(f, s," ",self.name)
     if s=="class" & ( *(superstr := self.supers$String()) > 0 ) then
 	    writes(f," : ",superstr)
     writes(f,"(")
@@ -309,10 +318,7 @@ class Class : declaration (supers,
        fail
        }
 
-    if \thePackage then nam := thePackage.name || "__" || self.name
-    else
-       nam := self.name
-
+    nam := self.name
     s := fName || "\nclass " || nam
     if *(superstr := self.supers$String()) > 0 then {
        s ||:= " : "; s ||:= superstr
@@ -323,7 +329,6 @@ class Class : declaration (supers,
     s ||:= rv[1:-1]
     s ||:= ")\n"
     every s ||:= (methods$foreach())$mkspec()
-#    if self$has_initially() then s ||:= "initially\n"
     s ||:= "end\n"
 #    if *(self.name) + *s > 1023 then { # need to compress s
 #       f2 := open("gzip.out", "w")
@@ -354,9 +359,8 @@ class Class : declaration (supers,
     if \self.glob & *self.glob>0 then {
 	write(f,"#\n# globals declared within the class\n#")
 	every i := 1 to *self.glob do
-	   yyprint(glob[i], (\thePackage).name|&null)
+	   yyprint(glob[i])
 	write(f)
-#	   (self.glob[i])$Write(f,"")
     }
   end
 
@@ -365,10 +369,7 @@ class Class : declaration (supers,
   #
   method Write(f)
 
-    if \thePackage then nam := thePackage.name || "__" || self.name
-    else
-       nam := self.name
-
+    nam := self.name
     yyprint("\n")
     writemethods(f)
     #
@@ -540,7 +541,7 @@ end
 #
 # a class defining operations on methods and procedures
 #
-class Method : declaration (Class, locals, initl, procbody)
+class Method : declaration (Class, locals, initl, procbody, abstract_flag)
   method mkspec()
     decl := self$String()
     decl ?:= {
@@ -566,13 +567,9 @@ class Method : declaration (Class, locals, initl, procbody)
 #     if x := \ (self.text.vars) then
 #	return x$lookup(id)
   end
-  method scopeck(myclass)
-     body_scopeck(procbody, self)
-  end
   method Write(f, nam)
     yyprint("\n")
     writes(f, "procedure ")
-    writes(f, (\thePackage).name, "__")
     writes(f, self.Class$name(), "_")
     yyprint(name)
     writes(f, "(self")
@@ -581,10 +578,13 @@ class Method : declaration (Class, locals, initl, procbody)
        }
     yyprint(fields)
     yyprint(")\n")
-    yyprint(locals)
-    yyprint(initl)
-    (\fields).coercions()
-    yyprint(procbody)
+    if /abstract_flag then {
+       yyprint(locals)
+       yyprint(initl)
+       (\fields).coercions()
+       yyprint(procbody)
+       }
+    else write(f, "   runerr(700, \"method " || name || "()\")")
     yyprint("\nend\n")
   end
 end
@@ -632,6 +632,11 @@ procedure methodstaque(node, cl, taq)
 	 "token": {
 	    write("token ", tokenstr(node.tok), " line ", node.line, " file ", node.filename)
 	    }
+         "declaration__state" : {
+            # Record declaration.
+            /(cl.glob) := []
+            put(cl.glob, node)
+            }
 	 default: {
 	    write("methods Taque on ", type(node), " : ", image(node))
 	    }
@@ -825,7 +830,7 @@ procedure fetchspec(name)
 #	    close(f2)
 #	    remove("gzip.out")
 #	    }
-	 return s
+	 return db_entry(".", s)
 	 }
       close(f)
       }
@@ -843,7 +848,7 @@ procedure fetchspec(name)
 	 while dir := tab(many(&cset--' \t')) do {
 	    if f := open(dir || "/" || env, "dr") then {
 	       if s := fetch(f, name) then {
-		  close(f); return s }
+		  close(f); return db_entry(dir, s) }
 	       close(f)
 	       }
 	    tab(many(' \t'))
@@ -857,9 +862,10 @@ end
 #
 procedure readspec(name)
    local s
-   if not (s := fetchspec(name)) then
+   if not (dbe := fetchspec(name)) then
       stop("fatal: can't read spec for class ", name)
 
+   s := dbe.entry
    fName := name
    fLine := 0
    if /s then write("fetchspec ", name, " returned null")
@@ -877,6 +883,7 @@ procedure readspec(name)
 	 tab(many(white))
 	 if ="class" then {
 	    decl := Class()
+            decl.dir := dbe.dir
 	    decl.linkfile := fromfile
 	    decl$Read(line,L)
 	    #insert into table for lookup, but not into list for generation

@@ -10,7 +10,7 @@ end
 
 global thePackage
 
-procedure yyprint(node, pkgprefix)
+procedure yyprint(node)
    static lasttok
    case type(node) of {
       "treenode" : {
@@ -19,31 +19,30 @@ procedure yyprint(node, pkgprefix)
 	     # noop
 	    }
 	 else if node.label == "import" then {
-	    tempp := Package( , node.children[2].s)
-	    every fn := tempp.files.foreach() do {
-	       if map(fn)[-4:0]==".icn" then fn[-4:0] := ""
-	       write(yyout,"\nlink ",image(fn))
-	       outcol := 1
-	       }
+	    print_imports(node.children[2])
 	    }
          else if node.label == "packageref" then {
-	     yyprint(node.children[1])
-	     writes(yyout, "__")
-	     outcol +:= ((* writes(yyout, node.children[3].s)) + 2)
+	     if *node.children = 2 then
+		 yyprint(node.children[2]) # ::ident
+	     else { # ident :: ident
+		yyprint(node.children[1])
+		writes(yyout, "__")
+	        outcol +:= ((* writes(yyout, node.children[3].s)) + 2)
+		}
 	 }
          else if node.label == "global" then {
-	    yyprint(node.children[1], pkgprefix)
-	    yyprint(node.children[2], (\thePackage).name|&null)
+	    yyprint(node.children[1])
+	    yyprint(node.children[2])
 	    }
 	 else if node.label == "proc" then {
-	    yyprint(node.children[1],pkgprefix)
-	    every yyprint(node.children[2 to 4],pkgprefix)
+	    yyprint(node.children[1])
+	    every yyprint(node.children[2 to 4])
 	    (node.children[1].fields).coercions()
-	    yyprint(node.children[5],pkgprefix)
-	    yyprint(node.children[6],pkgprefix)
+	    yyprint(node.children[5])
+	    yyprint(node.children[6])
 	    }
 	 else if *node.children > 0 then {
-            every yyprint(!node.children, pkgprefix)
+            every yyprint(!node.children)
 	    }
 	 else if node.label === "error" then fail
 	 else write("leaf, ", node.label)
@@ -74,7 +73,7 @@ procedure yyprint(node, pkgprefix)
 	 if outcol >= node.column then {
             # force space between idents and reserved words, and other
             # deadly combinations (need to add some more)
-            if ((\lasttok).tok = (IDENT|INTLIT) & reswords[node.s][2]~=IDENT) |
+            if ((\lasttok).tok = (IDENT|INTLIT) & reswords[node.s][2]~=IDENT)|
 		(((\lasttok).tok = NMLT) & (node.tok = MINUS)) |
 		((\lasttok).tok = node.tok = PLUS) |
 		((\lasttok).tok = node.tok = MINUS) |
@@ -84,13 +83,8 @@ procedure yyprint(node, pkgprefix)
 	       writes(yyout, " ")
 	    }
 	 else
-         while outcol < node.column do { writes(yyout, " "); outcol +:= 1 }
+	    while outcol < node.column do { writes(yyout, " "); outcol +:= 1 }
 
-	 if \pkgprefix & (node.tok = IDENT) then {
-	     writes(yyout, pkgprefix, "__")
-	     outcol +:= *pkgprefix + 1
-	     thePackage.insertsym(node.s)
-	     }
 	 writes(yyout, node.s)
 	 outcol +:= *node.s
 	 lasttok := node
@@ -109,27 +103,405 @@ procedure yyprint(node, pkgprefix)
       }
 end
 
-procedure body_scopeck(node,met)
- case type(node) of {
-    "treenode": {
-       if node.label === "keyword" then fail
-       else if node.label === "field" then body_scopeck(node.children[1], met)
-       else if *node.children > 0 then
-	  every body_scopeck(!node.children, met)
-       }
-    "token": {
-       if node.tok = IDENT then {
-	  if (\met).Class.ismethod(node.s) | (\met).Class.isfield(node.s) then {
-	     if not met.islocal(node.s) then {
-		node.s := "self." || node.s
-		}
-	     else {
-		}
-	     }
-	  else {
-	      node.s := \ ((\imported)[node.s]) || "__" || node.s
-	     }
-	  }
-       }
+procedure print_imports(node)
+   if type(node)=="treenode" & node.label=="lnklist" then {
+      print_imports(node.children[1])
+      print_imports(node.children[3])
+   } else if node.tok = (IDENT|STRINGLIT) then {
+      tempp := Package(node.s)
+      every fn := (\tempp.files).foreach() do {
+         if map(fn)[-4:0]==".icn" then fn[-4:0] := ""
+         writelink(tempp.dir, fn)
+         outcol := 1
+      }
+   }
+end
+
+#
+# This method takes a symbol (a string) and "mangles" it according to which
+# imported package it belongs to, or whether it belongs to the local package.
+#
+procedure mangle_sym(sym)
+   initial {
+      if \yydbg then {
+         dbg := 1
+         write("imported syms:---")
+         every x := !sort(imported) do {
+            s := "["
+            every s ||:= !x[2] || ","
+            s[-1] := "]"
+            write(x[1],"->",s)
+         }
+         write("------")
+      }
+   }
+                               
+   #
+   # First check if it is in the package-level symbols defined in this file.
+   # These override any imports.
+   #
+   if member(package_level_syms, sym) then
+      return package_mangled_symbol(sym)
+
+   if member(imported, sym) then {
+      l := imported[sym]
+      if *l > 1 then {
+         s := sym || " is imported from several packages: ("
+         every s ||:= !l || ","
+         s[-1]:=") Use the :: operator to specify which package is intended."
+         yyerror(s)
+         return sym
+      }
+
+      return l[1] || "__" || sym
+   }
+
+   return sym
+end
+
+#
+# This method is the same as above, but just operates on class symbols,
+# as opposed to general symbols.
+#
+procedure mangle_class_sym(sym)
+   initial {
+      if \yydbg then {
+         dbg := 1
+         write("imported class syms:---")
+         every x := !sort(imported_classes) do {
+            s := "["
+            every s ||:= !x[2] || ","
+            s[-1] := "]"
+            write(x[1],"->",s)
+         }
+         write("------")
+      }
+   }
+
+   #
+   # First check if it is in the classes defined in this file.  These
+   # override any imports.
+   #
+   if member(package_level_class_syms, sym) then
+      return package_mangled_symbol(sym)
+
+   if member(imported_classes, sym) then {
+      l := imported_classes[sym]
+      if *l > 1 then {
+         s := sym || " is imported from several packages: ("
+         every s ||:= !l || ","
+         s[-1]:=") Use the :: operator to specify which package is intended."
+         yyerror(s)
+         return sym
+      }
+
+      return l[1] || "__" || sym
+   }
+
+   return sym
+end
+
+#
+# This function is called to setup the package_level_syms variable.
+# This is a set of the package-level symbols defined in this file, ie
+# class names, global variables, record names and procedure names.  It
+# is called immediately after parsing has completed.  As it comes
+# across the symbols it must add, they are mangled. 
+#
+procedure set_package_level_syms(node)
+   local n
+   case type(node) of {
+      "treenode": {
+         case node.label of {
+            "decls" : {
+               every set_package_level_syms(node.children[1 | 2])
+            }
+
+            "global" : {
+               n := node.children[2]
+               repeat {
+                  if type(n) == "token" then {
+                     ident_into_package_level_syms(n)
+                     return
+                  } 
+                  ident_into_package_level_syms(n.children[3])
+                  n := n.children[1]
+               }
+            }
+
+            "proc" : {
+               ident_into_package_level_syms(node.children[1].name)
+            }
+
+         }
+      }
+      "declaration__state": {  # record declaration
+         ident_into_package_level_syms(node.name)
+      }
+      "Class__state": {
+         insert(package_level_syms, node.unmangled_name)
+         insert(package_level_class_syms, node.unmangled_name)
+         #
+         # Process the inner records/globals; these are just
+         # treated as top-level declarations.
+         #
+         every set_package_level_syms(!(\node.glob))
+      }
+   }
+
+end
+
+#
+# Helper function to add the symbol to the set, and mangle it.
+#
+procedure ident_into_package_level_syms(node)
+   insert(package_level_syms, node.s)
+   node.s := package_mangled_symbol(node.s)
+end
+
+#
+# Mangle a symbol according to the package the current file is in (if any).
+#
+procedure package_mangled_symbol(symbol)
+   if /thePackage then
+      return symbol
+   else
+      return thePackage.name || "__" || symbol
+end
+
+#
+# Mangle a packageref node, ie an explicit package reference in
+# the form a::b or ::b
+#
+procedure mangle_explicit_packageref(node)
+   if *node.children = 2 then
+      return node.children[2].s
+   else
+      return node.children[1].s || "__" || node.children[3].s
+end
+
+# This function scope-checks the superclass names of the class declarations
+# in this file.  Any symbols which refer to packages are mangled
+# appropriately. This stage takes place after the package_level_syms set
+# has been set up, but before the class definitions have had their fields
+# and methods resolved.
+#
+# As an example a class declaration
+# class A : X : Y : Z()
+# might be transformed to
+# class A : pack1__X : pack2__Y : pack2__Z()
+#
+#
+procedure scopecheck_superclass_decs(node)
+   every scopecheck_superclass_dec(classes.foreach_t())
+end
+
+#
+# Perform the superclass declaration scope-check for the class c.
+#
+procedure scopecheck_superclass_dec(c)
+   local tmp, x
+
+   tmp := idTaque(":")
+   x := c.supers_node
+   while x ~=== EmptyNode do {
+      sc := x.children[2]
+
+      if type(sc) == "token" then
+         # Simple reference, so use mangle_class_sym (it must be a class)
+         tmp.Push(mangle_class_sym(sc.s))
+      else
+         # Explicit packageref, eg a::b
+         tmp.Push(mangle_explicit_packageref(sc))
+
+      x := x.children[3]
+   }
+
+   c.supers := tmp
+end
+
+#
+# This function is called at the end of the translation process, to mangle
+# any symbols in the procedure and method bodies.  For each body, it is
+# necessary to construct a set of the parameters, local variables and
+# static variables which should NOT be mangled.  For methods, the class
+# methods and variables must also be omitted.
+#
+procedure scopecheck_bodies(node)
+   case type(node) of {
+      "treenode": {
+         case node.label of {
+            "decls" : {
+               every scopecheck_bodies(node.children[1 | 2])
+            }
+
+            "proc" : {
+               scopecheck_proc(node)
+            }
+         }
+      }
+      "Class__state": {
+         scopecheck_methods(node)
+      }
+   }
+end
+
+#
+# Scope-check a single procedure definition.
+#
+procedure scopecheck_proc(node)
+   local local_vars, n
+
+   # Build local_vars from the params and local var expressions.
+   local_vars := set()
+   extract_identifiers(node.children[1].fields, local_vars)
+   extract_identifiers(node.children[3], local_vars)
+
+   # The expression in the intially section (if any)
+   if node.children[4] ~=== EmptyNode then
+      scopecheck_expr(node.children[4].children[2], local_vars)
+
+   # The procbody expressions
+   scopecheck_procbody(node.children[5], local_vars)
+end
+
+#
+# Scope-check the methods in class c
+#
+procedure scopecheck_methods(c)
+   local self_vars
+   self_vars := set()
+
+   every insert(self_vars, c.foreachmethod().name)
+   every insert(self_vars, c.foreachfield())
+   every insert(self_vars, (!c.ifields).ident)
+   every insert(self_vars, (!c.imethods).ident)
+
+   every m := c.foreachmethod() do {
+      local_vars := set()
+      extract_identifiers(m.fields, local_vars)
+      extract_identifiers(m.locals, local_vars)
+
+      # The expression in the intially section (if any)
+      if m.initl ~=== EmptyNode then
+         scopecheck_expr(m.initl.children[2], local_vars, self_vars)
+      scopecheck_procbody(m.procbody, local_vars, self_vars)
+   }
+
+end
+
+#
+# Scope-check a procbody parse node.
+#
+procedure scopecheck_procbody(n, local_vars, self_vars)
+   while n ~=== EmptyNode do {
+      scopecheck_expr(n.children[1], local_vars, self_vars)
+      n := n.children[3]
+   }
+end
+
+#
+# Scope-check an expression.
+#
+procedure scopecheck_expr(node, local_vars, self_vars)
+   case type(node) of {
+      "treenode": {
+         if node.label == ("keyword" | "packageref") then
+            fail
+         else if node.label == "field" then {
+            scopecheck_field(node, local_vars, self_vars)
+         } else
+            every scopecheck_expr(!node.children, local_vars, self_vars)
+      }
+      "token": {
+         if node.tok = IDENT then {
+            if not member(\local_vars, node.s) then {
+               if member(\self_vars, node.s) then
+                  node.s := "self." || node.s
+               else 
+                  node.s := mangle_sym(node.s)
+            }
+         }
+      }
+   }
+end
+
+procedure scopecheck_field(node, local_vars, self_vars)
+   while type(node) == "treenode" & node.label === "field" do {
+      lhs := node.children[1]
+      rhs := node.children[3]
+
+      if type(rhs) == "token" then {
+         if type(lhs) == "token" & lhs.s === "self" then {
+            #
+            # A special case; the rhs of a self.<tok> expression; the token
+	    # should be mangled if it is not in self_vars; it could be in
+	    # the form self.super.tok; 'super' must be mangled.
+            #
+            if not member(\self_vars, rhs.s) then
+               rhs.s := mangle_class_sym(rhs.s)
+         } else
+            rhs.s := mangle_class_sym(rhs.s)
+      }
+
+      node := lhs
+   }
+   
+   scopecheck_expr(node, local_vars, self_vars)
+end
+
+#
+# Helper function to extract the identifiers from a treenode; used to
+# conveniently get the identifiers from a list of local variables
+# for example.
+#
+procedure extract_identifiers(node, res)
+   /res := set()
+   case type(node) of {
+      "treenode": {
+         if node.label == ("arg2" | "arg3" | "arg4") then
+            extract_identifiers(node.children[1], res)
+         else
+            every extract_identifiers(!node.children, res)
+      }
+      "token": {
+         if node.tok = IDENT then
+            insert(res, node.s)
+      }
+      "argList__state" : {
+         # The list node.l is either null, or a mixture of strings and nodes.
+         every el := !(\node.l) do {
+            if type(el) == "string" then
+               insert(res, el)
+            else
+               extract_identifiers(el, res)
+         }
+      }
+   }
+   return res
+end
+
+#
+# Useful debug function to recursively print a treenode.
+#
+procedure print_node(node, childindex, indent)
+   /indent := 0
+   /childindex := " "
+   s := repl(" ", indent*3) || childindex || " "
+
+   case type(node) of {
+      "treenode" : {
+         write(s, "treenode - label=", node.label)
+         every i := 1 to *node.children do
+            print_node(node.children[i], i, indent+1)
+      }
+      "integer"|
+      "string": {  write(s, type(node), ": ", image(node)) }
+      "token": {   write(s, "token(", node.tok, "): ", image(node.s)) }
+      "null"|
+      "declaration__state"|
+      "argList__state": { write(s, image(node)) }
+      "Class__state": { write(s, "class: ", image(node)) }
+      default: write("its a ", type(node))
    }
 end

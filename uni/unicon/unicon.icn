@@ -33,10 +33,15 @@
 global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
 global classes,comp,exec,strict,links,imports,loud,ct,reserved
 global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
-
-global yyout, linkline, translateducode
+global yydbg, yyout, linkline, translateducode, imported, imported_classes
 
 link basename, io
+
+$ifdef _MS_WINDOWS_NT
+$define PATHCHAR "\\"
+$else
+$define PATHCHAR "/"
+$endif
 
 procedure istop(args[])
    if push(args, \flog) then {
@@ -78,14 +83,13 @@ procedure initialize()
   loud     := 1
   comp     := 0
   yynerrs  := 0
+  errors   := 0
   alpha    := &ucase ++ &lcase ++ '_' ++ &digits
   nonalpha := &cset -- alpha
   alphadot := alpha ++ '.'
   white    := ' \t\f\r'
   nonwhite := &cset -- white
-  classes  := taque()
-  links    := []
-  imports  := []
+  reinitialize()
   ilinkopt := ""
   linkline := ""
   tmpcount := 0
@@ -97,7 +101,10 @@ end
 
 procedure reinitialize()
    classes  := taque()
+   links := []
    imports := []
+   imported := table()
+   imported_classes := table()
    thePackage := &null
 end
 
@@ -135,6 +142,7 @@ procedure main(argv)
 		}
 	     }
 	 "-y": parseonly := 1
+	 "-yydbg": parseonly := yydbg := 1
 	 "-G": ilinkopt ||:= argv[i] || " "
 	 default   : icontopt ||:= argv[i] || " "
          }
@@ -164,17 +172,22 @@ procedure main(argv)
          yylex_reinit()
 	 cmd := selecticont()
 	 cmd ||:= " -c "||icontopt||" -O "||fName ||" "
-	 temppath := getenv("TEMP") | "/tmp"
-	 tmpname := tempname("uni",,temppath,5)
-	 yyout := open(tmpname, "w") |
-	     stop("can't open temporary file ",tmpname," for writing")
+	 if /yydbg then {
+	    temppath := getenv("TEMP") | "/tmp"
+	    tmpname := tempname("uni",,temppath,5)
+	    yyout := open(tmpname, "w") |
+	       stop("can't open temporary file ",tmpname," for writing")
+	    }
+	 else yyout := &output
+
 #	 yyout := &output
 	 write(yyout, "#line 0 \"", fName, "\"")
 	 iwrites(&errout, "Parsing ", fName ,": ")
 	 rv := yyparse()
 	 if yynerrs = 0 then iwrite(&errout)
-	 close(yyout)
-	 if rv = 0 & yynerrs = 0 & /parseonly then {
+	 if /yydbg then
+	    close(yyout)
+	 if rv = 0 & errors = 0 & yynerrs = 0 & /parseonly then {
 	     rv := mysystem(cmd || tmpname)
 	     if rv ~=== 0 then yynerrs +:= 1
 	     if &features == "Win32" then { # copy icont log to our console
@@ -193,11 +206,12 @@ procedure main(argv)
 	 }
 	 if find("wicont", selecticont()) then
             delay(1000)
-	 remove(tmpname) | iwrite(&errout,"remove ", image(tmpname), " fails")
+	 /tmpname | remove(tmpname) |
+	    iwrite(&errout,"remove ", image(tmpname), " fails")
 	 reinitialize()
      }
   }
-  if comp = 0 & yynerrs = 0 & (not find("-E", icontopt)) then {
+  if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
       cmd := selecticont()
       cmd ||:= " "
       if \exename then cmd ||:= exename
@@ -229,9 +243,12 @@ procedure main(argv)
      }
   }
    if \flog then {
-       close(flog)
-       moveto(flogname, widollog)
-   }
+      close(flog)
+      moveto(flogname, widollog)
+      }
+   # Produce a non-zero exit code if there were any errors.
+   if errors + yynerrs > 0 then
+      exit(1)
 end
 #
 # error/warning/message handling
@@ -252,8 +269,12 @@ procedure errsrc()
   iwrites(&errout,"File ",\fName,"; Line ",\fLine,": Unicon/")
 end
 
-procedure writelink(s)
-  write(yyout,"link \"",basename(s,".icn"),"\"")
+procedure writelink(dir, s)
+   if map(s[-4:0]) == ".icn" then
+      s[-4:0] := ""
+   if dir[-1] ~== PATHCHAR then
+      dir ||:= PATHCHAR
+   write(yyout,"link \"",dir,s,"\"")
 end
 procedure trans(argstr, prefix)
 static cmd

@@ -49,6 +49,7 @@ static t
 initial {
    t := table([Beginner+Ender, IDENT])
 
+   t["abstract"] := [0, ABSTRACT]
    t["break"] := [Beginner+Ender, BREAK]
    t["by"] := [0, BY]
    t["case"] := [Beginner, CASE]
@@ -355,6 +356,7 @@ procedure do_colon()
 		  return ASSIGN
 	      }
 	      if yytext ||:= =":" then {
+                  tokflags +:= Beginner
 		  return COLONCOLON
 	      }
 	      return COLON
@@ -432,17 +434,33 @@ procedure do_literal()
 	      until yytext ||:= =(yytext[1]) do {
 		  yytext ||:= ="\\"
 		  # need more logic here to eat escape chars
-		  yytext ||:= move(1)
+		  yytext ||:= move(1) | {
+		      if not (yytext[-1]=="_") then {
+		         yyerror("unterminated string constant")
+			 break
+		     }
+		  }
 		  if yytext[-1] == "\n" then {
-		      if not yytext[-2] == "_" then {
-			  write(&errout, "unterminated string constant")
+		      if not (yytext[-2] == "_") then {
+			  yytext := yytext[1:-1]
+			  yyerror("unterminated string constant")
+			  break
 		      }
 		      else {
 			  yytext := yytext[1:-2]
-			  tab(many(' \t'))
+			  yylineno +:= 1
+			  yycolno := 1
+			  if eat := tab(many(' \t')) then {
+			      every s := !eat do {
+				 yycolno +:= 1
+				 if s == "\t" then {
+				    while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
+				    }
+			         }
+			      }
+			  }
 		      }
 		  }
-	      }
 	      tokflags +:= Beginner + Ender
 	      if yytext[1] == "'" then
 		  return CSETLIT
@@ -484,7 +502,7 @@ procedure yylex()
     yytext := saved_yytext
     yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
     if \debuglex then
-      write("yylex() : ",tokenstr(rv))
+      write("yylex() : ",tokenstr(rv), "\t", image(yytext))
     return rv
   }
   ender := iand(tokflags, Ender)
@@ -515,7 +533,7 @@ procedure yylex()
     }
    yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
    if \debuglex then
-      write("yylex() : ", tokenstr(rv))
+      write("yylex() : ", tokenstr(rv), "\t", image(yytext))
    return rv
 end
 

@@ -131,6 +131,7 @@
 %token	RBRACE      /* }         */
 
 %token	DOLLAR      /* $         */
+%token	ABSTRACT    /* abstract  */
 
 %{
 
@@ -171,8 +172,15 @@ procedure Clone1stToken(n)
       }
 end
 
-global outline, outcol, outfilename
+global outline, outcol, outfilename,package_level_syms,package_level_class_syms
+
 procedure Progend(x1)
+   
+   package_level_syms := set()
+   package_level_class_syms := set()
+   set_package_level_syms(x1)
+   scopecheck_superclass_decs(x1)
+
    outline := 1
    outcol := 1
    #
@@ -195,7 +203,7 @@ procedure Progend(x1)
 	    cl := classes.lookup(super)
 	    if /cl then halt("can't inherit class '",super,"'")
 	    iwrite("  inherits ", super, " from ", cl.linkfile)
-	    writelink(cl.linkfile)
+	    writelink(cl.dir, cl.linkfile)
             }
        }
     if added = 0 then break
@@ -206,12 +214,13 @@ procedure Progend(x1)
   #
   every (classes.foreach_t()).transitive_closure()
   every (classes.foreach_t()).resolve()
-  #
-  # scope check on classes defined in this source file
-  # fix me
-  #
-#  every (!native).scopeck()
-  every (classes.foreach_t()).scopeck()
+
+  scopecheck_bodies(x1)
+
+   if \thePackage then {
+      every thePackage.insertsym(!package_level_syms)
+      }
+
   #
   # generate output
   #
@@ -249,43 +258,52 @@ decl	: record
 
 initiallysection: { $$ := EmptyNode }
 	| INITIALLY SEMICOL locals initial procbody {
-	   $$ := Method( , , , , "initially", EmptyNode, "method", "(", ")")
+	   $$ := Method( , , , , , "initially", EmptyNode, "method", "(", ")")
 	   $$.locals := $3
 	   $$.initl := $4
 	   $$.procbody := $5
 	}
 	| INITIALLY LPAREN arglist RPAREN SEMICOL locals initial procbody {
-	   $$ := Method( , , , , "initially", $3, "method", "(", ")")
+	   $$ := Method( , , , , , "initially", $3, "method", "(", ")")
 	   $$.locals := $6
 	   $$.initl := $7
 	   $$.procbody := $8
 	}
 	;
 
-cl : classhead SEMICOL END {
-   $$ := $1;
+optsemi : { $$ := EmptyNode } ; 
+        | SEMICOL;
+
+cl: classhead SEMICOL END {
+   $$ := $1
    $$.methods := methodstaque(&null, $$)
    }
-   | classhead methods initiallysection END {
-   $$ := $1;
-   if $3 ~=== EmptyNode then
-      $2 := node("methods", $2, $3)
+   | classhead methods optsemi initiallysection END {
+   $$ := $1
+   if $4 ~=== EmptyNode then
+      $2 := node("methods", $2, $4)
    $$.methods := methodstaque($2, $$)
    } ;
 
 classhead : CLASS IDENT supers LPAREN arglist RPAREN {
    $$ := Class()
    $$.tag := $1
-   $$.name := $2.s
+   $$.unmangled_name := $2.s
+   $$.name := package_mangled_symbol($2.s)
    classes.insert($$, $$.name)
-   $$.supers := $3
+   $$.supers_node := $3
    $$.fields := $5
    $$.lptoken := $4
    $$.rptoken := $6
    } ;
 
-supers: { $$ := idTaque(":") } ;
-   | COLON IDENT supers { $$ := $3; taque_Push($$, $2.s) }
+supers: { $$ := EmptyNode } ;
+   | COLON IDENT supers { $$ := node("supers", $1, $2, $3) }
+   | COLON packageref supers { $$ := node("supers", $1, $2, $3) }
+   ;
+
+packageref : IDENT COLONCOLON IDENT { $$ := node("packageref", $1,$2,$3) } 
+   | COLONCOLON IDENT { $$ := node("packageref", $1,$2) }  
    ;
 
 methods: { $$ := EmptyNode } ;
@@ -311,12 +329,13 @@ package	: PACKAGE lnkfile {
       }
    else {
       $$ := node("package", $1,$2);
-      thePackage := Package( , $2.s)
+      thePackage := Package($2.s)
       thePackage.insertfname(fName)
+      thePackage.add_imported()
       }
    } ;
 
-import	: IMPORT lnklist {
+import: IMPORT lnklist {
    $$ := node("import", $1,$2," ")
    import_class($2)
    } ;
@@ -339,7 +358,7 @@ fldlist	: { $$ := EmptyNode } ;
 	| idlist ;
 
 proc	: prochead SEMICOL locals initial procbody END {
-		body_scopeck($5)
+#		body_scopeck($5)
 		$$ := node("proc", $1,";",$3,$4,$5,$6)
 		} ;
 
@@ -348,6 +367,10 @@ meth	: methhead SEMICOL locals initial procbody END {
 		$$.locals := $3
 		$$.initl := $4
 		$$.procbody := $5
+		}
+	| ABSTRACT methhead {
+		$$ := $2
+                $$.abstract_flag := 1
 		} ;
 
 prochead: PROCEDURE IDENT LPAREN arglist RPAREN {
@@ -355,7 +378,7 @@ prochead: PROCEDURE IDENT LPAREN arglist RPAREN {
 		} ;
 
 methhead: METHOD IDENT LPAREN arglist RPAREN {
-		$$ := Method( , , , , $2.s, $4, $1.s, $3, $5)
+		$$ := Method( , , , , , $2.s, $4, $1.s, $3, $5)
 		} ;
 
 arglist	: { $$ := argList( , , &null) } ;
@@ -536,11 +559,11 @@ expr11	: literal ;
 	| expr11 DOLLAR IDENT DOT IDENT LPAREN exprlist RPAREN {
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6,$7,$8)
 	   } ;
-	| expr11 DOT IDENT { $$ := Field($1,$2,$3);} ;
-	| IDENT COLONCOLON IDENT { $$ := node("packageref", $1,$2,$3);} ;
-	| expr11 DOT INITIALLY { $$ := Field($1,$2,$3);} ;
-	| AND FAIL { $$ := node("keyword",$1,$2);} ;
-	| AND IDENT { $$ := Keyword($1,$2);} ;
+	| expr11 DOT IDENT { $$ := Field($1,$2,$3) } ;
+	| packageref;
+	| expr11 DOT INITIALLY { $$ := Field($1,$2,$3) } ;
+	| AND FAIL { $$ := node("keyword",$1,$2) } ;
+	| AND IDENT { $$ := Keyword($1,$2) } ;
 
 while	: WHILE expr { $$ := node("While0", $1,$2);} ;
 	| WHILE expr DO expr { $$ := node("While1", $1,$2,$3,$4);} ;

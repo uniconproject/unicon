@@ -203,7 +203,11 @@ int nargs, *n;
 
 	    if(is:record(newargp[0])) {
 	       struct b_record *rp = (struct b_record *)BlkLoc(newargp[0]);
-	       if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) {
+	       if ((rp->recdesc->proc.ndynam == -3) ||
+		   (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) ||
+	           (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__m")) ||
+	           (!strcmp(StrLoc(rp->recdesc->proc.lnames[
+				    rp->recdesc->proc.nfields-1]), "__m"))) {
 		  /* its an object */
 		  return invoke(nargs+1, cargp, n);
 		  }
@@ -252,26 +256,24 @@ int nargs, *n;
             }
          }
       nargs = nparam;
-
       xnargs = nargs;
-
       }
    else {
       if (proc->ndynam >= 0) { /* this is a procedure */
-         int lelems;
+         int lelems, absnparam = abs(nparam);
 	 dptr llargp;
 
-         if (nargs < abs(nparam) - 1) {
-            i = abs(nparam) - 1 - nargs;
+         if (nargs < absnparam - 1) {
+            i = absnparam - 1 - nargs;
             while (i--) {
                *++newsp = D_Null;
                *++newsp = 0;
                }
-            nargs = abs(nparam) - 1;
+            nargs = absnparam - 1;
             }
 
-	 lelems = nargs - (abs(nparam) - 1);
-         llargp = &newargp[abs(nparam)];
+	 lelems = nargs - (absnparam - 1);
+         llargp = &newargp[absnparam];
          arg_sv = llargp[-1];
 
 	 Ollist(lelems, &llargp[-1]);
@@ -283,7 +285,7 @@ int nargs, *n;
           */
          proc = (struct b_proc *)BlkLoc(newargp[0]);
 	 newsp = (word *)llargp + 1;
-	 nargs = abs(nparam);
+	 nargs = absnparam;
 	 }
       }
 
@@ -307,7 +309,7 @@ int nargs, *n;
 
       EVVal((word)Op_Invoke,E_Ecall);
 
-      if ((nparam < 0) || (proc->ndynam == -2))
+      if ((nparam < 0) || (proc->ndynam == -2) || (proc->ndynam == -3))
          return I_Vararg;
       else
          return I_Builtin;

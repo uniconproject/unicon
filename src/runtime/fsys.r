@@ -1740,18 +1740,18 @@ function{1} system(s, o)
 #if NT
       if (o == 0)   { /* nowait, or 0, for second argument */
          cmdname = strtok(s, " ");
-     
          for(j = 0; j<256; j++)   
             if ((args[j] = strtok(NULL, " ")) == NULL)
 	       break;
 	 args[j] = NULL;
          _flushall();
          i = (C_integer)_spawnvp(_P_NOWAITO, cmdname, args);
-       
       }
       else
-#endif					/*NT*/
+	 i = mswinsystem(s);
+#else					/*NT*/
       i = (C_integer)system(s);
+#endif					/*NT*/
 
       return C_integer i;
       }

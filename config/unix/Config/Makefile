@@ -49,7 +49,7 @@ Makefiles:
 		cat ../Config/xpm.mak \
 		   > ../../../src/xpm/lib/Makefile
 		echo "ICONT=../../bin/icont" > ../../../uni/unicon/makefile
-		echo "COPY=cp" >> ../../../uni/unicon/makefile
+		echo "CP=cp" >> ../../../uni/unicon/makefile
 		echo "RM=rm -f" >> ../../../uni/unicon/makefile
 		echo "BINDIR=../../bin" >> ../../../uni/unicon/makefile
 		echo "UNICON=../unicon/unicon" >> ../../../uni/unicon/makefile
@@ -59,7 +59,7 @@ Makefiles:
 		cat ../Config/unilib.mak >> ../../../uni/lib/makefile
 		echo "RM=rm -f" > ../../../uni/ivib/makefile
 		echo "UNICON=../unicon/unicon" >> ../../../uni/ivib/makefile
-		echo "COPY=cp" >> ../../../uni/ivib/makefile
+		echo "CP=cp" >> ../../../uni/ivib/makefile
 		echo "BINDIR=../../bin" >> ../../../uni/ivib/makefile
 		cat ../Config/ivib.mak >> ../../../uni/ivib/makefile
 		cat ../Config/ipllib.mak >> ../../../ipl/lib/makefile

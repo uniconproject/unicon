@@ -4,11 +4,12 @@ IYACC=../iyacc/iyacc
 
 unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
 	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
-	$(COPY) unicon$(EXE) $(BINDIR)
+	$(CP) unicon$(EXE) $(BINDIR)
 
+# A windows-specific build option
 wunicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
-	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
-	$(COPY) unicon$(EXE) $(BINDIR)\wunicon.exe
+	$(ICONT) -G -o wunicon.exe unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
+	$(CP) wunicon$(EXE) $(BINDIR)
 
 unicon.u : unicon.icn
 	$(ICONT) -c unicon

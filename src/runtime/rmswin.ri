@@ -1065,8 +1065,7 @@ int wputc(int ci, wbp w)
 	 STDLOCALS(w);
 	 ws->y -= LEADING(w);
 	 y_plus_descent = ws->y + DESCENT(w);
-	 BitBlt(pixdc, 0, 0,
-		ws->width, y_plus_descent,
+	 BitBlt(pixdc, 0, 0, ws->width, y_plus_descent,
 		pixdc, 0, LEADING(w), SRCCOPY);
 	 r.left = 0;
 	 r.top = y_plus_descent - FHEIGHT(w);
@@ -1076,8 +1075,7 @@ int wputc(int ci, wbp w)
 	 FillRect(pixdc, &r, hb);
 	 DeleteObject(hb);
 	 if (stdwin)
-	    BitBlt(stddc, 0, 0, ws->width, ws->height,
-		   pixdc, 0, 0, SRCCOPY);
+	    BitBlt(stddc, 0, 0, ws->width, ws->height, pixdc, 0, 0, SRCCOPY);
 	 FREE_STDLOCALS(w);
 	 }
       /* intended fall-through */
@@ -2458,6 +2456,7 @@ unsigned char *data;
     * overwriting the paltbl.
     */
    if (ncolors > DMAXCOLORS) {
+      FREE_STDLOCALS(w);
       free(clist);
       return 0;
       }
@@ -2930,7 +2929,7 @@ char *getselection(wbp w, char *buf)
             char *pClip = GlobalLock(hClipMemory);
             int len = strlen(pClip);
             if (len > 4000) {
-               rv = p = malloc(len+1);
+               rv = p = malloc(len+1); /* check receiver for leak ? */
                }
             else {
                rv = p = buf;
@@ -3218,7 +3217,7 @@ LONG NumWindows = 0;
 
 
 /*
- * allocate a context.  Can't be called until w has a display and window.
+ * allocate a context.  Can't be called until w has a window.
  */
 wcp alc_context(w)
 wbp w;

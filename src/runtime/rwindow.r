@@ -4203,7 +4203,7 @@ char *rgbkey(int p, double r, double g, double b)	{ return 0; }
 
 /*
  * the next section consists of code to deal with string-integer
- * (stringint) symbols.  See graphics.h.
+ * (stringint) symbols.  See rstructs.h.
  */
 
 /*

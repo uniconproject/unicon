@@ -1128,13 +1128,16 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    ws->x += w->context->dx;
 #ifdef Graphics3D
    w->context->is_3D = ws->is_3D = is_3d;
-#endif					/* Graphics3D */
-    if (is_3d) {
-   /* create an empty list for list of function calls */
-       if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
+   if (is_3d) {
+      /*
+       * Create an empty list for list of function calls.
+       */
+      if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots))
+	  == NULL)
            return NULL;
        ws->funclist.dword = D_List;
     }
+#endif					/* Graphics3D */
    /*
     * Loop through any remaining arguments.
     */
@@ -4006,14 +4009,16 @@ wbp w;
 char *filename;
 unsigned int x, y, height, width;
    {
-   int status;
+   int status, slen;
    STDLOCALS(w);
 
    /*
     * Check for bilevel XBM (X BitMap) format.
     */
-   if (!strcmp(".xbm", filename + strlen(filename) - 4) ||
-       !strcmp(".XBM", filename + strlen(filename) - 4)) {
+   slen = strlen(filename);
+   if ((slen > 4) &&
+      (!strcmp(".xbm", filename + slen - 4) ||
+       !strcmp(".XBM", filename + slen - 4))) {
       /*
        * Write a bitmap from a "color" window (presumed to have only BW in it).
        * BlackPixel ^ WhitePixel will have a 1 in the first bit in which
@@ -4075,9 +4080,10 @@ unsigned int x, y, height, width;
    /*
     * Check for XPM (color X PixMap) format.
     */
-   else if (!strcmp(".xpm", filename + strlen(filename) - 4) ||
-       !strcmp(".XPM", filename + strlen(filename) - 4) ||
-       !strcmp(".xpm.Z", filename + strlen(filename) - 6)) {
+   else if (((slen > 4) &&
+	    (!strcmp(".xpm", filename + slen - 4) ||
+	     !strcmp(".XPM", filename + slen - 4))) ||
+	    ((slen > 6) && !strcmp(".xpm.Z", filename + slen - 6))) {
 #ifdef HAVE_LIBXPM
       /*
        * Could optimize by calling XpmWriteFileFromPixmap directly on the
@@ -4409,9 +4415,12 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    int is_3d=0, query;
    struct wbind_list *curr;
    wdp wd;
+#ifdef Graphics3D
    int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+#endif					/* Graphics3D */
 
    if (child_window==2) {
+#ifdef Graphics3D
       is_3d = 1;
 
       /*
@@ -4426,10 +4435,13 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
       if (wd->vis==NULL) {
          wd->vis = glXChooseVisual(wd->display, wd->screen, L);
          if (wd->vis == NULL) {
-	    printf("visual failed");
+	    printf("visual failed\n");
 	    return 0;
 	    }
 	 }
+#else					/* Graphics3D */
+      printf("3D subwindow requested on VM built without 3D facilities\n");
+#endif					/* Graphics3D */
       }
 
    if ((w->window = alc_winstate()) == NULL) {
@@ -4503,7 +4515,9 @@ char my_wmap(wbp w)
 
 /*   STDLOCALS(w); */
 
+#ifdef Graphics3D
     if (ws->is_3D) child_window = 2;
+#endif					/* Graphics3D */
     wp = ws->parent;
    /*
     *  Create a pixmap for this canvas if there isn't one already.

@@ -720,11 +720,15 @@ Deliberate Syntax Error
 		     case 0:
 			break;
 		     case TP_ECONNECT:
-			runerr(1205, fname);
-			break;
+			/*
+			 * used to be runerr 1205
+			 */
+			fail;
 		     case TP_EHOST:
-			runerr(1206, fname);
-			break;
+			/*
+			 * used to be runerr 1206
+			 */
+			fail;
 		     case TP_ESERVER:
 			runerr(1212, fname);
 			break;

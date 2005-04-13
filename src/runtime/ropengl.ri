@@ -762,7 +762,10 @@ int traversefunctionlist(wbp w)
     * The ith element of the list is a list with information
     * about the function call made on the window.
     */
+   v = v2;
    for (i=0; i< elements; i++) {
+      if (v != v2) free(v);
+      v = v2;
       c_traverse((struct b_list *)ws->funclist.vword.bptr, &flist, i);
       if (is:record(flist)) {
 	 fname = BlkLoc(flist)->record.fields[0];
@@ -771,8 +774,10 @@ int traversefunctionlist(wbp w)
 	 if (tmp == -1) {
 	    return Failed; /* probably should runerr on this */
 	    }
-	 for (j=0; j < (tmp&7); j++)
-	    if (!cnv:C_double(rp->fields[j+1], v[j])) goto free_v_and_fail;
+	 for (j=0; j < (tmp&7); j++) {
+	    var1 = rp->fields[j+1];
+	    if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
+	    }
 
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:

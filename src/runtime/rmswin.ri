@@ -302,13 +302,13 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;
-#endif					/* Graphics3D */
 
    if (is_3d) {
      if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
      return NULL;
      ws->funclist.dword = D_List;
    }
+#endif					/* Graphics3D */
 
    /*
     * process the passed in attributes - by calling wattrib
@@ -332,7 +332,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 
    if (ws->posx < 0) ws->posx = 0;
    if (ws->posy < 0) ws->posy = 0;
+#ifdef Graphics3D
    ws->no = 0;
+#endif					/* Graphics3D */
    ws->children = NULL;
    ws->parent = NULL;
 
@@ -3981,7 +3983,6 @@ void UpdateCursorPos(wsp ws, wcp wc)
 int resizePixmap(wbp w, int width, int height)
    {
    HDC hdc, hdc2, hdc3;
-   HGLRC ctx;
    HBITMAP newpix, oldpix, oldpix2;
    HBRUSH hb;
    LOGBRUSH lb;
@@ -4667,7 +4668,6 @@ char *nativefiledialog(wbp w, char *s1, char *s2, char *s3,
 
 char child_window_stuff(wbp w, wbp wp, char child_window)
 {
-#ifdef MSWindows
    wsp ws;
    wcp wc;
    struct imgdata *imd;
@@ -4713,9 +4713,10 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
   curr->next = wp->window->children;
   wp->window->children = curr;
   w->refcount++;
+#ifdef Graphics3D
   wp->window->no++;
   ws->no = wp->window->no;
-#endif
+#endif					/* Graphics3D */
   return 1;
 }
 
@@ -4770,7 +4771,13 @@ char my_wmap(wbp w)
 		   ws->width == 0 ? 400 : ws->width,
 		   ws->height == 0 ? 400: ws->height,
 			       /*		   NULL, NULL, mswinInstance, NULL); */
-		   ws->parent->window->win, (HMENU) (int) ws->no, mswinInstance, NULL);
+		   ws->parent->window->win,
+#ifdef Graphics3D
+			      (HMENU) (int) ws->no,
+#else					/* Graphics3D */
+			      (HMENU) 0,
+#endif					/* Graphics3D */
+			      mswinInstance, NULL);
    hdc = GetDC(ws->iconwin);
    if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors == 0)){
       /* This window is on a device that supports palettes */

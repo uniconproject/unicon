@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.31 2005-03-15 20:40:53 jeffery Exp $
+ * $Id: fxposix.ri,v 1.32 2005-04-26 11:29:47 jeffery Exp $
  */
 
 /*
@@ -2083,19 +2083,11 @@ void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 #ifdef Graphics
    wbp w;
 #endif					/* Graphics */
-#if NT
+
    if ((status & Fs_Socket) == 0) return;
-#endif					/* NT */
+
    fd = get_fd(*f, Fs_Read|Fs_Socket);
-   if (FD_ISSET(fd, fdsp)
-#if !NT
-#ifdef Graphics
-       && (((status & Fs_Window) == 0) ||
-	((w = (wbp)(BlkLoc(*f)->file.fd)) &&
-	 ((BlkLoc(w->window->listp))->list.size > 0)))
-#endif					/* Graphics */
-#endif					/* NT */
-       ) {
+   if ((fd!=-1) && FD_ISSET(fd, fdsp)) {
       /*
        * If its a listener socket, convert it to the new connection.
        */

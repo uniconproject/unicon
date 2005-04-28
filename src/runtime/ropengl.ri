@@ -709,36 +709,56 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define	REDRAW_CUBE 16
 #define	REDRAW_CYLINDER 32
 #define	REDRAW_DISK 48
-#define	REDRAW_SPHERE 64
-#define	REDRAW_TORUS 80
-#define	REDRAW_IDENTITY 96
-#define	REDRAW_MATRIXMODE 112
-#define	REDRAW_POPMATRIX 128
-#define	REDRAW_PUSHMATRIX 144
-#define	REDRAW_ROTATE 160
-#define	REDRAW_SCALE 176
-#define	REDRAW_TEXTURE 192
-#define	REDRAW_TRANSLATE 208
+#define	REDRAW_LINE 64
+#define	REDRAW_POINT 80
+#define	REDRAW_POLYGON 96
+#define	REDRAW_SEGMENT 112
+#define	REDRAW_SPHERE 128
+#define	REDRAW_TORUS 144
+#define	REDRAW_FG 160
+#define	REDRAW_FILLPOLYGON 176
+#define	REDRAW_IDENTITY 192
+#define	REDRAW_MATRIXMODE 208
+#define	REDRAW_POPMATRIX 224
+#define	REDRAW_PUSHMATRIX 240
+#define	REDRAW_ROTATE 256
+#define	REDRAW_SCALE 272
+#define	REDRAW_TEXTURE 288
+#define	REDRAW_TEXCOORD 304
+#define	REDRAW_TRANSLATE 320
+#define	REDRAW_DIM 336
+#define	REDRAW_LINEWIDTH 352
+#define	REDRAW_TEXMODE 368
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			13 },		/* number of entries */
+   { 0,			23 },		/* number of entries */
    { "DrawCube",	REDRAW_CUBE | 4 },
    { "DrawCylinder",	REDRAW_CYLINDER | 6},
    { "DrawDisk",	REDRAW_DISK | 7 },
+   { "DrawLine",	REDRAW_LINE },
+   { "DrawPoint",	REDRAW_POINT },
+   { "DrawPolygon",	REDRAW_POLYGON },
+   { "DrawSegment",	REDRAW_SEGMENT },
    { "DrawSphere",	REDRAW_SPHERE | 4 },
    { "DrawTorus",	REDRAW_TORUS | 5},
+   { "Fg",		REDRAW_FG},
+   { "FillPolygon",	REDRAW_FILLPOLYGON },
    { "Identity",	REDRAW_IDENTITY },
    { "MatrixMode",	REDRAW_MATRIXMODE },
    { "PopMatrix",	REDRAW_POPMATRIX },
    { "PushMatrix",	REDRAW_PUSHMATRIX },
    { "Rotate",		REDRAW_ROTATE | 4 },
    { "Scale",		REDRAW_SCALE | 3 },
+   { "Texcoord",	REDRAW_TEXCOORD },
    { "Texture",		REDRAW_TEXTURE },
    { "Translate",	REDRAW_TRANSLATE | 3 },
+   { "dim",		REDRAW_DIM },
+   { "linewidth",	REDRAW_LINEWIDTH },
+   { "texmode",		REDRAW_TEXMODE },
    };
 
 /*
@@ -750,13 +770,14 @@ int traversefunctionlist(wbp w)
    wsp ws = w->window;
    double x, y, z, r1, r2, h, a1, a2, *v, v2[256];
    C_integer num, dim;
-   int i, j, tmp;
+   int i, j, tmp, vsize=256;
    tended struct descrip flist, fname, var1, var2;
    tended struct b_list *funclist;
    tended char *temp;
    tended struct b_record *rp;
    int elements = ws->funclist.vword.bptr->list.size;
 
+   v = v2;
    makecurrent(w);
    /*
     * The ith element of the list is a list with information
@@ -835,46 +856,99 @@ int traversefunctionlist(wbp w)
 	    }
 	 continue;
 	 }
-      if (flist.dword == D_List) {
+      else if (is:list(flist)) {
 	 funclist = (struct b_list*)flist.vword.bptr;
    	 c_traverse (funclist, &fname, 0);
-         }
+	 tmp = si_s2i(redraw3Dnames, StrLoc(fname));
+	 if (funclist->size-1 > vsize) {
+	    if (v == v2)
+	       v = calloc(funclist->size, sizeof (double));
+	    else {
+	       v = realloc(v, funclist->size * sizeof (double));
+	       }
+	    vsize = funclist->size-1;
+	    if (v == NULL) return Error;
+	    }
+	 }
       else {
 	 return Failed;
 	 }
 
-      if (funclist->size-1 > 256) {
-	 v = calloc(funclist->size, sizeof (double));
-	 if (v == NULL) return Error;
-	 }
-      else v = v2;
-
-      /* Fg() or WAttrib("fg=...") */
-      if (!strcmp(fname.vword.sptr, "Fg")) {
+      switch(tmp & ~0xf) {
+      case REDRAW_TORUS:
+	 torus(v[3], v[4], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	 break;
+      case REDRAW_CUBE:
+	 cube(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	 break;
+      case REDRAW_SPHERE:
+	 sphere(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	 break;
+      case REDRAW_CYLINDER:
+	 cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
+		  (wc->texmode?wc->autogen:0));
+	 break;
+      case REDRAW_DISK:
+	 disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
+	      (wc->texmode?wc->autogen:0));
+	 break;
+      case REDRAW_ROTATE:
+	 glRotated(v[3], v[0], v[1], v[2]);
+	 break;
+      case REDRAW_TRANSLATE:
+	 glTranslated(v[0], v[1], v[2]);
+	 break;
+      case REDRAW_SCALE:
+	 glScaled(v[0], v[1], v[2]);
+	 break;
+      case REDRAW_POPMATRIX:
+	 if (popmatrix() != Succeeded) goto free_v_and_fail;
+	 break;
+      case REDRAW_PUSHMATRIX:
+	 if (pushmatrix() != Succeeded) goto free_v_and_fail;
+	 break;
+      case REDRAW_IDENTITY:
+	 glLoadIdentity();
+	 break;
+      case REDRAW_MATRIXMODE:
+	 if (!cnv:C_string(rp->fields[1], temp)) goto free_v_and_fail;
+	 if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
+	 else if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
+	 break;
+      case REDRAW_TEXTURE:
+	 /*
+	  * lookup the name of the texture and bind it
+	  * the objects using glBindTexture()
+	  */
+	 if (!cnv:C_integer(rp->fields[1], num)) goto free_v_and_fail;
+	 glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
+	 if (wc->texmode)
+	    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
+	 break;
+      case REDRAW_FG:
+	 /* Fg() or WAttrib("fg=...") */
 	 if(!determinematerial(funclist)) {
 free_v_and_fail:
 	    if (v != v2) free(v);
 	    return Failed;
 	    }
-         }
-
-      /* WAttrib("dim=...") */
-      else if(!strcmp(fname.vword.sptr, "dim")) {
+	 break;
+      case REDRAW_DIM:
+	 /* WAttrib("dim=...") */
 	 c_traverse(funclist, &var1, 1);
     	 if ((!cnv:C_integer(var1, dim))||(dim<1)||(dim>3))
 	    goto free_v_and_fail;
          wc->dim = dim;
-         }
-
-      /* WAttrib("linewidth=...") */
-      else if(!strcmp(fname.vword.sptr, "linewidth")) {
+	 break;
+      case REDRAW_LINEWIDTH:
+	 /* WAttrib("linewidth=...") */
          c_traverse(funclist, &var1, 1);
          if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 	 setlinewidth(w, num);
          glLineWidth(num);
-      }
-      /* WAttrib("texmode=...") */
-      else if(!strcmp(fname.vword.sptr, "texmode")) {
+	 break;
+      case REDRAW_TEXMODE:
+	 /* WAttrib("texmode=...") */
          c_traverse(funclist, &var1, 1);
          if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 
@@ -890,11 +964,9 @@ free_v_and_fail:
             if (wc->texmode != 0)
                glDisable(GL_TEXTURE_2D);
             wc->texmode = 0;
-           }
-       }
-
-      /* Texcoord() or WAttrib("texcoord=...") */
-      else if(!strcmp(fname.vword.sptr, "Texcoord")) {
+	    }
+	 break;
+      case REDRAW_TEXCOORD:      /* Texcoord() or WAttrib("texcoord=...") */
          /*
 	  * first element tells us if opengl generates texture coordinates
 	  */
@@ -924,60 +996,54 @@ free_v_and_fail:
 	      }
            wc->numtexcoords = funclist->size-2;
            }
-         }
-
-
-      /* DrawPolygon() */
-      else if(!strcmp(fname.vword.sptr, "DrawPolygon")) {
+	 break;
+      case REDRAW_POLYGON:      /* DrawPolygon() */
          /* element in position 1 is the dim attribute */
          for (j = 0; j < (funclist->size)-1; j++) {
             c_traverse(funclist, &var2, j+1);
             if(!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-         }
+	    }
 
-        /* call drawpoly with GL_LINE_LOOP to get a polygon */
-        drawpoly(w, v, (funclist->size)-1, GL_LINE_LOOP, wc->dim);
-        }
-
-      /* FillPolygon() */
-      else if(!strcmp(fname.vword.sptr, "FillPolygon")) {
+	 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+	 drawpoly(w, v, (funclist->size)-1, GL_LINE_LOOP, wc->dim);
+	 break;
+      case REDRAW_FILLPOLYGON:      /* FillPolygon() */
 	 for (j = 0; j < (funclist->size)-1; j++) {
             c_traverse(funclist, &var2, j+1);
             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
             }
 	  /* drawpoly with GL_POLYGON will give filled polygons */
          drawpoly(w, v, (funclist->size)-1, GL_POLYGON, wc->dim);
-        }
-
-      /* DrawSegment() */
-       else if(!strcmp(fname.vword.sptr, "DrawSegment")) {
-          for (j = 0; j < (funclist->size)-1; j++) {
-             c_traverse(funclist, &var2, j+1);
-             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-             }
-          drawpoly(w, v, (funclist->size)-1, GL_LINES, wc->dim);
-          }
-
-       /* DrawLine() */
-       else if(!strcmp(fname.vword.sptr, "DrawLine")) {
-          for (j = 0; j < (funclist->size)-1; j++) {
-             c_traverse(funclist, &var2, j+1);
-             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-           }
-          drawpoly(w, v, (funclist->size)-1, GL_LINE_STRIP, wc->dim);
-         }
-
-       /* DrawPoint() */
-       else if(!strcmp(fname.vword.sptr, "DrawPoint")) {
-          for (j = 0; j < (funclist->size)-1; j++) {
-             c_traverse(funclist, &var2, j+1);
-             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
+	 break;
+      case REDRAW_SEGMENT:      /* DrawSegment() */
+	 for (j = 0; j < (funclist->size)-1; j++) {
+	    c_traverse(funclist, &var2, j+1);
+	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
+	    }
+	 drawpoly(w, v, (funclist->size)-1, GL_LINES, wc->dim);
+	 break;
+      case REDRAW_LINE:       /* DrawLine() */
+	 for (j = 0; j < (funclist->size)-1; j++) {
+	    c_traverse(funclist, &var2, j+1);
+	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
+	    }
+	 drawpoly(w, v, (funclist->size)-1, GL_LINE_STRIP, wc->dim);
+	 break;
+      case REDRAW_POINT:       /* DrawPoint() */
+	 for (j = 0; j < (funclist->size)-1; j++) {
+	    c_traverse(funclist, &var2, j+1);
+	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
             }
-          drawpoly(w, v, (funclist->size)-1, GL_POINTS, wc->dim);
-         }
+	 drawpoly(w, v, (funclist->size)-1, GL_POINTS, wc->dim);
+	 break;
+      default:
+	 fprintf(stderr,"invalid displaylist entry '%s'\n", StrLoc(fname));
+	 goto free_v_and_fail;
+	 }
 
-     if (v!=v2) free(v);
-     }
+      }
+
+   if (v!=v2) free(v);
    return Succeeded;
 }
 
@@ -2585,14 +2651,17 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
       }
    wc->textures = wt2;
 
-   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
-   wc->curtexture = wt2->texindex = wc->ntextures;
-   wc->ntextures++;
-   if (wc->ntextures > wc->nalced) {
+   /*
+    * need a new texture name, make room for it if necessary
+    */
+   if (wc->ntextures >= wc->nalced) {
       wc->nalced *= 2;
       wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
       glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
       }
+   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+   wc->curtexture = wt2->texindex = wc->ntextures;
+   wc->ntextures++;
 
    if (ttype == 3)
       i = imagestr(w, name);

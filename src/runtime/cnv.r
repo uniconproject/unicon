@@ -696,7 +696,7 @@ void f(dptr s, dptr d)
 	       int rv;
 	       DBM *db;
 	       datum key, content;
-	       db = (DBM *)bp->tvtbl.clink->file.fd;
+	       db = (DBM *)bp->tvtbl.clink->file.fd.fp;
 	       if (!cnv:string(bp->tvtbl.tref, bp->tvtbl.tref)) { /* key */
 		  fatalerr(103, &(bp->tvtbl.tref));
 		  }

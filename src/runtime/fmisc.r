@@ -35,7 +35,8 @@ function{0,1} args(x,i)
       abstract { return any_value }
       inline {
 #ifdef MultiThread
-         if (IntVal(i) >= BlkLoc(x)->coexpr.program->Xnargs) fail;
+	 int c_i = IntVal(i);
+	 if ((c_i <= 0) || (c_i > BlkLoc(x)->coexpr.program->Xnargs)) fail;
 	 return BlkLoc(x)->coexpr.program->Xargp[IntVal(i)];
 #else
 	 fail;
@@ -317,9 +318,10 @@ function{1} display(i,f)
       /*
        * Produce error if file cannot be written.
        */
-      std_f = BlkLoc(f)->file.fd;
       if ((BlkLoc(f)->file.status & Fs_Write) == 0) 
          runerr(213, f);
+
+      std_f = BlkLoc(f)->file.fd.fp;
 
       /*
        * Produce error if i is negative; constrain i to be <= &level.
@@ -711,7 +713,7 @@ function {0,1} serial(x)
 #ifdef Graphics
       file:   inline {
 	 if (BlkLoc(x)->file.status & Fs_Window) {
-	    wsp ws = ((wbp)(BlkLoc(x)->file.fd))->window;
+	    wsp ws = BlkLoc(x)->file.fd.wb->window;
 	    return C_integer ws->serial;
 	    }
 	 else {
@@ -1624,7 +1626,7 @@ end
 
 
 "load(s,arglist,input,output,error,blocksize,stringsize,stacksize) - load"
-" an icode file corresponding to string s as a co-expression."
+" a program corresponding to string s as a co-expression."
 
 function{1} load(s,arglist,infile,outfile,errfile,
 		 blocksize, stringsize, stacksize)

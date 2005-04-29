@@ -490,7 +490,7 @@ const dptr src;
 	 int rv;
 	 DBM *db;
 	 datum key, content;
-	 db = (DBM *)bp->clink->file.fd;
+	 db = (DBM *)bp->clink->file.fd.dbm;
 	 /*
 	  * we are doing an assignment to a subscripted DBM file, treat same
 	  * as insert().  key is bp->tref, and value is src

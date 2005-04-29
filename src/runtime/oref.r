@@ -85,7 +85,7 @@ operator{*} ! bang(underef x -> dx)
              * x is a file.  Read the next line into the string space
              *	and suspend the newly allocated string.
              */
-            fd = BlkLoc(dx)->file.fd;
+            fd = BlkLoc(dx)->file.fd.fp;
    
             status = BlkLoc(dx)->file.status;
             if ((status & Fs_Read) == 0) 
@@ -761,7 +761,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
 	       tended char *c_y;
-	       struct MFile *mf = (struct MFile *)BlkLoc(dx)->file.fd;
+	       struct MFile *mf = BlkLoc(dx)->file.fd.mf;
 	       if (!cnv:C_string(y, c_y)) {
 		  runerr(103, y);
 		  }

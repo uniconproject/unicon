@@ -286,7 +286,7 @@ struct b_file *f(FILE *fd, int status, dptr name)
 
    EVVal(sizeof (struct b_file), e_file);
    AlcFixBlk(blk, b_file, T_File)
-   blk->fd = fd;
+   blk->fd.fp = fd;
    blk->status = status;
    blk->fname = tname;
    return blk;

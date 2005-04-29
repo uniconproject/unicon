@@ -96,7 +96,7 @@ operator{1} * size(x)
 #ifdef Dbm
 	 if ((status & Fs_Dbm) == Fs_Dbm) {
 	    int count = 0;
-	    DBM *db = (DBM *)BlkLoc(x)->file.fd;
+	    DBM *db = (DBM *)BlkLoc(x)->file.fd.dbm;
 	    datum key = dbm_firstkey(db);
 	    while (key.dptr != NULL) {
 	       count++;

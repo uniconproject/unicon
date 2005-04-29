@@ -472,7 +472,7 @@ int noimage;
           * Check for distinguished files by looking at the address of
           *  of the object to image.  If one is found, print its name.
           */
-         if ((fd = BlkLoc(*dp)->file.fd) == stdin)
+         if ((fd = BlkLoc(*dp)->file.fd.fp) == stdin)
             fprintf(f, "&input");
          else if (fd == stdout)
             fprintf(f, "&output");
@@ -503,11 +503,11 @@ int noimage;
 #ifdef Graphics
 	    if (BlkLoc(*dp)->file.status & Fs_Window) {
 	       if ((BlkLoc(*dp)->file.status != Fs_Window) && /* window open?*/
-		  (s = ((wbp)(BlkLoc(*dp)->file.fd))->window->windowlabel)) {
+		  (s = BlkLoc(*dp)->file.fd.wb->window->windowlabel)) {
 		  i = strlen(s);
 	          fprintf(f, "window_%d:%d(",
-		       ((wbp)BlkLoc(*dp)->file.fd)->window->serial,
-		       ((wbp)BlkLoc(*dp)->file.fd)->context->serial
+		       BlkLoc(*dp)->file.fd.wb->window->serial,
+		       BlkLoc(*dp)->file.fd.wb->context->serial
 		       );
 		  }
 	       else {
@@ -519,7 +519,7 @@ int noimage;
 #endif					/* Graphics */
 #ifdef Messaging
             if (BlkLoc(*dp)->file.status & Fs_Messaging) {
-	       struct MFile *mf = (struct MFile *)BlkLoc(*dp)->file.fd;
+	       struct MFile *mf = BlkLoc(*dp)->file.fd.mf;
 	       fprintf(f, "message(");
 	       if (mf && mf->resp && mf->resp->msg != NULL) {
 		  fprintf(f, "[%d:%s]", mf->resp->sc, mf->resp->msg);
@@ -1442,7 +1442,7 @@ dptr dp1, dp2;
           *  of the object to image.  If one is found, make a string
           *  naming it and return.
           */
-         if ((fd = BlkLoc(source)->file.fd) == stdin) {
+         if ((fd = BlkLoc(source)->file.fd.fp) == stdin) {
             StrLen(*dp2) = 6;
             StrLoc(*dp2) = "&input";
             }
@@ -1464,12 +1464,12 @@ dptr dp1, dp2;
 #ifdef Graphics
 	    if (BlkLoc(source)->file.status & Fs_Window) {
 	       if ((BlkLoc(source)->file.status != Fs_Window) &&
-		  (s = ((wbp)(BlkLoc(source)->file.fd))->window->windowlabel)){
+		  (s = BlkLoc(source)->file.fd.wb->window->windowlabel)){
 	          len = strlen(s);
                   Protect (reserve(Strings, (len << 2) + 16), return Error);
 	          sprintf(sbuf, "window_%d:%d(", 
-		       ((wbp)BlkLoc(source)->file.fd)->window->serial,
-		       ((wbp)BlkLoc(source)->file.fd)->context->serial
+		       BlkLoc(source)->file.fd.wb->window->serial,
+		       BlkLoc(source)->file.fd.wb->context->serial
 		       );
                 }
 		else {
@@ -1486,7 +1486,7 @@ dptr dp1, dp2;
 #ifdef PosixFns
                if (BlkLoc(source)->file.status & Fs_Socket) {
                    s = namebuf;
-                   len = sock_name(BlkLoc(source)->file.fd,
+                   len = sock_name(BlkLoc(source)->file.fd.fd,
                                  StrLoc(BlkLoc(source)->file.fname),
                                  namebuf, sizeof(namebuf));
                }

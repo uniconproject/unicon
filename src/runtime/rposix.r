@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.25 2004-12-05 07:03:45 jeffery Exp $
+ * $Id: rposix.r,v 1.26 2005-04-29 07:54:27 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -19,6 +19,13 @@
       StrLoc(d) = alcstr((s), len); \
       StrLen(d) = len;              \
 } while (0)
+
+/* Padding for machines that have opcodes smaller than words */
+#if IntBits != WordBits
+#define ipad(wp)  do *(wp).op++ = Op_Noop; while (0)
+#else
+#define ipad(wp)  do ; while (0)
+#endif
 
 /* Signal definitions */ 
 #passthru #if !defined(SIGABRT) 
@@ -209,13 +216,17 @@ unsigned int errmask;
      return -1;
 
 #ifdef Graphics
-   if (status & Fs_Window)
+   if (status & Fs_Window) {
+     if (!(status & Fs_Read)) {
+	return -1;
+	}
 #ifdef XWindows
-     return XConnectionNumber(((wbp)(BlkLoc(file)->file.fd))->
+     return XConnectionNumber(((wbp)(BlkLoc(file)->file.fd.fp))->
 				      window->display->display);
 #else
      return -1;
 #endif
+     }
 #endif
 
    if (errmask && !(status & errmask))
@@ -227,9 +238,9 @@ unsigned int errmask;
 #endif					/* NT */
 
       if (status & Fs_Socket)
-	 return (int)(BlkLoc(file)->file.fd);
+	 return BlkLoc(file)->file.fd.fd;
       else
-	 return fileno(BlkLoc(file)->file.fd);
+	 return fileno(BlkLoc(file)->file.fd.fp);
 }
 
 
@@ -444,10 +455,14 @@ char *mode;
 
 
 
-/* Here we are going to create a record of type posix_struct
+/*
+ * Create a record of type posix_struct
  * (defined in posix.icn because it's too painful for iconc if we
  * add a new record type here) and initialise the fields with the
- * fields from the struct stat. */
+ * fields from the struct stat.  Because this allocates memory that
+ * may trigger a garbage collection, the pointer parameters dp and rp
+ * should point at tended variables.
+ */
 void stat2rec(st, dp, rp)
 #if NT
 struct _stat *st;
@@ -455,7 +470,7 @@ struct _stat *st;
 struct stat *st;
 #endif					/* NT */
 struct descrip *dp;
-struct b_record *rp;
+struct b_record **rp;
 {
    int i;
    char mode[12], *user, *group;
@@ -463,28 +478,28 @@ struct b_record *rp;
    struct group *gr;
 
    dp->dword = D_Record;
-   dp->vword.bptr = (union block *)rp;
+   dp->vword.bptr = (union block *)(*rp);
 
    for (i = 0; i < 13; i++)
-     rp->fields[i].dword = D_Integer;
+     (*rp)->fields[i].dword = D_Integer;
 
-   IntVal(rp->fields[0]) = (int)st->st_dev;
-   IntVal(rp->fields[1]) = (int)st->st_ino;
-   IntVal(rp->fields[3]) = (int)st->st_nlink;
-   IntVal(rp->fields[6]) = (int)st->st_rdev;
-   IntVal(rp->fields[7]) = (int)st->st_size;
-   IntVal(rp->fields[8]) = (int)st->st_atime;
-   IntVal(rp->fields[9]) = (int)st->st_mtime;
-   IntVal(rp->fields[10]) = (int)st->st_ctime;
+   IntVal((*rp)->fields[0]) = (int)st->st_dev;
+   IntVal((*rp)->fields[1]) = (int)st->st_ino;
+   IntVal((*rp)->fields[3]) = (int)st->st_nlink;
+   IntVal((*rp)->fields[6]) = (int)st->st_rdev;
+   IntVal((*rp)->fields[7]) = (int)st->st_size;
+   IntVal((*rp)->fields[8]) = (int)st->st_atime;
+   IntVal((*rp)->fields[9]) = (int)st->st_mtime;
+   IntVal((*rp)->fields[10]) = (int)st->st_ctime;
 #if NT
-   IntVal(rp->fields[11]) = (int)0;
-   IntVal(rp->fields[12]) = (int)0;
+   IntVal((*rp)->fields[11]) = (int)0;
+   IntVal((*rp)->fields[12]) = (int)0;
 #else
-   IntVal(rp->fields[11]) = (int)st->st_blksize;
-   IntVal(rp->fields[12]) = (int)st->st_blocks;
+   IntVal((*rp)->fields[11]) = (int)st->st_blksize;
+   IntVal((*rp)->fields[12]) = (int)st->st_blocks;
 #endif
 
-   rp->fields[13] = nulldesc;
+   (*rp)->fields[13] = nulldesc;
 
    strcpy(mode, "----------");
 #if NT
@@ -520,11 +535,11 @@ struct b_record *rp;
    if (S_ISVTX & st->st_mode) mode[9] = (mode[9] == 'x') ? 't' : 'T';
 #endif					/* NT */
 
-   StrLoc(rp->fields[2]) = alcstr(mode, 10);
-   StrLen(rp->fields[2]) = 10;
+   StrLoc((*rp)->fields[2]) = alcstr(mode, 10);
+   StrLen((*rp)->fields[2]) = 10;
 
 #if NT
-   rp->fields[4] = rp->fields[5] = emptystr;
+   (*rp)->fields[4] = (*rp)->fields[5] = emptystr;
 #else					/* NT */
    pw = getpwuid(st->st_uid);
    if (!pw) {
@@ -532,8 +547,8 @@ struct b_record *rp;
       user = mode;
    } else
       user = pw->pw_name;
-   StrLoc(rp->fields[4]) = alcstr(user, strlen(user));
-   StrLen(rp->fields[4]) = strlen(user);
+   StrLoc((*rp)->fields[4]) = alcstr(user, strlen(user));
+   StrLen((*rp)->fields[4]) = strlen(user);
    
    gr = getgrgid(st->st_gid);
    if (!gr) {
@@ -541,8 +556,8 @@ struct b_record *rp;
       group = mode;
    } else
       group = gr->gr_name;
-   StrLoc(rp->fields[5]) = alcstr(group, strlen(group));
-   StrLen(rp->fields[5]) = strlen(group);
+   StrLoc((*rp)->fields[5]) = alcstr(group, strlen(group));
+   StrLen((*rp)->fields[5]) = strlen(group);
 #endif					/* NT */
 
 }
@@ -717,7 +732,7 @@ char *name;
  * For clients, the setup is much simpler; just create the socket and call
  * connect, which returns an fd. We do both in the one procedure "connect".
  *
- * UDP is just simpler - no listen or accept, only bind for sock_listen;
+852 * UDP is just simpler - no listen or accept, only bind for sock_listen;
  * and for sock_connect it's basically the same except that it must be
  * AF_INET.
  *
@@ -743,7 +758,14 @@ struct sockaddr_in saddrs[128];
 #define MAXHOSTNAMELEN 32
 #endif					/* MAXHOSTNAMELEN */
 
-FILE *sock_connect(char *fn, int is_udp, int timeout)
+/*
+ * Empty handler for connection alarm signals (used for timeouts).
+ */
+static void on_alarm(int x) 
+{
+}
+
+int sock_connect(char *fn, int is_udp, int timeout)
 {
    int imode, saveflags, rc, fd, s, len, fromlen;
    struct sockaddr *sa, from;
@@ -844,7 +866,7 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
    if (is_udp) {
       /* save the sockaddr struct */
       saddrs[s] = saddr_in;
-      return (FILE *)s;
+      return s;
       }
 
    if (timeout > 0) {
@@ -900,12 +922,14 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
          FD_SET(s, &es);
          errno = 0;
          sc = select(FD_SETSIZE, NULL, &ws, &es, &tv);      
-         /* A result of 0 means timeout; in this case errno will be zero too,
-            and that can be used to distinguish from another error condition. */
+         /*
+	  * A result of 0 means timeout; in this case errno will be zero too,
+          * and that can be used to distinguish from another error condition.
+	  */
          if (sc <= 0) {
             close(s);
             return 0;
-         }
+            }
 
          /* Get the error code of the connect */
          cclen = sizeof(cc);
@@ -921,7 +945,7 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
             return 0;
          }         
 
-         return (FILE *)s;
+         return s;
       }
 #endif					/* UNIX */
 #if NT
@@ -972,7 +996,7 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
             return 0;
          }         
 
-         return (FILE *)s;
+         return s;
       }
 #endif					/* NT */
    }
@@ -982,7 +1006,7 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
       return 0;
    }
 
-   return (FILE *)s;
+   return s;
 }
 
 /*
@@ -990,7 +1014,7 @@ FILE *sock_connect(char *fn, int is_udp, int timeout)
  * including UDP sockets and non-blocking "listener" sockets on which a
  * later select() may turn up an accept.
  */
-FILE *sock_listen(addr, is_udp_or_listener)
+int sock_listen(addr, is_udp_or_listener)
 char *addr;
 int is_udp_or_listener;
 {
@@ -1102,19 +1126,18 @@ int is_udp_or_listener;
    }
     
    if (is_udp_or_listener)
-      return (FILE *)s;
+      return s;
 
    fromlen = sizeof(from);
    if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
       return 0;
 
-   return (FILE *)fd;
+   return fd;
 }
 
 /* Used for image() of connected sockets */
-int sock_name(FILE* sock, char* addr, char* addrbuf, int bufsize)
+int sock_name(int s, char* addr, char* addrbuf, int bufsize)
 {
-   int s = (int) sock;
    int len;
    struct sockaddr_in conn;
    int addrlen = sizeof(conn);
@@ -1196,19 +1219,19 @@ int sock_send(char *adr, char *msg, int msglen)
    return 1;
 }
 
-/* Used by function receive() to receive a UDP datagram into a record */
-int sock_recv(f, rp)
-FILE *f;
-struct b_record *rp;
+/*
+ * Used by function receive() to receive a UDP datagram into a record.
+ * This allocates from the heaps, so rp must point at a tended pointer.
+ */
+int sock_recv(int s, struct b_record **rp)
 {
-   int s, s_type;
+   int s_type;
    struct sockaddr_in saddr_in;
    struct hostent *hp;
    char buf[1024];
    int len, BUFSIZE = 1024, msglen;
    
    memset(&saddr_in, 0, sizeof(saddr_in));
-   s = (int)f;
    len = sizeof(s_type);
 
 #if NT
@@ -1234,8 +1257,8 @@ struct b_record *rp;
 	 &len)) < 0)
       return 0;
 
-   StrLen(rp->fields[1]) = msglen;
-   StrLoc(rp->fields[1]) = alcstr(buf, msglen);
+   StrLen((*rp)->fields[1]) = msglen;
+   StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
 
    hp = gethostbyaddr((char *)&saddr_in.sin_addr,
 	 sizeof(saddr_in.sin_addr), saddr_in.sin_family);
@@ -1249,19 +1272,15 @@ struct b_record *rp;
 	     ntohs(saddr_in.sin_port));
       }
 
-   String(rp->fields[0], buf);
+   String((*rp)->fields[0], buf);
 
    return 1;
 }
 
-int sock_write(FILE *f, char *msg, int n)
+int sock_write(int f, char *msg, int n)
 {
    int rv, s_type, len;
-#if 1 /* NT */
-   SOCKET fd = ((SOCKET)f);
-#else					/* NT */
-   int fd = fileno(f);
-#endif					/* NT */
+   SOCKET fd = ((SOCKET)f); /* used to wrap f inside an fdup, but no more */
 
    len = sizeof(s_type);
    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&s_type, &len) < 0)
@@ -1483,16 +1502,19 @@ int nargs;
 #endif					/* HP */
 
    wp.opnd = callproc = ibuf;
-   *wp.op++ = Op_Mark;   *wp.opnd++ = (2 + nargs+1)*2 * WordSize;
-   *wp.op++ = Op_Copyd;  *wp.opnd++ = -(nargs+1);
+   ipad(wp);  *wp.op++ = Op_Mark;   *wp.opnd++ = (2 + nargs+1)*2 * WordSize;
+   ipad(wp);  *wp.op++ = Op_Copyd;  *wp.opnd++ = -(nargs+1);
    off = -nargs;
    for (i = 1; i < nargs+1; i++) {
+      ipad(wp);
       *wp.op++ = Op_Copyd;
       *wp.opnd++ = off++;
    }
-   *wp.op++ = Op_Invoke;  *wp.opnd++ =  nargs;
+   ipad(wp);  *wp.op++ = Op_Invoke;  *wp.opnd++ =  nargs;
    *wp.op++ = Op_Eret;
+   ipad(wp);
    *wp.op++ = Op_Trapret;
+   ipad(wp);
    *wp.op++ = Op_Trapfail;
 
    dp = (dptr)(sp + 1);
@@ -1676,7 +1698,7 @@ struct b_list *findactivewindow(struct b_list *lws)
    {
    static LONG next = 0;
    LONG i, j;
-   union block *ep;
+   tended union block *ep;
    wsp ptr, ws;
    tended struct descrip d;
    extern FILE *ConsoleBinding;
@@ -1695,19 +1717,31 @@ struct b_list *findactivewindow(struct b_list *lws)
    for (ep = (union block *)(lws->listhead); BlkType(ep) == T_Lelem;
 	ep = ep->lelem.listnext) {
       for (i = 0; i < ep->lelem.nused; i++) {
-	 dptr f;
+	 union block *bp;
+         wbp w;
+         wsp ws;
+	 int status;
 	 j = ep->lelem.first + i;
 	 if (j >= ep->lelem.nslots)
 	    j -= ep->lelem.nslots;
-	 f = &ep->lelem.lslots[j];
-         if (!(is:file(*f) && BlkLoc(*f)->file.status & Fs_Window))
+	 
+         if (!(is:file(ep->lelem.lslots[j]) &&
+	       (status = BlkLoc(ep->lelem.lslots[j])->file.status) &&      
+	       (status & Fs_Window)))
             syserr("internal error calling findactivewindow()");
-	 if (BlkLoc(((wbp)(BlkLoc(*f)->file.fd))->window->listp)->list.size > 0) {
+         if (!(status & Fs_Read)) {
+            /* a closed window was found on the list, ignore it */
+	    continue;
+	    }
+	 bp = BlkLoc(ep->lelem.lslots[j]);
+	 w = bp->file.fd.wb;
+	 ws = w->window;
+	 if (BlkLoc(ws->listp)->list.size > 0) {
 	    if (is:null(d)) {
 	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
 	       d.dword = D_List;
 	       }
-	    c_put(&d, f);
+	    c_put(&d, &(ep->lelem.lslots[j]));
 	    }
 	 }
       }

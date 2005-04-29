@@ -2,9 +2,12 @@
  * File: rcoexpr.r -- co_init, co_chng
  */
 
-#if COMPILER
-static continuation coexpr_fnc;  /* function to call after switching stacks */
-#endif					/* COMPILER */
+
+/*
+ * Function to call after switching stacks. If NULL, call interp().
+ */
+static continuation coexpr_fnc;
+
 
 /*
  * co_init - use the contents of the refresh block to initialize the
@@ -301,11 +304,14 @@ void new_context(fsig,cargp)
 int fsig;
 dptr cargp;
    {
-#if COMPILER
-   (*coexpr_fnc)();
-#else					/* COMPILER */
-   interp(fsig, cargp);
-#endif					/* COMPILER */
+   continuation cf;
+   if (coexpr_fnc != NULL) {
+      cf = coexpr_fnc;
+      coexpr_fnc = NULL;
+      (*cf)();
+      }
+   else
+      interp(fsig, cargp);
    }
 #else					/* Coexpr */
 /* dummy new_context if co-expressions aren't supported */
@@ -313,5 +319,6 @@ void new_context(fsig,cargp)
 int fsig;
 dptr cargp;
    {
+   syserr("new_context() called, but co-expressions not implemented");
    }
 #endif					/* Coexpr */

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.32 2005-04-26 11:29:47 jeffery Exp $
+ * $Id: fxposix.ri,v 1.33 2005-04-29 07:54:26 jeffery Exp $
  */
 
 /*
@@ -197,7 +197,7 @@ function{0,1} kill(pid, signal)
       return null
       }
    body {
-      int sig;
+      C_integer sig;
       tended char *signalname;
      
       if (is:string(signal)) {
@@ -240,7 +240,7 @@ function{0,1} trap(nsignal, handler)
       return proc
       }
    body { 
-      int sig;
+      C_integer sig;
       tended char *signalname;
         
       if (is:string(nsignal)) {
@@ -281,7 +281,7 @@ end
 
 function{0,1} chown(s, u, g)
    declare {
-      int i_u, i_g;
+      C_integer i_u, i_g;
       }
    type_case u of {
       string: {
@@ -388,7 +388,7 @@ function{0,1} chmod(s, m)
 	    return null
 	    }
 	 body {
-	    int i;
+	    C_integer i;
 	    tended char *fname, *cmode;
 	    IntVal(amperErrno) = 0;
             cnv:C_string(s, fname);
@@ -421,7 +421,7 @@ function{0,1} chmod(s, m)
 	    }
 	 body {
 	    tended char *cmode;
-	    int i, fd;
+	    C_integer i, fd;
 	    IntVal(amperErrno) = 0;
 	    if (is:string(m)) {
 	       cnv:C_string(m, cmode);
@@ -511,7 +511,7 @@ function{0,1} mkdir(s, m)
       }
    body {
       tended char *cmode;
-      int mode = 0777;		/* default; will be modified by umask */
+      C_integer mode = 0777;	/* default; will be modified by umask */
       
       if (is:string(m)) {
          cnv:C_string(m, cmode);
@@ -551,7 +551,7 @@ function{0,1} truncate(f, l)
 	    }
 	 body {
 	    tended char *s;
-		int fd = 0;
+	    int fd = 0;
 
 	    IntVal(amperErrno) = 0;
             cnv:C_string(f, s);
@@ -778,7 +778,7 @@ function{0,1} fcntl(f, action, options)
 	 start[-1] = len[-1] = ',';
 
 	 IntVal(amperErrno) = 0;
-	 if (fcntl(fd, cmd, (int)&fl) < 0) {
+	 if (fcntl(fd, cmd, &fl) < 0) {
 	    IntVal(amperErrno) = errno;
 	    fail;
 	 }
@@ -813,7 +813,7 @@ function{0,1} fcntl(f, action, options)
 	 return result;
       } else {
 	 /* options should be an int */
-	 int o = 0, retval;
+	 C_integer o = 0, retval;
 
 	 if (cmd == F_SETFL) {
 	    tended char *opt;
@@ -935,7 +935,7 @@ function{0,1} filepair()
       int fds[2], i;
       FILE* fps[2];
       struct descrip fname;
-      struct b_file *fl;
+      struct b_file *fl; /* not tended: single assignment usage */
       tended struct b_list *lp;
       tended union block *ep;
 #if NT
@@ -1063,9 +1063,9 @@ function{0,1} fdup(src, dest)
 	 runerr(174, dest);
       if (BlkLoc(dest)->file.status != 0)
 	 if (BlkLoc(dest)->file.status & Fs_Pipe)
-	    pclose(BlkLoc(dest)->file.fd);
+	    pclose(BlkLoc(dest)->file.fd.fp);
 	 else 
-	    fclose(BlkLoc(dest)->file.fd);
+	    fclose(BlkLoc(dest)->file.fd.fp);
  
       IntVal(amperErrno) = 0;
       if (dup2(fd_src, fd_dest) < 0) {
@@ -1079,7 +1079,7 @@ function{0,1} fdup(src, dest)
       case Fs_Read & Fs_Write : fmode = "r+"; break;
       default: runerr(500); break;
       }
-      BlkLoc(dest)->file.fd = fp = fdopen(fd_dest, fmode);
+      BlkLoc(dest)->file.fd.fp = fp = fdopen(fd_dest, fmode);
       BlkLoc(dest)->file.fname = BlkLoc(src)->file.fname;
       return nulldesc;
       }
@@ -1100,6 +1100,7 @@ function{0,1} exec(f, argv[argc])
        * collection but we're going to be doing an exec() so ...
        */
       tended char *p;
+      /* fixme: remove static limit on margv */
       char *margv[200];		/* We need a different array so we can put
 				   a nil pointer at the end of the list */
       if (argc > 200)
@@ -1143,7 +1144,8 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       return null ++ integer
       }
    body {
-      int i, j, n, fd_0, fd_1, fd_2, i_mode=0, is_argv_str=0, pid;
+      int i, j, n, fd_0, fd_1, fd_2, is_argv_str=0, pid;
+      C_integer i_mode=0;
       union block *ep, *bp;
 	 
       /*
@@ -1152,9 +1154,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
        */
       tended char *p;
       tended char *cmdline;
-      int margvsize = 256;
-      char **margv=NULL;	/* We need a different array so we can put
-				   a nil pointer at the end of the list */
+      char **margv=NULL;
       IntVal(amperErrno) = 0;
 
       /* Decode the mode */
@@ -1167,7 +1167,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       }
 
       if (is:list(argv)) {
-         margv = (char **)malloc(256 * sizeof(char *));
+         margv = (char **)malloc((BlkLoc(argv)->list.size+1) * sizeof(char *));
          if (margv == NULL) runerr(305);
 	 n = 0;
 	 /* Traverse the list */
@@ -1182,16 +1182,9 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
 	       if (!cnv:C_string((*f), p))
 		  runerr(103, *f);
-	       if (i > 200)
-		  runerr(0);
 	       margv[n++] = p;
-               if (n >= margvsize-1) {
-	          margvsize += margvsize;
-                  margv = (char **)realloc(margv,margvsize * sizeof(char *));
-                  if (margv == NULL) runerr(305);
-                  }
+	       }
 	    }
-	 }
 	 margv[n] = 0;
          }
       else if (is:string(argv)) {
@@ -1235,7 +1228,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    int status;
 	    waitpid(pid, &status, 0);
 	    return C_integer status;
-	 }
+	    }
 	 else {
 	    return C_integer pid;
             }
@@ -1505,6 +1498,7 @@ function{0,1} crypt(key, salt)
       fail;
       return nulldesc; /* NOTREACHED */
 #else					/* NoCrypt */
+      char *crypt(const char *key, const char *salt);
       String(result, (char*)crypt(key, salt));
       return result;
 #endif					/* NoCrypt */
@@ -1523,7 +1517,7 @@ function{0,1} umask(mask)
       }
    inline {
       if (is:integer(mask)) {
-	 int m;
+	 C_integer m;
          cnv:C_integer(mask, m);
 #if NT
 #define umask _umask
@@ -1715,7 +1709,7 @@ function{0,1} gettimeofday()
 #if NT
       struct _timeb wtp;
 #endif					/* NT */
-      struct b_record *rp;
+      struct b_record *rp; /* does not need to be tended */
       static dptr constr;
       int nfields;
 
@@ -1757,7 +1751,7 @@ function{0,1} lstat(f)
       return record
       }
    body {
-      struct b_record *rp;
+      tended struct b_record *rp;
 #if NT
       struct _stat sbuf;
 #else					/* NT */
@@ -1781,7 +1775,7 @@ function{0,1} lstat(f)
 
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-      stat2rec(&sbuf, &result, rp);
+      stat2rec(&sbuf, &result, &rp);
       return result;
    }
 end
@@ -1795,7 +1789,7 @@ function{0,1} stat(f)
 	    return record
 	    }
 	 body {
-	    struct b_record *rp;
+	    tended struct b_record *rp;
 #if NT
 	    struct _stat sbuf;
 #else					/* NT */
@@ -1817,7 +1811,7 @@ function{0,1} stat(f)
 
 	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-	    stat2rec(&sbuf, &result, rp);
+	    stat2rec(&sbuf, &result, &rp);
 
 #if !NT
 	    if (S_ISLNK(sbuf.st_mode)) {
@@ -1861,7 +1855,7 @@ function{0,1} stat(f)
 	    return record
 	    }
 	 body {
-	    struct b_record *rp;
+	    tended struct b_record *rp;
 #if NT
 	    struct _stat sbuf;
 #else					/* NT */
@@ -1871,9 +1865,8 @@ function{0,1} stat(f)
 	    int nfields, fd;
 
 #if HAVE_LIBZ 
-            if (BlkLoc(f)->file.status & Fs_Compress) {
+            if (BlkLoc(f)->file.status & Fs_Compress)
                fail;
-               }
 #endif					/* HAVE_LIBZ */
 
 	    IntVal(amperErrno) = 0;
@@ -1889,7 +1882,7 @@ function{0,1} stat(f)
 
 	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-	    stat2rec(&sbuf, &result, rp);
+	    stat2rec(&sbuf, &result, &rp);
 	    return result;
 	 }
       }
@@ -1927,7 +1920,7 @@ function{0,1} receive(f)
       return record
       }
    body {
-      struct b_record *rp;
+      tended struct b_record *rp;
       static dptr constr;
       int nfields, status, ret;
       
@@ -1943,7 +1936,7 @@ function{0,1} receive(f)
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 
       IntVal(amperErrno) = 0;
-      if ((ret = sock_recv(BlkLoc(f)->file.fd, rp)) == 0) {
+      if ((ret = sock_recv(BlkLoc(f)->file.fd.fd, &rp)) == 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
@@ -1976,7 +1969,7 @@ function{0,1} fetch(d, k)
 
 	 if (!cnv:string(k, dkey))
 	    runerr(103, k);
-	 db = (DBM *)BlkLoc(d)->file.fd;
+	 db = (DBM *)BlkLoc(d)->file.fd.dbm;
 	 key.dsize = StrLen(dkey); key.dptr = StrLoc(dkey);
 	 content = dbm_fetch(db, key);
 	 if (content.dptr == NULL)
@@ -2080,9 +2073,6 @@ void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 {
    int fd, fromlen, status = BlkLoc(*f)->file.status;
    struct sockaddr_in from;
-#ifdef Graphics
-   wbp w;
-#endif					/* Graphics */
 
    if ((status & Fs_Socket) == 0) return;
 
@@ -2095,7 +2085,7 @@ void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 	 fromlen = sizeof(from);
 	 if ((fd = accept(fd, (struct sockaddr *)&from, &fromlen)) < 0)
 	    return;
-	 BlkLoc(*f)->file.fd = (FILE *)fd;
+	 BlkLoc(*f)->file.fd.fd = fd;
 	 BlkLoc(*f)->file.status = Fs_Socket | Fs_Read | Fs_Write;
 	 }
       c_put(ldp, f);
@@ -2110,7 +2100,9 @@ function{0,1} select(files[nargs])
       return new list(file)
       }
    body {
-      int rv, status, timeout = -1, acc_time = 0, check_time, clocks;
+      int rv, status, acc_time = 0, check_time, clocks;
+      int i, j, k=0, n=0, nset, nset_add=0;
+      C_integer timeout = -1;
 #if UNIX
       struct tms t;
       int base_time = times(&t), ctps = sysconf(_SC_CLK_TCK);
@@ -2118,7 +2110,6 @@ function{0,1} select(files[nargs])
       int base_time = clock(), ctps = CLOCKS_PER_SEC;
 #endif					/* UNIX */
       fd_set fds;
-      int i, j, k=0, n=0, nset, nset_add=0;
       struct timeval tv, *ptv = &tv;
       tended struct b_list *lp = NULL;
       union block *ep;
@@ -2226,7 +2217,7 @@ function{0,1} select(files[nargs])
 #else
 	    IntVal(amperErrno) = errno;
 #endif
-	    if (IntVal(amperErrno) !=0 )
+	    if (IntVal(amperErrno) != 0)
 	       fail;
 	    }
 
@@ -2349,7 +2340,7 @@ function{0,1} getpw(u)
 #if NT
 	    fail;
 #else					/* NT */
-	    int uid;
+	    C_integer uid;
 	    cnv:C_integer(u, uid);
 
 	    if ((pw = getpwuid(uid)) == NULL)
@@ -2411,7 +2402,7 @@ function{0,1} getgr(g)
       }
    integer: {
 	 body {
-	    int gid;
+	    C_integer gid;
 	    cnv:C_integer(g, gid);
 #if NT
 	    fail;
@@ -2536,7 +2527,7 @@ function{0,1} getserv(s, proto)
       integer: {
 	 body {
 	    tended char *p;
-	    int port;
+	    C_integer port;
 	    p = 0;
 	    cnv:C_integer(s, port);
             if (!is:null(proto))

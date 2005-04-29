@@ -112,7 +112,7 @@ function{1} close(f)
       }
 
    body {
-      FILE *fp = BlkLoc(f)->file.fd;
+      FILE *fp = BlkLoc(f)->file.fd.fp;
       int status = BlkLoc(f)->file.status;
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
@@ -130,9 +130,9 @@ function{1} close(f)
       if (BlkLoc(f)->file.status & Fs_Socket) {
 	 BlkLoc(f)->file.status = 0;
 #if NT
-	 return C_integer closesocket((SOCKET)fp);
+	 return C_integer closesocket((SOCKET)BlkLoc(f)->file.fd.fd);
 #else					/* NT */
-	 return C_integer close((int)fp);
+	 return C_integer close(BlkLoc(f)->file.fd.fd);
 #endif					/* NT */
 	 }
 #endif					/* PosixFns */
@@ -315,9 +315,10 @@ function{0,1} open(fname, spec)
       register int i;
       register char *s;
       int status;
-      char mode[4];
+      char mode[4], sbuf[MaxCvtLen+1], sbuf2[MaxCvtLen+1];
       extern FILE *fopen();
       FILE *f;
+      SOCKET fd;
       struct b_file *fl;
 #ifdef PosixFns
       struct stat st;
@@ -647,10 +648,10 @@ Deliberate Syntax Error
 
 #ifdef Graphics3D
 	 if (status & Fs_Window3D)
-	    f = (FILE *)wopengl(fnamestr, hp, attr, n, &err_index);
+	    f = wopengl(fnamestr, hp, attr, n, &err_index);
 	 else
 #endif					/* Graphics3D */
-	    f = (FILE *)wopen(fnamestr, hp, attr, n, &err_index,0);
+	    f = wopen(fnamestr, hp, attr, n, &err_index,0);
 
 	 if (f == NULL) {
 	    if (err_index >= 0) runerr(145, attr[err_index]);
@@ -761,9 +762,25 @@ Deliberate Syntax Error
 
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
       if (status & Fs_Pipe) {
+	 int c;
 	 if (status != (Fs_Read|Fs_Pipe) && status != (Fs_Write|Fs_Pipe))
 	    runerr(209, spec);
+	 strcpy(sbuf, fnamestr);
+	 if ((s = strchr(sbuf, ' ')) != NULL) *s = '\0';
+	 if (findonpath(sbuf, sbuf2, MaxCvtLen) == NULL) {
+	    fail;
+	    }
+         fnamestr = sbuf2;
+	 if (s) {
+	    strcat(fnamestr, " ");
+	    strcat(fnamestr, s+1);
+	    }
 	 f = popen(fnamestr, mode);
+	 if (!strcmp(mode,"r") && ((c = getc(f)) == EOF)) {
+	    pclose(f);
+	    fail;
+	    }
+	 ungetc(c, f);
 	 }
       else
 #endif					/* AMIGA || ARM || OS2 || ... */
@@ -805,7 +822,7 @@ Deliberate Syntax Error
 	       runerr(209, spec);
 	    if (status & Fs_Append) {
 	       /* "na" => listen for connections */
-	       f = sock_listen(fnamestr, is_udp_or_listener);
+	       fd = sock_listen(fnamestr, is_udp_or_listener);
 	    } else {
 	       C_integer timeout = 0;
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
@@ -815,7 +832,7 @@ Deliberate Syntax Error
                }
 #endif
 	       /* connect to a port */
-	       f = sock_connect(fnamestr, is_udp_or_listener, timeout);
+	       fd = sock_connect(fnamestr, is_udp_or_listener, timeout);
 	    }
 	    /*
 	     * read/reads is not allowed on a listener socket, only select
@@ -829,9 +846,17 @@ Deliberate Syntax Error
 	       status = Fs_Socket | Fs_Read | Fs_Write;
 
 
-	    if (!f)
+	    if (!fd) {
 	       IntVal(amperErrno) = errno;
-	 }
+	       fail;
+	       }
+
+	    StrLen(filename) = strlen(fnamestr);
+	    StrLoc(filename) = fnamestr;
+	    Protect(fl = alcfile(0, status, &filename), runerr(0));
+	    fl->fd.fd = fd;
+	    return file(fl);
+	    }
 	 else if (stat(fnamestr, &st) < 0) {
 	    if (errno == ENOENT && (status & Fs_Read))
 	       fail;
@@ -998,7 +1023,7 @@ function{0,1} read(f)
       /*
        * Get a pointer to the file and be sure that it is open for reading.
        */
-      fp = BlkLoc(f)->file.fd;
+      fp = BlkLoc(f)->file.fd.fp;
       status = BlkLoc(f)->file.status;
       if ((status & Fs_Read) == 0)
 	 runerr(212, f);
@@ -1007,7 +1032,7 @@ function{0,1} read(f)
        if (status & Fs_Socket) {
 	  StrLen(s) = 0;
           do {
-	     ws = (SOCKET)fp;
+	     ws = (SOCKET)BlkLoc(f)->file.fd.fd;
 	     if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
 	        /*IntVal(amperErrno) = errno; */
 	        fail;
@@ -1138,8 +1163,6 @@ function{0,1} read(f)
 	else 
 #endif					/* HAVE_LIBZ */
 
-
-
 #ifdef RecordIO
 	 if ((slen = (status & Fs_Record ? getrec(sbuf, MaxReadStr, fp) :
 					   getstrg(sbuf, MaxReadStr, &BlkLoc(f)->file)))
@@ -1213,14 +1236,13 @@ function{0,1} reads(f,i)
       /*
        * Get a pointer to the file and be sure that it is open for reading.
        */
-      fp = BlkLoc(f)->file.fd;
       status = BlkLoc(f)->file.status;
       if ((status & Fs_Read) == 0)
 	 runerr(212, f);
 
 #ifdef Messaging
       if (status & Fs_Messaging) {
-	 struct MFile *mf = (struct MFile *)fp;
+	 struct MFile *mf = BlkLoc(f)->file.fd.mf;
 	 /* Casting to unsigned lets us use reads(f, -1) */
 	 size_t size = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
 	 if (!MFIN(mf, READING)) {
@@ -1245,7 +1267,7 @@ function{0,1} reads(f,i)
 	    StrLen(s) = 0;
 	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
 	    do {
-	        ws = (SOCKET)fp;
+	        ws = (SOCKET)BlkLoc(f)->file.fd.fd;
 		if (bytesread > 0) {
                     if (i - bytesread <= MaxReadStr)
                         Maxread = i - bytesread;
@@ -1292,6 +1314,7 @@ function{0,1} reads(f,i)
 	}
 #endif					/* PosixFns */
 
+      fp = BlkLoc(f)->file.fd.fp;
       if (status & Fs_Writing) {
 	 fseek(fp, 0L, SEEK_CUR);
 	 BlkLoc(f)->file.status &= ~Fs_Writing;
@@ -1539,7 +1562,7 @@ function{0,1} seek(f,o)
    body {
       FILE *fd;
 
-      fd = BlkLoc(f)->file.fd;
+      fd = BlkLoc(f)->file.fd.fp;
       if (BlkLoc(f)->file.status == 0)
 	 fail;
 
@@ -1683,7 +1706,7 @@ function{0,1} where(f)
       long ftell();
       long pos;
 
-      fd = BlkLoc(f)->file.fd;
+      fd = BlkLoc(f)->file.fd.fp;
 
       if (BlkLoc(f)->file.status == 0)
 	 fail;
@@ -1723,9 +1746,9 @@ end
 	 runerr(213);
       else {
 #ifndef ConsoleWindow
-	 f = k_errout.fd;
+	 f.fp = k_errout.fd.fp;
 #else					/* ConsoleWindow */
-         f = (ConsoleFlags & StdErrRedirect) ? k_errout.fd : OpenConsole();
+         f.fp=(ConsoleFlags & StdErrRedirect) ? k_errout.fd.fp : OpenConsole();
 #endif					/* ConsoleWindow */
 	 }
 #else					/* error_out */
@@ -1733,9 +1756,9 @@ end
 	 runerr(213);
       else {
 #ifndef ConsoleWindow
-	 f = k_output.fd;
+	 f.fp = k_output.fd.fp;
 #else					/* ConsoleWindow */
-         f = (ConsoleFlags & StdOutRedirect) ? k_output.fd : OpenConsole();
+         f.fp=(ConsoleFlags & StdOutRedirect) ? k_output.fd.fp : OpenConsole();
 #endif					/* ConsoleWindow */
 	 }
 #endif					/* error_out */
@@ -1751,30 +1774,25 @@ end
    pollctr >>= 1;
    pollctr++;
    if (status & Fs_Window)
-      wputc('\n',(wbp)f);
+      wputc('\n', f.wb);
    else
 #endif					/* Graphics */
 
-
 #if HAVE_LIBZ
-   
    if (status & Fs_Compress) {
-     
-      if (gzputc((gzFile)f,'\n')==-1) {
-          fflush(stdout);
+      if (gzputc((gzFile)(f.fp),'\n')==-1) {
           runerr(214);
           }
       }
    else
 #endif					/* HAVE_LIBZ */
 
-
 #ifdef RecordIO
       if (!(status & Fs_Record)) {
 #endif					/* RecordIO */
 #ifdef Messaging
       if (status & Fs_Messaging) {
-	 struct MFile *mf = (struct MFile *)f;
+	 struct MFile *mf = f.mf;
 	 extern int Merror;
 	 if (!MFIN(mf, WRITING)) {
 	    runerr(213);
@@ -1794,7 +1812,7 @@ end
 #endif                                  /* Messaging */
 #ifdef PosixFns
       if (status & Fs_Socket) {
-	 if (sock_write(f, "\n", 1) < 0)
+	 if (sock_write(f.fd, "\n", 1) < 0)
 #if terminate
 	    syserr("sock_write failed in stop()");
 #else
@@ -1803,7 +1821,7 @@ end
          }
       else
 #endif					/* PosixFns */
-	 putc('\n', f);
+	 putc('\n', f.fp);
 
 #ifdef RecordIO
       }
@@ -1821,7 +1839,7 @@ end
 #endif					/* Graphics */
 #ifdef RecordIO
       if (status & Fs_Record)
-	 flushrec(f);
+	 flushrec(f.fp);
 #endif					/* RecordIO */
 
 #ifdef PosixFns
@@ -1829,21 +1847,22 @@ end
 #endif					/* PosixFns */
 
 #if HAVE_LIBZ
-      if (status & Fs_Compress) {
+      if (status & (Fs_Compress
+		    )) {
 
        /*if (ferror(f))
 	    runerr(214);
          gzflush(f, Z_SYNC_FLUSH);  */
          }
       else{
-         if (ferror(f))
+         if (ferror(f.fp))
 	    runerr(214);
-         fflush(f);
+         fflush(f.fp);
       }
 #else					/* HAVE_LIBZ */
-         if (ferror(f))
+         if (ferror(f.fp))
 	    runerr(214);
-         fflush(f);
+         fflush(f.fp);
       
 #endif					/* HAVE_LIBZ */
 
@@ -1895,7 +1914,19 @@ function {1} name(x[nargs])
 #endif					/* terminate */
 
    declare {
-      FILE *f = NULL;
+      union {
+      FILE *fp;
+#ifdef Graphics
+      struct _wbinding *wb;
+#endif					/* Graphics */
+#ifdef Messaging
+      struct MFile *mf;
+#endif					/* Messaging */
+#ifdef Dbm
+      struct DBM *dbm;
+#endif					/* Dbm */
+      int  fd;
+      } f;
       word status =
 #if terminate
 #ifndef ConsoleWindow
@@ -1970,19 +2001,17 @@ function {1} name(x[nargs])
 		     pollctr >>= 1;
 		     pollctr++;
 		     if (status & Fs_Window) {
-			wputc('\n',(wbp)f);
-			wflush((wbp)f);
-			  }
+			wputc('\n', f.wb);
+			wflush(f.wb);
+			}
 		     else {
 #endif					/* Graphics */
 
-
 #if HAVE_LIBZ
                      if (status & Fs_Compress) {
-                       
-			if (gzputc(f,'\n')==-1)
+			if (gzputc(f.fp,'\n')==-1)
                             runerr(214);
-/*			gzflush(f,4); */
+/*			gzflush(f.fp,4); */
 			  }
 		     else {
                           }
@@ -1991,19 +2020,19 @@ function {1} name(x[nargs])
 
 #ifdef RecordIO
 			if (status & Fs_Record)
-			   flushrec(f);
+			   flushrec(f.fp);
 			else
 #endif					/* RecordIO */
 #ifdef Messaging
                         if (status & Fs_Messaging) {
-			   struct MFile *mf = (struct MFile *)f;
+			   struct MFile *mf = f.mf;
 			   extern int Merror;
 			   if (!MFIN(mf, WRITING)) {
 			     runerr(213);
 			   }
 			   if (tp_write(mf->tp, "\n", 1) < 0) {
 #if terminate
-	    syserr("tp_write failed in stop()");
+			      syserr("tp_write failed in stop()");
 #else
 			      fail;
 #endif
@@ -2016,7 +2045,7 @@ function {1} name(x[nargs])
 #endif                                  /* Messaging */
 #ifdef PosixFns
 			if (status & Fs_Socket) {
-			   if (sock_write(f, "\n", 1) < 0)
+			   if (sock_write(f.fd, "\n", 1) < 0)
 #if terminate
 			      syserr("sock_write failed in stop()");
 #else
@@ -2025,10 +2054,10 @@ function {1} name(x[nargs])
 			   }
 			else {
 #endif					/* PosixFns */
-			putc('\n', f);
-			if (ferror(f))
+			putc('\n', f.fp);
+			if (ferror(f.fp))
 			   runerr(214);
-			fflush(f);
+			fflush(f.fp);
 #ifdef PosixFns
                         }
 #endif					/* PosixFns */
@@ -2055,11 +2084,11 @@ function {1} name(x[nargs])
 		  status = BlkLoc(x[n])->file.status;
 		  if ((status & Fs_Write) == 0)
 		     runerr(213, x[n]);
-		  f = BlkLoc(x[n])->file.fd;
+		  f.fp = BlkLoc(x[n])->file.fd.fp;
 #ifdef ConsoleWindow
-                  if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
-                      (f == stderr && !(ConsoleFlags & StdErrRedirect))) {
-                     f = OpenConsole();
+                  if ((f.fp == stdout && !(ConsoleFlags & StdOutRedirect)) ||
+                      (f.fp == stderr && !(ConsoleFlags & StdErrRedirect))) {
+                     f.fp = OpenConsole();
                      status = Fs_Read | Fs_Write | Fs_Window;
                      }
 #endif					/* ConsoleWindow */
@@ -2069,9 +2098,9 @@ function {1} name(x[nargs])
 		      * have to set the background to overpaint - the one
                       * difference between DrawString and write(s)
 		      */
-                    ((wbp)f)->context->charBundle.usBackMixMode = BM_OVERPAINT;
+                    f.wb->context->charBundle.usBackMixMode = BM_OVERPAINT;
                     /* unload the context from the window so it will be reloaded */
-                    ((wbp)f)->window->charContext = NULL;
+                    f.wb->window->charContext = NULL;
                     }
 #endif					/* PresentationManager */
 		  }
@@ -2088,14 +2117,14 @@ function {1} name(x[nargs])
 		   */
 #ifdef Graphics
 		  if (status & Fs_Window)
-		     wputstr((wbp)f, StrLoc(t), StrLen(t));
+		     wputstr(f.wb, StrLoc(t), StrLen(t));
 		  else
 #endif					/* Graphics */
 
 
 #if HAVE_LIBZ
 	          if (status & Fs_Compress){
-                     if (gzputs(f, StrLoc(t))==-1) 
+                     if (gzputs(f.fp, StrLoc(t))==-1) 
 			runerr(214);
                      }
 		  else
@@ -2103,12 +2132,12 @@ function {1} name(x[nargs])
 
 
 #ifdef RecordIO
-		     if ((status & Fs_Record ? putrec(f, &t) :
-					     putstr(f, &t)) == Failed)
+		     if ((status & Fs_Record ? putrec(f.fp, &t) :
+					     putstr(f.fp, &t)) == Failed)
 #else					/* RecordIO */
 #ifdef Messaging
                      if (status & Fs_Messaging) {
-			struct MFile *mf = (struct MFile *)f;
+			struct MFile *mf = f.mf;
 			extern int Merror;
 			Merror = 0;
 			tp_write(mf->tp, StrLoc(t), StrLen(t));
@@ -2118,10 +2147,11 @@ function {1} name(x[nargs])
 			}
 		     else
 #endif                                  /* Messaging */
+
 #ifdef PosixFns
 		     if (status & Fs_Socket) {
 
-			if (sock_write(f, StrLoc(t), StrLen(t)) < 0) {
+			if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
 #if terminate
 			   syserr("sock_write failed in stop()");
 #else
@@ -2130,7 +2160,7 @@ function {1} name(x[nargs])
 			   }
 		     } else {
 #endif					/* PosixFns */
-		     if (putstr(f, &t) == Failed)
+		     if (putstr(f.fp, &t) == Failed)
 #endif					/* RecordIO */
 			runerr(214, x[n]);
 #ifdef PosixFns
@@ -2260,7 +2290,7 @@ function{0,1} chdir(s)
 #ifndef PATH_MAX
 #define PATH_MAX 512
 #endif					/* PATH_MAX */
-      if ((int)getcwd(path, PATH_MAX) == 0)
+      if (getcwd(path, PATH_MAX) == NULL)
 	  fail;
 
       len = strlen(path);
@@ -2325,7 +2355,7 @@ function{1} flush(f)
       }
 
    body {
-      FILE *fp = BlkLoc(f)->file.fd;
+      FILE *fp = BlkLoc(f)->file.fd.fp;
       int status = BlkLoc(f)->file.status;
 
       /*

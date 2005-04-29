@@ -1228,7 +1228,6 @@ Deliberate Syntax Error
    /*
     * Start timing execution.
     */
-
    millisec();
    }
 
@@ -1727,7 +1726,7 @@ void datainit()
       k_errout.fd = ferredir;
    else
 #endif					/* MSWindows */
-   k_errout.fd = stderr;
+   k_errout.fd.fp = stderr;
    StrLen(k_errout.fname) = 7;
    StrLoc(k_errout.fname) = "&errout";
 #ifdef ConsoleWindow
@@ -1739,11 +1738,11 @@ void datainit()
 
 #ifdef MSWindows
    if (finredir != NULL)
-      k_input.fd = finredir;
+      k_input.fd.fp = finredir;
    else
 #endif					/* MSWindows */
-   if (k_input.fd == NULL)
-      k_input.fd = stdin;
+   if (k_input.fd.fp == NULL)
+      k_input.fd.fp = stdin;
    StrLen(k_input.fname) = 6;
    StrLoc(k_input.fname) = "&input";
 #ifdef ConsoleWindow
@@ -1755,11 +1754,11 @@ void datainit()
 
 #ifdef MSWindows
    if (fouredir != NULL)
-      k_output.fd = fouredir;
+      k_output.fd.fp = fouredir;
    else
 #endif					/* MSWindows */
-   if (k_output.fd == NULL)
-      k_output.fd = stdout;
+   if (k_output.fd.fp == NULL)
+      k_output.fd.fp = stdout;
    StrLen(k_output.fname) = 7;
    StrLoc(k_output.fname) = "&output";
 #ifdef ConsoleWindow
@@ -1858,6 +1857,135 @@ void datainit()
    }
 
 #ifdef MultiThread
+
+/*
+ * Initialize a loaded program.  Unicon programs will have an
+ * interesting icodesize; non-Unicon programs will send a fake
+ * icodesize (nonzero, perhaps good if longword-aligned) to alccoexp.
+ */
+struct b_coexpr *initprogram(word icodesize, word stacksize,
+			     word stringsiz, word blocksiz)
+{
+   struct b_coexpr *coexp = alccoexp(icodesize, stacksize);
+   struct progstate *pstate = NULL;
+   if (coexp == NULL) return NULL;
+   pstate = coexp->program;
+   /*
+    * Initialize values.
+    */
+   pstate->hsize = icodesize;
+   pstate->parent= NULL;
+   pstate->parentdesc= nulldesc;
+   pstate->eventmask= nulldesc;
+   pstate->opcodemask= nulldesc;
+   pstate->eventcount = zerodesc;
+   pstate->valuemask= nulldesc;
+   pstate->eventcode= nulldesc;
+   pstate->eventval = nulldesc;
+   pstate->eventsource = nulldesc;
+   pstate->Glbl_argp = NULL;
+   pstate->Kywd_err = zerodesc;
+   pstate->Kywd_pos = onedesc;
+   StrLen(pstate->ksub) = 0;
+   StrLoc(pstate->ksub) = "";
+   pstate->Kywd_ran = zerodesc;
+   pstate->Line_num = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
+   pstate->Lastop = 0;
+   pstate->Xargp = NULL;
+   pstate->Xnargs = 0;
+   pstate->K_errornumber = 0;
+   pstate->T_errornumber = 0;
+   pstate->Have_errval = 0;
+   pstate->T_have_val = 0;
+   pstate->K_errortext = "";
+   pstate->K_errorvalue = nulldesc;
+   pstate->T_errorvalue = nulldesc;
+   pstate->Kywd_time_elsewhere = millisec();
+   pstate->Kywd_time_out = 0;
+   pstate->Mainhead= ((struct b_coexpr *)pstate)-1;
+   pstate->K_main.dword = D_Coexpr;
+   BlkLoc(pstate->K_main) = (union block *) pstate->Mainhead;
+
+#ifdef Graphics
+   pstate->AmperX = zerodesc;
+   pstate->AmperY = zerodesc;
+   pstate->AmperRow = zerodesc;
+   pstate->AmperCol = zerodesc;
+   pstate->AmperInterval = zerodesc;
+   pstate->LastEventWin = nulldesc;
+   pstate->Kywd_xwin[XKey_Window] = nulldesc;
+#endif					/* Graphics */
+
+   pstate->Coexp_ser = 2;
+   pstate->List_ser = 1;
+   pstate->Set_ser = 1;
+   pstate->Table_ser = 1;
+
+   pstate->stringtotal = pstate->blocktotal =
+   pstate->colltot     = pstate->collstat   =
+   pstate->collstr     = pstate->collblk    = 0;
+
+   pstate->stringregion = (struct region *)malloc(sizeof(struct region));
+   pstate->blockregion  = (struct region *)malloc(sizeof(struct region));
+   pstate->stringregion->size = stringsiz;
+   pstate->blockregion->size = blocksiz;
+
+   /*
+    * the local program region list starts out with this region only
+    */
+   pstate->stringregion->prev = NULL;
+   pstate->blockregion->prev = NULL;
+   pstate->stringregion->next = NULL;
+   pstate->blockregion->next = NULL;
+   /*
+    * the global region list links this region with curpstate's
+    */
+   pstate->stringregion->Gprev = curpstate->stringregion;
+   pstate->blockregion->Gprev = curpstate->blockregion;
+   pstate->stringregion->Gnext = curpstate->stringregion->Gnext;
+   pstate->blockregion->Gnext = curpstate->blockregion->Gnext;
+   if (curpstate->stringregion->Gnext)
+      curpstate->stringregion->Gnext->Gprev = pstate->stringregion;
+   curpstate->stringregion->Gnext = pstate->stringregion;
+   if (curpstate->blockregion->Gnext)
+      curpstate->blockregion->Gnext->Gprev = pstate->blockregion;
+   curpstate->blockregion->Gnext = pstate->blockregion;
+   initalloc(0, pstate);
+
+   pstate->Cplist = cplist_0;
+   pstate->Cpset = cpset_0;
+   pstate->Cptable = cptable_0;
+   pstate->EVstralc = EVStrAlc_0;
+   pstate->Interp = interp_0;
+   pstate->Cnvcset = cnv_cset_0;
+   pstate->Cnvint = cnv_int_0;
+   pstate->Cnvreal = cnv_real_0;
+   pstate->Cnvstr = cnv_str_0;
+   pstate->Cnvtcset = cnv_tcset_0;
+   pstate->Cnvtstr = cnv_tstr_0;
+   pstate->Deref = deref_0;
+   pstate->Alcbignum = alcbignum_0;
+   pstate->Alccset = alccset_0;
+   pstate->Alcfile = alcfile_0;
+   pstate->Alchash = alchash_0;
+   pstate->Alcsegment = alcsegment_0;
+   pstate->Alclist_raw = alclist_raw_0;
+   pstate->Alclist = alclist_0;
+   pstate->Alclstb = alclstb_0;
+   pstate->Alcreal = alcreal_0;
+   pstate->Alcrecd = alcrecd_0;
+   pstate->Alcrefresh = alcrefresh_0;
+   pstate->Alcselem = alcselem_0;
+   pstate->Alcstr = alcstr_0;
+   pstate->Alcsubs = alcsubs_0;
+   pstate->Alctelem = alctelem_0;
+   pstate->Alctvtbl = alctvtbl_0;
+   pstate->Deallocate = deallocate_0;
+   pstate->Reserve = reserve_0;
+
+   return coexp;
+}
+
 /*
  * loadicode - initialize memory particular to a given icode file
  */
@@ -1890,39 +2018,16 @@ C_integer bs, ss, stk;
    /*
     * Allocate memory for icode and the struct that describes it
     */
-   Protect(coexp = alccoexp(hdr.hsize, stk),
+   Protect(coexp = initprogram(hdr.hsize, stk, ss, bs),
     {fprintf(stderr,"can't malloc new icode region\n");c_exit(EXIT_FAILURE);});
 
    pstate = coexp->program;
-   /*
-    * Initialize values.
-    */
-   pstate->hsize = hdr.hsize;
-   pstate->parent= NULL;
-   pstate->parentdesc= nulldesc;
-   pstate->eventmask= nulldesc;
-   pstate->opcodemask= nulldesc;
-   pstate->eventcount = zerodesc;
-   pstate->valuemask= nulldesc;
-   pstate->eventcode= nulldesc;
-   pstate->eventval = nulldesc;
-   pstate->eventsource = nulldesc;
-   pstate->Glbl_argp = NULL;
    pstate->K_current.dword = D_Coexpr;
 
-   pstate->Kywd_err = zerodesc;
-   pstate->Kywd_pos = onedesc;
-   StrLen(pstate->ksub) = 0;
-   StrLoc(pstate->ksub) = "";
    StrLen(pstate->Kywd_prog) = strlen(prog_name);
    StrLoc(pstate->Kywd_prog) = prog_name;
-   pstate->Kywd_ran = zerodesc;
    MakeInt(hdr.trace, &(pstate->Kywd_trc));
 
-   pstate->Line_num = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
-   pstate->Lastop = 0;
-   pstate->Xargp = NULL;
-   pstate->Xnargs = 0;
    /*
     * might want to override from TRACE environment variable here.
     */
@@ -1930,9 +2035,6 @@ C_integer bs, ss, stk;
    /*
     * Establish pointers to icode data regions.		[[I?]]
     */
-   pstate->Mainhead= ((struct b_coexpr *)pstate)-1;
-   pstate->K_main.dword = D_Coexpr;
-   BlkLoc(pstate->K_main) = (union block *) pstate->Mainhead;
    pstate->Code    = (char *)(pstate + 1);
    pstate->Ecode    = (char *)(pstate->Code + hdr.Records);
    pstate->Records = (word *)(pstate->Code + hdr.Records);
@@ -1967,97 +2069,10 @@ C_integer bs, ss, stk;
    pstate->Ilines = (struct ipc_line *)(pstate->Efilenms);
    pstate->Elines = (struct ipc_line *)(pstate->Code + hdr.Strcons);
    pstate->Strcons = (char *)(pstate->Elines);
-   pstate->K_errornumber = 0;
-   pstate->T_errornumber = 0;
-   pstate->Have_errval = 0;
-   pstate->T_have_val = 0;
-   pstate->K_errortext = "";
-   pstate->K_errorvalue = nulldesc;
-   pstate->T_errorvalue = nulldesc;
-
-#ifdef Graphics
-   pstate->AmperX = zerodesc;
-   pstate->AmperY = zerodesc;
-   pstate->AmperRow = zerodesc;
-   pstate->AmperCol = zerodesc;
-   pstate->AmperInterval = zerodesc;
-   pstate->LastEventWin = nulldesc;
-   pstate->Kywd_xwin[XKey_Window] = nulldesc;
-#endif					/* Graphics */
-
-   pstate->Coexp_ser = 2;
-   pstate->List_ser = 1;
-   pstate->Set_ser = 1;
-   pstate->Table_ser = 1;
-
-   pstate->Kywd_time_elsewhere = millisec();
-   pstate->Kywd_time_out = 0;
-
-   pstate->stringtotal = pstate->blocktotal =
-   pstate->colltot     = pstate->collstat   =
-   pstate->collstr     = pstate->collblk    = 0;
-
-   pstate->stringregion = (struct region *)malloc(sizeof(struct region));
-   pstate->blockregion  = (struct region *)malloc(sizeof(struct region));
-   pstate->stringregion->size = ss;
-   pstate->blockregion->size = bs;
-
-   /*
-    * the local program region list starts out with this region only
-    */
-   pstate->stringregion->prev = NULL;
-   pstate->blockregion->prev = NULL;
-   pstate->stringregion->next = NULL;
-   pstate->blockregion->next = NULL;
-   /*
-    * the global region list links this region with curpstate's
-    */
-   pstate->stringregion->Gprev = curpstate->stringregion;
-   pstate->blockregion->Gprev = curpstate->blockregion;
-   pstate->stringregion->Gnext = curpstate->stringregion->Gnext;
-   pstate->blockregion->Gnext = curpstate->blockregion->Gnext;
-   if (curpstate->stringregion->Gnext)
-      curpstate->stringregion->Gnext->Gprev = pstate->stringregion;
-   curpstate->stringregion->Gnext = pstate->stringregion;
-   if (curpstate->blockregion->Gnext)
-      curpstate->blockregion->Gnext->Gprev = pstate->blockregion;
-   curpstate->blockregion->Gnext = pstate->blockregion;
-   initalloc(0, pstate);
 
    pstate->K_errout = *theError;
    pstate->K_input  = *theInput;
    pstate->K_output = *theOutput;
-
-   pstate->Cplist = cplist_0;
-   pstate->Cpset = cpset_0;
-   pstate->Cptable = cptable_0;
-   pstate->EVstralc = EVStrAlc_0;
-   pstate->Interp = interp_0;
-   pstate->Cnvcset = cnv_cset_0;
-   pstate->Cnvint = cnv_int_0;
-   pstate->Cnvreal = cnv_real_0;
-   pstate->Cnvstr = cnv_str_0;
-   pstate->Cnvtcset = cnv_tcset_0;
-   pstate->Cnvtstr = cnv_tstr_0;
-   pstate->Deref = deref_0;
-   pstate->Alcbignum = alcbignum_0;
-   pstate->Alccset = alccset_0;
-   pstate->Alcfile = alcfile_0;
-   pstate->Alchash = alchash_0;
-   pstate->Alcsegment = alcsegment_0;
-   pstate->Alclist_raw = alclist_raw_0;
-   pstate->Alclist = alclist_0;
-   pstate->Alclstb = alclstb_0;
-   pstate->Alcreal = alcreal_0;
-   pstate->Alcrecd = alcrecd_0;
-   pstate->Alcrefresh = alcrefresh_0;
-   pstate->Alcselem = alcselem_0;
-   pstate->Alcstr = alcstr_0;
-   pstate->Alcsubs = alcsubs_0;
-   pstate->Alctelem = alctelem_0;
-   pstate->Alctvtbl = alctvtbl_0;
-   pstate->Deallocate = deallocate_0;
-   pstate->Reserve = reserve_0;
 
 #if HAVE_LIBZ
    check_version(&hdr, name, fdname);

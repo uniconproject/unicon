@@ -227,7 +227,7 @@ function{0,1} EvGet(cs,vmask,flag)
 #ifdef Graphics
       if (Testb((word)ToAscii(E_MXevent), cs) &&
 	  is:file(kywd_xwin[XKey_Window])) {
-	 wbp _w_ = (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd;
+	 wbp _w_ = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;
 	 wsync(_w_);
 	 pollctr = pollevent();
 	 if (pollctr == -1)

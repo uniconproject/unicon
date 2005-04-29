@@ -97,7 +97,7 @@ function{1} delete(s, x[n])
 	    if (BlkLoc(s)->file.status & Fs_Dbm) {
 	       DBM *db;
 	       datum key;
-	       db = (DBM *)BlkLoc(s)->file.fd;
+	       db = (DBM *)BlkLoc(s)->file.fd.dbm;
 	       for (argc = 0; argc < n; argc++) {
 		  key.dsize = StrLen(x[argc]); key.dptr = StrLoc(x[argc]);
 		  dbm_delete(db, key);
@@ -109,7 +109,7 @@ function{1} delete(s, x[n])
 
 #ifdef Messaging
             if ((BlkLoc(s)->file.status & Fs_Messaging)) {
-	       struct MFile *mf = (struct MFile *)BlkLoc(s)->file.fd;
+	       struct MFile *mf = BlkLoc(s)->file.fd.mf;
 	       if (strcmp(mf->tp->uri.scheme, "pop") != 0) {
 		  runerr(1213, s);
 		  }
@@ -223,7 +223,7 @@ function{0,1} get_or_pop(x,i)
 	    if (!(BlkLoc(x)->file.status & Fs_Messaging)) {
 	       runerr(1213, x);
 	       }
-	    mf = (struct MFile*)BlkLoc(x)->file.fd;
+	    mf = BlkLoc(x)->file.fd.mf;
 	    if (strcmp(mf->tp->uri.scheme, "pop") != 0) {
 	       runerr(1213, x);
 	       }
@@ -330,7 +330,7 @@ function{*} key(t)
 	    if (status & Fs_Dbm) {
 	       DBM *db;
 	       datum key; 
-	       db = (DBM *)BlkLoc(t)->file.fd;
+	       db = (DBM *)BlkLoc(t)->file.fd.dbm;
 	       for (key = dbm_firstkey(db); key.dptr != NULL;
 		    key = dbm_nextkey(db)) {
 		  Protect(StrLoc(result) = alcstr(key.dptr, key.dsize),runerr(0));
@@ -342,9 +342,8 @@ function{*} key(t)
 #endif                                  /* Dbm */
 #ifdef Messaging
 	       else if (status & Fs_Messaging) {
-		  struct MFile *mf = (struct MFile *)BlkLoc(t)->file.fd;
-		  char *field;
-		  char *end;
+		  struct MFile *mf = BlkLoc(t)->file.fd.mf;
+		  char *field, *end;
 
 		  if (!MFIN(mf, READING)) {
 		     Mstartreading(mf);
@@ -568,7 +567,7 @@ function{1} insert(s, x[n])
 		  if (!cnv:string(x[argc+1],x[argc+1])) runerr(103, x[argc+1]);
 		  }
 	       else runerr(103, nulldesc);
-	       db = (DBM *)BlkLoc(s)->file.fd;
+	       db = (DBM *)BlkLoc(s)->file.fd.dbm;
 	       status = BlkLoc(s)->file.status;
 	       if (status & Fs_Dbm == 0)
 		  runerr(122, s);
@@ -736,7 +735,7 @@ function{0,1} member(s, x[n])
 	       if (!cnv:string(x[argc], x[argc]) )
 		   runerr(103,x[argc]);
 
-	       db = (DBM *)BlkLoc(s)->file.fd;
+	       db = (DBM *)BlkLoc(s)->file.fd.dbm;
 	       status = BlkLoc(s)->file.status;
 	       if (status & Fs_Dbm == 0)
 		  runerr(122, s);

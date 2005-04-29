@@ -115,7 +115,7 @@ int maxi;
 struct b_file *fbp;
    {
    register int c, l;
-   FILE *fd = fbp->fd;
+   FILE *fd = fbp->fd.fp;
 
 #ifdef PosixFns
    static char savedbuf[BUFSIZ];
@@ -726,9 +726,9 @@ fprintf(stderr, "I am handling things by not handling them\n");
  * urlopen opens a local file or a remote file depending on the url input.
  * It checks the http_proxy environment variable. If it is set, then sending
  * the request to the proxy server for the remote file, otherwise, only support
- * sending the http request to the remote http server for retrieving the file at
- * the remote site.
-*/
+ * sending the http request to the remote http server for retrieving the file
+ * at the remote site.
+ */
  
 int urlopen(char *url, int flag, struct netfd *retval)
 {
@@ -788,11 +788,8 @@ int urlopen(char *url, int flag, struct netfd *retval)
       signal(SIGALRM, myhandler);
       alarm(5);
       if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-	 if (errno == EINTR) { /* timed out */
-	    alarm(0);
-	    }
-	 else {
-	    alarm(0);
+         alarm(0);
+	 if (errno != EINTR) { /* if not just a timeout, print an error */
 	    perror("httpget: connect()");
 	    }
 	 close(s);

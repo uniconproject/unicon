@@ -384,7 +384,7 @@ dptr dx;
          MakeInt(1 + IntVal(amperX)/lastEvFWidth, &amperCol);
 	 }
       else {
-         w = (wbp)BlkLoc(lastEventWin)->file.fd;
+         w = BlkLoc(lastEventWin)->file.fd.wb;
          MakeInt(1 + XTOCOL(w, IntVal(amperX)), &amperCol);
          }
       }
@@ -396,7 +396,7 @@ dptr dx;
          MakeInt(IntVal(amperY) / lastEvLeading + 1, &amperRow);
          }
       else {
-         w = (wbp)BlkLoc(lastEventWin)->file.fd;
+         w = BlkLoc(lastEventWin)->file.fd.wb;
          MakeInt(YTOROW(w, IntVal(amperY)), &amperRow);
          }
       }
@@ -408,7 +408,7 @@ dptr dx;
          MakeInt((IntVal(amperCol) - 1) * lastEvFWidth, &amperX);
          }
       else {
-         w = (wbp)BlkLoc(lastEventWin)->file.fd;
+         w = BlkLoc(lastEventWin)->file.fd.wb;
          MakeInt(COLTOX(w, IntVal(amperCol)), &amperX);
          }
       }
@@ -420,7 +420,7 @@ dptr dx;
          MakeInt((IntVal(amperRow)-1) * lastEvLeading + lastEvAscent, &amperY);
          }
       else {
-         w = (wbp)BlkLoc(lastEventWin)->file.fd;
+         w = BlkLoc(lastEventWin)->file.fd.wb;
          MakeInt(ROWTOY(w, IntVal(amperRow)), &amperY);
          }
       }
@@ -2876,7 +2876,7 @@ SHORT *x, *y, *width, *height;
 
 
 /* return failure if operation returns either failure or error */
-#define AttemptAttr(operation) if ((operation) != Succeeded) return Failed;
+#define AttemptAttr(operation) do { switch (operation) { case Error: t_errornumber=145; StrLen(t_errorvalue)=strlen(val);StrLoc(t_errorvalue)=val;return Error; case Succeeded: break; default: return Failed; } } while(0)
 
 /* does string (already checked for "on" or "off") say "on"? */
 #define ATOBOOL(s) (s[1]=='n')

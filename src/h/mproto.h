@@ -18,6 +18,7 @@ struct implement *db_impl  (int oper_typ);
 int	db_open		(char *s, char **lrgintflg);
 char	*db_string	(void);
 int	db_tbl		(char *section, struct implement **tbl);
+char *findonpath(char *name, char *buf, size_t len);
 struct fileparts *fparse(char *s);
 void	free_stbl	(void);
 void	id_comment	(FILE *f);

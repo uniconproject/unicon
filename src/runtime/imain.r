@@ -974,7 +974,7 @@ int *ip;
     * if argv[0] is not a reference to our interpreter, take it as the
     * name of the icode file, and back up for it.
     */
-   if (!(len >= 5 && !strcmp(tmp+len-5, "iconx"))) {
+   if (!(len >= 5 && !strcmp(tmp+len-4, "conx"))) {
       argv--;
       argc++;
       (*ip)--;

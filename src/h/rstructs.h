@@ -75,7 +75,19 @@ struct b_cset {			/* cset block */
 
 struct b_file {			/* file block */
    word title;			/*   T_File */
-   FILE *fd;			/*   stdio file pointer, socket, or wbp */
+   union {
+      FILE *fp;			/*   stdio file pointer */
+#ifdef Graphics
+     struct _wbinding *wb;			/*   window */
+#endif					/* Graphics */
+#ifdef Messaging
+     struct MFile *mf;
+#endif					/* Messaging */
+#ifdef Dbm
+     struct DBM *dbm;
+#endif					/* Dbm */
+      int fd;			/*   other int-based file descriptor */
+      } fd;
    word status;			/*   file status */
    struct descrip fname;	/*   file name (string qualifier) */
    };

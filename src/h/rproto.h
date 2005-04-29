@@ -450,6 +450,9 @@ void detectRedirection();
 #endif
    int	wgetq		(wbp w, dptr res, int t);
    FILE	*wopen		(char *nm, struct b_list *hp, dptr attr, int n, int *e, int is_3d);
+#ifdef Graphics3D
+   FILE	*wopengl	(char *nm, struct b_list *hp, dptr attr, int n,int *e);
+#endif					/* Graphics3D */
    int	wputc		(int ci, wbp w);
 #ifndef MSWindows
    void	wsync		(wbp w);
@@ -741,15 +744,19 @@ void	varargs		(dptr argp, int nargs, dptr rslt);
 
 dptr rec_structinate(dptr dp, char *name, int nfields, char *a[]);
 
+#ifdef Messaging
+struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq);
+#endif					/* Messaging */
+
 #ifdef PosixFns
 #if NT
-void stat2rec			(struct _stat *st, dptr dp, struct b_record *rp);
+void stat2rec			(struct _stat *st, dptr dp, struct b_record **rp);
 #else					/* NT */
-void stat2rec			(struct stat *st, dptr dp, struct b_record *rp);
+void stat2rec			(struct stat *st, dptr dp, struct b_record **rp);
 #endif					/* NT */
 dptr rec_structor		(char *s);
 dptr rec_structor3d		(char *s);
-FILE *sock_connect		(char *s, int udp, int timeout);
+int sock_connect		(char *s, int udp, int timeout);
 int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
 int get_uid			(char *name);
@@ -760,11 +767,11 @@ dptr make_group			(struct group *pw, dptr result);
 #endif					/* NT */
 dptr make_host			(struct hostent *pw, dptr result);
 dptr make_serv			(struct servent *pw, dptr result);
-FILE *sock_listen		(char *s, int udp);
-int sock_name			(FILE* sock, char* addr, char* addrbuf, int bufsize);
+int sock_listen		(char *s, int udp);
+int sock_name			(int sock, char* addr, char* addrbuf, int bufsize);
 int sock_send			(char* addr, char* msg, int msglen);
-int sock_recv			(FILE *f, struct b_record *rp);
-int sock_write			(FILE *f, char *s, int n);
+int sock_recv			(int f, struct b_record **rp);
+int sock_write			(int f, char *s, int n);
 struct descrip register_sig	(int sig, struct descrip handler);
 void signal_dispatcher		(int sig);
 int get_fd			(struct descrip, unsigned int errmask);

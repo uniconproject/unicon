@@ -178,11 +178,16 @@ function{1} Clone(argv[argc])
       char child_window=0;
 
       OptWindow(w);
+
+      for (n=warg; n<argc; n++) {
+         if (!is:string(argv[n])) runerr(103, argv[n]);
+	 }
+
       Protect(w2 = alc_wbinding(), runerr(0));
       {
         int f1=0;
         for (n=warg; n<argc; n++) {
-          if (!strncmp(StrLoc(argv[n]), "gl", 2))
+          if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gl", 2))
               f1++;
         }
         if (f1==1) {
@@ -194,7 +199,7 @@ function{1} Clone(argv[argc])
 	   }
         else {
           for (n=warg; n<argc; n++) {
-            if (!strncmp(StrLoc(argv[n]), "g", 1))
+            if (StrLen(argv[n])==1 && !strncmp(StrLoc(argv[n]), "g", 1))
                 f1++;
           }
           if (f1==1) child_window=1;
@@ -211,11 +216,11 @@ function{1} Clone(argv[argc])
 	    runerr(140,argv[warg]);
 	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-	 if (ISCLOSED((wbp)BlkLoc(argv[warg])->file.fd))
+	 if (ISCLOSED(BlkLoc(argv[warg])->file.fd.wb))
 	    runerr(142,argv[warg]);
          if (child_window) child_window_stuff(w2, w, child_window);
 	 else Protect(w2->context =
-		 clone_context((wbp)BlkLoc(argv[warg])->file.fd), runerr(0));
+		 clone_context((wbp)BlkLoc(argv[warg])->file.fd.wb),runerr(0));
 	 warg++;
 	 }
       else {
@@ -331,14 +336,17 @@ function{0,1} ColorValue(argv[argc])
       char tmp[32], *t;
 
       if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window)) {
-         w = (wbp)BlkLoc(argv[0])->file.fd;		/* explicit window */	
+         w = BlkLoc(argv[0])->file.fd.wb;	/* explicit window */	
          warg = 1;
          }
       else if (is:file(kywd_xwin[XKey_Window]) &&
-            (BlkLoc(kywd_xwin[XKey_Window])->file.status & Fs_Window))
-         w = (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd;	/* &window */
-      else
+            ((BlkLoc(kywd_xwin[XKey_Window])->file.status &
+	     (Fs_Window|Fs_Read))==(Fs_Window|Fs_Read))) {
+         w = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;	/* &window */
+	 }
+      else {
          w = NULL;			/* no window (but proceed anyway) */
+	 }
 
       if (!(warg < argc))
          runerr(103);
@@ -386,7 +394,7 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 	    runerr(140,argv[warg]);
 	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-	 w2 = (wbp)BlkLoc(argv[warg])->file.fd;
+	 w2 = BlkLoc(argv[warg])->file.fd.wb;
 	 if (ISCLOSED(w2))
 	    runerr(142,argv[warg]);
 	 warg++;
@@ -443,14 +451,14 @@ function{0,1} Couple(w,w2)
        * if w is a file, then we bind to an existing window
        */
       if (is:file(w) && (BlkLoc(w)->file.status & Fs_Window)) {
-	 wb = (wbp)(BlkLoc(w)->file.fd);
+	 wb = BlkLoc(w)->file.fd.wb;
 	 wb_new->window = ws = wb->window;
 	 if (is:file(w2) && (BlkLoc(w2)->file.status & Fs_Window)) {
 	    /*
 	     * Bind an existing window to an existing context,
 	     * and up the context's reference count.
 	     */
-	    if (rebind(wb_new, (wbp)(BlkLoc(w2)->file.fd)) == Failed) fail;
+	    if (rebind(wb_new, BlkLoc(w2)->file.fd.wb) == Failed) fail;
 	    wb_new->context->refcount++;
 	    }
 	 else 
@@ -1233,7 +1241,7 @@ function{1} Event(argv[argc])
 	 runerr(140,d);
       if ((BlkLoc(d)->file.status & (Fs_Read|Fs_Write)) == 0)
 	 runerr(142,d);
-      (w) = (wbp)BlkLoc(d)->file.fd;
+      w = BlkLoc(d)->file.fd.wb;
 #ifdef ConsoleWindow
       if ((((FILE*)(w)) != ConsoleBinding) &&
 	  ((((FILE*)(w)) == k_input.fd) ||
@@ -1262,13 +1270,13 @@ function{1} Event(argv[argc])
          }
       if (i == 0) {
          if (is:file(kywd_xwin[XKey_Window]) &&
-               w == (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd)
+               w == BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb)
 	    lastEventWin = kywd_xwin[XKey_Window];
 	 else
 	    lastEventWin = argv[warg-1];
-         lastEvFWidth = FWIDTH((wbp)BlkLoc(lastEventWin)->file.fd);
-         lastEvLeading = LEADING((wbp)BlkLoc(lastEventWin)->file.fd);
-         lastEvAscent = ASCENT((wbp)BlkLoc(lastEventWin)->file.fd);
+         lastEvFWidth = FWIDTH(BlkLoc(lastEventWin)->file.fd.wb);
+         lastEvLeading = LEADING(BlkLoc(lastEventWin)->file.fd.wb);
+         lastEvAscent = ASCENT(BlkLoc(lastEventWin)->file.fd.wb);
 	 if (is:integer(d) && IntVal(d)==WINDOWCLOSED && 
 	     !(w->window->inputmask & WindowClosureMask)) {
 	    /* closed, don't accept more I/O on it */
@@ -1829,12 +1837,12 @@ function{0,1} PaletteKey(argv[argc])
       long r, g, b, a;
 
       if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window)) {
-         w = (wbp)BlkLoc(argv[0])->file.fd;		/* explicit window */	
+         w = BlkLoc(argv[0])->file.fd.wb;	/* explicit window */	
          warg = 1;
          }
       else if (is:file(kywd_xwin[XKey_Window]) &&
             (BlkLoc(kywd_xwin[XKey_Window])->file.status & Fs_Window))
-         w = (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd;	/* &window */
+         w = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;	/* &window */
       else
          w = NULL;			/* no window (but proceed anyway) */
 
@@ -1911,7 +1919,7 @@ function{0,1} Pending(argv[argc])
          if ((BlkLoc(argv[warg])->file.status & Fs_Write) == 0)
 	    isclosed = 1;
 
-         w = (wbp)BlkLoc(argv[warg])->file.fd;
+         w = BlkLoc(argv[warg])->file.fd.wb;
 #ifdef ConsoleWindow
          if ((((FILE*)(w)) != ConsoleBinding) &&
 	     ((((FILE*)(w)) == k_input.fd) || (((FILE*)(w)) == k_output.fd) ||
@@ -1928,7 +1936,7 @@ function{0,1} Pending(argv[argc])
 	    runerr(140,kywd_xwin[XKey_Window]);
 	 if ((BlkLoc(kywd_xwin[XKey_Window])->file.status & (Fs_Read|Fs_Write))==0)
 	    isclosed = 1;
-         (w) = (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd;
+         w = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;
          if (ISCLOSED(w))
 	    isclosed = 1;
          }
@@ -2069,7 +2077,7 @@ function{0,2} QueryPointer(w)
       else {
 	 if (!is:file(w) || !(BlkLoc(w)->file.status & Fs_Window))
 	    runerr(140, w);
-	 query_pointer((wbp)BlkLoc(w)->file.fd, &xp);
+	 query_pointer(BlkLoc(w)->file.fd.wb, &xp);
 	 }
       suspend C_integer xp.x;
       suspend C_integer xp.y;
@@ -2187,7 +2195,7 @@ function{1} WSync(w)
       else {
          if (!(BlkLoc(w)->file.status & Fs_Window))
             runerr(140,w);
-         _w_ = (wbp)BlkLoc(w)->file.fd;
+         _w_ = BlkLoc(w)->file.fd.wb;
 	 }
 
       wsync(_w_);
@@ -2230,7 +2238,7 @@ function{1} Uncouple(w)
       if (!is:file(w)) runerr(140,w);
       if ((BlkLoc(w)->file.status & Fs_Window) == 0) runerr(140,w);
       if ((BlkLoc(w)->file.status & (Fs_Read|Fs_Write)) == 0) runerr(142,w);
-      _w_ = (wbp)BlkLoc(w)->file.fd;
+      _w_ = BlkLoc(w)->file.fd.wb;
       BlkLoc(w)->file.status = Fs_Window; /* no longer open for read/write */
       free_binding(_w_);
       return w;
@@ -2271,7 +2279,7 @@ function{*} WAttrib(argv[argc])
                 */
                if (!(BlkLoc(argv[n])->file.status & Fs_Window))
                   runerr(140,argv[n]);
-               w = (wbp)BlkLoc(argv[n])->file.fd;
+               w = BlkLoc(argv[n])->file.fd.wb;
 	       if (config && pass == 2) {
 		  if (do_config(w, config) == Failed) fail;
 		  }
@@ -3545,8 +3553,11 @@ function{1} Eye(argv[argc])
 
       OptWindow(w);
       wc = w->context;
-      if (wc->is_3D == 0)
-         runerr(150, (warg==0?kywd_xwin[XKey_Window]:argv[0]));
+      if (wc->is_3D == 0) {
+	 if (warg == 0)
+	    runerr(150, kywd_xwin[XKey_Window]);
+	 else runerr(150, argv[0]);
+	 }
 
       while (warg+i < argc && i < 9) {
 	 if (!is:null(argv[warg+i]))
@@ -3674,7 +3685,8 @@ function{1} PopMatrix(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, nfields, npops, i;
+      C_integer npops;
+      int warg = 0, n, nfields, i;
       struct descrip f;  
       tended struct b_record *rp;
       static dptr constr;
@@ -3682,7 +3694,9 @@ function{1} PopMatrix(argv[argc])
       OptWindow(w);
 
       if (w->window->is_3D == 0) {
-         runerr(150, (warg==0?kywd_xwin[XKey_Window]:argv[0]));
+	 if (warg == 0)
+	    runerr(150, kywd_xwin[XKey_Window]);
+	 else runerr(150, argv[0]);
          }
 
       if (argc == warg) npops = 1;
@@ -3735,7 +3749,9 @@ function{1} PushMatrix(argv[argc])
       OptWindow(w);
 
       if (w->window->is_3D == 0) {
-         runerr(150, (warg==0?kywd_xwin[XKey_Window]:argv[0]));
+	 if (warg == 0)
+	    runerr(150, kywd_xwin[XKey_Window]);
+	 else runerr(150, argv[0]);
          }
 
       if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
@@ -4004,7 +4020,7 @@ function{1} Texture(argv[argc])
 	    runerr(140,argv[warg]);
 	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-	 w2 = (wbp)BlkLoc(argv[warg])->file.fd;
+	 w2 = BlkLoc(argv[warg])->file.fd.wb;
 	 if (ISCLOSED(w2))
 	    runerr(142,argv[warg]);
 
@@ -4083,8 +4099,9 @@ function{1} Texcoord(argv[argc])
 	    wc->texcoords = realloc(wc->texcoords,
 				    coords->size * sizeof(double));
 	    if (wc->texcoords == NULL) {
-	       if(wc->texcoords = malloc(wc->ntexcoordsalced * sizeof(double)))
-		  fail;
+	       /*
+		* realloc fails; where did our old tex coordinates go?
+		*/
 	       runerr(305, argv[argc-warg]);
 	       }
 	    wc->ntexcoordsalced = coords->size;
@@ -4127,11 +4144,12 @@ function{1} Texcoord(argv[argc])
 	       wc->texcoords = realloc(wc->texcoords,
 				       (argc-warg) * sizeof(double));
 	    if (wc->texcoords == NULL) {
-	       if(wc->texcoords = malloc(wc->ntexcoordsalced * sizeof(double)))
-		  fail;
+	       /*
+		* realloc fails; where did our old tex coordinates go?
+		*/
 	       runerr(305);
 	       }
-	    wc->ntexcoordsalced = (argc-warg);
+	       wc->ntexcoordsalced = (argc-warg);
 	       }
 	    for (i = warg; i < argc; i++) {
 	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords++]))
@@ -4161,8 +4179,11 @@ function{1} Refresh(argv[argc])
       wbp w;
       int i, warg = 0;
       OptWindow(w);
-      if (w->context->is_3D == 0)
-         runerr(150, (warg==0?kywd_xwin[XKey_Window]:argv[0]));
+      if (w->context->is_3D == 0) {
+	 if (warg == 0)
+	    runerr(150, kywd_xwin[XKey_Window]);
+	 else runerr(150, argv[0]);
+	 }
 
       redraw3D(w);
       ReturnWindow; 

@@ -4032,9 +4032,9 @@ FILE *OpenConsole()
       strcat(ConsoleTitle, " - console");
 
       ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
-      k_input.fd = ConsoleBinding;
-      k_output.fd = ConsoleBinding;
-      k_errout.fd = ConsoleBinding;
+      k_input.fd.fp = ConsoleBinding;
+      k_output.fd.fp = ConsoleBinding;
+      k_errout.fd.fp = ConsoleBinding;
       }
    return ConsoleBinding;
    }

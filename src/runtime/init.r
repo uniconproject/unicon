@@ -1723,7 +1723,7 @@ void datainit()
 
 #ifdef MSWindows
    if (ferredir != NULL)
-      k_errout.fd = ferredir;
+      k_errout.fd.fp = ferredir;
    else
 #endif					/* MSWindows */
    k_errout.fd.fp = stderr;

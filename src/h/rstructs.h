@@ -83,6 +83,9 @@ struct b_file {			/* file block */
 #ifdef Messaging
      struct MFile *mf;
 #endif					/* Messaging */
+#ifdef ISQL
+     struct ISQLFile *sqlf;
+#endif					/* ISQL */
 #ifdef Dbm
      struct DBM *dbm;
 #endif					/* Dbm */

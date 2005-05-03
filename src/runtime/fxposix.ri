@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.33 2005-04-29 07:54:26 jeffery Exp $
+ * $Id: fxposix.ri,v 1.34 2005-05-03 08:27:05 jeffery Exp $
  */
 
 /*
@@ -1985,7 +1985,7 @@ function{0,1} fetch(d, k)
 	    int rv;
 	    if (!is:null(k) && (!cnv:string(k, dkey)))
 		runerr(103, k);
-	    rv = dbfetch((struct ISQLFile *)BlkLoc(d)->file.fd, &result);
+	    rv = dbfetch(BlkLoc(d)->file.fd.sqlf, &result);
 	    if (rv == Succeeded) {
 	       if (is:null(k))
 		  return result;

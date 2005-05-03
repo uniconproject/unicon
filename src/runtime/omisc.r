@@ -114,7 +114,7 @@ operator{1} * size(x)
 #else					/* ODBCVER >= 0x0351 */
 	    SQLINTEGER numrows;
 #endif					/* ODBCVER >= 0x0351 */
-	    fp = (struct ISQLFile *) BlkLoc(x)->file.fd;
+	    fp = BlkLoc(x)->file.fd.sqlf;
 	    rc = SQLRowCount(fp->hstmt, &numrows);
 	    return C_integer(numrows);
 	    }

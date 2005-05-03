@@ -1244,9 +1244,9 @@ function{1} Event(argv[argc])
       w = BlkLoc(d)->file.fd.wb;
 #ifdef ConsoleWindow
       if ((((FILE*)(w)) != ConsoleBinding) &&
-	  ((((FILE*)(w)) == k_input.fd) ||
-	   (((FILE*)(w)) == k_output.fd) ||
-	   (((FILE*)(w)) == k_errout.fd)))
+	  ((((FILE*)(w)) == k_input.fd.fp) ||
+	   (((FILE*)(w)) == k_output.fd.fp) ||
+	   (((FILE*)(w)) == k_errout.fd.fp)))
 	 (w) = (wbp)OpenConsole();
 #endif					/* ConsoleWindow */
 
@@ -1922,8 +1922,8 @@ function{0,1} Pending(argv[argc])
          w = BlkLoc(argv[warg])->file.fd.wb;
 #ifdef ConsoleWindow
          if ((((FILE*)(w)) != ConsoleBinding) &&
-	     ((((FILE*)(w)) == k_input.fd) || (((FILE*)(w)) == k_output.fd) ||
-	      (((FILE*)(w)) == k_errout.fd)))
+	     ((((FILE*)(w)) == k_input.fd.fp) || (((FILE*)(w)) == k_output.fd.fp) ||
+	      (((FILE*)(w)) == k_errout.fd.fp)))
 	   w = (wbp)OpenConsole();
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))

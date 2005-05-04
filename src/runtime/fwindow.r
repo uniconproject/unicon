@@ -3992,8 +3992,10 @@ function{1} Texture(argv[argc])
 	 if (!cnv:C_integer(argv[warg + 1], theTexture)) {
 	    runerr(101, argv[warg+1]);
 	    }
+	 theTexture++;
 	 MakeInt(theTexture, &(rp->fields[1]));
 	 wc->curtexture = theTexture;
+	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
 	 }
       else {
 
@@ -4028,7 +4030,7 @@ function{1} Texture(argv[argc])
          if (w2->context->is_3D)
             texwindow3D(w, w2);
          else
-            texwindow2D(w2); 
+            texwindow2D(w, w2);
          return f;
 	 }
 

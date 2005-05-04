@@ -1067,7 +1067,7 @@ function{0,1} read(f)
        * well.... switching from unbuffered to buffered actually works so
        * we will allow it except for sockets.
        */
-      if (status & Fs_Unbuf) {
+      if ((status & Fs_Unbuf) && (!(status & Fs_Messaging))) {
 	 if (status & Fs_Socket)
 	    runerr(1048, f);
 	 status &= ~Fs_Unbuf;

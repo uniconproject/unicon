@@ -3629,12 +3629,15 @@ struct imgmem *imem;
    return Succeeded;
    }
 
+static wclrp lastcp;
+
 int getpixel_term(w, imem)
 wbp w;
 struct imgmem *imem;
    {
    if (imem->im != NULL)
       XDestroyImage(imem->im);
+   lastcp = NULL;
    return Succeeded;
    }
 
@@ -3663,8 +3666,12 @@ struct imgmem *imem;
       c = colorcell.pixel = XGetPixel(imem->im, x - imem->x, y - imem->y);
    *rv = 0xff000000;
 
+   if (lastcp && (lastcp->c == c)) { cp = lastcp; goto foundc; }
+   else
    for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
       if (cp->c == c) {
+	 lastcp = cp;
+      foundc:
 	 if (cp->type == MUTABLE)
 	    *rv = -c - 1;
 	 else {

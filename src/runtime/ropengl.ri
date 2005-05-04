@@ -777,8 +777,6 @@ int traversefunctionlist(wbp w)
    tended struct b_record *rp;
    int elements = ws->funclist.vword.bptr->list.size;
 
-   v = v2;
-   makecurrent(w);
    /*
     * The ith element of the list is a list with information
     * about the function call made on the window.
@@ -2306,16 +2304,25 @@ int powertwo(int a)
    else return p;
 }
 
+static wclrp lastcp;
+
 /* convert a 2D window into a texture */
-int texwindow2D(wbp w)
+int texwindow2D(wbp w, wbp w2d)
 {
    struct imgmem imem;
    int i, j, r;
    long rv;
-   wsp ws = w->window;
+   wsp ws = w2d->window;
    char strout[50];
    char *s2;
-   GLubyte tex[ws->height][ws->width][3];
+   GLubyte tex[ws->height][ws->width][3], *texp;
+   XColor colorcell;
+   LinearColor clr;
+   wclrp cp;
+   unsigned long c;
+   wcp wc = w2d->context;
+   wdp wd = w2d->window->display;
+   Display *stddpy = wd->display; 
 
    makecurrent(w);
    imem.x = 0;
@@ -2323,11 +2330,43 @@ int texwindow2D(wbp w)
    imem.width = ws->width;
    imem.height = ws->height;
    /* call get pixel to get pixel information */
-   if (getpixel_init(w, &imem) == Failed)
+   if (getpixel_init(w2d, &imem) == Failed)
       return Failed;
+   lastcp = wd->colors;
    for(j=0; j < ws->height; j++)
 	for(i=0; i < ws->width; i++) {
- 	   if (getpixel(w, i, j, &rv, strout, &imem) == Failed)
+#ifdef XWindows
+	   c = colorcell.pixel = XGetPixel(imem.im, i, j);
+	   rv = 0xff000000;
+	   if (lastcp->c == c) {
+	      texp = tex[ws->height-j-1][i];
+	      texp[0] = lastcp->r>>8;
+	      texp[1] = lastcp->g>>8;
+	      texp[2] = lastcp->b>>8;
+	      continue;
+	      }
+	   else
+	      for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
+		 if (cp->c == c) {
+		    lastcp = cp;
+		 foundc:
+		    texp = tex[ws->height-j-1][i];
+		    texp[0] = cp->r>>8;
+		    texp[1] = cp->g>>8;
+		    texp[2] = cp->b>>8;
+		    continue;
+		    }
+		 }
+	   if (rv == 0xff000000) {
+	      XQueryColor(stddpy, wd->cmap, &colorcell);
+	      rv = 1;
+	      clr = lcolor(w, colorcell);
+   	   tex[ws->height-j-1][i][0] = clr.red>>8;
+   	   tex[ws->height-j-1][i][1] = clr.green>>8;
+    	   tex[ws->height-j-1][i][2] = clr.blue>>8;
+	      }
+#else
+ 	   if (getpixel(w2d, i, j, &rv, strout, &imem) == Failed)
             return Failed;
 	   s2 = strout;
          /* parse string to get pixel values */
@@ -2339,6 +2378,7 @@ int texwindow2D(wbp w)
    	   while (isdigit(*s2)) s2++;
   	   s2++;
     	   tex[ws->height-j-1][i][2] = atoi(s2)/256;
+#endif
         }
 
    /* apply the texture */

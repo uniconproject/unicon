@@ -179,6 +179,8 @@ ssize_t tp_write(Tp_t* tp, void* buf, size_t n);
 /* tp_headerfield: Return a pointer to the value part of a header field. */
 char* tp_headerfield(char* header, char* field);
 
+int tp_fileno(Tp_t* tp);
+
 #ifndef _LIBTP_
 
 /* Methods */

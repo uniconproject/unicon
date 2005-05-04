@@ -401,3 +401,9 @@ static Tpunixdisc_t _tpdunix =
     unixwrite, unixmem, unixfree, unixexcept, unixnewdisc, 0 }, 0 };
 
 Tpunixdisc_t* TpdUnix = &_tpdunix;
+  
+int tp_fileno(Tp_t *t)
+{
+   int fd = ((Tpunixdisc_t *)t->disc)->fd;
+   return fd;
+}

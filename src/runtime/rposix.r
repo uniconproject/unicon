@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.26 2005-04-29 07:54:27 jeffery Exp $
+ * $Id: rposix.r,v 1.27 2005-05-04 19:28:46 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -239,6 +239,8 @@ unsigned int errmask;
 
       if (status & Fs_Socket)
 	 return BlkLoc(file)->file.fd.fd;
+      else if (status & Fs_Messaging)
+	 return tp_fileno(BlkLoc(file)->file.fd.mf->tp);
       else
 	 return fileno(BlkLoc(file)->file.fd.fp);
 }
@@ -1692,7 +1694,8 @@ void dup_fds(dptr d_stdin, dptr d_stdout, dptr d_stderr)
 
 #ifdef Graphics
 /*
- * Get a window that has an event pending (queued)
+ * Get a window that has an event pending (queued).
+ * pollevent() can allocate memory, so lws is unsafe after that.
  */
 struct b_list *findactivewindow(struct b_list *lws)
    {
@@ -1703,7 +1706,9 @@ struct b_list *findactivewindow(struct b_list *lws)
    tended struct descrip d;
    extern FILE *ConsoleBinding;
 
+   if (lws->size == 0) return NULL;
    d = nulldesc;
+   ep = (union block *)(lws->listhead);
    /*
    * Check for any new pending events.
    */
@@ -1714,8 +1719,7 @@ struct b_list *findactivewindow(struct b_list *lws)
    /*
     * go through listed windows, looking for those with events pending
     */
-   for (ep = (union block *)(lws->listhead); BlkType(ep) == T_Lelem;
-	ep = ep->lelem.listnext) {
+   for ( ; BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
       for (i = 0; i < ep->lelem.nused; i++) {
 	 union block *bp;
          wbp w;

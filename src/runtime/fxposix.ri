@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.36 2005-05-04 19:51:49 jeffery Exp $
+ * $Id: fxposix.ri,v 1.37 2005-05-10 06:05:18 jeffery Exp $
  */
 
 /*
@@ -2112,10 +2112,10 @@ function{0,1} select(files[nargs])
       fd_set fds;
       struct timeval tv, *ptv = &tv;
       tended struct b_list *lp = NULL;
-      union block *ep;
+      tended union block *ep;
       tended struct descrip d = nulldesc;
       tended struct descrip d2 = nulldesc;
-      dptr f;
+      tended struct descrip f;
       tended struct b_list *lws = NULL;
 
       /*
@@ -2135,9 +2135,9 @@ function{0,1} select(files[nargs])
 		  j = ep->lelem.first + i;
 		  if (j >= ep->lelem.nslots)
 		     j -= ep->lelem.nslots;
-		  f = &ep->lelem.lslots[j];
-		  if (is:file(*f) && BlkLoc(*f)->file.status & Fs_Window)
-		     c_put(&d2, f);
+		  f = ep->lelem.lslots[j];
+		  if (is:file(f) && BlkLoc(f)->file.status & Fs_Window)
+		     c_put(&d2, &f);
 		  }
 	       }
 	    }
@@ -2172,9 +2172,9 @@ function{0,1} select(files[nargs])
 		     j = ep->lelem.first + i;
 		     if (j >= ep->lelem.nslots)
 		        j -= ep->lelem.nslots;
-		     f = &ep->lelem.lslots[j];
-		     if (rv = set_if_selectable(f, &fds, &n))
-			runerr(rv, *f);
+		     f = ep->lelem.lslots[j];
+		     if (rv = set_if_selectable(&f, &fds, &n))
+			runerr(rv, f);
 		     }
 	          }
 	    }
@@ -2222,9 +2222,7 @@ function{0,1} select(files[nargs])
 	    }
 
 #ifdef Graphics
-#if UNIX
 	 pollevent();
-#endif
 
 	 /*
 	  * if our select() could have taken any time, try windows again
@@ -2265,14 +2263,14 @@ function{0,1} select(files[nargs])
 	          j = ep->lelem.first + i;
 	          if (j >= ep->lelem.nslots)
 	             j -= ep->lelem.nslots;
-	          f = &ep->lelem.lslots[j];
-		  if (is:file(*f)) {
+	          f = ep->lelem.lslots[j];
+		  if (is:file(f)) {
 #if HAVE_LIBZ
 		     if (BlkLoc(files[k])->file.status & Fs_Compress) { 
 	                fail;
 	                }
 #endif					/* HAVE_LIBZ */
-		     post_if_ready(&d, f, &fds);
+		     post_if_ready(&d, &f, &fds);
 		     }
 	       }
 	    }

@@ -2316,13 +2316,16 @@ int texwindow2D(wbp w, wbp w2d)
    char strout[50];
    char *s2;
    GLubyte tex[ws->height][ws->width][3], *texp;
-   XColor colorcell;
    LinearColor clr;
    wclrp cp;
    unsigned long c;
    wcp wc = w2d->context;
+#ifdef XWindows
    wdp wd = w2d->window->display;
    Display *stddpy = wd->display; 
+   XColor colorcell;
+   lastcp = wd->colors;
+#endif					/* XWindows */
 
    makecurrent(w);
    imem.x = 0;
@@ -2332,7 +2335,6 @@ int texwindow2D(wbp w, wbp w2d)
    /* call get pixel to get pixel information */
    if (getpixel_init(w2d, &imem) == Failed)
       return Failed;
-   lastcp = wd->colors;
    for(j=0; j < ws->height; j++)
 	for(i=0; i < ws->width; i++) {
 #ifdef XWindows

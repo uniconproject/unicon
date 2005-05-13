@@ -4004,14 +4004,14 @@ function{1} Texture(argv[argc])
        * This name is stored in w->context->texName[w->context->ntexture].
        * so we put w->context->ntexture in the list.
        */
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
-      wc->curtexture = wc->ntextures;
-      wc->ntextures++;
-      if (wc->ntextures > wc->nalced) {
+      if (wc->ntextures >= wc->nalced) {
          wc->nalced *= 2;
          wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
          glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
          }
+      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+      wc->curtexture = wc->ntextures;
+      wc->ntextures++;
       }
       MakeInt(wc->curtexture, &(rp->fields[1]));
       c_put(&(w->window->funclist), &f);

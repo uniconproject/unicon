@@ -1038,7 +1038,6 @@ free_v_and_fail:
 	 fprintf(stderr,"invalid displaylist entry '%s'\n", StrLoc(fname));
 	 goto free_v_and_fail;
 	 }
-
       }
 
    if (v!=v2) free(v);
@@ -1148,14 +1147,38 @@ int getmaterials(char* buf)
    return Succeeded;
 }
 
+int gettexture(wbp w, dptr dp)
+{
+   wcp wc= w->context;
+   wtp wt = wc->textures;
+   while (wt) {
+      if (wt->texindex == wc->curtexture) {
+	 *dp = wt->d;
+	 return Succeeded;
+	 }
+      wt = wt->next;
+      }
+   return Failed;
+}
+
+void getatexcoord(double d, char *b)
+{
+   if ((double)(int)d == d) sprintf(b,"%d",(int)d);
+   else sprintf(b,"%.3f",d);
+}
+
 /* get the user specified texture coordinates */
 int gettexcoords(wbp w, char *buf)
 {
+   char *s = buf;
    int i;
    wcp wc = w->context;
-   sprintf(buf, "%.f", wc->texcoords[0]);
+   getatexcoord(wc->texcoords[0], s);
+   s += strlen(s);
    for (i = 1; i < wc->numtexcoords; i++) {
-      sprintf(buf, "%s,%.3f", buf, wc->texcoords[i]);
+      *s++ = ',';
+      getatexcoord(wc->texcoords[i], s);
+      s += strlen(s);
      }
    return Succeeded;
 }

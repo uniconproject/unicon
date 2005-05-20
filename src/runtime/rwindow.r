@@ -3389,9 +3389,9 @@ char * abuf;
 	break;
       case A_LIGHT:
       case A_LIGHT0:
-	  getlight(0, abuf);
-	  MakeStr(abuf, strlen(abuf), answer);
-        break;
+	 getlight(0, abuf);
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
       case A_LIGHT1:
         getlight(1, abuf);
         MakeStr(abuf, strlen(abuf), answer);
@@ -3421,18 +3421,21 @@ char * abuf;
         MakeStr(abuf, strlen(abuf), answer);
         break;
       case A_TEXTURE:
-        MakeInt(wc->ntextures-1, answer);
+	gettexture( w, answer );
+	if (is:string(*answer)) StrLoc(*answer) = strdup(StrLoc(*answer));
         break;
       case A_TEXMODE:
         MakeInt(w->context->texmode, answer);
         break;
       case A_TEXCOORD:
-	strcpy(abuf, "auto");
-        if (wc->autogen) 
-           MakeStr(abuf, 4, answer); 
-        else
-           gettexcoords(w, abuf); 
-        break;
+	 strcpy(abuf, "auto");
+	 if (wc->autogen) 
+	    MakeStr(abuf, 4, answer); 
+	 else {
+	    gettexcoords(w, abuf);
+	    MakeStr(strdup(abuf), strlen(abuf), answer);
+	    }
+	 break;
 #endif					/* Graphics3D */
       case A_VISUAL:
 	 if (getvisual(w, abuf) == Failed) return Failed;

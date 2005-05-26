@@ -1,5 +1,5 @@
 #
-# $Id: netclient.icn,v 1.5 2004-10-10 17:45:20 rparlett Exp $
+# $Id: netclient.icn,v 1.6 2005-05-26 10:36:17 rparlett Exp $
 #
 
 package net
@@ -98,12 +98,23 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
    end
 
    #
+   # Get an error string based on &errno
+   # 
+   method strerror()
+      return sys_errstr(&errno) | ("&errno=" || &errno)
+   end
+
+   #
    # @p
    method recv(len)
-      if /timeout | (timeout = 0) | (*select(connection, timeout) > 0) then
-         return sysread(connection, len) | error("EOF encountered")
-      else
-         return error("Failed to select")
+      local l
+
+      if \timeout > 0 then {
+         l := select(connection, timeout) | return error("Failed to select:" || strerror())
+         if *l = 0 then
+            return error("Failed to select (timeout)")
+      }
+      return sysread(connection, len) | error("EOF encountered")
    end
 
    #

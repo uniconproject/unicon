@@ -65,14 +65,16 @@ end
 
 procedure yyprint(node)
    static lasttok
+   repeat			# allows us to suppress tail recursion
    case type(node) of {
       "treenode" : {
-
 	 if node.label == "package" then {
-	     # noop
+	    # noop
+	    fail
 	    }
 	 else if node.label == "import" then {
 	    print_imports(node.children[2])
+	    fail
 	    }
          else if node.label == "packageref" then {
 	     if *node.children = 2 then
@@ -82,18 +84,22 @@ procedure yyprint(node)
 		writes(yyout, "__")
 	        outcol +:= ((* writes(yyout, node.children[3].s)) + 2)
 		}
+	     fail
 	 }
          else if node.label == "global" then {
 	    yyprint(node.children[1])
-	    yyprint(node.children[2])
+	    node := node.children[2]
+	    next
 	    }
 	 else if node.label == ("varlist2"|"stalist2") then {
 	    yyprint(node.children[1])
+	    fail
 	    }
 	 else if node.label == ("varlist4"|"stalist4") then {
 	    yyprint(node.children[1])
 	    yyprint(node.children[2])
-	    yyprint(node.children[3])
+	    node := node.children[3]
+	    next
 	    }
 	 else if node.label == "proc" then {
 	    yyprint(node.children[1])
@@ -114,15 +120,19 @@ procedure yyprint(node)
             yyvarlists(node.children[3])
 	    yyprint(node.children[5])
 	    yyprint(node.children[6])
+	    fail
 	    }
 	 else if *node.children > 0 then {
-            every yyprint(!node.children)
+            every yyprint(node.children[1 to *node.children-1])
+	    node := node.children[-1]
+	    next
 	    }
 	 else if node.label === "error" then fail
-	 else write("leaf, ", node.label)
+	 else { write("leaf, ", node.label); fail }
 	    }
       "integer": {
 	 writes(yyout, node); outcol +:= *string(node)
+	 fail
 	 }
       "string": {
          node ? {
@@ -132,6 +142,7 @@ procedure yyprint(node)
 	    node := tab(0)
 	    }
 	 writes(yyout, node); outcol +:= *node
+	 fail
          }
       "token": {
 	 if outfilename ~== node.filename | outline > node.line then {
@@ -162,18 +173,22 @@ procedure yyprint(node)
 	 writes(yyout, node.s)
 	 outcol +:= *node.s
 	 lasttok := node
+	 fail
 	 }
-      "null": { }
+      "null": { fail }
       "declaration__state": {
 	 node.Write(yyout)
+	 fail
 	 }
       "Class__state": {
 	 node.Write(yyout)
+	 fail
 	 }
       "argList__state": {
 	 node.Write(yyout)
+	 fail
 	 }
-      default: write("its a ", type(node))
+      default: { write("its a ", type(node)); fail }
       }
 end
 

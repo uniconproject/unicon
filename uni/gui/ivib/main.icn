@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.10 2004-12-30 10:58:24 rparlett Exp $
+# $Id: main.icn,v 1.11 2005-06-11 14:29:00 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -62,14 +62,6 @@ end
 # The main window's toolbar.
 #
 class CustomToolBar : ToolBar(x1, y1, img_w, img_h, bg)
-   method show_label(x, y, label)
-      self.parent_dialog.button_name_label.set_label(label)
-   end
-
-   method hide_label()
-      self.parent_dialog.button_name_label.set_label("")
-   end
-
    method add_button(t)
       if /img_w then {
          img_w := t.img_w
@@ -183,6 +175,14 @@ class Main : CommonDialog(
    last_icn_dir
 
    )
+
+   method show_tooltip(x, y, label)
+      self.button_name_label.set_label(label)
+   end
+
+   method hide_tooltip()
+      self.button_name_label.set_label("")
+   end
 
    #
    # Shade buttons/menu relating to selections.
@@ -1002,6 +1002,8 @@ class Main : CommonDialog(
       mb.set_size(, y)
       self.add(mb)
 
+      set_tooltip_start_delay(0)
+
       #
       # Set up the menu structure.
       #
@@ -1235,7 +1237,6 @@ class Main : CommonDialog(
       mb.add(objects_menu)
 
       tb := CustomToolBar()
-      tb.set_start_end_delays(0, 3000)
       tb.set_pos(0, y)
 
       every ui := !uis do {

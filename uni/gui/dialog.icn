@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.7 2004-11-05 19:24:55 rparlett Exp $
+# $Id: dialog.icn,v 1.8 2005-06-11 14:29:59 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -42,7 +42,21 @@ class Dialog : Component(
    curr_drag,
    tried_drag,
    pointer_stack,
-   all_valid
+   all_valid,
+   tooltip_ticker,
+   tooltip_last_obj, 
+   tooltip_state,
+   tooltip_start_time,
+   tooltip_end_time,
+   tooltip_start_delay,
+   tooltip_end_delay,
+   tooltip_continue_time,
+   tooltip_continue_delay,
+   tooltip_win,
+   tooltip_x,
+   tooltip_y,
+   tooltip_w,
+   tooltip_h
    )
 
    method invoke_validate()
@@ -305,6 +319,7 @@ class Dialog : Component(
       self.is_open := 1
       self.validate()
       self.init_dialog()
+      self.tooltip_init()
    end
 
    method bevel_dispose()
@@ -316,6 +331,7 @@ class Dialog : Component(
       every (!child_dialogs).dispose()
       self.finally()
       self.bevel_dispose()
+      self.tooltip_dispose()
       self.close_win()
       self.is_open := &null
       dispatcher.del(self)
@@ -335,6 +351,12 @@ class Dialog : Component(
 
       if e === (&lpress | &rpress | &mpress) then {
          check_click_count(e)
+      }
+
+      if not(e === (&ldrag | &rdrag | &mdrag | -12)) then {
+         if tooltip_state = 2 then
+            hide_tooltip()
+         tooltip_state := 5
       }
 
       if e === &resize then {
@@ -390,6 +412,167 @@ class Dialog : Component(
             self.set_focus(c, e)
       }
 
+   end
+
+   #
+   # Initialize the tooltip state and ticker.
+   # @p
+   method tooltip_init()
+      self.tooltip_state := 5
+      self.tooltip_ticker.start(200)
+   end
+
+   #
+   # Cleanup the tooltip settings.
+   # @p
+   method tooltip_dispose()
+      self.tooltip_ticker.stop()
+      if self.tooltip_state = 2 then
+         hide_tooltip()
+   end
+
+   #
+   # Configure the delay (in ms) before a tooltip appears over a component.
+   #
+   # The default is 750.
+   #
+   # @param x   The starting delay in ms.
+   #
+   method set_tooltip_start_delay(x)
+      self.tooltip_start_delay := x
+   end
+
+   #
+   # Configure the delay (in ms) before a tooltip is removed.
+   #
+   # The default is 3000.
+   #
+   # @param x   The delay in ms.
+   #
+   method set_tooltip_end_delay(x)
+      self.tooltip_end_delay := x
+   end
+
+   #
+   # Configure the tooltip continue delay (in ms).  if the cursor moves between
+   # two components within this time, the tooltip on the second shows 
+   # immediately.
+   #
+   # The default is 1500.
+   #
+   # @param x   The delay in ms.
+   #
+   method set_tooltip_continue_delay(x)
+      self.tooltip_continue_delay := x
+   end
+
+   #
+   # Show the tooltip label at the given x,y position.
+   # @p
+   method show_tooltip(x, y, label)
+      local cw, ww, wh
+
+      ww := WAttrib(self.win, "width")
+      wh := WAttrib(self.win, "height")
+
+      cw := Clone(self.cwin, "bg=pale yellow", "font=sans,10", "fg=black")
+
+      self.tooltip_w := TextWidth(cw, label) + 4
+      self.tooltip_h := WAttrib(cw, "fheight") +  6
+
+      self.tooltip_x := x + 8
+      if self.tooltip_x + self.tooltip_w > ww then
+         self.tooltip_x := 0 <= ww - self.tooltip_w
+
+      self.tooltip_y := y + 8   #self.y + self.h + 3
+      if self.tooltip_y + self.tooltip_h > wh then
+         self.tooltip_y := 0 <= wh - self.tooltip_h
+
+      self.tooltip_win := WOpen("canvas=hidden", "size=" || self.tooltip_w || "," || self.tooltip_h)
+      CopyArea(cwin, self.tooltip_win, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h, 0, 0)
+      EraseRectangle(cw, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h)
+      Rectangle(cw, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h)
+      center_string(cw, self.tooltip_x + self.tooltip_w / 2, self.tooltip_y + self.tooltip_h / 2, label)
+      Uncouple(cw)
+   end
+
+   #
+   # Hide the tooltip label.
+   # @p
+   method hide_tooltip()
+      CopyArea(self.tooltip_win, cwin, 0, 0, self.tooltip_w, self.tooltip_h, self.tooltip_x, self.tooltip_y)
+      WClose(self.tooltip_win)
+      self.tooltip_win := &null
+   end
+
+   #
+   # Tooltip processing.
+   # @p
+   method process_tooltip()
+      local obj, x1, y1, t
+
+      #
+      # Don't process ticks whilst unique mode on
+      #
+      if \self.unique_flag then
+         return
+
+      #
+      # Search for a component with a tooltip
+      #
+      if /self.is_blocked_flag then {
+         x1 := WAttrib(self.win, "pointerx")
+         y1 := WAttrib(self.win, "pointery")
+         obj := find_tooltip(x1, y1)
+      }
+
+      t := dispatcher.curr_time_of_day()
+
+      if obj ~=== self.tooltip_last_obj then {
+         if /obj then
+            self.tooltip_state := if self.tooltip_state = 2 then 3 else 4
+         else {
+            if self.tooltip_state = 2 then
+               hide_tooltip()
+            self.tooltip_start_time := t
+            if self.tooltip_state = 5 then
+               self.tooltip_start_time +:= self.tooltip_start_delay
+            self.tooltip_state := 1
+            self.tooltip_end_time := self.tooltip_start_time + self.tooltip_end_delay
+         }
+         self.tooltip_last_obj := obj
+      }
+
+      if \obj then
+         self.tooltip_continue_time := t + self.tooltip_continue_delay
+
+      if self.tooltip_state = 1 & t >= self.tooltip_start_time then {
+         #
+         # Change label.
+         #
+         show_tooltip(x1, y1, obj.tooltip)
+         self.tooltip_state := 2
+      }
+      if self.tooltip_state = 2 & t >= self.tooltip_end_time then
+         self.tooltip_state := 3
+      if self.tooltip_state = 3 then {
+         hide_tooltip()
+         self.tooltip_state := 4
+      }
+      if self.tooltip_state = 4 & t >= self.tooltip_continue_time then
+         self.tooltip_state := 5
+   end
+
+   #
+   # Find the component which may show a tooltip, if any.
+   # @p
+   method find_tooltip(x1, y1)
+      local c
+      every c := self.generate_components() do {
+         if \c.tooltip & c.is_unhidden() & 
+            ((c.x <= x1 < c.x + c.w) & (c.y  <= y1 < c.y + c.h)) then
+            return c
+      }
    end
 
    #
@@ -541,6 +724,9 @@ class Dialog : Component(
    method set_one(attr, val)
       case attr of {
          "double_click_delay" : set_double_click_delay(int_val(attr, val))
+         "tooltip_start_delay" : self.set_tooltip_start_delay(int_val(attr, val))
+         "tooltip_end_delay" : self.set_tooltip_end_delay(int_val(attr, val))
+         "tooltip_continue_delay" : self.set_tooltip_continue_delay(int_val(attr, val))
          "repeat_delay" : set_repeat_delay(int_val(attr, val))
          "repeat_rate" : set_repeat_rate(int_val(attr, val))
          "min_size" : set_min_size!int_vals(attr, val)
@@ -560,5 +746,10 @@ class Dialog : Component(
       self.double_click_delay := 500
       self.repeat_delay := 500
       self.repeat_rate := 100
+      self.tooltip_ticker := Ticker()
+      self.tooltip_ticker.connect(self, "process_tooltip", TICK_EVENT)
+      self.tooltip_start_delay := 750
+      self.tooltip_end_delay := 3000
+      self.tooltip_continue_delay := 1500
       set_fields(a)
 end

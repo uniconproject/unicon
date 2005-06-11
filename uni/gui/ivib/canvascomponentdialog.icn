@@ -1,5 +1,5 @@
 #
-# $Id: canvascomponentdialog.icn,v 1.2 2004-05-15 19:17:38 rparlett Exp $
+# $Id: canvascomponentdialog.icn,v 1.3 2005-06-11 14:28:29 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -31,7 +31,7 @@ class CanvasComponentDialog : CommonDialog(
    class_name,              # TextField - class name
    import_name,             # TextField - import name
    tooltip_flag,            # Tooltip on/off
-   tooltip,                 # TextField - tooltip
+   tooltip_field,           # TextField - tooltip
    accel_flag,              # Accel on/off
    accel,                   # TextField - accel
    okay,                    # Buttons           
@@ -71,7 +71,7 @@ class CanvasComponentDialog : CommonDialog(
    end
 
    method on_tooltip_flag()
-      tooltip.toggle_is_shaded()
+      tooltip_field.toggle_is_shaded()
    end
 
    method on_accel_flag()
@@ -316,11 +316,11 @@ class CanvasComponentDialog : CommonDialog(
       other_tab := TabItem("label=Other", "accel=o")
       tabset.add(other_tab)
 
-      tooltip := TextField()
-      tooltip.set_size(125)
-      tooltip.set_pos("200", "40")
-      tooltip.set_align("l", "c")
-      other_tab.add(tooltip)
+      tooltip_field := TextField()
+      tooltip_field.set_size(125)
+      tooltip_field.set_pos("200", "40")
+      tooltip_field.set_align("l", "c")
+      other_tab.add(tooltip_field)
 
       tooltip_flag := CheckBox()
       tooltip_flag.connect(self, "on_tooltip_flag", ACTION_EVENT)
@@ -328,10 +328,10 @@ class CanvasComponentDialog : CommonDialog(
       tooltip_flag.set_pos("50", "40")
       tooltip_flag.set_align("l", "c")
       if /c.tooltip then
-         tooltip.set_is_shaded()
+         tooltip_field.set_is_shaded()
       else  {
          tooltip_flag.set_is_checked()
-         tooltip.set_contents(c.tooltip)
+         tooltip_field.set_contents(c.tooltip)
       }
       other_tab.add(tooltip_flag)
 
@@ -447,7 +447,7 @@ class CanvasComponentDialog : CommonDialog(
       c.h_fixed := set_h_fixed.get_status()
       c.is_shaded_flag := shaded.get_status()
       c.draw_border_flag := draw_border.get_status()
-      c.tooltip := if tooltip_flag.is_checked() then tooltip.get_contents() else &null
+      c.tooltip := if tooltip_flag.is_checked() then tooltip_field.get_contents() else &null
       c.accel := if accel_flag.is_checked() then accel.get_contents() else &null
       if has_initial_focus.is_checked() then
          c.parent_Canvas.initial_focus := c

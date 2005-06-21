@@ -18,23 +18,6 @@
 #include <string.h>
 #include <time.h>
 
-#if HAVE_LIBJPEG
-
-#if defined(__x86_64__) && defined(XWindows)
-/* Some AMD64 Gentoo systems seem to have a buggy macros in
-   jmorecfg.h, but if we include Xmd.h beforehand then we get better
-   definitions of the macros. */
-#include <X11/Xmd.h>
-#endif
-
-#include "jpeglib.h"
-#include "jerror.h"
-#include <setjmp.h>
-/* we do not use their definitions of GLOBAL, LOCAL, or OF; we use our own */
-#undef GLOBAL
-#undef LOCAL
-#undef OF
-#endif					/* HAVE_LIBJPEG */
 
 /*
  * Operating-system-dependent includes.
@@ -283,6 +266,19 @@
  * Include this after Xlib stuff, jmorecfg.h expects this.
  */
 #if HAVE_LIBJPEG
+
+#if defined(__x86_64__) && defined(XWindows)
+/* Some AMD64 Gentoo systems seem to have a buggy macros in
+   jmorecfg.h, but if we include Xmd.h beforehand then we get better
+   definitions of the macros. */
+#include <X11/Xmd.h>
+#endif
+
+#ifdef NTGCC
+/* avoid INT32 compile error in jmorecfg.h by pretending we used Xmd.h! */
+#define XMD_H
+#endif
+
 #include "jpeglib.h"
 #include "jerror.h"
 #include <setjmp.h>

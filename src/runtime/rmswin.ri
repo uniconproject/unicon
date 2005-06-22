@@ -2576,6 +2576,8 @@ unsigned char *data;
    STDLOCALS(w);
 
    clist = malloc(DMAXCOLORS * sizeof (SysColor));
+   if (!clist)
+      return 0;
    nclist = DMAXCOLORS;
    /*
     * Make a sorted list of the pixel values of the colors that are in
@@ -2599,9 +2601,11 @@ unsigned char *data;
 	    if (*lp != px) {
 	       i = ncolors++;
                if (ncolors >= nclist) {
-		 nclist = nclist * 1.5;
-		 clist = realloc(clist, nclist * sizeof (SysColor));
-		 }
+		  nclist = nclist * 1.5;
+		  clist = realloc(clist, nclist * sizeof (SysColor));
+	          if (!clist) return 0;
+		  lp = imqsearch(px, clist, ncolors);
+		  }
 	       while (clist + i != lp) {
 		  clist[i] = clist[i-1];
 		  i--;
@@ -2654,6 +2658,37 @@ unsigned char *data;
 	 }
       }
    free(clist);
+   FREE_STDLOCALS(w);
+   return 1;
+   }
+/*
+ * getimstr24 -- get an image as a string of RGB tuples.
+ *
+ * Stores the specified subimage in data, three pixels per byte.
+ */
+int getimstr24(w, xx, yy, width, height, data)
+wbp w;
+int xx, yy, width, height;
+unsigned char *data;
+   {
+   SysColor px;
+   int i, x, y, wd = xx + width, ht = yy + height;
+   STDLOCALS(w);
+
+   for (y = yy; y < ht; y++) {
+#if 0
+      /* want to do pollevent here, but can't inside a STDLOCALS declaration */
+      if (y & 1 == 0) {
+	 pollevent();
+	 }
+#endif
+      for (x = xx; x < wd; x++) {
+	 px = GetPixel(pixdc, x, y);
+	 *data++ = RED(px);
+	 *data++ = GREEN(px);
+	 *data++ = BLUE(px);
+	 }
+      }
    FREE_STDLOCALS(w);
    return 1;
    }

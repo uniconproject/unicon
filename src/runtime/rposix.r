@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.27 2005-05-04 19:28:46 jeffery Exp $
+ * $Id: rposix.r,v 1.28 2005-06-22 10:17:29 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1618,7 +1618,7 @@ dptr d;
       /* Allocate n bytes of char space */
       StrLoc(*d) = alcstr(NULL, n);
       StrLen(*d) = 0;
-      tally = read(fd, StrLoc(*d), n);
+      tally = recv(fd, StrLoc(*d), n, 0);
 
       if (tally <= 0) {
 	 strtotal += n;
@@ -1633,21 +1633,24 @@ dptr d;
       EVStrAlc(nbytes);
       strtotal += nbytes;
       strfree = StrLoc(*d) + tally;
-   } else {
-      /* Read as much as we can without blocking, in chunks of 1000 bytes */
-      char buf[1000];
-      long bufsize = 1000, total = 0, i = 0;
+      }
+   else {
+      /* Read as much as we can without blocking, in chunks of 1536 bytes */
+      char buf[1536];
+      long bufsize = 1536, total = 0, i = 0;
       StrLoc(*d) = strfree;
       StrLen(*d) = 0;
       for(;;) {
+	 int kk=0;
 	 fd_set readset;
 	 struct timeval tv;
 	 FD_ZERO(&readset);
 	 FD_SET(fd, &readset);
 	 tv.tv_sec = tv.tv_usec = 0;
-	 if (select(fd+1, &readset, NULL, NULL, &tv) == 0)
+	 if (select(fd+1, &readset, NULL, NULL, &tv) == 0) {
  	    /* Nothing more is available */
 	    break;
+	    }
 
 	 /* Something is available: allocate another chunk */
 	 if (i == 0)
@@ -1655,8 +1658,31 @@ dptr d;
 	 else
 	    /* Extend the string */
 	    (void) alcstr(NULL, bufsize);
-	 tally = read(fd, StrLoc(*d) + i*bufsize, bufsize);
-	 if (i == 0 && tally <= 0) {
+tryagain:
+	 tally = recv(fd, StrLoc(*d) + i*bufsize, bufsize, 0);
+
+	 if (tally < 0) {
+	    /*
+	     * Error on recv().  Some kinds of errors might be recoverable.
+	     */
+	    kk++;
+#if NT
+	    errno = WSAGetLastError();
+#endif					/* NT */
+	    switch (errno) {
+#if NT
+	    case WSAEINTR: case WSAEINPROGRESS:
+#endif					/* NT */
+	       if (kk < 5) goto tryagain;
+	       break;
+	    default:
+	       strtotal += bufsize;
+	       strfree = StrLoc(*d);
+	       return 0;
+               }
+	    }
+
+	 if ((i == 0) && (tally == 0)) {
 	    strtotal += bufsize;
 	    strfree = StrLoc(*d);
 	    return 0;

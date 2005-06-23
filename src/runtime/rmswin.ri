@@ -341,10 +341,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
     * create the window
     */
    winstyles=(ISTITLEBAR(ws)?WS_OVERLAPPEDWINDOW:(WS_DLGFRAME|WS_THICKFRAME));
-   winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+   winstyles |= WS_CLIPCHILDREN;
    if (!ISTOBEHIDDEN(ws))
       winstyles |= WS_VISIBLE;
-   if (is_3d) winstyles |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
    ws->iconwin = CreateWindow( "iconx", ws->windowlabel,
 		   winstyles,
 		   ws->posx, ws->posy,
@@ -431,6 +430,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       }
    else ws->win = 0;
 
+   BringWindowToTop(ws->win);
    if (ws->initialPix) {
       hdc = GetDC(ws->iconwin);
       hdc2 = CreateCompatibleDC(hdc);
@@ -790,7 +790,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    case WM_LBUTTONUP:   case WM_RBUTTONUP:   case WM_MBUTTONUP:
       handle_mouse(wb,msg,wp,lp);
       return 0;
-#ifdef WM_MOUSEWHEEL
+#ifndef NoMouseWheel
    case WM_MOUSEWHEEL:
       if (0 /* ws->inputmask & MouseWheelMask */) {
          }
@@ -813,7 +813,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             }
          }
       return 0;
-#endif   		/* WM_MOUSEWHEEL */
+#endif					/* WM_MOUSEWHEEL */
    case WM_KEYUP:
       if (ws->inputmask & KeyReleaseMask) handle_keypress(wb, msg, wp, lp, 0);
       return 0;

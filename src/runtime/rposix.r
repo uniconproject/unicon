@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.28 2005-06-22 10:17:29 jeffery Exp $
+ * $Id: rposix.r,v 1.29 2005-06-24 09:13:44 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1672,6 +1672,8 @@ tryagain:
 	    switch (errno) {
 #if NT
 	    case WSAEINTR: case WSAEINPROGRESS:
+#else					/* NT */
+	    case EINTR: case EINPROGRESS:
 #endif					/* NT */
 	       if (kk < 5) goto tryagain;
 	       break;

@@ -56,6 +56,313 @@ fi
 
 ])
 
+#---------------------------------------
+# Checking for libogg for audio support
+#---------------------------------------
+AC_DEFUN([CHECK_OGG],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if oggvorbis is wanted)
+AC_ARG_WITH(ogg,
+[  --with-ogg=DIR root directory path of libogg installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-ogg to disable ogg usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  LIBOGG_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+LIBOGG_HOME=/usr/local
+if test ! -f "${LIBOGG_HOME}/include/ogg/ogg.h"
+then
+	LIBOGG_HOME=/usr
+fi
+])
+
+#
+# Locate libogg, if wanted
+#
+if test -n "${LIBOGG_HOME}"
+then
+        LIBOGG_OLD_LDFLAGS=$LDFLAGS
+        LIBOGG_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${LIBOGG_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${LIBOGG_HOME}/include/ogg -I${LIBOGG_HOME}/include/vorbis"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(ogg, oggpack_write, [ogglib_cv_libogg=yes], [ogglib_cv_libogg=no])
+        AC_CHECK_LIB(vorbis, vorbis_bitrate_init, [ogglib_cv_libvorbis=yes], [ogglib_cv_libvorbis=no])
+        AC_CHECK_LIB(vorbisfile, ov_open, [libvorbisfile_cv_libvorbisfile=yes], [libvorbisfile_cv_libvorbisfile=no])
+        AC_CHECK_HEADER(ogg.h, [ogglib_cv_ogglib_h=yes], [ogglib_cv_ogglib_h=no])
+        AC_CHECK_HEADER(vorbisfile.h, [libvorbis_cv_libvorbis_h=yes], [libvorbis_cv_libvorbis_h=no])
+        AC_CHECK_HEADER(codec.h, [libvorbis_cv_codec_h=yes], [libvorbis_cv_codec_h=no])
+        AC_LANG_RESTORE
+        if test "$ogglib_cv_libogg" = "yes" -a "$ogglib_cv_libvorbis" = "yes" -a "$libvorbisfile_cv_libvorbisfile" = "yes" -a "$ogglib_cv_ogglib_h" = "yes" -a "$libvorbis_cv_libvorbis_h" = "yes" -a "$libvorbis_cv_codec_h" = "yes"
+        then
+                #
+                # If all libraries were found, use them
+                #
+                AC_CHECK_LIB(ogg, oggpack_write)
+                AC_CHECK_LIB(vorbis, vorbis_bitrate_init)
+                AC_CHECK_LIB(vorbisfile, ov_open)
+                AC_MSG_CHECKING(oggvorbis in ${LIBOGG_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(oggvorbis in ${LIBOGG_HOME})
+                AC_MSG_RESULT(failed)
+        fi
+fi
+
+])
+
+#------------------------------------------------
+# Checking for the SDL library for Audio Support
+#------------------------------------------------
+AC_DEFUN([CHECK_SDL],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if libsdl is wanted)
+AC_ARG_WITH(libsdl,
+[  --with-libsdl=DIR root directory path of libsdl installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-libsdl to disable lib usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  LIBSDL_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+LIBSDL_HOME=/usr/local
+if test ! -f "${LIBSDL_HOME}/include/SDL/SDL_audio.h"
+then
+        LIBSDL_HOME=/usr
+fi
+])
+
+#
+# Locate libSDL, if wanted
+#
+if test -n "${LIBSDL_HOME}"
+then
+        LIBSDL_OLD_LDFLAGS=$LDFLAGS
+        LIBSDL_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${LIBSDL_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${LIBSDL_HOME}/include/SDL"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(SDL, SDL_AudioInit, [libsdl_cv_libsdl=yes], [libsdl_cv_libsdl=no])
+        AC_CHECK_HEADER(SDL_audio.h, [libsdl_cv_libsdl_h=yes], [libsdl_cv_libsdl_h=no])
+        AC_LANG_RESTORE
+        if test "$libsdl_cv_libsdl" = "yes" -a "$libsdl_cv_libsdl_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                AC_CHECK_LIB(SDL, SDL_AudioInit)
+                AC_MSG_CHECKING(libsdl in ${LIBSDL_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(libsdl in ${LIBSDL_HOME})
+                LDFLAGS="$LIBSDL_OLD_LDFLAGS"
+                CPPFLAGS="$LIBSDL_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+])
+
+#-----------------------------------------------------------
+# Checking for libsmpeg, it supports OpenAL for Playing MP3
+#-----------------------------------------------------------
+AC_DEFUN([CHECK_SMPEG],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if libsmpeg is wanted)
+AC_ARG_WITH(libsmpeg,
+[  --with-libsmpeg=DIR root directory path of libsmpeg installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-libsmpeg to disable libsmpeg usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  LIBSMPEG_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+LIBSMPEG_HOME=/usr/local
+if test ! -f "${LIBSMPEG_HOME}/include/smpeg/smpeg.h"
+then
+        LIBSMPEG_HOME=/usr
+fi
+])
+
+#
+# Locate libsmpeg, if wanted
+#
+if test -n "${LIBSMPEG_HOME}"
+then
+        LIBSMPEG_OLD_LDFLAGS=$LDFLAGS
+        LIBSMPEG_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${LIBSMPEG_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${LIBSMPEG_HOME}/include/smpeg"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(smpeg, SMPEG_playAudio, [libsmpeg_cv_libsmpeg=yes], [libsmpeg_cv_libsmpeg=no])
+        AC_CHECK_HEADER(smpeg.h, [libsmpeg_cv_libsmpeg_h=yes], [libsmpeg_cv_libsmpeg_h=no])
+        AC_LANG_RESTORE
+        if test "$libsmpeg_cv_libsmpeg" = "yes" -a "$libsmpeg_cv_libsmpeg_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                AC_CHECK_LIB(smpeg, SMPEG_playAudio)
+                AC_MSG_CHECKING(libsmpeg in ${LIBSMPEG_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(libsmpeg in ${LIBSMPEG_HOME})
+                LDFLAGS="$LIBSMPEG_OLD_LDFLAGS"
+                CPPFLAGS="$LIBSMPEG_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+])
+
+#---------------------------------------
+# Checking for OpenAL for audio support
+#---------------------------------------
+AC_DEFUN([CHECK_OPENAL],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if libopenal is wanted)
+AC_ARG_WITH(libopenal,
+[  --with-libopenal=DIR root directory path of libopenal installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-libopenal to disable libopenal usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  LIBOPENAL_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+LIBOPENAL_HOME=/usr/local
+if test ! -f "${LIBOPENAL_HOME}/include/AL/al.h"
+then
+        LIBOPENAL_HOME=/usr
+fi
+])
+
+#
+# Locate libopenal, if wanted
+#
+if test -n "${LIBOPENAL_HOME}"
+then
+        LIBOPENAL_OLD_LDFLAGS=$LDFLAGS
+        LIBOPENAL_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${LIBOPENAL_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${LIBOPENAL_HOME}/include/AL"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(openal, alGetSourceiv, [libopenal_cv_libopenal=yes], [libopenal_cv_libopenal=no])
+        AC_CHECK_HEADER(al.h, [libopenal_cv_libopenal_h=yes], [libopenal_cv_libopenal_h=no])
+        AC_LANG_RESTORE
+        if test "$libopenal_cv_libopenal" = "yes" -a "$libopenal_cv_libopenal_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                AC_CHECK_LIB(openal, alGetSourceiv)
+                AC_MSG_CHECKING(libopenal in ${LIBOPENAL_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(libopenal in ${LIBOPENAL_HOME})
+                LDFLAGS="$LIBOPENAL_OLD_LDFLAGS"
+                CPPFLAGS="$LIBOPENAL_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+])
+
+AC_DEFUN([CHECK_VOICE],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if jvoiplib is wanted)
+AC_ARG_WITH(jvoiplib,
+[  --with-jvoiplib=DIR root directory path of jvoiplib installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-jvoiplib to disable jvoiplib usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  JVOIPLIB_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+JVOIPLIB_HOME=bin
+])
+
+#
+# Locate jvoiplib, if wanted
+#
+if test -n "${JVOIPLIB_HOME}"
+then
+        JVOIPLIB_OLD_LDFLAGS=$LDFLAGS
+        JVOIPLIB_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${JVOIPLIB_HOME}"
+        AC_LANG_SAVE
+        AC_LANG_CPLUSPLUS
+        AC_CHECK_LIB(jrtp, _ZN9RTPPacket5ClearEv, [jvlib_cv_libjr=yes], [jvlib_cv_libjr=no])
+	AC_CHECK_LIB(jthread, _ZN7JThread13ThreadStartedEv, [jvlib_cv_libjt=yes], [jvlib_cv_libjt=no])
+	AC_CHECK_LIB(jvoip, _Z19JVOIPGetErrorStringi, [jvlib_cv_libjv=yes], [jvlib_cv_libjv=no])
+
+        AC_LANG_RESTORE
+        if test "$jvlib_cv_libjv" = "yes" -a "$jvlib_cv_libjt" = "yes" -a "$jvlib_cv_libjr" = "yes"
+        then
+                #
+                # If all libraries were found, use them
+                #
+	        AC_LANG_SAVE
+	        AC_LANG_CPLUSPLUS
+                AC_CHECK_LIB(jrtp, _ZN9RTPPacket5ClearEv)
+		AC_CHECK_LIB(jthread, _ZN7JThread13ThreadStartedEv)
+		AC_CHECK_LIB(jvoip, _Z19JVOIPGetErrorStringi)
+	        AC_LANG_RESTORE
+                AC_MSG_CHECKING(jvoiplib in ${JVOIPLIB_HOME})
+		JV_LDFLAGS=" -L../../bin -lvoip -ljvoip.a -ljthread -ljrtp -lpthread -lstdc++ "
+		AC_SUBST(JV_LDFLAGS)
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(jvoiplib in ${JVOIPLIB_HOME})
+		JV_LDFLAGS=
+		AC_SUBST(JV_LDFLAGS)
+                AC_MSG_RESULT(failed)
+        fi
+fi
+
+])
+
 AC_DEFUN([CHECK_XLIB],
 #
 # Handle user hints
@@ -289,7 +596,7 @@ if test -n "${ODBC_HOME}"
 then
         ODBC_OLD_LDFLAGS=$LDFLAGS
         ODBC_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${ODBC_HOME}/lib"
+        LDFLAGS="$LDFLAGS -L${ODBC_HOME}/lib -L${ODBC_HOME}/lib64"
         CPPFLAGS="$CPPFLAGS -I${ODBC_HOME}/include"
         AC_LANG_SAVE
         AC_LANG_C

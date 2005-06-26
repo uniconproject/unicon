@@ -255,11 +255,6 @@
       #define VMS 0
    #endif				/* VMS */
 
-   #ifdef NAS
-      #include	<audio/audiolib.h>
-      #include	<audio/soundlib.h>
-   #endif					/* NAS */
-
 #endif					/* XWindows */
 
 /*
@@ -365,3 +360,11 @@
 #endif
 
 #endif					/* HAVE_LIBZ */
+
+#ifdef HAVE_VOICE
+#include "../lib/voice/jvoip.h"
+#endif					/* HAVE_VOICE */
+
+#ifdef Audio
+#include "../lib/audio/audio.h"
+#endif					/* Audio */

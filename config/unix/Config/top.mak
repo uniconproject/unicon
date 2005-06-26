@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.13 2004-02-15 18:22:43 rparlett Exp $
+# $Id: top.mak,v 1.14 2005-06-26 07:15:41 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -53,6 +53,18 @@ Configure:	config/unix/$(name)/status
 
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
+		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
+		sh ./configure
+
+V-Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		-cd src/lib/voice;		$(MAKE)
+		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
+		sh ./configure
+
+VX-Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		-cd src/lib/voice;		$(MAKE)
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure
 
@@ -79,6 +91,7 @@ Unicon:		Icont
 # The interpreter: icont and iconx.
 
 Icont bin/icont: Common
+		cd src/lib/audio;	$(MAKE)
 		cd src/icont;		$(MAKE)
 		cd src/runtime;		$(MAKE) interp_all
 

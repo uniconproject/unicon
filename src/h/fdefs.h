@@ -5,6 +5,11 @@
 #undef exit		/* may be defined under ConsoleWindow */
 #undef getenv		/* may be defined under AMIGA */
 
+FncDef(PlayAudio,1)
+FncDef(StopAudio,1)
+FncDef(VAttrib,2)
+FncDef(VWho,1)
+
 FncDef(abs,1)
 FncDef(acos,1)
 FncDef(any,4)

@@ -22,5 +22,9 @@
 #ifdef PosixFns
 #include "fxposix.ri"
 #endif					/* POSIX interface functions */
+
+#if defined(Audio) || defined(HAVE_VOICE)
+#include "fxaudio.ri"
+#endif					/* Audio/VOIP functions */
 	
 static char junk;			/* avoid empty module */

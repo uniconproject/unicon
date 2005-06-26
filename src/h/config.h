@@ -233,6 +233,14 @@
    #define IPATH "IPATH"
 #endif
 
+#if defined(HAVE_LIBJVOIP) && defined(HAVE_LIBJRTP) && defined(HAVE_LIBJTHREAD) && defined(HAVE_LIBJVOIPAPI)
+#define HAVE_VOICE
+#endif
+
+#if defined(HAVE_LIBOGG) || defined(HAVE_LIBOPENAL)
+#define Audio
+#endif
+
 #ifdef MSWindows
    #undef Graphics
    #define Graphics 1

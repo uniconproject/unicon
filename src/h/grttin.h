@@ -293,6 +293,14 @@ typedef int siptr, stringint, inst;
       #endif				/* FAttrib */
    #endif				/* MSWindows */
 
+   #ifdef HAVE_VOICE
+      typedef int VSESSION, PVSESSION;
+   #endif				/* HAVE_VOICE */
+
+   #if defined Audio
+      typedef int AudioFile, AudioStruct, AudioPtr;
+   #endif				/* Audio */
+
    #ifdef PresentationManager
       /* OS/2 PM specifics */
       typedef int HAB, HPS, QMSG, HMQ, HWND, USHORT, MRESULT, ULONG, MPARAM;
@@ -431,3 +439,7 @@ typedef int siptr, stringint, inst;
    typedef int HGLRC, PIXELFORMATDESCRIPTOR;
 #endif
 #endif					/* Graphics3D */
+
+#if HAVE_OGG
+typedef int OggVorbis_File, vorbis_info;
+#endif					/* HAVE_OGG */

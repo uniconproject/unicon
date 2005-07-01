@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.12 2005-06-11 14:29:59 rparlett Exp $
+# $Id: component.icn,v 1.13 2005-07-01 16:08:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -120,6 +120,10 @@ class Component : Object : SetFields : Connectable(
    #
    allow_drag_flag,
    allow_drop_flag,
+   #
+   # Mouse pointer.
+   #
+   pointer,
 
    ticker
    )
@@ -129,6 +133,30 @@ class Component : Object : SetFields : Connectable(
    #
    method set_tooltip(x)
       return self.tooltip := x
+   end
+
+   #
+   # Return the tooltip, if any.
+   #
+   method get_tooltip()
+      return self.tooltip
+   end
+
+   #
+   # Set the pointer.  When the mouse moves over the component,
+   # the pointer cursor will automatically be set to this value.
+   #
+   method set_pointer(x)
+      self.pointer := x
+      (\self.parent_dialog).synch_pointer()
+      return x
+   end
+
+   #
+   # Return the pointer string, if any.
+   #
+   method get_pointer()
+      return self.pointer
    end
 
    #
@@ -417,9 +445,12 @@ class Component : Object : SetFields : Connectable(
    end
 
    #
-   # The test for whether {&x} and {&y} lie within the bounds of the component
+   # The test for whether x1 and y1 lie within the bounds of the component.
+   # x1 and y1 default to {&x} and {&y} respectively.
    #
-   method in_region()
+   method in_region(x1, y1)
+      /x1 := &x
+      /y1 := &y
       return (self.x <= &x < self.x + self.w) & (self.y  <= &y < self.y + self.h)
    end
 
@@ -993,6 +1024,7 @@ class Component : Object : SetFields : Connectable(
    method set_one(attr, val)
       case attr of {
          "tooltip" : set_tooltip(string_val(attr, val))
+         "pointer" : set_pointer(string_val(attr, val))
          "allow_drop" :
             if test_flag(attr, val) then
                set_allow_drop() 

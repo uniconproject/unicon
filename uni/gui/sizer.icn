@@ -1,5 +1,5 @@
 #
-# $Id: sizer.icn,v 1.6 2004-11-13 23:40:17 rparlett Exp $
+# $Id: sizer.icn,v 1.7 2005-07-01 16:08:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -29,8 +29,7 @@ class Sizer : Component(
    drag_offset,
    curr_pos,
    start_pos,
-   end_pos,
-   pointer_flag
+   end_pos
    )
 
    #
@@ -114,17 +113,11 @@ class Sizer : Component(
       return curr_pos
    end
 
-   #
-   # Change the pointer to be the double arrow (unless it is already).
-   # @p
-   method pointer_on()
-      if /pointer_flag then {
-         if \self.is_horizontal_flag then
-            get_parent_dialog().change_pointer("sb v double arrow")
-         else
-            get_parent_dialog().change_pointer("sb h double arrow")
-         pointer_flag := 1
-      }
+   method firstly()
+      if \self.is_horizontal_flag then
+         set_pointer("sb v double arrow")
+      else
+         set_pointer("sb h double arrow")
    end
 
    method resize()
@@ -135,23 +128,8 @@ class Sizer : Component(
       self.Component.resize()
    end
 
-   #
-   # Reset the pointer if needed.
-   #
-   method pointer_off()
-      if \pointer_flag then {
-         get_parent_dialog().restore_pointer()
-         pointer_flag := &null
-      }
-   end
-
    method handle_event(e)
-      if e === -12 then {
-         if self.in_region() then
-            pointer_on()
-         else
-            pointer_off()
-      } else if e === (&lpress | &rpress | &mpress) then {
+      if e === (&lpress | &rpress | &mpress) then {
          if self.in_region() then {
             unique_start()
             self.is_held := 1
@@ -164,7 +142,6 @@ class Sizer : Component(
             } else {
                drag_offset := &x - self.x
             }
-            pointer_on()
             start_pos := set_curr_pos()
             self.invalidate()
          }
@@ -174,7 +151,6 @@ class Sizer : Component(
             self.invalidate()
          } else if e === (&lrelease | &rrelease | &mrelease) then {
             self.is_held := &null
-            pointer_off()
             end_pos := set_curr_pos()
             CopyArea(temp_win, cwin, 0, 0, temp_w, temp_h, 0, 0)
             WClose(self.temp_win)

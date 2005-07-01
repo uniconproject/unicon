@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.9 2005-06-28 16:09:49 rparlett Exp $
+# $Id: dialog.icn,v 1.10 2005-07-01 16:08:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -41,6 +41,7 @@ class Dialog : Component(
    drag_gesture_y,
    curr_drag,
    tried_drag,
+   pointer_component,
    pointer_stack,
    all_valid,
    tooltip_ticker,
@@ -415,6 +416,7 @@ class Dialog : Component(
             self.set_focus(c, e)
       }
 
+      synch_pointer()
    end
 
    #
@@ -512,7 +514,7 @@ class Dialog : Component(
    # Tooltip processing.
    # @p
    method process_tooltip()
-      local obj, x1, y1, t
+      local obj, t
 
       #
       # Don't process ticks whilst unique mode on
@@ -523,11 +525,8 @@ class Dialog : Component(
       #
       # Search for a component with a tooltip
       #
-      if /self.is_blocked_flag then {
-         x1 := WAttrib(self.win, "pointerx")
-         y1 := WAttrib(self.win, "pointery")
-         obj := find_tooltip(x1, y1)
-      }
+      if /self.is_blocked_flag then
+         obj := find_tooltip()
 
       t := dispatcher.curr_time_of_day()
 
@@ -553,7 +552,9 @@ class Dialog : Component(
          #
          # Change label.
          #
-         show_tooltip(x1, y1, obj.tooltip)
+         show_tooltip(WAttrib(self.win, "pointerx"),
+                      WAttrib(self.win, "pointery"),
+                      obj.tooltip)
          self.tooltip_state := 2
       }
       if self.tooltip_state = 2 & t >= self.tooltip_end_time then
@@ -569,11 +570,52 @@ class Dialog : Component(
    #
    # Find the component which may show a tooltip, if any.
    # @p
-   method find_tooltip(x1, y1)
-      local c
+   method find_tooltip()
+      local c, x1, y1
+
+      x1 := WAttrib(self.win, "pointerx")
+      y1 := WAttrib(self.win, "pointery")
       every c := self.generate_components() do {
-         if \c.tooltip & c.is_unhidden() & 
-            ((c.x <= x1 < c.x + c.w) & (c.y  <= y1 < c.y + c.h)) then
+         if \c.tooltip & c.is_unhidden() & c.in_region(x1, y1) then 
+            return c
+      }
+   end
+
+   #
+   # Synch the mouse cursor pointer with the component it's over.
+   #
+   method synch_pointer()
+      local ps
+
+      #
+      # Do nothing if the dialog isn't open, or is in unique mode.
+      #
+      if /self.is_open | \self.unique_flag then
+         return
+
+      ps := find_pointer_component()
+
+      if (ps ~=== self.pointer_component) | 
+         ((\ps).pointer ~== WAttrib(self.win, "pointer")) then {
+         if \self.pointer_component then
+            restore_pointer()
+         self.pointer_component := ps
+         if \self.pointer_component then
+            change_pointer(self.pointer_component.pointer)
+      }
+   end
+
+   #
+   # Find the component with a custom pointer under the given
+   # pointer location.
+   # @p
+   method find_pointer_component()
+      local c, x1, y1
+
+      x1 := WAttrib(self.win, "pointerx")
+      y1 := WAttrib(self.win, "pointery")
+      every c := self.generate_components() do {
+         if \c.pointer & c.is_unhidden() & c.in_region(x1, y1) & c.is_unshaded() then
             return c
       }
    end

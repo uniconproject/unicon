@@ -1,0 +1,140 @@
+import gui
+$include "guih.icn"
+
+class Untitled : Dialog(text_button_1, text_button_2, text_button_3, count)
+   method component_setup()
+      self.setup()
+      text_button_1.set_pointer("fleur")
+      #text_button_1.set_is_shaded()
+      count := 0
+      set_ticker(1000)
+   end
+
+   method tick()
+      count +:= 1
+      if count % 2 = 0 then
+         s := "sb v double arrow"
+      else
+         s := "sb h double arrow"
+      text_button_2.set_pointer(s)
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_close(ev)
+      dispose()
+   end
+
+   method setup()
+      local close_button, list_1
+      self.set_attribs("size=160,231")
+      text_button_1 := TextButton()
+      text_button_1.set_pos("50%", 51)
+      text_button_1.set_align("c", "t")
+      text_button_1.clear_toggles()
+      text_button_1.set_label("Button1")
+      text_button_1.set_internal_alignment("c")
+      self.add(text_button_1)
+      text_button_2 := TextButton()
+      text_button_2.set_pos("50%", 89)
+      text_button_2.set_align("c", "t")
+      text_button_2.clear_toggles()
+      text_button_2.set_label("Button2")
+      text_button_2.set_internal_alignment("c")
+      self.add(text_button_2)
+      text_button_3 := TextButton()
+      text_button_3.set_pos("50%", 128)
+      text_button_3.set_align("c", "t")
+      text_button_3.clear_toggles()
+      text_button_3.set_label("Button3")
+      text_button_3.set_internal_alignment("c")
+      self.add(text_button_3)
+      close_button := TextButton()
+      close_button.set_pos("50%", "181")
+      close_button.set_align("c", "t")
+      close_button.connect(self, "on_close", ACTION_EVENT)
+      close_button.clear_toggles()
+      close_button.set_label("Close")
+      close_button.set_internal_alignment("c")
+      self.add(close_button)
+      list_1 := List()
+      list_1.set_pos("50%", "10")
+      list_1.set_size("100", )
+      list_1.set_align("c", "t")
+      list_1.set_selection_list(["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"])
+      self.add(list_1)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+procedure main()
+   local d
+   d := Untitled()
+   d.show_modal()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|2|string|list|integer|1|str
+#ing|text_button|integer|4|SuperClass Name|string|Dialog|Import Name|st
+#ring|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|li
+#st|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|li
+#st|0|Gen Indent|integer|3|Gen Main|integer|1|Gen Component Setup|integ
+#er|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|c
+#lass|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs
+#|list|0|Name|string|Untitled|Width|integer|160|Height|integer|231|Item
+#s|list|5|class|CanvasTextButton|36|Parent Canvas|1|Name|string|text_bu
+#tton_1|Class Name|string|TextButton|Import Name|string|gui|X Fix|integ
+#er|1|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|in
+#teger|1|X Spec|string|50%|Y Spec|integer|51|W Spec|integer|58|H Spec|i
+#nteger|23|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button S
+#ubclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|n
+#ull|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|
+#Label|string|Button1|No Keyboard|null|Img Up|null|Img Down|null|Img Wi
+#dth|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Pa
+#rent CheckBoxGroup|null|Parent Button Group|null|Internal Align|string
+#|c|class|CanvasTextButton|36|Parent Canvas|1|Name|string|text_button_2
+#|Class Name|string|TextButton|Import Name|string|gui|X Fix|integer|1|Y
+# Fix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|
+#1|X Spec|string|50%|Y Spec|integer|89|W Spec|integer|58|H Spec|integer
+#|23|X Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclas
+#s|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Ev
+#ent Handlers|list|0|Class Variable|integer|1|Parent Component|1|Label|
+#string|Button2|No Keyboard|null|Img Up|null|Img Down|null|Img Width|nu
+#ll|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent C
+#heckBoxGroup|null|Parent Button Group|null|Internal Align|string|c|cla
+#ss|CanvasTextButton|36|Parent Canvas|1|Name|string|text_button_3|Class
+# Name|string|TextButton|Import Name|string|gui|X Fix|integer|1|Y Fix|n
+#ull|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Sp
+#ec|string|50%|Y Spec|integer|128|W Spec|integer|58|H Spec|integer|23|X
+# Align|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|int
+#eger|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event H
+#andlers|list|0|Class Variable|integer|1|Parent Component|1|Label|strin
+#g|Button3|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Im
+#g Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckB
+#oxGroup|null|Parent Button Group|null|Internal Align|string|c|class|Ca
+#nvasTextButton|36|Parent Canvas|1|Name|string|close_button|Class Name|
+#string|TextButton|Import Name|string|gui|X Fix|integer|1|Y Fix|null|W 
+#Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|str
+#ing|50%|Y Spec|string|181|W Spec|integer|46|H Spec|integer|23|X Align|
+#string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|
+#Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers
+#|list|1|list|2|string|ACTION_EVENT|string|on_close|Class Variable|null
+#|Parent Component|1|Label|string|Close|No Keyboard|null|Img Up|null|Im
+#g Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Che
+#ckbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|Int
+#ernal Align|string|c|class|CanvasList|28|Parent Canvas|1|Name|string|l
+#ist_1|Class Name|string|List|Import Name|string|gui|X Fix|integer|1|Y 
+#Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|integer|1|X Sp
+#ec|string|50%|Y Spec|string|10|W Spec|string|100|H Spec|integer|23|X A
+#lign|string|c|Y Align|string|t|Is shaded|null|Is Button Subclass|null|
+#Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers
+#|list|0|Class Variable|null|Parent Component|1|Constant Label|null|Sel
+#ection|integer|1|Selection List|list|10|string|one|string|two|string|t
+#hree|string|four|string|five|string|six|string|seven|string|eight|stri
+#ng|nine|string|ten|Initial Focus|null|Event Handlers|null|

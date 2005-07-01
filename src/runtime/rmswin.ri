@@ -303,7 +303,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    ws->is_3D = wc->is_3D = is_3d;
 
    if (is_3d) {
-     if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
+     if ((ws->funclist.vword.bptr = (union block *)alclist(0, 8192)) == NULL)
      return NULL;
      ws->funclist.dword = D_List;
    }
@@ -331,9 +331,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 
    if (ws->posx < 0) ws->posx = 0;
    if (ws->posy < 0) ws->posy = 0;
-#ifdef Graphics3D
    ws->no = 0;
-#endif					/* Graphics3D */
    ws->children = NULL;
    ws->parent = NULL;
 
@@ -341,9 +339,11 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
     * create the window
     */
    winstyles=(ISTITLEBAR(ws)?WS_OVERLAPPEDWINDOW:(WS_DLGFRAME|WS_THICKFRAME));
+/*
    winstyles |= WS_CLIPCHILDREN;
    if (!ISTOBEHIDDEN(ws))
       winstyles |= WS_VISIBLE;
+*/
    ws->iconwin = CreateWindow( "iconx", ws->windowlabel,
 		   winstyles,
 		   ws->posx, ws->posy,
@@ -590,6 +590,7 @@ void handle_child(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    }
    t = GetMessageTime();
    qevent(ws, &d, x, y, t, flags);
+
    if (ws->focusChild)
       SetFocus(ws->focusChild);
    else if (ws->win)
@@ -3931,8 +3932,10 @@ int status;
       glViewport(0, 0, (GLsizei)wid, (GLsizei)ht);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      glFrustum(-0.125, 0.125, -0.125*ws->width/ws->height,
-                0.125*ws->width/ws->height, .25, 50000.0);
+      {
+      double tb = 0.125 * ws->height / ws->width;
+      glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
+      }
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
       redraw3D(w);
@@ -4481,6 +4484,7 @@ void setchildselection(wsp ws, childcontrol *cc, int x, int y)
       SendMessage(cc->win, EM_LINESCROLL, 0, iLine-topLine);
       }
    SendMessage(cc->win, EM_SETSEL, x - 1, y - 1);
+
    SetFocus(cc->win);
    ws->focusChild = cc->win;
 }
@@ -4747,10 +4751,8 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
   curr->next = wp->window->children;
   wp->window->children = curr;
   w->refcount++;
-#ifdef Graphics3D
   wp->window->no++;
   ws->no = wp->window->no;
-#endif					/* Graphics3D */
   return 1;
 }
 
@@ -4806,11 +4808,7 @@ char my_wmap(wbp w)
 		   ws->height == 0 ? 400: ws->height,
 			       /*		   NULL, NULL, mswinInstance, NULL); */
 		   ws->parent->window->win,
-#ifdef Graphics3D
 			      (HMENU) (int) ws->no,
-#else					/* Graphics3D */
-			      (HMENU) 0,
-#endif					/* Graphics3D */
 			      mswinInstance, NULL);
    hdc = GetDC(ws->iconwin);
    if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors == 0)){
@@ -4983,8 +4981,10 @@ char my_wmap(wbp w)
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
-             0.125 * ws->height / ws->width, .25, 50000.0);
+   {
+   double tb = 0.125 * ws->height / ws->width;
+   glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
+   }
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    }

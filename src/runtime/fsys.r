@@ -112,6 +112,9 @@ function{1} close(f)
       }
 
    body {
+#ifdef HAVE_VOICE
+	PVSESSION Ptr;
+#endif					/* HAVE_VOICE */
       FILE *fp = BlkLoc(f)->file.fd.fp;
       int status = BlkLoc(f)->file.status;
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
@@ -189,6 +192,15 @@ function{1} close(f)
 	 }
       else
 #endif					/* Graphics */
+#ifdef HAVE_VOICE
+	if(BlkLoc(f)->file.status & Fs_Voice) {
+	/* PVSESSION Ptr; */
+	Ptr = (PVSESSION)BlkLoc(f)->file.fd.fp;
+	CloseVoiceSession(Ptr);
+	return C_integer 1;
+	}
+	else
+#endif					/* HAVE_VOICE */
 
 #if NT
 #ifndef NTGCC
@@ -515,6 +527,16 @@ Deliberate Syntax Error
 	       fail;
 #endif 					/* ISQL */
 
+	    case 'v':
+	    case 'V':
+#ifdef HAVE_VOICE
+	       status |= Fs_Voice;
+	       continue;
+
+#else 					/* HAVE_VOICE */
+	       fail;
+#endif 					/* HAVE_VOICE */
+
             case 'z':
 	    case 'Z':
 
@@ -759,6 +781,30 @@ Deliberate Syntax Error
       }
    else
 #endif					/* ISQL */
+
+#ifdef HAVE_VOICE
+   if (status & Fs_Voice) {
+      /* check arguments, number and type */
+      /* attr[0] is a destination */
+      if( n > 0){
+      	tended char *tmps; 
+      	
+	if (is:null(attr[0])) 
+		attr[0] = emptystr;
+	
+	if (!is:string(attr[0])) 
+		runerr(109, attr[0]);
+	
+	if (cnv:C_string(attr[0], tmps))
+		f = (FILE*) CreateVoiceSession(fnamestr,tmps);
+	else
+		fail;
+      }
+      else
+      	f = (FILE*) CreateVoiceSession(fnamestr,NULL);
+      }
+   else
+#endif					/* HAVE_VOICE */
 
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
       if (status & Fs_Pipe) {

@@ -80,6 +80,10 @@
    #define Fs_Compress  02000000	/* reading/writing compressed file */
 #endif					/* HAVE_LIBZ */
 
+#ifdef HAVE_VOICE
+   #define Fs_Voice  04000000		/* voice/audio connection */
+#endif					/* HAVE_VOICE */
+
 #ifdef Graphics
    #define XKey_Window 0
    #define XKey_Fg 1

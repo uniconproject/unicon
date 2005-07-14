@@ -170,3 +170,11 @@
 #ifdef ISQL
    Feature(1, "_SQL", "SQL via ODBC")
 #endif					/* ISQL */
+
+#ifdef HAVE_LIBOGG
+   Feature(1, "_AUDIO", "Audio: Ogg/Vorbis and OpenAL")
+#endif					/* ISQL */
+
+#ifdef HAVE_VOICE
+   Feature(1, "_VOIP", "Voice Over IP")
+#endif					/* HAVE_VOICE */

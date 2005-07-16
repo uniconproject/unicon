@@ -1,0 +1,32 @@
+#
+# Makefile for libaudio.a on MS Windows using gcc
+#
+
+CC=gcc
+CXX=g++
+INC= -I include 
+
+ARCHIVE 	= libaudio.a
+ARFLAGS 	= qc
+OBJECTS		= woggvorb.o audio.o
+
+
+all: staticlib
+
+staticlib: $(ARCHIVE)
+
+$(ARCHIVE): $(OBJECTS)
+	rm -f $(ARCHIVE)
+	ar $(ARFLAGS) $(ARCHIVE) $(OBJECTS)
+	cp $(ARCHIVE) ../../../bin
+	rm *.o
+
+woggvorb.o:woggvorb.cpp
+	$(CXX) -g -c woggvorb.cpp -o woggvorb.o
+
+audio.o: audio.c woggvorb.cpp 
+	$(CC) $(INC) -c audio.c -o audio.o
+
+clean:
+	-rm *.o
+	-rm *.a

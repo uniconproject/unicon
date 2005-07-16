@@ -3,7 +3,7 @@
 
 
 CC=gcc
-INC= -I include 
+INC=
 
 LIBRARYNAME	= libaudio
 ARCHIVE 	= $(LIBRARYNAME).a
@@ -21,7 +21,7 @@ $(ARCHIVE): $(OBJECTS)
 	cp $(ARCHIVE) ../../../bin
 	rm *.o
 
-al.o : al.c include/base.h include/config.h
+al.o : al.c base.h config.h
 	$(CC) $(INC) -c al.c
 
 audio.o: audio.c

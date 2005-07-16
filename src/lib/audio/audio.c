@@ -3,10 +3,10 @@
  * OpenAL to play MP3, Ogg Vorbis, and WAV.
  * StartAudioThread(filename) is the main function where
  * filename is any of the three formats.
- *
- * written by Ziad Al-Sharif
- * email: zsharif@cs.nmsu.edu
  */
+#include "../../h/auto.h"
+
+#if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 
 #include "common.h"
 
@@ -188,4 +188,7 @@ struct AudioFile * StartAudioThread(char filename[])
 	}
 	/*exit(0);*/
 }
-/*===========================================================*/
+
+#else
+static char c;
+#endif			/* HAVE_LIBOPENAL && HAVE_LIBSDL && HAVE_LIBSMPEG */

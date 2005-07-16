@@ -460,4 +460,6 @@
 		alcCloseDevice(  dev  );
 		return NULL;
 	}
+#else
+static char c;
 #endif /* HAVE_LIBOPENAL */

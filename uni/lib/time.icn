@@ -1,5 +1,5 @@
 #
-# $Id: time.icn,v 1.3 2004-12-10 19:04:03 rparlett Exp $
+# $Id: time.icn,v 1.4 2005-07-18 20:22:06 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -457,7 +457,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec, zone, ps
    # is always a Saturday
    #
    method week_day()
-      return (6 + self.seconds / 86400) % 7
+      return (6 + (self.seconds + self.zone.get_offset()) / 86400) % 7
    end
 
    #

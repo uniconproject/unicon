@@ -1,5 +1,5 @@
 #
-# $Id: netclient.icn,v 1.6 2005-05-26 10:36:17 rparlett Exp $
+# $Id: netclient.icn,v 1.7 2005-07-20 18:04:11 rparlett Exp $
 #
 
 package net
@@ -81,20 +81,26 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
    #
    # @p
    method send(s)
-      local t
+      local i, t
 
       if /timeout | (timeout = 0) then
-         return writes(connection, s)
+         return syswrite(connection, s)
 
       fcntl(connection, "F", "d")
       t := curr_time_millis()
-      repeat {
-         if writes(connection,s) then
-            return
-         if curr_time_millis() - t > timeout then
-            return error("Send timed out")
-         sleep(50)
+      while *s > 0 do {
+         if i := syswrite(connection, s) then {
+            s := s[i+1 : 0]
+            t := curr_time_millis()
+         } else {
+            if &errno ~= EAGAIN then
+               return error("Failed to write:" || strerror())
+            if curr_time_millis() - t > timeout then
+               return error("Send timed out")
+            sleep(50)
+         }
       }
+      return
    end
 
    #

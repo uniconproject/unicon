@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.38 2005-06-22 10:14:24 jeffery Exp $
+ * $Id: fxposix.ri,v 1.39 2005-07-20 18:01:31 rparlett Exp $
  */
 
 /*
@@ -2670,6 +2670,52 @@ function{0, 1} sysread(f, i)
       if (u_read(fd, i, &desc) == 0)
 	 fail;
       return desc;
+   }
+end
+
+"syswrite() - low level write with no buffering."
+
+function{0, 1} syswrite(f, s)
+   if !cnv:string(s,s) then
+      runerr(103, s)
+
+   if is:null(f) then
+      inline {
+	 f.dword = D_File;
+	 BlkLoc(f) = (union block *)&k_output;
+	 }
+   else if !is:file(f) then
+      runerr(105, f)
+
+   abstract {
+      return integer
+      }
+   body {
+      int status, fd, rc;
+      tended struct descrip desc;
+      status = BlkLoc(f)->file.status;
+
+      if (!status || !(status & Fs_Write) 
+#ifdef Graphics
+      || (status & Fs_Window)
+#endif					/* Graphics */
+          )
+	  runerr(213, f);
+
+      if ((fd = get_fd(f, 0)) < 0)
+	 runerr(174, f);
+      
+      if (status & Fs_Buff)
+	 runerr(1048, f);
+      BlkLoc(f)->file.status = status;
+      
+      IntVal(amperErrno) = 0;
+      rc = write(fd, StrLoc(s), StrLen(s));
+      if (rc < 0) {
+         IntVal(amperErrno) = errno;
+         fail;
+      }
+      return C_integer(rc);
    }
 end
 

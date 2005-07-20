@@ -1,5 +1,5 @@
 #
-# $Id: canvastabsetdialog.icn,v 1.2 2004-05-15 19:17:38 rparlett Exp $
+# $Id: canvastabsetdialog.icn,v 1.3 2005-07-20 13:23:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -23,8 +23,11 @@ class CanvasTabSetDialog : CanvasComponentDialog(
    os,                      #          
    os_on,                   #             
    os_off,                  #              
+   item_var_category0,      # Checkboxes for item variable category
+   item_var_category1,             
+   item_var_category_cbg,        
    col_name,                #                
-   item_shaded,                  #              
+   item_shaded,                                
    which_one                #
    )
 
@@ -42,6 +45,10 @@ class CanvasTabSetDialog : CanvasComponentDialog(
          else
             item_shaded.clear_is_checked()
          col_name.set_contents(new.name)
+         if \new.class_variable then
+            item_var_category_cbg.set_which_one(item_var_category0)
+         else
+            item_var_category_cbg.set_which_one(item_var_category1)
       } else {
          apply.set_is_shaded()
          delete.set_is_shaded()
@@ -78,6 +85,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
          struct.set_selections([nl])
          struct.set_cursor(nl)
       }                              
+      item_var_category_cbg.set_which_one(item_var_category1)
       delete.clear_is_shaded()
       apply.clear_is_shaded()
       which_one.clear_is_shaded()
@@ -93,6 +101,10 @@ class CanvasTabSetDialog : CanvasComponentDialog(
       r.set_label(self.edit_label.get_contents())
       r.is_shaded_flag := item_shaded.get_status()
       r.set_name(col_name.get_contents())
+      r.class_variable := case item_var_category_cbg.get_which_one() of {
+         item_var_category0 : 1
+         item_var_category1 : &null
+      }
       struct.set_contents(c.string_rep())
       struct.clear_selections()
       which_one.set_is_shaded()
@@ -201,32 +213,48 @@ class CanvasTabSetDialog : CanvasComponentDialog(
 
       l := Label()
       l.set_label("Label : ")
-      l.set_pos(20, "25%")
+      l.set_pos(20, 30)
       l.set_align("l", "c")
       b.add(l)
       
       edit_label := TextField()
       edit_label.set_align("l", "c")
-      edit_label.set_pos(70, "25%")
+      edit_label.set_pos(70, 30)
       edit_label.set_size(125)
       b.add(edit_label)
 
       item_shaded := CheckBox()
       item_shaded.set_label("Is shaded")
-      item_shaded.set_pos(20, "50%")
+      item_shaded.set_pos(20, 65)
       item_shaded.set_align("l", "c")
       b.add(item_shaded)
 
       l := Label()
       l.set_label("Name :")
-      l.set_pos(20, "75%")
+      l.set_pos(20, 100)
       l.set_align("l", "c")
       b.add(l)
 
       col_name := TextField()
       col_name.set_size(125)
-      col_name.set_pos(70, "75%")
+      col_name.set_pos(70, 100)
       col_name.set_align("l", "c")
       b.add(col_name)
+
+      item_var_category_cbg := CheckBoxGroup()
+
+      item_var_category0 := CheckBox()
+      item_var_category0.set_label("Class variable")
+      item_var_category0.set_pos(20, 145)
+      item_var_category0.set_align("l", "c")
+      item_var_category_cbg.add(item_var_category0)
+      b.add(item_var_category0)
+
+      item_var_category1 := CheckBox()
+      item_var_category1.set_label("Local variable")
+      item_var_category1.set_pos(20, 165)
+      item_var_category1.set_align("l", "c")
+      item_var_category_cbg.add(item_var_category1)
+      b.add(item_var_category1)
 
 end

@@ -1,5 +1,5 @@
 #
-# $Id: canvastabledialog.icn,v 1.2 2004-05-15 19:17:38 rparlett Exp $
+# $Id: canvastabledialog.icn,v 1.3 2005-07-20 13:23:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -25,6 +25,9 @@ class CanvasTableDialog : CanvasComponentDialog(
    os,                      #          
    os_on,                   #             
    os_off,                  #              
+   col_var_category0,       # Checkboxes for column variable category
+   col_var_category1,       #  
+   col_var_category_cbg,    #
    internal_alignment_list, #                               
    col_name,                #
    select_group             #
@@ -43,6 +46,10 @@ class CanvasTableDialog : CanvasComponentDialog(
             "c" : 1
             "l" : 2
             "r" : 3 })
+         if \new.class_variable then
+            col_var_category_cbg.set_which_one(col_var_category0)
+         else
+            col_var_category_cbg.set_which_one(col_var_category1)
       } else {
          apply.set_is_shaded()
          delete.set_is_shaded()
@@ -79,6 +86,7 @@ class CanvasTableDialog : CanvasComponentDialog(
          struct.set_selections([nl])
          struct.set_cursor(nl)
       }                              
+      col_var_category_cbg.set_which_one(col_var_category1)
       delete.clear_is_shaded()
       apply.clear_is_shaded()
       os.set_which_one(os_on)
@@ -102,6 +110,10 @@ class CanvasTableDialog : CanvasComponentDialog(
       r.set_column_width(integer(self.size.get_contents()))
       r.set_internal_alignment(internal_alignment_list[internal_alignment.get_selection()])
       r.set_name(col_name.get_contents())
+      r.class_variable := case col_var_category_cbg.get_which_one() of {
+         col_var_category0 : 1
+         col_var_category1 : &null
+      }
       struct.set_contents(c.string_rep())
       struct.clear_selections()
       delete.set_is_shaded()
@@ -218,36 +230,36 @@ class CanvasTableDialog : CanvasComponentDialog(
 
       l := Label()
       l.set_label("Label : ")
-      l.set_pos(20, "20%")
+      l.set_pos(20, 25)
       l.set_align("l", "c")
       b.add(l)
       
       edit_label := TextField()
       edit_label.set_align("l", "c")
-      edit_label.set_pos(70, "20%")
+      edit_label.set_pos(70, 25)
       edit_label.set_size(100)
       b.add(edit_label)
 
       l := Label()
       l.set_label("Width : ")
-      l.set_pos(20, "40%")
+      l.set_pos(20, 60)
       l.set_align("l", "c")
       b.add(l)
       
       size := TextField()
       size.set_align("l", "c")
-      size.set_pos(70, "40%")
+      size.set_pos(70, 60)
       size.set_size(100)
       b.add(size)
 
       l := Label()
       l.set_label("Align : ")
-      l.set_pos(20, "60%")
+      l.set_pos(20, 95)
       l.set_align("l", "c")
       b.add(l)
 
       internal_alignment := List()
-      internal_alignment.set_pos(70, "60%")
+      internal_alignment.set_pos(70, 95)
       internal_alignment.set_size(50)
       internal_alignment.set_align("l", "c")
       internal_alignment.set_selection_list(internal_alignment_list)
@@ -255,15 +267,31 @@ class CanvasTableDialog : CanvasComponentDialog(
 
       l := Label()
       l.set_label("Name :")
-      l.set_pos(20, "80%")
+      l.set_pos(20, 130)
       l.set_align("l", "c")
       b.add(l)
 
       col_name := TextField()
       col_name.set_size(100)
-      col_name.set_pos(70, "80%")
+      col_name.set_pos(70, 130)
       col_name.set_align("l", "c")
       b.add(col_name)
+
+      col_var_category_cbg := CheckBoxGroup()
+
+      col_var_category0 := CheckBox()
+      col_var_category0.set_label("Class variable")
+      col_var_category0.set_pos(20, 170)
+      col_var_category0.set_align("l", "c")
+      col_var_category_cbg.add(col_var_category0)
+      b.add(col_var_category0)
+
+      col_var_category1 := CheckBox()
+      col_var_category1.set_label("Local variable")
+      col_var_category1.set_pos(20, 190)
+      col_var_category1.set_align("l", "c")
+      col_var_category_cbg.add(col_var_category1)
+      b.add(col_var_category1)
 
       p := TabItem()
       add_tab(p)

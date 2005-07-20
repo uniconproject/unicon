@@ -1,5 +1,5 @@
 #
-# $Id: canvasoverlaysetdialog.icn,v 1.2 2004-05-15 19:17:38 rparlett Exp $
+# $Id: canvasoverlaysetdialog.icn,v 1.3 2005-07-20 13:23:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -22,6 +22,9 @@ class CanvasOverlaySetDialog : CanvasComponentDialog(
    os,                      #          
    os_on,                   #             
    os_off,                  #              
+   item_var_category0,      # Checkboxes for item variable category
+   item_var_category1,           
+   item_var_category_cbg,        
    col_name,                #                
    which_one                #
    )
@@ -35,6 +38,10 @@ class CanvasOverlaySetDialog : CanvasComponentDialog(
          which_one.clear_is_shaded()
          os.set_which_one(os_on)
          col_name.set_contents(new.name)
+         if \new.class_variable then
+            item_var_category_cbg.set_which_one(item_var_category0)
+         else
+            item_var_category_cbg.set_which_one(item_var_category1)
       } else {
          apply.set_is_shaded()
          which_one.set_is_shaded()
@@ -70,6 +77,7 @@ class CanvasOverlaySetDialog : CanvasComponentDialog(
          struct.set_selections([nl])
          struct.set_cursor(nl)
       }                              
+      item_var_category_cbg.set_which_one(item_var_category1)
       delete.clear_is_shaded()
       apply.clear_is_shaded()
       which_one.clear_is_shaded()
@@ -80,6 +88,10 @@ class CanvasOverlaySetDialog : CanvasComponentDialog(
    method on_apply()
       r := c.children[struct.get_selections()[1]]
       r.set_name(col_name.get_contents())
+      r.class_variable := case item_var_category_cbg.get_which_one() of {
+         item_var_category0 : 1
+         item_var_category1 : &null
+      }
       struct.set_contents(c.string_rep())
       struct.clear_selections()
       which_one.set_is_shaded()
@@ -188,14 +200,30 @@ class CanvasOverlaySetDialog : CanvasComponentDialog(
 
       l := Label()
       l.set_label("Name :")
-      l.set_pos(20, "50%")
+      l.set_pos(20, 50)
       l.set_align("l", "c")
       b.add(l)
 
       col_name := TextField()
       col_name.set_size(125)
-      col_name.set_pos(70, "50%")
+      col_name.set_pos(70, 50)
       col_name.set_align("l", "c")
       b.add(col_name)
+
+      item_var_category_cbg := CheckBoxGroup()
+
+      item_var_category0 := CheckBox()
+      item_var_category0.set_label("Class variable")
+      item_var_category0.set_pos(20, 105)
+      item_var_category0.set_align("l", "c")
+      item_var_category_cbg.add(item_var_category0)
+      b.add(item_var_category0)
+
+      item_var_category1 := CheckBox()
+      item_var_category1.set_label("Local variable")
+      item_var_category1.set_pos(20, 125)
+      item_var_category1.set_align("l", "c")
+      item_var_category_cbg.add(item_var_category1)
+      b.add(item_var_category1)
 
 end

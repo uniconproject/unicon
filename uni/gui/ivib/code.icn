@@ -1,5 +1,5 @@
 #
-# $Id: code.icn,v 1.5 2004-12-30 10:58:24 rparlett Exp $
+# $Id: code.icn,v 1.6 2005-07-20 13:21:57 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -222,36 +222,21 @@ class Code(
          s ? {
             tab(many(' '))
             if ="class " then {
-               #
-               # Update the classname if needed.
-               #
-               tab(many(' '))
-               class_name := tab(many(idchars))
-               if \class_name ~== self.parent_Canvas.name then {
-                  s[&pos -: *class_name] := self.parent_Canvas.name
-               }
+               s := "class " || self.parent_Canvas.name || " : " || 
+                  self.parent_Canvas.superclass_name || "("
 
-               #
-               # Update the superclass name if needed.
-               #
-               tab(many(' :'))
-               superclass_name := tab(many(idchars))
-               if \superclass_name ~== self.parent_Canvas.superclass_name then {
-                  s[&pos -: *superclass_name] := self.parent_Canvas.superclass_name
-               }
+               tab(upto('('))
+               move(1)
 
                #
                # Add any new class vars.
                #
                if *class_vars > 0 then {
-                  tab(upto('('))
-                  move(1)
-                  t := ""
-                  every t ||:= !sort(class_vars) || ", "
+                  every s ||:= !sort(class_vars) || ", "
                   if any(')') then
-                     t[-2:0] := ""
-                  s[&pos - 1] ||:= t
+                     s[-2:0] := ""
                }
+               s ||:= tab(0)
             }
             write(f, s)
          }

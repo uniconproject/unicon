@@ -1,5 +1,5 @@
 #
-# $Id: smtpclient.icn,v 1.3 2004-06-30 10:36:58 rparlett Exp $
+# $Id: smtpclient.icn,v 1.4 2005-07-20 18:02:54 rparlett Exp $
 #
 
 package mail
@@ -11,7 +11,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
       hostname := s
    end
 
-   method connect()
+   method open_connection()
       local s
       open() | fail
       sent_helo := &null
@@ -21,7 +21,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
       return connection
    end
 
-   method disconnect()
+   method close_connection()
       send_command("QUIT", 221) | fail
       close() | fail
       return
@@ -75,13 +75,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
    end
 
    method send_command(msg, reply)
-      if \logging then
-         write("Sending ", msg)
-
       write_line(msg)
-
-      if \logging then
-         write("Expecting ", reply)
 
       s := read_response() | fail
 

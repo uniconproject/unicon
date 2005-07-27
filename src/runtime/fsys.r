@@ -822,11 +822,14 @@ Deliberate Syntax Error
 	    strcat(fnamestr, s+1);
 	    }
 	 f = popen(fnamestr, mode);
-	 if (!strcmp(mode,"r") && ((c = getc(f)) == EOF)) {
-	    pclose(f);
-	    fail;
+	 if (!strcmp(mode,"r")) {
+	    if ((c = getc(f)) == EOF) {
+	       pclose(f);
+	       fail;
+	       }
+	    else
+	       ungetc(c, f);
 	    }
-	 ungetc(c, f);
 	 }
       else
 #endif					/* AMIGA || ARM || OS2 || ... */

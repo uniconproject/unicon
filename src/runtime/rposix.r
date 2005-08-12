@@ -7,7 +7,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.29 2005-06-24 09:13:44 jeffery Exp $
+ * $Id: rposix.r,v 1.30 2005-08-12 06:20:06 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -754,7 +754,7 @@ static void sock_put (char *, int);
  * All because for UDP connect/send doesn't do what sendto does. (At least
  * on Linux 2.0.36)
  */
-struct sockaddr_in saddrs[128];
+struct sockaddr_in *saddrs;
 
 #if !defined(MAXHOSTNAMELEN)
 #define MAXHOSTNAMELEN 32
@@ -867,6 +867,11 @@ int sock_connect(char *fn, int is_udp, int timeout)
    /* We don't connect UDP sockets but always use sendto(2). */
    if (is_udp) {
       /* save the sockaddr struct */
+      saddrs = realloc(saddrs, (s+1) * (sizeof(struct sockaddr_in)));
+      if (saddrs == NULL) {
+	 close(s);
+	 return 0;
+	 }
       saddrs[s] = saddr_in;
       return s;
       }

@@ -67,7 +67,7 @@ end
 # Preprocesses a file, generating output lines.
 #
 procedure preprocessor(fname,predefined_syms)
-    local line,result
+    local line,result, tmppos
     static nonpunctuation
     initial {
         nonpunctuation := &letters ++ &digits ++ ' \t\f\r'
@@ -77,7 +77,8 @@ procedure preprocessor(fname,predefined_syms)
     
     while line := preproc_read() do line ? {
         preproc_space()
-        if ="#" & match("line") then {
+        if ="#" & tmppos := &pos & ="line" & tab(any(' \t')) then {
+	    &pos := tmppos
             suspend preproc_scan_directive()
         }
         if ="$" & any(nonpunctuation) then {
@@ -318,7 +319,7 @@ procedure preproc_scan_text(done_set)
                             suspend preproc_sync_lines()
                             suspend if q = 1 then .&subject else
                                     result || &subject[q:0]
-                            if not match("_",,-1) then {
+                            if not match("_",trim(&subject),-1) then {
                                 break
                             }
                             &subject := preproc_read() | fail

@@ -445,15 +445,16 @@ procedure do_literal()
 		     }
 		  }
 		  if yytext[-1] == "\n" then {
-		      if not (yytext[-2] == "_") then {
-			  yytext := yytext[1:-1]
+		      # discard newline. discard trailing whitespace.
+		      yytext := trim(yytext[1:-1])
+		      yylineno +:= 1
+		      yycolno := 1
+		      if not (yytext[-1] == "_") then {
 			  uni_error("unterminated string constant")
 			  break
 		      }
 		      else {
-			  yytext := yytext[1:-2]
-			  yylineno +:= 1
-			  yycolno := 1
+			  yytext := yytext[1:-1] # discard _
 			  if eat := tab(many(' \t')) then {
 			      every s := !eat do {
 				 yycolno +:= 1

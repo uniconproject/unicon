@@ -81,6 +81,10 @@ int bsizes[] = {
      -1,                      /* T_Kywdwin (23), keyword &window */
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
+#ifdef PatternType
+     sizeof(struct b_pattern),   /* T_Pattern (26), pattern block */
+     sizeof(struct b_pelem),   /* T_Pattern (27), pattern element */    
+#endif					/* PatternType */
     };
 
 /*
@@ -126,6 +130,10 @@ int firstd[] = {
      -1,                      /* T_Kywdwin (23), keyword &window */
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
+#ifdef PatternType
+    0,              /* T_Pattern (26), pattern block */
+    3*WordSize,              /* T_Pelem (27), pattern element */
+#endif					/* PatternType */
     };
 
 /*
@@ -159,6 +167,10 @@ int firstp[] = {
      -1,                      /* T_Kywdwin (23), keyword &window */
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
+#ifdef PatternType
+    3*WordSize,               /* T_Pattern(26) pattern block*/
+    2*WordSize,               /* T_Pelem(26) pattern element block*/
+#endif					/* PatternType */
     };
 
 /*
@@ -192,6 +204,10 @@ int ptrno[] = {
     -1,                       /* T_Kywdwin (23), keyword &window */
     -1,                       /* T_Kywdstr (24), string keyword variable */
     -1,                       /* T_Kywdevent (25), event keyword variable */
+#ifdef PatternType
+     1,                       /* T_Pattern (26), pattern block */
+     1,                       /* T_Pelem (26), pattern element block */
+#endif					/* PatternType */
     };
 
 /*
@@ -224,6 +240,10 @@ char *blkname[] = {
    "illegal object",                    /* T_Kywdwin (23) */
    "illegal object",                    /* T_Kywdstr (24) */
    "illegal object",                    /* T_Kywdevent (25) */
+#ifdef PatternType
+   "pattern",                           /* T_Pattern (26) */
+   "pattern element",                   /* T_Pelem (27) */
+#endif					/* PatternType */
    };
 
 /*

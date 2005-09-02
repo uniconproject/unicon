@@ -27,4 +27,8 @@
 #include "fxaudio.ri"
 #endif					/* Audio/VOIP functions */
 	
+#ifdef PatternType
+#include "fxpattrn.ri"
+#endif					/* (Snobol-style) Pattern data type */
+	
 static char junk;			/* avoid empty module */

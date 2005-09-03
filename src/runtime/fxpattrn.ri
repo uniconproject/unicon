@@ -1,0 +1,2896 @@
+#ifdef PatternType
+
+#include "../h/opdefs.h"
+
+enum pattern_codes{
+   PC_Arb_Y = 0,
+   PC_Assign = 1,
+   PC_Bal = 2,
+   PC_BreakX_X = 3,
+   PC_Cancel = 4,
+   PC_EOP = 5,
+   PC_Fail = 6,
+   PC_Fence = 7,
+   PC_Fence_X = 8,
+   PC_Fence_Y = 9,
+   PC_R_Enter = 10,
+   PC_R_Remove = 11,
+   PC_R_Restore = 12,
+   PC_Rest = 13,
+   PC_Succeed = 14,
+   PC_Unanchored = 15,
+
+   PC_Alt = 16,
+   PC_Arb_X = 17,
+   PC_Arbno_S = 18,
+   PC_Arbno_X = 19,
+
+   PC_Rpat = 20,
+
+   PC_Pred_Func = 21,
+
+   PC_Assign_Imm = 22,
+   PC_Assign_OnM = 23,
+   PC_Any_VP = 24,
+   PC_Break_VP = 25,
+   PC_BreakX_VP = 26,
+   PC_NotAny_VP = 27,
+   PC_NSpan_VP = 28,
+   PC_Span_VP = 29,
+   PC_String_VP = 30,
+
+   PC_Write_Imm = 31,
+   PC_Write_OnM = 32,
+
+   PC_Null = 33,
+   PC_String = 34,
+
+   PC_String_2 = 35,
+   PC_String_3 = 36,
+   PC_String_4 = 37,
+   PC_String_5 = 38,
+   PC_String_6 = 39,
+
+   PC_Setcur = 40,
+
+   PC_Any_CH = 41,
+   PC_Break_CH = 42,
+   PC_BreakX_CH = 43,
+   PC_Char = 44,
+   PC_NotAny_CH = 45,
+   PC_NSpan_CH = 46,
+   PC_Span_CH = 47,
+
+   PC_Any_CS = 48,
+   PC_Break_CS = 49,
+   PC_BreakX_CS = 50,
+   PC_NotAny_CS = 51,
+   PC_NSpan_CS = 52,
+   PC_Span_CS = 53,
+
+   PC_Arbno_Y = 54,
+   PC_Len_Nat = 55,
+   PC_Pos_Nat = 56,
+   PC_RPos_Nat = 57,
+   PC_RTab_Nat = 58,
+   PC_Tab_Nat = 59,
+
+   PC_Pos_NF = 60,
+   PC_Len_NF = 61,
+   PC_RPos_NF = 62,
+   PC_RTab_NF = 63,
+   PC_Tab_NF = 64,
+
+   PC_Pos_NP = 65,
+   PC_Len_NP = 66,
+   PC_RPos_NP = 67,
+   PC_RTab_NP = 68,
+   PC_Tab_NP = 69,
+
+   PC_Any_VF = 70,
+   PC_Break_VF = 71,
+   PC_BreakX_VF = 72,
+   PC_NotAny_VF = 73,
+   PC_NSpan_VF = 74,
+   PC_Span_VF = 75,
+   PC_String_VF = 76,
+   PC_Func = 77,
+
+   /*
+    * These constants are added because of the way "unevaluated expressions"
+    * are handled in unicon During the pattern construction process pattern
+    * elements containing unevaluated expressions contain their string
+    * representations. In the procedure pattern_match these string names are
+    * resolved to the corresponding variable references.
+    */
+
+   PC_UNEVALVAR = 78,
+   PC_UNEVALFIELD = 79,
+   PC_STRINGFUNCCALL = 80,
+   PC_BOOLFUNCCALL = 81,
+   PC_STRINGMETHODCALL = 82,
+   PC_BOOLMETHODCALL = 83,
+   PC_String_MF = 84,
+   PC_Pred_MF = 85,
+   PC_Pos_NMF = 86,
+   PC_Len_NMF = 87,
+   PC_RPos_NMF = 88,
+   PC_RTab_NMF = 89,
+   PC_Tab_NMF = 90,
+   PC_Any_MF = 91,
+   PC_Break_MF = 92,
+   PC_BreakX_MF = 93,
+   PC_NotAny_MF = 94,
+   PC_NSpan_MF = 95,
+   PC_Span_MF = 96
+};
+
+#define PRINTF_DEBUG 1
+#ifdef PRINTF_DEBUG
+#define DEBUGF(lev, x) if (lev <= PRINTF_DEBUG) fprintf x
+#else  /* DEBUG not defined */
+#define DEBUGF(lev, x)
+#endif /* DEBUG not defined */
+
+
+
+int internal_match(char * pat_sub, int Length, int Pat_S,
+		struct b_pelem * pattern, int *Start, int *Stop,
+		int initial_cursor );
+static void cnv_str_pattern(dptr s, dptr p);
+static void cnv_cset_pattern(dptr s, dptr p);
+
+static void * checked_calloc(size_t nelem, size_t elsize)
+{
+   void *retval = calloc(nelem,elsize);
+   if (retval == NULL) {
+      fprintf(stdout, "Fatal error out of memory");
+      fatalerr(0, NULL);
+      }
+   else
+      return retval;
+}
+
+
+static struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
+
+
+union block *pattern_make(int stck_size, struct b_pelem * pnext,
+		int pattern_code, int index, struct descrip param)
+{
+   struct b_pattern * pattern;
+   tended struct b_pelem *lpnext = pnext;
+   tended struct b_pelem *pelem = alcpelem(pattern_code);
+   tended struct descrip lparam = param;
+   tended union block * bp = (union block *)alcpattern(stck_size);
+   pelem->pthen = (union block *) lpnext;
+   pelem->parameter = lparam;
+   pelem->index = index;
+   pattern = (struct b_pattern *)bp;
+   pattern->pe = (union block *)pelem;
+   return bp;
+}
+
+union block *pattern_make_pelem(int stck_size, struct b_pelem * pe)
+{
+   struct b_pattern * pattern;
+   tended union block * bp;
+   tended struct b_pelem *lpe = pe;
+   bp = (union block *)alcpattern(stck_size);
+   pattern = (struct b_pattern *)bp;
+   pattern->pe = (union block *)lpe;
+   return bp;
+}
+
+union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
+			struct descrip param)
+{
+   struct b_pelem *pelem;
+   tended union block * bp;
+   tended struct b_pelem *lpnext = pnext;
+   tended struct descrip lparam = param;
+   bp = (union block *)alcpelem(pattern_code);
+   pelem  = (struct b_pelem *)bp;
+   pelem->pthen =(union block *) lpnext;
+   pelem->parameter = lparam;
+   pelem->index = index;
+   return bp;
+}
+
+union block *pelem_copy(struct b_pelem * p2copy)
+{
+   struct b_pelem *pelem;
+   tended union block * bp;
+   tended struct b_pelem *lp2copy = p2copy;
+   bp = (union block *)alcpelem(lp2copy->pcode);
+   pelem  = (struct b_pelem *)bp;
+   pelem->pthen = lp2copy->pthen;
+   pelem->parameter = lp2copy->parameter;
+   pelem->index = lp2copy->index;
+   return bp;
+}
+
+#begdef Has_Alt(pcode)
+(
+(pcode == PC_Alt) ||
+(pcode == PC_Arb_X) ||
+(pcode == PC_Arbno_S)||
+(pcode == PC_Arbno_X)
+)
+#enddef
+
+void Record_PE (struct b_pelem * E, struct b_pelem *RA[])
+{
+   DEBUGF(20, (stdout,"  Record_PE called\n"));
+   if (E ==  &EOP || RA[E->index] != NULL){
+      DEBUGF(20, (stdout," nothing to do\n"));
+      return;
+      }
+   else {
+      DEBUGF(20, (stdout," recording %d\n",E->index));
+      RA[E->index] = E;
+      Record_PE ((struct b_pelem *)E->pthen, RA);
+      if (Has_Alt(E->pcode))
+	 Record_PE ((struct b_pelem *)BlkLoc(E->parameter),RA);
+      }
+}
+
+void Build_Ref_Array(struct b_pelem * E, struct b_pelem *RA[] )
+{
+   DEBUGF(20,(stdout, "\nEntering Build_Ref_Array\n"));
+   Record_PE(E, RA);
+}
+
+
+void VariableLookupFailed(char * varname)
+{
+   fprintf(stdout, "failed to lookup variable name=%s\n",varname);
+   fatalerr(0,NULL);
+}
+
+/*
+ *  ----------
+ *  -- Resolve References --
+ *  ----------
+ *  Maps identifier names to variable references
+ */
+static struct b_pelem *  ResolveReferences(struct b_pelem * P )
+{
+   if (P == NULL) {
+      DEBUGF(20,(stdout,"Null pointer passed to resolve references"));
+      fatalerr(0, NULL);
+      }
+   else {
+      /*            --  References to elements in P, indexed by Index field */
+      struct b_pelem ** Refs;
+      /*            --  Copies of elements of P, indexed by Index field. */
+      struct b_pelem **Copy;
+      struct b_pelem * E;
+      int J;
+      int RefLen = P->index + 1;
+
+      Refs = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Copy = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+
+      Build_Ref_Array (P, Refs);
+
+      /*
+       * Now copy all nodes
+       */
+      for(J = 1; J < RefLen; J++)
+	 Copy[J] = (struct b_pelem *)pelem_copy(Refs[J]);
+
+      /*
+       * Adjust all internal references
+       */
+      for(J = 1; J < RefLen; J++) {
+	 E = Copy[J];
+	 /*
+	  * Adjust successor pointer to point to copy
+	  */
+	 if (E->pthen !=(union block *) &EOP)
+	    E->pthen =(union block *)
+	       Copy[((struct b_pelem *)(E->pthen))->index];
+	 /*
+	  * Adjust Alt pointer if there is one to point to copy
+	  */
+	 if (Has_Alt(E->pcode) &&
+	     ((struct b_pelem *)(BlkLoc(E->parameter)) != &EOP))
+	    (BlkLoc(E->parameter)) = (union block *)
+	       Copy[((struct b_pelem *)(BlkLoc(E->parameter)))->index];
+	 /*
+	  * Resolve references
+	  */
+	 switch(E->pcode){
+	 case PC_Assign_OnM:
+	 case PC_Assign_Imm: {
+	    tended char * varname;				
+	    cnv:C_string(E->parameter, varname);
+	    DEBUGF(2, (stdout, "Looking up assignment variable name =%s\n",
+		       varname));
+
+	    if ( getvar(varname,&E->parameter)== Failed){
+	       VariableLookupFailed(varname);	
+	       }	
+	    break;
+	    }
+	 case PC_Rpat:{
+	    break;
+	    }
+	 case PC_Pred_Func:
+	 case PC_String_VF:{
+	    struct descrip proc;
+	    tended struct b_lelem *elsrc;
+	    tended struct b_lelem *eldest;
+	    int i, nargs;
+	    tended struct b_list *lpsrc;
+	    struct b_list *lpdest;
+	    lpsrc = (struct b_list *)BlkLoc(E->parameter);
+	    lpdest = alclist(lpsrc->size,lpsrc->size);
+	    DEBUGF(20,(stdout, "Resolving function name and parameters"));
+	    nargs = lpsrc->size -1;
+	    elsrc = (struct b_lelem *)lpsrc->listhead;
+	    proc.dword = D_Proc;
+	    BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
+	    if (BlkLoc(proc) == NULL) {
+	       fprintf(stdout, "Unable to find proc");
+	       fatalerr(0, NULL);
+	       }
+	    eldest = (struct b_lelem *)lpdest->listhead;
+	    eldest->lslots[0] = proc;
+	    for (; BlkType(elsrc) == T_Lelem;
+		 elsrc = (struct b_lelem *)elsrc->listnext) {
+	       for (i = 1; i < elsrc->nused; i++) {
+		  tended char * varname;
+		  struct descrip parm;
+	          cnv:C_string(elsrc->lslots[i],varname);
+		  if ( getvar(varname,&parm)== Failed) {
+		     VariableLookupFailed(varname);
+		     }
+		  eldest->lslots[i] = parm;
+		  }
+	       }
+	    E->parameter.dword = D_List;
+	    E->parameter.vword.bptr = (union block *) lpdest;
+	    }
+	    }
+	 }
+      E =  Copy[P->index];
+      free(Refs);
+      free(Copy);
+      return E;
+      }
+}
+
+
+/*
+ * Copy
+ */
+static struct b_pelem *  Copy (struct b_pelem * P )
+{
+   if (P == NULL) {
+      DEBUGF(20,(stdout,"Null pointer passed to copy"));
+      fatalerr(0, NULL);
+      }
+   else {
+      /* References to elements in P, indexed by Index field */
+      struct b_pelem ** Refs;
+      /* Holds copies of elements of P, indexed by Index field. */
+      struct b_pelem **Copy;
+      struct b_pelem * E;
+      int J;
+      int RefLen = P->index + 1;
+
+      Refs = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Copy = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+
+      Build_Ref_Array (P, Refs);
+
+      /* Now copy all nodes */
+      for(J = 1; J < RefLen; J++)
+	 Copy[J] = (struct b_pelem *)pelem_copy(Refs[J]);
+      /* Adjust all internal references */
+      for(J = 1; J < RefLen; J++){
+	 E = Copy[J];
+	 /*
+	  * Adjust successor pointer to point to copy
+	  */
+	 if (E->pthen !=(union block *) &EOP)
+	    E->pthen =(union block *)
+	       Copy[((struct b_pelem *)(E->pthen))->index];
+
+	 /*
+	  * Adjust Alt pointer if there is one to point to copy
+	  */
+	 if (Has_Alt(E->pcode) &&
+	     ((struct b_pelem *)(BlkLoc(E->parameter)) != &EOP))
+	    (BlkLoc(E->parameter)) = (union block *)Copy[((struct b_pelem *)
+					(BlkLoc(E->parameter)))->index];
+	 }
+      E =  Copy[P->index];
+      free(Refs);
+      free(Copy);
+      return E;
+      }
+}
+
+
+struct b_pelem *  Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
+{
+   if (L == &EOP)
+      return R;
+   else if (R == &EOP)
+      return L;
+   else {
+      struct b_pelem **Refs;
+      /*
+       * We build a reference array for L whose N'th element points to
+       * the pattern element of L whose original Index value is N.
+       */
+      struct b_pelem * P ;
+      int J;
+      int RefLen = L->index + 1;
+      Refs=(struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Build_Ref_Array (L, Refs);
+      for (J = 1; J < RefLen;J++) {
+	 P = Refs[J];
+	 P->index += R->index;
+	 if (P->pcode == PC_Arbno_Y){
+	    IntVal(P->parameter) += Incr;
+	    }
+	 if ((struct b_pelem *)P->pthen == &EOP)
+	    P->pthen = (union block *)R;
+	 if (Has_Alt(P->pcode) &&
+	     (BlkLoc(P->parameter) == (union block *)&EOP)) {
+	    tended struct descrip param;
+	    param.dword = D_Pelem;
+	    param.vword.bptr = (union block *) R;
+	    P->parameter = param;
+	    }
+	 }
+      free(Refs);
+      return L;
+      }
+}
+
+#begdef OK_For_Simple_Arbno(pcode)
+(
+(pcode  == PC_Any_CS)     ||
+(pcode  == PC_Any_CH)     ||
+(pcode  == PC_Any_VF)     ||
+(pcode  == PC_Any_VP)     ||
+(pcode  == PC_Char)       ||
+(pcode  == PC_Len_Nat)    ||
+(pcode  == PC_NotAny_CS)  ||
+(pcode  == PC_NotAny_CH)  ||
+(pcode  == PC_NotAny_VF)  ||
+(pcode  == PC_NotAny_VP)  ||
+(pcode  == PC_Span_CS)    ||
+(pcode  == PC_Span_CH)    ||
+(pcode  == PC_Span_VF)    ||
+(pcode  == PC_Span_VP)    ||
+(pcode  == PC_String)
+)
+#enddef
+
+
+function {*} pattern_match(underef psub -> dpsub, pat)
+   declare {
+      int use_trap = 0;
+      }
+   /*
+    *  psub must either be a string or be convertible to one. Decide
+    *  whether a substring trapped variable can be created.
+    */
+   if is:variable(psub) && is:string(dpsub) then {
+      abstract {
+	 return new tvsubs(type(psub))
+	 }
+      inline {
+	 use_trap = 1;
+	 }
+       }
+   else if cnv:tmp_string(dpsub) then
+      abstract {
+	 return string
+	 }
+   else
+      runerr(114, dpsub);
+   body {
+      int curpos = 0;
+      int oldpos;
+      int start;
+      int stop;
+      struct b_pattern *pattern;
+      struct b_pelem *phead;
+      char * pattern_subject = StrLoc(dpsub);
+      int subject_len = StrLen(dpsub);
+      int new_len;
+      type_case pat of {
+	 string : {
+	    cnv_str_pattern(&pat,&pat);
+	    }
+	 cset :{
+	    cnv_cset_pattern(&pat,&pat);
+	    }
+         pattern:{
+	    }
+         default:{
+		runerr(127);
+	    }
+	}
+      pattern = (struct b_pattern *)BlkLoc(pat);
+      while ((curpos >= 0) &&
+	     internal_match(pattern_subject, subject_len,pattern->stck_size,
+			    (struct b_pelem *)pattern->pe,&start,&stop,curpos)
+	     ){
+	 oldpos = curpos;
+	 curpos = stop;
+	 if (use_trap == 1)
+	    suspend tvsubs(&psub, start+1,stop - start);
+	 else
+	    suspend string(stop - start, StrLoc(dpsub)+ start);
+	 deref(&psub,&dpsub);
+	 pattern_subject = StrLoc(dpsub);
+	 if (subject_len != StrLen(dpsub)) {
+	    curpos += StrLen(dpsub) - subject_len;
+	    subject_len = StrLen(dpsub);
+	    }
+	 }
+	 fail;
+      }
+end
+
+
+static void cnv_str_pattern(dptr s, dptr p)
+{
+   union block *bp;
+   bp = pattern_make(0, &EOP,PC_String,1, *s);
+   p->dword = D_Pattern;
+   BlkLoc(*p) = bp;
+}
+
+
+static void cnv_cset_pattern(dptr s, dptr p)
+{
+   union block *bp;
+   bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
+   p->dword = D_Pattern;
+   BlkLoc(*p) = bp;
+}
+
+/*
+ *
+ * Set_Successor
+ *
+ * Note: this procedure is not used by the normal concatenation circuit,
+ * since other fixups are required on the left operand in this case, and
+ * they might as well be done all together.
+ */
+static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
+{
+   if (Pat == NULL) {
+      fprintf(stdout,"Uninitialized pattern");
+      fatalerr(0, NULL);
+      }
+   else if (Pat == &EOP) {
+      fprintf(stdout, "Set_Successor Logic_Error");
+      fatalerr(0, NULL);
+      }
+   else {
+      struct b_pelem **Refs;
+      /*
+       * We build a reference array for L whose N'th element points to
+       * the pattern element of L whose original Index value is N.
+       */
+      struct b_pelem * P ;
+      int J;
+      int RefLen = Pat->index + 1;
+      Refs= (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
+      Build_Ref_Array (Pat, Refs);
+      for (J = 1; J < RefLen;J++){
+	 P = Refs[J];
+	 if ((struct b_pelem *)P->pthen == &EOP)
+	    P->pthen = (union block *)Succ;
+	 if (Has_Alt(P->pcode) &&
+	     ((struct b_pelem *)BlkLoc(P->parameter) == &EOP)){
+	    struct descrip param;
+	    param.dword = D_Pelem;
+	    param.vword.bptr = (union block *) Succ;
+	    P->parameter = param;
+	    }
+	 }
+      free(Refs);
+      }
+}
+
+/*
+ * Bracket
+ */
+struct b_pelem *Bracket (struct b_pelem *E,struct b_pelem * P,
+			    struct b_pelem * A)
+{
+   if (P == &EOP) {
+      E->pthen =  (union block *)A;
+      E->index = 2;
+      A->index = 1;
+      }
+   else {
+      E->pthen =  (union block *)P;
+      Set_Successor (P, A);
+      E->index = P->index + 2;
+      A->index = P->index + 1;
+      }
+   return E;
+}
+
+
+#begdef ConvertPatternArgumentCset(arg, bp, ptype)
+   type_case arg of {
+      pattern: {
+	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
+	 struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 switch(pe->pcode) {
+	 case PC_Rpat: {
+	    bp = pattern_make(0, &EOP,ptype ## _VP,1, pe->parameter);
+	    break;
+	    }
+	 case PC_String_VF: {
+	    bp = pattern_make(0, &EOP,ptype ## _VF,1, pe->parameter);
+	    break;
+	    }
+	 case PC_String_MF: {
+	    bp = pattern_make(0, &EOP,ptype ## _MF,1, pe->parameter);
+	    break;
+	    }
+	 default: {
+	    runerr(127);
+	    }
+	    }
+	 }
+      default: {
+	 if (!cnv_cset(&arg, &arg))
+	    runerr(103,arg);
+	 bp = pattern_make(0, &EOP, ptype ## _CS,1, arg);
+	 }
+	 }
+#enddef
+
+function {1} PAny(charset)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentCset(charset, bp, PC_Any);
+      return pattern(bp);
+    }
+end
+
+function {1} PBreak(charset)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentCset(charset, bp, PC_Break);
+      return pattern(bp);
+      }
+end
+
+function {1} PNotAny(char_set)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentCset(char_set, bp, PC_NotAny);
+      return pattern(bp);
+      }
+end
+
+function {1} PSpan(char_set)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentCset(char_set, bp, PC_Span);
+      return pattern(bp);
+      }
+end
+
+
+static struct b_pattern * breakx_make(struct b_pelem * B)
+{
+   tended struct b_pelem *X =  pelem_make(B,PC_BreakX_X, 2, nulldesc);
+   tended struct descrip param;
+   tended struct b_pelem *A;
+   param.dword = D_Pelem;
+   BlkLoc(param) =  (union block *)X;
+   A =  (struct b_pelem *)pelem_make(&EOP,PC_Alt, 1, param);
+   B->pthen =  (union block *)A;
+   return (struct b_pattern *)pattern_make_pelem(2, B);
+}
+
+/*
+ * BreakX
+ */
+function {1} PBreakx(char_set)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      struct b_pelem *peBreakx;
+      type_case char_set of {
+      pattern: {
+	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(char_set);
+	 struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 switch(pe->pcode){
+	 case PC_Rpat:{
+	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_Break_VP, 3,
+						    pe->parameter);
+	    break;
+	    }
+	 case PC_String_VF: {
+	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_Break_VF, 3,
+						    pe->parameter);
+	    break;
+	    }
+	 default: {
+	    runerr(128);
+	    }
+	    }
+	 }
+      default: {
+	 if (!cnv_cset(&char_set, &char_set))
+	    runerr(103,char_set);
+	 peBreakx = (struct b_pelem *)pelem_make(NULL,
+						 PC_Break_CS, 3,char_set);
+	 }
+	 }
+      bp =  (union block *)breakx_make(peBreakx);
+      return pattern(bp);
+      }
+end
+
+
+#begdef ConvertPatternArgumentInt(arg, bp, ptype)
+   type_case arg of{
+      pattern: {
+	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
+	 struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 switch(pe->pcode){
+	 case PC_Rpat: {
+	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NP,
+					      1, pe->parameter);
+	    break;
+	    }
+	 case PC_String_VF: {
+	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
+					      1, pe->parameter);
+	    break;
+	    }
+	 case PC_String_MF: {
+	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NMF,
+					      1, pe->parameter);
+	    break;
+	    }
+	 default: {
+	    runerr(128);
+	    }
+	    }
+	 }
+      default: {
+	 if (!cnv_int(&arg, &arg))
+	    runerr(103,arg);
+	 bp =  (union block *)pattern_make(0, &EOP, ptype ## _Nat,1, arg);
+	 }
+	 }
+#enddef
+
+function {1} PLen(count)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentInt(count,bp,PC_Len);
+      return pattern(bp);
+      }
+end
+
+function {1} PPos(position)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentInt(position,bp,PC_Pos);
+      return pattern(bp);
+      }
+end
+
+function {1} PRpos(position)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentInt(position,bp,PC_RPos);
+      return pattern(bp);
+      }
+end
+
+function {1} PTab(count)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentInt(count,bp,PC_Tab);
+      return pattern(bp);
+      }
+end
+
+function {1} PRtab(count)
+   if !cnv:integer(count) then
+      runerr(103,count)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentInt(count,bp,PC_RTab);
+      return pattern(bp);
+      }
+end
+
+
+/*
+ * Arb
+ *    +---+
+ *    | X |---->
+ *    +---+
+ *      .
+ *      .
+ *    +---+
+ *    | Y |---->
+ *    +---+
+ *
+ *  The PC_Arb_X element is numbered 2, and the PC_Arb_Y element is 1.
+*/
+
+function {1} PArb()
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      tended struct descrip var;
+      tended struct b_pelem * Y = pelem_make(&EOP,PC_Arb_Y,1,nulldesc);
+      tended struct b_pelem * X;
+      var.dword = D_Pelem;
+      BlkLoc(var) =  (union block *)Y;
+      X = (struct b_pelem *)pelem_make(&EOP,PC_Arb_X,2,var);
+      bp = pattern_make_pelem(1,X);
+      return pattern(bp);
+      }
+end
+
+
+/*
+ * Arbno
+ */
+
+struct b_pelem * Arbno_Simple(struct b_pelem *pe)
+{
+   tended struct descrip var;
+   tended struct b_pelem *S;
+   var.dword = D_Pelem;
+   BlkLoc(var) =  (union block *)pe;
+   S = (struct b_pelem *)pelem_make(&EOP,PC_Arbno_S, pe->index + 1, var);
+   Set_Successor(pe,S);
+   return S;
+}
+
+
+function {1} PArbno(ARBPAT)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      struct b_pattern * P;
+      tended struct b_pelem * X;
+      type_case ARBPAT of {
+	 string : {
+	    cnv_str_pattern(&ARBPAT,&ARBPAT);
+	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
+	    X = Arbno_Simple((struct b_pelem *)P->pe);
+	    bp = pattern_make_pelem(0,X);
+	    return pattern(bp);
+	    }
+	 cset : {
+	    cnv_cset_pattern(&ARBPAT,&ARBPAT);
+	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
+	    X = Arbno_Simple((struct b_pelem *)P->pe);
+	    bp = pattern_make_pelem(0,X);
+	    return pattern(bp);
+	    }
+         pattern: {
+	    tended struct b_pelem *Pat;
+	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
+	    Pat = Copy((struct b_pelem *)P->pe);
+	    if ( (P->stck_size == 0) &&OK_For_Simple_Arbno(Pat->pcode)) {
+	       /*
+		*
+		* Arbno_Simple
+		*
+		*
+		*      +-------------+
+		*      |             ^
+		*      V             |
+		*    +---+           |
+		*    | S |---->      |
+		*    +---+           |
+		*      .             |
+		*      .             |
+		*    +---+           |
+		*    | P |---------->+
+		*    +---+
+		*
+		*  The node numbering of the constituent pattern P is not
+		*  affected. The S node has a node number of P.Index + 1.
+		*
+		*  Note that we know that P cannot be EOP, because a null
+		*  pattern does not meet the requirements for simple Arbno.
+		*/
+
+	       X = Arbno_Simple(Pat);
+	       bp = pattern_make_pelem(1,X);
+	       return pattern(bp);
+	       }
+	    else {
+	       /*
+		*  This is the complex case, either the pattern makes stack
+		*  entries or it is possible for the pattern to match the null
+		*  string (more accurately, we don't know that this is not the
+		* case).
+		*
+		*      +--------------------------+
+		*      |                          ^
+		*      V                          |
+		*    +---+                        |
+		*    | X |---->                   |
+		*    +---+                        |
+		*      .                          |
+		*      .                          |
+		*    +---+     +---+     +---+    |
+		*    | E |---->| P |---->| Y |--->+
+		*    +---+     +---+     +---+
+		*
+		* The node numbering of the constituent pattern P is not
+		* affected. Where N is the number of nodes in P, the Y node is
+		* numbered N + 1, the E node is N + 2, and the X node is N + 3.
+		*/
+	       tended struct b_pelem * E;
+	       tended struct b_pelem * Y;
+	       tended struct b_pelem *EPY;
+	       tended struct descrip var;
+	       E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
+						 0,nulldesc);
+	       var.dword = D_Pelem;
+	       BlkLoc(var) =  (union block *)E;
+	       X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
+	       var.dword = D_Integer;
+	       IntVal(var) = P->stck_size + 3;
+	       Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
+	       EPY = Bracket (E, Pat, Y);
+	       var.dword = D_Pelem;
+	       BlkLoc(var) =  (union block *)EPY;
+	       X->parameter = var;
+	       X->index = EPY->index + 1;
+	       bp = pattern_make_pelem(P->stck_size,X);
+	       return pattern(bp);
+	       }
+	    }
+	 }
+      }
+end
+
+
+/*
+ * Succeed
+ */
+function {1} PSucceed()
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(1, &EOP,PC_Succeed,1, nulldesc);
+      return pattern(bp);
+      }
+end
+
+/*
+ * bal
+ */
+function {1} PBal()
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(1, &EOP,PC_Bal,1, nulldesc);
+      return pattern(bp);
+      }
+end
+
+
+function {1} pattern_fieldeval (var_list)
+   if !is:list(var_list) then
+      runerr(108, var_list)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_UNEVALFIELD,1, var_list);
+      return pattern(bp);
+      }
+end
+
+
+function {1} pattern_stringfunccall (var_list)
+   if !is:list(var_list) then
+      runerr(108, var_list)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_String_VF,1, var_list);
+      return pattern(bp);
+      }
+end
+
+function {1} pattern_stringmethodcall (var_list)
+   if !is:list(var_list) then
+      runerr(108, var_list)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_String_MF,1, var_list);
+      return pattern(bp);
+      }
+end
+
+function {1} pattern_boolfunccall (var_list)
+   if !is:list(var_list) then
+      runerr(108, var_list)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_Pred_Func,1, var_list);
+      return pattern(bp);
+      }
+end
+
+function {1} pattern_boolmethodcall (var_list)
+   if !is:list(var_list) then
+      runerr(108, var_list)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_Pred_MF,1, var_list);
+      return pattern(bp);
+      }
+end
+
+/*
+ * Unevaluated variables
+ */
+
+function {1} pattern_unevalvar (name)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp = pattern_make(3, &EOP,PC_Rpat,1, name);
+      return pattern(bp);
+      }
+end
+
+function {1} pattern_concat(L, R)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      struct b_pattern *lpattern;
+      struct b_pattern *rpattern;
+      struct b_pelem *pe;
+      type_case L of {
+      string:
+	 cnv_str_pattern(&L,&L);
+      cset:
+	 cnv_cset_pattern(&L,&L);
+      pattern: {
+	 }
+      default:{
+	 runerr(127);
+	 }
+	 }
+
+      type_case R of {
+      string:
+	 cnv_str_pattern(&R,&R);
+      cset:
+	 cnv_cset_pattern(&R,&R);
+      pattern: {
+	 }
+      default: {
+	 runerr(127);
+	 }
+	 }
+
+      lpattern = (struct b_pattern *)BlkLoc(L);
+      rpattern = (struct b_pattern *)BlkLoc(R);
+      pe = Concat(Copy((struct b_pelem *)lpattern->pe),
+		  Copy((struct b_pelem *)rpattern->pe), rpattern->stck_size);
+      bp = pattern_make_pelem(lpattern->stck_size + rpattern->stck_size,pe);
+      return pattern(bp);
+      }
+end
+
+static struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
+{
+   tended struct descrip param;
+   param.dword = D_Pelem;
+   param.vword.bptr = (union block *)R;
+
+   if (L == &EOP) {
+      return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
+					  (word)R->index + 1, param);
+      }
+   /*
+    *  If the left pattern is non-null, then build a reference vector
+    *  for its elements, and adjust their index values to acccomodate
+    *  the right hand elements. Then add the alternation node.
+    */
+   else {
+      struct b_pelem **Refs;
+      /*
+       *  We build a reference array for L whose N'th element points to
+       *  the pattern element of L whose original Index value is N.
+       */
+      struct b_pelem * P ;
+      int J;
+      int RefLen = L->index + 1;
+      Refs=(struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Build_Ref_Array (L, Refs);
+      for (J = 1; J < RefLen;J++){
+	 P = Refs[J];
+	 P->index += R->index;
+	 }
+      return (struct b_pelem *)pelem_make(L, PC_Alt, L->index + 1, param);
+      }
+}
+
+#begdef MAX(x,y)
+((x) > (y)? (x):(y))
+#enddef
+
+function{1} pattern_alternate (LPAT, RPAT )
+   abstract {
+      return pattern;
+      }
+   body {
+      struct b_pattern * lpattern;
+      struct b_pattern * rpattern;
+      struct b_pelem *pe;
+      union block *bp;
+      type_case LPAT of {
+      string:
+	 cnv_str_pattern(&LPAT,&LPAT);
+      cset:
+	 cnv_cset_pattern(&LPAT,&LPAT);
+      pattern:{
+	 }
+      default:{
+	 /*raise error type mismatch*/
+	 runerr(127);
+	 }
+	 }
+
+      type_case RPAT of {
+      string:
+	 cnv_str_pattern(&RPAT,&RPAT);
+      cset:
+	 cnv_cset_pattern(&RPAT,&RPAT);
+      pattern: {
+	 }
+      default: {
+	 /*raise error type mismatch*/
+	 runerr(127);
+	 }
+	 }
+
+      lpattern = (struct b_pattern *)BlkLoc(LPAT);
+      rpattern = (struct b_pattern *)BlkLoc(RPAT);
+      pe = Alternate(Copy((struct b_pelem *)lpattern->pe),
+		     Copy((struct b_pelem *)rpattern->pe)
+		     );
+      bp =pattern_make_pelem(MAX(lpattern->stck_size, rpattern->stck_size),pe);
+      return pattern(bp);
+      }
+end
+
+/*
+ * Setcur
+ */
+function {1} pattern_setcur (underef var, name )
+   abstract{
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_Setcur,1, name);
+      return pattern(bp);
+      }
+end
+
+/*
+ *  Assign immediate
+ *
+ *    +---+     +---+     +---+
+ *    | E |---->| P |---->| A |---->
+ *    +---+     +---+     +---+
+ *
+ *  The node numbering of the constituent pattern P is not affected.
+ *  Where N is the number of nodes in P, the A node is numbered N + 1,
+ *  and the E node is N + 2.
+ */
+function {1} pattern_assign_immediate (PAT, underef var, name)
+   abstract {
+      return pattern;
+      }
+   body {
+      struct b_pattern * p = (struct b_pattern *)BlkLoc(PAT);
+      union block *bp;
+      struct b_pelem *P;
+      struct b_pelem *E;
+      struct b_pelem *A;
+      struct b_pelem *pe;
+      P = Copy((struct b_pelem *)p->pe);
+      E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
+      A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_Imm,0,name);
+      pe = Bracket(E,P,A);
+      bp = pattern_make_pelem(p->stck_size + 3,pe);
+      return pattern(bp);
+      }
+end
+
+/*
+ *  Fence
+ *
+ *    +---+     +---+     +---+
+ *    | E |---->| P |---->| X |---->
+ *    +---+     +---+     +---+
+ *
+ *  The node numbering of the constituent pattern P is not affected.
+ *  Where N is the number of nodes in P, the X node is numbered N + 1,
+ *  and the E node is N + 2.
+ */
+function {1} PFence(P)
+   abstract {
+      return pattern;
+      }
+   if is:null (P) then
+   body {
+      union block *bp;
+      bp = pattern_make(1, &EOP,PC_Fence,1, nulldesc);
+      return pattern(bp);
+      }
+   else
+   body {
+      struct b_pattern * p = (struct b_pattern *)BlkLoc(P);
+      union block *bp;
+      struct b_pelem *Pat;
+      struct b_pelem *E;
+      struct b_pelem *X;
+      Pat = Copy((struct b_pelem *)p->pe);
+      E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
+      X = (struct b_pelem *)pelem_make(&EOP,PC_Fence_X,0, nulldesc);
+      bp = pattern_make_pelem(p->stck_size + 1,Bracket(E,Pat,X));
+      return pattern(bp);
+      }
+end
+
+/*
+ *  Assign on match
+ *
+ *    +---+     +---+     +---+
+ *    | E |---->| P |---->| A |---->
+ *    +---+     +---+     +---+
+ *
+ *  The node numbering of the constituent pattern P is not affected.
+ *  Where N is the number of nodes in P, the A node is numbered N + 1,
+ *  and the E node is N + 2.
+ */
+
+function {1} pattern_assign_onmatch (PAT, underef var, name)
+   abstract {
+      return pattern;
+      }
+   body {
+      struct b_pattern *p = (struct b_pattern *)BlkLoc(PAT);
+      union block *bp;
+      struct b_pelem *P;
+      struct b_pelem *E;
+      struct b_pelem *A;
+      struct b_pelem *pe;
+      P = Copy((struct b_pelem *)p->pe);
+      E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
+      A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_OnM,0,name);
+      pe = Bracket(E,P,A);
+      bp = pattern_make_pelem(p->stck_size + 3,pe);
+      return pattern(bp);
+      }
+end
+
+/*
+ * The following functions take the parameter "var" which is not used in
+ * the body of the function.
+ * pattern_assign_onmatch
+ * pattern_assign_immediate
+ * pattern_recursive
+ * pattern_unevalvar
+ *
+ * The unicon compiler converts expressions such as P -> X to pattern_assign_immediate(P,X,"X")
+ * During the pattern matching process the variable X is looked up using the string X
+ * Passing the variable to the function frees the programmer from having to declare it
+ */
+
+function {1} PCancel()
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_Cancel,1, nulldesc);
+      return pattern(bp);
+      }
+end
+
+
+function {1} PRest()
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_Rest,1, nulldesc);
+      return pattern(bp);
+      }
+end
+
+function {1} PFail()
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
+      return pattern(bp);
+      }
+end
+
+static void MYWriteToFile(FILE *fd, int len, char *s){
+   int i;
+   for (i = 0; i < len; i++){
+      fprintf(fd,"%c",s[i]);
+      }
+   fprintf(fd,"\n");	
+}
+
+static dptr calliconproc(struct descrip proc, struct descrip args[], int nargs);
+
+/*
+ * Set_String assign to variable v new string from the subject
+ */
+static void Set_String(dptr V, char * pat, int start, int end)
+{
+   struct descrip d;
+   StrLen(d) = end - start;
+   StrLoc(d) = pat + start;
+   *V = d;
+}
+
+
+/*
+ * Constant Pattern elements used only on stack
+ *  CP_Assign    : aliased PE := (PC_Assign,    0, N);
+ *  CP_Cancel    : aliased PE := (PC_Cancel,    0, N);
+ *  CP_Fence_Y   : aliased PE := (PC_Fence_Y,   0, N);
+ *  CP_R_Remove  : aliased PE := (PC_R_Remove,  0, N);
+ *  CP_R_Restore : aliased PE := (PC_R_Restore, 0, N);
+ */
+
+static struct b_pelem CP_Assign    = {T_Pelem, PC_Assign,    (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_Cancel    = {T_Pelem, PC_Cancel,    (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_Fence_Y   = {T_Pelem, PC_Fence_Y,   (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_R_Remove  = {T_Pelem, PC_R_Remove,  (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_R_Restore = {T_Pelem, PC_R_Restore, (union block *)NULL, 0, {D_Null,0}};
+
+/*
+ * Stack used to maintain history during pattern matching
+ */
+
+typedef struct stack_entry {
+   int cursor;
+   struct b_pelem *node;
+   } stack_entry;
+
+/*
+ *
+ * Pop_Region
+ *
+ *
+ *     procedure Pop_Region is
+ *     begin
+ *        -- If nothing was pushed in the inner region, we can just get
+ *        -- rid of it entirely, leaving no traces that it was ever there
+ *
+ *       if Stack_Ptr = Stack_Base then
+ *          Stack_Ptr := Stack_Base - 2;
+ *          Stack_Base := Stack (Stack_Ptr + 2).Cursor;
+ *
+ *       --  If stuff was pushed in the inner region, then we have to
+ *       --  push a PC_R_Restore node so that we properly handle possible
+ *       --  rematches within the region.
+ *
+ *       else
+ *          Stack_Ptr := Stack_Ptr + 1;
+ *          Stack (Stack_Ptr).Cursor := Stack_Base;
+ *          Stack (Stack_Ptr).Node   := CP_R_Restore'Access;
+ *          Stack_Base := Stack (Stack_Base).Cursor;
+ *       end if;
+ *    end Pop_Region;
+ */
+
+#begdef Pop_Region()
+if (Stack_Ptr == Stack_Base) {
+   Stack_Ptr = Stack_Base - 2;
+   Stack_Base = Stack[Stack_Ptr + 2].cursor;
+}
+else {
+   Stack_Ptr++;
+   Stack[Stack_Ptr].cursor = Stack_Base;
+   Stack[Stack_Ptr].node = &CP_R_Restore;
+   Stack_Base = Stack[Stack_Base].cursor;
+}
+#enddef
+/*
+ *
+ * Push
+ *
+ *    procedure Push (Node : PE_Ptr) is
+ *    begin
+ *       Stack_Ptr := Stack_Ptr + 1;
+ *       Stack (Stack_Ptr).Cursor := Cursor;
+ *       Stack (Stack_Ptr).Node   := Node;
+ *    end Push;
+ */
+
+#begdef Push(Node)
+Stack_Ptr++;
+Stack[Stack_Ptr].cursor = Cursor;
+Stack[Stack_Ptr].node   = Node;
+#enddef
+
+/*
+ * Push_Region
+ *
+ *    procedure Push_Region is
+ *    begin
+ *       Stack_Ptr := Stack_Ptr + 2;
+ *       Stack (Stack_Ptr).Cursor := Stack_Base;
+ *       Stack (Stack_Ptr).Node   := CP_R_Remove'Access;
+ *       Stack_Base := Stack_Ptr;
+ *    end Push_Region;
+ *
+ */
+#begdef Push_Region()
+Stack_Ptr = Stack_Ptr + 2;
+Stack[Stack_Ptr].cursor = Stack_Base;
+Stack[Stack_Ptr].node   = &CP_R_Remove;
+Stack_Base = Stack_Ptr;
+#enddef
+
+/*
+ * used to convert the string or list stored in the parameter field of a
+ * node to the variable location and value the variable location is stored in
+ * the pvar (used when the variable needs to be assigned to) the variable value
+ * is stored in var
+*/
+
+#begdef GetVarFromNodeParameter(Node)
+struct descrip var;
+struct descrip varref;
+dptr pvar;
+tended char * varname;
+if (is:list(Node->parameter)) {
+   /*
+    * we know our list
+    * it has only 2 elements object variable name and field name
+    * so we dont perform all the sanity checks
+    */
+   tended struct b_lelem *ep;
+   tended struct b_record *rp;
+   union block *bptr;
+   struct descrip fieldptr;
+
+   int i,nfields, fnum;
+   struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+   ep = (struct b_lelem *)lp->listhead;
+
+   cnv:C_string(ep->lslots[0],varname);
+   if ( getvar(varname,&var)== Failed) {
+      VariableLookupFailed(varname);
+      }
+   deref(&var,&var);
+   if (!is:record(var))
+      RunErr(107, &var);
+
+   fieldptr = ep->lslots[1];
+
+   rp = (struct b_record *)BlkLoc(var);
+   bptr = rp->recdesc;
+   nfields = bptr->proc.nfields;
+   for (i=0;i<nfields;i++) {
+      if ((StrLen(fieldptr) == StrLen(bptr->proc.lnames[i])) &&
+	  !strncmp(StrLoc(fieldptr),
+		   StrLoc(bptr->proc.lnames[i]),StrLen(fieldptr)))
+	 break;
+      }
+   if (i<nfields)
+      fnum = i;
+   else {
+      VariableLookupFailed(varname);
+      }
+   pvar = &rp->fields[fnum];
+   varref = var = rp->fields[fnum];
+   }
+else {
+   cnv:C_string(Node->parameter, varname);
+   DEBUGF(2,(stdout,"Looking up variable name =%s\n", varname));
+   if (getvar(varname,&varref)== Failed){
+      VariableLookupFailed(varname);
+      }
+    pvar = VarLoc(varref);
+    var = *pvar;
+}
+#enddef
+
+static void ErrorDuringPatternMatch(char *x)
+{
+   fprintf(stdout, x);
+   fatalerr(0, NULL);
+}
+
+
+/*
+ * uses the list stored in the parameter field of a node to
+ * 1. obtains the name of the procedure from the first element of the list
+ * 2. the remaining elements of the list are used as paramters to the function
+ */
+#begdef GetResultFromFuncCall()
+int nargs;
+struct descrip procargs[10];
+struct descrip proc;
+tended struct descrip cresult;
+dptr call_result;
+tended struct b_lelem *ep;
+int i;
+tended struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+nargs = lp->size -1;
+
+ep = (struct b_lelem *)lp->listhead;
+proc.dword = D_Proc;
+BlkLoc(proc)=  (union block *)strprc(&ep->lslots[0],nargs);
+if (BlkLoc(proc) == NULL) {
+   fprintf(stdout, "Unable to find proc");
+   fatalerr(0, NULL);
+}
+
+for (; BlkType(ep) == T_Lelem; ep = (struct b_lelem *)ep->listnext) {
+   for (i = 1; i < ep->nused; i++) {
+      tended char * varname;
+      struct descrip parm;
+      cnv:C_string(ep->lslots[i],varname);
+      if ( getvar(varname,&parm)== Failed) {
+	 VariableLookupFailed(varname);
+	 }
+      procargs[i -1] = parm;
+      }
+   }
+call_result = calliconproc(proc,procargs,nargs);
+if (call_result == 0)
+   goto Node_Fail;
+cresult = *call_result;
+#enddef
+
+/*
+ * uses the list stored in the parameter field of a node to
+ * 1. first obtain the object from the first element of the list
+ * 2. access the method from the object using the second element of the list
+ * 3. remaining elements of the list are parameters to the method invocation
+ */
+#begdef GetResultFromMethodCall()
+int nargs;
+struct descrip procargs[10];
+struct descrip proc;
+tended struct descrip cresult;
+dptr call_result;
+tended struct b_lelem *ep;
+int i;
+tended struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+struct descrip var;
+struct descrip varref;
+dptr pvar;
+tended char * varname;
+nargs = lp->size -1;
+
+ep = (struct b_lelem *)lp->listhead;
+
+if (is:list(Node->parameter)) {
+   /*
+    *       we know our list
+    *       so we dont perform all the sanity checks
+    */
+   tended struct b_lelem *ep;
+   tended struct b_record *rp;
+   union block *bptr;
+   struct descrip methodptr;
+   int i,nfields, fnum, found__m = 0;
+   struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+   ep = (struct b_lelem *)lp->listhead;
+
+   cnv:C_string(ep->lslots[0],varname);
+   if (getvar(varname,&var) == Failed) {
+      VariableLookupFailed(varname);
+      }
+   procargs[0] = var;
+   deref(&var,&var);
+   if (!is:record(var))
+      RunErr(107, &var);
+   methodptr = ep->lslots[1];
+   rp = (struct b_record *)BlkLoc(var);
+   bptr = rp->recdesc;
+   nfields = bptr->proc.nfields;
+   for( i = 0; i < nfields;i++) {
+      if (!strcmp(StrLoc(bptr->proc.lnames[i]), "__m")) {
+	 found__m = 1;
+	 break;
+	 }
+      }/* for ... nfields */
+   if (found__m != 1) {
+      fprintf(stdout, "Trying to lookup method from a non object");
+      fatalerr(0, NULL);
+      }
+   var = rp->fields[i];
+   rp = (struct b_record *)BlkLoc(var);
+   bptr = rp->recdesc;
+   nfields = bptr->proc.nfields;
+   for (i=0; i<nfields; i++) {
+      if ((StrLen(methodptr) == StrLen(bptr->proc.lnames[i])) &&
+	  !strncmp(StrLoc(methodptr),
+		   StrLoc(bptr->proc.lnames[i]),StrLen(methodptr)))
+	 break;
+      }
+   if (i<nfields)
+      fnum = i;
+   else {
+      VariableLookupFailed(varname);
+      }
+   proc = rp->fields[fnum];
+
+   for (; BlkType(ep) == T_Lelem; ep = (struct b_lelem *)ep->listnext) {
+      for (i = 2; i < ep->nused; i++) {
+	 tended char * varname;
+	 struct descrip parm;
+         cnv:C_string(ep->lslots[i],varname);
+	 if (getvar(varname,&parm)== Failed) {
+	    VariableLookupFailed(varname);
+	    }
+	 procargs[i -1] = parm;
+	 }
+      }
+   call_result = calliconproc(proc,procargs,nargs);
+   if ( call_result == 0 )
+      goto Node_Fail;
+   cresult = *call_result;
+   }
+else {
+   ErrorDuringPatternMatch("error in method call parameters");
+   }
+#enddef
+
+
+
+#define Stack_Init 1
+#define Stack_Size 200
+static int Anchored_Mode = 0;
+int internal_match(char * pat_sub, int Length, int Pat_S,
+		   struct b_pelem * pattern, int *Start, int *Stop,
+		   int initial_cursor )
+{
+   stack_entry Stack[Stack_Size];
+   int Stack_Ptr , Stack_Base ;
+   int Cursor = initial_cursor;
+   struct b_pelem * Node = NULL;
+   struct b_pelem PE_Unanchored = {0, PC_Unanchored, (union block *)pattern,
+				      0, {D_Null,0}};
+   int Assign_OnM = 0;
+   int Region_Level = 0;
+   DEBUGF(2, (stdout,
+	  "Initiating pattern match, subject = %*s\t Len = %d\t Curpos = %d\n",
+	      Length,pat_sub,Length, Cursor));
+   if (pattern == NULL) {
+      fprintf(stdout,"Uninitialized Pattern");
+      fatalerr(0,NULL);
+      }
+
+   if (Pat_S > Stack_Size - 1) {
+      fprintf(stdout,"Pattern Stack Overflow");
+      fatalerr(0,NULL);
+      }
+   /* In anchored mode, the bottom entry on the stack is an abort entry */
+   if (Anchored_Mode) {
+      Stack[Stack_Init].node = &CP_Cancel;
+      Stack[Stack_Init].cursor = 0;
+      }
+   */
+/*
+ *       --  In unanchored mode, the bottom entry on the stack references
+ *       --  the special pattern element PE_Unanchored, whose Pthen field
+ *       --  points to the initial pattern element. The cursor value in this
+ *       --  entry is the number of anchor moves so far.
+ */
+   else {
+      Stack[Stack_Init].node = &PE_Unanchored;
+      Stack[Stack_Init].cursor = initial_cursor;
+      }
+   Stack_Ptr = Stack_Init;
+   Stack_Base = Stack_Ptr;
+   Node = pattern;
+   goto Match;
+   /*
+    *
+    * Main Pattern Matching State Control
+    *
+    *       --  This is a state machine which uses gotos to change state. The
+    *       --  initial state is Match, to initiate the matching of the first
+    *       --  element, so the goto Match above starts the match. In the
+    *       --  following descriptions, we indicate the global values that
+    *       --  are relevant for the state transition.
+    */
+
+/*
+ *       --  Come here if entire match fails
+ */
+
+Match_Fail:
+   DEBUGF(20,(stdout,"Match fails\n"));
+   *Start = 0;
+   *Stop = 0;
+   return 0;
+/*
+ *       --  Come here if entire match succeeds
+ *
+ *       --  Cursor        current position in subject string
+ */
+Match_Succeed:
+   DEBUGF(2,(stdout,"Match Succeeds\n"));
+   *Start = Stack[Stack_Init].cursor;
+   *Stop = Cursor;
+   DEBUGF(2,(stdout, "first matched character index =%d\n", *Start));
+   DEBUGF(2,(stdout, "last matched character index =%d\n" ,*Stop));
+   if (Assign_OnM) {
+      int S;
+      for ( S = Stack_Init; S <= Stack_Ptr; S++) {
+	 if (Stack[S].node == &CP_Assign){
+	    int Inner_Base = Stack[S + 1].cursor;
+	    int Special_Entry =  Inner_Base - 1;
+	    struct b_pelem * Node_OnM = Stack[Special_Entry].node;
+	    int Start = Stack[Special_Entry].cursor;
+	    int Stop = Stack[S].cursor;
+	    GetVarFromNodeParameter(Node_OnM);
+	    if (Node_OnM->pcode == PC_Assign_OnM){
+	       if (var.dword == D_File) {
+		  struct b_file *f;
+		  f = (struct b_file *)BlkLoc(var);
+		  MYWriteToFile(f->fd,Stop - Start,pat_sub + Start);
+		  }
+	       else
+		  Set_String(pvar,pat_sub,Start, Stop );
+	       }
+	    else {
+	       fprintf(stdout,"Logic Error in internal_match");
+	       fatalerr(0, NULL);
+	       }
+	    }
+	 }
+      }
+   return 1;
+Node_Fail:
+/*
+ *       --  Come here if attempt to match current element fails
+ *
+ *       --    Stack_Base    current stack base
+ *       --    Stack_Ptr     current stack pointer
+ */
+   Cursor = Stack[Stack_Ptr].cursor;
+   Node   = Stack[Stack_Ptr].node;
+   Stack_Ptr--;
+   goto Match;
+Node_Succeed:
+/*
+ *       --  Come here if attempt to match current element succeeds
+ *
+ *       --    Cursor        current position in subject string
+ *       --    Node          pointer to node successfully matched
+ *       --    Stack_Base    current stack base
+ *       --    Stack_Ptr     current stack pointer
+ */
+
+    Node = (struct b_pelem *)Node->pthen;
+/*
+ *       --  Come here to match the next pattern element
+ *
+ *       --    Cursor        current position in subject string
+ *       --    Node          pointer to node to be matched
+ *       --    Stack_Base    current stack base
+ *       --    Stack_Ptr     current stack pointer
+ */
+ Match:
+/*
+ *
+ *       -- Main Pattern Match Element Matching Routines --
+ *
+ *
+ *       --  Here is the case statement that processes the current node. The
+ *       --  processing for each element does one of five things:
+ *
+ *       --    goto Succeed        to move to the successor
+ *       --    goto Match_Succeed  if the entire match succeeds
+ *       --    goto Match_Fail     if the entire match fails
+ *       --    goto Fail           to signal failure of current match
+ */
+   switch(Node->pcode) {
+   case PC_Alt: {
+      DEBUGF(20,(stdout,"Setting up alternative \n"));
+      Push((struct b_pelem *)BlkLoc(Node->parameter));
+      Node = (struct b_pelem *)Node->pthen;
+      goto Match;
+      break;
+      }
+   case PC_Any_CS:{
+      DEBUGF(20,(stdout,"Matching Any\n"));
+      if( (Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]),
+				     Node->parameter)){
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      break;
+      }
+   case PC_Any_VP:{
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching Any unevaluated variable\n"));
+      if (!cnv_cset(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+			       "Unevaluated variable for Any should be cset"));
+	 }
+      if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), var)) {
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      break;
+      }
+   case PC_Any_VF: {
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching Any unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+			  "Unevaluated function call for Any should be cset"));
+      if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), cresult)) {
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      break;
+      }
+   case PC_Any_MF: {
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching Any unevaluated method call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+			    "Unevaluated method call for Any should be cset"));
+      if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), cresult)) {
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      break;
+      }
+
+      /*
+       *  Arb (initial match)
+       */
+   case PC_Arb_X : {
+      DEBUGF(20,(stdout, "matching Arb\n"));
+      Push ((struct b_pelem *)BlkLoc(Node->parameter));
+      Node = (struct b_pelem *)Node->pthen;
+      goto Match;
+      break;
+      }
+      /*
+       *  Arb (extension)
+       */
+   case PC_Arb_Y : {
+      DEBUGF(20,(stdout, "extending Arb"));
+      if (Cursor < Length){
+	 Cursor++;
+	 Push (Node);
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      break;
+      }
+      /*
+       *  Arbno_S (simple Arbno initialize). This is the node that
+       *  initiates the match of a simple Arbno structure.
+       */
+   case PC_Arbno_S : {
+      DEBUGF(20,(stdout,"setting up Arbno alternative "));
+      Push ((struct b_pelem *)BlkLoc(Node->parameter));
+      Node = (struct b_pelem *)Node->pthen;
+      goto Match;
+      break;
+      }
+      /*
+       *   Arbno_X (Arbno initialize). This is the node that initiates
+       *   the match of a complex Arbno structure.
+       */
+   case PC_Arbno_X: {
+      DEBUGF(20,(stdout,"setting up Arbno alternative "));
+      Push ((struct b_pelem *)BlkLoc(Node->parameter));
+      Node = (struct b_pelem *)Node->pthen;
+      goto Match;
+      break;
+      }
+      /*
+       *   Arbno_Y (Arbno rematch). This is the node that is executed
+       *   following successful matching of one instance of a complex
+       *   Arbno pattern.
+       */
+   case PC_Arbno_Y : {
+      int  Null_Match = 0;
+      if (Cursor == Stack[Stack_Base - 1].cursor)
+	 Null_Match = 1;
+      DEBUGF(20,(stdout,"extending Arbno"));
+      Pop_Region();
+
+      /*
+       *   If arbno extension matched null, then immediately fail
+       */
+      if (Null_Match){
+	 DEBUGF(20,(stdout,"Arbno extension matched null, so fails"));
+	 goto Node_Fail;
+	 }
+      /*
+       *   Here we must do a stack check to make sure enough stack
+       *   is left. This check will happen once for each instance of
+       *   the Arbno pattern that is matched. The parameter field of a
+       *   PC_Arbno pattern contains the maximum stack entries needed
+       *   for the Arbno with one instance and the successor pattern
+       */
+      if (Stack_Ptr + IntVal(Node->parameter) >= Stack_Size){
+	 fprintf(stdout,
+		 "Fatal Error Stack Overflow in Pattern Match");
+	 fatalerr(0,NULL);
+	 }
+      goto Node_Succeed;
+      }
+      /*
+       *  Assign. If this node is executed, it means the assign-on-match
+       *  or write-on-match operation will not happen after all, so we
+       *  is propagate the failure, removing the PC_Assign node.
+       */
+   case PC_Assign : {
+      goto Node_Fail;
+      }
+      /*
+       *   Assign immediate. This node performs the actual assignment.
+       */
+   case  PC_Assign_Imm : {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout, "executing immediate assignment of %s\n ", varname));
+      if (var.dword == D_File) {
+	 struct b_file *f;
+	 f = (struct b_file *)BlkLoc(var);
+	 MYWriteToFile(f->fd,Cursor - Stack[Stack_Base - 1].cursor,
+		       pat_sub + Stack[Stack_Base - 1].cursor);
+	 }
+      else {
+	 Set_String(pvar, pat_sub,Stack[Stack_Base - 1].cursor,Cursor);
+	 }
+      Pop_Region();
+      goto Node_Succeed;
+      }
+      /*
+       * Assign on match. This node sets up for the eventual assignment
+       */
+   case PC_Assign_OnM : {
+      Stack[Stack_Base - 1].node = Node;
+      Push (&CP_Assign);
+      Pop_Region();
+      Assign_OnM = 1;
+      goto Node_Succeed;
+      }
+      /*
+       * Cancel
+       */
+   case PC_Cancel: {
+      DEBUGF(20,(stdout, "matching Cancel"));
+      goto Match_Fail;
+      break;
+      }
+      /*
+       *   Bal
+       */
+   case PC_Bal : {
+      DEBUGF(2,(stdout,"matching or extending Bal\n"));
+      if ((Cursor >= Length) || pat_sub[Cursor] == ')')
+	 goto Node_Fail;
+      else if (pat_sub[Cursor] == '('){
+	 int Paren_Count = 1;
+	 DEBUGF(2,(stdout,
+		   "Paren_Count = %d  Cursor = %d\n", Paren_Count,Cursor));
+	 while(1) {
+	    Cursor++;
+	    if (Cursor >= Length)
+	       goto Node_Fail;
+	    else if (pat_sub[Cursor] == '(' ){
+	       Paren_Count++;
+	       DEBUGF(2,(stdout,
+			 " Found ( Paren_Count = %d  Cursor = %d\n",
+			 Paren_Count,Cursor));
+	       }
+	    else if (pat_sub[Cursor] == ')'){
+	       Paren_Count--;
+	       DEBUGF(2,(stdout,
+			 "Found ) Paren_Count = %d  Cursor = %d\n",
+			 Paren_Count,Cursor));
+	       }
+	    if (Paren_Count == 0) {
+	       DEBUGF(2,(stdout,
+			 "Paren_Count = %d  Cursor = %d\n",
+			 Paren_Count,Cursor));
+	       break;
+	       }
+	    }
+	 }
+	Cursor++;
+	Push (Node);
+	DEBUGF(2,(stdout,
+		  "matching or extending Bal succeded Cursor = %d\n",
+		  Cursor));
+	goto Node_Succeed;
+    }
+
+      /*
+       * Break (character set case)
+       */
+   case PC_Break_CS : {
+      DEBUGF(20,(stdout, "matching Break\n"));
+      while( Cursor < Length ){	
+	 if (Testb(ToAscii(pat_sub[Cursor]), Node->parameter))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+   case PC_Break_VP :{
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching Break unevaluated variable\n"));
+      if (!cnv_cset(&var,&var)){
+	 ErrorDuringPatternMatch((stdout,
+			     "Unevaluated variable for Break should be cset"));
+	 }
+      while( Cursor < Length ){
+	 if (Testb(ToAscii(pat_sub[Cursor]), var))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+   case PC_Break_VF :{
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching Break unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		       "Unevaluated function call for Break should be cset"));
+      while (Cursor < Length ){
+	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+
+   case PC_Break_MF :{
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching Break unevaluated method call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+			  "Unevaluated method call for Break should be cset"));
+      while( Cursor < Length ){
+	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+
+      /*
+       * BreakX (character set case)
+       */
+   case PC_BreakX_CS: {
+      DEBUGF(20,(stdout, "matching BreakX\n"));
+      while( Cursor < Length ){
+	 if (Testb(ToAscii(pat_sub[Cursor]), Node->parameter))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+   case PC_BreakX_VP : {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching BreakX unevaluated variable\n"));
+      if (!cnv_cset(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+			    "Unevaluated variable for BreakX should be cset"));
+	 }
+
+      while (Cursor < Length) {
+	 if (Testb(ToAscii(pat_sub[Cursor]), var))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+   case PC_BreakX_VF : {
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching BreakX unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		       "Unevaluated function call for BreakX should be cset"));
+      while (Cursor < Length) {
+	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+   case PC_BreakX_MF : {
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching BreakX unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		       "Unevaluated function call for BreakX should be cset"));
+      while (Cursor < Length) {
+	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
+	    goto Node_Succeed;
+	 else
+	    Cursor++;
+	 }
+      goto Node_Fail;
+      break;
+      }
+
+      /*
+       *   BreakX_X (BreakX extension). See section on "Compound Pattern
+       *   Structures". This node is the alternative that is stacked to
+       *   skip past the break character and extend the break.
+       */
+   case  PC_BreakX_X : {
+      Cursor++;
+      goto Node_Succeed;
+      }
+
+      /*
+       * Fail
+       */
+   case PC_Fail: {
+      goto Node_Fail;
+      }
+
+      /*
+       *   Fence (built in pattern)
+       */
+   case PC_Fence : {
+      Push (&CP_Cancel);
+      goto Node_Succeed;
+      }
+
+      /*
+       *   Fence function node X. This is the node that gets control
+       *   after a successful match of the fenced pattern.
+       */
+   case  PC_Fence_X : {
+      Stack_Ptr++;
+      Stack[Stack_Ptr].cursor = Stack_Base;
+      Stack[Stack_Ptr].node   = &CP_Fence_Y;
+      Stack_Base = Stack[Stack_Base].cursor;
+      goto Node_Succeed;
+      }
+
+      /*
+       *   Fence function node Y. This is the node that gets control on
+       *   a failure that occurs after the fenced pattern has matched.
+       *
+       *   Note: the Cursor at this stage is actually the inner stack
+       *   base value. We don't reset this, but we do use it to strip
+       *   off all the entries made by the fenced pattern.
+       */
+   case PC_Fence_Y : {
+      Stack_Ptr = Cursor - 2;
+      goto Node_Fail;
+      }
+
+      /*
+       *  Unevaluated function call
+       */
+   case  PC_Pred_Func: {
+      GetResultFromFuncCall();
+      if ( call_result == 0)
+	 goto Node_Fail;
+      else
+	 goto Node_Succeed;
+      break;
+      }
+
+   case  PC_Pred_MF:{
+      GetResultFromMethodCall();
+      if (call_result == 0)
+	 goto Node_Fail;
+      else
+	 goto Node_Succeed;
+      break;
+      }
+
+   case PC_Len_Nat: {
+      DEBUGF(20,(stdout, "matching Len\n"));
+      if (Cursor + IntVal(Node->parameter) > Length)
+	 goto Node_Fail;
+      else
+	 Cursor = Cursor + IntVal(Node->parameter);
+      goto Node_Succeed;
+      break;
+      }
+   case PC_Len_NP: {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching Len unevaluated variable\n"));
+      if (!cnv_int(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+			     "Unevaluated variable for Len should be cset"));
+	 }
+      DEBUGF(20,(stdout, "matching Len\n"));
+      if (Cursor + IntVal(var) > Length)
+	 goto Node_Fail;
+      else
+	 Cursor = Cursor + IntVal(var);
+      goto Node_Succeed;
+      break;
+      }
+   case PC_Len_NF: {
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		      "Unevaluated function call for Len should be integer"));
+      if (Cursor + IntVal(cresult) > Length)
+	 goto Node_Fail;
+      else
+	 Cursor = Cursor + IntVal(cresult);
+      goto Node_Succeed;
+      break;
+      }
+
+   case PC_Len_NMF:{
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		      "Unevaluated function call for Len should be integer"));
+      if (Cursor + IntVal(cresult) > Length)
+	 goto Node_Fail;
+      else
+	 Cursor = Cursor + IntVal(cresult);
+      goto Node_Succeed;
+      break;
+      }
+
+   case PC_NotAny_CS : {
+      DEBUGF(20,(stdout, "matching NotAny\n"));
+      if ((Cursor < Length) &&
+	  !Testb(ToAscii(pat_sub[Cursor]), Node->parameter)) {
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case PC_NotAny_VP : {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching NotAny unevaluated variable\n"));
+      if (!cnv_cset(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+			    "Unevaluated variable for NotAny should be cset"));
+	 }
+      DEBUGF(20,(stdout, "matching NotAny_VP\n"));
+      if ((Cursor < Length) &&
+	  !Testb(ToAscii(pat_sub[Cursor]), var)){
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case PC_NotAny_VF :{
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching NotAny unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		      "Unevaluated function call for NotAny should be cset"));
+      DEBUGF(20,(stdout, "matching NotAny\n"));
+      if ((Cursor < Length) &&
+	  !Testb(ToAscii(pat_sub[Cursor]), cresult)){
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+      /*
+       *  Initiate recursive match (pattern pointer case)
+       */
+   case PC_Rpat: {
+      GetVarFromNodeParameter(Node);
+      type_case var of {
+      string: {
+	 int Len = StrLen(var);
+	 DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
+	 if ((Length - Cursor >= Len )
+	     && !strncmp(pat_sub + Cursor, StrLoc(var), Len)){
+	    Cursor = Cursor + Len;
+	    goto Node_Succeed;
+	    }
+	 else
+	    goto Node_Fail;
+	 break;
+	 }
+
+      cset: {
+	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
+	 if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), var)) {
+	    Cursor++;
+	    goto Node_Succeed;
+	    }
+	 else {
+	    goto Node_Fail;
+	    }
+	 break;
+	 }
+      pattern: {
+	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
+	 Stack[Stack_Ptr + 1].node = (struct b_pelem *)Node->pthen;
+	 Push_Region();
+	 if (Stack_Ptr +
+	     ((struct b_pattern *)BlkLoc(var))->stck_size >= Stack_Size) {
+	    fprintf(stdout, "Stack Overflow");
+	    fatalerr(0, NULL);
+	    }
+	 else {
+	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(var))->pe;
+	    goto Match;
+	    }
+	 break;
+	 }
+      default: {
+	 fprintf(stdout,"Unable to convert unevaluated variable to pattern\n");
+	 fatalerr(0,NULL);
+	 }
+	 }
+      }
+
+      /*
+       *  Pos
+       */
+   case PC_Pos_Nat: {
+      if (Cursor == IntVal(Node->parameter) - 1)
+	 goto Node_Succeed;
+      else
+	 goto Node_Fail;
+      }
+
+   case PC_Pos_NP:{
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching Len unevaluated variable\n"));
+      if (!cnv_int(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+			       "Unevaluated variable for Len should be cset"));
+	 }
+      DEBUGF(20,(stdout, "matching Len\n"));
+      if (Cursor == IntVal(var) - 1)
+	 goto Node_Succeed;
+      else
+	 goto Node_Fail;
+      }
+
+   case PC_Pos_NF: {
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		       "Unevaluated function call for Len should be integer"));
+      if (Cursor == IntVal(cresult) - 1)
+	 goto Node_Succeed;
+      else
+	 goto Node_Fail;
+      }
+
+      /*
+       *   Tab (integer case)
+       */
+   case  PC_Tab_Nat: {
+      if (Cursor <= IntVal(Node->parameter) - 1){
+	 Cursor = IntVal(Node->parameter) - 1;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_Tab_NP: {
+      GetVarFromNodeParameter(Node);
+      if (!cnv_int(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+		"Could not convert unevaluated variable for PTab to integer"));
+	 }
+      if (Cursor <= IntVal(var) - 1){
+	 Cursor = IntVal(var) - 1;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_Tab_NF: {
+      GetResultFromFuncCall();
+      if (call_result == 0)
+	 goto Node_Fail;
+      else {
+	 if (!cnv_int(&cresult,&cresult))
+	    ErrorDuringPatternMatch((stdout,
+			  "Unevaluated function call for Any should be cset"));
+	 }
+      if (Cursor <= IntVal(cresult) - 1) {
+	 Cursor = IntVal(cresult) - 1;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+      /*
+       * Rest
+       */
+   case PC_Rest: {
+      Cursor = Length;
+      goto Node_Succeed;
+      }
+
+      /*
+       *  RPos
+       */
+   case PC_RPos_Nat: {
+      if (Cursor == (Length - IntVal(Node->parameter)))
+	 goto Node_Succeed;
+      else
+	 goto Node_Fail;
+      }
+
+   case PC_RPos_NP: {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching Rpos unevaluated variable\n"));
+      if (!cnv_int(&var,&var)){
+	 ErrorDuringPatternMatch((stdout,
+			    "Unevaluated variable for Len should be integer"));
+	 }
+      DEBUGF(20,(stdout, "matching Len\n"));
+      if (Cursor == (Length - IntVal(Node->parameter)))
+	 goto Node_Succeed;
+      else
+	 goto Node_Fail;
+      }
+
+   case PC_RPos_NF: {
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		     "Unevaluated function call for RPos should be integer"));
+      if (Cursor == (Length - IntVal(cresult)))
+	 goto Node_Succeed;
+      else
+	 goto Node_Fail;
+      }
+
+      /*
+       *   RTab (integer case)
+       */
+   case  PC_RTab_Nat: {
+      if (Cursor <= (Length - IntVal(Node->parameter))){
+	 Cursor = Length - IntVal(Node->parameter);
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_RTab_NP: {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching RTab unevaluated variable\n"));
+      if (!cnv_int(&var,&var)){
+	 ErrorDuringPatternMatch((stdout,
+			  "Unevaluated variable for RTab should be integer"));
+	 }
+      DEBUGF(20,(stdout, "matching Len\n"));
+      if (Cursor <= (Length - IntVal(var))){
+	 Cursor = Length - IntVal(var);
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_RTab_NF: {
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+	     "Unevaluated function call for RTab should be integer"));
+      if (Cursor <= (Length - IntVal(cresult))){
+	 Cursor = Length - IntVal(cresult);
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+      /*
+       *   Region Enter. Initiate new pattern history stack region
+       */
+   case PC_R_Enter : {
+      DEBUGF(20,(stdout, "starting match of nested pattern\n"));
+      Stack[Stack_Ptr + 1].cursor = Cursor;
+      Push_Region();
+      goto Node_Succeed;
+      }
+
+      /*
+       *   Region Remove node. This is the node stacked by an R_Enter.
+       *   It removes the special format stack entry right underneath, and
+       *   then restores the outer level stack base and signals failure.
+       *
+       *   Note: the cursor value at this stage is actually the (negative)
+       *   stack base value for the outer level.
+       */
+   case PC_R_Remove : {
+      DEBUGF(20,(stdout,"failure, match of nested pattern terminated\n"));
+      Stack_Base = Cursor;
+      Region_Level--;
+      Stack_Ptr--;
+      goto Node_Fail;
+      }
+
+      /*
+       *   Region restore node. This is the node stacked at the end of an
+       *   inner level match. Its function is to restore the inner level
+       *   region, so that alternatives in this region can be sought.
+       *
+       *   Note: the Cursor at this stage is actually the negative of the
+       *   inner stack base value, which we use to restore the inner region.
+       */
+   case  PC_R_Restore : {
+      DEBUGF(20,(stdout,
+		 "failure, search for alternatives in nested pattern\n"));
+      Region_Level = Region_Level + 1;
+      Stack_Base = Cursor;
+      goto Node_Fail;
+      }
+
+   case PC_Setcur: {
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout, "Matching Setcur assigning Cursor = %d\n", Cursor));
+      pvar->dword = D_Integer;
+      IntVal(*pvar) = Cursor + 1;
+      goto Node_Succeed;
+      }
+
+   case  PC_Span_CS : {
+      int P = Cursor;
+      DEBUGF(20,(stdout,"Matching Span\n"));
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),Node->parameter))
+	 P++;
+      if (P != Cursor) {
+	 Cursor = P;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_Span_VP : {
+      int P = Cursor;
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching Span unevaluated variable\n"));
+      if (!cnv_cset(&var,&var)) {
+	 ErrorDuringPatternMatch((stdout,
+			      "Unevaluated variable for Span should be cset"));
+	 }
+      DEBUGF(20,(stdout,"Matching Span_VP\n"));
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),var))
+	 P++;
+      if (P != Cursor) {
+	 Cursor = P;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_Span_VF : {
+      int P = Cursor;
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching Span_VF unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 ErrorDuringPatternMatch((stdout,
+		      "Unevaluated function call for Span_VF should be cset"));
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
+	 P++;
+      if (P != Cursor) {
+	 Cursor = P;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_String : {
+      int Len = StrLen(Node->parameter);
+      DEBUGF(20,(stdout,"Matching String\n"));
+      if ((Length - Cursor >= Len )
+	  && !strncmp(pat_sub + Cursor, StrLoc(Node->parameter), Len)) {
+	 Cursor = Cursor + Len;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+   case  PC_String_VP : {
+      int Len;
+      GetVarFromNodeParameter(Node);
+      Len = StrLen(var);
+      DEBUGF(20,(stdout,"Matching String\n"));
+      if ((Length - Cursor >= Len) &&
+	  !strncmp(pat_sub + Cursor, StrLoc(var), Len)) {
+	 Cursor = Cursor + Len;
+	 goto Node_Succeed;
+	 }
+      else
+	 goto Node_Fail;
+      }
+
+      /*
+       */
+   case  PC_String_VF: {
+      GetResultFromFuncCall();
+      if (call_result == 0)
+	 goto Node_Fail;
+      else {
+	 if (cnv_str(&cresult,&cresult)){
+	    int Len = StrLen(cresult);
+	    DEBUGF(20,(stdout,"Matching String\n"));
+	    if ((Length - Cursor >= Len) &&
+		!strncmp(pat_sub + Cursor, StrLoc(cresult), Len)) {
+	       Cursor = Cursor + Len;
+	       goto Node_Succeed;
+	       }
+	    else
+	       goto Node_Fail;
+	    }
+	 goto Node_Succeed;
+	 }
+      break;
+      }
+
+   case  PC_String_MF: {
+      GetResultFromMethodCall();
+      if (call_result == 0)
+	 goto Node_Fail;
+      else {
+	 if (cnv_str(&cresult,&cresult)){
+	    int Len = StrLen(cresult);
+	    DEBUGF(20,(stdout,"Matching String\n"));
+	    if ((Length - Cursor >= Len )
+		&& !strncmp(pat_sub + Cursor, StrLoc(cresult), Len)){
+	       Cursor = Cursor + Len;
+	       goto Node_Succeed;
+	       }
+	    else
+	       goto Node_Fail;
+	    }
+	 goto Node_Succeed;
+	 }
+      break;
+      }
+
+      /*
+       *  Succeed
+       */
+   case  PC_Succeed: {
+      DEBUGF(20,(stdout,"matching Succeed"));
+      Push (Node);
+      goto Node_Succeed;
+      }
+
+   case PC_Unanchored : {
+      /* --  All done if we tried every position  */
+      if (Cursor > Length )
+	 goto Match_Fail;
+      /* --  Otherwise extend the anchor point, and restack ourself */
+      else{
+	 Cursor++;
+	 Push (Node);
+	 goto Node_Succeed;
+	 }
+      }
+
+      /*
+       *  End of Pattern
+       */
+   case  PC_EOP: {
+      if (Stack_Base == Stack_Init)
+	 goto Match_Succeed;
+      /*
+       *   End of recursive inner match. See separate section on
+       *   handing of recursive pattern matches for details.
+       */
+      else {
+	 Node = Stack[Stack_Base - 1].node;
+	 Pop_Region();
+	 goto Match;
+	 }
+      }
+      }
+   fprintf(stdout,"!!Unrecognized pcode in internal match!!\n");
+   fatalerr(0,NULL);
+}
+
+
+
+#if !COMPILER
+
+/* No provision for resumption */
+static word *callproc, ibuf[100];
+static dptr calliconproc(proc, args, nargs)
+struct descrip proc;
+struct descrip args[];
+int nargs;
+{
+   int i, off, retval;
+   inst saved_ipc;
+   word *saved_sp = sp;
+   inst wp;
+   dptr dp, ret;
+
+#ifdef HP
+   bcopy(&ipc, &saved_ipc, sizeof(ipc));
+#else					/* HP */
+   saved_ipc = ipc;
+#endif					/* HP */
+
+   wp.opnd = callproc = ibuf;
+   *wp.op++ = Op_Mark;   *wp.opnd++ = (2 + nargs+1)*2 * WordSize;
+   *wp.op++ = Op_Copyd;  *wp.opnd++ = -(nargs+1);
+   off = -nargs;
+   for (i = 1; i < nargs+1; i++) {
+      *wp.op++ = Op_Copyd;
+      *wp.opnd++ = off++;
+      }
+   *wp.op++ = Op_Invoke;  *wp.opnd++ =  nargs;
+   *wp.op++ = Op_Eret;
+   *wp.op++ = Op_Trapret;
+   *wp.op++ = Op_Trapfail;
+
+   dp = (dptr)(sp + 1);
+   dp[0] = proc;
+   for (i = 0; i < nargs; i++)
+      dp[i+1] = args[i];
+
+   sp += (nargs+1)*2;
+   ipc.op = (int *)callproc;
+   retval = interp(0, NULL);
+   if (retval != A_Trapfail) ret = (dptr)(sp-1);
+
+#ifdef HP
+   bcopy(&saved_ipc, &ipc, sizeof(ipc));
+#else
+   ipc = saved_ipc;
+#endif
+   sp = saved_sp;
+
+   if (retval == A_Trapfail){
+/*	   fprintf(stdout, "Icon procedure failed\n");*/
+      return 0;
+      }
+   else {
+/*	   fprintf(stdout, "Icon procedure succeded\n");*/
+      return ret;
+      }
+}
+#endif					/* !COMPILER */
+
+#endif					/* PatternType */

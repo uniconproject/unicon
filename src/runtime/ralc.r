@@ -14,6 +14,9 @@ extern word alcnum;
 #ifndef MultiThread
 word coexp_ser = 2;	/* serial numbers for co-expressions; &main is 1 */
 word list_ser = 1;	/* serial numbers for lists */
+#ifdef PatternType
+word pat_ser = 1;	/* serial numbers for patterns */
+#endif					/* PatternType */
 word set_ser = 1;	/* serial numbers for sets */
 word table_ser = 1;	/* serial numbers for tables */
 #endif					/* MultiThread */
@@ -364,7 +367,66 @@ alcsegment_macro(alcsegment_1,E_Slots)
 alcsegment_macro(alcsegment,0)
 #endif					/* MultiThread */
 
-#begdef alclist_raw_macro(f,e_list,e_lelem)
+
+#ifdef PatternType
+
+#begdef alcpattern_macro(f, e_pattern, e_pelem)
+
+struct b_pattern *f(word stck_size)
+{
+   register struct b_pattern *pheader;
+   register struct b_pelem *pelem;
+   
+   if (!reserve(Blocks, (word)
+		( sizeof(struct b_pattern) + sizeof(struct b_pelem))))
+      return NULL; 
+   EVVal(sizeof (struct b_pattern), e_pattern);
+   EVVal(sizeof (struct b_pelem), e_pelem);
+   AlcFixBlk(pheader, b_pattern, T_Pattern)
+   pheader->stck_size = stck_size;
+   pheader->id = pat_ser++;
+   pheader->pe = NULL;
+   return pheader;
+}
+#enddef
+
+#ifdef MultiThread
+alcpattern_macro(alcpattern_0,0)
+alcpattern_macro(alcpattern_1,E_List)
+#else					/* MultiThread */
+alcpattern_macro(alcpattern,0)
+#endif					/* MultiThread */
+
+
+#begdef alcpelem_macro(f, e_pelem)
+
+struct b_pelem *f( word patterncode)
+{
+   register struct b_pelem *pelem;
+   
+   if (!reserve(Blocks, (word)
+		(sizeof(struct b_pelem))
+		)
+       ) return NULL;
+   EVVal(sizeof (struct b_pelem), e_pelem);
+   AlcFixBlk(pelem, b_pelem, T_Pelem)
+   pelem->pcode = patterncode;
+   pelem->pthen = NULL;
+   return pelem;
+   }
+#enddef
+
+#ifdef MultiThread
+alcpelem_macro(alcpelem_0,0)
+alcpelem_macro(alcpelem_1,E_Pelem)
+#else					/* MultiThread */
+alcpelem_macro(alcpelem,0)
+#endif					/* MultiThread */
+
+
+#endif					/* PatternType */
+
+#begdef alclist_raw_macro(f, e_list, e_lelem)
 /*
  * alclist - allocate a list header block in the block region.
  *  A corresponding list element block is also allocated.

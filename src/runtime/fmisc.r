@@ -173,6 +173,9 @@ function{1} copy(x)
       file:
       proc:
       coexpr:
+#ifdef PatternType
+      pattern:
+#endif					/* PatternType */
          inline {
             /*
              * Copy the null value, integers, long integers, reals, files,
@@ -1293,6 +1296,9 @@ function{1} type(x)
       set:      inline { return C_string "set";       }
       record:   inline { return BlkLoc(x)->record.recdesc->proc.recname; }
       coexpr:   inline { return C_string "co-expression"; }
+#ifdef PatternType
+      pattern:     inline { return C_string "pattern"; }
+#endif					/* PatternType */
       default:
          inline {
 #if !COMPILER

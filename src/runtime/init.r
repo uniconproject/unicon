@@ -721,6 +721,10 @@ char *argv[];
    rootpstate.Alcfile = alcfile_0;
    rootpstate.Alchash = alchash_0;
    rootpstate.Alcsegment = alcsegment_0;
+#ifdef PatternType
+   rootpstate.Alcpattern = alcpattern_0;
+   rootpstate.Alcpelem = alcpelem_0;
+#endif					/* PatternType */
    rootpstate.Alclist_raw = alclist_raw_0;
    rootpstate.Alclist = alclist_0;
    rootpstate.Alclstb = alclstb_0;

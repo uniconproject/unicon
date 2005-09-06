@@ -36,6 +36,12 @@ struct b_telem	*alctelem_1	(void);
 struct b_tvtbl	*alctvtbl_0	(dptr tbl,dptr ref,uword hashnum);
 struct b_tvtbl	*alctvtbl_1	(dptr tbl,dptr ref,uword hashnum);
 void assign_event_functions(struct progstate *p, struct descrip cs);
+#ifdef PatternType
+struct b_pattern	*alcpattern_0 (word size);
+struct b_pattern	*alcpattern_1 (word size);
+struct b_pelem	*alcpelem_0	(word pattern_code);
+struct b_pelem	*alcpelem_1	(word pattern_code);
+#endif					/* PatternType */
 #else					/* MultiThread */
 struct b_cset	*alccset	(void);
 struct b_file	*alcfile	(FILE *fd,int status,dptr name);
@@ -49,6 +55,10 @@ struct b_selem	*alcselem	(dptr mbr,uword hn);
 char		*alcstr		(char	*s,word slen);
 struct b_telem	*alctelem	(void);
 struct b_tvtbl	*alctvtbl	(dptr tbl,dptr ref,uword hashnum);
+#ifdef PatternType
+struct b_pattern	*alcpattern	(word size);
+struct b_pelem	*alcpelem(word pattern_code);
+#endif					/* PatternType */
 #endif					/* MultiThread */
 int		anycmp		(dptr dp1,dptr dp2);
 int		bfunc		(void);
@@ -836,3 +846,8 @@ int     dbfetch(struct ISQLFile *, dptr);
 void    odbcerror               (struct ISQLFile *fp, int errornum);
 void    qalloc                  (struct ISQLFile *f, long n); /* query space alloc */
 #endif					/* ISQL */
+
+#ifdef Audio
+struct AudioFile * StartAudioThread(char filename[]);
+void StopAudioThread(struct AudioFile * Ptr);
+#endif					/* Audio */

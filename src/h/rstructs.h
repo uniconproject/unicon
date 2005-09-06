@@ -89,6 +89,9 @@ struct b_file {			/* file block */
 #ifdef Dbm
      struct DBM *dbm;
 #endif					/* Dbm */
+#ifdef Audio
+     struct AudioFile *af;
+#endif					/* Audio */
       int fd;			/*   other int-based file descriptor */
       } fd;
    word status;			/*   file status */
@@ -255,6 +258,24 @@ struct astkblk {		  /* co-expression activator-stack block */
       struct b_coexpr *activator; /*     the activator itself */
       } arec[ActStkBlkEnts];
    };
+
+#ifdef PatternType
+struct b_pattern {            /*Pattern header block*/
+    word title;             /*T_Pattern*/  
+    word id;
+    word stck_size;         /* size of stack for pattern history during match*/
+    union block * pe;		/*   pattern element */
+};
+
+struct b_pelem {                      /* Pattern element block */
+    word title;                     /* T_Pelem       */
+    word pcode;                     /* Indicates Pattern type*/
+    union block * pthen;            /*  Pointer to succeeding pointer element*/
+    word index;                     /* posn of pattern elem in pointer chain
+				     * (used in image) */
+    struct descrip parameter;		/*   parameter */    
+};
+#endif					/* PatternType */
 
 /*
  * Structure for keeping set/table generator state across a suspension.
@@ -464,6 +485,9 @@ struct progstate {
 
    word Coexp_ser;			/* this program's serial numbers */
    word List_ser;
+#ifdef PatternType   
+   word Pat_ser;
+#endif					/* PatternType */
    word Set_ser;
    word Table_ser;
 
@@ -519,6 +543,10 @@ struct progstate {
    struct b_file * (*Alcfile)(FILE*,int,dptr);
    union block * (*Alchash)(int);
    struct b_slots * (*Alcsegment)(word);
+#ifdef PatternType
+   struct b_pattern * (*Alcpattern)(word);
+   struct b_pelem * (*Alcpelem)(word);
+#endif					/* PatternType */
    struct b_list *(*Alclist_raw)(uword,uword);
    struct b_list *(*Alclist)(uword,uword);
    struct b_lelem *(*Alclstb)(uword,uword,uword);
@@ -654,6 +682,10 @@ union block {			/* general block */
    struct b_external externl;
    struct b_slots slots;
 
+#ifdef PatternType
+   struct b_pattern pattern;
+   struct b_pelem pelem;
+#endif					/* PatternType */
    #ifdef LargeInts
       struct b_bignum bignumblk;
    #endif				/* LargeInts */

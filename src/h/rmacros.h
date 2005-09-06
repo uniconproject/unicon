@@ -380,7 +380,12 @@
 #define T_Kywdstr	24	/* string keyword */
 #define T_Kywdevent	25	/* keyword &eventsource, etc. */
 
-#define MaxType		25	/* maximum type number */
+#ifdef PatternType
+#define T_Pattern 	26	/* keyword &eventsource, etc. */
+#define T_Pelem 	        27	/* keyword &eventsource, etc. */
+#endif					/* PatternType */
+
+#define MaxType		27	/* maximum type number */
 
 /*
  * Definitions for keywords.
@@ -429,6 +434,10 @@
 #define D_Kywdwin	(T_Kywdwin  | D_Typecode | F_Ptr | F_Var)
 #define D_Kywdstr	(T_Kywdstr  | D_Typecode | F_Ptr | F_Var)
 #define D_Kywdevent	(T_Kywdevent| D_Typecode | F_Ptr | F_Var)
+#ifdef PatternType
+#define D_Pattern		(T_Pattern     | D_Typecode | F_Ptr)
+#define D_Pelem		(T_Pelem     | D_Typecode | F_Ptr)
+#endif					/* PatternType */
 
 #define D_Var		(F_Var | F_Nqual | F_Ptr)
 #define D_Typecode	(F_Nqual | F_Typecode)
@@ -734,6 +743,9 @@
       
       #define coexp_ser (curpstate->Coexp_ser)
       #define list_ser  (curpstate->List_ser)
+#ifdef PatternType
+      #define pat_ser  (curpstate->Pat_ser)
+#endif					/* PatternType */
       #define set_ser   (curpstate->Set_ser)
       #define table_ser (curpstate->Table_ser)
       
@@ -785,6 +797,10 @@
       #define alcfile	    (curpstate->Alcfile)
       #define alchash	    (curpstate->Alchash)
       #define alcsegment    (curpstate->Alcsegment)
+#ifdef PatternType
+      #define alcpattern    (curpstate->Alcpattern)
+      #define alcpelem      (curpstate->Alcpelem)
+#endif					/* PatternType */
       #define alclist_raw   (curpstate->Alclist_raw)
       #define alclist	    (curpstate->Alclist)
       #define alclstb	    (curpstate->Alclstb)
@@ -834,7 +850,7 @@
    #endif				/* MultiThread */
    #ifdef PosixFns
       #define	A_Trapret	12	/* Return from stub  */
-      #define	A_Trapfail	12	/* Fail from stub  */
+      #define	A_Trapfail	13	/* Fail from stub  */
    #endif 				/* PosixFns */
 #endif					/* COMPILER */
 

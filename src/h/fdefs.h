@@ -98,6 +98,39 @@ FncDef(upto,4)
 FncDef(where,1)
 FncDefV(write)
 FncDefV(writes)
+#ifdef PatternType
+     FncDef(pattern_match,2) /* ?? */
+     FncDef(PAny,1)    
+     FncDef(PBreak,1) 
+     FncDef(PNotAny,1)
+     FncDef(PSpan,1)
+     FncDef(PArb,0)
+     FncDef(PArbno,1)
+     FncDef(pattern_concat,2) /* && */
+     FncDef(pattern_alternate,2) /* or */
+     FncDef(pattern_setcur,2)
+     FncDef(PSucceed,0)
+     FncDef(PBal,0)
+     FncDef(PBreakx,1)
+     FncDef(pattern_assign_immediate,3) /* $$ */
+     FncDef(pattern_assign_onmatch,3)  /* -> */
+     FncDef(pattern_recursive,2)   /* ``*/
+     FncDef(PFence,1)
+     FncDef(pattern_unevalvar,1)   /* `` */
+     FncDef(pattern_fieldeval,1)   /* `x.y` */
+     FncDef(PLen,1)
+     FncDef(PCancel,0)
+     FncDef(PRest,0)
+     FncDef(pattern_stringfunccall,1)  /* ```` */
+     FncDef(pattern_boolfunccall,1)    /* `` */
+     FncDef(pattern_stringmethodcall,1)  /* ``x.y`` */
+     FncDef(pattern_boolmethodcall,1)    /* `x.y` */
+     FncDef(PFail,0)
+     FncDef(PPos,1)
+     FncDef(PRpos,1)
+     FncDef(PTab,1)
+     FncDef(PRtab,1)
+#endif					/* PatternType */
 
 #if AMIGA || UNIX || VMS || OS2_32 || NT || SCCX_MX
    FncDef(delay,1)

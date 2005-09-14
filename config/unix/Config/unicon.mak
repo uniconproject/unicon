@@ -19,8 +19,8 @@ export PATH:=$(BIN):$(PATH)
 
 unicon$(EXE): unicon
 
-unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
-	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
+unicon: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u main.u
+	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u
 	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
@@ -37,6 +37,9 @@ unicon.u : unicon.icn
 
 unilex.u : unilex.icn ytab_h.icn
 	$(ICONT) -c unilex
+
+main.u: main.icn
+	$(ICONT) -c main
 
 tree.u : tree.icn
 	$(ICONT) -c tree

@@ -557,10 +557,51 @@ wbp w;
 char *s;
 int len;
    {
-   char *s2 = s;
+   char *s2 = s, *catenation;
    wstate *ws = w->window;
+   tended struct descrip result;
+
    /* turn off the cursor */
    hidecrsr(ws);
+
+#ifdef ScrollingConsoleWin
+#undef fprintf
+   if (w == (wbp)ConsoleBinding) {
+      int i, j=0;
+      for(i=0; i<len; i++)
+	 if (s[i]=='\n') j++;
+      geteditregion(ws->child, &result);
+
+      while (StrLen(result) + len + j + 1 > 32700) {
+	 while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
+	    StrLoc(result) ++;
+	    StrLen(result) --;
+	    }
+	 if (StrLen(result) > 0) {
+	    StrLoc(result)++; StrLen(result)--;
+	    }
+	 }
+
+	reserve(Strings, StrLen(result) + len + j + 1);
+	catenation = alcstr(StrLoc(result), StrLen(result));
+        alcstr(s, len+j);
+
+	{ int i, k=0;
+	for(i=0; i<len; i++) {
+	   if (s[i] == '\n')
+	      catenation[StrLen(result) + k++] = '\r';
+	   catenation[StrLen(result) + k++] = s[i];
+	   }
+	}
+        alcstr("\0", 1);
+	seteditregion(ws->child, catenation);
+      movechild(ws->child, 0, 0, ws->width, ws->height);
+      setfocusonchild(ws, ws->child, ws->width, ws->height);
+	setchildselection(ws, ws->child, StrLen(result), StrLen(result)+len);
+	return;
+	}
+#define fprintf Consolefprintf
+#endif					/* ScrollingConsoleWin */
 
    while (len > 0) {
       /*
@@ -1737,8 +1778,6 @@ static int jpegread(char *filename, int p)
    jerr.pub.error_exit = my_error_exit;
 
    if (setjmp(jerr.setjmp_buffer)) {
-      jpeg_destroy_decompress(&cinfo);
-      fclose(gf_f);
       return Failed;
       }
 
@@ -1807,21 +1846,49 @@ static int jpegread(char *filename, int p)
 
    (void) jpeg_finish_decompress(&cinfo); /* jpeg lib function call */
 
+#ifdef NTGCC
+   /*
+    * Swap around pixel data to compensate for either a library bug or a
+    * bug in the code that calls the library. (image upside down)
+    */
+   {
+   int i, j, t, t1, t2, t3;
+   for (i=0, j=row_stride*cinfo.output_height-1; i < j; i++,j--) {
+      t = gf_string[i]; gf_string[i] = gf_string[j]; gf_string[j]=t;
+      }
+   for (i=0; i < cinfo.output_height; i++) {
+      for (j=0; j < cinfo.output_width/2; j++) {
+	 t1 = gf_string[i*row_stride+j*3+0];
+	 t2 = gf_string[i*row_stride+j*3+1];
+	 t3 = gf_string[i*row_stride+j*3+2];
+	 gf_string[i*row_stride+j*3+0] = gf_string[(i+1)*row_stride-(j+1)*3+0];
+	 gf_string[i*row_stride+j*3+1] = gf_string[(i+1)*row_stride-(j+1)*3+1];
+	 gf_string[i*row_stride+j*3+2] = gf_string[(i+1)*row_stride-(j+1)*3+2];
+	 gf_string[(i+1)*row_stride-(j+1)*3+0] = t1;
+	 gf_string[(i+1)*row_stride-(j+1)*3+1] = t2;
+	 gf_string[(i+1)*row_stride-(j+1)*3+2] = t3;
+	 }
+      }
+   }
+#endif					/* NTGCC */
+
    /*
     * Release JPEG decompression object
     */
    jpeg_destroy_decompress(&cinfo); /* jpeg lib function call */
 
    fclose(gf_f);
+   gf_f = NULL;
    return Succeeded;
 }
-
 
 /* a part of error handling */
 void my_error_exit (j_common_ptr cinfo)
 {
   my_error_ptr myerr = (my_error_ptr) cinfo->err;
   (*cinfo->err->output_message) (cinfo);
+  jpeg_destroy(cinfo);
+  if (gf_f) { fclose(gf_f); gf_f = NULL; }
   longjmp(myerr->setjmp_buffer, 1);
 }
 
@@ -2171,7 +2238,7 @@ int x, y, width, height;
    int r;
 
    r = jpegwrite(w, filename, x, y, width, height);
-   if (gf_f) fclose(gf_f);
+   if (gf_f) { fclose(gf_f); gf_f = NULL; }
    if (gf_string) free((pointer)gf_string);
    return r;
    }
@@ -2183,47 +2250,28 @@ int x, y, width, height;
 
 static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 {
-   int i, j, c, cur;
+   int i, j, c;
    long len;
-   LinearColor *cp;
    unsigned char *p, *q;
-   struct palentry paltbl[DMAXCOLORS];
-   unsigned char obuf[GifBlockSize];
-   lzwnode tree[GifTableSize + 1];
 
    struct jpeg_compress_struct cinfo;
-   struct jpeg_error_mgr jerr;
+   struct my_error_mgr jerr;
 
    JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
    int row_stride;		/* physical row width in image buffer */
    int quality;
 
-   unsigned char * gf_string_pixcolor;
-
-   gf_string_pixcolor = calloc(width*height*3, sizeof(unsigned char));
-
    len = (long)width * (long)height ;	/* total length of data */
-
-   if (!(gf_string = (unsigned char*)malloc((msize)len)))
-      return Error;
-
-   for (i = 0; i < DMAXCOLORS; i++)
-      paltbl[i].used = paltbl[i].valid = paltbl[i].transpt = 0;
-
-   if (!getimstr(w, x, y, width, height, paltbl, gf_string))
-      return Error;
-
-   gfpack(gf_string, len, paltbl);/* pack color table, set color params */
 
    quality = 95;
 
-   for ( i = 0, j=0; j < len; i = i + 3, j++) {
-      gf_string_pixcolor[i] = paltbl[gf_string[j]].clr.red;
-      gf_string_pixcolor[i+1] = paltbl[gf_string[j]].clr.green;
-      gf_string_pixcolor[i+2] = paltbl[gf_string[j]].clr.blue;
+   cinfo.err = jpeg_std_error(&jerr.pub);
+   jerr.pub.error_exit = my_error_exit;
+
+   if (setjmp(jerr.setjmp_buffer)) {
+      return Failed;
       }
 
-   cinfo.err = jpeg_std_error(&jerr);
    jpeg_create_compress(&cinfo);
 
    if ((gf_f = fopen(filename,"wb")) == NULL) {
@@ -2246,8 +2294,14 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 
    row_stride = cinfo.image_width *3;	/* JSAMPLEs per row in image_buffer */
 
+   if (!(gf_string = (unsigned char*)malloc((msize)len*3)))
+      return Error;
+
+   if (!getimstr24(w, x, y, width, height, gf_string))
+      return Error;
+
    while (cinfo.next_scanline < cinfo.image_height) {
-      row_pointer[0] = & gf_string_pixcolor[cinfo.next_scanline*row_stride];
+      row_pointer[0] = & gf_string[cinfo.next_scanline*row_stride];
       (void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
       }
 
@@ -4017,18 +4071,14 @@ FILE *OpenConsole()
       /*
        * build the attribute list
        */
-      StrLoc(attrs[0]) = "cursor=on";
-      StrLen(attrs[0]) = strlen("cursor=on");
-      StrLoc(attrs[1]) = "rows=24";
-      StrLen(attrs[1]) = strlen("rows=24");
-      StrLoc(attrs[2]) = "columns=80";
-      StrLen(attrs[2]) = strlen("columns=80");
+      AsgnCStr(attrs[0], "cursor=on");
+      AsgnCStr(attrs[1], "rows=24");
+      AsgnCStr(attrs[2], "columns=80");
       /*
-       * enable these last two (by telling wopen it has 4 args)
+       * enable this last argument (by telling wopen it has 4 args)
        * if you want white text on black bg
        */
-      StrLoc(attrs[3]) = "reverse=on";
-      StrLen(attrs[3]) = strlen("reverse=on");
+      AsgnCStr(attrs[3], "reverse=on");
 
       strncpy(ConsoleTitle, StrLoc(kywd_prog), StrLen(kywd_prog));
       ConsoleTitle[StrLen(kywd_prog)] = '\0';
@@ -4038,6 +4088,15 @@ FILE *OpenConsole()
       k_input.fd.fp = ConsoleBinding;
       k_output.fd.fp = ConsoleBinding;
       k_errout.fd.fp = ConsoleBinding;
+#ifdef ScrollingConsoleWin
+{
+      wsp ws = ((wbp)ConsoleBinding)->window;
+      ws->nChildren++;
+      ws->child = realloc(ws->child, ws->nChildren * sizeof(childcontrol));
+      makeeditregion(ConsoleBinding, ws->child + (ws->nChildren-1), "");
+      movechild(ws->child + (ws->nChildren-1), 0, 0, ws->width, ws->height);
+}
+#endif					/* ScrollingConsoleWin */
       }
    return ConsoleBinding;
    }
@@ -4141,7 +4200,11 @@ int Consolefflush(FILE *f)
       if (flog) fflush(flog);
       console = (wbp)OpenConsole();
       if (console == NULL) return 0;
+#ifdef MSWindows
+      return 0;
+#else					/* MSWindows */
       return wflush(console);
+#endif					/* MSWindows */
       }
   return fflush(f);
 }

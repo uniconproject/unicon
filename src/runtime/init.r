@@ -1529,7 +1529,8 @@ void closelogfile()
    /*
     * if it is not the ultimate default logfile name, free malloc'ed memory
     */
-   if ((getenv("WICONLOG")!=NULL) || strcmp(lognam, "winicon.log")) {
+   if (lognam &&
+       ((getenv("WICONLOG")!=NULL) || strcmp(lognam, "winicon.log"))) {
       free(lognam);
       lognam = NULL;
       }
@@ -1544,7 +1545,11 @@ int i;
 {
 
 #ifdef ConsoleWindow
+#ifdef ScrollingConsoleWin
+   char *msg = "Click the \"x\" to close console...";
+#else					/* ScrollingConsoleWin */
    char *msg = "Strike any key to close console...";
+#endif					/* ScrollingConsoleWin */
 #endif					/* ConsoleWindow */
 
 #if E_Exit

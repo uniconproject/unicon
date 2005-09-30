@@ -1192,6 +1192,10 @@ int n;
    SelectObject(pixdc, oldfont2);
    FREE_STDLOCALS(w);
    }
+
+void geteditregion(childcontrol *cc, dptr d);
+void seteditregion(childcontrol *cc, char *s2);
+
 /*
  * wputc
  */
@@ -1202,6 +1206,32 @@ int wputc(int ci, wbp w)
    wcp wc = w->context;
    int y_plus_descent;
    HBRUSH hb;
+
+#ifdef ScrollingConsoleWin
+   char c2[3], *catenation;
+   tended struct descrip result;
+
+   if (w == (wbp)ConsoleBinding) {
+        geteditregion(ws->child, &result);
+      while (StrLen(result) + 2 > 32700) {
+	 while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
+	    StrLoc(result) ++;
+	    StrLen(result) --;
+	    }
+	 if (StrLen(result) > 0) {
+	    StrLoc(result)++; StrLen(result)--;
+	    }
+	 }
+	reserve(Strings, StrLen(result) + 3);
+	catenation = alcstr(StrLoc(result), StrLen(result));
+	if (c == '\n') { c2[0] = '\r'; c2[1] = '\n'; c2[2] = '\0'; }
+	else { c2[0] = c; c2[1] = '\0'; }
+        alcstr(c2, strlen(c2)+1);
+	seteditregion(w->window->child, catenation);
+	setchildselection(w->window, w->window->child, StrLen(result), StrLen(result)+strlen(c2));
+	return 0;
+}
+#endif					/* ScrollingConsoleWin */
 
    switch (c) {
    case '\n':

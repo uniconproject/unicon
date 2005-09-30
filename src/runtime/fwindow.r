@@ -4049,7 +4049,7 @@ function{1} Texture(argv[argc])
 	 strncpy(filename, tmp, MaxFileName);
 	 filename[MaxFileName] = '\0';
 	 if (fileimage(w, filename) != Succeeded)
-	    runerr(153, argv[warg]);
+	    fail;
 	 }
       return f; 
       }

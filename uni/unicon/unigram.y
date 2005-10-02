@@ -132,6 +132,13 @@
 
 %token	DOLLAR      /* $         */
 %token	ABSTRACT    /* abstract  */
+%token  PMATCH      /*??         */
+%token  PAND        /*&&         */
+%token  POR        /* .|         */
+%token  PUNEVAL      /* ` */
+%token  PASSNONMATCH  /* -> */
+%token  PIMDASSN      /* $$ */  
+%token  PSETCUR       /* .$ */  
 
 %{
 
@@ -453,48 +460,55 @@ expr	: expr1a ;
 expr1a	: expr1 ;
 	| expr1a QMARK expr1	{ $$ := node("binques", $1,$2,$3);} ;
 
-expr1	: expr2 ;
-	| expr2 SWAP expr1      { $$ := node("swap", $1,$2,$3);} ;
-	| expr2 ASSIGN expr1    { $$ := node("assign", $1,$2,$3);} ;
-	| expr2 REVSWAP expr1   { $$ := node("revswap", $1,$2,$3);} ;
-	| expr2 REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3);} ;
-	| expr2 AUGCONCAT expr1 { $$ := node("augcat", $1,$2,$3);} ;
-	| expr2 AUGLCONCAT expr1 { $$ := node("auglcat", $1,$2,$3);} ;
-	| expr2 AUGDIFF expr1   { $$ := node("Bdiffa", $1,$2,$3);} ;
-	| expr2 AUGUNION expr1  { $$ := node("Buniona", $1,$2,$3);} ;
-	| expr2 AUGPLUS expr1   { $$ := node("Bplusa", $1,$2,$3);} ;
-	| expr2 AUGMINUS expr1  { $$ := node("Bminusa", $1,$2,$3);} ;
-	| expr2 AUGSTAR expr1   { $$ := node("Bstara", $1,$2,$3);} ;
-	| expr2 AUGINTER expr1  { $$ := node("Bintera", $1,$2,$3);} ;
-	| expr2 AUGSLASH expr1  { $$ := node("Bslasha", $1,$2,$3);} ;
-	| expr2 AUGMOD expr1    { $$ := node("Bmoda", $1,$2,$3);} ;
-	| expr2 AUGCARET expr1  { $$ := node("Bcareta", $1,$2,$3);} ;
-	| expr2 AUGNMEQ expr1   { $$ := node("Baugeq", $1,$2,$3);} ;
-	| expr2 AUGEQUIV expr1  { $$ := node("Baugeqv", $1,$2,$3);} ;
-	| expr2 AUGNMGE expr1   { $$ := node("Baugge", $1,$2,$3);} ;
-	| expr2 AUGNMGT expr1   { $$ := node("Bauggt", $1,$2,$3);} ;
-	| expr2 AUGNMLE expr1   { $$ := node("Baugle", $1,$2,$3);} ;
-	| expr2 AUGNMLT expr1   { $$ := node("Bauglt", $1,$2,$3);} ;
-	| expr2 AUGNMNE expr1   { $$ := node("Baugne", $1,$2,$3);} ;
-	| expr2 AUGNEQUIV expr1 { $$ := node("Baugneqv", $1,$2,$3);} ;
-	| expr2 AUGSEQ expr1    { $$ := node("Baugseq", $1,$2,$3);} ;
-	| expr2 AUGSGE expr1    { $$ := node("Baugsge", $1,$2,$3);} ;
-	| expr2 AUGSGT expr1    { $$ := node("Baugsgt", $1,$2,$3);} ;
-	| expr2 AUGSLE expr1    { $$ := node("Baugsle", $1,$2,$3);} ;
-	| expr2 AUGSLT expr1    { $$ := node("Baugslt", $1,$2,$3);} ;
-	| expr2 AUGSNE expr1    { $$ := node("Baugsne", $1,$2,$3);} ;
-	| expr2 AUGQMARK expr1  { $$ := node("Baugques", $1,$2,$3);} ;
-	| expr2 AUGAND expr1    { $$ := node("Baugamper", $1,$2,$3);} ;
-	| expr2 AUGAT expr1     { $$ := node("Baugact", $1,$2,$3);} ;
+expr1	: expr2a ;
+	| expr2a SWAP expr1      { $$ := node("swap", $1,$2,$3);} ;
+	| expr2a ASSIGN expr1    { $$ := node("assign", $1,$2,$3);} ;
+	| expr2a REVSWAP expr1   { $$ := node("revswap", $1,$2,$3);} ;
+	| expr2a REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3);} ;
+	| expr2a AUGCONCAT expr1 { $$ := node("augcat", $1,$2,$3);} ;
+	| expr2a AUGLCONCAT expr1 { $$ := node("auglcat", $1,$2,$3);} ;
+	| expr2a AUGDIFF expr1   { $$ := node("Bdiffa", $1,$2,$3);} ;
+	| expr2a AUGUNION expr1  { $$ := node("Buniona", $1,$2,$3);} ;
+	| expr2a AUGPLUS expr1   { $$ := node("Bplusa", $1,$2,$3);} ;
+	| expr2a AUGMINUS expr1  { $$ := node("Bminusa", $1,$2,$3);} ;
+	| expr2a AUGSTAR expr1   { $$ := node("Bstara", $1,$2,$3);} ;
+	| expr2a AUGINTER expr1  { $$ := node("Bintera", $1,$2,$3);} ;
+	| expr2a AUGSLASH expr1  { $$ := node("Bslasha", $1,$2,$3);} ;
+	| expr2a AUGMOD expr1    { $$ := node("Bmoda", $1,$2,$3);} ;
+	| expr2a AUGCARET expr1  { $$ := node("Bcareta", $1,$2,$3);} ;
+	| expr2a AUGNMEQ expr1   { $$ := node("Baugeq", $1,$2,$3);} ;
+	| expr2a AUGEQUIV expr1  { $$ := node("Baugeqv", $1,$2,$3);} ;
+	| expr2a AUGNMGE expr1   { $$ := node("Baugge", $1,$2,$3);} ;
+	| expr2a AUGNMGT expr1   { $$ := node("Bauggt", $1,$2,$3);} ;
+	| expr2a AUGNMLE expr1   { $$ := node("Baugle", $1,$2,$3);} ;
+	| expr2a AUGNMLT expr1   { $$ := node("Bauglt", $1,$2,$3);} ;
+	| expr2a AUGNMNE expr1   { $$ := node("Baugne", $1,$2,$3);} ;
+	| expr2a AUGNEQUIV expr1 { $$ := node("Baugneqv", $1,$2,$3);} ;
+	| expr2a AUGSEQ expr1    { $$ := node("Baugseq", $1,$2,$3);} ;
+	| expr2a AUGSGE expr1    { $$ := node("Baugsge", $1,$2,$3);} ;
+	| expr2a AUGSGT expr1    { $$ := node("Baugsgt", $1,$2,$3);} ;
+	| expr2a AUGSLE expr1    { $$ := node("Baugsle", $1,$2,$3);} ;
+	| expr2a AUGSLT expr1    { $$ := node("Baugslt", $1,$2,$3);} ;
+	| expr2a AUGSNE expr1    { $$ := node("Baugsne", $1,$2,$3);} ;
+	| expr2a AUGQMARK expr1  { $$ := node("Baugques", $1,$2,$3);} ;
+	| expr2a AUGAND expr1    { $$ := node("Baugamper", $1,$2,$3);} ;
+	| expr2a AUGAT expr1     { $$ := node("Baugact", $1,$2,$3);} ;
 
+expr2a  : expr2;
+	| expr2a PMATCH expr2	{ $$ := node("BPmatch", $1,$2,$3);} ;
+           
 expr2	: expr3 ;
 	| expr2 TO expr3 { $$ := node("to", $1,$2,$3);} ;
 	| expr2 TO expr3 BY expr3 { $$ := node("toby", $1,$2,$3,$4,$5);} ;
+        | expr2 POR expr3 { $$ := node("BPor", $1,$2,$3); };
 
 expr3	: expr4 ;
-	| expr4 BAR expr3 {$$ := node(BAR, $1,$2,$3);} ;
+        | expr4 PAND expr3 { $$ := node("BPand", $1,$2,$3); };
+	| expr4 BAR expr3  {$$ := node(BAR, $1,$2,$3);} ;
 
-expr4	: expr5 ;
+expr4	: expr5;
+	| expr4 PIMDASSN expr5 { $$ := node("BPiam", $1,$2,$3);} ;
+	| expr4 PASSNONMATCH expr5 { $$ := node("BPaom", $1,$2,$3);} ;
 	| expr4 SEQ expr5 { $$ := node("Bseq", $1,$2,$3);} ;
 	| expr4 SGE expr5 { $$ := node("Bsge", $1,$2,$3);} ;
 	| expr4 SGT expr5 { $$ := node("Bsgt", $1,$2,$3);} ;
@@ -514,6 +528,10 @@ expr5	: expr6 ;
 	| expr5 CONCAT expr6 { $$ := node("Bcat", $1,$2,$3);} ;
 	| expr5 LCONCAT expr6 { $$ := node("Blcat", $1,$2,$3);} ;
 
+/* Rules for pattern matching operators 
+expr6p  : expr7;
+        
+*/
 expr6	: expr7 ;
 	| expr6 PLUS expr7 { $$ := node("Bplus", $1,$2,$3);} ;
 	| expr6 DIFF expr7 { $$ := node("Bdiff", $1,$2,$3);} ;
@@ -559,6 +577,7 @@ expr10	: expr11 ;
 	| QMARK expr10 { $$ := node("uqmark", $1,$2);} ;
 	| NEQUIV expr10 { $$ := node("unotequiv", $1,$2);} ;
 	| BACKSLASH expr10 { $$ := node("ubackslash", $1,$2);} ;
+	| PSETCUR expr10 { $$ := node("upsetcur", $1,$2);} ;
 
 expr11	: literal ;
 	| section ;
@@ -569,6 +588,7 @@ expr11	: literal ;
 	| until ;
 	| every ;
 	| repeat ;
+        | PUNEVAL { $$ := node("BPuneval", $1);} ;
 	| CREATE expr { $$ := node("create", $1,$2);} ;
 	| IDENT ;
 	| NEXT { $$ := node("Next", $1);} ;

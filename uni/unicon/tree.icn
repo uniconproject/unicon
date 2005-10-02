@@ -63,6 +63,135 @@ procedure yystalists(node)
    }
 end
 
+
+
+procedure  emit_code_for_uneval(funcname)
+	L := []
+	tab(many("`"))
+	temp := tab(upto("(.")) 
+	if \temp == "\\" then temp := "\\\\"
+	put(L,\temp)
+	while ( tab(upto(&letters))) do
+	{
+		temp := tab(many(&letters))
+		put(L,temp)
+	}
+	writes(yyout,funcname, "(")
+	writes(yyout, "[")
+	every temp := !L\ (*L -1) do
+	{
+		writes(yyout, "\"", temp,"\",")
+	}
+ 	writes(yyout, "\"", L[*L], "\"")
+	writes(yyout, "])")
+	return
+end
+
+
+# the unevaluated expressions in pattern matching has the following major cases
+# 1. local/global variable ( indicated by absence of . and ( )
+# 2. member field          ( indicated by presence of . and absence of ( )  
+# 3. procedure invocation  ( indicated by presence of ( and absence of . )
+# 4. method invocation     ( indicated by presence of both . ( )
+# Currently we return error for cases like x.y.z or x.y.z() ( possible future work
+# resolve multiple references
+# will add error checking later
+
+procedure process_uneval(node)
+	case type(node.s) of 
+	{ 
+		"string":
+		{
+			write(node.s)
+		 	if node.s[1:3] === "``" then 		
+			{
+				node.s ?
+					{
+						if find(".") & find ("(") then
+						{
+							write("\nFound method call")
+							return emit_code_for_uneval("pattern_stringmethodcall")
+						}
+						else if find ("(") then
+						{
+							write("\nFound procedure call")
+							return emit_code_for_uneval( "pattern_stringfunccall")
+						}	
+						else
+							yyerror("`` must enclose function call", node)
+					}	
+			}
+		 	else
+		 	{
+		 		node.s ?
+					{
+						if find(".") & find ("(") then
+						{
+							write("\nFound method call")
+							return emit_code_for_uneval("pattern_boolmethodcall")
+						}
+						else if find ("(") then
+						{
+							write("\nFound procedure call")
+							return emit_code_for_uneval( "pattern_boolfunccall")
+						}	
+						else if find(".") then 
+						{
+						    write("\nFound field reference")
+	           				    return emit_code_for_uneval("pattern_unevalvar")
+						}
+						else
+						{
+						   write("\nFound variable reference")
+						   tab(upto(&letters))
+						   temp := tab(many(&letters))
+						   writes(yyout,"pattern_unevalvar( ")
+						   writes(yyout, "\"", temp, "\"")
+						   writes(yyout, ")")
+	        	   		           return
+						}	
+					}
+			}
+		}	
+		default :
+		write("Error string expected but got  ", type(node))
+	}
+end
+
+procedure emit_assign_code(node)
+	case type(node) of
+	{
+		"treenode":
+		{
+			if ( node.label ~== "field") then
+				{
+					yyerror("Assignement must be to field")
+					return;
+				}
+			if ( type(node.children[1]) ~== "token") then
+				{
+					yyerror("Multiple references not supported")
+					return;
+				}
+			writes(yyout,"[","\"",node.children[1].s,"\",\"",node.children[3].s,"\"]")
+			return
+		}
+		"token":
+		{
+			node.s ??
+				{
+					rec := tab(upto("."))
+					if \rec then &pos +:= 1; # jump over the .
+					var := tab(0)
+					write("rec =", rec, " var = ",var)
+					if (\rec) then writes(yyout,"[","\"",rec,"\",\"",var,"\"]")
+					else writes(yyout,"\"",var,"\"")
+				}
+		}
+	}
+
+end
+
 procedure yyprint(node)
    static lasttok
    repeat			# allows us to suppress tail recursion
@@ -91,6 +220,55 @@ procedure yyprint(node)
 	    node := node.children[2]
 	    next
 	    }
+         else if node.label == "BPand" then {
+	    writes(yyout, " pattern_concat( ")
+	    yyprint(node.children[1])
+	    writes(yyout, ",")
+	    yyprint(node.children[3])
+	    writes(yyout, " ) ")		
+	    }	
+         else if node.label == "BPor" then {
+	    writes(yyout, " pattern_alternate( ")
+	    yyprint(node.children[1])
+	    writes(yyout, ",")
+	    yyprint(node.children[3])
+	    writes(yyout, " ) ")		
+	    }	
+         else if node.label == "BPmatch" then {
+	    writes(yyout, " pattern_match( ")
+	    yyprint(node.children[1])
+	    writes(yyout, ",")
+	    yyprint(node.children[3])
+	    writes(yyout, " ) ")		
+	    }	
+         else if node.label == "BPiam" then {
+	    writes(yyout, " pattern_assign_immediate( ")
+	    yyprint(node.children[1])
+	    writes(yyout, ",")
+	    yyprint(node.children[3])
+	    writes(yyout, ",")
+	    emit_assign_code(node.children[3])
+	    writes(yyout, " ) ")		
+	    }	
+         else if node.label == "BPaom" then {
+	    writes(yyout, " pattern_assign_onmatch( ")
+	    yyprint(node.children[1])
+	    writes(yyout, ",")
+	    yyprint(node.children[3])
+	    writes(yyout, ",")
+	    emit_assign_code(node.children[3])
+	    writes(yyout, " ) ")		
+	    }	
+         else if node.label == "upsetcur" then {
+	    writes(yyout, " pattern_setcur( ")
+	    yyprint(node.children[2])
+	    writes(yyout, ",")
+	    emit_assign_code(node.children[2])
+	    writes(yyout, " ) ")		
+	    }	
+         else if node.label == "BPuneval" then {
+		process_uneval(node.children[1])
+	    }	
 	 else if node.label == ("varlist2"|"stalist2") then {
 	    yyprint(node.children[1])
 	    fail
@@ -506,7 +684,7 @@ procedure scopecheck_expr(node, local_vars, self_vars)
 				  "Baugeqv"|"Baugge"|"Bauggt"|"Baugle"|
 				  "Bauglt"|"Baugne"|"Baugneqv"|"Baugseq"|
 				  "Baugsge"|"Baugsgt"|"Baugsle"|"Baugslt"|
-				  "Baugsne"|"Baugques"|"Baugamper"|"Baugact") then {
+				  "Baugsne"|"Baugques"|"Baugamper"|"Baugact"|"BPand") then {
             every scopecheck_expr(!node.children, local_vars, self_vars)
 	    ckfnasgn(node.children[1], local_vars, self_vars)
          } else

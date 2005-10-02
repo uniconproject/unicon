@@ -931,6 +931,20 @@
 #define E_Literal 0
 #endif
 
+#if defined(EventMon) || defined(E_Pattern)
+#undef E_Pattern
+#define E_Pattern	'\200'
+#else
+#define E_Pattern 0
+#endif
+
+#if defined(EventMon) || defined(E_Pelem)
+#undef E_Pelem
+#define E_Pelem	'\201'
+#else
+#define E_Pelem 0
+#endif
+
 /* unused pool.  how many event codes are unused?
 
 000 001 002 003 004 005 006 007
@@ -947,7 +961,7 @@
 137
 162
 
-200 201 202 203 204 205 206 207
+202 203 204 205 206 207
 210 211 212 213 214 215 216 217
 220 221 222 223 224 225 226 227
 230 231 232 233 234 235 236 237

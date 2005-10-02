@@ -114,7 +114,6 @@ FncDefV(writes)
      FncDef(PBreakx,1)
      FncDef(pattern_assign_immediate,3) /* $$ */
      FncDef(pattern_assign_onmatch,3)  /* -> */
-     FncDef(pattern_recursive,2)   /* ``*/
      FncDef(PFence,1)
      FncDef(pattern_unevalvar,1)   /* `` */
      FncDef(pattern_fieldeval,1)   /* `x.y` */

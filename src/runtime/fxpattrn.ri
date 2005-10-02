@@ -996,6 +996,9 @@ function {1} PArbno(ARBPAT)
 	       return pattern(bp);
 	       }
 	    }
+      default: {
+	 runerr(127,ARBPAT);
+	 }
 	 }
       }
 end
@@ -1760,7 +1763,6 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
       Stack[Stack_Init].node = &CP_Cancel;
       Stack[Stack_Init].cursor = 0;
       }
-   */
 /*
  *       --  In unanchored mode, the bottom entry on the stack references
  *       --  the special pattern element PE_Unanchored, whose Pthen field
@@ -1820,7 +1822,7 @@ Match_Succeed:
 	       if (var.dword == D_File) {
 		  struct b_file *f;
 		  f = (struct b_file *)BlkLoc(var);
-		  MYWriteToFile(f->fd,Stop - Start,pat_sub + Start);
+		  MYWriteToFile(f->fd.fp,Stop - Start,pat_sub + Start);
 		  }
 	       else
 		  Set_String(pvar,pat_sub,Start, Stop );
@@ -2040,7 +2042,7 @@ Node_Succeed:
       if (var.dword == D_File) {
 	 struct b_file *f;
 	 f = (struct b_file *)BlkLoc(var);
-	 MYWriteToFile(f->fd,Cursor - Stack[Stack_Base - 1].cursor,
+	 MYWriteToFile(f->fd.fp,Cursor - Stack[Stack_Base - 1].cursor,
 		       pat_sub + Stack[Stack_Base - 1].cursor);
 	 }
       else {

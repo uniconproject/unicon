@@ -290,7 +290,7 @@ xrwindow.o: rwindow.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c xrwindow.c
 	rm xrwindow.c
 
-xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri
+xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri
 	../../bin/rtt -x fxtra.r
 	$(CC) $(CFLAGS) -c xfxtra.c
 	rm xfxtra.c

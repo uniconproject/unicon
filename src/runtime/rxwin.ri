@@ -3534,6 +3534,47 @@ unsigned char *data;
    XDestroyImage(im);
    return 1;
    }
+/*
+ * getimstr24 -- get an image as a string of RGB tuples.
+ *
+ * Stores the specified subimage in data, three pixels per byte.
+ */
+int getimstr24(w, xx, yy, width, height, data)
+wbp w;
+int xx, yy, width, height;
+unsigned char *data;
+   {
+   XImage *im;
+   XColor colorcell;
+   SysColor px;
+   unsigned long pix;
+   int i, x, y, wid = xx + width, ht = yy + height;
+   STDLOCALS(w);
+
+   /*
+    * Get an XImage structure containing window pixel values.
+    */
+   im = getximage(w, x, y, width, height, 1);
+   if (!im)
+      return 0;
+   
+   for (y = yy; y < ht; y++) {
+#if 0
+      /* want to do pollevent here, but can't inside a STDLOCALS declaration */
+      if (y & 1 == 0) {
+	 pollevent();
+	 }
+#endif
+      for (x = xx; x < wid; x++) {
+	 px.pixel = XGetPixel(im, x, y);
+	 XQueryColor(stddpy, wd->cmap, &px);
+	 *data++ = px.red >> 8;
+	 *data++ = px.green >> 8;
+	 *data++ = px.blue >> 8;
+	 }
+      }
+   return 1;
+   }
 
 /*
  * Create an XImage structure corresponding to subimage (x, y, w, h).

@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.15 2005-07-26 15:19:57 rparlett Exp $
+# $Id: component.icn,v 1.16 2005-10-04 19:06:54 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -598,13 +598,13 @@ class Component : Object : SetFields : Connectable(
 	    write(&errout, "clone failed, discarding attributes:")
 	    every write(&errout, "\t", ! attribs)
 	    cwin := Clone(parent.get_cwin_reference())
-	    if /cwin then error("multiple bad attributes")
+	    if /cwin then fatal("multiple bad attributes")
 	    cbwin := Clone(parent.get_cbwin_reference())
-	    if /cbwin then error("bad cbwin, multiple bad attributes")
+	    if /cbwin then fatal("bad cbwin, multiple bad attributes")
 	    }
 	 else {
 	    cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
-	    if /cbwin then error("bad cbwin, not sure why")
+	    if /cbwin then fatal("bad cbwin, not sure why")
 	    }
 	 }
       every (!self.children).init()

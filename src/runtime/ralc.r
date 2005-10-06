@@ -391,10 +391,10 @@ struct b_pattern *f(word stck_size)
 #enddef
 
 #ifdef MultiThread
-alcpattern_macro(alcpattern_0,0)
-alcpattern_macro(alcpattern_1,E_List)
+alcpattern_macro(alcpattern_0,0,0)
+alcpattern_macro(alcpattern_1,E_Pattern,E_Pelem)
 #else					/* MultiThread */
-alcpattern_macro(alcpattern,0)
+alcpattern_macro(alcpattern,0,0)
 #endif					/* MultiThread */
 
 

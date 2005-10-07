@@ -15,8 +15,8 @@ int real_typ = 9;
 int list_typ = 10;
 int tbl_typ = 11;
 
-int num_typs = 20;
-struct icon_type icontypes[20] = {
+int num_typs = 21;
+struct icon_type icontypes[21] = {
   {"string", 0, DrfNone, TRetSpcl, NULL, 0, 0, "s", "String"},
   {"integer", 0, DrfNone, TRetNone, NULL, 0, 0, "i", "Integer"},
   {"record", 0, DrfNone, TRetBlkP, NULL, 0, 0, "R", "Record"},
@@ -30,13 +30,14 @@ struct icon_type icontypes[20] = {
   {"list", 1, DrfNone, TRetBlkP, NULL, 1, 2, "L", "List"},
   {"table", 1, DrfNone, TRetBlkP, NULL, 3, 3, "T", "Table"},
   {"file", 0, DrfNone, TRetBlkP, NULL, 0, 0, "f", "File"},
-  {"set", 1, DrfNone, TRetBlkP, NULL, 1, 6, "S", "Set"},
-  {"kywdint", 0, DrfCnst, TRetDescP, ".i..................", 0, 0, "kywdint", "Kywdint"},
-  {"kywdsubj", 0, DrfCnst, TRetDescP, "s...................", 0, 0, "kywdsubj", "Kywdsubj"},
-  {"kywdpos", 0, DrfCnst, TRetDescP, ".i..................", 0, 0, "kywdpos", "Kywdpos"},
-  {"kywdevent", 0, DrfCnst, TRetDescP, "siRpC..ncrLTfS......", 0, 0, "kywdevent", "Kywdevent"},
-  {"kywdwin", 0, DrfCnst, TRetDescP, ".......n....f.......", 0, 0, "kywdwin", "Kywdwin"},
-  {"kywdstr", 0, DrfCnst, TRetDescP, "s...................", 0, 0, "kywdstr", "Kywdstr"}};
+  {"pattern", 1, DrfNone, TRetBlkP, NULL, 1, 6, "p", "Pattern"},
+  {"set", 1, DrfNone, TRetBlkP, NULL, 1, 7, "S", "Set"},
+  {"kywdint", 0, DrfCnst, TRetDescP, ".i...................", 0, 0, "kywdint", "Kywdint"},
+  {"kywdsubj", 0, DrfCnst, TRetDescP, "s....................", 0, 0, "kywdsubj", "Kywdsubj"},
+  {"kywdpos", 0, DrfCnst, TRetDescP, ".i...................", 0, 0, "kywdpos", "Kywdpos"},
+  {"kywdevent", 0, DrfCnst, TRetDescP, "siRpC..ncrLTfpS......", 0, 0, "kywdevent", "Kywdevent"},
+  {"kywdwin", 0, DrfCnst, TRetDescP, ".......n....f........", 0, 0, "kywdwin", "Kywdwin"},
+  {"kywdstr", 0, DrfCnst, TRetDescP, "s....................", 0, 0, "kywdstr", "Kywdstr"}};
 
 int str_var = 0;
 int trpd_tbl = 1;
@@ -44,12 +45,13 @@ int lst_elem = 2;
 int tbl_dflt = 5;
 int tbl_val = 4;
 
-int num_cmpnts = 7;
-struct typ_compnt typecompnt[7] = {
+int num_cmpnts = 8;
+struct typ_compnt typecompnt[8] = {
   {"str_var", 0, 0, 5, NULL},
   {"trpd_tbl", 0, 0, 6, NULL},
   {"lst_elem", 0, 1, 10, "LE"},
   {"tbl_key", 0, 0, 11, NULL},
   {"tbl_val", 1, 1, 11, "TV"},
   {"tbl_dflt", 2, 0, 11, NULL},
-  {"set_elem", 0, 0, 13, NULL}};
+  {"pat_elem", 0, 0, 13, NULL},
+  {"set_elem", 0, 0, 14, NULL}};

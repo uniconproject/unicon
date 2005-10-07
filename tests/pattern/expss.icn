@@ -1,0 +1,37 @@
+# pg 54
+# Original SNOBOL code
+#	&ANCHOR = 1
+#	VARIABLE = ANY('XYZ')
+#	ADDOP = ANY('+-')
+#	MULOP = ANY('*/')
+#	FACTOR = VARIABLE | '(' *EXP ')'
+#	TERM = FACTOR | *TERM MULOP FACTOR
+#	EXP = ADDOP TERM | TERM | *EXP ADDOP TERM
+#LOOP	STRING = TRIM(INPUT)				:F(END)
+#	STRING EXP RPOS(0)				:F(NOGOOD)
+#	OUTPUT = STRING ' IS AN EXPRESSION'		:(LOOP)
+#NOGOOD	OUTPUT = STRING ' IS NOT AN EXPRESSION'		:(LOOP)
+#END
+
+procedure main()
+	variable := PAny("xyz")
+	addop 	 := PAny("+-")
+	mulop 	 := PAny("*/")
+	factor 	 := variable .| "(" && `exp` && ")"
+	term 	 := factor .|  factor && mulop && `term`
+	exp 	 := addop && term .| term .| term &&addop && `exp`
+	p	 := PPos(0) && exp && PRpos(0)
+
+	L := [
+		"x+y*(z+x)",
+		"x+y+z",
+		"xy"
+		]
+	every s := !L do
+	{
+		if ( s ?? p ) then
+			write(s, " is an expression")
+		else
+			write(s, " is not an expression")
+	}
+end

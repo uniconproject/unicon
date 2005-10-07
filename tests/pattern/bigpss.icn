@@ -1,0 +1,41 @@
+# Original SNOBOL CODE pg 53
+#
+
+#	BIGP = (*P $ TRY *GT(SIZE(TRY),SIZE(BIG))) $ BIG FAIL
+#	STR = 'ON jANUARY 1,1965, THE UNITED STATES MERCHANT FLEET HAD 29632000 VESSELS TOTALLING 2529  DEADWEIGHT TONS'
+
+#	P = SPAN('0123456789')
+#	BIG = 
+#	STR BIGP
+#	OUTPUT = 'LARGEST NUMBER IS ' BIG
+#	P = SPAN('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+#	BIG = 
+#	STR BIGP
+#	OUTPUT = 'LARGEST WORD IS ' BIG
+
+
+procedure gt(t,p)
+	write("In gt")
+	write( "t = ",t)
+	write( "p = ",p)
+	return *t > *p
+#	if *t > *p then
+#	return 1
+#	else
+#	return 0
+end
+
+
+
+procedure main()
+	bigp := ( `p` $$ try && `gt(try,big)`) $$ big && PFail()
+	str := "ON jANUARY 1,1965, THE UNITED STATES MERCHANT FLEET HAD 29632000 VESSELS TOTALLING 2529  DEADWEIGHT TONS"
+	p := PSpan(&digits)
+	big := ""
+	str ?? bigp
+	write("Largest number is ", big)
+	big := ""
+	str ?? bigp
+	write("Largest word is ", big)	
+	gt(try,big)
+end

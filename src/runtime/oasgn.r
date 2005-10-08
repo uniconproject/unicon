@@ -150,6 +150,13 @@ operator{0,1} := asgn(underef x, y)
    GeneralAsgn(x, y)
 
    inline {
+#ifdef PatternType
+      if (is:tvsubs(x))
+	   {
+	       union block *bp_x = BlkLoc(x);
+	       return bp_x->tvsubs.ssvar;
+	   }
+#endif
       /*
        * The returned result is the variable to which assignment is being
        *  made.

@@ -169,8 +169,13 @@ procedure unicon(argv)
 	 "-yydbg": parseonly := yydbg := 1
 	 "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
 	 "-v" : {
-	      ilinkopt ||:= argv[i] || " " || integer(argv[i+1]) || " "
-	      argv[i+1] := "-v"
+	    if (i=1) | (argv[i-1] ~=== "-v") then {
+	       ilinkopt ||:= argv[i] || " " || integer(argv[i+1]) || " "
+	       argv[i+1] := "-v"
+	       }
+	    }
+	 "-v0"|"-v1"|"-v2"|"-v3" : {
+	      ilinkopt ||:= argv[i] || " "
 	      }
 	 "-M" : merrflag := 1
 	 default   : icontopt ||:= argv[i] || " "

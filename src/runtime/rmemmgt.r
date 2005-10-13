@@ -132,7 +132,7 @@ int firstd[] = {
      -1,                      /* T_Kywdevent (25), event keyword variable */
 #ifdef PatternType
     0,              /* T_Pattern (26), pattern block */
-    3*WordSize,              /* T_Pelem (27), pattern element */
+    4*WordSize,              /* T_Pelem (27), pattern element */
 #endif					/* PatternType */
     };
 
@@ -441,6 +441,9 @@ int region;
 #endif					/* MultiThread */
    markblock(&k_main);
    markblock(&k_current);
+
+   markptr(&pattern_cache);
+
    /*
     * Mark &subject and the cached s2 and s3 strings for map.
     */

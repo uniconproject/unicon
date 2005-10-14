@@ -315,7 +315,8 @@
 #endif					/* Dbm */
 
 #ifdef ISQL
-
+  /* to prevent double-typedef of BOOL on some platforms */
+  #define BOOL int
   #include <sqlext.h>
 
   #define Type(d) (int)((d).dword & TypeMask)

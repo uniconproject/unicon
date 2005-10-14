@@ -1268,12 +1268,25 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
       return pattern;
       }
    body {
-      struct b_pattern * p = (struct b_pattern *)BlkLoc(PAT);
+       struct b_pattern * p;
       union block *bp;
       struct b_pelem *P;
       struct b_pelem *E;
       struct b_pelem *A;
       struct b_pelem *pe;
+      type_case PAT of {
+      string:
+	 cnv_str_pattern(&PAT,&PAT);
+      cset:
+	 cnv_cset_pattern(&PAT,&PAT);
+      pattern: {
+	 }
+      default:{
+	 runerr(127);
+	 }
+	}
+
+      p = (struct b_pattern *)BlkLoc(PAT);
       P = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_Imm,0,name);
@@ -1306,11 +1319,23 @@ function {1} PFence(P)
       }
    else
    body {
-      struct b_pattern * p = (struct b_pattern *)BlkLoc(P);
+       struct b_pattern * p;
       union block *bp;
       struct b_pelem *Pat;
       struct b_pelem *E;
       struct b_pelem *X;
+      type_case P of {
+      string:
+	 cnv_str_pattern(&P,&P);
+      cset:
+	 cnv_cset_pattern(&P,&P);
+      pattern: {
+	 }
+      default:{
+	 runerr(127);
+	 }
+	}
+      p = (struct b_pattern *)BlkLoc(P);
       Pat = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       X = (struct b_pelem *)pelem_make(&EOP,PC_Fence_X,0, nulldesc);

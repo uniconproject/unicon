@@ -221,11 +221,12 @@ procedure yyprint(node)
 	    next
 	    }
          else if node.label == "BPand" then {
-	    writes(yyout, " pattern_concat( ")
+            writes(yyout, " pattern_concat( ")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
-	    writes(yyout, " ) ")		
+	    writes(yyout, " ) ")
+            fail
 	    }	
          else if node.label == "BPor" then {
 	    writes(yyout, " pattern_alternate( ")
@@ -233,14 +234,16 @@ procedure yyprint(node)
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
-	    }	
+            fail
+        }	
          else if node.label == "BPmatch" then {
 	    writes(yyout, " pattern_match( ")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
-	    }	
+            fail
+        }	
          else if node.label == "BPiam" then {
 	    writes(yyout, " pattern_assign_immediate( ")
 	    yyprint(node.children[1])
@@ -249,7 +252,8 @@ procedure yyprint(node)
 	    writes(yyout, ",")
 	    emit_assign_code(node.children[3])
 	    writes(yyout, " ) ")		
-	    }	
+            fail
+        }	
          else if node.label == "BPaom" then {
 	    writes(yyout, " pattern_assign_onmatch( ")
 	    yyprint(node.children[1])
@@ -258,17 +262,20 @@ procedure yyprint(node)
 	    writes(yyout, ",")
 	    emit_assign_code(node.children[3])
 	    writes(yyout, " ) ")		
-	    }	
+            fail
+        }	
          else if node.label == "upsetcur" then {
 	    writes(yyout, " pattern_setcur( ")
 	    yyprint(node.children[2])
 	    writes(yyout, ",")
 	    emit_assign_code(node.children[2])
 	    writes(yyout, " ) ")		
-	    }	
+            fail
+        }	
          else if node.label == "BPuneval" then {
 		process_uneval(node.children[1])
-	    }	
+                fail
+            }	
 	 else if node.label == ("varlist2"|"stalist2") then {
 	    yyprint(node.children[1])
 	    fail

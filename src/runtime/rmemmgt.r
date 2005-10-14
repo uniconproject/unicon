@@ -442,7 +442,6 @@ int region;
    markblock(&k_main);
    markblock(&k_current);
 
-   markptr(&pattern_cache);
 
    /*
     * Mark &subject and the cached s2 and s3 strings for map.

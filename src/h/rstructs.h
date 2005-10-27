@@ -166,7 +166,6 @@ struct b_proc {			/* procedure block */
    word ndynam;			/*   number of dynamic locals */
    word nstatic;		/*   number of static locals */
    word fstatic;		/*   index (in global table) of first static */
-
    struct descrip pname;	/*   procedure name (string qualifier) */
    struct descrip lnames[1];	/*   list of local names (qualifiers) */
    };
@@ -583,6 +582,10 @@ struct pf_marker {		/* procedure frame marker */
    inst pf_ipc;			/*   saved ipc */
    word pf_ilevel;		/*   saved ilevel */
    dptr pf_scan;		/*   saved scanning environment */
+#ifdef PatternType
+    struct b_table *pattern_cache; /* used to cache the variable references used in a pattern*/
+#endif
+
    struct descrip pf_locals[1];	/*   descriptors for locals */
    };
 

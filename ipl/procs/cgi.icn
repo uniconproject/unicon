@@ -4,10 +4,10 @@
 #
 #	Subject:  Procedures for writing CGI scripts
 #
-#	Authors:  Joe Van Meter, Clinton Jeffery,
-#		  Federico Balbi, and Kostas Oikonomou
+#	Authors:  Joe Van Meter, Clinton Jeffery, Federico Balbi,
+#		  Kostas Oikonomou, and Wade Bowmer
 #
-#	Date:     September 9, 2004
+#	Date:     October 27, 2005
 #
 ############################################################################
 #
@@ -41,9 +41,9 @@ end
 #
 procedure cgiInput(ty,nam,va)
    every is := !va do {
-      writes("[<INPUT TYPE=\"",ty,"\" NAME=\"",nam,"\" VALUE=\"",is,"\"")
+      writes("[<input type=\"",ty,"\" name=\"",nam,"\" value=\"",is,"\"")
       if is===va[1] then
-	  writes(" CHECKED")
+	  writes(" checked")
       write(">", is, "]")
       }
 end
@@ -53,13 +53,13 @@ end
 # this program with the name and value makes a select box
 #
 procedure cgiSelect(nam, va)
-   write("<SELECT NAME=\"", nam, "\">")
+   write("<select name=\"", nam, "\">")
    every is := !va do {
-      writes("<OPTION" )
-      if is==va[1] then writes(" SELECTED")
+      writes("<option" )
+      if is==va[1] then writes(" selected")
       write(">", is)
       }
-   write("</SELECT>")
+   write("</select>")
 end
 
 #
@@ -237,6 +237,7 @@ end
 procedure cgiHexval(c)
     if any(&digits, c) then return integer(c)
     if any('ABCDEF', c) then return ord(c) - ord("A") + 10
+    if any('abcdef', c) then return ord(c) - ord("a") + 10
 end
 
 procedure cgiHexchar(c1,c2)
@@ -286,7 +287,7 @@ procedure cgiPrePro(filename,def)
    AllFlag := 0
    DefFlag := 0
    all := "<!-- ALL"
-   look := "<!-- "||def	
+   look := "<!-- " || def	
    intext := open(filename)
    while here:=read(intext) do {
       if match(all,here) then { 
@@ -345,6 +346,21 @@ end
 procedure main(args)
    local BB
    write("Content-type: text/html\n\n")
+
+   if \cgicookies then
+      every c := !cgicookies(args) do {
+	 if type(c) == "table" then {
+	    write("Set-cookie: ", c["name"], "=", c["value"])
+	    every attr := ! [ "expires", "path", "domain" ] do
+		if \c[attr] then writes("; " || attr || c[attr])
+	    if \c["secure"] then writes("; secure")
+	    }
+	 else
+	    write("Set-cookie: ", c)
+	 write()
+         }
+   write()
+
    write("<html>")
    write("<head>")
    if \cgititle then {

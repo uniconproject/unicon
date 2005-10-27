@@ -248,6 +248,7 @@ void VariableLookupFailed(char * varname)
    fatalerr(0,NULL);
 }
 
+
 /*
  *  ----------
  *  -- Resolve References --
@@ -265,9 +266,11 @@ static struct b_pelem *  ResolveReferences(struct b_pelem * P )
       struct b_pelem ** Refs;
       /*            --  Copies of elements of P, indexed by Index field. */
       struct b_pelem **Copy;
-      struct b_pelem * E;
+      tended struct b_pelem * E;
       int J;
       int RefLen = P->index + 1;
+
+      reserve(Blocks, RefLen * sizeof(struct b_pelem));
 
       Refs = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
       Copy = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
@@ -302,21 +305,67 @@ static struct b_pelem *  ResolveReferences(struct b_pelem * P )
 	  * Resolve references
 	  */
 	 switch(E->pcode){
+	 case PC_Pos_NP:
+	 case PC_Len_NP:
+	 case PC_RPos_NP: 
+	 case PC_RTab_NP:
+	 case PC_Tab_NP: 
+	 case PC_Any_VP:
+	 case PC_Break_VP:
+	 case PC_BreakX_VP:
+	 case PC_NotAny_VP:
+	 case PC_NSpan_VP:
+	 case PC_Span_VP:
 	 case PC_Assign_OnM:
-	 case PC_Assign_Imm: {
-	    tended char * varname;				
-	    cnv:C_string(E->parameter, varname);
-	    DEBUGF(2, (stdout, "Looking up assignment variable name =%s\n",
-		       varname));
-
-	    if ( getvar(varname,&E->parameter)== Failed){
-	       VariableLookupFailed(varname);	
-	       }	
-	    break;
-	    }
+	 case PC_Assign_Imm: 
 	 case PC_Rpat:{
-	    break;
+	    tended char * varname;				
+	    if (is:list(E->parameter)) {
+		/*
+		 * we know our list
+		 * it has only 2 elements object variable name and field name
+		 * so we dont perform all the sanity checks
+		 */
+		tended struct b_lelem *ep;
+		tended struct b_record *rp;
+		union block *bptr;
+		struct descrip fieldptr;
+
+		int i,nfields, fnum;
+		tended struct b_list *lp = (struct b_list *)BlkLoc(E->parameter);
+		ep = (struct b_lelem *)lp->listhead;
+		if (is:string(ep->lslots[0])){
+
+		    cnv:C_string(ep->lslots[0],varname);
+			if ( getvar(varname,&ep->lslots[0])== Failed) {
+			    VariableLookupFailed(varname);
+			}
+		    }
 	    }
+	    else
+		{
+		    if ( is:string(E->parameter)){
+		    cnv:C_string(E->parameter, varname);
+			DEBUGF(2, (stdout, "Looking up variable name =%s\n",
+				   varname));
+			if ( getvar(varname,&E->parameter)== Failed){
+			    VariableLookupFailed(varname);	
+			}	
+		    }
+		}
+	    break;
+	 }
+	 case PC_Pos_NF:
+	 case PC_Len_NF:
+	 case PC_RPos_NF:
+	 case PC_RTab_NF:
+	 case PC_Tab_NF:
+	 case PC_Any_VF:
+	 case PC_Break_VF:
+	 case PC_BreakX_VF:
+	 case PC_NotAny_VF:
+	 case PC_NSpan_VF:
+	 case PC_Span_VF:
 	 case PC_Pred_Func:
 	 case PC_String_VF:{
 	    struct descrip proc;
@@ -324,7 +373,7 @@ static struct b_pelem *  ResolveReferences(struct b_pelem * P )
 	    tended struct b_lelem *eldest;
 	    int i, nargs;
 	    tended struct b_list *lpsrc;
-	    struct b_list *lpdest;
+	    tended struct b_list *lpdest;
 	    lpsrc = (struct b_list *)BlkLoc(E->parameter);
 	    lpdest = alclist(lpsrc->size,lpsrc->size);
 	    DEBUGF(20,(stdout, "Resolving function name and parameters"));
@@ -361,6 +410,7 @@ static struct b_pelem *  ResolveReferences(struct b_pelem * P )
       return E;
       }
 }
+
 
 
 /*
@@ -473,6 +523,59 @@ struct b_pelem *  Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
 )
 #enddef
 
+struct b_pelem * ResolvePattern(struct b_pattern *pat)
+{
+    struct descrip key;
+    tended struct descrip val;    
+    int res;
+    uword hn;
+    struct b_telem *te;
+    tended struct b_pelem *phead;
+    union block **pd;
+    key.dword = D_Integer;
+    IntVal(key) = pat->id;
+    hn = hash(&key);
+    if (pfp->pattern_cache == NULL)
+	{
+	    pfp->pattern_cache =  (struct b_table *)hmake(T_Table, (word)0,(word)0);
+	}
+    else /* we have a table check if the pattern is already resolved */
+	{
+	    pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
+	    if ( res != 0) /*the element is in the table*/
+		{
+		    te = (struct b_telem *) *pd;
+		    return (struct b_pelem *)BlkLoc(te->tval);
+		}
+	}
+    /* if it is not in table first resolve references */
+    phead = ResolveReferences(&(pat->pe->pelem));
+    val.dword = D_Pelem;
+    BlkLoc(val) = (union block *)phead;
+    /* get this now because can't tend pb */
+    te = alctelem();
+    if ( te == NULL)
+	{
+	    fprintf(stdout,"Out of memory");
+	    fatalerr(0, NULL);
+	}
+    /* find where to insert cannot just reuse pd as it cannot be tended*/
+    pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
+    pfp->pattern_cache->size++;
+    te->clink = *pd;
+    *pd =  (union block *)te;
+    te->hashnum = hn;
+    te->tref = key;
+    te->tval = val;
+    if (TooCrowded(pfp->pattern_cache))
+	hgrow( (union block *)pfp->pattern_cache);
+    return phead;
+    
+
+}
+
+
+
 
 function {*} pattern_match(underef psub -> dpsub, pat)
    declare {
@@ -502,7 +605,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       int start;
       int stop;
       struct b_pattern *pattern;
-      struct b_pelem *phead;
+      tended struct b_pelem *phead;
       char * pattern_subject = StrLoc(dpsub);
       int subject_len = StrLen(dpsub);
       int new_len;
@@ -520,9 +623,10 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	    }
 	}
       pattern = (struct b_pattern *)BlkLoc(pat);
+      phead = ResolvePattern(pattern) ;
       while ((curpos >= 0) &&
-	     internal_match(pattern_subject, subject_len,pattern->stck_size,
-			    (struct b_pelem *)pattern->pe,&start,&stop,curpos)
+	     internal_match(pattern_subject, subject_len, pattern->stck_size,
+			    phead, &start, &stop, curpos)
 	     ){
 	 oldpos = curpos;
 	 curpos = stop;
@@ -1564,32 +1668,22 @@ Stack_Base = Stack_Ptr;
  * the pvar (used when the variable needs to be assigned to) the variable value
  * is stored in var
 */
-
 #begdef GetVarFromNodeParameter(Node)
 struct descrip var;
 struct descrip varref;
 dptr pvar;
 tended char * varname;
 if (is:list(Node->parameter)) {
-   /*
-    * we know our list
-    * it has only 2 elements object variable name and field name
-    * so we dont perform all the sanity checks
-    */
-   tended struct b_lelem *ep;
-   tended struct b_record *rp;
-   union block *bptr;
-   struct descrip fieldptr;
+		tended struct b_lelem *ep;
+		tended struct b_record *rp;
+		union block *bptr;
+		struct descrip fieldptr;
 
-   int i,nfields, fnum;
-   struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
-   ep = (struct b_lelem *)lp->listhead;
+		int i,nfields, fnum;
+		struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+		ep = (struct b_lelem *)lp->listhead;
 
-   cnv:C_string(ep->lslots[0],varname);
-   if ( getvar(varname,&var)== Failed) {
-      VariableLookupFailed(varname);
-      }
-   deref(&var,&var);
+   deref(&var,&ep->lslots[0]);
    if (!is:record(var))
       RunErr(107, &var);
 
@@ -1607,21 +1701,19 @@ if (is:list(Node->parameter)) {
    if (i<nfields)
       fnum = i;
    else {
+   cnv:C_string(ep->lslots[1],varname);       
       VariableLookupFailed(varname);
       }
    pvar = &rp->fields[fnum];
    varref = var = rp->fields[fnum];
    }
 else {
-   cnv:C_string(Node->parameter, varname);
-   DEBUGF(2,(stdout,"Looking up variable name =%s\n", varname));
-   if (getvar(varname,&varref)== Failed){
-      VariableLookupFailed(varname);
-      }
-    pvar = VarLoc(varref);
+    pvar = VarLoc(Node->parameter);
     var = *pvar;
 }
 #enddef
+
+
 
 static void ErrorDuringPatternMatch(char *x)
 {
@@ -1647,22 +1739,10 @@ tended struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
 nargs = lp->size -1;
 
 ep = (struct b_lelem *)lp->listhead;
-proc.dword = D_Proc;
-BlkLoc(proc)=  (union block *)strprc(&ep->lslots[0],nargs);
-if (BlkLoc(proc) == NULL) {
-   fprintf(stdout, "Unable to find proc");
-   fatalerr(0, NULL);
-}
-
+proc = ep->lslots[0];
 for (; BlkType(ep) == T_Lelem; ep = (struct b_lelem *)ep->listnext) {
    for (i = 1; i < ep->nused; i++) {
-      tended char * varname;
-      struct descrip parm;
-      cnv:C_string(ep->lslots[i],varname);
-      if ( getvar(varname,&parm)== Failed) {
-	 VariableLookupFailed(varname);
-	 }
-      procargs[i -1] = parm;
+      procargs[i -1] = ep->lslots[i];
       }
    }
 call_result = calliconproc(proc,procargs,nargs);

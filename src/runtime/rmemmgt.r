@@ -1060,6 +1060,10 @@ struct b_coexpr *ce;
 
    while ((fp != 0 || nargs)) {         /* Keep going until current fp is
                                             0 and no arguments are left. */
+#ifdef PatternType
+       if (fp->pattern_cache != NULL)
+	   markptr((union block **)&fp->pattern_cache);
+#endif       
       if (s_sp == (word *)fp + Vwsizeof(*pfp) - 1) {
                                         /* sp has reached the upper
                                             boundary of a procedure frame,

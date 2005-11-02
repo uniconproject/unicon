@@ -1,0 +1,479 @@
+#
+#	File:     udb.icn
+#
+#	Subject:  The Unicon debugger
+#
+#	Author:   Eric Munson
+#
+#	Date:     May 2005
+#
+
+$include "evdefs.icn"
+link evinit
+link filenames
+link image
+
+#
+# The following sets define the command names and recognized abbreviations
+#
+global breakSet, stepSet, nextSet, runSet, quitSet, whereSet
+global printSet, displaySet, undispSet, contSet, dirSet, listSet
+global eStepSet, helpSet
+
+# The first define is the PROMPT that will be displayed.  The following
+# are numeric representations of states that the debugger can be in.
+$define PROMPT "(udb) "
+
+$define FINISHED 0
+
+$define STOPPED 1
+
+$define RUNNING 2
+
+$define STEP 3
+
+$define NEXT 4
+
+# nextLine is an ordered pair, the first entry is the file where the next 
+# line is located and the second value is the appropriate line number as 
+# determined by the next executable line.  These values are set when the 
+# users issues the next command and cleared when the destination is reached
+global nextLine
+
+# The list of source files that the executable indicates were included.
+global sourceFiles
+
+# The set of variables that the user has asked to be displayed.
+global dispVars
+
+# The list of source files identified by the executable that are not in 
+# the DPATH environment variable
+global missingSrcFiles
+
+# A table that contains the file names that we have located and their
+# relative starting index in the array of source code lines.
+global srcIndex
+
+# The array of source code lines that we have found.
+global sourceText
+
+# The path that we wil be searching for source code files.
+global sourcePath
+
+# The list of files that we have located.
+global foundFiles
+
+# The name of the program we are executing.
+global program
+
+# Holds the last valid command that was executed.
+global lastCmd
+
+# breakPoints are going to migrate from a set to a table of sets
+# indexed by  file name
+global breakPoints
+
+# Holds the state of the debugger.
+global state
+
+procedure main(args)
+   local eventMask, command
+   sourceText:= []
+   missingSrcFiles := []
+   srcIndex := table( 0 )
+   foundFiles := set( )
+
+   sourcePath := ". .. ../.."
+   sourcePath ||:= " " || getenv( "DPATH" )
+
+   # Initialize the command sets
+   initCommands( )
+
+   # Initialize state variables
+   state := FINISHED
+   breakPoints := table( )
+   nextLine := []
+   dispVars := []
+   lastCmd := ""
+
+   # Start the event monitoring framework
+   program := args[1]
+   write( "Unicon Debugger\nOpening target: " || program )
+   write( "Source file path currently set to: " || sourcePath)
+
+   # Parse the source files out of the executable
+   ( sourceFiles := getSrcFileNames( args[1] ) ) |
+      die( "Cannot open " || program )
+
+   # load the source files that we can find in the DPATH environment variable
+   # and keep a list of the ones that we could not find incase the DPATH
+   # variable is updated by the user
+   every i := 1 to *sourceFiles do {
+      if s := dopen( sourceFiles[ i ] ) then {
+         srcIndex[ sourceFiles[ i ] ] := *sourceText
+         insert( foundFiles, sourceFiles[ i ] )
+         breakPoints[ sourceFiles[ i ] ] := set( )
+         while( put( sourceText, read( s ) ) )
+         close( s )
+         }
+      else {
+	      put( missingSrcFiles, sourceFiles[ i ] )
+	      }
+      }
+
+
+   writes( PROMPT )
+
+   # Starts the input generator
+   command := create getWord()
+
+   # Setup the program to monitor and execute until the first instruction is
+   # issued then wait for a command
+   EvInit(program) | write("Can't load program ", program)
+   EvGet( E_Loc ++ E_Pret ++ E_Pcall ++ E_Pfail )
+
+   # Sets the inital eventMask to Location Changes
+   eventMask := E_Line
+
+   # The main running loop
+   while checkCommand( cmd := @command ) do {
+      if cmd === "\n" & lastCmd === "" then next
+      eventMask := parseCommand( cmd, command, eventMask )
+      if state >= RUNNING then {
+	 if member( foundFiles, keyword( "file", Monitored ) ) then {
+	    eventMask := E_Line ++ E_Pcall
+            }
+	 else {
+	    eventMask := E_Pret ++ E_Pcall ++ E_Pfail
+            }
+
+	 while EvGet( eventMask ) do {
+	    if member( foundFiles, keyword( "file", Monitored ) ) then {
+               #write( keyword( "file", Monitored ) || ":" ||
+               #       keyword( "line", Monitored ) )
+	       if ( state == STEP ) |
+		  ( member( breakPoints[ keyword( "file", Monitored ) ],
+                            keyword("line", Monitored) ) ) |
+		  ( checkNextLine( keyword( "file", Monitored ), keyword( 
+                    "line", Monitored ) ) ) then {
+		  # We have a reason to stop, print the last line of 
+                  # code executed
+                  if(  member( breakPoints[ keyword( "file", Monitored ) ],
+                            keyword("line", Monitored) ) ) then {
+                     write( "Break point at " ||
+                            keyword( "file", Monitored ) || ":" ||
+                            keyword( "line", Monitored ) )
+                     }
+		  write( sourceText[ keyword("line", Monitored) +
+				    srcIndex[ keyword("file", Monitored) ] ] )
+		  state := STOPPED
+
+		  # Display any of the variables in the watch list
+		  if *dispVars > 0 then {
+		     every i := 0 to *dispVars do {
+			write( dispVars[ i ] || " = " ||
+			      Image( variable( dispVars[ i ], Monitored ), 4 ))
+		        }
+                     }
+		  # Stop the execution and ask the user for input
+		  break
+	          }
+                  else { }
+               }
+            }
+	 }
+      writes( PROMPT )
+      }
+   EvTerm( )
+end
+
+# Checks the command just read to make sure that we are not on the way out.
+procedure checkCommand(command)
+   if member( quitSet, command ) then {
+      if state >= STOPPED then {
+         writes("Program is currently running, are you sure you want to exit?")
+         ans := read( )
+         if ans[1] == ( "y" | "Y" ) then {
+            fail
+            }
+         else
+            return 0
+         }
+      else {
+         fail
+         }
+      }
+   else
+      return 0
+end
+
+#
+# Parses the specified command from the user and updates the eventMask
+# if necessary.
+#
+procedure parseCommand(cmd, command, eventMask)
+   local temp := [], ans, arg, argv
+
+   # This is the default eventMask set for most of the possible commands,
+   # to return a different value certain commands will overwrite this value.
+   eventMask := E_Line ++ E_Pcall
+
+   if cmd == "\n" then {
+      cmd := lastCmd
+      }
+
+   if member( runSet, cmd ) then {
+      # If the program is currently running, restart it from the beginning.
+      if state >= RUNNING then {
+         #&trace := -1
+         &eventsource := &null
+         writes("Program is already running; restart from beginning? ")
+         ans := read()
+         if not (map(ans) == ("y"|"yes")) then return eventMask
+         EvTerm( )
+         argv := [program]
+         while arg := @command do if arg==="\n" then break else put(argv,arg)
+         writes("Running: ")
+         every writes(!argv) do writes(" ")
+         write()
+         EvInit(argv) | write("Can't load program ", program)
+         }
+      # Run command, this starts execution of the program, no modifications
+      # to the eventMask are necessary
+      while arg := @command do if arg==="\n" then break else put(argv,arg)
+      variable( "argv", Monitored ) := argv
+      state := RUNNING
+      return eventMask
+      }
+   else if member( contSet, cmd ) then {
+      # Set the program to continue to the next break point
+      state := RUNNING
+      return eventMask
+      }
+   else if member( breakSet, cmd ) then {
+      # The user requested a break point at a line
+      # break the string up into the command portion and the line number
+      # insert the line number into our list of break points.
+
+      # How does GDB let you specify break points in files other than the
+      # main file?  I need to make break points a table and poll the table
+      # for breakpoints
+
+      # This command needs to search for the next line of executable code
+      # if the line specified is not executable.
+      bp := @command
+
+      # test if bp is an Integer, if it is then we have specified a line
+      # in the current file otherwise it must be file name and add the 
+      # specified break point to the table under the specified file.
+      if integer( bp ) then {
+         fName := keyword( "file", Monitored )
+         bp := integer( bp )
+         }
+      else {
+         fName := bp
+         bp := @command
+         bp := integer( bp )
+         }
+
+      if bp := findNextExeLine( bp, fName ) then {
+         insert( breakPoints[ fName ], bp )
+         }
+      else {
+         write( "Invalid break point specified." )
+         }
+
+         return eventMask
+      }
+   else if member( stepSet, cmd ) then {
+      # Step into the next instruction
+      state := STEP
+      return eventMask
+      }
+   else if member( nextSet, cmd ) then {
+      # Step over the next instruction
+      # Needs to be made smart about what the next executable line actually
+      # is
+      nextLine[ 1 ] := keyword( "file", Monitored )
+      if ( nextLine[ 2 ] := findNextExeLine(  
+                keyword( "line", Monitored ) + 1 ) ) then {
+         # The next line is really available in the same file
+         state := NEXT
+         }
+      else {
+         # The next line is not available in the same file so this next 
+         # is the same as issuing a step in this instance.
+         state := STEP
+         nextLine[ 1 ] = ""
+         }
+      return eventMask
+      }
+   else if member( whereSet, cmd ) then {
+      # Print the stack trace to this point.
+      i:= 1
+      write( keyword( "file", Monitored ) || ":" ||
+             image( proc( Monitored, 0 ) ) || ":" ||
+             keyword( "line", Monitored ) )
+      while write( image( proc( Monitored, i ) ) ) do {
+	      i +:= 1
+         }
+      }
+   else if member( printSet, cmd ) then {
+      # Print the contents of the specified variable
+      varName := @command
+      write( varName || " = " || Image( variable( varName, Monitored ), 4 ) )
+      }
+   else if member( listSet, cmd ) then {
+      # Print the requested line(s) of the source code from the requested file
+
+      }
+   else if member( displaySet, cmd ) then {
+      # Add the specified variable to the watch list
+      varName :=  @command
+      write( varName || " = " || Image( variable( varName, Monitored ), 4 ) )
+      put( dispVars, varName )
+      }
+   else if member( undispSet, cmd ) then {
+      # Remove the specified variable from the watch list
+      temp := []
+      varName := @command
+      every i := 1 to *dispVars do {
+         if not( varName === dispVars[ i ] ) then {
+            put( temp, dispVars[ i ] )
+            }
+         }
+      dispVars := temp
+      }
+   else if member( dirSet, cmd ) then {
+      # Update the source file path to search for source files in this
+      # executable
+      temp := []
+      dir := @command
+      sourcePath := dir || ((" " || \sourcePath) | "")
+      write( "source path = " || sourcePath)
+      every i := 1 to *missingSrcFiles do {
+	      if s := dopen( missingSrcFiles[ i ] ) then {
+	         srcIndex[ missingSrcFiles[ i ] ] := *sourceText
+	         insert( foundFiles, missingSrcFiles[ i ] )
+                 breakPoints[ missingSrcFiles[ i ] ] := set( )
+	         while( put( sourceText, read( s ) ) )
+	         close( s )
+            }
+	      else {
+	         put( temp, missingSrcFiles[ i ] )
+            }
+         }
+      missingSrcFiles := temp
+      }
+   else if member( helpSet, cmd ) then {
+      # print the possible commands
+      write( "Command set = {break, run, step, next, where, print, display," ||
+             "undisplay, STEP, continue, directory, list, quit, help}" )
+      return eventMask
+      }
+   else if member( eStepSet, cmd ) then {
+      # The STEP command steps by expression rather than line
+      state := STEP
+      return E_Loc ++ E_Pcall
+      }
+   else if cmd === "" then {
+      # Repeat the last command issued
+      parseCommand( lastCmd, command, eventMask )
+      }
+   else {
+      # Unrecognized command
+      write( "Unrecognized command: '" || cmd || "'" )
+      return eventMask
+      }
+end
+
+# Initializes all the commmand sets
+procedure initCommands( )
+
+   nextSet := set( "n", "ne", "nex", "next" )
+   stepSet := set( "s", "st", "ste", "step" )
+   breakSet := set( "b", "br", "bre", "brea", "break" )
+   runSet := set( "r", "ru", "run" )
+   quitSet := set( "q", "qu", "qui", "quit" )
+   whereSet := set( "w", "wh", "whe", "wher", "where" )
+   printSet := set( "p", "pr", "pri", "prin", "print" );
+   displaySet := set( "dis", "disp", "displ", "displa", "display" )
+   undispSet := set( "u", "un", "und", "undi", "undis", "undisp",
+		    "undispl", "undispla", "undisplay" )
+   contSet := set( "c", "co", "con", "cont", "conti", "contin",
+		  "continu", "continue" )
+   dirSet := set( "dir", "dire", "direc", "direct", "directo",
+		 "director", "directory" )
+   listSet := set( "l", "li", "lis", "list" )
+   eStepSet := set( "S", "ST", "STE", "STEP" )
+   helpSet := set( "?", "h", "he", "hel", "help" )
+
+end
+
+# Reads input, words at a time
+procedure getWord()
+   local wchar,line
+   wchar := &letters ++&digits ++ '\'\\/-.\n&'
+   while line :=read() do {
+      line ? while tab(upto(wchar))do {
+	 word :=tab(many(wchar))
+	 suspend word
+         }
+      suspend "\n"
+      }
+end
+
+# Searchs through the specified source path (global) for the
+# requested file.
+procedure dopen(s)
+   local file, paths, path, binpath, f
+
+   if file := open(s) then return file          # look in current directory
+
+   paths := sourcePath
+
+   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+      ((f := open((binpath:=getpaths()) ||
+                  ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
+      close(\f)
+      paths ||:= " " || binpath || "../ipl/gdata " ||
+            binpath || "../ipl/mdata " || binpath || "../ipl/data"
+      }
+
+   s := "/" || s                                # platform-specific
+
+   paths ? {
+      while path := tab(upto(' ') | 0) do {
+         if file := open(path || s) then return file
+         tab(many(' ')) | break
+         }
+      }
+   fail
+end
+
+# Finds the next executable line from the specified line number in the
+# specified file.
+procedure findNextExeLine(lineNum, fileName)
+   local line := sourceText[ lineNum + srcIndex[ fileName ] ]
+   wSpace := cset( " \t\n\^m" )
+   line := trim( line, wSpace, 0 )
+   while line == ("" | "{" | "}" | "(" | ")") | line[1] == '#' do {
+      lineNum := lineNum + 1
+      line := sourceText[ lineNum + srcIndex[ fileName ] ] | fail
+      line := trim( line, wSpace, 0 )
+      if line == "end" then fail
+      }
+   return lineNum
+end
+
+# Checks to see if the specified location is the target of a 'next'
+procedure checkNextLine( file, line )
+   if nextLine[ 1 ] == file & nextLine[ 2 ] == line then {
+      nextLine[ 1 ] := ""
+      nextLine[ 2 ] := 0
+      return
+      }
+   fail
+end
+
+# Email Dr. J about finding Main in executable.

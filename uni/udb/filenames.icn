@@ -1,0 +1,101 @@
+link bincvt
+
+record header (
+    hsize, #			/* size of interpreter code */
+    trace, #			/* initial value of &trace */
+
+    Records, #
+    Ftab, #			/* location of record/field table */
+    Fnames, #			/* location of names of fields */
+    Globals, #		/* location of global variables */
+    Gnames, #			/* location of names of globals */
+    Statics, #		/* location of static variables */
+    Strcons, #		/* location of identifier table */
+    Filenms, #		/* location of ipc/file name table */
+
+    linenums, #		/* location of ipc/line number table */
+    config # [16];		/* icode version */
+
+# #ifdef FieldTableCompression
+#    FtabWidth, #		/* width of field table entries, 1 | 2 | 4 */
+#    FoffWidth, #		/* width of field offset entries, 1 | 2 | 4 */
+#    Nfields, #		/* number of field names */
+#    Fo, #			/* The start of the Fo array */
+#    Bm, #			/* The start of the Bm array */
+# #endif					/* FieldTableCompression */
+
+)
+
+procedure littleord(s)
+    o := ord(s)
+    i1 := 0
+    i2 := 0
+    every i := 1 to 8 do
+    {
+        if iand(o,2^(i-1))>0 then
+        {
+	        i1 +:= 2^(i-1)
+	    }
+        else
+        {
+	    }
+    }
+    every i := 1 to 8 do
+    {
+        if iand(o,2^(8-i))>0 then
+        {
+	        i2 +:= 2^(i-1)
+	    }
+        else
+        {
+	    }
+    }
+    return o
+end
+
+procedure littleendian(s)
+   local i
+   i := 0
+   s := reverse(s)
+   every i := littleord(!s) + i * 256
+   return i
+end
+
+
+procedure getSrcFileNames(exeName)
+    local fNames, s, f
+    f := open(exeName,"r")
+    s := reads(f, 1000000000)
+
+    # look at header information
+    s ?
+    {
+	    tab((x := find("\^l"))+3) # \^l\n\0 terminate shell header
+
+        hdr := header()
+	    every i := 1 to 11 do
+        {
+	       w := move(4)
+           hdr[i] := littleendian(w)
+        }
+
+        hdr.config := move(64)
+	    i := hdr.Filenms
+	    move(hdr.Filenms)
+	    LLL := []
+	    fNames := []
+	    while i < hdr.linenums do
+        {
+	        move(4)
+	        put(LLL, j := littleendian(move(4)))
+	        i +:= 8
+	    }
+	    every i := 1 to *LLL do
+        {
+	        move(LLL[i] + hdr.Strcons - hdr.linenums) &
+		        x := tab(find("\0")\1) &
+		        put( fNames, x ) & &fail
+	    }
+    }
+    return fNames
+end

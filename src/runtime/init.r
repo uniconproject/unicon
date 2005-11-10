@@ -191,6 +191,10 @@ struct pf_marker *pfp = NULL;		/* Procedure frame pointer */
 #define MaxHeader MaxHdr
 #endif					/* MaxHeader */
 
+#ifdef OVLD
+ int *OpTab;				/* pointer to op2fieldnum table */
+#endif
+
 #ifdef MultiThread
 struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
@@ -924,6 +928,9 @@ Deliberate Syntax Error
     * Establish pointers to icode data regions.		[[I?]]
     */
    ecode = code + hdr.Records;
+#ifdef OVLD
+    OpTab = (int *)(code + hdr.OpTab);
+#endif
    records = (word *)ecode;
    ftabp = (int *)(code + hdr.Ftab);
 #ifdef FieldTableCompression

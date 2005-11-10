@@ -749,7 +749,6 @@ int nargs, ndyn, nstat, fstat;
     *  sizeof(descrip)*(# of args + # of dynamics + # of statics).
     */
    size = (9*WordSize) + (2*WordSize) * (abs(nargs)+ndyn+nstat);
-
    p = &lsspace[name];
 #ifdef DeBugLinker
    if (Dflag) {
@@ -835,6 +834,107 @@ int nargs, ndyn, nstat, fstat;
       }
    }
 
+#ifdef OVLD
+/*
+ * This table contains the method names that allow us to do operator
+ * overloading.  These method names map to opcodes which correspond to the
+ * operators we are overloading
+ *
+ * The second array is used to map the opcodes directly to the field number
+ * corrsponding to the  method 
+ */
+
+
+static char *op2funcmap[] = {
+   NULL, 
+   NULL, 
+   "__bang__",  /*unary ! operator*/
+   "__cat__",   /*binary || operator*/
+   "__compl__", /* unary ~ operator */
+   "__diff__",  /* binary -- operator*/
+   "__div__",   /*binary / operator */
+   "__eqv__",   /*binary == operator*/
+   "__inter__", /*binary ** operator*/
+   "__lcat__",  /*binary ||| list concat */
+   "__lexeq__", /*binary == operator*/
+   "__lexge__", /*binary >>= operator*/
+   "__lexgt__", /*binary >> operator*/
+   "__lexle__", /*binary <<= operator*/
+   "__lexlt__", /*binary << operator*/
+   "__lexne__", /*binary ~== operator*/
+   "__minus__", /*binary -  operator*/
+   "__mod__",   /*binary % operator*/
+   "__mult__",  /*binary * operator*/
+   "__neg__",   /* unary ~ operator */
+   "__neqv__",  /*binary ~=== operator*/
+   NULL, 
+   NULL, 
+   "__number__",  /* unary + operator */
+   "__numeq__", /*binary = operator*/
+   "__numge__", /*binary >= operator*/
+   "__numgt__", /*binary > operator*/
+   "__numle__", /*binary <= operator*/
+   "__numlt__", /*binary < operator*/
+   "__numne__", /*binary ~= operator*/
+   "__add__",   /*binary + operator*/
+   "__powr__",  /*binary ^ operator*/
+   "__random__",/* unary ? operator */ 
+   NULL, 
+   "__refresh__", /* unary ^ operator */
+   NULL, 
+   "__sect__", 
+   "__size__", /* unary * operator */
+   "__subsc__", /* ternary [i:j] operator*/
+   NULL, 
+   "__tabmat__", /* unary ~ operator */
+   "__toby__", 
+   "__union__", /*binary ++ operator*/
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL, 
+   NULL
+   };
+
+#define NUMOPCODES (sizeof(op2funcmap)/sizeof(char *))
+
+static int op2fieldnum[NUMOPCODES];
+
+/*
+ if the fieldname is one of our special methods which overload operators
+ then set the fieldnum in the op2fieldnum table
+*/
+void setovldfieldid(struct fentry * f)
+{
+  int i;
+  char *f_name = &lsspace[f->f_name];
+#ifdef OVLD_DEBUG
+  fprintf(stdout,"Field Name =%s\tField ID = %d\n",f_name,f->f_fid);
+#endif
+  for ( i = 0; i < NUMOPCODES; i++)
+    {
+      char *name =  op2funcmap[i];
+      if ( (name != NULL) && (0 == strcmp(name, f_name)))
+	{
+#ifdef OVLD_DEBUG
+	  fprintf(stdout,"*found* Method Name =%s\tField ID = %d\n",f_name,f->f_fid);
+#endif
+	  op2fieldnum[i] = f->f_fid - 1;
+	}
+    }
+}
+#endif					/* OVLD */
+
 /*
  * gentables - generate interpreter code for global, static,
  *  identifier, and record tables, and built-in procedure blocks.
@@ -862,6 +962,22 @@ void gentables()
     */
    align();
    hdr.Records = pc;
+
+#ifdef OVLD
+   /*
+    * Initialize the array of opcodes to fieldnums to -1
+    */
+   for( i = 0; i < NUMOPCODES; i++) {
+      op2fieldnum[i] = -1;
+      }
+
+   /*
+    * For opcodes that might actually get overloaded, fill in their field #.
+    */
+   for (fp = lffirst; fp != NULL; fp = fp->f_nextentry) {
+      setovldfieldid(fp);
+      }
+#endif					/* OVLD */
 
 #ifdef DeBugLinker
    if (Dflag) {
@@ -1494,6 +1610,23 @@ void gentables()
          quit("cannot write icode file");
 
    pc += lsfree;
+
+#ifdef OVLD
+   /*
+   write out the op2fieldnum map 
+   */
+   hdr.OpTab = pc;
+#ifdef OVLD_DEBUG
+   fprintf(stdout, "OPcode = %d\n", NUMOPCODES);
+#endif
+   for ( i = 0; i < NUMOPCODES; i++)
+     outop(op2fieldnum[i]);
+
+   if (longwrite(op2fieldnum, (long) (NUMOPCODES) * (sizeof(int)), outfile) < 0)
+         quit("cannot write icode file");
+
+   
+#endif					/* OVLD */
 
    /*
     * Output icode file header.

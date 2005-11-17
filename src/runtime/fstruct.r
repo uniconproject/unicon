@@ -382,6 +382,59 @@ function{*} key(t)
 end
 
 
+/*
+ * Insert an array of alternating keys and values into a table.
+ */
+int cinserttable(union block **pbp, int n, dptr x)
+{
+   tended struct descrip s;
+   union block **pd;
+   struct b_telem *te;
+   register uword hn;
+   int res, argc;
+
+   s.dword = D_Table;
+   BlkLoc(s) = *pbp;
+   for(argc=0; argc<n; argc+=2) {
+      hn = hash(x+argc);
+
+      /* get this now because can't tend pd */
+      Protect(te = alctelem(), return -1);
+
+      pd = memb(*pbp, x+argc, hn, &res);	/* search table for key */
+      if (res == 0) {
+	 /*
+	  * The element is not in the table - insert it.
+	  */
+	 (*pbp)->table.size++;
+	 te->clink = *pd;
+	 *pd = (union block *)te;
+	 te->hashnum = hn;
+	 te->tref = x[argc];
+	 if (argc+1 < n)
+	    te->tval = x[argc+1];
+	 else
+	    te->tval = nulldesc;
+	 if (TooCrowded(*pbp))
+	    hgrow(*pbp);
+	 }
+      else {
+	 /*
+	  * We found an existing entry; just change its value.
+	  */
+	 deallocate((union block *)te);
+	 te = (struct b_telem *) *pd;
+	 if (argc+1 < n)
+	    te->tval = x[argc+1];
+	 else
+	    te->tval = nulldesc;
+	 }
+      EVValD(&s, E_Tinsert);
+      EVValD(x+argc, E_Tsub);
+      }
+   return 0;
+}
+
 "insert(x1, x2, x3) - insert element x2 into set or table x1 if not already there."
 " If x1 is a table, the assigned value for element x2 is x3."
 " (always succeeds and returns x1)."
@@ -500,53 +553,9 @@ function{1} insert(s, x[n])
             }
 
          body {
-            tended union block *bp, *bp2;
-            union block **pd;
-            struct b_telem *te;
-            register uword hn;
-            int res, argc;
-
-            bp = BlkLoc(s);
-
-	    for(argc=0; argc<n; argc+=2) {
-
-	       hn = hash(x+argc);
-
-	       /* get this now because can't tend pd */
-	       Protect(te = alctelem(), runerr(0));
-
-	       pd = memb(bp, x+argc, hn, &res);	/* search table for key */
-	       if (res == 0) {
-		  /*
-		   * The element is not in the table - insert it.
-		   */
-		  bp->table.size++;
-		  te->clink = *pd;
-		  *pd = (union block *)te;
-		  te->hashnum = hn;
-		  te->tref = x[argc];
-		  if (argc+1 < n)
-		     te->tval = x[argc+1];
-		  else
-		     te->tval = nulldesc;
-		  if (TooCrowded(bp))
-		     hgrow(bp);
-		  }
-	       else {
-		  /*
-		   * We found an existing entry; just change its value.
-		   */
-		  deallocate((union block *)te);
-		  te = (struct b_telem *) *pd;
-		  if (argc+1 < n)
-		     te->tval = x[argc+1];
-		  else
-		     te->tval = nulldesc;
-		  }
-
-	       EVValD(&s, E_Tinsert);
-	       EVValD(x+argc, E_Tsub);
-	       }
+	    tended union block *bp;
+	    bp = BlkLoc(s);
+	    if (cinserttable(&bp, n, x) == -1) runerr(0);
             return s;
             }
          }
@@ -1279,19 +1288,25 @@ function{1} set(x[n])
 end
 
 
-"table(x) - create a table with default value x."
+"table(k, v, ..., x) - create a table with default value x."
 
-function{1} table(x)
+function{1} table(x[n])
    abstract {
       return new table(empty_type, empty_type, type(x))
       }
    inline {
-      union block *bp;
+      tended union block *bp;
+      int i = 0;
    
-      bp = hmake(T_Table, (word)0, (word)0);
+      bp = hmake(T_Table, (word)0, (word)n);
       if (bp == NULL)
          runerr(0);
-      bp->table.defvalue = x;
+      if (n-i > 1) {
+	 if (cinserttable(&bp, n, x) == -1) runerr(0);
+	 }
+      if (n % 2)
+	 bp->table.defvalue = x[n-1];
+      else bp->table.defvalue = nulldesc;
       Desc_EVValD(bp, E_Tcreate, D_Table);
       return table(bp);
       }

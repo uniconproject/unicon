@@ -27,6 +27,13 @@ X-Configure:	config/unix/$(name)/status
 		sh ./configure
 		@echo Now remember to add unicon/bin to your path
 
+VX-Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		-cd src/lib/voice; $(MAKE)
+		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
+		sh ./configure
+		@echo Now remember to add unicon/bin to your path
+
 NT-Configure:
 		cd config\win32\msvc
 		config

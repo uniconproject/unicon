@@ -330,12 +330,14 @@ then
         LDFLAGS="$LDFLAGS -L${JVOIPLIB_HOME}"
         AC_LANG_SAVE
         AC_LANG_CPLUSPLUS
+        #  _ZN7JThread13ThreadStartedEv
         AC_CHECK_LIB(jrtp, _ZN9RTPPacket5ClearEv, [jvlib_cv_libjr=yes], [jvlib_cv_libjr=no])
-	AC_CHECK_LIB(jthread, _ZN7JThread13ThreadStartedEv, [jvlib_cv_libjt=yes], [jvlib_cv_libjt=no])
+	AC_CHECK_LIB(jthread, _ZN6JMutex4InitEv, [jvlib_cv_libjt=yes], [jvlib_cv_libjt=no])
 	AC_CHECK_LIB(jvoip, _Z19JVOIPGetErrorStringi, [jvlib_cv_libjv=yes], [jvlib_cv_libjv=no])
+	AC_CHECK_LIB(voip, _Z11dummy_printc, [jvlib_cv_libv=yes], [jvlib_cv_libv=no])
 
         AC_LANG_RESTORE
-        if test "$jvlib_cv_libjv" = "yes" -a "$jvlib_cv_libjt" = "yes" -a "$jvlib_cv_libjr" = "yes"
+        if test "$jvlib_cv_libjv" = "yes" -a "$jvlib_cv_libjt" = "yes" -a "$jvlib_cv_libjr" = "yes" -a "$jvlib_cv_libjv" = "yes"
         then
                 #
                 # If all libraries were found, use them
@@ -343,11 +345,12 @@ then
 	        AC_LANG_SAVE
 	        AC_LANG_CPLUSPLUS
                 AC_CHECK_LIB(jrtp, _ZN9RTPPacket5ClearEv)
-		AC_CHECK_LIB(jthread, _ZN7JThread13ThreadStartedEv)
+		AC_CHECK_LIB(jthread, _ZN6JMutex4InitEv)
 		AC_CHECK_LIB(jvoip, _Z19JVOIPGetErrorStringi)
+		AC_CHECK_LIB(voip, _Z11dummy_printc)
 	        AC_LANG_RESTORE
                 AC_MSG_CHECKING(jvoiplib in ${JVOIPLIB_HOME})
-		JV_LDFLAGS=" -L../../bin -lvoip -ljvoip.a -ljthread -ljrtp -lpthread -lstdc++ "
+		JV_LDFLAGS=" -L../../bin -lvoip -ljvoip -ljthread -ljrtp -lpthread -lstdc++ "
 		AC_SUBST(JV_LDFLAGS)
                 AC_MSG_RESULT(ok)
         else

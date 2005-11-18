@@ -15,6 +15,7 @@ function{0,1} PlayAudio(fname)
       }
 
    body {
+#ifdef Audio
       tended char *fnamestr;
       int status;
       FILE * f;
@@ -35,6 +36,9 @@ function{0,1} PlayAudio(fname)
       StrLoc(filename) = fnamestr;
       Protect(fl = alcfile(f, status, &filename), runerr(0));
       return file(fl);
+#else
+      fail;
+#endif
       }
 end
 
@@ -49,11 +53,15 @@ function{1} StopAudio(f)
       }
 
    body {
+#ifdef Audio
       /* we are passing the file name as struct */
       AudioPtr Ptr;
       Ptr = (AudioPtr)BlkLoc(f)->file.fd.fp;
       StopAudioThread(Ptr);
       return C_integer 1;
+#else
+      fail;
+#endif
       }
 end
 

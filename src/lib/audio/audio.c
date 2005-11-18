@@ -6,7 +6,7 @@
  */
 #include "../../h/auto.h"
 
-#if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
+#if (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)) || (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG) ) || (defined(HAVE_LIBOGG) && defined(WIN32))
 
 #include "common.h"
 
@@ -16,7 +16,7 @@
 
 struct AudioFile * init(char filename[])
 {
-	FilePtr = (struct AudioFile *) malloc(sizeof(struct AudioFile));
+        FilePtr = (struct AudioFile *) malloc(sizeof(struct AudioFile));
 
 	if(FilePtr != NULL){
 		FilePtr->doneflag=0;
@@ -87,7 +87,7 @@ struct AudioFile * StartOggVorbisThread(char filename[])
 	Ptr = init(filename);
 	if(Ptr != NULL){
 	#ifndef WIN32
-		if ( pthread_create( &AudioThread, NULL, PlayOggVorbis /*OpenAL_PlayOgg*/, NULL) ) {
+		if ( pthread_create( &AudioThread, NULL, /*PlayOggVorbis*/ OpenAL_PlayOgg, NULL) ) {
 			printf("error creating thread.");
 			abort();
 		}/* End Creation Thread*/
@@ -106,11 +106,12 @@ struct AudioFile * StartOggVorbisThread(char filename[])
 /* This is A general Audio API Function    */
 struct AudioFile * StartAudioThread(char filename[])
 {
-	//pthread_t AudioThread;
+        //pthread_t AudioThread;
 	char *sp;
-	struct AudioFile *Ptr;
+	static struct AudioFile *Ptr=NULL;
+           
 	Ptr = init(filename);
-	
+        
 	if(Ptr != NULL){
 		if( (sp = strstr(Ptr->fname,".mp3")  ) != NULL || (sp = strstr(Ptr->fname,".MP3")  ) != NULL){
 		#if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
@@ -133,7 +134,7 @@ struct AudioFile * StartAudioThread(char filename[])
 		if( (sp = strstr(Ptr->fname,".ogg")  ) != NULL || (sp = strstr(Ptr->fname,".Ogg")  ) != NULL){
 		#if defined(HAVE_LIBOGG) 
 			#ifndef WIN32
-				if ( pthread_create( &AudioThread, NULL, PlayOggVorbis /*OpenAL_PlayOgg*/ , NULL) ) {
+		           	if ( pthread_create( &AudioThread, NULL, /*PlayOggVorbis*/ OpenAL_PlayOgg , NULL) ) {
 					printf("error creating thread.");
 					abort();
 				}/* End Creation Thread*/
@@ -185,6 +186,7 @@ struct AudioFile * StartAudioThread(char filename[])
 		#ifdef WIN32
 			CloseHandle(hThread);
 		#endif
+			/*FilePtr=NULL;*/
 	}
 	/*exit(0);*/
 }

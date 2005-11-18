@@ -2,9 +2,11 @@
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 
-#include <AL/base.h>
+#include "base.h"
 #include <AL/al.h>
+
 #include "common.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -195,6 +197,16 @@
 		void *data;
 		int i = 0;
 		int size;
+		
+		/*------ To solve replaying ---*/ 
+		static short int done = 0,signe=0; 
+		 if(done != 0){
+		   while(done != 0 )
+                         signe = 0;
+		 }
+		 done = 1;
+		 signe = 1;
+		/*-----------------------------*/		
 
 		dev = alcOpenDevice( NULL );
 		if( dev == NULL ) {
@@ -242,9 +254,11 @@
 		while(SourceIsPlaying(mp3source) == AL_TRUE) {
 			sleep(1);
 			if(FilePtr->doneflag)	break; /* stop playing */
+			if(signe == 0)        break;
 		}
 		cleanupMP3();
 		alcCloseDevice( dev );
+		done = 0;
 		return NULL;
 	}/* End OpenAL_PlayMP3 */
 #endif /* if(HAVE_OPENAL && HAVE_LIBSDL && HAVE_LIBSMPEG) */
@@ -253,20 +267,20 @@
 #ifdef HAVE_LIBOPENAL
 	#define DATABUFSIZE 		4096
 	#define VORBIS_FUNC		"alutLoadVorbis_LOKI"
-	static ALuint vorbbuf; /* our buffer */
+        static ALuint vorbbuf; /* our buffer */
 	static ALuint vorbsource = (ALuint ) -1;
 
-	/* our vorbis extension */
+       	/* our vorbis extension */
 	typedef ALboolean (vorbisLoader)(ALuint, ALvoid *, ALint);
 	vorbisLoader *alutLoadVorbisp = NULL;
 
-	static void initOggVorbis( void )
+        static void initOggVorbis( void )
 	{
 		start = time(NULL);
 		alGenBuffers( 1, &vorbbuf);
 		alGenSources( 1, &vorbsource);
 		alSourcei(  vorbsource, AL_BUFFER, vorbbuf );
-		alSourcei(  vorbsource, AL_LOOPING, AL_TRUE );
+		alSourcei(  vorbsource, AL_LOOPING, AL_FALSE /*AL_TRUE*/ );
 		return;
 	}
 
@@ -286,11 +300,21 @@
 		void *data;
 		int size;
 		int i = 0;
+                
+		/*------ To solve replaying ---*/ 
+		static short int done = 0,signe=0; 
+		 if(done != 0){
+		   while(done != 0 )
+                         signe = 0;
+		 }
+		 done = 1;
+		 signe = 1;
+		/*-----------------------------*/
 
 		dev = alcOpenDevice( NULL );
 		if( dev == NULL ) {
 			return NULL;}
-
+                
 		/* Initialize ALUT. */
 		context_id = alcCreateContext( dev, NULL );
 		if(context_id == NULL) {
@@ -337,10 +361,13 @@
 
 		while(SourceIsPlaying(vorbsource) == AL_TRUE) {
 			sleep(1);
-			if(FilePtr->doneflag)	break;/* break the thread and stop playing */
+			if(FilePtr->doneflag) break;/* break the thread and stop playing */
+                        if(signe == 0)        break;
 		}
 		cleanupOggVorbis();
 		alcCloseDevice( dev );
+                
+		done = 0;
 		return NULL;
 	} /* End OpenAL_PlayOgg  */
 #endif 	/* HAVE_LIBOPENAL */
@@ -433,6 +460,16 @@
 		if( dev == NULL ) {
 			fprintf(stderr, "Could not open device\n");
 			return NULL;}
+		
+		/*------ To solve replaying ---*/ 
+		static short int done = 0,signe=0; 
+		 if(done != 0){
+		   while(done != 0 )
+                         signe = 0;
+		 }
+		 done = 1;
+		 signe = 1;
+		/*-----------------------------*/		
 
 		/* Initialize ALUT. */
 		context_id = alcCreateContext( dev, attrlist );
@@ -452,12 +489,13 @@
 			shouldend = time(NULL);
 			if((shouldend - start) > 30) {
 				alSourceStop(moving_source);}
-			if(FilePtr->doneflag == 1)
-				break; /* break the thread and stop playing */
+			if(FilePtr->doneflag == 1) break; /* break the thread and stop playing */
+			if(signe == 0)        break;
 		}
 		cleanupWAV();
 		alcDestroyContext( context_id );
 		alcCloseDevice(  dev  );
+		done = 0;
 		return NULL;
 	}
 #else

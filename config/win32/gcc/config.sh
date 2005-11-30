@@ -19,8 +19,6 @@ echo ICONT=icont >../../../src/icont/makefile
 echo CONSOLE=NTConsole >>../../../src/icont/makefile
 cat MAKEFILE.T >>../../../src/icont/makefile
 mkdir -p ../../../ipl/lib
-echo ICONT=../../bin/icont >../../../ipl/lib/makefile
-cat makefile.ipl >> ../../../ipl/lib/makefile
 cp makefile.cfn ../../../ipl/cfuncs/makefile
 
 cp ../../unix/Config/ipllib.mak ../../../ipl/lib/makefile

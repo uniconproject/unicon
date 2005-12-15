@@ -30,24 +30,18 @@ procedure littleord(s)
     o := ord(s)
     i1 := 0
     i2 := 0
-    every i := 1 to 8 do
-    {
-        if iand(o,2^(i-1))>0 then
-        {
+    every i := 1 to 8 do {
+        if iand(o,2^(i-1))>0 then {
 	        i1 +:= 2^(i-1)
 	    }
-        else
-        {
+        else {
 	    }
     }
-    every i := 1 to 8 do
-    {
-        if iand(o,2^(8-i))>0 then
-        {
+    every i := 1 to 8 do {
+        if iand(o,2^(8-i))>0 then {
 	        i2 +:= 2^(i-1)
 	    }
-        else
-        {
+        else {
 	    }
     }
     return o
@@ -64,34 +58,56 @@ end
 
 procedure getSrcFileNames(exeName)
     local fNames, s, f
-    f := open(exeName,"r")
-    s := reads(f, 1000000000)
+    statrec := stat(exeName) | stop("can't stat ", image(exeName))
+    f := open(exeName,"ru")
+    s := reads(f, statrec.size)
 
     # look at header information
-    s ?
-    {
-	    tab((x := find("\^l"))+3) # \^l\n\0 terminate shell header
+    s ? {
+	if find(".exe", exeName) then {
+            tab(find("exit\^m\nrem [executable Icon binary follows]"))
+	}
+	tab((x := find("\^l"))+3) # \^l\n\0 terminate shell header
 
         hdr := header()
-	    every i := 1 to 11 do
-        {
-	       w := move(4)
+	every i := 1 to 11 do {
+	   w := move(4)
            hdr[i] := littleendian(w)
         }
-
+	    
         hdr.config := move(64)
+
+            #
+	    # check whether it is a compressed icode or not
+	    #
+	    hdr.config ? {
+		tab(find("/")+1) | stop("can't find /")
+		wordsize := integer(tab(many(&digits)))
+		Z := move(1)
+		}
+	    if Z == "Z" then {
+		# we need to uncompress the rest
+		# brute force means: write it out and then read it in
+		# uncompress mode
+		ftmp := open("tmpfilename","w")
+		writes(ftmp, tab(0))
+		close(ftmp)
+		ftmp := open("tmpfilename","rz")
+		&subject := reads(f, hdr.hsize) |
+		   stop("can't read compressed icode")
+		close(ftmp)
+		}
+
 	    i := hdr.Filenms
 	    move(hdr.Filenms)
 	    LLL := []
 	    fNames := []
-	    while i < hdr.linenums do
-        {
+	    while i < hdr.linenums do {
 	        move(4)
 	        put(LLL, j := littleendian(move(4)))
 	        i +:= 8
 	    }
-	    every i := 1 to *LLL do
-        {
+	    every i := 1 to *LLL do  {
 	        move(LLL[i] + hdr.Strcons - hdr.linenums) &
 		        x := tab(find("\0")\1) &
 		        put( fNames, x ) & &fail

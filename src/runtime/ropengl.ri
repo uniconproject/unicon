@@ -4,6 +4,8 @@
  */
 int texture(int width, int height, GLubyte *tex, int texmode);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type);
+void drawstrng3d(wbp w, double x, double y, double z, char *s);
+
 
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
@@ -729,13 +731,15 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define	REDRAW_DIM 336
 #define	REDRAW_LINEWIDTH 352
 #define	REDRAW_TEXMODE 368
+#define REDRAW_FONT3D 384
+#define REDRAW_DRAWSTRING3D 400
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			23 },		/* number of entries */
+   { 0,			25 },		/* number of entries */
    { "DrawCube",	REDRAW_CUBE | 4 },
    { "DrawCylinder",	REDRAW_CYLINDER | 6},
    { "DrawDisk",	REDRAW_DISK | 7 },
@@ -744,9 +748,11 @@ stringint redraw3Dnames[] = {
    { "DrawPolygon",	REDRAW_POLYGON },
    { "DrawSegment",	REDRAW_SEGMENT },
    { "DrawSphere",	REDRAW_SPHERE | 4 },
+   { "DrawString3d",    REDRAW_DRAWSTRING3D },
    { "DrawTorus",	REDRAW_TORUS | 5},
    { "Fg",		REDRAW_FG},
    { "FillPolygon",	REDRAW_FILLPOLYGON },
+   { "Font3d",          REDRAW_FONT3D },
    { "Identity",	REDRAW_IDENTITY },
    { "MatrixMode",	REDRAW_MATRIXMODE },
    { "PopMatrix",	REDRAW_POPMATRIX },
@@ -773,9 +779,26 @@ int traversefunctionlist(wbp w)
    int i, j, tmp, vsize=256;
    tended struct descrip flist, fname, var1, var2;
    tended struct b_list *funclist;
+   tended struct b_list *hp;
+   tended struct b_lelem *bp;
    tended char *temp;
    tended struct b_record *rp;
+   tended char *s;
+   int used;
+   word k;
    int elements = ws->funclist.vword.bptr->list.size;
+  
+   hp = (struct b_list *) ws->funclist.vword.bptr;
+   bp = (struct b_lelem *) hp->listhead;
+   if (elements<=0) return Succeeded;
+
+   if (bp->nused<=0) {
+        bp = (struct b_lelem *) bp->listnext;
+        hp->listhead = (union block *) bp;
+        bp->listprev = (union block *) hp;
+   }
+   k = bp->first;
+   used =bp->nused;
 
    /*
     * The ith element of the list is a list with information
@@ -785,7 +808,19 @@ int traversefunctionlist(wbp w)
    for (i=0; i< elements; i++) {
       if (v != v2) free(v);
       v = v2;
-      c_traverse((struct b_list *)ws->funclist.vword.bptr, &flist, i);
+/*      c_traverse1((struct b_list *)ws->funclist.vword.bptr, &flist, i);  */
+
+      flist = bp->lslots[k];
+      k++;
+      used--;
+      if (k>=bp->nslots) k=0;
+
+      if (used<=0) {
+  	 bp = (struct b_lelem *) bp->listnext;
+	 used = bp->nused;
+         k = bp->first;
+      }
+
       if (is:record(flist)) {
 	 fname = BlkLoc(flist)->record.fields[0];
 	 rp = (struct b_record *)BlkLoc(flist);
@@ -849,6 +884,18 @@ int traversefunctionlist(wbp w)
 	    if (wc->texmode)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	    break;
+         case REDRAW_FONT3D:
+#if 0
+	    curr_font = (struct wfont *) IntVal(rp->fields[1]);
+#endif
+	    break;
+         case REDRAW_DRAWSTRING3D:
+	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;	  
+	    if (!cnv:C_string(rp->fields[4], s)) goto free_v_and_fail;
+	    drawstrng3d(w,x,y,z,s);
+            break;
 	 default:
             goto free_v_and_fail;
 	    }
@@ -2613,6 +2660,8 @@ struct descrip gl_pushmatrix = {D_Null};
 struct descrip gl_identity = {D_Null};
 struct descrip gl_matrixmode = {D_Null};
 struct descrip gl_texture = {D_Null};
+struct descrip gl_font3d = {D_Null};
+struct descrip gl_drawstring3d = {D_Null};
 
 char * gl_torus_fields[] = {"radius1","radius2"};
 char * gl_cube_fields[] = {"length"};
@@ -2622,6 +2671,8 @@ char * gl_disk_fields[] = {"radius1","radius2", "angle1","angle2"};
 char * gl_rotate_fields[] = {"angle"};
 char * gl_matrixmode_fields[] = {"mode"};
 char * gl_texture_fields[] = {"texture_handle"};
+char * gl_font_fields[] = {"font_ptr"};
+char * gl_drawstring3d_fields[] = {"string"};
 
 dptr rec_structinate(dptr dp, char *name, int nfields, char *a[])
 {
@@ -2676,6 +2727,11 @@ dptr rec_structor3d(char *name)
 				2, gl_matrixmode_fields);
    else if (!strcmp(name, "gl_texture"))
       return rec_structinate(&gl_texture, "gl_texture", 2, gl_texture_fields);
+   else if (!strcmp(name, "gl_font3d"))
+      return rec_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
+   else if (!strcmp(name, "gl_drawstring3d"))
+	return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 
+				5, gl_drawstring3d_fields);
 #endif					/* Graphics3D */
 
    return 0;
@@ -2847,4 +2903,91 @@ int texture_16img(wbp w, struct imgdata im)
       return Succeeded;
    else
       return Failed;
+}
+
+void drawstrng3d(wbp w, double x, double y, double z, char *s)
+{
+  int xx=0;
+  char *p, *q; 
+#ifdef WIN32
+  char path[255] = "..\\src\\lib\\fonts\\fonts\\"; 
+#else
+ char path[255] = "../src/lib/fonts/fonts/";  
+#endif
+  static char *full_name=0;
+  FILE *f = 0;
+#if 0
+  int len_full_name=0, len_path=0, len_font=strlen(curr_font->name);
+
+  makecurrent(w); 
+  if (full_name==0) {
+    full_name = (char *) malloc(sizeof(char)*255);
+    findonpath("unicon", full_name, 255);
+    q = full_name + strlen(full_name);
+    while (q > full_name && q[-1] != '/')
+       q--;				
+    *q = '\0';
+  }
+  len_path = strlen(path);
+  len_full_name = strlen(full_name);
+  p = (char *) malloc(sizeof(char)*(len_full_name+len_path+len_font+1));
+  strcpy(p, full_name);
+  strcat(p,path);
+  strcat(p,curr_font->name);
+  f = fopen(p, "r");
+  if (!f) return;
+  else fclose(f);
+
+  xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size, &(curr_font->fonts));
+#endif
+
+  switch (xx) {
+  case 1: fprintf(stderr, "Error:file does not support point size\n"); break;
+  case 2: fprintf(stderr, "Insufficient Memory allocating to allocate font\n");
+	  break;
+  case 3: fprintf(stderr, "Return 3\n"); break;
+  }
+
+  free(p); 
+/*   fprintf(stderr, "fonts=%p\n", curr_font->fonts);  */
+}
+
+int 
+add_3dfont(char *fname, int fsize, char ftype)
+{
+#if 0
+  if (end_font) {
+     end_font->next = (struct _wfont *) malloc(sizeof(struct _wfont));
+     end_font = end_font->next;
+     }
+  else {
+     end_font = (struct _wfont *) malloc(sizeof(struct _wfont));
+     start_font = end_font;
+     }
+   end_font->name = (char *) malloc((strlen(fname)+1)*sizeof(char));
+   if (!end_font->name)
+	return 0;
+/*   fprintf(stderr, "adding: %s, %d, %d\n", fname, fsize, ftype); */
+   strcpy(end_font->name, fname);
+   end_font->size = fsize;
+   end_font->type = ftype;
+   end_font->fonts = 0;
+   end_font->next = 0;
+#endif
+   return 1;
+}
+
+wfp 
+srch_3dfont(char *fname, int fsize, char ftype)
+{
+#if 0
+  wfp g = start_font;
+/*  fprintf(stderr, "searching: %s, %d, %d\n", fname, fsize, ftype); */
+  while (g) {
+    if (!strcmp(g->name, fname) && g->size==fsize &&
+	g->type==ftype) return g;
+    g=g->next;
+  }
+#endif
+  return 0;
 }

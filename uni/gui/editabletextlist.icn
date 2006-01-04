@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.19 2006-01-04 17:03:32 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.20 2006-01-04 17:27:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -231,7 +231,7 @@ class EditableTextList : LineBasedScrollArea(
          ed := EditableTextListPasteEdit(self, s)
          ed.redo()
          ce.add_edit(ed)
-
+         ce.close()
          undo_manager.add_edit(ce)
          changed := 1
       }
@@ -690,14 +690,12 @@ class EditableTextList : LineBasedScrollArea(
       #
       if type(e) == "string" & not(&control | &meta) & any(printable, e) then {
          if has_region() then {
-            ce := CompoundEdit()
             ed := EditableTextListDeleteRegionEdit(self)
             ed.redo()
-            ce.add_edit(ed)
+            undo_manager.add_edit(ed)
             ed := EditableTextListDefaultEdit(self, e)
             ed.redo()
-            ce.add_edit(ed)
-            undo_manager.add_edit(ce)
+            undo_manager.add_edit(ed)
          } else {
             ed := EditableTextListDefaultEdit(self, e)
             ed.redo()

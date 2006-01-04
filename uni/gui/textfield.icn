@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.9 2004-11-11 19:55:34 rparlett Exp $
+# $Id: textfield.icn,v 1.10 2006-01-04 17:27:56 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -368,7 +368,7 @@ class TextField : Component(
          ed := TextFieldPasteEdit(self, s)
          ed.redo()
          ce.add_edit(ed)
-
+         ce.close()
          undo_manager.add_edit(ce)
 
          changed := 1
@@ -385,15 +385,13 @@ class TextField : Component(
       #
       if type(e) == "string" & not(&control | &meta) & any(filter, e) then {
          if has_region() then {
-            ce := CompoundEdit()
             ed := TextFieldDeleteRegionEdit(self)
             ed.redo()
-            ce.add_edit(ed)
+            undo_manager.add_edit(ed)
             clear_mark()
             ed := TextFieldDefaultEdit(self, e)
             ed.redo()
-            ce.add_edit(ed)
-            undo_manager.add_edit(ce)
+            undo_manager.add_edit(ed)
          } else {
             ed := TextFieldDefaultEdit(self, e)
             ed.redo()

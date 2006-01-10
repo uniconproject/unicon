@@ -1,5 +1,5 @@
 #
-# $Id: menu.icn,v 1.6 2006-01-01 02:17:28 rparlett Exp $
+# $Id: menu.icn,v 1.7 2006-01-10 23:03:52 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -36,9 +36,9 @@ class Menu : SubMenu(
    end
 
    #
-   # Add the given component to the Menu.
+   # Add the given {MenuComponent} to the Menu.
    #
-   # @param c   The {Component} to add.
+   # @param c   The {MenuComponent} to add.
    # @param i   The index to add at; if omitted then the new component
    # @          is appended to the end.
    #
@@ -48,6 +48,20 @@ class Menu : SubMenu(
       else
          self.children := self.children[1 : i] ||| [c] ||| self.children[i : 0]
       c.set_parent(self)
+   end
+
+   #
+   # Remove the {MenuComponent} from the menu.
+   # @param c   The {MenuComponent} to remove.
+   #
+   method remove(c)
+      local i
+      every i := 1 to *self.children do {
+         if self.children[i] === c then {
+            delete(self.children, i)
+            return
+         }
+      }
    end
 
    method get_which_open()

@@ -1,5 +1,5 @@
 #
-# $Id: canvas.icn,v 1.4 2004-11-13 14:33:12 rparlett Exp $
+# $Id: canvas.icn,v 1.5 2006-01-12 16:41:07 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -313,10 +313,10 @@ class Canvas : Component : SelectiveClassCoding(
 
       self.parent_dialog.push_undo()
 
-      every e := !self.selections do {
+      every e := (selected ~=== !self.selections) do {
          e.w_spec := selected.w_spec
          e.w_fixed := selected.w_fixed
-         e.w_default := selected.w_default 
+         e.w_default := &null
          e.resize()
       }
 
@@ -333,10 +333,10 @@ class Canvas : Component : SelectiveClassCoding(
 
       self.parent_dialog.push_undo()
 
-      every e := !self.selections do {
+      every e := (selected ~=== !self.selections) do {
          e.h_spec := selected.h_spec
          e.h_fixed := selected.h_fixed
-         e.h_default := selected.h_default 
+         e.h_default := &null
          e.resize()
       }
 

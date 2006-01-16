@@ -1,5 +1,5 @@
 #
-# $Id: linebasedscrollarea.icn,v 1.4 2004-05-15 19:17:29 rparlett Exp $
+# $Id: linebasedscrollarea.icn,v 1.5 2006-01-16 00:32:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -104,6 +104,44 @@ class LineBasedScrollArea : DrawScrollArea(
             return l
       }
    end
+
+   method draw(subject_x, subject_y, vx, vy, vw, vh)
+      local first_line, last_line, xp, yp, i
+
+      #
+      # Which lines to draw
+      #
+      first_line := get_first_line()
+      last_line := get_last_line()
+      last_line >:= get_line_count()
+
+      #
+      # Where to draw them
+      #
+      yp := vy + self.line_height / 2
+
+      #
+      # Left offset
+      #
+      xp := vx - subject_x
+
+      #
+      # Write the lines
+      #
+      every i := first_line to last_line do {
+         draw_line(xp, yp, i)
+         yp +:= self.line_height
+      }
+   end
+
+   #
+   # This method is overridden by the subclass to draw the given 
+   # line at the given position, into the buffer window cbwin.
+   # @param xp  The left position it should be drawn at
+   # @param yp   The y position it should be drawn at
+   # @param i   The line number to draw
+   #
+   abstract method draw_line(xp, yp, i)
 
    #
    # This method is overridden by the subclass to return the

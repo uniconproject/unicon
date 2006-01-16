@@ -1,5 +1,5 @@
 #
-# $Id: displayscrollarea.icn,v 1.5 2004-08-15 16:13:02 rparlett Exp $
+# $Id: displayscrollarea.icn,v 1.6 2006-01-16 00:32:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -15,35 +15,7 @@ $include "guih.icn"
 # This class extends LineBasedScrollArea to provide keyboard movement.  No
 # selection, or cursor handling, and no events are generated.
 #
-class DisplayScrollArea : LineBasedScrollArea(contents)
-   method get_line_count()
-      return *self.contents
-   end
-
-   #
-   # Set the data to be displayed.
-   # @param x  The list of data.
-   #
-   method set_contents(x)
-      self.contents := x
-      contents_changed()
-   end
-
-   #
-   # Call this method if the contents list, previously
-   # set with {set_contents()}, has changed.
-   #
-   method contents_changed()
-      compute_and_invalidate()
-   end
-
-   #
-   # Return the contents of the {ScrollArea}
-   #
-   method get_contents()
-      return self.contents
-   end
-
+class DisplayScrollArea : LineBasedScrollArea()
    method handle_key_page_up(e)
       if i := (\self.vsb).get_value() then {
          self.vsb.set_value(i - self.vsb.page_size) 
@@ -87,7 +59,6 @@ class DisplayScrollArea : LineBasedScrollArea(contents)
    end
 
    method handle_key_home(e)
-write("1.value=",(\self.vsb).value)
       if \self.vsb then {
          self.vsb.set_value(0)
          self.refresh()
@@ -122,51 +93,6 @@ write("1.value=",(\self.vsb).value)
    method keeps(e)
       return e === (Key_Left | Key_Right | Key_Up | Key_Down)
    end
-
-   method draw(subject_x, subject_y, vx, vy, vw, vh)
-      local first_line, last_line, xp, yp, i
-
-      #
-      # Which lines to draw
-      #
-      first_line := get_first_line()
-      last_line := get_last_line()
-      last_line >:= get_line_count()
-
-      #
-      # Where to draw them
-      #
-      yp := vy + self.line_height / 2
-
-      #
-      # Left offset
-      #
-      xp := vx - subject_x
-
-      #
-      # Write the lines
-      #
-      every i := first_line to last_line do {
-         draw_line(xp, yp, i, rev)
-         yp +:= self.line_height
-      }
-   end
-
-   method set_one(attr, val)
-      case attr of {
-         "contents" : set_contents(val)
-         default: self.LineBasedScrollArea.set_one(attr, val)
-      }
-   end
-
-   #
-   # This method is overridden by the subclass to draw the given 
-   # line at the given position, into the buffer window cbwin.
-   # @param xp  The left position it should be drawn at
-   # @param yp   The y position it should be drawn at
-   # @param i   The line number to draw
-   #
-   abstract method draw_line(xp, yp, i)
 
    initially
       self.ScrollArea.initially()

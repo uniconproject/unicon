@@ -1,5 +1,5 @@
 #
-# $Id: textdisplay.icn,v 1.2 2004-11-06 00:28:13 rparlett Exp $
+# $Id: textdisplay.icn,v 1.3 2006-01-16 00:32:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -14,7 +14,35 @@ $include "guih.icn"
 #
 # This class displays a list of strings.
 #
-class TextDisplay : DisplayScrollArea()
+class TextDisplay : DisplayScrollArea(contents)
+   method get_line_count()
+      return *self.contents
+   end
+
+   #
+   # Set the data to be displayed.
+   # @param x  The list of data.
+   #
+   method set_contents(x)
+      self.contents := x
+      contents_changed()
+   end
+
+   #
+   # Call this method if the contents list, previously
+   # set with {set_contents()}, has changed.
+   #
+   method contents_changed()
+      compute_and_invalidate()
+   end
+
+   #
+   # Return the contents of the {ScrollArea}
+   #
+   method get_contents()
+      return self.contents
+   end
+
    method get_line_height()
       return WAttrib(self.cwin, "fheight")
    end
@@ -39,6 +67,13 @@ class TextDisplay : DisplayScrollArea()
       s := contents[i]
 
       left_string(self.cbwin, xp, yp, detab(s))
+   end
+
+   method set_one(attr, val)
+      case attr of {
+         "contents" : set_contents(val)
+         default: self.LineBasedScrollArea.set_one(attr, val)
+      }
    end
 
    initially(a[])

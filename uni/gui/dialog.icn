@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.10 2005-07-01 16:08:11 rparlett Exp $
+# $Id: dialog.icn,v 1.11 2006-01-16 00:30:20 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -472,9 +472,9 @@ class Dialog : Component(
    end
 
    #
-   # Show the tooltip label at the given x,y position.
+   # Show the tooltip at the given x,y position.
    # @p
-   method show_tooltip(x, y, label)
+   method show_tooltip(x, y, obj)
       local cw, ww, wh
 
       ww := WAttrib(self.win, "width")
@@ -482,7 +482,7 @@ class Dialog : Component(
 
       cw := Clone(self.cwin, "bg=pale yellow", "font=sans,10", "fg=black")
 
-      self.tooltip_w := TextWidth(cw, label) + 4
+      self.tooltip_w := TextWidth(cw, obj.tooltip) + 4
       self.tooltip_h := WAttrib(cw, "fheight") +  6
 
       self.tooltip_x := x + 8
@@ -497,7 +497,8 @@ class Dialog : Component(
       CopyArea(cwin, self.tooltip_win, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h, 0, 0)
       EraseRectangle(cw, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h)
       Rectangle(cw, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h)
-      center_string(cw, self.tooltip_x + self.tooltip_w / 2, self.tooltip_y + self.tooltip_h / 2, label)
+      center_string(cw, self.tooltip_x + self.tooltip_w / 2, 
+                    self.tooltip_y + self.tooltip_h / 2, obj.tooltip, obj.accel)
       Uncouple(cw)
    end
 
@@ -554,7 +555,7 @@ class Dialog : Component(
          #
          show_tooltip(WAttrib(self.win, "pointerx"),
                       WAttrib(self.win, "pointery"),
-                      obj.tooltip)
+                      obj)
          self.tooltip_state := 2
       }
       if self.tooltip_state = 2 & t >= self.tooltip_end_time then

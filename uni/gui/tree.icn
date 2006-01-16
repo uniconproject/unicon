@@ -1,5 +1,5 @@
 #
-# $Id: tree.icn,v 1.7 2004-11-13 20:49:23 rparlett Exp $
+# $Id: tree.icn,v 1.8 2006-01-16 00:29:25 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -188,6 +188,7 @@ class Tree : SelectableScrollArea(
    end
 
    method handle_press(e)
+      local l, lno, N, curr_sel
       if (self.view.x <= &x < self.view.x + self.view.w) & (self.view.y  <= &y < self.view.y + self.view.h) then {
          lno := (&y - self.view.y) / self.line_height
          l := lno + self.get_first_line()
@@ -205,11 +206,13 @@ class Tree : SelectableScrollArea(
                   # to the given node.
                   #
                   start_handle(e)
+                  curr_sel := object_get_selections()
                   N.toggle_expanded()
                   self.last_expanded := N
                   tree_structure_changed()
                   is_held := &null
-                  selchange := 1
+                  if not lang::equals(object_get_selections(), curr_sel) then
+                     selchange := 1
                   fire(TREE_NODE_EXPANSION_EVENT, e)
                   end_handle(e)
                   return

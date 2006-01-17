@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.10 2006-01-04 17:27:56 rparlett Exp $
+# $Id: textfield.icn,v 1.11 2006-01-17 12:41:51 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -52,7 +52,8 @@ class TextField : Component(
    undo_manager,
    old_cursor,
    old_has_region,
-   changed
+   changed,
+   view_str
    )
 
    #
@@ -98,6 +99,7 @@ class TextField : Component(
          self.tx := self.x + (DEFAULT_TEXT_X_SURROUND - BORDER_WIDTH)
          self.tw := self.w - 2 * (DEFAULT_TEXT_X_SURROUND - BORDER_WIDTH)
       }
+      compute_bounds()
    end
 
    #
@@ -108,8 +110,10 @@ class TextField : Component(
    method set_contents(x)
       self.contents := string(x)
       self.cursor := *self.contents + 1
-      clear_mark()
       self.leftmost := 1
+      clear_mark()
+      if \ (\self.parent_dialog).is_open then
+         compute_bounds()
       self.invalidate()
       undo_manager.clear()
       return x
@@ -124,11 +128,13 @@ class TextField : Component(
    method end_handle(e)
       local hr, moved
       if \changed then {
+         compute_bounds()
          self.invalidate()
          fire(CONTENT_CHANGED_EVENT, e)
       }
       if old_cursor ~= cursor then {
          moved := 1
+         compute_bounds()
          self.invalidate()
          fire(CURSOR_MOVED_EVENT, e)
       }
@@ -487,12 +493,13 @@ class TextField : Component(
       self.Component.lost_focus(e)
    end
 
-   method display(buffer_flag)
-      local r
-
-      fh := WAttrib(self.cwin, "fheight")
-
-      spc := self.tw
+   #
+   # Work out the portion of the string that should be displayed,
+   # and store it in view_str.
+   #
+   # @p
+   method compute_bounds()
+      local s
 
       #
       # Space at end for cursor at end of string
@@ -501,31 +508,36 @@ class TextField : Component(
          s := repl(displaychar, *(self.contents)) || " "
       else
          s := self.contents || " "
-      #
-      # Initialize left and right markers; only move leftmost if needed
-      #
+
       self.leftmost >:= self.cursor
       self.rightmost := self.cursor + 1
 
       #
       # Now pad out left and right markers to fill space
       #
-      if TextWidth(self.cwin, s[self.leftmost:self.rightmost]) <= spc then {
-         while TextWidth(self.cwin, s[self.leftmost:self.rightmost + 1]) <= spc do
+      if TextWidth(self.cwin, s[self.leftmost:self.rightmost]) <= self.tw then {
+         while TextWidth(self.cwin, s[self.leftmost:self.rightmost + 1]) <= self.tw do
             self.rightmost +:= 1
          while (self.leftmost > 1) & 
-            TextWidth(self.cwin, s[self.leftmost - 1:self.rightmost]) <= spc do
+            TextWidth(self.cwin, s[self.leftmost - 1:self.rightmost]) <= self.tw do
             self.leftmost -:= 1
       } else {
-         while TextWidth(self.cwin, s[self.leftmost:self.rightmost]) > spc do
+         while TextWidth(self.cwin, s[self.leftmost:self.rightmost]) > self.tw do
             self.leftmost +:= 1
       }
+
+      self.view_str := s[self.leftmost:self.rightmost]
+   end
+
+   method display(buffer_flag)
+      local cp, fh, mp, np, off1, off2, cw
+
+      fh := WAttrib(self.cwin, "fheight")
 
       #
       # Clear rectangle, set s to string to display
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      s := s[self.leftmost:self.rightmost]
 
       #
       # Cursor position within s
@@ -536,36 +548,38 @@ class TextField : Component(
          DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
       #
-      # Display s centred vertically in box
+      # Display view_str centred vertically in box
       #
-      left_string(self.cbwin, self.tx, self.y + self.h / 2 , s)
+      left_string(self.cbwin, self.tx, self.y + self.h / 2 , view_str)
 
       #
       # If has focus display box cursor, else display outline cursor
       #
       if \self.has_focus then {
          cw := Clone(self.cbwin, "bg=red", "fg=white")
-         EraseRectangle(cw, self.tx + TextWidth(self.cwin, s[1:cp]), 1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, s[cp]), fh)
-         left_string(cw, self.tx + TextWidth(cw, s[1:cp]), self.y + self.h / 2 , s[cp])
+         EraseRectangle(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]), 
+                        1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, view_str[cp]), fh)
+         left_string(cw, self.tx + TextWidth(cw, view_str[1:cp]), self.y + self.h / 2 , view_str[cp])
          Uncouple(cw)
       } else {
          cw := Clone(self.cbwin, "fg=red")
-         Rectangle(cw, self.tx + TextWidth(self.cwin, s[1:cp]), 1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, s[cp]), fh)
+         Rectangle(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]), 
+                   1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, view_str[cp]), fh)
          Uncouple(cw)
       }
 
       if has_region() then {
          mp := self.mark - self.leftmost + 1 
          mp <:= 1
-         mp >:= (*s + 1)
+         mp >:= (*view_str + 1)
          if mp > cp then {
             np := mp
             mp := cp + 1
          } else {
             np := cp
          }
-         off1 := TextWidth(self.cwin, s[1:mp])
-         off2 := TextWidth(self.cwin, s[1:np])
+         off1 := TextWidth(self.cwin, view_str[1:mp])
+         off2 := TextWidth(self.cwin, view_str[1:np])
 
          cw := Clone(self.cbwin, "drawop=reverse")
          FillRectangle(cw,

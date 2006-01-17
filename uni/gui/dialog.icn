@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.11 2006-01-16 00:30:20 rparlett Exp $
+# $Id: dialog.icn,v 1.12 2006-01-17 12:40:49 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -340,6 +340,7 @@ class Dialog : Component(
       self.is_open := &null
       dispatcher.del(self)
       delete((\owning_dialog).child_dialogs, self)
+      fire(DIALOG_CLOSED_EVENT, e)
    end
 
    method consume_same(e)

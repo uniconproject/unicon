@@ -1,5 +1,5 @@
 #
-# $Id: listener.icn,v 1.2 2004-06-27 16:19:05 rparlett Exp $
+# $Id: listener.icn,v 1.3 2006-01-17 12:42:24 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -9,8 +9,7 @@
 package util
 
 #
-# A class extended by a listener which is added
-# to a ListenerList.
+# This simply holds information about a single listener.
 #
 class Listener(obj,
                meth,
@@ -38,29 +37,4 @@ class Listener(obj,
    method get_type()
       return type
    end
-
-   #
-   # Fire an event to the method, if it matches.
-   #
-   method maybe_fire(event)
-      if /type | type === event.get_type() then
-         meth(obj, event)
-   end
-
-   # Look for the method in the given object, stopping on error.
-   # @p
-   method find_method(obj, method_name)
-      local t, m
-      t := lang::get_class(obj) | stop("no class found for ", image(obj))
-      every m := !t.get_methods() do {
-          if m.get_method_name() == method_name then
-             return m.get_as_procedure()
-      }
-      stop("no such method ", method_name)
-   end
-
-   initially(obj, method_name, type) 
-      self.obj := obj
-      self.meth := find_method(obj, method_name)
-      self.type := type
 end

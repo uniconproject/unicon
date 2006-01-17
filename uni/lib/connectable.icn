@@ -5,17 +5,15 @@ class Connectable(listeners)
    # Helper method to create and fire an Event object from the given parameters.
    #
    method fire(type, param)
-      local e
-      if /type then stop("null type to fire")
-      e := Event(self, type, param)
-      return fire_event(e)
-   end
+      local e, l
 
-   #
-   # Fire the given event to the listeners
-   #
-   method fire_event(e)
-      every (!listeners).maybe_fire(e)
+      if /type then stop("null type to fire")
+
+      e := Event(self, type, param)
+      every l := !listeners do {
+         if /l.type | l.type === e.type then
+            l.meth(l.obj, e)
+      }
       return e
    end
 
@@ -25,16 +23,49 @@ class Connectable(listeners)
    #
    method connect(obj, meth, type)
       local l
-      l := Listener(obj, meth, type)
+
+      l := Listener(obj, 
+                    find_method(obj, meth), 
+                    type)
       put(listeners, l)
+
       return l
+   end
+
+   #
+   # Look for the method in the given object, stopping on error.
+   # @p
+   method find_method(obj, method_name)
+      local t, m
+      t := lang::get_class(obj) | stop("no class found for ", image(obj))
+      every m := !t.get_methods() do {
+          if m.get_method_name() == method_name then
+             return m.get_as_procedure()
+      }
+      stop("no such method ", method_name)
+   end
+
+   #
+   # Remove all {Listener}s with the given object field.
+   #
+   method disconnect_all(obj)
+      local t, l
+      t := []
+      every l := !listeners do {
+         if l.obj ~=== obj then
+            put(t, l)
+      }
+      listeners := t
    end
 
    #
    # Remove a Listener previously returned by {connect}
    #
    method disconnect(l)
-      delete(listeners, l)
+      local t
+      t := []
+      every put(t, l ~=== !listeners)
+      listeners := t
    end
 
    initially

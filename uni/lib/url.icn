@@ -1,5 +1,5 @@
 #
-# $Id: url.icn,v 1.5 2005-02-18 18:16:54 rparlett Exp $
+# $Id: url.icn,v 1.6 2006-01-17 12:43:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -154,9 +154,14 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref, 
    # Create a CGI parameter string from a table
    #
    method make_cgi_string(cgi)
+      local l, s
       s := ""
-      every l := !sort(cgi) do
-         every s ||:= convert_hex(l[1]) || "=" || convert_hex(!l[2]) || "&"
+      every l := !sort(cgi) do {
+         if string(l[2]) then
+            s ||:= convert_hex(l[1]) || "=" || convert_hex(l[2]) || "&"
+         else
+            every s ||:= convert_hex(l[1]) || "=" || convert_hex(!l[2]) || "&"
+      }
       s[-1] := ""
       return s
    end

@@ -79,6 +79,13 @@ pinit.o: $(PP_DIR)pinit.c $(P_DOT_H)
 	$(CC) -c $(CFLAGS) $(PP_DIR)pinit.c
 
 #
+# The following entry is to help everyone remember how to run the
+# merr program when it is needed.
+#
+yyerror.c:
+	merr -B -F "yylval.t->fname" -I rtt.h -L "yylval.t->line" -T "yylval.t->image" rtt foo.r
+
+#
 # The following entry is commented out because it is not normally
 # necessary to recreate rttparse.c and ltoken.h unless the grammar
 # in rttgram.y for the run-time langauge is changed. Recreating these

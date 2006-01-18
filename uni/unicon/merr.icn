@@ -12,7 +12,7 @@
 #
 
 global C, att, bison, byacc, make, compile, ofile, target, yyfn, yyln, yytxt
-global calloc, yywritefn
+global calloc, yywritefn, inclfile
 
 procedure main(argv)
 
@@ -24,26 +24,29 @@ procedure main(argv)
    yyln := "yylineno"
    yytxt := "yytext"
    calloc := "calloc"
+   inclfile := "y.tab.h"
    i := 1
    while i<= *argv do {
 	case argv[i] of {
+	    "-y": { C := byacc := 1 }
 	    "-Y": { C := att := "yy_state" }
 	    "-B": { C := bison := "yystate" }
-	    "-y": { C := byacc := 1 }
-	    "-s": { i +:= 1; make := argv[i] }
-	    "-C": { i +:= 1; calloc := argv[i] }
-	    "--F": { i +:= 1; yyfn := &null }
-	    "-F": { i +:= 1; yyfn := argv[i] }
 	    "-W": { i +:= 1; yywritefn := argv[i] }
+	    "-F": { i +:= 1; yyfn := argv[i] }
+	    "--F": { i +:= 1; yyfn := &null }
+	    "-s": { i +:= 1; make := argv[i] }
+	    "-o": { i +:= 1; ofile := argv[i] }
+	    "-C": { i +:= 1; calloc := argv[i] }
+	    "-I": { i +:= 1; inclfile := argv[i] }
 	    "-L": { i +:= 1; yyln := argv[i] }
 	    "-T": { i +:= 1; yytxt := argv[i] }
-	    "-o": { i +:= 1; ofile := argv[i] }
 	    default: {
-		if /compile := argv[i] then {
-		   if \C then target := "m_err.c" else target := "m_err.icn"
-		   }
-		else
-		    target := argv[i]
+	       if /compile := argv[i] then {
+		  if \C then target := "m_err.c" else target := "m_err.icn"
+		  }
+	       else {
+		  target := argv[i]
+	          }
 	    }
 	}
 	i+:= 1
@@ -63,6 +66,16 @@ $endif
 
     t := table()
     fin := open(yamfile) | stop("no ", yamfile)
+
+    # skip down to a %% if there is one; otherwise reset to beginning
+    while line := read(fin) do {
+	if line == "%%" then break
+    }
+    if line ~=== "%%" then {
+	close(fin)
+	fin := open(yamfile) | stop("can't reopen ", yamfile)
+    }
+
     while line := read(fin) do {
         prog := []
 	while not (i := find(":::",line)) do {
@@ -124,8 +137,11 @@ procedure gen(t)
 	}
       write(f, "}\n")
 
-      write(f,"int __merr_errors;\n",
-	      "extern int yychar, ",yyln,";\n")
+      write(f,"int __merr_errors;\nextern int yychar;")
+      if find("yylval", yyln) then
+	  write(f, "#include \"",inclfile,"\"")
+      else
+	  write(f,"extern int ",yyln,";\n")
       if \yyfn=="yyfilename" then write(f,"extern char *yyfilename;\n")
 # Berkeley and/or AT&T probably need extern char yytext[]; need to check
       if yytxt=="yytext" then write(f,"extern char *yytext;\n")
@@ -209,28 +225,37 @@ global efile
 procedure generr(t, prog, msg)
 
     efile := \target | "err.icn"
-    f := open(efile,"w")
+    f := open(efile,"w") | stop("can't open ", image(efile))
     every write(f, !prog) 
     close(f)
 $ifdef _MS_WINDOWS_NT
     system("command /C type " || target)
-    system("command /C type err.out")
     s := compile || " -quiet -log err.out " ||efile
 $else
     system("cat " || target)
-    system("cat err.out")
     s := compile ||" "||efile||" 2> err.out"
 $endif
 
     system(s)
-    f := open("err.out")
+
+$ifdef _MS_WINDOWS_NT
+    system("command /C type err.out")
+$else
+    system("cat err.out")
+$endif
+
+    f := open("err.out") | stop("can't open err.out")
     while ((line := read(f)) &
 	   (not (line ? (tab(find("(")+1), tab(many(&digits)),
 			=";", tab(many(&digits)), =")"))))
 
     if (not (\line ? (tab(find("(")+1), tab(many(&digits)),
-			=";", tab(many(&digits)), =")"))) then
-	stop("no error in ",efile)
+			=";", tab(many(&digits)), =")"))) then {
+        write("having trouble looking for line in ", image(&subject))
+	close(f)
+	fail
+	}
+
     line2 := line
     while line ?:= (tab(find(":")+1) & tab(0))
     if *trim(line) = 0 then stop("bad line ", image(line))

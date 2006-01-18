@@ -1,6 +1,7 @@
 
 # line 7 "rttgram.y"
 #include "rtt1.h"
+#include "yyerror.h"
 #define YYMAXDEPTH 250
 
 # line 11 "rttgram.y"

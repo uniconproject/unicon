@@ -1,7 +1,10 @@
+extern void rm_files();
 /*
  * rttsym.c contains symbol table routines.
  */
 #include "rtt.h"
+#define yyerror(s) _yyerror(s,-1)
+
 
 #define HashSize 149
 
@@ -495,8 +498,11 @@ struct node *head;
     *  function parameters must remain in the symbol table, so the
     *  context is just updated, not popped.
     */
-   if (!dcl_stk->parms_done)
+   if (!dcl_stk->parms_done) {
       yyerror("invalid declaration");
+      rm_files();
+      exit(EXIT_FAILURE);
+      }
    dcl_stk->parms_done = 0;
    if (dcl_stk->next->kind_dcl == IsTypedef)
       yyerror("a typedef may not be a function definition");
@@ -714,8 +720,11 @@ struct token *t;
    /*
     * Only union block pointers may be tended.
     */
-   if (t->image != block)
+   if (t->image != block) {
       yyerror("unsupported tended type");
+      rm_files();
+      exit(EXIT_FAILURE);
+      }
    free_t(t);
    dcl_stk->kind_dcl = TndBlk;
    dcl_stk->blk_name = NULL;

@@ -6,12 +6,6 @@
 extern char *progname;
 
 /*
- * Prototypes for static functions.
- */
-static void rm_files (void);
-
-
-/*
  * File list.
  */
 struct finfo_lst {
@@ -147,7 +141,7 @@ FILE *f;
  * rm_files - remove files that must be cleaned up in the event of an
  *   error.
  */
-static void rm_files()
+void rm_files()
    {
    while (file_lst != NULL) {
       if (file_lst->file != NULL)

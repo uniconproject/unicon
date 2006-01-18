@@ -59,6 +59,7 @@ void            pop_src      (void);
 struct token      *preproc      (void);
 void            push_src     (int flag, union src_ref *ref);
 void            rel_sbuf     (struct str_buf *sbuf);
+void            rm_files     (void);
 int                rt_state     (int tok_id);
 void            show_usage   (void);
 void            source       (char *fname);

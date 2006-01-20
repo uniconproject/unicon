@@ -22,27 +22,16 @@ class Connectable(listeners)
    # @return the Listener created and added.
    #
    method connect(obj, meth, type)
-      local l
+      local l, p
+
+      p := lang::find_method(obj, meth) | stop("No such method ", meth)
 
       l := Listener(obj, 
-                    find_method(obj, meth), 
+                    p,
                     type)
       put(listeners, l)
 
       return l
-   end
-
-   #
-   # Look for the method in the given object, stopping on error.
-   # @p
-   method find_method(obj, method_name)
-      local t, m
-      t := lang::get_class(obj) | stop("no class found for ", image(obj))
-      every m := !t.get_methods() do {
-          if m.get_method_name() == method_name then
-             return m.get_as_procedure()
-      }
-      stop("no such method ", method_name)
    end
 
    #

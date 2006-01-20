@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.12 2006-01-17 12:40:49 rparlett Exp $
+# $Id: dialog.icn,v 1.13 2006-01-20 23:40:26 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -43,6 +43,7 @@ class Dialog : Component(
    tried_drag,
    pointer_component,
    pointer_stack,
+   invokes,
    all_valid,
    tooltip_ticker,
    tooltip_last_obj, 
@@ -350,6 +351,10 @@ class Dialog : Component(
    end
 
    method process_event(e)
+      if e === 1000 then {
+         do_invokes()
+      }
+
       if e === -11 then {
          fire(CLOSE_BUTTON_EVENT, e)
       }
@@ -637,6 +642,10 @@ class Dialog : Component(
          self.curr_drag := &null
          self.invoke_drag_reset()
          restore_pointer()
+      } else if e === "\e" then {
+         self.curr_drag := &null
+         self.invoke_drag_reset()
+         restore_pointer()
       }
    end
 
@@ -768,6 +777,37 @@ class Dialog : Component(
       return self.repeat_rate := i
    end
 
+   #
+   # This method adds an otherwise meaningless event to the window's event
+   # queue.  When that event comes to be processed, the given method in the
+   # given object is invoked, with the optional parameter.
+   #
+   # This is useful if you need to take some action from within an event
+   # handler method, but that action has to take place after the current
+   # event has completed processing.
+   #
+   # @param obj     The object whose method will be invoked.
+   # @param meth    The name of the method.
+   # @param param   An optional parameter which will be passed to the
+   #                method.
+   #
+   method invoke_later(obj, meth, param)
+      local p
+      p := lang::find_method(obj, meth) | stop("Couldn't find method ", meth)
+      put(self.invokes, [p, obj, param])
+      Enqueue(self.win, 1000)
+   end
+
+   #
+   # Call any methods added via invoke_later().
+   # @p
+   method do_invokes()
+      local e
+      while e := pop(self.invokes) do {
+         e[1](e[2], e[3])
+      }
+   end
+
    method set_one(attr, val)
       case attr of {
          "double_click_delay" : set_double_click_delay(int_val(attr, val))
@@ -790,6 +830,7 @@ class Dialog : Component(
       self.Component.initially()
       self.child_dialogs := set([])
       self.pointer_stack := []
+      self.invokes := []
       self.double_click_delay := 500
       self.repeat_delay := 500
       self.repeat_rate := 100

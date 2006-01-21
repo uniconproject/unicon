@@ -1,5 +1,5 @@
 #
-# $Id: node.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+# $Id: node.icn,v 1.2 2006-01-21 18:22:04 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -148,6 +148,42 @@ class Node : Object(parent, children)
          s ||:= do_trim(string(e))
       }
       return s
+   end
+
+   #
+   # Succeed if this node has string s as a child.
+   #
+   method has_string(s)
+      return string(!self.children) == s
+   end
+
+   #
+   # As has_string() above, but trims the child strings before
+   # comparison.
+   #
+   method has_trimmed_string(s)
+      return do_trim(string(!self.children)) == s
+   end
+
+   #
+   # Search recursively for the given string in the node tree.  Any
+   # nodes with the string as a child are produced.
+   #
+   method find_string(s)
+      local n
+      every n := generate_nodes() do
+         if n.has_string(s) then
+            suspend n
+   end
+
+   #
+   # As above, but uses trimmed child strings for comparison.
+   #
+   method find_trimmed_string(s)
+      local n
+      every n := generate_nodes() do
+         if n.has_trimmed_string(s) then
+            suspend n
    end
 
    #

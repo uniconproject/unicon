@@ -1,0 +1,179 @@
+#
+# $Id: webscraper.icn,v 1.1 2006-01-21 18:21:19 rparlett Exp $
+#
+
+package xml
+
+link noncase
+import lang, util
+
+class WebScraper:Error:Object(paths)
+   method load_file(fn)
+      local f, s
+      f := open(fn) | return error("Couldn't open:" || fn)
+      s := ""
+      every s ||:= !f || "\n"
+      close(f)
+      return set_page(s)
+   end
+
+   method to_string()
+      local s, e, p
+      s := "[WebScraper\n\t"
+      every e := !sort(paths) do {
+         s ||:= e[1] || "->\n"
+         every p := !e[2] do
+            s ||:= "\t" || lang::to_string(p) || "\n"
+      }
+      return s || "]\n"
+   end
+
+   method set_page(data)
+      local p, d, n, s, i, anchors
+
+      p := HtmlParser()
+      d := p.parse(data) | return error("Couldn't parse")
+
+      anchors := create_anchors(d) | fail
+
+      paths := table()
+
+      every n := d.generate_nodes() do {
+         if n.get_type() == "element" & s := \n.get_attribute("scrapeId") then {
+            do_insert(s, n, anchors) | fail
+         }
+         i := 0
+         every s := string(!n.children) do {
+            i +:= 1
+            s ? if tab(c_match("$scrapeid=")) then {
+               s := tab(upto('$')) | return error("Unclosed scrapeid")
+               do_insert(s, n, anchors, i)
+            }
+         }
+      }
+
+      return
+   end
+
+   method do_insert(s, n, anchors, si)
+      local a, t, anchor_str, anchor_path, id
+      s ? {
+         if a := tab(upto(':')) then {
+            move(1)
+            t := \anchors[a] | return error("Unknown anchor:" || a)
+            anchor_str := t[1]
+            anchor_path := t[2]
+         }
+         id := tab(0)
+      }
+      return insert(paths, id, create_path(n, anchor_str, anchor_path, si))
+   end
+
+   method create_anchors(d)
+      local n, s, id, str, res
+
+      res := table()
+      every n := d.generate_nodes() do {
+         every s := string(!n.children) do {
+            s ? if tab(c_match("$anchorid=")) then {
+               id := tab(upto('$')) | return error("Unclosed anchor id")
+               move(1)
+               str := tab(0)
+               insert(res, id, [str, path_to_root(n)])
+            }
+         }
+      }
+
+      return res
+   end
+
+   method create_path(n, anchor_str, anchor_path, si)
+      local p1, p2, i, res, str, t
+
+      res := []
+      p1 := path_to_root(n)
+
+      if \anchor_path then {
+         p2 := copy(anchor_path)
+         while p1[1] === p2[1] do {
+            pop(p1)
+            pop(p2)
+         }
+
+         put(res, ["A", anchor_str])
+         put(res, ["U", *p2])
+      } else {
+         put(res, ["R"])
+         pop(p1)
+      }
+
+      every el := !p1 do
+         put(res, ["T", get_tag_index(el), el.name])
+
+      if \si then
+         put(res, ["S", si])
+
+      return res
+   end
+
+   method get_tag_index(n)
+      local i, e
+      i := 0
+      every e := !n.parent.children do {
+         if not(string(e)) & e.get_type() == "element" & e.name == n.name then
+            i +:= 1
+         if e === n then
+            return i
+      }
+      stop("Couldn't find child in parent!")
+   end
+
+   method path_to_root(n)
+      local l
+      l := []
+      repeat {
+         push(l, n)
+         n := n.parent 
+         n.get_type() == "element" | return l
+      }
+   end
+
+   method lookup(d, id)
+      local l, n, e
+
+      l := \paths[id] | return error("Unknown id:" || id)
+
+      every e := !l do {
+         #write("Doing:",lang::to_string(e))
+         case e[1] of {
+            "R" : {
+               n := d.get_root_element()
+            }
+            "A" : {
+               n := d.find_string(e[2]) | return error("Couldn't find anchor string:" || e[2])
+            }
+            "U" : {
+               every 1 to e[2] do {
+                  n := n.parent
+                  n.get_type() == "element" | return error("Couldn't go up")
+               }
+            }
+            "T" : {
+               #n.print_structure()
+               n := n.get_nth_element(e[2], e[3]) | return error("While looking up " || 
+                                                                 id || ": Element " || e[3] || " not found.")
+            }
+            "S" : {
+               n := n.get_nth_string(e[2]) | return error("While looking up " || 
+                                                       id || ": String at " || e[2] || " not found.")
+            }
+            default : stop("Unknown command")
+         }
+      }
+      return n
+   end
+
+   initially(fn)
+      if \fn then
+         return load_file(fn)
+end

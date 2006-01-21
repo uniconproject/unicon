@@ -9,7 +9,7 @@ UFILES=attlist.u attributedef.u canonicalxmlformatter.u cdata.u \
 	errorhandler.u externalid.u formatter.u globalname.u htmldocument.u \
 	htmlelement.u htmlformatter.u htmlparser.u node.u notationdecl.u \
 	parser.u processinginstruction.u resolver.u xmldecl.u xmldocument.u \
-	xmlelement.u xmlformatter.u xmlparser.u
+	xmlelement.u xmlformatter.u xmlparser.u webscraper.u
 
 PROGS=testhtml$(EXE) testxml$(EXE) testpatterns$(EXE) testvalid$(EXE) \
 	testnotwf$(EXE) testinvalid$(EXE) globaldemo$(EXE) createdemo$(EXE)

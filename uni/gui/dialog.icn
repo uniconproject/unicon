@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.13 2006-01-20 23:40:26 rparlett Exp $
+# $Id: dialog.icn,v 1.14 2006-01-21 18:23:18 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -414,10 +414,10 @@ class Dialog : Component(
 
       do_handle_event(e)
 
-      if (e === ("\t" | Key_Right)) & ( /self.focus | not(self.focus.keeps(e))) then {
+      if (e === ("\t" | Key_Right | Key_Down)) & ( /self.focus | not(self.focus.keeps(e))) then {
          if c := find_next_focus() then
             self.set_focus(c, e)
-      } else if e === (Shift_Tab | Key_Left) & ( /self.focus | not(self.focus.keeps(e))) then {
+      } else if e === (Shift_Tab | Key_Left | Key_Up) & ( /self.focus | not(self.focus.keeps(e))) then {
          if c := find_previous_focus() then
             self.set_focus(c, e)
       }

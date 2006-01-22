@@ -1,9 +1,10 @@
 #
-#	merr.icn 1.2, an error message generator program.
+#	merr.icn 2.0 alpha, an error message generator program.
 #
 #	Clinton Jeffery, jeffery@cs.nmsu.edu
+#	Sudarshan Gaikaiwari, sudarshan@acm.org
 #
-#	11/16/2004
+#	1/22/2006
 #
 #	Maintains the mapping from parse states to error messages.
 #	See http://unicon.org/merr/
@@ -12,12 +13,16 @@
 #
 
 global C, att, bison, byacc, make, compile, ofile, target, yyfn, yyln, yytxt
-global calloc, yywritefn, inclfile
+global calloc, yywritefn, ytabh, inclfile
+global maxiter # user specified number of iterations
+global genfrag # option to generate possible error fragments
+global phase   # phase1 creates tokens / phase2 creates error fragments
 
 procedure main(argv)
 
    if *argv=0 then
-      stop("usage: merr [-yYB] [-W writefunc] [-F filename] [-s make] [-o msgfile] compiler [target]")
+      stop("usage: merr [-yYBG] [-W writefn] [-F filenm] [-s make] [-o msgfl]",
+	   "compiler [target] [-N MaxIterations] [-phase1] [-phase2] ")
    ofile := "yyerror.icn"
    yamfile := "meta.err"
    yyfn := "yyfilename"
@@ -26,7 +31,7 @@ procedure main(argv)
    calloc := "calloc"
    inclfile := "y.tab.h"
    i := 1
-   while i<= *argv do {
+   while i <= *argv do {
 	case argv[i] of {
 	    "-y": { C := byacc := 1 }
 	    "-Y": { C := att := "yy_state" }
@@ -37,9 +42,22 @@ procedure main(argv)
 	    "-s": { i +:= 1; make := argv[i] }
 	    "-o": { i +:= 1; ofile := argv[i] }
 	    "-C": { i +:= 1; calloc := argv[i] }
+	    #
+	    # -H is where to read token info from in phase 1, while
+	    # -I is what file to write an include for within yyerror.h
+	    #
+	    "-H": { i +:= 1; ytabh := argv[i] }
 	    "-I": { i +:= 1; inclfile := argv[i] }
+	    "--F": { i +:= 1; yyfn := &null }
+	    "-F": { i +:= 1; yyfn := argv[i] }
+	    "-W": { i +:= 1; yywritefn := argv[i] }
 	    "-L": { i +:= 1; yyln := argv[i] }
 	    "-T": { i +:= 1; yytxt := argv[i] }
+	    "-o": { i +:= 1; ofile := argv[i] }
+	    "-G": { genfrag := 1 }
+	    "-N": { i +:= 1; maxiter := argv[i]; write(maxiter) }
+	    "-phase1":{phase := 1}
+	    "-phase2":{phase := 2}
 	    default: {
 	       if /compile := argv[i] then {
 		  if \C then target := "m_err.c" else target := "m_err.icn"
@@ -51,44 +69,48 @@ procedure main(argv)
 	}
 	i+:= 1
     }
+   if (\genfrag = 1) | \phase=1 then {
+      merr2()
+      }
+   else {
 $ifdef _MS_WINDOWS_NT
-    /compile := ".\\wunicon"
+      /compile := ".\\wunicon"
 $else
-    /compile := "./unicon"
+      /compile := "./unicon"
 $endif
-    /make := "make " || compile
-    if \C & ofile=="yyerror.icn" then ofile := "yyerror.c"
-    if \C then /yywritefn := "fprintf" else /yywritefn := "write"
-    gen()
+      /make := "make " || compile
+      if \C & ofile=="yyerror.icn" then ofile := "yyerror.c"
+      if \C then /yywritefn := "fprintf" else /yywritefn := "write"
+      gen()
 
-    # now the fun begins: write error-inducing source codes, run them,
-    # and read the stack states from their errors.
+      # now the fun begins: write error-inducing source codes, run them,
+      # and read the stack states from their errors.
 
-    t := table()
-    fin := open(yamfile) | stop("no ", yamfile)
+      t := table()
+      fin := open(yamfile) | stop("no ", yamfile)
+      # skip down to a %% if there is one; otherwise reset to beginning
+      while line := read(fin) do {
+	 if line == "%%" then break
+         }
+      if line ~=== "%%" then {
+	 close(fin)
+	 fin := open(yamfile) | stop("can't reopen ", yamfile)
+         }
 
-    # skip down to a %% if there is one; otherwise reset to beginning
-    while line := read(fin) do {
-	if line == "%%" then break
-    }
-    if line ~=== "%%" then {
-	close(fin)
-	fin := open(yamfile) | stop("can't reopen ", yamfile)
-    }
-
-    while line := read(fin) do {
-        prog := []
-	while not (i := find(":::",line)) do {
+      while line := read(fin) do {
+	 prog := []
+	 while not (i := find(":::",line)) do {
 	    put(prog,line)
 	    line := read(fin) | break break
-	}
-	if i>1 then put(prog,line[1:i])
-	msg := line[i+3:0]
-	msg ?:= (tab(many(' \t')), tab(0))
-	write(msg)
-	generr(t, prog, msg)
-    }
-    gen(t)
+	    }
+	 if i>1 then put(prog,line[1:i])
+	 msg := line[i+3:0]
+	 msg ?:= (tab(many(' \t')), tab(0))
+	 write(msg)
+	 generr(t, prog, msg)
+	 }
+      gen(t)
+      }
 end
 
 procedure gen(t)
@@ -161,7 +183,7 @@ procedure gen(t)
 	       "      ", yywritefn, "(stderr, \"too many errors, aborting\");\n",
 	       "      exit(__merr_errors); }")
 
-      write(f, "   if(",\yyfn,") ",yywritefn,"(stderr, \"%s:\", ",\yyfn,");")
+      write(f, "   if (",\yyfn,") ",yywritefn,"(stderr, \"%s:\", ",\yyfn,");")
       write(f, "   if ((!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\"))&&")
       write(f,"         (state>=0 && state<=yymaxstate)) {")
       write(f,"       if (errtab[state].i==1)")
@@ -284,4 +306,174 @@ $else
     system("cat " || efile)
     system("cat err.out")
 $endif
+end
+
+
+
+#
+#  Merr version 2
+#
+# Per conversation with Sudarshan Gaikaiwari, things this tool needs include:
+# * modify the compiler to always include the parse state in the error message
+# * build a table of newlegalprefixes, not a list; skip duplicates that
+#   produce the same parse state
+# * termination conditions: need to play around with options such as:
+#   run to interation N; or run until X% parse states have fragments...
+#   in addition to the current termination condition of running until an
+#   iteration finds no new states.
+#
+global foundsome
+
+procedure merr2()
+local tabhs
+if phase = 1 then {
+   if \C then {
+      if \bison then {
+	 tabhs := []
+	 dir := open(".")
+	 while dirn := read(dir) do
+	    if dirn[-6:0] == ".tab.h" then put(tabhs, dirn)
+	 if *tabhs > 1 then {
+	    write("merr: not sure which .tab.h to use out of:\n\t")
+	    every writes(!tabhs, " ")
+	    stop("... aborting.")
+	    }
+	 else if (*tabhs = 0) & /ytabh then stop("merr: no .tab.h for phase1")
+	 /ytabh := tabhs[1]
+         }
+      /ytabh := "y.tab.h"
+      }
+   else /ytabh := "ytab_h.icn"
+
+   f := open(ytabh) | stop("can't open ", image(ytabh))
+   f2 := open("meta.err2", "w") | stop("can't write meta.err2")
+   write(f2, "#Merr2 token samples")
+   identchars := &letters++&digits++'_'
+   while line := read(f) do {
+      line ? {
+	 if tab(any('#$')) & ((tab(many(' \t'))|"")\1) &
+	     ="define " & (tok:=tab(many(identchars))) then {
+	    write(f2, tok, " = ",map(tok))
+            }
+	 }
+      }
+   close(f)
+   close(f2)
+   }
+else if phase = 2 then {
+   if not (f := open("meta.err2")) then
+      stop("can't read meta.err2; run -phase1 ?")
+   if not ((line := read(f)) == "# Merr2 token samples") then
+      stop("# Merr2 token samples expected")
+   L := []
+   while line := read(f) do {
+#	write(line)
+	line ? {
+	 #   write("size " || *line)
+	    if ="%%" then break
+	    if tab(find("= ")+2) & &pos <= *&subject then
+		{
+	#	    write(&pos || " " || tab(0))
+		    put(L, tab(0))
+		}
+	}
+    }
+#    write ("**************Test********************")
+#    every write(generrs(L,1))
+#    write ("**********************************")
+    close(f)
+#    return
+    # now, iterate merr generating fragments that generate errors
+    foundsome := 0
+    iteration := 1
+    repeat {
+	curfoundsome := foundsome
+	write("*********************************************************************")
+	generate_errs(L, iteration)
+	legalprefixes := newlegalprefixes
+        write("iteration ", iteration, " complete, found ", foundsome, " prefixes ", *legalprefixes)
+	write("*********************************************************************")
+	iteration +:= 1
+       	if \maxiter & maxiter < iteration then break
+        if foundsome = curfoundsome & iteration > 2 then break
+    }
+}
+end
+
+global legalprefixes, newlegalprefixes, statesserved
+
+# generate errors for fragments of length = i tokens
+procedure generate_errs(L,i)
+initial statesserved := set()
+   # smg converted to table
+   newlegalprefixes := table(0)
+   every err := generrs(L, i) do {
+      write ("Generated Fragment : " || err)
+      f2 := open("errfrag.icn","w") | stop("can't open errfrag.icn")
+      write(f2, err)
+      close(f2)
+      system("./unicon -E errfrag &> err.foo")
+#      writes(".")
+      f3 := open("err.foo")
+      Lmsgs := []
+      while(msgline := read(f3)) do {
+		write(msgline)
+	 put(Lmsgs, msgline)
+         }
+      close(f3)
+      # smg to modify
+      if find("unexpected end of file"|"No errors"|" \"\":", msgline) then {
+	  write("Legal Prefix : " || msgline)
+	  addprefix(newlegalprefixes, err, msgline)
+         }
+      else if i = 1 then {
+	  write(err, " not deemed a legal prefix:")
+	  every write("\t", !Lmsgs)
+      }
+      if find("syntax error", msgline) then {
+	  msgline ? {
+	      tab(find("syntax error"))
+	      ="syntax error"
+	      if =" (" & stt := integer(tab(many(&digits))) then {
+		  if not member(statesserved, stt) then {
+		     insert(statesserved, stt)
+		     every write(!Lmsgs)
+		     write("Found error ", err , "In state ", image(stt))
+		     f2 := open("meta.err2", "a")
+		     write(f2, err)
+		     write(f2, "::: syntax error")
+		     close(f2)
+		     foundsome +:= 1
+		 }
+	      }
+	  }
+	    }
+	}
+end
+
+
+procedure addprefix(newlegalprefixes, err, msg)
+
+   msg ?
+       {
+	   tab(find('(') + 1) & stt := integer(tab(many(&digits))) 	  
+	   write("In state : " ||stt, "Legal prefix = ", err );	  
+       }
+   if newlegalprefixes[stt] == 0 then
+       {
+	   newlegalprefixes[stt] := err
+	   write ("Added prefix to table : " || err)
+       }
+
+
+end
+
+# generate errors for fragments of length = i tokens that start with t
+procedure generrs(L, i)
+    write("generrs ", i, " L ", image(L))
+
+    if i = 1 then suspend !L
+    else {
+       suspend !legalprefixes ||" "|| !L
+    }
 end

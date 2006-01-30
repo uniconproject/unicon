@@ -1,11 +1,11 @@
 #
-#	File:     udb.icn
+#        File:     udb.icn
 #
-#	Subject:  The Unicon debugger
+#        Subject:  The Unicon debugger
 #
-#	Author:   Eric Munson
+#        Author:   Eric Munson
 #
-#	Date:     May 2005
+#        Date:     May 2005
 #
 
 $include "evdefs.icn"
@@ -18,7 +18,15 @@ link image
 #
 global breakSet, stepSet, nextSet, runSet, quitSet, whereSet
 global printSet, displaySet, undispSet, contSet, dirSet, listSet
-global eStepSet, helpSet
+global eStepSet, helpSet, gcThrashMSet, uninitMSet, convMSet
+
+# Definitions used by the automated tools.
+$define OFF 0
+$define ON 1
+
+# The coexpression that holds the yacc parser for the automated defect
+# location.
+global parser
 
 # The first define is the PROMPT that will be displayed.  The following
 # are numeric representations of states that the debugger can be in.
@@ -69,15 +77,23 @@ global program
 # Holds the last valid command that was executed.
 global lastCmd
 
-# breakPoints are going to migrate from a set to a table of sets
-# indexed by  file name
+# breakPoints are a table of sets indexed by file name
 global breakPoints
+
+# The state of the garbage collection thrashing monitor (ON or OFF )
+global thrashState
+
+# The state of the type conversion monitor (ON or OFF )
+global convState
+
+# The state of the uninitialized variable monitor (ON or OFF )
+global uninitState
 
 # Holds the state of the debugger.
 global state
 
 procedure main(args)
-   local eventMask, command
+   local eventMask, command, uninitGroup, thrashGroup, convGroup
    sourceText:= []
    missingSrcFiles := []
    srcIndex := table( 0 )
@@ -95,6 +111,15 @@ procedure main(args)
    nextLine := []
    dispVars := []
    lastCmd := ""
+
+   # Initialize all the automated monitors to OFF
+   thrashState := OFF
+   convState := OFF
+   uninitState := OFF
+
+   initParser( )
+
+   parser := create yyparse( )
 
    # Start the event monitoring framework
    program := args[1]
@@ -117,8 +142,8 @@ procedure main(args)
          close( s )
          }
       else {
-	      put( missingSrcFiles, sourceFiles[ i ] )
-	      }
+         put( missingSrcFiles, sourceFiles[ i ] )
+         }
       }
 
 
@@ -133,30 +158,79 @@ procedure main(args)
    EvGet( E_Loc ++ E_Pret ++ E_Pcall ++ E_Pfail )
 
    # Sets the inital eventMask to Location Changes
-   eventMask := E_Line
+   eventMask := E_Line ++ E_Pcall ++ E_Error
+
+   uninitGroup := E_Deref ++ E_Assign
+   thrashGroup := E_Collect ++ E_EndCollect
+   convGroup := E_Deref ++ E_Aconv
 
    # The main running loop
    while checkCommand( cmd := @command ) do {
       if cmd === "\n" & lastCmd === "" then next
       eventMask := parseCommand( cmd, command, eventMask )
       if state >= RUNNING then {
-	 if member( foundFiles, keyword( "file", Monitored ) ) then {
-	    eventMask := E_Line ++ E_Pcall
+         if member( foundFiles, keyword( "file", Monitored ) ) then {
+            eventMask := E_Line ++ E_Pcall ++ E_Error
             }
-	 else {
-	    eventMask := E_Pret ++ E_Pcall ++ E_Pfail
+         else {
+            eventMask := E_Pret ++ E_Pcall ++ E_Pfail ++ E_Error
             }
 
-	 while EvGet( eventMask ) do {
-	    if member( foundFiles, keyword( "file", Monitored ) ) then {
-               #write( keyword( "file", Monitored ) || ":" ||
-               #       keyword( "line", Monitored ) )
-	       if ( state == STEP ) |
-		  ( member( breakPoints[ keyword( "file", Monitored ) ],
+         if thrashState == ON then {
+            eventMask := eventMask ++ thrashGroup
+            }
+
+         if convState == ON then {
+            eventMask := eventMask ++ convGroup
+            }
+
+         if uninitState == ON then {
+            eventMask := eventMask ++ uninitGroup
+            }
+
+         while EvGet( eventMask ) do {
+            # The intersection is used as a faster way to test to see if the 
+            # event is one of the ones this monitor needs.
+            if thrashState == ON then {
+               if not( &eventcode ** thrashGroup == '' ) then {
+                  setEvCode( &eventcode, &eventvalue )
+                  @parser
+                  continue
+               }
+            }
+
+            if uninitState == ON then {
+               if not( &eventcode ** uninitGroup == '' ) then {
+                  setEvCode( &eventcode, &eventvalue )
+                  @parser
+                  continue
+               }
+            }
+
+            if convState == ON then {
+               if not( &eventcode ** convGroup == '' ) then {
+                  setEvCode( &eventcode, &eventvalue )
+                  @parser
+                  continue
+               }
+            }
+
+            if &eventcode == E_Error then {
+               
+               state := STOPPED
+               break
+               }
+            else if &eventcode == E_Exit then {
+               state := STOPPED
+               break
+               }
+            else if member( foundFiles, keyword( "file", Monitored ) ) then {
+               if ( state == STEP ) |
+                  ( member( breakPoints[ keyword( "file", Monitored ) ],
                             keyword("line", Monitored) ) ) |
-		  ( checkNextLine( keyword( "file", Monitored ), keyword( 
+                  ( checkNextLine( keyword( "file", Monitored ), keyword( 
                     "line", Monitored ) ) ) then {
-		  # We have a reason to stop, print the last line of 
+                  # We have a reason to stop, print the last line of 
                   # code executed
                   if(  member( breakPoints[ keyword( "file", Monitored ) ],
                             keyword("line", Monitored) ) ) then {
@@ -164,24 +238,24 @@ procedure main(args)
                             keyword( "file", Monitored ) || ":" ||
                             keyword( "line", Monitored ) )
                      }
-		  write( sourceText[ keyword("line", Monitored) +
-				    srcIndex[ keyword("file", Monitored) ] ] )
-		  state := STOPPED
+                  write( sourceText[ keyword("line", Monitored) +
+                                    srcIndex[ keyword("file", Monitored) ] ] )
+                  state := STOPPED
 
-		  # Display any of the variables in the watch list
-		  if *dispVars > 0 then {
-		     every i := 0 to *dispVars do {
-			write( dispVars[ i ] || " = " ||
-			      Image( variable( dispVars[ i ], Monitored ), 4 ))
-		        }
+                  # Display any of the variables in the watch list
+                  if *dispVars > 0 then {
+                     every i := 0 to *dispVars do {
+                        write( dispVars[ i ] || " = " ||
+                              Image( variable( dispVars[ i ], Monitored ), 4 ))
+                        }
                      }
-		  # Stop the execution and ask the user for input
-		  break
-	          }
+                  # Stop the execution and ask the user for input
+                  break
+                  }
                   else { }
                }
             }
-	 }
+         }
       writes( PROMPT )
       }
    EvTerm( )
@@ -315,7 +389,7 @@ procedure parseCommand(cmd, command, eventMask)
              image( proc( Monitored, 0 ) ) || ":" ||
              keyword( "line", Monitored ) )
       while write( image( proc( Monitored, i ) ) ) do {
-	      i +:= 1
+         i +:= 1
          }
       }
    else if member( printSet, cmd ) then {
@@ -332,6 +406,24 @@ procedure parseCommand(cmd, command, eventMask)
       varName :=  @command
       write( varName || " = " || Image( variable( varName, Monitored ), 4 ) )
       put( dispVars, varName )
+      }
+   else if member( uninitMSet, cmd ) then {
+      # Turn the uninitialized variable monitor on.
+      uninitState := ON
+      return eventMask
+      }
+   else if member( gcThrashMSet, cmd ) then {
+      # Turn the garbage collection thrashing monitor on.
+      thrashState := ON
+      setStartTime( &time )
+      return eventMask
+      }
+   else if member( convMSet, cmd ) then {
+      # Turn the type conversion monitor on.
+      count := @command
+      setConvLimit( count )
+      convState := ON
+      return eventMask
       }
    else if member( undispSet, cmd ) then {
       # Remove the specified variable from the watch list
@@ -352,15 +444,15 @@ procedure parseCommand(cmd, command, eventMask)
       sourcePath := dir || ((" " || \sourcePath) | "")
       write( "source path = " || sourcePath)
       every i := 1 to *missingSrcFiles do {
-	      if s := dopen( missingSrcFiles[ i ] ) then {
-	         srcIndex[ missingSrcFiles[ i ] ] := *sourceText
-	         insert( foundFiles, missingSrcFiles[ i ] )
-                 breakPoints[ missingSrcFiles[ i ] ] := set( )
-	         while( put( sourceText, read( s ) ) )
-	         close( s )
+         if s := dopen( missingSrcFiles[ i ] ) then {
+            srcIndex[ missingSrcFiles[ i ] ] := *sourceText
+            insert( foundFiles, missingSrcFiles[ i ] )
+            breakPoints[ missingSrcFiles[ i ] ] := set( )
+            while( put( sourceText, read( s ) ) )
+            close( s )
             }
-	      else {
-	         put( temp, missingSrcFiles[ i ] )
+         else {
+            put( temp, missingSrcFiles[ i ] )
             }
          }
       missingSrcFiles := temp
@@ -368,7 +460,8 @@ procedure parseCommand(cmd, command, eventMask)
    else if member( helpSet, cmd ) then {
       # print the possible commands
       write( "Command set = {break, run, step, next, where, print, display," ||
-             "undisplay, STEP, continue, directory, list, quit, help}" )
+             "undisplay, iStep, continue, directory, list, quit, thrash," ||
+             " uninit, conv, help, ?}" )
       return eventMask
       }
    else if member( eStepSet, cmd ) then {
@@ -396,17 +489,21 @@ procedure initCommands( )
    runSet := set( "r", "ru", "run" )
    quitSet := set( "q", "qu", "qui", "quit" )
    whereSet := set( "w", "wh", "whe", "wher", "where" )
-   printSet := set( "p", "pr", "pri", "prin", "print" );
+   printSet := set( "p", "pr", "pri", "prin", "print" )
    displaySet := set( "dis", "disp", "displ", "displa", "display" )
-   undispSet := set( "u", "un", "und", "undi", "undis", "undisp",
-		    "undispl", "undispla", "undisplay" )
-   contSet := set( "c", "co", "con", "cont", "conti", "contin",
-		  "continu", "continue" )
+   undispSet := set( "und", "undi", "undis", "undisp", "undispl",
+                     "undispla", "undisplay" )
+   contSet := set( "cont", "conti", "contin", "continu",
+                   "continue" )
    dirSet := set( "dir", "dire", "direc", "direct", "directo",
-		 "director", "directory" )
+                  "director", "directory" )
    listSet := set( "l", "li", "lis", "list" )
-   eStepSet := set( "S", "ST", "STE", "STEP" )
+   eStepSet := set( "i", "iS", "iSt", "iSte", "iStep" )
    helpSet := set( "?", "h", "he", "hel", "help" )
+   gcThrashMSet := set( "t", "th", "thr", "thra", "thras",
+                        "thrash" )
+   uninitMSet := set( "uni", "unin", "unini", "uninit" )
+   convMSet := set( "conv" )
 
 end
 
@@ -416,8 +513,8 @@ procedure getWord()
    wchar := &letters ++&digits ++ '\'\\/-.\n&'
    while line :=read() do {
       line ? while tab(upto(wchar))do {
-	 word :=tab(many(wchar))
-	 suspend word
+         word :=tab(many(wchar))
+         suspend word
          }
       suspend "\n"
       }
@@ -475,5 +572,3 @@ procedure checkNextLine( file, line )
       }
    fail
 end
-
-# Email Dr. J about finding Main in executable.

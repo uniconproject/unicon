@@ -157,6 +157,7 @@ char *name;
       strcat(buf, name);
       strcat(buf, "'");
       if (name[strlen(name)-1] != 'u') { /* .u[12], tried also .u */
+         buf[strlen(buf)-2] = '\'';
          buf[strlen(buf)-1] = '\0';
          strcat(buf, " or '%s'");
          }

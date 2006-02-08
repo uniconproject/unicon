@@ -822,7 +822,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             }
          else if (smatch(fp->ext,U1Suffix) || smatch(fp->ext,U2Suffix)
                || smatch(fp->ext,USuffix)) {
-            makename(buf,TargetDir,argv[optind],U1Suffix);
+            makename(buf,(*TargetDir?TargetDir:NULL),argv[optind],U1Suffix);
             *lptr++ = salloc(buf);
             }
          else

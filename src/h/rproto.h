@@ -177,6 +177,9 @@ void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
 int		lexcmp		(dptr dp1,dptr dp2);
 word		longread	(char *s,int width,long len,FILE *fname);
+#if HAVE_LIBZ
+word		gzlongread	(char *s,int width,long len,FILE *fd);
+#endif					/* HAVE_LIBZ */
 #ifdef FAttrib
 #if UNIX
 char *  make_mode		(mode_t st_mode);

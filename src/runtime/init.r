@@ -598,7 +598,7 @@ char *argv[];
 #if !COMPILER
    int fdname = -1;
    FILE *fname = 0;
-   word cbread, longread(), gzlongread();
+   word cbread;
 #endif					/* COMPILER */
 
 #if OS2
@@ -2017,7 +2017,7 @@ C_integer bs, ss, stk;
    int fdname;
 #endif					/* HAVE_LIBZ */
    FILE *fname = NULL;
-   word cbread, longread();
+   word cbread;
 
    /*
     * open the icode file and read the header

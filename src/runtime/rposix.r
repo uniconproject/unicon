@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.31 2006-02-17 06:49:34 jeffery Exp $
+ * $Id: rposix.r,v 1.32 2006-02-17 23:19:05 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -213,7 +213,7 @@ int StartupWinSocket(void)
 int CleanupWinSocket(void)
 {
    if (WSACleanup()==SOCKET_ERROR) {
-      fprintf(stder, "cannot cleanup windows sockets\n");
+      fprintf(stderr, "cannot cleanup windows sockets\n");
       return 0;
       }
    WINSOCK_INITIAL = 0;

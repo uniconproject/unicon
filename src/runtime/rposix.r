@@ -1,4 +1,3 @@
-
 /*
  * Copyright 1997-2001 Shamim Mohamed.
  *
@@ -7,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.30 2005-08-12 06:20:06 jeffery Exp $
+ * $Id: rposix.r,v 1.31 2006-02-17 06:49:34 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -198,6 +197,28 @@ WORD wVersionRequested = MAKEWORD( 2, 0 );
 WSADATA wsaData;
 int werr;
 int WINSOCK_INITIAL=0;
+
+int StartupWinSocket(void)
+{
+   if (!WINSOCK_INITIAL) {
+      if(WSAStartup(wVersionRequested, &wsaData)!= 0){
+         fprintf(stderr, "can't startup windows sockets\n");
+         return 0;
+         }
+      WINSOCK_INITIAL = 1;
+      }
+   return 1;
+}
+
+int CleanupWinSocket(void)
+{
+   if (WSACleanup()==SOCKET_ERROR) {
+      fprintf(stder, "cannot cleanup windows sockets\n");
+      return 0;
+      }
+   WINSOCK_INITIAL = 0;
+   return 1;
+}
 #endif					/* NT */
 
 int get_fd(file, errmask)
@@ -798,27 +819,18 @@ int sock_connect(char *fn, int is_udp, int timeout)
       if (port == 0) {
 	 errno = ENXIO;
 	 return 0;
-      }
+         }
 
 #if NT
-      if (!WINSOCK_INITIAL)   {
-        werr = WSAStartup( wVersionRequested, &wsaData );
-	if ( werr != 0 ) {
-	    /* Tell the user that we couldn't find a usable */
-	    /* WinSock DLL.                                  */
-	    fprintf(stderr, "can't startup windows sockets\n");
-	    return 0;
- 	}
-	WINSOCK_INITIAL = 1;
-      }
+      if (!StartupWinSocket()) return 0;
 #endif					/*NT*/
 
       if (*host == 0) {
-          /* localhost - should we use gethostname() or "localhost"? SPM */
+         /* localhost - should we use gethostname() or "localhost"? SPM */
 /*          gethostname(hostname, sizeof(hostname));*/
-	  strncpy(hostname, "localhost", sizeof(hostname));
-          host = hostname;
-      }
+	 strncpy(hostname, "localhost", sizeof(hostname));
+         host = hostname;
+         }
 
       if ((hp = gethostbyname(host)) == NULL) {
 	 return 0;
@@ -1045,19 +1057,10 @@ int is_udp_or_listener;
       * empty, it means on any interface.
       */
 
-     if ((p=strchr(addr, ':')) != NULL) {
+      if ((p=strchr(addr, ':')) != NULL) {
 
 #if NT
-        if (!WINSOCK_INITIAL)   {
-            werr = WSAStartup( wVersionRequested, &wsaData );
-            if ( werr != 0 ) {
-	        /* Tell the user that we couldn't find a usable */
-	        /* WinSock DLL.                                  */
-	        fprintf(stderr, "can't startup windows sockets\n");
-	        return 0;
-	    }
-	    WINSOCK_INITIAL = 1;
-        }
+	 if (!StartupWinSocket()) return 0;
 #endif					/*NT*/
 
         if (*addr == ':')
@@ -1181,16 +1184,7 @@ int sock_send(char *adr, char *msg, int msglen)
    *p = 0;
       
 #if NT
-   if (!WINSOCK_INITIAL)   {
-      werr = WSAStartup( wVersionRequested, &wsaData );
-      if ( werr != 0 ) {
-	 /* Tell the user that we couldn't find a usable */
-	 /* WinSock DLL.                                  */
-	 fprintf(stderr, "can't startup windows sockets\n");
-	 return 0;
-      }
-      WINSOCK_INITIAL = 1;
-   }
+   if (!StartupWinSocket()) return 0;
 #endif					/* NT */
 
    if (*host == 0) {
@@ -1242,16 +1236,7 @@ int sock_recv(int s, struct b_record **rp)
    len = sizeof(s_type);
 
 #if NT
-   if (!WINSOCK_INITIAL)   {
-      werr = WSAStartup( wVersionRequested, &wsaData );
-      if ( werr != 0 ) {
-	 /* Tell the user that we couldn't find a usable */
-	 /* WinSock DLL.                                  */
-	 fprintf(stderr, "can't startup windows sockets\n");
-	 return 0;
-      }
-      WINSOCK_INITIAL = 1;
-   }
+   if (!StartupWinSocket()) return 0;
 #endif					/* NT */
 
    if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *)&s_type, &len) < 0)

@@ -15,11 +15,8 @@ jmp_buf Mexceptbuf;
 int Mexceptjmp;
 int Merror;
 #if NT
-extern WORD wVersionRequested;
-extern WSADATA wsaData;
-extern int werr;
-extern int WINSOCK_INITIAL;
-#endif
+extern int StartupWinSocket(void);
+#endif					/* NT */
 
 const char* DEFAULT_USER_AGENT = "User-Agent: Unicon Messaging/10.0";
 
@@ -75,16 +72,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
 #endif                                  /* UNIX */
 
 #if NT
-      if (!WINSOCK_INITIAL)   {
-        werr = WSAStartup( wVersionRequested, &wsaData );
-	if ( werr != 0 ) {
-	    /* Tell the user that we couldn't find a usable */
-	    /* WinSock DLL.                                  */
-	    fprintf(stderr, "can't startup windows sockets\n");
-	    return 0;
- 	}
-	WINSOCK_INITIAL = 1;
-   }
+   if (!StartupWinSocket()) return NULL;
 #endif					/*NT*/
 
    tpexcept = disc->exceptf;

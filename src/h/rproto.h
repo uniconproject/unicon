@@ -763,6 +763,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq);
 
 #ifdef PosixFns
 #if NT
+int StartupWinSocket(void);
 void stat2rec			(struct _stat *st, dptr dp, struct b_record **rp);
 #else					/* NT */
 void stat2rec			(struct stat *st, dptr dp, struct b_record **rp);

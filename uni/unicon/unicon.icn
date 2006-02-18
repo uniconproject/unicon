@@ -165,6 +165,16 @@ procedure unicon(argv)
 		argv[i+1] := "-o"
 		}
 	     }
+	 # -I and -L: add argv[i+1] to LPATH or IPATH, respectively
+	 "-I"|"-L": {
+	    if argv[i] == "-I" then thepath := "LPATH" else thepath := "IPATH" 
+	    if (i=1) | (argv[i-1] ~=== argv[i]) then {
+	       tmp_s := argv[i+1]
+	       argv[i+1] := argv[i]
+	       tmp_s ||:= " " || getenv(thepath)
+	       setenv(thepath, tmp_s) | write(&errout, "setenv failed")
+	       }
+	    }
 	 "-y": parseonly := 1
 	 "-yydbg": parseonly := yydbg := 1
 	 "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "

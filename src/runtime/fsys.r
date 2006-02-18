@@ -2353,8 +2353,12 @@ end
 
 #if NT
 #ifdef MSWindows
-#ifndef NTGCC
+#ifdef NTGCC
+/* gcc has a getenv() but it doesn't work as well as GetEnvironmentVariable */
+char *getenv(const char *s)
+#else					/* NTGCC */
 char *getenv(char *s)
+#endif					/* NTGCC */
 {
 static char tmp[1537];
 DWORD rv;
@@ -2362,7 +2366,6 @@ rv = GetEnvironmentVariable(s, tmp, 1536);
 if (rv > 0) return tmp;
 return NULL;
 }
-#endif					/* NTGCC */
 #endif					/* MSWindows */
 
 #ifndef NTGCC

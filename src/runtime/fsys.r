@@ -343,6 +343,7 @@ function{0,1} open(fname, spec)
 
 #ifdef Messaging
       int is_shortreq = 0;
+      C_integer timeout = 0;
 #endif                                  /* Messaging */
 
 /*
@@ -735,6 +736,15 @@ Deliberate Syntax Error
 			runerr(1204, fname);
 		     }
 
+		  /*
+		   * Need to look into doing this for Graphics and ISQL also.
+		   */
+		  if (n > 0 && !is:null(attr[0])) {
+		     if (!cnv:C_integer(attr[0], timeout))
+			runerr(101, attr[0]);
+		     M_open_timeout = timeout;
+		     }
+
 		  f = (FILE *)Mopen(puri, attr, n, is_shortreq);
 		  if (Merror > 1200) {
 		    runerr(Merror, fname);
@@ -813,13 +823,14 @@ Deliberate Syntax Error
 	    runerr(209, spec);
 	 strcpy(sbuf, fnamestr);
 	 if ((s = strchr(sbuf, ' ')) != NULL) *s = '\0';
-	 if (findonpath(sbuf, sbuf2, MaxCvtLen) == NULL) {
-	    fail;
-	    }
-         fnamestr = sbuf2;
-	 if (s) {
-	    strcat(fnamestr, " ");
-	    strcat(fnamestr, s+1);
+	 if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
+	    if (findonpath(sbuf, sbuf2, MaxCvtLen) == NULL)
+	       fail;
+	    fnamestr = sbuf2;
+	    if (s) {
+	       strcat(fnamestr, " ");
+	       strcat(fnamestr, s+1);
+	       }
 	    }
 	 f = popen(fnamestr, mode);
 	 if (!strcmp(mode,"r")) {

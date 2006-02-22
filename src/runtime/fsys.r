@@ -701,7 +701,11 @@ Deliberate Syntax Error
 		     if (is:null(attr[a])) {
 			attr[a] = emptystr;
 			}
-		     if (!is:string(attr[a])) {
+		     else if (!cnv:C_integer(attr[a], timeout)) {
+			M_open_timeout = timeout;
+			continue;
+			}
+		     else if (!is:string(attr[a])) {
 			runerr(109, attr[a]);
 			}
 		     if (cnv:C_string(attr[a], tmps)) {
@@ -734,15 +738,6 @@ Deliberate Syntax Error
 			   }
 #endif                                  /* PosixFns */
 			runerr(1204, fname);
-		     }
-
-		  /*
-		   * Need to look into doing this for Graphics and ISQL also.
-		   */
-		  if (n > 0 && !is:null(attr[0])) {
-		     if (!cnv:C_integer(attr[0], timeout))
-			runerr(101, attr[0]);
-		     M_open_timeout = timeout;
 		     }
 
 		  f = (FILE *)Mopen(puri, attr, n, is_shortreq);

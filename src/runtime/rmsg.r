@@ -14,6 +14,13 @@ static Tpexcept_f tpexcept;
 jmp_buf Mexceptbuf;
 int Mexceptjmp;
 int Merror;
+
+/*
+ * Adding a timeout to open() is a practical requirement.
+ * Not implemented yet.
+ */
+int M_open_timeout;
+
 #if NT
 extern int StartupWinSocket(void);
 #endif					/* NT */

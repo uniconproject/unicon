@@ -4,8 +4,6 @@
  */
 int texture(int width, int height, GLubyte *tex, int texmode);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type);
-void drawstrng3d(wbp w, double x, double y, double z, char *s);
-
 
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
@@ -526,7 +524,7 @@ int pushmatrix()
 int pushmatrix_rd(wbp w, dptr f)
 {
    static dptr constr;
-   int nfields;
+   int nfields, draw_code;
    tended struct b_record *rp;
 
    if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
@@ -546,6 +544,12 @@ int pushmatrix_rd(wbp w, dptr f)
    f->dword = D_Record;
    f->vword.bptr = (union block *)rp;
    MakeStr("PushMatrix", 10 ,&(rp->fields[0]));
+
+   draw_code = si_s2i(redraw3Dnames, "PushMatrix");
+   if (draw_code == -1)
+       return Failed; 
+   MakeInt(draw_code, &(rp->fields[1]));
+
    c_put(&(w->window->funclist), f);
    return 0;
 }
@@ -733,13 +737,14 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define	REDRAW_TEXMODE 368
 #define REDRAW_FONT3D 384
 #define REDRAW_DRAWSTRING3D 400
+#define REDRAW_MARK 432
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			25 },		/* number of entries */
+   { 0,			26 },		/* number of entries */
    { "DrawCube",	REDRAW_CUBE | 4 },
    { "DrawCylinder",	REDRAW_CYLINDER | 6},
    { "DrawDisk",	REDRAW_DISK | 7 },
@@ -754,6 +759,7 @@ stringint redraw3Dnames[] = {
    { "FillPolygon",	REDRAW_FILLPOLYGON },
    { "Font3d",          REDRAW_FONT3D },
    { "Identity",	REDRAW_IDENTITY },
+   { "Mark",            REDRAW_MARK},
    { "MatrixMode",	REDRAW_MATRIXMODE },
    { "PopMatrix",	REDRAW_POPMATRIX },
    { "PushMatrix",	REDRAW_PUSHMATRIX },
@@ -776,21 +782,25 @@ int traversefunctionlist(wbp w)
    wsp ws = w->window;
    double x, y, z, r1, r2, h, a1, a2, *v, v2[256];
    C_integer num, dim;
+   C_integer r, g, b, a;
    int i, j, tmp, vsize=256;
-   tended struct descrip flist, fname, var1, var2;
+   tended struct descrip flist, fname, var1, var2, d;
    tended struct b_list *funclist;
-   tended struct b_list *hp;
-   tended struct b_lelem *bp;
    tended char *temp;
    tended struct b_record *rp;
    tended char *s;
-   int used;
-   word k;
+   tended struct b_list *hp;
+   tended struct b_lelem *bp, *bp1;
+   int used, used1, count=0;
+   word k,k1;
    int elements = ws->funclist.vword.bptr->list.size;
-  
+
+
+
    hp = (struct b_list *) ws->funclist.vword.bptr;
+   if (hp->size<=0) return Succeeded;
+   elements = hp->size;
    bp = (struct b_lelem *) hp->listhead;
-   if (elements<=0) return Succeeded;
 
    if (bp->nused<=0) {
         bp = (struct b_lelem *) bp->listnext;
@@ -800,6 +810,7 @@ int traversefunctionlist(wbp w)
    k = bp->first;
    used =bp->nused;
 
+
    /*
     * The ith element of the list is a list with information
     * about the function call made on the window.
@@ -808,8 +819,18 @@ int traversefunctionlist(wbp w)
    for (i=0; i< elements; i++) {
       if (v != v2) free(v);
       v = v2;
-/*      c_traverse1((struct b_list *)ws->funclist.vword.bptr, &flist, i);  */
-
+/*
+      if (count) {
+        if (count<used) {
+              printf("count=%d used=%d k=%d nslots=%d: ", count, used, k, bp->nslots);
+              used=used-count;
+              k = k + count;
+              if (k>=bp->nslots) k=k-bp->nslots;
+              count=0;
+              printf("count=%d used=%d k=%d nslots=%d\n", count, used, k, bp->nslots);
+              }
+          }
+*/
       flist = bp->lslots[k];
       k++;
       used--;
@@ -821,18 +842,26 @@ int traversefunctionlist(wbp w)
          k = bp->first;
       }
 
+        if (count) {
+/*           if (count>=used) { */
+               count--;
+               continue;
+/*               } */
+           }
+
       if (is:record(flist)) {
 	 fname = BlkLoc(flist)->record.fields[0];
 	 rp = (struct b_record *)BlkLoc(flist);
-	 tmp = si_s2i(redraw3Dnames, StrLoc(fname));
+
+         tmp = IntVal(BlkLoc(flist)->record.fields[1]);
 	 if (tmp == -1) {
 	    return Failed; /* probably should runerr on this */
 	    }
 	 for (j=0; j < (tmp&7); j++) {
-	    var1 = rp->fields[j+1];
+	    var1 = rp->fields[j+2];
 	    if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
 	    }
-
+        if (tmp & ~0xf==432) printf("mark found\n");
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
 	    torus(v[3], v[4], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
@@ -870,7 +899,7 @@ int traversefunctionlist(wbp w)
 	    glLoadIdentity();
 	    break;
 	 case REDRAW_MATRIXMODE:
-	    if (!cnv:C_string(rp->fields[1], temp)) goto free_v_and_fail;
+	    if (!cnv:C_string(rp->fields[2], temp)) goto free_v_and_fail;
 	    if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
 	    else if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
 	    break;
@@ -879,22 +908,33 @@ int traversefunctionlist(wbp w)
 	     * lookup the name of the texture and bind it
              * the objects using glBindTexture()
 	     */
-	    if (!cnv:C_integer(rp->fields[1], num)) goto free_v_and_fail;
+	    if (!cnv:C_integer(rp->fields[2], num)) goto free_v_and_fail;
 	    glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
 	    if (wc->texmode)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	    break;
          case REDRAW_FONT3D:
 #if 0
-	    curr_font = (struct wfont *) IntVal(rp->fields[1]);
+	    curr_font = (struct wfont *) IntVal(rp->fields[2]);
 #endif
 	    break;
          case REDRAW_DRAWSTRING3D:
+/*
 	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;	  
-	    if (!cnv:C_string(rp->fields[4], s)) goto free_v_and_fail;
+*/
+	    if (!cnv:C_string(rp->fields[5], s)) goto free_v_and_fail;
+#if 0
 	    drawstrng3d(w,x,y,z,s);
+#endif
+            break;
+         case REDRAW_MARK:
+            if (IntVal(BlkLoc(flist)->record.fields[3])==1) {
+	        count = IntVal(BlkLoc(flist)->record.fields[4]);
+/*                printf("count=%d\n", count); */
+                }
+            else count=0;
             break;
 	 default:
             goto free_v_and_fail;
@@ -903,8 +943,20 @@ int traversefunctionlist(wbp w)
 	 }
       else if (is:list(flist)) {
 	 funclist = (struct b_list*)flist.vword.bptr;
-   	 c_traverse (funclist, &fname, 0);
-	 tmp = si_s2i(redraw3Dnames, StrLoc(fname));
+         if (funclist->size<0) continue;
+         bp1 = (struct b_lelem *) funclist->listhead;
+         if (bp1->nused<=0) {
+            bp1 = (struct b_lelem *) bp1->listnext;
+            funclist->listhead = (union block *) bp1;
+            bp1->listprev = (union block *) funclist;
+         }
+         k1 = bp1->first;
+         fname = bp1->lslots[k1];
+
+         if (k1++>=bp1->nslots) k1=0;
+         tmp=IntVal(bp1->lslots[k1]);
+         used1 = bp1->nused-1;
+
 	 if (funclist->size-1 > vsize) {
 	    if (v == v2)
 	       v = calloc(funclist->size, sizeof (double));
@@ -956,7 +1008,7 @@ int traversefunctionlist(wbp w)
 	 glLoadIdentity();
 	 break;
       case REDRAW_MATRIXMODE:
-	 if (!cnv:C_string(rp->fields[1], temp)) goto free_v_and_fail;
+	 if (!cnv:C_string(rp->fields[2], temp)) goto free_v_and_fail;
 	 if (!strcmp("modelview", temp)) glMatrixMode(GL_MODELVIEW);
 	 else if (!strcmp("projection", temp)) glMatrixMode(GL_PROJECTION);
 	 break;
@@ -965,36 +1017,135 @@ int traversefunctionlist(wbp w)
 	  * lookup the name of the texture and bind it
 	  * the objects using glBindTexture()
 	  */
-	 if (!cnv:C_integer(rp->fields[1], num)) goto free_v_and_fail;
+	 if (!cnv:C_integer(rp->fields[2], num)) goto free_v_and_fail;
 	 glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
 	 if (wc->texmode)
 	    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	 break;
       case REDRAW_FG:
 	 /* Fg() or WAttrib("fg=...") */
-	 if(!determinematerial(funclist)) {
-free_v_and_fail:
+
+        if (used1<=1) {
+            bp1=(struct b_lelem *) bp1->listnext;
+            used1 = bp1->nused;
+            k1 = bp1->first;
+            }
+        else {
+           if (k1++>=bp1->nslots) k1=0;
+           used1--;
+        }
+        d = bp1->lslots[k1];
+        if (!cnv:C_string(d, temp))
+	    return Failed;
+
+        if (used1<=1) {
+            bp1=(struct b_lelem *) bp1->listnext;
+            used1 = bp1->nused;
+            k1 = bp1->first;
+            }
+        else {
+           if (k1++>=bp1->nslots) k1=0;
+           used1--;
+        }
+        d = bp1->lslots[k1];
+        if (!cnv:C_integer(d, r))
+	    return Failed;
+
+        if (used1<=1) {
+            bp1=(struct b_lelem *) bp1->listnext;
+            used1 = bp1->nused;
+            k1 = bp1->first;
+            }
+        else {
+           if (k1++>=bp1->nslots) k1=0;
+           used1--;
+        }
+        d = bp1->lslots[k1];
+        if (!cnv:C_integer(d, g))
+	    return Failed;
+
+        if (used1<=1) {
+            bp1=(struct b_lelem *) bp1->listnext;
+            used1 = bp1->nused;
+            k1 = bp1->first;
+            }
+        else {
+           if (k1++>=bp1->nslots) k1=0;
+           used1--;
+        }
+        d = bp1->lslots[k1];
+        if (!cnv:C_integer(d, b))
+	    return Failed;
+
+        if (used1<=1) {
+            bp1=(struct b_lelem *) bp1->listnext;
+            used1 = bp1->nused;
+            k1 = bp1->first;
+            }
+        else {
+           if (k1++>=bp1->nslots) k1=0;
+           used1--;
+        }
+        d = bp1->lslots[k1];
+        if (!cnv:C_integer(d, a))
+	    return Failed;
+
+	if(!determinematerial(temp, r, g, b, a)) {
+/*
+        if(!determinematerial(funclist)) {
+*/
+            free_v_and_fail:
 	    if (v != v2) free(v);
 	    return Failed;
 	    }
 	 break;
       case REDRAW_DIM:
 	 /* WAttrib("dim=...") */
-	 c_traverse(funclist, &var1, 1);
+        if (used1<=1) {
+            bp1=(struct b_lelem *) bp1->listnext;
+            used1 = bp1->nused;
+            k1 = bp1->first;
+            }
+        else {
+           if (k1++>=bp1->nslots) k1=0;
+           used1--;
+        }
+        var1 = bp1->lslots[k1];
+
     	 if ((!cnv:C_integer(var1, dim))||(dim<1)||(dim>3))
 	    goto free_v_and_fail;
          wc->dim = dim;
 	 break;
       case REDRAW_LINEWIDTH:
 	 /* WAttrib("linewidth=...") */
-         c_traverse(funclist, &var1, 1);
+         if (used1<=1) {
+             bp1=(struct b_lelem *) bp1->listnext;
+             used1 = bp1->nused;
+             k1 = bp1->first;
+             }
+         else {
+            if (k1++>=bp1->nslots) k1=0;
+            used1--;
+            }
+         var1 = bp1->lslots[k1];
+
          if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 	 setlinewidth(w, num);
          glLineWidth(num);
 	 break;
       case REDRAW_TEXMODE:
 	 /* WAttrib("texmode=...") */
-         c_traverse(funclist, &var1, 1);
+         if (used1<=1) {
+             bp1=(struct b_lelem *) bp1->listnext;
+             used1 = bp1->nused;
+             k1 = bp1->first;
+             }
+         else {
+            if (k1++>=bp1->nslots) k1=0;
+            used1--;
+            }
+         var1 = bp1->lslots[k1];
+
          if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 
          /* texturing is on */
@@ -1015,7 +1166,17 @@ free_v_and_fail:
          /*
 	  * first element tells us if opengl generates texture coordinates
 	  */
-         c_traverse(funclist, &var1, 1);
+         if (used1<=1) {
+             bp1=(struct b_lelem *) bp1->listnext;
+             used1 = bp1->nused;
+             k1 = bp1->first;
+             }
+         else {
+            if (k1++>=bp1->nslots) k1=0;
+            used1--;
+            }
+         var1 = bp1->lslots[k1];
+         
          if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
          if (num) {
             glEnable(GL_TEXTURE_GEN_S);
@@ -1029,57 +1190,116 @@ free_v_and_fail:
             glDisable(GL_TEXTURE_GEN_T);
             wc->autogen = 0;
 
-	   if (wc->ntexcoordsalced < funclist->size-2) {
+	   if (wc->ntexcoordsalced < funclist->size-3) {
 	      printf("need to grow ntexcooords alced %d need %d\n",
-		     wc->ntexcoordsalced, funclist->size-2);
+		     wc->ntexcoordsalced, funclist->size-1);
 	      goto free_v_and_fail;
 	      }
 
            /* traverse the list and set the texture coordinates */
-           if(!c_realarray(funclist, 3, funclist->size, wc->texcoords)){
-	      goto free_v_and_fail;
-	      }
-           wc->numtexcoords = funclist->size-2;
+           for (j=0; j < (funclist->size)-3; j++){
+              if (used1 <= 1){
+	         bp1 = (struct b_lelem *) bp1->listnext;
+                 used1 = bp1->nused;
+                 k1 = bp1->first;
+                 }
+              else {
+	         if (k1++ >= bp1->nslots) k1 = 0;
+	         used1--;
+                 }
+              if (used1>0) {
+	         d = bp1->lslots[k1];
+                 if (!cnv:real(d, d)) return 0;
+	         bp1->lslots[k1] = d;
+	         wc->texcoords[j] = BlkLoc(d)->realblk.realval;
+                 }
+             }
+
+           wc->numtexcoords = funclist->size-3;
            }
 	 break;
       case REDRAW_POLYGON:      /* DrawPolygon() */
          /* element in position 1 is the dim attribute */
-         for (j = 0; j < (funclist->size)-1; j++) {
-            c_traverse(funclist, &var2, j+1);
+         for (j = 0; j < (funclist->size)-2; j++) {
+            if (used1<=1) {
+                bp1=(struct b_lelem *) bp1->listnext;
+                used1 = bp1->nused;
+                k1 = bp1->first;
+                }
+            else {
+                if (k1++>=bp1->nslots) k1=0;
+                used1--;
+                }
+            var2 = bp1->lslots[k1];
             if(!cnv:C_double(var2, v[j])) goto free_v_and_fail;
 	    }
 
 	 /* call drawpoly with GL_LINE_LOOP to get a polygon */
-	 drawpoly(w, v, (funclist->size)-1, GL_LINE_LOOP, wc->dim);
+	 drawpoly(w, v, (funclist->size)-2, GL_LINE_LOOP, wc->dim);
 	 break;
       case REDRAW_FILLPOLYGON:      /* FillPolygon() */
-	 for (j = 0; j < (funclist->size)-1; j++) {
-            c_traverse(funclist, &var2, j+1);
+	 for (j = 0; j < (funclist->size)-2; j++) {
+            if (used1<=1) {
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+                if (k1++>=bp1->nslots) k1=0;
+                used1--;
+            }
+            var2 = bp1->lslots[k1];
             if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
             }
 	  /* drawpoly with GL_POLYGON will give filled polygons */
-         drawpoly(w, v, (funclist->size)-1, GL_POLYGON, wc->dim);
+         drawpoly(w, v, (funclist->size)-2, GL_POLYGON, wc->dim);
 	 break;
       case REDRAW_SEGMENT:      /* DrawSegment() */
 	 for (j = 0; j < (funclist->size)-1; j++) {
-	    c_traverse(funclist, &var2, j+1);
+            if (used1<=1) {
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+                if (k1++>=bp1->nslots) k1=0;
+                used1--;
+            }
+            var2 = bp1->lslots[k1];
 	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
 	    }
-	 drawpoly(w, v, (funclist->size)-1, GL_LINES, wc->dim);
+	 drawpoly(w, v, (funclist->size)-2, GL_LINES, wc->dim);
 	 break;
       case REDRAW_LINE:       /* DrawLine() */
 	 for (j = 0; j < (funclist->size)-1; j++) {
-	    c_traverse(funclist, &var2, j+1);
+            if (used1<=1) {
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+                if (k1++>=bp1->nslots) k1=0;
+                used1--;
+            }
 	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
 	    }
-	 drawpoly(w, v, (funclist->size)-1, GL_LINE_STRIP, wc->dim);
+	 drawpoly(w, v, (funclist->size)-2, GL_LINE_STRIP, wc->dim);
 	 break;
       case REDRAW_POINT:       /* DrawPoint() */
 	 for (j = 0; j < (funclist->size)-1; j++) {
-	    c_traverse(funclist, &var2, j+1);
+            if (used1<=1) {
+               bp1=(struct b_lelem *) bp1->listnext;
+               used1 = bp1->nused;
+               k1 = bp1->first;
+            }
+            else {
+                if (k1++>=bp1->nslots) k1=0;
+                used1--;
+            }
+            var2 = bp1->lslots[k1];
 	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
             }
-	 drawpoly(w, v, (funclist->size)-1, GL_POINTS, wc->dim);
+	 drawpoly(w, v, (funclist->size)-2, GL_POINTS, wc->dim);
 	 break;
       default:
 	 fprintf(stderr,"invalid displaylist entry '%s'\n", StrLoc(fname));
@@ -1094,34 +1314,12 @@ free_v_and_fail:
 /*
  * traverse the given list and set material properties
  */
-int determinematerial(struct b_list *list)
+int determinematerial(temp, r, g, b, a) 
+char *temp;
+C_integer r, g, b, a;
 {
    struct descrip d;
-   C_integer r, g, b, a;
-   tended char *temp;
    GLfloat color[4];
-
-   /*
-    * Convert the elements of the list to the appropriate type. The first
-    * element is a string which give the material property. the last three
-    * elements should be the r, g, b value of that property
-    */
-
-   c_traverse( list, &d, 1);
-   if (!cnv:C_string(d, temp))
-	 return Failed;
-   c_traverse( list, &d, 2);
-   if (!cnv:C_integer(d, r))
-	 return Failed;
-   c_traverse( list, &d, 3);
-   if (!cnv:C_integer(d, g))
-	return Failed;
-   c_traverse( list, &d, 4);
-   if (!cnv:C_integer(d, b))
-	 return Failed;
-   c_traverse( list, &d, 5);
-   if (!cnv:C_integer(d, a))
-	 return Failed;
 
    /*
     * must convert from an integer between 0 and 65535
@@ -1235,8 +1433,10 @@ int gettexcoords(wbp w, char *buf)
 /* set the linewidth */
 int setlinewidth3D(wbp w, LONG linewid)
 {
-   struct descrip f, funcname, width;
-   struct b_list *func;
+   tended struct descrip f; /* tended added */
+   struct descrip funcname, width, g;
+   tended struct b_list *func;
+   int draw_code;
 
    if (linewid < 0) return Error;
    makecurrent(w);
@@ -1250,6 +1450,13 @@ int setlinewidth3D(wbp w, LONG linewid)
    f.vword.bptr = (union block *) func;
    MakeStr("linewidth", 9, &funcname);
    c_put(&f, &funcname);
+
+   draw_code = si_s2i(redraw3Dnames, "linewidth");
+   if (draw_code == -1)
+       return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
+
    MakeInt(linewid, &width);
    c_put(&f, &width);
    c_put(&(w->window->funclist), &f);
@@ -1267,14 +1474,15 @@ int setmaterials(wbp w, char* s)
 #ifdef XWindows
    wdp wd = w->window->display;
 #endif					/* XWindows */
-   int k, j, i = 0;
+   int k, j, i = 0, draw_code;
    long rd, gr, bl, al;
    GLfloat shine;
    GLfloat color[4];
    char sbuf1[MaxCvtLen];
    char sbuf2[MaxCvtLen];
-   struct descrip f, funcname, material, r, b, g, a;
-   struct b_list *func;
+   tended struct descrip f;  /* tended added */
+   struct descrip funcname, material, r, b, g, a, gg;
+   tended struct b_list *func; /* tended added */
 
    makecurrent(w);
    while(s[i]) {
@@ -1282,12 +1490,18 @@ int setmaterials(wbp w, char* s)
       k = 0;
 
       /* create a list element for each material property */
-      if ((func = alclist(0, MinListSlots)) == NULL)
+      if ((func = alclist(0, 7)) == NULL)
          return Failed;
       f.dword = D_List;
       f.vword.bptr = (union block *) func;
       MakeStr("Fg", 2, &funcname);
       c_put(&f, &funcname);
+
+      draw_code = si_s2i(redraw3Dnames, "Fg");
+      if (draw_code == -1)
+	return Failed;
+      MakeInt(draw_code, &gg);
+      c_put(&f, &gg);
 
      /*
       * parse the string to determine the material property and its value
@@ -1613,10 +1827,11 @@ int setlight(wbp w, char* s, int light)
 /* set the dim attribute */
 int setdim(wbp w, char* s)
 {
-   struct descrip f, funcname;
-   struct b_list *func;
-   struct descrip d;
-   int dim;
+   tended struct descrip f;  /* tended added */
+   struct descrip funcname, g;
+   tended struct b_list *func; /* tended added */
+   tended struct descrip d;
+   int dim, draw_code;
 
    makecurrent(w);
    /* create a list */
@@ -1626,6 +1841,12 @@ int setdim(wbp w, char* s)
    f.vword.bptr = (union block*) func;
    MakeStr("dim", 3, &funcname);
    c_put(&f, &funcname);
+
+   draw_code = si_s2i(redraw3Dnames, "dim");
+   if (draw_code == -1)
+       return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
 
    dim = atoi(s);
    /* must be a value between 1 and 4 */
@@ -1643,11 +1864,12 @@ int setdim(wbp w, char* s)
 /* set the texture mode, either on or off */
 int settexmode(wbp w, char* s)
 {
-   tended struct descrip f, funcname;
-   struct b_list *func;
-   struct descrip mode;
+   tended struct descrip f; /* tended added */
+   struct descrip funcname, g;
+   tended struct b_list *func;
+   tended struct descrip mode;
    wcp wc = w->context;
-   int oldtexmode = wc->texmode;
+   int oldtexmode = wc->texmode, draw_code;
 
    makecurrent(w);
     /* create a list */
@@ -1657,6 +1879,12 @@ int settexmode(wbp w, char* s)
    f.vword.bptr = (union block*) func;
    MakeStr("texmode", 7, &funcname);
    c_put(&f, &funcname);
+
+   draw_code = si_s2i(redraw3Dnames, "texmode");
+   if (draw_code == -1)
+       return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
 
    /*
     * turn textures on in replace, blend, or modulate (default mode = replace)
@@ -1697,19 +1925,25 @@ int settexcoords(wbp w, char* s)
    double r;
    char* s2 = s;
    char s3[MaxCvtLen];
-   int j, i =0;
-   tended struct descrip f = nulldesc, val = nulldesc;
-   struct descrip funcname, mode;
+   int j, i =0, draw_code;
+   tended struct descrip f = nulldesc, val = nulldesc;  /* tended added */
+   struct descrip funcname, mode, g;
    tended struct b_list *func;
    makecurrent(w);
 
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
+   if ((func = alclist(0, MinListSlots+2)) == NULL)
       return Failed;
    f.dword = D_List;
    f.vword.bptr = (union block*) func;
    MakeStr("Texcoord", 8, &funcname);
    c_put(&f, &funcname);
+
+   draw_code = si_s2i(redraw3Dnames, "Texcoord");
+   if (draw_code == -1)
+       return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
 
    while(isspace(*s2)) s2++;
 
@@ -1770,9 +2004,8 @@ int settexcoords(wbp w, char* s)
          else break;
          }
       /* Number of texture coordinates must be even */
-      if (BlkLoc(f)->list.size % 2) {
+      if ((BlkLoc(f)->list.size-3) % 2)
 	 return Error;
-	 }
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
       c_put(&(w->window->funclist), &f);
@@ -2038,9 +2271,9 @@ int settexture(wbp w, char* str, int len)
 {
    wcp wc = w->context;
    char* s;
-   int nfields;
-   struct descrip f;
-   struct descrip d;
+   int nfields, draw_code;
+   tended struct descrip f; /* tended added */
+   tended struct descrip d;
    tended struct b_record *rp;
    static dptr constr;
    wtp wt;
@@ -2060,6 +2293,11 @@ int settexture(wbp w, char* str, int len)
    f.vword.bptr = (union block *)rp;
    MakeStr("Texture", 7, &(rp->fields[0])); 
 
+   draw_code = si_s2i(redraw3Dnames, "Texture");
+   if (draw_code == -1)
+       return Failed; 
+   MakeInt(draw_code, &(rp->fields[1]));
+
    s=str;
    while(isspace(*s)) s++;
    while(isdigit(*s)) s++;
@@ -2077,7 +2315,7 @@ int settexture(wbp w, char* str, int len)
     * to it by opengl. This name is stored in wc->texName[wc->ntextures].
     * So by remembering wc->ntextures we can recover the name of the texture.
     */
-   MakeInt(wc->curtexture, &(rp->fields[1]));
+   MakeInt(wc->curtexture, &(rp->fields[2]));
    c_put(&(w->window->funclist), &f);
 
    return Succeeded;
@@ -2536,7 +2774,7 @@ int translate(wbp w, dptr argv, int i, dptr f)
 {
    static dptr constr;
    double coords[3];
-   int j, nfields;
+   int j, nfields, draw_code;
    tended struct b_record *rp;
 
    if (!constr)
@@ -2560,8 +2798,14 @@ int translate(wbp w, dptr argv, int i, dptr f)
    f->dword = D_Record;
    f->vword.bptr = (union block *)rp;
    MakeStr("Translate", 9, &(rp->fields[0]));
+
+   draw_code = si_s2i(redraw3Dnames, "Translate");
+   if (draw_code == -1)
+       return Failed; 
+   MakeInt(draw_code, &(rp->fields[1]));
+
    for (j = i; j < i+3; j++)
-      rp->fields[1 + j - i] = argv[j];
+      rp->fields[2 + j - i] = argv[j];
    c_put(&(w->window->funclist), f);
    return 0;
 }
@@ -2572,7 +2816,7 @@ int translate(wbp w, dptr argv, int i, dptr f)
  */
 int rotate(wbp w, dptr argv, int i, dptr f)
 {
-   int nfields, j;
+   int nfields, j, draw_code;
    double coords[4];
    static dptr constr;
    tended struct b_record *rp;
@@ -2595,11 +2839,17 @@ int rotate(wbp w, dptr argv, int i, dptr f)
    f->dword = D_Record;
    f->vword.bptr = (union block *)rp;
    MakeStr("Rotate", 6, &(rp->fields[0]));
+
+   draw_code = si_s2i(redraw3Dnames, "Rotate");
+   if (draw_code == -1)
+       return Failed; 
+   MakeInt(draw_code, &(rp->fields[1]));
+
    /* strangeness here preserves name,x,y,z,... field ordering */
-   rp->fields[4] = argv[i];
-   rp->fields[1] = argv[i+1];
-   rp->fields[2] = argv[i+2];
-   rp->fields[3] = argv[i+3];
+   rp->fields[5] = argv[i];
+   rp->fields[2] = argv[i+1];
+   rp->fields[3] = argv[i+2];
+   rp->fields[4] = argv[i+3];
    c_put(&(w->window->funclist), f);
    return 0;
 }
@@ -2610,7 +2860,7 @@ int rotate(wbp w, dptr argv, int i, dptr f)
  */
 int scale(wbp w, dptr argv, int i, dptr f)
 {
-   int nfields, j;
+   int nfields, j, draw_code;
    double coords[3];
    static dptr constr;
    tended struct b_record *rp;
@@ -2635,8 +2885,13 @@ int scale(wbp w, dptr argv, int i, dptr f)
    f->dword = D_Record;
    f->vword.bptr = (union block *)rp;
    MakeStr("Scale", 5, &(rp->fields[0]));
+   draw_code = si_s2i(redraw3Dnames, "Scale");
+   if (draw_code == -1)
+       return Failed; 
+   MakeInt(draw_code, &(rp->fields[1]));
+
    for (j = i; j < i+3; j++)
-      rp->fields[1 + j - i] = argv[j];
+      rp->fields[2 + j - i] = argv[j];
    c_put(&(w->window->funclist), f);
    return 0;
 }
@@ -2662,6 +2917,7 @@ struct descrip gl_matrixmode = {D_Null};
 struct descrip gl_texture = {D_Null};
 struct descrip gl_font3d = {D_Null};
 struct descrip gl_drawstring3d = {D_Null};
+struct descrip gl_mark = {D_Null};
 
 char * gl_torus_fields[] = {"radius1","radius2"};
 char * gl_cube_fields[] = {"length"};
@@ -2672,9 +2928,10 @@ char * gl_rotate_fields[] = {"angle"};
 char * gl_matrixmode_fields[] = {"mode"};
 char * gl_texture_fields[] = {"texture_handle"};
 char * gl_font_fields[] = {"font_ptr"};
-char * gl_drawstring3d_fields[] = {"string"};
+char * gl_drawstring3d_fields[] = {"font_name"};
+char * gl_mark_fields[] = {"room_name","skip","count"};
 
-dptr rec_structinate(dptr dp, char *name, int nfields, char *a[])
+dptr rec1_structinate(dptr dp, char *name, int nfields, char *a[])
 {
    int i;
    struct descrip s;
@@ -2682,56 +2939,66 @@ dptr rec_structinate(dptr dp, char *name, int nfields, char *a[])
    if (is:null(*dp)) {
       AsgnCStr(s, name);
       AsgnCStr(fields[0], "name");
-      if (nfields > 2) {
-         AsgnCStr(fields[1], "x");
-         AsgnCStr(fields[2], "y");
-         AsgnCStr(fields[3], "z");
-         for(i=4; i < nfields; i++)
-            AsgnCStr(fields[i], a[i-4]);
+      AsgnCStr(fields[1], "code");
+      if (nfields > 3) {
+         if (!strcmp(name,"gl_mark")) {
+           for(i=2; i < nfields; i++)
+              AsgnCStr(fields[i], a[i-2]);
+           }
+         else {
+           AsgnCStr(fields[2], "x");
+           AsgnCStr(fields[3], "y");
+           AsgnCStr(fields[4], "z");
+           for(i=5; i < nfields; i++)
+              AsgnCStr(fields[i], a[i-5]);
+           }
          }
-      else if (nfields == 2)
-         AsgnCStr(fields[1], a[0]);
+      else if (nfields == 3)
+         AsgnCStr(fields[2], a[0]);
       dp->dword = D_Proc;
       dp->vword.bptr = (union block *)dynrecord(&s, fields, nfields);
       }
    return dp;
 }
 
+
 dptr rec_structor3d(char *name)
 {
 #ifdef Graphics3D
    if (!strcmp(name, "gl_torus"))
-      return rec_structinate(&gl_torus, "gl_torus", 6, gl_torus_fields);
+      return rec1_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
    else if (!strcmp(name, "gl_cube"))
-      return rec_structinate(&gl_cube, "gl_cube", 5, gl_cube_fields);
+      return rec1_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
    else if (!strcmp(name, "gl_sphere"))
-      return rec_structinate(&gl_sphere, "gl_sphere", 5, gl_sphere_fields);
+      return rec1_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
    else if (!strcmp(name, "gl_cylinder"))
-      return rec_structinate(&gl_cylinder, "gl_cylinder",7,gl_cylinder_fields);
+      return rec1_structinate(&gl_cylinder, "gl_cylinder",8,gl_cylinder_fields);
    else if (!strcmp(name, "gl_disk"))
-      return rec_structinate(&gl_disk, "gl_disk", 8, gl_disk_fields);
+      return rec1_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
    else if (!strcmp(name, "gl_rotate"))
-      return rec_structinate(&gl_rotate, "gl_rotate", 5, gl_rotate_fields);
+      return rec1_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
    else if (!strcmp(name, "gl_translate"))
-      return rec_structinate(&gl_translate, "gl_translate", 4, NULL);
+      return rec1_structinate(&gl_translate, "gl_translate", 5, NULL);
    else if (!strcmp(name, "gl_scale"))
-      return rec_structinate(&gl_scale, "gl_scale", 4, NULL);
+      return rec1_structinate(&gl_scale, "gl_scale", 5, NULL);
    else if (!strcmp(name, "gl_popmatrix"))
-      return rec_structinate(&gl_popmatrix, "gl_popmatrix", 1, NULL);
+      return rec1_structinate(&gl_popmatrix, "gl_popmatrix", 2, NULL);
    else if (!strcmp(name, "gl_pushmatrix"))
-      return rec_structinate(&gl_pushmatrix, "gl_pushmatrix", 1, NULL);
+      return rec1_structinate(&gl_pushmatrix, "gl_pushmatrix", 2, NULL);
    else if (!strcmp(name, "gl_identity"))
-      return rec_structinate(&gl_identity, "gl_identity", 1, NULL);
+      return rec1_structinate(&gl_identity, "gl_identity", 2, NULL);
    else if (!strcmp(name, "gl_matrixmode"))
-      return rec_structinate(&gl_matrixmode, "gl_matrixmode",
-				2, gl_matrixmode_fields);
+      return rec1_structinate(&gl_matrixmode, "gl_matrixmode",
+				3, gl_matrixmode_fields);
    else if (!strcmp(name, "gl_texture"))
-      return rec_structinate(&gl_texture, "gl_texture", 2, gl_texture_fields);
+      return rec1_structinate(&gl_texture, "gl_texture", 3, gl_texture_fields);
    else if (!strcmp(name, "gl_font3d"))
-      return rec_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
+      return rec1_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
    else if (!strcmp(name, "gl_drawstring3d"))
-	return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 
+	return rec1_structinate(&gl_drawstring3d, "gl_drawstring3d", 
 				5, gl_drawstring3d_fields);
+   else if (!strcmp(name, "gl_mark")) 
+	return rec1_structinate(&gl_mark, "gl_mark", 5, gl_mark_fields);
 #endif					/* Graphics3D */
 
    return 0;
@@ -2905,7 +3172,8 @@ int texture_16img(wbp w, struct imgdata im)
       return Failed;
 }
 
-void drawstrng3d(wbp w, double x, double y, double z, char *s)
+void
+drawstrng3d(wbp w, double x, double y, double z, char *s)
 {
   int xx=0;
   char *p, *q; 
@@ -2939,7 +3207,6 @@ void drawstrng3d(wbp w, double x, double y, double z, char *s)
   else fclose(f);
 
   xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size, &(curr_font->fonts));
-#endif
 
   switch (xx) {
   case 1: fprintf(stderr, "Error:file does not support point size\n"); break;
@@ -2950,6 +3217,7 @@ void drawstrng3d(wbp w, double x, double y, double z, char *s)
 
   free(p); 
 /*   fprintf(stderr, "fonts=%p\n", curr_font->fonts);  */
+#endif
 }
 
 int 
@@ -2988,6 +3256,76 @@ srch_3dfont(char *fname, int fsize, char ftype)
 	g->type==ftype) return g;
     g=g->next;
   }
-#endif
+#endif 
   return 0;
+}
+
+int section_length(wbp w)
+{
+   wsp ws = w->window;
+   int i, tmp, c1, c2;
+   double v[1];
+   struct descrip flist, save_flist, var1, fname;
+   tended struct b_list *funclist;
+   tended struct b_list *hp;
+   tended struct b_lelem *bp;
+   tended struct b_record *rp;
+   int used;
+   word k;
+   int elements = ws->funclist.vword.bptr->list.size;
+
+   hp = (struct b_list *) ws->funclist.vword.bptr;
+   if (hp->size<=0) 
+        return 0;
+        
+   bp = (struct b_lelem *) hp->listhead;
+
+   if (bp->nused<=0) {
+        bp = (struct b_lelem *) bp->listnext;
+        hp->listhead = (union block *) bp;
+        bp->listprev = (union block *) hp;
+   }
+   k = bp->first;
+   used =bp->nused;
+
+   /*
+    * The ith element of the list is a list with information
+    * about the function call made on the window.
+    */
+   c1=-1;
+   for (i=0; i< elements; i++) {
+      flist = bp->lslots[k];
+      k++;
+      used--;
+      if (k>=bp->nslots) k=0;
+
+      if (used<=0) {
+  	 bp = (struct b_lelem *) bp->listnext;
+	 used = bp->nused;
+         k = bp->first;
+      }
+      if (is:record(flist)) {
+	 rp = (struct b_record *)BlkLoc(flist);
+         fname = BlkLoc(flist)->record.fields[0];
+         tmp=si_s2i(redraw3Dnames, StrLoc(fname));
+
+	 if (tmp == -1) {
+	    return Failed;
+	    }
+         if ((tmp & ~0xf)==REDRAW_MARK) {
+	     var1 = rp->fields[4];   /* count */
+             if (!cnv:C_double(var1, v[0])) return Failed;
+	     if (v[0]==0) {
+	        c1=i;
+		save_flist = flist;
+                }
+             }
+         }
+   }
+   if (c1>0) {
+	c2 = elements-c1-1;
+	rp = (struct b_record *) BlkLoc(save_flist);
+        MakeInt(c2, &(rp->fields[4]));  /* count */
+   }
+   return Succeeded;
 }

@@ -240,7 +240,7 @@ function{1} Clone(argv[argc])
 
       for (n = warg; n < argc; n++) {
 	 if (!is:null(argv[n])) {
-	    if (!cnv:tmp_string(argv[n], sbuf))
+	    if (!cnv:tmp_string(argv[n], sbuf))  /* sbuf not allocated */
 	       runerr(109, argv[n]);
 	    switch (wattrib(w2, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2, answer)) {
 	    case Failed: fail;
@@ -678,7 +678,7 @@ function{0,1} DrawImage(argv[argc])
          runerr(101, argv[warg + 1]);
       if (argc - warg < 3)
          runerr(103);			/* missing s */
-      if (!cnv:tmp_string(argv[warg+2], d))
+      if (!cnv:tmp_string(argv[warg+2], d))    /* d is not allocated */
          runerr(103, argv[warg + 2]);
 
       x += w->context->dx;
@@ -788,7 +788,7 @@ function{1} DrawLine(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0;
+      int i, j, n, warg = 0, draw_code;
       XPoint points[MAXXOBJS];
       int dx, dy;
       OptWindow(w);
@@ -796,8 +796,9 @@ function{1} DrawLine(argv[argc])
 #ifdef Graphics3D
       if (w->context->is_3D){
          double *v, v2[256];  
-         struct descrip f, funcname;
-         struct b_list *func;
+         struct descrip funcname, g;        /* do not need to be tended */
+         tended struct descrip f;
+         tended struct b_list *func;
 
          /* create a list to keep track of function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));
@@ -805,6 +806,13 @@ function{1} DrawLine(argv[argc])
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawLine", 8, &funcname);
          c_put(&f, &funcname);
+
+         draw_code = si_s2i(redraw3Dnames, "DrawLine");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &g);
+
+         c_put(&f, &g);
 
 	 if (argc-warg > 256) {
 	    v = calloc(argc-warg, sizeof (double));
@@ -867,7 +875,7 @@ function{1} DrawPoint(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0;
+      int i, j, n, warg = 0, draw_code;
       XPoint points[MAXXOBJS];
       int dx, dy;
 
@@ -876,8 +884,9 @@ function{1} DrawPoint(argv[argc])
 #ifdef Graphics3D
       if (w->context->is_3D) {
          double *v, v2[256];   
-         struct descrip f, funcname;
-         struct b_list *func;  
+         struct descrip funcname, g;		/* do not need to be tended */
+         tended struct descrip f;
+         tended struct b_list *func;
 
          /* create a list to store function information */
          Protect(func = alclist(0, MinListSlots), runerr(0)); 
@@ -885,6 +894,12 @@ function{1} DrawPoint(argv[argc])
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawPoint", 9, &funcname);
          c_put(&f, &funcname);
+
+         draw_code = si_s2i(redraw3Dnames, "DrawPoint");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &g);
+         c_put(&f, &g);
 
 	 if (argc-warg > 256) {
 	    v = calloc(argc-warg, sizeof (double));
@@ -944,15 +959,16 @@ function{1} DrawPolygon(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, base, dx, dy, warg = 0;
+      int i, j, n, base, dx, dy, warg = 0, draw_code;
       XPoint points[MAXXOBJS];
       OptWindow(w);
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
          double *v, v2[256]; 
-         struct descrip f, funcname;
-         struct b_list *func;
+         struct descrip funcname, g;   /* do not need to be tended */
+         tended struct descrip f;
+         tended struct b_list *func;
       
          /* create a list for function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));  
@@ -960,6 +976,13 @@ function{1} DrawPolygon(argv[argc])
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawPolygon", 11, &funcname);
          c_put(&f, &funcname);
+
+         draw_code = si_s2i(redraw3Dnames, "DrawPolygon");
+         if (draw_code == -1) {
+	     fail;
+             }
+         MakeInt(draw_code, &g);
+         c_put(&f, &g);
 
 	 if (argc-warg > 256) {
 	    v = calloc(argc-warg, sizeof (double));
@@ -1073,7 +1096,7 @@ function{1} DrawSegment(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0, dx, dy;
+      int i, j, n, warg = 0, dx, dy, draw_code;
       XSegment segs[MAXXOBJS];
 
       OptWindow(w);
@@ -1081,8 +1104,9 @@ function{1} DrawSegment(argv[argc])
 #ifdef Graphics3D
       if (w->context->is_3D) {
          double *v, v2[256];
-         struct descrip f, funcname;
-         struct b_list *func;
+         struct descrip funcname, g;	/* do not need to be tended */
+         tended struct descrip f;
+         tended struct b_list *func;
 
          /* create a list for function information */
          Protect(func = alclist(0, MinListSlots), runerr(0));
@@ -1090,6 +1114,12 @@ function{1} DrawSegment(argv[argc])
          f.vword.bptr = (union block *) func; 
          MakeStr("DrawSegment", 11, &funcname);
          c_put(&f, &funcname);
+
+         draw_code = si_s2i(redraw3Dnames, "DrawLine");
+         if (draw_code == -1) 
+	     fail;
+         MakeInt(draw_code, &g);
+         c_put(&f, &g);
 
 	 if (argc-warg > 256) {
 	    v = calloc(argc-warg, sizeof (double));
@@ -1458,7 +1488,7 @@ function{1} FillPolygon(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0;
+      int i, j, n, warg = 0, draw_code;
       XPoint *points;
       int dx, dy;
       OptWindow(w);
@@ -1466,15 +1496,22 @@ function{1} FillPolygon(argv[argc])
 #ifdef Graphics3D
       if (w->context->is_3D) {
          double *v, v2[256];
-         struct descrip f, funcname;
-         struct b_list *func;
+         struct descrip funcname, g;	/* do not need to be tended */
+         tended struct descrip f;
+         tended struct b_list *func;
 	   
          /* create a list to save function information */
-         Protect(func = alclist(0, MinListSlots), runerr(0));
+         Protect(func = alclist(0, 14), runerr(0));
          f.dword = D_List;
          f.vword.bptr = (union block *) func; 
          MakeStr("FillPolygon", 11, &funcname);
          c_put(&f, &funcname);
+
+         draw_code = si_s2i(redraw3Dnames, "FillPolygon");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &g);
+         c_put(&f, &g);
 
 	 if (argc-warg > 256) {
 	    v = calloc(argc-warg, sizeof (double));
@@ -1528,7 +1565,7 @@ function{1} FillPolygon(argv[argc])
 
 end
 
-/*
+        /*
  * FillRectangle(w, x1, y1, width1, height1,...,xN, yN, widthN, heightN)
  */
 "FillRectangle(argv[]){1} - draw filled rectangle"
@@ -1790,7 +1827,8 @@ function{0,1} PaletteColor(argv[argc])
       }
    body {
       int p, warg, len;
-      char tmp[24], *s;
+      char tmp[24];
+      tended char *s;
       struct palentry *e;
       tended struct descrip d;
 
@@ -2298,13 +2336,12 @@ function{*} WAttrib(argv[argc])
                /*
                 * If its an integer or real, it can't be a valid attribute.
                 */
-	       if (is:integer(argv[n]) || is:real(argv[n])) {
+	       if (is:integer(argv[n]) || is:real(argv[n]))
 		  runerr(145, argv[n]);
-		  }
                /*
                 * Convert the argument to a string
                 */
-               if (!cnv:tmp_string(argv[n], sbuf)) 
+               if (!cnv:tmp_string(argv[n], sbuf)) /* sbuf not allocated */
                   runerr(109, argv[n]);
                /*
                 * Read/write the attribute
@@ -3244,9 +3281,9 @@ function{1} DrawTorus(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int n, i, j, warg = 0, nfields;
+      int n, i, j, warg = 0, nfields, draw_code;
       double r1, r2, x, y, z;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -3276,8 +3313,14 @@ function{1} DrawTorus(argv[argc])
 	 f.dword = D_Record;
 	 f.vword.bptr = (union block *)rp;
          MakeStr("DrawTorus", 9, &(rp->fields[0])); /* r.name */
+
+         draw_code = si_s2i(redraw3Dnames, "DrawTorus");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
          for(j = i; j < i + 5; j++)
-	    rp->fields[1 + j-i] = argv[j];
+	    rp->fields[2 + j-i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
    
@@ -3297,9 +3340,9 @@ function{1} DrawCube(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int n, i, j, warg = 0, nfields;
+      int n, i, j, warg = 0, nfields, draw_code;
       double l, x, y, z;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -3335,8 +3378,14 @@ function{1} DrawCube(argv[argc])
 	 f.dword = D_Record;
 	 f.vword.bptr = (union block *)rp;
          MakeStr("DrawCube", 8, &(rp->fields[0]));
+
+         draw_code = si_s2i(redraw3Dnames, "DrawCube");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
          for(j = i; j < i + 4; j++)
-            rp->fields[1 + j - i] = argv[j];
+            rp->fields[2 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
 
@@ -3357,10 +3406,10 @@ function{1} DrawSphere(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, i, j, nfields;
+      int warg = 0, n, i, j, nfields, draw_code;
       double r, x, y, z;
       tended struct b_record *rp;
-      struct descrip f;
+      tended struct descrip f;
       static dptr constr;
 
       OptWindow(w);
@@ -3389,11 +3438,16 @@ function{1} DrawSphere(argv[argc])
 	 f.vword.bptr = (union block *)rp;
 	 MakeStr("DrawSphere", 10, &(rp->fields[0])); /* r.name */
 
+         draw_code = si_s2i(redraw3Dnames, "DrawSphere");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
 	 /* put parameter in the list for the function */
-	 rp->fields[1] = argv[i];
-	 rp->fields[2] = argv[i+1];
-	 rp->fields[3] = argv[i+2];
-	 rp->fields[4] = argv[i+3];
+	 rp->fields[2] = argv[i];
+	 rp->fields[3] = argv[i+1];
+	 rp->fields[4] = argv[i+2];
+	 rp->fields[5] = argv[i+3];
 	 c_put(&(w->window->funclist), &f);
 	 }
 
@@ -3414,9 +3468,9 @@ function{1} DrawCylinder(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, i, j, nfields;
+      int warg = 0, n, i, j, nfields, draw_code;
       double r1, r2, h, x, y, z;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -3448,9 +3502,14 @@ function{1} DrawCylinder(argv[argc])
          f.vword.bptr = (union block *) rp;
          MakeStr("DrawCylinder", 12, &(rp->fields[0])); /* r.name */
 
+         draw_code = si_s2i(redraw3Dnames, "DrawCylinder");
+         if (draw_code == -1)
+             fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
 	   /* put parameters in the list */
          for(j = i; j < i + 6; j++)
-	    rp->fields[1 + j - i] = argv[j];
+	    rp->fields[2 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
 
@@ -3472,9 +3531,9 @@ function{1} DrawDisk(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, j, i, nfields;
+      int warg = 0, n, j, i, nfields, draw_code;
       double r1, r2, a1, a2, x, y, z;
-      struct descrip f;
+      tended struct descrip f;
       static dptr constr;
       tended struct b_record *rp;
 
@@ -3495,33 +3554,38 @@ function{1} DrawDisk(argv[argc])
 	 f.vword.bptr = (union block *)rp;
 	 MakeStr("DrawDisk", 8, &(rp->fields[0])); /* r.name */
 
+         draw_code = si_s2i(redraw3Dnames, "DrawDisk");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
 	 if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);
 	 if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
 	 if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
 	 if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
-	 rp->fields[1] = argv[i];
-	 rp->fields[2] = argv[i+1];
-	 rp->fields[3] = argv[i+2];
-	 rp->fields[4] = argv[i+3];
-	 rp->fields[5] = argv[i+4];
+	 rp->fields[2] = argv[i];
+	 rp->fields[3] = argv[i+1];
+	 rp->fields[4] = argv[i+2];
+	 rp->fields[5] = argv[i+3];
+	 rp->fields[6] = argv[i+4];
 
 	 if (i+5 >= argc) {
 	    a1 = 0.0;
-	    rp->fields[6] = zerodesc;
+	    rp->fields[7] = zerodesc;
 	    }
 	 else {
 	    if (!cnv:C_double(argv[i+5],a1)) runerr(102, argv[i+5]);
-	    rp->fields[6] = argv[i+5];
+	    rp->fields[7] = argv[i+5];
 	    }
 
 	 if (i+6 >= argc) {
 	    a2 = 360;
-            MakeInt(360, &(rp->fields[7])); 
+            MakeInt(360, &(rp->fields[8])); 
 	    }
 	 else {
 	    if (!cnv:C_double(argv[i+6], a2)) runerr(102, argv[i+6]);
-	    rp->fields[7] = argv[i+6];
+	    rp->fields[8] = argv[i+6];
 	    }
 
 	 disk(r1, r2, a1, a2, x, y, z,
@@ -3602,7 +3666,7 @@ function{1} Rotate(argv[argc])
       wbp w;
       int warg = 0, n, i, j, nfields;
       double x, y, z, angle;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
 
       OptWindow(w);
@@ -3630,7 +3694,7 @@ function{1} Translate(argv[argc])
    body {
       wbp w;
       int warg = 0, i, j, n;
-      struct descrip f;
+      tended struct descrip f;
       static dptr constr;
 
       OptWindow(w);
@@ -3660,7 +3724,7 @@ function{1} Scale(argv[argc])
       wbp w;
       int warg = 0, n, i, j;
       double x, y, z;
-      struct descrip f = nulldesc;
+      tended struct descrip f = nulldesc;
 
       OptWindow(w);
       CheckArgMultiple(3);
@@ -3686,8 +3750,8 @@ function{1} PopMatrix(argv[argc])
    body {
       wbp w;
       C_integer npops;
-      int warg = 0, n, nfields, i;
-      struct descrip f;  
+      int warg = 0, n, nfields, i, draw_code;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -3723,6 +3787,12 @@ function{1} PopMatrix(argv[argc])
 	 f.dword = D_Record;
 	 f.vword.bptr = (union block *)rp;
 	 MakeStr("PopMatrix", 9, &(rp->fields[0]));
+
+         draw_code = si_s2i(redraw3Dnames, "PopMatrix");
+         if (draw_code == -1)
+	     fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
 	 c_put(&(w->window->funclist), &f);	
 	 }
       return f;
@@ -3741,8 +3811,8 @@ function{1} PushMatrix(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, nfields;
-      struct descrip f;
+      int warg = 0, n, nfields, draw_code;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
  
@@ -3770,6 +3840,12 @@ function{1} PushMatrix(argv[argc])
       f.dword = D_Record;
       f.vword.bptr = (union block *)rp;
       MakeStr("PushMatrix", 10 ,&(rp->fields[0]));
+
+      draw_code = si_s2i(redraw3Dnames, "PushMatrix");
+      if (draw_code == -1)
+	fail;
+      MakeInt(draw_code, &(rp->fields[1]));
+
       c_put(&(w->window->funclist), &f);	
       return f;
       }
@@ -3783,7 +3859,7 @@ abstract { return record }
 body {
       wbp w;
       int warg = 0, i, j, n;
-      struct descrip f, f2;
+      tended struct descrip f, f2;
  
       OptWindow(w);
       CheckArgMultiple(3);
@@ -3813,7 +3889,7 @@ abstract { return record }
 body {
       wbp w;
       int warg = 0, i, j, n;
-      struct descrip f, f2;
+      tended struct descrip f, f2;
  
       OptWindow(w);
       CheckArgMultiple(4);
@@ -3843,7 +3919,7 @@ abstract { return record }
 body {
       wbp w;
       int warg = 0, i, j, n;
-      struct descrip f, f2;
+      tended struct descrip f, f2;
  
       OptWindow(w);
       CheckArgMultiple(3);
@@ -3874,8 +3950,8 @@ function{1} IdentityMatrix(argv[argc])
    abstract { return record }
    body {
       wbp w;
-      int warg = 0, n, nfields;
-      struct descrip f;
+      int warg = 0, n, nfields, draw_code;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -3893,6 +3969,12 @@ function{1} IdentityMatrix(argv[argc])
       f.dword = D_Record;
       f.vword.bptr = (union block *)rp;
       MakeStr("LoadIdentity", 12, &(rp->fields[0]));
+
+      draw_code = si_s2i(redraw3Dnames, "LoadIdentity");
+      if (draw_code == -1)
+	fail;
+      MakeInt(draw_code, &(rp->fields[1]));
+
       c_put(&(w->window->funclist), &f);
 
       /* load identity matrix */
@@ -3912,9 +3994,9 @@ function{1} MatrixMode(argv[argc])
    abstract { return record }
    body {
       wbp w; 
-      int warg = 0, n, nfields;
+      int warg = 0, n, nfields, draw_code;
       tended char* temp;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
             
@@ -3932,6 +4014,11 @@ function{1} MatrixMode(argv[argc])
       f.vword.bptr = (union block *)rp;
       MakeStr("MatrixMode", 10, &(rp->fields[0]));
 
+      draw_code = si_s2i(redraw3Dnames, "LoadIdentity");
+      if (draw_code == -1)
+	fail;
+      MakeInt(draw_code, &(rp->fields[1]));
+
       /* convert parameter */	
       if (!cnv:C_string(argv[warg],temp)) runerr(103,argv[warg]); 
 
@@ -3944,7 +4031,7 @@ function{1} MatrixMode(argv[argc])
          runerr(152, argv[warg]);
 
       /* put parameter in the list */
-      rp->fields[1] = argv[warg];
+      rp->fields[2] = argv[warg];
       c_put(&(w->window->funclist), &f);
       return f;
       }
@@ -3962,11 +4049,11 @@ function{1} Texture(argv[argc])
    body {
       wbp w, w2;
       wcp wc;
-      int warg = 0, nfields;
+      int warg = 0, nfields, draw_code;
       unsigned char *s;
       char filename[MaxFileName + 1];
       tended char* tmp;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -3987,13 +4074,18 @@ function{1} Texture(argv[argc])
       f.vword.bptr = (union block *)rp;
       MakeStr("Texture", 7, &(rp->fields[0])); 
 
+      draw_code = si_s2i(redraw3Dnames, "Texture");
+      if (draw_code == -1)
+	fail; 
+      MakeInt(draw_code, &(rp->fields[1]));
+
       if (argc - warg > 1) { /* replace an existing texture "name" */
 	 C_integer theTexture;
 	 if (!cnv:C_integer(argv[warg + 1], theTexture)) {
 	    runerr(101, argv[warg+1]);
 	    }
 	 theTexture++;
-	 MakeInt(theTexture, &(rp->fields[1]));
+	 MakeInt(theTexture, &(rp->fields[2]));
 	 wc->curtexture = theTexture;
 	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
 	 }
@@ -4013,7 +4105,7 @@ function{1} Texture(argv[argc])
       wc->curtexture = wc->ntextures;
       wc->ntextures++;
       }
-      MakeInt(wc->curtexture, &(rp->fields[1]));
+      MakeInt(wc->curtexture, &(rp->fields[2]));
       c_put(&(w->window->funclist), &f);
 
       /* check if the source is another window */
@@ -4067,10 +4159,10 @@ function{1} Texcoord(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, warg = 0;
+      int i, warg = 0, draw_code;
       char filename[MaxFileName + 1];
       tended char* tmp;
-      tended struct descrip f, funcname, mode, val;
+      struct descrip f, funcname, mode, val, g;
       tended struct b_list *func, *coords;
 
       OptWindow(w);
@@ -4080,11 +4172,17 @@ function{1} Texcoord(argv[argc])
 	 runerr(103);
 
       /* create a list */ 
-      Protect(func = alclist(0, MinListSlots), runerr(0));
+      Protect(func = alclist(0, MinListSlots+3), runerr(0));
       f.dword = D_List; 
       f.vword.bptr = (union block*) func; 
       MakeStr("Texcoord", 8, &funcname); 
       c_put(&f, &funcname);
+
+      draw_code = si_s2i(redraw3Dnames, "Texcoord");
+      if (draw_code == -1)
+	fail;
+      MakeInt(draw_code, &g);
+      c_put(&f, &g);
      
       /* check if the argument is a list */
       if (argv[argc-warg].dword == D_List) {
@@ -4211,6 +4309,67 @@ function{1} WindowContents(argv[argc])
       return w->window->funclist; 
 
    }
+end
+
+"WSection(argv[]){1} - mark section"
+
+function{1} WSection(argv[argc])
+  abstract{ return file ++ integer}
+  body {
+      wbp w;
+      int i, len, warg = 0, nfields, draw_code;
+      char *s;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
+
+      OptWindow(w);
+      if (w->context->is_3D==0) {
+        fail;
+        }
+      if (argc-warg==0) {
+        section_length(w);
+        return C_integer 1;
+        }
+      if (argc - warg!=1) {
+         fprintf(stderr, "not enough args!!\n");
+         fail;
+         }
+
+      if (!constr && !(constr = rec_structor3d("gl_mark"))) {
+	     syserr("failed to create opengl record constructor");
+      }
+      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      CnvTmpString(argv[warg], argv[warg]);
+      len = StrLen(argv[warg]);
+
+      s = (char *) malloc(sizeof(char)*(len+1)); 
+
+/*    argv[warg] seems not ending with \0, that is why I use strncpy */
+      strncpy(s, StrLoc(argv[warg]), len);
+      s[len]='\0';
+
+	 /* create a record of the graphical object */
+
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *) rp;
+      MakeStr("Mark", 4, &(rp->fields[0]));
+
+      draw_code = si_s2i(redraw3Dnames, "Mark");
+      if (draw_code == -1)
+	 fail; 
+      MakeInt(draw_code, &(rp->fields[1]));
+
+
+      MakeStr(s, len, &rp->fields[2]);   /* room_name */
+      free(s); 
+      rp->fields[3] = nulldesc;          /* skip */
+      MakeInt(0, &(rp->fields[4]));      /* count */
+      c_put(&(w->window->funclist), &f);
+      return f;	
+  }
 end
 
 #else					/* Graphics3D */

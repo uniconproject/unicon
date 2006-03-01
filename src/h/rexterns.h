@@ -294,7 +294,8 @@ extern stringint attribs[], drawops[];
    extern struct descrip gl_identity;
    extern struct descrip gl_matrixmode;
    extern struct descrip gl_texture;
-#endif
+   extern stringint redraw3Dnames[];
+#endif					/* Graphics3D */
 
 #endif					/* Graphics */
 

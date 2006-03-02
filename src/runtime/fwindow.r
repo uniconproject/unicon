@@ -4393,4 +4393,5 @@ MissingGraphicsFuncV(Texture)
 MissingGraphicsFuncV(Texcoord)
 MissingGraphicsFuncV(Refresh)
 MissingGraphicsFuncV(WindowContents)
+MissingGraphicsFuncV(WSection)
 #endif					/* Graphics3D */

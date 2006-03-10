@@ -177,7 +177,12 @@ procedure main(av)
    xargs := ""
    targs := ""
    wi_initialize()
-   &window := open("Wi","g", "size="||width||","||height, "font="||font,
+   if av[1] == "-kidmode" then {
+      font := "sans,bold,24"
+      height := width
+      pop(av)
+      }
+   &window := open("Wu","g", "size="||width||","||height, "font="||font,
 	"resize=on")
    fontheight := WAttrib("fheight")
    menu := [
@@ -198,7 +203,7 @@ procedure main(av)
 	 "&NT (console mode) binary",
 	 "Compiler &Options..."],
 	["&Run", "&Run", "&Arguments..."],
-	["&Help", "&Wi Programming Environment",
+	["&Help", "&Wu Programming Environment",
 		"Icon &Tutorial Overview",
 		"Icon &Language Reference",
 	 	"I&dol Reference",
@@ -341,7 +346,7 @@ procedure mainloop()
 	   system("winhelp iconref.hlp &")
 	"Icon &Graphics Facilities Reference":
 	   system("winhelp gipd.hlp &")
-	"&Wi Programming Environment":
+	"&Wu Programming Environment":
 	   system("winhelp ipd271.hlp &")
 	"Icon &Tutorial Overview":
 	   system("winhelp iconintr.hlp &")

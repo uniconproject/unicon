@@ -659,9 +659,34 @@ procedure scopecheck_methods(c)
       # The expression in the intially section (if any)
       if m.initl ~=== EmptyNode then
          scopecheck_expr(m.initl.children[2], local_vars, self_vars)
+      scopecheck_locals(m.locals, local_vars, self_vars)
       scopecheck_procbody(m.procbody, local_vars, self_vars)
    }
 
+end
+
+procedure scopecheck_locals(n, localvars, selfvars)
+   if /n then fail
+   if type(n) == "treenode" then {
+      case n.label of {
+	  "locals2": {
+	      scopecheck_locals(n.children[1], localvars, selfvars)
+	      scopecheck_locals(n.children[3], localvars, selfvars)
+	  }
+	  "varlist2": {
+	      scopecheck_expr(n.children[3], localvars, selfvars)
+	  }
+	  "varlist3": {
+	      scopecheck_locals(n.children[1], localvars, selfvars)
+	  }
+	  "varlist4": {
+	      scopecheck_locals(n.children[1], localvars, selfvars)
+	      scopecheck_expr(n.children[5], localvars, selfvars)
+	  }
+      }
+   }
+   else if type(n) ~== "token" then
+      stop("locals ", image(n), " is not a treenode or a token")
 end
 
 #
@@ -743,8 +768,12 @@ procedure extract_identifiers(node, res)
    /res := set()
    case type(node) of {
       "treenode": {
-         if node.label == ("arg2" | "arg3" | "arg4") then
+         if node.label == ("arg2" | "arg3" | "arg4" | "stalist2" | "varlist2") then
             extract_identifiers(node.children[1], res)
+         else if node.label == ("varlist4" | "stalist4") then {
+            extract_identifiers(node.children[1], res)
+            extract_identifiers(node.children[3], res)
+	    }
          else
             every extract_identifiers(!node.children, res)
       }

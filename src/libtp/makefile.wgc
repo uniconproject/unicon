@@ -36,8 +36,8 @@ config.h: config_h.win
 	$(CP) config_h.win config.h
 
 config_h:
-	-$(RM) config.h
-	$(CP) config_h.win config.h
+	if ! diff config_h.win config.h ; then \
+		{ $(RM) config.h; $(CP) config_h.win config.h; } fi
 
 
 tp.$(O): tp.c config.h tp.h util.h uri/uri.h

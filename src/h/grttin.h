@@ -443,3 +443,31 @@ typedef int siptr, stringint, inst;
 #if HAVE_OGG
 typedef int OggVorbis_File, vorbis_info;
 #endif					/* HAVE_OGG */
+
+#begdef MissingFunc(funcname)
+"an unavailable function"
+function{} funcname()
+   runerr(121)
+end
+#enddef
+
+#begdef MissingFunc1(funcname)
+"an unavailable function"
+function{} funcname(x)
+   runerr(121)
+end
+#enddef
+
+#begdef MissingFunc2(funcname)
+"an unavailable function"
+function{} funcname(x,y)
+   runerr(121)
+end
+#enddef
+
+#begdef MissingFuncV(funcname)
+"an unavailable function"
+function{0} funcname(argv[warg])
+   runerr(121)
+end
+#enddef

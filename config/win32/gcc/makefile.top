@@ -18,6 +18,17 @@ NT-Configure-GCC:
 	cd config/win32/gcc && sh config.sh
 	echo Run "make Unicon" to build
 
+VW-Configure-GCC:
+	cd src/lib/voice; $(MAKE) -f Makefile.wgcc
+	cd config/win32/gcc && sh w-config.sh
+	echo ICONX=wiconx >src/runtime/makefile
+	echo "VOIPLIBS=../lib/libvoip.a ../lib/libjvoip.a ../lib/libjrtp.a ../lib/libjthread.a ../lib/libaudio.a -lstdc++" >>src/runtime/makefile
+	echo CONSOLE=NOTHING >>src/runtime/makefile
+	cat config/win32/gcc/MAKEFILE.RUN >>src/runtime/makefile
+	echo "#define Audio" >>src/h/define.h
+	echo "#define HAVE_VOICE" >>src/h/define.h
+	@echo Now remember to add unicon/bin to your path
+
 NT-Configure:
 	cd config\win32\msvc
 	config

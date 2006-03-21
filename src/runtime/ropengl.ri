@@ -56,7 +56,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    wc->curtexture = -1;
 
    /* create an empty list for list of function calls */
-   if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
+   if ((ws->funclist.vword.bptr = (union block *)alclist(0, 40000)) == NULL)
       return NULL;
    ws->funclist.dword = D_List;
 
@@ -817,20 +817,17 @@ int traversefunctionlist(wbp w)
     */
    v = v2;
    for (i=0; i< elements; i++) {
-      if (v != v2) free(v);
-      v = v2;
-/*
-      if (count) {
-        if (count<used) {
-              printf("count=%d used=%d k=%d nslots=%d: ", count, used, k, bp->nslots);
-              used=used-count;
-              k = k + count;
-              if (k>=bp->nslots) k=k-bp->nslots;
-              count=0;
-              printf("count=%d used=%d k=%d nslots=%d\n", count, used, k, bp->nslots);
-              }
-          }
-*/
+
+      if (count>2) { /* skip forward as much as possible */
+	 int asmuchaspossible = count-1;
+	 if (used <= asmuchaspossible) asmuchaspossible = used-1;
+	 if (asmuchaspossible >1) {
+	    used -= asmuchaspossible;
+	    k = (k+asmuchaspossible) % (bp->nslots);
+	    count -= asmuchaspossible;
+	    i += asmuchaspossible;
+	    }
+	 }
       flist = bp->lslots[k];
       k++;
       used--;
@@ -840,14 +837,15 @@ int traversefunctionlist(wbp w)
   	 bp = (struct b_lelem *) bp->listnext;
 	 used = bp->nused;
          k = bp->first;
-      }
+         }
 
-        if (count) {
-/*           if (count>=used) { */
-               count--;
-               continue;
-/*               } */
-           }
+      if (count) {
+         count--;
+         continue;
+	 }
+
+      if (v != v2) free(v);
+      v = v2;
 
       if (is:record(flist)) {
 	 fname = BlkLoc(flist)->record.fields[0];
@@ -861,7 +859,6 @@ int traversefunctionlist(wbp w)
 	    var1 = rp->fields[j+2];
 	    if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
 	    }
-        if (tmp & ~0xf==432) printf("mark found\n");
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
 	    torus(v[3], v[4], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
@@ -929,12 +926,13 @@ int traversefunctionlist(wbp w)
 	    drawstrng3d(w,x,y,z,s);
 #endif
             break;
-         case REDRAW_MARK:
-            if (IntVal(BlkLoc(flist)->record.fields[3])==1) {
-	        count = IntVal(BlkLoc(flist)->record.fields[4]);
-/*                printf("count=%d\n", count); */
-                }
+         case REDRAW_MARK: {
+	    struct descrip d = BlkLoc(flist)->record.fields[3];
+            if (is:integer(d) && IntVal(d)==1) {
+	       count = IntVal(BlkLoc(flist)->record.fields[4]);
+               }
             else count=0;
+	    }
             break;
 	 default:
             goto free_v_and_fail;
@@ -1433,7 +1431,7 @@ int gettexcoords(wbp w, char *buf)
 /* set the linewidth */
 int setlinewidth3D(wbp w, LONG linewid)
 {
-   tended struct descrip f; /* tended added */
+   tended struct descrip f;
    struct descrip funcname, width, g;
    tended struct b_list *func;
    int draw_code;
@@ -1480,7 +1478,7 @@ int setmaterials(wbp w, char* s)
    GLfloat color[4];
    char sbuf1[MaxCvtLen];
    char sbuf2[MaxCvtLen];
-   tended struct descrip f;  /* tended added */
+   tended struct descrip f;
    struct descrip funcname, material, r, b, g, a, gg;
    tended struct b_list *func; /* tended added */
 
@@ -1827,7 +1825,7 @@ int setlight(wbp w, char* s, int light)
 /* set the dim attribute */
 int setdim(wbp w, char* s)
 {
-   tended struct descrip f;  /* tended added */
+   tended struct descrip f;
    struct descrip funcname, g;
    tended struct b_list *func; /* tended added */
    tended struct descrip d;
@@ -1864,7 +1862,7 @@ int setdim(wbp w, char* s)
 /* set the texture mode, either on or off */
 int settexmode(wbp w, char* s)
 {
-   tended struct descrip f; /* tended added */
+   tended struct descrip f;
    struct descrip funcname, g;
    tended struct b_list *func;
    tended struct descrip mode;
@@ -1926,7 +1924,7 @@ int settexcoords(wbp w, char* s)
    char* s2 = s;
    char s3[MaxCvtLen];
    int j, i =0, draw_code;
-   tended struct descrip f = nulldesc, val = nulldesc;  /* tended added */
+   tended struct descrip f = nulldesc, val = nulldesc;
    struct descrip funcname, mode, g;
    tended struct b_list *func;
    makecurrent(w);
@@ -2272,7 +2270,7 @@ int settexture(wbp w, char* str, int len)
    wcp wc = w->context;
    char* s;
    int nfields, draw_code;
-   tended struct descrip f; /* tended added */
+   tended struct descrip f;
    tended struct descrip d;
    tended struct b_record *rp;
    static dptr constr;
@@ -2931,7 +2929,7 @@ char * gl_font_fields[] = {"font_ptr"};
 char * gl_drawstring3d_fields[] = {"font_name"};
 char * gl_mark_fields[] = {"room_name","skip","count"};
 
-dptr rec1_structinate(dptr dp, char *name, int nfields, char *a[])
+dptr rec_structinate(dptr dp, char *name, int nfields, char *a[])
 {
    int i;
    struct descrip s;
@@ -2966,39 +2964,39 @@ dptr rec_structor3d(char *name)
 {
 #ifdef Graphics3D
    if (!strcmp(name, "gl_torus"))
-      return rec1_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
+      return rec_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
    else if (!strcmp(name, "gl_cube"))
-      return rec1_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
+      return rec_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
    else if (!strcmp(name, "gl_sphere"))
-      return rec1_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
+      return rec_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
    else if (!strcmp(name, "gl_cylinder"))
-      return rec1_structinate(&gl_cylinder, "gl_cylinder",8,gl_cylinder_fields);
+      return rec_structinate(&gl_cylinder, "gl_cylinder",8,gl_cylinder_fields);
    else if (!strcmp(name, "gl_disk"))
-      return rec1_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
+      return rec_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
    else if (!strcmp(name, "gl_rotate"))
-      return rec1_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
+      return rec_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
    else if (!strcmp(name, "gl_translate"))
-      return rec1_structinate(&gl_translate, "gl_translate", 5, NULL);
+      return rec_structinate(&gl_translate, "gl_translate", 5, NULL);
    else if (!strcmp(name, "gl_scale"))
-      return rec1_structinate(&gl_scale, "gl_scale", 5, NULL);
+      return rec_structinate(&gl_scale, "gl_scale", 5, NULL);
    else if (!strcmp(name, "gl_popmatrix"))
-      return rec1_structinate(&gl_popmatrix, "gl_popmatrix", 2, NULL);
+      return rec_structinate(&gl_popmatrix, "gl_popmatrix", 2, NULL);
    else if (!strcmp(name, "gl_pushmatrix"))
-      return rec1_structinate(&gl_pushmatrix, "gl_pushmatrix", 2, NULL);
+      return rec_structinate(&gl_pushmatrix, "gl_pushmatrix", 2, NULL);
    else if (!strcmp(name, "gl_identity"))
-      return rec1_structinate(&gl_identity, "gl_identity", 2, NULL);
+      return rec_structinate(&gl_identity, "gl_identity", 2, NULL);
    else if (!strcmp(name, "gl_matrixmode"))
-      return rec1_structinate(&gl_matrixmode, "gl_matrixmode",
+      return rec_structinate(&gl_matrixmode, "gl_matrixmode",
 				3, gl_matrixmode_fields);
    else if (!strcmp(name, "gl_texture"))
-      return rec1_structinate(&gl_texture, "gl_texture", 3, gl_texture_fields);
+      return rec_structinate(&gl_texture, "gl_texture", 3, gl_texture_fields);
    else if (!strcmp(name, "gl_font3d"))
-      return rec1_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
+      return rec_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
    else if (!strcmp(name, "gl_drawstring3d"))
-	return rec1_structinate(&gl_drawstring3d, "gl_drawstring3d", 
+	return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 
 				5, gl_drawstring3d_fields);
    else if (!strcmp(name, "gl_mark")) 
-	return rec1_structinate(&gl_mark, "gl_mark", 5, gl_mark_fields);
+	return rec_structinate(&gl_mark, "gl_mark", 5, gl_mark_fields);
 #endif					/* Graphics3D */
 
    return 0;
@@ -3256,16 +3254,16 @@ srch_3dfont(char *fname, int fsize, char ftype)
 	g->type==ftype) return g;
     g=g->next;
   }
-#endif 
+#endif
   return 0;
 }
 
 int section_length(wbp w)
 {
    wsp ws = w->window;
-   int i, tmp, c1, c2;
-   double v[1];
-   struct descrip flist, save_flist, var1, fname;
+   int i, tmp, flag=0;
+   int v;
+   tended struct descrip flist, save_flist, fname;
    tended struct b_list *funclist;
    tended struct b_list *hp;
    tended struct b_lelem *bp;
@@ -3278,31 +3276,22 @@ int section_length(wbp w)
    if (hp->size<=0) 
         return 0;
         
-   bp = (struct b_lelem *) hp->listhead;
+   bp = (struct b_lelem *) hp->listtail;
+   used=bp->nused;
+   k = bp->first + used-1;
+   if (k>=bp->nslots) k = k - bp->nslots;
 
-   if (bp->nused<=0) {
-        bp = (struct b_lelem *) bp->listnext;
-        hp->listhead = (union block *) bp;
-        bp->listprev = (union block *) hp;
-   }
-   k = bp->first;
-   used =bp->nused;
-
-   /*
-    * The ith element of the list is a list with information
-    * about the function call made on the window.
-    */
-   c1=-1;
-   for (i=0; i< elements; i++) {
+   for (i=0; i<elements; i++) {
       flist = bp->lslots[k];
-      k++;
+      k--;
       used--;
-      if (k>=bp->nslots) k=0;
+      if (k<0) k=bp->nslots-1;
 
       if (used<=0) {
-  	 bp = (struct b_lelem *) bp->listnext;
+  	 bp = (struct b_lelem *) bp->listprev;
 	 used = bp->nused;
-         k = bp->first;
+         k = bp->first + used-1;
+         if (k>=bp->nslots) k=k-bp->nslots-1;
       }
       if (is:record(flist)) {
 	 rp = (struct b_record *)BlkLoc(flist);
@@ -3313,19 +3302,17 @@ int section_length(wbp w)
 	    return Failed;
 	    }
          if ((tmp & ~0xf)==REDRAW_MARK) {
-	     var1 = rp->fields[4];   /* count */
-             if (!cnv:C_double(var1, v[0])) return Failed;
-	     if (v[0]==0) {
-	        c1=i;
+             if (!cnv:C_integer(rp->fields[4], v)) return Failed;
+	     if (v==0) {
 		save_flist = flist;
+                flag = 1;
+                break;
                 }
              }
          }
-   }
-   if (c1>0) {
-	c2 = elements-c1-1;
-	rp = (struct b_record *) BlkLoc(save_flist);
-        MakeInt(c2, &(rp->fields[4]));  /* count */
-   }
+      }
+   if (flag) {  /* count */
+      MakeInt(i, &(((struct b_record *) BlkLoc(save_flist))->fields[4]));
+      }
    return Succeeded;
 }

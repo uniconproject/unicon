@@ -13,27 +13,6 @@
  *  WAttrib, WDefault, WFlush, WSync, WriteImage
  */
 
-#begdef MissingGraphicsFunc(funcname)
-"an unavailable graphics function"
-function{} funcname()
-   runerr(121)
-end
-#enddef
-
-#begdef MissingGraphicsFunc1(funcname)
-"an unavailable graphics function"
-function{} funcname(x)
-   runerr(121)
-end
-#enddef
-
-#begdef MissingGraphicsFuncV(funcname)
-"an unavailable graphics function"
-function{0} funcname(argv[warg])
-   runerr(121)
-end
-#enddef
-
 #ifdef Graphics
 
 /*
@@ -3190,81 +3169,81 @@ function{0,1} WinSaveDialog(argv[argc])
       }
 end
 #else
-MissingGraphicsFunc1(WinAssociate)
-MissingGraphicsFuncV(WinPlayMedia)
-MissingGraphicsFuncV(WinButton)
-MissingGraphicsFuncV(WinScrollBar)
-MissingGraphicsFuncV(WinMenuBar)
-MissingGraphicsFuncV(WinEditRegion)
-MissingGraphicsFuncV(WinColorDialog)
-MissingGraphicsFuncV(WinFontDialog)
-MissingGraphicsFuncV(WinOpenDialog)
-MissingGraphicsFuncV(WinSelectDialog)
-MissingGraphicsFuncV(WinSaveDialog)
+MissingFunc1(WinAssociate)
+MissingFuncV(WinPlayMedia)
+MissingFuncV(WinButton)
+MissingFuncV(WinScrollBar)
+MissingFuncV(WinMenuBar)
+MissingFuncV(WinEditRegion)
+MissingFuncV(WinColorDialog)
+MissingFuncV(WinFontDialog)
+MissingFuncV(WinOpenDialog)
+MissingFuncV(WinSelectDialog)
+MissingFuncV(WinSaveDialog)
 #endif					/* MSWindows */
 
 
 #else					/* Graphics */
 
-MissingGraphicsFunc(Active)
-MissingGraphicsFuncV(Alert)
-MissingGraphicsFuncV(Bg)
-MissingGraphicsFuncV(Clip)
-MissingGraphicsFuncV(Clone)
-MissingGraphicsFuncV(Color)
-MissingGraphicsFuncV(ColorValue)
-MissingGraphicsFuncV(CopyArea)
-MissingGraphicsFuncV(Couple)
-MissingGraphicsFuncV(DrawArc)
-MissingGraphicsFuncV(DrawCircle)
-MissingGraphicsFuncV(DrawCurve)
-MissingGraphicsFuncV(DrawImage)
-MissingGraphicsFuncV(DrawLine)
-MissingGraphicsFuncV(DrawPoint)
-MissingGraphicsFuncV(DrawPolygon)
-MissingGraphicsFuncV(DrawRectangle)
-MissingGraphicsFuncV(DrawSegment)
-MissingGraphicsFuncV(DrawString)
-MissingGraphicsFuncV(EraseArea)
-MissingGraphicsFuncV(Event)
-MissingGraphicsFuncV(Fg)
-MissingGraphicsFuncV(FillArc)
-MissingGraphicsFuncV(FillCircle)
-MissingGraphicsFuncV(FillPolygon)
-MissingGraphicsFuncV(FillRectangle)
-MissingGraphicsFuncV(Font)
-MissingGraphicsFuncV(FreeColor)
-MissingGraphicsFuncV(GotoRC)
-MissingGraphicsFuncV(GotoXY)
-MissingGraphicsFuncV(Lower)
-MissingGraphicsFuncV(NewColor)
-MissingGraphicsFuncV(PaletteChars)
-MissingGraphicsFuncV(PaletteColor)
-MissingGraphicsFuncV(PaletteKey)
-MissingGraphicsFuncV(Pattern)
-MissingGraphicsFuncV(Pending)
-MissingGraphicsFuncV(Pixel)
-MissingGraphicsFunc1(QueryPointer)
-MissingGraphicsFuncV(Raise)
-MissingGraphicsFuncV(ReadImage)
-MissingGraphicsFuncV(TextWidth)
-MissingGraphicsFunc1(Uncouple)
-MissingGraphicsFuncV(WAttrib)
-MissingGraphicsFuncV(WDefault)
-MissingGraphicsFuncV(WFlush)
-MissingGraphicsFuncV(WriteImage)
-MissingGraphicsFunc1(WSync)
-MissingGraphicsFunc1(WinAssociate)
-MissingGraphicsFuncV(WinPlayMedia)
-MissingGraphicsFuncV(WinButton)
-MissingGraphicsFuncV(WinScrollBar)
-MissingGraphicsFuncV(WinMenuBar)
-MissingGraphicsFuncV(WinEditRegion)
-MissingGraphicsFuncV(WinColorDialog)
-MissingGraphicsFuncV(WinFontDialog)
-MissingGraphicsFuncV(WinOpenDialog)
-MissingGraphicsFuncV(WinSelectDialog)
-MissingGraphicsFuncV(WinSaveDialog)
+MissingFunc(Active)
+MissingFuncV(Alert)
+MissingFuncV(Bg)
+MissingFuncV(Clip)
+MissingFuncV(Clone)
+MissingFuncV(Color)
+MissingFuncV(ColorValue)
+MissingFuncV(CopyArea)
+MissingFuncV(Couple)
+MissingFuncV(DrawArc)
+MissingFuncV(DrawCircle)
+MissingFuncV(DrawCurve)
+MissingFuncV(DrawImage)
+MissingFuncV(DrawLine)
+MissingFuncV(DrawPoint)
+MissingFuncV(DrawPolygon)
+MissingFuncV(DrawRectangle)
+MissingFuncV(DrawSegment)
+MissingFuncV(DrawString)
+MissingFuncV(EraseArea)
+MissingFuncV(Event)
+MissingFuncV(Fg)
+MissingFuncV(FillArc)
+MissingFuncV(FillCircle)
+MissingFuncV(FillPolygon)
+MissingFuncV(FillRectangle)
+MissingFuncV(Font)
+MissingFuncV(FreeColor)
+MissingFuncV(GotoRC)
+MissingFuncV(GotoXY)
+MissingFuncV(Lower)
+MissingFuncV(NewColor)
+MissingFuncV(PaletteChars)
+MissingFuncV(PaletteColor)
+MissingFuncV(PaletteKey)
+MissingFuncV(Pattern)
+MissingFuncV(Pending)
+MissingFuncV(Pixel)
+MissingFunc1(QueryPointer)
+MissingFuncV(Raise)
+MissingFuncV(ReadImage)
+MissingFuncV(TextWidth)
+MissingFunc1(Uncouple)
+MissingFuncV(WAttrib)
+MissingFuncV(WDefault)
+MissingFuncV(WFlush)
+MissingFuncV(WriteImage)
+MissingFunc1(WSync)
+MissingFunc1(WinAssociate)
+MissingFuncV(WinPlayMedia)
+MissingFuncV(WinButton)
+MissingFuncV(WinScrollBar)
+MissingFuncV(WinMenuBar)
+MissingFuncV(WinEditRegion)
+MissingFuncV(WinColorDialog)
+MissingFuncV(WinFontDialog)
+MissingFuncV(WinOpenDialog)
+MissingFuncV(WinSelectDialog)
+MissingFuncV(WinSaveDialog)
 
 #endif					/* Graphics */
 
@@ -4318,8 +4297,7 @@ function{1} WSection(argv[argc])
   body {
       wbp w;
       int i, len, warg = 0, nfields, draw_code;
-      char *s;
-      struct descrip f;
+      tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
 
@@ -4331,7 +4309,7 @@ function{1} WSection(argv[argc])
         section_length(w);
         return C_integer 1;
         }
-      if (argc - warg!=1) {
+      if (argc - warg != 1) {
          fprintf(stderr, "not enough args!!\n");
          fail;
          }
@@ -4341,14 +4319,9 @@ function{1} WSection(argv[argc])
       }
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-      CnvTmpString(argv[warg], argv[warg]);
+      if (!cnv:string(argv[warg], argv[warg]))
+	 runerr(103, argv[warg]);
       len = StrLen(argv[warg]);
-
-      s = (char *) malloc(sizeof(char)*(len+1)); 
-
-/*    argv[warg] seems not ending with \0, that is why I use strncpy */
-      strncpy(s, StrLoc(argv[warg]), len);
-      s[len]='\0';
 
 	 /* create a record of the graphical object */
 
@@ -4363,8 +4336,7 @@ function{1} WSection(argv[argc])
       MakeInt(draw_code, &(rp->fields[1]));
 
 
-      MakeStr(s, len, &rp->fields[2]);   /* room_name */
-      free(s); 
+      rp->fields[2] = argv[warg];   /* room_name */
       rp->fields[3] = nulldesc;          /* skip */
       MakeInt(0, &(rp->fields[4]));      /* count */
       c_put(&(w->window->funclist), &f);
@@ -4373,25 +4345,25 @@ function{1} WSection(argv[argc])
 end
 
 #else					/* Graphics3D */
-MissingGraphicsFuncV(DrawTorus)
-MissingGraphicsFuncV(DrawCube)
-MissingGraphicsFuncV(DrawSphere)
-MissingGraphicsFuncV(DrawCylinder)
-MissingGraphicsFuncV(DrawDisk)
-MissingGraphicsFuncV(Eye)
-MissingGraphicsFuncV(PushMatrix)
-MissingGraphicsFuncV(PushRotate)
-MissingGraphicsFuncV(PushScale)
-MissingGraphicsFuncV(PushTranslate)
-MissingGraphicsFuncV(PopMatrix)
-MissingGraphicsFuncV(IdentityMatrix)
-MissingGraphicsFuncV(MatrixMode)
-MissingGraphicsFuncV(Scale)
-MissingGraphicsFuncV(Rotate)
-MissingGraphicsFuncV(Translate)
-MissingGraphicsFuncV(Texture)
-MissingGraphicsFuncV(Texcoord)
-MissingGraphicsFuncV(Refresh)
-MissingGraphicsFuncV(WindowContents)
-MissingGraphicsFuncV(WSection)
+MissingFuncV(DrawTorus)
+MissingFuncV(DrawCube)
+MissingFuncV(DrawSphere)
+MissingFuncV(DrawCylinder)
+MissingFuncV(DrawDisk)
+MissingFuncV(Eye)
+MissingFuncV(PushMatrix)
+MissingFuncV(PushRotate)
+MissingFuncV(PushScale)
+MissingFuncV(PushTranslate)
+MissingFuncV(PopMatrix)
+MissingFuncV(IdentityMatrix)
+MissingFuncV(MatrixMode)
+MissingFuncV(Scale)
+MissingFuncV(Rotate)
+MissingFuncV(Translate)
+MissingFuncV(Texture)
+MissingFuncV(Texcoord)
+MissingFuncV(Refresh)
+MissingFuncV(WindowContents)
+MissingFuncV(WSection)
 #endif					/* Graphics3D */

@@ -334,6 +334,9 @@ int nargs, *n;
    newpfp->pf_pfp = pfp;
    newpfp->pf_ilevel = ilevel;
    newpfp->pf_scan = NULL;
+#ifdef PatternType
+   newpfp->pattern_cache = NULL;
+#endif					/* PatternType */
 
    newpfp->pf_ipc = ipc;
    newpfp->pf_gfp = gfp;

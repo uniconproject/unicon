@@ -26,13 +26,21 @@ static long cptime()
 
 long millisec()
    {
-   static long starttime = -2;
+   static long starttime = -2, clk_tck;
    long t;
 
    t = cptime();
+#ifdef CLK_TCK
    if (starttime == -2)
       starttime = t;
    return (long) ((1000.0 / CLK_TCK) * (t - starttime));
+#else					/* CLK_TCK */
+   if (starttime == -2) {
+      starttime = t;
+      clk_tck = sysconf(_SC_CLK_TCK);
+      }
+   return (long) ((1000.0 / clk_tck) * (t - starttime));
+#endif					/* CLK_TCK */
    }
 
 #else					/* UNIX */

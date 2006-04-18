@@ -360,6 +360,7 @@ typedef struct _wcontext {
   int		drawop;
   double	gamma;			/* gamma correction value */
   int		bits;			/* context bits */
+
 #ifdef MacGraph
   ContextPtrType   contextPtr;
 #endif					/* MacGraph */
@@ -403,8 +404,10 @@ typedef struct _wcontext {
 #ifdef MSWindows
   HGLRC ctx;
 #endif					/* MSWindows */
-  int           dim;			   /* # of coordinates per vertex */
-  int           is_3D;			   /* flag for 3D windows */
+
+  int           dim;			/* # of coordinates per vertex */
+  int           is_3D;			/* flag for 3D windows */
+  char          buffermode;		/* 3D buffering flag */
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
   double        eyedirx, eyediry, eyedirz; /* eye direction vector */
   double        eyeposx, eyeposy, eyeposz; /* eye position */
@@ -683,8 +686,9 @@ typedef struct
 #define A_TEXCOORD      76
 
 #define A_TITLEBAR      77
+#define A_BUFFERMODE      78
 
-#define NUMATTRIBS	77
+#define NUMATTRIBS	78
 
 #define XICONSLEEP	20 /* milliseconds */
 
@@ -696,3 +700,7 @@ typedef struct
 #define StdErrRedirect        2
 #define StdInRedirect         4
 #define OutputToBuf           8
+
+/* Values for 3D attribute "buffer" */
+#define IMMEDIATE3D   1
+#define BUFFERED3D 0

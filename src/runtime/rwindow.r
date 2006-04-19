@@ -3250,6 +3250,11 @@ char * abuf;
 	 AttemptAttr(setdrawop(w, val));
 	 break;
          }
+      case A_BUFFERMODE: {
+        if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
+        else wc->buffermode = IMMEDIATE3D;
+        break;
+        }
       case A_DISPLAY: {
 	 AttemptAttr(setdisplay(w,val));
 	 break;
@@ -3490,6 +3495,11 @@ char * abuf;
 	    MakeStr(strdup(abuf), strlen(abuf), answer);
 	    }
 	 break;
+      case A_BUFFERMODE: {
+	 sprintf(abuf,"%s",((w->context->buffermode==BUFFERED3D)?"on":"off"));
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+	 }
 #endif					/* Graphics3D */
       case A_VISUAL:
 	 if (getvisual(w, abuf) == Failed) return Failed;
@@ -4237,6 +4247,7 @@ stringint attribs[] = {
    { 0,			NUMATTRIBS},
    {"ascent",		A_ASCENT},
    {"bg",		A_BG},
+   {"buffer",           A_BUFFERMODE},
    {"canvas",		A_CANVAS},
    {"ceol",		A_CEOL},
    {"cliph",		A_CLIPH},

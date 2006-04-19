@@ -811,9 +811,11 @@ function{1} DrawLine(argv[argc])
 
          /* draw the lines */
          CheckArgMultiple(w->context->dim);
-         drawpoly(w, v, argc-warg, GL_LINE_STRIP, w->context->dim);
-         glFlush();
-         glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (w->context->buffermode) {
+	    drawpoly(w, v, argc-warg, GL_LINE_STRIP, w->context->dim);
+	    glFlush();
+	    glXSwapBuffers(w->window->display->display, w->window->win);
+	    }
 	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
@@ -896,9 +898,11 @@ function{1} DrawPoint(argv[argc])
 	    }
          c_put(&(w->window->funclist), &f);
          CheckArgMultiple(w->context->dim);
-         drawpoly(w, v, argc-warg, GL_POINTS, w->context->dim);
-         glFlush();
-         glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (w->context->buffermode) {
+	    drawpoly(w, v, argc-warg, GL_POINTS, w->context->dim);
+	    glFlush();
+	    glXSwapBuffers(w->window->display->display, w->window->win);
+	    }
 	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
@@ -981,9 +985,11 @@ function{1} DrawPolygon(argv[argc])
  
          /* draw the polygon */
          CheckArgMultiple(w->context->dim);
-	 drawpoly(w, v, argc-warg, GL_LINE_LOOP, w->context->dim);
-	 glFlush();
-         glXSwapBuffers(w->window->display->display, w->window->win);
+         if (w->context->buffermode) {
+	    drawpoly(w, v, argc-warg, GL_LINE_LOOP, w->context->dim);
+	    glFlush();
+	    glXSwapBuffers(w->window->display->display, w->window->win);
+	    }
 	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
@@ -1118,9 +1124,11 @@ function{1} DrawSegment(argv[argc])
          /* draw the line segments */
          c_put(&(w->window->funclist), &f);
          CheckArgMultiple(w->context->dim);
-	 drawpoly(w, v, argc-warg, GL_LINES, w->context->dim);
-	 glFlush();
-    	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (w->context->buffermode) {
+	    drawpoly(w, v, argc-warg, GL_LINES, w->context->dim);
+	    glFlush();
+	    glXSwapBuffers(w->window->display->display, w->window->win);
+	    }
 	 if (v != v2) free(v);
 	 redraw3D(w);
 	 return f;
@@ -1510,9 +1518,11 @@ function{1} FillPolygon(argv[argc])
          c_put(&(w->window->funclist), &f);
 
          CheckArgMultiple(w->context->dim);
-         drawpoly(w, v, argc-warg, GL_POLYGON, w->context->dim);
-	 glFlush();
-	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 if (w->context->buffermode) {
+	    drawpoly(w, v, argc-warg, GL_POLYGON, w->context->dim);
+	    glFlush();
+	    glXSwapBuffers(w->window->display->display, w->window->win);
+	    }
 	 if (v != v2) free(v);
 	 return f;
 	 }
@@ -3265,9 +3275,11 @@ function{1} DrawTorus(argv[argc])
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
+      char bfmode;
 
       OptWindow(w);
       CheckArgMultiple(5);
+      bfmode = w->context->buffermode;
 	
       /* tori are not allowed in a 2-dim space */
       if (w->context->dim == 2) 
@@ -3285,7 +3297,8 @@ function{1} DrawTorus(argv[argc])
          if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
          if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
          if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
-	 torus(r1, r2, x, y, z, (w->context->texmode ? w->context->autogen:0));
+	 if (bfmode)
+	    torus(r1, r2, x, y, z,(w->context->texmode?w->context->autogen:0));
 
 	 /* create a record of the graphical object */	   
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3303,8 +3316,8 @@ function{1} DrawTorus(argv[argc])
          c_put(&(w->window->funclist), &f);
          }
    
-	/* Since we are using double buffers, swap */
-      glXSwapBuffers(w->window->display->display, w->window->win);
+      if (bfmode)
+	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
    }
 end
@@ -3324,9 +3337,11 @@ function{1} DrawCube(argv[argc])
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
+      char bfmode;
 
       OptWindow(w);		
       CheckArgMultiple(4);
+      bfmode = w->context->buffermode;
 
       /* Cubes are not 2-dim objects */
       if (w->context->dim == 2) 
@@ -3346,9 +3361,8 @@ function{1} DrawCube(argv[argc])
          if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
          if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
          if (!cnv:C_double(argv[i+3], l)) runerr(102, argv[i+3]);  
-
-
-	 cube(l, x, y, z, (w->context->texmode?w->context->autogen:0));
+	 if (bfmode) 
+	    cube(l, x, y, z, (w->context->texmode?w->context->autogen:0));
         
 	 /*
 	  * create a record of the graphical object and its parameters
@@ -3368,8 +3382,8 @@ function{1} DrawCube(argv[argc])
          c_put(&(w->window->funclist), &f);
          }
 
-      /* swap buffers, since we are double buffered */
-      glXSwapBuffers(w->window->display->display, w->window->win);
+      if (bfmode)
+	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
       }
 end
@@ -3390,10 +3404,12 @@ function{1} DrawSphere(argv[argc])
       tended struct b_record *rp;
       tended struct descrip f;
       static dptr constr;
+      char bfmode;
 
       OptWindow(w);
       CheckArgMultiple(4);
 
+      bfmode = w->context->buffermode;
       /* sphere cannot be drawn in a 2-dim scene */
       if (w->context->dim == 2) runerr(150);
 
@@ -3409,7 +3425,8 @@ function{1} DrawSphere(argv[argc])
 	 if (!cnv:C_double(argv[i+1], y))  runerr(102, argv[i+1]);
 	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
-	 sphere(r, x, y, z, (w->context->texmode?w->context->autogen:0));
+         if (bfmode) 
+   	    sphere(r, x, y, z, (w->context->texmode?w->context->autogen:0));
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3430,9 +3447,9 @@ function{1} DrawSphere(argv[argc])
 	 c_put(&(w->window->funclist), &f);
 	 }
 
-	/* swap buffers */
-	glXSwapBuffers(w->window->display->display, w->window->win);
-	return f;
+      if (bfmode)
+	 glXSwapBuffers(w->window->display->display, w->window->win);
+      return f;
     }
 end
 
@@ -3447,17 +3464,20 @@ function{1} DrawCylinder(argv[argc])
    abstract{ return record }
    body {
       wbp w;
+      wcp wc;
       int warg = 0, n, i, j, nfields, draw_code;
       double r1, r2, h, x, y, z;
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
+      char bfmode;
 
       OptWindow(w);
+      wc = w->context;
       CheckArgMultiple(6);
-
+      bfmode = w->context->buffermode;
       /* cylinders cannot be used in a 2-dim scene */
-      if (w->context->dim == 2) runerr(150);
+      if (wc->dim == 2) runerr(150);
 
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_cylinder")))
@@ -3473,7 +3493,8 @@ function{1} DrawCylinder(argv[argc])
 	 if (!cnv:C_double(argv[i+3], h))  runerr(102, argv[i+3]);  
 	 if (!cnv:C_double(argv[i+4], r1)) runerr(102, argv[i+4]);
 	 if (!cnv:C_double(argv[i+5], r2)) runerr(102, argv[i+5]);
-	 cylinder(r1, r2, h,x,y,z,(w->context->texmode?w->context->autogen:0));
+	 if (bfmode) 
+	    cylinder(r1,r2,h,x,y,z,(wc->texmode ? wc->autogen : 0));
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3492,8 +3513,8 @@ function{1} DrawCylinder(argv[argc])
          c_put(&(w->window->funclist), &f);
          }
 
-      /* swap buffers */
-      glXSwapBuffers(w->window->display->display, w->window->win);
+      if (bfmode)
+	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
    }
 end
@@ -3510,14 +3531,17 @@ function{1} DrawDisk(argv[argc])
    abstract{ return record }
    body {
       wbp w;
+      wcp wc;
       int warg = 0, n, j, i, nfields, draw_code;
       double r1, r2, a1, a2, x, y, z;
       tended struct descrip f;
       static dptr constr;
       tended struct b_record *rp;
+      char bfmode;
 
       OptWindow(w);
-
+      wc = w->context;
+      bfmode = wc->buffermode;
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_disk")))
 	    syserr("failed to create opengl record constructor");
@@ -3566,13 +3590,12 @@ function{1} DrawDisk(argv[argc])
 	    if (!cnv:C_double(argv[i+6], a2)) runerr(102, argv[i+6]);
 	    rp->fields[8] = argv[i+6];
 	    }
-
-	 disk(r1, r2, a1, a2, x, y, z,
-	      (w->context->texmode ? w->context->autogen : 0));
+	 if (bfmode)
+	    disk(r1, r2, a1, a2, x, y, z, (wc->texmode ? wc->autogen : 0));
          c_put(&(w->window->funclist), &f);
         }
-
-      glXSwapBuffers(w->window->display->display, w->window->win);
+      if (bfmode)
+	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
       }
 end
@@ -3993,7 +4016,7 @@ function{1} MatrixMode(argv[argc])
       f.vword.bptr = (union block *)rp;
       MakeStr("MatrixMode", 10, &(rp->fields[0]));
 
-      draw_code = si_s2i(redraw3Dnames, "LoadIdentity");
+      draw_code = si_s2i(redraw3Dnames, "MatrixMode");
       if (draw_code == -1)
 	fail;
       MakeInt(draw_code, &(rp->fields[1]));

@@ -99,9 +99,6 @@
       #define int_PASCAL int PASCAL
       #define LRESULT_CALLBACK LRESULT CALLBACK
       #define BOOL_CALLBACK BOOL CALLBACK
-      #if BORLAND_286
-         #include <dir.h>
-      #endif				/* BORLAND_286 */
       #ifdef PosixFns
       #include <winsock2.h>
       #else					/* PosixFns */
@@ -117,8 +114,9 @@
       #ifdef PosixFns
       #include <winsock2.h>
       #else
-#ifdef ISQL
+#if defined(ISQL) || defined(Audio)
 #include <windows.h>
+#include <mmsystem.h>
 #endif					/* ISQL */
       #endif					/* PosixFns */
       #endif					/* NT */
@@ -179,6 +177,12 @@
    #ifdef SysSelectH
       #include <sys/select.h>
    #endif
+#ifdef Audio
+   #include <sys/ioctl.h>
+   #include <fcntl.h>
+   #include <linux/soundcard.h>
+   #include <pthread.h>
+#endif
 #endif					/* UNIX */
 
 #if VMS
@@ -366,6 +370,15 @@
 #include "../lib/voice/jvoip.h"
 #endif					/* HAVE_VOICE */
 
-#ifdef Audio
-#include "../lib/audio/audio.h"
-#endif					/* Audio */
+#ifdef HAVE_LIBOPENAL
+	#include <AL/al.h>
+	#include <AL/alc.h>
+	#include <AL/alext.h>
+	#include <AL/alut.h>
+#endif					/* HAVE_LIBOPENAL */
+
+/* Ogg Vorbis */
+#ifdef HAVE_LIBOGG
+	#include <vorbis/codec.h>
+	#include <vorbis/vorbisfile.h>
+#endif					/* HAVE_LIBOGG */

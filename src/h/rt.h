@@ -20,6 +20,10 @@
    #include "../h/graphics.h"
 #endif					/* Graphics */
 
+#ifdef Audio
+   #include "../h/audio.h"
+#endif					/* Audio */
+
 #ifdef PosixFns
 #include "../h/posix.h"
 #endif					/* PosixFns */

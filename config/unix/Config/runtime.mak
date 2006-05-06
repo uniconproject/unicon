@@ -26,7 +26,7 @@ XOBJS=	xcnv.o xdata.o xdef.o xerrmsg.o xextcall.o xfconv.o xfload.o xfmath.o\
 	xkeyword.o xlmisc.o xoarith.o xoasgn.o xocat.o xocomp.o\
 	xomisc.o xoref.o xoset.o xovalue.o xralc.o xrcoexpr.o xrcomp.o xrdb.o\
 	xrdebug.o xrlocal.o xrlrgint.o xrmemmgt.o xrmisc.o xrstruct.o xrsys.o\
-	xrwinrsc.o xrgfxsys.o xrwinsys.o xrwindow.o xfxtra.o xrposix.o xrmsg.o
+	xrwinrsc.o xrgfxsys.o xrwinsys.o xrwindow.o xfxtra.o xraudio.o xrposix.o xrmsg.o
 
 COBJS=	../common/long.o ../common/time.o ../common/save.o \
 	../common/rswitch.o ../common/redirerr.o ../common/xwindow.o \
@@ -295,6 +295,10 @@ xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri
 	$(CC) $(CFLAGS) -c xfxtra.c
 	rm xfxtra.c
 
+xraudio.o: raudio.r 
+	../../bin/rtt -x raudio.r
+	$(CC) $(CFLAGS) -c xraudio.c
+	rm xraudio.c
 
 ####################################################################
 #
@@ -319,7 +323,7 @@ rt.db: $(HDRS)
 	  lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
 	  oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
 	  rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
-	  rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r\
+	  rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
 	  rposix.r rmsg.r
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`
@@ -329,7 +333,7 @@ rt.a: ../common/rswitch.o ../common/long.o ../common/time.o ../common/mlocal.o\
       fscan.o fstr.o fstranl.o fstruct.o fsys.o fwindow.o init.o invoke.o\
       keyword.o lmisc.o oarith.o oasgn.o ocat.o ocomp.o omisc.o oref.o oset.o\
       ovalue.o ralc.o rcoexpr.o rcomp.o rdebug.o rlrgint.o rlocal.o rmemmgt.o\
-      rmisc.o rstruct.o rsys.o rwinrsc.o rgfxsys.o rwinsys.o fxtra.o rmsg.o\
+      rmisc.o rstruct.o rsys.o rwinrsc.o rgfxsys.o rwinsys.o fxtra.o raudio.o rmsg.o\
       rposix.o rwindow.o ../common/xwindow.o ../common/alloc.o
 	rm -f rt.a
 	ar qc rt.a `sed 's/$$/.o/' rttfull.lst` ../common/rswitch.o\
@@ -555,5 +559,10 @@ rwindow.o: rwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 fxtra.o: fxtra.r $(HDRS)
 	../../bin/rtt fxtra.r
+	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
+	rm `sed 's/$$/.c/' rttcur.lst`
+
+raudio.o: raudio.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri
+	../../bin/rtt -x raudio.r
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`

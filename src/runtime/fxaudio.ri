@@ -105,24 +105,40 @@ function{1} VWho(f)
       }
 end
 
+/*function{0,1} VAttrib(f,attrib)*/
 
 "VAttrib(f,attrib) - set voice attribute. "
-function{0,1} VAttrib(f,attrib)
-
-   if !is:file(f) then
-      runerr(105, f)		/* f is not a file */
-
-   if !cnv:C_string(attrib) then
-      runerr(103, attrib)
-
+function{*} VAttrib(argv[argc])
    abstract {
       return integer ++ string ++ list;
       }
    body {
       /* char tmpstr[MaxCvtLen]; */
+      int varg = 0;
+      int i,res=0;
+      tended struct descrip sbuf; 
+     
+      tended char * attrib='\0';
+ 
+      if (!is:file(argv[0])) {
+	 for(i = 0 ; i < argc ; i++ ){
+	    if (!cnv:C_string(argv[i], attrib))
+	       runerr(103,argv[i]);
+	    res = AudioMixer(attrib);
+	    }
+	 if(res >= 0)
+	    return C_integer res;
+	 else
+	    fail;
+	 }
+      else {
 #ifdef HAVE_VOICE
       PVSESSION Ptr;
-      Ptr = (PVSESSION)BlkLoc(f)->file.fd.fp;
+      Ptr = (PVSESSION)BlkLoc(argv[0])->file.fd.fp;
+      if (!cnv:tmp_string(argv[1], sbuf)) /* sbuf not allocated */
+          runerr(109, argv[1]);
+
+      attrib = StrLoc(sbuf);
 
       if (strstr(attrib, "+=") || strstr(attrib, "-=") ) {
 	 SetVoiceAttrib(Ptr, attrib);
@@ -196,5 +212,6 @@ function{0,1} VAttrib(f,attrib)
 #else
       fail;
 #endif
+}
       }
 end

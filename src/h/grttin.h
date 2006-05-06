@@ -251,10 +251,9 @@ typedef int siptr, stringint, inst;
    typedef int XRectangle, XPoint, XSegment, XArc, SysColor, LinearColor;
    typedef int LONG, SHORT;
 
-   #ifdef NAS
-      typedef int AuServer, AuEvent, AuEventHandlerRec, AuPointer;
-      typedef int AudioComponentType, AuStatus;
-   #endif					/* NAS */
+   #ifdef Audio
+      typedef int AudioStruct, AudioPtr, ALCcontext, ALuint, pthread_t;
+   #endif					/* Audio */
 
    #ifdef MacGraph
       typedef int Str255, Point, StandardFileReply, SFTypeList, Ptr, PixMap;

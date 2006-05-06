@@ -664,26 +664,17 @@ void detectRedirection();
 
    #endif				/* PresentationManager */
 
-   #ifdef NAS
-   /*
-    * Audio support via NAS 1.2.4
-    */
-
-      short int PauseFlow  ( AudioComponentType *AuDev );
-      short int StopFlow   ( AudioComponentType *AuDev );
-      short int ResumeFlow ( AudioComponentType *AuDev );
-      short int InitAudio  ( AudioComponentType *AuDev );
-      short int SetVolume  ( AudioComponentType *AuDev );
-      short int GetVolume  ( AudioComponentType *AuDev );
-      short int OpenAudio  ( AudioComponentType *AuDev, char *AudioDeviceName);
-      short int CloseAudio ( AudioComponentType *AuDev );
-      short int IsAudioInUse ( AudioComponentType *AuDev );
-      short int PollServer   ( AudioComponentType *AuDev );
-      short int PlaySound    ( AudioComponentType *AuDev, char *FileName,
-			      int Volume, int Mode );
-   #endif					/* NAS */
 #endif					/* Graphics */
 
+
+#ifdef Audio
+struct AudioFile * StartAudioTread(char filename[]);
+void StopAudioThread(struct AudioFile * Ptr);
+
+struct AudioFile * StartMP3Thread(char filename[]);
+struct AudioFile * StartWAVThread(char filename[]);
+struct AudioFile * StartOggVorbisThread(char filename[]);
+#endif					/* Audio */
 
 /*
  * Prototypes for the run-time system.

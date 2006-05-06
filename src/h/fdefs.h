@@ -9,8 +9,10 @@
 FncDef(PlayAudio,1)
 FncDef(StopAudio,1)
 #endif					/* Audio */
+
+FncDefV(VAttrib)
+
 #if defined HAVE_VOICE
-FncDef(VAttrib,2)
 FncDef(VWho,1)
 #endif					/* HAVE_VOICE */
 

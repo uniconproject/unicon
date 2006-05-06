@@ -258,14 +258,6 @@ typedef struct _wctype {
 
 
 #ifdef XWindows
-#ifdef NAS
-typedef struct _audiocomponents {
-   AuServer *Server;
-   AuFlowID FlowID;
-   int Volume;
-   short int NumOfJobs;
-   } AudioComponentType; 
-#endif					/* NAS */
 
 /*
  * Displays are maintained in a global list in rwinrsc.r.
@@ -284,9 +276,6 @@ typedef struct _wdisplay {
 #ifdef Graphics3D
   XVisualInfo  *vis;
 #endif					/* Graphics3D */
-#ifdef NAS
-  AudioComponentType audio;
-#endif					/* NAS */
   int           numColors;		/* allocated color info */
   int		sizColors;		/* # elements of alloc. color array */
   struct wcolor	*colors;

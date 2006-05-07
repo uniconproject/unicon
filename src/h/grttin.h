@@ -253,6 +253,9 @@ typedef int siptr, stringint, inst;
 
    #ifdef Audio
       typedef int AudioStruct, AudioPtr, ALCcontext, ALuint, pthread_t;
+      typedef int HMIXER, MIXERLINE, MMRESULT, HMIXEROBJ, MIXERCAPS;
+      typedef int MIXERCONTROL, MIXERLINECONTROLS, MIXERCONTROLDETAILS;
+      typedef int MIXERCONTROLDETAILS_UNSIGNED, MIXERCONTROLDETAILS_BOOLEAN;
    #endif					/* Audio */
 
    #ifdef MacGraph

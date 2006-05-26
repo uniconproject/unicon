@@ -129,10 +129,10 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
       return Failed;
       }
 
-   Protect(reserve(Strings, MAX_COL_NAME * numcols), return Error);
    Protect(reserve(Blocks, sizeof (struct b_record)+(numcols-1)*sizeof(struct descrip)), return Error);
 
    if (fp->proc == NULL) {
+      Protect(reserve(Strings, MAX_COL_NAME * numcols), return Error);
       fieldname = malloc(numcols * sizeof(struct descrip));
       if (fieldname == NULL) {
          t_errornumber = 305;
@@ -187,6 +187,11 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
                      &SQLType, &typesize, &scale, &nullable);
 
       rc = SQLGetData(fp->hstmt, i, SQL_C_CHAR, buff, BUFF_SZ, &colsz);
+
+      /*
+       * reserve contiguous space for this column
+       */
+      Protect(reserve(Strings, colsz), return Error);
 
 #if WordBits == 64
       /*

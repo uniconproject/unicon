@@ -1,5 +1,5 @@
 #
-# $Id: editlist.icn,v 1.3 2004-11-11 20:01:11 rparlett Exp $
+# $Id: editlist.icn,v 1.4 2006-06-22 17:33:46 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -12,6 +12,10 @@ link graphics
 $include "guih.icn"
 
 class EditListTextField:TextField()
+   method keeps(e)
+      return e === (Key_Up | Key_Down | Key_Left | Key_Right)
+   end
+
    method handle_event(e)
       if \self.has_focus then {
          if e === Key_Up then

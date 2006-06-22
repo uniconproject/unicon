@@ -1,5 +1,5 @@
 #
-# $Id: langprocs.icn,v 1.3 2006-01-20 23:12:58 rparlett Exp $
+# $Id: langprocs.icn,v 1.4 2006-06-22 17:35:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -566,7 +566,7 @@ procedure to_string(o, depth, seen)
 end
 
 #
-# Look for the method in the given object, stopping on error.
+# Look for the method in the given object.
 #
 # @param obj         The object in which to find the method
 # @param method_name The name of the method
@@ -574,10 +574,5 @@ end
 # @fail              if the method cannot be found.
 #
 procedure find_method(obj, method_name)
-   local t, m
-   t := lang::get_class(obj) | fail
-   every m := !t.get_methods() do {
-      if m.get_method_name() == method_name then
-         return m.get_as_procedure()
-   }
+   return lang::get_class(obj).get_method(method_name).get_as_procedure()
 end

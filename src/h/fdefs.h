@@ -10,7 +10,9 @@ FncDef(PlayAudio,1)
 FncDef(StopAudio,1)
 #endif					/* Audio */
 
+#if defined(Audio) || defined(HAVE_VOICE)
 FncDefV(VAttrib)
+#endif
 
 #if defined HAVE_VOICE
 FncDef(VWho,1)
@@ -22,6 +24,7 @@ FncDef(any,4)
 FncDef(args,2)
 FncDef(asin,1)
 FncDef(atan,2)
+FncDef(atanh,1)
 FncDef(bal,6)
 FncDef(center,3)
 FncDef(char,1)

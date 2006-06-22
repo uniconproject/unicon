@@ -1,5 +1,5 @@
 #
-# $Id: node.icn,v 1.3 2004-01-25 23:04:36 rparlett Exp $
+# $Id: node.icn,v 1.4 2006-06-22 17:32:49 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -136,7 +136,24 @@ class Node : SetFields : Object(
    end
 
    #
-   # Toggle the opened status of the {Node}.
+   # Set the expanded flag.  Note that this will not update the GUI, to do that
+   # call tree.tree_structure_changed() on the tree in which the node resides.
+   #
+   method set_expanded()
+      return is_expanded_flag := 1
+   end
+
+   #
+   # Clear the expanded flag.  Note that this will not update the GUI, to do that
+   # call tree.tree_structure_changed() on the tree in which the node resides.
+   #
+   method clear_expanded()
+      return is_expanded_flag := &null
+   end
+      
+   #
+   # Toggle the opened status of the {Node}. Note that this will not update the GUI, to do that
+   # call tree.tree_structure_changed() on the tree in which the node resides.
    #
    method toggle_expanded()
       return is_expanded_flag := if /is_expanded_flag then 1 else &null

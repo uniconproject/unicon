@@ -114,9 +114,9 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
    SWORD numcols, colsize;
    /*
     * SQLINTEGER, SQLLEN, or SDWORD? Depending on ODBC version and doc
-    * you read.
+    * you read.  SQLLEN tried, and did not magically fix on AMD64.
     */
-   SQLLEN colsz, len;
+   SDWORD colsz, len;
    char buff[BUFF_SZ*2]; /* data buffer */
    UCHAR colname[MAX_COL_NAME+1];
    SWORD SQLType, scale, nullable;
@@ -192,7 +192,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
 
       rc = SQLGetData(fp->hstmt, i, SQL_C_CHAR, buff, BUFF_SZ, &colsz);
 
-#if 0 /* WordBits == 64 */
+#if WordBits == 64
       /*
        * On Fedora Core 3 AMD64, SQLGetData seems to be filling
        * in the least-significant 32-bits of colsz.  This workaround
@@ -263,7 +263,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
           while (colsz > 0 && len < tot) {
             rc=SQLGetData(fp->hstmt, i, SQL_C_CHAR,
                           StrLoc(r->fields[p])+len-1, BUFF_SZ, &colsz);
-#if 0 /* WordBits == 64 */
+#if WordBits == 64
 	    /*
 	     * On Fedora Core 3 AMD64, SQLGetData seems to be filling
 	     * in the least-significant 32-bits of colsz.  This workaround

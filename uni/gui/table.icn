@@ -1,5 +1,5 @@
 #
-# $Id: table.icn,v 1.10 2005-07-20 13:25:23 rparlett Exp $
+# $Id: table.icn,v 1.11 2006-07-03 17:10:06 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -17,9 +17,27 @@ class TableContent : SelectableScrollArea()
    end
 
    method get_subject_width()
-      subject_width := 0
-      every subject_width +:= (!parent.table_header.children).column_width
-      return subject_width
+      local col, l, sw, dw
+
+      l := []
+      sw := 0
+      every col := !parent.table_header.children do {
+         if /col.column_width then
+            put(l, col)
+         else
+            sw +:= col.column_width
+      }
+      
+      if *l = 0 then
+         return sw
+
+      # The width to give the auto size columns.
+      dw := (self.w - 2 * self.get_view_x_padding() - SB_SIZE - sw) / *l
+      dw <:= 10
+
+      every (!l).column_width := dw
+
+      return sw + *l * dw
    end
 
    method refresh(redraw)

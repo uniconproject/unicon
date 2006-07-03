@@ -1,5 +1,5 @@
 #
-# $Id: canvastable.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvastable.icn,v 1.2 2006-07-03 17:07:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -106,11 +106,20 @@ class CanvasTable : CanvasComponent : Table(select_one, select_many, columns)
    # Overrides CanvasComponent.reset_size()
    #
    method reset_size()
+      local c
       self.CanvasComponent.reset_size()
       #
       # Ensure button heights default on resize()
       #
       self.head_h := &null
+
+      #
+      # Put the auto-sizing columns back to &null col widths, so they
+      # are resized by the Table when they are displayed.
+      #
+      every c := !self.get_columns() do
+         if \c.auto_width_flag then
+            c.set_column_width()
    end
 
    #
@@ -121,9 +130,12 @@ class CanvasTable : CanvasComponent : Table(select_one, select_many, columns)
    end
 
    method string_rep()
+      local l, c
       l := []
       every c := !self.get_columns() do
-         put(l, [c.label, c.column_width, c.internal_alignment])
+         put(l, [c.label, 
+                 if \c.auto_width_flag then "Auto" else c.column_width, 
+                 c.internal_alignment])
       put(l, ["", "", ""])
       return l
    end

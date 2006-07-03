@@ -1,5 +1,5 @@
 #
-# $Id: canvastabledialog.icn,v 1.4 2005-07-27 21:38:37 rparlett Exp $
+# $Id: canvastabledialog.icn,v 1.5 2006-07-03 17:07:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -30,6 +30,7 @@ class CanvasTableDialog : CanvasComponentDialog(
    col_var_category_cbg,    #
    internal_alignment_list, #                               
    col_name,                #
+   auto_width_cb,
    select_group             #
    )
 
@@ -40,7 +41,15 @@ class CanvasTableDialog : CanvasComponentDialog(
          apply.clear_is_shaded()
          os.set_which_one(os_on)
          edit_label.set_contents(new.label)
-         size.set_contents(new.column_width)
+         if \new.auto_width_flag then {
+            size.set_is_shaded()
+            size.set_contents("")
+            auto_width_cb.set_is_checked()
+         } else {
+            size.clear_is_shaded()
+            size.set_contents(new.column_width)
+            auto_width_cb.clear_is_checked()
+         }
          col_name.set_contents(new.name)
          internal_alignment.set_selection(case new.internal_alignment of {
             "c" : 1
@@ -107,10 +116,17 @@ class CanvasTableDialog : CanvasComponentDialog(
       #
       # Validate fields
       #
-      integer(self.size.get_contents()) | return alert_error("Integer field required for col width")
+      auto_width_cb.is_checked() |
+         integer(self.size.get_contents()) | return alert_error("Integer field required for col width")
       r := c.table_header.children[struct.get_selections()[1]]
       r.set_label(self.edit_label.get_contents())
-      r.set_column_width(integer(self.size.get_contents()))
+      if auto_width_cb.is_checked() then {
+         r.auto_width_flag := 1
+         r.set_column_width(&null)
+      } else {
+         r.auto_width_flag := &null
+         r.set_column_width(integer(self.size.get_contents()))
+      }
       r.set_internal_alignment(internal_alignment_list[internal_alignment.get_selection()])
       r.set_name(col_name.get_contents())
       r.class_variable := case col_var_category_cbg.get_which_one() of {
@@ -133,6 +149,10 @@ class CanvasTableDialog : CanvasComponentDialog(
       delete.set_is_shaded()
       apply.set_is_shaded()
       os.set_which_one(os_off)
+   end
+
+   method on_auto_width_cb()
+      size.toggle_is_shaded()
    end
 
    method on_cancel()
@@ -252,8 +272,15 @@ class CanvasTableDialog : CanvasComponentDialog(
       size := TextField()
       size.set_align("l", "c")
       size.set_pos(70, 60)
-      size.set_size(100)
+      size.set_size(47)
       b.add(size)
+
+      auto_width_cb := CheckBox()
+      auto_width_cb.set_label("Auto")
+      auto_width_cb.set_align("l", "c")
+      auto_width_cb.set_pos(125, 60)
+      auto_width_cb.connect(self, "on_auto_width_cb", ACTION_EVENT)
+      b.add(auto_width_cb)
 
       l := Label()
       l.set_label("Align : ")

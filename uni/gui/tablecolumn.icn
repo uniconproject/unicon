@@ -1,5 +1,5 @@
 #
-# $Id: tablecolumn.icn,v 1.4 2004-02-12 16:45:24 rparlett Exp $
+# $Id: tablecolumn.icn,v 1.5 2006-07-03 17:10:06 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -84,17 +84,13 @@ class TableColumn : TextButton(
    end
 
    #
-   # Set the initial width of the column, in pixels; this must be
-   # specified.
+   # Set the initial width of the column, in pixels.  If this is
+   # not provided, then the width will be set automatically to
+   # use up any available free space.
    # @param x  The width
    #
    method set_column_width(x)
       return self.column_width := x
-   end
-
-   method check_width()
-      if /self.column_width then
-         fatal("no column width specified")
    end
 
    method display(buffer_flag)
@@ -123,7 +119,6 @@ class TableColumn : TextButton(
          FillRectangle(cw, self.x, self.y, self.w - CHANGE_SIZE_BORDER, self.h)
          Uncouple(cw)
       } 
-
       DrawRaisedRectangle(self.cbwin, self.x + self.w - CHANGE_SIZE_BORDER, self.y + BORDER_WIDTH, CHANGE_SIZE_BORDER, self.h - 2 * BORDER_WIDTH)
 
       Clip(self.cbwin)

@@ -1,5 +1,5 @@
 #
-# $Id: canvastablecolumn.icn,v 1.3 2005-12-31 15:15:08 rparlett Exp $
+# $Id: canvastablecolumn.icn,v 1.4 2006-07-03 17:07:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -13,7 +13,7 @@ import gui
 #
 # Class for representing a TableColumn on the canvas.
 #
-class CanvasTableColumn : CanvasComponent : TableColumn()
+class CanvasTableColumn : CanvasComponent : TableColumn(auto_width_flag)
    #
    # Generate code into Code object c.
    #
@@ -23,7 +23,8 @@ class CanvasTableColumn : CanvasComponent : TableColumn()
       c.line(name || " := " || self.class_name || "()")
       c.line(name || ".set_label(" || image(self.label) || ")")
       c.line(name || ".set_internal_alignment(" || image(self.internal_alignment) || ")")
-      c.line(name || ".set_column_width(" || self.column_width || ")")
+      if /self.auto_width_flag then
+         c.line(name || ".set_column_width(" || self.column_width || ")")
    end
 
    #
@@ -33,6 +34,7 @@ class CanvasTableColumn : CanvasComponent : TableColumn()
       c.label := self.label
       c.column_width := self.column_width
       c.internal_alignment := self.internal_alignment
+      c.auto_width_flag := self.auto_width_flag
    end
 
    #
@@ -63,7 +65,8 @@ class CanvasTableColumn : CanvasComponent : TableColumn()
               ["Class Variable", "class_variable"],
               ["Label", "label"],
               ["Column Width", "column_width"],
-              ["Internal Alignment", "internal_alignment"]
+              ["Internal Alignment", "internal_alignment"],
+              ["Auto width flag", "auto_width_flag"]
               ]
    end
 

@@ -2,7 +2,7 @@ import gui
 import lang
 $include "guih.icn"
 
-class TTExplorer : Dialog(tt, tree)
+class TTExplorer : Dialog(bits_col, date_col, file_col, size_col, tt, tree)
    #
    # Given a Node n, get the full file path it represents by traversing
    # up the tree structure to the root.
@@ -81,7 +81,7 @@ class TTExplorer : Dialog(tt, tree)
    end
 
    method setup()
-      local bits_col, date_col, file_col, size_col, text_button_1
+      local text_button_1
       self.set_attribs("size=495,315", "resize=on")
       text_button_1 := TextButton()
       text_button_1.set_pos("50%", "100%-10")
@@ -99,7 +99,6 @@ class TTExplorer : Dialog(tt, tree)
       file_col := TableColumn()
       file_col.set_label("File")
       file_col.set_internal_alignment("l")
-      file_col.set_column_width(150)
       tt.add_column(file_col)
       size_col := TableColumn()
       size_col.set_label("Size")
@@ -159,11 +158,14 @@ end
 #lign|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|
 #Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Var
 #iable|integer|1|Parent Component|1|Select One|null|Select Many|null|Co
-#lumns|list|4|class|CanvasTableColumn|4|Name|string|file_col|Label|stri
-#ng|File|Column Width|integer|150|Internal Alignment|string|l|class|Can
-#vasTableColumn|4|Name|string|size_col|Label|string|Size|Column Width|i
-#nteger|75|Internal Alignment|string|r|class|CanvasTableColumn|4|Name|s
-#tring|date_col|Label|string|Date|Column Width|integer|100|Internal Ali
-#gnment|string|l|class|CanvasTableColumn|4|Name|string|bits_col|Label|s
-#tring|Bits|Column Width|integer|100|Internal Alignment|string|l|Initia
-#l Focus|null|Event Handlers|list|0|
+#lumns|list|4|class|CanvasTableColumn|6|Name|string|file_col|Class Vari
+#able|integer|1|Label|string|File|Column Width|integer|166|Internal Ali
+#gnment|string|l|Auto width flag|integer|1|class|CanvasTableColumn|6|Na
+#me|string|size_col|Class Variable|integer|1|Label|string|Size|Column W
+#idth|integer|75|Internal Alignment|string|r|Auto width flag|null|class
+#|CanvasTableColumn|6|Name|string|date_col|Class Variable|integer|1|Lab
+#el|string|Date|Column Width|integer|100|Internal Alignment|string|l|Au
+#to width flag|null|class|CanvasTableColumn|6|Name|string|bits_col|Clas
+#s Variable|integer|1|Label|string|Bits|Column Width|integer|100|Intern
+#al Alignment|string|l|Auto width flag|null|Initial Focus|null|Event Ha
+#ndlers|list|0|

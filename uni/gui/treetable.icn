@@ -1,5 +1,5 @@
 #
-# $Id: treetable.icn,v 1.3 2006-07-03 17:21:29 rparlett Exp $
+# $Id: treetable.icn,v 1.4 2006-07-04 02:46:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -49,23 +49,7 @@ end
 #
 class TreeTableContent:Tree()
    method get_subject_width()
-      local col, l, sw, dw
-
-      l := []
-      sw := 0
-      every col := !parent.table_header.children do
-         (sw +:= \col.column_width) | put(l, col)
-      
-      if *l = 0 then
-         return sw
-
-      # The width to give the auto size columns.
-      dw := (self.w - 2 * self.get_view_x_padding() - SB_SIZE - sw) / *l
-      dw <:= 10
-
-      every (!l).column_width := dw
-
-      return sw + *l * dw
+      return parent.get_total_column_width()
    end
 
    method refresh(redraw)

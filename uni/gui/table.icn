@@ -1,5 +1,5 @@
 #
-# $Id: table.icn,v 1.12 2006-07-03 17:21:29 rparlett Exp $
+# $Id: table.icn,v 1.13 2006-07-04 02:46:35 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -17,23 +17,7 @@ class TableContent : SelectableScrollArea()
    end
 
    method get_subject_width()
-      local col, l, sw, dw
-
-      l := []
-      sw := 0
-      every col := !parent.table_header.children do
-         (sw +:= \col.column_width) | put(l, col)
-      
-      if *l = 0 then
-         return sw
-
-      # The width to give the auto size columns.
-      dw := (self.w - 2 * self.get_view_x_padding() - SB_SIZE - sw) / *l
-      dw <:= 10
-
-      every (!l).column_width := dw
-
-      return sw + *l * dw
+      return parent.get_total_column_width()
    end
 
    method refresh(redraw)
@@ -323,8 +307,41 @@ class Table : Component(
       self.table_content.set_select_none()
    end
 
+   #
+   # Get the total width of all columns
+   #
+   method get_total_column_width()
+      local sw
+      sw := 0
+      every sw +:= (!self.table_header.children).column_width
+      return sw
+   end
+
+   #
+   # Compute the widths of any columns whose width is unset.
+   # @p
+   method auto_size_columns()
+      local col, l, sw, dw
+
+      l := []
+      sw := 0
+      every col := !self.table_header.children do
+         (sw +:= \col.column_width) | put(l, col)
+      
+      if *l = 0 then
+         return
+
+      # The width to give the auto size columns.
+      dw := (self.w - 2 * DEFAULT_SP_X_PADDING - SB_SIZE - sw) / *l
+      dw <:= 10
+
+      every (!l).column_width := dw
+   end
+
    method resize()
       self.Component.compute_absolutes()
+
+      auto_size_columns()
 
       /self.head_h := WAttrib(self.cwin, "fheight") +  2 * DEFAULT_TEXT_Y_SURROUND + 2 * BORDER_WIDTH
 

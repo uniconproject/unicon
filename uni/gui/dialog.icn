@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.16 2006-06-30 20:55:34 rparlett Exp $
+# $Id: dialog.icn,v 1.17 2006-07-08 14:52:19 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -352,7 +352,7 @@ class Dialog : Component(
 
    method process_event(e)
       if e === 1000 then {
-         do_invokes()
+         do_invoke()
       }
 
       if e === -11 then {
@@ -799,11 +799,11 @@ class Dialog : Component(
    end
 
    #
-   # Call any methods added via invoke_later().
+   # Call a method added via invoke_later().
    # @p
-   method do_invokes()
+   method do_invoke()
       local e
-      while e := pop(self.invokes) do {
+      if e := pop(self.invokes) then {
          e[1](e[2], e[3])
       }
    end

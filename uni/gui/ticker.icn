@@ -1,5 +1,5 @@
 #
-# $Id: ticker.icn,v 1.5 2004-10-15 09:04:40 rparlett Exp $
+# $Id: ticker.icn,v 1.6 2006-07-08 14:51:44 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -28,9 +28,22 @@ $include "guih.icn"
 # @ t.connect(obj, "on_tick", TICK_EVENT)
 # @ t.start(2000)
 #
+# Other effects of the start method :-
+#
+# @example
+# @ # Run every 0.5s, but wait for 7s before the first call
+# @ # t.start(500, 7000)
+# @ #
+# @ # Run every 0.5s, no initial delay, but invoke 10 times only.
+# @ # t.start(500,, 10)
+# @ #
+# @ # Run just once with no initial delay.
+# @ # t.start(,, 1)
+#
 class Ticker : Object : Connectable(
    ticker_rate,             # Ticker rate
-   next_tick_time           # Time of next tick
+   next_tick_time,          # Time of next tick
+   ticker_count             # Num of times to invoke
    )
 
    #
@@ -45,11 +58,13 @@ class Ticker : Object : Connectable(
    # Start the ticker process, with the {tick()}
    # method being invoked approximately every {n} milliseconds.
    #
-   # @param n   the ticker interval in milliseconds.
+   # @param n   the ticker interval in milliseconds (default 0, ie 
+   #            repeat as regularly as possible).
    # @param d   the initial delay, if any (default 0)
+   # @param c   the number of times to invoke (default infinite).
    #
-   method start(n, d)
-      dispatcher.start_ticker(self, n, d)
+   method start(n, d, c)
+      dispatcher.start_ticker(self, n, d, c)
    end
 
    #

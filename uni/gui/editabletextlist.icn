@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.20 2006-01-04 17:27:55 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.21 2006-07-09 23:43:07 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -118,7 +118,7 @@ class EditableTextList : LineBasedScrollArea(
    #     
    # @p
    method constrain_cursor()
-      local vi, v
+      local vi, v, s, i, j, l
 
       vi := get_view_list_index()
 
@@ -428,7 +428,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method tick()
-      local l, s, v, vi
+      local l, s, v, vi, e
 
       start_handle(e)
 
@@ -573,6 +573,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method handle_key_page_up(e)
+      local i
       start_handle(e)
       keyboard_mark()
       if i := (\self.vsb).get_value() then {
@@ -584,6 +585,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method handle_key_page_down(e)
+      local i
       start_handle(e)
       keyboard_mark()
       if i := (\self.vsb).get_value() then {
@@ -766,7 +768,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method draw_line(xp, yp, i, rev)
-      local si, s, off, off1, off2, v, r
+      local si, s, off, off1, off2, v, r, cw
 
       v := self.view_list[i]
       s := v.str
@@ -945,7 +947,7 @@ class EditableTextList : LineBasedScrollArea(
    # be added.
    #
    method update_view_list(index, del, add)
-      local vi, i, pos, j, v, p
+      local vi, i, pos, j, v, p, s
 
       vi := get_view_list_index(1, index)
 

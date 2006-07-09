@@ -1,5 +1,5 @@
 #
-# $Id: tree.icn,v 1.8 2006-01-16 00:29:25 rparlett Exp $
+# $Id: tree.icn,v 1.9 2006-07-09 23:43:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -32,6 +32,7 @@ class Tree : SelectableScrollArea(
    )
 
    method get_line_height()
+      local res
       res:= WAttrib(self.cwin, "fheight")
       #
       # Ensure the line height is slightly greater than the
@@ -42,6 +43,7 @@ class Tree : SelectableScrollArea(
    end
 
    method get_subject_width()
+      local mw, s
       mw := 0
       every s := !self.contents do
          mw <:= col_w * s.depth + col_w + TextWidth(self.cwin, s.label)
@@ -132,6 +134,7 @@ class Tree : SelectableScrollArea(
    end
 
    method compute_bmp_wh()
+      local n, bmps
       bmp_w := bmp_h := 0
 
       every n := root_node.generate_all_preorder() do {
@@ -156,6 +159,7 @@ class Tree : SelectableScrollArea(
    # @return  A list of nodes.
    #
    method flatten()
+      local l, sub
       l := []
       if \self.show_root then {
          if \self.show_root_handles then
@@ -177,6 +181,7 @@ class Tree : SelectableScrollArea(
    end
 
    method flatten2(l, n, dl)
+      local sub
       n.draw_line := dl
       n.depth := *dl
       put(l, n)
@@ -188,7 +193,7 @@ class Tree : SelectableScrollArea(
    end
 
    method handle_press(e)
-      local l, lno, N, curr_sel
+      local l, lno, N, curr_sel, yp, xp
       if (self.view.x <= &x < self.view.x + self.view.w) & (self.view.y  <= &y < self.view.y + self.view.h) then {
          lno := (&y - self.view.y) / self.line_height
          l := lno + self.get_first_line()
@@ -228,7 +233,7 @@ class Tree : SelectableScrollArea(
    end
 
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
-      local N, dashed, lp, j
+      local N, dashed, lp, j, bmps, img, little
 
       N := contents[i]
       dashed := Clone(self.cbwin, "pattern=gray", "fillstyle=textured")

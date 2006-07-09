@@ -1,5 +1,5 @@
 #
-# $Id: palette.icn,v 1.1 2004-02-12 16:21:57 rparlett Exp $
+# $Id: palette.icn,v 1.2 2006-07-09 23:43:11 rparlett Exp $
 #
 
 import gui
@@ -53,6 +53,7 @@ class Palette : SubMenu(
    # and give the top left hand corner of the display. 
    #
    method display()
+      local c1, y1, e, x1, cw
       if /self.temp_win then {
          #
          # Open a temporary area for the menu and copy.
@@ -90,6 +91,7 @@ class Palette : SubMenu(
    # Test whether pointer in palette_region, and if so which cell it's in
    #
    method in_palette_region()
+      local x1, y1
       if (self.x <= &x < self.x + self.w) & (self.y <= &y < self.y + self.h) then {
          x1 := (&x - self.x - BORDER_WIDTH) / CELL_WIDTH
          y1 := (&y - self.y - BORDER_WIDTH) / CELL_WIDTH
@@ -101,6 +103,7 @@ class Palette : SubMenu(
    # Will be called if our menu is open.
    #
    method handle_event(e)
+      local i
       if i := self.in_palette_region() then {
          if integer(e) = (&lrelease | &rrelease | &mrelease) then {
             self.colour := i
@@ -120,6 +123,7 @@ class Palette : SubMenu(
    # Close this menu.
    #
    method hide()
+      local cw
       #
       # Restore window area.
       #

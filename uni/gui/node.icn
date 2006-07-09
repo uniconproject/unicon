@@ -1,5 +1,5 @@
 #
-# $Id: node.icn,v 1.5 2006-07-09 13:30:00 rparlett Exp $
+# $Id: node.icn,v 1.6 2006-07-09 23:43:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -67,6 +67,7 @@ class Node : SetFields : Object(
    # Expand all the {Nodes} below this node.
    #
    method expand()
+      local n
       every n := generate_all_postorder() do
          if *n.subnodes > 0 then
             n.is_expanded_flag := 1
@@ -177,6 +178,7 @@ class Node : SetFields : Object(
    # Delete the given {Node} from the subnodes.
    #
    method delete_node(n)
+      local i
       every i := 1 to *self.subnodes do {
          if n === self.subnodes[i] then {
             delete(self.subnodes, i)

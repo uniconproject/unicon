@@ -1,5 +1,5 @@
 #
-# $Id: canvasimage.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvasimage.icn,v 1.2 2006-07-09 23:43:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -18,6 +18,7 @@ class CanvasImage : CanvasComponent : Image()
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local s
       self.CanvasComponent.gen_code(c)
       s := \self.filename | ""
       c.line(name || ".set_filename(" || image(s) || ")")
@@ -40,6 +41,7 @@ class CanvasImage : CanvasComponent : Image()
    # Copy object.
    #
    method cp()
+      local c
       c := CanvasImage()
       self.CanvasComponent.cp(c)
       self.cp_fields(c)
@@ -50,6 +52,7 @@ class CanvasImage : CanvasComponent : Image()
    # Duplicate object.
    #
    method dup(pc)
+      local c
       c := CanvasImage()
       self.CanvasComponent.dup(c, pc)
       self.cp_fields(c)
@@ -72,6 +75,7 @@ class CanvasImage : CanvasComponent : Image()
    # Overrides Image.display() 
    #
    method display(buffer_flag)
+      local W
       if \self.filename then
          self.Image.display(buffer_flag)
       else {

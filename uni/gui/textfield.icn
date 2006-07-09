@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.12 2006-03-29 08:50:27 jeffery Exp $
+# $Id: textfield.icn,v 1.13 2006-07-09 23:43:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -409,7 +409,7 @@ class TextField : Component(
       end_handle(e)
    end
 
-   method handle_undo()
+   method handle_undo(e)
       start_handle(e)
       if undo_manager.can_undo() then {
          undo_manager.undo()
@@ -418,7 +418,7 @@ class TextField : Component(
       end_handle(e)
    end
 
-   method handle_redo()
+   method handle_redo(e)
       start_handle(e)
       if undo_manager.can_redo() then {
          undo_manager.redo()
@@ -449,11 +449,11 @@ class TextField : Component(
             "\^a" : handle_select_all(e)
             "\^e" : handle_end_of_line(e)
             "\d" | "\^d" : handle_delete_right(e)
-            "\^x" :  handle_cut()
-            "\^c" :  handle_copy()
-            "\^v" :  handle_paste()
-            "\^z" :  handle_undo()
-            "\^y" :  handle_redo()
+            "\^x" :  handle_cut(e)
+            "\^c" :  handle_copy(e)
+            "\^v" :  handle_paste(e)
+            "\^z" :  handle_undo(e)
+            "\^y" :  handle_redo(e)
             default : handle_default(e)
          }
       }

@@ -1,5 +1,5 @@
 #
-# $Id: groupsetdialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: groupsetdialog.icn,v 1.2 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -37,6 +37,7 @@ class GroupSetDialog : CommonDialog(
    end
 
    method on_struct()
+      local i, new
       if i := struct.get_selections()[1] then {
          new := c.boxes[i]
          apply.clear_is_shaded()
@@ -55,6 +56,7 @@ class GroupSetDialog : CommonDialog(
    end
 
    method on_apply()
+      local r
       r := c.boxes[struct.get_selections()[1]]
       r.name := col_name.get_contents()
       r.class_name := col_class_name.get_contents()
@@ -80,6 +82,8 @@ class GroupSetDialog : CommonDialog(
    end
 
    initially
+      local label, b, l
+
       self.CommonDialog.initially()
 
       lang::get_class_name(c) ? {

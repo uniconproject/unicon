@@ -41,7 +41,7 @@ class TTExplorer : Dialog(bits_col, date_col, file_col, size_col, tt, tree)
    # Given a Node n, load its children with the sub-directories.
    #
    method load_subtree(n)
-      local s, name, r1, dir_list, file_list
+      local s, name, r1, dir_list, file_list, l, p
 
       s := get_full_path(n)
 
@@ -62,6 +62,7 @@ class TTExplorer : Dialog(bits_col, date_col, file_col, size_col, tt, tree)
    end
 
    method component_setup()
+      local root_node
       self.setup()
       tree := tt.get_table_content()
       tree.connect(self, "handle_tree_expansion", TREE_NODE_EXPANSION_EVENT)

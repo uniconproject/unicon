@@ -1,5 +1,5 @@
 #
-# $Id: demo.icn,v 1.4 2004-08-15 16:11:45 rparlett Exp $
+# $Id: demo.icn,v 1.5 2006-07-09 23:43:11 rparlett Exp $
 #
 
 import gui
@@ -57,6 +57,7 @@ class TreeDialog : Dialog(pb, b, root_node)
    # Traverse whole of directory tree s into root node r - no recursive descent
    #
    method traverse_one_level(r)
+      local s, l, t, r1
       s := get_full_path(r)
 
       l := get_directory_list(s)
@@ -76,6 +77,7 @@ class TreeDialog : Dialog(pb, b, root_node)
    end
    
    initially
+      local l
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=400,300"])
 
@@ -164,7 +166,7 @@ class BorderDialog : Dialog(b1, b2, b3, b)
    end
 
    initially
-      local l
+      local l, c1, l1, t1
 
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=300,370"])
@@ -215,6 +217,7 @@ end
 
 class ColourRectangle : Component(r, g, b)
    method display(buffer_flag)
+      local W
       W := if /buffer_flag then self.cwin else self.cbwin
       FreeColor(W, WAttrib(self.cwin, "fg"))
       WAttrib(W, "fg=" || r || "," || g || "," || b)
@@ -346,7 +349,7 @@ class MenuDialog : Dialog(mb, b, mi1, mi2, mi3, mi4, mi5, mi6, mi7, mi8, mi9, mi
    end
 
    initially
-      local l, m1, m2, m3
+      local l, m1, m2, m3, cb, mbb, m4, menu_item
 
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=400,300"])
@@ -665,6 +668,7 @@ class TableDialog : Dialog(b, c1, c2, tbl, data)
 end
 
 procedure qsort(l, comp, first, last)
+   local i, j, pivot
    /first := 1
    /last := *l
 
@@ -885,7 +889,10 @@ class ButtonDialog1 : Dialog(b, b1, b2, b3)
    end
 
    initially
-      local l
+      local l, toolbar, button_group_1,
+         exit_icon_button,add_icon_button,open_icon_button,delete_icon_button,
+         download_icon_button,edit_icon_button,expand_icon_button,check_box_group_1,
+         graph_icon_button,table_icon_button,save_icon_button,print_icon_button
 
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=400,300"])
@@ -1314,7 +1321,7 @@ class TabSetDialog : Dialog(b, t1, t2, t3, t4, t5, b1, b2, b3, b4, b5)
    end
 
    initially
-      local l
+      local l,tc,c,c1,c2,c3,t
 
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=400,400"])
@@ -1620,7 +1627,7 @@ class ImageDialog : Dialog(b)
    end
 
    initially
-      local l, i1, i2, i3
+      local l, i1, i2, i3, j1, j2, j3
 
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=400,400"])
@@ -1806,7 +1813,7 @@ class IntroDialog : Dialog(b)
    end
    
    initially
-      local l
+      local l, msg, i, s
 
       self.Dialog.initially()
       self.set_attribs_list(global_attribs ||| ["size=400,400"])

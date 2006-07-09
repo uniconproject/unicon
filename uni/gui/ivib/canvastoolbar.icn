@@ -1,5 +1,5 @@
 #
-# $Id: canvastoolbar.icn,v 1.3 2005-12-30 17:42:33 rparlett Exp $
+# $Id: canvastoolbar.icn,v 1.4 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -14,18 +14,11 @@ import gui
 # Class for representing a ToolBar on the canvas.
 #
 class CanvasToolBar : CanvasPanel : ToolBar()
-   # 
-   # Override to stop the Ticker starting.
-   #
-   method firstly()
-      self.Panel.firstly()
-      state := 5
-   end
-
    #
    # Copy object.
    #
    method cp()
+      local c
       c := CanvasToolBar()
       self.CanvasComponent.cp(c)
       every put(c.children, (!self.children).cp())
@@ -36,6 +29,7 @@ class CanvasToolBar : CanvasPanel : ToolBar()
    # Duplicate object.
    #
    method dup(pc)
+      local c
       c := CanvasToolBar()
       self.CanvasComponent.dup(c, pc)
       every c.add((!self.children).dup(pc))

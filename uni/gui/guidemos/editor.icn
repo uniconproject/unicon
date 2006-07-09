@@ -1,5 +1,5 @@
 #
-# $Id: editor.icn,v 1.2 2005-03-15 18:46:27 rparlett Exp $
+# $Id: editor.icn,v 1.3 2006-07-09 23:43:11 rparlett Exp $
 #
 
 import gui
@@ -8,7 +8,7 @@ $include "guih.icn"
 class Editor : Dialog(curr_file_name, text, text_menu_item_1, text_menu_item_2, text_menu_item_3,
                       cut_item, copy_item, paste_item, undo_item, redo_item)
    method load(s)
-      local f
+      local f, l
 
       l := []
       if f := ::open(s) then {
@@ -34,6 +34,7 @@ class Editor : Dialog(curr_file_name, text, text_menu_item_1, text_menu_item_2, 
    end
 
    method handle_open(ev)
+      local fd, s
       fd := FileDialog()
       fd.show_modal()
       if s := fd.get_result() then
@@ -79,7 +80,8 @@ class Editor : Dialog(curr_file_name, text, text_menu_item_1, text_menu_item_2, 
    end
 
    method setup()
-      local menu_bar_1, menu_1
+      local menu_bar_1, menu_1,menu_2, cbg, menu_3, ww_off_item, 
+         ww_width_item, ww_40_item, ww_80_item
       self.set_attribs("size=323,345", "label=Editor", "resize=on")
       text := EditableTextList()
       text.set_pos("20", "40")

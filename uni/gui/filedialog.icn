@@ -1,5 +1,5 @@
 #
-# $Id: filedialog.icn,v 1.5 2005-01-20 00:00:44 jeffery Exp $
+# $Id: filedialog.icn,v 1.6 2006-07-09 23:43:07 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -93,6 +93,7 @@ class FileDialog : Dialog(
    #
    # @p
    method get_std_dir()
+      local s
       s := dir.get_contents()
       if (s[-1] ~== PATHCHAR) then
          s ||:= PATHCHAR
@@ -114,6 +115,7 @@ class FileDialog : Dialog(
    end
 
    method on_dlist()
+      local s, value, l
       #
       # Clicked in the directory list; get the item clicked on.
       #
@@ -151,6 +153,7 @@ class FileDialog : Dialog(
    end
 
    method on_dir()
+      local s, l
       #
       # Return pressed in directory TextField; update lists.
       #
@@ -233,8 +236,8 @@ end
 # Read a directory.
 #
 procedure get_directory_list(s)
-   local dir_list, file_list
-   /fatal_error := stop
+   local dir_list, file_list, p, s2, sr
+
 $ifdef _MS_WINDOWS_NT
    s := map(s,"/","\\")
    if (*s > 1) & (s[-1] == PATHCHAR) & (map(s,&letters,repl("a",52)) ~== "a:\\") then

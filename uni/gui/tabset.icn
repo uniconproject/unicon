@@ -1,5 +1,5 @@
 #
-# $Id: tabset.icn,v 1.5 2004-11-05 19:24:55 rparlett Exp $
+# $Id: tabset.icn,v 1.6 2006-07-09 23:43:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -80,6 +80,7 @@ class TabSet : Component(
    #
    # @p
    method which_tab()
+      local l, c
       l := (&y - self.y) / self.line_h + 1
       every c := !self.line_break[l] do {
          if c.is_unshaded() & (c.label_x <= &x < c.label_x + c.label_w) then
@@ -92,6 +93,7 @@ class TabSet : Component(
    #
    # @p
    method adjust_lines()
+      local l
       l := self.which_one.line_no
       self.line_break[l] :=: self.line_break[self.lines]
       every (!self.line_break[l]).line_no := l
@@ -121,6 +123,7 @@ class TabSet : Component(
    end
 
    method handle_event(e)
+      local m
       if &meta & m := find_key(e) then {
          self.set_which_one(m)
          fire(SELECTION_CHANGED_EVENT, e)     
@@ -151,6 +154,7 @@ class TabSet : Component(
    #
    # @p
    method how_many_lines(pad)
+      local t, l, cl, c, lw
       t := 0
       l := []
       cl := []
@@ -177,6 +181,7 @@ class TabSet : Component(
    end
 
    method compute_absolutes()
+      local pad, l2, n, curr_line, t, c, d
       if *self.children = 0 then
          fatal("no TabItems in TabSet")
 

@@ -1,5 +1,5 @@
 #
-# $Id: canvascheckboxmenuedit.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvascheckboxmenuedit.icn,v 1.2 2006-07-09 23:43:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -55,6 +55,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
    end
    
    method on_browse_up()
+      local fd, s
       fd := FileDialog()
       fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
       fd.set_fields(global_attribs)
@@ -65,6 +66,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
    end
 
    method on_browse_down()
+      local fd, s
       fd := FileDialog()
       fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
       fd.set_fields(global_attribs)
@@ -159,6 +161,7 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
    end
 
    method on_browse_right()
+      local fd
       fd := FileDialog()
       fd.set_directory(\self.c.parent_component.parent_Canvas.parent_dialog.last_icon_dir)
       fd.set_fields(global_attribs)
@@ -169,6 +172,8 @@ class CanvasCheckBoxMenuEdit : MenuComponentEdit(
    end
 
    initially
+      local fd, img_up, img_down, main_panel, l,
+         panel_1, label_3, panel_2, label_4, p_right
       self.MenuComponentEdit.initially()
       self.setup(c)
       self.set_attribs("size=540,400", "label=" || label)

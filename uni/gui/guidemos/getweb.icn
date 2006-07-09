@@ -1,11 +1,12 @@
 #
-# $Id: getweb.icn,v 1.1 2004-02-12 16:21:56 rparlett Exp $
+# $Id: getweb.icn,v 1.2 2006-07-09 23:43:11 rparlett Exp $
 #
 
 import gui
 import util
 import http
 import ipc
+import net
 
 $include "guih.icn"
 
@@ -20,7 +21,7 @@ class GetWeb : Dialog(text_list_1, text_button_1, text_button_2, text_button_3, 
 
       data := []
       text_list_1.set_contents(data)
-      bp := GetHttpGui()
+      #bp := GetHttpGui()
       mq := ipc::create_private_msg()
       bp.set_url(url)
       bp.set_mq(mq)
@@ -42,9 +43,10 @@ class GetWeb : Dialog(text_list_1, text_button_1, text_button_2, text_button_3, 
    end
 
    method tick()
+      local r, s
       while r := mq.poll(0) do {
          if integer(r) then {
-            s := http::decode_code(r)
+            #s := http::decode_code(r)
             put(data, "Status " || s)
             if s == "Failed" then {
                bp.join()

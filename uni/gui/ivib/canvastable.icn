@@ -1,5 +1,5 @@
 #
-# $Id: canvastable.icn,v 1.2 2006-07-03 17:07:08 rparlett Exp $
+# $Id: canvastable.icn,v 1.3 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -32,6 +32,7 @@ class CanvasTable : CanvasComponent : Table(select_one, select_many, columns)
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local i
       self.CanvasComponent.gen_code(c)
       if \self.select_one then
          c.line(self.name || ".set_select_one()")
@@ -58,6 +59,7 @@ class CanvasTable : CanvasComponent : Table(select_one, select_many, columns)
    # Copy object.
    #
    method cp()
+      local c
       c := CanvasTable()
       self.CanvasComponent.cp(c)
       every c.add_column((!self.get_columns()).cp())
@@ -69,6 +71,7 @@ class CanvasTable : CanvasComponent : Table(select_one, select_many, columns)
    # Duplicate object.
    #
    method dup(pc)
+      local c
       c := CanvasTable()
       self.CanvasComponent.dup(c, pc)
       every c.add_column((!self.get_columns()).dup(pc))

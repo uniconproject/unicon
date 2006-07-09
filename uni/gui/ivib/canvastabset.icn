@@ -1,5 +1,5 @@
 #
-# $Id: canvastabset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvastabset.icn,v 1.2 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -18,6 +18,7 @@ class CanvasTabSet : CanvasComponent : TabSet()
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local i
       self.CanvasComponent.gen_code(c)
       every i := !self.children do {
          i.gen_code(c)
@@ -36,6 +37,7 @@ class CanvasTabSet : CanvasComponent : TabSet()
    # Copy object.
    #
    method cp()
+      local c, e, e1
       c := CanvasTabSet()
       self.CanvasComponent.cp(c)
       every e := !self.children do {
@@ -51,6 +53,7 @@ class CanvasTabSet : CanvasComponent : TabSet()
    # Duplicate object.
    #
    method dup(pc)
+      local c, e, e1
       c := CanvasTabSet()
       self.CanvasComponent.dup(c, pc)
       every e := !self.children do {
@@ -91,6 +94,7 @@ class CanvasTabSet : CanvasComponent : TabSet()
    # Overrides CanvasComponent.which_cursor_over() 
    #
    method which_cursor_over()
+      local o
       #
       # If over one of the objects in the current item, return it.
       #
@@ -112,6 +116,7 @@ class CanvasTabSet : CanvasComponent : TabSet()
    end
 
    method string_rep()
+      local l, c, s
       l := []
       every c := !self.children do {
          s := c.name

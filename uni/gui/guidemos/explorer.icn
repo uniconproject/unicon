@@ -1,5 +1,5 @@
 #
-# $Id: explorer.icn,v 1.2 2004-11-13 23:40:53 rparlett Exp $
+# $Id: explorer.icn,v 1.3 2006-07-09 23:43:11 rparlett Exp $
 #
 
 import gui
@@ -68,7 +68,7 @@ class Explorer : Dialog(tree,
    # Given a Node n, load its children with the sub-directories.
    #
    method load_subtree(n)
-      local s, name, r1, dir_list, file_list
+      local s, name, r1, dir_list, file_list, l
 
       s := get_full_path(n)
 
@@ -89,7 +89,7 @@ class Explorer : Dialog(tree,
    # sub-directories.
    #
    method load_table(n)
-      local s, l, t
+      local s, l, t, el, p
 
       s := get_full_path(n)
 
@@ -111,6 +111,7 @@ class Explorer : Dialog(tree,
    # everything.
    #
    method handle_sizer(ev)
+      local result_x
       result_x := sizer.get_curr_pos()
       tree.set_size(result_x - 10, tree.h_spec)
       sizer.set_pos(result_x, sizer.y_spec)

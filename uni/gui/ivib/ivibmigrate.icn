@@ -1,5 +1,5 @@
 #
-# $Id: ivibmigrate.icn,v 1.2 2004-11-11 20:06:09 rparlett Exp $
+# $Id: ivibmigrate.icn,v 1.3 2006-07-09 23:43:13 rparlett Exp $
 #
 
 #
@@ -125,6 +125,7 @@ class ClassProxy(name, l)
    end
 
    method get_value(s)
+      local x
       every x := !l do {
          if x[1] == s then
             return x[2]
@@ -141,7 +142,7 @@ end
 #
 class CustomDecode : Decode(cs)
    method decode_class()
-      local cname, res, n, i, key, val
+      local cname, res, n, i, key, val, c
 
       cname := line_in() | fail
 
@@ -420,6 +421,7 @@ procedure create_converterset()
 end
 
 procedure migrate(s)
+   local cs, d, o, e
    cs := create_converterset()
    d := CustomDecode(cs, s)
    o := d.decode() | fail

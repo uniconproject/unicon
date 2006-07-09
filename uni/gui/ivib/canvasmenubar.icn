@@ -1,5 +1,5 @@
 #
-# $Id: canvasmenubar.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvasmenubar.icn,v 1.2 2006-07-09 23:43:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -21,6 +21,7 @@ class CanvasMenuBar : CanvasComponent : MenuBar(
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local i
       self.CanvasComponent.gen_code(c)
       every i := !self.menus do {
          i.gen_code(c)
@@ -38,6 +39,7 @@ class CanvasMenuBar : CanvasComponent : MenuBar(
    # Copy object.
    #
    method cp()
+      local c
       c := CanvasMenuBar()
       self.CanvasComponent.cp(c)
       every c.add((!self.menus).cp(c))
@@ -48,6 +50,7 @@ class CanvasMenuBar : CanvasComponent : MenuBar(
    # Duplicate object.
    #
    method dup(pc)
+      local c
       c := CanvasMenuBar()
       self.CanvasComponent.dup(c, pc)
       every c.add((!self.menus).dup(c))
@@ -82,7 +85,7 @@ class CanvasMenuBar : CanvasComponent : MenuBar(
    # Set the menu bar's string representation.
    #
    method set_string_rep()
-      local sub
+      local sub, i
       string_rep := []
       every sub := self.menus[i := 1 to *self.menus] do 
          sub.set_string_rep(string_rep, 1, self, i)

@@ -1,5 +1,5 @@
 #
-# $Id: canvasoverlayitem.icn,v 1.2 2005-07-20 13:23:19 rparlett Exp $
+# $Id: canvasoverlayitem.icn,v 1.3 2006-07-09 23:43:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -18,6 +18,7 @@ class CanvasOverlayItem : CanvasComponent : OverlayItem()
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local i
       c.add_var(self.name, class_variable)
       c.add_import(self.import_name)
       c.line(name || " := " || self.class_name || "()")
@@ -37,6 +38,7 @@ class CanvasOverlayItem : CanvasComponent : OverlayItem()
    # Copy object.
    #
    method cp()
+      local c
       c := CanvasOverlayItem()
       self.CanvasComponent.cp(c)
       every c.add((!self.children).cp())
@@ -47,6 +49,7 @@ class CanvasOverlayItem : CanvasComponent : OverlayItem()
    # Duplicate object.
    #
    method dup(pc)
+      local c
       c := CanvasOverlayItem()
       self.CanvasComponent.dup(c, pc)
       every c.add((!self.children).dup(pc))
@@ -81,6 +84,7 @@ class CanvasOverlayItem : CanvasComponent : OverlayItem()
    # Overrides CanvasComponent.inside()
    #
    method inside(c)
+      local e, o
       every e := !self.children do
          if o := e.inside(c) then
             return o
@@ -93,6 +97,7 @@ class CanvasOverlayItem : CanvasComponent : OverlayItem()
    # Overrides CanvasComponent.which_cursor_over() 
    #
    method which_cursor_over()
+      local e, o
       every e := rev(self.children) do
          if o := e.which_cursor_over() then
             return o

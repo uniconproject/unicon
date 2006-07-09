@@ -1,5 +1,5 @@
 #
-# $Id: code.icn,v 1.6 2005-07-20 13:21:57 rparlett Exp $
+# $Id: code.icn,v 1.7 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -101,6 +101,7 @@ class Code(
    # Output the code to file called s.
    #
    method output_code(s)
+      local f
       f := open(s, "w") | return alert_error("Couldn't open " || s)
 
       if self.imports_out(f) then
@@ -134,6 +135,7 @@ class Code(
    # in dest_name.
    #
    method interpose_code(src_name, dest_name)
+      local f, part1, t, reading_class, id, method_name, part2, temp_name, s
       static idchars
       initial idchars := &letters++&digits++"_"
 
@@ -336,6 +338,8 @@ class Code(
    # Generate the setup() method with the code.
    #
    method setup_out(f)
+      local t, l, s
+
       write(f, indent1, "method setup()")
 
       #

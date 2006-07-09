@@ -1,5 +1,5 @@
 #
-# $Id: main.icn,v 1.12 2006-01-16 02:10:32 rparlett Exp $
+# $Id: main.icn,v 1.13 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -211,6 +211,7 @@ class Main : CommonDialog(
    # Get undo item
    #
    method get_undo()
+      local res
       res := get(undo_list)
       if *undo_list = 0 then
          clear_undo()
@@ -248,6 +249,7 @@ class Main : CommonDialog(
    # Get redo item
    #
    method get_redo()
+      local res
       res := get(redo_list)
       if *redo_list = 0 then
          clear_redo()
@@ -267,6 +269,7 @@ class Main : CommonDialog(
    # Set filename_label to reflect current status of canvas.
    #
    method set_filename_label()
+      local s
       s := \self.canvas.filename | "Untitled"
       if \self.canvas.modified then
          s ||:= " *"
@@ -277,6 +280,7 @@ class Main : CommonDialog(
    # Special custom show to allow a popup during init
    #         
    method custom_show(a)
+      local s, f, c
       self.args := a
       show()
       dispatcher.add(self)
@@ -345,6 +349,7 @@ class Main : CommonDialog(
    # Undo operation.
    #
    method op_Undo()
+      local c
       c := self.get_undo()
       self.push_redo_list(self.canvas.dup())
       self.undo_to(c)
@@ -358,6 +363,7 @@ class Main : CommonDialog(
    # Redo operation.
    #
    method op_Redo()
+      local c
       c := self.get_redo()
       self.push_undo_list(self.canvas.dup())
       self.undo_to(c)
@@ -371,6 +377,7 @@ class Main : CommonDialog(
    # Replace current canvas with c
    #
    method undo_to(c)
+      local i
       #
       # Dispose of current canvas
       #
@@ -545,6 +552,7 @@ class Main : CommonDialog(
    # create it.
    #
    method create_in_canvas(object_ui)
+      local t
       self.push_undo()
       t := object_ui.create_canvas_component(self.canvas)
       add_new_object(t)
@@ -589,6 +597,7 @@ class Main : CommonDialog(
    # Canvas dialog preferences.
    #
    method op_preferences()
+      local t, d
       t := self.canvas.dup()
       d := canvas.dialog()
       d.show_modal(self)
@@ -604,6 +613,7 @@ class Main : CommonDialog(
    # Program preferences (see dialog below).
    #
    method op_prog_preferences()
+      local d
       d := Preferences(self)
       d.show_modal(self)
    end
@@ -612,6 +622,7 @@ class Main : CommonDialog(
    # CheckBoxGroup dialog.
    #
    method op_check_boxes()
+      local t, d
       t := self.canvas.dup()
       d := GroupSetDialog(canvas.checkbox_groups)
       d.show_modal(self)
@@ -625,6 +636,7 @@ class Main : CommonDialog(
    # ButtonGroup dialog.
    #
    method op_button_groups()
+      local t, d
       t := self.canvas.dup()
       d := GroupSetDialog(canvas.button_groups)
       d.show_modal(self)
@@ -638,6 +650,7 @@ class Main : CommonDialog(
    # Save as... operation 
    #
    method op_save_as()
+      local fd, s, c
       fd := FileDialog()
       fd.set_fields(global_attribs)
 
@@ -674,6 +687,7 @@ class Main : CommonDialog(
    # Save operation.
    #
    method op_save()
+      local c
       if /self.canvas.new_file_flag then {
          if /self.canvas.modified then {
             self.info_label.set_label("No changes need to be saved")
@@ -706,6 +720,7 @@ class Main : CommonDialog(
    # About operation.
    #
    method op_about()
+      local d
       d := InfoDialog(["Ivib Version : " || version_number, 
                        "Date : " || version_date, 
                        "Author : " || version_author], "About ivib")
@@ -725,6 +740,7 @@ class Main : CommonDialog(
    # Load component operation.
    #
    method op_component_load(x, y)
+      local fd, s, f, c, d
       fd := FileDialog()
       fd.set_fields(global_attribs)
       fd.set_directory(\last_layout_dir)
@@ -771,7 +787,7 @@ class Main : CommonDialog(
       }
    end
 
-   method load_layout(f)
+   method load_layout(f, fname)
       local s, t
       t := ""
       while s := read(f) do {
@@ -792,7 +808,7 @@ class Main : CommonDialog(
    method load_v1(f, fname)
       local s, c, d
 
-      s := load_layout(f)
+      s := load_layout(f, fname)
       s := migrate(s) |  return alert_error("Unable to migrate " || s)
       if not(c := lang::decode(s)) then
          return alert_error("Invalid file format")
@@ -819,7 +835,7 @@ class Main : CommonDialog(
    #
    method load_v2(f, fname)
       local s, c
-      s := load_layout(f)
+      s := load_layout(f, fname)
       if not(c := lang::decode(s)) then
          return alert_error("Invalid file format")
 
@@ -830,6 +846,7 @@ class Main : CommonDialog(
    # Open file operation.
    #
    method op_open_file()
+      local fd, s, f, c
       if \self.canvas.modified then
          self.save_if_wanted() | fail
 
@@ -861,6 +878,7 @@ class Main : CommonDialog(
    # to appropriate operation.
    #
    method save_if_wanted()
+      local d
       d := SaveChangesDialog()
       d.show_modal(self)
       case d.result() of {
@@ -969,6 +987,7 @@ class Main : CommonDialog(
    end
 
    method read_config_file()
+      local f
       if f := ::open(get_config_file_name()) then {
          if not(self.prefs := lang::decode(read(f))) then {
             self.prefs := Prefs()
@@ -979,7 +998,8 @@ class Main : CommonDialog(
    end
 
    method save_config_file()
-      f := ::open(get_config_file_name(), "w") | return alert_error("Couldn't open config file : " || config_name)
+      local f
+      f := ::open(get_config_file_name(), "w") | return alert_error("Couldn't open config file : " || get_config_file_name())
 
       write(f, lang::encode(self.prefs))
 
@@ -988,6 +1008,9 @@ class Main : CommonDialog(
    end
 
    initially
+      local c, mb, file, edit, alignment_sub_menu, spacing_sub_menu, copy_sub_menu,
+         uis, objects_menu, tb, ui, listener, mi, ui_button, width, m, height
+
       self.CommonDialog.initially()
 
       init_globals()
@@ -1498,6 +1521,7 @@ class Preferences : CommonDialog(c, okay, cancel, undo_size)
    end
 
    initially
+      local b, l
       self.CommonDialog.initially()
       self.set_attribs("size=460,300", "label=Program Preferences")
 

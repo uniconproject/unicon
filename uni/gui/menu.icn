@@ -1,5 +1,5 @@
 #
-# $Id: menu.icn,v 1.7 2006-01-10 23:03:52 rparlett Exp $
+# $Id: menu.icn,v 1.8 2006-07-09 23:43:07 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -69,6 +69,8 @@ class Menu : SubMenu(
    end
 
    method resize()
+      local cw, dy, m
+
       cw := self.parent_component.cwin
 
       self.h := self.max_label_left_w := self.max_label_right_w := self.max_label_mid_w := 0
@@ -120,6 +122,7 @@ class Menu : SubMenu(
    #
    # @p
    method which_item()
+      local m
       every m := !self.children do {
          if /m.is_shaded_flag & (m.label_y <= &y < m.label_y + m.label_h) then
             return m
@@ -127,6 +130,7 @@ class Menu : SubMenu(
    end
 
    method display()
+      local cw, c
       if /self.temp_win then {
          #
          # Open a temporary area for the menu and copy.
@@ -365,6 +369,7 @@ class Menu : SubMenu(
    end
 
    method handle_drag(e)
+      local t
       if in_button_region() then {
          #
          # Drag over region.
@@ -454,6 +459,7 @@ class Menu : SubMenu(
    #
    # @p
    method hide()
+      local cw
       #
       # Recursively close any open sub-menu.
       #

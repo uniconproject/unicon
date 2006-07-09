@@ -1,5 +1,5 @@
 #
-# $Id: canvasoverlayset.icn,v 1.2 2004-11-13 14:33:12 rparlett Exp $
+# $Id: canvasoverlayset.icn,v 1.3 2006-07-09 23:43:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -18,6 +18,7 @@ class CanvasOverlaySet : CanvasComponent : OverlaySet()
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local i
       self.CanvasComponent.gen_code(c)
       every i := !self.children do {
          i.gen_code(c)
@@ -36,6 +37,7 @@ class CanvasOverlaySet : CanvasComponent : OverlaySet()
    # Copy object.
    #
    method cp()
+      local c, e, e1
       c := CanvasOverlaySet()
       self.CanvasComponent.cp(c)
       every e := !self.children do {
@@ -51,6 +53,7 @@ class CanvasOverlaySet : CanvasComponent : OverlaySet()
    # Duplicate object.
    #
    method dup(pc)
+      local c, e, e1
       c := CanvasOverlaySet()
       self.CanvasComponent.dup(c, pc)
       every e := !self.children do {
@@ -91,6 +94,7 @@ class CanvasOverlaySet : CanvasComponent : OverlaySet()
    # Overrides CanvasComponent.which_cursor_over() 
    #
    method which_cursor_over()
+      local o
       #
       # If over one of the objects in the current item, return it.
       #
@@ -127,6 +131,7 @@ class CanvasOverlaySet : CanvasComponent : OverlaySet()
    end
 
    method string_rep()
+      local l, c, s
       l := []
       every c := !self.children do {
          s := c.name

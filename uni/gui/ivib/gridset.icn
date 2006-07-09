@@ -1,5 +1,5 @@
 #
-# $Id: gridset.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: gridset.icn,v 1.2 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -40,6 +40,7 @@ class VGridLine : GridLine()
    # Set the average.
    #
    method set_avg()
+      local s
       s := 0
       every s +:= (!elements).abs_y_spec
       avg := s / *elements
@@ -49,6 +50,7 @@ class VGridLine : GridLine()
    # Is element e in this line?
    #
    method in_line(e)
+      local f
       every f := !elements do
          if abs(f.abs_y_spec - e.abs_y_spec) > GRID_TOLERANCE then
             fail
@@ -59,6 +61,7 @@ class VGridLine : GridLine()
    # Set all the elements' positions
    # 
    method set_positions(spec, align, fix)
+      local e
       every e := !elements do {
          e.c.y_spec := spec
          e.c.y_align := \align
@@ -73,12 +76,14 @@ end
 #
 class HGridLine : GridLine()
    method set_avg()
+      local s
       s := 0
       every s +:= (!elements).abs_x_spec
       avg := s / *elements
    end
 
    method in_line(e)
+      local f
       every f := !elements do
          if abs(f.abs_x_spec - e.abs_x_spec) > GRID_TOLERANCE then
             fail
@@ -86,6 +91,7 @@ class HGridLine : GridLine()
    end
 
    method set_positions(spec, align, fix)
+      local e
       every e := !elements do {
          e.c.x_spec := spec
          e.c.x_align := \align
@@ -107,6 +113,7 @@ class GridSet : Comparator(
    # Determine whether e fits into one of the GridLines
    #
    method which_grid_line(e)
+      local l
       every l := !lines do
          if l.in_line(e) then
             return l
@@ -117,6 +124,7 @@ class GridSet : Comparator(
    # Create a new GridLine and enter e into it.
    #
    method enter_new(e)
+      local new
       new := if orientation == "v" then VGridLine() else HGridLine()
       put(lines, new)
       new.enter(e)
@@ -126,6 +134,7 @@ class GridSet : Comparator(
    # Enter e either into a current GridLine, or a new one.
    #
    method enter(e)
+      local l
       if l := which_grid_line(e) then
          l.enter(e)
       else
@@ -136,6 +145,7 @@ class GridSet : Comparator(
    # Equalize the GridLines.
    #
    method equalize_lines()
+      local delta, i, l
       #
       # Set the averages.
       #

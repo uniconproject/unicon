@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.18 2006-07-08 14:52:40 rparlett Exp $
+# $Id: component.icn,v 1.19 2006-07-09 23:43:07 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -579,6 +579,7 @@ class Component : Object : SetFields : Connectable(
    # dialog reference and creating the cloned windows.
    #
    method init()
+      local i, p
       if /self.parent then
          fatal("incorrect ancestry (parent null)")
       parent_dialog := parent.get_parent_dialog_reference()
@@ -694,6 +695,7 @@ class Component : Object : SetFields : Connectable(
    # contains other components.
    #
    method compute_absolutes()
+      local wh, ww
       #
       # Check for unspecified fields
       #
@@ -902,7 +904,7 @@ class Component : Object : SetFields : Connectable(
    # Drag and drop helper to invoke can_drag
    #
    method invoke_can_drag(ev)
-      local c, x
+      local c, x, o
       every c := !self.children do {
          if x := c.invoke_can_drag(ev) then
             return x

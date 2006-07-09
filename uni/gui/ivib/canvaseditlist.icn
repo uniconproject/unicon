@@ -1,5 +1,5 @@
 #
-# $Id: canvaseditlist.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvaseditlist.icn,v 1.2 2006-07-09 23:43:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -22,6 +22,7 @@ class CanvasEditList : CanvasComponent : EditList(
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local s, t
       self.CanvasComponent.gen_code(c)
 
       s := self.get_contents()
@@ -41,6 +42,7 @@ class CanvasEditList : CanvasComponent : EditList(
    # Copy fields from self to c.
    #
    method cp_fields(c)
+      local s, t
       s := self.get_contents()
       t := self.selection
       c.set_selection_list(copy(self.selection_list))
@@ -56,6 +58,7 @@ class CanvasEditList : CanvasComponent : EditList(
    # Copy object.
    #
    method cp()
+      local c
       c := CanvasEditList()
       self.CanvasComponent.cp(c)
       self.cp_fields(c)
@@ -66,6 +69,7 @@ class CanvasEditList : CanvasComponent : EditList(
    # Duplicate object.
    #
    method dup(pc)
+      local c
       c := CanvasEditList()
       self.CanvasComponent.dup(c, pc)
       self.cp_fields(c)

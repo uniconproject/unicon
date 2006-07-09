@@ -1,5 +1,5 @@
 #
-# $Id: canvas.icn,v 1.5 2006-01-12 16:41:07 rparlett Exp $
+# $Id: canvas.icn,v 1.6 2006-07-09 23:43:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -124,6 +124,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Determine whether all selections are in the same container.
    #
    method same_container()
+      local c, e
       c := selected.parent
       every e := !self.selections do
          if e.parent ~=== c then
@@ -174,6 +175,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Save the component
    #
    method component_save()
+      local fd, s, f, c
       something_selected() | fail
 
       fd := FileDialog()
@@ -194,6 +196,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Copy all the current selections.
    #
    method copy_selections()
+      local t, c
       static copy_count
       initial copy_count := 0
 
@@ -229,6 +232,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Centre all the current selections horizontally.
    #
    method centre_horiz_selections()
+      local e
       something_selected() | fail
 
       self.parent_dialog.push_undo()
@@ -249,6 +253,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Centre all the current selections vertically.
    #
    method centre_vert_selections()
+      local e
       something_selected() | fail
 
       self.parent_dialog.push_undo()
@@ -269,6 +274,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Align the selections horizontally with the highlighted item.
    #
    method align_horiz_selections()
+      local e
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -289,6 +295,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Align the selections vertically with the highlighted item.
    #
    method align_vert_selections()
+      local e
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -309,6 +316,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Equalize the selections' widths
    #
    method equalize_width_selections()
+      local e
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -329,6 +337,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Equalize the selections' heights
    #
    method equalize_height_selections()
+      local e
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -349,6 +358,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Lay out selections end-to-end
    #
    method end_to_end_selections_horizontally()
+      local e, x1
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -371,6 +381,8 @@ class Canvas : Component : SelectiveClassCoding(
    # Lay out selections end-to-end
    #
    method end_to_end_selections_vertically()
+      local e, y1
+
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -393,6 +405,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Copy attributes from first selected to others
    #
    method copy_attribs()
+      local e
       something_selected() | fail
 
       self.parent_dialog.push_undo()
@@ -411,7 +424,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Place the selected items in a grid (see also grid.iol).
    #
    method grid_selections()
-      local rows, cols
+      local rows, cols, e, el
 
       (something_selected() & same_container()) | fail
 
@@ -455,6 +468,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Reorder the items in the selection order.
    #
    method reorder_selections()
+      local i, j
       (something_selected() & same_container()) | fail
 
       self.parent_dialog.push_undo()
@@ -480,7 +494,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Even-space the selections horizontally.
    #
    method even_selections_horizontally()
-      local l
+      local l, r, i
 
       (something_selected() & same_container()) | fail
 
@@ -514,7 +528,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Even-space the selections vertically.
    #
    method even_selections_vertically()
-      local l
+      local l, r, i
 
       (something_selected() & same_container()) | fail
 
@@ -547,7 +561,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Even-space the selections horizontally in the container.
    #
    method even_selections_container_horizontally()
-      local l
+      local l, r, i
 
       (something_selected() & same_container()) | fail
 
@@ -580,7 +594,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Even-space the selections vertically in the container.
    #
    method even_selections_container_vertically()
-      local l
+      local l, r, i
 
       (something_selected() & same_container()) | fail
 
@@ -625,7 +639,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Generate code output (see also code.iol).
    #
    method gen_code()
-      local p
+      local p, c, i
 
       #
       # Create a Code object to contain the generated code.
@@ -741,6 +755,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Restore a fresh tree (from Load or Undo) with fields.
    #
    method restore()
+      local c
       self.resize()
       self.firstly()
       every c := !items do {
@@ -763,6 +778,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Return a copy of the Canvas.
    #
    method dup()
+      local c
       c := Canvas()
       c.parent_dialog := self.parent_dialog
       c.button_groups := self.button_groups.dup(c)
@@ -846,6 +862,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Display the canvas.
    #
    method display(buffer_flag)
+      local cw, i
       #
       # This is a flag to indicate whether to clear the area outside the current canvas size.
       #
@@ -1271,6 +1288,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Mouse left drag.
    #
    method handle_ldrag()
+      local x1, y1
       if \self.is_held then {
          #
          # Moving or resizing an object.
@@ -1456,6 +1474,7 @@ class Canvas : Component : SelectiveClassCoding(
    # the resizing or moving functionality.
    #
    method handle_rpress()
+      local i
       if i := self.which_cursor_over() then {
          self.select(i, if &control then 1 else &null)
          self.invalidate()
@@ -1473,6 +1492,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Fix the selected objects
    #
    method fix()
+      local e
       self.parent_dialog.push_undo()
       every e := !self.selections do
          e.y_fixed := e.x_fixed := e.h_fixed := e.w_fixed := 1
@@ -1483,6 +1503,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Unfix the selected objects. 
    #
    method unfix()
+      local e
       self.parent_dialog.push_undo()
       every e := !self.selections do
          e.y_fixed := e.x_fixed := e.h_fixed := e.w_fixed := &null
@@ -1493,6 +1514,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Which object is the item c in?
    #
    method inside(c)
+      local e, o
       every e := !items do
          if o := e.inside(c) then
             return o
@@ -1529,6 +1551,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Place c outside the canvas.
    #
    method place_outside(c)
+      local i
       #
       # Search for c and delete it from the items list.
       #
@@ -1573,6 +1596,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Which item, if any, is the cursor over?
    #
    method which_cursor_over()
+      local i, o
       if self.in_region() then {
          #
          # Search in reverse order so that the item displayed on top
@@ -1588,6 +1612,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Operation to create a CheckBoxGroup from the current selections.
    #
    method selections_to_cbg()
+      local e, n
       something_selected() | fail
 
       #
@@ -1637,6 +1662,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Operation to create a ButtonGroup from the current selections.
    #
    method selections_to_bg()
+      local e, n
       something_selected() | fail
 
       #
@@ -1667,6 +1693,7 @@ class Canvas : Component : SelectiveClassCoding(
    # Operation to delete the current selections.
    #
    method delete_selections()
+      local e
       something_selected() | fail
 
       self.parent_dialog.push_undo()
@@ -1766,6 +1793,7 @@ class CanvasPreferencesDialog : CommonDialog(
    end
    
    method on_okay()
+      local pair
       # 
       # Validate data
       #
@@ -1813,6 +1841,7 @@ class CanvasPreferencesDialog : CommonDialog(
    end
 
    initially
+      local label, l, ll, s, a, code_tab
       self.CommonDialog.initially()
       c.parent_dialog.save_extra_undo()
       label := "Dialog Preferences"

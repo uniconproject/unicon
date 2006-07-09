@@ -1,5 +1,5 @@
 #
-# $Id: canvasborder.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvasborder.icn,v 1.2 2006-07-09 23:43:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -21,6 +21,7 @@ class CanvasBorder : CanvasComponent : Border()
    # Generate code into Code object c.
    #
    method gen_code(c)
+      local i
       self.CanvasComponent.gen_code(c)
       c.line(name || ".set_internal_alignment(" || image(self.internal_alignment) || ")")
       every i := !self.children do {
@@ -43,6 +44,7 @@ class CanvasBorder : CanvasComponent : Border()
    # Copy object.
    #
    method cp()
+      local c, e
       c := CanvasBorder() 
       self.CanvasComponent.cp(c)
       every e := !self.children do {
@@ -58,6 +60,7 @@ class CanvasBorder : CanvasComponent : Border()
    # Duplicate object.
    #
    method dup(pc)
+      local c, e
       c := CanvasBorder()
       self.CanvasComponent.dup(c, pc)
       every e := !self.children do {
@@ -112,6 +115,7 @@ class CanvasBorder : CanvasComponent : Border()
    # Overrides CanvasComponent.which_cursor_over() 
    #
    method which_cursor_over()
+      local e, o
       every e := rev(self.children) do
          if o := e.which_cursor_over() then
             return o
@@ -124,6 +128,7 @@ class CanvasBorder : CanvasComponent : Border()
    # Overrides Border.display()
    #
    method display(buffer_flag)
+      local W, cw
       W := if /buffer_flag then self.cwin else self.cbwin
       self.Border.display(buffer_flag)
       cw := Clone(W, "linestyle=dashed")
@@ -143,6 +148,7 @@ class CanvasBorder : CanvasComponent : Border()
    # Overrides CanvasComponent.inside()
    #
    method inside(c)
+      local e, o
       every e := !self.children do
          if o := e.inside(c) then
             return o

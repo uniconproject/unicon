@@ -1,5 +1,5 @@
 #
-# $Id: canvasmenubardialog.icn,v 1.1 2004-02-12 16:42:29 rparlett Exp $
+# $Id: canvasmenubardialog.icn,v 1.2 2006-07-09 23:43:12 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -33,7 +33,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    # Insert new into tree, update string representation.
    #
    method update(new)
-      local nl
+      local nl, line, nlines
 
       select_rec.parent.insert(new, select_rec.index)
       c.set_string_rep()
@@ -73,6 +73,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    method on_struct()
+      local l, e, flag
       l := struct.get_selections()
       if *l = 1 then {
          select_rec := struct.get_rec(l[1])
@@ -116,6 +117,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    method on_new_cbg()
+      local l, n, e
       #
       # Should only have been selected if get_rec(!l) are all CanvasCheckBox
       #
@@ -134,6 +136,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
 
 
    method on_add_label()
+      local new
       new := CanvasTextMenuItem()
       new.set_name(c.parent_Canvas.get_new_name(new.name))
       new.set_label("Edit me")
@@ -142,6 +145,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    method on_add_menu()
+      local new
       new := CanvasMenu()
       new.set_name(c.parent_Canvas.get_new_name(new.name))
       new.set_label("Edit me")
@@ -150,6 +154,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    method on_add_separator()
+      local new
       new := CanvasMenuSeparator()
       new.set_name(c.parent_Canvas.get_new_name(new.name))
       update(new)
@@ -157,6 +162,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    method on_add_checkbox()
+      local new
       new := CanvasCheckBoxMenuItem()
       new.set_name(c.parent_Canvas.get_new_name(new.name))
       new.set_label("Edit me")
@@ -198,6 +204,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    method on_browse()
+      local fd, s
       fd := FileDialog()
       fd.set_directory(\self.c.parent_Canvas.parent_dialog.last_icon_dir)
       fd.set_fields(global_attribs)
@@ -208,6 +215,7 @@ class CanvasMenuBarDialog : CanvasComponentDialog(
    end
 
    initially
+      local p
       self.setup(c)
       draw_border.set_is_shaded()
 

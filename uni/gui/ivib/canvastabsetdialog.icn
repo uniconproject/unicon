@@ -1,5 +1,5 @@
 #
-# $Id: canvastabsetdialog.icn,v 1.4 2005-07-27 21:38:37 rparlett Exp $
+# $Id: canvastabsetdialog.icn,v 1.5 2006-07-09 23:43:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -32,6 +32,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
    )
 
    method on_struct()
+      local i, new
       if i := struct.get_selections()[1] & i <= *c.children then {
          new := c.children[i]
          if *c.children > 1 then
@@ -58,6 +59,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
    end
 
    method on_add_col()
+      local new, l, nl, line, nlines
       new := CanvasTabItem()
       new.set_name(c.parent_Canvas.get_new_name(new.name))
       new.set_label("Edit me") 
@@ -100,6 +102,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
    end
 
    method on_apply()
+      local r
       r := c.children[struct.get_selections()[1]]
       r.set_label(self.edit_label.get_contents())
       r.is_shaded_flag := item_shaded.get_status()
@@ -117,6 +120,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
    end
 
    method on_delete()
+      local i
       i := struct.get_selections()[1]
       if c.which_one === c.children[i] then
          c.which_one := c.children[i + 1 | i - 1]
@@ -149,6 +153,7 @@ class CanvasTabSetDialog : CanvasComponentDialog(
    end
 
    initially
+      local p, b, l
       self.setup(c)
       set_w_default.set_is_shaded()
       set_h_default.set_is_shaded()

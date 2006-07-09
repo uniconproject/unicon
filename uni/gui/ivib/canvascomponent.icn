@@ -1,5 +1,5 @@
 #
-# $Id: canvascomponent.icn,v 1.4 2006-01-12 19:11:23 rparlett Exp $
+# $Id: canvascomponent.icn,v 1.5 2006-07-09 23:43:11 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -130,6 +130,7 @@ class CanvasComponent : SelectiveClassCoding(
    # Generate the code into the Code object c.
    #
    method gen_code(c)
+      local t, p
       c.line(name || " := " || self.class_name || "()")
 
       c.line(name || ".set_pos(" || image(self.x_spec) || ", " || image(self.y_spec) || ")")
@@ -200,6 +201,7 @@ class CanvasComponent : SelectiveClassCoding(
    # Copy c (this will also be extended by subclasses).
    #
    method cp(c)
+      local el
       c.set_parent_Canvas(self.parent_Canvas)
 
       self.CanvasComponent.cp_fields(c)
@@ -322,6 +324,7 @@ class CanvasComponent : SelectiveClassCoding(
    # Highlight the given object.
    #
    method do_highlight(W)
+      local cw, i
       cw := Clone(W, "linestyle=dashed")
       Rectangle(cw, self.x - RST, self.y - RST, self.w + 2 * RST, self.h + 2 * RST)
 
@@ -410,6 +413,7 @@ class CanvasComponent : SelectiveClassCoding(
    # Remove object c from the container.
    #
    method place_outside(c)
+      local i
       every i := 1 to *self.children do
          if c === self.children[i] then {
             self.children := self.children[1 : i] ||| self.children[i + 1 : 0]
@@ -431,6 +435,7 @@ class CanvasComponent : SelectiveClassCoding(
    # Reorder selections
    #
    method reorder()
+      local i, j
       every i := 1 to *self.parent_Canvas.selections do {
          every j := i to *self.children do {
             if self.children[j] === self.parent_Canvas.selections[i] then {

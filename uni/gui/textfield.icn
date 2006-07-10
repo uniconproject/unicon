@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.14 2006-07-10 00:09:59 rparlett Exp $
+# $Id: textfield.icn,v 1.15 2006-07-10 00:35:45 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -112,8 +112,7 @@ class TextField : Component(
       self.cursor := *self.contents + 1
       self.leftmost := 1
       clear_mark()
-      if \ (\self.parent_dialog).is_open then
-         compute_bounds()
+      compute_bounds()
       self.invalidate()
       undo_manager.clear()
       return x
@@ -501,6 +500,8 @@ class TextField : Component(
    # @p
    method compute_bounds()
       local s
+
+      is_dialog_open() | return
 
       #
       # Space at end for cursor at end of string

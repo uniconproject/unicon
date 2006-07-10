@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.15 2006-07-10 00:35:45 rparlett Exp $
+# $Id: textfield.icn,v 1.16 2006-07-10 01:07:04 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -112,7 +112,8 @@ class TextField : Component(
       self.cursor := *self.contents + 1
       self.leftmost := 1
       clear_mark()
-      compute_bounds()
+      if is_dialog_open() then
+         compute_bounds()
       self.invalidate()
       undo_manager.clear()
       return x
@@ -483,7 +484,8 @@ class TextField : Component(
       if not(e === (&lpress | &rpress | &mpress)) then {
          self.cursor := *self.contents + 1
          self.mark := 1
-         compute_bounds()
+         if is_dialog_open() then
+            compute_bounds()
       }
       self.Component.got_focus(e)
    end
@@ -500,8 +502,6 @@ class TextField : Component(
    # @p
    method compute_bounds()
       local s
-
-      is_dialog_open() | return
 
       #
       # Space at end for cursor at end of string
@@ -533,6 +533,8 @@ class TextField : Component(
 
    method display(buffer_flag)
       local cp, fh, mp, np, off1, off2, cw
+
+      write("tf display ", if is_dialog_open() then "open" else "not open")
 
       fh := WAttrib(self.cwin, "fheight")
 

@@ -1,5 +1,5 @@
 #
-# $Id: symboltable.icn,v 1.1 2004-02-12 17:03:31 rparlett Exp $
+# $Id: symboltable.icn,v 1.2 2006-07-10 01:25:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -60,6 +60,8 @@ class SymbolTable(packages,
    # This is invoked to load any external package data for the given package.
    #
    method load_external_package(name)
+      local pi, t, classes, sym, si
+
       if member(external_packages_loaded, name) then
          return 
       insert(external_packages_loaded, name)
@@ -99,7 +101,7 @@ class SymbolTable(packages,
    # Add the initialized data from the given FileArg to the table.
    #
    method add_file_arg(fa)
-      local pp, t
+      local pp, t, x
       pp := fa.parsed_program
 
       #
@@ -129,6 +131,7 @@ class SymbolTable(packages,
    end
 
    method dump()
+      local x, y
       write("Internal packages")
       every x := !sort(packages) do {
          write("======== Package ", x[1])

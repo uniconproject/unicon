@@ -1,5 +1,5 @@
 #
-# $Id: util.icn,v 1.1 2004-02-12 17:03:31 rparlett Exp $
+# $Id: util.icn,v 1.2 2006-07-10 01:25:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -18,7 +18,7 @@ end
 
 procedure resolve_include(incl)
    static include_cache, lpath
-   local s
+   local s, el
    initial {
       include_cache := table()
       lpath := []
@@ -46,6 +46,7 @@ procedure resolve_include(incl)
 end
 
 procedure get_include_dependencies(file)
+   local l, f, s, inclname, fullinclname, a, line
    static dependency_cache, filechars
    initial {
       dependency_cache := table()
@@ -78,6 +79,7 @@ procedure get_include_dependencies(file)
 end
 
 procedure find_arg(file)
+   local x
    every x := !all_fileargs do
       if x.file == file then
          return x

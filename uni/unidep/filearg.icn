@@ -1,5 +1,5 @@
 #
-# $Id: filearg.icn,v 1.2 2004-02-15 01:24:37 rparlett Exp $
+# $Id: filearg.icn,v 1.3 2006-07-10 01:25:13 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -51,6 +51,7 @@ class FileArg(file,
    # or perhaps one of the imported symbols, or neither of these.
    #
    method get_unqualified_symbol_info(sym)
+      local l, si
       if member(local_package_level_syms, sym) then
          return local_package_level_syms[sym]
 
@@ -70,6 +71,7 @@ class FileArg(file,
    # in the superclass declarations and in dotted field references.
    #
    method get_unqualified_class_symbol_info(sym)
+      local l, si
       if member(local_package_level_class_syms, sym) then
          return local_package_level_class_syms[sym]
 
@@ -91,6 +93,7 @@ class FileArg(file,
    # Debug function
    #
    method show_imported_syms()
+      local x, s
       write("Imported syms for file " || file || " ==================")
       every x := !sort(imported_syms) do {
          s := x[1] || "-> ["
@@ -107,6 +110,7 @@ class FileArg(file,
    # symbol table, before init2() is called.
    #
    method init1(file) 
+      local sym, si, cl, fc
       self.file := file
       self.parsed_program := ParsedProgram(parse_unicon(file)) | err("Couldn't parse " || file)
       
@@ -161,6 +165,7 @@ class FileArg(file,
    # the main table.
    #
    method init2()
+      local imp, t, x, l
       imported_syms := table()
       imported_class_syms := table()
 
@@ -197,6 +202,7 @@ class FileArg(file,
    # the inherited symbol information for each instance.
    #
    method init3()
+      local fc
       every fc := !filearg_classes do
          fc.init()
 
@@ -207,6 +213,7 @@ class FileArg(file,
    # The final stage creates the dependency information
    #
    method init4()
+      local s, dependency_info, fc, m, p
       if \debug then {
          s := "computing deps for file " || self.file || ".  the local package level syms are : {"
          every s ||:= (!sort(local_package_level_syms))[1] || ","
@@ -233,6 +240,7 @@ class FileArg(file,
 
 
    method add_deps_for_function(pf, self_vars)
+      local local_vars, res1, res2, sym, si
       if \debug then
          write("adding deps for function ", pf.name, " in file ", self.file)
       local_vars := set(pf.args ||| pf.locals ||| pf.statics)
@@ -273,6 +281,7 @@ class FileArg(file,
    end
 
    method scopecheck_expr(node, res1, res2, local_vars, self_vars)
+      local t, si, sym, res
       case type(node) of {
          "treenode": {
             case node.label of {
@@ -335,6 +344,7 @@ class FileArg(file,
    end
 
    method scopecheck_field(node, res1, res2, local_vars, self_vars)
+      local lhs, rhs
       while type(node) == "treenode" & node.label === "field" do {
          lhs := node.children[1]
          rhs := node.children[3]
@@ -371,6 +381,7 @@ class FileArg(file,
    # Helper function to add a dependency from a given SymbolInfo.
    #
    method add_dep(symbol_info)
+      local l
       \symbol_info.filearg | stop("internal error")
 
       if symbol_info.filearg === self then 
@@ -393,6 +404,7 @@ class FileArg(file,
    # Check whether the unused imports set is non-empty
    #
    method check_for_unused_imports()
+      local s, e
       if *unused_imports = 0 then
          return
       s := ""
@@ -407,6 +419,7 @@ class FileArg(file,
    # Check this filearg for circular dependencies.
    #
    method circle_check(l)
+      local s, i, x, y
       if \done_circle_check then
          return
       /l := []
@@ -436,6 +449,7 @@ class FileArg(file,
    # Get the dependencies a s a string for displaying.
    #
    method get_dependency_string()
+      local s, x
       s := ""
       every x := !sort(filearg_dependencies) do {
          s ||:= " " || x[1].file || symbol_info_set_str(x[2])
@@ -453,6 +467,7 @@ class FileArg(file,
    # Get a string suitable for adding to a makefile
    #
    method get_makefile_string(opt)
+      local s, x
       s := convert_filename(file) || " : " || file
       every x := !sort(filearg_dependencies) do {
          s ||:= " " || convert_filename(x[1].file)
@@ -474,7 +489,7 @@ class FileArg(file,
    # Convert a set of SymbolInfo to string
    #
    method symbol_info_set_str(x)
-      local s
+      local s, y
       s := "("
       every y := !sort(x) do {
          s ||:= y.name

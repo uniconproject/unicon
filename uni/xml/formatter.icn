@@ -1,5 +1,5 @@
 #
-# $Id: formatter.icn,v 1.2 2004-01-17 11:37:23 rparlett Exp $
+# $Id: formatter.icn,v 1.3 2006-07-10 12:55:14 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -15,9 +15,10 @@ package xml
 #
 class Formatter()
    method format(n, level)
+      local s
       /level := 0
 
-      if string(n) then
+      if s := string(n) then
          return format_content(s, level)
 
       return case n.get_type() of {
@@ -49,7 +50,7 @@ class Formatter()
 end
 
 procedure xml_escape(s, c)
-   local r 
+   local ch, r
 
    r := ""
    s ? repeat {

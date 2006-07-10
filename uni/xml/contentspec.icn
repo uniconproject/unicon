@@ -1,5 +1,5 @@
 #
-# $Id: contentspec.icn,v 1.1 2003-08-04 17:35:05 jeffery Exp $
+# $Id: contentspec.icn,v 1.2 2006-07-10 12:55:14 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -19,6 +19,7 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
    # Print the structure to the given file.  For debugging.
    #
    method print_structure(f, indent)
+      local i, j, e
       /f := &output
       /indent := 0
       i := repl(" ", indent * 5)
@@ -40,7 +41,7 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
    # Match the given Element with the pattern whose root is this object.
    #
    method pattern_match_element(el)
-      local t
+      local t, x
       #
       # Create a list to match the pattern against.  The list contains
       # values of &null for character portions, and strings being element names
@@ -130,7 +131,7 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
    # Get a string representation of this object.
    #
    method to_string()
-      local s
+      local s, x
       case op of {
          "ANY" | "EMPTY" | "#PCDATA" :
             return op

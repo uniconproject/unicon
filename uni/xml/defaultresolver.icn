@@ -1,5 +1,5 @@
 #
-# $Id: defaultresolver.icn,v 1.3 2004-10-03 15:13:39 rparlett Exp $
+# $Id: defaultresolver.icn,v 1.4 2006-07-10 12:55:14 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -101,7 +101,7 @@ class DefaultResolver : Resolver(public_mapping, uri_cache, cache_uris_flag)
 
    method get_local(sys_id)
       local res, f
-      f := open(sys_id, "r") | fail
+      f := open(sys_id, "r") | return error("Couldn't open:" || sys_id)
       res := ""
       while res ||:= reads(f, 1000)
       close(f)

@@ -1,5 +1,5 @@
 #
-# $Id: xmlelement.icn,v 1.1 2003-08-04 17:35:06 jeffery Exp $
+# $Id: xmlelement.icn,v 1.2 2006-07-10 12:55:15 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -100,6 +100,7 @@ class XmlElement : Element(
    # @param gn the {GlobalName} instance representing the global name
    #
    method get_attribute_global_name(gn)
+      local e
       #
       # Unfortunately we have to iterate through because the GlobalNames
       # are stored in the map by identity.
@@ -138,7 +139,7 @@ class XmlElement : Element(
    end
 
    method print_structure(f, indent, flags)
-      local s, x, i
+      local s, x, i, e, j
 
       if /flags then {
          self.Element.print_structure(f, indent, flags)

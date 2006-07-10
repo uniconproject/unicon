@@ -1,5 +1,5 @@
 #
-# $Id: htmlparser.icn,v 1.4 2006-01-11 16:40:52 rparlett Exp $
+# $Id: htmlparser.icn,v 1.5 2006-07-10 12:55:14 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -82,6 +82,7 @@ class HtmlParser : Parser(doc)
    # Parse the string s returning an HtmlDocument object.
    #
    method parse(s)
+      local i, node
       doc := HtmlDocument()
 
       s ? {
@@ -146,6 +147,8 @@ class HtmlParser : Parser(doc)
    #
    # @p
    method parse_element(start_tag, parent)
+      local res, debug, print_debug, i, node, n
+
       res := HtmlElement()
 
       res.name := start_tag.name
@@ -215,6 +218,8 @@ class HtmlParser : Parser(doc)
    #
    # @p
    method parse_doctype()
+      local res, s, c
+
       res := DocType(doc)
       s := tab(many(idchars)) | fail
       #res.set_name("!" || s)
@@ -237,6 +242,7 @@ class HtmlParser : Parser(doc)
    #
    # @p
    method parse_comment(parent)
+      local res, s
       res := Comment(doc, parent)
       repeat {
          tab(upto('->'))
@@ -298,6 +304,7 @@ class HtmlParser : Parser(doc)
    #
    # @p
    method move_to_node()
+      local s, i, debug, print_debug
       s := ""
       repeat {
          s ||:= tab(upto('<') | 0)
@@ -329,6 +336,7 @@ class HtmlParser : Parser(doc)
    #
    # @p
    method remove_entities(s)
+      local e, res, i
       static entities
       initial {
          entities := table()

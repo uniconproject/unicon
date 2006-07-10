@@ -1,5 +1,5 @@
 #
-# $Id: xmlparser.icn,v 1.4 2004-10-03 15:14:32 rparlett Exp $
+# $Id: xmlparser.icn,v 1.5 2006-07-10 12:55:15 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -141,7 +141,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    method validate_docname()
-      local docname
+      local docname, e
 
       every e := !doc.children do {
          if not(string(e)) & (e.get_type() == "doctype") then {
@@ -347,7 +347,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    method normalize_attvalue1(s, circle)
-      local res, t
+      local res, t, ref, c2, o
       res := ""
       s ? {
          repeat {
@@ -568,6 +568,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_version_info()
+      local c, res
       spaces() | fail
       ="version" | return err("'version' expected")
 
@@ -646,6 +647,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_doctype_decl()
+      local res, s
       res := DocType()
       ="<!DOCTYPE" | return err("'<!DOCTYPE' expected")
       spaces() | fail
@@ -686,6 +688,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_markup_decls()
+      local ref, o, s
       repeat {
          if match("<!ELEMENT") then
             parse_element_decl() | fail
@@ -694,7 +697,7 @@ class XmlParser : Parser : Error(doc,
          else if match("<!ENTITY") then
             parse_entity_decl() | fail
          else if match("<!NOTATION") then
-            parse_notation_decl(doctype) | fail
+            parse_notation_decl() | fail
          else if match("<?") then
             doc.add_child(parse_pi()) | fail
          else if match("<!--") then
@@ -745,6 +748,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_ext_subset_decl()
+      local ref, o, s
       repeat {
          if match("<![") then
             parse_conditional_sect() | fail
@@ -755,7 +759,7 @@ class XmlParser : Parser : Error(doc,
          else if match("<!ENTITY") then
             parse_entity_decl() | fail
          else if match("<!NOTATION") then
-            parse_notation_decl(doctype) | fail
+            parse_notation_decl() | fail
          else if match("<?") then
             doc.add_child(parse_pi()) | fail
          else if match("<!--") then
@@ -796,6 +800,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_sdecl()
+      local c, res
       spaces() | fail
       ="standalone" | return err("'standalone' expected")
 
@@ -824,7 +829,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_element(parent_el)
-      local res, attlist
+      local res, attlist, xs
       res := XmlElement()
       ="<" | return err("'<' expected")
       res.name := parse_name() | fail
@@ -924,7 +929,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_content(parent, circle)
-      local s, o, c2
+      local s, o, c2, ref, cd
 
       repeat {
          if pos(0) then
@@ -1028,7 +1033,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_content_spec()
-      local a
+      local a, i
       if tab(dtd_match("EMPTY")) then
          return ContentSpec("EMPTY")
       else if tab(dtd_match("ANY")) then {
@@ -1090,7 +1095,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_choiceseq()
-      local res, op, a
+      local res, op, a, t
 
       tab(dtd_match("(")) | return err("'(' expected")
       dtd_opt_spaces()
@@ -1122,7 +1127,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_mixed()
-      local res, t, a, seen
+      local res, t, a, seen, n
 
       tab(dtd_match("(")) | return err("( expected")
       dtd_opt_spaces()
@@ -1169,7 +1174,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_attlist_decl()
-      local element_name, t
+      local element_name, t, attr_name, attribute_def, res
       tab(dtd_match("<!ATTLIST")) | return err("'<!ATTLIST' expected")
       dtd_spaces() | fail
       element_name := dtd_parse_name() | fail
@@ -1244,7 +1249,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_notation_type()
-      local res
+      local res, t
 
       res := set()
       tab(dtd_match("NOTATION")) | return err("'NOTATION' expected")
@@ -1592,6 +1597,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_external_id()
+      local res
       res := ExternalID()
       if tab(dtd_match("SYSTEM")) then {
          dtd_spaces() | fail
@@ -1653,6 +1659,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_encoding_decl()
+      local c, res
       spaces() | fail
       ="encoding" | return err("'encoding' expected")
 
@@ -1687,7 +1694,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method parse_notation_decl()
-      local res, name
+      local res, name, pub, sys
       res := NotationDecl()
       tab(dtd_match("<!NOTATION")) | return err("'<!NOTATION' expected")
       dtd_spaces() | fail
@@ -1845,6 +1852,7 @@ class XmlParser : Parser : Error(doc,
    end
 
    method validate_attribute_value(element_name, attdef, name, val) 
+      local l, entity_def, n
       case attdef.def_type of {
          "CDATA" : {
          }
@@ -1994,7 +2002,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method looking_at_space_then(s)
-      local res
+      local res, i
       any(xml_space) | fail
       i := &pos
       tab(many(xml_space))
@@ -2008,7 +2016,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method dtd_looking_at_space_then(s)
-      local res
+      local res, i
       dtd_any(xml_space) | fail
       i := &pos
       tab(dtd_many(xml_space))
@@ -2022,7 +2030,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method looking_at_space_then_cset(c)
-      local res
+      local res, i
       any(xml_space) | fail
       i := &pos
       tab(many(xml_space))
@@ -2036,7 +2044,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method dtd_looking_at_space_then_cset(c)
-      local res
+      local res, i
       dtd_any(xml_space) | fail
       i := &pos
       tab(dtd_many(xml_space))
@@ -2050,6 +2058,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method dtd_match(s)
+      local i, x, c
       i := &pos
       repeat {
          if x := match(s) then
@@ -2066,6 +2075,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method dtd_any(c)
+      local i, x
       i := &pos
       repeat {
          if x := any(c) then
@@ -2079,6 +2089,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method dtd_many(c)
+      local i, x
       i := &pos
 
       repeat {
@@ -2111,6 +2122,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method try_dtd_insert(i)
+      local j, t
       if any('%') then {
          if /in_ext_subset then {
             # Only show an error once; this prevents the same error message
@@ -2163,6 +2175,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method do_namespace_processing_element(resolve_table, el)
+      local k, sub
       #
       # Could be comment, cdata
       #
@@ -2209,6 +2222,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method convert_element(resolve_table, el)
+      local k
       el.global_name := convert_name(resolve_table, el.name) | fail
 
       every k := key(el.attributes) do {
@@ -2258,7 +2272,7 @@ class XmlParser : Parser : Error(doc,
    #
    # @p
    method make_declarations_map(el)
-      local k, uri, prefix
+      local k, uri, prefix, t
 
       t := table()
 
@@ -2298,6 +2312,7 @@ class XmlParser : Parser : Error(doc,
 end
 
 procedure init_xml_globals()
+   local c
    if \xml_space then
       return
    xml_space := ' \t\n\r'

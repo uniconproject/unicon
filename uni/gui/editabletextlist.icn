@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.21 2006-07-09 23:43:07 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.22 2006-07-10 01:13:44 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -82,7 +82,7 @@ class EditableTextList : LineBasedScrollArea(
 
       clear_view_list()
       clear_mark()
-      if \ (\self.parent_dialog).is_open then {
+      if is_dialog_open() then {
          self.cursor_y >:= *self.contents
          self.cursor_x >:= *self.contents[self.cursor_y] + 1
          compute_and_invalidate()
@@ -1009,7 +1009,7 @@ class EditableTextList : LineBasedScrollArea(
          field_error("Bad wrap mode:" || s)
 
       clear_view_list()
-      if \ (\self.parent_dialog).is_open then {
+      if is_dialog_open() then {
          compute_and_invalidate()
          constrain_line()
       }
@@ -1021,7 +1021,7 @@ class EditableTextList : LineBasedScrollArea(
    method set_tab_width(n)
       self.tab_width := n
       clear_view_list()
-      if \ (\self.parent_dialog).is_open then {
+      if is_dialog_open() then {
          compute_and_invalidate()
          constrain_line()
       }

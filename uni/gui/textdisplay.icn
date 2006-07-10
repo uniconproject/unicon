@@ -1,5 +1,5 @@
 #
-# $Id: textdisplay.icn,v 1.4 2006-01-20 23:40:56 rparlett Exp $
+# $Id: textdisplay.icn,v 1.5 2006-07-10 01:50:08 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -115,7 +115,7 @@ class TextDisplay : DisplayScrollArea(contents,
    method set_tab_width(n)
       self.tab_width := n
       self.view_list := &null
-      if \ (\self.parent_dialog).is_open then {
+      if is_dialog_open() then {
          compute_and_invalidate()
       }
    end
@@ -150,7 +150,7 @@ class TextDisplay : DisplayScrollArea(contents,
          field_error("Bad wrap mode:" || s)
 
       view_list := &null
-      if \ (\self.parent_dialog).is_open then
+      if is_dialog_open() then
          compute_and_invalidate()
    end
 

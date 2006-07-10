@@ -1,5 +1,5 @@
 #
-# $Id: langprocs.icn,v 1.4 2006-06-22 17:35:13 rparlett Exp $
+# $Id: langprocs.icn,v 1.5 2006-07-10 13:43:32 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -52,6 +52,7 @@ end
 # types, this method fails.
 #
 procedure get_name(object)
+   local s
    image(object) ? {
       if ="record " then {
          if s := tab(find("__state")) then
@@ -97,6 +98,7 @@ end
 # non-record type of object.
 #
 procedure generate_record_names(object)
+   local i
    every i := 1 to *object do {
       name(object[i]) ? {
          tab(upto('.'))
@@ -138,7 +140,7 @@ end
 # Cast the fields of this object to another object o.
 #
 procedure cast(object, other)
-   local i, t
+   local i, t, s
 
    t := table()
    i := 3
@@ -349,7 +351,7 @@ end
 # Clone the given object
 #
 procedure clone(o, seen)
-   local c, e, ty, res, t
+   local c, e, ty, res, t, i
 
    /seen := table()
 
@@ -438,7 +440,7 @@ end
 # @param depth   The depth of recursion; default is all levels
 #
 procedure to_string(o, depth, seen)
-   local ty, string_buff
+   local ty, string_buff, s, i, e, pairs
 
    /seen := table()
    /depth := -1

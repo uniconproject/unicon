@@ -1,5 +1,5 @@
 #
-# $Id: rfc822parser.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+# $Id: rfc822parser.icn,v 1.2 2006-07-10 13:44:28 rparlett Exp $
 #
 
 package mail
@@ -260,6 +260,7 @@ class RFC822Parser : Error()
    # mailbox = addr-spec | phrase route-addr
    #
    method parse_mailbox_impl(mb)
+      local x
       /mb := Mailbox()
       #
       # The lookahead is complex, so try parsing as a simple address
@@ -405,7 +406,7 @@ class RFC822Parser : Error()
    # hour =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
    #
    method parse_date_time_impl()
-      local d, m, y, h, s, t
+      local d, m, y, h, s, t, hh, mm, ss, zz
 
       t := Time()
 
@@ -526,6 +527,7 @@ class RFC822Parser : Error()
    #                 no intervening white space, by any token>
    #
    method parse_extension_token()
+      local s
       s := =("X-"|"x-") | return parse_error("X- or x- expected")
       return s || parse_token_1521()
    end
@@ -555,7 +557,7 @@ class RFC822Parser : Error()
    #  value := token / quoted-string
    #
    method parse_content_type_impl(ct)
-      local ty, key, val
+      local ty, key, val, st
 
       next_token() | fail
 

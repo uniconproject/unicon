@@ -1,5 +1,5 @@
 #
-# $Id: message.icn,v 1.2 2004-02-12 17:07:56 rparlett Exp $
+# $Id: message.icn,v 1.3 2006-07-10 13:44:28 rparlett Exp $
 #
 
 package mail
@@ -146,7 +146,7 @@ class Message:Error(headers, content, parser)
    # Return a string representation of the message in RFC822 format.
    # 
    method to_rfc822()
-      local s
+      local s, h
       s := ""
       every h := !headers.sort() do {
          every s ||:= fold(h[1] || ": " || !h[2]) || "\r\n"
@@ -230,6 +230,7 @@ class Message:Error(headers, content, parser)
    # Parse the given raw data into the message data structures.
    #
    method parse(data)
+      local s
       data ? {
          while s := tab(find("\r\n")) do {
             move(2)
@@ -271,7 +272,7 @@ class Message:Error(headers, content, parser)
    # @fail if there is no header with the given key
    #
    method get_catenated_headers(key, delim)
-      local s
+      local s, l, e
 
       l := get_headers(key) | fail
 
@@ -292,7 +293,7 @@ class Message:Error(headers, content, parser)
    # param is either an {Address} or a list of {Address}es.
    # @p
    method catenate_addresses(a, delim)
-      local s
+      local s, e
       if type(a) == "list" then {
          s := ""
          every e := !a do {

@@ -1,5 +1,5 @@
 #
-# $Id: httpclient.icn,v 1.14 2005-04-30 11:18:12 rparlett Exp $
+# $Id: httpclient.icn,v 1.15 2006-07-10 13:43:32 rparlett Exp $
 #
 
 package http
@@ -242,7 +242,7 @@ class HttpClient : NetClient(request,
    #
    # @p
    method create_digest_authorization_header()
-      local md5, nc, h
+      local md5, nc, h, t, hentity, ha2
 
       self.nonce_count +:= 1
       nc := map(format_int_to_string(self.nonce_count, 16, 8))
@@ -380,7 +380,7 @@ class HttpClient : NetClient(request,
                }
                "path" : c.path := v
                "domain" : c.domain := v
-               "secure" : secure := 1
+               "secure" : c.secure := 1
             }
          }
       }
@@ -392,7 +392,7 @@ class HttpClient : NetClient(request,
    # Store any cookie values in the current page's header.
    # @p
    method store_cookies()
-      local c, domain, paths, path, e, vals
+      local c, domain, paths, path, e, vals, s
 
       every s := !result.get_headers("set-cookie") do {
          if c := parse_cookie_string(s) then {
@@ -545,17 +545,26 @@ class HttpClient : NetClient(request,
       #
       write_request() | fail
 
-      #
-      # Create a result
-      #
-      result := HttpResponse()
-      result.set_url(request.url)
-      result.set_status(read_line()) | fail
+      repeat {
+         #
+         # Create a result
+         #
+         result := HttpResponse()
+         result.set_url(request.url)
+         result.set_status(read_line()) | fail
 
-      #
-      # Read the response.
-      #
-      read_headers() | fail
+         #
+         # Read the response.
+         #
+         read_headers() | fail
+
+         #
+         # A 100 ("Continue") result means go round again and get 
+         # the status/headers again - they follow immediately after
+         # the end of the first headers.
+         #
+         find("100", result.get_status()) | break
+      }
 
       if request.the_method ~=== "HEAD" then
          read_data() | fail
@@ -735,6 +744,7 @@ class HttpClient : NetClient(request,
    #
    # @p
    method read_to_eof()
+      local s
       #
       # No content length.  Read until eof, then close.
       #
@@ -757,6 +767,7 @@ class HttpClient : NetClient(request,
    #
    # @p
    method read_length()
+      local s
       #
       # Got a content length.  Read len bytes and leave the connection
       # open - unless told to close it.

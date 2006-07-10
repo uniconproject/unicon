@@ -1,5 +1,5 @@
 #
-# $Id: multiparthandler.icn,v 1.1 2004-02-12 17:07:56 rparlett Exp $
+# $Id: multiparthandler.icn,v 1.2 2006-07-10 13:44:28 rparlett Exp $
 #
 
 package mail
@@ -10,7 +10,7 @@ class MultipartHandler : TypeHandler()
    end
    
    method convert_to_object(m, data)
-      local s, res, b, ct
+      local s, res, b, ct, sm
 
       res := Multipart()
 
@@ -43,7 +43,7 @@ class MultipartHandler : TypeHandler()
    end
 
    method convert_from_object(m, obj)
-      local b, s, ct
+      local b, s, ct, e
 
       b := generate_boundary(obj.get_parts())
       
@@ -66,6 +66,7 @@ class MultipartHandler : TypeHandler()
 
    # @p
    method generate_boundary(l)
+      local b
       static id
       initial id := 1
 

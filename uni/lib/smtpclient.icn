@@ -1,5 +1,5 @@
 #
-# $Id: smtpclient.icn,v 1.4 2005-07-20 18:02:54 rparlett Exp $
+# $Id: smtpclient.icn,v 1.5 2006-07-10 13:44:28 rparlett Exp $
 #
 
 package mail
@@ -28,7 +28,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
    end
 
    method send_message(m)
-      local s
+      local s, l, mb
 
       if /sent_helo then {
          send_command("EHLO " || hostname, 250) | fail
@@ -75,6 +75,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
    end
 
    method send_command(msg, reply)
+      local s, rc
       write_line(msg)
 
       s := read_response() | fail
@@ -116,6 +117,7 @@ class SmtpClient:NetClient(hostname, sent_helo)
    end
 
    method send_headers(m)
+      local x
       static rfc822_headers
       initial {
          rfc822_headers := set(["date", "resent-date", "return-path", "received", "sender", "from", "reply-to", "resent-sender", "resent-from", "resent-reply-to", "to", "resent-to", "cc", "resent-cc", "bcc", "resent-bcc", "message-id", "resent-message-id", "in-reply-to", "references", "keywords", "subject", "comments", "encrypted"])

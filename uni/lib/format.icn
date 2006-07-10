@@ -1,5 +1,5 @@
 #
-# $Id: format.icn,v 1.1 2004-02-12 17:07:55 rparlett Exp $
+# $Id: format.icn,v 1.2 2006-07-10 13:43:32 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -13,6 +13,7 @@ package util
 # @param base  The base to use for the conversion (default is 16).
 #
 procedure format_string_to_int(subject, base)
+   local n, digs, s, c
    n := 0
    /base := 16
    digs := "0123456789abcdef"[1:base + 1] | fail
@@ -31,6 +32,7 @@ end
 # @             if necessary.
 #
 procedure format_int_to_string(subject, base, p)
+   local s, n, digs
    s := ""
    /base := 16
    /p := 1
@@ -60,7 +62,7 @@ end
 # @           
 #
 procedure format_numeric_to_string(subject, p, f)
-   local n1, s, t, lim, d, zs, dig, i
+   local n1, s, t, lim, d, zs, dig, i, n, sig_digs
 
    /f := ''
    n := numeric(subject) | fail
@@ -162,6 +164,8 @@ end
 # Remove escape sequences from the subject.
 #
 procedure format_unescape(subject)
+   local s, res, ch
+
    s := string(subject) | fail
    
    res := ""
@@ -204,6 +208,7 @@ end
 # Add escape sequences to the subject.
 #
 procedure format_escape(subject)
+   local s, res, ch
    static printable
    initial
       printable := cset(&ascii[33:128]) -- '\\'
@@ -239,6 +244,7 @@ end
 # Convert the subject integer into words, eg 231 to "Two Hundred and Thirty-One"
 #
 procedure format_int_to_words(subject)
+   local n, s, i, m
    static small, tens, pwr10, pwr10num
 
    initial {

@@ -1,5 +1,5 @@
 #
-# $Id: time.icn,v 1.5 2006-01-21 18:19:21 rparlett Exp $
+# $Id: time.icn,v 1.6 2006-07-10 13:44:28 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -471,7 +471,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec, zone, ps
    # Compute seconds past base date based on broken down fields.
    #
    method compute_seconds()
-      local days, year, mon, mday, year_diff, l
+      local days, year, mon, mday, year_diff, l, n
 
       #
       # Normalize seconds
@@ -549,7 +549,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec, zone, ps
    # Compute broken down fields based on seconds past base date
    #
    method compute_broken_down_fields()
-      local n, year, flag, l
+      local n, year, flag, l, i
       n := self.seconds + self.zone.get_offset()
       self.sec := n % 60
       n /:= 60
@@ -790,7 +790,7 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec, zone, ps
    # timezone is allowed.
    #
    method simple_parse(s)
-      local y, d, m, hh, mm, ss
+      local y, d, m, hh, mm, ss, z
       s ? {
          (y := get_int() &
           m := get_int() &
@@ -813,6 +813,14 @@ class Time : Error : Object(seconds, year, month, mday, hour, min, sec, zone, ps
    #
    method set_current_time(z)
       set_seconds(Time_data_unix_base_offset + gettimeofday()[1], z)
+   end
+
+   #
+   # Return the difference in seconds between the current system time and the
+   # time represented by this object.
+   #
+   method get_age()
+      return Time_data_unix_base_offset + gettimeofday()[1] - self.seconds
    end
 
    #
@@ -841,11 +849,12 @@ end
 
 #
 # Get the current time as a {Time} object
+# @param z an optional {Timezone}.  If omitted, the system timezone is used.
 #
-procedure get_current_time()
+procedure get_current_time(z)
    local t
    t := Time()
-   t.set_current_time()
+   t.set_current_time(z)
    return t
 end
 
@@ -869,6 +878,7 @@ end
 # Convert a month string to an month number, eg "feb"->2
 #
 procedure month_to_num(s)
+   local i
    initial {
       init_time()
    }

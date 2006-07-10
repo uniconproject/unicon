@@ -1,5 +1,5 @@
 #
-# $Id: htmloutputter.icn,v 1.2 2004-05-18 21:34:20 rparlett Exp $
+# $Id: htmloutputter.icn,v 1.3 2006-07-10 01:33:48 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -12,7 +12,8 @@ import xml
 
 class HtmlOutputter(output_dir, ps, done_files)
    method output()
-      local nav
+      local nav, fname, index, p, s, all_classes_table, all_others_table,
+         begin, c, all
 
       fname := output_dir || "/index.html"
       index := open(fname, "w") | stop("Couldn't open ", fname)
@@ -91,7 +92,7 @@ class HtmlOutputter(output_dir, ps, done_files)
 
    # Output the summary list for one package set
    method output_package(p)
-      local s, f
+      local s, f, fname, c
       s := p.get_name()
       fname := output_dir || "/" || s || "_list.html"
       f := open(fname, "w") | stop("couldn't open " || fname)
@@ -112,7 +113,8 @@ class HtmlOutputter(output_dir, ps, done_files)
 
    # Output one class description
    method output_class(c)
-      local s, f, fname, home, mangled, i, ci
+      local s, f, fname, home, mangled, i, ci, supers, o, subs, p, d,
+         overrides, class_methods, meths, m, vars, mm
 
       fname := output_dir || "/" || c.get_serial_no() || ".html"
       f := open(fname, "w") | stop("couldn't open " || fname)
@@ -234,6 +236,7 @@ class HtmlOutputter(output_dir, ps, done_files)
    end
 
    method do_inherited(f, ci, overrides, seen_classes, class_methods)
+      local s, o, l, x, m, cj
       every s := !ci.get_supers() do {
          if member(seen_classes, s) then
             next
@@ -300,6 +303,7 @@ class HtmlOutputter(output_dir, ps, done_files)
    # Convert abc__Def to abc::Def
    #
    method pretty_class(s)
+      local i
       if i := find("__", s) then
          s[i:i+2] := "::"
       return s
@@ -317,6 +321,7 @@ class HtmlOutputter(output_dir, ps, done_files)
    end
 
    method comment_and_fields(f, c)
+      local el
       every html_unbracket(f, !c.get_comment(), c)
       write(f, "<dl>")
       every el := !sort(c.get_fields()) do
@@ -334,7 +339,7 @@ class HtmlOutputter(output_dir, ps, done_files)
    end
 
    method html_fields(f, c, key, vals)
-      local name
+      local name, l
       case key of {
          "param" : {
             write(f, "<dt>Parameters :</dt>")
@@ -389,7 +394,7 @@ class HtmlOutputter(output_dir, ps, done_files)
             move(1)
             t := tab(upto('}') | 0)
             move(1)
-            r ||:= create_link(t, c, cl)
+            r ||:= create_link(t, c)
          }
          r ||:= xml_escape(tab(0), '<>&')
       }
@@ -402,7 +407,7 @@ class HtmlOutputter(output_dir, ps, done_files)
    # Get a link (if possible) for the string s.  c is the current comment.
    #
    method create_link(s, c)
-      local i
+      local i, o, s1
 
       if i := find("__" | "::", s) then {
          o := ps.get_package(s[1:i]).find_for_name(s[i+2:0]) | return s
@@ -428,7 +433,7 @@ class HtmlOutputter(output_dir, ps, done_files)
    end
 
    method output_file(file)
-      local f, fname, line_no
+      local f, fname, line_no, g, s
 
       if member(done_files, file) then
          return

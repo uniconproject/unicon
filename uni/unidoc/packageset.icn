@@ -1,5 +1,5 @@
 #
-# $Id: packageset.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+# $Id: packageset.icn,v 1.2 2006-07-10 01:33:49 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -8,6 +8,7 @@
 
 class PackageSet(packages)
    method debug()
+      local e
       every e := !sort(packages) do {
          e[2].debug()
       }
@@ -22,6 +23,7 @@ class PackageSet(packages)
    end
 
    method find_for_name(s)
+      local p, c
       every p := !get_packages_list() do {
          if c := p.find_class(s) | p.find_other(s) then
             return c
@@ -34,6 +36,7 @@ class PackageSet(packages)
    end
 
    method process_package(pi)
+      local p
       p := Package(pi, self)
       insert(packages, p.get_name(), p)
       p.load_classes()

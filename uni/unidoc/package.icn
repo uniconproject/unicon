@@ -1,5 +1,5 @@
 #
-# $Id: package.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+# $Id: package.icn,v 1.2 2006-07-10 01:33:49 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -14,6 +14,7 @@ class Package(package_info, classes, others, current_class, parent_package_set)
    end
 
    method load_classes()
+      local s, ci, c
       every s := !package_info.get_symbols() do {
          if ci := parser::load_class_info(package_info.name || "__" || s) then {
             c := Class(s, ci, self)
@@ -60,6 +61,7 @@ class Package(package_info, classes, others, current_class, parent_package_set)
    end
 
    method process_files()
+      local fn, f
       every fn := package_info.get_directory() || !package_info.get_files() do {
          f := open(fn) | stop("Couldn't open ", fn)
          process_file(f, fn)
@@ -68,6 +70,8 @@ class Package(package_info, classes, others, current_class, parent_package_set)
    end
 
    method process_file(current_file, current_file_name)
+      local in_comment, line_no, file_obj, line, comment_buff
+
       current_class := in_comment := &null
       line_no := 0
 
@@ -98,6 +102,7 @@ class Package(package_info, classes, others, current_class, parent_package_set)
    end
 
    method maybe_complete(comment_buff, file_obj, line_no)
+      local s, m, p
       if ="class " then {
          if current_class := find_class(tab(many(id_cset))) then {
             current_class.complete(comment_buff, file_obj.create_file_pos(line_no))
@@ -122,6 +127,7 @@ class Package(package_info, classes, others, current_class, parent_package_set)
    end
 
    method debug()
+      local e
       write("package ", package_info.name)
       every e := !sort(classes) do {
          e[2].debug()

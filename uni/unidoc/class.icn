@@ -1,5 +1,5 @@
 #
-# $Id: class.icn,v 1.1 2004-02-13 19:36:13 rparlett Exp $
+# $Id: class.icn,v 1.2 2006-07-10 01:33:48 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -16,6 +16,7 @@ class Class : Comment(name, class_info, methods, variables, parent_package)
    end
 
    method find_for_name(s)
+      local i
       if member(methods, s) then
          return methods[s]
       if member(variables, s) then
@@ -59,6 +60,7 @@ class Class : Comment(name, class_info, methods, variables, parent_package)
    end
 
    method debug()
+      local e
       write("Class ", class_info.name)
       every e := !sort(methods) do {
          e[2].debug()
@@ -69,6 +71,7 @@ class Class : Comment(name, class_info, methods, variables, parent_package)
    end
 
    initially(name, ci, pack)
+      local e
       self.Comment.initially()
       self.name := name
       self.class_info := ci

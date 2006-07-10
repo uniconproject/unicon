@@ -1,5 +1,5 @@
 #
-# $Id: groffoutputter.icn,v 1.2 2004-02-27 16:27:39 rparlett Exp $
+# $Id: groffoutputter.icn,v 1.3 2006-07-10 01:33:48 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -10,6 +10,7 @@ link strings
 
 class GroffOutputter(output_file, ps)
    method output()
+      local c, l, s, t, u, m, el
       every c := !(!ps.get_packages_list()).get_class_list() do {
          l := c.get_class_info().get_supers()
          if *l = 0 then 
@@ -43,6 +44,7 @@ class GroffOutputter(output_file, ps)
    end
 
    method groff_fields(key, vals)
+      local l
       case key of {
          "param" : {
             write(output_file, ".P")
@@ -79,6 +81,7 @@ class GroffOutputter(output_file, ps)
    end
 
    method groff_unbracket(s)
+      local r
       r := ""
       replace(s, "\\", "\\\\") ? {
          tab(many(whitespace_cset))
@@ -97,6 +100,7 @@ class GroffOutputter(output_file, ps)
    end
 
    initially(ps, t)
+      local s
       self.ps := ps
       if s := \t["o"] then
          output_file := open(s, "w") | stop("couldn't open output file " || s)

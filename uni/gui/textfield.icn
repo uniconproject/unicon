@@ -1,5 +1,5 @@
 #
-# $Id: textfield.icn,v 1.17 2006-07-10 01:07:26 rparlett Exp $
+# $Id: textfield.icn,v 1.18 2006-07-28 19:54:52 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -581,16 +581,16 @@ class TextField : Component(
             np := cp
 	    np >:= (*view_str + 1)
          }
-         off1 := TextWidth(self.cwin, view_str[1:mp])
-         off2 := TextWidth(self.cwin, view_str[1:np])
 
-         cw := Clone(self.cbwin, "drawop=reverse")
-         FillRectangle(cw,
-                       self.tx + off1, 
+	 if (off1 := TextWidth(self.cwin, view_str[1:mp])) &
+	     (off2 := TextWidth(self.cwin, view_str[1:np])) then {
+
+	    cw := Clone(self.cbwin, "drawop=reverse")
+	    FillRectangle(cw, self.tx + off1, 
                        1 + self.y + (self.h - fh) / 2, 
-                       off2 - off1,
-                       fh)
-         Uncouple(cw)
+                       off2 - off1, fh)
+	    Uncouple(cw)
+	    }
       }
 
       self.do_shading(self.cbwin)

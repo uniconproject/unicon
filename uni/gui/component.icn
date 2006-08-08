@@ -1,5 +1,5 @@
 #
-# $Id: component.icn,v 1.19 2006-07-09 23:43:07 rparlett Exp $
+# $Id: component.icn,v 1.20 2006-08-08 13:47:46 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -795,11 +795,8 @@ class Component : Object : SetFields : Connectable(
    # Validate the component, which means displaying it and setting the valid flag
    #
    method validate()
-      # Can't validate if not visible
-      if self.is_hidden() then
-         return
       if /self.valid then {
-         self.display()
+         self.is_hidden() | self.display()
          every generate_components().valid := 1
          child_validated(self)
       } else

@@ -44,7 +44,14 @@ PURI _http_parse(char *uri, PURI puri)
   }
 
   /* Get the host and port */
-  colon = strchr(uri, ':');
+
+  /* First, look for legal hostname chars per RFC 952. */
+  colon = uri;
+  while (isalnum(*colon) || (*colon == '-') || (*colon == '.')) {
+     colon++;
+     }
+  if (*colon != ':') colon = NULL;
+
   slash = strchr(uri, '/');
   if (colon) {
     /* With port specified */

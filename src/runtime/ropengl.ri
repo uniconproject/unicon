@@ -794,13 +794,12 @@ int traversefunctionlist(wbp w)
    tended struct b_lelem *bp, *bp1;
    int used, used1, count=0;
    word k,k1;
-   int elements = ws->funclist.vword.bptr->list.size;
-
-
+   int elements;
 
    hp = (struct b_list *) ws->funclist.vword.bptr;
-   if (hp->size<=0) return Succeeded;
    elements = hp->size;
+
+   if (elements <= 0) return Succeeded;
    bp = (struct b_lelem *) hp->listhead;
 
    if (bp->nused<=0) {
@@ -942,7 +941,7 @@ int traversefunctionlist(wbp w)
 	 }
       else if (is:list(flist)) {
 	 funclist = (struct b_list*)flist.vword.bptr;
-         if (funclist->size<0) continue;
+         if (funclist->size<=1) continue;
          bp1 = (struct b_lelem *) funclist->listhead;
          if (bp1->nused<=0) {
             bp1 = (struct b_lelem *) bp1->listnext;
@@ -953,8 +952,15 @@ int traversefunctionlist(wbp w)
          fname = bp1->lslots[k1];
 
          if (k1++>=bp1->nslots) k1=0;
-         tmp=IntVal(bp1->lslots[k1]);
          used1 = bp1->nused-1;
+         if (used1<=0) {
+            bp1 = (struct b_lelem *) bp1->listnext;
+            funclist->listhead = (union block *) bp1;
+            bp1->listprev = (union block *) funclist;
+         }
+         tmp = IntVal(bp1->lslots[k1]);
+
+/* OK, at this point, k1 has been preset to refer to the int code */
 
 	 if (funclist->size-1 > vsize) {
 	    if (v == v2)
@@ -1270,8 +1276,9 @@ int traversefunctionlist(wbp w)
 	 drawpoly(w, v, (funclist->size)-2, GL_LINES, wc->dim);
 	 break;
       case REDRAW_LINE:       /* DrawLine() */
-	 for (j = 0; j < (funclist->size)-1; j++) {
-            if (used1<=1) {
+	 used1 = bp1->nused-2;
+	 for (j = 0; j < (funclist->size-2); j++) {
+            if (used1<=0) {
                bp1=(struct b_lelem *) bp1->listnext;
                used1 = bp1->nused;
                k1 = bp1->first;
@@ -1280,7 +1287,10 @@ int traversefunctionlist(wbp w)
                 if (k1++>=bp1->nslots) k1=0;
                 used1--;
             }
-	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
+            var2 = bp1->lslots[k1];
+	    if (!cnv:C_double(var2, v[j])) {
+	       goto free_v_and_fail;
+	       }
 	    }
 	 drawpoly(w, v, (funclist->size)-2, GL_LINE_STRIP, wc->dim);
 	 break;
@@ -1509,7 +1519,7 @@ int setmaterials(wbp w, char* s)
       while(s[i] && isalpha(s[i])) {
          sbuf1[k] = s[i];
          i++; k++;
-	   }
+	 }
       sbuf1[k] = '\0';
 
       /* ambient */
@@ -1519,7 +1529,7 @@ int setmaterials(wbp w, char* s)
          while(s[i] != '\0' && s[i] != ';') {
             sbuf2[j] = s[i];
             i++; j++;
-	      }
+	    }
          sbuf2[j] = '\0';
          /* determine the icon color */
          if(parsecolor(w,sbuf2, &rd, &gr, &bl, &al)== Failed)

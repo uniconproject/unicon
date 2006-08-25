@@ -3419,7 +3419,7 @@ char * abuf;
       switch (a=si_s2i(attribs, abuf)) {
       case A_SELECTION:
 	 if ((selectiontemp=getselection(w, abuf)) == NULL) return Failed;
-	 MakeStr(selectiontemp, strlen(abuf), answer);
+	 MakeStr(selectiontemp, strlen(selectiontemp), answer);
 	 break;
       case A_IMAGE:
          ReturnErrNum(147, Error);

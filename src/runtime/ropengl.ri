@@ -1254,7 +1254,11 @@ int traversefunctionlist(wbp w)
                 used1--;
             }
             var2 = bp1->lslots[k1];
-            if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
+	    if (!is:real(var2)) {
+	       if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
+	       }
+	    else
+	       GetReal(&var2, v[j]);
             }
 	  /* drawpoly with GL_POLYGON will give filled polygons */
          drawpoly(w, v, (funclist->size)-2, GL_POLYGON, wc->dim);

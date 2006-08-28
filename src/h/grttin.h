@@ -301,6 +301,10 @@ typedef int siptr, stringint, inst;
 
    #if defined Audio
       typedef int AudioFile, AudioStruct, AudioPtr;
+   #ifdef HAVE_LIBOPENAL   
+      typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
+      typedef int PFNALBUFFERWRITEDATAPROC, ALCdevice, ALubyte;
+   #endif				/* HAVE_LIBOPENAL */
    #endif				/* Audio */
 
    #ifdef PresentationManager
@@ -361,7 +365,7 @@ typedef int siptr, stringint, inst;
 	    runerr(140,argv[warg]);
          if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-         (w) = (wbp)BlkLoc(argv[warg])->file.fd.fp;
+         (w) = BlkLoc(argv[warg])->file.fd.wb;
 #ifdef ConsoleWindow
          if ((((FILE*)(w)) != ConsoleBinding) &&
 	     ((((FILE*)(w)) == k_input.fd.fp) ||

@@ -371,6 +371,8 @@
 #endif					/* HAVE_VOICE */
 
 #ifdef HAVE_LIBOPENAL
+	#include <AL/altypes.h>
+	#include <AL/alexttypes.h>
 	#include <AL/al.h>
 	#include <AL/alc.h>
 	#include <AL/alext.h>

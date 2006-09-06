@@ -1,5 +1,5 @@
 #
-# $Id: code.icn,v 1.7 2006-07-09 23:43:13 rparlett Exp $
+# $Id: code.icn,v 1.8 2006-09-06 21:23:05 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -220,25 +220,35 @@ class Code(
       #
       imports_out(f)
 
+      reading_class := &null
       every s := !part1 do {
          s ? {
-            tab(many(' '))
             if ="class " then {
+               # Substitute our own class and superclass name
                s := "class " || self.parent_Canvas.name || " : " || 
                   self.parent_Canvas.superclass_name || "("
-
                tab(upto('('))
                move(1)
-
-               #
-               # Add any new class vars.
-               #
-               if *class_vars > 0 then {
-                  every s ||:= !sort(class_vars) || ", "
-                  if any(')') then
-                     s[-2:0] := ""
-               }
                s ||:= tab(0)
+               &subject := s
+               reading_class := 1
+            }
+            if \reading_class then {
+               # Look for the end of the class variables and insert our
+               # new variables.
+               if s := tab(upto(')')) then {
+                  reading_class := &null
+                  #
+                  # Add any new class vars.
+                  #
+                  if *class_vars > 0 then {
+                     if s[-1] ~== "(" then
+                        s ||:= ", "
+                     every s ||:= !sort(class_vars) || ", "
+                     s[-2:0] := ""
+                  }
+                  s ||:= tab(0)
+               }
             }
             write(f, s)
          }

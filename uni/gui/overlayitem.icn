@@ -1,5 +1,5 @@
 #
-# $Id: overlayitem.icn,v 1.1 2003-08-04 17:32:42 jeffery Exp $
+# $Id: overlayitem.icn,v 1.2 2006-09-06 01:02:26 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -25,11 +25,11 @@ $include "guih.icn"
 #
 class OverlayItem : Component()
    method is_hidden()
-      return parent.which_one ~=== self
+      return parent.is_hidden() | (parent.which_one ~=== self)
    end
 
    method is_unhidden()
-      return parent.which_one === self
+      return parent.is_unhidden() & (parent.which_one === self)
    end
 
    initially(a[])

@@ -311,7 +311,11 @@ dptr cargp;
       (*cf)();
       }
    else
+#if COMPILER
+      syserr("new_context() called with no coexpr_fnc defined");
+#else					/* COMPILER */
       interp(fsig, cargp);
+#endif					/* COMPILER */
    }
 #else					/* Coexpr */
 /* dummy new_context if co-expressions aren't supported */

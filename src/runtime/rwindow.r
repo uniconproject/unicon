@@ -3063,6 +3063,11 @@ char * abuf;
       case A_TEXMODE:
 	 AttemptAttr(settexmode(w, val)); 
 	 break;
+      case A_BUFFERMODE: {
+        if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
+        else wc->buffermode = IMMEDIATE3D;
+        break;
+        }
 #endif					/* Graphics3D */
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
@@ -3250,11 +3255,6 @@ char * abuf;
 	 AttemptAttr(setdrawop(w, val));
 	 break;
          }
-      case A_BUFFERMODE: {
-        if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
-        else wc->buffermode = IMMEDIATE3D;
-        break;
-        }
       case A_DISPLAY: {
 	 AttemptAttr(setdisplay(w,val));
 	 break;

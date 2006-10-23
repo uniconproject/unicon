@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.39 2005-07-20 18:01:31 rparlett Exp $
+ * $Id: fxposix.ri,v 1.40 2006-10-23 19:25:10 jeffery Exp $
  */
 
 /*
@@ -633,7 +633,9 @@ function{0,1} flock(f, cmd)
 	 case 's': option |= LOCK_SH; break;
 	 */
 	 case 'b': option |= LK_NBLCK; break;
-#ifndef NTGCC
+#ifdef NTGCC
+	 case 'u': option |= LK_UNLOCK; break;
+#else					/* NTGCC */
 	 case 'u': option |= LK_UNLCK; break;
 #endif					/* NTGCC */
 	 default: runerr(1044, cmd);

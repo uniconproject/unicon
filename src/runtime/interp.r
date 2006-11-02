@@ -320,7 +320,9 @@ Deliberate Syntax Error
 /*
  * End of operating-system specific code.
  */
+#ifndef MultiThread
 dptr clintsrargp;
+#endif
 
 #ifdef MultiThread
 static struct descrip unwinder;
@@ -1713,6 +1715,7 @@ Pfail_uw:
 	    PushVal(D_Integer);
 	    PushVal(GetWord);
 	    Setup_Arg(2);
+
 ExInterp;
 	    signal = Ofield(2,rargp);
 	    rargp = clintsrargp;

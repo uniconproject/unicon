@@ -15,7 +15,9 @@ LibDcl(field,2,".")
    tended struct b_record *rp;
    register dptr dp;
    register union block *bptr;
+#ifndef MultiThread
    extern dptr clintsrargp;
+#endif
 
 #ifdef MultiThread
    struct progstate *thisprog = curpstate, *progtouse = NULL;

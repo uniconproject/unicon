@@ -383,8 +383,16 @@ void EVVariable(dptr dx, int eventcode)
    else if (i == Failed) {
       /* parent->eventval = *dx; */
       }
+   else if (i == Succeeded) {
+      /* Succeeded, so OK; get_name allocated if needed.
+       * To check: did get_name allocate out of monitor?
+       */
+      }
    else if (i == Error) {
       syserr("get_name error in EVVariable");
+      }
+   else {
+      syserr("EVVariable: unknown return code from get_name");
       }
 
    parent->stringregion = curpstate->stringregion;

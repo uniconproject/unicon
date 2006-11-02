@@ -658,12 +658,13 @@ void f(dptr s, dptr d)
    register union block **ep;
    int res;
 
-   EVVar(s, e_deref);
 
    if (!is:variable(*s)) {
       *d = *s;
       }
-   else type_case *s of {
+   else {
+      EVVar(s, e_deref);
+      type_case *s of {
       tvsubs: {
          /*
           * A substring trapped variable is being dereferenced.
@@ -727,11 +728,13 @@ void f(dptr s, dptr d)
       kywdstr:
          *d = *VarLoc(*s);
 
-      default:
+      default: {
          /*
           * An ordinary variable is being dereferenced.
           */
          *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
+}
+      }
       }
    }
 #enddef

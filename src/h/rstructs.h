@@ -522,6 +522,8 @@ struct progstate {
    struct b_file K_input;
    struct b_file K_output;
 
+   dptr Clintsrargp;
+
    /*
     * Function Instrumentation Fields.
     */

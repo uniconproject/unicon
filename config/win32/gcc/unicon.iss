@@ -20,6 +20,7 @@ Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "A
 
 [Files]
 Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; CopyMode: alwaysoverwrite
+Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; CopyMode: alwaysoverwrite
@@ -46,12 +47,16 @@ Source: "\unicon\ipl\mincl\*.*"; DestDir: "{app}\ipl\mincl"; CopyMode: alwaysove
 Source: "\unicon\ipl\mdata\*.*"; DestDir: "{app}\ipl\mdata"; CopyMode: alwaysoverwrite
 Source: "\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; CopyMode: alwaysoverwrite
 Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\makedefs"; DestDir: "{app}\uni\"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\gui\*.icn"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\gui\*.u"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\gui\makefile"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\ivib\makefile"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\gui\ivib\icon\*.*"; DestDir: "{app}\uni\gui\ivib\icon"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\gui\guidemos\makefile"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite

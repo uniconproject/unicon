@@ -25,7 +25,7 @@ end
 # Convert a V2 style Event to a V1 _Event.
 #
 procedure V2TOV1(ev)
-   local p, code, c
+   local p, code, c, classnam
 
    #
    # V1 didn't have mouse movement, so speed things up
@@ -34,14 +34,15 @@ procedure V2TOV1(ev)
    if ev.get_param() === -12 then
       fail
 
-   c := get_class_for_name(get_class_name(ev.get_source())).get_implemented_classes()
+   classnam := get_class_name(ev.get_source())
+   c := get_class_for_name( classnam ).get_implemented_classes()
 
    if member(c, "gui__Button") then {
       code := case ev.get_type() of {
          BUTTON_PRESS_EVENT : 0
          BUTTON_RELEASE_EVENT : 1
          BUTTON_HELD_EVENT : -1
-         ev.get_param() == ("\r"|"\l") &
+         (\ev).get_param() === ("\r"|"\l") &
          ACTION_EVENT : 2
          default: fail
       }

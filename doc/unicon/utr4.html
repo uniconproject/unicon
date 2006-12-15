@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <HTML>
 <HEAD>
-   <TITLE>Writing CGI Scripts in Icon</TITLE>
+   <TITLE>Writing CGI and PHP Scripts in Icon and Unicon</TITLE>
    <META NAME="GENERATOR" CONTENT="Mozilla/3.02Gold (WinNT; I) [Netscape]">
 </HEAD>
 <!--<BODY BACKGROUND="bk101.gif">-->
@@ -21,8 +21,8 @@
 in Icon</B></P></CENTER>
 
 <CENTER><P><B>Clinton Jeffery and Jonathan Vallejo<BR>
-May 15, 2000<BR>
-Unicon Technical Report UTR-4 </B></P></CENTER>
+December 15, 2006<BR>
+Unicon Technical Report UTR-4a </B></P></CENTER>
 
 <P><BR>
 <BR>
@@ -49,8 +49,8 @@ that simplifies writing of CGI scripts in Icon. <BR>
 </P>
 
 <CENTER><P>Department of Computer Science<BR>
-The University of Nevada<BR>
-Las Vegas, NV 89154 </P></CENTER>
+The University of Idaho<BR>
+Moscow, ID 83843 </P></CENTER>
 
 <P><BR>
 <BR>
@@ -567,6 +567,37 @@ code </H3>
 <P>The CGI application must define procedure <TT>cgimain()</TT>, which
 generates the HTML content body for the client's web page as a result of
 their invoking the CGI script. </P>
+<br>
+<br>
+<br>
+<H2>PHP</h2>
+
+PHP stands for Perl Hypertext Processor. It is a popular way of introducing
+dynamic server-side behavior into a webpage, easier than using CGI or a
+servlet engine. PHP programs mostly look like HTML documents with some
+dynamic elements.  There are two ways that PHP and Unicon can interoperate:
+a PHP program can invoke an external program (such as an Icon or Unicon
+program), or a Unicon program can write out PHP and invoke the php
+translator as a postprocessor. Invoking Unicon from PHP looks like
+
+<pre>
+passthru(’¡È/your-path/your-unicon-program’¡É);
+</pre>
+<p>
+
+This is a PHP statement. While the Unicon program should write out HTML, it
+is not a CGI and should not expect a CGI environment. In order to use PHP
+from within a Unicon CGI script, you will need to have a PHP implementation
+which supports a php standalone executable, not just a PHP that runs
+built-in to your web server. For example, your machine might have a
+/usr/bin/php. In that case, using PHP in your CGI is simple, just open a
+pipe for writing with open("/usr/bin/php", "pw"), and write your output to the pipe.
+<p>
+
+Well, it is that easy on some web servers, and not that easy on others.
+You may have to study the web server configuration in order to make sure
+all the permissions are setup correctly.
+
 <br>
 <br>
 <br>

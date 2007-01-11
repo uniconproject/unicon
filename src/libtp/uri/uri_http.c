@@ -48,7 +48,7 @@ PURI _http_parse(char *uri, PURI puri)
 
   /* First, look for legal hostname chars per RFC 952. */
   colon = uri;
-  while (isalnum(*colon) || (*colon == '-') || (*colon == '.')) {
+  while (isalnum((int)*colon) || (*colon == '-') || (*colon == '.')) {
      colon++;
      }
   if (*colon != ':') colon = NULL;

@@ -1,27 +1,29 @@
+include ../Makedefs
+
 all :
-	make -C iyacc
-	make -C unicon
-	make -C lib
-	make -C ivib
-	make -C gui
-	make -C gui/ivib
-	make -C xml
-	make -C parser
-	make -C unidep
-	make -C util
-	make -C unidoc
-	make -C ide
+	cd iyacc; $(MAKE)
+	cd unicon; $(MAKE)
+	cd lib; $(MAKE)
+	cd ivib; $(MAKE)
+	cd gui; $(MAKE)
+	cd gui/ivib; $(MAKE)
+	cd xml; $(MAKE)
+	cd parser; $(MAKE)
+	cd unidep; $(MAKE)
+	cd util; $(MAKE)
+	cd unidoc; $(MAKE)
+	cd ide; $(MAKE)
 
 clean Clean:
-	make -C iyacc Clean
-	make -C unicon Clean
-	make -C ivib Clean
-	make -C lib clean
-	make -C gui clean
-	make -C gui/ivib clean
-	make -C xml clean
-	make -C parser clean
-	make -C unidep clean
-	make -C util clean
-	make -C unidoc clean
-	make -C ide clean
+	cd iyacc; $(MAKE) Clean
+	cd unicon; $(MAKE) Clean
+	cd ivib; $(MAKE) Clean
+	cd lib; $(MAKE) clean
+	cd gui; $(MAKE) clean
+	cd gui/ivib; $(MAKE) clean
+	cd xml; $(MAKE) clean
+	cd parser; $(MAKE) clean
+	cd unidep; $(MAKE) clean
+	cd util; $(MAKE) clean
+	cd unidoc; $(MAKE) clean
+	cd ide; $(MAKE) clean

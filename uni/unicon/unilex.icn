@@ -409,6 +409,11 @@ procedure do_minus()
 end
 
 procedure do_plus()
+   if yytoken.s == ":" & yytoken.column + 1 = yycolno then {
+      yytext := ":+"
+      warning("token may be malformed, did you mean +: ?")
+      yytext := "+"
+      }
 	      if yytext ||:= =":" then {
 		  if yytext ||:= ="=" then { return AUGPLUS }
 		  return PCOLON

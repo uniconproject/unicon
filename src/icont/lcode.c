@@ -1619,8 +1619,7 @@ void gentables()
 #ifdef OVLD_DEBUG
    fprintf(stdout, "OPcode = %d\n", NUMOPCODES);
 #endif
-   for ( i = 0; i < NUMOPCODES; i++)
-     outop(op2fieldnum[i]);
+   pc += NUMOPCODES * sizeof(int);
 
    if (longwrite(op2fieldnum, (long) (NUMOPCODES) * (sizeof(int)), outfile) < 0)
          quit("cannot write icode file");

@@ -1899,6 +1899,14 @@ EntInterp;
             ExInterp;
             ncp = popact((struct b_coexpr *)BlkLoc(k_current));
 
+	    /*
+	     *	if this is a main co-expression failing to its parent
+	     *  (monitoring) program, generate an E_Exit event.
+	     */
+            if (curpstate->parent == ncp->program) {
+	       EVVal(0, E_Exit);
+	       }
+
             co_chng(ncp, NULL, NULL, A_Cofail, 1);
             EntInterp;
 #endif					/* Coexpr */

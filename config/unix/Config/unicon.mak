@@ -29,6 +29,7 @@ unicon$(EXE): Unicon
 #	$(CP) unicon$(EXE) $(BIN)
 
 Unicon:
+	$(TOUCH) idol.u
 	-(test -f ./.dummy && make unicon-fresh) || (test -f ./.dummy2 && make unicon-update) || (make unicon-fresh)
 
 unicon-fresh: $(U)

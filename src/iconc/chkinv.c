@@ -34,8 +34,9 @@ void chkinv()
    int exec_flg;
    int i;
 
-   if (debug_info)
-       return;  /* The following analysis is not valid */
+   if (debug_info) {
+      return;  /* The following analysis is not valid */
+      }
 
    /*
     * start off assuming that global variables for procedure, etc. are
@@ -47,7 +48,7 @@ void chkinv()
    for (i = 0; i < GHSize; i++)
       for (gp = ghash[i]; gp != NULL; gp = gp->blink) {
          if (gp->flag & (F_Proc | F_Builtin | F_Record) &&
-            !(gp->flag & F_StrInv))
+            !(gp->flag & F_StrInv)) 
                gp->flag |= F_SmplInv;
          /*
           * However, only optimize normal cases for main.
@@ -64,7 +65,6 @@ void chkinv()
          if ((gp->flag & F_Proc) && gp->val.proc->has_coexpr)
             gp->flag &= ~(uword)F_SmplInv;
          }
-
    /*
     * Analyze code in each procedure.
     */

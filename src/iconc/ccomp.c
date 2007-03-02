@@ -162,10 +162,25 @@ Deliberate Syntax Error
 #endif
 
 #ifdef Graphics
-   lib_sz += strlen(" -lXpm ");
+/* mdw: modified   lib_sz += strlen(" -lXpm "); */
+   lib_sz += strlen(" -lXpm -lGL -lGLU");
    lib_sz += strlen(ICONC_XLIB);
    opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
 #endif						/* Graphics */
+
+#ifdef mdw_0
+#ifdef ISQL
+   lib_sz += strlen(" -liodbc ");
+#endif /* ISQL */
+#endif /* mdw_0 */
+
+#if HAVE_LIBZ
+   lib_sz += strlen(" -lz ");
+#endif /* HAVE_LIBZ */
+
+#if HAVE_LIBJPEG
+   lib_sz += strlen(" -ljpeg ");
+#endif /* HAVE_LIBJPEG */
 
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
 			     lib_sz + 5);
@@ -221,19 +236,43 @@ Deliberate Syntax Error
 #endif
 
 #ifdef Graphics
-   strcat(s," -lXpm ");
+   /* mdw: modified: strcat(s," -lXpm "); */
+   strcat(s, " -lXpm -lGL -lGLU ");
    strcat(s, ICONC_XLIB);
 #endif						/* Graphics */
+
+#ifdef mdw_0
+#ifdef ISQL
+   strcat(s, " -liodbc ");
+#endif /* ISQL */
+#endif /* mdw_0 */
+
+#if HAVE_LIBZ
+   strcat(s, " -lz ");
+#endif /* HAVE_LIBZ */
+
+#if HAVE_LIBJPEG
+   strcat(s, " -ljpeg ");
+#endif /* HAVE_LIBJPEG */
+
    s += strlen(s);
 
    strcpy(s, LinkLibs);
 
+   /*
+    * mdw: emit cc command-line if verbosity is set above 2
+    */
+   if (verbose > 2)
+      fprintf(stdout, "system(%s)...\n", buf);
    if (system(buf) != 0)
       return EXIT_FAILURE;
-   strcpy(buf, "strip ");
-   s = buf + 6;
-   strcpy(s, exename);
-   system(buf);
+   if (!dbgsyms) {
+      /* mdw: strip dbg symbols from target */
+      strcpy(buf, "strip ");
+      s = buf + 6;
+      strcpy(s, exename);
+      system(buf);
+      }
 #endif						/* UNIX ... */
 
 #if VMS

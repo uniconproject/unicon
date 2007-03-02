@@ -3,6 +3,17 @@
  */
 
 /*
+ * Macro to insert a comment into generated code
+ */
+#define mdw_cdcomment(s) do { \
+    struct code * code; \
+    code = alc_ary(1); \
+    code->ElemTyp(0) = A_Str; \
+    code->Str(0) = s; \
+    cd_add(code); \
+    } while (0)
+
+/*
  * ChkPrefix - allocate a prefix to x if it has not already been done.
  */
 #define ChkPrefix(x) if ((x)[0] == '\0') nxt_pre(x, pre, PrfxSz);

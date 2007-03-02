@@ -10,6 +10,9 @@
 #include "ctree.h"
 #include "ctoken.h"
 #include "cproto.h"
+#include "wop.h"
+#include "vtbl.h"
+#include "tv.h"
 
 #ifdef OptimizeLit
 
@@ -51,7 +54,7 @@ static int eval_code	(struct code *cd, struct lit_tbl *cur);
 static void propagate_literals (void);
 static void free_tbl		(void);
 static struct lit_tbl *alc_tbl (void);
-static void tbl_add		(truct lit_tbl *add);
+static void tbl_add		(struct lit_tbl *add);
 #endif					/* OptimizeLit */
 
 static struct code *asgn_null	(struct val_loc *loc1);
@@ -59,10 +62,14 @@ static struct val_loc *bound	(struct node *n, struct val_loc *rslt,
 				   int catch_fail);
 static struct code *check_var	(struct val_loc *d, struct code *lbl);
 static void deref_cd		(struct val_loc *src, struct val_loc *dest);
+/* mdw */static void deref_oparg_insitu(struct op_symentry *,
+    struct implement *);
+/* mdw */static void deref_fld(struct val_loc *);
 static void deref_ret		(struct val_loc *src, struct val_loc *dest,
 				   int subtypes);
 static void endlife		(int	kind, int indx, int old, nodeptr n);
-static struct val_loc *field_ref(struct node *n, struct val_loc *rslt);
+static struct val_loc *field_ref(struct node *p, struct node *n,
+   struct val_loc *rslt);
 static struct val_loc *gen_act	(nodeptr n, struct val_loc *rslt);
 static struct val_loc *gen_apply(struct node *n, struct val_loc *rslt);
 static struct val_loc *gen_args	(struct node *n, int frst_arg, int nargs);
@@ -70,7 +77,8 @@ static struct val_loc *gen_case	(struct node *n, struct val_loc *rslt);
 static struct val_loc *gen_creat(struct node *n, struct val_loc *rslt);
 static struct val_loc *gen_lim	(struct node *n, struct val_loc *rslt);
 static struct val_loc *gen_scan	(struct node *n, struct val_loc *rslt);
-static struct val_loc *gencode	(struct node *n, struct val_loc *rslt);
+static struct val_loc *gencode	(struct node *p, struct node *n,
+   struct val_loc *rslt);
 static struct val_loc *genretval(struct node *n, struct node *expr,
 				   struct val_loc *dest);
 static struct val_loc *inv_prc	(nodeptr n, struct val_loc *rslt);
@@ -90,6 +98,19 @@ static struct val_loc *var_ref	(struct lentry *sym);
 static struct val_loc *vararg_sz(int n);
 
 #define FrstArg 2
+
+struct fldrefhint {
+   int ncls;
+   int nrec;
+   int nmth;
+   struct gentry ** cls;
+   struct gentry ** rec;
+   };
+
+struct fldrefinfo {
+   struct fldrefhint ti;
+   struct fldrefhint raw;
+   };
 
 /*
  * Information that must be passed between a loop and its next and break
@@ -352,7 +373,7 @@ struct pentry *proc;
     */
    if (!cur_proc->reachable) {
       if (!(glookup(cur_proc->name)->flag & F_SmplInv))
-         outerfnc(fnc_lst);
+         outerfnc(fnc_lst, 0);
       return;
       }
 
@@ -427,7 +448,7 @@ struct pentry *proc;
     * The outer function is the first one on the list. It has the
     *  procedure interface; the others are just continuations.
     */
-   outerfnc(fnc_lst);
+   outerfnc(fnc_lst, 1);
    for (fnc = fnc_lst->next; fnc != NULL; fnc = fnc->next)
       if (fnc->ref_cnt > 0)
          prt_fnc(fnc);
@@ -436,13 +457,176 @@ struct pentry *proc;
 #endif					/* OptimizeLit */
 }
 
+extern
+int
+is_methods_vector(recname)
+   char * recname;
+{
+   int len;
+   if ((len = strlen(recname)) <= 9)
+      return 0;
+   return (strcmp((char *)(recname + len - 9), "__methods") == 0);
+}
+
+
+/*
+ * fldref_info_get : Retrieves information pertaining to the field-ref
+ *  contained in node n and stores it in the struct fldrefinfo named frf.
+ *  Any nonzero return value is indicative of an error.
+ */
+static
+int
+fldref_info_get(n, frf)
+   struct node * n;
+   struct fldrefinfo * frf;
+{
+   int i;
+   int clsidx;
+   int recidx;
+   int frst_bit;
+   char * fldname;
+   struct fentry * f;
+   struct gentry * g;
+   struct rentry * r;
+   struct par_rec * pr;
+   extern struct rentry ** rec_map;
+   extern struct typ_info * type_array;
+
+   frf->ti.ncls = 0;
+   frf->ti.nrec = 0;
+   frf->ti.nmth = 0;
+   frf->raw.ncls = 0;
+   frf->raw.nrec = 0;
+   frf->raw.nmth = 0;
+   fldname = Str0(Tree1(n));
+   /*
+    * Count how many recs & classes TI says have this field in its type.
+    */
+   frst_bit = type_array[rec_typ].frst_bit;
+   for (i=frst_bit; i<frst_bit + type_array[rec_typ].num_bits; i++) {
+      if (Vcall(bitset(n->symtyps->types[0], i))) {
+         r = rec_map[i-frst_bit];
+         g = glookup(r->name);
+         if (g && (g->flag & F_Object)) {
+            frf->ti.ncls += 1;
+            /*
+             * See if this class member is data or a method
+             */
+            if (vtbl_method_lkup(vtbl_get(g), fldname) >= 0)
+               /* it's a method */
+               frf->ti.nmth += 1;
+            }
+         else if (g && (g->flag & F_Record))
+            frf->ti.nrec += 1;
+         }
+      }
+   /*
+    * Count how many recs & classes have a field of this name (fuzzy)
+    */
+   f = flookup(fldname);
+   for (pr=f->rlist; pr; pr=pr->next) {
+      if (is_methods_vector(pr->rec->name))
+         continue;
+      g = glookup(pr->rec->name);
+      if (g && (g->flag & F_Object)) {
+         frf->raw.ncls += 1;
+         /*
+          * See if this class member is data or a method
+          */
+         if (vtbl_method_lkup(vtbl_get(g), fldname) >= 0)
+            /* it's a method */
+            frf->raw.nmth += 1;
+         }
+      else if (g && (g->flag & F_Record))
+         frf->raw.nrec += 1;
+      }
+   /*
+    * Allocate buffers for hint data
+    */
+   frf->ti.cls = 0;
+   frf->ti.rec = 0;
+   frf->raw.cls = 0;
+   frf->raw.rec = 0;
+   if (frf->ti.ncls)
+      frf->ti.cls = alloc(frf->ti.ncls * sizeof(struct gentry *));
+   if (frf->ti.nrec)
+      frf->ti.rec = alloc(frf->ti.nrec * sizeof(struct gentry *));
+   if (frf->raw.ncls)
+      frf->raw.cls = alloc(frf->raw.ncls * sizeof(struct gentry *));
+   if (frf->raw.nrec)
+      frf->raw.rec = alloc(frf->raw.nrec * sizeof(struct gentry *));
+   /*
+    * Get the TI info for this field-ref...
+    */
+   clsidx = 0;
+   recidx = 0; 
+   frst_bit = type_array[rec_typ].frst_bit;
+   for (i=frst_bit; i<frst_bit + type_array[rec_typ].num_bits; i++) {
+      if (Vcall(bitset(n->symtyps->types[0], i))) {
+         r = rec_map[i-frst_bit];
+         g = glookup(r->name);
+         if (g && (g->flag & F_Object))
+            frf->ti.cls[clsidx++] = g;
+         else if (g && (g->flag & F_Record))
+            frf->ti.rec[recidx++] = g;
+         }
+      }
+   /*
+    * Get the truly fuzzy info that may be necessary for disambiguation...
+    */
+   clsidx = 0;
+   recidx = 0;
+   f = flookup(Str0(Tree1(n)));
+   for (pr=f->rlist; pr; pr=pr->next) {
+      if (is_methods_vector(pr->rec->name))
+         continue;
+      g = glookup(pr->rec->name);
+      if (g && (g->flag & F_Object))
+         frf->raw.cls[clsidx++] = g;
+      else if (g && (g->flag & F_Record))
+         frf->raw.rec[recidx++] = g;
+      }
+   return 0;
+}
+
+static
+void
+fldref_info_free(frf)
+   struct fldrefinfo * frf;
+{
+   /*
+    * This is necessary because we're using the heap to
+    * store fldref hint data. We do this because we have
+    * no idea of knowing a reasonable upper bound for the
+    * number of elements that will be in a hint array.
+    */
+   if (frf->ti.cls)
+      free(frf->ti.cls);
+   if (frf->ti.rec)
+      free(frf->ti.rec);
+   if (frf->raw.cls)
+      free(frf->raw.cls);
+   if (frf->raw.rec)
+      free(frf->raw.rec);
+   /*
+    * Yes, this is paranoid... and I do it anyway.
+    */
+   frf->ti.cls = 0;
+   frf->ti.rec = 0;
+   frf->raw.cls = 0;
+   frf->raw.rec = 0;
+}
+
 /*
  * gencode - generate code for a syntax tree.
  */
-static struct val_loc *gencode(n, rslt)
-struct node *n;
-struct val_loc *rslt;
-   {
+static
+struct val_loc *
+gencode(p, n, rslt)
+   struct node * p;
+   struct node * n;
+   struct val_loc * rslt;
+{
    struct code *cd;
    struct code *cd1;
    struct code *fail_sav;
@@ -487,7 +671,7 @@ struct val_loc *rslt;
 
          cd_add(lbl1);
          cur_fnc->cursor = lbl1->prev;  /* 1st alternative goes before label */
-         gencode(Tree0(n), rslt);
+         gencode(n, Tree0(n), rslt);
 
          /*
           * Each alternative must call the same success continuation.
@@ -498,7 +682,7 @@ struct val_loc *rslt;
          cur_fnc = fnc_sav;             /* return to the context of the label */
          cur_fnc->cursor = lbl1;        /* 2nd alternative goes after label */
          on_failure = fail_sav;         /* on failure, alternation fails */
-         gencode(Tree1(n), rslt);
+         gencode(n, Tree1(n), rslt);
          callc_add(fnc);                /* call continuation */
 
          /*
@@ -529,7 +713,7 @@ struct val_loc *rslt;
          r1[0] = tmp_loc(tmp_indx);
          r1[1] = tmp_loc(tmp_indx + 1);
 
-         gencode(Tree2(n), r1[0]);  /* first argument */
+         gencode(n, Tree2(n), r1[0]);  /* first argument */
 
          /*
           * allocate an argument list for the assignment and copy the
@@ -543,7 +727,7 @@ struct val_loc *rslt;
          cd_add(mk_cpyval(r2[0], r1[0]));
          r2[1] = tmp_loc(tmp_indx);
 
-         gencode(Tree3(n), r1[1]); /* second argument */
+         gencode(n, Tree3(n), r1[1]); /* second argument */
 
          /*
           * Produce code for the operation.
@@ -612,7 +796,7 @@ struct val_loc *rslt;
           *  repeated as indicated by the value of the failure flag.
           */
          on_failure = lbl1;
-         rslt = gencode(Tree0(n), rslt);
+         rslt = gencode(n, Tree0(n), rslt);
          cd = alc_ary(2);
          cd->ElemTyp(0) = A_ValLoc;
          cd->ValLoc(0) =                fail_flg;
@@ -669,7 +853,7 @@ struct val_loc *rslt;
             loop_info->rslt = chk_alc(loop_info->rslt, Tree0(n)->lifetime);
             li_sav = loop_info;
             loop_info = loop_info->prev;
-            gencode(Tree0(n), li_sav->rslt);
+            gencode(n, Tree0(n), li_sav->rslt);
             loop_info = li_sav;
 
             /*
@@ -728,7 +912,7 @@ struct val_loc *rslt;
          break;
 
       case N_Field:
-         rslt = field_ref(n, rslt);
+         rslt = field_ref(p, n, rslt);
          break;
 
       case N_Id:
@@ -752,7 +936,7 @@ struct val_loc *rslt;
              * if-then. Control clause is bounded, but otherwise trivial.
              */ 
             bound(Tree0(n), &ignore, 0);  	/* control clause */
-            rslt = gencode(Tree1(n), rslt);     /* then clause */
+            rslt = gencode(n, Tree1(n), rslt);     /* then clause */
             }
          else {
             /*
@@ -770,7 +954,7 @@ struct val_loc *rslt;
             cur_fnc->cursor = lbl1->prev; /* then clause goes before else lbl */
             on_failure = fail_sav;
             rslt = chk_alc(rslt, n->lifetime);
-            gencode(Tree1(n), rslt);      /* then clause */
+            gencode(n, Tree1(n), rslt);      /* then clause */
 
             /*
              * If the then clause is not a generator, execution can
@@ -794,7 +978,7 @@ struct val_loc *rslt;
 
             cur_fnc->cursor = lbl1;    /* else clause goes after label */
             on_failure = fail_sav;
-            gencode(Tree2(n), rslt);   /* else clause */
+            gencode(n, Tree2(n), rslt);   /* else clause */
 
             /*
              * If the else clause is not a generator, execution is at
@@ -843,13 +1027,69 @@ struct val_loc *rslt;
              * Mutual evaluation.
              */
             for (i = 2; i <= nargs; ++i)
-               gencode(n->n_field[i].n_ptr, &ignore);   /* arg i - 1 */
+               gencode(n, n->n_field[i].n_ptr, &ignore);   /* arg i - 1 */
             rslt = chk_alc(rslt, n->lifetime);
-            gencode(n->n_field[nargs + 1].n_ptr, rslt); /* last argument */
+            gencode(n, n->n_field[nargs + 1].n_ptr, rslt); /* last argument */
             }
          else {
             ++nargs; /* consider the procedure an argument to invoke() */
             frst_arg = gen_args(n, 1, nargs);
+            if (n->n_type == N_Empty) {
+               /*
+                * If we get here, it's because disambiguation code has
+                * determined that the thingy being invoked may be a record
+                * field or a class method. We need to generate code here
+                * to adjust the invocation's arg-list in the event that
+                * what we encounter at run-time is *not* a class-inst.
+                */
+               struct code * cd;
+               n->n_type = N_Invok; /* set node back to N_Invok */
+               cd = alc_ary(6);
+               cd->ElemTyp(0) = A_Str;
+               cd->Str(0) = "if (r_signal == 0)/* adj invok args for rec-inst */";
+               cd->ElemTyp(1) = A_Str;
+               cd->Str(1) = "\n      for(r_signal=";
+               cd->ElemTyp(2) = A_Intgr;
+               cd->Intgr(2) = frst_arg->u.tmp + cur_proc->tnd_loc + 1;
+               cd->ElemTyp(3) = A_Str;
+               cd->Str(3) = "; r_signal<";
+               cd->ElemTyp(4) = A_Intgr;
+               cd->Intgr(4) = frst_arg->u.tmp + cur_proc->tnd_loc + nargs - 1;
+               cd->ElemTyp(5) = A_Str;
+               /*
+                * The following is necessary so that we can correctly access
+                * the procedure frame from within an "outer" function or from
+                * within a continuation. The check itself seems to work, but
+                * further refinement may be necessary.
+                */
+               if (cur_fnc == fnc_lst) /* is this an "outer" func? */
+                  cd->Str(5) = "; r_signal++)\n         "
+                     "r_f.t.d[r_signal] = r_f.t.d[r_signal+1];";
+               else
+                  cd->Str(5) = "; r_signal++)\n         "
+                     "(*r_pfp).t.d[r_signal] = (*r_pfp).t.d[r_signal+1];";
+               cd_add(cd);
+               /*
+                * Emit some info about argument-list params into the
+                * code stream. This is only a debugging convenience.
+                */
+               cd = alc_ary(7);
+               cd->ElemTyp(0) = A_Str;
+               cd->Str(0) = "/* frst_arg->u.tmp: ";
+               cd->ElemTyp(1) = A_Intgr;
+               cd->Intgr(1) = frst_arg->u.tmp;
+               cd->ElemTyp(2) = A_Str;
+               cd->Str(2) = " cur_proc->tnd_loc: ";
+               cd->ElemTyp(3) = A_Intgr;
+               cd->Intgr(3) = cur_proc->tnd_loc;
+               cd->ElemTyp(4) = A_Str;
+               cd->Str(4) = " nargs: ";
+               cd->ElemTyp(5) = A_Intgr;
+               cd->Intgr(5) = nargs;
+               cd->ElemTyp(6) = A_Str;
+               cd->Str(6) = " */";
+               cd_add(cd); 
+               }
             setloc(n);
             /*
              * Assume this operation uses its result location as a work
@@ -965,7 +1205,7 @@ struct val_loc *rslt;
                 * "next" in the control clause just fails.
                 */
                li.next_lbl = &next_fail;
-               gencode(Tree1(n), &ignore);          /* control clause */
+               gencode(n, Tree1(n), &ignore);          /* control clause */
                /*
                 * "next" in the do clause transfers control to the
                 *   statement at the end of the loop that resumes the
@@ -1220,8 +1460,8 @@ struct val_loc *rslt;
          tmp_indx = alc_tmp(3, lifetm_ary);
          for (i = 0; i < 3; ++i)
             r1[i] = tmp_loc(tmp_indx++);
-         gencode(Tree2(n), r1[0]);   /* generate code to compute x */
-         gencode(Tree3(n), r1[1]);   /* generate code compute i */
+         gencode(n, Tree2(n), r1[0]);   /* generate code to compute x */
+         gencode(n, Tree3(n), r1[1]);   /* generate code compute i */
 
          /*
           * Allocate work area of temporary variables for arithmetic.
@@ -1234,7 +1474,7 @@ struct val_loc *rslt;
          for (i = 0; i < 2; ++i)
             r2[i] = tmp_loc(tmp_indx++);
          cd_add(mk_cpyval(r2[0], r1[1])); /* generate code to copy i */
-         gencode(Tree4(n), r2[1]);        /* generate code to compute j */
+         gencode(n, Tree4(n), r2[1]);        /* generate code to compute j */
 
          /*
           * generate code for i op j.
@@ -1253,7 +1493,7 @@ struct val_loc *rslt;
 
       case N_Slist:
          bound(Tree0(n), &ignore, 1);
-         rslt = gencode(Tree1(n), rslt);
+         rslt = gencode(n, Tree1(n), rslt);
          break;
 
       case N_SmplAsgn: {
@@ -1274,7 +1514,7 @@ struct val_loc *rslt;
              *  know what it is. Assignment just copies value from
              *  one variable to the other.
              */
-            gencode(Tree3(n), &ignore);
+            gencode(n, Tree3(n), &ignore);
             val = var_ref(single);
             cd_add(mk_cpyval(var, val));
             }
@@ -1283,7 +1523,7 @@ struct val_loc *rslt;
                /*
                 * It is safe to compute the result directly into the variable.
                 */
-               gencode(Tree3(n), var);
+               gencode(n, Tree3(n), var);
                break;
             case AsgnCopy:
                /*
@@ -1291,14 +1531,14 @@ struct val_loc *rslt;
                 *  safe to compute it into the variable, we must use a
                 *  temporary variable.
                 */
-               val = gencode(Tree3(n), NULL);
+               val = gencode(n, Tree3(n), NULL);
                cd_add(mk_cpyval(var, val));
                break;
             case AsgnDeref:
                /*
                 * We must dereference the result into the variable.
                 */
-               val = gencode(Tree3(n), NULL);
+               val = gencode(n, Tree3(n), NULL);
                deref_cd(val, var);
                break;
             }
@@ -1308,7 +1548,7 @@ struct val_loc *rslt;
           *  variable reference.
           */
          if (rslt != &ignore)
-            rslt = gencode(Tree2(n), rslt);
+            rslt = gencode(n, Tree2(n), rslt);
          }
          break;
 
@@ -1383,7 +1623,7 @@ struct val_loc *rslt;
           *  variable reference.
           */
          if (rslt != &ignore)
-            rslt = gencode(Tree2(n), rslt);
+            rslt = gencode(n, Tree2(n), rslt);
          }
          break;
 
@@ -1420,7 +1660,7 @@ struct val_loc *rslt;
       freetmp = ft;
       }
    return rslt;
-   }
+}
 
 /*
  * chk_alc - make sure a result location has been allocated. If it is
@@ -1533,7 +1773,7 @@ int nargs;
    lifetm_ary = alc_lftm(nargs, &n->n_field[frst_arg]);
    tmp_indx = alc_tmp(nargs, lifetm_ary);
    for (i = 0; i < nargs; ++i)
-      gencode(n->n_field[frst_arg + i].n_ptr, tmp_loc(tmp_indx + i));
+      gencode(n, n->n_field[frst_arg + i].n_ptr, tmp_loc(tmp_indx + i));
    free((char *)lifetm_ary);
    return tmp_loc(tmp_indx);
    }
@@ -1617,7 +1857,7 @@ struct val_loc *rslt;
       cd_lbl = alc_lbl("selected code", Bounding);
       cd_add(cd_lbl);
       cur_fnc->cursor = cd_lbl->prev; 
-      gencode(Tree0(clause), r2);
+      gencode(clause, Tree0(clause), r2);
 
       /*
        * Dereference the results of the control clause and the selection
@@ -1650,7 +1890,7 @@ struct val_loc *rslt;
       cur_fnc = fnc_sav;
       cur_fnc->cursor = cd_lbl;
       on_failure = fail_sav;
-      gencode(Tree1(clause), rslt);
+      gencode(clause, Tree1(clause), rslt);
 
       /*
        * If this clause is a generator, call the success continuation
@@ -1680,7 +1920,7 @@ struct val_loc *rslt;
        * There is an explicit default action.
        */
       on_failure = fail_sav;
-      gencode(deflt, rslt);
+      gencode(n, deflt, rslt);
       if (cur_fnc->cursor->next != end_lbl) {
          if (succ_cont == NULL)
             succ_cont = alc_fnc();
@@ -1944,11 +2184,11 @@ struct val_loc *rslt;
        * Limitation is in a named variable. Use value directly from
        *  the variable rather than saving the result of the expression.
        */
-      gencode(limit, &ignore);
+      gencode(n, limit, &ignore);
       lim_desc = var_ref(single);
       }
    else {
-      lim_desc = gencode(limit, NULL);
+      lim_desc = gencode(n, limit, NULL);
       if (deref)
          deref_cd(lim_desc, lim_desc);
       }
@@ -2065,7 +2305,7 @@ struct val_loc *rslt;
    /*
     * Generate code for limited expression and to check the limit value.
     */
-   rslt = gencode(expr, rslt);
+   rslt = gencode(n, expr, rslt);
    cd = NewCode(2);
    cd->cd_id = C_If;
    cd1 = alc_ary(3);
@@ -2111,8 +2351,9 @@ struct val_loc *rslt;
    /*
     * Generate code to compute the two operands.
     */
-   callee = gencode(Tree0(n), NULL);
-   lst = gencode(Tree1(n), NULL);
+/* mdw   callee = gencode(n, Tree0(n), NULL); */
+callee = gencode(n, Tree0(n), rslt);
+   lst = gencode(n, Tree1(n), NULL);
    rslt = chk_alc(rslt, n->lifetime);
    setloc(n);
 
@@ -2205,7 +2446,7 @@ struct val_loc *rslt;
        * The subject value is in a named variable. Use value directly from
        *  the variable rather than saving the result of the expression.
        */
-      gencode(subj, &ignore);
+      gencode(n, subj, &ignore);
       new_subj = var_ref(subj_single);
 
       if (op_tok == AUGQMARK) {
@@ -2229,12 +2470,12 @@ struct val_loc *rslt;
       scan_rslt = tmp_loc(tmp_indx);
       free((char *)lifetm_ary);
 
-      gencode(subj, asgn_var);
+      gencode(n, subj, asgn_var);
       new_subj = chk_alc(NULL, n->intrnl_lftm);
       deref_cd(asgn_var, new_subj);
       }
    else {
-      new_subj = gencode(subj, NULL);
+      new_subj = gencode(n, subj, NULL);
       if (subj_deref)
           deref_cd(new_subj, new_subj);
       scan_rslt = rslt; /* result of 2nd operand is result of scanning */
@@ -2304,7 +2545,7 @@ struct val_loc *rslt;
    cd->Str(0) =                 "k_pos = 1;";
    cd_add(cd);
 
-   scan_rslt = gencode(body, scan_rslt);
+   scan_rslt = gencode(n, body, scan_rslt);
 
    setloc(op);
    if (op_tok == AUGQMARK) {
@@ -2418,7 +2659,7 @@ struct val_loc *rslt;
        *  This is also the transmitted value. Activation may need a
        *  dereferenced value, so this must be in a different location.
        */
-      gencode(transmit, asgn1);
+      gencode(n, transmit, asgn1);
       trans_loc = chk_alc(NULL, n->intrnl_lftm);
       setloc(op);
       deref_ret(asgn1, trans_loc, varsubtyp(transmit->type, NULL));
@@ -2435,7 +2676,7 @@ struct val_loc *rslt;
       /*
        * The value is something other than a single named variable.
        */
-      coexpr_loc = gencode(coexpr, NULL);
+      coexpr_loc = gencode(n, coexpr, NULL);
       if (c_deref)
          deref_cd(coexpr_loc, coexpr_loc);
       }
@@ -2444,7 +2685,7 @@ struct val_loc *rslt;
        * The value is in a named variable. Use it directly from the
        *  variable rather than saving the result of the expression.
        */
-      gencode(coexpr, &ignore);
+      gencode(n, coexpr, &ignore);
       coexpr_loc = var_ref(c_single);
       }
 
@@ -2728,7 +2969,7 @@ struct val_loc *dest;
     *  a variable reference; we need the value and we know where it is.
     */
    if (single != NULL && (subtypes & (HasLcl | HasPrm))) {
-      gencode(expr, &ignore);
+      gencode(n, expr, &ignore);
       val = var_ref(single);
       if (dest == NULL)
          dest = val;
@@ -2736,7 +2977,7 @@ struct val_loc *dest;
          cd_add(mk_cpyval(dest, val));
       }
    else {
-      dest = gencode(expr, dest);
+      dest = gencode(n, expr, dest);
       setloc(n);
       deref_ret(dest, dest, subtypes);
       }
@@ -2864,12 +3105,820 @@ struct code *lbl;
    }
 
 /*
+ * invok_method - generate code for a method invocation.
+ */
+static
+struct val_loc *
+invok_method(n, vtbl, rslt)
+   struct node * n;
+   struct vtbl * vtbl;
+   struct val_loc * rslt;
+{
+   int deref;
+   int index;
+   int offset;
+   struct code *cd;
+   struct code *cd1;
+   struct code *lbl;
+   struct node *rec;
+   struct node *fld;
+   struct val_loc *rloc;
+   struct lentry *single;
+
+   rec = Tree0(n);
+   fld = Tree1(n);
+
+   /*
+    * Get the offset of the method in the vtbl
+    */
+   if ((offset = vtbl_method_lkup(vtbl, Str0(fld))) < 0)
+      return NULL;
+   /*
+    * Get the index in the array of globals for this vtbl
+    */
+   if ((index = vtbl_index_get(vtbl)) < 0)
+      return NULL;
+   /*
+    * Generate code to compute the record value and dereference it.
+    */
+   deref = HasVar(varsubtyp(rec->type, &single));
+   if (single != NULL) {
+      /*
+       * The record is in a named variable. Use value directly from
+       *  the variable rather than saving the result of the expression.
+       */
+      gencode(n, rec, &ignore);
+      rloc = var_ref(single);
+      }
+   else {
+      rloc = gencode(n, rec, NULL);
+      if (deref) {
+         deref_fld(rloc);
+         }
+      }
+   setloc(fld);
+
+   /*
+    * Generate code to ensure the operand is a record.
+    */
+   cur_symtyps = n->symtyps;
+   if (eval_is(rec_typ, 0) & MaybeFalse) {
+      lbl = alc_lbl("is record", 0);
+      cd_add(lbl);
+      cur_fnc->cursor = lbl->prev;        /* new code goes before label */
+      cd = NewCode(2);
+      cd->cd_id = C_If;
+      cd1 = alc_ary(3);
+      cd1->ElemTyp(0) = A_Str;
+      cd1->Str(0) =                  "(globals[";
+      cd1->ElemTyp(1) = A_Intgr;
+      cd1->Intgr(1) =                index; 
+      cd1->ElemTyp(2) = A_Str;
+      cd1->Str(2) =                  "]).dword == D_Record";
+      cd->Cond = cd1;
+      cd->ThenStmt = mk_goto(lbl);
+      cd_add(cd);
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =                   "err_msg(107, &globals[";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =                 index;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =                   "]);";
+      cd_add(cd);
+      if (err_conv)
+         cd_add(sig_cd(on_failure, cur_fnc));
+      cur_fnc->cursor = lbl;
+      }
+
+   rslt = chk_alc(rslt, n->lifetime);
+
+   /*
+    * Generate code for declarations and to get the record block pointer.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =             "{";
+   cd_add(cd);
+#if 0
+   /*
+    * This places a comment in the generated code, but should only
+    * be used when debugging the compiler itself.
+    */
+   {
+   char * buf = alloc(sizeof(char) * (strlen(Str0(fld)) + 
+      strlen(vtbl_name(vtbl)) + 32));
+   sprintf(buf, "/* mi: lkup %s in %s */", Str0(fld), vtbl_name(vtbl));
+   mdw_cdcomment(buf);
+   }
+#endif
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =   "struct b_record *r_rp = (struct b_record *)BlkLoc(globals[";
+   cd->ElemTyp(1) = A_Intgr;
+   cd->Intgr(1) =            index;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =              "]);";
+   cd_add(cd);
+   if (err_conv) {
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =           "int r_must_fail = 0;";
+      cd_add(cd);
+      }
+
+   /*
+    * We already know the offset of the method in the vtbl.
+    */
+   cd = alc_ary(4);
+   cd->ElemTyp(0) = A_ValLoc;
+   cd->ValLoc(0) =           rslt;
+   cd->ElemTyp(1) = A_Str;
+   cd->Str(1) =              ".dword = D_Var + ((word *)&r_rp->fields[";
+   cd->ElemTyp(2) = A_Intgr;
+   cd->Intgr(2) =            offset;
+   cd->ElemTyp(3) = A_Str;
+   cd->Str(3) =              "] - (word *)r_rp);";
+   cd_add(cd);
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "VarLoc(";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =           rslt;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =              ") = (dptr)r_rp;";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "}";
+   cd_add(cd);
+
+   return rslt;
+}
+
+/*
+ * invok_methods : Generates code to invoke "ncls" methods whose gentries are
+ *   contained in "gents" and correspond to the field-ref node "n". This routine
+ *   does not perform implicit-self insertion on any of the methods being
+ *   invoked, and should therefore be used only in cases where no ambiguity
+ *   exists in the invocation(s).
+ */ 
+static
+struct val_loc *
+invok_methods(n, gents, ncls, rslt)
+   struct node * n;
+   struct gentry ** gents;
+   int ncls;
+   struct val_loc * rslt;
+{
+   struct code * cd;
+   struct code * cd1;
+   struct code * lbl;
+   struct node * rec;
+   struct node * fld;
+   struct rentry * r;
+   struct vtbl * vtbl;
+   int i, k, vidx, deref;
+   struct lentry * single;
+   struct val_loc * rec_loc;
+
+   rec = Tree0(n);
+   fld = Tree1(n);
+   if (ncls == 1)
+      return invok_method(n, vtbl_get(gents[0]), rslt);
+   /*
+    * Generate code to compute the record value and dereference it.
+    */
+   deref = HasVar(varsubtyp(rec->type, &single));
+   if (single) {
+      /*
+       * The record is in a named variable. Use value directly from
+       *  the variable rather than saving the result of the expression.
+       */
+      gencode(n, rec, &ignore);
+      rec_loc = var_ref(single);
+      }
+   else {
+      rec_loc = gencode(n, rec, NULL);
+      if (deref)
+         deref_fld(rec_loc);
+      }
+   setloc(fld);
+   /*
+    * Make sure the operand is a record.
+    */
+   cur_symtyps = n->symtyps;
+   if (eval_is(rec_typ, 0) & MaybeFalse) {
+      lbl = alc_lbl("invok-methods: is record", 0);
+      cd_add(lbl);
+      cur_fnc->cursor = lbl->prev; /* code goes before label */
+      cd = NewCode(2);
+      cd->cd_id = C_If;
+      cd1 = alc_ary(3);
+      cd1->ElemTyp(0) = A_Str;
+      cd1->Str(0) =                  "(";
+      cd1->ElemTyp(1) = A_ValLoc;
+      cd1->ValLoc(1) =               rec_loc;
+      cd1->ElemTyp(2) = A_Str;
+      cd1->Str(2) =                  ").dword == D_Record";
+      cd->Cond = cd1;
+      cd->ThenStmt = mk_goto(lbl);
+      cd_add(cd);
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =                   "err_msg(107, &";
+      cd->ElemTyp(1) = A_ValLoc;
+      cd->ValLoc(1) =                rec_loc;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =                   ");";
+      cd_add(cd);
+      if (err_conv)
+         cd_add(sig_cd(on_failure, cur_fnc));
+      cur_fnc->cursor = lbl;
+      }
+   rslt = chk_alc(rslt, n->lifetime);
+   /*
+    * Generate code for declarations and to get the record block pointer.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =             "{";
+   cd_add(cd);
+#if 0
+   {
+   /*
+    * This places a comment in the generated code, but should only
+    * be used when debugging the compiler itself.
+    */
+   char * buf = alloc(sizeof(char) * strlen(Str0(fld)) + 32);
+   sprintf(buf, "/* invok-methods: lkup %s */", Str0(fld));
+   mdw_cdcomment(buf);
+   }
+#endif
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =           "struct b_record *r_rp = (struct b_record *) BlkLoc(";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =        rec_loc;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =           ");";
+   cd_add(cd);
+   /*
+    * The field appears in several records; generate code to determine
+    * which one it is. Because these are method invocations, we need to
+    * use the r->rec_num to determine which __oprec contains the desired
+    * method; the methods themselves are not located in the same record
+    * when we're dealing with class instances.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "dptr r_dp; int fld_idx;";
+   cd_add(cd);
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+   cd_add(cd);
+   for (i=0; i<ncls; i++) {
+      r = gents[i]->val.rec;
+      vtbl = vtbl_get(gents[i]);
+      vidx = vtbl_index_get(vtbl);
+      k = vtbl_method_lkup(vtbl, Str0(fld));
+      if (vidx < 0 || k < 0)
+         continue;
+      cd = alc_ary(6);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =               "   case ";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =             r->rec_num;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =               ":";
+      cd->ElemTyp(3) = A_Str;
+      cd->Str(3) =               " /* ";
+      cd->ElemTyp(4) = A_Str;
+      cd->Str(4) =               vtbl_name(vtbl);
+      cd->ElemTyp(5) = A_Str;
+      cd->Str(5) =               " */";
+      cd_add(cd);
+
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =            "      r_rp = (struct b_record *)BlkLoc(globals[";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =             vidx;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =               "]);";
+      cd_add(cd);
+
+      cd = alc_ary(4);
+      cd->ElemTyp(0) = A_ValLoc;
+      cd->ValLoc(0) =           rslt;
+      cd->ElemTyp(1) = A_Str;
+      cd->Str(1) =           ".dword = D_Var + ((word *)&r_rp->fields[";
+      cd->ElemTyp(2) = A_Intgr;
+      cd->Intgr(2) =         k;
+      cd->ElemTyp(3) = A_Str;
+      cd->Str(3) =           "] - (word *)r_rp);";
+      cd_add(cd);
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "      VarLoc(";
+      cd->ElemTyp(1) = A_ValLoc;
+      cd->ValLoc(1) =           rslt;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =              ") = (dptr)r_rp;";
+      cd_add(cd);
+
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =               "      break;";
+      cd_add(cd);
+      }
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =                  "   default:";
+   cd_add(cd);
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =                  "      err_msg(207, &";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =               rec_loc;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =                  ");";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =                  "      break;";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "   }";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "}";
+   cd_add(cd);
+
+   return rslt;
+}
+
+extern
+int
+rec_fld_index(rec, fldname)
+   struct rentry * rec;
+   char * fldname;
+{
+   int i;
+   struct fldname * f;
+
+   f = rec->fields;
+   for (i=1; i<=rec->nfields; i++) {
+      if (strcmp(f->name, fldname) == 0)
+         return rec->nfields - i;
+      f = f->next;
+      }
+   return -1;
+}
+
+static
+struct val_loc *
+invok_methods_and_flds(p, n, clss, ncls, recs, nrec, rslt)
+   struct node * p;
+   struct node * n;
+   struct gentry ** clss;
+   int ncls;
+   struct gentry ** recs;
+   int nrec;
+   struct val_loc * rslt;
+{
+   int i, ofst;
+   int vidx, deref;
+   struct code * cd;
+   struct code * cd1;
+   struct node * fld;
+   struct node * rec;
+   struct vtbl * vtbl;
+   struct code * lbl_cls;
+   struct code * lbl_end;
+   struct lentry * single;
+   struct val_loc * recloc;
+
+   fld = Tree1(n);
+   rec = Tree0(n);
+   if (ncls <= 0 || nrec <= 0)
+      return NULL;
+   /*
+    * Generate code to compute the record's val_loc and dereference it.
+    */
+   deref = HasVar(varsubtyp(rec->type, &single));
+   if (single != NULL) {
+      /*
+       * The record is in a named variable. Use value directly from
+       *  the variable rather than saving the result of the expression.
+       */
+      gencode(n, rec, &ignore);
+      recloc = var_ref(single);
+      }
+   else {
+      recloc = gencode(n, rec, NULL);
+      if (deref)
+         deref_fld(recloc);
+      }
+   setloc(fld);
+
+   /*
+    * Generate code for declarations and get a record block pointer that
+    * is valid regardless of whether a method or field is being invoked.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =             "{";
+   cd_add(cd);
+#if 0
+   {
+   /*
+    * This places a comment in the generated code, but should only
+    * be used when debugging the compiler itself.
+    */
+   char * buf = alloc(sizeof(char) * strlen(Str0(fld)) + 32);
+   sprintf(buf, "/* i-m-n-f: lkup %s */", Str0(fld));
+   mdw_cdcomment(buf);
+   }
+#endif
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =           "struct b_record *r_rp = (struct b_record *) BlkLoc(";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =          recloc;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =             ");";
+   cd_add(cd);
+   if (err_conv) {
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =             "int r_must_fail = 0;";
+      cd_add(cd);
+      }
+   /*
+    * We have the record block ptr that we need. We now generate code to
+    * perform a branch depending upon whether the type of the record encountered
+    * at run-time is a class-inst or a rec-inst. The branch is effected via
+    * the is_obj() routine generated in the C output.
+    */
+   lbl_cls = alc_lbl("is cls-inst", 0);
+   lbl_end = alc_lbl("end disambig", Bounding);
+   cd_add(lbl_cls);
+   cd_add(lbl_end);
+
+   cur_fnc->cursor = lbl_cls->prev; /* code goes before label */
+   cd = NewCode(2);
+   cd->cd_id = C_If;
+   cd1 = alc_ary(3);
+   cd1->ElemTyp(0) = A_Str;
+   cd1->Str(0) =              "(r_signal = is_obj(";
+   cd1->ElemTyp(1) = A_ValLoc;
+   cd1->ValLoc(1) = recloc;
+   cd1->ElemTyp(2) = A_Str;
+   cd1->Str(2) =              "))";
+   cd->Cond = cd1;
+   cd->ThenStmt = mk_goto(lbl_cls);
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) = "{ /* printf(\"%d disambig: rec-inst\\n\",__LINE__); */";
+   cd_add(cd);
+
+   /*
+    * Generate code to get the rec field that we are invoking.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "dptr r_dp; int fld_idx;";
+   cd_add(cd);
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+   cd_add(cd);
+
+   for (i=0; i<nrec; i++) {
+      ofst = rec_fld_index(recs[i]->val.rec, Str0(fld));
+      if (ofst < 0)
+         continue;
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "   case ";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =            recs[i]->val.rec->rec_num;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =              ":";
+      cd_add(cd);
+
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "      r_dp = &r_rp->fields[";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =                   ofst;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =                     "];";
+      cd_add(cd);
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "      break;";
+      cd_add(cd);
+      }
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "   default:";
+   cd_add(cd);
+
+   /*
+    * Emit the rec-num that we were expecting; this is for dbg only.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) = "      printf(\"rec-num: %d.\\n\",r_rp->recdesc->proc.recnum);";
+   cd_add(cd);
+
+   /*
+    * Attempt to find the field via the rtl fldlookup function.
+    */
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "      if ((fld_idx = fldlookup(r_rp, \"";
+   cd->ElemTyp(1) = A_Str;
+   cd->Str(1) = Str0(fld);
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =              "\")) < 0)";
+   cd_add(cd);
+
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "         err_msg(207, &";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =                   recloc;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =                     ");";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "      else";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "         r_dp = &r_rp->fields[fld_idx];";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "   }";
+   cd_add(cd);
+
+   cd = alc_ary(2);
+   cd->ElemTyp(0) = A_ValLoc;
+   cd->ValLoc(0) =           rslt;
+   cd->ElemTyp(1) = A_Str;
+   cd->Str(1) =              ".dword = D_Var + ((word *)r_dp - (word *)r_rp);";
+   cd_add(cd);
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "VarLoc(";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =           rslt;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =              ") = (dptr)r_rp;";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) = "}";
+   cd_add(cd);
+
+   /*
+    * At this point we have a record field; generate a branch to the end of
+    * the disambiguation code so that we can converge with the class-inst
+    * control-path again.
+    */
+   cd_add(mk_goto(lbl_end));
+   cur_fnc->cursor = lbl_cls; /* code goes after label */
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) = "{ /* printf(\"%d: disambig: cls-inst\\n\",__LINE__); */";
+   cd_add(cd);
+
+   /*
+    * Generate code to get the method that we are invoking.
+    */
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "dptr r_dp; int fld_idx;";
+   cd_add(cd);
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+   cd_add(cd);
+
+   for (i=0; i<ncls; i++) {
+      vtbl = vtbl_get(clss[i]);
+      vidx = vtbl_index_get(vtbl);
+      ofst = vtbl_method_lkup(vtbl, Str0(fld));
+      if (vidx < 0 || ofst < 0)
+         continue;
+      cd = alc_ary(6);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =               "   case ";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =             clss[i]->val.rec->rec_num;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =               ":";
+      cd->ElemTyp(3) = A_Str;
+      cd->Str(3) =               " /* ";
+      cd->ElemTyp(4) = A_Str;
+      cd->Str(4) =               vtbl_name(vtbl);
+      cd->ElemTyp(5) = A_Str;
+      cd->Str(5) =               " */";
+      cd_add(cd);
+
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =            "      r_rp = (struct b_record *)BlkLoc(globals[";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =             vidx;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =               "]);";
+      cd_add(cd);
+
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "      r_dp = &r_rp->fields[";
+      cd->ElemTyp(1) = A_Intgr;
+      cd->Intgr(1) =                   ofst;
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) =                     "];";
+      cd_add(cd);
+
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =               "      break;";
+      cd_add(cd);
+      }
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =                  "   default:";
+   cd_add(cd);
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =                  "      err_msg(207, &";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =               recloc;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =                  ");";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =                  "      break;";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "   }";
+   cd_add(cd);
+
+   cd = alc_ary(2);
+   cd->ElemTyp(0) = A_ValLoc;
+   cd->ValLoc(0) =           rslt;
+   cd->ElemTyp(1) = A_Str;
+   cd->Str(1) =              ".dword = D_Var + ((word *)r_dp - (word *)r_rp);";
+   cd_add(cd);
+   cd = alc_ary(3);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "VarLoc(";
+   cd->ElemTyp(1) = A_ValLoc;
+   cd->ValLoc(1) =           rslt;
+   cd->ElemTyp(2) = A_Str;
+   cd->Str(2) =              ") = (dptr)r_rp;";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) =              "}";
+   cd_add(cd);
+
+   cd = alc_ary(1);
+   cd->ElemTyp(0) = A_Str;
+   cd->Str(0) = "}";
+   cd_add(cd);
+
+   /*
+    * At this point we may have a method. Branch to the end of disam 
+    * so that we can converge again.
+    */
+   cd_add(mk_goto(lbl_end));
+   cur_fnc->cursor = lbl_end; /* next code goes after label */
+
+   /*
+    * Now for the hack; We need to mark the parent invocation as ambiguous
+    * so we can generate code to adjust the argument list at run-time if the
+    * entity of the thing being invoked is not a method. Once code unwinds
+    * back to gencode at the N_Invok label, we will detect the ambiguity and
+    * generate arg-list adjustment code that will be effective if the thing
+    * being invoked isn't a method.
+    */
+   p->n_type = N_Empty;
+   return rslt;
+}
+
+static
+struct val_loc *
+invok_fuzzy(p, n, frf, rslt)
+   struct node * p;
+   struct node * n;
+   struct fldrefinfo * frf;
+   struct val_loc * rslt;
+{
+   extern int verbose;
+   extern int unicon_mode;
+   struct fldrefhint * hint;
+
+   /*
+    * The struct fldrefinfo contains two sets of hints
+    * regarding this invocation; one is composed of info from TI,
+    * the other is composed of raw or "fuzzy" information.
+    * Decide here which of these sets we will use for disambiguation.
+    */
+   if (frf->ti.ncls > 0 || frf->ti.nrec > 0)
+      hint = &frf->ti;
+   else
+      hint = &frf->raw;
+
+   /*
+    * Now that we have a dataset, interpret the info it contains.
+    */
+   if (hint->ncls <= 0 || hint->nmth <= 0) {
+      /*
+       * Don't perform code gyrations if not invoking methods; the
+       * standard iconc methodology will handle field invocations.
+       */ 
+      return NULL;
+      }
+   if (hint->nrec <= 0) {
+      /* invoke one or more methods */
+      return invok_methods(n, hint->cls, hint->ncls, rslt);
+      }
+   else { /* nrec > 0 && ncls > 0 */
+      /* invoke rec flds or methods */
+      if (unicon_mode != UM_Ambig && verbose > 3) {
+         printf("Detected ambiguous code at line: %d col: %d file: %s"
+            "\nunicon-mode is now UM_Ambig\n", n->n_line, n->n_col, n->n_file);
+         }
+      unicon_mode = UM_Ambig;
+      return invok_methods_and_flds(p, n, hint->cls, hint->ncls, hint->rec,
+         hint->nrec, rslt);
+      }
+}
+
+static
+struct val_loc *
+invok(p, n, rslt)
+   struct node * p;
+   struct node * n;
+   struct val_loc * rslt;
+{
+   int i;
+   struct val_loc * vloc;
+   struct fldrefinfo frf;
+
+   if ((i = fldref_info_get(n, &frf)) < 0) {
+      /* printf("invok: fldref_info_get failure: %d\n", i); */
+      return NULL;
+      }
+   vloc = invok_fuzzy(p, n, &frf, rslt);
+   fldref_info_free(&frf);
+   return vloc;
+}
+
+#define NodeIsFldInvok(n) ((n)->n_type == N_Invok || (n)->n_type == N_InvRec ||\
+   (n)->n_type == N_InvProc || (n)->n_type == N_Apply)
+
+/*
  * field_ref - generate code for a field reference.
  */
-static struct val_loc *field_ref(n, rslt)
-struct node *n;
-struct val_loc *rslt;
-   {
+static
+struct val_loc *
+field_ref(p, n, rslt)
+   struct node *p;
+   struct node *n;
+   struct val_loc *rslt;
+{
    struct node *rec;
    struct node *fld;
    struct fentry *fp;
@@ -2880,13 +3929,19 @@ struct val_loc *rslt;
    struct code *lbl;
    struct lentry *single;
    int deref;
+   int nrecs;
    int num_offsets;
    int offset;
    int bad_recs;
+   struct val_loc * tmploc;
 
    rec = Tree0(n);
    fld = Tree1(n);
 
+   if (p && NodeIsFldInvok(p)) {
+      if ((tmploc = invok(p, n, rslt)) != NULL)
+         return tmploc;
+      }
    /*
     * Generate code to compute the record value and dereference it.
     */
@@ -2896,13 +3951,17 @@ struct val_loc *rslt;
        * The record is in a named variable. Use value directly from
        *  the variable rather than saving the result of the expression.
        */
-      gencode(rec, &ignore);
+      gencode(n, rec, &ignore);
       rec_loc = var_ref(single);
       }
    else {
-      rec_loc = gencode(rec, NULL);
+      rec_loc = gencode(n, rec, NULL);
+      /* mdw: modified
+       * if (deref)
+       *  deref_cd(rec_loc, rec_loc);
+       */
       if (deref)
-         deref_cd(rec_loc, rec_loc);
+         deref_fld(rec_loc);
       }
 
    setloc(fld);
@@ -2949,7 +4008,6 @@ struct val_loc *rslt;
       nfatal(n, "invalid field", Str0(fld));
       return rslt;
       }
-
    /*
     * Generate code for declarations and to get the record block pointer.
     */
@@ -2957,6 +4015,17 @@ struct val_loc *rslt;
    cd->ElemTyp(0) = A_Str;
    cd->Str(0) =             "{";
    cd_add(cd);
+#if 0
+   {
+   /*
+    * This places a comment in the generated code, but should only
+    * be used when debugging the compiler itself.
+    */
+   char * buf = alloc(sizeof(char) * strlen(Str0(fld)) + 16);
+   sprintf(buf, "/* lkup %s */", Str0(fld));
+   mdw_cdcomment(buf);
+   }
+#endif
    cd = alc_ary(3);
    cd->ElemTyp(0) = A_Str;
    cd->Str(0) =           "struct b_record *r_rp = (struct b_record *) BlkLoc(";
@@ -3014,7 +4083,7 @@ struct val_loc *rslt;
 
       cd = alc_ary(1);
       cd->ElemTyp(0) = A_Str;
-      cd->Str(0) =              "dptr r_dp;";
+      cd->Str(0) =              "dptr r_dp; int fld_idx=-1;";
       cd_add(cd);
       cd = alc_ary(1);
       cd->ElemTyp(0) = A_Str;
@@ -3024,6 +4093,7 @@ struct val_loc *rslt;
       rp = fp->rlist;
       while (rp != NULL) {
          offset = rp->offset;
+#ifdef mdw_original
          while (rp != NULL && rp->offset == offset) {
             if (rp->mark) {
                rp->mark = 0;
@@ -3038,7 +4108,19 @@ struct val_loc *rslt;
                }
             rp = rp->next;
             }
-
+#endif
+         while (rp != NULL && rp->offset == offset) {
+            rp->mark = 0;
+            cd = alc_ary(3);
+            cd->ElemTyp(0) = A_Str;
+            cd->Str(0) =              "   case ";
+            cd->ElemTyp(1) = A_Intgr;
+            cd->Intgr(1) =            rp->rec->rec_num;
+            cd->ElemTyp(2) = A_Str;
+            cd->Str(2) =              ":";
+            cd_add(cd);
+            rp = rp->next;
+            }
          cd = alc_ary(3);
          cd->ElemTyp(0) = A_Str;
          cd->Str(0) =              "      r_dp = &r_rp->fields[";
@@ -3057,14 +4139,35 @@ struct val_loc *rslt;
       cd->ElemTyp(0) = A_Str;
       cd->Str(0) =              "   default:";
       cd_add(cd);
+
       cd = alc_ary(3);
       cd->ElemTyp(0) = A_Str;
-      cd->Str(0) =              "      err_msg(207, &";
+      cd->Str(0) =              "      if ((fld_idx = fldlookup(r_rp, \"";
+      cd->ElemTyp(1) = A_Str;
+      cd->Str(1) = Str0(fld);
+      cd->ElemTyp(2) = A_Str;
+      cd->Str(2) = "\")) < 0)";
+      cd_add(cd);
+
+      cd = alc_ary(3);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "         err_msg(207, &";
       cd->ElemTyp(1) = A_ValLoc;
       cd->ValLoc(1) =                   rec_loc;
       cd->ElemTyp(2) = A_Str;
       cd->Str(2) =                     ");";
       cd_add(cd);
+
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "      else";
+      cd_add(cd);
+
+      cd = alc_ary(1);
+      cd->ElemTyp(0) = A_Str;
+      cd->Str(0) =              "         r_dp = &r_rp->fields[fld_idx];";
+      cd_add(cd);
+
       if (err_conv) {
          /*
           * The peephole analyzer doesn't know how to handle a goto or return
@@ -3097,7 +4200,7 @@ struct val_loc *rslt;
       cd->ElemTyp(0) = A_ValLoc;
       cd->ValLoc(0) =           rslt;
       cd->ElemTyp(1) = A_Str;
-      cd->Str(1) =            ".dword = D_Var + ((word *)r_dp - (word *)r_rp);";
+      cd->Str(1) =           ".dword = D_Var + ((word *)r_dp - (word *)r_rp);";
       cd_add(cd);
       cd = alc_ary(3);
       cd->ElemTyp(0) = A_Str;
@@ -3108,13 +4211,12 @@ struct val_loc *rslt;
       cd->Str(2) =              ") = (dptr)r_rp;";
       cd_add(cd);
       }
-
    cd = alc_ary(1);
    cd->ElemTyp(0) = A_Str;
    cd->Str(0) =              "}";
    cd_add(cd);
    return rslt;
-   }
+}
 
 /*
  * bound - bound the code for the given sub-tree. If catch_fail is true,
@@ -3138,7 +4240,7 @@ int catch_fail;
    if (catch_fail)
       on_failure = lbl1;
 
-   rslt = gencode(n, rslt);
+   rslt = gencode(NULL, n, rslt);
 
    cd_add(sig_cd(lbl1, cur_fnc));   /* transfer control to bounding label */
    cur_fnc = fnc_sav;
@@ -3895,12 +4997,62 @@ struct val_loc *dest;
    }
 
 /*
+ * mdw: experimental; option -wb
+ */
+static
+void
+deref_oparg_insitu(sym, impl)
+   struct op_symentry * sym;
+   struct implement * impl;
+{
+   if (wop_get(Wop_OpArgDerefs) <= 0) {
+      /*
+       * The Wop_OpArgDerefs optimization is not
+       * enabled, so perform default behavior.
+       */
+      deref_cd(sym->loc, sym->loc);
+      return;
+      }
+   if (strcmp("lexge", impl->name) == 0) {
+      /*
+       * There is a problem derefing args of lexge in
+       * that the arg may be a substv, in which case
+       * deref is invoked recursively at runtime.
+       */
+      deref_cd(sym->loc, sym->loc);
+      return;
+      }
+   wop_arg_deref_insitu(sym->loc);
+}
+
+/*
+ * mdw: experimental; option -wf
+ */
+static
+void
+deref_fld(loc)
+   struct val_loc * loc;
+{
+   if (wop_get(Wop_FldDerefs) <= 0)  {
+      /*
+       * The Wop_FldDerefs optimization is not
+       * enabled, so perform default behavior.
+       */
+      deref_cd(loc, loc);
+      return;
+      }
+   wop_fld_deref(loc);
+}
+
+/*
  * inv_op - directly invoke a run-time operation, in-lining it if possible.
  */
-static struct val_loc *inv_op(n, rslt)
-nodeptr n;
-struct val_loc *rslt;
-   {
+static
+struct val_loc *
+inv_op(n, rslt)
+   nodeptr n;
+   struct val_loc *rslt;
+{
    struct implement *impl;
    struct code *scont_strt;
    struct code *scont_fail;
@@ -3932,6 +5084,7 @@ struct val_loc *rslt;
 
    nargs = Val0(n);
    impl = Impl1(n);
+
    if (impl == NULL) {
       /*
        * We have already printed an error, just make sure we can
@@ -4039,7 +5192,6 @@ struct val_loc *rslt;
           */
          maybe_var[j] = HasVar(varsubtyp(n->n_field[FrstArg + j].n_ptr->type,
              &(single[j])));
-
          /*
           * Determine how many times the argument is referenced. If we
           *  optimize away return statements because we don't need the
@@ -4135,7 +5287,7 @@ struct val_loc *rslt;
          /*
           * Generate the code for the argument.
           */
-         gencode(n->n_field[FrstArg + j].n_ptr, arg_rslt);
+         gencode(n, n->n_field[FrstArg + j].n_ptr, arg_rslt);
 
          if (flag == (RtParm | DrfPrm)) {
             /*
@@ -4230,7 +5382,6 @@ struct val_loc *rslt;
              */
             maybe_var[j + v] = HasVar(varsubtyp(
                n->n_field[FrstArg+j+v].n_ptr->type, &(single[j + v])));
-
             /*
              * Determine if the elements of the vararg parameter array
              *  might be modified. If it is a variable, dereferencing
@@ -4306,7 +5457,7 @@ struct val_loc *rslt;
                 */
                r = tmp_loc(arg_loc + v);
                }
-            varg_rslt[v] = gencode(n->n_field[FrstArg + j + v].n_ptr, r);
+            varg_rslt[v] = gencode(n, n->n_field[FrstArg + j + v].n_ptr, r);
             }
 
          setloc(n);
@@ -4361,7 +5512,7 @@ struct val_loc *rslt;
           * Compute extra arguments, but discard the results.
           */
          while (j < nargs) {
-            gencode(n->n_field[FrstArg + j].n_ptr, &ignore);
+            gencode(n, n->n_field[FrstArg + j].n_ptr, &ignore);
             ++j;
             }
          }
@@ -4401,7 +5552,11 @@ struct val_loc *rslt;
                /*
                 * Dereference in place.
                 */
-               deref_cd(symtab[i].loc, symtab[i].loc);
+               /* 
+                * original:
+                *   deref_cd(symtab[i].loc, symtab[i].loc);
+                */
+               deref_oparg_insitu(&symtab[i], impl);
                break;
            case AdjCpy:
                /*
@@ -4475,7 +5630,7 @@ struct val_loc *rslt;
    if (symtab != NULL)
       free((char *)symtab);
    return rslt;
-   }
+}
 
 /*
  * max_lftm - given two lifetimes (in the form of nodes) return the
@@ -4498,10 +5653,12 @@ nodeptr n2;
 /*
  * inv_prc - directly invoke a procedure.
  */
-static struct val_loc *inv_prc(n, rslt)
-nodeptr n;
-struct val_loc *rslt;
-   {
+static
+struct val_loc *
+inv_prc(n, rslt)
+   nodeptr n;
+   struct val_loc *rslt;
+{
    struct pentry *proc;
    struct val_loc *r;
    struct val_loc *arg1rslt;
@@ -4576,7 +5733,7 @@ struct val_loc *rslt;
          r = NULL;      /* let gencode allocate a new temporary */
       else
          r = tmp_loc(arg_loc + i);
-      arg_rslt[i] = gencode(n->n_field[FrstArg + i].n_ptr, r);
+      arg_rslt[i] = gencode(n, n->n_field[FrstArg + i].n_ptr, r);
       }
 
    /*
@@ -4599,7 +5756,7 @@ struct val_loc *rslt;
          var_loc = alc_tmp(var_sz, lifetm_ary);
          free((char *)lifetm_ary);
          for (j = 0; j < var_sz; ++j) {
-            gencode(n->n_field[FrstArg + nparms + j].n_ptr,
+            gencode(n, n->n_field[FrstArg + nparms + j].n_ptr,
                tmp_loc(var_loc + j));
          }
       }
@@ -4610,7 +5767,7 @@ struct val_loc *rslt;
        *  results.
        */
       while (i < nargs) {
-         gencode(n->n_field[FrstArg + i].n_ptr, &ignore);
+         gencode(n, n->n_field[FrstArg + i].n_ptr, &ignore);
          ++i;
          }
       }
@@ -4684,7 +5841,7 @@ struct val_loc *rslt;
       rslt = chk_alc(rslt, n->lifetime);
    mk_callop(sbuf, proc->ret_flag, arg1rslt, nargs, rslt, 1);
    return rslt;
-   }
+}
 
 /*
  * endlife - link a temporary variable onto the list to be freed when
@@ -4697,11 +5854,12 @@ int old;
 nodeptr n;
    {
    struct freetmp *freetmp;
-
-   if ((freetmp = freetmp_pool) == NULL)
+   if ((freetmp = freetmp_pool) == NULL) {
      freetmp = NewStruct(freetmp);
-   else
+   }
+   else {
       freetmp_pool = freetmp_pool->next;
+   }
    freetmp->kind = kind;
    freetmp->indx = indx;
    freetmp->old = old;

@@ -1,3 +1,14 @@
+
+/*
+ * mdw: these are app-wide constants that I don't want to put in /src/h
+ *
+ * Unicon mode consts
+ */
+#define UM_Min    (1)
+#define UM_Normal (UM_Min + 0)
+#define UM_Ambig  (UM_Min + 1)
+#define UM_Max    (UM_Ambig)
+
 /*
  * Prototypes for functions in iconc.
  */
@@ -9,9 +20,6 @@ int               alc_dtmp   (nodeptr lifetime);
 int               alc_itmp   (nodeptr lifetime);
 struct code      *alc_lbl    (char *desc, int flag);
 int               alc_sbufs  (int num, nodeptr lifetime);
-#ifdef OptimizeType
-unsigned int   *alloc_mem_typ   (unsigned int n_types);
-#endif					/* OptimizeType */
 void           arth_anlz  (struct il_code *var1, struct il_code *var2,
                                int *maybe_int, int *maybe_dbl, int *chk1,
                                struct code **conv1p, int *chk2,
@@ -53,9 +61,6 @@ void           gen_inlin  (struct il_code *il, struct val_loc *rslt,
                                struct op_symentry *symtab, nodeptr n,
                                int dcl_var, int n_va);
 int	          getopr     (int ac, int *cc);
-#ifdef OptimizeType
-unsigned int    get_bit_vector (struct typinfo *src, int pos);
-#endif					/* OptimizeType */
 struct gentry    *glookup    (char *id);
 void	          hsyserr    (char **av, char *file);
 struct node      *i_str_leaf (int type,struct node *loc_model,char *c, int d);
@@ -67,7 +72,7 @@ struct code      *il_dflt    (int typcd, struct il_code *src,
                                struct il_c *dflt, struct il_c *dest);
 void           implproto  (struct implement *ip);
 void           init       (void);
-void           init_proc  (char *name);
+struct gentry * init_proc(char *);
 void           init_rec   (char *name);
 void           init_src   (void);
 void           install    (char *name,int flag);
@@ -85,13 +90,8 @@ struct node      *list_nd    (nodeptr loc_model, nodeptr args);
 void           lnkdcl     (char *name);
 void	          readdb     (char *db_name);
 struct val_loc   *loc_cpy    (struct val_loc *loc, int mod_access);
-#ifdef OptimizeType
-void           mark_recs (struct fentry *fp, struct typinfo *typ,
+void           mark_recs (struct fentry *fp, typeinfo_t *typ,
                               int *num_offsets, int *offset, int *bad_recs);
-#else					/* OptimizeType */
-void           mark_recs (struct fentry *fp, unsigned int *typ,
-                              int *num_offsets, int *offset, int *bad_recs);
-#endif					/* OptimizeType */
 struct code      *mk_goto    (struct code *label);
 struct node      *multiunary (char *op, nodeptr loc_model, nodeptr oprnd);
 struct sig_act   *new_sgact  (struct code *sig, struct code *cd,
@@ -99,7 +99,7 @@ struct sig_act   *new_sgact  (struct code *sig, struct code *cd,
 int               nextchar   (void);
 void           nfatal     (struct node *n, char *s1, char *s2);
 int               n_arg_sym  (struct implement *ip);
-void           outerfnc   (struct c_fnc *fnc);
+void           outerfnc   (struct c_fnc *fnc, int);
 int               past_prms  (struct node *n);
 void           proccode   (struct pentry *proc);
 void           prt_fnc    (struct c_fnc *fnc);
@@ -113,7 +113,7 @@ void           recconstr  (struct rentry *r);
 void           resolve    (struct pentry *proc);
 unsigned int      round2     (unsigned int n);
 struct code      *sig_cd     (struct code *fail, struct c_fnc *fnc);
-void           src_file   (char *name);
+void             src_file    (char *name, struct srcfile **list);
 struct node      *sect_nd    (nodeptr op, nodeptr arg1, nodeptr arg2,
                                nodeptr arg3);
 void           tfatal     (char *s1,char *s2);
@@ -142,18 +142,11 @@ int               type_case  (struct il_code *il, int (*fnc)(),
 void           typeinfer  (void);
 struct node      *unary_nd   (nodeptr op, nodeptr arg);
 void           var_dcls   (void);
-#ifdef OptimizeType
-int               varsubtyp  (struct typinfo *typ, struct lentry **single);
-#else					/* OptimizeType */
-int               varsubtyp  (unsigned int *typ, struct lentry **single);
-#endif					/* OptimizeType */
+int               varsubtyp  (typeinfo_t *typ, struct lentry **single);
 void	          writecheck (int rc);
 void	          yyerror    (int tok,struct node *lval,int state);
 int               yylex      (void);
 int               yyparse    (void);
-#ifdef OptimizeType
-void         xfer_packed_types (struct typinfo *type);
-#endif					/* OptimizeType */
 pointer		xmalloc	(long n);
 
 #ifdef DeBug

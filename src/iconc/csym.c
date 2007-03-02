@@ -9,6 +9,7 @@
 #include "csym.h"
 #include "ccode.h"
 #include "cproto.h"
+#include "vtbl.h"
 
 /*
  * Prototypes.
@@ -71,7 +72,7 @@ int flag;
       gp->flag |= flag;
       }
    else			/* the user can't make up his mind */
-      tfatal("inconsistent redeclaration", name);
+      tfatal("instl_p: inconsistent redeclaration", name);
    return gp;
    }
 
@@ -81,10 +82,12 @@ int flag;
  *  the identifier if it isn't already there.  Some semantic checks
  *  are performed.
  */
-void install(name, flag)
-char *name;
-int flag;
-   {
+extern
+void
+install(name, flag)
+   char * name;
+   int flag;
+{
    struct fentry *fp;
    struct gentry *gp;
    struct lentry *lp;
@@ -98,6 +101,10 @@ int flag;
             putglob(name, flag);
          else
             gp->flag |= flag;
+         if (vtbl_name_check(name)) {
+            if (vtbl_add(name))
+               printf("install: vtbl_add failure.\n");
+         }
          break;
 
       case F_Static:	/* static declaration */
@@ -150,7 +157,7 @@ int flag;
       default:
          tsyserr("install: unrecognized symbol table flag.");
       }
-   }
+}
 
 /*
  * dcl_loc - handle declaration of a local identifier.
@@ -169,7 +176,7 @@ struct lentry *next;
    else if (lp->flag == flag) /* previously declared as same type */
       twarn("redeclared identifier", name);
    else		/* previously declared as different type */
-      tfatal("inconsistent redeclaration", name);
+      tfatal("dcl_loc: inconsistent redeclaration", name);
    return lp;
    }
 
@@ -320,6 +327,8 @@ void symdump()
 static void prt_flgs(flags)
 int flags;
    {
+   if (flags & F_Object)
+      fprintf(stderr, " F_Object");
    if (flags & F_Global)
       fprintf(stderr, " F_Global");
    if (flags & F_Proc)

@@ -4,6 +4,15 @@
 
 #define Iconc
 
+/*
+ * mdw: These preproc defs provide wrappers around function calls and
+ * macro expansions found in typinfer.c, ccode.c, etc. to facilitate
+ * plug-n-play with vector experiments.
+ */
+typedef struct tv typeinfo_t;
+#define Vcall(x) tv_##x
+#define Vpp(x) Tv##x
+
 #ifndef CUsage
    #define CUsage "[-C C-comp] [-E] [-T] [-c] [-f{adelns}] [-n{acest}]\n\
  [-o ofile] [-p C-opts] [-r runtime] [-s] [-t] [-u] [-v i]"

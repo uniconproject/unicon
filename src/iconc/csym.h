@@ -9,27 +9,6 @@
 #define MayDefault 2 /* defaulting type conversion may use default */
 #define MayKeep    4 /* conversion may succeed without any actual conversion */
 
-#ifdef OptimizeType
-#define NULL_T     0x1000000 
-#define REAL_T     0x2000000
-#define INT_T      0x4000000
-#define CSET_T     0x8000000
-#define STR_T      0x10000000
-
-#define TYPINFO_BLOCK 400000
-
-/* 
- * Optimized type structure for bit vectors  
- *     All previous occurencess of unsigned int * (at least
- *     when refering to bit vectors) have been replaced by 
- *     struct typinfo.
- */
-struct typinfo {
-   unsigned int packed;       /* packed representation of types */
-   unsigned int  *bits;         /* full length bit vector         */
-};
-#endif					/* OptimizeType */
-
 /*
  * Data base type codes are mapped to type inferencing information using
  *  an array.
@@ -38,11 +17,7 @@ struct typ_info {
    int frst_bit;      /* first bit in bit vector allocated to this type */
    int num_bits;      /* number of bits in bit vector allocated to this type */
    int new_indx;      /* index into arrays of allocated types for operation */
-#ifdef OptimizeType
-   struct typinfo *typ; /* for variables: initial type */
-#else					/* OptimizeType */
-   unsigned int *typ;   /* for variabled: initial type */
-#endif					/* OptimizeType */
+   typeinfo_t * typ;
    };
 
 /*
@@ -56,134 +31,118 @@ struct typ_info {
  */
 struct type {
    int size;
-#ifdef OptimizeType
-   struct typinfo *bits;
-#else					/* OptimizeType */
-   unsigned int *bits;
-#endif					/* OptimizeType */
+   typeinfo_t * bits;
    struct type *next;
    };
 
-
-#define DecodeSize(x)		(x & 0xFFFFFF)
-#define DecodePacked(x)		(x >> 24)
 /*
  * NumInts - convert from the number of bits in a bit vector to the
  *  number of integers implementing it.
- */
+ *
+ * mdw: let us shift this great divide.
+ *
 #define NumInts(n_bits) (n_bits - 1) / IntBits + 1
+ */
+#if (IntBits == 32)
+#define DivIntBits(n) ((n) >> 5)
+#define ModIntBits(n) ((n) & 31)
+#define NumInts(nbits) ((((nbits) - 1) >> 5) + 1)
+#elif (IntBits == 64)
+#define DivIntBits(n) ((n) >> 6)
+#define ModIntBits(n) ((n) & 63)
+#define NumInts(nbits) ((((nbits) - 1) >> 6) + 1)
+#else
+#error ***
+#error csym.h: IntBits not power of 2 >= 32.
+#error ***
+#endif
 
+#if (WordBits == 32)
+#define DivWordBits(n) ((n) >> 5)
+#define ModWordBits(n) ((n) & 31)
+#define NumWords(nbits) ((((nbits) - 1) >> 5) + 1)
+#elif (WordBits == 64)
+#define DivWordBits(n) ((n) >> 6)
+#define ModWordBits(n) ((n) & 63)
+#define NumWords(nbits) ((((nbits) - 1) >> 6) + 1)
+#else
+#error ***
+#error csym.h: WordBits not power of 2 >= 32.
+#error ***
+#endif
+
+
+#ifdef LegacyCode
 /*
  * ClrTyp - zero out the bit vector for a type.
  */
-#ifdef OptimizeType
-#define ClrTyp(size,typ) {\
-   int typ_indx;\
-   if ((typ)->bits == NULL)\
-      clr_packed((typ),(size));\
-   else\
-      for (typ_indx = 0; typ_indx < NumInts((size)); ++typ_indx)\
-         (typ)->bits[typ_indx] = 0;}
-#else					/* OptimizeType */
-#define ClrTyp(size,typ) {\
-   int typ_indx;\
-   for (typ_indx = 0; typ_indx < NumInts((size)); ++typ_indx)\
-      (typ)[typ_indx] = 0;}
-#endif					/* OptimizeType */
+static inline void TiClrTyp(unsigned size, unsigned int * typ)
+{
+   unsigned int * typ_idx = typ + NumInts((size)) - 1;
+   while (typ_idx >= typ)
+      *typ_idx-- = 0;
+}
 
 /*
  * CpyTyp - copy a type of the given size from one bit vector to another.
  */
-#ifdef OptimizeType
-#define CpyTyp(nsize,src,dest) {\
-   int typ_indx, num;\
-   if (((src)->bits == NULL) && ((dest)->bits == NULL))  {\
-      ClrTyp((nsize),(dest));\
-      cpy_packed_to_packed((src),(dest),(nsize));\
-   }\
-   else if (((src)->bits == NULL) && ((dest)->bits != NULL)) {\
-      ClrTyp((nsize),(dest));\
-      xfer_packed_to_bits((src),(dest),(nsize));\
-   }\
-   else if (((src)->bits != NULL) && ((dest)->bits == NULL))  {\
-      (dest)->bits = alloc_mem_typ(DecodeSize((dest)->packed));\
-      xfer_packed_types((dest));\
-      for (typ_indx = 0; typ_indx < NumInts((nsize)); ++typ_indx)\
-         (dest)->bits[typ_indx] = (src)->bits[typ_indx];\
-   }\
-   else\
-      for (typ_indx = 0; typ_indx < NumInts((nsize)); ++typ_indx)\
-         (dest)->bits[typ_indx] = (src)->bits[typ_indx];}
-#else					/* OptimizeType */
-#define CpyTyp(size,src,dest) {\
-   int typ_indx;\
-   for (typ_indx = 0; typ_indx < NumInts((size)); ++typ_indx)\
-      (dest)[typ_indx] = (src)[typ_indx];}
-#endif					/* OptimizeType */
+static inline void TiCpyTyp(int size, unsigned int * src, unsigned int * dst)
+{
+   int i = NumInts(size) - 1;
+   while (i >= 0) {
+      dst[i] = src[i];
+      i--;
+      }
+}
 
 /*
  * MrgTyp - merge a type of the given size from one bit vector into another.
  */
-#ifdef OptimizeType
-#define MrgTyp(nsize,src,dest) {\
-   int typ_indx;\
-   if (((src)->bits == NULL) && ((dest)->bits == NULL))\
-      mrg_packed_to_packed((src),(dest),(nsize));\
-   else if (((src)->bits == NULL) && ((dest)->bits != NULL))\
-      xfer_packed_to_bits((src),(dest),(nsize));\
-   else if (((src)->bits != NULL) && ((dest)->bits == NULL)) {\
-      (dest)->bits = alloc_mem_typ(DecodeSize((dest)->packed));\
-      xfer_packed_types((dest));\
-      for (typ_indx = 0; typ_indx < NumInts((nsize)); ++typ_indx)\
-         (dest)->bits[typ_indx] |= (src)->bits[typ_indx];\
-   }\
-   else\
-      for (typ_indx = 0; typ_indx < NumInts((nsize)); ++typ_indx)\
-         (dest)->bits[typ_indx] |= (src)->bits[typ_indx];}
-#else					/* OptimizeType */
-#define MrgTyp(size,src,dest) {\
-   int typ_indx;\
-   for (typ_indx = 0; typ_indx < NumInts((size)); ++typ_indx)\
-      (dest)[typ_indx] |= (src)[typ_indx];}
-#endif					/* OptimizeType */
+static inline void TiMrgTyp(int size, unsigned int * src, unsigned int *dst)
+{
+   int i = NumInts((size)) - 1;
+   while (i >= 0) {
+      dst[i] |= src[i];
+      i--;
+      }
+}
+static inline void TiMrgTyp2(int i, unsigned int * src, unsigned int * dst)
+{
+   while (i >= 0) {
+      dst[i] |= src[i];
+      i--;
+      }
+}
 
 /*
  * ChkMrgTyp - merge a type of the given size from one bit vector into another,
  *  updating the changed flag if the destination is changed by the merger.
  */
-#ifdef OptimizeType
-#define ChkMrgTyp(nsize,src,dest) {\
-   int typ_indx, ret; unsigned int old;\
-   if (((src)->bits == NULL) && ((dest)->bits == NULL)) {\
-       ret = mrg_packed_to_packed((src),(dest),(nsize));\
-       changed += ret;\
-   }\
-   else if (((src)->bits == NULL) && ((dest)->bits != NULL)) {\
-      ret = xfer_packed_to_bits((src),(dest),(nsize));\
-      changed += ret;\
-   }\
-   else if (((src)->bits != NULL) && ((dest)->bits == NULL)) {\
-      (dest)->bits = alloc_mem_typ(DecodeSize((dest)->packed));\
-      xfer_packed_types((dest));\
-      for (typ_indx = 0; typ_indx < NumInts((nsize)); ++typ_indx) {\
-         old = (dest)->bits[typ_indx];\
-         (dest)->bits[typ_indx] |= (src)->bits[typ_indx];\
-         if (old != (dest)->bits[typ_indx]) ++changed;}\
-   }\
-   else\
-      for (typ_indx = 0; typ_indx < NumInts((nsize)); ++typ_indx) {\
-         old = (dest)->bits[typ_indx];\
-         (dest)->bits[typ_indx] |= (src)->bits[typ_indx];\
-         if (old != (dest)->bits[typ_indx]) ++changed;}}
-#else					/* OptimizeType */
-#define ChkMrgTyp(size,src,dest) {\
-   int typ_indx; unsigned int old;\
-   for (typ_indx = 0; typ_indx < NumInts((size)); ++typ_indx) {\
-      old = (dest)[typ_indx];\
-      (dest)[typ_indx] |= (src)[typ_indx];\
-      if (old != (dest)[typ_indx]) ++changed;}}
-#endif					/* OptimizeType */
+static inline void TiChkMrgTyp(int size, unsigned int * src, unsigned int * dst)
+{
+   unsigned old;
+   extern long changed;
 
+   size = NumInts((size)) - 1;
+   while (size >= 0) {
+      old = dst[size];
+      dst[size] |= src[size];
+      if (old != dst[size]) changed++;
+      size--;
+      }
+}
+static inline void TiChkMrgTyp2(int size, unsigned int * src, unsigned int *dst)
+{
+   unsigned old;
+   extern long changed;
+   while (size >= 0) {
+      old = (dst)[size];
+      (dst)[size] |= (src)[size];
+      if (old != (dst)[size]) ++changed;
+      size--;
+      }
+}
+#endif /* LegacyCode */
 
 struct centry {		/* constant table entry */
    struct centry *blink;	/*   link for bucket chain */
@@ -257,20 +216,12 @@ struct pentry {
    int reachable;               /* this procedure may be executed */
    int iteration;		/* last iteration of type inference performed */
    int arg_lst;			/* for varargs - the type number of the list */
-#ifdef OptimizeType
-   struct typinfo *ret_typ;	/* type returned from procedure */
-#else					/* OptimizeType */
-   unsigned int *ret_typ;	/* type returned from procedure */
-#endif					/* OptimizeType */
+   typeinfo_t *ret_typ; /* type returned from procedure */
    struct store *in_store;	/* store at start of procedure */
    struct store *susp_store;	/* store for resumption points of procedure */
    struct store *out_store;	/* store on exiting procedure */
    struct lentry **vartypmap;   /* mapping from var types to symtab entries */
-#ifdef OptimizeType
-   struct typinfo *coexprs;     /* co-expressions in which proc may be called */
-#else					/* OptimizeType */
-   unsigned int *coexprs;     /* co-expressions in which proc may be called */
-#endif					/* OptimizeType */
+   typeinfo_t * coexprs; /* co-expressions in which proc may be called */
    struct pentry *next;
    };
 
@@ -320,21 +271,22 @@ extern struct implement *spec_op[NumSpecOp];
  * Flag values.
  */
 
-#define F_Global	    01	/* variable declared global externally */
-#define F_Proc		    04	/* procedure */
-#define F_Record	   010	/* record */
-#define F_Dynamic	   020	/* variable declared local dynamic */
-#define F_Static	   040	/* variable declared local static */
-#define F_Builtin	  0100	/* identifier refers to built-in procedure */
-#define F_StrInv          0200  /* variable needed for string invocation */
-#define F_ImpError	  0400	/* procedure has default error */
-#define F_Argument	 01000	/* variable is a formal parameter */
-#define F_IntLit	 02000	/* literal is an integer */
-#define F_RealLit	 04000	/* literal is a real */
-#define F_StrLit	010000	/* literal is a string */
-#define F_CsetLit	020000	/* literal is a cset */
-#define F_Field		040000  /* identifier refers to a record field */
-#define F_SmplInv      0100000  /* identifier only used in simple invocation */
+#define F_Global     0000001  /* variable declared global externally */
+#define F_Proc       0000004  /* procedure */
+#define F_Record     0000010  /* record */
+#define F_Dynamic    0000020  /* variable declared local dynamic */
+#define F_Static     0000040  /* variable declared local static */
+#define F_Builtin    0000100  /* identifier refers to built-in procedure */
+#define F_StrInv     0000200  /* variable needed for string invocation */
+#define F_ImpError   0000400  /* procedure has default error */
+#define F_Argument   0001000  /* variable is a formal parameter */
+#define F_IntLit     0002000  /* literal is an integer */
+#define F_RealLit    0004000  /* literal is a real */
+#define F_StrLit     0010000  /* literal is a string */
+#define F_CsetLit    0020000  /* literal is a cset */
+#define F_Field      0040000  /* identifier refers to a record field */
+#define F_SmplInv    0100000  /* identifier only used in simple invocation */
+#define F_Object     0200000  /* record represents a Unicon class instance */
 
 /*
  * Symbol table region pointers.

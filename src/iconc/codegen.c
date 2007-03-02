@@ -47,6 +47,7 @@ static int     dyn_nms   (struct lentry *lptr, int prt);
 static void fldnames  (struct fldname *fields);
 static void fnc_blk   (struct gentry *gptr);
 static void frame     (int outer);
+static void gen_disam(void *, void *);
 static void good_clsg (struct code *call, int outer);
 static void initpblk  (FILE *f, int c, char *prefix, char *name,
                            int nquals, int nparam, int ndynam, int nstatic,
@@ -93,7 +94,7 @@ void var_dcls()
    prc_main = NULL;
    for (i = 0; i < GHSize; i++)
       for (gptr = ghash[i]; gptr != NULL; gptr = gptr->blink) {
-         flag = gptr->flag & ~(F_Global | F_StrInv);
+         flag = gptr->flag & ~(F_Global | F_StrInv | F_Object);
          if (strcmp(gptr->name, "main") == 0 && (gptr->flag & F_Proc)) {
             /*
              * Remember main procedure.
@@ -125,6 +126,8 @@ void var_dcls()
                }
             switch (flag) {
                case F_Proc:
+                  if (ica_pdefn_unused(gptr))
+                     break;
                   proc_blk(gptr, init_glbl);
                   break;
                case F_Builtin:
@@ -132,6 +135,8 @@ void var_dcls()
                      fnc_blk(gptr);
                   break;
                case F_Record:
+                  if (ica_rdecl_unused(gptr))
+                     break;
                   rec_blk(gptr, init_glbl);
                }
             }
@@ -212,6 +217,7 @@ void var_dcls()
     * Produce code to initialize run-time system variables. Some depend
     *  on compiler options.
     */
+/* mdw */ fprintf(codefile, "   dynrec_start_set(DYNREC_START);\n"); 
    fprintf(codefile, "   op_tbl = (struct b_proc *)init_op_tbl;\n");
    fprintf(codefile, "   globals = (dptr)init_globals;\n");
    fprintf(codefile, "   eglobals = &globals[%d];\n", n_glob);
@@ -328,13 +334,15 @@ void var_dcls()
  * proc_blk - create procedure block and initialize global variable, also
  *   compute offsets for local procedure variables.
  */
-static void proc_blk(gptr, init_glbl)
-struct gentry *gptr;
-int init_glbl;
-   {
+static
+void
+proc_blk(gptr, init_glbl)
+   struct gentry *gptr;
+   int init_glbl;
+{
+   int nquals;
    struct pentry *p;
    register char *name;
-   int nquals;
 
    name = gptr->name;
    p = gptr->val.proc;
@@ -359,7 +367,7 @@ int init_glbl;
    stat_nms(p->statics, init_glbl);
    if (init_glbl)
       fprintf(inclfile, "   }};\n");
-   }
+}
 
 /*
  * arg_nms - compute offsets of arguments and, if needed, output the
@@ -590,9 +598,13 @@ void const_blks()
 void recconstr(r)
 struct rentry *r;
    {
-   register char *name;
    int optim;
    int nfields;
+   register char *name;
+   extern int unicon_mode;
+
+   if (unicon_mode == UM_Ambig)
+      gen_disam(inclfile, codefile);
 
    if (r == NULL)
       return;
@@ -642,9 +654,11 @@ struct rentry *r;
 /*
  * outerfnc - output code for the outer function implementing a procedure.
  */
-void outerfnc(fnc)
-struct c_fnc *fnc;
-   {
+void
+outerfnc(fnc, reachable)
+   struct c_fnc *fnc;
+   int reachable;
+{
    char *prefix;
    char *name;
    char *cnt_var;
@@ -859,8 +873,13 @@ struct c_fnc *fnc;
     * Output code to implement procedure body.
     */
    prtcode(&(fnc->cd), 1);
+   if (!reachable) {
+      fprintf(codefile, "/*\n");
+      fprintf(codefile, " * unreachable function.\n");
+      fprintf(codefile, " */\n");
+      }
    fprintf(codefile, "   }\n");
-   }
+}
 
 /*
  * prt_fnc - output C function that implements a continuation.
@@ -1941,4 +1960,38 @@ int frststat; /* index into static array of first static local */
    fprintf(f, "{T_Proc, %d, %c%s_%s, %d, %d, %d, %d, {", 9 + 2 * nquals, c,
       prefix, name, nparam, ndynam, nstatic, frststat);
    }
+
+/*
+ * gen_disam: Prints the is_obj disambiguation routine in the C file.
+ * This routine is called only if ambiguous code is detected in the input.
+ */
+static
+void
+gen_disam(hfile, cfile)
+   void * hfile;
+   void * cfile;
+{
+   static int first_time = 1;
+
+   if (!first_time)
+      return;
+   first_time = 0;
+   fprintf(hfile, "\n");
+   fprintf(hfile, "static int is_obj(struct descrip d);\n");
+   fprintf(cfile, "\n");
+   fprintf(cfile, "static\nint\nis_obj(d)\n   struct descrip d;\n");
+   fprintf(cfile, "{\n");
+   fprintf(cfile, "   int len;\n");
+   fprintf(cfile, "   int sfx;\n\n");
+   fprintf(cfile, "   if (d.dword != D_Record)\n");
+   fprintf(cfile, "      return 0;\n");
+   fprintf(cfile, "   d = ((struct b_record *)BlkLoc(d))->recdesc->proc.recname;\n");
+   fprintf(cfile, "   if ((len = StrLen(d)) <= 14)\n");
+   fprintf(cfile, "      return 0;\n");
+   fprintf(cfile, "   sfx = *(int *)((StrLoc(d)) + len - 4);\n");
+   fprintf(cfile, "   if (sfx != *(int *)\"_mdw\")\n");
+   fprintf(cfile, "      return 0;\n");
+   fprintf(cfile, "   return 1;\n");
+   fprintf(cfile, "}\n");
+}
 

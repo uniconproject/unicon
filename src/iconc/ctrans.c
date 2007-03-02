@@ -28,6 +28,77 @@ struct srcfile *srclst = NULL;	/* list of source files to translate */
 
 char *lpath;			/* LPATH value */
 
+
+/*
+ * This routine walks through rec_lst looking for object instance records,
+ * and removes those fields from said instance records that correspond to
+ * methods contained in the vector table (vtbl) for said object.  It is
+ * unfortunately O(n^2) where n is the size of recs.  This routine is
+ * only invoked once, though (after type inferencing), so it shouldn't be
+ * a problem yet.
+ */
+static
+void
+adjust_class_recs(recs)
+   struct rentry * recs;
+{
+   int nflds;
+   char * p, * q;
+   struct fldname * f;
+   struct rentry * rinst;
+   struct rentry * rmeth;
+
+   for (rinst=recs; rinst; rinst=rinst->next) {
+      if ((p = strstr(rinst->name, "__mdw_inst_mdw")) == NULL)
+         continue;
+      for (rmeth=rinst->next; rmeth; rmeth=rmeth->next) {
+         if ((q = strstr(rmeth->name, "__methods")) == NULL)
+            continue;
+         if (p - rinst->name != q - rmeth->name)
+            continue;
+         if (strncmp(rinst->name, rmeth->name, p - rinst->name))
+            continue;
+         /*
+         printf("mdw-adjust-recs: found vtbl %s for inst %s.\n",
+            rmeth->name, rinst->name);
+         printf("mdw-adjust-recs: vtbl flds: %d inst flds: %d.\n",
+            rmeth->nfields, rinst->nfields);
+         */
+         nflds = rinst->nfields - rmeth->nfields;
+         while (rinst->nfields > nflds) {
+            f = rinst->fields;
+            rinst->fields = rinst->fields->next;
+            free(f);
+            rinst->nfields--;
+            }
+         break;
+         }
+      }
+}
+
+
+static
+void
+publish_unreachable_funcs(pents)
+   struct pentry * pents;
+{
+   unsigned long n;
+   unsigned long nun;
+   struct pentry * p;
+
+   fprintf(codefile, "/*\n * unreachable functions:\n *\n");
+   n = 0UL;
+   nun = 0UL;
+   for (p=pents; p; p=p->next,n++) {
+      if (p->reachable)
+         continue;
+      nun++;
+      fprintf(codefile, " *    %s\n", p->name);
+      }
+   fprintf(codefile, " *\n * %ld of %ld functions are unreachable.\n", nun, n);
+   fprintf(codefile, " */\n\n");
+}
+
 /*
  * translate a number of files, returning an error count
  */
@@ -36,7 +107,7 @@ int trans(char *argv0)
    register struct pentry *proc;
    struct srcfile *sf;
 
-   lpath = libpath(argv0, "LPATH");	/* remains null if unspecified */
+   lpath = (char *)libpath(argv0, "LPATH");	/* remains null if unspecified */
 
    for (sf = srclst; sf != NULL; sf = sf->next)
       trans1(sf->name);	/* translate each file in turn */
@@ -47,34 +118,41 @@ int trans(char *argv0)
        */
       for (proc = proc_lst; proc != NULL; proc = proc->next)
          resolve(proc);
-   
+
 #ifdef DeBug
       symdump();
 #endif					/* DeBug */
-   
+
       if (tfatals == 0) {
          chkstrinv();  /* see what needs be available for string invocation */
          chkinv();     /* perform "naive" optimizations */
          }
-   
+
       if (tfatals == 0)
          typeinfer();        /* perform type inference */
-   
+
       if (just_type_trace)
          return tfatals;     /* stop without generating code */
-   
+
+/*
+for (proc=proc_lst; proc; proc=proc->next) {
+   if (strcmp(proc->name, "gui__Dialog_process_event") == 0) {
+      printf("gui__Dispatcher_process_event: reachable: %d\n", proc->reachable);
+      proc->reachable = 1;
+      } 
+   }
+*/
+      publish_unreachable_funcs(proc_lst);
+
       if (tfatals == 0) {
+         adjust_class_recs(rec_lst);
          var_dcls();         /* output declarations for globals and statics */
          const_blks();       /* output blocks for cset and real literals */
          for (proc = proc_lst; proc != NULL; proc = proc->next)
             proccode(proc);  /* output code for a procedure */
          recconstr(rec_lst); /* output code for record constructors */
-/* ANTHONY */
-/*
-	 print_ghash();
-*/
+         }
       }
-    }
 
    /*
     * Report information about errors and warnings and be correct about it.
@@ -134,19 +212,21 @@ char *filename;
    if (pponly)
       ppecho();			/* preprocess only */
    else
-   yyparse();				/* Parse the input */
-      }
+      yyparse();				/* Parse the input */
+   }
 
 /*
  * writecheck - check the return code from a stdio output operation
- */
+ *
+mdw: this is unreferenced...
+ *
 void writecheck(rc)
    int rc;
-
    {
    if (rc < 0)
       quit("unable to write to icode file");
    }
+*/
 
 /*
  * lnkdcl - find file locally or on LPATH and add to source list.
@@ -154,21 +234,25 @@ void writecheck(rc)
 void lnkdcl(name)
 char *name;
 {
+/* mdw: unrefd locals
    struct srcfile **pp;
    struct srcfile *p;
+*/
    char buf[MaxFileName];
 
    if (pathfind(buf, lpath, name, SourceSuffix))
-      src_file(buf);
+      /* mdw src_file(buf); */
+      src_file(buf, &srclst);
    else
       tfatal("cannot resolve reference to file name", name);
       }
 
+#ifdef mdw_old
 /*
  * src_file - add the file name to the list of source files to be translated,
  *   if it is not already on the list.
  */
-void src_file(name)
+void src_file_original(name)
 char *name;
    {
    struct srcfile **pp;
@@ -181,4 +265,23 @@ char *name;
    p->name = salloc(name);
    p->next = NULL;
    *pp = p;
+}
+#endif /* mdw_old */
+
+void src_file(name, srclist)
+char *name;
+struct srcfile **srclist;
+   {
+   struct srcfile **pp;
+   struct srcfile *p;
+/*mdw*/extern int ica_unit_add(char *);
+
+   for (pp = srclist; *pp != NULL; pp = &(*pp)->next)
+     if (strcmp((*pp)->name, name) == 0)
+        return;
+   p = NewStruct(srcfile);
+   p->name = salloc(name);
+   p->next = NULL;
+   *pp = p;
+/*mdw*/ica_unit_add(name);
 }

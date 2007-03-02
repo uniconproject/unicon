@@ -15,11 +15,7 @@ union field {
    struct implement *ip; /* fields referencing an operation */
    struct pentry *proc;	 /* pointer to procedure entry */
    struct rentry *rec;	 /* pointer to record entry */
-#ifdef OptimizeType
-   struct typinfo *typ;  /* extra type field */
-#else					/* OptimizeType */
-   unsigned int *typ;    /* extra type field */
-#endif					/* OptimizeType */
+   typeinfo_t *typ;    /* extra type field */
    nodeptr n_ptr;	 /* subtree pointers */
    };
 
@@ -30,11 +26,7 @@ union field {
 struct store {
    struct store *next;
    int perm;               /* flag: whether store stays across iterations */
-#ifdef OptimizeType
-   struct typinfo *types[1]; /* actual size is number of variables */
-#else					/* OptimizeType */
-   unsigned int *types[1]; /* actual size is number of variables */
-#endif					/* OptimizeType */
+   typeinfo_t *types[1]; /* actual size is number of variables */
    };
 
 /*
@@ -43,11 +35,7 @@ struct store {
 struct symtyps {
    int nsyms;                /* number of parameter symbols */
    struct symtyps *next;
-#ifdef OptimizeType
-   struct typinfo *types[1];   /* really one for every symbol */
-#else					/* OptimizeType */
-   unsigned int *types[1];   /* really one for every symbol */
-#endif					/* OptimizeType */
+   typeinfo_t *types[1];   /* really one for every symbol */
    };
 
 /*
@@ -77,11 +65,7 @@ struct node {
    int n_col;		    /* column number in source program */
    int flag;
    int *new_types;          /* pntr to array of struct types created here */
-#ifdef OptimizeType
-   struct typinfo *type;	    /* type of this expression */
-#else					/* OptimizeType */
-   unsigned int *type;		    /* type of this expression */
-#endif					/* OptimizeType */
+   typeinfo_t *type;		    /* type of this expression */
    struct store *store;     /* if needed, store saved between iterations */
    struct symtyps *symtyps; /* for operation in data base: types of arg syms */
    nodeptr lifetime;        /* lifetime of intermediate result */
@@ -102,31 +86,31 @@ struct node {
  * Macros to access fields of parse tree nodes.
  */
 
-#define Type(t)		t->n_type
-#define File(t)		t->n_file
-#define Line(t)		t->n_line
-#define Col(t)		t->n_col
-#define Tree0(t)	t->n_field[0].n_ptr
-#define Tree1(t)	t->n_field[1].n_ptr
-#define Tree2(t)	t->n_field[2].n_ptr
-#define Tree3(t)	t->n_field[3].n_ptr
-#define Tree4(t)	t->n_field[4].n_ptr
-#define Val0(t)		t->n_field[0].n_val
-#define Val1(t)		t->n_field[1].n_val
-#define Val2(t)		t->n_field[2].n_val
-#define Val3(t)		t->n_field[3].n_val
-#define Val4(t)		t->n_field[4].n_val
-#define Str0(t)		t->n_field[0].n_str
-#define Str1(t)		t->n_field[1].n_str
-#define Str2(t)		t->n_field[2].n_str
-#define Str3(t)		t->n_field[3].n_str
-#define LSym0(t)	t->n_field[0].lsym
-#define CSym0(t)	t->n_field[0].csym
-#define Impl0(t)	t->n_field[0].ip
-#define Impl1(t)	t->n_field[1].ip
-#define Rec1(t)		t->n_field[1].rec
-#define Proc1(t)	t->n_field[1].proc
-#define Typ4(t)		t->n_field[4].typ
+#define Type(t)   (t)->n_type
+#define File(t)   (t)->n_file
+#define Line(t)   (t)->n_line
+#define Col(t)    (t)->n_col
+#define Tree0(t)  (t)->n_field[0].n_ptr
+#define Tree1(t)  (t)->n_field[1].n_ptr
+#define Tree2(t)  (t)->n_field[2].n_ptr
+#define Tree3(t)  (t)->n_field[3].n_ptr
+#define Tree4(t)  (t)->n_field[4].n_ptr
+#define Val0(t)   (t)->n_field[0].n_val
+#define Val1(t)   (t)->n_field[1].n_val
+#define Val2(t)   (t)->n_field[2].n_val
+#define Val3(t)   (t)->n_field[3].n_val
+#define Val4(t)   (t)->n_field[4].n_val
+#define Str0(t)   (t)->n_field[0].n_str
+#define Str1(t)   (t)->n_field[1].n_str
+#define Str2(t)   (t)->n_field[2].n_str
+#define Str3(t)   (t)->n_field[3].n_str
+#define LSym0(t)  (t)->n_field[0].lsym
+#define CSym0(t)  (t)->n_field[0].csym
+#define Impl0(t)  (t)->n_field[0].ip
+#define Impl1(t)  (t)->n_field[1].ip
+#define Rec1(t)   (t)->n_field[1].rec
+#define Proc1(t)  (t)->n_field[1].proc
+#define Typ4(t)   (t)->n_field[4].typ
 
 /*
  * External declarations.

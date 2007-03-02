@@ -25,7 +25,7 @@ Global int uwarn	Init(0);	/* -u: warn about undefined ids? */
 Global int just_type_trace Init(0);	/* -T: suppress C code */
 Global int verbose      Init(1);	/* -s, -v: level of verbosity */
 Global int pponly       Init(0);	/* -E: preprocess only */
-
+Global int dbgsyms Init(0); /* -g: emit debugging symbols in output */
 Global char *c_comp     Init(CComp);    /* -C: C compiler */
 Global char *c_opts     Init(COpts);    /* -p: options for C compiler */
 
@@ -36,6 +36,7 @@ Global int opt_cntrl	Init(1);	/* do control flow optimization */
 Global int opt_sgnl	Init(1);	/* do signal handling optimizations */
 Global int do_typinfer	Init(1);	/* do type inference */
 Global int allow_inline Init(1);	/* allow expanding operations in line */
+Global int opt_ica Init(0); /* mdw: enable ica module? */
 
 /*
  * Files.

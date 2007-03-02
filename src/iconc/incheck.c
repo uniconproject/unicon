@@ -39,15 +39,18 @@ static int n_ret;       /* number of returns */
  *  and determine where the success continuation for the operation
  *  should be put.
  */
-int do_inlin(impl, n, cont_loc, symtab, n_va) 
-struct implement *impl;
-nodeptr n;
-int *cont_loc;
-struct op_symentry *symtab;
-int n_va;
-   {
-   int nsyms;
+extern
+int
+do_inlin(impl, n, cont_loc, symtab, n_va) 
+   struct implement *impl;
+   nodeptr n;
+   int *cont_loc;
+   struct op_symentry *symtab;
+   int n_va;
+{
    int i;
+   int nsyms;
+   extern int num_dynrec_ctors;
 
    /*
     * Copy arguments needed by other functions into globals and
@@ -68,6 +71,11 @@ int n_va;
     */
    il_anlz(impl->in_line);
 
+   /*
+    * mdw: Don't perform inlining if this program is using dynamic records.
+    */
+   if (num_dynrec_ctors)
+      return 0;
 
    /*
     * Don't in-line if there is more than one decision made based on
@@ -108,7 +116,7 @@ int n_va;
         symtab[i].var_safe = 1;
 
    return 1;
-   }
+}
 
 /*
  * il_anlz - analyze a piece of RTL code. Return an indication of

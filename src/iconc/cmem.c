@@ -60,12 +60,15 @@ void init()
 /*
  * init_proc - add a new entry on front of procedure list.
  */
-void init_proc(name)
-char *name;
-   {
-   register struct pentry *p;
+extern
+struct gentry *
+init_proc(name)
+   char *name;
+{
    int i;
    struct gentry *sym_ent;
+   register struct pentry *p;
+/*mdw*/extern int ica_pdefn_add(struct gentry *);
 
    p = NewStruct(pentry);
    p->name = name;
@@ -88,18 +91,42 @@ char *name;
    proc_lst = p;
    sym_ent = instl_p(name, F_Proc);
    sym_ent->val.proc = proc_lst;
-   }
+
+/*mdw*/ica_pdefn_add(sym_ent);
+   return sym_ent;
+}
+
+static
+int
+rec_is_obj(name)
+   char * name;
+{
+   int len;
+
+   if ((len = strlen(name)) < 15)
+      return 0;
+   if (strcmp("__mdw_inst_mdw", (char *)(name + len - 14)) == 0)
+      return 1;
+   return 0;
+}
 
 /*
  * init_rec - add a new entry on the front of the record list.
  */
-void init_rec(name)
-char *name;
-   {
+void
+init_rec(name)
+   char * name;
+{
+   int flags;
    register struct rentry *r;
    struct gentry *sym_ent;
    static int rec_num = 0;
+/*mdw*/extern int ica_rdecl_add(struct gentry *);
 
+   flags = F_Record;
+   if (rec_is_obj(name))
+      flags |= F_Object;
+   /*printf("mdw: init_rec: rec \"%s\" assigned #%d.\n", name, rec_num);*/
    r = NewStruct(rentry);
    r->name = name;
    nxt_pre(r->prefix, pre, PrfxSz);
@@ -109,6 +136,7 @@ char *name;
    r->fields = NULL;
    r->next = rec_lst;
    rec_lst = r;
-   sym_ent= instl_p(name, F_Record);
+   sym_ent= instl_p(name, flags);
    sym_ent->val.rec = r;
-   }
+/*mdw*/ica_rdecl_add(sym_ent);
+}

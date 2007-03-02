@@ -38,7 +38,8 @@ static int          part_asgn (struct val_loc *vloc, char *asgn,
                                     struct il_c *value);
 static void          rstr_locs (struct val_loc **locs);
 static struct val_loc **sav_locs  (void);
-static void         sub_ilc    (struct il_c *ilc, struct code *cd, int indx);
+static void         sub_ilc    (struct il_c *ilc, struct code *cd, int indx); 
+/* mdw */static void sub_ilc_fncall_explicit_arg(struct il_c * argilc, struct il_c * proto, struct code * cd, int indx);
 
 /*
  * There are many parameters that are shared by multiple routines. There
@@ -558,9 +559,10 @@ struct il_code *il;
          ++cd_indx;
          }
       if (!proto_prt)
-        fprintf(inclfile, "%s", il->u[il_indx].c_cd->s);   /* parameter dcl */
-      ++il_indx;
-      sub_ilc(il->u[il_indx++].c_cd, arg_lst, cd_indx++);
+         fprintf(inclfile, "%s", il->u[il_indx].c_cd->s);   /* parameter dcl */
+      sub_ilc_fncall_explicit_arg(il->u[il_indx+1].c_cd, il->u[il_indx].c_cd,
+         arg_lst, cd_indx++);
+      il_indx += 2;
       }
 
    /*
@@ -842,6 +844,94 @@ char *typ;
    }
 
 /*
+ * Substitute inline C for the explicit arg in a func call.
+ */
+static
+void
+sub_ilc_fncall_explicit_arg_old(argilc, protoilc, cd, indx)
+   struct il_c * argilc;
+   struct il_c * protoilc;
+   struct code * cd;
+   int indx;
+{
+   /* printf("sub_ilc_fncall_explicit_arg: entry.\n"); */
+
+   if (argilc->next) {
+      /* don't process fncall args containing more than 1 piece of code */
+      /* printf("sub_ilc_fncall_explicit_arg: bail 0.\n"); */
+      sub_ilc(argilc, cd, indx);
+      return;
+   }
+
+   if (argilc->il_c_type != ILC_Ref) {
+      /* process non-modifying arg references only */
+      /* printf("sub_ilc_fncall_explicit_arg: bail 1.\n"); */
+      sub_ilc(argilc, cd, indx);
+      return;
+   }
+
+   if (cur_symtab[argilc->n].loc->loc_type != V_Temp) {
+      /* process args that refer to temp locations only */
+      /* printf("sub_ilc_fncall_explicit_arg: bail 2.\n"); */
+      sub_ilc(argilc, cd, indx);
+      return;
+   }
+
+   if (protoilc->s == NULL || strncmp("C_integer", protoilc->s, 9)) {
+      /* currently process only C_integer type */
+      /* printf("sub_ilc_fncall_explicit_arg: bail 3.\n"); */
+      sub_ilc(argilc, cd, indx);
+      return;
+   }
+
+   cd->ElemTyp(indx) = A_ValLoc;
+   cd->ValLoc(indx) = loc_cpy(cur_symtab[argilc->n].loc, M_CInt);
+   /* printf("sub_ilc_fncall_explicit_arg: hit.\n"); */
+   /* printf("sub_ilc_fncall_explicit_arg: proto: %s.\n", protoilc->s); */
+}
+
+static
+void
+sub_ilc_fncall_explicit_arg(argilc, protoilc, cd, indx)
+   struct il_c * argilc;
+   struct il_c * protoilc;
+   struct code * cd;
+   int indx;
+{
+   int loctype;
+   /* printf("sub_ilc_fncall_explicit_arg: entry.\n"); */
+
+   for (; argilc && protoilc; argilc=argilc->next,protoilc=protoilc->next) {
+      if (argilc->il_c_type != ILC_Ref) {
+         /* process non-modifying arg references only */
+         /* printf("sub_ilc_fncall_explicit_arg: bail 1.\n"); */
+         sub_ilc(argilc, cd, indx);
+         continue;
+      }
+
+      loctype = cur_symtab[argilc->n].loc->loc_type;
+      if (loctype != V_Temp && loctype != V_NamedVar) {
+         /* process args that refer to temp locations only */
+         /* printf("sub_ilc_fncall_explicit_arg: bail 2.\n"); */
+         sub_ilc(argilc, cd, indx);
+         continue;
+      }
+
+      if (protoilc->s == NULL || strncmp("C_integer", protoilc->s, 9)) {
+         /* currently process only C_integer type */
+         /* printf("sub_ilc_fncall_explicit_arg: bail 3.\n"); */
+         sub_ilc(argilc, cd, indx);
+         continue;
+      }
+
+      cd->ElemTyp(indx) = A_ValLoc;
+      cd->ValLoc(indx) = loc_cpy(cur_symtab[argilc->n].loc, M_CInt);
+      /* printf("sub_ilc_fncall_explicit_arg: hit.\n"); */
+      /* printf("sub_ilc_fncall_explicit_arg: proto: %s.\n", protoilc->s); */
+   }
+}
+
+/*
  * sub_ilc - generate code from a sequence of C code and place it
  *  in a slot in a code array.
  */
@@ -876,6 +966,7 @@ int indx;
 
    while (ilc != NULL) {
       switch (ilc->il_c_type) {
+
          case ILC_Ref:
          case ILC_Mod:
             /*
@@ -936,7 +1027,6 @@ int indx;
       ilc = ilc->next;
       ++indx;
       }
-
    }
 
 /*

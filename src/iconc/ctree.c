@@ -295,6 +295,62 @@ nodeptr args;
    }
 
 /*
+ * This symbol is referred to during codegen
+ */
+int num_dynrec_ctors = 0;
+
+static
+int
+invk_check_dyn_rec(argc, argv)
+   int argc;
+   nodeptr argv;
+{
+   int i;
+   nodeptr p;
+   char * recname;
+
+   if (argc < 2)
+      return -1;
+   p = argv->n_field[1].n_ptr;
+   if (p->n_field[0].csym < 256 || p->n_field[0].csym->image == 0)
+      return -1;
+   if (strcmp("constructor", p->n_field[0].csym->image) != 0)
+      return -1;
+   /*
+    * Increment the number of dynamic recods that we've encountered.
+    * The assumption is that, even if we can't install an rentry for
+    * a given constructor call, we should increment num_dynrec_ctors so that
+    * when we generate code to tell the run-time system at what index to
+    * start allocating records, the starting index will hopefully be at least
+    * as large as it needs to be and therefore not cause a problem.
+    */ 
+   num_dynrec_ctors++;
+   if (argv->n_field[2].n_ptr->n_type != N_Str)
+      return -1;
+   recname = argv->n_field[2].n_ptr->n_field[0].csym->image;
+
+   for (i=3; i<=argc+1; i++) {
+      if (argv->n_field[i].n_ptr->n_type != N_Str)
+         return 0;
+      }
+   /* install the new record */
+   init_rec(recname);
+   for (i=3; i<=argc+1; i++) {
+      p = argv->n_field[i].n_ptr;
+      if (strcmp("__m", p->n_field[0].csym->image) == 0) {
+         /*
+          * Prohibit the use of "__m" as a user-defined field name.
+          */
+         tfatal("invalid use of reserved field name \"__m\" in record",
+            recname);
+         }
+      /* install the field */
+      install(p->n_field[0].csym->image, F_Field);
+      }
+   return 0;
+}
+
+/*
  * invk_nd - create a node for invocation.
  */
 nodeptr invk_nd(loc_model, proc, args)
@@ -304,6 +360,7 @@ nodeptr args;
    {
    register nodeptr t;
    int nargs;
+   extern int ica_pcall_add(struct node *);
 
    /*
     * Determine the number of arguments.
@@ -317,7 +374,6 @@ nodeptr args;
       if (nargs > max_prm)
          max_prm = nargs;
       }
-
    t = NewNode(nargs + 2);
    t->n_type = N_Invok;
    t->n_file = loc_model->n_file;
@@ -328,6 +384,12 @@ nodeptr args;
    t->n_field[1].n_ptr = proc;
    if (nargs > 0)
       put_elms(t, args, nargs + 1);
+   /*
+    * permit the use of dynamic records in iconc,
+    * whether or not we're running in unicon-mode.
+    */
+   invk_check_dyn_rec(nargs, t);
+   ica_pcall_add(t);
    return t;
    }
 

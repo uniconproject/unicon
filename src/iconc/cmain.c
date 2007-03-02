@@ -7,10 +7,12 @@
 #include "ccode.h"
 #include "csym.h"
 #include "cproto.h"
+#include "wop.h"
 
 /*
  * Prototypes.
  */
+static void emit_cmdline(void *, int, char **);
 static void execute (char *ofile, char *efile, char **args);
 static FILE  *open_out (char *fname);
 static void rmfile  (char *fname);
@@ -27,7 +29,7 @@ char *toolstr = "${TOOLS}";
 
 char *refpath;
 char patchpath[MaxPath+18] = "%PatchStringHere->";
-
+int unicon_mode = 0;
 
 #define Global
 #define Init(v) = v
@@ -40,6 +42,26 @@ extern int optind;		/* index into parent argv vector */
 extern int optopt;		/* character checked for validity */
 extern char *optarg;		/* argument associated with option */
 
+
+static
+int
+compute_dynrec_start()
+{
+   int rslt;
+   struct rentry * r;
+   extern int num_dynrec_ctors;
+
+   for (rslt=0,r=rec_lst; r; r=r->next,rslt++)
+      ;
+   if (rslt >= num_dynrec_ctors)
+      rslt -= num_dynrec_ctors;
+   else
+      rslt = 0;
+   if (rslt < 0)
+      rslt = 0;
+   return rslt;
+}
+
 /*
  *  main program
  */
@@ -47,8 +69,9 @@ int main(argc,argv)
 int argc;
 char **argv;
    {
-   int no_c_comp = 0;			/* suppress C compile and link? */
    int errors = 0;			/* compilation errors */
+   int dynrec_start; /* recnum origin for dynamic recs */
+   int no_c_comp = 0;			/* suppress C compile and link? */
    char *cfile = NULL;			/* name of C file - primary */
    char *hfile = NULL;			/* name of C file - include */
    char *ofile = NULL;			/* name of executable result */
@@ -62,6 +85,7 @@ char **argv;
    char *incl_path;			/* path to header file */
    char *s, c1;
    char buf[MaxFileName];		/* file name construction buffer */
+/*mdw*/extern int ica_init(void);
 
 #ifdef ExpTools
    char Buf[MaxFileName];
@@ -71,6 +95,8 @@ char **argv;
    int c;
    int ret_code;
    struct fileparts *fp;
+
+   report("iconc build: " __DATE__" "__TIME__".\n");
 
 #ifdef ExpTools
    if (strlen(patchpath)>18) {
@@ -82,11 +108,14 @@ char **argv;
               "patchstr begins with \"${TOOLS}\" but ${TOOLS} has no value\n");
             fprintf(stderr, "patchstr=%s\ncompilation aborted\n", refpath);
             exit(EXIT_FAILURE);
-           } else strcpy(Buf,tools);
+           }
+         else
+            strcpy(Buf,tools);
          strcat(Buf,refpath);			/* append name   */
-	 if (Buf[strlen(Buf)-1] != '/') strcat(Buf,"/");
-	 refpath = Buf;				/* use refpath   */
-  	 }
+         if (Buf[strlen(Buf)-1] != '/')
+            strcat(Buf,"/");
+         refpath = Buf;				/* use refpath   */
+         }
       }
    fprintf(stderr,"iconc library files found in %s\n",refpath);
 #else					/* ExpTools */
@@ -99,7 +128,7 @@ char **argv;
    /*
     * Process options.
     */
-   while ((c = getopt(argc,argv,"C:ELS:Tce:f:mn:o:p:r:stuv:x")) != EOF)
+   while ((c = getopt(argc,argv,"C:EL:S:TU:ce:f:gmn:o:p:r:stuv:w:x")) != EOF)
       switch (c) {
          case 'C':			/* -C C-comp: C compiler*/
             c_comp = optarg;
@@ -108,13 +137,21 @@ char **argv;
             pponly = 1;
             no_c_comp = 1;
             break;
-         case 'L':			/* Ignore: interpreter only */
-            break;
          case 'S':			/* Ignore: interpreter only */
             break;
-	 case 'T':
-	    just_type_trace = 1;
-	    break;
+         case 'T':
+            just_type_trace = 1;
+            break;
+         case 'U':			/* source was preprocessed by unicon */
+            if (*optarg == 'a')
+               unicon_mode = UM_Ambig;
+            else
+               unicon_mode = UM_Normal;
+            /*
+            printf("iconc: unicon-mode: %s.\n", unicon_mode == UM_Ambig ?
+                "UM_Ambig" : "UM_Normal");
+            */
+            break;
          case 'c':			/* -c: produce C file only */
             no_c_comp = 1;
             break;
@@ -133,7 +170,7 @@ char **argv;
                      break;
                   case 'd':             /* -fd: enable debugging features */
                      line_info = 1;
-                     debug_info = 1;
+                     /* mdw debug_info = 1; */
                      break;
                   case 'e':             /* -fe: enable error conversion */
                      err_conv = 1;
@@ -153,6 +190,9 @@ char **argv;
                   }
                }
             break;
+         case 'g':        /* -g: mdw: emit debugging symbols in target */
+            dbgsyms = 1;
+            break;
          case 'm':			/* -m: preprocess using m4(1) [UNIX] */
             m4pre = 1;
             break;
@@ -170,6 +210,9 @@ char **argv;
                      break;
                   case 'e':		/* -ne: disable expanding in-line */
                      allow_inline = 0;
+                     break;
+                  case 'i': /* mdw: disable ica module */
+                     opt_ica = 0;
                      break;
                   case 's':		/* -ns: disable switch optimizations */
                      opt_sgnl = 0;
@@ -212,13 +255,28 @@ char **argv;
             if (sscanf(optarg, "%d%c", &verbose, &c1) != 1)
                quitf("bad operand to -v option: %s",optarg);
             break;
+         case 'w': /* -w: weird opts */
+            for (s=optarg; *s; s++) {
+               switch (*s) {
+                  case 'b': /* -wb: optimize arg derefs #2 */
+                     wop_set(Wop_OpArgDerefs);
+                     break;
+                  case 'f':		/* -wf: optimize field derefs */
+                     wop_set(Wop_FldDerefs);
+                     break;
+                  default:
+                     usage();
+                     break;
+               }
+            }
+            break;
          default:
          case 'x':                      /* -x illegal until after file list */
             usage();
          }
 
    init();			/* initialize memory for translation */
-
+/*mdw*/ica_init();
    /*
     * Load the data bases of information about run-time routines and
     *  determine what libraries are needed for linking (these libraries
@@ -256,7 +314,8 @@ char **argv;
       if (strcmp(argv[optind],"-x") == 0)	/* stop at -x */
          break;
       else if (strcmp(argv[optind],"-") == 0)
-         src_file("-");				/* "-" means standard input */
+         /* mdw src_file("-"); */				/* "-" means standard input */
+         src_file("-", &srclst);
 
 /*
  * The following code is operating-system dependent [@tmain.02].  Check for
@@ -286,11 +345,16 @@ Deliberate Syntax Error
       else {
          fp = fparse(argv[optind]);		/* parse file name */
          if (*fp->ext == '\0' || smatch(fp->ext, SourceSuffix)) {
-            makename(buf,SourceDir,argv[optind], SourceSuffix);
+            /* mdw: modified this clause */
+            if (unicon_mode)
+               makename(buf, SourceDir, argv[optind], "");
+            else
+               makename(buf,SourceDir,argv[optind], SourceSuffix);
 #if VMS
-	    strcat(buf, fp->version);
+            strcat(buf, fp->version);
 #endif					/* VMS */
-            src_file(buf);
+            /* mdw src_file(buf);*/
+            src_file(buf, &srclst);
             }
          else
 
@@ -331,9 +395,9 @@ Deliberate Syntax Error
 
    if (pponly) {
       if (trans(argv[0]) == 0)
-	 exit (EXIT_FAILURE);
+         exit (EXIT_FAILURE);
       else
-	 exit (EXIT_SUCCESS);
+         exit (EXIT_SUCCESS);
       }
 
    if (ofile == NULL)  {		/* if no -o file, synthesize a name */
@@ -346,7 +410,6 @@ Deliberate Syntax Error
       if (*fp->ext == '\0' && *ExecSuffix != '\0')
          ofile = salloc(makename(buf,NULL,ofile,ExecSuffix));
    }
-
    /*
     * Make name of intermediate C files.
     */
@@ -354,6 +417,7 @@ Deliberate Syntax Error
    hfile = salloc(makename(buf,TargetDir,ofile,HSuffix));
 
    codefile = open_out(cfile);
+   emit_cmdline(codefile, argc, argv);
    fprintf(codefile, "#include \"%s\"\n", hfile);
 
    inclfile = open_out(hfile);
@@ -372,17 +436,26 @@ Deliberate Syntax Error
       report("Translating to C");
 
    errors = trans(argv[0]);
+
    if ((errors > 0) || just_type_trace) {	/* exit if errors seen */
       rmfile(cfile);
       rmfile(hfile);
       if (errors > 0)
-	 exit(EXIT_FAILURE);
-      else exit(EXIT_SUCCESS);
+         exit(EXIT_FAILURE);
+      else
+         exit(EXIT_SUCCESS);
       }
+
+   /*
+    * determine the origin of dynrecs so that we can
+    * notify the runtime system and keep recnums in sync.
+    */
+   dynrec_start = compute_dynrec_start();
+   fprintf(inclfile, "/* mdw: sync recnum between iconc and rtl */\n");
+   fprintf(inclfile, "#define DYNREC_START %d\n", dynrec_start);
 
    fclose(codefile);
    fclose(inclfile);
-
    /*
     * Compile and link C file.
     */
@@ -404,8 +477,10 @@ Deliberate Syntax Error
     * Finish by removing C files.
     */
 #if !MSDOS
+   /* mdw
    rmfile(cfile);
    rmfile(hfile);
+   */
 #endif					/* !MSDOS */
    rmfile(makename(buf,TargetDir,cfile,ObjSuffix));
 
@@ -414,10 +489,38 @@ Deliberate Syntax Error
          report("Executing");
       execute (ofile, efile, argv+optind+1);
       }
-
    return ret_code;
    }
 
+/*
+ * mdw: This plops the iconc command-line into the C file generated
+ * by iconc. It is a useful debugging instrument that doesn't necessarily
+ * need to go away for "real" code.
+ */ 
+static
+void
+emit_cmdline(f, argc, argv)
+   void * f;
+   int argc;
+   char ** argv;
+{
+   int i, len, col;
+
+   fprintf(f, "/*\n * command-line:\n *\n * ");
+   for (col=4,i=0; i<argc; i++) {
+      len = strlen(argv[i]);
+      if (col + len > 60) {
+         fprintf(f, "\n *   ");
+         col = 6 + len;
+         }
+      else
+         col += len;
+      fprintf(f, "%s ", argv[i]);
+      }
+   fprintf(f, "\n */\n");
+   fflush(f);
+}
+
 /*
  * execute - execute compiled Icon program
  */
@@ -446,7 +549,7 @@ char *ofile, *efile, **args;
    while (*p++) {
       *p = *args;
       args++;
-   }
+      }
 #else					/* AMIGA && LATTICE */
    while (*p++ = *args++)		/* copy args into argument vector */
       ;
@@ -599,9 +702,9 @@ char *fname;
       for (i = 0; i < (int)strlen(ident); ++i) {
          c = getc(f);
          if (c == EOF)
-             break;
+            break;
          if ((char)c != ident[i])
-            quitf("%s not in iconc format; rename or delete, and rerun", fname);
+            quitf("%s not in iconc format; rename or delete, and rerun",fname);
          }
       fclose(f);
       }

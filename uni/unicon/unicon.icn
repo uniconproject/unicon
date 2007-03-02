@@ -34,6 +34,12 @@ global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
 global classes,comp,exec,strict,links,imports,loud,ct,reserved
 global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
 global yydbg, yyout, linkline, translateducode, imported, imported_classes
+$ifdef Uniconc
+global iconc
+global iconc_links
+global iconc_parsed
+global iconc_imports
+$endif # Uniconc
 
 link basename, io
 
@@ -79,6 +85,282 @@ procedure iwrites(args[])
   return args[-1]|""
 end
 
+$ifdef Uniconc
+procedure ipaths_get()
+   static rslt
+   local binpath, pathstr, pathsep, f
+
+   initial {
+      rslt := []
+      pathstr := ""
+      if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+         ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|
+         "wiconx.exe")))) then {
+         close(\f)
+         pathstr ||:=
+            binpath || "../ipl/lib " ||
+            binpath || "../uni/lib "
+         }
+      pathstr ||:= (getenv("IPATH") | ".")
+      if \pathstr ~== "" then {
+         pathsep := getenv("PATHSEP") | " "
+         pathstr ? {
+            while put(rslt, tab(find(pathsep))) do
+               move(1)
+            put(rslt, tab(0))
+            }
+         }
+      }
+   return rslt
+end
+$endif # Uniconc
+
+$ifdef Uniconc
+procedure lpaths_get()
+   static rslt
+   local binpath, pathstr, pathsep, f
+
+   initial {
+      rslt := []
+      pathstr := ""
+      if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+         ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|
+         "wiconx.exe")))) then {
+         close(\f)
+         pathstr ||:=
+            binpath || "../ipl/procs " ||
+            binpath || "../uni/gui " ||
+            binpath || "../uni/lib " ||
+            binpath || "../ipl/gincl " ||
+            binpath || "../ipl/mincl " ||
+            binpath || "../ipl/gprocs " ||
+            binpath || "../ipl/gprogs "
+         }
+      pathstr ||:= (getenv("LPATH") | ".")
+      if \pathstr ~== "" then {
+         pathsep := getenv("PATHSEP") | " "
+         pathstr ? {
+            while put(rslt, tab(find(pathsep))) do
+               move(1)
+            put(rslt, tab(0))
+            }
+         }
+      }
+   return rslt
+end
+$endif # Uniconc
+
+$ifdef Uniconc
+procedure iconc_linkref_resolve(srcfname, ref)
+   static lpaths, sep, posixloc
+   local i, f, path, base, comps, rslt
+
+   initial {
+      sep := PATHCHAR
+      lpaths := lpaths_get()
+      if (bpath := (&features ? (="Binaries at " & tab(0)))) |
+         ((f := open((bpath := getpaths()) ||
+         ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
+         close(\f)
+         posixloc := (bpath || "../ipl/procs/posix.icn")
+         }
+      }
+
+   if (ref[1] == '"') then
+      # strip quotes
+      ref := ref[2:-1]
+
+   rslt := []
+   comps := tail(ref)
+
+   #
+   # try the raw ref first
+   #
+   if (f := open(ref)) then {
+      close(f)
+      put(rslt, ref)
+      return rslt
+      }
+
+   #
+   # try the raw ref .icn next
+   #
+   if (f := open(ref || ".icn")) then {
+      close(f)
+      put(rslt, ref || ".icn")
+      return rslt
+      }
+
+   if not (comps[1] == "") then {
+      #
+      # This linkref has a path-spec.
+      #
+      comps := suffix(ref)
+      comps[2] := ".icn"
+      if (f := open(comps[1] || comps[2])) then {
+         close(f)
+         put(rslt, (comps[1] || comps[2]))
+         return rslt
+         }
+      #
+      # Couldn't find the ref specified.
+      #
+      return &null
+      }
+
+   #
+   # mdw:
+   # This is a hack to circumvent the conventional
+   # link resolution facility and ensure that we parse
+   # the iconc-compatible posix.icn.  This will have
+   # to be revisited.
+   #
+   # begin hack
+   if (ref == "posix") then
+      return [posixloc]
+   # end hack
+
+   base := comps[2]
+   comps := tail(srcfname)
+   path := comps[1] || sep
+   if (f := open(path || base || ".icn")) then {
+      close(f)
+      put(rslt, (path || base || ".icn"))
+      return rslt
+      }
+
+   #
+   # Either the ref is an .icn file in the LPATH corresponding to
+   # some .u file on the IPATH, or it is invalid.
+   #
+   every i := 1 to *lpaths do {
+      if (f := open(lpaths[i] || sep || ref || ".icn")) then {
+         close(f)
+         break
+         }
+
+      else {
+         f := &null
+         }
+      }
+   if i = *lpaths & /f then {
+      #
+      # The ref is invalid.
+      #
+      return &null
+      }
+   #
+   # We found a .icn for the ref, so assume that
+   # a .u exists for it and the ref is valid.
+   #
+   put(rslt, (lpaths[i] || sep || ref || ".icn"))
+   # write("mdw: link-ref: \"" || lpaths[i] || sep || ref || ".icn\".");
+   return rslt
+end
+$endif # Uniconc
+
+$ifdef Uniconc
+procedure iconc_importref_resolve(ref)
+   static sep, ipaths
+   local i, k, f, entry, rslt
+
+   initial {
+      sep := PATHCHAR
+      ipaths := ipaths_get()
+      }
+
+   # write("iconc_importref_resolve(" || ref || ")...")
+   rslt := []
+
+   #
+   # Search for an ndbm entry containing this ref.
+   #
+   every i := 1 to *ipaths do {
+      # write("trying " || ipaths[i] || "/" || "uniclass...")
+      if not (f := open(ipaths[i] || sep || "uniclass", "dr")) then {
+         # write("  open failed.")
+         next
+         }
+      if not (entry := fetch(f, ref)) then {
+         # write("  fetch failed.")
+         close(f)
+         f := &null
+         next
+         }
+      close(f)
+      break
+      }
+
+   if i = *ipaths & /f then
+      return rslt
+
+   #
+   # parse the ndbm entry, adding its files into rslt[]
+   #
+   entry ? {
+      tab(upto(':'))
+      tab(many(' :'))
+      while put(rslt, (ipaths[i] || sep || tab(upto(':')))) do
+         tab(many(' :'))
+      if (k := find('(')) then
+         put(rslt, (ipaths[i] || sep || tab(k)))
+      else
+         put(rslt, (ipaths[i] || sep || tab(0)))
+      }
+
+   # mdw: debug
+   # every i := 1 to *rslt do
+   #    write("iconc-importref-resolve: rslt[" || i || "]: " || rslt[i])
+
+   return rslt
+end
+$endif # Uniconc
+
+$ifdef Uniconc
+procedure iconc_yyparse(fname, tmplist)
+   # write("mdw: iconc_yyparse(" || fname || ")...")
+   yyfilename := outfilename := fname
+   yyin := ""
+   every yyin ||:= preprocessor(fname, uni_predefs) do
+      yyin ||:= "\n"
+   yylex_reinit()
+   if /yydbg then {
+      temppath := getenv("TEMP") | "/tmp"
+      tmpname := tempname("uni","",temppath,5)
+      # write("mdw: tmpname: " || tmpname)
+      yyout := open(tmpname, "w") |
+         stop("can't open temporary file ",tmpname," for writing")
+      put(tmplist, tmpname)
+      }
+   else
+      yyout := &output
+   write(yyout, "#line 0 \"", fname, "\"")
+   iwrites(&errout, "Parsing ", fname ,": ")
+   rv := yyparse()
+   if yynerrs = 0 then iwrite(&errout)
+   if /yydbg then
+      close(yyout)
+   reinitialize()
+end
+$endif # Uniconc
+
+$ifdef Uniconc
+procedure get_abs_file_name(fname)
+    local pair, cwd, rslt
+
+    pair := tail(fname)
+    if (pair[1] == "") then
+        pair[1] := "."
+    cwd := chdir()
+    rslt := chdir(pair[1])
+    chdir(cwd)
+    if not (rslt[-1] == PATHCHAR) then
+        rslt ||:= PATHCHAR
+    rslt ||:= pair[2]
+    return rslt
+end
+$endif # Uniconc
+
 #
 # initialize global variables
 #
@@ -114,12 +396,22 @@ procedure reinitialize()
 end
 
 procedure unicon(argv)
+$ifdef Uniconc
+   local tmpfnames, tmpopt
+$endif # Uniconc
+
    initialize()
    if *argv = 0 then
       istop("usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [o ofile]\n",
 	    "   [-version] [-v i] file... [-x args]")
    EmptyNode := leaf(N_Empty)
    /yydebug := 0
+$ifdef Uniconc
+   tmpfnames := []
+   iconc_links := table()
+   iconc_parsed := table()
+   iconc_imports := table()
+$endif # Uniconc
 
    every i := 1 to *argv do {
       if \exec then next            # after -x, args are for execution
@@ -138,11 +430,36 @@ procedure unicon(argv)
 	       uni_predefs[sym] := def
 	       }
 	    }
+$ifdef Uniconc
+         else if (match ("-C", argv[i])) then {
+            #
+            # Generate code suitable for consumption by iconc.
+            #
+            iconc := 1
+            parseonly := 1
+            if (*argv[i] > 2) then
+               tmpopt := "-U" || argv[i][3:0] || " "
+            else
+               tmpopt := "-U1 "
+            if /icontopt then
+               icontopt := tmpopt
+            else
+               icontopt ||:= tmpopt
+            }
+$endif # Uniconc
 	 else
 	 case argv[i] of {
 	 "-c"   : {
 	    sysok := &null
 	    if comp = 0 then comp := -1        # don't make exe
+$ifdef Uniconc
+            if \iconc then {
+               if /icontopt then
+                  icontopt := "-c "
+               else
+                  icontopt ||:= "-c "
+               }
+$endif # Uniconc
 	    }
 	 "-quiet"  : loud := &null
 	 "-log"  : {
@@ -200,6 +517,11 @@ procedure unicon(argv)
 	 # do not translate .u files
 	 if map(fName[find(".", fName)+1 : 0]) == ("u"|"u1"|"u2") then {
 	     linkline ||:= " " || quotes(fName)
+$ifdef Uniconc
+             if \iconc then {
+                insert(iconc_links, fName)
+                }
+$endif # Uniconc
 	     next
 	 }
 	 else {
@@ -209,6 +531,11 @@ procedure unicon(argv)
 	     /translateducode := []
 	     put(translateducode, ucodefile)
 	 }
+$ifdef Uniconc         
+         if \iconc then
+            # mark this file as parsed
+            insert(iconc_parsed, get_abs_file_name(fName))
+$endif # Uniconc
 
 	 yyfilename := outfilename := fName
 	 yyin := ""
@@ -221,6 +548,9 @@ procedure unicon(argv)
 	    tmpname := tempname("uni",,temppath,5)
 	    yyout := open(tmpname, "w") |
 	       stop("can't open temporary file ",tmpname," for writing")
+$ifdef Uniconc
+            put(tmpfnames, tmpname)
+$endif # Uniconc
 	    }
 	 else yyout := &output
 
@@ -250,11 +580,130 @@ procedure unicon(argv)
 	 }
 	 if find("wicont", selecticont()) then
             delay(1000)
-	 /tmpname | remove(tmpname) |
+$ifdef Uniconc
+         if /iconc then {
+$endif # Uniconc
+	    /tmpname | remove(tmpname) |
 	    iwrite(&errout,"remove ", image(tmpname), " fails")
+$ifdef Uniconc
+            }
+$endif # Uniconc
 	 reinitialize()
      }
   }
+
+$ifdef Uniconc
+   #
+   # If this output is intended for consumption by iconc, suck in
+   # all files associated with link-refs and import-refs, and yyparse
+   # each of said files once.
+   #
+   if \iconc then {
+      locallinks := table()
+      localimports := table()
+      while (*iconc_links > 0) | (*iconc_imports > 0) do {
+         while *iconc_imports > 0 do {
+            every k := key(iconc_imports) do {
+               if member(localimports, k) then {
+                  # write("mdw: redundant import: " || k)
+                  delete(iconc_imports, k)
+                  next
+                  }
+
+               #
+               # mark this importref as having been processed
+               #
+               insert(localimports, k)
+               delete(iconc_imports, k)
+
+               #
+               # get the list of files for this importref
+               #
+               if /(files := iconc_importref_resolve(k)) then
+                  stop(k || ": unresolved import reference.")
+
+               #
+               # yyparse each file associated with this importref,
+               # unless the file has been previously yyparsed
+               #
+               every n := 1 to *files do {
+                  # inode := stat(files[n]).ino
+                  local_name := get_abs_file_name(files[n])
+                  # if member(iconc_parsed, inode) then
+                  if member(iconc_parsed, local_name) then {
+                     write("file \"" || local_name || "\" already parsed.")
+                          next # this file has already been parsed
+                     }
+                  #insert(iconc_parsed, inode)
+                  insert(iconc_parsed, local_name)
+                  iconc_yyparse(files[n], tmpfnames)
+                  }
+               }
+            }
+
+         while *iconc_links > 0 do {
+            every k := key(iconc_links) do {
+               if member(locallinks, k) then {
+                  # write("mdw: redundant linkref: " || k)
+                  delete(iconc_links, k)
+                  next
+                  }
+
+               #
+               # get the value associated with this key
+               #
+               v := iconc_links[k]
+
+               #
+               # mark this linkref as having been processed
+               #
+               insert(locallinks, k)
+               delete(iconc_links, k)
+
+               #
+               # get the list of files for this linkref
+               #
+               if /(files := iconc_linkref_resolve(v, k)) then
+                  stop(k || ": unresolved link reference.")
+
+               #
+               # yyparse each file associated with this linkref,
+               # unless the file has been previously yyparsed
+               #
+               every n := 1 to *files do {
+                  local_name := get_abs_file_name(files[n])
+                  if member(iconc_parsed, local_name) then
+                     next # this file has already been parsed
+                  insert(iconc_parsed, local_name)
+                  iconc_yyparse(files[n], tmpfnames)
+                  }
+               }
+            }
+         }
+      }
+
+   if \iconc & (*tmpfnames > 0) & (rv = errors = yynerrs = 0) then {
+      # mdw: xform idol output for iconc
+      every k := 1 to *tmpfnames do
+         cfy(tmpfnames[k], (tmpfnames[k] || "-iconc"));
+      cmd := "iconc "
+      cmd ||:= \icontopt
+      cmd ||:= \ilinkopt
+      cmd ||:= \exename
+      every k := 1 to *tmpfnames do {
+         cmd ||:= tmpfnames[k]
+         cmd ||:= "-iconc ";
+         }
+      rv := mysystem(cmd)
+# mdw: want to look at tmp files...
+#      if rv = 0 then
+#          every remove(!tmpfnames)
+#      else
+#          errors +:= 1
+if not (rv = 0) then errors +:= 1
+      }
+  else
+$endif # Uniconc
   if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
       cmd := selecticont()
       cmd ||:= " "
@@ -361,6 +810,12 @@ $endif
 end
 
 procedure writelink(dir, s)
+$ifdef Uniconc
+   if \iconc then
+      # do not generate linkrefs in 
+      # code that will be sent to iconc...
+      return
+$endif # Uniconc
    if map(s[-4:0]) == ".icn" then
       s[-4:0] := ""
    write(yyout,"link \"",canonize(dir),map(s,"\\","/"),"\"")

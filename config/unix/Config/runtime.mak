@@ -304,12 +304,25 @@ xraudio.o: raudio.r
 #
 # Make entries for the compiler library
 #
+RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fload.r fmath.r\
+	fmisc.r fmonitr.r fscan.r fstr.r fstranl.r fstruct.r\
+	fsys.r fwindow.r init.r invoke.r keyword.r\
+	lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
+	oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
+	rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
+	rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
+	rposix.r rmsg.r
 
 comp_all:
 	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o $(XPM) $(GDBM) $(LIBTP)
 	$(MAKE) db_lib
 
+comp_all_uniconc:
+	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o $(XPM) $(GDBM) $(LIBTP)
+	$(MAKE) db_lib_uniconc
+
 db_lib: rt.db rt.a
+db_lib_uniconc: rt.db.uniconc rt.a
 
 #
 # if rt.db is missing or any header files have been updated, recreate
@@ -317,15 +330,14 @@ db_lib: rt.db rt.a
 #
 rt.db: $(HDRS)
 	rm -f rt.db rt.a
-	../../bin/rtt cnv.r data.r def.r errmsg.r fconv.r fload.r fmath.r\
-	  fmisc.r fmonitr.r fscan.r fstr.r fstranl.r fstruct.r\
-	  fsys.r fwindow.r init.r invoke.r keyword.r\
-	  lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
-	  oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
-	  rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
-	  rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
-	  rposix.r rmsg.r
+	../../bin/rtt $(RTLSRC)
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
+	rm `sed 's/$$/.c/' rttcur.lst`
+
+rt.db.uniconc: $(HDRS)
+	rm -f rt.db rt.a
+	../../bin/rtt -DUniconc $(RTLSRC)
+	$(CC) $(CFLAGS) -DUniconc -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`
 
 rt.a: ../common/rswitch.o ../common/long.o ../common/time.o ../common/mlocal.o\

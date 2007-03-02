@@ -420,13 +420,19 @@ procedure mangle_sym(sym)
    if member(imported, sym) then {
       l := imported[sym]
       if *l > 1 then {
-         s := sym || " is imported from several packages: ("
-         every s ||:= !l || ","
-         s[-1]:=") Use the :: operator to specify which package is intended."
-         yyerror(s)
-         return sym
-      }
-
+$ifdef Uniconc
+         every i := 2 to *l do
+         if not (l[1] == l[i]) then {
+$endif # Uniconc
+            s := sym || " is imported from several packages: ("
+            every s ||:= !l || ","
+            s[-1]:=") Use the :: operator to specify which package is intended."
+            yyerror(s)
+            return sym
+$ifdef Uniconc
+            }
+$endif # Uniconc
+         }
       return l[1] || "__" || sym
    }
 
@@ -456,19 +462,35 @@ procedure mangle_class_sym(sym)
    # First check if it is in the classes defined in this file.  These
    # override any imports.
    #
+$ifdef Uniconc
+   if member(\package_level_class_syms, sym) then
+$else
    if member(package_level_class_syms, sym) then
+$endif # Uniconc
       return package_mangled_symbol(sym)
 
+$ifdef Uniconc
+   if member(\imported_classes, sym) then {
+$else
    if member(imported_classes, sym) then {
+$endif
       l := imported_classes[sym]
       if *l > 1 then {
-         s := sym || " is imported from several packages: ("
-         every s ||:= !l || ","
-         s[-1]:=") Use the :: operator to specify which package is intended."
-         yyerror(s)
-         return sym
-      }
-
+$ifdef Uniconc
+         # mdw
+         every i := 2 to *l do {
+            if not (l[1] == l[i]) then {
+$endif # Uniconc
+               s := sym || " is imported from several packages: ("
+               every s ||:= !l || ","
+               s[-1]:=") Use the :: operator to specify which package is intended."
+               yyerror(s)
+               return sym
+$ifdef Uniconc
+               }
+            }
+$endif # Uniconc
+         }
       return l[1] || "__" || sym
    }
 
@@ -793,6 +815,72 @@ procedure extract_identifiers(node, res)
    }
    return res
 end
+
+$ifdef Uniconc
+procedure iconc_prep_parse_tree(parent, child)
+   local i, t, o, m, s, el
+   local todo, tmplist, newnode
+
+   todo := list()
+   put(todo, parent)
+   put(todo, child)
+   while *todo > 0 do {
+      parent := pop(todo)
+      child := pop(todo)
+      case type(child) of {
+         "treenode": {
+            if child.label == ("link" | "import" | "lnklist") then {
+               every i := 1 to *child.children do {
+                  if not (type(child.children[i]) == "token") then
+                     next
+                  if child.children[i].s == ("link"|"import"|",") then {
+                     child.children[i].s := ""
+                     next
+                     }
+                  if child.label == ("link" | "lnklist") then {
+                     iconc_links[child.children[i].s] := yyfilename
+                     }
+                  else
+                     iconc_imports[child.children[i].s] := yyfilename
+                  child.children[i].s := ""
+                  }
+               }
+            if child.label == "package" then {
+               #
+               # eliminate package decls
+               #
+               child.children[1].s := ""
+               child.children[2].s := ""
+               }
+            if *child.children > 0 then {
+               tmplist := list()
+               every i := 1 to *child.children do {
+                  put(tmplist, child)
+                  put(tmplist, child.children[i])
+                  }
+               todo := tmplist ||| todo
+               }
+            }
+         "argList__state": {
+            tmplist := list()
+            every el := !(\child.l) do {
+               put(tmplist, child)
+               put(tmplist, el)
+               }
+            todo := tmplist ||| todo
+            }
+         "Class__state": {
+            tmplist := list()
+            every m := child.foreachmethod() do {
+               put(tmplist, child)
+               put(tmplist, m.procbody)
+               }
+            todo := tmplist ||| todo
+            }
+         }
+      }
+end
+$endif # Uniconc
 
 #
 # Useful debug function to recursively print a treenode.

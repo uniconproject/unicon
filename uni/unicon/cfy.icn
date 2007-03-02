@@ -1,0 +1,301 @@
+$ifdef Uniconc
+global dbg
+
+record recdecl(name, flds, xform)
+
+procedure cfy(ifname, ofname)
+   local fi, fo, nvars, ctor, stem
+   local i, s, m, n, r1, r2, numargs, prev
+
+   dbg := 1
+   fi := open(ifname, "r") | {
+      write("cfy: cannot access \"", ifname, "\".")
+      fail
+      }
+   fo := open(ofname, "w") | {
+      write("cfy: cannot access \"", ofname, "\".")
+      close(fi)
+      fail
+      }
+   while (s := read(fi)) do {
+      if not (cfy_match_nonws(s, "record")) then {
+         write(fo, s)
+         next
+         }
+      r1 := cfy_recdecl_parse(s)
+      if not (cfy_is_classrec(r1)) then {
+         write(fo, s)
+         next
+         }
+      # have __state; read __methods.
+      s := read(fi)
+      r2 := cfy_recdecl_parse(s)
+      stem := r1.name[1:-7]
+      # pop var __s off of r1.flds
+      pop(r1.flds)
+      # get the number of vars in this class
+      varc := *r1.flds - 1 # omit __s in count of vars
+      # get the number of methods in this class
+      methodc := *r2.flds
+      if (\dbg) then {
+         write(fo, "# ", stem, "_mdw_inst_mdw: varc: ", varc)
+         every i := 1 to varc do
+         write(fo, "# var ", i-1, ": ", r1.flds[i])
+         }
+      if (\dbg) then {
+         write(fo, "# ", stem, "_mdw_inst_mdw: methodc: ", methodc)
+         every i := 1 to methodc do
+         write(fo, "# method ", i-1, ": ", r2.flds[i])
+         }
+
+      #
+      # merge __state and __methods recs into r1
+      #
+      r1.xform := (r1.name[1:-5] || "mdw_inst_mdw")
+      pop(r1.flds) # discard __s
+      nvars := *r1.flds
+      every i := 1 to *r2.flds do
+         put(r1.flds, pop(r2.flds))
+      #
+      # emit the xxx_methods rec-decl so that the
+      # xxxinitialize method can use it to init xxx_oprec.
+      #
+      write(fo, s)
+      #
+      # emit xformed instance rec-decl
+      #
+      if (\dbg) then
+         write(fo, "# ", stem, "_mdw_inst_mdw: *r1.flds: ", *r1.flds)
+      writes(fo, "record " || r1.xform || "(")
+      every i := 1 to *r1.flds do {
+         writes(fo, r1.flds[i])
+         if (i < *r1.flds) then
+            writes(fo, ",")
+         }
+      write(fo, ")")
+
+      #
+      # skip oprec defn
+      #
+      write(fo, read(fi))
+
+      #
+      # get the ctor signature
+      #
+      while (ctor := read(fi)) do {
+         if (i := cfy_match_nonws(ctor, "procedure ")) then
+            break
+         write(fo, ctor)
+         }
+      write(fo, ctor); # emit untainted ctor signature
+      ctor := ctor[find("(", ctor)+1:-1] # peel off what we need
+
+      #
+      # determine how many args are in the ctor
+      #
+      s := ctor;
+      ctorargc := 0
+      while (i := find(",", s)) do {
+         ctorargc +:= 1
+         s := s[i+1:0]
+         }
+      if ((ctorargc > 0) | (*ctor > 1)) then
+         ctorargc +:= 1 
+      if (\dbg) then
+         write(fo, "# ", stem, "_mdw_inst_mdw: ctor-argc: ", ctorargc)
+
+      #
+      # read, save, and emit all ctor lines appearing
+      # in the initial clause.
+      #
+      ctorinitlines := list()
+      while (s := read(fi)) do {
+         put(ctorinitlines, s)
+         write(fo, s)
+         if (cfy_match_nonws(s, "}")) then
+            break
+         }
+
+      if (\dbg) then
+         write(fo, "# ", stem, "_mdw_inst_mdw: varc: ", varc, " nvars: ", nvars,
+            " r1.flds: ", *r1.flds)
+
+      #
+      # read all ctor lines (past initial clause) and save them
+      #
+      ctorlines := list()
+      while (s := read(fi)) do {
+      if (cfy_match_nonws(s, "end")) then
+            break
+         put(ctorlines, s)
+         }
+      put(ctorlines, s)
+
+      #
+      # read all xxxinitialize() lines and save them
+      #
+      initlines := list()
+      while (s := read(fi)) do {
+      if (cfy_match_nonws(s, "end")) then
+            break
+         put(initlines, s)
+         }
+      put(initlines, s)
+
+      #
+      # extract any base-class initializers from the ctor's initial clause
+      #
+      bcinits := cfy_baseclass_inits_get(cfy_classname(r1), ctorinitlines)
+      if (\dbg) then
+         write(fo, "# class ", cfy_classname(r1), " has ", *bcinits,
+            " bc-inits.")
+
+      #
+      # xform "self := xxx_state(...)"
+      # 
+      s := ctorlines[1]
+      m := find("__state", s)
+      writes(fo, s[1:m], "__mdw_inst_mdw(")
+      # use state-rec ctor to init inst-rec ctor vars...
+      numargs := 0
+      if (m := find("__oprec,", s)) then {
+         # count num args in the state-rec ctor
+         numargs := cfy_numargs(s[m+8:-1])
+         # emit the vars from the state-rec ctor
+         writes(fo, s[m+8:-1])
+         }
+      every i := numargs to varc-1 do
+         writes(fo, ",")
+      # get the methods to init the inst-rec ctor
+      # from the xxxinitialize() call...
+      s := initlines[3]
+      m := find("(", s)
+      if (numargs >= 1) then
+         writes(fo, ",")
+      write(fo, s[m+1:0])
+      write(fo, "# numargs: ", numargs, " varc: ", varc);
+
+      #
+      # initialize any baseclass instance vars found
+      #
+      every i := 1 to *bcinits do {
+         s := bcinits[i]
+         write(fo, "  self." || s || " := " || s || "__oprec")
+         }
+
+      #
+      # xform "self.__m.initially()..."
+      #
+      s := ctorlines[3]
+      m := find("__m.", s)
+      s[m:m+4] := ""
+      write(fo, s)
+
+      #
+      # write rest of ctor
+      #
+      write(fo, ctorlines[4])
+      write(fo, ctorlines[5])
+
+      #
+      # emit untainted xxxinitialize()
+      #
+      every i := 1 to *initlines do
+         write(fo, initlines[i])
+      }
+   close(fi)
+   close(fo)
+   return
+end
+
+procedure cfy_baseclass_inits_get(clsnm, lines)
+   local i, n, s, t, rslt;
+
+   rslt := []
+   every i := 1 to *lines do {
+      s := lines[i]
+      s ? {
+         tab(many(" \t"))
+         if (n := match(clsnm || "__oprec.")) then {
+            t := s[find(".")+1 : find(":=")]
+            put(rslt, trim(t))
+            }
+         }
+      }
+   return rslt
+end
+
+procedure cfy_classname(decl)
+   if (decl.name[-7:0] == "__state") then
+      return decl.name[1:-7]
+   if (decl.name[-9:0] == "__methods") then
+      return decl.name[1:-9]
+end
+
+procedure cfy_ctor_has_initially(lines)
+   every i := 1 to *lines do {
+      if (cfy_match_nonws(lines[i], "self.__m.initially(", lines[i])) then
+         return
+      }
+end
+
+procedure cfy_is_classrec(decl)
+   if ((decl.name[-7:0] == "__state") | (decl.name[-9:0] == "__methods")) then
+      return
+end
+
+procedure cfy_match_nonws(sub, pat)
+   static ws
+
+   initial ws := ' \f\n\r\t'
+   &subject := sub
+   tab(many(ws))
+   return match(pat)
+end
+
+procedure cfy_numargs(s)
+   local n, rslt
+
+   rslt := 0
+   while (s[1] == (" " | "\t")) do
+      s := s[2:0]
+   while (n := find(",", s)) do {
+      rslt +:= 1
+      s := s[n+1:0]
+      while (s[1] == (" " | "\t")) do
+         s := s[2:0]
+      }
+   while (*s > 0) do {
+      if (member(&letters, s[1])) then {
+         rslt +:= 1
+         break
+         }
+      pop(s)
+      }
+   return rslt
+end
+
+procedure cfy_recdecl_parse(s)
+   local m, n, flds, rslt
+
+   flds := []
+   rslt := recdecl()
+   if not (cfy_match_nonws(s, "record")) then
+      fail
+   m := find(" ", s)
+   n := find("(", s)
+   rslt.name := s[\m+1:\n]
+   s := s[\n+1:0]
+
+   while (m := find(",", s)) do {
+      put(flds, s[1:m])
+      s := s[\m+1:0]
+      }
+
+   m := find(")", s)
+   put(flds, s[1:m])
+
+   rslt.flds := flds
+   return rslt
+end
+$endif # Uniconc

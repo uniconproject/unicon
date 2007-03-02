@@ -56,6 +56,8 @@ procedure predefs()
     }
 
     # there is no predefn for "environment variables" feature
+    t["__DATE__"] := "\"" || &date || "\""
+    t["__TIME__"] := "\"" || &clock || "\""
     return t
 end
 
@@ -496,9 +498,19 @@ end
 #
 procedure preproc_get_path_list()
     static the_list
+$ifdef Uniconc
+    static iconc_list
+$endif # Uniconc
     initial {
         the_list := preproc_compute_path_list()
+$ifdef Uniconc
+        iconc_list := preproc_compute_iconc_path_list()
+$endif # Uniconc
     }
+$ifdef Uniconc
+    if \iconc then
+        return iconc_list 
+$endif # Uniconc
     return the_list
 end
 
@@ -531,6 +543,37 @@ procedure preproc_compute_path_list()
     }
     return result
 end
+
+
+$ifdef Uniconc
+procedure preproc_compute_iconc_path_list()
+   local f, rslt, sep, paths, binpath
+
+   rslt := []
+   paths := "."
+
+   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+      ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|"wiconx.exe")))) then{
+      close(\f)
+      paths ||:= " " ||
+         binpath || "../ipl/incl " ||
+         binpath || "../uni/lib " || binpath || "../uni/gui " ||
+         binpath || "../ipl/gincl " ||
+         binpath || "../ipl/mincl"
+   }
+
+   if not (paths == "") then {
+      sep := getenv("PATHSEP") | " "
+      paths ? {
+         while (put(rslt, tab(find(sep)))) do
+            move(1)
+         put(rslt, tab(0))
+      }
+   }
+
+   return rslt
+end
+$endif # Uniconc
 
 #
 # Determines if a "#lines" is called for and generates one if so.

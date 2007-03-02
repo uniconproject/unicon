@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.14 2005-06-26 07:15:41 jeffery Exp $
+# $Id: top.mak,v 1.15 2007-03-02 10:29:18 m-wilder Exp $
 
 
 # Configure the code for a specific system.
@@ -115,6 +115,13 @@ Ilib:		bin/icont
 Ibin:		bin/icont
 		cd ipl;			$(MAKE) Ibin
 
+#
+# Uniconc
+#
+Uniconc bin/iconc: Common
+	cd uni/unicon; $(MAKE) uniconc
+	cd src/runtime; $(RM) *.o; $(MAKE) comp_all_uniconc
+	cd src/iconc; $(MAKE)
 
 ##################################################################
 #

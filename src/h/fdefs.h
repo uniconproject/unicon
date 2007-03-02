@@ -135,6 +135,17 @@ FncDefV(writes)
      FncDef(PTab,1)
      FncDef(PRtab,1)
 #endif					/* PatternType */
+#ifdef Uniconc
+   FncDef(classname,1)
+   FncDef(membervarnames,1)
+   FncDef(methodnames,2)
+   FncDef(methodnames_fromstr,2)
+   FncDef(methods,1)
+   FncDef(methods_fromstr,1)
+   FncDef(oprecvar,1)
+   FncDef(oprecvar_fromstr,1)
+#endif /* Uniconc */
+
 
 #if AMIGA || UNIX || VMS || OS2_32 || NT || SCCX_MX
    FncDef(delay,1)

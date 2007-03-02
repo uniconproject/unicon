@@ -73,30 +73,58 @@ struct b_cset {			/* cset block */
    unsigned int bits[CsetSize];		/*   array of bits */
    };
 
+union f { /* mdw: eliminate anonymous union that chokes amd64 gcc */
+   FILE *fp;
+#ifdef Graphics
+   struct _wbinding *wb;
+#endif
+#ifdef Messaging
+   struct MFile *mf;
+#endif               /* Messaging */
+#ifdef ISQL
+   struct ISQLFile *sqlf;
+#endif               /* ISQL */
+#ifdef Dbm
+   struct DBM *dbm;
+#endif               /* Dbm */
+#ifdef Audio
+   struct AudioFile *af;
+#endif               /* Audio */
+   int fd;        /*   other int-based file descriptor */
+   };
+
 struct b_file {			/* file block */
    word title;			/*   T_File */
-   union {
-      FILE *fp;			/*   stdio file pointer */
-#ifdef Graphics
-     struct _wbinding *wb;			/*   window */
-#endif					/* Graphics */
-#ifdef Messaging
-     struct MFile *mf;
-#endif					/* Messaging */
-#ifdef ISQL
-     struct ISQLFile *sqlf;
-#endif					/* ISQL */
-#ifdef Dbm
-     struct DBM *dbm;
-#endif					/* Dbm */
-#ifdef Audio
-     struct AudioFile *af;
-#endif					/* Audio */
-      int fd;			/*   other int-based file descriptor */
-      } fd;
+   union f fd; /* mdw: this was anonymous */
    word status;			/*   file status */
    struct descrip fname;	/*   file name (string qualifier) */
    };
+#ifdef AnonymousUnionBreaksSomeAmd64Compilers
+struct b_file {         /* file block */
+   word title;       /*   T_File */
+   union {
+      FILE *fp;         /*   stdio file pointer */
+#ifdef Graphics
+     struct _wbinding *wb;       /*   window */
+#endif               /* Graphics */
+#ifdef Messaging
+     struct MFile *mf;
+#endif               /* Messaging */
+#ifdef ISQL
+     struct ISQLFile *sqlf;
+#endif               /* ISQL */
+#ifdef Dbm
+     struct DBM *dbm;
+#endif               /* Dbm */
+#ifdef Audio
+     struct AudioFile *af;
+#endif               /* Audio */
+      int fd;        /*   other int-based file descriptor */
+      } fd;
+   word status;         /*   file status */
+   struct descrip fname;   /*   file name (string qualifier) */
+   };
+#endif /* AnonymousUnion... */
 
 #ifdef ISQL
 

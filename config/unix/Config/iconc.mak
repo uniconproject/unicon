@@ -6,8 +6,8 @@ include ../../Makedefs
 
 OBJS=		cmain.o clocal.o ctrans.o dbase.o clex.o\
 		cparse.o csym.o cmem.o ctree.o ccode.o ccomp.o\
-                ivalues.o codegen.o fixcode.o inline.o chkinv.o\
-		typinfer.o types.o lifetime.o incheck.o
+		ivalues.o codegen.o fixcode.o inline.o chkinv.o\
+		typinfer.o lifetime.o incheck.o vtbl.o tv.o wop.o ica.o
 
 COBJS=		../common/long.o ../common/getopt.o ../common/time.o\
 		  ../common/filepart.o ../common/identify.o ../common/mlocal.o\

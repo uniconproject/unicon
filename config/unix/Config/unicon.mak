@@ -115,8 +115,8 @@ yyerror.u: yyerror.icn
 	$(ICONT) -c yyerror
 
 # Uncomment if you modify idol.icn
-idol.u: idol.icn
-	$(UNICON) -c idol
+#idol.u: idol.icn
+#	$(UNICON) -c idol
 
 unix.u: unix.icn
 	$(ICONT) -c unix

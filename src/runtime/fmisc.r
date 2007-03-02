@@ -584,8 +584,10 @@ function{1} name(underef v)
 
    body {
       C_integer i;
+#ifdef Uniconc
       if (!debug_info)
          runerr(402);
+#endif
 
 #ifdef MultiThread
       savedprog = curpstate;

@@ -560,7 +560,185 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
 
 int longest_dr = 0;
 struct b_proc_list **dr_arrays;
+#ifdef Uniconc
+static word mdw_dynrec_start = 0;
+#endif /* Uniconc */
 
+#ifdef Uniconc
+extern
+void
+dynrec_start_set(start)
+   word start;
+{
+   mdw_dynrec_start = start;
+}
+#endif /* Uniconc */
+
+#ifdef Uniconc
+static
+char *
+dynrec_recname_create(name, flds, nflds)
+   dptr name;
+   dptr flds;
+   int nflds;
+{
+   char * p;
+   int i, len;
+   static char rslt[256];
+
+   for (i=len=0; i<nflds; i++)
+      len += StrLen(flds[i]);
+   if (len + nflds > 256) {
+      printf("dynrec_name_create: name exceeds max.\n");
+      return NULL;
+      }
+   for (p=rslt,i=0; i<nflds; i++) {
+      strncpy(p, StrLoc(flds[i]), StrLen(flds[i]));
+      p += StrLen(flds[i]);
+      *p++ = '_';
+      }
+   name->vword.sptr = rslt;
+   name->dword = len + nflds - 1;
+
+   return rslt;
+}
+#endif /* Uniconc */
+
+#ifdef Uniconc
+static
+int
+rmkrec(nargs, cargp, rslt)
+   int nargs;
+   dptr cargp;
+   dptr rslt;
+{
+   int i;
+   dptr d;
+   struct b_proc * bp;
+   tended struct b_record * rp;
+
+   d = cargp[-1].vword.descptr;
+   bp = (struct b_proc *)d->vword.bptr;
+   Protect(rp = alcrecd((int)bp->nfields, (union block *)bp), RunErr(0,NULL));
+
+   for (i = (int)bp->nfields; i > nargs; i--)
+      rp->fields[i-1] = nulldesc;
+   for ( ; i > 0; i--) {
+       rp->fields[i-1] = cargp[i-1];
+      Deref(rp->fields[i-1]);
+      }
+   rslt->dword = D_Record;
+   rslt->vword.bptr = (union block *)rp;
+   return A_Continue;
+}
+#endif /* Uniconc */
+
+#ifdef Uniconc
+extern
+int
+fldlookup(rec, fld)
+    struct b_record * rec;
+    const char * const fld;
+{
+    int i, len;
+    union block * desc;
+
+    len = strlen(fld);
+    desc = rec->recdesc;
+    for (len=strlen(fld),i=0; i<desc->proc.nfields; i++) {
+        if (len == StrLen(desc->proc.lnames[i]) &&
+           (strncmp(fld, StrLoc(desc->proc.lnames[i]), len) == 0))
+           break;
+        }
+    if (i >= desc->proc.nfields)
+        i = -1;
+    return i;
+}
+#endif /* Uniconc */
+
+#ifdef Uniconc
+static struct b_proc_list * dr_tbl[128] = { 0 };
+
+struct b_proc *
+dynrecord(s, fields, n)
+   dptr s;
+   dptr fields;
+   int n;
+{
+   int i, hval, len;
+   struct b_proc * bp;
+   struct b_proc_list * bpl;
+   static int NextRecNum = 0;
+
+   if (StrLen(*s) == 0) {
+      for (i=1; i<=n; i++)
+         printf("\tfield %d: \"%.*s\"\n", i, StrLen(fields[i-1]),
+            StrLoc(fields[i-1]));
+      if (dynrec_recname_create(s, fields, n) == NULL) {
+         printf("dynrecord: dynrec_recname_create failure.\n");
+         return NULL;
+         }
+      }
+   hval = (hash(s) & 0x7f);
+
+   if (n > 0) {
+      for (bpl=dr_tbl[hval]; bpl; bpl=bpl->next) {
+         bp = bpl->this;
+         if (StrLen(*s) != StrLen(bp->recname))
+            continue;
+         if (strncmp(StrLoc(*s), StrLoc(bp->recname), StrLen(*s)))
+            continue;
+         if (bp->nfields != n)
+            return NULL;
+         for (i=0; i<n; i++) {
+            len = StrLen(fields[i]);
+            if ((len != StrLen(bp->lnames[i])) ||
+               (strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]), len)))
+               return NULL;
+            }
+         return bp;
+         }
+      }
+
+#if (COMPILER)
+   if (NextRecNum == 0) NextRecNum = mdw_dynrec_start;
+#else
+   if (NextRecNum == 0) NextRecNum = *records+1;
+#endif
+   bp = (struct b_proc *)malloc(sizeof(struct b_proc) +
+      sizeof(struct descrip) * n);
+   if (bp == NULL) return NULL;
+   bp->title = T_Proc;
+   bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
+#if (COMPILER)
+   bp->ccode = rmkrec;
+#else
+   bp->entryp.ccode = Omkrec;
+#endif
+   bp->nfields = n;
+   bp->ndynam = -2;
+   bp->recnum = NextRecNum++;
+   bp->recid = 1;
+   StrLoc(bp->recname) = malloc(StrLen(*s)+1);
+   if (StrLoc(bp->recname) == NULL) return NULL;
+   strncpy(StrLoc(bp->recname), StrLoc(*s), StrLen(*s));
+   StrLen(bp->recname) = StrLen(*s);
+   StrLoc(bp->recname)[StrLen(*s)] = '\0';
+   for (i=0;i<n;i++) {
+      StrLen(bp->lnames[i]) = StrLen(fields[i]);
+      StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
+      if (StrLoc(bp->lnames[i]) == NULL) return NULL;
+      strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
+      StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
+      }
+   bpl = malloc(sizeof(struct b_proc_list));
+   if (bpl == NULL) return NULL;
+   bpl->this = bp;
+   bpl->next = dr_tbl[hval];
+   dr_tbl[hval] = bpl;
+   return bp;
+}
+#else /* Uniconc */
 struct b_proc *dynrecord(dptr s, dptr fields, int n)
    {
       static int NextRecNum;
@@ -571,36 +749,35 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       return NULL;
 #else
       if (n > longest_dr) {
-	 if (longest_dr==0) {
+    if (longest_dr==0) {
             dr_arrays = calloc(n, sizeof (struct b_proc *));
             if (dr_arrays == NULL) return NULL;
-	    longest_dr = n;
-	    }
+       longest_dr = n;
+       }
          else {
-	    dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
+       dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
             if (dr_arrays == NULL) return NULL;
-	    while(longest_dr<n) {
-	       dr_arrays[longest_dr++] = NULL;
-	       }
-	    }
-	 }
+       while(longest_dr<n) {
+          dr_arrays[longest_dr++] = NULL;
+          }
+       }
+    }
 
       if (n>0)
       for(bpelem = dr_arrays[n-1]; bpelem; bpelem = bpelem->next, ct++) {
-	 bp = bpelem->this;
-	 for (i=0; i<n; i++) {
-	    if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
-	        strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
+    bp = bpelem->this;
+    for (i=0; i<n; i++) {
+       if((StrLen(fields[i]) != StrLen(bp->lnames[i])) ||
+           strncmp(StrLoc(fields[i]), StrLoc(bp->lnames[i]),StrLen(fields[i]))) break;
             }
-	 if(i==n) {
-	    return bp;
-	    }
-	 }
+    if(i==n) {
+       return bp;
+       }
+    }
 
       if (NextRecNum == 0) NextRecNum = *records+1;
-
       bp = (struct b_proc *)malloc(sizeof(struct b_proc) +
-				   sizeof(struct descrip) * n);
+               sizeof(struct descrip) * n);
       if (bp == NULL) return NULL;
       bp->title = T_Proc;
       bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
@@ -610,16 +787,16 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       bp->recnum = NextRecNum++;
       bp->recid = 1;
       StrLoc(bp->recname) = malloc(StrLen(*s)+1);
-      strncpy(StrLoc(bp->recname), StrLoc(*s), StrLen(*s));
+
       if (StrLoc(bp->recname) == NULL) return NULL;
       StrLen(bp->recname) = StrLen(*s);
       StrLoc(bp->recname)[StrLen(*s)] = '\0';
       for(i=0;i<n;i++) {
          StrLen(bp->lnames[i]) = StrLen(fields[i]);
-	 StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
-	 if (StrLoc(bp->lnames[i]) == NULL) return NULL;
-	 strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
-	 StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
+    StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
+    if (StrLoc(bp->lnames[i]) == NULL) return NULL;
+    strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
+    StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
          }
       bpelem = malloc(sizeof (struct b_proc_list));
       if (bpelem == NULL) return NULL;
@@ -629,6 +806,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       return bp;
 #endif
    }
+#endif /* Uniconc */
 
 #ifdef MultiThread
 

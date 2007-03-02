@@ -599,6 +599,388 @@ function{1} insert(s, x[n])
       }
 end
 
+#ifdef Uniconc
+#if COMPILER
+#define ClsInstSuffix "__mdw_inst_mdw"
+#else
+#define ClsInstSuffix "__state"
+#endif /* COMPILER */
+
+"classname(r) - get name of class for instance r"
+function{0,1} classname(r)
+   if !is:record(r) then
+      runerr(107,r)
+   abstract {
+      return string
+      }
+   body {
+      char * recnm_bgn;
+      char * recnm_end;
+      struct b_record * br;
+
+      br = (struct b_record *)BlkLoc(r);
+      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      recnm_end = strstr(recnm_bgn, ClsInstSuffix);
+      if (recnm_end > recnm_bgn) {
+         result.dword = recnm_end - recnm_bgn;
+         result.vword.sptr = recnm_bgn;
+         return result;
+         }
+      else
+         fail;
+      }
+end
+
+"membervarnames(r) - get list of the member vars for class instance r"
+function{1} membervarnames(r)
+   if !is:record(r) then
+      runerr(107, r)
+   abstract {
+      return new list(string)
+      }
+   body {
+      register word i, n_flds;
+      tended struct b_list * p;
+      tended struct b_record * br;
+      register struct b_lelem * bp;
+
+      br = (struct b_record *)BlkLoc(r);
+      n_flds = br->recdesc->proc.nfields;
+      Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
+      bp = (struct b_lelem *)p->listhead;
+      for (i=0; i<n_flds; i++)
+         bp->lslots[i] = br->recdesc->proc.lnames[i];
+      return list(p);
+      }
+end
+
+"methodnames(r) - get list of method names for class instance r"
+function{1} methodnames(r, cooked_names)
+   if !is:record(r) then
+      runerr(107, r)
+   abstract {
+      return new list(string)
+      }
+   body {
+#if !COMPILER
+      char * suffix;
+#endif /* COMPILER */
+      union block * blk;
+      unsigned recnm_len;
+      struct b_record * br;
+      tended char * recnm_bgn;
+      tended char * recnm_end;
+      tended struct b_list * p;
+      register struct b_lelem * bp;
+      register word i, k, n_mthds, n_glbls;
+
+      br = (struct b_record *)BlkLoc(r);
+      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      recnm_end = strstr(recnm_bgn, ClsInstSuffix);
+      recnm_len = recnm_end - recnm_bgn + 1;
+      n_glbls = egnames - gnames;
+      for (i=0,n_mthds=0; i<n_glbls; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+            continue;
+#if !COMPILER
+         suffix = StrLoc(blk->proc.pname);
+         suffix += (recnm_end - recnm_bgn);
+         if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         n_mthds++;
+         }
+      Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
+      bp = (struct b_lelem *)p->listhead;
+      for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+            continue;
+#if !COMPILER
+         suffix = StrLoc(blk->proc.pname);
+         suffix += (recnm_end - recnm_bgn);
+         if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         if (cooked_names.vword.integr) {
+            bp->lslots[k].dword = StrLen(blk->proc.pname) - recnm_len;
+            bp->lslots[k].vword.sptr = StrLoc(blk->proc.pname) + recnm_len;
+            }
+         else {
+            bp->lslots[k] = blk->proc.pname;
+            }
+         k++;
+         }
+      return list(p);
+      }
+end
+
+"methodnames_fromstr - get list of method names for class named s"
+function{1} methodnames_fromstr(s, cooked_names)
+   if !cnv:C_string(s) then
+      runerr(103,s)
+   abstract {
+      return new list(string)
+      }
+   body {
+      word len;
+      char * procname;
+      union block * blk;
+      tended struct b_list * p;
+      register struct b_lelem * bp;
+      register word i, k, n_glbls, n_mthds;
+
+      len = strlen(s);
+      n_glbls = egnames - gnames;
+      for (i=0,n_mthds=0; i<n_glbls; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (StrLen(blk->proc.pname) <= len)
+            continue;
+         procname = StrLoc(blk->proc.pname);
+         if (strncmp(procname, s, len))
+            continue;
+         if (procname[len] != '_')
+            continue;
+#if !COMPILER
+         if (strcmp(procname + len, "__state") == 0)
+            continue;
+         if (strcmp(procname + len, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         n_mthds++;
+         }
+      Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
+      bp = (struct b_lelem *)p->listhead;
+      for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (StrLen(blk->proc.pname) <= len)
+            continue;
+         procname = StrLoc(blk->proc.pname);
+         if (strncmp(procname, s, len))
+            continue;
+         if (procname[len] != '_')
+            continue;
+#if !COMPILER
+         if (strcmp(procname + len, "__state") == 0)
+            continue;
+         if (strcmp(procname + len, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         if (cooked_names.vword.integr) {
+            bp->lslots[k].dword = StrLen(blk->proc.pname) - len - 1;
+            bp->lslots[k].vword.sptr = procname + len + 1;
+            }
+         else {
+            bp->lslots[k] = blk->proc.pname;
+            }
+         k++;
+         }
+      return list(p);
+      }
+end
+
+"methods(r) - get list of methods for class instance r"
+function{1} methods(r)
+   if !is:record(r) then
+      runerr(107, r)
+   abstract {
+      return new list(proc)
+      }
+   body {
+#if !COMPILER
+      char * suffix;
+#endif /* COMPILER */
+      union block * blk;
+      unsigned recnm_len;
+      struct b_record * br;
+      tended char * recnm_bgn;
+      tended char * recnm_end;
+      tended struct b_list * p;
+      register struct b_lelem * bp;
+      register word i, k, n_glbls, n_mthds;
+
+      br = (struct b_record *)BlkLoc(r);
+      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      recnm_end = strstr(recnm_bgn, ClsInstSuffix);
+      recnm_len = recnm_end - recnm_bgn + 1;
+      n_glbls = egnames - gnames;
+      for (i=0,n_mthds=0; i<n_glbls; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+            continue;
+#if !COMPILER
+      suffix = StrLoc(blk->proc.pname);
+      suffix += (recnm_end - recnm_bgn);
+      if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
+         continue;
+#endif /* COMPILER */
+         n_mthds++;
+         }
+      Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
+      bp = (struct b_lelem *)p->listhead;
+      for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+            continue;
+#if !COMPILER
+      suffix = StrLoc(blk->proc.pname);
+      suffix += (recnm_end - recnm_bgn);
+      if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
+         continue;
+#endif /* COMPILER */
+         bp->lslots[k].dword = D_Proc;
+         bp->lslots[k].vword.bptr = blk;
+         k++;
+         }
+      return list(p);
+      }
+end
+
+"methods_fromstr(s) - get list of methods for class instance r"
+function{1} methods_fromstr(s)
+   if !cnv:C_string(s) then
+      runerr(103,s)
+   abstract {
+      return new list(proc)
+      }
+   body {
+      word len;
+      char * procname;
+      union block * blk;
+      tended struct b_list * p;
+      register struct b_lelem * bp;
+      register word i, k, n_glbls, n_mthds;
+
+      len = strlen(s);
+      n_glbls = egnames - gnames;
+      for (i=0,n_mthds=0; i<n_glbls; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (StrLen(blk->proc.pname) <= len)
+            continue;
+         procname = StrLoc(blk->proc.pname);
+         if (strncmp(procname, s, len))
+            continue;
+         if (procname[len] != '_')
+            continue;
+#if !COMPILER
+         if (strcmp(procname + len, "__state") == 0)
+            continue;
+         if (strcmp(procname + len, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         n_mthds++;
+         }
+      Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
+      bp = (struct b_lelem *)p->listhead;
+      for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (StrLen(blk->proc.pname) <= len)
+            continue;
+         procname = StrLoc(blk->proc.pname);
+         if (strncmp(procname, s, len))
+            continue;
+         if (procname[len] != '_')
+            continue;
+#if !COMPILER
+         if (strcmp(procname + len, "__state") == 0)
+            continue;
+         if (strcmp(procname + len, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         bp->lslots[k].dword = D_Proc;
+         bp->lslots[k].vword.bptr = blk;
+         k++;
+         }
+      return list(p);
+      }
+end
+
+"oprecvar(r) - get the operations record (as a variable) for class instance r"
+function{0,1} oprecvar(r)
+   if !is:record(r) then
+      runerr(107, r)
+   abstract {
+      return variable
+      }
+   body {
+      /* this calls nothing that provokes a collect */
+      char * p;
+      char * recnm_bgn;
+      char * recnm_end;
+      unsigned recnm_len;
+      struct b_record * br;
+      register word i, n_glbls;
+
+      br = (struct b_record *)BlkLoc(r);
+      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      recnm_end = strstr(recnm_bgn, ClsInstSuffix);
+      recnm_len = recnm_end - recnm_bgn;
+      n_glbls = egnames - gnames;
+      for (i=0; i<n_glbls; i++) {
+         p = StrLoc(gnames[i]);
+         if (strncmp(recnm_bgn, p, recnm_len))
+            continue;
+         p += recnm_len;
+         if (strncmp(p, "__oprec", 7) == 0)
+            break;
+         }
+      if (i < n_glbls) {
+         result.dword = D_Var;
+         VarLoc(result) = (dptr)&globals[i];
+         return result;
+         }
+      else
+         fail;
+      }
+end
+
+"oprecvar_fromstr(s) - take string as arg"
+function{0,1} oprecvar_fromstr(s)
+   if !cnv:C_string(s) then
+      runerr(103,s)
+   abstract {
+      return variable
+      }
+   body {
+      /* this calls nothing that provokes a collect */
+      char * p;
+      register word i, len, n_glbls;
+
+      len = strlen(s);
+      n_glbls = egnames - gnames;
+      for (i=0; i<n_glbls; i++) {
+         p = StrLoc(gnames[i]);
+         if (strncmp(s, p, len))
+            continue;
+         p += len;
+         if (strncmp(p, "__oprec", 7) == 0)
+            break;
+         }
+      if (i >= n_glbls)
+         fail;
+      result.dword = D_Var;
+      VarLoc(result) = (dptr)&globals[i];
+      return result;
+      }
+end
+#endif /* Uniconc */
 
 "list(i, x) - create a list of size i, with initial value x."
 

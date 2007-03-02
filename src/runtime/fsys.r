@@ -1969,19 +1969,22 @@ function {1} name(x[nargs])
 #endif					/* terminate */
 
    declare {
+      union f f;
+#ifdef AnonymousUnionAsParameter
       union {
       FILE *fp;
 #ifdef Graphics
       struct _wbinding *wb;
-#endif					/* Graphics */
+#endif               /* Graphics */
 #ifdef Messaging
       struct MFile *mf;
-#endif					/* Messaging */
+#endif               /* Messaging */
 #ifdef Dbm
       struct DBM *dbm;
-#endif					/* Dbm */
+#endif               /* Dbm */
       int  fd;
       } f;
+#endif /* AnonymousUnionAsParameter */
       word status =
 #if terminate
 #ifndef ConsoleWindow

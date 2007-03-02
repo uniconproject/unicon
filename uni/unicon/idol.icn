@@ -65,30 +65,8 @@ if / (self.tag) then {
 }
     return self.tag || " " || self.name || "(" || flds || ")"
   end
-$ifdef Uniconc
-  #
-  # Validate field names.  The sole purpose of this method at present
-  # is to enforce that __m is a reserved field name.
-  #
-  method ValidateFieldNames(flds)
-    if (type(\flds) == "treenode") & (flds.label == "idlist") then {
-       every tmpfld := !flds.children do {
-          if (type(\tmpfld) == "treenode") then
-              ValidateFieldNames(tmpfld)
-          else {
-             if \((\tmpfld).s) == "__m" then
-                stop("use of reserved field name \"__m\" in declaration");
-             }
-          }
-       }
-  end
-$endif # Uniconc
 initially
    tmpcount := 0
-$ifdef Uniconc
-   if (type(\tag) == "token") & (\(tag.s) == "record") then
-      ValidateFieldNames(\fields)
-$endif # Uniconc
 end
 
 global imported

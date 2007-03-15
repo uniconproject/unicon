@@ -811,6 +811,18 @@ Deliberate Syntax Error
    else
 #endif					/* HAVE_VOICE */
 
+      /* a bidirectional pipe can mean only one thing: pseudotty */
+      if (status == (Fs_Pipe | Fs_Read | Fs_Write)) {
+#ifdef PseudoPty
+	 status = Fs_Pty| Fs_Read | Fs_Write;
+	 f = (FILE*) ptopen(fnamestr);
+#else
+	 fprintf(stderr, "This VM is not built with bidirectional pipes.\n");
+	 fail;
+#endif
+	 }
+      else
+
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
       if (status & Fs_Pipe) {
 	 int c;
@@ -1126,7 +1138,8 @@ function{0,1} read(f)
 	 if (status & Fs_Socket)
 	    runerr(1048, f);
 	 status &= ~Fs_Unbuf;
-	 status |= Fs_Buff;
+	 if (! (status & Fs_Window))
+	    status |= Fs_Buff;
 	 BlkLoc(f)->file.status = status;
 	 }
 #endif					/* PosixFns */
@@ -1217,6 +1230,17 @@ function{0,1} read(f)
            
 	else 
 #endif					/* HAVE_LIBZ */
+
+#ifdef PseudoPty
+	   if (status & Fs_Pty) {
+	      struct timeval timeout;
+	      timeout.tv_sec = 1L;
+	      timeout.tv_usec = 0L;
+	      if ((slen = ptlongread(sbuf, MaxReadStr, fp)) == -1)
+		 fail;
+	      }
+	 else
+#endif					/* PseudoPty */
 
 #ifdef RecordIO
 	 if ((slen = (status & Fs_Record ? getrec(sbuf, MaxReadStr, fp) :

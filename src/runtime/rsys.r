@@ -1175,7 +1175,6 @@ static struct _popen_elt _z = { NULL, 0, &_z };
 static struct _popen_elt *_popen_list = &_z;
 
 FILE *popen (const char* cmd, const char *mode)
-/* [<][>][^][v][top][bottom][index][help] */
 {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
@@ -1196,9 +1195,11 @@ FILE *popen (const char* cmd, const char *mode)
   char **s;
   int go_on;
 
-  /* We should look for the application name along the PATH,
-     and decide to prepend "%COMSPEC% /c " or not to the command line.
-     Do nothing for the moment. */
+  /*
+   * Look for the application name along the PATH,
+   * and decide to prepend "%COMSPEC% /c " or not to the command line.
+   * Do nothing for the moment.
+   */
 
   /* Another way to do that would be to try CreateProcess first without
      invoking cmd, and look at the error code. If it fails because of
@@ -1458,3 +1459,426 @@ int pclose (FILE * f)
   return exit_code;
 }
 #endif
+
+#ifdef PseudoPty
+
+struct ptstruct
+{
+#ifdef WIN32
+   HANDLE master_read, master_write;
+   HANDLE slave_pid;
+#else					/* WIN32 */
+  int master_fd, slave_fd;		/* master, slave pty file descriptor */
+  pid_t slave_pid;			/* process id of slave  */
+#endif					/* WIN32 */
+     
+  char slave_filename[256]; /* pty slave filename associated with master pty */
+  char slave_command[256]; /* name of executable associated with slave */
+};
+
+void ptclose(struct ptstruct *ptStruct)
+{
+   int close_ret, status;
+   if (ptStruct == NULL)
+      return;  /* structure is NULL, nothing to do */
+
+#ifdef WIN32
+   close_ret=CloseHandle(ptStruct->master_read);
+   close_ret=CloseHandle(ptStruct->master_write);
+#else					/* WIN32 */
+   /* close the master and slave file descriptors */
+   close_ret = close(ptStruct->master_fd);
+   close_ret = close(ptStruct->slave_fd);
+   /* terminate the child process */
+   waitpid(ptStruct->slave_pid,&status,WNOHANG);
+   kill(ptStruct->slave_pid,SIGKILL);
+#endif					/* WIN32 */
+   /* free the space allocated for the structure */
+   free(ptStruct);
+   return;
+}
+
+#define EXITERROR(P) { ptclose(P); return NULL; }
+
+struct ptstruct *ptopen(char *command)
+{
+
+#ifdef WIN32
+   HANDLE hOutputReadMaster,hOutputRead,hOutputWrite;
+   HANDLE hInputWriteMaster,hInputRead,hInputWrite;
+   HANDLE hIOTmp;
+   HANDLE hStdIn = NULL;
+   SECURITY_ATTRIBUTES sa;
+   PROCESS_INFORMATION pi;
+   STARTUPINFO si;
+#else
+   int pstatus;
+#endif
+
+   /* allocating new ptstruct */
+   struct ptstruct *newPtStruct =
+      (struct ptstruct *)malloc(sizeof(struct ptstruct));
+   if(newPtStruct == NULL) {
+      EXITERROR(newPtStruct);
+      }
+
+#ifdef WIN32
+   /* Set up the security attributes struct. */
+   sa.nLength= sizeof(SECURITY_ATTRIBUTES);
+   sa.lpSecurityDescriptor = NULL;
+   sa.bInheritHandle = TRUE;
+
+   /* Create the child output pipe */
+   if(!CreatePipe(&newPtStruct->master_read,&hOutputWrite,&sa,0)) {
+      EXITERROR(newPtStruct);
+      }
+
+   if (!CreatePipe(&hInputRead,&newPtStruct->master_write,&sa,0)) {
+      EXITERROR(newPtStruct);
+      }
+
+   /* Set up the start up info struct. */
+   ZeroMemory(&si,sizeof(STARTUPINFO));
+   si.cb = sizeof(STARTUPINFO);
+   si.dwFlags = STARTF_USESTDHANDLES;
+   si.hStdOutput = hOutputWrite;
+   si.hStdInput  = hInputRead;
+   si.hStdError  = hOutputWrite;
+
+   /* Launch the process that you want to redirect */
+   if (!CreateProcess(NULL,newPtStruct->slave_command,NULL,NULL,TRUE,
+		      CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi)) {
+      EXITERROR(newPtStruct);
+      }
+
+   /* Set global child process handle to cause threads to exit. */
+   newPtStruct->slave_pid = pi.hProcess;
+
+#else
+
+  /* open master pty file descriptor */
+#ifdef SOLARIS
+   if((newPtStruct->master_fd=open("/dev/ptmx",O_RDWR|O_NONBLOCK)) == -1) {
+      EXITERROR(newPtStruct);
+      }
+#else
+   if((newPtStruct->master_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
+      EXITERROR(newPtStruct);
+      }
+#endif
+
+   /* change permissions of slave pty to correspond with the master pty */
+   if(grantpt(newPtStruct->master_fd) == -1) {
+      EXITERROR(newPtStruct);
+      }
+
+   /* unlock the slave pty file descriptor before opening it */
+   if(unlockpt(newPtStruct->master_fd) == -1) {
+      EXITERROR(newPtStruct);
+      }
+
+   /*
+    * determine the filename of the slave pty associated with
+    * the already opened master pty
+    */
+#ifdef SOLARIS
+   if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
+	              sizeof(newPtStruct->slave_filename)) != 0) {
+#else
+   if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
+		sizeof(newPtStruct->slave_filename)) != 0) {
+#endif
+      EXITERROR(newPtStruct);
+      }
+
+   /* finally open the slave pty file descriptor */
+   if((newPtStruct->slave_fd=open(newPtStruct->slave_filename,
+				  O_RDWR|O_NONBLOCK)) == -1) {
+      EXITERROR(newPtStruct);
+      }
+
+   strcpy(newPtStruct->slave_command, command);
+  
+   /* try forking the slave process ... */
+   if ((newPtStruct->slave_pid = fork()) == -1) {
+      EXITERROR(newPtStruct);
+      }
+   else if(newPtStruct->slave_pid == 0) {
+      /* create a session id and make this process the process group leader */
+      if(setsid() == -1) /* was setpgid */
+	 EXITERROR(newPtStruct);
+      /*
+       * dup standard file descriptors to be associated with pseudo terminal */
+      if(dup2(newPtStruct->slave_fd,0) == -1) {
+	 EXITERROR(newPtStruct);
+	 }
+      if(dup2(newPtStruct->slave_fd,1) == -1) {
+	 EXITERROR(newPtStruct);
+	 }
+      if(dup2(newPtStruct->slave_fd,2) == -1) {
+	 EXITERROR(newPtStruct);
+	 }
+
+      /* attempt to execute the command slave process */
+      {
+	 char *args[2]={newPtStruct->slave_command, NULL};
+	 if(execve(args[0],(char *const*)args,0) == -1) {
+	    EXITERROR(newPtStruct);
+	    }
+	 }
+#endif
+      }
+
+  return newPtStruct;
+#undef EXITERROR
+
+}
+
+
+int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigned long waittime, int longread)
+   {
+   int bytes_read=0, tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
+#ifndef WIN32
+   fd_set rd_set;
+   struct timeval timeout;
+#endif
+
+   if(buffer == NULL || ptStruct == NULL)
+      return -1;
+
+#ifndef WIN32
+  
+   /* clear the buffer */
+   memset(buffer,0,sizeof(buffer));
+
+   timeout.tv_sec = 0L;
+   timeout.tv_usec=waittime;
+
+   /* set the wait file descriptor for use with select */
+   wait_fd = ptStruct->master_fd+1;
+  
+   /* set file descriptor sets for reading with select */
+   FD_ZERO(&rd_set);
+   if (ptStruct->master_fd > -1)
+      FD_SET(ptStruct->master_fd,&rd_set);
+   else
+      return -1;
+
+  /* if select returns without any errors and
+     if the characters are availabe to read from input ...*/
+#endif /* WIN32 */
+
+#ifdef WIN32
+   /* clear the buffer */
+   ZeroMemory(buffer,bufsiz);
+   if(WaitForSingleObject(ptStruct->master_read,waittime) != WAIT_FAILED)
+#else
+   if((ret=select(wait_fd,&rd_set,NULL,NULL,&timeout)) > 0
+      && FD_ISSET(ptStruct->master_fd,&rd_set) )
+#endif /* WIN32 */
+    while(!premstop
+	  && tot_bytes_read < bufsiz 
+#ifdef WIN32
+	  && (ret=ReadFile(ptStruct->master_read,&buffer[i],1,&bytes_read,NULL)) != 0) {
+#else
+       && (bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+#endif // WIN32
+	     if(!longread && buffer[i] == '\n')
+		premstop=1;
+	     tot_bytes_read += bytes_read;
+      i++;
+#ifdef WIN32
+#else
+      FD_ZERO(&rd_set);
+      FD_SET(ptStruct->master_fd,&rd_set);
+#endif // WIN32
+	     }
+#ifdef WIN32
+      else ret = -1;
+      if(ret == 0)
+	 ret=-1;
+#endif					/* WIN32 */
+   /* if some bytes were read than return the number read */
+   if(tot_bytes_read > 0) {
+      return tot_bytes_read;
+  /* else if no bytes were read at all than return an error code */
+      }
+   else if(tot_bytes_read == 0) {
+      return -1;
+      }
+   /* else return the value returned by select */
+   return ret;
+   }
+
+int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct, struct timeval *timeout)
+{
+   return ptgetstrt(buffer, bufsiz, ptStruct, 0, 0);
+#if 0
+  presumably subsumed above
+  fd_set rd_set;
+  int bytes_read=0, ret=0, wait_fd, i=0, sel_ret;
+
+  if(buffer == NULL | ptStruct == NULL | timeout == NULL)
+    return -1;
+  
+  /* set the wait file descriptor for use with select */
+  wait_fd = ptStruct->master_fd+1;
+ 
+  /* clear the buffer */
+  memset(buffer,0,sizeof(buffer));
+  
+  /* set file descriptor sets for reading with select */
+  FD_ZERO(&rd_set);
+  if(ptStruct->master_fd > -1)
+    FD_SET(ptStruct->master_fd,&rd_set);
+  else
+    return -1;
+  /* if select returns without any errors then ... */
+  /* if the characters are availabe to read from input ... */
+  while((sel_ret=select(wait_fd,&rd_set,NULL,NULL,timeout)) > 0
+	&& FD_ISSET(ptStruct->master_fd,&rd_set)
+	&& bytes_read < bufsiz 
+	&& (ret=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+	bytes_read += ret;
+	i++;
+	FD_ZERO(&rd_set);
+	FD_SET(ptStruct->master_fd,&rd_set);
+  } 
+  if(bytes_read > 0) {
+    /* printf("output: %s",buffer); */
+    return bytes_read;
+  } else if(bytes_read == 0 && !FD_ISSET(ptStruct->master_fd,&rd_set)) {
+    return -1;
+  }
+  return sel_ret;
+#endif
+}
+
+int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
+{
+   return ptgetstrt(buffer, nelem, ptStruct, 0, 1);
+#if 0
+  fd_set rd_set;
+  int bytes_read=0, ret=0, wait_fd, i=0;
+  
+  /*   size_t max_read_bytes=sizeof(char)*256; */
+  /* if ptystruct pointer is NULL than return with error code */
+  if(ptStruct == NULL)
+    return -1;
+  
+  /* set the wait file descriptor for use with select */
+  wait_fd = ptStruct->master_fd+1;
+
+  /* clear the buffer */
+  memset(buffer,0,sizeof(buffer));
+  
+  /* set file descriptor sets for reading with select */
+  FD_ZERO(&rd_set);
+  if(ptStruct->master_fd > -1) 
+    FD_SET(ptStruct->master_fd,&rd_set);
+   
+  /* if select returns without any errors then ... */
+  if(select(wait_fd,&rd_set,NULL,NULL,NULL) > 0) {
+    /* if the characters are availabe to read from input ... */
+    if(FD_ISSET(ptStruct->master_fd,&rd_set)) {
+      /* read all the characters until  */
+      /* 1) none are available */
+      /* 2) the maximum buffer size has been reached */
+      /* 3) a newline has been read */
+      while((ret=read(ptStruct->master_fd,&buffer[i],1)) > 0 
+	    && (bytes_read+=ret) < nelem) 
+	i++;
+
+      /* if there was an error then return an error code */
+      if( ret < 0)
+	ret = -1; /* -1 indicates error reading from slave */
+      else 
+	ret = bytes_read;
+    } else {
+      /* select timed out */
+      ret = -2;
+    }
+  } else 
+    ret = -1; /* error occurred from select */
+  return ret;
+#endif
+}
+
+int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
+{
+   int bytes_written, ret=0, pstatus, sel_ret;
+
+   if (ptStruct == NULL || buffer == NULL || bufsize < 1)
+      return -1;
+
+#ifdef WIN32
+   if ( (WaitForSingleObject(ptStruct->master_write,0) == WAIT_FAILED) ||
+       (!WriteFile(ptStruct->master_write,buffer,bufsize,&bytes_written,NULL)))
+      ret = -1;
+   else 
+      ret = bytes_written;
+#else					/* WIN32 */
+
+   {
+   fd_set wd_set;
+   struct timeval timeout;
+
+   timeout.tv_sec=0L;
+   timeout.tv_usec=0L;
+  
+   /* set file descriptors for writing with select */
+   FD_ZERO(&wd_set);
+   if(ptStruct->master_fd > -1) 
+      FD_SET(ptStruct->master_fd,&wd_set);
+   else
+      return -3; /* invalid output file descriptor - return error */
+
+   if ((sel_ret=select(ptStruct->master_fd+1,NULL,&wd_set,NULL,&timeout)) > 0){
+      /* if the file descriptor is ready to write to ... */
+      if(FD_ISSET(ptStruct->master_fd,&wd_set)) {
+	 if((bytes_written=write(ptStruct->master_fd,buffer,bufsize)) < 0) 
+	    ret = -1; /* -1 indicates error writing to file descriptor */
+	 else 
+	    ret=bytes_written;
+	 }
+      else {
+	 /* select timed out */
+	 ret = 0; /* was -2 */
+	 }
+      }
+   else {
+      ret = sel_ret; /* return value returned by select */
+      }
+   }
+
+#endif					/* WIN32 */
+  return ret;
+}
+
+int ptputc(const char c, struct ptstruct *ptStruct)
+{
+   return ptputstr(ptStruct, &c, 1);
+}
+
+int ptflush(struct ptstruct *ptStruct)
+{
+#if 0
+   /* not implemented; not sure if this gobbledy gook does anything */
+  fd_set rd_set;
+  char temp_read;
+  int wait_fd = ptStruct->slave_fd+1;
+  FD_ZERO(&rd_set);
+  FD_SET(ptStruct->slave_fd,&rd_set);
+  if(select(wait_fd,&rd_set,NULL,NULL,NULL) > 0) {
+    if(FD_ISSET(ptStruct->slave_fd,&rd_set)) {
+      while(read(ptStruct->slave_fd,&temp_read,sizeof(temp_read)) > 0);
+      return 0;
+    } else {
+      return -2;
+    }
+  }
+#endif
+  return -1;
+}
+
+#endif					/* PseudoPty */

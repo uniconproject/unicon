@@ -156,6 +156,8 @@
 #endif
 #enddef					/* Desc_EVValD */
 
+typedef int pid_t;
+
 /*
  * dummy typedefs for things defined in #include files
  */

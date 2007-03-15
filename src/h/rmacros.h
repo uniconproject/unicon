@@ -84,6 +84,10 @@
    #define Fs_Voice  04000000		/* voice/audio connection */
 #endif					/* HAVE_VOICE */
 
+#ifdef PseudoPty
+   #define Fs_Pty   010000000            /* pty */
+#endif
+
 #ifdef Graphics
    #define XKey_Window 0
    #define XKey_Fg 1

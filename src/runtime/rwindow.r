@@ -3054,6 +3054,9 @@ char * abuf;
       case A_LIGHT7:
 	 AttemptAttr( setlight(w, val, GL_LIGHT7));
 	 break;
+      case A_MESHMODE:
+	 if (!setmeshmode(w,val)) return Failed;
+	 break;
       case A_TEXTURE:
 	 AttemptAttr(settexture(w, StrLoc(d), StrLen(d)));
 	 break;
@@ -3478,6 +3481,10 @@ char * abuf;
       case A_LIGHT7:
         getlight(7, abuf);
         MakeStr(abuf, strlen(abuf), answer);
+        break;
+      case A_MESHMODE:
+        getmeshmode(w, abuf);
+	MakeStr(abuf, strlen(abuf), answer);
         break;
       case A_TEXTURE:
 	gettexture( w, answer );
@@ -4299,6 +4306,7 @@ stringint attribs[] = {
    {"lines",		A_LINES},
    {"linestyle",	A_LINESTYLE},
    {"linewidth",	A_LINEWIDTH},
+   {"meshmode",		A_MESHMODE},
    {"pattern",		A_PATTERN},
    {"pointer",		A_POINTER},
    {"pointercol",	A_POINTERCOL},

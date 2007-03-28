@@ -3273,6 +3273,77 @@ srch_3dfont(char *fname, int fsize, char ftype)
   return 0;
 }
 
+int setmeshmode(wbp w, char* s)
+{
+#ifdef XWindows
+   wdp wd = w->window->display;
+#endif                                  /* XWindows */
+   int draw_code, t=0;
+   static dptr constr;
+   int nfields;
+   tended struct b_record *rp;
+   tended struct descrip f;
+
+   if (!constr && !(constr = rec_structor3d("gl_meshmode")))
+      syserr("failed to create opengl record constructor");
+
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   makecurrent(w);
+
+   /*
+    * create a record of the graphical object
+    */
+
+   Protect(rp = alcrecd(nfields, BlkLoc(*constr)), return -1);
+
+   f.dword = D_Record;
+   f.vword.bptr = (union block *)rp;
+
+   MakeStr("MeshMode", 8 ,&(rp->fields[0]));
+
+
+   draw_code = si_s2i(redraw3Dnames, "MeshMode");
+   if (draw_code == -1)
+       return Failed;
+   MakeInt(draw_code, &(rp->fields[1]));
+
+   if (!strcmp(s, "points")) t=GL_POINTS;
+   else if (!strcmp(s, "lines")) t=GL_LINES;
+   else if (!strcmp(s, "linestrip")) t=GL_LINE_STRIP;
+   else if (!strcmp(s, "lineloop")) t=GL_LINE_LOOP;
+   else if (!strcmp(s, "triangles")) t=GL_TRIANGLES;
+   else if (!strcmp(s, "trianglefan")) t=GL_TRIANGLE_FAN;
+   else if (!strcmp(s, "trianglestrip")) t=GL_TRIANGLE_STRIP;
+   else if (!strcmp(s, "quads")) t=GL_QUADS;
+   else if (!strcmp(s, "quadstrip")) t=GL_QUAD_STRIP;
+   else if (!strcmp(s, "polygon")) t=GL_POLYGON;
+   else return Failed;
+
+   MakeInt(t, &(rp->fields[2]));
+   c_put(&(w->window->funclist), &f);
+
+   w->context->meshmode = t;
+
+   return Succeeded;
+}
+
+void getmeshmode(wbp w, char *answer)
+{
+   switch(w->context->meshmode) {
+      case GL_POINTS: strcpy(answer, "points"); break;
+      case GL_LINES: strcpy(answer, "lines"); break;
+      case GL_LINE_STRIP: strcpy(answer, "linestrip"); break;
+      case GL_LINE_LOOP: strcpy(answer, "lineloop"); break;
+      case GL_TRIANGLES: strcpy(answer, "triangles"); break;
+      case GL_TRIANGLE_FAN: strcpy(answer, "trianglefan"); break;
+      case GL_TRIANGLE_STRIP: strcpy(answer, "trianglestrip"); break;
+      case GL_QUADS: strcpy(answer, "quads"); break;
+      case GL_QUAD_STRIP: strcpy(answer, "quadstrip"); break;
+      case GL_POLYGON: strcpy(answer, "polygon"); break;
+   }
+}
+
 int section_length(wbp w)
 {
    wsp ws = w->window;

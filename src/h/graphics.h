@@ -331,6 +331,12 @@ typedef struct _wtexture {
    } wtexture, *wtp;
 #endif					/* Graphics3D */
 
+typedef struct _savetexture {
+   GLubyte *tex;
+   int width, height;
+   struct _wbinding *w;
+   } stexture, *wvp;
+
 /*
  * "Context" comprises the graphics context, and the font (i.e. text context).
  * Foreground and background colors (pointers into the display color table)
@@ -397,6 +403,7 @@ typedef struct _wcontext {
   int           dim;			/* # of coordinates per vertex */
   int           is_3D;			/* flag for 3D windows */
   char          buffermode;		/* 3D buffering flag */
+  char		meshmode;		/* fillpolygon mesh mode */
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
   double        eyedirx, eyediry, eyedirz; /* eye direction vector */
   double        eyeposx, eyeposy, eyeposz; /* eye position */
@@ -411,6 +418,8 @@ typedef struct _wcontext {
   int nalced;				/* number allocated */
   GLuint *texName;			/* array of GL textures */
   wtp textures;				/* textures */
+  wvp stex;
+  int maxstex;
 
 #endif					/* Graphics3D */
 } wcontext, *wcp;
@@ -675,9 +684,10 @@ typedef struct
 #define A_TEXCOORD      76
 
 #define A_TITLEBAR      77
-#define A_BUFFERMODE      78
+#define A_BUFFERMODE    78
+#define A_MESHMODE      79
 
-#define NUMATTRIBS	78
+#define NUMATTRIBS	79
 
 #define XICONSLEEP	20 /* milliseconds */
 

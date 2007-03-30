@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.40 2006-10-23 19:25:10 jeffery Exp $
+ * $Id: fxposix.ri,v 1.41 2007-03-30 23:37:46 m-wilder Exp $
  */
 
 /*
@@ -1510,65 +1510,65 @@ end
 "umask() - set the umask and return the old value."
 
 function{0,1} umask(mask)
-   if !is:integer(mask) then
-      if !is:string(mask) then
-	 if !is:null(mask) then
-	    runerr(170, mask)
-   abstract {
-      return integer ++ string
+   declare {
+      C_integer m;
+	   tended char *perm;
       }
-   inline {
-      if (is:integer(mask)) {
-	 C_integer m;
-         cnv:C_integer(mask, m);
-#if NT
-#define umask _umask
-#endif
-	 return C_integer umask(m);
-	 }
-      else if (is:string(mask)) {
-	 /*
-	  * string better be of the form rwxrwxrwx with some dashes
-	  */
-	 tended char *perm;
-	 int i, cmask, oldmask;
-	 char allperms[10];
-
-         cnv:C_string(mask, perm);
-	 strcpy(allperms, "rwxrwxrwx");
-
-	 cmask = 0;
-	 for(i = 0; i < 9; i++) {
-	    cmask = cmask << 1;
-	    if (perm[i] == '-') {
-	       cmask |= 1;
-	    } else if (perm[i] != allperms[i])
-	       runerr(1046, mask);
-	 }
-	 oldmask = umask(cmask);
-	 for (i = 0; i < 9; i++) {
-	    if (oldmask & (1 << (8-i)))
-	       allperms[i] = '-';
-	 }
-	 String(result, allperms);
-	 return result;
+   if cnv:C_integer(mask, m) then {
+      abstract { return integer }
+      inline {
+         return C_integer umask(m);
+         }
       }
-      else {
-	 /* If null, just return the present value of umask */
-	 int oldmask, i;
-	 char allperms[10];
-	 strcpy(allperms, "rwxrwxrwx");
+   else if cnv:C_string(mask, perm) then {
+      abstract { return string }
+      body {
+         /*
+          * string better be of the form rwxrwxrwx with some dashes
+          */
+         char allperms[10];
+         int i, cmask, oldmask;
 
-	 oldmask = umask(0);
-	 umask(oldmask);
-	 for (i = 0; i < 9; i++) {
-	    if (oldmask & (1 << (8-i)))
-	       allperms[i] = '-';
-	 }
-	 String(result, allperms);
-	 return result;
+         strcpy(allperms, "rwxrwxrwx");
+         cmask = 0;
+         for(i = 0; i < 9; i++) {
+            cmask = cmask << 1;
+            if (perm[i] == '-') {
+               cmask |= 1;
+               }
+            else if (perm[i] != allperms[i])
+               runerr(1046, mask);
+            }
+         oldmask = umask(cmask);
+         for (i = 0; i < 9; i++) {
+            if (oldmask & (1 << (8-i)))
+               allperms[i] = '-';
+            }
+         String(result, allperms);
+         return result;
+         }
       }
-   }
+   else if is:null(mask) then {
+      abstract { return string }
+      body {
+         /* If null, just return the present value of umask */
+         int oldmask, i;
+         char allperms[10];
+
+         strcpy(allperms, "rwxrwxrwx");
+         oldmask = umask(0);
+         umask(oldmask);
+         for (i = 0; i < 9; i++) {
+            if (oldmask & (1 << (8-i)))
+               allperms[i] = '-';
+            }
+         String(result, allperms);
+         return result;
+         }
+      }
+   else {
+	   runerr(170, mask);
+      }
 end
 
 "wait() - wait for process to terminate or stop."

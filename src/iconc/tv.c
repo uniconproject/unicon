@@ -213,8 +213,10 @@ tv_bits_clr(tv, nbits)
    int nints;
 
    nints = NumInts(nbits);
+/*
    if (MemEqu(tv->ent->bits, zvect, nints * sizeof(unsigned int)))
       return;
+*/
    MemCpy(tmpent->bits, tv->ent->bits, n_vect_bytes);
    tmpent->raw_hash = tv->ent->raw_hash - tmpent->bits[0];
    i = nints - 1;
@@ -245,8 +247,10 @@ tv_bits_cpy(dst, src, nbits)
    if (dst->ent == src->ent)
       return; 
    nints = NumInts(nbits);
+/*
    if (MemEqu(dst->ent->bits, src->ent->bits, nints * sizeof(unsigned int)))
       return;
+*/
    MemCpy(tmpent->bits + nints, dst->ent->bits + nints,
       n_vect_bytes - nints * sizeof(unsigned int));
    MemCpy(tmpent->bits, src->ent->bits, nints * sizeof(unsigned int));
@@ -306,9 +310,11 @@ tv_deref_prep(dst, src)
     * We only concern ourselves with the first n_icntyp_ints in
     * the vectors here in order to correctly mimick the original code.
     */
+/*
    if (MemEqu(dst->ent->bits, src->ent->bits, n_icntyp_ints *
       sizeof(unsigned int)))
       return 0;
+*/
 
    deltas = 0;
    MemCpy(tmpent->bits, dst->ent->bits, n_vect_bytes);

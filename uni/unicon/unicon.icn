@@ -86,6 +86,26 @@ procedure iwrites(args[])
 end
 
 $ifdef Uniconc
+procedure iconc_make_exename_opt(args)
+   local rslt
+   local i, arg
+   local cmpnts
+
+   rslt := "-o "
+   every i := 1 to *args do {
+      arg := args[i]
+      if (arg[1] == "-") then
+         next
+      cmpnts := suffix(arg)
+      rslt ||:= cmpnts[1]
+      rslt ||:= " "
+      break
+      }
+   return rslt
+end
+$endif # Uniconc
+
+$ifdef Uniconc
 procedure ipaths_get()
    static rslt
    local binpath, pathstr, pathsep, f
@@ -689,6 +709,11 @@ $ifdef Uniconc
       cmd := "iconc "
       cmd ||:= \icontopt
       cmd ||:= \ilinkopt
+      # create exename (and option) if none supplied
+      if /exename then {
+         exename := iconc_make_exename_opt(argv)
+         # write("synthesized exename: \"", exename, "\"...")
+         }
       cmd ||:= \exename
       every k := 1 to *tmpfnames do {
          cmd ||:= tmpfnames[k]

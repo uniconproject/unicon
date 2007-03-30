@@ -304,12 +304,12 @@ xraudio.o: raudio.r
 #
 # Make entries for the compiler library
 #
-RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fload.r fmath.r\
+RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 	fmisc.r fmonitr.r fscan.r fstr.r fstranl.r fstruct.r\
 	fsys.r fwindow.r init.r invoke.r keyword.r\
 	lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
 	oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
-	rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
+	rdb.r rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
 	rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
 	rposix.r rmsg.r
 

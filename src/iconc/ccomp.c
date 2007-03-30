@@ -103,6 +103,40 @@ Deliberate Syntax Error
    }
 
 /*
+ * This routine removes the optimizations options from
+ * the string of options to be sent to the host compiler
+ */
+static
+char *
+rmv_ccomp_opts(opts)
+   char * opts;
+{
+   char * p;
+   char * q;
+   char * rslt;
+
+#if PORT || AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || VM || OS2 || VMS
+   /* something may be needed */
+   fprintf(stderr, "warning: option \"-nO\" unsupported on this platform.\n");
+   return opts;
+#endif						/* PORT || AMIGA || ... */
+
+#if UNIX
+   /*
+    * on unix, -O is the first member of COpts
+    */
+   rslt = alloc(sizeof(char) * (strlen(opts) + 1));
+   for (p=opts+1; p && *p != '-'; p++)
+      ;
+   q = rslt;
+   while (p && *p)
+      *q++ = *p++;
+   *q = 0;
+   return rslt;
+#endif
+}
+
+/*
  * ccomp - perform C compilation and linking.
  */
 int ccomp(srcname, exename)
@@ -120,6 +154,14 @@ char *exename;
    char *s;
    char *dlrgint;
    int cmd_sz, opt_sz, flg_sz, exe_sz, src_sz;
+extern int opt_hc_opts;
+
+   if (!opt_hc_opts)
+      /*
+       * The user has requested that all optimization
+       * options be removed when invoking the host compiler
+       */
+      c_opts = rmv_ccomp_opts(c_opts);
 
    /*
     * Compute the sizes of the various parts of the command line

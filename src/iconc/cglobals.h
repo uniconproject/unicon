@@ -37,7 +37,7 @@ Global int opt_sgnl	Init(1);	/* do signal handling optimizations */
 Global int do_typinfer	Init(1);	/* do type inference */
 Global int allow_inline Init(1);	/* allow expanding operations in line */
 Global int opt_ica Init(0); /* mdw: enable ica module? */
-
+Global int opt_hc_opts Init(1); /* mdw: use optimizations with host gcc? */
 /*
  * Files.
  */

@@ -199,6 +199,10 @@ char **argv;
          case 'n':			/* -n: disable optimizations */
             for (s = optarg; *s != '\0'; ++s) {
                switch (*s) {
+                  case 'O': /* -nO: no optimizations with host cc */
+                     opt_hc_opts = 0;
+                     printf("opt-hc-opts: 0\n");
+                     break;
                   case 'a':		/* -na: disable all optimizations */
                      opt_cntrl = 0;
                      allow_inline = 0;
@@ -400,16 +404,17 @@ Deliberate Syntax Error
          exit (EXIT_SUCCESS);
       }
 
-   if (ofile == NULL)  {		/* if no -o file, synthesize a name */
+   if (ofile == NULL) {		/* if no -o file, synthesize a name */
       if (strcmp(srclst->name,"-") == 0)
          ofile = salloc(makename(buf,TargetDir,"stdin",ExecSuffix));
       else
          ofile = salloc(makename(buf,TargetDir,srclst->name,ExecSuffix));
-   } else {				/* add extension if necessary */
+      }
+   else {				/* add extension if necessary */
       fp = fparse(ofile);
       if (*fp->ext == '\0' && *ExecSuffix != '\0')
          ofile = salloc(makename(buf,NULL,ofile,ExecSuffix));
-   }
+      }
    /*
     * Make name of intermediate C files.
     */

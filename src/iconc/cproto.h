@@ -43,8 +43,8 @@ void	          codegen    (struct node *t);
 int               cond_anlz  (struct il_code *il, struct code **cdp);
 void           const_blks (void);
 struct val_loc   *cvar_loc   (char *name);
-int               do_inlin   (struct implement *impl, nodeptr n, int *sep_cont,
-				struct op_symentry *symtab, int n_va);
+int do_inlin(struct implement *, struct node *, struct node *, int *,
+				struct op_symentry *, int);
 void	          doiconx    (char *s);
 struct val_loc   *dtmp_loc   (int n);
 void          eval_arith (int indx1, int indx2, int *maybe_int, int *maybe_dbl);

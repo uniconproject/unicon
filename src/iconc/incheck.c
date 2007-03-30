@@ -20,6 +20,7 @@ static struct code *and_cond (struct code *cd1, struct code *cd2);
 static int          cnv_anlz (unsigned int typcd, struct il_code *src,
                                struct il_c *dflt, struct il_c *dest,
                                struct code **cdp);
+static int can_il(struct node *, struct node *, struct implement *);
 static int          defer_il (struct il_code *il);
 static int          if_anlz  (struct il_code *il);
 static void      ilc_anlz (struct il_c *ilc);
@@ -33,6 +34,7 @@ static int n_vararg;    /* size of variable part of arg list to operation */
 static int n_susp;      /* number of suspends */
 static int n_ret;       /* number of returns */
 
+
 /*
  * do_inlin - determine if this operation can be in-lined at the current
  *  invocation. Also gather information about how arguments are used,
@@ -41,9 +43,10 @@ static int n_ret;       /* number of returns */
  */
 extern
 int
-do_inlin(impl, n, cont_loc, symtab, n_va) 
+do_inlin(impl, p, n, cont_loc, symtab, n_va) 
    struct implement *impl;
-   nodeptr n;
+   struct node * n;
+   struct node * p;
    int *cont_loc;
    struct op_symentry *symtab;
    int n_va;
@@ -71,12 +74,17 @@ do_inlin(impl, n, cont_loc, symtab, n_va)
     */
    il_anlz(impl->in_line);
 
-   /*
-    * mdw: Don't perform inlining if this program is using dynamic records.
-    */
-   if (num_dynrec_ctors)
+   if (!can_il(p, n, impl))
       return 0;
 
+   /*
+    * this is now performed in can_il...
+    *
+    * mdw: Don't perform inlining if this program is using dynamic records.
+    *
+   if (num_dynrec_ctors)
+      return 0;
+    */
    /*
     * Don't in-line if there is more than one decision made based on
     *  run-time type checks (this is a heuristic).
@@ -115,6 +123,41 @@ do_inlin(impl, n, cont_loc, symtab, n_va)
       if (symtab[i].n_mods == 0 && n->intrnl_lftm == n && !side_effect)
         symtab[i].var_safe = 1;
 
+   return 1;
+}
+
+static
+int
+can_il(p, n, impl)
+   struct node * p;
+   struct node * n;
+   struct implement * impl;
+{
+   struct implement * ip;
+   extern int num_dynrec_ctors;
+
+#ifdef USING_ARIZONA_RTL
+   /*
+    * If we're linking to the Arizona RTL, we can always inline.
+    */
+   return 1;
+#endif
+
+   if (impl->oper_typ == 'K')
+      return 1;
+   if (num_dynrec_ctors > 0)
+      return 0;
+   if (!past_prms(n))
+      return 0;
+   if (impl->nargs < Val0(n))
+      return 0;
+   if (p && p->n_type == N_InvOp && !past_prms(p))
+      return 0;
+   if (p && p->n_type == N_InvOp && Impl1(p)->nargs < Val0(p))
+      return 0;
+   if ((p && impl->use_rslt) && (p->n_type == N_Loop ||
+      p->n_type == N_SmplAug || p->n_type == N_SmplAsgn))
+      return 0;
    return 1;
 }
 

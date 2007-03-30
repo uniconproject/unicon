@@ -82,7 +82,7 @@ static struct val_loc *gencode	(struct node *p, struct node *n,
 static struct val_loc *genretval(struct node *n, struct node *expr,
 				   struct val_loc *dest);
 static struct val_loc *inv_prc	(nodeptr n, struct val_loc *rslt);
-static struct val_loc *inv_op	(nodeptr n, struct val_loc *rslt);
+static struct val_loc *inv_op	(struct node *, struct node *, struct val_loc *);
 static nodeptr max_lftm		(nodeptr	n1, nodeptr n2);
 static void mk_callop		(char *oper_nm, int ret_flag,
 				   struct val_loc *arg1rslt, int nargs,
@@ -1105,7 +1105,7 @@ gencode(p, n, rslt)
          break;
 
       case N_InvOp:
-         rslt = inv_op(n, rslt);
+         rslt = inv_op(p, n, rslt);
          break;
 
       case N_InvProc:
@@ -2351,8 +2351,8 @@ struct val_loc *rslt;
    /*
     * Generate code to compute the two operands.
     */
-/* mdw   callee = gencode(n, Tree0(n), NULL); */
-callee = gencode(n, Tree0(n), rslt);
+/* mdw: callee = gencode(n, Tree0(n), NULL); */
+   callee = gencode(n, Tree0(n), rslt);
    lst = gencode(n, Tree1(n), NULL);
    rslt = chk_alc(rslt, n->lifetime);
    setloc(n);
@@ -5049,8 +5049,9 @@ deref_fld(loc)
  */
 static
 struct val_loc *
-inv_op(n, rslt)
-   nodeptr n;
+inv_op(p, n, rslt)
+   struct node * p;
+   struct node * n;
    struct val_loc *rslt;
 {
    struct implement *impl;
@@ -5152,11 +5153,10 @@ inv_op(n, rslt)
     *  needed to in-line it.
     */
    if ((allow_inline || impl->oper_typ == 'K') &&
-      do_inlin(impl, n, &cont_loc, symtab, n_varargs)) {
+      do_inlin(impl, p, n, &cont_loc, symtab, n_varargs)) {
       /*
        * In-line the operation.
        */
-
       if (impl->ret_flag & DoesRet || impl->ret_flag & DoesSusp)
          rslt = chk_alc(rslt, rslt_lftm);  /* operation produces a result */
 

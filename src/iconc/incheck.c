@@ -156,7 +156,7 @@ can_il(p, n, impl)
    if (p && p->n_type == N_InvOp && Impl1(p)->nargs < Val0(p))
       return 0;
    if ((p && impl->use_rslt) && (p->n_type == N_Loop ||
-      p->n_type == N_SmplAug || p->n_type == N_SmplAsgn))
+      p->n_type == N_SmplAug /* || p->n_type == N_SmplAsgn*/))
       return 0;
    return 1;
 }

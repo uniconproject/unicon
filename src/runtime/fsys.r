@@ -1168,6 +1168,7 @@ function{0,1} read(f)
        *  encounters end of file. [[ What about -2?]]
        */
       StrLen(s) = 0;
+      StrLoc(s) = "";
       do {
 
 #ifdef Graphics

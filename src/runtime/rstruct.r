@@ -812,11 +812,13 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 
 int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    {
+   unsigned char ec = (unsigned char)evcode;
    int rv;
    uword hn;
    union block **foo, **bar;
    struct descrip d;
-   MakeInt(evcode, &d);
+   StrLoc(d) = &ec;
+   StrLen(d) = 1;
    hn = hash(&d);
    foo = memb(BlkLoc(p->valuemask), &d, hn, &rv);
    if (rv == 1) {

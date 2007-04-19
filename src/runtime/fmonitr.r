@@ -398,6 +398,9 @@ void EVVariable(dptr dx, int eventcode)
    parent->stringregion = curpstate->stringregion;
    curpstate->stringregion = rp;
    noMTevents--;
+   if (!is:null(curpstate->valuemask) &&
+       (invaluemask(curpstate, eventcode, &(parent->eventval)) != Succeeded))
+	 return;
    actparent(eventcode);
 }
 

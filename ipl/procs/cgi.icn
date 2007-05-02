@@ -8,6 +8,7 @@
 #		  Kostas Oikonomou, and Wade Bowmer
 #
 #	Date:	  October 27, 2005
+#       Revised:  May 2007
 #
 ############################################################################
 #
@@ -132,17 +133,12 @@ procedure cgiReadParse()
 		     move(2)
 		     if ="form-data; " then {
 			if ="name=" then {
-			   if delim := ="\"" then {
-			      nam := tab(find("\""))
-			      ="\""
-			      if nam == "file" then {
-				 ="; "
-				 if ="filename=" then {
-				    if delim := ="\"" then {
-				       filename := tab(find("\""))
-				       cgi["filename"] := filename
-				       }
-				    }
+			   move(1)
+			   nam := tab(find("\""))
+			   if tab(find("filename=")+9) then {
+			      if match("\"") then {
+				 move(1)
+				 cgi["filename"] := tab(find("\""))
 				 }
 			      }
 			   }

@@ -7,11 +7,11 @@
 #	Authors:  Joe Van Meter, Clinton Jeffery, Federico Balbi,
 #		  Kostas Oikonomou, and Wade Bowmer
 #
-#	Date:     October 27, 2005
+#	Date:	  October 27, 2005
 #
 ############################################################################
 #
-# This library makes programming cgi programs easier by automatically 
+# This library makes programming cgi programs easier by automatically
 # checking for title and body procedures.  There are other procedures
 # that do some repetitive things for the programmer.
 #
@@ -43,7 +43,7 @@ procedure cgiInput(ty,nam,va)
    every is := !va do {
       writes("[<input type=\"",ty,"\" name=\"",nam,"\" value=\"",is,"\"")
       if is===va[1] then
-	  writes(" checked")
+	 writes(" checked")
       write(">", is, "]")
       }
 end
@@ -65,9 +65,9 @@ end
 #
 # cgiXYCoord()
 # This procedure is used with a ISMAP to figure out what the x and y coords
-# and if they are between a certain boundry. It returns the value of the 
+# and if they are between a certain boundry. It returns the value of the
 # list that was entered.
-# 
+#
 record HMap(value,x1,y1,x2,y2)
 
 procedure cgiXYCoord(hlst)
@@ -80,7 +80,7 @@ procedure cgiXYCoord(hlst)
    every q := 2 to *hlst do {
       if (hlst[q].x1 < x < hlst[q].x2) & (hlst[q].y1 < y < hlst[q].y2) then {
 	 title := hlst[q].value
-         }
+	 }
       }
    return title
 end
@@ -96,16 +96,16 @@ end
 
 #
 # cgiReadParse()
-# This procedure gets input from either QUERY_STRING or stdin puts the 
+# This procedure gets input from either QUERY_STRING or stdin puts the
 # values with their variable names and returns a table with references
 # from the variables to their values
 #
 
 procedure cgiReadParse()
-  local html, it, line, r, k, data, c1, c2
-  initial {
-    cgi_hexen := &digits ++ 'ABCDEF'
-   }
+   local html, it, line, r, k, data, c1, c2
+   initial {
+      cgi_hexen := &digits ++ 'ABCDEF'
+      }
    html := [ ]
    it := ""
    cgi := table()
@@ -196,7 +196,7 @@ else {
 end
 
 
-# Replaces any hex codes in the given string by their ascii character 
+# Replaces any hex codes in the given string by their ascii character
 # equivalents and returns the fixed string.
 procedure cgiFixHex(s)
    while s ?:=
@@ -224,24 +224,23 @@ end
 procedure cgiError(in)
    if /in then
       write("Error: Script ", cgiMyURL(), " encountered fatal error")
-   else { 
+   else {
       write("Content-type: text/html\n\n")
       write("<html><head><title>",in[1],"</title></head>\n")
       every i := 2 to *in do
 	 write("<p>", in[i], "</p>")
       write("</body></html>\n")
       }
-
 end
 
 procedure cgiHexval(c)
-    if any(&digits, c) then return integer(c)
-    if any('ABCDEF', c) then return ord(c) - ord("A") + 10
-    if any('abcdef', c) then return ord(c) - ord("a") + 10
+   if any(&digits, c) then return integer(c)
+   if any('ABCDEF', c) then return ord(c) - ord("A") + 10
+   if any('abcdef', c) then return ord(c) - ord("a") + 10
 end
 
 procedure cgiHexchar(c1,c2)
-    return char(cgiHexval(c1) * 16 + cgiHexval(c2))
+   return char(cgiHexval(c1) * 16 + cgiHexval(c2))
 end
 
 #
@@ -274,12 +273,12 @@ initial {
       # unfinished; convert 16-bit decimal values into 8-bits/component hex
       }
    return ColorTbl[s]
-end	
+end
 
 #
 # Procedure cgiPrePro
-# This procedure goes through a file writes out 
-# either anything between ALL and the value that are passed into the 
+# This procedure goes through a file writes out
+# either anything between ALL and the value that are passed into the
 # procedure.
 #
 
@@ -287,17 +286,17 @@ procedure cgiPrePro(filename,def)
    AllFlag := 0
    DefFlag := 0
    all := "<!-- ALL"
-   look := "<!-- " || def	
+   look := "<!-- " || def
    intext := open(filename)
    while here:=read(intext) do {
-      if match(all,here) then { 
+      if match(all,here) then {
 	 if AllFlag = 1 then
-	     AllFlag := 0
+	    AllFlag := 0
 	 else {
 	    here := read(intext)
 	    AllFlag := 1
 	    }
-         }
+	 }
       if match(look,here) then
 	 if DefFlag = 1 then {
 	    DefFlag := 0
@@ -352,13 +351,13 @@ procedure main(args)
 	 if type(c) == "table" then {
 	    write("Set-cookie: ", c["name"], "=", c["value"])
 	    every attr := ! [ "expires", "path", "domain" ] do
-		if \c[attr] then writes("; " || attr || c[attr])
+	       if \c[attr] then writes("; " || attr || c[attr])
 	    if \c["secure"] then writes("; secure")
 	    }
 	 else
 	    write("Set-cookie: ", c)
 	 write()
-         }
+	 }
    write()
 
    write("<html>")
@@ -374,12 +373,12 @@ procedure main(args)
    writes("<body")
    if \cgiBBuilder then {
       BB := cgiBBuilder(args)
-      writes(" background=\"",BB["background"],"\"")	
-      writes(" bgcolor=\"",BB["bgcolor"],"\"")	
-      writes(" text=\"",BB["text"],"\"")	
-      writes(" link=\"",BB["link"],"\"")	
-      writes(" vlink=\"",BB["vlink"],"\"")	
-      writes(" bgproperties=\"",BB["bgproperties"],"\"")	
+      writes(" background=\"",BB["background"],"\"")
+      writes(" bgcolor=\"",BB["bgcolor"],"\"")
+      writes(" text=\"",BB["text"],"\"")
+      writes(" link=\"",BB["link"],"\"")
+      writes(" vlink=\"",BB["vlink"],"\"")
+      writes(" bgproperties=\"",BB["bgproperties"],"\"")
       }
    write(">")
    cgiReadParse()

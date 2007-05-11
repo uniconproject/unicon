@@ -4108,6 +4108,7 @@ function{1} Texture(argv[argc])
       wc->ntextures++;
       }
       MakeInt(wc->curtexture, &(rp->fields[2]));
+      rp->fields[3] = nulldesc;
       c_put(&(w->window->funclist), &f);
 
       /* check if the source is another window */
@@ -4361,7 +4362,7 @@ function{1} WSection(argv[argc])
 
       rp->fields[2] = argv[warg];   /* room_name */
       rp->fields[3] = nulldesc;          /* skip */
-      MakeInt(0, &(rp->fields[4]));      /* count */
+      rp->fields[4] = zerodesc;      /* count */
       c_put(&(w->window->funclist), &f);
       return f;	
   }

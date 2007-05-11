@@ -1874,6 +1874,19 @@ int setdim(wbp w, char* s)
    return Succeeded;
 }
 
+void gettexmode(wbp w, char *abuf, dptr answer)
+{
+   wcp wc = w->context;
+   switch (wc->texmode) {
+   case GL_REPLACE: strcpy(abuf, "on"); break;
+   case GL_BLEND: strcpy(abuf, "blend"); break;
+   case GL_MODULATE: strcpy(abuf, "modulate"); break;
+   case 0: strcpy(abuf, "off"); break;
+   default: strcpy(abuf, "unknown texture mode"); break;
+      }
+   MakeStr(abuf, strlen(abuf), answer);
+}
+
 /* set the texture mode, either on or off */
 int settexmode(wbp w, char* s)
 {
@@ -2330,6 +2343,7 @@ int settexture(wbp w, char* str, int len)
     * So by remembering wc->ntextures we can recover the name of the texture.
     */
    MakeInt(wc->curtexture, &(rp->fields[2]));
+   rp->fields[3] = nulldesc;
    c_put(&(w->window->funclist), &f);
 
    return Succeeded;
@@ -2491,7 +2505,7 @@ int textureimg(wbp w, int width, int height,
 #endif					/* XWindows */
    int c, v, i;
    unsigned int ix = 0, iy = height -1;
-   GLubyte *tex = (GLubyte *)malloc(height * width * 3);
+   GLubyte *tex = (GLubyte *)malloc(height * width * 4 + 1);
 
    makecurrent(w);
    if (tex == NULL) return Failed;
@@ -2928,6 +2942,7 @@ struct descrip gl_popmatrix = {D_Null};
 struct descrip gl_pushmatrix = {D_Null};
 struct descrip gl_identity = {D_Null};
 struct descrip gl_matrixmode = {D_Null};
+struct descrip gl_meshmode = {D_Null};
 struct descrip gl_texture = {D_Null};
 struct descrip gl_font3d = {D_Null};
 struct descrip gl_drawstring3d = {D_Null};
@@ -2940,7 +2955,8 @@ char * gl_cylinder_fields[] ={"height","radius1","radius2"};
 char * gl_disk_fields[] = {"radius1","radius2", "angle1","angle2"};
 char * gl_rotate_fields[] = {"angle"};
 char * gl_matrixmode_fields[] = {"mode"};
-char * gl_texture_fields[] = {"texture_handle"};
+char * gl_meshmode_fields[] = {"mode"};
+char * gl_texture_fields[] = {"texture_handle", "window_binding"};
 char * gl_font_fields[] = {"font_ptr"};
 char * gl_drawstring3d_fields[] = {"font_name"};
 char * gl_mark_fields[] = {"room_name","skip","count"};
@@ -2955,7 +2971,7 @@ dptr rec_structinate(dptr dp, char *name, int nfields, char *a[])
       AsgnCStr(fields[0], "name");
       AsgnCStr(fields[1], "code");
       if (nfields > 3) {
-         if (!strcmp(name,"gl_mark")) {
+         if (!strcmp(name,"gl_mark") || !strcmp(name, "gl_texture")) {
            for(i=2; i < nfields; i++)
               AsgnCStr(fields[i], a[i-2]);
            }
@@ -3004,8 +3020,11 @@ dptr rec_structor3d(char *name)
    else if (!strcmp(name, "gl_matrixmode"))
       return rec_structinate(&gl_matrixmode, "gl_matrixmode",
 				3, gl_matrixmode_fields);
+   else if (!strcmp(name, "gl_meshmode"))
+      return rec_structinate(&gl_meshmode, "gl_meshmode",
+				3, gl_meshmode_fields);
    else if (!strcmp(name, "gl_texture"))
-      return rec_structinate(&gl_texture, "gl_texture", 3, gl_texture_fields);
+      return rec_structinate(&gl_texture, "gl_texture", 4, gl_texture_fields);
    else if (!strcmp(name, "gl_font3d"))
       return rec_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
    else if (!strcmp(name, "gl_drawstring3d"))

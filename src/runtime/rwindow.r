@@ -3488,10 +3488,11 @@ char * abuf;
         break;
       case A_TEXTURE:
 	gettexture( w, answer );
+	/* looks like a memory leak to me */
 	if (is:string(*answer)) StrLoc(*answer) = strdup(StrLoc(*answer));
         break;
       case A_TEXMODE:
-        MakeInt(w->context->texmode, answer);
+	gettexmode( w, abuf, answer );
         break;
       case A_TEXCOORD:
 	 strcpy(abuf, "auto");

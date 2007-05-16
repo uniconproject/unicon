@@ -1,0 +1,159 @@
+# icode.icn - code for handling icode files
+
+record header (
+   hsize,    # /* size of interpreter code          */
+   trace,    # /* initial value of &trace           */
+   Records,  # 
+   Ftab,     # /* location of record/field table    */
+   Fnames,   # /* location of names of fields       */
+   Globals,  # /* location of global variables      */
+   Gnames,   # /* location of names of globals      */
+   Statics,  # /* location of static variables      */
+   Strcons,  # /* location of identifier table      */
+   Filenms,  # /* location of ipc/file name table   */
+   linenums, # /* location of ipc/line number table */
+   config    # /* [16];  icode version              */
+
+# #ifdef FieldTableCompression
+#    FtabWidth, # /* width of field table entries, 1 | 2 | 4  */
+#    FoffWidth, # /* width of field offset entries, 1 | 2 | 4 */
+#    Nfields,   # /* number of field names     */
+#    Fo,        # /* The start of the Fo array */
+#    Bm,        # /* The start of the Bm array */
+# #endif        # /* FieldTableCompression     */
+
+)
+
+#
+# Convert binary number (read in as string data) to integer.
+# This appears to be unfinished.
+#
+procedure littleord(s)
+   local o, i, i1, i2
+   o := ord(s)
+   i1 := 0
+   i2 := 0
+   every i := 1 to 8 do {
+      if iand(o,2^(i-1))>0 then {
+	 i1 +:= 2^(i-1)
+         }
+      }
+   every i := 1 to 8 do {
+      if iand(o,2^(8-i))>0 then {
+	 i2 +:= 2^(i-1)
+         }
+      }
+   return o
+end
+
+procedure littleendian(s)
+   local i
+   i := 0
+   s := reverse(s)
+   every i := littleord(!s) + i * 256
+   return i
+end
+
+procedure getSrcFileNames(exeName)
+   local fNames, s, f, x, w, fn, Z, wordsize, ftmp, i, LLL, j
+   local statrec, word
+   local p1
+
+   statrec := stat(exeName) | stop("can't stat ", image(exeName))
+   if not (f := open(exeName,"ru")) then {
+      write(&errout, "can not open file : ", exeName)
+      fail
+      }
+   s := reads(f, statrec.size)
+   if *s < statrec.size then {
+      write("file ", exeName, " is too short")
+      fail
+      }
+
+   # look at header information
+   s ? {
+      if find(".exe", exeName) then {
+	 tab(find("exit\^m\nrem [executable Icon binary follows]"))
+	 }
+      tab((x := find("\^l"))+3) # \^l\n\0 terminate shell header
+      p1 := &pos
+
+      # by default, Assume a 32-bit machine with word size 4
+      word := 4
+      hdr := header()
+      every i := 1 to 11 do {
+	 w := move(4)
+         hdr[i] := littleendian(w)
+         }
+	    
+      #printing Header
+      #every fn := fieldnames(hdr) do 
+      #  write("header.", left(fn,8," "), "= ", image(hdr[fn]))
+
+      hdr.config := move(16 * word)
+
+      if find("I9.U.00",hdr.config) ~= 1 then{
+	 # this means that the executable is in 64-bits formats
+	 word := 8
+         &pos := p1   # start over as a 64 bit machine
+	 #move(p1-p3) # go back
+	 hdr := header()     
+	 every i := 1 to 11 do {
+	    w := move(word)
+	    hdr[i] := littleendian(w)
+	    }
+	 hdr.config := move(16 * word)
+	 #write("config=",image(hdr.config))
+	 #write("\t Executable Program is loaded as a 64-bit ")
+	 Message ||:= "\n\t 64-bit "
+	 }
+      else{
+	 #write("\t Executable Program is loaded as a 32-bit ")
+	 Message ||:= "\n\t 32-bit "
+	 }
+    
+      #
+      # check whether it is a compressed icode or not
+      #
+      hdr.config ? {
+	 tab(find("/")+1) | stop("can't find /")
+	 wordsize := integer(tab(many(&digits)))
+	 Z := move(1)
+	 }
+      if Z == "Z" then {
+	 # we need to uncompress the rest
+	 # brute force means: write it out and then read it in
+	 # uncompress mode
+	 ftmp := open("tmpfilename","w") |  stop("can not open a tmpfilename")
+	 writes(ftmp, tab(0))
+	 close(ftmp)
+	 if ftmp := open("tmpfilename","rz") then {
+	    &subject := reads(f, hdr.hsize) |
+	       stop("can't read compressed icode")
+	    close(ftmp)
+	    Message ||:="compressed Icode "
+	    }
+	 else stop("can not open a tmpfilename")
+         }
+      else {
+	 Message ||:="uncompressed Icode "
+	 }
+
+      i := hdr.Filenms
+      move(i)
+      LLL := []
+      fNames := []
+      while i < hdr.linenums do {
+	 move(word)
+	 put(LLL, j := littleendian(move(word)))
+	 i +:= (word * 2)
+         }
+      every i := 1 to *LLL do  {
+	 move(LLL[i] + hdr.Strcons - hdr.linenums) &
+	     x := tab(find("\0")\1) &
+	     put( fNames, x ) & &fail
+	 }
+      }
+   Message ||:= "("|| exeName ||") loaded successfully"
+   return fNames
+end

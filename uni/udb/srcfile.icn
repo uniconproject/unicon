@@ -1,0 +1,152 @@
+# 
+#  srcfile.icn
+#  March 16, 2007 
+# 
+
+link bincvt
+
+#
+# Contains all of the source files issues such as found files, files text,
+# execution portability and so.  
+#
+class SourceFile(
+   TP,             # TargetProgram and its arguments
+   sourcePath,     # String of paths that will be searched for source files
+   sourceFiles,    # List with all source file names that are in the binary
+   sourceText,     # List holds all the all source files text
+   srcIndex,       # Table of our position in the source file; fname is the key
+   foundFiles,     # Set with all the files that we have found are here
+   missingSrcFiles,# Set with all the files that we did not find
+   Message,        # a string formated with the current message
+   hdr             # an instance of the header record
+)
+
+#
+# prints a message out int console, message box, and so
+#
+method Write(Msg)
+
+   if /Msg then
+      Msg := Message
+   write(Message)
+   Message := ""
+
+end
+
+#
+# Load the program Source File(s)
+#
+method load_SourceFile()
+   local i, j, s, path :=" ", f
+
+   # what if the TP is not in the current directory of the UDB
+   # such as ./udb ./test/t1/t2/t
+   f := TP[1]
+   j := 0
+   every i:= 1 to *f do
+     if f[i] == "/" then   j := i
+
+   path ||:= f[1:j+1]
+   sourcePath ||:= path ||" "
+   
+   if (j+1) >= *f then   fail
+ 
+  (sourceFiles := getSrcFileNames(TP[1])) | stop("Cannot open " || TP[1])
+
+   # load the source files that we can find in the DPATH environment variable
+   # and keep a list of the ones that we could not find incase the DPATH
+   # variable is updated by the user
+   every i := 1 to *sourceFiles do {
+      if s := dopen( sourceFiles[ i ] ) then {
+         srcIndex[ sourceFiles[ i ] ] := *sourceText
+         insert( foundFiles, sourceFiles[ i ] )
+         while( put( sourceText, read( s ) ) )
+         close( s )
+         }
+      else {
+         put( missingSrcFiles, sourceFiles[ i ] )
+         }
+   }
+
+   Message ||:="\n\t Found source files: "
+   every i:=1 to *sourceFiles do
+      Message ||:= sourceFiles[i] ||", "
+   Message   := Message[1:*Message-1]
+   Message ||:= "\n\t Type \"help\" for assistance."
+
+   #------ Test
+   #every j:= 1  to *sourceText do
+   #     write(sourceText[j])
+   return
+end
+
+#
+# Searchs through the specified source path for the requested file.
+#
+method dopen(s)
+   local file, paths, path, binpath, f
+
+   if file := open(s) then {
+      return file          # look in current directory
+   }
+
+   paths := sourcePath
+
+   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+      ((f := open((binpath:=getpaths()) ||
+                  ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
+      close(\f)
+      paths ||:= " " || binpath
+      paths ||:= " " || binpath || "../ipl/gdata/"
+      paths ||:= " " || binpath || "../ipl/gincl/"
+      paths ||:= " " || binpath || "../ipl/gprocs/"
+      paths ||:= " " || binpath || "../ipl/gprogs/"
+      paths ||:= " " || binpath || "../ipl/incl/"
+      paths ||:= " " || binpath || "../ipl/lib/" 
+      paths ||:= " " || binpath || "../ipl/mincl/" 
+      paths ||:= " " || binpath || "../ipl/mprocs/"
+      paths ||:= " " || binpath || "../ipl/mprogs/" 
+      paths ||:= " " || binpath || "../ipl/procs/"
+      paths ||:= " " || binpath || "../ipl/progs/" 
+      paths ||:= " " || binpath || "../uni/lib/" 
+      paths ||:= " " || binpath || "../uni/gui/" 
+   }
+
+   s := "/" || s                               # platform-specific
+   paths ? {
+      while path := tab(find(" ") | 0) do {
+         if file := open(path || s) then {
+            return file
+         }
+         tab(many(' ')) | break
+         }
+      }
+   fail
+end
+
+#
+# prints out the header information
+#
+method print_Header()
+   local fn
+
+   every fn := fieldnames(hdr) do
+       write("header.", left(fn,8," "), " = ", image(hdr[fn]))
+
+end
+
+initially()
+
+   sourceFiles:= []
+   sourceText := []
+   srcIndex   := table(0)
+   foundFiles := set()
+   Message    := "\t "
+   missingSrcFiles:= []
+
+   sourcePath   := ". .. ../.."
+#  sourcePath ||:= " " || getenv( "DPATH" )
+   sourcePath ||:= " " || getenv( "LPATH" )
+   sourcePath ||:= " " || getenv( "IPATH" )
+
+end

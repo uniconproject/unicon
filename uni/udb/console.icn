@@ -1,0 +1,219 @@
+#
+# console.icn
+# March 16, 2007 
+#
+
+$include "defaults.icn"
+
+class UDB_Console : Commands(
+   cmdHistory,           # list keeps all of the UDB's cmd Session History.
+   UP, DOWN, ENTER, BkSp # Control keys
+   )
+
+#
+# It is OK on Linux, needs to be tested on Windows???.
+#
+method my_getch()
+   local e1, e2, e3
+
+   e1 := getch()
+   if e1 === "\e" then {
+      if kbhit() then {
+         e2 := getch()
+         e3 := getch()
+         if e3 === !"2356" then e3 ||:= getch()
+         return e1 || e2 || e3
+      }
+   }else{
+      writes(e1)
+      return e1
+   }
+end
+
+#
+# Puts the last command in the right place in cmdHistory List
+#
+method update_cmdHistory(line)
+   local i
+
+   #cmdHistory[1] == " "
+   every i:=2 to *cmdHistory do
+      if line == cmdHistory[i] then{
+         delete(cmdHistory,i)    
+         break
+      }
+   put(cmdHistory,line)
+
+end
+
+#
+# Reads an inout string and parse it to tokens and put them in cmd list.
+#
+method get_CommandLine()
+   local wchar, line, words, word
+   local ch, i, c
+
+   # make sure that cmdIgnore is set with &null for the next command
+   line :=""
+   words := list(0)
+   wchar := CHARACTER ++ '\'\\/-.\_n&?[]\"'
+
+   i := 0
+   writes(PROMPT)
+
+   while ch := my_getch() do{
+      case ch of{
+        UP:{
+           if i > 1 then  
+              i-:=1
+           else if i = (1|0) then
+              i := *cmdHistory
+           else
+              i := 1
+           line := cmdHistory[i]
+           }
+       DOWN:{
+           if i < *cmdHistory then
+              i+:=1
+           else if i = *cmdHistory then
+              i := 1
+           else
+              i := *cmdHistory
+           line := cmdHistory[i]
+           }
+        BkSp:{
+           line := line[1:*line] }
+        ENTER:{
+           break }
+        default:{ 
+           if ch[1] ~==="\e" then
+              line ||:=ch         }
+      }#end of case
+
+      writes("\r")
+      every c := 1 to 10 do writes("      ")
+      writes("\r")
+      writes(PROMPT || line)
+
+   }#end of while
+
+   if *line > 0 then{  
+      update_cmdHistory(line)
+      # analyize that cmd line
+      line ? while tab(upto(wchar))do {
+           word := tab(many(wchar))
+           put(words, word)
+      }
+      return words
+   }else
+      return &null
+end
+
+#
+# Here where we start a UDB Console Session nad have
+# most of the user control debugging interface
+#
+method udb_Console(argv)
+   local ans, cmd, old_State:=NONE
+
+   Write(Message:=VERSION)
+   init_Debugging(argv)
+
+   while State ~= QUIT do{
+     case State of{
+       NONE:{
+          # waiting for the load command
+          #Show_Message(ErrorCode) 
+          }
+       LOAD:{
+          # waiting for the run or break
+          #Show_Message(ErrorCode)
+          }
+       RUN:{
+          # everything is fine, file is louded and ready to run TP
+          # when the program is PAUSED, we can make use of cmds such as:
+          # [run: re-execute],[break],[step],[next],[cont],[quit],[up],[down]
+          # [frame], [print], [where]
+          RunCode := RUN
+          every start_Debugging() do{
+             old_State := State
+             while State ~= RUN do{
+               case State of {
+                 END | 
+                 QUIT:    { break break next       }
+                 CONTINUE:{ State   := RUN
+                            RunCode := CONTINUE    
+                            next                   }
+                 STEP:    { State   := RUN
+                            RunCode := STEP        
+                            next                   }
+                 NEXT:    { State   := RUN
+                            RunCode := NEXT        
+                            next                   }
+                 RERUN:   { State   := RUN
+                            break break next       }
+                 SKIP:    { State := old_State     }
+                 ERROR:   { State := old_State
+                            Write(Message)         }
+                 #default:{ write("PAUSED !!!")    }
+               }# end of case
+               cmd := get_CommandLine()
+               if \cmd then    parse_Command(cmd)
+               else            State := SKIP
+             }# end of while
+          }#end of every
+          }
+       END:{
+          ## if debugging finished OK, ErrorCode = Error_6
+          ##Show_Message(ErrorCode)
+          ##ErrorCode := Error_0
+          State := LOAD #important for re-run
+          }
+       ERROR:{
+          # ErrorCode = (Error_1 | Error_2 | Error_3)
+          #Show_Message(ErrorCode)
+          State := old_State 
+          }
+       CONTINUE|
+       STEP|
+       NEXT| 
+       RERUN:{ 
+          #Show_Message(Error_9)
+          }
+       SKIP:{
+          State := old_State
+          }
+       QUIT:{
+          return
+          }
+       default:{
+          # for everything else ???, like when State = NONE
+          #write("udb_Console Default!!!!!")
+          #Show_Message(Error_0)
+          }
+     } # end case State
+    old_State := State
+    cmd := get_CommandLine()
+    if \cmd then   parse_Command(cmd)
+    else           State := SKIP
+   }# end while State
+end
+
+#
+#  
+#
+initially()
+
+   self.Commands.initially()
+   cmdHistory := []
+   put(cmdHistory,"")
+
+   # Constant Keys used with the command history
+   UP    := "\e[A"
+   DOWN  := "\e[B"
+#  RIGHT := "\e[C" # not used
+#  LEFT  := "\e[D" # not used
+   ENTER := "\n"
+   BkSp  := "\d"
+end
+

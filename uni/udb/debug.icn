@@ -1,0 +1,479 @@
+
+#
+#  debug.icn
+#  March 16, 2007
+#
+
+$include "evdefs.icn"
+link evinit
+link image
+link getpaths
+
+link evnames
+
+$include "defaults.icn"
+
+#
+# Evaltree uses the following record to keep track of the procedures.
+# Node   : contains procedure, function or other data
+# Parent : is the parent of the current Node
+# Child  : is a list which contains the childern of the current node.
+# Level  : is used for the next command to keep track of the procedure stack.
+# Ecode  : is the s_code given by each event.
+# fname  : is the current source file name
+# linnum : is the current line number in the current source file
+#
+record activation_record(node, parent, children, level, ecode, fname, linenum)
+
+#
+# This global will contain a table. For every file that has a break point
+# we will create a new set to store each breakpoint in.
+#
+record breakPt(file_name, line_num, code)
+
+#
+# This record will be used by the udb_evalTree
+#
+record __evaltree_node(node,parent,children)
+
+
+#
+# Contains the core of the udb debugging facilities 
+#
+class Debug : SourceFile(
+   State,       # Debugging state such RUN, PUSE, etc
+
+   eventMask,   # the mask that we are building the evaltree based on
+   breakMask,   # a set of the E_Line Event-values that we like to break on
+   watchMask,   # a set of the E_Assign Event-values that we like to watch for
+   valueMask,   # table used for break points and watch points set of masks
+   breakPoints, # A table For every file that has a break point we will
+                # create a new set to store each breakpoint in
+
+   RunCode,     # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
+#  ErrorCode,   # It contains one of the Error_numbers
+   treeRoot,    # the evaltree head
+   top_Frame,   # points at the last activation_record in the evalTree
+   cur_Frame,   # points at the last investigated frame, using up,down, frame n 
+   step_count,  # the step command optional counter, initial value is 0
+                # 0: means no stepping, default value is 1 eg. step
+                # unless it was specified by the user eg. step 4, to
+                # step 4 lines of source code
+   next_count,  # the next command optional counter, initial value is 0
+                # 0 means no next, default value is 1. eg. next
+                # unless it was specified by the user such as next 4 or so
+
+   CallCodes,   # function and procedure calls
+   SuspendCodes,# suspend a coroutine
+   ResumeCodes, # resume a coroutine
+   ReturnCodes, # return from a procedure with return st
+   FailCodes,   # fail in a procedure 
+   RemoveCodes, # remove
+
+   global_vars  # a set contains all of the global variable names
+   )
+
+
+#
+# This was in the evaltree.icn unicon library, we had to modify 
+# it some how for the need of the udb debugging facilities. 
+#
+#method udb_evalTree(mask, activation_record) #Old
+method udb_evalTree(activation_record)
+   local c, current, p, child
+
+   /activation_record := __evaltree_node
+   CallCodes    := string(eventMask ** 
+                          cset(E_Pcall || E_Fcall || E_Ocall || E_Snew))
+   SuspendCodes := string(eventMask **
+                          cset(E_Psusp || E_Fsusp || E_Osusp || E_Ssusp))
+   ResumeCodes  := string(eventMask ** 
+                          cset(E_Presum || E_Fresum || E_Oresum || E_Sresum))
+   ReturnCodes  := string(eventMask ** 
+                          cset(E_Pret || E_Fret || E_Oret))
+   FailCodes    := string(eventMask ** 
+                          cset(E_Pfail || E_Ffail || E_Ofail || E_Sfail))
+   RemoveCodes  := string(eventMask ** 
+                          cset(E_Prem || E_Frem || E_Orem || E_Srem))
+
+   current := activation_record()
+   current.parent := activation_record()
+   current.children := []
+   current.parent.children := []
+
+   #every write(evnames(kk := key(valueMask))," :  ", !(valueMask[kk]))
+
+   while EvGet(eventMask,valueMask) do {
+
+     if State = PAUSE then{
+        suspend
+     }
+     if State = END then{
+        return
+     }
+     case &eventcode of {
+      !CallCodes: {
+         c := activation_record()
+         c.node := &eventvalue
+         c.parent := current
+         c.children := []
+         put(current.children, c)
+         current := c
+         top_Frame := cur_Frame := current
+         debug_CallBack(current, current.parent)
+         }
+      !ReturnCodes | !FailCodes: {
+         p := pull(current.parent.children)
+         current := current.parent
+         top_Frame := cur_Frame := current
+         debug_CallBack(current, p)
+         }
+      !SuspendCodes: {
+         current := current.parent
+         top_Frame := cur_Frame := current
+         debug_CallBack(current, current.children[-1])
+         }
+      !ResumeCodes: {
+         current := current.children[-1]
+         top_Frame := cur_Frame := current
+         debug_CallBack(current, current.parent)
+         }
+      !RemoveCodes: {
+         if child := pull(current.children) then {
+            while put(current.children, pop(child.children))
+            top_Frame := cur_Frame := current
+            debug_CallBack(current, child)
+         }
+         else{
+            if current === current.parent.children[-1] then {
+            p := pull(current.parent.children)
+            current := current.parent
+            top_Frame := cur_Frame := current
+            debug_CallBack(current, p)
+            next
+            }
+            else
+                stop("evaltree: unknown removal")
+            }
+         }
+      default: {
+         debug_CallBack(current, current)
+         }
+     }# end case
+     }# end do
+     ##write("No more events to get")
+     return
+end
+
+#
+# Add a new node when ecode==(E_Pcall | E_Fcall | E_Ocall | E_Snew)
+#
+method add_Node(new, old)
+   local x
+
+   if /new.parent.node then{
+      new.level := 1
+      new.ecode := &eventcode
+      treeRoot := new
+      #write("New Root!!!!!!!!!!!!!!!!!!1")
+   }
+   else{
+      new.level := new.parent.level+1
+      new.ecode := &eventcode
+   }
+
+   new.fname   := keyword("file", Monitored)
+   new.linenum := keyword("line", Monitored)
+end
+
+#
+# Check the Monitored file for a break point
+#
+method checkBreakPoint()
+   static breakPt_list
+   local  cur_file, cur_line, skip
+   local  i := 1, temp
+
+   cur_file := keyword("file", Monitored)
+   cur_line := keyword("line", Monitored)
+   if member(breakPoints, cur_file) then{
+      breakPt_list := breakPoints[cur_file]
+      skip := 0
+   } else {
+      skip := 1
+   }
+
+   if skip = 0 then{
+      while i <= *breakPt_list do{
+         temp := breakPt_list[i]
+         if cur_line = temp.line_num then{
+            State := PAUSE
+            # this delete will help "next" and "step" operate well
+            # jut remove the the breakMask set from the valueMask 
+            # table temporarly until the continue command comes on
+            delete(valueMask,E_Line) 
+            Message :="\n\t Breakpoint in File("||temp.file_name||"), Line # "||
+                            temp.line_num || "\n\t Code: " || temp.code
+            Write(Message)
+            return
+         }
+         i +:= 1
+      }
+   }
+end
+
+#
+# Check the Monitored file for a watch point
+#
+method checkWatchPoint()
+   local cur_file, cur_line, var
+
+   var := &eventvalue
+   if member(watchMask, var) then{
+      State := PAUSE
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      Message:="\n\t Watchpoint in File("|| cur_file ||"), var : "|| var ||
+               " , Line : "||cur_line|| "\n\t Code: " || sourceText[cur_line]
+      Write(Message)
+      return
+   }
+end
+
+
+#
+# while next_count > 0, keep next until it is 0,
+# then stop there and change the state to step
+#
+method checkNext()
+   local cur_line, cur_file
+
+   if next_count > 1 then{
+      next_count -:= 1
+   }else
+   if next_count = 1 then{
+      next_count := 0
+      step_count := 1
+      State := PAUSE
+      RunCode := STEP
+   }
+end
+
+#
+# while step_count > 0, keep step until it is 0,
+# then stop there and make State := STEP
+#
+method checkStep()
+   local cur_line, cur_file
+
+   if step_count > 1 then{
+      step_count -:= 1
+      State := RUN
+      RunCode := NEXT
+   }else
+   if step_count = 1 then{
+      step_count -:= 1
+
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      cur_line +:= srcIndex[cur_file]
+
+      Message := "\n\t Stepping in File("||cur_file||"), Line # "||cur_line ||
+                 "\n\t code : " || sourceText[cur_line]
+      Write(Message)
+
+      State := PAUSE
+      RunCode := STEP
+   }
+end
+
+#
+# This is where most of the UDB checking goes on.
+#
+method debug_CallBack(new, old)
+   static skip_call := 0 # have two values
+                         # 0: no skipping over a procedure call
+                         # 1: run Proc call as one cmd and step on the next st.
+   static skip_line := 0 # have two values
+                         # 0 means do not skip the change in that line
+                         # 1 means skip the change in that line
+   local ecode := &eventcode
+
+   if State = RUN then {
+      #write(evnames(ecode), ": ", image(&eventvalue))
+      case ecode of{
+        E_Line:{
+           # do a break point check every line, is it enough?
+           # and if there is a break point, make "State := PAUSE"
+           if skip_line = 0 then {
+              #write("check for break  at line : ", image(&eventvalue))
+              checkBreakPoint()
+              if skip_call = 0 then {
+                 checkNext()
+                 checkStep()
+                 }
+           }else
+              skip_line := 0
+           }
+        E_Assign:{
+           checkWatchPoint()
+           }
+        E_Exit:{
+           State := END
+           # to Make sure that in the re-run, 
+           # every thing will start over
+           skip_call := 0
+           skip_line := 0
+           }
+        E_Error:{
+           State := PAUSE
+           RunCode := ERROR
+           Message := "\n\t Run-time error" ||
+                      "\n\t File: "|| keyword("file", Monitored) ||
+                      ", Line: " || keyword("line", Monitored)  ||
+                      ", Proc: " || image(proc(Monitored, 0 )) 
+           }
+        !CallCodes:{
+           add_Node(new, old)
+           if ecode == E_Pcall & RunCode = NEXT then{
+              # next on proc :", image(&eventvalue)
+              skip_call := 1
+           }
+           }
+        E_Pret | E_Pfail: {
+           # return from next on proc :", image(&eventvalue)
+           skip_call := 0
+           skip_line := 1
+           }
+      } # end of case ecode
+   }else
+      Write("The State is Not a RUN State !!!")
+end
+
+#
+# Here where the udb Session starts on
+#
+method start_Debugging()
+   local x, t
+
+   #-- it may need to be in EvInit() for the sake of re-run
+   &eventsource := &null
+
+   EvInit(TP) | stop("cant start evinit on " || TP[1])
+
+   #global_vars := set()
+   every x := globalnames(Monitored) do{
+     t := image(variable(x, Monitored, 0))
+     # note, do not use ~ in such cases, use not
+     if not find("procedure"|"function",t) then {
+        insert(global_vars, x)
+     }
+   }
+
+   if State = RUN  then {
+      # a generator that ends when TP is over and no more events out of it.
+      #every udb_evalTree(eventMask, activation_record) do{
+      every udb_evalTree(activation_record) do{
+         if State = PAUSE then{
+            # suspends the loop and go back to udb_Console() for a new cmd.
+            suspend
+         }
+         if State = END then{
+            break
+         }
+      }#end every 
+   }
+
+  #EvQuit()
+  #EvTerm()
+  #cofail(Monitored)
+  State := END
+  #ErrorCode := Error_6
+  Message := "\n\t End of Program!!!"
+  Write(Message)
+  return
+end
+
+#
+# Initialize the UDB Session
+#
+method init_Debugging(tp)
+   local x
+
+   # This is only when the TP is apssed when starting the udb, ex ./udb test
+   # in either case th ErrorCode will be initialized
+   State := NONE
+   if tp[1] then{
+      #every x := !tp do
+      #   put(TP,x)
+      TP := tp
+      # check if the TP is loadable and accessable.
+      if stat(TP[1]) & load_SourceFile() then{
+         State := LOAD
+         #ErrorCode := Error_10
+         #write(Message)
+      }
+      else{
+         State := ERROR
+         #ErrorCode := Error_3
+         Message := "\n\t Could not access \"" || TP[1] ||
+                    "\n\t Type \"help\" for assistance."
+         RunCode := NONE
+      }
+   }
+   else{
+      State := ERROR
+      #ErrorCode := Error_2
+      Message := "\n\t A program must be pre-loaded" ||
+                 "\n\t Type \"help\" for assistance"
+      RunCode := NONE
+   }
+   Write(Message)
+end
+
+initially()
+
+   self.SourceFile.initially()
+
+   TP := []
+
+   breakPoints := table(0)
+
+   State      := NONE
+   RunCode    := NONE
+   #ErrorCode  := Error_0
+   step_count := 0
+   next_count := 0
+   treeRoot   := &null
+   top_Frame  := &null
+   cur_Frame  := &null
+   global_vars:= set()
+
+   breakMask  := set()
+   watchMask  := set()
+   valueMask  := table()
+   #valueMask[E_Line] := breakMask
+   #eventmask(Monitored, , valueMask)
+
+   ## ????????
+   #Initilly, eventMask does not contain the E_Line & E_Assigne events
+   #If there is a break point, E_Line will be added to the eventMask,
+   #and the break point linenum will be inserted in valueMask[E_Line] set
+   #Also, initially the eventMask will not contain the E_Assign event
+   #If there is a watch point then the E_Assign will be added 
+   eventMask := cset(E_Pcall  || E_Fcall  || #E_Ocall  || E_Snew   ||
+                     E_Psusp  || E_Fsusp  || #E_Osusp  || E_Ssusp  ||
+                     E_Presum || E_Fresum || #E_Oresum || E_Sresum ||
+                     E_Pret   || E_Fret   || #E_Oret               ||
+                     E_Pfail  || E_Ffail  || #E_Ofail  || E_Sfail  ||
+                     E_Prem   || E_Frem   || #E_Orem   || E_Srem   ||
+                     # for others
+                     E_Error   || 
+                     E_Exit    ||
+                     #E_Null   || 
+                     E_Assign || 
+                     #E_Value  || 
+                     #E_Deref  ||
+                     E_Line    
+                    )
+end

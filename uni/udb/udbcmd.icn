@@ -1,0 +1,898 @@
+#
+# commands.icn
+# March 16, 2007
+#
+
+$include "defaults.icn"
+$include "evdefs.icn"
+
+class Commands : Debug()
+
+#
+# Parse a command
+#
+method parse_Command(cmd)
+
+   case cmd[1] of{
+     "l"    | 
+     "load" :{  cmdLoad(cmd)  }
+     "r"    |
+     "run"  :{  cmdRun(cmd)   }
+     "q"    | 
+     "quit" :{  cmdQuit()     }
+     "p"    |
+     "print":{  cmdPrint(cmd) }
+     "w"    |
+     "where":{  cmdWhere()    }
+     "b"    |
+     "break":{  cmdBreak(cmd) }
+     "watch":{  cmdWatch(cmd) }
+     "s"    | 
+     "step" :{  cmdStep(cmd)  }
+     "n"    |
+     "next" :{  cmdNext(cmd)  }
+     "f"    |
+     "frame":{  cmdFrame(cmd) }
+     "up"   :{  cmdUp()       }
+     "down" :{  cmdDown()     }
+     "?"    | 
+     "h"    |
+     "help" :{  cmdHelp(cmd)  }
+     "c"    | 
+     "cont" :{  cmdContinue() }
+     "tree" :{  cmdTree()     }
+     "bt"   :{  cmdBacktrace()}
+#     "str"  :{  cmdStructure()}
+     default:{   
+        # anything else
+        State := ERROR
+        #ErrorCode := Error_4
+        Message   := "\n\t Undefined Command." ||
+                     "\n\t Try \"help\" for assistance."
+        Write(Message)
+     }
+   }
+end
+# just for testing ???!!!!
+#method cmdStructure()
+#   local S
+#   every S := structure(Monitored) do{
+#      write(image(S))
+#      case type(S) of {
+#       "list" :{ write("List  # ",serial(S),"   ", name(S)) }
+#       "table":{ write("Table # ",serial(S)) }
+#       "set"  :{ write("Set   # ",serial(S)) }
+#      }
+#   }
+#end
+
+
+#
+# Loads a file after running the UDB Session 
+#
+method cmdLoad(cmd)
+
+   init_Debugging(cmd[2:0])
+end
+
+#
+# Runs the pre-loaded file, it can be used to re-run the program again
+#
+method cmdRun(cmd)
+   local i, args:=[]
+
+   if *cmd >= 2 then{
+      if State = (LOAD | PAUSE | END) then{
+         put(args, TP[1])
+         every i:=2 to *cmd do
+            put(args, cmd[i])
+         TP := args
+      }
+   }
+
+   if State = (LOAD | END) then{ 
+      State := RUN
+      if not member(valueMask, E_Line) & *breakMask > 0 then
+         valueMask[E_Line] := breakMask
+   }else
+   if State = PAUSE then{
+      State := RERUN
+   }else{ 
+      State := ERROR
+      #ErrorCode := Error_5
+      Message   := "\n\t No program to RUN, load program first"||
+                   "\n\t Type \"help\" for assistance"
+      Write(Message)
+   }
+end
+
+#
+# Allows you to quit the program.
+#
+method cmdQuit()
+   local ans
+
+   # check whether a program is running or not, Paused, etc??????
+   # do not exit directlly if the program is in the running state
+   if State = (RUN | PAUSE) then
+      Write("\t A Program is currently running")
+
+   # always ask the user if he realy wants to quit!!!
+   writes("\t Are you sure you want to Quit?, (Y/N )? :")
+   ans := read()
+   if ans[1] == ("y"|"Y") then
+      State := QUIT
+   else{
+      #make udb console takes no actions 
+      State := SKIP
+   }
+end
+
+
+#
+# prints out all of the Global Variables state in some level
+#
+method printGlobals(level)
+   local x, i
+        
+   if /level then
+      level := top_Frame.level - cur_Frame.level
+   
+   Message := ""
+   every x := !global_vars do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+   }
+   Write(Message)
+end
+
+#
+# prints out all of the Local Variables for some Level  
+#
+method printLocals(level)
+   local x, i
+
+   if /level then
+      level := top_Frame.level - cur_Frame.level
+
+   Message := ""
+   every x := localnames(Monitored,level) do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+   }
+   Write(Message)
+end
+
+#
+# prints out all of the Formal Parameters for some Level  
+#
+method printParams(level)
+   local x, i
+
+   if /level then
+      level := top_Frame.level - cur_Frame.level
+
+   Message := ""
+   every x := paramnames(Monitored,level) do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+   }
+   Write(Message)
+end
+
+#
+# writes down the current frame information, 
+# used by cmdPrint, cmdFrame, cmdUp, cmdDown
+#
+method printFrame(level)
+     
+   if /level then
+      level := top_Frame.level - cur_Frame.level
+   Message := "\n\t Frame: "|| level            ||
+              ", File: "|| cur_Frame.fname      ||
+              ", Line: "|| cur_Frame.linenum    ||
+              ", Proc: "|| image(cur_Frame.node)||
+              "\n\t -- Locals :"
+   Write(Message)
+   printLocals(level)
+   printParams(level)
+
+end
+
+#
+# Prints out a variable and it's current value. Variables from previous
+# procedures that are still in the stack can also be viewed.
+#
+method cmdPrint(cmd)
+   local x,    # is the dummy variable that we are looking for
+         i,    # is the index when x is a table or list
+         var,  # is the actual variable that we got from variable()
+         level,# stack frame level, 0: current level, biger level means older
+         i1,i2,temp
+
+   if State = PAUSE then{ 
+      if x := temp := cmd[2] then{
+         if temp == ("-G" | "-globals") then{
+            printGlobals()
+            return
+	    }
+	 else if temp == ("-L" | "-locals") then{
+            printLocals()
+            return
+	    }
+	 else if temp == ("-P" | "-params") then{
+            printParams()
+            return
+	    }
+
+         #--To be able to print things like T[1], T["a"], L[10], etc.
+         if (i1:= find("[",temp)) & (i2:= find("]", temp)) then{
+            x := temp[1:i1]
+            i := temp[i1+1:i2]
+            if *i > 0 then
+               if find("\"",i) then  i := string(i[2:*i])
+               else                  i := integer(i)
+            else
+               i := &null             
+         }
+
+         if cmd[3] then  level := integer(cmd[3]) | 0  #(level | current level) 
+         else            level := top_Frame.level - cur_Frame.level
+         
+         if var := variable(x, Monitored, level) then{
+            if type(var) == ("table" | "list" | "string" ) & \i  then
+               Message := "\n\t "||x||" = "||var[i]
+            else
+               Message := "\n\t "||x||" = "||image(var)
+	    }
+	 else
+            Message := "\n\t "||x||" : Is not in the current frame !!"
+	 }
+      else {
+         level := top_Frame.level - cur_Frame.level
+         printFrame(level)
+	 }
+      }
+   else{
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      }
+   Write(Message)
+end
+
+#
+# Prints out the current stack frame info,
+# It can be used to jump into a specific frame, [f n]
+#
+method cmdFrame(cmd)
+   local x, level 
+
+   if State = PAUSE then{ 
+      level := top_Frame.level - cur_Frame.level 
+      if *cmd = 1 then {
+         printFrame(level)
+	 }
+      else
+         Write("cmdFrame, What ???")
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+#
+# Moves one frame up on the execution stack
+#
+method cmdUp()
+   local x, level
+
+   if State = PAUSE then {
+      if /cur_Frame.parent.node then
+         Write("\t No more Frames up !!!")
+      else {
+         cur_Frame := cur_Frame.parent
+         level := top_Frame.level - cur_Frame.level
+         printFrame(level)
+	 }
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+#
+# Moves one frame down on the execution stack
+#
+method cmdDown()
+   local x, level
+
+   if State = PAUSE then {
+      if cur_Frame === top_Frame then
+         Write("\t No more Frames Down !!!")
+      else {
+         cur_Frame := cur_Frame.children[-1]
+         level := top_Frame.level - cur_Frame.level 
+         printFrame(level)
+	 }
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+#
+# Prints out where you are in the code, what file, and what line.
+#
+method cmdWhere()
+   local cur_file, cur_line, level
+
+   if State = PAUSE then{
+      cur_file := cur_Frame.fname   #keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      level := top_Frame.level - cur_Frame.level 
+      Message := "\n\t File: " || cur_file ||
+                 ", Proc: "    || image(proc(Monitored,level)) ||
+                 ", Line: "    || cur_line ||
+                 "\n\t Code: " || sourceText[cur_line + srcIndex[cur_file]]
+      }
+   else {
+      State := ERROR
+      Message := "\n\t No program is running !!!" ||
+                 "\n\t Try \"run\", or Type \"help\" for assistance"
+      }
+   Write(Message)
+end
+
+#
+# Used by the cmdTree method, leaf initial value is "treeRoot".  
+#
+method printT(leaf)
+   local t, i
+
+   Message ||:= "\n\t num of leaf:" || *leaf.children ||
+                "\n\t Proc  : " || image(leaf.node)   ||
+                "\n\t Level : " || leaf.level
+   Write(Message)
+
+   t := leaf.children
+   if *t < 1 then  return
+   #every i := 1 to *t do
+   every printT(!t)
+end
+
+#
+# Prints out the current execution tree, very simelar to bt cmd
+#
+method cmdTree()
+   # evalTree can not be printed unless the TP ran for a while.
+   if State = PAUSE  then {
+      printT(treeRoot)
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_7
+      Message := "\n\t EvalTree is empty, try \"run\" first"
+      Write(Message)
+      }
+end
+
+
+#
+# Used from cmdBacktrace 
+#
+method print_Backtrace(frame)
+   local t, i
+
+   Message   := "\n\t Frame: "|| frame.level   ||
+                ", File: "|| frame.fname       ||
+                ", Line: "|| frame.linenum     ||
+                ", proc: "|| image(frame.node)
+   Write(Message)
+
+   t := frame.children
+   if *t < 1 then
+      return
+   every print_Backtrace(!t)
+end
+
+#
+# To back trace the executin in the stack
+# [bt]
+#
+method cmdBacktrace()
+
+   if State = PAUSE then
+      print_Backtrace(treeRoot)
+   else {
+      State := ERROR
+      #ErrorCode := Error_7
+      Message := "\n\t EvalTree is empty, try \"run\" first"
+      Write(Message)
+      }
+end
+
+#
+# Continue the full speed execution after a PAUSE
+# [cont]
+#
+method cmdContinue()
+
+   if State = PAUSE & RunCode ~= ERROR then {
+      State := CONTINUE
+      if not member(valueMask, E_Line) & *breakMask > 0 then
+         valueMask[E_Line] := breakMask
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+#
+# Steps only on line of execution
+# [step], [step n]; n's default value is one
+#
+method cmdStep(cmd)
+   local count
+
+   if State = PAUSE & RunCode ~= ERROR then {
+      if count := integer(cmd[2]) then
+         step_count := count
+      else
+         step_count := 1
+      State := STEP
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+#
+# Steps only one line of execution, treats procedure call as one operation
+# [next], [next n]; n's default value is one  
+#
+method cmdNext(cmd)
+   local count
+
+   if State = PAUSE & RunCode ~= ERROR then {
+      if count := integer(cmd[2]) then
+	 next_count := count
+      else
+	 next_count := 1
+      State := NEXT
+      }
+   else {
+      State := ERROR
+      #ErrorCode := Error_9
+      Message   := "\n\t No program is running !!!" ||
+                   "\n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+
+#
+# watches for a variable
+#
+method cmdWatch(cmd)
+   local x, var, procName, i, old_State := State
+
+   if not (State = (LOAD | PAUSE)) then {
+      State := ERROR
+      #ErrorCode := Error_11
+      Message   := "\n\t No Program is Loaded" ||
+                   "\n\t Type \"help\" for assistance"
+      Write(Message)
+      return
+      }
+   State := SKIP
+   
+   # if cmd is only "watch"; will print all of the pre-set watch points info
+   if *cmd = 1 then{
+      Message :="\n\t " || cmd[1]
+      every x := !watchMask do {
+         Message ||:= "\n\t Watch for : " || x
+	 }
+      Write(Message)
+      return
+      }
+
+   var := cmd[2]
+   if member(watchMask, var) then {
+      Message := "\n\t There is already an existing watch point on: " || var
+      Write(Message)
+      return
+      }
+   
+   # Note: we have to be smart about the scope of the watched variable
+   if cmd[3] then {
+      var ||:= "-" || cmd[3] # cmd[3] is the procedure name
+      }
+   else if old_State = LOAD then {
+      # we would assume that the watched variable is a global one  
+      var ||:="+"  # + is the global scope character
+      }
+   else if old_State = PAUSE then {
+      # assume? that the watched variable is local to where it is paused
+      procName := image(top_Frame.node)
+      i := find(" ",procName)
+      var ||:= "-" || procName[i+1:0]
+      }
+   insert(watchMask, var)
+   if not member(valueMask, E_Assign) then
+      valueMask[E_Assign] := watchMask
+   Message := "\n\t Watchkpoint successfully set for: "||var
+   Write(Message)
+end
+
+#
+# Sets Break points on line numbers or procedure names
+# [b linenum], [b ProcName], [b file linenum]
+#
+method cmdBreak(cmd)
+   local code, line, arg1, arg2, i, j, x, f
+   local list_ptr             # List of records of type breakPt
+   local break_point, temp_bp # record of type breakPt
+
+   if not (State = (LOAD | PAUSE)) then {
+      State := ERROR
+      #ErrorCode := Error_11
+      Message   := "\n\t No Program is Loaded" ||
+                   "\n\t Type \"help\" for assistance"
+      Write(Message)
+      return
+      }
+   State := SKIP
+
+   # if cmd is only "break"; will print all of the preset breakpoints info
+   if *cmd = 1 then {
+      Message := "\n\t " || cmd[1]
+      every x := key(breakPoints) do {
+         list_ptr := breakPoints[x]
+         i := 1
+         while i <= *list_ptr do {
+            break_point := list_ptr[i]
+            Message ||:= "\n\t File: " || break_point.file_name ||
+                         ", Line: " || break_point.line_num ||
+                         ", Code: " || break_point.code
+            i +:= 1
+	    }
+	 }
+      Write(Message)
+      return
+      }
+ 
+   if *cmd = 2 then {
+      j:= 0
+      f := TP[1]
+      every i:= 1 to *f do
+         if f[i] == "/" then   j := i
+
+      arg1 := f[j+1:0]    #file_argv[1]
+      arg2 := cmd[2]
+      }
+   else if *cmd > 2 then {
+      arg1 := cmd[2]
+      arg2 := cmd[3]
+      }
+
+   arg1 := add_extension(arg1)
+   if member(foundFiles, arg1) then {
+      if line := integer(arg2) then {
+         if 0 < line <= *sourceText then {
+            code := search_file_lines(arg1, line)
+            if \code then {
+               break_point := breakPt(arg1, line, code)
+	       }
+            else {
+               Message   := "\n\t Line number was not found," ||
+                            "\n\t Please try a different line number"
+               Write(Message)
+               return
+	       }
+	    }
+         else {
+            Message := "\n\t Line number is not within the sourcefile"
+            Write(Message)
+            return
+	    }
+	 }
+      else {
+         line := search_file_procs(arg1, arg2)
+         if \line then {
+            break_point := breakPt(arg1,line,sourceText[line + srcIndex[arg1]])
+	    }
+         else {
+            Message   := "\n\t Procedure not found" ||
+                         "\n\t Make sure the method name is correct!"
+            Write(Message)
+            return
+	    }
+	 }
+      
+      # record breakPt(file_name, line_num, code)
+      line := break_point.line_num
+      if member(breakPoints, arg1) then {
+         list_ptr := breakPoints[arg1]
+         i := 1
+         while i <= *list_ptr do {
+            temp_bp := list_ptr[i]
+            if temp_bp.line_num = break_point.line_num then {
+               Message   := "\n\t The break point is already exist," ||
+                            "\n\t Type \"break\" to see all breakpoints"
+               Write(Message)
+               return
+	       }
+            i +:= 1
+	    }
+         put(list_ptr, break_point)
+	 }
+      # put and pull
+      else {
+         list_ptr := []
+         put(list_ptr, break_point)
+         breakPoints[arg1] := list_ptr
+	 }
+
+      # Important for the sake of valuemask 
+      insert(breakMask,line)
+      if not member(valueMask, E_Line) then
+         valueMask[E_Line] := breakMask
+      Message   := "\n\t Breakpoint set successfully in "|| arg1 ||
+                   "\n\t at "|| sourceText[line + srcIndex[arg1]]
+      Write(Message)
+      return
+      }
+   Message   := "\n\t File not found,"||
+                "\n\t Make sure the file name is correct."
+   Write(Message)
+end
+
+#
+# Used by cmdBreak
+#
+method add_extension(arg1)
+   local temp1, temp2
+
+   arg1 ? {
+      temp1 := tab(many(CHARACTER ++ '_'))
+      repeat {
+	 if (temp2 := move(1)) then {
+	    temp1 := temp1 || temp2
+            }
+	 else {
+	    temp1 := temp1 || ".icn"
+            return temp1
+            }
+	 temp2 := tab(many(CHARACTER))
+         if temp2 == "icn" then {
+	    return arg1
+            }
+         }
+      }
+end
+
+#
+# Used by cmdBreak
+# Searchs the fname for a specific linenum, and make sure it is applicable
+# for a breakpoint condition, if it is , it returns that line source code.
+#
+method search_file_lines(fname, linenum)
+   local temp, temp1, wSpace, punct
+
+   wSpace := cset( " \t\n\^m" )
+   punct := (",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
+   temp := sourceText[linenum + srcIndex[fname]]
+
+   # write("temp is == to empty line")
+   temp ? {
+      tab(many(wSpace))
+      if (temp1 := move(1)) then {
+         if temp1 == "#" then {
+            #Message := "\n\t Cannot place a breakpoint at a comment."
+            #write(Message)
+            return &null #NULL
+         }
+         return temp1 := temp1 || tab(many(CHARACTER ++ punct))
+      }
+      else {
+         #Message := "\n\t Cannot place breakpoint on empty line."
+         #write(Message)
+         return &null #NULL
+      }
+   }
+end
+
+#
+# Used by cmdBreak
+# Searchs the Fname for a specific ProcName and returns its linenum
+#
+method search_file_procs(Fname, ProcName)
+   local wSpace, other_char
+   local temp, temp1, linenum
+
+   linenum := 1
+   other_char := ("_")
+   wSpace := cset( " \t\n\^m" )
+
+   while temp := sourceText[linenum + srcIndex[Fname]] do {
+      # write(temp)
+      temp ? {
+         tab(many(wSpace))
+         if(temp1 := tab(many(&letters))) == ("method"|"procedure") then {
+            tab(many(wSpace))
+            temp1 := tab(many(CHARACTER ++ other_char))
+            if temp1 == ProcName then {
+	       return linenum
+	       }
+	    }
+	 }
+      linenum +:= 1
+      }
+   return &null # not NULL
+end
+
+#         
+# General Help Command
+#
+method cmdHelp(cmd)
+
+   #write("\t This is command " || cmd[1])
+   if *cmd = 1 then {
+   case State of {
+    NONE | LOAD | END:{
+      Message :="\n\t Applicable Commands are:_
+                 \n\t load f: loads a program file named f_
+                 \n\t run   : runs the pre-loaded program under UDB_
+                 \n\t break : sets a break point in the source code_
+                 \n\t quit  : quits the current UDB Session_
+                 \n\t help cmd : shows more info about a specific command"
+      }
+    PAUSE:{
+      Message :="\n\t Applicable Commands are:_
+                 \n\t cont  : continue on a ful speed execution after a PAUSE_
+                 \n\t step  : stepping one or more lines in the source code_
+                 \n\t next  : same as step command except treating a \n\t\t_
+                              procedure call as one command or one line of code_
+                 \n\t run   : restarts the execution from the begining_
+                 \n\t where : shows the current location info_
+                 \n\t frame : shows the current stack frame info_
+                 \n\t up    : moves up one ore more stack frame_
+                 \n\t down  : moves down one or more stack frame_
+                 \n\t print : prints out the value of a var in current frame_
+                 \n\t bt    : prints out the back trace_
+                 \n\t break : sets a break point in the source code_
+                 \n\t quit  : quits the current UDB Session_
+                 \n\t help cmd : shows more info about a specific command"
+      }
+    ERROR:{
+      Message :="\n\t Applicable Commands are:_
+                 \n\t where : shows the current location info_
+                 \n\t bt    : prints out the back trace_
+                 \n\t print : prints out the value of a var in current frame_
+                 \n\t run   : restarts the execution from the begining_
+                 \n\t break : sets a break point in the source code_
+                 \n\t quit  : quits the current UDB Session_
+                 \n\t help cmd : shows more info about a specific command"
+      }
+   }# end of case   
+   }
+   else{
+   case cmd[2] of {
+    "load":{
+      Message :="\n\t Loads a program into UDB. Use: \"load program\"_
+                 \n\t load p     : loads program (p)_
+                 \n\t load p arg : loads program (p) with argument (arg)"
+      }
+    "step":{
+      Message :="\n\t Steps into the next line in the source code_
+                 \n\t step   : steps one line_
+                 \n\t step n : steps (n) lines"
+      }
+    "run":{
+      Message :="\n\t Starts (or restarts) program execution_
+                 \n\t run      : runs current loaded program_
+                 \n\t run args : args list passed to program"
+      }
+    "next":{
+      Message :="\n\t next steps to next line even on function calls_
+                 \n\t treats function call as only one operation_
+                 \n\t next   : steps one line_
+                 \n\t next n : steps (n) lines"
+      }
+    "frame":{
+      Message :="\n\t Prints out the Stack Frame info_
+                 \n\t frame   : prints current stack frame info_
+                 \n\t frame n : prints info about stack frame number (n)_
+                 \n\t n=0: current frame, oldest frame has the bigest number_
+                 \n\t look for \"help up\" and \"help down"
+      }
+    "up":{
+      Message :="\n\t Moves current frame pointer up in the execution stack_
+                 \n\t up   : moves current frame pointer one frame up_
+                 \n\t up n : moves current frame pointer (n) frames up_
+                 \n\t look for \"help down\" and \"help frame\""
+      }
+    "down":{
+      Message :="\n\t Moves current frame pointer down in the stack_
+                 \n\t down   : moves current frame pointer one frame down_
+                 \n\t down n : moves current frame pointer (n) frames down_
+                 \n\t look for \"help up\" and \"help frame\""
+      }
+    "quit":{
+      Message :="\n\t quit: Exits UDB. Use: \"quit\""
+      }
+    "help":{
+      Message :="\n\t help: for more help. Try \"help command\""
+      }
+    "print":{
+      Message :="\n\t Prints variable information:_
+                 \n\t print       : prints globals and locals of current frame_
+                 \n\t print var   : prints the var value from current frame_
+                 \n\t print var i : prints tha var value from frame number i_
+                 \n\t print -G    : prints all global vars_
+                 \n\t print -L    : prints all local vars in current frame_
+                 \n\t print -P    : prints all Formal Parameters"
+      }
+    "where":{
+      Message :="\n\t Prints the current position in the Source Code_
+                 \n\t where_
+                 \n\t look for \"help break\""
+      }
+    "cont":{
+      Message :="\n\t Continue to run at full speed after a break point_
+                 \n\t continue_
+                 \n\t look for \"help cont\""
+      }
+    "break":{
+      Message :="\n\t Sets a break point_
+                 \n\t break      : prints all of the pre-set break points_
+                 \n\t break num  : Sets a break at line number (num)_
+                 \n\t break Proc : Sets a break at procedure named \"Proc\""
+      }
+    "watch":{
+      Message :="\n\t Sets a watch point on some var_
+                 \n\t watch          : prints a list of all pre-set watch vars_
+                 \n\t watch var      : break at every line the var can change,_
+                                       if the program is running, it watche for_ 
+                                       var in the local scope, otherwize it_
+                                       assumes that var is a global variable_
+                 \n\t watch var proc : watch for local var in procedure proc"
+      }
+    default:{
+      Message :="\n\t Command not found. Type \"help\" for assistance"
+      } 
+   }#end of case
+   }# end of else
+
+   #make udb console takes no actions 
+   State := SKIP
+   Write(Message)
+end
+
+initially()
+
+   self.Debug.initially()
+
+end

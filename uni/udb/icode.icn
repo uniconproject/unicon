@@ -56,8 +56,7 @@ end
 
 procedure getSrcFileNames(exeName)
    local fNames, s, f, x, w, fn, Z, wordsize, ftmp, i, LLL, j
-   local statrec, word
-   local p1
+   local statrec, word, hdr, p1
 
    statrec := stat(exeName) | stop("can't stat ", image(exeName))
    if not (f := open(exeName,"ru")) then {
@@ -105,11 +104,9 @@ procedure getSrcFileNames(exeName)
 	 hdr.config := move(16 * word)
 	 #write("config=",image(hdr.config))
 	 #write("\t Executable Program is loaded as a 64-bit ")
-	 Message ||:= "\n\t 64-bit "
 	 }
       else{
 	 #write("\t Executable Program is loaded as a 32-bit ")
-	 Message ||:= "\n\t 32-bit "
 	 }
     
       #
@@ -131,12 +128,11 @@ procedure getSrcFileNames(exeName)
 	    &subject := reads(f, hdr.hsize) |
 	       stop("can't read compressed icode")
 	    close(ftmp)
-	    Message ||:="compressed Icode "
 	    }
 	 else stop("can not open a tmpfilename")
          }
       else {
-	 Message ||:="uncompressed Icode "
+	 # uncompressed Icode
 	 }
 
       i := hdr.Filenms
@@ -154,6 +150,5 @@ procedure getSrcFileNames(exeName)
 	     put( fNames, x ) & &fail
 	 }
       }
-   Message ||:= "("|| exeName ||") loaded successfully"
    return fNames
 end

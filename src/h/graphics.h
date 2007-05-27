@@ -329,13 +329,13 @@ typedef struct _wtexture {
       } fattr;
    int       texindex;
    } wtexture, *wtp;
-#endif					/* Graphics3D */
 
 typedef struct _savetexture {
    GLubyte *tex;
    int width, height;
    struct _wbinding *w;
    } stexture, *wvp;
+#endif					/* Graphics3D */
 
 /*
  * "Context" comprises the graphics context, and the font (i.e. text context).

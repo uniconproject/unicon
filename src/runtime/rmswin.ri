@@ -298,6 +298,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    BlkLoc(ws->listp) = (union block *)lp;
    ws->width = ws->height = 0;
    wc = w->context;
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+	               malloc(wc->maxstex*sizeof(struct _savetexture));
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;
@@ -1076,7 +1079,9 @@ int wclose(wbp w)
    wsp ws = w->window;
    wbp tmp_wb;
    wbp p;
+   wcp wc = w->context;
    struct wbind_list *wbl, *t, *b;
+   int i;
    
    if (pollevent() == -1) return -1;
    while (w->window->children) {
@@ -1113,6 +1118,14 @@ int wclose(wbp w)
      w->window->parent=NULL;
      p->refcount--;
    }
+
+   /* Free textures from memory */
+   for (i=0; i<wc->curtexture; i++) {
+        free(wc->stex[i].tex);
+        wc->stex[i].w=0;
+        }
+   free(wc->stex);
+
 
    if (ws->win && ws->refcount > 1) {
       /*
@@ -4767,6 +4780,9 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
    ws->width = ws->height = 0;
    wc = w->context;
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+	malloc(wc->maxstex*sizeof(struct _savetexture));
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;
@@ -4993,6 +5009,7 @@ char my_wmap(wbp w)
    w->context->nalced = 16;
    w->context->ntextures = 0;
    w->context->curtexture = -1;
+   w->context->buffermode=IMMEDIATE3D;
 
    /* set up the appropriate opengl states */
    glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);

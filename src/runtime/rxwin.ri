@@ -951,6 +951,7 @@ wbp w;
    wbp tmp_wb;
    wbp p;
    struct wbind_list *wbl, *t, *b;
+   int i;
 
    STDLOCALS(w);
 
@@ -996,6 +997,15 @@ wbp w;
       w->window->parent=NULL;
       p->refcount--;
       }
+
+   /* Free textures from memory */
+   for (i=0; i<wc->curtexture; i++) {
+        free(wc->stex[i].tex);
+        wc->stex[i].w=0;
+        }
+   free(wc->stex);
+
+
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
       XDestroyWindow(stddpy,stdwin);
@@ -1248,6 +1258,9 @@ int wmap(wbp w)
    XClassHint clhints;
 
    STDLOCALS(w);
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+                 malloc(wc->maxstex*sizeof(struct _savetexture));
 
    /*
     *  Create a pixmap for this canvas if there isn't one already.
@@ -4539,6 +4552,9 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    w->context->is_3D = ws->is_3D = is_3d;
    w->context->buffermode = IMMEDIATE3D;
 #endif					/* Graphics3D */
+   w->context->maxstex=16;
+   w->context->stex = (struct _savetexture *) 
+                    malloc(w->context->maxstex*sizeof(struct _savetexture));
    return 1;
 }
 

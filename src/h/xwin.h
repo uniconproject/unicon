@@ -179,6 +179,9 @@
  * The name field is the string returned by WAttrib.  For a mutable
  * color this is of the form "-47" followed by a second C string
  * containing the current color setting.
+ *
+ * Note the structure is a simple array with a hash table superimposed
+ * 
  */
 typedef struct wcolor {
    int		refcount;
@@ -186,6 +189,7 @@ typedef struct wcolor {
    unsigned short r, g, b;		/* rgb for colorsearch */
    unsigned long	c;		/* X pixel value */
    int           type;			/* SHARED or MUTABLE */
+   int prev, next;			/* hash table bucket prev/next */
 } *wclrp;
 
 /*

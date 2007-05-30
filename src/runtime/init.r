@@ -985,10 +985,11 @@ Deliberate Syntax Error
 #endif					/* COMPILER */
 
    mainhead->title = T_Coexpr;
-   mainhead->id = 1;
    mainhead->size = 1;			/* pretend main() does an activation */
+   mainhead->id = 1;
    mainhead->nextstk = NULL;
    mainhead->es_tend = NULL;
+   mainhead->tvalloc = NULL;
    mainhead->freshblk = nulldesc;	/* &main has no refresh block. */
 					/*  This really is a bug. */
 #ifdef MultiThread

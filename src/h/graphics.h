@@ -279,6 +279,7 @@ typedef struct _wdisplay {
   int           numColors;		/* allocated color info */
   int		sizColors;		/* # elements of alloc. color array */
   struct wcolor	*colors;
+  int		buckets[16384];		/* hash table for quicker lookups */
   Cursor	cursors[NUMCURSORSYMS];
   struct _wdisplay *previous, *next;
 } *wdp;

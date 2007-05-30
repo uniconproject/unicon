@@ -546,6 +546,8 @@ void detectRedirection();
       wclrp	alc_rgb			(wbp w, char *s, unsigned int r,
 					   unsigned int g, unsigned int b,
 					   int is_iconcolor);
+      wclrp	alc_rgb2		(wbp w, char *s, unsigned int r,
+					   unsigned int g, unsigned int b);
       int	alc_centry		(wdp wd);
       wclrp	alc_color		(wbp w, char *s);
       void	copy_colors		(wbp w1, wbp w2);

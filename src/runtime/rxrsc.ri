@@ -12,6 +12,47 @@ int okfont(char *spec, int size, int flags);
 int fontcmp(char *font1, char *font2, int size, int flags);
 
 
+int colorhash(int r, int g, int b)
+{
+   return (((r * 37) + g) * 37 + b) & 16383;
+}
+
+int bucklookup(wdp wd, int r, int g, int b)
+{
+   int i = colorhash(r, g, b);
+   int wc;
+   wc = wd->buckets[i];
+   while (wc != -1) {
+      if (r == wd->colors[wc].r && g == wd->colors[wc].g &&
+	  b == wd->colors[wc].b) {
+	 return wc;
+	 }
+      wc = wd->colors[wc].next;
+      }
+   return -1;
+}
+
+int buckdelete(wdp wd, wclrp wc)
+{
+   int i = colorhash(wc->r, wc->g, wc->b);
+   if (wd->colors[wd->buckets[i]].prev != -1)
+       wd->colors[wd->colors[wd->buckets[i]].prev].next = wc->next;
+   if (wd->colors[wd->buckets[i]].next != -1)
+       wd->colors[wd->colors[wd->buckets[i]].next].prev = wc->prev;
+
+   if (wd->buckets[i] == wc-wd->colors) wd->buckets[i] = wc->next;
+}
+
+int buckinsert(wdp wd, wclrp wc)
+{
+   int i = colorhash(wc->r, wc->g, wc->b);
+   wc->prev = -1;
+   wc->next = wd->buckets[i];
+   if (wd->buckets[i] != -1) wd->colors[wd->buckets[i]].prev = wc - wd->colors;
+   wd->buckets[i] = wc - wd->colors;
+}
+
+
 /*
  * Allocate a color given linear r, g, b. Colors are shared on a
  * per-display basis, but they are often freed on a per-window basis,
@@ -71,17 +112,8 @@ int is_iconcolor;
    g = color.green;
    b = color.blue;
 
-   /*
-    * Search for the color in w's display
-    */
-   for (i = 2; i < wd->numColors; i++) {
-      if (wd->colors[i].refcount>0 &&
-	  wd->colors[i].type == SHARED &&
-          color.red == wd->colors[i].r &&
-          color.green == wd->colors[i].g &&
-          color.blue == wd->colors[i].b)
-         break;
-      }
+   if ((i = bucklookup(wd, r, g, b)) == -1)
+      i = wd->numColors;
 
    if (i >= wd->numColors) {
       int j;
@@ -118,23 +150,212 @@ int is_iconcolor;
       wd->colors[j].c = color.pixel;
       wd->colors[j].type = SHARED;
       (*theColors)[(*numColors)++] = j;
+      buckinsert(wd, &(wd->colors[j]));
       return &(wd->colors[j]);
       }
    else {
       /* color is found, alias it and put it in the window color table */
       static lastfound; /* exploit locality to speedup someday */
+      static lastlastfound; /* exploit locality to speedup someday */
       int k;
-      for(k=0; k < *numColors; k++){
+
+      if (lastfound && (*theColors)[lastfound] == i) return &(wd->colors[i]);
+      if (lastlastfound && (*theColors)[lastlastfound] == i)
+	 return &(wd->colors[i]);
+
+      for(k=*numColors-1; k >= 0; k--){
          if ((*theColors)[k] == i) {
 	    /* already there, no further action needed */
+	    lastlastfound = lastfound;
+	    lastfound = k;
 	    return &(wd->colors[i]);
             }
          }
       wd->colors[i].refcount++;
       (*theColors)[(*numColors)++] = i;
+      lastlastfound = lastfound;
+      lastfound = *numColors-1;
       return &(wd->colors[i]);
       }
    }
+/*
+*  Allocate color on TrueColor Display
+*/
+static int highbit(ul)
+     unsigned long ul;
+{
+
+  /* returns position of highest set bit in 'ul' as an integer (0-31),
+   or -1 if none */
+
+  int i;  unsigned long hb;
+  hb = 0x8000;  hb = (hb<<16);  /* hb = 0x80000000UL */
+  for (i=31; ((ul & hb) == 0) && i>=0;  i--, ul<<=1);
+  return i;
+}
+
+wclrp alc_rgbTrueColor(w,r,g,b)
+wbp w;
+unsigned long r,g,b;
+   {   
+   LinearColor lc;
+   XColor color;
+   unsigned long rmask, gmask, bmask;
+   int rshift, gshift, bshift;
+   Visual *vis = w->window->vis;    
+   wdp wd = w->window->display;
+
+   /*
+    * Old, slower version used to change into server-dependent R G B here
+    */
+   color.red = r;
+   color.green = g;
+   color.blue = b;
+
+   /* shift r,g,b so that high bit of 16-bit color specification is 
+    * aligned with high bit of r,g,b-mask in visual, 
+    * AND each component with its mask,
+    * and OR the three components together
+    */
+
+   r = color.red;  g = color.green;  b = color.blue;
+
+   rmask = vis->red_mask;
+   gmask = vis->green_mask;
+   bmask = vis->blue_mask;
+
+   rshift = 15 - highbit(rmask);
+   gshift = 15 - highbit(gmask);
+   bshift = 15 - highbit(bmask);
+
+   /* shift the bits around */
+   if (rshift<0) r = r << (-rshift);
+   else r = r >> rshift;
+
+   if (gshift<0) g = g << (-gshift);
+   else g = g >> gshift;
+
+   if (bshift<0) b = b << (-bshift);
+   else b = b >> bshift;
+
+   r = r & rmask;
+   g = g & gmask;
+   b = b & bmask;
+
+   wd->colors[2].c = r | g | b;    /*  pixel value */
+
+   /* put 'exact' colors into red,green,blue fields */
+   /* shift the bits BACK to where they were, now that they've been masked */
+   if (rshift<0) r = r >> (-rshift);
+            else r = r << rshift;
+
+   if (gshift<0) g = g >> (-gshift);
+            else g = g << gshift;
+
+   if (bshift<0) b = b >> (-bshift);
+            else b = b << bshift;
+
+   wd->colors[2].r = r;  wd->colors[2].g = g;  wd->colors[2].b = b;
+ 
+   return  &(wd->colors[2]);;
+}
+
+/*
+*
+*/
+
+wclrp alc_rgb2(w,s,r,g,b)
+wbp w;
+char *s;
+unsigned int r,g,b;
+   {
+   LinearColor lc;
+   XColor color;
+   int i;
+   int *numColors;
+   int *sizColors;
+   short **theColors;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
+
+   /*
+    * handle black and white specially (no allocation)
+    */
+   if ((r == 0) && (g == 0) && (b == 0))
+      return &(wd->colors[0]);
+   if ((r == 65535) && (g == 65535) && (b == 65535))
+      return &(wd->colors[1]);
+
+      if (ws->theColors == NULL) {
+	 ws->theColors = (short *)calloc(WMAXCOLORS*2, sizeof(short));
+	 if (ws->theColors == NULL) return NULL;
+	 ws->sizColors = WMAXCOLORS*2;
+	 }
+      numColors = &(ws->numColors);
+      sizColors = &(ws->sizColors);
+      theColors = &(ws->theColors);
+
+   /*
+    * Old, slower version used to change into server-dependent R G B here
+    */
+   color.red = r;
+   color.green = g;
+   color.blue = b;
+
+   {
+   int wc = bucklookup(wd, r, g, b);
+   if (wc != -1) {
+      i = wc;
+      }
+   else i = wd->numColors;
+   }
+
+   if (i >= wd->numColors) {
+      int j;
+      /*
+       * color not found, must allocate
+       * first verify there is room in window color table.
+       */
+      if (*numColors >= *sizColors-1) {
+	 if (*numColors >= 2 << DefaultDepth(wd->display, wd->screen))
+	    return NULL;
+	 (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
+	 *sizColors *= 2;
+	 /*
+	  * reallocated color table to *sizColors
+	  */
+         }
+
+      if (!XAllocColor(stddpy, wd->cmap, &color)) {
+	 /* try again with a virtual colormap (but not for an icon) */
+	 if (!go_virtual(w) ||
+	     !XAllocColor(stddpy, wd->cmap, &color))
+            return NULL;
+         }
+
+      j = alc_centry2(wd, wd->numColors);
+      if (j == 0)
+         return NULL;
+      strcpy(wd->colors[j].name, s);
+      /*
+       * Store server color as requested in color table.
+       */
+      wd->colors[j].r = r;
+      wd->colors[j].g = g;
+      wd->colors[j].b = b;
+      wd->colors[j].c = color.pixel;
+      wd->colors[j].type = SHARED;
+      (*theColors)[(*numColors)++] = j;
+      buckinsert(wd, &(wd->colors[j]));
+      return &(wd->colors[j]);
+      }
+   else {
+      /* color is found, alias it and put it in the window color table */
+      return &(wd->colors[i]);
+      }
+   }
+
 
 /*
  * allocate a color entry, return index (or 0 if table is full)
@@ -147,12 +368,24 @@ wdp wd;
    for (j = 2; j < wd->sizColors; j++)
       if (wd->colors[j].refcount == 0)
 	 break;
+   return alc_centry2(wd, j);
+}
+
+int alc_centry2(wd, j)
+wdp wd;
+int j;
+   {
+int i;
+
    if (j >= wd->sizColors-1) {
       if (j >= 2 << DefaultDepth(wd->display, wd->screen)) return 0;
       wd->colors = realloc(wd->colors,
 			   wd->sizColors * 2 * sizeof (struct wcolor));
       if (wd->colors == NULL) return 0;
-      for(i=wd->sizColors;i<wd->sizColors*2;i++) wd->colors[i].refcount=0;
+      for(i=wd->sizColors;i<wd->sizColors*2;i++) {
+	 wd->colors[i].refcount=0;
+	 wd->colors[i].prev = wd->colors[i].next = -1;
+	 }
       wd->sizColors *= 2;
       /*
        * reallocated color table to wd->sizColors
@@ -164,6 +397,7 @@ wdp wd;
       return 0;		/* internal confusion */
 
    wd->colors[j].refcount = 1;
+   wd->colors[j].prev = wd->colors[j].next = NULL;
    return j;
 }
 
@@ -244,6 +478,7 @@ unsigned long c;
       }
    else {
       if (--(wd->colors[ws->theColors[i]].refcount) == 0) {
+	 buckdelete(wd, &(wd->colors[ws->theColors[i]]));
 	 XFreeColors(stddpy, wd->cmap, &c, 1, 0);
 	 ws->numColors--;
 	 if (ws->numColors != i)
@@ -410,6 +645,8 @@ char *s;
       wd->colors[1].c = WhitePixel(wd->display,wd->screen);
    wd->numColors = 2;
 
+   {int i; for(i=0; i<16384; i++)
+    wd->buckets[i] = -1; }
    /*
     * Set the default gamma correction value for windows that are
     * opened on this display.  Start with configuration default,

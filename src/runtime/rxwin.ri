@@ -1298,14 +1298,17 @@ int wmap(wbp w)
 #ifdef Graphics3D 
       if (ws->is_3D) {
          attr.colormap = 
-   				 XCreateColormap(wd->display, RootWindow(wd->display, wd->vis->screen), wd->vis->visual, AllocNone);
+	    XCreateColormap(wd->display,
+			    RootWindow(wd->display, wd->vis->screen),
+			    wd->vis->visual, AllocNone);
          ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
 		        XCreateWindow (stddpy, DefaultRootWindow(stddpy), 
-                                  ws->posx < 0 ? 0 : ws->posx, 
-				            ws->posy < 0 ? 0 : ws->posy, 
-                                  ws->width,  ws->height, 0, 
-				           wd->vis->depth, InputOutput, wd->vis->visual, 
-				           CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
+					ws->posx < 0 ? 0 : ws->posx, 
+					ws->posy < 0 ? 0 : ws->posy, 
+					ws->width,  ws->height, 0, 
+					wd->vis->depth, InputOutput,
+					wd->vis->visual,
+					CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
 	}
 	else
 #endif					/* Graphics3D */     
@@ -1384,7 +1387,8 @@ int wmap(wbp w)
    if (imd->width) {
       r = strimage(w, 0, 0, imd->width, imd->height, imd->paltbl,
          imd->data, (word)imd->width * (word)imd->height, 0);
-      free((pointer)imd->paltbl);
+      if (imd->paltbl)
+	 free((pointer)imd->paltbl);
       free((pointer)imd->data);
       imd->width = 0;
       if (r < 0)
@@ -3419,18 +3423,50 @@ int on_icon;
       }
    }
    else {
+      int lastr=-1, lastg=-1, lastb=-1, count = 0;
+      wclrp cp;
       iy = 0;
-      while (iy < height) {
-	 ix = 0;
-	 while (ix < width) {
-	    int b = *s++ * 257;
-	    int g = *s++ * 257;
-	    int r = *s++ * 257;
-	    wclrp cp = alc_rgb(w,"anon", r, g, b, 0);
-	    XPutPixel(im, ix++, iy, cp->c);
+
+      /*
+       * test for availability of true color display
+       *  otherwise allocate new colors
+       */ 
+      
+	if (w->window->vis->class == TrueColor)
+	   while (iy < height) {
+	      ix = 0;
+	      while (ix < width) {
+	         int r = *s++ * 257;
+	    	 int g = *s++ * 257;
+	    	 int b = *s++ * 257;
+	    	 if (r==lastr && g == lastg && b == lastb){
+	            count++;
+	         }
+	         else{
+		    cp = (wclrp) alc_rgbTrueColor(w, r, g, b);
+		    lastr = r; lastg = g; lastb = b;
+		 }
+	         XPutPixel(im, ix++, iy, cp->c);	         
+	       }
+	     iy++;
 	    }
-	 iy++;
-	 }
+	else
+	   while (iy < height) {
+	      ix = 0;
+	      while (ix < width) {
+	         int r = *s++ * 257;
+	    	 int g = *s++ * 257;
+	    	 int b = *s++ * 257;
+	    	 if (r==lastr && g == lastg && b == lastb){
+	            count++;
+	         }
+	         else
+	            cp = alc_rgb2(w,"anon", r, g, b);
+	         XPutPixel(im, ix++, iy, cp->c);
+	         lastr = r; lastg = g; lastb = b;
+	       }
+	     iy++;
+	    }
       }
    /*
     * Put it on the screen.
@@ -4579,6 +4615,9 @@ char my_wmap(wbp w)
    char child_window=1;
 
 /*   STDLOCALS(w); */
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+                 malloc(wc->maxstex*sizeof(struct _savetexture));
 
 #ifdef Graphics3D
     if (ws->is_3D) child_window = 2;

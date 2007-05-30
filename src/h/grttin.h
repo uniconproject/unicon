@@ -81,7 +81,7 @@
       else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
       MakeInt(value, &(curpstate->parent->eventval));
       if (!is:null(curpstate->valuemask) &&
-	  !invaluemask(curpstate, event, &(curpstate->parent->eventval)))
+	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
    } while (0)
@@ -99,7 +99,7 @@
       else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
       curpstate->parent->eventval = *(dp);
       if (!is:null(curpstate->valuemask) &&
-	  !invaluemask(curpstate, event, &(curpstate->parent->eventval)))
+	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
    } while (0)
@@ -114,7 +114,7 @@
       parent->eventval.dword = D_Coexpr;
       BlkLoc(parent->eventval) = (union block *)(bp);
       if (!is:null(curpstate->valuemask) &&
-	  !invaluemask(curpstate, event, &(curpstate->parent->eventval)))
+	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
    } while (0)
@@ -391,6 +391,20 @@ typedef int siptr, stringint, inst;
          }
    #enddef				/* OptWindow */
    
+   #begdef OptTexWindow(w)
+      if (argc>warg && is:record(argv[warg])) {
+	/* set a boolean flag, use a texture */
+	is_texture=1;
+	/* Get the Window from Texture record */
+	w = BlkLoc(BlkLoc(argv[warg])->record.fields[3])->file.fd.wb;
+        /* Pull out the texture handler */
+	texhandle = IntVal(BlkLoc(argv[warg])->record.fields[2]);
+	/* get the context from the window binding */
+	warg=0;
+      }
+      else OptWindow(w); 
+   #enddef   /* OptTexWindow */
+
    #begdef ReturnWindow
          if (!warg) return kywd_xwin[XKey_Window];
          else return argv[0]

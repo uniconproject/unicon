@@ -810,27 +810,36 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 
 #ifdef MultiThread
 
+/*
+ * Determine whether an event (value) is in a mask for a given event code.
+ */
 int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    {
-   unsigned char ec = (unsigned char)evcode;
    int rv;
    uword hn;
    union block **foo, **bar;
+   /*
+    * Build a Unicon string for the event code.
+    */
+   unsigned char ec = (unsigned char)evcode;
    struct descrip d;
    StrLoc(d) = &ec;
    StrLen(d) = 1;
+
+   if (! is:table(p->valuemask)) return Error;
    hn = hash(&d);
    foo = memb(BlkLoc(p->valuemask), &d, hn, &rv);
    if (rv == 1) {
       /* found a value mask for this event code; use it */
       d = (*foo)->telem.tval;
+      if (! is:set(d)) return Error;
       hn = hash(val);
       foo = memb(BlkLoc(d), val, hn, &rv);
-      if (rv == 1) return 1;
-      return 0;
+      if (rv == 1) return Succeeded;
+      return Failed;
       }
    else { /* no value mask for this code, let anything through */
-      return 1;
+      return Succeeded;
       }
    }
 #endif					/* MultiThread */

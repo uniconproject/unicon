@@ -43,7 +43,6 @@ extern struct descrip maps3;	/* third argument to map() */
 extern struct descrip nulldesc;	/* null value */
 extern struct descrip onedesc;	/* one */
 extern struct descrip ucase;	/* uppercase string */
-extern struct descrip unwinder;
 extern struct descrip zerodesc;	/* zero */
 
 extern word mstksize;		/* size of main stack in words */

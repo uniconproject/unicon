@@ -770,7 +770,34 @@ function{1} DrawLine(argv[argc])
       int i, j, n, warg = 0, draw_code;
       XPoint points[MAXXOBJS];
       int dx, dy;
-      OptWindow(w);
+      double x1,x2,y1,y2;
+      int int_x1, int_x2, int_y1, int_y2;
+      int is_texture=0, base=0;
+      int texhandle;
+      OptTexWindow(w);
+      if (is_texture) {
+	 base=warg;
+	 CheckArgMultiple(4);
+
+	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
+	 if (!cnv:C_double(argv[base+1], x1)) runerr(102, argv[base+1]);
+	 if (!cnv:C_double(argv[base+2], y1)) runerr(102, argv[base+2]);
+	 if (!cnv:C_double(argv[base+3], x2)) runerr(102, argv[base+3]);
+	 if (!cnv:C_double(argv[base+4], y2)) runerr(102, argv[base+4]);
+
+	 /* Convert line co-ordinates to integer values */
+	 int_x1 = (int) x1;
+	 int_x2 = (int) x2;
+	 int_y1 = (int) y1;
+	 int_y2 = (int) y2;
+
+	 if (x1-int_x1>0.5) int_x1++;
+	 if (x2-int_x2>0.5) int_x2++;
+	 if (y1-int_y1>0.5) int_y1++;
+	 if (y2-int_y2>0.5) int_y2++;
+	 TexDrawLine(w, texhandle, int_x1, int_y1, int_x2, int_y2);
+	 ReturnWindow;
+	 }
 
 #ifdef Graphics3D
       if (w->context->is_3D){
@@ -860,7 +887,30 @@ function{1} DrawPoint(argv[argc])
       XPoint points[MAXXOBJS];
       int dx, dy;
 
-      OptWindow(w);
+      double x,y;
+      double *v, v2[256];
+      int int_x, int_y;
+      int is_texture=0, base=0;
+      int texhandle;
+
+      OptTexWindow(w);
+      if (is_texture) {
+	 base=warg;
+	 CheckArgMultiple(3); 
+
+	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
+	 if (!cnv:C_double(argv[base+1], x)) runerr(102, argv[base+1]);
+	 if (!cnv:C_double(argv[base+2], y)) runerr(102, argv[base+2]);
+
+	 /* Convert line co-ordinates to integer values */
+	 int_x = (int) x;
+	 int_y = (int) y;
+
+	 if (x - int_x > 0.5) int_x++;
+	 if (y - int_y > 0.5) int_y++;
+	 TexDrawPoint(w, texhandle, int_x, int_y);
+	 ReturnWindow;
+	 }
   
 #ifdef Graphics3D
       if (w->context->is_3D) {
@@ -985,7 +1035,7 @@ function{1} DrawPolygon(argv[argc])
  
          /* draw the polygon */
          CheckArgMultiple(w->context->dim);
-         if (w->context->buffermode) {
+	 if (w->context->buffermode) {
 	    drawpoly(w, v, argc-warg, GL_LINE_LOOP, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
@@ -1317,14 +1367,18 @@ function{0,1} Fg(argv[argc])
       }
    body {
       wbp w;
+      wcp wc;
       char sbuf1[MaxCvtLen];
       int len;
       tended char *tmp;
-	char *temp;
-
+      char *temp;
+      int is_texture=0;
+      int texhandle;
       int warg = 0;
-
-      OptWindow(w);
+      OptTexWindow(w);
+      if (is_texture) {
+	warg=1;
+      }
 
       /*
        * If there is a (non-window) argument we are setting by
@@ -2139,35 +2193,47 @@ function{0,1} ReadImage(argv[argc])
       wbp w;
       char filename[MaxFileName + 1];
       tended char *tmp;
-      int status, warg = 0;
+      int status, warg = 0, base=0;
       C_integer x, y;
       int p, r;
       struct imgdata imd;
-      OptWindow(w);
+      int is_texture=0; 
+      int texhandle;
+
+      OptTexWindow(w);
+
+      if (is_texture)
+	 base=1;
+
 
       if (argc - warg == 0)
-	 runerr(103,nulldesc);
-      if (!cnv:C_string(argv[warg], tmp))
-	 runerr(103,argv[warg]);
+	 runerr(103,nulldesc);	
+      if (!cnv:C_string(argv[base], tmp))
+	 runerr(103,argv[base]);
 
       /*
        * x and y must be integers; they default to the upper left pixel.
        */
-      if (argc - warg < 2) x = -w->context->dx;
-      else if (!def:C_integer(argv[warg+1], -w->context->dx, x))
-         runerr(101, argv[warg+1]);
-      if (argc - warg < 3) y = -w->context->dy;
-      else if (!def:C_integer(argv[warg+2], -w->context->dy, y))
-         runerr(101, argv[warg+2]);
+      if (argc - base < 2)
+	 x = -w->context->dx;
+      else if (!def:C_integer(argv[base+1], -w->context->dx, x))
+	 runerr(101, argv[warg+1]);
+
+
+      if (argc - base < 3)
+	 y = -w->context->dy;
+      else if (!def:C_integer(argv[base+2], -w->context->dy, y))
+         runerr(101, argv[base+2]);
+
 
       /*
        * p is an optional palette name.
        */
-      if (argc - warg < 4 || is:null(argv[warg+3])) p = 0;
+      if (argc - base < 4 || is:null(argv[base+3])) p = 0;
       else {
-         p = palnum(&argv[warg+3]);
+         p = palnum(&argv[base+3]);
          if (p == -1)
-            runerr(103, argv[warg+3]);
+            runerr(103, argv[base+3]);
          if (p == 0)
             fail;
          }
@@ -2178,12 +2244,21 @@ function{0,1} ReadImage(argv[argc])
       filename[MaxFileName] = '\0';
 
       /*
-       * First try to read as a GIF file.
+       * First try to read as a GIF file, BMP  or JPG.
        * If that doesn't work, try platform-dependent image reading code.
        */
       r = readGIF(filename, p, &imd);
       if (r != Succeeded) r = readBMP(filename, p, &imd);
+#if HAVE_LIBJPEG	
+      if (r != Succeeded) r = readJPEG(filename, p, &imd);
+#endif
       if (r == Succeeded) {
+
+	 if (is_texture) {
+	    if (texhandle>w->context->maxstex) runerr(102, argv[warg]);
+	    return C_integer (word) TexReadImage(w, texhandle, x, y, &imd);
+	    }
+
          status = strimage(w, x, y, imd.width, imd.height, imd.paltbl,
 			   imd.data, (word)imd.width * (word)imd.height, 0);
          if (status < 0)
@@ -3299,7 +3374,6 @@ function{1} DrawTorus(argv[argc])
          if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
 	 if (bfmode)
 	    torus(r1, r2, x, y, z,(w->context->texmode?w->context->autogen:0));
-
 	 /* create a record of the graphical object */	   
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	 f.dword = D_Record;
@@ -3316,6 +3390,7 @@ function{1} DrawTorus(argv[argc])
          c_put(&(w->window->funclist), &f);
          }
    
+	/* Since we are using double buffers, swap */
       if (bfmode)
 	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
@@ -3361,7 +3436,7 @@ function{1} DrawCube(argv[argc])
          if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
          if (!cnv:C_double(argv[i+2], z)) runerr(102, argv[i+2]);
          if (!cnv:C_double(argv[i+3], l)) runerr(102, argv[i+3]);  
-	 if (bfmode) 
+	 if (bfmode)
 	    cube(l, x, y, z, (w->context->texmode?w->context->autogen:0));
         
 	 /*
@@ -3425,8 +3500,8 @@ function{1} DrawSphere(argv[argc])
 	 if (!cnv:C_double(argv[i+1], y))  runerr(102, argv[i+1]);
 	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
-         if (bfmode) 
-   	    sphere(r, x, y, z, (w->context->texmode?w->context->autogen:0));
+	 if (bfmode)
+	    sphere(r, x, y, z, (w->context->texmode?w->context->autogen:0));
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3450,7 +3525,7 @@ function{1} DrawSphere(argv[argc])
       if (bfmode)
 	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
-    }
+      }
 end
 
 
@@ -3493,9 +3568,8 @@ function{1} DrawCylinder(argv[argc])
 	 if (!cnv:C_double(argv[i+3], h))  runerr(102, argv[i+3]);  
 	 if (!cnv:C_double(argv[i+4], r1)) runerr(102, argv[i+4]);
 	 if (!cnv:C_double(argv[i+5], r2)) runerr(102, argv[i+5]);
-	 if (bfmode) 
-	    cylinder(r1,r2,h,x,y,z,(wc->texmode ? wc->autogen : 0));
-
+	 if (bfmode)
+	    cylinder(r1, r2, h, x, y, z, (wc->texmode ? wc->autogen : 0));
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
          f.dword = D_Record;
@@ -3512,7 +3586,6 @@ function{1} DrawCylinder(argv[argc])
 	    rp->fields[2 + j - i] = argv[j];
          c_put(&(w->window->funclist), &f);
          }
-
       if (bfmode)
 	 glXSwapBuffers(w->window->display->display, w->window->win);
       return f;
@@ -4080,6 +4153,10 @@ function{1} Texture(argv[argc])
       if (draw_code == -1)
 	fail; 
       MakeInt(draw_code, &(rp->fields[1]));
+      if (argc > 0 && is:file(argv[0]))
+	rp->fields[3] = argv[0];
+      else
+	rp->fields[3] = kywd_xwin[XKey_Window];
 
       if (argc - warg > 1) { /* replace an existing texture "name" */
 	 C_integer theTexture;
@@ -4108,7 +4185,6 @@ function{1} Texture(argv[argc])
       wc->ntextures++;
       }
       MakeInt(wc->curtexture, &(rp->fields[2]));
-      rp->fields[3] = nulldesc;
       c_put(&(w->window->funclist), &f);
 
       /* check if the source is another window */

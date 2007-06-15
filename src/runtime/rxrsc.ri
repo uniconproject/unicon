@@ -548,6 +548,8 @@ int extent;
 
       if (--(wd->colors[j].refcount) == 0) {
 	 toFree[freed++] = wd->colors[j].c;
+	 /* unlink it from the link list */
+	 buckdelete(wd, &(wd->colors[j]));
          }
       }
    if (freed>0)

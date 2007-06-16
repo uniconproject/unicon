@@ -1138,7 +1138,10 @@ function{0,1} read(f)
 	 if (status & Fs_Socket)
 	    runerr(1048, f);
 	 status &= ~Fs_Unbuf;
+#ifdef Graphics
+	 /* windows never turn on buffering */
 	 if (! (status & Fs_Window))
+#endif					/* Graphics */
 	    status |= Fs_Buff;
 	 BlkLoc(f)->file.status = status;
 	 }

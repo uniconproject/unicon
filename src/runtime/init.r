@@ -116,9 +116,8 @@ extern struct errtab errtab[];		/* error numbers and messages */
 word mstksize = MStackSize;		/* initial size of main stack */
 word stksize = StackSize;		/* co-expression stack size */
 
-int k_level = 0;			/* &level */
-
 #ifndef MultiThread
+int k_level = 0;			/* &level */
 struct descrip k_main;			/* &main */
 #endif					/* MultiThread */
 
@@ -991,6 +990,7 @@ Deliberate Syntax Error
    mainhead->es_tend = NULL;
    mainhead->tvalloc = NULL;
    mainhead->freshblk = nulldesc;	/* &main has no refresh block. */
+   mainhead->tvalloc = NULL;
 					/*  This really is a bug. */
 #ifdef MultiThread
    mainhead->program = &rootpstate;
@@ -1914,6 +1914,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->T_errornumber = 0;
    pstate->Have_errval = 0;
    pstate->T_have_val = 0;
+   pstate->K_level = 0;
    pstate->K_errortext = "";
    pstate->K_errorvalue = nulldesc;
    pstate->T_errorvalue = nulldesc;

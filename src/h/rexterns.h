@@ -24,7 +24,6 @@ extern dptr *quallist;		/* start of qualifier list */
 extern int bsizes[];		/* sizes of blocks */
 extern int firstd[];		/* offset (words) of first descrip. */
 extern uword segsize[];		/* size of hash bucket segment */
-extern int k_level;		/* value of &level */
 
 extern struct b_coexpr *stklist;/* base of co-expression stack list */
 extern struct b_cset blankcs;   /* ' ' */
@@ -109,6 +108,7 @@ extern struct b_real realzero;		/* real zero block */
    extern struct b_file k_output;	/* value of &output */
    extern struct descrip k_errorvalue;	/* value of &errorvalue */
    extern struct descrip kywd_err;	/* &error */
+   extern int k_level;			/* &level */
    extern struct descrip kywd_pos;	/* descriptor for &pos */
    extern struct descrip kywd_prog;	/* descriptor for &prog */
    extern struct descrip kywd_ran;	/* descriptor for &random */

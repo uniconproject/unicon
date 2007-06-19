@@ -1988,9 +1988,9 @@ function{*} keyword(keyname,ce)
 	 }
       else if (strcmp(kname,"level") == 0) {
 	 /*
-	  * Bug; levels aren't maintained per program yet.
-	  * But shouldn't they be per co-expression, not per program?
+	  * Shouldn't &level be per co-expression, not per program?
 	  */
+	 return C_integer p->K_level;
 	 }
       else if (strcmp(kname,"line") == 0) {
 	 struct progstate *savedp = curpstate;

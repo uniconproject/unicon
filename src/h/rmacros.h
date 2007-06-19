@@ -773,6 +773,7 @@
       
       #define k_current     (curpstate->K_current)
       #define k_errornumber (curpstate->K_errornumber)
+      #define k_level       (curpstate->K_level)
       #define k_errortext   (curpstate->K_errortext)
       #define k_errorvalue  (curpstate->K_errorvalue)
       #define have_errval   (curpstate->Have_errval)

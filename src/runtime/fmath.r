@@ -40,6 +40,14 @@ MathOp(cos, cos,  ", x in radians.", ;, ;)
 MathOp(tan, tan,  ", x in radians.", ; , erange)
 MathOp(acos,acos, ", x in radians.", aroundone, edom)
 MathOp(asin,asin, ", x in radians.", aroundone, edom)
+
+#if NT
+double atanh(double x)
+{
+   return 0.5 * ln((1 + x) / (1 - x));
+}
+#endif
+
 MathOp(atanh,atanh, ", x in radians.", aroundone, edom)
 MathOp(exp, exp,  " - e^x.", ; , erange)
 MathOp(sqrt,sqrt, " - square root of x.", positive, edom)

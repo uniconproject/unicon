@@ -44,7 +44,7 @@ MathOp(asin,asin, ", x in radians.", aroundone, edom)
 #if NT
 double atanh(double x)
 {
-   return 0.5 * ln((1 + x) / (1 - x));
+   return 0.5 * 2.302585093 * log((1 + x) / (1 - x));
 }
 #endif
 

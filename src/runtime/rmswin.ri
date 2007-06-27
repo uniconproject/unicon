@@ -981,6 +981,16 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	 ws->hasCaret = 1;
          }
       break;
+   case WM_CLOSE: {
+        if (ws->inputmask & WindowClosureMask) {
+	   struct descrip d;
+	   MakeInt(WINDOWCLOSED, &d);
+	   qevent(ws, &d, 0, 0, 0, 0);
+	   return 0;
+	   }
+	break;
+	}
+
    /* case WM_QUIT is handled prior to the switch*/
    case WM_DESTROY: {
       wbp tmp_wb, w = wb;
@@ -1122,10 +1132,11 @@ int wclose(wbp w)
    /* Free textures from memory */
    for (i=0; i<wc->curtexture; i++) {
         free(wc->stex[i].tex);
-        wc->stex[i].w=0;
+        wc->stex[i].w = 0;
         }
    free(wc->stex);
 
+   ws->inputmask &= ~WindowClosureMask;
 
    if (ws->win && ws->refcount > 1) {
       /*
@@ -1226,7 +1237,10 @@ int wputc(int ci, wbp w)
 
    if (w == (wbp)ConsoleBinding) {
         geteditregion(ws->child, &result);
+
       while (StrLen(result) + 2 > 32700) {
+	/* remove a line from the beginning of the buffer */
+
 	 while((StrLen(result) > 0) && (StrLoc(result)[0] != '\n')) {
 	    StrLoc(result) ++;
 	    StrLen(result) --;
@@ -1241,7 +1255,8 @@ int wputc(int ci, wbp w)
 	else { c2[0] = c; c2[1] = '\0'; }
         alcstr(c2, strlen(c2)+1);
 	seteditregion(w->window->child, catenation);
-	setchildselection(w->window, w->window->child, StrLen(result), StrLen(result)+strlen(c2));
+	setchildselection(w->window, w->window->child,
+			  StrLen(result), StrLen(result)+strlen(c2));
 	return 0;
 }
 #endif					/* ScrollingConsoleWin */

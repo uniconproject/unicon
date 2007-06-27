@@ -1237,10 +1237,10 @@ function{0,1} read(f)
 
 #ifdef PseudoPty
 	   if (status & Fs_Pty) {
-	      struct timeval timeout;
+/*	      struct timeval timeout;
 	      timeout.tv_sec = 1L;
-	      timeout.tv_usec = 0L;
-	      if ((slen = ptlongread(sbuf, MaxReadStr, fp)) == -1)
+	      timeout.tv_usec = 0L; */
+	      if ((slen = ptgetstr(sbuf, MaxReadStr, fp, 0)) == -1)
 		 fail;
 	      }
 	 else
@@ -1313,7 +1313,7 @@ function{0,1} reads(f,i)
       int Maxread = 0;
       long tally, nbytes;
       int status;
-      FILE *fp;
+      FILE *fp = NULL;
       tended struct descrip s;
 
       /*
@@ -1344,6 +1344,19 @@ function{0,1} reads(f,i)
 	 }
       else
 #endif                                  /* Messaging */
+
+#ifdef PseudoPty
+      if (status & Fs_Pty) {
+	 struct ptstruct *p = (struct ptstruct *)BlkLoc(f)->file.fd.fp;
+	 tended char *s = alcstr(NULL, i);
+	 if ((slen = ptlongread(s, i, p)) == -1) {
+	    fail;
+	    }
+	 return string(slen, s);
+	 }
+      else
+#endif                                  /* PseudoPty */
+
 
 #ifdef PosixFns
         if (status & Fs_Socket) {
@@ -1861,6 +1874,13 @@ end
    else
 #endif					/* Graphics */
 
+#ifdef PseudoPty
+		     if (status & Fs_Pty) {
+			ptputc('\n', f.fp);
+			}
+		     else
+#endif					/* PseudoPty */
+
 #if HAVE_LIBZ
    if (status & Fs_Compress) {
       if (gzputc((gzFile)(f.fp),'\n')==-1) {
@@ -1920,6 +1940,9 @@ end
 #ifdef Graphics
    if (!(status & Fs_Window)) {
 #endif					/* Graphics */
+#ifdef PseudoPty
+   if (!(status & Fs_Pty)) {
+#endif
 #ifdef RecordIO
       if (status & Fs_Record)
 	 flushrec(f.fp);
@@ -1967,6 +1990,9 @@ end
       } /* End of else if - not the console window we're writing to */
 #endif					/* PresentationManager */
 #endif					/* Graphics */
+#ifdef PseudoPty
+   }
+#endif					/* PseudoPty */
 #ifdef Messaging
    }
 #endif					/* Messaging */
@@ -2093,6 +2119,13 @@ function {1} name(x[nargs])
 		     else {
 #endif					/* Graphics */
 
+#ifdef PseudoPty
+		     if (status & Fs_Pty) {
+			ptputc('\n', f.fp);
+			}
+		     else
+#endif					/* PseudoPty */
+
 #if HAVE_LIBZ
                      if (status & Fs_Compress) {
 			if (gzputc(f.fp,'\n')==-1)
@@ -2207,6 +2240,11 @@ function {1} name(x[nargs])
 		  else
 #endif					/* Graphics */
 
+#ifdef PseudoPty
+		  if (status & Fs_Pty)
+		     ptputstr(f.fp, StrLoc(t), StrLen(t));
+		  else
+#endif
 
 #if HAVE_LIBZ
 	          if (status & Fs_Compress){

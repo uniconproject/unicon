@@ -1640,7 +1640,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
    int bytes_read=0, tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
 #ifndef WIN32
    fd_set rd_set;
-   struct timeval timeout;
+   struct timeval timeout, *timeoutp = NULL;
 #endif
 
    if(buffer == NULL || ptStruct == NULL)
@@ -1651,59 +1651,82 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
    /* clear the buffer */
    memset(buffer,0,sizeof(buffer));
 
-   timeout.tv_sec = 0L;
-   timeout.tv_usec=waittime;
+   if (!longread) {
+      timeout.tv_sec  = 0L;
+      timeout.tv_usec = waittime;
+      timeoutp = &timeout;
+      }
 
    /* set the wait file descriptor for use with select */
    wait_fd = ptStruct->master_fd+1;
   
    /* set file descriptor sets for reading with select */
    FD_ZERO(&rd_set);
-   if (ptStruct->master_fd > -1)
+   if (ptStruct->master_fd > -1) {
       FD_SET(ptStruct->master_fd,&rd_set);
+      }
    else
       return -1;
 
-  /* if select returns without any errors and
-     if the characters are availabe to read from input ...*/
+  /*
+   * if select returns without any errors and
+   * if the characters are available to read from input ...
+   */
 #endif /* WIN32 */
 
 #ifdef WIN32
    /* clear the buffer */
    ZeroMemory(buffer,bufsiz);
-   if(WaitForSingleObject(ptStruct->master_read,waittime) != WAIT_FAILED)
+   if(WaitForSingleObject(ptStruct->master_read,waittime) != WAIT_FAILED) {
 #else
-   if((ret=select(wait_fd,&rd_set,NULL,NULL,&timeout)) > 0
-      && FD_ISSET(ptStruct->master_fd,&rd_set) )
+
+
+   if((ret=select(wait_fd,&rd_set,NULL,NULL,timeoutp)) > 0
+      && FD_ISSET(ptStruct->master_fd,&rd_set) ) {
+
 #endif /* WIN32 */
-    while(!premstop
-	  && tot_bytes_read < bufsiz 
+
+    while(!premstop && tot_bytes_read < bufsiz 
+
 #ifdef WIN32
-	  && (ret=ReadFile(ptStruct->master_read,&buffer[i],1,&bytes_read,NULL)) != 0) {
+	  && (ret=ReadFile(ptStruct->master_read,&buffer[i],1,
+			   &bytes_read,NULL)) != 0) {
 #else
        && (bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
 #endif // WIN32
-	     if(!longread && buffer[i] == '\n')
+	     if(!longread && buffer[i] == '\n') {
+		if (buffer[i-1] == '\r') tot_bytes_read--;
 		premstop=1;
+		}
 	     tot_bytes_read += bytes_read;
       i++;
+
 #ifdef WIN32
 #else
       FD_ZERO(&rd_set);
       FD_SET(ptStruct->master_fd,&rd_set);
 #endif // WIN32
-	     }
+
+       }
+       }
+
 #ifdef WIN32
       else ret = -1;
-      if(ret == 0)
-	 ret=-1;
+      if (ret == 0)
+	 ret = -1;
+#else
+else {
+   }
 #endif					/* WIN32 */
+
+
    /* if some bytes were read than return the number read */
-   if(tot_bytes_read > 0) {
+   if (tot_bytes_read > 0) {
+      if(!longread && premstop) tot_bytes_read--;
       return tot_bytes_read;
-  /* else if no bytes were read at all than return an error code */
       }
-   else if(tot_bytes_read == 0) {
+  /* else if no bytes were read at all than return an error code */
+   else if (tot_bytes_read == 0) {
       return -1;
       }
    /* else return the value returned by select */
@@ -1712,7 +1735,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
 
 int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct, struct timeval *timeout)
 {
-   return ptgetstrt(buffer, bufsiz, ptStruct, 0, 0);
+   return ptgetstrt(buffer, bufsiz, ptStruct, 10000000, 0);
 #if 0
   presumably subsumed above
   fd_set rd_set;

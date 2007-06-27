@@ -366,7 +366,7 @@ typedef int siptr, stringint, inst;
          if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
          if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
-	    runerr(142,argv[warg]);
+	    fail;
          (w) = BlkLoc(argv[warg])->file.fd.wb;
 #ifdef ConsoleWindow
          if ((((FILE*)(w)) != ConsoleBinding) &&
@@ -376,7 +376,7 @@ typedef int siptr, stringint, inst;
 	   (w) = (wbp)OpenConsole();
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))
-	    runerr(142,argv[warg]);
+	    fail;
          warg++;
          }
       else {
@@ -384,10 +384,10 @@ typedef int siptr, stringint, inst;
 	      (BlkLoc(kywd_xwin[XKey_Window])->file.status & Fs_Window)))
 	    runerr(140,kywd_xwin[XKey_Window]);
          if (!(BlkLoc(kywd_xwin[XKey_Window])->file.status & (Fs_Read|Fs_Write)))
-	    runerr(142,kywd_xwin[XKey_Window]);
+	    fail;
          (w) = (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd.fp;
          if (ISCLOSED(w))
-	    runerr(142,kywd_xwin[XKey_Window]);
+	    fail;
          }
    #enddef				/* OptWindow */
    

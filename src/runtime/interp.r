@@ -117,9 +117,9 @@ word xnargs;
    ExInterp;
 #enddef					/* Setup_Arg */
 
-#begdef Call_Cond
+#begdef Call_Cond(e)
    if ((*(optab[lastop]))(rargp) == A_Resume) {
-     InterpEVValD(&lastdesc, e_ofail);
+     InterpEVValD(&lastdesc, e);
      goto efail_noev;
    }
    rsp = (word *) rargp + 1;
@@ -323,10 +323,6 @@ Deliberate Syntax Error
 #ifndef MultiThread
 dptr clintsrargp;
 #endif
-
-#ifdef MultiThread
-static struct descrip unwinder;
-#endif					/* MultiThread */
 
 #begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal)
 
@@ -729,23 +725,23 @@ Deliberate Syntax Error
 	    Setup_Op(1, e_ocall);
 	    HandleOVLD(1);
 	    DerefArg(1);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 
 	 case Op_Value: 	/* .e */
             Setup_Op(1, e_ocall);
             DerefArg(1);
-            Call_Cond;
+            Call_Cond(e_ofail);
 
 	 case Op_Nonnull:	/* \e */
 	 case Op_Null:		/* /e */
 	    Setup_Op(1, e_ocall);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 
 	 case Op_Random:	/* ?e */
 	    PushNull;
 	    Setup_Op(2, e_ocall)
 	    HandleOVLD(1);
-	    Call_Cond
+	    Call_Cond(e_ofail)
 
 				/* Generative unary operators */
 
@@ -792,22 +788,22 @@ Deliberate Syntax Error
 	    HandleOVLD(2);
 	    DerefArg(1);
 	    DerefArg(2);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 
 	 case Op_Asgn:		/* e1 := e2 */
 	    Setup_Op(2, e_ocall);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 
 	 case Op_Swap:		/* e1 :=: e2 */
 	    PushNull;
 	    Setup_Op(3, e_ocall);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 
 	 case Op_Subsc: 	/* e1[e2] */
 	    PushNull;
 	    Setup_Op(3, e_ocall);
 	    HandleOVLD(2);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 				/* Generative binary operators */
 
 	 case Op_Rasgn: 	/* e1 <- e2 */
@@ -825,7 +821,7 @@ Deliberate Syntax Error
 	    PushNull;
 	    Setup_Op(4, e_ocall);
 	    HandleOVLD(4);
-	    Call_Cond;
+	    Call_Cond(e_ofail);
 				/* Generative ternary operators */
 
 	 case Op_Toby:		/* e1 to e2 by e3 */
@@ -1414,10 +1410,6 @@ Eret_uw:
 
 
 	 case Op_Pret: {	/* return from procedure */
-#ifdef MultiThread
-	   struct descrip oldargp;
-#endif					/* MultiThread */
-
 	    /*
 	     * An Icon procedure is returning a value.	Determine if the
 	     *	value being returned should be dereferenced and if so,
@@ -1428,9 +1420,6 @@ Eret_uw:
 	     */
 	    struct b_proc *rproc;
 	    rproc = (struct b_proc *)BlkLoc(*glbl_argp);
-#ifdef MultiThread
-            oldargp = *glbl_argp;
-#endif					/* MultiThread */
 #if e_prem || e_erem
 	    ExInterp;
             vanq_proc(efp, gfp);
@@ -1457,16 +1446,9 @@ Pret_uw:
 
                EVVal(A_Pret_uw, e_intret);
                EVVal(DiffPtrs(sp, stack), e_stack);
-#ifdef MultiThread
-	       unwinder = oldargp;
-#endif					/* MultiThread */
 	       return A_Pret_uw;
 	       }
 	   
-#ifdef MultiThread
-	   if (!is:proc(oldargp) && is:proc(unwinder))
-	      oldargp = unwinder;
-#endif					/* MultiThread */
 	    rsp = (word *)glbl_argp + 1;
 	    efp = pfp->pf_efp;
 	    gfp = pfp->pf_gfp;
@@ -2234,7 +2216,7 @@ register struct b_coexpr *ncp;
    else
       first = 1;
 
-   if(ccp->tvalloc) {
+   if (ccp->tvalloc) {
      if (InRange(blkbase,ccp->tvalloc,blkfree)) {
        fprintf(stderr,
 	       "Multiprogram garbage collection disaster in mt_activate()!\n");

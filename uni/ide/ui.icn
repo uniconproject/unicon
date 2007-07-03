@@ -4,9 +4,9 @@
 #
 #	Subject:  Unicon IDE, an integrated programming environment
 #
-#	Authors:  Nolan Clayton and Clinton Jeffery
+#	Authors:  Hani Bani Salameh, Nolan Clayton and Clinton Jeffery
 #
-#	Date:     May 16, 2004
+#	Date:     July 2, 2007
 #
 ############################################################################
 #
@@ -14,13 +14,12 @@
 #  for Unicon.  It is gradually gaining features and usability.
 #
 #  To do:
-#	replace TextDialog() and Notice() with gui.icn equivalents
 #	keyboard shortcuts
 #	multiple edit regions.
 #	
 ############################################################################
 #
-#  Requires:  graphics
+#  Requires:  graphics, version 2 GUI libraries, and ivib
 #
 ############################################################################
 #
@@ -28,1719 +27,283 @@
 #
 ############################################################################
 
-    
-link font_dlg
-link graphics
-link io
+import gui
+$include "guih.icn"
+link mainbar
+link getpaths
+link classbrowser
+
+global pnlToolbar, MsgBox, EditBoxt, FileTabSet, ClassTabSet, DevTabSet,
+       FileBrowser, linebreak, dialogself, browser, docpath
+
+#$define lpr "enscript -b \" \" -1 -Plex3normal"
+##$define HELP_PATH "help"
+
+$ifdef _UNIX
+   $define PS  "/"
+$else
+   $define PS  "\\"
+$endif
+
 $ifdef _UNIX
    $define PATHSEP "/"
 $else # implies Windows for now
    $define PATHSEP "\\"
 $endif
-global  targs, browser, docpath, xargs, icodename, wiconlog,
-   project,
-   findstr,
-   foundline,
-   foundcol,
-   height,
-   width,
-   font,
-   fontheight,
-   msglines,
-   linebreak,
-   ui_ini
-
-global tmp
-
-class dialog : _Dialog(message_menu, classb_menu, window_menu,
-                       ViewClassNormal_menu_item, ViewClass50_menu_item, ViewClass100_menu_item,
-                       ViewMsgNormal_menu_item, ViewMsg50_menu_item, ViewMsg100_menu_item,
-                       ViewShowHide_menu_item, ViewFilesClass_menu_item,
-                       icbViewAll,icbViewFiles,icbViewFilesMsg,pnlToolbar,
-                       ViewAll_menu_item,ViewFiles_menu_item,ViewFilesMsg_menu_item,
-                       icbRun,icbMakeExe, icbMethod,icbClass,icbProcedure,icbFind,icbUndo,
-                       icbPaste,icbCopy,icbCut,icbSaveFile,icbCloseFile,icbOpenFile,icbNewFile,
-                       InsertMethod,InsertClass,InsertProcedure,FileTabSet,DevTabSet,
-                       tab_item_3,ClassTabSet,tab_item_2,tab_set_2,tab_item_1,tab_set_1,
-                       FileBrowser,new_menu_item, openfile, closefile, print_menu_item,
-                       save_menu_item,saveas_menu_item, ivib_menu_item, exit_menu_item,
-                       copy_menu_item, cut_menu_item,paste_menu_item,EditBox,MsgBox,
-                       find_menu_item,replace_menu_item,goto_menu_item,
-                       matchparen_menu_item,undo_menu_item,font_menu_item,saveoptions_menu_item,
-                       make_exec_menu_item,compile_menu_item,compile_options_menu_item,
-                       run_menu_item,run_arg_menu_item,project_add_menu_item,
-                       help_about,help_prog_env,help_tutorial,help_graphics,help_ipl,
-                       help_ivib,help_iconfaq,help_uniconfaq,browse_local,
-                       browse_net,help_icon_reference,help_unicon_reference, file_menu,
-                       select_all_menu_item,unix_newlines,dos_newlines
-                       )
 
 
-   #
-   # copy to clipboard
-   #
-   method copy_to_clipboard(l)
-   local large_str, i
-      if /l | *l = 0 then fail
-      large_str := l[1]
-      every i := 2 to *l do large_str ||:= "\n" || l[i]
-      WAttrib(self.win,"selection=" || large_str)
-      return large_str
+class UIDE : Dialog(menu_1, menu_bar, tab_item_1, tab_item_2, tab_item_3, close_menu_item, exit_menu_item, file_menu, ivib_menu_item, new_menu_item, open_menu_item, print_menu_item, save_menu_item, saveas_menu_item, copy_menu_item, cut_menu_item, find_menu_item, goto_menu_item, matchparen_menu_item, menu_2, paste_menu_item, replace_menu_item, select_all_menu_item, undo_menu_item, uide, menu_separator_1, menubar)
+   method component_setup()
+      self.setup()
+
+      pnlToolbar := Panel()
+      pnlToolbar.set_pos("0", "25")
+      pnlToolbar.set_size("100%", "25")
+      pnlToolbar.set_draw_border()
+      pnlToolbar.set_attribs("bg=light whitish gray", "resize=on")
+      self.add(pnlToolbar)
+      menubar.Menubar()
+      ide.Toolbar(pnlToolbar) #This call to add a toolbar
+#      FileBrowser.addreplace("file_contents", "tab_label", 0)
+
    end
 
-   #
-   # get list from clipboard
-   #
-   method get_list_from_clipboard()
-   local large_str, l, str
-      large_str := WAttrib(self.win, "selection")
-      if /large_str then fail
-      l := []
-      large_str ? {
-         while put(l, tab(upto("\n"))) do move(1)
-         put(l, tab(0))
-         }
-      return l
-   end
-   
-   #
-   # copy the current selection to the clipboard
-   #
-   method handle_copy_menu_item(ev)
-   local copylst
-      copylst := CurrentEditBox().get_selection() | []		#copy it
-      tmp := CurrentEditBox().get_selection()			#copy it
-      copy_to_clipboard(copylst)
+   method IDEDialog()
    end
 
-   #
-   # cut the current selection, leave it in the clipboard
-   #
-   method handle_cut_menu_item(ev)
-      handle_copy_menu_item(ev)
-      CurrentEditBox().cut_selection()
-   end
+#
+# Set Doc Path Proc:
+#
+method set_docpath()
+match("Binaries at ", docpath := &features) |
+Notice("What, no binaries?" ||
+	"Have you added Unicon's bin directory to your path?")
+docpath ?:= (="Binaries at " & tab(0))
+if map(docpath[-4:0])==("bin/"|"bin\\") then docpath[-4:0] := ""
+else write("did not find expected Unicon binaries in a bin/ directory")
+end
 
-   #
-   # replace the current selection with what is in the clipboard
-   #
-   method handle_paste_menu_item(ev)
-   local s
-      s := []
-      CurrentEditBox().set_selection(tmp)
-      
-      #  s := get_list_from_clipboard()
-      #  CurrentEditBox().set_selection(s)
-      
-   end
-
-   #
-   # New Menu Item Method
-   #
-   method handle_new_menu_item(ev)
-      FileTabSet.new_tabitem()  
-      CurrentEditBox().set_contents([""])
-      CurrentEditBox().set_attribs("font=" || \font)
-      CurrentTabItem().setfilename(&null)
-      set_focus(CurrentEditBox())
-   end
-
-   #
-   #  Open File Menu Item Method
-   #
-   method handle_openfile(ev, filename)
-      local line, L, nchars, fd, file, tab_label, found, which_tab
-
-      if /filename then {
+#
+# main initialization procedure
+#
+method ui_initialize()
+local f, line
+ui_ini := getenv("UNICONINI") | "ui.ini"
+height := 400
+width := 600
+msglines := 7
+font := "sans,15"
+linebreak := "LF"                      # default to UNIX mode
+if f := open(ui_ini) then {
+while line := read(f) do {
+	line ? {
+	if ="msglines" then {
+	tab(upto(&digits))
+	msglines := integer(tab(many(&digits)))
+	}
+	else if ="height" then {
+	tab(upto(&digits))
+	height := integer(tab(many(&digits)))
+	}
+	else if ="width" then {
+	tab(upto(&digits))
+	width := integer(tab(many(&digits)))
+	}
+	else if ="font" then {
+	tab(many('= \t'))
+	font := tab(0)
+	}
+	else if ="linebreak" then {
+	tab(many('= \t'))
+	linebreak := tab(0)
+	}
+	}
+	}
+close(f)
+}
+wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
+if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
+xargs := ""
 $ifdef _UNIX
-         fd := FileDialog()
-         fd.set_extra_attribs(["label=Open File ..."])
-         fd.show_modal(self)
-         filename := fd.get_result() | fail
+every browser := getenv("BROWSER") | "netscape" | "mozilla"| "opera" do {
+if stat(getpaths() || browser) then {
+	MsgBox.set_contents(["found browser " || browser])
+	break
+	}
+else browser := &null
+}
 $else
-            filename := WinOpenDialog(self.win, "Open File ...", "", 50) | fail
+(browser := "\"" || WinAssociate("HTM") || "\"" ) |
+write(
+	"What, no browser?  Unicon's online help won't be readable until you\n_
+	associate an HTML reader application with the HTM file extension.\n")
 $endif
-         }
-      
-      if /filename | filename=="" | filename[-1]==("\\"|"/") then 
-         return MsgBox.set_label(["Enter File Name"])
-      
-      if  map(filename)[-4:0] == ".icp" then { # open project
-         project := filename
-         updateproject()
-         }
-
-      if  filename[-2:0]==(".*") then filename := filename[1:-2] 
-      
-      file := open(filename, "ru") | {
-         MsgBox.set_contents(["Could not open file: " || filename])
-         return
-      }
-      
-      tab_label :=  file_name(filename)
-      found := 1
-
-      # A loop to check whether or not the file is already open
-      # or if there is a different file open with the same name
-      while \found do {
-
-         which_tab := FileTabSet.get_tabitem(tab_label)
-         if \which_tab then  {
-            
-            if which_tab.getfilename() == filename then {
-               # The file is already open so set the focus on that file
-               FileTabSet.set_which_one(which_tab)
-               set_focus(CurrentEditBox())
-               fail
-               }
-            
-            # We have different files with the same name, so 
-            # add <#> to the label name and repeat the loop        
-            else {
-	       found +:= 1 
-	       if found > 2 then tab_label := tab_label[1:-3] 
-	       tab_label := tab_label || "<"|| found ||">"
-               }
-            }
-         # the file is not open but has the same name of another
-         # exit loop and add <#> to the label and display it
-         else found := &null 
-         }
-      
-      MsgBox.set_contents(MsgBox.get_contents() |||
-			  ["Reading " || filename || "..."])
-      L := []
-      nchars := 0
-      while line := read(file) do { put(L, line); nchars +:= *line + 1 }
-      
-      FileTabSet.new_tabitem()  
-      CurrentEditBox().set_contents(L)
-      CurrentEditBox().set_attribs("font=" || \font)
-
-      FileBrowser.addreplace(L, tab_label, 0)
-      
-      MsgBox.set_contents(["opened " || filename || ", " || *L ||
-                           " lines, " || nchars || " characters"])
-
-      CurrentTabItem().setfilename(filename)
-      CurrentTabItem().set_label(tab_label)
-      handle_update()      
-   end
-
-   #
-   # Close File Menu Item Method
-   #
-   method handle_closefile(ev, c)
-      FileBrowser.nodereplace(CurrentTabItem().get_label() )
-      if /c then c :=  CurrentTabItem()
-      if *FileTabSet.components = 1 then handle_new_menu_item()
-      FileTabSet.remove(c)
-      handle_update()
-   end
-
-   #
-   # Update Method
-   #
-   method handle_update()
-      self.resize()
-      ClassTabSet.set_which_one(ClassTabSet.which_one)
-      DevTabSet.set_which_one(DevTabSet.which_one)
-      FileTabSet.set_which_one(FileTabSet.get_which_one())
-      pnlToolbar.display()
-      self.resize()
-      set_focus(CurrentEditBox())
-   end
-
-# $define lpr "lpr -Plex3normal"
-$define lpr "enscript -b \" \" -1 -Plex3normal"
-
-   #
-   # Print Menu Item Method
-   #
-   method handle_print_menu_item(ev)
-      local f, L, line
-      L := CurrentEditBox().get_contents() | []
-      if f := open(lpr, "pw") then {
-	  every line := !L do {
-	      line := trim(line, '\^m')
-	      write(f, line)
-	  }
-	  close(f)
-      }
-      else
-      MsgBox.set_contents(["Sorry, no printing yet."])
-   end
-   
-   method handle_save_file(filename)  
-      local file, l, line
-
-      l := CurrentEditBox().get_contents() | []
-      file := open(filename, "cu") | {
-         MsgBox.set_contents([filename || ": failure to open for writing."])
-         fail
-         }
-
-      every line := !l do {
-         line := trim(line, '\^m')
-         if linebreak == "CRLF" then write(file, line, "\^m")
-         else
-            write(file, line)
-         }
-      close(file)
-
-      MsgBox.set_contents([filename || " saved."])
-      CurrentEditBox().clear_modified()
-      if map(filename[-4:0]) == ".icp" then updateproject()
-      FileBrowser.addreplace(CurrentEditBox().get_contents(),
-                             CurrentTabItem().get_label()  , 0)
-
-      handle_update()      
-   end
-
-   #
-   # Save Menu Item Method
-   #
-   method handle_save_menu_item(ev)
-      if /CurrentTabItem().getfilename() then {
-         handle_saveas_menu_item(ev)
-         return
-         }
-      handle_save_file(CurrentTabItem().getfilename())
-   end
-
-   #
-   #  Save As Menu Item Method
-   #
-   method handle_saveas_menu_item(ev)
-      local fd, filename, foo
-
-$ifdef _UNIX
-      fd := FileDialog()
-      fd.set_extra_attribs(["label=Save file As:"])
-      fd.show_modal(self)
-      filename := fd.get_result() | fail
-$else
-      filename := WinSaveDialog(self.win, "Save file As:", "", 50) | fail
-      if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
-$endif
-      
-      if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-         MsgBox$set_contents(["Enter File Name to save"])
-         return
-         }    
-      
-      if \project then {
-         # Resolve absolute versus relative paths and not add absolute
-         # if relative is already in the project.  Brute force version in place.
-         if (not find(map(filename), map(("" | (chdir() || PATHSEP)) || (!file_menu.menus).get_label()))) & find(".icn"|".u",filename) then {
-            foo := TextMenuItem()
-            foo.set_label(filename)
-            file_menu.add(foo)
-            self.resize()			# recalc with new components in place
-         }
-      }
-      
-      CurrentTabItem().setfilename( filename )
-      handle_save_file(filename)
-      
-      if find(".icp", map(filename)) then { # open project
-         project := filename
-         updateproject()
-      }
-      handle_update()
-   end
-
-   #
-   #  Ivib Menu Item Method
-   #
-   method handle_ivib_menu_item(ev)
-      local L := []
-      prompt_save()
-      if /CurrentTabItem().getfilename() then {
-         CurrentTabItem().setfilename("untitled_ivibsession.icn")
-         }
-      system("ivib " || CurrentTabItem().getfilename(), L) | write("system failed")
-      MsgBox.set_contents(L)
-      handle_openfile( , CurrentTabItem().getfilename())
-   end
-
-   #
-   # Prompt Save Method
-   #
-   method prompt_save()
-      if \ (CurrentEditBox().modified) then {
-         case SelectDialog((\CurrentTabItem().getfilename()|"File") || " is modified, save it?",,,
-                           ["Yes", "Save As", "No", "Cancel"]) of {
-                              "Yes": {
-                                 if \CurrentTabItem().getfilename() then
-                                    handle_save_file(CurrentTabItem().getfilename())
-
-                                 else handle_saveas_menu_item()
-                              }
-                              "Save As": {
-                                 handle_saveas_menu_item()
-                              }
-                              "Cancel": {
-                                 fail
-                              }
-                           }
-      }
-   end
-
-   #
-   # Exit Menu Item Method
-   #
-   method handle_exit_menu_item(ev)
-      prompt_save()
-      dispose()
-   end
-
-   #
-   #  Compile Menu Item Method
-   #
-   method handle_compile_menu_item(ev)
-      local command, str, compile_options, log1, lst
-      MsgBox.set_contents([""])
-      lst := []
-
-      if /CurrentTabItem().getfilename() then { # current file null
-         MsgBox$set_contents(["Open a file to compile "])
-         return
-         }
-      /targs := ""
-      
-$ifdef _UNIX
-      system("unicon -c " || " " || targs || " " ||
-             comp1file(CurrentTabItem().getfilename()) || " > " || wiconlog||
-	     " 2>&1", lst, 1)
-$else
-      system("wunicon -c -quiet -log " || quotes(wiconlog) || " " || targs ||
-	     " " || comp1file(CurrentTabItem().getfilename()), lst, 1)
-$endif
-
-      showanyerror(wiconlog, lst)
-   end
-
-   #
-   #  quotes Method
-   #
-   method quotes(s)
-      if find(" ", s) then s := "\"" || s || "\""
-      return s
-   end
-
-   #
-   # comp1file Method
-   #
-   method comp1file(s)
-      local extended
-      if find(".u", map(s)) then return ""  # do not compile .u files
-      s[find(".icn", map(s)) : 0] := "" # truncate extension
-      # check file attributes; if .u exists and is newer, use it.
-      if newer(s||".u", s||".icn") then fail
-      extended := s || ".icn"
-      #   extended := s || (if newer(s||".u", s||".icn") then ".u" else ".icn")
-      return quotes(extended)
-   end
-
-   #
-   #  system Method
-   #
-   method system(s, lst, apnd)
-      local rv
-
-      if /s then fail
-      /lst := []
-      if /apnd then while pop(lst)
-      put(lst,s)
-      WAttrib("pointer=wait")
-      rv := proc("system", 0)(s)
-      WAttrib("pointer=arrow")
-      
-      if \rv then return rv
-   end
-
-   #
-   # default Method
-   #
-   method handle_default(ev)
-      if ev.event === &resize then {
-         self.resize()
-         self.display()
-         }
-      else {
-         x := ev.get_component()
-         if find("TextMenuItem", type(x)) then {
-            # unidentified text menu item, must be a file to open
-            handle_openfile(ev, x.get_label())
-            }
-         }
-      if ev.event === -11 then                 #Close Dialog !!!
-         handle_exit_menu_item(ev)
-
-   end
-   
-   #
-   # Dialog Event Method
-   #
-   method dialog_event(ev)
-      case ev.get_component() of {
-         icbNewFile : handle_icbNewFile(ev)
-         icbOpenFile : handle_icbOpenFile(ev)
-         icbCloseFile : handle_icbCloseFile(ev)
-         icbSaveFile : handle_icbSaveFile(ev)
-         icbCut : handle_icbCut(ev)
-         icbCopy : handle_icbCopy(ev)
-         icbPaste : handle_icbPaste(ev)
-         icbFind : handle_icbFind(ev)
-         icbUndo: handle_icbUndo(ev)
-         icbProcedure: handle_icbProcedure(ev)
-         icbClass: handle_icbClass(ev)
-         icbMethod: handle_icbMethod(ev)
-         icbMakeExe: handle_icbMakeExe(ev)
-         icbRun: handle_icbRun(ev)
-         icbViewAll :handle_icbViewAll(ev)
-         icbViewFiles :handle_icbViewFiles(ev)
-         icbViewFilesMsg :handle_icbViewFilesMsg(ev)
-         
-         ViewAll_menu_item:handle_ViewAll_menu_item(ev)
-         ViewFiles_menu_item : handle_ViewFiles_menu_item(ev)
-         ViewFilesMsg_menu_item : handle_ViewFilesMsg_menu_item(ev)
-         ViewFilesClass_menu_item: handle_ViewFilesClass_menu_item(ev)
-         ViewShowHide_menu_item: handle_ViewShowHide_menu_item(ev)
-
-         ViewClassNormal_menu_item: handle_ViewClassNormal_menu_item(ev)   
-         ViewClass50_menu_item: handle_ViewClass50_menu_item(ev)
-         ViewClass100_menu_item: handle_ViewClass100_menu_item(ev)
-
-         ViewMsgNormal_menu_item: handle_ViewMsgNormal_menu_item(ev)
-         ViewMsg50_menu_item: handle_ViewMsg50_menu_item(ev) 
-         ViewMsg100_menu_item: handle_ViewMsg100_menu_item(ev)
-
-         InsertProcedure : handle_InsertProcedure(ev)
-         InsertClass : handle_InsertClass(ev)
-         InsertMethod : handle_InsertMethod(ev)
-
-         FileBrowser : handle_FileBrowser(ev)
-         select_all_menu_item : handle_select_all_menu_item(ev)
-         
-         unix_newlines : handle_unix_newlines(ev)
-         dos_newlines : handle_dos_newlines(ev)
-
-         help_icon_reference : handle_help_icon_reference(ev)
-         help_unicon_reference : handle_help_unicon_reference(ev)
-
-         browse_local : handle_browse_local(ev)
-         browse_net : handle_browse_net(ev)
-
-         help_iconfaq : handle_help_iconfaq(ev)
-         help_uniconfaq : handle_help_uniconfaq(ev)
-         help_prog_env : handle_help_prog_env(ev)
-         help_tutorial : handle_help_tutorial(ev)
-         help_graphics : handle_help_graphics(ev)
-         help_ipl : handle_help_ipl(ev)
-         help_ivib : handle_help_ivib(ev)
-         help_about : handle_help_about(ev)
-
-         project_add_menu_item : handle_project_add_menu_item(ev)
-         make_exec_menu_item : handle_make_exec_menu_item(ev)
-         compile_menu_item : handle_compile_menu_item(ev)
-         compile_options_menu_item : handle_compile_options_menu_item(ev)
-         run_menu_item : handle_run_menu_item(ev)
-         run_arg_menu_item : handle_run_arg_menu_item(ev)
-         
-         font_menu_item : handle_font_menu_item(ev)
-         saveoptions_menu_item : handle_saveoptions_menu_item(ev)
-         find_menu_item : handle_find_menu_item(ev)
-         replace_menu_item : handle_replace_menu_item(ev)
-         goto_menu_item : handle_goto_menu_item(ev)
-         matchparen_menu_item : handle_matchparen_menu_item(ev)
-         undo_menu_item : handle_undo_menu_item(ev)
-         EditBox : handle_EditBox(ev)
-         MsgBox : handle_MsgBox(ev)
-         new_menu_item : handle_new_menu_item(ev)
-         openfile : handle_openfile(ev)
-         closefile : handle_closefile(ev)
-         print_menu_item : handle_print_menu_item(ev)
-         save_menu_item : handle_save_menu_item(ev)
-         saveas_menu_item : handle_saveas_menu_item(ev)
-         ivib_menu_item : handle_ivib_menu_item(ev)
-         exit_menu_item : handle_exit_menu_item(ev)
-         copy_menu_item : handle_copy_menu_item(ev)
-         cut_menu_item : handle_cut_menu_item(ev)
-         paste_menu_item : handle_paste_menu_item(ev)
-         default : handle_default(ev)
-      }
-   end
-
-   method init_dialog()
-      if \ CurrentTabItem().getfilename() then
-         handle_openfile( , CurrentTabItem().getfilename())
-   end
+set_docpath()
+end
 
    method end_dialog()
    end
 
-   method handle_EditBox(ev)
-   end
-
-   method handle_MsgBox(ev)
-   end
-
-   method findstring(s)
-      local L, startcol, i, j
-      L := CurrentEditBox().get_contents()
-      startcol := CurrentEditBox().cursor_x
-      i := CurrentEditBox().cursor_y
-      foundline := &null
-      while L[i] do {
-         if j := find(s, L[i], startcol) then {
-            foundline := i
-            foundcol := j
-            goto_line(i)
-	    CurrentEditBox().cursor_x := j + *s
-	    CurrentEditBox().constrain_line()
-	    CurrentEditBox().refresh(1)
-            return
-         }
-         i +:= 1
-         startcol := 1
-      }
-   end
-
-   #
-   # Find Menu Item Method
-   #
-   method handle_find_menu_item(ev)
-      /findstr := ""
-      if TextDialog("Enter string to seek: ",,findstr,60)=="Okay" then {
-         findstr := dialog_value[1]
-         findstring(findstr)
-         }
-   end
-
-   #
-   # Replace Menu Item Method
-   #
-   method handle_replace_menu_item(ev)
-      if TextDialog("Replace what with what: ",,
-                    [(\findstr | ""),""],60)=="Okay" then {
-                       Notice("replace is not implemented yet")
-                       # wu_replace(dialog_value[1], dialog_value[2])
-                    }
-   end
-
-   
-   method goto_line(ln)
-      if 1 <= ln <= *(CurrentEditBox().contents) then {
-         CurrentEditBox().cursor_y := ln
-         CurrentEditBox().cursor_x := 1
-         CurrentEditBox().constrain_line()
-         CurrentEditBox().refresh(1)
-         }
-      else write("nonexistent line number " || ln)
-   end
-
-   #
-   # Goto Menu Item Method
-   #
-   method handle_goto_menu_item(ev)
-      if TextDialog("Go to line: ",,"",6)=="Okay" then {
-         goto_line(integer(dialog_value[1]))
-         }
-   end
-
-   #
-   #  Match Parenthesis Menu Item Method
-   #
-   method handle_matchparen_menu_item(ev)
-      Notice("match parenthesis not implemented yet")
-   end
-
-   #
-   # Undo Menu Item Method
-   #
-   method handle_undo_menu_item(ev)
-      CurrentEditBox().handle_undo()
-   end
-
-   #
-   # Font Menu Item Method
-   #
-   method handle_font_menu_item(ev)
-   local c
-      /font := Font()
-      if font := fontdialog(font) then {
-         if MsgBox.set_attribs("font=" || font) then {
-	     MsgBox.compute_and_redisplay()
-	     every c := (!(CurrentTabItem().components)) do {
-		c.set_attribs("font=" || font)
-		c.compute_and_redisplay()
-		write("set font for ", image(c))
-	        }
-	    }
-	 else MsgBox.set_contents(["set font failed"])
-         }
-   end
-
-   #
-   #  Save Options Menu Item Method
-   #
-   method handle_saveoptions_menu_item(ev)
-      local f
-      if f := open(ui_ini,"w") then {
-         write(f, "width=",width,"\n",
-               "height=",height,"\n",
-               "msglines=",msglines,"\n",
-               "font=",font,"\n",
-               "linebreak=",linebreak)
-         close(f)
-         }
-      else {
-         # can't write ui.ini, save options fails
-         }
-   end
-
-
-   method complink()
-      local x, arglist, lst := [], logf, i, s
-      /targs := ""
-      if /CurrentTabItem().getfilename() then {
-         handle_saveas_menu_item()
-         if /CurrentTabItem().getfilename() then {
-            MsgBox.set_contents(["No filename specified."])
-            fail
-            }
-         }
-      else {
-         if \ (CurrentEditBox().modified) then handle_save_file(CurrentTabItem().getfilename())
-         }
-      if /project then {
-         if not (arglist := comp1file(CurrentTabItem().getfilename())) then {
-            s := CurrentTabItem().getfilename()
-            s[find(".icn", map(s)) : 0] := ".u"
-            if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
-            arglist := quotes(s)
-            }
-         icodename := CurrentTabItem().getfilename()
-         icodename[find(".icn", map(icodename)) : 0] := ""
-         }
-      else {
-         # compile all project sources that need it (in one step)
-         # this part is untested under ui.icn yet
-         arglist := ""
-         i := 1
-         while file_menu.menus[i].get_label() ~== "Exit" do i +:= 1
-         i +:= 1
-         while file_menu.menus[i] do {
-            if arglist ||:= comp1file(file_menu.menus[i].get_label()) then
-               arglist ||:= " "
-            i +:= 1
-            }
-         if find(".icn", \arglist) then {
-$ifdef _UNIX
-            system("unicon " || " -c " || targs ||
-                   " " || arglist || " > " || wiconlog || " 2>&1", lst, 1)
-$else
-               system("wunicon -quiet -log " || quotes(wiconlog) ||
-                      " -c " || targs || " " || arglist, lst, 1)
-$endif
-            showanyerror(wiconlog, lst)
-            }
-
-         # build a list of all the files to be linked together
-         arglist := ""
-         i := 1
-         while file_menu.menus[i].get_label() ~== "Exit" do i +:= 1
-         i +:= 1
-         while file_menu.menus[i] do {
-            s := file_menu.menus[i].get_label()
-            s[find(".icn", map(s)) : 0] := ".u"
-            if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
-            arglist ||:= s
-            arglist ||:= " "
-            i +:= 1
-            }
-         }
-
-$ifdef _UNIX
-      system("unicon " || " -o " || quotes(icodename) || " " || targs || " " || arglist || " > "|| wiconlog || " 2>&1", lst, 1)
-$else
-         system("wunicon -quiet -log " || quotes(wiconlog) ||
-                " -o " || quotes(icodename) || " " || targs || " " || arglist,
-                lst, 1)
-$endif
-      showanyerror(wiconlog, lst)
-   end
-
-   method showanyerror(fn, lst)
-   local log1, i, s, ln
-      every i := 1 to 5 do {
-         delay(800)
-         if log1 := open(fn, "r") then {
-            while put(lst, read(log1)) do {
-               }
-            close(log1)
-            remove(fn)
-            MsgBox.set_contents(lst)
-            if ( \ (MsgBox.vsb)).set_value(*lst - MsgBox.vsb.page_size) then
-               MsgBox.refresh()
-            every s := !lst do s ? {
-               if (fn := ((tab(any(&letters))||=":")|"") || tab(many(&letters++&digits++' .\\/-'))) &
-                  =":" &
-                  ln := integer(tab(many(&digits))) &
-                  = ":" then {
-                     if map(fn) ~== map(CurrentTabItem().getfilename()) then {
-                        if not handle_openfile( , fn) then {
-                           put(MsgBox.contents,"[switch to file with error failed]")
-                           MsgBox.set_contents(MsgBox.contents)
-                           return
-                           }
-                        }
-                     goto_line(ln)
-                     return
-                     }
-               }
-            return # 
-            }
-         else {
-            put(lst, "Can't open logfile " || fn || ": " || i)
-            MsgBox.set_contents(lst)
-            }
-         }
-   end
-
-   #
-   # Make Executable Menu Item Method
-   #
-   method handle_make_exec_menu_item(ev)
-      #      save()
-      MsgBox.set_contents([""])
-      complink()
-   end
-
-   #
-   # Compile Options Menu Item Method
-   #
-   method handle_compile_options_menu_item(ev)
-      if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
-         targs := dialog_value[1]
-   end
-
-   #
-   # Run Menu Item Method
-   #
-   method handle_run_menu_item(ev)
-   local L, cmd, s
-
-      complink()
-      L := copy(MsgBox.contents)
-
-      if /icodename then fail
-$ifndef _UNIX
-      if not (any(&letters,icodename) & (icodename[2]==":")) then
-$endif
-      if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP || icodename
-      cmd := quotes(icodename) || " " || xargs
-$ifdef _UNIX
-      cmd ||:= " &> " || wiconlog
-$else
-         cmd := "wiconx " || cmd
-$endif
-      
-      if system(cmd, L) then { # hope WICONLOG does trick?
-         showanyerror(wiconlog, L, 1)
-         }
-      else {
-         s := "system(" || icodename || " " || xargs ||
-            ") failed.  Is the PATH setup to run this?"
-         showanyerror(s, [], 0)
-         }
-   end
-
-   #
-   # Run Arguments Menu Item Method
-   #
-   method handle_run_arg_menu_item(ev)
-      if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
-         xargs := dialog_value[1]
-   end
-
-   
-   method handle_project_add_menu_item(ev)
-      Notice("project add not implemented yet")
-   end
-
-   
-   method handle_help_about(ev)
-      Notice("            Unicon IDE 0.9",
-             &version,
-             "   by Nolan Clayton and Clint Jeffery",
-	     "     {nclayton,jeffery}@cs.nmsu.edu",
-             "     Department of Computer Science",
-             "      New Mexico State University")
-   end
-
-   
-   method handle_help(filename, URL)
-      local URL2 := "", f
-      if \docpath then
-         URL := "file://" || map(\docpath || filename,"/",PATHSEP)
-$ifdef _UNIX
-      if find("netscape", \browser) then
-         URL2 := " -remote 'openURL(" || URL || ")'"
-      else URL2 := " " || URL
-      proc("system",0)(\browser || " " || URL2 || " &>ui.err &")
-      delay(800)
-      if f := open("ui.err") then {
-         if find("not running", read(f)) then
-            proc("system",0)(\browser || " " || URL || " &>ui.err &")
-         close(f)
-         remove("ui.err")
-      }
-$else
-         proc("system",0)(\browser || " " || URL) # || " &")
-      #      s := \browser[2:-1] || " " || URL
-      #      proc("system",0)(s,,,,1)
-$endif
-   end
-
-   
-   method handle_help_prog_env(ev)
-      handle_help("doc/unicon/utr7.htm",
-                  "http://www.cs.arizona.edu/icon/docs/ipd271.htm")
-   end
-   
-   method handle_help_tutorial(ev)
-      handle_help("doc/icon/ipd266.htm",
-                  "http://www.cs.arizona.edu/icon/docs/ipd266.htm")
-   end
-
-   method handle_help_icon_reference(ev)
-      handle_help("doc/icon/ipd266.htm",
-                  "http://www.cs.arizona.edu/icon/refernce/ref.htm")
-   end
-
-   method handle_help_unicon_reference(ev)
-      handle_help("doc/unicon/utr8.pdf","http://unicon.sourceforge.net/utr/utr8.pdf")
-   end
-
-   method handle_help_graphics(ev)
-      handle_help("doc/icon/ipd281.pdf",
-                  "http://www.cs.arizona.edu/icon/docs/ipd281.htm")
-   end
-
-   method handle_help_ipl(ev)
-      handle_help("doc/icon/ipd283.htm",
-                  "http://www.cs.arizona.edu/icon/docs/ipd283.htm")
-   end
-
-   method handle_help_ivib(ev)
-      handle_help("doc/unicon/utr6.html",
-                  "http://unicon.sourceforge.net/utr/utr6.html")
-   end
-
-   method handle_help_iconfaq(ev)
-      handle_help("doc/icon/faq.htm",
-                  "http://www.cs.arizona.edu/icon/faq.htm")
-   end
-
-   method handle_help_uniconfaq(ev)
-      handle_help("doc/unicon/faq.html",
-                  "http://unicon.sourceforge.net/faq.html")
-   end
-
-   method handle_browse_local(ev)
-      set_docpath()
-   end
-
-   method handle_browse_net(ev)
+   method init_dialog()
+      ui_initialize()
       docpath := &null
+      put(opened_files_list,"scratch")
+      put(opened_files_locs,\filedirectory)
+
+      ##ide_design()
    end
 
-   
-   method updateproject()
-      local f, s, foo
-      while file_menu.menus[-1].get_label() ~== "Exit" do pull(file_menu.menus)
-      icodename := project
-      icodename[find(".icp", map(icodename)) : 0] := ""
-      if f := open(project) then {
-         while s := trim(read(f), '\^m') do {
-            foo := TextMenuItem()
-            foo.set_label(s)
-            file_menu.add(foo)
-            self.resize()		# recalc with new components in place
-            }
-         close(f)
-         }
-   end
-
-   
-   method handle_select_all_menu_item(ev)
-      CurrentEditBox().select_all()
-   end
-
-   method handle_unix_newlines(ev)
-      linebreak := "LF"
-   end
-
-   method handle_dos_newlines(ev)
-      linebreak := "CRLF"
-   end
-
-   method handle_FileBrowser(ev)
-   end
-
-   method handle_InsertProcedure(ev)
-      InsertCode( templates("procedure"), definitions("procedure")  )
-   end
-
-   method handle_InsertClass(ev)
-      InsertCode( templates("class"), definitions("class") ) 
-   end
-
-   method handle_InsertMethod(ev)
-      InsertCode( templates("method"), definitions("method") )
-   end
-
-   method InsertCode(template, definition)
-      local l, oldy
-      
-      l := CurrentEditBox().get_contents() 
-      oldy := CurrentEditBox().cursor_y
-      l := l[1: oldy] ||| template ||| l[oldy:0]
-      CurrentEditBox().set_contents(l) 
-      goto_line(oldy)
-      MsgBox.set_contents(definition)
-   end
-
-   
-   method  handle_ViewAll_menu_item(ev)
-   local tlbv, cbv, msgv
-      tlbv := ToolbarVal() +25
-      cbv := ClassBrowserVal() +150
-      msgv := MessagesVal() + 110
-      
-      DevTabSet$set_pos("0", "100%-"||msgv)
-      DevTabSet$set_size("100%", msgv)
-      
-      ClassTabSet$set_pos("0", tlbv)
-      ClassTabSet$set_size(cbv, "100%-"||msgv +tlbv)
-      
-      FileTabSet$set_pos(cbv,  tlbv)
-      FileTabSet$set_size("100%-"||cbv,  "100%-"||msgv +tlbv)
-
-      window_menu.set_label("Window (all)")
-      handle_update()
-      
-   end
-   
-   method handle_ViewFiles_menu_item(ev)
-      local tlbv
-      tlbv := ToolbarVal() +25
-      
-      DevTabSet$set_pos("0", "100%")
-      ClassTabSet$set_pos("100%","0")
-      
-      FileTabSet$set_pos("0", tlbv)
-      FileTabSet$set_size("100%-2", "100%-"||2+tlbv)
-
-      window_menu.set_label("Window (files)")
-      handle_update()      
-   end
-
-   method handle_ViewFilesMsg_menu_item(ev)
-      local tlbv, msgv
-      tlbv := ToolbarVal() +25
-      msgv := MessagesVal() + 110
-      
-      DevTabSet$set_pos("0", "100%-"|| msgv)
-      DevTabSet$set_size("100%", msgv)
-      
-      ClassTabSet$set_pos("100%", "0")
-      
-      FileTabSet$set_pos("0", tlbv)
-      FileTabSet$set_size("100%-2", "100%-"||msgv +tlbv)
-
-      window_menu.set_label("Window (files/messages)")
-      handle_update()          
-   end
-
-   method handle_ViewFilesClass_menu_item(ev)
-      local tlbv, cbv
-      tlbv := ToolbarVal() +25
-      cbv := ClassBrowserVal() +150
-      
-      DevTabSet$set_pos("0", "100%")
-      ClassTabSet$set_pos("0", tlbv)
-      ClassTabSet$set_size(cbv, "100%-"||2 +tlbv)
-      
-      FileTabSet$set_pos(cbv, tlbv)
-      FileTabSet$set_size("100%-"||2+cbv, "100%-"||2+tlbv)
-      
-      window_menu.set_label("Window (files/class browser)")
-      handle_update()            
-   end
-   
-   method handle_ViewShowHide_menu_item(ev)
-      if ViewShowHide_menu_item.get_label() == "Hide Toolbar" then {
-         ViewShowHide_menu_item.set_label("Show Toolbar")
-         pnlToolbar$set_pos(0, "100%")
-         }
-      else {
-         ViewShowHide_menu_item.set_label("Hide Toolbar") 
-         pnlToolbar$set_pos(0, 25)
-         }
-      CurrentView()
-   end
-
-   method handle_ViewClassNormal_menu_item(ev)
-      classb_menu$set_label("Class Browser (normal)")
-      CurrentView()
-   end
-   
-   method handle_ViewClass50_menu_item(ev)
-      classb_menu$set_label("Class Browser (+50)")
-      CurrentView()
-   end
-   
-   method handle_ViewClass100_menu_item(ev)
-      classb_menu$set_label("Class Browser (+100)")
-      CurrentView()
-   end
-   
-   method handle_ViewMsgNormal_menu_item(ev)
-      message_menu$set_label("Messages (normal)")
-      CurrentView()
-   end
-   
-   method handle_ViewMsg50_menu_item(ev)
-      message_menu$set_label("Messages (+50)")
-      CurrentView()
-   end
-   
-   method handle_ViewMsg100_menu_item(ev)
-      message_menu$set_label("Messages (+100)")
-      CurrentView()
-   end
-   
-   #
-   # The following methods relate to the IDE Toolbar.
-   #
-   method handle_icbNewFile(ev)
-      if ev.event === &lpress then handle_new_menu_item(ev)
-   end
-   
-   method handle_icbOpenFile(ev)
-      if ev.event === &lpress then handle_openfile(ev)
-   end
-
-   method handle_icbCloseFile(ev)
-      if ev.event === &lpress then handle_closefile(ev)
-   end
-
-   method handle_icbSaveFile(ev)
-      if ev.event === &lpress then handle_save_menu_item(ev)
-   end
-
-   method handle_icbCut(ev)
-      if ev.event === &lpress then handle_cut_menu_item(ev)
-   end
-
-   method handle_icbCopy(ev)
-      if ev.event === &lpress then handle_copy_menu_item(ev)
-   end
-
-   method handle_icbPaste(ev)
-      if ev.event === &lpress then handle_paste_menu_item(ev)
-   end
-
-   method handle_icbUndo(ev)
-      if ev.event === &lpress then handle_undo_menu_item(ev)
-   end
-
-   method handle_icbFind(ev)
-      if ev.event === &lpress then handle_find_menu_item(ev)
-   end
-
-   method handle_icbProcedure(ev)
-      if ev.event === &lpress then handle_InsertProcedure(ev)
-   end
-
-   method handle_icbClass(ev)
-      if ev.event === &lpress then handle_InsertClass(ev)
-   end
-
-   method handle_icbMethod(ev)
-      if ev.event === &lpress then handle_InsertMethod(ev)
-   end
-
-   method handle_icbMakeExe(ev)
-      if ev.event === &lpress then handle_make_exec_menu_item(ev)
-   end
-
-   method handle_icbRun(ev)
-      if ev.event === &lpress then handle_run_menu_item(ev)
-   end
-   
-   method handle_icbViewAll(ev)
-      if ev.event === &lpress then handle_ViewAll_menu_item(ev)
-   end
-
-   method handle_icbViewFiles(ev)
-      if ev.event === &lpress then handle_ViewFiles_menu_item(ev)
-   end
-
-   method handle_icbViewFilesMsg(ev)
-      if ev.event === &lpress then handle_ViewFilesMsg_menu_item(ev)
-   end
-   
-   #
-   # Current Working FIle (Buffer Text List)
-   #
-   method CurrentEditBox()
-      return CurrentTabItem().components[1]
-   end
-
-   #
-   # Current Tab In Which The Current Working FIle Is Displayed
-   #
-   method CurrentTabItem()
-      return FileTabSet.get_which_one()
-   end
-
-   #
-   # Current View, state of the editor
-   #
-   method CurrentView()
-      case window_menu.get_label()  of {
-         "Window (all)"                               : handle_ViewAll_menu_item()
-         "Window (files)"                          : handle_ViewFiles_menu_item()
-         "Window (files/messages)"       : handle_ViewFilesMsg_menu_item()
-         "Window (files/class browser)" : handle_ViewFilesClass_menu_item()
-      }
-      
-   end
-   
-   method ToolbarVal()
-      if ViewShowHide_menu_item.get_label() == "Hide Toolbar" then
-         return 25 
-      else return 0
-   end
-
-   method ClassBrowserVal()
-      return case classb_menu$get_label() of {
-         "Class Browser (normal)" :  0
-         "Class Browser (+50)"    : 50
-         "Class Browser (+100)"   :100
-      }
-   end
-
-   method MessagesVal()
-      return case message_menu.get_label() of {
-         "Messages (normal)" :  0
-         "Messages (+50)"    : 50
-         "Messages (+100)"   :100
-      }
-   end
-   
-   
-   #
-   # Setup Method
-   #
    method setup()
-      local menu_bar_1, file_menu, edit_menu, view_menu, options_menu, insert_menu
-      local compile_menu, run_menu, project_menu, help_menu, help_language, menu_8
-      
-      self.set_attribs("size=750,560", "bg=pale gray", "label=Unicon IDE", "resize=on")
-      self.set_min_size(450, 400)
-
-      menu_bar_1 := WhiteMenuBar()
-      menu_bar_1$set_pos("0", "0")
-      menu_bar_1$set_attribs("font=sans,15", "fg=black")
-      menu_bar_1$set_size("100%", "24")
-      
-      file_menu := WhiteMenu()
-      file_menu$set_label("File")
-
-      new_menu_item := TextMenuItem()
-      new_menu_item$set_label("New")
-      new_menu_item$set_img_left(editorimgs("newfile") )
-      file_menu$add(new_menu_item)
-
-      openfile := TextMenuItem()
-      openfile$set_label("Open")
-      openfile$set_img_left(editorimgs("openfile") )
-      file_menu$add(openfile)
-      
-      closefile := TextMenuItem()
-      closefile$set_label("Close")
-      closefile$set_img_left(editorimgs("closefile") )
-      file_menu$add(closefile)
-      
-      print_menu_item := TextMenuItem()
-      print_menu_item$set_label("Print")
-      file_menu$add(print_menu_item)
-
-      save_menu_item := TextMenuItem()
-      save_menu_item$set_label("Save")
-      save_menu_item$set_img_left(editorimgs("save") )
-      file_menu$add(save_menu_item)
-
-      saveas_menu_item := TextMenuItem()
-      saveas_menu_item$set_label("Save As")
-      saveas_menu_item$set_img_left(editorimgs("saveas") )
-      file_menu$add(saveas_menu_item)
-
-      ivib_menu_item := TextMenuItem()
-      ivib_menu_item$set_label("Ivib")
-      file_menu$add(ivib_menu_item)
-
-      exit_menu_item := TextMenuItem()
-      exit_menu_item$set_label("Exit")
-      file_menu$add(exit_menu_item)
-      menu_bar_1$add(file_menu)
-
-      edit_menu := WhiteMenu()
-      edit_menu$set_label("Edit")
-
-      copy_menu_item := TextMenuItem()
-      copy_menu_item$set_label("Copy")
-      copy_menu_item$set_img_left(editorimgs("copy") )
-      edit_menu$add(copy_menu_item)
-
-      cut_menu_item := TextMenuItem()
-      cut_menu_item$set_label("Cut")
-      cut_menu_item$set_img_left(editorimgs("cut") )
-      edit_menu$add(cut_menu_item)
-
-      paste_menu_item := TextMenuItem()
-      paste_menu_item$set_label("Paste")
-      paste_menu_item$set_img_left( editorimgs("paste") )
-      edit_menu$add(paste_menu_item)
-
-      select_all_menu_item := TextMenuItem()
-      select_all_menu_item$set_label("Select All")
-      edit_menu$add(select_all_menu_item)
-
-      find_menu_item := TextMenuItem()
-      find_menu_item$set_label("Find ^F")
-      find_menu_item$set_img_left(editorimgs("find") )
-      edit_menu$add(find_menu_item)
-
-      replace_menu_item := TextMenuItem()
-      replace_menu_item$set_label("Replace")
-      edit_menu$add(replace_menu_item)
-
-      goto_menu_item := TextMenuItem()
-      goto_menu_item$set_label("Go To Line #")
-      edit_menu$add(goto_menu_item)
-
-      matchparen_menu_item := TextMenuItem()
-      matchparen_menu_item$set_label("Match Parenthesis")
-      edit_menu$add(matchparen_menu_item)
-      
-      undo_menu_item := TextMenuItem()
-      undo_menu_item$set_label("Undo")
-      undo_menu_item$set_img_left(editorimgs("undo") )
-      edit_menu$add(undo_menu_item)
-      menu_bar_1$add(edit_menu)
-
-      view_menu := WhiteMenu()
-      view_menu$set_label("View")
-
-      window_menu := WhiteMenu()
-      window_menu$set_label("Window (all)")
-      
-      ViewAll_menu_item := TextMenuItem()
-      ViewAll_menu_item$set_label("All")
-      ViewAll_menu_item$set_img_left(editorimgs("viewall") )
-      window_menu$add(ViewAll_menu_item)
-
-      ViewFiles_menu_item := TextMenuItem()
-      ViewFiles_menu_item$set_label("Files")
-      ViewFiles_menu_item$set_img_left(editorimgs("viewfiles") )
-      window_menu$add(ViewFiles_menu_item)
-
-      ViewFilesMsg_menu_item := TextMenuItem()
-      ViewFilesMsg_menu_item$set_label("Files/Messages")
-      ViewFilesMsg_menu_item$set_img_left(editorimgs("viewfilesmsg") )
-      window_menu$add(ViewFilesMsg_menu_item)
-      
-      ViewFilesClass_menu_item := TextMenuItem()
-      ViewFilesClass_menu_item$set_label("Files/Class Browser")
-      ViewFilesClass_menu_item$set_img_left(editorimgs("viewfilesclass") )
-      window_menu$add(ViewFilesClass_menu_item)
-
-      view_menu$add(window_menu)
-      
-      ViewShowHide_menu_item := TextMenuItem()
-      ViewShowHide_menu_item$set_label("Hide Toolbar")
-      view_menu$add(ViewShowHide_menu_item)
-
-      message_menu := WhiteMenu()
-      message_menu$set_label("Messages (normal)")
-
-      ViewMsgNormal_menu_item := TextMenuItem()
-      ViewMsgNormal_menu_item$set_label("normal")
-      message_menu$add( ViewMsgNormal_menu_item)
-
-      ViewMsg50_menu_item := TextMenuItem()
-      ViewMsg50_menu_item$set_label("+50")
-      message_menu$add( ViewMsg50_menu_item)
-
-      ViewMsg100_menu_item := TextMenuItem()
-      ViewMsg100_menu_item$set_label("+100")
-      message_menu$add( ViewMsg100_menu_item)
-      
-      view_menu$add(message_menu)
-
-      
-      classb_menu := WhiteMenu()
-      classb_menu$set_label("Class Browser (normal)")
-      
-      ViewClassNormal_menu_item := TextMenuItem()
-      ViewClassNormal_menu_item$set_label("normal")
-      classb_menu$add( ViewClassNormal_menu_item)
-
-      ViewClass50_menu_item := TextMenuItem()
-      ViewClass50_menu_item$set_label("+50")
-      classb_menu$add( ViewClass50_menu_item)
-
-      ViewClass100_menu_item := TextMenuItem()
-      ViewClass100_menu_item$set_label("+100")
-      classb_menu$add( ViewClass100_menu_item)
-
-      view_menu$add(classb_menu)
-      menu_bar_1$add(view_menu)
-      
-      options_menu := WhiteMenu()
-      options_menu$set_label("Options")
-      
-      browse_local := TextMenuItem()
-      browse_local$set_label("Browse Help Locally")
-      options_menu$add(browse_local)
-
-      browse_net := TextMenuItem()
-      browse_net$set_label("Browse Help from Web")
-      options_menu$add(browse_net)
-
-      font_menu_item := TextMenuItem()
-      font_menu_item$set_label("Font...")
-      options_menu$add(font_menu_item)
-
-      unix_newlines := TextMenuItem()
-      unix_newlines$set_label("UNIX (LF) newlines when saving")
-      options_menu$add(unix_newlines)
-
-      dos_newlines := TextMenuItem()
-      dos_newlines$set_label("DOS (CRLF) newlines when saving")
-      options_menu$add(dos_newlines)
-
-      saveoptions_menu_item := TextMenuItem()
-      saveoptions_menu_item$set_label("Save options")
-      options_menu$add(saveoptions_menu_item)
-      menu_bar_1$add(options_menu)
-
-      insert_menu := WhiteMenu()
-      insert_menu$set_label("Insert")
-
-      InsertProcedure := TextMenuItem()
-      InsertProcedure$set_label("Procedure")
-      InsertProcedure$set_img_left(editorimgs("procedure") )
-      insert_menu$add(InsertProcedure)
-      
-      InsertClass := TextMenuItem()
-      InsertClass$set_label("Class")
-      InsertClass$set_img_left(editorimgs("class") )
-      insert_menu$add(InsertClass)
-
-      InsertMethod := TextMenuItem()
-      InsertMethod$set_label("Method")
-      InsertMethod$set_img_left(editorimgs("method") )
-      insert_menu$add(InsertMethod)
-      menu_bar_1$add(insert_menu)
-
-      compile_menu := WhiteMenu()
-      compile_menu$set_label("Compile")
-
-      make_exec_menu_item := TextMenuItem()
-      make_exec_menu_item$set_label("Make executable")
-      make_exec_menu_item$set_img_left(editorimgs("makeexe") )
-      compile_menu$add(make_exec_menu_item)
-
-      compile_menu_item := TextMenuItem()
-      compile_menu_item$set_label("Compile only")
-      compile_menu$add(compile_menu_item)
-
-      compile_options_menu_item := TextMenuItem()
-      compile_options_menu_item$set_label("Compile options")
-      compile_menu$add(compile_options_menu_item)
-      menu_bar_1$add(compile_menu)
-
-      run_menu := WhiteMenu()
-      run_menu$set_label("Run")
-
-      run_menu_item := TextMenuItem()
-      run_menu_item$set_label("Run program")
-      run_menu_item$set_img_left(editorimgs("run") )
-      run_menu$add(run_menu_item)
-
-      run_arg_menu_item := TextMenuItem()
-      run_arg_menu_item$set_label("Run arguments")
-      run_menu$add(run_arg_menu_item)
-      menu_bar_1$add(run_menu)
-
-      project_menu := WhiteMenu()
-      project_menu$set_label("Project")
-
-      project_add_menu_item := TextMenuItem()
-      project_add_menu_item$set_label("Add files")
-      project_menu$add(project_add_menu_item)
-      menu_bar_1$add(project_menu)
-
-      help_menu := WhiteMenu()
-      help_menu$set_label("Help")
-
-      help_prog_env := TextMenuItem()
-      help_prog_env$set_label("UI Programming Environment")
-      help_menu$add(help_prog_env)
-
-      help_tutorial := TextMenuItem()
-      help_tutorial$set_label("Tutorial Overview")
-      help_menu$add(help_tutorial)
-
-      help_language := WhiteMenu()
-      help_language$set_label("Language References")
-
-      help_icon_reference := TextMenuItem()
-      help_icon_reference$set_label("Icon")
-      help_language$add(help_icon_reference)
-
-      help_unicon_reference := TextMenuItem()
-      help_unicon_reference$set_label("Unicon")
-      help_language$add(help_unicon_reference)
-      help_menu$add(help_language)
-
-      help_graphics := TextMenuItem()
-      help_graphics$set_label("Graphics Reference")
-      help_menu$add(help_graphics)
-
-      help_ipl := TextMenuItem()
-      help_ipl$set_label("Icon Program Library")
-      help_menu$add(help_ipl)
-
-      help_ivib := TextMenuItem()
-      help_ivib$set_label("IVIB Interface Builder")
-      help_menu$add(help_ivib)
-
-      menu_8 := WhiteMenu()
-      menu_8$set_label("Frequently Asked Questions")
-      help_iconfaq := TextMenuItem()
-      help_iconfaq$set_label("Icon")
-      menu_8$add(help_iconfaq)
-
-      help_uniconfaq := TextMenuItem()
-      help_uniconfaq$set_label("Unicon")
-      menu_8$add(help_uniconfaq)
-      help_menu$add(menu_8)
-
-      help_about := TextMenuItem()
-      help_about$set_label("About")
-      help_menu$add(help_about)
-      menu_bar_1$add(help_menu)
-      self$add(menu_bar_1)
-
-      
+      self.set_attribs("size=750,560", "bg=pale gray", "label=Unicon IDE")
       DevTabSet := TabSet()
-      DevTabSet$set_pos("0", "100%-110")
-      DevTabSet$set_size("100%", "110")
-
-      tab_item_1 := EditorTabItem()
-      tab_item_1$set_label("Messages")
-
-      MsgBox := TextList()
-      MsgBox$set_pos("2", "2")
-      MsgBox$set_size("100%-4", "100%-4")
-      MsgBox$set_attribs("bg=white")
-      MsgBox$set_contents([""])
-      tab_item_1$add(MsgBox)
-
-      DevTabSet$add(tab_item_1)
-      DevTabSet$set_which_one(tab_item_1)
-      self$add(DevTabSet)
-
-      FileTabSet :=BufferTabSet()
-      FileTabSet$set_pos("150", "50")
-      FileTabSet$set_size("100%-150", "100%-160")
-      FileTabSet$set_attribs("font=sans,15")
-      
-      tab_item_2 := BufferTabItem()
-      tab_item_2$set_label("scratch")
-      
-      EditBox := BufferTextList()
-      EditBox$set_pos("2", "2")
-      EditBox$set_size("100%-4", "100%-4")
-      EditBox$set_attribs("bg=white","font=sans,14")
-      EditBox$set_contents([""])
-      tab_item_2$add(EditBox)
-      FileTabSet$add(tab_item_2)
-      FileTabSet$set_which_one(tab_item_2)
-      self$add(FileTabSet)
-
-      ClassTabSet := TabSet()
-      ClassTabSet$set_pos("0", "50")
-      ClassTabSet$set_size("150", "100%-160")
-      
-      tab_item_3 := EditorTabItem()
-      tab_item_3$set_label("Class Browser")
-
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      tab_item_1 := TabItem()
+      tab_item_1.set_label("Messages")
+      MsgBox := EditableTextList()
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      MsgBox.set_draw_border()
+      MsgBox.set_attribs("bg=white")
+      MsgBox.set_contents([""])
+      tab_item_1.add(MsgBox)
+      DevTabSet.add(tab_item_1)
+      DevTabSet.set_which_one(tab_item_1)
+      self.add(DevTabSet)
+      FileTabSet := BufferTabSet()
+      FileTabSet.set_pos("150", "50")
+      FileTabSet.set_size("100%-150", "100%-160")
+      FileTabSet.set_attribs("font=sans,15")
+      tab_item_2 := TabItem()
+      tab_item_2.set_label("scratch")
+      EditBox := BuffEditableTextList()
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      EditBox.set_draw_border()
+      EditBox.set_attribs("bg=white", "font=sans,14")
+      EditBox.set_contents([""])
+      tab_item_2.add(EditBox)
+      FileTabSet.add(tab_item_2)
+      FileTabSet.set_which_one(tab_item_2)
+      self.add(FileTabSet)
+      ClassTabSet := BufferTabSet()
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("150", "100%-160")
+      tab_item_3 := TabItem()
+      tab_item_3.set_label("Class Browser")
       FileBrowser := ClassBrowser()
-      FileBrowser$set_pos("2", "2")
-      FileBrowser$set_size("100%-4", "100%-4")
-      FileBrowser$set_attribs("bg=white")
-      FileBrowser$set_contents([""])
-      FileBrowser$filltree()
-      tab_item_3$add(FileBrowser)
-
-      ClassTabSet$add(tab_item_3)
-      ClassTabSet$set_which_one(tab_item_3)
-      self$add(ClassTabSet)
-
-      
-      pnlToolbar := icbPanel()
-      pnlToolbar$set_pos(0, 25)
-      pnlToolbar$set_size("100%", "25")
-
-      icbNewFile := icbButton()
-      icbNewFile$set_pos("0", "0")
-      icbNewFile$set_size("25", "25")
-      icbNewFile$set_draw_border()
-      icbNewFile$set_img(editorimgs("newfile") )
-      pnlToolbar$add(icbNewFile)
-      
-      icbOpenFile := icbButton()
-      icbOpenFile$set_pos("25", "0")
-      icbOpenFile$set_size("25", "25")
-      icbOpenFile$set_draw_border()
-      icbOpenFile$set_img(editorimgs("openfile") )
-      pnlToolbar$add(icbOpenFile)
-      
-      icbCloseFile := icbButton()
-      icbCloseFile$set_pos("50", "0")
-      icbCloseFile$set_size("25", "25")
-      icbCloseFile$set_draw_border()
-      icbCloseFile$set_img(editorimgs("closefile") )
-      pnlToolbar$add(icbCloseFile)
-      
-      icbSaveFile := icbButton()
-      icbSaveFile$set_pos("75", "0")
-      icbSaveFile$set_size("25", "25")
-      icbSaveFile$set_draw_border()
-      icbSaveFile$set_img(editorimgs("save") )
-      pnlToolbar$add(icbSaveFile)
-
-      icbCut := icbButton()
-      icbCut$set_pos("100", "0")
-      icbCut$set_size("25", "25")
-      icbCut$set_draw_border()
-      icbCut$set_img(editorimgs("cut") )
-      pnlToolbar$add(icbCut)
-
-      icbCopy := icbButton()
-      icbCopy$set_pos("125", "0")
-      icbCopy$set_size("25", "25")
-      icbCopy$set_draw_border()
-      icbCopy$set_img(editorimgs("copy") )
-      pnlToolbar$add(icbCopy)
-
-      icbPaste := icbButton()
-      icbPaste$set_pos("150", "0")
-      icbPaste$set_size("25", "25")
-      icbPaste$set_draw_border()
-      icbPaste$set_img(editorimgs("paste") )
-      pnlToolbar$add(icbPaste)
-
-      icbUndo := icbButton()
-      icbUndo$set_pos("175", "0")
-      icbUndo$set_size("25", "25")
-      icbUndo$set_draw_border()
-      icbUndo$set_img(editorimgs("undo") )
-      pnlToolbar$add(icbUndo)
-      
-      icbFind := icbButton()
-      icbFind$set_pos("200", "0")
-      icbFind$set_size("25", "25")
-      icbFind$set_draw_border()
-      icbFind$set_img(editorimgs("find") )
-      pnlToolbar$add(icbFind)
-
-      icbViewAll := icbButton()
-      icbViewAll$set_pos("225", "0")
-      icbViewAll$set_size("25", "25")
-      icbViewAll$set_draw_border()
-      icbViewAll$set_img(editorimgs("viewall") )
-      pnlToolbar$add(icbViewAll)
-      
-      icbViewFiles := icbButton()
-      icbViewFiles$set_pos("250", "0")
-      icbViewFiles$set_size("25", "25")
-      icbViewFiles$set_draw_border()
-      icbViewFiles$set_img(editorimgs("viewfiles") )
-      pnlToolbar$add(icbViewFiles)
-
-      icbViewFilesMsg := icbButton()
-      icbViewFilesMsg$set_pos("275", "0")
-      icbViewFilesMsg$set_size("25", "25")
-      icbViewFilesMsg$set_draw_border()
-      icbViewFilesMsg$set_img(editorimgs("viewfilesmsg") )
-      pnlToolbar$add(icbViewFilesMsg)
-
-      
-      icbProcedure := icbButton()
-      icbProcedure$set_pos("300", "0")
-      icbProcedure$set_size("25", "25")
-      icbProcedure$set_draw_border()
-      icbProcedure$set_img(editorimgs("procedure") )
-      pnlToolbar$add(icbProcedure)
-
-      icbClass := icbButton()
-      icbClass$set_pos("325", "0")
-      icbClass$set_size("25", "25")
-      icbClass$set_draw_border()
-      icbClass$set_img(editorimgs("class") )
-      pnlToolbar$add(icbClass)
-
-      icbMethod := icbButton()
-      icbMethod$set_pos("350", "0")
-      icbMethod$set_size("25", "25")
-      icbMethod$set_draw_border()
-      icbMethod$set_img(editorimgs("method") )
-      pnlToolbar$add(icbMethod)
-      
-      icbMakeExe := icbButton()
-      icbMakeExe$set_pos("375", "0")
-      icbMakeExe$set_size("25", "25")
-      icbMakeExe$set_draw_border()
-      icbMakeExe$set_img(editorimgs("makeexe") )
-      pnlToolbar$add(icbMakeExe)
-
-      icbRun := icbButton()
-      icbRun$set_pos("400", "0")
-      icbRun$set_size("25", "25")
-      icbRun$set_draw_border()
-      icbRun$set_img(editorimgs("run") )
-      pnlToolbar$add(icbRun)
-      
-      self$add(pnlToolbar)
-   end
-
-   method component_setup()
-      self.setup()
-      EditBox.set_attribs("font=" || \font) | write("setattribs failed")
-      MsgBox.set_attribs("font=" || \font) | write("setattribs failed")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+      FileBrowser.set_draw_border()
+      FileBrowser.set_attribs("bg=white")
+      FileBrowser.set_select_one()
+      tab_item_3.add(FileBrowser)
+      ClassTabSet.add(tab_item_3)
+      ClassTabSet.set_which_one(tab_item_3)
+      self.add(ClassTabSet)
+      pnlToolbar := Panel()
+      pnlToolbar.set_pos("0", "25")
+      pnlToolbar.set_size("100%", "25")
+      self.add(pnlToolbar)
    end
 
    initially
-      self$_Dialog.initially()
+      self.Dialog.initially()
+      ide := IDE(FileTabSet, ClassTabSet, FileBrowser)  #contains the main ide functions
+      dialogself := self
+      menubar := Mainbar(JProject(), CProject(), UProject())
 end
+
+procedure main()
+   local d
+   d := UIDE()
+   d.show_modal()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|11|string|editable_text_lis
+#t|integer|2|string|icon|integer|1|string|menu|integer|2|string|menu_ba
+#r|integer|1|string|menu_separator|integer|1|string|panel|integer|1|str
+#ing|tab_item|integer|4|string|tab_set|integer|3|string|text_list|integ
+#er|2|string|text_menu_item|integer|18|string|tree|integer|1|SuperClass
+# Name|string|Dialog|Import Name|string|gui|Button Groups|class|ButtonG
+#roupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|CheckBoxG
+#roupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Main|i
+#nteger|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen I
+#nitially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min He
+#ight|null|Ticker Rate|null|Attribs|list|2|string|bg=pale gray|string|l
+#abel=Unicon IDE|Name|string|UIDE|Width|integer|750|Height|integer|560|
+#Items|list|4|class|CanvasTabSet|27|Parent Canvas|1|Name|string|DevTabS
+#et|Class Name|string|TabSet|Import Name|string|gui|X Fix|null|Y Fix|nu
+#ll|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|0
+#|Y Spec|string|100%-110|W Spec|string|100%|H Spec|string|110|X Align|s
+#tring|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw B
+#order|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|
+#0|Class Variable|integer|1|Parent Component|1|Children|list|1|class|Ca
+#nvasTabItem|28|Parent Canvas|1|Name|string|tab_item_1|Class Name|strin
+#g|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fi
+#x|null|W Default|null|H Default|null|X Spec|integer|0|Y Spec|integer|0
+#|W Spec|string|100%|H Spec|string|100%|X Align|string|l|Y Align|string
+#|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|lis
+#t|0|Tooltip|null|Accel|null|Event Handlers|null|Class Variable|integer
+#|1|Parent Component|10|Label|string|Messages|Parent TabSet|10|Children
+#|list|1|class|CanvasEditableTextList|26|Parent Canvas|1|Name|string|Ms
+#gBox|Class Name|string|EditableTextList|Import Name|string|gui|X Fix|n
+#ull|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X S
+#pec|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4
+#|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|n
+#ull|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|
+#Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Compo
+#nent|14|Contents|list|1|string||Which One|14|class|CanvasTabSet|27|Par
+#ent Canvas|1|Name|string|FileTabSet|Class Name|string|BufferTabSet|Imp
+#ort Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defa
+#ult|null|H Default|null|X Spec|string|150|Y Spec|string|50|W Spec|stri
+#ng|100%-150|H Spec|string|100%-160|X Align|string|l|Y Align|string|t|I
+#s shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|
+#string|font=sans,15|Tooltip|null|Accel|null|Event Handlers|list|0|Clas
+#s Variable|integer|1|Parent Component|1|Children|list|1|class|CanvasTa
+#bItem|28|Parent Canvas|1|Name|string|tab_item_2|Class Name|string|TabI
+#tem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null
+#|W Default|null|H Default|null|X Spec|integer|0|Y Spec|integer|0|W Spe
+#c|string|100%|H Spec|string|100%|X Align|string|l|Y Align|string|t|Is 
+#shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|To
+#oltip|null|Accel|null|Event Handlers|null|Class Variable|integer|1|Par
+#ent Component|21|Label|string|scratch|Parent TabSet|21|Children|list|1
+#|class|CanvasEditableTextList|26|Parent Canvas|1|Name|string|EditBox|C
+#lass Name|string|BuffEditableTextList|Import Name|string|gui|X Fix|nul
+#l|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spe
+#c|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X
+# Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|nul
+#l|Draw Border|integer|1|Attribs|list|2|string|bg=white|string|font=san
+#s,14|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|inte
+#ger|1|Parent Component|25|Contents|list|1|string||Which One|25|class|C
+#anvasTabSet|27|Parent Canvas|1|Name|string|ClassTabSet|Class Name|stri
+#ng|BufferTabSet|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nul
+#l|H Fix|null|W Default|null|H Default|null|X Spec|string|0|Y Spec|stri
+#ng|50|W Spec|string|150|H Spec|string|100%-160|X Align|string|l|Y Alig
+#n|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Att
+#ribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variab
+#le|integer|1|Parent Component|1|Children|list|1|class|CanvasTabItem|28
+#|Parent Canvas|1|Name|string|tab_item_3|Class Name|string|TabItem|Impo
+#rt Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defau
+#lt|null|H Default|null|X Spec|integer|0|Y Spec|integer|0|W Spec|string
+#|100%|H Spec|string|100%|X Align|string|l|Y Align|string|t|Is shaded|n
+#ull|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|nu
+#ll|Accel|null|Event Handlers|null|Class Variable|integer|1|Parent Comp
+#onent|32|Label|string|Class Browser|Parent TabSet|32|Children|list|1|c
+#lass|CanvasTree|29|Parent Canvas|1|Name|string|FileBrowser|Class Name|
+#string|Tree|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H 
+#Fix|null|W Default|null|H Default|null|X Spec|string|2|Y Spec|string|2
+#|W Spec|string|100%-4|H Spec|string|100%-4|X Align|string|l|Y Align|st
+#ring|t|Is shaded|null|Is Button Subclass|null|Draw Border|integer|1|At
+#tribs|list|1|string|bg=white|Tooltip|null|Accel|null|Event Handlers|li
+#st|0|Class Variable|integer|1|Parent Component|36|Select One|integer|1
+#|Select Many|null|Show Root Handles|integer|1|Show Root|integer|1|Whic
+#h One|36|class|CanvasPanel|26|Parent Canvas|1|Name|string|pnlToolbar|C
+#lass Name|string|Panel|Import Name|string|gui|X Fix|null|Y Fix|null|W 
+#Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|0|Y Sp
+#ec|string|25|W Spec|string|100%|H Spec|string|25|X Align|string|l|Y Al
+#ign|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|A
+#ttribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Vari
+#able|integer|1|Parent Component|1|Children|list|0|Initial Focus|null|E
+#vent Handlers|list|0|

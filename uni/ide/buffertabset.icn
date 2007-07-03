@@ -1,140 +1,45 @@
-################################################################
-#
-#   File:         buffertabset.icn
-#
-#   Subject:  SubClass TabSet
-#
-#   Author:   Nolan Clayton
-#
-#   Date:       May 25, 2004
-#
-################################################################
+import gui
+link graphics
+$include "guih.icn"
 
-
-
-#
-# class Buffer Tab Set:
-#
 class BufferTabSet : TabSet()
-
    method get_tabitem(lab)
-      local c
-      if (c := !components).get_label() == lab then return c
-      return &null
+   local c
+   if (c := !children).label == lab then return c
    end
 
-   method get_which_one()
-      return which_one
-   end
-   
-   method set_which_one(x)
-      if \ (\self.parent_Dialog).is_open then {
-         self.which_one := x
-         self$adjust_lines()
-         self$display()
-      } else
-         self.which_one := x
-      
-      return x
-   end
-   
-   method handle_event(e)
-      if integer(e) = (&lpress | &mpress) & (self.y <= &y < self.y + self.tab_h) then
-         self$set_which_one(which_tab())
-      
-      suspend which_one$handle_event(e)
-   end
-
-   
-   #
-   # New TabItem Method: Insert a New TabItem,  for a file, into the TabSet.
-   #
-   method new_tabitem(ev)
-      local tab_item_new, EditBox
-      
-      tab_item_new := BufferTabItem()  
-      tab_item_new.set_label("(Untitled)")
-
-      EditBox := BufferTextList()
-      EditBox$set_pos("2", "2")
-      EditBox$set_size("100%-4", "100%-4")
-      EditBox$set_attribs("bg=white","font=sans,14")
-      EditBox$set_contents([""])
-
-      tab_item_new.add(EditBox)
-      add(tab_item_new)
-      tab_item_new.final_setup(self.parent_Dialog, self)
-      
-      self.parent_Dialog.resize()
-      redisplay()    
-      set_which_one(components[*components])
-      
-   end
-
-   
-   #
-   # Remove Method: Remove TabItem C from the TabSet.
-   #
-   method remove(c)
-      local i
-      
-      #
-      # find which element to delete
-      #
-      if *components = 1 then fail
-      every i := 1 to *components do if components[i] === c then break
-      if (i > *components) | (components[i] ~=== c) then fail
-      
-      #
-      # delete it from components list
-      #
-      delete(components, i)
-      
-      #
-      # redraw the screen to show removal
-      #
-      parent_Dialog.resize()
-      parent_Dialog.redisplay()
-      set_which_one(components[*components])
-   end
-
-
-   #
-   # Display Method: Display the TabSet and all of its TabItems.
-   #
    method display(buffer_flag)
       local last_on_a_line, cw
-      
+
       #
       # Erase all and display outline of tabbed pane area.
       #
       EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
       DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h, 2)
-      
       #
       # Display all tabs.
       #
       every (!!self.line_break).display_tab()
       last_on_a_line := (!self.line_break)[-1] === self.which_one
-      
+
       #
       # Display line under tabs.
       #
-      cw := Clone(self.cbwin)
+      cw := Clone(self.cbwin, "drawop=reverse")
       Fg(cw, "pale gray")
       DrawLine(cw, self.x, self.y + self.tab_h - 2, self.which_one.label_x, self.y + self.tab_h - 2)
 
       if /last_on_a_line then
          DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 2, self.x + self.w - 1, self.y + self.tab_h - 2)
 
-      Fg(cw, "white")
+      Fg(cw, "black")
       DrawLine(cw, self.x, self.y + self.tab_h - 1, self.which_one.label_x, self.y + self.tab_h - 1)
 
       if /last_on_a_line then
          DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 1, self.x + self.w - 2, self.y + self.tab_h - 1)
 
       Uncouple(cw)
-      
+
       #
       # Display contents of current tab into buffer
       #
@@ -155,4 +60,5 @@ class BufferTabSet : TabSet()
 
    initially
       self$TabSet.initially()
+
 end

@@ -11,7 +11,7 @@
 ################################################################
 
 $include "guih.icn"
-
+import gui
 
 
 #
@@ -45,13 +45,13 @@ class BufferTabItem : TabItem(
    method display_tab()
       local xpw, pslh, updown, ypos, cw
       
-      ypos := (self.line_no - 1) * self.parent_tab_set.line_h + self.parent_tab_set.y
-      cw := Clone(self.parent_tab_set.cbwin)
+      ypos := (self.line_no - 1) * self.parent.line_h + self.parent.y
+      cw := Clone(self.parent.cbwin)
 
       xpw := self.label_x + self.label_w
-      pslh := self.parent_tab_set.line_h
+      pslh := self.parent.line_h
       
-      Fg(cw, "black")
+      Fg(cw, "black") #"greyish white")
       DrawLine(cw, xpw - 1, ypos, xpw - 1, ypos + pslh - 1)
       DrawLine(cw, xpw - 2, ypos + 1, xpw - 2, ypos + pslh - 2)
       DrawLine(cw, self.label_x, ypos + pslh - 1, self.label_x, ypos, xpw - 1, ypos)
@@ -63,27 +63,28 @@ class BufferTabItem : TabItem(
       
       #################################################################
       #These  4 rectangles give the tabs a nice look
-      self.parent_tab_set.set_attribs("fg=white")
-      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 + (pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 2)
-      self.parent_tab_set.set_attribs("fg=pale greyish white")
-      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2  +(pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 4)
-      self.parent_tab_set.set_attribs("fg=light greyish white")
-      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) /2 )
-      self.parent_tab_set.set_attribs("fg=greyish white")
-      FillRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) / 4)
+      ###
+      Fg(\ (self.parent.cbwin), "white")
+      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2 + (pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 2)
+      Fg(\ (self.parent.cbwin), "pale greyish white")
+      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2  +(pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 4)
+      Fg(\ (self.parent.cbwin), "light greyish white")
+      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) /2 )
+      Fg(\ (self.parent.cbwin), "greyish white")
+      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) / 4)
           
       updown := -1
-      if parent_tab_set.which_one === self then  updown :=1
+      if parent.which_one === self then  updown :=1
 
-      self.parent_tab_set.set_attribs("fg=pale grey")
-      BevelRoundedRectangle(self.parent_tab_set.cbwin, self.label_x+DEFAULT_TEXT_X_SURROUND -1,
-                            ypos-6 + pslh/ 2,  TextWidth(self.parent_tab_set.cbwin, self.label),  3+(pslh - 2) / 2, updown)
+      Fg(\ (self.parent.cbwin), "pale grey")
+      BevelRoundedRectangle(self.parent.cbwin, self.label_x+DEFAULT_TEXT_X_SURROUND -1,
+                            ypos-6 + pslh/ 2,  TextWidth(self.parent.cbwin, self.label),  3+(pslh - 2) / 2, updown)
       
-      self.parent_tab_set.set_attribs("fg=black")
-      left_string(self.parent_tab_set.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + pslh / 2, self.label)
+      Fg(\ (self.parent.cbwin), "black")
+      left_string(self.parent.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + pslh / 2, self.label)
       
       if is_shaded() then
-         FilterRectangle(self.parent_tab_set.cbwin, self.label_x, ypos + 2, self.label_w - 2, pslh - 1)
+         FilterRectangle(self.parent.cbwin, self.label_x, ypos + 2, self.label_w - 2, pslh - 1)
       
    end
    

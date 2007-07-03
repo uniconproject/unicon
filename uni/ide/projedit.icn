@@ -1,0 +1,1611 @@
+#
+# This ProjectEditor is inspired by that found in VIDE
+# (The V Integrated Development Environment) which is an Open Source IDE
+# http://www.objectcentral.com/vide/help/videdoc/videdoc.htm
+#
+
+import gui
+$include "guih.icn"
+
+global needConsole
+
+class CProjEditor : Dialog(icon_1, advanced_tab, label_14, label_15, userMakefileOpts_list, userMakfileOptAdd_btn, userMakfileOptDel_btn, userTargetOptAdd_btn, userTargetOptDel_btn, userTargetOpts_list, binpath_txt, libpaths_list, objpath_txt, incpaths_list, libpath_list, options_list, libsAddByBrowsing_btn, libsAdd_btn, libsDel_btn, filesAdd_btn, filesDel_btn, ProjEditor_TabSet, Makefile_name_txt, ProjEditor, compiler_txt, compilerflags_txt, libraryfiles_list, linker_txt, linkerflags_txt, sourcefiles_list, targetFile_name_txt, files_tab, libraries_tab, names_tab, fileslist, fileslist1, libslist, optslist, incpathslist, libpathslist, filesloclist, userMakefilelist, userTargetlist, ruleslist, UIDE_VERS, projectname, Compiler, TypeOfBuild, isBorland, makeName, cc, ld, cFlags, ObjDir, BinDir, SrcDir, pname)
+
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   local cmp, lnk, cmpOpts, lnkOpts  #To identifiey the compiler and 
+				     #linker respectivelly and their options
+      cmp := "g++"
+      lnk := "g++"
+      cmpOpts :="-O"
+      lnkOpts :="-s"
+      pname :=file_name(projectname)
+      targetFile_name_txt.set_contents(pname||".exe")
+      Makefile_name_txt.set_contents(pname||"_uprjMakefile")
+      compiler_txt.set_contents(cmp)
+      compilerflags_txt.set_contents(cmpOpts)
+      linker_txt.set_contents(lnk)
+      linkerflags_txt.set_contents(lnkOpts)
+
+      if TypeOfBuild === "Console" then {
+	 if Compiler === "MinGW" then {
+	    cmp :="g++"
+	    lnk :="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s"
+          }
+         else if Compiler === "Cygwin" then {
+	    cmp :="g++"
+	    lnk :="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s"
+	  }
+         else if Compiler === "Borland C" then {
+	    cmp :="BCC32"
+	    lnk :="g++"
+	    cmpOpts :="-q -O1 -v-"
+	    lnkOpts :="-v- -Tpe -ap -c"
+	  }
+         else {
+	    cmp :="g++"
+	    lnk :="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s"
+	  }
+         targetFile_name_txt.set_contents(projectname||".exe")
+         Makefile_name_txt.set_contents(pname||"_uprjMakefile")
+         compiler_txt.set_contents(cmp)
+         compilerflags_txt.set_contents(cmpOpts)
+         linker_txt.set_contents(lnk)
+         linkerflags_txt.set_contents(lnkOpts)
+         needConsole :="TRUE"
+       }
+      else if TypeOfBuild === "GUI" then {
+	 if Compiler === "MinGW" then {
+	    cmp :="g++"
+	    lnk :="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s -mwindows"
+          }
+         else if Compiler === "Cygwin" then {
+	    cmp :="g++"
+	    lnk :="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-e _mainCRTStartup"
+	  }
+         else if Compiler === "Borland C" then {
+	    cmp :="BCC32"
+	    lnk :="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-v- -Tpe -aa -c"
+	  }
+         else {
+	    cmp:="g++"
+	    lnk:="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s -mwindows"
+	  }
+	 #file_name(projectname[1:*projectname-3])
+         targetFile_name_txt.set_contents(projectname||".exe")
+         Makefile_name_txt.set_contents(pname||"_uprjMakefile")
+         compiler_txt.set_contents(cmp)
+         compilerflags_txt.set_contents(cmpOpts)
+         linker_txt.set_contents(lnk)
+         linkerflags_txt.set_contents(lnkOpts)
+         needConsole :="FALSE"
+       }
+      else if TypeOfBuild === "Dynamic" then {
+	 if Compiler === "MinGW" then {
+	    cmp:="g++"
+	    lnk:="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s"
+          }
+         else if Compiler === "Cygwin" then {
+	    cmp:="g++"
+	    lnk:="g++"
+	    cmp:="g++"
+	    lnk:="g++"
+	    cmpOpts :="-O"
+	    lnkOpts :="-s"
+	  }
+         else if Compiler === "Borland C" then {
+	    cmp :="BCC32"
+	    lnk :="g++"
+	    cmpOpts :="-q -O1 -v-"
+	    lnkOpts :="-v- -Tpe -aa -c"
+	  }
+         else {
+	    cmp:="g++"
+	    lnk:="g++"
+	  }
+
+	 #file_name(projectname[1:*projectname-3])
+         targetFile_name_txt.set_contents(projectname||".dll")
+         Makefile_name_txt.set_contents(pname||"_uprjMakefile")
+         compiler_txt.set_contents(cmp)
+         compilerflags_txt.set_contents(cmpOpts)
+         linker_txt.set_contents(lnk)
+         linkerflags_txt.set_contents(lnkOpts)
+         needConsole :="FALSE"
+       }
+      fileslist:=[]
+      fileslist1:=[]
+      filesloclist:=[]
+      libslist:=[]
+      optslist:=[]
+      incpathslist:=[]
+      libpathslist:=[]
+      userMakefilelist:=[]
+      userTargetlist:=[]
+      ruleslist:=[]
+      UIDE_VERS:="0.1"
+      makeName := pname||"_uprjMakefile"
+   end
+
+   method on_ok_btn(ev)
+      createMakefile(pname)
+      chdir(filedirectory)
+      if /find(".uprj",projectname) then
+         ide.handle_openproject(ev,file_name(projectname)||".uprj")
+###      view.FileBrowser.addreplace(file_name(projectname), "Editor", 0)
+###      every i:=1 to *fileslist do
+###         view.FileBrowser.addreplace(file_name(projectname), file_name(fileslist[i]), 0)
+      self.dispose()
+   end
+
+#=====================>>> createMakefile <<<=======================#
+# Build the file name projectname+"_uprjMakefile" using 	   #
+# informations stored in project			   	   #
+#==================================================================#
+   method createMakefile(pname)
+      local l:=""
+      local resName
+      resName:= ""
+      f := open(pname||"_uprjMakefile", "w") #where to write uprjMakefile
+
+      if cc== "BCC32" then
+         isBorland="TRUE"
+
+      #if isBorland =="TRUE" then
+      #   uide.MsgBox.set_contents("Building Borland Makefile ...")
+      #else
+      #   uide.MsgBox.set_contents("Building Makefile ....")
+
+
+      write(f,"#=======================================================")
+      writes(f,"#@V@:Note: File automatically generated by Unicron IDE ")
+      write(f,UIDE_VERS, " (",compiler_txt.get_contents(),").")
+      write(f,"# Generated ",&clock," ",&date)
+      write(f,"#=======================================================")
+      write(f,"# Standard defines:")
+
+     if (isBorland == "TRUE") then
+      {
+        $ifdef _MS_WINDOWS #implies Windows for now
+	  write(f,".AUTODEPEND")
+	  write(f,"# Borland C++ tools")
+	  write(f,"IMPLIB\t= $(BCCROOT)\\bin\\Implib")
+	  write(f,"ILINK32\t= $(BCCROOT)\\bin\\ILink32")
+	  write(f,"TLIB\t= $(BCCROOT)\\bin\\TLib")
+	  write(f,"BRC32\t= $(BCCROOT)\\bin\\Brc32")
+	  write(f,"TASM32\t= $(BCROOT)\\bin\\Tasm32")
+	  write(f,"CC  \t= $(BCCROOT)\\bin\\") 
+	  writes(f,cc)
+	  write(f)
+	  write(f)
+        $endif
+      }
+    else		#gnu stuff
+      {
+	 write(f,"CC  \t=\t",compiler_txt.get_contents())
+	 write(f,"LD  \t=\t",linker_txt.get_contents())
+	 write(f,"WRES\t=\twindres")
+         if (compiler_txt.get_contents() == "g++") then
+	    write(f,"CCOMP\t=\tgcc")
+      }
+
+     ObjDir :=objpath_txt.get_contents()
+     if ObjDir == "" then
+        ObjDir := "."
+     else ObjDir := objpath_txt.get_contents()
+     BinDir :=binpath_txt.get_contents()
+     if BinDir == "" then
+        BinDir := "."
+     else BinDir := objpath_txt.get_contents()
+
+     write(f,"oDir\t=\t",ObjDir) # Obj Dir
+     write(f,"Bin\t=\t",BinDir) # Bin Dir
+     write(f,"Src\t=\t",SrcDir) #Source Dir
+
+     writes(f,"libDirs\t=")
+     if isBorland == "TRUE" & *libpathslist > 0 then
+	writes(f,"\t-L")
+
+     every i:=1 to *libpathslist do {
+        if isBorland == "TRUE" then {
+	   file:=map(libpathslist[i])
+	   writes(f,file)
+           if i<*libpathslist then
+	      writes(f,";")
+	}
+        else {
+	   file:=map(libpathslist[i])
+	   writes(f,"\t-L",file)
+ 	   if i < *libpathslist then
+	      writes(f,"\\")
+	}
+	write(f)
+      }
+      write(f)
+     if isBorland == "TRUE" then
+	write(f)
+
+     writes(f,"incDirs\t=")
+     if isBorland == "TRUE" & *libpathslist > 0 then
+	writes(f,"\t-I")
+
+     every i:=1 to *incpathslist do {
+        if isBorland == "TRUE" then {
+	   file:=map(incpathslist[i])
+	   writes(f,file)
+           if i<*incpathslist then
+	      writes(f,";")
+	}
+        else {
+           file:=map(incpathslist[i])
+	   writes(f,"\t-L",file)
+ 	   if i < *incpathslist then
+	      writes(f,"\\")
+	}
+	write(f)
+      }
+      write(f)
+
+      #ld flags
+         write(f,"LD_FLAGS =\t",linkerflags_txt.get_contents())
+      #LIBS switch
+      if (isBorland == "FALSE") then {
+	 writes(f,"LIBS\t=\t")
+	 l:=getLibFiles(f)
+	 write(f,l)
+       }
+
+      #C_FLAGS & paths to includes
+      writes(f,"C_FLAGS\t=\t", compilerflags_txt.get_contents())
+      every i:=1 to *optslist do {
+ 	 writes(f,"\\")
+	 file:=map(optslist[i])
+	 write(f)
+	 writes(f,"\t",file)
+	}
+      write(f)
+      write(f)
+
+      #sources
+      writes(f,"SRCS\t=")
+      l:=getSourceFiles(f)
+      write(f,l)
+
+      #objects
+      writes(f,"EXOBJS\t=")
+      every i:=1 to *fileslist do {
+         if (isBorland == "TRUE") then {
+            objn :=srcN2ObjN(fileslist[i],".obj")
+            write("objn : ",objn)
+	    writes(f,"\\\n\t$(oDir)\\",objn)
+            if \strstr(objn,".res") then {
+	       resName := "$(oDir)\\"
+               resName := resName||objn
+	     }
+	    else {
+	       resName := resName||"+$(oDir)\\"
+               resName := resName||objn
+	     }
+          }
+         else {
+	    writes(f,"\\")
+            objn :=srcN2ObjN(fileslist[i],".o")
+	    write(f)
+	    writes(f,"\t$(oDir)/",objn) #file[1:*projectname-3]||".o")
+         }
+	}
+      write(f)
+      write(f)
+      write(f,"ALLOBJS\t=\t$(EXOBJS)")
+      if (isBorland == "TRUE")then {
+	 write(f,"BCCJUNK\t=\t*.il* *.csm *.tds")
+	 write(f,"ALLBIN\t=\t$(Bin)\\",file_name(targetFile_name_txt.get_contents()))
+	 write(f,"ALLTGT\t=\t$(Bin)\\",file_name(targetFile_name_txt.get_contents()))
+       }
+      else
+      {
+	if find(".dll",file_name(targetFile_name_txt.get_contents())) then {
+	    writes(f,"ALLBIN\t=\t$(Bin)/",file_name(targetFile_name_txt.get_contents()))
+	    writes(f," $(Bin)/",file_name(targetFile_name_txt.get_contents(),".a"))
+	 }
+	else
+	    write(f,"ALLBIN\t=\t$(Bin)/",file_name(targetFile_name_txt.get_contents()))
+	write(f,"ALLTGT\t=\t$(Bin)/",file_name(targetFile_name_txt.get_contents()))
+      }
+
+      #Options
+      write(f,"# User defines:")
+
+#      every i:=1 to *fileslist do {
+#	 buff,curOpts->list[ixe]);
+#	mkf << buff << '\n';	 
+#       }
+      write(f,"#@# Targets follow ---------------------------------\n\n")
+      #target file
+      #all:
+	 write(f,"all:\t$(ALLTGT)\n\n")
+      #objs:
+	 write(f,"objs:\t$(ALLOBJS)\n\n")
+      #cleanobjs:
+         write(f,"cleanobjs:\n\trm -f $(ALLOBJS)\n\n")
+      #cleanbin
+      if (isBorland == "TRUE") then
+	 write(f,"cleanbin:\n\trm -f $(ALLBIN) $(BCCJUNK)\n\n")
+      else
+	 write(f,"cleanbin:\n\trm -f $(ALLBIN)\n\n")
+      #clean
+      	 write(f,"clean:\tcleanobjs cleanbin\n\n")
+      #cleanall
+      	 write(f,"cleanall:\tcleanobjs cleanbin\n\n")
+      
+      write(f,"#@# User Targets follow ---------------------------------\n\n")
+#     every ixf := 1 to *userTargets do
+#      {
+#	buff :=userTargets[ixf]
+#	write (f, buff)
+#      }
+#    write(f)
+
+     write(f,"#@# Dependency rules follow -----------------------------")
+      #dependency rules
+      #allow user to override the all: target with a #all comment
+      if (not (userTargetlist[1] & strstr(userTargetlist[1],"#all")~== &null)) then {
+         isDLL := "FALSE"
+         $ifdef _MS_WINDOWS #implies Windows for now
+	    if find(".dll",targetFile_name_txt.get_contents()) then
+	    isDLL := "TRUE"
+         $endif
+
+         if (isBorland == "TRUE") then {
+            $ifdef _MS_WINDOWS #implies Windows for now
+	       write(f,"$(Bin)\\",file_name(targetFile_name_txt.get_contents())," : $(EXOBJS)")
+
+               #standard linker commands
+	       write(f,"  $(ILINK32) @&&|\n" << " $(LD_FLAGS) $(libDirs) +")
+	       write(f,"$(BCC32STARTUP)")
+  	       every i := 1 to *fileslist do {
+ 	          objn = srcN2ObjN(fileslist[i],".obj")
+		     if find(objn,".res") then {
+		        write(f," +\n$(oDir)\\"||srcN2ObjN(fileslist[i],".obj"))
+		      }
+	        }
+	       write(f,"\n$<,$*\n")
+
+               #OK, scan the libs list to output BCC lib files
+		  every i:=1 to *libslist do {
+  		     write(f," +")
+		     if find(libslist[i],".lib") |
+		        find(libslist[i],".LIB") then
+		           write(f,libslist[i])  #already has .lib
+		     else
+			   write(f,libslist[i])||".lib"
+		  }
+		write(f)
+		write(f,"$(BCC32DEF)")  #allow DEF files!
+
+            if find(".res",objn) then {   #if (*resName) had a .res file
+	       write(f,resName||"\n\n|\n")
+	     }
+	    else write(f,"\n\n|\n")
+           $endif
+         }
+        else {   #gnu compatible
+          $ifdef _MS_WINDOWS #implies Windows for now
+           if (isDLL == "TRUE")then {
+	      write(f,"$(Bin)/",file_name(targetFile_name_txt.get_contents()),": $(EXOBJS)")
+	      write(f,"\t$(CC) -shared -o $(Bin)/",file_name(targetFile_name_txt.get_contents())," \\")
+	      write(f,"\t-Wl,--out-implib=$(Bin)/",file_name(targetFile_name_txt.get_contents()),".a \\")
+	      write(f,"\t-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--strip-all \\")
+	      write(f,"\t-Wl,--whole-archive $(EXOBJS) \\")
+	      write(f,"\t-Wl,--no-whole-archive $(LIBS)")
+	    }
+           else 
+	  $endif
+	    {
+	      write(f,"$(Bin)/",file_name(targetFile_name_txt.get_contents()),": $(EXOBJS)")
+	      writes(f,"\t$(LD) -o $(Bin)/",file_name(targetFile_name_txt.get_contents()))
+	      writes(f," $(EXOBJS) $(incDirs) $(libDirs) $(LD_FLAGS) $(LIBS)\n")
+	    }
+	 }
+
+     } #first if
+
+    #now the src Files
+
+    if (isBorland == "TRUE") then {
+       #now count on autodependency for borland
+       every i:=1 to *fileslist do {
+	    writes(f,"$(oDir)\\",srcN2ObjN(fileslist[i],".obj"))
+	    write(f," : ",catSrc("$(Src)\\", fileslist[i]))
+
+	    # check for .rc files
+	    if \(find(".rc",fileslist[i]) | \find(".RC",fileslist[i])) then {
+	        write(f,"  $(BRC32) -r $(incDirs) -fo$@ ",catSrc("$(Src)\\",fileslist[i]))
+	      }
+	    else {		#it is a .rc file
+	        write(f,"  $(CC) -c $(C_FLAGS) $(incDirs) -o$@ ",catSrc("$(Src)\\",fileslist[i]))
+	      }
+	}
+      }
+    else {  #NOT Borland
+	every i:=1 to *fileslist do {
+	   # make GUI more responsive here
+	   $ifdef _MS_WINDOWS
+	    if (\ strstr(fileslist[i],".rc"|".RC")) then {
+		write(f,"\n$(oDir)/",srcN2ObjN(fileslist[i],".o"))
+		write(f," : " << catSrc("$(Src)/",fileslist[i]))
+		write(f,"\t$(WRES) " << catSrc("$(Src)/",fileslist[i]))
+		write(f," $(oDir)/" << srcN2ObjN(fileslist[i],".o"))
+		write(f)
+	      }
+	   else
+          $endif
+	    if (needCFile(fileslist[i]) == "TRUE") then{ # mix c++/c?
+		findRule(file_name(fileslist[i]),"gcc")
+	      }
+	    else {
+		findRule(file_name(fileslist[i]),cc)
+	      }
+	  }
+
+	lim := *ruleslist
+        every i:=1 to lim do {
+	    needc := needCFile(ruleslist[i]) #C++/c mix?
+
+	    write(f,"\n$(oDir)/",ruleslist[i])
+	    #check for continuation lines
+#	    while ( *(ruleslist[i] + *(ruleslist[i])-1) ===
+#		    LINE_CONTINUES) do {
+#		++i
+#		if (ruleslist[i]) then
+#		    write(f,ruleslist[i])
+#	      }
+	    if (needc == "TRUE") then
+		write(f,"\t$(CCOMP) $(C_FLAGS) $(incDirs) -c -o $@ $<\n")
+	    else
+		write(f,"\t$(CC) $(C_FLAGS) $(incDirs) -c -o $@ $<\n")
+	  }
+        }
+
+    buffer := makeName||" ("||&clock||" "||&date||") - Makefile saved."
+#    view.uideMsgBox.set_contents(buffer)
+    close(f)
+
+    f := open(filedirectory||pname||".uprj", "w") #where to write project file info.
+    write(f,"#=======================================================")
+    writes(f,"#@V@:Note: C/C++ Project File generated by Unicron IDE ")
+    write(f,UIDE_VERS, " (",\compiler_txt.get_contents(),").")
+    write(f,"# Generated ",&clock," ",&date)
+    write(f,"#=======================================================")
+    write(f)
+    write(f,"Project Name    : ",pname,".uprj")
+    write(f,"Files Directory : ",filedirectory)
+    write(f)
+    write(f,"Project Files List:")
+       every i:=1 to *fileslist do 
+          write(f, "\t - "||fileslist[i])
+    write(f,"#=======================================================")
+    close(f)
+
+   end
+
+#======================>>> needCFile <<<============================
+  method needCFile(cF)
+    local cp := strstr(cF,".c")
+    if (cc ~=="g++") then     #can't need if not g++
+	return "FALSE"
+    if (/cp)	then  #find a a ".C"
+	 cp := strstr(cF,".C")
+    if (/cp) then	#no .c's
+	return "FALSE"
+    if (cp[3] == " " | /cp[3]) then #must be .c only
+	return "TRUE"
+    return "FALSE"
+  end
+#======================>>> strstr <<<============================
+  #This method works as strstr in c++
+  method strstr(str1,str2)  
+     local str
+     if \find(str2,str1) then {
+        if *str2 == 2 then {
+	   every i:=1 to *str1 do {
+	      if str1[i] == str2[1] &
+	         str1[i+1] == str2[2] then
+	      str:=str1[i:*str1]
+            }
+         }
+        else {
+	   every i:=1 to *str1 do {
+	      if str1[i] == str2[1] &
+	         str1[i+1] == str2[2] &
+                 str1[i+2] == str2[3] then
+	         str:=str1[i:*str1]
+            }
+        }
+      }
+     return str
+  end
+
+# ======================>>> findRule <<<============================
+  method findRule(name,comp)  
+  local command, hvbuff		# command line & buffer
+
+    # finds the rules to build object file pointed by name
+
+    # Increased buffer size substantially!
+    local currlineMaxLength := 4096
+    local hvp,currlin:=[]
+
+    command := comp
+    # add include directories
+    every i:=1 to *incpathslist do {
+	incdir := incpathslist[i]
+
+	command := command || " -I"
+	command := command || incdir
+     }
+    command := command ||" "
+    command := command || cFlags # include any command-line defines
+    command := command || " -MM "
+
+    hvbuff := name
+    command ||:= fileQuote (hvbuff)
+  end
+#============================>>> fileQuote <<<===========================
+method fileQuote(fname)
+   # adds quotes to file name on windows
+   local temp:=[]
+   $ifdef _MS_WINDOWS
+   if (strstr(fname," ") ~== &null) then {
+      temp:="\""
+      temp ||:=fname
+      temp ||:="\""
+      return temp
+    }
+   else
+      return fname
+   $else
+      return fname
+   $endif
+end
+#======================>>> catSrc <<<=========================
+  method catSrc (src,file)
+    # this will allow user to use something other that $(Src)
+    # for source files.  
+     local srcfile
+
+    $ifdef USE_SRC_INMAKE
+       if (file[1] & file[1] == "=") then
+	  return file+:=1
+       srcfile := src
+       srcfile := srcfile || file
+       return srcfile
+    $else
+    	if (file[1] & file[1] == "=") then
+	   return file+:=1
+    	return file
+    $endif
+  end
+
+# =====================>>> srcN2ObjN <<<============================
+   method srcN2ObjN(name, ext)
+      #replace .cpp with .o
+      local curExt
+      objn := file_name(name[1:*name-3])  #||".o"
+      every i:=1 to *name do {
+	 if name[i] == "." then {
+	    curExt := name[i+1:*name]
+	  }
+       }
+      $ifdef _MS_WINDOWS #implies Windows for now
+         if (curExt == "rc") then {
+	   if (cc == "BCC32") then objn:=objn ||".res"	 #borland uses .res
+           else objn:=objn ||".res"  #gcc uses .o
+          }
+         else 
+      $endif
+	  objn := objn||ext
+     return objn
+   end
+
+#  =====================>>> getLibFiles <<<============================
+   method getLibFiles(f)
+   local libs
+   libs := ""
+   # This will take the list of libraries in the libFiles list and
+   # convert them to a string of -l's with the lib part strip suitable
+   # for gnu ld input.
+      every i:=1 to *libslist do {
+         if i>=1 then
+            libs ||:= " -l"
+         else libs ||:= "-l"
+	 file:=map(libslist[i])
+	 writes(f,libs,file)
+	}
+      write(f)
+      write(f)
+   end
+
+#  =====================>>> getSourceFiles <<<============================
+   method getSourceFiles(f)
+   # This will take the list of files in the SourceFiles list and
+   # convert them to a string with the SRC part strip suitable
+   # for gnu ld input.
+      every i:=1 to *fileslist do {
+         if isBorland == "TRUE" then {
+	    writes(f,"\\\n\t")
+            writes(f,"$(Src)")
+	    file:=map(fileslist[i])
+	    writes(f,"\t",file)
+	  }
+         else {
+	    writes(f,"\\\n\t")
+	    writes(f,"$(Src)")
+	    file:=map(fileslist[i])
+	    writes(f,"\t",file)
+          }
+	}
+   end
+#  =====================>>> txtDialog <<<===========================
+  method txtDialog(text)
+  local oldwindow
+     /inputstr := ""
+     oldwindow := &window
+     &window := win
+        TextDialog(text,,inputstr,18)
+        inputstr := dialog_value[1]
+     &window := oldwindow
+  return inputstr
+  end 
+
+
+   method on_filesAdd_btn(ev)
+      write(" filedirectory : ",filedirectory)
+      prjPath := chdir(filedirectory)
+      selectedfile := (ide.ProjectSave())
+      put(fileslist,\file_name(selectedfile))
+      put(fileslist1,\selectedfile)
+      sourcefiles_list.set_contents(\fileslist)
+   end
+
+   method on_filesDel_btn(ev)
+        delete(fileslist,sourcefiles_list.get_cursor())
+        delete(fileslist1,sourcefiles_list.get_cursor())
+        sourcefiles_list.set_contents(fileslist)
+   end
+
+   method on_libsAddByBrowsing_btn(ev)
+      selectedfile := file_name(ide.ProjectSave())
+      put(libslist,\selectedfile)
+      libraryfiles_list.set_contents(\libslist)
+   end
+
+   method on_libsAdd_btn(ev)
+      selectedfile := txtDialog("Add Library Files: ")
+      put(libslist,\selectedfile)
+      libraryfiles_list.set_contents(\libslist) 
+   end
+
+   method on_libsDel_btn(ev)
+      delete(libslist,libraryfiles_list.get_cursor())
+      libraryfiles_list.set_contents(libslist)
+   end
+
+   method on_options_Add(ev)
+      selectedfile := txtDialog("Add Defines: ")
+      put(optslist,\selectedfile)
+      options_list.set_contents(\optslist)
+   end
+
+   method on_options_Del(ev)
+      delete(optslist,libraryfiles_list.get_cursor())
+      options_list.set_contents(optslist)
+   end
+
+   method on_addincpath_btn(ev)
+      selectedfile := txtDialog("Add Include Path: ")
+      put(incpathslist,\selectedfile)
+      incpaths_list.set_contents(\incpathslist)
+   end
+
+   method on_addlibpath_btn(ev)
+      selectedfile := txtDialog("Add Library Path: ")
+      put(libpathslist,\selectedfile)
+      libpaths_list.set_contents(\libpathslist)
+   end
+
+   method on_delincpath_btn(ev)
+      delete(incpathslist,incpaths_list.get_cursor())
+      incpaths_list.set_contents(incpathslist)
+   end
+
+   method on_dellibpath_btn(ev)
+      delete(libpathslist,libpaths_list.get_cursor())
+      libpaths_list.set_contents(libpathslist)
+   end
+
+   method on_userMakfileOptAdd_btn(ev)
+      selectedfile := txtDialog("Add User Makefile Options: ")
+      put(userMakefilelist,\selectedfile)
+      userMakefileOpts_list.set_contents(\userMakefilelist)
+
+   end
+
+   method on_userMakfileOptDel_btn(ev)
+      delete(userMakefilelist,userMakefileOpts_list.get_cursor())
+      userMakefileOpts_list.set_contents(userMakefilelist)
+   end
+
+   method on_userTargetOptAdd_btn(ev)
+      selectedfile := txtDialog("Add User Target Options: ")
+      put(userTargetlist,\selectedfile)
+      userTargetOpts_list.set_contents(\userTargetlist)
+   end
+
+   method on_userTargetOptDel_btn(ev)
+      delete(userTargetlist,userTargetOpts_list.get_cursor())
+      userTargetOpts_list.set_contents(userTargetlist)
+   end
+
+   method setup()
+      local addincpath_btn, addlibpath_btn, binPath_btn, defines_tab, dellibpath_btn, files_tab, label_10, label_11, label_12, label_13, libraries_tab, libraryfiles_lbl, names_lbl1, names_lbl2, names_lbl3, names_lbl4, names_lbl5, names_lbl6, names_tab, objPath_btn, ok_btn, options_Add, options_Del, paths_tab, sourcefiles_lbl
+      self.set_attribs("size=414,308", "font=serif,bold,14", "label=Project Editor", "bg=light gray")
+      ProjEditor_TabSet := TabSet()
+      ProjEditor_TabSet.set_pos("5", "5")
+      ProjEditor_TabSet.set_size("100%-10", "100%-35")
+      ProjEditor_TabSet.set_attribs("font=serif,14,bold")
+      names_tab := TabItem()
+      names_tab.set_label("Names")
+      names_lbl1 := Label()
+      names_lbl1.set_pos("15", "30")
+      names_lbl1.set_size("140", "25")
+      names_lbl1.set_internal_alignment("l")
+      names_lbl1.set_label("Target File Name:")
+      names_tab.add(names_lbl1)
+      names_lbl2 := Label()
+      names_lbl2.set_pos("15", "65")
+      names_lbl2.set_size("140", "25")
+      names_lbl2.set_internal_alignment("l")
+      names_lbl2.set_label("Makefile Name:")
+      names_tab.add(names_lbl2)
+      names_lbl3 := Label()
+      names_lbl3.set_pos("15", "100")
+      names_lbl3.set_size("140", "25")
+      names_lbl3.set_internal_alignment("l")
+      names_lbl3.set_label("Compiler:")
+      names_tab.add(names_lbl3)
+      names_lbl5 := Label()
+      names_lbl5.set_pos("15", "170")
+      names_lbl5.set_size("140", "25")
+      names_lbl5.set_internal_alignment("l")
+      names_lbl5.set_label("Linker:")
+      names_tab.add(names_lbl5)
+      names_lbl4 := Label()
+      names_lbl4.set_pos("15", "135")
+      names_lbl4.set_size("140", "25")
+      names_lbl4.set_internal_alignment("l")
+      names_lbl4.set_label("Compiler Flags:")
+      names_tab.add(names_lbl4)
+      names_lbl6 := Label()
+      names_lbl6.set_pos("15", "205")
+      names_lbl6.set_size("140", "25")
+      names_lbl6.set_internal_alignment("l")
+      names_lbl6.set_label("Linker Flags:")
+      names_tab.add(names_lbl6)
+      targetFile_name_txt := TextField()
+      targetFile_name_txt.set_pos("175", "30")
+      targetFile_name_txt.set_size("150", "25")
+      targetFile_name_txt.set_draw_border()
+      targetFile_name_txt.set_contents("")
+      names_tab.add(targetFile_name_txt)
+      Makefile_name_txt := TextField()
+      Makefile_name_txt.set_pos("175", "65")
+      Makefile_name_txt.set_size("150", "25")
+      Makefile_name_txt.set_draw_border()
+      Makefile_name_txt.set_contents("")
+      names_tab.add(Makefile_name_txt)
+      compiler_txt := TextField()
+      compiler_txt.set_pos("175", "100")
+      compiler_txt.set_size("150", "25")
+      compiler_txt.set_draw_border()
+      compiler_txt.set_contents("")
+      names_tab.add(compiler_txt)
+      compilerflags_txt := TextField()
+      compilerflags_txt.set_pos("175", "135")
+      compilerflags_txt.set_size("150", "25")
+      compilerflags_txt.set_draw_border()
+      compilerflags_txt.set_contents("")
+      names_tab.add(compilerflags_txt)
+      linker_txt := TextField()
+      linker_txt.set_pos("175", "170")
+      linker_txt.set_size("150", "25")
+      linker_txt.set_draw_border()
+      linker_txt.set_contents("")
+      names_tab.add(linker_txt)
+      linkerflags_txt := TextField()
+      linkerflags_txt.set_pos("175", "205")
+      linkerflags_txt.set_size("150", "25")
+      linkerflags_txt.set_draw_border()
+      linkerflags_txt.set_contents("")
+      names_tab.add(linkerflags_txt)
+      ProjEditor_TabSet.add(names_tab)
+      files_tab := TabItem()
+      files_tab.set_label("Files")
+      sourcefiles_lbl := Label()
+      sourcefiles_lbl.set_pos("10", "10")
+      sourcefiles_lbl.set_size("120", "25")
+      sourcefiles_lbl.set_internal_alignment("l")
+      sourcefiles_lbl.set_label("Source Files:")
+      files_tab.add(sourcefiles_lbl)
+      sourcefiles_list := TextList()
+      sourcefiles_list.set_pos("10", "45")
+      sourcefiles_list.set_size("255", "170")
+      sourcefiles_list.set_draw_border()
+      sourcefiles_list.set_attribs("bg=white")
+      sourcefiles_list.set_contents([""])
+      files_tab.add(sourcefiles_list)
+      filesAdd_btn := TextButton()
+      filesAdd_btn.set_pos("280", "150")
+      filesAdd_btn.set_size("70", )
+      filesAdd_btn.connect(self, "on_filesAdd_btn", ACTION_EVENT)
+      filesAdd_btn.clear_toggles()
+      filesAdd_btn.set_label("Add")
+      filesAdd_btn.set_internal_alignment("c")
+      files_tab.add(filesAdd_btn)
+      filesDel_btn := TextButton()
+      filesDel_btn.set_pos("280", "185")
+      filesDel_btn.set_size("70", )
+      filesDel_btn.connect(self, "on_filesDel_btn", ACTION_EVENT)
+      filesDel_btn.clear_toggles()
+      filesDel_btn.set_label("Del")
+      filesDel_btn.set_internal_alignment("c")
+      files_tab.add(filesDel_btn)
+      ProjEditor_TabSet.add(files_tab)
+      paths_tab := TabItem()
+      paths_tab.set_label("Paths")
+      label_10 := Label()
+      label_10.set_pos("13", 20)
+      label_10.set_size(61, 20)
+      label_10.set_internal_alignment("l")
+      label_10.set_label("ObjPath:")
+      paths_tab.add(label_10)
+      label_11 := Label()
+      label_11.set_pos("13", 50)
+      label_11.set_size(62, 19)
+      label_11.set_internal_alignment("l")
+      label_11.set_label("BinPath:")
+      paths_tab.add(label_11)
+      objpath_txt := TextField()
+      objpath_txt.set_pos("79", "18")
+      objpath_txt.set_size("202", "22")
+      objpath_txt.set_draw_border()
+      objpath_txt.set_attribs("bg=white")
+      objpath_txt.set_contents("")
+      paths_tab.add(objpath_txt)
+      binpath_txt := TextField()
+      binpath_txt.set_pos("79", "50")
+      binpath_txt.set_size("202", "20")
+      binpath_txt.set_draw_border()
+      binpath_txt.set_attribs("bg=white")
+      binpath_txt.set_contents("")
+      paths_tab.add(binpath_txt)
+      objPath_btn := TextButton()
+      objPath_btn.set_pos("290", 15)
+      objPath_btn.clear_toggles()
+      objPath_btn.set_label("Browse")
+      objPath_btn.set_internal_alignment("c")
+      paths_tab.add(objPath_btn)
+      binPath_btn := TextButton()
+      binPath_btn.set_pos("291", 47)
+      binPath_btn.clear_toggles()
+      binPath_btn.set_label("Browse")
+      binPath_btn.set_internal_alignment("c")
+      paths_tab.add(binPath_btn)
+      addincpath_btn := TextButton()
+      addincpath_btn.set_pos("15", "210")
+      addincpath_btn.set_size("42", )
+      addincpath_btn.connect(self, "on_addincpath_btn", ACTION_EVENT)
+      addincpath_btn.clear_toggles()
+      addincpath_btn.set_label("Add")
+      addincpath_btn.set_internal_alignment("c")
+      paths_tab.add(addincpath_btn)
+      addlibpath_btn := TextButton()
+      addlibpath_btn.set_pos("189", "210")
+      addlibpath_btn.set_size("42", )
+      addlibpath_btn.connect(self, "on_addlibpath_btn", ACTION_EVENT)
+      addlibpath_btn.clear_toggles()
+      addlibpath_btn.set_label("Add")
+      addlibpath_btn.set_internal_alignment("c")
+      paths_tab.add(addlibpath_btn)
+      incpaths_list := TextList()
+      incpaths_list.set_pos("16", "101")
+      incpaths_list.set_size("160", "104")
+      incpaths_list.set_draw_border()
+      incpaths_list.set_attribs("bg=white")
+      incpaths_list.set_contents([""])
+      paths_tab.add(incpaths_list)
+      libpaths_list := TextList()
+      libpaths_list.set_pos("188", "101")
+      libpaths_list.set_size("160", "104")
+      libpaths_list.set_draw_border()
+      libpaths_list.set_attribs("bg=white")
+      libpaths_list.set_contents([""])
+      paths_tab.add(libpaths_list)
+      addlibpath_btn := TextButton()
+      addlibpath_btn.set_pos("62", "210")
+      addlibpath_btn.set_size("42", )
+      addlibpath_btn.connect(self, "on_delincpath_btn", ACTION_EVENT)
+      addlibpath_btn.clear_toggles()
+      addlibpath_btn.set_label("Del")
+      addlibpath_btn.set_internal_alignment("c")
+      paths_tab.add(addlibpath_btn)
+      dellibpath_btn := TextButton()
+      dellibpath_btn.set_pos("237", "210")
+      dellibpath_btn.set_size("42", )
+      dellibpath_btn.connect(self, "on_dellibpath_btn", ACTION_EVENT)
+      dellibpath_btn.clear_toggles()
+      dellibpath_btn.set_label("Del")
+      dellibpath_btn.set_internal_alignment("c")
+      paths_tab.add(dellibpath_btn)
+      label_12 := Label()
+      label_12.set_pos("18", "83")
+      label_12.set_size("116", )
+      label_12.set_internal_alignment("l")
+      label_12.set_label("Include Paths:")
+      paths_tab.add(label_12)
+      label_13 := Label()
+      label_13.set_pos("190", "84")
+      label_13.set_size("116", )
+      label_13.set_internal_alignment("l")
+      label_13.set_label("Library Paths:")
+      paths_tab.add(label_13)
+      ProjEditor_TabSet.add(paths_tab)
+      libraries_tab := TabItem()
+      libraries_tab.set_label("Libraries")
+      libraryfiles_lbl := Label()
+      libraryfiles_lbl.set_pos("10", "10")
+      libraryfiles_lbl.set_size("120", "25")
+      libraryfiles_lbl.set_internal_alignment("l")
+      libraryfiles_lbl.set_label("Library Files:")
+      libraries_tab.add(libraryfiles_lbl)
+      libraryfiles_list := TextList()
+      libraryfiles_list.set_pos("10", "45")
+      libraryfiles_list.set_size("245", "170")
+      libraryfiles_list.set_draw_border()
+      libraryfiles_list.set_attribs("bg=white")
+      libraryfiles_list.set_contents([""])
+      libraries_tab.add(libraryfiles_list)
+      libsAddByBrowsing_btn := TextButton()
+      libsAddByBrowsing_btn.set_pos("257", "185")
+      libsAddByBrowsing_btn.set_size("100", )
+      libsAddByBrowsing_btn.set_attribs("font=serif,12,bold")
+      libsAddByBrowsing_btn.connect(self, "on_libsAddByBrowsing_btn", ACTION_EVENT)
+      libsAddByBrowsing_btn.clear_toggles()
+      libsAddByBrowsing_btn.set_label("Add By Browsing")
+      libsAddByBrowsing_btn.set_internal_alignment("c")
+      libraries_tab.add(libsAddByBrowsing_btn)
+      libsDel_btn := TextButton()
+      libsDel_btn.set_pos("272", "150")
+      libsDel_btn.set_size("70", )
+      libsDel_btn.connect(self, "on_libsDel_btn", ACTION_EVENT)
+      libsDel_btn.clear_toggles()
+      libsDel_btn.set_label("Del")
+      libsDel_btn.set_internal_alignment("c")
+      libraries_tab.add(libsDel_btn)
+      libsAdd_btn := TextButton()
+      libsAdd_btn.set_pos("272", "115")
+      libsAdd_btn.set_size("70", )
+      libsAdd_btn.connect(self, "on_libsAdd_btn", ACTION_EVENT)
+      libsAdd_btn.clear_toggles()
+      libsAdd_btn.set_label("Add")
+      libsAdd_btn.set_internal_alignment("c")
+      libraries_tab.add(libsAdd_btn)
+      ProjEditor_TabSet.add(libraries_tab)
+      defines_tab := TabItem()
+      defines_tab.set_label("Defines")
+      options_list := TextList()
+      options_list.set_pos("14", "17")
+      options_list.set_size("249", "208")
+      options_list.set_draw_border()
+      options_list.set_attribs("bg=white")
+      options_list.set_contents([""])
+      defines_tab.add(options_list)
+      options_Add := TextButton()
+      options_Add.set_pos("271", "158")
+      options_Add.set_size("71", )
+      options_Add.connect(self, "on_options_Add", ACTION_EVENT)
+      options_Add.clear_toggles()
+      options_Add.set_label("Add")
+      options_Add.set_internal_alignment("c")
+      defines_tab.add(options_Add)
+      options_Del := TextButton()
+      options_Del.set_pos("272", "194")
+      options_Del.set_size("71", )
+      options_Del.connect(self, "on_options_Del", ACTION_EVENT)
+      options_Del.clear_toggles()
+      options_Del.set_label("Del")
+      options_Del.set_internal_alignment("c")
+      defines_tab.add(options_Del)
+      ProjEditor_TabSet.add(defines_tab)
+      advanced_tab := TabItem()
+      advanced_tab.set_label("Advanced")
+      userMakefileOpts_list := TextList()
+      userMakefileOpts_list.set_pos("7", "122")
+      userMakefileOpts_list.set_size("192", "153")
+      userMakefileOpts_list.set_align("l", "c")
+      userMakefileOpts_list.set_draw_border()
+      userMakefileOpts_list.set_attribs("bg=white")
+      userMakefileOpts_list.set_select_one()
+      userMakefileOpts_list.set_contents([""])
+      advanced_tab.add(userMakefileOpts_list)
+      label_14 := Label()
+      label_14.set_pos(10, 14)
+      label_14.set_size("187", "27")
+      label_14.set_internal_alignment("l")
+      label_14.set_label("User Makefile Options:")
+      advanced_tab.add(label_14)
+      label_15 := Label()
+      label_15.set_pos("211", "14")
+      label_15.set_size("187", "27")
+      label_15.set_internal_alignment("l")
+      label_15.set_label("User Target Options:")
+      advanced_tab.add(label_15)
+      userMakfileOptAdd_btn := TextButton()
+      userMakfileOptAdd_btn.set_pos(7, 207)
+      userMakfileOptAdd_btn.connect(self, "on_userMakfileOptAdd_btn", ACTION_EVENT)
+      userMakfileOptAdd_btn.clear_toggles()
+      userMakfileOptAdd_btn.set_label("Add")
+      userMakfileOptAdd_btn.set_internal_alignment("c")
+      advanced_tab.add(userMakfileOptAdd_btn)
+      userTargetOptAdd_btn := TextButton()
+      userTargetOptAdd_btn.set_pos(208, 207)
+      userTargetOptAdd_btn.connect(self, "on_userTargetOptAdd_btn", ACTION_EVENT)
+      userTargetOptAdd_btn.clear_toggles()
+      userTargetOptAdd_btn.set_label("Add")
+      userTargetOptAdd_btn.set_internal_alignment("c")
+      advanced_tab.add(userTargetOptAdd_btn)
+      userMakfileOptDel_btn := TextButton()
+      userMakfileOptDel_btn.set_pos(55, 207)
+      userMakfileOptDel_btn.connect(self, "on_userMakfileOptDel_btn", ACTION_EVENT)
+      userMakfileOptDel_btn.clear_toggles()
+      userMakfileOptDel_btn.set_label("Del")
+      userMakfileOptDel_btn.set_internal_alignment("c")
+      advanced_tab.add(userMakfileOptDel_btn)
+      userTargetOptDel_btn := TextButton()
+      userTargetOptDel_btn.set_pos("257", "207")
+      userTargetOptDel_btn.connect(self, "on_userTargetOptDel_btn", ACTION_EVENT)
+      userTargetOptDel_btn.clear_toggles()
+      userTargetOptDel_btn.set_label("Del")
+      userTargetOptDel_btn.set_internal_alignment("c")
+      advanced_tab.add(userTargetOptDel_btn)
+      userTargetOpts_list := TextList()
+      userTargetOpts_list.set_pos("209", "122")
+      userTargetOpts_list.set_size("192", "153")
+      userTargetOpts_list.set_align("l", "c")
+      userTargetOpts_list.set_draw_border()
+      userTargetOpts_list.set_attribs("bg=white")
+      userTargetOpts_list.set_select_one()
+      userTargetOpts_list.set_contents([""])
+      advanced_tab.add(userTargetOpts_list)
+      ProjEditor_TabSet.add(advanced_tab)
+      ProjEditor_TabSet.set_which_one(names_tab)
+      self.add(ProjEditor_TabSet)
+      ok_btn := TextButton()
+      ok_btn.set_pos("50%", "281")
+      ok_btn.set_size("69", )
+      ok_btn.set_align("c", "t")
+      ok_btn.connect(self, "on_ok_btn", ACTION_EVENT)
+      ok_btn.clear_toggles()
+      ok_btn.set_label("Create")
+      ok_btn.set_internal_alignment("c")
+      self.add(ok_btn)
+   end
+
+   initially(isb,isd,btype,cmp,pname)
+      isBorland := isb
+      isDLL := isd
+      TypeOfBuild :=btype
+      Compiler :=cmp
+      projectname :=pname
+      cc := "g++"
+      ld := "g++"
+      cFlags := "-O"
+      ObjDir := "."
+      BinDir := "."
+      SrcDir := "."
+
+      self.Dialog.initially()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|18|string|border|integer|3|
+#string|icon|integer|2|string|icon_button|integer|1|string|label|intege
+#r|15|string|objPath_btn|integer|1|string|on_userMakfileOptAdd_btn|inte
+#ger|2|string|on_userMakfileOptDel_btn|integer|1|string|overlay_item|in
+#teger|3|string|overlay_set|integer|1|string|tab_item|integer|7|string|
+#tab_set|integer|1|string|text_button|integer|17|string|text_field|inte
+#ger|8|string|text_list|integer|7|string|tree|integer|1|string|userMake
+#fileOpts_list|integer|1|string|userMakfileOptAdd_btn|integer|2|string|
+#userMakfileOptDel_btn|integer|1|SuperClass Name|string|Dialog|Import N
+#ame|string|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Bo
+#xes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Bo
+#xes|list|0|Gen Indent|integer|3|Gen Main|integer|1|Gen Component Setup
+#|integer|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog St
+#ruct|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|A
+#ttribs|list|3|string|font=serif,bold,14|string|label=Project Editor|st
+#ring|bg=light gray|Name|string|ProjectEditor|Width|integer|414|Height|
+#integer|308|Items|list|2|class|CanvasTabSet|27|Parent Canvas|1|Name|st
+#ring|ProjEditor_TabSet|Class Name|string|TabSet|Import Name|string|gui
+#|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|
+#null|X Spec|string|5|Y Spec|string|5|W Spec|string|100%-10|H Spec|stri
+#ng|100%-35|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button 
+#Subclass|null|Draw Border|null|Attribs|list|1|string|font=serif,14,bol
+#d|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer
+#|1|Parent Component|1|Children|list|6|class|CanvasTabItem|28|Parent Ca
+#nvas|1|Name|string|names_tab|Class Name|string|TabItem|Import Name|str
+#ing|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H D
+#efault|null|X Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spe
+#c|string|100%|X Align|string|l|Y Align|string|t|Is shaded|null|Is Butt
+#on Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|nu
+#ll|Event Handlers|null|Class Variable|null|Parent Component|10|Label|s
+#tring|Names|Parent TabSet|10|Children|list|12|class|CanvasLabel|27|Par
+#ent Canvas|1|Name|string|names_lbl1|Class Name|string|Label|Import Nam
+#e|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|nul
+#l|H Default|null|X Spec|string|15|Y Spec|string|30|W Spec|string|140|H
+# Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Bu
+#tton Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|
+#null|Event Handlers|list|0|Class Variable|null|Parent Component|14|Lab
+#el|string|Target File Name:|Internal Align|string|l|class|CanvasLabel|
+#27|Parent Canvas|1|Name|string|names_lbl2|Class Name|string|Label|Impo
+#rt Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defau
+#lt|null|H Default|null|X Spec|string|15|Y Spec|string|65|W Spec|string
+#|140|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded|null
+#|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|
+#Accel|null|Event Handlers|list|0|Class Variable|null|Parent Component|
+#14|Label|string|Makefile Name:|Internal Align|string|l|class|CanvasLab
+#el|27|Parent Canvas|1|Name|string|names_lbl3|Class Name|string|Label|I
+#mport Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W De
+#fault|null|H Default|null|X Spec|string|15|Y Spec|string|100|W Spec|st
+#ring|140|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded|
+#null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|n
+#ull|Accel|null|Event Handlers|list|0|Class Variable|null|Parent Compon
+#ent|14|Label|string|Compiler:|Internal Align|string|l|class|CanvasLabe
+#l|27|Parent Canvas|1|Name|string|names_lbl5|Class Name|string|Label|Im
+#port Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Def
+#ault|null|H Default|null|X Spec|string|15|Y Spec|string|170|W Spec|str
+#ing|140|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded|n
+#ull|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|nu
+#ll|Accel|null|Event Handlers|list|0|Class Variable|null|Parent Compone
+#nt|14|Label|string|Linker:|Internal Align|string|l|class|CanvasLabel|2
+#7|Parent Canvas|1|Name|string|names_lbl4|Class Name|string|Label|Impor
+#t Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defaul
+#t|null|H Default|null|X Spec|string|15|Y Spec|string|135|W Spec|string
+#|140|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded|null
+#|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|
+#Accel|null|Event Handlers|list|0|Class Variable|null|Parent Component|
+#14|Label|string|Compiler Flags:|Internal Align|string|l|class|CanvasLa
+#bel|27|Parent Canvas|1|Name|string|names_lbl6|Class Name|string|Label|
+#Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W D
+#efault|null|H Default|null|X Spec|string|15|Y Spec|string|205|W Spec|s
+#tring|140|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|
+#null|Accel|null|Event Handlers|list|0|Class Variable|null|Parent Compo
+#nent|14|Label|string|Linker Flags:|Internal Align|string|l|class|Canva
+#sTextField|27|Parent Canvas|1|Name|string|targetFile_name_txt|Class Na
+#me|string|TextField|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix
+#|null|H Fix|null|W Default|null|H Default|null|X Spec|string|175|Y Spe
+#c|string|30|W Spec|string|150|H Spec|string|25|X Align|string|l|Y Alig
+#n|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|integer|
+#1|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class V
+#ariable|integer|1|Parent Component|14|Contents|string||Filter String|s
+#tring||class|CanvasTextField|27|Parent Canvas|1|Name|string|Makefile_n
+#ame_txt|Class Name|string|TextField|Import Name|string|gui|X Fix|null|
+#Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|
+#string|175|Y Spec|string|65|W Spec|string|150|H Spec|string|25|X Align
+#|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw
+# Border|integer|1|Attribs|list|0|Tooltip|null|Accel|null|Event Handler
+#s|list|0|Class Variable|integer|1|Parent Component|14|Contents|string|
+#|Filter String|string||class|CanvasTextField|27|Parent Canvas|1|Name|s
+#tring|compiler_txt|Class Name|string|TextField|Import Name|string|gui|
+#X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|n
+#ull|X Spec|string|175|Y Spec|string|100|W Spec|string|150|H Spec|strin
+#g|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subcla
+#ss|null|Draw Border|integer|1|Attribs|list|0|Tooltip|null|Accel|null|E
+#vent Handlers|list|0|Class Variable|integer|1|Parent Component|14|Cont
+#ents|string||Filter String|string||class|CanvasTextField|27|Parent Can
+#vas|1|Name|string|compilerflags_txt|Class Name|string|TextField|Import
+# Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default
+#|null|H Default|null|X Spec|string|175|Y Spec|string|135|W Spec|string
+#|150|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded|null
+#|Is Button Subclass|null|Draw Border|integer|1|Attribs|list|0|Tooltip|
+#null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent 
+#Component|14|Contents|string||Filter String|string||class|CanvasTextFi
+#eld|27|Parent Canvas|1|Name|string|linker_txt|Class Name|string|TextFi
+#eld|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null
+#|W Default|null|H Default|null|X Spec|string|175|Y Spec|string|170|W S
+#pec|string|150|H Spec|string|25|X Align|string|l|Y Align|string|t|Is s
+#haded|null|Is Button Subclass|null|Draw Border|integer|1|Attribs|list|
+#0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer
+#|1|Parent Component|14|Contents|string||Filter String|string||class|Ca
+#nvasTextField|27|Parent Canvas|1|Name|string|linkerflags_txt|Class Nam
+#e|string|TextField|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|
+#null|H Fix|null|W Default|null|H Default|null|X Spec|string|175|Y Spec
+#|string|205|W Spec|string|150|H Spec|string|25|X Align|string|l|Y Alig
+#n|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|integer|
+#1|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class V
+#ariable|integer|1|Parent Component|14|Contents|string||Filter String|s
+#tring||class|CanvasTabItem|28|Parent Canvas|1|Name|string|files_tab|Cl
+#ass Name|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W
+# Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|0|Y 
+#Spec|integer|0|W Spec|string|100%|H Spec|string|100%|X Align|string|l|
+#Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|nu
+#ll|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Class Va
+#riable|null|Parent Component|10|Label|string|Files|Parent TabSet|10|Ch
+#ildren|list|4|class|CanvasLabel|27|Parent Canvas|1|Name|string|sourcef
+#iles_lbl|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y F
+#ix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|str
+#ing|10|Y Spec|string|10|W Spec|string|120|H Spec|string|25|X Align|str
+#ing|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Bor
+#der|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|
+#Class Variable|null|Parent Component|53|Label|string|Source Files:|Int
+#ernal Align|string|l|class|CanvasTextList|29|Parent Canvas|1|Name|stri
+#ng|sourcefiles_list|Class Name|string|TextList|Import Name|string|gui|
+#X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|n
+#ull|X Spec|string|10|Y Spec|string|45|W Spec|string|255|H Spec|string|
+#170|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclas
+#s|null|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|nu
+#ll|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Co
+#mponent|53|Select One|null|Select Many|null|Checked|list|1|null|Conten
+#ts|list|1|string||class|CanvasTextButton|36|Parent Canvas|1|Name|strin
+#g|filesAdd_btn|Class Name|string|TextButton|Import Name|string|gui|X F
+#ix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|inte
+#ger|1|X Spec|string|280|Y Spec|string|150|W Spec|string|70|H Spec|inte
+#ger|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subc
+#lass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null
+#|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_filesAdd_b
+#tn|Class Variable|integer|1|Parent Component|53|Label|string|Add|No Ke
+#yboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|I
+#s Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Pa
+#rent Button Group|null|Internal Align|string|c|class|CanvasTextButton|
+#36|Parent Canvas|1|Name|string|filesDel_btn|Class Name|string|TextButt
+#on|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|
+#W Default|null|H Default|integer|1|X Spec|string|280|Y Spec|string|185
+#|W Spec|string|70|H Spec|integer|25|X Align|string|l|Y Align|string|t|
+#Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|l
+#ist|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTI
+#ON_EVENT|string|on_filesDel_btn|Class Variable|integer|1|Parent Compon
+#ent|53|Label|string|Del|No Keyboard|null|Img Up|null|Img Down|null|Img
+# Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null
+#|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align|str
+#ing|c|class|CanvasTabItem|28|Parent Canvas|1|Name|string|paths_tab|Cla
+#ss Name|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W 
+#Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|0|Y S
+#pec|integer|0|W Spec|string|100%|H Spec|string|100%|X Align|string|l|Y
+# Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|nul
+#l|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Class Var
+#iable|null|Parent Component|10|Label|string|Paths|Parent TabSet|10|Chi
+#ldren|list|14|class|CanvasLabel|27|Parent Canvas|1|Name|string|label_1
+#0|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null
+#|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|13|
+#Y Spec|integer|20|W Spec|integer|61|H Spec|integer|20|X Align|string|l
+#|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|n
+#ull|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class
+# Variable|null|Parent Component|72|Label|string|ObjPath:|Internal Alig
+#n|string|l|class|CanvasLabel|27|Parent Canvas|1|Name|string|label_11|C
+#lass Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W 
+#Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|13|Y S
+#pec|integer|50|W Spec|integer|62|H Spec|integer|19|X Align|string|l|Y 
+#Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null
+#|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Va
+#riable|null|Parent Component|72|Label|string|BinPath:|Internal Align|s
+#tring|l|class|CanvasTextField|27|Parent Canvas|1|Name|string|objpath_t
+#xt|Class Name|string|TextField|Import Name|string|gui|X Fix|null|Y Fix
+#|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|strin
+#g|79|Y Spec|string|18|W Spec|string|202|H Spec|string|22|X Align|strin
+#g|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Borde
+#r|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Accel|null|Eve
+#nt Handlers|list|0|Class Variable|integer|1|Parent Component|72|Conten
+#ts|string||Filter String|string||class|CanvasTextField|27|Parent Canva
+#s|1|Name|string|binpath_txt|Class Name|string|TextField|Import Name|st
+#ring|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H 
+#Default|null|X Spec|string|79|Y Spec|string|50|W Spec|string|202|H Spe
+#c|string|20|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button
+# Subclass|null|Draw Border|integer|1|Attribs|list|1|string|bg=white|To
+#oltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|P
+#arent Component|72|Contents|string||Filter String|string||class|Canvas
+#TextButton|36|Parent Canvas|1|Name|string|objPath_btn|Class Name|strin
+#g|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H
+# Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|290|Y 
+#Spec|integer|15|W Spec|integer|61|H Spec|integer|25|X Align|string|l|Y
+# Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Borde
+#r|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Cl
+#ass Variable|null|Parent Component|72|Label|string|Browse|No Keyboard|
+#null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is Check
+#ed Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Bu
+#tton Group|null|Internal Align|string|c|class|CanvasTextButton|36|Pare
+#nt Canvas|1|Name|string|binPath_btn|Class Name|string|TextButton|Impor
+#t Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defaul
+#t|integer|1|H Default|integer|1|X Spec|string|291|Y Spec|integer|47|W 
+#Spec|integer|61|H Spec|integer|25|X Align|string|l|Y Align|string|t|Is
+# shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|lis
+#t|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|null|
+#Parent Component|72|Label|string|Browse|No Keyboard|null|Img Up|null|I
+#mg Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Ch
+#eckbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|In
+#ternal Align|string|c|class|CanvasTextButton|36|Parent Canvas|1|Name|s
+#tring|addincpath_btn|Class Name|string|TextButton|Import Name|string|g
+#ui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defaul
+#t|integer|1|X Spec|string|15|Y Spec|string|210|W Spec|string|42|H Spec
+#|integer|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button
+# Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel
+#|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_addin
+#cpath_btn|Class Variable|null|Parent Component|72|Label|string|Add|No 
+#Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null
+#|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|
+#Parent Button Group|null|Internal Align|string|c|class|CanvasTextButto
+#n|36|Parent Canvas|1|Name|string|addlibpath_btn|Class Name|string|Text
+#Button|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|n
+#ull|W Default|null|H Default|integer|1|X Spec|string|189|Y Spec|string
+#|210|W Spec|string|42|H Spec|integer|25|X Align|string|l|Y Align|strin
+#g|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attri
+#bs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|
+#ACTION_EVENT|string|on_addlibpath_btn|Class Variable|null|Parent Compo
+#nent|72|Label|string|Add|No Keyboard|null|Img Up|null|Img Down|null|Im
+#g Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|nul
+#l|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align|st
+#ring|c|class|CanvasTextList|29|Parent Canvas|1|Name|string|incpaths_li
+#st|Class Name|string|TextList|Import Name|string|gui|X Fix|null|Y Fix|
+#null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string
+#|16|Y Spec|string|101|W Spec|string|160|H Spec|string|104|X Align|stri
+#ng|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Bord
+#er|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Accel|null|Ev
+#ent Handlers|list|0|Class Variable|integer|1|Parent Component|72|Selec
+#t One|null|Select Many|null|Checked|list|1|null|Contents|list|1|string
+#||class|CanvasTextList|29|Parent Canvas|1|Name|string|libpaths_list|Cl
+#ass Name|string|TextList|Import Name|string|gui|X Fix|null|Y Fix|null|
+#W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|188|
+#Y Spec|string|101|W Spec|string|160|H Spec|string|104|X Align|string|l
+#|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|i
+#nteger|1|Attribs|list|1|string|bg=white|Tooltip|null|Accel|null|Event 
+#Handlers|list|0|Class Variable|integer|1|Parent Component|72|Select On
+#e|null|Select Many|null|Checked|list|1|null|Contents|list|1|string||cl
+#ass|CanvasTextButton|36|Parent Canvas|1|Name|string|addlibpath_btn|Cla
+#ss Name|string|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null
+#|W Fix|null|H Fix|null|W Default|null|H Default|integer|1|X Spec|strin
+#g|62|Y Spec|string|210|W Spec|string|42|H Spec|integer|25|X Align|stri
+#ng|l|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw
+# Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|lis
+#t|1|list|2|string|ACTION_EVENT|string|on_delincpath_btn|Class Variable
+#|null|Parent Component|72|Label|string|Del|No Keyboard|null|Img Up|nul
+#l|Img Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is
+# Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null
+#|Internal Align|string|c|class|CanvasTextButton|36|Parent Canvas|1|Nam
+#e|string|dellibpath_btn|Class Name|string|TextButton|Import Name|strin
+#g|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Def
+#ault|integer|1|X Spec|string|237|Y Spec|string|210|W Spec|string|42|H 
+#Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Bu
+#tton Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|A
+#ccel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_d
+#ellibpath_btn|Class Variable|null|Parent Component|72|Label|string|Del
+#|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|
+#null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|n
+#ull|Parent Button Group|null|Internal Align|string|c|class|CanvasLabel
+#|27|Parent Canvas|1|Name|string|label_12|Class Name|string|Label|Impor
+#t Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defaul
+#t|null|H Default|integer|1|X Spec|string|18|Y Spec|string|83|W Spec|st
+#ring|116|H Spec|integer|15|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|
+#null|Accel|null|Event Handlers|list|0|Class Variable|null|Parent Compo
+#nent|72|Label|string|Include Paths:|Internal Align|string|l|class|Canv
+#asLabel|27|Parent Canvas|1|Name|string|label_13|Class Name|string|Labe
+#l|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W
+# Default|null|H Default|integer|1|X Spec|string|190|Y Spec|string|84|W
+# Spec|string|116|H Spec|integer|15|X Align|string|l|Y Align|string|t|I
+#s shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|
+#Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|null|Pare
+#nt Component|72|Label|string|Library Paths:|Internal Align|string|l|cl
+#ass|CanvasTabItem|28|Parent Canvas|1|Name|string|libraries_tab|Class N
+#ame|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|
+#null|H Fix|null|W Default|null|H Default|null|X Spec|integer|0|Y Spec|
+#integer|0|W Spec|string|100%|H Spec|string|100%|X Align|string|l|Y Ali
+#gn|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|At
+#tribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Class Variabl
+#e|null|Parent Component|10|Label|string|Libraries|Parent TabSet|10|Chi
+#ldren|list|5|class|CanvasLabel|27|Parent Canvas|1|Name|string|libraryf
+#iles_lbl|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y F
+#ix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|str
+#ing|10|Y Spec|string|10|W Spec|string|120|H Spec|string|25|X Align|str
+#ing|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Bor
+#der|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|
+#Class Variable|null|Parent Component|125|Label|string|Library Files:|I
+#nternal Align|string|l|class|CanvasTextList|29|Parent Canvas|1|Name|st
+#ring|libraryfiles_list|Class Name|string|TextList|Import Name|string|g
+#ui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defaul
+#t|null|X Spec|string|10|Y Spec|string|45|W Spec|string|245|H Spec|stri
+#ng|170|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subc
+#lass|null|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip
+#|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent
+# Component|125|Select One|null|Select Many|null|Checked|list|1|null|Co
+#ntents|list|1|string||class|CanvasTextButton|36|Parent Canvas|1|Name|s
+#tring|libsAddByBrowsing_btn|Class Name|string|TextButton|Import Name|s
+#tring|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H
+# Default|integer|1|X Spec|string|257|Y Spec|string|185|W Spec|string|1
+#00|H Spec|integer|24|X Align|string|l|Y Align|string|t|Is shaded|null|
+#Is Button Subclass|integer|1|Draw Border|null|Attribs|list|1|string|fo
+#nt=serif,12,bold|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|
+#string|ACTION_EVENT|string|on_libsAddByBrowsing_btn|Class Variable|int
+#eger|1|Parent Component|125|Label|string|Add By Browsing|No Keyboard|n
+#ull|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is Checke
+#d Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent But
+#ton Group|null|Internal Align|string|c|class|CanvasTextButton|36|Paren
+#t Canvas|1|Name|string|libsDel_btn|Class Name|string|TextButton|Import
+# Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default
+#|null|H Default|integer|1|X Spec|string|272|Y Spec|string|150|W Spec|s
+#tring|70|H Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Too
+#ltip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|
+#string|on_libsDel_btn|Class Variable|integer|1|Parent Component|125|La
+#bel|string|Del|No Keyboard|null|Img Up|null|Img Down|null|Img Width|nu
+#ll|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent C
+#heckBoxGroup|null|Parent Button Group|null|Internal Align|string|c|cla
+#ss|CanvasTextButton|36|Parent Canvas|1|Name|string|libsAdd_btn|Class N
+#ame|string|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W F
+#ix|null|H Fix|null|W Default|null|H Default|integer|1|X Spec|string|27
+#2|Y Spec|string|115|W Spec|string|70|H Spec|integer|25|X Align|string|
+#l|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Bo
+#rder|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1
+#|list|2|string|ACTION_EVENT|string|on_libsAdd_btn|Class Variable|integ
+#er|1|Parent Component|125|Label|string|Add|No Keyboard|null|Img Up|nul
+#l|Img Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is
+# Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null
+#|Internal Align|string|c|class|CanvasTabItem|28|Parent Canvas|1|Name|s
+#tring|defines_tab|Class Name|string|TabItem|Import Name|string|gui|X F
+#ix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null
+#|X Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spec|string|10
+#0%|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass
+#|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Ha
+#ndlers|null|Class Variable|null|Parent Component|10|Label|string|Defin
+#es|Parent TabSet|10|Children|list|3|class|CanvasTextList|29|Parent Can
+#vas|1|Name|string|options_list|Class Name|string|TextList|Import Name|
+#string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|
+#H Default|null|X Spec|string|14|Y Spec|string|17|W Spec|string|249|H S
+#pec|string|208|X Align|string|l|Y Align|string|t|Is shaded|null|Is But
+#ton Subclass|null|Draw Border|integer|1|Attribs|list|1|string|bg=white
+#|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|
+#1|Parent Component|148|Select One|null|Select Many|null|Checked|list|1
+#|null|Contents|list|1|string||class|CanvasTextButton|36|Parent Canvas|
+#1|Name|string|options_Add|Class Name|string|TextButton|Import Name|str
+#ing|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H D
+#efault|integer|1|X Spec|string|271|Y Spec|string|158|W Spec|string|71|
+#H Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is 
+#Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null
+#|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on
+#_options_Add|Class Variable|null|Parent Component|148|Label|string|Add
+#|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|
+#null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|n
+#ull|Parent Button Group|null|Internal Align|string|c|class|CanvasTextB
+#utton|36|Parent Canvas|1|Name|string|options_Del|Class Name|string|Tex
+#tButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|
+#null|W Default|null|H Default|integer|1|X Spec|string|272|Y Spec|strin
+#g|194|W Spec|string|71|H Spec|integer|25|X Align|string|l|Y Align|stri
+#ng|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attr
+#ibs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string
+#|ACTION_EVENT|string|on_options_Del|Class Variable|null|Parent Compone
+#nt|148|Label|string|Del|No Keyboard|null|Img Up|null|Img Down|null|Img
+# Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null
+#|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align|str
+#ing|c|class|CanvasTabItem|28|Parent Canvas|1|Name|string|advanced_tab|
+#Class Name|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null
+#|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|0|
+#Y Spec|integer|0|W Spec|string|100%|H Spec|string|100%|X Align|string|
+#l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|
+#null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Class 
+#Variable|integer|1|Parent Component|10|Label|string|Advanced|Parent Ta
+#bSet|10|Children|list|8|class|CanvasTextList|29|Parent Canvas|1|Name|s
+#tring|userMakefileOpts_list|Class Name|string|TextList|Import Name|str
+#ing|gui|X Fix|null|Y Fix|integer|1|W Fix|null|H Fix|null|W Default|nul
+#l|H Default|null|X Spec|string|7|Y Spec|string|122|W Spec|string|192|H
+# Spec|string|153|X Align|string|l|Y Align|string|c|Is shaded|null|Is B
+#utton Subclass|null|Draw Border|integer|1|Attribs|list|1|string|bg=whi
+#te|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|intege
+#r|1|Parent Component|164|Select One|integer|1|Select Many|null|Checked
+#|list|1|null|Contents|list|1|string||class|CanvasLabel|27|Parent Canva
+#s|1|Name|string|label_14|Class Name|string|Label|Import Name|string|gu
+#i|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default
+#|null|X Spec|integer|10|Y Spec|integer|14|W Spec|string|187|H Spec|str
+#ing|27|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subc
+#lass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Even
+#t Handlers|list|0|Class Variable|integer|1|Parent Component|164|Label|
+#string|User Makefile Options:|Internal Align|string|l|class|CanvasLabe
+#l|27|Parent Canvas|1|Name|string|label_15|Class Name|string|Label|Impo
+#rt Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defau
+#lt|null|H Default|null|X Spec|string|211|Y Spec|string|14|W Spec|strin
+#g|187|H Spec|string|27|X Align|string|l|Y Align|string|t|Is shaded|nul
+#l|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null
+#|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Comp
+#onent|164|Label|string|User Target Options:|Internal Align|string|l|cl
+#ass|CanvasTextButton|36|Parent Canvas|1|Name|string|userMakfileOptAdd_
+#btn|Class Name|string|TextButton|Import Name|string|gui|X Fix|null|Y F
+#ix|null|W Fix|null|H Fix|null|W Default|integer|1|H Default|integer|1|
+#X Spec|integer|7|Y Spec|integer|207|W Spec|integer|40|H Spec|integer|2
+#5|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|
+#integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Even
+#t Handlers|list|1|list|2|string|ACTION_EVENT|string|on_userMakfileOptA
+#dd_btn|Class Variable|integer|1|Parent Component|164|Label|string|Add|
+#No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|n
+#ull|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|nu
+#ll|Parent Button Group|null|Internal Align|string|c|class|CanvasTextBu
+#tton|36|Parent Canvas|1|Name|string|userTargetOptAdd_btn|Class Name|st
+#ring|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nul
+#l|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|integer|20
+#8|Y Spec|integer|207|W Spec|integer|40|H Spec|integer|25|X Align|strin
+#g|l|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw 
+#Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list
+#|1|list|2|string|ACTION_EVENT|string|on_userTargetOptAdd_btn|Class Var
+#iable|integer|1|Parent Component|164|Label|string|Add|No Keyboard|null
+#|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is Checked F
+#lag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button
+# Group|null|Internal Align|string|c|class|CanvasTextButton|36|Parent C
+#anvas|1|Name|string|userMakfileOptDel_btn|Class Name|string|TextButton
+#|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W 
+#Default|integer|1|H Default|integer|1|X Spec|integer|55|Y Spec|integer
+#|207|W Spec|integer|39|H Spec|integer|25|X Align|string|l|Y Align|stri
+#ng|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attr
+#ibs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string
+#|ACTION_EVENT|string|on_userMakfileOptDel_btn|Class Variable|integer|1
+#|Parent Component|164|Label|string|Del|No Keyboard|null|Img Up|null|Im
+#g Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Che
+#ckbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|Int
+#ernal Align|string|c|class|CanvasTextButton|36|Parent Canvas|1|Name|st
+#ring|userTargetOptDel_btn|Class Name|string|TextButton|Import Name|str
+#ing|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|integer|
+#1|H Default|integer|1|X Spec|string|257|Y Spec|string|207|W Spec|integ
+#er|39|H Spec|integer|25|X Align|string|l|Y Align|string|t|Is shaded|nu
+#ll|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Toolti
+#p|null|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|str
+#ing|on_userTargetOptDel_btn|Class Variable|integer|1|Parent Component|
+#164|Label|string|Del|No Keyboard|null|Img Up|null|Img Down|null|Img Wi
+#dth|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Pa
+#rent CheckBoxGroup|null|Parent Button Group|null|Internal Align|string
+#|c|class|CanvasTextList|29|Parent Canvas|1|Name|string|userTargetOpts_
+#list|Class Name|string|TextList|Import Name|string|gui|X Fix|null|Y Fi
+#x|integer|1|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec
+#|string|209|Y Spec|string|122|W Spec|string|192|H Spec|string|153|X Al
+#ign|string|l|Y Align|string|c|Is shaded|null|Is Button Subclass|null|D
+#raw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Accel
+#|null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|
+#164|Select One|integer|1|Select Many|null|Checked|list|1|null|Contents
+#|list|1|string||Which One|14|class|CanvasTextButton|36|Parent Canvas|1
+#|Name|string|ok_btn|Class Name|string|TextButton|Import Name|string|gu
+#i|X Fix|integer|1|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H De
+#fault|integer|1|X Spec|string|50%|Y Spec|string|281|W Spec|string|69|H
+# Spec|integer|25|X Align|string|c|Y Align|string|t|Is shaded|null|Is B
+#utton Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|
+#Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_
+#ok_btn|Class Variable|null|Parent Component|1|Label|string|Create|No K
+#eyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|
+#Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|P
+#arent Button Group|null|Internal Align|string|c|Initial Focus|null|Eve
+#nt Handlers|list|0|

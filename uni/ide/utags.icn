@@ -1,86 +1,191 @@
-################################################################
+#################################################################
 #
 #   File:         utags.icn
 #
-#   Subject:   Parse File and Generate Nodes for Class Browser Tree 
-#
+#   Subject:   Parse File and Generate Nodes for  
+#		 Class Browser Tree
 #   Author:   Nolan Clayton
 #
 #   Date:       May 26, 04
 #
-################################################################
+##################################################################
+
+import gui
+global line
+
+##################################################################
+# class  Tag : is a subclass of Node used only to keep 
+#  track of Node attribs
+##################################################################
+
+procedure utags(contents, parentfile)
+   local  lineno, outlines, notid, word, javaKeywords:=[], x, gword
+      CKeywords :=["bool", "char", "class", "const",
+                   "const_cast", "double", "explicit",
+                   "extern", "float", "friend", "inline",
+                   "int", "long", "namespace", "private",
+                   "protected", "public", "short", "signed",
+                   "static", "string", "template", "unsigned",
+                   "using", "void"]
+
+      javaKeywords := ["abstract", "boolean", "byte",
+                       "char", "class", "const", "double",
+                       "extends", "final", "finally", "float",
+                       "generic", "implements", "import", "inner",
+                       "int", "interface", "long", "native",
+                       "operator", "outer", "package",
+                       "private", "protected", "public",
+                       "short", "static", "String",
+                       "super", "synchronized", "void"]
 
 
-
-##########################################################
-# Utags Proc: 
-procedure utags(contents, parentfile) 
-   local line, lineno,  outlines, notid, word 
-   
    notid := &cset -- &ucase -- &digits -- &lcase -- '_'
 
-   
    lineno := 1
-   outlines   := []      
-   
-   every line := !contents do {
+   outlines   := []
+
+write("parentfile : ",parentfile)
+
+every line := !contents do {
+
       line[upto('#',line):0] := ""
-      line ? {
+      line[upto("*/",line):0] := ""
+      line[upto("/*",line):0] := ""
+      line[upto("//",line):0] := ""
+
+#      if find((".cpp"|".java"|".icn"),line) then
+#      if find(("link "|"$include "|"import"),line) then{
+#	   put(outlines, Tag("procedure", line, lineno, parentfile))
+#       }
+#      else 
+   line ? {
+      gword3 := getword3(line)
+### Unicon Tags ###
+
+      if find(".icn"|".cpp", parentfile) then {    #Unicon Tags
+         gword := getword()
          tab(many(' ')) 
-         
-         if ="procedure" then 
-            if any(notid) then put(outlines, Tag("procedure", getword(), lineno, parentfile) )
-                     
-         if ="class" then 
-            if any(notid) then put(outlines, Tag("class", getword(), lineno, parentfile) )
-         
-         if ="method" then 
-            if any(notid) then outlines[*outlines].add( Tag("method", getword(), lineno, parentfile)  )
 
-         if ="initially" then 
-            if any(notid) then outlines[*outlines].add( Tag("initially", "initially", lineno, parentfile)  ) 
-         
-         if ="link" then 
-            if any(notid) then every  word := getword()  do
+         if gword === "procedure" then {
+	       put(outlines, Tag("procedure", getword(), lineno, parentfile))
+	  }
+         if gword === "class" then {
+	       put(outlines, Tag("class", getword(), lineno, parentfile))
+          }
+         if gword === "method" then {
+	       outlines[-1].add( Tag("method", getword(), lineno, parentfile))
+          }
+         if gword === "initially" then {
+	       outlines[-1].add(Tag("initially","initially",lineno,parentfile))
+          }
+         if gword === "link" then {
+            every  word := getword()  do
                put(outlines, Tag("link", word, lineno, parentfile) )
-         
-         if ="$include" then 
-            if any(notid) then every  word := getword()  do
+          }
+         if gword === "$include" then {
+            every  word := getword()  do
                put(outlines, Tag("$include", word, lineno, parentfile) )
-
-         if ="package" then 
-            if any(notid) then every  word := getword()  do
+          }
+         if gword === "package" then {
+            every  word := getword()  do
                put(outlines, Tag("package", word, lineno, parentfile) )
-         
+          }
+       }
+### Java Tags ###
+      else if find(".java", parentfile) then {    #Java Tags
+
+         x := getword()
+         if \x then gword := getword3(line)
+         else gword := &null
+
+         tab(many(' '))
+
+#         if gword === member(javaKeywords,gword) then {
+#            every  word := getword()  do
+#            put(outlines, Tag("class", gword, lineno, parentfile) )
+#          }
+#         if x === "class" then
+#            put(outlines, Tag("class", gword, lineno, parentfile) )
+
+#         if gword === "package" then 
+#            every  word := getword()  do
+#               put(outlines, Tag("package", gword, lineno, parentfile) )
+
+#         if gword === "public" | gword==="static" |
+#            gword === "void" | gword=== "main" then
+
+         if x === ("import"|"package") then {
+           word := getword()
+           write("Line # :",lineno, "   ", word)
+           put(outlines, Tag("link", \word, lineno, parentfile) )
+           write("=============================\n")
          }
+
+         else if x === "public" then {
+           word := getword3(line)
+           if \word then {
+             write("Line # :",lineno, "   ", word)
+             if member(javaKeywords,word) then
+               word := getword()
+             else put(outlines, Tag("method", word, lineno, parentfile))
+           }
+           write("=============================\n")
+         }
+      }
          lineno +:= 1
    }
-   
+}
    return outlines
-   
 end
 
 
-#######################################################
-# pocedures' names are self explanitory.  Taken from itags.
-#######################################################
+#
+# procedures' names are self explanitory.  Taken from itags. #
+#
 
 procedure getword()
    local word
    static letts, ids
    initial {
-        letts := &ucase ++ &lcase ++'('
-        ids :=&ucase ++ &lcase ++ &digits ++ '_'++'.'
+        letts := &letters ++ '(' ++ '{'
+        ids :=&letters ++ &digits ++ '_' ++ '.'
      }
-   
+
    while tab(upto(letts)) do {
       word := tab(many(ids))
       suspend word
    }
-   
 end
 
+procedure getword3(line)
+ local i, c, ch1, ch2, index, index2
 
+#
+# returns the index of the location of 
+# '(' or '{' in the method header.
+#
+ ch1:=0
+ every c := !line do {
+    ch1+:=1
+    if  c == "(" | c == "{" then {
+       index2 := ch1
+       break
+    }
+  }
+
+#
+# returns the index of the location of 
+# the first blank before the method name.
+#
+ i:=\index2-2
+ while line[\i] ~== " " do
+    i-:=1
+
+ index1:=i
+ word := line[\index1:\index2] 
+ suspend word
+
+end
 
 
 
@@ -162,4 +267,3 @@ end
 #    initially
 #       self$_Dialog.initially()
 # end
-

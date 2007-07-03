@@ -7,7 +7,7 @@
 #	Author:   Nolan Clayton
 #
 #       Date:     September 22, 2003
-#  
+#
 #################################################################
 #
 #  This program provides a simple graphical, not ASCII art as below,
@@ -19,13 +19,17 @@
 #               |--class whatever
 #               |    |--method bees 
 #               |--procedure good
-#                 
+#
 #
 #   result from--> classbrowser foo.icn 
-#  	
+#
 #################################################################
 #  Links:  graphics
 #################################################################
+import gui
+
+link graphics
+$include "guih.icn"
 
 
 #################################################################
@@ -35,15 +39,15 @@
 class  ClassBrowser : Tree( last_selected, fileimgs,files_root )
 
 
-   
+
    ###########################################################
    # Draw Method: Each node depending on its type is drawn with a different image.
-   method draw(N, left_pos, yp, i)
+   method drawclint(N, left_pos, yp, i)
       local oldfg, dashed, lp, j, bmps, little, img , temp
-      
+
       dashed := Clone(self.cbwin, "pattern=gray", "fillstyle=textured")
       lp := left_pos
-      
+
       every j := 1 to N.depth - 1 do {
          if N.draw_line[j] == "y" then
             DrawLine(dashed, lp + col_w / 2, yp - line_height / 2, lp + col_w / 2, yp + line_height / 2)
@@ -76,57 +80,55 @@ class  ClassBrowser : Tree( last_selected, fileimgs,files_root )
          }
 
          if not(N.type == ("class" |"editor"|"file") ) then little := editorimgs("elbow")
-         
+
          temp := editorimgs(N.type)
          if \temp then img := temp
-         
+
          EraseArea(self.cbwin, lp - col_w / 2 - little_w / 2, yp - little_h / 2, little_w, little_h)
          DrawImage(self.cbwin, lp - col_w / 2 - little_w / 2, yp - little_h / 2, little)
       }
-      
+
       DrawImage(self.cbwin, lp + col_w / 2 - bmp_w / 2, yp - bmp_h / 2, img)
       left_string(self.cbwin, lp + col_w, yp, N.label)
-      
+
       if \self.checked[i] | i = \self.which_down then
       { 
          oldfg := Fg(rev)
 
-        
+
          Fg(rev, "65535,65535,52428") 
          if not( \N.type == "editor" ) then
             FillRectangle(rev, lp + col_w, yp - self.line_height / 2,
                           TextWidth(self.cbwin, N.label), self.line_height)
          Fg(rev, oldfg) 
       }
-      
+
       Uncouple(dashed)      
    end
 
-   
    #################################################################
    # Handle Press Method:  If a node in the class browser is clicked then goto the node's line in it's
    #                                       parent's file.
-   method handle_press(e)
+   method hhandle_press(e)
       local l, lno, xp, yp ,N
+      return self$Tree.handle_press(e)
 
       if  (self.tx <= &x < self.tx + self.tw) & (self.ty  <= &y < self.ty + self.th) then {
-                  
+
          ##########################
          #Compute line clicked
          lno := (&y - self.ty) / self.line_height
          l := lno + self$get_line()
-         
-         
+
          if self.which_down := (self$get_last_line() >= l) then {
             if \self.select_many & (&shift | &control) then {
-               
                ####################################
                # Click with shift/ctrl - the state will end here.
                if &control then
                   self.checked[self.which_down] := if /self.checked[self.which_down] then 1 else &null
-               
-               else {         7               # &shift
-                  
+
+               else {                       # &shift
+
                   if \self.prev_down then {
                      if self.prev_down > self.which_down then
                         every self.checked[self.which_down to self.prev_down] := 1
@@ -145,13 +147,13 @@ class  ClassBrowser : Tree( last_selected, fileimgs,files_root )
                N := self.contents[which_down]
                if /N then fail
                if (*N.subnodes > 0) | \N.always_expandable then {
-                  
+
                   #################################################################
                   # Check for click on little +/- icon.
                   yp := self.ty + self.line_height / 2 + self.line_height * lno - little_h / 2
                   xp := self$get_left_pos() + (N.depth - 1) * col_w + little_w / 2
                   if (xp <= &x < xp + little_w) & (yp <= &y < yp + little_h) then {
-               
+
                      #################################################
                      # Clicking on the little icon ends the sequence, and sets the selection
                      # to the given node.
@@ -167,16 +169,16 @@ class  ClassBrowser : Tree( last_selected, fileimgs,files_root )
                      return _Event(e, self, 2)
                   }
                }
-               
+
                ##############################################
                # Normal click down
                self.is_held := 1
                self.checked := list(*self.contents)
                self$refresh(1)
-               
+
                last_selected := self.contents[which_down]
                goto(N.parentfile, N.lineno)
-               
+
                return _Event(e, self, 0)
             }
          }
@@ -184,76 +186,72 @@ class  ClassBrowser : Tree( last_selected, fileimgs,files_root )
 
    end
 
-
-   
    #################################################################
    #Fill Tree Method: Used to initialize a tree (class browser). Contents is a list of Tags (nodes).
    method filltree(contents)
-      local i      
+      local i
       if \contents then every  i :=  ! contents do files_root.add(i)
       self.set_root_node(files_root)
    end
 
-   
+
    #################################################################
    #Add Replace Method:  Replace a Tag with an newer version of the that Tag.
    #                         Contents is a list of lines in a file.  Tab Label is the Files Name on the TabSet.
    method addreplace(contents, tab_label)
       local i, l, temp
 
-      if not( find(".icn",tab_label) ) then fail
+      if not( find(".icn"|".cpp"|".c"|".java",tab_label) ) then fail
 
       nodereplace(tab_label)
-      
-      l := utags(contents, tab_label)
+
+      l := utags(contents, tab_label)  #l is a list of tags
       temp := Tag("file", tab_label,1, tab_label)
-      every  i :=  ! l do temp.add(i)
-      
+      every  i :=  ! l do {
+        temp.add(i)
+        write("==> ", image(i))
+       }
+
       files_root.add(temp)
       self.set_root_node(files_root)
-      
    end
 
-   
+
    #################################################################
    # Node Replace Method: Remove a Node with the same label as Tab Label
    #                   from the tree (class browser).
    method nodereplace(tab_label)
       local i
-      
+
       every i := 1 to  *files_root.subnodes do 
          if tab_label == files_root.subnodes[i].label then {
             files_root.subnodes := files_root.subnodes[1 : i] ||| files_root.subnodes[i + 1 : 0]
             return   }
       self.set_root_node(files_root)
-      
    end
 
-   
+
    #################################################################
    # Go To Method: A Node was clicked.  Set the focus on Tab with the label Tab Label and go to
    #              and highlight the line number   Line.
    method goto(tab_label,line)
       local c
-    
+
       if /tab_label | /line then fail
       c := IDE.FileTabSet.get_tabitem(tab_label)  
       if /c then fail
  
-      IDE.FileTabSet.set_which_one(c)
-      IDE.CurrentEditBox().highlight_line( line )
-      IDE.set_focus(IDE.CurrentEditBox())
-      
-   end
-   
+      FileTabSet.set_which_one(c)
+      CurrentEditBox().highlight_line( line )
+      set_focus(IDE.CurrentEditBox())
 
-   
+   end
+
    initially()
       self$Tree.initially() 
       which_down := 1
       fileimgs := table()
       files_root := Tag("editor", "Editor",0, &null)
-      
 end
 
 
@@ -261,23 +259,23 @@ end
 # class  Tag : is a subclass of Node used only to keep track of Node attribs
 ##################################################################
 class Tag : Node (
-                  type,           # Type is what kind of node it is (method, $include, procedure ....).
-                  lineno,        # The line number on which the Node occurs.
+                  type,        # Type is what kind of node it is (method, $include, procedure ....).
+                  lineno,      # The line number on which the Node occurs.
                   parentfile   #  The label (Tab Item) of the file in which the Node is a member.
                   )
-   
+
    method settype( x )
       type := x
    end
-   
+
    method setlineno( x )
       lineno := x
    end
-   
+
    method gettype( )
-      return type     
+      return type
    end
-   
+
    method getlineno( )
       return lineno
    end
@@ -285,11 +283,11 @@ class Tag : Node (
    method getparentfile()
       return parentfile
    end
-   
+
    method setparentfile(x)
       return parentfile := x
    end
-   
+
    initially ( args[] )
       self$Node.initially()
       if *(\args) > 3 then {

@@ -1,0 +1,1078 @@
+################################################################
+#
+# File:        ProjectMenubar.icn
+#
+# Subject:    Main Unicron System Menubar
+#
+# Description: Class ProjectMenubar is where the overall main
+# menubar GUI and its funcyionality are implemented and added into
+# the CVE.It contains a call to all of the ide commands; such as 
+# new/exitsting files/projects editing and creation.
+#
+################################################################
+
+import gui
+$include "guih.icn"
+$include "defaults.icn"
+link graphics
+link io
+link "fontdialog"
+
+# $define lpr "lpr -Plexnormal"
+$define lpr "enscript -b \" \" -1 -Plexnormal"
+global new_CProject, new_JavaProject, new_UniconProject,
+        javaProject, cppProject, uniconProject
+       
+#
+# Class menubar needs description.
+# If this class is a GUI class, it normally should be a subclass of
+# Component or some other GUI class.
+#
+class Mainbar(new_Project,new_CProject, new_JavaProject, new_UniconProject,
+               javaProject, cppProject, uniconProject,
+	       open_Project, openCProj, openJProj, openUProj,
+	       menu_1, exit_menu_item,
+	       classbrowser_100, classbrowser_50, classbrowser_normal,
+	       classbrowser_submenu, close_file, compile_only,
+	       compile_options, copy, cut, find, font, gotoline,
+	       insert_class, insert_menu, insert_method, insert_proc,
+	       ivib, make_exe, match_parenthesis,
+	       menu_10, menu_11, menu_12, menu_2, menu_6, menu_7, menu_9,
+	       menu_net, menu_separator_1, msgs_100, msgs_50,
+	       msgs_normal, msgs_submenu, new_file, online_courses,
+	       open_file, hide_toolbar,
+	       paste, print_file, replace, run_arguments, run_program,
+	       save_file, saveas_file, select_all, users_guide_menu,
+	       command_reference_menu, about_menu, text_menu_item_3,
+	       text_menu_item_4,undo, view_window_all, view_window_files,
+	       view_window_filesclassbrowser, view_window_filesmsgs,
+	       window_submenu,menu_bar_1, uide, projectname, projecttype,
+	       makeCPP_compileJava, runProject, AppletHtml, WinApp,
+	       ConsoleApp, makeClean, makeCleanAll, menu_separator,
+	       menu_separator2, connect_menu, disconnect_menu,
+	       menu_act, pswd_menu, avt_menu, face_menu, reg_menu,
+	       cppProjectEditor, users_guide_file,
+	       commands_file)
+
+   method on_close_file(ev)
+      #ide.FileBrowser.nodereplace(tab_label)
+      ide.handle_closefile()
+      FileTabSet.resize()
+   end
+
+   method on_ivib(ev)
+      ide.on_ivib(ev)
+   end
+
+   method system(s, lst, apnd)
+      local rv
+      if /s then fail
+      /lst := []
+      if /apnd then while pop(lst)
+      put(lst,s)
+      WAttrib("pointer=wait")
+      rv := proc("system", 0)(s)
+      WAttrib("pointer=arrow")
+      if \rv then return rv
+   end
+
+   method on_new_file(ev)
+      ide.new_tabitem(,0,"","") 
+   end
+
+   method on_open_file(ev)
+      ide.handle_openfile(ev)
+      #FileTabSet.resize()
+   end
+
+   method on_print_file(ev)
+   local f, L, line
+      L := ide.CurrentEditBox().get_contents() | []
+      if f := open(lpr, "pw") then {
+	 every line := !L do {
+	 line := trim(line, '\^m')
+	 write(f, line)
+	 }
+        close(f)
+       }
+      else {
+         MsgBox.set_contents(["Sorry, no printing yet."])
+      }
+   end
+
+   method on_save_file(ev)
+      ide.save()
+   end
+
+   method on_saveas_file(ev)
+      ide.saveas()
+   end
+
+   method on_copy(ev)
+      ide.CurrentEditBox().handle_copy(ev)
+   end
+
+   method on_cut(ev)
+      ide.CurrentEditBox().handle_cut(ev)
+   end
+
+   method on_find(ev)
+      ide.handle_files()
+   end
+
+   method on_goto_line(ev)
+   local oldwindow
+      /findstr := ""
+      oldwindow := &window
+	&window := win
+	if TextDialog("Go to line: ",,"",6)=="Okay" then {
+	   ide.goto_line(integer(dialog_value[1]),1)
+	}
+      &window := oldwindow 
+   end
+
+   method on_match_parenthesis(ev)
+   end
+
+   method on_paste(ev)
+      ide.CurrentEditBox().handle_paste(ev)
+   end
+
+   method on_replace(ev)
+   local oldwindow
+   /findstr := ""
+   oldwindow := &window
+   &window := win
+   if TextDialog("Replace what with what: ",,
+		[(\findstr | ""),""],60)=="Okay" then {
+		Notice("replace is not implemented yet")
+		# wu_replace(dialog_value[1], dialog_value[2])
+      }
+   &window := oldwindow 
+   end
+
+   method on_select_all(ev)
+       ide.CurrentEditBox().handle_select_all()
+   end
+
+   method on_undo(ev)
+      ide.CurrentEditBox().handle_undo()
+   end
+
+   method on_font()
+   local c
+      /font := Font()
+      if font := fontdialog(font) then {
+         if MsgBox.set_attribs("font=" || font) then {
+	    MsgBox.compute_and_invalidate()
+	    every c := (!(ide.CurrentTabItem().children)) do {
+#             if find("EditableTextList",\image(c)) then {
+                c.set_attribs("font=" || font)
+		write("set font for ", image(c))
+		\c.compute_and_invalidate()
+		write("set font for ", image(c))
+             }
+	   }
+	 else MsgBox.set_contents(["set font failed"])
+         }
+
+   end
+
+   method on_view_window_all(ev)
+      FileTabSet.set_pos("150", "50")
+      FileTabSet.set_size("100%-150", "100%-160")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("150", "100%-160")
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+   end
+
+   method on_view_window_files(ev)
+      FileTabSet.set_pos("0", "50")
+      FileTabSet.set_size("100%", "100%-50")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("0", "110%")
+      ClassTabSet.set_pos("0", "110%")
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+   end
+
+   method on_view_window_filesmsgs(ev)
+      FileTabSet.set_pos("0", "50")
+      FileTabSet.set_size("100%", "100%-160")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      ClassTabSet.set_pos("0", "110%")
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+   end
+
+   method on_hide_toolbar(ev)
+      if hide_toolbar.get_label() == "Hide Toolbar" then {
+         hide_toolbar.set_label("Show Toolbar")
+         pnlToolbar.set_pos("0", "110%")
+         FileTabSet.set_pos("150", "25")
+	 FileTabSet.set_size("100%-150", "100%-135")
+         ClassTabSet.set_pos("0", "25")
+         ClassTabSet.set_size("150", "100%-135")
+         DevTabSet.set_pos("0", "100%-110")
+         DevTabSet.set_size("100%", "110")
+         FileTabSet.resize()
+         ClassTabSet.resize()
+         DevTabSet.resize()
+	 pnlToolbar.resize()
+       }
+      else {
+	 hide_toolbar.set_label("Hide Toolbar") 
+	 pnlToolbar.set_pos("0","25")
+         FileTabSet.set_pos("150", "50")
+	 FileTabSet.set_size("100%-150", "100%-160")
+         ClassTabSet.set_pos("0", "50")
+         ClassTabSet.set_size("150", "100%-160")
+         DevTabSet.set_pos("0", "100%-110")
+         DevTabSet.set_size("100%", "110")
+         FileTabSet.resize()
+         ClassTabSet.resize()
+         DevTabSet.resize()
+	 pnlToolbar.resize()
+       }
+      #handle_update()
+   end
+
+
+   method on_msgs_100(ev)
+      FileTabSet.set_pos("150", "50")
+      FileTabSet.set_size("100%-150", "100%-260")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("150", "100%-260")
+      DevTabSet.set_pos("0", "100%-210")
+      DevTabSet.set_size("100%", "210")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+      pnlToolbar.resize()
+   end
+
+   method on_msgs_50(ev)
+      FileTabSet.set_pos("150", "50")
+      FileTabSet.set_size("100%-150", "100%-210")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("150", "100%-210")
+      DevTabSet.set_pos("0", "100%-160")
+      DevTabSet.set_size("100%", "160")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+      pnlToolbar.resize()
+  end
+
+   method on_msgs_normal(ev)
+      FileTabSet.set_pos("150", "50")
+      FileTabSet.set_size("100%-150", "100%-160")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("150", "100%-160")
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+      pnlToolbar.resize()
+   end
+
+   method on_classbrowser_100(ev)
+      FileTabSet.set_pos("250", "50")
+      FileTabSet.set_size("100%-260", "100%-160")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("250", "100%-160")
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+      pnlToolbar.resize()
+   end
+
+   method on_classbrowser_50(ev)
+      FileTabSet.set_pos("200", "50")
+      FileTabSet.set_size("100%-210", "100%-160")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("200", "100%-160")
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+      pnlToolbar.resize()
+   end
+
+   method on_classbrowser_normal(ev)
+      FileTabSet.set_pos("150", "50")
+      FileTabSet.set_size("100%-150", "100%-160")
+      ClassTabSet.set_pos("0", "50")
+      ClassTabSet.set_size("150", "100%-160")
+      DevTabSet.set_pos("0", "100%-110")
+      DevTabSet.set_size("100%", "110")
+      EditBox.set_pos("2", "2")
+      EditBox.set_size("100%-4", "100%-4")
+      MsgBox.set_pos("2", "2")
+      MsgBox.set_size("100%-4", "100%-4")
+      FileBrowser.set_pos("2", "2")
+      FileBrowser.set_size("100%-4", "100%-4")
+
+      FileTabSet.resize()
+      ClassTabSet.resize()
+      DevTabSet.resize()
+      pnlToolbar.resize()
+   end
+
+   method on_compile_only(ev)
+      ide.compile()
+   end
+
+   method on_compile_options(ev)
+      configdlg := ConfigureOptions()
+      configdlg.show_modal()
+   end
+
+   method on_make_exe(ev)
+      MsgBox.set_contents([""])
+      ide.complink()
+   end
+
+   method on_run_arguments(ev)
+   local oldwindow
+      oldwindow := &window
+      &window := win
+         if TextDialog("Enter command line arguments: ", ,xargs,60)=="Okay" then
+         xargs := dialog_value[1]
+      &window :=oldwindow   
+      ide.run()
+   end
+
+   method on_run_program(ev)
+      #if fileOpened ==="TRUE" then 
+	 ide.run()
+   end
+
+   method on_insert_class(ev)
+      ide.InsertCode( templates("class"), definitions("class") )
+   end
+
+   method on_insert_method(ev)
+      ide.InsertCode( templates("method"), definitions("method") )
+   end
+
+   method on_insert_proc(ev)
+      ide.InsertCode( templates("procedure"), definitions("procedure") )
+   end
+
+
+   method on_exit(ev)
+      ide.prompt_save()
+      exit(0)
+   end
+
+
+   method on_about(ev)
+   sav := &window
+   &window  := &null
+      Notice("            Unicon IDE 0.9",
+             &version,
+             "==================================",
+             "   by Nolan Clayton, Clint Jeffery",
+             "      and Hani Bani-Salameh",
+	     "{nclayton,jeffery,hbanisal}@cs.nmsu.edu",
+             "     Department of Computer Science",
+             "       New Mexico State University")
+
+   &window := sav
+   end
+
+   method on_project_check()
+   local sav
+   sav := &window
+   &window  := &null
+   Notice("Project Path Unknown")
+   &window := sav
+   end
+
+
+method on_ui_programming_envi(ev)
+   handle_help("doc/unicon/utr7.htm",
+               "http://www.cs.arizona.edu/icon/docs/ipd271.htm")
+end
+
+method on_tutorial_overview(ev)
+   handle_help("doc/icon/ipd266.htm",
+               "http://www.cs.arizona.edu/icon/docs/ipd266.htm")
+end
+
+method on_ivib_interface_builder()
+   handle_help("doc/unicon/utr6.html",
+               "http://unicon.sourceforge.net/utr/utr6.html")
+end
+
+   method handle_help(filename, URL)
+      local URL2 := "", f
+      if \docpath then
+         URL := "file://" || map(\docpath || filename,"/",PATHSEP)
+$ifdef _UNIX
+      if find("netscape", \browser) then
+         URL2 := " -remote 'openURL(" || URL || ")'"
+      else URL2 := " " || URL
+      proc("system",0)(\browser || " " || URL2 || " &>ui.err &")
+      delay(800)
+      if f := open("ui.err") then {
+         if find("not running", read(f)) then
+            proc("system",0)(\browser || " " || URL || " &>ui.err &")
+         close(f)
+         remove("ui.err")
+      }
+$else
+         proc("system",0)(\browser || " " || URL) # || " &")
+      #      s := \browser[2:-1] || " " || URL
+      #      proc("system",0)(s,,,,1)
+$endif
+   end
+
+method on_new_CProject(ev)
+   local newProject, pname
+   projectname := ide.ProjectSave()
+   if \projectname then {
+      newProject := CProject(projectname)
+      newProject.show_modal()
+      pname:=file_name(projectname)
+      chdir(filedirectory)
+      ide.handle_openfile(ev,filedirectory||pname||".uprj")
+     }
+   projecttype :="CPP"
+   makeCPP_compileJava.set_label("Make C++") 
+end
+
+method on_new_Applet(ev)
+   local newJPro, pname
+   projectname := ide.ProjectSave()
+   if \projectname then {
+      newJPro := JProject(projectname,"applet")
+      newJPro.show_modal()
+      pname:=file_name(projectname)
+      chdir(filedirectory)
+      ide.handle_openfile(ev,filedirectory||pname||".uprj")
+     }
+   projecttype :="Java"
+   makeCPP_compileJava.set_label("Compile Java")
+end
+
+method on_new_WinApp(ev)
+   local newJPro, pname
+   projectname := ide.ProjectSave()
+   if \projectname then {
+      newJPro := JProject(projectname,"winApp")
+      newJPro.show_modal()
+      pname:=file_name(projectname)
+      chdir(filedirectory)
+      ide.handle_openfile(ev,filedirectory||pname||".uprj")
+     }
+   projecttype :="Java"
+   makeCPP_compileJava.set_label("Compile Java")
+end
+
+method on_new_ConsoleApp(ev)
+   local newJPro, pname
+   projectname := ide.ProjectSave()
+   if \projectname then {
+      newJPro := JProject(projectname,"consoleApp")
+      newJPro.show_modal()
+      pname:=file_name(projectname)
+      chdir(filedirectory)
+      ide.handle_openfile(ev,filedirectory||pname||".uprj")
+     }
+   projecttype :="Java"
+   makeCPP_compileJava.set_label("Compile Java")
+end
+
+method on_new_UniconProject(ev)
+   local newUPro, pname
+   projectname := ide.ProjectSave()
+   if \projectname then {
+      newUPro := UProject(projectname)
+      newUPro.show_modal()
+      pname:=file_name(projectname)
+      ide.handle_openfile(ev,filedirectory||pname||".uprj")
+     }
+   projecttype :="Unicon"
+   makeCPP_compileJava.set_label("Make Unicon")
+end
+
+method on_open_cppProject(ev)
+   local pname
+   pname := ide.handle_openproject(ev)
+   if \pname then {
+       pname := file_name(pname)
+    }
+   projecttype :="CPP"
+   makeCPP_compileJava.set_label("Make C++") 
+end
+
+method on_open_javaProject(ev)
+   local pname
+   projectname := ide.ProjectSave()
+   projectOpened := "TRUE"
+   if \projectname then {
+      pname:=file_name(projectname)
+      #uide.new_project_tabitem(,0,pname,"")
+      ide.handle_openfile(ev,filedirectory||pname) #||".uprj"
+     }
+   projecttype :="Java"
+   makeCPP_compileJava.set_label("Compile Java")
+end
+
+method on_open_uniconProject(ev)
+   local pname
+   projectname := ide.handle_openfile(ev)
+   projectOpened := "TRUE"
+   write("filedirectory ===> ",filedirectory)
+   if \projectname then {
+      pname:=file_name(projectname)
+     }
+   projecttype :="Unicon"
+   makeCPP_compileJava.set_label("Make Unicon")
+end
+
+method on_open_Project(ev)
+   ide.handle_openfile(ev)
+   projectOpened := "TRUE"
+#   local x:=getenv("OS"), sav
+#   write("OS===============> ",x)
+#      sav := &window
+#      &window  := &null
+#      Notice("This feature is not done yet")
+#      &window := sav
+end
+
+method on_network_connect()
+   session.connect()
+end
+
+method on_network_disconnect()
+   session.disconnect()
+end
+
+#
+# Method on_make_compile_Project; it allows making 
+# or compiling the project depending of its type(C/C++,
+# Java or Unicon)
+#
+method on_make_compile_Project()
+   local console, pname, pname2
+   lst :=[]
+   pname := ide.CurrentTabItem().label
+   pname2 := pname[1:*pname-4]
+
+   $ifdef _UNIX
+      console:="konsole --vt_sz 70x18 " 
+   $else # implies Windows for now
+      console:="cmd "
+   $endif
+
+   if \projecttype == "Java" then {
+      chdir(filedirectory)
+      javaProject.CompileJava()
+    }
+   else if \projecttype == "CPP" then {
+      chdir(filedirectory)
+      system("make -f "||pname2||"_uprjMakefile"||" > "||wiconlog||" 2>&1",lst,1)
+      ide.showanyerror(wiconlog, lst)
+    }
+   else if \projecttype == "Unicon" then {
+      chdir(filedirectory)
+      system("make deps")
+      system("make"||" > "||wiconlog||" 2>&1",lst,1)
+      ide.showanyerror(wiconlog, lst)
+    }
+   fileCompiled := "TRUE"
+end
+
+method on_run_project()
+   local console, cmd, pname, pname2
+   lst :=[]
+   pname := ide.CurrentTabItem().label
+   pname2 := pname[1:*pname-4]||".exe"
+
+$ifdef _UNIX
+      console:="konsole --vt_sz 70x18 " 
+$else # implies Windows for now
+      console:="cmd "
+$endif
+   if \projecttype == "Java" then {   #run java projects
+      chdir(filedirectory)
+      javaProject.RunJava(mFile)
+    }
+   else if \projecttype == "CPP" then { #run cpp projects
+      chdir(filedirectory)
+      if \needConsole == "TRUE" then {
+$ifdef _UNIX
+	 # path search, see if xterm exists on path, use it
+         if pathfind("xterm", getenv("PATH")) then {
+            console :="xterm -hold -e "
+            system(console||pname2)
+          }
+	 else #just run without "console || ..."
+            system(pname2)
+$else
+         system(console||pname2)
+$endif
+	 }
+      else
+         system(pname2||" > "||wiconlog||" 2>&1",lst,1)
+    }
+   else if \projecttype == "Unicon" then { #run unicon projects
+      chdir(filedirectory)
+$ifdef _UNIX
+	 # path search, see if xterm exists on path, use it
+         if pathfind("xterm", getenv("PATH")) then {
+            console :="xterm -hold -e "
+            system(console||" ./"||"UProject")
+          }
+	 else #just run without "console || ..."
+            system(pname2)
+$else
+         system(console||" ./"||"UProject")
+$endif
+    }
+end
+
+method on_make_clean()
+   local pname, pname2
+   lst :=[]
+   pname := ide.CurrentTabItem().label
+   pname2 := pname[1:*pname-4]||".exe"
+
+   if \(projectCreated| projectOpened) == "TRUE" then {
+      if \projecttype == "Java" then {
+         chdir(filedirectory)
+         system("rm *.class"||" &> "||"output.txt"||" 2>&1",lst,1)
+         wiconlog:="output.txt"
+       }
+      else if \projecttype == "CPP" then {
+         chdir(filedirectory)
+         system("make -f "||pname2||"_uprjMakefile clean"||" > "||wiconlog||" 2>&1",lst,1)
+       }
+      else if \projecttype == "Unicon" then {
+         chdir(filedirectory)
+         system("make clean"||" > "||wiconlog||" 2>&1",lst,1)
+       }
+      uide.showanyerror(wiconlog, lst)
+    }
+   else on_project_check()
+end
+
+method on_make_clean_all()
+   local pname, pname2
+   lst :=[]
+   pname := ide.CurrentTabItem().label
+   pname2 := pname[1:*pname-4]||".exe"
+
+   if \projectCreated == "TRUE" then {
+      if \projecttype == "Java" then {
+         chdir(filedirectory)
+         system("rm *.class"|" &> "||"output.txt"||" 2>&1",lst,1)
+         wiconlog:="output.txt"
+       }
+      else if \projecttype == "CPP" then {
+         chdir(filedirectory)
+         system("make -f "||pname2||"_uprjMakefile cleanall"||" > "||wiconlog||" 2>&1",lst,1)
+       }
+      else if \projecttype == "Unicon" then {
+         chdir(filedirectory)
+         system("make clean"||" > "||wiconlog||" 2>&1",lst,1)
+       }
+      uide.showanyerror(wiconlog, lst)
+    }
+   else on_project_check()
+end
+
+######################################################################
+
+method Menubar()
+    menu_bar_1 := MenuBar()
+    menu_bar_1.set_pos("0", "0")
+    menu_bar_1.set_size("100%", "4.5%")
+    menu_bar_1.set_attribs("bg=very light whitish gray", "font=sans,bold,15", "resize=on")
+    menu_1 := Menu()
+    menu_1.set_label("File")
+    new_file := TextMenuItem()
+    new_file.set_label("New")
+    new_file.connect(self, "on_new_file", ACTION_EVENT)
+    new_file.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~>>>>>>>>>~~~~~~~>6666666>>~~~~~~>6666666>`>~~~~~>6666666>>>>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>>>>>>>>>>>>~~~~~~~~~~~~~~~~~~")
+    menu_1.add(new_file)
+    open_file := TextMenuItem()
+    open_file.set_label("Open")
+    open_file.connect(self, "on_open_file", ACTION_EVENT)
+    open_file.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~~~~~~~~~~>~~~>~>~~~~~~~~~~~~~~>>~~>>>~~~~~~~~>>>~>`6`>>>>>>>~~~~~>6`6`6`6`6>~~~~~>`6`6`6`6`>~~~~~>6`6`>>>>>>>>>>>>`6`><<<<<<<<<>~>6`><<<<<<<<<>~~>`><<<<<<<<<>~~~>><<<<<<<<<>~~~~>>>>>>>>>>>~~~~~~~~~~~~~~~~~~~~~")
+    menu_1.add(open_file)
+    close_file := TextMenuItem()
+    close_file.set_label("Close")
+    close_file.connect(self, "on_close_file", ACTION_EVENT)
+    close_file.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~>>>>>>>>>~~~~~~AA6666666>>~A~~~AAAA66666>AA~~~~~AAAA6666AA>>~~~~>6AAA66AA66>~~~~>66AAAAA666>~~~~>666AAA6666>~~~~>66AAAAA666>~~~~>6AAA66AA66>~~~~>AAA6666AA6>~~~~AAA666666A6>~~~~AAA6666666A>~~~~>A666666666>~~~~>>>>>>>>>>>A~~~~~~~~~~~~~~~~~~")
+    menu_1.add(close_file)
+    print_file := TextMenuItem()
+    print_file.set_label("Print")
+    print_file.connect(self, "on_print_file", ACTION_EVENT)
+    print_file.set_img_left("16,c1,666<111111111<66666<122222221<66666<255555552<66666<2<<<<<<<2<66666<133333<<2<66666<133333<<2<66666<255555552<66666<255555552<66666<133333<52<66<<<22555555522<<12333<<<<<<<333212<<<2222222<<<212<<<<<<<<<<<<<212<<<<<<<<<<<<<2223<<<<<<<<<<432<<2222222222222<")
+    menu_1.add(print_file)
+    save_file := TextMenuItem()
+    save_file.set_label("Save")
+    save_file.connect(self, "on_save_file", ACTION_EVENT)
+    save_file.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~>`>66666666>6>~~>`>66666666>>>~~>`>66666666>`>~~>`>66666666>`>~~>`>66666666>`>~~>`>66666666>`>~~>``>>>>>>>>``>~~>````````````>~~>```>>>>>>>``>~~>``>>>>>>66>`>~~>``>>>>>>66>`>~~>``>>>>>>66>`>~~~>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    menu_1.add(save_file)
+    saveas_file := TextMenuItem()
+    saveas_file.set_label("Save As")
+    saveas_file.connect(self, "on_saveas_file", ACTION_EVENT)
+    saveas_file.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>~~~~~~~~>666666>>~~~~~~~>666666>>>~~~~~~>66666666>~~~~~~>666>>>>>>>>>>~~>666>`>6666>6>~~>666>`>6666>>>~~>666>`>6666>`>~~>666>``>>>>``>~~>666>````````>~~>666>``>>>>``>~~>>>>>`>>>>6>`>~~~~~~>`>>>>6>`>~~~~~~~>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    menu_1.add(saveas_file)
+    ivib := TextMenuItem()
+    ivib.set_label("Ivib")
+    ivib.connect(self, "on_ivib", ACTION_EVENT)
+    menu_1.add(ivib)
+    exit_menu_item := TextMenuItem()
+    exit_menu_item.set_label("Exit")
+    exit_menu_item.connect(self, "on_exit", ACTION_EVENT)
+    menu_1.add(exit_menu_item)
+    menu_bar_1.add(menu_1)
+    menu_6 := Menu()
+    menu_6.set_label("View")
+    window_submenu := Menu()
+    window_submenu.set_label("Window")
+    view_window_all := TextMenuItem()
+    view_window_all.set_label("All")
+    view_window_all.connect(self, "on_view_window_all", ACTION_EVENT)
+    view_window_all.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    window_submenu.add(view_window_all)
+    view_window_files := TextMenuItem()
+    view_window_files.set_label("Files")
+    view_window_files.connect(self, "on_view_window_files", ACTION_EVENT)
+    view_window_files.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    window_submenu.add(view_window_files)
+    view_window_filesmsgs := TextMenuItem()
+    view_window_filesmsgs.set_label("Files/Messages")
+    view_window_filesmsgs.connect(self, "on_view_window_filesmsgs", ACTION_EVENT)
+    view_window_filesmsgs.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    window_submenu.add(view_window_filesmsgs)
+    view_window_filesclassbrowser := TextMenuItem()
+    view_window_filesclassbrowser.set_label("Files/Class Browser")
+    view_window_filesclassbrowser.set_img_left("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    window_submenu.add(view_window_filesclassbrowser)
+    menu_6.add(window_submenu)
+    hide_toolbar := TextMenuItem()
+    hide_toolbar.set_label("Hide Toolbar")
+    hide_toolbar.connect(self, "on_hide_toolbar", ACTION_EVENT)
+    menu_6.add(hide_toolbar)
+    msgs_submenu := Menu()
+    msgs_submenu.set_label("Messages")
+    msgs_normal := TextMenuItem()
+    msgs_normal.set_label("normal")
+    msgs_normal.connect(self, "on_msgs_normal", ACTION_EVENT)
+    msgs_submenu.add(msgs_normal)
+    msgs_50 := TextMenuItem()
+    msgs_50.set_label("+50")
+    msgs_50.connect(self, "on_msgs_50", ACTION_EVENT)
+    msgs_submenu.add(msgs_50)
+    msgs_100 := TextMenuItem()
+    msgs_100.set_label("+100")
+    msgs_100.connect(self, "on_msgs_100", ACTION_EVENT)
+    msgs_submenu.add(msgs_100)
+    menu_6.add(msgs_submenu)
+    classbrowser_submenu := Menu()
+    classbrowser_submenu.set_label("Class Browser")
+    classbrowser_normal := TextMenuItem()
+    classbrowser_normal.set_label("normal")
+    classbrowser_normal.connect(self, "on_classbrowser_normal", ACTION_EVENT)
+    classbrowser_submenu.add(classbrowser_normal)
+    classbrowser_50 := TextMenuItem()
+    classbrowser_50.set_label("+50")
+    classbrowser_50.connect(self, "on_classbrowser_50", ACTION_EVENT)
+    classbrowser_submenu.add(classbrowser_50)
+    classbrowser_100 := TextMenuItem()
+    classbrowser_100.set_label("+100")
+    classbrowser_100.connect(self, "on_classbrowser_100", ACTION_EVENT)
+    classbrowser_submenu.add(classbrowser_100)
+    menu_6.add(classbrowser_submenu)
+    menu_bar_1.add(menu_6)
+    menu_7 := Menu()
+    menu_7.set_label("Config")
+    font := TextMenuItem()
+    font.set_label("Font ...")
+    font.connect(self, "on_font", ACTION_EVENT)
+    menu_7.add(font)
+    menu_bar_1.add(menu_7)
+    menu_11 := Menu()
+    menu_11.set_label("Edit")
+    undo := TextMenuItem()
+    undo.set_label("Undo")
+    undo.connect(self, "on_undo", ACTION_EVENT)
+    undo.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>~~~~~~~~~~>>>>>>>~~~~~~~~>>>~~~>>>~~~~~~>>>~~~~~>>>~~~~~>>~~~~~~~>>~~~>~>>~>~~~~~>>~~~~>>>>~~~~~~>>~~~~~>>~~~~~~>>>~~~~~~~~~~~~>>>~~~~~~~~~>>>>>>~~~~~~~~~~>>>>>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    menu_11.add(undo)
+    menu_separator_1 := MenuSeparator()
+    menu_separator_1.set_is_shaded()
+    menu_11.add(menu_separator_1)
+    cut := TextMenuItem()
+    cut.set_label("Cut")
+    cut.connect(self, "on_cut", ACTION_EVENT)
+    cut.set_img_left("16,c1,~~~~v~~~~~v~~~~~~~~~v~~~~~v~~~~~~~~~~v~~~v~~~~~~~~~~~v~~~v~~~~~~~~~~~v~~~v~~~~~~~~~~~~v~v~~~~~~~~~~~~~v~v~~~~~~~~~~~~~~I~~~~~~~~~~~~~~VVV~~~~~~~~~~~~~V~VVV~~~~~~~~~VVV~V~~V~~~~~~~V~~V~V~~V~~~~~~~V~~V~V~~V~~~~~~~V~~V~~VV~~~~~~~~~VV~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    menu_11.add(cut)
+    copy := TextMenuItem()
+    copy.set_label("Copy")
+    copy.connect(self, "on_copy", ACTION_EVENT)
+    copy.set_img_left("16,c1,~~~~~~~~~~~~~~~~vvvvvv~~~~~~~~~~v6666vv~~~~~~~~~v6<<6v6v~~~~~~~~v6666v>>>>>>~~~~v6<<<6>6666>>~~~v66666>6``6>6>~~v6<<<<>6666>>>>~v66666>6```666>~v6<<<<>6666666>~v66666>6`````6>~vvvvvv>6666666>~~~~~~~>6`````6>~~~~~~~>6666666>~~~~~~~>>>>>>>>>~~~~~~~~~~~~~~~~~")
+    menu_11.add(copy)
+    paste := TextMenuItem()
+    paste.set_label("Paste")
+    paste.connect(self, "on_paste", ACTION_EVENT)
+    paste.set_img_left("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>~~~~~~~~~~~~>4565>~~~~~~~~~~~>>>>>>>>~~~~~~~~~>56566665>~~~~~~~~>55555654>~~~~~>>>>55555655>~~~~>566G05555654>~~~>>>>4650555655>~~~>4440J6G455654>~~~>5505045>55655>~~~>4>60>>6>55654>~~~~>60>5>5455655>~~~>60>65>>555654>~~>60~>>>>5555655>~4>0~~~~>44444444>>>~~~~~~~>>>>>>>>~ii<i<<~~~~~~~~~~~~")
+    menu_11.add(paste)
+    select_all := TextMenuItem()
+    select_all.set_label("Select All")
+    select_all.connect(self, "on_select_all", ACTION_EVENT)
+    menu_11.add(select_all)
+    find := TextMenuItem()
+    find.set_label("Find")
+    find.connect(self, "on_find", ACTION_EVENT)
+    find.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~>>>~~~~~~~>6>~~~>6>~~~~~~~>>>~~~>>>~~~~~~>>>>>~>>>>>~~~~~>6>>>~>6>>>~~~~>>>>>>>>>>>>>~~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>>>>>>~>>>>>>>~>6>>>~~~~~>6>>>~>6>>>~~~~~>6>>>~>>>>>~~~~~>>>>>~~~~~~~~~~~~~~~~")
+    menu_11.add(find)
+    replace := TextMenuItem()
+    replace.set_label("Replace")
+    replace.connect(self, "on_replace", ACTION_EVENT)
+    menu_11.add(replace)
+    gotoline := TextMenuItem()
+    gotoline.set_label("Go To Line ...")
+    gotoline.connect(self, "on_goto_line", ACTION_EVENT)
+    menu_11.add(gotoline)
+    match_parenthesis := TextMenuItem()
+    match_parenthesis.set_label("Match Parenthesis")
+    match_parenthesis.connect(self, "on_match_parenthesis", ACTION_EVENT)
+    menu_11.add(match_parenthesis)
+    menu_bar_1.add(menu_11)
+    insert_menu := Menu()
+    insert_menu.set_label("Insert")
+    insert_proc := TextMenuItem()
+    insert_proc.set_label("Procedure")
+    insert_proc.connect(self, "on_insert_proc", ACTION_EVENT)
+    insert_proc.set_img_left("16,c1,~~wwww~~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~~wwwwssss~~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~~ssssnnnn~~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~~nnnn~~")
+    insert_menu.add(insert_proc)
+    insert_class := TextMenuItem()
+    insert_class.set_label("Class")
+    insert_class.connect(self, "on_insert_class", ACTION_EVENT)
+    insert_class.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~wwwww~~~~~yy~~~wjjjjjw~~~yLLy~~wjjjjjw~~~yLLy~~wjjjsssss~~yy~~~wjjsFFS++s~~~~~~wjjsFFS++s~~~~~~~wwsSS+nnnnn~~~~~~~s++nAANaan~~~qq~s++nAANaan~~qDDq~ssnNNaaan~~qDDq~~~naaaaan~~~qq~uu~naaaaan~~~~~uHHu~nnnnn~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~")
+    insert_menu.add(insert_class)
+    insert_method := TextMenuItem()
+    insert_method.set_label("Method")
+    insert_method.connect(self, "on_insert_method", ACTION_EVENT)
+    insert_method.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~yy~~~~~~~~~~~~~yLLy~~~~~~~~~~~~yLLy~~~~~~~~~~~~~yy~~~~~qq~~~~~~~~~~~~~qDDq~~~~~~~~~~~~qDDq~~~~~~~~~~~~~qq~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~uu~~~~~~~~~~~~~uHHu~~~~~~~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~~~~~~~~~~~~~~~")
+    insert_menu.add(insert_method)
+    menu_bar_1.add(insert_menu)
+    menu_9 := Menu()
+    menu_9.set_label("Compile")
+    make_exe := TextMenuItem()
+    make_exe.set_label("Make executable")
+    make_exe.connect(self, "on_make_exe", ACTION_EVENT)
+    make_exe.set_img_left("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~~3444444444444430~~34JJJJJJJJJJJJ30~~34JJJJJJ60606030~~3433333333333330~~3466666666666630~~3466666666666630~~3460060606006630~~3460660606066630~~3460066066006630~~3460660606066630~~3460060606006630~~3466666666666630~~3466666666666630~~3333333333333330~~0000000000000000~~~~~~~~~~~~~~~~~~~")
+    menu_9.add(make_exe)
+    compile_only := TextMenuItem()
+    compile_only.set_label("Compile only")
+    compile_only.connect(self, "on_compile_only", ACTION_EVENT)
+    menu_9.add(compile_only)
+    compile_options := TextMenuItem()
+    compile_options.set_label("Compile options")
+    compile_options.connect(self, "on_compile_options", ACTION_EVENT)
+    menu_9.add(compile_options)
+    menu_bar_1.add(menu_9)
+    menu_10 := Menu()
+    menu_10.set_label("Run")
+    run_program := TextMenuItem()
+    run_program.set_label("Run program")
+    run_program.connect(self, "on_run_program", ACTION_EVENT)
+    run_program.set_img_left("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~SS444444444444430~S+SJJJJJJJJJJJJ30~S++SJJJJJ60606030~S+*+S333333333330~S+**+S66666666630~S+***+S6666666630~S+****+S666666630~SF*G*G*FS66666630~S+G*G*G+S66666630~SF*G*GFS666666630~SFGGGFS6666666630~SFGGFS66666666630~SFGFS666666666630~SFFS3333333333330~SFS00000000000000~SS~~~~~~~~~~~~~~~~")
+    menu_10.add(run_program)
+    run_arguments := TextMenuItem()
+    run_arguments.set_label("Run arguments")
+    run_arguments.connect(self, "on_run_arguments", ACTION_EVENT)
+    menu_10.add(run_arguments)
+    menu_bar_1.add(menu_10)
+
+    menu_12 := Menu()
+    menu_12.set_label("Project")
+    open_Project := Menu()
+    open_Project.set_label("Open")
+    openCProj := TextMenuItem()
+    openCProj.set_label("C++/C Project")
+    openCProj.connect(self, "on_open_cppProject", ACTION_EVENT)
+    open_Project.add(openCProj)
+
+    openJProj := TextMenuItem()
+    openJProj.set_label("Java Project")
+    openJProj.connect(self, "on_open_javaProject", ACTION_EVENT)
+    open_Project.add(openJProj)
+
+    openUProj := TextMenuItem()
+    openUProj.set_label("Unicon Project")
+    openUProj.connect(self, "on_open_uniconProject", ACTION_EVENT)
+    open_Project.add(openUProj)
+    menu_12.add(open_Project)
+
+    new_Project := Menu()
+    new_Project.set_label("New")
+    menu_12.add(new_Project)
+
+    new_CProject := TextMenuItem()
+    new_CProject.set_label("C++/C Project")
+    new_CProject.connect(self, "on_new_CProject", ACTION_EVENT)
+    new_Project.add(new_CProject)
+
+    new_JavaProject := Menu()
+    new_JavaProject.set_label("Java Project")
+    AppletHtml := TextMenuItem()
+    AppletHtml.set_label("Applet")
+    AppletHtml.connect(self, "on_new_Applet", ACTION_EVENT)
+    new_JavaProject.add(AppletHtml)
+    WinApp := TextMenuItem()
+    WinApp.set_label("Windows App.")
+    WinApp.connect(self, "on_new_WinApp", ACTION_EVENT)
+    new_JavaProject.add(WinApp)
+    ConsoleApp := TextMenuItem()
+    ConsoleApp.set_label("Console App.")
+    ConsoleApp.connect(self, "on_new_ConsoleApp", ACTION_EVENT)
+    new_JavaProject.add(ConsoleApp)
+    new_Project.add(new_JavaProject)
+    new_UniconProject := TextMenuItem()
+    new_UniconProject.set_label("Unicon Project")
+    new_UniconProject.connect(self, "on_new_UniconProject", ACTION_EVENT)
+    new_Project.add(new_UniconProject)
+    menu_separator := MenuSeparator()
+    menu_separator.set_is_shaded()
+    menu_12.add(menu_separator)
+
+    makeCPP_compileJava := TextMenuItem()
+    makeCPP_compileJava.set_label("Compile Project")
+    makeCPP_compileJava.connect(self, "on_make_compile_Project", ACTION_EVENT)
+    menu_12.add(makeCPP_compileJava)
+    makeClean := TextMenuItem()
+    makeClean.set_label("Make Clean")
+    makeClean.connect(self, "on_make_clean", ACTION_EVENT)
+    menu_12.add(makeClean)
+    makeCleanAll := TextMenuItem()
+    makeCleanAll.set_label("Make Clean All")
+    makeCleanAll.connect(self, "on_make_clean_all", ACTION_EVENT)
+    menu_12.add(makeCleanAll)
+
+    menu_separator2 := MenuSeparator()
+    menu_separator2.set_is_shaded()
+    menu_12.add(menu_separator2)
+
+    runProject := TextMenuItem()
+    runProject.set_label("Run Project")
+    runProject.connect(self, "on_run_project", ACTION_EVENT)
+    menu_12.add(runProject)
+
+    menu_bar_1.add(menu_12)
+
+    menu_2 := Menu()
+    menu_2.set_label("Help")
+    ui_programming_envi := TextMenuItem()
+    ui_programming_envi.set_label("UI Programming Enivironment")
+    ui_programming_envi.connect(self, "on_ui_programming_envi", ACTION_EVENT)
+    menu_2.add(ui_programming_envi)
+    tutorial_overview := TextMenuItem()
+    tutorial_overview.set_label("Tutorial Overview")
+    tutorial_overview.connect(self, "on_tutorial_overview", ACTION_EVENT)
+    menu_2.add(tutorial_overview)
+    ivib_interface_builder := TextMenuItem()
+    ivib_interface_builder.set_label("IVIB Interface Builder")
+    ivib_interface_builder.connect(self, "on_ivib_interface_builder", ACTION_EVENT)
+    menu_2.add(ivib_interface_builder)
+    about_menu:= TextMenuItem()
+    about_menu.set_label("About")
+    about_menu.connect(self, "on_about", ACTION_EVENT)
+    menu_2.add(about_menu)
+    menu_bar_1.add(menu_2)
+
+.   dialogself.add(menu_bar_1)
+    #menu_bar_1.init()
+    #menu_bar_1.resize()
+end
+
+initially(newJavaProject, newCppProject, newUniconProject)
+   cppProject     := newCppProject
+   javaProject    := newJavaProject
+   uniconProject  := newUniconProject
+   projectCreated := "FALSE"
+   fileOpened     := "FALSE"
+   users_guide_file := 0
+
+end #Class ProjectMenubar
+
+procedure fontdialog(font)
+local d
+$ifdef _UNIX
+   d := FontDialog()
+   d.show_modal()
+   if font := \ (d.font) then {
+      suspend font
+      suspend d.fontcolor
+      }
+$else
+   return WinFontDialog(font)
+$endif
+end

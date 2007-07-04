@@ -214,6 +214,175 @@ end
       menubar := Mainbar(JProject(), CProject(), UProject())
 end
 
+
+# These are primitive legacy Notice/TextDialog compatibility functions.
+# They need to be improved/polished and eventually moved to the gui package.
+
+$define ButtonWidth	 50	# minimum button width
+$define ButtonHeight	 30	# button height
+$define FieldWidth	 10	# default field width
+$define OpenWidth	 50	# default field width for Open/SaveDialog
+
+$define XOff		  0	# offset for text vidgets
+$define XOffButton	 85	# initial x offset for buttons
+$define XOffIncr	 15	# space between buttons
+
+class Vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method setup()
+   local nlines := *captions + *labels + 2
+   local label_2, text_button_1, text_field_1
+
+      self.set_attribs("size=640," || (32 * nlines))
+      every i := 1 to *captions do {
+	 cap := Label()
+	 cap.set_pos("175", integer(i *100 / nlines)|| "%")
+	 cap.set_internal_alignment("l")
+	 cap.set_label(captions[i])
+	 self.add(cap)
+	 }
+      every i := 1 to *labels do {
+	 label_2 := Label()
+	 label_2.set_pos(117, integer((*captions + i)*100/nlines) || "%")
+	 label_2.set_internal_alignment("l")
+	 label_2.set_label(labels[i])
+	 self.add(label_2)
+	 }
+      every i := 1 to *labels do {
+	 text_field_1 := TextField()
+	 text_field_1.set_pos(167, integer((*captions + i)*100/nlines) || "%")
+	 text_field_1.set_size(60, 30)
+	 text_field_1.set_draw_border()
+	 text_field_1.set_contents("")
+	 self.add(text_field_1)
+	 }
+      every i := 1 to *buttons do {
+	 text_button_1 := TextButton()
+	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%",
+			       integer((*captions + *labels + 1)*100/nlines) ||
+			       "%" )
+	 text_button_1.connect(self, "on_button", ACTION_EVENT)
+	 text_button_1.clear_toggles()
+	 text_button_1.set_label(buttons[i])
+	 text_button_1.set_internal_alignment("c")
+	 self.add(text_button_1)
+	 }
+   end
+
+   method on_button(ev)
+      myanswer := ev[3].label
+      dispose()
+   end
+
+initially(caps, labs, btns)
+   captions := caps
+   labels := labs
+   buttons := btns
+   self.Dialog.initially()
+end
+
+
+procedure TextDialog(			#: text dialog
+   win, captions, labels, defaults, widths, buttons, index
+   )
+
+   if type(win) ~== "window" then {
+      win :=: captions :=: labels :=: defaults :=: widths :=: buttons :=:
+         index
+      win := &window
+      /win := temp_win := WOpen("canvas=hidden", "bg=gray")
+      }
+
+   /captions := []
+   /labels := []
+   /defaults := []
+   /widths := []
+   /buttons := ["Okay", "Cancel"]
+   /index := 1
+
+   if type(captions) ~== "list" then captions := [captions]
+   if type(labels) ~== "list" then labels := ([\labels] | [])
+   if type(defaults) ~== "list" then defaults := ([\defaults] | [])
+   if type(widths) ~== "list" then widths := ([\widths] | [default_width])
+   if type(buttons) ~== "list" then buttons := [buttons]
+
+   default_button := buttons[index] 		# null if out of bounds
+   default_width := widths[-1] | FieldWidth
+
+   maxl := 0
+   every maxl <:= *(labels | defaults | widths)
+   until *labels = maxl do put(labels, labels[-1] | "")
+   until *defaults = maxl do put(defaults, defaults[-1] | "")
+   until *widths = maxl do put(widths, widths[-1] | 10) 
+
+   id := 0
+
+   label_width := 0
+   every label_width <:= TextWidth(win, !labels)
+   if label_width > 0 then label_width +:= 15
+
+   maxb := 0
+   every maxb <:= TextWidth(win, !buttons)
+   maxb +:= 10
+   maxb <:= ButtonWidth
+
+   lead := WAttrib(win, "leading")
+   pad := 2 * lead
+   cwidth := WAttrib(win, "fwidth")
+
+   dialog := Vdialog(captions, labels, buttons)
+
+   maxw := 0
+   every maxw <:= TextWidth(win, !captions)
+
+   y := -lead
+
+   dialog.show_modal()
+   dialog_button := dialog.myanswer
+   return dialog_button
+end
+
+global dialog_button
+
+procedure Notice(captions[])		#: notice dialog
+   local win, temp_win
+   static type
+
+   initial type := proc("type", 0)	# protect attractive name
+
+   if type(captions[1]) == "window" then
+      win := get(captions)
+   else {
+      win := &window
+      /win := temp_win := WOpen("canvas=hidden", "bg=gray")
+      }
+
+$ifdef _MS_WINDOWS_NT
+   if p := proc("WinSelectDialog", 0) then {	# use built-in if available
+      p(win, captions)
+      dialog_button := "Okay"
+      }
+   else
+$endif
+      TextDialog(win, captions, , , , "Okay")
+
+   dialog_value := &null
+
+   WClose(\temp_win)
+
+   return dialog_button
+
+end
+
 procedure main()
    local d
    d := UIDE()

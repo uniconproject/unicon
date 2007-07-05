@@ -219,6 +219,8 @@ end
 # These are primitive legacy Notice/TextDialog compatibility functions.
 # They need to be improved/polished and eventually moved to the gui package.
 
+global dialog_value, dialog_button
+
 $define ButtonWidth	 50	# minimum button width
 $define ButtonHeight	 30	# button height
 $define FieldWidth	 10	# default field width
@@ -265,6 +267,7 @@ class Vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
 	 text_field_1.set_draw_border()
 	 text_field_1.set_contents("")
 	 self.add(text_field_1)
+	 put(textfields, text_field_1)
 	 }
       every i := 1 to *buttons do {
 	 text_button_1 := TextButton()
@@ -288,6 +291,7 @@ initially(caps, labs, btns)
    captions := caps
    labels := labs
    buttons := btns
+   textfields := []
    self.Dialog.initially()
 end
 
@@ -349,10 +353,10 @@ procedure TextDialog(			#: text dialog
 
    dialog.show_modal()
    dialog_button := dialog.myanswer
+   dialog_value := []
+   every put(dialog_value, (!(dialog.textfields)).get_contents())
    return dialog_button
 end
-
-global dialog_button
 
 procedure Notice(captions[])		#: notice dialog
    local win, temp_win

@@ -121,14 +121,14 @@ method udb_Console(argv)
 
    while State ~= QUIT do{
      case State of{
-       NONE:{
-          # waiting for the load command
-          #Show_Message(ErrorCode) 
-          }
-       LOAD:{
-          # waiting for the run or break
-          #Show_Message(ErrorCode)
-          }
+#       NONE:{
+#          # waiting for the load command
+#          #Show_Message(ErrorCode) 
+#          }
+#       LOAD:{
+#          # waiting for the run or break
+#          #Show_Message(ErrorCode)
+#          }
        RUN:{
           # everything is fine, file is louded and ready to run TP
           # when the program is PAUSED, we can make use of cmds such as:
@@ -164,22 +164,20 @@ method udb_Console(argv)
           }#end of every
           }
        END:{
-          ## if debugging finished OK, ErrorCode = Error_6
-          ##Show_Message(ErrorCode)
-          ##ErrorCode := Error_0
+          # if debugging finished OK
           State := LOAD #important for re-run
           }
        ERROR:{
-          # ErrorCode = (Error_1 | Error_2 | Error_3)
-          #Show_Message(ErrorCode)
+          # if there is a Console Error, handle it, 
+          # and go back to the old state
           State := old_State 
           }
-       CONTINUE|
-       STEP|
-       NEXT| 
-       RERUN:{ 
-          #Show_Message(Error_9)
-          }
+#       CONTINUE|
+#       STEP|
+#       NEXT| 
+#       RERUN:{ 
+#          #Show_Message(Error_9)
+#          }
        SKIP:{
           State := old_State
           }

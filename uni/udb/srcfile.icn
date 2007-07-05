@@ -1,6 +1,6 @@
 # 
 #  srcfile.icn
-#  March 16, 2007 
+#  Handling the collected Source Files from the Icode
 # 
 
 link bincvt
@@ -9,7 +9,7 @@ link bincvt
 # Contains all of the source files issues such as found files, files text,
 # execution portability and so.  
 #
-class SourceFile(
+class SourceFile : Icode(
    TP,             # TargetProgram and its arguments
    sourcePath,     # String of paths that will be searched for source files
    sourceFiles,    # List with all source file names that are in the binary
@@ -17,18 +17,17 @@ class SourceFile(
    srcIndex,       # Table of our position in the source file; fname is the key
    foundFiles,     # Set with all the files that we have found are here
    missingSrcFiles,# Set with all the files that we did not find
-   Message,        # a string formated with the current message
-   hdr             # an instance of the header record
-)
+   Message         # a string formated with the current message
+   )
 
 #
-# prints a message out int console, message box, and so
+# prints a message out into a console, message box, and so
 #
 method Write(Msg)
 
    if /Msg then
       Msg := Message
-   write(Message)
+   write(Msg)
    Message := ""
 
 end
@@ -68,6 +67,7 @@ method load_SourceFile()
          }
    }
 
+   Message := "\n\t "|| exeName ||" : is a " || icodeVersion
    Message ||:="\n\t Found source files: "
    every i:=1 to *sourceFiles do
       Message ||:= sourceFiles[i] ||", "
@@ -124,18 +124,10 @@ method dopen(s)
    fail
 end
 
-#
-# prints out the header information
-#
-method print_Header()
-   local fn
-
-   every fn := fieldnames(hdr) do
-       write("header.", left(fn,8," "), " = ", image(hdr[fn]))
-
-end
 
 initially()
+
+   self.Icode.initially()
 
    sourceFiles:= []
    sourceText := []

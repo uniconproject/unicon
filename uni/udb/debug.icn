@@ -1,7 +1,7 @@
 
 #
 #  debug.icn
-#  March 16, 2007
+#  Handles the main Runtime Monitor 
 #
 
 $include "evdefs.icn"
@@ -36,43 +36,83 @@ record breakPt(file_name, line_num, code)
 #
 record __evaltree_node(node,parent,children)
 
+#
+# This new record is used by the traceList
+# level: is the level of the procedure in the evaltree
+# fname: is the source file name that has the procedure 
+# line : is the line in the source file that starts on
+# proc : is the procdure name
+# param: is a string with the parameters and their values
+#
+record traceProcRec(level, fname, line, proc, param)
+
+#
+# This record is used by checkTraceFail()
+# fname: file name
+# line : line number
+# code : the source code of the line where the fail is.
+#
+record traceRec(fname, line, code)
+
+#
+# This record is used by checkTraceVar()
+# fname: is the file name
+# line : is the line number
+# var  : is the variable name
+# value: is an image of the variable value 
+#
+record traceVarRec(fname, line, var, value) 
 
 #
 # Contains the core of the udb debugging facilities 
 #
 class Debug : SourceFile(
-   State,       # Debugging state such RUN, PUSE, etc
+   State,         # Debugging state such RUN, PUSE, etc
+   RunCode,       # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
 
-   eventMask,   # the mask that we are building the evaltree based on
-   breakMask,   # a set of the E_Line Event-values that we like to break on
-   watchMask,   # a set of the E_Assign Event-values that we like to watch for
-   valueMask,   # table used for break points and watch points set of masks
-   breakPoints, # A table For every file that has a break point we will
-                # create a new set to store each breakpoint in
+   eventMask,     # the mask that we are building the evaltree based on
+   breakMask,     # a set of the E_Line Event-values that we like to break on
+   watchMask,     # a set of the E_Assign Event-values that we like to watch for
+   
+   valueMask,     # table used for break points and watch points set of masks
+   breakPoints,   # A table For every file that has a break point we will
+                  # create a new set to store each breakpoint in
+   
+   treeFlag,      # by default is null:tree is included. not null means no tree 
+   treeRoot,      # the evaltree head
+   top_Frame,     # points at the last activation_record in the evalTree
+   cur_Frame,     # points at the last investigated frame, using up,down,frame n
+   step_count,    # the step command optional counter, initial value is 0
+                  # 0: means no stepping, default value is 1 eg. step
+                  # unless it was specified by the user eg. step 4, to
+                  # step 4 lines of source code
+   next_count,    # the next command optional counter, initial value is 0
+                  # 0 means no next, default value is 1. eg. next
+                  # unless it was specified by the user such as next 4 or so
 
-   RunCode,     # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
-#  ErrorCode,   # It contains one of the Error_numbers
-   treeRoot,    # the evaltree head
-   top_Frame,   # points at the last activation_record in the evalTree
-   cur_Frame,   # points at the last investigated frame, using up,down, frame n 
-   step_count,  # the step command optional counter, initial value is 0
-                # 0: means no stepping, default value is 1 eg. step
-                # unless it was specified by the user eg. step 4, to
-                # step 4 lines of source code
-   next_count,  # the next command optional counter, initial value is 0
-                # 0 means no next, default value is 1. eg. next
-                # unless it was specified by the user such as next 4 or so
+   #---- new stuff
+   #guiFlag,       # &null vs. not &null: not &null means we are debugging GUI
+   #guiMask,       # s set of the E_Pcall Event-value "util__Connectable_fire"
 
-   CallCodes,   # function and procedure calls
-   SuspendCodes,# suspend a coroutine
-   ResumeCodes, # resume a coroutine
-   ReturnCodes, # return from a procedure with return st
-   FailCodes,   # fail in a procedure 
-   RemoveCodes, # remove
+   #---- new trace stuff
+   traceState,    # a cset of &eventcode(s) of wanted traced fetures
+   traceTable,    # an eventcode maped to a list of traceRec
+   traceVarMask,  # a set just like watchMask, has the traced variables and is
+                  # used by the valueMask along with watchMask 
+   traceVarTable, # a table with keys from traceVarMask to a list of var values
 
-   global_vars  # a set contains all of the global variable names
+   #---- evalTree codes
+   CallCodes,     # function and procedure calls
+   SuspendCodes,  # suspend a coroutine
+   ResumeCodes,   # resume a coroutine
+   ReturnCodes,   # return from a procedure with return st
+   FailCodes,     # fail in a procedure 
+   RemoveCodes,   # remove
+   
+   global_vars    # a set contains all of the global variable names
+   # new things
+   # whyCrash     # Table with variables in the key and whycrashRec in the value
    )
-
 
 #
 # This was in the evaltree.icn unicon library, we had to modify 
@@ -83,19 +123,20 @@ method udb_evalTree(activation_record)
    local c, current, p, child
 
    /activation_record := __evaltree_node
-   CallCodes    := string(eventMask ** 
-                          cset(E_Pcall || E_Fcall || E_Ocall || E_Snew))
-   SuspendCodes := string(eventMask **
-                          cset(E_Psusp || E_Fsusp || E_Osusp || E_Ssusp))
-   ResumeCodes  := string(eventMask ** 
-                          cset(E_Presum || E_Fresum || E_Oresum || E_Sresum))
-   ReturnCodes  := string(eventMask ** 
-                          cset(E_Pret || E_Fret || E_Oret))
-   FailCodes    := string(eventMask ** 
-                          cset(E_Pfail || E_Ffail || E_Ofail || E_Sfail))
-   RemoveCodes  := string(eventMask ** 
-                          cset(E_Prem || E_Frem || E_Orem || E_Srem))
-
+#   if /treeFlag then{
+      CallCodes    := string(eventMask ** 
+                             cset(E_Pcall || E_Fcall || E_Ocall || E_Snew))
+      SuspendCodes := string(eventMask ** 
+                             cset(E_Psusp || E_Fsusp || E_Osusp || E_Ssusp))
+      ResumeCodes  := string(eventMask ** 
+                             cset(E_Presum || E_Fresum || E_Oresum || E_Sresum))
+      ReturnCodes  := string(eventMask ** 
+                             cset(E_Pret || E_Fret || E_Oret))
+      FailCodes    := string(eventMask ** 
+                             cset(E_Pfail || E_Ffail || E_Ofail || E_Sfail))
+      RemoveCodes  := string(eventMask **  
+                             cset(E_Prem || E_Frem || E_Orem || E_Srem))
+#   }
    current := activation_record()
    current.parent := activation_record()
    current.children := []
@@ -104,13 +145,8 @@ method udb_evalTree(activation_record)
    #every write(evnames(kk := key(valueMask))," :  ", !(valueMask[kk]))
 
    while EvGet(eventMask,valueMask) do {
-
-     if State = PAUSE then{
-        suspend
-     }
-     if State = END then{
-        return
-     }
+     #if State = PAUSE then{ suspend }
+     #if State = END then  { return  }
      case &eventcode of {
       !CallCodes: {
          c := activation_record()
@@ -160,30 +196,84 @@ method udb_evalTree(activation_record)
          debug_CallBack(current, current)
          }
      }# end case
-     }# end do
-     ##write("No more events to get")
-     return
+     if State = PAUSE then{ suspend }
+     if State = END then  { return  }
+   }# end do
+   ##write("No more events to get")
+   return
 end
 
 #
 # Add a new node when ecode==(E_Pcall | E_Fcall | E_Ocall | E_Snew)
 #
 method add_Node(new, old)
-   local x
+   local x, i, p
 
    if /new.parent.node then{
+      # New Tree Root
       new.level := 1
-      new.ecode := &eventcode
-      treeRoot := new
-      #write("New Root!!!!!!!!!!!!!!!!!!1")
-   }
-   else{
+      treeRoot  := new
+      }
+   else
       new.level := new.parent.level+1
-      new.ecode := &eventcode
-   }
 
+   new.ecode   := &eventcode
    new.fname   := keyword("file", Monitored)
    new.linenum := keyword("line", Monitored)
+end
+
+#
+# Try to build the Behavior Procedure Tracer
+# traceProcRec(level, fname, line, proc, param)
+# traceCode is something from the ProcMask
+#
+method checkTraceProc(traceCode)
+   local i, x, R, level, proc, p:="" 
+
+   level := top_Frame.level - cur_Frame.level
+   every x := paramnames(Monitored,level) do{
+      i := variable(x, Monitored,level)
+      p ||:= x ||"="||image(i)||", "
+      }
+   p := p[1:-2]
+   proc := image(&eventvalue)
+   R:= traceProcRec(top_Frame.level,top_Frame.fname,top_Frame.linenum,proc,p)
+   if member(traceTable, traceCode) then
+      put(traceTable[traceCode],R)
+   else
+      traceTable[traceCode] := [R]
+end 
+
+#
+# Check for a behavior trace other than procedures
+# record traceRec(fname, line, code)
+#
+method checkTraceOther(traceCode)
+   local cur_file, cur_line, R, srcCode, OperCode
+
+   cur_file := keyword("file", Monitored)
+   cur_line := keyword("line", Monitored)
+   srcCode  := sourceText[cur_line + srcIndex[cur_file]]
+   R := traceRec(cur_file, cur_line, srcCode)
+
+   if member(traceTable, traceCode) then
+      put(traceTable[traceCode],R)
+   else
+      traceTable[traceCode]:=[R]
+end
+
+#
+# check trace dispatcher 
+#
+method checkTrace()
+   local ecode := &eventcode
+
+   if member(traceState, ecode) then{
+      if member(ProcMask, ecode) then  checkTraceProc(ecode)
+      else                             checkTraceOther(ecode)
+      }
+#   else
+#      Write(Message := "\n\t No trace on this event!!!")   
 end
 
 #
@@ -212,8 +302,8 @@ method checkBreakPoint()
             # jut remove the the breakMask set from the valueMask 
             # table temporarly until the continue command comes on
             delete(valueMask,E_Line) 
-            Message :="\n\t Breakpoint in File("||temp.file_name||"), Line # "||
-                            temp.line_num || "\n\t Code: " || temp.code
+            Message :="\n\t Break in ("||cur_file||"), Line # "|| cur_line || 
+                      "\n\t Code:" || sourceText[cur_line + srcIndex[cur_file]]
             Write(Message)
             return
          }
@@ -231,6 +321,7 @@ method checkWatchPoint()
    var := &eventvalue
    if member(watchMask, var) then{
       State := PAUSE
+      RunCode := WATCH
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
       Message:="\n\t Watchpoint in File("|| cur_file ||"), var : "|| var ||
@@ -240,6 +331,33 @@ method checkWatchPoint()
    }
 end
 
+#
+# Check the Monitored file for a variable trace point
+# record traceVarRec(fname, line, var, value) 
+#
+method checkTraceVar()
+   local cur_file, cur_line, var, varinfo
+   static varName
+
+   var := &eventvalue
+   if member(traceVarMask, var) then{
+      #State := RUN
+      RunCode := TRACE
+      varName := var
+      eventMask ++:=cset(E_Value)
+      }
+   else if RunCode = TRACE then{
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      varinfo := traceVarRec(cur_file,cur_line,varName,image(var))
+      if member(traceVarTable,varName) then
+         put(traceVarTable[varName],varinfo)
+      else
+         traceVarTable[varName]:=[varinfo]
+      RunCode := RUN
+      eventMask --:=cset(E_Value)
+      }
+end
 
 #
 # while next_count > 0, keep next until it is 0,
@@ -300,23 +418,26 @@ method debug_CallBack(new, old)
    local ecode := &eventcode
 
    if State = RUN then {
-      #write(evnames(ecode), ": ", image(&eventvalue))
+      #write("-->",evnames(ecode), ": ", image(&eventvalue))
       case ecode of{
         E_Line:{
            # do a break point check every line, is it enough?
            # and if there is a break point, make "State := PAUSE"
            if skip_line = 0 then {
-              #write("check for break  at line : ", image(&eventvalue))
+              #write("----- check for break  at line : ", image(&eventvalue))
               checkBreakPoint()
               if skip_call = 0 then {
                  checkNext()
                  checkStep()
                  }
-           }else
+              }
+           else
               skip_line := 0
            }
-        E_Assign:{
+        E_Assign | E_Value :{
+           #write("check for (Watch|Trace) point on var: ",image(&eventvalue))
            checkWatchPoint()
+           checkTraceVar()
            }
         E_Exit:{
            State := END
@@ -336,16 +457,20 @@ method debug_CallBack(new, old)
         !CallCodes:{
            add_Node(new, old)
            if ecode == E_Pcall & RunCode = NEXT then{
-              # next on proc :", image(&eventvalue)
+              # next on proc
               skip_call := 1
+              }
            }
-           }
-        E_Pret | E_Pfail: {
+        E_Pret | E_Pfail | E_Prem:{
            # return from next on proc :", image(&eventvalue)
-           skip_call := 0
-           skip_line := 1
+           if skip_call = 1 then{
+              skip_call := 0
+              skip_line := 1
+              }
            }
       } # end of case ecode
+      # new tracing facility
+      checkTrace()
    }else
       Write("The State is Not a RUN State !!!")
 end
@@ -388,7 +513,6 @@ method start_Debugging()
   #EvTerm()
   #cofail(Monitored)
   State := END
-  #ErrorCode := Error_6
   Message := "\n\t End of Program!!!"
   Write(Message)
   return
@@ -404,18 +528,13 @@ method init_Debugging(tp)
    # in either case th ErrorCode will be initialized
    State := NONE
    if tp[1] then{
-      #every x := !tp do
-      #   put(TP,x)
       TP := tp
       # check if the TP is loadable and accessable.
       if stat(TP[1]) & load_SourceFile() then{
          State := LOAD
-         #ErrorCode := Error_10
-         #write(Message)
       }
       else{
          State := ERROR
-         #ErrorCode := Error_3
          Message := "\n\t Could not access \"" || TP[1] ||
                     "\n\t Type \"help\" for assistance."
          RunCode := NONE
@@ -423,9 +542,8 @@ method init_Debugging(tp)
    }
    else{
       State := ERROR
-      #ErrorCode := Error_2
-      Message := "\n\t A program must be pre-loaded" ||
-                 "\n\t Type \"help\" for assistance"
+      Message := "\n\t A program must be pre-loaded_
+                  \n\t Type \"help\" for assistance"
       RunCode := NONE
    }
    Write(Message)
@@ -441,39 +559,47 @@ initially()
 
    State      := NONE
    RunCode    := NONE
-   #ErrorCode  := Error_0
    step_count := 0
    next_count := 0
+   treeFlag   := &null
    treeRoot   := &null
    top_Frame  := &null
    cur_Frame  := &null
    global_vars:= set()
 
+   # tracing stuff
+   traceState    := cset('')
+   traceTable    := table(0)
+   traceVarMask  := set()
+   traceVarTable := table(0)
+   #guiFlag    := &null
+   #guiMask    := set("util__Connectable_fire")
+
+   # in case of treeFlag is not null 
+   CallCodes   := SuspendCodes := ResumeCodes := ""
+   ReturnCodes := FailCodes    := RemoveCodes := ""
+
    breakMask  := set()
    watchMask  := set()
    valueMask  := table()
-   #valueMask[E_Line] := breakMask
+   #valueMask[E_Pcall] := guiMask
+   #valueMask[E_Line]  := breakMask
+   #valueMask[E_Assign]:= watchMask
    #eventmask(Monitored, , valueMask)
 
-   ## ????????
+   #For the sake of redusing the context switch between the TP and Monitor:
    #Initilly, eventMask does not contain the E_Line & E_Assigne events
    #If there is a break point, E_Line will be added to the eventMask,
    #and the break point linenum will be inserted in valueMask[E_Line] set
    #Also, initially the eventMask will not contain the E_Assign event
-   #If there is a watch point then the E_Assign will be added 
-   eventMask := cset(E_Pcall  || E_Fcall  || #E_Ocall  || E_Snew   ||
-                     E_Psusp  || E_Fsusp  || #E_Osusp  || E_Ssusp  ||
-                     E_Presum || E_Fresum || #E_Oresum || E_Sresum ||
-                     E_Pret   || E_Fret   || #E_Oret               ||
-                     E_Pfail  || E_Ffail  || #E_Ofail  || E_Sfail  ||
-                     E_Prem   || E_Frem   || #E_Orem   || E_Srem   ||
-                     # for others
-                     E_Error   || 
-                     E_Exit    ||
-                     #E_Null   || 
-                     E_Assign || 
-                     #E_Value  || 
-                     #E_Deref  ||
-                     E_Line    
-                    )
+   #If there is a watch point then the E_Assign will be added and the 
+   #variable will be added to the watchMask set.
+   # note for every thing to behave correctly, procMask must be in eventMask
+   eventMask   := cset(E_Error || E_Exit)
+   eventMask ++:= ProcMask # monitoring the user defined procedures   
+
+#   eventMask ++:= FncMask  # monitoring the built-in functions
+#   eventMask ++:= OperMask # monitoring the operation
+#   eventMask ++:= ScanMask # monitoring the string scanning operations
+
 end

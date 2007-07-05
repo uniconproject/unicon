@@ -125,13 +125,14 @@ wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
 if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
 xargs := ""
 $ifdef _UNIX
-every browser := getenv("BROWSER") | "netscape" | "mozilla"| "opera" do {
-if stat(getpaths() || browser) then {
-	MsgBox.set_contents(["found browser " || browser])
-	break
-	}
-else browser := &null
-}
+   every browser := getenv("BROWSER") |
+		    "firefox" | "netscape" | "mozilla"| "opera" do {
+      if stat(getpaths() || browser) then {
+	 MsgBox.set_contents(["found browser " || browser])
+	 break
+	 }
+      else browser := &null
+      }
 $else
 (browser := "\"" || WinAssociate("HTM") || "\"" ) |
 write(

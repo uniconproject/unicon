@@ -2,7 +2,7 @@
 # Makefile
 #
 
-UFILES= udb.u srcfile.u debug.u udbcmd.u console.u icode.u
+UFILES= udb.u icode.u srcfile.u debug.u udbcmd.u console.u
 SRC   = udb.icn srcfile.icn debug.icn udbcmd.icn console.icn defaults.icn icode.icn
 UC    = unicon
 EXEs  = udb     #test
@@ -28,7 +28,7 @@ udbcmd.u: udbcmd.icn defaults.icn
 debug.u: debug.icn defaults.icn
 	$(UC) $(cflags) debug
 
-srcfile.u: srcfile.icn
+srcfile.u: srcfile.icn icode.u
 	$(UC) $(cflags) srcfile
 
 icode.u: icode.icn

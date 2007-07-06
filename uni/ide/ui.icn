@@ -52,7 +52,7 @@ $else # implies Windows for now
 $endif
 
 
-class UIDE : Dialog(menu_1, menu_bar, tab_item_1, tab_item_2, tab_item_3, close_menu_item, exit_menu_item, file_menu, ivib_menu_item, new_menu_item, open_menu_item, print_menu_item, save_menu_item, saveas_menu_item, copy_menu_item, cut_menu_item, find_menu_item, goto_menu_item, matchparen_menu_item, menu_2, paste_menu_item, replace_menu_item, select_all_menu_item, undo_menu_item, uide, menu_separator_1, menubar)
+class UIDE : Dialog(menu_1, menu_bar, tab_item_1, tab_item_2, tab_item_3, close_menu_item, exit_menu_item, file_menu, ivib_menu_item, new_menu_item, open_menu_item, print_menu_item, save_menu_item, saveas_menu_item, copy_menu_item, cut_menu_item, find_menu_item, goto_menu_item, matchparen_menu_item, menu_2, paste_menu_item, replace_menu_item, select_all_menu_item, undo_menu_item, uide, menu_separator_1, menubar,startfile)
    method component_setup()
       self.setup()
 
@@ -150,7 +150,7 @@ end
       docpath := &null
       put(opened_files_list,"scratch")
       put(opened_files_locs,\filedirectory)
-
+      ide.handle_openfile(&null, \startfile)
       ##ide_design()
    end
 
@@ -208,11 +208,15 @@ end
       self.add(pnlToolbar)
    end
 
-   initially
-      self.Dialog.initially()
-      ide := IDE(FileTabSet, ClassTabSet, FileBrowser)  #contains the main ide functions
-      dialogself := self
-      menubar := Mainbar(JProject(), CProject(), UProject())
+initially(initfile)
+   self.Dialog.initially()
+
+   # contains the main ide functions
+   ide := IDE(FileTabSet, ClassTabSet, FileBrowser)
+   dialogself := self
+   menubar := Mainbar(JProject(), CProject(), UProject())
+   startfile := initfile
+   return self
 end
 
 
@@ -388,9 +392,9 @@ $endif
 
 end
 
-procedure main()
+procedure main(argv)
    local d
-   d := UIDE()
+   d := UIDE(argv[1])
    d.show_modal()
 end
 

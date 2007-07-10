@@ -775,6 +775,8 @@ function{1} DrawLine(argv[argc])
       int is_texture=0, base=0;
       int texhandle;
       OptTexWindow(w);
+
+#ifdef Graphics3D
       if (is_texture) {
 	 base=warg;
 	 CheckArgMultiple(4);
@@ -799,7 +801,6 @@ function{1} DrawLine(argv[argc])
 	 ReturnWindow;
 	 }
 
-#ifdef Graphics3D
       if (w->context->is_3D){
          double *v, v2[256];  
          struct descrip funcname, g;        /* do not need to be tended */
@@ -894,6 +895,8 @@ function{1} DrawPoint(argv[argc])
       int texhandle;
 
       OptTexWindow(w);
+
+#ifdef Graphics3D
       if (is_texture) {
 	 base=warg;
 	 CheckArgMultiple(3); 
@@ -912,7 +915,6 @@ function{1} DrawPoint(argv[argc])
 	 ReturnWindow;
 	 }
   
-#ifdef Graphics3D
       if (w->context->is_3D) {
          double *v, v2[256];   
          struct descrip funcname, g;		/* do not need to be tended */
@@ -2254,11 +2256,12 @@ function{0,1} ReadImage(argv[argc])
 #endif
       if (r == Succeeded) {
 
+#ifdef Graphics3D
 	 if (is_texture) {
 	    if (texhandle>w->context->maxstex) runerr(102, argv[warg]);
 	    return C_integer (word) TexReadImage(w, texhandle, x, y, &imd);
 	    }
-
+#endif
          status = strimage(w, x, y, imd.width, imd.height, imd.paltbl,
 			   imd.data, (word)imd.width * (word)imd.height, 0);
          if (status < 0)

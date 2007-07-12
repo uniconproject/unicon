@@ -183,6 +183,9 @@ global outline, outcol, outfilename,package_level_syms,package_level_class_syms
 
 procedure Progend(x1)
    
+   if yynerrs > 0 then
+      istop(yynerrs || " error" || (if yynerrs > 1 then "s" else ""))
+
    package_level_syms := set()
    package_level_class_syms := set()
    set_package_level_syms(x1)
@@ -311,7 +314,13 @@ classhead : CLASS IDENT supers LPAREN carglist RPAREN {
    $$.name := package_mangled_symbol($2.s)
    if proc($$.name, 0) then
       warning("Warning: class "|| $$.name ||" overrides the built-in function")
-   classes.insert($$, $$.name)
+   else if \ (foobar := classes.lookup($$.name)) then {
+      yyerror("redeclaration of class " || $$.name)
+      yynerrs +:= 1
+      }
+   else
+      classes.insert($$, $$.name)
+
    $$.supers_node := $3
    $$.fields := $5
    $$.lptoken := $4

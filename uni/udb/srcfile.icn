@@ -8,6 +8,13 @@ link bincvt
 $define CHARACTER &letters++&digits
 
 #
+# It is used ti index the files in srcText
+# begin: is where the source file index starts in srcText
+# end  : is where the source file index ends in srcText
+# 
+record fileIndex(fbegin, fend)
+
+#
 # Contains all of the source files issues such as found files and so  
 #
 class SourceFile(
@@ -23,47 +30,46 @@ class SourceFile(
 #
 # Extracts the executable name
 #
-method getExeName(f)
+method getFileName(f)
    local i, j:=0, path:=" "
+   local fname :="?"
 
    # what if the TP is not in the current directory of the UDB
    # such as ./udb ./test/t1/t2/t
-   every i:= 1 to *f do
-     if f[i] == "/" then   j := i
+
+   every j:= find("/",f)
 
    path ||:= f[1:j+1]
    sourcePath ||:= path ||" "
-
    if (j+1) > *f then   fail
-   else   exeName := f[j+1:0]
+   else   fname := f[j+1:0]
 
-   return
+   return fname
 end
 
 #
 # Load the program Source File(s)
 #
 method loadSourceFiles(fname, src)
-   local i, j, s
+   local i, j, s, findex, f
 
-   getExeName(fname)
-
+   exeName     := getFileName(fname)
    sourceFiles := src
  
-   # (sourceFiles := getSrcFileNames(TP[1])) |
-   # stop("Cannot open " || TP[1])
-
    # loads the source files that we can find and keep a 
    # list of the ones that we could not find
    every i := 1 to *sourceFiles do {
       if s := dopen( sourceFiles[ i ] ) then {
-         srcIndex[ sourceFiles[ i ] ] := *sourceText
-         insert( foundFiles, sourceFiles[ i ] )
+         f := getFileName(sourceFiles[i])
+         findex := fileIndex(*sourceText,0)
+         insert( foundFiles, f )
          while( put( sourceText, read( s ) ) )
          close( s )
+         findex.fend := *sourceText
+         srcIndex[ f ] := findex
          }
       else
-         put( missingFiles, sourceFiles[ i ] )
+         put( missingFiles, sourceFiles[ i ] ) # keep it as it is
       }
    return
 end
@@ -78,18 +84,18 @@ method searchFileLines(fname, linenum)
 
    wSpace := cset( " \t\n\^m" )
    punct := (",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
-   temp := sourceText[linenum + srcIndex[fname]]
+   temp := sourceText[linenum + srcIndex[fname].fbegin]
 
    temp ? {
       tab(many(wSpace))
       if (temp1 := move(1)) then {
          if temp1 == "#" then {
-            return &null
+            fail
             }
          return temp1 ||:= tab(many(CHARACTER ++ punct))
          }
       else{
-         return &null
+         fail
          }
       }
 end
@@ -106,7 +112,7 @@ method searchFileProcs(Fname, ProcName)
    other_char := ("_")
    wSpace := cset( " \t\n\^m" )
 
-   while temp := sourceText[linenum + srcIndex[Fname]] do{
+   while temp := sourceText[linenum + srcIndex[Fname].fbegin] do{
       temp ? {
          tab(many(wSpace))
          if(temp1 := tab(many(&letters))) == ("method"|"procedure") then {
@@ -119,7 +125,26 @@ method searchFileProcs(Fname, ProcName)
 	 }
       linenum +:= 1
       }
-   return &null
+   fail
+end
+
+#
+# check to see if file is loaded or not
+# loaded files are those that opend and placed in sourceText
+#
+method isLoaded(fname)
+   if member(foundFiles, fname) then
+      return
+   fail
+end
+
+#
+# checks to see whether a line number is in the file limits or not
+#
+method isInFile(fname, fline)
+   if srcIndex[fname].fbegin <= fline <= srcIndex[fname].fend then
+      return
+   fail 
 end
 
 #
@@ -172,11 +197,14 @@ end
 # returns an image of the current source line
 #
 method getSrcLine(line, fname)
+    local f
 
     if /fname then
-       return image(sourceText[line])
-    else
-       return image(sourceText[line + srcIndex[fname]])
+       return sourceText[line]
+    else{
+       f := getFileName(fname)       
+       return sourceText[line + srcIndex[ f ].fbegin]
+       } 
 end
 
 #

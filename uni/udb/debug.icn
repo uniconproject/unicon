@@ -7,6 +7,7 @@
 $include "evdefs.icn"
 link evinit
 link image
+link ximage
 link getpaths
 link evnames
 link icode
@@ -81,43 +82,40 @@ class Debug(
    valueMask,     # table used for break points and watch points set of masks
    breakPoints,   # A table maps files to their a its list of break point 
    
-   treeFlag,      # by default is null:tree is included. not null means no tree 
+   treeFlag,      # by default is null:no tree is included 
    treeRoot,      # the evaltree head
    cur_Frame,     # points at the last investigated frame, using up,down,frame n
    step_count,    # the cmdStep optional counter, initial value 0, default 1
    next_count,    # the cmdNext optional counter, initial value 0, default 1
    nex_level,     # used with the next command to skip over a call
 
-   #---- new stuff
+   #new stuff
    #guiFlag,       # &null vs. not &null: not &null means we are debugging GUI
    #guiMask,       # s set of the E_Pcall Event-value "util__Connectable_fire"
 
-   #---- new trace stuff
+   #new trace stuff
    traceState,    # a cset of &eventcode(s) of wanted traced fetures
    traceTable,    # an eventcode maped to a list of traceRec
    traceVarMask,  # a set just like watchMask, has the traced variables and is
                   # used by the valueMask along with watchMask 
    traceVarTable, # a table with keys from traceVarMask to a list of var values
 
-   #---- evalTree codes
-#   CallCodes,     # function and procedure calls
-#   SuspendCodes,  # suspend a coroutine
-#   ResumeCodes,   # resume a coroutine
-#   ReturnCodes,   # return from a procedure with return st
-#   FailCodes,     # fail in a procedure 
-#   RemoveCodes,   # remove
+   #evalTree codes
+   CallCodes,     # function and procedure calls
+   SuspendCodes,  # suspend a coroutine
+   ResumeCodes,   # resume a coroutine
+   ReturnCodes,   # return from a procedure with return st
+   FailCodes,     # fail in a procedure 
+   RemoveCodes,   # remove
    
-   global_vars,    # a set contains all of the global variable names
-   Message         # a string formated with the current message
-   # new things
-   # whyCrash     # Table with variables in the key and whycrashRec in the value
+   global_vars,   # a set contains all of the global variable names
+   Message        # a string formated with the current message
    )
 
 #
 # prints a message out into a console, message box, and so
 #
 method Write(Msg)
-
    if /Msg then
       Msg := Message
    write(Msg)
@@ -132,89 +130,91 @@ end
 method udb_evalTree(activation_record)
    local c, current, p, child
 
-#   /activation_record := __evaltree_node
-#   if /treeFlag then{
-#      CallCodes    := string(eventMask ** 
-#                             cset(E_Pcall || E_Fcall || E_Ocall || E_Snew))
-#      SuspendCodes := string(eventMask ** 
-#                             cset(E_Psusp || E_Fsusp || E_Osusp || E_Ssusp))
-#      ResumeCodes  := string(eventMask ** 
-#                             cset(E_Presum || E_Fresum || E_Oresum || E_Sresum))
-#      ReturnCodes  := string(eventMask ** 
-#                             cset(E_Pret || E_Fret || E_Oret))
-#      FailCodes    := string(eventMask ** 
-#                             cset(E_Pfail || E_Ffail || E_Ofail || E_Sfail))
-#      RemoveCodes  := string(eventMask **  
-#                             cset(E_Prem || E_Frem || E_Orem || E_Srem))
-#   }
-#   current := activation_record()
-#   current.parent := activation_record()
-#   current.children := []
-#   current.parent.children := []
+   # when there is no evalTree involved
+   if /treeFlag then{
+      while EvGet(eventMask,valueMask) do {
+         #write("-->",evnames(&eventcode), ": ", image(&eventvalue))
+         debug_CallBack(current, current)
+         if State = PAUSE then{ suspend }
+         if State = END then  { return  }
+         }
+      }   
+   else{# it is not used until the cmdTree() is used with "tree=on"
+     /activation_record := __evaltree_node
+     CallCodes    := string(eventMask ** 
+                             cset(E_Pcall || E_Fcall || E_Ocall || E_Snew))
+     SuspendCodes := string(eventMask ** 
+                            cset(E_Psusp || E_Fsusp || E_Osusp || E_Ssusp))
+     ResumeCodes  := string(eventMask ** 
+                            cset(E_Presum || E_Fresum || E_Oresum || E_Sresum))
+     ReturnCodes  := string(eventMask ** 
+                            cset(E_Pret || E_Fret || E_Oret))
+     FailCodes    := string(eventMask ** 
+                            cset(E_Pfail || E_Ffail || E_Ofail || E_Sfail))
+     RemoveCodes  := string(eventMask **  
+                            cset(E_Prem || E_Frem || E_Orem || E_Srem))
+ 
+     current := activation_record()
+     current.parent := activation_record()
+     current.children := []
+     current.parent.children := []
 
-   #every write(evnames(kk := key(valueMask))," :  ", !(valueMask[kk]))
-
-   while EvGet(eventMask,valueMask) do {
-     #write("-->",evnames(ecode), ": ", image(&eventvalue))
-     debug_CallBack(current, current)
-     if State = PAUSE then{ suspend }
-     if State = END then  { return  }
-     }
-#########################################
-#     case &eventcode of {
-#      !CallCodes: {
-#         c := activation_record()
-#         c.node := &eventvalue
-#         c.parent := current
-#         c.children := []
-#         put(current.children, c)
-#         current := c
-#         top_Frame := cur_Frame := current
-#         debug_CallBack(current, current.parent)
-#         }
-#      !ReturnCodes | !FailCodes: {
-#         p := pull(current.parent.children)
-#         current := current.parent
-#         top_Frame := cur_Frame := current
-#         debug_CallBack(current, p)
-#         }
-#      !SuspendCodes: {
-#         current := current.parent
-#         top_Frame := cur_Frame := current
-#         debug_CallBack(current, current.children[-1])
-#         }
-#      !ResumeCodes: {
-#         current := current.children[-1]
-#         top_Frame := cur_Frame := current
-#         debug_CallBack(current, current.parent)
-#         }
-#      !RemoveCodes: {
-#         if child := pull(current.children) then {
-#            while put(current.children, pop(child.children))
-#            top_Frame := cur_Frame := current
-#            debug_CallBack(current, child)
-#         }
-#         else{
-#            if current === current.parent.children[-1] then {
-#            p := pull(current.parent.children)
-#            current := current.parent
-#            top_Frame := cur_Frame := current
-#            debug_CallBack(current, p)
-#            next
-#            }
-#            else
-#                stop("evaltree: unknown removal")
-#            }
-#         }
-#      default: {
-#         debug_CallBack(current, current)
-#         }
-#     }# end case
-#     if State = PAUSE then{ suspend }
-#     if State = END then  { return  }
-#   }# end do
-#   ##write("No more events to get")
+      #every write(evnames(kk := key(valueMask))," :  ", !(valueMask[kk]))
+     while EvGet(eventMask,valueMask) do {
+      case &eventcode of {
+       !CallCodes: {
+          c := activation_record()
+          c.node := &eventvalue
+          c.parent := current
+          c.children := []
+          put(current.children, c)
+          current := c
+          #top_Frame := cur_Frame := current
+          debug_CallBack(current, current.parent)
+          }
+       !ReturnCodes | !FailCodes: {
+          p := pull(current.parent.children)
+          current := current.parent
+          #top_Frame := cur_Frame := current
+          debug_CallBack(current, p)
+          }
+       !SuspendCodes: {
+          current := current.parent
+          #top_Frame := cur_Frame := current
+          debug_CallBack(current, current.children[-1])
+          }
+       !ResumeCodes: {
+          current := current.children[-1]
+          #top_Frame := cur_Frame := current
+          debug_CallBack(current, current.parent)
+          }
+       !RemoveCodes: {
+          if child := pull(current.children) then {
+             while put(current.children, pop(child.children))
+             #top_Frame := cur_Frame := current
+             debug_CallBack(current, child)
+          }
+          else{
+             if current === current.parent.children[-1] then {
+             p := pull(current.parent.children)
+             current := current.parent
+             #top_Frame := cur_Frame := current
+             debug_CallBack(current, p)
+             next
+             }
+             else
+                 stop("evaltree: unknown removal")
+             }
+          }
+       default: {
+          debug_CallBack(current, current)
+          }
+      }# end case
+      if State = PAUSE then{ suspend }
+      if State = END then  { return  }
+     }# end do
     return
+   }
 end
 
 #
@@ -378,6 +378,7 @@ method checkTraceVar()
       else
          traceVarTable[varName]:=[varinfo]
       RunCode := RUN
+      write("------traceVar : ",image(var))
       eventMask --:=cset(E_Value)
       }
 end
@@ -538,7 +539,7 @@ method init_Debugging(tp)
       }
       else{
          State := ERROR
-         Message := "\n\t Could not access \"" || TP[1] ||
+         Message := "\n\t Could not access \"" || TP[1] ||"\""||
                     "\n\t Type \"help\" for assistance."
          RunCode := NONE
       }
@@ -601,11 +602,11 @@ initially()
    #variable will be added to the watchMask set.
    #note for every thing to behave correctly, procMask must be in eventMask
 
-   eventMask   := cset(E_Error || E_Exit || E_Line)
+   eventMask   := cset(E_Error || E_Exit || E_Line || E_Assign) #++ ProcMask
 #  eventMask ++:= ProcMask # monitoring the user defined procedures   
 #  eventMask ++:= FncMask  # monitoring the built-in functions
 #  eventMask ++:= OperMask # monitoring the operation
 #  eventMask ++:= ScanMask # monitoring the string scanning operations
 
-    Message  := "\t "
+   Message  := "\t "
 end

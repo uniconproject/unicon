@@ -41,11 +41,11 @@ method parse_Command(cmd)
      "cont"  :{  cmdContinue()     }
      "bt"    :{  cmdBacktrace()    }
      "l"     |
-     "list"  :{  cmdList()         }
+     "list"  :{  cmdList(cmd)      }
+     "clear" :{  cmdClear(cmd)     }
       #-cmds that are not in gdb
      "tree"  :{  cmdTree(cmd)      }
      "ihdr"  :{  cmdIcodeHeader()  }
-     "level" :{  cmdLevel()        }
      "trace" :{  cmdTrace(cmd)     }
      "gui"   :{  cmdGUI(cmd)       }
      default :{   
@@ -181,10 +181,11 @@ end
 #
 method cmdPrint(cmd)
    local x,    # is the dummy variable that we are looking for
-         i,    # is the index when x is a table or list
+         i,j,  # is the index when x is a table or list
          var,  # is the actual variable that we got from variable()
          level,# stack frame level, 0: current level, biger level means older
-         i1,i2,temp
+         i1,i2,temp,
+         action
 
    if State = PAUSE then{ 
       if x := temp := cmd[2] then{
@@ -201,6 +202,20 @@ method cmdPrint(cmd)
             return
 	    }
 
+         if j:=find("&", temp) then{
+            Message := "\n\t "|| temp
+            x := temp := temp[j+1:0]
+            Message ||:=" = "||keyword(x,Monitored) 
+            Write(Message)
+            return
+            }
+
+         if j:=find("*",temp) then{
+            action := "*"
+            x := temp := temp[j+1:0]
+            write("action=",action)
+            write("temp=",temp)
+            } 
          #--To be able to print things like T[1], T["a"], L[10], etc.
          if (i1:= find("[",temp)) & (i2:= find("]", temp)) then{
             x := temp[1:i1]
@@ -210,16 +225,33 @@ method cmdPrint(cmd)
                else                  i := integer(i)
             else
                i := &null             
-         }
+            }
 
          if cmd[3] then  level := integer(cmd[3]) | 0  #(level | current level) 
          else            level := cur_Frame # which is 0 if no up/down involved
          
          if var := variable(x, Monitored, level) then{
-            if type(var) == ("table" | "list" | "string" ) & \i  then
-               Message := "\n\t "||x||" = "||var[i]
-            else
-               Message := "\n\t "||x||" = "||image(var)
+            if type(var) == ("table" | "list" | "string" ) then{
+               if \i  then{
+                  if \action then{
+                     Message := "\n\t *"||x||" = "||*var[i]
+                     } 
+                  else{
+                     Message := "\n\t "||x||" = "||ximage(var[i])
+                     } 
+                  }
+               else{
+                  if \action then{
+                     Message := "\n\t *"||x||" = "||*var
+                     } 
+                  else{
+                     Message := "\n\t "||x||" = "||ximage(var)
+                     } 
+                  } 
+               }
+            else{
+               Message := "\n\t "||x||" = "||var
+               }
 	    }
 	 else
             Message := "\n\t "||x||" : Is not in the current frame !!"
@@ -385,8 +417,11 @@ method cmdContinue()
 
    if State = PAUSE & RunCode ~= ERROR then {
       State := CONTINUE
+      
+      ##if not member(valueMask, E_Assign) & *watchMask > 0 then
+      #valueMask[E_Assign] := watchMask
       if not member(valueMask, E_Line) & *breakMask > 0 then
-         valueMask[E_Line] := breakMask
+          valueMask[E_Line] := breakMask
       else{
          # when there is no break point the E_Line 
          # will not be in the original eventMask
@@ -514,127 +549,77 @@ method cmdWatch(cmd)
 end
 
 #
-# Sets Break points on line numbers or procedure names
-# [b linenum], [b ProcName], [b file linenum]
+# prints out a list of the existing break points used by cmdBreak
 #
-method cmdBreak(cmd)
-   local code, line, arg1, arg2, i, j, x, f
-   local list_ptr             # List of records of type breakPt
-   local break_point, temp_bp # record of type breakPt
+method printBreakPoints(cmd)
+   local x, L, bp
 
-   if not (State = (LOAD | PAUSE)) then {
-      State := ERROR
-      Message   := "\n\t No Program is Loaded_
-                    \n\t Type \"help\" for assistance"
+   Message := "\n\t " || cmd[1]
+   every x := key(breakPoints) do {
+      L := breakPoints[x]
+      every bp := !L do
+         Message ||:= "\n\t " || bp.file_name ||
+                      "(" || bp.line_num ||")"|| ": " || bp.code
+      }
       Write(Message)
-      return
-      }
-   State := SKIP
+end
 
-   # if cmd is only "break"; will print all of the preset breakpoints info
-   if *cmd = 1 then {
-      Message := "\n\t " || cmd[1]
-      every x := key(breakPoints) do {
-         list_ptr := breakPoints[x]
-         i := 1
-         while i <= *list_ptr do {
-            break_point := list_ptr[i]
-            Message ||:= "\n\t File: " || break_point.file_name ||
-                         ", Line: " || break_point.line_num ||
-                         ", Code: " || break_point.code
-            i +:= 1
-	    }
-	 }
-      Write(Message)
-      return
-      }
- 
-   if *cmd = 2 then {
-      arg1 := srcFile.exeName
-      arg2 := cmd[2]
-      }
-   else if *cmd > 2 then {
-      arg1 := cmd[2]
-      arg2 := cmd[3]
-      }
+#
+# check to see whether a break point is pre-exist or not
+#
+method isBreakExist(fname, line)
+   local L, bp
 
-   arg1 := addExtension(arg1)
-   if member(srcFile.foundFiles, arg1) then {
-      if line := integer(arg2) then {
-         if 0 < line <= *srcFile.sourceText then {
-            code := srcFile.searchFileLines(arg1, line)
-            if \code then {
-               break_point := breakPt(arg1, line, code)
-	       }
-            else {
-               Message   := "\n\t Line number was not found,_
-                             \n\t Please try a different line number"
-               Write(Message)
-               return
-	       }
-	    }
-         else {
-            Message := "\n\t Line number is not within the sourcefile"
-            Write(Message)
+   if member(breakPoints, fname) then {
+      L := breakPoints[fname]
+      every bp := !L do
+         if bp.line_num = line then
             return
-	    }
-	 }
-      else {
-         line := srcFile.searchFileProcs(arg1, arg2)
-         if \line then {
-            break_point := breakPt(arg1,line,srcFile.getSrcLine(line, arg1))
-	    }
-         else {
-            Message   := "\n\t Procedure not found_
-                          \n\t Make sure the method name is correct!"
-            Write(Message)
-            return
-	    }
-	 }
-      
-      # record breakPt(file_name, line_num, code)
-      line := break_point.line_num
-      if member(breakPoints, arg1) then {
-         list_ptr := breakPoints[arg1]
-         i := 1
-         while i <= *list_ptr do {
-            temp_bp := list_ptr[i]
-            if temp_bp.line_num = break_point.line_num then {
-               Message   := "\n\t The break point is already exist,_
-                             \n\t Type \"break\" to see all breakpoints"
-               Write(Message)
-               return
-	       }
-            i +:= 1
-	    }
-         put(list_ptr, break_point)
-	 }
-      # put and pull
-      else {
-         list_ptr := []
-         put(list_ptr, break_point)
-         breakPoints[arg1] := list_ptr
-	 }
-
-      # Important for the sake of valuemask 
-      insert(breakMask,line)
-      Message   := "\n\t Breakpoint set successfully in "|| arg1 ||
-                   "\n\t at "|| srcFile.getSrcLine(line, arg1) 
-      Write(Message)
-      return
       }
-   Message   := "\n\t File not found,_
-                 \n\t Make sure the file name is correct."
-   Write(Message)
+   fail
+end
+
+#
+# used to add a new break point into the 
+# breakPoints table and the breakMask set
+#
+method addBreakPoint(fname, bp)
+   local L
+   
+   if member(breakPoints,fname) then
+      put(breakPoints[fname], bp)
+   else {
+      L := []
+      put(L, bp)
+      breakPoints[fname] := L
+      }
+   insert(breakMask,bp.line_num)
+end
+
+#
+# used it clear break points, is used by cmdClear()
+#
+method deleteBreakPoint(fname, line)
+   local L, x, i
+   
+   L := breakPoints[fname]
+   every i := 1 to *L do{
+      x := L[i]
+      if x.line_num = line then
+         delete(L,i)
+      } 
+   if *L = 0 then
+      delete(breakPoints, fname)
+   delete(breakMask,line)
 end
 
 #
 # Used by cmdBreak
 #
-method addExtension(arg1)
+method addExtension(fname)
    local temp1, temp2
 
-   arg1 ? {
+   fname ? {
       temp1 := tab(many(CHARACTER ++ '_-'))
       repeat {
 	 if (temp2 := move(1)) then {
@@ -646,42 +631,224 @@ method addExtension(arg1)
             }
 	 temp2 := tab(many(CHARACTER))
          if temp2 == "icn" then {
-	    return arg1
+	    return fname
             }
          }
       }
 end
 
 #
+# Sets Break points on line numbers or procedure names
+# [b linenum], [b ProcName], [b file linenum]
+#
+method cmdBreak(cmd)
+   local code, line, fname, arg, break_point
+
+   if not (State = (LOAD | PAUSE)) then {
+      State := ERROR
+      Message   := "\n\t No Program is Loaded_
+                    \n\t Type \"help\" for assistance"
+      Write(Message)
+      return
+      }
+   State := SKIP
+
+   # if cmd is only "break"; will print all of the preset breakpoints info
+   if *cmd = 1 then{
+      printBreakPoints(cmd)
+      return
+      } 
+ 
+   if *cmd = 2 then {
+      fname := srcFile.exeName
+      arg   := cmd[2]
+      }
+   else if *cmd > 2 then {
+      fname := cmd[2]
+      arg   := cmd[3]
+      }
+
+   fname := addExtension(fname)
+   if srcFile.isLoaded(fname) then{
+      if line := integer(arg) then {
+         if srcFile.isInFile(fname, line) then {
+            if code := srcFile.searchFileLines(fname, line) then
+               break_point := breakPt(fname, line, code)
+            else {
+               Message   := "\n\t Line number was not found,_
+                             \n\t Please try a different line number"
+               Write(Message)
+               return
+	       }
+	    }
+         else {
+            Message := "\n\t Line number is not within the \""||fname||"\""
+            Write(Message)
+            return
+	    }
+	 }
+      else {
+         if line := srcFile.searchFileProcs(fname, arg) then
+            break_point := breakPt(fname,line,srcFile.getSrcLine(line, fname))
+         else {
+            Message   := "\n\t Procedure not found_
+                          \n\t Make sure the method name is correct!"
+            Write(Message)
+            return
+	    }
+	 } 
+      
+      # record breakPt(file_name, line_num, code)
+      line := break_point.line_num
+      if isBreakExist(fname, line) then
+         Message   := "\n\t The break point is already exist,_
+                       \n\t Type \"break\" to see all breakpoints"
+      else{
+         addBreakPoint(fname, break_point)
+         Message := "\n\t Breakpoint set successfully in:\n\t "|| 
+                    fname ||"("||line||"): "||srcFile.getSrcLine(line, fname) 
+         } 
+      }
+   else
+      Message := "\n\t File not found,_
+                  \n\t Make sure the file name is correct."
+   Write(Message)
+end
+
+#
+# it clears pre-set break points
+#
+method cmdClear(cmd)
+   local line, x, fname, arg
+
+   # clears all of the preset break points
+   if *cmd = 1 then{
+      breakMask := set(-1)
+      every x := key(breakPoints) do
+          delete(breakPoints, x)
+      Message := "\n\t All break points are cleared!!!"
+      Write(Message)
+      return
+      }
+
+   if *cmd = 2 then{
+      fname := srcFile.exeName
+      arg   := cmd[2]
+      }
+   else if *cmd > 2 then{
+      fname := cmd[2]
+      arg   := cmd[3]
+      }
+
+   fname := addExtension(fname)
+   if line := integer(arg) then{
+      if isBreakExist(fname, line) then{
+         deleteBreakPoint(fname, line)
+         Message := "\n\t The break point is cleared at :\n\t "||fname||
+                    "("||line ||"): "||srcFile.getSrcLine(line, fname)
+         }
+      else
+         Message := "\n\t There is no break point at : \n\t "||fname||
+                    "("||line ||"): "||srcFile.getSrcLine(line)
+      }
+   else{ 
+      if line := srcFile.searchFileProcs(fname, arg) then{
+         if isBreakExist(fname, line) then{
+            deleteBreakPoint(fname,line)
+            Message := "\n\t The break point is cleared at :\n\t "||fname||
+                       "("||line ||"): "||srcFile.getSrcLine(line, fname)
+            }
+         else
+            Message := "\n\t There is no break point at : \n\t "||fname||
+                       "("||line ||"): "||srcFile.getSrcLine(line)
+         }
+      else
+         Message   := "\n\t Procedure not found_
+                       \n\t Make sure the method name is correct!"
+      }
+   Write(Message)
+end
+
+#
+# used by cmdList to print a a bunch of src lines
+#
+method printSrcLines(cur_line, cur_file, num)
+   local i, line := cur_line - 5
+
+   if /num then num := 10
+
+   if line < 0 then line := 0
+
+   Message :="" 
+   every i:= 1 to num do{
+      line +:= 1
+      if line = cur_line then
+         Message ||:="\n    --> "||line ||":"||
+                     srcFile.getSrcLine(line, cur_file)
+      else
+         Message ||:="\n\t"||line ||":"||
+                     srcFile.getSrcLine(line, cur_file)
+      }
+   Write(Message)
+end
+
+#
 # The list command from gdb, as in gdb defaults are 10 lines from
 # the current file are printed centered around the curent line 
 #
-method cmdList()
-   local i, line,cur_line, cur_file
-
-   if State =  PAUSE then {
-      cur_file := keyword("file", Monitored)
-      cur_line := keyword("line", Monitored)
-      #write("----cur_line=",cur_line)
-      #write("----cur_file=",cur_file)
-      Message :="" 
-      line := cur_line - 5
-      every i:= 1 to 10 do{
-         line +:= 1
-         if line = cur_line then
-            Message ||:="\n    --> "||line ||":"||
-                        srcFile.getSrcLine(line, cur_file)
-         else
-            Message ||:="\n\t"||line ||":"||
-                        srcFile.getSrcLine(line, cur_file)
-         }
+method cmdList(cmd)
+   local cur_line, cur_file, fnc
+   static last_line := -1
+   
+   if RunCode ~= LIST then{
+      last_line := -1
+      RunCode := LIST
       }
-   else{
+
+   if State ~=  PAUSE then {
       State := ERROR
       Message   := "\n\t No Program is running_
                     \n\t Type \"help\" for assistance"
+      Write(Message)
+      return
       }
-   Write(Message)
+
+   cur_file := keyword("file", Monitored)
+   if *cmd = 1 then{
+      cur_line := keyword("line", Monitored)
+      if last_line = -1 then{
+         last_line := cur_line
+         printSrcLines(cur_line, cur_file)
+         }
+      else{
+         last_line +:= 10
+         printSrcLines(last_line, cur_file)
+         }
+      }
+   else{
+       if cur_line := integer(cmd[2]) then{
+          last_line := cur_line
+          printSrcLines(cur_line, cur_file)
+          }
+       else{
+          if cmd[2] == "-" then{
+             last_line -:= 10
+             printSrcLines(last_line)
+             }
+          else{
+             fnc := cmd[2]
+             if cur_line := srcFile.searchFileProcs(cur_file, fnc) then{
+                last_line := cur_line
+                printSrcLines(cur_line, cur_file)
+                } 
+             else{
+                Message := "\n\t Procedure not found_
+                            \n\t Make sure the method name is correct!"
+                Write(Message)
+                }
+          }
+       }
+   }          
 end
 
 #------ Commands that are not in gdb,thay need Dr.J's approval
@@ -716,36 +883,26 @@ end
 #
 method cmdTree(cmd)
    # evalTree can not be printed unless the TP ran for a while.
-   if State = (PAUSE | LOAD | END) then{ # needs a fix when state=END ?
+   if State = ( LOAD | END) then{
       if *cmd = 1 then
          printT(treeRoot)
       else{
          if cmd[2] == "on" then{
             # it is on by default until it is set to be off
-            treeFlag := &null
+            treeFlag := 1
             Write(Message:="\n\t the evaltree is ON.")
             }
-         else{ # cmd[2] == "off"
-            treeFlag := 1
+         else if cmd[2] == "off" then {
+            treeFlag := &null
             Write(Message:="\n\t the evaltree is Off.")
             }
          }
       }
    else{
       State := ERROR
-      Message := "\n\t EvalTree is empty, try \"run\" first"
+      Message := "\n\t EvalTree must be turned on befor running the program!"
       Write(Message)
       }
-end
-
-#
-# prints out the current depth level in the calling stack 
-#
-method cmdLevel()
-
-   Message := "Current level is " || keyword("level",Monitored)
-   Write(Message)
-
 end
 
 #
@@ -764,7 +921,6 @@ method traceVar(cmd)
          }
       else if old_State = PAUSE then {
          # assume? that the watched variable is local to where it is paused
-         #procName := image(top_Frame.node)
          procName := image(proc(Monitored,0))
          i := find(" ",procName)
          var ||:= "-" || procName[i+1:0]
@@ -796,7 +952,6 @@ method traceVar(cmd)
          }
       }
 
-   # here var := real var
    # write("------var= ",var)
    if member(traceVarMask, var) then{
       if cmd[3] == "on" then
@@ -815,7 +970,7 @@ method traceVar(cmd)
                               ": "|| r.var||" = "||r.value
                }# end if *L > 0
             else
-               Message:= "\n\t Var: "||var||" has no trace info yet!"
+               Message:= "\n\t var: "||var||" has no trace info yet!"
             }
          else
             Message:= "\n\t Var: "||var||" has no trace info yet!"
@@ -1037,7 +1192,9 @@ method cmdHelp(cmd)
       \n\t print : prints out the value of a var in current frame_
       \n\t bt    : prints out the back trace_
       \n\t break : sets a break point in the source code_
+      \n\t clear : deletes an existing break point_
       \n\t trace : to trace some of the program behaviors_
+      \n\t list  : to print out lines of the source code_
       \n\t quit  : quits the current UDB Session_
       \n\t help cmd : shows more info about a specific command"
       }
@@ -1135,9 +1292,30 @@ method cmdHelp(cmd)
     "break":{
       Message:="_
       \n\t Sets a break point_
-      \n\t break      : prints all of the pre-set break points_
-      \n\t break num  : Sets a break at line number (num)_
-      \n\t break Proc : Sets a break at procedure named \"Proc\""
+      \n\t break        : prints all of the pre-set break points_
+      \n\t break num    : Sets a break at line number (num)_
+      \n\t break f num  : Sets a break in file f at line number num_
+      \n\t break Proc   : Sets a break at procedure named \"Proc\"_
+      \n\t break f Proc : Sets a break in file f at procedure \"Proc\""
+      }
+    "clear":{
+      Message:="_
+      \n\t Clears a break point_
+      \n\t clear        : Clears all of the pre-set break points_
+      \n\t clear num    : Clears break at line num in the current file_
+      \n\t clear f num  : Clears break in file f at line num_
+      \n\t clear Proc   : Clears break at procedure Proc in the current file_
+      \n\t clear f Proc : Clears break in file f at procedure Proc"
+      }
+    "list":{
+      Message:="_
+      \n\t Prints out some source code lines_
+      \n\t list      : prints 10 lines from the current file centered_
+      \n\t             around the current line, another list cmd will_
+      \n\t             print the next 10 lines and so on_ 
+      \n\t list -    : prints the previous 10 lines from the current print_
+      \n\t list num  : prints 10 lines centered around the line num_
+      \n\t list Proc : prints 10 lines centered around the precedure Proc"
       }
     "watch":{
       Message:="_
@@ -1192,7 +1370,5 @@ end
 
 # Just make sure that the base class is initialized
 initially()
-
    self.Debug.initially()
-
 end

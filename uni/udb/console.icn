@@ -55,8 +55,8 @@ method get_CommandLine()
 
    # make sure that cmdIgnore is set with &null for the next command
    line :=""
-   words := list(0)
-   wchar := CHARACTER ++ '\'\\/-.\_n&?[]\"'
+   words := list()
+   wchar := CHARACTER ++ '\'\\/-.*\_n&?[]\"'
 
    i := 0
    writes(PROMPT)
@@ -97,12 +97,18 @@ method get_CommandLine()
 
    }#end of while
 
+   # if Eneter hit it will take the last cmdx
+   if *line = 0 then{
+      i:= *cmdHistory
+      line := cmdHistory[i]
+      } 
    if *line > 0 then{  
       update_cmdHistory(line)
       # analyize that cmd line
       line ? while tab(upto(wchar))do {
            word := tab(many(wchar))
            put(words, word)
+           #write("---:",word)
       }
       return words
    }else

@@ -27,7 +27,6 @@ record header (
 )
 
 class Icode(
-   exeName,      # The executable file name
    icode,        # A string with the executable file
    hdr,          # An instance of the header() record
    wordSize,     # 4 on a 32-bit and 8 on a 64-bit machine 
@@ -73,25 +72,23 @@ end
 method openIcodeFile(exeFile)
    local statrec, f
 
-   exeName := exeFile
+   statrec := stat(exeFile) | stop("can't stat ", image(exeFile))
 
-   statrec := stat(exeName) | stop("can't stat ", image(exeName))
-
-   if not (f := open(exeName,"ru")) then {
-      write(&errout, "can not open file : ", exeName)
+   if not (f := open(exeFile,"ru")) then {
+      write(&errout, "can not open file : ", exeFile)
       fail
       }
 
-   # reads all of the executable source file into the icode 
+   # reads all of the executable into the icode 
    icode := reads(f, statrec.size)
    close(f)
 
    if *icode < statrec.size then {
-      write("file ", exeName, " is too short")
+      write("file \"", exeFile, "\" is too short")
       fail
       }
+   return
 end
-
 
 #
 # Initialize the hdr class variable base on the Icode wordSize
@@ -107,7 +104,6 @@ method readIcodeHeader()
 
    hdr.config := move(16 * wordSize)
    #write("config=",image(hdr.config))
-
 end
 
 #
@@ -185,22 +181,21 @@ method checkCompressedIcode()
       }
    else
       icodeVersion ||:= " Uncompressed Icode"
-  
 end
 
 
 #
 # Collect the Source files from the executable Icode
 #
-method getSrcFileNames(exename)
+method getSrcFileNames(exeFile)
    local fNames, LLL,
          p1, x, i, j
 
-   openIcodeFile(exename)
+   openIcodeFile(exeFile)
 
    # look at header information
    icode ? {
-      if find(".exe", exeName) then {
+      if find(".exe", exeFile) then {
          tab(find("exit\^m\nrem [executable Icon binary follows]"))
          }
       tab((x := find("\^l"))+3) # \^l\n\0 terminate shell header

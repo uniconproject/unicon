@@ -14,7 +14,6 @@ class Commands : Debug()
 method parse_Command(cmd)
 
    case cmd[1] of{
-     "l"     |
      "load"  :{  cmdLoad(cmd)      }
      "r"     |
      "run"   :{  cmdRun(cmd)       }
@@ -41,6 +40,8 @@ method parse_Command(cmd)
      "c"     |
      "cont"  :{  cmdContinue()     }
      "bt"    :{  cmdBacktrace()    }
+     "l"     |
+     "list"  :{  cmdList()         }
       #-cmds that are not in gdb
      "tree"  :{  cmdTree(cmd)      }
      "ihdr"  :{  cmdIcodeHeader()  }
@@ -78,23 +79,23 @@ method cmdRun(cmd)
          every i:=2 to *cmd do
             put(args, cmd[i])
          TP := args
+         }
       }
-   }
 
    if State = (LOAD | END | PAUSE) then{ 
       if State = PAUSE then  State := RERUN
       else                   State := RUN
       if not member(valueMask, E_Line) & *breakMask > 0 then{
          valueMask[E_Line] := breakMask
-         eventMask := eventMask ++ cset(E_Line) 
+         eventMask ++:= cset(E_Line) 
          #write("------E_Line added")
          }
       if not member(valueMask, E_Assign) & (*watchMask | *traceVarMask) >0 then{
          valueMask[E_Assign] := watchMask ++ traceVarMask
-         eventMask := eventMask ++ cset(E_Assign)
+         eventMask ++:= cset(E_Assign)
          #write("------E_Assign added")
          }
-   }
+      }
    else{
       State := ERROR
       Message   := "\n\t No program to RUN, load program first_
@@ -132,8 +133,7 @@ end
 method printGlobals(level)
    local x, i
         
-   if /level then
-      level := top_Frame.level - cur_Frame.level
+   if /level then  level := cur_Frame # 0 if no up/down involved
    
    Message := ""
    every x := !global_vars do{
@@ -149,8 +149,7 @@ end
 method printLocals(level)
    local x, i
 
-   if /level then
-      level := top_Frame.level - cur_Frame.level
+   if /level then level := cur_Frame # 0 if no up/down involved
 
    Message := ""
    every x := localnames(Monitored,level) do{
@@ -166,8 +165,7 @@ end
 method printParams(level)
    local x, i
 
-   if /level then
-      level := top_Frame.level - cur_Frame.level
+   if /level then level := cur_Frame # 0 if no up/down involved
 
    Message := ""
    every x := paramnames(Monitored,level) do{
@@ -175,25 +173,6 @@ method printParams(level)
       Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
    }
    Write(Message)
-end
-
-#
-# writes down the current frame information, 
-# used by cmdPrint, cmdFrame, cmdUp, cmdDown
-#
-method printFrame(level)
-     
-   if /level then
-      level := top_Frame.level - cur_Frame.level
-   Message := "\n\t Frame: "|| level            ||
-              ", File: "|| cur_Frame.fname      ||
-              ", Line: "|| cur_Frame.linenum    ||
-              ", Proc: "|| image(cur_Frame.node)||
-              "\n\t -- Locals :"
-   Write(Message)
-   printLocals(level)
-   printParams(level)
-
 end
 
 #
@@ -209,15 +188,15 @@ method cmdPrint(cmd)
 
    if State = PAUSE then{ 
       if x := temp := cmd[2] then{
-         if temp == ("-G" | "-globals") then{
+         if temp == ("-g" |"-G" | "-globals") then{
             printGlobals()
             return
 	    }
-	 else if temp == ("-L" | "-locals") then{
+	 else if temp == ("-l" | "-L" | "-locals") then{
             printLocals()
             return
 	    }
-	 else if temp == ("-P" | "-params") then{
+	 else if temp == ("-p" | "-P" | "-params") then{
             printParams()
             return
 	    }
@@ -234,7 +213,7 @@ method cmdPrint(cmd)
          }
 
          if cmd[3] then  level := integer(cmd[3]) | 0  #(level | current level) 
-         else            level := top_Frame.level - cur_Frame.level
+         else            level := cur_Frame # which is 0 if no up/down involved
          
          if var := variable(x, Monitored, level) then{
             if type(var) == ("table" | "list" | "string" ) & \i  then
@@ -246,7 +225,7 @@ method cmdPrint(cmd)
             Message := "\n\t "||x||" : Is not in the current frame !!"
 	 }
       else {
-         level := top_Frame.level - cur_Frame.level
+         level := cur_Frame # which is 0 if no up/down involved
          printFrame(level)
 	 }
       }
@@ -259,41 +238,42 @@ method cmdPrint(cmd)
 end
 
 #
-# Prints out the current stack frame info,
-# It can be used to jump into a specific frame, [f n]
+# writes down the current frame information, 
+# used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
-method cmdFrame(cmd)
-   local x, level 
-
-   if State = PAUSE then{ 
-      level := top_Frame.level - cur_Frame.level 
-      if *cmd = 1 then {
-         printFrame(level)
-	 }
-      else
-         Write("cmdFrame, What ???")
+method printFrame(frame)
+   local x, i, level, p:="("
+   
+   level := keyword("level", Monitored) -1
+   if 0 <= frame <= level then{
+      Message   := "\t #"|| frame
+      Message ||:= ": "|| image(proc(Monitored, frame))
+      every x := paramnames(Monitored,frame) do{
+         i := variable(x, Monitored,frame)
+         p ||:= x||"="||image(i)||", "
+         }
+      p:= p[1:-2]
+      Message ||:= p ||")"
       }
-   else {
-      State := ERROR
-      Message   := "\n\t No program is running !!!_
-                    \n\t Try \"run\", or Type \"help\" for assistance"
-      Write(Message)
-      }
+   else
+      Message := " The \""||frame ||"\" is not a valid frame number"||
+                 " valid frames are (0 <= frame_num <= "||level||")"  
+   Write(Message)
 end
 
 #
 # Moves one frame up on the execution stack
 #
 method cmdUp()
-   local x, level
+   local level
 
+   level := keyword("level",Monitored) - 1 
    if State = PAUSE then {
-      if /cur_Frame.parent.node then
+      if cur_Frame = level then
          Write("\t No more Frames up !!!")
       else {
-         cur_Frame := cur_Frame.parent
-         level := top_Frame.level - cur_Frame.level
-         printFrame(level)
+         cur_Frame +:= 1
+         printFrame(cur_Frame)
 	 }
       }
    else {
@@ -308,16 +288,40 @@ end
 # Moves one frame down on the execution stack
 #
 method cmdDown()
-   local x, level
 
    if State = PAUSE then {
-      if cur_Frame === top_Frame then
+      if cur_Frame = 0 then
          Write("\t No more Frames Down !!!")
       else {
-         cur_Frame := cur_Frame.children[-1]
-         level := top_Frame.level - cur_Frame.level 
-         printFrame(level)
+         cur_Frame -:= 1
+         printFrame(cur_Frame)
 	 }
+      }
+   else {
+      State := ERROR
+      Message   := "\n\t No program is running !!!_
+                    \n\t Try \"run\", or Type \"help\" for assistance"
+      Write(Message)
+      }
+end
+
+#
+# Prints out the current stack frame info,
+# It can be used to jump into a specific frame, [f n]
+#
+method cmdFrame(cmd)
+   local frame, level 
+
+   if State = PAUSE then{ 
+      if *cmd = 1 then {
+         printFrame(cur_Frame)
+	 }
+      else{
+         if frame := integer(cmd[2]) then
+            printFrame(frame)
+         else
+            Write("cmdFrame, What ???")
+         }
       }
    else {
       State := ERROR
@@ -331,16 +335,21 @@ end
 # Prints out where you are in the code, what file, and what line.
 #
 method cmdWhere()
-   local cur_file, cur_line, level
+   local i, x, cur_file, cur_line, p, param
 
    if State = PAUSE then{
-      cur_file := cur_Frame.fname
+      cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
-      level := top_Frame.level - cur_Frame.level 
-      Message := "\n\t File: " || cur_file ||
-                 ", Proc: "    || image(proc(Monitored,level)) ||
-                 ", Line: "    || cur_line ||
-                 "\n\t Code: " || sourceText[cur_line + srcIndex[cur_file]]
+      p        := image(proc(Monitored,0))
+      param:="("
+      every x := paramnames(Monitored,0) do{
+         i := variable(x, Monitored,0)
+         param ||:= x||"="||image(i)||", "
+         }
+      param:= param[1:-2] ||")"
+     
+      Message := "\n\t "||cur_file||"("||cur_line||")"||": "|| p||param ||
+                 "\n\t Code: "|| srcFile.getSrcLine(cur_line, cur_file)  
       }
    else {
       State := ERROR
@@ -351,34 +360,19 @@ method cmdWhere()
 end
 
 #
-# Used from cmdBacktrace 
-#
-method print_Backtrace(frame)
-   local t, i
-
-   Message   := "\n\t Frame: "|| frame.level   ||
-                ", File: "|| frame.fname       ||
-                ", Line: "|| frame.linenum     ||
-                ", proc: "|| image(frame.node)
-   Write(Message)
-
-   t := frame.children
-   if *t < 1 then
-      return
-   every print_Backtrace(!t)
-end
-
-#
 # To back trace the executin in the stack
 # [bt]
 #
 method cmdBacktrace()
+   local level, frame
 
+   level := keyword("level", Monitored) - 1
    if State = PAUSE then
-      print_Backtrace(treeRoot)
-   else {
+      every frame := 0 to level do
+         printFrame(frame) 
+   else{
       State := ERROR
-      Message := "\n\t EvalTree is empty, try \"run\" first"
+      Message := "\n\t Execution Stack is empty\n\t Try \"run\" first"
       Write(Message)
       }
 end
@@ -400,7 +394,7 @@ method cmdContinue()
             eventMask --:= cset(E_Line)
          }
       }
-   else {
+   else{
       State := ERROR
       Message   := "\n\t No program is running !!!_
                     \n\t Try \"run\", or Type \"help\" for assistance"
@@ -448,7 +442,10 @@ method cmdNext(cmd)
 	 next_count := count
       else
 	 next_count := 1
+
       State := NEXT
+      nex_level := keyword("level", Monitored)
+
       if RunCode = WATCH then{
          # if *breakMask>0 then E_Line is already in eventMask
          # and we need to remove delete(valueMask,E_Line) until continu
@@ -483,9 +480,9 @@ method cmdWatch(cmd)
    # if cmd is only "watch"; will print all of the pre-set watch points info
    if *cmd = 1 then{
       Message :="\n\t " || cmd[1]
-      every x := !watchMask do {
+      every x := !watchMask do
          Message ||:= "\n\t Watch for : " || x
-	 }
+
       Write(Message)
       return
       }
@@ -507,13 +504,11 @@ method cmdWatch(cmd)
       }
    else if old_State = PAUSE then {
       # assume? that the watched variable is local to where it is paused
-      procName := image(top_Frame.node)
+      procName := image(proc(Monitored, 0))
       i := find(" ",procName)
       var ||:= "-" || procName[i+1:0]
       }
    insert(watchMask, var)
-   #???if not member(valueMask, E_Assign) then
-   #???   valueMask[E_Assign] := watchMask
    Message := "\n\t Watchkpoint successfully set for: "||var
    Write(Message)
 end
@@ -555,12 +550,7 @@ method cmdBreak(cmd)
       }
  
    if *cmd = 2 then {
-      j:= 0
-      f := TP[1]
-      every i:= 1 to *f do
-         if f[i] == "/" then   j := i
-
-      arg1 := f[j+1:0]    #file_argv[1]
+      arg1 := srcFile.exeName
       arg2 := cmd[2]
       }
    else if *cmd > 2 then {
@@ -568,11 +558,11 @@ method cmdBreak(cmd)
       arg2 := cmd[3]
       }
 
-   arg1 := add_extension(arg1)
-   if member(foundFiles, arg1) then {
+   arg1 := addExtension(arg1)
+   if member(srcFile.foundFiles, arg1) then {
       if line := integer(arg2) then {
-         if 0 < line <= *sourceText then {
-            code := search_file_lines(arg1, line)
+         if 0 < line <= *srcFile.sourceText then {
+            code := srcFile.searchFileLines(arg1, line)
             if \code then {
                break_point := breakPt(arg1, line, code)
 	       }
@@ -590,9 +580,9 @@ method cmdBreak(cmd)
 	    }
 	 }
       else {
-         line := search_file_procs(arg1, arg2)
+         line := srcFile.searchFileProcs(arg1, arg2)
          if \line then {
-            break_point := breakPt(arg1,line,sourceText[line + srcIndex[arg1]])
+            break_point := breakPt(arg1,line,srcFile.getSrcLine(line, arg1))
 	    }
          else {
             Message   := "\n\t Procedure not found_
@@ -628,10 +618,8 @@ method cmdBreak(cmd)
 
       # Important for the sake of valuemask 
       insert(breakMask,line)
-      #????if not member(valueMask, E_Line) then
-      #????   valueMask[E_Line] := breakMask
       Message   := "\n\t Breakpoint set successfully in "|| arg1 ||
-                   "\n\t at "|| sourceText[line + srcIndex[arg1]]
+                   "\n\t at "|| srcFile.getSrcLine(line, arg1) 
       Write(Message)
       return
       }
@@ -643,17 +631,17 @@ end
 #
 # Used by cmdBreak
 #
-method add_extension(arg1)
+method addExtension(arg1)
    local temp1, temp2
 
    arg1 ? {
       temp1 := tab(many(CHARACTER ++ '_-'))
       repeat {
 	 if (temp2 := move(1)) then {
-	    temp1 := temp1 || temp2
+	    temp1 ||:= temp2
             }
 	 else {
-	    temp1 := temp1 || ".icn"
+	    temp1 ||:= ".icn"
             return temp1
             }
 	 temp2 := tab(many(CHARACTER))
@@ -665,63 +653,35 @@ method add_extension(arg1)
 end
 
 #
-# Used by cmdBreak
-# Searchs the fname for a specific linenum, and make sure it is applicable
-# for a breakpoint condition, if it is , it returns that line source code.
+# The list command from gdb, as in gdb defaults are 10 lines from
+# the current file are printed centered around the curent line 
 #
-method search_file_lines(fname, linenum)
-   local temp, temp1, wSpace, punct
+method cmdList()
+   local i, line,cur_line, cur_file
 
-   wSpace := cset( " \t\n\^m" )
-   punct := (",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
-   temp := sourceText[linenum + srcIndex[fname]]
-
-   # write("temp is == to empty line")
-   temp ? {
-      tab(many(wSpace))
-      if (temp1 := move(1)) then {
-         if temp1 == "#" then {
-            #Message := "\n\t Cannot place a breakpoint at a comment."
-            #write(Message)
-            return &null
+   if State =  PAUSE then {
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      #write("----cur_line=",cur_line)
+      #write("----cur_file=",cur_file)
+      Message :="" 
+      line := cur_line - 5
+      every i:= 1 to 10 do{
+         line +:= 1
+         if line = cur_line then
+            Message ||:="\n    --> "||line ||":"||
+                        srcFile.getSrcLine(line, cur_file)
+         else
+            Message ||:="\n\t"||line ||":"||
+                        srcFile.getSrcLine(line, cur_file)
          }
-         return temp1 := temp1 || tab(many(CHARACTER ++ punct))
       }
-      else {
-         #Message := "\n\t Cannot place breakpoint on empty line."
-         #write(Message)
-         return &null
+   else{
+      State := ERROR
+      Message   := "\n\t No Program is running_
+                    \n\t Type \"help\" for assistance"
       }
-   }
-end
-
-#
-# Used by cmdBreak
-# Searchs the Fname for a specific ProcName and returns its linenum
-#
-method search_file_procs(Fname, ProcName)
-   local wSpace, other_char
-   local temp, temp1, linenum
-
-   linenum := 1
-   other_char := ("_")
-   wSpace := cset( " \t\n\^m" )
-
-   while temp := sourceText[linenum + srcIndex[Fname]] do {
-      # write(temp)
-      temp ? {
-         tab(many(wSpace))
-         if(temp1 := tab(many(&letters))) == ("method"|"procedure") then {
-            tab(many(wSpace))
-            temp1 := tab(many(CHARACTER ++ other_char))
-            if temp1 == ProcName then {
-	       return linenum
-	       }
-	    }
-	 }
-      linenum +:= 1
-      }
-   return &null # not NULL
+   Write(Message)
 end
 
 #------ Commands that are not in gdb,thay need Dr.J's approval
@@ -731,7 +691,7 @@ end
 #
 method cmdIcodeHeader()
 
-   printIcodeHeader()
+   icode.printIcodeHeader()
 
 end
 
@@ -748,7 +708,6 @@ method printT(leaf)
 
    t := leaf.children
    if *t < 1 then  return
-   #every i := 1 to *t do
    every printT(!t)
 end
 
@@ -805,7 +764,8 @@ method traceVar(cmd)
          }
       else if old_State = PAUSE then {
          # assume? that the watched variable is local to where it is paused
-         procName := image(top_Frame.node)
+         #procName := image(top_Frame.node)
+         procName := image(proc(Monitored,0))
          i := find(" ",procName)
          var ||:= "-" || procName[i+1:0]
          }
@@ -829,7 +789,8 @@ method traceVar(cmd)
          }
       else if old_State = PAUSE then {
          # assume? that the watched variable is local to where it is paused
-         procName := image(top_Frame.node)
+         #procName := image(top_Frame.node)
+         procName := image(proc(Monitored,0))
          i := find(" ",procName)
          var ||:= "-" || procName[i+1:0]
          }
@@ -845,22 +806,19 @@ method traceVar(cmd)
          delete(traceVarMask, var)
          }
       else{ #$trace var proc, or $trace var, are used to print the var info 
-         if member(traceVarTable, var) then {
+         if member(traceVarTable, var) then{
             L := traceVarTable[var]
             if *L > 0 then{
-               Message := "\n\t--trace var: "||var
-               every r := !L do{
-                  Message ||:="\n\t----" || r.fname || ", " || r.line ||
+               Message := "\n\t--The tracing info for \""||var||"\""
+               every r := !L do
+                  Message ||:="\n\t  " || r.fname || ", " || r.line ||
                               ": "|| r.var||" = "||r.value
-                  }
                }# end if *L > 0
-            else{
+            else
                Message:= "\n\t Var: "||var||" has no trace info yet!"
-               }
             }
-         else{
+         else
             Message:= "\n\t Var: "||var||" has no trace info yet!"
-            }
          }# end else
       }
    else{# if not member(traceVarMask, var)
@@ -868,13 +826,11 @@ method traceVar(cmd)
          insert(traceVarMask, var)
          Message := "\n\t Trace for \""||var||"\" is set to be ON"
          }
-      else if cmd[3] == "off" then{
+      else if cmd[3] == "off" then
          Message := "\n\t Trace for \""||var||"\" is not ON to set it OFF"
-         }
-      else{
+      else
          Message:= "\n\t unknown action_
                     \n\t Try \"help trace\" for assistance"
-         }
       }
    Write(Message)
 end
@@ -888,25 +844,20 @@ method printTraceBehavior(ecodeSet)
 
    every e := !ecodeSet do{
       if member(traceState, e) then{
-         Message := "\n\t---Printing the trace info for "||evnames(e)||":"
+         Message := "\n\t--The tracing info for \""||evnames(e)||"\":"
          L := traceTable[e]
          if type(L) ~== "list" then next
-         #Message := "\n-"|| evnames(e) ||":"
-         if e === E_Pcall then{
-            every x := !L do{
-               Message ||:= "\n\t --"||x.level ||", "||x.fname||", "||x.line||
-                            ": "||x.proc  ||"("||x.param||")."
-               }
-            } 
-         else{
+         if member(ProcMask, e) then
             every x := !L do
-               Message ||:= "\n\t --"||x.fname||", "||x.line||": "||x.code
-            }
+               Message ||:= "\n\t  "||x.level ||", "||x.fname||", "||x.line||
+                            ": "||x.proc  ||"("||x.param||")."
+         else
+            every x := !L do
+               Message ||:= "\n\t -"||x.fname||", "||x.line||": "||x.code
          }
-      else{
+      else
          Message:="\n\t No trace is ON for \""||evnames(e)||"\" to print._
                    \n\t Try \"help trace\" for assistance"
-         } 
       Write(Message)
       }
 end
@@ -931,12 +882,10 @@ method traceBehaviorAction(cmd)
         "off"|"disable":{ action   := "off"   }
          }
       if *cmd = 4 then{
-         if cmd[4] == ("on"|"enable") then{
+         if cmd[4] == ("on"|"enable") then
             action := "on"
-            }
-         else if cmd[4] == ("off"|"disable") then{
+         else if cmd[4] == ("off"|"disable") then
                  action := "off"
-            }
          }
       }
    return action
@@ -952,7 +901,6 @@ method traceBehavior(cmd)
    case cmd[2] of{
    "-proc" :{
        ecodeSet := ProcMask
-       eventMask ++= ProcMask
        case cmd[3] of{
          "call"   :{ ecodeSet := cset(E_Pcall)  }
          "fail"   :{ ecodeSet := cset(E_Pfail)  }
@@ -961,7 +909,6 @@ method traceBehavior(cmd)
        }} 
    "-func" :{
        ecodeSet := FncMask
-       eventMask ++:= FncMask
        case cmd[3] of{
          "call"   :{ ecodeSet := cset(E_Fcall)  }
          "fail"   :{ ecodeSet := cset(E_Ffail)  }
@@ -970,7 +917,6 @@ method traceBehavior(cmd)
        }}
    "-oper" :{
        ecodeSet := OperMask
-       eventMask ++:= OperMask
        case cmd[3] of{
          "call"   :{ ecodeSet := cset(E_Ocall)  }
          "fail"   :{ ecodeSet := cset(E_Ofail)  }
@@ -979,7 +925,6 @@ method traceBehavior(cmd)
        }}
    "-scan" :{
        ecodeSet := ScanMask
-       eventMask ++:= ScanMask
        case cmd[3] of{
          "new"    :{ ecodeSet := cset(E_Snew)   }
          "fail"   :{ ecodeSet := cset(E_Sfail)  }
@@ -999,7 +944,8 @@ method traceBehavior(cmd)
    
    case action of{
      "print" :{ printTraceBehavior(ecodeSet) }
-     "on"    :{ traceState ++:= ecodeSet    
+     "on"    :{ traceState ++:= ecodeSet
+                eventMask ++:= ecodeSet ## ???     
                 Message := "\n\t The traceState has a new trace code: "||ename
                 Write(Message)
               }

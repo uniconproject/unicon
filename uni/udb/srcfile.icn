@@ -5,56 +5,56 @@
 
 link bincvt
 
+$define CHARACTER &letters++&digits
+
 #
-# Contains all of the source files issues such as found files, files text,
-# execution portability and so.  
+# Contains all of the source files issues such as found files and so  
 #
-class SourceFile : Icode(
-   TP,             # TargetProgram and its arguments
-   sourcePath,     # String of paths that will be searched for source files
-   sourceFiles,    # List with all source file names that are in the binary
-   sourceText,     # List holds all the all source files text
-   srcIndex,       # Table of our position in the source file; fname is the key
-   foundFiles,     # Set with all the files that we have found are here
-   missingSrcFiles,# Set with all the files that we did not find
-   Message         # a string formated with the current message
+class SourceFile(
+   exeName,      # The executable file name
+   sourcePath,   # String of paths that will be searched for source files
+   sourceFiles,  # List with all source file names that are in the binary
+   sourceText,   # List holds all the all source files text
+   srcIndex,     # Table of our position in the source file; fname is the key
+   foundFiles,   # Set with all the files that we have found are here
+   missingFiles  # Set with all the files that we did not find
    )
 
 #
-# prints a message out into a console, message box, and so
+# Extracts the executable name
 #
-method Write(Msg)
-
-   if /Msg then
-      Msg := Message
-   write(Msg)
-   Message := ""
-
-end
-
-#
-# Load the program Source File(s)
-#
-method load_SourceFile()
-   local i, j, s, path :=" ", f
+method getExeName(f)
+   local i, j:=0, path:=" "
 
    # what if the TP is not in the current directory of the UDB
    # such as ./udb ./test/t1/t2/t
-   f := TP[1]
-   j := 0
    every i:= 1 to *f do
      if f[i] == "/" then   j := i
 
    path ||:= f[1:j+1]
    sourcePath ||:= path ||" "
-   
-   if (j+1) >= *f then   fail
- 
-  (sourceFiles := getSrcFileNames(TP[1])) | stop("Cannot open " || TP[1])
 
-   # load the source files that we can find in the DPATH environment variable
-   # and keep a list of the ones that we could not find incase the DPATH
-   # variable is updated by the user
+   if (j+1) > *f then   fail
+   else   exeName := f[j+1:0]
+
+   return
+end
+
+#
+# Load the program Source File(s)
+#
+method loadSourceFiles(fname, src)
+   local i, j, s
+
+   getExeName(fname)
+
+   sourceFiles := src
+ 
+   # (sourceFiles := getSrcFileNames(TP[1])) |
+   # stop("Cannot open " || TP[1])
+
+   # loads the source files that we can find and keep a 
+   # list of the ones that we could not find
    every i := 1 to *sourceFiles do {
       if s := dopen( sourceFiles[ i ] ) then {
          srcIndex[ sourceFiles[ i ] ] := *sourceText
@@ -62,32 +62,131 @@ method load_SourceFile()
          while( put( sourceText, read( s ) ) )
          close( s )
          }
-      else {
-         put( missingSrcFiles, sourceFiles[ i ] )
-         }
-   }
-
-   Message := "\n\t "|| exeName ||" : is a " || icodeVersion
-   Message ||:="\n\t Found source files: "
-   every i:=1 to *sourceFiles do
-      Message ||:= sourceFiles[i] ||", "
-   Message   := Message[1:*Message-1]
-   Message ||:= "\n\t Type \"help\" for assistance."
-
-   #------ Test
-   #every j:= 1  to *sourceText do
-   #     write(sourceText[j])
+      else
+         put( missingFiles, sourceFiles[ i ] )
+      }
    return
+end
+
+#
+# Used by cmdBreak
+# Searchs the fname for a specific linenum, and make sure it is applicable
+# for a breakpoint condition, if it is , it returns that line source code.
+#
+method searchFileLines(fname, linenum)
+   local temp, temp1, wSpace, punct
+
+   wSpace := cset( " \t\n\^m" )
+   punct := (",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
+   temp := sourceText[linenum + srcIndex[fname]]
+
+   temp ? {
+      tab(many(wSpace))
+      if (temp1 := move(1)) then {
+         if temp1 == "#" then {
+            return &null
+            }
+         return temp1 ||:= tab(many(CHARACTER ++ punct))
+         }
+      else{
+         return &null
+         }
+      }
+end
+
+#
+# Used by cmdBreak
+# Searchs the Fname for a specific ProcName and returns its linenum
+#
+method searchFileProcs(Fname, ProcName)
+   local wSpace, other_char
+   local temp, temp1, linenum
+
+   linenum := 1
+   other_char := ("_")
+   wSpace := cset( " \t\n\^m" )
+
+   while temp := sourceText[linenum + srcIndex[Fname]] do{
+      temp ? {
+         tab(many(wSpace))
+         if(temp1 := tab(many(&letters))) == ("method"|"procedure") then {
+            tab(many(wSpace))
+            temp1 := tab(many(CHARACTER ++ other_char))
+            if temp1 == ProcName then {
+	       return linenum
+	       }
+	    }
+	 }
+      linenum +:= 1
+      }
+   return &null
+end
+
+#
+# prints out the source code
+#
+method printSourceCode()
+   local i
+
+   every i:= 1  to *sourceText do
+        write(sourceText[i])
+end
+
+#
+# returns a string of the names of the opend src files 
+#
+method getFoundFiles()
+   local x, fnames
+
+   every x := !foundFiles do
+      fnames ||:=" \""||x||"\", "
+   
+   return fnames[1:-2]
+end
+
+#
+# returns a string of the names of the missing src files
+#
+method getMissingFiles()
+   local x, fnames:=""
+
+   every x := !missingFiles do
+      fnames ||:= " \""||x||"\", "
+
+   return fnames[1:-2]
+end
+
+#
+# returns a string of the names of all source files
+#
+method getSourceFiles()
+   local x, fnames:=""
+   
+   every x := !sourceFiles do
+      fnames ||:= " \""||x||"\", "
+
+   return fnames[1:-2]
+end
+
+#
+# returns an image of the current source line
+#
+method getSrcLine(line, fname)
+
+    if /fname then
+       return image(sourceText[line])
+    else
+       return image(sourceText[line + srcIndex[fname]])
 end
 
 #
 # Searchs through the specified source path for the requested file.
 #
 method dopen(s)
-   local file, paths, path, binpath, f
+   local File, paths, path, binpath, f
 
-   if file := open(s) then {
-      return file          # look in current directory
+   if File := open(s) then {
+      return File          # look in current directory
    }
 
    paths := sourcePath
@@ -112,11 +211,11 @@ method dopen(s)
       paths ||:= " " || binpath || "../uni/gui/" 
    }
 
-   s := "/" || s                               # platform-specific
+   s := "/" || s      # platform-specific
    paths ? {
       while path := tab(find(" ") | 0) do {
-         if file := open(path || s) then {
-            return file
+         if File := open(path || s) then {
+            return File
          }
          tab(many(' ')) | break
          }
@@ -124,21 +223,17 @@ method dopen(s)
    fail
 end
 
-
 initially()
 
-   self.Icode.initially()
-
-   sourceFiles:= []
-   sourceText := []
-   srcIndex   := table(0)
-   foundFiles := set()
-   Message    := "\t "
-   missingSrcFiles:= []
+   exeName     := "?"
+   sourceFiles := []
+   sourceText  := []
+   srcIndex    := table(0)
+   foundFiles  := set()
+   missingFiles:= []
 
    sourcePath   := ". .. ../.."
-#  sourcePath ||:= " " || getenv( "DPATH" )
+   #sourcePath||:= " " || getenv( "DPATH" )
    sourcePath ||:= " " || getenv( "LPATH" )
    sourcePath ||:= " " || getenv( "IPATH" )
-
 end

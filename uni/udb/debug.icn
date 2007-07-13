@@ -530,12 +530,18 @@ method init_Debugging(tp)
    if tp[1] then{
       TP := tp
       # check if the TP is loadable and accessable.
-      if stat(TP[1]) & load_SourceFile() then{
+      if not stat(TP[1]) then {
+         State := ERROR
+         Message := "\n\t Could not stat \"" || image(TP[1]) ||
+                    "\n\t Type \"help\" for assistance."
+         RunCode := NONE
+      }
+      else if load_SourceFile() then{
          State := LOAD
       }
       else{
          State := ERROR
-         Message := "\n\t Could not access \"" || TP[1] ||
+         Message := "\n\t Could not access " || image(TP[1]) ||
                     "\n\t Type \"help\" for assistance."
          RunCode := NONE
       }

@@ -2315,6 +2315,9 @@ function{0,1} getch()
    body {
       int i;
 #ifndef ConsoleWindow
+#ifdef Graphics
+      while (! kbhit()) { idelay(100); pollevent(); }
+#endif					/* Graphics */
       i = getch();
 #else					/* ConsoleWindow */
       struct descrip res;
@@ -2336,6 +2339,9 @@ function{0,1} getche()
    body {
       int i;
 #ifndef ConsoleWindow
+#ifdef Graphics
+      while (! kbhit()) { idelay(100); pollevent(); }
+#endif					/* Graphics */
       i = getche();
 #else					/* ConsoleWindow */
       struct descrip res;

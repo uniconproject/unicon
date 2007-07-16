@@ -4,6 +4,7 @@
 # 
 
 link bincvt
+link strings
 
 $define CHARACTER &letters++&digits
 
@@ -28,9 +29,26 @@ class SourceFile(
    )
 
 #
-# Extracts the executable name
+# Extracts the file name from its path, it is different from
+# getSourceFile() name by not keeping the path in sourcePath
+# this is a public function mostly used by debug.icn
 #
 method getFileName(f)
+   local i, j:=0, path:=" "
+
+   # what if the f is not in the current directory
+   # such f = ../ipl/fname
+
+   every j:= find("/",f)
+   if (j+1) > *f then   fail
+   else   return f[j+1:0]
+end
+
+#
+# Extracts the file name from its path, it is only used by 
+# loadSourceFiles()
+#
+method getSourceFileName(f)
    local i, j:=0, path:=" "
    local fname :="?"
 
@@ -51,25 +69,30 @@ end
 # Load the program Source File(s)
 #
 method loadSourceFiles(fname, src)
-   local i, j, s, findex, f
+   local i, j, s, f, b, e
 
-   exeName     := getFileName(fname)
+   exeName := getSourceFileName(fname)
    sourceFiles := src
  
    # loads the source files that we can find and keep a 
-   # list of the ones that we could not find
-   every i := 1 to *sourceFiles do {
-      if s := dopen( sourceFiles[ i ] ) then {
-         f := getFileName(sourceFiles[i])
-         findex := fileIndex(*sourceText,0)
-         insert( foundFiles, f )
-         while( put( sourceText, read( s ) ) )
-         close( s )
-         findex.fend := *sourceText
-         srcIndex[ f ] := findex
+   # list of the ones that we could not find. Note a source file
+   # can be opened more that once so we need to be careful !!!
+   every i := 1 to *sourceFiles do{
+      f := getSourceFileName(sourceFiles[i])
+      if not member(foundFiles, f) then{
+         if s := dopen( sourceFiles[ i ] ) then {
+            b := *sourceText
+            while( put( sourceText, read( s ) ) )
+            close( s )
+            e := *sourceText
+            insert( foundFiles, f )
+            srcIndex[ f ] := fileIndex(b,e)
+            }
+         else
+            put(missingFiles, sourceFiles[ i ])# keep it as it is
          }
-      else
-         put( missingFiles, sourceFiles[ i ] ) # keep it as it is
+#      else
+#         write("File is already found:",f)
       }
    return
 end
@@ -141,56 +164,16 @@ end
 #
 # checks to see whether a line number is in the file limits or not
 #
-method isInFile(fname, fline)
-   if srcIndex[fname].fbegin <= fline <= srcIndex[fname].fend then
-      return
+method isInFile(fname, line)
+   local b, e
+   
+   if line > 0 then{
+      b := srcIndex[fname].fbegin
+      e := srcIndex[fname].fend
+      if (b + line <= e) & ( e - line >= b ) then
+         return
+      }
    fail 
-end
-
-#
-# prints out the source code
-#
-method printSourceCode()
-   local i
-
-   every i:= 1  to *sourceText do
-        write(sourceText[i])
-end
-
-#
-# returns a string of the names of the opend src files 
-#
-method getFoundFiles()
-   local x, fnames
-
-   every x := !foundFiles do
-      fnames ||:=" \""||x||"\", "
-   
-   return fnames[1:-2]
-end
-
-#
-# returns a string of the names of the missing src files
-#
-method getMissingFiles()
-   local x, fnames:=""
-
-   every x := !missingFiles do
-      fnames ||:= " \""||x||"\", "
-
-   return fnames[1:-2]
-end
-
-#
-# returns a string of the names of all source files
-#
-method getSourceFiles()
-   local x, fnames:=""
-   
-   every x := !sourceFiles do
-      fnames ||:= " \""||x||"\", "
-
-   return fnames[1:-2]
 end
 
 #
@@ -199,12 +182,104 @@ end
 method getSrcLine(line, fname)
     local f
 
-    if /fname then
-       return sourceText[line]
-    else{
-       f := getFileName(fname)       
+    if /fname then fname := keyword("file", Monitored)
+    if /line  then line  := keyword("line", Monitored)
+    f := getFileName(fname)
+
+    if isLoaded(f) then #& isInFile(f, line) then       
        return sourceText[line + srcIndex[ f ].fbegin]
-       } 
+    else
+       fail
+end
+
+#
+# prints out the source code
+#
+method getSourceCode(fname)
+   local i, b, e, code:="\n"
+
+   if /fname then fname := keyword("file", Monitored)
+
+   b := srcIndex[fname].fbegin
+   e := srcIndex[fname].fend
+   every i:= b  to e do
+      code ||:= sourceText[i]||"\n"
+
+   return code
+end
+
+#
+# returns a string of the names of the opend src files 
+#
+method getFoundFiles()
+   local L, x, i, max, fnames:="    "
+
+   if *foundFiles > 0 then{
+      i := 1
+      L := sortf(foundFiles)
+      max := maxlen(L)+2
+      every x := !L do{
+         fnames ||:=left(x, max)
+         if i > 3 then{
+            fnames ||:="\n    "
+            i := 1    
+            }
+         else 
+            i +:= 1
+         } 
+      return fnames
+      }
+   else
+      fail  
+end
+
+#
+# returns a string of the names of the missing src files
+#
+method getMissingFiles()
+   local L, x, i, max, fnames:="    "
+
+   if *missingFiles > 0 then{ 
+      i := 1
+      L := sortf(missingFiles)
+      max := maxlen(L)+2
+      every x := !L do{
+         fnames ||:=left(x, max)
+         if i > 3 then{
+            fnames ||:="\n    "
+            i := 1    
+            }
+         else 
+            i +:= 1
+         } 
+      return fnames
+      }
+   else
+      fail
+end
+
+#
+# returns a string of the names of all source files
+#
+method getSourceFiles()
+   local x, i, max, fnames:="    "
+   
+   if *sourceFiles > 0 then{
+      i := 1
+      max := maxlen(sourceFiles)+2
+      every x := !sourceFiles do{
+         fnames ||:=left(x, max)
+         if i > 3 then{
+            fnames ||:="\n    "
+            i := 1    
+            }
+         else 
+            i +:= 1
+         } 
+      return fnames
+      }
+   else
+      fail
 end
 
 #

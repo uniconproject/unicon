@@ -302,36 +302,28 @@ end
 # Check the Monitored file for a break point
 #
 method checkBreakPoint()
-   static breakPt_list
-   local  cur_file, cur_line, skip
-   local  i := 1, temp
+   #static breakPt_list
+   local  cur_file, cur_line, L, x
 
    cur_file := keyword("file", Monitored)
    cur_line := keyword("line", Monitored)
-   if member(breakPoints, cur_file) then{
-      breakPt_list := breakPoints[cur_file]
-      skip := 0
-      }
-   else{
-      skip := 1
-      }
 
-   if skip = 0 then{
-      while i <= *breakPt_list do{
-         temp := breakPt_list[i]
-         if cur_line = temp.line_num then{
+   cur_file := srcFile.getFileName(cur_file) # ??
+
+   if member(breakPoints, cur_file) then{
+      L := breakPoints[cur_file]
+      every x := !L do
+         if cur_line = x.line_num then{
             State := PAUSE
             # this delete will help "next" and "step" operate well
             # jut remove the the breakMask set from the valueMask 
             # table temporarly until the continue command comes on
             delete(valueMask,E_Line) 
-            Message :="\n\t Break point in "||cur_file||"("|| cur_line ||")"|| 
-                      "\n\t Code:" || srcFile.getSrcLine(cur_line, cur_file) 
+            Message   :="\n\tBreak point:\n\t"||cur_file||"("||cur_line||"): "
+            Message ||:= srcFile.getSrcLine(cur_line, cur_file) 
             Write(Message)
             return
             }
-         i +:= 1
-         }
       }
 end
 
@@ -347,8 +339,9 @@ method checkWatchPoint()
       RunCode := WATCH
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
-      Message:="\n\t Watching for \""|| var ||"\" in "|| cur_file ||
-               "("||cur_line||")\n\t Code: "|| srcFile.getSrcLine(cur_line) 
+      Message  :="\n\tWatching for \""|| var ||"\" in:"||
+                 "\n\t"|| cur_file ||"("||cur_line||"): "
+      Message ||:= srcFile.getSrcLine(cur_line, cur_file)
       Write(Message)
       return
    }
@@ -378,7 +371,7 @@ method checkTraceVar()
       else
          traceVarTable[varName]:=[varinfo]
       RunCode := RUN
-      write("------traceVar : ",image(var))
+      #write("------traceVar : ",image(var))
       eventMask --:=cset(E_Value)
       }
 end
@@ -388,9 +381,16 @@ end
 # then stop there and change the state to step
 #
 method checkNext()
-   local cur_line, cur_file, level
+   local  level
+   static once:=0 # To help not coming back to the calling line
 
    level := keyword("level", Monitored)
+
+   if level > nex_level & once = 0 then{
+      next_count +:=1
+      once := 1
+      } 
+
    if level = nex_level then{
       if next_count > 1 then{
          next_count -:= 1
@@ -400,6 +400,7 @@ method checkNext()
          step_count := 1
          State := PAUSE
          RunCode := STEP
+         once := 0
          }
       }
 end
@@ -422,8 +423,8 @@ method checkStep()
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
 
-      Message := "\n\t Stepping in "||cur_file||"("||cur_line||")"||
-                 "\n\t code : "|| srcFile.getSrcLine(cur_line, cur_file)
+      Message   := "\n\t Stepping in: \n\t "||cur_file||"("||cur_line||"): "
+      Message ||:= srcFile.getSrcLine(cur_line, cur_file)
       Write(Message)
 
       State := PAUSE
@@ -438,7 +439,7 @@ method debug_CallBack(new, old)
    local ecode := &eventcode
 
    if State = RUN then {
-      #write("-->",evnames(ecode), ": ", image(&eventvalue))
+      write("-->",evnames(ecode), ": ", image(&eventvalue))
       case ecode of{
         E_Line:{
            # ????           
@@ -515,7 +516,7 @@ end
 # Initialize the UDB Session
 #
 method init_Debugging(tp)
-   local x, src
+   local x, src, found, missing
 
    # This is only when the TP is apssed when starting the udb, ex ./udb test
    # in either case th ErrorCode will be initialized
@@ -528,12 +529,18 @@ method init_Debugging(tp)
             srcFile.loadSourceFiles(TP[1], src)
             State := LOAD
             Message := "\n\t "|| srcFile.exeName ||" : is a "||
-                       icode.icodeVersion || "\n\t Found source files: "||
-                       srcFile.getSourceFiles()
-            Message ||:= "\n\t Type \"help\" for assistance."
+                        icode.icodeVersion 
+            found := *srcFile.foundFiles
+            if found > 0 then 
+               Message ||:=  "\n\t "|| found ||" Source file(s) found"
+            missing := *srcFile.missingFiles
+            if missing > 0 then
+               Message ||:=  "\n\t and "|| missing ||" Source file(s) missing"
+            Message ||:= "\n\t Type \"help\" for assistance _
+                               or \"src\" for file(s) name"
             }
          else{
-            Message := "\n\t can not get the Source File Names_
+            Message := "\n\t Can not get the Source File Names_
                         \n\t Type \"help\" for assistance."
             }
       }
@@ -602,7 +609,7 @@ initially()
    #variable will be added to the watchMask set.
    #note for every thing to behave correctly, procMask must be in eventMask
 
-   eventMask   := cset(E_Error || E_Exit || E_Line || E_Assign) #++ ProcMask
+   eventMask   := cset(E_Error || E_Exit || E_Line)
 #  eventMask ++:= ProcMask # monitoring the user defined procedures   
 #  eventMask ++:= FncMask  # monitoring the built-in functions
 #  eventMask ++:= OperMask # monitoring the operation

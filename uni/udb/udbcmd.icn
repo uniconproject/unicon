@@ -44,6 +44,7 @@ method parse_Command(cmd)
      "list"  :{  cmdList(cmd)      }
      "clear" :{  cmdClear(cmd)     }
       #-cmds that are not in gdb
+     "src"   :{  cmdSource(cmd)    }
      "tree"  :{  cmdTree(cmd)      }
      "ihdr"  :{  cmdIcodeHeader()  }
      "trace" :{  cmdTrace(cmd)     }
@@ -71,7 +72,7 @@ end
 # Runs the pre-loaded file, it can be used to re-run the program again
 #
 method cmdRun(cmd)
-   local i, args:=[]
+   local i, ans, args:=[]
 
    if *cmd >= 2 then{
       if State = (LOAD | PAUSE | END) then{
@@ -83,17 +84,27 @@ method cmdRun(cmd)
       }
 
    if State = (LOAD | END | PAUSE) then{ 
-      if State = PAUSE then  State := RERUN
+      if State = PAUSE then{
+         Write("\t A Program is currently running")
+         writes("\t Are you sure you want to re-run?, (Y/N )? :")
+         ans := read()
+         if ans[1] == ("y"|"Y") then
+            State := RERUN
+         else{
+            State := SKIP
+            return
+            }
+         } 
       else                   State := RUN
       if not member(valueMask, E_Line) & *breakMask > 0 then{
          valueMask[E_Line] := breakMask
          eventMask ++:= cset(E_Line) 
-         #write("------E_Line added")
+         write("------E_Line added")
          }
       if not member(valueMask, E_Assign) & (*watchMask | *traceVarMask) >0 then{
          valueMask[E_Assign] := watchMask ++ traceVarMask
          eventMask ++:= cset(E_Assign)
-         #write("------E_Assign added")
+         write("------E_Assign added")
          }
       }
    else{
@@ -450,12 +461,22 @@ method cmdStep(cmd)
       else
          step_count := 1
       State := STEP
-      if RunCode = WATCH then{
-         # if *breakMask>0 then E_Line is already in eventMask
-         # and we need to remove delete(valueMask,E_Line) until continu
-         if *breakMask > 0 then  delete(valueMask, E_Line)
-         else                    eventMask ++:= cset(E_Line)
+      # if *breakMask>0 then E_Line is already in eventMask
+      # and we need to remove delete(valueMask,E_Line) until continu
+      eventMask ++:= cset(E_Line)
+      if *breakMask > 0 then{
+         delete(valueMask, E_Line)
+        }
+      if *watchMask > 0 then{
+         eventMask ++:= cset(E_Line)
          }
+
+      #if RunCode = WATCH then{
+      #   # if *breakMask>0 then E_Line is already in eventMask
+      #   # and we need to remove delete(valueMask,E_Line) until continu
+      #   if *breakMask > 0 then  delete(valueMask, E_Line)
+      #   else                    eventMask ++:= cset(E_Line)
+      #   #}
       }
    else {
       State := ERROR
@@ -669,9 +690,10 @@ method cmdBreak(cmd)
       }
 
    fname := addExtension(fname)
+
    if srcFile.isLoaded(fname) then{
-      if line := integer(arg) then {
-         if srcFile.isInFile(fname, line) then {
+      if line := integer(arg) then{
+         if srcFile.isInFile(fname, line) then{
             if code := srcFile.searchFileLines(fname, line) then
                break_point := breakPt(fname, line, code)
             else {
@@ -681,37 +703,41 @@ method cmdBreak(cmd)
                return
 	       }
 	    }
-         else {
+         else{
             Message := "\n\t Line number is not within the \""||fname||"\""
             Write(Message)
             return
 	    }
-	 }
-      else {
+         }
+      else{
          if line := srcFile.searchFileProcs(fname, arg) then
             break_point := breakPt(fname,line,srcFile.getSrcLine(line, fname))
-         else {
+         else{
             Message   := "\n\t Procedure not found_
                           \n\t Make sure the method name is correct!"
             Write(Message)
             return
 	    }
-	 } 
-      
-      # record breakPt(file_name, line_num, code)
-      line := break_point.line_num
-      if isBreakExist(fname, line) then
-         Message   := "\n\t The break point is already exist,_
-                       \n\t Type \"break\" to see all breakpoints"
-      else{
-         addBreakPoint(fname, break_point)
-         Message := "\n\t Breakpoint set successfully in:\n\t "|| 
-                    fname ||"("||line||"): "||srcFile.getSrcLine(line, fname) 
          } 
+      }      
+   else{
+      Message := "\n\t Source File \""||fname||"\" is not loaded !!!"
+      if line := integer(arg) then
+         break_point := breakPt(fname , line, "?")
+      #Write(Message)???
       }
-   else
-      Message := "\n\t File not found,_
-                  \n\t Make sure the file name is correct."
+      
+   # record breakPt(file_name, line_num, code)
+   line := break_point.line_num
+   if isBreakExist(fname, line) then
+      Message ||:= "\n\t The break point is already exist,_
+                    \n\t Type \"break\" to see all breakpoints"
+   else{
+      addBreakPoint(fname, break_point)
+      Message ||:= "\n\t Breakpoint set successfully in:\n\t "||
+                   fname ||"("||line||"): "
+      Message ||:= srcFile.getSrcLine(line, fname) 
+      } 
    Write(Message)
 end
 
@@ -797,7 +823,7 @@ end
 # the current file are printed centered around the curent line 
 #
 method cmdList(cmd)
-   local cur_line, cur_file, fnc
+   local cur_line, cur_file, fnc, line
    static last_line := -1
    
    if RunCode ~= LIST then{
@@ -805,50 +831,59 @@ method cmdList(cmd)
       RunCode := LIST
       }
 
-   if State ~=  PAUSE then {
+   if State = LOAD then{
+      cur_file := srcFile.exeName ||".icn"
+      cur_line := 5
+      } 
+   else if State = PAUSE then{
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      }
+   else{
       State := ERROR
-      Message   := "\n\t No Program is running_
-                    \n\t Type \"help\" for assistance"
+      Message := "\n\t No Program is Loaded nor Running_
+                  \n\t Type \"help\" for assistance"
       Write(Message)
       return
       }
 
-   cur_file := keyword("file", Monitored)
    if *cmd = 1 then{
-      cur_line := keyword("line", Monitored)
-      if last_line = -1 then{
+      if last_line = -1 then
          last_line := cur_line
-         printSrcLines(cur_line, cur_file)
-         }
-      else{
+      else
          last_line +:= 10
-         printSrcLines(last_line, cur_file)
-         }
       }
    else{
-       if cur_line := integer(cmd[2]) then{
-          last_line := cur_line
-          printSrcLines(cur_line, cur_file)
-          }
+       if line := integer(cmd[2]) then
+          last_line := line
        else{
-          if cmd[2] == "-" then{
+          if cmd[2] == "-" then
              last_line -:= 10
-             printSrcLines(last_line)
-             }
           else{
              fnc := cmd[2]
-             if cur_line := srcFile.searchFileProcs(cur_file, fnc) then{
-                last_line := cur_line
-                printSrcLines(cur_line, cur_file)
+             if line := srcFile.searchFileProcs(cur_file, fnc) then
+                last_line := line
+             else if member(srcFile.foundFiles, fnc||".icn") then{#????
+                cur_file:= fnc||".icn"
+                last_line := 5
                 } 
              else{
                 Message := "\n\t Procedure not found_
                             \n\t Make sure the method name is correct!"
                 Write(Message)
+                return
                 }
+             }
           }
        }
-   }          
+
+   if srcFile.isInFile(cur_file, last_line) then
+      printSrcLines(last_line, cur_file)
+   else{
+      Message := "\n\t line #"||last_line||" is out of the file limits"
+      last_line := -1
+      Write(Message)
+      }
 end
 
 #------ Commands that are not in gdb,thay need Dr.J's approval
@@ -860,6 +895,58 @@ method cmdIcodeHeader()
 
    icode.printIcodeHeader()
 
+end
+
+#
+# it is to print the found/missing source files
+#
+method cmdSource(cmd)
+   local op, files
+
+   if cmd[3] then{
+      Message := srcFile.getSourceCode(cmd[3])
+      Write(Message)
+      return
+      }
+
+   op := cmd[2] | ""
+   case op of{
+      "-f" | "-found":{
+           if files := srcFile.getFoundFiles() then{
+              Message := "\n    Found Source Files are:\n"
+              Message ||:= files
+              }
+           else
+              Message := "\n\t No file(s) found !!"
+           }
+      "-m" | "-missing":{
+           if files := srcFile.getMissingFiles() then{
+              Message   := "\n    Missing Source Files are:\n"
+              Message ||:= files
+              }
+           else
+              Message := "\n\t No file(s) missing !!"
+           }
+      "-a" | "-all":{
+           if files := srcFile.getSourceFiles() then{
+              Message   := "\n    All Source Files are:\n"
+              Message ||:= files
+              }
+           else
+              Message := "\n\t No file(s) loaded !!"
+           }
+      default:{
+           if files := srcFile.getFoundFiles() then{
+              Message   := "\n    Found Source Files are:\n"
+              Message ||:= files
+              }
+           if files := srcFile.getMissingFiles() then{
+              Message ||:= "\n    Missing Source Files are:\n"
+              Message ||:= files
+              }
+           } 
+      } 
+   Write(Message)
 end
 
 #
@@ -1170,10 +1257,11 @@ method cmdHelp(cmd)
     NONE | LOAD | END:{
       Message:="_
       \n\t Applicable Commands are:_
-      \n\t load f: loads a program file named f_
-      \n\t run   : runs the pre-loaded program under UDB_
+      \n\t load  : loads a new program into udb_
+      \n\t run   : runs the pre-loaded program under udb_
       \n\t break : sets a break point in the source code_
       \n\t trace : to trace some of the program behaviors_
+      \n\t list  : prints out lines of the source code_
       \n\t quit  : quits the current UDB Session_
       \n\t help cmd : shows more info about a specific command"
       }
@@ -1184,6 +1272,7 @@ method cmdHelp(cmd)
       \n\t step  : stepping one or more lines in the source code_
       \n\t next  : same as step command except treating a \n\t\t_
       \n\t         procedure call as one command or one line of code_
+      \n\t load  : loads a new program into udb_
       \n\t run   : restarts the execution from the begining_
       \n\t where : shows the current location info_
       \n\t frame : shows the current stack frame info_
@@ -1204,9 +1293,11 @@ method cmdHelp(cmd)
       \n\t where : shows the current location info_
       \n\t bt    : prints out the back trace_
       \n\t print : prints out the value of a var in current frame_
+      \n\t load  : loads a new program into udb_
       \n\t run   : restarts the execution from the begining_
       \n\t break : sets a break point in the source code_
       \n\t trace : to trace some of the program behaviors_
+      \n\t list  : to print out lines of the source code_
       \n\t quit  : quits the current UDB Session_
       \n\t help cmd : shows more info about a specific command"
       }

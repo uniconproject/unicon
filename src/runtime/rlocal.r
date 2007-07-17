@@ -1065,6 +1065,10 @@ int rchar(int with_echo)
       tty.c_lflag &= ~ECHO;
    tcsetattr(STDIN, TCSANOW, &tty);	/* set temporary attributes */
 
+#ifdef Graphics
+   while (!kbhit()) { idelay(100); pollevent(); }
+#endif					/* Graphics */
+
    n = read(STDIN, &c, 1);		/* read one char from stdin */
 
    tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
@@ -1098,7 +1102,9 @@ int kbhit(void)
 
    tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
 
-   return rv;				/* return result */
+   if (rv == -1) return 0;
+   if (FD_ISSET(0, &fds)) return 1;
+   return 0;				/* return result */
 }
 
 #endif					/* UNIX */

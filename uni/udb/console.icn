@@ -7,7 +7,7 @@ $include "defaults.icn"
 
 class UDB_Console : Commands(
    cmdHistory,           # list keeps all of the UDB's cmd Session History.
-   UP, DOWN, ENTER, BkSp # Control keys
+   UP, DOWN, ENTER, BkSp, LEFT # Control keys
    )
 
 #
@@ -81,20 +81,20 @@ method get_CommandLine()
               i := *cmdHistory
            line := cmdHistory[i]
            }
-        BkSp:{
-           line := line[1:*line] }
+        BkSp | LEFT :{
+           line := line[1:-1] }
         ENTER:{
            break }
         default:{ 
            if ch[1] ~==="\e" then
-              line ||:=ch         }
+              line ||:=ch         
+       }
       }#end of case
 
       writes("\r")
       every c := 1 to 10 do writes("      ")
       writes("\r")
       writes(PROMPT || line)
-
    }#end of while
 
    # if Eneter hit it will take the last cmdx
@@ -144,6 +144,9 @@ method udb_Console(argv)
           every start_Debugging() do{
              old_State := State
              while State ~= RUN do{
+               #if RunCode = ERROR then
+               #   showRunError()
+               #else
                case State of {
                  END | 
                  QUIT:    { break break next       }
@@ -216,7 +219,7 @@ initially()
    UP    := "\e[A"
    DOWN  := "\e[B"
 #  RIGHT := "\e[C" # not used
-#  LEFT  := "\e[D" # not used
+   LEFT  := "\e[D" # ???
    ENTER := "\n"
    BkSp  := "\d"
 end

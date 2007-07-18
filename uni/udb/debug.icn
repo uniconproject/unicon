@@ -433,6 +433,21 @@ method checkStep()
 end
 
 #
+# prints the RunTime error Messages
+#
+method showRunError()
+   local cur_line, cur_file, cur_proc, src
+
+   cur_file := keyword("file", Monitored)
+   cur_line := keyword("line", Monitored)
+   cur_proc := image(proc(Monitored, 0 ))
+   Message := "\n\t Run-time error !" ||
+              "\n\t "||cur_proc||" in "||cur_file||"("||cur_line||"): "||
+               srcFile.getSrcLine(cur_line, cur_file)
+   Write(Message)
+end
+
+#
 # This is where most of the UDB checking goes on.
 #
 method debug_CallBack(new, old)
@@ -458,10 +473,7 @@ method debug_CallBack(new, old)
         E_Error:{
            State := PAUSE
            RunCode := ERROR
-           Message := "\n\t Run-time error" ||
-                      "\n\t File: "|| keyword("file", Monitored) ||
-                      ", Line: " || keyword("line", Monitored)  ||
-                      ", Proc: " || image(proc(Monitored, 0 ))
+           showRunError()
            }
       } # end of case ecode
       checkTrace()
@@ -568,8 +580,6 @@ initially()
    icode   := Icode()
    srcFile := SourceFile()
 
-   breakPoints := table(0)
-
    State      := NONE
    RunCode    := NONE
    step_count := 0
@@ -592,24 +602,24 @@ initially()
 #   CallCodes   := SuspendCodes := ResumeCodes := ""
 #   ReturnCodes := FailCodes    := RemoveCodes := ""
 
-   breakMask  := set(-1)
-   watchMask  := set()
-   valueMask  := table()
+   breakPoints := table(0)
+   breakMask   := set()
+   watchMask   := set()
+   valueMask   := table()
    #valueMask[E_Pcall] := guiMask
-   valueMask[E_Line]  := breakMask
+   #valueMask[E_Line]  := breakMask
    #valueMask[E_Assign]:= watchMask
-   #eventmask(Monitored, , valueMask)
+   #eventmask(Monitored, eventMask , valueMask)
 
-   #For the sake of redusing the context switch between the TP and Monitor:
    #Initilly, eventMask does not contain the E_Line & E_Assigne events
    #If there is a break point, E_Line will be added to the eventMask,
    #and the break point linenum will be inserted in valueMask[E_Line] set
    #Also, initially the eventMask will not contain the E_Assign event
    #If there is a watch point then the E_Assign will be added and the 
    #variable will be added to the watchMask set.
-   #note for every thing to behave correctly, procMask must be in eventMask
 
-   eventMask   := cset(E_Error || E_Exit || E_Line)
+   eventMask := cset(E_Error || E_Exit) 
+
 #  eventMask ++:= ProcMask # monitoring the user defined procedures   
 #  eventMask ++:= FncMask  # monitoring the built-in functions
 #  eventMask ++:= OperMask # monitoring the operation

@@ -19,6 +19,7 @@ record fileIndex(fbegin, fend)
 # Contains all of the source files issues such as found files and so  
 #
 class SourceFile(
+   fmain,        # The Source File that has the procedure main
    exeName,      # The executable file name
    sourcePath,   # String of paths that will be searched for source files
    sourceFiles,  # List with all source file names that are in the binary
@@ -87,6 +88,9 @@ method loadSourceFiles(fname, src)
             e := *sourceText
             insert( foundFiles, f )
             srcIndex[ f ] := fileIndex(b,e)
+            if /fmain then
+               if searchFileProcs(f,"main") then
+                  fmain := f
             }
          else
             put(missingFiles, sourceFiles[ i ])# keep it as it is
@@ -152,6 +156,24 @@ method searchFileProcs(Fname, ProcName)
 end
 
 #
+# returns the executable name
+#
+method getExeName()
+   if exeName =="?" then
+      fail
+   return exeName 
+end
+
+#
+# returns the File Name that has the procedure main 
+#
+method getMainFileName()
+   if /fmain then
+      fail
+   return fmain
+end
+
+#
 # check to see if file is loaded or not
 # loaded files are those that opend and placed in sourceText
 #
@@ -167,7 +189,7 @@ end
 method isInFile(fname, line)
    local b, e
    
-   if line > 0 then{
+   if line > 0 & isLoaded(fname) then{
       b := srcIndex[fname].fbegin
       e := srcIndex[fname].fend
       if (b + line <= e) & ( e - line >= b ) then
@@ -186,7 +208,7 @@ method getSrcLine(line, fname)
     if /line  then line  := keyword("line", Monitored)
     f := getFileName(fname)
 
-    if isLoaded(f) then #& isInFile(f, line) then       
+    if isLoaded(fname) then #& isInFile(f, line) then       
        return sourceText[line + srcIndex[ f ].fbegin]
     else
        fail

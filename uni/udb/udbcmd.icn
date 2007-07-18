@@ -95,7 +95,9 @@ method cmdRun(cmd)
             return
             }
          } 
-      else                   State := RUN
+      else  
+         State := RUN
+
       if not member(valueMask, E_Line) & *breakMask > 0 then{
          valueMask[E_Line] := breakMask
          eventMask ++:= cset(E_Line) 
@@ -224,9 +226,8 @@ method cmdPrint(cmd)
          if j:=find("*",temp) then{
             action := "*"
             x := temp := temp[j+1:0]
-            write("action=",action)
-            write("temp=",temp)
             } 
+
          #--To be able to print things like T[1], T["a"], L[10], etc.
          if (i1:= find("[",temp)) & (i2:= find("]", temp)) then{
             x := temp[1:i1]
@@ -244,25 +245,20 @@ method cmdPrint(cmd)
          if var := variable(x, Monitored, level) then{
             if type(var) == ("table" | "list" | "string" ) then{
                if \i  then{
-                  if \action then{
-                     Message := "\n\t *"||x||" = "||*var[i]
-                     } 
-                  else{
-                     Message := "\n\t "||x||" = "||ximage(var[i])
-                     } 
+                  if \action then Message := "\n\t *"||x||" = "||*var[i]
+                  else            Message := "\n\t "||x||" = "||ximage(var[i])
                   }
                else{
-                  if \action then{
-                     Message := "\n\t *"||x||" = "||*var
-                     } 
-                  else{
-                     Message := "\n\t "||x||" = "||ximage(var)
-                     } 
+                  if \action then Message := "\n\t *"||x||" = "||*var
+                  else            Message := "\n\t "||x||" = "||ximage(var)
                   } 
-               }
+               }# if type(var)...
             else{
-               Message := "\n\t "||x||" = "||var
-               }
+               if type(var) == "null" then
+                  Message := "\n\t "||x||" = "||image(var)
+               else
+                  Message := "\n\t "||x||" = "||var
+               } 
 	    }
 	 else
             Message := "\n\t "||x||" : Is not in the current frame !!"
@@ -274,8 +270,8 @@ method cmdPrint(cmd)
       }
    else{
       State := ERROR
-      Message   := "\n\t No program is running !!!_
-                    \n\t Try \"run\", or Type \"help\" for assistance"
+      Message := "\n\t No program is running !!!_
+                  \n\t Try \"run\", or Type \"help\" for assistance"
       }
    Write(Message)
 end
@@ -429,16 +425,17 @@ method cmdContinue()
    if State = PAUSE & RunCode ~= ERROR then {
       State := CONTINUE
       
-      ##if not member(valueMask, E_Assign) & *watchMask > 0 then
-      #valueMask[E_Assign] := watchMask
-      if not member(valueMask, E_Line) & *breakMask > 0 then
-          valueMask[E_Line] := breakMask
-      else{
-         # when there is no break point the E_Line 
-         # will not be in the original eventMask
-         if *breakMask = 0 then
-            eventMask --:= cset(E_Line)
+      if not member(valueMask, E_Assign) & *watchMask > 0 then{
+         valueMask[E_Assign] := watchMask
+         eventMask ++:= cset(E_Assign)
          }
+      else if *watchMask = 0 then  eventMask --:= cset(E_Assign)
+
+      if not member(valueMask, E_Line) & *breakMask > 0 then{
+         valueMask[E_Line] := breakMask
+         eventMask ++:= cset(E_Line)
+         }
+      else if *breakMask = 0 then  eventMask --:= cset(E_Line)
       }
    else{
       State := ERROR
@@ -461,22 +458,9 @@ method cmdStep(cmd)
       else
          step_count := 1
       State := STEP
-      # if *breakMask>0 then E_Line is already in eventMask
-      # and we need to remove delete(valueMask,E_Line) until continu
-      eventMask ++:= cset(E_Line)
-      if *breakMask > 0 then{
-         delete(valueMask, E_Line)
-        }
-      if *watchMask > 0 then{
-         eventMask ++:= cset(E_Line)
-         }
 
-      #if RunCode = WATCH then{
-      #   # if *breakMask>0 then E_Line is already in eventMask
-      #   # and we need to remove delete(valueMask,E_Line) until continu
-      #   if *breakMask > 0 then  delete(valueMask, E_Line)
-      #   else                    eventMask ++:= cset(E_Line)
-      #   #}
+      if *breakMask > 0 then  delete(valueMask, E_Line)
+      if *watchMask > 0 then  eventMask ++:= cset(E_Line)
       }
    else {
       State := ERROR
@@ -502,12 +486,8 @@ method cmdNext(cmd)
       State := NEXT
       nex_level := keyword("level", Monitored)
 
-      if RunCode = WATCH then{
-         # if *breakMask>0 then E_Line is already in eventMask
-         # and we need to remove delete(valueMask,E_Line) until continu
-         if *breakMask > 0 then  delete(valueMask, E_Line)
-         else                    eventMask ++:= cset(E_Line)
-         }
+      if *breakMask > 0 then  delete(valueMask, E_Line)
+      if *watchMask > 0 then  eventMask ++:= cset(E_Line)
       }
    else {
       State := ERROR
@@ -516,7 +496,6 @@ method cmdNext(cmd)
       Write(Message)
       }
 end
-
 
 #
 # watches for a variable
@@ -696,18 +675,18 @@ method cmdBreak(cmd)
          if srcFile.isInFile(fname, line) then{
             if code := srcFile.searchFileLines(fname, line) then
                break_point := breakPt(fname, line, code)
-            else {
+            else{
                Message   := "\n\t Line number was not found,_
                              \n\t Please try a different line number"
                Write(Message)
                return
-	       }
-	    }
+               }
+            }
          else{
             Message := "\n\t Line number is not within the \""||fname||"\""
             Write(Message)
             return
-	    }
+            }
          }
       else{
          if line := srcFile.searchFileProcs(fname, arg) then
@@ -717,7 +696,7 @@ method cmdBreak(cmd)
                           \n\t Make sure the method name is correct!"
             Write(Message)
             return
-	    }
+            }
          } 
       }      
    else{
@@ -877,10 +856,17 @@ method cmdList(cmd)
           }
        }
 
-   if srcFile.isInFile(cur_file, last_line) then
-      printSrcLines(last_line, cur_file)
+   if srcFile.isLoaded(cur_file) then{
+      if srcFile.isInFile(cur_file, last_line) then
+         printSrcLines(last_line, cur_file)
+      else{
+         Message := "\n\t line #("||last_line||") is out of the file limits"
+         last_line := -1
+         Write(Message)
+         }
+      }
    else{
-      Message := "\n\t line #"||last_line||" is out of the file limits"
+      Message := "\n\t Source File \""||cur_file||"\" is NOT loaded !!!"
       last_line := -1
       Write(Message)
       }
@@ -1260,8 +1246,10 @@ method cmdHelp(cmd)
       \n\t load  : loads a new program into udb_
       \n\t run   : runs the pre-loaded program under udb_
       \n\t break : sets a break point in the source code_
+      \n\t clear : deletes an existing break point_
       \n\t trace : to trace some of the program behaviors_
       \n\t list  : prints out lines of the source code_
+      \n\t src   : prints out a list of the source files_
       \n\t quit  : quits the current UDB Session_
       \n\t help cmd : shows more info about a specific command"
       }
@@ -1284,6 +1272,7 @@ method cmdHelp(cmd)
       \n\t clear : deletes an existing break point_
       \n\t trace : to trace some of the program behaviors_
       \n\t list  : to print out lines of the source code_
+      \n\t src   : prints out a list of the source files_
       \n\t quit  : quits the current UDB Session_
       \n\t help cmd : shows more info about a specific command"
       }
@@ -1296,8 +1285,10 @@ method cmdHelp(cmd)
       \n\t load  : loads a new program into udb_
       \n\t run   : restarts the execution from the begining_
       \n\t break : sets a break point in the source code_
+      \n\t clear : deletes an existing break point_
       \n\t trace : to trace some of the program behaviors_
       \n\t list  : to print out lines of the source code_
+      \n\t src   : prints out a list of the source files_
       \n\t quit  : quits the current UDB Session_
       \n\t help cmd : shows more info about a specific command"
       }
@@ -1398,6 +1389,16 @@ method cmdHelp(cmd)
       \n\t clear Proc   : Clears break at procedure Proc in the current file_
       \n\t clear f Proc : Clears break in file f at procedure Proc"
       }
+    "watch":{
+      Message:="_
+      \n\t Sets a watch point on some var_
+      \n\t watch          : prints a list of all pre-set watch vars_
+      \n\t watch var      : break at every line the var can change,_
+      \n\t                  if the program is running, it watche for_ 
+      \n\t                  var in the local scope, otherwize it_
+      \n\t                  assumes that var is a global variable_
+      \n\t watch var proc : watch for local var in procedure proc"
+      }
     "list":{
       Message:="_
       \n\t Prints out some source code lines_
@@ -1408,15 +1409,13 @@ method cmdHelp(cmd)
       \n\t list num  : prints 10 lines centered around the line num_
       \n\t list Proc : prints 10 lines centered around the precedure Proc"
       }
-    "watch":{
+    "src":{
       Message:="_
-      \n\t Sets a watch point on some var_
-      \n\t watch          : prints a list of all pre-set watch vars_
-      \n\t watch var      : break at every line the var can change,_
-      \n\t                  if the program is running, it watche for_ 
-      \n\t                  var in the local scope, otherwize it_
-      \n\t                  assumes that var is a global variable_
-      \n\t watch var proc : watch for local var in procedure proc"
+      \n\t Prints out a list of the source file names_
+      \n\t src    : prints all of the found & missing source file names_
+      \n\t src -f : prints only the loaded source file names_
+      \n\t src -m : prints only the unloaded source file names_
+      \n\t src -a : prints all of the source file names along with their path"
       }
     "trace":{
       Message:="_

@@ -15,6 +15,7 @@ all: $(EXEs)
 
 udb: $(UFILES)
 	$(UC) -G $(UFILES)
+	cp udb ../../bin
 
 udb.u: udb.icn 
 	$(UC) $(cflags) udb

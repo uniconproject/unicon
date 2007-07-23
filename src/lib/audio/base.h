@@ -76,8 +76,10 @@ extern "C" {
 
 #endif /* AL_SITE_CONFIG_H_ */
 
+#if HAVE_ALTYPES
 #include <AL/altypes.h>
 #include <AL/alexttypes.h>
+#endif					/* HAVE_ALTYPES */
 #include "config.h"
 
 /*

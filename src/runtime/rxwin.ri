@@ -998,12 +998,14 @@ wbp w;
       p->refcount--;
       }
 
+#ifdef Graphics3D
    /* Free textures from memory */
    for (i=0; i<wc->curtexture; i++) {
         free(wc->stex[i].tex);
         wc->stex[i].w=0;
         }
    free(wc->stex);
+#endif					/* Graphics3D */
 
 
    if (ws->win && ws->refcount > 1) {
@@ -1258,9 +1260,11 @@ int wmap(wbp w)
    XClassHint clhints;
 
    STDLOCALS(w);
+#ifdef Graphics3D
    wc->maxstex=16;
    wc->stex = (struct _savetexture *) 
                  malloc(wc->maxstex*sizeof(struct _savetexture));
+#endif					/* Graphics3D */
 
    /*
     *  Create a pixmap for this canvas if there isn't one already.
@@ -4587,10 +4591,11 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 #ifdef Graphics3D
    w->context->is_3D = ws->is_3D = is_3d;
    w->context->buffermode = IMMEDIATE3D;
-#endif					/* Graphics3D */
+
    w->context->maxstex=16;
    w->context->stex = (struct _savetexture *) 
                     malloc(w->context->maxstex*sizeof(struct _savetexture));
+#endif					/* Graphics3D */
    return 1;
 }
 
@@ -4615,11 +4620,11 @@ char my_wmap(wbp w)
    char child_window=1;
 
 /*   STDLOCALS(w); */
+#ifdef Graphics3D
    wc->maxstex=16;
    wc->stex = (struct _savetexture *) 
                  malloc(wc->maxstex*sizeof(struct _savetexture));
 
-#ifdef Graphics3D
     if (ws->is_3D) child_window = 2;
 #endif					/* Graphics3D */
     wp = ws->parent;

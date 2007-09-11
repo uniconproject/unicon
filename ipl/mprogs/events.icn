@@ -40,6 +40,7 @@ link evinit
 link evnames
 link evsyms
 link options
+$include "evdefs.icn"
 
 procedure main(args)
    local opts, output, symmap
@@ -51,9 +52,14 @@ procedure main(args)
 
    EvInit(args) | stop("*** cannot open icode file ***")
 
+   while EvGet() do {
+      val := &eventvalue
+      if &eventcode === E_Opcode then {
+	  val := opnames(val)
+      }
 
-   while EvGet() do
       write(output, left(\symmap[&eventcode], 14),
-         left(evnames(&eventcode), 35), image(&eventvalue))
+         left(evnames(&eventcode), 35), (string|image)(val))
+   }
 
 end

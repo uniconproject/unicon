@@ -23,9 +23,10 @@
 #include "fxposix.ri"
 #endif					/* POSIX interface functions */
 
-#if defined(Audio) || defined(HAVE_VOICE)
+/*
+ * Always include - defines dummy functions if audio is not supported.
+ */
 #include "fxaudio.ri"
-#endif					/* Audio/VOIP functions */
 	
 #ifdef PatternType
 #include "fxpattrn.ri"

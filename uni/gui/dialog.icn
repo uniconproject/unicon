@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.19 2006-07-10 00:34:22 rparlett Exp $
+# $Id: dialog.icn,v 1.20 2007-09-16 11:12:30 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -17,14 +17,14 @@ $include "guih.icn"
 #
 class Dialog : Component(
    win,                     # The dialog's window.
-   is_open,                 # Flag indicates whether window is open              
+   is_open,                 # Flag indicates whether window is open
    owning_dialog,
    child_dialogs,
    focus,                   # Component with current focus            
-   unique_flag,             # Flag indicates whether in unique processing mode             
+   unique_flag,             # Flag indicates whether in unique processing mode
    re_process_flag,         # Flag indicates whether to distribute last
-                            # Icon event during unique mode                      
-   buffer_win,              # Buffer window for double buffering                 
+                            # Icon event during unique mode
+   buffer_win,              # Buffer window for double buffering
    min_width,               # Minimum size of window.                
    min_height,              #                  
    click_count,             # Variables controlling multiple clicks
@@ -345,7 +345,8 @@ class Dialog : Component(
       self.finally()
       self.bevel_dispose()
       self.tooltip_dispose()
-      self.close_win()
+      if \ (is_open) then
+	 self.close_win()
       self.is_open := &null
       dispatcher.del(self)
       delete((\owning_dialog).child_dialogs, self)

@@ -116,6 +116,7 @@ extern struct errtab errtab[];		/* error numbers and messages */
 word mstksize = MStackSize;		/* initial size of main stack */
 word stksize = StackSize;		/* co-expression stack size */
 
+
 #ifndef MultiThread
 int k_level = 0;			/* &level */
 struct descrip k_main;			/* &main */
@@ -678,6 +679,7 @@ char *argv[];
    StrLoc(rootpstate.Kywd_prog) = prog_name;
    rootpstate.Kywd_ran = zerodesc;
    rootpstate.K_errornumber = 0;
+   rootpstate.K_level = 0;
    rootpstate.T_errornumber = 0;
    rootpstate.Have_errval = 0;
    rootpstate.T_have_val = 0;
@@ -1911,6 +1913,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Xargp = NULL;
    pstate->Xnargs = 0;
    pstate->K_errornumber = 0;
+   pstate->K_level = 0;
    pstate->T_errornumber = 0;
    pstate->Have_errval = 0;
    pstate->T_have_val = 0;

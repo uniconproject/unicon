@@ -280,7 +280,9 @@
 
 #include "jpeglib.h"
 #include "jerror.h"
+#ifndef HAVE_LIBPNG
 #include <setjmp.h>
+#endif					/* HAVE_LIBPNG */
 /* we do not use their definitions of GLOBAL, LOCAL, or OF; we use our own */
 #undef GLOBAL
 #undef LOCAL
@@ -349,7 +351,7 @@
 #endif					/* Graphics3D */
 
 #if HAVE_LIBZ
-			
+
 #  ifdef STDC
 #    define OF(args)  args
 #  else
@@ -359,7 +361,14 @@
 #if !VMS
 #undef VMS
 #endif
+
 #include <zlib.h>
+
+#if HAVE_LIBPNG
+#include "pngconf.h"
+#include "png.h"
+#endif					/* HAVE_LIBPNG */
+
 #ifndef VMS
 #define VMS 0
 #endif

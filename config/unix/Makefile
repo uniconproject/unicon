@@ -11,7 +11,12 @@ Setup-Common:
 	cd Config; make Makefiles
 	cp $(name)/define.h $(SRC)/h
 	cp $(name)/rswitch.[cs] $(SRC)/common
-	cp $(name)/Makedefs $(TOP)
+	echo 'AC_JV_LDFLAGS= @JV_LDFLAGS@' > $(TOP)/Makedefs
+	echo 'AC_GL_LDFLAGS= @GL_LDFLAGS@' >> $(TOP)/Makedefs
+	echo 'AC_LIBS= @LIBS@' >> $(TOP)/Makedefs
+	echo 'AC_GL_CFLAGS= @GL_CFLAGS@' >> $(TOP)/Makedefs
+	echo 'AC_LDFLAGS= @LDFLAGS@' >> $(TOP)/Makedefs
+	cat $(name)/Makedefs >> $(TOP)/Makedefs
 	cp $(name)/Makedefs $(TOP)/Makedefs.in
 	echo ''					>> $(TOP)/Makedefs
 	if [ -f $(name)/custom.sh ]; then cd $(name); sh custom.sh; fi
@@ -26,6 +31,9 @@ Setup-Graphics:  Setup-Common
 	echo 'XL = -L../../bin -lXpm $$(XLIBS)'	>> $(TOP)/Makedefs.in
 	echo '#define Graphics 1'		>> $(SRC)/h/define.h
 
+Setup-Thin: Setup-Common
+	cp $(name)/Makedefs $(TOP)/Makedefs
+	echo '#define NoAuto 1'			>> $(SRC)/h/define.h
 
 Clean:
 

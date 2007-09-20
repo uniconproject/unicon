@@ -290,7 +290,7 @@ xrwindow.o: rwindow.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c xrwindow.c
 	rm xrwindow.c
 
-xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri
+xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri fxaudio.ri
 	../../bin/rtt -x fxtra.r
 	$(CC) $(CFLAGS) -c xfxtra.c
 	rm xfxtra.c
@@ -569,7 +569,7 @@ rwindow.o: rwindow.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`
 
-fxtra.o: fxtra.r $(HDRS)
+fxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri fxaudio.ri
 	../../bin/rtt fxtra.r
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
 	rm `sed 's/$$/.c/' rttcur.lst`

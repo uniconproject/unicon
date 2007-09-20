@@ -3,6 +3,8 @@
  *  Contents: PlayAudio, StopAudio, VWho, VAttrib.
  */
 
+#ifdef Audio
+
 "PlayAudio(s) - Play audio file."
 function{0,1} PlayAudio(fname)
 
@@ -15,7 +17,6 @@ function{0,1} PlayAudio(fname)
       }
 
    body {
-#ifdef Audio
       tended char *fnamestr;
       int status;
       FILE * f;
@@ -36,10 +37,6 @@ function{0,1} PlayAudio(fname)
       StrLoc(filename) = fnamestr;
       Protect(fl = alcfile(f, status, &filename), runerr(0));
       return file(fl);
-#else
-      if (0) return file(&k_output);
-      fail;
-#endif
       }
 end
 
@@ -54,18 +51,20 @@ function{1} StopAudio(f)
       }
 
    body {
-#ifdef Audio
       /* we are passing the file name as struct */
       AudioPtr Ptr;
       Ptr = (AudioPtr)BlkLoc(f)->file.fd.fp;
       StopAudioThread(Ptr);
       return C_integer 1;
-#else
-      fail;
-#endif
       }
 end
 
+#else					/* Audio */
+MissingFunc1(PlayAudio)
+MissingFunc1(StopAudio)
+#endif					/* Audio */
+
+#ifdef HAVE_VOICE
 
 "VWho(f) - List the destinations in the voice session."
 function{1} VWho(f)
@@ -78,7 +77,6 @@ function{1} VWho(f)
       }
    body {
       int i , k;
-#ifdef HAVE_VOICE
       PVSESSION Ptr;
       char *s;
       struct descrip Str;
@@ -100,9 +98,6 @@ function{1} VWho(f)
 	 }
 
       return L;
-#else
-      fail;
-#endif
       }
 end
 
@@ -122,7 +117,6 @@ function{*} VAttrib(argv[argc])
       tended char * attrib='\0';
  
       if (!is:file(argv[0])) {
-#ifdef Audio
 	 for(i = 0 ; i < argc ; i++ ){
 	    if (!cnv:C_string(argv[i], attrib))
 	       runerr(103,argv[i]);
@@ -131,11 +125,9 @@ function{*} VAttrib(argv[argc])
 	 if(res >= 0)
 	    return C_integer res;
 	 else
-#endif					/* Audio */
 	    fail;
 	 }
       else {
-#ifdef HAVE_VOICE
       PVSESSION Ptr;
       Ptr = (PVSESSION)BlkLoc(argv[0])->file.fd.fp;
       if (!cnv:tmp_string(argv[1], sbuf)) /* sbuf not allocated */
@@ -212,9 +204,13 @@ function{*} VAttrib(argv[argc])
 	 return C_integer 1;
 	 }
       return C_integer 1;
-#else
-      fail;
-#endif
-}
+      }
       }
 end
+
+#else					/* HAVE_VOICE */
+
+MissingFunc1(VWho)
+MissingFunc2(VAttrib)
+
+#endif					/* HAVE_VOICE */

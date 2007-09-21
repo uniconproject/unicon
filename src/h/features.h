@@ -171,6 +171,10 @@
    Feature(1, "_JPEG", "JPEG images")
 #endif					/* HAVE_LIBJPEG */
 
+#if HAVE_LIBPNG
+   Feature(1, "_PNG", "PNG images")
+#endif					/* HAVE_LIBPNG */
+
 #ifdef ISQL
    Feature(1, "_SQL", "SQL via ODBC")
 #endif					/* ISQL */

@@ -775,7 +775,6 @@ function{1} DrawLine(argv[argc])
       int is_texture=0, base=0;
       int texhandle;
       OptTexWindow(w);
-
 #ifdef Graphics3D
       if (is_texture) {
 	 base=warg;
@@ -895,7 +894,6 @@ function{1} DrawPoint(argv[argc])
       int texhandle;
 
       OptTexWindow(w);
-
 #ifdef Graphics3D
       if (is_texture) {
 	 base=warg;
@@ -2253,15 +2251,19 @@ function{0,1} ReadImage(argv[argc])
       if (r != Succeeded) r = readBMP(filename, p, &imd);
 #if HAVE_LIBJPEG	
       if (r != Succeeded) r = readJPEG(filename, p, &imd);
-#endif
+#endif					/* HAVE_LIBJPEG */
+#if HAVE_LIBPNG	
+      if (r != Succeeded) r = readPNG(filename, p, &imd); 
+#endif					/* HAVE_LIBPNG */
       if (r == Succeeded) {
 
 #ifdef Graphics3D
 	 if (is_texture) {
-	    if (texhandle>w->context->maxstex) runerr(102, argv[warg]);
+	    if (texhandle > w->context->maxstex) runerr(102, argv[warg]);
 	    return C_integer (word) TexReadImage(w, texhandle, x, y, &imd);
 	    }
-#endif
+#endif					/* Graphics3D */
+
          status = strimage(w, x, y, imd.width, imd.height, imd.paltbl,
 			   imd.data, (word)imd.width * (word)imd.height, 0);
          if (status < 0)
@@ -3348,7 +3350,7 @@ function{1} DrawTorus(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int n, i, j, warg = 0, nfields, draw_code;
+      int n, i, j, warg = 0, nfields, draw_code, slices, rings;
       double r1, r2, x, y, z;
       tended struct descrip f;
       tended struct b_record *rp;
@@ -3357,7 +3359,10 @@ function{1} DrawTorus(argv[argc])
 
       OptWindow(w);
       CheckArgMultiple(5);
+
       bfmode = w->context->buffermode;
+      slices = w->context->slices;
+      rings = w->context->rings;
 	
       /* tori are not allowed in a 2-dim space */
       if (w->context->dim == 2) 
@@ -3376,7 +3381,7 @@ function{1} DrawTorus(argv[argc])
          if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
          if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
 	 if (bfmode)
-	    torus(r1, r2, x, y, z,(w->context->texmode?w->context->autogen:0));
+	    torus(r1, r2, x, y, z, slices, rings, (w->context->texmode?w->context->autogen:0));
 	 /* create a record of the graphical object */	   
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	 f.dword = D_Record;
@@ -3386,7 +3391,10 @@ function{1} DrawTorus(argv[argc])
          draw_code = si_s2i(redraw3Dnames, "DrawTorus");
          if (draw_code == -1)
 	     fail;
+
          MakeInt(draw_code, &(rp->fields[1]));
+	 MakeInt(slices, &(rp->fields[7]));
+         MakeInt(rings,  &(rp->fields[8]));
 
          for(j = i; j < i + 5; j++)
 	    rp->fields[2 + j-i] = argv[j];
@@ -3477,17 +3485,17 @@ function{1} DrawSphere(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, i, j, nfields, draw_code;
+      int warg = 0, n, i, j, nfields, draw_code, slices, rings;
       double r, x, y, z;
       tended struct b_record *rp;
       tended struct descrip f;
       static dptr constr;
       char bfmode;
 
+
       OptWindow(w);
       CheckArgMultiple(4);
 
-      bfmode = w->context->buffermode;
       /* sphere cannot be drawn in a 2-dim scene */
       if (w->context->dim == 2) runerr(150);
 
@@ -3495,6 +3503,10 @@ function{1} DrawSphere(argv[argc])
 	 if (!(constr = rec_structor3d("gl_sphere")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      bfmode = w->context->buffermode;
+      slices = w->context->slices;
+      rings = w->context->rings;
 
       for(i = warg; i < argc; i += 4) {
 
@@ -3504,7 +3516,7 @@ function{1} DrawSphere(argv[argc])
 	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
 	 if (bfmode)
-	    sphere(r, x, y, z, (w->context->texmode?w->context->autogen:0));
+	    sphere(r, x, y, z, slices, rings, (w->context->texmode?w->context->autogen:0));
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3516,6 +3528,9 @@ function{1} DrawSphere(argv[argc])
          if (draw_code == -1)
 	     fail;
          MakeInt(draw_code, &(rp->fields[1]));
+
+	 MakeInt(slices, &(rp->fields[6]));
+         MakeInt(rings,  &(rp->fields[7]));
 
 	 /* put parameter in the list for the function */
 	 rp->fields[2] = argv[i];
@@ -3543,7 +3558,7 @@ function{1} DrawCylinder(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, i, j, nfields, draw_code;
+      int warg = 0, n, i, j, nfields, draw_code, slices, rings;
       double r1, r2, h, x, y, z;
       tended struct descrip f;
       tended struct b_record *rp;
@@ -3553,7 +3568,7 @@ function{1} DrawCylinder(argv[argc])
       OptWindow(w);
       wc = w->context;
       CheckArgMultiple(6);
-      bfmode = w->context->buffermode;
+
       /* cylinders cannot be used in a 2-dim scene */
       if (wc->dim == 2) runerr(150);
 
@@ -3561,6 +3576,10 @@ function{1} DrawCylinder(argv[argc])
 	 if (!(constr = rec_structor3d("gl_cylinder")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      bfmode = w->context->buffermode;
+      slices = w->context->slices;
+      rings = w->context->rings;
 
       for(i = warg; i < argc; i += 6) {
 
@@ -3572,7 +3591,7 @@ function{1} DrawCylinder(argv[argc])
 	 if (!cnv:C_double(argv[i+4], r1)) runerr(102, argv[i+4]);
 	 if (!cnv:C_double(argv[i+5], r2)) runerr(102, argv[i+5]);
 	 if (bfmode)
-	    cylinder(r1, r2, h, x, y, z, (wc->texmode ? wc->autogen : 0));
+	    cylinder(r1, r2, h, x, y, z, slices, rings, (wc->texmode ? wc->autogen : 0));
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
          f.dword = D_Record;
@@ -3582,7 +3601,10 @@ function{1} DrawCylinder(argv[argc])
          draw_code = si_s2i(redraw3Dnames, "DrawCylinder");
          if (draw_code == -1)
              fail;
+
          MakeInt(draw_code, &(rp->fields[1]));
+	 MakeInt(slices, &(rp->fields[8]));
+         MakeInt(rings,  &(rp->fields[9]));
 
 	   /* put parameters in the list */
          for(j = i; j < i + 6; j++)
@@ -3608,7 +3630,7 @@ function{1} DrawDisk(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, j, i, nfields, draw_code;
+      int warg = 0, n, j, i, nfields, draw_code, slices, rings;
       double r1, r2, a1, a2, x, y, z;
       tended struct descrip f;
       static dptr constr;
@@ -3617,11 +3639,15 @@ function{1} DrawDisk(argv[argc])
 
       OptWindow(w);
       wc = w->context;
-      bfmode = wc->buffermode;
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_disk")))
 	    syserr("failed to create opengl record constructor");
       nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+      bfmode = w->context->buffermode;
+      slices = w->context->slices;
+      rings = w->context->rings;
+
 
       for (i = warg; i < argc; i += 7) {
 	 if (argc-warg <= i+3)
@@ -3637,6 +3663,8 @@ function{1} DrawDisk(argv[argc])
          if (draw_code == -1)
 	     fail;
          MakeInt(draw_code, &(rp->fields[1]));
+	 MakeInt(slices, &(rp->fields[9]));
+         MakeInt(rings,  &(rp->fields[10]));
 
 	 if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);
 	 if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
@@ -3667,7 +3695,7 @@ function{1} DrawDisk(argv[argc])
 	    rp->fields[8] = argv[i+6];
 	    }
 	 if (bfmode)
-	    disk(r1, r2, a1, a2, x, y, z, (wc->texmode ? wc->autogen : 0));
+	    disk(r1, r2, a1, a2, x, y, z, slices, rings, (wc->texmode ? wc->autogen : 0));
          c_put(&(w->window->funclist), &f);
         }
       if (bfmode)

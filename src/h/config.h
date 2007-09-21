@@ -742,6 +742,11 @@ Deliberate Syntax Error
 #define HAVE_LIBJPEG 0
 #endif					/* NoJPEG */
 
+#ifdef NoPNG
+#undef HAVE_LIBPNG
+#define HAVE_LIBPNG 0
+#endif					/* NoPNG */
+
 #ifdef NoGL
 #undef HAVE_LIBGL
 #define HAVE_LIBGL 0

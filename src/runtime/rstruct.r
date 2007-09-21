@@ -790,6 +790,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
 
       if (StrLoc(bp->recname) == NULL) return NULL;
       StrLen(bp->recname) = StrLen(*s);
+      for(i=0;i<StrLen(*s); i++) StrLoc(bp->recname)[i]=StrLoc(*s)[i];
       StrLoc(bp->recname)[StrLen(*s)] = '\0';
       for(i=0;i<n;i++) {
          StrLen(bp->lnames[i]) = StrLen(fields[i]);

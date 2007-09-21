@@ -405,6 +405,10 @@ typedef struct _wcontext {
   int           is_3D;			/* flag for 3D windows */
   char          buffermode;		/* 3D buffering flag */
   char		meshmode;		/* fillpolygon mesh mode */
+
+  int		slices;			/* slices and rings, used to control the level*/
+  int		rings;			/* of detail sphere, cylinder, disk and torus to be drawn */
+
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
   double        eyedirx, eyediry, eyedirz; /* eye direction vector */
   double        eyeposx, eyeposy, eyeposz; /* eye position */
@@ -421,6 +425,7 @@ typedef struct _wcontext {
   wtp textures;				/* textures */
   wvp stex;
   int maxstex;
+  
 
 #endif					/* Graphics3D */
 } wcontext, *wcp;
@@ -687,8 +692,10 @@ typedef struct
 #define A_TITLEBAR      77
 #define A_BUFFERMODE    78
 #define A_MESHMODE      79
+#define A_SLICES        80
+#define A_RINGS         81
 
-#define NUMATTRIBS	79
+#define NUMATTRIBS	81
 
 #define XICONSLEEP	20 /* milliseconds */
 

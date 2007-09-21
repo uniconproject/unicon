@@ -211,6 +211,10 @@ typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
 typedef int j_common_ptr, JSAMPARRAY, JSAMPROW;
 #endif					/* HAVE_LIBJPEG */
 
+#if HAVE_LIBPNG
+typedef int png_uint_32, png_bytep,  png_bytepp,  png_color_16p, png_structp, png_infop; 
+#endif					/* HAVE_LIBPNG */
+
 #ifdef PosixFns
 typedef int SOCKET;
 typedef int u_short;

@@ -348,6 +348,9 @@ void detectRedirection();
 #if HAVE_LIBJPEG
    int	readJPEG	(char *fname, int p, struct imgdata *d);
 #endif					/* HAVE_LIBJPEG */
+#if HAVE_LIBPNG
+   int	readPNG		(char *fname, int p, struct imgdata *d);
+#endif					/* HAVE_LIBPNG */
    int	rectargs	(wbp w, int argc, dptr argv, int i,
    			   word *px, word *py, word *pw, word *ph);
    char	*rgbkey		(int p, double r, double g, double b);

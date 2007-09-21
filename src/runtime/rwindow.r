@@ -1895,6 +1895,185 @@ void my_error_exit (j_common_ptr cinfo)
 #endif
 
 
+
+#if HAVE_LIBPNG
+/*
+ * readPNG(filename, p, imd) - read PNG file into image data structure
+ * p is a palette number to which the PNG colors are to be coerced;
+ * p=0 uses the colors exactly as given in the PNG file.
+ */
+
+static int pngread(char *filename, int p);
+
+int readPNG(char *filename, int p, struct imgdata *imd)
+{
+   int r = pngread(filename, p);			/* read image */
+   if (r == Failed) return Failed;
+
+   imd->width = gf_width;		/* set return variables */
+   imd->height = gf_height;
+   imd->paltbl = gf_paltbl;
+   imd->data = gf_string;
+
+   return Succeeded;				/* return success */
+}
+
+
+/*
+ * pngread(filename, p) - read png file, setting gf_ globals
+ */
+
+static int pngread(char *filename, int p)
+{
+
+   unsigned char header[8];
+   int  bit_depth, color_type;
+   double  gamma;
+
+   
+   png_uint_32  i, rowbytes;
+   
+
+   png_bytepp row_pointers = NULL;
+   png_color_16p pBackground;
+   png_structp png_ptr = NULL;
+   png_infop info_ptr = NULL;
+   png_infop end_info = NULL;
+
+   gf_f = NULL;
+
+   #ifdef MSWindows
+      if ((gf_f = fopen(filename, "rb")) == NULL) {
+   #else					/* MSWindows */
+      if ((gf_f = fopen(filename, "r")) == NULL) {
+   #endif					/* MSWindows */
+	 return Failed;
+	 }
+
+   /* read the first n bytes (1-8, 8 used here) and test for png signature */
+   fread(header, 1, 8, gf_f);
+
+   if (png_sig_cmp(header, 0, 8)) {
+      return Failed;  /* (NOT_PNG) */
+      }
+
+  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+
+   if (!png_ptr)
+      return Failed;
+
+   info_ptr = png_create_info_struct(png_ptr);
+   if (!info_ptr) {
+      png_destroy_read_struct(&png_ptr, NULL, NULL);
+      return Failed;
+      }
+
+   end_info = png_create_info_struct(png_ptr);
+   if (!end_info){
+      png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+      return Failed;
+      }
+
+   if (setjmp(png_jmpbuf(png_ptr))) {
+      png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+      if (gf_f) { fclose(gf_f); gf_f = NULL; }	
+      return Failed;
+      }
+
+   png_init_io(png_ptr, gf_f);
+   png_set_sig_bytes(png_ptr, 8);
+   png_read_info(png_ptr, info_ptr);
+
+   {
+   unsigned long mywidth, myheight;
+
+   png_get_IHDR(png_ptr, info_ptr, &mywidth, &myheight, &bit_depth,
+         &color_type, NULL, NULL, NULL);
+
+   gf_width = mywidth;
+   gf_height = myheight;
+   }
+
+   /*
+    * Expand palette images to RGB, low-bit-depth grayscale images to 8 bits,
+    * transparency chunks to full alpha channel; strip 16-bit-per-sample
+    * images to 8 bits per sample; and convert grayscale to RGB[A]
+    */
+
+   if (color_type == PNG_COLOR_TYPE_PALETTE)
+      png_set_expand(png_ptr);
+   if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+      png_set_expand(png_ptr);
+   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+      png_set_expand(png_ptr);
+   if (bit_depth == 16)
+      png_set_strip_16(png_ptr);
+   if (color_type == PNG_COLOR_TYPE_GRAY ||
+       color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+      png_set_gray_to_rgb(png_ptr);
+
+   /*
+    * if it doesn't have a file gamma, don't
+    * do any correction
+    */
+   if (png_get_gAMA(png_ptr, info_ptr, &gamma))
+      png_set_gamma(png_ptr, GammaCorrection, gamma);
+
+   /*
+    * All transformations have been registered; now update info_ptr data,
+    * get rowbytes and channels, and allocate image memory.
+    */
+
+   png_read_update_info(png_ptr, info_ptr);
+
+   rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+
+   /* pChannels = (int)png_get_channels(png_ptr, info_ptr); */
+
+   if ((gf_string = (unsigned char *)malloc(rowbytes*gf_height)) == NULL) {
+      png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+      return Failed;
+      }
+
+   if ((row_pointers=(png_bytepp)malloc(gf_height*sizeof(png_bytep))) == NULL){
+      png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+      free(gf_string);
+      gf_string = NULL;
+      return Failed;
+      }
+
+   /* set the individual row_pointers to point at the correct offsets */
+
+   for (i = 0;  i < gf_height;  ++i)
+      row_pointers[i] = gf_string + i*rowbytes;
+
+
+   /* now we can go ahead and just read the whole image */
+   png_read_image(png_ptr, row_pointers);
+
+   /* and we're done!  (png_read_end() can be omitted if no processing of
+    * post-IDAT text/time/etc. is desired) */
+
+   free(row_pointers);
+   row_pointers = NULL;
+
+   png_read_end(png_ptr, NULL);
+
+   if (png_ptr && info_ptr) {
+      png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+      png_ptr = NULL;
+      info_ptr = NULL;
+      end_info = NULL;
+      }
+
+   fclose(gf_f);
+   gf_f = NULL;
+   return Succeeded;
+}
+
+#endif		/*  HAVE_LIBPNG  */
+
 /*
  * writeBMP(w, filename, x, y, width, height) - write BMP image
  *
@@ -3066,11 +3245,17 @@ char * abuf;
       case A_TEXMODE:
 	 AttemptAttr(settexmode(w, val)); 
 	 break;
+      case A_SLICES:
+	AttemptAttr(setslices(w, val));
+	break;
+      case A_RINGS:
+	AttemptAttr(setrings(w, val));
+	break;
       case A_BUFFERMODE: {
         if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
         else wc->buffermode = IMMEDIATE3D;
         break;
-        }
+	}
 #endif					/* Graphics3D */
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
@@ -3311,10 +3496,21 @@ char * abuf;
                setwidth(w, ws->initimage.width);
                setheight(w, ws->initimage.height);
                }
-            else
+            else{
 #endif					/* HAVE_LIBJPEG */
+#if HAVE_LIBPNG
+            r = readPNG(val,0, &ws->initimage);
+            if (r == Succeeded) {
+               setwidth(w, ws->initimage.width);
+               setheight(w, ws->initimage.height);
+               }
+            else
+#endif					/* HAVE_LIBPNG */
                r = setimage(w, val);
+#if HAVE_LIBJPEG
             }
+#endif					/* HAVE_LIBJPEG */
+	    }
 
 	 AttemptAttr(r);
          break;
@@ -3503,6 +3699,12 @@ char * abuf;
 	    MakeStr(strdup(abuf), strlen(abuf), answer);
 	    }
 	 break;
+      case A_SLICES:
+	MakeInt(wc->slices, answer);	
+	break;
+      case A_RINGS:
+	MakeInt(wc->rings, answer);
+	break;
       case A_BUFFERMODE: {
 	 sprintf(abuf,"%s",((w->context->buffermode==BUFFERED3D)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
@@ -4319,10 +4521,12 @@ stringint attribs[] = {
    {"posy",		A_POSY},
    {"resize",		A_RESIZE},
    {"reverse",		A_REVERSE},
+   {"rings",		A_RINGS},
    {"row",		A_ROW},
    {"rows",		A_ROWS},
    {"selection",	A_SELECTION},
    {"size",		A_SIZE},
+   {"slices",		A_SLICES},
    {"texcoord",		A_TEXCOORD}, 
    {"texmode",		A_TEXMODE},
    {"texture",		A_TEXTURE},

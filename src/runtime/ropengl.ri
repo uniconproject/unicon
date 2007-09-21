@@ -22,12 +22,12 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
   /* create an opengl window */
    wdp wd = alc_display(NULL);
    if (!glXQueryExtension(wd->display, &query, &query)) {
-      printf("X server has no OpenGL GLX extension");
+      printf("X server has no OpenGL GLX extension\n");
       return NULL;
       }
    wd->vis = glXChooseVisual(wd->display, wd->screen, L);
    if (wd->vis == NULL) {
-      printf("visual failed");
+      printf("glXChooseVisual: visual failed\n");
       return NULL;
       }
 #endif					/* XWindows */
@@ -42,6 +42,8 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    wc->eyeupx = wc->eyeupz = 0.0;
    wc->eyeupy = 1.0;
    wc->dim = 3;
+   wc->slices = 15;
+   wc->rings = 10;
    wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
    wc->eyedirz = -100.0;
    wc->autogen = 1;
@@ -223,14 +225,13 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 
 
 /* helper function to draw a torus */
-void torus(double radius1, double radius2, double x,double y, double z,int gen)
+void torus(double radius1, double radius2, double x,double y, double z, int slices, int rings, int gen)
 {
    int i, j;
    GLfloat theta, phi, theta1;
    GLfloat cosTheta, sinTheta;
    GLfloat cosTheta1, sinTheta1;
-   GLfloat ringDelta, sideDelta;
-   GLint rings = 16, nsides = 16;
+   GLfloat ringDelta, sliceDelta;
 
    /* generate texture coordinates if needed */
    if (gen == 1){
@@ -249,7 +250,7 @@ void torus(double radius1, double radius2, double x,double y, double z,int gen)
    /* rotate to make the torus look nicer */
    glRotatef(130.0, 1.0, 0.0, 0.0);
    ringDelta = 2.0 * M_PI / rings;
-   sideDelta = 2.0 * M_PI / nsides;
+   sliceDelta = 2.0 * M_PI / slices;
    theta = 0.0;
    cosTheta = 1.0;
    sinTheta = 0.0;
@@ -261,9 +262,9 @@ void torus(double radius1, double radius2, double x,double y, double z,int gen)
       sinTheta1 = sin(theta1);
       glBegin(GL_QUAD_STRIP);
       phi = 0.0;
-      for (j = nsides; j >= 0; j--) {
+      for (j = slices; j >= 0; j--) {
          GLfloat cosPhi, sinPhi, dist;
-         phi += sideDelta;
+         phi += sliceDelta;
          cosPhi = cos(phi);
          sinPhi = sin(phi);
          dist = radius2 + radius1 * cosPhi;
@@ -348,7 +349,7 @@ void cube(double length, double x, double y, double z, int gen)
 /*
  * draw a sphere. This routine makes use of the glu library
  */
-void sphere(double radius, double x, double y, double z, int gen)
+void sphere(double radius, double x, double y, double z, int slices, int rings, int gen)
 {
    GLUquadricObj *qobj;
    glPushMatrix();
@@ -363,7 +364,7 @@ void sphere(double radius, double x, double y, double z, int gen)
       glDisable(GL_TEXTURE_GEN_T);
       gluQuadricTexture(qobj, GL_TRUE);
       }
-   gluSphere(qobj, radius, 15, 10);
+   gluSphere(qobj, radius, slices, rings);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -376,7 +377,7 @@ void sphere(double radius, double x, double y, double z, int gen)
  * draw a cylinder. makes use of the glu library.
  */
 void cylinder(double radius1, double radius2, double height,
-              double x,  double y, double z, int gen)
+              double x,  double y, double z, int slices, int rings, int gen)
 {
    GLUquadricObj *qobj;
 
@@ -401,7 +402,7 @@ void cylinder(double radius1, double radius2, double height,
       gluQuadricTexture(qobj, GL_TRUE);
      }
    /* draw the cylinder */
-   gluCylinder(qobj, radius1, radius2, height, 15, 5);
+   gluCylinder(qobj, radius1, radius2, height, slices, rings);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -413,7 +414,7 @@ void cylinder(double radius1, double radius2, double height,
  * draw a disk. angle2 < 360 degrees specifies a partial disk
  */
 void disk(double radius1, double radius2, double angle1, double angle2,
-          double x, double y, double z, int gen)
+          double x, double y, double z, int slices, int rings, int gen)
 {
    GLUquadricObj *qobj;
 
@@ -435,7 +436,7 @@ void disk(double radius1, double radius2, double angle1, double angle2,
 
    /* draw a disk */
    if (angle2 < 360.0)
-      gluPartialDisk(qobj, radius1, radius2, 15, 5, angle1, angle2);
+      gluPartialDisk(qobj, radius1, radius2, slices, rings, angle1, angle2);
    else
       gluDisk(qobj, radius1, radius2, 15, 5);
    if (gen == 1){
@@ -861,21 +862,31 @@ int traversefunctionlist(wbp w)
 	    }
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
-	    torus(v[3], v[4], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	    torus(v[3], v[4], v[0], v[1], v[2], 
+		IntVal(BlkLoc(flist)->record.fields[7]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[8]),    /*  rings   */
+		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_CUBE:
 	    cube(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_SPHERE:
-	    sphere(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	    sphere(v[3], v[0], v[1], v[2],
+		IntVal(BlkLoc(flist)->record.fields[6]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[7]),    /*  rings   */
+		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_CYLINDER:
 	    cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
-		     (wc->texmode?wc->autogen:0));
+		IntVal(BlkLoc(flist)->record.fields[8]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[9]),    /*  rings   */
+		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_DISK:
 	    disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
-		 (wc->texmode?wc->autogen:0));
+		IntVal(BlkLoc(flist)->record.fields[9]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[10]),   /*  rings   */
+		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_ROTATE:
 	    glRotated(v[3], v[0], v[1], v[2]);
@@ -978,21 +989,31 @@ int traversefunctionlist(wbp w)
 
       switch(tmp & ~0xf) {
       case REDRAW_TORUS:
-	 torus(v[3], v[4], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	 torus(v[3], v[4], v[0], v[1], v[2],
+		IntVal(BlkLoc(flist)->record.fields[7]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[8]),    /*  rings   */
+		(wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_CUBE:
 	 cube(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_SPHERE:
-	 sphere(v[3], v[0], v[1], v[2], (wc->texmode?wc->autogen:0));
+	 sphere(v[3], v[0], v[1], v[2], 
+	 IntVal(BlkLoc(flist)->record.fields[6]),
+	 IntVal(BlkLoc(flist)->record.fields[7]),
+	 (wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_CYLINDER:
 	 cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
-		  (wc->texmode?wc->autogen:0));
+		IntVal(BlkLoc(flist)->record.fields[8]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[9]),    /*  rings   */
+		(wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_DISK:
 	 disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
-	      (wc->texmode?wc->autogen:0));
+		IntVal(BlkLoc(flist)->record.fields[9]),    /*  slices  */
+		IntVal(BlkLoc(flist)->record.fields[10]),    /*  rings   */
+	       (wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_ROTATE:
 	 glRotated(v[3], v[0], v[1], v[2]);
@@ -2041,6 +2062,36 @@ int settexcoords(wbp w, char* s)
    return Succeeded;
 }
 
+/* set the slices attribute */
+int setslices(wbp w, char *s)
+{
+   int slices;
+   wcp wc = w->context;
+
+  slices = atoi(s);
+   /* must be positive integer */
+   if (slices < 1 )
+      return Error;
+
+   w->context->slices = slices;
+   return Succeeded;
+}
+
+/* set the rings attribute */
+int setrings(wbp w, char *s)
+{
+   int rings;
+   wcp wc = w->context;
+
+  rings = atoi(s);
+   /* must be positive integer */
+   if (rings < 1 )
+      return Error;
+
+   w->context->rings = rings;
+   return Succeeded;
+}
+
 /* set the eyepos attribute */
 int seteyepos(wbp w, char *s)
 {
@@ -2482,10 +2533,26 @@ int fileimage(wbp w, char* filename)
                 break;
         }
       }
-     else
+     else{
 #endif					/* HAVE_JPEG */
+#if HAVE_LIBPNG
+     r = readPNG(filename, i, &im);
+     if (r == Succeeded) {
+        switch (i) {
+        case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
+                        (word)im.width*(word)im.height);
+                break;
+        case 2: /* i = texture_16img(w, im);
+                break; */
+        case 3: i = texture_24img(w, im);
+                break;
+        }
+      }
+     else
+#endif					/* HAVE_PNG */
          r = readimage(w, filename, 0, 0, &status);
     }
+   }
    if (i == Succeeded)
 	 return Succeeded;
    else
@@ -3035,11 +3102,11 @@ struct descrip gl_font3d = {D_Null};
 struct descrip gl_drawstring3d = {D_Null};
 struct descrip gl_mark = {D_Null};
 
-char * gl_torus_fields[] = {"radius1","radius2"};
+char * gl_torus_fields[] = {"radius1","radius2", "slices", "rings"};
 char * gl_cube_fields[] = {"length"};
-char * gl_sphere_fields[] = {"radius"};
-char * gl_cylinder_fields[] ={"height","radius1","radius2"};
-char * gl_disk_fields[] = {"radius1","radius2", "angle1","angle2"};
+char * gl_sphere_fields[] = {"radius", "slices", "rings"};
+char * gl_cylinder_fields[] ={"height","radius1","radius2","slices", "rings"};
+char * gl_disk_fields[] = {"radius1","radius2", "angle1","angle2","slices", "rings"};
 char * gl_rotate_fields[] = {"angle"};
 char * gl_matrixmode_fields[] = {"mode"};
 char * gl_meshmode_fields[] = {"mode"};
@@ -3083,15 +3150,15 @@ dptr rec_structor3d(char *name)
 {
 #ifdef Graphics3D
    if (!strcmp(name, "gl_torus"))
-      return rec_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
+      return rec_structinate(&gl_torus, "gl_torus", 9, gl_torus_fields);
    else if (!strcmp(name, "gl_cube"))
       return rec_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
    else if (!strcmp(name, "gl_sphere"))
-      return rec_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
+      return rec_structinate(&gl_sphere, "gl_sphere", 8, gl_sphere_fields);
    else if (!strcmp(name, "gl_cylinder"))
-      return rec_structinate(&gl_cylinder, "gl_cylinder",8,gl_cylinder_fields);
+      return rec_structinate(&gl_cylinder, "gl_cylinder", 10, gl_cylinder_fields);
    else if (!strcmp(name, "gl_disk"))
-      return rec_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
+      return rec_structinate(&gl_disk, "gl_disk", 11, gl_disk_fields);
    else if (!strcmp(name, "gl_rotate"))
       return rec_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
    else if (!strcmp(name, "gl_translate"))

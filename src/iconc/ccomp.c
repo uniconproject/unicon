@@ -190,8 +190,7 @@ Deliberate Syntax Error
 
 #if UNIX
 
-   lib_sz += strlen(" -L") +
-             strlen(refpath);
+   lib_sz += strlen(" -L") + strlen(refpath);
 
 #ifdef Messaging
    lib_sz += strlen(" -ltp ");
@@ -205,7 +204,10 @@ Deliberate Syntax Error
 
 #ifdef Graphics
 /* mdw: modified   lib_sz += strlen(" -lXpm "); */
-   lib_sz += strlen(" -lXpm -lGL -lGLU");
+   lib_sz += strlen(" -lXpm")
+#ifdef Graphics3D
+   lib_sz += strlen(" -lGL -lGLU");
+#endif					/* Graphics3D */
    lib_sz += strlen(ICONC_XLIB);
    opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
 #endif						/* Graphics */
@@ -225,7 +227,7 @@ Deliberate Syntax Error
 #endif /* HAVE_LIBJPEG */
 
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
-			     lib_sz + 5);
+			     lib_sz + 25);
    strcpy(buf, c_comp);
    s = buf + cmd_sz;
    *s++ = ' ';
@@ -278,8 +280,10 @@ Deliberate Syntax Error
 #endif
 
 #ifdef Graphics
-   /* mdw: modified: strcat(s," -lXpm "); */
-   strcat(s, " -lXpm -lGL -lGLU ");
+   strcat(s, " -lXpm ");
+#ifdef Graphics3D
+   strcat(s, " -lGL -lGLU ");
+#endif					/* Graphics3D */
    strcat(s, ICONC_XLIB);
 #endif						/* Graphics */
 

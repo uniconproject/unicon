@@ -204,7 +204,7 @@ Deliberate Syntax Error
 
 #ifdef Graphics
 /* mdw: modified   lib_sz += strlen(" -lXpm "); */
-   lib_sz += strlen(" -lXpm")
+   lib_sz += strlen(" -lXpm");
 #ifdef Graphics3D
    lib_sz += strlen(" -lGL -lGLU");
 #endif					/* Graphics3D */

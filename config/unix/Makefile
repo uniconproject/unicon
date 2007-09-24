@@ -17,7 +17,7 @@ Setup-Common:
 	echo 'AC_GL_CFLAGS= @GL_CFLAGS@' >> $(TOP)/Makedefs
 	echo 'AC_LDFLAGS= @LDFLAGS@' >> $(TOP)/Makedefs
 	cat $(name)/Makedefs >> $(TOP)/Makedefs
-	cp $(name)/Makedefs $(TOP)/Makedefs.in
+	cp $(TOP)/Makedefs $(TOP)/Makedefs.in
 	echo ''					>> $(TOP)/Makedefs
 	if [ -f $(name)/custom.sh ]; then cd $(name); sh custom.sh; fi
 

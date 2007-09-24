@@ -2505,24 +2505,22 @@ int fileimage(wbp w, char* filename)
    int status;
    word l;
    struct imgdata im;
-   r = readGIF(filename, 0, &im);
 
    /* a gif file */
-   if (r == Succeeded){
+   if ((r = readGIF(filename, 0, &im)) == Succeeded){
       i = textureimg(w, im.width, im.height, im.paltbl, im.data,
                      (word)im.width*(word)im.height);
 
-   /* we need to handle other cases beside gif...
-	 what are those cases ? ... look at ReadImage */
-     }
-   /* not a gif file */
+      }
    else {
+      /*
+       * Not a gif file. We need to handle other cases beside gif...
+       * what are those cases ? ... look at ReadImage
+       */
      i = SCREENDEPTH(w);
      i = i / 8;
 #if HAVE_LIBJPEG
-     r = readJPEG(filename, i, &im);
-
-     if (r == Succeeded) {
+     if ((r = readJPEG(filename, i, &im)) == Succeeded) {
         switch (i) {
         case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
                         (word)im.width*(word)im.height);
@@ -2533,11 +2531,10 @@ int fileimage(wbp w, char* filename)
                 break;
         }
       }
-     else{
+     else
 #endif					/* HAVE_JPEG */
 #if HAVE_LIBPNG
-     r = readPNG(filename, i, &im);
-     if (r == Succeeded) {
+     if ((r = readPNG(filename, i, &im)) == Succeeded) {
         switch (i) {
         case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
                         (word)im.width*(word)im.height);
@@ -2550,8 +2547,8 @@ int fileimage(wbp w, char* filename)
       }
      else
 #endif					/* HAVE_PNG */
+
          r = readimage(w, filename, 0, 0, &status);
-    }
    }
    if (i == Succeeded)
 	 return Succeeded;

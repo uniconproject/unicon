@@ -8,6 +8,9 @@
 #include "cproto.h"
 #include "tv.h"
 
+/*
+ * This is a nonsensical comment added for the benefit of nothing.
+ */
 #define BitGet(t,n) ((t)->ent->bits[DivIntBits(n)] & (1<<(ModIntBits(n))))
 #define MemCpy memcpy
 #define MemEqu(p,q,n) (memcmp((p),(q),(n))==0)

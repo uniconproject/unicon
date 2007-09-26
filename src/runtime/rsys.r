@@ -1502,7 +1502,8 @@ void ptclose(struct ptstruct *ptStruct)
 
 struct ptstruct *ptopen(char *command)
 {
-
+   int ac;
+   char **av;
 #ifdef WIN32
    HANDLE hOutputReadMaster,hOutputRead,hOutputWrite;
    HANDLE hInputWriteMaster,hInputRead,hInputWrite;
@@ -1518,9 +1519,12 @@ struct ptstruct *ptopen(char *command)
    /* allocating new ptstruct */
    struct ptstruct *newPtStruct =
       (struct ptstruct *)malloc(sizeof(struct ptstruct));
-   if(newPtStruct == NULL) {
+   if (newPtStruct == NULL) {
       EXITERROR(newPtStruct);
       }
+   strcpy(newPtStruct->slave_command, command);
+  
+   ac = CmdParamToArgv(command, &av, 0);
 
 #ifdef WIN32
    /* Set up the security attributes struct. */
@@ -1597,8 +1601,6 @@ struct ptstruct *ptopen(char *command)
       EXITERROR(newPtStruct);
       }
 
-   strcpy(newPtStruct->slave_command, command);
-  
    /* try forking the slave process ... */
    if ((newPtStruct->slave_pid = fork()) == -1) {
       EXITERROR(newPtStruct);
@@ -1620,12 +1622,9 @@ struct ptstruct *ptopen(char *command)
 	 }
 
       /* attempt to execute the command slave process */
-      {
-	 char *args[2]={newPtStruct->slave_command, NULL};
-	 if(execve(args[0],(char *const*)args,0) == -1) {
-	    EXITERROR(newPtStruct);
-	    }
-	 }
+      if(execve(av[0], av, NULL) == -1) {
+         EXITERROR(newPtStruct);
+         }
 #endif
       }
 

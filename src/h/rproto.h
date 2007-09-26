@@ -66,6 +66,7 @@ struct b_proc	*bi_strprc	(dptr s, C_integer arity);
 void		c_exit		(int i);
 int		c_get		(struct b_list *hp, struct descrip *res);
 void		c_put		(struct descrip *l, struct descrip *val);
+int		CmdParamToArgv	(char *s, char ***avp, int dequote);
 int		cnv_c_dbl	(dptr s, double *d);
 int		cnv_c_int	(dptr s, C_integer *d);
 int		cnv_c_str	(dptr s, dptr d);

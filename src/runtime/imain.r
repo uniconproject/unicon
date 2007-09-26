@@ -97,7 +97,6 @@ int mterm = Op_Quit;
 
 FILE *finredir, *fouredir, *ferredir;
 
-#if NT
 /*
  * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
  * Called for both input processing (e.g. in WinMain()) and in output
@@ -174,16 +173,21 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 	    break;
 	    }
          default: {
+#if NT
             FINDDATA_T fd;
+#endif					/* NT */
 	    char *t3 = t2;
             while (*t2 && !isspace(*t2)) t2++;
 	    if (*t2)
 	       *t2++ = '\0';
             strcpy(tmp, t3);
+#if NT
 	    if (!FINDFIRST(tmp, &fd)) {
+#endif
 	       *avp = realloc(*avp, (rv + 2) * sizeof (char *));
 	       (*avp)[rv++] = salloc(t3);
                (*avp)[rv] = NULL;
+#if NT
                }
 	    else {
                int end;
@@ -202,6 +206,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 	          } while (FINDNEXT(&fd));
 	       FINDCLOSE(&fd);
 	       }
+#endif					/* NT */
             break;
 	    }
          }
@@ -209,8 +214,6 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    free(t);
    return rv;
    }
-
-#endif
 
 #ifdef MSWindows
 #ifdef ConsoleWindow

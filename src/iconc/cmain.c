@@ -458,7 +458,7 @@ Deliberate Syntax Error
    dynrec_start = compute_dynrec_start();
    fprintf(inclfile, "/* mdw: sync recnum between iconc and rtl */\n");
    fprintf(inclfile, "#define DYNREC_START %d\n", dynrec_start);
-
+   fprintf(inclfile, "extern void dynrec_start_set(int);\n");
    fclose(codefile);
    fclose(inclfile);
    /*

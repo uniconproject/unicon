@@ -1,0 +1,439 @@
+<!-- Creator     : groff version 1.18.1 -->
+<!-- CreationDate: Sat Oct 13 08:52:06 2007 -->
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta name="Content-Style" content="text/css">
+<title>STREAM.ICN</title>
+</head>
+<body>
+
+<h1 align=center>STREAM.ICN</h1>
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURNS">RETURNS</a><br>
+<a href="#PORTABILITY">PORTABILITY</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#BUGS AND LIMITATIONS">BUGS AND LIMITATIONS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+<a name="NAME"></a>
+<h2>NAME</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>Stream</b>--Constructor for sequential access class
+wrappers for co-expressions, files, and lists</p>
+</td>
+</table>
+<a name="SYNOPSIS"></a>
+<h2>SYNOPSIS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<pre>  # construct subclass of Stream_Abstract
+  procedure <b>Stream( device, mode, other[ ] )
+
+</b>  # base class for StreamC, Streamf, StreamL
+  class Stream_Abstract
+    method <i>Close</i>( )          # &amp;fail
+    method <i>Data</i>( )           # &amp;fail
+    method <i>Flush</i>( )          # &amp;fail
+    method <i>Get</i>( )            # &amp;fail
+    method <i>Pull</i>( )           # &amp;fail
+    method <i>Push</i>( )           # &amp;fail
+    method <i>Put</i>( )            # &amp;fail
+    method <i>Select</i>( )         # &amp;fail
+    method <i>Type</i>( )           # &amp;fail
+
+ # sequential access class for co-expression
+  class StreamC : Stream_Abstract
+    method <i>Close</i>( )          # null?
+    method <i>Data</i>( )           # co-expression
+    method <i>Flush</i>( )          # null
+    method <i>Get</i>( value )      # any
+    method <i>Put</i>( values[ ] )  # list?
+    method <i>Select</i>( )         # null?
+    method <i>Type</i>( )           # string
+
+ # sequential access class for file
+  class Streamf : Stream_Abstract
+    method <i>Close</i>( )          # file|integer|null?
+    method <i>Data</i>( )           # file|null
+    method <i>Flush</i>( )          # file?
+    method <i>Get</i>( )            # string?
+    method <i>Put</i>( values[ ] )  # list?
+    method <i>Select</i>( timeout ) # null?
+    method <i>Type</i>( )           # string
+
+ # sequential access class for list
+  class StreamL : Stream_Abstract
+    method <i>Close</i>( )          # null
+    method <i>Data</i>( )           # list
+    method <i>Flush</i>( )          # null
+    method <i>Get</i>( )            # any?
+    method <i>Pull</i>( )           # any?
+    method <i>Push</i>( values[ ] ) # list?
+    method <i>Put</i>( values[ ] )  # list?
+    method <i>Select</i>( )         # integer?
+    method <i>Type</i>( )           # string
+</pre>
+</td>
+</table>
+<a name="DESCRIPTION"></a>
+<h2>DESCRIPTION</h2>
+<!-- INDENTATION -->
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>For an extended introduction to <b>Stream.icn</b> and
+ideas about how to apply it, please see [Eschenlauer,
+2006].</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="4%"></td>
+<td width="95%">
+<p><b>Constructor (Factory)</b></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>The <b>Stream( )</b> procedure constructs instances of
+the <i>StreamC</i>, <i>Streamf</i>, and <i>StreamL</i>
+classes to provide a common interface to exchange data with
+co&minus;expressions, files, and lists, respectively.</p>
+<!-- INDENTATION -->
+<p>The &quot;returns&quot; section below explains how the
+arguments determine the class of the object produced.</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="4%"></td>
+<td width="95%">
+<p><b>Interface</b></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>The <i>StreamC</i>, <i>Streamf</i>, and <i>StreamL</i>
+classes all implement the following methods:</p>
+</td>
+</table>
+<!-- TABS -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="4" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Close</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Closes f, cofails C, or replaces L with an empty
+list.</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Data</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces the list, file, or co-expression managed by
+<i>StreamC</i>, <i>Streamf</i>, and <i>StreamL</i>.</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Flush</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces result of flush(f), or &amp;null.</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Get</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces a value; can transmit a value to C</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Pull</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces a value (for <i>StreamL</i> only)</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Push</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces a list as long as number of args (for
+<i>StreamL</i> only)</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Put</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces a list as long as number of args</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Select</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces &amp;null if Get may produce a value</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="8%">
+
+<p><i>Type</i></p>
+</td>
+<td width="1%"></td>
+<td width="77%">
+
+<p>Produces &quot;list&quot; | &quot;file&quot; |
+&quot;co-expression&quot;</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="4%"></td>
+<td width="95%">
+<p><b>Activation of Producers and Consumers</b></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>When a producer coexpression uses <i>StreamC</i> object
+to transmit values to a consumer coexpression that receives
+them using another <i>StreamC</i> object, the values
+transmitted will be the same regardless of whether the
+producer or the consumer was activated first.</p>
+</td>
+</table>
+<a name="RETURNS"></a>
+<h2>RETURNS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>The class produced by the constructor function Stream( )
+depends on the arguments supplied:</p>
+</td>
+</table>
+<!-- TABS -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="4" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="13%"></td>
+<td width="25%">
+
+<p><b>Stream(C,&quot;r&quot;|&quot;w&quot;)</b></p>
+</td>
+<td width="1%"></td>
+<td width="60%">
+
+<p>produces an instance of <i>StreamC</i> encapsulating
+co-expression <i>C</i>.</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="39%"></td>
+<td width="60%">
+<p>Note that under <b>shell.icn( 1 )</b>:<br>
+&minus; A producer task should use the &quot;w&quot;
+filemode when creating a <i>StreamC</i> instance to manage
+communication with a consumer task.<br>
+&minus; A consumer task should use the &quot;r&quot;
+filemode to when creating a <i>StreamC</i> instance to
+communicate with a producer task.<br>
+&minus; A client task should use the &quot;w&quot; filemode
+when creating a <i>StreamC</i> instance to manage
+communication with a service task.</p>
+</td>
+</table>
+<!-- TABS -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="4" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+<p><b>Stream(f)</b></p>
+</td>
+<td width="1%"></td>
+<td width="60%">
+
+<p>produces an instance of <i>Streamf</i> encapsulating
+file <i>f</i></p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+<p><b>Stream(s,args[ ])</b></p>
+</td>
+<td width="1%"></td>
+<td width="60%">
+
+<p>produces an instance of <i>Streamf</i> where <i>[s] |||
+args</i> is the argument list passed to the open( )
+function</p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+<p><b>Stream(L)</b></p>
+</td>
+<td width="1%"></td>
+<td width="60%">
+
+<p>produces an instance of <i>StreamL</i> encapsulating
+list <i>L</i></p>
+</td>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="26%">
+
+<p><b>Stream(StreamL)</b></p>
+</td>
+<td width="1%"></td>
+<td width="60%">
+
+<p>produces an instance of <i>StreamL</i> encapsulating the
+list encapsulated by the <i>StreamL</i>-typed argument</p>
+</td>
+</table>
+<a name="PORTABILITY"></a>
+<h2>PORTABILITY</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>Stream.icn</b> is compatible with Unicon but not Icon
+since Icon does not support classes. Stream.icn is not
+Idol-compatible.</p>
+</td>
+</table>
+<a name="SEE ALSO"></a>
+<h2>SEE ALSO</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>Eschenlauer, Arthur C., 2006. &quot;A Unicon Shell&quot;,
+<i>The Generator</i>, Vol. 2, No. 2, pp 3-32.</p>
+<!-- INDENTATION -->
+<pre>  http://www.unicon.org/generator/v2n2.pdf
+</pre>
+<!-- INDENTATION -->
+<p><b>shell.icn( 1 )</b></p>
+</td>
+</table>
+<a name="BUGS AND LIMITATIONS"></a>
+<h2>BUGS AND LIMITATIONS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>Streamf has been extensively tested only with disk files;
+databases, network connections, etc., have not been tested
+much if at all.</p>
+</td>
+</table>
+<a name="AUTHOR"></a>
+<h2>AUTHOR</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>Art Eschenlauer</p>
+<!-- INDENTATION -->
+<p><b>Stream.icn</b> is in the public domain. The freedom of
+its content is protected by the Lesser GNU public license,
+version 2.1, February 1999,</p>
+<!-- INDENTATION -->
+<pre>  http://www.gnu.org/licenses/lgpl.html
+</pre>
+<!-- INDENTATION -->
+<p>which means you are granted permission to use this in any
+way that does not limit others&rsquo; freedom to use it.</p>
+</td>
+</table>
+<hr>
+</body>
+</html>

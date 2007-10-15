@@ -1,0 +1,437 @@
+<!-- Creator     : groff version 1.18.1 -->
+<!-- CreationDate: Sat Oct 13 08:52:04 2007 -->
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta name="Content-Style" content="text/css">
+<title>SHELL.ICN</title>
+</head>
+<body>
+
+<h1 align=center>SHELL.ICN</h1>
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ENVIRONMENT VARIABLES">ENVIRONMENT VARIABLES</a><br>
+<a href="#SCRIPTS">SCRIPTS</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#PORTABILITY">PORTABILITY</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#BUGS AND LIMITATIONS">BUGS AND LIMITATIONS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+<a name="NAME"></a>
+<h2>NAME</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>shell.icn</b> &minus; Launch tasks that collaborate
+via co-expression switching.</p>
+</td>
+</table>
+<a name="SYNOPSIS"></a>
+<h2>SYNOPSIS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>shell</b> [ options ] [ arguments ]</p>
+</td>
+</table>
+<a name="DESCRIPTION"></a>
+<h2>DESCRIPTION</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>shell.icn</b> is a proof-of-concept implementation of
+a shell that facilitates composition of new solutions from
+Unicon tasks. A solution may be an assembly of tasks into a
+simple linear pipeline or into a more complicated network.
+These tasks are previously translated Unicon programs that
+the shell loads into its own virtual machine (and process)
+via the <i>Load( )</i> function as originally described in
+[Jeffery 1997].</p>
+<!-- INDENTATION -->
+<p><b>shell.icn</b> can execute a &quot;script&quot; that
+defines a new solution without invoking the Unicon
+translator; it can read a script from a file or the standard
+input. To prevent occurrence of &quot;infinite loops of
+failure&quot;, <b>shell.icn</b> sets up one
+&quot;proxy&quot; co-expression per task to monitor the
+execution of the task&rsquo;s co-expression and to intervene
+if necessary.</p>
+<!-- INDENTATION -->
+<p>Compatible tasks are ordinary Unicon programs in every
+way except that they may use the <i>Get( )</i> and <i>Put(
+)</i> methods from the <b>Stream.icn( 3 )</b> interface to
+transfer control of execution to other tasks in the solution
+and to ensure that producer tasks will transmit the same
+result sequences to the consumer tasks regardless of whether
+the producer or the consumer is activated first.</p>
+<!-- INDENTATION -->
+<p>For an extended introduction to <b>shell.icn</b> and
+ideas about how to apply it, please see [Eschenlauer,
+2006].</p>
+</td>
+</table>
+<a name="OPTIONS"></a>
+<h2>OPTIONS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>The following options are recognized by
+<b>shell.icn</b>:</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>&minus;i</b> <i>script</i></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="82%">
+<p>Read script from file <i>script</i> instead of the
+standard input. You may wish to use &quot;.shell&quot; as
+the extension of script file names.</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>&minus;p</b> <i>prog</i></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="82%">
+<p>(Option &minus;p overrides option &minus;i) Invoke
+<i>prog</i> as preprocessor, passing arguments to it;
+<i>prog</i> will be invoked with a task that is a recursive
+instance of <b>shell.icn</b> as the first argument and a
+list for enqueueing results as the second argument; any
+arguments appearing afterward will be passed through to prog
+as arguments 3:0 (see <b>ush.icn( 1 )</b> for an
+example)</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>&minus;r</b> <i>list</i></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="82%">
+<p>Use list specified by <i>list</i> for a result list
+instead of creating a new one; this option cannot be used
+from the command line because the argument must be of type
+list rather than type string.</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>&minus;s</b> <i>path</i></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="82%">
+<p>Search directory specified by <i>path</i> for icode and
+script files. This option may be repeated; alternatively,
+several directories may be specified by enclosing
+<i>path</i> in double quotes and separating directory names
+with spaces (as is done for IPATH and LPATH). If a directory
+name contains a space, you must both enclose <i>path</i> in
+double quotes and enclose space-containing directory names
+in single quotes, (e.g., &minus;s &quot;&rsquo;/path to/one
+folder&rsquo; ../another_folder&quot; ). Directories
+specified with the &minus;s option are searched after the
+working directory and before directories specified by the
+<i>USHPATH</i> environment variable.</p>
+</td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>&minus;t</b></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="82%">
+<p>Trace co-expression activation, process setup, etc., by
+<b>shell.icn</b></p>
+</td>
+</table>
+<a name="ENVIRONMENT VARIABLES"></a>
+<h2>ENVIRONMENT VARIABLES</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><i>USHPATH</i></p></td>
+</table>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="82%">
+<p>Space&minus;separated directory names searched after
+those specified with the &minus;s option. Enclose spaces in
+directory names in single quotes. <i>USHPATH</i> must not
+contain double quotes.</p>
+</td>
+</table>
+<a name="SCRIPTS"></a>
+<h2>SCRIPTS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b><small>Grammar of Scripts</small></b></p>
+<!-- INDENTATION -->
+<p>The parser built into <b>shell.icn</b> expects the lines
+in shell files to conform to the following grammar:</p>
+<!-- INDENTATION -->
+<pre>input_file_line         ::= task_declaration |
+                            list_symbol_declaration |
+                            task_activation |
+                            comment
+
+task_declaration        ::= lvalue &quot;:=&quot; &lt;program_name&gt; arguments
+
+list_symbol_declaration ::= &quot;list&quot; lvalues
+
+task_activation         ::= &quot;@&quot; lvalues
+
+comment                 ::= &quot;#&quot; many(&lt;&amp;cset&gt;)
+
+arguments               ::= arguments argument | argument | &lt;nothing&gt;
+
+argument                ::= lvalue | &quot;$&quot; many(&lt;&amp;digits&gt;) | alphanum
+
+lvalues                 ::= lvalues lvalue | lvalue
+
+lvalue                  ::= alphanum
+
+alphanum                ::= many(&lt;&amp;letters&gt; ++ &lt;&amp;digits&gt;)
+
+many(c)                 ::= c many(c) | c
+
+</pre>
+<!-- INDENTATION -->
+<p><b><small>Additional Script Rules</small></b></p>
+<!-- INDENTATION -->
+<p>Names of programs that are not in the current working
+directory must include relative or absolute path information
+suitable for the platform; the program name supplied is
+passed directly to the load( ) function.</p>
+<!-- INDENTATION -->
+<p>List symbols must be declared before they are used.</p>
+<!-- INDENTATION -->
+<p>Task declarations may include forward references to other
+tasks.</p>
+<!-- INDENTATION -->
+<p>Task activations must be deferred until all referenced
+tasks have been declared. The convert_tasks( ) procedure
+loads the tasks, wraps them with a monitoring co-expression
+(which is created by via the monitor_task( ) procedure), and
+activates them.</p>
+<!-- INDENTATION -->
+<p>Once a task has terminated, it must be redeclared before
+it can be reactivated. Once one task has been redeclared,
+all must be redeclared before they are activated. List
+symbols need not be redeclared, however, but the lists that
+they represent are replaced with empty lists when
+convert_tasks( ) is executed.</p>
+<!-- INDENTATION -->
+<p>If desired, string&minus;valued arguments in scripts may
+be quoted in any way permitted by the balq(s) procedure
+(from the scan.icn file in the Icon Program Library), where
+balq(s) is invoked with a single argument.</p>
+</td>
+</table>
+<a name="EXAMPLES"></a>
+<h2>EXAMPLES</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>The following script loads a consumer task and a producer
+task and activates the producer first, then it repeats this
+excepting that it activates the consumer first. Notice that
+arguments of the tasks invoked can be either co-expressions
+or strings.</p>
+<!-- INDENTATION -->
+<pre>    CONS   := consumer  PROD &minus;
+    PROD   := producer  CONS
+    @ PROD
+    CONS   := consumer  PROD &minus;
+    PROD   := producer  CONS
+    @ CONS
+</pre>
+<!-- INDENTATION -->
+<p>In this script, &quot;consumer&quot; and
+&quot;producer&quot; are the name of icode files,
+&quot;CONS&quot; and &quot;PROD&quot; are symbols for the
+tasks created when the respective icode files are loaded,
+and &quot;&minus;&quot; is a string. The consumer task is
+loaded and invoked with two arguments, the producer task and
+the string &quot;&minus;&quot;, and the producer task is
+loaded and invoked with one argument, the consumer task.</p>
+<!-- INDENTATION -->
+<p>Suppose shell.icn is translated and on your PATH, and
+that consumer.icn and producer.icn have been translated and
+the icode files are in</p>
+<!-- INDENTATION -->
+<pre>    c:\My Documents\shelltest
+</pre>
+<!-- INDENTATION -->
+<p>and that a script file named test.shell containing the
+script above is also in that directory. Then you may either
+invoke the script with the command</p>
+<!-- INDENTATION -->
+<pre>    shell -s &quot;&rsquo;c:\My Documents\shelltest&rsquo;&quot; -i test.shell
+</pre>
+<!-- INDENTATION -->
+<p>or you may set USHPATH to</p>
+<!-- INDENTATION -->
+<pre>    &rsquo;c:\My Documents\shelltest&rsquo;
+</pre>
+<!-- INDENTATION -->
+<p>and invoke the script with the command</p>
+<!-- INDENTATION -->
+<pre>    shell -i test.shell
+</pre>
+</td>
+</table>
+<a name="PORTABILITY"></a>
+<h2>PORTABILITY</h2>
+<!-- INDENTATION -->
+
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p><b>shell.icn</b> depends on <b>Stream.icn( 3 )</b> which
+in turn depends on classes. Thus, shell.icn is compatible
+with Unicon but not Icon since Icon does not support
+classes. shell.icn is not Idol-compatible because Stream.icn
+is not Idol-compatible.</p>
+</td>
+</table>
+<a name="SEE ALSO"></a>
+<h2>SEE ALSO</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>Eschenlauer, Arthur C., 2006. &quot;A Unicon Shell&quot;,
+<i>The Generator</i>, Vol. 2, No. 2, pp 3-32.</p>
+<!-- INDENTATION -->
+<pre>  http://www.unicon.org/generator/v2n2.pdf
+</pre>
+<!-- INDENTATION -->
+<p>Jeffery, Clinton L., 1997. <i>The MT Icon
+Interpreter.</i> (Icon Project Document 169).</p>
+<!-- INDENTATION -->
+<pre>  http://www.cs.arizona.edu/icon/docs/ipd169.htm
+</pre>
+<!-- INDENTATION -->
+<p><b>Stream.icn( 3 )</b></p>
+</td>
+</table>
+<a name="BUGS AND LIMITATIONS"></a>
+<h2>BUGS AND LIMITATIONS</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>Infinite loops in tasks will prevent control being
+returned to shell.icn</p>
+<!-- INDENTATION -->
+<p>At present, the parser for scripts is &quot;built
+into&quot; shell.icn. Specification of external parsing
+tasks has not yet been implemented. Thus, there is not yet
+an opportunity to use scripts with alternative grammars or
+in formats such as XML.</p>
+</td>
+</table>
+<a name="AUTHOR"></a>
+<h2>AUTHOR</h2>
+<!-- INDENTATION -->
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<p>Art Eschenlauer</p>
+<!-- INDENTATION -->
+<p><b>shell.icn</b> is in the public domain. The freedom of
+its content is protected by the Lesser GNU public license,
+version 2.1, February 1999,</p>
+<!-- INDENTATION -->
+<pre>  http://www.gnu.org/licenses/lgpl.html
+</pre>
+<!-- INDENTATION -->
+<p>which means you are granted permission to use this in any
+way that does not limit others&rsquo; freedom to use it.</p>
+</td>
+</table>
+<hr>
+</body>
+</html>

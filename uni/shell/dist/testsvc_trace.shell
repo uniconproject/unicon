@@ -1,0 +1,17 @@
+# testsvc_trace.shell
+
+# declare tasks
+OUTPUT  := s_file   -t -          w
+CLIENT  := client   -t PROD       SERVICE OUTPUT
+SERVICE := service  -t my_reverse
+PROD    := producer -t CLIENT
+# activate producer
+@ PROD
+
+# declare tasks
+OUTPUT  := s_file   -t -       w
+CLIENT  := client   -t PROD    SERVICE OUTPUT
+SERVICE := service  -t my_map  " "     "_"
+PROD    := producer -t CLIENT
+# activate producer
+@ PROD

@@ -1,0 +1,355 @@
+argc = 3
+argv[1] = "-t"
+argv[2] = "-i"
+argv[3] = "testsvc_trace.shell"
+line 1: '# testsvc_trace.shell'
+line 2: ''
+line 3: '# declare tasks'
+line 4: 'OUTPUT  := s_file   -t -          w'
+ task symbol: OUTPUT
+ task lvalue: OUTPUT
+ task creation for task: OUTPUT
+ Literal (an executable): s_file
+ Literal (an argument): -t
+ Literal (an argument): -
+ Literal (an argument): w
+ end of task creation (load the task)
+line 5: 'CLIENT  := client   -t PROD       SERVICE OUTPUT'
+ task symbol: CLIENT
+ task lvalue: CLIENT
+ task creation for task: CLIENT
+ Literal (an executable): client
+ Literal (an argument): -t
+ Literal (an argument): PROD
+ Literal (an argument): SERVICE
+ task reference (an argument): OUTPUT
+ end of task creation (load the task)
+line 6: 'SERVICE := service  -t my_reverse'
+ task symbol: SERVICE
+ task lvalue: SERVICE
+ task creation for task: SERVICE
+ Literal (an executable): service
+ Literal (an argument): -t
+ Literal (an argument): my_reverse
+ end of task creation (load the task)
+line 7: 'PROD    := producer -t CLIENT'
+ task symbol: PROD
+ task lvalue: PROD
+ task creation for task: PROD
+ Literal (an executable): producer
+ Literal (an argument): -t
+ task reference (an argument): CLIENT
+ end of task creation (load the task)
+line 8: '# activate producer'
+line 9: '@  PROD'
+ task activation
+ task about to be activated: PROD
+ convert task_record references to co-expressions 
+ ...convert_tasks: task_key=PROD, coexp=co-expression_1(0), monitor=co-expression_3(0)
+ ...convert_tasks: task_key=CLIENT, coexp=co-expression_1(0), monitor=co-expression_4(0)
+ ...convert_tasks: task_key=OUTPUT, coexp=co-expression_1(0), monitor=co-expression_5(0)
+ ...convert_tasks: task_key=SERVICE, coexp=co-expression_1(0), monitor=co-expression_6(0)
+ ...shell: about to activate no trace symbol defined
+ OOO monitor_task: first activation of 1-PROD by PROD_monitor
+ ... coactrace: PROD is transmitting: "1st value transmitted by coexp that monitors 1-PROD"
+ ______ (1) producer.icn: instantiating StreamC
+ ______ (1) producer.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-CLIENT_monitor - &source is 1-PROD (co-expression_1(0))
+ OOO monitor_task: first activation of 2-CLIENT by CLIENT_monitor
+ ... coactrace: CLIENT is transmitting: "1st value transmitted by coexp that monitors 2-CLIENT"
+ ______ (2) client.icn: instantiating StreamC
+ ______ (2) client.icn: StreamC constructor: mode r
+ ______ (2) client.icn: instantiating StreamC
+ ______ (2) client.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-SERVICE_monitor - &source is 2-CLIENT (co-expression_1(0))
+ OOO monitor_task: first activation of 4-SERVICE by SERVICE_monitor
+ ... coactrace: SERVICE is transmitting: "1st value transmitted by coexp that monitors 4-SERVICE"
+ ______ service.icn: about to activate or cofail source
+ ... coactrace: SERVICE received: &null
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value &null
+ ... coactrace: SERVICE is transmitting: &null
+ ______ (2) client.icn: instantiating StreamC
+ ______ (2) client.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-OUTPUT_monitor - &source is 2-CLIENT (co-expression_1(0))
+ OOO monitor_task: first activation of 3-OUTPUT by OUTPUT_monitor
+ ... coactrace: OUTPUT is transmitting: "1st value transmitted by coexp that monitors 3-OUTPUT"
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received: &null
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value &null
+ ... coactrace: OUTPUT is transmitting: &null
+ ... coactrace:  ______ (2) client.icn is transmitting: "I am the client."
+ ... coactrace: OUTPUT received result 1: "I am the client."
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "I am the client."
+ ... coactrace: OUTPUT is transmitting: "I am the client."
+ ______ s_file.icn: about to invoke callback
+I am the client.
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn is transmitting: "I am the producer."
+ ... coactrace: CLIENT received result 1: "I am the producer."
+ ... monitor_task: 2-CLIENT's monitoring co-expression was resumed and received value "I am the producer."
+ ... coactrace: CLIENT is transmitting: "I am the producer."
+ ______ (2) client.icn: StreamC.Get produced "I am the producer."
+ ... coactrace: SERVICE received result 1: "I am the producer."
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "I am the producer."
+ ... coactrace: SERVICE is transmitting: "I am the producer."
+ ______ service.icn: about to invoke callback
+ ______ service.icn: about to activate or cofail source
+ ... coactrace: SERVICE received result 1: ".recudorp eht ma I"
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value ".recudorp eht ma I"
+ ... coactrace: SERVICE is transmitting: ".recudorp eht ma I"
+ ______ (2) client.icn: StreamC.Get produced ".recudorp eht ma I"
+ ... coactrace:  ______ (2) client.icn is transmitting: ".recudorp eht ma I"
+ ... coactrace: OUTPUT received result 1: ".recudorp eht ma I"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value ".recudorp eht ma I"
+ ... coactrace: OUTPUT is transmitting: ".recudorp eht ma I"
+ ______ s_file.icn: about to invoke callback
+.recudorp eht ma I
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn received: &null
+ ______ (1) producer.icn: StreamC.Put first activation produced &null
+ ... coactrace:  ______ (1) producer.icn is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: CLIENT received result 1: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... monitor_task: 2-CLIENT's monitoring co-expression was resumed and received value "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: CLIENT is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ______ (2) client.icn: StreamC.Get produced "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: SERVICE received result 1: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: SERVICE is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ______ service.icn: about to invoke callback
+ ______ service.icn: about to activate or cofail source
+ ... coactrace: SERVICE received result 1: "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ... coactrace: SERVICE is transmitting: "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ______ (2) client.icn: StreamC.Get produced "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ... coactrace:  ______ (2) client.icn is transmitting: "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ... coactrace: OUTPUT received result 1: "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ... coactrace: OUTPUT is transmitting: "?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW"
+ ______ s_file.icn: about to invoke callback
+?gnidnatsrednU dna ,evoL ,ecaeP tuoB' ynnuF oS s'tahW
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn received: &null
+ ______ (1) producer.icn: StreamC.Put first activation produced &null
+ ______ (1) producer.icn: _____ StreamC.Close cofailing stream opened for w
+ ... cofailtrace: CLIENT (to next_task) about to suspend and cofail
+ ______ (2) client.icn: _____ StreamC.Get failed
+ ... coactrace:  ______ (2) client.icn is transmitting: "client: no more input."
+ ... coactrace: OUTPUT received result 1: "client: no more input."
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "client: no more input."
+ ... coactrace: OUTPUT is transmitting: "client: no more input."
+ ______ s_file.icn: about to invoke callback
+client: no more input.
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ XXX monitor_task: 3-OUTPUT's monitoring co-expression 1-OUTPUT_monitor cofailed by own task
+ ... cofailtrace: OUTPUT (to last_task) about to suspend and cofail
+ XXX cofailtrace [ OUTPUT (to last_task) ]: 1-OUTPUT_monitor received failure from 3-OUTPUT
+ ... cofailtrace: OUTPUT (to monitor) about to suspend and cofail
+ activation for task PROD failed
+ completed activation of 1-PROD_monitor
+ end of task activation
+line 10: ''
+line 11: '# declare tasks'
+line 12: 'OUTPUT  := s_file   -t -       w'
+ task symbol: OUTPUT
+ task lvalue: OUTPUT
+ task creation for task: OUTPUT
+reset StreamC_activated table
+ Literal (an executable): s_file
+ Literal (an argument): -t
+ Literal (an argument): -
+ Literal (an argument): w
+ end of task creation (load the task)
+line 13: 'CLIENT  := client   -t PROD    SERVICE OUTPUT'
+ task symbol: CLIENT
+ task lvalue: CLIENT
+ task creation for task: CLIENT
+ Literal (an executable): client
+ Literal (an argument): -t
+ task reference (an argument): PROD
+ task reference (an argument): SERVICE
+ task reference (an argument): OUTPUT
+ end of task creation (load the task)
+line 14: 'SERVICE := service  -t my_map  " "     "_"'
+ task symbol: SERVICE
+ task lvalue: SERVICE
+ task creation for task: SERVICE
+ Literal (an executable): service
+ Literal (an argument): -t
+ Literal (an argument): my_map
+ Literal (an argument):  
+ Literal (an argument): _
+ end of task creation (load the task)
+line 15: 'PROD    := producer -t CLIENT'
+ task symbol: PROD
+ task lvalue: PROD
+ task creation for task: PROD
+ Literal (an executable): producer
+ Literal (an argument): -t
+ task reference (an argument): CLIENT
+ end of task creation (load the task)
+line 16: '# activate producer'
+line 17: '@  PROD'
+ task activation
+ task about to be activated: PROD
+ convert task_record references to co-expressions 
+ ...convert_tasks: task_key=PROD, coexp=co-expression_1(0), monitor=co-expression_7(0)
+ ...convert_tasks: task_key=CLIENT, coexp=co-expression_1(0), monitor=co-expression_8(0)
+ ...convert_tasks: task_key=OUTPUT, coexp=co-expression_1(0), monitor=co-expression_9(0)
+ ...convert_tasks: task_key=SERVICE, coexp=co-expression_1(0), monitor=co-expression_10(0)
+ ...shell: about to activate no trace symbol defined
+ OOO monitor_task: first activation of 1-PROD by PROD_monitor
+ ... coactrace: PROD is transmitting: "1st value transmitted by coexp that monitors 1-PROD"
+ ______ (1) producer.icn: instantiating StreamC
+ ______ (1) producer.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-CLIENT_monitor - &source is 1-PROD (co-expression_1(0))
+ OOO monitor_task: first activation of 2-CLIENT by CLIENT_monitor
+ ... coactrace: CLIENT is transmitting: "1st value transmitted by coexp that monitors 2-CLIENT"
+ ______ (2) client.icn: instantiating StreamC
+ ______ (2) client.icn: StreamC constructor: mode r
+ ______ (2) client.icn: instantiating StreamC
+ ______ (2) client.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-SERVICE_monitor - &source is 2-CLIENT (co-expression_1(0))
+ OOO monitor_task: first activation of 4-SERVICE by SERVICE_monitor
+ ... coactrace: SERVICE is transmitting: "1st value transmitted by coexp that monitors 4-SERVICE"
+ ______ service.icn: about to activate or cofail source
+ ... coactrace: SERVICE received: &null
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value &null
+ ... coactrace: SERVICE is transmitting: &null
+ ______ (2) client.icn: instantiating StreamC
+ ______ (2) client.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-OUTPUT_monitor - &source is 2-CLIENT (co-expression_1(0))
+ OOO monitor_task: first activation of 3-OUTPUT by OUTPUT_monitor
+ ... coactrace: OUTPUT is transmitting: "1st value transmitted by coexp that monitors 3-OUTPUT"
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received: &null
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value &null
+ ... coactrace: OUTPUT is transmitting: &null
+ ... coactrace:  ______ (2) client.icn is transmitting: "I am the client."
+ ... coactrace: OUTPUT received result 1: "I am the client."
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "I am the client."
+ ... coactrace: OUTPUT is transmitting: "I am the client."
+ ______ s_file.icn: about to invoke callback
+I am the client.
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn is transmitting: "I am the producer."
+ ... coactrace: CLIENT received result 1: "I am the producer."
+ ... monitor_task: 2-CLIENT's monitoring co-expression was resumed and received value "I am the producer."
+ ... coactrace: CLIENT is transmitting: "I am the producer."
+ ______ (2) client.icn: StreamC.Get produced "I am the producer."
+ ... coactrace: SERVICE received result 1: "I am the producer."
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "I am the producer."
+ ... coactrace: SERVICE is transmitting: "I am the producer."
+ ______ service.icn: about to invoke callback
+ ______ service.icn: about to activate or cofail source
+ ... coactrace: SERVICE received result 1: "I_am_the_producer."
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "I_am_the_producer."
+ ... coactrace: SERVICE is transmitting: "I_am_the_producer."
+ ______ (2) client.icn: StreamC.Get produced "I_am_the_producer."
+ ... coactrace:  ______ (2) client.icn is transmitting: "I_am_the_producer."
+ ... coactrace: OUTPUT received result 1: "I_am_the_producer."
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "I_am_the_producer."
+ ... coactrace: OUTPUT is transmitting: "I_am_the_producer."
+ ______ s_file.icn: about to invoke callback
+I_am_the_producer.
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn received: &null
+ ______ (1) producer.icn: StreamC.Put first activation produced &null
+ ... coactrace:  ______ (1) producer.icn is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: CLIENT received result 1: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... monitor_task: 2-CLIENT's monitoring co-expression was resumed and received value "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: CLIENT is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ______ (2) client.icn: StreamC.Get produced "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: SERVICE received result 1: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: SERVICE is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ______ service.icn: about to invoke callback
+ ______ service.icn: about to activate or cofail source
+ ... coactrace: SERVICE received result 1: "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ... monitor_task: 4-SERVICE's monitoring co-expression was resumed and received value "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ... coactrace: SERVICE is transmitting: "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ______ (2) client.icn: StreamC.Get produced "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ... coactrace:  ______ (2) client.icn is transmitting: "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ... coactrace: OUTPUT received result 1: "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ... coactrace: OUTPUT is transmitting: "What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?"
+ ______ s_file.icn: about to invoke callback
+What's_So_Funny_'Bout_Peace,_Love,_and_Understanding?
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn received: &null
+ ______ (1) producer.icn: StreamC.Put first activation produced &null
+ ______ (1) producer.icn: _____ StreamC.Close cofailing stream opened for w
+ ... cofailtrace: CLIENT (to next_task) about to suspend and cofail
+ ______ (2) client.icn: _____ StreamC.Get failed
+ ... coactrace:  ______ (2) client.icn is transmitting: "client: no more input."
+ ... coactrace: OUTPUT received result 1: "client: no more input."
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "client: no more input."
+ ... coactrace: OUTPUT is transmitting: "client: no more input."
+ ______ s_file.icn: about to invoke callback
+client: no more input.
+ ______ s_file.icn: about to activate or cofail source
+ ... coactrace: OUTPUT received result 1: "ready for input"
+ ... monitor_task: 3-OUTPUT's monitoring co-expression was resumed and received value "ready for input"
+ ... coactrace: OUTPUT is transmitting: "ready for input"
+ ... coactrace:  ______ (2) client.icn received result 1: "ready for input"
+ ______ (2) client.icn: StreamC.Put first activation produced "ready for input"
+ XXX monitor_task: 3-OUTPUT's monitoring co-expression 1-OUTPUT_monitor cofailed by own task
+ ... cofailtrace: OUTPUT (to last_task) about to suspend and cofail
+ XXX cofailtrace [ OUTPUT (to last_task) ]: 1-OUTPUT_monitor received failure from 3-OUTPUT
+ ... cofailtrace: OUTPUT (to monitor) about to suspend and cofail
+ activation for task PROD failed
+ completed activation of 1-PROD_monitor
+ end of task activation
+size of StreamC_activated is 8

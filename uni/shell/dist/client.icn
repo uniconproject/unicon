@@ -1,0 +1,41 @@
+# client.icn
+#   Model a client as a producer relative to the service (i.e.,
+#     open the service Stream with a filemode of "w") so that 
+#     the client will not write a value that cannot be read 
+#     by the service and the client will not be attempting 
+#     to read data that the service has not yet written.
+#   Note that either Get or Put can be used with a service
+#     Stream opened with a "w" filemode.  Get is more convenient
+#     for obtaining a single result produced by a service,
+#     whereas Put is easier for processing a list of data values,
+#     because it produces the list of results produced by the service.
+link Stream
+global StreamC_trace # use string for tracing, &null for no tracing
+procedure main( argv )
+  local S_in, S_out, S_service, data_in, data_service
+  local usage
+  usage := "usage: client [-t] <infile> <service> <outfile>"
+  # &trace := -1
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "client.icn"
+    pop( argv )
+  }
+  S_in := Stream(argv[1],"r") |
+    stop( usage )
+  S_service := Stream(argv[2],"w") |
+    stop( usage )
+  S_out := Stream(argv[3],"w") |
+    stop( usage )
+  S_out.Put( "I am the client.")
+  while ( data_in := &null, data_in :=  S_in.Get( ) ) do {
+    if 
+      data_service := S_service.Get( \data_in ) 
+    then
+      S_out.Put( data_service )
+  }
+  S_out.Put( "client: no more input." )
+end
+
+#vim :set syntax=icon ai ts=2 sw=2:

@@ -1,0 +1,131 @@
+##########################################################################
+#
+# File:     ush.icn
+#
+# Subject:  Command line interpreter program for Unicon shell (shell.icn)
+#
+# Author:   Arthur C. Eschenlauer
+#
+# Date:     September 25, 2007
+#
+# Version:  0.2
+#
+##########################################################################
+#
+#   This file is in the public domain.
+#   The freedom of its content is protected by the Lesser GNU public
+#     license, version 2.1, February 1999,
+#     http://www.gnu.org/licenses/lgpl.html
+#   which means you are granted permission to use this in any way that 
+#   does not limit others' freedom to use it.
+#
+##########################################################################
+# links: Stream, scan
+##########################################################################
+# This file is a very rudimentary command line interpreter interface
+# for the Unicon shell, shell.icn.  
+# It demonstrates a "preprocessor" program that can be invoked with the -p 
+# option of shell.icn.
+# Note that the first argument for a preprocessor must be -o and that
+# the second must be a consumer task.
+##########################################################################
+link Stream
+link scan
+
+# ushpath is a list of paths to search for input files
+# friend: shell.icn - variable is manipulated by shell.icn
+# friend: Stream.icn - variable is used by Stream.icn
+global ushpath
+
+procedure main( argv )
+  local S_in, S_out, S_result, S_src, inp, outp, result_list, line, getline, ws, quoted
+  local usage, arg_ushpath, shell_arglist
+  ws := ' \t'
+  usage := "usage: ush [ [ -s ushpath ]{0:N} out_co-expresion result_list ]{0:1} [infile]{0:N}"
+  if "list" == type( argv[2] )
+  then
+    argv[3] | put( argv, "-" )
+  else {
+    while 
+      "string" == type(argv[1]) & "-s" == argv[1]
+    do {
+      # write( &errout, "argv[2]: ", image(argv[2]) )
+      pop( argv )
+      ( arg_ushpath := pop( argv ), "string" == type( arg_ushpath ) ) |
+        stop( usage || "\nush: error extracting ushpath"  )
+      # write( &errout, "tentative ushpath: ", image( arg_ushpath ) )
+    }
+    # every write( &errout, "arg: ", ! argv )
+    # push an empty result list to our argv
+    result_list := [ ]
+    push( argv, result_list )
+    shell_arglist := [ "-i", &current, "-r", result_list ]
+    # if arg_ushpath is not null, put "-s" and then put arg_ushpath
+    put( shell_arglist, "-s", \arg_ushpath )
+    # every write( &errout, "shell_arg: ", image(!shell_arglist) )
+    push( argv, load( "shell", shell_arglist ) ) | 
+      stop( "ush: load shell failed" )
+    argv[3] | put( argv, "-" )
+  }
+
+  # open the consumer of input-script strings
+  outp := pop( argv )
+  type( outp ) == "co-expression" | 
+    stop( "ush: error - type of outp is " || type( outp ) )
+  S_out := Stream( outp, "w" ) | 
+    stop( usage || "\nush: error opening S_out" )
+
+  ushpath := variable( "ushpath", outp )
+
+  # Note that ush.icn does not (yet) do anything else
+  #   with the next argument once the Stream has been opened.
+  result_list := pop( argv ) | stop( "failed to get result list" )
+  S_result := Stream( result_list, "r" ) | 
+    stop( usage || "\nush: error opening S_result; image of arg is " || image( result_list ) )
+  
+  while inp := pop( argv ) do {
+    S_in  := Stream(inp,"r") | stop( usage || "\nush: error opening S_in" )
+    S_in.Data( ) === &input & writes( "ush: ")
+    # prepend a space so the "tab(many(ws))" 
+    #   will always succeed at the beginning of a line
+    # append " EOL" to line because "s ? balq( ws )" fails if s has no spaces
+    while line := S_in.Get( ) do {
+      \ushpath | stop( "ush: fatal error - ushpath is not set" )
+      # every write( &errout, "ushpath: ", !ushpath )
+      " " || line || " EOL" ? 
+        if
+          (
+            ( tab(many(ws)) 
+            , ="."
+            , tab(many(ws))
+            , quoted := tab( balq( ws ) )
+            , quoted := ( quoted[1:2] == quoted[-1:0] == "\"", quoted[2:0] ) | 
+                        quoted
+            )\1
+          , S_src := Stream( !ushpath || quoted, "r" )\1 | 
+              stop( "ush: could not load task '" || quoted || "'" )
+          )
+        then
+          while getline :=  S_src.Get( ) do {
+            # write( &errout, "getline: ", getline )
+            S_out.Put( getline ) | stop( "ush: shell exited" )
+          }
+        else if
+          ( tab(many(ws)) | 1
+          , ="exit"
+          )
+        then {
+          S_out.Put( "_HALT_" )
+          stop( )
+        }
+        else {
+          # write( &errout, "line: ", getline )
+          S_out.Put( line ) | stop( "ush: shell exited" )
+        }
+      S_in.Data( ) === &input & writes( "ush: ")
+    }
+  }
+  S_out.Put( "_HALT_" )
+  exit( 0 )
+end
+# vim: :set syntax=icon ai ts=2 sw=2 expandtab :

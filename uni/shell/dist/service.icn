@@ -1,0 +1,74 @@
+# service.icn
+#   Model a service as a consumer relative to the client because 
+#     the service should not be permitted to miss the first value transmitted
+#     by the client, i.e., the client should open a Stream for the service
+#     using the filemode "w".
+#   Note that the first required argument must supply the name of 
+#     one of the provided functions. 
+
+link Stream
+
+global StreamC_trace # use string for tracing, &null for no tracing
+global logstream     # optional stream for logging
+
+invocable all        # do not discard any procedure names when linking
+                     #   this is necessary for string invocation
+
+procedure main( argv )
+  local routine, source
+
+  source := &source # save the first source
+  
+  # enable tracing if applicable (if so, must be argv[1])
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "service.icn"
+    pop( argv )
+  }
+  
+  # enable logging if applicable (if so, the -o logstream 
+  #   argument must appear after tracing and 
+  #   before the string naming function to be executed)
+  if
+    ( type(argv[1]) == "string", argv[1] == "-o" )
+  then {
+    pop( argv )
+    logstream := Stream( pop( argv ), "w" ) | 
+      stop( "service.icn: could not open log Stream" )
+  }
+  
+  # get the callback routine
+  if
+    type( argv[1] ) == "string"
+  then
+    routine := argv[1]
+  else
+    stop( "service.icn: fatal error - argv[1] is " || image(argv[1]) )
+  
+  # start the service (never returns)
+  service( routine, argv[2:0] | &null, source )
+  
+  # next line never is reached
+  stop( "FATAL ERROR: ... service stops" )
+end
+
+procedure my_map( s, m )
+  if
+    ( \logstream, type(m) == "list", type(m[1]) == type(m[2]) == "string" )
+  then
+    logstream.Put( "service: my_map("||image(s)||
+                   "," || ( m[1] || "" ) ||
+                   "," || ( m[2] || "" ) ||
+                   ")"
+                 )
+  /m := [ ]
+  return map ! ( [ s ] ||| m )
+end
+
+procedure my_reverse( s )
+  (\logstream).Put( "service: my_reverse("||image(s)||")" )
+  return reverse( s )
+end
+
+#vim :set syntax=icon ai ts=2 sw=2:

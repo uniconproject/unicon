@@ -1,0 +1,28 @@
+# t_cat.icn - concatenate one or more input Streams to the output Stream
+link Stream
+global StreamC_trace
+
+procedure main( argv )
+  local S_in, S_out, inp, outp
+  local usage
+  usage := "usage: t_cat [-t] <infile>{1:N} <outfile>"
+
+  # handle tracing option
+  if ( type(argv[1]) == "string", argv[1] == "-t" )
+  then { StreamC_trace := "t_cat.icn" ; pop( argv ) }
+  
+  # pull the output task or file off the end of the arg list
+  outp := pull( argv )
+  0 == *argv & stop( usage )
+  S_out := Stream( outp, "w" ) | 
+    stop( "could not open output " || image(outp) || "\n" || usage )
+    
+  # send each input task or file (left to right) to output
+  while inp := pop( argv ) do {
+    S_in  := Stream(inp,"r") | 
+      stop( "could not open input " || image(inp) || "\n" || usage )
+    while S_out.Put( S_in.Get( ) )
+  }
+  S_out.Close( )
+end
+# vim :set syntax=icon ai ts=2 sw=2:

@@ -1,0 +1,35 @@
+# queue_put.icn
+link Stream
+global StreamC_trace
+procedure main( argv )
+  local S_list, usage
+  usage := "usage: queue_put <list>"
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "queue_put.icn"
+    pop( argv )
+  }
+
+  ( S_list := Stream( argv[1] )
+  , S_list.Type( ) == "list"
+  ) | stop( usage || "\nlist open failed" )
+
+  write( "I am queue_put.icn" )
+
+  if
+    S_list.Select( )
+  then
+    stop( "queue_put: global list is not empty" )
+
+  S_list.Put( "First string-value transmitted"
+            , "Second string-value transmitted" ) |
+    stop( "queue_put: S_list.Put failed" )
+
+  if
+    not S_list.Select( )
+  then
+    stop( "queue_put: global list is empty" )
+
+end
+# vim :set syntax=icon ai ts=2 sw=2:

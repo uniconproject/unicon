@@ -1,0 +1,83 @@
+argc = 3
+argv[1] = "-t"
+argv[2] = "-i"
+argv[3] = "test_trace.shell"
+line 1: '# test_trace.shell'
+line 2: ''
+line 3: '# declare tasks'
+line 4: 'CONS   := consumer -t PROD -'
+ task symbol: CONS
+ task lvalue: CONS
+ task creation for task: CONS
+ Literal (an executable): consumer
+ Literal (an argument): -t
+ Literal (an argument): PROD
+ Literal (an argument): -
+ end of task creation (load the task)
+line 5: 'PROD   := producer -t CONS'
+ task symbol: PROD
+ task lvalue: PROD
+ task creation for task: PROD
+ Literal (an executable): producer
+ Literal (an argument): -t
+ task reference (an argument): CONS
+ end of task creation (load the task)
+line 6: '@  PROD '
+ task activation
+ task about to be activated: PROD
+ convert task_record references to co-expressions 
+ ...convert_tasks: task_key=PROD, coexp=co-expression_1(0), monitor=co-expression_3(0)
+ ...convert_tasks: task_key=CONS, coexp=co-expression_1(0), monitor=co-expression_4(0)
+ ...shell: about to activate no trace symbol defined
+ OOO monitor_task: first activation of 1-PROD by PROD_monitor
+ ... coactrace: PROD is transmitting: "1st value transmitted by coexp that monitors 1-PROD"
+ ______ (1) producer.icn: instantiating StreamC
+ ______ (1) producer.icn: StreamC constructor: mode w activating p_coexp 
+ ... monitor_task: 1-CONS_monitor - &source is 1-PROD (co-expression_1(0))
+ OOO monitor_task: first activation of 2-CONS by CONS_monitor
+ ... coactrace: CONS is transmitting: "1st value transmitted by coexp that monitors 2-CONS"
+ ______ (2) consumer.icn: instantiating StreamC
+ ______ (2) consumer.icn: StreamC constructor: mode r
+I am the consumer.
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn is transmitting: "I am the producer."
+ ... coactrace: CONS received result 1: "I am the producer."
+ ... monitor_task: 2-CONS's monitoring co-expression was resumed and received value "I am the producer."
+ ... coactrace: CONS is transmitting: "I am the producer."
+ ______ (2) consumer.icn: StreamC.Get produced "I am the producer."
+"I am the producer."
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn received: &null
+ ______ (1) producer.icn: StreamC.Put first activation produced &null
+ ... coactrace:  ______ (1) producer.icn is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: CONS received result 1: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... monitor_task: 2-CONS's monitoring co-expression was resumed and received value "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: CONS is transmitting: "What's So Funny 'Bout Peace, Love, and Understanding?"
+ ______ (2) consumer.icn: StreamC.Get produced "What's So Funny 'Bout Peace, Love, and Understanding?"
+"What's So Funny 'Bout Peace, Love, and Understanding?"
+ ... coactrace: PROD received: &null
+ ... monitor_task: 1-PROD's monitoring co-expression was resumed and received value &null
+ ... coactrace: PROD is transmitting: &null
+ ... coactrace:  ______ (1) producer.icn received: &null
+ ______ (1) producer.icn: StreamC.Put first activation produced &null
+ ______ (1) producer.icn: _____ StreamC.Close cofailing stream opened for w
+ ... cofailtrace: CONS (to next_task) about to suspend and cofail
+ ______ (2) consumer.icn: _____ StreamC.Get failed
+Consumer: no more input.
+ ______ (2) consumer.icn: _____ StreamC.Close cofailing stream opened for r
+ XXX cofailtrace [ CONS (to next_task) ]: 1-CONS_monitor received failure from 1-PROD
+ ... cofailtrace: CONS (to last_task) about to suspend and cofail
+producer got resumed
+ ... cofailtrace: PROD (to next_task) about to suspend and cofail
+ XXX cofailtrace [ PROD (to next_task) ]: 1-PROD_monitor received failure from 2-CONS
+ ... cofailtrace: PROD (to last_task) about to suspend and cofail
+ XXX cofailtrace [ CONS (to last_task) ]: 1-CONS_monitor received failure from 1-PROD
+ ... cofailtrace: CONS (to monitor) about to suspend and cofail
+ activation for task PROD failed
+ completed activation of 1-PROD_monitor
+ end of task activation
+size of StreamC_activated is 4

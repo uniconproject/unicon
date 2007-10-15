@@ -1,0 +1,109 @@
+# make test      compares output of test programs against expected output
+
+BN=../../bin
+
+# first target is default - build core programs
+default : test
+
+
+# perform all tests
+test : test_pipeline testsvc test_s_file test_queue test_super test_subst test_trace testsvc_trace test_ush
+	:
+	:
+	: All tests passed!
+	:
+	:
+
+test_pipeline :
+	:
+	: begin test_pipeline
+	:
+	shell -s dist -i test.shell > test.output
+	diff test.output dist/test.comparison > test.diff
+	:
+	: PASSED test_pipeline
+	:
+
+test_trace :
+	:
+	: begin test_trace
+	:
+	shell -s dist -t -i test_trace.shell > test_trace.output
+	diff test_trace.output dist/test_trace.comparison > test_trace.diff
+	:
+	: PASSED test_trace
+	:
+
+testsvc :
+	:
+	: begin testsvc
+	:
+	shell -s dist -i testsvc.shell > testsvc.output
+	diff testsvc.output dist/testsvc.comparison > testsvc.diff
+	:
+	: PASSED testsvc
+	:
+
+testsvc_trace :
+	:
+	: begin testsvc_trace
+	:
+	shell -s dist -t -i testsvc_trace.shell > testsvc_trace.output
+	diff testsvc_trace.output dist/testsvc_trace.comparison > testsvc_trace.diff
+	:
+	: PASSED testsvc_trace
+	:
+
+test_s_file :
+	:
+	: begin test_s_file
+	:
+	rm -f test_s_file.out
+	shell -s dist -i test_s_file.shell > test_s_file.output
+	cat test_s_file.out >> test_s_file.output
+	diff test_s_file.output dist/test_s_file.comparison > test_s_file.diff
+	:
+	: PASSED test_s_file
+	:
+
+test_queue :
+	:
+	: begin test_queue
+	:
+	shell -s dist -i test_queue.shell > test_queue.output
+	diff test_queue.output dist/test_queue.comparison > test_queue.diff
+	:
+	: PASSED test_queue
+	:
+
+test_super :
+	:
+	: begin test_super
+	:
+	shell -s dist -i super.shell -s $(BN) > super.output
+	diff super.output dist/super.comparison > super.diff
+	:
+	: PASSED test_super
+	:
+
+test_subst :
+	:
+	: begin test_subst
+	:
+	shell -s dist -i super_subst.shell -s $(BN) > super_subst.output
+	diff super_subst.output dist/super_subst.comparison > super_subst.diff
+	:
+	: PASSED test_subst
+	:
+
+test_ush : 
+	:
+	: begin test_ush
+	:
+	{ echo . test.shell ; echo exit ; } | { shell -s dist -s $(BN) -p ush - > ush.output ; }
+	shell -s dist -s $(BN) -p ush test_queue.ush >> ush.output
+	diff ush.output dist/ush.comparison > ush.diff
+	:
+	: PASSED test_ush
+	:
+

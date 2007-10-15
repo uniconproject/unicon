@@ -1,0 +1,242 @@
+.TH SHELL.ICN 1 "25 September 2007" "version 0.9"
+.CO \" Manual page for shell.icn(1)
+.SH NAME
+\fBshell.icn\fR \- Launch tasks that collaborate via co-expression 
+switching.
+.SH SYNOPSIS
+.B shell
+[ options ] [ arguments ]
+.SH DESCRIPTION
+.B shell.icn
+is a proof-of-concept implementation of a shell that facilitates 
+composition of new solutions from Unicon tasks.  
+A solution may be an assembly of tasks into a simple linear pipeline
+or into a more complicated network.
+These tasks are previously translated Unicon programs 
+that the shell loads into its own virtual machine (and process) via 
+the \fILoad(\ )\fR function as originally described in [Jeffery 1997].
+.P
+.B shell.icn
+can execute a "script" that defines a new solution 
+without invoking the Unicon translator; it
+can read a script from a file or the standard input.  
+To prevent occurrence of "infinite loops of failure",
+.B shell.icn
+sets up one "proxy" co-expression per task to monitor the execution 
+of the task's co-expression and to intervene if necessary.
+.P
+Compatible tasks are ordinary Unicon programs in every way except 
+that they may use the \fIGet( )\fR and \fIPut( )\fR methods from the
+.B Stream.icn( 3 )
+interface to transfer control of execution to other tasks in the solution
+and to ensure that producer tasks will transmit the same result sequences 
+to the consumer tasks regardless of whether the producer or the consumer 
+is activated first.
+.P
+For an extended introduction to 
+.B shell.icn
+and ideas about how to apply it, please see [Eschenlauer, 2006].
+.P
+.SH OPTIONS
+The following options are recognized by 
+\fBshell.icn\fR:
+.P
+.TP 4
+\fB\-i\fR \fIscript\fR
+Read script from file \fIscript\fR instead of the standard input.  
+You may wish to use ".shell" as the extension of script file names.
+.TP 4
+\fB\-p\fR \fIprog\fR 
+(Option \-p overrides option \-i)
+Invoke \fIprog\fR as preprocessor, passing arguments to it;
+\fIprog\fR will be invoked with a task that is a recursive 
+instance of 
+.B shell.icn 
+as the first argument and a list
+for enqueueing results as the second argument; any
+arguments appearing afterward will be passed through
+to prog as arguments 3:0 (see 
+.B ush.icn( 1 )
+ for an example)
+.TP 4
+\fB\-r\fR \fIlist\fR
+Use list specified by \fIlist\fR for a result list instead of 
+creating a new one; this option cannot be used from the command 
+line because the argument must be of type list rather than type 
+string.  
+.TP 4
+\fB\-s\fR \fIpath\fR
+Search directory specified by \fIpath\fR for icode and script files.  
+This option may be repeated; alternatively, several directories may
+be specified by enclosing \fIpath\fR in double quotes and separating 
+directory names with spaces (as is done for IPATH and LPATH).  
+If a directory name contains a space, you must both enclose 
+\fIpath\fR in double quotes and enclose space-containing directory names
+in single quotes, (e.g., \-s "'/path to/one folder' ../another_folder" ).
+Directories specified with the \-s option are searched
+after the working directory and 
+before directories specified by the \fIUSHPATH\fR environment variable.
+.TP 4
+\fB\-t\fR \ \ \ \ \ 
+Trace co-expression activation, process setup, etc., by 
+.B shell.icn
+.SH "ENVIRONMENT VARIABLES"
+.TP 4
+.I USHPATH
+Space\-separated directory names searched after those specified 
+with the \-s option.  
+Enclose spaces in directory names in single quotes.
+\fIUSHPATH\fR must not contain double quotes.
+.P
+.SH SCRIPTS
+.P
+.SB Grammar of Scripts
+.P
+The parser built into 
+.B shell.icn
+expects the lines in shell 
+files to conform to the following grammar:
+.P
+.nf 
+
+input_file_line         ::= task_declaration | 
+                            list_symbol_declaration | 
+                            task_activation |
+                            comment
+
+task_declaration        ::= lvalue ":=" <program_name> arguments
+
+
+list_symbol_declaration ::= "list" lvalues
+
+task_activation         ::= "@" lvalues
+
+comment                 ::= "#" many(<&cset>)
+
+arguments               ::= arguments argument | argument | <nothing>
+
+argument                ::= lvalue | "$" many(<&digits>) | alphanum
+
+lvalues                 ::= lvalues lvalue | lvalue
+
+lvalue                  ::= alphanum
+
+alphanum                ::= many(<&letters> ++ <&digits>)
+
+many(c)                 ::= c many(c) | c
+
+.fi
+.P
+.SB Additional Script Rules
+.P
+Names of programs that are not in the current working directory must 
+include relative or absolute path information suitable for the 
+platform; the program name supplied is passed directly to the 
+load( ) function.
+.P
+List symbols must be declared before they are used.
+.P
+Task declarations may include forward references to other tasks.
+.P
+Task activations must be deferred until all referenced tasks
+have been declared. The convert_tasks( ) procedure loads the tasks, 
+wraps them with a monitoring co-expression (which is created by via
+the monitor_task( ) procedure), and activates them.
+.P
+Once a task has terminated, it must be redeclared before it can be 
+reactivated.  Once one task has been redeclared, all must be 
+redeclared before they are activated.  List symbols need not be 
+redeclared, however, but the lists that they represent
+are replaced with empty lists when convert_tasks( ) is executed.
+.P
+If desired, string\-valued arguments in scripts may be quoted in any
+way permitted by the balq(s) procedure (from the scan.icn file in
+the Icon Program Library), where balq(s) is invoked with a single
+argument.
+.P
+.SH EXAMPLES
+The following script loads a consumer task and a producer
+task and activates the producer first, then it repeats this excepting
+that it activates the consumer first.  Notice that arguments of the
+tasks invoked can be either co-expressions or strings.
+.P
+.nf
+    CONS   := consumer  PROD \-
+    PROD   := producer  CONS
+    @ PROD
+    CONS   := consumer  PROD \-
+    PROD   := producer  CONS
+    @ CONS
+.fi
+.P
+In this script, "consumer" and "producer" are the name of icode files,
+"CONS" and "PROD" are symbols for the tasks created when the respective
+icode files are loaded, and "\-" is a string.  The consumer task is
+loaded and invoked with two arguments, the producer task and the string
+"\-", and the producer task is loaded and invoked with one argument,
+the consumer task.
+.P
+Suppose shell.icn is translated and on your PATH, and that consumer.icn and
+producer.icn have been translated and the icode files are in
+.nf
+    c:\\My Documents\\shelltest
+.fi
+and that a script file named test.shell containing the script above
+is also in that directory.  Then you may either invoke the script with
+the command
+.nf
+    shell -s "'c:\\My Documents\\shelltest'" -i test.shell
+.fi
+or you may set USHPATH to
+.nf
+    'c:\\My Documents\\shelltest'
+.fi
+and invoke the script with the command
+.nf
+    shell -i test.shell
+.fi
+.P
+.SH PORTABILITY
+.B shell.icn 
+depends on 
+.B Stream.icn( 3 )
+which in turn depends on classes.
+Thus, shell.icn is compatible with Unicon but not Icon 
+since Icon does not support classes.
+shell.icn is not Idol-compatible because Stream.icn is not Idol-compatible.
+
+.SH SEE ALSO
+Eschenlauer, Arthur C., 2006. "A Unicon Shell",
+\fIThe Generator\fR, Vol. 2, No. 2, pp 3-32.
+.nf
+  http://www.unicon.org/generator/v2n2.pdf
+.fi
+.P
+Jeffery, Clinton L., 1997. 
+\fIThe MT Icon Interpreter.\fR 
+(Icon Project Document 169).
+.nf
+  http://www.cs.arizona.edu/icon/docs/ipd169.htm
+.fi
+.P
+.B Stream.icn( 3 )
+.P
+.SH BUGS AND LIMITATIONS
+.P
+Infinite loops in tasks will prevent control being returned to shell.icn
+.P
+At present, the parser for scripts is "built into" shell.icn.
+Specification of external parsing tasks has not yet been implemented.
+Thus, there is not yet an opportunity to use scripts with alternative 
+grammars or in formats such as XML.
+.SH AUTHOR
+Art Eschenlauer
+.P
+\fBshell.icn\fR is in the public domain.  
+The freedom of its content is protected by the Lesser GNU public license, version 2.1, February 1999,
+.nf
+  http://www.gnu.org/licenses/lgpl.html
+.fi
+which means you are granted permission to use this in any way that 
+does not limit others' freedom to use it.
+

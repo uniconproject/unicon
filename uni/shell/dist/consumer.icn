@@ -1,0 +1,24 @@
+# consumer.icn
+link Stream
+global StreamC_trace
+procedure main( argv )
+  local S_in, S_out
+  local usage
+  usage := "usage: consumer [-t] <infile> <outfile>"
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "consumer.icn"
+    pop( argv )
+  }
+  # assume that first argument is a producer or readable filename
+  S_in  := Stream(argv[1],"r") | stop( usage )
+  # assume that second argument is a consumer or writable filename
+  S_out := Stream(argv[2],"w") | stop( usage )
+  S_out.Put( "I am the consumer.")
+  while S_out.Put( "\"" || S_in.Get( ) || "\"" )
+  S_out.Put( "Consumer: no more input." )
+  S_in.Close( )
+  S_out.Close( )
+end
+# vim :set syntax=icon ai ts=2 sw=2:

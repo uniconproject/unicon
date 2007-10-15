@@ -1,0 +1,39 @@
+# open a file and produce the opened file or cofail
+link Stream
+global StreamC_trace
+procedure main( argv )
+  local f # file produced by open( )
+  local S_t # task stream created for service (first argument)
+  local S_f # file stream created for file (second argument)
+  local usage
+  local data
+  usage := "usage: s_file_consumer_test [-t] service filename filemode additional_arguments"
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "s_file_consumer_test.icn"
+    pop( argv )
+  }
+  \argv[3] | stop( "argv[3] is null\n" || usage )
+  type( argv[1] ) == "co-expression" |
+    stop( "type(argv[1]) is "||type( argv[1] )||"\n" || usage )
+  type( argv[2] ) == "co-expression" | "string" |
+    stop( "type(argv[2]) is "||type( argv[2] )||"\n" || usage )
+  type( argv[3] ) ==  "string" |
+    stop( "type(argv[3]) is "||type( argv[3] )||"\n" || usage )
+  if
+    find( "r", argv[3] )
+  then {
+    # always open services with filemode "w", even for reading
+    S_t := Stream( argv[1], "w" ) | stop( "bad argv[1]\n" || usage )
+    S_f := Stream ! argv[2:0] | stop( "bad argv[2:0]\n" || usage )
+    S_t.Put( S_f.Get( ) )
+  }
+  else {
+    S_t := Stream( argv[1], "w" ) | stop( "bad argv[1]\n" || usage )
+    S_f := Stream ! argv[2:0] | stop( "bad argv[2:0]\n" || usage )
+    if data := S_t.Get( ) then S_f.Put( data )
+  }
+  stop("s_file_consumer_test.icn stops" )
+end
+# vim :set syntax=icon ai ts=2 sw=2:

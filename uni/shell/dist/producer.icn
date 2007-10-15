@@ -1,0 +1,21 @@
+# producer.icn
+link Stream
+global StreamC_trace
+procedure main( argv )
+  local S
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "producer.icn"
+    pop( argv )
+  }
+  # assume that first argument is a consumer or writable filename
+  S := Stream(argv[1],"w") | stop("usage: producer <outfile>")
+  S.Put( "I am the producer." )
+  S.Put( "What's So Funny 'Bout Peace, Love, and Understanding?" )
+  S.Close( )\1
+  # S.Close( ) performs cofail( S.Coexp( ) )
+  #   for a coexpression Stream opened in "write" mode
+  write("producer got resumed")
+end
+# vim :set syntax=icon ai ts=2 sw=2:

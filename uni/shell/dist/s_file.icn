@@ -1,0 +1,52 @@
+# s_file.icn - service to read or write files
+link Stream
+global StreamC_trace
+global S_f # file stream created for first argument
+
+procedure main( argv )
+  local f # file produced by open( )
+  local usage, badargv
+  local source
+  source := &source
+  usage := "usage: s_file [-t] filename filemode <additional_arguments>"
+  badargv := "bad argv[1:0] - "
+  if
+    ( type(argv[1]) == "string", argv[1] == "-t" )
+  then {
+    StreamC_trace := "s_file.icn"
+    pop( argv )
+    badargv := "bad argv[2:0] - "
+  }
+  \argv[2] | stop( "filemode is null\n" || usage )
+  type( argv[1] ) == "co-expression" | "string" |
+    stop( "type(filename) is "||type( argv[1] )||"\n" || usage )
+  if
+    find( "r" | "w" | "a", argv[2] )
+  then { # same code whether filemode is read, write, or append
+    S_f := Stream ! argv[1:0] | stop( badargv || usage )
+    if
+      find( "r", argv[2] )
+    then
+      service( S_in_func, &null, source )
+    else
+      service( S_out_func, &null, source )
+  }
+  else {
+    stop( "bad filemode: " || argv[2] )
+  }
+end
+
+procedure S_in_func( )
+  return S_f.Get( )
+end
+
+procedure S_out_func( value )
+  if 
+    S_f.Put( value )
+  then
+    return "ready for input"
+  else
+    fail
+end
+
+# vim :set syntax=icon ai ts=2 sw=2:

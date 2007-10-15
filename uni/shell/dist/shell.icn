@@ -1,0 +1,986 @@
+############################################################################
+#
+# File:     shell.icn
+#
+# Subject:  Launch tasks that collaborate via co-expression switching.
+#
+# Author:   Arthur C. Eschenlauer
+#
+# Date:     September 25, 2007
+#
+# Version:  0.9
+#
+############################################################################
+#
+#   This file is in the public domain.
+#   The freedom of its content is protected by the Lesser GNU public
+#     license, version 2.1, February 1999,
+#     http://www.gnu.org/licenses/lgpl.html
+#   which means you are granted permission to use this in any way that 
+#   does not limit others' freedom to use it.
+#
+##########################################################################
+#
+# usage: shell [options] [arguments]
+#   option -t:      trace co-expression activation, process setup, etc.
+#   option -s path: search path for icode and shell files
+#   option -i file: take input from file instead of standard input
+#   option -p prog: invoke prog as preprocessor, passing arguments to it
+#                   prog will be invoked with a task that is a recursive 
+#                   instance of shell.icn as the first argument and a list
+#                   for enqueueing results as the second argument; any
+#                   arguments appearing afterward will be passed through
+#                   to prog as arguments 3:0 (see ush.icn for an example)
+#   (option -p overrides option -i)
+#
+# shell.icn facilitates construction of specialized processing systems that
+#   are defined as the integration a number tasks (translated Unicon
+#   programs).  The program can be used to define a simple linear pipeline
+#   of tasks or a more complicated network of tasks (but not cyclic net-
+#   works).  The multitask process definition is read from an input file.
+#
+# It loads the tasks (icode files) and sets up "proxy" co-expressions that
+#   monitor the execution of the tasks' co-expressions and intervene to
+#   prevent "infinite loops of failure".  Tasks co-operatively yield control
+#   by activating co-expressions and gain control, receiving results of the
+#   activation.  
+#
+# Although tasks may directly exchange results with other tasks, the 
+#   StreamC.Get and StreamC.Put methods defined in Stream.icn provide a 
+#   convenient interface that ensures that producers will transmit the same
+#   result sequences to the consumers regardless of whether the producer or
+#   the consumer is activated first.
+#
+# The following example input file loads a consumer task and a producer
+#   task and activates the producer first, then it repeats this excepting
+#   that it activates the consumer first.  Notice that arguments of the
+#   tasks invoked can be either co-expressions or strings.
+#
+#     CONS   := consumer  PROD -
+#     PROD   := producer  CONS
+#     @ PROD
+#     CONS   := consumer  PROD -
+#     PROD   := producer  CONS
+#     @ CONS
+#
+# In this example, "consumer" and "producer" are the name of icode files,
+#   "CONS" and "PROD" are symbols for the tasks created when the respective
+#   icode files are loaded, and "-" is a string.  The consumer task is
+#   loaded and invoked with two arguments, the producer task and the string
+#   "-", and the producer task is loaded and invoked with one argument,
+#   the consumer task.
+#
+# Grammar for input file lines:
+#
+#   input_file_line         ::= task_declaration | 
+#                               list_symbol_declaration | 
+#                               task_activation |
+#                               comment
+# 
+#   task_declaration        ::= lvalue ":=" <program_name> arguments
+#
+#   list_symbol_declaration ::= "list" lvalues
+#
+#   task_activation         ::= "@" lvalues
+#
+#   comment                 ::= "#" many(<&cset>)
+#
+#   arguments               ::= arguments argument | argument | <nothing>
+# 
+#   argument                ::= lvalue | "$" many(<&digits>) | alphanum
+#
+#   lvalues                 ::= lvalues lvalue | lvalue
+#
+#   lvalue                  ::= alphanum
+#   
+#   alphanum                ::= many(<&letters> ++ <&digits>)
+#
+#   many(c)                 ::= c many(c) | c
+#
+# The following further rules apply to scripts:
+# 
+#   Names of programs that are not in the current working directory must 
+#     include relative or absolute path information suitable for the 
+#     platform; the program name supplied is passed directly to the 
+#     load( ) function.
+#
+#   List symbols must be declared before they are used.
+#
+#   Task declarations may include forward references to other tasks.
+#
+#   Task activations must be deferred until all referenced tasks
+#     have been declared. The convert_tasks( ) procedure loads the tasks, 
+#     wraps them with a monitoring co-expression (which is created by via
+#     the monitor_task( ) procedure), and activates them.
+#
+#   Once a task has terminated, it must be redeclared before it can be 
+#     reactivated.  Once one task has been redeclared, all must be 
+#     redeclared before they are activated.  List symbols need not be 
+#     redeclared, however, but the lists that they represent
+#     are replaced with empty lists when convert_tasks( ) is executed.
+#
+#   If desired, string-valued arguments in scripts may be quoted in any
+#     way permitted by the balq(s) procedure (from the scan.icn file in
+#     the Icon Program Library), where balq(s) is invoked with a single
+#     argument.
+# 
+############################################################################
+#
+#  Links:  Stream, scan
+#
+############################################################################
+
+# link Stream to get implementation of Stream( )
+link Stream
+
+# link scan to get the implementation of balq( )
+link scan
+
+global state  # set by dispatcher (main()), cleared by tokenizer
+# constatnes defining each state
+$define S_NONE        1
+$define S_LIST_DECL   2
+$define S_CREATION    3
+$define S_ACTIVATION  4
+$define S_ARGUMENT    5
+$define USHPATH       "USHPATH"
+
+# other macros
+$define DEFAULT_TRACE_SYMBOL "no trace symbol defined"
+# onstruct task record with default values
+$define DEFAULT_TASK_RECORD (task( tok, &null, invalid_task, &null, &null ))
+
+# definition for records in the task table
+record task( symbol  # s: task's own key in task table
+           , coexp   # C: the task created to execute the program
+           , monitor # C: the co-expression created to monitor the program
+           , program # s: the name or path to an executable unicon program
+           , argv    # L: the list of arguments passed to the program
+           )
+
+global trace             # set to &null to suppress trace messages
+global arglist           # reference to the list of arguments received by main
+global line, lineno      # set by tokenizer, used in dispatcher for tracing
+global eol               # ibid
+global StreamC_act_shell # set to track activated co-expressions for StreamC
+global list_table        # key: list symbol
+                         # value: intertask-accessible lists
+global task_table        # key: task-symbols
+                         # value: task record
+global invalid_task      # a co-expression representing an invalid task
+global t_task_symbol     # table mapping tasks to task symbols
+global task_counter      # increment by one for each task created; start at 1
+global ushpath           # [ "", "./" ] ||| parsed -s option ||| 
+                         #    parsed USHPATH envar (shared with Stream)
+
+# main program - parser that consumes tokens and dispatches the tasks
+procedure main( argv )
+  local opt_tab     # table of options
+  local tok         # token extracted by token( )
+  local exec_name   # name of program's executable image, i.e., the task
+  local lvalue      # task-symbol for task being created
+  local tsk_cnvrtd  # not null if task args have been replaced with coexps
+  local input_files # where input is to be taken from
+  local token_file  # coexpression to facilitate invocation of token( )
+
+  # create invalid task to stop if it is activated inadvertantly
+  invalid_task := create stop("co-expression " || trace_task_symbol[&source] ||
+                              " attempted to activate an invalid task")
+  # initialize structures
+  list_table := table( )
+  task_table := table( )
+  StreamC_act_shell := set( [ ] )
+  # shell_options( ) defines the values for an options table from the arguments
+  /ushpath := [ "", "./" ]
+  opt_tab := shell_options( arglist := argv )
+
+  # state transition model for parsing stream of tokens (tok):
+  #
+  #--------------+---------------------+-----------------------------------+--------------+
+  # state        | constraint          | action                            | next_state   |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # (start)      |                     |                                   | S_NONE       |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # (any)        | tok=="_HALT_"       | stop( )                           | S_NONE       |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # S_NONE       | tok=="list"         |                                   | S_LIST_DECL  |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok==":=" & \lvalue |                                   | S_CREATION   |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok==":=" & /lvalue | stop("lvalue required")           | (stop)       |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok=="@"            |                                   | S_ACTIVATION |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok~=="@" | ":=" |  |                                   | S_NONE       |
+  #              |              "none" |                                   |              |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # S_LIST_DECL  | tok~=="_NEWLINE_"   | list_table[tok] := list           | S_LIST_DECL  |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok=="_NEWLINE_"    |                                   | S_NONE       |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # S_CREATION   | tok=="_NEWLINE_"    |                                   | S_NONE       |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok=="$"            |                                   | S_ARGUMENT   |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok~=="_NEWLINE_" | | put(task_table[lvalue].argv,tok)  | S_CREATION   |
+  #              |                 "$" |                                   |              |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # S_ACTIVATION | tok~=="_NEWLINE_"   | @task_table[tok].monitor          | S_ACTIVATION |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | tok=="_NEWLINE_"    |                                   | S_NONE       |
+  #--------------+---------------------+-----------------------------------+--------------+
+  # S_ARGUMENT   | integer(tok)        | put( task_table[lvalue].argv      | S_CREATION   |
+  #              |                     |    , arglist(integer(tok)) )      |              |
+  #              |---------------------|-----------------------------------|--------------|
+  #              | not integer(tok)    | stop("integer required")          | (stop)       |
+  #--------------+---------------------+-----------------------------------+--------------+
+
+  # define initial state
+  state := S_NONE
+
+  # fetch each token generated by token( ) and feed it to parsing logic
+  input_files := [ ]
+  if type(\opt_tab["i"]) == "string" 
+    then every put( input_files, !path_list( opt_tab["i"] ) )
+    else put( input_files, \opt_tab["i"] | "-" )
+
+  every
+    file := !input_files
+  do every 
+    tok := token( Stream( file, "r" ) )
+  do {
+    # (\trace)("token = "||tok) # uncomment to observe tokens in trace
+    case tok of {
+      ":=" : { # assign definition of task labeled to lvalue (task symbol)
+        /lvalue & stop( "LVALUE REQUIRED: ", line[2:-*eol] )
+        (\trace)( " task creation for task: "||lvalue )
+        state := S_CREATION
+        \task_table[lvalue] |
+          stop("assignment failed. No entry for "||lvalue||" in task table")
+        task_table[lvalue].monitor := invalid_task
+        if \tsk_cnvrtd then {
+          (\trace)("reset StreamC_activated table")
+          StreamC_act_shell := set( [ ] )
+        }
+        tsk_cnvrtd := &null
+        next
+      }
+      "list" : { # list _ <lvalues>
+        (\trace)( " list declaration" )
+        state := S_LIST_DECL
+        next
+      }
+      "@" : { # @ _ <lvalues>
+        (\trace)( " task activation" )
+        state := S_ACTIVATION
+        next
+      }
+      "$" : { # $ _ <digits>
+        (\trace)( " argument substitution" )
+        \lvalue | stop("argument substitution not permitted for lvalues")
+        state := S_ARGUMENT
+        next
+      }
+      "_HALT_" : { # _HALT_ _
+        (\trace)( " shell - normal termination with _HALT_" )
+        stop( )
+      }
+      "_NEWLINE_" : { # _NEWLINE_ _
+        case state of {
+          S_CREATION : {
+            (\trace)( " end of task creation (load the task)" )
+          }
+          S_ACTIVATION : {
+              (\trace)( " end of task activation" )
+          }
+          S_LIST_DECL : {
+            (\trace)( " end of list delcaration" )
+          }
+          S_NONE : {
+            # do nothing for empty lines
+          }
+          S_CREATION : {
+            stop( "SYNTAX ERROR: many(&digits) expected" || line[2:-*eol] )
+          }
+          default : {
+            stop( "SYNTAX ERROR: newline unexpected" || line[2:-*eol] )
+          }
+        }
+        lvalue := exec_name := &null
+        state := S_NONE
+        # note that tsk_cnvrtd is not reset here
+        next
+      }
+      default : { # tok
+        case \state of {
+          S_LIST_DECL : {
+            (\trace)( " list symbol: "||tok )
+            list_table[ tok ] := [ ]
+            next
+          }
+          S_NONE : {
+            (\trace)( " task symbol: "||tok )
+            # record task( symbol, coexp, monitor, program, argv )
+            task_table[ tok ] := DEFAULT_TASK_RECORD
+          }
+        }
+        if
+          \task_table[ tok ]
+        then
+          case state of {
+            S_ACTIVATION : { # state = S_ACTIVATION
+              \tok | stop("task name token is null")
+
+              \task_table[tok] |
+                stop("task table for token "|| tok ||" is null")
+
+              (\trace)( " task about to be activated: "||tok )
+
+              # convert task table only if necessary
+              /tsk_cnvrtd & {
+
+                (\trace)(" convert task_record references to co-expressions " )
+
+                task_counter := 1
+                convert_tasks( )
+                tsk_cnvrtd := 1
+              }
+
+              ( \task_table[tok].monitor
+              , task_table[tok].monitor ~=== invalid_task
+              ) | stop( "task record monitoring co-expression for token "||
+                        tok ||" is null or invalid")
+
+              (\trace)( " ...shell: about to activate " ||
+                        trace_task_symbol[task_table[ tok ].monitor] )
+
+              @ task_table[ tok ].monitor |
+                (\trace)( " activation for task " || tok || " failed")
+
+              (\trace)( " completed activation of " ||
+                        trace_task_symbol[task_table[ tok ].monitor] )
+              next
+            }
+          S_CREATION : { # state = S_CREATION
+              \tok | stop(" task name token is null")
+
+              \list_table[ tok ] & next
+
+              \task_table[tok] |
+                stop("task table for token "|| tok ||" is null")
+
+              (\trace)(" task reference (an argument): "||tok )
+
+              put( task_table[ lvalue ].argv, tok )
+
+              next
+            }
+          default : { # state ~= S_ACTIVATION | S_CREATION
+              \tok | stop("task name token is null")
+              \task_table[tok] | stop("task table for token "|| tok ||" is null")
+
+              (\trace)( " task lvalue: "||tok )
+
+              lvalue := tok
+              task_table[tok].argv := [ ]
+              next
+            }
+          } # end case
+        else if \state = S_ACTIVATION then {
+          stop("task activation for "||tok||" FAILED - no task_table entry")
+        } # end if
+
+        if
+          \state = ( S_ACTIVATION )
+        then {
+          stop("TASK REFERENCE REQUIRED: ",line[2:-*eol] )
+        }
+
+        if
+          /exec_name
+        then {
+          /lvalue  &
+            stop( "task " || tok || " has not been declared" )
+          /(task_table[ lvalue ]) &
+            stop( "LVALUE " || lvalue || " has not been declared" )
+          (\trace)(" Literal (an executable): "||tok )
+          exec_name := tok
+          task_table[ lvalue ].program := tok
+          next
+        }
+        else if
+          state = S_ARGUMENT
+        then {
+          \tok | stop(" argument token is null")
+
+          /list_table[ tok ] |
+            stop(" list symbol " || tok ||
+                 " encountered when argument number expected\n> " ||
+                 line[2:-*eol]
+                )
+
+          (\trace)(" shell arglist index: "||tok )
+
+          put( task_table[ lvalue ].argv
+             , arglist[
+                 ( integer(tok) |
+                     stop(" argument index " || tok || " is not an integer")
+                 )\1
+               ] | 
+               stop(" arglist[ " || tok || " ] '" || 
+                 arglist[integer(tok)] || "'does not exist")
+             )
+
+          state := S_CREATION
+          next
+        }
+        else if
+          state = S_CREATION
+        then {
+          (\trace)( " Literal (an argument): "||tok )
+          put( task_table[ lvalue ].argv, tok )
+          next
+        }
+        else {
+          stop( "SYNTAX ERROR: not \\task_table[ tok ] & not /exec_name & " ||
+                "not state = (S_CREATION | S_ARGUMENT)\n" || line[2:-*eol] )
+        } # end if
+      }
+    }
+  }
+  (\trace)( ( /StreamC_act_shell, "StreamC_activated is null" ) |
+           "size of StreamC_activated is "||*StreamC_act_shell )
+  exit( 0 )
+end
+
+# put directory onto path only if it is not there yet
+procedure put_ushpath( s )
+  if not ( s == !ushpath )
+    then put( ushpath, s )
+end
+
+# options extracter - different from options( ) routine 
+#   in the Icon Program Library
+procedure shell_options( argv )
+  local topt, argc, i, arg, result_list
+  topt := table( )
+  while ( \argv[1] )
+    do case argv[1] of {
+      "--help" : {
+          write(
+            "Usage: shell [-i C|f|L|s] [-p C|f|L|s] [-r L] [-s s] [-t] [arguments]\n",
+            "Launch tasks that collaborate via co-expression switching,\n",
+            "  where options are:\n",
+            "    -i read input script from C, f, L, or s instead of &input\n",
+            "    -p get input via preprocessor C, f, L, or s instead of &input\n",
+            "    -r use supplied result list instead of creating a new list\n",
+            "    -s search path for scripts and tasks\n",
+            "      (for directory paths with spaces, enclose in single quotes)\n",
+            "      (for multiple directory paths, specify multiple -s options\n",
+            "        or separate with spaces and enclose in double quotes)\n",
+            "    -t trace co-expression activation, process setup, etc.\n",
+            "For more help, see:\n",
+            "  man page shell.icn.1\n",
+            "  file     shell.icn.1.html\n",
+            "  URL      http://www.unicon.org/generator/v2n2.pdf\n"
+          )
+          exit(0)
+        }
+      "-i" : { # handle input script option
+          pop( argv )
+          topt["i"] := pop( argv ) | stop( "bad argument for option '-i'" )
+        }
+      "-p" : { # handle preprocessor program option
+          /( list_table[ "_LIST_" ] ) := [ ]
+          pop( argv )
+          # record task( symbol, coexp, monitor, program, argv )
+          task_table["_SHELL_"]  := task( "_SHELL_"
+                                        , &null
+                                        , invalid_task
+                                        , &progname
+                                        , [ "-i", "_SCRIPT_", "_LIST_" ] 
+                                        )
+          task_table["_SCRIPT_"] := task( "_SCRIPT_"
+                                        , &null
+                                        , invalid_task
+                                        , arglist[1]
+                                        , [ "_SHELL_", "_LIST_" ] |||
+                                          arglist[2:0] 
+                                        )
+          arglist := argv := [ ]
+          topt["i"] := [ "@ _SHELL_" ]
+        }
+      "-r" : { # handle result-list specification option
+          pop( argv )
+          result_list := pop( argv ) | stop( "bad option -r: argument missing" )
+          "list" == type( result_list ) | stop( "bad option -r: argument should be list but is of type " || image(r) )
+          list_table[ "_LIST_" ] := result_list
+        }
+      "-s" : { # shell search path option
+          pop( argv )
+          # write( &errout, "shell: -s argument: ", argv[1] )
+          every put_ushpath( !path_list( pop( argv )\1 ) || "/" )
+          # every put( topt["s"], !path_list( pop( argv )\1 ) || "/" )
+        }
+      "-t" : { # handle trace option
+          /trace := write
+          argc := * argv
+          trace( "argc = " || argc )
+          every trace("argv["||(i := 1 to argc) ||"] = "||image(argv[i]))
+          pop( argv )
+        }
+      default : 
+        break # once options end, the arguments follow
+    }
+  every put_ushpath( !path_list( getenv( USHPATH ) ) || "/" )
+  # every write( &errout, image( !ushpath ) )
+  return topt
+end
+# "tokenizer" - does some lexical analysis and preliminary parsing
+procedure token( S_in )
+  local quoted, got_null
+  static ws
+  initial {
+    ws := ' \t'
+    eol := " EOL"
+  }
+
+  lineno := 0
+  # get a line
+  # prepend a space so the "while tab( many( ws ) )" 
+  #   will always succeed at the beginning of a line
+  # append " EOL" to line because "s ? balq( ws )" fails if s has no spaces
+  while
+    line := S_in.Get( )
+  do {
+    lineno +:= 1
+    # preprocessing begins here
+    # skip empty lines (where S_in.Get( ) produced &null or "")
+    if
+      /line
+    then { # a maximum of one null line is permitted
+      if
+        /got_null
+      then {
+        got_null := 1
+        next
+      }
+      stop( "more than one null value read from input script" )
+    }
+    line := " " || line || eol
+    #   be sure that there is a space after an @ at the beginning of the line
+    line ? if
+             tab( many( ws ) ) & ="@"
+           then
+             line := " @ " || tab(0)
+    # trace progress
+    (\trace)( "line "||lineno||": '"||line[2:-*eol]||"'" )
+    # skip lines having nothing but whitespace
+    line ? ( tab( many( ws ) ), tab( match( "EOL") ), pos(0), next )
+    # tokenize the line
+    line ? {
+      while
+        tab( many( ws ) ) # whitespace separates tokens
+      do {
+        if
+          ="#"
+        then { # discard comments
+          tab(0)
+          break
+        }
+        else if
+          =";"
+        then {
+          suspend "_NEWLINE_"
+          next
+        }
+        else if
+          pos(-3) & ="EOL"
+        then
+          break
+        else { # use balq so quoted strings become a single token
+          quoted := tab( balq( ws ) )\1 # process token
+          if           # strip quotes if need be
+            quoted[1:2] == quoted[-1:0] == "\""
+          then
+            suspend quoted[2:-1]
+          else if      # handle substitutable parameters if need be
+            quoted[1] == "$"
+          then {
+            suspend "$"
+            if
+              0 < * quoted[2:0]
+            then
+              suspend quoted[2:0]
+          }
+          else         # produce token without modification
+            suspend quoted
+        }
+      }
+      suspend "_NEWLINE_"
+    }
+  }
+  S_in.Close( )
+end
+# convert task references; wrap each task with monitoring task
+procedure convert_tasks( )
+  local task_record # a record from task_table
+  local task_key    # a key to task_table
+  local task_argv   # a list stored at task.argv
+  local task_argidx # an index in task_argv
+  t_task_symbol := table("TASK_SYMBOL_UNDIFINED")
+  t_task_symbol[ &main ] := "SHELL_MAIN"
+  every task_key := key( task_table ) do {
+    task_record := task_table[task_key] 
+    \task_record | stop("no task record exists for key: " || task_key)
+    if task_record.monitor ~=== invalid_task then {
+      (\trace)("task "||task_key||" may still be active")
+      next
+    }
+    \task_record.argv    | stop("task_table[ " || task_key || " ].argv IS NULL")
+    if /task_record.program 
+      then write(&errout, "warning - task_table[ " || task_key || " ].program IS NULL")
+      else {
+        task_record.coexp := 
+          load( !ushpath || task_record.program, task_record.argv ) | 
+            {
+              write( &progname || ": Could not find task " || 
+                     task_record.program || " on path" )
+              every write( "  " || !ushpath )
+              stop( )
+            }
+        task_record.monitor := monitor_task( task_record.coexp, task_key ) |
+          stop( "convert_tasks: could not create monitoring co-expression " ||
+                "for task " || task_key )
+        (\trace)(" ...convert_tasks: task_key=" || task_key ||
+                 ", coexp=" || image(task_record.coexp) ||
+                 ", monitor=" || image(task_record.monitor)
+                )
+        t_task_symbol[task_record.monitor] := task_key || "_monitor"
+        t_task_symbol[task_record.coexp]   := task_key
+      }
+  }
+  every task_key := key( task_table ) do {
+    task_record := task_table[task_key];
+    task_argv := task_record.argv
+    every task_argidx := 1 to 0 < * task_argv do {
+      task_argv[task_argidx] :=
+        (\task_table[ task_argv[task_argidx] ]).monitor |
+        (\list_table[ task_argv[task_argidx] ])
+    }
+  }
+  return &null
+end
+
+# path list extractor
+procedure path_list( s )
+  local pathList, dir
+  pathList := [ ]
+  if s[1:2] == s[-1:0] == ( "\"" )
+    then s := s[2:-1]
+  s ? repeat {
+        tab(many(' '))
+        if pos(0) then
+           break
+        put(pathList, 
+          {
+            dir := &null
+            ="'" || (dir := tab( upto('\'') | break ) ) || move(1) | 
+              (dir := tab(upto(' '))) ||move(1) | 
+              (dir := tab(0)) | 
+              break
+            \dir
+          }
+        )
+      }
+  return pathList
+end
+
+# Procedure monitor_task produces a monitoring co-expression to avoid
+#   "infinite loops of failure".
+#
+# To avoid "infinite failure" scenarios, shell.icn invokes each
+#   task via a separate co-expression that the monitor_task procedure
+#   creates.  This co-expression refuses to resume a task that has 
+#   "cofailed to it" (i.e., the task either (1) explicitly transmitted 
+#   failure to the monitoring co-expression using the cofail( ) function
+#   or (2) implicitly failed by either (a) by falling off the end of the 
+#   main( ) procedure, or (b) by executing fail in the main( ) procedure,
+#   or (c) by invoking the stop( ) function in any procedure 
+#   or co-expression).
+# 
+# The specific logic implemented by the co-expression that the 
+# monitor_task procedure creates is as follows:
+# 
+# (1) The monitoring co-expression repeatedly transmits values to
+# other tasks the values that were transmitted to it.  
+#
+# (2) (a) USUALLY the task to which the monitoring co-expression transmits 
+#         a value is the monitored task.
+#     (b) However, if the monitoring co-expression transmits a value
+#         to the monitored task and the monitored task either transmits a
+#         value back to (or cofails back to) &current (the task's &source),
+#         then the monitoring co-expression should transmit the value  
+#         received back to (or cofail back to) the task that formerly 
+#         activated it before it transmitted a value to the monitored task.
+#         If there are no such previous activations, or if the monitoring
+#         co-expression was activated by &main, then iteration should stop.
+#
+# Thus:
+#
+# If the monitoring co-expression receives a value (or failure) from a task
+#   other than the monitored task, it pushes a reference to the transmitting 
+#   task to a stack and transmits the value (or failure) to the monitored task.
+#
+# If the monitoring co-expression receives a value (or failure) from the 
+#   monitored task, and if it cannot pop a reference to a task from the stack,
+#   it ceases cofails to &main; otherwise it transmits the value (or failure)
+#   to the task referenced by the value popped from the stack.
+
+procedure monitor_task( task, task_key )
+  # these variables all must be local to persist their values in co-expression
+  local next_rslt      # next result produced, initially &null
+  local last_rslt      # last result produced, initially &null
+  local monitor        # co-expression that invoked monitor_task, probably &main
+  local task_symbol    # symbol for monitored task co-expression
+  local task_id        # task ID for monitored task co-expression
+  local monitor_symbol # symbol for monitoring co-expression
+                       # (key to t_task_symbol is a co-expression-reference)
+  local next_task      # next task to activate
+  local last_task      # last task activated that was not the monitored task
+  local failed         # true if last activation failed to produce a result
+  local source_stack   # stack of previously active sources
+  source_stack := [ ]
+  monitor := &current
+  /task     & write("monitor_task: null task argument") & fail
+  /task_key & stop("monitor_task: null task_key argument")
+
+  # friends share the activation table 
+  variable( "StreamC_activated", task ) := StreamC_act_shell
+  # friends share the task/script/file search path
+  variable( "ushpath", task ) := ushpath
+
+  # set the task ID in the child task if need be
+  task_id :=
+      ( \trace_task_id || "." | "" ) ||
+      1( string(task_counter), task_counter +:= 1 ) |
+      stop("could not set variable trace_task_id")
+  /variable( "trace_task_id", task ) := task_id
+
+  # initialize trace-symbols table if need be
+  if
+    /trace_task_symbol := table( DEFAULT_TRACE_SYMBOL )
+  then
+    trace_task_symbol[ &current ] := ( \trace_task_id | 1 ) || "-SHELL_MAIN"
+
+  # set the trace-symbols table in the child task if need be
+  /variable( "trace_task_symbol", task ) := trace_task_symbol
+
+  # sanity warning if tracing is enabled
+  if
+    ( \trace, monitor ~=== &main )
+  then
+    (\trace)( " ... monitor_task: monitor ~=== &main (is that what you wanted?)" )
+
+  # create the monitoring co-expression
+  return create {
+    insert( StreamC_act_shell, task )
+    task_symbol := t_task_symbol[task]
+    insert( StreamC_act_shell, &current )
+    monitor_symbol := t_task_symbol[&current]
+    trace_task_symbol[ &current ] := ( \trace_task_id | 1 ) || "-" || monitor_symbol
+    trace_task_symbol[ task ] := task_id || "-" || task_symbol
+
+    # if tracing is enabled, then enable it for the tasks as well
+    if
+      \trace
+    then {
+      if
+        not variable( "trace", task )
+      then
+        (\trace)(" global variable 'trace' not declared for task " || trace_task_symbol[task] )
+      else if
+        not ( /variable( "trace", task ) := write )
+      then
+        (\trace)(" global variable 'trace' already has value assigned for task " || trace_task_symbol[task] )
+    }
+
+    if
+      &source ~=== &main
+    then {
+      push( source_stack, last_task := &source )
+      (\trace)( " ... monitor_task: "|| trace_task_symbol[ &current ] || " - &source is "||
+                trace_task_symbol[&source] ||  " (" || image(&source) || ")" )
+    }
+
+    (\trace)( " OOO monitor_task: first activation of " || trace_task_symbol[task] ||
+              " by " || monitor_symbol)
+
+    # set up for first activation of the monitored task
+    next_task := task
+    last_rslt := "1st value transmitted by coexp that monitors " || trace_task_symbol[task]
+
+    repeat {
+      # The monitoring co-expression transmits to other tasks
+      #    those values that were transmitted to it.  
+
+      # 1. Trace results if applicable.
+      if
+        \trace
+      then {
+        next_rslt :=
+          
+          if
+            /failed # failed is not null when activation failed
+          then { # did not fail
+            # preceding activation/resumption did not fail
+            coactrace( last_rslt, next_task, task_symbol )\1 |
+              ( failed := 1 )
+          }
+          else { # did fail
+            # reset failed flag
+            failed := &null
+            # preceding activation/resumption failed
+            cofailtrace( next_task, task_symbol || " (to next_task)" )\1 | 
+              break
+          }
+        if
+          \failed 
+        then { # did fail
+          ( &source === task , \trace )
+            ( " ... monitor_task: " || trace_task_symbol[task] ||
+              "'s monitoring co-expression " || trace_task_symbol[ &current ] ||
+                  " was resumed by cofailure from its own task"
+            )
+          ( &source ~=== task , \trace )
+            (
+              " XXX monitor_task: " || trace_task_symbol[task] ||
+              "'s monitoring co-expression " || trace_task_symbol[ &current ] ||
+              " was resumed by cofailure from a task other than its own " ||
+              trace_task_symbol[&source] || " (and thus received no value)"
+            )
+        }
+        else { # did not fail
+          (\trace)( " ... monitor_task: " || trace_task_symbol[task] ||
+                    "'s monitoring co-expression was resumed and received value " ||
+                    image(next_rslt)
+                  )
+        }
+      }
+      else {
+        next_rslt :=
+          if
+            /failed
+          then { # did not fail
+            # preceding activation/resumption did not fail
+            (last_rslt @ next_task)\1 | ( failed := 1 )
+          }
+          else { # did fail
+            # reset failed flag
+            failed := &null
+            # preceding activation/resumption failed
+            cofail( next_task )\1 | 
+            break 
+          }
+      }
+
+      # 2. Handle the special case where main is failing to itself.
+      #    This happened when shell.icn was invoking shell.icn
+      if
+        ( \failed, &source === &main )
+      then
+        break
+
+      # 3. Test for each of the following cases in the following order: 
+      #   * another task succeeded and produced a value
+      #   * own task succeeded and produced a value
+      #   * another task cofailed
+      #   * own task cofailed
+      # where the task tested is &source
+      if
+        /failed
+      then { # did not fail
+        if
+          ( &source ~=== task )
+        then {
+          # If the monitoring co-expression receives a value from a task
+          # other than the monitored task, it continues iterating, transmiting 
+          # that value to the monitored task.
+          last_rslt := next_rslt
+          next_task := task
+          push( source_stack, last_task := &source )
+          next
+        }
+        else { # therefore &source === task
+          # If the monitoring co-expression receives a value from the 
+          # monitored task, it transmits that value
+          # to the last task that activated it before it activated 
+          # the monitored task and received a value from that task.
+          last_rslt := next_rslt
+          next_task := last_task
+          last_task := pop( source_stack ) | break
+          next
+        }
+      }
+      else { # did fail
+        if
+          ( &source ~=== task )
+        then {
+          # If the monitoring co-expression receives failure from a task
+          # other than the monitored task, it continues iterating, transmiting 
+          # failure to the monitored task.
+          last_rslt := &null
+          next_task := task
+          push( source_stack, last_task := &source )
+          next
+        }
+        else { # therefore &source === task
+          # If the monitoring co-expression receives failure from the 
+          # monitored task, and if it cannot transmit failure to 
+          # the last task that activated it before it activated the monitored
+          # task and received failure from that task, it ceases iterating.
+          last_rslt := &null
+          next_task := task
+          last_task := pop( source_stack ) | break
+          next
+        }
+      }
+    } # end of while loop
+
+    if
+      ( \trace, \failed )
+    then {
+      if
+        &source ~=== task
+      then {
+        (\trace)( " XXX monitor_task: " || trace_task_symbol[task] ||
+                  "'s monitoring co-expression " || trace_task_symbol[ &current ] ||
+                  " cofailed by a task other than its own" )
+      }
+      else {
+        (\trace)( " XXX monitor_task: " || trace_task_symbol[task] ||
+                  "'s monitoring co-expression " || trace_task_symbol[ &current ] ||
+                  " cofailed by own task" )
+      }
+    }
+
+    # at this point, monitored task should have failed
+    if
+      \trace
+    then {
+      cofailtrace( \last_task, task_symbol || " (to last_task)" )\1 |
+        cofailtrace( monitor, task_symbol || " (to monitor)" )\1 
+    }
+    else  {
+      cofail( \last_task )\1 |
+        cofail( monitor )\1
+    }
+
+    # prevent reactivation of this co-expression without re-converting task table
+    (/task_table[ task_key ]).monitor := invalid_task
+    # the following expression is needed so that compound expression will fail -
+    #   any expression such as "1 = 0"  will work as an alternative to "&fail"
+    &fail
+  } # end of compound expression created by create
+end
+# vim: :set filetype=icon syntax=icon ai ts=2 sw=2 expandtab :

@@ -1,0 +1,160 @@
+.TH USH.ICN 1 "25 September 2007" "version 0.2"
+.CO \" Manual page for ush.icn(1)
+.SH NAME
+\fBush.icn\fR \- Preprocessor for \fBshell.icn( 1 )\fR.
+.SH SYNOPSIS
+.TP 4
+Invoked from the command line:
+.B ush
+[-s ushpath]{0:N} [infile]{0:N}
+.TP 4
+Invoked from \fBshell.icn( 1 )\fR:
+.B ush
+[out_co-expresion]{1:1} [result_list]{1:1} [infile]{0:N}
+.P
+.SH DESCRIPTION
+.B ush.icn
+is an example implementation of a preprocessor for 
+.I ad hoc 
+invocation of \fBshell.icn( 1 )\fR functionality "on the fly".
+It is very incomplete.
+.P
+At this time,
+.B ush.icn
+supports only two functionalities:
+.P
+.TP 4
+*
+Type lines one at a time for input into shell.icn instead of 
+reading them from a file.  This is not significantly different
+from invoking shell.icn without a -i or -p argument.
+.TP 4
+*
+"Sourcing a file as a shell.icn input script", i.e., reading
+a shell.icn input script from a file and 
+sending it to an instance of shell.icn.
+.P
+.SH OPTIONS
+.SS Command Line Invocation
+Zero or more input files may be specified at the end of the command
+line.  A dash may be supplied in lieu of a file name to indicate that 
+input should be taken from the standard input.
+If none are specified, \fBush.icn\fR reads from the standard input.
+.P 
+The following switch may preceed the input files when  
+\fBush.icn\fR is invoked:
+.P
+.TP 4
+\fB\-s\fR \fIpath\fR
+Search directory specified by \fIpath\fR for icode and script files.  
+This option may be repeated; alternatively, several directories may
+be specified by enclosing \fIpath\fR in double quotes and separating 
+directory names with spaces (as is done for IPATH and LPATH).  
+If a directory name contains a space, you must both enclose 
+\fIpath\fR in double quotes and enclose space-containing directory names
+in single quotes, (e.g., \-s "'/path to/one folder' ../another_folder" ).
+Directories specified with the \-s option are searched
+after the working directory and 
+before directories specified by the \fIUSHPATH\fR environment variable.
+.SS Invocation from Shell.icn( 1 ):
+When invoked from \fBShell.icn( 1 )\fR, the first argument to
+\fBush.icn\fR must be a co-expression (i.e., the instance of
+\fBShell.icn( 1 )\fR) and the second argument must be a list.
+If no third argument is specified, input is taken from the standard input
+.SH "ENVIRONMENT VARIABLES"
+.TP 4
+.I USHPATH
+Space\-separated directory names searched after those specified 
+with the \-s option.  
+Enclose spaces in directory names in single quotes.
+\fIUSHPATH\fR must not contain double quotes.
+.P
+.SH EXAMPLES
+Suppose that test.shell and translated versions of consumer.icn and producer.icn are in 
+.nf 
+  ./dist
+.fi
+and suppose that \fBush.icn\fR is invoked either directly with
+.nf
+  ush -s dist
+.fi
+or indirectly with
+.nf
+  shell -s dist -p ush
+.fi
+The input lines
+.nf
+  . test.shell
+  CONS   := consumer PROD -
+  PROD   := producer CONS
+  @ PROD
+.fi
+invoke \fBshell.icn( 1 )\fR first with test.shell as the input script and then
+with the next lines as a second script.
+.P
+Execution of the above input using \fBush.icn\fR 
+should produce the same results as as 
+executing the following input using \fBbash( 1 )\fR
+.nf
+  { cat test.shell ; cat << END
+  CONS   := consumer PROD -
+  PROD   := producer CONS
+  @ PROD
+  END
+  } | shell
+.fi
+except 
+.TP 4
+*
+you don't need bash
+.TP 4
+*
+you can decide whether you want to type the remaining lines 
+after you have seen the output that test.shell produces.
+.SH PORTABILITY
+.B ush.icn 
+depends on 
+.B shell.icn( 1 )
+which depends on 
+.B Stream.icn( 3 )
+which in turn depends on classes.
+Thus, ush.icn is compatible with Unicon but not Icon 
+since Icon does not support classes.
+ush.icn is not Idol-compatible because Stream.icn and shell.icn not Idol-compatible.
+
+.SH SEE ALSO
+Eschenlauer, Arthur C., 2006. "A Unicon Shell",
+\fIThe Generator\fR, Vol. 2, No. 2, pp 3-32.
+.nf
+  http://www.unicon.org/generator/v2n2.pdf
+.fi
+.P
+Jeffery, Clinton L., 1997. 
+\fIThe MT Icon Interpreter.\fR 
+(Icon Project Document 169).
+.nf
+  http://www.cs.arizona.edu/icon/docs/ipd169.htm
+.fi
+.P
+\fBStream.icn( 3 )\fR, \fBshell.icn( 1 )\fR
+.P
+.SH BUGS AND LIMITATIONS
+.P
+Infinite loops in tasks will prevent control being returned to ush.icn
+.P
+If shell.icn aborts, ush.icn aborts instead of attempting to restart shell.icn.
+.P
+At present, the parser for scripts is an integral part of shell.icn. 
+Thus, there is no way to specify alternative script syntax 
+for lines typed into ush.icn.
+.SH AUTHOR
+Art Eschenlauer
+.P
+\fBush.icn\fR is in the public domain.  
+The freedom of its content is protected by the Lesser GNU public license, version 2.1, February 1999,
+.nf
+  http://www.gnu.org/licenses/lgpl.html
+.fi
+which means you are granted permission to use this in any way that 
+does not limit others' freedom to use it.
+

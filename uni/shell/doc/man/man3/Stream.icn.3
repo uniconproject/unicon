@@ -1,0 +1,184 @@
+.CO \" Manual page for Stream.icn(3)
+.TH STREAM.ICN 3 "25 September 2007" "version 0.9"
+.SH NAME
+\fBStream\fR--Constructor for sequential access class wrappers for co-expressions, files, and lists
+.SH SYNOPSIS
+.nf
+  # construct subclass of Stream_Abstract
+  procedure \fBStream( device, mode, other[ ] )\fR
+
+  # base class for StreamC, Streamf, StreamL
+  class Stream_Abstract
+    method \fIClose\fR( )          # &fail
+    method \fIData\fR( )           # &fail
+    method \fIFlush\fR( )          # &fail
+    method \fIGet\fR( )            # &fail
+    method \fIPull\fR( )           # &fail
+    method \fIPush\fR( )           # &fail
+    method \fIPut\fR( )            # &fail
+    method \fISelect\fR( )         # &fail
+    method \fIType\fR( )           # &fail
+
+  # sequential access class for co-expression
+  class StreamC : Stream_Abstract
+    method \fIClose\fR( )          # null?
+    method \fIData\fR( )           # co-expression
+    method \fIFlush\fR( )          # null
+    method \fIGet\fR( value )      # any
+    method \fIPut\fR( values[ ] )  # list?
+    method \fISelect\fR( )         # null?
+    method \fIType\fR( )           # string
+
+  # sequential access class for file
+  class Streamf : Stream_Abstract
+    method \fIClose\fR( )          # file|integer|null?
+    method \fIData\fR( )           # file|null
+    method \fIFlush\fR( )          # file?
+    method \fIGet\fR( )            # string?
+    method \fIPut\fR( values[ ] )  # list?
+    method \fISelect\fR( timeout ) # null?
+    method \fIType\fR( )           # string
+
+  # sequential access class for list
+  class StreamL : Stream_Abstract
+    method \fIClose\fR( )          # null
+    method \fIData\fR( )           # list
+    method \fIFlush\fR( )          # null
+    method \fIGet\fR( )            # any?
+    method \fIPull\fR( )           # any?
+    method \fIPush\fR( values[ ] ) # list?
+    method \fIPut\fR( values[ ] )  # list?
+    method \fISelect\fR( )         # integer?
+    method \fIType\fR( )           # string
+.fi
+.SH DESCRIPTION
+For an extended introduction to 
+.B Stream.icn
+and ideas about how to apply it, please see [Eschenlauer, 2006].
+
+.SS Constructor (Factory)
+The \fBStream( )\fR procedure constructs instances of the
+\fIStreamC\fR, \fIStreamf\fR, and \fIStreamL\fR
+classes to provide a common interface to exchange data with co\-expressions, files, and lists, respectively.
+.P
+The "returns" section below explains how the arguments determine the class of the object produced.
+.SS Interface
+The \fIStreamC\fR, \fIStreamf\fR, and \fIStreamL\fR classes all implement 
+the following methods:
+.TP 7
+.I Close
+Closes f, cofails C, or replaces L with an empty list.
+.TP 7
+.I Data
+Produces the list, file, or co-expression managed by \fIStreamC\fR, \fIStreamf\fR, and \fIStreamL\fR.
+.TP 7
+.I Flush
+Produces result of flush(f), or &null.
+.TP 7
+.I Get
+Produces a value; can transmit a value to C
+.TP 7
+.I Pull
+Produces a value (for \fIStreamL\fR only)
+.TP 7
+.I Push
+Produces a list as long as number of args (for \fIStreamL\fR only)
+.TP 7
+.I Put
+Produces a list as long as number of args
+.TP 7
+.I Select
+Produces &null if Get may produce a value
+.TP 7
+.I Type
+Produces "list" | "file" | "co-expression"
+.SS Activation of Producers and Consumers
+When a producer coexpression uses 
+.I StreamC 
+object to transmit values to a 
+consumer coexpression that receives them using another
+.I StreamC
+object, the values 
+transmitted will be the same regardless of whether the producer or
+the consumer was activated first.
+
+.SH RETURNS
+The class produced by the constructor function Stream( ) 
+depends on the arguments supplied:
+
+.TP 19
+.B Stream(C,"r"|"w") 
+produces an instance of 
+.I StreamC 
+encapsulating co-expression 
+\fIC\fR.
+.br
+Note that under \fBshell.icn( 1 )\fR:
+.br 
+\- A producer task should use the "w" filemode when creating a 
+.I StreamC 
+instance to manage communication with a consumer task.
+.br 
+\- A consumer task should use the "r" filemode to when creating a 
+.I StreamC 
+instance to communicate with a producer task.
+.br 
+\- A client task should use the "w" filemode when creating a 
+.I StreamC
+instance to manage communication with a service task.
+
+.TP 19
+.B Stream(f) 
+produces an instance of 
+.I Streamf 
+encapsulating file 
+.I f 
+.TP 19
+.B Stream(s,args[ ]) 
+produces an instance of 
+.I Streamf
+where 
+.I [s] ||| args 
+is the argument list passed to the open( ) function 
+.TP 19
+.B Stream(L) 
+produces an instance of 
+.I StreamL 
+encapsulating list 
+.I L
+.TP 19
+.B Stream(StreamL) 
+produces an instance of 
+.I StreamL 
+encapsulating the list encapsulated by the 
+\fIStreamL\fR-typed
+argument
+.P
+.SH PORTABILITY
+.B Stream.icn
+is compatible with Unicon but not Icon since Icon does not support classes.  
+Stream.icn is not Idol-compatible.
+
+.SH SEE ALSO
+Eschenlauer, Arthur C., 2006. "A Unicon Shell",
+\fIThe Generator\fR, Vol. 2, No. 2, pp 3-32.
+.nf
+  http://www.unicon.org/generator/v2n2.pdf
+.fi
+.P
+.B shell.icn( 1 )
+.P
+.SH BUGS AND LIMITATIONS
+Streamf has been extensively tested only with disk files; databases, 
+network connections, etc., have not been tested much if at all.
+.P
+.SH AUTHOR
+Art Eschenlauer
+.P
+\fBStream.icn\fR is in the public domain.
+The freedom of its content is protected by the Lesser GNU public license, version 2.1, February 1999,
+.nf
+  http://www.gnu.org/licenses/lgpl.html
+.fi
+which means you are granted permission to use this in any way that 
+does not limit others' freedom to use it.

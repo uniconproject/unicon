@@ -2,8 +2,8 @@
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 
-#include "base.h"
 #include <AL/al.h>
+#include "base.h"
 
 #include "common.h"
 

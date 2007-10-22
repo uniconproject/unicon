@@ -2,17 +2,19 @@
 	#include "../../h/auto.h"
 
 	/* OpenAL */
-	#include "base.h"
 	#include <AL/al.h>
 	#include <AL/alc.h>
 	#include <AL/alext.h>
+#ifdef HAVE_ALUT_H
 	#include <AL/alut.h>
+#endif					/* HAVE_ALUT_H */
 	#include <errno.h>
 	#include <time.h>
 	#include <sys/stat.h>
 	#include <sys/time.h>
 	#include <sys/types.h>
 	#include <unistd.h>
+	#include "base.h"
 
 	static time_t start;
 	static ALCcontext *context_id;

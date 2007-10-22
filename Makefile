@@ -21,11 +21,21 @@ Configure:	config/unix/$(name)/status
 		sh ./configure
 		@echo Now remember to add unicon/bin to your path
 
+Thin-Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		cd config/unix;$(MAKE) Setup-NoGraphics Setup-Thin name=$(name)
+		@echo 'skipping ./configure for Thin configuration'
+
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure
 		@echo Now remember to add unicon/bin to your path
+
+Thin-X-Configure:	config/unix/$(name)/status
+		$(MAKE) Pure >/dev/null
+		cd config/unix; $(MAKE) Setup-Graphics Setup-Thin name=$(name)
+		@echo 'skipping ./configure for Thin configuration'
 
 VX-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null

@@ -18,6 +18,8 @@
 #define CComp "gcc"
 #define COpts "-O2 -fomit-frame-pointer"
 #define NEED_UTIME
+/* a non-default datatype for SQLBindCol's 6th parameter */
+#define SQL_LENORIND SQLLEN
 
 /*
  * Some Linuxen have -lcrypt, some dont.

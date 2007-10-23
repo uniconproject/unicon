@@ -63,9 +63,9 @@ function{0,1} dbcolumns(f,table_name)
 
     /* buffers for bytes available to return */
 
-    SQLINTEGER cbCatalog, cbSchema, cbTableName, cbColumnName;
-    SQLINTEGER cbDataType, cbTypeName, cbColumnSize, cbBufferLength;
-    SQLINTEGER cbDecimalDigits, cbNumPrecRadix, cbNullable, cbRemarks;
+    SQL_LENORIND cbCatalog, cbSchema, cbTableName, cbColumnName;
+    SQL_LENORIND cbDataType, cbTypeName, cbColumnSize, cbBufferLength;
+    SQL_LENORIND cbDecimalDigits, cbNumPrecRadix, cbNullable, cbRemarks;
     
     HSTMT hstmt;
     
@@ -286,7 +286,7 @@ function{1} dbkeys(f, table_name)
     
     UCHAR szPkCol[COL_LEN];   /* primary key column     */
 
-    SQLINTEGER cbPkCol, cbKeySeq;
+    SQL_LENORIND cbPkCol, cbKeySeq;
     short iKeySeq;
 
     SQLHSTMT hstmt;
@@ -561,7 +561,7 @@ function{0,1} dbtables(f)
 
     /* buffers for bytes available to return */
 
-    SQLINTEGER cbQualif, cbOwner, cbName, cbType, cbRemarks;
+    SQL_LENORIND cbQualif, cbOwner, cbName, cbType, cbRemarks;
     
     HSTMT hstmt;
     

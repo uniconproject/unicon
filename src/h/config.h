@@ -787,6 +787,9 @@ Deliberate Syntax Error
 
 #if HAVE_LIBIODBC || HAVE_LIBODBC
 #define ISQL 1
+#ifndef SQL_LENORIND
+#define SQL_LENORIND SQLINTEGER
+#endif
 #endif					/* HAVE_LIBIODBC */
 
 /*

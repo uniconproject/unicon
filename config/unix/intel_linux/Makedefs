@@ -11,14 +11,14 @@
 # Note: -lsocket is not available on some Linux systems,
 # but if your system has it you might need to add it to RLIBS
 
-LIBS = @JV_LDFLAGS@ @GL_LDFLAGS@ @LIBS@ -lm
+LIBS = $(AC_JV_LDFLAGS) $(AC_GL_LDFLAGS) $(AC_LIBS) -lm
 CC = gcc
 # removed -O2 due to memory violations reports on newer Linux platforms,
 # feel free to put it back if it works for you
-CFLAGS = -I../libtp -I../gdbm -I../xpm @GL_CFLAGS@ -I/usr/X11R6/include
-LDFLAGS= @LDFLAGS@
+CFLAGS = -I../libtp -I../gdbm -I../xpm $(AC_GL_CFLAGS) -I/usr/X11R6/include
+LDFLAGS= $(AC_LDFLAGS)
 CFDYN = -fPIC
-RLINK = -Wl,-E -L../../bin @LDFLAGS@
+RLINK = -Wl,-E -L../../bin $(AC_LDFLAGS)
 RLIBS = $(LIBS) -L ../../bin -laudio -lm -lgdbm -ltp -lnsl -ldl
 XLIBS = -L/usr/X11R6/lib -lXpm -lX11
 XPMDEFS = -DZPIPE

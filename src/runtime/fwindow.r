@@ -4233,25 +4233,44 @@ function{1} Texture(argv[argc])
             texwindow3D(w, w2);
          else
             texwindow2D(w, w2);
-         return f;
 	 }
+      /* check if the source is a record */
+      else if (is:record(argv[warg])) {
+	 C_integer texhandle;
 
-      /* otherwise it must be a string */
-      if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
-      s = tmp;
-      while(isspace(*s)) s++;
-      while(isdigit(*s)) s++;
-      while(isspace(*s)) s++; 
+	 if (!cnv:C_string(BlkLoc(argv[warg])->record.fields[0], tmp))
+	    runerr(103, argv[warg]);
 
-      if (*s == ',') { /* must be an image string */
-	 if (imagestr(w, tmp) != Succeeded)
-	    runerr(153, argv[warg]);
+	 if (strcmp(tmp, "Texture")) runerr(103, argv[warg]);
+
+         w2 = BlkLoc(BlkLoc(argv[warg])->record.fields[3])->file.fd.wb;
+         rp->fields[3] = BlkLoc(argv[warg])->record.fields [3];
+         wc = w2->context;
+
+         /* Pull out the texture handle */
+         texhandle = IntVal(BlkLoc(argv[warg])->record.fields[2]);
+         rp->fields[2] = BlkLoc(argv[warg])->record.fields [2];
+         wc->curtexture = texhandle;
+         glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
 	 }
-      else {  /* it is a file name */
-	 strncpy(filename, tmp, MaxFileName);
-	 filename[MaxFileName] = '\0';
-	 if (fileimage(w, filename) != Succeeded)
-	    fail;
+      else {
+	 /* otherwise it must be a string */
+	 if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
+	 s = tmp;
+	 while(isspace(*s)) s++;
+	 while(isdigit(*s)) s++;
+	 while(isspace(*s)) s++; 
+
+	 if (*s == ',') { /* must be an image string */
+	    if (imagestr(w, tmp) != Succeeded)
+	       runerr(153, argv[warg]);
+	    }
+	 else {  /* it is a file name */
+	    strncpy(filename, tmp, MaxFileName);
+	    filename[MaxFileName] = '\0';
+	    if (fileimage(w, filename) != Succeeded)
+	       fail;
+	    }
 	 }
       return f; 
       }

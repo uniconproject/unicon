@@ -740,6 +740,7 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define REDRAW_FONT3D 384
 #define REDRAW_DRAWSTRING3D 400
 #define REDRAW_MARK 432
+#define REDRAW_MESHMODE 464
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
@@ -763,6 +764,7 @@ stringint redraw3Dnames[] = {
    { "Identity",	REDRAW_IDENTITY },
    { "Mark",            REDRAW_MARK},
    { "MatrixMode",	REDRAW_MATRIXMODE },
+   { "MeshMode",        REDRAW_MESHMODE },
    { "PopMatrix",	REDRAW_POPMATRIX },
    { "PushMatrix",	REDRAW_PUSHMATRIX },
    { "Rotate",		REDRAW_ROTATE | 4 },
@@ -944,6 +946,10 @@ int traversefunctionlist(wbp w)
                }
             else count=0;
 	    }
+            break;
+         case REDRAW_MESHMODE:
+            if (!cnv:C_integer(rp->fields[2], num)) goto free_v_and_fail;
+            w->context->meshmode = num;
             break;
 	 default:
             goto free_v_and_fail;
@@ -1261,7 +1267,7 @@ int traversefunctionlist(wbp w)
 	    }
 
 	 /* call drawpoly with GL_LINE_LOOP to get a polygon */
-	 drawpoly(w, v, (funclist->size)-2, GL_LINE_LOOP, wc->dim);
+	 drawpoly(w, v, (funclist->size)-2, w->context->meshmode, wc->dim);
 	 break;
       case REDRAW_FILLPOLYGON:      /* FillPolygon() */
 	 for (j = 0; j < (funclist->size)-2; j++) {

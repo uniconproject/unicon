@@ -162,6 +162,7 @@ FncDefV(writes)
    FncDef(name,2)
    FncDef(proc,3)
    FncDef(variable,3)
+   FncDef(istate,2)
 #else					/* MultiThread */
    FncDef(display,2)
    FncDef(name,1)

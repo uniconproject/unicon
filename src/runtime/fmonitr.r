@@ -292,6 +292,41 @@ function{0,1} EvGet(cs,vmask,flag)
       }
 end
 
+/*function{*} istate(ce,attrib)*/
+
+"istate(ce,attrib) - gets the istate attribute. "
+function{*} istate(ce,attrib)
+   abstract {
+      return integer
+      }
+   body {
+      tended char *field='\0';
+
+      if (!cnv:C_string(attrib, field))
+	 runerr(103,attrib);
+ 
+      if (!is:null(ce)){
+	 if (is:coexpr(ce)){
+            if (!strcmp(field, "ilevel"))
+               return C_integer (long) BlkLoc(ce)->coexpr.es_ilevel;
+            else if (!strcmp(field, "ipc"))
+               return C_integer (long) BlkLoc(ce)->coexpr.es_ipc.opnd;
+            else if (!strcmp(field, "sp"))
+               return C_integer (long) BlkLoc(ce)->coexpr.es_sp;
+            else if (!strcmp(field, "efp"))
+               return C_integer (long) BlkLoc(ce)->coexpr.es_efp;
+            else if (!strcmp(field, "gfp"))
+               return C_integer (long) BlkLoc(ce)->coexpr.es_gfp;
+            else fail;   
+            }   
+	 else  
+	    runerr(118, ce);
+	 }
+      fail;
+      }
+end
+
+
 /*
  * Prototypes.
  */
@@ -512,7 +547,6 @@ void EVStrAlc_1(word n)
       EVVal(n, E_String);
       }
 }
-
 
 #else					/* MultiThread */
 static char xjunk;			/* avoid empty module */

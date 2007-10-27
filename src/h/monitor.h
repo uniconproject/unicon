@@ -264,6 +264,13 @@
 #define E_Opcode 0
 #endif
 
+#if defined(EventMon) || defined(E_Operand)
+#undef E_Operand
+#define E_Operand	'\110'		/* Virtual-machine Operand*/
+#else
+#define E_Operand 0
+#endif
+
 
    /*
     * Type-conversion events
@@ -956,7 +963,6 @@
 060 061 062 063 064 065 066 067
 070 071 073 074 075 076 077
 
-110
 124
 137
 162

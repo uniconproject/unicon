@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.32 2006-02-17 23:19:05 jeffery Exp $
+ * $Id: rposix.r,v 1.33 2007-10-29 05:47:16 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -244,11 +244,21 @@ unsigned int errmask;
 #ifdef XWindows
      return XConnectionNumber(((wbp)(BlkLoc(file)->file.fd.fp))->
 				      window->display->display);
-#else
+#else					/* XWindows */
      return -1;
-#endif
+#endif					/* XWindows */
      }
-#endif
+#endif					/* Graphics */
+
+#ifdef PseudoPty
+   if (status & Fs_Pty) {
+#if NT
+      return -1;
+#else					/* NT */
+      return BlkLoc(file)->file.fd.pt->master_fd;
+#endif					/* NT */
+      }
+#endif					/* PseudoPty */
 
    if (errmask && !(status & errmask))
       return -2;

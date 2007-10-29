@@ -119,6 +119,9 @@ struct b_file {         /* file block */
 #ifdef Audio
      struct AudioFile *af;
 #endif               /* Audio */
+#ifdef PseudoPty
+     struct ptstruct *pt;
+#endif					/* PseudoPty */
       int fd;        /*   other int-based file descriptor */
       } fd;
    word status;         /*   file status */
@@ -724,3 +727,18 @@ union block {			/* general block */
       struct b_bignum bignumblk;
    #endif				/* LargeInts */
    };
+
+#ifdef PseudoPty
+struct ptstruct {
+#ifdef WIN32
+   HANDLE master_read, master_write;
+   HANDLE slave_pid;
+#else					/* WIN32 */
+   int master_fd, slave_fd;		/* master, slave pty file descriptor */
+   pid_t slave_pid;			/* process id of slave  */
+#endif					/* WIN32 */
+     
+   char slave_filename[256];/* pty slave filename associated with master pty */
+   char slave_command[256]; /* name of executable associated with slave */
+};
+#endif					/* PseudoPty */

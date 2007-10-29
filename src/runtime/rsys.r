@@ -1139,6 +1139,16 @@ int link(char *s1, char *s2)
 
 #ifdef NTGCC
 
+/* tmpfile() from Mingw32 no longer works under Vista */
+FILE *mytmpfile()
+{
+   char *temp = getenv("TEMP");
+   char *temp2 = _tempnam(temp, "wx");
+   FILE *f = fopen(temp2, "w+b");
+   return f;
+}
+
+
 /* libc replacement functions for win32.
 
 Copyright (C) 1992, 93 Free Software Foundation, Inc.
@@ -1461,21 +1471,6 @@ int pclose (FILE * f)
 #endif
 
 #ifdef PseudoPty
-
-struct ptstruct
-{
-#ifdef WIN32
-   HANDLE master_read, master_write;
-   HANDLE slave_pid;
-#else					/* WIN32 */
-  int master_fd, slave_fd;		/* master, slave pty file descriptor */
-  pid_t slave_pid;			/* process id of slave  */
-#endif					/* WIN32 */
-     
-  char slave_filename[256]; /* pty slave filename associated with master pty */
-  char slave_command[256]; /* name of executable associated with slave */
-};
-
 void ptclose(struct ptstruct *ptStruct)
 {
    int close_ret, status;

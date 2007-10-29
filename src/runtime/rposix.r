@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.33 2007-10-29 05:47:16 jeffery Exp $
+ * $Id: rposix.r,v 1.34 2007-10-29 05:51:22 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -914,9 +914,8 @@ int sock_connect(char *fn, int is_udp, int timeout)
       }
 #endif					/* UNIX */
 #if NT
-      /* Turn on non-blocking flag - this will make connect
-         return immediately.  */
-      int imode = 1;
+      /* Turn on non-blocking flag so connect will return immediately. */
+      unsigned long imode = 1;
       if (ioctlsocket(s, FIONBIO, &imode) < 0) {
          errno = WSAGetLastError();      
          closesocket(s);
@@ -980,7 +979,7 @@ int sock_connect(char *fn, int is_udp, int timeout)
 #if NT
       /* Turn off non-blocking flag */
       int connect_err = WSAGetLastError();
-      int imode = 0;
+      unsigned long imode = 0;
       if (ioctlsocket(s, FIONBIO, &imode) < 0) {
          errno = WSAGetLastError();      
          closesocket(s);

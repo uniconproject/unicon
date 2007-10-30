@@ -646,5 +646,11 @@ function{0,1} dbtables(f)
 end
 
 #else					/* ISQL */
-static int nothing;
+MissingFunc2(dbcolumns)
+MissingFunc1(dbdriver)
+MissingFunc2(dbkeys)
+MissingFunc1(dblimits)
+MissingFunc1(dbproduct)
+MissingFunc2(sql)
+MissingFunc1(dbtables)
 #endif					/* ISQL */

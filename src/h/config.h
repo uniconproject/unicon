@@ -787,10 +787,12 @@ Deliberate Syntax Error
 
 #if HAVE_LIBIODBC || HAVE_LIBODBC
 #define ISQL 1
+#endif					/* HAVE_LIBIODBC */
+#ifdef ISQL
 #ifndef SQL_LENORIND
 #define SQL_LENORIND SQLINTEGER
-#endif
-#endif					/* HAVE_LIBIODBC */
+#endif					/* SQL_LENORIND */
+#endif					/* ISQL */
 
 /*
  *  Vsizeof is for use with variable-sized (i.e., indefinite)

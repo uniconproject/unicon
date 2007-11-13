@@ -1058,10 +1058,10 @@ struct b_coexpr *ce;
       }
 #endif					/* MultiThread */
 
-   while ((fp != 0 || nargs)) {         /* Keep going until current fp is
+   while ((fp != 0) || nargs) {         /* Keep going until current fp is
                                             0 and no arguments are left. */
 #ifdef PatternType
-       if (fp->pattern_cache != NULL)
+       if ((fp != NULL) && (fp->pattern_cache != NULL))
 	   markptr((union block **)&fp->pattern_cache);
 #endif       
       if (s_sp == (word *)fp + Vwsizeof(*pfp) - 1) {

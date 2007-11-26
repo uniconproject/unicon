@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.34 2007-10-29 05:51:22 jeffery Exp $
+ * $Id: rposix.r,v 1.35 2007-11-26 08:38:11 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1718,6 +1718,61 @@ void dup_fds(dptr d_stdin, dptr d_stdout, dptr d_stderr)
    }
 }
 
+#if defined(PseudoPty) && defined(MSWindows)
+/*
+ * Get a pty that has an event pending (queued).
+ */
+struct b_list *findactivepty(struct b_list *lps)
+{
+   static LONG next = 0;
+   LONG i, j;
+   tended union block *ep;
+   tended struct descrip d;
+   extern FILE *ConsoleBinding;
+   struct ptstruct *pt;
+
+   if (lps->size == 0) return NULL;
+   d = nulldesc;
+   ep = (union block *)(lps->listhead);
+   /*
+    * go through listed ptys, looking for those with events pending
+    */
+   for ( ; BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
+      for (i = 0; i < ep->lelem.nused; i++) {
+	 union block *bp;
+	 int status;
+	 DWORD tb;
+	 j = ep->lelem.first + i;
+	 if (j >= ep->lelem.nslots)
+	    j -= ep->lelem.nslots;
+	 
+         if (!(is:file(ep->lelem.lslots[j])))
+            syserr("internal error #1 calling findactivepty()");
+         if (!(status = BlkLoc(ep->lelem.lslots[j])->file.status))
+            syserr("internal error #2 calling findactivepty()");
+         if (! (status & Fs_Pty)) {
+            syserr("internal error #3 calling findactivepty()");
+	    }
+         if (!(status & Fs_Read)) {
+            /* a closed window was found on the list, ignore it */
+	    continue;
+	    }
+	 bp = BlkLoc(ep->lelem.lslots[j]);
+	 pt = bp->file.fd.pt;
+	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
+		&& (tb>0)) {
+	    if (is:null(d)) {
+	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
+	       d.dword = D_List;
+	       }
+	    c_put(&d, &(ep->lelem.lslots[j]));
+	    }
+	 }
+      }
+   if (is:null(d)) return NULL;
+   return (struct b_list *)BlkLoc(d);
+}
+#endif
 
 #ifdef Graphics
 /*

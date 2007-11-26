@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.41 2007-03-30 23:37:46 m-wilder Exp $
+ * $Id: fxposix.ri,v 1.42 2007-11-26 08:37:30 jeffery Exp $
  */
 
 /*
@@ -1259,12 +1259,18 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    }
          }
       else {
+	    int argc;
+	    char **garbage, *g2;
+extern char *ArgvToCmdline(char **);
+	    argc = CmdParamToArgv(cmdline, &garbage, 0);
+            g2 = ArgvToCmdline(garbage);
+
 	    /* Sigh... old "system". Collect all args into a string. */
 	    if (is_argv_str) {
 #ifdef MSWindows
-	       i = (C_integer)mswinsystem(cmdline);
+	       i = (C_integer)mswinsystem(g2);
 #else					/* MSWindows */
-	       i = (C_integer)system(cmdline);
+	       i = (C_integer)system(g2);
 #endif					/* MSWindows */
 	       return C_integer i;
 	       }
@@ -2055,6 +2061,15 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
 	 }
       else 
 #endif					/* Graphics */
+#if defined(PseudoPty) && defined(MSWindows)
+      /*
+       * windows pty's are handled separately from sockets in select()
+       */
+      if (status & Fs_Pty) {
+	 return 0;
+	 }
+      else 
+#endif					/* PseudoPty && MSWindows */
       if ((fd = get_fd(*f, Fs_Read|Fs_Socket|Fs_Messaging)) < 0) {
 	 if (fd == -2)
 	    return 212;
@@ -2117,19 +2132,30 @@ function{0,1} select(files[nargs])
       tended union block *ep;
       tended struct descrip d = nulldesc;
       tended struct descrip d2 = nulldesc;
+      tended struct descrip d3 = nulldesc;
       tended struct descrip f;
       tended struct b_list *lws = NULL;
+      tended struct b_list *lps = NULL;
 
+#ifdef Graphics
       /*
        * prepass: pull out windows, into their own list
        */
-#ifdef Graphics
       if ((lws = alclist(0, MinListSlots)) == NULL) fail;
       d2.dword = D_List;
       BlkLoc(d2) = (union block *)lws;
+#if defined(PseudoPty) && defined(MSWindows)
+      if ((lps = alclist(0, MinListSlots)) == NULL) fail;
+      d3.dword = D_List;
+      BlkLoc(d3) = (union block *)lps;
+#endif					/* PseudoPty */
       for (k=0; k<nargs; k++) {
 	 if (is:file(files[k]) && (BlkLoc(files[k])->file.status & Fs_Window))
 	    c_put(&d2, files+k);
+#if defined(PseudoPty) && defined(MSWindows)
+	 else if (is:file(files[k]) && (BlkLoc(files[k])->file.status & Fs_Pty))
+	    c_put(&d3, files+k);
+#endif					/* PseudoPty */
 	 else if (is:list(files[k])) {
 	    for (ep = BlkLoc(files[k])->list.listhead;
 		 BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
@@ -2140,6 +2166,10 @@ function{0,1} select(files[nargs])
 		  f = ep->lelem.lslots[j];
 		  if (is:file(f) && BlkLoc(f)->file.status & Fs_Window)
 		     c_put(&d2, &f);
+#if defined(PseudoPty) && defined(MSWindows)
+		  else if (is:file(f) && BlkLoc(f)->file.status & Fs_Pty)
+		     c_put(&d3, &f);
+#endif					/* PseudoPty */
 		  }
 	       }
 	    }
@@ -2194,6 +2224,17 @@ function{0,1} select(files[nargs])
 	    }
 	 else
 #endif					/* Graphics */
+#if defined(PseudoPty) && defined(MSWindows)
+	 /*
+	  * if there are any ptys, then even if we said to go forever
+	  * timeout periodically to check for window events.
+	  */
+	 if (lps->size > 0) {
+	    tv.tv_sec = 0;
+	    tv.tv_usec = 50000;
+	    }
+	 else
+#endif					/* PseudoPty && MSWindows */
 	    ptv = 0;
          }
       else {
@@ -2211,6 +2252,14 @@ function{0,1} select(files[nargs])
          tv.tv_sec = tv.tv_usec = 0;
 	 }
 #endif					/* Graphics */
+
+#if defined(PseudoPty) && defined(MSWindows)
+      else if ((lps->size > 0) && ((lp = findactivepty(lps)) != NULL)) {
+	 d.dword = D_List;
+	 BlkLoc(d) = (union block *) lp;
+         tv.tv_sec = tv.tv_usec = 0;
+	 }
+#endif					/* PseudoPty && MSWindows */
 
       if (n) {
          if ((nset = select(n, &fds, NULL, NULL, ptv)) < 0) {
@@ -2234,6 +2283,15 @@ function{0,1} select(files[nargs])
 	    BlkLoc(d) = (union block *) lp;
 	    }
 #endif					/* Graphics */
+#if defined(PseudoPty) && defined(MSWindows)
+	 /*
+	  * if our select() could have taken any time, try ptys again
+	  */
+	 if ((lp == NULL) && ((lp = findactivepty(lps)) != NULL)) {
+	    d.dword = D_List;
+	    BlkLoc(d) = (union block *) lp;
+	    }
+#endif					/* PseudoPty */
 	 }
       else if (ptv && (ptv->tv_sec || ptv->tv_usec)) {
 	 idelay(ptv->tv_sec * 1000 + ptv->tv_usec / 1000);

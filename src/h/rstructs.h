@@ -90,6 +90,9 @@ union f { /* mdw: eliminate anonymous union that chokes amd64 gcc */
 #ifdef Audio
    struct AudioFile *af;
 #endif               /* Audio */
+#ifdef PseudoPty
+     struct ptstruct *pt;
+#endif					/* PseudoPty */
    int fd;        /*   other int-based file descriptor */
    };
 
@@ -730,7 +733,7 @@ union block {			/* general block */
 
 #ifdef PseudoPty
 struct ptstruct {
-#ifdef WIN32
+#if NT
    HANDLE master_read, master_write;
    HANDLE slave_pid;
 #else					/* WIN32 */

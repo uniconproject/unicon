@@ -1477,17 +1477,17 @@ void ptclose(struct ptstruct *ptStruct)
    if (ptStruct == NULL)
       return;  /* structure is NULL, nothing to do */
 
-#ifdef WIN32
+#if NT
    close_ret=CloseHandle(ptStruct->master_read);
    close_ret=CloseHandle(ptStruct->master_write);
-#else					/* WIN32 */
+#else					/* NT */
    /* close the master and slave file descriptors */
    close_ret = close(ptStruct->master_fd);
    close_ret = close(ptStruct->slave_fd);
    /* terminate the child process */
    waitpid(ptStruct->slave_pid,&status,WNOHANG);
    kill(ptStruct->slave_pid,SIGKILL);
-#endif					/* WIN32 */
+#endif					/* NT */
    /* free the space allocated for the structure */
    free(ptStruct);
    return;
@@ -1499,7 +1499,7 @@ struct ptstruct *ptopen(char *command)
 {
    int ac;
    char **av;
-#ifdef WIN32
+#if NT
    HANDLE hOutputReadMaster,hOutputRead,hOutputWrite;
    HANDLE hInputWriteMaster,hInputRead,hInputWrite;
    HANDLE hIOTmp;
@@ -1507,9 +1507,9 @@ struct ptstruct *ptopen(char *command)
    SECURITY_ATTRIBUTES sa;
    PROCESS_INFORMATION pi;
    STARTUPINFO si;
-#else
+#else					/* NT */
    int pstatus;
-#endif
+#endif					/* NT */
 
    /* allocating new ptstruct */
    struct ptstruct *newPtStruct =
@@ -1521,7 +1521,7 @@ struct ptstruct *ptopen(char *command)
   
    ac = CmdParamToArgv(command, &av, 0);
 
-#ifdef WIN32
+#if NT
    /* Set up the security attributes struct. */
    sa.nLength= sizeof(SECURITY_ATTRIBUTES);
    sa.lpSecurityDescriptor = NULL;
@@ -1553,18 +1553,18 @@ struct ptstruct *ptopen(char *command)
    /* Set global child process handle to cause threads to exit. */
    newPtStruct->slave_pid = pi.hProcess;
 
-#else
+#else					/* NT */
 
   /* open master pty file descriptor */
 #ifdef SOLARIS
    if((newPtStruct->master_fd=open("/dev/ptmx",O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
-#else
+#else					/* Solaris */
    if((newPtStruct->master_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
-#endif
+#endif					/* Solaris */
 
    /* change permissions of slave pty to correspond with the master pty */
    if(grantpt(newPtStruct->master_fd) == -1) {
@@ -1583,10 +1583,10 @@ struct ptstruct *ptopen(char *command)
 #ifdef SOLARIS
    if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 	              sizeof(newPtStruct->slave_filename)) != 0) {
-#else
+#else					/* Solaris */
    if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 		sizeof(newPtStruct->slave_filename)) != 0) {
-#endif
+#endif					/* Solaris */
       EXITERROR(newPtStruct);
       }
 
@@ -1620,8 +1620,8 @@ struct ptstruct *ptopen(char *command)
       if(execve(av[0], av, NULL) == -1) {
          EXITERROR(newPtStruct);
          }
-#endif
       }
+#endif					/* NT */
 
   return newPtStruct;
 #undef EXITERROR
@@ -1632,7 +1632,7 @@ struct ptstruct *ptopen(char *command)
 int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigned long waittime, int longread)
    {
    int bytes_read=0, tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
-#ifndef WIN32
+#if !NT
    fd_set rd_set;
    struct timeval timeout, *timeoutp = NULL;
 #endif
@@ -1640,7 +1640,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
    if(buffer == NULL || ptStruct == NULL)
       return -1;
 
-#ifndef WIN32
+#if !NT
   
    /* clear the buffer */
    memset(buffer,0,sizeof(buffer));
@@ -1666,28 +1666,27 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
    * if select returns without any errors and
    * if the characters are available to read from input ...
    */
-#endif /* WIN32 */
+#endif					/* NT */
 
-#ifdef WIN32
+#if NT
    /* clear the buffer */
    ZeroMemory(buffer,bufsiz);
    if(WaitForSingleObject(ptStruct->master_read,waittime) != WAIT_FAILED) {
-#else
-
+#else					/* NT */
 
    if((ret=select(wait_fd,&rd_set,NULL,NULL,timeoutp)) > 0
       && FD_ISSET(ptStruct->master_fd,&rd_set) ) {
 
-#endif /* WIN32 */
+#endif					/* NT */
 
     while(!premstop && tot_bytes_read < bufsiz 
 
-#ifdef WIN32
+#if NT
 	  && (ret=ReadFile(ptStruct->master_read,&buffer[i],1,
 			   &bytes_read,NULL)) != 0) {
-#else
+#else					/* NT */
        && (bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
-#endif // WIN32
+#endif					/* NT */
 	     if(!longread && buffer[i] == '\n') {
 		if (buffer[i-1] == '\r') tot_bytes_read--;
 		premstop=1;
@@ -1695,23 +1694,23 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
 	     tot_bytes_read += bytes_read;
       i++;
 
-#ifdef WIN32
-#else
+#if NT
+#else					/* NT */
       FD_ZERO(&rd_set);
       FD_SET(ptStruct->master_fd,&rd_set);
-#endif // WIN32
+#endif					/* NT */
 
        }
        }
 
-#ifdef WIN32
+#if NT
       else ret = -1;
       if (ret == 0)
 	 ret = -1;
-#else
+#else					/* NT */
 else {
    }
-#endif					/* WIN32 */
+#endif					/* NT */
 
 
    /* if some bytes were read than return the number read */
@@ -1828,13 +1827,13 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
    if (ptStruct == NULL || buffer == NULL || bufsize < 1)
       return -1;
 
-#ifdef WIN32
+#if NT
    if ( (WaitForSingleObject(ptStruct->master_write,0) == WAIT_FAILED) ||
        (!WriteFile(ptStruct->master_write,buffer,bufsize,&bytes_written,NULL)))
       ret = -1;
    else 
       ret = bytes_written;
-#else					/* WIN32 */
+#else					/* NT */
 
    {
    fd_set wd_set;
@@ -1868,7 +1867,7 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
       }
    }
 
-#endif					/* WIN32 */
+#endif					/* NT */
   return ret;
 }
 

@@ -117,6 +117,7 @@ function{1} close(f)
 #endif					/* HAVE_VOICE */
       FILE *fp = BlkLoc(f)->file.fd.fp;
       int status = BlkLoc(f)->file.status;
+
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
       /*
@@ -165,6 +166,13 @@ function{1} close(f)
 	 return C_integer 0;
 	 }
 #endif					/* ISQL */
+
+#ifdef PseudoPty
+      if (BlkLoc(f)->file.status & Fs_Pty) {
+	 ptclose(BlkLoc(f)->file.fd.pt);
+	 return C_integer 0;
+	 }
+#endif					/* PseudoPty */
 
 #ifdef Dbm
       if (BlkLoc(f)->file.status & Fs_Dbm) {
@@ -375,7 +383,6 @@ Deliberate Syntax Error
 /*
  * End of operating-system specific code.
  */
-
       /*
        * get a C string for the file name
        */
@@ -948,9 +955,11 @@ Deliberate Syntax Error
 		     strcat(tempbuf, "\\");
 		  strcat(tempbuf, "*.*");
 		  if (*tempbuf) {
+		     extern FILE *mytmpfile();
 		     FINDDATA_T fd;
-		     if (!FINDFIRST(tempbuf, &fd)) fail;
-		     f = tmpfile();
+		     if (!FINDFIRST(tempbuf, &fd))
+			fail;
+		     f = mytmpfile();
 		     if (f == NULL) fail;
 		     do {
 			fprintf(f, "%s\n", FILENAME(&fd));

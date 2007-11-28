@@ -20,7 +20,7 @@ export PATH:=$(BIN):$(PATH)
 
 U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u
 
-UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn
+UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn ca.icn
 
 unicon$(EXE): Unicon
 
@@ -92,6 +92,9 @@ preproce.u : preproce.icn
 
 cfy.u : cfy.icn
 	$(ICONT) -c cfy
+
+ca.u : ca.icn
+	$(ICONT) -c ca
 
 # Commented out to avoid bootstrap problem.
 # Uncomment if you modify unigram.y/unigram.icn

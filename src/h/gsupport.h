@@ -27,3 +27,13 @@
    #include "../h/rproto.h"
 #endif					/* ConsoleWindow */
 
+/* mdw: squelch redef of "OF" as gcc warning */
+#ifdef OF
+#undef OF
+#endif
+
+/* mdw: squelch redef of "Type" as gcc warning */
+#ifdef Type
+#undef Type
+#endif
+

@@ -126,8 +126,6 @@ void var_dcls()
                }
             switch (flag) {
                case F_Proc:
-                  if (ica_pdefn_unused(gptr))
-                     break;
                   proc_blk(gptr, init_glbl);
                   break;
                case F_Builtin:
@@ -135,8 +133,6 @@ void var_dcls()
                      fnc_blk(gptr);
                   break;
                case F_Record:
-                  if (ica_rdecl_unused(gptr))
-                     break;
                   rec_blk(gptr, init_glbl);
                }
             }
@@ -874,9 +870,9 @@ outerfnc(fnc, reachable)
     */
    prtcode(&(fnc->cd), 1);
    if (!reachable) {
-      fprintf(codefile, "/*\n");
-      fprintf(codefile, " * unreachable function.\n");
-      fprintf(codefile, " */\n");
+      fprintf(codefile,"   /*\n");
+      fprintf(codefile,"    * unreachable function.\n");
+      fprintf(codefile,"    */\n");
       }
    fprintf(codefile, "   }\n");
 }

@@ -63,6 +63,7 @@ struct node {
    char *n_file;	    /* name of file containing source program */
    int n_line;		    /* line number in source program */
    int n_col;		    /* column number in source program */
+   int n_nflds; /* mdw: number of fields in this node */
    int flag;
    int *new_types;          /* pntr to array of struct types created here */
    typeinfo_t *type;		    /* type of this expression */
@@ -79,13 +80,11 @@ struct node {
 /*
  * NewNode - allocate a parse tree node with "size" fields.
  */
-#define NewNode(size) (struct node *)alloc((unsigned int)\
-    (sizeof(struct node) + (size-1) * sizeof(union field)))
+#define NewNode(size) mdw_new_node(size)
 
 /*
  * Macros to access fields of parse tree nodes.
  */
-
 #define Type(t)   (t)->n_type
 #define File(t)   (t)->n_file
 #define Line(t)   (t)->n_line

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.42 2007-11-26 08:37:30 jeffery Exp $
+ * $Id: fxposix.ri,v 1.43 2007-11-28 08:59:14 jeffery Exp $
  */
 
 /*
@@ -2690,9 +2690,9 @@ function{0,1} setservent(so)
    }
 end
 
-"sysread() - low level non-blocking read with no buffering."
+"ready() - low level non-blocking read with no buffering."
 
-function{0, 1} sysread(f, i)
+function{0, 1} ready(f, i)
    if !def:C_integer(i, 0) then
       runerr(101, i)
 
@@ -2718,6 +2718,27 @@ function{0, 1} sysread(f, i)
 #endif					/* Graphics */
           )
 	  runerr(212, f);
+
+#if defined(PseudoPty) && NT
+      if (status & Fs_Pty) {
+         DWORD tb;
+         tended char *sbuf = NULL;
+         struct ptstruct *pt;
+         pt = BlkLoc(f)->file.fd.pt;
+	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
+		&& (tb>0)) {
+	    if (i == 0) i = tb;
+            else if (tb < i) i = tb;
+            Protect(sbuf = alcstr(NULL, i), runerr(0));
+            status = ReadFile(pt->master_read, sbuf, i, &tb, NULL);
+	    if (!status) fail;
+            StrLoc(desc) = sbuf;
+            StrLen(desc) = tb;
+            return desc;
+	 }
+	else fail;
+	}
+#endif					/* PseudoPty */
 
       if ((fd = get_fd(f, 0)) < 0)
 	 runerr(174, f);

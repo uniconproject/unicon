@@ -92,6 +92,7 @@ void	          readdb     (char *db_name);
 struct val_loc   *loc_cpy    (struct val_loc *loc, int mod_access);
 void           mark_recs (struct fentry *fp, typeinfo_t *typ,
                               int *num_offsets, int *offset, int *bad_recs);
+struct node * mdw_new_node(int);
 struct code      *mk_goto    (struct code *label);
 struct node      *multiunary (char *op, nodeptr loc_model, nodeptr oprnd);
 struct sig_act   *new_sgact  (struct code *sig, struct code *cd,

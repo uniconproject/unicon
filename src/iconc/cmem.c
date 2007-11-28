@@ -68,7 +68,6 @@ init_proc(name)
    int i;
    struct gentry *sym_ent;
    register struct pentry *p;
-/*mdw*/extern int ica_pdefn_add(struct gentry *);
 
    p = NewStruct(pentry);
    p->name = name;
@@ -92,7 +91,6 @@ init_proc(name)
    sym_ent = instl_p(name, F_Proc);
    sym_ent->val.proc = proc_lst;
 
-/*mdw*/ica_pdefn_add(sym_ent);
    return sym_ent;
 }
 
@@ -121,7 +119,6 @@ init_rec(name)
    register struct rentry *r;
    struct gentry *sym_ent;
    static int rec_num = 0;
-/*mdw*/extern int ica_rdecl_add(struct gentry *);
 
    flags = F_Record;
    if (rec_is_obj(name))
@@ -138,5 +135,4 @@ init_rec(name)
    rec_lst = r;
    sym_ent= instl_p(name, flags);
    sym_ent->val.rec = r;
-/*mdw*/ica_rdecl_add(sym_ent);
 }

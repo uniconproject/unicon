@@ -71,78 +71,12 @@ struct type {
 #error ***
 #endif
 
-
-#ifdef LegacyCode
-/*
- * ClrTyp - zero out the bit vector for a type.
- */
-static inline void TiClrTyp(unsigned size, unsigned int * typ)
-{
-   unsigned int * typ_idx = typ + NumInts((size)) - 1;
-   while (typ_idx >= typ)
-      *typ_idx-- = 0;
-}
-
-/*
- * CpyTyp - copy a type of the given size from one bit vector to another.
- */
-static inline void TiCpyTyp(int size, unsigned int * src, unsigned int * dst)
-{
-   int i = NumInts(size) - 1;
-   while (i >= 0) {
-      dst[i] = src[i];
-      i--;
-      }
-}
-
-/*
- * MrgTyp - merge a type of the given size from one bit vector into another.
- */
-static inline void TiMrgTyp(int size, unsigned int * src, unsigned int *dst)
-{
-   int i = NumInts((size)) - 1;
-   while (i >= 0) {
-      dst[i] |= src[i];
-      i--;
-      }
-}
-static inline void TiMrgTyp2(int i, unsigned int * src, unsigned int * dst)
-{
-   while (i >= 0) {
-      dst[i] |= src[i];
-      i--;
-      }
-}
-
-/*
- * ChkMrgTyp - merge a type of the given size from one bit vector into another,
- *  updating the changed flag if the destination is changed by the merger.
- */
-static inline void TiChkMrgTyp(int size, unsigned int * src, unsigned int * dst)
-{
-   unsigned old;
-   extern long changed;
-
-   size = NumInts((size)) - 1;
-   while (size >= 0) {
-      old = dst[size];
-      dst[size] |= src[size];
-      if (old != dst[size]) changed++;
-      size--;
-      }
-}
-static inline void TiChkMrgTyp2(int size, unsigned int * src, unsigned int *dst)
-{
-   unsigned old;
-   extern long changed;
-   while (size >= 0) {
-      old = (dst)[size];
-      (dst)[size] |= (src)[size];
-      if (old != (dst)[size]) ++changed;
-      size--;
-      }
-}
-#endif /* LegacyCode */
+/* mdw: vector-word defs */
+typedef word vord;
+#define DivVordBits DivWordBits
+#define ModVordBits ModWordBits
+#define NumVords NumWords
+#define VordBits WordBits
 
 struct centry {		/* constant table entry */
    struct centry *blink;	/*   link for bucket chain */

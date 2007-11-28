@@ -13,7 +13,9 @@
 /*
  * Prototypes.
  */
-static void	trans1		(char *filename);
+static void adjust_class_recs(struct rentry *);
+static void publish_unreachable_funcs(struct pentry *);
+/* mdw: for ca static */ void	trans1(char *);
 
 /*
  * Variables.
@@ -106,11 +108,37 @@ int trans(char *argv0)
    {
    register struct pentry *proc;
    struct srcfile *sf;
+char * s;
+extern char * ca_first_perifile;
+extern int ca_mark_parsed(char *);
 
    lpath = (char *)libpath(argv0, "LPATH");	/* remains null if unspecified */
 
+#ifdef mdw_original
    for (sf = srclst; sf != NULL; sf = sf->next)
       trans1(sf->name);	/* translate each file in turn */
+#else
+   if (ca_first_perifile) {
+      /*
+       * translate all non-peri files
+       */
+      for (sf=srclst; sf; sf=sf->next) {
+         if (strcmp(sf->name, ca_first_perifile) == 0)
+            break;
+         trans1(sf->name);
+         ca_mark_parsed(sf->name);
+         }
+      /*
+       * resolve all remaining symbols
+       */
+      ca_resolve();
+      }
+   else {
+      for (sf = srclst; sf != NULL; sf = sf->next)
+         trans1(sf->name);	/* translate each file in turn */
+      }
+#endif
+
 
    if (!pponly) {
       /*
@@ -134,14 +162,6 @@ int trans(char *argv0)
       if (just_type_trace)
          return tfatals;     /* stop without generating code */
 
-/*
-for (proc=proc_lst; proc; proc=proc->next) {
-   if (strcmp(proc->name, "gui__Dialog_process_event") == 0) {
-      printf("gui__Dispatcher_process_event: reachable: %d\n", proc->reachable);
-      proc->reachable = 1;
-      } 
-   }
-*/
       publish_unreachable_funcs(proc_lst);
 
       if (tfatals == 0) {
@@ -183,7 +203,8 @@ for (proc=proc_lst; proc; proc=proc->next) {
 /*
  * translate one file.
  */
-static void trans1(filename)
+/* mdw: for ca... static */
+void trans1(filename)
 char *filename;
    {
    in_line = 1;			/* start with line 1, column 0 */
@@ -274,7 +295,6 @@ struct srcfile **srclist;
    {
    struct srcfile **pp;
    struct srcfile *p;
-/*mdw*/extern int ica_unit_add(char *);
 
    for (pp = srclist; *pp != NULL; pp = &(*pp)->next)
      if (strcmp((*pp)->name, name) == 0)
@@ -283,5 +303,4 @@ struct srcfile **srclist;
    p->name = salloc(name);
    p->next = NULL;
    *pp = p;
-/*mdw*/ica_unit_add(name);
 }

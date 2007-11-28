@@ -131,7 +131,9 @@ static unsigned int nxt_bit;    /* next unassigned bit in bit vector */
 unsigned int n_icntyp;   /* number of non-variable types */
 unsigned int n_intrtyp;  /* number of types in intermediate values */
 unsigned int n_rttyp;    /* number of types in runtime computations */
+#ifdef now_in_tv_module
 unsigned int val_mask;   /* mask for non-var types in last int of type */
+#endif
 
 unsigned int null_bit;   /* bit for null type */
 unsigned int str_bit;    /* bit for string type */
@@ -169,7 +171,6 @@ static char *trcname = "stdout";/* "typ-trc.out"*/	/* output file name for traci
 static char *trc_indent = "";
 #endif					/* TypTrc */
 
-
 /*
  * typeinfer - infer types of operands. If "do_typinfer" is set, actually
  *   do abstract interpretation, otherwise assume any type for all operands.
@@ -191,10 +192,8 @@ void typeinfer()
    int i, j, k;
    int size;
    int flag;
-/*mdw*/extern int ica_analyze(void);
 /* mdw */long lastchanged;
 struct rusage ru_in, ru_out;
-ica_analyze();
 getrusage(RUSAGE_SELF, &ru_in);
 #ifdef TypTrc
    /*
@@ -437,20 +436,22 @@ getrusage(RUSAGE_SELF, &ru_in);
     * Assign bits for predefined variable types that are not treated as
     *   sets of globals.
     */
-   for (i = 0; i < num_typs; ++i)
+   for (i = 0; i < num_typs; ++i) {
       if (icontypes[i].deref == DrfCnst || icontypes[i].deref == DrfSpcl) {
          type_array[i].frst_bit = nxt_bit;
          nxt_bit += type_array[i].num_bits;
          }
+      }
 
    /*
     * Assign bits to aggregate compontents that are variables.
     */
-   for (i = 0; i < num_cmpnts; ++i)
+   for (i = 0; i < num_cmpnts; ++i) {
       if (typecompnt[i].var) {
          compnt_array[i].frst_bit = nxt_bit;
          nxt_bit += compnt_array[i].num_bits;
          }
+      }
 
    /*
     * Assign bits to record fields and named variables.
@@ -466,9 +467,10 @@ getrusage(RUSAGE_SELF, &ru_in);
     * Convert from relative to ablsolute bit numbers for predefined variable
     *  types that are treated as sets of global variables.
     */
-   for (i = 0; i < num_typs; ++i)
+   for (i = 0; i < num_typs; ++i) {
       if (icontypes[i].deref == DrfGlbl)
          type_array[i].frst_bit += frst_gbl;
+      }
 
    n_intrtyp = nxt_bit; /* number of types for intermediate values */
 
@@ -476,11 +478,12 @@ getrusage(RUSAGE_SELF, &ru_in);
     * Assign bits to aggregate compontents that are not variables. These
     *  are the runtime system's internal descriptor reference types.
     */
-   for (i = 0; i < num_cmpnts; ++i)
+   for (i = 0; i < num_cmpnts; ++i) {
       if (!typecompnt[i].var) {
          compnt_array[i].frst_bit = nxt_bit;
          nxt_bit += compnt_array[i].num_bits;
          }
+      }
 
    n_rttyp = nxt_bit; /* total size of type system */
 
@@ -506,11 +509,24 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
     * The division between bits for first-class types and variables types
     *  generally occurs in the middle of a word. Set up a mask for extracting
     *  the first-class types from this word.
+    *
+    * mdw: this is width-dependent; if an int is 32 bits and a word is 64 bits,
+    * this methodology needs to be refined in order to use words in typevects.
     */
+#ifdef now_performed_in_tv_init
+#ifdef mdw
    val_mask = 0;
+#else
+   val_mask = (vord)0;
+#endif
+#ifdef mdw
    i = n_icntyp - (NumInts(n_icntyp) - 1) * IntBits;
+#else
+   i = n_icntyp - (NumVords(n_icntyp) - 1) * VordBits;
+#endif
    while (i--)
       val_mask = (val_mask << 1) | 1;
+#endif /* now_performed_in_tv_init */
 
    if (do_typinfer) {
       /*
@@ -676,53 +692,48 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
    iteration = 0;
    if (verbose > 1)
       fprintf(stderr, "type inferencing: ");
-
+   
    while (changed > 0L) {
-     lastchanged = changed;
-     changed = 0L;
-     ++iteration;
+      lastchanged = changed;
+      changed = 0L;
+      ++iteration;
 
 #ifdef TypTrc
-     if (trcfile != NULL)
-        fprintf(trcfile, "**** iteration %d ****\n", iteration);
+      if (trcfile != NULL)
+         fprintf(trcfile, "**** iteration %d ****\n", iteration);
 #endif					/* TypTrc */
 
-     /*
-      * Start at the implicit initial call to the main procedure. Inferencing
-      *  walks the call graph from here.
-      */
-     succ_store = cpy_store(init_store);
-     fail_store = f_store;
-     infer_nd(call_main);
-     /*
-      * If requested, monitor the progress of inferencing.
-      */
-     switch (verbose) {
-        case 0:
-        case 1:
-           break;
-        case 2:
-           fprintf(stderr, ".");
-           break;
-        default: /* > 2 */
-           if (iteration != 1)
-              fprintf(stderr, ", ");
-           fprintf(stderr, "%ld", changed);
-        }
-#ifdef DebugOnly
-     /*
-     {
-     int arr[] = { 0 };
-     tv_stats(arr, 0);
-     }
-     */
-#endif
-     }
+      /*
+       * Start at the implicit initial call to the main procedure. Inferencing
+       *  walks the call graph from here.
+       */
+      succ_store = cpy_store(init_store);
+      fail_store = f_store;
+      infer_nd(call_main);
+      /*
+       * If requested, monitor the progress of inferencing.
+       */
+      switch (verbose) {
+         case 0:
+         case 1:
+            break;
+         case 2:
+            fprintf(stderr, ".");
+            break;
+         default: /* > 2 */
+            if (iteration != 1)
+               fprintf(stderr, ", ");
+            fprintf(stderr, "%ld", changed);
+         }
+      /*tv_stats(-1, -1);*/
+      }
+   /*tv_stats(0, -1);*/
 #ifdef DebugOnly
 {
 extern int tv_nalcs;
 extern unsigned int hash_mask, hash_upper, hash_upper_shr, hash_shifts;
 long bgn, end;
+printf("n-icntyp: %d n-intrtyp: %d n-rttyp: %d\n", n_icntyp,n_intrtyp,n_rttyp);
 printf("n-alcs: %d rttyp-ints: %d\n", tv_nalcs, NumInts(n_rttyp));
 getrusage(RUSAGE_SELF, &ru_out);
 bgn = ru_in.ru_utime.tv_sec * 1000 + ru_in.ru_utime.tv_usec / 1000;
@@ -1042,12 +1053,14 @@ struct il_code *il;
 /*
  * alloc_stor - allocate a store with empty types.
  */
-static struct store *alloc_stor(stor_sz, n_types)
-int stor_sz;
-int n_types;
-   {
-   struct store *stor;
+static
+struct store *
+alloc_stor(stor_sz, n_types)
+   int stor_sz;
+   int n_types;
+{
    int i;
+   struct store * rslt;
 
    /*
     * If type inferencing is disabled, we don't actually make use of
@@ -1055,15 +1068,27 @@ int n_types;
     */
    if (!do_typinfer)
       return NULL;
-   stor = (struct store *)alloc((unsigned int)(sizeof(struct store) +
+   rslt = (struct store *)alloc((unsigned int)(sizeof(struct store) +
       ((stor_sz - 1) * sizeof(unsigned int *))));
-   stor->next = NULL;
-   stor->perm = 1;
-   for (i = 0; i < stor_sz; ++i) {
-      stor->types[i] = (typeinfo_t *)Vcall(alloc_typ(n_types));
-      }
-   return stor;
+   rslt->next = NULL;
+   rslt->perm = 1;
+   for (i=0; i<stor_sz; i++)
+      rslt->types[i] = (typeinfo_t *)Vcall(alloc_typ(n_types));
+#ifdef mdw_debug_store_usage
+   {
+   /*
+    * enqueue the store for instrumentation
+    */
+   struct sto * sto;
+   sto = alloc(sizeof(struct sto));
+   sto->s = rslt;
+   sto->n = stor_sz;
+   sto->next = stos;
+   stos = sto;
    }
+#endif /* mdw_debug_store_usage */
+   return rslt;
+}
 
 /*
  * findloops - find both explicit loops and implicit loops caused by
@@ -1834,7 +1859,11 @@ nodeptr n;
     */
    store = proc->out_store;
    for (i = 0; i < n_gbl; ++i)
+#ifdef dangeresque
       Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
+#else
+      tv_cpy(succ_store->types[i], store->types[i]);
+#endif
 
    /*
     * If the procedure can fail, merge variable types into the failure
@@ -1852,19 +1881,19 @@ nodeptr n;
 static
 void
 infer_prc(proc, n)
-   struct pentry *proc;
+   struct pentry * proc;
    nodeptr n;
 {
-   struct store *s_store;
-   struct store *f_store;
-   struct store *store;
-   struct pentry *sv_proc;
-   struct t_coexpr *sv_coexp;
-   struct lentry *lptr;
-   nodeptr n1;
    int i;
    int nparams;
    int coexp_bit;
+   struct node * n1;
+   struct store * store;
+   struct lentry * lptr;
+   struct store * s_store;
+   struct store * f_store;
+   struct pentry * sv_proc;
+   struct t_coexpr * sv_coexp;
 
    /*
     * Determine what co-expressions the procedure might be called from.
@@ -1887,6 +1916,7 @@ infer_prc(proc, n)
     *  backtracking paths to the suspends of the procedure and propagate
     *  types of locals to the success store of the call.
     */
+#ifdef mdw_opt_try
    if (proc->ret_flag & DoesSusp && n->store != NULL) {
       for (i = 0; i < n_gbl; ++i)
          Vpp(ChkMrgTyp(n_icntyp, n->store->types[i],
@@ -1896,6 +1926,12 @@ infer_prc(proc, n)
          Vpp(MrgTyp(n_icntyp, n->store->types[n_gbl + i],
             succ_store->types[n_gbl + i]));
       }
+#else
+   if (proc->ret_flag & DoesSusp && n->store != NULL) {
+      tv_stores_or(proc->susp_store, n->store, 0, n_gbl - 1);
+      tv_stores_or(succ_store, n->store, n_gbl, n_gbl + n_loc - 1);
+      }
+#endif /* mdw_opt_try */
 
    /*
     * Merge the types of global variables into the "in store" of the
@@ -1906,9 +1942,12 @@ infer_prc(proc, n)
     *  into the body.
     */
    store = proc->in_store;
-   for (i=0; i<n_gbl; i++) {
+#ifdef mdw_opt_try
+   for (i=0; i<n_gbl; i++)
       Vpp(ChkMrgTyp(n_icntyp, succ_store->types[i], store->types[i]));
-      }
+#else
+   tv_stores_or(store, succ_store, 0, n_gbl - 1);
+#endif /* mdw_opt_try */
 
 #ifdef TypTrc
    /*
@@ -1945,7 +1984,7 @@ infer_prc(proc, n)
    /*
     * Get the type of the varargs part of the argument list.
     */
-   if (proc->nargs < 0)
+   if (proc->nargs < 0) {
       while (i < num_args) {
          typ_deref(arg_typs->types[i],
             compnt_array[lst_elem].store->types[proc->arg_lst], 1);
@@ -1963,6 +2002,7 @@ infer_prc(proc, n)
 
          ++i;
          }
+      }
 
    /*
     * Missing arguments have the null type.
@@ -2052,7 +2092,11 @@ infer_prc(proc, n)
     */
    store = proc->out_store;
    for (i = 0; i < n_gbl; ++i)
+#ifdef dangeresque
       Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
+#else
+      tv_cpy(succ_store->types[i], store->types[i]);
+#endif
 
    /*
     * If the procedure can fail, merge variable types into the failure
@@ -2070,52 +2114,58 @@ infer_prc(proc, n)
 /*
  * cpy_store - make a copy of a store.
  */
+#ifdef opt_try_dangeresque
 static
 struct store *
-cpy_store(source)
-   struct store *source;
+cpy_store(src)
+   struct store * src;
 {
    int i;
    int stor_sz;
-   struct store *dest;
+   struct store * dst;
 
-   if (source == NULL) 
-      dest = get_store(1);
+   if (src == NULL) 
+      dst = get_store(1);
    else {
       stor_sz = n_gbl + n_loc;
-      dest = get_store(0);
+      dst = get_store(0);
       for (i = 0; i < stor_sz; ++i)
-         Vpp(CpyTyp(n_icntyp, source->types[i], dest->types[i]));
-      }
-   return dest;
-}
-
-#ifdef mdw_cant_use_this_anymore
-static
-inline
-struct store *
-cpy_store(src)
-   struct store *src;
-{
-   int i;
-   unsigned nbytes;
-   struct store *dst;
-
-   if (src == NULL)
-      return get_store(1);
-
-   dst = get_store(0);
-   i = n_gbl + n_loc - 1;
-   nbytes = NumInts(n_icntyp);
-   nbytes <<= 2; /* machine dependency */
-   while (i >= 0) {
-      /* memcpy(dst->types[i], src->types[i], nbytes); */
-      Vpp(CpyTyp(n_icntyp, src->types[i], dst->types[i]));
-      i--;
+         Vpp(CpyTyp(n_icntyp, src->types[i], dst->types[i]));
       }
    return dst;
 }
-#endif /* mdw_cant_use_this_anymore */
+#else
+/*
+ * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE
+ *
+ * This is a dangeresque optimization; we assume that reference-based
+ * semantics will suffice for copying of vectors contained within stores.
+ * There may be situations where this can have side effects, especially
+ * since the original code (see above) only copied the first n_icntyp bits
+ * in each vector contained within a store.
+ *
+ * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE
+ */
+static
+struct store *
+cpy_store(src)
+   struct store * src;
+{
+   int i;
+   int stor_sz;
+   struct store * rslt;
+
+   if (src == NULL) {
+      rslt = get_store(1);
+      return rslt;
+      }
+   stor_sz = n_gbl + n_loc;
+   rslt = get_store(0);
+   for (i=0; i<stor_sz; i++)
+      rslt->types[i]->ent = src->types[i]->ent;
+   return rslt;
+}
+#endif
 
 /*
  * mrg_store - merge the source store into the destination store.
@@ -2161,6 +2211,7 @@ mrg_store(src, dst)
    i = n_gbl + n_loc - 1;
    nints = NumInts(n_icntyp) - 1;
 
+#ifdef mdw_previous_method
    /*
     * Is this store included in the state that must be checked for a fixed
     *  point?
@@ -2168,25 +2219,32 @@ mrg_store(src, dst)
    if (dst->perm) {
       while (i >= 0) {
          /* Vpp(ChkMrgTyp(n_icntyp, src->types[i], dst->types[i])); */
-         Vpp(ChkMrgTyp2(nints, src->types[i], dst->types[i]));
+         if (src->types[i]->ent != dst->types[i]->ent)
+            Vpp(ChkMrgTyp2(nints, src->types[i], dst->types[i]));
          i--;
          }
       }
    else {
       while (i >= 0) {
          /* Vpp(MrgTyp(n_icntyp, src->types[i], dst->types[i])); */
-         Vpp(MrgTyp2(nints, src->types[i], dst->types[i]));
+         if (src->types[i]->ent != dst->types[i]->ent)
+            Vpp(MrgTyp2(nints, src->types[i], dst->types[i]));
          i--;
          }
       }
+#else
+   tv_stores_or(dst, src, 0, i);
+#endif /* mdw_previous_method */
 }
 
 /*
  * set_ret - Save return type and the store for global variables.
  */
-static void set_ret(typ)
-typeinfo_t *typ;
-   {
+static
+void
+set_ret(typ)
+   typeinfo_t * typ;
+{
    int i;
    int nints;
 
@@ -2207,39 +2265,56 @@ typeinfo_t *typ;
       */
       Vpp(MrgTyp2(nints, succ_store->types[i], cur_proc->out_store->types[i]));
 
-   }
+}
 
 /*
  * deref_lcl - dereference local variable sub-types.
  */
-static void deref_lcl(src, dest)
-typeinfo_t *src;
-typeinfo_t *dest;
-   {
+static
+void
+deref_lcl(src, dest)
+   typeinfo_t * src;
+   typeinfo_t * dest;
+{
    int i, j;
+   int n_set;
    int ref_gbl;
-   int frst_stv;
    int num_stv;
+   int frst_stv;
+   unsigned int * rng;
+   struct type * wktyp;
    struct store *stv_stor;
-   struct type *wktyp;
 
    /*
     * Make a copy of the type to be dereferenced.
     */
    wktyp = get_wktyp();
+#ifdef dangeresque
    Vpp(CpyTyp(n_intrtyp, src, wktyp->bits));
+#else
+   tv_cpy(wktyp->bits, src);
+#endif
 
    /*
     * Determine which variable types must be dereferenced.  Merge the
     *  dereferenced type into the return type and delete the variable
     *  type. Start with simple local variables.
     */
+#ifdef opt_try
    for (i = 0; i < n_loc; ++i)
       if (Vcall(bitset(wktyp->bits, frst_loc + i))) {
+         printf("  bit %d set...\n", frst_loc + i);
          Vpp(MrgTyp(n_icntyp, succ_store->types[n_gbl + i], wktyp->bits));
          Vcall(clr_typ(wktyp->bits, frst_loc + i));
          }
-
+#else
+   rng = tv_rng_get(wktyp->bits, frst_loc, frst_loc + n_loc - 1, &n_set);
+   for (i=0; i<n_set; i++) {
+      Vpp(MrgTyp(n_icntyp, succ_store->types[n_gbl + rng[i] - frst_loc],
+         wktyp->bits));
+      Vcall(clr_typ(wktyp->bits, rng[i]));
+      }
+#endif
    /*
     * Check for substring trapped variables. If a sub-string trapped
     *  variable references a local, add "string" to the return type.
@@ -2294,17 +2369,19 @@ typeinfo_t *dest;
 #endif					/* TypTrc */
 
    free_wktyp(wktyp);
-   }
+}
 
 /*
  * get_store - get a store large enough to hold globals and locals.
  */
-static struct store *get_store(clear)
-int clear;
-   {
-   struct store *store;
-   int store_sz;
+static
+struct store *
+get_store(clear)
+   int clear;
+{
    int i;
+   int store_sz;
+   struct store *store;
 
    /*
     * Warning, stores for all procedures must be the same size. In some
@@ -2334,7 +2411,7 @@ int clear;
             Vpp(ClrTyp(n_icntyp, store->types[i]));
       }
    return store;
-   }
+}
 
 static void free_store(store)
 struct store *store;
@@ -2343,38 +2420,13 @@ struct store *store;
    store_pool = store;
    }
 
-#ifdef mdw_replaced
 static
 int
 node_descendants(n)
    struct node * n;
 {
-   int i;
-
-   if (n->n_type == N_Invok)
-      i = 1;
-   else
-      i = 0;
-   for (; i<16; i++) {
-      if (n->n_field[i].n_ptr == NULL)
-         break;
-      }
-   return i;
+   return n->n_nflds;
 }
-#else /* mdw_replaced */
-static
-int
-node_descendants(n)
-   struct node * n;
-{
-   int i;
-
-   i = (n->n_type == N_Invok) ? 1 : 0;
-   while (n->n_field[i].n_ptr)
-      i++;
-   return i;
-}
-#endif /* mdw_replaced */
 
 static
 struct node *
@@ -2463,6 +2515,32 @@ methodinvok_add_implicit_self(n)
    n->n_field[2].n_ptr = t;
 }
 
+void
+infer_nd_in(n)
+   struct node * n;
+{
+   char * p;
+   char * q;
+   struct node * rec;
+   struct node * fld;
+
+   if (n->n_file == NULL)
+      return;
+   q = n->n_file;
+   while ((p = strchr(q, '/')) != NULL)
+      q = ++p;
+   printf("infer-nd-in: line: %d file: \"%s\" type: %s\n", n->n_line,
+      q, util_gettreenodetypename(n->n_type));
+   if (n->n_type == N_Id)
+      printf("  id: \"%s\"\n", n->n_field[0].csym->image);
+
+   if (n->n_type == N_Field) {
+      rec = Tree0(n);
+      fld = Tree1(n);
+      printf("  fld-id: \"%s\"\n", Str0(fld));
+      }
+}
+
 /*
  * infer_nd - perform type inference on a subtree of the syntax tree.
  */
@@ -2489,6 +2567,8 @@ nodeptr n;
    int i;
    extern int verbose;
    extern int unicon_mode;
+
+/*   infer_nd_in(n); debug only */
 
    switch (n->n_type) {
       case N_Activat:
@@ -2872,8 +2952,9 @@ Vcall(set_typ(wktyp->bits, null_bit));
          if (Tree1(n)->n_type == N_Empty) {
             Vpp(MrgTyp(n_intrtyp, arg_typs->types[num_args - 1], n->type));
             }
-         else
+         else {
             gen_inv(Tree1(n)->type, n);
+            }
 
          free_argtyp(arg_typs);
          arg_typs = sav_argtyp;
@@ -3024,7 +3105,11 @@ Vcall(set_typ(wktyp->bits, null_bit));
                 */
                store = cur_proc->susp_store;
                for (i = 0; i < n_gbl; ++i)
+#ifdef dangeresque
                   Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
+#else
+                  tv_cpy(succ_store->types[i], store->types[i]);
+#endif
 
                /*
                 * Next in the do clause resumes the control clause as
@@ -3367,13 +3452,15 @@ Vcall(set_typ(wktyp->bits, null_bit));
  * infer_con - perform type inference for the invocation of a record
  *  constructor.
  */
-static void infer_con(rec, n)
-struct rentry *rec;
-nodeptr n;
-   {
-   int fld_indx;
-   int nfields;
+static
+void
+infer_con(rec, n)
+   struct rentry * rec;
+   nodeptr n;
+{
    int i;
+   int nfields;
+   int fld_indx;
 
 #ifdef TypTrc
    if (trcfile != NULL) {
@@ -3425,28 +3512,30 @@ nodeptr n;
       fprintf(trcfile, "\n");
       }
 #endif					/* TypTrc */
-   }
+}
 
 /*
  * infer_act - perform type inference on coexpression activation.
  */
-static void infer_act(n)
-nodeptr n;
-   {
-   struct implement *asgn_impl;
+static
+void
+infer_act(n)
+   nodeptr n;
+{
+   int i;
+   int j;
+   int num_coexp;
+   int sav_nargs;
+   int frst_coexp;
+   struct store *store;
    struct store *s_store;
    struct store *f_store;
    struct store *e_store;
-   struct store *store;
-   struct t_coexpr *sv_coexp;
-   struct t_coexpr *coexp;
    struct type *rslt_typ;
+   struct t_coexpr *coexp;
+   struct t_coexpr *sv_coexp;
    struct argtyps *sav_argtyp;
-   int frst_coexp;
-   int num_coexp;
-   int sav_nargs;
-   int i;
-   int j;
+   struct implement *asgn_impl;
 
 #ifdef TypTrc
    FILE *trc_save;
@@ -3485,16 +3574,23 @@ nodeptr n;
     */
    e_store = get_store(1);
    for (i = 0; i < n_loc; ++i)
+#ifdef dangeresque
       Vpp(CpyTyp(n_icntyp, succ_store->types[n_gbl + i], e_store->types[n_gbl + i]));
+#else
+      tv_cpy(e_store->types[n_gbl + i], succ_store->types[n_gbl + i]);
+#endif
+
    if (fail_store->perm) {
-      for (i = 0; i < n_loc; ++i)
+      for (i = 0; i < n_loc; ++i) {
          Vpp(ChkMrgTyp(n_icntyp, succ_store->types[n_gbl + i],
             fail_store->types[n_gbl + i]));
          }
+      }
     else {
-      for (i = 0; i < n_loc; ++i)
+      for (i = 0; i < n_loc; ++i) {
          Vpp(MrgTyp(n_icntyp, succ_store->types[n_gbl + i],
             fail_store->types[n_gbl + i]));
+         }
       }
 
 
@@ -3624,80 +3720,85 @@ nodeptr n;
       Vpp(ChkMrgTyp(n_intrtyp, rslt_typ->bits, n->type));
 
    free_wktyp(rslt_typ);
-   }
+}
 
 /*
  * mrg_act - merge entry information for the co-expression to the
  *  the ending store and result type for the activation being
  *  analyzed.
  */
-static void mrg_act(coexp, e_store, rslt_typ)
-struct t_coexpr *coexp;
-struct store *e_store;
-struct type *rslt_typ;
-   {
-   struct store *store;
+static
+void
+mrg_act(coexp, e_store, rslt_typ)
+   struct t_coexpr * coexp;
+   struct store * e_store;
+   struct type * rslt_typ;
+{
    int i;
+   struct store * store;
 
    store = coexp->in_store;
    for (i = 0; i < n_gbl; ++i)
       Vpp(MrgTyp(n_icntyp, store->types[i], e_store->types[i]));
 
    Vpp(MrgTyp(n_intrtyp, coexp->act_typ, rslt_typ->bits));
-   }
+}
 
 /*
  * typ_deref - perform dereferencing in the abstract type realm.
  */
-static void typ_deref(src, dest, chk)
-typeinfo_t *src;
-typeinfo_t *dest;
-int chk;
-   {
-   struct store *tblel_stor;
-   struct store *tbldf_stor;
-   struct store *ttv_stor;
-   struct store *store;
-   unsigned int old;
+static
+void
+typ_deref(src, dst, chk)
+   typeinfo_t * src;
+   typeinfo_t * dst;
+   int chk;
+{
+   int i;
+   int j;
+   int n_set;
    int num_tbl;
    int frst_tbl;
    int num_bits;
    int frst_bit;
-   int i;
-   int j;
-   int ret;
+   unsigned int * rng;
+   struct store * store;
+   struct store * ttv_stor;
+   struct store * tblel_stor;
+   struct store * tbldf_stor;
 
    /*
     * copy values to destination
     */
-   i = Vcall(deref_prep(dest, src));
-   if (chk) changed += i;
+   i = Vcall(deref_prep(dst, src));
+   if (chk)
+      changed += i;
    /* 
     * predefined variables whose types do not change.
     */
    for (i = 0; i < num_typs; ++i) {
-      if (icontypes[i].deref == DrfCnst) {
-         if (Vcall(bitset(src, type_array[i].frst_bit)))
-            if (chk)
-               Vpp(ChkMrgTyp(n_icntyp, type_array[i].typ, dest));
-            else
-               Vpp(MrgTyp(n_icntyp, type_array[i].typ, dest));
+      if (icontypes[i].deref != DrfCnst)
+         continue;
+      if (Vcall(bitset(src, type_array[i].frst_bit))) {
+         if (chk)
+            Vpp(ChkMrgTyp(n_icntyp, type_array[i].typ, dst));
+         else
+            Vpp(MrgTyp(n_icntyp, type_array[i].typ, dst));
          }
       }
-
    /*
     * substring trapped variables
     */
    num_bits = type_array[stv_typ].num_bits;
    frst_bit = type_array[stv_typ].frst_bit;
-   for (i = 0; i < num_bits; ++i)
-      if (Vcall(bitset(src, frst_bit + i)))
-         if (!Vcall(bitset(dest, str_bit))) {
-            if (chk)
-               ++changed;
-            Vcall(set_typ(dest, str_bit));
+   for (i = 0; i < num_bits; ++i) {
+      if (Vcall(bitset(src, frst_bit + i))) {
+         if (!Vcall(bitset(dst, str_bit))) {
+            if (chk) ++changed;
+            Vcall(set_typ(dst, str_bit));
             }
-
+         }
+      }
    /*
     * table element trapped variables
     */
@@ -3708,19 +3809,40 @@ int chk;
    tblel_stor = compnt_array[tbl_val].store;
    tbldf_stor = compnt_array[tbl_dflt].store;
    ttv_stor = compnt_array[trpd_tbl].store;
-   for (i = 0; i < num_bits; ++i)
-      if (Vcall(bitset(src, frst_bit + i)))
-         for (j = 0; j < num_tbl; ++j)
-             if (Vcall(bitset(ttv_stor->types[i], frst_tbl + j))) {
-                if (chk) {
-                   Vpp(ChkMrgTyp(n_icntyp, tblel_stor->types[j], dest));
-                   Vpp(ChkMrgTyp(n_icntyp, tbldf_stor->types[j], dest));
-                   }
-                else {
-                   Vpp(MrgTyp(n_icntyp, tblel_stor->types[j], dest));
-                   Vpp(MrgTyp(n_icntyp, tbldf_stor->types[j], dest));
-                   }
-                }
+#ifdef opt_try
+   for (i = 0; i < num_bits; ++i) {
+      if (Vcall(bitset(src, frst_bit + i))) {
+         for (j = 0; j < num_tbl; ++j) {
+            if (Vcall(bitset(ttv_stor->types[i], frst_tbl + j))) {
+               if (chk) {
+                  Vpp(ChkMrgTyp(n_icntyp, tblel_stor->types[j], dst));
+                  Vpp(ChkMrgTyp(n_icntyp, tbldf_stor->types[j], dst));
+                  }
+               else {
+                  Vpp(MrgTyp(n_icntyp, tblel_stor->types[j], dst));
+                  Vpp(MrgTyp(n_icntyp, tbldf_stor->types[j], dst));
+                  }
+               }
+            }
+         }
+      }
+#else
+   rng = tv_rng_get(src, frst_bit, frst_bit + num_bits - 1, &n_set);
+   for (i=0; i<n_set; i++) {
+      for (j=0; j<num_tbl; j++) {
+         if (!Vcall(bitset(ttv_stor->types[rng[i] - frst_bit], frst_tbl + j)))
+            continue;
+         if (chk) {
+            Vpp(ChkMrgTyp(n_icntyp, tblel_stor->types[j], dst));
+            Vpp(ChkMrgTyp(n_icntyp, tbldf_stor->types[j], dst));
+            }
+         else {
+            Vpp(MrgTyp(n_icntyp, tblel_stor->types[j], dst));
+            Vpp(MrgTyp(n_icntyp, tbldf_stor->types[j], dst));
+            }
+         }
+      }
+#endif
 
    /*
     * Aggregate compontents that are variables.
@@ -3730,66 +3852,109 @@ int chk;
          frst_bit = compnt_array[i].frst_bit;
          num_bits = compnt_array[i].num_bits;
          store = compnt_array[i].store;
+#ifdef opt_try
          for (j = 0; j < num_bits; ++j) {
             if (Vcall(bitset(src, frst_bit + j)))
                if (chk)
-                  Vpp(ChkMrgTyp(n_icntyp, store->types[j], dest));
+                  Vpp(ChkMrgTyp(n_icntyp, store->types[j], dst));
                else
-                  Vpp(MrgTyp(n_icntyp, store->types[j], dest));
+                  Vpp(MrgTyp(n_icntyp, store->types[j], dst));
             }
+#else
+         rng = tv_rng_get(src, frst_bit, frst_bit + num_bits - 1, &n_set);
+         for (j=0; j<n_set; j++) {
+            if (chk)
+               Vpp(ChkMrgTyp(n_icntyp, store->types[rng[j] - frst_bit], dst));
+            else
+               Vpp(MrgTyp(n_icntyp, store->types[rng[j] - frst_bit], dst));
+            }
+#endif
          }
       }
 
-
+#ifdef opt_try
    /*
     * record fields
     */
    for (i = 0; i < n_fld; ++i)
       if (Vcall(bitset(src, frst_fld + i))) {
          if (chk)
-            Vpp(ChkMrgTyp(n_icntyp, fld_stor->types[i], dest));
+            Vpp(ChkMrgTyp(n_icntyp, fld_stor->types[i], dst));
          else
-            Vpp(MrgTyp(n_icntyp, fld_stor->types[i], dest));
+            Vpp(MrgTyp(n_icntyp, fld_stor->types[i], dst));
       }
+#else
+   rng = tv_rng_get(src, frst_fld, frst_fld + n_fld - 1, &n_set);
+   for (i=0; i<n_set; i++) {
+      if (chk)
+         Vpp(ChkMrgTyp(n_icntyp, fld_stor->types[rng[i] - frst_fld], dst));
+      else
+         Vpp(MrgTyp(n_icntyp, fld_stor->types[rng[i] - frst_fld], dst));
+      } 
+#endif
 
+#ifdef opt_try
    /*
     * global variables
     */
    for (i = 0; i < n_gbl; ++i)
       if (Vcall(bitset(src, frst_gbl + i))) {
          if (chk)
-            Vpp(ChkMrgTyp(n_icntyp, succ_store->types[i], dest));
+            Vpp(ChkMrgTyp(n_icntyp, succ_store->types[i], dst));
          else
-            Vpp(MrgTyp(n_icntyp, succ_store->types[i], dest));
+            Vpp(MrgTyp(n_icntyp, succ_store->types[i], dst));
       }
+#else
+   rng = tv_rng_get(src, frst_gbl, frst_gbl + n_gbl - 1, &n_set);
+   for (i=0; i<n_set; i++) {
+      if (chk)
+         Vpp(ChkMrgTyp(n_icntyp, succ_store->types[rng[i] - frst_gbl], dst));
+      else
+         Vpp(MrgTyp(n_icntyp, succ_store->types[rng[i] - frst_gbl], dst));
+      } 
+#endif
 
+#ifdef opt_try
    /*
     * local variables
     */
    for (i = 0; i < n_loc; ++i)
       if (Vcall(bitset(src, frst_loc + i))) {
          if (chk)
-            Vpp(ChkMrgTyp(n_icntyp, succ_store->types[n_gbl + i], dest));
+            Vpp(ChkMrgTyp(n_icntyp, succ_store->types[n_gbl + i], dst));
          else
-            Vpp(MrgTyp(n_icntyp, succ_store->types[n_gbl + i], dest));
+            Vpp(MrgTyp(n_icntyp, succ_store->types[n_gbl + i], dst));
       }
+#else
+   rng = tv_rng_get(src, frst_loc, frst_loc + n_loc - 1, &n_set);
+   for (i=0; i<n_set; i++) {
+      if (chk)
+         Vpp(ChkMrgTyp(n_icntyp, succ_store->types[n_gbl + rng[i] - frst_loc],
+            dst));
+      else
+         Vpp(MrgTyp(n_icntyp, succ_store->types[n_gbl + rng[i] - frst_loc],
+            dst));
+      }
+#endif
 }
 
 /*
  * infer_impl - perform type inference on a call to built-in operation
  *   using the implementation entry from the data base.
  */
-static void infer_impl(impl, n, symtyps, rslt_typ)
-struct implement *impl;
-nodeptr n;
-struct symtyps *symtyps;
-typeinfo_t *rslt_typ;
-   {
-   typeinfo_t *typ;
-   int flag;
-   int nparms;
+static
+void
+infer_impl(impl, n, symtyps, rslt_typ)
+   struct implement * impl;
+   nodeptr n;
+   struct symtyps * symtyps;
+   typeinfo_t * rslt_typ;
+{
    int i;
    int j; 
+   int flag;
+   int nparms;
+   typeinfo_t * typ;
 
 #ifdef TypTrc
    if (trcfile != NULL) {
@@ -3809,7 +3974,11 @@ typeinfo_t *rslt_typ;
    j = 0;
    for (i = 0; i < num_args && i < nparms; ++i) {
       if (impl->arg_flgs[i] & RtParm) {
+#ifdef dangeresque
          Vpp(CpyTyp(n_intrtyp, arg_typs->types[i], symtyps->types[j]));
+#else
+         tv_cpy(symtyps->types[j], arg_typs->types[i]);
+#endif
 
 #ifdef TypTrc
          if (trcfile != NULL) {
@@ -3912,18 +4081,19 @@ typeinfo_t *rslt_typ;
       fprintf(trcfile, "\n");
       }
 #endif					/* TypTrc */
-
-   }
+}
 
 /*
  * chk_succ - check to see if the operation can succeed. In particular,
  *   see if it can suspend. Change the succ_store and failure store
  *   appropriately.
  */
-static void chk_succ(ret_flag, susp_stor)
-int ret_flag;
-struct store *susp_stor;
-   {
+static
+void
+chk_succ(ret_flag, susp_stor)
+   int ret_flag;
+   struct store * susp_stor;
+{
    if (ret_flag & DoesSusp) {
        if (susp_stor != NULL && (ret_flag & DoesRet))
           mrg_store(susp_stor, fail_store); /* "pass along" failure */
@@ -3934,15 +4104,17 @@ struct store *susp_stor;
       succ_store = get_store(1);
       fail_store = dummy_stor;    /* shouldn't be used */
       }
-   }
+}
 
 /*
  * infer_il - perform type inference on a piece of code within built-in
  *   operation and determine whether execution can get past it.
  */
-static int infer_il(il)
-struct il_code *il;
-   {
+static
+int
+infer_il(il)
+   struct il_code * il;
+{
    struct il_code *il1;
    int condition;
    int case_fnd;
@@ -4055,21 +4227,25 @@ struct il_code *il;
          exit(EXIT_FAILURE);
          /* NOTREACHED */
       }
-   }
+}
 
 /*
  * side_effect - perform a side effect from an abstract clause of a
  *  built-in operation.
  */
-static void side_effect(il)
-struct il_code *il;
-   {
-   struct type *var_typ;
-   struct type *val_typ;
-   struct store *store;
+static
+void
+side_effect(il)
+   struct il_code * il;
+{
+   int n_set;
+   int i, j, k;
    int num_bits;
    int frst_bit;
-   int i, j;
+   unsigned int * rng;
+   struct store * store;
+   struct type * var_typ;
+   struct type * val_typ;
 
    /*
     * il is IL_TpAsgn, get the variable type and value type, and perform
@@ -4090,63 +4266,91 @@ struct il_code *il;
       frst_bit = compnt_array[i].frst_bit;
       num_bits = compnt_array[i].num_bits;
       store = compnt_array[i].store;
+#ifdef opt_try
       for (j = 0; j < num_bits; ++j) {
          if (Vcall(bitset(var_typ->bits, frst_bit + j)))
             Vpp(ChkMrgTyp(n_icntyp, val_typ->bits, store->types[j]));
          }
+#else
+      rng = tv_rng_get(var_typ->bits, frst_bit, frst_bit + num_bits - 1,&n_set);
+      for (k=0; k<n_set; k++)
+         Vpp(ChkMrgTyp(n_icntyp, val_typ->bits,
+            store->types[rng[k] - frst_bit]));
+#endif
       }
 
+#ifdef opt_try
    /*
     * record fields
     */
    for (i = 0; i < n_fld; ++i)
       if (Vcall(bitset(var_typ->bits, frst_fld + i)))
          Vpp(ChkMrgTyp(n_icntyp, val_typ->bits, fld_stor->types[i]));
+#else
+   rng = tv_rng_get(var_typ->bits, frst_fld, frst_fld + n_fld - 1, &n_set);
+   for (i=0; i<n_set; i++)
+      Vpp(ChkMrgTyp(n_icntyp, val_typ->bits,
+         fld_stor->types[rng[i] - frst_fld]));
+#endif
 
+#ifdef opt_try
    /*
     * global variables
     */
    for (i = 0; i < n_gbl; ++i)
       if (Vcall(bitset(var_typ->bits, frst_gbl + i)))
           Vpp(MrgTyp(n_icntyp, val_typ->bits, succ_store->types[i]));
+#else
+   rng = tv_rng_get(var_typ->bits, frst_gbl, frst_gbl + n_gbl - 1, &n_set);
+   for (i=0; i<n_set; i++)
+      Vpp(MrgTyp(n_icntyp, val_typ->bits,succ_store->types[rng[i] - frst_gbl]));
+#endif
 
+#ifdef opt_try
    /*
     * local variables
     */
    for (i = 0; i < n_loc; ++i)
       if (Vcall(bitset(var_typ->bits, frst_loc + i)))
           Vpp(MrgTyp(n_icntyp, val_typ->bits, succ_store->types[n_gbl + i]));
-
+#else
+   rng = tv_rng_get(var_typ->bits, frst_loc, frst_loc + n_loc - 1, &n_set);
+   for (i=0; i<n_set; i++)
+      Vpp(MrgTyp(n_icntyp, val_typ->bits,
+         succ_store->types[n_gbl + rng[i] - frst_loc]));
+#endif
 
    free_wktyp(var_typ);
    free_wktyp(val_typ);
-   }
+}
 
 /*
  * abstr_typ - compute the type bits corresponding to an abstract type
  *  from an abstract clause of a built-in operation.
  */
-static void abstr_typ(il, typ)
-struct il_code *il;
-struct type *typ;
-   {
-   struct type *typ1;
-   struct type *typ2;
-   struct rentry *rec;
-   struct store *store;
-   struct compnt_info *compnts;
-   int num_bits;
-   int frst_bit;
-   int frst_cmpnt;
-   int num_comps;
-   int typcd;
-   int new_indx;
+static
+void
+abstr_typ(il, typ)
+   struct il_code * il;
+   struct type * typ;
+{
    int i;
    int j;
    int indx;
    int size;
+   int typcd;
    int t_indx;
+   int num_bits;
+   int frst_bit;
+   int new_indx;
+   int num_comps;
+   int frst_cmpnt;
+   struct type *typ1;
+   struct type *typ2;
    typeinfo_t *prmtyp;
+   struct rentry *rec;
+   struct store *store;
+   struct compnt_info *compnts;
 
    if (il == NULL)
        return;
@@ -4319,7 +4523,7 @@ struct type *typ;
          Vcall(typcd_bits((int)il->u[0].n, typ->bits));      /* type code */
          break;
       }
-   }
+}
 
 /*
  * eval_cond - evaluate the condition of in 'if' statement from a
@@ -4643,22 +4847,24 @@ int *maybe_dbl;
  *  the code generator: a different fnc is passed in each case.
  *  In addition, the code generator passes a case_anlz structure.
  */
-int type_case(il, fnc, case_anlz)
-struct il_code *il;
-int (*fnc)();
-struct case_anlz *case_anlz;
-   {
-   int *typ_vect;
+extern
+int
+type_case(il, fnc, case_anlz)
+   struct il_code * il;
+   int (*fnc)();
+   struct case_anlz * case_anlz;
+{
    int i, j;
+   int indx;
+   int typcd;
+   int select;
+   int sym_indx;
+   int use_dflt;
    int num_cases;
    int num_types;
-   int indx;
-   int sym_indx;
-   int typcd;
-   int use_dflt;
-   typeinfo_t *typ;
-   int select;
-   struct type *wktyp;
+   int * typ_vect;
+   typeinfo_t * typ;
+   struct type * wktyp;
 
    /*
     * Make a copy of the type of the variable the type case is
@@ -4670,7 +4876,11 @@ struct case_anlz *case_anlz;
    else
      typ = cur_symtyps->types[sym_indx];
    wktyp = get_wktyp();
+#ifdef dangeresque
    Vpp(CpyTyp(n_intrtyp, typ, wktyp->bits));
+#else
+   tv_cpy(wktyp->bits, typ);
+#endif
    typ = wktyp->bits;
 
    /*
@@ -4740,7 +4950,7 @@ struct case_anlz *case_anlz;
       return indx;
    else
       return -1;
-   }
+}
 
 /*
  * gen_inv - general invocation. The argument list is set up, perform
@@ -5135,16 +5345,21 @@ struct argtyps *argtyps;
  *  If the type consists of a single named variable, return its symbol
  *  table entry through the parameter "single".
  */
-int varsubtyp(typeinfo_t *typ, struct lentry **single)
-   {
-   struct store *stv_stor;
-   int subtypes;
+extern
+int
+varsubtyp(typ, single)
+   typeinfo_t * typ;
+   struct lentry ** single;
+{
+   int i, j;
+   int n_set;
    int n_types;
+   int subtypes;
    int var_indx;
    int frst_bit;
    int num_bits;
-   int i, j;
-
+   unsigned int * rng;
+   struct store * stv_stor;
 
    subtypes = 0;
    n_types = 0;
@@ -5153,11 +5368,19 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
    /*
     * check for non-variables.
     */
-   for (i = 0; i < n_icntyp; ++i)
+#ifdef opt_try
+   for (i = 0; i < n_icntyp; ++i) {
       if (Vcall(bitset(typ, i))) {
          subtypes |= HasVal;
          ++n_types;
          }
+      }
+#else
+   rng = tv_rng_get(typ, 0, n_icntyp, &n_set);
+   if (n_set)
+      subtypes |= HasVal;
+   n_types += n_set;
+#endif
 
    /* 
     * Predefined variable types.
@@ -5189,8 +5412,9 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
       }
 
    /*
-    * Aggregate compontents that are variables.
+    * Aggregate components that are variables.
     */
+#ifdef opt_try
    for (i = 0; i < num_cmpnts; ++i) {
       if (typecompnt[i].var) {
          frst_bit = compnt_array[i].frst_bit;
@@ -5203,15 +5427,35 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
             }
          }
       }
+#else
+   for (i=0; i<num_cmpnts; i++) {
+      if (typecompnt[i].var == 0)
+         continue;
+      frst_bit = compnt_array[i].frst_bit;
+      num_bits = compnt_array[i].num_bits;
+      rng = tv_rng_get(typ, frst_bit, frst_bit + num_bits - 1, &n_set);
+      if (n_set)
+         subtypes |= HasGlb;
+      n_types += n_set;
+      }
+#endif
 
    /*
     * record fields
     */
-   for (i = 0; i < n_fld; ++i)
+#ifdef opt_try
+   for (i = 0; i < n_fld; ++i) {
       if (Vcall(bitset(typ, frst_fld + i))) {
          subtypes |= HasGlb;
          ++n_types;
          }
+      }
+#else
+   rng = tv_rng_get(typ, frst_fld, frst_fld + n_fld - 1, &n_set);
+   if (n_set)
+      subtypes |= HasGlb;
+   n_types += n_set;
+#endif
 
    /*
     * global variables, including statics
@@ -5249,35 +5493,42 @@ int varsubtyp(typeinfo_t *typ, struct lentry **single)
       }
 
    return subtypes;
-   }
+}
 
 /*
  * mark_recs - go through the list of parent records for this field
  *  and mark those that are in the type. Also gather information
  *  to help generate better code.
  */
-void mark_recs(fp, typ, num_offsets, offset, bad_recs)
-struct fentry *fp;
-typeinfo_t *typ;
-int *num_offsets;
-int *offset;
-int *bad_recs;
-   {
-   struct par_rec *rp;
-   struct type *wktyp;
+extern
+void
+mark_recs(fp, typ, num_offsets, offset, bad_recs)
+   struct fentry * fp;
+   typeinfo_t * typ;
+   int * num_offsets;
+   int * offset;
+   int * bad_recs;
+{
    int frst_rec;
+   struct type * wktyp;
+   struct par_rec * rp;
    
    *num_offsets = 0;
    *offset = -1;
    *bad_recs = 0;
 
    wktyp = get_wktyp();
+#ifdef dangeresque
    Vpp(CpyTyp(n_icntyp, typ, wktyp->bits));
+#else
+   tv_cpy(wktyp->bits, typ);
+#endif
 
    /*
     * For each record containing this field, see if the record is
     *  in the type.
     */
+#ifdef reverse_logic
    frst_rec = type_array[rec_typ].frst_bit;
    for (rp = fp->rlist; rp != NULL; rp = rp->next) {
       if (Vcall(bitset(wktyp->bits, frst_rec + rp->rec->rec_num))) {
@@ -5292,13 +5543,29 @@ int *bad_recs;
             }
          }
       }
+#else
+   frst_rec = type_array[rec_typ].frst_bit;
+   for (rp = fp->rlist; rp != NULL; rp = rp->next) {
+      if (!Vcall(bitset(wktyp->bits, frst_rec + rp->rec->rec_num)))
+         continue;
+      /*
+       * This record is in the type.
+       */
+      rp->mark = 1;
+      Vcall(clr_typ(wktyp->bits, frst_rec + rp->rec->rec_num));
+      if (*offset != rp->offset) {
+         *offset = rp->offset;
+         *num_offsets += 1;
+         }
+      }
+#endif
 
    /*
     * Are there any records that do not contain this field?
     */
    *bad_recs = Vcall(has_type(wktyp->bits, rec_typ, 0));
    free_wktyp(wktyp);
-   }
+}
 
 /*
  * past_prms - return true if execution might continue past the parameter

@@ -17,6 +17,18 @@ static nodeptr chk_empty (nodeptr n);
 static void put_elms  (nodeptr t, nodeptr args, int slot);
 static nodeptr subsc_nd  (nodeptr op, nodeptr arg1, nodeptr arg2);
 
+extern
+struct node *
+mdw_new_node(nflds)
+   int nflds;
+{
+   struct node * rslt;
+
+   rslt = alloc(sizeof(struct node) + nflds * sizeof(union field));
+   rslt->n_nflds = nflds;
+   return rslt;
+}
+
 /*
  *  tree[1-6] construct parse tree nodes with specified values.
  *   loc_model is a node containing the same line and column information
@@ -87,6 +99,8 @@ nodeptr a, b;
    t->freetmp = NULL;
    t->n_field[0].n_ptr = a;
    t->n_field[1].n_ptr = b;
+if (type == N_Apply)
+ca_apply_add(t->n_file, t);
    return t;
    }
 
@@ -353,15 +367,16 @@ invk_check_dyn_rec(argc, argv)
 /*
  * invk_nd - create a node for invocation.
  */
-nodeptr invk_nd(loc_model, proc, args)
-nodeptr loc_model;
-nodeptr proc;
-nodeptr args;
-   {
-   register nodeptr t;
+extern
+struct node *
+invk_nd(loc_model, proc, args)
+   struct node * loc_model;
+   struct node * proc;
+   struct node * args;
+{
    int nargs;
-   extern int ica_pcall_add(struct node *);
-
+   register nodeptr t;
+extern int ca_invk_add(char *, struct node *);
    /*
     * Determine the number of arguments.
     */
@@ -389,9 +404,10 @@ nodeptr args;
     * whether or not we're running in unicon-mode.
     */
    invk_check_dyn_rec(nargs, t);
-   ica_pcall_add(t);
+/* printf("invk-nd: expr11: %d file: %s\n", proc->n_type, t->n_file); */
+   ca_invk_add(loc_model->n_file, t);
    return t;
-   }
+}
 
 /*
  * put_elms - convert a linked list of arguments into an array of arguments

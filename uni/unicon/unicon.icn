@@ -39,6 +39,7 @@ global iconc
 global iconc_links
 global iconc_parsed
 global iconc_imports
+global iconc_perifile_idx
 $endif # Uniconc
 
 link basename, io
@@ -192,7 +193,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
 
    rslt := []
    comps := tail(ref)
-
+   ca_add_link(srcfname, ref)
    #
    # try the raw ref first
    #
@@ -258,7 +259,6 @@ procedure iconc_linkref_resolve(srcfname, ref)
          close(f)
          break
          }
-
       else {
          f := &null
          }
@@ -354,8 +354,10 @@ procedure iconc_yyparse(fname, tmplist)
       }
    else
       yyout := &output
+   /iconc_perifile_idx := *tmplist
    write(yyout, "#line 0 \"", fname, "\"")
    iwrites(&errout, "Parsing ", fname ,": ")
+   ca_assoc(fname, tmpname)
    rv := yyparse()
    if yynerrs = 0 then iwrite(&errout)
    if /yydbg then
@@ -431,6 +433,7 @@ $ifdef Uniconc
    iconc_links := table()
    iconc_parsed := table()
    iconc_imports := table()
+   ca_init()
 $endif # Uniconc
 
    every i := 1 to *argv do {
@@ -570,6 +573,7 @@ $endif # Uniconc
 	       stop("can't open temporary file ",tmpname," for writing")
 $ifdef Uniconc
             put(tmpfnames, tmpname)
+            ca_assoc(yyfilename, tmpname) 
 $endif # Uniconc
 	    }
 	 else yyout := &output
@@ -715,10 +719,18 @@ $ifdef Uniconc
          # write("synthesized exename: \"", exename, "\"...")
          }
       cmd ||:= \exename
+      if \iconc_perifile_idx then {
+         mw_temppath := getenv("TEMP") | "/tmp"
+         mw_tmpname := tempname("uni", "", mw_temppath, 5)
+         ca_write(mw_tmpname, tmpfnames[iconc_perifile_idx])
+         cmd ||:= " -A " || mw_tmpname || " "
+         }
       every k := 1 to *tmpfnames do {
          cmd ||:= tmpfnames[k]
-         cmd ||:= "-iconc ";
+         cmd ||:= "-iconc "
          }
+      # mdw: dbg only...
+      # ca_dbg_dump()
       rv := mysystem(cmd)
 # mdw: want to look at tmp files...
 #      if rv = 0 then

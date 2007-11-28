@@ -839,9 +839,12 @@ procedure iconc_prep_parse_tree(parent, child)
                      }
                   if child.label == ("link" | "lnklist") then {
                      iconc_links[child.children[i].s] := yyfilename
+                     ca_add_link(yyfilename, child.children[i].s)
                      }
-                  else
+                  else {
                      iconc_imports[child.children[i].s] := yyfilename
+                     ca_add_import(yyfilename, child.children[i].s)
+                     }
                   child.children[i].s := ""
                   }
                }
@@ -850,6 +853,7 @@ procedure iconc_prep_parse_tree(parent, child)
                # eliminate package decls
                #
                child.children[1].s := ""
+               ca_add_pkg(yyfilename, child.children[2].s)
                child.children[2].s := ""
                }
             if *child.children > 0 then {
@@ -871,7 +875,10 @@ procedure iconc_prep_parse_tree(parent, child)
             }
          "Class__state": {
             tmplist := list()
+#            ca_add_method(yyfilename, child.name, "ctor") # constructor
+            ca_add_class(yyfilename, child)
             every m := child.foreachmethod() do {
+               ca_add_method(yyfilename, m)
                put(tmplist, child)
                put(tmplist, m.procbody)
                }

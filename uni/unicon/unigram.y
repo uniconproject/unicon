@@ -402,6 +402,9 @@ global	: GLOBAL idlist { $$ := node("global", $1,$2) } ;
 
 record	: RECORD IDENT LPAREN fldlist RPAREN {
 		$$ := declaration($2,$4,$1,$3,$5)
+$ifdef Uniconc
+      ca_add_proc(yyfilename, $2.s)
+$endif
 		} ;
 
 fldlist	: { $$ := EmptyNode } ;
@@ -425,6 +428,9 @@ meth	: methhead SEMICOL locals initial procbody END {
 
 prochead: PROCEDURE IDENT LPAREN arglist RPAREN {
 		$$ := declaration($2, $4, $1, $3, $5)
+$ifdef Uniconc
+      ca_add_proc(yyfilename, $2.s)
+$endif
 		} ;
 
 methhead: METHOD IDENT LPAREN arglist RPAREN {
@@ -772,24 +778,14 @@ procedure FieldRef(lhs, dot, rhs)
    if (type(lhs) ~== "treenode") then
       return Field(lhs, dot, rhs);
 
-   case lhs.label of {
-      "field": {
-         tmpcount +:= 1;
-         return node("Paren", "(",
-            node("assign", "__" || tmpcount, " := ", lhs, ")", "& "),
-            Field("__" || tmpcount, ".", rhs))
-         }
-      "invoke": {
-         tmpcount +:= 1;
-         return node("Paren", "(",
-            node("assign", "__" || tmpcount, " := ", lhs, ")", "& "),
-            node("invoke", Field("__" || tmpcount, ".", rhs))
-            );
-         }
-      default: {
-         return Field(lhs, dot, rhs)
-         }
+   if (lhs.label == "invoke") then {
+      tmpcount +:= 1;
+      return node("Paren", "(",
+         node("assign", "__" || tmpcount, " := ", lhs, ")", "& "),
+         node("invoke", Field("__" || tmpcount, ".", rhs))
+         );
       }
+   return Field(lhs, dot, rhs)
 end
 $endif # Uniconc
 

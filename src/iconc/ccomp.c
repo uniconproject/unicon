@@ -190,7 +190,8 @@ Deliberate Syntax Error
 
 #if UNIX
 
-   lib_sz += strlen(" -L") + strlen(refpath);
+   lib_sz += strlen(" -L") +
+             strlen(refpath);
 
 #ifdef Messaging
    lib_sz += strlen(" -ltp ");
@@ -204,19 +205,14 @@ Deliberate Syntax Error
 
 #ifdef Graphics
 /* mdw: modified   lib_sz += strlen(" -lXpm "); */
-   lib_sz += strlen(" -lXpm");
-#ifdef Graphics3D
-   lib_sz += strlen(" -lGL -lGLU");
-#endif					/* Graphics3D */
+   lib_sz += strlen(" -lXpm -lGL -lGLU");
    lib_sz += strlen(ICONC_XLIB);
    opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
 #endif						/* Graphics */
 
-#ifdef mdw_0
 #ifdef ISQL
    lib_sz += strlen(" -liodbc ");
 #endif /* ISQL */
-#endif /* mdw_0 */
 
 #if HAVE_LIBZ
    lib_sz += strlen(" -lz ");
@@ -227,7 +223,7 @@ Deliberate Syntax Error
 #endif /* HAVE_LIBJPEG */
 
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
-			     lib_sz + 25);
+			     lib_sz + 8);
    strcpy(buf, c_comp);
    s = buf + cmd_sz;
    *s++ = ' ';
@@ -280,18 +276,14 @@ Deliberate Syntax Error
 #endif
 
 #ifdef Graphics
-   strcat(s, " -lXpm ");
-#ifdef Graphics3D
-   strcat(s, " -lGL -lGLU ");
-#endif					/* Graphics3D */
+   /* mdw: modified: strcat(s," -lXpm "); */
+   strcat(s, " -lXpm -lGL -lGLU ");
    strcat(s, ICONC_XLIB);
 #endif						/* Graphics */
 
-#ifdef mdw_0
 #ifdef ISQL
    strcat(s, " -liodbc ");
 #endif /* ISQL */
-#endif /* mdw_0 */
 
 #if HAVE_LIBZ
    strcat(s, " -lz ");
@@ -301,9 +293,7 @@ Deliberate Syntax Error
    strcat(s, " -ljpeg ");
 #endif /* HAVE_LIBJPEG */
 
-   s += strlen(s);
-
-   strcpy(s, LinkLibs);
+   strcat(s, LinkLibs);
 
    /*
     * mdw: emit cc command-line if verbosity is set above 2

@@ -1,0 +1,374 @@
+$ifdef Uniconc
+global uftbl  # tbl of all ufiles
+global ubndls # list of all ubundles
+global ufmain # ufile containing main proc
+
+record ufile(tmpnm, imps, lnks, procs, classes, pkg)
+record ubndl(typ, name, entry, classes, syms)
+record ucls(name, fullname, entry, supers)
+
+procedure ca_add_import(fname, ref)
+   local i, s, uf
+
+   uf := uftbl[fname]
+   if /uf then {
+      write("ca-add-import: \"", fname, "\" not ready.")
+      exit(-1)
+      }
+   s := ""
+   every i := 1 to *uf.imps do {
+      s := uf.imps[i]
+      if (s == ref) then
+         break
+      }
+   if not (s == ref) then
+      put(uf.imps, ref)
+   ca_import_rslv(ref)
+end
+
+procedure ca_add_link(fname, ref)
+   local i, s, uf
+
+   uf := uftbl[fname]
+   if /uf then {
+      write("ca-add-link: \"", fname, "\" not ready.")
+      exit(-1)
+      }
+   s := ""
+   every i := 1 to *uf.lnks do {
+      s := uf.lnks[i]
+      if (s == ref) then
+         break
+      }
+   if not (s == ref) then
+      put(uf.lnks, ref)
+end
+
+procedure ca_add_class(fname, cls)
+   local uf, clsname
+   local tmp, supers
+
+   uf := uftbl[fname]
+   if /uf then {
+      write("ca-add-class: \"", fname, "\" not ready.")
+      exit(-1)
+      }
+   clsname := cls.name
+   supers := list()
+   every tmp := cls.foreachsuper() do
+      put(supers, tmp)
+   tmp := ucls(clsname, clsname, &null, supers)
+   put(uf.classes, tmp)
+   put(uf.procs, clsname || "initialize")
+   put(uf.procs, clsname || "__methods")
+   put(uf.procs, clsname || "__mdw_inst_mdw")
+   put(uf.procs, clsname)
+   # write("ca-add-class: \"", clsname, "\" in \"", fname, "\"")
+end
+
+procedure ca_add_method(fname, mthd, ctor)
+   local uf, id
+
+   uf := uftbl[fname]
+   if /uf then {
+      write("ca-add-method: \"", fname, "\" not ready.")
+      exit(-1)
+      }
+   if (\ctor) then {
+      put(uf.procs, mthd || "initialize")
+      put(uf.procs, mthd || "__methods")
+      put(uf.procs, mthd || "__mdw_inst_mdw")
+      put(uf.classes, mthd)
+      id := mthd
+      }
+   else {
+      id := mthd.Class.name
+      id := id || "_"
+      id := id || mthd.name
+      }
+   # write("ca-add-method: \"", id, "\" in \"", fname, "\"")
+   put(uf.procs, id) 
+end
+
+procedure ca_add_pkg(fname, id)
+   local uf, i, s, prfx
+
+   uf := uftbl[fname]
+   if /uf then {
+      write("ca-add-pkg: \"", fname, "\" not ready.")
+      exit(-1)
+      }
+   uf.pkg := id
+   # prepend a pkg-spec to all procs in this ufile
+   # that don't already have one...
+   prfx  := id || "__"
+   every i := 1 to *uf.procs do {
+      s := uf.procs[i]
+      if (match(prfx, s)) then
+         next
+      uf.procs[i] := prfx || s
+      }
+end
+
+procedure ca_add_proc(fname, id)
+   local uf
+
+   uf := uftbl[fname]
+   if /uf then {
+      write("ca-add-proc: \"", fname, "\" not ready.")
+      exit(-1)
+      }
+   if (uf.pkg == "dflt") then
+      put(uf.procs, id)
+   else
+      put(uf.procs, (uf.pkg || "__" || id))
+   if (id == "main") then {
+      ufmain := uf
+      # write("ca-add-proc: found main in \"", fname, "\"")
+      }
+end
+
+procedure ca_assoc(fname, tmpfname)
+   local uf
+
+# record ufile(tmpnm, imps, lnks, procs, classes, pkg)
+   uf := ufile(tmpfname, [], [], [], [], "dflt")
+   uftbl[fname] := uf 
+end
+
+procedure ca_dbg_dump()
+   local i, k, uf, cls
+
+   every k := key(uftbl) do {
+      uf := uftbl[k]
+      write("ca-dbg-dump: ", k)
+      write("  maps to ", uf.tmpnm)
+      writes("  in pkg: ")
+      if (\uf.pkg & (*uf.pkg > 0)) then
+         write(uf.pkg)
+      else
+         write("dflt")
+      every i := 1 to *uf.imps do
+         write("    imports ", uf.imps[i])
+      every i := 1 to *uf.lnks do
+         write("    links ", uf.lnks[i])
+      every i := 1 to *uf.classes do {
+         cls := uf.classes[i]
+         write("    class ", cls.name)
+         }
+      every i := 1 to *uf.procs do
+         write("    proc ", uf.procs[i])
+      }
+   # write bundles
+   every i := 1 to *ubndls do {
+      ub := ubndls[i]
+      write("bundle \"", ub.name, "\"")
+      write("  type: ", ub.typ)
+      write("  ent: ", ub.entry)
+      }
+#
+# interactively fetch class info...
+#
+#   repeat {
+#      write("class name: ")
+#      s := read()
+#      write("fetching class \"", s, "\"...")
+#      if (mdw_str := lkup_class("", s)) then
+#         write("got: \"", mdw_str, "\"")
+#      else
+#         write("not found.")
+#      }
+end
+
+$ifdef _MS_WINDOWS_NT
+$define PATHCHAR "\\"
+$else
+$define PATHCHAR "/"
+$endif
+
+procedure ca_import_rslv(name)
+   local i, bndl
+   static sep, ipaths
+
+   initial {
+      sep := PATHCHAR
+      ipaths := ipaths_get()
+      }
+   # see if we have this bundle already
+   every i := 1 to *ubndls do {
+      bndl := ubndls[i]
+      if not (bndl.typ == "imp") then
+         next
+      if (bndl.name == name) then
+         # this imp-ref already resolved
+         return
+      }
+   bndl := ubndl("imp", name)
+   every i := 1 to *ipaths do {
+      if not (f := open(ipaths[i] || sep || "uniclass", "dr")) then
+         next
+      if not (entry := fetch(f, name)) then {
+         close(f)
+         f := &null
+         next
+         }
+      close(f)
+      break
+      }
+   if (i = *ipaths & /f) then
+      fail
+   # write("ca-import-rslv: ")
+   # write("name: ", name)
+   # write("entry: ", entry)
+   bndl.entry := entry
+   get_classinfo_for_bundle(bndl)
+   put(ubndls, bndl)
+   return
+end
+
+procedure ca_linkref_rslv(name)
+end
+
+procedure ca_init()
+   uftbl := table()
+   ubndls := list()
+end
+
+procedure ca_write(fname, firstperi)
+   local f, i, j, k, s, uf, cls, spr
+
+   f := open(fname, "w") | {
+      write("ca-write: open failure: ", fname)
+      exit(-1)
+      }
+   write(f, "firstperi:", firstperi, "-iconc")
+   every k := key(uftbl) do {
+      uf := uftbl[k]
+      write(f, "file:", uf.tmpnm, "-iconc ", k)
+      if (/uf.pkg | (*uf.pkg = 0)) then
+         s := "dflt"
+      else
+         s := uf.pkg
+      write(f, "Pkg:", s)
+      every i := 1 to *uf.imps do
+         write(f, "imp:", uf.imps[i])
+      every i := 1 to *uf.lnks do
+         write(f, "lnk:", uf.lnks[i])
+      every i := 1 to *uf.procs do
+         write(f, "prc:", uf.procs[i])
+      every i := 1 to *uf.classes do {
+         cls := uf.classes[i]
+         write(f, "Class:", cls.name)
+         every j := 1 to *cls.supers do {
+            spr := cls.supers[j]
+            write(f, "super:", spr)
+            }
+         }
+      }
+   # write bundles
+   every i := 1 to *ubndls do {
+      b := ubndls[i]
+      write(f, "bndl:", b.name) # , " ", b.entry)
+      every k := 1 to *b.classes do {
+         c := b.classes[k]
+         write(f, "clss:", c.fullname)
+         write(f, c.entry[1:-1])
+         }
+      }
+   write(f, "end:")
+   close(f)
+end
+
+# record ucls(name, fullname, mthds, flds, supers)
+procedure get_classinfo_for_bundle(bndl)
+   local i, clsnms, entry
+
+   clsnms := list()
+   bndl.classes := list()
+   # write("ca.get-classinfo-for-bundle(", bndl.name, ")")
+   bndl.entry ? {
+      tab(upto("("))
+      tab(many("( "))
+      while (put(clsnms, tab(upto(",")))) do
+         tab(many(", "))
+      put(clsnms, tab(find(")")))
+      }
+   every i := 1 to *clsnms do {
+      # write("  \"", clsnms[i], "\"")
+      if (entry := lkup_class(bndl.name, clsnms[i])) then {
+         # write("    a class")
+         # write("    ", entry)
+         cls := ucls(clsnms[i], bndl.name || "__" || clsnms[i], entry)
+         put(bndl.classes, cls)
+$ifdef JustWritingEntryOutNow
+         s := entry[find("class", entry):0]
+         s ? {
+            # scan for superclasses
+            tab(upto(":"))
+            tab(many(": "))
+            while (put(cls.supers, tab(upto(":")))) do
+               tab(many(": "))
+            put(cls.supers, tab(upto("(")))
+            tab(many("("))
+            # scan for membervars
+            while (put(cls.flds, tab(upto(",")))) do
+               tab(many(", "))
+            put(cls.flds, tab(upto(")")))
+            tab(many(")"))
+            # scan for methods
+            tab(many("\n"))
+            while (put(cls.mthds, tab(upto("\n")))) do
+               tab(many("\n "))
+            }
+         # write("     has ", *cls.supers, " supers")
+         every sup := 1 to *cls.supers do
+            # write("      \"", cls.supers[sup], "\"")
+
+         # write("     has ", *cls.flds, " fields")
+         every sup := 1 to *cls.flds do
+            # write("      \"", cls.flds[sup], "\"")
+
+         # write("     has ", *cls.mthds, " methods")
+         every sup := 1 to *cls.mthds do
+            # write("      \"", cls.mthds[sup], "\"")
+         put(bndl.classes, cls)
+$endif #JustWritingEntryOutNow
+         }
+      else {
+         # write("    not found (a symbol?)")
+         }
+      entry := &null
+      }
+end
+
+procedure lkup_class_old(name)
+   local i, entry
+   static sep, ipaths
+
+   initial {
+      sep := PATHCHAR
+      ipaths := ipaths_get()
+      }
+   every i := 1 to *ipaths do {
+      if not (f := open(ipaths[i] || sep || "uniclass", "dr")) then
+         next
+      if not (entry := fetch(f, name)) then {
+         close(f)
+         f := &null
+         next
+         }
+      close(f)
+      return entry
+      }
+   fail
+end
+
+procedure lkup_class(pkg, name)
+   local dbent
+
+#   dbent := fetchspec(name | (pkg || "__" || name)) | fail
+   dbent := fetchspec(pkg || "__" || name) | fail
+   return dbent.entry
+end
+$endif # Uniconc
+

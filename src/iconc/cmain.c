@@ -85,8 +85,9 @@ char **argv;
    char *incl_path;			/* path to header file */
    char *s, c1;
    char buf[MaxFileName];		/* file name construction buffer */
-/*mdw*/extern int ica_init(void);
-
+   extern int ca_init(char *, int, char **);
+   extern void ca_dbg_dump(void);
+   extern char * ca_first_perifile;
 #ifdef ExpTools
    char Buf[MaxFileName];
    char *tools;				/* patch and TOOLS string buffer */
@@ -128,21 +129,28 @@ char **argv;
    /*
     * Process options.
     */
-   while ((c = getopt(argc,argv,"C:EL:S:TU:ce:f:gmn:o:p:r:stuv:w:x")) != EOF)
+   while ((c = getopt(argc,argv,"A:C:EL:S:TU:ce:f:gmn:o:p:r:stuv:w:x")) != EOF)
       switch (c) {
-         case 'C':			/* -C C-comp: C compiler*/
+         case 'A': /* here come the perifiles... */
+            ca_init(optarg, argc, argv);
+            if (verbose > 3) {
+               printf("mdw: ca-first-perifile: \"%s\"\n", ca_first_perifile);
+               ca_dbg_dump();
+               }
+            break;
+         case 'C': /* -C C-comp: C compiler*/
             c_comp = optarg;
             break;
-         case 'E':			/* -E: preprocess only */
+         case 'E': /* -E: preprocess only */
             pponly = 1;
             no_c_comp = 1;
             break;
-         case 'S':			/* Ignore: interpreter only */
+         case 'S': /* Ignore: interpreter only */
             break;
          case 'T':
             just_type_trace = 1;
             break;
-         case 'U':			/* source was preprocessed by unicon */
+         case 'U': /* source was preprocessed by unicon */
             if (*optarg == 'a')
                unicon_mode = UM_Ambig;
             else
@@ -152,36 +160,36 @@ char **argv;
                 "UM_Ambig" : "UM_Normal");
             */
             break;
-         case 'c':			/* -c: produce C file only */
+         case 'c': /* -c: produce C file only */
             no_c_comp = 1;
             break;
-         case 'e':			/* -e file: redirect stderr */
+         case 'e': /* -e file: redirect stderr */
             efile = optarg;
             break;
-         case 'f':			/* -f: enable features */
+         case 'f': /* -f: enable features */
             for (s = optarg; *s != '\0'; ++s) {
                switch (*s) {
-                  case 'a':             /* -fa: enable all features */
+                  case 'a': /* -fa: enable all features */
                      line_info = 1;
                      debug_info = 1;
                      err_conv = 1;
                      largeints = 1;
                      str_inv = 1;
                      break;
-                  case 'd':             /* -fd: enable debugging features */
+                  case 'd': /* -fd: enable debugging features */
                      line_info = 1;
                      /* mdw debug_info = 1; */
                      break;
-                  case 'e':             /* -fe: enable error conversion */
+                  case 'e': /* -fe: enable error conversion */
                      err_conv = 1;
                      break;
-                  case 'l':             /* -fl: support large integers */
+                  case 'l': /* -fl: support large integers */
                      largeints = 1;
                      break;
-                  case 'n':             /* -fn: enable line numbers */
+                  case 'n': /* -fn: enable line numbers */
                      line_info = 1;
                      break;
-                  case 's':		/* -fs: enable full string invocation */
+                  case 's': /* -fs: enable full string invocation */
                      str_inv = 1;
                      break;
                   default:
@@ -190,38 +198,38 @@ char **argv;
                   }
                }
             break;
-         case 'g':        /* -g: mdw: emit debugging symbols in target */
+         case 'g': /* -g: mdw: emit debugging symbols in target */
             dbgsyms = 1;
             break;
-         case 'm':			/* -m: preprocess using m4(1) [UNIX] */
+         case 'm': /* -m: preprocess using m4(1) [UNIX] */
             m4pre = 1;
             break;
-         case 'n':			/* -n: disable optimizations */
+         case 'n': /* -n: disable optimizations */
             for (s = optarg; *s != '\0'; ++s) {
                switch (*s) {
                   case 'O': /* -nO: no optimizations with host cc */
                      opt_hc_opts = 0;
                      printf("opt-hc-opts: 0\n");
                      break;
-                  case 'a':		/* -na: disable all optimizations */
+                  case 'a': /* -na: disable all optimizations */
                      opt_cntrl = 0;
                      allow_inline = 0;
                      opt_sgnl = 0;
                      do_typinfer = 0;
                      break;
-                  case 'c':		/* -nc: disable control flow opts */
+                  case 'c': /* -nc: disable control flow opts */
                      opt_cntrl = 0;
                      break;
-                  case 'e':		/* -ne: disable expanding in-line */
+                  case 'e': /* -ne: disable expanding in-line */
                      allow_inline = 0;
                      break;
                   case 'i': /* mdw: disable ica module */
                      opt_ica = 0;
                      break;
-                  case 's':		/* -ns: disable switch optimizations */
+                  case 's': /* -ns: disable switch optimizations */
                      opt_sgnl = 0;
                      break;
-                  case 't':		/* -nt: disable type inference */
+                  case 't': /* -nt: disable type inference */
                      do_typinfer = 0;
                      break;
                   default:
@@ -229,10 +237,10 @@ char **argv;
                   }
                }
             break;
-         case 'o':			/* -o file: name output file */
+         case 'o': /* -o file: name output file */
             ofile = optarg;
             break;
-         case 'p':			/* -p C-opts: options for C comp */
+         case 'p': /* -p C-opts: options for C comp */
             if (*optarg == '\0')	/* if empty string, clear options */
                c_opts = optarg;
             else {			/* else append to current set */
@@ -241,21 +249,21 @@ char **argv;
                c_opts = s;
                }
             break;
-         case 'r':			/* -r path: primary runtime system */
+         case 'r': /* -r path: primary runtime system */
             refpath = optarg;
             break;
-         case 's':			/* -s: suppress informative messages */
+         case 's': /* -s: suppress informative messages */
             verbose = 0;
             break;
-         case 't':                      /* -t: &trace = -1 */
+         case 't': /* -t: &trace = -1 */
             line_info = 1;
             debug_info = 1;
             trace = 1;
             break;
-         case 'u':			/* -u: warn about undeclared ids */
+         case 'u': /* -u: warn about undeclared ids */
             uwarn = 1;
             break;
-         case 'v':			/* -v: set level of verbosity */
+         case 'v': /* -v: set level of verbosity */
             if (sscanf(optarg, "%d%c", &verbose, &c1) != 1)
                quitf("bad operand to -v option: %s",optarg);
             break;
@@ -275,12 +283,11 @@ char **argv;
             }
             break;
          default:
-         case 'x':                      /* -x illegal until after file list */
+         case 'x': /* -x illegal until after file list */
             usage();
          }
 
    init();			/* initialize memory for translation */
-/*mdw*/ica_init();
    /*
     * Load the data bases of information about run-time routines and
     *  determine what libraries are needed for linking (these libraries
@@ -458,7 +465,7 @@ Deliberate Syntax Error
    dynrec_start = compute_dynrec_start();
    fprintf(inclfile, "/* mdw: sync recnum between iconc and rtl */\n");
    fprintf(inclfile, "#define DYNREC_START %d\n", dynrec_start);
-   fprintf(inclfile, "extern void dynrec_start_set(int);\n");
+
    fclose(codefile);
    fclose(inclfile);
    /*

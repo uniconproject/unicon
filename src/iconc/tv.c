@@ -666,7 +666,7 @@ tv_rng_get(tv, bgn, end, numset)
 
    *numset = 0;
    if (end < bgn) {
-      printf("tv-rng-get: range [%d .. %d] is invalid\n", bgn, end);
+      /*printf("tv-rng-get: range [%d .. %d] is invalid\n", bgn, end);*/
       return 0;
       }
    n = 0;

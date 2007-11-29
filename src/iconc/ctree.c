@@ -376,7 +376,7 @@ invk_nd(loc_model, proc, args)
 {
    int nargs;
    register nodeptr t;
-extern int ca_invk_add(char *, struct node *);
+   extern int ca_invk_add(char *, struct node *);
    /*
     * Determine the number of arguments.
     */

@@ -326,7 +326,7 @@ invk_check_dyn_rec(argc, argv)
    if (argc < 2)
       return -1;
    p = argv->n_field[1].n_ptr;
-   if (p->n_field[0].csym < 256 || p->n_field[0].csym->image == 0)
+   if (p->n_nflds <= 0 || p->n_field[0].csym->image == 0)
       return -1;
    if (strcmp("constructor", p->n_field[0].csym->image) != 0)
       return -1;

@@ -260,7 +260,7 @@ int icont(int argc, char **argv);
 #include <windows.h>
 #define lstrlen longstrlen
 
-int CmdParamToArgv(char *s, char ***avp)
+int CmdParamToArgv(char *s, char ***avp, int dequote)
    {
    char tmp[MaxPath], dir[MaxPath];
    char *t, *t2;
@@ -402,7 +402,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
    mswinInstance = hInstance;
    ncmdShow = nCmdShow;
-   argc = CmdParamToArgv(GetCommandLine(), &argv);
+   argc = CmdParamToArgv(GetCommandLine(), &argv, 0);
    MSStartup(argc, argv, hInstance, hPrevInstance);
 #if BORLAND_286
    _InitEasyWin();

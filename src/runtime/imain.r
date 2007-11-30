@@ -215,6 +215,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    return rv;
    }
 
+#if NT
 /*
  * Convert an argv array to a command line string.  argv[0] is searched
  * on the PATH, since system() or its relatives do not reliably do that.
@@ -249,6 +250,7 @@ char *ArgvToCmdline(char **argv)
    }
    return mytmp;
 }
+#endif					/* NT */
 
 #ifdef MSWindows
 #ifdef ConsoleWindow

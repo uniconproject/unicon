@@ -1898,3 +1898,121 @@ int ptflush(struct ptstruct *ptStruct)
 }
 
 #endif					/* PseudoPty */
+
+/*
+ * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
+ * Called for both input processing (e.g. in WinMain()) and in output
+ * (e.g. in mswinsystem()).  Behavior differs in that output does not
+ * remove double quotes from quoted arguments, otherwise receiving process
+ * (if a win32 process) would lose quotedness.
+ */
+int CmdParamToArgv(char *s, char ***avp, int dequote)
+{
+   char tmp[MaxPath], dir[MaxPath];
+   char *t=salloc(s), *t2=t;
+   int rv=0, i=0;
+   FILE *f=NULL;
+
+   *avp = malloc(2 * sizeof(char *));
+   (*avp)[rv] = NULL;
+
+#ifdef ConsoleWindow
+   detectRedirection();
+#endif					/* ConsoleWindow */
+
+   while (*t2) {
+      while (*t2 && isspace(*t2)) t2++;
+      switch (*t2) {
+	 case '\0': break;
+#ifdef ConsoleWindow
+	 case '<': case '>': {
+	    /*
+	     * perform file redirection; this is for Windows 3.1
+	     * and other situations where Wiconx is launched from
+	     * a shell that does not process < and > characters.
+	     */
+	    char c = *t2++, buf[128], *t3;
+	    FILE *f;
+	    while (*t2 && isspace(*t2)) t2++;
+	    t3 = buf;
+	    while (*t2 && !isspace(*t2)) *t3++ = *t2++;
+	    *t3 = '\0';
+	    if (c == '<')
+	       f = fopen(buf, "r");
+	    else
+	       f = fopen(buf, "w");
+	    if (f == NULL) {
+	       MessageBox(0, "unable to redirect i/o", "system error",
+			  MB_ICONHAND);
+	       c_exit(-1);
+	       }
+	    if (c == '<') {
+	       finredir = f;
+	       ConsoleFlags |= StdInRedirect;
+	       }
+	    else {
+	       fouredir = f;
+	       ConsoleFlags |= StdOutRedirect;
+	       }
+	    break;
+	    }
+#endif					/* ConsoleWindow */
+	 case '"': {
+	    char *t3, c = '\0';
+	    if (dequote) t3 = ++t2;			/* skip " */
+	    else t3 = t2++;
+
+            while (*t2 && (*t2 != '"')) t2++;
+	    if (*t2 && !dequote) t2++;
+            if (c = *t2) {
+	       *t2++ = '\0';
+	       }
+	    *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+	    (*avp)[rv++] = salloc(t3);
+            (*avp)[rv] = NULL;
+	    if(!dequote && c) *--t2 = c;
+
+	    break;
+	    }
+         default: {
+#if NT
+            FINDDATA_T fd;
+#endif					/* NT */
+	    char *t3 = t2;
+            while (*t2 && !isspace(*t2)) t2++;
+	    if (*t2)
+	       *t2++ = '\0';
+            strcpy(tmp, t3);
+#if NT
+	    if (!FINDFIRST(tmp, &fd)) {
+#endif
+	       *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+	       (*avp)[rv++] = salloc(t3);
+               (*avp)[rv] = NULL;
+#if NT
+               }
+	    else {
+               int end;
+               strcpy(dir, t3);
+	       do {
+	          end = strlen(dir)-1;
+	          while (end >= 0 && dir[end] != '\\' && dir[end] != '/' &&
+			dir[end] != ':') {
+                     dir[end] = '\0';
+		     end--;
+	             }
+		  strcat(dir, FILENAME(&fd));
+	          *avp = realloc(*avp, (rv + 2) * sizeof (char *));
+	          (*avp)[rv++] = salloc(dir);
+                  (*avp)[rv] = NULL;
+	          } while (FINDNEXT(&fd));
+	       FINDCLOSE(&fd);
+	       }
+#endif					/* NT */
+            break;
+	    }
+         }
+      }
+   free(t);
+   return rv;
+}

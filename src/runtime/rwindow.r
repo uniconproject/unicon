@@ -11,6 +11,21 @@ static	double	rgbval		(double n1, double n2, double hue);
 static	int	setpos          (wbp w, char *s);
 static	int	sicmp		(siptr sip1, siptr sip2);
 
+/*
+ * Global variables.
+ *  A poll counter for use in interp.c,
+ *  the binding for the console window - FILE * for simplicity,
+ *  &col, &row, &x, &y, &interval, timestamp, and modifier keys.
+ */
+int pollctr;
+FILE *ConsoleBinding = NULL;
+/*
+ * the global buffer used as work space for printing string, etc 
+ */
+char ConsoleStringBuf[MaxReadStr * 48];
+char *ConsoleStringBufPtr = ConsoleStringBuf;
+unsigned long ConsoleFlags = 0;			 /* Console flags */
+
 int canvas_serial, context_serial;
 
 #ifdef MSWindows
@@ -4226,7 +4241,9 @@ int n;
    genCurve(w, p, n, curveHelper);
    }
 
-#ifdef ConsoleWindow
+/*
+ * ConsoleWindow code.
+ */
 void wattr(FILE *w, char *s, int len)
 {
    struct descrip answer;
@@ -4408,8 +4425,10 @@ int Consoleputc(int c, FILE *f)
    return fputc(c, f);
    }
 
+#ifdef ConsoleWindow
 #undef fflush
 #passthru #undef fflush
+#endif					/* ConsoleWindow */
 
 int Consolefflush(FILE *f)
 {
@@ -4420,14 +4439,14 @@ int Consolefflush(FILE *f)
       if (flog) fflush(flog);
       console = (wbp)OpenConsole();
       if (console == NULL) return 0;
-#ifdef MSWindows
-      return 0;
-#else					/* MSWindows */
-      return wflush(console);
+#ifndef MSWindows
+      wflush(console);
 #endif					/* MSWindows */
+      return 0;
       }
   return fflush(f);
 }
+#ifdef ConsoleWindow
 #passthru #define fflush Consolefflush
 #endif					/* ConsoleWindow */
 
@@ -4538,6 +4557,68 @@ stringint attribs[] = {
    {"y",		A_Y},
 };
 
+void gotorc(wbp w,int r,int c)
+{
+   wsp ws = w->window;
+   wcp wc = w->context;
+
+   /*
+    * turn the cursor off
+    */
+   hidecrsr(ws);
+
+      ws->y = ROWTOY(w, r);
+      ws->x = COLTOX(w, c);
+      ws->x += wc->dx;
+      ws->y += wc->dy;
+
+      /*
+       * turn it back on at new location
+       */
+      UpdateCursorPos(ws, wc);
+      showcrsr(ws);
+}
+
+void gotoxy(wbp w, int x, int y)
+{
+   wsp ws = w->window;
+   wcp wc = w->context;
+
+   x += wc->dx;
+   y += wc->dy;
+
+   hidecrsr(ws);
+
+   ws->x = x;
+   ws->y = y;
+
+   UpdateCursorPos(ws, wc);
+   showcrsr(ws);
+}
+
+void drawpts(wbp w, XPoint *points, int npoints)
+{
+   drawpoints(w, points, npoints);
+}
+
+int guicurses_lines(wbp w)
+{
+   return YTOROW(w,w->window->height - DESCENT(w));
+}
+
+int guicurses_cols(wbp w)
+{
+   return XTOCOL(w,w->window->width - DESCENT(w));
+}
+
+char * watt(wbp w, char *s)
+{
+   struct descrip throw;   
+   char foo[256];
+   wattrib(w, s, strlen(s), &throw, foo);
+   if (strchr(s, '=') == NULL) return strdup(foo);
+   return NULL;
+}
 
 /*
  * There are more, X-specific stringint arrays in ../common/xwindow.c
@@ -4596,4 +4677,4 @@ int i;
   for(;sip2<=sip+sip[0].i;sip2++) if (sip2->i == i) return sip2->s;
   return NULL;
 }
-#endif
+#endif					/* Graphics || PosixFns */

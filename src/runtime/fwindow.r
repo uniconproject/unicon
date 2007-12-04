@@ -15,21 +15,6 @@
 
 #ifdef Graphics
 
-/*
- * Global variables.
- *  A poll counter for use in interp.c,
- *  the binding for the console window - FILE * for simplicity,
- *  &col, &row, &x, &y, &interval, timestamp, and modifier keys.
- */
-int pollctr;
-FILE *ConsoleBinding = NULL;
-/*
- * the global buffer used as work space for printing string, etc 
- */
-char ConsoleStringBuf[MaxReadStr * 48];
-char *ConsoleStringBufPtr = ConsoleStringBuf;
-unsigned long ConsoleFlags = 0;			 /* Console flags */
-
 
 
 "Active() - produce the next active window"
@@ -1731,21 +1716,7 @@ function{1} GotoRC(argv[argc])
       else
 	 CnvCInteger(argv[warg + 1], c)
 
-      /*
-       * turn the cursor off
-       */
-      hidecrsr(w->window);
-
-      w->window->y = ROWTOY(w, r);
-      w->window->x = COLTOX(w, c);
-      w->window->x += w->context->dx;
-      w->window->y += w->context->dy;
-
-      /*
-       * turn it back on at new location
-       */
-      UpdateCursorPos(w->window, w->context);
-      showcrsr(w->window);
+      gotorc(w,r,c);
 
       ReturnWindow;
       }
@@ -1773,16 +1744,7 @@ function{1} GotoXY(argv[argc])
       else
 	 CnvCInteger(argv[warg + 1], y)
 
-      x += w->context->dx;
-      y += w->context->dy;
-
-      hidecrsr(w->window);
-
-      w->window->x = x;
-      w->window->y = y;
-
-      UpdateCursorPos(w->window, w->context);
-      showcrsr(w->window);
+      gotoxy(w, x, y);
 
       ReturnWindow;
       }

@@ -24,7 +24,7 @@
 
 #ifdef Graphics3D
 #include "ropengl.ri"
-#endif
+#endif					/* Graphics3D */
 
 #else					/* Graphics */
 static char junk;		/* avoid empty module */

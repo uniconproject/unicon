@@ -192,11 +192,11 @@
    #include <stsdef.h>
 #endif					/* VMS */
 
+#include <stdarg.h>
 /*
  * Window-system-dependent includes.
  */
 #ifdef ConsoleWindow
-   #include <stdarg.h>
    #undef printf
    #undef fprintf
    #undef fflush

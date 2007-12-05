@@ -310,7 +310,7 @@ tv_bits_or_chk(dst, src, nbits)
       return 0;
    nvords = NumVords(nbits);
    deltas = ints_or(dst, src, nvords);
-   /* changed += deltas; */
+   changed += deltas;
    return deltas;
 }
 
@@ -577,7 +577,7 @@ tv_ints_or_chk(dst, src, nints)
    if (IsZeroVect(src))
       return 0;
    deltas = ints_or(dst, src, NumIntsToNumVords(nints));
-   /* changed += deltas; */
+   changed += deltas;
    return deltas;
 }
 

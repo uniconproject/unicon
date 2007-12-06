@@ -28,6 +28,10 @@ unsigned long ConsoleFlags = 0;			 /* Console flags */
 
 int canvas_serial, context_serial;
 
+/* Used by the FreeType (3D) fonts subsystem. */
+wfont gfont;
+wfont *start_font, *end_font, *curr_font;
+
 #ifdef MSWindows
 extern wclrp scp;
 extern HPALETTE palette;
@@ -526,6 +530,8 @@ char *s;
       if (posy < 0) sprintf(tmp,"+%d%d",posx,posy);
       else sprintf(tmp,"+%d+%d",posx,posy);
       }
+   w->window->exactx= posx;
+   w->window->exacty= posy;
    return setgeometry(w,tmp);
    }
 
@@ -1793,6 +1799,8 @@ static int jpegread(char *filename, int p)
    jerr.pub.error_exit = my_error_exit;
 
    if (setjmp(jerr.setjmp_buffer)) {
+      jpeg_destroy_decompress(&cinfo);
+      fclose(gf_f);
       return Failed;
       }
 
@@ -2444,7 +2452,7 @@ int x, y, width, height;
 
 static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 {
-   int i, j, c;
+   int i, j, c, cur;
    long len;
    unsigned char *p, *q;
 
@@ -2924,6 +2932,16 @@ stringint fontwords[] = {
    { "wide",		FONTATT_WIDTH	| FONTFLAG_WIDE },
 };
 
+stringint font_type[] = {
+   {0,                  6},
+   { "outline",         FONT_OUTLINE },
+   { "polygon",         FONT_POLYGON },
+   { "texture",         FONT_TEXTURE },
+   { "bitmap",          FONT_BITMAP },
+   { "pixmap",          FONT_PIXMAP },
+   { "extrude",         FONT_EXTRUDE }
+};
+
 /*
  * parsefont - extract font family name, style attributes, and size
  *
@@ -2933,11 +2951,12 @@ stringint fontwords[] = {
  * returns 1 on an OK font name
  * returns 0 on a "malformed" font (might be a window-system fontname)
  */
-int parsefont(s, family, style, size)
+int parsefont(s, family, style, size, tp)
 char *s;
 char family[MAXFONTWORD+1];
 int *style;
 int *size;
+int *tp;
    {
    char c, *a, attr[MAXFONTWORD+1];
    int tmp;
@@ -2948,6 +2967,7 @@ int *size;
    *family = '\0';
    *style = 0;
    *size = -1;
+   *tp = 5;
 
    /*
     * now, scan through the raw and break out pieces
@@ -2998,6 +3018,13 @@ int *size;
             if ((tmp & *style) != 0 && (tmp & *style) != tmp)
                return 0;		/* conflicting attribute */
             *style |= tmp;
+            }
+	 else {
+	    *tp=0;
+	    for (tmp=1; tmp<=font_type[0].i; tmp++) {
+	      if (!strcmp(font_type[tmp].s, attr))
+		*tp = font_type[tmp].i-1;
+	      }
             }
          }
       }
@@ -4293,11 +4320,15 @@ FILE *OpenConsole()
          curblock = (struct region *)malloc(sizeof (struct region));
          curstring->size = MaxStrSpace;
          curblock->size  = MaxAbrSize;
+#if COMPILER
+	 initalloc();
+#else					/* COMPILER */
 #ifdef MultiThread
          initalloc(1000, &rootpstate);
 #else					/* MultiThread */
          initalloc(1000);
 #endif					/* MultiThread */
+#endif					/* COMPILER */
          }
 
       /*

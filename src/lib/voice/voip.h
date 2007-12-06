@@ -1,7 +1,7 @@
 // C++ API Functions for unicon
 // 2 - 15 - 2005
 // Ziad Al-Sharif
-// email: zsharif@nmsu.edu
+// email: zsharif@cs.uidaho.edu
 
 #include "jvoipsession.h"
 #include "jvoiprtptransmission.h"

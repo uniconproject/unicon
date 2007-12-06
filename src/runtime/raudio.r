@@ -811,7 +811,7 @@ void StopAudioThread(struct AudioFile * Ptr)
  *  audio mixer
  *	Windows 32: Based on Windows Multimedia -lwinmm
  *	Linux     : Based on the OSS APIs
- *  Auther      : Ziad Al-Sharif, zsharif@cs.nmsu.edu
+ *  Author      : Ziad Al-Sharif, zsharif@cs.uidaho.edu
  *  Date        : April 1, 2006
  */
 

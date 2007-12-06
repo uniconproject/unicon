@@ -39,6 +39,8 @@ global iconc
 global iconc_links
 global iconc_parsed
 global iconc_imports
+global iconc_posixloc
+global iconc_parsed_posix
 global iconc_perifile_idx
 $endif # Uniconc
 
@@ -172,8 +174,19 @@ end
 $endif # Uniconc
 
 $ifdef Uniconc
+procedure calc_posix_loc()
+   if (bpath := (&features ? (="Binaries at " & tab(0)))) |
+      ((f := open((bpath := getpaths()) ||
+      ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
+         close(\f)
+         iconc_posixloc := (bpath || "../ipl/procs/posix.icn")
+         }
+end
+$endif # Uniconc
+
+$ifdef Uniconc
 procedure iconc_linkref_resolve(srcfname, ref)
-   static lpaths, sep, posixloc
+   static lpaths, sep
    local i, f, path, base, comps, rslt
 
    initial {
@@ -183,7 +196,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
          ((f := open((bpath := getpaths()) ||
          ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
          close(\f)
-         posixloc := (bpath || "../ipl/procs/posix.icn")
+         iconc_posixloc := (bpath || "../ipl/procs/posix.icn")
          }
       }
 
@@ -238,7 +251,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
    #
    # begin hack
    if (ref == "posix") then
-      return [posixloc]
+      return [iconc_posixloc]
    # end hack
 
    base := comps[2]
@@ -468,6 +481,7 @@ $ifdef Uniconc
                icontopt := tmpopt
             else
                icontopt ||:= tmpopt
+            calc_posix_loc()
             }
 $endif # Uniconc
 	 else
@@ -667,6 +681,8 @@ $ifdef Uniconc
 
          while *iconc_links > 0 do {
             every k := key(iconc_links) do {
+               if (k == "posix") then
+                  iconc_parsed_posix := 1
                if member(locallinks, k) then {
                   # write("mdw: redundant linkref: " || k)
                   delete(iconc_links, k)
@@ -704,6 +720,8 @@ $ifdef Uniconc
                }
             }
          }
+      if (/iconc_parsed_posix) then
+         iconc_yyparse(iconc_posixloc, tmpfnames) 
       }
 
    if \iconc & (*tmpfnames > 0) & (rv = errors = yynerrs = 0) then {

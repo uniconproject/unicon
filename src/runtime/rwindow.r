@@ -530,8 +530,10 @@ char *s;
       if (posy < 0) sprintf(tmp,"+%d%d",posx,posy);
       else sprintf(tmp,"+%d+%d",posx,posy);
       }
+#ifdef Graphics3D
    w->window->exactx= posx;
    w->window->exacty= posy;
+#endif					/* Graphics3D */
    return setgeometry(w,tmp);
    }
 

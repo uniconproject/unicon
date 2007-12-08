@@ -341,7 +341,7 @@ void detectRedirection();
    struct palentry *palsetup(int p);
    int	palnum		(dptr d);
    int	parsecolor	(wbp w, char *s, long *r, long *g, long *b, long *a);
-   int	parsefont	(char *s, char *fam, int *sty, int *sz);
+   int	parsefont	(char *s, char *fam, int *sty, int *sz, int *tp);
    int	parsegeometry	(char *buf, SHORT *x, SHORT *y, SHORT *w, SHORT *h);
    int	parsepattern	(char *s, int len, int *w, int *nbits, C_integer *bits);
    void	qevent		(wsp ws, dptr e, int x, int y, uword t, long f);
@@ -564,6 +564,7 @@ void detectRedirection();
       void	wflushall		(void);
       void postcursor(wbp);
       void scrubcursor(wbp);
+      void mkfont			(char *s, char is_3D);
 
    #endif				/* XWindows */
 
@@ -571,6 +572,10 @@ void detectRedirection();
       /* For creating child windows for 3D graphics */
       char child_window_stuff(wbp w, wbp wp, char child_window);
       void makecurrent(wbp w);
+      void drawstrng3d(wbp w, double x, double y, double z, char *s);
+      int cpp_drawstring3d(double x, double y, double z, char *s, char *f, int t, int size, void *tfont);
+      int add_3dfont(char *fname, int fsize, char ftype);
+      wfp srch_3dfont(char *fname, int fsize, char ftype);
    #endif					/* Graphics3D */
 
    #ifdef MSWindows
@@ -582,7 +587,7 @@ void detectRedirection();
       int nativefontdialog	(wbp w, char *buf, int flags, int fheight);
       char *nativeselectdialog	(wbp w,struct b_list *,char *s);
       char *nativefiledialog	(wbp w,char *s1,char *s2,char *s3,int i,int j,int k);
-      HFONT mkfont		(char *s);
+      HFONT mkfont		(char *s, char is_3D);
       int sysTextWidth		(wbp w, char *s, int n);
       int sysFontHeight		(wbp w);
       int mswinsystem		(char *s);

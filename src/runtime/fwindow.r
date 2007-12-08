@@ -2993,7 +2993,7 @@ function{0,1} WinFontDialog(argv[argc])
       wbp w;
       int r;
       C_integer x, y, width, height, warg = 0, fheight;
-      int flags;
+      int flags, t;
       tended char *s;
       char buf[64], *tmp = buf;
       OptWindow(w);
@@ -3004,7 +3004,7 @@ function{0,1} WinFontDialog(argv[argc])
          }
       else s = "fixed";
 
-      parsefont(s, buf, &flags, &fheight);
+      parsefont(s, buf, &flags, &fheight, &t);
 
       if (nativefontdialog(w, buf, flags, fheight) == Failed) fail;
       StrLoc(result) = alcstr(buf, strlen(buf));

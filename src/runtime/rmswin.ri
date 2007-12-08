@@ -1596,14 +1596,14 @@ HFONT findfont(char *family, int size, int flags, int ansi)
 		spacing, family);
 }
 
-HFONT mkfont(char *s)
+HFONT mkfont(char *s, char is_3D)
 {
-   int flags, size;
+   int flags, size, t;
    char family[MAXFONTWORD+1];
    char *stdfam = NULL;
    HFONT hf = 0;
 
-   if (parsefont(s, family, &flags, &size)) {
+   if (parsefont(s, family, &flags, &size, &t)) {
       /*
        * This is a legal Icon font spec.
        * Check first for special "standard" family names.
@@ -1658,7 +1658,7 @@ char **s;
    TEXTMETRIC	metrics;
    HDC tmpdc;
 
-   hf = mkfont(*s);
+   hf = mkfont(*s, 0);
    if (hf != NULL) {
       if (wc->font->font)
 	 DeleteObject(wc->font->font);
@@ -4514,7 +4514,7 @@ int setchildfont(childcontrol *cc, char *fontname)
 {
    HFONT hf;
    RECT rect;
-   if (hf = mkfont(fontname)) {
+   if (hf = mkfont(fontname, 0)) {
       SendMessage(cc->win, WM_SETFONT, (WPARAM)hf, 0);
       if (cc->font) DeleteObject(cc->font);
       cc->font = hf;

@@ -71,6 +71,13 @@
 #define FONTFLAG_HEBREW		0x00400000
 #define FONTFLAG_LATIN6		0x00800000
 
+#define FONT_OUTLINE            0x00000001
+#define FONT_POLYGON            0x00000002
+#define FONT_TEXTURE            0x00000003
+#define FONT_BITMAP             0x00000004
+#define FONT_PIXMAP             0x00000005
+#define FONT_EXTRUDE            0x00000006
+
 /*
  * EVENT HANDLING
  *
@@ -174,6 +181,9 @@ typedef struct _wfont {
   int		refcount;
   int		serial;			/* serial # */
   struct _wfont *previous, *next;
+  char          type;
+  int           size;
+  void          *fonts;
 #ifdef MacGraph
   short     fontNum;
   Style     fontStyle;
@@ -512,6 +522,8 @@ typedef struct _wstate {
   int		iconx, icony;           /* location of icon */
   unsigned int	iconw, iconh;		/* width and height of icon */
   long		wmhintflags;		/* window manager hints */
+  /* 3D Fonts introduced the fields below; I am not crazy about them. */
+  int old_posx, old_posy, exactx, exacty;
 #endif					/* XWindows */
 #ifdef PresentationManager
   HWND		hwnd;			/* handle to the window (client) */

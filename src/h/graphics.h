@@ -522,8 +522,6 @@ typedef struct _wstate {
   int		iconx, icony;           /* location of icon */
   unsigned int	iconw, iconh;		/* width and height of icon */
   long		wmhintflags;		/* window manager hints */
-  /* 3D Fonts introduced the fields below; I am not crazy about them. */
-  int old_posx, old_posy, exactx, exacty;
 #endif					/* XWindows */
 #ifdef PresentationManager
   HWND		hwnd;			/* handle to the window (client) */
@@ -575,6 +573,8 @@ typedef struct _wstate {
 #ifdef Graphics3D
   int            is_3D;        /* flag for 3D windows */
   struct descrip funclist;    /* descriptor to hold list of 3d functions */
+  /* 3D Fonts introduce the fields below; I am not crazy about them. */
+  int old_posx, old_posy, exactx, exacty;
 #endif					/* Graphics3D */
   int            no;          /* new field added for child windows */
 } wstate, *wsp;

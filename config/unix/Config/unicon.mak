@@ -33,8 +33,8 @@ Unicon:
 	-(test -f ./.dummy && make unicon-fresh) || (test -f ./.dummy2 && make unicon-update) || (make unicon-fresh)
 
 unicon-fresh: $(U)
-	$(RM) unigram.icn
-	$(IYACC) -i unigram.y
+#	$(RM) unigram.icn
+#	$(IYACC) -i unigram.y
 	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u
 	$(CP) unicon$(EXE) $(BIN)
 	$(RM) ./.dummy
@@ -54,8 +54,8 @@ uniconc:
 	-(test -f ./.dummy && make uniconc-update) || (make uniconc-fresh)
 
 uniconc-fresh: $(UCFILES)
-	$(RM) unigram.icn
-	$(IYACC) -i unigram.y
+#	$(RM) unigram.icn
+#	$(IYACC) -i unigram.y
 	$(UNICON) -DUniconc $(UCFILES) -o unicon
 	$(CP) unicon $(BIN)
 	$(TOUCH) ./.dummy
@@ -102,8 +102,8 @@ unigram.u: unigram.icn
 	$(ICONT) -c unigram
 
 # build iyacc, and uncomment these lines, if you change the language grammar
-unigram.icn : unigram.y ytab_h.icn
-	$(IYACC) -i unigram.y
+#unigram.icn : unigram.y ytab_h.icn
+#	$(IYACC) -i unigram.y
 
 # these lines were used when Idol was involved in the build process
 #unigram.icn : unigram.y ytab_h.icn

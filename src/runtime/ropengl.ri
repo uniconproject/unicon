@@ -850,6 +850,7 @@ int traversefunctionlist(wbp w)
 
       if (v != v2) free(v);
       v = v2;
+      vsize = 256;
 
       if (is:record(flist)) {
 	 fname = BlkLoc(flist)->record.fields[0];
@@ -859,7 +860,7 @@ int traversefunctionlist(wbp w)
 	 if (tmp == -1) {
 	    return Failed; /* probably should runerr on this */
 	    }
-	 for (j=0; j < (tmp&7); j++) {
+	 for (j=0; j < (tmp&15); j++) {
 	    var1 = rp->fields[j+2];
 	    if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
 	    }
@@ -973,9 +974,13 @@ int traversefunctionlist(wbp w)
          used1 = bp1->nused-1;
          if (used1<=0) {
             bp1 = (struct b_lelem *) bp1->listnext;
+	    k1 = bp1->first;
             funclist->listhead = (union block *) bp1;
             bp1->listprev = (union block *) funclist;
          }
+	 if (! is:integer(bp1->lslots[k1])) { /* should check for large int! */
+	    return Error;	
+	    }
          tmp = IntVal(bp1->lslots[k1]);
 
 /* OK, at this point, k1 has been preset to refer to the int code */
@@ -1343,7 +1348,8 @@ int traversefunctionlist(wbp w)
 	 drawpoly(w, v, (funclist->size)-2, GL_POINTS, wc->dim);
 	 break;
       default:
-	 fprintf(stderr,"invalid displaylist entry '%s'\n", StrLoc(fname));
+	 fprintf(stderr,"invalid displaylist entry '%s'\n",
+	   (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
 	 goto free_v_and_fail;
 	 }
       }

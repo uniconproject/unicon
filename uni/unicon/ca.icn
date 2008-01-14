@@ -10,6 +10,8 @@ record ucls(name, fullname, entry, supers)
 procedure ca_add_import(fname, ref)
    local i, s, uf
 
+   if /iconc then
+      fail
    uf := uftbl[fname]
    if /uf then {
       write("ca-add-import: \"", fname, "\" not ready.")
@@ -29,6 +31,8 @@ end
 procedure ca_add_link(fname, ref)
    local i, s, uf
 
+   if /iconc then
+      fail
    uf := uftbl[fname]
    if /uf then {
       write("ca-add-link: \"", fname, "\" not ready.")
@@ -48,6 +52,8 @@ procedure ca_add_class(fname, cls)
    local uf, clsname
    local tmp, supers
 
+   if /iconc then
+      fail
    uf := uftbl[fname]
    if /uf then {
       write("ca-add-class: \"", fname, "\" not ready.")
@@ -69,6 +75,8 @@ end
 procedure ca_add_method(fname, mthd, ctor)
    local uf, id
 
+   if /iconc then
+      fail
    uf := uftbl[fname]
    if /uf then {
       write("ca-add-method: \"", fname, "\" not ready.")
@@ -93,6 +101,8 @@ end
 procedure ca_add_pkg(fname, id)
    local uf, i, s, prfx
 
+   if /iconc then
+      fail
    uf := uftbl[fname]
    if /uf then {
       write("ca-add-pkg: \"", fname, "\" not ready.")
@@ -113,6 +123,8 @@ end
 procedure ca_add_proc(fname, id)
    local uf
 
+   if /iconc then
+      fail
    uf := uftbl[fname]
    if /uf then {
       write("ca-add-proc: \"", fname, "\" not ready.")
@@ -131,6 +143,8 @@ end
 procedure ca_assoc(fname, tmpfname)
    local uf
 
+   if /iconc then
+      fail
 # record ufile(tmpnm, imps, lnks, procs, classes, pkg)
    uf := ufile(tmpfname, [], [], [], [], "dflt")
    uftbl[fname] := uf 
@@ -139,6 +153,8 @@ end
 procedure ca_dbg_dump()
    local i, k, uf, cls
 
+   if /iconc then
+      fail
    every k := key(uftbl) do {
       uf := uftbl[k]
       write("ca-dbg-dump: ", k)
@@ -194,6 +210,8 @@ procedure ca_import_rslv(name)
       sep := PATHCHAR
       ipaths := ipaths_get()
       }
+   if /iconc then
+      fail
    # see if we have this bundle already
    every i := 1 to *ubndls do {
       bndl := ubndls[i]
@@ -237,6 +255,8 @@ end
 procedure ca_write(fname, firstperi)
    local f, i, j, k, s, uf, cls, spr
 
+   if /iconc then
+      fail
    f := open(fname, "w") | {
       write("ca-write: open failure: ", fname)
       exit(-1)
@@ -283,6 +303,8 @@ end
 procedure get_classinfo_for_bundle(bndl)
    local i, clsnms, entry
 
+   if /iconc then
+      fail
    clsnms := list()
    bndl.classes := list()
    # write("ca.get-classinfo-for-bundle(", bndl.name, ")")
@@ -349,6 +371,8 @@ procedure lkup_class_old(name)
       sep := PATHCHAR
       ipaths := ipaths_get()
       }
+   if /iconc then
+      fail
    every i := 1 to *ipaths do {
       if not (f := open(ipaths[i] || sep || "uniclass", "dr")) then
          next
@@ -367,6 +391,8 @@ procedure lkup_class(pkg, name)
    local dbent
 
 #   dbent := fetchspec(name | (pkg || "__" || name)) | fail
+   if /iconc then
+      fail
    dbent := fetchspec(pkg || "__" || name) | fail
    return dbent.entry
 end

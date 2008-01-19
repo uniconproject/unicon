@@ -4276,7 +4276,7 @@ function{1} Texcoord(argv[argc])
       c_put(&f, &g);
      
       /* check if the argument is a list */
-      if (argv[argc-warg].dword == D_List) {
+      if (argv[warg].dword == D_List) {
          if (glIsEnabled(GL_TEXTURE_GEN_S))
             glDisable(GL_TEXTURE_GEN_S);
          if (glIsEnabled(GL_TEXTURE_GEN_T))
@@ -4285,7 +4285,7 @@ function{1} Texcoord(argv[argc])
          c_put(&f, &mode);
          wc->autogen = 0; 
          wc->numtexcoords = 0;
-         coords = (struct b_list*) argv[argc-warg].vword.bptr;
+         coords = (struct b_list*) argv[warg].vword.bptr;
 	 if (coords->size > wc->ntexcoordsalced) {
 	    wc->texcoords = realloc(wc->texcoords,
 				    coords->size * sizeof(double));
@@ -4293,7 +4293,7 @@ function{1} Texcoord(argv[argc])
 	       /*
 		* realloc fails; where did our old tex coordinates go?
 		*/
-	       runerr(305, argv[argc-warg]);
+	       runerr(305, argv[warg]);
 	       }
 	    wc->ntexcoordsalced = coords->size;
 	    }

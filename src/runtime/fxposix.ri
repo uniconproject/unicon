@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.44 2008-01-19 05:28:46 jeffery Exp $
+ * $Id: fxposix.ri,v 1.45 2008-01-19 23:27:20 jeffery Exp $
  */
 
 /*
@@ -2092,9 +2092,9 @@ void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
    struct sockaddr_in from;
 
    if ((status & (Fs_Socket|Fs_Messaging
-#if UNIX
+#if UNIX && defined(PseudoPty)
                   | Fs_Pty
-#endif
+#endif					/* UNIX && PseudoPty */
 					)) == 0)
       return;
 

@@ -1202,6 +1202,9 @@ static void cofree()
             abp = abp->astk_nxt;
             free((pointer)xabp);
             }
+         #ifdef CoClean
+	    coclean(xep->cstate);
+         #endif				/* CoClean */
 
 #ifdef CoProcesses
          coswitch(BlkLoc(k_current)->coexpr.cstate, xep->cstate, -1);

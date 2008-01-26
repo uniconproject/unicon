@@ -115,6 +115,7 @@ static struct caf * caf_get_by_alias(char *);
 static struct caf * caf_get_by_name(char *);
 static struct cls * caf_get_class(char *, struct caf *);
 static struct prc * caf_get_prc(struct caf *, char *);
+static int caf_has_posix_rec_defs(struct caf *);
 static void caf_parse(struct caf *, char *);
 static void cleanup(void);
 static void gui_app_init(void);
@@ -123,6 +124,7 @@ static int is_rtl_func(char *);
 static char * name_get_pkgspec(char *);
 static unsigned name_hash(char *);
 static void parse(char *, char *);
+static void posix_recs_init(void);
 static void prc_add_invk(struct prc *, struct invk *);
 static struct prc * prc_lkup(char *, struct caf **);
 static void prc_parse_name(struct prc *, char *, char *);
@@ -356,6 +358,7 @@ ca_resolve(void)
       printf("ca-resolve: procedure \"main\" not found\n");
       return -1;
       }
+   posix_recs_init();
    gui_app_init();
    /* printf("ca-resolve: _resolving...\n"); */
    resolve_invks(main_caf, main_prc);
@@ -490,6 +493,21 @@ caf_get_prc(caf, name)
          break;
       }
    return prc;
+}
+
+static
+int
+caf_has_posix_rec_defs(caf)
+   struct caf * caf;
+{
+   int len;
+   char * p;
+
+   len = strlen(caf->alias);
+   if (len < 9)
+      return 0;
+   p = caf->alias + (len - 9);
+   return (strcmp(p, "posix.icn") == 0);
 }
 
 static
@@ -640,6 +658,20 @@ parse(fname, symname)
    /*fprintf(stderr, "Parsing %s to resolve symbol %s\n", fname, symname);*/
    /*printf("Parsing %s to resolve symbol %s\n", fname, symname);*/
    trans1(fname);
+}
+
+static
+void
+posix_recs_init(void)
+{
+   struct caf * caf;
+
+   for (caf=cafs; caf; caf=caf->next) {
+      if (caf_has_posix_rec_defs(caf)) {
+         caf_parse(caf, "posix_stat");
+         return;
+         }
+      }
 }
 
 static

@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.18 2007-09-20 23:55:21 jeffery Exp $
+# $Id: top.mak,v 1.19 2008-01-29 01:03:22 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -101,7 +101,6 @@ Unicon:		Icont
 # The interpreter: icont and iconx.
 
 Icont bin/icont: Common
-		cd src/lib/audio;	$(MAKE)
 		cd src/icont;		$(MAKE)
 		cd src/runtime;		$(MAKE) interp_all
 

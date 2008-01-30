@@ -95,7 +95,6 @@ word istart[4];
 int mterm = Op_Quit;
 
 
-FILE *finredir, *fouredir, *ferredir;
 
 #if NT
 /*

@@ -1899,6 +1899,8 @@ int ptflush(struct ptstruct *ptStruct)
 
 #endif					/* PseudoPty */
 
+FILE *finredir, *fouredir, *ferredir;
+
 /*
  * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
  * Called for both input processing (e.g. in WinMain()) and in output

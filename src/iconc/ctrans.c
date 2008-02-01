@@ -106,11 +106,11 @@ publish_unreachable_funcs(pents)
  */
 int trans(char *argv0)
    {
+   char * s;
    register struct pentry *proc;
    struct srcfile *sf;
-char * s;
-extern char * ca_first_perifile;
-extern int ca_mark_parsed(char *);
+   extern char * ca_first_perifile;
+   extern int ca_mark_parsed(char *);
 
    lpath = (char *)libpath(argv0, "LPATH");	/* remains null if unspecified */
 

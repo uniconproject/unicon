@@ -3845,8 +3845,6 @@ invok_fuzzy(p, n, frf, rslt)
    struct fldrefinfo * frf;
    struct val_loc * rslt;
 {
-   extern int verbose;
-   extern int unicon_mode;
    struct fldrefhint * hint;
 
    /*

@@ -2565,8 +2565,6 @@ nodeptr n;
    int sav_nargs;
    struct type *wktyp;
    int i;
-   extern int verbose;
-   extern int unicon_mode;
 
 /*   infer_nd_in(n); debug only */
 

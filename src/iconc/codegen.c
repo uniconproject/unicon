@@ -597,7 +597,6 @@ struct rentry *r;
    int optim;
    int nfields;
    register char *name;
-   extern int unicon_mode;
 
    if (unicon_mode == UM_Ambig)
       gen_disam(inclfile, codefile);

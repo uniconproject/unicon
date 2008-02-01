@@ -29,7 +29,6 @@ char *toolstr = "${TOOLS}";
 
 char *refpath;
 char patchpath[MaxPath+18] = "%PatchStringHere->";
-int unicon_mode = 0;
 
 #define Global
 #define Init(v) = v

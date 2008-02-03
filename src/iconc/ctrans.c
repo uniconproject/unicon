@@ -132,6 +132,7 @@ int trans(char *argv0)
        * resolve all remaining symbols
        */
       ca_resolve();
+      ca_cleanup();
       }
    else {
       for (sf = srclst; sf != NULL; sf = sf->next)

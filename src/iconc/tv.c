@@ -23,10 +23,10 @@
 #endif /* IntBits == VordBits */
 
 static int n_tvtbl_bkts = 0;
-static int n_tvpool_size = 0;
-static int n_entpool_size = 0;
-static int n_bitspool_size = 0;
-static int n_aurapool_size = 0;
+static int n_tvs_per_pool = 0; /*n_tvpool_size*/
+static int n_ents_per_pool = 0; /*n_entpool_size*/
+static int n_vects_per_pool = 0; /*n_bitspool_size*/
+static int n_auras_per_pool = 0; /*n_aurapool_size*/
 
 static int n_vect_bytes = 0;
 static int n_rttyp_bits = 0;
@@ -431,10 +431,10 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
          "hash-shifts: %d hash-upper-shift: %d\n",
          hash_mask, hash_upper, hash_shifts, hash_upper_shr);
 
-   n_tvpool_size = n_tvtbl_bkts;
-   n_entpool_size = n_tvtbl_bkts << 1;
-   n_bitspool_size = n_entpool_size;
-   n_aurapool_size = n_bitspool_size;
+   n_tvs_per_pool = n_tvtbl_bkts;
+   n_ents_per_pool = n_tvtbl_bkts << 1;
+   n_vects_per_pool = n_ents_per_pool;
+   n_auras_per_pool = n_vects_per_pool;
    
    n_rttyp_bits = nrttyp;
    n_rttyp_vords = NumVords(nrttyp);
@@ -838,8 +838,9 @@ alcbits(void)
 {
    vord * rslt;
    static int idx = -31;
-   static vord * pool = 0;
+   static char * pool = 0;
 
+#ifdef old_and_buggish
    if (idx == -31) {
       /*
        * this is an init call, not an alc.
@@ -853,6 +854,29 @@ alcbits(void)
    if (idx < 0) {
       idx = n_rttyp_vords * (n_bitspool_size - 1);
       pool = alloc(n_vect_bytes * n_bitspool_size);
+      }
+   return rslt;
+#endif /* old_and_buggish */
+
+   /*
+    * NOTE * NOTE * NOTE
+    *
+    * - The variable n_bitspool_size is actually the number of bitvects per pool
+    *    and should be renamed to reflect this fact.
+    */
+   if (idx == -31) {
+      /*
+       * this is an init call, not an alc.
+       */
+      idx = n_vects_per_pool - 1;
+      pool = alloc(n_vect_bytes * n_vects_per_pool);
+      return 0;
+      }
+   rslt = (vord *)&pool[idx * n_vect_bytes];
+   idx -= 1;
+   if (idx < 0) {
+      idx = n_vects_per_pool - 1;
+      pool = alloc(n_vect_bytes * n_vects_per_pool);
       }
    return rslt;
 }
@@ -870,14 +894,14 @@ alcent(void)
       /*
        * this is an init call, not an alc.
        */
-      idx = n_entpool_size - 1;
-      pool = alloc(sizeof(struct tvent) * n_entpool_size);
+      idx = n_ents_per_pool - 1;
+      pool = alloc(sizeof(struct tvent) * n_ents_per_pool);
       return 0;
       }
    rslt = &pool[idx];
    if (--idx < 0) {
-      idx = n_entpool_size - 1;
-      pool = alloc(sizeof(struct tvent) * n_entpool_size);
+      idx = n_ents_per_pool - 1;
+      pool = alloc(sizeof(struct tvent) * n_ents_per_pool);
       }
    rslt->aura = 0;
    return rslt;
@@ -896,14 +920,14 @@ alctv(void)
       /*
        * this is an init call, not an alc.
        */
-      idx = n_tvpool_size - 1;
-      pool = alloc(sizeof(struct tv) * n_tvpool_size);
+      idx = n_tvs_per_pool - 1;
+      pool = alloc(sizeof(struct tv) * n_tvs_per_pool);
       return 0;
       }
    rslt = &pool[idx];
    if (--idx < 0) {
-      idx = n_tvpool_size - 1;
-      pool = alloc(sizeof(struct tv) * n_tvpool_size);
+      idx = n_tvs_per_pool - 1;
+      pool = alloc(sizeof(struct tv) * n_tvs_per_pool);
       }
    return rslt;
 }

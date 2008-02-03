@@ -118,6 +118,7 @@ static struct prc * caf_get_prc(struct caf *, char *);
 static int caf_has_posix_rec_defs(struct caf *);
 static void caf_parse(struct caf *, char *);
 static void cleanup(void);
+static void cls_free(struct cls *);
 static void gui_app_init(void);
 static char * is_ctor(char *);
 static int is_rtl_func(char *);
@@ -126,6 +127,7 @@ static unsigned name_hash(char *);
 static void parse(char *, char *);
 static void posix_recs_init(void);
 static void prc_add_invk(struct prc *, struct invk *);
+static void prc_free(struct prc *);
 static struct prc * prc_lkup(char *, struct caf **);
 static void prc_parse_name(struct prc *, char *, char *);
 static void read_bndl_class(void *);
@@ -178,6 +180,26 @@ ca_apply_add(fname, node)
    invk->node = node;
    prc_add_invk(prc, invk);
 
+   return 0;
+}
+
+extern
+int
+ca_cleanup(void)
+{
+   struct caf * caf;
+   struct bndl * bndl;
+
+   while (bndls) {
+      bndl = bndls;
+      bndls = bndls->next;
+      bndl_free(bndl);
+      }
+   while (cafs) {
+      caf = cafs;
+      cafs = cafs->next;
+      caf_free(caf);
+      }
    return 0;
 }
 
@@ -374,13 +396,14 @@ bndl_free(bndl)
 {
    struct cls * cls;
 
-   if (bndl->name)
-      free(bndl->name);
    while (bndl->clss) {
       cls = bndl->clss;
-      bndl->clss = cls->next;
-      free(cls);
+      bndl->clss = bndl->clss->next;
+      cls_free(cls);
       }
+   if (bndl->name)
+      free(bndl->name);
+   free(bndl);
 }
 
 static
@@ -407,32 +430,35 @@ caf_free(caf)
    struct prc * prc;
    struct cls * cls;
 
-   if (caf->alias)
-      free(caf->alias);
-   if (caf->fname)
-      free(caf->fname);
-   if (caf->pkgname)
-      free(caf->pkgname);
    while (caf->imps) {
       imp = caf->imps;
-      caf->imps = imp->next;
+      caf->imps = caf->imps->next;
+      if (imp->name)
+         free(imp->name);
       free(imp);
       }
    while (caf->lnks) {
       lnk = caf->lnks;
-      caf->lnks = lnk->next;
+      caf->lnks = caf->lnks->next;
+      if (lnk->name)
+         free(lnk->name);
       free(lnk);
       }
    while (caf->prcs) {
       prc = caf->prcs;
-      caf->prcs = prc->next;
-      free(prc);
+      caf->prcs = caf->prcs->next;
+      prc_free(prc);
       }
    while (caf->clss) {
       cls = caf->clss;
-      caf->clss = cls->next;
-      free(cls);
+      caf->clss = caf->clss->next;
+      cls_free(cls);
       }
+   if (caf->fname)
+      free(caf->fname);
+   if (caf->alias)
+      free(caf->alias);
+   free(caf);
 }
 
 static
@@ -540,6 +566,42 @@ cleanup(void)
       bndl_free(bndl);
       }
 }
+
+static
+void
+cls_free(cls)
+   struct cls * cls;
+{
+   struct mthd * mthd;
+   struct member * mbr;
+   struct supercls * sc;
+
+   while (cls->mthds) {
+      mthd = cls->mthds;
+      cls->mthds = cls->mthds->next;
+      if (mthd->name)
+         free(mthd->name);
+      free(mthd);
+      }
+   while (cls->mbrs) {
+      mbr = cls->mbrs;
+      cls->mbrs = cls->mbrs->next;
+      if (mbr->name)
+         free(mbr->name);
+      free(mbr);
+      }
+   while (cls->supers) {
+      sc = cls->supers;
+      cls->supers = cls->supers->next;
+      if (sc->name)
+         free(sc->name);
+      free(sc);
+      }
+   if (cls->name)
+      free(cls->name);
+   free(cls);
+}
+
 
 static
 void
@@ -690,6 +752,21 @@ prc_add_invk(prc, invk)
    for (tmp=prc->invks; tmp->next; tmp=tmp->next)
       ;
    tmp->next = invk;
+}
+
+static
+void
+prc_free(prc)
+   struct prc * prc;
+{
+   struct invk * invk;
+
+   while (prc->invks) {
+      invk = prc->invks;
+      prc->invks = prc->invks->next;
+      free(invk);
+      }
+   free(prc);
 }
 
 /*

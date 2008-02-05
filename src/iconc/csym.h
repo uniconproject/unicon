@@ -72,11 +72,12 @@ struct type {
 #endif
 
 /* mdw: vector-word defs */
-typedef word vord;
-#define DivVordBits DivWordBits
-#define ModVordBits ModWordBits
-#define NumVords NumWords
-#define VordBits WordBits
+/*typedef word vord;*/
+typedef unsigned int vord;
+#define DivVordBits DivIntBits
+#define ModVordBits ModIntBits
+#define NumVords NumInts
+#define VordBits IntBits
 
 struct centry {		/* constant table entry */
    struct centry *blink;	/*   link for bucket chain */

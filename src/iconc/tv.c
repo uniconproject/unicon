@@ -311,6 +311,7 @@ tv_bits_or_chk(dst, src, nbits)
    nvords = NumVords(nbits);
    deltas = ints_or(dst, src, nvords);
    changed += deltas;
+
    return deltas;
 }
 
@@ -425,7 +426,7 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
       i >>= 1;
       hash_upper_shr++;
       }
-   hash_shifts = (WordBits / hash_upper_shr) + 1;
+   hash_shifts = (VordBits / hash_upper_shr) + 1;
    if (verbose > 3)
       fprintf(stdout, "tv-init: hash-mask: %08x hash-upper: %08x "
          "hash-shifts: %d hash-upper-shift: %d\n",
@@ -436,6 +437,11 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
    n_vects_per_pool = n_ents_per_pool;
    n_auras_per_pool = n_vects_per_pool;
    
+   if (verbose > 3)
+      fprintf(stdout, "n-tvs-per-pool: %d n-ents-per-pool: %d n-vects-per-pool:"
+         " %d n-auras-per-pool: %d\n", n_tvs_per_pool, n_ents_per_pool,
+         n_vects_per_pool, n_auras_per_pool);
+
    n_rttyp_bits = nrttyp;
    n_rttyp_vords = NumVords(nrttyp);
    n_icntyp_bits = nicntyp;
@@ -444,6 +450,11 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
    n_intrtyp_vords = NumVords(nintrtyp);
    n_vect_bytes = n_rttyp_vords * sizeof(vord);
    init = infer ? (unsigned int)0 : ~(unsigned int)0;
+
+   if (verbose > 3)
+      fprintf(stdout, "n-rttyp-bits: %d n-rttyp-vords: %d\n"
+         "n-vect-bytes: %d sizeof-vord: %d\n", n_rttyp_bits, n_rttyp_vords,
+         n_vect_bytes, sizeof(vord));
 
    rng_buf = alloc(n_rttyp_bits * sizeof(unsigned int));
 
@@ -570,14 +581,17 @@ tv_ints_or_chk(dst, src, nints)
    int nints;
 {
    int deltas;
+   int nvords;
    extern long changed;
 
    if (dst->ent == src->ent)
       return 0;
    if (IsZeroVect(src))
       return 0;
-   deltas = ints_or(dst, src, NumIntsToNumVords(nints));
+   nvords = NumIntsToNumVords(nints);
+   deltas = ints_or(dst, src, nvords);
    changed += deltas;
+
    return deltas;
 }
 
@@ -834,36 +848,38 @@ tv_type_bits_set(tv, typcd)
 static
 inline
 vord *
+alcbits_old_n_crufty(void)
+{
+   vord * rslt;
+   static int idx = -31;
+   static vord * pool = 0;
+
+   if (idx == -31) {
+      /*
+       * this is an init call, not an alc.
+       */
+      idx = n_rttyp_vords * (n_vects_per_pool/*n_bitspool_size*/ - 1);
+      pool = alloc(n_vect_bytes * n_vects_per_pool/*n_bitspool_size*/);
+      return 0;
+      }
+   rslt = &pool[idx];
+   idx -= n_vect_bytes;
+   if (idx < 0) {
+      idx = n_rttyp_vords * (n_vects_per_pool/*n_bitspool_size*/ - 1);
+      pool = alloc(n_vect_bytes * n_vects_per_pool/*n_bitspool_size*/);
+      }
+   return rslt;
+}
+
+static
+inline
+vord *
 alcbits(void)
 {
    vord * rslt;
    static int idx = -31;
    static char * pool = 0;
 
-#ifdef old_and_buggish
-   if (idx == -31) {
-      /*
-       * this is an init call, not an alc.
-       */
-      idx = n_rttyp_vords * (n_bitspool_size - 1);
-      pool = alloc(n_vect_bytes * n_bitspool_size);
-      return 0;
-      }
-   rslt = &pool[idx];
-   idx -= n_vect_bytes;
-   if (idx < 0) {
-      idx = n_rttyp_vords * (n_bitspool_size - 1);
-      pool = alloc(n_vect_bytes * n_bitspool_size);
-      }
-   return rslt;
-#endif /* old_and_buggish */
-
-   /*
-    * NOTE * NOTE * NOTE
-    *
-    * - The variable n_bitspool_size is actually the number of bitvects per pool
-    *    and should be renamed to reflect this fact.
-    */
    if (idx == -31) {
       /*
        * this is an init call, not an alc.

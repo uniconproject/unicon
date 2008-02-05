@@ -23,9 +23,11 @@ static struct optab *optr; /* pointer into operator table */
 /*
  * readdb - read data base produced by rtt.
  */
-void readdb(db_name)
-char *db_name;
-   {
+extern
+void
+readdb(db_name)
+   char *db_name;
+{
    char *op, *s;
    int i;
    struct implement *ip;
@@ -103,15 +105,17 @@ char *db_name;
             if (ip->ret_flag & DoesEFail)
                ip->min_result = 0;
       }
-   }
+}
 
 /*
  * acpt_opt - given a data base entry for an operator determine if it
  *  is in iconc's operator table.
  */
-static int acpt_op(ip)
-struct implement *ip;
-   {
+static
+int
+acpt_op(ip)
+   struct implement *ip;
+{
    register char *op;
    register int opcmp;
 
@@ -156,17 +160,19 @@ struct implement *ip;
             return chck_spec(ip);
          }
       }
-   }
+}
 
 /*
  * chck_spec - check whether the operator is one that does not use standard
  *    unary or binary syntax.
  */
-static int chck_spec(ip)
-struct implement *ip;
-   {
-   register char *op;
+static
+int
+chck_spec(ip)
+   struct implement *ip;
+{
    int indx;
+   register char *op;
 
    indx = -1;
    op = ip->op;
@@ -193,4 +199,4 @@ struct implement *ip;
       }
    else
       return 0;
-   }
+}

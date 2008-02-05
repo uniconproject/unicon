@@ -210,9 +210,11 @@ Deliberate Syntax Error
    opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
 #endif						/* Graphics */
 
+#ifdef mdw_0
 #ifdef ISQL
    lib_sz += strlen(" -liodbc ");
 #endif /* ISQL */
+#endif /* mdw_0 */
 
 #if HAVE_LIBZ
    lib_sz += strlen(" -lz ");
@@ -281,9 +283,11 @@ Deliberate Syntax Error
    strcat(s, ICONC_XLIB);
 #endif						/* Graphics */
 
+#ifdef mdw_0
 #ifdef ISQL
    strcat(s, " -liodbc ");
 #endif /* ISQL */
+#endif /* mdw_0 */
 
 #if HAVE_LIBZ
    strcat(s, " -lz ");

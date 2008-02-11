@@ -3602,6 +3602,10 @@ wbp w;
       wc->eyedirz = wc2->eyedirz;
       wc->autogen = wc2->autogen;
       wc->texmode = wc2->texmode;
+
+/* unfinished: make safe copy of context (textures, etc) */
+wc->nalced = wc2->nalced;
+wc->texName = malloc(wc->nalced * sizeof(GLuint));
       wc->numtexcoords = wc2->numtexcoords;
       wc->ntextures = wc2->ntextures;
       for (i=0; i<wc->numtexcoords; i++) wc->texcoords[i] = wc2->texcoords[i];
@@ -4801,6 +4805,9 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;
+   if (is_3d) {
+      if (init_3dcontext(wc) == Failed) return 0;
+      }
 #endif					/* Graphics3D */
 
   ws->children=NULL;

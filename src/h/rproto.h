@@ -571,6 +571,7 @@ void detectRedirection();
    #ifdef Graphics3D
       /* For creating child windows for 3D graphics */
       char child_window_stuff(wbp w, wbp wp, char child_window);
+      int init_3dcontext(wcp wc);
       void makecurrent(wbp w);
       void drawstrng3d(wbp w, double x, double y, double z, char *s);
       int cpp_drawstring3d(double x, double y, double z, char *s, char *f, int t, int size, void *tfont);

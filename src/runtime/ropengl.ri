@@ -38,26 +38,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    ws = w->window;
    wc = w->context;
 
-  /* set defaults for attributes */
-   wc->eyeupx = wc->eyeupz = 0.0;
-   wc->eyeupy = 1.0;
-   wc->dim = 3;
-   wc->slices = 15;
-   wc->rings = 10;
-   wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
-   wc->eyedirz = -100.0;
-   wc->autogen = 1;
-   wc->texmode = wc->numtexcoords = 0;
-   wc->texName = malloc(16 * sizeof(GLuint));
-   if (wc->texName == NULL) return NULL;
-   wc->nalced = 16;
-   wc->texcoords = malloc(256 * sizeof (double));
-   if (wc->texcoords == NULL) return NULL;
-   wc->ntexcoordsalced = 256;
-   wc->ntextures = 0;
-   wc->curtexture = -1;
-   wc->buffermode = IMMEDIATE3D;
-   wc->meshmode = GL_POLYGON;
+   if (init_3dcontext(wc) == Failed) return NULL;
 
    /* create an empty list for list of function calls */
    if ((ws->funclist.vword.bptr = (union block *)alclist(0, 40000)) == NULL)
@@ -87,6 +68,31 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    return f;
+}
+
+int init_3dcontext(wcp wc)
+{
+  /* set defaults for attributes */
+   wc->eyeupx = wc->eyeupz = 0.0;
+   wc->eyeupy = 1.0;
+   wc->dim = 3;
+   wc->slices = 15;
+   wc->rings = 10;
+   wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
+   wc->eyedirz = -100.0;
+   wc->autogen = 1;
+   wc->texmode = wc->numtexcoords = 0;
+   wc->texName = malloc(16 * sizeof(GLuint));
+   if (wc->texName == NULL) return Failed;
+   wc->nalced = 16;
+   wc->texcoords = malloc(256 * sizeof (double));
+   if (wc->texcoords == NULL) return Failed;
+   wc->ntexcoordsalced = 256;
+   wc->ntextures = 0;
+   wc->curtexture = -1;
+   wc->buffermode = IMMEDIATE3D;
+   wc->meshmode = GL_POLYGON;
+   return Succeeded;
 }
 
 
@@ -3528,7 +3534,6 @@ int setmeshmode(wbp w, char* s)
    c_put(&(w->window->funclist), &f);
 
    w->context->meshmode = t;
-
    return Succeeded;
 }
 

@@ -436,9 +436,15 @@ $ifdef Uniconc
 $endif # Uniconc
 
    initialize()
-   if *argv = 0 then
-      istop("usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [o ofile]\n",
+   if *argv = 0 then {
+$ifdef Uniconc
+      istop("usage: unicon [-cBCstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
 	    "   [-version] [-v i] file... [-x args]")
+$else
+      istop("usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
+	    "   [-version] [-v i] file... [-x args]")
+$endif
+      }
    EmptyNode := leaf(N_Empty)
    /yydebug := 0
 $ifdef Uniconc

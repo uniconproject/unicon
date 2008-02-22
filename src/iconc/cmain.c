@@ -206,6 +206,9 @@ char **argv;
          case 'n': /* -n: disable optimizations */
             for (s = optarg; *s != '\0'; ++s) {
                switch (*s) {
+                  case 'A': /* mdw: disable ca module */
+                     opt_ca = 0;
+                     break;
                   case 'O': /* -nO: no optimizations with host cc */
                      opt_hc_opts = 0;
                      printf("opt-hc-opts: 0\n");
@@ -221,9 +224,6 @@ char **argv;
                      break;
                   case 'e': /* -ne: disable expanding in-line */
                      allow_inline = 0;
-                     break;
-                  case 'i': /* mdw: disable ica module */
-                     opt_ica = 0;
                      break;
                   case 's': /* -ns: disable switch optimizations */
                      opt_sgnl = 0;

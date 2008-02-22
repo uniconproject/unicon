@@ -118,7 +118,7 @@ int trans(char *argv0)
    for (sf = srclst; sf != NULL; sf = sf->next)
       trans1(sf->name);	/* translate each file in turn */
 #else
-   if (ca_first_perifile) {
+   if (opt_ca && ca_first_perifile) {
       /*
        * translate all non-peri files
        */

@@ -1788,7 +1788,36 @@ void datainit()
       k_output.status = Fs_Write;
 
    IntVal(kywd_pos) = 1;
+#ifndef NoRandomize
+/*
+ * Set the random number seed randomly.
+ * This code attempts to use the same algorithm as in ipl/procs/random.icn
+ *   &random := map("sSmMhH", "Hh:Mm:Ss", &clock) +
+ *    map("YyXxMmDd", "YyXx/Mm/Dd", &date) + &time + 1009 * ncalls
+ */
+   {
+   static ncalls = 0;
+   int i;
+   time_t t;
+   struct tm *ct;
+   char sbuf[MaxCvtLen];
+
+   time(&t);
+   ct = localtime(&t);
+   /* map &clock */
+   k_random = ((ct->tm_sec % 10)*10+ct->tm_sec/10)*10+
+       ((ct->tm_min % 10)*10+ct->tm_min/10)*10+
+       ((ct->tm_hour % 10)*10+ct->tm_hour/10);
+   /* + map &date */
+   k_random += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday;
+   /* + map &time */
+   k_random += millisec();
+   ncalls++;
+   k_random += 1009 * ncalls;
+   }
+#else
    IntVal(kywd_ran) = 0;
+#endif
    StrLen(kywd_prog) = strlen(prog_name);
    StrLoc(kywd_prog) = prog_name;
    StrLen(k_subject) = 0;

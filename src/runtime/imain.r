@@ -197,7 +197,16 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
    remove(lognam);
    if (getenv("WICONLOG")!=NULL)
       lognam = strdup(lognam);
-   tnam = _tempnam("C:\\TEMP", "wx");
+   if (getenv("TEMP") != NULL) {
+      tnam = _tempnam(getenv("TEMP"), "wx");
+      }
+   else {
+      tnam = _tempnam("C:\\TEMP", "wx");
+      }
+   if (tnam == NULL) {
+      fprintf(stderr, "_tempnam failed, is your temp directory full?\n");
+      tnam = "wx0001";
+      }
    strcpy(tmplognam, tnam);
    flog = fopen(tnam, "w");
    free(tnam);
@@ -276,7 +285,7 @@ void ExpandArgv(int *argcp, char ***avp)
       }
    if (newargc == argc) return;
 
-   newargv = malloc((newargc+1) * sizeof (char *));
+   if ((newargv = malloc((newargc+1) * sizeof (char *))) == NULL) return;
    newargc = 0;
    for(j=0; j < argc; j++) {
       if (strchr(argv[j], '*') || strchr(argv[j], '?')) {

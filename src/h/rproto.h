@@ -35,6 +35,7 @@ struct b_telem	*alctelem_0	(void);
 struct b_telem	*alctelem_1	(void);
 struct b_tvtbl	*alctvtbl_0	(dptr tbl,dptr ref,uword hashnum);
 struct b_tvtbl	*alctvtbl_1	(dptr tbl,dptr ref,uword hashnum);
+struct b_tvmonitored  *alctvmonitored	(dptr tv, word ipc);
 void assign_event_functions(struct progstate *p, struct descrip cs);
 #ifdef PatternType
 struct b_pattern	*alcpattern_0 (word size);
@@ -747,6 +748,7 @@ void	rtos		(double n,dptr dp,char *s);
 int	sig_rsm		(void);
 struct b_proc *strprc	(dptr s, C_integer arity);
 int	subs_asgn	(dptr dest, const dptr src);
+int	tvmonitored_asgn(dptr dest, const dptr src);
 int	trcmp3		(struct dpair *dp1,struct dpair *dp2);
 int	trefcmp		(dptr d1,dptr d2);
 int	tvalcmp		(dptr d1,dptr d2);

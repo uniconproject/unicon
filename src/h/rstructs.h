@@ -276,6 +276,14 @@ struct b_tvtbl {		/* table element trapped variable block */
    struct descrip tref;		/*   entry value */
    };
 
+#ifdef EventMon
+struct b_tvmonitored {          /* Monitored variable block */
+   word title;                  /*   T_Tvmonitored */
+   struct descrip tv;           /*   the variable in the other program */
+   word cur_actv;		/*   current co-expression activation */
+   };
+#endif				/* EventMon */
+
 struct b_external {		/* external block */
    word title;			/*   T_External */
    word blksize;		/*   size of block */
@@ -594,6 +602,7 @@ struct progstate {
    struct b_tvsubs *(*Alcsubs)(word, word, dptr);
    struct b_telem *(*Alctelem)(void);
    struct b_tvtbl *(*Alctvtbl)(dptr, dptr, uword);
+   struct b_tvmonitored *(*Alctvmonitored) (dptr);
    void (*Deallocate)(union block *);
    char * (*Reserve)(int, word);
    };
@@ -672,6 +681,9 @@ struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
    word size;			/*   number of results produced */
    word id;			/*   identification number */
+#ifdef EventMon
+   word actv_count;             /*   number of times activated using EvGet() */
+#endif				/* EventMon */
    struct b_coexpr *nextstk;	/*   pointer to next allocated stack */
    struct pf_marker *es_pfp;	/*   current pfp */
    struct ef_marker *es_efp;	/*   efp */
@@ -717,6 +729,9 @@ union block {			/* general block */
    struct b_record record;
    struct b_tvsubs tvsubs;
    struct b_tvtbl tvtbl;
+#ifdef EventMon
+   struct b_tvmonitored tvmonitored;
+#endif					/* EventMon */
    struct b_refresh refresh;
    struct b_coexpr coexpr;
    struct b_external externl;

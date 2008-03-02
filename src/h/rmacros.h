@@ -389,7 +389,9 @@
 #define T_Pelem 	        27	/* keyword &eventsource, etc. */
 #endif					/* PatternType */
 
-#define MaxType		27	/* maximum type number */
+#define T_Tvmonitored   28      /* Monitored trapped variable */
+
+#define MaxType		28	/* maximum type number */
 
 /*
  * Definitions for keywords.
@@ -428,6 +430,7 @@
 #define D_Record	(T_Record   | D_Typecode | F_Ptr)
 #define D_Tvsubs	(T_Tvsubs   | D_Typecode | F_Ptr | F_Var)
 #define D_Tvtbl		(T_Tvtbl    | D_Typecode | F_Ptr | F_Var)
+#define D_Tvmonitored	(T_Tvmonitored | D_Typecode | F_Ptr | F_Var)
 #define D_Kywdint	(T_Kywdint  | D_Typecode | F_Ptr | F_Var)
 #define D_Kywdpos	(T_Kywdpos  | D_Typecode | F_Ptr | F_Var)
 #define D_Kywdsubj	(T_Kywdsubj | D_Typecode | F_Ptr | F_Var)
@@ -437,10 +440,10 @@
 #define D_Slots		(T_Slots    | D_Typecode | F_Ptr)
 #define D_Kywdwin	(T_Kywdwin  | D_Typecode | F_Ptr | F_Var)
 #define D_Kywdstr	(T_Kywdstr  | D_Typecode | F_Ptr | F_Var)
-#define D_Kywdevent	(T_Kywdevent| D_Typecode | F_Ptr | F_Var)
+#define D_Kywdevent	(T_Kywdevent | D_Typecode | F_Ptr | F_Var)
 #ifdef PatternType
-#define D_Pattern		(T_Pattern     | D_Typecode | F_Ptr)
-#define D_Pelem		(T_Pelem     | D_Typecode | F_Ptr)
+#define D_Pattern	(T_Pattern  | D_Typecode | F_Ptr)
+#define D_Pelem		(T_Pelem    | D_Typecode | F_Ptr)
 #endif					/* PatternType */
 
 #define D_Var		(F_Var | F_Nqual | F_Ptr)

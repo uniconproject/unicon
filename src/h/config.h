@@ -184,6 +184,12 @@
    #define MultiThread
 #endif					/* EventMon */
 
+#ifndef NoMonitoredTrappedVar
+   #undef MonitoredTrappedVar
+   #define MonitoredTrappedVar
+#endif					/* MonitoredTrappedVar */
+
+
 /*
  * Names for standard environment variables.
  * The standard names are used unless they are overridden.

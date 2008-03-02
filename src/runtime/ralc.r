@@ -808,6 +808,29 @@ alctvtbl_macro(alctvtbl_1,E_Tvtbl)
 #else					/* MultiThread */
 alctvtbl_macro(alctvtbl,0)
 #endif					/* MultiThread */
+
+#ifdef EventMon
+#begdef alctvmonitored_macro(f)
+/*
+ * alctvmonitored - allocate a trapped monitored variable block in the block
+ *  region. no need for event, unless the Monitor is a TP for another Monitor.
+ */
+
+struct b_tvmonitored *f(register dptr tv, word count)
+   {
+   tended struct descrip vref = *tv;
+   register struct b_tvmonitored *blk;
+
+   AlcFixBlk(blk, b_tvmonitored,T_Tvmonitored);
+   blk->tv = vref;
+   blk->cur_actv = count;
+   return blk;
+   } 
+#enddef
+
+alctvmonitored_macro(alctvmonitored)
+#endif					/* EventMon */
+
 
 #begdef deallocate_macro(f,e_blkdealc)
 /*

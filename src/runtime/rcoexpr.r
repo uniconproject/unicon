@@ -231,6 +231,9 @@ int first;
    ccp->es_ipc = ipc;
    ccp->es_sp = sp;
    ccp->es_ilevel = ilevel;
+#ifdef EventMon
+   ccp->actv_count += 1;
+#endif					/* EventMon */
 #endif					/* COMPILER */
 
 #if COMPILER

@@ -492,8 +492,16 @@ function{1} image(x)
       return string
       }
    inline {
-      if (getimage(&x,&result) == Error)
-          runerr(0);
+      type_case x of {
+          tvmonitored:{
+             if (getimage(VarLoc(BlkLoc(x)->tvmonitored.tv),&result) == Error)
+                runerr(0);
+             }
+          default:{
+             if (getimage(&x,&result) == Error)
+                runerr(0);
+             }
+      }
       return result;
       }
 end
@@ -1301,6 +1309,26 @@ function{1} type(x)
 #ifdef PatternType
       pattern:     inline { return C_string "pattern"; }
 #endif					/* PatternType */
+
+      tvmonitored:  
+         inline{
+             if (is:string(*(VarLoc(BlkLoc(x)->tvmonitored.tv))))
+                return C_string "foreign-local-string";
+             else switch(Type(*(VarLoc(BlkLoc(x)->tvmonitored.tv)))) { 
+                case T_Null:   { return C_string "foreign-local-null";     }
+		case T_Integer:{ return C_string "foreign-local-integer";  }
+                case T_Real:   { return C_string "foreign-local-real";     }
+                case T_Cset:   { return C_string "foreign-local-cset";     }
+                case T_File:   { return C_string "foreign-local-file";     }
+                case T_Proc:   { return C_string "foreign-local-procedure";}
+                case T_List:   { return C_string "foreign-local-list";     }
+                case T_Table:  { return C_string "foreign-local-table";    }
+                case T_Set:    { return C_string "foreign-local-set";      }
+                case T_Record: { return C_string "foreign-local-record";   }
+                case T_Coexpr: { return C_string "foreign-local-co-expression";}
+		default:       { return C_string "foreign-local-??";       }
+		}
+             }
       default:
          inline {
 #if !COMPILER
@@ -1383,7 +1411,14 @@ function{0,1} variable(s)
 	 glbl_argp = tmp_argp;
 
 	 if ((rv == LocalName) || (rv == StaticName)) {
-	    Deref(result);
+
+#ifdef MonitoredTrappedVar
+            result.dword = D_Tvmonitored;
+            VarLoc(result) = 
+                  (dptr) alctvmonitored(&result, BlkLoc(c)->coexpr.actv_count);
+#else
+            Deref(result);
+#endif                                         /* MonitoredTrappedVar */
 	    }
 	 }
 #endif						/* MultiThread */

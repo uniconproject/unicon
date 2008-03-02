@@ -37,6 +37,17 @@
               runerr(0);
            }
          }
+      tvmonitored: {
+#ifdef MonitoredTrappedVar 
+        abstract { 
+           store[store[type(x).trpd_monitored]] = type(y)
+           }
+        inline {
+           if (tvmonitored_asgn(&x, (const dptr)&y) == Error)
+              runerr(0);
+           }
+#endif                                /* MonitoredTrappedVar */
+         }
       kywdevent:
 	 body {
 	    *VarLoc(x) = y;
@@ -558,3 +569,24 @@ const dptr src;
       }
    return Succeeded;
    }
+
+
+#ifdef MonitoredTrappedVar
+/* 
+ * tvmonitored_asgn - perform an assignment to a monitored trapped variable
+ *   in the Target Program form the Monitor.
+ */
+int tvmonitored_asgn(dest, src)
+dptr dest;
+const dptr src;
+   {
+   word count;
+
+   count = BlkLoc(curpstate->eventsource)->coexpr.actv_count;
+   if (count != BlkLoc(*dest)->tvmonitored.cur_actv)
+      return Error;
+
+   *VarLoc(BlkLoc(*dest)->tvmonitored.tv) = *src;
+   return Succeeded;
+   }
+#endif                                    /* MonitoredTrappedVar */

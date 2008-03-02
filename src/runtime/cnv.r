@@ -728,6 +728,12 @@ void f(dptr s, dptr d)
       kywdstr:
          *d = *VarLoc(*s);
 
+      tvmonitored:{
+#ifdef EventMon
+         *d = *(VarLoc(BlkLoc(*s)->tvmonitored.tv));
+#endif					/* EventMon */
+         }
+
       default: {
          /*
           * An ordinary variable is being dereferenced.

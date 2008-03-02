@@ -300,23 +300,32 @@ function{*} istate(ce,attrib)
       return integer
       }
    body {
-      tended char *field='\0';
+      tended char *field=NULL;
+      word *ipc_opnd;
 
       if (!cnv:C_string(attrib, field))
 	 runerr(103,attrib);
  
       if (!is:null(ce)){
 	 if (is:coexpr(ce)){
+            if (!strcmp(field, "count"))
+               return C_integer (word) BlkLoc(ce)->coexpr.actv_count;
             if (!strcmp(field, "ilevel"))
-               return C_integer (long) BlkLoc(ce)->coexpr.es_ilevel;
+               return C_integer (word) BlkLoc(ce)->coexpr.es_ilevel;
             else if (!strcmp(field, "ipc"))
-               return C_integer (long) BlkLoc(ce)->coexpr.es_ipc.opnd;
+               return C_integer (word) BlkLoc(ce)->coexpr.es_ipc.opnd;
+            else if (!strcmp(field, "ipc_offset")){
+               ipc_opnd = BlkLoc(ce)->coexpr.es_ipc.opnd;
+               return C_integer (word) DiffPtrs(
+                                (char*)ipc_opnd,
+                                (char *)BlkLoc(ce)->coexpr.program->Code);
+               }
             else if (!strcmp(field, "sp"))
-               return C_integer (long) BlkLoc(ce)->coexpr.es_sp;
+               return C_integer (word) BlkLoc(ce)->coexpr.es_sp;
             else if (!strcmp(field, "efp"))
-               return C_integer (long) BlkLoc(ce)->coexpr.es_efp;
+               return C_integer (word) BlkLoc(ce)->coexpr.es_efp;
             else if (!strcmp(field, "gfp"))
-               return C_integer (long) BlkLoc(ce)->coexpr.es_gfp;
+               return C_integer (word) BlkLoc(ce)->coexpr.es_gfp;
             else fail;   
             }   
 	 else  

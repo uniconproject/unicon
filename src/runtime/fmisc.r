@@ -491,7 +491,7 @@ function{1} image(x)
    abstract {
       return string
       }
-   inline {
+   body {
       type_case x of {
           tvmonitored:{
              if (getimage(VarLoc(BlkLoc(x)->tvmonitored.tv),&result) == Error)

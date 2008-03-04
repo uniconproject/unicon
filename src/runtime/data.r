@@ -400,6 +400,7 @@ struct errtab errtab[] = {
    214, "input/output error",
    215, "attempt to refresh &main",
    216, "external function not found",
+   217, "unsafe inter-program variable assignment",
 
    301, "evaluation stack overflow",
    302, "memory violation",

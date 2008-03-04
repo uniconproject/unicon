@@ -584,7 +584,7 @@ const dptr src;
 
    count = BlkLoc(curpstate->eventsource)->coexpr.actv_count;
    if (count != BlkLoc(*dest)->tvmonitored.cur_actv)
-      return Error;
+      ReturnErrVal(217, *dest, Error);
 
    *VarLoc(BlkLoc(*dest)->tvmonitored.tv) = *src;
    return Succeeded;

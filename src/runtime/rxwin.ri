@@ -4508,6 +4508,7 @@ wbp w;
 char child_window_stuff(wbp w, wbp wp, char child_window)
 {
    wsp ws;
+   wcp wc;
    int is_3d=0, query;
    struct wbind_list *curr;
    wdp wd;
@@ -4574,23 +4575,27 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
       return 0;
       }
 	
+   wc = w->context;
    /*
     * some attributes of the context determine window defaults
     */
-   ws->height = w->context->font->height * 12;
-   ws->width  = w->context->font->fsp->max_bounds.width * 80;
-   ws->y = w->context->font->fsp->max_bounds.ascent;
+   ws->height = wc->font->height * 12;
+   ws->width  = wc->font->fsp->max_bounds.width * 80;
+   ws->y = wc->font->fsp->max_bounds.ascent;
    ws->x = 0;
-   ws->y += w->context->dy;
-   ws->x += w->context->dx;
+   ws->y += wc->dy;
+   ws->x += wc->dx;
 #ifdef Graphics3D
-   w->context->is_3D = ws->is_3D = is_3d;
-   w->context->buffermode = IMMEDIATE3D;
+   wc->is_3D = ws->is_3D = is_3d;
+   wc->buffermode = IMMEDIATE3D;
 
-   w->context->maxstex=16;
-   w->context->stex = (struct _savetexture *) 
-                    malloc(w->context->maxstex*sizeof(struct _savetexture));
-   w->context->meshmode = GL_POLYGON;
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+                    malloc(wc->maxstex*sizeof(struct _savetexture));
+   wc->meshmode = GL_POLYGON;
+   if (is_3d) {
+      if (init_3dcontext(wc) == Failed) return 0;
+      }
 #endif					/* Graphics3D */
    return 1;
 }

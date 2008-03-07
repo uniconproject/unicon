@@ -1311,7 +1311,7 @@ function{1} type(x)
 #endif					/* PatternType */
 
       tvmonitored:  
-         inline{
+         body {
              if (is:string(*(VarLoc(BlkLoc(x)->tvmonitored.tv))))
                 return C_string "foreign-local-string";
              else switch(Type(*(VarLoc(BlkLoc(x)->tvmonitored.tv)))) { 
@@ -1328,6 +1328,7 @@ function{1} type(x)
                 case T_Coexpr: { return C_string "foreign-local-co-expression";}
 		default:       { return C_string "foreign-local-??";       }
 		}
+	     return C_string "cannot happen";
              }
       default:
          inline {

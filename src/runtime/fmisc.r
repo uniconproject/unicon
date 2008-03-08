@@ -492,6 +492,7 @@ function{1} image(x)
       return string
       }
    body {
+#ifdef EventMon
       type_case x of {
           tvmonitored:{
              if (getimage(VarLoc(BlkLoc(x)->tvmonitored.tv),&result) == Error)
@@ -502,6 +503,10 @@ function{1} image(x)
                 runerr(0);
              }
       }
+#else
+      if (getimage(&x,&result) == Error)
+	 runerr(0);
+#endif
       return result;
       }
 end
@@ -1309,7 +1314,7 @@ function{1} type(x)
 #ifdef PatternType
       pattern:     inline { return C_string "pattern"; }
 #endif					/* PatternType */
-
+#ifdef EventMon
       tvmonitored:  
          body {
              if (is:string(*(VarLoc(BlkLoc(x)->tvmonitored.tv))))
@@ -1330,6 +1335,7 @@ function{1} type(x)
 		}
 	     return C_string "cannot happen";
              }
+#endif					/* EventMon */
       default:
          inline {
 #if !COMPILER

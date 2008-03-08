@@ -1619,6 +1619,15 @@ dptr dp1, dp2;
          StrLen(*dp2) = 13 + len;
          }
 
+      tvmonitored:{
+         /* 
+          * foreign monitored tapped variable 
+          */
+         Protect(t = alcstr("Trapped_monitored", (word)(17)), return Error);
+         StrLoc(*dp2) = t;
+         StrLen(*dp2) = 17;
+         } 
+
       default:
         if (Type(*dp1) == T_External) {
            /*

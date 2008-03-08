@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.45 2008-01-19 23:27:20 jeffery Exp $
+ * $Id: fxposix.ri,v 1.46 2008-03-08 10:25:13 jeffery Exp $
  */
 
 /*
@@ -1169,7 +1169,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       }
 
       if (is:list(argv)) {
-         margv = (char **)malloc((BlkLoc(argv)->list.size+1) * sizeof(char *));
+         margv = (char **)malloc((BlkLoc(argv)->list.size+3) * sizeof(char *));
          if (margv == NULL) runerr(305);
 	 n = 0;
 	 /* Traverse the list */
@@ -1184,7 +1184,19 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
 	       if (!cnv:C_string((*f), p))
 		  runerr(103, *f);
-	       margv[n++] = p;
+#if WIN32
+	       if ((n == 0) && is_internal(p)) {
+		  margv[n++] = "cmd"; /* on Win9x this should be command */
+		  margv[n++] = "/C";
+		  margv[n++] = "p";
+		  }
+	       else {
+		  margv[n++] = p;
+		  }
+#else
+		  margv[n++] = p;
+#endif
+
 	       }
 	    }
 	 margv[n] = 0;
@@ -1247,6 +1259,16 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    int argc;
 	    char **garbage;
 	    argc = CmdParamToArgv(cmdline, &garbage, 0);
+	    if (is_internal(garbage[0])) {
+	       int jj;
+	       argc += 2;
+	       garbage = realloc(garbage, (sizeof (char *)) * (argc+1));
+	       garbage[argc] = NULL;
+	       for(jj = argc-1; jj >= 2; jj--)
+		  garbage[jj] = garbage[jj-2];
+	       garbage[0] = "cmd";
+	       garbage[1] = "/C";
+	       }
 	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], garbage);
 	    }
 	 else {
@@ -1307,6 +1329,24 @@ extern char *ArgvToCmdline(char **);
       return nulldesc;
    }
 end
+
+#if NT
+   char *internal_cmds[] = {
+      "dir", "cd", "chdir", "copy", "ren", "rename", "del", "erase",
+      "md", "mkdir", "rd", "rmdir", "vol", "label", "verify", "type",
+      "break", "cls", "chcp", "ctty", "date", "echo", "lh", "loadhigh",
+      "lock", "path", "pause", "prompt", "set", "time", "unlock", "ver", NULL
+      };
+int is_internal(char *s)
+{
+   int i = 0;
+   while (internal_cmds[i]) {
+      if (! stricmp(s, internal_cmds[i])) return 1;
+      }
+   return 0;
+}
+#endif
+
 
 "getuid() - get the real user identity."
 

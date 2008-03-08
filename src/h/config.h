@@ -690,6 +690,7 @@ Deliberate Syntax Error
     */
    #undef MultiThread		/* no way -- interpreter only */
    #undef EventMon		/* presently not supported in the compiler */
+   #undef MonitoredTrappedVar	/* no way */
    #undef ExecImages		/* interpreter only */
    #undef HAVE_IODBC		/* ODBC interpreter only until dynamic */
    #undef ISQL			/* records get added to the compiler */

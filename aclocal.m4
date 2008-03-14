@@ -27,7 +27,7 @@ fi
 if test -n "${ZLIB_HOME}"
 then
         ZLIB_OLD_LDFLAGS=$LDFLAGS
-        ZLIB_OLD_CPPFLAGS=$LDFLAGS
+        ZLIB_OLD_CPPFLAGS=$CPPFLAGS
         LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
         CPPFLAGS="$CPPFLAGS -I${ZLIB_HOME}/include"
         AC_LANG_SAVE
@@ -60,11 +60,11 @@ AC_DEFUN([CHECK_FREETYPE],
 #
 # Handle user hints
 #
-[AC_MSG_CHECKING(if freetype2 is wanted)
-AC_ARG_WITH(freetype2,
-[  --with-freetype2=DIR root directory path of freetype2 installation [defaults to
+[AC_MSG_CHECKING(if freetype is wanted)
+AC_ARG_WITH(freetype,
+[  --with-freetype2=DIR root directory path of freetype installation [defaults to
                     /usr/include or /usr if not found in /usr/lib64]
-  --without-freetype2 to disable freetype2 usage completely],
+  --without-freetype to disable freetype usage completely],
 [if test "$withval" != no ; then
   AC_MSG_RESULT(yes)
   FREETYPE_HOME="$withval"
@@ -72,32 +72,33 @@ else
   AC_MSG_RESULT(no)
 fi], [
 AC_MSG_RESULT(yes)
-FREETYPE_HOME=/usr
+FREETYPE_HOME=/usr/local
 if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
 then
-        FREETYPE_HOME=/usr/
+        FREETYPE_HOME=/usr
 fi
 ])
 #
-# Locate freetype2, if wanted
+# Locate freetype, if wanted
 #
 if test -n "${FREETYPE_HOME}"
 then
-	FREETYPE_OLS_LIBS=$LIBS
-	FREETYPE_OLS_RLINK=$RLINK
-	RLINK="$RLINK -I${FREETYPE_HOME}/include/freetype2 -I${FREETYPE_HOME}/include/freetype2/freetype"
-	LIBS="$LIBS -lfreetype"
+	FREETYPE_OLD_LDFLAGS=$LDFLAGS
+	FREETYPE_OLD_CPPFLAGS=$CPPFLAGS
+	LDFLAGS="$LDFLAGS -L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include/freetype2/freetype  -I${FREETYPE_HOME}/include/freetype2"
+	echo "$CPPFLAGS"
         AC_LANG_SAVE
         AC_LANG_C
-        AC_CHECK_LIB(freetype2, inflateEnd, [freetype_cv_libfreetype=yes], [freetype_cv_libfreetype=no])
-        AC_CHECK_HEADER(freetype.h, [freetype_cv_freetype_h=yes], [freetype_cv_freetype_h=no])
+        AC_CHECK_LIB(freetype, FT_Open_Face, [freetype_cv_libfreetype=yes], [freetype_cv_libfreetype=no])
+        AC_CHECK_HEADER(ft2build.h, [freetype_cv_ft2build_h=yes], [freetype_cv_ft2build_h=no])
         AC_LANG_RESTORE
-        if test "$freetypelib_cv_libfreetype" = "yes" -a "$freetypelib_cv_freetype_h" = "yes"
+        if test "$freetype_cv_libfreetype" = "yes" -a "$freetype_cv_ft2build_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
-                AC_CHECK_LIB(z, inflateEnd)
+                AC_CHECK_LIB(freetype, FT_Open_Face)
                 AC_MSG_CHECKING(freetype in ${FREETYPE_HOME})
                 AC_MSG_RESULT(ok)
         else
@@ -105,8 +106,8 @@ then
                 # If either header or library was not found, revert and bomb
                 #
                 AC_MSG_CHECKING(freetype in ${FREETYPE_HOME})
-                RLINK="$FREETYPE_OLD_RLINK"
-                LIBS="$FREETYPE_OLD_LIBS"
+		LDFLAGS="$FREETYPE_OLD_LDFLAGS"
+		CPPFLAGS="$FREETYPE_OLD_CPPFLAGS"
                 AC_MSG_RESULT(failed)
         fi
 fi
@@ -128,10 +129,10 @@ else
   AC_MSG_RESULT(no)
 fi], [
 AC_MSG_RESULT(yes)
-FTGL_HOME=/usr/local/ftgl
-if test ! -f "${FTGL_HOME}/include/FTGL.h"
+FTGL_HOME=/usr/local
+if test ! -f "${FTGL_HOME}/include/FTGL/FTGL.h"
 then
-        FTGL_HOME=/usr/local/ftgl
+        FTGL_HOME=/usr
 fi
 ])
 
@@ -140,13 +141,13 @@ fi
 #
 if test -n "${FTGL_HOME}"
 then
-	FTGL_OLD_RLINK=RLINK
-	FTGL_OLD_LIBS=LIBS
-	RLINK="RLINK -I${FTGL_HOME}/include"
-	LIBS="LIBS -L${FTGL_HOME}/src -lftgl"
+	FTGL_OLD_LDFLAGS=$LDFLAGS
+	FTGL_OLD_CPPFLAGS=$CPPFLAGS
+	LDFLAGS="$LDFLAGS -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib"
+	CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
         AC_LANG_SAVE
-        AC_LANG_C
-        AC_CHECK_LIB(z, inflateEnd, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
+        AC_LANG_CPLUSPLUS
+        AC_CHECK_LIB(ftgl, main, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
         AC_CHECK_HEADER(FTGL.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
         AC_LANG_RESTORE
         if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
@@ -154,7 +155,7 @@ then
                 #
                 # If both library and header were found, use them
                 #
-                AC_CHECK_LIB(z, inflateEnd)
+                AC_CHECK_LIB(ftgl, main)
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
                 AC_MSG_RESULT(ok)
         else
@@ -162,8 +163,8 @@ then
                 # If either header or library was not found, revert and bomb
                 #
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
-		LIBS="$FTGL_OLD_LIBS"
-		RLINK="$FTGL_OLD_RLINK"
+		LDFLAGS="$FTGL_OLD_LDFLAGS"
+		CPPFLAGS="$FTGL_OLD_CPPFLAGS"
                 AC_MSG_RESULT(failed)
         fi
 fi

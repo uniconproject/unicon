@@ -136,3 +136,120 @@ init_rec(name)
    sym_ent= instl_p(name, flags);
    sym_ent->val.rec = r;
 }
+
+#ifdef mdw_Instrument_Allocations
+static
+void *
+alloc_original(n)
+   unsigned int n;
+{
+   register void * a;
+
+   if (n == 0) /* Work-around for 0 allocation */
+      n = 1;
+
+   a = calloc((msize)n,sizeof(char));
+   if (a == NULL) {
+      fprintf(stderr, "alloc(%d): out of memory\n", (int)n);
+      exit(EXIT_FAILURE);
+      }
+   return a;
+}
+
+#define AlcTblSize (512)
+
+struct alc_ent {
+   int line_num;
+   char * fname;
+   unsigned long total_bytes;
+   struct alc_ent * next;
+   };
+
+struct alc_ent * alc_tbl[AlcTblSize] = { 0 };
+
+static
+void
+add_alloc_entry(n, fname, line)
+   unsigned int n;
+   char * fname;
+   int line;
+{
+   unsigned h;
+   struct alc_ent * ent;
+
+   h = line & (AlcTblSize - 1);
+   for (ent=alc_tbl[h]; ent; ent=ent->next) {
+      if (ent->line_num != line)
+         continue;
+      if (strcmp(ent->fname, fname) == 0) {
+         ent->total_bytes += (unsigned long)n;
+         return;
+         }
+      }
+   ent = malloc(sizeof(struct alc_ent));
+   ent->fname = fname;
+   ent->line_num = line;
+   ent->total_bytes = (unsigned long)n;
+   ent->next = alc_tbl[h];
+   alc_tbl[h] = ent;
+}
+
+extern
+void
+alc_stats(void)
+{
+   int i, k;
+   struct alc_ent * ent;
+   unsigned long n_bytes;
+   unsigned long max_val;
+   struct alc_ent * max_ent;
+
+   printf("  ### alc-stats bgn ###\n");
+
+   n_bytes = 0L;
+   for (i=0; i<AlcTblSize; i++) {
+      for(ent=alc_tbl[i]; ent; ent=ent->next)
+         n_bytes += ent->total_bytes;
+      }
+#ifdef unordered_traversal
+   for (i=0; i<AlcTblSize; i++) {
+      for (ent=alc_tbl[i]; ent; ent=ent->next) {
+         printf("%d.%s: %ld bytes\n", ent->line_num, ent->fname,
+            ent->total_bytes);
+         }
+      }
+#else
+   max_val = 1L;
+   while (max_val > 0L) {
+      max_val = 0L;
+      for (i=0; i<AlcTblSize; i++) {
+         for (ent=alc_tbl[i]; ent; ent=ent->next) {
+            if (ent->total_bytes > max_val) {
+               max_ent = ent;
+               max_val = ent->total_bytes;
+               }
+            }
+         }
+         printf("  %d.%s: %ld bytes\n", max_ent->line_num, max_ent->fname,
+            max_ent->total_bytes);
+         max_ent->total_bytes = 0UL;
+      }
+#endif
+   printf("  *** total-bytes: %ld\n", n_bytes);
+   printf("  ### alc-stats end ###\n");
+}
+
+pointer
+_alloc(n, fname, line)
+   unsigned int n;
+   char * fname;
+   int line;
+{
+   pointer rslt;
+
+   add_alloc_entry(n, fname, line);
+   rslt = alloc_original(n);
+   return rslt;
+}
+#endif /* mdw_Instrument_Allocations */
+

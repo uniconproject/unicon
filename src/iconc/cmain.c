@@ -494,7 +494,9 @@ Deliberate Syntax Error
    */
 #endif					/* !MSDOS */
    rmfile(makename(buf,TargetDir,cfile,ObjSuffix));
-
+#ifdef mdw_Instrument_Allocations
+   alc_stats();
+#endif
    if (ret_code == EXIT_SUCCESS && optind < argc)  {
       if (verbose > 0)
          report("Executing");

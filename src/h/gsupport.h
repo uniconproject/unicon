@@ -27,6 +27,11 @@
    #include "../h/rproto.h"
 #endif					/* ConsoleWindow */
 
+#ifdef mdw_Instrument_Allocations
+extern void * _alloc(unsigned int, char *, int);
+#define alloc(n) (_alloc((n),__FILE__,__LINE__))
+#endif /* mdw_Instrument_Allocations */
+
 /* mdw: squelch redef of "OF" as gcc warning */
 #ifdef OF
 #undef OF

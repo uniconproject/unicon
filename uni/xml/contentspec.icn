@@ -1,5 +1,5 @@
 #
-# $Id: contentspec.icn,v 1.3 2008-04-15 23:50:05 rparlett Exp $
+# $Id: contentspec.icn,v 1.4 2008-04-16 01:00:33 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -74,7 +74,9 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
    # the sequence of initial matches of the pattern in subject, starting from pos.
    #
    method pattern_match(subject, pos)
-      local x, y
+      local x, y, b
+      static max
+      initial max := proc("max",0)
 
       case op of {
          "ANY" :
@@ -108,22 +110,26 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
          "*" : {
             suspend x := 0
             repeat {
-               y := arg1.best_match(subject, pos + x) | fail
-               suspend x + y
-               if y = 0 then
-                  fail
-               x +:= y
+               b := &null
+               every y := arg1.pattern_match(subject, pos + x) do {
+                  suspend x + y
+                  b := max(b, y)
+               }
+               \b > 0 | fail
+               x +:= b
             }
          }
 
          "+" : {
             x := 0
             repeat {
-               y := arg1.best_match(subject, pos + x) | fail
-               suspend x + y
-               if y = 0 then
-                  fail
-               x +:= y
+               b := &null
+               every y := arg1.pattern_match(subject, pos + x) do {
+                  suspend x + y
+                  b := max(b, y)
+               }
+               \b > 0 | fail
+               x +:= b
             }
          }
 
@@ -132,16 +138,6 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
          }
 
       }
-   end
-
-   #
-   # @p
-   method best_match(subject, pos)
-      local n, i
-      every i := pattern_match(subject, pos) do
-         if /n then n := i
-         else n := max(n, i)
-      return \n
    end
 
    #

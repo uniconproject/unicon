@@ -1,5 +1,5 @@
 #
-# $Id: contentspec.icn,v 1.4 2008-04-16 01:00:33 rparlett Exp $
+# $Id: contentspec.icn,v 1.5 2008-04-16 01:11:55 rparlett Exp $
 #
 # This file is in the public domain.
 #
@@ -110,12 +110,12 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
          "*" : {
             suspend x := 0
             repeat {
-               b := &null
+               b := 0
                every y := arg1.pattern_match(subject, pos + x) do {
                   suspend x + y
                   b := max(b, y)
                }
-               \b > 0 | fail
+               b > 0 | fail
                x +:= b
             }
          }
@@ -123,12 +123,12 @@ class ContentSpec(op, arg1, arg2, is_mixed_flag)
          "+" : {
             x := 0
             repeat {
-               b := &null
+               b := 0
                every y := arg1.pattern_match(subject, pos + x) do {
                   suspend x + y
                   b := max(b, y)
                }
-               \b > 0 | fail
+               b > 0 | fail
                x +:= b
             }
          }

@@ -342,13 +342,13 @@
 #define putc Consoleputc
 #endif					/* ConsoleWindow */
 
-#ifdef Graphics3D
+#if HAVE_LIBGL
 #include <GL/gl.h>
 #ifdef XWindows
 #include <GL/glx.h>
 #endif					/* XWindows */
 #include <GL/glu.h>
-#endif					/* Graphics3D */
+#endif					/* HAVE_LIBGL */
 
 #if HAVE_LIBZ
 

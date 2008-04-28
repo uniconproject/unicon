@@ -18,6 +18,15 @@
    #include "../h/mswin.h"
 #endif					/* MSWindows */
 
+#ifdef Graphics3D
+/* at present, it is OpenGL or Direct3D */
+#if HAVE_LIBGL
+#include "opengl.h"
+#else					/* HAVE_LIBGL */
+#include "direct3d.h"
+#endif					/* HAVE_LIBGL */
+#endif					/* Graphics3D */
+
 #ifndef MAXXOBJS
    #define MAXXOBJS 256
 #endif					/* MAXXOBJS */
@@ -342,7 +351,9 @@ typedef struct _wtexture {
    } wtexture, *wtp;
 
 typedef struct _savetexture {
+#if HAVE_LIBGL
    GLubyte *tex;
+#endif					/* HAVE_LIBGL */
    int width, height;
    struct _wbinding *w;
    } stexture, *wvp;
@@ -404,21 +415,35 @@ typedef struct _wcontext {
 
 #ifdef Graphics3D
 
+#if HAVE_LIBGL
 #ifdef XWindows
   GLXContext    ctx;			   /* context for "gl" windows */
 #endif					/* XWindows */
 #ifdef MSWindows
   HGLRC ctx;
 #endif					/* MSWindows */
+#endif					/* HAVE_LIBGL */
 
   int           dim;			/* # of coordinates per vertex */
   int           is_3D;			/* flag for 3D windows */
   char          buffermode;		/* 3D buffering flag */
   char		meshmode;		/* fillpolygon mesh mode */
 
-  int		slices;			/* slices and rings, used to control the level*/
-  int		rings;			/* of detail sphere, cylinder, disk and torus to be drawn */
+  int		slices;			/* slices and rings for level of */
+  int		rings;			/* detail sphere etal to be drawn */
 
+/* selection parameters   */
+  int           selectionenabled;            /* selection is enabled */
+  int		selectionrendermode;         /* selection code should be executed */
+  int		selectionavailablename;      /* what int code to use for OpenGL name  */
+  char **	selectionnamelist;	     /* all of the current used names  */
+  int		selectionnamecount;	     /* how many - used so far   */	
+  int		selectionnamelistsize;       /* current available size  */
+  /*
+  char **	selectednamelist;
+  int 		selectednamecount;
+  */   
+ 
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
   double        eyedirx, eyediry, eyedirz; /* eye direction vector */
   double        eyeposx, eyeposy, eyeposz; /* eye position */
@@ -431,12 +456,12 @@ typedef struct _wcontext {
   int ntextures;			/* # textures actually used */
   int curtexture;			/* subscript of current texture */
   int nalced;				/* number allocated */
+#if HAVE_LIBGL
   GLuint *texName;			/* array of GL textures */
+#endif					/* HAVE_LIBGL */
   wtp textures;				/* textures */
   wvp stex;
   int maxstex;
-  
-
 #endif					/* Graphics3D */
 } wcontext, *wcp;
 
@@ -706,8 +731,9 @@ typedef struct
 #define A_MESHMODE      79
 #define A_SLICES        80
 #define A_RINGS         81
+#define A_PICK          82
 
-#define NUMATTRIBS	81
+#define NUMATTRIBS	82
 
 #define XICONSLEEP	20 /* milliseconds */
 

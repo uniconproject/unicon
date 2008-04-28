@@ -295,6 +295,9 @@ extern stringint attribs[], drawops[];
    extern struct descrip gl_matrixmode;
    extern struct descrip gl_texture;
    extern stringint redraw3Dnames[];
+   #ifndef MultiThread
+         extern struct descrip amperPick;
+   #endif				/* MultiThread */
 #endif					/* Graphics3D */
 
 #endif					/* Graphics */

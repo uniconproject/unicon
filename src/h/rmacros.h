@@ -742,6 +742,9 @@
          #define xmod_control (curpstate->Xmod_Control)
          #define xmod_shift (curpstate->Xmod_Shift)
          #define xmod_meta (curpstate->Xmod_Meta)
+      #ifdef Graphics3D
+         #define amperPick   (curpstate->AmperPick)
+      #endif				/* Graphics3D */
       #endif				/* Graphics */
       
       #define line_num  (curpstate->Line_num)

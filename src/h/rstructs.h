@@ -520,6 +520,10 @@ struct progstate {
       uword PrevTimeStamp;				/* previous timestamp */
       uword Xmod_Control, Xmod_Shift, Xmod_Meta;	/* control,shift,meta */
       struct descrip Kywd_xwin[2];			/* &window + ... */
+
+   #ifdef Graphics3D
+      struct descrip AmperPick;				/* &pick */
+   #endif				/* Graphics3D */
    #endif				/* Graphics */
    
    word Line_num, Column, Lastline, Lastcol;

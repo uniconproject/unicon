@@ -775,7 +775,7 @@ Deliberate Syntax Error
 
 #ifndef HAVE_LIBGL
 #define HAVE_LIBGL 0
-#endif					/* HAVE_LIBJPEG */
+#endif					/* HAVE_LIBGL */
 
 #ifndef HAVE_LIBIODBC
 #define HAVE_LIBIODBC 0

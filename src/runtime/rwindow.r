@@ -48,6 +48,7 @@ struct descrip amperY = {D_Integer};
 struct descrip amperCol = {D_Integer};
 struct descrip amperRow = {D_Integer};
 struct descrip amperInterval = {D_Integer};
+struct descrip amperPick = {D_Null};
 struct descrip lastEventWin = {D_Null};
 int lastEvFWidth = 0, lastEvLeading = 0, lastEvAscent = 0;
 uword xmod_control, xmod_shift, xmod_meta;
@@ -88,7 +89,8 @@ wbp w;
 dptr res;
 int t;
    {
-   struct descrip xdesc, ydesc;
+   struct descrip xdesc, ydesc, pickdesc;
+   struct b_list *hp;
    uword i;
    int retval;
 
@@ -141,6 +143,13 @@ int t;
 
    wgetq(w,&xdesc,-1);
    wgetq(w,&ydesc,-1);
+
+   hp= (struct b_list *) (w->window->listp.vword.bptr);
+   if (hp->size > 0) {   /* we might have picking results */
+      c_traverse( hp , &pickdesc ,0);
+      if ((pickdesc.dword == D_List))  /* pull out the picking results */
+         wgetq( w, &amperPick, -1);
+      }
 
    if (xdesc.dword != D_Integer || ydesc.dword != D_Integer)
       return -2;			/* bad values on queue */
@@ -3295,6 +3304,9 @@ char * abuf;
       case A_RINGS:
 	AttemptAttr(setrings(w, val));
 	break;
+      case A_PICK:
+	AttemptAttr(setselectionmode(w, val));
+        break;
       case A_BUFFERMODE: {
         if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
         else wc->buffermode = IMMEDIATE3D;
@@ -3749,6 +3761,11 @@ char * abuf;
       case A_RINGS:
 	MakeInt(wc->rings, answer);
 	break;
+      case A_PICK: {
+	 sprintf(abuf,"%s",((w->context->selectionenabled==1)?"on":"off"));
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+	 }	
       case A_BUFFERMODE: {
 	 sprintf(abuf,"%s",((w->context->buffermode==BUFFERED3D)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
@@ -4563,6 +4580,7 @@ stringint attribs[] = {
    {"linewidth",	A_LINEWIDTH},
    {"meshmode",		A_MESHMODE},
    {"pattern",		A_PATTERN},
+   {"pick",		A_PICK},
    {"pointer",		A_POINTER},
    {"pointercol",	A_POINTERCOL},
    {"pointerrow",	A_POINTERROW},

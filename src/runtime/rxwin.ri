@@ -767,6 +767,13 @@ wbp w;
 	 case ButtonPress:
 	    presscount++;
 	    handle_mouse(wb, (XButtonEvent *)&event);
+#ifdef Graphics3D
+	    if ( wb->context->is_3D && wb->context->selectionenabled ){
+	       wb->context->selectionrendermode = 1;
+	       redraw3D(wb);
+	       wb->context->selectionrendermode = 0;
+	       }
+#endif	          
 	    break;
 	 case ButtonRelease:
 	    if (--presscount < 0) presscount = 0;
@@ -1001,10 +1008,16 @@ wbp w;
 #ifdef Graphics3D
    /* Free textures from memory */
    for (i=0; i<wc->curtexture; i++) {
+#if HAVE_LIBGL
         free(wc->stex[i].tex);
+#endif					/* HAVE_LIBGL */
         wc->stex[i].w=0;
         }
    free(wc->stex);
+   
+   free(wc->selectionnamelist);
+   free(wc->texName);
+   free(wc->texcoords);
 #endif					/* Graphics3D */
 
    if (ws->win && ws->refcount > 1) {
@@ -1369,12 +1382,14 @@ int wmap(wbp w)
 
 #ifdef Graphics3D
    if (wc->is_3D) {
+#if HAVE_LIBGL
       wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
       if (wc->ctx == NULL) 
 	 return Failed;
       glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+#endif					/* HAVE_LIBGL */
       }
-#endif				/* Graphics3D */
+#endif					/* Graphics3D */
 
    if (wc->clipw >= 0)
       setclip(w);
@@ -1552,12 +1567,14 @@ int status;
 #ifdef Graphics3D
         if (ws->is_3D) {
             makecurrent(w);
+#if HAVE_LIBGL
             glViewport(0, 0, (GLsizei) wid, (GLsizei) ht);
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
             glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width, 0.125 * ws->height / ws->width, 0.25, 50000.0);
             glMatrixMode(GL_MODELVIEW);
 /*            glLoadIdentity(); */
+#endif					/* HAVE_LIBGL */
         }
 #endif					/* Graphics3D */
 
@@ -2668,11 +2685,13 @@ XConfigureEvent *event;
 #ifdef Graphics3D
    if (ws->is_3D) {
       double tb = 0.125 * ws->height / ws->width;
+#if HAVE_LIBGL
       glViewport(0, 0, (GLsizei)event->width, (GLsizei) event->height);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
       glMatrixMode(GL_MODELVIEW);
+#endif					/* HAVE_LIBGL */
       }
 #endif					/* Graphics3D */
 
@@ -4512,9 +4531,9 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    int is_3d=0, query;
    struct wbind_list *curr;
    wdp wd;
-#ifdef Graphics3D
+#if HAVE_LIBGL
    int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
-#endif					/* Graphics3D */
+#endif					/* HAVE_LIBGL */
 
    if (child_window==2) {
 #ifdef Graphics3D
@@ -4524,6 +4543,7 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
        * create an opengl window
        */
       wd = wp->window->display;
+#if HAVE_LIBGL
       if (!glXQueryExtension(wd->display, &query, &query)) {
          printf("X server has no OpenGL GLX extension");
          return 0;
@@ -4536,6 +4556,7 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 	    return 0;
 	    }
 	 }
+#endif					/* HAVE_LIBGL */
 #else					/* Graphics3D */
       printf("3D subwindow requested on VM built without 3D facilities\n");
 #endif					/* Graphics3D */
@@ -4592,7 +4613,9 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    wc->maxstex=16;
    wc->stex = (struct _savetexture *) 
                     malloc(wc->maxstex*sizeof(struct _savetexture));
+#if HAVE_LIBGL
    wc->meshmode = GL_POLYGON;
+#endif					/* HAVE_LIBGL */
    if (is_3d) {
       if (init_3dcontext(wc) == Failed) return 0;
       }
@@ -4732,13 +4755,15 @@ char my_wmap(wbp w)
 
 #ifdef Graphics3D
    if (wc->is_3D) {
+#if HAVE_LIBGL
       wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
       if (wc->ctx == NULL) 
 	 return 0;
       if (w->window->win)
 	 glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+#endif					/* HAVE_LIBGL */
       }
-#endif				/* Graphics3D */
+#endif					/* Graphics3D */
 
    if (wc->clipw >= 0)
       setclip(w);
@@ -4911,7 +4936,9 @@ char my_wmap(wbp w)
      w->context->autogen = 1;
      w->context->texmode = 0;
      w->context->numtexcoords = 0;
+#if HAVE_LIBGL
      w->context->texName = malloc(16 * sizeof(GLuint));
+#endif					/* HAVE_LIBGL */
      w->context->nalced = 16;
      w->context->ntextures = 0;
      w->context->curtexture = -1;
@@ -4923,6 +4950,7 @@ char my_wmap(wbp w)
      ws->funclist.dword = D_List;
 */     
      /* set up the appropriate opengl states */
+#if HAVE_LIBGL
      glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
      glClearColor(RED(w->context->bg)/(GLfloat)255,
 		  GREEN(w->context->bg)/(GLfloat)255,
@@ -4943,6 +4971,7 @@ char my_wmap(wbp w)
      glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
      glMatrixMode(GL_MODELVIEW);
      glLoadIdentity();
+#endif					/* HAVE_LIBGL */
    }
 #endif					/* Graphics3D */
    return 1;
@@ -4952,7 +4981,9 @@ char my_wmap(wbp w)
 void makecurrent(wbp w)
 {
    wsp ws = w->window;
+#if HAVE_LIBGL
    glXMakeCurrent(ws->display->display, ws->win, w->context->ctx);
+#endif					/* HAVE_LIBGL */
 }
 #endif					/* Graphics3D */
 

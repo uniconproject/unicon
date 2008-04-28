@@ -824,9 +824,11 @@ function{1} DrawLine(argv[argc])
          /* draw the lines */
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
+#if HAVE_LIBGL
 	    drawpoly(w, v, argc-warg, GL_LINE_STRIP, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
 	    }
 	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
@@ -934,9 +936,11 @@ function{1} DrawPoint(argv[argc])
          c_put(&(w->window->funclist), &f);
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
+#if HAVE_LIBGL
 	    drawpoly(w, v, argc-warg, GL_POINTS, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
 	    }
 	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
@@ -1021,9 +1025,11 @@ function{1} DrawPolygon(argv[argc])
          /* draw the polygon */
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
+#if HAVE_LIBGL
 	    drawpoly(w, v, argc-warg, GL_LINE_LOOP, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
 	    }
 	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
@@ -1160,9 +1166,11 @@ function{1} DrawSegment(argv[argc])
          c_put(&(w->window->funclist), &f);
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
+#if HAVE_LIBGL
 	    drawpoly(w, v, argc-warg, GL_LINES, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
 	    }
 	 if (v != v2) free(v);
 	 redraw3D(w);
@@ -1251,11 +1259,15 @@ function{1} EraseArea(argv[argc])
 	  */
          Protect(w->window->funclist.vword.bptr = (union block *)alclist(0, MinListSlots), runerr(0));
 	 
+#if HAVE_LIBGL
          glClearColor(RED(w->context->bg)/(GLfloat)256,
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+         w->context->selectionavailablename=1;
+         w->context->selectionnamecount=0;
          glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
          ReturnWindow;
 	 }
 #endif                                /* Graphics3D */
@@ -1558,9 +1570,11 @@ function{1} FillPolygon(argv[argc])
 
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
+#if HAVE_LIBGL
 	    drawpoly(w, v, argc-warg, GL_POLYGON, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
 	    }
 	 if (v != v2) free(v);
 	 return f;
@@ -4091,10 +4105,16 @@ function{1} MatrixMode(argv[argc])
       if (!cnv:C_string(argv[warg],temp)) runerr(103,argv[warg]); 
 
       /* check the value of s and switch matrix stacks */
-      if (!strcmp("modelview", temp))
-	 glMatrixMode(GL_MODELVIEW);	
-      else if (!strcmp("projection", temp))
+      if (!strcmp("modelview", temp)) {
+#if HAVE_LIBGL
+	 glMatrixMode(GL_MODELVIEW);
+#endif					/* HAVE_LIBGL */
+	 }
+      else if (!strcmp("projection", temp)) {
+#if HAVE_LIBGL
 	 glMatrixMode(GL_PROJECTION);
+#endif					/* HAVE_LIBGL */
+	 }
       else 
          runerr(152, argv[warg]);
 
@@ -4159,7 +4179,9 @@ function{1} Texture(argv[argc])
 	 theTexture++;
 	 MakeInt(theTexture, &(rp->fields[2]));
 	 wc->curtexture = theTexture;
+#if HAVE_LIBGL
 	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+#endif					/* HAVE_LIBGL */
 	 }
       else {
 
@@ -4170,10 +4192,14 @@ function{1} Texture(argv[argc])
        */
       if (wc->ntextures >= wc->nalced) {
          wc->nalced *= 2;
+#if HAVE_LIBGL
          wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
          glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
+#endif					/* HAVE_LIBGL */
          }
+#if HAVE_LIBGL
       glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+#endif					/* HAVE_LIBGL */
       wc->curtexture = wc->ntextures;
       wc->ntextures++;
       }
@@ -4213,7 +4239,9 @@ function{1} Texture(argv[argc])
          texhandle = IntVal(BlkLoc(argv[warg])->record.fields[2]);
          rp->fields[2] = BlkLoc(argv[warg])->record.fields [2];
          wc->curtexture = texhandle;
+#if HAVE_LIBGL
          glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+#endif					/* HAVE_LIBGL */
 	 }
       else {
 	 /* otherwise it must be a string */
@@ -4277,10 +4305,12 @@ function{1} Texcoord(argv[argc])
      
       /* check if the argument is a list */
       if (argv[warg].dword == D_List) {
+#if HAVE_LIBGL
          if (glIsEnabled(GL_TEXTURE_GEN_S))
             glDisable(GL_TEXTURE_GEN_S);
          if (glIsEnabled(GL_TEXTURE_GEN_T))
             glDisable(GL_TEXTURE_GEN_T); 
+#endif					/* HAVE_LIBGL */
          mode = zerodesc;
          c_put(&f, &mode);
          wc->autogen = 0; 
@@ -4312,10 +4342,12 @@ function{1} Texcoord(argv[argc])
 	    if (!strcmp(tmp, "auto")){
 	       wc->autogen = 1;
 	       wc->numtexcoords = 0;
+#if HAVE_LIBGL
 	       if (!glIsEnabled(GL_TEXTURE_GEN_S))
 		  glEnable(GL_TEXTURE_GEN_S);
 	       if (!glIsEnabled(GL_TEXTURE_GEN_T))
 		  glEnable(GL_TEXTURE_GEN_T); 
+#endif					/* HAVE_LIBGL */
 	       mode = onedesc;
 	       c_put(&f, &mode);
 	       }
@@ -4323,10 +4355,12 @@ function{1} Texcoord(argv[argc])
 	    }
 	 /* the arguments are texture coordinates */
 	 else {
+#if HAVE_LIBGL
 	    if (glIsEnabled(GL_TEXTURE_GEN_S))
 	       glDisable(GL_TEXTURE_GEN_S);
 	    if (glIsEnabled(GL_TEXTURE_GEN_T))
 	       glDisable(GL_TEXTURE_GEN_T); 
+#endif					/* HAVE_LIBGL */
 	    mode = zerodesc;
 	    c_put(&f, &mode);
 	    wc->autogen = 0; 
@@ -4408,19 +4442,50 @@ function{1} WSection(argv[argc])
   abstract{ return file ++ integer}
   body {
       wbp w;
+      wcp wc;
       int i, len, warg = 0, nfields, draw_code;
       tended struct descrip f;
       tended struct b_record *rp;
-      static dptr constr;
+      tended char* tmp;
+      static dptr constr, constr2;
+      static section_depth=1;     /* one is the outer most section. every new nested section increment one  */
 
       OptWindow(w);
-      if (w->context->is_3D==0) {
+      wc=w->context;
+      if (wc->is_3D==0) {
         fail;
         }
-      if (argc-warg==0) {
-        section_length(w);
-        return C_integer 1;
-        }
+      if (argc-warg==0) {	/* section ends */
+	 if (!section_length(w))
+	    syserr("failed to find the section length");
+	 section_depth--;
+	 if (!(wc->selectionenabled))	
+	    return C_integer 1;   /* selection is off. no record need to be added */
+
+	 /*  selection is enabled. add a record to mark the end of the section  */
+	 if (!constr2 && !(constr2 = rec_structor3d("gl_endmark"))) {
+	    syserr("failed to create opengl record constructor");
+	    }
+	 nfields = (int) ((struct b_proc *)BlkLoc(*constr2))->nfields;
+
+	 /* create a record of the graphical object */
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr2)), runerr(0));
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *) rp;
+	 MakeStr("EndMark", 7, &(rp->fields[0]));
+
+	 draw_code = si_s2i(redraw3Dnames, "EndMark");
+	 if (draw_code == -1)
+	    fail; 
+
+	 MakeInt(draw_code, &(rp->fields[1]));
+	 MakeInt(section_depth+1, &(rp->fields[2]));
+
+	 c_put(&(w->window->funclist), &f);
+
+	 return f;			
+	 }
+		
       if (argc - warg != 1) {
          fprintf(stderr, "not enough args!!\n");
          fail;
@@ -4448,9 +4513,33 @@ function{1} WSection(argv[argc])
       MakeInt(draw_code, &(rp->fields[1]));
 
 
-      rp->fields[2] = argv[warg];   /* room_name */
-      rp->fields[3] = nulldesc;          /* skip */
-      rp->fields[4] = zerodesc;      /* count */
+      rp->fields[2] = argv[warg];   /* section_name */
+      rp->fields[3] = zerodesc;     /* skip */
+      rp->fields[4] = zerodesc;     /* count */
+      
+      MakeInt(section_depth, &(rp->fields[6]));
+      section_depth++;
+
+      if (wc->selectionenabled){
+         MakeInt(wc->selectionavailablename, &(rp->fields[5])); /*  integer code for opengl selection */      
+         wc->selectionavailablename++;
+	 
+	 if (wc->selectionnamecount >= wc->selectionnamelistsize){
+printf("doubling selectionnamelist of %d for wc %p\n",
+       wc->selectionnamelistsize, wc);
+	    wc->selectionnamelistsize *=2;
+	    wc->selectionnamelist=realloc(wc->selectionnamelist, wc->selectionnamelistsize*sizeof(char*));
+	    if (wc->selectionnamelist == NULL) fail;
+	 }
+	    wc->selectionnamecount++;
+	    if (!cnv:C_string(argv[warg], tmp))
+		    runerr(103, argv[warg]);
+
+	    wc->selectionnamelist[wc->selectionnamecount] = tmp;	
+      }
+      else
+	rp->fields[5]=zerodesc;
+
       c_put(&(w->window->funclist), &f);
       return f;	
   }

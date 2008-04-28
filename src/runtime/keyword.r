@@ -514,6 +514,46 @@ keyword{1} pi
    constant 3.14159265358979323846264338327950288419716939937511
 end
 
+
+"&pick - variable containing the result of 3D selection"
+#ifdef Graphics3D
+keyword{0,*} pick
+   abstract {
+      return string
+      }
+   inline {
+      int i, elements;
+      struct b_list *namelist;
+      struct descrip name;
+      if (is:null(lastEventWin)) runerr(140, lastEventWin);
+
+      namelist = (struct b_list *) amperPick.vword.bptr;
+      elements = namelist->size;
+
+      /*printf (" # elements:%i\n", elements);*/
+      for (i=0; i<elements; i++){
+         /*printf (" # i:%i\n", i);*/
+         c_traverse(namelist, &name, i);
+         /*c_get(namelist, &name);*/
+         /*printf (" # name:%s\n", name.vword.sptr );*/
+         suspend name;
+         }
+
+      fail;
+      }
+end
+#else					/* Graphics3D */
+keyword{0} pick
+   abstract {
+      return empty_type
+      }
+   inline {
+      fail;
+      }
+end
+#endif					/* Graphics3D */
+
+
 "&pos - a variable containing the current focus in string scanning."
 keyword{1} pos
    abstract {

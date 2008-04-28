@@ -1027,7 +1027,7 @@ FILE *ptr;
 
 #if UNIX
 
-#if YouArePtho
+#ifdef HAVE_VFORK
 /*
  * Modified     3/03/2001       Manuel Novoa III
  *

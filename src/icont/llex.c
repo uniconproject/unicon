@@ -390,3 +390,17 @@ void newline()
       }
    nlflag = 0;
    }
+
+/*
+ * the string syntax code 
+ */
+word getsynt(synt)
+char **synt;
+   {
+   word indx;
+
+   indx = getstr();
+   if (indx == -1)
+      return EOF;
+   *synt = &lsspace[indx];
+   }

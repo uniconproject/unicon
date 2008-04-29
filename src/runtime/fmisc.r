@@ -1982,6 +1982,9 @@ function{*} keyword(keyname,ce)
 	 int i;
 	 ENTERPSTATE(p);
 	 i = findcol(BlkLoc(d)->coexpr.es_ipc.opnd);
+         if (i == 0){ /* fixing returned column zerro */
+	    i = findcol(BlkLoc(d)->coexpr.es_oldipc.opnd);
+            }
 	 ENTERPSTATE(savedp);
 	 return C_integer i;
 	 }
@@ -2039,9 +2042,20 @@ function{*} keyword(keyname,ce)
 	 int i;
 	 ENTERPSTATE(p);
 	 i = findline(BlkLoc(d)->coexpr.es_ipc.opnd);
+         if (i == 0){ /* fixing returned line zerro */
+	    i = findline(BlkLoc(d)->coexpr.es_oldipc.opnd);
+            } 
 	 ENTERPSTATE(savedp);
 	 return C_integer i;
 	 }
+      else if (strcmp(kname,"syntax") == 0) {
+         struct progstate *savedp = curpstate;
+	 int i;
+	 ENTERPSTATE(p);
+	 i = findsyntax(BlkLoc(d)->coexpr.es_ipc.opnd);
+	 ENTERPSTATE(savedp);
+	 return C_integer i;
+         } 
       else if (strcmp(kname,"main") == 0) {
 	 return p->K_main;
 	 }

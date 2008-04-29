@@ -3,6 +3,7 @@
  *  Contents: deref, eq, getvar, hash, outimage,
  *  qtos, pushact, popact, topact, [dumpact], 
  *  findline, findipc, findfile, doimage, getimage
+ *  findsyntax, hitsyntax
  *  printable, sig_rsm, cmd_line, varargs.
  *
  *  Integer overflow checking.
@@ -1143,7 +1144,13 @@ word *ipc;
 int findcol(ipc)
 word *ipc;
 {
-  return findloc(ipc) >> 16;
+  return findloc(ipc) >> 21; /*16 changed to 21  */
+}
+
+int findsyntax(ipc)
+word *ipc;
+{
+  return ((findloc(ipc) >> 16) & 31);
 }
 
 int findloc(ipc)
@@ -1164,8 +1171,9 @@ word *ipc;
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
-   if (!InRange(code,ipc,ecode))
+   if (!InRange(code,ipc,ecode)){
       return 0;
+      }
    ipc_offset = DiffPtrs((char *)ipc,(char *)code);
    base = ilines;
    size = DiffPtrs((char *)elines,(char *)ilines) / sizeof(struct ipc_line *);
@@ -1178,7 +1186,7 @@ word *ipc;
          size = size / two;
       }
    /*
-    * return the line component of the location (column is top 16 bits)
+    * return the line component of the location (column is top 11 bits)
     */
    return (int)(base->line);
 }
@@ -1210,6 +1218,47 @@ int line;
       }
    return base->ipc;
 }
+
+/*
+ * hitsyntax - finds if the ipc that has an entry on the line table.
+ * returns a syntax_code > 0 if it founds, otherwise it returns a zero.
+ */
+int hitsyntax(ipc)
+word *ipc;
+{
+
+   int synt=0;
+   uword ipc_offset;
+   uword size;
+   struct ipc_line *base;
+
+#ifndef MultiThread
+   extern struct ipc_line *ilines, *elines;
+   extern word *records;
+#endif					/* MultiThread */
+
+   static int two = 2;	/* some compilers generate bad code for division
+			   by a constant that is a power of two ... */
+
+   if (!InRange(code,ipc,ecode))
+      return 0;
+   ipc_offset = DiffPtrs((char *)ipc,(char *)code);
+   base = ilines;
+   size = DiffPtrs((char *)elines,(char *)ilines) / sizeof(struct ipc_line *);
+   while (size > 1) {
+      if (ipc_offset >= base[size / two].ipc) {
+         base = &base[size / two];
+         size -= size / two;
+         }
+      else
+         size = size / two;
+      }
+
+   if (ipc_offset == base->ipc)
+       synt = ((int)base->line >> 16) & 31;
+   return synt;
+}
+
 
 /*
  * findfile - find source file name associated with the ipc

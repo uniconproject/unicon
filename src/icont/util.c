@@ -112,3 +112,40 @@ unsigned int n;
       b <<= 1;
    return b;
    }
+
+/* 
+ * used by the new pesudo Op_Synt and the E_Syntax
+ */
+#ifdef SrcSyntaxInfo
+#define MaxSyntax 17
+
+char *Syntax[]={
+      "any",        /* any unidentified syntax */
+      "case",       /* entering case expr      */
+      "endcase",    /* exiting case expr       */  
+      "if",         /* entering if expr        */
+      "endif",      /* exiting if expr         */
+      "ifelse",     /* entering if/else expr   */
+      "endifelse",  /* exiting if/else expr    */
+      "while",      /* entering while loop     */
+      "endwhile",   /* exiting while loop      */ 
+      "every",      /* entering every loop     */
+      "endevery",   /* exiting every loop      */
+      "until",      /* entering until loop     */
+      "enduntil",   /* exiting until loop      */
+      "repeat",     /* entering repeat loop    */ 
+      "endrepeat",  /* exiting repeat loop     */ 
+      "supend",     /* entering suspend loop   */
+      "endsuspend"  /* exiting suspend loop    */
+  };
+
+int SyntCode(s)
+char *s;
+{   int i=0;
+    for(i=0; i < MaxSyntax ; i++){
+      if (strcmp(Syntax[i],s) == 0)
+          return i;
+     } 
+    return 0;
+} 
+#endif  /* SrcSyntaxInfo */

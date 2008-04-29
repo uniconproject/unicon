@@ -21,7 +21,7 @@ static void	emitl		(char *s,int a);
 static void	emitlab		(int l);
 static void	emitn		(char *s,int a);
 static void	emits		(char *s,char *a);
-static void	setloc		(nodeptr n);
+static void	setloc		(nodeptr n, char*s);
 static int	traverse	(nodeptr t);
 static void	unopa		(int op, nodeptr t);
 static void	unopb		(int op);
@@ -95,6 +95,8 @@ register nodeptr t;
    n = 1;
    switch (TType(t)) {
 
+      setloc(t,NULL); /* -new- */
+
       case N_Activat:			/* co-expression activation */
 	 if (Val0(Tree0(t)) == AUGAT) {
 	    emit("pnull");
@@ -103,7 +105,7 @@ register nodeptr t;
 	 if (Val0(Tree0(t)) == AUGAT)
 	    emit("sdup");
 	 traverse(Tree1(t));		/* evaluate activate expression */
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("coact");
 	 if (Val0(Tree0(t)) == AUGAT)
 	    emit("asgn");
@@ -118,7 +120,7 @@ register nodeptr t;
 	 loopsp->markcount--;
 
 #ifdef EventMon
-         setloc(t);
+         setloc(t,NULL);
 #endif					/* EventMon */
 
 	 emit("esusp");                 /*  and suspend with its result */
@@ -135,7 +137,7 @@ register nodeptr t;
 	 if (TType(t) == N_Augop)
 	    emit("dup");
 	 traverse(Tree2(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 binop((int)Val0(Tree0(t)));
 	 free(Tree0(t));
 	 break;
@@ -169,6 +171,7 @@ register nodeptr t;
 	 casesp++;
 	 casesp->endlab = lab;
 	 casesp->deftree = NULL;
+	 setloc(t,"case"); /* -new- */
 	 emit("mark0");
 	 loopsp->markcount++;
 	 traverse(Tree0(t));		/* evaluate control expression */
@@ -182,6 +185,7 @@ register nodeptr t;
 	 else
 	    emit("efail");
 	 emitlab(lab);			/* end label */
+         setloc(t,"endcase"); /* -new- */
 	 casesp--;
 	 break;
 
@@ -200,7 +204,7 @@ register nodeptr t;
 	    loopsp->markcount++;
 	    emit("ccase");
 	    traverse(Tree0(t));		/* evaluate selector */
-	    setloc(t);
+	    setloc(t,NULL);
 	    emit("eqv");
 	    loopsp->markcount--;
 	    emit("unmark");
@@ -225,7 +229,7 @@ register nodeptr t;
 	    emit("pop");
 	 traverse(Tree2(t));
 	 if (Val0(Tree0(t)) == AUGAND) {
-	    setloc(t);
+	   setloc(t,NULL);
 	    emit("asgn");
 	    }
 	 free(Tree0(t));
@@ -245,7 +249,7 @@ register nodeptr t;
 	 loopsp->markcount++;
 	 traverse(Tree0(t));		/* traverse code for co-expression */
 	 loopsp->markcount--;
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("coret");                 /* return to activator */
 	 emit("efail");                 /* drive co-expression */
 	 emitlab(lab+1);		/* loop on exhaustion */
@@ -274,7 +278,7 @@ register nodeptr t;
       case N_Field:			/* field reference */
 	 emit("pnull");
 	 traverse(Tree0(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 emits("field", Str0(Tree1(t)));
 	 free(Tree1(t));
 	 break;
@@ -287,10 +291,12 @@ register nodeptr t;
       case N_If:			/* if expression */
 	 if (TType(Tree2(t)) == N_Empty) {
 	    lab = 0;
+	    setloc(t,"if"); /* -new- : there is no else part*/
 	    emit("mark0");
 	    }
 	 else {
 	    lab = alclab(2);
+	    setloc(t,"ifelse"); /* -new- : there is an else part*/
 	    emitl("mark", lab);
 	    }
 	 loopsp->markcount++;
@@ -298,11 +304,14 @@ register nodeptr t;
 	 loopsp->markcount--;
 	 emit("unmark");
 	 traverse(Tree1(t));
+         if (lab == 0)         /* -new- */
+            setloc(t,"endif"); /* -new- : there is no else part*/
 	 if (lab > 0) {
 	    emitl("goto", lab+1);
 	    emitlab(lab);
 	    traverse(Tree2(t));
 	    emitlab(lab+1);
+            setloc(t,"endifelse"); /* -new- : there is an else part*/
 	    }
          else
 	    free(Tree2(t));
@@ -333,19 +342,19 @@ register nodeptr t;
             }
          else
 	    n = traverse(Tree1(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 emitn("invoke", n);
 	 n = 1;
 	 break;
 
       case N_Key:			/* keyword reference */
-	 setloc(t);
+	setloc(t,NULL);
 	 emits("keywd", Str0(t));
 	 break;
 
       case N_Limit:			/* limitation */
 	 traverse(Tree1(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("limit");
 	 loopsp->markcount++;
 	 traverse(Tree0(t));
@@ -361,7 +370,7 @@ register nodeptr t;
             }
 	 else
 	    n = traverse(Tree0(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 emitn("llist", n);
 	 n = 1;
 	 break;
@@ -375,6 +384,7 @@ register nodeptr t;
 	       loopsp->nextlab = lab;
 	       loopsp->breaklab = lab + 1;
 	       loopsp->markcount = 1;
+	       setloc(t,"every"); /* -new- */
 	       emit("mark0");
 	       traverse(Tree1(t));
 	       emit("pop");
@@ -391,6 +401,7 @@ register nodeptr t;
 	       emitlab(loopsp->nextlab);
 	       emit("efail");
 	       emitlab(loopsp->breaklab);
+	       setloc(t,"endevery"); /* -new- */
 	       loopsp--;
 	       break;
 
@@ -402,13 +413,14 @@ register nodeptr t;
 	       loopsp->breaklab = lab + 2;
 	       loopsp->markcount = 1;
 	       emitlab(lab);
-	       setloc(t);
+	       setloc(t,"repeat");
 	       emitl("mark", lab);
 	       traverse(Tree1(t));
 	       emitlab(loopsp->nextlab);
 	       emit("unmark");
 	       emitl("goto", lab);
 	       emitlab(loopsp->breaklab);
+	       setloc(t,"endrepeat"); /* -new- */
 	       loopsp--;
                free(Tree2(t));
 	       break;
@@ -422,9 +434,10 @@ register nodeptr t;
 	       loopsp->nextlab = lab;
 	       loopsp->breaklab = lab + 1;
 	       loopsp->markcount = 1;
+	       setloc(t,"suspend"); /* -new- */
 	       emit("mark0");
 	       traverse(Tree1(t));
-	       setloc(t);
+	       setloc(t,NULL);
 	       emit("psusp");
 	       emit("pop");
 	       if (TType(Tree2(t)) != N_Empty) { /* suspend e1 do e2 */
@@ -440,6 +453,7 @@ register nodeptr t;
 	       emitlab(loopsp->nextlab);
 	       emit("efail");
 	       emitlab(loopsp->breaklab);
+	       setloc(t,"endsuspend"); /* -new- */
 	       loopsp--;
 	       break;
 
@@ -451,7 +465,7 @@ register nodeptr t;
 	       loopsp->breaklab = lab + 2;
 	       loopsp->markcount = 1;
 	       emitlab(lab);
-	       setloc(t);
+	       setloc(t,"while");
 	       emit("mark0");
 	       traverse(Tree1(t));
 	       if (TType(Tree2(t)) != N_Empty) {
@@ -465,6 +479,7 @@ register nodeptr t;
 	       emit("unmark");
 	       emitl("goto", lab);
 	       emitlab(loopsp->breaklab);
+               setloc(t,"endwhile"); /* -new- */
 	       loopsp--;
 	       break;
 
@@ -476,7 +491,7 @@ register nodeptr t;
 	       loopsp->breaklab = lab + 3;
 	       loopsp->markcount = 1;
 	       emitlab(lab);
-	       setloc(t);
+	       setloc(t,"until");
 	       emitl("mark", lab+1);
 	       traverse(Tree1(t));
 	       emit("unmark");
@@ -488,6 +503,7 @@ register nodeptr t;
 	       emit("unmark");
 	       emitl("goto", lab);
 	       emitlab(loopsp->breaklab);
+	       setloc(t,"enduntil"); /* -new- */
 	       loopsp--;
 	       break;
 	    }
@@ -531,7 +547,7 @@ register nodeptr t;
 	 constout(codefile);
 
 	 emit("declend");
-	 setloc(t);
+	 setloc(t,NULL);
 	 if (TType(Tree1(t)) != N_Empty) {
 	    lab = alclab(1);
 	    emitl("init", lab);
@@ -546,7 +562,7 @@ register nodeptr t;
 	    traverse(Tree2(t));
          else
 	    free(Tree2(t));
-	 setloc(Tree3(t));
+	 setloc(Tree3(t),NULL);
 	 emit("pfail");
 	 emit("end");
 	 if (!silent)
@@ -574,11 +590,11 @@ register nodeptr t;
 	    loopsp->markcount++;
 	    traverse(Tree1(t));
 	    loopsp->markcount--;
-	    setloc(t);
+	    setloc(t,NULL);
 	    emit("pret");
 	    emitlab(lab);
 	    }
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("pfail");
          free(Tree0(t));
 	 break;
@@ -589,10 +605,10 @@ register nodeptr t;
 	 traverse(Tree1(t));
 	 if (Val0(Tree0(t)) == AUGQMARK)
 	    emit("sdup");
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("bscan");
 	 traverse(Tree2(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("escan");
 	 if (Val0(Tree0(t)) == AUGQMARK)
 	    emit("asgn");
@@ -606,12 +622,12 @@ register nodeptr t;
 	 if (Val0(Tree0(t)) == PCOLON || Val0(Tree0(t)) == MCOLON)
 	    emit("dup");
 	 traverse(Tree3(t));
-	 setloc(Tree0(t));
+	 setloc(Tree0(t),NULL);
 	 if (Val0(Tree0(t)) == PCOLON)
 	    emit("plus");
 	 else if (Val0(Tree0(t)) == MCOLON)
 	    emit("minus");
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("sect");
 	 free(Tree0(t));
 	 break;
@@ -636,7 +652,7 @@ register nodeptr t;
 	 traverse(Tree0(t));
 	 traverse(Tree1(t));
 	 emit("push1");
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("toby");
 	 break;
 
@@ -645,14 +661,14 @@ register nodeptr t;
 	 traverse(Tree0(t));
 	 traverse(Tree1(t));
 	 traverse(Tree2(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 emit("toby");
 	 break;
 
       case N_Unop:			/* unary operator */
 	 unopa((int)Val0(Tree0(t)),t);
 	 traverse(Tree1(t));
-	 setloc(t);
+	 setloc(t,NULL);
 	 unopb((int)Val0(Tree0(t)));
 	 free(Tree0(t));
 	 break;
@@ -1006,8 +1022,9 @@ int op;
 static char *lastfiln = NULL;
 static int lastlin = 0;
 
-static void setloc(n)
+static void setloc(n,s)
 nodeptr n;
+char *s;
    {
    if ((n != NULL) &&
       (TType(n) != N_Empty) &&
@@ -1021,11 +1038,20 @@ nodeptr n;
    /*
     * if either line or column has changed, emit location information
     */
-   if (((Col(n) << 16) + Line(n)) != lastlin) {
-      lastlin = (Col(n) << 16) + Line(n);
+#ifdef SrcSyntaxInfo 
+   if (((Col(n) << 21) + ((s ? SyntCode(s) : 0) << 16) + Line(n)) != lastlin) {
+      lastlin = (Col(n) << 21) + ((s ? SyntCode(s) : 0) << 16) + Line(n);
+#else
+   if (((Col(n) << 21) + Line(n)) != lastlin) {
+      lastlin = (Col(n) << 21) + Line(n);
+#endif                                  /* SrcSyntaxInfo */
       emitn("line",Line(n));
       emitn("colm",Col(n));
       }
+#ifdef SrcSyntaxInfo 
+      emits("synt",s ? s : "any");
+#endif                                  /* SrcSyntaxInfo */
+
 #else					/* SrcColumnInfo */
    /*
     * if line has changed, emit line information

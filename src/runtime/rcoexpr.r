@@ -229,6 +229,7 @@ int first;
    ccp->es_efp = efp;
    ccp->es_gfp = gfp;
    ccp->es_ipc = ipc;
+   ccp->es_oldipc = oldipc; /* To be used when the found line is zero*/
    ccp->es_sp = sp;
    ccp->es_ilevel = ilevel;
 #ifdef EventMon

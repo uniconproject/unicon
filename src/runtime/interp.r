@@ -54,6 +54,7 @@ word lastop;			/* Last operator evaluated */
 struct ef_marker *efp;		/* Expression frame pointer */
 struct gf_marker *gfp;		/* Generator frame pointer */
 inst ipc;			/* Interpreter program counter */
+inst oldipc;                    /* the previous ipc, fix returned line zero */
 word *sp = NULL;		/* Stack pointer */
 
 
@@ -324,7 +325,7 @@ Deliberate Syntax Error
 dptr clintsrargp;
 #endif
 
-#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal,e_operand)
+#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal,e_operand,e_syntax)
 
 /*
  * The main loop of the interpreter.
@@ -1107,6 +1108,7 @@ mark:
 	    newefp->ef_gfp = gfp;
 	    newefp->ef_efp = efp;
 	    newefp->ef_ilevel = ilevel;
+	    InterpEVValS((word *) ipc.opnd, E_Syntax);/* -new- */
 	    rsp += Wsizeof(*efp);
 	    efp = newefp;
 	    gfp = 0;
@@ -1120,6 +1122,7 @@ mark0:
 	    newefp->ef_gfp = gfp;
 	    newefp->ef_efp = efp;
 	    newefp->ef_ilevel = ilevel;
+            InterpEVValS((word *) ipc.opnd, E_Syntax);/* -new- */
 	    rsp += Wsizeof(*efp);
 	    efp = newefp;
 	    gfp = 0;
@@ -1141,6 +1144,7 @@ mark0:
 	     * Remove any suspended C generators.
 	     */
 Unmark_uw:
+            InterpEVValS((word *) ipc.opnd - 1, E_Syntax); /* -new- */
 	    if (efp->ef_ilevel < ilevel) {
 	       --ilevel;
 	       ExInterp;
@@ -1518,6 +1522,7 @@ efail_noev:
 	         }
 #endif					/* MultiThread */
 
+               oldipc = ipc;            /* fixing the line zero return */
 	       ipc = efp->ef_failure;
 	       gfp = efp->ef_gfp;
 	       rsp = (word *)efp - 1;
@@ -1525,6 +1530,10 @@ efail_noev:
 
 	       if (ipc.op == 0)
 		  goto efail;
+
+               if (pfp != NULL &&  sp != rsp)
+                  InterpEVValS((word *) ipc.opnd - 1, E_Syntax); /* -new- */
+
 	       break;
 	       }
 
@@ -2048,10 +2057,10 @@ interp_quit:
 #enddef
 
 #ifdef MultiThread
-interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret,E_Literal,E_Operand)
+interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret,E_Literal,E_Operand,E_Syntax)
 #else					/* MultiThread */
-interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 #endif					/* MultiThread */
 
 

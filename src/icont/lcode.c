@@ -10,6 +10,8 @@
 #include "../h/version.h"
 #include "../h/header.h"
 
+extern int SyntCode(char *s);
+
 struct unref {
    word name;
    int num;
@@ -87,7 +89,7 @@ void gencode()
    {
    register int op, k, lab;
    int j, nargs, flags, implicit;
-   char *name;
+   char *name, *synt;
    word id, procname;
    struct centry *cp;
    struct gentry *gp;
@@ -333,14 +335,30 @@ void gencode()
          case Op_Colm:			/* always recognize, maybe ignore */
 
             colmno = getdec();
-#ifdef SrcColumnInfo
+#ifndef SrcSyntaxInfo
+   #ifdef SrcColumnInfo
             if (lnfree >= &lntable[nsize])
                lntable  = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
                   sizeof(struct ipc_line), 1, "line number table");
             lnfree->ipc = pc;
-            lnfree->line = lineno + (colmno << 16);
+            lnfree->line = (colmno << 21) + lineno ;
             lnfree++;
-#endif					/* SrcColumnInfo */
+   #endif                               /* SrcColumnInfo */
+#endif					/* SrcSyntaxInfo */
+	    newline();
+            break;
+
+         case Op_Synt:
+
+#ifdef SrcSyntaxInfo
+	    getsynt(&synt);
+            if (lnfree >= &lntable[nsize])
+                lntable = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
+                           sizeof(struct ipc_line), 1, "line number table");
+            lnfree->ipc = pc;
+            lnfree->line = (colmno << 21) + (SyntCode(synt) << 16) + lineno;
+            lnfree++;
+#endif					/* SrcSyntaxInfo */
             break;
 
          case Op_Mark:

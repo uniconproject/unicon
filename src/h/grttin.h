@@ -92,6 +92,7 @@
    RealEVVal(value,event)
 #endif
 #enddef					/* EVVal */
+
 #begdef EVValD(dp,event)
 #if event
    do {
@@ -105,6 +106,26 @@
    } while (0)
 #endif
 #enddef					/* EVValD */
+
+#begdef EVValS(ipcopnd,event)           /* Syntax events */
+#if event
+   do {
+      int scode;
+      if (is:null(curpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
+      if (!is:null(curpstate->valuemask) &&
+	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
+	 break;
+
+      scode = hitsyntax(ipcopnd);
+      if (scode == 0) break;
+      MakeInt(scode, &(curpstate->parent->eventval));
+      actparent(event);
+   } while (0)
+#endif
+#enddef					/* EVValS */
+
+
 #begdef EVValX(bp,event)
 #if event
    do {
@@ -120,6 +141,7 @@
    } while (0)
 #endif
 #enddef					/* EVValX */
+
 #begdef EVVar(dp, e)
 #if e
    do {
@@ -136,6 +158,7 @@
   { ExInterp; RealEVVal(value,event); EntInterp; }
 #endif
 #enddef
+
 #begdef InterpEVValD(dp,event)
 #if event
  { ExInterp; EVValD(dp,event); EntInterp; }
@@ -143,9 +166,17 @@
 #enddef
 
 /*
+ * Macro for Syntax Monitoring 
+ */  
+#begdef InterpEVValS(ipcopnd,event)
+#if event
+ { ExInterp; EVValS(ipcopnd,event); EntInterp; }
+#endif
+#enddef
+
+/*
  * Macro with construction of event descriptor.
  */
-
 #begdef Desc_EVValD(bp, code, type)
 #if code
    do {

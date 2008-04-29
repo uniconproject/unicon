@@ -695,6 +695,7 @@ struct b_coexpr {		/* co-expression stack block */
    struct tend_desc *es_tend;	/*   current tended pointer */
    dptr es_argp;		/*   argp */
    inst es_ipc;			/*   ipc */
+   inst es_oldipc;              /*   oldipc */
    word es_ilevel;		/*   interpreter level */
    word *es_sp;			/*   sp */
    dptr tvalloc;		/*   where to place transmitted value */

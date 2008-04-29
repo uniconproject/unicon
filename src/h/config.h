@@ -649,6 +649,10 @@ Deliberate Syntax Error
    #define SrcColumnInfo
 #endif					/* NoSrcColumnInfo */
 
+#ifndef NoSrcSyntaxInfo
+   #define SrcSyntaxInfo
+#endif					/* NoSrcSyntaxInfo */
+
 #ifndef ExecSuffix
    #define ExecSuffix ""
 #endif					/* ExecSuffix */

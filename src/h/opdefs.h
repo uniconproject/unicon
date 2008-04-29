@@ -149,3 +149,5 @@
 #define Op_Trapret      112
 #define Op_Trapfail     113
 #endif					/* PosixFns */
+
+#define Op_Synt         114             /* syntax code used by the linker */

@@ -710,6 +710,12 @@
 #define E_Erem 0
 #endif
 
+#if defined(EventMon) || defined(E_Syntax)
+#undef E_Esyntax
+#define E_Syntax      	'\124'		/* Source code syntax change */
+#else
+#define E_Syntax 0
+#endif
 
    /*
     * Co-expression events
@@ -963,7 +969,6 @@
 060 061 062 063 064 065 066 067
 070 071 073 074 075 076 077
 
-124
 137
 162
 

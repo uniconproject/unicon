@@ -156,6 +156,7 @@ extern struct b_proc_list **dr_arrays;
     */
    
    extern inst ipc;			/* interpreter program counter */
+   extern inst oldipc;                  /* previous interpreter program counter*/
    extern int ilevel;			/* interpreter level */
    extern int ntended;			/* number of active tended descriptors*/
    extern struct b_cset k_ascii;	/* value of &ascii */

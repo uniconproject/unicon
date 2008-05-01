@@ -773,7 +773,7 @@ wbp w;
 	       redraw3D(wb);
 	       wb->context->selectionrendermode = 0;
 	       }
-#endif	          
+#endif					/* Graphics3D */
 	    break;
 	 case ButtonRelease:
 	    if (--presscount < 0) presscount = 0;
@@ -1319,12 +1319,12 @@ int wmap(wbp w)
 			    wd->vis->visual, AllocNone);
          ws->win = ((ws->iconic == RootState) ? DefaultRootWindow(stddpy) :
 		        XCreateWindow (stddpy, DefaultRootWindow(stddpy), 
-					ws->posx < 0 ? 0 : ws->posx, 
-					ws->posy < 0 ? 0 : ws->posy, 
-					ws->width,  ws->height, 0, 
-					wd->vis->depth, InputOutput,
-					wd->vis->visual,
-					CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
+				       ws->posx < 0 ? 0 : ws->posx,
+				       ws->posy < 0 ? 0 : ws->posy,
+				       ws->width,  ws->height, 0,
+				       wd->vis->depth, InputOutput,
+				       wd->vis->visual,
+				       CWBackPixel|CWBorderPixel|CWColormap|CWEventMask, &attr));
 	}
 	else
 #endif					/* Graphics3D */     
@@ -1988,11 +1988,16 @@ char *s;
 	       }
 	    if (ws->iconic != IconicState) {
 	       SETZOMBIE(w);
+/* Omar had commented out this destroywindow...pollevent sequence */
+#if 1
 	       XDestroyWindow(stddpy, stdwin);
+#endif
 	       XFlush(stddpy);
+#if 1
 	       while (ws->win)
 		  if (pollevent() == -1)
 		     return Error;
+#endif
 	       }
 	    }
 	 }
@@ -3476,19 +3481,19 @@ int on_icon;
 	   while (iy < height) {
 	      ix = 0;
 	      while (ix < width) {
-	         int r = *s++ * 257;
-	    	 int g = *s++ * 257;
-	    	 int b = *s++ * 257;
+		 int r = *s++ * 257;
+		 int g = *s++ * 257;
+		 int b = *s++ * 257;
 	    	 if (r==lastr && g == lastg && b == lastb){
 	            count++;
 	         }
 	         else
 	            cp = alc_rgb2(w,"anon", r, g, b);
-	         XPutPixel(im, ix++, iy, cp->c);
+		 XPutPixel(im, ix++, iy, cp->c);
 	         lastr = r; lastg = g; lastb = b;
-	       }
-	     iy++;
-	    }
+		 }
+	      iy++;
+	      }
       }
    /*
     * Put it on the screen.

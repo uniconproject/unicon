@@ -299,6 +299,10 @@ extern stringint attribs[], drawops[];
    #ifndef MultiThread
          extern struct descrip amperPick;
    #endif				/* MultiThread */
+
+extern wfont gfont;
+extern wfont *start_font, *end_font, *curr_font;
+
 #endif					/* Graphics3D */
 
 #endif					/* Graphics */

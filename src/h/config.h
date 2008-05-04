@@ -239,6 +239,10 @@
    #define IPATH "IPATH"
 #endif
 
+#ifndef HAVE_FTGL
+#define HAVE_FTGL 0
+#endif
+
 #if defined(HAVE_LIBJVOIP) && defined(HAVE_LIBJRTP) && defined(HAVE_LIBJTHREAD) && defined(HAVE_LIBVOIP)
 #define HAVE_VOICE
 #endif

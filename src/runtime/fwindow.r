@@ -1216,11 +1216,63 @@ function{1} DrawString(argv[argc])
       }
    body {
       wbp w;
-      int i, n, len, warg = 0;
-      char *s;
-      int dx, dy;
+      int i, j, n, len, warg = 0, nf, dx, dy;
+      tended char *s;
+      double x, y, z;
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
+      int draw_code;
 
       OptWindow(w);
+#ifdef Graphics3D
+      if (w->context->is_3D) {
+	 struct descrip g;
+
+	 if (argc - warg < 3) fprintf(stderr, "not enough args!!\n");
+
+	 if (!constr) {
+	    if (!(constr = rec_structor3d("gl_drawstring3d")))
+	      syserr("failed to create opengl record constructor");
+	    }
+         nf = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+	 if (!(cnv:C_double(argv[warg], x)))
+	     runerr(102, argv[warg]);
+	 if (!(cnv:C_double(argv[warg+1], y)))
+	     runerr(102, argv[warg+1]);
+	 if (!(cnv:C_double(argv[warg+2], z)))
+	    runerr(102, argv[warg+2]);
+	 if (!(cnv:C_string(argv[warg+3], s)))
+	    runerr(103, argv[warg+3]);
+	 drawstrng3d(w, (double) x, (double) y, (double) z, s);
+#if HAVE_LIBGL
+	 glFlush();
+	 glXSwapBuffers(w->window->display->display, w->window->win);
+#endif					/* HAVE_LIBGL */
+	 /* create a record of the graphical object */
+
+	 Protect(rp = alcrecd(nf, BlkLoc(*constr)), runerr(0));
+         f.dword = D_Record;
+         f.vword.bptr = (union block *) rp;
+         MakeStr("DrawString3d", 10, &(rp->fields[0]));
+
+	 draw_code = si_s2i(redraw3Dnames, "DrawString3d");
+         if (draw_code == -1)
+	    fail;
+         MakeInt(draw_code, &(rp->fields[1]));
+
+         for(j = warg; j < warg + 3; j++)
+	    rp->fields[2 + j - warg] = argv[j];
+	 MakeStr(s, len, &rp->fields[5]);
+         c_put(&(w->window->funclist), &f);
+	 
+	 ReturnWindow;	
+	 }
+      else 
+#endif                      /* Graphics3D */
+	{
+
       CheckArgMultiple(3);
 
       for(i=0; i < n; i++) {
@@ -1236,6 +1288,7 @@ function{1} DrawString(argv[argc])
 	 drawstrng(w, x, y, s, len);
          }
       ReturnWindow;
+      }
       }
 end
 
@@ -1369,13 +1422,13 @@ function{0,1} Fg(argv[argc])
       int len;
       tended char *tmp;
       char *temp;
-      int is_texture=0;
-      int texhandle;
+      int is_texture=0, texhandle;
       int warg = 0;
+
       OptTexWindow(w);
       if (is_texture) {
-	warg=1;
-      }
+	 warg=1;
+	 }
 
       /*
        * If there is a (non-window) argument we are setting by
@@ -1607,7 +1660,7 @@ function{1} FillPolygon(argv[argc])
 
 end
 
-        /*
+/*
  * FillRectangle(w, x1, y1, width1, height1,...,xN, yN, widthN, heightN)
  */
 "FillRectangle(argv[]){1} - draw filled rectangle"
@@ -1655,10 +1708,14 @@ function{0,1} Font(argv[argc])
       }
    body {
       tended char *tmp;
-      int len;
+      int len, nfields, draw_code;
       wbp w;
       int warg = 0;
       char buf[MaxCvtLen];
+      struct descrip f;
+      tended struct b_record *rp;
+      static dptr constr;
+
       OptWindow(w);
 
       if (warg < argc) {
@@ -1669,6 +1726,28 @@ function{0,1} Font(argv[argc])
       getfntnam(w, buf);
       len = strlen(buf);
       Protect(tmp = alcstr(buf, len), runerr(0));
+#ifdef Graphics3D
+      if (w->context->is_3D) {
+	 if (!constr)
+	    if (!(constr = rec_structor3d("gl_font3d")))
+	      syserr("failed to create opengl record constructor");
+         nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+         f.dword = D_Record;
+         f.vword.bptr = (union block *) rp;
+
+         MakeStr("Font3d", 10, &(rp->fields[0]));
+
+         draw_code = si_s2i(redraw3Dnames, "Font3d");
+         if (draw_code == -1)
+	     fail;
+
+	 MakeInt(draw_code, &rp->fields[1]);
+	 MakeInt(curr_font, &rp->fields[2]);
+         c_put(&(w->window->funclist), &f);	
+	}
+#endif					/* Graphics3D */
       return string(len,tmp);
       }
 end
@@ -2181,9 +2260,8 @@ function{0,1} ReadImage(argv[argc])
       if (is_texture)
 	 base=1;
 
-
       if (argc - warg == 0)
-	 runerr(103,nulldesc);	
+	 runerr(103,nulldesc);
       if (!cnv:C_string(argv[base], tmp))
 	 runerr(103,argv[base]);
 
@@ -2220,7 +2298,7 @@ function{0,1} ReadImage(argv[argc])
       filename[MaxFileName] = '\0';
 
       /*
-       * First try to read as a GIF file, BMP  or JPG.
+       * First try to read as a GIF, BMP, or JPG file.
        * If that doesn't work, try platform-dependent image reading code.
        */
       r = readGIF(filename, p, &imd);
@@ -3664,7 +3742,7 @@ function{1} DrawDisk(argv[argc])
 
 	 if (i+6 >= argc) {
 	    a2 = 360;
-            MakeInt(360, &(rp->fields[8])); 
+            MakeInt(360, &(rp->fields[8]));
 	    }
 	 else {
 	    if (!cnv:C_double(argv[i+6], a2)) runerr(102, argv[i+6]);
@@ -4281,7 +4359,7 @@ function{1} Texcoord(argv[argc])
       int i, warg = 0, draw_code;
       char filename[MaxFileName + 1];
       tended char* tmp;
-      struct descrip f, funcname, mode, val, g;
+      tended struct descrip f, funcname, mode, val, g;
       tended struct b_list *func, *coords;
 
       OptWindow(w);
@@ -4299,7 +4377,7 @@ function{1} Texcoord(argv[argc])
 
       draw_code = si_s2i(redraw3Dnames, "Texcoord");
       if (draw_code == -1)
-	fail;
+	 fail;
       MakeInt(draw_code, &g);
       c_put(&f, &g);
      

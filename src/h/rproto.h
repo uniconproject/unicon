@@ -574,7 +574,7 @@ void detectRedirection();
       char child_window_stuff(wbp w, wbp wp, char child_window);
       int init_3dcontext(wcp wc);
       void makecurrent(wbp w);
-      void drawstrng3d(wbp w, double x, double y, double z, char *s);
+      int drawstrng3d(wbp w, double x, double y, double z, char *s);
       int cpp_drawstring3d(double x, double y, double z, char *s, char *f, int t, int size, void *tfont);
       int add_3dfont(char *fname, int fsize, char ftype);
       wfp srch_3dfont(char *fname, int fsize, char ftype);

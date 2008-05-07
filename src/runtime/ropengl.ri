@@ -86,7 +86,7 @@ int init_3dcontext(wcp wc)
    wc->selectionnamelistsize=256;
    wc->selectionnamecount=0;
    wc->selectionnamelist=malloc(wc->selectionnamelistsize*sizeof(char*));
-   if (wc->selectionnamelist == NULL) return NULL;
+   if (wc->selectionnamelist == NULL) return Failed;
 
    wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
    wc->eyedirz = -100.0;
@@ -573,8 +573,10 @@ int pushmatrix_rd(wbp w, dptr f)
    return 0;
 }
 
-int compare_GLuint (const GLuint * x,const GLuint * y)
+int compare_GLuint (const void * xx, const void * yy)
 {
+   GLuint *x = (GLuint *) xx;
+   GLuint *y = (GLuint *) yy;
    if (*x > *y)
       return 1;
    else if (*x < *y)
@@ -915,7 +917,7 @@ stringint redraw3Dnames[] = {
    { "DrawPolygon",	REDRAW_POLYGON },
    { "DrawSegment",	REDRAW_SEGMENT },
    { "DrawSphere",	REDRAW_SPHERE | 4 },
-   { "DrawString3d",    REDRAW_DRAWSTRING3D },
+   { "DrawString3d",    REDRAW_DRAWSTRING3D | 3},
    { "DrawTorus",	REDRAW_TORUS | 5},
    { "EndMark",         REDRAW_ENDMARK},   
    { "Fg",		REDRAW_FG},
@@ -973,7 +975,6 @@ int traversefunctionlist(wbp w)
    }
    k = bp->first;
    used =bp->nused;
-
 
    /*
     * The ith element of the list is a list with information
@@ -1086,20 +1087,18 @@ int traversefunctionlist(wbp w)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	    break;
          case REDRAW_FONT3D:
-#if 0
-	    curr_font = (struct wfont *) IntVal(rp->fields[2]);
-#endif
+#if HAVE_FTGL
+	    curr_font = (wfont *) IntVal(rp->fields[2]);
+#endif					/* HAVE_FTGL */
 	    break;
          case REDRAW_DRAWSTRING3D:
-/*
-	    if (!cnv:C_double(rp->fields[1], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[2], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], z))  goto free_v_and_fail;	  
-*/
+#if HAVE_FTGL
+	    if (!cnv:C_double(rp->fields[2], x))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], y))  goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], z))  goto free_v_and_fail;	  
 	    if (!cnv:C_string(rp->fields[5], s)) goto free_v_and_fail;
-#if 0
 	    drawstrng3d(w,x,y,z,s);
-#endif
+#endif					/* HAVE_FTGL */
             break;
          case REDRAW_MARK: {
 	    struct descrip d = BlkLoc(flist)->record.fields[3];
@@ -1123,6 +1122,10 @@ int traversefunctionlist(wbp w)
             w->context->meshmode = num;
             break;
 	 default:
+	    {
+	 fprintf(stderr,"invalid displaylist entry '%s'\n",
+	   (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
+             }
             goto free_v_and_fail;
 	    }
 	 continue;
@@ -3308,7 +3311,7 @@ char * gl_matrixmode_fields[] = {"mode"};
 char * gl_meshmode_fields[] = {"mode"};
 char * gl_texture_fields[] = {"texture_handle", "window_binding"};
 char * gl_font_fields[] = {"font_ptr"};
-char * gl_drawstring3d_fields[] = {"font_name"};
+char * gl_drawstring3d_fields[] = {"str"};
 char * gl_mark_fields[] = {"section_name","skip","count","int_code", "depth"};
 char * gl_endmark_fields[] = {"depth"};
 
@@ -3377,10 +3380,10 @@ dptr rec_structor3d(char *name)
    else if (!strcmp(name, "gl_texture"))
       return rec_structinate(&gl_texture, "gl_texture", 4, gl_texture_fields);
    else if (!strcmp(name, "gl_font3d"))
-      return rec_structinate(&gl_font3d, "gl_font3d", 2, gl_font_fields);
+      return rec_structinate(&gl_font3d, "gl_font3d", 3, gl_font_fields);
    else if (!strcmp(name, "gl_drawstring3d"))
 	return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 
-				5, gl_drawstring3d_fields);
+				6, gl_drawstring3d_fields);
    else if (!strcmp(name, "gl_endmark")) 
       return rec_structinate(&gl_endmark, "gl_endmark", 3, gl_mark_fields);
    else if (!strcmp(name, "gl_mark")) 
@@ -3578,19 +3581,19 @@ int texture_16img(wbp w, struct imgdata im)
       }
 }
 
-void
+int
 drawstrng3d(wbp w, double x, double y, double z, char *s)
 {
   int xx=0;
   char *p, *q; 
 #ifdef WIN32
-  char path[255] = "..\\src\\lib\\fonts\\fonts\\"; 
+  char path[255] = "..\\src\\lib\\fonts\\"; 
 #else
- char path[255] = "../src/lib/fonts/fonts/";  
+ char path[255] = "../src/lib/fonts/";  
 #endif
   static char *full_name=0;
   FILE *f = 0;
-#if 0
+#if HAVE_FTGL
   int len_full_name=0, len_path=0, len_font=strlen(curr_font->name);
 
   makecurrent(w); 
@@ -3608,8 +3611,13 @@ drawstrng3d(wbp w, double x, double y, double z, char *s)
   strcpy(p, full_name);
   strcat(p,path);
   strcat(p,curr_font->name);
+
   f = fopen(p, "r");
-  if (!f) return;
+  if (!f) {
+     fprintf(stderr, "can't open font file %s\n", p);
+     fflush(stderr);
+     return Failed;
+     }
   else fclose(f);
 
   xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size, &(curr_font->fonts));
@@ -3622,27 +3630,27 @@ drawstrng3d(wbp w, double x, double y, double z, char *s)
   }
 
   free(p); 
-/*   fprintf(stderr, "fonts=%p\n", curr_font->fonts);  */
+  return ((xx==0)?Succeeded:Failed);
 #endif
 }
 
 int 
 add_3dfont(char *fname, int fsize, char ftype)
 {
-#if 0
+#if HAVE_FTGL
   if (end_font) {
      end_font->next = (struct _wfont *) malloc(sizeof(struct _wfont));
      end_font = end_font->next;
+     if (!end_font) return 0;
      }
   else {
      end_font = (struct _wfont *) malloc(sizeof(struct _wfont));
+     if (!end_font) return 0;
      start_font = end_font;
      }
-   end_font->name = (char *) malloc((strlen(fname)+1)*sizeof(char));
+   end_font->name = (char *) strdup(fname);
    if (!end_font->name)
 	return 0;
-/*   fprintf(stderr, "adding: %s, %d, %d\n", fname, fsize, ftype); */
-   strcpy(end_font->name, fname);
    end_font->size = fsize;
    end_font->type = ftype;
    end_font->fonts = 0;
@@ -3654,13 +3662,13 @@ add_3dfont(char *fname, int fsize, char ftype)
 wfp 
 srch_3dfont(char *fname, int fsize, char ftype)
 {
-#if 0
+#if HAVE_FTGL
   wfp g = start_font;
-/*  fprintf(stderr, "searching: %s, %d, %d\n", fname, fsize, ftype); */
   while (g) {
-    if (!strcmp(g->name, fname) && g->size==fsize &&
-	g->type==ftype) return g;
-    g=g->next;
+    if (!strcmp(g->name, fname) && g->size==fsize && g->type==ftype) {
+       return g;
+       }
+    g = g->next;
   }
 #endif
   return 0;

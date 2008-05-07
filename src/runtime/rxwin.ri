@@ -93,7 +93,6 @@ static Atom     atom_array[NUMBER_ATOMS];
 #define USER                11
 
 
-
 static int InternAtoms(Display* display)
 {
    int i;
@@ -1200,7 +1199,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       Atom WMDeleteWindow = XInternAtom(ws->display->display, "WM_DELETE_WINDOW", True);
       XSetWMProtocols(ws->display->display, ws->win, &WMDeleteWindow, 1);
       }
-
    return (FILE *)w;
    }
 
@@ -1932,6 +1930,12 @@ char *s;
 			     ws->normalw, ws->normalh);
 	    ws->iconic = NormalState;
 	    }
+            else {
+               ws->posx = ws->exactx;
+               ws->posy = ws->exacty;
+               do_config(w, 1);
+               if (ws->is_3D) redraw3D(w);
+            }
 	 }
       }
    else if (!strcmp(s, "maximal")) {
@@ -1988,16 +1992,12 @@ char *s;
 	       }
 	    if (ws->iconic != IconicState) {
 	       SETZOMBIE(w);
-/* Omar had commented out this destroywindow...pollevent sequence */
-#if 1
-	       XDestroyWindow(stddpy, stdwin);
-#endif
+	       ws->old_posx=ws->posx;
+	       ws->old_posy=ws->posy;
+	       ws->posx=4096;
+	       ws->posy=0;
+	       do_config(w, 1);
 	       XFlush(stddpy);
-#if 1
-	       while (ws->win)
-		  if (pollevent() == -1)
-		     return Error;
-#endif
 	       }
 	    }
 	 }
@@ -2527,6 +2527,11 @@ char **s;
    wfp tmp;
    STDLOCALS(w);
 
+   if (wc->is_3D) {
+      mkfont(*s, 1);
+      return Succeeded;
+      }
+
    /* could free up previously allocated font here */
 
    Protect(tmp = alc_font(w,s), return Failed);
@@ -2557,6 +2562,7 @@ XExposeEvent *event;
    SETEXPOSED(w);
    if (stdwin && !ISZOMBIE(w)) {
 /* if its a 3D window, do we skip this part ?? */
+if (wc->is_3D == 0) {
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy, stdgc, GXcopy);
       if (wc->clipw >= 0)
@@ -2567,6 +2573,7 @@ XExposeEvent *event;
 	 setclip(w);
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy,stdgc,wc->drawop);
+      }
 /* end of " if its a 3D window " */
 
 #ifdef Graphics3D
@@ -3481,14 +3488,14 @@ int on_icon;
 	   while (iy < height) {
 	      ix = 0;
 	      while (ix < width) {
-		 int r = *s++ * 257;
+		 int r = *s++ * 257; /* Omar had bgr, not rgb */
 		 int g = *s++ * 257;
 		 int b = *s++ * 257;
 	    	 if (r==lastr && g == lastg && b == lastb){
 	            count++;
 	         }
 	         else
-	            cp = alc_rgb2(w,"anon", r, g, b);
+		    cp = alc_rgb2(w,"anon", r, g, b /*, 0*/);
 		 XPutPixel(im, ix++, iy, cp->c);
 	         lastr = r; lastg = g; lastb = b;
 		 }
@@ -4989,6 +4996,82 @@ void makecurrent(wbp w)
 #if HAVE_LIBGL
    glXMakeCurrent(ws->display->display, ws->win, w->context->ctx);
 #endif					/* HAVE_LIBGL */
+}
+
+void mkfont(char *s, char is_3D)
+{
+   int flags, size, tp;
+   char family[MAXFONTWORD+1], fn[80];
+   char *stdfam = NULL;
+
+   if (parsefont(s, family, &flags, &size, &tp)) {
+      /*
+       * This is a legal Icon font spec.
+       * Check first for special "standard" family names.
+       */
+      if (!strcmp(family, "mono") || !strcmp(family, "fixed")) {
+	 stdfam = "Lucida Sans"; /* Lucida Console? */
+	 flags |= FONTFLAG_MONO + FONTFLAG_SANS;
+	 }
+      else if (!strcmp(family, "typewriter")) {
+	 stdfam = "Courier New"; /* was "courier" */
+	 flags |= FONTFLAG_MONO + FONTFLAG_SERIF;
+	 }
+      else if (!strcmp(family, "sans")) {
+	 stdfam = "Arial"; /* was "swiss" */
+	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SANS;
+	 }
+      else if (!strcmp(family, "serif")) {
+	 stdfam = "Times New Roman";
+	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
+	 }
+      else stdfam = NULL;
+      if (is_3D) {
+	if (stdfam) {
+	      if (strcmp(stdfam, "Arial")==0) { 
+	      strcpy(fn,"NIMBU" /* "arial" */);
+	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+		strcat(fn, "17" /* "b"*/);
+	      else if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_NORMAL)))
+		strcat(fn,"15" /* "b" */);
+	      else if (flags & FONTFLAG_BOLD) strcat(fn, "15" /* "bd" */);
+	      else if (flags & FONTFLAG_ITALIC) strcat(fn, "16" /* "i" */);
+	      else strcat(fn, "14");
+	      }
+	   else if (strcmp(stdfam, "Times New Roman")==0) { 
+	      strcpy(fn,"NIMBU" /* "times" */);
+ 	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+		strcat(fn, "25" /* "b" */);
+	      else if (flags & FONTFLAG_BOLD) strcat(fn, "23" /*"bd"*/);
+	      else if (flags & FONTFLAG_ITALIC) strcat(fn, "24"/*"i"*/);
+	      else strcat(fn, "22");
+              }
+	   else if ((strcmp(stdfam, "Courier New")==0) ||
+		    (strcmp(stdfam, "Lucida Sans")==0)
+		    ) {
+	      strcpy(fn,"NIMBU" /* "cour" */);
+ 	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+		strcat(fn, "29" /* "b" */);
+	      else if (flags & FONTFLAG_BOLD) strcat(fn, "27" /* "bd" */);
+	      else if (flags & FONTFLAG_ITALIC) strcat(fn, "28" /* "i" */);
+	      else strcat(fn, "26");
+              }
+	   strcat(fn, ".TTF");
+	   }
+	else {
+	   strcpy(fn,family);
+	   if (flags & (FONTFLAG_BOLD+FONTFLAG_ITALIC)) strcat(fn, "BI");
+	   else if (flags & FONTFLAG_BOLD) strcat(fn, "BD");
+	   else if (flags & FONTFLAG_ITALIC) strcat(fn, "I");
+	   strcat(fn, ".TTF");
+           }
+        curr_font = srch_3dfont(fn, size, tp);
+	if (!curr_font) {
+	  add_3dfont(fn, size, tp);
+	  curr_font = end_font;
+          }
+      }
+    }
 }
 #endif					/* Graphics3D */
 

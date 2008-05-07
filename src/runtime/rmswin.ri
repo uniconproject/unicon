@@ -1632,7 +1632,52 @@ HFONT mkfont(char *s, char is_3D)
 	 flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
 	 }
       else stdfam = NULL;
-   
+      if (is_3D) {
+	if (stdfam) {
+	   if (strcmp(stdfam, "Lucida Sans")==0) {
+	      strcpy(fn, "lsans");
+	      if (flags & FONTFLAG_BOLD) strcat(fn,"d");
+	      if (flags & FONTFLAG_ITALIC) strcat(fn,"i");
+	   }
+	   else if (strcmp(stdfam, "Arial")==0) { 
+	      strcpy(fn,"arial");
+	      if (flags & FONTFLAG_NORMAL) strcat(fn,"N");
+	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+		strcat(fn, "b");
+	      else if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_NORMAL)))
+		strcat(fn,"b");
+	      else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
+	      if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
+	      }
+	   else if (strcmp(stdfam, "Times New Roman")==0) { 
+	      strcpy(fn,"times");
+ 	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+		strcat(fn, "b");
+	      else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
+	      if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
+              }
+	   else if (strcmp(stdfam, "Courier New")==0) {
+	      strcpy(fn,"cour");
+ 	      if ((flags & FONTFLAG_BOLD) && (flags & (FONTFLAG_ITALIC)))
+		strcat(fn, "b");
+	      else if (flags & FONTFLAG_BOLD) strcat(fn, "bd");
+	      if (flags & FONTFLAG_ITALIC) strcat(fn, "i");
+              }
+	   strcat(fn, ".ttf");
+	   }
+	else {
+	   strcpy(fn,family);
+	   if (flags & (FONTFLAG_BOLD+FONTFLAG_ITALIC)) strcat(fn, "BI");
+	   else if (flags & FONTFLAG_BOLD) strcat(fn, "BD");
+	   else if (flags & FONTFLAG_ITALIC) strcat(fn, "I");
+	   strcat(fn, ".ttf");
+           }
+        curr_font = srch_3dfont(fn, size, tp);
+	if (!curr_font) {
+	  add_3dfont(fn, size, tp);
+	  curr_font = end_font;
+          }
+      }
       if (stdfam) {
 	 /*
 	  * Standard name: first try preferred family, then generalize.

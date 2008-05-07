@@ -114,6 +114,7 @@ fi
 
 ])
 
+
 AC_DEFUN([CHECK_FTGL],
 #
 # Handle user hints
@@ -134,6 +135,7 @@ if test ! -f "${FTGL_HOME}/include/FTGL/FTGL.h"
 then
         FTGL_HOME=/usr
 fi
+
 ])
 
 #
@@ -147,7 +149,7 @@ then
 	CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
         AC_LANG_SAVE
         AC_LANG_CPLUSPLUS
-        AC_CHECK_LIB(ftgl, main, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
+        AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
         AC_CHECK_HEADER(FTGL.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
         AC_LANG_RESTORE
         if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
@@ -155,7 +157,7 @@ then
                 #
                 # If both library and header were found, use them
                 #
-                AC_CHECK_LIB(ftgl, main)
+                AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev)
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
                 AC_MSG_RESULT(ok)
         else
@@ -807,3 +809,60 @@ dnl   ]
   fi
 done
 ])
+
+AC_DEFUN([CHECK_XFT],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if xft is wanted)
+AC_ARG_WITH(xft,
+[  --with-xft=DIR root directory path of Xft installation [defaults to /usr/local]
+  --without-xft to disable xft usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  XFT_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+XFT_HOME=/usr/local
+if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
+then
+        XFT_HOME=/usr
+fi
+])
+#
+# Locate XFT, if wanted
+#
+if test -n "${XFT_HOME}"
+then
+	XFT_OLD_LDFLAGS=$LDFLAGS
+	XFT_OLD_CPPFLAGS=$CPPFLAGS
+	LDFLAGS="$LDFLAGS -L${XFT_HOME}/lib64 -L${XFT_HOME}/lib"
+	CPPFLAGS="$CPPFLAGS -I${XFT_HOME}/include/X11/Xft"
+        AC_LANG_SAVE
+        AC_LANG_C
+        AC_CHECK_LIB(Xft, XftPatternCreate, [xft_cv_libxft=yes], [xft_cv_libxft=no])
+        AC_CHECK_HEADER(Xft.h, [xft_cv_xft_h=yes], [xft_cv_xft_h=no])
+        AC_LANG_RESTORE
+        if test "$xft_cv_libxft" = "yes" -a "$xft_cv_xft_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                AC_CHECK_LIB(Xft, main)
+                AC_MSG_CHECKING(XFT in ${XFT_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(XFT in ${XFT_HOME})
+		LDFLAGS="$XFT_OLD_LDFLAGS"
+		CPPFLAGS="$XFT_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+
+])
+

@@ -1,4 +1,4 @@
-AC_INIT([Unicon],[11.3],[jeffery@cs.uidaho.edu])
+AC_INIT([Unicon],[11.5],[jeffery@cs.uidaho.edu])
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 CHECK_FREETYPE()
 CHECK_FTGL()
@@ -19,4 +19,5 @@ AC_VAR_TIMEZONE_EXTERNALS()
 AC_STRUCT_TIMEZONE()
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
+CHECK_XFT()
 AC_OUTPUT

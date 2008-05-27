@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.19 2008-01-29 01:03:22 jeffery Exp $
+# $Id: top.mak,v 1.20 2008-05-27 21:05:22 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -106,7 +106,7 @@ Icont bin/icont: Common
 
 # The compiler: rtt, the run-time system, and iconc.
 
-Iconc bin/iconc: Common
+Iconc: Common
 		cd src/runtime;		$(MAKE) comp_all
 		cd src/iconc;		$(MAKE)
 

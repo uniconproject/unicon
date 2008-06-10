@@ -199,7 +199,7 @@ void		mksubs		(dptr var,dptr val,word i,word j, dptr result);
 word		mod3		(word a,word b);
 word		mul		(word a,word b);
 word		neg		(word a);
-void		new_context	(int fsig, dptr cargp); /* w/o Coexpr: a stub */
+void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub */
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		outimage	(FILE *f,dptr dp,int noimage);
 struct b_coexpr	*popact		(struct b_coexpr *ce);

@@ -80,13 +80,13 @@
    Feature(1, "_EBCDIC", "EBCDIC")
 #endif					/* EBCDIC */
 
-#ifdef Coexpr
+#ifdef CoExpr
    Feature(1, "_CO_EXPRESSIONS", "co-expressions")
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 #ifdef ConsoleWindow
    Feature(1, "_CONSOLE_WINDOW", "console window")
-#endif					/* Coexpr */
+#endif					/* ConsoleWindow */
 
 #ifdef LoadFunc
    Feature(1, "_DYNAMIC_LOADING", "dynamic loading")

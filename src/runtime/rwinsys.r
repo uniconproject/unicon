@@ -23,7 +23,9 @@
 #endif  				/* MSWindows */
 
 #ifdef Graphics3D
+#if HAVE_LIBGL
 #include "ropengl.ri"
+#endif					/* HAVE_LIBGL */
 #endif					/* Graphics3D */
 
 #else					/* Graphics */

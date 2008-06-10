@@ -1,6 +1,19 @@
 import gui
 $include "guih.icn"
 
+procedure fontdialog(font)
+$ifdef _UNIX
+   d := FontDialog()
+   d.show_modal()
+   if font := \ (d.font) then {
+      suspend font
+      suspend d.fontcolor
+      }
+$else
+   return WinFontDialog(font)
+$endif
+end
+
 class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok, border_1, edit_fontname, edit_fontsize, edit_fontstyle, label_1, label_2, label_3, font)
    method component_setup()
       self.setup()

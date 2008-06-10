@@ -6,6 +6,6 @@
 #define DeBug
 #define FixedRegions
 #define HostStr "unspecified host"
-#define NoCoexpr
+#define NoCoExpr
 
 #define PORT 1

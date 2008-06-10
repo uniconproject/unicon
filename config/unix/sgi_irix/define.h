@@ -11,9 +11,9 @@
 #define Double
 
 #define NoRanlib
-#ifdef NoCoexpr
+#ifdef NoCoExpr
    #define MaxStatSize 9000
-#endif				/* NoCoexpr */
+#endif				/* NoCoExpr */
 
 #define COpts "-Wf,-XNd10000"
 

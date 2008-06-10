@@ -30,7 +30,7 @@
 
 /* #define Eve */
 #define NoPosixFns /* wince */
-#define NoCoexpr   /* wince */
+#define NoCoExpr   /* wince */
 #define KeyboardFncs
 /* #define ISQL wince */
 #undef ISQL

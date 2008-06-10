@@ -6,7 +6,7 @@
  *  the middle of the context switch. If the debugging flag is on, you get an
  *  empty file name and a 0 line number for the location. This is because the
  *  error appears to occur in the co-expression, but no code has yet been
- *  executed. If co-expressions are disabled with #define NoCoexpr, you
+ *  executed. If co-expressions are disabled with #define NoCoExpr, you
  *  won't get this far so it shouldn't be a problem.
  */  
 #include "../h/rt.h"

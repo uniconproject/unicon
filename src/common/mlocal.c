@@ -140,10 +140,14 @@ char *findonpath(char *name, char *buf, size_t len) {
          return NULL;
          }
       memcpy(buf, next, plen);
+#if NT
+      buf[plen] = '\\';
+#else					/* NT */
       buf[plen] = '/';
+#endif					/* NT */
       strcpy(buf + plen + 1, name);
-#if NT && !defined(NTGCC)
-/* under visual C++, just check whether the file exists */
+#if NT
+/* X_OK flag not reliable, just check whether the file exists */
 #define access _access
 #define X_OK 00
 #endif

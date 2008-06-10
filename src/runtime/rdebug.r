@@ -524,7 +524,7 @@ static int keyref(bp, dp)
    return Succeeded;
    }
 
-#ifdef Coexpr
+#ifdef CoExpr
 /*
  * cotrace -- a co-expression context switch; produce a trace message.
  */
@@ -576,7 +576,7 @@ dptr valloc;
    fprintf(stderr,"co-expression_%ld\n", (long)ncp->id);
    fflush(stderr);
    }
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 /*
  * showline - print file and line number information.
@@ -922,7 +922,7 @@ dptr dp;
    fflush(stderr);
    }
 
-#ifdef Coexpr
+#ifdef CoExpr
 /*
  * coacttrace -- co-expression is being activated; produce a trace message.
  */
@@ -993,7 +993,7 @@ struct b_coexpr *ncp;
       (long)ccp->id, (long)ncp->id);
    fflush(stderr);
    }
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 #endif					/* !COMPILER */
 
 /*

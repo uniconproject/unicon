@@ -416,9 +416,9 @@ struct errtab errtab[] = {
    318, "co-expression stack too large",
 #endif					/* IntBits == 16 */
 
-#ifndef Coexpr
+#ifndef CoExpr
    401, "co-expressions not implemented",
-#endif					/* Coexpr */
+#endif					/* CoExpr */
    402, "program not compiled with debugging option",
 
    500, "program malfunction",		/* for use by runerr() */

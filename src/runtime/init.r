@@ -1002,10 +1002,10 @@ Deliberate Syntax Error
    mainhead->line_num = 0;
 #endif					/* COMPILER */
 
-#ifdef Coexpr
+#ifdef CoExpr
    Protect(mainhead->es_actstk = alcactiv(), fatalerr(0,NULL));
    pushact(mainhead, mainhead);
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
    /*
     * Point &main at the co-expression block for the main procedure and set

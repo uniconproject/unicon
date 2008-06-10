@@ -16,9 +16,9 @@ static continuation coexpr_fnc;
 void co_init(sblkp)
 struct b_coexpr *sblkp;
 {
-#ifndef Coexpr
+#ifndef CoExpr
    syserr("co_init() called, but co-expressions not implemented");
-#else					/* Coexpr */
+#else					/* CoExpr */
    register word *newsp;
    register dptr dp, dsp;
    int frame_size;
@@ -145,7 +145,7 @@ struct b_coexpr *sblkp;
    sblkp->es_sp = (word *)dsp - 1;
 #endif					/* COMPILER */
 
-#endif					/* Coexpr */
+#endif					/* CoExpr */
    }
 
 /*
@@ -158,9 +158,9 @@ struct descrip *rsltloc;/* location to put result */
 int swtch_typ;          /* A_Coact, A_Coret, A_Cofail, or A_MTEvent */
 int first;
 {
-#ifndef Coexpr
+#ifndef CoExpr
    syserr("co_chng() called, but co-expressions not implemented");
-#else        				/* Coexpr */
+#else        				/* CoExpr */
    static int coexp_act;     /* used to pass signal across activations */
                              /* back to whomever activates, if they care */
 
@@ -296,10 +296,10 @@ int first;
    coexp_act = swtch_typ;
    coswitch(ccp->cstate, ncp->cstate,first);
    return coexp_act;
-#endif        				/* Coexpr */
+#endif        				/* CoExpr */
    }
 
-#ifdef Coexpr
+#ifdef CoExpr
 /*
  * new_context - determine what function to call to execute the new
  *  co-expression; this completes the context switch.
@@ -321,7 +321,7 @@ dptr cargp;
       interp(fsig, cargp);
 #endif					/* COMPILER */
    }
-#else					/* Coexpr */
+#else					/* CoExpr */
 /* dummy new_context if co-expressions aren't supported */
 void new_context(fsig,cargp)
 int fsig;
@@ -329,4 +329,4 @@ dptr cargp;
    {
    syserr("new_context() called, but co-expressions not implemented");
    }
-#endif					/* Coexpr */
+#endif					/* CoExpr */

@@ -1834,7 +1834,7 @@ EntInterp;
 
 	 case Op_Create:	/* create */
 
-#ifdef Coexpr
+#ifdef CoExpr
 	    PushNull;
 	    Setup_Arg(0);
 	    opnd = GetWord;
@@ -1843,17 +1843,17 @@ EntInterp;
 	    signal = Ocreate((word *)opnd, rargp);
 
 	    goto C_rtn_term;
-#else					/* Coexpr */
+#else					/* CoExpr */
 	    err_msg(401, NULL);
 	    goto efail;
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 	 case Op_Coact: {	/* @e */
 
-#ifndef Coexpr
+#ifndef CoExpr
             err_msg(401, NULL);
             goto efail;
-#else                                        /* Coexpr */
+#else                                        /* CoExpr */
             struct b_coexpr *ncp;
             dptr dp;
 
@@ -1875,15 +1875,15 @@ EntInterp;
                goto efail_noev;
             else
                rsp -= 2;
-#endif					/* Coexpr */
+#endif					/* CoExpr */
             break;
 	    }
 
 	 case Op_Coret: {	/* return from co-expression */
 
-#ifndef Coexpr
+#ifndef CoExpr
             syserr("co-expression return, but co-expressions not implemented");
-#else                                        /* Coexpr */
+#else                                        /* CoExpr */
             struct b_coexpr *ncp;
 
             ExInterp;
@@ -1892,16 +1892,16 @@ EntInterp;
             ++BlkLoc(k_current)->coexpr.size;
             co_chng(ncp, (dptr)&sp[-1], NULL, A_Coret, 1);
             EntInterp;
-#endif					/* Coexpr */
+#endif					/* CoExpr */
             break;
 
 	    }
 
 	 case Op_Cofail: {	/* fail from co-expression */
 
-#ifndef Coexpr
+#ifndef CoExpr
             syserr("co-expression failure, but co-expressions not implemented");
-#else                                        /* Coexpr */
+#else                                        /* CoExpr */
             struct b_coexpr *ncp;
 
             ExInterp;
@@ -1917,7 +1917,7 @@ EntInterp;
 
             co_chng(ncp, NULL, NULL, A_Cofail, 1);
             EntInterp;
-#endif					/* Coexpr */
+#endif					/* CoExpr */
             break;
 
 	    }

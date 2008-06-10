@@ -756,7 +756,7 @@ dptr dp;
          }
 #endif					/* MultiThread */
 
-#ifdef Coexpr
+#ifdef CoExpr
       /*
        * Mark the activators of this co-expression.   The activators are
        *  stored as a list of addresses, but markblock requires the address
@@ -776,7 +776,7 @@ dptr dp;
          }
       if(BlkLoc(cp->freshblk) != NULL)
          markblock(&((struct b_coexpr *)block)->freshblk);
-#endif                                  /* Coexpr */
+#endif                                  /* CoExpr */
       }
 
    else {

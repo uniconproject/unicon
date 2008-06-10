@@ -617,11 +617,11 @@ keyword{1} source
        return coexpr
        }
    inline {
-#ifndef Coexpr
+#ifndef CoExpr
          return k_main;
-#else					/* Coexpr */
+#else					/* CoExpr */
          return coexpr(topact((struct b_coexpr *)BlkLoc(k_current)));
-#endif					/* Coexpr */
+#endif					/* CoExpr */
          }
 end
 

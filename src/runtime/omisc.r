@@ -4,7 +4,7 @@
  */
 
 "^x - create a refreshed copy of a co-expression."
-#ifdef Coexpr
+#ifdef CoExpr
 /*
  * ^x - return an entry block for co-expression x from the refresh block.
  */
@@ -50,10 +50,10 @@ operator{1} ^ refresh(x)
 
       return coexpr(sblkp);
       }
-#else					/* Coexpr */
+#else					/* CoExpr */
 operator{} ^ refresh(x)
       runerr(401)
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 end
 

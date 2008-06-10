@@ -991,7 +991,7 @@ char *sbuf;
    }
 #endif					/* !COMPILER */
 
-#ifdef Coexpr
+#ifdef CoExpr
 /*
  * pushact - push actvtr on the activator stack of ce
  */
@@ -1033,7 +1033,7 @@ struct b_coexpr *ce, *actvtr;
 #endif					/* MultiThread */
    return Succeeded;
 }
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 /*
  * popact - pop the most recent activator from the activator stack of ce
@@ -1043,7 +1043,7 @@ struct b_coexpr *popact(ce)
 struct b_coexpr *ce;
 {
 
-#ifdef Coexpr
+#ifdef CoExpr
 
    struct astkblk *abp = ce->es_actstk, *oabp;
    struct actrec *arp;
@@ -1079,13 +1079,13 @@ struct b_coexpr *ce;
    return actvtr;
 #endif					/* MultiThread */
 
-#else					/* Coexpr */
+#else					/* CoExpr */
     syserr("popact() called, but co-expressions not implemented");
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 }
 
-#ifdef Coexpr
+#ifdef CoExpr
 /*
  * topact - return the most recent activator of ce.
  */
@@ -1129,7 +1129,7 @@ struct b_coexpr *ce;
       }
 }
 #endif					/* DeBugIconx */
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
 #if !COMPILER
 /*

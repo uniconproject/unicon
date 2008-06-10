@@ -20,7 +20,7 @@ register dptr cargp;
 #endif					/* COMPILER */
    {
 
-#ifdef Coexpr
+#ifdef CoExpr
    tended struct b_coexpr *sblkp;
    register struct b_refresh *rblkp;
    register dptr dp, ndp;
@@ -129,14 +129,14 @@ register dptr cargp;
    BlkLoc(Arg0) = (union block *) sblkp;
    Return;
 #endif					/* COMPILER */
-#else					/* Coexpr */
+#else					/* CoExpr */
    err_msg(401, NULL);
 #if COMPILER
    return NULL;
 #else					/* COMPILER */
    Fail;
 #endif					/* COMPILER */
-#endif					/* Coexpr */
+#endif					/* CoExpr */
 
    }
 
@@ -148,7 +148,7 @@ dptr val;
 struct b_coexpr *ncp;
 dptr result;
    {
-#ifdef Coexpr
+#ifdef CoExpr
 
    int first;
 
@@ -170,7 +170,7 @@ dptr result;
    else
       return A_Continue;
 
-#else					/* Coexpr */
+#else					/* CoExpr */
    RunErr(401,NULL);
-#endif					/* Coexpr */
+#endif					/* CoExpr */
    }

@@ -64,8 +64,7 @@ int NoOptions = 0;
 #endif					/* MPW */
 #endif					/* MACINTOSH */
 
-#if ARM || MSDOS || MVS || VM || OS2 || UNIX\
-   || VMS
+#if ARM || MSDOS || MVS || VM || OS2 || UNIX || VMS
    /* nothing needed */
 #endif					/* ARM || ... */
 

@@ -306,8 +306,7 @@ void odbcerror(struct ISQLFile *fp, int errornum)
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState,&NativeErr,
 		       ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
 	      SQL_NO_DATA_FOUND)) {
-      k_errortext=alcstr(ErrMsg, strlen(ErrMsg)+1);
-      if (k_errortext == NULL) k_errortext = ErrMsg;
+      k_errortext = ErrMsg; /* can't alcstr here; k_errortext is untended */
       }
    else {
       if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))

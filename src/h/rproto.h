@@ -199,7 +199,7 @@ void		mksubs		(dptr var,dptr val,word i,word j, dptr result);
 word		mod3		(word a,word b);
 word		mul		(word a,word b);
 word		neg		(word a);
-void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub */
+void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub*/
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		outimage	(FILE *f,dptr dp,int noimage);
 struct b_coexpr	*popact		(struct b_coexpr *ce);
@@ -212,7 +212,7 @@ char		*qsearch	(char *key, char *base, int nel, int width,
 				   int (*cmp)());
 int		qtos		(dptr dp,char *sbuf);
 int    		 radix		(int sign, register int r, register char *s,
-				   register char *end_s, union numeric *result);
+				 register char *end_s, union numeric *result);
 #ifdef MultiThread
 char		*reserve_0	(int region, word nbytes);
 char		*reserve_1	(int region, word nbytes);

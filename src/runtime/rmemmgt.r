@@ -83,12 +83,16 @@ int bsizes[] = {
      -1,                      /* T_Kywdevent (25), event keyword variable */
 #ifdef PatternType
      sizeof(struct b_pattern),   /* T_Pattern (26), pattern block */
-     sizeof(struct b_pelem),   /* T_Pattern (27), pattern element */    
+     sizeof(struct b_pelem),     /* T_Pattern (27), pattern element */    
 #else					/* PatternType */
      0,
      0,
 #endif					/* PatternType */
+#ifdef EventMon
      sizeof(struct b_tvmonitored),
+#else					/* EventMon */
+     0,
+#endif					/* EventMon */
     };
 
 /*

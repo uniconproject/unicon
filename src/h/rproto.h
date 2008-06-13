@@ -862,3 +862,7 @@ void    qalloc                  (struct ISQLFile *f, long n); /* query space all
 struct AudioFile * StartAudioThread(char filename[]);
 void StopAudioThread(struct AudioFile * Ptr);
 #endif					/* Audio */
+
+#ifdef DebugHeap
+void heaperr(char *msg, union block *p, int t);
+#endif					/* DebugHeap */

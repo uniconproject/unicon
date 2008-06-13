@@ -1127,3 +1127,12 @@ char *pi, *pj;
    return lexcmp(&gnames[i], &gnames[j]);
    }
 
+
+#ifdef DebugHeap
+void heaperr(char *msg, union block *p, int t)
+{
+   char buf[256];
+   sprintf(buf, "%s : %p : %d / %d\n",msg,p,p->File.title,t);
+   syserr(buf);
+}
+#endif					/* DebugHeap */

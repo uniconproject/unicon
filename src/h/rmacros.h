@@ -145,6 +145,66 @@
 #define BlkLoc(d)	((d).vword.bptr)
 
 /*
+ * Block reference macros.  This abstraction of the act of
+ * dereferencing a block pointer does not add clarity, but
+ * it does allow runtime type checking of a sort, if DebugHeap
+ * is enabled.
+ */
+#define BlkCkD(d,u) BlkCkP(BlkLoc(d),u)
+#define BlkD(d,u,s) BlkP(BlkLoc(d),u,s)
+#define BlkU(d,u) Blk(BlkLoc(d),u)
+#ifndef DebugHeap
+#define Blk(p,u) ((p)->u)
+#define BlkCkP(p,u) (&((p)->u))
+#define BlkP(p,u,s) ((p)->u.s)
+#define BlkPH(p,u,s) ((p)->u.s)
+#define BlkPE(p,u,s) ((p)->u.s)
+#else
+
+/*
+ * Debug Heap macros.  Goal: add runtime checks to catch (most)
+ * illegal block references resulting from untended pointers.
+ * Use: during new code development, when gdb and valgrind fail you.
+ */
+
+/*
+ * could make the ValidPtr check much pickier -- check if it is
+ * in a block or icode region (only places blocks can appear)
+ */
+#define ValidPtr(p) (((unsigned long)(p)) > 256)
+
+/*
+ * Block references that do not use (the address of) a particular field.
+ */
+#define BlkA(p,u,a) ((((!ValidPtr(p)) || ((p)->u.title != T_ ## u)) ? \
+      heaperr("invalid block",p, T_ ## u) : 1), a((p)->u))
+#define Blk(p,u) BlkA(p,u,/**/)
+#define BlkCkP(p,u) BlkA(p,u,&)
+
+/*
+ * Block references that use (the address or lvalue of) a particular field.
+ * Tried to define this in terms of BlkA but gcc rejects it.
+ */
+#define BlkP(p,u,s) \
+   ((ValidPtr(p) ? \
+     (((p)->u.title == T_ ## u) ? ((p)->u.s) : \
+      (heaperr("invalid block title", p, T_ ## u), ((p)->u.s))) : \
+     (syserr("invalid pointer"), ((p)->u.s))))
+
+/*
+ * Block references for generic (set|table) code.
+ */
+#define BlkPA(p,u,s,t,f) \
+   ((ValidPtr(p) ? \
+   ((((p)->Set.title == T_ ## s)||((p)->Set.title == T_ ## t)) ? ((p)->u.f) : \
+      (heaperr("invalid block title", p, (p)->Set.title), ((p)->u.f))) : \
+     (syserr("invalid pointer"), ((p)->u.f))))
+#define BlkPH(p,u,f) BlkPA(p,u,Set,Table,f)
+#define BlkPE(p,u,f) BlkPA(p,u,Selem,Telem,f)
+
+#endif					/* DebugHeap */
+
+/*
  * Check for null-valued descriptor.
  */
 #define ChkNull(d)	((d).dword==D_Null)

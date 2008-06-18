@@ -531,7 +531,7 @@ int f(dptr s, dptr d)
             word slen;
             word dlen;
 
-            slen = (BlkLoc(*s)->bignumblk.lsd - BlkLoc(*s)->bignumblk.msd +1);
+            slen = (BlkD(*s,Lrgint)->lsd - BlkD(*s,Lrgint)->msd +1);
             dlen = slen * NB * 0.3010299956639812;	/* 1 / log2(10) */
 	    bigtos(s,d);
 	    }
@@ -546,7 +546,7 @@ int f(dptr s, dptr d)
          rtos(res, d, sbuf);
          }
       cset:
-         cstos(BlkLoc(*s)->cset.bits, d, sbuf);
+         cstos(BlkD(*s,Cset)->bits, d, sbuf);
       default: {
          EVValD(s, e_fconv);
          return 0;
@@ -575,6 +575,11 @@ int f(struct b_cset *cbuf, dptr s, dptr d)
    char sbuf[MaxCvtLen];
    register char *s1;
    C_integer l;
+
+#ifdef DebugHeap
+   /* we know its stack memory, but BlkCk won't know that... */
+   cbuf->title = T_Cset;
+#endif
 
    EVValD(s, e_aconv);
    EVValD(&csetdesc, e_tconv);
@@ -672,17 +677,17 @@ void f(dptr s, dptr d)
           *  the string.
           */
          bp = BlkLoc(*s);
-         deref(&bp->tvsubs.ssvar, &v);
+	 deref(&Blk(bp,Tvsubs)->ssvar, &v);
          if (!is:string(v))
             fatalerr(103, &v);
-         if (bp->tvsubs.sspos + bp->tvsubs.sslen - 1 > StrLen(v))
+         if (Blk(bp,Tvsubs)->sspos + Blk(bp,Tvsubs)->sslen - 1 > StrLen(v))
             fatalerr(205, NULL);
          /*
           * Make a descriptor for the substring by getting the
           *  length and pointing into the string.
           */
-         StrLen(*d) = bp->tvsubs.sslen;
-         StrLoc(*d) = StrLoc(v) + bp->tvsubs.sspos - 1;
+         StrLen(*d) = Blk(bp,Tvsubs)->sslen;
+         StrLoc(*d) = StrLoc(v) + Blk(bp,Tvsubs)->sspos - 1;
         }
 
       tvtbl: {
@@ -690,19 +695,19 @@ void f(dptr s, dptr d)
           * Look up the element in the table.
           */
          bp = BlkLoc(*s);
-	 if (BlkType(bp->tvtbl.clink) == T_File) {
-	    int status = bp->tvtbl.clink->file.status;
+	 if (BlkType(Blk(bp,Tvtbl)->clink) == T_File) {
+	    int status = Blk(Blk(bp,Tvtbl)->clink,File)->status;
 #ifdef Dbm
 	    if (status & Fs_Dbm) {
 	       int rv;
 	       DBM *db;
 	       datum key, content;
-	       db = (DBM *)bp->tvtbl.clink->file.fd.fp;
-	       if (!cnv:string(bp->tvtbl.tref, bp->tvtbl.tref)) { /* key */
-		  fatalerr(103, &(bp->tvtbl.tref));
+	       db = (DBM *)Blk(Blk(bp,Tvtbl)->clink,File)->fd.fp;
+	       if (!cnv:string(bp->Tvtbl.tref, bp->Tvtbl.tref)) { /* key */
+		  fatalerr(103, &(bp->Tvtbl.tref));
 		  }
-	       key.dptr = StrLoc(bp->tvtbl.tref);
-	       key.dsize = StrLen(bp->tvtbl.tref);
+	       key.dptr = StrLoc(Blk(bp,Tvtbl)->tref);
+	       key.dsize = StrLen(Blk(bp,Tvtbl)->tref);
 	       content = dbm_fetch(db, key);
 	       if (content.dptr == NULL) fatalerr(103, s);
 	       Protect(StrLoc(*d) = alcstr(content.dptr, content.dsize),fatalerr(103, s));
@@ -713,11 +718,11 @@ void f(dptr s, dptr d)
 #endif					/* Dbm */
 	       fatalerr(103, s);
 	       }
-         ep = memb(bp->tvtbl.clink,&bp->tvtbl.tref,bp->tvtbl.hashnum,&res);
+         ep = memb(bp->Tvtbl.clink,&(bp->Tvtbl.tref), bp->Tvtbl.hashnum, &res);
          if (res == 1)
-            *d = (*ep)->telem.tval;			/* found; use value */
+            *d = Blk((*ep),Telem)->tval;		/* found; use value */
          else
-            *d = bp->tvtbl.clink->table.defvalue;	/* nope; use default */
+            *d = Blk(Blk(bp,Tvtbl)->clink,Table)->defvalue;  /* use default */
          }
 
       kywdint:
@@ -730,7 +735,7 @@ void f(dptr s, dptr d)
 
       tvmonitored:{
 #ifdef EventMon
-         *d = *(VarLoc(BlkLoc(*s)->tvmonitored.tv));
+         *d = *(VarLoc(BlkD(*s,Tvmonitored)->tv));
 #endif					/* EventMon */
          }
 
@@ -781,7 +786,7 @@ dptr d;
             word slen;
             word dlen;
 
-            slen = (BlkLoc(*s)->bignumblk.lsd - BlkLoc(*s)->bignumblk.msd +1);
+            slen = (BlkD(*s,Lrgint)->lsd - BlkD(*s,Lrgint)->msd +1);
             dlen = slen * NB * 0.3010299956639812;	/* 1 / log2(10) */
 	    bigtos(s,d);
 	    }
@@ -796,7 +801,7 @@ dptr d;
          rtos(res, d, sbuf);
          }
       cset:
-         cstos(BlkLoc(*s)->cset.bits, d, sbuf);
+         cstos(BlkD(*s,Cset)->bits, d, sbuf);
       default:
          return 0;
       }
@@ -874,7 +879,7 @@ C_integer arity;
    for (i = 0; i < n_globals; ++i)
       if (eq(s, &gnames[i]))
          if (is:proc(globals[i]))
-            return (struct b_proc *)BlkLoc(globals[i]);
+            return BlkD(globals[i], Proc);
          else
             return NULL;
 

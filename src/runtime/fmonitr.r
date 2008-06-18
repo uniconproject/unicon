@@ -34,14 +34,12 @@ function{0,1} event(x,y,ce)
       if (is:null(ce) && is:coexpr(curpstate->parentdesc))
 	 ce = curpstate->parentdesc;
       else if (!is:coexpr(ce)) runerr(118,ce);
-      dest = BlkLoc(ce)->coexpr.program;
+      dest = BlkD(ce,Coexpr)->program;
       dest->eventcode = x;
       dest->eventval = y;
-      if (mt_activate(&(dest->eventcode),&result,
-			 (struct b_coexpr *)BlkLoc(ce)) == A_Cofail) {
+      if (mt_activate(&(dest->eventcode),&result,BlkD(ce,Coexpr))==A_Cofail)
          fail;
-         }
-       return result;
+      return result;
       }
 end
 
@@ -218,12 +216,12 @@ function{0,1} EvGet(cs,vmask,flag)
       if (!is:coexpr(curpstate->eventsource))
          runerr(118,curpstate->eventsource);
       if (!is:null(vmask))
-         BlkLoc(curpstate->eventsource)->coexpr.program->valuemask = vmask;
+         BlkD(curpstate->eventsource,Coexpr)->program->valuemask = vmask;
 
       /*
        * If our event source is a child of ours, assign its event mask.
        */
-      p = BlkLoc(curpstate->eventsource)->coexpr.program;
+      p = BlkD(curpstate->eventsource,Coexpr)->program;
       if (p->parent == curpstate) {
 	 if (BlkLoc(p->eventmask) != BlkLoc(cs)) {
 	    assign_event_functions(p, cs);
@@ -233,12 +231,12 @@ function{0,1} EvGet(cs,vmask,flag)
 #ifdef Graphics
       if (Testb((word)ToAscii(E_MXevent), cs) &&
 	  is:file(kywd_xwin[XKey_Window])) {
-	 wbp _w_ = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;
+	 wbp _w_ = BlkD(kywd_xwin[XKey_Window],File)->fd.wb;
 	 wsync(_w_);
 	 pollctr = pollevent();
 	 if (pollctr == -1)
 	    fatalerr(141, NULL);
-	 if (BlkLoc(_w_->window->listp)->list.size > 0) {
+	 if (BlkD(_w_->window->listp,List)->size > 0) {
 	    c = wgetevent(_w_, &curpstate->eventval, -1);
 	    if (c == 0) {
 	       StrLen(curpstate->eventcode) = 1;
@@ -263,8 +261,8 @@ function{0,1} EvGet(cs,vmask,flag)
           */
 	 dummy = cs;
 	 if (mt_activate(&dummy, &curpstate->eventcode,
-			 (struct b_coexpr *)BlkLoc(curpstate->eventsource)) ==
-	     A_Cofail) fail;
+			 BlkD(curpstate->eventsource, Coexpr)) == A_Cofail)
+	    fail;
 	 deref(&curpstate->eventcode, &curpstate->eventcode);
 	 if (!is:string(curpstate->eventcode) ||
 	     StrLen(curpstate->eventcode) != 1) {
@@ -280,7 +278,7 @@ function{0,1} EvGet(cs,vmask,flag)
 #if E_Cofail || E_Coret
 	 switch(*StrLoc(curpstate->eventcode)) {
 	 case E_Cofail: case E_Coret: {
-	    if (BlkLoc(curpstate->eventsource)->coexpr.id == 1) {
+	    if (BlkD(curpstate->eventsource,Coexpr)->id == 1) {
 	       fail;
 	       }
 	    }
@@ -309,23 +307,23 @@ function{*} istate(ce,attrib)
       if (!is:null(ce)){
 	 if (is:coexpr(ce)){
             if (!strcmp(field, "count"))
-               return C_integer (word) BlkLoc(ce)->coexpr.actv_count;
+               return C_integer (word) BlkD(ce,Coexpr)->actv_count;
             if (!strcmp(field, "ilevel"))
-               return C_integer (word) BlkLoc(ce)->coexpr.es_ilevel;
+               return C_integer (word) BlkD(ce,Coexpr)->es_ilevel;
             else if (!strcmp(field, "ipc"))
-               return C_integer (word) BlkLoc(ce)->coexpr.es_ipc.opnd;
+               return C_integer (word) BlkD(ce,Coexpr)->es_ipc.opnd;
             else if (!strcmp(field, "ipc_offset")){
-               ipc_opnd = BlkLoc(ce)->coexpr.es_ipc.opnd;
+               ipc_opnd = BlkD(ce,Coexpr)->es_ipc.opnd;
                return C_integer (word) DiffPtrs(
                                 (char*)ipc_opnd,
-                                (char *)BlkLoc(ce)->coexpr.program->Code);
+                                (char *)BlkD(ce,Coexpr)->program->Code);
                }
             else if (!strcmp(field, "sp"))
-               return C_integer (word) BlkLoc(ce)->coexpr.es_sp;
+               return C_integer (word) BlkD(ce,Coexpr)->es_sp;
             else if (!strcmp(field, "efp"))
-               return C_integer (word) BlkLoc(ce)->coexpr.es_efp;
+               return C_integer (word) BlkD(ce,Coexpr)->es_efp;
             else if (!strcmp(field, "gfp"))
-               return C_integer (word) BlkLoc(ce)->coexpr.es_gfp;
+               return C_integer (word) BlkD(ce,Coexpr)->es_gfp;
             else fail;   
             }   
 	 else  
@@ -390,7 +388,7 @@ void EVVariable(dptr dx, int eventcode)
 #if COMPILER
    procname = &(PFDebug(*pfp)->proc->pname);
 #else					/* COMPILER */
-   procname = &((&BlkLoc(*glbl_argp)->proc)->pname);
+   procname = &(BlkD(*glbl_argp,Proc)->pname);
 #endif					/* COMPILER */
    /*
     * call get_name, allocating out of the monitor if necessary.

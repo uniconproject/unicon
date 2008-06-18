@@ -15,7 +15,7 @@ function{0,1} args(x,i)
 
    if is:proc(x) then {
       abstract { return integer }
-      inline { return C_integer ((struct b_proc *)BlkLoc(x))->nparam; }
+      inline { return C_integer BlkD(x,Proc)->nparam; }
       }
    else if !is:coexpr(x) then
       runerr(106, x)
@@ -23,7 +23,7 @@ function{0,1} args(x,i)
       abstract { return integer }
       inline {
 #ifdef MultiThread
-	 return C_integer BlkLoc(x)->coexpr.program->Xnargs;
+	 return C_integer BlkD(x,Coexpr)->program->Xnargs;
 #else
 	 fail;
 #endif					/* MultiThread */
@@ -36,8 +36,8 @@ function{0,1} args(x,i)
       inline {
 #ifdef MultiThread
 	 int c_i = IntVal(i);
-	 if ((c_i <= 0) || (c_i > BlkLoc(x)->coexpr.program->Xnargs)) fail;
-	 return BlkLoc(x)->coexpr.program->Xargp[IntVal(i)];
+	 if ((c_i <= 0) || (c_i > BlkD(x,Coexpr)->program->Xnargs)) fail;
+	 return BlkD(x,Coexpr)->program->Xargp[IntVal(i)];
 #else
 	 fail;
 #endif					/* MultiThread */
@@ -192,13 +192,13 @@ function{1} copy(x)
             /*
              * Pass the buck to cplist to copy a list.
              */
-            if (cplist(&x, &result, (word)1, BlkLoc(x)->list.size + 1) ==Error)
+            if (cplist(&x, &result, (word)1, BlkD(x,List)->size + 1) ==Error)
 	       runerr(0);
             return result;
             }
       table: {
          body {
-	    if (cptable(&x, &result, BlkLoc(x)->table.size) == Error) {
+	    if (cptable(&x, &result, BlkD(x,Table)->size) == Error) {
 	       runerr(0);
 	       }
 	    return result;
@@ -210,7 +210,7 @@ function{1} copy(x)
             /*
              * Pass the buck to cpset to copy a set.
              */
-            if (cpset(&x, &result, BlkLoc(x)->set.size) == Error)
+            if (cpset(&x, &result, BlkD(x,Set)->size) == Error)
                runerr(0);
 	    return result;
             }
@@ -231,8 +231,8 @@ function{1} copy(x)
              * Allocate space for the new record and copy the old
              *	one into it.
              */
-            old_rec = (struct b_record *)BlkLoc(x);
-            i = old_rec->recdesc->proc.nfields;
+            old_rec = BlkD(x, Record);
+            i = Blk(old_rec->recdesc,Proc)->nfields;
 
             /* #%#% param changed ? */
             Protect(new_rec = alcrecd(i,old_rec->recdesc), runerr(0));
@@ -321,10 +321,10 @@ function{1} display(i,f)
       /*
        * Produce error if file cannot be written.
        */
-      if ((BlkLoc(f)->file.status & Fs_Write) == 0) 
+      if ((BlkD(f,File)->status & Fs_Write) == 0) 
          runerr(213, f);
 
-      std_f = BlkLoc(f)->file.fd.fp;
+      std_f = BlkD(f,File)->fd.fp;
 
       /*
        * Produce error if i is negative; constrain i to be <= &level.
@@ -337,8 +337,8 @@ function{1} display(i,f)
          i = k_level;
 
       fprintf(std_f,"co-expression_%ld(%ld)\n\n",
-         (long)BlkLoc(k_current)->coexpr.id,
-	 (long)BlkLoc(k_current)->coexpr.size);
+         (long)BlkD(k_current,Coexpr)->id,
+	 (long)BlkD(k_current,Coexpr)->size);
       fflush(std_f);
 #ifdef MultiThread
       if (ce) {
@@ -495,7 +495,7 @@ function{1} image(x)
 #ifdef EventMon
       type_case x of {
           tvmonitored:{
-             if (getimage(VarLoc(BlkLoc(x)->tvmonitored.tv),&result) == Error)
+             if (getimage(VarLoc(BlkD(x,Tvmonitored)->tv),&result) == Error)
                 runerr(0);
              }
           default:{
@@ -608,7 +608,7 @@ function{1} name(underef v)
          prog = curpstate;
          }
       else if (is:coexpr(c)) {
-         prog = BlkLoc(c)->coexpr.program;
+         prog = BlkD(c,Coexpr)->program;
          }
       else {
          runerr(118,c);
@@ -714,24 +714,24 @@ function {0,1} serial(x)
 
    type_case x of {
       list:   inline {
-         return C_integer BlkLoc(x)->list.id;
+         return C_integer BlkD(x,List)->id;
          }
       set:   inline {
-         return C_integer BlkLoc(x)->set.id;
+         return C_integer BlkD(x,Set)->id;
          }
       table:   inline {
-         return C_integer BlkLoc(x)->table.id;
+         return C_integer BlkD(x,Table)->id;
          }
       record:   inline {
-         return C_integer BlkLoc(x)->record.id;
+         return C_integer BlkD(x,Record)->id;
          }
       coexpr:   inline {
-         return C_integer BlkLoc(x)->coexpr.id;
+         return C_integer BlkD(x,Coexpr)->id;
          }
 #ifdef Graphics
       file:   inline {
-	 if (BlkLoc(x)->file.status & Fs_Window) {
-	    wsp ws = BlkLoc(x)->file.fd.wb->window;
+	 if (BlkD(x,File)->status & Fs_Window) {
+	    wsp ws = BlkD(x,File)->fd.wb->window;
 	    return C_integer ws->serial;
 	    }
 	 else {
@@ -759,10 +759,10 @@ function{1} sort(t, i)
              * Sort the list by copying it into a new list and then using
              *  qsort to sort the descriptors.  (That was easy!)
              */
-            size = BlkLoc(t)->list.size;
+            size = BlkD(t,List)->size;
             if (cplist(&t, &result, (word)1, size + 1) == Error)
 	       runerr(0);
-            qsort((char *)BlkLoc(result)->list.listhead->lelem.lslots,
+            qsort((char *)Blk(BlkD(result,List)->listhead,Lelem)->lslots,
                (int)size, sizeof(struct descrip),(QSortFncCast) anycmp);
 
             Desc_EVValD(BlkLoc(result), E_Lcreate, D_List);
@@ -785,17 +785,17 @@ function{1} sort(t, i)
              * the list, and then sort the list using qsort as in list
              * sorting and return the sorted list.
              */
-            size = BlkLoc(t)->record.recdesc->proc.nfields;
+            size = Blk(BlkD(t,Record)->recdesc,Proc)->nfields;
 
             Protect(lp = alclist_raw(size, size), runerr(0));
 
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty records */
-               d1 = lp->listhead->lelem.lslots;
+               d1 = Blk(lp->listhead,Lelem)->lslots;
                for (i = 0; i < size; i++)
-                  *d1++ = bp->record.fields[i];
-               qsort((char *)lp->listhead->lelem.lslots,(int)size,
+                  *d1++ = Blk(bp,Record)->fields[i];
+               qsort((char *)Blk(lp->listhead,Lelem)->lslots,(int)size,
                      sizeof(struct descrip),(QSortFncCast)anycmp);
                }
 
@@ -820,19 +820,19 @@ function{1} sort(t, i)
              * the list, and then sort the list using qsort as in list
              * sorting and return the sorted list.
              */
-            size = BlkLoc(t)->set.size;
+            size = BlkD(t,Set)->size;
 
             Protect(lp = alclist(size, size), runerr(0));
 
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty sets */
-               d1 = lp->listhead->lelem.lslots;
-               for (j=0; j < HSegs && (seg = bp->table.hdir[j]) != NULL; j++)
+               d1 = Blk(lp->listhead,Lelem)->lslots;
+               for (j=0; j < HSegs && (seg= BlkPH(bp,Table,hdir)[j])!=NULL;j++)
                   for (k = segsize[j] - 1; k >= 0; k--)
-                     for (ep= seg->hslots[k]; ep != NULL; ep= ep->telem.clink)
-                        *d1++ = ep->selem.setmem;
-               qsort((char *)lp->listhead->lelem.lslots,(int)size,
+                     for (ep= seg->hslots[k]; ep!=NULL;ep=BlkPE(ep,Telem,clink))
+                        *d1++ = BlkPE(ep,Selem,setmem);
+               qsort((char *)Blk(lp->listhead,Lelem)->lslots,(int)size,
                      sizeof(struct descrip),(QSortFncCast)anycmp);
                }
 
@@ -870,7 +870,7 @@ function{1} sort(t, i)
                 *  as the table has, so get that value and also make a valid
                 *  list block size out of it.
                 */
-               size = BlkLoc(t)->table.size;
+               size = BlkD(t,Table)->size;
 
 	       /*
 		* Make sure, now, that there's enough room for all the
@@ -908,11 +908,11 @@ function{1} sort(t, i)
                   for (k = segsize[j] - 1; k >= 0; k--)
                      for (ep= seg->hslots[k];
 			  BlkType(ep) == T_Telem;
-			  ep = ep->telem.clink){
+			  ep = Blk(ep,Telem)->clink){
                         Protect(tp = alclist_raw(2, 2), runerr(0));
-                        tp->listhead->lelem.lslots[0] = ep->telem.tref;
-                        tp->listhead->lelem.lslots[1] = ep->telem.tval;
-                        d1 = &lp->listhead->lelem.lslots[n++];
+                        Blk(tp->listhead,Lelem)->lslots[0]=Blk(ep,Telem)->tref;
+                        Blk(tp->listhead,Lelem)->lslots[1]=Blk(ep,Telem)->tval;
+                        d1 = &Blk(lp->listhead,Lelem)->lslots[n++];
                         d1->dword = D_List;
                         BlkLoc(*d1) = (union block *)tp;
                         }
@@ -921,10 +921,10 @@ function{1} sort(t, i)
                 *  function determined by i.
                 */
                if (i == 1)
-                  qsort((char *)lp->listhead->lelem.lslots, (int)size,
+                  qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size,
                         sizeof(struct descrip), (QSortFncCast)trefcmp);
                else
-                  qsort((char *)lp->listhead->lelem.lslots, (int)size,
+                  qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size,
                         sizeof(struct descrip), (QSortFncCast)tvalcmp);
                break;		/* from cases 1 and 2 */
                }
@@ -939,7 +939,7 @@ function{1} sort(t, i)
              *  elements as the table has, so get that value and also make
              *  a valid list block size out of it.
              */
-            size = BlkLoc(t)->table.size * 2;
+            size = BlkD(t,Table)->size * 2;
 
             /*
              * Point bp at the table header block of the table to be sorted
@@ -959,7 +959,7 @@ function{1} sort(t, i)
              * Point d1 at the start of the list elements in the new list
              * element block in preparation for use as an index into the list.
              */
-            d1 = lp->listhead->lelem.lslots;
+            d1 = Blk(lp->listhead,Lelem)->lslots;
             /*
              * Traverse the element chain for each table bucket.  For each
              *  table element copy the the entry descriptor and the value
@@ -972,19 +972,19 @@ function{1} sort(t, i)
                for (k = segsize[j] - 1; k >= 0; k--)
                   for (ep = seg->hslots[k];
 		       BlkType(ep) == T_Telem;
-		       ep = ep->telem.clink) {
-                     *d1++ = ep->telem.tref;
-                     *d1++ = ep->telem.tval;
+		       ep = Blk(ep,Telem)->clink) {
+                     *d1++ = Blk(ep,Telem)->tref;
+                     *d1++ = Blk(ep,Telem)->tval;
                      }
             /*
              * Sort the resulting two-element list using the
              *  sorting function determined by i.
              */
             if (i == 3)
-               qsort((char *)lp->listhead->lelem.lslots, (int)size / 2,
+               qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size / 2,
                      (2 * sizeof(struct descrip)),(QSortFncCast)trcmp3);
             else
-               qsort((char *)lp->listhead->lelem.lslots, (int)size / 2,
+               qsort((char *)Blk(lp->listhead,Lelem)->lslots, (int)size / 2,
                      (2 * sizeof(struct descrip)),(QSortFncCast)tvcmp4);
             break; /* from case 3 or 4 */
                }
@@ -1023,8 +1023,8 @@ dptr d1, d2;
       syserr("trefcmp: internal consistency check fails.");
 #endif					/* DeBug */
 
-   return (anycmp(&(BlkLoc(*d1)->list.listhead->lelem.lslots[0]),
-                  &(BlkLoc(*d2)->list.listhead->lelem.lslots[0])));
+   return (anycmp(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[0]),
+                  &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[0])));
    }
 
 /*
@@ -1040,8 +1040,8 @@ dptr d1, d2;
       syserr("tvalcmp: internal consistency check fails.");
 #endif					/* DeBug */
 
-   return (anycmp(&(BlkLoc(*d1)->list.listhead->lelem.lslots[1]),
-      &(BlkLoc(*d2)->list.listhead->lelem.lslots[1])));
+   return (anycmp(&(Blk(BlkD(*d1,List)->listhead,Lelem)->lslots[1]),
+      &(Blk(BlkD(*d2,List)->listhead,Lelem)->lslots[1])));
    }
 
 /*
@@ -1090,11 +1090,11 @@ function{1} sortf(t, i)
              * Sort the list by copying it into a new list and then using
              *  qsort to sort the descriptors.  (That was easy!)
              */
-            size = BlkLoc(t)->list.size;
+            size = BlkD(t,List)->size;
             if (cplist(&t, &result, (word)1, size + 1) == Error)
                runerr(0);
             sort_field = i;
-            qsort((char *)BlkLoc(result)->list.listhead->lelem.lslots,
+            qsort((char *)Blk(BlkD(result,List)->listhead,Lelem)->lslots,
                (int)size, sizeof(struct descrip),(QSortFncCast) nthcmp);
 
             Desc_EVValD(BlkLoc(result), E_Lcreate, D_List);
@@ -1125,18 +1125,18 @@ function{1} sortf(t, i)
              * the list, and then sort the list using qsort as in list
              * sorting and return the sorted list.
              */
-            size = BlkLoc(t)->record.recdesc->proc.nfields;
+            size = Blk(BlkD(t,Record)->recdesc,Proc)->nfields;
 
             Protect(lp = alclist_raw(size, size), runerr(0));
 
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty records */
-               d1 = lp->listhead->lelem.lslots;
+               d1 = Blk(lp->listhead,Lelem)->lslots;
                for (j = 0; j < size; j++)
-                  *d1++ = bp->record.fields[j];
+                  *d1++ = Blk(bp,Record)->fields[j];
                sort_field = i;
-               qsort((char *)lp->listhead->lelem.lslots,(int)size,
+               qsort((char *)Blk(lp->listhead,Lelem)->lslots,(int)size,
                   sizeof(struct descrip),(QSortFncCast)nthcmp);
                }
 
@@ -1169,20 +1169,20 @@ function{1} sortf(t, i)
              * the list, and then sort the list using qsort as in list
              * sorting and return the sorted list.
              */
-            size = BlkLoc(t)->set.size;
+            size = BlkD(t,Set)->size;
 
             Protect(lp = alclist(size, size), runerr(0));
 
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
             if (size > 0) {  /* only need to sort non-empty sets */
-               d1 = lp->listhead->lelem.lslots;
-               for (j = 0; j < HSegs && (seg = bp->table.hdir[j]) != NULL; j++)
+               d1 = Blk(lp->listhead,Lelem)->lslots;
+               for (j = 0; j < HSegs && (seg = BlkPH(bp,Table,hdir)[j]) != NULL; j++)
                   for (k = segsize[j] - 1; k >= 0; k--)
-                     for (ep = seg->hslots[k]; ep != NULL; ep= ep->telem.clink)
-                        *d1++ = ep->selem.setmem;
+                     for (ep=seg->hslots[k];ep!=NULL;ep=BlkPE(ep,Telem,clink))
+                        *d1++ = BlkPE(ep,Selem,setmem);
                sort_field = i;
-               qsort((char *)lp->listhead->lelem.lslots,(int)size,
+               qsort((char *)Blk(lp->listhead,Lelem)->lslots,(int)size,
                      sizeof(struct descrip),(QSortFncCast)nthcmp);
                }
 
@@ -1252,9 +1252,9 @@ dptr d;
        * Find the nth field of a record.
        */
       bp = BlkLoc(*d);
-      i = cvpos((long)sort_field, (long)(bp->record.recdesc->proc.nfields));
-      if (i != CvtFail && i <= bp->record.recdesc->proc.nfields)
-         rv = &bp->record.fields[i-1];
+      i =cvpos((long)sort_field,(long)(Blk(Blk(bp,Record)->recdesc,Proc)->nfields));
+      if (i != CvtFail && i <= Blk(Blk(bp,Record)->recdesc,Proc)->nfields)
+         rv = &Blk(bp,Record)->fields[i-1];
       }
    else if (d->dword == D_List) {
       /*
@@ -1268,17 +1268,17 @@ dptr d;
           */
          bp = lp->listhead;
          j = 1;
-         while (i >= j + bp->lelem.nused) {
-            j += bp->lelem.nused;
-            bp = bp->lelem.listnext;
+         while (i >= j + Blk(bp,Lelem)->nused) {
+            j += Blk(bp,Lelem)->nused;
+            bp = Blk(bp,Lelem)->listnext;
             }
          /*
           * Locate the desired element.
           */
-         i += bp->lelem.first - j;
-         if (i >= bp->lelem.nslots)
-            i -= bp->lelem.nslots;
-         rv = &bp->lelem.lslots[i];
+         i += Blk(bp,Lelem)->first - j;
+         if (i >= Blk(bp,Lelem)->nslots)
+            i -= Blk(bp,Lelem)->nslots;
+         rv = &Blk(bp,Lelem)->lslots[i];
          }
       }
    return rv;
@@ -1300,7 +1300,7 @@ function{1} type(x)
       file:
 	 inline {
 #ifdef Graphics
-	    if (BlkLoc(x)->file.status & Fs_Window)
+	    if (BlkD(x,File)->status & Fs_Window)
 	       return C_string "window";
 #endif					/* Graphics */
 	    return C_string "file";
@@ -1309,17 +1309,18 @@ function{1} type(x)
       list:     inline { return C_string "list";      }
       table:    inline { return C_string "table";     }
       set:      inline { return C_string "set";       }
-      record:   inline { return BlkLoc(x)->record.recdesc->proc.recname; }
+      record:   inline { return Blk(BlkD(x,Record)->recdesc,Proc)->recname; }
       coexpr:   inline { return C_string "co-expression"; }
 #ifdef PatternType
       pattern:     inline { return C_string "pattern"; }
 #endif					/* PatternType */
+
 #ifdef EventMon
       tvmonitored:  
          body {
-             if (is:string(*(VarLoc(BlkLoc(x)->tvmonitored.tv))))
+             if (is:string(*(VarLoc(BlkD(x,Tvmonitored)->tv))))
                 return C_string "foreign-local-string";
-             else switch(Type(*(VarLoc(BlkLoc(x)->tvmonitored.tv)))) { 
+             else switch(Type(*(VarLoc(BlkD(x,Tvmonitored)->tv)))) { 
                 case T_Null:   { return C_string "foreign-local-null";     }
 		case T_Integer:{ return C_string "foreign-local-integer";  }
                 case T_Real:   { return C_string "foreign-local-real";     }
@@ -1333,7 +1334,7 @@ function{1} type(x)
                 case T_Coexpr: { return C_string "foreign-local-co-expression";}
 		default:       { return C_string "foreign-local-??";       }
 		}
-	     return C_string "cannot happen";
+	     fail; /* won't get here; this silences a bogus rtt warning */
              }
 #endif					/* EventMon */
       default:
@@ -1382,9 +1383,9 @@ function{0,1} variable(s)
       savedprog = curpstate;
       if (!is:null(c)) {
 	 if (is:coexpr(c)) {
-	    prog = BlkLoc(c)->coexpr.program;
-	    pfp = BlkLoc(c)->coexpr.es_pfp;
-	    glbl_argp = BlkLoc(c)->coexpr.es_argp;
+	    prog = BlkD(c,Coexpr)->program;
+	    pfp = BlkD(c,Coexpr)->es_pfp;
+	    glbl_argp = BlkD(c,Coexpr)->es_argp;
 	    ENTERPSTATE(prog);
 	    }
 	 else {
@@ -1422,7 +1423,7 @@ function{0,1} variable(s)
 #ifdef MonitoredTrappedVar
             result.dword = D_Tvmonitored;
             VarLoc(result) = 
-                  (dptr) alctvmonitored(&result, BlkLoc(c)->coexpr.actv_count);
+                  (dptr) alctvmonitored(&result, BlkD(c,Coexpr)->actv_count);
 #else
             Deref(result);
 #endif                                         /* MonitoredTrappedVar */
@@ -1448,7 +1449,7 @@ function{0,1} cofail(CE)
    if is:null(CE) then
       body {
 #ifdef CoExpr
-	 struct b_coexpr *ce = topact((struct b_coexpr *)BlkLoc(k_current));
+	 struct b_coexpr *ce = topact(BlkD(k_current,Coexpr));
 	 if (ce != NULL) {
 	    CE.dword = D_Coexpr;
 	    BlkLoc(CE) = (union block *)ce;
@@ -1461,7 +1462,7 @@ function{0,1} cofail(CE)
    else if !is:coexpr(CE) then
       runerr(118,CE)
    body {
-      struct b_coexpr *ncp = (struct b_coexpr *)BlkLoc(CE);
+      struct b_coexpr *ncp = BlkD(CE, Coexpr);
       if (co_chng(ncp, NULL, &result, A_Cofail, 1) == A_Cofail) fail;
       return result;
       }
@@ -1476,9 +1477,9 @@ function{*} fieldnames(r)
       }
    if !is:record(r) then runerr(107,r)
    body {
-      int i, sz = BlkLoc(r)->record.recdesc->proc.nfields;
+      int i, sz = Blk(BlkD(r,Record)->recdesc,Proc)->nfields;
       for(i=0;i<sz;i++)
-	 suspend BlkLoc(r)->record.recdesc->proc.lnames[i];
+	 suspend Blk(BlkD(r,Record)->recdesc,Proc)->lnames[i];
       fail;
       }
 end
@@ -1495,11 +1496,11 @@ function{*} localnames(ce,i)
       }
    if is:null(ce) then inline {
       d = k_current;
-      BlkLoc(k_current)->coexpr.es_pfp = pfp; /* sync w/ current value */
+      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else if is:proc(ce) then inline {
       int j;
-      struct b_proc *cproc = (struct b_proc *)BlkLoc(ce);
+      struct b_proc *cproc = BlkD(ce, Proc);
       for(j = 0; j < cproc->ndynam; j++) {
 	 result = cproc->lnames[j + cproc->nparam];
 	 suspend result;
@@ -1508,7 +1509,7 @@ function{*} localnames(ce,i)
       }
    else if is:coexpr(ce) then inline {
       d = ce;
-      BlkLoc(k_current)->coexpr.es_pfp = pfp; /* sync w/ current value */
+      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else runerr(118, ce)
    if !def:C_integer(i,0) then
@@ -1518,7 +1519,7 @@ function{*} localnames(ce,i)
       int j;
       dptr arg;
       struct b_proc *cproc;
-      struct pf_marker *thePfp = BlkLoc(d)->coexpr.es_pfp;
+      struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
 
       if (thePfp == NULL) fail;
       
@@ -1536,7 +1537,7 @@ function{*} localnames(ce,i)
          }
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
-      cproc = (struct b_proc *)BlkLoc(arg[0]);    
+      cproc = BlkD(arg[0], Proc);
       for(j = 0; j < cproc->ndynam; j++) {
 	 result = cproc->lnames[j + cproc->nparam];
 	 suspend result;
@@ -1560,11 +1561,11 @@ function{*} staticnames(ce,i)
       }
    if is:null(ce) then inline {
       d = k_current;
-      BlkLoc(k_current)->coexpr.es_pfp = pfp; /* sync w/ current value */
+      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else if is:proc(ce) then inline {
       int j;
-      struct b_proc *cproc = (struct b_proc *)BlkLoc(ce);
+      struct b_proc *cproc = BlkD(ce, Proc);
       for(j = 0; j < cproc->nstatic; j++) {
 	 result = cproc->lnames[j + cproc->nparam + cproc->ndynam];
 	 suspend result;
@@ -1573,7 +1574,7 @@ function{*} staticnames(ce,i)
       }
    else if is:coexpr(ce) then inline {
       d = ce;
-      BlkLoc(k_current)->coexpr.es_pfp = pfp; /* sync w/ current value */
+      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else runerr(118,ce)
    if !def:C_integer(i,0) then
@@ -1583,7 +1584,7 @@ function{*} staticnames(ce,i)
       int j;
       dptr arg;
       struct b_proc *cproc;
-      struct pf_marker *thePfp = BlkLoc(d)->coexpr.es_pfp;
+      struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
       if (thePfp == NULL) fail;
 
       /*
@@ -1600,7 +1601,7 @@ function{*} staticnames(ce,i)
          }
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
-      cproc = (struct b_proc *)BlkLoc(arg[0]);    
+      cproc = BlkD(arg[0], Proc);
       for(j=0; j < cproc->nstatic; j++) {
 	 result = cproc->lnames[j + cproc->nparam + cproc->ndynam];
 	 suspend result;
@@ -1622,11 +1623,11 @@ function{1,*} paramnames(ce,i)
       }
    if is:null(ce) then inline {
       d = k_main;
-      BlkLoc(k_main)->coexpr.es_pfp = pfp; /* sync w/ current value */
+      BlkD(k_main, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else if is:proc(ce) then inline {
       int j;
-      struct b_proc *cproc = (struct b_proc *)BlkLoc(ce);
+      struct b_proc *cproc = BlkD(ce, Proc);
       /* do built-ins (nparam < 0) have readable parameter names? maybe not.*/
       for(j = 0; j < cproc->nparam; j++) {
 	 result = cproc->lnames[j];
@@ -1636,7 +1637,7 @@ function{1,*} paramnames(ce,i)
       }
    else if is:coexpr(ce) then inline {
       d = ce;
-      BlkLoc(k_main)->coexpr.es_pfp = pfp; /* sync w/ current value */
+      BlkD(k_main, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else runerr(118,ce)
    if !def:C_integer(i,0) then
@@ -1646,7 +1647,7 @@ function{1,*} paramnames(ce,i)
       int j;
       dptr arg;
       struct b_proc *cproc;
-      struct pf_marker *thePfp = BlkLoc(d)->coexpr.es_pfp;
+      struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
 
       if (thePfp == NULL) fail;
 
@@ -1664,7 +1665,7 @@ function{1,*} paramnames(ce,i)
          }
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
-      cproc = (struct b_proc *)BlkLoc(arg[0]);    
+      cproc = BlkD(arg[0], Proc);
       for(j = 0; j < cproc->nparam; j++) {
 	 result = cproc->lnames[j];
 	 suspend result;
@@ -1747,21 +1748,21 @@ function{1} load(s,arglist,infile,outfile,errfile,
       else {
 	 if (!is:file(infile))
 	    runerr(105,infile);
-	 else theInput = &(BlkLoc(infile)->file);
+	 else theInput = &(BlkLoc(infile)->File);
          }
       if (is:null(outfile))
 	 theOutput = &(curpstate->K_output);
       else {
 	 if (!is:file(outfile))
 	    runerr(105,outfile);
-	 else theOutput = &(BlkLoc(outfile)->file);
+	 else theOutput = &(BlkLoc(outfile)->File);
          }
       if (is:null(errfile))
 	 theError = &(curpstate->K_errout);
       else {
 	 if (!is:file(errfile))
 	    runerr(105,errfile);
-	 else theError = &(BlkLoc(errfile)->file);
+	 else theError = &(BlkLoc(errfile)->File); /* could check harder */
          }
 
       stack =
@@ -1864,11 +1865,11 @@ function{1} parent(ce)
       return coexpr
       }
    body {
-      if (BlkLoc(ce)->coexpr.program->parent == NULL) fail;
+      if (BlkD(ce,Coexpr)->program->parent == NULL) fail;
 
       result.dword = D_Coexpr;
       BlkLoc(result) =
-	(union block *)(BlkLoc(ce)->coexpr.program->parent->Mainhead);
+	(union block *)(BlkD(ce,Coexpr)->program->parent->Mainhead);
       return result;
       }
 end
@@ -1884,7 +1885,7 @@ function{1} eventmask(ce,cs,vmask)
          return cset++null
          }
       inline {
-         return BlkLoc(ce)->coexpr.program->eventmask;
+         return BlkD(ce,Coexpr)->program->eventmask;
          }
       }
    else if !cnv:cset(cs) then runerr(104,cs)
@@ -1893,7 +1894,7 @@ function{1} eventmask(ce,cs,vmask)
          return cset
          }
       body {
-	 struct progstate *p = ((struct b_coexpr *)BlkLoc(ce))->program;
+	 struct progstate *p = BlkD(ce,Coexpr)->program;
 	 if (BlkLoc(cs) != BlkLoc(p->eventmask)) {
 	    p->eventmask = cs;
 	    assign_event_functions(p, cs);
@@ -1901,7 +1902,7 @@ function{1} eventmask(ce,cs,vmask)
 
 	 if (!is:null(vmask)) {
             if (!is:table(vmask)) runerr(124,vmask);
-	    BlkLoc(ce)->coexpr.program->valuemask = vmask;
+	    BlkD(ce,Coexpr)->program->valuemask = vmask;
 	    }
          return cs;
          }
@@ -1925,7 +1926,7 @@ function{*} globalnames(ce)
 #ifdef MultiThread
    if is:null(ce) then inline { ps = curpstate; }
    else if is:coexpr(ce) then
-      inline { ps = BlkLoc(ce)->coexpr.program; }
+      inline { ps = BlkD(ce,Coexpr)->program; }
    else runerr(118,ce)
 #else					/* MultiThread */
    if not (is:null(ce) || is:coexpr(ce)) runerr(118, ce)
@@ -1955,14 +1956,14 @@ function{*} keyword(keyname,ce)
    if !cnv:C_string(keyname,kyname) then runerr(103,keyname)
    if is:null(ce) then inline {
       d = k_current;
-      BlkLoc(k_current)->coexpr.es_pfp = pfp; /* sync w/ current value */
-      BlkLoc(k_current)->coexpr.es_ipc.opnd = ipc.opnd;
+      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
+      BlkLoc(k_current)->Coexpr.es_ipc.opnd = ipc.opnd;
       }
    else if is:coexpr(ce) then
       inline { d = ce; }
    else runerr(118, ce)
    body {
-      struct progstate *p = BlkLoc(d)->coexpr.program;
+      struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
       if (kname[0] == '&') kname++;
       if (strcmp(kname,"allocated") == 0) {
@@ -1981,9 +1982,9 @@ function{*} keyword(keyname,ce)
 	 struct progstate *savedp = curpstate;
 	 int i;
 	 ENTERPSTATE(p);
-	 i = findcol(BlkLoc(d)->coexpr.es_ipc.opnd);
-         if (i == 0){ /* fixing returned column zerro */
-	    i = findcol(BlkLoc(d)->coexpr.es_oldipc.opnd);
+	 i = findcol(BlkD(d,Coexpr)->es_ipc.opnd);
+         if (i == 0){ /* fixing returned column zero */
+	    i = findcol(BlkD(d,Coexpr)->es_oldipc.opnd);
             }
 	 ENTERPSTATE(savedp);
 	 return C_integer i;
@@ -2022,7 +2023,7 @@ function{*} keyword(keyname,ce)
 	 struct progstate *savedp = curpstate;
 	 struct descrip s;
 	 ENTERPSTATE(p);
-	 StrLoc(s) = findfile(BlkLoc(d)->coexpr.es_ipc.opnd);
+	 StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
 	 StrLen(s) = strlen(StrLoc(s));
 	 ENTERPSTATE(savedp);
 	 if (!strcmp(StrLoc(s),"?")) fail;
@@ -2041,9 +2042,9 @@ function{*} keyword(keyname,ce)
 	 struct progstate *savedp = curpstate;
 	 int i;
 	 ENTERPSTATE(p);
-	 i = findline(BlkLoc(d)->coexpr.es_ipc.opnd);
+	 i = findline(BlkD(d,Coexpr)->es_ipc.opnd);
          if (i == 0){ /* fixing returned line zerro */
-	    i = findline(BlkLoc(d)->coexpr.es_oldipc.opnd);
+	    i = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
             } 
 	 ENTERPSTATE(savedp);
 	 return C_integer i;
@@ -2052,7 +2053,7 @@ function{*} keyword(keyname,ce)
          struct progstate *savedp = curpstate;
 	 int i;
 	 ENTERPSTATE(p);
-	 i = findsyntax(BlkLoc(d)->coexpr.es_ipc.opnd);
+	 i = findsyntax(BlkD(d,Coexpr)->es_ipc.opnd);
 	 ENTERPSTATE(savedp);
 	 return C_integer i;
          } 
@@ -2091,7 +2092,8 @@ function{*} keyword(keyname,ce)
 	 }
       else if (strcmp(kname,"source") == 0) {
 #ifdef CoExpr
-	 return coexpr(topact((struct b_coexpr *)BlkLoc(BlkLoc(d)->coexpr.program->K_current)));
+	 return coexpr(topact(
+			   BlkD(BlkD(d,Coexpr)->program->K_current,Coexpr)));
 #else					/* CoExpr */
 	fail;
 #endif					/* CoExpr */
@@ -2186,7 +2188,7 @@ function{1} opmask(ce,cs)
          return cset++null
          }
       body {
-         result = BlkLoc(ce)->coexpr.program->opcodemask;
+         result = BlkD(ce,Coexpr)->program->opcodemask;
          return result;
          }
       }
@@ -2196,7 +2198,7 @@ function{1} opmask(ce,cs)
          return cset
          }
       body {
-         ((struct b_coexpr *)BlkLoc(ce))->program->opcodemask = cs;
+         BlkD(ce, Coexpr)->program->opcodemask = cs;
          return cs;
          }
       }
@@ -2222,7 +2224,7 @@ function {*} structure(x)
       struct region *theregion, *rp;
 
 #ifdef MultiThread
-      theregion = ((struct b_coexpr *)BlkLoc(x))->program->blockregion;
+      theregion = BlkD(x,Coexpr)->program->blockregion;
 #else
       theregion = curblock;
 #endif

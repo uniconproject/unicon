@@ -598,11 +598,11 @@ function{1} reverse(x)
          return type(x)
          }
       body {
-	 int i=0, size = BlkLoc(x)->list.size;
+	 int i=0, size = BlkD(x,List)->size;
 	 struct descrip temp;
 	 dptr dp;
 	 cplist(&x, &result, 1, size+1);
-	 dp = BlkLoc(result)->list.listhead->lelem.lslots;
+	 dp = Blk(BlkD(result,List)->listhead,Lelem)->lslots;
 	 while (i<size-1) {
 	    temp = dp[i]; dp[i] = dp[size-1]; dp[size-1] = temp;
 	    i++; size--;

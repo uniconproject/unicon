@@ -45,7 +45,7 @@ function{1} abs(n)
          return integer
          }
       inline {
-	 if (BlkLoc(n)->bignumblk.sign == 0)
+	 if (BlkD(n, Lrgint)->sign == 0)
 	    result = n;
 	 else {
 	    if (bigneg(&n, &result) == Error)  /* alcbignum failed */
@@ -266,9 +266,8 @@ function{0,1} proc(x,i)
 	     * Test to see whether a given procedure belongs to a given
 	     * program.  Currently this is a sleazy pointer arithmetic check.
 	     */
-	    p = BlkLoc(c)->coexpr.program;
-	    if (! InRange(p, BlkLoc(x)->proc.entryp.icode,
-			  (char *)p + p->hsize))
+	    p = BlkD(c,Coexpr)->program;
+	    if (! InRange(p, BlkD(x,Proc)->entryp.icode, (char *)p + p->hsize))
 	       fail;
 	    }
 #endif					/* MultiThread */
@@ -303,7 +302,7 @@ function{0,1} proc(x,i)
 	    prog = curpstate;
 	    }
 	 else if (is:coexpr(c)) {
-	    prog = BlkLoc(c)->coexpr.program;
+	    prog = BlkD(c,Coexpr)->program;
 	    }
 	 else {
 	    runerr(118,c);

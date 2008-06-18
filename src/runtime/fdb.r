@@ -23,8 +23,8 @@ SQLHENV ISQLEnv=NULL;           /* global environment variable */
 #define COL_LEN SQL_MAX_COLUMN_NAME_LEN+1
 
 /* hate long names... */
-#define FSTATUS(f) BlkLoc(f)->file.status		/* file status */
-#define FDESC(f)   BlkLoc(f)->file.fd.sqlf		/* ISQLFile * */
+#define FSTATUS(f) BlkD(f,File)->status		/* file status */
+#define FDESC(f)   BlkD(f,File)->fd.sqlf		/* ISQLFile * */
 
 
 /*-- functions implementation --*/

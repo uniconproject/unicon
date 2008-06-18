@@ -170,11 +170,16 @@ int getvar(s,vp)
 #if COMPILER
    bp = PFDebug(*pfp)->proc;  /* get address of procedure block */
 #else					/* COMPILER */
-   bp = (struct b_proc *)BlkLoc(*dp);	/* get address of procedure block */
+   bp = &(BlkLoc(*dp)->Proc);		/* get address of procedure block */
+
+   if (bp->title != T_Proc) {
+      if (value_tmp.dword == D_Proc) {
+	 bp = (struct b_proc *)BlkLoc(value_tmp);
+	 }
+      }
 #endif					/* COMPILER */
    
    np = bp->lnames;		/* Check the formal parameter names. */
-
 
    for (i = abs((int)bp->nparam); i > 0; i--) {
 #if COMPILER
@@ -305,7 +310,7 @@ dptr dp;
           */
 	 case T_Lrgint:
 	    {
-	    struct b_bignum *b = &BlkLoc(*dp)->bignumblk;
+	    struct b_bignum *b = BlkD(*dp, Lrgint);
 
 	    i = ((b->lsd - b->msd) << 16) ^ 
 		(b->digits[b->msd] << 8) ^ b->digits[b->lsd];
@@ -332,7 +337,7 @@ dptr dp;
           */
          case T_Cset:
             i = 0;
-            bitarr = BlkLoc(*dp)->cset.bits + CsetSize - 1;
+            bitarr = BlkD(*dp,Cset)->bits + CsetSize - 1;
             for (j = 0; j < CsetSize; j++) {
                i += *bitarr--;
                i *= 37;			/* better distribution */
@@ -345,23 +350,23 @@ dptr dp;
           *   hashed like an integer.
           */
          case T_List:
-            i = (13255 * BlkLoc(*dp)->list.id) >> 10;
+            i = (13255 * BlkD(*dp,List)->id) >> 10;
             break;
 
          case T_Set:
-            i = (13255 * BlkLoc(*dp)->set.id) >> 10;
+            i = (13255 * BlkD(*dp,Set)->id) >> 10;
             break;
 
          case T_Table:
-            i = (13255 * BlkLoc(*dp)->table.id) >> 10;
+            i = (13255 * BlkD(*dp,Table)->id) >> 10;
             break;
 
          case T_Record:
-            i = (13255 * BlkLoc(*dp)->record.id) >> 10;
+            i = (13255 * BlkD(*dp,Record)->id) >> 10;
             break;
  
 	 case T_Proc:
-	    dp = &(BlkLoc(*dp)->proc.pname);
+	    dp = &(BlkD(*dp,Proc)->pname);
 	    goto hashstring;
 
          default:
@@ -473,7 +478,7 @@ int noimage;
           * Check for distinguished files by looking at the address of
           *  of the object to image.  If one is found, print its name.
           */
-         if ((fd = BlkLoc(*dp)->file.fd.fp) == stdin)
+         if ((fd = BlkD(*dp,File)->fd.fp) == stdin)
             fprintf(f, "&input");
          else if (fd == stdout)
             fprintf(f, "&output");
@@ -483,32 +488,32 @@ int noimage;
             /*
              * The file isn't a special one, just print "file(name)".
              */
-	    i = StrLen(BlkLoc(*dp)->file.fname);
-	    s = StrLoc(BlkLoc(*dp)->file.fname);
+	    i = StrLen(BlkD(*dp,File)->fname);
+	    s = StrLoc(BlkLoc(*dp)->File.fname);
 #ifdef PosixFns
-	    if (BlkLoc(*dp)->file.status & Fs_Socket) {
+	    if (BlkLoc(*dp)->File.status & Fs_Socket) {
 	       fprintf(f, "inet(");
                }
             else
-	    if (BlkLoc(*dp)->file.status & Fs_Directory) {
+	    if (BlkLoc(*dp)->File.status & Fs_Directory) {
 	       fprintf(f, "directory(");
                }
 	    else
 #endif
 #ifdef Dbm
-	    if(BlkLoc(*dp)->file.status & Fs_Dbm) {
+	    if(BlkLoc(*dp)->File.status & Fs_Dbm) {
 	       fprintf(f, "dbmfile(");
                }
 	    else
 #endif
 #ifdef Graphics
-	    if (BlkLoc(*dp)->file.status & Fs_Window) {
-	       if ((BlkLoc(*dp)->file.status != Fs_Window) && /* window open?*/
-		  (s = BlkLoc(*dp)->file.fd.wb->window->windowlabel)) {
+	    if (BlkLoc(*dp)->File.status & Fs_Window) {
+	       if ((BlkLoc(*dp)->File.status != Fs_Window) && /* window open?*/
+		  (s = BlkLoc(*dp)->File.fd.wb->window->windowlabel)) {
 		  i = strlen(s);
 	          fprintf(f, "window_%d:%d(",
-		       BlkLoc(*dp)->file.fd.wb->window->serial,
-		       BlkLoc(*dp)->file.fd.wb->context->serial
+		       BlkLoc(*dp)->File.fd.wb->window->serial,
+		       BlkLoc(*dp)->File.fd.wb->context->serial
 		       );
 		  }
 	       else {
@@ -519,8 +524,8 @@ int noimage;
 	    else
 #endif					/* Graphics */
 #ifdef Messaging
-            if (BlkLoc(*dp)->file.status & Fs_Messaging) {
-	       struct MFile *mf = BlkLoc(*dp)->file.fd.mf;
+            if (BlkD(*dp,File)->status & Fs_Messaging) {
+	       struct MFile *mf = BlkLoc(*dp)->File.fd.mf;
 	       fprintf(f, "message(");
 	       if (mf && mf->resp && mf->resp->msg != NULL) {
 		  fprintf(f, "[%d:%s]", mf->resp->sc, mf->resp->msg);
@@ -546,9 +551,9 @@ int noimage;
           * Note that the number of dynamic locals is used to determine
           *  what type of "procedure" is at hand.
           */
-         i = StrLen(BlkLoc(*dp)->proc.pname);
-         s = StrLoc(BlkLoc(*dp)->proc.pname);
-         switch ((int)BlkLoc(*dp)->proc.ndynam) {
+         i = StrLen(BlkD(*dp,Proc)->pname);
+         s = StrLoc(BlkLoc(*dp)->Proc.pname);
+         switch ((int)BlkLoc(*dp)->Proc.ndynam) {
             default:  type = "procedure"; break;
             case -1:  type = "function"; break;
             case -2:  type = "record constructor"; break;
@@ -563,23 +568,23 @@ int noimage;
          /*
           * listimage does the work for lists.
           */
-         listimage(f, (struct b_list *)BlkLoc(*dp), noimage);
+         listimage(f, BlkD(*dp, List), noimage);
          }
 
       table: {
          /*
           * Print "table_m(n)" where n is the size of the table.
           */
-         fprintf(f, "table_%ld(%ld)", (long)BlkLoc(*dp)->table.id,
-            (long)BlkLoc(*dp)->table.size);
+         fprintf(f, "table_%ld(%ld)", (long)BlkD(*dp,Table)->id,
+            (long)BlkLoc(*dp)->Table.size);
          }
 
       set: {
 	/*
          * print "set_m(n)" where n is the cardinality of the set
          */
-	fprintf(f,"set_%ld(%ld)",(long)BlkLoc(*dp)->set.id,
-           (long)BlkLoc(*dp)->set.size);
+	fprintf(f,"set_%ld(%ld)",(long)BlkD(*dp,Set)->id,
+           (long)BlkLoc(*dp)->Set.size);
         }
 
       record: {
@@ -589,13 +594,13 @@ int noimage;
           *  the image of each field instead of the number of fields.
           */
          bp = BlkLoc(*dp);
-         i = StrLen(bp->record.recdesc->proc.recname);
-         s = StrLoc(bp->record.recdesc->proc.recname);
+         i = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
+         s = StrLoc(bp->Record.recdesc->Proc.recname);
          fprintf(f, "record ");
          while (i-- > 0)
             printimage(f, *s++, '\0');
-        fprintf(f, "_%ld", (long)bp->record.id);
-         j = bp->record.recdesc->proc.nfields;
+         fprintf(f, "_%ld", (long)Blk(bp,Record)->id);
+         j = Blk(Blk(bp,Record)->recdesc,Proc)->nfields;
          if (j <= 0)
             fprintf(f, "()");
          else if (noimage > 0)
@@ -604,7 +609,7 @@ int noimage;
             putc('(', f);
             i = 0;
             for (;;) {
-               outimage(f, &bp->record.fields[i], noimage + 1);
+               outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);
                if (++i >= j)
                   break;
                putc(',', f);
@@ -615,8 +620,7 @@ int noimage;
 
       coexpr: {
          fprintf(f, "co-expression_%ld(%ld)",
-            (long)((struct b_coexpr *)BlkLoc(*dp))->id,
-            (long)((struct b_coexpr *)BlkLoc(*dp))->size);
+            (long)BlkD(*dp, Coexpr)->id,(long)BlkLoc(*dp)->Coexpr.size);
          }
 
       tvsubs: {
@@ -627,41 +631,41 @@ int noimage;
           *  (j) is one, just produce "v[i] = value".
           */
          bp = BlkLoc(*dp);
-	 dp = VarLoc(bp->tvsubs.ssvar);
-         if (is:kywdsubj(bp->tvsubs.ssvar)) {
+	 dp = VarLoc(Blk(bp,Tvsubs)->ssvar);
+         if (is:kywdsubj(bp->Tvsubs.ssvar)) {
             fprintf(f, "&subject");
             fflush(f);
             }
          else {
-            dp = (dptr)((word *)dp + Offset(bp->tvsubs.ssvar));
+            dp = (dptr)((word *)dp + Offset(Blk(bp,Tvsubs)->ssvar));
             outimage(f, dp, noimage);
             }
 
-         if (bp->tvsubs.sslen == 1)
+         if (bp->Tvsubs.sslen == 1)
 
 #if EBCDIC != 1
-            fprintf(f, "[%ld]", (long)bp->tvsubs.sspos);
+            fprintf(f, "[%ld]", (long)Blk(bp,Tvsubs)->sspos);
 #else					/* EBCDIC != 1 */
 
-            fprintf(f, "$<%ld$>", (long)bp->tvsubs.sspos);
+            fprintf(f, "$<%ld$>", (long)Blk(bp,Tvsubs)->sspos);
 #endif					/* EBCDIC != 1 */
 
          else
 
 #if EBCDIC != 1
-            fprintf(f, "[%ld+:%ld]", (long)bp->tvsubs.sspos,
+            fprintf(f, "[%ld+:%ld]", (long)Blk(bp,Tvsubs)->sspos,
 
 #else					/* EBCDIC != 1 */
-            fprintf(f, "$<%ld+:%ld$>", (long)bp->tvsubs.sspos,
+            fprintf(f, "$<%ld+:%ld$>", (long)Blk(bp,Tvsubs)->sspos,
 #endif					/* EBCDIC != 1 */
 
-               (long)bp->tvsubs.sslen);
+               (long)Blk(bp,Tvsubs)->sslen);
 
          if (Qual(*dp)) {
-            if (bp->tvsubs.sspos + bp->tvsubs.sslen - 1 > StrLen(*dp))
+            if (Blk(bp,Tvsubs)->sspos + Blk(bp,Tvsubs)->sslen - 1 >StrLen(*dp))
                return;
-            StrLen(q) = bp->tvsubs.sslen;
-            StrLoc(q) = StrLoc(*dp) + bp->tvsubs.sspos - 1;
+            StrLen(q) = bp->Tvsubs.sslen;
+            StrLoc(q) = StrLoc(*dp) + bp->Tvsubs.sspos - 1;
             fprintf(f, " = ");
             outimage(f, &q, noimage);
             }
@@ -679,7 +683,7 @@ int noimage;
 	 else
 #endif					/* Dbm */
 	    tdp.dword = D_Table;
-	 BlkLoc(tdp) = bp->tvtbl.clink;
+	 BlkLoc(tdp) = Blk(bp,Tvtbl)->clink;
 	 outimage(f, &tdp, noimage);
 
 #if EBCDIC != 1
@@ -689,7 +693,7 @@ int noimage;
          putc('<', f);
 #endif					/* EBCDIC != 1 */
 
-         outimage(f, &bp->tvtbl.tref, noimage);
+         outimage(f, &(bp->Tvtbl.tref), noimage);
 
 #if EBCDIC != 1
          putc(']', f);
@@ -759,7 +763,7 @@ int noimage;
             putc(')', f);
             }
          else if (Type(*dp) == T_External)
-            fprintf(f, "external(%d)",((struct b_external *)BlkLoc(*dp))->blksize);
+            fprintf(f, "external(%d)",BlkD(*dp,External)->blksize);
          else if (Type(*dp) <= MaxType)
             fprintf(f, "%s", blkname[Type(*dp)]);
          else
@@ -1171,9 +1175,8 @@ word *ipc;
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
-   if (!InRange(code,ipc,ecode)){
+   if (!InRange(code,ipc,ecode))
       return 0;
-      }
    ipc_offset = DiffPtrs((char *)ipc,(char *)code);
    base = ilines;
    size = DiffPtrs((char *)elines,(char *)ilines) / sizeof(struct ipc_line *);
@@ -1218,6 +1221,7 @@ int line;
       }
    return base->ipc;
 }
+
 
 /*
  * hitsyntax - finds if the ipc that has an entry on the line table.
@@ -1259,7 +1263,6 @@ word *ipc;
    return synt;
 }
 
-
 /*
  * findfile - find source file name associated with the ipc
  */
@@ -1428,7 +1431,7 @@ dptr dp1, dp2;
          if (Type(source) == T_Lrgint) {
             word slen;
             word dlen;
-            struct b_bignum *blk = &BlkLoc(source)->bignumblk;
+            struct b_bignum *blk = BlkD(source, Lrgint);
 
             slen = blk->lsd - blk->msd;
             dlen = slen * NB * 0.3010299956639812 	/* 1 / log2(10) */
@@ -1468,7 +1471,7 @@ dptr dp1, dp2;
 	  * Otherwise, describe it in terms of the character membership.
 	  */
 
-	 i = BlkLoc(source)->cset.size;
+	 i = BlkD(source,Cset)->size;
 	 if (i < 0)
 	    i = cssize(&source);
 	 i = (i << 2) + 2;
@@ -1491,7 +1494,7 @@ dptr dp1, dp2;
           *  of the object to image.  If one is found, make a string
           *  naming it and return.
           */
-         if ((fd = BlkLoc(source)->file.fd.fp) == stdin) {
+         if ((fd = BlkD(source,File)->fd.fp) == stdin) {
             StrLen(*dp2) = 6;
             StrLoc(*dp2) = "&input";
             }
@@ -1511,14 +1514,14 @@ dptr dp1, dp2;
              */
              char namebuf[100];		/* scratch space */
 #ifdef Graphics
-	    if (BlkLoc(source)->file.status & Fs_Window) {
-	       if ((BlkLoc(source)->file.status != Fs_Window) &&
-		  (s = BlkLoc(source)->file.fd.wb->window->windowlabel)){
+	    if (BlkD(source,File)->status & Fs_Window) {
+	       if ((BlkLoc(source)->File.status != Fs_Window) &&
+		  (s = BlkLoc(source)->File.fd.wb->window->windowlabel)){
 	          len = strlen(s);
                   Protect (reserve(Strings, (len << 2) + 16), return Error);
 	          sprintf(sbuf, "window_%d:%d(", 
-		       BlkLoc(source)->file.fd.wb->window->serial,
-		       BlkLoc(source)->file.fd.wb->context->serial
+		       BlkLoc(source)->File.fd.wb->window->serial,
+		       BlkLoc(source)->File.fd.wb->context->serial
 		       );
                 }
 		else {
@@ -1533,16 +1536,16 @@ dptr dp1, dp2;
 	    else {
 #endif					/* Graphics */
 #ifdef PosixFns
-               if (BlkLoc(source)->file.status & Fs_Socket) {
+               if (BlkD(source,File)->status & Fs_Socket) {
                    s = namebuf;
-                   len = sock_name(BlkLoc(source)->file.fd.fd,
-                                 StrLoc(BlkLoc(source)->file.fname),
+                   len = sock_name(BlkLoc(source)->File.fd.fd,
+                                 StrLoc(BlkLoc(source)->File.fname),
                                  namebuf, sizeof(namebuf));
                }
                else {
 #endif 					/* PosixFns */
-               s = StrLoc(BlkLoc(source)->file.fname);
-               len = StrLen(BlkLoc(source)->file.fname);
+               s = StrLoc(BlkD(source,File)->fname);
+               len = StrLen(BlkD(source,File)->fname);
 #ifdef PosixFns
                }
 #endif 					/* PosixFns */
@@ -1571,10 +1574,10 @@ dptr dp1, dp2;
           * Note that the number of dynamic locals is used to determine
           *  what type of "procedure" is at hand.
           */
-         len = StrLen(BlkLoc(source)->proc.pname);
-         s = StrLoc(BlkLoc(source)->proc.pname);
+         len = StrLen(BlkD(source,Proc)->pname);
+         s = StrLoc(BlkLoc(source)->Proc.pname);
 	 Protect (reserve(Strings, len + 22), return Error);
-         switch ((int)BlkLoc(source)->proc.ndynam) {
+         switch ((int)BlkLoc(source)->Proc.ndynam) {
             default:  type = "procedure "; outlen = 10; break;
             case -1:  type = "function "; outlen = 9; break;
             case -2:  type = "record constructor "; outlen = 19; break;
@@ -1593,7 +1596,8 @@ dptr dp1, dp2;
           * where n is the current size of the list.
           */
          bp = BlkLoc(*dp1);
-         sprintf(sbuf, "list_%ld(%ld)", (long)bp->list.id, (long)bp->list.size);
+         sprintf(sbuf, "list_%ld(%ld)", (long)Blk(bp,List)->id,
+		 (long)Blk(bp,List)->size);
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return Error);
          StrLoc(*dp2) = t;
@@ -1607,8 +1611,8 @@ dptr dp1, dp2;
           * where n is the size of the table.
           */
          bp = BlkLoc(*dp1);
-         sprintf(sbuf, "table_%ld(%ld)", (long)bp->table.id,
-            (long)bp->table.size);
+         sprintf(sbuf, "table_%ld(%ld)", (long)Blk(bp,Table)->id,
+            (long)Blk(bp,Table)->size);
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return Error);
          StrLoc(*dp2) = t;
@@ -1620,7 +1624,8 @@ dptr dp1, dp2;
           * Produce "set_m(n)" where n is size of the set.
           */
          bp = BlkLoc(*dp1);
-         sprintf(sbuf, "set_%ld(%ld)", (long)bp->set.id, (long)bp->set.size);
+         sprintf(sbuf, "set_%ld(%ld)", (long)Blk(bp,Set)->id,
+		 (long)Blk(bp,Set)->size);
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf,len), return Error);
          StrLoc(*dp2) = t;
@@ -1634,16 +1639,16 @@ dptr dp1, dp2;
           * where n is the number of fields.
           */
          bp = BlkLoc(*dp1);
-         rnlen = StrLen(bp->record.recdesc->proc.recname);
-         sprintf(sbuf, "_%ld(%ld)", (long)bp->record.id,
-            (long)bp->record.recdesc->proc.nfields);
+         rnlen = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
+         sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id,
+            (long)bp->Record.recdesc->Proc.nfields);
          len = strlen(sbuf);
 	 Protect (reserve(Strings, 7 + len + rnlen), return Error);
          Protect(t = alcstr("record ", (word)(7)), return Error);
          bp = BlkLoc(*dp1);		/* refresh pointer */
          StrLoc(*dp2) = t;
 	 StrLen(*dp2) = 7;
-         Protect(alcstr(StrLoc(bp->record.recdesc->proc.recname),rnlen),
+         Protect(alcstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),rnlen),
 	            return Error);
          StrLen(*dp2) += rnlen;
          Protect(alcstr(sbuf, len),  return Error);
@@ -1658,8 +1663,8 @@ dptr dp1, dp2;
           *  number of results that have been produced.
           */
 
-         sprintf(sbuf, "_%ld(%ld)", (long)BlkLoc(source)->coexpr.id,
-            (long)BlkLoc(source)->coexpr.size);
+         sprintf(sbuf, "_%ld(%ld)", (long)BlkD(source,Coexpr)->id,
+            (long)BlkLoc(source)->Coexpr.size);
          len = strlen(sbuf);
 	 Protect (reserve(Strings, len + 13), return Error);
          Protect(t = alcstr("co-expression", (word)(13)), return Error);
@@ -1682,7 +1687,7 @@ dptr dp1, dp2;
            /*
             * For now, just produce "external(n)". 
             */
-           sprintf(sbuf, "external(%ld)", (long)BlkLoc(*dp1)->externl.blksize);
+           sprintf(sbuf, "external(%ld)",(long)BlkD(*dp1,External)->blksize);
            len = strlen(sbuf);
            Protect(t = alcstr(sbuf, len), return Error);
            StrLoc(*dp2) = t;
@@ -1703,7 +1708,7 @@ dptr dp;
    {
    register int n;
 
-   n = BlkLoc(*dp)->cset.size;
+   n = BlkD(*dp,Cset)->size;
    if (n < 0) 
       n = cssize(dp);
 
@@ -1761,7 +1766,7 @@ dptr dp;
       else if (n == 128) {
          int i;
          for (i = 0; i < CsetSize; i++)
-            if (k_ascii.bits[i] != BlkLoc(*dp)->cset.bits[i])
+            if (k_ascii.bits[i] != BlkLoc(*dp)->Cset.bits[i])
                break;
          if (i >= CsetSize) return "&ascii";
          }
@@ -1780,7 +1785,7 @@ dptr dp;
    register unsigned int w, *wp;
    register struct b_cset *cs;
 
-   cs = &BlkLoc(*dp)->cset;
+   cs = BlkD(*dp,Cset);
    wp = (unsigned int *)cs->bits;
    n = 0;
    for (i = CsetSize; --i >= 0; )
@@ -1992,7 +1997,7 @@ dptr rslt;
     * Allocate the list and a list block.
     */
    Protect(hp = alclist(argc, argc), fatalerr(0,NULL));
-   bp = (struct b_lelem *)hp->listhead;
+   bp = hp->listhead;
 
    /*
     * Copy the arguments into the list
@@ -2023,7 +2028,7 @@ dptr rslt;
     * Allocate the list and a list block.
     */
    Protect(hp = alclist(nargs, nargs), fatalerr(0,NULL));
-   bp = (struct b_lelem *)hp->listhead;
+   bp = hp->listhead;
 
    /*
     * Copy the arguments into the list
@@ -2049,8 +2054,8 @@ word *high;
    struct b_tvsubs *tvb;
    word *loc;
 
-   if (Type(*valp) == T_Tvsubs) {
-      tvb = (struct b_tvsubs *)BlkLoc(*valp);
+   if (((*valp).dword & F_Typecode) && (Type(*valp) == T_Tvsubs)) {
+      tvb = BlkD(*valp, Tvsubs);
       loc = (word *)VarLoc(tvb->ssvar);
       }
    else

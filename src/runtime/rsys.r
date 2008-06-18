@@ -1138,13 +1138,26 @@ int link(char *s1, char *s2)
 #endif					/* NT */
 
 #ifdef NTGCC
-
-/* tmpfile() from Mingw32 no longer works under Vista */
+/*
+ * tmpfile() from Mingw32 no longer works under Vista
+ */
 FILE *mytmpfile()
 {
-   char *temp = getenv("TEMP");
-   char *temp2 = _tempnam(temp, "wx");
-   FILE *f = fopen(temp2, "w+b");
+   char *temp, *temp2;
+   FILE *f;
+   
+   if ((temp = getenv("TEMP")) == NULL) {
+      fprintf(stderr, "getenv(TEMP) failed\n");
+      return NULL;
+      }
+   if ((temp2 = _tempnam(temp, "wx")) == NULL) {
+      fprintf(stderr, "_tempnam(TEMP) failed\n");
+      return NULL;
+      }
+   if ((f = fopen(temp2, "w+b")) == NULL) {
+      fprintf(stderr, "fopen(TEMP) w+b failed\n");
+      return NULL;
+      }
    return f;
 }
 
@@ -1422,10 +1435,9 @@ FILE *popen (const char* cmd, const char *mode)
 }
 
 int pclose (FILE * f)
-/* [<][>][^][v][top][bottom][index][help] */
 {
   struct _popen_elt *p, *q;
-  int exit_code;
+  long exit_code;
 
   /* Look for f is the access key in the linked list */
   for (q = NULL, p = _popen_list; 

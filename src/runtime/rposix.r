@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.35 2007-11-26 08:38:11 jeffery Exp $
+ * $Id: rposix.r,v 1.36 2008-06-18 09:14:18 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -227,7 +227,7 @@ unsigned int errmask;
 {
    int status;
 
-   status = BlkLoc(file)->file.status;
+   status = BlkD(file,File)->status;
    /* Check it's opened for reading, or it's a window */
    if ((status & Fs_Directory)
 #ifdef Dbm
@@ -242,8 +242,8 @@ unsigned int errmask;
 	return -1;
 	}
 #ifdef XWindows
-     return XConnectionNumber(((wbp)(BlkLoc(file)->file.fd.fp))->
-				      window->display->display);
+     return XConnectionNumber(BlkD(file,File)->fd.wb->
+			      window->display->display);
 #else					/* XWindows */
      return -1;
 #endif					/* XWindows */
@@ -269,11 +269,11 @@ unsigned int errmask;
 #endif					/* NT */
 
       if (status & Fs_Socket)
-	 return BlkLoc(file)->file.fd.fd;
+	 return BlkD(file,File)->fd.fd;
       else if (status & Fs_Messaging)
-	 return tp_fileno(BlkLoc(file)->file.fd.mf->tp);
+	 return tp_fileno(BlkD(file,File)->fd.mf->tp);
       else
-	 return fileno(BlkLoc(file)->file.fd.fp);
+	 return fileno(BlkD(file,File)->fd.fp);
 }
 
 
@@ -1801,38 +1801,38 @@ struct b_list *findactivewindow(struct b_list *lws)
    /*
     * go through listed windows, looking for those with events pending
     */
-   for ( ; BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
-      for (i = 0; i < ep->lelem.nused; i++) {
+   for ( ; BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext) {
+      for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
 	 union block *bp;
          wbp w;
          wsp ws;
 	 int status;
-	 j = ep->lelem.first + i;
-	 if (j >= ep->lelem.nslots)
-	    j -= ep->lelem.nslots;
+	 j = ep->Lelem.first + i;
+	 if (j >= ep->Lelem.nslots)
+	    j -= ep->Lelem.nslots;
 	 
-         if (!(is:file(ep->lelem.lslots[j]) &&
-	       (status = BlkLoc(ep->lelem.lslots[j])->file.status) &&      
+         if (!(is:file(ep->Lelem.lslots[j]) &&
+	       (status = BlkD(ep->Lelem.lslots[j],File)->status) &&      
 	       (status & Fs_Window)))
             syserr("internal error calling findactivewindow()");
          if (!(status & Fs_Read)) {
             /* a closed window was found on the list, ignore it */
 	    continue;
 	    }
-	 bp = BlkLoc(ep->lelem.lslots[j]);
-	 w = bp->file.fd.wb;
+	 bp = BlkLoc(ep->Lelem.lslots[j]);
+	 w = Blk(bp,File)->fd.wb;
 	 ws = w->window;
-	 if (BlkLoc(ws->listp)->list.size > 0) {
+	 if (BlkD(ws->listp,List)->size > 0) {
 	    if (is:null(d)) {
 	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
 	       d.dword = D_List;
 	       }
-	    c_put(&d, &(ep->lelem.lslots[j]));
+	    c_put(&d, &(Blk(ep,Lelem)->lslots[j]));
 	    }
 	 }
       }
    if (is:null(d)) return NULL;
-   return (struct b_list *)BlkLoc(d);
+   return BlkD(d, List);
 }   
 #endif					/* Graphics */
 #endif					/* PosixFns */

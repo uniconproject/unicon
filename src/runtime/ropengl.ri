@@ -858,7 +858,7 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 	 d = bp->lslots[i];
          if (!cnv:real(d, d)) return 0;
 	 bp->lslots[i] = d;
-	 a[j-(m-1)] = BlkLoc(d)->realblk.realval;
+	 a[j-(m-1)] = BlkD(d,Real)->realval;
 	 }
       if (used <= 1){
 	 bp = (struct b_lelem *) bp->listnext;
@@ -1014,10 +1014,10 @@ int traversefunctionlist(wbp w)
       vsize = 256;
 
       if (is:record(flist)) {
-	 fname = BlkLoc(flist)->record.fields[0];
-	 rp = (struct b_record *)BlkLoc(flist);
+	 rp = BlkD(flist, Record);
+	 fname = rp->fields[0];
 
-         tmp = IntVal(BlkLoc(flist)->record.fields[1]);
+         tmp = IntVal(rp->fields[1]);
 	 if (tmp == -1) {
 	    return Failed; /* probably should runerr on this */
 	    }
@@ -1028,8 +1028,8 @@ int traversefunctionlist(wbp w)
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
 	    torus(v[3], v[4], v[0], v[1], v[2], 
-		IntVal(BlkLoc(flist)->record.fields[7]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[8]),    /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[7]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_CUBE:
@@ -1037,20 +1037,20 @@ int traversefunctionlist(wbp w)
 	    break;
 	 case REDRAW_SPHERE:
 	    sphere(v[3], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->record.fields[6]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[7]),    /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[6]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[7]),    /*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_CYLINDER:
 	    cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->record.fields[8]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[9]),    /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[9]),    /*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_DISK:
 	    disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->record.fields[9]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[10]),   /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[9]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[10]),   /*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_ROTATE:
@@ -1101,14 +1101,14 @@ int traversefunctionlist(wbp w)
 #endif					/* HAVE_FTGL */
             break;
          case REDRAW_MARK: {
-	    struct descrip d = BlkLoc(flist)->record.fields[3];
+	    struct descrip d = BlkLoc(flist)->Record.fields[3];
             if (is:integer(d) && IntVal(d)==1) {
-	       count = IntVal(BlkLoc(flist)->record.fields[4]);
+	       count = IntVal(BlkLoc(flist)->Record.fields[4]);
                }
             else count=0;
 
 	   if (!count && wc->selectionenabled && wc->selectionrendermode ){
-	      GLuint int_code = IntVal(BlkLoc(flist)->record.fields[5]);
+	      GLuint int_code = IntVal(BlkLoc(flist)->Record.fields[5]);
               glPushName(int_code);
               }
 	    }
@@ -1174,8 +1174,8 @@ int traversefunctionlist(wbp w)
       switch(tmp & ~0xf) {
       case REDRAW_TORUS:
 	 torus(v[3], v[4], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->record.fields[7]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[8]),    /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[7]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  rings   */
 		(wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_CUBE:
@@ -1183,20 +1183,20 @@ int traversefunctionlist(wbp w)
 	 break;
       case REDRAW_SPHERE:
 	 sphere(v[3], v[0], v[1], v[2], 
-	 IntVal(BlkLoc(flist)->record.fields[6]),
-	 IntVal(BlkLoc(flist)->record.fields[7]),
+	 IntVal(BlkLoc(flist)->Record.fields[6]),
+	 IntVal(BlkLoc(flist)->Record.fields[7]),
 	 (wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_CYLINDER:
 	 cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->record.fields[8]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[9]),    /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[9]),    /*  rings   */
 		(wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_DISK:
 	 disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->record.fields[9]),    /*  slices  */
-		IntVal(BlkLoc(flist)->record.fields[10]),    /*  rings   */
+		IntVal(BlkLoc(flist)->Record.fields[9]),    /*  slices  */
+		IntVal(BlkLoc(flist)->Record.fields[10]),    /*  rings   */
 	       (wc->texmode?wc->autogen:0));
 	 break;
       case REDRAW_ROTATE:
@@ -1437,7 +1437,7 @@ int traversefunctionlist(wbp w)
 	         d = bp1->lslots[k1];
                  if (!cnv:real(d, d)) return 0;
 	         bp1->lslots[k1] = d;
-	         wc->texcoords[j] = BlkLoc(d)->realblk.realval;
+	         wc->texcoords[j] = BlkD(d,Real)->realval;
                  }
              }
 
@@ -2252,7 +2252,7 @@ int settexcoords(wbp w, char* s)
          else break;
          }
       /* Number of texture coordinates must be even */
-      if ((BlkLoc(f)->list.size-3) % 2)
+      if ((BlkD(f,List)->size-3) % 2)
 	 return Error;
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
@@ -3754,15 +3754,15 @@ int section_length(wbp w)
    tended struct b_list *hp;
    tended struct b_lelem *bp;
    tended struct b_record *rp;
-   int used;
+   int used, elements;
    word k;
-   int elements = ws->funclist.vword.bptr->list.size;
 
-   hp = (struct b_list *) ws->funclist.vword.bptr;
-   if (hp->size<=0) 
+   hp = BlkD(ws->funclist, List);
+   elements = hp->size;
+   if (hp->size <= 0) 
         return 0;
         
-   bp = (struct b_lelem *) hp->listtail;
+   bp = Blk(hp->listtail, Lelem);
    used=bp->nused;
    k = bp->first + used-1;
    if (k>=bp->nslots) k = k - bp->nslots;
@@ -3780,8 +3780,8 @@ int section_length(wbp w)
          if (k>=bp->nslots) k=k-bp->nslots-1;
       }
       if (is:record(flist)) {
-	 rp = (struct b_record *)BlkLoc(flist);
-         fname = BlkLoc(flist)->record.fields[0];
+	 rp = BlkD(flist, Record);
+         fname = rp->fields[0];
          tmp=si_s2i(redraw3Dnames, StrLoc(fname));
 
 	 if (tmp == -1) {

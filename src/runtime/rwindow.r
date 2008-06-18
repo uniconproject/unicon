@@ -95,8 +95,8 @@ int t;
    int retval;
 
    if (wstates != NULL && wstates->next != NULL		/* if multiple windows*/
-   && (BlkLoc(w->window->listp)->list.size == 0)) {	/* & queue is empty */
-      while (BlkLoc(w->window->listp)->list.size == 0) {
+   && (BlkD(w->window->listp,List)->size == 0)) {	/* & queue is empty */
+      while (BlkD(w->window->listp,List)->size == 0) {
 #ifdef XWindows
          extern void postcursor(wbp);
          extern void scrubcursor(wbp);
@@ -138,13 +138,13 @@ int t;
    if (retval == -2)
       return -3;					/* timeout expired */
 
-   if (BlkLoc(w->window->listp)->list.size < 2)
+   if (BlkD(w->window->listp,List)->size < 2)
       return -2;					/* malformed queue */
 
    wgetq(w,&xdesc,-1);
    wgetq(w,&ydesc,-1);
 
-   hp= (struct b_list *) (w->window->listp.vword.bptr);
+   hp = BlkD(w->window->listp, List);
    if (hp->size > 0) {   /* we might have picking results */
       c_traverse( hp , &pickdesc ,0);
       if ((pickdesc.dword == D_List))  /* pull out the picking results */
@@ -261,7 +261,7 @@ int kbhit(void)
        * perhaps should look in the console's icon event list for a keypress;
        *  either a string or event > 60k; presently, succeed for all events
        */
-      if (BlkLoc(((wbp)ConsoleBinding)->window->listp)->list.size > 0)
+      if (BlkD(((wbp)ConsoleBinding)->window->listp,List)->size > 0)
          return 1;
       else
         return 0;  /* fail */
@@ -309,7 +309,7 @@ wsp getactivewindow()
        */
       for (ws = ptr, i = 0, j = next + 1; i < nwindows;
 	   (ws = (ws->next) ? ws->next : wstates), i++, j++)
-	 if (ws != stdws && BlkLoc(ws->listp)->list.size > 0) {
+	 if (ws != stdws && BlkD(ws->listp,List)->size > 0) {
 	    next = j;
 	    return ws;
 	    }
@@ -407,48 +407,48 @@ dptr dx;
    if (VarLoc(*dx) == &amperX) { /* update &col too */
       wbp w;
       if (!is:file(lastEventWin) ||
-          ((BlkLoc(lastEventWin)->file.status & Fs_Window) == 0) ||
-          ((BlkLoc(lastEventWin)->file.status & (Fs_Read|Fs_Write)) == 0)) {
+          ((BlkD(lastEventWin,File)->status & Fs_Window) == 0) ||
+          ((BlkD(lastEventWin,File)->status & (Fs_Read|Fs_Write)) == 0)) {
          MakeInt(1 + IntVal(amperX)/lastEvFWidth, &amperCol);
 	 }
       else {
-         w = BlkLoc(lastEventWin)->file.fd.wb;
+         w = BlkD(lastEventWin,File)->fd.wb;
          MakeInt(1 + XTOCOL(w, IntVal(amperX)), &amperCol);
          }
       }
    else if (VarLoc(*dx) == &amperY) { /* update &row too */
       wbp w;
       if (!is:file(lastEventWin) ||
-          ((BlkLoc(lastEventWin)->file.status & Fs_Window) == 0) ||
-          ((BlkLoc(lastEventWin)->file.status & (Fs_Read|Fs_Write)) == 0)) {
+          ((BlkD(lastEventWin,File)->status & Fs_Window) == 0) ||
+          ((BlkD(lastEventWin,File)->status & (Fs_Read|Fs_Write)) == 0)) {
          MakeInt(IntVal(amperY) / lastEvLeading + 1, &amperRow);
          }
       else {
-         w = BlkLoc(lastEventWin)->file.fd.wb;
+         w = BlkD(lastEventWin,File)->fd.wb;
          MakeInt(YTOROW(w, IntVal(amperY)), &amperRow);
          }
       }
    else if (VarLoc(*dx) == &amperCol) { /* update &x too */
       wbp w;
       if (!is:file(lastEventWin) ||
-          ((BlkLoc(lastEventWin)->file.status & Fs_Window) == 0) ||
-          ((BlkLoc(lastEventWin)->file.status & (Fs_Read|Fs_Write)) == 0)) {
+          ((BlkD(lastEventWin,File)->status & Fs_Window) == 0) ||
+          ((BlkD(lastEventWin,File)->status & (Fs_Read|Fs_Write)) == 0)) {
          MakeInt((IntVal(amperCol) - 1) * lastEvFWidth, &amperX);
          }
       else {
-         w = BlkLoc(lastEventWin)->file.fd.wb;
+         w = BlkD(lastEventWin,File)->fd.wb;
          MakeInt(COLTOX(w, IntVal(amperCol)), &amperX);
          }
       }
    else if (VarLoc(*dx) == &amperRow) { /* update &y too */
       wbp w;
       if (!is:file(lastEventWin) ||
-          ((BlkLoc(lastEventWin)->file.status & Fs_Window) == 0) ||
-          ((BlkLoc(lastEventWin)->file.status & (Fs_Read|Fs_Write)) == 0)) {
+          ((BlkD(lastEventWin,File)->status & Fs_Window) == 0) ||
+          ((BlkD(lastEventWin,File)->status & (Fs_Read|Fs_Write)) == 0)) {
          MakeInt((IntVal(amperRow)-1) * lastEvLeading + lastEvAscent, &amperY);
          }
       else {
-         w = BlkLoc(lastEventWin)->file.fd.wb;
+         w = BlkD(lastEventWin,File)->fd.wb;
          MakeInt(ROWTOY(w, IntVal(amperRow)), &amperY);
          }
       }
@@ -4300,7 +4300,7 @@ void waitkey(FILE *w)
 {
    struct descrip answer;
    /* throw away pending events */
-   while (BlkLoc(((wbp)w)->window->listp)->list.size > 0) {
+   while (BlkD(((wbp)w)->window->listp,List)->size > 0) {
       wgetevent((wbp)w, &answer,-1);
       }
    /* wait for an event */

@@ -819,7 +819,7 @@ wbp w;
 	    wclose(wb);
 	    MakeInt(WINDOWCLOSED, &d);
 	    qevent(wb->window, &d, 0, 0, 0, 0);
-	    BlkLoc(lastEventWin)->file.status &= ~(Fs_Write);
+	    BlkD(lastEventWin,File)->status &= ~(Fs_Write);
 	    if (ret) return 1;
 	    break;
 	    }
@@ -1930,11 +1930,11 @@ char *s;
 			     ws->normalw, ws->normalh);
 	    ws->iconic = NormalState;
 	    }
-            else {
-               ws->posx = ws->exactx;
-               ws->posy = ws->exacty;
-               do_config(w, 1);
-               if (ws->is_3D) redraw3D(w);
+	 else {
+	    ws->posx = ws->exactx;
+	    ws->posy = ws->exacty;
+	    do_config(w, 1);
+	    if (ws->is_3D) redraw3D(w);
             }
 	 }
       }
@@ -3104,7 +3104,7 @@ int npix;
 XPoint *p;
 int n, delay;
    {
-   wbp w2 = BlkLoc(*pixs)->file.fd.wb;
+   wbp w2 = BlkD(*pixs,File)->fd.wb;
    STDLOCALS(w);
 
    sprite = w2;
@@ -3470,9 +3470,9 @@ int on_icon;
 	   while (iy < height) {
 	      ix = 0;
 	      while (ix < width) {
-	         int r = *s++ * 257;
-	    	 int g = *s++ * 257;
-	    	 int b = *s++ * 257;
+		 int r = *s++ * 257;
+		 int g = *s++ * 257;
+		 int b = *s++ * 257;
 	    	 if (r==lastr && g == lastg && b == lastb){
 	            count++;
 	         }
@@ -3488,14 +3488,14 @@ int on_icon;
 	   while (iy < height) {
 	      ix = 0;
 	      while (ix < width) {
-		 int r = *s++ * 257; /* Omar had bgr, not rgb */
+		 int r = *s++ * 257;
 		 int g = *s++ * 257;
 		 int b = *s++ * 257;
-	    	 if (r==lastr && g == lastg && b == lastb){
-	            count++;
-	         }
+		 if (r==lastr && g == lastg && b == lastb){
+		    count++;
+		    }
 	         else
-		    cp = alc_rgb2(w,"anon", r, g, b /*, 0*/);
+		    cp = alc_rgb2(w,"anon", r, g, b);
 		 XPutPixel(im, ix++, iy, cp->c);
 	         lastr = r; lastg = g; lastb = b;
 		 }
@@ -4069,8 +4069,8 @@ dptr dp;
    /*
     * get the preloaded (in another window value) pixmap image
     */
-   if (is:file(*dp) && (BlkLoc(*dp)->file.status & Fs_Window)) {
-      wbp x = BlkLoc(*dp)->file.fd.wb;
+   if (is:file(*dp) && (BlkD(*dp,File)->status & Fs_Window)) {
+      wbp x = BlkLoc(*dp)->File.fd.wb;
       if ((ws->iconimage = salloc(x->window->windowlabel)) == NULL)
 	 ReturnErrNum(305, Error);
       pix = XCreatePixmap(stddpy, DefaultRootWindow(stddpy),

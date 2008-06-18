@@ -33,8 +33,8 @@ word i, j;
     * Get pointers to the list and list elements for the source list
     *  (bp1, lp1).
     */
-   lp1 = (struct b_list *) BlkLoc(*dp1);
-   bp1 = (struct b_lelem *) lp1->listhead;
+   lp1 = BlkD(*dp1, List);
+   bp1 = Blk(lp1->listhead, Lelem);
    size = j - i;
 
    /*
@@ -83,7 +83,7 @@ int f(dptr dp1, dptr dp2, word i, word j)
       nslots = MinListSlots;
 
    Protect(lp2 = (struct b_list *) alclist(size, nslots), return Error);
-   cpslots(dp1, lp2->listhead->lelem.lslots, i, j);
+   cpslots(dp1, lp2->listhead->Lelem.lslots, i, j);
 
    /*
     * Fix type and location fields for the new list.
@@ -126,7 +126,7 @@ cpset_macro(cpset, 0)
 int f(dptr dp1, dptr dp2, word n)
    {
    int i = cphash(dp1, dp2, n, T_Table);
-   BlkLoc(*dp2)->table.defvalue = BlkLoc(*dp1)->table.defvalue;
+   BlkD(*dp2,Table)->defvalue = BlkD(*dp1,Table)->defvalue;
    EVValD(dp2, e);
    return i;
    }
@@ -155,23 +155,23 @@ int tcode;
    /*
     * Make a new set organized like dp1, with room for n elements.
     */
-   dst = hmake(tcode, BlkLoc(*dp1)->set.mask + 1, n);
+   dst = hmake(tcode, BlkPH(BlkLoc(*dp1),Set,mask) + 1, n);
    if (dst == NULL)
       return Error;
    /*
     * Copy the header and slot blocks.
     */
    src = BlkLoc(*dp1);
-   dst->set.size = src->set.size;	/* actual set size */
-   dst->set.mask = src->set.mask;	/* hash mask */
-   for (i = 0; i < HSegs && src->set.hdir[i] != NULL; i++)
-      memcpy((char *)dst->set.hdir[i], (char *)src->set.hdir[i],
-         src->set.hdir[i]->blksize);
+   dst->Set.size = src->Set.size;	/* actual set size */
+   dst->Set.mask = src->Set.mask;	/* hash mask */
+   for (i = 0; i < HSegs && src->Set.hdir[i] != NULL; i++)
+      memcpy((char *)dst->Set.hdir[i], (char *)src->Set.hdir[i],
+         src->Set.hdir[i]->blksize);
    /*
     * Work down the chain of element blocks in each bucket
     *	and create identical chains in new set.
     */
-   for (i = 0; i < HSegs && (seg = dst->set.hdir[i]) != NULL; i++)
+   for (i = 0; i < HSegs && (seg = BlkPH(dst,Set,hdir)[i]) != NULL; i++)
       for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--)  {
 	 prev = NULL;
          for (ep = (struct b_selem *)seg->hslots[slotnum];
@@ -233,14 +233,21 @@ word nslots, nelem;
    Protect(blk = alchash(tcode), return NULL);
    for (; seg >= 0; seg--) {
       Protect(segp = alcsegment(segsize[seg]), return NULL);
-      blk->set.hdir[seg] = segp;
+#ifdef DebugHeap
+      if (tcode == T_Table)
+         Blk(blk,Table)->hdir[seg] = segp;
+      else
+         Blk(blk,Set)->hdir[seg] = segp;
+#else					/* DebugHeap */
+      blk->Set.hdir[seg] = segp;
+#endif					/* DebugHeap */
       if (tcode == T_Table) {
 	 int j;
 	 for (j = 0; j < segsize[seg]; j++)
 	    segp->hslots[j] = blk;
          }
       }
-   blk->set.mask = nslots - 1;
+   blk->Set.mask = nslots - 1;
    return blk;
    }
 
@@ -285,10 +292,10 @@ struct hgstate *s;
 
    s->segnum = 0;				/* set initial state */
    s->slotnum = -1;
-   s->tmask = bp->table.mask;
+   s->tmask = BlkPH(bp,Table,mask);
    for (i = 0; i < HSegs; i++)
       s->sghash[i] = s->sgmask[i] = 0;
-   return hgnext(bp, s, (union block *)0);	/* get and return first value */
+   return hgnext(bp, s, (union block *)0);     /* get and return first value */
    }
 
 /*
@@ -320,13 +327,14 @@ union block *ep;
     *  has same hash value as the current one, in which case we defer it
     *  by doing nothing now.
     */
-   if (bp->table.mask != s->tmask &&
-	  (ep->selem.clink == NULL || BlkType(ep->telem.clink) == T_Table ||
-	  ep->telem.clink->telem.hashnum != ep->telem.hashnum)) {
+   if (BlkPH(bp,Table,mask) != s->tmask &&
+	  (BlkPE(ep,Selem,clink) == NULL ||
+	   BlkType(BlkPE(ep,Telem,clink)) == T_Table ||
+	  BlkPE(BlkPE(ep,Telem,clink),Telem,hashnum) != BlkPE(ep,Telem,hashnum))){
       /*
        * Yes, they did split.  Make a note of the current state.
        */
-      hn = ep->telem.hashnum;
+      hn = BlkPE(ep,Telem,hashnum);
       for (i = 1; i < HSegs; i++)
          if ((((word)HSlots) << (i - 1)) > s->tmask) {
    	 /*
@@ -336,17 +344,17 @@ union block *ep;
    	 s->sgmask[i] = s->tmask;
    	 s->sghash[i] = hn;
          }
-      s->tmask = bp->table.mask;
+      s->tmask = BlkPH(bp,Table,mask);
       /*
        * Find the next element in our original segment by starting
        *  from the beginning and skipping through the current hash
        *  number.  We can't just follow the link from the current
        *  element, because it may have moved to a new segment.
        */
-      ep = bp->table.hdir[s->segnum]->hslots[s->slotnum];
+      ep = BlkPH(bp,Table,hdir)[s->segnum]->hslots[s->slotnum];
       while (ep != NULL && BlkType(ep) != T_Table &&
-	     ep->telem.hashnum <= hn)
-         ep = ep->telem.clink;
+	     BlkPE(ep,Telem,hashnum) <= hn)
+         ep = BlkPE(ep,Telem,clink);
       }
 
    else {
@@ -356,7 +364,7 @@ union block *ep;
        *  the current hash chain.
        */
       if (ep != NULL && BlkType(ep) != T_Table)	/* NULL on very first call */
-         ep = ep->telem.clink;		/* next element in chain, if any */
+         ep = BlkPE(ep,Telem,clink);	/* next element in chain, if any */
    }
 
    /*
@@ -370,10 +378,10 @@ union block *ep;
       if (s->slotnum >= segsize[s->segnum]) {
 	 s->slotnum = 0;		/* need to move to next segment */
 	 s->segnum++;
-	 if (s->segnum >= HSegs || bp->table.hdir[s->segnum] == NULL)
+	 if (s->segnum >= HSegs || BlkPH(bp,Table,hdir)[s->segnum] == NULL)
 	    return 0;			/* return NULL at end of set/table */
          }
-      ep = bp->table.hdir[s->segnum]->hslots[s->slotnum];
+      ep = BlkPH(bp,Table,hdir)[s->segnum]->hslots[s->slotnum];
       /*
        * Check to see if parts of this hash chain were already processed.
        *  This could happen if the elements were in a different chain,
@@ -389,8 +397,8 @@ union block *ep;
              *  being processed.  Skip past elements already processed.
              */
             while (ep != NULL && BlkType(ep) != T_Table &&
-		   ep->telem.hashnum <= s->sghash[i])
-               ep = ep->telem.clink;
+		   BlkPE(ep,Telem,hashnum) <= s->sghash[i])
+               ep = BlkPE(ep,Telem,clink);
             }
          }
       }
@@ -415,7 +423,12 @@ union block *bp;
    struct b_slots *seg, *newseg;
    union block **curslot;
 
-   ps = (struct b_set *) bp;
+   ps = &(bp->Set);
+#ifdef DebugHeap
+   if (!ValidPtr(bp)) syserr("invalid block ptr");
+   if ((ps->title != T_Set) && (ps->title != T_Table))
+      heaperr("invalid title not set/table", (union block *)ps, T_Set);
+#endif
    if (ps->hdir[HSegs-1] != NULL)
       return;				/* can't split further */
    newslots = ps->mask + 1;
@@ -432,14 +445,14 @@ union block *bp;
          tp1 = curslot++;		/* ptr to tail of new slot */
          for (ep = *tp0;
 	      ep != NULL && BlkType(ep) != T_Table;
-	      ep = ep->selem.clink) {
-            if ((ep->selem.hashnum & newslots) == 0) {
+	      ep = BlkPE(ep,Telem,clink)) {
+            if ((BlkPE(ep,Telem,hashnum) & newslots) == 0) {
                *tp0 = ep;		/* element does not move */
-               tp0 = &ep->selem.clink;
+               tp0 = &(ep->Selem.clink);
                }
             else {
                *tp1 = ep;		/* element moves to new slot */
-               tp1 = &ep->selem.clink;
+               tp1 = &(ep->Selem.clink);
                }
             }
          if ( BlkType(bp) == T_Table ) 
@@ -468,6 +481,11 @@ union block *bp;
    union block **uppslot;
 
    ps = (struct b_set *)bp;
+#ifdef DebugHeap
+   if (!ValidPtr(bp)) syserr("invalid block ptr");
+   if ((ps->title != T_Set) && (ps->title != T_Table))
+      heaperr("invalid title not set/table", (union block *)ps, T_Set);
+#endif
    topseg = 0;
    for (topseg = 1; topseg < HSegs && ps->hdir[topseg] != NULL; topseg++)
       ;
@@ -482,25 +500,25 @@ union block *bp;
             ep1 = *uppslot++;			/* upper slot entry pointer */
             while (ep0 != NULL && BlkType(ep0) != T_Table &&
 		   ep1 != NULL && BlkType(ep1) != T_Table)
-               if (ep0->selem.hashnum < ep1->selem.hashnum) {
+               if (Blk(ep0,Selem)->hashnum < Blk(ep1,Selem)->hashnum) {
                   *tp = ep0;
-                  tp = &ep0->selem.clink;
-                  ep0 = ep0->selem.clink;
+                  tp = &(ep0->Selem.clink);
+                  ep0 = Blk(ep0,Selem)->clink;
                   }
                else {
                   *tp = ep1;
-                  tp = &ep1->selem.clink;
-                  ep1 = ep1->selem.clink;
+                  tp = &(ep1->Selem.clink);
+                  ep1 = Blk(ep1,Selem)->clink;
                   }
             while (ep0 != NULL && BlkType(ep0) != T_Table) {
                *tp = ep0;
-               tp = &ep0->selem.clink;
-               ep0 = ep0->selem.clink;
+               tp = &(ep0->Selem.clink);
+               ep0 = Blk(ep0,Selem)->clink;
                }
             while (ep1 != NULL && BlkType(ep1) != T_Table) {
                *tp = ep1;
-               tp = &ep1->selem.clink;
-               ep1 = ep1->selem.clink;
+               tp = &(ep1->Selem.clink);
+               ep1 = Blk(ep1,Selem)->clink;
                }
             }
       ps->mask >>= 1;
@@ -520,6 +538,12 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
    register union block **lp;
    register struct b_selem *pe;
    register uword eh;
+#ifdef DebugHeap
+   int elemtitle;
+   if (pb->Set.title == T_Set) elemtitle = T_Selem;
+   else if (pb->Set.title == T_Table) elemtitle = T_Telem;
+   else { syserr("odd memb\n"); }
+#endif
 
    ps = (struct b_set *)pb;
    lp = hchain(pb, hn);
@@ -832,7 +856,7 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    foo = memb(BlkLoc(p->valuemask), &d, hn, &rv);
    if (rv == 1) {
       /* found a value mask for this event code; use it */
-      d = (*foo)->telem.tval;
+      d = Blk(*foo,Telem)->tval;
       if (! is:set(d)) return Error;
       hn = hash(val);
       foo = memb(BlkLoc(d), val, hn, &rv);

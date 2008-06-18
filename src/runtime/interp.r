@@ -925,39 +925,38 @@ Deliberate Syntax Error
                case T_List: {
                   rsp -= 2;				/* pop it off */
                   bp = BlkLoc(value_tmp);
-                  args = (int)bp->list.size;
+                  args = (int)Blk(bp,List)->size;
 
 #ifndef MultiThread
-                 /*
-                  * Make a stab at catching interpreter stack overflow.
-                  * This does nothing for invocation in a co-expression other
-                  * than &main.
-                  */
-                 if (BlkLoc(k_current) == BlkLoc(k_main) &&
-                    ((char *)sp + args * sizeof(struct descrip) >
+		  /*
+		   * Make a stab at catching interpreter stack overflow.
+		   * This does nothing for invocation in a co-expression other
+		   * than &main.
+		   */
+		  if (BlkLoc(k_current) == BlkLoc(k_main) &&
+		      ((char *)sp + args * sizeof(struct descrip) >
                        (char *)stackend))
-                          fatalerr(301, NULL);
+		     fatalerr(301, NULL);
 #endif					/* MultiThread */
 
-                  for (bp = bp->list.listhead;
-		       BlkType(bp) == T_Lelem;
-                     bp = bp->lelem.listnext) {
-                        for (i = 0; i < bp->lelem.nused; i++) {
-                           j = bp->lelem.first + i;
-                           if (j >= bp->lelem.nslots)
-                              j -= bp->lelem.nslots;
-                           PushDesc(bp->lelem.lslots[j])
-                           }
-                        }
+                  for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
+		       bp = Blk(bp,Lelem)->listnext) {
+		     for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
+			j = bp->Lelem.first + i;
+			if (j >= bp->Lelem.nslots)
+			   j -= bp->Lelem.nslots;
+			PushDesc(bp->Lelem.lslots[j]);
+			}
+		     }
 		  goto invokej;
 		  }
 
                case T_Record: {
                   rsp -= 2;		/* pop it off */
-                  bp = BlkLoc(value_tmp);
-                  args = bp->record.recdesc->proc.nfields;
+                  bp = (union block *)BlkD(value_tmp, Record);
+                  args = Blk(bp->Record.recdesc,Proc)->nfields;
                   for (i = 0; i < args; i++) {
-                     PushDesc(bp->record.fields[i])
+                     PushDesc(bp->Record.fields[i]);
                      }
                   goto invokej;
                   }
@@ -1008,7 +1007,7 @@ invokej:
 	       InterpEVValD(rargp, e_fcall);
 #endif					/* MultiThread */
 
-	       bproc = (struct b_proc *)BlkLoc(*rargp);
+	       bproc = BlkD(*rargp, Proc);
 
 #ifdef FncTrace
                typedef int (*bfunc2)(dptr, struct descrip *);
@@ -1355,7 +1354,7 @@ Lsusp_uw:
 	    --k_level;
 	    if (k_trace) {
                k_trace--;
-	       sproc = (struct b_proc *)BlkLoc(*glbl_argp);
+	       sproc = BlkD(*glbl_argp, Proc);
 	       strace(&(sproc->pname), svalp);
 	       }
 
@@ -1440,15 +1439,26 @@ Eret_uw:
 	     *	values are restored from the procedure frame.
 	     */
 	    struct b_proc *rproc;
-	    rproc = (struct b_proc *)BlkLoc(*glbl_argp);
+	    rproc = BlkD(*glbl_argp, Proc);
 #if e_prem || e_erem
 	    ExInterp;
             vanq_proc(efp, gfp);
 	    EntInterp;
-	    /* used to InterpEVValD(argp,E_Pret); here */
 #endif					/* E_Prem || E_Erem */
 
+	    /* used to InterpEVValD(argp,E_Pret); here */
+
+	    /* E_Pret moved below the unwinding code to avoid duplicates */
+
+#ifdef MultiThread
+	    /*
+	     * Store the procedure we are returning from, it may
+	     * be useful in the E_Deref event in the retderef().
+	     */
+	    value_tmp = *glbl_argp;
+#endif					/* MultiThread */
 	    *glbl_argp = *(dptr)(rsp - 1);
+
 	    if (Var(*glbl_argp)) {
                ExInterp;
                retderef(glbl_argp, (word *)glbl_argp, sp);
@@ -1553,7 +1563,7 @@ efail_noev:
 		  if (k_trace) {	/* procedure tracing */
                      k_trace--;
 		     ExInterp;
-		     atrace(&(((struct b_proc *)BlkLoc(*glbl_argp))->pname));
+		     atrace(&(BlkD(*glbl_argp, Proc)->pname));
 		     EntInterp;
 		     }
 		  }
@@ -1654,7 +1664,7 @@ efail_noev:
 	    --k_level;
 	    if (k_trace) {
                k_trace--;
-	       failtrace(&(((struct b_proc *)BlkLoc(*glbl_argp))->pname));
+	       failtrace(&(BlkD(*glbl_argp, Proc)->pname));
                }
 Pfail_uw:
 
@@ -1867,7 +1877,7 @@ EntInterp;
                goto efail;
                }
 
-            ncp = (struct b_coexpr *)BlkLoc(*dp);
+            ncp = BlkD(*dp, Coexpr);
 
             signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
             EntInterp;
@@ -1887,9 +1897,9 @@ EntInterp;
             struct b_coexpr *ncp;
 
             ExInterp;
-            ncp = popact((struct b_coexpr *)BlkLoc(k_current));
+            ncp = popact(BlkD(k_current, Coexpr));
 
-            ++BlkLoc(k_current)->coexpr.size;
+            ++BlkLoc(k_current)->Coexpr.size;
             co_chng(ncp, (dptr)&sp[-1], NULL, A_Coret, 1);
             EntInterp;
 #endif					/* CoExpr */
@@ -1905,7 +1915,7 @@ EntInterp;
             struct b_coexpr *ncp;
 
             ExInterp;
-            ncp = popact((struct b_coexpr *)BlkLoc(k_current));
+            ncp = popact(BlkD(k_current, Coexpr));
 
 	    /*
 	     *	if this is a main co-expression failing to its parent
@@ -2223,7 +2233,7 @@ int mt_activate(tvalp,rslt,ncp)
 dptr tvalp, rslt;
 register struct b_coexpr *ncp;
 {
-   register struct b_coexpr *ccp = (struct b_coexpr *)BlkLoc(k_current);
+   register struct b_coexpr *ccp = BlkD(k_current, Coexpr);
    int first, rv;
    dptr savedtvalloc = NULL;
 

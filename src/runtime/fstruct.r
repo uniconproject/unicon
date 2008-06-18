@@ -1,7 +1,7 @@
 /*
  * File: fstruct.r
  *  Contents: delete, get, key, insert, list, member, pop, pull, push, put,
- *  set, table
+ *  set, table, constructor
  */
 
 "delete(x1, x2) - delete element x2 from set, table, or list x1 if it is there"
@@ -34,8 +34,8 @@ function{1} delete(s, x[n])
 		  /*
 		   * The element is there so delete it.
 		   */
-		  *pd = (*pd)->selem.clink;
-		  (BlkLoc(s)->set.size)--;
+		  *pd = Blk(*pd, Selem)->clink;
+		  BlkD(s, Set)->size--;
 		  }
 	       EVValD(&s, E_Sdelete);
 	       EVValD(x+argc, E_Sval);
@@ -56,8 +56,8 @@ function{1} delete(s, x[n])
 		  /*
 		   * The element is there so delete it.
 		   */
-		  *pd = (*pd)->telem.clink;
-		  (BlkLoc(s)->table.size)--;
+		  *pd = Blk(*pd,Telem)->clink;
+		  BlkD(s,Table)->size--;
 		  }
 	       EVValD(&s, E_Tdelete);
 	       EVValD(x+argc, E_Tsub);
@@ -75,7 +75,7 @@ function{1} delete(s, x[n])
 
 	       if (!cnv:C_integer(x[argc], cnv_x)) runerr(101, x[argc]);
 
-	       hp = (struct b_list *)BlkLoc(s);
+	       hp = BlkD(s, List);
 	       size = hp->size;
 	       for (i = 1; i <= size; i++) {
 		  c_get(hp, &d);
@@ -94,10 +94,10 @@ function{1} delete(s, x[n])
 	    int argc;
 
 #ifdef Dbm
-	    if (BlkLoc(s)->file.status & Fs_Dbm) {
+	    if (BlkD(s,File)->status & Fs_Dbm) {
 	       DBM *db;
 	       datum key;
-	       db = (DBM *)BlkLoc(s)->file.fd.dbm;
+	       db = BlkD(s,File)->fd.dbm;
 	       for (argc = 0; argc < n; argc++) {
 		  key.dsize = StrLen(x[argc]); key.dptr = StrLoc(x[argc]);
 		  dbm_delete(db, key);
@@ -108,8 +108,8 @@ function{1} delete(s, x[n])
 #endif
 
 #ifdef Messaging
-            if ((BlkLoc(s)->file.status & Fs_Messaging)) {
-	       struct MFile *mf = BlkLoc(s)->file.fd.mf;
+            if ((BlkD(s,File)->status & Fs_Messaging)) {
+	       struct MFile *mf = BlkD(s,File)->fd.mf;
 	       if (strcmp(mf->tp->uri.scheme, "pop") != 0) {
 		  runerr(1213, s);
 		  }
@@ -203,7 +203,7 @@ function{0,1} get_or_pop(x,i)
 	    int j;
 	    EVValD(&x, E_Lget);
 	    for(j=0;j<i;j++)
-	       if (!c_get((struct b_list *)BlkLoc(x), &result)) fail;
+	       if (!c_get(BlkD(x,List), &result)) fail;
 	    return result;
 	    }
 	 }
@@ -220,10 +220,10 @@ function{0,1} get_or_pop(x,i)
 	    unsigned int msgnum;
 	    size_t msglen;
 
-	    if (!(BlkLoc(x)->file.status & Fs_Messaging)) {
+	    if (!(BlkD(x,File)->status & Fs_Messaging)) {
 	       runerr(1213, x);
 	       }
-	    mf = BlkLoc(x)->file.fd.mf;
+	    mf = BlkD(x,File)->fd.mf;
 	    if (strcmp(mf->tp->uri.scheme, "pop") != 0) {
 	       runerr(1213, x);
 	       }
@@ -295,8 +295,8 @@ function{*} key(t)
 	    EVValD(&t, E_Tkey);
 	    for (ep = hgfirst(BlkLoc(t), &state); ep != 0;
 		 ep = hgnext(BlkLoc(t), &state, ep)) {
-	       EVValD(&ep->telem.tref, E_Tsub);
-	       suspend ep->telem.tref;
+	       EVValD(&(Blk(ep,Telem)->tref), E_Tsub);
+	       suspend ep->Telem.tref;
             }
 	    fail;
 	    }
@@ -304,7 +304,7 @@ function{*} key(t)
       list: {
 	 abstract { return integer }
 	 inline {
-	    C_integer i, sz = ((struct b_list *)BlkLoc(t))->size;
+	    C_integer i, sz = BlkD(t, List)->size;
 	    for(i=1; i<=sz; i++) suspend C_integer i;
 	    fail;
 	    }
@@ -312,9 +312,9 @@ function{*} key(t)
       record: {
 	 abstract { return string }
 	 inline {
-	    C_integer i, sz = BlkLoc(t)->record.recdesc->proc.nfields;
+	    C_integer i, sz = Blk(BlkD(t,Record)->recdesc,Proc)->nfields;
 	    for(i=0; i<sz; i++)
-	       suspend BlkLoc(t)->record.recdesc->proc.lnames[i];
+	       suspend Blk(BlkD(t,Record)->recdesc,Proc)->lnames[i];
 	    fail;
 	    }
 	 }
@@ -325,12 +325,12 @@ function{*} key(t)
 	 }
 	 inline {
 	    word status;
-	    status = BlkLoc(t)->file.status;	
+	    status = BlkD(t,File)->status;
 #ifdef Dbm
 	    if (status & Fs_Dbm) {
 	       DBM *db;
 	       datum key; 
-	       db = (DBM *)BlkLoc(t)->file.fd.dbm;
+	       db = BlkD(t,File)->fd.dbm;
 	       for (key = dbm_firstkey(db); key.dptr != NULL;
 		    key = dbm_nextkey(db)) {
 		  Protect(StrLoc(result) = alcstr(key.dptr, key.dsize),runerr(0));
@@ -342,7 +342,7 @@ function{*} key(t)
 #endif                                  /* Dbm */
 #ifdef Messaging
 	       else if (status & Fs_Messaging) {
-		  struct MFile *mf = BlkLoc(t)->file.fd.mf;
+		  struct MFile *mf = BlkD(t,File)->fd.mf;
 		  char *field, *end;
 
 		  if (!MFIN(mf, READING)) {
@@ -406,7 +406,7 @@ int cinserttable(union block **pbp, int n, dptr x)
 	 /*
 	  * The element is not in the table - insert it.
 	  */
-	 (*pbp)->table.size++;
+	 Blk(*pbp, Table)->size++;
 	 te->clink = *pd;
 	 *pd = (union block *)te;
 	 te->hashnum = hn;
@@ -503,7 +503,7 @@ function{1} insert(s, x[n])
             word i, j, size, argc;
 
 	    for(argc=0;argc<n;argc+=2) {
-	       hp = (struct b_list *)BlkLoc(s);
+	       hp = BlkD(s, List);
 	       /*
 		* Make sure that subscript x is in range.
 		*/
@@ -576,8 +576,8 @@ function{1} insert(s, x[n])
 		  if (!cnv:string(x[argc+1],x[argc+1])) runerr(103, x[argc+1]);
 		  }
 	       else runerr(103, nulldesc);
-	       db = (DBM *)BlkLoc(s)->file.fd.dbm;
-	       status = BlkLoc(s)->file.status;
+	       db = BlkD(s,File)->fd.dbm;
+	       status = BlkD(s,File)->status;
 	       if (status & Fs_Dbm == 0)
 		  runerr(122, s);
 	       key.dptr = StrLoc(x[argc]);
@@ -618,7 +618,7 @@ function{0,1} classname(r)
       char * recnm_end;
       struct b_record * br;
 
-      br = (struct b_record *)BlkLoc(r);
+      br = BlkD(r, Record);
       recnm_bgn = StrLoc(br->recdesc->proc.recname);
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
@@ -644,7 +644,7 @@ function{1} membervarnames(r)
       tended struct b_record * br;
       register struct b_lelem * bp;
 
-      br = (struct b_record *)BlkLoc(r);
+      br = BlkD(r, Record);
       n_flds = br->recdesc->proc.nfields;
       Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
       bp = (struct b_lelem *)p->listhead;
@@ -674,8 +674,8 @@ function{1} methodnames(r, cooked_names)
       register struct b_lelem * bp;
       register word i, k, n_mthds, n_glbls;
 
-      br = (struct b_record *)BlkLoc(r);
-      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      br = BlkD(r, Record);
+      recnm_bgn = StrLoc(Blk(br->recdesc, Proc)->recname);
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       recnm_len = recnm_end - recnm_bgn + 1;
       n_glbls = egnames - gnames;
@@ -808,8 +808,8 @@ function{1} methods(r)
       register struct b_lelem * bp;
       register word i, k, n_glbls, n_mthds;
 
-      br = (struct b_record *)BlkLoc(r);
-      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      br = BlkD(r, Record);
+      recnm_bgn = StrLoc(Blk(br->recdesc, Proc)->recname);
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       recnm_len = recnm_end - recnm_bgn + 1;
       n_glbls = egnames - gnames;
@@ -928,8 +928,8 @@ function{0,1} oprecvar(r)
       struct b_record * br;
       register word i, n_glbls;
 
-      br = (struct b_record *)BlkLoc(r);
-      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      br = BlkD(r, Record);
+      recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       recnm_len = recnm_end - recnm_bgn;
       n_glbls = egnames - gnames;
@@ -1087,7 +1087,7 @@ function{0,1} member(s, x[n])
 	 inline {
 	    int argc, size;
 	    C_integer cnv_x;
-	    size = ((struct b_list *)BlkLoc(s))->size;
+	    size = BlkD(s,List)->size;
 	    for(argc=0; argc<n; argc++) {
 	       if (!(cnv:C_integer(x[argc], cnv_x))) fail;
 	       cnv_x = cvpos(cnv_x, size);
@@ -1126,10 +1126,10 @@ function{0,1} member(s, x[n])
 	       if (!cnv:string(x[argc], x[argc]) )
 		   runerr(103,x[argc]);
 
-	       db = (DBM *)BlkLoc(s)->file.fd.dbm;
-	       status = BlkLoc(s)->file.status;
+	       status = BlkD(s,File)->status;
 	       if (status & Fs_Dbm == 0)
 		  runerr(122, s);
+	       db = BlkD(s,File)->fd.dbm;
 	       key.dptr = StrLoc(x[argc]);
 	       key.dsize = StrLen(x[argc]);
 	       content = dbm_fetch(db, key);
@@ -1171,9 +1171,8 @@ function{0,1} pull(x,n)
 	 /*
 	  * Point at list header block and fail if the list is empty.
 	  */
-	 hp = (struct b_list *) BlkLoc(x);
-	 if (hp->size <= 0)
-	    fail;
+         hp = BlkD(x, List);
+	 if (hp->size <= 0) fail;
 
 	 /*
 	  * Point bp at the last list element block.  If the last block has no
@@ -1217,7 +1216,7 @@ dptr val;
    /*
     * Point bp at the first list-element block.
     */
-   bp = (struct b_lelem *) BlkLoc(*l)->list.listhead;
+   bp = Blk(BlkD(*l,List)->listhead, Lelem);
 
    /*
     * If the first list-element block is full, allocate a new
@@ -1229,7 +1228,7 @@ dptr val;
       /*
        * Set i to the size of block to allocate.
        */
-      i = BlkLoc(*l)->list.size / two;
+      i = BlkD(*l, List)->size / two;
       if (i < MinListSlots)
          i = MinListSlots;
 #ifdef MaxListSlots
@@ -1247,10 +1246,10 @@ dptr val;
             fatalerr(0, NULL);
          }
 
-      BlkLoc(*l)->list.listhead->lelem.listprev = (union block *) bp;
+      Blk(BlkD(*l, List)->listhead, Lelem)->listprev = (union block *)bp;
       bp->listprev = BlkLoc(*l);
-      bp->listnext = BlkLoc(*l)->list.listhead;
-      BlkLoc(*l)->list.listhead = (union block *) bp;
+      bp->listnext = BlkD(*l,List)->listhead;
+      BlkLoc(*l)->List.listhead = (union block *) bp;
       }
 
    /*
@@ -1267,7 +1266,7 @@ dptr val;
     */
    bp->first = i;
    bp->nused++;
-   BlkLoc(*l)->list.size++;
+   BlkLoc(*l)->List.size++;
    }
 #endif					/* Graphics */
 
@@ -1307,8 +1306,8 @@ function{1} push(x, vals[n])
 	  * Point hp at the list-header block and bp at the first
 	  *  list-element block.
 	  */
-	 hp = (struct b_list *) BlkLoc(x);
-	 bp = (struct b_lelem *) hp->listhead;
+	 hp = BlkD(x, List);
+	 bp = Blk(hp->listhead, Lelem);
 
 	 /*
 	  * Initialize i so it's 0 if first list-element.
@@ -1343,7 +1342,7 @@ function{1} push(x, vals[n])
 		  runerr(0);
 	       }
 
-	    hp->listhead->lelem.listprev = (union block *) bp;
+	    Blk(hp->listhead, Lelem)->listprev = (union block *)bp;
 	    bp->listprev = (union block *) hp;
 	    bp->listnext = hp->listhead;
 	    hp->listhead = (union block *) bp;
@@ -1390,7 +1389,7 @@ void c_put(struct descrip *l, struct descrip *val)
     * Point hp at the list-header block and bp at the last
     *  list-element block.
     */
-   bp = (struct b_lelem *) BlkLoc(*l)->list.listtail;
+   bp = Blk(BlkD(*l,List)->listtail, Lelem);
    
    /*
     * If the last list-element block is full, allocate a new
@@ -1402,7 +1401,7 @@ void c_put(struct descrip *l, struct descrip *val)
       /*
        * Set i to the size of block to allocate.
        */
-      i = ((struct b_list *)BlkLoc(*l))->size / two;
+      i = BlkD(*l, List)->size / two;
       if (i < MinListSlots)
          i = MinListSlots;
 #ifdef MaxListSlots
@@ -1420,8 +1419,7 @@ void c_put(struct descrip *l, struct descrip *val)
             fatalerr(0, NULL);
          }
 
-      ((struct b_list *)BlkLoc(*l))->listtail->lelem.listnext =
-	(union block *) bp;
+      Blk(BlkD(*l,List)->listtail,Lelem)->listnext = (union block *) bp;
       bp->listprev = ((struct b_list *)BlkLoc(*l))->listtail;
       bp->listnext = BlkLoc(*l);
       ((struct b_list *)BlkLoc(*l))->listtail = (union block *) bp;
@@ -1440,7 +1438,7 @@ void c_put(struct descrip *l, struct descrip *val)
     * Adjust block usage count and current list size.
     */
    bp->nused++;
-   ((struct b_list *)BlkLoc(*l))->size++;
+   BlkD(*l, List)->size++;
 }
 
 
@@ -1479,8 +1477,8 @@ function{1} put(x, vals[n])
        */
       for(val = 0; val < num; val++) {
 
-	 hp = (struct b_list *)BlkLoc(x);
-	 bp = (struct b_lelem *) hp->listtail;
+	 hp = BlkD(x, List);
+	 bp = Blk(hp->listtail, Lelem);
    
 	 i = 0;			/* block isn't full */
 
@@ -1516,7 +1514,7 @@ function{1} put(x, vals[n])
 		  runerr(0);
 	       }
 
-	    hp->listtail->lelem.listnext = (union block *) bp;
+	    Blk(hp->listtail, Lelem)->listnext = (union block *) bp;
 	    bp->listprev = hp->listtail;
 	    bp->listnext = (union block *) hp;
 	    hp->listtail = (union block *) bp;
@@ -1617,7 +1615,7 @@ function{1} set(x[n])
 	    /*
 	     * Make a set.
              */
-            if (is:list(x[0])) i = BlkLoc(x[0])->list.size;
+            if (is:list(x[0])) i = BlkD(x[0],List)->size;
             else i = n;
             ps = hmake(T_Set, (word)0, i);
             if (ps == NULL) {
@@ -1628,7 +1626,7 @@ function{1} set(x[n])
 	      if (is:list(x[arg])) {
 		pb = BlkLoc(x[arg]);
                 if(!(reserve(Blocks,
-                     pb->list.size*(2*sizeof(struct b_selem))))){
+                     Blk(pb,List)->size * (2*sizeof(struct b_selem))))){
                    runerr(0);
                    }
 		/*
@@ -1636,20 +1634,20 @@ function{1} set(x[n])
 		 *  each element contained in the block
 		 *  insert the element into the set if not there.
 		 */
-		for (pb = pb->list.listhead;
+		for (pb = Blk(pb,List)->listhead;
 		     pb && (BlkType(pb) == T_Lelem);
-		     pb = pb->lelem.listnext) {
-		  for (i = 0; i < pb->lelem.nused; i++) {
+		     pb = Blk(pb,Lelem)->listnext) {
+		  for (i = 0; i < Blk(pb,Lelem)->nused; i++) {
 #ifdef Polling
             if (!pollctr--) {
                pollctr = pollevent();
 	       if (pollctr == -1) fatalerr(141, NULL);
 	       }	       
 #endif					/* Polling */
-		    j = pb->lelem.first + i;
-		    if (j >= pb->lelem.nslots)
-		      j -= pb->lelem.nslots;
-		    C_SETINSERT(ps, &pb->lelem.lslots[j], res);
+		    j = Blk(pb,Lelem)->first + i;
+		    if (j >= Blk(pb,Lelem)->nslots)
+		      j -= pb->Lelem.nslots;
+		    C_SETINSERT(ps, &(pb->Lelem.lslots[j]), res);
                     if (res == -1) {
                        runerr(0);
                        }
@@ -1687,8 +1685,9 @@ function{1} table(x[n])
 	 if (cinserttable(&bp, n, x) == -1) runerr(0);
 	 }
       if (n % 2)
-	 bp->table.defvalue = x[n-1];
-      else bp->table.defvalue = nulldesc;
+	 bp->Table.defvalue = x[n-1];
+      else bp->Table.defvalue = nulldesc;
+
       Desc_EVValD(bp, E_Tcreate, D_Table);
       return table(bp);
       }

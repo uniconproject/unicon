@@ -52,7 +52,7 @@ LibDcl(field,2,".")
    /*
     * Map the field number into a field number for the record x.
     */
-   rp = (struct b_record *) BlkLoc(Arg1);
+   rp = BlkD(Arg1,Record);
 
    bptr = rp->recdesc;
 
@@ -69,10 +69,10 @@ LibDcl(field,2,".")
       Arg0 = efnames[IntVal(Arg2)];
 
 linearsearch:
-      nfields = bptr->proc.nfields;
+      nfields = Blk(bptr, Proc)->nfields;
       for (i=0;i<nfields;i++){
-	 if ((StrLen(Arg0) == StrLen(bptr->proc.lnames[i])) &&
-	     !strncmp(StrLoc(Arg0), StrLoc(bptr->proc.lnames[i]),StrLen(Arg0)))
+	 if ((StrLen(Arg0) == StrLen(bptr->Proc.lnames[i])) &&
+	     !strncmp(StrLoc(Arg0), StrLoc(bptr->Proc.lnames[i]),StrLen(Arg0)))
 	   break;
          }
       if (i<nfields) fnum = i;
@@ -101,7 +101,7 @@ linearsearch:
 #define FO(i) ((foffwidth==1)?(focp[i]&255L):((foffwidth==2)?(fosp[i]&65535L):fo[i]))
 #define FTAB(i) ((ftabwidth==1)?(ftabcp[i]&255L):((ftabwidth==2)?(ftabsp[i]&65535L):ftabp[i]))
 
-      fnum = FTAB(FO(IntVal(Arg2)) + (rp->recdesc->proc.recnum - 1));
+      fnum = FTAB(FO(IntVal(Arg2)) + (Blk(rp->recdesc,Proc)->recnum - 1));
 
       /*
        * Check the bitmap for this entry.  If it fails, it converts our
@@ -114,8 +114,8 @@ linearsearch:
       bytes = *records >> 3;
       if ((*records & 07) != 0)
 	 bytes++;
-      index = IntVal(Arg2) * bytes + (rp->recdesc->proc.recnum - 1) / 8;
-      this_bit = this_bit >> (rp->recdesc->proc.recnum - 1) % 8;
+      index = IntVal(Arg2) * bytes + (rp->recdesc->Proc.recnum - 1) / 8;
+      this_bit = this_bit >> (rp->recdesc->Proc.recnum - 1) % 8;
       if ((bm[index] | this_bit) != bm[index]) {
 	 fnum = -1;
 	 }
@@ -126,7 +126,7 @@ linearsearch:
 	 }
 
 #else					/* FieldTableCompression */
-      fnum = ftabp[IntVal(Arg2) * *records + rp->recdesc->proc.recnum - 1];
+      fnum = ftabp[IntVal(Arg2) * *records + Blk(rp->recdesc,Proc)->recnum - 1];
 #endif					/* FieldTableCompression */
 
 #ifdef MultiThread
@@ -142,121 +142,124 @@ linearsearch:
       /*
        * if we are an object, look for a corresponding method
        */
-if ((rp->recdesc->proc.ndynam == -3) ||
-    (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) ||
-    (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__m")) ||
-    (!strcmp(StrLoc(rp->recdesc->proc.lnames[
-			rp->recdesc->proc.nfields-1]), "__m"))) {
-      struct b_record *rp2;
-      tended struct descrip md;
-      if (rp->recdesc->proc.ndynam == -3)
-	 md = rp->recdesc->proc.lnames[rp->recdesc->proc.nparam];
-      else if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s"))
-	 md = rp->fields[1];
-      else if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__m"))
-	 md = rp->fields[0];
-      else
-	 md = rp->fields[rp->recdesc->proc.nfields-1];
+      union block *rd = rp->recdesc;
+      if ((Blk(rd,Proc)->ndynam == -3) ||
+	  (!strcmp(StrLoc(rd->Proc.lnames[0]), "__s")) ||
+	  (!strcmp(StrLoc(rd->Proc.lnames[0]), "__m")) ||
+	  (!strcmp(StrLoc(rd->Proc.lnames[rd->Proc.nfields-1]), "__m"))) {
+	 struct b_record *rp2;
+	 union block *rd2;
+	 tended struct descrip md;
+	 if (rd->Proc.ndynam == -3)
+	    md = rd->Proc.lnames[rd->Proc.nparam];
+	 else if (!strcmp(StrLoc(rd->Proc.lnames[0]), "__s"))
+	    md = rp->fields[1];
+	 else if (!strcmp(StrLoc(rd->Proc.lnames[0]), "__m"))
+	    md = rp->fields[0];
+	 else
+	    md = rp->fields[rd->Proc.nfields-1];
 
-      if (!is:record(md))
-         RunErr(107, &Arg1);
-      rp2 = (struct b_record *)BlkLoc(md);
-      if (IntVal(Arg2) < 0) {
-	 int nfields = rp2->recdesc->proc.nfields;
-	 int i;
+	 if (!is:record(md))
+	    RunErr(107, &Arg1);
+	 rp2 = BlkD(md, Record);
+	 rd2 = rp2->recdesc;
+	 if (IntVal(Arg2) < 0) {
+	    int nfields = Blk(rd2,Proc)->nfields;
+	    int i;
 #ifdef MultiThread
-	 if (progtouse)
-	    Arg0 = progtouse->Efnames[IntVal(Arg2)];
-	 else RunErr(207, &Arg1);
+	    if (progtouse)
+	       Arg0 = progtouse->Efnames[IntVal(Arg2)];
+	    else RunErr(207, &Arg1);
 #else					/* MultiThread */
-	 Arg0 = efnames[IntVal(Arg2)];
+	    Arg0 = efnames[IntVal(Arg2)];
 #endif					/* MultiThread */
-	 for (i=0;i<nfields;i++) {
-	 if ((StrLen(Arg0) == StrLen(rp2->recdesc->proc.lnames[i])) &&
-	     !strncmp(StrLoc(Arg0), StrLoc(rp2->recdesc->proc.lnames[i]),StrLen(Arg0)))
-	    break;
+	    for (i=0;i<nfields;i++) {
+	       if ((StrLen(Arg0) == StrLen(rd2->Proc.lnames[i])) &&
+		   !strncmp(StrLoc(Arg0),
+			   StrLoc(rd2->Proc.lnames[i]), StrLen(Arg0)))
+		  break;
+	       }
+	    if (i<nfields) fnum = i;
+	    else fnum = -1;
 	    }
-	 if (i<nfields) fnum = i;
-	 else fnum = -1;
-	 }
-      else {
+	 else {
 #ifdef MultiThread
-	 ENTERPSTATE(progtouse);
+	    ENTERPSTATE(progtouse);
 #endif
 #ifdef FieldTableCompression
-	 fnum = FTAB(FO(IntVal(Arg2)) + (rp2->recdesc->proc.recnum - 1));
+	    fnum = FTAB(FO(IntVal(Arg2)) + (rd2->Proc.recnum - 1));
 
-	 /*
-	  * Check the bitmap for this entry.  If it fails, it converts our
-	  * nice field offset number into -1 (empty/invalid for our row).
-	  */
-	 {
-	 int bytes, index;
-	 unsigned char this_bit = 0200;
+	    /*
+	     * Check the bitmap for this entry.  If it fails, it converts our
+	     * nice field offset number into -1 (empty/invalid for our row).
+	     */
+	    {
+	    int bytes, index;
+	    unsigned char this_bit = 0200;
 
-	 bytes = *records >> 3;
-	 if ((*records & 07) != 0)
-	    bytes++;
-	 index = IntVal(Arg2) * bytes + (rp2->recdesc->proc.recnum - 1) / 8;
-	 this_bit = this_bit >> (rp2->recdesc->proc.recnum - 1) % 8;
-	 if ((bm[index] | this_bit) != bm[index]) {
-	    fnum = -1;
+	    bytes = *records >> 3;
+	    if ((*records & 07) != 0)
+	       bytes++;
+	    index = IntVal(Arg2) * bytes + (rd2->Proc.recnum - 1) / 8;
+	    this_bit = this_bit >> (rd2->Proc.recnum - 1) % 8;
+	    if ((bm[index] | this_bit) != bm[index]) {
+	       fnum = -1;
+	       }
+	    else { /* bitmap passes test on __m.field */
+	       }
 	    }
-	 else { /* bitmap passes test on __m.field */
-	    }
-	 }
 #else					/* FieldTableCompression */
-	 fnum = ftabp[IntVal(Arg2) * *records + rp2->recdesc->proc.recnum - 1];
+	    fnum = ftabp[IntVal(Arg2) * *records + rd2->Proc.recnum - 1];
 #endif					/* FieldTableCompression */
 
 #ifdef MultiThread
-	 ENTERPSTATE(thisprog);
+	    ENTERPSTATE(thisprog);
 #endif
-         }
-      if (fnum < 0) RunErr(207, &Arg1);
-      md = rp2->fields[fnum];
-      if (is:record(md)) {
-	 /*
-	  * Make an indirect reference to the current instance,
-	  * overloaded with the superclass' methods vector.
-	  */
-   
-	 /*
-	  * Note, these pointers don't need to be tended, because they are
-	  *  not used until after allocation is complete.
-	  */
-	 struct b_record *new_rec;
-	 dptr d1, d2;
-	 int i;
-
-	 if (stubrec == NULL) {
-	    stubrec = dynrecord(&emptystr, rp->recdesc->proc.lnames, 2);
 	    }
+	 if (fnum < 0) RunErr(207, &Arg1);
+	 md = rp2->fields[fnum];
+	 if (is:record(md)) {
+	    /*
+	     * Make an indirect reference to the current instance,
+	     * overloaded with the superclass' methods vector.
+	     */
 
-	 Protect(new_rec = alcrecd(2, (union block *)stubrec), RunErr(0, 0));
+	    /*
+	     * Note, these pointers don't need to be tended, because they are
+	     *  not used until after allocation is complete.
+	     */
+	    struct b_record *new_rec;
+	    dptr d1, d2;
+	    int i;
 
-	 /*
-	  * overwrite the __s to point at the original, the __m to point at
-	  * the superclass methods.
-	  */
-	 new_rec->fields[0] = Arg1;
-	 new_rec->fields[1] = md;
+	    if (stubrec == NULL) {
+	       stubrec = dynrecord(&emptystr, rp->recdesc->Proc.lnames, 2);
+	       }
 
-	 Arg0 = Arg1;
-	 BlkLoc(Arg0) = (union block *) new_rec;
-	 Return;
-         }
-      else {
-	 Arg0 = md;
-	 if (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s"))
-	    *((&(Arg0))+1) = rp->fields[0];
-	 else
-	    *((&(Arg0))+1) = Arg1;
-	 sp++; sp++;
-	 clintsrargp = cargp+1;
-	 Return;
+	    Protect(new_rec = alcrecd(2, (union block *)stubrec), RunErr(0,0));
+
+	    /*
+	     * overwrite the __s to point at the original, the __m to point at
+	     * the superclass methods.
+	     */
+	    new_rec->fields[0] = Arg1;
+	    new_rec->fields[1] = md;
+
+	    Arg0 = Arg1;
+	    BlkLoc(Arg0) = (union block *) new_rec;
+	    Return;
+	    }
+	 else {
+	    Arg0 = md;
+	    if (!strcmp(StrLoc(rp->recdesc->Proc.lnames[0]), "__s"))
+	       *((&(Arg0))+1) = rp->fields[0];
+	    else
+	       *((&(Arg0))+1) = Arg1;
+	    sp++; sp++;
+	    clintsrargp = cargp+1;
+	    Return;
+	    }
 	 }
-      }
       RunErr(207, &Arg1);
       }
 

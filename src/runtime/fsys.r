@@ -113,10 +113,10 @@ function{1} close(f)
 
    body {
 #ifdef HAVE_VOICE
-	PVSESSION Ptr;
+      PVSESSION Ptr;
 #endif					/* HAVE_VOICE */
-      FILE *fp = BlkLoc(f)->file.fd.fp;
-      int status = BlkLoc(f)->file.status;
+      FILE *fp = BlkD(f,File)->fd.fp;
+      int status = BlkD(f,File)->status;
 
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
@@ -124,27 +124,27 @@ function{1} close(f)
        * Close f, using fclose, pclose, closedir, or wclose as appropriate.
        */
 #ifdef Messaging
-      if (BlkLoc(f)->file.status & Fs_Messaging) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_Messaging) {
+	 BlkLoc(f)->File.status = 0;
 	 return C_integer Mclose((struct Mfile*) fp);
 	 }
 #endif                                  /* Messaging */
 
 #ifdef PosixFns
-      if (BlkLoc(f)->file.status & Fs_Socket) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_Socket) {
+	 BlkLoc(f)->File.status = 0;
 #if NT
-	 return C_integer closesocket((SOCKET)BlkLoc(f)->file.fd.fd);
+	 return C_integer closesocket((SOCKET)BlkLoc(f)->File.fd.fd);
 #else					/* NT */
-	 return C_integer close(BlkLoc(f)->file.fd.fd);
+	 return C_integer close(BlkLoc(f)->File.fd.fd);
 #endif					/* NT */
 	 }
 #endif					/* PosixFns */
 
 #ifdef ReadDirectory
 #if !NT
-      if (BlkLoc(f)->file.status & Fs_Directory) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_Directory) {
+	 BlkLoc(f)->File.status = 0;
 	 closedir((DIR *)fp);
 	 return f;
          }
@@ -152,31 +152,31 @@ function{1} close(f)
 #endif					/* ReadDirectory */
 
 #if HAVE_LIBZ
-      if (BlkLoc(f)->file.status & Fs_Compress) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_Compress) {
+	 BlkLoc(f)->File.status = 0;
 	 if (gzclose((gzFile) fp)) fail;
 	 return C_integer 0;
 	 }
 #endif					/* HAVE_LIBZ */
 
 #ifdef ISQL
-      if (BlkLoc(f)->file.status & Fs_ODBC) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_ODBC) {
+	 BlkLoc(f)->File.status = 0;
 	 if (dbclose((struct ISQLFile *)fp)) fail;
 	 return C_integer 0;
 	 }
 #endif					/* ISQL */
 
 #ifdef PseudoPty
-      if (BlkLoc(f)->file.status & Fs_Pty) {
-	 ptclose(BlkLoc(f)->file.fd.pt);
+      if (BlkD(f,File)->status & Fs_Pty) {
+	 ptclose(BlkLoc(f)->File.fd.pt);
 	 return C_integer 0;
 	 }
 #endif					/* PseudoPty */
 
 #ifdef Dbm
-      if (BlkLoc(f)->file.status & Fs_Dbm) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_Dbm) {
+	 BlkLoc(f)->File.status = 0;
 	 dbm_close((DBM *)fp);
 	 return f;
          }
@@ -190,9 +190,9 @@ function{1} close(f)
 
       pollctr >>= 1;
       pollctr++;
-      if (BlkLoc(f)->file.status & Fs_Window) {
-	 if (BlkLoc(f)->file.status != Fs_Window) { /* not already closed? */
-	    BlkLoc(f)->file.status = Fs_Window;
+      if (BlkD(f,File)->status & Fs_Window) {
+	 if (BlkLoc(f)->File.status != Fs_Window) { /* not already closed? */
+	    BlkLoc(f)->File.status = Fs_Window;
 	    SETCLOSED((wbp) fp);
 	    wclose((wbp) fp);
 	    }
@@ -201,9 +201,9 @@ function{1} close(f)
       else
 #endif					/* Graphics */
 #ifdef HAVE_VOICE
-	if(BlkLoc(f)->file.status & Fs_Voice) {
+	if(BlkD(f,File)->status & Fs_Voice) {
 	/* PVSESSION Ptr; */
-	Ptr = (PVSESSION)BlkLoc(f)->file.fd.fp;
+	Ptr = (PVSESSION)BlkLoc(f)->File.fd.fp;
 	CloseVoiceSession(Ptr);
 	return C_integer 1;
 	}
@@ -222,15 +222,15 @@ function{1} close(f)
        * Close pipe if pipes are supported.
        */
 
-      if (BlkLoc(f)->file.status & Fs_Pipe) {
-	 BlkLoc(f)->file.status = 0;
+      if (BlkD(f,File)->status & Fs_Pipe) {
+	 BlkLoc(f)->File.status = 0;
 	 return C_integer((pclose(fp) >> 8) & 0377);
 	 }
       else
 #endif					/* AMIGA || ARM || OS2 || ... */
 
       fclose(fp);
-      BlkLoc(f)->file.status = 0;
+      BlkLoc(f)->File.status = 0;
 
       /*
        * Return the closed file.
@@ -957,10 +957,13 @@ Deliberate Syntax Error
 		  if (*tempbuf) {
 		     extern FILE *mytmpfile();
 		     FINDDATA_T fd;
-		     if (!FINDFIRST(tempbuf, &fd))
+		     if (!FINDFIRST(tempbuf, &fd)) {
 			fail;
+			}
 		     f = mytmpfile();
-		     if (f == NULL) fail;
+		     if (f == NULL) {
+			fail;
+			}
 		     do {
 			fprintf(f, "%s\n", FILENAME(&fd));
 			}
@@ -1099,8 +1102,8 @@ function{0,1} read(f)
       /*
        * Get a pointer to the file and be sure that it is open for reading.
        */
-      fp = BlkLoc(f)->file.fd.fp;
-      status = BlkLoc(f)->file.status;
+      fp = BlkD(f,File)->fd.fp;
+      status = BlkLoc(f)->File.status;
       if ((status & Fs_Read) == 0)
 	 runerr(212, f);
 
@@ -1108,7 +1111,7 @@ function{0,1} read(f)
        if (status & Fs_Socket) {
 	  StrLen(s) = 0;
           do {
-	     ws = (SOCKET)BlkLoc(f)->file.fd.fd;
+	     ws = (SOCKET)BlkD(f,File)->fd.fd;
 	     if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
 	        /*IntVal(amperErrno) = errno; */
 	        fail;
@@ -1152,15 +1155,15 @@ function{0,1} read(f)
 	 if (! (status & Fs_Window))
 #endif					/* Graphics */
 	    status |= Fs_Buff;
-	 BlkLoc(f)->file.status = status;
+	 BlkLoc(f)->File.status = status;
 	 }
 #endif					/* PosixFns */
 
       if (status & Fs_Writing) {
 	 fseek(fp, 0L, SEEK_CUR);
-	 BlkLoc(f)->file.status &= ~Fs_Writing;
+	 BlkLoc(f)->File.status &= ~Fs_Writing;
 	 }
-      BlkLoc(f)->file.status |= Fs_Reading;
+      BlkLoc(f)->File.status |= Fs_Reading;
 
 #ifdef ConsoleWindow
       /*
@@ -1257,10 +1260,11 @@ function{0,1} read(f)
 
 #ifdef RecordIO
 	 if ((slen = (status & Fs_Record ? getrec(sbuf, MaxReadStr, fp) :
-					   getstrg(sbuf, MaxReadStr, &BlkLoc(f)->file)))
+			   getstrg(sbuf, MaxReadStr, BlkD(f,File))))
 	     == -1) fail;
 #else					/* RecordIO */
-	 if ((slen = getstrg(sbuf, MaxReadStr, &BlkLoc(f)->file)) == -1) {
+
+	 if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
 #ifdef PosixFns
 	    IntVal(amperErrno) = errno;
 #endif					/* PosixFns */
@@ -1328,13 +1332,13 @@ function{0,1} reads(f,i)
       /*
        * Get a pointer to the file and be sure that it is open for reading.
        */
-      status = BlkLoc(f)->file.status;
+      status = BlkD(f,File)->status;
       if ((status & Fs_Read) == 0)
 	 runerr(212, f);
 
 #ifdef Messaging
       if (status & Fs_Messaging) {
-	 struct MFile *mf = BlkLoc(f)->file.fd.mf;
+	 struct MFile *mf = BlkLoc(f)->File.fd.mf;
 	 /* Casting to unsigned lets us use reads(f, -1) */
 	 size_t size = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
 	 if (!MFIN(mf, READING)) {
@@ -1356,7 +1360,7 @@ function{0,1} reads(f,i)
 
 #ifdef PseudoPty
       if (status & Fs_Pty) {
-	 struct ptstruct *p = (struct ptstruct *)BlkLoc(f)->file.fd.fp;
+	 struct ptstruct *p = (struct ptstruct *)BlkLoc(f)->File.fd.fp;
 	 tended char *s = alcstr(NULL, i);
 	 if ((slen = ptlongread(s, i, p)) == -1) {
 	    fail;
@@ -1372,7 +1376,7 @@ function{0,1} reads(f,i)
 	    StrLen(s) = 0;
 	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
 	    do {
-	        ws = (SOCKET)BlkLoc(f)->file.fd.fd;
+	        ws = (SOCKET)BlkD(f,File)->fd.fd;
 		if (bytesread > 0) {
                     if (i - bytesread <= MaxReadStr)
                         Maxread = i - bytesread;
@@ -1413,18 +1417,18 @@ function{0,1} reads(f,i)
 	 * implemented after release: all I/O is low-level, no stdio. This
 	 * makes the Fs_Buff/Fs_Unbuf go away and select will work -- 
 	 * correctly. */
-        if (strcmp(StrLoc(BlkLoc(f)->file.fname), "pipe") != 0) {
+        if (strcmp(StrLoc(BlkD(f,File)->fname), "pipe") != 0) {
 	    status |= Fs_Buff;
-	    BlkLoc(f)->file.status = status;
+	    BlkLoc(f)->File.status = status;
 	}
 #endif					/* PosixFns */
 
-      fp = BlkLoc(f)->file.fd.fp;
+      fp = BlkD(f,File)->fd.fp;
       if (status & Fs_Writing) {
 	 fseek(fp, 0L, SEEK_CUR);
-	 BlkLoc(f)->file.status &= ~Fs_Writing;
+	 BlkLoc(f)->File.status &= ~Fs_Writing;
 	 }
-      BlkLoc(f)->file.status |= Fs_Reading;
+      BlkLoc(f)->File.status |= Fs_Reading;
 
 #ifdef ConsoleWindow
       /*
@@ -1444,7 +1448,7 @@ function{0,1} reads(f,i)
       /*
        *  If reading a directory, return up to i bytes of next entry.
        */
-      if ((BlkLoc(f)->file.status & Fs_Directory) != 0) {
+      if ((BlkD(f,File)->status & Fs_Directory) != 0) {
          char *sp;
          struct dirent *de = readdir((DIR*) fp);
          if (de == NULL)
@@ -1667,33 +1671,30 @@ function{0,1} seek(f,o)
    body {
       FILE *fd;
 
-      fd = BlkLoc(f)->file.fd.fp;
-      if (BlkLoc(f)->file.status == 0)
+      fd = BlkD(f,File)->fd.fp;
+      if (BlkLoc(f)->File.status == 0)
 	 fail;
 
 #ifdef ReadDirectory
-      if (BlkLoc(f)->file.status & Fs_Directory)
+      if (BlkLoc(f)->File.status & Fs_Directory)
 	 fail;
 #endif					/* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
-      if (BlkLoc(f)->file.status & Fs_Window)
+      if (BlkD(f,File)->status & Fs_Window)
 	 fail;
 #endif					/* Graphics */
 
 
 #if HAVE_LIBZ
-        if ( BlkLoc(f)->file.status & Fs_Compress) {
-            if (o<0)
-               fail;
-            else
-               if (gzseek(fd, o - 1, SEEK_SET)==-1)
-                   fail;
-               else
-                   return f;        
-             }
+      if (BlkD(f,File)->status & Fs_Compress) {
+	 if ((o<0) || (gzseek(fd, o - 1, SEEK_SET)==-1))
+	    fail;
+	 else
+	    return f;        
+	 }
 #endif                                 /* HAVE_LIBZ */
 
       if (o > 0) {
@@ -1731,7 +1732,7 @@ function{0,1} seek(f,o)
 #endif					/* CSET2 */
 
 	 }
-      BlkLoc(f)->file.status &= ~(Fs_Reading | Fs_Writing);
+      BlkLoc(f)->File.status &= ~(Fs_Reading | Fs_Writing);
       return f;
       }
 end
@@ -1811,20 +1812,20 @@ function{0,1} where(f)
       long ftell();
       long pos;
 
-      fd = BlkLoc(f)->file.fd.fp;
+      fd = BlkD(f,File)->fd.fp;
 
-      if (BlkLoc(f)->file.status == 0)
+      if (BlkLoc(f)->File.status == 0)
 	 fail;
 
 #ifdef ReadDirectory
-      if ((BlkLoc(f)->file.status & Fs_Directory) != 0)
+      if ((BlkLoc(f)->File.status & Fs_Directory) != 0)
          fail;
 #endif					/* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
-      if (BlkLoc(f)->file.status & Fs_Window)
+      if (BlkLoc(f)->File.status & Fs_Window)
 	 fail;
 #endif					/* Graphics */
 
@@ -2209,10 +2210,10 @@ function {1} name(x[nargs])
 		   * Switch the current file to the file named by the current
 		   * argument providing it is a file.
 		   */
-		  status = BlkLoc(x[n])->file.status;
+		  status = BlkD(x[n],File)->status;
 		  if ((status & Fs_Write) == 0)
 		     runerr(213, x[n]);
-		  f.fp = BlkLoc(x[n])->file.fd.fp;
+		  f.fp = BlkLoc(x[n])->File.fd.fp;
 #ifdef ConsoleWindow
                   if ((f.fp == stdout && !(ConsoleFlags & StdOutRedirect)) ||
                       (f.fp == stderr && !(ConsoleFlags & StdErrRedirect))) {
@@ -2378,7 +2379,7 @@ function{0,1} kbhit()
 	 * perhaps should look in the console's icon event list for a keypress;
 	 *  either a string or event > 60k; presently, succeed for all events
 	 */
-        if (BlkLoc(((wbp)ConsoleBinding)->window->listp)->list.size > 0)
+        if (BlkD(((wbp)ConsoleBinding)->window->listp,List)->size > 0)
 	   return nulldesc;
         }
      fail;
@@ -2491,8 +2492,8 @@ function{1} flush(f)
       }
 
    body {
-      FILE *fp = BlkLoc(f)->file.fd.fp;
-      int status = BlkLoc(f)->file.status;
+      FILE *fp = BlkD(f,File)->fd.fp;
+      int status = BlkD(f,File)->status;
 
       /*
        * File types for which no flushing is possible, or is a no-op.

@@ -176,15 +176,15 @@ function{1} Clone(argv[argc])
       else warg++;
 
       if (argc>warg && is:file(argv[warg])) {
-	 if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
-	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
+	 if ((BlkLoc(argv[warg])->File.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-	 if (ISCLOSED(BlkLoc(argv[warg])->file.fd.wb))
+	 if (ISCLOSED(BlkLoc(argv[warg])->File.fd.wb))
 	    runerr(142,argv[warg]);
          if (child_window) child_window_stuff(w2, w, child_window);
 	 else Protect(w2->context =
-		 clone_context((wbp)BlkLoc(argv[warg])->file.fd.wb),runerr(0));
+		 clone_context((wbp)BlkD(argv[warg],File)->fd.wb),runerr(0));
 	 warg++;
 	 }
       else {
@@ -215,8 +215,7 @@ function{1} Clone(argv[argc])
       if (child_window) my_wmap(w2);
 
       Protect(BlkLoc(result) =
-	      (union block *)alcfile((FILE *)w2,
-				     Fs_Window|Fs_Read|Fs_Write
+	      (union block *)alcfile((FILE *)w2, Fs_Window|Fs_Read|Fs_Write
 #ifdef Graphics3D
 				      | (w->context->is_3D?Fs_Window3D:0)
 #endif					/* Graphics3D */
@@ -299,14 +298,14 @@ function{0,1} ColorValue(argv[argc])
       tended char *s;
       char tmp[32], *t;
 
-      if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window)) {
-         w = BlkLoc(argv[0])->file.fd.wb;	/* explicit window */	
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_Window)) {
+         w = BlkD(argv[0],File)->fd.wb;	/* explicit window */	
          warg = 1;
          }
       else if (is:file(kywd_xwin[XKey_Window]) &&
-            ((BlkLoc(kywd_xwin[XKey_Window])->file.status &
+            ((BlkD(kywd_xwin[XKey_Window],File)->status &
 	     (Fs_Window|Fs_Read))==(Fs_Window|Fs_Read))) {
-         w = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;	/* &window */
+         w = BlkD(kywd_xwin[XKey_Window],File)->fd.wb;	/* &window */
 	 }
       else {
          w = NULL;			/* no window (but proceed anyway) */
@@ -354,11 +353,11 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
        * 2nd window defaults to value of first window
        */
       if (argc>warg && is:file(argv[warg])) {
-	 if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
-	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
+	 if ((BlkLoc(argv[warg])->File.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-	 w2 = BlkLoc(argv[warg])->file.fd.wb;
+	 w2 = BlkLoc(argv[warg])->File.fd.wb;
 	 if (ISCLOSED(w2))
 	    runerr(142,argv[warg]);
 	 warg++;
@@ -414,15 +413,15 @@ function{0,1} Couple(w,w2)
       /*
        * if w is a file, then we bind to an existing window
        */
-      if (is:file(w) && (BlkLoc(w)->file.status & Fs_Window)) {
-	 wb = BlkLoc(w)->file.fd.wb;
+      if (is:file(w) && (BlkD(w,File)->status & Fs_Window)) {
+	 wb = BlkLoc(w)->File.fd.wb;
 	 wb_new->window = ws = wb->window;
-	 if (is:file(w2) && (BlkLoc(w2)->file.status & Fs_Window)) {
+	 if (is:file(w2) && (BlkD(w2,File)->status & Fs_Window)) {
 	    /*
 	     * Bind an existing window to an existing context,
 	     * and up the context's reference count.
 	     */
-	    if (rebind(wb_new, BlkLoc(w2)->file.fd.wb) == Failed) fail;
+	    if (rebind(wb_new, BlkLoc(w2)->File.fd.wb) == Failed) fail;
 	    wb_new->context->refcount++;
 	    }
 	 else 
@@ -1026,7 +1025,7 @@ function{1} DrawPolygon(argv[argc])
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, argc-warg, GL_LINE_LOOP, w->context->dim);
+	    drawpoly(w, v, argc-warg, GL_LINE_LOOP /* w->context->meshmode*/, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
@@ -1272,7 +1271,6 @@ function{1} DrawString(argv[argc])
       else 
 #endif                      /* Graphics3D */
 	{
-
       CheckArgMultiple(3);
 
       for(i=0; i < n; i++) {
@@ -1316,14 +1314,14 @@ function{1} EraseArea(argv[argc])
          glClearColor(RED(w->context->bg)/(GLfloat)256,
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
          w->context->selectionavailablename=1;
          w->context->selectionnamecount=0;
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
          glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
          ReturnWindow;
 	 }
-#endif                                /* Graphics3D */
+#endif					/* Graphics3D */
 
       for (i = warg; i < argc || i == warg; i += 4) {
          r = rectargs(w, argc, argv, i, &x, &y, &width, &height);
@@ -1354,11 +1352,11 @@ function{1} Event(argv[argc])
       else {
 	 d = kywd_xwin[XKey_Window];
 	 }
-      if (is:null(d) || ((BlkLoc(d)->file.status & Fs_Window) == 0))
+      if (is:null(d) || ((BlkD(d,File)->status & Fs_Window) == 0))
 	 runerr(140,d);
-      if ((BlkLoc(d)->file.status & (Fs_Read|Fs_Write)) == 0)
+      if ((BlkD(d,File)->status & (Fs_Read|Fs_Write)) == 0)
 	 runerr(142,d);
-      w = BlkLoc(d)->file.fd.wb;
+      w = BlkLoc(d)->File.fd.wb;
 #ifdef ConsoleWindow
       if ((((FILE*)(w)) != ConsoleBinding) &&
 	  ((((FILE*)(w)) == k_input.fd.fp) ||
@@ -1367,7 +1365,7 @@ function{1} Event(argv[argc])
 	 (w) = (wbp)OpenConsole();
 #endif					/* ConsoleWindow */
 
-      if (ISCLOSED(w) && BlkLoc(w->window->listp)->list.size == 0)
+      if (ISCLOSED(w) && BlkD(w->window->listp,List)->size == 0)
 	 runerr(142,d);
       if (argc - warg < 1)
 	 t = -1;
@@ -1387,17 +1385,17 @@ function{1} Event(argv[argc])
          }
       if (i == 0) {
          if (is:file(kywd_xwin[XKey_Window]) &&
-               w == BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb)
+               w == BlkD(kywd_xwin[XKey_Window],File)->fd.wb)
 	    lastEventWin = kywd_xwin[XKey_Window];
 	 else
 	    lastEventWin = argv[warg-1];
-         lastEvFWidth = FWIDTH(BlkLoc(lastEventWin)->file.fd.wb);
-         lastEvLeading = LEADING(BlkLoc(lastEventWin)->file.fd.wb);
-         lastEvAscent = ASCENT(BlkLoc(lastEventWin)->file.fd.wb);
+         lastEvFWidth = FWIDTH(BlkD(lastEventWin,File)->fd.wb);
+         lastEvLeading = LEADING(BlkD(lastEventWin,File)->fd.wb);
+         lastEvAscent = ASCENT(BlkD(lastEventWin,File)->fd.wb);
 	 if (is:integer(d) && IntVal(d)==WINDOWCLOSED && 
 	     !(w->window->inputmask & WindowClosureMask)) {
 	    /* closed, don't accept more I/O on it */
-	    BlkLoc(lastEventWin)->file.status &= ~(Fs_Read|Fs_Write);
+	    BlkLoc(lastEventWin)->File.status &= ~(Fs_Read|Fs_Write);
 	    }
 	 return d;
 	 }
@@ -1424,7 +1422,6 @@ function{0,1} Fg(argv[argc])
       char *temp;
       int is_texture=0, texhandle;
       int warg = 0;
-
       OptTexWindow(w);
       if (is_texture) {
 	 warg=1;
@@ -1660,7 +1657,7 @@ function{1} FillPolygon(argv[argc])
 
 end
 
-/*
+        /*
  * FillRectangle(w, x1, y1, width1, height1,...,xN, yN, widthN, heightN)
  */
 "FillRectangle(argv[]){1} - draw filled rectangle"
@@ -1725,7 +1722,6 @@ function{0,1} Font(argv[argc])
          }
       getfntnam(w, buf);
       len = strlen(buf);
-      Protect(tmp = alcstr(buf, len), runerr(0));
 #ifdef Graphics3D
       if (w->context->is_3D) {
 	 if (!constr)
@@ -1748,6 +1744,7 @@ function{0,1} Font(argv[argc])
          c_put(&(w->window->funclist), &f);	
 	}
 #endif					/* Graphics3D */
+      Protect(tmp = alcstr(buf, len), runerr(0));
       return string(len,tmp);
       }
 end
@@ -1889,7 +1886,7 @@ function{0,1} PaletteChars(argv[argc])
       int n, warg;
       extern char c1list[], c2list[], c3list[], c4list[];
 
-      if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window))
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_Window))
          warg = 1;
       else
          warg = 0;		/* window not required */
@@ -1930,7 +1927,7 @@ function{0,1} PaletteColor(argv[argc])
       struct palentry *e;
       tended struct descrip d;
 
-      if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window))
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_Window))
          warg = 1;
       else
          warg = 0;			/* window not required */
@@ -1972,13 +1969,13 @@ function{0,1} PaletteKey(argv[argc])
       tended char *s;
       long r, g, b, a;
 
-      if (is:file(argv[0]) && (BlkLoc(argv[0])->file.status & Fs_Window)) {
-         w = BlkLoc(argv[0])->file.fd.wb;	/* explicit window */	
+      if (is:file(argv[0]) && (BlkD(argv[0],File)->status & Fs_Window)) {
+         w = BlkLoc(argv[0])->File.fd.wb;	/* explicit window */	
          warg = 1;
          }
       else if (is:file(kywd_xwin[XKey_Window]) &&
-            (BlkLoc(kywd_xwin[XKey_Window])->file.status & Fs_Window))
-         w = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;	/* &window */
+            (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window))
+         w = BlkLoc(kywd_xwin[XKey_Window])->File.fd.wb;	/* &window */
       else
          w = NULL;			/* no window (but proceed anyway) */
 
@@ -2050,12 +2047,12 @@ function{0,1} Pending(argv[argc])
       /* not using OptWindow() macro here since Pending() does no I/O */
 
       if (argc>warg && is:file(argv[warg])) {
-         if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+         if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
-         if ((BlkLoc(argv[warg])->file.status & Fs_Write) == 0)
+         if ((BlkD(argv[warg],File)->status & Fs_Write) == 0)
 	    isclosed = 1;
 
-         w = BlkLoc(argv[warg])->file.fd.wb;
+         w = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
          if ((((FILE*)(w)) != ConsoleBinding) &&
 	     ((((FILE*)(w)) == k_input.fd.fp) || (((FILE*)(w)) == k_output.fd.fp) ||
@@ -2068,11 +2065,11 @@ function{0,1} Pending(argv[argc])
          }
       else {
          if (!(is:file(kywd_xwin[XKey_Window]) &&
-	      (BlkLoc(kywd_xwin[XKey_Window])->file.status & Fs_Window)))
+	      (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
 	    runerr(140,kywd_xwin[XKey_Window]);
-	 if ((BlkLoc(kywd_xwin[XKey_Window])->file.status & (Fs_Read|Fs_Write))==0)
+	 if ((BlkD(kywd_xwin[XKey_Window],File)->status& (Fs_Read|Fs_Write))==0)
 	    isclosed = 1;
-         w = BlkLoc(kywd_xwin[XKey_Window])->file.fd.wb;
+         w = BlkLoc(kywd_xwin[XKey_Window])->File.fd.wb;
          if (ISCLOSED(w))
 	    isclosed = 1;
          }
@@ -2211,9 +2208,9 @@ function{0,2} QueryPointer(w)
 	 query_rootpointer(&xp);
 	 }
       else {
-	 if (!is:file(w) || !(BlkLoc(w)->file.status & Fs_Window))
+	 if (!is:file(w) || !(BlkD(w,File)->status & Fs_Window))
 	    runerr(140, w);
-	 query_pointer(BlkLoc(w)->file.fd.wb, &xp);
+	 query_pointer(BlkLoc(w)->File.fd.wb, &xp);
 	 }
       suspend C_integer xp.x;
       suspend C_integer xp.y;
@@ -2260,8 +2257,9 @@ function{0,1} ReadImage(argv[argc])
       if (is_texture)
 	 base=1;
 
+
       if (argc - warg == 0)
-	 runerr(103,nulldesc);
+	 runerr(103,nulldesc);	
       if (!cnv:C_string(argv[base], tmp))
 	 runerr(103,argv[base]);
 
@@ -2354,9 +2352,9 @@ function{1} WSync(w)
 	 }
       else if (!is:file(w)) runerr(140,w);
       else {
-         if (!(BlkLoc(w)->file.status & Fs_Window))
+         if (!(BlkD(w,File)->status & Fs_Window))
             runerr(140,w);
-         _w_ = BlkLoc(w)->file.fd.wb;
+         _w_ = BlkLoc(w)->File.fd.wb;
 	 }
 
       wsync(_w_);
@@ -2397,10 +2395,10 @@ function{1} Uncouple(w)
    body {
       wbp _w_;
       if (!is:file(w)) runerr(140,w);
-      if ((BlkLoc(w)->file.status & Fs_Window) == 0) runerr(140,w);
-      if ((BlkLoc(w)->file.status & (Fs_Read|Fs_Write)) == 0) runerr(142,w);
-      _w_ = BlkLoc(w)->file.fd.wb;
-      BlkLoc(w)->file.status = Fs_Window; /* no longer open for read/write */
+      if ((BlkD(w,File)->status & Fs_Window) == 0) runerr(140,w);
+      if ((BlkLoc(w)->File.status & (Fs_Read|Fs_Write)) == 0) runerr(142,w);
+      _w_ = BlkLoc(w)->File.fd.wb;
+      BlkLoc(w)->File.status = Fs_Window; /* no longer open for read/write */
       free_binding(_w_);
       return w;
       }
@@ -2438,9 +2436,9 @@ function{*} WAttrib(argv[argc])
                 *  current argument providing it is a file.  argv[n]
                 *  is made to be a empty string to avoid a special case.
                 */
-               if (!(BlkLoc(argv[n])->file.status & Fs_Window))
+               if (!(BlkD(argv[n],File)->status & Fs_Window))
                   runerr(140,argv[n]);
-               w = BlkLoc(argv[n])->file.fd.wb;
+               w = BlkLoc(argv[n])->File.fd.wb;
 	       if (config && pass == 2) {
 		  if (do_config(w, config) == Failed) fail;
 		  }
@@ -2907,7 +2905,7 @@ function{0,1} WinMenuBar(argv[argc])
       if (warg == argc) fail;
       for (i = warg; i < argc; i++) {
          if (!is:list(argv[i])) runerr(108, argv[i]);
-         total += BlkLoc(argv[i])->list.size;
+         total += BlkD(argv[i],List)->size;
 	 }
       /*
        * free up memory for the old menu map
@@ -3202,7 +3200,7 @@ function{0,1} WinSelectDialog(argv[argc])
       if (warg == argc)
          fail;
       if (!is:list(argv[warg])) runerr(108, argv[warg]);
-      hp  = (struct b_list *)BlkLoc(argv[warg]);
+      hp  = BlkD(argv[warg], List);
       lsize = hp->size;
       for(i=0; i < lsize; i++) {
          c_get(hp, &d);
@@ -3224,7 +3222,7 @@ function{0,1} WinSelectDialog(argv[argc])
          }
       else {
          if (!is:list(argv[warg])) runerr(108, argv[warg]);
-         hp  = (struct b_list *)BlkLoc(argv[warg]);
+         hp  = BlkD(argv[warg], List);
          lsize = hp->size;
          for(i=0; i < lsize; i++) {
             c_get(hp, &d);
@@ -3424,7 +3422,7 @@ function{1} DrawTorus(argv[argc])
 
       if (!constr && !(constr = rec_structor3d("gl_torus")))
 	 syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       for (i = warg; i < argc; i += 5) {
 
@@ -3490,7 +3488,7 @@ function{1} DrawCube(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_cube")))
 	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       makecurrent(w);
 
@@ -3539,6 +3537,7 @@ function{1} DrawSphere(argv[argc])
    abstract{ return record }
    body {
       wbp w;
+      wcp wc;
       int warg = 0, n, i, j, nfields, draw_code, slices, rings;
       double r, x, y, z;
       tended struct b_record *rp;
@@ -3546,21 +3545,22 @@ function{1} DrawSphere(argv[argc])
       static dptr constr;
       char bfmode;
 
-
       OptWindow(w);
       CheckArgMultiple(4);
 
+      wc = w->context;
+
       /* sphere cannot be drawn in a 2-dim scene */
-      if (w->context->dim == 2) runerr(150);
+      if (wc->dim == 2) runerr(150);
 
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_sphere")))
 	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      bfmode = w->context->buffermode;
-      slices = w->context->slices;
-      rings = w->context->rings;
+      bfmode = wc->buffermode;
+      slices = wc->slices;
+      rings = wc->rings;
 
       for(i = warg; i < argc; i += 4) {
 
@@ -3570,7 +3570,7 @@ function{1} DrawSphere(argv[argc])
 	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
 	 if (bfmode)
-	    sphere(r, x, y, z, slices, rings, (w->context->texmode?w->context->autogen:0));
+	    sphere(r, x, y, z, slices, rings, (wc->texmode?wc->autogen:0));
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3629,11 +3629,11 @@ function{1} DrawCylinder(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_cylinder")))
 	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr,Proc)->nfields;
 
-      bfmode = w->context->buffermode;
-      slices = w->context->slices;
-      rings = w->context->rings;
+      bfmode = wc->buffermode;
+      slices = wc->slices;
+      rings = wc->rings;
 
       for(i = warg; i < argc; i += 6) {
 
@@ -3696,12 +3696,11 @@ function{1} DrawDisk(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_disk")))
 	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
-      bfmode = w->context->buffermode;
-      slices = w->context->slices;
-      rings = w->context->rings;
-
+      bfmode = wc->buffermode;
+      slices = wc->slices;
+      rings = wc->rings;
 
       for (i = warg; i < argc; i += 7) {
 	 if (argc-warg <= i+3)
@@ -3742,7 +3741,7 @@ function{1} DrawDisk(argv[argc])
 
 	 if (i+6 >= argc) {
 	    a2 = 360;
-            MakeInt(360, &(rp->fields[8]));
+            MakeInt(360, &(rp->fields[8])); 
 	    }
 	 else {
 	    if (!cnv:C_double(argv[i+6], a2)) runerr(102, argv[i+6]);
@@ -3930,7 +3929,7 @@ function{1} PopMatrix(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_popmatrix")))
 	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       makecurrent(w);
 
@@ -3986,7 +3985,7 @@ function{1} PushMatrix(argv[argc])
 
       if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
 	 syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       makecurrent(w);
       /* push a copy of the top matrix, if possible */
@@ -4120,7 +4119,7 @@ function{1} IdentityMatrix(argv[argc])
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_identity")))
 	    syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       /*
        * create a record of the graphical object and its parameters
@@ -4164,7 +4163,7 @@ function{1} MatrixMode(argv[argc])
   	
       if (!constr & !(constr = rec_structor3d("gl_matrixmode")))
 	 syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       /*
        * create a record of the graphical object and its parameters
@@ -4185,7 +4184,7 @@ function{1} MatrixMode(argv[argc])
       /* check the value of s and switch matrix stacks */
       if (!strcmp("modelview", temp)) {
 #if HAVE_LIBGL
-	 glMatrixMode(GL_MODELVIEW);
+	 glMatrixMode(GL_MODELVIEW);	
 #endif					/* HAVE_LIBGL */
 	 }
       else if (!strcmp("projection", temp)) {
@@ -4230,7 +4229,7 @@ function{1} Texture(argv[argc])
 
       if (!constr && !(constr = rec_structor3d("gl_texture")))
 	 syserr("failed to create opengl record constructor");
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       /*
        * create a record of the graphical object and its parameters
@@ -4269,8 +4268,8 @@ function{1} Texture(argv[argc])
        * so we put w->context->ntexture in the list.
        */
       if (wc->ntextures >= wc->nalced) {
-         wc->nalced *= 2;
 #if HAVE_LIBGL
+         wc->nalced *= 2;
          wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
          glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
 #endif					/* HAVE_LIBGL */
@@ -4286,11 +4285,11 @@ function{1} Texture(argv[argc])
 
       /* check if the source is another window */
       if (argc>warg && is:file(argv[warg])) {
-	 if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
-	 if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
+	 if ((BlkLoc(argv[warg])->File.status & (Fs_Read|Fs_Write)) == 0)
 	    runerr(142,argv[warg]);
-	 w2 = BlkLoc(argv[warg])->file.fd.wb;
+	 w2 = BlkLoc(argv[warg])->File.fd.wb;
 	 if (ISCLOSED(w2))
 	    runerr(142,argv[warg]);
 
@@ -4304,18 +4303,18 @@ function{1} Texture(argv[argc])
       else if (is:record(argv[warg])) {
 	 C_integer texhandle;
 
-	 if (!cnv:C_string(BlkLoc(argv[warg])->record.fields[0], tmp))
+	 if (!cnv:C_string(BlkD(argv[warg],Record)->fields[0], tmp))
 	    runerr(103, argv[warg]);
 
 	 if (strcmp(tmp, "Texture")) runerr(103, argv[warg]);
 
-         w2 = BlkLoc(BlkLoc(argv[warg])->record.fields[3])->file.fd.wb;
-         rp->fields[3] = BlkLoc(argv[warg])->record.fields [3];
+         w2 = BlkD(BlkLoc(argv[warg])->Record.fields[3],File)->fd.wb;
+         rp->fields[3] = BlkLoc(argv[warg])->Record.fields[3];
          wc = w2->context;
 
          /* Pull out the texture handle */
-         texhandle = IntVal(BlkLoc(argv[warg])->record.fields[2]);
-         rp->fields[2] = BlkLoc(argv[warg])->record.fields [2];
+         texhandle = IntVal(BlkLoc(argv[warg])->Record.fields[2]);
+         rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
          wc->curtexture = texhandle;
 #if HAVE_LIBGL
          glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
@@ -4446,12 +4445,12 @@ function{1} Texcoord(argv[argc])
 	    if (argc - warg > wc->ntexcoordsalced) {
 	       wc->texcoords = realloc(wc->texcoords,
 				       (argc-warg) * sizeof(double));
-	    if (wc->texcoords == NULL) {
-	       /*
-		* realloc fails; where did our old tex coordinates go?
-		*/
-	       runerr(305);
-	       }
+	       if (wc->texcoords == NULL) {
+		  /*
+		   * realloc fails; where did our old tex coordinates go?
+		   */
+		  runerr(305);
+		  }
 	       wc->ntexcoordsalced = (argc-warg);
 	       }
 	    for (i = warg; i < argc; i++) {
@@ -4526,13 +4525,17 @@ function{1} WSection(argv[argc])
       tended struct b_record *rp;
       tended char* tmp;
       static dptr constr, constr2;
-      static section_depth=1;     /* one is the outer most section. every new nested section increment one  */
+      /*
+       * Section one is the outer most section.
+       * every new nested section increment one
+       */
+      static section_depth=1;
 
       OptWindow(w);
-      wc=w->context;
+      wc = w->context;
       if (wc->is_3D==0) {
-        fail;
-        }
+	 fail;
+	 }
       if (argc-warg==0) {	/* section ends */
 	 if (!section_length(w))
 	    syserr("failed to find the section length");
@@ -4572,7 +4575,7 @@ function{1} WSection(argv[argc])
       if (!constr && !(constr = rec_structor3d("gl_mark"))) {
 	     syserr("failed to create opengl record constructor");
       }
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
 
       if (!cnv:string(argv[warg], argv[warg]))
 	 runerr(103, argv[warg]);
@@ -4589,7 +4592,6 @@ function{1} WSection(argv[argc])
       if (draw_code == -1)
 	 fail; 
       MakeInt(draw_code, &(rp->fields[1]));
-
 
       rp->fields[2] = argv[warg];   /* section_name */
       rp->fields[3] = zerodesc;     /* skip */

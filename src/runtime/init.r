@@ -1593,8 +1593,8 @@ int i;
       fprintf(stderr,"\nTermination dump:\n\n");
       fflush(stderr);
        fprintf(stderr,"co-expression #%ld(%ld)\n",
-	 (long)BlkLoc(k_current)->coexpr.id,
-	 (long)BlkLoc(k_current)->coexpr.size);
+	 (long)BlkD(k_current,Coexpr)->id,
+	 (long)BlkD(k_current,Coexpr)->size);
       fflush(stderr);
       xdisp(pfp,glbl_argp,k_level,stderr);
       }

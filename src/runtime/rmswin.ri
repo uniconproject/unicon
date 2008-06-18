@@ -1072,7 +1072,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
          ws->refcount = -ws->refcount;
 	 }
       if (BlkLoc(lastEventWin))
-         BlkLoc(lastEventWin)->file.status &= ~(Fs_Write);
+         BlkD(lastEventWin,File)->status &= ~(Fs_Write);
 
 #ifdef ConsoleWindow
       if (ConsoleBinding && (ws == ((wbp)ConsoleBinding)->window)) {
@@ -3365,14 +3365,19 @@ void fillarcs(wbp wb, XArc *arcs, int narcs)
             (int)(((arc->width + 1)>>1) * cos(arc->angle1+arc->angle2));
 	 pts[2].y = arc->y + (arc->height>>1) -
             (int)(((arc->height )>>1) * sin(arc->angle1+arc->angle2));
-	 if (stdwin) {
-	    Pie(stddc, arc->x, arc->y,
+	 if ((pts[1].x == pts[2].x) && (pts[1].y == pts[2].y)) {
+	    /* extent of 0 will be misinterpreted by windows as 2pi */
+	    }
+	 else {
+	    if (stdwin) {
+	       Pie(stddc, arc->x, arc->y,
+		   arc->x + arc->width + 1, arc->y + arc->height + 1,
+		   pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+	       }
+	    Pie(pixdc, arc->x, arc->y,
 		arc->x + arc->width + 1, arc->y + arc->height + 1,
 		pts[1].x, pts[1].y, pts[2].x, pts[2].y);
 	    }
-	 Pie(pixdc, arc->x, arc->y,
-	     arc->x + arc->width + 1, arc->y + arc->height + 1,
-		pts[1].x, pts[1].y, pts[2].x, pts[2].y);
 	 }
       }
    if (stdwin) SelectObject(stddc, oldpen);
@@ -4459,7 +4464,7 @@ int nativemenubar(wbp w, int total, int argc, dptr argv, int warg, dptr d)
       /*
        * each argument must be a list of strings
        */
-      hp = (struct b_list *)BlkLoc(argv[warg]);
+      hp = BlkD(argv[warg], List);
       r = hp->size;
       /*
        * Construct a Windows menu corresponding to the Icon list

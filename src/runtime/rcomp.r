@@ -74,14 +74,14 @@ dptr dp1, dp2;
          /*
           * Collate on co-expression id.
           */
-         lresult = (BlkLoc(*dp1)->coexpr.id - BlkLoc(*dp2)->coexpr.id);
+         lresult = (BlkD(*dp1,Coexpr)->id - BlkD(*dp2,Coexpr)->id);
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
 
       case T_Cset:
-         return csetcmp((unsigned int *)((struct b_cset *)BlkLoc(*dp1))->bits,
-            (unsigned int *)((struct b_cset *)BlkLoc(*dp2))->bits);
+         return csetcmp((unsigned int *)BlkD(*dp1,Cset)->bits,
+			(unsigned int *)BlkD(*dp2,Cset)->bits);
 
       case T_File:
          /*
@@ -89,11 +89,11 @@ dptr dp1, dp2;
           */
 	 {
 	 struct descrip s1, s2; /* live only long enough to lexcmp them */
-	 dptr ps1 = &(BlkLoc(*dp1)->file.fname);
-	 dptr ps2 = &(BlkLoc(*dp2)->file.fname);
+	 dptr ps1 = &(BlkD(*dp1,File)->fname);
+	 dptr ps2 = &(BlkD(*dp2,File)->fname);
 #ifdef Graphics
-	 if (BlkLoc(*dp1)->file.status & Fs_Window) {
-	    wbp w = BlkLoc(*dp1)->file.fd.wb;
+	 if (BlkLoc(*dp1)->File.status & Fs_Window) {
+	    wbp w = BlkLoc(*dp1)->File.fd.wb;
 	    if (w->window) {
 	       StrLoc(s1) = w->window->windowlabel;
 	       StrLen(s1) = strlen(StrLoc(s1));
@@ -104,8 +104,8 @@ dptr dp1, dp2;
                } 
 	    ps1 = &s1;
 	    }
-	 if (BlkLoc(*dp2)->file.status & Fs_Window) {
-	    wbp w = BlkLoc(*dp2)->file.fd.wb;
+	 if (BlkLoc(*dp2)->File.status & Fs_Window) {
+	    wbp w = BlkLoc(*dp2)->File.fd.wb;
 	    if (w->window) {
 	       StrLoc(s2) = w->window->windowlabel;
 	       StrLen(s2) = strlen(StrLoc(s2));
@@ -124,7 +124,7 @@ dptr dp1, dp2;
          /*
           * Collate on list id.
           */
-         lresult = (BlkLoc(*dp1)->list.id - BlkLoc(*dp2)->list.id);
+         lresult = (BlkD(*dp1,List)->id - BlkD(*dp2,List)->id);
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
@@ -136,8 +136,8 @@ dptr dp1, dp2;
          /*
           * Collate on procedure name.
           */
-         return lexcmp(&(BlkLoc(*dp1)->proc.pname),
-            &(BlkLoc(*dp2)->proc.pname));
+         return lexcmp(&(BlkD(*dp1,Proc)->pname),
+            &(BlkD(*dp2,Proc)->pname));
 
       case T_Real:
          GetReal(dp1,rres1);
@@ -151,10 +151,10 @@ dptr dp1, dp2;
          /*
           * Collate on record id within record name.
           */
-         iresult = lexcmp(&(BlkLoc(*dp1)->record.recdesc->proc.pname),
-            &(BlkLoc(*dp2)->record.recdesc->proc.pname));
+         iresult = lexcmp(&(BlkD(*dp1,Record)->recdesc->Proc.pname),
+            &(BlkD(*dp2,Record)->recdesc->Proc.pname));
          if (iresult == Equal) {
-            lresult = (BlkLoc(*dp1)->record.id - BlkLoc(*dp2)->record.id);
+            lresult = (BlkD(*dp1,Record)->id - BlkD(*dp2,Record)->id);
             if (lresult > 0)	/* coded this way because of code-generation */
                return Greater;  /* bug in MSC++ 7.0A;  do not change. */
             else if (lresult < 0)
@@ -168,7 +168,7 @@ dptr dp1, dp2;
          /*
           * Collate on set id.
           */
-         lresult = (BlkLoc(*dp1)->set.id - BlkLoc(*dp2)->set.id);
+         lresult = (BlkD(*dp1,Set)->id - BlkD(*dp2,Set)->id);
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
@@ -177,7 +177,7 @@ dptr dp1, dp2;
          /*
           * Collate on table id.
           */
-         lresult = (BlkLoc(*dp1)->table.id - BlkLoc(*dp2)->table.id);
+         lresult = (BlkD(*dp1,Table)->id - BlkD(*dp2,Table)->id);
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);
@@ -316,7 +316,7 @@ dptr dp1, dp2;
 	     */
 	    result = 1;
 	    for (i = 0; i < CsetSize; i++)
-	       if (BlkLoc(*dp1)->cset.bits[i] != BlkLoc(*dp2)->cset.bits[i]) {
+	       if (BlkD(*dp1,Cset)->bits[i] != BlkD(*dp2,Cset)->bits[i]) {
 		  result = 0;
 		  break;
 		  }

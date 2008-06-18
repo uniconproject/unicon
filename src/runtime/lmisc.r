@@ -30,7 +30,7 @@ register dptr cargp;
    struct b_proc *cproc;
 
    /* cproc is the Icon procedure that create occurs in */
-   cproc = (struct b_proc *)BlkLoc(glbl_argp[0]);
+   cproc = BlkD(glbl_argp[0], Proc);
 #endif					/* COMPILER */
 
    /*

@@ -48,20 +48,20 @@ operator{*} ! bang(underef x -> dx)
              * each one, suspend with a variable pointing to each
              * element contained in the block.
              */
-            for (ep = BlkLoc(dx)->list.listhead;
+            for (ep = BlkD(dx,List)->listhead;
 		 BlkType(ep) == T_Lelem;
-                 ep = ep->lelem.listnext){
-               for (i = 0; i < ep->lelem.nused; i++) {
-                  j = ep->lelem.first + i;
-                  if (j >= ep->lelem.nslots)
-                     j -= ep->lelem.nslots;
+                 ep = Blk(ep,Lelem)->listnext){
+               for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+                  j = ep->Lelem.first + i;
+                  if (j >= ep->Lelem.nslots)
+                     j -= ep->Lelem.nslots;
 
 #if E_Lsub
 		  ++xi;
 		  EVVal(xi, E_Lsub);
 #endif					/* E_Lsub */
 
-                  suspend struct_var(&ep->lelem.lslots[j], ep);
+                  suspend struct_var(&ep->Lelem.lslots[j], ep);
                   }
                }
             }
@@ -85,18 +85,18 @@ operator{*} ! bang(underef x -> dx)
              * x is a file.  Read the next line into the string space
              *	and suspend the newly allocated string.
              */
-            fd = BlkLoc(dx)->file.fd.fp;
+            fd = BlkD(dx,File)->fd.fp;
    
-            status = BlkLoc(dx)->file.status;
+            status = BlkLoc(dx)->File.status;
             if ((status & Fs_Read) == 0) 
                runerr(212, dx);
 
             if (status & Fs_Writing) {
                fseek(fd, 0L, SEEK_CUR);
-               BlkLoc(dx)->file.status &= ~Fs_Writing;
+               BlkLoc(dx)->File.status &= ~Fs_Writing;
                }
-            BlkLoc(dx)->file.status |= Fs_Reading;
-            status = BlkLoc(dx)->file.status;
+            BlkLoc(dx)->File.status |= Fs_Reading;
+            status = BlkLoc(dx)->File.status;
 
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
@@ -226,9 +226,9 @@ operator{*} ! bang(underef x -> dx)
 #ifdef RecordIO
                   if ((slen = (status & Fs_Record ?
 			getrec(sbuf, MaxCvtLen, fd) :
-			getstrg(sbuf, MaxCvtLen, &BlkLoc(dx)->file))) == -1)
+			getstrg(sbuf, MaxCvtLen, BlkD(dx,File)))) == -1)
 #else					/* RecordIO */
-                  if ((slen = getstrg(sbuf,MaxCvtLen,&BlkLoc(dx)->file)) == -1)
+                  if ((slen = getstrg(sbuf,MaxCvtLen,BlkD(dx,File))) == -1)
 #endif                                  /* RecordIO */
 
                      fail;
@@ -266,10 +266,9 @@ operator{*} ! bang(underef x -> dx)
              */
 	    for (ep = hgfirst(BlkLoc(dx), &state); ep != 0;
 	       ep = hgnext(BlkLoc(dx), &state, ep)) {
+                  EVValD(&(Blk(ep,Telem)->tval), E_Tval);
 
-                  EVValD(&ep->telem.tval, E_Tval);
-
-		  Protect(tp = alctvtbl(&dx, &ep->telem.tref, ep->telem.hashnum), runerr(0));
+		  Protect(tp = alctvtbl(&dx, &ep->Telem.tref, ep->Telem.hashnum), runerr(0));
 		  suspend tvtbl(tp);
                   }
             }
@@ -287,8 +286,8 @@ operator{*} ! bang(underef x -> dx)
              */
 	    for (ep = hgfirst(BlkLoc(dx), &state); ep != 0;
 	       ep = hgnext(BlkLoc(dx), &state, ep)) {
-                  EVValD(&ep->selem.setmem, E_Sval);
-                  suspend ep->selem.setmem;
+                  EVValD(&(ep->Selem.setmem), E_Sval);
+                  suspend ep->Selem.setmem;
                   }
 	    }
          }
@@ -305,11 +304,11 @@ operator{*} ! bang(underef x -> dx)
 
             EVValD(&dx, E_Rbang);
 
-            j = BlkLoc(dx)->record.recdesc->proc.nfields;
+            j = Blk(BlkD(dx,Record)->recdesc,Proc)->nfields;
             for (i = 0; i < j; i++) {
 	       EVVal(i+1, E_Rsub);
-               suspend struct_var(&BlkLoc(dx)->record.fields[i], 
-                  (struct b_record *)BlkLoc(dx));
+               suspend struct_var(&BlkLoc(dx)->Record.fields[i], 
+                  BlkD(dx, Record));
                }
             }
          }
@@ -432,7 +431,7 @@ operator{0,1} ? random(underef x -> dx)
             double rval;
             register C_integer i, j;
             union block *bp;     /* doesn't need to be tended */
-            val = BlkLoc(dx)->list.size;
+            val = BlkD(dx,List)->size;
             if (val <= 0)
                fail;
             rval = RandVal;
@@ -447,10 +446,10 @@ operator{0,1} ? random(underef x -> dx)
              * Work down chain list of list blocks and find the block that
              *  contains the selected element.
              */
-            bp = BlkLoc(dx)->list.listhead;
-            while (i >= j + bp->lelem.nused) {
-               j += bp->lelem.nused;
-               bp = bp->lelem.listnext;
+            bp = BlkD(dx,List)->listhead;
+            while (i >= j + Blk(bp,Lelem)->nused) {
+               j += Blk(bp,Lelem)->nused;
+               bp = Blk(bp,Lelem)->listnext;
                if (BlkType(bp) == T_List)
                   syserr("list reference out of bounds in random");
                }
@@ -458,10 +457,10 @@ operator{0,1} ? random(underef x -> dx)
              * Locate the appropriate element and return a variable
              * that points to it.
              */
-            i += bp->lelem.first - j;
-            if (i >= bp->lelem.nslots)
-               i -= bp->lelem.nslots;
-            return struct_var(&bp->lelem.lslots[i], bp);
+            i += Blk(bp,Lelem)->first - j;
+            if (i >= bp->Lelem.nslots)
+               i -= bp->Lelem.nslots;
+            return struct_var(&(bp->Lelem.lslots[i]), bp);
             }
          }
 
@@ -482,7 +481,7 @@ operator{0,1} ? random(underef x -> dx)
 	    struct b_tvtbl *tp;
 
             bp = BlkLoc(dx);
-            val = bp->table.size;
+            val = Blk(bp,Table)->size;
             if (val <= 0)
                fail;
             rval = RandVal;
@@ -496,13 +495,13 @@ operator{0,1} ? random(underef x -> dx)
              * Walk down the hash chains to find and return the nth element
 	     *  as a variable.
              */
-            for (i = 0; i < HSegs && (seg = bp->table.hdir[i]) != NULL; i++)
+            for (i=0; i < HSegs && (seg = Blk(bp,Table)->hdir[i])!=NULL;i++)
                for (j = segsize[i] - 1; j >= 0; j--)
                   for (ep = seg->hslots[j];
 		       BlkType(ep) == T_Telem;
-		       ep = ep->telem.clink)
+		       ep = Blk(ep,Telem)->clink)
                      if (--n <= 0) {
-			Protect(tp = alctvtbl(&dx, &ep->telem.tref, ep->telem.hashnum), runerr(0));
+			Protect(tp = alctvtbl(&dx, &(ep->Telem.tref), (ep->Telem.hashnum)), runerr(0));
 			return tvtbl(tp);
 			}
             syserr("table reference out of bounds in random");
@@ -525,7 +524,7 @@ operator{0,1} ? random(underef x -> dx)
 	    struct b_slots *seg;
 
             bp = BlkLoc(dx);
-            val = bp->set.size;
+            val = Blk(bp,Set)->size;
             if (val <= 0)
                fail;
             rval = RandVal;
@@ -533,16 +532,15 @@ operator{0,1} ? random(underef x -> dx)
             n = (word)rval + 1;
 
             EVValD(&dx, E_Srand);
-
             /*
              * Walk down the hash chains to find and return the nth element.
              */
-            for (i = 0; i < HSegs && (seg = bp->table.hdir[i]) != NULL; i++)
+            for (i=0; i < HSegs && (seg = Blk(bp,Table)->hdir[i]) != NULL; i++)
                for (j = segsize[i] - 1; j >= 0; j--)
-                  for (ep = seg->hslots[j]; ep != NULL; ep = ep->telem.clink)
+                  for (ep = seg->hslots[j]; ep != NULL; ep = Blk(ep,Telem)->clink)
                      if (--n <= 0) {
-			EVValD(&ep->selem.setmem, E_Selem);
-                        return ep->selem.setmem;
+			EVValD(&(ep->Selem.setmem), E_Selem);
+                        return Blk(ep,Selem)->setmem;
 			}
             syserr("set reference out of bounds in random");
             }
@@ -562,8 +560,8 @@ operator{0,1} ? random(underef x -> dx)
             double rval;
             struct b_record *rec;  /* doesn't need to be tended */
 
-            rec = (struct b_record *)BlkLoc(dx);
-            val = rec->recdesc->proc.nfields;
+            rec = BlkD(dx, Record);
+            val = Blk(rec->recdesc,Proc)->nfields;
             if (val <= 0)
                fail;
             /*
@@ -656,10 +654,10 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
       body {
          C_integer t;
 
-         i = cvpos((long)i, (long)BlkLoc(dx)->list.size);
+         i = cvpos((long)i, (long)BlkD(dx,List)->size);
          if (i == CvtFail)
             fail;
-         j = cvpos((long)j, (long)BlkLoc(dx)->list.size);
+         j = cvpos((long)j, (long)BlkD(dx,List)->size);
          if (j == CvtFail)
             fail;
          if (i > j) {
@@ -746,7 +744,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	    }
 
 	 body {
-	    int status = BlkLoc(dx)->file.status;
+	    int status = BlkD(dx,File)->status;
 #ifdef Dbm
 	    if (status & Fs_Dbm) {
 	       struct b_tvtbl *tp;
@@ -761,7 +759,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
 	       tended char *c_y;
-	       struct MFile *mf = BlkLoc(dx)->file.fd.mf;
+	       struct MFile *mf = BlkD(dx,File)->fd.mf;
 	       if (!cnv:C_string(y, c_y)) {
 		  runerr(103, y);
 		  }
@@ -867,7 +865,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	    /*
 	     * Make sure that subscript y is in range.
 	     */
-            lp = (struct b_list *)BlkLoc(dx);
+            lp = BlkD(dx, List);
             i = cvpos((long)y, (long)lp->size);
             if (i == CvtFail || i > lp->size)
                fail;
@@ -882,18 +880,18 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	     * violation would occur in the code that follows, anyhow, so
 	     * exiting the loop on a NULL bp makes no sense.
 	     */
-            while (i >= j + bp->lelem.nused) {
-               j += bp->lelem.nused;
-               bp = bp->lelem.listnext;
+            while (i >= j + Blk(bp,Lelem)->nused) {
+               j += bp->Lelem.nused;
+               bp = bp->Lelem.listnext;
                }
 
             /*
              * Locate the desired element and return a pointer to it.
              */
-            i += bp->lelem.first - j;
-            if (i >= bp->lelem.nslots)
-               i -= bp->lelem.nslots;
-            return struct_var(&bp->lelem.lslots[i], bp);
+            i += bp->Lelem.first - j;
+            if (i >= bp->Lelem.nslots)
+               i -= bp->Lelem.nslots;
+            return struct_var(&bp->Lelem.lslots[i], bp);
             }
          }
 
@@ -938,13 +936,13 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	       char *loc;
 	       int nf;
 	       bp = BlkLoc(dx);
-	       bp2 = BlkLoc(dx)->record.recdesc;
-	       nf = bp2->proc.nfields;
+	       bp2 = BlkD(dx,Record)->recdesc;
+	       nf = Blk(bp2,Proc)->nfields;
 	       loc = StrLoc(y);
 	       len = StrLen(y);
 	       for(i=0; i<nf; i++) {
-		  if (len == StrLen(bp2->proc.lnames[i]) &&
-		      !strncmp(loc, StrLoc(bp2->proc.lnames[i]), len)) {
+		  if (len == StrLen(Blk(bp2,Proc)->lnames[i]) &&
+		      !strncmp(loc, StrLoc(Blk(bp2,Proc)->lnames[i]), len)) {
 
 		     EVValD(&dx, E_Rref);
 		     EVVal(i+1, E_Rsub);
@@ -952,7 +950,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		     /*
 		      * Found the field, return a pointer to it.
 		      */
-		     return struct_var(&bp->record.fields[i], bp);
+		     return struct_var(&(Blk(bp,Record)->fields[i]), bp);
 		     }
 		  }
 	       fail;
@@ -964,8 +962,8 @@ operator{0,1} [] subsc(underef x -> dx,y)
             register union block *bp; /* doesn't need to be tended */
 
             bp = BlkLoc(dx);
-            i = cvpos(y, (word)(bp->record.recdesc->proc.nfields));
-            if (i == CvtFail || i > bp->record.recdesc->proc.nfields)
+            i = cvpos(y, (word)(Blk(Blk(bp,Record)->recdesc,Proc)->nfields));
+            if (i == CvtFail || i > Blk(Blk(bp,Record)->recdesc,Proc)->nfields)
                fail;
 
             EVValD(&dx, E_Rref);
@@ -974,7 +972,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
             /*
              * Locate the appropriate field and return a pointer to it.
              */
-            return struct_var(&bp->record.fields[i-1], bp);
+            return struct_var(&Blk(bp,Record)->fields[i-1], bp);
             }
          }
 

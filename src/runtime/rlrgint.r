@@ -69,7 +69,7 @@ extern int over_flow;
 
 /* LrgInt(dptr dp) : the struct b_bignum pointed to by dp */
 
-#define LrgInt(dp)   ((struct b_bignum *)&BlkLoc(*dp)->bignumblk)
+#define LrgInt(dp)   (BlkD((*dp),Lrgint))
 
 /* LEN(struct b_bignum *b) : number of significant digits */
 
@@ -190,6 +190,9 @@ word i;
 struct b_bignum *x;
 dptr dx;
 {
+#ifdef DebugHeap
+   x->title = T_Lrgint;
+#endif					/* DebugHeap */
    x->lsd = WORDLEN - 1;
    x->msd = WORDLEN;
    x->sign = 0;
@@ -273,7 +276,7 @@ union numeric *result;          /* output T_Integer or T_Lrgint */
    { struct descrip dx;
    (void)mkdesc(b, &dx);
    if (Type(dx) == T_Lrgint)
-     result->big = (struct b_bignum *)BlkLoc(dx);
+     result->big = BlkD(dx, Lrgint);
    else
      result->integer = IntVal(dx);
    return Type(dx);
@@ -289,7 +292,7 @@ dptr da;
 {
    word i;
    double r = 0;
-   struct b_bignum *b = &BlkLoc(*da)->bignumblk;
+   struct b_bignum *b = BlkD(*da,Lrgint);
 
    for (i = b->msd; i <= b->lsd; i++)
       r = r * B + b->digits[i];
@@ -308,7 +311,7 @@ dptr da, dx;
 #ifdef Double
    double x;
 #else					/* Double */
-   double x = BlkLoc(*da)->realblk.realval;
+   double x = BlkD(*da,Real)->realval;
 #endif					/* Double */
 
    struct b_bignum *b;
@@ -317,13 +320,13 @@ dptr da, dx;
    int sgn;
 
 #ifdef Double
-	{
-		int	*rp, *rq;
-		rp = (int *) &(BlkLoc(*da)->realblk.realval);
-		rq = (int *) &x;
-		*rq++ = *rp++;
-		*rq = *rp;
-	}
+   {
+   int	*rp, *rq;
+   rp = (int *) &(BlkLoc(*da)->Real.realval);
+   rq = (int *) &x;
+   *rq++ = *rp++;
+   *rq = *rp;
+   }
 #endif					/* Double */
 
    if (x > 0.9999 * MinLong && x < 0.9999 * MaxLong) {
@@ -411,7 +414,7 @@ dptr da;
    struct b_bignum *a, *temp;
    word alen = LEN(LrgInt(da));
    word slen, dlen;
-   struct b_bignum *blk = &BlkLoc(*da)->bignumblk;
+   struct b_bignum *blk = BlkD(*da,Lrgint);
 
    slen = blk->lsd - blk->msd;
    dlen = slen * NB * 0.3010299956639812	/* 1 / log2(10) */
@@ -1566,11 +1569,11 @@ dptr da, db, dx;
 word bigcmp(da, db)
 dptr da, db;
 {
-   struct b_bignum *a = LrgInt(da);
-   struct b_bignum *b = LrgInt(db);
    word alen, blen; 
 
    if (Type(*da) == T_Lrgint && Type(*db) == T_Lrgint) {
+      struct b_bignum *a = LrgInt(da);
+      struct b_bignum *b = LrgInt(db);
       if (a->sign != b->sign)
          return (b->sign - a->sign);
       alen = LEN(a);

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.46 2008-03-08 10:25:13 jeffery Exp $
+ * $Id: fxposix.ri,v 1.47 2008-06-18 09:05:18 jeffery Exp $
  */
 
 /*
@@ -265,7 +265,7 @@ function{0,1} trap(nsignal, handler)
       if (is:null(handler))
          signal(sig, SIG_DFL);
       else if (is:proc(handler)) {
-	 struct b_proc *pp = (struct b_proc*)BlkLoc(handler);
+	 struct b_proc *pp = BlkD(handler, Proc);
 	 if (pp->nparam != 1 && pp->nparam != -1)
 	    runerr(172, handler);
          signal(sig, signal_dispatcher);
@@ -581,7 +581,7 @@ function{0,1} truncate(f, l)
 	    IntVal(amperErrno) = 0;
 
 #if HAVE_LIBZ 
-            if (BlkLoc(f)->file.status & Fs_Compress) {
+            if (BlkD(f,File)->status & Fs_Compress) {
                fail;
                }
 #endif					/* HAVE_LIBZ */
@@ -620,7 +620,7 @@ function{0,1} flock(f, cmd)
       long flength;
 
 #if HAVE_LIBZ 
-      if (BlkLoc(f)->file.status & Fs_Compress) {
+      if (BlkD(f,File)->status & Fs_Compress) {
          fail;
          }
 #endif					/* HAVE_LIBZ */
@@ -701,7 +701,7 @@ function{0,1} fcntl(f, action, options)
       static dptr constr;
 
 #if HAVE_LIBZ 
-      if (BlkLoc(f)->file.status & Fs_Compress) {
+      if (BlkD(f,File)->status & Fs_Compress) {
          fail;
          }
 #endif					/* HAVE_LIBZ */
@@ -803,7 +803,7 @@ function{0,1} fcntl(f, action, options)
 	    if (!(constr = rec_structor("posix_lock")))
 	       syserr("failed to create posix record constructor");
 
-	 nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+	 nfields = (int) BlkD(*constr, Proc)->nfields;
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	 result.dword = D_Record;
 	 result.vword.bptr = (union block*)rp;
@@ -906,7 +906,7 @@ function{0,1} ioctl(f, action, options)
 	 runerr(174, f);
 
 #if HAVE_LIBZ 
-      if (BlkLoc(f)->file.status & Fs_Compress) {
+      if (BlkD(f,File)->status & Fs_Compress) {
          fail;
          }
 #endif					/* HAVE_LIBZ */
@@ -959,8 +959,8 @@ function{0,1} filepair()
 	 fps[i] = fdopen(fds[i], "r");
 	 Protect(fl = alcfile(fps[i], Fs_Write|Fs_Read|Fs_Socket, &fname),
 		 runerr(0));
-	 ep->lelem.lslots[i].dword = D_File;
-	 ep->lelem.lslots[i].vword.bptr = (union block*)fl;
+	 Blk(ep,Lelem)->lslots[i].dword = D_File;
+	 ep->Lelem.lslots[i].vword.bptr = (union block*)fl;
 	 }
 
       return list(lp);
@@ -1001,8 +1001,8 @@ function{0,1} pipe()
 	 fps[i] = fdopen(fds[i], i? "w":"r");
 	 Protect(fl = alcfile(fps[i], (i? Fs_Write:Fs_Read), &fname),
 		 runerr(0));
-	 ep->lelem.lslots[i].dword = D_File;
-	 ep->lelem.lslots[i].vword.bptr = (union block*)fl;
+	 Blk(ep,Lelem)->lslots[i].dword = D_File;
+	 ep->Lelem.lslots[i].vword.bptr = (union block*)fl;
 	 }
       return list(lp);
    }
@@ -1048,13 +1048,13 @@ function{0,1} fdup(src, dest)
       char *fmode;
       FILE *fp;
 
-      if (BlkLoc(src)->file.status == 0)
+      if (BlkD(src,File)->status == 0)
 	 runerr(1042, src);
 
 #ifdef Graphics
-      if (BlkLoc(src)->file.status & Fs_Window)
+      if (BlkLoc(src)->File.status & Fs_Window)
 	 runerr(105, src);
-      if (BlkLoc(dest)->file.status & Fs_Window)
+      if (BlkD(dest,File)->status & Fs_Window)
 	 runerr(105, dest);
 #endif					/* Graphics */
 
@@ -1063,26 +1063,26 @@ function{0,1} fdup(src, dest)
 
       if ((fd_dest = get_fd(dest, 0)) < 0)
 	 runerr(174, dest);
-      if (BlkLoc(dest)->file.status != 0)
-	 if (BlkLoc(dest)->file.status & Fs_Pipe)
-	    pclose(BlkLoc(dest)->file.fd.fp);
+      if (BlkLoc(dest)->File.status != 0)
+	 if (BlkLoc(dest)->File.status & Fs_Pipe)
+	    pclose(BlkLoc(dest)->File.fd.fp);
 	 else 
-	    fclose(BlkLoc(dest)->file.fd.fp);
+	    fclose(BlkLoc(dest)->File.fd.fp);
  
       IntVal(amperErrno) = 0;
       if (dup2(fd_src, fd_dest) < 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
-      BlkLoc(dest)->file.status = status = BlkLoc(src)->file.status;
+      BlkLoc(dest)->File.status = status = BlkD(src,File)->status;
       switch (status & (Fs_Read|Fs_Write)) {
       case Fs_Read & ~Fs_Write : fmode = "r"; break;
       case ~Fs_Read & Fs_Write : fmode = "w"; break;
       case Fs_Read & Fs_Write : fmode = "r+"; break;
       default: runerr(500); break;
       }
-      BlkLoc(dest)->file.fd.fp = fp = fdopen(fd_dest, fmode);
-      BlkLoc(dest)->file.fname = BlkLoc(src)->file.fname;
+      BlkLoc(dest)->File.fd.fp = fp = fdopen(fd_dest, fmode);
+      BlkLoc(dest)->File.fname = BlkLoc(src)->File.fname;
       return nulldesc;
       }
 end
@@ -1169,18 +1169,18 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       }
 
       if (is:list(argv)) {
-         margv = (char **)malloc((BlkLoc(argv)->list.size+3) * sizeof(char *));
+         margv = (char **)malloc((BlkD(argv,List)->size+1) * sizeof(char *));
          if (margv == NULL) runerr(305);
 	 n = 0;
 	 /* Traverse the list */
-	 for (ep = BlkLoc(argv)->list.listhead; BlkType(ep) == T_Lelem;
-	      ep = ep->lelem.listnext) {
-	    for (i = 0; i < ep->lelem.nused; i++) {
+	 for (ep = BlkD(argv,List)->listhead; BlkType(ep) == T_Lelem;
+	      ep = Blk(ep,Lelem)->listnext) {
+	    for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
 	       dptr f;
-	       j = ep->lelem.first + i;
-	       if (j >= ep->lelem.nslots)
-		  j -= ep->lelem.nslots;
-	       f = &ep->lelem.lslots[j];
+	       j = Blk(ep,Lelem)->first + i;
+	       if (j >= Blk(ep,Lelem)->nslots)
+		  j -= Blk(ep,Lelem)->nslots;
+	       f = &Blk(ep,Lelem)->lslots[j];
 
 	       if (!cnv:C_string((*f), p))
 		  runerr(103, *f);
@@ -1345,8 +1345,7 @@ int is_internal(char *s)
       }
    return 0;
 }
-#endif
-
+#endif					/* NT */
 
 "getuid() - get the real user identity."
 
@@ -1774,7 +1773,7 @@ function{0,1} gettimeofday()
 	 if (!(constr = rec_structor("posix_timeval")))
 	    syserr("failed to create posix record constructor");
 
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
       result.dword = D_Record;
       result.vword.bptr = (union block *)rp;
@@ -1821,7 +1820,7 @@ function{0,1} lstat(f)
 	 if (!(constr = rec_structor("posix_stat")))
 	    syserr("failed to create posix record constructor");
 
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr, Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
       stat2rec(&sbuf, &result, &rp);
       return result;
@@ -1857,7 +1856,7 @@ function{0,1} stat(f)
 	       if (!(constr = rec_structor("posix_stat")))
 		  syserr("failed to create posix record constructor");
 
-	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+	    nfields = (int) BlkD(*constr, Proc)->nfields;
 	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	    stat2rec(&sbuf, &result, &rp);
 
@@ -1913,7 +1912,7 @@ function{0,1} stat(f)
 	    int nfields, fd;
 
 #if HAVE_LIBZ 
-            if (BlkLoc(f)->file.status & Fs_Compress)
+            if (BlkD(f,File)->status & Fs_Compress)
                fail;
 #endif					/* HAVE_LIBZ */
 
@@ -1928,7 +1927,7 @@ function{0,1} stat(f)
 	       if (!(constr = rec_structor("posix_stat")))
 		  syserr("failed to create posix record constructor");
 
-	    nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+	    nfields = (int) BlkD(*constr, Proc)->nfields;
 	    Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	    stat2rec(&sbuf, &result, &rp);
 	    return result;
@@ -1972,7 +1971,7 @@ function{0,1} receive(f)
       static dptr constr;
       int nfields, status, ret;
       
-      status = BlkLoc(f)->file.status;
+      status = BlkD(f,File)->status;
       if (!(status & Fs_Socket))
 	 runerr(175, f);
 
@@ -1980,11 +1979,11 @@ function{0,1} receive(f)
 	 if (!(constr = rec_structor("posix_message")))
 	    syserr("failed to create posix record constructor");
 
-      nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+      nfields = (int) BlkD(*constr,Proc)->nfields;
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 
       IntVal(amperErrno) = 0;
-      if ((ret = sock_recv(BlkLoc(f)->file.fd.fd, &rp)) == 0) {
+      if ((ret = sock_recv(BlkD(f,File)->fd.fd, &rp)) == 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
@@ -2010,14 +2009,14 @@ function{0,1} fetch(d, k)
    body {
       tended struct descrip dkey;
 #ifdef Dbm
-      if (BlkLoc(d)->file.status & Fs_Dbm) {
+      if (BlkD(d,File)->status & Fs_Dbm) {
 	 DBM *db;
 	 datum key, content;
 	 int n;
 
 	 if (!cnv:string(k, dkey))
 	    runerr(103, k);
-	 db = (DBM *)BlkLoc(d)->file.fd.dbm;
+	 db = BlkLoc(d)->File.fd.dbm;
 	 key.dsize = StrLen(dkey); key.dptr = StrLoc(dkey);
 	 content = dbm_fetch(db, key);
 	 if (content.dptr == NULL)
@@ -2029,11 +2028,11 @@ function{0,1} fetch(d, k)
       else
 #endif					/* Dbm */
 #ifdef ISQL
-      if (BlkLoc(d)->file.status & Fs_ODBC) {
+      if (BlkD(d,File)->status & Fs_ODBC) {
 	    int rv;
 	    if (!is:null(k) && (!cnv:string(k, dkey)))
 		runerr(103, k);
-	    rv = dbfetch(BlkLoc(d)->file.fd.sqlf, &result);
+	    rv = dbfetch(BlkLoc(d)->File.fd.sqlf, &result);
 	    if (rv == Succeeded) {
 	       if (is:null(k))
 		  return result;
@@ -2045,13 +2044,13 @@ function{0,1} fetch(d, k)
 		  char *loc;
 		  int nf;
 		  bp = BlkLoc(result);
-		  bp2 = BlkLoc(result)->record.recdesc;
-		  nf = bp2->proc.nfields;
+		  bp2 = BlkD(result,Record)->recdesc;
+		  nf = Blk(bp2,Proc)->nfields;
 		  loc = StrLoc(dkey);
 		  len = StrLen(dkey);
 		  for(i=0; i<nf; i++) {
-		     if (len == StrLen(bp2->proc.lnames[i]) &&
-			 !strncmp(loc, StrLoc(bp2->proc.lnames[i]), len)) {
+		     if (len == StrLen(Blk(bp2,Proc)->lnames[i]) &&
+			 !strncmp(loc, StrLoc(Blk(bp2,Proc)->lnames[i]), len)){
 			EVValD(&result, E_Rref);
 			EVVal(i+1, E_Rsub);
 
@@ -2061,7 +2060,7 @@ function{0,1} fetch(d, k)
 			/*
 			 * Found the field, return a pointer to it.
 			 */
-			return struct_var(&bp->record.fields[i], bp);
+			return struct_var(&(Blk(bp,Record)->fields[i]), bp);
 #endif					/* COMPILER */
 			}
 		     }
@@ -2086,10 +2085,10 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
 {
    int fd, status;
    if (is:file(*f)) {
-      status = BlkLoc(*f)->file.status;
+      status = BlkD(*f,File)->status;
 #if UNIX
       if (status & Fs_Buff) return 1048;
-      BlkLoc(*f)->file.status |= Fs_Unbuf;
+      BlkLoc(*f)->File.status |= Fs_Unbuf;
 #endif					/* UNIX */
 
 #ifdef Graphics
@@ -2128,7 +2127,7 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
 
 void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 {
-   int fd, fromlen, status = BlkLoc(*f)->file.status;
+   int fd, fromlen, status = BlkD(*f,File)->status;
    struct sockaddr_in from;
 
    if ((status & (Fs_Socket|Fs_Messaging
@@ -2147,8 +2146,8 @@ void post_if_ready(struct descrip *ldp, struct descrip *f, fd_set *fdsp)
 	 fromlen = sizeof(from);
 	 if ((fd = accept(fd, (struct sockaddr *)&from, &fromlen)) < 0)
 	    return;
-	 BlkLoc(*f)->file.fd.fd = fd;
-	 BlkLoc(*f)->file.status = Fs_Socket | Fs_Read | Fs_Write;
+	 BlkD(*f,File)->fd.fd = fd;
+	 BlkLoc(*f)->File.status = Fs_Socket | Fs_Read | Fs_Write;
 	 }
       c_put(ldp, f);
       }
@@ -2195,24 +2194,24 @@ function{0,1} select(files[nargs])
       BlkLoc(d3) = (union block *)lps;
 #endif					/* PseudoPty */
       for (k=0; k<nargs; k++) {
-	 if (is:file(files[k]) && (BlkLoc(files[k])->file.status & Fs_Window))
+	 if (is:file(files[k]) && (BlkD(files[k],File)->status & Fs_Window))
 	    c_put(&d2, files+k);
 #if defined(PseudoPty) && defined(MSWindows)
-	 else if (is:file(files[k]) && (BlkLoc(files[k])->file.status & Fs_Pty))
+	 else if (is:file(files[k]) && (BlkD(files[k],File)->status & Fs_Pty))
 	    c_put(&d3, files+k);
 #endif					/* PseudoPty */
 	 else if (is:list(files[k])) {
-	    for (ep = BlkLoc(files[k])->list.listhead;
-		 BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
-	       for (i = 0; i < ep->lelem.nused; i++) {
-		  j = ep->lelem.first + i;
-		  if (j >= ep->lelem.nslots)
-		     j -= ep->lelem.nslots;
-		  f = ep->lelem.lslots[j];
-		  if (is:file(f) && BlkLoc(f)->file.status & Fs_Window)
+	    for (ep = BlkD(files[k],List)->listhead;
+		 BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext) {
+	       for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+		  j = Blk(ep,Lelem)->first + i;
+		  if (j >= ep->Lelem.nslots)
+		     j -= ep->Lelem.nslots;
+		  f = ep->Lelem.lslots[j];
+		  if (is:file(f) && BlkD(f,File)->status & Fs_Window)
 		     c_put(&d2, &f);
 #if defined(PseudoPty) && defined(MSWindows)
-		  else if (is:file(f) && BlkLoc(f)->file.status & Fs_Pty)
+		  else if (is:file(f) && BlkD(f,File)->status & Fs_Pty)
 		     c_put(&d3, &f);
 #endif					/* PseudoPty */
 		  }
@@ -2243,13 +2242,13 @@ function{0,1} select(files[nargs])
 		     runerr(rv, files[k]);
 	       }
 	    else
-	       for (ep = BlkLoc(files[k])->list.listhead;
-		    BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
-		  for (i = 0; i < ep->lelem.nused; i++) {
-		     j = ep->lelem.first + i;
-		     if (j >= ep->lelem.nslots)
-		        j -= ep->lelem.nslots;
-		     f = ep->lelem.lslots[j];
+	       for (ep = BlkD(files[k],List)->listhead;
+		    BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext) {
+		  for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+		     j = Blk(ep,Lelem)->first + i;
+		     if (j >= ep->Lelem.nslots)
+		        j -= Blk(ep,Lelem)->nslots;
+		     f = Blk(ep,Lelem)->lslots[j];
 		     if (rv = set_if_selectable(&f, &fds, &n))
 			runerr(rv, f);
 		     }
@@ -2353,7 +2352,7 @@ function{0,1} select(files[nargs])
 	 if (is:file(files[k])) {
 
 #if HAVE_LIBZ
-           if (BlkLoc(files[k])->file.status & Fs_Compress) { 
+           if (BlkD(files[k],File)->status & Fs_Compress) { 
                fail;
                }
 #endif					/* HAVE_LIBZ */
@@ -2361,17 +2360,17 @@ function{0,1} select(files[nargs])
 	    }
          else if (is:integer(files[k])) {/* timeout */}
 	 else {
-            for (ep = BlkLoc(files[k])->list.listhead;
+            for (ep = BlkD(files[k],List)->listhead;
 	         BlkType(ep) == T_Lelem;
-	         ep = ep->lelem.listnext) {
-	       for (i = 0; i < ep->lelem.nused; i++) {
-	          j = ep->lelem.first + i;
-	          if (j >= ep->lelem.nslots)
-	             j -= ep->lelem.nslots;
-	          f = ep->lelem.lslots[j];
+	         ep = Blk(ep,Lelem)->listnext) {
+	       for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+	          j = Blk(ep,Lelem)->first + i;
+	          if (j >= ep->Lelem.nslots)
+	             j -= ep->Lelem.nslots;
+	          f = Blk(ep,Lelem)->lslots[j];
 		  if (is:file(f)) {
 #if HAVE_LIBZ
-		     if (BlkLoc(files[k])->file.status & Fs_Compress) { 
+		     if (BlkD(files[k],File)->status & Fs_Compress) { 
 	                fail;
 	                }
 #endif					/* HAVE_LIBZ */
@@ -2401,7 +2400,7 @@ function{0,1} select(files[nargs])
 	 else {
 	    check_time = clocks + acc_time;
 	    }
-      } while ((BlkLoc(d)->list.size == 0) &&
+      } while ((BlkD(d,List)->size == 0) &&
 	       ((timeout < 0)||(check_time*1000/ctps<timeout)));
 
       Desc_EVValD(lp, E_Lcreate, D_List);
@@ -2755,9 +2754,9 @@ function{0, 1} ready(f, i)
    body {
       int status, fd;
       tended struct descrip desc;
-      status = BlkLoc(f)->file.status;
+      status = BlkD(f,File)->status;
 
-      if (!status || !(status & Fs_Read))
+      if (!(status & Fs_Read))
 	  runerr(212, f);
 
 #ifdef Graphics
@@ -2770,7 +2769,7 @@ function{0, 1} ready(f, i)
 #if defined(PseudoPty)
       if (status & Fs_Pty) {
          tended char *sbuf = NULL;
-         struct ptstruct *pt = BlkLoc(f)->file.fd.pt;
+         struct ptstruct *pt = BlkD(f,File)->fd.pt;
 #if NT
          DWORD tb;
 	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
@@ -2810,7 +2809,7 @@ function{0, 1} ready(f, i)
       if (status & Fs_Buff)
 	 runerr(1048, f);
 /* this looks bogus
-      BlkLoc(f)->file.status = status;
+      BlkLoc(f)->File.status = status;
 */
 
       IntVal(amperErrno) = 0;
@@ -2840,7 +2839,7 @@ function{0, 1} syswrite(f, s)
    body {
       int status, fd, rc;
       tended struct descrip desc;
-      status = BlkLoc(f)->file.status;
+      status = BlkD(f,File)->status;
 
       if (!status || !(status & Fs_Write) 
 #ifdef Graphics
@@ -2854,7 +2853,7 @@ function{0, 1} syswrite(f, s)
       
       if (status & Fs_Buff)
 	 runerr(1048, f);
-      BlkLoc(f)->file.status = status;
+      BlkLoc(f)->File.status = status;
       
       IntVal(amperErrno) = 0;
       rc = write(fd, StrLoc(s), StrLen(s));

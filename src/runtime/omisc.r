@@ -27,7 +27,7 @@ operator{1} ^ refresh(x)
       Protect(sblkp = alccoexp(), runerr(0));
 #endif					/* MultiThread */
 
-      sblkp->freshblk = BlkLoc(x)->coexpr.freshblk;
+      sblkp->freshblk = BlkD(x,Coexpr)->freshblk;
       if (ChkNull(sblkp->freshblk))	/* &main cannot be refreshed */
          runerr(215, x);
 
@@ -37,14 +37,14 @@ operator{1} ^ refresh(x)
       co_init(sblkp);
 
 #if COMPILER
-      sblkp->fnc = BlkLoc(x)->coexpr.fnc;
+      sblkp->fnc = BlkLoc(x)->Coexpr.fnc;
       if (line_info) {
          if (debug_info)
-            PFDebug(sblkp->pf)->proc = PFDebug(BlkLoc(x)->coexpr.pf)->proc;
+            PFDebug(sblkp->pf)->proc = PFDebug(BlkLoc(x)->Coexpr.pf)->proc;
          PFDebug(sblkp->pf)->old_fname =
-            PFDebug(BlkLoc(x)->coexpr.pf)->old_fname;
+            PFDebug(BlkLoc(x)->Coexpr.pf)->old_fname;
          PFDebug(sblkp->pf)->old_line =
-            PFDebug(BlkLoc(x)->coexpr.pf)->old_line;
+            PFDebug(BlkLoc(x)->Coexpr.pf)->old_line;
          }
 #endif					/* COMPILER */
 
@@ -69,34 +69,34 @@ operator{1} * size(x)
          return C_integer StrLen(x);
          }
       list: inline {
-         return C_integer BlkLoc(x)->list.size;
+         return C_integer BlkD(x,List)->size;
          }
       table: inline {
-         return C_integer BlkLoc(x)->table.size;
+         return C_integer BlkD(x,Table)->size;
          }
       set: inline {
-         return C_integer BlkLoc(x)->set.size;
+         return C_integer BlkD(x,Set)->size;
          }
       cset: inline {
          register word i;
 
-         i = BlkLoc(x)->cset.size;
+         i = BlkD(x,Cset)->size;
 	 if (i < 0)
 	    i = cssize(&x);
          return C_integer i;
          }
       record: inline {
-         return C_integer BlkLoc(x)->record.recdesc->proc.nfields;
+         return C_integer Blk(BlkD(x,Record)->recdesc,Proc)->nfields;
          }
       coexpr: inline {
-         return C_integer BlkLoc(x)->coexpr.size;
+         return C_integer BlkD(x,Coexpr)->size;
          }
       file: inline {
-	 int status = BlkLoc(x)->file.status;
+	 int status = BlkD(x,File)->status;
 #ifdef Dbm
 	 if ((status & Fs_Dbm) == Fs_Dbm) {
 	    int count = 0;
-	    DBM *db = (DBM *)BlkLoc(x)->file.fd.dbm;
+	    DBM *db = BlkLoc(x)->File.fd.dbm;
 	    datum key = dbm_firstkey(db);
 	    while (key.dptr != NULL) {
 	       count++;
@@ -114,7 +114,7 @@ operator{1} * size(x)
 #else					/* ODBCVER >= 0x0351 */
 	    SQLINTEGER numrows;
 #endif					/* ODBCVER >= 0x0351 */
-	    fp = BlkLoc(x)->file.fd.sqlf;
+	    fp = BlkLoc(x)->File.fd.sqlf;
 	    rc = SQLRowCount(fp->hstmt, &numrows);
 	    return C_integer(numrows);
 	    }
@@ -339,7 +339,7 @@ operator{1} [...] llist(elems[n])
       /*
        * Assign each argument to a list element.
        */
-      memmove(hp->listhead->lelem.lslots, elems, n * sizeof(struct descrip));
+      memmove(hp->listhead->Lelem.lslots, elems, n * sizeof(struct descrip));
 
 /*  Not quite right -- should be after list() returns in case it fails */
       Desc_EVValD(hp, E_Lcreate, D_List);

@@ -175,15 +175,15 @@ int get_name(dptr dp1,dptr dp0)
 #else					/* COMPILER */
    arg1 = &glbl_argp[1];
    loc1 = pfp->pf_locals;
-   proc = &BlkLoc(*glbl_argp)->proc;
+   proc = BlkD(*glbl_argp,Proc);
 #endif					/* COMPILER */
 
    type_case *dp1 of {
       tvsubs: {
-         blkptr = BlkLoc(*dp1);
-         get_name(&(blkptr->tvsubs.ssvar),dp0);
-         sprintf(sbuf,"[%ld:%ld]",(long)blkptr->tvsubs.sspos,
-            (long)blkptr->tvsubs.sspos+blkptr->tvsubs.sslen);
+         blkptr = (union block *)BlkD(*dp1, Tvsubs);
+         get_name(&((blkptr->Tvsubs.ssvar)),dp0);
+         sprintf(sbuf,"[%ld:%ld]",(long)(blkptr->Tvsubs.sspos),
+            (long)(blkptr->Tvsubs.sspos)+(blkptr->Tvsubs.sslen));
          k = StrLen(*dp0);
          j = strlen(sbuf);
 
@@ -203,7 +203,7 @@ int get_name(dptr dp1,dptr dp0)
          }
 
       tvtbl: {
-         t = keyref(BlkLoc(*dp1) ,dp0);
+         t = keyref((union block *)BlkD(*dp1, Tvtbl) ,dp0);
          if (t == Error)
             return Error;
           }
@@ -350,25 +350,25 @@ int get_name(dptr dp1,dptr dp0)
             varptr = (dptr)((word *)VarLoc(*dp1) + Offset(*dp1));
             switch ((int)BlkType(blkptr)) {
                case T_Lelem: 		/* list */
-                  i = varptr - &blkptr->lelem.lslots[blkptr->lelem.first] + 1;
+                  i = varptr - &Blk(blkptr,Lelem)->lslots[blkptr->Lelem.first] + 1;
                   if (i < 1)
-                     i += blkptr->lelem.nslots;
-                  while (BlkType(blkptr->lelem.listprev) == T_Lelem) {
-                     blkptr = blkptr->lelem.listprev;
-                     i += blkptr->lelem.nused;
+                     i += blkptr->Lelem.nslots;
+                  while (BlkType(Blk(blkptr,Lelem)->listprev) == T_Lelem) {
+                     blkptr = blkptr->Lelem.listprev;
+                     i += blkptr->Lelem.nused;
                      }
                   sprintf(sbuf,"list_%d[%ld]",
-			  (long)blkptr->lelem.listprev->list.id, (long)i);
+			  (long)Blk(Blk(blkptr,Lelem)->listprev,List)->id, (long)i);
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return Error);
                   StrLen(*dp0) = i;
                   break;
                case T_Record: 		/* record */
-                  i = varptr - blkptr->record.fields;
-                  proc = &blkptr->record.recdesc->proc;
+                  i = varptr - Blk(blkptr,Record)->fields;
+                  proc = &blkptr->Record.recdesc->Proc;
 
                   sprintf(sbuf,"record %s_%d.%s", StrLoc(proc->recname),
-			  blkptr->record.id,
+			  Blk(blkptr,Record)->id,
 			  StrLoc(proc->lnames[i]));
 
                   i = strlen(sbuf);
@@ -492,7 +492,7 @@ static int keyref(bp, dp)
    char sbuf[256];			/* buffer; might be too small */
    int len;
 
-   if (getimage(&(bp->telem.tref),dp) == Error)
+   if (getimage(&((bp->Telem.tref)),dp) == Error)
       return Error;	
 
    /*
@@ -501,17 +501,17 @@ static int keyref(bp, dp)
    s2 = StrLoc(*dp);
    len = StrLen(*dp);
    if (BlkType(bp) == T_Tvtbl)
-      bp = bp->tvtbl.clink;
+      bp = Blk(bp,Tvtbl)->clink;
    else
       while(BlkType(bp) == T_Telem)
-         bp = bp->telem.clink;
+         bp = Blk(bp,Telem)->clink;
 #ifdef Dbm
    if (BlkType(bp) == T_File) {
-      sprintf(sbuf, "dbmfile(%s)[", bp->file.fname);
+      sprintf(sbuf, "dbmfile(%s)[", Blk(bp,File)->fname);
       }
    else
 #endif					/* Dbm */
-      sprintf(sbuf, "table_%d[", bp->table.id);
+      sprintf(sbuf, "table_%d[", Blk(bp,Table)->id);
    { char * dest = sbuf + strlen(sbuf);
    strncpy(dest, s2, len);
    dest[len] = '\0';
@@ -552,7 +552,7 @@ dptr valloc;
     */
    t_ipc.op = ipc.op - 1;
    showline(findfile(t_ipc.opnd), findline(t_ipc.opnd));
-   proc = (struct b_proc *)BlkLoc(*glbl_argp);
+   proc = BlkD(*glbl_argp, Proc);
 #endif					/* COMPILER */
 
    showlevel(k_level);
@@ -653,7 +653,7 @@ static void ttrace()
          break;
 
       case Op_Invoke:
-         bp = (struct b_proc *)BlkLoc(*xargp);
+         bp = BlkD(*xargp, Proc);
          nargs = xnargs;
          if (xargp[0].dword == D_Proc)
             putstr(stderr, &(bp->pname));
@@ -933,7 +933,7 @@ struct b_coexpr *ncp;
    struct b_proc *bp;
    inst t_ipc;
 
-   bp = (struct b_proc *)BlkLoc(*glbl_argp);
+   bp = BlkD(*glbl_argp, Proc);
    /*
     * Compute the ipc of the activation instruction.
     */
@@ -957,7 +957,7 @@ struct b_coexpr *ncp;
    struct b_proc *bp;
    inst t_ipc;
 
-   bp = (struct b_proc *)BlkLoc(*glbl_argp);
+   bp = BlkD(*glbl_argp, Proc);
    /*
     * Compute the ipc of the coret instruction.
     */
@@ -981,7 +981,7 @@ struct b_coexpr *ncp;
    struct b_proc *bp;
    inst t_ipc;
 
-   bp = (struct b_proc *)BlkLoc(*glbl_argp);
+   bp = BlkD(*glbl_argp, Proc);
    /*
     * Compute the ipc of the cofail instruction.
     */
@@ -1023,8 +1023,11 @@ int xdisp(fp,dp,count,f)
 #if COMPILER
       bp = PFDebug(*fp)->proc;	/* get address of procedure block */
 #else					/* COMPILER */
-      bp = (struct b_proc *)BlkLoc(*dp++); /* get addr of procedure block */
-      /* #%#% was: no post-increment there, but *pre*increment dp below */
+      bp = BlkD(*dp, Proc); /* get addr of procedure block */
+      dp++;
+      /*
+       * #%#% was: no post-increment here, but *pre*increment dp below
+       */
 #endif					/* COMPILER */
 
       /*
@@ -1132,7 +1135,7 @@ char *pi, *pj;
 void heaperr(char *msg, union block *p, int t)
 {
    char buf[256];
-   sprintf(buf, "%s : %p : %d / %d\n",msg,p,p->File.title,t);
+   sprintf(buf, "%s : %p : %d / %d\n",msg,p,ValidPtr(p)?p->File.title:-1,t);
    syserr(buf);
 }
 #endif					/* DebugHeap */

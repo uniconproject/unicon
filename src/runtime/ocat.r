@@ -84,8 +84,8 @@ operator{1} ||| lconcat(x, y)
       /*
        * Get the size of both lists.
        */
-      size1 = BlkLoc(x)->list.size;
-      size2 = BlkLoc(y)->list.size;
+      size1 = BlkD(x,List)->size;
+      size2 = BlkD(y,List)->size;
       size3 = size1 + size2;
 
       Protect(bp1 = (struct b_list *)alclist_raw(size3, size3), runerr(0));

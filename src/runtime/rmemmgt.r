@@ -138,9 +138,9 @@ int firstd[] = {
      -1,                      /* T_Kywdwin (23), keyword &window */
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
-    0,                        /* T_Pattern (26), pattern block */
-    4*WordSize,               /* T_Pelem (27), pattern element */
-    2*WordSize,               /* T_Tvmonitored (28), monitor trapped var. */
+    0,				/* T_Pattern (26), pattern block */
+    4*WordSize,              /* T_Pelem (27), pattern element */
+    2*WordSize,			/* T_Tvmonitored */
     };
 
 /*
@@ -175,8 +175,8 @@ int firstp[] = {
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
     3*WordSize,               /* T_Pattern(26) pattern block*/
-    2*WordSize,               /* T_Pelem(27) pattern element block*/
-     -1,		      /* T_Tvmonitored(28) monitor trapped variable */
+    2*WordSize,               /* T_Pelem(26) pattern element block*/
+    -1,
     };
 
 /*
@@ -211,8 +211,8 @@ int ptrno[] = {
     -1,                       /* T_Kywdstr (24), string keyword variable */
     -1,                       /* T_Kywdevent (25), event keyword variable */
      1,                       /* T_Pattern (26), pattern block */
-     1,                       /* T_Pelem (27), pattern element block */
-    -1,			      /* T_Tvmonitored (28), monitor trapped variable*/
+     1,                       /* T_Pelem (26), pattern element block */
+     -1,			/* T_Tvmonitored */
     };
 
 /*
@@ -424,7 +424,7 @@ int region;
     * Sync the values (used by sweep) in the coexpr block for &current
     *  with the current values.
     */
-   cp = (struct b_coexpr *)BlkLoc(k_current);
+   cp = BlkD(k_current, Coexpr);
    cp->es_tend = tend;
 
 #if !COMPILER

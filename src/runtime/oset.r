@@ -52,7 +52,7 @@ operator{1} -- diff(x,y)
          /*
           * Make a new set based on the size of x.
           */
-         dstp = hmake(T_Set, (word)0, BlkLoc(x)->set.size);
+         dstp = hmake(T_Set, (word)0, BlkD(x,Set)->size);
          if (dstp == NULL)
             runerr(0);
          /*
@@ -66,7 +66,7 @@ operator{1} -- diff(x,y)
          tstp = BlkLoc(y);
          Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
 
-         for (i = 0; i < HSegs && (seg = srcp->set.hdir[i]) != NULL; i++)
+         for (i = 0; i < HSegs && (seg = Blk(srcp,Set)->hdir[i]) != NULL; i++)
             for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
                ep = (struct b_selem *)seg->hslots[slotnum];
                while (ep != NULL) {
@@ -75,7 +75,7 @@ operator{1} -- diff(x,y)
                      hook = memb(dstp, &ep->setmem, ep->hashnum, &res);
 		     np->setmem = ep->setmem;
 		     np->hashnum = ep->hashnum;
-                     addmem(&dstp->set, np, hook);
+                     addmem(Blk(dstp,Set), np, hook);
                      Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
                      }
                   ep = (struct b_selem *)ep->clink;
@@ -106,8 +106,8 @@ operator{1} -- diff(x,y)
          register int i;
 
          Protect(cp = alccset(), runerr(0));
-         cpx = (struct b_cset *)BlkLoc(x);  /* must come after alccset() */
-         cpy = (struct b_cset *)BlkLoc(y);  /* must come after alccset() */
+         cpx = BlkD(x,Cset);  /* put after alccset() to avoid tending */
+         cpy = BlkD(y,Cset);  /* put after alccset() to avoid tending */
          for (i = 0; i < CsetSize; i++)
             cp->bits[i] = cpx->bits[i] & ~cpy->bits[i];
          return cset(cp);
@@ -137,7 +137,7 @@ operator{1} ** inter(x,y)
           * Make a new set the size of the smaller argument set.
           */
          dstp = hmake(T_Set, (word)0,
-            Min(BlkLoc(x)->set.size, BlkLoc(y)->set.size));
+            Min(BlkD(x,Set)->size, BlkD(y,Set)->size));
          if (dstp == NULL)
             runerr(0);
          /*
@@ -148,7 +148,7 @@ operator{1} ** inter(x,y)
 	  * np always has a new element ready for use.  We get one in advance,
 	  *  and stay one ahead, because hook can't be tended.
           */
-         if (BlkLoc(x)->set.size <= BlkLoc(y)->set.size) {
+         if (BlkD(x,Set)->size <= BlkD(y,Set)->size) {
             srcp = BlkLoc(x);
             tstp = BlkLoc(y);
             }
@@ -157,7 +157,7 @@ operator{1} ** inter(x,y)
             tstp = BlkLoc(x);
             }
          Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
-         for (i = 0; i < HSegs && (seg = srcp->set.hdir[i]) != NULL; i++)
+         for (i = 0; i < HSegs && (seg = Blk(srcp,Set)->hdir[i]) != NULL; i++)
             for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
                ep = (struct b_selem *)seg->hslots[slotnum];
                while (ep != NULL) {
@@ -166,7 +166,7 @@ operator{1} ** inter(x,y)
                      hook = memb(dstp, &ep->setmem, ep->hashnum, &res);
 		     np->setmem = ep->setmem;
 		     np->hashnum = ep->hashnum;
-                     addmem(&dstp->set, np, hook);
+                     addmem(Blk(dstp,Set), np, hook);
                      Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
                      }
                   ep = (struct b_selem *)ep->clink;
@@ -199,8 +199,8 @@ operator{1} ** inter(x,y)
          register int i;
 
          Protect(cp = alccset(), runerr(0));
-         cpx = (struct b_cset *)BlkLoc(x);  /* must come after alccset() */
-         cpy = (struct b_cset *)BlkLoc(y);  /* must come after alccset() */
+         cpx = BlkD(x,Cset);  /* must come after alccset() */
+         cpy = BlkD(y,Cset);  /* must come after alccset() */
          for (i = 0; i < CsetSize; i++) {
             cp->bits[i] = cpx->bits[i] & cpy->bits[i];
             }
@@ -231,7 +231,7 @@ operator{1} ++ union(x,y)
          /*
           * Ensure that x is the larger set; if not, swap.
           */
-         if (BlkLoc(y)->set.size > BlkLoc(x)->set.size) {
+         if (BlkD(y,Set)->size > BlkD(x,Set)->size) {
 	    d = x;
 	    x = y;
 	    y = d;
@@ -239,12 +239,12 @@ operator{1} ++ union(x,y)
          /*
           * Copy x and ensure there's room for *x + *y elements.
           */
-         if (cpset(&x, &result, BlkLoc(x)->set.size + BlkLoc(y)->set.size)
+         if (cpset(&x, &result, BlkD(x,Set)->size + BlkD(y,Set)->size)
             == Error) {
             runerr(0);
             }
 
-         if(!(reserve(Blocks,BlkLoc(y)->set.size*(2*sizeof(struct b_selem))))){
+         if(!(reserve(Blocks,BlkD(y,Set)->size*(2*sizeof(struct b_selem))))){
             runerr(0);
             }
          /*
@@ -255,7 +255,7 @@ operator{1} ++ union(x,y)
           */
          dstp = BlkLoc(result);
          Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
-         for (i = 0; i < HSegs && (seg = BlkLoc(y)->set.hdir[i]) != NULL; i++)
+         for (i = 0; i < HSegs && (seg = BlkD(y,Set)->hdir[i]) != NULL; i++)
             for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
                ep = (struct b_selem *)seg->hslots[slotnum];
                while (ep != NULL) {
@@ -263,7 +263,7 @@ operator{1} ++ union(x,y)
                   if (res == 0) {
 		     np->setmem = ep->setmem;
 		     np->hashnum = ep->hashnum;
-                     addmem(&dstp->set, np, hook);
+                     addmem(Blk(dstp,Set), np, hook);
                      Protect(np = alcselem(&nulldesc, (uword)0), runerr(0));
                      }
                   ep = (struct b_selem *)ep->clink;
@@ -295,8 +295,8 @@ operator{1} ++ union(x,y)
          register int i;
 
          Protect(cp = alccset(), runerr(0));
-         cpx = (struct b_cset *)BlkLoc(x);  /* must come after alccset() */
-         cpy = (struct b_cset *)BlkLoc(y);  /* must come after alccset() */
+         cpx = BlkD(x,Cset);  /* must come after alccset() */
+         cpy = BlkD(y,Cset);  /* must come after alccset() */
          for (i = 0; i < CsetSize; i++)
             cp->bits[i] = cpx->bits[i] | cpy->bits[i];
          return cset(cp);

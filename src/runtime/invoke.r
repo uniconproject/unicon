@@ -25,8 +25,7 @@ continuation succ_cont;
    nargs -= 1;
 
    if (is:proc(callee))
-      return (*((struct b_proc *)BlkLoc(callee))->ccode)(nargs, args, rslt,
-         succ_cont);
+      return (*BlkD(callee, Proc)->ccode)(nargs, args, rslt, succ_cont);
    else if (cnv:C_integer(callee, n)) {
       if (n <= 0)
          n += nargs + 1;
@@ -76,7 +75,7 @@ continuation succ_cont;
          /*
           * Copy the arguments from the list into an tended array of descriptors.
           */
-         nargs = BlkLoc(dstrct)->list.size + 1;
+         nargs = BlkD(dstrct, List)->size + 1;
          tnd_args = (struct tend_desc *)malloc((msize)(sizeof(struct tend_desc)
             + (nargs - 1) * sizeof(struct descrip)));
          if (tnd_args == NULL)
@@ -84,14 +83,14 @@ continuation succ_cont;
       
          tnd_args->d[0] = *callee;
          indx = 1;
-         for (ep = BlkLoc(dstrct)->list.listhead;
+         for (ep = BlkD(dstrct, List)->listhead;
 	      BlkType(ep) == T_Lelem;
-	      ep = ep->lelem.listnext) {
-            for (i = 0; i < ep->lelem.nused; i++) {
-               j = ep->lelem.first + i;
-               if (j >= ep->lelem.nslots)
-                  j -= ep->lelem.nslots;
-               tnd_args->d[indx++] = ep->lelem.lslots[j];
+	      ep = Blk(ep,Lelem)->listnext) {
+            for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+               j = ep->Lelem.first + i;
+               if (j >= ep->Lelem.nslots)
+                  j -= ep->Lelem.nslots;
+               tnd_args->d[indx++] = ep->Lelem.lslots[j];
                }
             }
          tnd_args->num = nargs;
@@ -109,7 +108,7 @@ continuation succ_cont;
           * Copy the arguments from the record into an tended array
           * of descriptors.
           */
-         nargs = BlkLoc(dstrct)->record.recdesc->proc.nfields;
+         nargs = BlkLoc(dstrct)->Record.recdesc->Proc.nfields;
          tnd_args = (struct tend_desc *)malloc((msize)(sizeof(struct tend_desc)
             + (nargs - 1) * sizeof(struct descrip)));
          if (tnd_args == NULL)
@@ -119,7 +118,7 @@ continuation succ_cont;
          indx = 1;
          ep = BlkLoc(dstrct);
          for (i = 0; i < nargs; i++)
-            tnd_args->d[indx++] = ep->record.fields[i];
+            tnd_args->d[indx++] = ep->Record.fields[i];
          tnd_args->num = nargs;
          tnd_args->previous = tend;
          tend = tnd_args;
@@ -202,12 +201,13 @@ int nargs, *n;
 	     ((tmp = strprc(newargp, (C_integer)nargs)) == NULL)) {
 
 	    if(is:record(newargp[0])) {
-	       struct b_record *rp = (struct b_record *)BlkLoc(newargp[0]);
-	       if ((rp->recdesc->proc.ndynam == -3) ||
-		   (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__s")) ||
-	           (!strcmp(StrLoc(rp->recdesc->proc.lnames[0]), "__m")) ||
-	           (!strcmp(StrLoc(rp->recdesc->proc.lnames[
-				    rp->recdesc->proc.nfields-1]), "__m"))) {
+	       struct b_record *rp = BlkD(newargp[0], Record);
+	       union block *bp = rp->recdesc;
+	       if ((Blk(bp,Proc)->ndynam == -3) ||
+		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__s")) ||
+	           (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__m")) ||
+	           (!strcmp(StrLoc(Blk(bp,Proc)->lnames[
+				    Blk(bp,Proc)->nfields-1]), "__m"))) {
 		  /* its an object */
 		  return invoke(nargs+1, cargp, n);
 		  }
@@ -226,7 +226,7 @@ int nargs, *n;
     *  the supplied arguments.
     */
 
-   proc = (struct b_proc *)BlkLoc(newargp[0]);
+   proc = BlkD(newargp[0], Proc);
    if (proc->nstatic >= 0)	/* if negative, don't reference arguments */
       for (i = 1; i <= nargs; i++)
          Deref(newargp[i]);
@@ -243,7 +243,7 @@ int nargs, *n;
     *  null descriptors are pushed for each missing argument.
     */
 
-   proc = (struct b_proc *)BlkLoc(newargp[0]);
+   proc = BlkD(newargp[0], Proc);
    nparam = (int)proc->nparam;
    if (nparam >= 0) {
       if (nargs > nparam)
@@ -283,7 +283,7 @@ int nargs, *n;
          /*
           *  Reload proc pointer in case Ollist triggered a garbage collection.
           */
-         proc = (struct b_proc *)BlkLoc(newargp[0]);
+         proc = BlkD(newargp[0], Proc);
 	 newsp = (word *)llargp + 1;
 	 nargs = absnparam;
 	 }

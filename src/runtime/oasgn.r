@@ -58,7 +58,7 @@
 	    if (is:null(y))
 	       *VarLoc(x) = y;
 	    else {
-	       if ((!is:file(y)) || !(BlkLoc(y)->file.status & Fs_Window))
+	       if ((!is:file(y)) || !(BlkD(y,File)->status & Fs_Window))
 		  runerr(140,y);
 	       *VarLoc(x) = y;
 	       }
@@ -162,11 +162,9 @@ operator{0,1} := asgn(underef x, y)
 
    inline {
 #ifdef PatternType
-      if (is:tvsubs(x))
-	   {
-	       union block *bp_x = BlkLoc(x);
-	       return bp_x->tvsubs.ssvar;
-	   }
+      if (is:tvsubs(x)) {
+	 return BlkD(x, Tvsubs)->ssvar;
+	 }
 #endif
       /*
        * The returned result is the variable to which assignment is being
@@ -225,10 +223,10 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
 
    if is:tvsubs(x) && is:tvsubs(y) then
       body {
-         bp_x = BlkLoc(x);
-         bp_y = BlkLoc(y);
-         if (VarLoc(bp_x->tvsubs.ssvar) == VarLoc(bp_y->tvsubs.ssvar) &&
-   	  Offset(bp_x->tvsubs.ssvar) == Offset(bp_y->tvsubs.ssvar)) {
+         bp_x = (union block *)BlkD(x,Tvsubs);
+         bp_y = (union block *)BlkD(y,Tvsubs);
+         if (VarLoc(bp_x->Tvsubs.ssvar) == VarLoc(bp_y->Tvsubs.ssvar) &&
+   	  Offset(bp_x->Tvsubs.ssvar) == Offset(bp_y->Tvsubs.ssvar)) {
             /*
              * x and y are both substrings of the same string, set
              *  adj1 and adj2 for use in locating the substrings after
@@ -237,10 +235,10 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
              *  x, set adj2 := *y - *x.  Note that the adjustment
              *  values may be negative.
              */
-            if (bp_x->tvsubs.sspos > bp_y->tvsubs.sspos)
-               adj1 = bp_x->tvsubs.sslen - bp_y->tvsubs.sslen;
-            else if (bp_y->tvsubs.sspos > bp_x->tvsubs.sspos)
-               adj2 = bp_y->tvsubs.sslen - bp_x->tvsubs.sslen;
+            if (bp_x->Tvsubs.sspos > bp_y->Tvsubs.sspos)
+               adj1 = bp_x->Tvsubs.sslen - bp_y->Tvsubs.sslen;
+            else if (bp_y->Tvsubs.sspos > bp_x->Tvsubs.sspos)
+               adj2 = bp_y->Tvsubs.sslen - bp_x->Tvsubs.sslen;
    	    }
          }
 
@@ -251,13 +249,14 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
 
    if is:tvsubs(x) && is:tvsubs(y) then
       inline {
-         if (adj2 != 0)
+         if (adj2 != 0) {
             /*
              * Arg2 is to the right of Arg1 and the assignment Arg1 := Arg2 has
              *  shifted the position of Arg2.  Add adj2 to the position of Arg2
              *  to account for the replacement of Arg1 by Arg2.
              */
-            bp_y->tvsubs.sspos += adj2;
+            Blk(bp_y, Tvsubs)->sspos += adj2;
+	    }
          }
 
    /*
@@ -267,13 +266,14 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
 
    if is:tvsubs(x) && is:tvsubs(y) then
       inline {
-         if (adj1 != 0)
+         if (adj1 != 0) {
             /*
              * Arg1 is to the right of Arg2 and the assignment Arg2 := Arg1
              *  has shifted the position of Arg1.  Add adj2 to the position
              *  of Arg1 to account for the replacement of Arg2 by Arg1.
              */
-            bp_x->tvsubs.sspos += adj1;
+            Blk(bp_x, Tvsubs)->sspos += adj1;
+	    }
          }
 
    inline {
@@ -286,15 +286,17 @@ operator{0,1+} <-> rswap(underef x -> dx, underef y -> dy)
    GeneralAsgn(x, dx)
    if is:tvsubs(x) && is:tvsubs(y) then
       inline {
-         if (adj2 != 0)
-           bp_y->tvsubs.sspos -= adj2;
+         if (adj2 != 0) {
+           Blk(bp_y, Tvsubs)->sspos -= adj2;
+	   }
          }
 
    GeneralAsgn(y, dy)
    if is:tvsubs(x) && is:tvsubs(y) then
       inline {
-         if (adj1 != 0)
-            bp_x->tvsubs.sspos -= adj1;
+         if (adj1 != 0) {
+            Blk(bp_x,Tvsubs)->sspos -= adj1;
+	    }
          }
 
    inline {
@@ -326,10 +328,10 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
 
    if is:tvsubs(x) && is:tvsubs(y) then
       body {
-         bp_x = BlkLoc(x);
-         bp_y = BlkLoc(y);
-         if (VarLoc(bp_x->tvsubs.ssvar) == VarLoc(bp_y->tvsubs.ssvar) &&
-   	  Offset(bp_x->tvsubs.ssvar) == Offset(bp_y->tvsubs.ssvar)) {
+         bp_x = (union block *)BlkD(x,Tvsubs);
+         bp_y = (union block *)BlkD(y,Tvsubs);
+         if (VarLoc(bp_x->Tvsubs.ssvar) == VarLoc(bp_y->Tvsubs.ssvar) &&
+   	  Offset(bp_x->Tvsubs.ssvar) == Offset(bp_y->Tvsubs.ssvar)) {
             /*
              * x and y are both substrings of the same string, set
              *  adj1 and adj2 for use in locating the substrings after
@@ -338,10 +340,10 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
              *  x, set adj2 := *y - *x.  Note that the adjustment
              *  values may be negative.
              */
-            if (bp_x->tvsubs.sspos > bp_y->tvsubs.sspos)
-               adj1 = bp_x->tvsubs.sslen - bp_y->tvsubs.sslen;
-            else if (bp_y->tvsubs.sspos > bp_x->tvsubs.sspos)
-               adj2 = bp_y->tvsubs.sslen - bp_x->tvsubs.sslen;
+            if (bp_x->Tvsubs.sspos > bp_y->Tvsubs.sspos)
+               adj1 = bp_x->Tvsubs.sslen - bp_y->Tvsubs.sslen;
+            else if (bp_y->Tvsubs.sspos > bp_x->Tvsubs.sspos)
+               adj2 = bp_y->Tvsubs.sslen - bp_x->Tvsubs.sslen;
    	    }
          }
 
@@ -352,13 +354,14 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
 
    if is:tvsubs(x) && is:tvsubs(y) then
       inline {
-         if (adj2 != 0)
+         if (adj2 != 0) {
             /*
              * Arg2 is to the right of Arg1 and the assignment Arg1 := Arg2 has
              *  shifted the position of Arg2.  Add adj2 to the position of Arg2
              *  to account for the replacement of Arg1 by Arg2.
              */
-            bp_y->tvsubs.sspos += adj2;
+            Blk(bp_y,Tvsubs)->sspos += adj2;
+	    }
          }
 
    /*
@@ -368,13 +371,14 @@ operator{0,1} :=: swap(underef x -> dx, underef y -> dy)
 
    if is:tvsubs(x) && is:tvsubs(y) then
       inline {
-         if (adj1 != 0)
+         if (adj1 != 0) {
             /*
              * Arg1 is to the right of Arg2 and the assignment Arg2 := Arg1
              *  has shifted the position of Arg1.  Add adj2 to the position
              *  of Arg1 to account for the replacement of Arg2 by Arg1.
              */
-            bp_x->tvsubs.sspos += adj1;
+            Blk(bp_x,Tvsubs)->sspos += adj1;
+	    }
          }
 
    inline {
@@ -409,7 +413,7 @@ const dptr src;
     *  to a string and that the string is big enough to contain
     *  the substring.
     */
-   tvsub = (struct b_tvsubs *)BlkLoc(*dest);
+   tvsub = BlkD(*dest, Tvsubs);
    deref(&tvsub->ssvar, &deststr);
    if (!is:string(deststr))
       ReturnErrVal(103, deststr, Error);
@@ -498,17 +502,17 @@ const dptr src;
     * Allocate te now (even if we may not need it)
     * because slot cannot be tended.
     */
-   bp = (struct b_tvtbl *) BlkLoc(*dest);	/* Save params to tended vars */
+   bp = BlkD(*dest, Tvtbl);	/* Save params to tended vars */
    tval = *src;
 
    if (BlkType(bp->clink) == T_File) {
-      int status = bp->clink->file.status;
+      int status = Blk(bp->clink,File)->status;
 #ifdef Dbm
       if (status & Fs_Dbm) {
 	 int rv;
 	 DBM *db;
 	 datum key, content;
-	 db = (DBM *)bp->clink->file.fd.dbm;
+	 db = Blk(bp->clink,File)->fd.dbm;
 	 /*
 	  * we are doing an assignment to a subscripted DBM file, treat same
 	  * as insert().  key is bp->tref, and value is src
@@ -548,7 +552,7 @@ const dptr src;
        * Do not need new te, just update existing entry.
        */
       deallocate((union block *) te);
-      (*slot)->telem.tval = tval;
+      (*slot)->Telem.tval = tval;
       }
    else {
       /*
@@ -582,11 +586,11 @@ const dptr src;
    {
    word count;
 
-   count = BlkLoc(curpstate->eventsource)->coexpr.actv_count;
-   if (count != BlkLoc(*dest)->tvmonitored.cur_actv)
+   count = BlkD(curpstate->eventsource,Coexpr)->actv_count;
+   if (count != BlkD(*dest,Tvmonitored)->cur_actv)
       ReturnErrVal(217, *dest, Error);
 
-   *VarLoc(BlkLoc(*dest)->tvmonitored.tv) = *src;
+   *VarLoc(BlkD(*dest,Tvmonitored)->tv) = *src;
    return Succeeded;
    }
 #endif                                    /* MonitoredTrappedVar */

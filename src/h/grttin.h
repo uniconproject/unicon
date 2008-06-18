@@ -125,7 +125,6 @@
 #endif
 #enddef					/* EVValS */
 
-
 #begdef EVValX(bp,event)
 #if event
    do {
@@ -398,11 +397,11 @@ typedef int siptr, stringint, inst;
     */
    #begdef OptWindow(w)
       if (argc>warg && is:file(argv[warg])) {
-         if ((BlkLoc(argv[warg])->file.status & Fs_Window) == 0)
+         if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
-         if ((BlkLoc(argv[warg])->file.status & (Fs_Read|Fs_Write)) == 0)
+         if ((BlkD(argv[warg],File)->status & (Fs_Read|Fs_Write)) == 0)
 	    fail;
-         (w) = BlkLoc(argv[warg])->file.fd.wb;
+         (w) = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
          if ((((FILE*)(w)) != ConsoleBinding) &&
 	     ((((FILE*)(w)) == k_input.fd.fp) ||
@@ -416,11 +415,11 @@ typedef int siptr, stringint, inst;
          }
       else {
          if (!(is:file(kywd_xwin[XKey_Window]) &&
-	      (BlkLoc(kywd_xwin[XKey_Window])->file.status & Fs_Window)))
+	      (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
 	    runerr(140,kywd_xwin[XKey_Window]);
-         if (!(BlkLoc(kywd_xwin[XKey_Window])->file.status & (Fs_Read|Fs_Write)))
+         if (!(BlkD(kywd_xwin[XKey_Window],File)->status & (Fs_Read|Fs_Write)))
 	    fail;
-         (w) = (wbp)BlkLoc(kywd_xwin[XKey_Window])->file.fd.fp;
+         (w) = (wbp)BlkD(kywd_xwin[XKey_Window],File)->fd.fp;
          if (ISCLOSED(w))
 	    fail;
          }
@@ -431,9 +430,9 @@ typedef int siptr, stringint, inst;
 	/* set a boolean flag, use a texture */
 	is_texture=1;
 	/* Get the Window from Texture record */
-	w = BlkLoc(BlkLoc(argv[warg])->record.fields[3])->file.fd.wb;
+	w = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
         /* Pull out the texture handler */
-	texhandle = IntVal(BlkLoc(argv[warg])->record.fields[2]);
+	texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
 	/* get the context from the window binding */
 	warg=0;
       }

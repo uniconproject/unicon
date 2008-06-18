@@ -145,26 +145,25 @@
 #define BlkLoc(d)	((d).vword.bptr)
 
 /*
- * Block reference macros.  This abstraction of the act of
- * dereferencing a block pointer does not add clarity, but
- * it does allow runtime type checking of a sort, if DebugHeap
- * is enabled.
+ * Block reference macros.  This abstraction of the act of dereferencing a
+ * block pointer does not add clarity, it allows runtime type checking of
+ * block references, if DebugHeap is enabled.
+ *
+ * Blk   ("Block") - convert union block ptr to a typed block ptr
+ * BlkD  ("Block (from) Descriptor") - fetch typed block ptr for a descriptor
+ * BlkPH ("Block )
  */
-#define BlkCkD(d,u) BlkCkP(BlkLoc(d),u)
-#define BlkD(d,u,s) BlkP(BlkLoc(d),u,s)
-#define BlkU(d,u) Blk(BlkLoc(d),u)
+#define BlkD(d,u) Blk(BlkLoc(d),u)
 #ifndef DebugHeap
-#define Blk(p,u) ((p)->u)
-#define BlkCkP(p,u) (&((p)->u))
-#define BlkP(p,u,s) ((p)->u.s)
+#define Blk(p,u) (&((p)->u))
 #define BlkPH(p,u,s) ((p)->u.s)
 #define BlkPE(p,u,s) ((p)->u.s)
 #else
 
 /*
- * Debug Heap macros.  Goal: add runtime checks to catch (most)
+ * Debug Heap macros.  These add runtime checks to catch (most)
  * illegal block references resulting from untended pointers.
- * Use: during new code development, when gdb and valgrind fail you.
+ * Use during new code development, when gdb and valgrind fail to help.
  */
 
 /*
@@ -176,20 +175,8 @@
 /*
  * Block references that do not use (the address of) a particular field.
  */
-#define BlkA(p,u,a) ((((!ValidPtr(p)) || ((p)->u.title != T_ ## u)) ? \
-      heaperr("invalid block",p, T_ ## u) : 1), a((p)->u))
-#define Blk(p,u) BlkA(p,u,/**/)
-#define BlkCkP(p,u) BlkA(p,u,&)
-
-/*
- * Block references that use (the address or lvalue of) a particular field.
- * Tried to define this in terms of BlkA but gcc rejects it.
- */
-#define BlkP(p,u,s) \
-   ((ValidPtr(p) ? \
-     (((p)->u.title == T_ ## u) ? ((p)->u.s) : \
-      (heaperr("invalid block title", p, T_ ## u), ((p)->u.s))) : \
-     (syserr("invalid pointer"), ((p)->u.s))))
+#define Blk(p,u) ((((!ValidPtr(p)) || ((p)->u.title != T_ ## u)) ? \
+      heaperr("invalid block",p, T_ ## u) : 1), &((p)->u))
 
 /*
  * Block references for generic (set|table) code.
@@ -253,7 +240,11 @@
 /*
  * Type of descriptor.
  */
-#define Type(d)		(int)((d).dword & TypeMask)
+#ifdef DebugHeap
+#define Type(d)		(int)((((d).dword & F_Typecode) ? ((int)((d).dword & TypeMask)) : (heaperr("descriptor type error",BlkLoc(d),(d).dword), -1)))
+#else					/* DebugHeap */
+#define Type(d) (int)((d).dword & TypeMask)
+#endif					/* DebugHeap */
 
 /*
  * Check for variable.
@@ -284,10 +275,15 @@
  * Get floating-point number from real block.
  */
 #ifdef Double
+#ifdef DebugHeap
+   #define GetReal(dp,res) (BlkD(*dp, Real), *((struct size_dbl *)&(res)) =\
+         *((struct size_dbl *)&(BlkLoc(*dp)->Real.realval)))
+#else					/* DebugHeap */
    #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
-         *((struct size_dbl *)&(BlkLoc(*dp)->realblk.realval))
+         *((struct size_dbl *)&((BlkLoc(*dp)->Real.realval)))
+#endif					/* DebugHeap */
 #else					/* Double */
-   #define GetReal(dp,res)	res = BlkLoc(*dp)->realblk.realval
+   #define GetReal(dp,res)	res = BlkD(*dp,Real)->realval
 #endif					/* Double */
 
 /*
@@ -523,7 +519,7 @@
 #define SubStr(dest,var,len,pos)\
    if ((var)->dword == D_Tvsubs)\
       (dest)->vword.bptr = (union block *)alcsubs(len, (pos) +\
-         BlkLoc(*(var))->tvsubs.sspos - 1, &BlkLoc(*(var))->tvsubs.ssvar);\
+         BlkLoc(*(var))->Tvsubs.sspos - 1, &BlkLoc(*(var))->Tvsubs.ssvar);\
    else\
       (dest)->vword.bptr = (union block *)alcsubs(len, pos, (var));\
    (dest)->dword = D_Tvsubs;
@@ -929,7 +925,7 @@
 /*
  * Address of word containing cset bit b (c is a struct descrip of type Cset).
  */
-#define CsetPtr(b,c)	(BlkLoc(c)->cset.bits + (((b)&0377) >> LogIntBits))
+#define CsetPtr(b,c)	(BlkD(c,Cset)->bits + (((b)&0377) >> LogIntBits))
 
 #if MSDOS
    #if (MICROSOFT && defined(M_I86HM)) || (TURBO && defined(__HUGE__))

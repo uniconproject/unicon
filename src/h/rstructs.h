@@ -85,7 +85,7 @@ union f { /* mdw: eliminate anonymous union that chokes amd64 gcc */
    struct ISQLFile *sqlf;
 #endif               /* ISQL */
 #ifdef Dbm
-   struct DBM *dbm;
+   DBM *dbm;
 #endif               /* Dbm */
 #ifdef Audio
    struct AudioFile *af;
@@ -279,8 +279,8 @@ struct b_tvtbl {		/* table element trapped variable block */
 #ifdef EventMon
 struct b_tvmonitored {          /* Monitored variable block */
    word title;                  /*   T_Tvmonitored */
-   struct descrip tv;           /*   the variable in the other program */
    word cur_actv;		/*   current co-expression activation */
+   struct descrip tv;           /*   the variable in the other program */
    };
 #endif				/* EventMon */
 
@@ -721,34 +721,34 @@ struct b_refresh {		/* co-expression block */
 #endif					/* COMPILER */
 
 union block {			/* general block */
-   struct b_real realblk;
-   struct b_cset cset;
-   struct b_file file;
-   struct b_proc proc;
-   struct b_list list;
-   struct b_lelem lelem;
-   struct b_table table;
-   struct b_telem telem;
-   struct b_set set;
-   struct b_selem selem;
-   struct b_record record;
-   struct b_tvsubs tvsubs;
-   struct b_tvtbl tvtbl;
+   struct b_real Real;
+   struct b_cset Cset;
+   struct b_file File;
+   struct b_proc Proc;
+   struct b_record Record;
+   struct b_list List;
+   struct b_lelem Lelem;
+   struct b_set Set;
+   struct b_selem Selem;
+   struct b_table Table;
+   struct b_telem Telem;
+   struct b_tvsubs Tvsubs;
+   struct b_tvtbl Tvtbl;
 #ifdef EventMon
-   struct b_tvmonitored tvmonitored;
+   struct b_tvmonitored Tvmonitored;
 #endif					/* EventMon */
-   struct b_refresh refresh;
-   struct b_coexpr coexpr;
-   struct b_external externl;
-   struct b_slots slots;
+   struct b_refresh Refresh;
+   struct b_coexpr Coexpr;
+   struct b_external External;
+   struct b_slots Slots;
 
 #ifdef PatternType
-   struct b_pattern pattern;
-   struct b_pelem pelem;
+   struct b_pattern Pattern;
+   struct b_pelem Pelem;
 #endif					/* PatternType */
-   #ifdef LargeInts
-      struct b_bignum bignumblk;
-   #endif				/* LargeInts */
+#ifdef LargeInts
+   struct b_bignum Lrgint;
+#endif				/* LargeInts */
    };
 
 #ifdef PseudoPty

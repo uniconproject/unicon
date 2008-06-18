@@ -162,7 +162,8 @@
       ws->eQback = ws->eQfront; \
       } \
    }
-#define EVQUEEMPTY(w) (BlkLoc((w)->window->listp)->list.size == 0)
+
+#define EVQUEEMPTY(w) (BlkD((w)->window->listp,List)->size == 0)
 
 /*
  * Colors.  These are allocated within displays; they are currently

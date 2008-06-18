@@ -325,7 +325,11 @@
   #define BOOL int
   #include <sqlext.h>
 
-  #define Type(d) (int)((d).dword & TypeMask)
+#ifdef DebugHeap
+#define Type(d)		(int)((((d).dword & F_Typecode) ? ((int)((d).dword & TypeMask)) : (heaperr("descriptor type error",BlkLoc(d),(d).dword), -1)))
+#else
+#define Type(d) (int)((d).dword & TypeMask)
+#endif
   #define Precision 16
 
 #if UNIX

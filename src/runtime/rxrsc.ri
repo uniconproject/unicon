@@ -10,6 +10,12 @@ wdp wdsplys;
 wfp findfont(wbp w, char *fam, int size, int flags);
 int okfont(char *spec, int size, int flags);
 int fontcmp(char *font1, char *font2, int size, int flags);
+wfp loadfont(wdp wd, char *s);
+
+#ifdef HAVE_XFT
+static char *convert_spec(char *s);
+#endif					/* HAVE_XFT */
+#define DEFAULTFONTNAME "fixed"
 
 
 int colorhash(int r, int g, int b)
@@ -667,29 +673,29 @@ char *s;
     * Initialize fonts and other things.
     */
    wd->numFonts = 1;
-   wd->fonts = (wfp)malloc(sizeof(struct _wfont));
+#ifdef HAVE_XFT
+   wd->fonts = loadfont(wd, convert_spec(DEFAULTFONTNAME));
+#else					/* HAVE_XFT */
+   wd->fonts = loadfont(wd, DEFAULTFONTNAME);
+#endif					/* HAVE_XFT */
    if (wd->fonts == NULL) {
       free(wd);
       return NULL;
       }
    wd->fonts->refcount = 1;
    wd->fonts->next = wd->fonts->previous = NULL;
-   wd->fonts->name = malloc(6);
-   if (wd->fonts->name == NULL) {
-      free(wd);
-      return NULL;
-      }
-   strcpy(wd->fonts->name,"fixed");
-   wd->fonts->fsp = XLoadQueryFont(wd->display, "fixed");
-   if (wd->fonts->fsp == NULL) { /* couldn't load "fixed"! */
-      free(wd);
-      return NULL;
-      }
+#ifdef HAVE_XFT
+   wd->xfont = XLoadQueryFont(wd->display, "fixed");
+#endif					/* HAVE_XFT */
 
    {
    XGCValues gcv;
    Display *stddpy = wd->display;
+#ifdef HAVE_XFT
+   gcv.font = wd->xfont->fid;
+#else					/* HAVE_XFT */
    gcv.font = wd->fonts->fsp->fid;
+#endif					/* HAVE_XFT */
    gcv.foreground = wd->colors[0].c;
    gcv.background = wd->colors[1].c;
    gcv.fill_style = FillSolid;
@@ -702,12 +708,108 @@ char *s;
       }
    }
 
-   wd->fonts->height = wd->fonts->fsp->ascent + wd->fonts->fsp->descent;
-
    GRFX_LINK(wd, wdsplys);
    return wd;
    }
 
+
+#ifdef HAVE_XFT
+
+/*
+ * Convert a given font spec, which may or may not be in icon font spec format,
+ * into fontconfig (used by Xft) style format.  The result is never null.
+ * 
+ * To avoid ambiguity, a spec can start with "fc:" to indicate it's in
+ * fontconfig format; otherwise parsefont is called to decide the format.
+ */
+char *convert_spec(char *s)
+{
+   static char res[256];
+   int flags, size;
+   char family[MAXFONTWORD+1];
+   XftPattern *p;
+
+   if (!strncmp(s, "fc:", 3))
+       return s + 3;
+
+   if (!parsefont(s, family, &flags, &size))
+       return s;
+
+    p = XftPatternCreate();
+
+   /*
+    * Check first for special "standard" family names.
+    */
+   if (!strcmp(family, "fixed")) {
+       XftPatternAddString(p, XFT_FAMILY, "Unicon fixed");
+       XftPatternAddString(p, XFT_FAMILY, "fixed");
+       flags |= FONTFLAG_MONO;
+   }
+   else if (!strcmp(family, "mono")) {
+       XftPatternAddString(p, XFT_FAMILY, "Unicon mono");
+       XftPatternAddString(p, XFT_FAMILY, "lucidatypewriter");
+       flags |= FONTFLAG_MONO;
+   }
+   else if (!strcmp(family, "typewriter")) {
+       XftPatternAddString(p, XFT_FAMILY, "Unicon typewriter");
+       XftPatternAddString(p, XFT_FAMILY, "courier");
+       flags |= FONTFLAG_MONO;
+   }
+   else if (!strcmp(family, "sans")) {
+       XftPatternAddString(p, XFT_FAMILY, "Unicon sans");
+       XftPatternAddString(p, XFT_FAMILY, "helvetica");
+       flags |= FONTFLAG_PROPORTIONAL;
+   }
+   else if (!strcmp(family, "serif")) {
+       XftPatternAddString(p, XFT_FAMILY, "Unicon serif");
+       XftPatternAddString(p, XFT_FAMILY, "times");
+       flags |= FONTFLAG_PROPORTIONAL;
+   }
+   else
+       XftPatternAddString(p, XFT_FAMILY, family);
+
+   if (size > 0)
+       XftPatternAddDouble(p, XFT_SIZE, (double)size);
+
+    if (flags & FONTFLAG_MEDIUM)
+        XftPatternAddInteger(p, XFT_WEIGHT, XFT_WEIGHT_MEDIUM);
+    else if ((flags & FONTFLAG_DEMI) && (flags & FONTFLAG_BOLD))
+        XftPatternAddInteger(p, XFT_WEIGHT, XFT_WEIGHT_DEMIBOLD);
+    else if (flags & FONTFLAG_BOLD)
+        XftPatternAddInteger(p, XFT_WEIGHT, XFT_WEIGHT_BOLD);
+    else if (flags & FONTFLAG_LIGHT)
+        XftPatternAddInteger(p, XFT_WEIGHT, XFT_WEIGHT_LIGHT);
+
+    if (flags & FONTFLAG_ITALIC)
+        XftPatternAddInteger(p, XFT_SLANT, XFT_SLANT_ITALIC);
+    else if (flags & FONTFLAG_OBLIQUE)
+        XftPatternAddInteger(p, XFT_SLANT, XFT_SLANT_OBLIQUE);
+    else if (flags & FONTFLAG_ROMAN)
+        XftPatternAddInteger(p, XFT_SLANT, XFT_SLANT_ROMAN);
+
+   if (flags & FONTFLAG_PROPORTIONAL)
+        XftPatternAddInteger(p, XFT_SPACING, XFT_PROPORTIONAL);
+   if (flags & FONTFLAG_MONO)
+        XftPatternAddInteger(p, XFT_SPACING, XFT_MONO);
+
+   XftNameUnparse(p, res, sizeof(res) - 1);
+   XftPatternDestroy(p);
+
+   return res;
+}
+
+/*
+ * allocate font s in the display attached to w
+ */
+wfp alc_font(w,s)
+wbp w;
+char **s;
+{
+   return tryfont(w,convert_spec(*s));
+}
+
+#else /* HAVE_XFT */
+
 /*
  * allocate font s in the display attached to w
  */
@@ -742,7 +844,7 @@ char **s;
          flags |= FONTFLAG_PROPORTIONAL + FONTFLAG_SERIF;
          }
       else stdfam = NULL;
-   
+
       if (stdfam) {
          /*
           * Standard name: first try preferred family, then generalize.
@@ -986,6 +1088,8 @@ do { int r = fieldcmp(font1, font2, s, n); if (r != 0) return -r; } while (0)
    return 0;
    }
 
+#endif /* HAVE_XFT */
+
 /*
  * load a font and return a font structure.
  */
@@ -1010,17 +1114,11 @@ char *s;
    /*
     * load a new font
     */
-   GRFX_ALLOC(rv, _wfont);
-   rv->name = (char *)malloc((int)strlen(s)+1);
-   if (rv->name == NULL) ReturnErrNum(305, NULL);
-   strcpy(rv->name, s);
-   rv->fsp = XLoadQueryFont(wd->display, rv->name);
-   if (rv->fsp == NULL){
-      free(rv->name);
-      free(rv);
+   rv = loadfont(wd, s);
+   if (rv == NULL) {
       return NULL;
       }
-   rv->height = rv->fsp->ascent + rv->fsp->descent;
+
    w->context->leading = rv->height;
 
    /*
@@ -1032,6 +1130,57 @@ char *s;
    wd->fonts->next = rv;
    return rv;
    }
+
+wfp loadfont(wd,s)
+wdp wd;
+char *s;
+   {
+   wfp rv;
+   GRFX_ALLOC(rv, _wfont);
+   rv->name = (char *)malloc((int)strlen(s)+1);
+   if (rv->name == NULL) ReturnErrNum(305, NULL);
+   strcpy(rv->name, s);
+#ifdef HAVE_XFT
+   rv->fsp = XftFontOpenName(wd->display, wd->screen, rv->name);
+#else					/* HAVE_XFT */
+   rv->fsp = XLoadQueryFont(wd->display, rv->name);
+#endif					/* HAVE_XFT */
+   if (rv->fsp == NULL){
+      free(rv->name);
+      free(rv);
+      return NULL;
+      }
+
+#ifdef HAVE_XFT
+   {
+   XGlyphInfo	extents; 
+   char s[256];
+   int i;
+
+   /*
+    * Xft seems to give strange values in its font ascent/descent fields; therefore
+    * calculate the GlyphInfo for a string comprising all 256 chars and work out
+    * ascent/descent from the resulting dimensions.
+    */
+   for (i = 0; i < 256; ++i) s[i] = (char)i;
+   XftTextExtents8 (wd->display,
+                    rv->fsp,
+                    s,
+                    256,
+                    &extents);
+   rv->ascent = extents.y;
+   rv->descent = extents.height - extents.y;
+   rv->maxwidth = rv->fsp->max_advance_width;
+   }
+#else
+   rv->ascent = rv->fsp->ascent;
+   rv->descent = rv->fsp->descent;
+   rv->maxwidth = rv->fsp->max_bounds.width;
+#endif
+   rv->height = rv->ascent + rv->descent;
+   return rv;
+   }
+
 
 /*
  * allocate a context.  Can't be called until w has a display and window.
@@ -1103,7 +1252,11 @@ wbp w;
    else
       gcv.foreground = wd->colors[rv->fg].c;
    gcv.background = wd->colors[rv->bg].c;
+#ifdef HAVE_XFT
+   gcv.font       = wd->xfont->fid;
+#else					/* HAVE_XFT */
    gcv.font       = rv->font->fsp->fid;
+#endif					/* HAVE_XFT */
    gcv.line_style = rv->linestyle;
    gcv.line_width = rv->linewidth;
    if (rv->linewidth > 1) {
@@ -1133,7 +1286,7 @@ wbp w;
 wsp alc_winstate()
    {
    wsp ws;
-   
+
    GRFX_ALLOC(ws, _wstate);
    ws->serial = ++canvas_serial;
    ws->bits = 1024;				/* echo ON; others OFF */
@@ -1146,6 +1299,11 @@ wsp alc_winstate()
 	    StructureNotifyMask;
    ws->iconic = NormalState;
    ws->posx = ws->posy = -(MaxInt);
+   ws->minwidth = ws->minheight = 0;
+#ifdef HAVE_XFT
+   ws->pixDraw = ws->winDraw = NULL;
+#endif					/* HAVE_XFT */
+
    GRFX_LINK(ws, wstates);
    return ws;
    }
@@ -1159,6 +1317,16 @@ wsp ws;
    ws->refcount--;
    if(ws->refcount == 0) {
       ws->bits |= 1;			/* SETZOMBIE */
+#ifdef HAVE_XFT
+      if (ws->winDraw) {
+         XftDrawDestroy(ws->winDraw);
+         ws->winDraw = NULL;
+         }
+      if (ws->pixDraw) {
+         XftDrawDestroy(ws->pixDraw);
+         ws->pixDraw = NULL;
+      }
+#endif					/* HAVE_XFT */
       if (ws->win != (Window) NULL) {
 	 XDestroyWindow(ws->display->display, ws->win);
 	 XFlush(ws->display->display);

@@ -1137,9 +1137,8 @@ char *s;
    {
    wfp rv;
    GRFX_ALLOC(rv, _wfont);
-   rv->name = (char *)malloc((int)strlen(s)+1);
+   rv->name = (char *)strdup(s);
    if (rv->name == NULL) ReturnErrNum(305, NULL);
-   strcpy(rv->name, s);
 #ifdef HAVE_XFT
    rv->fsp = XftFontOpenName(wd->display, wd->screen, rv->name);
 #else					/* HAVE_XFT */
@@ -1158,16 +1157,12 @@ char *s;
    int i;
 
    /*
-    * Xft seems to give strange values in its font ascent/descent fields; therefore
-    * calculate the GlyphInfo for a string comprising all 256 chars and work out
-    * ascent/descent from the resulting dimensions.
+    * Xft seems to give strange values in its font ascent/descent fields;
+    * therefore calculate the GlyphInfo for a string comprising all 256
+    * chars and work out ascent/descent from the resulting dimensions.
     */
    for (i = 0; i < 256; ++i) s[i] = (char)i;
-   XftTextExtents8 (wd->display,
-                    rv->fsp,
-                    s,
-                    256,
-                    &extents);
+   XftTextExtents8 (wd->display, rv->fsp, s, 256, &extents);
    rv->ascent = extents.y;
    rv->descent = extents.height - extents.y;
    rv->maxwidth = rv->fsp->max_advance_width;

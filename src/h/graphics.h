@@ -201,8 +201,15 @@ typedef struct _wfont {
 #endif					/* MacGraph */
 #ifdef XWindows
   char	      *	name;			/* name for WAttrib and fontsearch */
-  int		height;			/* font height */
+  int           ascent;                 /* font dimensions */
+  int           descent;
+  int		height;			
+  int           maxwidth;               /* max width of one char */
+#ifdef HAVE_XFT
+  XftFont     * fsp;
+#else					/* HAVE_XFT */
   XFontStruct *	fsp;			/* X font pointer */
+#endif					/* HAVE_XFT */
 #endif					/* XWindows */
 #ifdef PresentationManager
    /*
@@ -292,6 +299,9 @@ typedef struct _wdisplay {
   int		screen;
   int		numFonts;
   wfp		fonts;
+#ifdef HAVE_XFT
+  XFontStruct   *xfont;
+#endif					/* HAVE_XFT */
 #ifdef Graphics3D
   XVisualInfo  *vis;
 #endif					/* Graphics3D */
@@ -502,8 +512,12 @@ typedef struct _wstate {
   int		y, x;			/* current cursor location, in pixels*/
   int		pointery,pointerx;	/* current mouse location, in pixels */
   int		posy, posx;		/* desired upper lefthand corner */
+  int		real_posx, real_posy;	/* real (canvas=normal) position */
   unsigned int	height;			/* window height, in pixels */
   unsigned int	width;			/* window width, in pixels */
+  unsigned int	minheight;		/* minimum window height, in pixels */
+  unsigned int	minwidth;		/* minimum window width, in pixels */
+  struct descrip selectionproc;         /* callback procedure for getting/clearing selection */
   int		bits;			/* window bits */
   int		theCursor;		/* index into cursor table */
   word		timestamp;		/* last event time stamp */
@@ -534,6 +548,9 @@ typedef struct _wstate {
   Window        iconwin;		/* icon window */
   Pixmap	iconpix;		/* icon pixmap */
   Visual	*vis;
+#ifdef HAVE_XFT
+  XftDraw       *winDraw,*pixDraw;
+#endif					/* HAVE_XFT */
   int		normalx, normaly;	/* pos to remember when maximized */
   int		normalw, normalh;	/* size to remember when maximized */
   int           numColors;		/* allocated (used) color info */
@@ -598,8 +615,6 @@ typedef struct _wstate {
 #ifdef Graphics3D
   int            is_3D;        /* flag for 3D windows */
   struct descrip funclist;    /* descriptor to hold list of 3d functions */
-  /* 3D Fonts introduce the fields below; I am not crazy about them. */
-  int old_posx, old_posy, exactx, exacty;
 #endif					/* Graphics3D */
   int            no;          /* new field added for child windows */
 } wstate, *wsp;

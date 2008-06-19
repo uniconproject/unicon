@@ -388,7 +388,7 @@ int interp_x(int fsig,dptr cargp)
 #else
       value_tmp = cargp[0];
 #endif
-      Deref(value_tmp);
+      Deref0(value_tmp);
       if (fsig == G_Fsusp) {
 	 InterpEVValD(&value_tmp, e_fsusp);
 	 }
@@ -701,6 +701,20 @@ Deliberate Syntax Error
 	    PutOp(Op_Aglobal);
 	    PushVal(D_Var);
 	    opnd = GetWord;
+#if 0
+	    /*
+	     * Todo:
+	     * if the current procedure is not within the current program
+	     * state, then lookup the program state of the current procedure,
+	     * and use its globals instead of the current program state.
+	     */
+	    /*
+	     * Enter the program state of the procedure being invoked.
+	     */
+	     if (!InRange(code, ipc.opnd, ecode)) {
+		syserr("interprogram procedure calls prohibited for now\n");
+		}
+#endif					/* 0 */
 	    PushAVal(&globals[opnd]);
 	    PutWord((word)&globals[opnd]);
 	    break;
@@ -1300,7 +1314,7 @@ Lsusp_uw:
 
 #if e_psusp
             value_tmp = *(dptr)(rsp - 1);	/* argument */
-            Deref(value_tmp);
+            Deref0(value_tmp);
             InterpEVValD(&value_tmp, E_Psusp);
 #endif					/* E_Psusp */
 
@@ -1446,9 +1460,22 @@ Eret_uw:
 	    EntInterp;
 #endif					/* E_Prem || E_Erem */
 
-	    /* used to InterpEVValD(argp,E_Pret); here */
 
-	    /* E_Pret moved below the unwinding code to avoid duplicates */
+#if e_pret
+	    /*
+	     * originally was InterpEVValD(argp,E_Pret) here.
+	     * InterpEVValD(glbl_argp,E_Pret) would give the
+	     * procedure as the event value; want actual return value.
+	     *
+	     * We do the E_Pret, using the return value in value_tmp,
+	     * prior to replacing the procedure ref (in glbl_argp)
+	     * with the return value.
+	     */
+	    value_tmp = *(dptr)(rsp - 1);	/* argument */
+	    Deref0(value_tmp);
+	    InterpEVValD(&value_tmp, E_Pret);
+#endif
+
 
 #ifdef MultiThread
 	    /*
@@ -1487,21 +1514,11 @@ Pret_uw:
 	    glbl_argp = pfp->pf_argp;
 	    pfp = pfp->pf_pfp;
 
-#ifdef MultiThread
-	   if (pfp && !InRange(code, pfp->pf_ipc.op, ecode) &&
-	       !InRange(((char *)istart), pfp->pf_ipc.op,
-			((char *)istart)+sizeof(istart)) &&
-	       pfp->pf_ipc.op != &mterm) {
-#if 0
-	       syserr("return to another program state not implemented");
-#endif
-	       }
-#if e_pret
-            value_tmp = *(dptr)(rsp - 1);	/* argument */
-            Deref(value_tmp);
-            InterpEVValD(&value_tmp, E_Pret);
-#endif					/* E_Pret */
-#endif					/* MultiThread */
+	    /*
+	     * Had moved E_Pret (via value_tmp) here for awhile,
+	     * but don't we get duplicate E_Pret's due to unwinding here?
+	     */
+
 	    break;
 	    }
 
@@ -2038,7 +2055,7 @@ return_term:
          if (lastev == E_Function) {
 #if e_fret
 	    value_tmp = *(dptr)(rsp - 1);	/* argument */
-	    Deref(value_tmp);
+	    Deref0(value_tmp);
 	    InterpEVValD(&value_tmp, e_fret);
 #endif					/* E_Fret */
 	    lastev = E_Misc;
@@ -2046,7 +2063,7 @@ return_term:
          else if (lastev == E_Operator) {
 #if e_oret
 	    value_tmp = *(dptr)(rsp - 1);	/* argument */
-	    Deref(value_tmp);
+	    Deref0(value_tmp);
 	    InterpEVValD(&value_tmp, e_oret);
 #endif					/* E_Oret */
 	    lastev = E_Misc;

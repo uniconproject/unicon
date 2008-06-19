@@ -767,7 +767,7 @@ wbp w;
 	    presscount++;
 	    handle_mouse(wb, (XButtonEvent *)&event);
 #ifdef Graphics3D
-	    if ( wb->context->is_3D && wb->context->selectionenabled ){
+	    if (wb->context->is_3D && wb->context->app_use_selection3D){
 	       wb->context->selectionrendermode = 1;
 	       redraw3D(wb);
 	       wb->context->selectionrendermode = 0;
@@ -1013,7 +1013,9 @@ wbp w;
         wc->stex[i].w=0;
         }
    free(wc->stex);
-   
+   i = wc->selectionnamecount;
+   while (i)
+      free(wc->selectionnamelist[i--]);
    free(wc->selectionnamelist);
    free(wc->texName);
    free(wc->texcoords);

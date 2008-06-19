@@ -509,9 +509,11 @@
 #define OffsetMask	(~(D_Var)) /* offset mask for variables */
 
 /*
- * "In place" dereferencing.
+ * "In place" dereferencing. The 2nd version generates no E_Deref event;
+ * it is for use during other events, to avoid spurious extra E_Deref's.
  */
 #define Deref(d) if (Var(d)) deref(&d, &d)
+#define Deref0(d) if (Var(d)) deref_0(&d, &d)
 
 /*
  * Construct a substring trapped variable.

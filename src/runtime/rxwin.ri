@@ -1931,8 +1931,12 @@ char *s;
 	    ws->iconic = NormalState;
 	    }
 	 else {
-	    ws->posx = ws->exactx;
-	    ws->posy = ws->exacty;
+	    /*
+	     * Going normal from presumed hidden/offscreen state.
+	     * Restore posx/posy from saved values.
+	     */
+	    ws->posx = ws->real_posx;
+	    ws->posy = ws->real_posy;
 	    do_config(w, 1);
 	    if (ws->is_3D) redraw3D(w);
             }
@@ -1991,10 +1995,14 @@ char *s;
 	       ws->iconic = NormalState;
 	       }
 	    if (ws->iconic != IconicState) {
-	       SETZOMBIE(w);
-	       ws->old_posx=ws->posx;
-	       ws->old_posy=ws->posy;
-	       ws->posx=4096;
+	       /*
+		* Going hidden used to be this nice clean, kill-the-window
+		* affair.  Some complications are now avoided by not killing
+		* the window but instead, moving it off-screen.
+		*/
+	       ws->real_posx=ws->posx;
+	       ws->real_posy=ws->posy;
+	       ws->posx=8192;
 	       ws->posy=0;
 	       do_config(w, 1);
 	       XFlush(stddpy);

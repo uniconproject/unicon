@@ -539,10 +539,8 @@ char *s;
       if (posy < 0) sprintf(tmp,"+%d%d",posx,posy);
       else sprintf(tmp,"+%d+%d",posx,posy);
       }
-#ifdef Graphics3D
-   w->window->exactx= posx;
-   w->window->exacty= posy;
-#endif					/* Graphics3D */
+   w->window->real_posx = posx;
+   w->window->real_posy = posy;
    return setgeometry(w,tmp);
    }
 
@@ -1959,15 +1957,10 @@ int readPNG(char *filename, int p, struct imgdata *imd)
 
 static int pngread(char *filename, int p)
 {
-
    unsigned char header[8];
    int  bit_depth, color_type;
    double  gamma;
-
-   
    png_uint_32  i, rowbytes;
-   
-
    png_bytepp row_pointers = NULL;
    png_color_16p pBackground;
    png_structp png_ptr = NULL;
@@ -1991,7 +1984,7 @@ static int pngread(char *filename, int p)
       return Failed;  /* (NOT_PNG) */
       }
 
-  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+   png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
 
    if (!png_ptr)
@@ -2361,11 +2354,11 @@ struct palentry *paltbl;
          ncolors++;
          }
 
-   if (ncolors < lastcolor + 1) {	/* if entries were moved to fill gaps */
+   if (ncolors < lastcolor + 1) {      /* if entries were moved to fill gaps */
       p = data;
       q = p + len;
       while (p < q) {
-         *p = cmap[*p];			/* adjust color values in data string */
+         *p = cmap[*p];		       /* adjust color values in data string */
          p++;
          }
       }

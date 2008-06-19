@@ -26,6 +26,9 @@
 #if HAVE_LIBGL
 #include "ropengl.ri"
 #endif					/* HAVE_LIBGL */
+#if HAVE_D3D
+#include "rd3d.ri"
+#endif					/* HAVE_D3D */
 #endif					/* Graphics3D */
 
 #else					/* Graphics */

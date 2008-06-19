@@ -443,16 +443,13 @@ typedef struct _wcontext {
   int		rings;			/* detail sphere etal to be drawn */
 
 /* selection parameters   */
-  int           selectionenabled;            /* selection is enabled */
-  int		selectionrendermode;         /* selection code should be executed */
-  int		selectionavailablename;      /* what int code to use for OpenGL name  */
-  char **	selectionnamelist;	     /* all of the current used names  */
-  int		selectionnamecount;	     /* how many - used so far   */	
-  int		selectionnamelistsize;       /* current available size  */
-  /*
-  char **	selectednamelist;
-  int 		selectednamecount;
-  */   
+  int           selectionenabled;       /* selection is enabled */
+  int		selectionrendermode;    /* selection code should be executed */
+  int		selectionavailablename; /* what int code to use for OpenGL name  */
+  char **	selectionnamelist;	/* all of the current used names  */
+  int		selectionnamecount;	/* how many - used so far   */	
+  int		selectionnamelistsize;  /* current available size  */
+  int		app_use_selection3D;    /* the application uses 3D selection */
  
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
   double        eyedirx, eyediry, eyedirz; /* eye direction vector */
@@ -517,7 +514,6 @@ typedef struct _wstate {
   unsigned int	width;			/* window width, in pixels */
   unsigned int	minheight;		/* minimum window height, in pixels */
   unsigned int	minwidth;		/* minimum window width, in pixels */
-  struct descrip selectionproc;         /* callback procedure for getting/clearing selection */
   int		bits;			/* window bits */
   int		theCursor;		/* index into cursor table */
   word		timestamp;		/* last event time stamp */

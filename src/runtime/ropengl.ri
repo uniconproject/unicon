@@ -87,6 +87,7 @@ int init_3dcontext(wcp wc)
    wc->selectionnamecount=0;
    wc->selectionnamelist=malloc(wc->selectionnamelistsize*sizeof(char*));
    if (wc->selectionnamelist == NULL) return Failed;
+   wc->app_use_selection3D = 0;
 
    wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
    wc->eyedirz = -100.0;
@@ -611,7 +612,7 @@ int redraw3D(wbp w)
 
    setlinewidth(w, 1);
    glLineWidth(1.0);
-   wc->dim = 3;   
+   wc->dim = 3;
 
   /*
    *  render in GL_RENDER mode otherwise GL_SELECT
@@ -698,16 +699,11 @@ int redraw3D(wbp w)
       if (w->window->funclist.vword.bptr != NULL) {
          if (traversefunctionlist(w) == Failed)
              return Failed;
-      }      
-      
+      }
+
       /* switch back to GL_RENDER render mode and save the hits  */
       glFlush();
       selectionhits = glRenderMode(GL_RENDER);
-       
-       if ((namelist = alclist(0, MinListSlots)) == NULL)
-	   return Failed;
-       selectednameslist.dword = D_List;
-       selectednameslist.vword.bptr = (union block*) namelist;
    
       if (selectionhits){
          /* first pass over the selection buffer to collect and sort z values  */
@@ -858,7 +854,7 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 	 d = bp->lslots[i];
          if (!cnv:real(d, d)) return 0;
 	 bp->lslots[i] = d;
-	 a[j-(m-1)] = BlkD(d,Real)->realval;
+	 a[j-(m-1)] = BlkD(d, Real)->realval;
 	 }
       if (used <= 1){
 	 bp = (struct b_lelem *) bp->listnext;
@@ -1093,9 +1089,9 @@ int traversefunctionlist(wbp w)
 	    break;
          case REDRAW_DRAWSTRING3D:
 #if HAVE_FTGL
-	    if (!cnv:C_double(rp->fields[2], x))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[3], y))  goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], z))  goto free_v_and_fail;	  
+	    if (!cnv:C_double(rp->fields[2], x)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[3], y)) goto free_v_and_fail;
+	    if (!cnv:C_double(rp->fields[4], z)) goto free_v_and_fail;	  
 	    if (!cnv:C_string(rp->fields[5], s)) goto free_v_and_fail;
 	    drawstrng3d(w,x,y,z,s);
 #endif					/* HAVE_FTGL */
@@ -2252,7 +2248,7 @@ int settexcoords(wbp w, char* s)
          else break;
          }
       /* Number of texture coordinates must be even */
-      if ((BlkD(f,List)->size-3) % 2)
+      if ((BlkD(f, List)->size-3) % 2)
 	 return Error;
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
@@ -3663,13 +3659,13 @@ wfp
 srch_3dfont(char *fname, int fsize, char ftype)
 {
 #if HAVE_FTGL
-  wfp g = start_font;
-  while (g) {
-    if (!strcmp(g->name, fname) && g->size==fsize && g->type==ftype) {
-       return g;
-       }
-    g = g->next;
-  }
+   wfp g = start_font;
+   while (g) {
+      if (!strcmp(g->name, fname) && g->size==fsize && g->type==ftype) {
+	 return g;
+	 }
+      g = g->next;
+      }
 #endif
   return 0;
 }
@@ -4004,6 +4000,8 @@ int setselectionmode(wbp w, char* s)
 	   wc->selectionenabled = 0;  
    else
 	   return Error;
+
+   wc->app_use_selection3D = 1;
 
    MakeInt(wc->selectionenabled, &mode);
    c_put(&f, &mode);

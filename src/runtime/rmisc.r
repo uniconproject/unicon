@@ -1997,7 +1997,7 @@ dptr rslt;
     * Allocate the list and a list block.
     */
    Protect(hp = alclist(argc, argc), fatalerr(0,NULL));
-   bp = hp->listhead;
+   bp = Blk(hp->listhead,Lelem);
 
    /*
     * Copy the arguments into the list
@@ -2028,7 +2028,7 @@ dptr rslt;
     * Allocate the list and a list block.
     */
    Protect(hp = alclist(nargs, nargs), fatalerr(0,NULL));
-   bp = hp->listhead;
+   bp = Blk(hp->listhead, Lelem);
 
    /*
     * Copy the arguments into the list

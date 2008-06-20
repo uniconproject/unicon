@@ -669,12 +669,12 @@ fldlookup(rec, fld)
 
     len = strlen(fld);
     desc = rec->recdesc;
-    for (len=strlen(fld),i=0; i<desc->proc.nfields; i++) {
-        if (len == StrLen(desc->proc.lnames[i]) &&
-           (strncmp(fld, StrLoc(desc->proc.lnames[i]), len) == 0))
+    for (len=strlen(fld),i=0; i<Blk(desc,Proc)->nfields; i++) {
+        if (len == StrLen(desc->Proc.lnames[i]) &&
+           (strncmp(fld, StrLoc(desc->Proc.lnames[i]), len) == 0))
            break;
         }
-    if (i >= desc->proc.nfields)
+    if (i >= desc->Proc.nfields)
         i = -1;
     return i;
 }

@@ -619,11 +619,11 @@ function{0,1} classname(r)
       struct b_record * br;
 
       br = BlkD(r, Record);
-      recnm_bgn = StrLoc(br->recdesc->proc.recname);
+      recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
-         result.dword = recnm_end - recnm_bgn;
-         result.vword.sptr = recnm_bgn;
+         StrLen(result) = recnm_end - recnm_bgn;
+         StrLoc(result) = recnm_bgn;
          return result;
          }
       else
@@ -645,11 +645,11 @@ function{1} membervarnames(r)
       register struct b_lelem * bp;
 
       br = BlkD(r, Record);
-      n_flds = br->recdesc->proc.nfields;
+      n_flds = Blk(br->recdesc,Proc)->nfields;
       Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
-      bp = (struct b_lelem *)p->listhead;
+      bp = Blk(p->listhead,Lelem);
       for (i=0; i<n_flds; i++)
-         bp->lslots[i] = br->recdesc->proc.lnames[i];
+         bp->lslots[i] = br->recdesc->Proc.lnames[i];
       return list(p);
       }
 end
@@ -675,7 +675,7 @@ function{1} methodnames(r, cooked_names)
       register word i, k, n_mthds, n_glbls;
 
       br = BlkD(r, Record);
-      recnm_bgn = StrLoc(Blk(br->recdesc, Proc)->recname);
+      recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       recnm_len = recnm_end - recnm_bgn + 1;
       n_glbls = egnames - gnames;
@@ -683,7 +683,7 @@ function{1} methodnames(r, cooked_names)
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+         if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
             continue;
 #if !COMPILER
          suffix = StrLoc(blk->proc.pname);
@@ -694,25 +694,25 @@ function{1} methodnames(r, cooked_names)
          n_mthds++;
          }
       Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
-      bp = (struct b_lelem *)p->listhead;
+      bp = Blk(p->listhead,Lelem);
       for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+         if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
             continue;
 #if !COMPILER
-         suffix = StrLoc(blk->proc.pname);
+         suffix = StrLoc(blk->Proc.pname);
          suffix += (recnm_end - recnm_bgn);
          if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
             continue;
 #endif /* COMPILER */
          if (cooked_names.vword.integr) {
-            bp->lslots[k].dword = StrLen(blk->proc.pname) - recnm_len;
-            bp->lslots[k].vword.sptr = StrLoc(blk->proc.pname) + recnm_len;
+            bp->lslots[k].dword = StrLen(blk->Proc.pname) - recnm_len;
+            bp->lslots[k].vword.sptr = StrLoc(blk->Proc.pname) + recnm_len;
             }
          else {
-            bp->lslots[k] = blk->proc.pname;
+            bp->lslots[k] = blk->Proc.pname;
             }
          k++;
          }
@@ -741,9 +741,9 @@ function{1} methodnames_fromstr(s, cooked_names)
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (StrLen(blk->proc.pname) <= len)
+         if (StrLen(Blk(blk,Proc)->pname) <= len)
             continue;
-         procname = StrLoc(blk->proc.pname);
+         procname = StrLoc(blk->Proc.pname);
          if (strncmp(procname, s, len))
             continue;
          if (procname[len] != '_')
@@ -757,14 +757,14 @@ function{1} methodnames_fromstr(s, cooked_names)
          n_mthds++;
          }
       Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
-      bp = (struct b_lelem *)p->listhead;
+      bp = Blk(p->listhead,Lelem);
       for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (StrLen(blk->proc.pname) <= len)
+         if (StrLen(Blk(blk,Proc)->pname) <= len)
             continue;
-         procname = StrLoc(blk->proc.pname);
+         procname = StrLoc(blk->Proc.pname);
          if (strncmp(procname, s, len))
             continue;
          if (procname[len] != '_')
@@ -776,11 +776,11 @@ function{1} methodnames_fromstr(s, cooked_names)
             continue;
 #endif /* COMPILER */
          if (cooked_names.vword.integr) {
-            bp->lslots[k].dword = StrLen(blk->proc.pname) - len - 1;
+            bp->lslots[k].dword = StrLen(blk->Proc.pname) - len - 1;
             bp->lslots[k].vword.sptr = procname + len + 1;
             }
          else {
-            bp->lslots[k] = blk->proc.pname;
+            bp->lslots[k] = blk->Proc.pname;
             }
          k++;
          }
@@ -817,7 +817,7 @@ function{1} methods(r)
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+         if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
             continue;
 #if !COMPILER
       suffix = StrLoc(blk->proc.pname);
@@ -833,10 +833,10 @@ function{1} methods(r)
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (strncmp(StrLoc(blk->proc.pname), recnm_bgn, recnm_len))
+         if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
             continue;
 #if !COMPILER
-      suffix = StrLoc(blk->proc.pname);
+      suffix = StrLoc(blk->Proc.pname);
       suffix += (recnm_end - recnm_bgn);
       if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
          continue;
@@ -870,9 +870,9 @@ function{1} methods_fromstr(s)
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (StrLen(blk->proc.pname) <= len)
+         if (StrLen(Blk(blk,Proc)->pname) <= len)
             continue;
-         procname = StrLoc(blk->proc.pname);
+         procname = StrLoc(blk->Proc.pname);
          if (strncmp(procname, s, len))
             continue;
          if (procname[len] != '_')
@@ -886,14 +886,14 @@ function{1} methods_fromstr(s)
          n_mthds++;
          }
       Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
-      bp = (struct b_lelem *)p->listhead;
+      bp = Blk(p->listhead,Lelem);
       for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (StrLen(blk->proc.pname) <= len)
+         if (StrLen(Blk(blk,Proc)->pname) <= len)
             continue;
-         procname = StrLoc(blk->proc.pname);
+         procname = StrLoc(blk->Proc.pname);
          if (strncmp(procname, s, len))
             continue;
          if (procname[len] != '_')

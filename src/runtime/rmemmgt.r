@@ -1185,7 +1185,7 @@ static void cofree()
 #ifdef MultiThread
    rootpstate.Mainhead->title = T_Coexpr;
 #else				/* MultiThread */
-   BlkLoc(k_main)->coexpr.title = T_Coexpr;
+   BlkLoc(k_main)->Coexpr.title = T_Coexpr;
 #endif				/* MultiThread */
 
    /*

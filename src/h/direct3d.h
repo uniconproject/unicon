@@ -8,3 +8,6 @@
 #define U3D_REPLACE    4
 #define U3D_BLEND      5
 #define U3D_MODULATE   6
+
+#define GLfloat float
+#define GLubyte unsigned char

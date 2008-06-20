@@ -345,12 +345,13 @@ rt.a: ../common/rswitch.o ../common/long.o ../common/time.o ../common/mlocal.o\
       fscan.o fstr.o fstranl.o fstruct.o fsys.o fwindow.o init.o invoke.o\
       keyword.o lmisc.o oarith.o oasgn.o ocat.o ocomp.o omisc.o oref.o oset.o\
       ovalue.o ralc.o rcoexpr.o rcomp.o rdebug.o rlrgint.o rlocal.o rmemmgt.o\
-      rmisc.o rstruct.o rsys.o rwinrsc.o rgfxsys.o rwinsys.o fxtra.o raudio.o rmsg.o\
-      rposix.o rwindow.o ../common/xwindow.o ../common/alloc.o
+      rmisc.o rstruct.o rsys.o rwinrsc.o rgfxsys.o rwinsys.o fxtra.o raudio.o\
+      rmsg.o rposix.o rwindow.o\
+      ../common/xwindow.o ../common/alloc.o ../common/drawstring3d.o
 	rm -f rt.a
 	ar qc rt.a `sed 's/$$/.o/' rttfull.lst` ../common/rswitch.o\
 	    ../common/long.o ../common/time.o ../common/mlocal.o\
-	    ../common/xwindow.o ../common/alloc.o
+	    ../common/xwindow.o ../common/alloc.o ../common/drawstring3d.o
 	cp rt.a rt.db ../common/dlrgint.o ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 

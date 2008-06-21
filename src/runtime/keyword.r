@@ -525,17 +525,15 @@ keyword{0,*} pick
       int i, elements;
       struct b_list *namelist;
       struct descrip name;
-      if (is:null(lastEventWin)) runerr(140, lastEventWin);
 
-      namelist = (struct b_list *) amperPick.vword.bptr;
+      if (is:null(lastEventWin)) runerr(140, lastEventWin);
+      if (is:null(amperPick)) fail;
+
+      namelist = BlkD(amperPick, List);
       elements = namelist->size;
 
-      /*printf (" # elements:%i\n", elements);*/
       for (i=0; i<elements; i++){
-         /*printf (" # i:%i\n", i);*/
          c_traverse(namelist, &name, i);
-         /*c_get(namelist, &name);*/
-         /*printf (" # name:%s\n", name.vword.sptr );*/
          suspend name;
          }
 
@@ -620,7 +618,7 @@ keyword{1} source
 #ifndef CoExpr
          return k_main;
 #else					/* CoExpr */
-         return coexpr(topact((struct b_coexpr *)BlkLoc(k_current)));
+         return coexpr(topact(BlkD(k_current,Coexpr)));
 #endif					/* CoExpr */
          }
 end

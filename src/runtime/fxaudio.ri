@@ -8,6 +8,9 @@
 "PlayAudio(s) - Play audio file."
 function{0,1} PlayAudio(fname)
 
+   if !cnv:C_string(fname) then
+      runerr(103,fname)
+
    declare {
       tended struct descrip filename;
       }
@@ -17,24 +20,14 @@ function{0,1} PlayAudio(fname)
       }
 
    body {
-      tended char *fnamestr;
       int status;
       FILE * f;
       struct b_file *fl;
 
-      /*
-       * get a C string for the file name
-       */
-      if (!cnv:C_string(fname, fnamestr))
-	 runerr(103,fname);
-
-      if (strlen(fnamestr) != StrLen(fname))
-	 fail;
-
-      f = (FILE*) StartAudioThread(fnamestr);
+      if ((f = (FILE*) StartAudioThread(fname)) == NULL) fail;
       status = 1;
-      StrLen(filename) = strlen(fnamestr);
-      StrLoc(filename) = fnamestr;
+      StrLen(filename) = strlen(fname);
+      StrLoc(filename) = fname;
       Protect(fl = alcfile(f, status, &filename), runerr(0));
       return file(fl);
       }
@@ -53,7 +46,7 @@ function{1} StopAudio(f)
    body {
       /* we are passing the file name as struct */
       AudioPtr Ptr;
-      Ptr = (AudioPtr)BlkLoc(f)->file.fd.fp;
+      Ptr = (AudioPtr)BlkD(f,File)->fd.fp;
       StopAudioThread(Ptr);
       return C_integer 1;
       }
@@ -89,7 +82,7 @@ function{1} VWho(f)
       L.dword=D_List;
       L.vword.bptr=(union block *) hp;
 
-      Ptr = (PVSESSION) BlkLoc(f)->file.fd.fp;
+      Ptr = (PVSESSION) BlkD(f,File)->fd.fp;
       k = GetVListSize(Ptr);
       for(i=0; i<= k; ++i) {
 	 s = FetchListener(Ptr,i);
@@ -129,7 +122,7 @@ function{*} VAttrib(argv[argc])
 	 }
       else {
       PVSESSION Ptr;
-      Ptr = (PVSESSION)BlkLoc(argv[0])->file.fd.fp;
+      Ptr = (PVSESSION)BlkD(argv[0],File)->fd.fp;
       if (!cnv:tmp_string(argv[1], sbuf)) /* sbuf not allocated */
           runerr(109, argv[1]);
 

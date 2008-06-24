@@ -7,7 +7,7 @@
 
 #ifdef ConsoleWindow
 
-FILE *ConsoleBinding = NULL;
+/* FILE *ConsoleBinding = NULL; */
 
 #ifdef MultiThread
 
@@ -321,7 +321,7 @@ struct descrip *val;
     * Point hp at the list-header block and bp at the last
     *  list-element block.
     */
-   bp = (struct b_lelem *) BlkLoc(*l)->list.listtail;
+   bp = Blk(BlkD(*l, List)->listtail, Lelem);
 
    /*
     * If the last list-element block is full, allocate a new
@@ -333,7 +333,7 @@ struct descrip *val;
       /*
        * Set i to the size of block to allocate.
        */
-      i = ((struct b_list *)BlkLoc(*l))->size / two;
+      i = BlkD(*l, List)->size / two;
       if (i < MinListSlots)
          i = MinListSlots;
 #ifdef MaxListSlots
@@ -351,10 +351,9 @@ struct descrip *val;
             fatalerr(0,NULL);
          }
 
-      ((struct b_list *)BlkLoc(*l))->listtail->lelem.listnext =
-	(union block *) bp;
-      bp->listprev = ((struct b_list *)BlkLoc(*l))->listtail;
-      ((struct b_list *)BlkLoc(*l))->listtail = (union block *) bp;
+      Blk(BlkD(*l, List)->listtail, Lelem)->listnext = (union block *) bp;
+      bp->listprev = BlkD(*l, List)->listtail;
+      BlkD(*l, List)->listtail = (union block *) bp;
       }
 
    /*
@@ -370,7 +369,7 @@ struct descrip *val;
     * Adjust block usage count and current list size.
     */
    bp->nused++;
-   ((struct b_list *)BlkLoc(*l))->size++;
+   BlkD(*l, List)->size++;
 }
 
 /*
@@ -878,9 +877,11 @@ C_integer *d;
 /*
  * the global buffer used as work space for printing string, etc 
  */
+#if 0
 char ConsoleStringBuf[512 * 48];
 char *ConsoleStringBufPtr = ConsoleStringBuf;
 unsigned long ConsoleFlags = 0;			 /* Console flags */
+#endif
 extern int ConsolePause;
 extern FILE *flog;
 

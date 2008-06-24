@@ -3255,6 +3255,7 @@ char * abuf;
       case A_EYEDIR:
    	 AttemptAttr(seteyedir(w, val));
 	 break;
+#if HAVE_LIBGL
       case A_LIGHT: case A_LIGHT0:
 	 AttemptAttr(setlight(w, val, GL_LIGHT0));
 	 break;
@@ -3279,6 +3280,7 @@ char * abuf;
       case A_LIGHT7:
 	 AttemptAttr( setlight(w, val, GL_LIGHT7));
 	 break;
+#endif					/* HAVE_LIBGL */
       case A_MESHMODE:
 	 if (!setmeshmode(w,val)) return Failed;
 	 break;

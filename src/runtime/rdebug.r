@@ -653,10 +653,11 @@ static void ttrace()
          break;
 
       case Op_Invoke:
-         bp = BlkD(*xargp, Proc);
          nargs = xnargs;
-         if (xargp[0].dword == D_Proc)
+         if (xargp[0].dword == D_Proc) {
+	    bp = BlkD(*xargp, Proc);
             putstr(stderr, &(bp->pname));
+	    }
          else
             outimage(stderr, xargp, 0);
          putc('(', stderr);

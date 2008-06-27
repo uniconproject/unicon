@@ -4603,19 +4603,17 @@ function{1} WSection(argv[argc])
       if (wc->selectionenabled){
          MakeInt(wc->selectionavailablename, &(rp->fields[5])); /*  integer code for opengl selection */      
          wc->selectionavailablename++;
+         wc->selectionnamecount++;
 	 
 	 if (wc->selectionnamecount >= wc->selectionnamelistsize){
-printf("doubling selectionnamelist of %d for wc %p\n",
-       wc->selectionnamelistsize, wc);
 	    wc->selectionnamelistsize *=2;
 	    wc->selectionnamelist=realloc(wc->selectionnamelist, wc->selectionnamelistsize*sizeof(char*));
 	    if (wc->selectionnamelist == NULL) fail;
 	 }
-	    wc->selectionnamecount++;
 	    if (!cnv:C_string(argv[warg], tmp))
 		    runerr(103, argv[warg]);
 
-	    wc->selectionnamelist[wc->selectionnamecount] = tmp;	
+	    wc->selectionnamelist[wc->selectionnamecount] = strdup(tmp);
       }
       else
 	rp->fields[5]=zerodesc;

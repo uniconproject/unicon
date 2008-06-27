@@ -571,6 +571,10 @@ struct progstate *pstate;
    PostDescrip(pstate->eventval);
    PostDescrip(pstate->eventsource);
 
+#ifdef Graphics3D
+   PostDescrip(pstate->AmperPick);
+#endif					/* Graphics3D */
+
    /* Kywd_err, &error, always an integer */
    /* Kywd_pos, &pos, always an integer */
    postqual(&(pstate->ksub));

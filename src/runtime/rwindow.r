@@ -147,9 +147,13 @@ int t;
    hp = BlkD(w->window->listp, List);
    if (hp->size > 0) {   /* we might have picking results */
       c_traverse( hp , &pickdesc ,0);
-      if ((pickdesc.dword == D_List))  /* pull out the picking results */
+      if (is:list(pickdesc))  /* pull out the picking results */
          wgetq( w, &amperPick, -1);
+     else
+        amperPick = nulldesc;
       }
+   else
+        amperPick = nulldesc;
 
    if (xdesc.dword != D_Integer || ydesc.dword != D_Integer)
       return -2;			/* bad values on queue */

@@ -1,12 +1,15 @@
 /*
- * Katie's n'th attempt at writing a lex specification for lex.
+ * Name: lex.l
+ * Author: Katie Ray
  * Last Updated: September 17, 2002
+ *
+ * This program is the flex(1) lexical specification file for ulex.
+ * It may work just fine under lex(1) if you comment out the %option yylineno
  */
 
+%option yylineno
+
 %{
-/*
- * This program is the lexical specification file for lex
- */
 
 #include "y.tab.h"
 #include <string.h>

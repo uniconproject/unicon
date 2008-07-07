@@ -16,30 +16,47 @@
 
 extern YYSTYPE yylval;
 extern yylineno;
-extern char *yyfilename;
+extern char *yyfilename, *outfilename;
+extern FILE *outfile;
 int whiteflag=0;
 %}
 
 %%
 
-"}%"			            { printf("}% should read %}"); }
+"}%"	{ printf("}% should read %}"); }
 
-"%%"			            { whiteflag = 1;
-                                      yylineno++;
-					return -1 /* token(PERCENTS) */; }
+"%%"	{
+	/*
+	 * copy out remainder, up to EOF, into output file.
+	 */
+	int nextchar;
+	FILE *foutfile = fopen("ulex.tmp","w");
+	whiteflag = 1;
 
-"["("^")?([^\]\\]|((\\\\)*\\.))+"]" { 
+	if (foutfile == NULL) {
+	   fprintf(stderr, "exiting\n");
+	   fflush(stderr);
+	   exit(1);
+	   }
+	fprintf(foutfile, "\n\n");
+	fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename);
+	while ((nextchar = yyinput()) != EOF) fprintf(foutfile,"%c",nextchar);
+	fclose(foutfile);
+	return -1 /* token(PERCENTS) */;
+	}
+
+"["("^")?([^\]\\]|((\\\\)*\\.))+"]" {
                                       yylval.s = strdup(yytext);
-                                      return token(CSET); 
+                                      return token(CSET);
                                     }
-"."			            { return token(DOT); } 
-"\""(((\\\\)*\\.)|[^\"\\])+"\""     { 
+"."			            { return token(DOT); }
+"\""(((\\\\)*\\.)|[^\"\\])+"\""     {
                                       yylval.s = strdup(yytext);
-                                      return token(QUOTES); 
+                                      return token(QUOTES);
                                     }
-"\\".			            { 
+"\\".			            {
                                       yylval.s = strdup(yytext);
-				      return token(BACKSLASH); 
+				      return token(BACKSLASH);
                                     }
 "^"                                 { return token(LINEBEGIN); }
 "$"                                 { return token(LINEEND); }
@@ -50,16 +67,16 @@ int whiteflag=0;
 "("                                 { return token(PARENTHESES); }
 ")"                                 { return token(CLOSEPARENTHESES); }
 "/"                                 { return token(FORWARDSLASH); }
-"{"[0-9]+","[0-9]+"}"|"{"[0-9]"}"   { 
+"{"[0-9]+","[0-9]+"}"|"{"[0-9]"}"   {
                                       yylval.s = strdup(yytext);
-                                      return token(CURLBRACKETS); 
+                                      return token(CURLBRACKETS);
                                     }
-"{"			  	    { 
+"{"			  	    {
                                       grab_semantic_action();
                                       yylval.s = strdup(yytext);
-                                      return token(ACTION); 
+                                      return token(ACTION);
                                     }
-[a-zA-Z0-9_]                        { 
+['a-zA-Z0-9_]                       {
                                       yylval.s = strdup(yytext);
                                       return token(CHARACTER);
                                     }
@@ -75,14 +92,16 @@ int whiteflag=0;
 %%
 int token(int x)
 {
-   //if (1) printf("\t %d %s \n", x, yytext);
+#if DEBUG
+   printf("\ttoken: %d '%s'\n", x, yytext);
+#endif
    return x;
 }
 
 int grab_semantic_action()
 {
     int numbrace, quotemode, slash;
-    char nextchar;
+    int nextchar;
     char* temp;
     numbrace = 1;
     quotemode = 0;
@@ -90,15 +109,27 @@ int grab_semantic_action()
 
     while (numbrace != 0) {
         nextchar = yyinput();
+        if (nextchar == EOF) {
+	   fprintf(stderr,"bad/unfinished semantic action\n");
+	   fflush(stderr);
+	   exit(-1);
+	   }
 
-        if (nextchar == '"' && slash == 0) 
-            quotemode = 1 - quotemode;
+        if (nextchar == '"' && slash == 0) {
+           quotemode = 1 - quotemode;
+	   }
 
-        if (nextchar == '\\') slash = 1 - slash;
-        
-        if (quotemode == 0) { 
-            if (nextchar == '{') numbrace ++;
-            else if (nextchar == '}') numbrace --; 
+        if (nextchar == '\\') {
+	   slash = 1 - slash;
+	   }
+	else slash = 0;
+        if (quotemode == 0) {
+            if (nextchar == '{') {
+	       numbrace ++;
+	       }
+            else if (nextchar == '}') {
+	       numbrace --;
+	       }
         }
 
         temp = yytext;
@@ -107,7 +138,6 @@ int grab_semantic_action()
         temp++;
         *temp = '\0';
     }
-    
     return 0;
 }
 

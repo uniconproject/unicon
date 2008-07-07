@@ -6,12 +6,13 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 FILE *yyin;
 char *begintext;
 extern int yylineno;
 
 char* grab_upto_percents();
-char* makebigger(char* previous, int size);
 char *yyfilename;
 char *outfilename;
 FILE *outfile;
@@ -19,7 +20,7 @@ FILE *outfile;
 int main(int argc, char *argv[])
 {
    int i;
-   char nextchar, nextchar2;
+   int nextchar, nextchar2;
    char ppcmdline[1024];
    int arg = 1;
    int pp = 1;
@@ -62,14 +63,23 @@ int main(int argc, char *argv[])
       fflush(stderr);
       exit(-1);
       }
+   else {
+#if 0
+      printf("ulex: opened %s\n", pp ? ppcmdline : yyfilename);
+#endif
+      }
 
    /* process up to first %% */
 
-   nextchar = fgetc(yyin);
+   if ((nextchar = fgetc(yyin)) == EOF) {
+      fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+      }
    if (nextchar == 10 || nextchar == 13)
       yylineno++;
   
-   nextchar2 = fgetc(yyin);
+   if ((nextchar2 = fgetc(yyin)) == EOF) {
+      fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+      }
    if(nextchar2 == 10 || nextchar2 == 13)
       yylineno++;
 
@@ -78,7 +88,9 @@ int main(int argc, char *argv[])
        * ignore everything until either %% or %{
        */
       nextchar = nextchar2;
-      nextchar2 = fgetc(yyin);
+      if ((nextchar2 = fgetc(yyin)) == EOF) {
+	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+	 }
       if (nextchar2 == 10 || nextchar2 == 13)
 	 yylineno++;
       }
@@ -91,26 +103,22 @@ int main(int argc, char *argv[])
    /*
     * copy out remainder, up to EOF, into output file.
     */
-   if (outfile == NULL) {
-      fprintf(stderr, "exiting\n"); fflush(stderr);
-      }
 
-   fprintf(outfile, "\n\n");
-   fprintf(outfile, "#line %d \"%s\"\n", yylineno, yyfilename);
-
-   while ((i=yylex()) > 0) {
-      extern char yytext[];
-      fprintf(outfile, "%s", yytext);
-      }
+   yyin = fopen("ulex.tmp","r");
+   while (((nextchar = fgetc(yyin)) != EOF) && (nextchar != '%'))
+      fprintf(outfile, "%c", nextchar);
+   if (nextchar == '%') nextchar = fgetc(yyin);
+   if (nextchar == '%') nextchar = fgetc(yyin);
 
    nextchar = fgetc(yyin);
-   while(nextchar != -1) {
-      printf("still looping nothing outlasts the energizer bunny\n");
+   while(nextchar != EOF) {
       fprintf(outfile, "%c", nextchar);
-      nextchar = fgetc(yyin);
+      if ((nextchar = fgetc(yyin)) == EOF) break;
       }
 
    fclose(outfile);
+   fclose(yyin);
+   unlink("ulex.tmp");
    printf("\n");
    return 0;
 }
@@ -118,7 +126,7 @@ int main(int argc, char *argv[])
 char* grab_upto_percents()
 {
    int quotemode = 0, slash = 0, index = 0, size = 20, reset;
-   char nextchar, nextchar2;
+   int nextchar, nextchar2;
 
    begintext = (char *) calloc(size, sizeof(char));
    if (begintext == NULL) {
@@ -127,11 +135,15 @@ char* grab_upto_percents()
       exit(-1);
       }
 
-   nextchar = fgetc(yyin);
+   if ((nextchar = fgetc(yyin)) == EOF) {
+      fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+      }
    if (nextchar == 10 || nextchar == 13)
       yylineno++;
 
-   nextchar2 = fgetc(yyin);
+   if ((nextchar2 = fgetc(yyin)) == EOF) {
+      fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+      }
    if (nextchar2 == 10 || nextchar2 == 13)
       yylineno++;
 
@@ -148,8 +160,13 @@ char* grab_upto_percents()
       if (nextchar == '\\') slash = 1 - slash;
 
       if (index >= size-2) {
-	 begintext = makebigger(begintext, size);
 	 size = size * 2;
+	 begintext = realloc(begintext, size * sizeof(char));
+	 if (begintext == NULL) {
+	    fprintf(stderr, "calloc failed in makebigger\n");
+	    fflush(stderr);
+	    exit(-1);
+	    }
 	 }
 
       begintext[index] = nextchar;
@@ -157,35 +174,19 @@ char* grab_upto_percents()
       begintext[index] = '\0';
 
       nextchar = nextchar2;
-      nextchar2 = fgetc(yyin);
+      if ((nextchar2 = fgetc(yyin)) == EOF) {
+	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+	 }
       if (nextchar2 == 10 || nextchar2 == 13)
 	 yylineno++;
       }
 
    while(nextchar != '%' || nextchar2 != '%') {
       nextchar = nextchar2;
-      nextchar2 = fgetc(yyin);
+      if ((nextchar2 = fgetc(yyin)) == EOF) {
+	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+	 }
       if (nextchar2 == 10 || nextchar2 == 13)
 	 yylineno++;
       }
    }
-
-char* makebigger(char* previous, int size)
-{
-   int newsize, i;
-   char *buffer;
-
-   newsize = size*2;
-   buffer = (char *) calloc(newsize, sizeof(char));
-   if (buffer == NULL) {
-      fprintf(stderr, "calloc failed in makebigger\n");
-      fflush(stderr);
-      exit(-1);
-      }
-
-   for(i = 0; i <= size; i++)
-      buffer[i] = previous[i];
-
-   free(previous);
-   return buffer;
-}

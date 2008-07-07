@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "automata.h"
 
 
@@ -108,14 +109,13 @@ void createicon(struct automata *myautomata)
 
    states = myautomata->states;
    while (states != NULL) {
-      fprintf(outfile, "   currstate := anode(%d, %d, [], [], [])\n",
+      fprintf(outfile,
+	 "   put(myautomata.states, currstate := anode(%d, %d, [], [], []))\n",
 	      states->current->label, states->current->rulenum);
 
       if (states->current->label == myautomata->start->label)
         fprintf(outfile, "   myautomata.start := currstate\n");
 
-      fprintf(outfile, "   put(myautomata.states, currstate)\n");
- 
       if (member(states->current->label, myautomata->accepting) == 1) {
 	 fprintf(outfile, "   put(myautomata.accepting, currstate)\n");
 	 if (states->current->rulenum > maxrulenum)

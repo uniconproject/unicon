@@ -657,6 +657,10 @@ Deliberate Syntax Error
    #define SrcSyntaxInfo
 #endif					/* NoSrcSyntaxInfo */
 
+#ifndef NoPseudoPty
+   #define PseudoPty
+#endif					/* PseudoPty */
+
 #ifndef ExecSuffix
    #define ExecSuffix ""
 #endif					/* ExecSuffix */

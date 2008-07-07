@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.36 2008-06-18 09:14:18 jeffery Exp $
+ * $Id: rposix.r,v 1.37 2008-07-07 22:21:28 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -255,7 +255,7 @@ unsigned int errmask;
 #if NT
       return -1;
 #else					/* NT */
-      return BlkLoc(file)->file.fd.pt->master_fd;
+      return BlkD(file,File)->fd.pt->master_fd;
 #endif					/* NT */
       }
 #endif					/* PseudoPty */

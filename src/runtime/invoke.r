@@ -179,7 +179,7 @@ int nargs, *n;
       if (cnv:C_integer(newargp[0], tmp)) {
          MakeInt(tmp,&newargp[0]);
 
-         /*
+	 /*
 	  * Arg0 is an integer, select result.
 	  */
          i = cvpos(IntVal(newargp[0]), (word)nargs);
@@ -193,7 +193,7 @@ int nargs, *n;
          }
       else {
          struct b_proc *tmp;
-         /*
+	 /*
 	  * See if Arg0 can be converted to a string that names a procedure
 	  *  or operator.  If not, generate run-time error 106.
 	  */
@@ -205,8 +205,8 @@ int nargs, *n;
 	       union block *bp = rp->recdesc;
 	       if ((Blk(bp,Proc)->ndynam == -3) ||
 		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__s")) ||
-	           (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__m")) ||
-	           (!strcmp(StrLoc(Blk(bp,Proc)->lnames[
+		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[0]), "__m")) ||
+		   (!strcmp(StrLoc(Blk(bp,Proc)->lnames[
 				    Blk(bp,Proc)->nfields-1]), "__m"))) {
 		  /* its an object */
 		  return invoke(nargs+1, cargp, n);

@@ -155,7 +155,6 @@ int nargs, *n;
    tended struct descrip arg_sv;
    register word i;
    struct b_proc *proc;
-   tended struct b_coexpr *ncp;
    int nparam;
 
    /*
@@ -192,7 +191,6 @@ int nargs, *n;
          sp = (word *)newargp + 1;
          return I_Continue;
          }
-#if !COMPILER
       else if (newargp->dword == D_Coexpr) {
          /*
           * Arg0 is a co-expression, start by dereferencing the
@@ -218,13 +216,11 @@ int nargs, *n;
 	 /*
 	  * Activate the coexpression.
 	  */
-	 ncp = BlkD(newargp[0], Coexpr);
-	 result = activate(&llargp[0], ncp, &llargp[-1]);
+	 result = activate(&llargp[0], BlkD(newargp[0], Coexpr), &llargp[-1]);
 	 sp = (word *)newargp+1;
 	 if (result == A_Resume) return I_Fail;
 	 return I_Continue;
 	 }
-#endif					/* !COMPILER */
       else {
          struct b_proc *tmp;
 	 /*

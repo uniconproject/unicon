@@ -525,7 +525,7 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
    /* the global fname */
    if (stat(FilePtr->fname, &sbuf) == -1) {
       perror(FilePtr->fname);
-      return NULL;/*errno;*/
+      return NULL;
       }
 
    size = sbuf.st_size;
@@ -861,6 +861,7 @@ int OpenMixer()
    status = ioctl(mixer_fd, SOUND_MIXER_READ_DEVMASK, &devmask);
    if (status == -1)
       fprintf(stderr,"SOUND_MIXER_READ_DEVMASK ioctl failed");
+
    status = ioctl(mixer_fd, SOUND_MIXER_READ_STEREODEVS, &stereodevs);
    if (status == -1)
       fprintf(stderr,"SOUND_MIXER_READ_STEREODEVS ioctl failed");

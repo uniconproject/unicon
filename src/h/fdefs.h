@@ -14,10 +14,6 @@ FncDef(StopAudio,1)
 FncDefV(VAttrib)
 #endif
 
-#if defined HAVE_VOICE
-FncDef(VWho,1)
-#endif					/* HAVE_VOICE */
-
 FncDef(abs,1)
 FncDef(acos,1)
 FncDef(any,4)

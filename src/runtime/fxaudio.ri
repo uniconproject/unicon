@@ -1,6 +1,6 @@
 /*
  * File: fxaudio.ri - Unicon Audio + VoIP Interface
- *  Contents: PlayAudio, StopAudio, VWho, VAttrib.
+ *  Contents: PlayAudio, StopAudio, VAttrib.
  */
 
 #ifdef Audio
@@ -59,41 +59,6 @@ MissingFunc1(StopAudio)
 
 #ifdef HAVE_VOICE
 
-"VWho(f) - List the destinations in the voice session."
-function{1} VWho(f)
-
-   if !is:file(f) then
-      runerr(105, f)		/* f is not a file */
-
-   abstract {
-      return list;
-      }
-   body {
-      int i , k;
-      PVSESSION Ptr;
-      char *s;
-      struct descrip Str;
-	
-      tended struct descrip L;
-      tended struct b_list *hp;
-
-      /* create empty list  */
-      if ((hp=alclist(0, MinListSlots)) == NULL) fail;
-      L.dword=D_List;
-      L.vword.bptr=(union block *) hp;
-
-      Ptr = (PVSESSION) BlkD(f,File)->fd.fp;
-      k = GetVListSize(Ptr);
-      for(i=0; i<= k; ++i) {
-	 s = FetchListener(Ptr,i);
-	 MakeStr(s,strlen(s),&Str);
-	 c_put(&L, &Str);	
-	 }
-
-      return L;
-      }
-end
-
 /*function{0,1} VAttrib(f,attrib)*/
 
 "VAttrib(f,attrib) - set voice attribute. "
@@ -102,7 +67,6 @@ function{*} VAttrib(argv[argc])
       return integer ++ string ++ list;
       }
    body {
-      /* char tmpstr[MaxCvtLen]; */
       int varg = 0;
       int i,res=0;
       tended struct descrip sbuf; 
@@ -203,7 +167,6 @@ end
 
 #else					/* HAVE_VOICE */
 
-MissingFunc1(VWho)
 MissingFunc2(VAttrib)
 
 #endif					/* HAVE_VOICE */

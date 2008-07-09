@@ -323,7 +323,7 @@ Deliberate Syntax Error
  */
 #ifndef MultiThread
 dptr clintsrargp;
-#endif
+#endif					/* !MultiThread */
 
 #begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal,e_operand,e_syntax)
 
@@ -548,7 +548,7 @@ int interp_x(int fsig,dptr cargp)
 	 ExInterp;
 	 return interp_1(0, cargp);
 	 }
-#endif
+#endif					/* MultiThread */
 #endif					/* E_Line || E_Loc */
 
       lastop = GetOp;		/* Instruction fetch */
@@ -673,10 +673,22 @@ Deliberate Syntax Error
 	    PutOp(Op_Astr);
 	    PushVal(GetWord)
 
+#ifdef MultiThread
+	    /*
+	     * if the current procedure is not within the current program
+	     * state, then lookup the program state of the current procedure,
+	     * and use its globals instead of the current program state.
+	     */
+	    if (!InRange(code, ipc.opnd, ecode)) {
+	       struct progstate *p = findicode(ipc.opnd);
+	       opnd = (word)(p->Strcons + GetWord);
+	       }
+	    else
+#endif					/* MultiThread */
 #ifdef CRAY
-	    opnd = (word)(strcons + GetWord);
+	       opnd = (word)(strcons + GetWord);
 #else					/* CRAY */
-	    opnd = (word)strcons + GetWord;
+	       opnd = (word)strcons + GetWord;
 #endif					/* CRAY */
 
 	    PutWord(opnd);
@@ -701,22 +713,23 @@ Deliberate Syntax Error
 	    PutOp(Op_Aglobal);
 	    PushVal(D_Var);
 	    opnd = GetWord;
-#if 0
+#ifdef MultiThread
 	    /*
-	     * Todo:
 	     * if the current procedure is not within the current program
 	     * state, then lookup the program state of the current procedure,
 	     * and use its globals instead of the current program state.
 	     */
-	    /*
-	     * Enter the program state of the procedure being invoked.
-	     */
-	     if (!InRange(code, ipc.opnd, ecode)) {
-		syserr("interprogram procedure calls prohibited for now\n");
-		}
-#endif					/* 0 */
+	    if (!InRange(code, ipc.opnd, ecode)) {
+	       struct progstate *p = findicode(ipc.opnd);
+	       PushAVal(&(p->Globals[opnd]));
+	       PutWord((word)&(p->Globals[opnd]));
+	       }
+	    else
+#endif					/* MultiThread */
+	    {
 	    PushAVal(&globals[opnd]);
 	    PutWord((word)&globals[opnd]);
+	    }
 	    break;
 
 	 case Op_Aglobal:	/* global, absolute address */
@@ -733,8 +746,23 @@ Deliberate Syntax Error
 	    PutOp(Op_Astatic);
 	    PushVal(D_Var);
 	    opnd = GetWord;
+#ifdef MultiThread
+	    /*
+	     * if the current procedure is not within the current program
+	     * state, then lookup the program state of the current procedure,
+	     * and use its statics instead of the current program state.
+	     */
+	    if (!InRange(code, ipc.opnd, ecode)) {
+	       struct progstate *p = findicode(ipc.opnd);
+	       PushAVal(&(p->Statics[opnd]));
+	       PutWord((word)&(p->Statics[opnd]));
+	       }
+	    else
+#endif					/* MultiThread */
+	    {
 	    PushAVal(&statics[opnd]);
 	    PutWord((word)&statics[opnd]);
+	    }
 	    break;
 
 	 case Op_Astatic:	/* static, absolute address */
@@ -1387,23 +1415,6 @@ Lsusp_uw:
 	       k_pos = IntVal(tmp);
 	       }
 
-#ifdef MultiThread
-	    /*
-	     * If the program state changed for this procedure call,
-	     * change back.
-	     */
-	   if (pfp && !InRange(code, pfp->pf_ipc.op, ecode) &&
-	       !InRange(((char *)istart), pfp->pf_ipc.op,
-			((char *)istart)+sizeof(istart)) &&
-	       pfp->pf_ipc.op != &mterm) {
-		/*
-		 * search for new program state to enter
-		 */
-#if 0
-		syserr("suspend to another program state not implemented");
-#endif
-		}
-#endif					/* MultiThread */
 	    efp = pfp->pf_efp;
 	    ipc = pfp->pf_ipc;
 	    glbl_argp = pfp->pf_argp;
@@ -1606,20 +1617,6 @@ efail_noev:
 		     InterpEVValD(&k_subject, e_sresum);
 		     }
 
-#ifdef MultiThread
-		  /*
-		   * Enter the program state of the resumed frame
-		   */
-		  if (pfp && !InRange(code, pfp->pf_ipc.op, ecode) &&
-		      !InRange(((char *)istart), pfp->pf_ipc.op,
-			       ((char *)istart)+sizeof(istart)) &&
-		      pfp->pf_ipc.op != &mterm) {
-#if 0
-	       syserr("resume to another program state not implemented");
-#endif
-	       }
-#endif					/* MultiThread */
-
 		  ++k_level;		/* adjust procedure level */
 		  }
 
@@ -1697,31 +1694,6 @@ Pfail_uw:
 	    ipc = pfp->pf_ipc;
 	    glbl_argp = pfp->pf_argp;
 	    pfp = pfp->pf_pfp;
-
-#ifdef MultiThread
-	    /*
-	     * Enter the program state of the procedure being reentered.
-	     * A NULL pfp is supposed to indicate the program is complete.
-	     */
-
-	    { inst tstipc;
-	      tstipc.op = 0;
-	    if (gfp) tstipc = gfp->gf_ipc;
-	    else if (efp) tstipc = efp->ef_failure;
-	    if (tstipc.op) {
-	       if (!InRange(code, tstipc.op, ecode)) {
-		  if (!InRange(((char *)istart), tstipc.op,
-			 ((char *)istart)+sizeof(istart))) {
-		     if (tstipc.op != &mterm) {
-#if 0
-		       syserr("fail to another program state not implemented");
-#endif
-		       }
-		     }
-		  }
-	       }
-	      }
-#endif					/* MultiThread */
 
 	    goto efail_noev;
 	    }

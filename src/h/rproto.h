@@ -229,7 +229,8 @@ void		xmfree		(void);
 
 #ifdef MultiThread
    void	resolve			(struct progstate *pstate);
-   struct b_coexpr *loadicode (char *name, struct b_file *theInput,
+   struct progstate *findicode	(word *opnd);
+   struct b_coexpr *loadicode	(char *name, struct b_file *theInput,
       struct b_file *theOutput, struct b_file *theError,
       C_integer bs, C_integer ss, C_integer stk);
    void actparent (int eventcode);

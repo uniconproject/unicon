@@ -389,15 +389,6 @@ int nargs, *n;
     */
    ipc.opnd = (word *)proc->entryp.icode;
 
-#ifdef MultiThread
-   /*
-    * Enter the program state of the procedure being invoked.
-    */
-   if (!InRange(code, ipc.opnd, ecode)) {
-      syserr("interprogram procedure calls temporarily prohibited\n");
-      }
-#endif					/* MultiThread */
-
    efp = 0;
    gfp = 0;
 

@@ -661,6 +661,7 @@ char *argv[];
     * initialize root pstate
     */
    curpstate = &rootpstate;
+   rootpstate.parent = rootpstate.next = NULL;
    rootpstate.parentdesc = nulldesc;
    rootpstate.eventmask= nulldesc;
    rootpstate.opcodemask = nulldesc;
@@ -2034,6 +2035,24 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Reserve = reserve_0;
 
    return coexp;
+}
+
+/*
+ * Given a pointer into icode, tell which program it came from.
+ * At present this is a linear search of loaded programs in a
+ * link list. For performance scalability, the link list should
+ * be replaced by a sorted array so this routine can use binary search.
+ */
+struct progstate * findicode(word *opnd)
+{
+   struct progstate *p;
+   for (p = &rootpstate; p != NULL; p = p->next) {
+      if (InRange(p->Code, ipc.opnd, p->Ecode)) {
+	 return p;
+	 }
+      }
+   if (p == NULL)
+      syserr("unidentified inter-program icode\n");
 }
 
 /*

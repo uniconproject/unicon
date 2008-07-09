@@ -465,6 +465,7 @@ struct ipc_line {
 struct progstate {
    long hsize;				/* size of icode, 0 = C|Python|... */
    struct progstate *parent;
+   struct progstate *next;
    struct descrip parentdesc;		/* implicit "&parent" */
    struct descrip eventmask;		/* implicit "&eventmask" */
    struct descrip opcodemask;		/* implicit "&opcodemask" */

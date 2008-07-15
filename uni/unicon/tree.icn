@@ -194,6 +194,7 @@ end
 
 procedure yyprint(node)
    static lasttok
+   local inode
    repeat			# allows us to suppress tail recursion
    case type(node) of {
       "treenode" : {
@@ -204,6 +205,18 @@ procedure yyprint(node)
 	 else if node.label == "import" then {
 	    yyprint("\n")
 	    print_imports(node.children[2])
+
+	    inode := node.children[1]
+	    if (outfilename ~== (inode.filename))|(outline > inode.line) then {
+	       write(yyout,"\n#line ", inode.line-1," \"", inode.filename,"\"")
+	       outline := inode.line
+	       outcol := 1
+	       outfilename := inode.filename
+	       }
+	    else while outline < inode.line do {
+	       write(yyout); outline +:= 1; outcol := 1
+	       }
+
 	    fail
 	    }
          else if node.label == "packageref" then {

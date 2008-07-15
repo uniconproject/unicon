@@ -1381,17 +1381,15 @@ function{0,1} variable(s)
       dptr tmp_argp = glbl_argp;
 
       savedprog = curpstate;
-      if (!is:null(c)) {
-	 if (is:coexpr(c)) {
-	    prog = BlkD(c,Coexpr)->program;
-	    pfp = BlkD(c,Coexpr)->es_pfp;
-	    glbl_argp = BlkD(c,Coexpr)->es_argp;
-	    ENTERPSTATE(prog);
-	    }
-	 else {
-	    runerr(118, c);
-	    }
+      if (is:null(c)) c = k_current;
+      else if (!is:coexpr(c)){
+	 runerr(118, c);
 	 }
+
+      prog = BlkD(c,Coexpr)->program;
+      pfp = BlkD(c,Coexpr)->es_pfp;
+      glbl_argp = BlkD(c,Coexpr)->es_argp;
+      ENTERPSTATE(prog);
 
       /*
        * Produce error if i is negative
@@ -1402,7 +1400,10 @@ function{0,1} variable(s)
          }
 
       while (i--) {
-	 if (pfp == NULL) fail;
+	 if (pfp == NULL) {
+	    pfp = tmp_pfp;
+	    fail;
+	    }
 	 pfp = pfp->pf_pfp;
          }
       if (pfp)
@@ -1774,6 +1775,9 @@ function{1} load(s,arglist,infile,outfile,errfile,
       pstate = sblkp->program;
       pstate->parent = curpstate;
       pstate->parentdesc = k_main;
+
+      pstate->next = rootpstate.next;
+      rootpstate.next = pstate;
 
       savedsp = sp;
       sp = stack + Wsizeof(struct b_coexpr)

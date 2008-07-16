@@ -1385,6 +1385,7 @@ function{0,1} variable(s)
       else if (!is:coexpr(c)){
 	 runerr(118, c);
 	 }
+      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync frame pointer */
 
       prog = BlkD(c,Coexpr)->program;
       pfp = BlkD(c,Coexpr)->es_pfp;

@@ -85,7 +85,7 @@ int init_3dcontext(wcp wc)
    wc->selectionavailablename=1;
    wc->selectionnamelistsize=256;
    wc->selectionnamecount=0;
-   wc->selectionnamelist=malloc(wc->selectionnamelistsize*sizeof(char*));
+   wc->selectionnamelist = malloc(wc->selectionnamelistsize*sizeof(char*));
    if (wc->selectionnamelist == NULL) return Failed;
    wc->app_use_selection3D = 0;
 
@@ -686,6 +686,7 @@ int redraw3D(wbp w)
 	       wc->eyedirz, wc->eyeupx, wc->eyeupy, wc->eyeupz);
 
       /* switch to GL_SELECT render mode  */
+
       glSelectBuffer(256, selectionbuf);
       glRenderMode(GL_SELECT);
       glInitNames();
@@ -711,7 +712,9 @@ int redraw3D(wbp w)
          selectednameslist.dword = D_List;
          selectednameslist.vword.bptr = (union block*) namelist;
 
-         /* first pass over the selection buffer to collect and sort z values  */
+	 /*
+	  * first pass over the selection buffer to collect and sort z values
+	  */
          bufp = selectionbuf;
          for(j = 0; j < selectionhits; j++){
        	    numnames = *bufp++;
@@ -727,31 +730,41 @@ int redraw3D(wbp w)
          while (savedhits<selectionhits){
             bufp = selectionbuf;
             for(j = 0; j < selectionhits; j++){
-       	       numnames = *bufp;
- 	       bufp++;
- 	       z1 = *bufp++;
-  	       bufp++; /* skip z2 */
-  	   
-  	       if (z1 == 1 || z1>z_buf[savedhits]){
-	          bufp+=numnames;   /* skip names */
-	          continue;
-  	          }
-  	       else{
-  	          tended char *tmpname;
-  	          tended struct descrip the_newselectedname;
-  	          int numnam=numnames, memsize=0;
-  	          GLuint *bufp2 = bufp;
-	          *(bufp-2)=1;  /* z is 2 locations back. set it to 1 so that it would be skipped next time  */
-	          savedhits++;
-	          while(numnam--) memsize += strlen(wc->selectionnamelist[*bufp2++])+1;
+	       numnames = *bufp++;
+	       z1 = *bufp++;
+	       bufp++; /* skip z2 */
+
+	       if (z1 == 1 || z1>z_buf[savedhits]) {
+		  bufp+=numnames;   /* skip names */
+		  continue;
+		  }
+	       else {
+		  tended char *tmpname;
+		  tended struct descrip the_newselectedname;
+		  int numnam=numnames, memsize=0;
+		  GLuint *bufp2 = bufp;
+		  /*
+		   * z is 2 locations back. set it to 1 so that
+		   * it will be skipped next time
+		   */
+		  *(bufp-2)=1;  
+		  savedhits++;
+		  while (numnam--) {
+		     int i = *bufp2++;
+		     if ((0 < i) && (i < wc->selectionnamecount))
+			memsize += strlen(wc->selectionnamelist[i])+1;
+		     }
 
 	          Protect(tmpname = alcstr(NULL, memsize), return Error);
 	          tmpname[0] = '\0'; 
 
-	          while(numnames){
-    	             name = *bufp++;
-                     strcat(tmpname, wc->selectionnamelist[name]);
-                     if (--numnames)strcat(tmpname, "-");
+		  while (numnames) {
+		     name = *bufp++;
+		     --numnames;
+		     if ((0 < name) && (name < wc->selectionnamecount)) {
+			strcat(tmpname, wc->selectionnamelist[name]);
+			if (numnames)strcat(tmpname, "-");
+			}
                      } /* while */
 		
                   if ( strlen(tmpname) > 0 ){
@@ -979,7 +992,6 @@ int traversefunctionlist(wbp w)
    k = bp->first;
    used =bp->nused;
 
-
    /*
     * The ith element of the list is a list with information
     * about the function call made on the window.
@@ -1029,6 +1041,7 @@ int traversefunctionlist(wbp w)
 	    var1 = rp->fields[j+2];
 	    if (!cnv:C_double(var1, v[j])) goto free_v_and_fail;
 	    }
+
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
 	    torus(v[3], v[4], v[0], v[1], v[2], 

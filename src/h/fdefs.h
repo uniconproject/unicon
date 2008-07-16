@@ -157,7 +157,7 @@ FncDefV(writes)
    FncDef(display,3)
    FncDef(name,2)
    FncDef(proc,3)
-   FncDef(variable,3)
+   FncDef(variable,4)
    FncDef(istate,2)
 #else					/* MultiThread */
    FncDef(display,2)

@@ -1355,7 +1355,7 @@ end
 " variable descriptor which points to its value."
 
 #ifdef MultiThread
-function{0,1} variable(s,c,i)
+function{0,1} variable(s,c,i,trap_local)
 #else					/* MultiThread */
 function{0,1} variable(s)
 #endif					/* MultiThread */
@@ -1366,6 +1366,8 @@ function{0,1} variable(s)
 #ifdef MultiThread
    if !def:C_integer(i,0) then
       runerr(101,i)
+   if !def:C_integer(trap_local,0) then
+      runerr(101,trap_local)
 #endif					/* MultiThread */
 
    abstract {
@@ -1423,12 +1425,14 @@ function{0,1} variable(s)
 	 if ((rv == LocalName) || (rv == StaticName)) {
 
 #ifdef MonitoredTrappedVar
-            result.dword = D_Tvmonitored;
-            VarLoc(result) = 
+	    if (trap_local) {
+               result.dword = D_Tvmonitored;
+               VarLoc(result) = 
                   (dptr) alctvmonitored(&result, BlkD(c,Coexpr)->actv_count);
-#else
-            Deref(result);
+	       }
+	    else
 #endif                                         /* MonitoredTrappedVar */
+            Deref(result);
 	    }
 	 }
 #endif						/* MultiThread */

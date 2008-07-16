@@ -1315,6 +1315,7 @@ function{1} EraseArea(argv[argc])
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);
          w->context->selectionavailablename=1;
+	 /* need to free selectionnamelist entries here */
          w->context->selectionnamecount=0;
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
          glXSwapBuffers(w->window->display->display, w->window->win);
@@ -4600,21 +4601,23 @@ function{1} WSection(argv[argc])
       MakeInt(section_depth, &(rp->fields[6]));
       section_depth++;
 
-      if (wc->selectionenabled){
-         MakeInt(wc->selectionavailablename, &(rp->fields[5])); /*  integer code for opengl selection */      
+      if (wc->selectionenabled) {
+	 /*  integer code for opengl selection */
+         MakeInt(wc->selectionavailablename, &(rp->fields[5]));
          wc->selectionavailablename++;
          wc->selectionnamecount++;
 	 
-	 if (wc->selectionnamecount >= wc->selectionnamelistsize){
+	 if (wc->selectionnamecount >= wc->selectionnamelistsize) {
 	    wc->selectionnamelistsize *=2;
-	    wc->selectionnamelist=realloc(wc->selectionnamelist, wc->selectionnamelistsize*sizeof(char*));
+	    wc->selectionnamelist=realloc(wc->selectionnamelist,
+		wc->selectionnamelistsize*sizeof(char*));
 	    if (wc->selectionnamelist == NULL) fail;
-	 }
-	    if (!cnv:C_string(argv[warg], tmp))
-		    runerr(103, argv[warg]);
+	    }
+	 if (!cnv:C_string(argv[warg], tmp))
+	    runerr(103, argv[warg]);
 
-	    wc->selectionnamelist[wc->selectionnamecount] = strdup(tmp);
-      }
+	 wc->selectionnamelist[wc->selectionnamecount] = strdup(tmp);
+	 }
       else
 	rp->fields[5]=zerodesc;
 

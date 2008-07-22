@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.37 2008-07-07 22:21:28 jeffery Exp $
+ * $Id: rposix.r,v 1.38 2008-07-22 22:31:34 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1731,24 +1731,25 @@ struct b_list *findactivepty(struct b_list *lps)
    extern FILE *ConsoleBinding;
    struct ptstruct *pt;
 
+   Blk((union block *)lps, List);
    if (lps->size == 0) return NULL;
    d = nulldesc;
    ep = (union block *)(lps->listhead);
    /*
     * go through listed ptys, looking for those with events pending
     */
-   for ( ; BlkType(ep) == T_Lelem; ep = ep->lelem.listnext) {
-      for (i = 0; i < ep->lelem.nused; i++) {
+   for ( ; BlkType(ep) == T_Lelem; ep = ep->Lelem.listnext) {
+      for (i = 0; i < ep->Lelem.nused; i++) {
 	 union block *bp;
 	 int status;
 	 DWORD tb;
-	 j = ep->lelem.first + i;
-	 if (j >= ep->lelem.nslots)
-	    j -= ep->lelem.nslots;
+	 j = ep->Lelem.first + i;
+	 if (j >= ep->Lelem.nslots)
+	    j -= ep->Lelem.nslots;
 	 
-         if (!(is:file(ep->lelem.lslots[j])))
+         if (!(is:file(ep->Lelem.lslots[j])))
             syserr("internal error #1 calling findactivepty()");
-         if (!(status = BlkLoc(ep->lelem.lslots[j])->file.status))
+         if (!(status = BlkLoc(ep->Lelem.lslots[j])->File.status))
             syserr("internal error #2 calling findactivepty()");
          if (! (status & Fs_Pty)) {
             syserr("internal error #3 calling findactivepty()");
@@ -1757,15 +1758,15 @@ struct b_list *findactivepty(struct b_list *lps)
             /* a closed window was found on the list, ignore it */
 	    continue;
 	    }
-	 bp = BlkLoc(ep->lelem.lslots[j]);
-	 pt = bp->file.fd.pt;
+	 bp = BlkLoc(ep->Lelem.lslots[j]);
+	 pt = bp->File.fd.pt;
 	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
 		&& (tb>0)) {
 	    if (is:null(d)) {
 	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
 	       d.dword = D_List;
 	       }
-	    c_put(&d, &(ep->lelem.lslots[j]));
+	    c_put(&d, &(ep->Lelem.lslots[j]));
 	    }
 	 }
       }

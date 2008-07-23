@@ -667,6 +667,11 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    POINT pt;
    HWND win;
 
+   x = LOWORD(lp);
+   y = HIWORD(lp);
+   ws->pointerx = x;
+   ws->pointery = y;
+
    switch(msg) {
    case WM_MOUSEMOVE: /* only called if one of these three cases is true */
       if (MK_LBUTTON & wp)
@@ -678,11 +683,8 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
       else eventcode = MOUSEMOVED;
       break;
    case WM_LBUTTONDOWN: {
-      WORD x, y;
-      x = LOWORD(lp);
-      y = HIWORD(lp);
-      pt.x=x;
-      pt.y=y;
+      pt.x = x;
+      pt.y = y;
       win = ChildWindowFromPoint(ws->win,pt);
       if ((win!=NULL) && (win != GetFocus())) {
 	 SetFocus(win);
@@ -708,8 +710,6 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
       }
 
    MakeInt(eventcode, &d);
-   x = LOWORD(lp);
-   y = HIWORD(lp);
    t = GetMessageTime(); /* why might someone comment this out? */
 
    if (MK_CONTROL & wp) flags |= ControlMask;

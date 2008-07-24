@@ -795,7 +795,6 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	 handle_mouse(wb,msg,wp,lp);
       return 0;
    case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN:
-   case WM_LBUTTONUP:   case WM_RBUTTONUP:   case WM_MBUTTONUP:
       handle_mouse(wb,msg,wp,lp);
 #ifdef Graphics3D
       if (wb->context->is_3D && wb->context->app_use_selection3D){
@@ -804,6 +803,9 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	  wb->context->selectionrendermode = 0;
 	  }
 #endif					/* Graphics3D */
+      return 0;
+   case WM_LBUTTONUP:   case WM_RBUTTONUP:   case WM_MBUTTONUP:
+      handle_mouse(wb,msg,wp,lp);
       return 0;
 #ifndef NoMouseWheel
    case WM_MOUSEWHEEL:

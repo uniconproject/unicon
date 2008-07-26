@@ -399,6 +399,7 @@ procedure do_minus()
     }
     if yytext ||:= ="-" then {
 	if yytext ||:= =":=" then { return AUGDIFF}
+	tokflags +:= Beginner # could be two unary prefix - operators
 	return DIFF
     }
     if yytext ||:= =">" then {
@@ -414,21 +415,24 @@ procedure do_plus()
       warning("token may be malformed, did you mean +: ?")
       yytext := "+"
       }
-	      if yytext ||:= =":" then {
-		  if yytext ||:= ="=" then { return AUGPLUS }
-		  return PCOLON
-	      }
-	      if yytext ||:= ="+" then {
-		  if yytext ||:= =":=" then {return AUGUNION}
-		  return UNION
-	      }
-	      tokflags +:= Beginner
-	      return PLUS
+   if yytext ||:= =":" then {
+      if yytext ||:= ="=" then { return AUGPLUS }
+      return PCOLON
+      }
+   if yytext ||:= ="+" then {
+      if yytext ||:= =":=" then {return AUGUNION}
+      tokflags +:= Beginner # could be two unary prefix + operators
+      return UNION
+      }
+   tokflags +:= Beginner
+   return PLUS
 end
+
 procedure do_star()
     if yytext ||:= =":=" then { return AUGSTAR }
     if yytext ||:= ="*" then {
 	if yytext ||:= =":=" then {return AUGINTER}
+	tokflags +:= Beginner # could be two unary prefix * operators
 	return INTER
     }
     tokflags +:= Beginner

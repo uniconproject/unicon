@@ -1940,7 +1940,9 @@ char *s;
 	    ws->posx = ws->real_posx;
 	    ws->posy = ws->real_posy;
 	    do_config(w, 1);
+#ifdef Graphics3D
 	    if (ws->is_3D) redraw3D(w);
+#endif					/* Graphics3D */
             }
 	 }
       }
@@ -2537,10 +2539,12 @@ char **s;
    wfp tmp;
    STDLOCALS(w);
 
+#ifdef Graphics3D
    if (wc->is_3D) {
       mkfont(*s, 1);
       return Succeeded;
       }
+#endif					/* Graphics3D */
 
    /* could free up previously allocated font here */
 
@@ -2571,8 +2575,20 @@ XExposeEvent *event;
    returnval = ISEXPOSED(w);
    SETEXPOSED(w);
    if (stdwin && !ISZOMBIE(w)) {
-/* if its a 3D window, do we skip this part ?? */
-if (wc->is_3D == 0) {
+#ifdef Graphics3D
+       if (wc->is_3D) {
+	  /*
+	   * since we redraw whole window, its safe to discard duplicate
+	   * exposures
+	   */
+	  while (XCheckTypedWindowEvent(wd->display, ws->win, Expose,
+					(XEvent *)event) == True) ;
+	  redraw3D(w);
+	  }
+       else
+
+#endif					/* Graphics3D */
+      {
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy, stdgc, GXcopy);
       if (wc->clipw >= 0)
@@ -2584,20 +2600,6 @@ if (wc->is_3D == 0) {
       if (wc->drawop != GXcopy)
 	 XSetFunction(stddpy,stdgc,wc->drawop);
       }
-/* end of " if its a 3D window " */
-
-#ifdef Graphics3D
-       if (wc->is_3D) {
-	  /*
-	   * since we redraw whole window, its safe to discard duplicate
-	   * exposures
-	   */
-	  while (XCheckTypedWindowEvent(wd->display, ws->win, Expose,
-					(XEvent *)event) == True) ;
-	  redraw3D(w);
-	  }
-#endif                        /* Graphics3D */
-
       }
    return returnval;
    }

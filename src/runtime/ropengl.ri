@@ -3550,52 +3550,56 @@ int texture_16img(wbp w, struct imgdata im)
 int
 drawstrng3d(wbp w, double x, double y, double z, char *s)
 {
-  int xx=0;
-  char *p, *q; 
+   int xx=0;
+   char *p, *q; 
 #ifdef WIN32
-  char path[255] = "..\\src\\lib\\fonts\\"; 
+   char path[255] = "..\\src\\lib\\fonts\\"; 
 #else
- char path[255] = "../src/lib/fonts/";  
+   char path[255] = "../src/lib/fonts/";  
 #endif
-  static char *full_name=0;
-  FILE *f = 0;
+   static char *full_name = NULL;
+   FILE *f = 0;
 #if HAVE_FTGL
-  int len_full_name=0, len_path=0, len_font=strlen(curr_font->name);
+   int len_full_name=0, len_path=0, len_font=strlen(curr_font->name);
 
-  makecurrent(w); 
-  if (full_name==0) {
-    full_name = (char *) malloc(sizeof(char)*255);
-    findonpath("unicon", full_name, 255);
-    q = full_name + strlen(full_name);
-    while (q > full_name && q[-1] != '/')
-       q--;				
-    *q = '\0';
-  }
-  len_path = strlen(path);
-  len_full_name = strlen(full_name);
-  p = (char *) malloc(sizeof(char)*(len_full_name+len_path+len_font+1));
-  strcpy(p, full_name);
-  strcat(p,path);
-  strcat(p,curr_font->name);
-  f = fopen(p, "r");
-  if (!f) {
-     fprintf(stderr, "can't open font file %s\n", p);
-     fflush(stderr);
-     return Failed;
-     }
-  else fclose(f);
+   makecurrent(w); 
+   if (full_name==NULL) {
+      full_name = (char *) malloc(sizeof(char)*255);
+      findonpath("unicon", full_name, 255);
+      q = full_name + strlen(full_name);
+      while (q > full_name && q[-1] != '/')
+	 q--;
+      *q = '\0';
+      }
+   len_path = strlen(path);
+   len_full_name = strlen(full_name);
+   p = (char *) malloc(sizeof(char)*(len_full_name+len_path+len_font+1));
+   if (!p) return Failed;
+   strcpy(p, full_name);
+   strcat(p,path);
+   strcat(p,curr_font->name);
+   f = fopen(p, "r");
+   if (!f) {
+      fprintf(stderr, "can't open font file %s\n", p);
+      fflush(stderr);
+      free(p);
+      return Failed;
+      }
+   else fclose(f);
 
-  xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size, &(curr_font->fonts));
+   xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size,
+		       &(curr_font->fonts));
 
-  switch (xx) {
-  case 1: fprintf(stderr, "Error:file does not support point size\n"); break;
-  case 2: fprintf(stderr, "Insufficient Memory allocating to allocate font\n");
-	  break;
-  case 3: fprintf(stderr, "Return 3\n"); break;
-  }
+   switch (xx) {
+   case 1: fprintf(stderr, "Error:file does not support point size\n"); break;
+   case 2: fprintf(stderr, "Insufficient Memory to allocate font\n"); break;
+   case 3: fprintf(stderr, "Return 3\n"); break;
+      }
 
-  free(p); 
-  return ((xx==0)?Succeeded:Failed);
+   free(p); 
+   return ((xx==0)?Succeeded:Failed);
+#else
+   return Failed;
 #endif
 }
 

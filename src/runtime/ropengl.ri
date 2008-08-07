@@ -918,13 +918,14 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define REDRAW_ENDMARK 432
 #define REDRAW_MESHMODE 448
 #define REDRAW_PICK 464
+#define REDRAW_MULTMATRIX 480
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			29 },		/* number of entries */
+   { 0,			30 },		/* number of entries */
    { "DrawCube",	REDRAW_CUBE | 4 },
    { "DrawCylinder",	REDRAW_CYLINDER | 6},
    { "DrawDisk",	REDRAW_DISK | 7 },
@@ -943,6 +944,7 @@ stringint redraw3Dnames[] = {
    { "Mark",            REDRAW_MARK},
    { "MatrixMode",	REDRAW_MATRIXMODE },
    { "MeshMode",        REDRAW_MESHMODE },
+   { "MultMatrix",	REDRAW_MULTMATRIX },
    { "Pick"	,	REDRAW_PICK},
    { "PopMatrix",	REDRAW_POPMATRIX },
    { "PushMatrix",	REDRAW_PUSHMATRIX },
@@ -1400,6 +1402,41 @@ int traversefunctionlist(wbp w)
                   } /* for j=0 ... */
 
                wc->numtexcoords = funclist->size-3;
+               }
+	    break;
+         case REDRAW_MULTMATRIX:      /* MultMatrix() */
+            {
+               GLdouble matvalues[4][4];
+               int mi=0, mj=0;
+               /* check if we have a list of size 18.  18 = 2 reserved + 16 values */
+               if ((funclist->size)!=18) goto free_v_and_fail; 
+
+               /* traverse the list and set matrix elements */
+               for (j=0; j < (funclist->size)-2 /*16*/; j++){
+                  if (used1 <= 1){
+	             bp1 = (struct b_lelem *) bp1->listnext;
+                     used1 = bp1->nused;
+                     k1 = bp1->first;
+                     }
+                  else {
+	             if (k1++ >= bp1->nslots) k1 = 0;
+	             used1--;
+                     }
+
+                  if (used1>0) {
+	             d = bp1->lslots[k1];
+                     if (!cnv:real(d, d)) return 0;
+	             bp1->lslots[k1] = d;
+	             matvalues[mj][mi] = BlkD(d,Real)->realval;
+	             if (++mj==4 ){
+	                mj=0;
+	                mi++;
+	                }
+                     }
+                  } /* for j=0 ... */
+#if HAVE_LIBGL
+               glMultMatrixd(matvalues);	
+#endif					/* HAVE_LIBGL */
                }
 	    break;
          case REDRAW_POLYGON:      /* DrawPolygon() */

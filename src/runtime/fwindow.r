@@ -4138,7 +4138,9 @@ function{1} IdentityMatrix(argv[argc])
       c_put(&(w->window->funclist), &f);
 
       /* load identity matrix */
+#if HAVE_LIBGL
       glLoadIdentity();
+#endif					/* HAVE_LIBGL */
       return f;
    }
 end
@@ -4357,7 +4359,6 @@ function{1} Texcoord(argv[argc])
       wbp w;
       wcp wc;
       int i, warg = 0, draw_code;
-      char filename[MaxFileName + 1];
       tended char* tmp;
       tended struct descrip f, funcname, mode, val, g;
       tended struct b_list *func, *coords;
@@ -4469,6 +4470,83 @@ function{1} Texcoord(argv[argc])
       return f; 
       }
 end
+
+/*
+ * MultMatrix (w, L) 
+ */
+
+"MultMatrix(argv[]){1} - multiply transformation matrix by the list L "
+
+function{1} MultMatrix(argv[argc])
+   abstract { return list }
+   body {
+      wbp w;
+      wcp wc;
+      int i, j, k, warg = 0, draw_code;
+      tended struct descrip f, funcname, val, g;
+      tended struct b_list *func, *matlist;
+      GLdouble matvalues[4][4];
+
+      OptWindow(w);
+
+      wc = w->context;
+      if (argc-warg < 1) /* missing the matrix elements */
+	 runerr(103);
+
+      /* create a list */ 
+      Protect(func = alclist(0, MinListSlots+3), runerr(0));
+      f.dword = D_List; 
+      f.vword.bptr = (union block*) func; 
+      MakeStr("MultMatrix", 10, &funcname); 
+      c_put(&f, &funcname);
+
+      draw_code = si_s2i(redraw3Dnames, "MultMatrix");
+      if (draw_code == -1)
+	 fail;
+      MakeInt(draw_code, &g);
+      c_put(&f, &g);
+     
+      /* check if the argument is a list */
+      if (argv[warg].dword == D_List) {
+         matlist = (struct b_list*) argv[warg].vword.bptr;
+	 if (matlist->size != 16) {
+	    /*
+	     * fails; transformation matrix should have 16 values
+	     */
+	    runerr(305, argv[warg]);
+	    }
+         for (i = 0; i < 4; i++) 
+	    for (j = 0; j < 4; j++){
+	       c_traverse(matlist, &val, i*4+j); 
+	       if (!cnv:C_double(val, matvalues[j][i]))
+		  runerr(102, val);
+	       c_put(&f, &val);
+	       }
+	 }
+      else {
+	 /* the remaining arguments are matrix elements */
+	 if (argc - warg != 16 ) {
+	    /*
+	     * transformation matrix must have 16 values
+	     */
+	    runerr(305);
+	    }
+	 k=warg;
+	 for (i = 0; i < 4; i++) 
+            for (j = 0; j < 4; j++){
+	       if (!cnv:C_double(argv[k], matvalues[j][i]))
+		  runerr(102, argv[k]);
+	       c_put(&f, &argv[k++]);
+	       }
+	    }
+      c_put(&(w->window->funclist), &f);
+#if HAVE_LIBGL
+      glMultMatrixd(matvalues);	
+#endif					/* HAVE_LIBGL */
+      return f; 
+      }
+end
+
 
 /* 
  * Refresh(w) 

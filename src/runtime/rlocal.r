@@ -1027,7 +1027,7 @@ FILE *ptr;
 
 #if UNIX
 
-#ifdef HAVE_VFORK
+#ifdef HAVE_WORKING_VFORK
 /*
  * Modified     3/03/2001       Manuel Novoa III
  *

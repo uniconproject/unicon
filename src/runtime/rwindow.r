@@ -144,6 +144,7 @@ int t;
    wgetq(w,&xdesc,-1);
    wgetq(w,&ydesc,-1);
 
+#ifdef Graphics3D
    hp = BlkD(w->window->listp, List);
    if (hp->size > 0) {   /* we might have picking results */
       c_traverse( hp , &pickdesc ,0);
@@ -154,6 +155,7 @@ int t;
       }
    else
         amperPick = nulldesc;
+#endif					/* Graphics3D */
 
    if (xdesc.dword != D_Integer || ydesc.dword != D_Integer)
       return -2;			/* bad values on queue */

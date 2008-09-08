@@ -4663,11 +4663,44 @@ int guicurses_cols(wbp w)
    return XTOCOL(w,w->window->width - DESCENT(w));
 }
 
+/*
+ * convenience function: C language set-attribute
+ */
 char * watt(wbp w, char *s)
 {
+   int config=0, len = strlen(s);
    struct descrip throw;   
    char foo[256];
    wattrib(w, s, strlen(s), &throw, foo);
+
+   if (len > 4) {
+      if (!strncmp(s, "pos=", 4)) config |= 1;
+      if (len > 5) {
+	 if (!strncmp(s, "posx=", 5)) config |= 1;
+	 if (!strncmp(s, "posy=", 5)) config |= 1;
+	 if (!strncmp(s, "rows=", 5)) config |= 2;
+	 if (!strncmp(s, "size=", 5)) config |= 2;
+	 if (len > 6) {
+	    if (!strncmp(s, "width=", 6)) config |= 2;
+	    if (!strncmp(s, "lines=", 6)) config |= 2;
+	    if (len > 7) {
+	       if (!strncmp(s, "height=", 7)) config |= 2;
+	       if (!strncmp(s, "resize=", 7)) config |= 2;
+	       if (len > 8) {
+		  if (!strncmp(s, "columns=", 8)) config |= 2;
+		  if (len > 9) {
+		     if (!strncmp(s, "geometry=", 9)) config |= 3;
+		     }
+		  }
+		}
+	    }
+	 }
+      }
+
+   if (config) {
+      if (do_config(w, config) == Failed) return NULL;
+      }
+
    if (strchr(s, '=') == NULL) return strdup(foo);
    return NULL;
 }

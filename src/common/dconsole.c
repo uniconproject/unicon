@@ -1,3 +1,5 @@
+void exit(int);
+
 /*
  * dconsole.c - versions of run-time support for console windows for
  *  applications that do not include the entire Icon runtime system
@@ -7,7 +9,7 @@
 
 #ifdef ConsoleWindow
 
-/* FILE *ConsoleBinding = NULL; */
+/* FILE *ConsoleBinding = NULL; moved to rwindow.r */
 
 #ifdef MultiThread
 
@@ -55,7 +57,7 @@ struct descrip nullptr =
 struct descrip emptystr; 		/* zero-length empty string */
 
 struct tend_desc *tend;
-char *reserve_0(int r, int n) { return malloc(1); }
+char *reserve_0(int r, word n) { return malloc(1); }
 
 #ifdef MSWindows
    char *getenv(const char *s)
@@ -170,7 +172,7 @@ struct b_real *alcreal_0(double val)
    return blk;
    }
 
-char *alcstr_0(char *s, int len)
+char *alcstr_0(char *s, word len)
 {
    register char *s1;
 
@@ -879,12 +881,16 @@ C_integer *d;
  */
 #if 0
 char ConsoleStringBuf[512 * 48];
+/* moved to rwindow.r
 char *ConsoleStringBufPtr = ConsoleStringBuf;
-unsigned long ConsoleFlags = 0;			 /* Console flags */
+unsigned long ConsoleFlags = 0;	*/
 #endif
+
 extern int ConsolePause;
 extern FILE *flog;
 
+char *lognam;
+char tmplognam[128];
 
 void closelogfile()
 {
@@ -924,7 +930,7 @@ int i;
    /*
     * if the console was used for anything, pause it
     */
-   if (ConsoleBinding && ConsolePause) {
+   if (ConsoleBinding /* && ConsolePause */) {
       char label[256], tossanswer[256];
 
       wputstr((wbp)ConsoleBinding, msg, strlen(msg));
@@ -958,7 +964,9 @@ int i;
       free(lognam);
       }
    if (wstates != NULL) {
+#ifdef MSWindows
       PostQuitMessage(i);
+#endif					/* MSWindows */
       pollevent();
       }
 
@@ -982,7 +990,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
    }
 
 
-#ifndef NTGCC
+#if ! (defined(NTGCC) || UNIX)
 int strncasecmp(char *s1, char *s2, int n)
 {
    int i, j;

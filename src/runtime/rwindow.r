@@ -4666,14 +4666,14 @@ int guicurses_cols(wbp w)
 /*
  * convenience function: C language draw rectangle
  */
-void drawRectangle(w,x,y,width,height)
+void drawRectangle(wbp w,int x,int y,int width,int height)
 {
-  XRectangle r;
-  RECX(r) = x;
-  RECY(r) = y;
-  RECWIDTH(r) = width;
-  RECHEIGHT(r) = height;
-  drawrectangles(w,&r,1);
+  XRectangle r[1];
+  RECX(r[0]) = x;
+  RECY(r[0]) = y;
+  RECWIDTH(r[0]) = width;
+  RECHEIGHT(r[0]) = height;
+  drawrectangles(w,r,1);
 }
 
 /*

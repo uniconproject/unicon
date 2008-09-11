@@ -135,6 +135,7 @@
 #define drawpoints(w, points, npoints) \
    { STDLOCALS(w); RENDER3(XDrawPoints,points,npoints,CoordModeOrigin); }
 #define drawrectangles(w, recs, nrecs) { \
+   int i; \
    STDLOCALS(w); \
    for(i=0; i<nrecs; i++) { \
      RENDER4(XDrawRectangle,recs[i].x,recs[i].y,recs[i].width,recs[i].height);\

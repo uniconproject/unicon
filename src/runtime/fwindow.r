@@ -4485,7 +4485,11 @@ function{1} MultMatrix(argv[argc])
       int i, j, k, warg = 0, draw_code;
       tended struct descrip f, funcname, val, g;
       tended struct b_list *func, *matlist;
+#if HAVE_LIBGL
       GLdouble matvalues[4][4];
+#else					/* HAVE_LIBGL */
+      double matvalues[4][4];
+#endif					/* HAVE_LIBGL */
 
       OptWindow(w);
 

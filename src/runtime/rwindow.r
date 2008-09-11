@@ -4664,6 +4664,19 @@ int guicurses_cols(wbp w)
 }
 
 /*
+ * convenience function: C language draw rectangle
+ */
+void drawRectangle(w,x,y,width,height)
+{
+  XRectangle r;
+  RECX(r) = x;
+  RECY(r) = y;
+  RECWIDTH(r) = width;
+  RECHEIGHT(r) = height;
+  drawrectangles(w,&r,1);
+}
+
+/*
  * convenience function: C language set-attribute
  */
 char * watt(wbp w, char *s)

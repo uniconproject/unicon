@@ -4714,7 +4714,13 @@ char * watt(wbp w, char *s)
       if (do_config(w, config) == Failed) return NULL;
       }
 
-   if (strchr(s, '=') == NULL) return strdup(foo);
+   if (strchr(s, '=') == NULL) {
+      if (is:integer(throw)) {
+	 sprintf(foo, "%d", IntVal(throw));
+	 }
+      else if (!is:string(throw)) return NULL;
+      return strdup(foo);
+      }
    return NULL;
 }
 

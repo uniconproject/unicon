@@ -1,0 +1,330 @@
+#
+# memory.icn 
+# Ziad Al-Sharif
+# June 1, 2008
+#
+
+$include "evdefs.icn"
+
+#
+# The main Memeory Monitoring class:
+# It Handles the memory managment of an Icon/Unicon perogram 
+#
+class Memory : Listener(
+   eventMask,      # The monitored events
+   collectMask,    # The garbage collection mask
+   allocMask,      # The heap memory allcation mask
+ 
+   BlockRegion,    # Total memory allocated for the block region
+   StringRegion,   # Total memory allocated for the String Region
+
+   AllocBlkTotal,  # Total allocated memory currentlly in the Block region
+   AllocBlkCount,  # Total number of allocation currentlly in the Block region
+
+   AllocStrTotal,  # Total allocated memory currentlly in the String region
+   AllocStrCount,  # Total number of allocation currentlly in the String region
+
+   Talloc_total,   # Accumelates the allocation of each alloc event
+   Talloc_count,   # Accumelates the number of allocation of each alloc event
+
+   Tcollections,   # Counts the number of garbage collections
+   collect_flag,   # a flag indicates the start/end of garbage collection
+
+   AllocStateInfo, # a Formatted list with the allocation
+   MemoryStateInfo # a Formatted list with the memory layout
+   )
+
+#
+# Garbage Collection
+# Used events are: E_Collect & E_EndCollect
+#
+method handle_GarbageCollection()
+   if &eventcode == E_Collect then{
+      Tcollections[&eventvalue] +:= 1
+      Talloc_total  := table(0)   # re-initialize : total allocations
+      AllocBlkTotal := 0
+      AllocBlkCount := 1
+      AllocStrTotal := 0
+      AllocStrCount := 1
+      collect_flag  := 1
+      }
+   else if &eventcode == E_EndCollect then{
+      collect_flag := &null
+      }
+end
+
+#
+#  Memeory Allocation
+#  Used events are: AllocMask from evdefs.icn
+#
+method handle_MemoryAllocation()
+   if &eventcode == E_String then{
+      AllocStrTotal +:= &eventvalue
+      AllocStrCount +:= 1
+      }
+   else{
+      case &eventcode of {
+         E_Lelem :{ &eventcode := E_List  }
+         E_Telem |
+         E_Tvtbl |
+         E_Slots :{ &eventcode := E_Table }
+         E_Selem :{ &eventcode := E_Set   }
+         }
+      AllocBlkTotal +:= &eventvalue
+      AllocBlkCount +:= 1
+      Talloc_total[&eventcode] +:= &eventvalue
+      }
+   Talloc_count[&eventcode] +:= 1
+end
+
+#
+# updates the allocation state whenever it is needed
+#
+method update_AllocStateInfo()
+
+  # Fields description:
+  # 1- *** | 2-Lists | 3-Tables | 4-Sets | 5-Csets | 6-Records |
+  # 7-Large Int | 8-Real
+
+  #AllocStateInfo[1][1] := "Total" 
+   AllocStateInfo[1][2] := Talloc_total[E_List]
+   AllocStateInfo[1][3] := Talloc_total[E_Table]
+   AllocStateInfo[1][4] := Talloc_total[E_Set]
+   AllocStateInfo[1][5] := Talloc_total[E_Cset]
+   AllocStateInfo[1][6] := Talloc_total[E_Record]
+   AllocStateInfo[1][7] := Talloc_total[E_Lrgint]
+   AllocStateInfo[1][8] := Talloc_total[E_Real]
+
+  #AllocStateInfo[2][1] := "Total %"
+   AllocStateInfo[2][2] := Talloc_total[E_List]   * 100 / AllocBlkTotal
+   AllocStateInfo[2][3] := Talloc_total[E_Table]  * 100 / AllocBlkTotal
+   AllocStateInfo[2][4] := Talloc_total[E_Set]    * 100 / AllocBlkTotal
+   AllocStateInfo[2][5] := Talloc_total[E_Cset]   * 100 / AllocBlkTotal
+   AllocStateInfo[2][6] := Talloc_total[E_Record] * 100 / AllocBlkTotal
+   AllocStateInfo[2][7] := Talloc_total[E_Lrgint] * 100 / AllocBlkTotal
+   AllocStateInfo[2][8] := Talloc_total[E_Real]   * 100 / AllocBlkTotal
+
+  #AllocStateInfo[3][1] := "Average"
+   AllocStateInfo[3][2] := Talloc_total[E_List]   / Talloc_count[E_List]
+   AllocStateInfo[3][3] := Talloc_total[E_Table]  / Talloc_count[E_Table]
+   AllocStateInfo[3][4] := Talloc_total[E_Set]    / Talloc_count[E_Set]
+   AllocStateInfo[3][5] := Talloc_total[E_Cset]   / Talloc_count[E_Cset]
+   AllocStateInfo[3][6] := Talloc_total[E_Record] / Talloc_count[E_Record]
+   AllocStateInfo[3][7] := Talloc_total[E_Lrgint] / Talloc_count[E_Lrgint]
+   AllocStateInfo[3][8] := Talloc_total[E_Real]   / Talloc_count[E_Real]
+  #return AllocInfo
+end
+
+#
+# It is to be used in a console based application such as UDB
+#
+method write_AllocStateInfo()
+   local L
+
+   update_AllocStateInfo()
+
+   write("\n-------------------------------------------------------------")
+   write("\n---- Heap Memory Allocation Info ----")
+   write(left(" ***",10),   " : ",left("Lists",8),  " : ",
+         left("Tables",8),  " : ",left("Sets",8) ,  " : ",
+         left("Csets",8),   " : ",left("Records",8)," : ",
+         left("LargeInt",8)," : ",left("Real",8)
+         )
+   every L := !AllocStateInfo do{
+      write(left(L[1],10)," : ",
+            left(L[2],8), " : ",
+            left(L[3],8), " : ",
+            left(L[4],8), " : ",
+            left(L[5],8), " : ",
+            left(L[6],8), " : ",
+            left(L[7],8), " : ",
+            left(L[8],8)
+           )
+      }
+end
+
+#
+# update the current memory state whenever it is needed 
+#
+method update_MemoryStateInfo()
+
+  # Fields description:
+  # 1-Region | 2-Total Memory | 3-Allocated |  4-Allocated % |
+  # 5-# Allocation | 6-Avg Allocation | 7-# of GC
+   
+  #MemoryStateInfo[1][1] := "String Region"
+  #MemoryStateInfo[1][2] := StringRegion / 1000000
+   MemoryStateInfo[1][3] := AllocStrTotal
+   MemoryStateInfo[1][4] := (AllocStrTotal * 100 / StringRegion) ||"%"
+   MemoryStateInfo[1][5] := AllocStrCount
+   MemoryStateInfo[1][6] := AllocStrTotal / AllocStrCount
+   MemoryStateInfo[1][7] := Tcollections[2] # number of GC in Block Region
+
+  #MemoryStateInfo[2][1] := "Block Region"
+  #MemoryStateInfo[2][2] := BlockRegion / 1000000
+   MemoryStateInfo[2][3] := AllocBlkTotal
+   MemoryStateInfo[2][4] := (AllocBlkTotal * 100 / BlockRegion) ||"%"
+   MemoryStateInfo[2][5] := AllocBlkCount
+   MemoryStateInfo[2][6] := AllocBlkTotal  / AllocBlkCount
+   MemoryStateInfo[2][7] := Tcollections[3] # number of GC in Block Region
+  #return MemoryState
+end
+
+#
+# It is to be used in a console based application such as UDB
+#
+method write_MemoryStateInfo()
+   local L
+
+   update_MemoryStateInfo()
+
+   write("\n-------------------------------------------------------------")
+   write("\n---- Heap Memory State info ----")
+   write(left("Region",15),      " : ",left("Total Memory",12),  " : ",
+         left("Allocated",10),   " : ",left("Allocated%",10),    " : ",
+         left("# Allocation",12)," : ",left("Avg Allocation",14)," : ",
+         left("# of GC",8)
+         )
+   every L := !MemoryStateInfo do{
+      write(left(L[1],15)," : ",
+            left(L[2],12)," : ",
+            left(L[3],10)," : ",
+            left(L[4],10)," : ",
+            left(L[5],12)," : ",
+            left(L[6],14)," : ",
+            left(L[7],8)
+            )
+      }
+end
+
+#
+# returns the allocation percentage of a specific structure
+# k=(E_List | E_Table | E_Set | E_Record | E_Cset | E_Lrgint | E_Real)
+#
+method get_AllocPercentage(k)
+    if k == E_String then{
+       return AllocStrTotal * 100 / StringRegion
+       }
+    else{ # anything other than strings 
+       return Talloc_total[k] * 100 / AllocBlkTotal
+       } 
+end
+
+#
+# returns the alocation average of a specific structure
+# k=(E_List | E_Table | E_Set | E_Record | E_Cset | E_Lrgint | E_Real)
+#
+method get_AllocAvg(k)
+    if k == E_String then{
+       return AllocStrTotal / ((0 < Talloc_count[E_String]) | 1)
+       }
+    else{ # any thing other than strings 
+       return Talloc_total[k] / ((0 < Talloc_count[k]) | 1)
+       } 
+end
+
+# takes a table that maps events to their total allocations
+# and returns another with the percentage of that total
+#
+method get_Percentage(T)
+   local k, result := table(0)
+   local total := 0
+
+   every k := key(T) do total +:= T[k]
+   if total > 0 then{
+      every k := key(T) do
+         result[k] := 100.0 * T[k] / total
+      return result
+      }
+   else fail
+end
+
+#
+# takes a table and returns its sum
+#
+method get_Total(T)
+   local k, total := 0
+
+   every k := key(T) do total +:= T[k]
+   return total  
+end
+
+#
+# Initialize the memory regions
+#
+method init_Regions()
+   local Regions := []
+
+   every put(Regions, keyword("regions",Monitored))
+   StringRegion:= Regions[2]
+   BlockRegion := Regions[3]
+end
+
+#
+# Initialize the Monitoring Stuff
+#
+initially(name, state)
+
+   self.Listener.initially(name, state)
+
+   allocMask   := AllocMask
+   collectMask := cset(E_Collect || E_EndCollect)
+   eventMask   := allocMask ++ collectMask
+
+   Talloc_total  := table(1)
+   Talloc_count  := table(1)
+   Tcollections  := table(0)
+
+   BlockRegion   := 0
+   StringRegion  := 0
+
+   AllocBlkTotal := 1
+   AllocBlkCount := 1
+
+   AllocStrTotal := 1
+   AllocStrCount := 1
+
+   init_Regions()
+
+   # Fields description:
+   # 1-Region       | 2-Total Memory   | 3-Allocated |  4-Allocated % |
+   # 5-# Allocation | 6-Avg Allocation | 7-# of GC
+   MemoryStateInfo := 
+           [["String Region",StringRegion / 1000000||" MB",0,0,0,0,0],
+            ["Block Region" ,BlockRegion  / 1000000||" MB",0,0,0,0,0]]
+
+   # Fields description:
+   # 1- *** | 2-Lists | 3-Tables | 4-Sets | 5-Csets | 6-Records |
+   # 7-Large Int | 8-Real
+   AllocStateInfo  := [["Total"  ,0,0,0,0,0,0,0],
+                       ["Total %",0,0,0,0,0,0,0],
+                       ["Average",0,0,0,0,0,0,0]]
+     
+end
+
+
+#
+# StandAlone is defined when this tool is used as a stand-alone monitor.
+#  Otherwise, this tool can be statically linked into the main utop/udb
+#  source code 
+#
+$ifdef StandAlone
+
+link evinit
+ 
+procedure main(arg)
+   local obj
+   
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+   
+   obj := Memory()   
+   while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Collect | E_EndCollect) then
+         obj.handle_GarbageCollection()
+      else
+         obj.handle_MemoryAllocation()
+      }
+   obj.write_MemoryStateInfo()
+   obj.write_AllocStateInfo()
+end
+$endif

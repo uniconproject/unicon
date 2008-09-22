@@ -1,0 +1,277 @@
+#
+# varprofile.icn
+# Ziad Al-Sharif
+# June 1, 2008 
+#
+
+$include "evdefs.icn"
+
+#
+# This class monitors variables usage during the execution of a program
+# and build information about the most used ones (Local  & global)
+#
+class VarProfile : Listener(
+   eventMask,      # A cset of the Monitored events 
+
+   procCallCount,  # Table maps procedur names to their number of calls
+
+   GlobalVar,      # A table with all of the global variables info
+   GlobalVarCount, # Table maps global var names into their number of Deref
+   GlobalVarType,  # Table maps local var names into their last type change
+   GlobalVarTCount,# Table maps local var names into their number type change
+
+   LocalVar,       # A table with all of the local variables info 
+   LocalVarCount,  # Table maps local var names into their number of Deref
+   LocalVarType,   # Table maps local var names into their last type change
+   LocalVarTCount, # Table maps local var names into their number type change
+
+   GlobalVarInfo,  # A list with the global vars info
+   LocalVarInfo    # A list with the local vars info
+   )
+
+#
+# Checks for Dead Variables
+# The monitored events are E_Pcall, E_Deref 
+#
+method handle_Events()
+   static fname, pname
+   local i,x, vtype
+   
+   if &eventcode == E_Pcall then{
+      pname := image(&eventvalue)
+      pname := pname[find(" ", pname)+1: 0]
+      procCallCount[pname] +:= 1
+      }
+   else if &eventcode == E_Deref & type(&eventvalue) == "string" then{
+      # handle global variables info
+      if find("+",&eventvalue) & \GlobalVarCount[&eventvalue] then{
+         pname := image(proc(Monitored,0))
+         pname := pname[find(" ", pname)+1: 0]
+         fname := keyword("file",Monitored)
+         GlobalVarCount[&eventvalue] +:= 1
+         GlobalVar[&eventvalue] := fname||":"||&eventvalue||pname
+         vtype := type(variable(&eventvalue[1:-1],Monitored))
+         /GlobalVarType[&eventvalue] := vtype
+         if GlobalVarType[&eventvalue] ~==:= vtype then
+            GlobalVarTCount[&eventvalue] +:= 1
+         }
+      # handle local variables info
+      else if i := find("-",&eventvalue) then{
+         x := &eventvalue[1: i]
+         if vtype := type(variable(x,Monitored,0)) then{
+            /LocalVarType[&eventvalue] := vtype 
+            if LocalVarType[&eventvalue] ~==:= vtype then
+               LocalVarTCount[&eventvalue] +:= 1
+            LocalVarCount[&eventvalue] +:= 1
+            fname := keyword("file",Monitored)
+            LocalVar[&eventvalue] := fname||":"||&eventvalue
+            } 
+         } 
+      }
+end
+
+#
+# Updates the Local variabls info,
+# it receives the param j which is the most important j Variables 
+#
+method update_LocalVarInfo(j)
+   local i:=1, k,name, var, pname, fname, last_type
+   
+   if \LocalVarCount & *LocalVarCount > 0 then {
+      if /j then j := *LocalVarCount + 1
+      else  j >=:= *LocalVarCount + 1
+  
+      LocalVarInfo := reverse(sort(LocalVarCount,2))[1:j]
+      # 1-"File Name" | # 2-"Proc Name"   | # 3-"#Call"  | # 4-"Var Name" 
+      # 5-"Last Type" | # 6-"Change Type" | # 7-"#Deref" | # 8-"Avg(Deref/Call)"
+      while i <= j  & \LocalVarInfo & LocalVarInfo[i][2] > 1 do{
+         name := LocalVar[LocalVarInfo[i][1]]
+         k := find(":",name)
+         fname := name[1:k]
+         name := name[k+1:0]
+         k := find("-",name)
+         var := name[1:k]
+         pname := name[k+1:0]
+         push(LocalVarInfo[i],
+              LocalVarInfo[i][2]/procCallCount[pname],
+              LocalVarInfo[i][2],
+              LocalVarTCount[name],
+              LocalVarType[name],
+              var,
+              procCallCount[pname],
+              pname,
+              fname
+              )
+         i +:= 1
+         } 
+      }
+end
+
+#
+# Prints out the total time of a procedure call in ms 
+# It is to be used in a console based application such as UDB
+#
+method write_LocalVarInfo( num )
+   local i:=1
+
+   update_LocalVarInfo(num)
+   num := *LocalVarInfo + 1
+  
+   write("\n-------------------------------------------------------------")
+   write("\n---- [The Most (",num,") Local Variables] ----")
+   write(left("File Name",10),  " : ",
+         left("Proc Name",10),  " : ",
+         left("#Call",10),      " : ",
+         left("Var Name",10),   " : ",
+         left("Last Type",10),  " : ",
+         left("Change Type",12)," : ",
+         left("#Deref",10),     " : ",
+         left("Avg(Deref/Call)",25)
+         )
+   while i <= num &  \LocalVarInfo do{
+      write(left(LocalVarInfo[i][1],10), " | ",
+            left(LocalVarInfo[i][2],10), " : ",
+            left(LocalVarInfo[i][3],10), " : ",
+            left(LocalVarInfo[i][4],10), " : ",
+            left(LocalVarInfo[i][5],10), " : ",
+            left(LocalVarInfo[i][6],12), " : ",
+            left(LocalVarInfo[i][7],10), " : ",
+            left(LocalVarInfo[i][8],25)
+            )
+      i +:= 1
+      }
+end
+
+#
+# updates the Global variabls info,
+# it receives the param j which is the most important j Variables 
+#
+method update_GlobalVarInfo(j)
+   local i:=1, k,name, var, pname, fname
+   
+   if \GlobalVarCount & *GlobalVarCount > 0 then{
+      if /j then j := *GlobalVarCount + 1
+      else  j >=:= *GlobalVarCount + 1
+  
+      GlobalVarInfo := reverse(sort(GlobalVarCount,2))[1:j]
+      # 1-"File Name" | # 2-"Proc Name"   | # 3-"#Call"  | # 4-"Var Name" 
+      # 5-"Last Type" | # 6-"Change Type" | # 7-"#Deref" | # 8-"Avg(Deref/Call)"
+      while i <= j  & \GlobalVarInfo & GlobalVarInfo[i][2] > 1 do{
+         name := GlobalVar[GlobalVarInfo[i][1]]
+         k := find(":",name)
+         fname := name[1:k]
+         name := name[k+1:0]
+         k := find("+",name)
+         var := name[1:k]
+         pname := name[k+1:0]
+         push(GlobalVarInfo[i],
+              GlobalVarInfo[i][2]/procCallCount[pname],
+              GlobalVarInfo[i][2],
+              GlobalVarTCount[name[1:k+1]],
+              GlobalVarType[name[1:k+1]],
+              var,
+              procCallCount[pname],
+              pname,
+              fname
+              )
+         i +:= 1
+         } 
+      }
+end
+
+#
+# Prints out the total time of a procedure call in ms 
+# It is to be used in a console based application such as UDB
+#
+method write_GlobalVarInfo( num )
+   local i:=1
+
+   update_GlobalVarInfo(num)
+   num := *GlobalVarInfo + 1
+
+   write("\n-------------------------------------------------------------")
+   write("\n---- [The Most (",num,") Global Variables] ----")
+   write(left("File Name",10),  " : ",
+         left("Proc Name",10),  " : ",
+         left("#Call",10),      " : ",
+         left("Var Name",10),   " : ",
+         left("Last Type",10),  " : ",
+         left("Change Type",12)," : ",
+         left("#Deref",10),     " : ",
+         left("Avg(Deref/Call)",25)
+         )
+   while i <= num &  \GlobalVarInfo do{
+      write(left(GlobalVarInfo[i][1],10), " | ",
+            left(GlobalVarInfo[i][2],10), " : ",
+            left(GlobalVarInfo[i][3],10), " : ",
+            left(GlobalVarInfo[i][4],10), " : ",
+            left(GlobalVarInfo[i][5],10), " : ",
+            left(GlobalVarInfo[i][6],12), " : ",
+            left(GlobalVarInfo[i][7],10), " : ",
+            left(GlobalVarInfo[i][8],25)
+            )
+      i +:= 1
+      }
+end
+
+#
+# Initialize the global variables count,
+# This way will eliminate the built ins and the user defined procedures:)
+# This technique is not needed for the local variables.
+# 
+method init_GlobalVarCount()
+   local x
+
+   GlobalVarCount := table()
+   every x := globalnames(Monitored) do{
+      if not find("procedure"|"function",image(variable(x, Monitored))) then
+         GlobalVarCount[x||"+"] := 0
+     }
+end
+
+#
+# Initialize the class attributes
+#
+initially(name, state)
+
+   self.Listener.initially(name, state)
+
+   eventMask      := cset(E_Pcall || E_Deref)
+
+   procCallCount  := table(0)
+
+   init_GlobalVarCount() # GlobalVarCount := table(0)
+   GlobalVarTCount := table(0)
+   GlobalVarType   := table()
+   GlobalVar       := table()
+
+   LocalVarCount   := table(0)
+   LocalVarTCount  := table(0)
+   LocalVarType    := table()
+   LocalVar        := table()
+
+   LocalVarInfo  := [ ]
+   GlobalVarInfo := [ ]
+end
+
+#
+# StandAlone is defined when this tool is used as a stand-alone monitor.
+#  Otherwise, this tool can be statically linked into the main utop/udb
+#  source code 
+#
+$ifdef StandAlone
+
+link evinit
+
+procedure main(arg)
+   local obj
+   
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+   obj := VarProfile()   
+   while EvGet(obj.eventMask) do
+      obj.handle_Events() 
+
+   obj.write_LocalVarInfo(10)
+   obj.write_GlobalVarInfo(10)
+end
+$endif

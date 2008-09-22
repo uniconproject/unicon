@@ -1,0 +1,143 @@
+
+#
+# structaliases.icn
+# Ziad Al-Sharif
+# June 1, 2008 
+#
+
+$include "evdefs.icn"
+
+#
+# This class handles the struct usage of Aliases
+# List, Table, Set, Record
+#
+class StructAliases : Listener(
+   eventMask,     # Monitored events for this detection
+
+   tLalias,       # List's Aliases, maps the serial # to a set of var names
+   tTalias,       # Table's Aliases, maps the serial # to a set of var names
+   tSalias,       # Set's Aliases, maps the serial # to a set of var names
+   tRalias        # Records's Aliases, maps the serial # to a set of var names
+   )
+
+#
+# To check structute aliases ( Lists, Tables, and Sets)
+# Monitored events are: E_Pcall, E_Assign, E_Value
+#
+method handle_Events()
+   static assigned_var
+   local i, x, pname, var
+
+   if &eventcode == E_Pcall then{
+      x := image(&eventvalue)
+      pname := x[find(" ",x)+1:0]
+      every x := paramnames(Monitored,0) do{
+         case type(var := variable(x,Monitored,0)) of{
+           "list":{
+              i := serial(var)
+              /tLalias[i]:=set()
+              insert(tLalias[i],x||"^"||pname)
+              }
+           "table":{
+              i := serial(var)
+              /tTalias[i]:=set()
+              insert(tTalias[i],x||"^"||pname)
+              }
+           "set":{
+              i := serial(var)
+              /tSalias[i]:=set()
+              insert(tSalias[i],x||"^"||pname)
+              }
+           "record":{
+              i := serial(var)
+              /tRalias[i]:=set()
+              insert(tRalias[i],x||"^"||pname)
+              }
+           }# end case
+         } 
+      }
+   else if &eventcode == E_Assign then{
+      assigned_var := &eventvalue
+      }
+   else if &eventcode ==  E_Value then{
+      case type(&eventvalue) of {
+        "list":{
+           i := serial(&eventvalue)
+           /tLalias[i]:=set()
+           insert(tLalias[i],assigned_var)
+           }
+        "table":{
+           i := serial(&eventvalue)
+           /tTalias[i]:=set()
+           insert(tTalias[i],assigned_var)
+           }
+        "set":{
+           i := serial(&eventvalue)
+           /tSalias[i]:=set()
+           insert(tSalias[i],assigned_var)
+           }
+        "record":{
+           i := serial(&eventvalue)
+           /tRalias[i]:=set()
+           insert(tRalias[i],assigned_var)
+           }
+        }# end case
+      }# end else
+end
+
+#
+# Returns the set of struct source names
+# k : (E_List | E_Table | E_Set | E_Record )
+# i : is the serial number for the actual struct
+#
+method get_Info(k,i)
+   local t, x, result := ""
+
+   case k of{
+     E_List:  { t := tLalias  }
+     E_Table: { t := tTalias  }
+     E_Record:{ t := tRalias  }
+     E_Set:   { t := tSalias  }
+     } 
+
+   if \t[i] then{
+      every x := !t[i] do result ||:= x||", "
+      return result[1:-2]
+      }
+   return "??"
+end
+
+#
+# Initialize the class attributes
+#
+initially(name, state)
+
+   self.Listener.initially(name, state)
+
+   eventMask := cset(E_Pcall || E_Assign || E_Value)
+
+   tLalias := table() 
+   tTalias := table() 
+   tSalias := table() 
+   tRalias := table()
+end
+
+#
+# StandAlone is defined when this tool is used as a stand-alone monitor.
+#  Otherwise, this tool can be statically linked into the main utop/udb
+#  source code 
+#
+$ifdef StandAlone
+
+link evinit
+ 
+procedure main(arg)
+   local obj
+   
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+   
+   obj := StructAliases()   
+   while EvGet(obj.eventMask) do
+      obj.handle_Events() 
+end
+$endif

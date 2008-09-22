@@ -1,0 +1,174 @@
+#
+# failedloop.icn
+# Ziad Al-Sharif
+# June 1, 2008 
+#
+
+$include "evdefs.icn"
+link syntname
+
+#
+# check failed loop, loops that executes zero times
+# otherwise it will show up how many times that loop executed
+#
+class FailedLoop : Listener(
+   eventMask,     # Monitored events for this detection
+   
+   procCallCount, # Table counts the number of times each procedure is called
+   loopFailCount, # Table counts the number of time a loop has been iterated
+   
+   FailedLoopInfo # a list with the failed loop information
+   )
+
+#
+# collect loopes information
+#
+method handle_Events()
+   static loopStart := "while every repeat until"
+   static loopEnd   := "endwhile endevery endrepeat enduntil"
+   static fname, line, pname, k
+   local  loop
+
+   if &eventcode == E_Pcall then{
+      pname := image(&eventvalue)
+      pname := pname[find(" ", pname)+1: 0]
+      procCallCount[pname] +:= 1
+      }
+   else if &eventcode == E_Syntax then{ 
+      loop := syntname(&eventvalue)
+      if find(loop, loopStart) then{
+         line := keyword("line", Monitored)
+         fname := keyword("file", Monitored)
+         pname := image(proc(Monitored,0))
+         pname := pname[find(" ", pname)+1: 0]
+         k := fname||"("||line||"){"||pname||
+              #"-"||procCallCount[pname]||
+              "}"||loop
+         loopFailCount[k] +:= 1
+         }
+      }
+   else if &eventcode == E_Line then{
+      loop := syntname(keyword("syntax",Monitored))
+      if find(loop, loopStart) then{
+         line := &eventvalue 
+         fname := keyword("file", Monitored)
+         pname := image(proc(Monitored,0))
+         pname := pname[find(" ", pname)+1: 0]
+         k := fname||"("||line||"){"||pname||
+              #"-"||procCallCount[pname]||
+              "}"||loop
+         loopFailCount[k] +:=1 
+         }
+      }
+end
+
+#
+# updates the failed loop info,
+# it receives the param j which is the most elapsed j loops 
+#
+method update_Info(j)
+   local i:=1, loop, fname, pname, line, p
+   
+   if \loopFailCount & *loopFailCount > 0 then{
+      if /j then j := *loopFailCount + 1
+      else  j >=:= *loopFailCount + 1
+      
+      FailedLoopInfo := sort(loopFailCount,2)[1:j]
+      # 1-"Seq Num"          | 
+      # 2-"File Name"        | # 3-"Line #" |
+      # 4-"Proc Name"        | # 5-"#call"  |
+      # 6-"Loop Name"        |  
+      # 7-"Avg(Iter/Call)"   |
+      # 8-"Total Iterations" |
+      while i <= j  & \FailedLoopInfo do{
+         loop  := get(FailedLoopInfo[i])
+         fname := loop[1 : p := find("(", loop)]
+         line  := loop[p+1 : find(")", loop)]
+         pname := loop[find("{",loop)+1 : p := find("}",loop)]
+         loop  := loop[p+1 : 0]
+         push(FailedLoopInfo[i],
+              FailedLoopInfo[i][1]/procCallCount[pname],
+              loop,
+              procCallCount[pname],
+              pname,
+              line,
+              fname,
+              i
+              )
+         i +:= 1
+         } 
+      }
+end
+
+#
+# Prints out the total elapsed of a loop in ms 
+# It is to be used in a console based application such as UDB
+#
+method write_Info( num )
+   local i:=1
+
+   update_Info(num)
+   /num := *FailedLoopInfo
+
+   write("\n-------------------------------------------------------------")
+   write("\n---- Loop's info [The Least Iterated (",num,") Loops] ----")
+   write(left("Num",3),            " | ",
+         left("File Name",10),     " : ",        
+         left("Line #",6),         " : ",
+         left("proc Name",10),     " : ",
+         left("#Calls",6),         " : ",
+         left("Loop Name",10),     " : ",
+         left("Avg(Iter/Call)",14)," : ",
+         left("Total Iteration",15)
+         )
+   while i <= num &  \FailedLoopInfo do{
+      write(left(FailedLoopInfo[i][1],3), " | ",
+            left(FailedLoopInfo[i][2],10)," : ",
+            left(FailedLoopInfo[i][3],6)," : ",
+            left(FailedLoopInfo[i][4],10)," : ",
+            left(FailedLoopInfo[i][5],6)," : ",
+            left(FailedLoopInfo[i][6],10)," : ",
+            left(FailedLoopInfo[i][7],14)," : ",
+            left(FailedLoopInfo[i][8],15)
+             )
+      i +:= 1
+      }
+end
+
+#
+# Initialize the class attributes
+#
+initially(name, state)
+
+   self.Listener.initially(name, state)
+
+   eventMask     := cset(E_Pcall || E_Syntax || E_Line)
+
+   procCallCount := table(0)
+   loopFailCount := table(-2)
+
+   FailedLoopInfo := []
+end
+
+#
+# StandAlone is defined when this tool is used as a stand-alone monitor.
+#  Otherwise, this tool can be statically linked into the main utop/udb
+#  source code 
+#
+$ifdef StandAlone
+
+link evinit
+ 
+procedure main(arg)
+   local obj
+   
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+   
+   obj := FailedLoop()   
+   while EvGet(obj.eventMask) do
+      obj.handle_Events() 
+
+   obj.write_Info()
+end
+$endif
+

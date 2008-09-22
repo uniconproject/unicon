@@ -1,0 +1,154 @@
+#
+# This class is used to find out the methods in the 
+# internal monitor and its event mask
+# Author : Dr. Jeffery, modified by Ziad Al-Sharif
+#
+
+link ximage
+link evsyms
+
+class Listener(
+   Name,      # The formal name of the internal name
+   Id,        # it is a unique id number
+   State,     # The current state of the internal tool
+   eventMask, # The event mask of the used monitor
+   methtab    # A table handles the methods used in the derived monitor
+   )
+
+#
+# It handles and forwards the internal monitor
+#
+method Forward(code, value)
+   local foo, foolist
+
+   /code := &eventcode; /value := &eventvalue
+   if \self.methtab[code] then
+      self.methtab[code] (self, code, value)
+   else{
+      foolist := self.methtab["handler"]
+      every foo := !foolist do
+          foo(self) #, code, value)
+      write("Forward, hmmmm")
+      }  
+end
+
+#
+# performas an on-demand analysis in the listener monitor 
+#
+method AnalyzeInof(tag)
+   local foo, foolist
+
+   /tag := "analyzer"
+   foolist := self.methtab[tag]
+   every foo := !foolist do
+      foo(self)
+end
+
+#
+# performas an on-demand output from the listener monitor 
+#
+method WriteInfo(tag)
+   local foo, foolist
+
+   /tag := "writer"
+   foolist := self.methtab[tag]
+   every foo := !foolist do
+      foo(self)
+end
+
+#
+# reads the derived class and finds out which methods start with 
+# on of the prefixes (handle_, update, or write)
+# It is used to automatically register the internal monitors
+# based on the assumptions:
+# event handler starts with the prefix "handle_" 
+# method analazer starts withe the prefix: "analyze" | "update"
+# method writer starts withe the prefix  : "write"   | "print"
+#
+method AutoRegister(name, id, state)
+   local eventcode, methodName, mask := "", symtab := evsyms()
+
+   Name  := name
+   Id    := id
+   State := state
+   
+   every (methodName := key(self.__m)) & not match("__",methodName) do {
+       if (eventcode := symtab[methodName ? (="handle_" & tab(0))]) &
+          eventcode ~== "E_????" then {
+          mask ||:= eventcode
+          methtab[eventcode] := self.__m[methodName]
+          }
+       else if find("handle_", methodName) then
+          RegisterHandler(methodName)
+       else if find("analyze"|"update", methodName) then
+          RegisterAnalyzer(methodName)
+       else if find("write"|"print", methodName) then
+          RegisterWriter(methodName)
+       }  
+   if *mask > 0 then eventMask := cset(mask)
+end
+
+#
+# Registers the event handler of the monitoring tool
+#
+method RegisterHandler(methodname, mask)
+   local eventcode 
+
+   if \mask then{
+      every eventcode := !mask do
+         methtab[eventcode] := self.__m[get_Method(methodname)]
+      eventMask := mask
+      }
+   else{
+      /methtab["handler"] := [ ] 
+      put(methtab["handler"], get_Method(methodname))
+      }  
+end
+
+#
+# Registers the analyzer handler of the monitoring tool
+#
+method RegisterAnalyzer(methodname)
+   /methtab["analyzer"] := [ ] 
+   put(methtab["analyzer"], get_Method(methodname))
+end
+
+#
+# Registers the analyzer handler of the monitoring tool
+#
+method RegisterWriter(methodname)
+   /methtab["writer"] := [ ] 
+   put(methtab["writer"], get_Method(methodname))
+end
+
+#
+# Registers the analyzer handler of the monitoring tool
+#
+method RegisterEventMask(mask)
+   /eventMask := cset() 
+   eventMask ++:= mask
+end
+
+#
+# returns the actual pointer to the method from its name
+#
+method get_Method(name)
+   local methodname
+   
+   every (methodname := key(self.__m)) & not match("__",methodname) do
+       if find(name, methodname) then
+          return self.__m[methodname]
+   fail 
+end
+#
+# reads the derived class and finds out which methods start with 
+# on of the prefixes (handle, update, or write)
+#
+initially(name, id,state)
+   
+   Name  := name
+   Id    := id
+   State := state
+   methtab   := table()
+end
+

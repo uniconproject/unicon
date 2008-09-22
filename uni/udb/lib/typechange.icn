@@ -1,0 +1,160 @@
+#
+# typechange.icn
+# Ziad Al-Sharif
+# June 1, 2008 
+#
+
+$include "evdefs.icn"
+
+#
+# This class Monitors the Variable type change that may occur during
+# the programs execution. It is considered a pad programming paractice 
+#
+class TypeChange : Listener(
+   eventMask,          # Cset with the monitored events
+
+   varTypeChangeCount, # A table maps variables into their num of type change 
+   varLastTypeChange,  # A table maps variables into their actual type change
+   TypeChangeInfo,     # A list the the updated type change info
+   i, var, vname, oldtype
+   )
+
+#
+# Suspicious change of a variable type 
+#
+method handle_Events()
+   static var, vname, oldtype, i
+   local  fname, line, pname, newtype
+   
+   if &eventcode == E_Assign then{
+      var := image(&eventvalue)[2:-1]
+      if i := find("-"|"^"|"+",var) then{
+         vname := var[1:i]
+         oldtype := type(variable(vname, Monitored, 0))
+         }
+      }
+   else if \i & &eventcode == E_Value then{
+      newtype := type(&eventvalue)
+      if oldtype ~== "null" & newtype ~== oldtype then{
+         fname := keyword("file", Monitored)
+         line  := keyword("line", Monitored)
+         varTypeChangeCount[var] +:= 1
+         varLastTypeChange[var] := fname||"("||line||"):"||
+                                   oldtype||"->"||newtype
+         i := &null
+         }
+      }
+end
+
+#
+# Updates the type changes info,
+# It receives the param j which is the most elapsed j loops 
+#
+method update_Info(j)
+   local i:=1, k, var, vname, scope, fname, line, type_change, attrib
+   
+   if \varTypeChangeCount & *varTypeChangeCount > 0 then{
+      if /j then j := *varTypeChangeCount + 1
+      else  j >=:= *varTypeChangeCount + 1
+   
+      TypeChangeInfo := reverse(sort(varTypeChangeCount,2))[1:j]
+      # 1-"Num"              |
+      # 2-"File Name"        |
+      # 3-"Line#"            |
+      # 4-"Var"              |
+      # 5-"Scope"            |
+      # 6-"Last Type Change" |
+      # 5-"#Change"          |
+      #write("-----hmmmm-----",ximage(TypeChangeInfo))
+      while i <= j  & \TypeChangeInfo do { #& i < *TypeChangeInfo do{
+         var := get(TypeChangeInfo[i])
+         k := find("-"|"^"|"+"|":",var)
+         vname := var[1:k]
+         if var[k] == "+" then scope := "global"
+         else                  scope := var[k+1:0]
+         attrib := varLastTypeChange[var]
+         fname  := attrib[1: k:=find("(",attrib)]
+         line   := attrib[k+1 : find(")",attrib)]
+         type_change := attrib[find(":",attrib)+1 : 0]
+         push(TypeChangeInfo[i],
+              type_change,
+              scope,
+              vname,
+              line,
+              fname,
+              i
+              )    
+         i +:= 1
+         }
+      }
+end
+
+#
+# Prints out the most frequent type change info
+# It is to be used in a console based application such as UDB
+#
+method write_Info( num )
+   local i:=1
+
+   update_Info(num)
+   /num := *TypeChangeInfo
+
+   write("\n-------------------------------------------------------------")
+   write("\n---- Type change's info [The Most (",num,") Thape change] ----")
+   write(left("Num",3),              " : ",
+         left("File Name",10),       " : ",        
+         left("Line #",6),           " : ",
+         left("Var Name",10),        " : ",
+         left("Scope",10),           " : ",
+         left("Last Type Change",15)," : ",
+         left("Total Change",12) 
+         )
+   while i <= num &  \TypeChangeInfo do{
+      write(left(TypeChangeInfo[i][1],3), " : ",
+            left(TypeChangeInfo[i][2],10)," : ",
+            left(TypeChangeInfo[i][3],6), " : ",
+            left(TypeChangeInfo[i][4],10)," : ",
+            left(TypeChangeInfo[i][5],10)," : ",
+            left(TypeChangeInfo[i][6],15)," : ",
+            left(TypeChangeInfo[i][7],12)
+            )
+      i +:= 1
+      }
+end
+
+#
+# Initialize the class attributes
+#
+initially(name, state)
+
+   self.Listener.initially(name, state)
+ 
+   eventMask     := cset(E_Assign || E_Value)
+  
+   varTypeChangeCount := table(0)
+   varLastTypeChange  := table("??") 
+   
+   TypeChangeInfo    := []
+end
+
+#
+# StandAlone is defined when this tool is used as a stand-alone monitor.
+#  Otherwise, this tool can be statically linked into the main utop/udb
+#  source code 
+#
+$ifdef StandAlone
+
+link evinit
+ 
+procedure main(arg)
+   local obj
+   
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+
+   obj := TypeChange()   
+   while EvGet(obj.eventMask) do
+      obj.handle_Events() 
+
+   obj.write_Info(10)
+end
+$endif

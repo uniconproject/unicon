@@ -1,6 +1,8 @@
-# 
+#
 #  srcfile.icn
-#  Handling the collected Source Files from the Icode
+#  Handles the collected Source Files from the Icode
+#  Author : Ziad Al-Sharif
+#  Date   : Feb 24, 2008
 # 
 
 link bincvt
@@ -9,11 +11,12 @@ link strings
 $define CHARACTER &letters++&digits
 
 #
-# It is used ti index the files in srcText
-# begin: is where the source file index starts in srcText
-# end  : is where the source file index ends in srcText
+# It is used to index the loaded source files in the srcText list
 # 
-record fileIndex(fbegin, fend)
+record fileIndex(
+   fbegin, # where the source file index starts in srcText
+   fend    # where the source file index ends in srcText
+   )
 
 #
 # Contains all of the source files issues such as found files and so  
@@ -95,8 +98,6 @@ method loadSourceFiles(fname, src)
          else
             put(missingFiles, sourceFiles[ i ])# keep it as it is
          }
-#      else
-#         write("File is already found:",f)
       }
    return
 end
@@ -201,11 +202,11 @@ end
 #
 # returns an image of the current source line
 #
-method getSrcLine(line, fname)
+method getSrcLine(fname, line)
     local f
 
-    if /fname then fname := keyword("file", Monitored)
-    if /line  then line  := keyword("line", Monitored)
+    /fname := keyword("file", Monitored)
+    /line  := keyword("line", Monitored)
     f := getFileName(fname)
 
     if isLoaded(fname) then #& isInFile(f, line) then       

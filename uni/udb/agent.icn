@@ -1,0 +1,131 @@
+
+#
+# agent.icn
+# it is an abstract class that handles the basic extra monitoring
+# architecture, it will be derived into internals and externals
+# type of minitors
+# Author  : Ziad Al-Sharif
+# Date    : Feb 24, 2008
+#
+
+$include "defaults.icn"
+
+#
+# Loads and initializes the internal monitors
+#
+class Agent(
+   DState,          # An object of the class State()
+   eventMask,       # Monitor event Mask is for all externals or internals
+   Clients,         # A table of the InternalClient record
+   activeClients,   # A set of the current active clients
+   disabledClients, # A set of the current disabled clients
+   mtype,           # it holds the derived class identity (internal or external)
+   count,           # an integer holds the tatal number of monitors
+   enabled          # an integer hold the total number of enabled monitors
+   )
+
+#
+# Enables the internal monitor
+#
+method cmdEnable(name)
+   local msg:="??"
+
+   if \Clients[name] then{
+      if Clients[name].State = DISABLED then{
+         Clients[name].State := ENABLED
+         insert(activeClients, name)
+         delete(disabledClients, name)
+         enabled +:= 1
+         build_Mask()
+         msg := "\n\t The "||mtype||" monitor ("||name||") is ENABLED"
+         }
+      else
+         msg := "\n\t The "||mtype||" monitor ("||name||") is already ENABLED"
+      }
+   else
+      msg := "\n\t The "||mtype||" monitor ("||name||") is NOT Found!"
+   DState.Write(msg)
+end
+
+#
+# Disables the internal monitor
+#
+method cmdDisable(name)
+   local msg:="??"
+
+   if \Clients[name] then{
+      if Clients[name].State = ENABLED then{
+         Clients[name].State := DISABLED
+         insert(disabledClients, name)
+         delete(activeClients, name)
+         enabled -:= 1
+         build_Mask()
+         msg := "\n\t The "||mtype||" monitor ("||name||") is DISABLED"
+         }
+      else
+         msg := "\n\t The "||mtype||" monitor ("||name||") is already DISABLED"
+      }
+   else
+      msg := "\n\t The "||mtype||" monitor ("||name||") is NOT Found!"
+   DState.Write(msg)
+end
+
+#
+# printd out information about the enabled internals
+#
+method cmdInfo(name)
+   local i:=1, msg:="\n\t"
+
+   ## what if there is more than one monitor loaded with the same name??
+   if \name then{
+      if \Clients[name] then{
+         if Clients[name].State = DISABLED then
+            msg := "\n\t The "||mtype||" monitor ("||name||") is DISABLED"
+         else
+            msg := "\n\t The "||mtype||" monitor ("||name||") is ENABLED"
+         }
+      else
+         msg := "\n\t The "||mtype||" monitor ("||name||") is NOT Found!"
+      }
+   else{
+      every name := !activeClients do
+         msg ||:= i ||":"||name||"\n\t"
+      if msg >= 5 then
+         msg := "\n\t The following are the enabled "||mtype||" monitors:"||msg
+      else
+         msg := "\n\t There is no enabled "||mtype||"s !"
+      } 
+   DState.Write(msg)
+end
+
+#
+# it constructs/re-constucts the eventMask from all active monitors  
+#
+method build_Mask()
+   local Name
+
+   eventMask := cset('')
+   every Name := !activeClients do
+      eventMask ++:= Clients[Name].eventMask
+
+   if mtype == "internal" then{
+      DState.internalMask := eventMask
+      DState.Update()
+      }
+   else if mtype == ("external"|"semi-internal") then{
+      DState.externalMask := eventMask 
+      DState.Update()
+      }
+end
+#
+#
+initially(t)
+
+   mtype   := t
+   count   := 0
+   enabled := 0
+   Clients := table()
+   activeClients   := set()
+   disabledClients := set()
+   eventMask := cset('')
+end

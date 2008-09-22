@@ -1,0 +1,509 @@
+#
+# session.icn
+# Handles the main debugging session properties such as initialization
+# Author : Ziad Al-Sharif
+# Date   : Feb 24, 2008 
+#
+
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+#
+# This class is used to handle the current debugging state 
+# State     : Debugging state such RUN, PAUSE, END, etc
+# RunCode   : It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
+# eventMask : the mask that we are building the evaltree based on
+# valueMask : table used for break points and watch points set of masks
+#
+class Session(
+   DState,       # an object of the class State()
+   Message,      #?????
+   Debug         # An object of the class Evaluator() 
+   )
+
+#
+# Here where the udb Session starts on
+#
+method startSession()
+   local x, t
+
+   #-- it may need to be in EvInit() for the sake of re-run
+   &eventsource := &null
+
+   EvInit(DState.TP) | stop("cant start evinit on " || DState.TP[1])
+
+   #global_vars := set()
+   every x := globalnames(Monitored) do{
+     t := image(variable(x, Monitored, 0))
+     # note, do not use ~ in such cases, use not
+     if not find("procedure"|"function",t) then {
+        insert(DState.global_vars, x)
+        }
+     }
+
+ if DState.State = RUN  then {
+      # a generator that ends when TP is over and no more events out of it.
+      # every udb_evalTree(eventMask, activation_record) do{
+      every Debug.startEvaluator() do{
+         if DState.State = PAUSE then{
+            # suspends the loop and go back to udb_Console() for a new cmd.
+            suspend
+            }
+         if DState.State = END then{
+            # The program exit normally
+            break
+            }
+      }#end every 
+   }
+
+  DState.State := END
+  Message := "\n\t UDB received E_Exit at the end of "||DState.TP[1]
+  DState.Write(Message)
+  return
+end
+
+#
+# Parse a command
+#
+method parse_Command(cmd)
+
+   case cmd[1] of{
+     #-The start of the standard debugging commands
+     "load"   :{  cmdLoad(cmd)                 }
+     "r"      |
+     "run"    :{  cmdRun(cmd)                  }
+     "q"      |
+     "quit"   :{  cmdQuit()                    }
+     "p"      |
+     "print"  :{  cmdPrint(cmd)                }
+     "w"      |
+     "where"  :{  Debug.Frame.cmdWhere()       }
+     "b"      |
+     "break"  :{  Debug.Break.cmdBreak(cmd)    }
+     "watch"  :{  Debug.Watch.cmdWatch(cmd)    }
+     "s"      |
+     "step"   :{  Debug.Step.cmdStep(cmd)      }
+     "n"      |
+     "next"   :{  Debug.Step.cmdNext(cmd)      }
+     "f"      |
+     "frame"  :{  Debug.Frame.cmdFrame(cmd)    }
+     "up"     :{  Debug.Frame.cmdUp()          }
+     "down"   :{  Debug.Frame.cmdDown()        }
+     "?"      |
+     "h"      |
+     "help"   :{  cmdHelp(cmd)                 }
+     "c"      |
+     "cont"   :{  Debug.Step.cmdContinue()     }
+     "bt"     :{  Debug.Frame.cmdBacktrace()   }
+     "l"      |
+     "list"   :{  Debug.Print.cmdList(cmd)     }
+     "clear"  :{  Debug.Break.cmdClear(cmd)    }
+     #-cmds that are not in GDB
+     "src"    :{  Debug.Print.cmdSource(cmd)            }
+     "trace"  :{  Debug.Trace.cmdTrace(cmd)             }
+     "enable" :{  cmdEnable(cmd)                        }
+     "disable":{  cmdDisable(cmd)                       }
+     "info"   :{  cmdInfo(cmd)                          }
+     "analyze":{  Debug.Internal.cmdAnalyzeInfo(cmd[3]) }
+     #-new set of commands for the UDB config script 
+     "loadscript" :{ }
+     "runscript"  :{ }
+     default  :{   
+        # anything else
+        DState.State := ERROR
+        Message   := "\n\t Undefined Command: \""|| cmd[1] ||"\"" ||
+                     "\n\t Try \"help\" for assistance."
+        DState.Write(Message)
+     }
+   }
+end
+
+#
+# Loads a file after running the UDB Session 
+# or loads an external monitor: load -external name
+#
+method cmdLoad(cmd)
+   
+   if cmd[2][1] == "-" then{
+      #load -external name
+      if find("external", cmd[2]) & \cmd[3] then
+         Debug.External.cmdLoad(cmd[3])
+      #load -semi-internal name 
+      else if find("semi-internal", cmd[2]) & \cmd[3] then
+         Debug.SemiInternal.cmdLoad(cmd[3])
+      else{
+         DState.State := ERROR
+         Message := "\n\t Undefined Command: \""|| cmd[1] ||" "||cmd[2]||"\""||
+                    "\n\t Try \"help\" for assistance."
+         DState.Write(Message)
+         }
+      }
+   else
+      DState.initializeState(cmd[2:0])
+end
+
+#
+# Runs the pre-loaded file, it can be used to re-run the program again
+#
+method cmdRun(cmd)
+   local i, ans, args:=[]
+   
+   if *cmd >= 2 then{
+      if DState.State = (LOAD | PAUSE | END) then{
+         put(args, DState.TP[1])
+         every i:=2 to *cmd do
+            put(args, cmd[i])
+         DState.TP := args
+         }
+      }
+   
+   if DState.State = (LOAD | END | PAUSE) then{ 
+      if DState.State = PAUSE then{
+         DState.Write("\t A Program is currently running")
+         writes("\t Are you sure you want to re-run?, (Y/N )? :")
+         ans := read()
+         if ans[1] == ("y"|"Y") then
+            DState.Update(RERUN)
+         else{
+            DState.State := SKIP
+            return
+            }
+         } 
+      else  
+         DState.Update(RUN)
+      }
+   else{
+      DState.State := ERROR
+      Message   := "\n\t No program to RUN, load program first_
+                    \n\t Type \"help\" for assistance"
+      DState.Write(Message)
+   }
+end
+
+#
+# Allows you to quit the program.
+#
+method cmdQuit()
+   local ans
+
+   # check whether a program is running or not, Paused, etc??????
+   # do not exit directlly if the program is in the running state
+   if DState.State = (RUN | PAUSE) then
+      DState.Write("\t A Program is currently running")
+
+   # always ask the user if he realy wants to quit!!!
+   writes("\t Are you sure you want to Quit?, (Y/N )? :")
+   ans := read()
+   if \ans & ans[1] == ("y"|"Y") then
+      DState.State := QUIT
+   else{
+      #make udb console takes no actions 
+      DState.State := SKIP
+   }
+end
+
+#
+# Enables some debugging commands
+#
+method cmdPrint(cmd)
+
+   case cmd[2] of{
+      "-internal": { Debug.Internal.cmdPrintInfo(cmd[3])   }
+      default:     { Debug.Print.cmdPrint(cmd)             }
+      }
+end
+
+#
+# Enables some debugging commands
+#
+method cmdEnable(cmd)
+
+   case cmd[2] of{
+      "-trace"   : { Debug.Trace.cmdEnableTraceVar(cmd) }
+      "-internal": { Debug.Internal.cmdEnable(cmd[3])   }
+      "-external": { Debug.External.cmdEnable(cmd[3])   }
+      default: {
+          DState.Write("\n\t OPS, do not know what to enable ?_
+                        \n\t Type \"help\" for assistance ")
+          }
+      }
+end
+
+#
+# Disables some debugging commands
+#
+method cmdDisable(cmd)
+
+   case cmd[2] of{
+      "-trace "  : { Debug.Trace.cmdDisableTraceVar(cmd) }
+      "-internal": { Debug.Internal.cmdDisable(cmd[3])   }
+      "-external": { Debug.External.cmdDisable(cmd[3])   }
+      default: {
+          DState.Write("\n\t OPS, do not know what to disable ?_
+                        \n\t Type \"help\" for assistance")
+          }
+      }
+end
+
+#
+# Finds out information about some of the debugging commands
+#
+method cmdInfo(cmd)
+
+   case cmd[2] of{
+      "-trace"   : { Debug.Trace.cmdTraceInfo(cmd)   }
+      "-internal": { Debug.Internal.cmdInfo(cmd[3])  }
+      "-external": { Debug.External.cmdInfo(cmd[3])  }
+      default: {
+          DState.Write("\n\t OPS, do not know what to find info for ?_
+                       \n\t Type \"help\" for assistance")
+          }
+      }
+end
+
+#         
+# General Help Command
+#
+method cmdHelp(cmd)
+
+   #write("\t This is command " || cmd[1])
+   if *cmd = 1 then {
+   case DState.State of {
+    NONE | LOAD | END:{
+      Message:="_
+      \n\t Applicable Commands are:_
+      \n\t load  : loads a new program into udb_
+      \n\t run   : runs the pre-loaded program under udb_
+      \n\t break : sets a break point in the source code_
+      \n\t clear : deletes an existing break point_
+      \n\t trace : to trace some of the program behaviors_
+      \n\t list  : prints out lines of the source code_
+      \n\t src   : prints out a list of the source files_
+      \n\t quit  : quits the current UDB Session_
+      \n\t help cmd : shows more info about a specific command"
+      }
+    PAUSE:{
+      Message:="_
+      \n\t Applicable Commands are:_
+      \n\t cont  : continue on a ful speed execution after a PAUSE_
+      \n\t step  : stepping one or more lines in the source code_
+      \n\t next  : same as step command except treating a \n\t\t_
+      \n\t         procedure call as one command or one line of code_
+      \n\t load  : loads a new program into udb_
+      \n\t run   : restarts the execution from the begining_
+      \n\t where : shows the current location info_
+      \n\t frame : shows the current stack frame info_
+      \n\t up    : moves up one ore more stack frame_
+      \n\t down  : moves down one or more stack frame_
+      \n\t print : prints out the value of a var in current frame_
+      \n\t bt    : prints out the back trace_
+      \n\t break : sets a break point in the source code_
+      \n\t clear : deletes an existing break point_
+      \n\t trace : to trace some of the program behaviors_
+      \n\t list  : to print out lines of the source code_
+      \n\t src   : prints out a list of the source files_
+      \n\t quit  : quits the current UDB Session_
+      \n\t help cmd : shows more info about a specific command"
+      }
+    ERROR:{
+      Message:="_
+      \n\t Applicable Commands are:_
+      \n\t where : shows the current location info_
+      \n\t bt    : prints out the back trace_
+      \n\t print : prints out the value of a var in current frame_
+      \n\t load  : loads a new program into udb_
+      \n\t run   : restarts the execution from the begining_
+      \n\t break : sets a break point in the source code_
+      \n\t clear : deletes an existing break point_
+      \n\t trace : to trace some of the program behaviors_
+      \n\t list  : to print out lines of the source code_
+      \n\t src   : prints out a list of the source files_
+      \n\t quit  : quits the current UDB Session_
+      \n\t help cmd : shows more info about a specific command"
+      }
+   }# end of case   
+   }
+   else{
+   case cmd[2] of {
+    "load":{
+      Message:="_
+      \n\t Loads a program into UDB. Use: \"load program\"_
+      \n\t load p     : loads program (p)_
+      \n\t load p arg : loads program (p) with argument (arg)"
+      }
+    "step":{
+      Message:="_
+      \n\t Steps into the next line in the source code_
+      \n\t step   : steps one line_
+      \n\t step n : steps (n) lines"
+      }
+    "run":{
+      Message:="_
+      \n\t Starts (or restarts) program execution_
+      \n\t run      : runs current loaded program_
+      \n\t run args : args list passed to program"
+      }
+    "next":{
+      Message:="_
+      \n\t next steps to next line even on function calls_
+      \n\t treats function call as only one operation_
+      \n\t next   : steps one line_
+      \n\t next n : steps (n) lines"
+      }
+    "frame":{
+      Message:="_
+      \n\t Prints out the Stack Frame info_
+      \n\t frame   : prints current stack frame info_
+      \n\t frame n : prints info about stack frame number (n)_
+      \n\t n=0: current frame, oldest frame has the bigest number_
+      \n\t look for \"help up\" and \"help down"
+      }
+    "up":{
+      Message:="_
+      \n\t Moves current frame pointer up in the execution stack_
+      \n\t up   : moves current frame pointer one frame up_
+      \n\t up n : moves current frame pointer (n) frames up_
+      \n\t look for \"help down\" and \"help frame\""
+      }
+    "down":{
+      Message:="_
+      \n\t Moves current frame pointer down in the stack_
+      \n\t down   : moves current frame pointer one frame down_
+      \n\t down n : moves current frame pointer (n) frames down_
+      \n\t look for \"help up\" and \"help frame\""
+      }
+    "quit":{
+      Message:="\n\t quit: Exits UDB. Use: \"quit\""
+      }
+    "help":{
+      Message:="\n\t help: for more help. Try \"help command\""
+      }
+    "print":{
+      Message:="_
+      \n\t Prints variable information:_
+      \n\t print       : prints globals and locals of current frame_
+      \n\t print var   : prints the var value from current frame_
+      \n\t print var i : prints tha var value from frame number i_
+      \n\t print -G    : prints all global vars_
+      \n\t print -L    : prints all local vars in current frame_
+      \n\t print -P    : prints all Formal Parameters"
+      }
+    "where":{
+      Message:="_
+      \n\t Prints the current position in the Source Code_
+      \n\t where_
+      \n\t look for \"help break\""
+      }
+    "cont":{
+      Message:="_
+      \n\t Continue to run at full speed after a break point_
+      \n\t continue_
+      \n\t look for \"help cont\""
+      }
+    "break":{
+      Message:="_
+      \n\t Sets a break point_
+      \n\t break        : prints all of the pre-set break points_
+      \n\t break num    : Sets a break at line number (num)_
+      \n\t break f num  : Sets a break in file f at line number num_
+      \n\t break Proc   : Sets a break at procedure named \"Proc\"_
+      \n\t break f Proc : Sets a break in file f at procedure \"Proc\""
+      }
+    "clear":{
+      Message:="_
+      \n\t Clears a break point_
+      \n\t clear        : Clears all of the pre-set break points_
+      \n\t clear num    : Clears break at line num in the current file_
+      \n\t clear f num  : Clears break in file f at line num_
+      \n\t clear Proc   : Clears break at procedure Proc in the current file_
+      \n\t clear f Proc : Clears break in file f at procedure Proc"
+      }
+    "watch":{
+      Message:="_
+      \n\t Sets a watch point on some var_
+      \n\t watch          : prints a list of all pre-set watch vars_
+      \n\t watch var      : break at every line the var can change,_
+      \n\t                  if the program is running, it watche for_ 
+      \n\t                  var in the local scope, otherwize it_
+      \n\t                  assumes that var is a global variable_
+      \n\t watch var proc : watch for local var in procedure proc"
+      }
+    "list":{
+      Message:="_
+      \n\t Prints out some source code lines_
+      \n\t list      : prints 10 lines from the current file centered_
+      \n\t             around the current line, another list cmd will_
+      \n\t             print the next 10 lines and so on_ 
+      \n\t list -    : prints the previous 10 lines from the current print_
+      \n\t list num  : prints 10 lines centered around the line num_
+      \n\t list Proc : prints 10 lines centered around the precedure Proc"
+      }
+    "src":{
+      Message:="_
+      \n\t Prints out a list of the source file names_
+      \n\t src    : prints all of the found & missing source file names_
+      \n\t src -f : prints only the loaded source file names_
+      \n\t src -m : prints only the unloaded source file names_
+      \n\t src -a : prints all of the source file names along with their path"
+      }
+    "trace":{
+      Message:="_
+      \n\t Sets a tracer on any variable or execution behavior of the program:_
+      \n\t trace var | var=[on|off]_
+      \n\t       -proc | -proc=[on | off] |_
+      \n\t       -proc [ call | fail | suspend | resume ]=[on | off]_
+      \n\t       -func | -func=[on | off] |_
+      \n\t       -func [ call | fail | suspend | resume ]=[on | off]_
+      \n\t       -oper | -oper=[on | off] |_
+      \n\t       -oper [ call | fail | suspend | resume ]=[on | off]_
+      \n\t       -scan | -scan=[on | off] |_
+      \n\t       -scan [ new  | fail | suspend | resume ]=[on | off]_
+      \n\t \"on\" and \"off\" are used to turn the tracer on and off_
+      \n\t when there is no on/off then the action is printing info_
+      \n\t ----------------------_
+      \n\t trace var             : prints the traced var info_
+      \n\t                         if the program is running, it assumes the_ 
+      \n\t                         var is in the local scope, otherwise it_
+      \n\t                         assumes that var is a global variable_
+      \n\t trace var p           : prints traced var info that is local to p_
+      \n\t trace var=[on|off]    : traces every value the var can have,_
+      \n\t trace var=[on|off] p  : traces a local var in procedure p_
+      \n\t --In oreder to set any of the following behavior tracers ON,_
+      \n\t   it must be set before the program is running/rerunning_
+      \n\t trace -proc           : prints all the traced procedure info_
+      \n\t trace -proc=[on|off]  : Sets the procdure tracer on/off _
+      \n\t trace -proc call      : prints the traced procedure calls_
+      \n\t trace -proc call=on   : Sets a tracer ON on every procedure call_
+      \n\t trace -proc call=off  : Sets a tracer OFF on every procedure call_
+      \n\t and the rest ar going in the same fashion"
+      }
+    default:{
+      Message:="\n\t Command not found. Type \"help\" for assistance"
+      } 
+   }#end of case
+   }# end of else
+   #make udb console takes no actions 
+   DState.State := SKIP
+   DState.Write(Message)
+end
+
+#
+#
+initially()
+
+   Debug  := Evaluator()
+
+   DState := Debug.DState           := 
+             Debug.Break.DState     := 
+             Debug.Watch.DState     := 
+             Debug.Step.DState      := 
+             Debug.Frame.DState     := 
+             Debug.Print.DState     := 
+             Debug.Trace.DState     :=
+             Debug.Internal.DState  := 
+             Debug.External.DState  := State()
+
+# Test : To test the inter-program event forwarding
+#        DState.external := debug.external
+end

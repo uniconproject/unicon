@@ -1,0 +1,144 @@
+
+#
+# stepping.icn
+# It handles UDB's stepping and continuing related tasks
+# Author: Ziad Al-Sharif
+# Date:   7-15-2008
+#
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+class Stepping(
+   DState,      # (Alias) object of type State class
+   step_count,  # the cmdStep optional counter, initial value 0, default 1
+   next_count,  # the cmdNext optional counter, initial value 0, default 1
+   nex_level,   # used with the next command to skip over a call
+   msg          # a string with latest message from this class 
+   )
+
+#
+# while next_count > 0, keep next until it is 0,
+# then stop there and change the state to step
+#
+method checkNext()
+   local  level
+   static once:=0 # To help not coming back to the calling line
+
+   level := keyword("level", Monitored)
+
+   if level > nex_level & once = 0 then{
+      next_count +:=1
+      once := 1
+      } 
+
+   if level = nex_level then{
+      if next_count > 1 then{
+         next_count -:= 1
+         }
+      else if next_count = 1 then{
+         next_count := 0
+         step_count := 1
+         DState.State := PAUSE
+         DState.RunCode := STEP
+         once := 0
+         }
+      }
+end
+
+#
+# Steps only one line of execution, treats procedure call as one operation
+# [next], [next n]; n's default value is one  
+#
+method cmdNext(cmd)
+   local count
+
+   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
+      if count := integer(cmd[2]) then
+	 next_count := count
+      else
+	 next_count := 1
+
+      nex_level := keyword("level", Monitored)
+      DState.Update(NEXT)
+      }
+   else {
+      DState.State := ERROR
+      msg   := "\n\t No program is running !!!_
+                \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(msg)
+      }
+end
+
+#
+# while step_count > 0, keep step until it is 0,
+# then stop there and make State := STEP
+#
+method checkStep()
+   local cur_line, cur_file
+
+   if step_count > 1 then{
+      step_count -:= 1
+      DState.State := RUN
+      DState.RunCode := NEXT
+   }else
+   if step_count = 1 then{
+      step_count -:= 1
+
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+
+      msg := "\n\t Stepping in: \n\t "||cur_file||"("||cur_line||"): "||
+             DState.srcFile.getSrcLine(cur_file, cur_line)
+      DState.Write(msg)
+
+      DState.State := PAUSE
+      DState.RunCode := STEP
+   }
+end
+
+#
+# Steps only on line of execution
+# [step], [step n]; n's default value is one
+#
+method cmdStep(cmd)
+   local count
+
+   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
+      if count := integer(cmd[2]) then
+         step_count := count
+      else
+         step_count := 1
+      DState.Update(STEP)
+      }
+   else {
+      DState.State := ERROR
+      msg := "\n\t No program is running !!!_
+              \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(msg)
+      }
+end
+
+#
+# Continue the full speed execution after a PAUSE
+# [cont]
+#
+method cmdContinue()
+
+   if DState.State = PAUSE & DState.RunCode ~= ERROR then
+      DState.Update(CONTINUE)      
+   else{
+      DState.State := ERROR
+      msg := "\n\t No program is running !!!_
+              \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(msg)
+      }
+end
+
+
+initially()
+
+   step_count := 0
+   next_count := 0
+   nex_level  := &null
+end

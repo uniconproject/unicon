@@ -1,0 +1,409 @@
+#
+# trace.icn
+# Handles the main dynamic tracing facilities supported by UDB
+# Author : Ziad Al-Sharif
+# Date   : Feb 24, 2008
+#
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+link evnames
+#link state
+
+
+#
+# This record is used by the trace Behavior
+#
+record traceRec(
+   fname, # is the source file name that has the current procedure
+   line,  # is the line in the source file that starts on 
+   level, # is the level of the procedure in the execution stack
+   pname, # is the procdure name
+   param  # is a string with the parameters and their values
+   )
+
+#
+# This record is used by checkTraceVar()
+#
+record traceVarRec(
+   fname, # is the file name
+   line,  # is the line number
+   vname, # is the variable name
+   value  # is an image of the variable value 
+   ) 
+
+#
+# This class handles both the variable and behavior tracer
+#
+class Tracing(
+   DState,       # An object of the class DebugState()
+   traceVarTable,# a table with keys from traceVarMask to a list of var values
+   traceState,   # a cset of &eventcode(s) of wanted traced fetures
+   traceTable,   # an eventcode maped to a list of trace behavior records
+   Message       # a string formated with the current message
+   )
+
+#
+# Check the Monitored program for a variable trace point
+# record traceVarRec(fname, line, vname, value) 
+#
+method checkTraceVar()
+   local fname, line, var, vinfo
+   static vname
+
+   var := &eventvalue
+   if member(DState.traceVarMask, var) then{
+      DState.RunCode := TRACE
+      vname := var
+      DState.eventMask ++:=cset(E_Value)
+      }
+   else if DState.RunCode = TRACE then{
+      fname := keyword("file", Monitored)
+      line  := keyword("line", Monitored)
+      vinfo := traceVarRec(fname ,line,vname, image(var))
+
+      if member(traceVarTable,vname) then
+         put(traceVarTable[vname],vinfo)
+      else
+         traceVarTable[vname]:=[vinfo]
+
+      DState.RunCode := RUN
+      DState.eventMask --:=cset(E_Value)
+      }
+end
+
+#
+# resolves the scope of the variable
+#
+method getVar(cmd)
+   local var, pname, i, old_State := DState.State
+
+   var := cmd[1]
+   # Note: we have to be smart about the scope of the watched variable
+   if cmd[2] then {
+      var ||:= "-" || cmd[2] # cmd[2] is the procedure name
+      }
+   else if old_State = LOAD then {
+      # we would assume that the watched variable is a global one  
+      var ||:="+"  # + is the global scope character
+      }
+   else if old_State = PAUSE then {
+      # assume? that the watched variable is local to where it is paused
+      pname := image(proc(Monitored, 0))
+      i := find(" ",pname) + 1
+      var ||:= "-" || pname[i:0]
+      }
+   return var
+end
+
+#
+# set a trace on a variable, used by cmdTrace
+#
+method traceVar(cmd)
+   local var
+
+   # if cmd is only "tracev"; will print all of the trace points info
+   if *cmd = 1 then{
+      printTraceVar()
+      return
+      }
+   
+   if *cmd = 2 then{
+      printTraceVar(cmd[2])
+      return
+      }
+   else{ 
+      var := getVar(cmd[2:0])
+      if member(DState.traceVarMask, var) then
+         Message := "\n\t There is already an existing trace point on: " || var
+      else{
+         insert(DState.traceVarMask, var)
+         Message := "\n\t A trace point successfully set at: "||var
+         }
+      } 
+   DState.Write(Message)
+end
+
+#
+# Print the out put of the traced variables
+#
+method printTraceVar(Var)
+   local L, r, var
+   
+    Message := ""
+    if /Var | *Var = 0 then{
+       every var := key(traceVarTable) do{
+          L := traceVarTable[var]
+          if *L > 0 then{
+             Message := "\n\t--The tracing info for \""||var||"\""
+             every r := !L do
+                Message ||:= "\n\t\t  " || r.fname ||"("|| r.line ||
+                             "): "|| r.vname||" = "||r.value
+             }
+          else
+             Message ||:= "\n\t\t var: "||var||" has no trace info yet!"
+          }
+       } 
+    else{
+       if type(Var) ~=="list" then  var := Var
+       else                         var := getVar(Var)
+       if L := traceVarTable[var] & type(L) == "list" then{
+          Message := "\n\t--The tracing info for \""||var||"\""
+          every r := !L do
+             Message ||:= "\n\t\t  " || r.fname ||"("|| r.line ||
+                          "): "|| r.vname||" = "||r.value
+          }
+       else
+          Message ||:= "\n\t var: "||var||" has no trace info yet!"
+       }
+    DState.Write(Message)   
+end
+
+#
+# Try to build the Behavior Tracer for some event in the traceState cset.
+#
+method checkTraceBehavior()
+   local i, x, R
+   local fname, line, level, pname, param := ""
+
+   if member(traceState, &eventcode) then{
+      fname := keyword("file", Monitored) | "?"
+      line  := keyword("line", Monitored) | "?"
+      level := keyword("level", Monitored)| "?"
+      pname := image(&eventvalue)
+
+      case &eventcode of{
+         !ProcMask:{
+             every x := paramnames(Monitored,0) do{
+                 i := variable(x, Monitored,0)
+                 param ||:= x ||"="||image(i)||", "
+                 }
+             param := param[1:-2]
+             R:= traceRec(fname, line, level, pname, param)
+             }
+         default:{
+             R:= traceRec(fname, line, level, pname, &null)
+             }
+         }
+      if member(traceTable, &eventcode) then
+         put(traceTable[&eventcode], R)
+      else
+         traceTable[&eventcode] := [R]
+   }
+end 
+
+#
+# prints the execution behavior tracer info
+# it is used by traceBehavior()
+#
+method printTraceBehavior(ecodeSet)
+   local x, L, e, traced
+
+   every e := !ecodeSet do{
+      if member(traceState, e) then{
+         Message := "\n\t--The tracing info for \""||evnames(e)||"\":"
+         L := traceTable[e]
+         if type(L) ~== "list" then next
+         if member(ProcMask, e) then
+            every x := !L do
+               Message ||:= "\n\t  "||x.level ||", "||x.fname||", "||x.line||
+                            ": "||x.pname  ||"("||x.param||")."
+         else
+            every x := !L do
+               Message ||:= "\n\t -"||x.fname||", "||x.line
+         }
+      else
+         Message:="\n\t No trace is ON for \""||evnames(e)||"\" to print._
+                   \n\t Try \"help trace\" for assistance"
+      DState.Write(Message)
+      }
+end
+
+#
+# get a cset of the behaviors
+#
+method getBehavior(behavior)
+   local ecodeSet
+
+   case behavior of{
+      "-proc"     :{ ecodeSet := ProcMask }
+      "-func"     :{ ecodeSet := FncMask  }
+      "-conv"     :{ ecodeSet := ConvMask }
+      "-oper"     :{ ecodeSet := OperMask }
+      "-scan"     :{ ecodeSet := ScanMask }
+      "-pcall"    :{ ecodeSet := cset(E_Pcall)  }
+      "-pfail"    :{ ecodeSet := cset(E_Pfail)  }
+      "-psuspend" :{ ecodeSet := cset(E_Psusp)  }
+      "-presume"  :{ ecodeSet := cset(E_Presum) }
+      "-fcall"    :{ ecodeSet := cset(E_Fcall)  }
+      "-ffail"    :{ ecodeSet := cset(E_Ffail)  }
+      "-fsuspend" :{ ecodeSet := cset(E_Fsusp)  }
+      "-fresume"  :{ ecodeSet := cset(E_Fresum) }
+      "-ocall"    :{ ecodeSet := cset(E_Ocall)  }
+      "-ofail"    :{ ecodeSet := cset(E_Ofail)  }
+      "-osuspend" :{ ecodeSet := cset(E_Osusp)  }
+      "-oresume"  :{ ecodeSet := cset(E_Oresum) }
+      "-snew"     :{ ecodeSet := cset(E_Snew)   }
+      "-sfail"    :{ ecodeSet := cset(E_Sfail)  }
+      "-ssuspend" :{ ecodeSet := cset(E_Ssusp)  }
+      "-sresume"  :{ ecodeSet := cset(E_Sresum) }
+   }# end case
+   return ecodeSet
+end
+
+#
+# used only by the Trace Behavior stuff
+#
+method getTraceNames(ecode)
+   local e, ename := ""
+
+   every e := !ecode do
+      ename ||:= "\n\t " || evnames(e)
+   return ename
+end
+
+#
+# Process the trace behavior command
+# it isused by cmdTrace()
+#
+method traceBehavior(cmd)
+   local e, ecodeSet, ename
+ 
+   if *cmd > 2 then{
+      ecodeSet := getBehavior(cmd[2])
+      write("--------->",type(ecodeSet))
+      traceState ++:= ecodeSet
+      DState.eventMask ++:= ecodeSet
+      Message := "\n\t The traceState has a new trace code: "||
+                 getTraceNames(ecodeSet)
+      DState.Write(Message)
+      }
+   else{
+      Message := "\n\t The traceState has a new trace code: "||
+                 getTraceNames(ecodeSet)
+      # needs to be solved with the valueMask
+      # traceBehaviorMask := set(cmd3) ????
+      }  
+end
+
+#
+# build Variable(s) and/or Behavior(s) tracer  
+#
+method cmdTrace(cmd)
+
+   if DState.isValidCommand(cmd) then{
+      if *cmd >= 2 then{
+         if cmd[2][1] == "-" then traceBehavior(cmd)
+         else                     traceVar(cmd)
+         }
+      else{
+         Message := "\n\t unknown trace action !!?_
+                     \n\t try \"help trace\" for assistance"
+         DState.Write(Message)
+         }
+      DState.State := SKIP
+   }
+end
+
+#
+# Enable the trace on a variable and/or a behavior
+#
+method cmdEnableTrace(cmd)
+   local var, ecodeSet
+
+   if DState.isValidCommand(cmd) then{
+   if *cmd > 2 then{ 
+      if cmd[3][1] == "-" then{ 
+      #Enable Trace Behavior, ie: enable trace -pfail [proc]
+         ecodeSet := getBehavior(cmd[3])
+         traceState ++:= ecodeSet
+         DState.eventMask ++:= traceState     
+         Message := "\n\t The traceState has enabled with the following_
+                     new traces: "|| getTraceNames(ecodeSet)
+         DState.Write(Message)
+         }
+      else{ 
+      #Enable Trace Var, ie: enable trace var [proc]
+         var := getVar(cmd[3:0])      
+         if member(DState.traceVarMask, var) then
+            Message := "\n\t The trace point at: "||var||" is already enabled"
+         else{
+            insert(DState.traceVarMask, var)
+            Message := "\n\t The trace point is successfully enabled at: "||var
+            } 
+         }
+      }  
+   else 
+      Message := "\n\t Unknown command \n\t Type help enable for assistance"
+   DState.Write(Message)
+   }
+end 
+
+#
+# Disable the trace on the variable
+#
+method cmdDisableTrace(cmd)
+   local var, ecodeSet
+
+   if DState.isValidCommand(cmd) then{
+   if *cmd > 2 then{
+      if cmd[3][1] == "-" then{ 
+      #Disable Trace Behavior, ie: disable trace -pfail [proc]
+         ecodeSet := getBehavior(cmd[3])
+         traceState --:= ecodeSet
+         DState.eventMask --:= traceState
+         Message := "\n\t The traceState has disabled the following traces:"||
+                     getTraceNames(ecodeSet)
+         DState.Write(Message)
+         }
+      else{ 
+      #Disable Trace Var, ie: disable trace var [proc]
+         var := getVar(cmd[3:0])
+         if not member(DState.traceVarMask, var) then
+            Message := "\n\t The trace point at: "||var||" is already disabled"
+         else{
+            delete(DState.traceVarMask, var)
+            Message := "\n\t The trace point is successfully disabled at: "||var
+            } 
+         }
+      } 
+   else 
+      Message := "\n\t Unknown command \n\t Type help disable for assistance"
+   DState.Write(Message)
+   }
+end
+
+#
+# Disable the trace on the variable
+#
+method cmdTraceInfo(cmd)
+   local var, ecodeSet
+
+   if DState.isValidCommand(cmd) then{
+   if *cmd > 2 then{
+      if cmd[3][1] == "-" then{ 
+      #Disable Trace Behavior, ie: info trace -pfail [proc]
+         ecodeSet := getBehavior(cmd[3])
+         printTraceBehavior(ecodeSet)
+         }
+      else{ 
+      #Disable Trace Var, ie: info trace var [proc]
+         var := getVar(cmd[3:0])
+         printTraceVar(var)
+         }
+      } 
+   else{ 
+      Message := "\n\t Unknown command \n\t Type help disable for assistance"
+      DState.Write(Message)
+      } 
+   }
+end
+
+initially()
+
+   # tracing stuff
+   traceState    := cset('')
+   traceTable    := table()
+   traceVarTable := table()
+end

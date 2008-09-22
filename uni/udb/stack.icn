@@ -1,0 +1,160 @@
+
+#
+# stepping.icn
+# It handles UDB's stepping and continuing related tasks
+# Author: Ziad Al-Sharif
+# Date:   7-15-2008
+#
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+class Stack(
+   DState,     # (Alias) object of type State class
+   Message     # a string with latest message from this class 
+   )
+
+#
+# writes down the current frame information, 
+# used by cmdPrint, cmdFrame, cmdUp, cmdDown
+#
+method printFrame(frame)
+   local x, i, level, p:="("
+   
+   level := keyword("level", Monitored) -1
+   if 0 <= frame <= level then{
+      Message   := "\t #"|| frame
+      Message ||:= ": "|| image(proc(Monitored, frame))
+      every x := paramnames(Monitored,frame) do{
+         i := variable(x, Monitored,frame)
+         p ||:= x||"="||image(i)||", "
+         }
+      p:= p[1:-2]
+      Message ||:= p ||")"
+      }
+   else
+      Message := " The \""||frame ||"\" is not a valid frame number"||
+                 " valid frames are (0 <= frame_num <= "||level||")"  
+   DState.Write(Message)
+end
+
+#
+# Moves one frame up on the execution stack
+#
+method cmdUp(cmd)
+   local level
+
+   level := keyword("level",Monitored) - 1 
+   if DState.State = PAUSE then {
+      if DState.cur_Frame = level then
+         DState.Write("\t No more Frames up !!!")
+      else {
+         DState.cur_Frame +:= 1
+         printFrame(DState.cur_Frame)
+	 }
+      }
+   else {
+      DState.State := ERROR
+      Message   := "\n\t No program is running !!!_
+                    \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(Message)
+      }
+end
+
+#
+# Moves one frame down on the execution stack
+#
+method cmdDown(cmd)
+
+   if DState.State = PAUSE then {
+      if DState.cur_Frame = 0 then
+         DState.Write("\t No more Frames Down !!!")
+      else {
+         DState.cur_Frame -:= 1
+         printFrame(DState.cur_Frame)
+	 }
+      }
+   else {
+      DState.State := ERROR
+      Message   := "\n\t No program is running !!!_
+                    \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(Message)
+      }
+end
+
+#
+# Prints out the current stack frame info,
+# It can be used to jump into a specific frame, [f n]
+#
+method cmdFrame(cmd)
+   local frame, level 
+
+   if DState.State = PAUSE then{ 
+      if *cmd = 1 then {
+         printFrame(DState.cur_Frame)
+	 }
+      else{
+         if frame := integer(cmd[2]) then
+            printFrame(frame)
+         else
+            DState.Write("cmdFrame, What ???")
+         }
+      }
+   else {
+      DState.State := ERROR
+      Message   := "\n\t No program is running !!!_
+                    \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(Message)
+      }
+end
+
+#
+# Prints out where you are in the code, what file, and what line.
+#
+method cmdWhere()
+   local i, x, cur_file, cur_line, p, param
+
+   if DState.State = PAUSE then{
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      p        := image(proc(Monitored,0))
+      param:="("
+      every x := paramnames(Monitored,0) do{
+         i := variable(x, Monitored,0)
+         param ||:= x||"="||image(i)||", "
+         }
+      if *param>2 then param:= param[1:-2] 
+      param ||:= ")"
+     
+      Message := "\n\t "||cur_file||"("||cur_line||")"||": "|| p||param ||
+                 "\n\t Code: "|| DState.srcFile.getSrcLine(cur_file, cur_line)  
+      }
+   else {
+      DState.State := ERROR
+      Message := "\n\t No program is running !!!_
+                  \n\t Try \"run\", or Type \"help\" for assistance"
+      }
+   DState.Write(Message)
+end
+
+#
+# To back trace the executin in the stack
+# [bt]
+#
+method cmdBacktrace()
+   local level, frame
+
+   level := keyword("level", Monitored) - 1
+   if DState.State = PAUSE then
+      every frame := 0 to level do
+         printFrame(frame) 
+   else{
+      DState.State := ERROR
+      Message := "\n\t Execution Stack is empty\n\t Try \"run\" first"
+      DState.Write(Message)
+      }
+end
+
+initially()
+
+end

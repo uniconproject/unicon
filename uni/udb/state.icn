@@ -1,0 +1,211 @@
+
+#
+# state.icn
+# Handles the main debugging state properties
+# Author : Ziad Al-Sharif
+# Date   : Feb 24, 2008
+#
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+#
+# This class is used to handle the current debugging state of UDB 
+#
+class State(
+   TP,          # TargetProgram and its arguments
+
+   State,       # Debugging state such RUN, PUSE, etc
+   RunCode,     # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
+
+   eventMask,   # the cset of the main evaluator set of event codes 
+   valueMask,   # table used for break points and watch points set of masks
+   breakMask,   # a set of the E_Line Event-values that we like to break on
+   watchMask,   # a set of the E_Assign Event-values that we like to watch for
+   internalMask,# The cset of the active internals event mask
+   externalMask,# The cset of the active externals event mask   
+
+   global_vars, # a set contains all of the global variable names
+   cur_Frame,   # points at the last investigated frame, using up,down,frame n
+
+   Message,     # a string formated with the current message
+
+   srcFile,     # an instance of the SourceFile class
+   icode,       # an instance of the Icode class
+   #external,   # To Test the performance of Eve Architecture 
+   traceVarMask # a set of the variable names that we like to trace 
+   )
+
+#
+# prints a message out into a console, message box, and so
+#
+method Write(Msg)
+
+   /Msg := Message
+   write(Msg)
+   Message := ""
+end
+
+#
+# check if the current command is valid
+#
+method isValidCommand(cmd)
+
+   if State = (LOAD | PAUSE | END) then
+      return
+   else{
+      State := ERROR
+      Message   := "\n\t No Program is Loaded_
+                    \n\t Type \"help "||cmd[1]||"\" for assistance"
+      Write(Message)
+      fail
+      }
+end
+
+#
+# Update the debug state 
+# cmd =("run" | "rerun" | "continue" | "step" | "next"| "fresh" | "break")
+# enable/disable -internal/external,
+#  
+method Update(state)
+
+   if /state then state := State else  State := state
+   case state of {
+     LOAD    |
+     RUN     | 
+     RERUN   | 
+     CONTINUE:{
+       #State := state
+       eventMask := cset(E_Error || E_Exit)
+       # Break points related
+       if *breakMask > 0 then{
+         if ((*internalMask > 0 | *externalMask > 0)  &
+             (member(internalMask,E_Line) | member(externalMask,E_Line))) then
+            eventMask ++:= cset(E_Line) ++ internalMask ++ externalMask
+         else{
+            eventMask ++:= cset(E_Line) ++ internalMask ++ externalMask
+            valueMask[E_Line] := breakMask
+            }
+         }
+       else{ 
+         delete(valueMask,E_Line)
+         eventMask ++:= internalMask ++ externalMask
+         }
+
+       # Watch points related
+       if *watchMask > 0 | *traceVarMask > 0 then{
+         if ((*internalMask > 0 | *externalMask > 0)  &
+            (member(internalMask,E_Assign) | member(externalMask,E_Assign)))then
+            eventMask ++:= cset(E_Assign) ++ internalMask ++ externalMask
+         else{
+            eventMask ++:= cset(E_Assign) ++ internalMask ++ externalMask
+            valueMask[E_Assign] := watchMask
+            }
+         }
+       else{ 
+          delete(valueMask,E_Assign)
+          eventMask ++:= internalMask ++ externalMask
+          }
+       }
+    STEP |
+    NEXT :{
+       #State := state
+       if not member(eventMask, E_Line) then eventMask ++:= cset(E_Line)
+       if \valueMask[E_Line] then            delete(valueMask, E_Line)
+       eventMask ++:= internalMask ++ externalMask
+       }
+    default:{
+       Write("OPs: Start Over !!!")
+       Fresh()
+       }
+    }
+end
+
+#
+# Initialize the UDB Debugging State
+#
+method initializeState(tp)
+   local x, src, found, missing
+
+   # This is only when the TP is passed the start of udb, i.e: ./udb test
+   # in either case th ErrorCode will be initialized
+   State := NONE
+   if tp[1] then{
+      TP := tp
+      # check if the TP is loadable and accessable.
+      if stat(TP[1]) then{
+         if src := icode.getSrcFileNames(TP[1]) then{
+            srcFile.loadSourceFiles(TP[1], src)
+            State := LOAD
+            ###State := RUN ###### TEST : For the sake of getting the Time right
+            Message ||:= "\n\t "|| srcFile.exeName ||" : is a "||
+                        icode.icodeVersion 
+            found := *srcFile.foundFiles
+            if found > 0 then 
+               Message ||:=  "\n\t "|| found ||" Source file(s) found"
+            missing := *srcFile.missingFiles
+            if missing > 0 then
+               Message ||:=  "\n\t and "|| missing ||" Source file(s) missing"
+            Message ||:= "\n\t Type \"help\" for assistance _
+                               or \"src\" for file(s) name"
+            ### TEST : To test the performance of Eve Architecture
+            ###external.loadExternal(["loadMonitor","testeve"])
+            }
+         else{
+            Message ||:= "\n\t Can not get the Source File Names_
+                        \n\t Type \"help\" for assistance."
+            }
+      }
+      else{
+         State := ERROR
+         Message ||:= "\n\t Could not access \"" || TP[1] ||"\""||
+                      "\n\t Type \"help\" for assistance."
+         State := NONE
+      }
+   }
+   else{
+      State := ERROR
+      Message ||:= "\n\t A program must be pre-loaded_
+                    \n\t Type \"help\" for assistance"
+      RunCode := NONE
+   }
+   Write(Message)
+end
+
+#
+# refresh the debugging state to the default settings
+#
+method Fresh() 
+
+   #Initilly, eventMask does not contain the E_Line & E_Assign events
+   #If there is a break point, E_Line will be added to the eventMask,
+   #and the break point linenum will be inserted in valueMask[E_Line] set
+   #Also, initially the eventMask will not contain the E_Assign event
+   #If there is a watch point then the E_Assign will be added and the 
+   #variable will be added to the watchMask set.
+ 
+   eventMask    := cset(E_Error || E_Exit)
+   internalMask := cset('')
+   externalMask := cset('')
+
+   valueMask    := table()
+   breakMask    := set()
+   watchMask    := set()
+   global_vars  := set()
+   traceVarMask := set()
+   cur_Frame    := 0 # the current active frame is the last one
+
+   Message      := VERSION||"\n"
+end
+
+initially()
+   TP        := []
+
+   State     := NONE
+   RunCode   := NONE
+
+   icode     := Icode()
+   srcFile   := SourceFile()
+
+   Fresh()
+end

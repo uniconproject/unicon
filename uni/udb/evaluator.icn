@@ -1,0 +1,107 @@
+ 
+#
+# evaluator.icn
+# Handles the main Runtime Monitoring facilities
+# Author : Ziad Al-Sharif
+# Date   : Feb 24, 2008 
+#
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+link evinit
+link image
+link ximage
+link getpaths
+link evnames
+
+#
+# Contains the core of the udb debugging facilities 
+#
+class Evaluator(
+   Break,       # An object of the BreakPoint() class 
+   Watch,       # An object of the WatchkPoint() class 
+   Frame,       # An object of the Stack() class
+   Print,       # An object of the Data() class
+   Step,        # An object of the Stepping() class
+   Trace,       # An object of the Tracing() class
+   Internal,    # An object of the Internals() class
+   External,    # An object of the Externals() class
+   DState,      # An object of the State() class
+   
+   Message      # a string formated with the current message
+   )
+
+#
+# This was in the evaltree.icn unicon library, we had to modify 
+# it some how for the need of the udb debugging facilities. 
+#
+method startEvaluator()
+
+   while EvGet(DState.eventMask, DState.valueMask) do {
+     #write("-->",evnames(&eventcode), ": ", image(&eventvalue))
+     if DState.State = RUN then {
+        case &eventcode of{
+          E_Line:{
+            Break.checkBreakPoint()
+            if DState.RunCode = NEXT then{ Step.checkNext() }
+            if DState.RunCode = STEP then{ Step.checkStep() }
+            }
+          E_Assign | E_Value :{
+            # check for (Watch|Trace) point on var
+            if *DState.watchMask > 0    then Watch.checkWatchPoint()
+            if *DState.traceVarMask > 0 then Trace.checkTraceVar()
+            }
+          E_Exit:{
+            DState.State := END
+            }
+          E_Error:{
+            DState.State := PAUSE
+            DState.RunCode := ERROR
+            showRunError()
+            }
+        } # end of case ecode
+        #Trace.checkTraceBehavior() # needs extra check
+        if Internal.enabled > 0 & 
+           member(Internal.eventMask, &eventcode) then Internal.forward()
+        if External.enabled > 0 & 
+           member(External.eventMask, &eventcode) then External.forward()
+        } 
+        else
+           Write("The State is Not a RUN State !!!")
+     
+     if DState.State = PAUSE then{ suspend }
+     if DState.State = END   then{ return  }
+     }
+end
+
+#
+# prints the RunTime error Messages
+#
+method showRunError()
+   local cur_line, cur_file, cur_p, src
+
+   cur_file := keyword("file", Monitored)
+   cur_line := keyword("line", Monitored)
+   cur_p := image(image(proc(Monitored, 0 )))
+   Message := "\n\t Run-time error : " ||keyword("errornumber",Monitored)||
+              "\n\t "||cur_p||"; File "||cur_file||
+              "; Line "||cur_line||"; Col "||keyword("column",Monitored)
+   Message ||:="\n\t "||DState.srcFile.getSrcLine(cur_file, cur_line)
+   Message ||:="\n\t "||keyword("errortext",Monitored)
+   DState.Write(Message)
+end
+
+initially()
+
+   Break    := BreakPoint()    # The break points techniques
+   Watch    := WatchPoint()    # The watching points techniques
+   Frame    := Stack()         # The stack and frames related techniques
+   Print    := Data()          # The printing techbiques
+   Step     := Stepping()      # The stepping and continuing Techniques
+   Trace    := Tracing()       # The Dynamic Tracing Techniques
+   Internal := Internals()     # The Internal monitors and/or visualizers 
+   External := Externals()     # The External monitors with co-expression switch
+
+   Message  := "\t "
+end

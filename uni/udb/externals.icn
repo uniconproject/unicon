@@ -1,0 +1,75 @@
+
+#
+# externals.icn
+# handles the external monitores that can be loaded 
+# to run in-conjunction with UDB
+# Author  : Ziad Al-Sharif
+# Date    : Feb 24, 2008
+#
+
+$include "defaults.icn"
+
+#
+# It is used to keep the related information of the external monitors
+#
+record ExternalClient(
+   Name,      # The name of the external monitor program
+   Id,        # a unique identification number
+   State,     # The current external monitor program state
+   Prog,      # The program handler (co-expression) of the external monitor
+   eventMask  # The eventmask of the external monitor program
+   )
+
+#
+# Loads and initializes the external monitor
+#
+class Externals : Agent()
+
+#
+# This method receives a command list from UDB and loads an
+# external monitor program into a new co-expression
+#
+method cmdLoad(name)
+   local prog, mask, client, old
+   
+   prog := load(name)
+   variable("&eventsource", prog ) := &main
+   mask := @ prog
+   count +:= 1
+   enabled +:= 1
+   insert(activeClients, name)
+   client := ExternalClient(name, count, ENABLED, prog, mask)
+   
+   # if you have tow or more monitors of the same name,
+   # then build a list for them
+   if /Clients[name] then{
+      Clients[name] := client
+      build_Mask()
+      } 
+   else{
+      if type(Clients[name]) == "list" then
+         put(Clients[name], client)
+      else if type(Clients[name]) == "record" then{
+         old := Clients[name]
+         Clients[name] := [old]
+         } 
+      }
+end
+
+#
+# It handles the updates in each client by forwarding relevent events
+#
+method forward()
+   local name
+
+   ## what if there is more than one monitor loaded with the same name??
+   every name := !activeClients do
+      if member(Clients[name].eventMask, &eventcode) then
+         event(,,Clients[name].Prog)
+end
+
+#
+#
+initially()
+   self.Agent.initially("external")
+end

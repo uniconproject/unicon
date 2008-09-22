@@ -1,0 +1,613 @@
+
+#
+# data.icn
+# Handles the print debugging faclities found in debuggers such as GDB
+# Author  : Ziad Al-Sharif
+# Date    : Feb 24, 2008
+#
+
+$include "evdefs.icn"
+$include "defaults.icn"
+
+#
+# This class contains the classical/standard debugging techniqies
+#
+class Data(
+   DState,  # (Alias) object of type State class
+   Message  # a string formated with the current message
+   )
+
+#
+# prints out all of the Global Variables state in some level
+#
+method printGlobals(level)
+   local x, i
+        
+   /level := DState.cur_Frame # 0 if no up/down involved
+   
+   Message := ""
+   every x := !DState.global_vars do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+   }
+   DState.Write(Message)
+end
+
+#
+# prints out all of the Local Variables for some Level  
+#
+method printLocals(level)
+   local x, i
+
+   /level := DState.cur_Frame # 0 if no up/down involved
+
+   Message := ""
+   every x := localnames(Monitored,level) do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+   }
+   DState.Write(Message)
+end
+
+#
+# prints out all of the Formal Parameters for some Level  
+#
+method printParams(level)
+   local x, i
+
+   /level := DState.cur_Frame # 0 if no up/down involved
+
+   Message := ""
+   every x := paramnames(Monitored,level) do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+   }
+   DState.Write(Message)
+end
+
+#
+# returns the expression value or fails
+# used by cmdPrint() and assignVar()  
+#
+method getVarValue(expr, level)
+   local Value, ref, var, Var, index:=[]
+
+   index := parsePrintExpression(expr)
+   if *index = 0 then fail
+
+   var := get(index)
+   if Var := variable(var, Monitored, level) then{
+      if (ref := getVarReference(Var, index, level)) & *index = 0 then{
+         Value := if integer(ref) = ref then integer(ref) 
+                  else if real(ref) = ref then real(ref)
+                  else ref
+         return Value
+         }
+      else fail 
+      }
+   else{
+      if *index = 0 then{
+         Value := if integer(expr) = expr then integer(expr) 
+                  else if real(expr) = expr then real(expr)
+                  else string(expr)
+         return Value
+         }
+      else fail 
+      } 
+   return Value
+end
+
+
+#
+# getVarReference is used by printVar and cmdPrint to 
+# get a reference for an element of a structure
+#
+method getVarReference(Var, index, level)
+   local v, j, i1, i2, x, fld
+
+   if *index = 0 then return Var
+
+   case type(Var) of{
+      "integer"|"real"|"null"|"cset"|"set"|"file"|"window"|
+      "procedure"|"co-expression"|"external":{
+           return Var
+           }
+      "string":{
+           x := get(index)
+           if j := find(":",x) then{
+              i1 := integer(x[1:j])
+              i2 := integer(x[j+1:0])
+              Var := Var[i1:i2]
+              return Var
+              }
+           else if v := variable(x, Monitored, level, 1) | integer(x) then{
+              Var := Var[v]
+              return Var
+              }
+           fail
+           }
+      "list":{
+           x := get(index)
+           if v := variable(x, Monitored, level, 1) | integer(x) then{
+              if type(v) == "integer" & member(Var, v) then{
+                 Var := Var[v]
+                 return getVarReference(Var, index, level)
+                 }
+              }
+           fail
+           }
+      "table":{
+           x := get(index)
+           if v := variable(x, Monitored, level, 1) |
+                                      integer(x) | string(x[2:-1]) then{
+              if member(Var, v) then{
+                 Var := Var[v]
+                 return getVarReference(Var, index, level)
+                 }
+               } 
+           fail
+           }
+      # "record" & "object" do not have the word "record" in their type
+      default:{
+           x := get(index)
+           every fld := fieldnames(Var) do{
+              if x === fld then{
+                 Var := Var[string(x)]
+                 return getVarReference(Var, index, level)
+                 }
+              }
+           fail
+           }
+      }
+end
+
+#
+# setVarReference is used by assignVar() and cmdPrint()
+# to assign a value to any variable or element of a structure
+#
+method setVarReference(lvar, index, level, value)
+   local v, j, i1, i2, x, fld, Var
+
+   DState.Write("value = ",value)
+
+   if *index = 0 then{
+      if variable(lvar, Monitored, level) then{
+         variable(lvar, Monitored, level, 1) := value
+         return
+         }
+      else fail
+      } 
+   
+   Var := variable(lvar, Monitored, level, 1)
+   if \Var then{
+      if *index ~= 0 then{
+      while *index > 0 do{
+      x := get(index)
+      case type(Var) of{
+        "integer"|"real"|"null"|"cset"|"set"|"file"|"window"|
+        "procedure"|"co-expression"|"external":{
+           if *index = 0 then{
+              #variable(lvar, Monitored, level, 1) := value 
+              Var := value
+              return 
+              } 
+           else fail
+           }
+        "string":{
+           if *index = 0 then{
+              if j := find(":",x) then{
+                 # what if either of i1 or i2 were variables??
+                 i1 := integer(x[1:j])
+                 i2 := integer(x[j+1:0])
+                 variable(lvar, Monitored, level, 1) := 
+                          Var[1:i1]|| string(value) ||Var[i2:0]
+                 }
+              else if v := variable(x, Monitored, level, 1) | integer(x) then{
+                    variable(lvar, Monitored, level, 1) := 
+                             Var[1:v]||string(value) || Var[v+1:0]
+                 } 
+              return
+              }
+           else{
+              fail
+              }
+           }
+        "list":{
+           if v := variable(x, Monitored, level, 1) | integer(x) then{
+              if type(v) == "integer" & member(Var, v) then{
+                 if *index = 0 then{
+                    Var[v] := value
+                    return
+                    } 
+                 else Var := Var[v]
+                 }
+              else fail
+              }
+           else fail
+           }
+        "table":{
+           if v := variable(x, Monitored, level, 1) |
+                                      integer(x) | string(x[2:-1]) then{
+              if member(Var, v) then{
+                 if *index = 0 then{
+                    Var[v] := value
+                    return
+                    }
+                 else Var := Var[v]
+                 }
+              else fail
+              } 
+           else fail
+           }
+        # "record" & "object" do not have the word "record" in their type
+        default:{
+           every fld := fieldnames(Var) do{
+              if x === fld then{
+                 if *index = 0 then{
+                    Var[string(x)]:= value
+                    return 
+                    }
+                 else{
+                    Var := Var[string(x)]
+                    break
+                    } 
+                 }
+              }#end every 
+           }#end default 
+      }#end case
+      }#end while
+      }#end if *index ~= 0 then
+      else{
+         variable(lvar, Monitored, level, 1) := value
+         DState.Write("hmmmm!!!!")
+         return
+         }
+      }
+   else fail
+end
+
+#
+# finds the var reference and prints its value acording
+# to the action such as */! or the value itself
+#
+method printVar(expr, level)
+   local Var, var, index
+   local x, j, action, ref
+
+   if j:=find("*"|"!",expr) then{
+      action := expr[j]
+      expr := expr[j+1:0]
+      }
+
+   index := parsePrintExpression(expr)
+   if *index = 0 then{
+      Message :="\n\t\""||expr||"\" is Unkown Expression !!!"
+      DState.Write(Message)
+      return
+      }
+   
+   var := get(index)
+   if Var := variable(var, Monitored, level) then
+      if (ref := getVarReference(Var, index, level)) & *index = 0 then{
+         Message := "\n\t " || expr || " = "
+         case action of{
+            "*" :{ Message ||:= *ref }
+            "!" :{ Message ||:="{ "
+                   every x := !ref do
+                      Message ||:= image(x)||", "
+                   Message:=Message[1:-2] || " }"
+                 }
+             default:{
+                 #DState.Write("---type of ",expr," is : ", type(ref))
+                 if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
+                     find("record",image(ref))) & *ref > 1 then
+                        Message ||:= ximage(ref)
+                 else{
+                        Message ||:= image(ref)
+                        #Message ||:= "\n\t ..................!"
+                     }
+                 }
+             }
+         }
+      else Message :="\n\t\""||expr||"\" is Unkown Expression !!!"
+   else Message := "\n\t The variable \""|| var ||
+                   "\" is not within the current frame"
+   DState.Write(Message)
+end
+
+#
+# changes the var value according to the user input
+#
+method assignVar(expr, level)
+   local j, lexpr, rexpr, lhs, lvar , rvalue
+
+   if j := find(":=", expr) then{
+       lexpr := expr[1:j]
+       rexpr := expr[j+2:0]
+       }
+   else if j := find("=", expr) then{
+       lexpr := expr[1:j]
+       rexpr := expr[j+1:0]
+       }
+
+   lhs := parsePrintExpression(lexpr)
+   if *lhs = 0 then{
+      Message :="\n\t The expression \""||expr||"\" is Unkown !!!"
+      DState.Write(Message)
+      return
+      }
+
+   if rvalue := getVarValue(rexpr, level) then{
+      lvar := get(lhs)
+      if setVarReference(lvar, lhs, level, rvalue) then
+         Message :="\n\t Assigning \""||lexpr||"\" with \""||
+                    rexpr||"\" has been succeeded"
+      else
+         Message :="\n\t Assigning \""||lexpr||"\" with \""||
+                    rexpr||"\" has been failed"
+      }
+   else 
+      Message := "\n\t The RHS expr \""||rexpr||"\" is Unknown !!!"
+
+   DState.Write(Message)
+end
+
+#
+# Prints out a variable and it's current value. Variables from previous
+# procedures that are still in the stack can also be viewed.
+#
+method cmdPrint(cmd)
+   local level, expr, lexpr, rexpr, x, j
+
+   if DState.State ~= PAUSE then{
+      DState.State := ERROR
+      Message := "\n\t No program is running !!!_
+                  \n\t Try \"run\", or Type \"help\" for assistance"
+      DState.Write(Message)
+      return
+      }
+
+   if cmd[3] then  level := integer(cmd[3]) | 0 
+   else            level := DState.cur_Frame 
+      
+   if expr := cmd[2] then{
+      if expr == ("-g" |"-G" | "-globals") then{
+         printGlobals()
+         return
+         }
+      else if expr == ("-l" | "-L" | "-locals") then{
+         printLocals()
+         return
+         }
+      else if expr == ("-p" | "-P" | "-params") then{
+         printParams()
+         return
+         }
+      else if j:=find("&", expr) then{ # keywords
+         # There is a bug here when = or := is used???
+         if j := find(":=",expr) then{ # p &pos:=10
+            lexpr := expr[1:j]
+            rexpr := expr[j+2:0]
+            write("hhh ",lexpr ,"  ", getVarValue(rexpr,level))
+            #variable(lexpr, Monitored, level) := getVarValue(rexpr,level)
+            variable("&pos",Monitored) := 10
+            return
+            }
+         else if j := find("=", expr) then{ # p &pos=10
+            lexpr := expr[1:j]
+            rexpr := expr[j+1:0]
+            variable(lexpr, Monitored, level, 1) := getVarValue(rexpr,level)
+            return
+            }
+         else{ # p &pos 
+            Message := "\n\t "|| expr
+            expr := expr[j+1:0]
+            Message ||:=" = "||image(keyword(expr, Monitored))
+            DState.Write(Message)
+            return
+            }
+         }
+      else
+         if find("=", expr) then assignVar(expr, level)
+         else                    printVar(expr, level)
+      }
+   else{
+      #printFrame(level)
+      write("OPSSSSS")
+      #Message := ""
+      }
+end
+
+#
+# used by cmdList to print a a bunch of src lines
+#
+method printSrcLines(cur_line, cur_file, num)
+   local i, line := cur_line - 5
+
+   if /num then num := 10
+
+   if line < 0 then line := 0
+
+   Message :="" 
+   every i:= 1 to num do{
+      line +:= 1
+      if line = cur_line then
+         Message ||:="\n    --> "||line ||":"||
+                     DState.srcFile.getSrcLine(cur_file, line)
+      else
+         Message ||:="\n\t"||line ||":"||
+                     DState.srcFile.getSrcLine(cur_file, line)
+      }
+   DState.Write(Message)
+end
+
+#
+# parse the expression into tokens, mainVar is tokens[1]
+# ie L[2], L[3][4], L[1].x, S[5:-5]
+#
+method parsePrintExpression(expr)
+   local x, old_x, j, valid_char, tokens := []
+   
+   valid_char := CHARACTER ++ cset('-_:\"') 
+   
+   expr ? {
+        if x := tab(many(valid_char)) then{
+           put(tokens, x)
+           while (j := move(1)) ==("["|"]"|"."|",") do{
+               if j == "." & old_x := integer(x) then{
+                 if x := tab(many(valid_char)) then{
+                    if integer(x) then{
+                       old_x := pop(tokens)
+                       old_x ||:="."||x
+                       put(tokens, old_x)
+                       old_x := &null
+                       }
+                    else 
+                       put(tokens,x)
+                    } 
+                 }
+              else if x := tab(many(valid_char)) then
+                    put(tokens,x)
+              }
+           } 
+        }
+
+#   every x:=!tokens do
+#      write("-----x=",x)
+   return tokens
+end
+
+#
+# The list command from gdb, as in gdb defaults are 10 lines from
+# the current file are printed centered around the curent line 
+#
+method cmdList(cmd)
+   local cur_line, cur_file, fnc, line
+   static last_line := -1
+   
+   if DState.RunCode ~= LIST then{
+      last_line := -1
+      DState.RunCode := LIST
+      }
+
+   if DState.State = LOAD then{
+      cur_file := DState.srcFile.exeName ||".icn"
+      cur_line := 5
+      } 
+   else if DState.State = PAUSE then{
+      cur_file := keyword("file", Monitored)
+      cur_line := keyword("line", Monitored)
+      }
+   else{
+      DState.State := ERROR
+      Message := "\n\t No Program is Loaded nor Running_
+                  \n\t Type \"help\" for assistance"
+      DState.Write(Message)
+      return
+      }
+
+   if *cmd = 1 then{
+      if last_line = -1 then
+         last_line := cur_line
+      else
+         last_line +:= 10
+      }
+   else{
+       if line := integer(cmd[2]) then
+          last_line := line
+       else{
+          if cmd[2] == "-" then
+             last_line -:= 10
+          else{
+             fnc := cmd[2]
+             if line := DState.srcFile.searchFileProcs(cur_file, fnc) then
+                last_line := line
+             else if member(DState.srcFile.foundFiles, fnc||".icn") then{#????
+                cur_file:= fnc||".icn"
+                last_line := 5
+                } 
+             else{
+                Message := "\n\t Procedure not found_
+                            \n\t Make sure the method name is correct!"
+                DState.Write(Message)
+                return
+                }
+             }
+          }
+       }
+
+   if DState.srcFile.isLoaded(cur_file) then{
+      if DState.srcFile.isInFile(cur_file, last_line) then
+         printSrcLines(last_line, cur_file)
+      else{
+         Message := "\n\t line #("||last_line||") is out of the file limits"
+         last_line := -1
+         DState.Write(Message)
+         }
+      }
+   else{
+      Message := "\n\t Source File \""||cur_file||"\" is NOT loaded !!!"
+      last_line := -1
+      DState.Write(Message)
+      }
+end
+
+#
+# it is to print the found/missing source files
+#
+method cmdSource(cmd)
+   local op, files
+
+   if cmd[3] then{
+      Message := DState.srcFile.getSourceCode(cmd[3])
+      DState.Write(Message)
+      return
+      }
+
+   op := cmd[2] | ""
+   case op of{
+      "-f" | "-found":{
+           if files := DState.srcFile.getFoundFiles() then{
+              Message := "\n    Found Source Files are:\n"
+              Message ||:= files
+              }
+           else
+              Message := "\n\t No file(s) found !!"
+           }
+      "-m" | "-missing":{
+           if files := DState.srcFile.getMissingFiles() then{
+              Message   := "\n    Missing Source Files are:\n"
+              Message ||:= files
+              }
+           else
+              Message := "\n\t No file(s) missing !!"
+           }
+      "-a" | "-all":{
+           if files := DState.srcFile.getSourceFiles() then{
+              Message   := "\n    All Source Files are:\n"
+              Message ||:= files
+              }
+           else
+              Message := "\n\t No file(s) loaded !!"
+           }
+      default:{
+           if files := DState.srcFile.getFoundFiles() then{
+              Message   := "\n    Found Source Files are:\n"
+              Message ||:= files
+              }
+           if files := DState.srcFile.getMissingFiles() then{
+              Message ||:= "\n    Missing Source Files are:\n"
+              Message ||:= files
+              }
+           } 
+      } 
+   DState.Write(Message)
+end
+
+#
+#
+initially()
+
+end
+
+ 

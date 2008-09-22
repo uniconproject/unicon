@@ -1,0 +1,121 @@
+
+#
+# internals.icn
+# handles the internals (built-in) monitores that can be used 
+# during the debugging session with UDB
+# Author  : Ziad Al-Sharif
+# Date    : Feb 24, 2008
+#
+
+$include "defaults.icn"
+
+#
+# Loads and initializes the internal monitors
+#
+class Internals : Agent()
+
+#
+# It handles the updates in each client by forwarding relevent events
+#
+method forward()
+   local Name
+   
+   every Name := !activeClients do{
+      if Clients[Name].State = ENABLED & 
+         member(Clients[Name].eventMask, &eventcode) then{
+         Clients[Name].Forward()
+         }
+      }
+end
+
+#
+# Analyzes whatever the internal monitor has collected so far
+#
+method cmdAnalyzeInfo(name)
+   local client, msg:="??"
+
+   if \Clients[name] then{
+      if member(activeClients, name) then
+         Clients[name].AnalyzeInfo()
+      else
+         msg := "\n\t The internal monitor ("||name||") is NOT Enabled!"
+      }
+   else
+      msg := "\n\t The internal monitor ("||name||") is NOT Found!"
+   DState.Write(msg)
+end
+
+#
+# Prints out whatever the internal monitor has collected so far
+#
+method cmdPrintInfo(name)
+   local client, msg:="??"
+
+   if \Clients[name] then{
+      if member(activeClients, name) then
+         Clients[name].WriteInfo()
+      else
+         msg := "\n\t The internal monitor ("||name||") is NOT Enabled!"
+      }
+   else
+      msg := "\n\t The internal monitor ("||name||") is NOT Found!"
+   DState.Write(msg)
+end
+
+#
+# Registers an internal monitor: i.e.
+# register("test", obj,  
+#          [handle_event1, handle_event2], [analyze_events], [write1, write2])
+method register(name, client, handler, analyzer, writer, mask)
+   local methodName
+
+   count +:= 1
+   Clients[name] := client
+   insert(disabledClients, name)
+   client.AutoRegister(name, count, DISABLED)
+   
+   #handler: is a list of method names from the internal monitor 
+   if \handler then
+      every methodName := !handler do
+         client.RegisterHandler(methodName)
+
+   #analyzer: is a list of method names from the internal monitor 
+   if \analyzer then
+      every methodName := !analyzer do
+         client.RegisterAnalyzer(methodName)
+
+   #writer: is a list of method names from the internal monitor 
+   if \writer then
+      every methodName := !writer do
+         client.RegisterHandler(methodName)
+
+   #mask: is the set of events needed by the internal monitor 
+   if \mask then
+      client.RegisterEventMask(mask)
+end
+
+#
+# This method is where a user registers an internal monitor
+# to be used under UDB
+#
+method Init()
+   
+   register("memory", Memory())
+   register("varprofile", VarProfile())
+   register("procprofile", ProcProfile())
+   register("proctime", ProcTime())
+   register("failedloop", FailedLoop())
+   register("failedsubscript", FailedSubscript())
+   register("looptime", LoopTime())
+   register("deadvar", DeadVar())
+   register("typechange", TypeChange())
+   register("structusage", StructUsage())
+end
+
+#
+#
+initially()
+
+   self.Agent.initially("internal")
+   Init()
+end

@@ -1,6 +1,9 @@
 #
 # icode.icn - code for handling icode files
 #
+# Author:        Eric Munson
+# Maintained by: Ziad Al-Sharif
+#
 
 record header (
    hsize,    # /* size of interpreter code          */
@@ -26,6 +29,9 @@ record header (
 
 )
 
+#
+# This class contains the main icode parsing facility
+#
 class Icode(
    icode,        # A string with the executable file
    hdr,          # An instance of the header() record
@@ -141,7 +147,7 @@ method checkIcodeVersion(p)
 end
 
 #
-# UnComprees the Icode in case if it is Compressed
+# UnCompress the Icode if it is Compressed
 #
 method readCompressedIcode()
    local ftmp
@@ -163,7 +169,7 @@ method readCompressedIcode()
 end
 
 #
-# Unicon I code will be in a Compressed format if it exceds the 1Mag limit 
+# Icode will be in a compressed format if it exceeds the 1MB limit 
 #
 method checkCompressedIcode()
    local Z, size

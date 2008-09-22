@@ -1,13 +1,20 @@
 #
 # console.icn
-# March 16, 2007 
+# Handles the main console based command interpreter
+# Author : Ziad Al-Sharif
+# Date   : Feb 24, 2008 
 #
 
 $include "defaults.icn"
 
-class UDB_Console : Commands(
-   cmdHistory,           # list keeps all of the UDB's cmd Session History.
-   UP, DOWN, ENTER, BkSp, LEFT # Control keys
+class Console : Session(
+   cmdHistory, # list keeps all of the UDB's cmd Session History
+   wchar,      # a cset of valid characters used in the command line
+   UP,         # The up arrow control key
+   DOWN,       # The down arrow control key
+   ENTER,      # The enter key
+   BkSp,       # The Back Space key
+   LEFT        # The left arrow control key
    )
 
 #
@@ -47,16 +54,16 @@ method update_cmdHistory(line)
 end
 
 #
-# Reads an inout string and parse it to tokens and put them in cmd list.
+# Reads an inout string char by char,and parse the
+# collected line to tokens and put them in cmdlist.
 #
 method get_CommandLine()
-   local wchar, line, words, word
+   local line, words, word
    local ch, i, c
 
    # make sure that cmdIgnore is set with &null for the next command
    line :=""
    words := list()
-   wchar := CHARACTER ++ '\'\\/-.*\_n&?[]\"'
 
    i := 0
    writes(PROMPT)
@@ -116,94 +123,78 @@ method get_CommandLine()
 end
 
 #
-# Here where we start a UDB Console Session nad have
+# Here where we start a UDB Console Session and have
 # most of the user control debugging interface
 #
-method udb_Console(argv)
+method startConsole(argv)
    local ans, cmd, old_State:=NONE
 
-   Write(Message:=VERSION)
-   init_Debugging(argv)
+   DState.initializeState(argv)
 
-   while State ~= QUIT do{
-     case State of{
-#       NONE:{
-#          # waiting for the load command
-#          #Show_Message(ErrorCode) 
-#          }
-#       LOAD:{
-#          # waiting for the run or break
-#          #Show_Message(ErrorCode)
-#          }
+   while DState.State ~= QUIT do{
+     case DState.State of{
        RUN:{
           # everything is fine, file is louded and ready to run TP
           # when the program is PAUSED, we can make use of cmds such as:
           # [run: re-execute],[break],[step],[next],[cont],[quit],[up],[down]
           # [frame], [print], [where]
-          RunCode := RUN
-          every start_Debugging() do{
-             old_State := State
-             while State ~= RUN do{
-               #if RunCode = ERROR then
-               #   showRunError()
-               #else
-               case State of {
+          DState.RunCode := RUN
+          every startSession() do{
+             old_State := DState.State
+             while DState.State ~= RUN do{
+               case DState.State of {
                  END | 
-                 QUIT:    { break break next       }
-                 CONTINUE:{ State   := RUN
-                            RunCode := CONTINUE    
-                            next                   }
-                 STEP:    { State   := RUN
-                            RunCode := STEP        
-                            next                   }
-                 NEXT:    { State   := RUN
-                            RunCode := NEXT        
-                            next                   }
-                 RERUN:   { State   := RUN
-                            break break next       }
-                 SKIP:    { State := old_State     }
-                 ERROR:   { State := old_State
-                            Write(Message)         }
-                 #default:{ write("PAUSED !!!")    }
+                 QUIT:    { break break next 
+                            #-- TEST: for The Sake of getting the Time right
+                            ###break break break 
+                          }
+                 CONTINUE:{ DState.State   := RUN
+                            DState.RunCode := CONTINUE    
+                            next                       }
+                 STEP:    { DState.State   := RUN
+                            DState.RunCode := STEP        
+                            next                       }
+                 NEXT:    { DState.State   := RUN
+                            DState.RunCode := NEXT        
+                            next                       }
+                 RERUN:   { DState.State   := RUN
+                            break break next           }
+                 SKIP:    { DState.State := old_State  }
+                 ERROR:   { DState.State := old_State
+                            Write(Message)             }
+                 #default:{ write("PAUSED !!!")        }
                }# end of case
                cmd := get_CommandLine()
                if \cmd then    parse_Command(cmd)
-               else            State := SKIP
+               else            DState.State := SKIP
              }# end of while
           }#end of every
           }
        END:{
           # if debugging finished OK
-          State := LOAD #important for re-run
+          DState.State := LOAD #important for re-run
           }
        ERROR:{
           # if there is a Console Error, handle it, 
           # and go back to the old state
-          State := old_State 
+          DState.State := old_State 
           }
-#       CONTINUE|
-#       STEP|
-#       NEXT| 
-#       RERUN:{ 
-#          #Show_Message(Error_9)
-#          }
        SKIP:{
-          State := old_State
+          DState.State := old_State
           }
        QUIT:{
           return
           }
        default:{
-          # for everything else ???, like when State = NONE
-          #write("udb_Console Default!!!!!")
-          #Show_Message(Error_0)
+          # for anyything else ???, like when DState.State = NONE
+          # write("udb_Console Default!!!!!")
           }
-     } # end case State
-    old_State := State
+     } # end case DState.State
+    old_State := DState.State
     cmd := get_CommandLine()
     if \cmd then   parse_Command(cmd)
-    else           State := SKIP
-   }# end while State
+    else           DState.State := SKIP
+   }# end while DState.State
 end
 
 #
@@ -211,14 +202,15 @@ end
 #
 initially()
 
-   self.Commands.initially()
-   cmdHistory := []
-   put(cmdHistory,"")
+   self.Session.initially()
+
+   cmdHistory := [""]
+   wchar := CHARACTER ++ '\'\\/-+.*:=,\_n&?[]\"!<>'
 
    # Constant Keys used with the command history
    UP    := "\e[A"
    DOWN  := "\e[B"
-#  RIGHT := "\e[C" # not used
+   #RIGHT := "\e[C" # not used
    LEFT  := "\e[D" # ???
    ENTER := "\n"
    BkSp  := "\d"

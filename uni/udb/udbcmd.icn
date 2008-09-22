@@ -74,8 +74,8 @@ end
 method cmdRun(cmd)
    local i, ans, args:=[]
 
-   if *cmd >= 2 then{
-      if State = (LOAD | PAUSE | END) then{
+   if *cmd >= 2 then {
+      if State = (LOAD | PAUSE | END) then {
          put(args, TP[1])
          every i:=2 to *cmd do
             put(args, cmd[i])
@@ -83,7 +83,7 @@ method cmdRun(cmd)
          }
       }
 
-   if State = (LOAD | END | PAUSE) then{ 
+   if State = (LOAD | END | PAUSE) then { 
       if State = PAUSE then{
          Write("\t A Program is currently running")
          writes("\t Are you sure you want to re-run?, (Y/N )? :")
@@ -103,7 +103,7 @@ method cmdRun(cmd)
          eventMask ++:= cset(E_Line) 
          write("------E_Line added")
          }
-      if not member(valueMask, E_Assign) & (*watchMask | *traceVarMask) >0 then{
+      if not member(valueMask, E_Assign) & (*watchMask | *traceVarMask) >0 then {
          valueMask[E_Assign] := watchMask ++ traceVarMask
          eventMask ++:= cset(E_Assign)
          write("------E_Assign added")
@@ -200,17 +200,17 @@ method cmdPrint(cmd)
          i1,i2,temp,
          action
 
-   if State = PAUSE then{ 
-      if x := temp := cmd[2] then{
-         if temp == ("-g" |"-G" | "-globals") then{
+   if State = PAUSE then { 
+      if x := temp := cmd[2] then {
+         if temp == ("-g" |"-G" | "-globals") then {
             printGlobals()
             return
 	    }
-	 else if temp == ("-l" | "-L" | "-locals") then{
+	 else if temp == ("-l" | "-L" | "-locals") then {
             printLocals()
             return
 	    }
-	 else if temp == ("-p" | "-P" | "-params") then{
+	 else if temp == ("-p" | "-P" | "-params") then {
             printParams()
             return
 	    }
@@ -229,7 +229,7 @@ method cmdPrint(cmd)
             } 
 
          #--To be able to print things like T[1], T["a"], L[10], etc.
-         if (i1:= find("[",temp)) & (i2:= find("]", temp)) then{
+         if (i1:= find("[",temp)) & (i2:= find("]", temp)) then {
             x := temp[1:i1]
             i := temp[i1+1:i2]
             if *i > 0 then
@@ -242,7 +242,7 @@ method cmdPrint(cmd)
          if cmd[3] then  level := integer(cmd[3]) | 0  #(level | current level) 
          else            level := cur_Frame # which is 0 if no up/down involved
          
-         if var := variable(x, Monitored, level) then{
+         if var := variable(x, Monitored, level) then {
             if type(var) == ("table" | "list" | "string" ) then{
                if \i  then{
                   if \action then Message := "\n\t *"||x||" = "||*var[i]
@@ -376,7 +376,7 @@ end
 method cmdWhere()
    local i, x, cur_file, cur_line, p, param
 
-   if State = PAUSE then{
+   if State = PAUSE then {
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
       p        := image(proc(Monitored,0))
@@ -513,7 +513,7 @@ method cmdWatch(cmd)
    State := SKIP
    
    # if cmd is only "watch"; will print all of the pre-set watch points info
-   if *cmd = 1 then{
+   if *cmd = 1 then {
       Message :="\n\t " || cmd[1]
       every x := !watchMask do
          Message ||:= "\n\t Watch for : " || x
@@ -960,7 +960,7 @@ method cmdTree(cmd)
       if *cmd = 1 then
          printT(treeRoot)
       else{
-         if cmd[2] == "on" then{
+         if cmd[2] == "on" then {
             # it is on by default until it is set to be off
             treeFlag := 1
             Write(Message:="\n\t the evaltree is ON.")
@@ -987,7 +987,7 @@ method traceVar(cmd)
    # Note: we have to be smart about the scope of the traced variable
    # find the real var first, then find the action
    var := cmd[2]
-   if not cmd[3] then{
+   if not cmd[3] then {
       if old_State = LOAD then {
          # we would assume that the watched variable is a global one  
          var ||:="+"  # + is the global scope character
@@ -1005,10 +1005,10 @@ method traceVar(cmd)
          return
          }
       }
-   else if not (cmd[3] == ("on"|"off")) then{
+   else if not (cmd[3] == ("on"|"off")) then {
       var ||:= "-" || cmd[3] # cmd[3] is the procedure name
       }
-   else if cmd[3] == ("on"|"off") then{
+   else if cmd[3] == ("on"|"off") then {
       if cmd[4] then {
          var ||:= "-" || cmd[4] # cmd[4] is the procedure name
          }
@@ -1026,17 +1026,17 @@ method traceVar(cmd)
       }
 
    # write("------var= ",var)
-   if member(traceVarMask, var) then{
+   if member(traceVarMask, var) then {
       if cmd[3] == "on" then
          Message := "\n\t Trace for \""||var||"\" is already ON"
-      else if cmd[3] == "off" then{
+      else if cmd[3] == "off" then {
          Message := "\n\t Trace for \""||var||"\" is set to be OFF"
          delete(traceVarMask, var)
          }
       else{ #$trace var proc, or $trace var, are used to print the var info 
          if member(traceVarTable, var) then{
             L := traceVarTable[var]
-            if *L > 0 then{
+            if *L > 0 then {
                Message := "\n\t--The tracing info for \""||var||"\""
                every r := !L do
                   Message ||:="\n\t  " || r.fname || ", " || r.line ||
@@ -1050,12 +1050,13 @@ method traceVar(cmd)
          }# end else
       }
    else{# if not member(traceVarMask, var)
-      if cmd[3] == "on" then{
+      if cmd[3] == "on" then {
          insert(traceVarMask, var)
          Message := "\n\t Trace for \""||var||"\" is set to be ON"
          }
-      else if cmd[3] == "off" then
+      else if cmd[3] == "off" then {
          Message := "\n\t Trace for \""||var||"\" is not ON to set it OFF"
+	 }
       else
          Message:= "\n\t unknown action_
                     \n\t Try \"help trace\" for assistance"
@@ -1070,8 +1071,8 @@ end
 method printTraceBehavior(ecodeSet)
    local x, L, e, traced
 
-   every e := !ecodeSet do{
-      if member(traceState, e) then{
+   every e := !ecodeSet do {
+      if member(traceState, e) then {
          Message := "\n\t--The tracing info for \""||evnames(e)||"\":"
          L := traceTable[e]
          if type(L) ~== "list" then next
@@ -1097,10 +1098,10 @@ end
 method traceBehaviorAction(cmd)
    local action
  
-   if *cmd = 2 then{
+   if *cmd = 2 then {
       action := "print"
       }
-   else if *cmd >=3 then{
+   else if *cmd >=3 then {
       case cmd[3] of{
         "call"         :{ action   := "print" }
         "fail"         :{ action   := "print" }
@@ -1109,12 +1110,14 @@ method traceBehaviorAction(cmd)
         "on"|"enable"  :{ action   := "on"    }
         "off"|"disable":{ action   := "off"   }
          }
-      if *cmd = 4 then{
-         if cmd[4] == ("on"|"enable") then
+      if *cmd = 4 then {
+         if cmd[4] == ("on"|"enable") then {
             action := "on"
-         else if cmd[4] == ("off"|"disable") then
-                 action := "off"
+            }
+         else if cmd[4] == ("off"|"disable") then {
+	    action := "off"
          }
+      }
       }
    return action
 end
@@ -1202,7 +1205,7 @@ method cmdTrace(cmd)
       return
       }
 
-   if *cmd >= 2 then{
+   if *cmd >= 2 then {
       if find("-",cmd[2]) then traceBehavior(cmd)
       else                     traceVar(cmd)
       }
@@ -1218,11 +1221,11 @@ end
 # to skip the infinite loop that goes in the gui stuff waitting for an event
 #
 method cmdGUI(cmd)
-   if cmd[2]=="on" then{
+   if cmd[2]=="on" then {
 #      guiFlag:=1
       Write(Message := "\n\t The guiFlag is set to be on") 
    }
-   else if cmd[2]=="off" then{
+   else if cmd[2]=="off" then {
 #      guiFlag := &null
       Write(Message := "\n\t The guiFlag is set to be off") 
    }

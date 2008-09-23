@@ -1,8 +1,8 @@
 #
 # icode.icn - code for handling icode files
-#
-# Author:        Eric Munson
-# Maintained by: Ziad Al-Sharif
+# Manages the main Icode Analysis techniques
+# Updated and maintained by : Ziad Al-Sharif
+# Original Author : Eric Munson
 #
 
 record header (
@@ -18,15 +18,6 @@ record header (
    Filenms,  # /* location of ipc/file name table   */
    linenums, # /* location of ipc/line number table */
    config    # /* [16];  icode version              */
-
-# #ifdef FieldTableCompression
-#    FtabWidth, # /* width of field table entries, 1 | 2 | 4  */
-#    FoffWidth, # /* width of field offset entries, 1 | 2 | 4 */
-#    Nfields,   # /* number of field names     */
-#    Fo,        # /* The start of the Fo array */
-#    Bm,        # /* The start of the Bm array */
-# #endif        # /* FieldTableCompression     */
-
 )
 
 #
@@ -35,6 +26,8 @@ record header (
 class Icode(
    icode,        # A string with the executable file
    hdr,          # An instance of the header() record
+   IntBits,      # number of bits in an integer
+   WordBits,     # number of bits in a unicon word
    wordSize,     # 4 on a 32-bit and 8 on a 64-bit machine 
    icodeVersion  # String holds the Icode Version 32/64 compressed/uncompressed
    )
@@ -134,7 +127,7 @@ method checkIcodeVersion(p)
    wordSize := 4
    readIcodeHeader()
 
-   if find("I9.U.00",hdr.config) ~= 1 then{
+   if find("I9.U.10",hdr.config) ~= 1 then{
       &pos := p   # start over as a 64-bit machine
       wordSize := 8
 
@@ -165,11 +158,10 @@ method readCompressedIcode()
       }
    else 
       stop("can not open a tmpfilename")
-
 end
 
 #
-# Icode will be in a compressed format if it exceeds the 1MB limit 
+# I code will be in a compressed format if it exceeds the 1 MB limit 
 #
 method checkCompressedIcode()
    local Z, size
@@ -177,9 +169,12 @@ method checkCompressedIcode()
    # check whether it is a compressed icode or not
    hdr.config ? {
       tab(find("/")+1) | stop("can't find /")
-      size := integer(tab(many(&digits)))
-      Z := move(1)
+      IntBits := size := integer(tab(many(&digits)))# tabs the IntBits
+      move(1)                                       # moves over the / 
+      WordBits := integer(tab(many(&digits)))       # tabs the WordBits
+      Z := move(1)                                  # get the Z letter 
       }
+
 
    if Z == "Z" then {
       readCompressedIcode()
@@ -188,7 +183,6 @@ method checkCompressedIcode()
    else
       icodeVersion ||:= " Uncompressed Icode"
 end
-
 
 #
 # Collect the Source files from the executable Icode
@@ -230,5 +224,6 @@ method getSrcFileNames(exeFile)
 end
 
 initially()
-   icodeVersion := "NONE"
+   icodeVersion := "unkown?"
+   IntBits := WordBits := -1
 end

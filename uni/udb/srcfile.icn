@@ -1,4 +1,4 @@
-#
+#  
 #  srcfile.icn
 #  Handles the collected Source Files from the Icode
 #  Author : Ziad Al-Sharif
@@ -24,6 +24,7 @@ record fileIndex(
 class SourceFile(
    fmain,        # The Source File that has the procedure main
    exeName,      # The executable file name
+   exeSize,      # The executable file size
    sourcePath,   # String of paths that will be searched for source files
    sourceFiles,  # List with all source file names that are in the binary
    sourceText,   # List holds all the all source files text
@@ -70,12 +71,31 @@ method getSourceFileName(f)
 end
 
 #
+# Obtains the file size from its name and path
+#
+method getSourceFileSize(f)
+  local s:="", p, cmd :="du -h "
+  local fsize:=-1, i
+     
+  cmd ||:= f 
+  p := open(cmd,"p")
+  while s ||:=  read(p) || "\n"
+  close(p)
+
+  i := find("\t",s)
+  fsize := s[1:\i]
+
+  return fsize 
+end
+
+#
 # Load the program Source File(s)
 #
 method loadSourceFiles(fname, src)
    local i, j, s, f, b, e
 
    exeName := getSourceFileName(fname)
+   exeSize := getSourceFileSize(fname)
    sourceFiles := src
  
    # loads the source files that we can find and keep a 
@@ -98,6 +118,8 @@ method loadSourceFiles(fname, src)
          else
             put(missingFiles, sourceFiles[ i ])# keep it as it is
          }
+      #else
+         #write("File is already found:",f)
       }
    return
 end
@@ -349,9 +371,12 @@ method dopen(s)
    fail
 end
 
+
+
 initially()
 
    exeName     := "?"
+   exeSize     := -1
    sourceFiles := []
    sourceText  := []
    srcIndex    := table(0)

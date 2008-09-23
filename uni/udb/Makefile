@@ -37,7 +37,7 @@ tools:
 
 udb: $(UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(UFILES) -o udb
-	mv udb ../bin
+	mv udb ../../bin
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

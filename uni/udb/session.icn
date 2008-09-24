@@ -193,13 +193,13 @@ method cmdQuit()
       DState.Write("\t A Program is currently running")
 
    # always ask the user if he realy wants to quit!!!
-   writes("\t Are you sure you want to Quit?, (Y/N )? :")
+   writes("\t Are you sure you want to quit?, (Y/n )?:")
    ans := read()
-   if \ans & ans[1] == ("y"|"Y") then
-      DState.State := QUIT
-   else{
+   if \ans & ans[1] ~== ("n"|"N") then
       #make udb console takes no actions 
       DState.State := SKIP
+   else{
+      DState.State := QUIT
    }
 end
 
@@ -286,15 +286,15 @@ method cmdHelp(cmd)
     PAUSE:{
       Message:="_
       \n\t Applicable Commands are:_
-      \n\t cont  : continue on a ful speed execution after a PAUSE_
+      \n\t cont  : continue on a full speed execution after a PAUSE_
       \n\t step  : stepping one or more lines in the source code_
-      \n\t next  : same as step command except treating a \n\t\t_
+      \n\t next  : same as step command except treating a_
       \n\t         procedure call as one command or one line of code_
       \n\t load  : loads a new program into udb_
       \n\t run   : restarts the execution from the begining_
       \n\t where : shows the current location info_
       \n\t frame : shows the current stack frame info_
-      \n\t up    : moves up one ore more stack frame_
+      \n\t up    : moves up one or more stack frame_
       \n\t down  : moves down one or more stack frame_
       \n\t print : prints out the value of a var in current frame_
       \n\t bt    : prints out the back trace_

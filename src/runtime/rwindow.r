@@ -4663,6 +4663,8 @@ int guicurses_cols(wbp w)
    return XTOCOL(w,w->window->width - DESCENT(w));
 }
 
+/* convenience function: C language set clip region */
+
 /*
  * convenience function: C language draw rectangle
  */
@@ -4674,6 +4676,16 @@ void drawRectangle(wbp w,int x,int y,int width,int height)
   RECWIDTH(r[0]) = width;
   RECHEIGHT(r[0]) = height;
   drawrectangles(w,r,1);
+}
+
+int Wx()
+{
+   return IntVal(amperX);
+}
+
+int Wy()
+{
+   return IntVal(amperY);
 }
 
 /*

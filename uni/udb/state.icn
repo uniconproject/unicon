@@ -19,7 +19,7 @@ class State(
    RunCode,     # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
 
    eventMask,   # the cset of the main evaluator set of event codes 
-   valueMask,   # table used for break points and watch points set of masks
+   valueMask,   # table used for breakpoints and watchpoints set of masks
    breakMask,   # a set of the E_Line Event-values that we like to break on
    watchMask,   # a set of the E_Assign Event-values that we like to watch for
    internalMask,# The cset of the active internals event mask
@@ -47,6 +47,16 @@ method Write(Msg)
 end
 
 #
+# prints a message out into a console, message box, and so
+#
+method Writes(Msg)
+
+   /Msg := Message
+   writes(Msg)
+   Message := ""
+end
+
+#
 # check if the current command is valid
 #
 method isValidCommand(cmd)
@@ -55,8 +65,8 @@ method isValidCommand(cmd)
       return
    else{
       State := ERROR
-      Message   := "\n\t No Program is Loaded_
-                    \n\t Type \"help "||cmd[1]||"\" for assistance"
+      Message   := "\n   No Program is Loaded_
+                    \n   Type \"help "||cmd[1]||"\" for assistance"
       Write(Message)
       fail
       }
@@ -77,7 +87,7 @@ method Update(state)
      CONTINUE:{
        #State := state
        eventMask := cset(E_Error || E_Exit)
-       # Break points related
+       # Breakpoints related
        if *breakMask > 0 then{
          if ((*internalMask > 0 | *externalMask > 0)  &
              (member(internalMask,E_Line) | member(externalMask,E_Line))) then
@@ -92,7 +102,7 @@ method Update(state)
          eventMask ++:= internalMask ++ externalMask
          }
 
-       # Watch points related
+       # Watchpoints related
        if *watchMask > 0 | *traceVarMask > 0 then{
          if ((*internalMask > 0 | *externalMask > 0)  &
             (member(internalMask,E_Assign) | member(externalMask,E_Assign)))then
@@ -138,33 +148,33 @@ method initializeState(tp)
             srcFile.loadSourceFiles(TP[1], src)
             State := LOAD
             ###State := RUN ###### TEST : For the sake of getting the Time right
-            Message ||:= "\n\t "|| srcFile.exeName ||" : loaded "||
+            Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
                          srcFile.exeSize||" of "||icode.icodeVersion 
             found := *srcFile.foundFiles
             if found > 0 then 
-               Message ||:=  "\n\t "|| found ||" Source file(s) found"
+               Message ||:=  "\n   "|| found ||" Source file(s) found"
             missing := *srcFile.missingFiles
             if missing > 0 then
-               Message ||:=  "\n\t and "|| missing ||" Source file(s) missing"
-            Message ||:= "\n\t Type \"help\" for assistance _
+               Message ||:=  "\n   and "|| missing ||" Source file(s) missing"
+            Message ||:= "\n   Type \"help\" for assistance _
                                or \"src\" for file(s) name"
             }
          else{
-            Message ||:= "\n\t Can not get the Source File Names_
-                        \n\t Type \"help\" for assistance."
+            Message ||:= "\n   Can not get the Source File Names_
+                        \n   Type \"help\" for assistance."
             }
       }
       else{
          State := ERROR
-         Message ||:= "\n\t Could not access \"" || TP[1] ||"\""||
-                      "\n\t Type \"help\" for assistance."
+         Message ||:= "\n   Could not access \"" || TP[1] ||"\""||
+                      "\n   Type \"help\" for assistance."
          State := NONE
       }
    }
    else{
       State := ERROR
-      Message ||:= "\n\t A program must be pre-loaded_
-                    \n\t Type \"help\" for assistance"
+      Message ||:= "\n   A program must be pre-loaded_
+                    \n   Type \"help\" for assistance"
       RunCode := NONE
    }
    Write(Message)
@@ -176,10 +186,10 @@ end
 method Fresh() 
 
    #Initilly, eventMask does not contain the E_Line & E_Assign events
-   #If there is a break point, E_Line will be added to the eventMask,
-   #and the break point linenum will be inserted in valueMask[E_Line] set
+   #If there is a breakpoint, E_Line will be added to the eventMask,
+   #and the breakpoint linenum will be inserted in valueMask[E_Line] set
    #Also, initially the eventMask will not contain the E_Assign event
-   #If there is a watch point then the E_Assign will be added and the 
+   #If there is a watchpoint then the E_Assign will be added and the 
    #variable will be added to the watchMask set.
  
    eventMask    := cset(E_Error || E_Exit)
@@ -193,9 +203,12 @@ method Fresh()
    traceVarMask := set()
    cur_Frame    := 0 # the current active frame is the last one
 
-   Message      := VERSION||"\n"
+   Message      := VERSION||"\n   "
 end
 
+#
+# Initialization
+#
 initially()
    TP        := []
 

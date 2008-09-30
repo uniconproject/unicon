@@ -11,6 +11,8 @@ $include "defaults.icn"
 
 class Stack(
    DState,     # (Alias) object of type State class
+   MaxFrame,   # the max number of frames displayed in one command [bt & where]
+   BaseFrame,  # the initial frame number by default is zero [bt & where]
    Message     # a string with latest message from this class 
    )
 
@@ -19,23 +21,64 @@ class Stack(
 # used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
 method printFrame(frame)
-   local x, i, level, p:="("
+   local x, i, level, p:="(", pname
+   local pfile:="file ?", pline:="line ?"
    
    level := keyword("level", Monitored) -1
    if 0 <= frame <= level then{
-      Message   := "\t #"|| frame
-      Message ||:= ": "|| image(proc(Monitored, frame))
+      Message := "#"|| frame
+      pname := image(proc(Monitored, frame))
+      pname := pname[find(" ",pname)+1 : 0]
+      Message ||:= ": "|| pname
       every x := paramnames(Monitored,frame) do{
          i := variable(x, Monitored,frame)
          p ||:= x||"="||image(i)||", "
          }
       p:= p[1:-2]
       Message ||:= p ||")"
+      # work around that is valid when the source file of the debuggee is 
+      # loaded and the name of the procedure is not any where in another class 
+      #pfile := keyword("file",Monitored,frame) # ideal solution
+      #pline := keyword("line",Monitored,frame) # ideal solution
+      pfile := DState.srcFile.getProcFile(pname)
+      pline := DState.srcFile.getProcLine(pname)
+      Message ||:= " at "|| pfile ||":"||pline
       }
    else
       Message := " The \""||frame ||"\" is not a valid frame number"||
                  " valid frames are (0 <= frame_num <= "||level||")"  
    DState.Write(Message)
+end
+
+#
+# writes out a list of information about frames i to j inclusive
+#
+method printFrames(i, j)
+   local f, level
+   
+   # make sure that i < j
+   if j < i then i :=: j
+   if i < 0 then i := 0
+   if j < 0 then j := 0
+
+   level := keyword("level", Monitored) - 1
+   if i<=level & j<=level then{
+      DState.Write("") 
+      every f := i to j do
+          printFrame(f)
+      if j < level then
+         DState.Write("(More stack frames follow...)")
+      }
+   else if i<=level then{
+      DState.Write("") 
+      every f := i to level do
+          printFrame(f)
+       }
+   else{
+      DState.State := ERROR
+      Message := "\n   No more frames, end of stack"
+      DState.Write(Message)
+      } 
 end
 
 #
@@ -47,7 +90,7 @@ method cmdUp(cmd)
    level := keyword("level",Monitored) - 1 
    if DState.State = PAUSE then {
       if DState.cur_Frame = level then
-         DState.Write("\t No more Frames up !!!")
+         DState.Write("No more Frames up !!!")
       else {
          DState.cur_Frame +:= 1
          printFrame(DState.cur_Frame)
@@ -55,8 +98,8 @@ method cmdUp(cmd)
       }
    else {
       DState.State := ERROR
-      Message   := "\n\t No program is running !!!_
-                    \n\t Try \"run\", or Type \"help\" for assistance"
+      Message   := "\n   The program is not being run._
+                    \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(Message)
       }
 end
@@ -68,7 +111,7 @@ method cmdDown(cmd)
 
    if DState.State = PAUSE then {
       if DState.cur_Frame = 0 then
-         DState.Write("\t No more Frames Down !!!")
+         DState.Write("No more Frames Down !!!")
       else {
          DState.cur_Frame -:= 1
          printFrame(DState.cur_Frame)
@@ -76,8 +119,8 @@ method cmdDown(cmd)
       }
    else {
       DState.State := ERROR
-      Message   := "\n\t No program is running !!!_
-                    \n\t Try \"run\", or Type \"help\" for assistance"
+      Message   := "\n   The program is not being run._
+                    \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(Message)
       }
 end
@@ -102,59 +145,79 @@ method cmdFrame(cmd)
       }
    else {
       DState.State := ERROR
-      Message   := "\n\t No program is running !!!_
-                    \n\t Try \"run\", or Type \"help\" for assistance"
+      Message   := "\n   The program is not being run._
+                    \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(Message)
       }
-end
-
-#
-# Prints out where you are in the code, what file, and what line.
-#
-method cmdWhere()
-   local i, x, cur_file, cur_line, p, param
-
-   if DState.State = PAUSE then{
-      cur_file := keyword("file", Monitored)
-      cur_line := keyword("line", Monitored)
-      p        := image(proc(Monitored,0))
-      param:="("
-      every x := paramnames(Monitored,0) do{
-         i := variable(x, Monitored,0)
-         param ||:= x||"="||image(i)||", "
-         }
-      if *param>2 then param:= param[1:-2] 
-      param ||:= ")"
-     
-      Message := "\n\t "||cur_file||"("||cur_line||")"||": "|| p||param ||
-                 "\n\t Code: "|| DState.srcFile.getSrcLine(cur_file, cur_line)  
-      }
-   else {
-      DState.State := ERROR
-      Message := "\n\t No program is running !!!_
-                  \n\t Try \"run\", or Type \"help\" for assistance"
-      }
-   DState.Write(Message)
 end
 
 #
 # To back trace the executin in the stack
-# [bt]
+# [bt] [where]
 #
-method cmdBacktrace()
-   local level, frame
+method cmdBacktrace(cmd)
+   local ans, level, frames
 
-   level := keyword("level", Monitored) - 1
-   if DState.State = PAUSE then
-      every frame := 0 to level do
-         printFrame(frame) 
+   if DState.State = PAUSE then{
+      level := keyword("level", Monitored)
+      if *cmd = 1 then{
+         BaseFrame := 0
+         while(BaseFrame < level) do{
+            printFrames(BaseFrame, BaseFrame + MaxFrame)
+            BaseFrame +:= MaxFrame + 1
+            if BaseFrame < level then{
+               Message:="---Type <return> to continue, or q <return> to quit---"
+               DState.Writes(Message)
+               if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
+               }
+            } 
+         }
+      else if *cmd = 2 & integer(cmd[2]) then{
+         frames := integer(cmd[2])
+         if frames >= 0 then
+            BaseFrame := 0
+         else if frames < 0 then{
+            BaseFrame := level + frames
+            frames := level
+            } 
+         if frames < MaxFrame then
+            printFrames(BaseFrame, BaseFrame + frames)
+         else{
+            if frames > level then frames := level
+            while(BaseFrame < frames) do{
+               if (BaseFrame + MaxFrame) < frames then{
+                  printFrames(BaseFrame, BaseFrame + MaxFrame)
+                  BaseFrame +:= MaxFrame + 1
+                  }
+               else{
+                  printFrames(BaseFrame, frames)
+                  BaseFrame := frames
+                  }
+               if BaseFrame < frames then{
+                  Message  := "---Type <return> to continue,"
+                  Message||:= "or q <return> to quit---"
+                  DState.Writes(Message)
+                  if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
+                  }
+               }
+            }
+         }
+      }
    else{
       DState.State := ERROR
-      Message := "\n\t Execution Stack is empty\n\t Try \"run\" first"
+      Message := "\n   The program is not being run._
+                  \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(Message)
       }
 end
 
+#
+# Initialization
+#
 initially()
 
+   MaxFrame  := 9
+   BaseFrame := 0 
+
+   Message := ""
 end

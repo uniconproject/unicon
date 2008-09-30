@@ -9,8 +9,6 @@ $include "evdefs.icn"
 $include "defaults.icn"
 
 link evnames
-#link state
-
 
 #
 # This record is used by the trace Behavior
@@ -116,10 +114,10 @@ method traceVar(cmd)
    else{ 
       var := getVar(cmd[2:0])
       if member(DState.traceVarMask, var) then
-         Message := "\n\t There is already an existing trace point on: " || var
+         Message := "\n   There is already an existing trace point on: " || var
       else{
          insert(DState.traceVarMask, var)
-         Message := "\n\t A trace point successfully set at: "||var
+         Message := "\n   A trace point successfully set at: "||var
          }
       } 
    DState.Write(Message)
@@ -136,26 +134,26 @@ method printTraceVar(Var)
        every var := key(traceVarTable) do{
           L := traceVarTable[var]
           if *L > 0 then{
-             Message := "\n\t--The tracing info for \""||var||"\""
+             Message := "\n   --The tracing info for \""||var||"\""
              every r := !L do
-                Message ||:= "\n\t\t  " || r.fname ||"("|| r.line ||
+                Message ||:= "\n   " || r.fname ||"("|| r.line ||
                              "): "|| r.vname||" = "||r.value
              }
           else
-             Message ||:= "\n\t\t var: "||var||" has no trace info yet!"
+             Message ||:= "\n   var: "||var||" has no trace info yet!"
           }
        } 
     else{
        if type(Var) ~=="list" then  var := Var
        else                         var := getVar(Var)
        if L := traceVarTable[var] & type(L) == "list" then{
-          Message := "\n\t--The tracing info for \""||var||"\""
+          Message := "\n   --The tracing info for \""||var||"\""
           every r := !L do
-             Message ||:= "\n\t\t  " || r.fname ||"("|| r.line ||
+             Message ||:= "\n   " || r.fname ||"("|| r.line ||
                           "): "|| r.vname||" = "||r.value
           }
        else
-          Message ||:= "\n\t var: "||var||" has no trace info yet!"
+          Message ||:= "\n   var: "||var||" has no trace info yet!"
        }
     DState.Write(Message)   
 end
@@ -202,20 +200,20 @@ method printTraceBehavior(ecodeSet)
 
    every e := !ecodeSet do{
       if member(traceState, e) then{
-         Message := "\n\t--The tracing info for \""||evnames(e)||"\":"
+         Message := "\n   --The tracing info for \""||evnames(e)||"\":"
          L := traceTable[e]
          if type(L) ~== "list" then next
          if member(ProcMask, e) then
             every x := !L do
-               Message ||:= "\n\t  "||x.level ||", "||x.fname||", "||x.line||
+               Message ||:= "\n   "||x.level ||", "||x.fname||", "||x.line||
                             ": "||x.pname  ||"("||x.param||")."
          else
             every x := !L do
-               Message ||:= "\n\t -"||x.fname||", "||x.line
+               Message ||:= "\n   "||x.fname||", "||x.line
          }
       else
-         Message:="\n\t No trace is ON for \""||evnames(e)||"\" to print._
-                   \n\t Try \"help trace\" for assistance"
+         Message:="\n   No trace is ON for \""||evnames(e)||"\" to print._
+                   \n   Try \"help trace\" for assistance"
       DState.Write(Message)
       }
 end
@@ -259,7 +257,7 @@ method getTraceNames(ecode)
    local e, ename := ""
 
    every e := !ecode do
-      ename ||:= "\n\t " || evnames(e)
+      ename ||:= "\n   " || evnames(e)
    return ename
 end
 
@@ -275,12 +273,12 @@ method traceBehavior(cmd)
       write("--------->",type(ecodeSet))
       traceState ++:= ecodeSet
       DState.eventMask ++:= ecodeSet
-      Message := "\n\t The traceState has a new trace code: "||
+      Message := "\n   The traceState has a new trace code: "||
                  getTraceNames(ecodeSet)
       DState.Write(Message)
       }
    else{
-      Message := "\n\t The traceState has a new trace code: "||
+      Message := "\n   The traceState has a new trace code: "||
                  getTraceNames(ecodeSet)
       # needs to be solved with the valueMask
       # traceBehaviorMask := set(cmd3) ????
@@ -298,8 +296,8 @@ method cmdTrace(cmd)
          else                     traceVar(cmd)
          }
       else{
-         Message := "\n\t unknown trace action !!?_
-                     \n\t try \"help trace\" for assistance"
+         Message := "\n   Unknown trace action !!?_
+                     \n   try \"help trace\" for assistance"
          DState.Write(Message)
          }
       DState.State := SKIP
@@ -319,7 +317,7 @@ method cmdEnableTrace(cmd)
          ecodeSet := getBehavior(cmd[3])
          traceState ++:= ecodeSet
          DState.eventMask ++:= traceState     
-         Message := "\n\t The traceState has enabled with the following_
+         Message := "\n   The traceState has enabled with the following_
                      new traces: "|| getTraceNames(ecodeSet)
          DState.Write(Message)
          }
@@ -327,15 +325,15 @@ method cmdEnableTrace(cmd)
       #Enable Trace Var, ie: enable trace var [proc]
          var := getVar(cmd[3:0])      
          if member(DState.traceVarMask, var) then
-            Message := "\n\t The trace point at: "||var||" is already enabled"
+            Message := "\n   The trace point at: "||var||" is already enabled"
          else{
             insert(DState.traceVarMask, var)
-            Message := "\n\t The trace point is successfully enabled at: "||var
+            Message := "\n   The trace point is successfully enabled at: "||var
             } 
          }
       }  
    else 
-      Message := "\n\t Unknown command \n\t Type help enable for assistance"
+      Message := "\n   Unknown command \n   Type help enable for assistance"
    DState.Write(Message)
    }
 end 
@@ -353,7 +351,7 @@ method cmdDisableTrace(cmd)
          ecodeSet := getBehavior(cmd[3])
          traceState --:= ecodeSet
          DState.eventMask --:= traceState
-         Message := "\n\t The traceState has disabled the following traces:"||
+         Message := "\n   The traceState has disabled the following traces:"||
                      getTraceNames(ecodeSet)
          DState.Write(Message)
          }
@@ -361,15 +359,15 @@ method cmdDisableTrace(cmd)
       #Disable Trace Var, ie: disable trace var [proc]
          var := getVar(cmd[3:0])
          if not member(DState.traceVarMask, var) then
-            Message := "\n\t The trace point at: "||var||" is already disabled"
+            Message := "\n   The trace point at: "||var||" is already disabled"
          else{
             delete(DState.traceVarMask, var)
-            Message := "\n\t The trace point is successfully disabled at: "||var
+            Message := "\n   The trace point is successfully disabled at: "||var
             } 
          }
       } 
    else 
-      Message := "\n\t Unknown command \n\t Type help disable for assistance"
+      Message := "\n   Unknown command \n   Type help disable for assistance"
    DState.Write(Message)
    }
 end
@@ -394,12 +392,15 @@ method cmdTraceInfo(cmd)
          }
       } 
    else{ 
-      Message := "\n\t Unknown command \n\t Type help disable for assistance"
+      Message := "\n   Unknown command \n   Type help disable for assistance"
       DState.Write(Message)
       } 
    }
 end
 
+#
+# Initialization
+#
 initially()
 
    # tracing stuff

@@ -61,11 +61,12 @@ method cmdNext(cmd)
 
       nex_level := keyword("level", Monitored)
       DState.Update(NEXT)
+      DState.Write("   Nexting.")
       }
    else {
       DState.State := ERROR
-      msg   := "\n\t No program is running !!!_
-                \n\t Try \"run\", or Type \"help\" for assistance"
+      msg   := "\n   The program is not being run._
+                \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(msg)
       }
 end
@@ -88,8 +89,13 @@ method checkStep()
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
 
-      msg := "\n\t Stepping in: \n\t "||cur_file||"("||cur_line||"): "||
+      msg  :="\n   file "||cur_file||", line "||cur_line||"."
+      msg||:="\n   "||cur_line-1||":"||
+             DState.srcFile.getSrcLine(cur_file, cur_line-1)
+      msg||:="\n-->"||cur_line||":"||
              DState.srcFile.getSrcLine(cur_file, cur_line)
+      msg||:="\n   "||cur_line+1||":"||
+             DState.srcFile.getSrcLine(cur_file, cur_line+1)
       DState.Write(msg)
 
       DState.State := PAUSE
@@ -110,11 +116,12 @@ method cmdStep(cmd)
       else
          step_count := 1
       DState.Update(STEP)
+      DState.Write("   Stepping.")
       }
    else {
       DState.State := ERROR
-      msg := "\n\t No program is running !!!_
-              \n\t Try \"run\", or Type \"help\" for assistance"
+      msg := "\n   The program is not being run._
+              \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(msg)
       }
 end
@@ -125,17 +132,21 @@ end
 #
 method cmdContinue()
 
-   if DState.State = PAUSE & DState.RunCode ~= ERROR then
-      DState.Update(CONTINUE)      
+   if DState.State = PAUSE & DState.RunCode ~= ERROR then{
+      DState.Update(CONTINUE)
+      DState.Write("   Continuing.")
+      }
    else{
       DState.State := ERROR
-      msg := "\n\t No program is running !!!_
-              \n\t Try \"run\", or Type \"help\" for assistance"
+      msg := "\n   The program is not being run._
+              \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(msg)
       }
 end
 
-
+#
+# Initialization
+#
 initially()
 
    step_count := 0

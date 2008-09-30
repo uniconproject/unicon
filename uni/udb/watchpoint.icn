@@ -1,6 +1,6 @@
 #
 # watchpoint.icn
-# It handles UDB's watch points related tasks
+# It handles UDB's watchpoints related tasks
 # Author: Ziad Al-Sharif
 # Date:   7-15-2008
 #
@@ -8,85 +8,134 @@
 $include "evdefs.icn"
 $include "defaults.icn"
 
+#
+# This record keeps information about the watched variable
+#
+record WatchedVar(
+   name,      # the string name of the var without its scope attachement
+   id,        # an integer identifies the watchpoint number
+   count,     # an integer counts the number watchpoint hits
+   initValue, # the old value of the watched variable
+   value      # the current value of the watched variable
+   )     
+
+#
+# This class handles watchpoints
+#
 class WatchPoint(
-   DState,    # (Alias) object of type State class
-   msg        # a string with latest message from this class 
+   DState,  # (Alias) object of type State class
+   varInfo, # a table tracks information about the watched variables
+   count,   # a watchpoint counter
+   msg      # a string with latest message from this class 
    )
 
 #
-# Check the Monitored file for a watch point
+# Check the Monitored file for a watchpoint
 #
 method checkWatchPoint( )
-   local cur_file, cur_line, var
+   local cur_file, cur_line#, cur_val, name
+   static var, hit := 0, evalue := 0
 
-   var := &eventvalue
-   if member(DState.watchMask, var) then{
+   if &eventcode == E_Assign then{
+      var := &eventvalue
+      if member(DState.watchMask,var) then{
+         hit := 1
+         if not member(DState.eventMask, E_Value) then{
+            evalue := 1
+            DState.eventMask ++:= cset(E_Value)
+            }
+         }
+      return
+      }
+   else if &eventcode == E_Value & hit=1 then{
+      hit := 0
+      if evalue = 1 then{
+         evalue := 0
+         DState.eventMask --:= cset(E_Value)
+         }
       DState.State := PAUSE
       DState.RunCode := WATCH
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
-      msg  :="\n\tWatching for \""|| var ||"\" in:"   ||
-             "\n\t"|| cur_file ||"("||cur_line||"): " ||
+      msg  :="\n   Init Value: " ||(\varInfo[var].initValue | type(&null))
+      msg||:="\n   Old  Value: " ||(\varInfo[var].value  | type(&null))
+      msg||:="\n   New  Value: " ||&eventvalue
+      msg||:="\n   Watchpoint #"||varInfo[var].id||" on: "||var||"; "||
+             cur_file||":"||cur_line||"."
+      msg||:="\n   "||cur_line||":"||
              DState.srcFile.getSrcLine(cur_file, cur_line)
+      varInfo[var].value := &eventvalue
       DState.Write(msg)
       return
-   }
+      }
+   fail
 end
 
 #
 # watches for a variable
 #
 method cmdWatch(cmd)
-   local x, var, procName, i, old_State := DState.State
+   local x, name, var, cur_val, procName, i, old_State := DState.State
 
    if not (DState.State = (LOAD | PAUSE)) then {
       DState.State := ERROR
-      msg   := "\n\t No Program is Loaded_
-                \n\t Type \"help\" for assistance"
+      msg   := "\n   No Program is Loaded_
+                \n   Type \"help\" for assistance"
       DState.Write(msg)
       return
       }
    DState.State := SKIP
    
-   # if cmd is only "watch"; will print all of the pre-set watch points info
+   # if cmd is only "watch"; will print all of the pre-set watchpoints info
    if *cmd = 1 then{
-      msg :="\n\t " || cmd[1]
+      msg :="\n   " || cmd[1]
       every x := !DState.watchMask do
-         msg ||:= "\n\t Watch for : " || x
-
+         msg ||:= "\n   Watchpoint #"||varInfo[x].id||" on: "||x
       DState.Write(msg)
       return
       }
 
    var := cmd[2]
+   if x := find("-"|"+"|"^"|":", var) then{
+      name := var[1:x]
+      }
+   else{ 
+      name := var
+      # Note: we have to be smart about the scope of the watched variable
+      if \cmd[3] then { #what about "^" or ":" ?????
+         var ||:= "-" || cmd[3] # cmd[3] is the procedure name
+         }
+      else if old_State = LOAD then {
+         # we would assume that the watched variable is a global one  
+         var ||:="+"  # + is the global scope character
+         }
+      else if old_State = PAUSE then { #what about "^" or ":" ????
+         # assume that the watched variable is local to where it is being paused
+         procName := image(proc(Monitored, 0))
+         i := find(" ",procName)
+         var ||:= "-" || procName[i+1:0]
+         }
+      }
+
    if member(DState.watchMask, var) then {
-      msg := "\n\t There is already an existing watch point on: " || var
+      msg := "\n   Watchpoint #"||varInfo[var].id||" already exist on: "||var
       DState.Write(msg)
       return
       }
-   
-   # Note: we have to be smart about the scope of the watched variable
-   if \cmd[3] then {
-      var ||:= "-" || cmd[3] # cmd[3] is the procedure name
-      }
-   else if old_State = LOAD then {
-      # we would assume that the watched variable is a global one  
-      var ||:="+"  # + is the global scope character
-      }
-   else if old_State = PAUSE then {
-      # assume? that the watched variable is local to where it is paused
-      procName := image(proc(Monitored, 0))
-      i := find(" ",procName)
-      var ||:= "-" || procName[i+1:0]
-      }
    insert(DState.watchMask, var)
-   msg := "\n\t Watchkpoint successfully set for: "||var
+   count +:= 1
+   cur_val := variable(name, Monitored, 0)
+   #WatchedVar(name, id, count, initValue, value)  
+   varInfo[var] := WatchedVar(name, count, 0, cur_val, cur_val)  
+   msg := "\n   Watchkpoint #"||count||" set on: "||var
    DState.Write(msg)
 end
 
-
 #
+# Initialization
 #
 initially()
+   varInfo := table() # maps var into WatchedVar() 
+   count   := 0
    msg := ""
 end

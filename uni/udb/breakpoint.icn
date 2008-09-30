@@ -1,7 +1,7 @@
 
 #
 # breakpoint.icn
-# It handles UDB's break points related tasks
+# It handles UDB's breakpoints related tasks
 # Author: Ziad Al-Sharif
 # Date:   7-15-2008
 #
@@ -10,42 +10,44 @@ $include "evdefs.icn"
 $include "defaults.icn"
 
 #
-# For every file that has a break point
+# For every file that has a breakpoint
 # we will create a new breakPt in a list inside a table.
 #
 record breakPt(
    id,    # a unique identification number
-   fname, # The file name that has the break point
+   fname, # The file name that has the breakpoint
    line,  # The exact line number where the breakpoint is
    code   # a copy of the actual source code of that line
    )
 
 class BreakPoint(
    DState,       # (Alias) object of type State class
-   breakPoints,  # A table maps files to their list of break points 
-   count,        # An integer counts the total number of break points
+   breakPoints,  # A table maps files to their list of breakpoints 
+   count,        # An integer counts the total number of breakpoints
    msg           # a string with latest message from this class 
    )
 
 #
-# Check the Monitored file for a break point
+# Check the Monitored file for a breakpoint
 #
 method checkBreakPoint()
-   local  cur_file, cur_line, L, x
+   local  cur_file, cur_line, L, x, id
 
    cur_file := keyword("file", Monitored)
    if member(breakPoints, cur_file) then{
       cur_line := keyword("line", Monitored)
       L := breakPoints[cur_file]
       every x := !L do
-         if cur_line = x.line then{
+         if cur_line = x.line & id:=isBreakExist(cur_file,cur_line) then{
             DState.State := PAUSE
             # this delete will help "next" and "step" operate well
             # jut remove the the breakMask set from the valueMask 
             # table temporarly until the continue command comes on
             delete(DState.valueMask,E_Line) 
-            msg   :="\n\tBreak point:\n\t"||cur_file||"("||cur_line||"): "
-            msg ||:= DState.srcFile.getSrcLine(cur_file, cur_line) 
+            msg   :="\n   Breakpoint #"||id||" at : "||
+                    cur_file||":"||cur_line||"."
+            msg ||:="\n   "||cur_line||":"|| #???"\nb->"
+                    DState.srcFile.getSrcLine(cur_file, cur_line) 
             DState.Write(msg)
             return
             }
@@ -53,31 +55,31 @@ method checkBreakPoint()
 end
 
 #
-# prints out a list of the existing break points used by cmdBreak
+# prints out a list of the existing breakpoints used by cmdBreak
 #
 method printBreakPoints(fname)
    local x, L, bp
 
-   msg := "\n\t "
+   msg := ""
    if /fname then{
       every x := key(breakPoints) do {
          L := breakPoints[x]
          every bp := !L do
-            msg ||:= "\n\t "|| bp.id||"#  "|| bp.fname ||
-                     "(" || bp.line ||")"|| ": " || bp.code
+            msg ||:= "\n   Breakpoint #"|| bp.id||" at : file "||bp.fname||
+                     ", line "||bp.line||". Source code"||" : "||bp.code
          }
       }
    else{
       L := breakPoints[fname]
       every bp := !L do
-         msg ||:= "\n\t "|| bp.id||"#  "|| bp.fname ||
-                  "(" || bp.line ||")"|| ": " || bp.code
+         msg ||:= "\n   Breakpoint #"||bp.id||" at : file "||bp.fname||
+                  ", line "||bp.line||". Source code"||" : "||bp.code
       }
    DState.Write(msg)
 end
 
 #
-# check to see whether a break point is pre-exist or not
+# check to see whether a breakpoint is pre-exist or not
 #
 method isBreakExist(fname, line)
    local L, bp
@@ -86,13 +88,13 @@ method isBreakExist(fname, line)
       L := breakPoints[fname]
       every bp := !L do
          if bp.line = line then
-            return
+            return bp.id
       }
    fail
 end
 
 #
-# used to add a new break point into the 
+# used to add a new breakpoint into the 
 # breakPoints table and the breakMask set
 #
 method addBreakPoint(fname, bp)
@@ -106,7 +108,7 @@ method addBreakPoint(fname, bp)
 end
 
 #
-# used it clear break points, is used by cmdClear()
+# used it clear breakpoints, is used by cmdClear()
 #
 method deleteBreakPoint(fname, line)
    local L, x, i
@@ -124,7 +126,7 @@ method deleteBreakPoint(fname, line)
 end
 
 #
-# Sets Break points on line numbers or procedure names
+# Sets Breakpoints on line numbers or procedure names
 # [b linenum], [b ProcName], [b file linenum]
 #
 method cmdBreak(cmd)
@@ -133,8 +135,8 @@ method cmdBreak(cmd)
    msg := ""
    if not (DState.State = (LOAD | PAUSE)) then {
       DState.State := ERROR
-      msg := "\n\t No Program is Loaded_
-              \n\t Type \"help\" for assistance"
+      msg := "\n   No Program is Loaded_
+              \n   Type \"help\" for assistance"
       DState.Write(msg)
       return
       }
@@ -163,65 +165,67 @@ method cmdBreak(cmd)
       if line := integer(arg) then{
          if DState.srcFile.isInFile(fname, line) then{
             if code := DState.srcFile.searchFileLines(fname, line) then{
-               break_point := breakPt(count +:=1, fname, line, code)
+               break_point := breakPt(count +:= 1, fname, line, code)
                }
             else{
-               msg := "\n\t Line number was not found,_
-                       \n\t Please try a different line number"
+               msg := "\n   Line number was not found,_
+                       \n   Please try a different line number"
                DState.Write(msg)
                return
                }
             }
          else{
-            msg := "\n\t Line number is not within the \""||fname||"\""
+            msg := "\n   Line number "||line||" out of range; "||fname||
+                   " has "||DState.srcFile.getFileTotalLines(fname)||" lines." 
             DState.Write(msg)
             return
             }
          }
       else{
          if line := DState.srcFile.searchFileProcs(fname, arg) then
-            break_point := breakPt(count +:=1, fname,line,
+            break_point := breakPt(count +:= 1, fname,line,
                                    DState.srcFile.getSrcLine(fname, line))
          else{
-            msg := "\n\t Procedure not found_
-                    \n\t Make sure the method name is correct!"
+            msg := "\n   Procedure not found_
+                    \n   Make sure the procedure/method name is correct!"
             DState.Write(msg)
             return
             }
          } 
       }      
    else{
-      msg := "\n\t Source File \""||fname||"\" is not loaded !!!"
+      msg := "\n   Source file \""||fname||"\" is not loaded !!!"
       if line := integer(arg) then
-         break_point := breakPt(count +:=1, fname , line, "?")
+         break_point := breakPt(count +:= 1, fname , line, "?")
       }
       
    # record breakPt(fname, linenum, code)
    line := break_point.line
-   if isBreakExist(fname, line) then
-      msg ||:= "\n\t The break point is already exist,_
-                \n\t Type \"break\" to see all breakpoints"
+   if isBreakExist(fname, line) then{
+      msg ||:= "\n   The breakpoint is already exist,_
+                \n   Type \"break\" to see all breakpoints"
+      }
    else{
       addBreakPoint(fname, break_point)
-      msg ||:= "\n\t Breakpoint set successfully in:\n\t "||
-                break_point.id||"#  "||fname ||"("||line||"): " ||
-                DState.srcFile.getSrcLine(fname, line) 
+      msg ||:= "\n   Breakpoint #"||
+                break_point.id||" at : file "||fname||", line "||line||"."||
+               "\n   Source code:"||DState.srcFile.getSrcLine(fname, line) 
       } 
    DState.Write(msg)
 end
 
 #
-# It clears pre-set break points
+# It clears pre-set breakpoints
 #
 method cmdClear(cmd)
-   local line, x, fname, arg
+   local line, x, fname, arg, id
 
-   # clears all of the preset break points
+   # clears all of the preset breakpoints
    if *cmd = 1 then{
       DState.breakMask := set()
       every x := key(breakPoints) do
           delete(breakPoints, x)
-      msg := "\n\t All break points are cleared!!!"
+      msg := "\n   All breakpoints are deleted."
       DState.Write(msg)
       return
       }
@@ -240,37 +244,44 @@ method cmdClear(cmd)
       fname ||:= ".icn"
 
    if line := integer(arg) then{
-      if isBreakExist(fname, line) then{
+      if id := isBreakExist(fname, line) then{
          deleteBreakPoint(fname, line)
-         msg := "\n\t The break point is cleared at :\n\t "||fname||
-                "("||line ||"): "||DState.srcFile.getSrcLine(fname, line)
+         msg  :="\n   Deleted breakpoint #"||id||" at : file "||fname||
+                ", line "||line ||"."
+         msg||:="\n   Source code:"||DState.srcFile.getSrcLine(fname, line)
          }
-      else
-         msg := "\n\t There is no break point at : \n\t "||fname||
-                "("||line ||"): "||DState.srcFile.getSrcLine(fname, line)
+      else{
+         msg  :="\n   No breakpoint at : file "||fname||", line "||line ||"."
+         msg||:="\n   Source code: "||DState.srcFile.getSrcLine(fname, line)
+         }
       }
    else{ 
       if line := DState.srcFile.searchFileProcs(fname, arg) then{
-         if isBreakExist(fname, line) then{
+         if id := isBreakExist(fname, line) then{
             deleteBreakPoint(fname,line)
-            msg := "\n\t The break point is cleared at :\n\t "||fname||
-                   "("||line ||"): "||DState.srcFile.getSrcLine(fname, line)
+            msg  :="\n   Deleted breakpoint #"||id||" at : file "||fname||
+                   ", line "||line ||"."
+            msg||:="\n   Source code:"||DState.srcFile.getSrcLine(fname, line)
             }
-         else
-            msg := "\n\t There is no break point at : \n\t "||fname||
-                   "("||line ||"): "||DState.srcFile.getSrcLine(fname, line)
+         else{
+            msg  :="\n   No breakpoint at : file "||fname||", line "||line||"."
+            msg||:="\n   Source code : "||DState.srcFile.getSrcLine(fname, line)
+            }
          }
-      else
-         msg := "\n\t Procedure not found_
-                 \n\t Make sure the method name is correct!"
+      else{
+         msg := "\n   Procedure not found_
+                 \n   Make sure the method name is correct!"
+         }
       }
    DState.Write(msg)
 end
 
-
+#
+# Initialization
+#
 initially()
    
    breakPoints := table(0)
    count := 0
-   msg :="\n\t "
+   msg :="\n   "
 end

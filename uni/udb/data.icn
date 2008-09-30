@@ -28,7 +28,7 @@ method printGlobals(level)
    Message := ""
    every x := !DState.global_vars do{
       i := variable(x, Monitored, level)
-      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
    }
    DState.Write(Message)
 end
@@ -44,7 +44,7 @@ method printLocals(level)
    Message := ""
    every x := localnames(Monitored,level) do{
       i := variable(x, Monitored, level)
-      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
    }
    DState.Write(Message)
 end
@@ -60,7 +60,7 @@ method printParams(level)
    Message := ""
    every x := paramnames(Monitored,level) do{
       i := variable(x, Monitored, level)
-      Message ||:= "\n\t "||x||" = "||image(i)||" : "|| type(i)
+      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
    }
    DState.Write(Message)
 end
@@ -281,7 +281,7 @@ method printVar(expr, level)
 
    index := parsePrintExpression(expr)
    if *index = 0 then{
-      Message :="\n\t\""||expr||"\" is Unkown Expression !!!"
+      Message :="\n   \""||expr||"\" is Unkown Expression !!!"
       DState.Write(Message)
       return
       }
@@ -289,7 +289,7 @@ method printVar(expr, level)
    var := get(index)
    if Var := variable(var, Monitored, level) then
       if (ref := getVarReference(Var, index, level)) & *index = 0 then{
-         Message := "\n\t " || expr || " = "
+         Message := "\n   " || expr || " = "
          case action of{
             "*" :{ Message ||:= *ref }
             "!" :{ Message ||:="{ "
@@ -304,13 +304,13 @@ method printVar(expr, level)
                         Message ||:= ximage(ref)
                  else{
                         Message ||:= image(ref)
-                        #Message ||:= "\n\t ..................!"
+                        #Message ||:= "\n   ..................!"
                      }
                  }
              }
          }
-      else Message :="\n\t\""||expr||"\" is Unkown Expression !!!"
-   else Message := "\n\t The variable \""|| var ||
+      else Message :="\n   \""||expr||"\" is Unkown Expression !!!"
+   else Message := "\n   The variable \""|| var ||
                    "\" is not within the current frame"
    DState.Write(Message)
 end
@@ -332,7 +332,7 @@ method assignVar(expr, level)
 
    lhs := parsePrintExpression(lexpr)
    if *lhs = 0 then{
-      Message :="\n\t The expression \""||expr||"\" is Unkown !!!"
+      Message :="\n   The expression \""||expr||"\" is Unkown !!!"
       DState.Write(Message)
       return
       }
@@ -340,14 +340,14 @@ method assignVar(expr, level)
    if rvalue := getVarValue(rexpr, level) then{
       lvar := get(lhs)
       if setVarReference(lvar, lhs, level, rvalue) then
-         Message :="\n\t Assigning \""||lexpr||"\" with \""||
+         Message :="\n   Assigning \""||lexpr||"\" with \""||
                     rexpr||"\" has been succeeded"
       else
-         Message :="\n\t Assigning \""||lexpr||"\" with \""||
+         Message :="\n   Assigning \""||lexpr||"\" with \""||
                     rexpr||"\" has been failed"
       }
    else 
-      Message := "\n\t The RHS expr \""||rexpr||"\" is Unknown !!!"
+      Message := "\n   The RHS expr \""||rexpr||"\" is Unknown !!!"
 
    DState.Write(Message)
 end
@@ -361,8 +361,8 @@ method cmdPrint(cmd)
 
    if DState.State ~= PAUSE then{
       DState.State := ERROR
-      Message := "\n\t No program is running !!!_
-                  \n\t Try \"run\", or Type \"help\" for assistance"
+      Message := "\n   The program is not being run._
+                  \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(Message)
       return
       }
@@ -400,7 +400,7 @@ method cmdPrint(cmd)
             return
             }
          else{ # p &pos 
-            Message := "\n\t "|| expr
+            Message := "\n   "|| expr
             expr := expr[j+1:0]
             Message ||:=" = "||image(keyword(expr, Monitored))
             DState.Write(Message)
@@ -416,29 +416,6 @@ method cmdPrint(cmd)
       write("OPSSSSS")
       #Message := ""
       }
-end
-
-#
-# used by cmdList to print a a bunch of src lines
-#
-method printSrcLines(cur_line, cur_file, num)
-   local i, line := cur_line - 5
-
-   if /num then num := 10
-
-   if line < 0 then line := 0
-
-   Message :="" 
-   every i:= 1 to num do{
-      line +:= 1
-      if line = cur_line then
-         Message ||:="\n    --> "||line ||":"||
-                     DState.srcFile.getSrcLine(cur_file, line)
-      else
-         Message ||:="\n\t"||line ||":"||
-                     DState.srcFile.getSrcLine(cur_file, line)
-      }
-   DState.Write(Message)
 end
 
 #
@@ -478,88 +455,137 @@ method parsePrintExpression(expr)
 end
 
 #
+# used by cmdList to print a bunch of src lines
+#
+method printSrcLines(cur_file, cur_line, offset)
+   local i, line, max_line
+
+   /offset := 10
+   max_line := DState.srcFile.getFileTotalLines(cur_file)
+
+   if cur_line <= 5 then
+      line := 1
+   else if cur_line <= max_line then
+      line := cur_line - 5
+   else if cur_line > max_line then{
+      Message := "\n   Line number "||cur_line||" out of range; "||
+                  cur_file||" has "||max_line||" lines."
+      DState.Write(Message)
+      fail
+      }
+
+   Message :="" 
+   every i:= 1 to offset do{
+      if line = cur_line then
+         Message ||:="\n-->"||line ||":"||
+                     DState.srcFile.getSrcLine(cur_file, line)
+      else
+         Message ||:="\n   "||line ||":"||
+                     DState.srcFile.getSrcLine(cur_file, line)
+      line +:= 1
+      }
+   DState.Write(Message)
+end
+
+#
 # The list command from gdb, as in gdb defaults are 10 lines from
 # the current file are printed centered around the curent line 
 #
 method cmdList(cmd)
-   local cur_line, cur_file, fnc, line
-   static last_line := -1
+   static cur_line, cur_file, max_line
+   local name, line
    
    if DState.RunCode ~= LIST then{
-      last_line := -1
       DState.RunCode := LIST
-      }
-
-   if DState.State = LOAD then{
-      cur_file := DState.srcFile.exeName ||".icn"
-      cur_line := 5
-      } 
-   else if DState.State = PAUSE then{
-      cur_file := keyword("file", Monitored)
-      cur_line := keyword("line", Monitored)
-      }
-   else{
-      DState.State := ERROR
-      Message := "\n\t No Program is Loaded nor Running_
-                  \n\t Type \"help\" for assistance"
-      DState.Write(Message)
-      return
-      }
-
-   if *cmd = 1 then{
-      if last_line = -1 then
-         last_line := cur_line
-      else
-         last_line +:= 10
-      }
-   else{
-       if line := integer(cmd[2]) then
-          last_line := line
-       else{
-          if cmd[2] == "-" then
-             last_line -:= 10
-          else{
-             fnc := cmd[2]
-             if line := DState.srcFile.searchFileProcs(cur_file, fnc) then
-                last_line := line
-             else if member(DState.srcFile.foundFiles, fnc||".icn") then{#????
-                cur_file:= fnc||".icn"
-                last_line := 5
-                } 
-             else{
-                Message := "\n\t Procedure not found_
-                            \n\t Make sure the method name is correct!"
-                DState.Write(Message)
-                return
-                }
-             }
-          }
-       }
-
-   if DState.srcFile.isLoaded(cur_file) then{
-      if DState.srcFile.isInFile(cur_file, last_line) then
-         printSrcLines(last_line, cur_file)
+      if DState.State = LOAD then{
+         cur_file := DState.srcFile.procMainFile
+         cur_line := DState.srcFile.procMainLine
+         max_line := DState.srcFile.getFileTotalLines(cur_file)
+         } 
+      else if DState.State = PAUSE then{
+         cur_file := keyword("file", Monitored)
+         cur_line := keyword("line", Monitored)
+         max_line := DState.srcFile.getFileTotalLines(cur_file)
+         }
       else{
-         Message := "\n\t line #("||last_line||") is out of the file limits"
-         last_line := -1
+         DState.RunCode := DState.State := ERROR
+         Message := "\n   No Program is Loaded nor Running_
+                     \n   Type \"help\" for assistance"
          DState.Write(Message)
+         return
          }
       }
+   else if *cmd = 1 then{
+      if (cur_line + 10) < max_line then  cur_line +:= 10
+      else if cur_line < max_line   then  cur_line := max_line
+      else if cur_line = max_line   then  cur_line := max_line + 1
+      }
+
+   if *cmd >= 2 then{
+      if line := integer(cmd[2]) then{
+         if line > 0 then 
+            cur_line := line
+         else if line < 0 then{
+            cur_line := max_line + line
+            }
+         }
+      else if cmd[2] == "+" then{
+         if (cur_line + 10) < max_line then  cur_line +:= 10
+         else if cur_line < max_line   then  cur_line := max_line
+         else if cur_line = max_line   then  cur_line := max_line + 1
+         }
+      else if cmd[2] == "-" then{
+         if (cur_line - 10) >= 1 then  cur_line -:= 10
+         else                          cur_line := 1
+         }
+      else{
+         name := cmd[2]
+         if line := DState.srcFile.searchFileProcs(cur_file, name) then{
+            cur_line := line
+            }
+         else{
+            name ||:=".icn"          
+            if DState.srcFile.isSrcFile(name) then{
+               cur_file := name
+               max_line := DState.srcFile.getFileTotalLines(cur_file)
+               if *cmd = 2 then
+                  cur_line := 1
+               else if line := integer(cmd[3]) then{
+                  if line > 0 then
+                     cur_line := line
+                  else if line < 0 then
+                     cur_line := max_line
+                  }
+               }
+            else{
+               DState.RunCode := DState.State := ERROR
+               Message  := "\n   "||name||" is not a source file in: \""||
+                           DState.TP[1]||"\"."
+               Message||:= "\n   Try \"src\", or Type \"help\" for assistance."
+               DState.Write(Message)
+               return
+               } 
+            }
+         }
+      }
+
+   if DState.srcFile.isLoaded(cur_file) then{
+      printSrcLines(cur_file, cur_line)
+      }
    else{
-      Message := "\n\t Source File \""||cur_file||"\" is NOT loaded !!!"
-      last_line := -1
+      Message := "\n   Source File \""||cur_file||"\" is NOT loaded !!!"
       DState.Write(Message)
       }
 end
 
 #
-# it is to print the found/missing source files
+# prints the found/missing source files
 #
 method cmdSource(cmd)
    local op, files
 
    if cmd[3] then{
-      Message := DState.srcFile.getSourceCode(cmd[3])
+      Message := DState.srcFile.getSrcCode(cmd[3])
       DState.Write(Message)
       return
       }
@@ -568,35 +594,35 @@ method cmdSource(cmd)
    case op of{
       "-f" | "-found":{
            if files := DState.srcFile.getFoundFiles() then{
-              Message := "\n    Found Source Files are:\n"
+              Message := "\n    Found Source Files are:\n   "
               Message ||:= files
               }
            else
-              Message := "\n\t No file(s) found !!"
+              Message := "\   nNo file(s) found !!"
            }
       "-m" | "-missing":{
            if files := DState.srcFile.getMissingFiles() then{
-              Message   := "\n    Missing Source Files are:\n"
+              Message   := "\n   Missing Source Files are:\n"
               Message ||:= files
               }
            else
-              Message := "\n\t No file(s) missing !!"
+              Message := "\n   No file(s) missing !!"
            }
       "-a" | "-all":{
            if files := DState.srcFile.getSourceFiles() then{
-              Message   := "\n    All Source Files are:\n"
+              Message   := "\n   All Source Files are:\n"
               Message ||:= files
               }
            else
-              Message := "\n\t No file(s) loaded !!"
+              Message := "\n   No file(s) loaded !!"
            }
       default:{
            if files := DState.srcFile.getFoundFiles() then{
-              Message   := "\n    Found Source Files are:\n"
+              Message   := "\n   Found Source Files are:\n"
               Message ||:= files
               }
            if files := DState.srcFile.getMissingFiles() then{
-              Message ||:= "\n    Missing Source Files are:\n"
+              Message ||:= "\n   Missing Source Files are:\n"
               Message ||:= files
               }
            } 
@@ -605,9 +631,10 @@ method cmdSource(cmd)
 end
 
 #
+# Initialization
 #
 initially()
-
+   Message := ""
 end
 
  

@@ -81,20 +81,24 @@ end
 method showRunError()
    local cur_line, cur_file, cur_p, src
 
-   cur_file := keyword("file", Monitored)
-   cur_line := keyword("line", Monitored)
-   cur_p := image(image(proc(Monitored, 0 )))
-   Message := "\n\t Run-time error : " ||keyword("errornumber",Monitored)||
-              "\n\t "||cur_p||"; File "||cur_file||
+   cur_file := keyword("file", Monitored) | "?"
+   cur_line := keyword("line", Monitored) | "?"
+   #cur_p := "2"#image(image(proc(Monitored, 0 ))) | "OPS!!"
+   Message := "\n   Run-time error : " ||keyword("errornumber",Monitored)||
+              "\n   "  || #cur_p
+              "; File "||cur_file||
               "; Line "||cur_line||"; Col "||keyword("column",Monitored)
-   Message ||:="\n\t "||DState.srcFile.getSrcLine(cur_file, cur_line)
-   Message ||:="\n\t "||keyword("errortext",Monitored)
+   Message ||:="\n   "||DState.srcFile.getSrcLine(cur_file, cur_line)
+   Message ||:="\n   "||keyword("errortext",Monitored)
    DState.Write(Message)
 end
 
+#
+# Initialization
+#
 initially()
 
-   Break    := BreakPoint()    # The break points techniques
+   Break    := BreakPoint()    # The breakpoints techniques
    Watch    := WatchPoint()    # The watching points techniques
    Frame    := Stack()         # The stack and frames related techniques
    Print    := Data()          # The printing techbiques
@@ -103,5 +107,5 @@ initially()
    Internal := Internals()     # The Internal monitors and/or visualizers 
    External := Externals()     # The External monitors with co-expression switch
 
-   Message  := "\t "
+   Message  := ""
 end

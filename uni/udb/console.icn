@@ -14,6 +14,7 @@ class Console : Session(
    DOWN,       # The down arrow control key
    ENTER,      # The enter key
    BkSp,       # The Back Space key
+   RIGHT,      # The right arrow control key
    LEFT        # The left arrow control key
    )
 
@@ -43,14 +44,12 @@ end
 method update_cmdHistory(line)
    local i
 
-   #cmdHistory[1] == " "
    every i:=2 to *cmdHistory do
       if line == cmdHistory[i] then{
          delete(cmdHistory,i)    
          break
       }
    put(cmdHistory,line)
-
 end
 
 #
@@ -115,7 +114,6 @@ method get_CommandLine()
       line ? while tab(upto(wchar))do {
            word := tab(many(wchar))
            put(words, word)
-           #write("---:",word)
       }
       return words
    }else
@@ -162,7 +160,6 @@ method startConsole(argv)
                  SKIP:    { DState.State := old_State  }
                  ERROR:   { DState.State := old_State
                             Write(Message)             }
-                 #default:{ write("PAUSED !!!")        }
                }# end of case
                cmd := get_CommandLine()
                if \cmd then    parse_Command(cmd)
@@ -198,7 +195,7 @@ method startConsole(argv)
 end
 
 #
-#  
+#  Initialization
 #
 initially()
 
@@ -210,7 +207,7 @@ initially()
    # Constant Keys used with the command history
    UP    := "\e[A"
    DOWN  := "\e[B"
-   #RIGHT := "\e[C" # not used
+   RIGHT := "\e[C" # not used
    LEFT  := "\e[D" # ???
    ENTER := "\n"
    BkSp  := "\d"

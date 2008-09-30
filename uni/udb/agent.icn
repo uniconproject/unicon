@@ -37,13 +37,13 @@ method cmdEnable(name)
          delete(disabledClients, name)
          enabled +:= 1
          build_Mask()
-         msg := "\n\t The "||mtype||" monitor ("||name||") is ENABLED"
+         msg := "\n   The "||mtype||" monitor ("||name||") is ENABLED"
          }
       else
-         msg := "\n\t The "||mtype||" monitor ("||name||") is already ENABLED"
+         msg := "\n   The "||mtype||" monitor ("||name||") is already ENABLED"
       }
    else
-      msg := "\n\t The "||mtype||" monitor ("||name||") is NOT Found!"
+      msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
    DState.Write(msg)
 end
 
@@ -60,13 +60,13 @@ method cmdDisable(name)
          delete(activeClients, name)
          enabled -:= 1
          build_Mask()
-         msg := "\n\t The "||mtype||" monitor ("||name||") is DISABLED"
+         msg := "\n   The "||mtype||" monitor ("||name||") is DISABLED"
          }
       else
-         msg := "\n\t The "||mtype||" monitor ("||name||") is already DISABLED"
+         msg := "\n   The "||mtype||" monitor ("||name||") is already DISABLED"
       }
    else
-      msg := "\n\t The "||mtype||" monitor ("||name||") is NOT Found!"
+      msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
    DState.Write(msg)
 end
 
@@ -74,26 +74,26 @@ end
 # printd out information about the enabled internals
 #
 method cmdInfo(name)
-   local i:=1, msg:="\n\t"
+   local i:=1, msg:="\n   "
 
    ## what if there is more than one monitor loaded with the same name??
    if \name then{
       if \Clients[name] then{
          if Clients[name].State = DISABLED then
-            msg := "\n\t The "||mtype||" monitor ("||name||") is DISABLED"
+            msg := "\n   The "||mtype||" monitor ("||name||") is DISABLED"
          else
-            msg := "\n\t The "||mtype||" monitor ("||name||") is ENABLED"
+            msg := "\n   The "||mtype||" monitor ("||name||") is ENABLED"
          }
       else
-         msg := "\n\t The "||mtype||" monitor ("||name||") is NOT Found!"
+         msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
       }
    else{
       every name := !activeClients do
-         msg ||:= i ||":"||name||"\n\t"
+         msg ||:= i ||":"||name||"\n   "
       if msg >= 5 then
-         msg := "\n\t The following are the enabled "||mtype||" monitors:"||msg
+         msg := "\n   The following are the enabled "||mtype||" monitors:"||msg
       else
-         msg := "\n\t There is no enabled "||mtype||"s !"
+         msg := "\n   There is no enabled "||mtype||"s !"
       } 
    DState.Write(msg)
 end
@@ -117,7 +117,9 @@ method build_Mask()
       DState.Update()
       }
 end
+
 #
+# Initialization
 #
 initially(t)
 

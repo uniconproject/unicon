@@ -22,21 +22,21 @@ record fileIndex(
 # Contains all of the source files issues such as found files and so  
 #
 class SourceFile(
-   fmain,        # The Source File that has the procedure main
+   procMainFile, # The Source File that has the procedure main
+   procMainLine, # The Source Line that has the procedure main
    exeName,      # The executable file name
    exeSize,      # The executable file size
    sourcePath,   # String of paths that will be searched for source files
    sourceFiles,  # List with all source file names that are in the binary
-   sourceText,   # List holds all the all source files text
+   sourceText,   # List holds all source files text
    srcIndex,     # Table of our position in the source file; fname is the key
-   foundFiles,   # Set with all the files that we have found are here
-   missingFiles  # Set with all the files that we did not find
+   foundFiles,   # Set with all file names that were found - loaded
+   missingFiles  # Set with all file names that were not found - not loaded 
    )
 
 #
 # Extracts the file name from its path, it is different from
 # getSourceFile() name by not keeping the path in sourcePath
-# this is a public function mostly used by debug.icn
 #
 method getFileName(f)
    local i, j:=0, path:=" "
@@ -76,7 +76,8 @@ end
 method getSourceFileSize(f)
   local s:="", p, cmd :="du -h "
   local fsize:=-1, i
-     
+
+  # what about MS Windows ???     
   cmd ||:= f 
   p := open(cmd,"p")
   while s ||:=  read(p) || "\n"
@@ -111,9 +112,9 @@ method loadSourceFiles(fname, src)
             e := *sourceText
             insert( foundFiles, f )
             srcIndex[ f ] := fileIndex(b,e)
-            if /fmain then
-               if searchFileProcs(f,"main") then
-                  fmain := f
+            if /procMainFile then
+               if procMainLine := searchFileProcs(f,"main") then
+                  procMainFile := f
             }
          else
             put(missingFiles, sourceFiles[ i ])# keep it as it is
@@ -158,24 +159,27 @@ method searchFileProcs(Fname, ProcName)
    local wSpace, other_char
    local temp, temp1, linenum
 
-   linenum := 1
-   other_char := ("_")
-   wSpace := cset( " \t\n\^m" )
-
-   while temp := sourceText[linenum + srcIndex[Fname].fbegin] do{
-      temp ? {
-         tab(many(wSpace))
-         if(temp1 := tab(many(&letters))) == ("method"|"procedure") then {
+   if \Fname & \ProcName then{
+      linenum := 1
+      other_char := ("_")
+      wSpace := cset( " \t\n\^m" )
+      
+      while temp := sourceText[linenum + srcIndex[Fname].fbegin] do{
+         temp ? {
             tab(many(wSpace))
-            temp1 := tab(many(CHARACTER ++ other_char))
-            if temp1 == ProcName then {
-	       return linenum
-	       }
-	    }
-	 }
-      linenum +:= 1
+            if(temp1 := tab(many(&letters))) == ("method"|"procedure") then{
+              tab(many(wSpace))
+              temp1 := tab(many(CHARACTER ++ other_char))
+              if temp1 == ProcName then {
+                 return linenum
+                 }
+              }
+            }
+         linenum +:= 1
+         }
       }
-   fail
+   else
+      fail
 end
 
 #
@@ -191,9 +195,27 @@ end
 # returns the File Name that has the procedure main 
 #
 method getMainFileName()
-   if /fmain then
+   if /procMainFile then
       fail
-   return fmain
+   return procMainFile
+end
+
+#
+# returns the total number of lines in a file.
+#
+method getFileTotalLines(fname)
+   /fname := procMainFile
+    
+   return srcIndex[fname].fend - srcIndex[fname].fbegin #+ 1
+end
+
+#
+# checks whether fname is a source file or not
+#
+method isSrcFile(fname)
+  if member(foundFiles, fname) | member(missingFiles, fname) then
+     return
+  fail
 end
 
 #
@@ -218,7 +240,7 @@ method isInFile(fname, line)
       if (b + line <= e) & ( e - line >= b ) then
          return
       }
-   fail 
+   fail
 end
 
 #
@@ -238,9 +260,33 @@ method getSrcLine(fname, line)
 end
 
 #
+# returns the file name of a procedure 
+#
+method getProcFile(pname)
+    local fname
+
+    every fname := !foundFiles do
+       if searchFileProcs(fname, pname) then
+          return fname
+    fail
+end
+
+#
+# returns the line number of a procedure name
+#
+method getProcLine(pname)
+    local pfile, pline
+
+    if pfile := getProcFile(pname) then
+       if pline := searchFileProcs(pfile, pname) then
+          return pline
+    fail
+end
+
+#
 # prints out the source code
 #
-method getSourceCode(fname)
+method getSrcCode(fname)
    local i, b, e, code:="\n"
 
    if /fname then fname := keyword("file", Monitored)
@@ -371,8 +417,9 @@ method dopen(s)
    fail
 end
 
-
-
+#
+# Initialization
+#
 initially()
 
    exeName     := "?"

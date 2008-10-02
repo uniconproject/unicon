@@ -14,6 +14,7 @@ $include "defaults.icn"
 #
 class Data(
    DState,  # (Alias) object of type State class
+   Keywords,# a set of the valid unicon keywords used in UDB
    Message  # a string formated with the current message
    )
 
@@ -357,7 +358,7 @@ end
 # procedures that are still in the stack can also be viewed.
 #
 method cmdPrint(cmd)
-   local level, expr, lexpr, rexpr, x, j
+   local level, expr, lexpr, rexpr, x, i, j, data
 
    if DState.State ~= PAUSE then{
       DState.State := ERROR
@@ -383,28 +384,51 @@ method cmdPrint(cmd)
          printParams()
          return
          }
-      else if j:=find("&", expr) then{ # keywords
+      else if i:=find("&", expr) then{ # keywords
          # There is a bug here when = or := is used???
          if j := find(":=",expr) then{ # p &pos:=10
-            lexpr := expr[1:j]
+            lexpr := expr[i+1:j]
             rexpr := expr[j+2:0]
-            write("hhh ",lexpr ,"  ", getVarValue(rexpr,level))
-            #variable(lexpr, Monitored, level) := getVarValue(rexpr,level)
-            variable("&pos",Monitored) := 10
-            return
+            if validKeyword(lexpr) then{
+               variable(lexpr, Monitored, level) := getVarValue(rexpr,level)
+               return
+               }
+            else{
+               Message := "\n   &"||lexpr ||" "||" is not a valid keyword."
+               DState.Write(Message)
+               fail 
+               }
             }
          else if j := find("=", expr) then{ # p &pos=10
-            lexpr := expr[1:j]
+            lexpr := expr[i+1:j]
             rexpr := expr[j+1:0]
-            variable(lexpr, Monitored, level, 1) := getVarValue(rexpr,level)
-            return
+            if validKeyword(lexpr) then{
+               variable(lexpr, Monitored, level, 1) := getVarValue(rexpr,level)
+               ##variable("&pos",Monitored,0,1) := 10 ???
+               return
+               }
+            else{
+               Message := "\n   &"||lexpr ||" "||" is not a valid keyword."
+               DState.Write(Message)
+               fail 
+               }
             }
          else{ # p &pos 
             Message := "\n   "|| expr
-            expr := expr[j+1:0]
-            Message ||:=" = "||image(keyword(expr, Monitored))
-            DState.Write(Message)
-            return
+            expr := expr[i+1:0]
+            if validKeyword(expr) then{
+               data := keyword(expr, Monitored)
+               if not (type(data) == ("string"|"integer"|"real")) then
+                  data := image(data)
+               Message ||:=" = "|| data
+               DState.Write(Message)
+               return
+               }
+            else{
+               Message ||:= " is not a valid keyword."
+               DState.Write(Message)
+               fail 
+               }
             }
          }
       else
@@ -452,6 +476,16 @@ method parsePrintExpression(expr)
 #   every x:=!tokens do
 #      write("-----x=",x)
    return tokens
+end
+
+#
+# check whether keyword is valid or not  
+#
+method validKeyword(expr)
+
+   if member(Keywords, expr) then 
+      return 
+   fail
 end
 
 #
@@ -634,6 +668,22 @@ end
 # Initialization
 #
 initially()
+
+   Keywords := 
+      set("allocated","clock","collections","column","current",
+          "date","now","dateline","digits","e","error",
+          "errornumber","errortext","errorvalue","errout","fail",
+          "eventcode","eventsource","eventvalue","features",
+          "file","host","input","lcase","letters","level",
+          "line","main","null","output","phi","pi","pos",
+          "progname","random","regions","source","storage",
+          "subject","time","trace","dump","ucase","version",
+          "errno","window","col","row","x","y","interval",
+          "control","shift","meta","lpress","mpress","rpress",
+          "lrelease","mrelease","rrelease","ldrag","mdrag",
+          "rdrag","resize","ascii","cset"
+          )
+
    Message := ""
 end
 

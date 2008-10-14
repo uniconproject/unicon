@@ -10,12 +10,12 @@ CLEAN   = clean
 cflags  = -u -c 
 ldflags = -u -G
 
-SRC       = udb.icn icode.icn srcfile.icn state.icn \
+SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
             agent.icn internals.icn externals.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
             evaluator.icn session.icn console.icn defaults.icn
-UFILES    = udb.u icode.u srcfile.u state.u \
+UFILES    = udb.u icode.u srcfile.u srccode.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
@@ -51,11 +51,14 @@ session.u: session.icn defaults.icn state.u evaluator.u externals.u
 evaluator.u: evaluator.icn defaults.icn state.u data.u trace.u internals.u externals.u
 	$(UC) $(cflags) evaluator
 
-state.u: state.icn defaults.icn srcfile.u icode.u
+state.u: state.icn defaults.icn srcfile.u srccode.u icode.u
 	$(UC) $(cflags) state
 
 srcfile.u: srcfile.icn
 	$(UC) $(cflags) srcfile
+
+srccode.u: srccode.icn
+	$(UC) $(cflags) srccode
 
 icode.u: icode.icn
 	$(UC) $(cflags) icode

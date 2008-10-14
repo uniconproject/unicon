@@ -40,8 +40,8 @@ method printFrame(frame)
       # loaded and the name of the procedure is not any where in another class 
       #pfile := keyword("file",Monitored,frame) # ideal solution
       #pline := keyword("line",Monitored,frame) # ideal solution
-      pfile := DState.srcFile.getProcFile(pname)
-      pline := DState.srcFile.getProcLine(pname)
+      ##pfile := DState.srcFile.getProcFile(pname)
+      ##pline := DState.srcFile.getProcLine(pname)
       Message ||:= " at "|| pfile ||":"||pline
       }
    else
@@ -160,10 +160,13 @@ method cmdBacktrace(cmd)
 
    if DState.State = PAUSE then{
       level := keyword("level", Monitored)
+      #write("level=",level)
       if *cmd = 1 then{
          BaseFrame := 0
          while(BaseFrame < level) do{
+            #write("level=",level,"BaseFrame=",BaseFrame)
             printFrames(BaseFrame, BaseFrame + MaxFrame)
+            #write("hhhhhhhhhhmmmm")
             BaseFrame +:= MaxFrame + 1
             if BaseFrame < level then{
                Message:="---Type <return> to continue, or q <return> to quit---"

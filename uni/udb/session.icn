@@ -11,10 +11,6 @@ $include "defaults.icn"
 
 #
 # This class is used to handle the current debugging state 
-# State     : Debugging state such RUN, PAUSE, END, etc
-# RunCode   : It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
-# eventMask : the mask that we are building the evaltree based on
-# valueMask : table used for breakpoints and watchpoints set of masks
 #
 class Session(
    DState,       # an object of the class State()
@@ -26,26 +22,20 @@ class Session(
 # Here where the udb Session starts on
 #
 method startSession()
-   local x, t
+   local arg
 
    #-- it may need to be in EvInit() for the sake of re-run
    &eventsource := &null
 
    EvInit(DState.TP) | stop("cant start evinit on " || DState.TP[1])
-   Message   :="   Starting program: "
-   every t := !DState.TP do Message ||:=" "||t
+   Message :="   Starting program: "
+   every arg := !DState.TP do Message ||:=" "||arg
    Message ||:="\n"
    DState.Write(Message)
-   #global_vars := set()
-   every x := globalnames(Monitored) do{
-     t := image(variable(x, Monitored, 0))
-     # note, do not use ~ in such cases, use not
-     if not find("procedure"|"function",t) then {
-        insert(DState.global_vars, x)
-        }
-     }
 
- if DState.State = RUN  then {
+   DState.srcCode.analyzeGlobalNames()
+
+   if DState.State = RUN  then {
       # a generator that ends when TP is over and no more events out of it.
       # every udb_evalTree(eventMask, activation_record) do{
       every Debug.startEvaluator() do{

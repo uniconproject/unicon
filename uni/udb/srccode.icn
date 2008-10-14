@@ -5,6 +5,7 @@
 #  Date   : Oct 13, 2008
 # 
 
+link ximage
 
 #
 # This packages is used by the analyzeGlobalNames()
@@ -27,9 +28,10 @@ class SourceCode(
    pglobals,  # a set of all user-defined procedure names used in program
    fglobals,  # a set of all built-in function names used in program
    records,   # a set of all the user-defined records
-   classes,   # a set pf all the user defined classes
+   classes,   # a set of all the user defined classes
    methods,   # a table maps each class name into its set of methods
-   packages   # a table maps each package name into its set procedures
+   packages,  # a table maps each package name into its set procedures
+   pkgclasses # a set of all classes that are member of a package
    )
 
 #
@@ -61,7 +63,7 @@ method analyzeGlobalNames()
               /packages[pname] := PackageInfo()
               /packages[pname].classes := set()
               insert(packages[pname].classes, x[j+2:i])
-              insert(classes, x[j+2:i])
+              insert(pkgclasses, x[j+2:i])
               }
            else{
               insert(classes,  x[1:i])
@@ -71,7 +73,7 @@ method analyzeGlobalNames()
            insert(records, x)
         }
      else if not find("__oprec",x) then
-        insert(vglobals, x||":"||type(var))
+        insert(vglobals, x) #||":"||type(var))
      }
     
      removeClassRecordConstructor()
@@ -111,13 +113,13 @@ method filterPackages()
           # and    packageName__classNameinitialize() procedure 
           if j := find("_",pname[i:0]) - 1 then{
              cname := pname[i+:j]
-             if member(classes, cname) then{
+             if member(pkgclasses, cname) then{
                 pkgcls := pname[1:j]
                 /methods[cname] := set()
                 insert(methods[cname], pname)
                 delete(pglobals, pname) 
                 }
-              else{
+             else{
                 /packages[pkg] := PackageInfo()
                 /packages[pkg].procs := set()
                 insert(packages[pkg].procs, pname)
@@ -136,10 +138,11 @@ end
 # This method filter class methods from the procedures
 # 
 method filterMethods()
-   local cname, pname, x
+   local cls, cname, pname, x
 
    # move methods from the procedure set to the methods table
-   every cname := !classes do{
+   cls := classes ++ pkgclasses
+   every cname := !cls do{
      x := cname || "_"
      every pname := !pglobals do
        if match(x, pname) then{
@@ -200,7 +203,7 @@ end
 #
 method isClass(name)
 
-   if member(classes, name) then 
+   if member(classes, name) | member(pkgclasses, name) then 
       return
    fail
 end
@@ -249,14 +252,24 @@ end
 # returns a list of the class names used in that package
 #
 method getPackageClasses(pkg)
-   local cls, c, names := []
+   local cname, names := []
 
-   if *packages > 0 & \packages[pkg] & cls := packages[pkg].classes then{
-      every c := !cls do
-         push(names, c)
-      return names
+   if /pkg then{
+      if *pkgclasses > 0 then{
+         every cname := !pkgclasses do
+           push(names, cname)
+         return names
+         }
+      else fail
       }
-   else fail
+   else{
+      if \packages[pkg] & \packages[pkg].classes then{
+         every cname := !packages[pkg].classes do
+           push(names, cname)
+         return names
+         }
+      else fail
+      }
 end
 
 #
@@ -264,11 +277,12 @@ end
 # returns a list of the procedure names used in that package
 #
 method getPackageProcs(pkg)
-   local prc, p, names := []
-
-   if *packages > 0 & \packages[pkg] & prc := packages[pkg].procs then{
-      every p := !prc do
-         push(names, p)
+   local p, i, names := []
+   
+   if \packages[pkg] & \packages[pkg].procs then{
+      i := *pkg + 3 # (1 + 2)
+      every p := !packages[pkg].procs do
+         push(names, p[i:0])
       return names
       }
    else fail
@@ -276,14 +290,17 @@ end
 
 #
 # public method:
-# returns a list of class names used in the loaded program
+# returns a list of class names that are not in any package 
 #
-method getClasses()
-   local cname, names := []
+method getClasses(all)
+   local cname, cls, names := []
 
-   if *classes > 0 then{
-      every cname := !classes do
-         push(names, cname)
+   if /all then  cls := classes
+   else          cls := classes ++ pkgclasses 
+      
+   if *cls > 0 then{
+      every cname := !cls do
+        push(names, cname)
       return names
       }
    else fail
@@ -294,11 +311,74 @@ end
 # returns a list of class names used in the loaded program
 #
 method getClassMethods(cname)
-   local mthd, names := [] 
+   local mthd, i, j, names := [] 
 
-   if member(classes, cname) & \methods[cname] then{
+   if \methods[cname] then{
+      i := *cname + 1
+      mthd := ?methods[cname]
+      j := find(cname, mthd)
       every mthd := !methods[cname] do
-         push(names, mthd)
+         push(names, mthd[i+j:0])
+      return names
+      }
+   else fail 
+end
+
+#
+# public method:
+# returns a list of all global variables used in the loaded program
+#
+method getGlobals()
+   local var, names := [] 
+
+   if *vglobals > 0 then{
+      every var := !vglobals do
+         push(names, var)
+      return names
+      }
+   else fail 
+end
+
+#
+# public method:
+# returns a list of all procedures used in the loaded program
+#
+method getProcedures()
+   local p, names := [] 
+
+   if *pglobals > 0 then{
+      every p := !pglobals do
+         push(names, p)
+      return names
+      }
+   else fail 
+end
+
+#
+# public method:
+# returns a list of all built-in functions used in the loaded program
+#
+method getFunctions()
+   local f, names := [] 
+
+   if *fglobals > 0 then{
+      every f := !fglobals do
+         push(names, f)
+      return names
+      }
+   else fail 
+end
+
+#
+# public method:
+# returns a list of all records used in the loaded program
+#
+method getRecords()
+   local r, names := [] 
+
+   if *records > 0 then{
+      every r := !records do
+         push(names, r)
       return names
       }
    else fail 
@@ -349,5 +429,5 @@ initially()
    classes     := set()
    methods     := table()
    packages    := table()
-
+   pkgclasses  := set()
 end

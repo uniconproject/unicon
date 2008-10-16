@@ -14,7 +14,8 @@ record PackageInfo(
    classes,  # a set with all class names used in that package,
              # it is a subset of the general classes set, which 
              # can be used in the methods table 
-   procs     # a set with all procedures used in that package
+   procs,    # a set with all procedures used in that package
+   vars      # a set with all global variables in that package
    )
 
 #
@@ -101,10 +102,11 @@ end
 # This methods filters the collected packages
 #
 method filterPackages()
-   local pkg, pkgcls, pname, cname, x, i, j
+   local pkg, pkgcls, pname, cname, vname, x, i, j
 
    every pkg := key(packages) do{
      x := pkg || "__"
+     # filter package procedures out of the pglobals 
      every pname := !pglobals do{
        if match(x, pname) then{
           i := *x + 1
@@ -127,6 +129,16 @@ method filterPackages()
              }
           else
              delete(pglobals, pname)
+          }
+       }
+     # filter package global variables out of the vglobals 
+     every vname := !vglobals do{
+       if match(x, vname) then{
+          i := *x + 1
+          /packages[pkg] := PackageInfo()
+          /packages[pkg].vars := set()
+          insert(packages[pkg].vars, vname)
+          delete(vglobals, vname) 
           }
        }
      }
@@ -238,12 +250,9 @@ end
 method getPackages()
    local pkg, names := []
 
-   if *packages > 0 then{
-      every pkg := key(packages) do
-         push(names, pkg)
-      return names
-      }
-   else fail
+   every pkg := key(packages) do
+      push(names, pkg)
+   return names
 end
 
 #
@@ -254,21 +263,16 @@ method getPackageClasses(pkg)
    local cname, names := []
 
    if /pkg then{
-      if *pkgclasses > 0 then{
+      if *pkgclasses > 0 then
          every cname := !pkgclasses do
            push(names, cname)
-         return names
-         }
-      else fail
       }
    else{
-      if \packages[pkg] & \packages[pkg].classes then{
+      if \packages[pkg] & \packages[pkg].classes then
          every cname := !packages[pkg].classes do
            push(names, cname)
-         return names
-         }
-      else fail
       }
+   return names
 end
 
 #
@@ -282,9 +286,23 @@ method getPackageProcs(pkg)
       i := *pkg + 3 # (1 + 2)
       every p := !packages[pkg].procs do
          push(names, p[i:0])
-      return names
       }
-   else fail
+   return names
+end
+
+#
+# public method:
+# returns a list of global variables in that package
+#
+method getPackageVars(pkg)
+   local p, i, names := []
+   
+   if \packages[pkg] & \packages[pkg].vars then{
+      i := *pkg + 3 # (1 + 2)
+      every p := !packages[pkg].vars do
+         push(names, p[i:0])
+      }
+   return names
 end
 
 #
@@ -300,9 +318,8 @@ method getClasses(all)
    if *cls > 0 then{
       every cname := !cls do
         push(names, cname)
-      return names
       }
-   else fail
+   return names
 end
 
 #
@@ -318,9 +335,8 @@ method getClassMethods(cname)
       j := find(cname, mthd)
       every mthd := !methods[cname] do
          push(names, mthd[i+j:0])
-      return names
       }
-   else fail 
+   return names
 end
 
 #
@@ -333,9 +349,8 @@ method getGlobals()
    if *vglobals > 0 then{
       every var := !vglobals do
          push(names, var)
-      return names
       }
-   else fail 
+   return names
 end
 
 #
@@ -348,9 +363,8 @@ method getProcedures()
    if *pglobals > 0 then{
       every p := !pglobals do
          push(names, p)
-      return names
       }
-   else fail 
+   return names
 end
 
 #
@@ -363,9 +377,8 @@ method getFunctions()
    if *fglobals > 0 then{
       every f := !fglobals do
          push(names, f)
-      return names
       }
-   else fail 
+   return names
 end
 
 #
@@ -378,9 +391,8 @@ method getRecords()
    if *records > 0 then{
       every r := !records do
          push(names, r)
-      return names
       }
-   else fail 
+   return names
 end
 
 #

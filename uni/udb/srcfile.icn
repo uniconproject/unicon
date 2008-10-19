@@ -26,9 +26,16 @@ class SourceFile(
    procMainLine, # The Source Line that has the procedure main
    exeName,      # The executable file name
    exeSize,      # The executable file size
-   sourcePath,   # String of paths that will be searched for source files
-   sourceFiles,  # List with all source file names that are in the binary
-   sourceText,   # List holds all source files text
+
+   userFiles,    # a set of the loaded user files
+   libFiles,     # a set of the loaded library files
+
+   binPath,      # the path of the VM: iconx or wiconx.exe
+   srcPath,      # String of paths that will be searched for source files
+   libPath,      # String of paths that will be searched for library files
+
+   fileNames,    # List with all source file names that are in the binary
+   srcText,      # List holds all source files text
    srcIndex,     # Table of our position in the source file; fname is the key
    foundFiles,   # Set with all file names that were found - loaded
    missingFiles  # Set with all file names that were not found - not loaded 
@@ -36,7 +43,7 @@ class SourceFile(
 
 #
 # Extracts the file name from its path, it is different from
-# getSourceFile() name by not keeping the path in sourcePath
+# getSourceFile() name by not keeping the path in srcPath
 #
 method getFileName(f)
    local i, j:=0, path:=" "
@@ -63,7 +70,7 @@ method getSourceFileName(f)
    every j:= find("/",f)
 
    path ||:= f[1:j+1]
-   sourcePath ||:= path ||" "
+   srcPath ||:= path ||" "
    if (j+1) > *f then   fail
    else   fname := f[j+1:0]
 
@@ -97,19 +104,19 @@ method loadSourceFiles(fname, src)
 
    exeName := getSourceFileName(fname)
    exeSize := getSourceFileSize(fname)
-   sourceFiles := src
+   fileNames := src
  
    # loads the source files that we can find and keep a 
    # list of the ones that we could not find. Note a source file
    # can be opened more that once so we need to be careful !!!
-   every i := 1 to *sourceFiles do{
-      f := getSourceFileName(sourceFiles[i])
+   every i := 1 to *fileNames do{
+      f := getSourceFileName(fileNames[i])
       if not member(foundFiles, f) then{
-         if s := dopen( sourceFiles[ i ] ) then {
-            b := *sourceText
-            while( put( sourceText, read( s ) ) )
+         if s := dopen( fileNames[ i ] ) then {
+            b := *srcText
+            while( put( srcText, read( s ) ) )
             close( s )
-            e := *sourceText
+            e := *srcText
             insert( foundFiles, f )
             srcIndex[ f ] := fileIndex(b,e)
             if /procMainFile then
@@ -117,7 +124,7 @@ method loadSourceFiles(fname, src)
                   procMainFile := f
             }
          else
-            put(missingFiles, sourceFiles[ i ])# keep it as it is
+            put(missingFiles, fileNames[ i ])# keep it as it is
          }
       #else
          #write("File is already found:",f)
@@ -135,7 +142,7 @@ method searchFileLines(fname, linenum)
 
    wSpace := cset( " \t\n\^m" )
    punct := (",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
-   temp := sourceText[linenum + srcIndex[fname].fbegin]
+   temp := srcText[linenum + srcIndex[fname].fbegin]
 
    temp ? {
       tab(many(wSpace))
@@ -164,7 +171,7 @@ method searchFileProcs(Fname, ProcName)
       other_char := ("_")
       wSpace := cset( " \t\n\^m" )
       
-      while temp := sourceText[linenum + srcIndex[Fname].fbegin] do{
+      while temp := srcText[linenum + srcIndex[Fname].fbegin] do{
          temp ? {
             tab(many(wSpace))
             if(temp1 := tab(many(&letters))) == ("method"|"procedure") then{
@@ -220,7 +227,7 @@ end
 
 #
 # check to see if file is loaded or not
-# loaded files are those that opend and placed in sourceText
+# loaded files are those that opend and placed in srcText
 #
 method isLoaded(fname)
    if member(foundFiles, fname) then
@@ -254,7 +261,7 @@ method getSrcLine(fname, line)
     f := getFileName(fname)
 
     if isLoaded(fname) then #& isInFile(f, line) then       
-       return sourceText[line + srcIndex[ f ].fbegin]
+       return srcText[line + srcIndex[ f ].fbegin]
     else
        fail
 end
@@ -294,7 +301,7 @@ method getSrcCode(fname)
    b := srcIndex[fname].fbegin
    e := srcIndex[fname].fend
    every i:= b  to e do
-      code ||:= sourceText[i]||"\n"
+      code ||:= srcText[i]||"\n"
 
    return code
 end
@@ -355,10 +362,10 @@ end
 method getSourceFiles()
    local x, i, max, fnames:="    "
    
-   if *sourceFiles > 0 then{
+   if *fileNames > 0 then{
       i := 1
-      max := maxlen(sourceFiles)+2
-      every x := !sourceFiles do{
+      max := maxlen(fileNames)+2
+      every x := !fileNames do{
          fnames ||:=left(x, max)
          if i > 3 then{
             fnames ||:="\n    "
@@ -374,41 +381,78 @@ method getSourceFiles()
 end
 
 #
+# returns the VM binary path (iconx, icont, wiconx, wicont)
+#
+method getBinPath()
+   local f
+
+   if (binPath := (&features ? (="Binaries at " & tab(0)))) |
+      ((f := open((binPath:=getpaths()) ||
+                  ("iconx"|"iconx.exe"|"wiconx.exe")))) then
+      close(\f)
+   
+   return binPath
+end
+
+#
+# returns the Unicon's library paths 
+#
+method getLibPath()
+   local f
+
+   /binPath := getBinPath()
+   
+   libPath := binPath || "../ipl/gdata/"  || " " ||
+              binPath || "../ipl/gincl/"  || " " ||
+              binPath || "../ipl/gprocs/" || " " ||
+              binPath || "../ipl/gprogs/" || " " ||
+              binPath || "../ipl/incl/"   || " " ||
+              binPath || "../ipl/lib/"    || " " ||
+              binPath || "../ipl/mincl/"  || " " ||
+              binPath || "../ipl/mprocs/" || " " ||
+              binPath || "../ipl/mprogs/" || " " ||
+              binPath || "../ipl/procs/"  || " " ||
+              binPath || "../ipl/progs/"  || " " ||
+              binPath || "../uni/lib/"    || " " ||
+              binPath || "../uni/gui/" 
+end
+
+#
 # Searchs through the specified source path for the requested file.
+# It looks first in current directory, 
+# then it looks in the surrent direcory neigborhood, if it failed,
+# it looks in the library paths 
 #
 method dopen(s)
    local File, paths, path, binpath, f
 
    if File := open(s) then {
-      return File          # look in current directory
-   }
+      insert(userFiles, s)
+      return File
+      }
+   else{
+      paths := srcPath
+      s := "/" || s      # platform-specific
+      paths ? {
+         while path := tab(find(" ") | 0) do {
+            if File := open(path || s) then {
+               insert(userFiles, s)
+               return File
+               }
+            tab(many(' ')) | break
+            }
+         }
+      }
 
-   paths := sourcePath
+   # look in the library paths
+   /libPath := getLibPath()
 
-   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
-      ((f := open((binpath:=getpaths()) ||
-                  ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
-      close(\f)
-      paths ||:= " " || binpath
-      paths ||:= " " || binpath || "../ipl/gdata/"
-      paths ||:= " " || binpath || "../ipl/gincl/"
-      paths ||:= " " || binpath || "../ipl/gprocs/"
-      paths ||:= " " || binpath || "../ipl/gprogs/"
-      paths ||:= " " || binpath || "../ipl/incl/"
-      paths ||:= " " || binpath || "../ipl/lib/" 
-      paths ||:= " " || binpath || "../ipl/mincl/" 
-      paths ||:= " " || binpath || "../ipl/mprocs/"
-      paths ||:= " " || binpath || "../ipl/mprogs/" 
-      paths ||:= " " || binpath || "../ipl/procs/"
-      paths ||:= " " || binpath || "../ipl/progs/" 
-      paths ||:= " " || binpath || "../uni/lib/" 
-      paths ||:= " " || binpath || "../uni/gui/" 
-   }
-
+   paths := libPath
    s := "/" || s      # platform-specific
    paths ? {
       while path := tab(find(" ") | 0) do {
          if File := open(path || s) then {
+            insert(libFiles, s)
             return File
          }
          tab(many(' ')) | break
@@ -424,14 +468,18 @@ initially()
 
    exeName     := "?"
    exeSize     := -1
-   sourceFiles := []
-   sourceText  := []
+
+   fileNames   := []
+   userFiles   := set()
+   libFiles    := set()
+
+   srcText     := []
    srcIndex    := table(0)
    foundFiles  := set()
    missingFiles:= []
 
-   sourcePath   := ". .. ../.."
-   #sourcePath||:= " " || getenv( "DPATH" )
-   sourcePath ||:= " " || getenv( "LPATH" )
-   sourcePath ||:= " " || getenv( "IPATH" )
+   srcPath   := ". .. ../.."
+   #srcPath||:= " " || getenv( "DPATH" )
+   srcPath ||:= " " || getenv( "LPATH" )
+   srcPath ||:= " " || getenv( "IPATH" )
 end

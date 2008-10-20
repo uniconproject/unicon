@@ -1353,7 +1353,7 @@ function{0,1} reads(f,i)
 	    fail;
 	    }
 
-	 return string(bytesread, sbuf);
+	 return string(bytesread, alcstr(sbuf, bytesread));
 	 }
       else
 #endif                                  /* Messaging */

@@ -5,6 +5,7 @@
 #  Date   : Feb 24, 2008
 # 
 
+$include "defaults.icn"
 link bincvt
 link strings
 
@@ -64,7 +65,7 @@ method getSourceFileName(f)
    local i, j:=0, path:=" "
    local fname :="?"
 
-   # what if the TP is not in the current directory of the UDB
+   # what if the TP and UDB are not in the same directory
    # such as ./udb ./test/t1/t2/t
 
    every j:= find("/",f)
@@ -390,7 +391,7 @@ method getBinPath()
       ((f := open((binPath:=getpaths()) ||
                   ("iconx"|"iconx.exe"|"wiconx.exe")))) then
       close(\f)
-   
+   write("binPath=",binPath)  
    return binPath
 end
 
@@ -401,20 +402,35 @@ method getLibPath()
    local f
 
    /binPath := getBinPath()
-   
-   libPath := binPath || "../ipl/gdata/"  || " " ||
-              binPath || "../ipl/gincl/"  || " " ||
-              binPath || "../ipl/gprocs/" || " " ||
-              binPath || "../ipl/gprogs/" || " " ||
-              binPath || "../ipl/incl/"   || " " ||
-              binPath || "../ipl/lib/"    || " " ||
-              binPath || "../ipl/mincl/"  || " " ||
-              binPath || "../ipl/mprocs/" || " " ||
-              binPath || "../ipl/mprogs/" || " " ||
-              binPath || "../ipl/procs/"  || " " ||
-              binPath || "../ipl/progs/"  || " " ||
-              binPath || "../uni/lib/"    || " " ||
-              binPath || "../uni/gui/" 
+$ifdef _UNIX   
+   libPath := binPath || "../ipl/gdata"  || " " ||
+              binPath || "../ipl/gincl"  || " " ||
+              binPath || "../ipl/gprocs" || " " ||
+              binPath || "../ipl/gprogs" || " " ||
+              binPath || "../ipl/incl"   || " " ||
+              binPath || "../ipl/lib"    || " " ||
+              binPath || "../ipl/mincl"  || " " ||
+              binPath || "../ipl/mprocs" || " " ||
+              binPath || "../ipl/mprogs" || " " ||
+              binPath || "../ipl/procs"  || " " ||
+              binPath || "../ipl/progs"  || " " ||
+              binPath || "../uni/lib"    || " " ||
+              binPath || "../uni/gui" 
+$else
+   libPath := binPath || "..\ipl\gdata"  || " " ||
+              binPath || "..\ipl\gincl"  || " " ||
+              binPath || "..\ipl\gprocs" || " " ||
+              binPath || "..\ipl\gprogs" || " " ||
+              binPath || "..\ipl\incl"   || " " ||
+              binPath || "..\ipl\lib"    || " " ||
+              binPath || "..\ipl\mincl"  || " " ||
+              binPath || "..\ipl\mprocs" || " " ||
+              binPath || "..\ipl\mprogs" || " " ||
+              binPath || "..\ipl\procs"  || " " ||
+              binPath || "..\ipl\progs"  || " " ||
+              binPath || "..\uni\lib"    || " " ||
+              binPath || "..\uni\gui" 
+$endif
 end
 
 #
@@ -432,7 +448,7 @@ method dopen(s)
       }
    else{
       paths := srcPath
-      s := "/" || s      # platform-specific
+      s := PS || s      # platform-specific
       paths ? {
          while path := tab(find(" ") | 0) do {
             if File := open(path || s) then {
@@ -448,7 +464,7 @@ method dopen(s)
    /libPath := getLibPath()
 
    paths := libPath
-   s := "/" || s      # platform-specific
+   s := PS || s      # platform-specific
    paths ? {
       while path := tab(find(" ") | 0) do {
          if File := open(path || s) then {
@@ -478,7 +494,11 @@ initially()
    foundFiles  := set()
    missingFiles:= []
 
+$ifdef _UNIX
    srcPath   := ". .. ../.."
+$else
+   srcPath   := ". .. ..\.."
+$endif
    #srcPath||:= " " || getenv( "DPATH" )
    srcPath ||:= " " || getenv( "LPATH" )
    srcPath ||:= " " || getenv( "IPATH" )

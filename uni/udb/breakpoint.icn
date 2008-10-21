@@ -130,7 +130,7 @@ end
 # [b linenum], [b ProcName], [b file linenum]
 #
 method cmdBreak(cmd)
-   local code, line, fname, arg, break_point
+   local code, line, fname, arg, break_point, i
 
    msg := ""
    if not (DState.State = (LOAD | PAUSE)) then {
@@ -149,7 +149,7 @@ method cmdBreak(cmd)
       } 
  
    if *cmd = 2 then {
-      fname := DState.srcFile.exeName
+      fname := DState.srcFile.procMainFile #exeName
       arg   := cmd[2]
       }
    else if *cmd > 2 then {
@@ -218,7 +218,7 @@ end
 # It clears pre-set breakpoints
 #
 method cmdClear(cmd)
-   local line, x, fname, arg, id
+   local line, x, fname, arg, id, i
 
    # clears all of the preset breakpoints
    if *cmd = 1 then{
@@ -231,7 +231,7 @@ method cmdClear(cmd)
       }
 
    if *cmd = 2 then{
-      fname := DState.srcFile.exeName
+      fname := DState.srcFile.procMainFile #exeName
       arg   := cmd[2]
       }
    else if *cmd > 2 then{

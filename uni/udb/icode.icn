@@ -17,8 +17,16 @@ record header (
    Strcons,  # /* location of identifier table      */
    Filenms,  # /* location of ipc/file name table   */
    linenums, # /* location of ipc/line number table */
-   config    # /* [16];  icode version              */
-)
+   config,   # /* [16];  icode version              */
+
+             #ifdef FieldTableCompression
+   FtabWidth,# /* width of field table entries, 1 | 2 | 4  */
+   FoffWidth,# /* width of field offset entries, 1 | 2 | 4 */
+   Nfields,  # /* number of field names                    */
+   Fo,       # /* The start of the Fo array                */
+   Bm        # /* The start of the Bm array                */
+             #endif    /* FieldTableCompression            */
+   )
 
 #
 # This class contains the main icode parsing facility
@@ -29,6 +37,7 @@ class Icode(
    IntBits,      # number of bits in an integer
    WordBits,     # number of bits in a unicon word
    wordSize,     # 4 on a 32-bit and 8 on a 64-bit machine 
+   FTC,          # a flag that is when it is not null, it holds FT from icode v
    icodeVersion  # String holds the Icode Version 32/64 compressed/uncompressed
    )
 
@@ -63,7 +72,6 @@ method littleendian(s)
    every i := littleord(!s) + i * 256
    return i
 end
-
 
 #
 # checks the accessability of the executable and reads the icode 
@@ -102,7 +110,19 @@ method readIcodeHeader()
       }
 
    hdr.config := move(16 * wordSize)
-   #write("config=",image(hdr.config))
+
+   if \FTC then{
+      # Reading both of FtabWidth, and FoffWidth
+      every i := 13 to 14 do{
+         w := move(wordSize/2)
+         hdr[i] := littleendian(w)
+         }
+      # Reading all of Nfields, Fo, and Bm
+      every i := 15 to 17 do{
+         w := move(wordSize)
+         hdr[i] := littleendian(w)
+         }
+      }
 end
 
 #
@@ -127,6 +147,11 @@ method checkIcodeVersion(p)
    wordSize := 4
    readIcodeHeader()
 
+   if find("I9.U.10FT",hdr.config) = 1 then{
+      FTC := "FT"
+      &pos := p   # start over as a 64-bit machine
+      readIcodeHeader()
+      }
    if find("I9.U.10",hdr.config) ~= 1 then{
       &pos := p   # start over as a 64-bit machine
       wordSize := 8
@@ -174,7 +199,6 @@ method checkCompressedIcode()
       WordBits := integer(tab(many(&digits)))       # tabs the WordBits
       Z := move(1)                                  # get the Z letter 
       }
-
 
    if Z == "Z" then {
       readCompressedIcode()

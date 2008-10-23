@@ -40,7 +40,19 @@ $ifdef _UNIX
       }
 $else
    e1 := getch()
-   return e1
+   if e1 === "\xe0" then {
+      if kbhit() then {
+         e2 := getch()
+         #e3 := getch()
+         #write("e1=",image(e1),"   e2=",image(e2),"   e3=",image(e3))
+         #if \e2 === !"kM" then e3 ||:= getch()
+         return e1 || e2 #|| e3
+         }
+      }
+   else{
+      writes(e1)
+      return e1
+      }
 $endif
 
 end
@@ -108,13 +120,33 @@ $ifdef _UNIX
         }#end of case
 $else       
       case ch of{
-        BkSp:{
+        UP:{
+           if i > 1 then  
+              i-:=1
+           else if i = (1|0) then
+              i := *cmdHistory
+           else
+              i := 1
+           line := cmdHistory[i]
+           }
+        DOWN:{
+           if i < *cmdHistory then
+              i+:=1
+           else if i = *cmdHistory then
+              i := 1
+           else
+              i := *cmdHistory
+           line := cmdHistory[i]
+           }
+        BkSp | LEFT:{
            line := line[1:-1] 
            }
         ENTER:{
            write()
            break
-           } 
+           }
+        RIGHT:{
+           }
         default:{
            line ||:= ch
            } 
@@ -236,10 +268,10 @@ $ifdef _UNIX
    ENTER := "\n"
    BkSp  := "\d"
 $else
-   #UP    := "\e[A"
-   #DOWN  := "\e[B"
-   #RIGHT := "\e[C" # not used
-   #LEFT  := "\e[D" # ???
+   UP    := "\xe0H"
+   DOWN  := "\xe0P"
+   RIGHT := "\xe0M" # not used
+   LEFT  := "\xe0K" # ???
    ENTER := "\r"
    BkSp  := "\b"
 $endif

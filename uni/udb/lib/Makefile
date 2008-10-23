@@ -6,7 +6,7 @@
 
 UC         = unicon
 CFLAGS     = -u -c 
-LDFLAGS    = -u -G
+LDFLAGS    = -u
 STANDALONE = -DStandAlone
 
 SRC    = listener.icn memory.icn structaliases.icn structusage.icn \

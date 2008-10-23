@@ -8,7 +8,7 @@ EXEs    = udb
 DEL     = -rm
 CLEAN   = clean
 cflags  = -u -c 
-ldflags = -u -G
+ldflags = -u
 
 SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
             agent.icn internals.icn externals.icn \

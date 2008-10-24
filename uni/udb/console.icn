@@ -12,20 +12,20 @@ class Console : Session(
    wchar,      # a cset of valid characters used in the command line
    UP,         # The up arrow control key
    DOWN,       # The down arrow control key
-   ENTER,      # The enter key
-   BkSp,       # The Back Space key
    RIGHT,      # The right arrow control key
-   LEFT        # The left arrow control key
+   LEFT,       # The left arrow control key
+   ENTER,      # The enter key
+   BkSp        # The Back Space key
    )
 
 #
-# It is OK on Linux, needs to be tested on Windows???.
+# A general getch() that works on windows/linux and handles control keys
 #
 method my_getch()
    local e1, e2, e3
 
-$ifdef _UNIX
    e1 := getch()
+$ifdef _UNIX
    if e1 === "\e" then {
       if kbhit() then {
          e2 := getch()
@@ -34,27 +34,18 @@ $ifdef _UNIX
          return e1 || e2 || e3
          }
       }
-   else{
-      writes(e1)
-      return e1
-      }
-$else
-   e1 := getch()
+$else # Windows console
    if e1 === "\xe0" then {
       if kbhit() then {
          e2 := getch()
-         #e3 := getch()
-         #write("e1=",image(e1),"   e2=",image(e2),"   e3=",image(e3))
-         #if \e2 === !"kM" then e3 ||:= getch()
-         return e1 || e2 #|| e3
+         return e1 || e2
          }
       }
+$endif # _UNIX
    else{
       writes(e1)
       return e1
       }
-$endif
-
 end
 
 #
@@ -87,71 +78,41 @@ method get_CommandLine()
    writes(PROMPT)
 
    while ch := my_getch() do{
-$ifdef _UNIX
       case ch of{
-        UP:{
-           if i > 1 then  
-              i-:=1
-           else if i = (1|0) then
-              i := *cmdHistory
-           else
-              i := 1
-           line := cmdHistory[i]
-           }
-        DOWN:{
-           if i < *cmdHistory then
-              i+:=1
-           else if i = *cmdHistory then
-              i := 1
-           else
-              i := *cmdHistory
-           line := cmdHistory[i]
-           }
-        BkSp | LEFT :{
-           line := line[1:-1] 
-           }
-        ENTER:{
-           break 
-           }
-        default:{
-           if ch[1] ~==="\e" then
-              line ||:=ch         
-           }
-        }#end of case
-$else       
-      case ch of{
-        UP:{
-           if i > 1 then  
-              i-:=1
-           else if i = (1|0) then
-              i := *cmdHistory
-           else
-              i := 1
-           line := cmdHistory[i]
-           }
-        DOWN:{
-           if i < *cmdHistory then
-              i+:=1
-           else if i = *cmdHistory then
-              i := 1
-           else
-              i := *cmdHistory
-           line := cmdHistory[i]
-           }
-        BkSp | LEFT:{
-           line := line[1:-1] 
-           }
-        ENTER:{
-           write()
-           break
-           }
-        RIGHT:{
-           }
-        default:{
-           line ||:= ch
-           } 
-        } #end case
+         UP:{
+            if i > 1 then  
+               i-:=1
+            else if i = (1|0) then
+               i := *cmdHistory
+            else
+               i := 1
+            line := cmdHistory[i]
+            }
+         DOWN:{
+            if i < *cmdHistory then
+               i+:=1
+            else if i = *cmdHistory then
+               i := 1
+            else
+               i := *cmdHistory
+            line := cmdHistory[i]
+            }
+         BkSp | LEFT :{
+            line := line[1:-1] 
+            }
+         RIGHT:{
+            }
+         ENTER:{
+$ifndef _UNIX
+            write()
 $endif
+            break 
+            }
+         default:{
+            line ||:=ch         
+            }
+         }#end of case
+
       writes("\r")
       every c := 1 to 10 do writes("      ")
       writes("\r")
@@ -263,15 +224,15 @@ initially()
 $ifdef _UNIX 
    UP    := "\e[A"
    DOWN  := "\e[B"
-   RIGHT := "\e[C" # not used
-   LEFT  := "\e[D" # ???
+   RIGHT := "\e[C"
+   LEFT  := "\e[D"
    ENTER := "\n"
    BkSp  := "\d"
 $else
    UP    := "\xe0H"
    DOWN  := "\xe0P"
-   RIGHT := "\xe0M" # not used
-   LEFT  := "\xe0K" # ???
+   RIGHT := "\xe0M" 
+   LEFT  := "\xe0K"
    ENTER := "\r"
    BkSp  := "\b"
 $endif

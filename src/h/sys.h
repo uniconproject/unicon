@@ -391,7 +391,12 @@
 	#include <AL/al.h>
 	#include <AL/alc.h>
 	#include <AL/alext.h>
+/*
+ * 10/2008: alut.h is a legacy header. Putting this in to see what breaks.
+ */
+#if HAVE_ALUT
 	#include <AL/alut.h>
+#endif
 #endif					/* HAVE_LIBOPENAL */
 
 /* Ogg Vorbis */

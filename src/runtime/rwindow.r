@@ -4670,6 +4670,7 @@ int guicurses_cols(wbp w)
  */
 void drawRectangle(wbp w,int x,int y,int width,int height)
 {
+  int i;
   XRectangle r[1];
   RECX(r[0]) = x;
   RECY(r[0]) = y;

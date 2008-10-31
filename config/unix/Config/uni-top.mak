@@ -4,6 +4,7 @@ all :
 	cd iyacc; $(MAKE)
 	cd unicon; $(MAKE)
 	cd lib; $(MAKE)
+	cd udb; $(MAKE)
 	cd ivib; $(MAKE)
 	cd gui; $(MAKE)
 	cd gui/ivib; $(MAKE)
@@ -17,6 +18,7 @@ all :
 clean Clean:
 	cd iyacc; $(MAKE) Clean
 	cd unicon; $(MAKE) Clean
+	cd udb; $(MAKE) Clean
 	cd ivib; $(MAKE) Clean
 	cd lib; $(MAKE) clean
 	cd gui; $(MAKE) clean

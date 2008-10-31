@@ -1,4 +1,7 @@
+#include "../h/define.h"
+#ifndef NoAuto
 #include "../h/auto.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

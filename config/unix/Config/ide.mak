@@ -25,6 +25,7 @@ UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
 	$(UC) -o ui $(OBJ)
+	cp ui ../../bin
 
 ide.u: ide.icn
 	unicon -c ide

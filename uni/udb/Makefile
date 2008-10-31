@@ -96,6 +96,8 @@ print:
 zip:
 	zip -r udb.zip ../udb
 
+Clean: clean
+
 clean:
 	$(DEL) *.u 
 	$(DEL) $(EXEs) 

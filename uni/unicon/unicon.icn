@@ -396,6 +396,7 @@ procedure get_abs_file_name(fname)
 end
 $endif # Uniconc
 
+
 #
 # initialize global variables
 #
@@ -430,6 +431,43 @@ procedure reinitialize()
    thePackage := &null
 end
 
+procedure unicon_usage(continue_flag)
+   local f
+   if \continue_flag then f := iwrite else f := istop
+$ifdef Uniconc
+      f("Usage: unicon [-cBCstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
+	    "   [-version] [-v i] file... [-x args]")
+$else
+      f("Usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
+	    "   [-version] [-v i] file... [-x args]")
+$endif
+end
+
+procedure unicon_help()
+   unicon_usage(1)
+   every iwrite ( ! [
+   "options may be one of:",
+   "   -B          : bundle VM (iconx) into executable",
+   "   -c          : compile only, do not link",
+   "   -C          : generate (optimized) C code executable",
+   "   -Dsym[=val] : define preprocessor symbol",
+   "   -E          : preprocess only, do not compile",
+   "   -fs         : prevent removal of unreferenced declarations",
+   "   -G          : generate graphics (wiconx) executable",
+   "   -M          : report error message to the authorities",
+   "   -o ofile    : generate executable named ofile",
+   "   -s          : work silently",
+   "   -t          : turn on tracing",
+   "   -u          : warn of undeclared variables",
+   "   -v i        : set diagnostic verbosity level to i",
+   "   -version    : report Unicon version",
+   "   -x args     : execute immediately",
+   "   -y          : parse (syntax check) only, do not compile",
+   "   -Z          : compress icode"
+   ] )
+   istop()
+end
+
 procedure unicon(argv)
 $ifdef Uniconc
    local tmpfnames, tmpopt
@@ -437,13 +475,7 @@ $endif # Uniconc
 
    initialize()
    if *argv = 0 then {
-$ifdef Uniconc
-      istop("usage: unicon [-cBCstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
-	    "   [-version] [-v i] file... [-x args]")
-$else
-      istop("usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
-	    "   [-version] [-v i] file... [-x args]")
-$endif
+      unicon_usage()
       }
    EmptyNode := leaf(N_Empty)
    /yydebug := 0
@@ -548,6 +580,7 @@ $endif # Uniconc
 	      ilinkopt ||:= argv[i] || " "
 	      }
 	 "-M" : merrflag := 1
+	 "--help" | "-?": unicon_help()
 	 default   : icontopt ||:= argv[i] || " "
          }
       }

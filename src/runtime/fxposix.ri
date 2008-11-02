@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.48 2008-07-04 14:29:22 jeffery Exp $
+ * $Id: fxposix.ri,v 1.49 2008-11-02 03:56:41 jeffery Exp $
  */
 
 /*
@@ -1212,7 +1212,11 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
        * We don't use system(3) any more since the program is allowed to
        * re-map the files even for foreground execution
        */
+#ifdef HAVE_WORKING_VFORK
+      switch (pid = vfork()) {
+#else					/* HAVE_WORKING_VFORK */
       switch (pid = fork()) {
+#endif					/* HAVE_WORKING_VFORK */
       case 0:
 
 	 dup_fds(&d_stdin, &d_stdout, &d_stderr);

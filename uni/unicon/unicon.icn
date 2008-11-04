@@ -434,13 +434,13 @@ end
 procedure unicon_usage(continue_flag)
    local f
    if \continue_flag then f := iwrite else f := istop
+   msg := "Usage: unicon [-cB"
 $ifdef Uniconc
-      f("Usage: unicon [-cBCstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
-	    "   [-version] [-v i] file... [-x args]")
-$else
-      f("Usage: unicon [-cBstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n",
-	    "   [-version] [-v i] file... [-x args]")
+   msg ||:= "C"
 $endif
+   msg ||:= "stuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n   _
+	     [--help] [-version] [-v i] file... [-x args]"
+   f(msg)
 end
 
 procedure unicon_help()

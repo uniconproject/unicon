@@ -38,4 +38,4 @@
 #define MSWindows
 #define FAttrib 1
 #define FieldTableCompression 1
-#define Graphics3D
+#define HAVE_LIBGL 1

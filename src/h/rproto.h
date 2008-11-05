@@ -207,7 +207,16 @@ long physicalmemorysize();
 word		prescan		(dptr d);
 int		pstrnmcmp	(struct pstrnm *a,struct pstrnm *b);
 #ifdef PseudoPty
+void ptclose(struct ptstruct *ptStruct);
 struct ptstruct *ptopen(char *command);
+int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
+	      unsigned long waittime, int longread);
+int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
+	     struct timeval *timeout);
+int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct);
+int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize);
+int ptputc(const char c, struct ptstruct *ptStruct);
+int ptflush(struct ptstruct *ptStruct);
 #endif                                        /* PseudoPty */
 int		pushact		(struct b_coexpr *ce, struct b_coexpr *actvtr);
 int		putstr		(FILE *f,dptr d);
@@ -570,6 +579,9 @@ void detectRedirection();
       void postcursor(wbp);
       void scrubcursor(wbp);
       void mkfont			(char *s, char is_3D);
+#ifdef HAVE_XFT
+      void drawstrng(wbp w, int x, int y, char *str, int slen);
+#endif					/* HAVE_XFT */
 
    #endif				/* XWindows */
 
@@ -870,3 +882,4 @@ void StopAudioThread(struct AudioFile * Ptr);
 #ifdef DebugHeap
 void heaperr(char *msg, union block *p, int t);
 #endif					/* DebugHeap */
+

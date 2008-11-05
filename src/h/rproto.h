@@ -206,6 +206,9 @@ struct b_coexpr	*popact		(struct b_coexpr *ce);
 long physicalmemorysize();
 word		prescan		(dptr d);
 int		pstrnmcmp	(struct pstrnm *a,struct pstrnm *b);
+#ifdef PseudoPty
+struct ptstruct *ptopen(char *command);
+#endif                                        /* PseudoPty */
 int		pushact		(struct b_coexpr *ce, struct b_coexpr *actvtr);
 int		putstr		(FILE *f,dptr d);
 char		*qsearch	(char *key, char *base, int nel, int width,

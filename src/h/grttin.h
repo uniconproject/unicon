@@ -487,9 +487,9 @@ typedef int siptr, stringint, inst;
 #enddef				/* GRFX_UNLINK */
 
 #ifdef Graphics3D
-   typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean;
-   typedef int XWindowChanges, XStandardColormap, XMappingEvent;
-   typedef int GLXContext, GLUquadricObj, GLubyte, GLuint;
+   typedef int GLdouble, GLint, GLfloat, GLsizei, Status, GLboolean, GLenum;
+   typedef int XWindowChanges, XStandardColormap, XMappingEvent, _GLUfuncptr;
+   typedef int GLXContext, GLUquadricObj, GLUtesselator, GLubyte, GLuint;
    typedef int GLXFBConfig, GLXWindow;
 #ifdef MSWindows
    typedef int HGLRC, PIXELFORMATDESCRIPTOR;

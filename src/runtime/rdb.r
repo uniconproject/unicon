@@ -286,7 +286,7 @@ void odbcerror(struct ISQLFile *fp, int errornum)
 {
    char SQLState[6];
    static char ErrMsg[SQL_MAX_MESSAGE_LENGTH];
-   SDWORD NativeErr;
+   SQLINTEGER NativeErr;
    SWORD  ErrMsgLen;
 
    char *errmsg[]={
@@ -303,7 +303,7 @@ void odbcerror(struct ISQLFile *fp, int errornum)
       };
 
    k_errornumber=errornum;
-   if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState,&NativeErr,
+   if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,
 		       ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
 	      SQL_NO_DATA_FOUND)) {
       k_errortext = ErrMsg; /* can't alcstr here; k_errortext is untended */

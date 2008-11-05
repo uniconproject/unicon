@@ -1107,6 +1107,11 @@ function{0,1} read(f)
       if ((status & Fs_Read) == 0)
 	 runerr(212, f);
 
+/*
+ * Should probably move these cases into getstrg() in rsys.r, where
+ * the other cases, such as Fs_Messaging, are handled.
+ */
+
 #ifdef PosixFns
        if (status & Fs_Socket) {
 	  StrLen(s) = 0;

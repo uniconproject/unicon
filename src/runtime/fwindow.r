@@ -4545,7 +4545,7 @@ function{1} MultMatrix(argv[argc])
 	    }
       c_put(&(w->window->funclist), &f);
 #if HAVE_LIBGL
-      glMultMatrixd(matvalues);	
+      glMultMatrixd((GLdouble *)matvalues);	
 #endif					/* HAVE_LIBGL */
       return f; 
       }

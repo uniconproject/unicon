@@ -63,6 +63,7 @@ Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysove
 Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\udb\*.*"; DestDir: "{app}\uni\udb"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; CopyMode: alwaysoverwrite

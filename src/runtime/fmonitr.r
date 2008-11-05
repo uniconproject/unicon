@@ -511,7 +511,7 @@ void EVInit()
     *  the text segment.
     */
 #ifdef HaveProfil
-   profil(ticker.s, sizeof(ticker.s), (int) EVInit & ~0x3FFFF, 2);
+   profil(ticker.s, sizeof(ticker.s), (long) EVInit & ~0x3FFFF, 2);
 #endif					/* HaveProfil*/
 #endif					/* UNIX */
 

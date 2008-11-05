@@ -1883,7 +1883,7 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
   return ret;
 }
 
-int ptputc(const char c, struct ptstruct *ptStruct)
+int ptputc(char c, struct ptstruct *ptStruct)
 {
    return ptputstr(ptStruct, &c, 1);
 }

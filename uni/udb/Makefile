@@ -37,8 +37,8 @@ tools:
 
 udb: $(UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(UFILES) -o udb
-	mv udb ../../bin
-	-mv udb.exe ../../bin
+	-mv udb ../../bin
+	-cp udb.exe ../../bin
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb
@@ -100,9 +100,12 @@ zip:
 Clean: clean
 
 clean:
-	$(DEL) *.u 
+	$(DEL) *.u
 	$(DEL) $(EXEs) 
-	$(DEL) *.dir *.pag *.db
+	$(DEL) *.exe
+	$(DEL) *.dir
+	$(DEL) *.pag
+	$(DEL) *.db
 	$(DEL) *~
 	$(DEL) ../bin/$(EXEs) 
 	cd lib; make clean

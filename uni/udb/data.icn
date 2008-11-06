@@ -13,9 +13,10 @@ $include "defaults.icn"
 # This class contains the classical/standard debugging techniqies
 #
 class Data(
-   DState,  # (Alias) object of type State class
-   Keywords,# a set of the valid unicon keywords used in UDB
-   Message  # a string formated with the current message
+   DState,   # (Alias) object of type State class
+   Keywords, # a set of all Unicon's valid keyword
+   GKeywords,# a set of all Unicon's keywords that are Global/General
+   Message   # a string formated with the current message
    )
 
 #
@@ -301,7 +302,7 @@ method printVar(expr, level)
              default:{
                  #DState.Write("---type of ",expr," is : ", type(ref))
                  if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
-                     find("record",image(ref))) & *ref > 1 then
+                     find("record",image(ref))) & *ref >= 1 then
                         Message ||:= ximage(ref)
                  else{
                         Message ||:= image(ref)
@@ -407,7 +408,7 @@ method handleKeyword(expr, i, level)
    if j := find(":=",expr) then{ # p &pos:=10
       lexpr := expr[i:j]
       rexpr := expr[j+2:0]
-      if validKeyword(lexpr[2:0]) then{
+      if isValidKeyword(lexpr[2:0]) then{
          data := getVarValue(rexpr,level)
          variable(lexpr, Monitored, 0, 1) := data 
          return
@@ -421,7 +422,7 @@ method handleKeyword(expr, i, level)
    else if j := find("=", expr) then{ # p &pos=10
       lexpr := expr[i:j]
       rexpr := expr[j+1:0]
-      if validKeyword(lexpr[2:0]) then{
+      if isValidKeyword(lexpr[2:0]) then{
          data := getVarValue(rexpr,level)
          variable(lexpr, Monitored, 0, 1) := data
          return
@@ -432,14 +433,27 @@ method handleKeyword(expr, i, level)
          fail 
          }
       }
-   else{ # p &pos 
-      if validKeyword(expr[2:0]) then{
-         data := keyword(expr, Monitored)
-         if not (type(data) == ("string"|"integer"|"real")) then
-            data := image(data)
-         Message :="\n   "|| expr ||" = "|| data
-         DState.Write(Message)
-         return
+   else{ # p &pos or p *&subject
+      if isValidKeyword(expr[i+1:0]) then{
+         if data := isGlobalKeyword(expr[i+1:0]) then{
+              Message :="\n   "|| expr ||" = "|| data
+              DState.Write(Message)
+              return
+              }
+         else if data := keyword(expr[i:0], Monitored) then{
+            if find("*",expr) then
+               data := *data
+            else if not (type(data) == ("string"|"integer"|"real")) then
+               data := image(data)
+            Message :="\n   "|| expr ||" = "|| data
+            DState.Write(Message)
+            return
+            }
+         else{
+            Message :="\n   "|| expr || " : is not a valid operation yet !!!."
+            DState.Write(Message)
+            fail 
+            }
          }
       else{
          Message :="\n   "|| expr || " : is not a valid keyword."
@@ -452,10 +466,58 @@ end
 #
 # check whether keyword is valid or not  
 #
-method validKeyword(expr)
+method isValidKeyword(expr)
 
    if member(Keywords, expr) then 
       return 
+   fail
+end
+
+#
+# check whether a keyword is not suppoted by the keyword() function
+# and return its value or list of valuses  
+#
+method isGlobalKeyword(expr)
+   local x, data
+
+   if member(GKeywords, expr) then{
+      case expr of{
+        "features":{
+            data:=""
+            every x := &features do data ||:="\n      "|| x
+            return data
+            }
+         "clock":   { return data := &clock       }
+         "date":    { return data := &date        }
+         "now":     { return data := &now         }
+         "dateline":{ return data := &dateline    }
+         "digits":  { return data := &digits      }
+         "e":       { return data := &e           }
+         "fail":    { return data := "&fail"      }
+         "host":    { return data := &host        }
+         "lcase":   { return data := &lcase       }
+         "letters": { return data := &letters     }
+         "null":    { return data := image(&null) }
+         "phi":     { return data := &phi         }
+         "pi":      { return data := &pi          }
+         "dump":    { return data := &dump        }
+         "ucase":   { return data := &ucase       }
+         "version": { return data := &version     }
+         "lpress":  { return data := &lpress      }
+         "mpress":  { return data := &mpress      }
+         "rpress":  { return data := &rpress      }
+         "lrelease":{ return data := &lrelease    }
+         "mrelease":{ return data := &mrelease    }
+         "rrelease":{ return data := &rrelease    }
+         "ldrag":   { return data := &ldrag       }
+         "mdrag":   { return data := &mdrag       }
+         "rdrag":   { return data := &rdrag       }
+         "resize":  { return data := &resize      }
+         "ascii":   { return data := &ascii       }
+         "cset":    { return data := &cset        }
+         default:   { fail }
+         }
+      }
    fail
 end
 
@@ -690,7 +752,13 @@ initially()
           "lrelease","mrelease","rrelease","ldrag","mdrag",
           "rdrag","resize","ascii","cset"
           )
-
+   GKeywords := 
+      set("clock","date","now","dateline","digits","e","fail",
+          "features","host","lcase","letters","null","phi","pi",
+          "dump","ucase","version","lpress","mpress","rpress",
+          "lrelease","mrelease","rrelease","ldrag","mdrag","rdrag",
+          "resize","ascii","cset"
+          )
    Message := ""
 end
 

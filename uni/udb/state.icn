@@ -147,15 +147,18 @@ method initializeState(tp)
          if src := icode.getSrcFileNames(TP[1]) then{
             srcFile.loadSourceFiles(TP[1], src)
             State := LOAD
+            #--
+            EvInit(TP) | stop("cant start evinit on " || TP[1])
+            srcCode.analyzeGlobalNames()
             ###State := RUN ###### TEST : For the sake of getting the Time right
             Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
                          srcFile.exeSize||" of "||icode.icodeVersion 
             found := *srcFile.foundFiles
             if found > 0 then 
-               Message ||:=  "\n   "|| found ||" Source file(s) found"
+               Message ||:=  "\n   "|| found ||" file(s) are found"
             missing := *srcFile.missingFiles
             if missing > 0 then
-               Message ||:=  "\n   and "|| missing ||" Source file(s) missing"
+               Message ||:=  "\n   and "|| missing ||" file(s) are missing"
             Message ||:= "\n   Type \"help\" for assistance _
                                or \"src\" for file(s) name"
             }
@@ -163,20 +166,20 @@ method initializeState(tp)
             Message ||:= "\n   Can not get the Source File Names_
                         \n   Type \"help\" for assistance."
             }
-      }
+         }
       else{
          State := ERROR
          Message ||:= "\n   Could not access \"" || TP[1] ||"\""||
                       "\n   Type \"help\" for assistance."
          State := NONE
+         }
       }
-   }
    else{
       State := ERROR
       Message ||:= "\n   A program must be pre-loaded_
                     \n   Type \"help\" for assistance"
       RunCode := NONE
-   }
+      }
    Write(Message)
 end
 

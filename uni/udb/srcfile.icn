@@ -140,7 +140,7 @@ method searchFileLines(fname, linenum)
    local temp, temp1, wSpace, punct
 
    wSpace := cset( " \t\n\^m" )
-   punct := (",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
+   punct  := cset(",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
    temp := srcText[linenum + srcIndex[fname].fbegin]
 
    temp ? {
@@ -306,74 +306,42 @@ method getSrcCode(fname)
 end
 
 #
-# returns a string of the names of the opend src files 
+# returns a sorted of all opend src file names 
 #
 method getFoundFiles()
-   local L, x, i, max, fnames:="    "
+   local L
 
    if *foundFiles > 0 then{
-      i := 1
       L := sortf(foundFiles)
-      max := maxlen(L)+2
-      every x := !L do{
-         fnames ||:=left(x, max)
-         if i > 3 then{
-            fnames ||:="\n    "
-            i := 1    
-            }
-         else 
-            i +:= 1
-         } 
-      return fnames
+      return L
       }
    else
       fail  
 end
 
 #
-# returns a string of the names of the missing src files
+# returns a sorted list of all missing src file names
 #
 method getMissingFiles()
-   local L, x, i, max, fnames:="    "
+   local L
 
    if *missingFiles > 0 then{ 
-      i := 1
       L := sortf(missingFiles)
-      max := maxlen(L)+2
-      every x := !L do{
-         fnames ||:=left(x, max)
-         if i > 3 then{
-            fnames ||:="\n    "
-            i := 1    
-            }
-         else 
-            i +:= 1
-         } 
-      return fnames
+      return L
       }
    else
       fail
 end
 
 #
-# returns a string of the names of all source files
+# returns a sorted list of all source file names
 #
 method getSourceFiles()
-   local x, i, max, fnames:="    "
+   local L
    
    if *fileNames > 0 then{
-      i := 1
-      max := maxlen(fileNames)+2
-      every x := !fileNames do{
-         fnames ||:=left(x, max)
-         if i > 3 then{
-            fnames ||:="\n    "
-            i := 1    
-            }
-         else 
-            i +:= 1
-         } 
-      return fnames
+      L := sortf(fileNames)
+      return L
       }
    else
       fail

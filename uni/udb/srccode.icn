@@ -250,59 +250,138 @@ end
 method getPackages()
    local pkg, names := []
 
-   every pkg := key(packages) do
-      push(names, pkg)
-   return names
+   if *packages > 0 then{
+      every pkg := key(packages) do
+        push(names, pkg)
+      return sortf(names)
+      }
+   else
+      fail
 end
 
 #
 # public method:
 # returns a list of the class names used in that package
+# or returns a list of all class names used in all packages
 #
 method getPackageClasses(pkg)
    local cname, names := []
 
-   if /pkg then{
-      if *pkgclasses > 0 then
-         every cname := !pkgclasses do
-           push(names, cname)
-      }
-   else{
+   if \pkg then{
       if \packages[pkg] & \packages[pkg].classes then
          every cname := !packages[pkg].classes do
            push(names, cname)
       }
+   else{
+      if *pkgclasses > 0 then
+         every cname := !pkgclasses do
+           push(names, cname)
+      }
    return names
 end
 
 #
 # public method:
-# returns a list of the procedure names used in that package
+# returns the total number of classes used in a package
+# or returns the total number of class used in all packages
+#
+method getTotalPackageClasses(pkg)
+   local total:=0
+
+   if \pkg then{
+      total := if \packages[pkg].classes then *packages[pkg].classes
+      }
+   else{
+      total := *pkgclasses     
+      }
+   return total
+end
+
+#
+# public method:
+# returns a list of all procedure names used in a package,
+# or returns a list of all procedure names used in all packages
 #
 method getPackageProcs(pkg)
-   local p, i, names := []
-   
-   if \packages[pkg] & \packages[pkg].procs then{
-      i := *pkg + 3 # (1 + 2)
-      every p := !packages[pkg].procs do
-         push(names, p[i:0])
+   local p, k, i, names := []
+
+   if \pkg then{
+      if \packages[pkg] & \packages[pkg].procs then{
+         i := *pkg + 3 # (1 + 2)
+         every p := !packages[pkg].procs do
+           push(names, p[i:0])
+         }
+      }
+   else{
+      every k := key(packages) do
+        if \packages[k].procs then{
+           every p := !packages[k].procs do
+             push(names, p[i:0])
+           }
       }
    return names
 end
 
 #
 # public method:
-# returns a list of global variables in that package
+# returns the total number of procedures in a package,
+# or returns the total number of procedures in all packages.
+#
+method getTotalPackageProcs(pkg)
+   local k, total:=0
+   
+   if \pkg then{
+     total := if \packages[pkg].procs then *packages[pkg].procs
+     }
+   else{ 
+     every k := key(packages) do
+        if \packages[k].procs then 
+           total +:= *packages[k].procs
+     }
+   return total 
+end
+
+#
+# public method:
+# returns a list of all global variables in that package
+# or returns a list of all global variables in all packages
 #
 method getPackageVars(pkg)
-   local p, i, names := []
+   local var, k, i, names := []
    
-   if \packages[pkg] & \packages[pkg].vars then{
-      i := *pkg + 3 # (1 + 2)
-      every p := !packages[pkg].vars do
-         push(names, p[i:0])
+   if \pkg then{
+      if \packages[pkg] & \packages[pkg].vars then{
+         i := *pkg + 3 # (1 + 2)
+         every var := !packages[pkg].vars do
+           push(names, var[i:0])
+         }
       }
+   else{
+      every k := key(packages) do
+        if \packages[k].vars then
+           every var := !packages[k].vars do
+             push(names, var[i:0])
+      }  
    return names
+end
+
+#
+# public method:
+# returns the total number of global variables in a package
+# or returns the total number of global variables in all packages
+#
+method getTotalPackageVars(pkg)
+   local k, total:=0
+   
+   if \pkg then{
+      total := if \packages[pkg].vars then *packages[pkg].vars
+      }
+   else{
+      every k := key(packages) do
+        if \packages[k].vars then
+           total +:= *packages[k].vars
+      }  
+   return total
 end
 
 #
@@ -318,8 +397,10 @@ method getClasses(all)
    if *cls > 0 then{
       every cname := !cls do
         push(names, cname)
+      return sortf(names)
       }
-   return names
+   else 
+      fail 
 end
 
 #
@@ -349,8 +430,10 @@ method getGlobals()
    if *vglobals > 0 then{
       every var := !vglobals do
          push(names, var)
+      return sortf(names)
       }
-   return names
+   else
+      fail 
 end
 
 #
@@ -363,8 +446,10 @@ method getProcedures()
    if *pglobals > 0 then{
       every p := !pglobals do
          push(names, p)
+      return sortf(names)
       }
-   return names
+   else
+      fail 
 end
 
 #
@@ -377,8 +462,10 @@ method getFunctions()
    if *fglobals > 0 then{
       every f := !fglobals do
          push(names, f)
+      return sortf(names)
       }
-   return names
+   else 
+      fail
 end
 
 #
@@ -391,8 +478,10 @@ method getRecords()
    if *records > 0 then{
       every r := !records do
          push(names, r)
+      return sortf(names)
       }
-   return names
+   else
+      fail
 end
 
 #

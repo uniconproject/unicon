@@ -693,7 +693,7 @@ method printFileNames(fnames, ftype)
      i +:= 1
      Message ||:= "   "||(cur+:=1)||"# "||get(fnames) ||"\n"
      if i = 10 & *fnames ~= 0 then{
-        Message ||:="   (["||total-cur||"] More file names follow...)\n"
+        Message ||:="   (["||total-cur||"] More "||ftype||" names follow...)\n"
         Message ||:="---Type <return> to continue, or q <return> to quit---"
         DState.Writes(Message)
         if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break
@@ -737,7 +737,7 @@ end
 # prints the found/missing source files
 #
 method cmdSource(cmd)
-   local op, names, found, missing
+   local op, names
 
    # src fname
    if cmd[3] then{
@@ -750,49 +750,49 @@ method cmdSource(cmd)
    case op of{
       "-f"|"-found":{
           if names := DState.srcFile.getFoundFiles() then
-             printFileNames(names,"Found Source Files")
+             printFileNames(names,"Found File")
           else
              DState.Write("\n   No found source file(s) !!")
           }
       "-m"|"-missing":{
           if names := DState.srcFile.getMissingFiles() then
-             printFileNames(names,"Missing Source Files")
+             printFileNames(names,"Missing File")
           else
             DState.Write("\n   No missing source file(s) !!")
           }
       "-file":{
           if names := DState.srcFile.getSourceFiles() then
-             printFileNames(names,"Used source files:")
+             printFileNames(names,"Used file")
           else
             DState.Write("\n   No missing source file(s) !!")
           }
       "-pkg"|"-pk"|"-package":{
           if names := DState.srcCode.getPackages() then
-             printFileNames(names,"Used packages:")
+             printFileNames(names,"Used package")
           else
             DState.Write("\n   No packages used !!")
           }
       "-c"|"-cls"|"-class":{
           if names := DState.srcCode.getClasses() then
-             printFileNames(names,"Used no package classes:")
+             printFileNames(names,"Used standalone class")
           else
             DState.Write("\n   No classes used !!")
           }
       "-p"|"-proc"|"-procedure":{
           if names := DState.srcCode.getProcedures() then
-             printFileNames(names,"Used procedures:")
+             printFileNames(names,"Used procedure")
           else
             DState.Write("\n   No procedures used !!")
           }
       "-g"|"-glb"|"-global":{
           if names := DState.srcCode.getGlobals() then
-             printFileNames(names,"Used global variables:")
+             printFileNames(names,"Used global variable")
           else
             DState.Write("\n   No global variables used !!")
           }
       "-r"|"-rec"|"-record":{
           if names := DState.srcCode.getRecords() then
-             printFileNames(names,"Used records:")
+             printFileNames(names,"Used record")
           else
             DState.Write("\n   No global records used !!")
           }

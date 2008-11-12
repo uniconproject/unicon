@@ -367,7 +367,7 @@ FncDef(fetch,2)
     */
    FncDefV(load)
    FncDef(parent,1)
-   FncDef(keyword,2)
+   FncDef(keyword,3)
 
    /*
     * Event processing functions.  These won't get you very far if no

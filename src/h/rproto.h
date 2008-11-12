@@ -157,6 +157,7 @@ void		fatalerr	(int n,dptr v);
 int		findcol		(word *ipc);
 char		*findfile	(word *ipc);
 int		findipc		(int line);
+word		* findoldipc	(struct b_coexpr *ce, int level);
 int		findline	(word *ipc);
 int		findloc		(word *ipc);
 void		fpetrap		(void);

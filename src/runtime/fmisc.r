@@ -1954,7 +1954,7 @@ function{*} globalnames(ce)
 end
 
 "keyword(kname,ce) - produce a keyword in ce's thread"
-function{*} keyword(keyname,ce)
+function{*} keyword(keyname,ce,iframe)
    declare {
       tended struct descrip d;
       tended char *kyname;
@@ -1971,6 +1971,8 @@ function{*} keyword(keyname,ce)
    else if is:coexpr(ce) then
       inline { d = ce; }
    else runerr(118, ce)
+   if !def:C_integer(iframe,0) then
+      runerr(101,iframe)
    body {
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
@@ -2032,8 +2034,14 @@ function{*} keyword(keyname,ce)
 	 struct progstate *savedp = curpstate;
 	 struct descrip s;
 	 ENTERPSTATE(p);
-	 StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
-	 StrLen(s) = strlen(StrLoc(s));
+         if (iframe > 0){
+	    StrLoc(s) = findfile(findoldipc(BlkD(d,Coexpr),iframe));
+	    StrLen(s) = strlen(StrLoc(s));
+            }
+         else{
+	    StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
+	    StrLen(s) = strlen(StrLoc(s));
+            } 
 	 ENTERPSTATE(savedp);
 	 if (!strcmp(StrLoc(s),"?")) fail;
 	 return s;
@@ -2051,10 +2059,15 @@ function{*} keyword(keyname,ce)
 	 struct progstate *savedp = curpstate;
 	 int i;
 	 ENTERPSTATE(p);
-	 i = findline(BlkD(d,Coexpr)->es_ipc.opnd);
-         if (i == 0){ /* fixing returned line zerro */
-	    i = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
-            } 
+         if (iframe > 0){
+            i = findline(findoldipc(BlkD(d,Coexpr),iframe));
+            }
+         else{
+	    i = findline(BlkD(d,Coexpr)->es_ipc.opnd);
+            if (i == 0){ /* fixing returned line zero */
+	       i = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
+               }
+            }  
 	 ENTERPSTATE(savedp);
 	 return C_integer i;
 	 }

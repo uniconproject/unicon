@@ -1643,7 +1643,8 @@ struct ptstruct *ptopen(char *command)
 
 int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigned long waittime, int longread)
    {
-   int bytes_read=0, tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
+   unsigned long bytes_read=0;
+   int tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
 #if !NT
    fd_set rd_set;
    struct timeval timeout, *timeoutp = NULL;
@@ -1834,7 +1835,8 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
 
 int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
 {
-   int bytes_written, ret=0, pstatus, sel_ret;
+   unsigned long bytes_written;
+   int ret=0, pstatus, sel_ret;
 
    if (ptStruct == NULL || buffer == NULL || bufsize < 1)
       return -1;

@@ -1257,7 +1257,8 @@ function{0,1} read(f)
 /*	      struct timeval timeout;
 	      timeout.tv_sec = 1L;
 	      timeout.tv_usec = 0L; */
-	      if ((slen = ptgetstr(sbuf, MaxReadStr, fp, 0)) == -1)
+	      if ((slen = ptgetstr(sbuf, MaxReadStr, (struct ptstruct *)fp, 0))
+		== -1)
 		 fail;
 	      }
 	 else
@@ -1891,7 +1892,7 @@ end
 
 #ifdef PseudoPty
 		     if (status & Fs_Pty) {
-			ptputc('\n', f.fp);
+			ptputc('\n', f.pt);
 			}
 		     else
 #endif					/* PseudoPty */
@@ -2136,7 +2137,7 @@ function {1} name(x[nargs])
 
 #ifdef PseudoPty
 		     if (status & Fs_Pty) {
-			ptputc('\n', f.fp);
+			ptputc('\n', f.pt);
 			}
 		     else
 #endif					/* PseudoPty */
@@ -2257,7 +2258,7 @@ function {1} name(x[nargs])
 
 #ifdef PseudoPty
 		  if (status & Fs_Pty)
-		     ptputstr(f.fp, StrLoc(t), StrLen(t));
+		     ptputstr(f.pt, StrLoc(t), StrLen(t));
 		  else
 #endif
 

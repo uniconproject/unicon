@@ -1,0 +1,267 @@
+import gui
+$include "guih.icn"
+
+class ConfigureOptions : Dialog(ok_btn,
+   cancel_btn, comp_lbl_4, uniconCompilerCmd_txt,
+   uniconCompilerFlgs_txt, uniconCompiler_lst, uniconLinkerFlgs_txt,
+   uniconLinker_txt, comp_lbl, compflags_lbl, linker_lbl, linkerflags_lbl, 
+   makefileOpts_tabset, unicon_tab_options, uniconCompilerslist
+   )
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog() 
+      uniconCompilerslist:=["unicon", "wicont"]
+      uniconCompiler_lst.set_selection_list(uniconCompilerslist)
+   end
+
+   method on_cancel_btn(ev)
+      self.dispose()
+   end
+
+   method on_ok_btn(ev)
+      targs := "-----------"
+   end
+
+   method on_uniconCompiler_lst(ev)
+      uniconCompilerCmd_txt.set_contents(uniconCompilerslist[uniconCompiler_lst.get_selection()])
+      uniconCompilerFlgs_txt.set_contents("-c")
+      uniconLinker_txt.set_contents(uniconCompilerslist[uniconCompiler_lst.get_selection()]) 
+      uniconLinkerFlgs_txt.set_contents(" ")
+   end
+
+   method setup()
+      local button_group_1
+      self.set_attribs("size=413,287", "label=Configure Options", "font=serif, bold, 14")
+      makefileOpts_tabset := TabSet()
+      makefileOpts_tabset.set_pos("5", "5")
+      makefileOpts_tabset.set_size("100%-10", "244")
+      makefileOpts_tabset.set_attribs("font=serif, bold, 14")
+      unicon_tab_options := TabItem()
+      unicon_tab_options.set_label("Unicon")
+      comp_lbl := Label()
+      comp_lbl.set_pos("20", "63")
+      comp_lbl.set_size("125", "28")
+      comp_lbl.set_internal_alignment("l")
+      comp_lbl.set_label("Compiler Command")
+      unicon_tab_options.add(comp_lbl)
+      linker_lbl := Label()
+      linker_lbl.set_pos("20", "133")
+      linker_lbl.set_size("125", "28")
+      linker_lbl.set_internal_alignment("l")
+      linker_lbl.set_label("Linker Command")
+      unicon_tab_options.add(linker_lbl)
+      linkerflags_lbl := Label()
+      linkerflags_lbl.set_pos("20", "168")
+      linkerflags_lbl.set_size("125", "28")
+      linkerflags_lbl.set_internal_alignment("l")
+      linkerflags_lbl.set_label("Linker Flags")
+      unicon_tab_options.add(linkerflags_lbl)
+      compflags_lbl := Label()
+      compflags_lbl.set_pos("20", "98")
+      compflags_lbl.set_size("125", "28")
+      compflags_lbl.set_internal_alignment("l")
+      compflags_lbl.set_label("Compiler Flags")
+      unicon_tab_options.add(compflags_lbl)
+      uniconCompilerFlgs_txt := TextField()
+      uniconCompilerFlgs_txt.set_pos("174", "98")
+      uniconCompilerFlgs_txt.set_size("200", "28")
+      uniconCompilerFlgs_txt.set_draw_border()
+      uniconCompilerFlgs_txt.set_contents("")
+      unicon_tab_options.add(uniconCompilerFlgs_txt)
+      uniconLinkerFlgs_txt := TextField()
+      uniconLinkerFlgs_txt.set_pos("174", "168")
+      uniconLinkerFlgs_txt.set_size("200", "28")
+      uniconLinkerFlgs_txt.set_draw_border()
+      uniconLinkerFlgs_txt.set_contents("")
+      unicon_tab_options.add(uniconLinkerFlgs_txt)
+      uniconCompiler_lst := List()
+      uniconCompiler_lst.set_pos("174", "28")
+      uniconCompiler_lst.set_size("200", "28")
+      uniconCompiler_lst.connect(self, "on_uniconCompiler_lst", SELECTION_CHANGED_EVENT)
+      uniconCompiler_lst.set_selection_list(["unicon"])
+      unicon_tab_options.add(uniconCompiler_lst)
+      comp_lbl_4 := Label()
+      comp_lbl_4.set_pos("20", "28")
+      comp_lbl_4.set_size("125", "28")
+      comp_lbl_4.set_internal_alignment("l")
+      comp_lbl_4.set_label("Unicon Compiler")
+      unicon_tab_options.add(comp_lbl_4)
+      uniconLinker_txt := TextField()
+      uniconLinker_txt.set_pos("174", "133")
+      uniconLinker_txt.set_size("200", "28")
+      uniconLinker_txt.set_draw_border()
+      uniconLinker_txt.set_contents("")
+      unicon_tab_options.add(uniconLinker_txt)
+      uniconCompilerCmd_txt := TextField()
+      uniconCompilerCmd_txt.set_pos("174", "63")
+      uniconCompilerCmd_txt.set_size("200", "28")
+      uniconCompilerCmd_txt.set_draw_border()
+      uniconCompilerCmd_txt.set_contents("")
+      unicon_tab_options.add(uniconCompilerCmd_txt)
+      makefileOpts_tabset.add(unicon_tab_options)
+      makefileOpts_tabset.set_which_one(unicon_tab_options)
+      self.add(makefileOpts_tabset)
+      button_group_1 := ButtonGroup()
+      ok_btn := TextButton()
+      ok_btn.set_pos("118", "254")
+      ok_btn.set_size("80", "28")
+      ok_btn.connect(self, "on_ok_btn", ACTION_EVENT)
+      ok_btn.clear_toggles()
+      button_group_1.add(ok_btn)
+      ok_btn.set_label("OK")
+      ok_btn.set_internal_alignment("c")
+      self.add(ok_btn)
+      cancel_btn := TextButton()
+      cancel_btn.set_pos(225, 254)
+      cancel_btn.set_size("80", "28")
+      cancel_btn.connect(self, "on_cancel_btn", ACTION_EVENT)
+      cancel_btn.clear_toggles()
+      button_group_1.add(cancel_btn)
+      cancel_btn.set_label("Cancel")
+      cancel_btn.set_internal_alignment("c")
+      self.add(cancel_btn)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+#procedure main()
+#   local d
+#   d := Untitled()
+#   d.show_modal()
+#end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|17|string|button_group|inte
+#ger|1|string|comp_lbl|integer|8|string|compflags_lbl|integer|2|string|
+#icon_button|integer|1|string|label|integer|1|string|linker_lbl|integer
+#|2|string|linkerflags_lbl|integer|2|string|list|integer|3|string|tab_i
+#tem|integer|3|string|tab_set|integer|1|string|text_button|integer|2|st
+#ring|text_field|integer|4|string|uniconCompilerCmd_txt|integer|2|strin
+#g|uniconCompilerFlgs_txt|integer|2|string|uniconCompiler_lst|integer|2
+#|string|uniconLinkerFlgs_txt|integer|2|string|uniconLinker_txt|integer
+#|2|SuperClass Name|string|Dialog|Import Name|string|gui|Button Groups|
+#class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|1|class|CanvasButton
+#Group|5|Name|string|button_group_1|Number|integer|1|Class Name|string|
+#ButtonGroup|Import Name|string|gui|Class Variable|null|Checkbox Groups
+#|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|inte
+#ger|3|Gen Main|integer|1|Gen Component Setup|integer|1|Gen Init Dialog
+#|integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min W
+#idth|null|Min Height|null|Ticker Rate|null|Attribs|list|2|string|label
+#=Configure Options|string|font=serif, bold, 14|Name|string|ConfigureOp
+#tions|Width|integer|413|Height|integer|287|Items|list|3|class|CanvasTa
+#bSet|27|Parent Canvas|1|Name|string|makefileOpts_tabset|Class Name|str
+#ing|TabSet|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H F
+#ix|null|W Default|null|H Default|null|X Spec|string|5|Y Spec|string|5|
+#W Spec|string|100%-10|H Spec|string|244|X Align|string|l|Y Align|strin
+#g|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|li
+#st|1|string|font=serif, bold, 14|Tooltip|null|Accel|null|Event Handler
+#s|list|0|Class Variable|integer|1|Parent Component|1|Children|list|1|c
+#lass|CanvasTabItem|28|Parent Canvas|1|Name|string|unicon_tab_options|C
+#lass Name|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|
+#W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|0|Y
+# Spec|integer|0|W Spec|string|100%|H Spec|string|100%|X Align|string|l
+#|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|n
+#ull|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Class V
+#ariable|integer|1|Parent Component|11|Label|string|Unicon|Parent TabSe
+#t|11|Children|list|10|class|CanvasLabel|27|Parent Canvas|1|Name|string
+#|comp_lbl|Class Name|string|Label|Import Name|string|gui|X Fix|null|Y 
+#Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|st
+#ring|20|Y Spec|string|63|W Spec|string|125|H Spec|string|28|X Align|st
+#ring|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Bo
+#rder|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0
+#|Class Variable|integer|1|Parent Component|15|Label|string|Compiler Co
+#mmand|Internal Align|string|l|class|CanvasLabel|27|Parent Canvas|1|Nam
+#e|string|linker_lbl|Class Name|string|Label|Import Name|string|gui|X F
+#ix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null
+#|X Spec|string|20|Y Spec|string|133|W Spec|string|125|H Spec|string|28
+#|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|n
+#ull|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Hand
+#lers|list|0|Class Variable|integer|1|Parent Component|15|Label|string|
+#Linker Command|Internal Align|string|l|class|CanvasLabel|27|Parent Can
+#vas|1|Name|string|linkerflags_lbl|Class Name|string|Label|Import Name|
+#string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|
+#H Default|null|X Spec|string|20|Y Spec|string|168|W Spec|string|125|H 
+#Spec|string|28|X Align|string|l|Y Align|string|t|Is shaded|null|Is But
+#ton Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|n
+#ull|Event Handlers|list|0|Class Variable|integer|1|Parent Component|15
+#|Label|string|Linker Flags|Internal Align|string|l|class|CanvasLabel|2
+#7|Parent Canvas|1|Name|string|compflags_lbl|Class Name|string|Label|Im
+#port Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Def
+#ault|null|H Default|null|X Spec|string|20|Y Spec|string|98|W Spec|stri
+#ng|125|H Spec|string|28|X Align|string|l|Y Align|string|t|Is shaded|nu
+#ll|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|nul
+#l|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Com
+#ponent|15|Label|string|Compiler Flags|Internal Align|string|l|class|Ca
+#nvasTextField|27|Parent Canvas|1|Name|string|uniconCompilerFlgs_txt|Cl
+#ass Name|string|TextField|Import Name|string|gui|X Fix|null|Y Fix|null
+#|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|174
+#|Y Spec|string|98|W Spec|string|200|H Spec|string|28|X Align|string|l|
+#Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|in
+#teger|1|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|C
+#lass Variable|integer|1|Parent Component|15|Contents|string||Filter St
+#ring|string||class|CanvasTextField|27|Parent Canvas|1|Name|string|unic
+#onLinkerFlgs_txt|Class Name|string|TextField|Import Name|string|gui|X 
+#Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|nul
+#l|X Spec|string|174|Y Spec|string|168|W Spec|string|200|H Spec|string|
+#28|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass
+#|null|Draw Border|integer|1|Attribs|list|0|Tooltip|null|Accel|null|Eve
+#nt Handlers|list|0|Class Variable|integer|1|Parent Component|15|Conten
+#ts|string||Filter String|string||class|CanvasList|28|Parent Canvas|1|N
+#ame|string|uniconCompiler_lst|Class Name|string|List|Import Name|strin
+#g|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Def
+#ault|null|X Spec|string|174|Y Spec|string|28|W Spec|string|200|H Spec|
+#string|28|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button S
+#ubclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|E
+#vent Handlers|list|1|list|2|string|SELECTION_CHANGED_EVENT|string|on_u
+#niconCompiler_lst|Class Variable|integer|1|Parent Component|15|Constan
+#t Label|null|Selection|integer|1|Selection List|list|1|string|unicon|c
+#lass|CanvasLabel|27|Parent Canvas|1|Name|string|comp_lbl_4|Class Name|
+#string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H
+# Fix|null|W Default|null|H Default|null|X Spec|string|20|Y Spec|string
+#|28|W Spec|string|125|H Spec|string|28|X Align|string|l|Y Align|string
+#|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|lis
+#t|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integ
+#er|1|Parent Component|15|Label|string|Unicon Compiler|Internal Align|s
+#tring|l|class|CanvasTextField|27|Parent Canvas|1|Name|string|uniconLin
+#ker_txt|Class Name|string|TextField|Import Name|string|gui|X Fix|null|
+#Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|
+#string|174|Y Spec|string|133|W Spec|string|200|H Spec|string|28|X Alig
+#n|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Dra
+#w Border|integer|1|Attribs|list|0|Tooltip|null|Accel|null|Event Handle
+#rs|list|0|Class Variable|integer|1|Parent Component|15|Contents|string
+#||Filter String|string||class|CanvasTextField|27|Parent Canvas|1|Name|
+#string|uniconCompilerCmd_txt|Class Name|string|TextField|Import Name|s
+#tring|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H
+# Default|null|X Spec|string|174|Y Spec|string|63|W Spec|string|200|H S
+#pec|string|28|X Align|string|l|Y Align|string|t|Is shaded|null|Is Butt
+#on Subclass|null|Draw Border|integer|1|Attribs|list|0|Tooltip|null|Acc
+#el|null|Event Handlers|list|0|Class Variable|integer|1|Parent Componen
+#t|15|Contents|string||Filter String|string||Which One|15|class|CanvasT
+#extButton|36|Parent Canvas|1|Name|string|ok_btn|Class Name|string|Text
+#Button|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|n
+#ull|W Default|null|H Default|null|X Spec|string|118|Y Spec|string|254|
+#W Spec|string|80|H Spec|string|28|X Align|string|l|Y Align|string|t|Is
+# shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|lis
+#t|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTION
+#_EVENT|string|on_ok_btn|Class Variable|integer|1|Parent Component|1|La
+#bel|string|OK|No Keyboard|null|Img Up|null|Img Down|null|Img Width|nul
+#l|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent Ch
+#eckBoxGroup|null|Parent Button Group|5|Internal Align|string|c|class|C
+#anvasTextButton|36|Parent Canvas|1|Name|string|cancel_btn|Class Name|s
+#tring|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nu
+#ll|H Fix|null|W Default|null|H Default|null|X Spec|integer|225|Y Spec|
+#integer|254|W Spec|string|80|H Spec|string|28|X Align|string|l|Y Align
+#|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null
+#|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|s
+#tring|ACTION_EVENT|string|on_cancel_btn|Class Variable|integer|1|Paren
+#t Component|1|Label|string|Cancel|No Keyboard|null|Img Up|null|Img Dow
+#n|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox
+# Flag|null|Parent CheckBoxGroup|null|Parent Button Group|5|Internal Al
+#ign|string|c|Initial Focus|null|Event Handlers|list|0|

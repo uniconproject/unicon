@@ -1,0 +1,58 @@
+global matching, L
+
+class MatchParen(stack)
+
+   method leftMatch(c)
+      case (c) of {
+         "(" : return "("
+         ")" : return "("
+         "[" : return "["
+         "]" : return "["
+         "{" : return "{"
+         "}" : return "{"
+         }
+   end
+
+   method add_char( c) 
+      local m
+      m := leftMatch(c)
+
+      if \m then {
+         if (m ==  c) then { # c is some kind of left parenthesis
+            push(stack, m)          # push a Character version, m
+            }
+         else {
+            if (not (n := pop(stack))) | (n ~=== m) then {
+            return "false"
+            } 
+         }
+      }
+   end
+  
+   method add_string(s)
+      every i:=1 to *s do
+         if add_char(s[i]) == "false" then fail
+      return
+   end
+
+   method test(s)
+      every i:=1 to *stack do pop(stack)
+
+      if add_string(s) & *stack=0 then {
+         sav := &window
+         &window  := &null
+            Notice("Good: Matching")
+         &window := sav
+         }
+      else {
+         sav := &window
+         &window  := &null
+            Notice("Bad: No Matching")
+         &window := sav
+         }
+   end
+
+initially
+   matching := "true"
+   stack := []
+end

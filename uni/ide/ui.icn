@@ -33,8 +33,9 @@ link mainbar
 link getpaths
 link classbrowser
 
-global pnlToolbar, MsgBox, EditBoxt, FileTabSet, ClassTabSet, DevTabSet,
-       FileBrowser, linebreak, dialogself, browser, docpath
+global pnlToolbar, MsgBox, EditBox, FileTabSet, ClassTabSet, DevTabSet,
+       FileBrowser, linebreak, dialogself, browser, docpath,
+       tab_item_1, tab_item_2, tab_item_3, menubar
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
@@ -51,11 +52,16 @@ $else # implies Windows for now
    $define PATHSEP "\\"
 $endif
 
+class UIDE : Dialog(menu_1, menu_bar, close_menu_item, exit_menu_item, 
+                    file_menu, ivib_menu_item, new_menu_item, open_menu_item,
+                    print_menu_item, save_menu_item, saveas_menu_item, 
+                    copy_menu_item, cut_menu_item, find_menu_item, 
+                    goto_menu_item, matchparen_menu_item, menu_2, 
+                    paste_menu_item, replace_menu_item, select_all_menu_item, 
+                    undo_menu_item, uide, menu_separator_1, startfile)
 
-class UIDE : Dialog(menu_1, menu_bar, tab_item_1, tab_item_2, tab_item_3, close_menu_item, exit_menu_item, file_menu, ivib_menu_item, new_menu_item, open_menu_item, print_menu_item, save_menu_item, saveas_menu_item, copy_menu_item, cut_menu_item, find_menu_item, goto_menu_item, matchparen_menu_item, menu_2, paste_menu_item, replace_menu_item, select_all_menu_item, undo_menu_item, uide, menu_separator_1, menubar,startfile)
    method component_setup()
       self.setup()
-
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "25")
       pnlToolbar.set_size("100%", "25")
@@ -64,83 +70,82 @@ class UIDE : Dialog(menu_1, menu_bar, tab_item_1, tab_item_2, tab_item_3, close_
       self.add(pnlToolbar)
       menubar.Menubar()
       ide.Toolbar(pnlToolbar) #This call to add a toolbar
-#      FileBrowser.addreplace("file_contents", "tab_label", 0)
-
+      FileBrowser.addreplace("file_contents", "tab_label", 0)
    end
 
    method IDEDialog()
    end
 
-#
-# Set Doc Path Proc:
-#
-method set_docpath()
-match("Binaries at ", docpath := &features) |
-Notice("What, no binaries?" ||
-	"Have you added Unicon's bin directory to your path?")
-docpath ?:= (="Binaries at " & tab(0))
-if map(docpath[-4:0])==("bin/"|"bin\\") then docpath[-4:0] := ""
-else write("did not find expected Unicon binaries in a bin/ directory")
-end
+   #
+   # Set Doc Path Proc:
+   #
+   method set_docpath()
+      match("Binaries at ", docpath := &features) |
+      Notice("What, no binaries?" ||
+             "Have you added Unicon's bin directory to your path?")
+      docpath ?:= (="Binaries at " & tab(0))
+      if map(docpath[-4:0])==("bin/"|"bin\\") then docpath[-4:0] := ""
+      else write("did not find expected Unicon binaries in a bin/ directory")
+   end
+   #
+   # main initialization procedure
+   #
+   method ui_initialize()
+      local f, line
+      ui_ini := getenv("UNICONINI") | "ui.ini"
+      height := 400
+      width := 600
+      msglines := 7
+      font := "sans,15"
+      linebreak := "LF"           # default to UNIX mode
+      if f := open(ui_ini) then {
+         while line := read(f) do {
+            line ? {
+               if ="msglines" then {
+                  tab(upto(&digits))
+                  msglines := integer(tab(many(&digits)))
+                  }
+               else if ="height" then {
+                  tab(upto(&digits))
+                  height := integer(tab(many(&digits)))
+                  }
+               else if ="width" then {
+                  tab(upto(&digits))
+                  width := integer(tab(many(&digits)))
+                  }
+               else if ="font" then {
+                  tab(many('= \t'))
+                  font := tab(0)
+                  }
+               else if ="linebreak" then {
+                  tab(many('= \t'))
+                  linebreak := tab(0)
+                  }
+               }
+            }
+         close(f)
+     }
 
-#
-# main initialization procedure
-#
-method ui_initialize()
-local f, line
-ui_ini := getenv("UNICONINI") | "ui.ini"
-height := 400
-width := 600
-msglines := 7
-font := "sans,15"
-linebreak := "LF"                      # default to UNIX mode
-if f := open(ui_ini) then {
-while line := read(f) do {
-	line ? {
-	if ="msglines" then {
-	tab(upto(&digits))
-	msglines := integer(tab(many(&digits)))
-	}
-	else if ="height" then {
-	tab(upto(&digits))
-	height := integer(tab(many(&digits)))
-	}
-	else if ="width" then {
-	tab(upto(&digits))
-	width := integer(tab(many(&digits)))
-	}
-	else if ="font" then {
-	tab(many('= \t'))
-	font := tab(0)
-	}
-	else if ="linebreak" then {
-	tab(many('= \t'))
-	linebreak := tab(0)
-	}
-	}
-	}
-close(f)
-}
-wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
-if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
-xargs := ""
+      wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
+      if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
+      xargs := ""
 $ifdef _UNIX
-   every browser := getenv("BROWSER") |
-		    "firefox" | "netscape" | "mozilla"| "opera" do {
-      if stat(getpaths() || browser) then {
-	 MsgBox.set_contents(["found browser " || browser])
-	 break
-	 }
-      else browser := &null
-      }
+      every browser := getenv("BROWSER") |
+                       "firefox" | "netscape" | "mozilla"| "opera" do {
+         if stat(getpaths() || browser) then {
+            MsgBox.set_contents(["found browser " || browser])
+            break
+            }
+         else browser := &null
+         }
 $else
-(browser := "\"" || WinAssociate("HTM") || "\"" ) |
-write(
-	"What, no browser?  Unicon's online help won't be readable until you\n_
-	associate an HTML reader application with the HTM file extension.\n")
+      (browser := "\"" || WinAssociate("HTM") || "\"" ) |
+      write("What, no browser?  Unicon's online help won't be readable \n_
+             until you associate an HTML reader application with the HTM \n_ 
+             file extension.\n")
 $endif
-set_docpath()
-end
+      set_docpath()
+   end
 
    method end_dialog()
    end
@@ -151,16 +156,19 @@ end
       put(opened_files_list,"scratch")
       put(opened_files_locs,\filedirectory)
       ide.handle_openfile(&null, \startfile)
-      ##ide_design()
+   end
+
+   method on_close(ev)
+      dispose()
    end
 
    method setup()
-      self.set_attribs("size=750,560", "bg=pale gray", "label=Unicon IDE")
+      self.set_attribs("size=750,560", "bg=pale gray", "label=Unicon IDE", "font=sans,14")
       DevTabSet := TabSet()
       DevTabSet.set_pos("0", "100%-110")
       DevTabSet.set_size("100%", "110")
       tab_item_1 := TabItem()
-      tab_item_1.set_label("Messages")
+      tab_item_1.set_label("Messages: (Single File Mode)")
       MsgBox := EditableTextList()
       MsgBox.set_pos("2", "2")
       MsgBox.set_size("100%-4", "100%-4")
@@ -174,14 +182,13 @@ end
       FileTabSet := BufferTabSet()
       FileTabSet.set_pos("150", "50")
       FileTabSet.set_size("100%-150", "100%-160")
-      FileTabSet.set_attribs("font=sans,15")
       tab_item_2 := TabItem()
       tab_item_2.set_label("scratch")
       EditBox := BuffEditableTextList()
       EditBox.set_pos("2", "2")
       EditBox.set_size("100%-4", "100%-4")
       EditBox.set_draw_border()
-      EditBox.set_attribs("bg=white", "font=sans,14")
+      EditBox.set_attribs("bg=white")
       EditBox.set_contents([""])
       tab_item_2.add(EditBox)
       FileTabSet.add(tab_item_2)
@@ -206,6 +213,7 @@ end
       pnlToolbar.set_pos("0", "25")
       pnlToolbar.set_size("100%", "25")
       self.add(pnlToolbar)
+      self.connect(self, "on_close", CLOSE_BUTTON_EVENT)
    end
 
 initially(initfile)
@@ -214,7 +222,7 @@ initially(initfile)
    # contains the main ide functions
    ide := IDE(FileTabSet, ClassTabSet, FileBrowser)
    dialogself := self
-   menubar := Mainbar(JProject(), CProject(), UProject())
+   menubar := Mainbar(UProject())
    startfile := initfile
    return self
 end
@@ -234,7 +242,7 @@ $define XOff		  0	# offset for text vidgets
 $define XOffButton	 85	# initial x offset for buttons
 $define XOffIncr	 15	# space between buttons
 
-class Vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
+class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
    method component_setup()
       self.setup()
    end
@@ -249,25 +257,25 @@ class Vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
    local nlines := *captions + *labels + 2
    local label_2, text_button_1, text_field_1
 
-      self.set_attribs("size=640," || (32 * nlines))
+      self.set_attribs("size=220," || (32 * nlines))
       every i := 1 to *captions do {
 	 cap := Label()
-	 cap.set_pos("175", integer(i *100 / nlines)|| "%")
+	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
 	 cap.set_internal_alignment("l")
 	 cap.set_label(captions[i])
 	 self.add(cap)
 	 }
       every i := 1 to *labels do {
 	 label_2 := Label()
-	 label_2.set_pos(117, integer((*captions + i)*100/nlines) || "%")
+	 label_2.set_pos(20, integer((*captions + i)*100/nlines) || "%")
 	 label_2.set_internal_alignment("l")
 	 label_2.set_label(labels[i])
 	 self.add(label_2)
 	 }
       every i := 1 to *labels do {
 	 text_field_1 := TextField()
-	 text_field_1.set_pos(167, integer((*captions + i)*100/nlines) || "%")
-	 text_field_1.set_size(60, 30)
+	 text_field_1.set_pos(100, integer((*captions + i)*100/nlines) || "%-10")
+	 text_field_1.set_size(100, 30)
 	 text_field_1.set_draw_border()
 	 text_field_1.set_contents("")
 	 self.add(text_field_1)
@@ -275,7 +283,7 @@ class Vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
 	 }
       every i := 1 to *buttons do {
 	 text_button_1 := TextButton()
-	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%",
+	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
 			       integer((*captions + *labels + 1)*100/nlines) ||
 			       "%" )
 	 text_button_1.connect(self, "on_button", ACTION_EVENT)
@@ -348,7 +356,7 @@ procedure TextDialog(			#: text dialog
    pad := 2 * lead
    cwidth := WAttrib(win, "fwidth")
 
-   dialog := Vdialog(captions, labels, buttons)
+   dialog := vdialog(captions, labels, buttons)
 
    maxw := 0
    every maxw <:= TextWidth(win, !captions)
@@ -409,36 +417,36 @@ end
 #roupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Gen Main|i
 #nteger|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen I
 #nitially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min He
-#ight|null|Ticker Rate|null|Attribs|list|2|string|bg=pale gray|string|l
-#abel=Unicon IDE|Name|string|UIDE|Width|integer|750|Height|integer|560|
-#Items|list|4|class|CanvasTabSet|27|Parent Canvas|1|Name|string|DevTabS
-#et|Class Name|string|TabSet|Import Name|string|gui|X Fix|null|Y Fix|nu
-#ll|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|0
-#|Y Spec|string|100%-110|W Spec|string|100%|H Spec|string|110|X Align|s
-#tring|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw B
-#order|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|
-#0|Class Variable|integer|1|Parent Component|1|Children|list|1|class|Ca
-#nvasTabItem|28|Parent Canvas|1|Name|string|tab_item_1|Class Name|strin
-#g|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fi
-#x|null|W Default|null|H Default|null|X Spec|integer|0|Y Spec|integer|0
-#|W Spec|string|100%|H Spec|string|100%|X Align|string|l|Y Align|string
-#|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|lis
-#t|0|Tooltip|null|Accel|null|Event Handlers|null|Class Variable|integer
-#|1|Parent Component|10|Label|string|Messages|Parent TabSet|10|Children
-#|list|1|class|CanvasEditableTextList|26|Parent Canvas|1|Name|string|Ms
-#gBox|Class Name|string|EditableTextList|Import Name|string|gui|X Fix|n
-#ull|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X S
-#pec|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4
-#|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|n
-#ull|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|
-#Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Compo
-#nent|14|Contents|list|1|string||Which One|14|class|CanvasTabSet|27|Par
-#ent Canvas|1|Name|string|FileTabSet|Class Name|string|BufferTabSet|Imp
-#ort Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defa
-#ult|null|H Default|null|X Spec|string|150|Y Spec|string|50|W Spec|stri
-#ng|100%-150|H Spec|string|100%-160|X Align|string|l|Y Align|string|t|I
-#s shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|1|
-#string|font=sans,15|Tooltip|null|Accel|null|Event Handlers|list|0|Clas
+#ight|null|Ticker Rate|null|Attribs|list|3|string|bg=pale gray|string|l
+#abel=Unicon IDE|string|font=sans,14|Name|string|UIDE|Width|integer|750
+#|Height|integer|560|Items|list|4|class|CanvasTabSet|27|Parent Canvas|1
+#|Name|string|DevTabSet|Class Name|string|TabSet|Import Name|string|gui
+#|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|
+#null|X Spec|string|0|Y Spec|string|100%-110|W Spec|string|100%|H Spec|
+#string|110|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button 
+#Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|
+#Event Handlers|list|0|Class Variable|integer|1|Parent Component|1|Chil
+#dren|list|1|class|CanvasTabItem|28|Parent Canvas|1|Name|string|tab_ite
+#m_1|Class Name|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|
+#null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|intege
+#r|0|Y Spec|integer|0|W Spec|string|100%|H Spec|string|100%|X Align|str
+#ing|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Bor
+#der|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Cl
+#ass Variable|integer|1|Parent Component|10|Label|string|Messages|Paren
+#t TabSet|10|Children|list|1|class|CanvasEditableTextList|26|Parent Can
+#vas|1|Name|string|MsgBox|Class Name|string|EditableTextList|Import Nam
+#e|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|nul
+#l|H Default|null|X Spec|string|2|Y Spec|string|2|W Spec|string|100%-4|
+#H Spec|string|100%-4|X Align|string|l|Y Align|string|t|Is shaded|null|
+#Is Button Subclass|null|Draw Border|integer|1|Attribs|list|1|string|bg
+#=white|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|in
+#teger|1|Parent Component|14|Contents|list|1|string||Which One|14|class
+#|CanvasTabSet|27|Parent Canvas|1|Name|string|FileTabSet|Class Name|str
+#ing|BufferTabSet|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nu
+#ll|H Fix|null|W Default|null|H Default|null|X Spec|string|150|Y Spec|s
+#tring|50|W Spec|string|100%-150|H Spec|string|100%-160|X Align|string|
+#l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|
+#null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Clas
 #s Variable|integer|1|Parent Component|1|Children|list|1|class|CanvasTa
 #bItem|28|Parent Canvas|1|Name|string|tab_item_2|Class Name|string|TabI
 #tem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null
@@ -452,36 +460,36 @@ end
 #l|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spe
 #c|string|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X
 # Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|nul
-#l|Draw Border|integer|1|Attribs|list|2|string|bg=white|string|font=san
-#s,14|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|inte
-#ger|1|Parent Component|25|Contents|list|1|string||Which One|25|class|C
-#anvasTabSet|27|Parent Canvas|1|Name|string|ClassTabSet|Class Name|stri
-#ng|BufferTabSet|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nul
-#l|H Fix|null|W Default|null|H Default|null|X Spec|string|0|Y Spec|stri
-#ng|50|W Spec|string|150|H Spec|string|100%-160|X Align|string|l|Y Alig
-#n|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Att
-#ribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variab
-#le|integer|1|Parent Component|1|Children|list|1|class|CanvasTabItem|28
-#|Parent Canvas|1|Name|string|tab_item_3|Class Name|string|TabItem|Impo
+#l|Draw Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Ac
+#cel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Compone
+#nt|25|Contents|list|1|string||Which One|25|class|CanvasTabSet|27|Paren
+#t Canvas|1|Name|string|ClassTabSet|Class Name|string|BufferTabSet|Impo
 #rt Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defau
-#lt|null|H Default|null|X Spec|integer|0|Y Spec|integer|0|W Spec|string
-#|100%|H Spec|string|100%|X Align|string|l|Y Align|string|t|Is shaded|n
-#ull|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|nu
-#ll|Accel|null|Event Handlers|null|Class Variable|integer|1|Parent Comp
-#onent|32|Label|string|Class Browser|Parent TabSet|32|Children|list|1|c
-#lass|CanvasTree|29|Parent Canvas|1|Name|string|FileBrowser|Class Name|
-#string|Tree|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H 
-#Fix|null|W Default|null|H Default|null|X Spec|string|2|Y Spec|string|2
-#|W Spec|string|100%-4|H Spec|string|100%-4|X Align|string|l|Y Align|st
-#ring|t|Is shaded|null|Is Button Subclass|null|Draw Border|integer|1|At
-#tribs|list|1|string|bg=white|Tooltip|null|Accel|null|Event Handlers|li
-#st|0|Class Variable|integer|1|Parent Component|36|Select One|integer|1
-#|Select Many|null|Show Root Handles|integer|1|Show Root|integer|1|Whic
-#h One|36|class|CanvasPanel|26|Parent Canvas|1|Name|string|pnlToolbar|C
-#lass Name|string|Panel|Import Name|string|gui|X Fix|null|Y Fix|null|W 
-#Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|0|Y Sp
-#ec|string|25|W Spec|string|100%|H Spec|string|25|X Align|string|l|Y Al
-#ign|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|A
-#ttribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Vari
-#able|integer|1|Parent Component|1|Children|list|0|Initial Focus|null|E
-#vent Handlers|list|0|
+#lt|null|H Default|null|X Spec|string|0|Y Spec|string|50|W Spec|string|
+#150|H Spec|string|100%-160|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|
+#null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent 
+#Component|1|Children|list|1|class|CanvasTabItem|28|Parent Canvas|1|Nam
+#e|string|tab_item_3|Class Name|string|TabItem|Import Name|string|gui|X
+# Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|nu
+#ll|X Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spec|string|
+#100%|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subcla
+#ss|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event 
+#Handlers|null|Class Variable|integer|1|Parent Component|32|Label|strin
+#g|Class Browser|Parent TabSet|32|Children|list|1|class|CanvasTree|29|P
+#arent Canvas|1|Name|string|FileBrowser|Class Name|string|ClassBrowser|
+#Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W D
+#efault|null|H Default|null|X Spec|string|2|Y Spec|string|2|W Spec|stri
+#ng|100%-4|H Spec|string|100%-4|X Align|string|l|Y Align|string|t|Is sh
+#aded|null|Is Button Subclass|null|Draw Border|integer|1|Attribs|list|1
+#|string|bg=white|Tooltip|null|Accel|null|Event Handlers|list|0|Class V
+#ariable|integer|1|Parent Component|36|Select One|integer|1|Select Many
+#|null|Show Root Handles|integer|1|Show Root|integer|1|Which One|36|cla
+#ss|CanvasPanel|26|Parent Canvas|1|Name|string|pnlToolbar|Class Name|st
+#ring|Panel|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H F
+#ix|null|W Default|null|H Default|null|X Spec|string|0|Y Spec|string|25
+#|W Spec|string|100%|H Spec|string|25|X Align|string|l|Y Align|string|t
+#|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|
+#0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer
+#|1|Parent Component|1|Children|list|0|Initial Focus|null|Event Handler
+#s|list|1|list|2|string|CLOSE_BUTTON_EVENT|string|on_close|

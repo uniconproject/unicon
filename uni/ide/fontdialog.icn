@@ -10,11 +10,15 @@ $ifdef _UNIX
       suspend d.fontcolor
       }
 $else
-   return WinFontDialog(font)
+   return WinFontDialog()
 $endif
 end
 
-class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok, border_1, edit_fontname, edit_fontsize, edit_fontstyle, label_1, label_2, label_3, font)
+class FontDialog : Dialog(
+   cancel, edit_fontcolor, label_4, label_5, ok, border_1, edit_fontname, 
+   edit_fontsize, edit_fontstyle, label_1, label_2, label_3, font, fn, 
+   fsz, fst, fontcolor
+   )
    method component_setup()
       self.setup()
    end
@@ -32,8 +36,8 @@ class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok, border_1
 
    method on_edit_fontcolor(ev)
       fontcolor := edit_fontcolor.selection_list[edit_fontcolor.get_selection()]
-      write("font color : ",fontcolor)
-      label_5.set_attribs("fg="||fontcolor)
+      label_5.set_attribs("font="||font,"fg="||fontcolor)
+
       self.init()
       self.resize()
       self.display()
@@ -41,13 +45,7 @@ class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok, border_1
 
    method on_edit_fontname(ev)
       fn := edit_fontname.selection_list[edit_fontname.get_selection()]
-      fst := map(edit_fontstyle.selection_list[edit_fontstyle.get_selection()])
-      if fst == "regular" then fst := &null
-      else if fst == "bold italic" then fst := "bold,italic"
-      fsz := edit_fontsize.selection_list[edit_fontsize.get_selection()]
       font := fn
-      if \fst then font ||:= "," || fst
-      font ||:= "," || fsz
       label_5.set_attribs("font="||font)
       self.init()
       self.resize()
@@ -55,11 +53,23 @@ class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok, border_1
    end
 
    method on_edit_fontsize(ev)
-      on_edit_fontname(ev)
+      fsz := edit_fontsize.selection_list[edit_fontsize.get_selection()]
+      font ||:= "," || fsz
+      label_5.set_attribs("font="||font)
+      self.init()
+      self.resize()
+      self.display()
    end
 
    method on_edit_fontstyle(ev)
-      on_edit_fontname(ev)
+      fst := map(edit_fontstyle.selection_list[edit_fontstyle.get_selection()])
+      if fst == "regular" then fst := &null
+      else if fst == "bold italic" then fst := "bold,italic"
+      if \fst then font ||:= "," || fst
+      label_5.set_attribs("font="||font)
+      self.init()
+      self.resize()
+      self.display()
    end
 
    method on_ok(ev)

@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 1.1
+AppVerName=Windows Unicon Version 1.2
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net

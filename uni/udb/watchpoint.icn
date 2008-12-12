@@ -9,43 +9,101 @@ $include "evdefs.icn"
 $include "defaults.icn"
 
 #
+# This record is used when watchtype is WTRACE
+#
+record oldVarInfo(
+   fname, # file name
+   line,  # line number
+   value  # variable value 
+   ) 
+
+#
 # This record keeps information about the watched variable
 #
 record WatchedVar(
-   name,      # the string name of the var without its scope attachement
-   id,        # an integer identifies the watchpoint number
-   count,     # an integer counts the number watchpoint hits
-   initValue, # the old value of the watched variable
-   value      # the current value of the watched variable
-   )     
+   name,       # the string name of the var without its scope attachement
+   id,         # integer identifies the watchpoint number
+   silent,     # tells when the watch is silent, not null = silen is on
+   hitMax,     # integer specifies the number of hits before notifying the user
+   hitCount,   # integer counts the total number of watchpoint hits
+   missCount,  # integer counts the total number of watchpoint misses
+   state,      # integer code of (ENABLED, DISABLED, or DELETED) 
+   op,         # the operation used in the watch condition
+   catchValue, # the value that user wants to catch (watched) value of interes
+   watchType,  # watchType = (WASSIGN | WVALUECHANGE | WTYPECHANGE | WREAD)
+   initValue,  # initial value of the watched variable when cmd applied
+   oldValue,   # previous value of the watched variable when watch last hit
+   curValue,   # current value of the watched variable when watch is hit
+   traceList,  # a list of oldVarInfo record, used for tracing
+   cmd         # a string with the used command
+   )
 
 #
 # This class handles watchpoints
 #
 class WatchPoint(
-   DState,  # (Alias) object of type State class
-   varInfo, # a table tracks information about the watched variables
-   count,   # a watchpoint counter
-   msg      # a string with latest message from this class 
+   DState,     # (Alias) object of type State class
+   varInfo,    # a table tracks information about the watched variables
+   id,         # a watchpoint counter
+   pname,      # the procedure name of the variable scope
+   chScope,    # the character scope ("+"|"-"|"^"|":")     
+   catchValue, # the catched value
+   var,        # the variable name as it is seen internally
+   vname,      # the variable name as its seen by the programmer 
+   initValue,  # the initial value at the time of placing the watchpoint
+   oper,       # the relational operation used  for the catchvalue (=|<=|>=|>|<)
+   hits,       # the maximum number of watchpoint hits
+   watchType,  # watchType = (WASSIGN|WVALUECHANGE|WTYPECHANGE|WREAD)_SILENT
+   silent,     # to enable variable tracing, when it is null, traceList os null
+   msg         # a string with latest message from this class 
    )
 
 #
+# public method
 # Check the Monitored file for a watchpoint
+# it is called when E_Deref is the event
 #
-method checkWatchPoint( )
-   local cur_file, cur_line#, cur_val, name
+method checkWatchRead()
+   local var
+
+   if member(DState.watchReadMask,&eventvalue) & 
+      varInfo[&eventvalue].state = ENABLED    then{
+      var := &eventvalue
+      if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
+         (varInfo[var].hitCount < abs(varInfo[var].hitMax)) then{
+         varInfo[var].oldValue := varInfo[var].curValue
+         varInfo[var].curValue := variable(varInfo[var].name, Monitored, 0)
+         if \varInfo[var].catchValue then
+            checkCatchValue(var)
+         else
+            printWatchedVarInfo(var)
+         return
+         }
+      }
+   fail
+end
+
+#
+# public method
+# Check the Monitored file for a watchpoint
+# it is called when either E_Assign or E_Value is the event
+# 
+method checkWatchChange( )
    static var, hit := 0, evalue := 0
 
-   if &eventcode == E_Assign then{
+   if &eventcode == E_Assign & 
+      member(DState.watchChangeMask,&eventvalue) &
+      varInfo[&eventvalue].state = ENABLED     then{
       var := &eventvalue
-      if member(DState.watchMask,var) then{
+      if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
+         (varInfo[var].hitCount < abs(varInfo[var].hitMax)) then{
          hit := 1
          if not member(DState.eventMask, E_Value) then{
             evalue := 1
             DState.eventMask ++:= cset(E_Value)
             }
+         return
          }
-      return
       }
    else if &eventcode == E_Value & hit=1 then{
       hit := 0
@@ -53,82 +111,1061 @@ method checkWatchPoint( )
          evalue := 0
          DState.eventMask --:= cset(E_Value)
          }
-      DState.State := PAUSE
-      DState.RunCode := WATCH
-      cur_file := keyword("file", Monitored)
-      cur_line := keyword("line", Monitored)
-      msg  :="\n   Init Value: " ||(\varInfo[var].initValue | type(&null))
-      msg||:="\n   Old  Value: " ||(\varInfo[var].value  | type(&null))
-      msg||:="\n   New  Value: " ||&eventvalue
-      msg||:="\n   Watchpoint #"||varInfo[var].id||" on: "||var||"; "||
-             cur_file||":"||cur_line||"."
-      msg||:="\n   "||cur_line||":"||
-             DState.srcFile.getSrcLine(cur_file, cur_line)
-      varInfo[var].value := &eventvalue
-      DState.Write(msg)
+      varInfo[var].oldValue := varInfo[var].curValue
+      varInfo[var].curValue := &eventvalue
+      if \varInfo[var].catchValue then
+         checkCatchValue(var)
+      else
+         printWatchedVarInfo(var)
       return
       }
    fail
 end
 
 #
-# watches for a variable
+# public method
+# Check the Monitored file for implicit change on &pos and &subject watchpoint
+# it is called when E_Snew or E_Spos is the event
+#
+method checkWatchScan()
+   local var
+
+   if &eventcode == E_Spos then{
+      var := "&pos"
+      if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
+         (varInfo[var].hitCount < abs(varInfo[var].hitMax)) then{
+         varInfo[var].oldValue := varInfo[var].curValue
+         varInfo[var].curValue := &eventvalue
+         if \varInfo[var].catchValue then
+            checkCatchValue(var)
+         else
+            printWatchedVarInfo(var)
+         return
+         }
+      }
+   else if &eventcode == E_Snew then{
+      var := "&subject"
+      if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
+         (varInfo[var].hitCount < abs(varInfo[var].hitMax)) then{
+         varInfo[var].oldValue := varInfo[var].curValue
+         varInfo[var].curValue := &eventvalue
+         if \varInfo[var].catchValue then{
+            checkCatchValue(var)
+            }
+         else
+            printWatchedVarInfo(var)
+         return
+         }
+      }
+   fail
+end
+
+#
+# private method
+# when the watchpoint has a not null catch value, this method decides
+# whether to pause and print the info or not
+#
+method checkCatchValue(var)
+
+   if numeric(varInfo[var].curValue) & 
+      numeric(varInfo[var].catchValue) then{
+      case varInfo[var].op of{
+         "=":{
+            if varInfo[var].curValue = varInfo[var].catchValue then
+               printWatchedVarInfo(var)
+            return }
+         "~=":{
+            if varInfo[var].curValue ~= varInfo[var].catchValue then
+               printWatchedVarInfo(var)
+            return }
+         ">":{
+            if varInfo[var].curValue > varInfo[var].catchValue then
+               printWatchedVarInfo(var)
+            return }
+         "<":{
+            if varInfo[var].curValue < varInfo[var].catchValue then
+               printWatchedVarInfo(var)
+            return }
+         ">=":{
+            if varInfo[var].curValue >= varInfo[var].catchValue then
+               printWatchedVarInfo(var)
+            return }
+         "<=":{
+            if varInfo[var].curValue <= varInfo[var].catchValue then
+               printWatchedVarInfo(var)
+            return }
+         default:{
+            msg:="\n   "||var||" has an unkown operation on catch value."
+            DState.Write(msg)
+            #printWatchedVarInfo(var)
+            fail   }
+         }
+      varInfo[var].missCount +:= 1
+      return
+      }
+   else if type(varInfo[var].catchValue) == "string"  &  
+                             string(varInfo[var].curValue) then{
+      if varInfo[var].watchType = WTYPE then{
+         case varInfo[var].op of{
+            "=":{
+               if type(varInfo[var].curValue) == varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            "~=":{
+               if type(varInfo[var].curValue) ~== varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            default:{
+               msg:="\n   "||var||" has an unkown operation"
+               DState.Write(msg)
+               #printWatchedVarInfo(var)
+               fail   }
+            } 
+         }
+      else{ 
+         case varInfo[var].op of{
+            "=":{
+               if varInfo[var].curValue == varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            "~=":{
+               if varInfo[var].curValue ~== varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            ">":{
+               if varInfo[var].curValue >> varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            "<":{
+               if varInfo[var].curValue << varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            ">=":{
+               if varInfo[var].curValue >>= varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            "<=":{
+               if varInfo[var].curValue <<= varInfo[var].catchValue then
+                  printWatchedVarInfo(var)
+               return }
+            default:{
+               msg:="\n   "||var||" has an unkown operation"
+               DState.Write(msg)
+               #printWatchedVarInfo(var)
+               fail   }
+            }
+         }
+      varInfo[var].missCount +:= 1
+      return   
+      }
+   fail
+end
+
+#
+# private method
+# prints the watched variable info
+#
+method printWatchedVarInfo(var)
+   if varInfo[var].watchType = (WASSIGN | WSCAN) then{
+      printInfo(var)
+      }
+   else if varInfo[var].watchType = WREAD then{
+      printInfo(var)
+      }
+   else if varInfo[var].watchType = WTYPE then{
+      if type(varInfo[var].oldValue) ~== type(varInfo[var].curValue) then
+         printInfo(var)
+      else
+         varInfo[var].missCount +:= 1
+      }
+   else if varInfo[var].watchType = WVALUE then{
+      if image(varInfo[var].oldValue) ~== image(varInfo[var].curValue) then
+         printInfo(var)
+      else
+         varInfo[var].missCount +:= 1
+      }
+end
+
+#
+# finds and returns the right &subject[i: i+len] around p
+# where (i <= p <= (i+len))
+#
+method scanSnapshot(p, len)
+   local prefix, size, pad, i, subject
+
+   subject := image(keyword("&subject", Monitored))
+   size    := *subject
+
+   /len := 40
+   prefix   := "\n   &subject  : "
+   pad := *prefix - 2 - 2
+ 
+   if size <= len then{
+      pad +:= p #- 3
+      prefix ||:= subject
+      prefix ||:="\n   "||left(" ",pad)||"^"
+      }
+   else if p <= len then{
+      pad +:= p #- 3
+      prefix ||:= subject[1:len]
+      prefix ||:="\n   "||left(" ",pad)||"^"
+      }
+   else if p <= size + 1 then{
+      while p > len do len +:= 40
+      i := len - 40
+      if len > size then len := size + 1
+      p := p - i
+      pad +:= p + 1
+      prefix ||:= subject[i:len]
+      prefix ||:="\n   "||left(" ",pad)||"^"
+      }
+   return prefix
+end
+
+#
+# private method
+# Prints the watched var info whenever it reaches a condition or state
+#
+method printInfo(var)
+   local cur_file, cur_line, i, j, ans, r, trace
+
+   varInfo[var].hitCount +:= 1
+   cur_file := keyword("file",Monitored)
+   cur_line := keyword("line",Monitored)
+
+   if \varInfo[var].silent | \varInfo[var].hitMax then{
+      trace := oldVarInfo(cur_file, cur_line,varInfo[var].curValue)
+      push(varInfo[var].traceList,trace)
+      if \varInfo[var].silent & \varInfo[var].hitMax then{
+         if varInfo[var].hitCount >= varInfo[var].hitMax > 0 then{
+            showEndWatchInfo(var)
+            }
+         return
+         }
+      else if \varInfo[var].silent then return
+      }
+
+   DState.State := PAUSE
+   DState.RunCode := WATCH
+
+   msg  :=""
+   msg||:="\n   Command   : " ||varInfo[var].cmd
+   msg||:="\n   hit  total: " ||varInfo[var].hitCount
+   if \varInfo[var].catchValue then
+      msg||:="\n   miss total: " ||varInfo[var].missCount
+   msg||:="\n   Init Value: " ||(\varInfo[var].initValue | type(&null))||
+          " : "||type(varInfo[var].initValue)
+   msg||:="\n   Old  Value: " ||(\varInfo[var].oldValue  | type(&null))||
+          " : "||type(varInfo[var].oldValue)
+   msg||:="\n   New  Value: " ||(\varInfo[var].curValue  | type(&null))||
+          " : "||type(varInfo[var].curValue)
+   if var == "&pos" then{
+      msg ||:= scanSnapshot(varInfo[var].curValue)
+      } 
+   msg||:="\n   --------------------------------------------------"
+   msg||:="\n   Watchpoint #" ||varInfo[var].id||" on: "||var||"; "||
+             cur_file||":"||cur_line||"."
+   msg||:="\n   "||cur_line||":"||
+          DState.srcFile.getSrcLine(cur_file, cur_line)
+
+   DState.Write(msg)
+
+   # whem hitMax reaches the end, it should notify the user.
+   if \varInfo[var].hitMax then{
+      if varInfo[var].hitCount >= varInfo[var].hitMax > 0 then
+         showEndWatchInfo(var)
+      }
+end
+
+#
+# private method
+# triggered at the end of a count watch, 
+# it notfies the user that there is no more watching
+#
+method showEndWatchInfo(var)
+   local ans, r, i
+
+   DState.State := PAUSE
+   DState.RunCode := WATCH
+
+   if varInfo[var].hitMax > 0 then{ 
+      msg   :="\n   Reaching the last of "||varInfo[var].hitCount||" hits"
+      if \varInfo[var].silent then{
+         msg ||:=" of:"
+         msg ||:="\n   Watchpoint(Silent) #"
+         msg ||:= varInfo[var].id||" at: "||var||"; "||
+                  getWatchTypeName(varInfo[var])
+         }
+      }
+   else
+      msg := ""
+   msg ||:="\n   Do you want to display previous info (Y|n)? : " 
+   DState.Writes(msg)
+   if *(ans := read()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then{
+      if varInfo[var].hitMax > 0 then{ 
+         msg :="\n   --------------------------------------------------"
+         every i := 1 to *varInfo[var].traceList do{
+            r := varInfo[var].traceList[i]
+            msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
+                   "; value="||r.value||" : "||type(r.value)||"."
+            }
+         DState.Write(msg)
+         }
+      else
+         printOldInfo(var)
+      }
+end
+
+#
+# private method
+# used to determin the watching type
+#
+method resolveWatchType(cmd)
+
+   case cmd[1] of {
+     "watch"  |
+     "awatch" :{ watchType := WASSIGN        }
+     "rwatch" :{ watchType := WREAD          }
+     "twatch" :{ watchType := WTYPE          }
+     "vwatch" :{ watchType := WVALUE         }
+     "swatch" :{ watchType := WSCAN          }
+     default  :{ watchType := WASSIGN        }
+     }
+ 
+   if \cmd[2] == ("-s"|"-sil"|"-silent") then{
+      silent := 1
+      delete(cmd, 2)
+      }
+
+   if hits := integer(\cmd[2]) then
+      delete(cmd, 2)
+
+   if \cmd[2] then{
+      vname := var := cmd[2]
+      return
+      }
+   fail
+end
+
+#
+# private method
+# resolves the ctached value if any
+#
+method resolveCatchValue(cmd)
+
+   # watch var > 3 | watch var-proc >= 10
+   if \cmd[3] & cmd[3] == ("="|"<"|">"|"<="|">="|"~=") then{
+      # finds the watched value and its relation
+      oper := cmd[3]
+      if \cmd[4] then{
+         cmd[4] := numeric(cmd[4])
+         catchValue := cmd[4]
+         delete(cmd,4)
+         delete(cmd,3)
+         }
+      else{
+         fail
+         }
+      }
+   # watch var  3 | watch var-proc = 3
+   else if \cmd[3] & hits := integer(cmd[3]) then{
+      # finds the watched number of hits before notifying the user
+      delete(cmd,3)
+      }
+   return
+end
+
+#
+# private method
+# builds an internal variable name based on the context and the provided command
+#
+method buildInternalVarName(cmd)
+   local i
+
+   if not resolveCatchValue(cmd) then{
+      msg  :="\n   Setting the watchpoint is failed."
+      msg||:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+             "\n   Try \"help\" for assistance."
+      DState.Write(msg)
+      fail
+      }
+
+   if i := find("+"|"-"|"^"|":",var) then{
+      # watch var-proc
+      pname := var[i+1:0]
+      chScope := var[i]
+      vname := var[1:i]
+      if DState.srcCode.isProcedure(pname) then{
+         if not DState.srcCode.isActiveProc(pname) then{
+            msg :="\n   \""||pname||"\" is not active in the current state;"
+            DState.Writes(msg)
+            }
+         }
+      else{
+         msg   :="\n   Setting a watchpoint is failed;" 
+         msg ||:="\n   \""||pname||"\" is not procedure in the current binary."
+         DState.Write(msg)
+         fail
+         }
+      }
+   else{ #watch var
+      if DState.State = PAUSE then{
+         pname := image(proc(Monitored, 0))
+         i := find(" ",pname)+1
+         pname := pname[i:0]
+         #initValue := variable(vname, Monitored, level)
+         if DState.srcCode.isLocal(var) then
+            var ||:= "-" || pname
+         else if DState.srcCode.isParam(var) then
+            var ||:= "^" || pname
+         else if DState.srcCode.isStatic(var) then
+            var ||:= ":" || pname
+         else if DState.srcCode.isGlobal(var) then
+            var ||:="+"
+         else{
+            msg   :="\n   Setting a watchpoint is failed." 
+            msg ||:="\n   \""||var||"\" is not recognized in the current state."
+            DState.Write(msg)
+            fail
+            }
+         }
+      else{
+         if DState.srcCode.isGlobal(var) then
+            var ||:="+"
+         else{
+            msg   :="\n   Setting a watchpoint is failed."
+            msg ||:="\n   \""||vname||"\" is not a global variable."
+            DState.Write(msg)
+            fail
+            }
+         }
+      }
+   return
+end
+
+#
+# private method 
+# retrieves a symbolic name for the watching type  
+#
+method getWatchTypeName(varRec)
+   local watchname:="whenever "
+
+   case varRec.watchType of{
+     WASSIGN:{
+       watchname ||:= "assigned"
+       }
+     WREAD:{
+       watchname ||:= "read"
+       }
+     WVALUE:{
+       watchname ||:= "changed its value"
+       }
+     WTYPE:{
+       watchname ||:= "changed its type"
+       }
+     WSCAN:{
+       watchname ||:= "changed"
+       }
+     default:{ 
+       watchname ||:= "??" 
+       }
+     }
+   if \varRec.op & \varRec.catchValue then
+      watchname ||:=" and its value "||varRec.op||" "||varRec.catchValue
+
+   if \varRec.hitMax then{
+      if \varRec.hitMax > 0 then
+         watchname ||:=",(First "||varRec.hitMax||" hits)."
+      else
+         watchname ||:=",(Last "||abs(varRec.hitMax)||" hits are traceable)."
+      } 
+   else
+      watchname ||:=""
+
+   return watchname
+end
+
+#
+# private method
+# when everything is right, it adds/rplaces a watchpoint
+# watchType = (WASSIGN | WVALUECHANGE | WTYPECHANGE | WREAD)
+#
+method addWatchpoint(cmd)
+
+   if watchType = WREAD then insert(DState.watchReadMask, var)
+   else                      insert(DState.watchChangeMask, var)
+
+   id +:= 1
+
+   #WatchedVar(name, id, silent, hitMax, hitCount, missCount, op, catchValue,
+   #           watchType, initValue, oldValue, curValue, traceList, cmd)
+   varInfo[var] := 
+     WatchedVar(vname, id, silent, hits, 0, 0, ENABLED, oper, catchValue,
+                watchType,initValue, initValue, initValue,,DState.cmdHistory[1])
+
+   if \silent | \hits then
+      varInfo[var].traceList := []
+
+   if \silent then  msg := "\n   Watchpoint(silent) #"
+   else             msg := "\n   Watchpoint(normal) #"
+
+   msg ||:= id||" set on: "||var||"; "||getWatchTypeName(varInfo[var])
+   DState.Write(msg)
+
+   #write(ximage(varInfo[var]))
+end
+
+#
+# public method
+# used to set a general watchpoint on some program variable
 #
 method cmdWatch(cmd)
-   local x, name, var, cur_val, procName, i, old_State := DState.State
+   local ans
+   
+   if not isOKcmdWatch() then fail
+   
+   initNewCmd()
+
+   if cmd[1] == "swatch" then{
+      resolveWatchType(cmd)
+      var := "&pos"
+      addWatchpoint()
+      var := "&subject"
+      addWatchpoint()
+      return
+      }
+
+   # if cmd is only "watch"; will print all of the pre-set watchpoints info
+   if *cmd = 1 then{
+      printWatchInfo(cmd)
+      return
+      }
+      
+   if not resolveWatchType(cmd) then{
+      DState.State := ERROR
+      msg   := "\n   Undefined Command: \""|| DState.cmdHistory[1] ||"\"" ||
+               "\n   Try \"help\" for assistance."
+      DState.Write(msg)
+      fail
+      }
+
+   if (isKeyword(var) & resolveCatchValue(cmd)) |
+                           buildInternalVarName(cmd) then{
+      if member(DState.watchReadMask, var) | 
+         member(DState.watchChangeMask, var) then {
+         msg   :="\n   Watchpoint #"||varInfo[var].id||" already exist: "||var
+         msg ||:="\n   previous command is : "||varInfo[var].cmd
+         msg ||:="\n   Do you really want to rplace it (Y/n)? : "
+         DState.Writes(msg)
+         if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then{
+            delete(DState.watchReadMask, var)
+            delete(DState.watchChangeMask, var)
+            msg :="\n   previous command has been rplaced."
+            DState.Write(msg)
+            addWatchpoint()
+            }
+         else{
+            msg :="\n   \""||DState.cmdHistory[1]||"\" command is ignored."
+            DState.Write(msg)
+            fail
+            }
+         }
+      else{
+         addWatchpoint()
+         } 
+      return
+      }
+   else fail
+end
+
+#
+# private method
+# prints the watchpoints info, a summery of all watchpoints
+# used by command "info watch"
+#
+method printWatchInfo(cmd)
+   local x, name, i
+
+   if cmd[1] == "info" then delete(cmd, 1)
+
+   case cmd[1] of {
+     "watchpoints"|
+     "watch"  :{ watchType := WANY           }
+     "awatch" :{ watchType := WASSIGN        }
+     "rwatch" :{ watchType := WREAD          }
+     "twatch" :{ watchType := WTYPE          }
+     "vwatch" :{ watchType := WVALUE         }
+     "swatch" :{ watchType := WSCAN          }
+     default  :{ watchType := WANY           }
+     }
+
+   msg := ""
+   if *cmd = 1 then{
+      #info watchpoints | watch | awatch | rwatch | twatch | vwatch | swatch
+      every x := key(varInfo) do{
+         if watchType = WANY | varInfo[x].watchType = watchType then{
+            if \varInfo[x].silent then msg||:="\n   Watchpoint(Silent) #"
+            else                       msg||:="\n   Watchpoint(normal) #"
+            msg||:=varInfo[x].id||" on: "||x||"; "||
+                   getWatchTypeName(varInfo[x])||"("||
+                   getWatchState(varInfo[x].state)||")."
+            }
+         }
+      }
+   else{
+      if *cmd = 2 then{
+         #info watch id
+         if name := integer(cmd[2]) then{
+            every x := key(varInfo) do{
+               if varInfo[x].id = name then{
+                  if \varInfo[x].silent then msg||:="\n   Watchpoint(Silent) #"
+                  else                       msg||:="\n   Watchpoint(normal) #"
+                  msg||:=varInfo[x].id||" on: "||x||"; "||
+                         getWatchTypeName(varInfo[x])||"("||
+                         getWatchState(varInfo[x].state)||")."
+                  if \varInfo[x].traceList & *varInfo[x].traceList > 0 then{
+                     printOldInfo(x)
+                     return
+                     } 
+                  break
+                  }
+               }
+            }
+         else{
+            #info watch var
+            name := cmd[2]
+            if i := find("+"|"-"|"^"|":", name) then name := name[1:i]
+            every x := key(varInfo) do{
+               if varInfo[x].name == name then{
+                  if \varInfo[x].silent then msg||:="\n   Watchpoint(Silent) #"
+                  else                       msg||:="\n   Watchpoint(normal) #"
+                  msg||:=varInfo[x].id||" on: "||x||"; "||
+                         getWatchTypeName(varInfo[x])||"("||
+                         getWatchState(varInfo[x].state)||")."
+                  #break
+                  }
+               }
+            }
+         }
+      }
+
+   if *msg = 0 then
+      msg :="\n   No watchpoints available." 
+   DState.Write(msg)
+end
+
+#
+# public method
+# prints the results of traced expressions (old variable's information)
+#
+method printOldInfo(var)
+   local i, r, max
+   
+   if \varInfo[var].traceList then{
+      msg  :="\n   Command   : " ||varInfo[var].cmd
+      msg||:="\n   hit  total: " ||varInfo[var].hitCount
+      if \varInfo[var].catchValue then
+         msg||:="\n   miss total: " ||varInfo[var].missCount
+      msg||:=   "\n   WatchInfo # " ||varInfo[var].id||" on "||var||"; "||
+                getWatchTypeName(varInfo[var])
+      msg||:=   "\n   --------------------------------------------------"
+
+      if \varInfo[var].hitMax then
+         max := abs(varInfo[var].hitMax)
+      if /max | max > *varInfo[var].traceList then
+         max := *varInfo[var].traceList
+       
+      every i := 1 to max do{
+         r := varInfo[var].traceList[i]
+         msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
+                "; value="||r.value||" : "||type(r.value)||"."
+         }
+      }
+   else
+      msg := "\n   "||var||": has no trace info yet!"
+   DState.Write(msg)
+end
+
+#
+# returns a string name of the state of the brekpoint
+#
+method getWatchState(state)
+
+   if state = ENABLED then
+      return "enabled"
+   else if state = DISABLED then
+      return "disabled"
+   else if state = DELETED then
+      return "deleted"
+   else
+      return "unknown state"
+end
+
+#
+# clears all watchpoints
+#
+method cmdClear(cmd)
+   local x, i := 0, id
+
+   # clears all watchpoints (all types)
+   if *cmd = 2 then{
+      if cmd[2] == ("watch" |"watchpoints") then{
+         every x := key(varInfo) do{
+            delete(varInfo, x)
+            delete(DState.watchChangeMask, x)
+            delete(DState.watchReadMask, x)
+            i +:= 1
+            }
+         if i > 0 then
+            msg := "\n   All watchpoints are cleared; ("||i||" total)."
+         else
+            msg := "\n   No watchpoints are available to be cleared."
+         DState.Write(msg)
+         }
+      else{
+         case cmd[2] of {
+            "awatch" :{ watchType := WASSIGN   }
+            "rwatch" :{ watchType := WREAD     }
+            "twatch" :{ watchType := WTYPE     }
+            "vwatch" :{ watchType := WVALUE    }
+            "swatch" :{ watchType := WSCAN     }
+            default  :{ watchType := WASSIGN   }
+            }
+         every x := key(varInfo) do{
+            if varInfo[x].watchType = watchType then{
+               delete(varInfo, x)
+               delete(DState.watchChangeMask, x)
+               delete(DState.watchReadMask, x)
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg:="\n   All Watchpoints of type "||cmd[2]||
+                 " are cleared; ("||i||" total)."
+         else
+            msg:="\n   No Watchpoints of type "||cmd[2]||
+                 " are available to clear."
+         DState.Write(msg)
+         }
+      }
+   else if id := integer(cmd[3]) then{
+      every x := key(varInfo) do{
+         if varInfo[x].id = id then{
+            delete(varInfo, x)
+            delete(DState.watchChangeMask, x)
+            delete(DState.watchReadMask, x)
+            msg:="\n   Watchpoints #"||id||" is cleared"
+            DState.Write(msg)
+            return
+            }
+         }
+      msg:="\n   Watchpoints # "||id|| " is not available to be cleared."
+      DState.Write(msg)
+      }
+   else{
+      DState.State := ERROR
+      msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+           "\n   Try \"help\" for assistance."
+      DState.Write(msg)
+      }
+end
+
+#
+# It deletes pre-set breakpoints
+#
+method cmdDelete(cmd)
+   local x, i := 0, id
+
+   # deletes all watchpoints (all types)
+   if *cmd = 2 then{
+      if cmd[2] == ("watch" |"watchpoints") then{
+         every x := key(varInfo) do{
+            if varInfo[x].state ~= DELETED then{
+               varInfo[x].state := DELETED
+               delete(DState.watchChangeMask, x)
+               delete(DState.watchReadMask, x)
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg := "\n   All watchpoints are deleted; ("||i||" total)."
+         else
+            msg := "\n   No watchpoints are available to delete."
+         DState.Write(msg)
+         }
+      else{
+         case cmd[2] of {
+            "awatch" :{ watchType := WASSIGN   }
+            "rwatch" :{ watchType := WREAD     }
+            "twatch" :{ watchType := WTYPE     }
+            "vwatch" :{ watchType := WVALUE    }
+            "swatch" :{ watchType := WSCAN     }
+            default  :{ watchType := WASSIGN   }
+            }
+         every x := key(varInfo) do{
+            if varInfo[x].watchType = watchType &
+               varInfo[x].state    ~= DELETED     then{
+               varInfo[x].state := DELETED
+               delete(DState.watchChangeMask, x)
+               delete(DState.watchReadMask, x)
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg:="\n   All Watchpoints of type "||cmd[2]||
+                 " are deleted; ("||i||" total)."
+         else
+            msg:="\n   No Watchpoints of type "||cmd[2]||
+                 " are available to delete."
+         DState.Write(msg)
+         }
+      }
+   else if id := integer(cmd[3]) then{
+      every x := key(varInfo) do{
+         if varInfo[x].id = id then{
+            if varInfo[x].state ~= DELETED then{
+               varInfo[x].state := DELETED
+               delete(DState.watchChangeMask, x)
+               delete(DState.watchReadMask, x)
+               msg:="\n   Watchpoints #"||id||" is deleted"
+               DState.Write(msg)
+               return
+               }
+            else{
+               msg := "\n   Watchpoint #"||id||" is already deleted."
+               DState.Write(msg)
+               fail
+               }
+            } 
+         }
+      msg:="\n   Watchpoints # "||id|| " is not available to be deleted."
+      DState.Write(msg)
+      }
+   else{
+      DState.State := ERROR
+      msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+           "\n   Try \"help\" for assistance."
+      DState.Write(msg)
+      }
+end
+
+#
+# It deletes pre-set breakpoints
+#
+method cmdEnable(cmd)
+   local x, i := 0, id
+
+   # enables all watchpoints (all types)
+   if *cmd = 2 then{
+      if cmd[2] == ("watch" |"watchpoints") then{
+         every x := key(varInfo) do{
+            if varInfo[x].state = DISABLED then{
+               varInfo[x].state := ENABLED
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg:="\n   All disabled watchpoints are enabled; ("||i||" total)."
+         else
+            msg:="\n   No disabled watchpoints are available to enable."
+         DState.Write(msg)
+         }
+      else{
+         case cmd[2] of {
+            "awatch" :{ watchType := WASSIGN   }
+            "rwatch" :{ watchType := WREAD     }
+            "twatch" :{ watchType := WTYPE     }
+            "vwatch" :{ watchType := WVALUE    }
+            "swatch" :{ watchType := WSCAN     }
+            default  :{ watchType := WASSIGN   }
+            }
+         every x := key(varInfo) do{
+            if varInfo[x].watchType = watchType &
+               varInfo[x].state     = DISABLED then{
+               varInfo[x].state := ENABLED
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg:="\n   All disabled watchpoints of type "||cmd[2]||
+                 " are enabled; ("||i||" total)."
+         else
+            msg:="\n   No disabled watchpoints of type "||cmd[2]||
+                 " are available to enable."
+         DState.Write(msg)
+         }
+      }
+   else if id := integer(cmd[3]) then{
+      every x := key(varInfo) do{
+         if varInfo[x].id = id then{
+            if varInfo[x].state = DISABLED then{
+               varInfo[x].state := ENABLED
+               msg:="\n   Watchpoints #"||id||" is enabled"
+               DState.Write(msg)
+               return
+               }
+            else{
+               if varInfo[x].state = ENABLED then
+                  msg:="\n   Watchpoint #"||id||" is already enabled."
+               else
+                  msg:="\n   Watchpoint #"||id||" is deleted;_
+                        it can not be enabled."
+               DState.Write(msg)
+               fail
+               }
+            }
+         }
+      msg:="\n   Watchpoints # "||id|| " is not available to be enabled."
+      DState.Write(msg)
+      }
+   else{
+      DState.State := ERROR
+      msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+           "\n   Try \"help\" for assistance."
+      DState.Write(msg)
+      }
+end
+
+#
+# It deletes pre-set breakpoints
+#
+method cmdDisable(cmd)
+   local x, i := 0, id
+
+   # disables all watchpoints (all types)
+   if *cmd = 2 then{
+      if cmd[2] == ("watch" |"watchpoints") then{
+         every x := key(varInfo) do{
+            if varInfo[x].state = ENABLED then{
+               varInfo[x].state := DISABLED
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg:="\n   All enabled watchpoints are disabled; ("||i||" total)."
+         else
+            msg:="\n   No enabled watchpoints are available to disable."
+         DState.Write(msg)
+         }
+      else{
+         case cmd[2] of {
+            "awatch" :{ watchType := WASSIGN   }
+            "rwatch" :{ watchType := WREAD     }
+            "twatch" :{ watchType := WTYPE     }
+            "vwatch" :{ watchType := WVALUE    }
+            "swatch" :{ watchType := WSCAN     }
+            default  :{ watchType := WASSIGN   }
+            }
+         every x := key(varInfo) do{
+            if varInfo[x].watchType = watchType &
+               varInfo[x].state     = ENABLED then{
+               varInfo[x].state := DISABLED
+               i +:= 1
+               }
+            }
+         if i > 0 then
+            msg:="\n   All enabled watchpoints of type "||cmd[2]||
+                 " are disabled; ("||i||" total)."
+         else
+            msg:="\n   No enabled watchpoints of type "||cmd[2]||
+                 " are available to disable."
+         DState.Write(msg)
+         }
+      }
+   else if id := integer(cmd[3]) then{
+      every x := key(varInfo) do{
+         if varInfo[x].id = id then{
+            if varInfo[x].state = ENABLED then{
+               varInfo[x].state := DISABLED
+               msg:="\n   Watchpoints #"||id||" is disabled"
+               DState.Write(msg)
+               return
+               }
+            else{
+               if varInfo[x].state = DISABLED then
+                  msg:="\n   Watchpoint #"||id||" is already disabled."
+               else
+                  msg:="\n   Watchpoint #"||id||" is deleted;_
+                        it can not be disabled."
+               DState.Write(msg)
+               fail
+               }
+            }
+         }
+      msg:="\n   Watchpoints # "||id|| " is not available to be disabled."
+      DState.Write(msg)
+      }
+   else{
+      DState.State := ERROR
+      msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+           "\n   Try \"help\" for assistance."
+      DState.Write(msg)
+      }
+end
+
+#
+# check if a watched variable is keyword
+#
+method isKeyword(name)
+   
+   if \name & name == ("&pos"|"&subject") then{
+      vname := var := name
+      return
+      }
+   fail
+end
+
+#
+# private method
+# checks if a watch command is applicable
+# ?? move to state.icn
+#
+method isOKcmdWatch()
 
    if not (DState.State = (LOAD | PAUSE)) then {
       DState.State := ERROR
       msg   := "\n   No Program is Loaded_
                 \n   Type \"help\" for assistance"
       DState.Write(msg)
-      return
+      fail
       }
-   DState.State := SKIP
-   
-   # if cmd is only "watch"; will print all of the pre-set watchpoints info
-   if *cmd = 1 then{
-      msg :="\n   " || cmd[1]
-      every x := !DState.watchMask do
-         msg ||:= "\n   Watchpoint #"||varInfo[x].id||" on: "||x
-      DState.Write(msg)
-      return
+   return
+end
+
+#
+# public method
+# re-initializes all watchpoints info
+#
+method resetWatchInfo()
+   local x
+
+   every x := !DState.watchChangeMask do{
+      varInfo[x].hitCount := varInfo[x].missCount := 0
+      varInfo[x].curValue := varInfo[x].oldValue  := varInfo[x].initValue
       }
 
-   var := cmd[2]
-   if x := find("-"|"+"|"^"|":", var) then{
-      name := var[1:x]
+   every x := !DState.watchReadMask do{
+      varInfo[x].hitCount := varInfo[x].missCount := 0
+      varInfo[x].curValue := varInfo[x].oldValue  := varInfo[x].initValue
       }
-   else{ 
-      name := var
-      # Note: we have to be smart about the scope of the watched variable
-      if \cmd[3] then { #what about "^" or ":" ?????
-         var ||:= "-" || cmd[3] # cmd[3] is the procedure name
-         }
-      else if old_State = LOAD then {
-         # we would assume that the watched variable is a global one  
-         var ||:="+"  # + is the global scope character
-         }
-      else if old_State = PAUSE then { #what about "^" or ":" ????
-         # assume that the watched variable is local to where it is being paused
-         procName := image(proc(Monitored, 0))
-         i := find(" ",procName)
-         var ||:= "-" || procName[i+1:0]
-         }
-      }
+end
 
-   if member(DState.watchMask, var) then {
-      msg := "\n   Watchpoint #"||varInfo[var].id||" already exist on: "||var
-      DState.Write(msg)
-      return
-      }
-   insert(DState.watchMask, var)
-   count +:= 1
-   cur_val := variable(name, Monitored, 0)
-   #WatchedVar(name, id, count, initValue, value)  
-   varInfo[var] := WatchedVar(name, count, 0, cur_val, cur_val)  
-   msg := "\n   Watchkpoint #"||count||" set on: "||var
-   DState.Write(msg)
+#
+# private method
+# initialize class variables for the sake of starting new command
+#
+method initNewCmd()
+
+   var        := &null
+   vname      := &null
+   pname      := &null
+   chScope    := &null
+   catchValue := &null
+   initValue  := &null
+   oper       := &null
+   hits       := &null
+   watchType  := &null
+   silent     := &null
 end
 
 #
@@ -136,6 +1173,6 @@ end
 #
 initially()
    varInfo := table() # maps var into WatchedVar() 
-   count   := 0
+   id   := 0
    msg := ""
 end

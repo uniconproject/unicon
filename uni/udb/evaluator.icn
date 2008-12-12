@@ -43,14 +43,19 @@ method startEvaluator()
      if DState.State = RUN then {
         case &eventcode of{
           E_Line:{
-            Break.checkBreakPoint()
+            Break.checkBreakpoint()
             if DState.RunCode = NEXT then{ Step.checkNext() }
             if DState.RunCode = STEP then{ Step.checkStep() }
             }
           E_Assign | E_Value :{
-            # check for (Watch|Trace) point on var
-            if *DState.watchMask > 0    then Watch.checkWatchPoint()
-            if *DState.traceVarMask > 0 then Trace.checkTraceVar()
+            # check for Watch point on var
+            if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
+            }
+          E_Deref:{
+            if *DState.watchReadMask   > 0  then Watch.checkWatchRead()
+            }
+          E_Spos | E_Snew:{
+            if *DState.watchChangeMask > 0  then Watch.checkWatchScan()
             }
           E_Exit:{
             DState.State := END
@@ -60,13 +65,22 @@ method startEvaluator()
             DState.RunCode := ERROR
             showRunError()
             }
+          E_Collect:{
+            #???
+            }
+          E_EndCollect:{
+            #???
+            }  
         } # end of case ecode
-        #Trace.checkTraceBehavior() # needs extra check
+
+        if *DState.traceMask > 0 &
+           member(DState.traceMask, &eventcode) then Trace.checkTraceBehavior()
+
         if Internal.enabled > 0 & 
            member(Internal.eventMask, &eventcode) then Internal.forward()
         if External.enabled > 0 & 
            member(External.eventMask, &eventcode) then External.forward()
-        } 
+        }
         else
            Write("The State is Not a RUN State !!!")
      

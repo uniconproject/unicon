@@ -13,27 +13,30 @@ $include "defaults.icn"
 # This class is used to handle the current debugging state of UDB 
 #
 class State(
-   TP,          # TargetProgram and its arguments
+   TP,              # TargetProgram and its arguments
 
-   State,       # Debugging state such RUN, PUSE, etc
-   RunCode,     # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
+   State,           # Debugging state such RUN, PUSE, etc
+   RunCode,         # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
+   RunCount,        # integer counts number of runs a program has in a session
 
-   eventMask,   # the cset of the main evaluator set of event codes 
-   valueMask,   # table used for breakpoints and watchpoints set of masks
-   breakMask,   # a set of the E_Line Event-values that we like to break on
-   watchMask,   # a set of the E_Assign Event-values that we like to watch for
-   internalMask,# The cset of the active internals event mask
-   externalMask,# The cset of the active externals event mask   
+   eventMask,       # the cset of the main evaluator set of event codes 
+   valueMask,       # table used for breakpoints and watchpoints set of masks
+   breakMask,       # a set of the E_Line values that we like to break on
+   watchChangeMask, # a set of the E_Assign values that we like to watch
+   watchReadMask,   # a set of the E_Deref values that we like to watch
+   internalMask,    # The cset of the active internals event mask
+   externalMask,    # The cset of the active externals event mask   
+   traceMask,       # a cset of &eventcode(s) of wanted traced fetures
 
-   cur_Frame,   # points at the last investigated frame, using up,down,frame n
+   cur_Frame,       # points at the last investigated frame, using up,down,frame n
 
-   Message,     # a string formated with the current message
+   Message,         # a string formated with the current message
 
-   srcFile,     # an instance of the SourceFile class
-   icode,       # an instance of the Icode class
-   srcCode,     # an instance of the SourceCode class
-   #external,   # To Test the performance of Eve Architecture 
-   traceVarMask # a set of the variable names that we like to trace 
+   srcFile,         # an instance of the SourceFile class
+   icode,           # an instance of the Icode class
+   srcCode,         # an instance of the SourceCode class
+   
+   cmdHistory       # list keeps all of the UDB's cmd Session History
    )
 
 #
@@ -73,6 +76,66 @@ method isValidCommand(cmd)
 end
 
 #
+# constructs/reconstructs the monitoring/debugging event-mask & value-mask
+#
+method constructEventMask()
+
+   if *internalMask > 0 | *externalMask > 0 | *traceMask > 0 then{
+      eventMask := cset(E_Error || E_Exit) ++ 
+                   cset(E_Collect || E_EndCollect) ++
+                   internalMask ++ externalMask ++ traceMask
+      if *breakMask > 0 then{
+         if member(traceMask,E_Line)    |
+            member(internalMask,E_Line) | member(externalMask,E_Line) then
+            delete(valueMask,E_Line)
+         else{
+            eventMask ++:= cset(E_Line)
+            valueMask[E_Line] := breakMask
+            }
+         }
+      if *watchChangeMask > 0 then{
+         if member(traceMask,E_Assign)    |
+            member(internalMask,E_Assign) | member(externalMask,E_Assign) then
+            delete(valueMask,E_Assign)
+         else{
+            eventMask ++:= cset(E_Assign)
+            valueMask[E_Assign] := watchChangeMask
+            }
+         }
+      if *watchReadMask > 0 then{
+         if member(traceMask,E_Deref)    |
+            member(internalMask,E_Deref) | member(externalMask,E_Deref) then
+            delete(valueMask,E_Deref)
+         else{
+            eventMask ++:= cset(E_Deref)
+            valueMask[E_Deref] := watchReadMask
+            }
+         }
+      }
+   else{ # *internalMask = 0 & *externalMask = 0 & *traceMask = 0
+      eventMask := cset(E_Error || E_Exit) ++ cset(E_Collect || E_EndCollect)
+      if *breakMask > 0 then{
+         eventMask ++:= cset(E_Line)
+         valueMask[E_Line] := breakMask
+         }
+
+      if *watchChangeMask > 0 then{
+         if member(watchChangeMask, "&pos") then
+            eventMask ++:= cset(E_Spos)
+         if member(watchChangeMask, "&subject") then
+            eventMask ++:= cset(E_Snew)
+         eventMask ++:= cset(E_Assign)
+         valueMask[E_Assign] := watchChangeMask
+         }
+
+      if *watchReadMask > 0 then{
+         eventMask ++:= cset(E_Deref)
+         valueMask[E_Deref] := watchReadMask
+         }
+      }
+end
+
+#
 # Update the debug state 
 # cmd =("run" | "rerun" | "continue" | "step" | "next"| "fresh" | "break")
 # enable/disable -internal/external,
@@ -81,54 +144,29 @@ method Update(state)
 
    if /state then state := State else  State := state
    case state of {
-     LOAD    |
-     RUN     | 
-     RERUN   | 
-     CONTINUE:{
-       #State := state
-       eventMask := cset(E_Error || E_Exit)
-       # Breakpoints related
-       if *breakMask > 0 then{
-         if ((*internalMask > 0 | *externalMask > 0)  &
-             (member(internalMask,E_Line) | member(externalMask,E_Line))) then
-            eventMask ++:= cset(E_Line) ++ internalMask ++ externalMask
-         else{
-            eventMask ++:= cset(E_Line) ++ internalMask ++ externalMask
-            valueMask[E_Line] := breakMask
-            }
-         }
-       else{ 
-         delete(valueMask,E_Line)
-         eventMask ++:= internalMask ++ externalMask
-         }
-
-       # Watchpoints related
-       if *watchMask > 0 | *traceVarMask > 0 then{
-         if ((*internalMask > 0 | *externalMask > 0)  &
-            (member(internalMask,E_Assign) | member(externalMask,E_Assign)))then
-            eventMask ++:= cset(E_Assign) ++ internalMask ++ externalMask
-         else{
-            eventMask ++:= cset(E_Assign) ++ internalMask ++ externalMask
-            valueMask[E_Assign] := watchMask
-            }
-         }
-       else{ 
-          delete(valueMask,E_Assign)
-          eventMask ++:= internalMask ++ externalMask
+     LOAD :{
+          write("\n   --- a program just loaded ---") 
           }
-       }
-    STEP |
-    NEXT :{
-       #State := state
-       if not member(eventMask, E_Line) then eventMask ++:= cset(E_Line)
-       if \valueMask[E_Line] then            delete(valueMask, E_Line)
-       eventMask ++:= internalMask ++ externalMask
-       }
-    default:{
-       Write("OPs: Start Over !!!")
-       Fresh()
-       }
-    }
+     RUN  |
+     RERUN:{
+        RunCount +:= 1
+        constructEventMask()
+        } 
+     CONTINUE:{
+        constructEventMask()
+        }
+     STEP |
+     NEXT :{
+        #State := state
+        if not member(eventMask, E_Line) then eventMask ++:= cset(E_Line)
+        if \valueMask[E_Line] then            delete(valueMask, E_Line)
+        eventMask ++:= internalMask ++ externalMask
+        }
+     default:{
+        Write("OPs: Start Over !!!")
+        Fresh()
+        }
+     }
 end
 
 #
@@ -184,6 +222,21 @@ method initializeState(tp)
 end
 
 #
+# Puts the last command in the right place in cmdHistory List
+#
+method update_cmdHistory(line)
+   local i
+
+   # cmdHistory[1]=""
+   every i:=2 to *cmdHistory do
+      if line == cmdHistory[i] then{
+         delete(cmdHistory,i)    
+         break
+         }
+   push(cmdHistory,line)
+end
+
+#
 # refresh the debugging state to the default settings
 #
 method Fresh() 
@@ -195,17 +248,19 @@ method Fresh()
    #If there is a watchpoint then the E_Assign will be added and the 
    #variable will be added to the watchMask set.
  
-   eventMask    := cset(E_Error || E_Exit)
-   internalMask := cset('')
-   externalMask := cset('')
+   eventMask       := cset(E_Error || E_Exit)
+   internalMask    := cset('')
+   externalMask    := cset('')
+   traceMask       := cset('')
 
-   valueMask    := table()
-   breakMask    := set()
-   watchMask    := set()
-   traceVarMask := set()
-   cur_Frame    := 0 # the current active frame is the last one
+   valueMask       := table()
+   breakMask       := set()
+   watchChangeMask := set()
+   watchReadMask   := set()
+   cur_Frame       := 0 # the current active frame is the last one
+   cmdHistory      := [""]
 
-   Message      := VERSION||"\n   "
+   Message         := VERSION||"\n   "
 end
 
 #
@@ -216,6 +271,7 @@ initially()
 
    State     := NONE
    RunCode   := NONE
+   RunCount  := 0
 
    icode     := Icode()
    srcFile   := SourceFile()

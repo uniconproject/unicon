@@ -62,53 +62,67 @@ method parse_Command(cmd)
 
    case cmd[1] of{
      #-The start of the standard debugging commands
-     "load"   :{  cmdLoad(cmd)                 }
+     "load"   :{  cmdLoad(cmd)                      }
      "r"      |
-     "run"    :{  cmdRun(cmd)                  }
+     "run"    :{  cmdRun(cmd)                       }
      "q"      |
-     "quit"   :{  cmdQuit()                    }
+     "quit"   :{  cmdQuit()                         }
      "p"      |
-     "print"  :{  cmdPrint(cmd)                }
+     "print"  :{  cmdPrint(cmd)                     }
      "b"      |
-     "break"  :{  Debug.Break.cmdBreak(cmd)    }
-     "watch"  :{  Debug.Watch.cmdWatch(cmd)    }
+     "break"  :{  Debug.Break.cmdBreak(cmd)         }
+     "watch"  |
+     "awatch" |
+     "twatch" |
+     "vwatch" |
+     "rwatch" |
+     "swatch" :{  Debug.Watch.cmdWatch(cmd)         }
      "s"      |
-     "step"   :{  Debug.Step.cmdStep(cmd)      }
+     "step"   :{  Debug.Step.cmdStep(cmd)           }
      "n"      |
-     "next"   :{  Debug.Step.cmdNext(cmd)      }
+     "next"   :{  Debug.Step.cmdNext(cmd)           }
+     "ret"    |
+     "return" |
+     "finish" :{  Debug.Step.cmdReturn(cmd)         }
      "f"      |
-     "frame"  :{  Debug.Frame.cmdFrame(cmd)    }
-     "up"     :{  Debug.Frame.cmdUp()          }
-     "down"   :{  Debug.Frame.cmdDown()        }
+     "frame"  :{  Debug.Frame.cmdFrame(cmd)         }
+     "up"     :{  Debug.Frame.cmdUp()               }
+     "down"   :{  Debug.Frame.cmdDown()             }
      "?"      |
      "h"      |
-     "help"   :{  cmdHelp(cmd)                 }
+     "help"   :{  cmdHelp(cmd)                      }
      "c"      |
-     "cont"   :{  Debug.Step.cmdContinue()     }
+     "cont"   :{  Debug.Step.cmdContinue()          }
      "w"      |
      "where"  |
-     "bt"     :{  Debug.Frame.cmdBacktrace(cmd)}
+     "backtrace"|
+     "bt"     :{  Debug.Frame.cmdBacktrace(cmd)     }
      "l"      |
-     "list"   :{  Debug.Print.cmdList(cmd)     }
-     "clear"  :{  Debug.Break.cmdClear(cmd)    }
+     "list"   :{  Debug.Print.cmdList(cmd)          }
+     "clear"  :{  cmdClear(cmd)                     }
+     "delete" :{  cmdDelete(cmd)                    }
+     "enable" :{  cmdEnable(cmd)                    }
+     "disable":{  cmdDisable(cmd)                   }
      #-cmds that are not in GDB
-     "src"    :{  Debug.Print.cmdSource(cmd)            }
-     "trace"  :{  Debug.Trace.cmdTrace(cmd)             }
-     "enable" :{  cmdEnable(cmd)                        }
-     "disable":{  cmdDisable(cmd)                       }
-     "info"   :{  cmdInfo(cmd)                          }
+     "source" |
+     "src"    :{  Debug.Print.cmdSource(cmd)        }
+     "trace"  :{  Debug.Trace.cmdTrace(cmd)         }
+     "info"   :{  cmdInfo(cmd)                      }
      "analyze":{  Debug.Internal.cmdAnalyzeInfo(cmd[3]) }
+     #- the shell commands
+     "ls"|"ll":{ ls()  }
+     "pwd"    :{ pwd() }
      #-new set of commands for the UDB config script 
      "loadscript" :{ }
      "runscript"  :{ }
-     default  :{   
+     default  :{
         # anything else
         DState.State := ERROR
-        Message   := "\n   Undefined Command: \""|| cmd[1] ||"\"" ||
-                     "\n   Try \"help\" for assistance."
+        Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                   "\n   Try \"help\" for assistance."
         DState.Write(Message)
+        }
      }
-   }
 end
 
 #
@@ -139,31 +153,36 @@ end
 # Runs the pre-loaded file, it can be used to re-run the program again
 #
 method cmdRun(cmd)
-   local i, ans, args:=[]
-   
-   if *cmd >= 2 then{
-      if DState.State = (LOAD | PAUSE | END) then{
-         put(args, DState.TP[1])
-         every i:=2 to *cmd do
-            put(args, cmd[i])
-         DState.TP := args
-         }
-      }
-   
-   if DState.State = (LOAD | END | PAUSE) then{ 
+   local i, ans, args
+     
+   if DState.State = (LOAD | END | PAUSE) then{
+      args := [DState.TP[1]]
+      if *cmd >= 2 then
+          every i:=2 to *cmd do
+             put(args, cmd[i])
+      DState.TP := args
+ 
       if DState.State = PAUSE then{
          Message  :="\n   The program being debugged has been started already."
          Message||:="\n   Start it from the beginning? (Y/n)?: "
          DState.Writes(Message)
-         if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then
+         if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then{
+            Debug.Watch.resetWatchInfo()
+            Debug.Trace.resetTraceInfo()
             DState.Update(RERUN)
+            } 
          else{
             DState.State := SKIP
             return
             }
          } 
-      else  
+      else{
          DState.Update(RUN)
+         if DState.RunCount >= 1 then{
+            Debug.Watch.resetWatchInfo()
+            Debug.Trace.resetTraceInfo()
+            }             
+         }
       }
    else{
       DState.State := ERROR
@@ -182,8 +201,10 @@ method cmdQuit()
    # check whether a program is running or not, Paused, etc??????
    # do not exit directlly if the program is in the running state
    if DState.State = (RUN | PAUSE) then{
-      DState.Writes("\n   The program is running.  Exit anyway (Y/n)?: ")
-      if *(ans:=read())=0 | ans[1] == ("y"|"Y") then
+      DState.Writes("\n   The program "|| 
+                          DState.srcFile.exeName ||
+                          " is running.  Exit anyway (Y/n)?: ")
+      if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then
          DState.State := QUIT
       else
          DState.State := SKIP
@@ -197,9 +218,73 @@ end
 #
 method cmdPrint(cmd)
 
-   case cmd[2] of{
-      "-internal": { Debug.Internal.cmdPrintInfo(cmd[3])   }
-      default:     { Debug.Print.cmdPrint(cmd)             }
+   if \cmd[2] & cmd[2] == "-internal" then
+      Debug.Internal.cmdPrintInfo(cmd[3])
+   else if \cmd[2] & cmd[2] == "-trace" then
+      Debug.Watch.cmdPrintTrace(cmd)
+   else
+      Debug.Print.cmdPrint(cmd)
+end
+
+#
+# clears breakpoints, watchpoints, and tracepoints 
+#
+method cmdClear(cmd)
+
+   case cmd[2] of {
+      "break"      |
+      "breakpoints":{ Debug.Break.cmdClear(cmd)     }
+      "awatch"     |
+      "rwatch"     |
+      "twatch"     |
+      "vwatch"     |
+      "swatch"     |
+      "watch"      |
+      "watchpoints":{ Debug.Watch.cmdClear(cmd)     }
+      "ptrace"     |
+      "otrace"     |
+      "ftrace"     |
+      "trace"      |
+      "tracepoints":{ Debug.Trace.cmdClear(cmd)     }
+      "internal"   :{                               }
+      "external"   :{                               }
+      default:{
+         DState.State := ERROR
+         Message:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                  "\n   Try \"help\" for assistance."
+         DState.Write(Message)
+         }
+      }
+end
+
+#
+# deletes breakpoints, watchpoints, and tracepoints 
+#
+method cmdDelete(cmd)
+
+   case cmd[2] of {
+      "break"      |
+      "breakpoints":{ Debug.Break.cmdDelete(cmd)    }
+      "awatch"     |
+      "rwatch"     |
+      "twatch"     |
+      "vwatch"     |
+      "swatch"     |
+      "watch"      |
+      "watchpoints":{ Debug.Watch.cmdDelete(cmd)    }
+      "ptrace"     |
+      "otrace"     |
+      "ftrace"     |
+      "trace"      |
+      "tracepoints":{ Debug.Trace.cmdDelete(cmd)    }
+      "internal"   :{                               }
+      "external"   :{                               }
+      default:{
+         DState.State := ERROR
+         Message:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                  "\n   Try \"help\" for assistance."
+         DState.Write(Message)
+         }
       }
 end
 
@@ -208,14 +293,29 @@ end
 #
 method cmdEnable(cmd)
 
-   case cmd[2] of{
-      "-trace"   : { Debug.Trace.cmdEnableTraceVar(cmd) }
-      "-internal": { Debug.Internal.cmdEnable(cmd[3])   }
-      "-external": { Debug.External.cmdEnable(cmd[3])   }
-      default: {
-          DState.Write("\n   OPS, do not know what to enable ?_
-                        \n   Type \"help\" for assistance ")
-          }
+   case cmd[2] of {
+      "break"      |
+      "breakpoints":{ Debug.Break.cmdEnable(cmd)    }
+      "awatch"     |
+      "rwatch"     |
+      "twatch"     |
+      "vwatch"     |
+      "swatch"     |
+      "watch"      |
+      "watchpoints":{ Debug.Watch.cmdEnable(cmd)    }
+      "ptrace"     |
+      "otrace"     |
+      "ftrace"     |
+      "trace"      |
+      "tracepoints":{ Debug.Trace.cmdEnable(cmd)    }
+      "internal"   :{                               }
+      "external"   :{                               }
+      default:{
+         DState.State := ERROR
+         Message:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                  "\n   Try \"help\" for assistance."
+         DState.Write(Message)
+         }
       }
 end
 
@@ -224,15 +324,30 @@ end
 #
 method cmdDisable(cmd)
 
-   case cmd[2] of{
-      "-trace "  : { Debug.Trace.cmdDisableTraceVar(cmd) }
-      "-internal": { Debug.Internal.cmdDisable(cmd[3])   }
-      "-external": { Debug.External.cmdDisable(cmd[3])   }
-      default: {
-          DState.Write("\n   OPS, do not know what to disable ?_
-                        \n   Type \"help\" for assistance")
+   case cmd[2] of {
+      "break"      |
+      "breakpoints":{ Debug.Break.cmdDisable(cmd)    }
+      "awatch"     |
+      "rwatch"     |
+      "twatch"     |
+      "vwatch"     |
+      "swatch"     |
+      "watch"      |
+      "watchpoints":{ Debug.Watch.cmdDisable(cmd)    }
+      "ptrace"     |
+      "otrace"     |
+      "ftrace"     |
+      "trace"      |
+      "tracepoints":{ Debug.Trace.cmdDisable(cmd)    }
+      "internal"   :{                                }
+      "external"   :{                                }
+      default:{
+          DState.State := ERROR
+          Message:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                   "\n   Try \"help\" for assistance."
+          DState.Write(Message)
           }
-      }
+       }
 end
 
 #
@@ -241,14 +356,59 @@ end
 method cmdInfo(cmd)
 
    case cmd[2] of{
-      "-trace"   : { Debug.Trace.cmdTraceInfo(cmd)   }
-      "-internal": { Debug.Internal.cmdInfo(cmd[3])  }
-      "-external": { Debug.External.cmdInfo(cmd[3])  }
-      default: {
-          DState.Write("\n   OPS, do not know what to find info for ?_
-                        \n   Type \"help\" for assistance")
+      "break"      |
+      "breakpoints":{ Debug.Break.printBreakInfo(cmd)        }
+      "awatch"     |
+      "rwatch"     |
+      "twatch"     |
+      "vwatch"     |
+      "watch"      |
+      "watchpoints":{ Debug.Watch.printWatchInfo(cmd)        }
+      "ptrace"     |
+      "otrace"     |
+      "ftrace"     |
+      "trace"      |
+      "tracepoints":{ Debug.Trace.printTraceInfo(cmd)        }
+      "global"     :{ Debug.Print.cmdPrint(["p","-g"])       }
+      "local"      :{ Debug.Print.cmdPrint(["p","-l"])       }
+      "static"     :{ Debug.Print.cmdPrint(["p","-s"])       }
+      "param"      |
+      "parameter"  :{ Debug.Print.cmdPrint(["p","-p"])       }
+      "source"     :{ Debug.Print.cmdSource(["src"])         }
+      "file"       :{ Debug.Print.cmdSource(["src","-file"]) }
+      "found"      :{ Debug.Print.cmdSource(["src","-f"])    }
+      "missing"    :{ Debug.Print.cmdSource(["src","-m"])    }
+      "user"       :{ Debug.Print.cmdSource(["src","-u"])    }
+      "lib"        :{ Debug.Print.cmdSource(["src","-l"])    }
+      "package"    :{ Debug.Print.cmdSource(["src","-pkg"])  }
+      "class"      :{ Debug.Print.cmdSource(["src","-cls"])  }
+      "record"     :{ Debug.Print.cmdSource(["src","-rec"])  }
+      "procedure"  :{ Debug.Print.cmdSource(["src","-proc"]) }
+      "function"   :{ Debug.Print.cmdSource(["src","-func"]) }
+      "icode"      :{ Debug.Print.cmdSource(["src","-icode"])}      
+      "internal"   :{ Debug.Internal.cmdInfo(cmd[3])         }
+      "external"   :{ Debug.External.cmdInfo(cmd[3])         }
+      default:{
+          DState.State := ERROR
+          Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                     "\n   Try \"help\" for assistance."
+          DState.Write(Message)
           }
       }
+end
+
+#
+# the shell ls command
+#
+method ls()
+   system(DState.cmdHistory[1])
+end
+
+#
+# the shell pwd command
+#
+method pwd()
+   system(DState.cmdHistory[1])
 end
 
 #         
@@ -424,12 +584,12 @@ method cmdHelp(cmd)
     "list":{
       Message:="_
       \n   Prints out some source code lines_
-      \n   list [+]  : prints 10 lines from the current file centered_
-      \n               around the current line, another list cmd will_
-      \n               print the next 10 lines and so on._
-      \n               if program is not running yet, current line is the_
+      \n   list      : if program is not running yet, current line is the_
       \n               line of procedure main(). Otherwise, current line is_
       \n               where the execution paused_ 
+      \n   list +    : prints 10 lines from the current file centered_
+      \n               around the current line, another list cmd will_
+      \n               print the next 10 lines and so on._
       \n   list -    : prints the previous 10 lines from the current print_
       \n   list num  : prints 10 lines centered around the line num_
       \n   list Proc : prints 10 lines centered around the precedure Proc_
@@ -439,15 +599,18 @@ method cmdHelp(cmd)
     "src":{
       Message:="_
       \n   Prints out a sorted list of related source code info_
-      \n   src      : prints a detailed summery of all used file names_
-      \n   src -f   : prints all loaded file names_
-      \n   src -m   : prints all unloaded source file names_
-      \n   src -pkg : prints all used package names_
-      \n   src -cls : prints all used class names-does not belong to packages_
-      \n   src -p   : prints all used procedure names_
-      \n   src -g   : prints all used global variables_
-      \n   src -r   : prints all used record names_
-      \n   src -a   : prints a summery of used source files"
+      \n   src       : prints a detailed summery of all used file names_
+      \n   src -f    : prints all loaded file names_
+      \n   src -m    : prints all unloaded source file names_
+      \n   src -u    : prints all loaded user files_
+      \n   src -l    : prints all loaded library files_
+      \n   src -pkg  : prints all used package names_
+      \n   src -cls  : prints all used class names-does not belong to packages_
+      \n   src -proc : prints all used procedure names_
+      \n   src -fun  : prints all used function names_
+      \n   src -g    : prints all used global variables_
+      \n   src -r    : prints all used record names_
+      \n   src -a    : prints a summery of used source files"
       }
     "trace":{
       Message:="_

@@ -13,389 +13,1066 @@ link evnames
 #
 # This record is used by the trace Behavior
 #
-record traceRec(
+record LocationRec(
    fname, # is the source file name that has the current procedure
    line,  # is the line in the source file that starts on 
    level, # is the level of the procedure in the execution stack
-   pname, # is the procdure name
-   param  # is a string with the parameters and their values
+   ecode  # the current event code at that location
    )
 
 #
-# This record is used by checkTraceVar()
+# This record keeps information about the watched variable
 #
-record traceVarRec(
-   fname, # is the file name
-   line,  # is the line number
-   vname, # is the variable name
-   value  # is an image of the variable value 
-   ) 
+record TraceRec(
+   name,       # a string name of the traced object as entered by the user
+   id,         # integer identifies the tracepoint number
+   hitMax,     # integer specifies the number of hits before notifying the user
+   hitCount,   # integer counts the total number of Tracepoint hits
+   missCount,  # integer counts the total number of Tracepoint misses 
+   op,         # the operation used in the watch condition
+   traceValue, # the value that user wants to catch (trace); value of interes
+   traceList,  # a list of LocationRec record, used for tracing back
+   eventMask,  # a cset of the traced events
+   state,      # an integer code tells if the trace is enabled/disabled/deleted 
+   silent,     # tells when the trace is silent, not null = silent is on
+   traceType,  # a string holds the type of the tracing commaand
+   cmd         # a string with the used command
+   )
 
 #
-# This class handles both the variable and behavior tracer
+# This class handles both the< variable and behavior tracer
 #
 class Tracing(
-   DState,       # An object of the class DebugState()
-   traceVarTable,# a table with keys from traceVarMask to a list of var values
-   traceState,   # a cset of &eventcode(s) of wanted traced fetures
-   traceTable,   # an eventcode maped to a list of trace behavior records
-   Message       # a string formated with the current message
+   DState,        # An object of the class DebugState()
+   id,            # integer identifies the tracepoint number
+   ecodeSet,      # a cset of the current event traced codes
+   hits,          # the max number of traced hits
+   silent,        # a flag tells whether the trace is silent or not
+   traceName,     # a string holds the name of the tracing commaand
+   traceType,     # a string holds the type of the tracing commaand
+   traceBehavior, # traced opbject are maped to TraceRec records
+   Behavior,      # a set of valid traceable behaviors
+   Operator,      # a set of valid traceable operations
+   ReturnCode,    # used when there is a cndition on the return value (ret<0)
+   msg            # a string formated with the current message
    )
 
 #
-# Check the Monitored program for a variable trace point
-# record traceVarRec(fname, line, vname, value) 
+# private method
+# when the watchpoint has a not null catch value, this method decides
+# whether to pause and print the info or not
 #
-method checkTraceVar()
-   local fname, line, var, vinfo
-   static vname
+method checkTraceValue(name)
 
-   var := &eventvalue
-   if member(DState.traceVarMask, var) then{
-      DState.RunCode := TRACE
-      vname := var
-      DState.eventMask ++:=cset(E_Value)
-      }
-   else if DState.RunCode = TRACE then{
-      fname := keyword("file", Monitored)
-      line  := keyword("line", Monitored)
-      vinfo := traceVarRec(fname ,line,vname, image(var))
-
-      if member(traceVarTable,vname) then
-         put(traceVarTable[vname],vinfo)
-      else
-         traceVarTable[vname]:=[vinfo]
-
-      DState.RunCode := RUN
-      DState.eventMask --:=cset(E_Value)
-      }
-end
-
-#
-# resolves the scope of the variable
-#
-method getVar(cmd)
-   local var, pname, i, old_State := DState.State
-
-   var := cmd[1]
-   # Note: we have to be smart about the scope of the watched variable
-   if cmd[2] then {
-      var ||:= "-" || cmd[2] # cmd[2] is the procedure name
-      }
-   else if old_State = LOAD then {
-      # we would assume that the watched variable is a global one  
-      var ||:="+"  # + is the global scope character
-      }
-   else if old_State = PAUSE then {
-      # assume? that the watched variable is local to where it is paused
-      pname := image(proc(Monitored, 0))
-      i := find(" ",pname) + 1
-      var ||:= "-" || pname[i:0]
-      }
-   return var
-end
-
-#
-# set a trace on a variable, used by cmdTrace
-#
-method traceVar(cmd)
-   local var
-
-   # if cmd is only "tracev"; will print all of the trace points info
-   if *cmd = 1 then{
-      printTraceVar()
-      return
-      }
-   
-   if *cmd = 2 then{
-      printTraceVar(cmd[2])
-      return
-      }
-   else{ 
-      var := getVar(cmd[2:0])
-      if member(DState.traceVarMask, var) then
-         Message := "\n   There is already an existing trace point on: " || var
-      else{
-         insert(DState.traceVarMask, var)
-         Message := "\n   A trace point successfully set at: "||var
+   if numeric(&eventvalue) & 
+      numeric(traceBehavior[name].traceValue) then{
+      case traceBehavior[name].op of{
+         "=":{
+            if &eventvalue = traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         "~=":{
+            if &eventvalue ~= traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         ">":{
+            if &eventvalue > traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         "<":{
+            if &eventvalue < traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         ">=":{
+            if &eventvalue >= traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         "<=":{
+            if &eventvalue <= traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         default:{
+            msg:="\n   "||name||" has an unkown operation on catch value."
+            DState.Write(msg)
+            fail   }
          }
-      } 
-   DState.Write(Message)
+      traceBehavior[name].missCount +:= 1
+      return
+      }
+   else if type(&eventvalue) == "string" &
+           type(traceBehavior[name].traceValue) == "string" then{
+      case traceBehavior[name].op of{
+         "=":{
+            if &eventvalue == traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         "~=":{
+            if &eventvalue ~== traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         ">":{
+            if &eventvalue >> traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         "<":{
+            if &eventvalue << traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         ">=":{
+            if &eventvalue >>= traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         "<=":{
+            if &eventvalue <<= traceBehavior[name].traceValue then
+               printInfo(name)
+            return }
+         default:{
+            msg:="\n   "||name||" has an unkown operation"
+            DState.Write(msg)
+            fail   }
+         }
+      traceBehavior[name].missCount +:= 1
+      return   
+      }
+   fail
 end
 
 #
-# Print the out put of the traced variables
+# constructs and updates the the change on the traceMask after all of
+# new trace, enable, disable, delete or clear
 #
-method printTraceVar(Var)
-   local L, r, var
-   
-    Message := ""
-    if /Var | *Var = 0 then{
-       every var := key(traceVarTable) do{
-          L := traceVarTable[var]
-          if *L > 0 then{
-             Message := "\n   --The tracing info for \""||var||"\""
-             every r := !L do
-                Message ||:= "\n   " || r.fname ||"("|| r.line ||
-                             "): "|| r.vname||" = "||r.value
-             }
-          else
-             Message ||:= "\n   var: "||var||" has no trace info yet!"
-          }
-       } 
-    else{
-       if type(Var) ~=="list" then  var := Var
-       else                         var := getVar(Var)
-       if L := traceVarTable[var] & type(L) == "list" then{
-          Message := "\n   --The tracing info for \""||var||"\""
-          every r := !L do
-             Message ||:= "\n   " || r.fname ||"("|| r.line ||
-                          "): "|| r.vname||" = "||r.value
-          }
-       else
-          Message ||:= "\n   var: "||var||" has no trace info yet!"
-       }
-    DState.Write(Message)   
+method UpdateMask()
+   local x, mask:= cset('')
+
+   every x := key(traceBehavior) do
+      if traceBehavior[x].state = ENABLED then
+         mask ++:= traceBehavior[x].eventMask
+
+   DState.traceMask := mask
 end
 
 #
 # Try to build the Behavior Tracer for some event in the traceState cset.
 #
 method checkTraceBehavior()
-   local i, x, R
-   local fname, line, level, pname, param := ""
+   static name
 
-   if member(traceState, &eventcode) then{
-      fname := keyword("file", Monitored) | "?"
-      line  := keyword("line", Monitored) | "?"
-      level := keyword("level", Monitored)| "?"
-      pname := image(&eventvalue)
-
-      case &eventcode of{
-         !ProcMask:{
-             every x := paramnames(Monitored,0) do{
-                 i := variable(x, Monitored,0)
-                 param ||:= x ||"="||image(i)||", "
-                 }
-             param := param[1:-2]
-             R:= traceRec(fname, line, level, pname, param)
-             }
-         default:{
-             R:= traceRec(fname, line, level, pname, &null)
-             }
+   if member(DState.traceMask, &eventcode) then{
+      #write("Tracing.......................")
+      name := image(&eventvalue)
+      if member(traceBehavior,name) & traceBehavior[name].state = ENABLED &
+                        member(traceBehavior[name].eventMask, &eventcode) then{
+         if /traceBehavior[name].hitMax  |
+            traceBehavior[name].hitCount < abs(traceBehavior[name].hitMax) then{
+            if member(ReturnCode, &eventcode) & 
+               \traceBehavior[name].traceValue then
+               checkTraceValue(name)
+            else
+               printInfo(name)
+            } 
          }
-      if member(traceTable, &eventcode) then
-         put(traceTable[&eventcode], R)
       else
-         traceTable[&eventcode] := [R]
-   }
+         fail
+      }
 end 
+
+#
+# private method
+# Prints the watched object info whenever it reaches a condition or state
+#
+method printInfo(name)
+   local R
+
+   R := LocationRec(
+             keyword("file", Monitored) | "?",
+             keyword("line", Monitored) | "?",
+             keyword("level", Monitored)| "?",
+             &eventcode)
+
+   write(image(R))
+   push(traceBehavior[name].traceList, R)
+   traceBehavior[name].hitCount +:= 1
+
+   if \traceBehavior[name].silent | \traceBehavior[name].hitMax then{
+      #trace := oldVarInfo(cur_file, cur_line,varInfo[var].curValue)
+      #push(varInfo[var].traceList,trace)
+      if \traceBehavior[name].silent then{
+         if traceBehavior[name].hitCount >= \traceBehavior[name].hitMax >0 then{
+            showEndTraceInfo(name)
+            }
+         return
+         }
+      }
+   
+   DState.State := PAUSE
+   DState.RunCode := TRACE
+
+   msg  :="\n   Command   : " ||traceBehavior[name].cmd
+   msg||:="\n   hit  total: " ||traceBehavior[name].hitCount
+   if \traceBehavior[name].traceValue then
+      msg||:="\n   miss total: " ||traceBehavior[name].missCount
+   msg||:="\n   --------------------------------------------------"
+   msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||name||"; "||
+          getBehaviorNames(&eventcode) ||", "||
+          R.fname||":"||R.line||"."
+   msg||:="\n   "||R.line||":"||
+                DState.srcFile.getSrcLine(R.fname, R.line)
+   DState.Write(msg)
+end
+
+#
+# private method
+# triggered at the end of a count watch, 
+# it notfies the user that there is no more watching
+#
+method showEndTraceInfo(name)
+   local ans, r, i
+
+   DState.State := PAUSE
+   DState.RunCode := WATCH
+
+   if traceBehavior[name].hitMax > 0 then{ 
+      msg :="\n   Reaching the last of "||traceBehavior[name].hitCount||" hits"
+      if \traceBehavior[name].silent then{
+         msg ||:=" of:"
+         msg ||:="\n   Tracepoint(Silent) #"
+         msg ||:= traceBehavior[name].id||" at: "||name||"; "||
+                  getBehaviorNames(traceBehavior[name].eventMask)||"."
+         }
+      }
+   else
+      msg := ""
+   msg ||:="\n   Do you want to display old Trace Info (Y|n)? : " 
+   DState.Writes(msg)
+   if *(ans := read()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then{
+      if traceBehavior[name].hitMax > 0 then{ 
+         msg :="\n   --------------------------------------------------"
+         every i := 1 to *traceBehavior[name].traceList do{
+            r := traceBehavior[name].traceList[i]
+            msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
+                   "; level="||r.level||"."
+            }
+         DState.Write(msg)
+         }
+      else
+         printOldTraceInfo(name,abs(traceBehavior[name].hitMax))
+      }
+end
+
+#
+# public method
+# prints the results of traced expressions (old variable's information)
+#
+method printOldTraceInfo(name, max)
+   local i, r
+   
+   if \traceBehavior[name].traceList then{
+      msg  :="\n   Command   : " ||traceBehavior[name].cmd
+      msg||:="\n   hit  total: " ||traceBehavior[name].hitCount
+      if \traceBehavior[name].traceValue then
+         msg||:="\n   miss total: " ||traceBehavior[name].missCount
+      msg||:=   "\n   Tracepoint# " ||traceBehavior[name].id||" on "||name||
+                "; "||getBehaviorNames(traceBehavior[name].eventMask)||"."
+      msg||:=   "\n   --------------------------------------------------"
+
+      if /max then max := *traceBehavior[name].traceList
+      else  max >:= *traceBehavior[name].traceList
+
+      if \traceBehavior[name].hitMax then
+         max := abs(traceBehavior[name].hitMax)
+     
+      every i := 1 to max do{
+         r := traceBehavior[name].traceList[i]
+         msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
+                "; level="||r.level||"."
+         }
+      }
+   else
+      msg := "\n   "||name||": has no trace info yet!"
+   DState.Write(msg)   
+end
+
+#
+# private method
+# returns the trace name based on the trace type 
+#
+method getTraceName(kind)
+
+   if kind == "ptrace" then 
+      return "procedure "
+   else if kind == "ftrace" then
+      return "function "
+   else if kind =="otrace" then
+      return "operator "
+   else
+      return "?? "
+end
+
+#
+# private method
+# returns the trace state
+#
+method getTraceState(State)
+
+   if State = ENABLED then 
+      return "enabled"
+   else if State = DISABLED then
+      return "disabled"
+   else if State = DELETED then
+      return "deleted"
+   else
+      return "????" 
+end
 
 #
 # prints the execution behavior tracer info
 # it is used by traceBehavior()
 #
-method printTraceBehavior(ecodeSet)
-   local x, L, e, traced
+method printTraceInfo(cmd)
+   local name, id
 
-   every e := !ecodeSet do{
-      if member(traceState, e) then{
-         Message := "\n   --The tracing info for \""||evnames(e)||"\":"
-         L := traceTable[e]
-         if type(L) ~== "list" then next
-         if member(ProcMask, e) then
-            every x := !L do
-               Message ||:= "\n   "||x.level ||", "||x.fname||", "||x.line||
-                            ": "||x.pname  ||"("||x.param||")."
-         else
-            every x := !L do
-               Message ||:= "\n   "||x.fname||", "||x.line
-         }
-      else
-         Message:="\n   No trace is ON for \""||evnames(e)||"\" to print._
-                   \n   Try \"help trace\" for assistance"
-      DState.Write(Message)
+   if *traceBehavior = 0 then{
+      msg :="\n   No tracepoints are available."
+      DState.Write(msg)
+      fail
       }
+
+   msg := ""
+   if *cmd = 2 then{
+      if cmd[2] == ("trace" | "tracepoints") then{
+         every name := key(traceBehavior) do{
+            msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
+                   getTraceName(traceBehavior[name].traceType)||
+                   traceBehavior[name].name||"; Traced Behaviors: "||
+                   getBehaviorNames(traceBehavior[name].eventMask)||
+                   "("||getTraceState(traceBehavior[name].state)||")."
+            }
+         }
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+         traceType := cmd[2]
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].traceType == traceType then{
+               msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
+                      getTraceName(traceBehavior[name].traceType)||
+                      traceBehavior[name].name||"; Traced Behaviors: "||
+                      ||getBehaviorNames(traceBehavior[name].eventMask)||
+                      "("||getTraceState(traceBehavior[name].state)||")."
+               DState.Write(msg)
+               return
+               }
+            }
+         msg:= "\n   No tracepoints of type \""||cmd[2]||"\" are available."
+         DState.Write(msg)
+         fail
+         }
+      }
+   else{
+      if id := integer(cmd[3]) then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].id == id then{
+               msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
+                      getTraceName(traceBehavior[name].traceType)||
+                      traceBehavior[name].name||"; Traced Behaviors: "||
+                      ||getBehaviorNames(traceBehavior[name].eventMask)||
+                      "("||getTraceState(traceBehavior[name].state)||")."
+               DState.Write(msg)
+               return
+               }
+            }
+         msg:= "\n   Tracepoint #"||id||" is not available."
+         DState.Write(msg)
+         fail
+         }
+      else{
+         id := cmd[3]
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].name == id then{
+               msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
+                      getTraceName(traceBehavior[name].traceType)||
+                      traceBehavior[name].name||"; Traced Behaviors: "||
+                      ||getBehaviorNames(traceBehavior[name].eventMask)||
+                      "("||getTraceState(traceBehavior[name].state)||")."
+               DState.Write(msg)
+               return
+               }
+            }
+         msg:= "\n   No tracepoints on \""||cmd[2]||"\" is available."
+         DState.Write(msg)
+         fail
+         }
+      }
+   if *msg = 0 then
+      msg:= "\n   No tracepoints of type \""||cmd[3]||"\" are available."
+   DState.Write(msg)
 end
 
 #
 # get a cset of the behaviors
 #
-method getBehavior(behavior)
+method getBehaviorCode(behavior, kind)
    local ecodeSet
 
-   case behavior of{
-      "-proc"     :{ ecodeSet := ProcMask }
-      "-func"     :{ ecodeSet := FncMask  }
-      "-conv"     :{ ecodeSet := ConvMask }
-      "-oper"     :{ ecodeSet := OperMask }
-      "-scan"     :{ ecodeSet := ScanMask }
-      "-pcall"    :{ ecodeSet := cset(E_Pcall)  }
-      "-pfail"    :{ ecodeSet := cset(E_Pfail)  }
-      "-psuspend" :{ ecodeSet := cset(E_Psusp)  }
-      "-presume"  :{ ecodeSet := cset(E_Presum) }
-      "-fcall"    :{ ecodeSet := cset(E_Fcall)  }
-      "-ffail"    :{ ecodeSet := cset(E_Ffail)  }
-      "-fsuspend" :{ ecodeSet := cset(E_Fsusp)  }
-      "-fresume"  :{ ecodeSet := cset(E_Fresum) }
-      "-ocall"    :{ ecodeSet := cset(E_Ocall)  }
-      "-ofail"    :{ ecodeSet := cset(E_Ofail)  }
-      "-osuspend" :{ ecodeSet := cset(E_Osusp)  }
-      "-oresume"  :{ ecodeSet := cset(E_Oresum) }
-      "-snew"     :{ ecodeSet := cset(E_Snew)   }
-      "-sfail"    :{ ecodeSet := cset(E_Sfail)  }
-      "-ssuspend" :{ ecodeSet := cset(E_Ssusp)  }
-      "-sresume"  :{ ecodeSet := cset(E_Sresum) }
-   }# end case
-   return ecodeSet
+   if kind == "procedure" then{
+      case behavior of{
+        "start"   |
+        "enter"   |
+        "begin"   :{ ecodeSet := cset(E_Pcall || E_Presum)}
+        "call"    :{ ecodeSet := cset(E_Pcall)            }
+        "resume"  :{ ecodeSet := cset(E_Presum)           }
+        "exit"    |
+        "end"     :{ ecodeSet := cset(E_Pfail || E_Psusp ||
+                                      E_Prem  || E_Pret)  }
+        "fail"    :{ ecodeSet := cset(E_Pfail)            }
+        "suspend" :{ ecodeSet := cset(E_Psusp)            }
+        "remove"  :{ ecodeSet := cset(E_Prem)             }
+        "return"  :{ ecodeSet := cset(E_Pret)             }
+        default   :{ fail                                 }
+        }
+      return ecodeSet
+      }
+   else if kind == "function" then{
+      case behavior of{
+        "start"   |
+        "enter"   |
+        "begin"   :{ ecodeSet := cset(E_Fcall || E_Fresum)}
+        "call"    :{ ecodeSet := cset(E_Fcall)            }
+        "resume"  :{ ecodeSet := cset(E_Fresum)           }
+        "exit"    |
+        "end"     :{ ecodeSet := cset(E_Ffail || E_Fsusp ||
+                                      E_Frem  || E_Fret)  }
+        "fail"    :{ ecodeSet := cset(E_Ffail)            }
+        "suspend" :{ ecodeSet := cset(E_Fsusp)            }
+        "remove"  :{ ecodeSet := cset(E_Frem)             }
+        "return"  :{ ecodeSet := cset(E_Fret)             }
+        default   :{ fail                                 }
+        }
+      return ecodeSet
+      }
+   else if kind == "operator" then{
+      case behavior of{
+        "start"   |
+        "enter"   |
+        "begin"   :{ ecodeSet := cset(E_Ocall || E_Oresum)}
+        "call"    :{ ecodeSet := cset(E_Ocall)            }
+        "resume"  :{ ecodeSet := cset(E_Oresum)           }
+        "exit"    |
+        "end"     :{ ecodeSet := cset(E_Ofail || E_Osusp ||
+                                      E_Orem  || E_Oret)  }
+        "fail"    :{ ecodeSet := cset(E_Ofail)            }
+        "suspend" :{ ecodeSet := cset(E_Osusp)            }
+        "remove"  :{ ecodeSet := cset(E_Orem)             }
+        "return"  :{ ecodeSet := cset(E_Oret)             }
+        default   :{ fail                                 }
+        }
+      return ecodeSet
+      }
+   fail
 end
 
 #
 # used only by the Trace Behavior stuff
 #
-method getTraceNames(ecode)
-   local e, ename := ""
+method getBehaviorNames(ecode)
+   local i, e, ename:="", name
 
-   every e := !ecode do
-      ename ||:= "\n   " || evnames(e)
+   if type(ecode) == "cset" then{
+      if *ecode > 0 then{
+         ename := "("
+         every e := !ecode do{
+            name := evnames(e)
+            i := (find(" ",name)+1) | 1
+            ename ||:=name[i:0]||","
+            }
+         ename[-1] := ")"
+         }
+      }
+   else{
+      name := evnames(ecode)
+      i := (find(" ",name)+1) | 1
+      ename := name[i:0]
+      }
    return ename
 end
 
 #
-# Process the trace behavior command
-# it isused by cmdTrace()
+# adds new tracepoint into the traceBehavior record; name is the key
 #
-method traceBehavior(cmd)
-   local e, ecodeSet, ename
- 
-   if *cmd > 2 then{
-      ecodeSet := getBehavior(cmd[2])
-      write("--------->",type(ecodeSet))
-      traceState ++:= ecodeSet
-      DState.eventMask ++:= ecodeSet
-      Message := "\n   The traceState has a new trace code: "||
-                 getTraceNames(ecodeSet)
-      DState.Write(Message)
-      }
-   else{
-      Message := "\n   The traceState has a new trace code: "||
-                 getTraceNames(ecodeSet)
-      # needs to be solved with the valueMask
-      # traceBehaviorMask := set(cmd3) ????
-      }  
+method addTracepoint(name, cmd)
+    local op, val
+
+    DState.traceMask ++:= ecodeSet
+    id +:= 1
+    
+    if *cmd > 4 then{
+       op := cmd[4]
+       val := cmd[5]
+       }
+    #TraceRec(name, id, hitMax, hitCount, missCount
+    #         op, traceValue, traceList, eventMask, cmd)
+    traceBehavior[name] := 
+       TraceRec(cmd[2], id, hits, 0, 0, op, val, [], ecodeSet, ENABLED,
+                silent, traceType,DState.cmdHistory[1])
+    # re-construct the traceMask 
+    UpdateMask()
+
+    msg := "\n   Tracepoint #" ||id||" on: "||
+           getTraceName(traceBehavior[name].traceType)||
+           traceBehavior[name].name||"; Traced Behaviors: "||
+           getBehaviorNames(ecodeSet)
+    DState.Write(msg)
+    #write(ximage(traceBehavior))
+    #every x := !ecodeSet do write(evnames(x))
 end
 
 #
 # build Variable(s) and/or Behavior(s) tracer  
 #
 method cmdTrace(cmd)
+   local ans, name
 
    if DState.isValidCommand(cmd) then{
-      if *cmd >= 2 then{
-         if cmd[2][1] == "-" then traceBehavior(cmd)
-         else                     traceVar(cmd)
+      if *cmd >= 2 & resolveTraceInfo(cmd) then{
+         name := traceName || cmd[2]
+         if \traceBehavior[name] then{
+            msg :="\n   Tracepoint #"||traceBehavior[name].id||
+                  " already exist: " ||name
+            msg ||:="\n   previous command is : "||traceBehavior[name].cmd
+            msg ||:="\n   Do you really want to rplace it (Y/n)? : "
+            DState.Writes(msg)
+            if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then{
+               msg :="\n   previous command has been rplaced."
+               DState.Write(msg)
+               addTracepoint(name, cmd)
+               }
+            else{
+               msg :="\n   \""||DState.cmdHistory[1]||"\" command is ignored."
+               DState.Write(msg)
+               fail
+               }
+            }
+         else
+            addTracepoint(name, cmd)
          }
       else{
-         Message := "\n   Unknown trace action !!?_
-                     \n   try \"help trace\" for assistance"
-         DState.Write(Message)
+         #*cmd = 1 [trace]
+         printTraceInfo()
          }
+      }
+   else{
+      DState.State := ERROR
+      msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+           "\n   Try \"help trace\" for assistance."
+      DState.Write(msg)
       DState.State := SKIP
-   }
+      }
 end
 
 #
-# Enable the trace on a variable and/or a behavior
-#
-method cmdEnableTrace(cmd)
-   local var, ecodeSet
+# resolve tracing info, used by new command
+# (udb) trace [-silent] [count] object [behavior [op value]]
+# 
+method resolveTraceInfo(cmd)
+   
+   initNewCmd()
+   if cmd[2] == ("-s"|"-silent") then{
+      silent := 1
+      delete(cmd, 2)
+      }
 
-   if DState.isValidCommand(cmd) then{
-   if *cmd > 2 then{ 
-      if cmd[3][1] == "-" then{ 
-      #Enable Trace Behavior, ie: enable trace -pfail [proc]
-         ecodeSet := getBehavior(cmd[3])
-         traceState ++:= ecodeSet
-         DState.eventMask ++:= traceState     
-         Message := "\n   The traceState has enabled with the following_
-                     new traces: "|| getTraceNames(ecodeSet)
-         DState.Write(Message)
-         }
-      else{ 
-      #Enable Trace Var, ie: enable trace var [proc]
-         var := getVar(cmd[3:0])      
-         if member(DState.traceVarMask, var) then
-            Message := "\n   The trace point at: "||var||" is already enabled"
-         else{
-            insert(DState.traceVarMask, var)
-            Message := "\n   The trace point is successfully enabled at: "||var
-            } 
-         }
-      }  
-   else 
-      Message := "\n   Unknown command \n   Type help enable for assistance"
-   DState.Write(Message)
-   }
-end 
+   if numeric(cmd[2]) then{
+      hits := integer(cmd[2])
+      delete(cmd, 2)
+      }
 
-#
-# Disable the trace on the variable
-#
-method cmdDisableTrace(cmd)
-   local var, ecodeSet
-
-   if DState.isValidCommand(cmd) then{
-   if *cmd > 2 then{
-      if cmd[3][1] == "-" then{ 
-      #Disable Trace Behavior, ie: disable trace -pfail [proc]
-         ecodeSet := getBehavior(cmd[3])
-         traceState --:= ecodeSet
-         DState.eventMask --:= traceState
-         Message := "\n   The traceState has disabled the following traces:"||
-                     getTraceNames(ecodeSet)
-         DState.Write(Message)
-         }
-      else{ 
-      #Disable Trace Var, ie: disable trace var [proc]
-         var := getVar(cmd[3:0])
-         if not member(DState.traceVarMask, var) then
-            Message := "\n   The trace point at: "||var||" is already disabled"
-         else{
-            delete(DState.traceVarMask, var)
-            Message := "\n   The trace point is successfully disabled at: "||var
-            } 
-         }
-      } 
-   else 
-      Message := "\n   Unknown command \n   Type help disable for assistance"
-   DState.Write(Message)
-   }
+   if DState.srcCode.isProcedure(cmd[2]) then{
+      traceName := "procedure "
+      traceType := "ptrace"
+      if \cmd[3] & member(Behavior, cmd[3]) then
+         ecodeSet := getBehaviorCode(cmd[3],"procedure")
+      else
+         ecodeSet := ProcMask
+      }
+   else if DState.srcCode.isFunction(cmd[2]) then{
+      traceName := "function "
+      traceType := "ftrace"
+      if \cmd[3] & member(Behavior, cmd[3]) then
+         ecodeSet := getBehaviorCode(cmd[3], "function")
+      else
+         ecodeSet := FncMask
+      }
+   else if member(Operator, cmd[2]) then{
+      traceName := "function "
+      traceType := "otrace"
+      if \cmd[3] & member(Behavior, cmd[3]) then
+         ecodeSet := getBehaviorCode(cmd[3], "operator")
+      else
+         ecodeSet := OperMask
+      }
+   else{
+      msg :="\n   \""||DState.cmdHistory[1]||"\" Unknown action_
+             \n   Try \"help trace\" for assistance"
+      DState.Write(msg)
+      fail
+      }
+   return
 end
 
 #
-# Disable the trace on the variable
+# It clears pre-set tracepoints
 #
-method cmdTraceInfo(cmd)
-   local var, ecodeSet
+method cmdClear(cmd)
+   local name, id, i:=0
 
-   if DState.isValidCommand(cmd) then{
-   if *cmd > 2 then{
-      if cmd[3][1] == "-" then{ 
-      #Disable Trace Behavior, ie: info trace -pfail [proc]
-         ecodeSet := getBehavior(cmd[3])
-         printTraceBehavior(ecodeSet)
+   # clears all of the preset tracepoints
+   # clear trace
+   if *cmd = 2 then{
+      if cmd[2] == ("trace" | "tracepoints") then{
+         every name := key(traceBehavior) do{
+             delete(traceBehavior, name)
+             i +:= 1
+             }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All tracepoints are cleared; ("||i||" total)."
+            }
+         else
+            msg:="\n   No tracepoints are available to be cleared."
+         DState.Write(msg)
+         return
          }
-      else{ 
-      #Disable Trace Var, ie: info trace var [proc]
-         var := getVar(cmd[3:0])
-         printTraceVar(var)
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+         traceType := cmd[2]
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].traceType == traceType then{
+               delete(traceBehavior, name)
+               i +:= 1
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All tracepoints of type \""||cmd[2]||
+                 "\" are cleared; ("||i||" total)."
+            }
+         else
+            msg:="\n   No tracepoints of type \""||cmd[2]||
+                 "\" are available to be cleared."
+         DState.Write(msg)
+         return
          }
-      } 
-   else{ 
-      Message := "\n   Unknown command \n   Type help disable for assistance"
-      DState.Write(Message)
-      } 
-   }
+      }
+   else if *cmd >= 3 then{
+      if id := integer(cmd[3]) then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].id = id then{
+               delete(traceBehavior, name)
+               # re-construct the traceMask 
+               UpdateMask()
+               msg:="\n   Tracepoint #"||id||" is cleared."
+               DState.Write(msg)
+               return
+               }
+            }
+         msg := "\n   Tracepoint #"||id||" is not available."
+         DState.Write(msg)
+         fail
+         }
+      else{
+         delete(cmd, 2)
+         if resolveTraceInfo(cmd) then{
+            name := traceName || cmd[2]
+            if member(traceBehavior, name) then{
+               id := traceBehavior[name].id
+               delete(traceBehavior, name)
+               # re-construct the traceMask 
+               UpdateMask()
+               msg:="\n   Tracepoint #"||id||" : "|| name ||" is cleared."
+               DState.Write(msg)
+               return
+               }
+            else{
+               msg:="\n   No tracepoint available on "||name||"."
+               DState.Write(msg)
+               fail
+               }
+            }
+         }
+     }
+   msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+        "\n   Try \"help\" for assistance."
+   DState.Write(msg)
+   fail
+end
+
+#
+# It deletes pre-set tracepoints
+#
+method cmdDelete(cmd)
+   local name, id, i:=0
+
+   # deletes all of the preset tracepoints
+   # delete trace
+   if *cmd = 2 then{
+      if cmd[2] == ("trace" | "tracepoints") then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].state ~= DELETED then{
+               traceBehavior[name].state := DELETED
+               i +:= 1
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All tracepoints are deleted; ("||i||" total)."
+           }
+         else
+           msg:="\n   No tracepoints to are available to be deleted."
+         DState.Write(msg)
+         return
+         }
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+         traceType := cmd[2]
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].traceType == traceType then{
+               if traceBehavior[name].state ~= DELETED then{
+                  traceBehavior[name].state := DELETED
+                  i +:= 1
+                  }
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All tracepoints of type \""||cmd[2]||
+                 "\" are deleted; ("||i||" total)."
+            }
+         else
+            msg:="\n   No tracepoints of type \""||cmd[2]||
+                 "\" are available to be deleted."
+         DState.Write(msg)
+         return
+         }
+      }
+   else if *cmd >= 3 then{
+      # delete trace 1
+      if id := integer(cmd[3]) then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].id = id then{
+               if traceBehavior[name].state ~= DELETED then{
+                  traceBehavior[name].state := DELETED
+                  # re-construct the traceMask 
+                  UpdateMask()
+                  msg:="\n   Tracepoint #"||id||" is deleted."
+                  DState.Write(msg)
+                  return
+                  }
+               else{
+                  if traceBehavior[name].state = DELETED then
+                     msg:="\n   Tracepoint #"||id||" is already deleted."
+                  else
+                     msg:="\n   Tracepoint #"||id||" is has unkown state."
+                  DState.Write(msg)
+                  fail
+                  }
+               } 
+            }
+         msg := "\n   Tracepoint #"||id||" is not available."
+         DState.Write(msg)
+         fail
+         }
+      else{
+         # delete trace [proc-name| fnc-name| oper-name]
+         delete(cmd, 2)
+         if resolveTraceInfo(cmd) then{
+            name := traceName || cmd[2]
+            if member(traceBehavior, name) then{
+               id := traceBehavior[name].id
+               if traceBehavior[name].state ~= DELETED then{
+                  traceBehavior[name].state := DELETED
+                  # re-construct the traceMask 
+                  UpdateMask()
+                  msg:="\n   Tracepoint #"||id||" is deleted."
+                  DState.Write(msg)
+                  return
+                  }
+               else{
+                  if traceBehavior[name].state = DELETED then
+                     msg:="\n   Tracepoint #"||id||" is already deleted."
+                  else
+                     msg:="\n   Tracepoint #"||id||" is has unkown state."
+                  DState.Write(msg)
+                  fail
+                  }
+               }
+            else{
+               msg:="\n   No tracepoint available on "||name||"."
+               DState.Write(msg)
+               fail
+               }
+            }
+         }
+     }
+   msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+        "\n   Try \"help\" for assistance."
+   DState.Write(msg)
+   fail
+end
+
+#
+# It enables pre-set tracepoints
+#
+method cmdEnable(cmd)
+   local name, id, i:=0
+
+   # enables all of the preset tracepoints
+   # enable trace
+   if *cmd = 2 then{
+      if cmd[2] == ("trace" | "tracepoints") then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].state = DISABLED then{
+               traceBehavior[name].state := ENABLED
+               i +:= 1
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All tracepoints are enabled; ("||i||" total)."
+            } 
+         else
+            msg:="\n   No tracepoints are available to be enabled."
+         DState.Write(msg)
+         return
+         }
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+         traceType := cmd[2]
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].traceType == traceType then{
+               if traceBehavior[name].state = DISABLED then{
+                  traceBehavior[name].state := ENABLED
+                  i +:= 1
+                  }
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All disabled tracepoints of type \""||cmd[2]||
+                 "\" are enabled; ("||i||" total)."
+            }
+         else
+            msg:="\n   No disabled tracepoints of type \""||cmd[2]||
+                 "\" are available to be enabled."
+         DState.Write(msg)
+         return
+         }
+      }
+   else if *cmd >= 3 then{
+      # enable trace 1
+      if id := integer(cmd[3]) then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].id = id then{
+               if traceBehavior[name].state = DISABLED then{
+                  traceBehavior[name].state := ENABLED
+                  # re-construct the traceMask 
+                  UpdateMask()
+                  msg:="\n   Tracepoint #"||id||" is enabled."
+                  DState.Write(msg)
+                  return
+                  }
+               else{
+                  if traceBehavior[name].state = ENABLED then
+                     msg:="\n   Tracepoint #"||id||" is already enabled."
+                  else
+                     msg:="\n   Tracepoint #"||id||" is deleted;_
+                           it can not be enabled."
+                  DState.Write(msg)
+                  fail
+                  }
+               }
+            }
+         msg := "\n   Tracepoint #"||id||" is not available."
+         DState.Write(msg)
+         fail
+         }
+      else{
+         # enable trace [proc-name| fnc-name| oper-name]
+         delete(cmd, 2)
+         if resolveTraceInfo(cmd) then{
+            name := traceName || cmd[2]
+            if member(traceBehavior, name) then{
+               id := traceBehavior[name].id
+               if traceBehavior[name].state = DISABLED then{
+                  traceBehavior[name].state := ENABLED
+                  # re-construct the traceMask 
+                  UpdateMask()
+                  msg:="\n   Tracepoint #"||id||" is enabled."
+                  DState.Write(msg)
+                  return
+                  }
+               else{
+                  if traceBehavior[name].state = ENABLED then
+                     msg:="\n   Tracepoint #"||id||" is already enabled."
+                  else
+                     msg:="\n   Tracepoint #"||id||" is deleted;_
+                           it can not be enabled."
+                  DState.Write(msg)
+                  fail
+                  }
+               }
+            else{
+               msg:="\n   No tracepoint available on "||name||"."
+               DState.Write(msg)
+               fail
+               }
+            }
+         }
+     }
+   msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+        "\n   Try \"help\" for assistance."
+   DState.Write(msg)
+   fail
+end
+
+#
+# It disables pre-set tracepoints
+#
+method cmdDisable(cmd)
+   local name, id, i:=0
+
+   # disables all of the preset tracepoints
+   # disable trace
+   if *cmd = 2 then{
+      if cmd[2] == ("trace" | "tracepoints") then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].state = ENABLED then{
+               traceBehavior[name].state := DISABLED
+               i +:= 1
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All tracepoints are enabled; ("||i||" total)."
+            }
+         else
+            msg:="\n   No tracepoints to are available to be disabled."
+         DState.Write(msg)
+         return
+         }
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+         traceType := cmd[2]
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].traceType == traceType then{
+               if traceBehavior[name].state = ENABLED then{
+                  traceBehavior[name].state := DISABLED
+                  i +:= 1
+                  }
+               }
+            }
+         if i > 0 then{
+            # re-construct the traceMask 
+            UpdateMask()
+            msg:="\n   All enabled tracepoints of type \""||cmd[2]||
+                 "\" are disabled; ("||i||" total)."
+            }
+         else
+            msg:="\n   No enabled tracepoints of type \""||cmd[2]||
+                 "\" are available to be disabled."
+         DState.Write(msg)
+         return
+         }
+      }
+   else if *cmd >= 3 then{
+      # disable trace 1
+      if id := integer(cmd[3]) then{
+         every name := key(traceBehavior) do{
+            if traceBehavior[name].id = id then{
+               if traceBehavior[name].state = ENABLED then{
+                  traceBehavior[name].state := DISABLED
+                  # re-construct the traceMask 
+                  UpdateMask()
+                  msg:="\n   Tracepoint #"||id||" is disabled."
+                  DState.Write(msg)
+                  return
+                  }
+               else{
+                  if traceBehavior[name].state = ENABLED then
+                     msg:="\n   Tracepoint #"||id||" is already disabled."
+                  else
+                     msg:="\n   Tracepoint #"||id||" is deleted;_
+                           it can not be disabled."
+                  DState.Write(msg)
+                  fail
+                  }
+               }
+            }
+         msg := "\n   Tracepoint #"||id||" is not available."
+         DState.Write(msg)
+         fail
+         }
+      else{
+         # delete trace [proc-name| fnc-name| oper-name]
+         delete(cmd, 2)
+         if resolveTraceInfo(cmd) then{
+            name := traceName || cmd[2]
+            if member(traceBehavior, name) then{
+               id := traceBehavior[name].id
+               if traceBehavior[name].state = ENABLED then{
+                  traceBehavior[name].state := DISABLED
+                  # re-construct the traceMask 
+                  UpdateMask()
+                  msg:="\n   Tracepoint #"||id||" is disabled."
+                  DState.Write(msg)
+                  return
+                  }
+               else{
+                  if traceBehavior[name].state = ENABLED then
+                     msg:="\n   Tracepoint #"||id||" is already disabled."
+                  else
+                     msg:="\n   Tracepoint #"||id||" is deleted;_
+                           it can not be disabled."
+                  DState.Write(msg)
+                  fail
+                  }
+               }
+            else{
+               msg:="\n   No tracepoint available on "||name||"."
+               DState.Write(msg)
+               fail
+               }
+            }
+         }
+     }
+   msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+        "\n   Try \"help\" for assistance."
+   DState.Write(msg)
+   fail
+end
+
+#
+# public method
+# re-initializes all tracepoints info
+#
+method resetTraceInfo()
+   local x
+
+   every x := key(traceBehavior) do
+      traceBehavior[x].hitCount := traceBehavior[x].missCount := 0
+end
+
+#
+# private method
+# initialize class variables for the sake of starting new tracing command
+#
+method initNewCmd()
+
+   traceType  := &null
+   traceName  := &null
+   ecodeSet   := &null
+   hits       := &null
+   silent     := &null
 end
 
 #
@@ -403,8 +1080,12 @@ end
 #
 initially()
 
-   # tracing stuff
-   traceState    := cset('')
-   traceTable    := table()
-   traceVarTable := table()
+   id            := 0
+   ReturnCode    := cset(E_Pret || E_Fret || E_Oret)
+   traceBehavior := table()
+   Operator      := set(
+      "+","-","*","/","\\","[]","++","--","**",
+      "<",">",">=","<=","=","==","===","~=","~==","~===",">>=","<<=")
+   Behavior      := set("start", "enter", "begin","call","resume", 
+                        "exit", "end","fail","return", "suspend","remove")
 end

@@ -10,25 +10,32 @@
 # State   := (NONE|RUN|QUIT|PAUSE|ERROR|END)
 # RunCode := (RUN|CONTINUE|STEP|NEXT)
 #
-$define NONE     0  # No State value, No Program loaded, "./udb" with no TP
-$define QUIT     1
-$define CONTINUE 2
-$define RUN      3  # Program is currentlly running
-$define STEP     4  # step: step.
-$define NEXT     5  # next: next.
-$define PAUSE    6  # pause: after a break, watch, step, next, or error
-$define ERROR    7  # error: Console Command Error
-$define END      8  # end: end of program execution
-$define LOAD     9  # for loading the tp and initializing the debugger
-$define RERUN    10 # for the re-running (restarting) state
-$define SKIP     11 # To skip some actions
-$define TRACE    12 # To get the value of the assigned variable
-$define WATCH    13 # to make sure that step and next are working after watch
-$define LIST     14 # to be used with the RunCode and cmdList()
+$define NONE            0  # No State value, No Program loaded.
+$define QUIT            1  # when the user hits the quit command
+$define CONTINUE        2  # when the user hits the continue commands
+$define RUN             3  # Program is currentlly running
+$define STEP            4  # step: step.
+$define NEXT            5  # next: next.
+$define PAUSE           6  # pause: after a break, watch, step, next, or error
+$define ERROR           7  # error: Console Command Error
+$define END             8  # end: end of program execution
+$define LOAD            9  # for loading the tp and initializing the debugger
+$define RERUN           10 # for the re-running (restarting) state
+$define SKIP            11 # to skip some actions
+$define TRACE           12 # to get the value of the assigned variable
+$define WATCH           13 # make sure that step & next are working after watch
+$define LIST            14 # to be used with the RunCode and cmdList()
 
-$define ENABLED  15 # to indicate that an external monitor is enabled
-$define DISABLED 16 # to indicate that an external monitor is disabled
+$define ENABLED         15 # to indicate that an external monitor is enabled
+$define DISABLED        16 # to indicate that an external monitor is disabled
+$define DELETED         17 # to indicate that feature (breakpoint) is deleted
 
+$define WASSIGN         18 # Watch a variable every time gets assigned
+$define WVALUE          19 # Watch a variable every time it changes its value
+$define WTYPE           20 # Watch a variable every time it changes its type
+$define WREAD           21 # Watch a variable every time is read 
+$define WSCAN           22 # Watch both of &subject and &pos
+$define WANY            23 # all of the above type of watches
 
 #
 # The UDB PROMPT shape!!!
@@ -45,7 +52,29 @@ $define VERSION "   Version 1.4, July 2008."
 #
 # Set of all the letters and all digits
 #
-$define CHARACTER &letters++&digits
+$define CHARACTER   &letters++&digits++cset('_')
+
+#
+# Set of all valid characters in a name (variable, procedure, ..)
+#
+$define ValidChar   &letters++&digits++cset('_')
+
+#
+# Set of all valid programming symbols
+#
+$define ValidSymbol CHARACTER ++ cset(",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
+
+#
+# Set of all valid white spaces
+#
+$define WhiteSpace  cset( " \t\n\^m" )
+
+#
+# the set of operators that can be used in a command line
+#
+$define OPERATOR    set("=",":=","<","<=",">",">=","*","!","?","~=")
+$define OPCHAR      cset('*!?:=<>~')
+$define TOKEN       &letters ++ &digits ++ cset('\'\\/.,\_n[]&+-^\"')
 
 
 $ifdef _UNIX

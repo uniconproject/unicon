@@ -8,8 +8,6 @@
 $include "defaults.icn"
 
 class Console : Session(
-   cmdHistory, # list keeps all of the UDB's cmd Session History
-   wchar,      # a cset of valid characters used in the command line
    UP,         # The up arrow control key
    DOWN,       # The down arrow control key
    RIGHT,      # The right arrow control key
@@ -43,97 +41,127 @@ $else # Windows console
       }
 $endif # _UNIX
    else{
-      writes(e1)
+      #writes(e1)
       return e1
       }
 end
 
 #
-# Puts the last command in the right place in cmdHistory List
+# Reads an input string char by char
 #
-method update_cmdHistory(line)
-   local i
+method get_Line()
+   local line:="", i:=0, ch, c, left, x
+   local max:=0
 
-   every i:=2 to *cmdHistory do
-      if line == cmdHistory[i] then{
-         delete(cmdHistory,i)    
-         break
-      }
-   put(cmdHistory,line)
-end
-
-#
-# Reads an inout string char by char,and parse the
-# collected line to tokens and put them in cmdlist.
-#
-method get_CommandLine()
-   local line, words, word
-   local ch, i, c
-
-   # make sure that cmdIgnore is set with &null for the next command
-   line :=""
-   words := list()
-
-   i := 0
    writes(PROMPT)
-
    while ch := my_getch() do{
       case ch of{
-         UP:{
+         DOWN:{
+            left := &null
             if i > 1 then  
                i-:=1
             else if i = (1|0) then
-               i := *cmdHistory
+               i := *DState.cmdHistory
             else
                i := 1
-            line := cmdHistory[i]
+            line := DState.cmdHistory[i]
             }
-         DOWN:{
-            if i < *cmdHistory then
+         UP:{
+            left := &null
+            if i < *DState.cmdHistory then
                i+:=1
-            else if i = *cmdHistory then
+            else if i = *DState.cmdHistory then
                i := 1
             else
-               i := *cmdHistory
-            line := cmdHistory[i]
+               i := *DState.cmdHistory
+            line := DState.cmdHistory[i]
             }
-         BkSp | LEFT :{
-            line := line[1:-1] 
+         BkSp:{
+            if /left then
+               line := line[1:-1]
+            else{
+               if left > 1 then left-:=1  
+               line := line[1:left]||line[left+1:0]
+               }   
+            }
+         LEFT:{
+            if /left then
+               left := *line
+            else if left > 1 then left-:=1  
             }
          RIGHT:{
+            if \left & left <= *line then left+:=1
             }
          ENTER:{
+            left := &null
 $ifndef _UNIX
             write()
 $endif
+            if *line = 0 then{ 
+               line := DState.cmdHistory[1]
+               writes(line)
+               }
             break 
             }
          default:{
-            line ||:=ch         
+            if /left then  
+               line ||:=ch
+            else{
+               line := line[1:left]||ch||line[left:0]
+               left +:= 1
+               }  
             }
          }#end of case
 
       writes("\r")
-      every c := 1 to 10 do writes("      ")
+      max <:= *line
+      every c := 1 to max+7 do writes(" ")
       writes("\r")
       writes(PROMPT || line)
+      if \left then{
+         writes("\r")
+         writes(PROMPT || line[1:left])
+         } 
       }#end of while
-      
-   # if Eneter hit it will take the last cmdx
-   if *line = 0 then{
-      i:= *cmdHistory
-      line := cmdHistory[i]
-      } 
+   write() # new line after the prompt
+   return line
+end
+
+#
+# returns list of the current command line
+#
+method get_CommandLine()
+   local line, tok, op, cmd
+
+   line := get_Line()
+   # analyize that cmd line
    if *line > 0 then{  
-      update_cmdHistory(line)
-      # analyize that cmd line
-      line ? while tab(upto(wchar))do {
-           word := tab(many(wchar))
-           put(words, word)
+      DState.update_cmdHistory(line)
+      cmd := []
+      line ? {
+         while &pos <= *line do {
+            tab(many(WhiteSpace))
+            tok := tab(many(TOKEN)) | &null
+            put(cmd, \tok)
+            tab(many(WhiteSpace))
+            op := tab(many(OPCHAR))  | &null
+            if \op then{
+               if op ==":" then{
+                  #write("-------op=",op)
+                  tok := tab(many(TOKEN)) | ""
+                  tok := cmd[-1]||op||tok
+                  cmd[-1]:=tok
+                  }
+               else
+                  put(cmd,op)
+               } 
+            }
+         }
+      #write(ximage(cmd))
+      return cmd
       }
-      return words
-   }else
-      return &null
+   else
+      fail
 end
 
 #
@@ -177,9 +205,9 @@ method startConsole(argv)
                  ERROR:   { DState.State := old_State
                             Write(Message)             }
                }# end of case
-               cmd := get_CommandLine()
-               if \cmd then    parse_Command(cmd)
-               else            DState.State := SKIP
+               
+               if cmd := get_CommandLine() then parse_Command(cmd)
+               else                             DState.State := SKIP
              }# end of while
           }#end of every
           }
@@ -204,9 +232,8 @@ method startConsole(argv)
           }
      } # end case DState.State
     old_State := DState.State
-    cmd := get_CommandLine()
-    if \cmd then   parse_Command(cmd)
-    else           DState.State := SKIP
+    if cmd := get_CommandLine() then parse_Command(cmd)
+    else                             DState.State := SKIP
    }# end while DState.State
 end
 
@@ -217,8 +244,8 @@ initially()
    
    self.Session.initially()
 
-   cmdHistory := [""]
-   wchar := CHARACTER ++ '\'\\/-+.*:=,\_n&?[]\"!<>~'
+   #cmdHistory := [""]
+   #wchar := CHARACTER ++ cset('\'\\/-+.*:=,\_n&?[]\"!<>~')
 
    # Constant Keys used with the command history
 $ifdef _UNIX 

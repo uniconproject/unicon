@@ -20,7 +20,7 @@ class Data(
    )
 
 #
-# prints out all of the Global Variables state in some level
+# prints all of Global Variables state in some level
 #
 method printGlobals(level)
    local x, i
@@ -31,12 +31,12 @@ method printGlobals(level)
    every x := !DState.srcCode.vglobals do{
       i := variable(x, Monitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
-   }
+      }
    DState.Write(Message)
 end
 
 #
-# prints out all of the Local Variables for some Level  
+# prints all Local Variables for some Level  
 #
 method printLocals(level)
    local x, i
@@ -47,12 +47,28 @@ method printLocals(level)
    every x := localnames(Monitored,level) do{
       i := variable(x, Monitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
-   }
+      }
    DState.Write(Message)
 end
 
 #
-# prints out all of the Formal Parameters for some Level  
+# prints all Local Variables for some Level  
+#
+method printStatics(level)
+   local x, i
+
+   /level := DState.cur_Frame # 0 if no up/down involved
+
+   Message := ""
+   every x := staticnames(Monitored,level) do{
+      i := variable(x, Monitored, level)
+      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
+      }
+   DState.Write(Message)
+end
+
+#
+# prints all Formal Parameters for some Level  
 #
 method printParams(level)
    local x, i
@@ -63,7 +79,7 @@ method printParams(level)
    every x := paramnames(Monitored,level) do{
       i := variable(x, Monitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
-   }
+      }
    DState.Write(Message)
 end
 
@@ -73,30 +89,35 @@ end
 #
 method getVarValue(expr, level)
    local Value, ref, var, Var, index:=[]
+  
+   # if the string expr is no a litteral (string value)
+   if expr[1] ~== "\"" then{
+      index := parsePrintExpression(expr)
+      if *index = 0 then fail
 
-   index := parsePrintExpression(expr)
-   if *index = 0 then fail
-
-   var := get(index)
-   if Var := variable(var, Monitored, level) then{
-      if (ref := getVarReference(Var, index, level)) & *index = 0 then{
-         Value := if integer(ref) = ref then integer(ref) 
-                  else if real(ref) = ref then real(ref)
-                  else ref
-         return Value
+      var := get(index)
+      if Var := variable(var, Monitored, level) then{
+         if (ref := getVarReference(Var, index, level)) & *index = 0 then{
+            Value := if integer(ref) = ref then integer(ref) 
+                     else if real(ref) = ref then real(ref)
+                     else ref
+            return Value
+            }
+         else fail 
          }
-      else fail 
+      else{
+         if *index = 0 then{
+            Value := if integer(expr) = expr then integer(expr) 
+                     else if real(expr) = expr then real(expr)
+                     else string(expr)
+            return Value
+            }
+         else fail 
+         } 
+      return Value
       }
-   else{
-      if *index = 0 then{
-         Value := if integer(expr) = expr then integer(expr) 
-                  else if real(expr) = expr then real(expr)
-                  else string(expr)
-         return Value
-         }
-      else fail 
-      } 
-   return Value
+   else
+      return expr 
 end
 
 
@@ -169,8 +190,6 @@ end
 #
 method setVarReference(lvar, index, level, value)
    local v, j, i1, i2, x, fld, Var
-
-   DState.Write("value = ",value)
 
    if *index = 0 then{
       if variable(lvar, Monitored, level) then{
@@ -272,15 +291,9 @@ end
 # finds the var reference and prints its value acording
 # to the action such as */! or the value itself
 #
-method printVar(expr, level)
-   local Var, var, index
-   local x, j, action, ref
-
-   if j:=find("*"|"!",expr) then{
-      action := expr[j]
-      expr := expr[j+1:0]
-      }
-
+method printVar(expr, action, level)
+   local Var, var, ref, index, x
+  
    index := parsePrintExpression(expr)
    if *index = 0 then{
       Message :="\n   \""||expr||"\" is Unkown Expression !!!"
@@ -291,22 +304,23 @@ method printVar(expr, level)
    var := get(index)
    if Var := variable(var, Monitored, level) then
       if (ref := getVarReference(Var, index, level)) & *index = 0 then{
-         Message := "\n   " || expr || " = "
          case action of{
-            "*" :{ Message ||:= *ref }
-            "!" :{ Message ||:="{ "
+            "*" :{ Message := "\n   *"||expr||" = "||*ref }
+            "!" :{ Message := "\n   !"||expr||" = "
+                   Message ||:="{ "
                    every x := !ref do
                       Message ||:= image(x)||", "
                    Message:=Message[1:-2] || " }"
                  }
-             default:{
+            "?" :{ Message := "OPS: not implemented yet!!!"  }
+            default:{
+                 Message := "\n   "||expr||" = "
                  #DState.Write("---type of ",expr," is : ", type(ref))
                  if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
                      find("record",image(ref))) & *ref >= 1 then
                         Message ||:= ximage(ref)
                  else{
                         Message ||:= image(ref)
-                        #Message ||:= "\n   ..................!"
                      }
                  }
              }
@@ -318,23 +332,14 @@ method printVar(expr, level)
 end
 
 #
-# changes the var value according to the user input
+# sets a variable value according to the user input
 #
-method assignVar(expr, level)
-   local j, lexpr, rexpr, lhs, lvar , rvalue
-
-   if j := find(":=", expr) then{
-       lexpr := expr[1:j]
-       rexpr := expr[j+2:0]
-       }
-   else if j := find("=", expr) then{
-       lexpr := expr[1:j]
-       rexpr := expr[j+1:0]
-       }
+method assignVar(lexpr, rexpr, level)
+   local lhs, lvar , rvalue
 
    lhs := parsePrintExpression(lexpr)
    if *lhs = 0 then{
-      Message :="\n   The expression \""||expr||"\" is Unkown !!!"
+      Message :="\n   The expression \""||lexpr||"\" is Unkown !!!"
       DState.Write(Message)
       return
       }
@@ -359,7 +364,7 @@ end
 # procedures that are still in the stack can also be viewed.
 #
 method cmdPrint(cmd)
-   local level, expr, i
+   local i, expr, action, level, cur_level
 
    if DState.State ~= PAUSE then{
       DState.State := ERROR
@@ -369,97 +374,134 @@ method cmdPrint(cmd)
       return
       }
 
-   if cmd[3] then  level := integer(cmd[3]) | 0 
-   else            level := DState.cur_Frame 
-      
-   if \cmd[2] & expr := cmd[2] then{
-      if expr == ("-g" |"-G" | "-globals") then{
-         printGlobals()
-         return
+   cur_level := keyword("level",Monitored)
+   if \cmd[2] then{
+      if cmd[2] == ("*"|"!"|"?") then{
+         action := cmd[2]
+         delete(cmd,2)
          }
-      else if expr == ("-l" | "-L" | "-locals") then{
-         printLocals()
-         return
+      if \cmd[3] & cmd[3] == ("="|":=") & \cmd[4] then{
+         #print a = 10 [level] or #print &pos:=5
+         if \cmd[5] then level := integer(cmd[5]) | 0 
+         else            level := DState.cur_Frame
+         if level > cur_level then{ 
+            Message   :="\n   Frame #"||level||" is not valid"
+            Message ||:="\n   The stack currentlly has "||cur_level||" frame(s)"
+            DState.Write(Message)
+            return            
+            }
+         if i := find("&", cmd[2]) then 
+            assignKeyword(cmd[2], cmd[4], level)
+         else
+            assignVar(cmd[2], cmd[4], level)
          }
-      else if expr == ("-p" | "-P" | "-params") then{
-         printParams()
-         return
+      else{
+         if \cmd[3] then level := integer(cmd[3]) | 0 
+         else            level := DState.cur_Frame
+         if level > cur_level then{ 
+            Message   :="\n   Frame #"||level||" is not valid"
+            Message ||:="\n   The stack currentlly has "||cur_level||" frame(s)"
+            DState.Write(Message)
+            return            
+            }
+         expr := cmd[2]
+         #print -g [level]
+         if expr == ("-g"|"-G"|"-globals") then{
+            printGlobals(level)
+            return
+            }
+         #print -l [level]
+         else if expr == ("-l"|"-L"|"-locals") then{
+            printLocals(level)
+            return
+            }
+         #print -p [level]
+         else if expr == ("-p"|"-P"|"-params") then{
+            printParams(level)
+            return
+            }
+         #print -s [level]
+         else if expr == ("-s"|"-S"|"-static") then{
+            printStatics(level)
+            return
+            }
+         #print &pos or #print *&subject 
+         else if expr[1] == "&" then{ 
+            printKeyword(expr, action, level)
+            }
+         #print x or #print *s
+         else  
+            printVar(expr, action, level)
          }
-      else if i := find("&", expr) then{ # keywords
-         handleKeyword(expr, i, level)
-         }
-      else
-         if find("=", expr) then assignVar(expr, level)
-         else                    printVar(expr, level)
       }
    else{
-      #printFrame(level)
-      write("OPSSSSS")
-      #Message := ""
+      Message   :="\n   The command \""||cmd[1]||"\" is incomplete"
+      Message ||:="\n   Try \"help\" or \"help print\" for assistance."
+      DState.Write(Message)
       }
 end
 
 #
-# handles keywords in the print expression
+# It assignes to those keywords that are considered variables
 #
-method handleKeyword(expr, i, level)
-   local lexpr, rexpr, data, j
+method assignKeyword(lexpr, rexpr, level)
+   local data
 
-   if j := find(":=",expr) then{ # p &pos:=10
-      lexpr := expr[i:j]
-      rexpr := expr[j+2:0]
-      if isValidKeyword(lexpr[2:0]) then{
-         data := getVarValue(rexpr,level)
-         variable(lexpr, Monitored, 0, 1) := data 
-         return
-         }
-      else{
-         Message := "\n   "||lexpr ||" : is not a valid keyword."
-         DState.Write(Message)
-         fail 
-         }
-      }
-   else if j := find("=", expr) then{ # p &pos=10
-      lexpr := expr[i:j]
-      rexpr := expr[j+1:0]
-      if isValidKeyword(lexpr[2:0]) then{
-         data := getVarValue(rexpr,level)
+   #print &pos:=10
+   if isValidKeyword(lexpr[2:0]) then{
+      if data := getVarValue(rexpr,level) then{
          variable(lexpr, Monitored, 0, 1) := data
+         Message :="\n   Assigning \""||lexpr||"\" with \""||
+                    rexpr||"\" has been succeeded"
+         DState.Write(Message)
          return
          }
       else{
-         Message := "\n   "||lexpr ||" : is not a valid keyword."
+         Message :="\n   Assigning \""||lexpr||"\" with \""||
+                    rexpr||"\" has been failed"
+         DState.Write(Message)
+         fail
+         } 
+      }
+   else{
+      Message := "\n   "||lexpr ||" is not a valid keyword."
+      DState.Write(Message)
+      fail 
+      }
+end
+
+# 
+# prints keyword value(s)
+#
+method printKeyword(expr, action, level)
+   local data
+
+   #print &pos or #print *&subject
+   if isValidKeyword(expr[2:0]) then{
+      if data := isGlobalKeyword(expr[2:0]) then{
+         Message :="\n   "|| expr ||" = "|| data
+         DState.Write(Message)
+         return
+         }
+      else if data := keyword(expr, Monitored) then{
+         if \action == "*" then
+            data := *data
+         else if not (type(data) == ("string"|"integer"|"real")) then
+            data := image(data)
+         Message :="\n   "|| expr ||" = "|| data
+         DState.Write(Message)
+         return
+         }
+      else{
+         Message :="\n   "|| expr || " is not a valid operation yet !!!."
          DState.Write(Message)
          fail 
          }
       }
-   else{ # p &pos or p *&subject
-      if isValidKeyword(expr[i+1:0]) then{
-         if data := isGlobalKeyword(expr[i+1:0]) then{
-              Message :="\n   "|| expr ||" = "|| data
-              DState.Write(Message)
-              return
-              }
-         else if data := keyword(expr[i:0], Monitored) then{
-            if find("*",expr) then
-               data := *data
-            else if not (type(data) == ("string"|"integer"|"real")) then
-               data := image(data)
-            Message :="\n   "|| expr ||" = "|| data
-            DState.Write(Message)
-            return
-            }
-         else{
-            Message :="\n   "|| expr || " : is not a valid operation yet !!!."
-            DState.Write(Message)
-            fail 
-            }
-         }
-      else{
-         Message :="\n   "|| expr || " : is not a valid keyword."
-         DState.Write(Message)
-         fail 
-         }
+   else{
+      Message :="\n   "|| expr || " : is not a valid keyword."
+      DState.Write(Message)
+      fail 
       }
 end
 
@@ -582,9 +624,11 @@ method printSrcLines(cur_file, cur_line, offset)
       if line = cur_line then
          Message ||:="\n-->"||line ||":"||
                      DState.srcFile.getSrcLine(cur_file, line)
-      else
+      else if line <= max_line then
          Message ||:="\n   "||line ||":"||
                      DState.srcFile.getSrcLine(cur_file, line)
+      else
+         break
       line +:= 1
       }
    DState.Write(Message)
@@ -625,6 +669,7 @@ method cmdList(cmd)
       }
 
    if *cmd >= 2 then{
+      # list i
       if line := integer(cmd[2]) then{
          if line > 0 then 
             cur_line := line
@@ -632,22 +677,26 @@ method cmdList(cmd)
             cur_line := max_line + line
             }
          }
+      # list +
       else if cmd[2] == "+" then{
          if (cur_line + 10) < max_line then  cur_line +:= 10
          else if cur_line < max_line   then  cur_line := max_line
          else if cur_line = max_line   then  cur_line := max_line + 1
          }
+      # list -
       else if cmd[2] == "-" then{
          if (cur_line - 10) >= 1 then  cur_line -:= 10
          else                          cur_line := 1
          }
       else{
          name := cmd[2]
+         # list procName
          if line := DState.srcFile.searchFileProcs(cur_file, name) then{
             cur_line := line
             }
          else{
-            name ||:=".icn"          
+            # list fileName           
+            if not find(".icn",name) then  name||:=".icn"
             if DState.srcFile.isSrcFile(name) then{
                cur_file := name
                max_line := DState.srcFile.getFileTotalLines(cur_file)
@@ -747,58 +796,90 @@ method cmdSource(cmd)
       }
 
    op := cmd[2] | ""
+   if op[1] ~=="-" then op :="-"||op
    case op of{
+      # all loaded source files 
       "-f"|"-found":{
           if names := DState.srcFile.getFoundFiles() then
              printFileNames(names,"Found File")
           else
              DState.Write("\n   No found source file(s) !!")
           }
+      # all unable to load source files
       "-m"|"-missing":{
           if names := DState.srcFile.getMissingFiles() then
              printFileNames(names,"Missing File")
           else
             DState.Write("\n   No missing source file(s) !!")
           }
+      # all files (user+library) used in the binary
       "-file":{
           if names := DState.srcFile.getSourceFiles() then
              printFileNames(names,"Used file")
           else
-            DState.Write("\n   No missing source file(s) !!")
+            DState.Write("\n   No source file(s) !!")
           }
+      # all user defined files used in the binary
+      "-u"|"user"|"usr":{
+          if names := DState.srcFile.getUserFiles() then
+             printFileNames(names,"User defined file")
+          else
+            DState.Write("\n   No  user defined source file(s) !!")
+          }
+      # all library files used in the binary
+      "-l"|"-lib"|"-library":{
+          if names := DState.srcFile.getLibFiles() then
+             printFileNames(names,"Used library file")
+          else
+            DState.Write("\n   No library file(s) !!")
+          }
+      # all packages used in the binary
       "-pkg"|"-pk"|"-package":{
           if names := DState.srcCode.getPackages() then
              printFileNames(names,"Used package")
           else
             DState.Write("\n   No packages used !!")
           }
+      # all classes used in the binary
       "-c"|"-cls"|"-class":{
           if names := DState.srcCode.getClasses() then
              printFileNames(names,"Used standalone class")
           else
             DState.Write("\n   No classes used !!")
           }
+      # all procedures used in the binary
       "-p"|"-proc"|"-procedure":{
           if names := DState.srcCode.getProcedures() then
              printFileNames(names,"Used procedure")
           else
             DState.Write("\n   No procedures used !!")
           }
+      # all built-in functions used in the binary
+      "-fun"|"-func"|"-function":{
+          if names := DState.srcCode.getFunctions() then
+             printFileNames(names,"Used built-in function")
+          else
+            DState.Write("\n   No functions used !!")
+          }
+      # all global variable names used in the binary
       "-g"|"-glb"|"-global":{
           if names := DState.srcCode.getGlobals() then
              printFileNames(names,"Used global variable")
           else
             DState.Write("\n   No global variables used !!")
           }
+      # all record names used in the binary
       "-r"|"-rec"|"-record":{
           if names := DState.srcCode.getRecords() then
              printFileNames(names,"Used record")
           else
             DState.Write("\n   No global records used !!")
           }
+      # a detailed summery with some statistics about the binary
       "-a"|"-all":{
           printSrcSummery(1)
           }
+      # a short summery about the binary
       default:{
           printSrcSummery()
           } 
@@ -833,5 +914,3 @@ initially()
           )
    Message := ""
 end
-
- 

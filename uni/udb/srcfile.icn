@@ -9,6 +9,8 @@ $include "defaults.icn"
 link bincvt
 link strings
 
+
+
 #
 # It is used to index the loaded source files in the srcText list
 # 
@@ -28,16 +30,16 @@ class SourceFile(
 
    userFiles,    # a set of the loaded user files
    libFiles,     # a set of the loaded library files
+   fileNames,    # List with all source file names that are in the binary
+   foundFiles,   # Set with all file names that were found - loaded
+   missingFiles, # Set with all file names that were not found - not loaded 
 
    binPath,      # the path of the VM: iconx or wiconx.exe
    srcPath,      # String of paths that will be searched for source files
    libPath,      # String of paths that will be searched for library files
 
-   fileNames,    # List with all source file names that are in the binary
    srcText,      # List holds all source files text
-   srcIndex,     # Table of our position in the source file; fname is the key
-   foundFiles,   # Set with all file names that were found - loaded
-   missingFiles  # Set with all file names that were not found - not loaded 
+   srcIndex      # Table of our position in the source file; fname is the key
    )
 
 #
@@ -45,35 +47,11 @@ class SourceFile(
 # getSourceFile() name by not keeping the path in srcPath
 #
 method getFileName(f)
-   local i, j:=0, path:=" "
+   local i:=0
 
-   # what if the f is not in the current directory
-   # such f = ../ipl/fname
-
-   every j:= find("/",f)
-   if (j+1) > *f then   fail
-   else   return f[j+1:0]
-end
-
-#
-# Extracts the file name from its path, it is only used by 
-# loadSourceFiles()
-#
-method getSourceFileName(f)
-   local i, j:=0, path:=" "
-   local fname :="?"
-
-   # what if the TP and UDB are not in the same directory
-   # such as ./udb ./test/t1/t2/t
-
-   every j:= find("/",f)
-
-   path ||:= f[1:j+1]
-   srcPath ||:= path ||" "
-   if (j+1) > *f then   fail
-   else   fname := f[j+1:0]
-
-   return fname
+   every i:= find("/",f)
+   if (i+1) > *f then   fail
+   else   return f[i+1:0]
 end
 
 #
@@ -101,7 +79,7 @@ end
 method loadSourceFiles(fname, src)
    local i, j, s, f, b, e
 
-   exeName := getSourceFileName(fname)
+   exeName := getFileName(fname)
    exeSize := getSourceFileSize(fname)
    fileNames := src
  
@@ -109,7 +87,7 @@ method loadSourceFiles(fname, src)
    # list of the ones that we could not find. Note a source file
    # can be opened more that once so we need to be careful !!!
    every i := 1 to *fileNames do{
-      f := getSourceFileName(fileNames[i])
+      f := getFileName(fileNames[i])
       if not member(foundFiles, f) then{
          if s := dopen( fileNames[ i ] ) then {
             b := *srcText
@@ -132,29 +110,24 @@ method loadSourceFiles(fname, src)
 end
 
 #
-# Used by cmdBreak
 # Searchs the fname for a specific linenum, and make sure it is applicable
 # for a breakpoint condition, if it is , it returns that line source code.
 #
 method searchFileLines(fname, linenum)
-   local temp, temp1, wSpace, punct
+   local temp, temp1
 
-   wSpace := cset( " \t\n\^m" )
-   punct  := cset(",<>?~`!@$#^&*-_:=+|[]\'./;(){} \t\^m\"")
-   temp := srcText[linenum + srcIndex[fname].fbegin]
-
-   temp ? {
-      tab(many(wSpace))
-      if (temp1 := move(1)) then {
-         if temp1 == "#" then {
-            fail
+   if member(foundFiles, fname) then{
+      temp := srcText[linenum + srcIndex[fname].fbegin]
+      temp ? {
+         tab(many(WhiteSpace))
+         if (temp1 := move(1)) then {
+            if temp1 == "#" then  fail
+            return temp1 ||:= tab(many(ValidSymbol)) #CHARACTER ++ punctuation
             }
-         return temp1 ||:= tab(many(CHARACTER ++ punct))
+         else  fail
          }
-      else{
-         fail
-         }
-      }
+       }
+   else  fail
 end
 
 #
@@ -162,26 +135,22 @@ end
 # Searchs the Fname for a specific ProcName and returns its linenum
 #
 method searchFileProcs(Fname, ProcName)
-   local wSpace, other_char
-   local temp, temp1, linenum
+   local temp, temp1, offset, base
 
-   if \Fname & \ProcName then{
-      linenum := 1
-      other_char := ("_")
-      wSpace := cset( " \t\n\^m" )
-      
-      while temp := srcText[linenum + srcIndex[Fname].fbegin] do{
+   if \Fname & \ProcName & member(foundFiles, Fname) then{
+      base := srcIndex[Fname].fbegin
+      offset := 1
+      while temp := srcText[base + offset] do{
          temp ? {
-            tab(many(wSpace))
-            if(temp1 := tab(many(&letters))) == ("method"|"procedure") then{
-              tab(many(wSpace))
-              temp1 := tab(many(CHARACTER ++ other_char))
-              if temp1 == ProcName then {
-                 return linenum
-                 }
+            tab(many(WhiteSpace))
+            if(temp1 := tab(many(&letters))) == ("procedure"|"method") then{
+              tab(many(WhiteSpace))
+              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
+              if temp1 == ProcName then
+                 return offset
               }
             }
-         linenum +:= 1
+         offset +:= 1
          }
       }
    else
@@ -219,19 +188,10 @@ end
 # checks whether fname is a source file or not
 #
 method isSrcFile(fname)
+  if not find(".icn", fname) then fname ||:= ".icn" 
   if member(foundFiles, fname) | member(missingFiles, fname) then
      return
   fail
-end
-
-#
-# check to see if file is loaded or not
-# loaded files are those that opend and placed in srcText
-#
-method isLoaded(fname)
-   if member(foundFiles, fname) then
-      return
-   fail
 end
 
 #
@@ -240,7 +200,7 @@ end
 method isInFile(fname, line)
    local b, e
    
-   if line > 0 & isLoaded(fname) then{
+   if line > 0 & member(foundFiles, fname) then{
       b := srcIndex[fname].fbegin
       e := srcIndex[fname].fend
       if (b + line <= e) & ( e - line >= b ) then
@@ -253,14 +213,13 @@ end
 # returns an image of the current source line
 #
 method getSrcLine(fname, line)
-    local f
 
     /fname := keyword("file", Monitored)
     /line  := keyword("line", Monitored)
-    f := getFileName(fname)
+    fname := getFileName(fname)
 
-    if isLoaded(fname) then #& isInFile(f, line) then       
-       return srcText[line + srcIndex[ f ].fbegin]
+    if member(foundFiles, fname) then #& isInFile(f, line) then       
+       return srcText[line + srcIndex[fname].fbegin]
     else
        fail
 end
@@ -280,10 +239,11 @@ end
 #
 # returns the line number of a procedure name
 #
-method getProcLine(pname)
-    local pfile, pline
+method getProcLine(pname, pfile)
+    local pline
 
-    if pfile := getProcFile(pname) then
+    /pfile := getProcFile(pname)
+    if \pfile then
        if pline := searchFileProcs(pfile, pname) then
           return pline
     fail
@@ -306,7 +266,7 @@ method getSrcCode(fname)
 end
 
 #
-# returns a sorted of all opend src file names 
+# returns a sorted list of all opend src file names 
 #
 method getFoundFiles()
    local L
@@ -317,6 +277,16 @@ method getFoundFiles()
       }
    else
       fail  
+end
+
+#
+# check to see if file is loaded or not
+# loaded files are those that opend and placed in srcText
+#
+method isLoaded(fname)
+   if member(foundFiles, fname) then
+      return
+   fail
 end
 
 #
@@ -334,6 +304,16 @@ method getMissingFiles()
 end
 
 #
+# check to see if file is Missing or not
+# missing files are those that are not opend and not placed in srcText
+#
+method isMissing(fname)
+   if member(missingFiles, fname) then
+      return
+   fail
+end
+
+#
 # returns a sorted list of all source file names
 #
 method getSourceFiles()
@@ -341,6 +321,34 @@ method getSourceFiles()
    
    if *fileNames > 0 then{
       L := sortf(fileNames)
+      return L
+      }
+   else
+      fail
+end
+
+#
+# returns a sorted list of all user-defined source file names
+#
+method getUserFiles()
+   local L
+   
+   if *userFiles > 0 then{
+      L := sortf(userFiles)
+      return L
+      }
+   else
+      fail
+end
+
+#
+# returns a sorted list of all used library file names
+#
+method getLibFiles()
+   local L
+   
+   if *libFiles > 0 then{
+      L := sortf(libFiles)
       return L
       }
    else
@@ -357,7 +365,6 @@ method getBinPath()
       ((f := open((binPath:=getpaths()) ||
                   ("iconx"|"iconx.exe"|"wiconx.exe")))) then
       close(\f)
-   write("binPath=",binPath)  
    return binPath
 end
 
@@ -406,18 +413,20 @@ end
 # it looks in the library paths 
 #
 method dopen(s)
-   local File, paths, path, binpath, f
+   local File, spaths, lpaths, path, binpath, f
 
    if File := open(s) then {
+      s := getFileName(s)      
       insert(userFiles, s)
       return File
       }
    else{
-      paths := srcPath
+      spaths := srcPath
       s := PS || s      # platform-specific
-      paths ? {
+      spaths ? {
          while path := tab(find(" ") | 0) do {
             if File := open(path || s) then {
+               s := getFileName(s)      
                insert(userFiles, s)
                return File
                }
@@ -429,14 +438,15 @@ method dopen(s)
    # look in the library paths
    /libPath := getLibPath()
 
-   paths := libPath
+   lpaths := libPath
    s := PS || s      # platform-specific
-   paths ? {
+   lpaths ? {
       while path := tab(find(" ") | 0) do {
          if File := open(path || s) then {
+            s := getFileName(s)      
             insert(libFiles, s)
             return File
-         }
+            }
          tab(many(' ')) | break
          }
       }

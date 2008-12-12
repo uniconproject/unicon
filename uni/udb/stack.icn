@@ -20,19 +20,23 @@ class Stack(
 # writes down the current frame information, 
 # used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
-method printFrame(frame)
+method printFrame(frame, detail)
    local x, i, level, p:="(", pname
    local pfile:="file ", pline:="line "
    
    level := keyword("level", Monitored) -1
    if 0 <= frame <= level then{
-      Message := "#"|| frame
+      Message := "   #"|| frame
       pname := image(proc(Monitored, frame))
       pname := pname[find(" ",pname)+1 : 0]
       Message ||:= ": "|| pname
       every x := paramnames(Monitored,frame) do{
-         i := variable(x, Monitored,frame)
-         p ||:= x||"="||image(i)||", "
+         if \detail then{
+            i := variable(x, Monitored,frame)
+            p ||:= x||"="||image(i)||", "
+            }
+         else
+            p ||:= x||", "
          }
       p:= p[1:-2]
       Message ||:= p ||")"
@@ -45,14 +49,16 @@ method printFrame(frame)
          pline ||:= keyword("line", Monitored)
          }
       else{
-         pfile ||:= DState.srcFile.getProcFile(pname) | "?"
-         pline ||:= DState.srcFile.getProcLine(pname) | "?"
+         pfile ||:= keyword("file", Monitored, frame)
+         #DState.srcFile.getProcFile(pname) | "?"
+         pline ||:= keyword("line", Monitored, frame) 
+         #DState.srcFile.getProcLine(pname,pfile) | "?"
          }
       Message ||:= " at "|| pfile ||":"||pline
       }
    else
-      Message := " The \""||frame ||"\" is not a valid frame number"||
-                 " valid frames are (0 <= frame_num <= "||level||")"  
+      Message := "\n   The \""||frame ||"\" is not a valid frame number_
+                  \n   valid frames are (0 <= frame_num <= "||level||")."
    DState.Write(Message)
 end
 
@@ -73,7 +79,7 @@ method printFrames(i, j)
       every f := i to j do
           printFrame(f)
       if j < level then
-         DState.Write("(More stack frames follow...)")
+         DState.Write("   (More stack frames follow...)")
       }
    else if i<=level then{
       DState.Write("") 
@@ -96,7 +102,7 @@ method cmdUp(cmd)
    level := keyword("level",Monitored) - 1 
    if DState.State = PAUSE then {
       if DState.cur_Frame = level then
-         DState.Write("No more Frames up !!!")
+         DState.Write("\n   No more Frames up !!!")
       else {
          DState.cur_Frame +:= 1
          printFrame(DState.cur_Frame)
@@ -117,7 +123,7 @@ method cmdDown(cmd)
 
    if DState.State = PAUSE then {
       if DState.cur_Frame = 0 then
-         DState.Write("No more Frames Down !!!")
+         DState.Write("\n   No more Frames Down !!!")
       else {
          DState.cur_Frame -:= 1
          printFrame(DState.cur_Frame)
@@ -143,10 +149,24 @@ method cmdFrame(cmd)
          printFrame(DState.cur_Frame)
 	 }
       else{
-         if frame := integer(cmd[2]) then
-            printFrame(frame)
-         else
-            DState.Write("cmdFrame, What ???")
+         if frame := integer(cmd[2]) then{
+            level := keyword("level",Monitored) -1
+            if 0 <= frame <= level then{
+               DState.cur_Frame := frame
+               printFrame(frame)
+               }
+            else{
+               Message:="\n   The \""||frame ||"\" is not a valid frame number_
+                         \n   Valid frames are: (0 <= frame# <= "||level||")."
+               DState.Write(Message)
+               }
+            }
+         else{
+            Message := "\n   "||cmd[2]||"# is not a vaild integer,_
+                        \n   Valid frames are integers: (0 <= frame# <= "||
+                        level||")."
+            DState.Write(Message)
+            }
          }
       }
    else {
@@ -159,7 +179,7 @@ end
 
 #
 # To back trace the executin in the stack
-# [bt] [where]
+# other aliases are [bt] [where]
 #
 method cmdBacktrace(cmd)
    local ans, level, frames
@@ -200,8 +220,8 @@ method cmdBacktrace(cmd)
                   BaseFrame := frames
                   }
                if BaseFrame < frames then{
-                  Message  := "---Type <return> to continue,"
-                  Message||:= "or q <return> to quit---"
+                  Message  := "---Type <return> to continue, _
+                              or q <return> to quit---"
                   DState.Writes(Message)
                   if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
                   }

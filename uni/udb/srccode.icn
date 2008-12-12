@@ -187,6 +187,69 @@ method isProcedure(name)
 end
 
 #
+# public method
+# checks if a prcedure is in the stack or not
+#
+method isActiveProc(pname)
+   local level, p, j, i:=0
+  
+   level := keyword("level", Monitored)
+   while i <= level do{
+      p := image(proc(Monitored, i))
+      if j := find(" ",p)+1 then{
+         p := p[j:0]
+         if p == pname then
+            return i
+         }
+      else fail
+      i +:= 1
+      }
+   fail
+end
+
+#
+# public method
+# checks wheather name is a local one
+#
+method isLocal(name, level)
+   local x
+
+   /level := 0
+   every x := localnames(Monitored, level) do
+      if x == name then
+         return
+   fail
+end
+
+#
+# public method
+# checks wheather name is a parameter
+#
+method isParam(name, level)
+   local x
+
+   /level := 0
+   every x := paramnames(Monitored, level) do
+      if x == name then
+         return
+   fail
+end
+
+# 
+# public method
+# checks wheather name is a local one
+#
+method isStatic(name, level)
+   local x
+
+   /level := 0
+   every x := staticnames(Monitored, level) do
+      if x == name then
+         return
+   fail
+end
+
+#
 # public method:
 # This method succeeds if name is a global var used in this program
 #
@@ -253,6 +316,7 @@ method getPackages()
    if *packages > 0 then{
       every pkg := key(packages) do
         push(names, pkg)
+      write(ximage(packages))
       return sortf(names)
       }
    else

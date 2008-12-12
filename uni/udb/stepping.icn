@@ -72,6 +72,28 @@ method cmdNext(cmd)
 end
 
 #
+# helps return from the current procedure level to the previous level
+#
+method cmdReturn(cmd)
+
+   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
+      #if count := integer(cmd[2]) then
+      #   next_count := count
+      #else
+      next_count := 1
+
+      nex_level := keyword("level", Monitored) -1
+      DState.Update(NEXT)
+      DState.Write("   Returning.")
+      }
+   else {
+      DState.State := ERROR
+      msg   := "\n   The program is not being run._
+                \n   Try \"run\", or Type \"help\" for assistance"
+      DState.Write(msg)
+      }
+end
+#
 # while step_count > 0, keep step until it is 0,
 # then stop there and make State := STEP
 #

@@ -13,10 +13,11 @@ $include "defaults.icn"
 # This class contains the classical/standard debugging techniqies
 #
 class Data(
-   DState,   # (Alias) object of type State class
-   Keywords, # a set of all Unicon's valid keyword
-   GKeywords,# a set of all Unicon's keywords that are Global/General
-   Message   # a string formated with the current message
+   DState,        # (Alias) object of type State class
+   Keywords,      # a set of all Unicon's valid keyword
+   GlobalKeywords,# a set of all Unicon's keywords that are Global/General
+   GenKeywords,   # a set of all Unicon's keywords that are Generators
+   Message        # a string formated with the current message
    )
 
 #
@@ -483,9 +484,15 @@ method printKeyword(expr, action, level)
          DState.Write(Message)
          return
          }
+      else if data := isGenKeyword(expr[2:0], action) then{
+         Message :="\n   "|| expr ||" = "|| data
+         DState.Write(Message)
+         return
+         }
       else if data := keyword(expr, Monitored) then{
-         if \action == "*" then
+         if \action == "*" then{
             data := *data
+            }
          else if not (type(data) == ("string"|"integer"|"real")) then
             data := image(data)
          Message :="\n   "|| expr ||" = "|| data
@@ -522,13 +529,8 @@ end
 method isGlobalKeyword(expr)
    local x, data
 
-   if member(GKeywords, expr) then{
+   if member(GlobalKeywords, expr) then{
       case expr of{
-        "features":{
-            data:=""
-            every x := &features do data ||:="\n      "|| x
-            return data
-            }
          "clock":   { return data := &clock       }
          "date":    { return data := &date        }
          "now":     { return data := &now         }
@@ -561,6 +563,76 @@ method isGlobalKeyword(expr)
          }
       }
    fail
+end
+
+#
+# when a keyword is a generator, it should generate all of the 
+# possible values, sometimes regardless of the action
+#
+method isGenKeyword(expr, action)
+   local x, L, data
+
+   if member(GenKeywords, expr) then{
+      case expr of{
+         "features":{
+             if \action == "!" then{
+                data:=""
+                every x := &features do data ||:="\n      "|| x
+                }
+             else if /action then
+                data := &features
+             else
+                fail
+             return data
+             }
+         "regions":{
+             L := []
+             every x := keyword("&regions", Monitored) do{
+                put(L,x)
+                }
+             data   := "\n   Total memory    = "||(L[1]+L[2]+L[3])
+             #data||:= "\n   --Static Region = "||L[1]||" Byte"
+             data ||:= "\n   --String Region = "||L[2]||" Byte"
+             data ||:= "\n   --Block  Region = "||L[3]||" Byte"
+             return data
+             }
+         "storage":{
+             L := []
+             every x := keyword("&storage", Monitored) do{
+                put(L,x)
+                }
+             data   := "\n   Total memory currently in use = "||(L[1]+L[2]+L[3])
+             #data||:= "\n   --Static Region     = "||L[1]||" Byte"
+             data ||:= "\n   --String Region     = "||L[2]||" Byte"
+             data ||:= "\n   --Block  Region     = "||L[3]||" Byte"
+             return data
+             }
+         "allocated":{
+             L := []
+             every x := keyword("&allocated", Monitored) do{
+                put(L,x)
+                }
+             data   := "\n   Total Allocations= "||L[1]||" Byte"
+             #data||:= "\n   --Static Region  = "||L[2]||" Byte"
+             data ||:= "\n   --String Region  = "||L[3]||" Byte"
+             data ||:= "\n   --Block  Region  = "||L[4]||" Byte"
+             return data
+             }
+         "collections":{
+             L := []
+             every x := keyword("&collections", Monitored) do{
+                put(L,x)
+                }
+             data   := "\n   Total Garbage Collections  = "||L[1]
+             #data||:= "\n   --Static Region = "||L[2]||" times"
+             data ||:= "\n   --String Region = "||L[3]||" times"
+             data ||:= "\n   --Block  Region = "||L[4]||" times"
+             return data
+             }
+         default:     { fail }
+         }
+      }
+   fail  
 end
 
 #
@@ -905,12 +977,14 @@ initially()
           "lrelease","mrelease","rrelease","ldrag","mdrag",
           "rdrag","resize","ascii","cset"
           )
-   GKeywords := 
+   GlobalKeywords := 
       set("clock","date","now","dateline","digits","e","fail",
-          "features","host","lcase","letters","null","phi","pi",
+          ,"host","lcase","letters","null","phi","pi",
           "dump","ucase","version","lpress","mpress","rpress",
           "lrelease","mrelease","rrelease","ldrag","mdrag","rdrag",
           "resize","ascii","cset"
           )
+   GenKeywords :=
+      set("features", "allocated", "collections", "storage","regions")
    Message := ""
 end

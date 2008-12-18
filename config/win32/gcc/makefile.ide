@@ -1,4 +1,4 @@
-# Windows makefile for v2-gui Unicon IDE
+# makefile for v2-gui Unicon IDE
 
 BASE=../..
 include ../makedefs
@@ -6,32 +6,27 @@ include ../makedefs
 # Avoid picking up a link to dialog in ../gui
 #export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
-UNICON=wunicon
-CP=cp
+# nothing to configure here yet
+UC=unicon
+UFLAGS=-c -u
 
 CFLAGS= -c -u
-SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn buffertabitem.icn mainbar.icn \
-	fontdialog.icn templates.icn definitions.icn uproject.icn cproject.icn jproject.icn \
-	projedit.icn idol.icn preproce.icn ytab_h.icn yyerror.icn unigram.icn unilex.icn unicon.icn \
-	classbrowser.icn tree.icn utags.icn
+SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
+	buffertabitem.icn mainbar.icn fontdialog.icn templates.icn \
+	definitions.icn uproject.icn idol.icn preproce.icn \
+	ytab_h.icn yyerror.icn unigram.icn unilex.icn unicon.icn \
+	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn
 
-OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u mainbar.u \
-	fontdialog.u templates.u definitions.u uproject.u cproject.u jproject.u \
-	projedit.u idol.u preproce.u ytab_h.u yyerror.u unigram.u unilex.u unicon.u \
-	classbrowser.u tree.u utags.u
+OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
+	mainbar.u fontdialog.u templates.u definitions.u uproject.u \
+	idol.u preproce.u ytab_h.u yyerror.u unigram.u unilex.u unicon.u \
+	classbrowser.u tree.u imgs.u utags.u matchparen.u
 
 UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
 
-all: ui wu
-
-ui: $(UNICONPACKAGE) $(OBJ)
-	$(UNICON) -G -o ui $(OBJ)
-	$(CP) ui.exe ../../bin
-
-wu: wu.icn
-	$(UNICON) -G wu
-	$(CP) wu.exe ../../bin
-
+ui:	$(UNICONPACKAGE) $(OBJ)
+	$(UC) -o ui $(OBJ)
+	-cp ui.exe ..\..\bin
 
 ide.u: ide.icn
 	unicon -c ide
@@ -48,6 +43,9 @@ buffertabitem.u: buffertabitem.icn
 buffertabset.u: buffertabset.icn
 	unicon -c buffertabset
 
+matchparen.u: matchparen.icn
+	unicon -c  matchparen
+
 mainbar.u: mainbar.icn
 	unicon -c mainbar
 
@@ -63,34 +61,28 @@ definitions.u: definitions.icn
 uproject.u: uproject.icn
 	unicon -c uproject
 
-cproject.u: cproject.icn
-	unicon -c cproject
-
-jproject.u: jproject.icn
-	unicon -c jproject
-
-projedit.u: projedit.icn
-	unicon -c projedit
-
 idol.u: idol.icn
 	unicon -c idol
 
 preproce.u: preproce.icn
 	unicon -c preproce
 
+ytab_h.u: ytab_h.icn
+	unicon -c ytab_h
+
 yyerror.u: yyerror.icn
 	unicon -c yyerror
 
 unigram.u: unigram.icn unilex.u
-	unicon -c unigram
+	unicon -c unigram yyerror
 
-unilex.u: unilex.icn ytab_h.icn
+unilex.u: unilex.icn yyerror.u
 	unicon -c unilex
 
 unicon.u: unicon.icn
 	unicon -c unicon
 
-classbrowser.u: classbrowser.icn
+classbrowser.u: classbrowser.icn  imgs.u tree.u
 	unicon -c classbrowser
 
 tree.u: tree.icn

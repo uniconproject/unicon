@@ -24,7 +24,8 @@ Configure:	config/unix/$(name)/status
 Thin-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix;$(MAKE) Setup-NoGraphics Setup-Thin name=$(name)
-		@echo 'skipping ./configure for Thin configuration'
+		@echo 'using ./thin for Thin configuration'
+		sh ./thin
 
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -35,7 +36,8 @@ X-Configure:	config/unix/$(name)/status
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics Setup-Thin name=$(name)
-		@echo 'skipping ./configure for Thin configuration'
+		@echo 'using ./thin for Thin configuration'
+		sh ./thin
 
 VX-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null

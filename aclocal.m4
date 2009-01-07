@@ -866,3 +866,15 @@ fi
 
 ])
 
+AC_DEFUN([AC_FAKESTUFF],
+if test -f "thin"
+then
+	echo "doing FAKESTUFF"
+	JV_LDFLAGS=
+	AC_SUBST(JV_LDFLAGS)
+	GL_LDFLAGS=
+	AC_SUBST(GL_LDFLAGS)
+	GL_CFLAGS=
+	AC_SUBST(GL_CFLAGS)
+fi
+)

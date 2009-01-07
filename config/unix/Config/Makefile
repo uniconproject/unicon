@@ -52,7 +52,8 @@ Makefiles:
 		-mkdir -p ../../../ipl/lib
 		cp unicon.mak ../../../uni/unicon/makefile
 		cp ipllib.mak ../../../ipl/lib/makefile
-		cp ide.mak ../../../uni/ide/makefile
+		# no longer copy ide.mak; ide/makefile is multiplatform
+		# cp ide.mak ../../../uni/ide/makefile
 		cp ivib.mak ../../../uni/ivib/makefile
 		cp unilib.mak ../../../uni/lib/makefile
 		cp xml.mak ../../../uni/xml/makefile

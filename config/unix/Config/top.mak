@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.20 2008-05-27 21:05:22 jeffery Exp $
+# $Id: top.mak,v 1.21 2009-01-07 11:42:14 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -54,7 +54,8 @@ Configure:	config/unix/$(name)/status
 Thin-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix;$(MAKE) Setup-NoGraphics Setup-Thin name=$(name)
-		@echo 'skipping ./configure for Thin configuration'
+		@echo 'using ./thin for Thin configuration'
+		sh ./thin
 
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -64,7 +65,8 @@ X-Configure:	config/unix/$(name)/status
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics Setup-Thin name=$(name)
-		@echo 'skipping ./configure for Thin configuration'
+		@echo 'using ./thin for Thin configuration'
+		sh ./thin
 
 V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null

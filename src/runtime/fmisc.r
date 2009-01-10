@@ -1953,8 +1953,8 @@ function{*} globalnames(ce)
       }
 end
 
-"keyword(kname,ce) - produce a keyword in ce's thread"
-function{*} keyword(keyname,ce,iframe)
+"keyword(kname,ce,i) - produce a keyword in ce's thread"
+function{*} keyword(keyname,ce,i)
    declare {
       tended struct descrip d;
       tended char *kyname;
@@ -1965,14 +1965,16 @@ function{*} keyword(keyname,ce,iframe)
    if !cnv:C_string(keyname,kyname) then runerr(103,keyname)
    if is:null(ce) then inline {
       d = k_current;
-      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
-      BlkLoc(k_current)->Coexpr.es_ipc.opnd = ipc.opnd;
       }
    else if is:coexpr(ce) then
       inline { d = ce; }
    else runerr(118, ce)
-   if !def:C_integer(iframe,0) then
-      runerr(101,iframe)
+   inline {
+   BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
+   BlkLoc(k_current)->Coexpr.es_ipc = ipc;
+   }
+   if !def:C_integer(i,0) then
+      runerr(101,i)
    body {
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
@@ -1991,14 +1993,14 @@ function{*} keyword(keyname,ce,iframe)
 	 }
       else if (strcmp(kname,"column") == 0) {
 	 struct progstate *savedp = curpstate;
-	 int i;
+	 int col;
 	 ENTERPSTATE(p);
-	 i = findcol(BlkD(d,Coexpr)->es_ipc.opnd);
-         if (i == 0){ /* fixing returned column zero */
-	    i = findcol(BlkD(d,Coexpr)->es_oldipc.opnd);
+	 col = findcol(BlkD(d,Coexpr)->es_ipc.opnd);
+         if (col == 0){ /* fixing returned column zero */
+	    col = findcol(BlkD(d,Coexpr)->es_oldipc.opnd);
             }
 	 ENTERPSTATE(savedp);
-	 return C_integer i;
+	 return C_integer col;
 	 }
       else if (strcmp(kname,"current") == 0) {
 	 return p->K_current;
@@ -2033,12 +2035,15 @@ function{*} keyword(keyname,ce,iframe)
       else if (strcmp(kname,"file") == 0) {
 	 struct progstate *savedp = curpstate;
 	 struct descrip s;
-	 ENTERPSTATE(p);
-         if (iframe > 0){
-	    StrLoc(s) = findfile(findoldipc(BlkD(d,Coexpr),iframe));
+         word * ipc_opnd;
+         if (i > 0){
+            ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
+	    ENTERPSTATE(p);
+	    StrLoc(s) = findfile(ipc_opnd);
 	    StrLen(s) = strlen(StrLoc(s));
             }
          else{
+	    ENTERPSTATE(p);
 	    StrLoc(s) = findfile(BlkD(d,Coexpr)->es_ipc.opnd);
 	    StrLen(s) = strlen(StrLoc(s));
             } 
@@ -2057,27 +2062,30 @@ function{*} keyword(keyname,ce,iframe)
 	 }
       else if (strcmp(kname,"line") == 0) {
 	 struct progstate *savedp = curpstate;
-	 int i;
-	 ENTERPSTATE(p);
-         if (iframe > 0){
-            i = findline(findoldipc(BlkD(d,Coexpr),iframe));
+	 int ln;
+         word * ipc_opnd;
+         if (i > 0){
+            ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
+	    ENTERPSTATE(p);
+            ln = findline(ipc_opnd);
             }
          else{
-	    i = findline(BlkD(d,Coexpr)->es_ipc.opnd);
-            if (i == 0){ /* fixing returned line zero */
-	       i = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
+	    ENTERPSTATE(p);
+	    ln = findline(BlkD(d,Coexpr)->es_ipc.opnd);
+            if (ln == 0){ /* fixing returned line zero */
+	       ln = findline(BlkD(d,Coexpr)->es_oldipc.opnd);
                }
             }  
 	 ENTERPSTATE(savedp);
-	 return C_integer i;
+	 return C_integer ln;
 	 }
       else if (strcmp(kname,"syntax") == 0) {
          struct progstate *savedp = curpstate;
-	 int i;
+	 int syn;
 	 ENTERPSTATE(p);
-	 i = findsyntax(BlkD(d,Coexpr)->es_ipc.opnd);
+	 syn = findsyntax(BlkD(d,Coexpr)->es_ipc.opnd);
 	 ENTERPSTATE(savedp);
-	 return C_integer i;
+	 return C_integer syn;
          } 
       else if (strcmp(kname,"main") == 0) {
 	 return p->K_main;

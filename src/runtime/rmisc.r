@@ -1230,12 +1230,13 @@ struct b_coexpr *ce;
 int level;
 {
    struct pf_marker *fp;
-   dptr dp=NULL;
    int i;
 
-   dp = ce->es_argp;
-   fp = ce->es_pfp;
-   if (dp == NULL) return (word*)0;
+   if (BlkLoc(ce->program->K_current) != BlkLoc(k_current))
+      fp = ce->es_pfp;
+   else
+      fp = pfp;
+
    i = ce->program->K_level;
    if (i<level) 
       return (word*)0;
@@ -1244,7 +1245,6 @@ int level;
    while (level) {
       if ((fp == NULL) || (fp->pf_ilevel == level))
          break;
-      dp = fp->pf_argp;
       fp = fp->pf_pfp;
       --level;
       }

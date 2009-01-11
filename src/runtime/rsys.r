@@ -158,7 +158,7 @@ struct b_file *fbp;
       if (buf[l-1] == '\n') {
 	 l--;
 	 }
-      if (fbp->status & Fs_Untrans && buf[l-1] == '\r') {
+      if ((!(fbp->status & Fs_Untrans)) && (buf[l-1] == '\r')) {
 	 l--;
 	 }
       return l;

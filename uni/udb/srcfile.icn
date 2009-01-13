@@ -77,11 +77,32 @@ end
 # Load the program Source File(s)
 #
 method loadSourceFiles(fname, src)
-   local i, j, s, f, b, e
+   local i, j, s, f, b, e, fmain
 
    exeName := getFileName(fname)
    exeSize := getSourceFileSize(fname)
    fileNames := src
+
+   fmain := keyword("progname", Monitored) || ".icn"
+   push(fileNames, fmain)
+   procMainFile := getFileName(fmain)
+   if s := dopen(fmain) then {
+      b := *srcText
+      while(put(srcText, read(s)))
+      close(s)
+      e := *srcText
+      insert(foundFiles, procMainFile)
+      srcIndex[procMainFile] := fileIndex(b,e)
+      if \procMainFile then{
+         procMainLine := searchFileProcs(procMainFile,"main")
+         if /procMainLine then
+            procMainLine := 1
+         }
+      else
+         procMainFile := fmain
+      }
+   else
+      procMainFile := exeName || ".icn"
  
    # loads the source files that we can find and keep a 
    # list of the ones that we could not find. Note a source file
@@ -89,19 +110,16 @@ method loadSourceFiles(fname, src)
    every i := 1 to *fileNames do{
       f := getFileName(fileNames[i])
       if not member(foundFiles, f) then{
-         if s := dopen( fileNames[ i ] ) then {
+         if s := dopen(fileNames[i]) then {
             b := *srcText
-            while( put( srcText, read( s ) ) )
-            close( s )
+            while(put(srcText, read(s)))
+            close(s)
             e := *srcText
-            insert( foundFiles, f )
-            srcIndex[ f ] := fileIndex(b,e)
-            if /procMainFile then
-               if procMainLine := searchFileProcs(f,"main") then
-                  procMainFile := f
+            insert(foundFiles, f)
+            srcIndex[f] := fileIndex(b,e)
             }
          else
-            put(missingFiles, fileNames[ i ])# keep it as it is
+            put(missingFiles, fileNames[i]) # keep it as it is
          }
       #else
          #write("File is already found:",f)

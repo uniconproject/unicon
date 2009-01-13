@@ -194,11 +194,12 @@ method initializeState(tp)
       checkWindowsExe()
       # check if the TP is loadable and accessable.
       if stat(TP[1]) then{
+         #--
+         EvInit(TP) | stop("cant start evinit on " || TP[1])
          if src := icode.getSrcFileNames(TP[1]) then{
             srcFile.loadSourceFiles(TP[1], src)
             State := LOAD
             #--
-            EvInit(TP) | stop("cant start evinit on " || TP[1])
             srcCode.analyzeGlobalNames()
             ###State := RUN ###### TEST : For the sake of getting the Time right
             Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||

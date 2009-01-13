@@ -170,16 +170,28 @@ method Update(state)
 end
 
 #
+# private method:
+# it is mainly used to check the Windows exe
+#
+method checkWindowsExe()
+$ifndef _UNIX
+   if not find(".exe", TP[1]) then
+      TP[1] ||:= ".exe"
+$endif  #_UNIX   
+end
+
+#
 # Initialize the UDB Debugging State
 #
 method initializeState(tp)
    local x, src, found, missing
 
-   # This is only when the TP is passed the start of udb, i.e: ./udb test
-   # in either case th ErrorCode will be initialized
+   # This is only when the TP is passed at the start of udb, i.e: ./udb test
+   # in either case the ErrorCode will be initialized
    State := NONE
    if tp[1] then{
       TP := tp
+      checkWindowsExe()
       # check if the TP is loadable and accessable.
       if stat(TP[1]) then{
          if src := icode.getSrcFileNames(TP[1]) then{
@@ -192,7 +204,7 @@ method initializeState(tp)
             Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
                          srcFile.exeSize||" of "||icode.icodeVersion 
             found := *srcFile.foundFiles
-            if found > 0 then 
+            if found > 0 then
                Message ||:=  "\n   "|| found ||" file(s) are found"
             missing := *srcFile.missingFiles
             if missing > 0 then

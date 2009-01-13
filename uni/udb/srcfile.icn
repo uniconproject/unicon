@@ -83,6 +83,7 @@ method loadSourceFiles(fname, src)
    exeSize := getSourceFileSize(fname)
    fileNames := src
 
+   #start the loading process with the file that has the procedure main() in it
    fmain := keyword("progname", Monitored) || ".icn"
    push(fileNames, fmain)
    procMainFile := getFileName(fmain)
@@ -101,9 +102,13 @@ method loadSourceFiles(fname, src)
       else
          procMainFile := fmain
       }
-   else
-      procMainFile := exeName || ".icn"
- 
+   else{
+      if i := find(".exe", exeName) then
+         procMainFile := exeName[1:i] ||".icn"
+      else
+          procMainFile := exeName ||".icn"
+      } 
+
    # loads the source files that we can find and keep a 
    # list of the ones that we could not find. Note a source file
    # can be opened more that once so we need to be careful !!!

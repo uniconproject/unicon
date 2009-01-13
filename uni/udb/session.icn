@@ -231,8 +231,13 @@ end
 #
 method cmdClear(cmd)
 
-   case cmd[2] of {
+if *cmd = 1 then
+   Debug.Break.cmdClear(cmd)
+else{
+   case cmd[2] of  {
+      "b"          |
       "break"      |
+      "breakpoint" |
       "breakpoints":{ Debug.Break.cmdClear(cmd)     }
       "awatch"     |
       "rwatch"     |
@@ -240,11 +245,13 @@ method cmdClear(cmd)
       "vwatch"     |
       "swatch"     |
       "watch"      |
+      "watchpoint" |
       "watchpoints":{ Debug.Watch.cmdClear(cmd)     }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
+      "watchpoint" |
       "tracepoints":{ Debug.Trace.cmdClear(cmd)     }
       "internal"   :{                               }
       "external"   :{                               }
@@ -255,6 +262,7 @@ method cmdClear(cmd)
          DState.Write(Message)
          }
       }
+   }
 end
 
 #
@@ -262,8 +270,13 @@ end
 #
 method cmdDelete(cmd)
 
-   case cmd[2] of {
+if *cmd = 1 then
+   Debug.Break.cmdDelete(cmd)
+else{
+   case cmd[2] of  {
+      "b"          |
       "break"      |
+      "breakpoint" |
       "breakpoints":{ Debug.Break.cmdDelete(cmd)    }
       "awatch"     |
       "rwatch"     |
@@ -271,11 +284,13 @@ method cmdDelete(cmd)
       "vwatch"     |
       "swatch"     |
       "watch"      |
+      "watchpoint" |
       "watchpoints":{ Debug.Watch.cmdDelete(cmd)    }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
+      "tracepoint" |
       "tracepoints":{ Debug.Trace.cmdDelete(cmd)    }
       "internal"   :{                               }
       "external"   :{                               }
@@ -286,6 +301,7 @@ method cmdDelete(cmd)
          DState.Write(Message)
          }
       }
+   }
 end
 
 #
@@ -293,8 +309,13 @@ end
 #
 method cmdEnable(cmd)
 
-   case cmd[2] of {
+if *cmd = 1 then
+   Debug.Break.cmdEnable(cmd)
+else{
+   case cmd[2] of  {
+      "b"          |
       "break"      |
+      "breakpoint" |
       "breakpoints":{ Debug.Break.cmdEnable(cmd)    }
       "awatch"     |
       "rwatch"     |
@@ -302,11 +323,13 @@ method cmdEnable(cmd)
       "vwatch"     |
       "swatch"     |
       "watch"      |
+      "watchpoint" |
       "watchpoints":{ Debug.Watch.cmdEnable(cmd)    }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
+      "watchpoint" |
       "tracepoints":{ Debug.Trace.cmdEnable(cmd)    }
       "internal"   :{                               }
       "external"   :{                               }
@@ -317,6 +340,7 @@ method cmdEnable(cmd)
          DState.Write(Message)
          }
       }
+   }
 end
 
 #
@@ -324,8 +348,13 @@ end
 #
 method cmdDisable(cmd)
 
-   case cmd[2] of {
+if *cmd = 1 then
+   Debug.Break.cmdDisable(cmd)
+else{
+   case cmd[2] of  {
+      "b"          |
       "break"      |
+      "breakpoint" |
       "breakpoints":{ Debug.Break.cmdDisable(cmd)    }
       "awatch"     |
       "rwatch"     |
@@ -333,11 +362,13 @@ method cmdDisable(cmd)
       "vwatch"     |
       "swatch"     |
       "watch"      |
+      "watchpoint" |
       "watchpoints":{ Debug.Watch.cmdDisable(cmd)    }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
+      "watchpoint" |
       "tracepoints":{ Debug.Trace.cmdDisable(cmd)    }
       "internal"   :{                                }
       "external"   :{                                }
@@ -348,6 +379,7 @@ method cmdDisable(cmd)
           DState.Write(Message)
           }
        }
+   }
 end
 
 #
@@ -355,19 +387,23 @@ end
 #
 method cmdInfo(cmd)
 
-   case cmd[2] of{
+   case cmd[2] of  {
+      "b"          |
       "break"      |
+      "breakpoint" |
       "breakpoints":{ Debug.Break.printBreakInfo(cmd)        }
       "awatch"     |
       "rwatch"     |
       "twatch"     |
       "vwatch"     |
       "watch"      |
+      "watchpoint" |
       "watchpoints":{ Debug.Watch.printWatchInfo(cmd)        }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
+      "watchpoint" |
       "tracepoints":{ Debug.Trace.printTraceInfo(cmd)        }
       "global"     :{ Debug.Print.cmdPrint(["p","-g"])       }
       "local"      :{ Debug.Print.cmdPrint(["p","-l"])       }

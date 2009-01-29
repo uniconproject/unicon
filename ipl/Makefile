@@ -55,5 +55,12 @@ Clean Pure:
 	rm -rf iexe */*.u[12] */*.zip
 	-rm -f `find *procs *progs -type f -perm -100 -print`
 	cd cfuncs && $(MAKE) Clean
-	for d in gpacks/{carpets,drawtree,ged,htetris,tiger,vib,weaving,xtiles}; do (cd $$d && $(MAKE) Clean); done
+	cd gpacks/carpets && $(MAKE) Clean
+	cd gpacks/drawtree && $(MAKE) Clean
+	cd gpacks/ged && $(MAKE) Clean
+	cd gpacks/htetris && $(MAKE) Clean
+	cd gpacks/tiger && $(MAKE) Clean
+	cd gpacks/vib && $(MAKE) Clean
+	cd gpacks/weaving && $(MAKE) Clean
+	cd gpacks/xtiles && $(MAKE) Clean
 	for d in packs/[d-qs-z]*; do (cd $$d && $(MAKE) Clean); done

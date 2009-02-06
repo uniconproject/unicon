@@ -37,6 +37,7 @@ struct b_tvtbl	*alctvtbl_0	(dptr tbl,dptr ref,uword hashnum);
 struct b_tvtbl	*alctvtbl_1	(dptr tbl,dptr ref,uword hashnum);
 struct b_tvmonitored  *alctvmonitored	(dptr tv, word ipc);
 void assign_event_functions(struct progstate *p, struct descrip cs);
+int invaluemask(struct progstate *p, int evcode, struct descrip *val);
 #ifdef PatternType
 struct b_pattern	*alcpattern_0 (word size);
 struct b_pattern	*alcpattern_1 (word size);

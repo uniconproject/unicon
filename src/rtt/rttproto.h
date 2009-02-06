@@ -88,5 +88,6 @@ char             *typ_name  (int typ, struct token *tok);
 void           unuse     (struct init_tend *t_lst, int lvl);
 void           var_args  (struct token *ident);
 void           yyerror   (char *s);
+int           _yyerror   (char *, int);
 int               yylex     (void);
 int               yyparse   (void);

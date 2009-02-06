@@ -27,6 +27,7 @@ double	getreal			(void);
 word	getrest			(void);
 word	getstr			(void);
 word	getstrlit		(int l);
+word	getsynt			(char **);
 struct	gentry *glocate		(word id);
 void	gout			(FILE *fd);
 struct	node *i_str_leaf	(int type,struct node *loc_model,char *c,int d);

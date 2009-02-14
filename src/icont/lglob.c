@@ -122,7 +122,8 @@ void readglob()
             break;
 
          case Op_Link:		/* link the named file */
-            name = &lsspace[getrest()];	/* get the name and */
+	    k = getrest();
+            name = &lsspace[k];	/* get the name */
 
             #if ARM
                {

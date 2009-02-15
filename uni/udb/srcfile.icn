@@ -77,37 +77,31 @@ end
 # Load the program Source File(s)
 #
 method loadSourceFiles(fname, src)
-   local i, j, s, f, b, e, fmain
+   local i, j, s, f, b, e
 
    exeName := getFileName(fname)
    exeSize := getSourceFileSize(fname)
    fileNames := src
 
    #start the loading process with the file that has the procedure main() in it
-   fmain := keyword("progname", Monitored) || ".icn"
-   push(fileNames, fmain)
-   procMainFile := getFileName(fmain)
-   if s := dopen(fmain) then {
+   if /exeName then
+      exeName := keyword("progname", Monitored)
+
+   procMainFile := getFileName(exeName)
+   if i := find(".exe", procMainFile) then procMainFile := procMainFile[1:i]
+   if j := find(".", procMainFile)    then procMainFile := procMainFile[1:j]
+   procMainFile ||:= ".icn"
+
+   push(fileNames, procMainFile)
+   if s := dopen(procMainFile) then {
       b := *srcText
       while(put(srcText, read(s)))
       close(s)
       e := *srcText
       insert(foundFiles, procMainFile)
       srcIndex[procMainFile] := fileIndex(b,e)
-      if \procMainFile then{
-         procMainLine := searchFileProcs(procMainFile,"main")
-         if /procMainLine then
-            procMainLine := 1
-         }
-      else
-         procMainFile := fmain
       }
-   else{
-      if i := find(".exe", exeName) then
-         procMainFile := exeName[1:i] ||".icn"
-      else
-          procMainFile := exeName ||".icn"
-      } 
+   procMainLine := searchFileProcs(procMainFile,"main") | 1
 
    # loads the source files that we can find and keep a 
    # list of the ones that we could not find. Note a source file
@@ -169,15 +163,17 @@ method searchFileProcs(Fname, ProcName)
             if(temp1 := tab(many(&letters))) == ("procedure"|"method") then{
               tab(many(WhiteSpace))
               temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
-              if temp1 == ProcName then
+              if temp1 == ProcName then{
                  return offset
+                 }  
               }
             }
          offset +:= 1
          }
       }
-   else
+   else{
       fail
+      } 
 end
 
 #
@@ -203,8 +199,11 @@ end
 #
 method getFileTotalLines(fname)
    /fname := procMainFile
-    
-   return srcIndex[fname].fend - srcIndex[fname].fbegin #+ 1
+
+   if member(foundFiles, fname) then
+      return srcIndex[fname].fend - srcIndex[fname].fbegin #+ 1
+   else
+      fail
 end
 
 #

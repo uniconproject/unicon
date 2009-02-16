@@ -359,13 +359,15 @@ struct errtab errtab[] = {
    147, "window attribute cannot be read or written as requested",
 #endif					/* Graphics */
 
-#ifdef Graphics3D                 /* Graphics3D */
+#ifdef Graphics3D
    150,  "drawing a 3D object while in 2D mode",
    151,  "pushed/popped too many matrices",
    152,  "modelview or projection expected",
    153,  "texture not in correct format",
    154,  "must have an even number of texture coordinates",
-#endif                            /* Graphics3D */
+#else					/* Graphics3D */
+   150,  "3D graphics is not enabled in this virtual machine",
+#endif					/* Graphics3D */
 
 #ifdef PosixFns
    /*

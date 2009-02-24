@@ -34,7 +34,9 @@ Clean:
 		rm -f ../../../src/common/rswitch.[csS]
 
 Makefiles:
-		cp ../Config/top.mak ../../../Makefile
+		-if [ -f ../$(name)/top.hdr ]; \
+		    then echo "found top.hdr" && cat ../$(name)/top.hdr ../Config/top.mak > ../../../Makefile; \
+		    else echo "no top.hdr " && cp ../Config/top.mak ../../../Makefile; fi
 		cat ../Config/rtt.mak \
 		   > ../../../src/rtt/Makefile
 		cat ../Config/common.mak \

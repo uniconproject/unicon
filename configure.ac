@@ -1,6 +1,29 @@
 AC_INIT([Unicon],[11.5],[jeffery@cs.uidaho.edu])
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_RANLIB
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(nsl, gethostbyname)
+AC_HEADER_STDC
+AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
+		 stdlib.h string.h fcntl.h memory.h sys/file.h \
+                 netinet/in.h sys/errno.h sys/socket.h sys/types.h)
+AC_INT_16_BITS
+AC_LONG_64_BITS
+AC_WORDS_BIGENDIAN
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_FUNC_ALLOCA
+AC_TYPE_OFF_T
+AC_ST_BLKSIZE
+AC_CHECK_TYPE(ssize_t, signed)
+AC_CHECK_FUNCS(socket bcopy bzero memcpy memset inet_aton inet_pton \
+	       snprintf vsprintf rename ftruncate flock fsync)
+AC_REPLACE_FUNCS(getopt)
 AC_FUNC_FORK()
+AC_CHECK_LIB(dbm,main)
+AC_CHECK_LIB(ndbm,main)
 CHECK_FREETYPE()
 CHECK_FTGL()
 CHECK_OGG()

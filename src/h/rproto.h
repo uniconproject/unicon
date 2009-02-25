@@ -928,7 +928,7 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
 
 #endif					/* COMPILER */
 
-   int	Omkrec			(int nargs, Fargs);
+   int	Omkrec			(int nargs, dptr Fargs);
 
 /* dynamic records */
 struct b_proc *dynrecord(dptr s, dptr fields, int n);

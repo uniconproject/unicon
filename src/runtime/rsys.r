@@ -521,10 +521,9 @@ dptr d;
    }
 
 /*
- * Wait for input to become available on fd, with timeout of t ms
+ * Wait for input to become available on fd, with timeout of t ms.
  */
-iselect(fd, t)
-int fd, t;
+int iselect(int fd, int t)
    {
 
 #ifdef PosixFns
@@ -1568,15 +1567,15 @@ struct ptstruct *ptopen(char *command)
 #else					/* NT */
 
   /* open master pty file descriptor */
-#ifdef SOLARIS
+#ifdef SUN
    if((newPtStruct->master_fd=open("/dev/ptmx",O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
-#else					/* Solaris */
+#else					/* SUN */
    if((newPtStruct->master_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
-#endif					/* Solaris */
+#endif					/* SUN */
 
    /* change permissions of slave pty to correspond with the master pty */
    if(grantpt(newPtStruct->master_fd) == -1) {
@@ -1592,13 +1591,13 @@ struct ptstruct *ptopen(char *command)
     * determine the filename of the slave pty associated with
     * the already opened master pty
     */
-#ifdef SOLARIS
+#ifdef SUN
    if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 	              sizeof(newPtStruct->slave_filename)) != 0) {
-#else					/* Solaris */
+#else					/* SUN */
    if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 		sizeof(newPtStruct->slave_filename)) != 0) {
-#endif					/* Solaris */
+#endif					/* SUN */
       EXITERROR(newPtStruct);
       }
 

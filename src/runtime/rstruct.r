@@ -848,7 +848,7 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
     */
    unsigned char ec = (unsigned char)evcode;
    struct descrip d;
-   StrLoc(d) = &ec;
+   StrLoc(d) = (char *)&ec;
    StrLen(d) = 1;
 
    if (! is:table(p->valuemask)) return Error;

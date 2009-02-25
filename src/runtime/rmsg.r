@@ -30,6 +30,7 @@ const char* DEFAULT_USER_AGENT = "User-Agent: Unicon Messaging/10.0";
 char *Maddtoheader(char* header, const char* s, int slen, int* nleft);
 void Mhttp(struct MFile* mf, dptr attr, int nattr);
 void Mpop(struct MFile* mf, dptr attr, int nattr);
+int Mpop_newlist(struct MFile* mf, unsigned n);
 void Msmtp(struct MFile* mf, dptr attr, int nattr);
 char *Mwashs(char* dest, char* s, size_t n);
 int si_cs2i(siptr sip, char* s);
@@ -291,7 +292,7 @@ int Mpop_delete(struct MFile* mf, unsigned int msgnum)
 	 }
       }
    svrnum = mplCurrent->msgnum;
-   req.args = buf;
+   req.args = (char *)buf;
    snprintf(req.args, sizeof(req.args), "%d", svrnum);
    mf->resp = tp_sendreq(mf->tp, &req);
    if (mf->resp->sc < 300) {

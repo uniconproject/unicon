@@ -4326,7 +4326,7 @@ function{1} Texture(argv[argc])
       else {
 	 /* otherwise it must be a string */
 	 if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
-	 s = tmp;
+	 s = (unsigned char *)tmp;
 	 while(isspace(*s)) s++;
 	 while(isdigit(*s)) s++;
 	 while(isspace(*s)) s++; 
@@ -4612,7 +4612,7 @@ function{1} WSection(argv[argc])
        * Section one is the outer most section.
        * every new nested section increment one
        */
-      static section_depth=1;
+      static int section_depth=1;
 
       OptWindow(w);
       wc = w->context;

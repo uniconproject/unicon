@@ -2,8 +2,13 @@
  *  File: ropengl.ri
  *     3D facilities OpenGL support routines
  */
-int texture(int width, int height, GLubyte *tex, int texmode);
+int bltex(wbp w, int width, int height, int ch, char *s, word len);
+int determinematerial(char *, C_integer, C_integer, C_integer, C_integer);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type);
+int texture(int width, int height, GLubyte *tex, int texmode);
+int texture_24img(wbp w, struct imgdata im);
+int textureimg(wbp w, int width, int height,
+               struct palentry *e, unsigned char *s, word len);
 
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
@@ -2616,7 +2621,7 @@ int imagestr(wbp w, char* str)
 
    /* Extract the Width and skip the following comma.*/
 
-   s = str;
+   s = (unsigned char *)str;
    z = s + strlen(str);		/* end+1 of string */
    width = 0;
    while (s < z && *s == ' ')	/* skip blanks */
@@ -2648,7 +2653,7 @@ int imagestr(wbp w, char* str)
          return Failed;
       height = nchars / row;
 
-      i = bltex(w, width, height, c, s, (word)(z - s));
+      i = bltex(w, width, height, c, (char *)s, (word)(z - s));
       if (i == Succeeded)
 	   return Succeeded;
       else

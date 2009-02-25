@@ -148,7 +148,7 @@ struct b_bignum *x;
 dptr dx;
 {
    word xlen, cmp;
-   static DIGIT maxword[WORDLEN] = { 1 << ((WordBits - 1) % NB) };
+   static DIGIT maxword[WORDLEN] = { 1U << ((WordBits - 1) % NB) };
 
    /* suppress leading zero digits */
 
@@ -985,7 +985,7 @@ dptr da, db, dx;
 	 *dx = onedesc;
 	 for ( n = 0; n < blen; ++n ) {
 	    nth_dig = *DIG ( b, n );
-	    for ( mask = 1 << ( NB - 1 ); mask; mask >>= 1 ) {
+	    for ( mask = 1U << ( NB - 1 ); mask; mask >>= 1 ) {
 	       if ( bigmul ( dx, dx, dx ) == Error )
 		  return Error;
 	       if ( nth_dig & mask )
@@ -1032,7 +1032,7 @@ dptr   db, drslt;
    retval = 1.0;
    for ( n = 0; n < blen; ++n ) {
       nth_dig = *DIG ( b, n );
-      for ( mask = 1 << ( NB - 1 ); mask; mask >>= 1 ) {
+      for ( mask = 1U << ( NB - 1 ); mask; mask >>= 1 ) {
 	 retval *= retval;
 	 if ( nth_dig & mask )
 	    retval *= a;

@@ -1797,7 +1797,7 @@ void datainit()
  *    map("YyXxMmDd", "YyXx/Mm/Dd", &date) + &time + 1009 * ncalls
  */
    {
-   static ncalls = 0;
+   static int ncalls = 0;
    int i;
    time_t t;
    struct tm *ct;

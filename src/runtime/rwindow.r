@@ -2179,7 +2179,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
       c[3] = 0;
       if (fwrite(c, 4, 1, gf_f) < 1) return Failed;
       }
-   if (bmp_data(width, height, 1, gf_string) == NULL) return Error;
+   if (bmp_data(width, height, 1, (char *)gf_string) == NULL) return Error;
    if (fwrite(gf_string, width, height, gf_f) < height) return Failed;
    return Succeeded;
 }

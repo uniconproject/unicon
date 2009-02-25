@@ -261,7 +261,7 @@ struct descrip kywd_ftrc = {D_Integer};	/* &ftrace */
 struct descrip kywd_dmp = {D_Integer};	/* &dump */
 
 struct descrip nullptr =
-   {F_Ptr | F_Nqual};	                /* descriptor with null block pointer */
+   {((word)(F_Ptr | F_Nqual))};        /* descriptor with null block pointer */
 struct descrip trashcan;		/* descriptor that is never read */
 
 /*

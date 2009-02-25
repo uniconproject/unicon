@@ -124,9 +124,9 @@ function{1} close(f)
        * Close f, using fclose, pclose, closedir, or wclose as appropriate.
        */
 #ifdef Messaging
-      if (BlkD(f,File)->status & Fs_Messaging) {
+      if (status & Fs_Messaging) {
 	 BlkLoc(f)->File.status = 0;
-	 return C_integer Mclose((struct Mfile*) fp);
+	 return C_integer Mclose(BlkD(f,File)->fd.mf);
 	 }
 #endif                                  /* Messaging */
 

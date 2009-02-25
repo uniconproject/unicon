@@ -83,9 +83,6 @@ int n_globals = 0;			/* number of globals */
 int n_statics = 0;			/* number of statics */
 #endif					/* MultiThread */
 
-extern int_setup;
-
-
 /*
  * Initial icode sequence. This is used to invoke the main procedure with one
  *  argument.  If main returns, the Op_Quit is executed.
@@ -1020,7 +1017,6 @@ int *ip;
    register word i, j;
    register struct b_proc *pp;
    register dptr dp;
-   extern Omkrec();
 
    #ifdef MultiThread
       register struct progstate *savedstate = curpstate;

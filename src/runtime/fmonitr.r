@@ -333,14 +333,6 @@ function{*} istate(ce,attrib)
       }
 end
 
-
-/*
- * Prototypes.
- */
-
-void mmrefresh		(void);
-
-#define evforget()
 
 
 char typech[MaxType+1];	/* output character for each type */

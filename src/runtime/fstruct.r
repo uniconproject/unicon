@@ -1703,7 +1703,6 @@ function{1} constructor(s, x[n])
    if !cnv:string(s) then runerr(103,s)
    inline {
       int i;
-      extern Omkrec();
       struct b_proc *bp;
       for(i=0;i<n;i++)
          if (!is:string(x[i])) runerr(103, x[i]);

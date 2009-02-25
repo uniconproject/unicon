@@ -466,15 +466,15 @@
  * Descriptor types and flags.
  */
 
-#define D_Null		(T_Null     | D_Typecode)
-#define D_Integer	(T_Integer  | D_Typecode)
+#define D_Null		((word)(T_Null     | D_Typecode))
+#define D_Integer	((word)(T_Integer  | D_Typecode))
 
 #ifdef LargeInts
    #define D_Lrgint	(T_Lrgint | D_Typecode | F_Ptr)
 #endif					/* LargeInts */
 
-#define D_Real		(T_Real     | D_Typecode | F_Ptr)
-#define D_Cset		(T_Cset     | D_Typecode | F_Ptr)
+#define D_Real		((word)(T_Real     | D_Typecode | F_Ptr))
+#define D_Cset		((word)(T_Cset     | D_Typecode | F_Ptr))
 #define D_File		(T_File     | D_Typecode | F_Ptr)
 #define D_Proc		(T_Proc     | D_Typecode | F_Ptr)
 #define D_List		(T_List     | D_Typecode | F_Ptr)

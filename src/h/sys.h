@@ -266,7 +266,7 @@
  */
 #if HAVE_LIBJPEG
 
-#if defined(__x86_64__) && defined(XWindows)
+#if defined(XWindows)
 /* Some AMD64 Gentoo systems seem to have a buggy macros in
    jmorecfg.h, but if we include Xmd.h beforehand then we get better
    definitions of the macros. */

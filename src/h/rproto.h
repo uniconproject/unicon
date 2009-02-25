@@ -106,6 +106,7 @@ void		coacttrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		cofailtrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		corettrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 int		coswitch	(word *old, word *new, int first);
+int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
 #ifdef MultiThread
 int		cplist_0	(dptr dp1,dptr dp2,word i,word j);
 int		cplist_1	(dptr dp1,dptr dp2,word i,word j);
@@ -161,12 +162,14 @@ int		findipc		(int line);
 word		* findoldipc	(struct b_coexpr *ce, int level);
 int		findline	(word *ipc);
 int		findloc		(word *ipc);
+int		findsyntax	(word *ipc);
 void		fpetrap		(void);
 int		getvar		(char *s,dptr vp);
 uword		hash		(dptr dp);
 union block	**hchain	(union block *pb,uword hn);
 union block	*hgfirst	(union block *bp, struct hgstate *state);
 union block	*hgnext		(union block*b,struct hgstate*s,union block *e);
+int		hitsyntax	(word *ipc);
 union block	*hmake		(int tcode,word nslots,word nelem);
 void		icon_init	(char *name, int *argcp, char *argv[]);
 void		iconhost	(char *hostname);
@@ -179,6 +182,7 @@ int		interp		(int fsig,dptr cargp);
 #endif
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
+int		iselect		(int fd, int t);
 int		lexcmp		(dptr dp1,dptr dp2);
 word		longread	(char *s,int width,long len,FILE *fname);
 #if HAVE_LIBZ
@@ -248,6 +252,7 @@ void		xmfree		(void);
       struct b_file *theOutput, struct b_file *theError,
       C_integer bs, C_integer ss, C_integer stk);
    void actparent (int eventcode);
+   void mmrefresh		(void);
    int mt_activate   (dptr tvalp, dptr rslt, struct b_coexpr *ncp);
    struct progstate *findprogramforblock(union block *p);
    void EVVariable(dptr dx, int eventcode);
@@ -353,7 +358,9 @@ void detectRedirection();
    void	genCurve	(wbp w, XPoint *p, int n, void (*h)());
    wsp	getactivewindow	(void);
    int	getpattern	(wbp w, char *answer);
-   char *getselection(wbp w, char *buf);
+   char *getselection	(wbp w, char *buf);
+   void gotorc		(wbp w,int r,int c);
+   void gotoxy		(wbp w, int x, int y);
    struct palentry *palsetup(int p);
    int	palnum		(dptr d);
    int	parsecolor	(wbp w, char *s, long *r, long *g, long *b, long *a);
@@ -361,9 +368,11 @@ void detectRedirection();
    int	parsegeometry	(char *buf, SHORT *x, SHORT *y, SHORT *w, SHORT *h);
    int	parsepattern	(char *s, int len, int *w, int *nbits, C_integer *bits);
    void	qevent		(wsp ws, dptr e, int x, int y, uword t, long f);
+   int readBMP		(char *filename, int p, struct imgdata *imd);
    int	readGIF		(char *fname, int p, struct imgdata *d);
 #if HAVE_LIBJPEG
    int	readJPEG	(char *fname, int p, struct imgdata *d);
+   int  writeJPEG	(wbp w, char *fn, int x, int y, int width, int height);
 #endif					/* HAVE_LIBJPEG */
 #if HAVE_LIBPNG
    int	readPNG		(char *fname, int p, struct imgdata *d);
@@ -422,6 +431,8 @@ void detectRedirection();
    int	geticonpos	(wbp w, char *s);
    int	getimstr	(wbp w, int x, int y, int width, int hgt,
    			  struct palentry *ptbl, unsigned char *data);
+   int	getimstr24	(wbp w, int xx, int yy, int width, int hgt,
+			  unsigned char *d);
    void	getlinestyle	(wbp w, char *answer);
    int	getpixel_init	(wbp w, struct imgmem *imem);
    int	getpixel_term	(wbp w, struct imgmem *imem);
@@ -466,6 +477,7 @@ void detectRedirection();
    int	seticonlabel	(wbp w, char *val);
    int	seticonpos	(wbp w, char *s);
    int	setimage	(wbp w, char *val);
+   int  setinputmask	(wbp w, char *val);
    int	setleading	(wbp w, int i);
    int	setlinestyle	(wbp w, char *s);
    int	setlinewidth	(wbp w, LONG linewid);
@@ -588,14 +600,62 @@ void detectRedirection();
    #endif				/* XWindows */
 
    #ifdef Graphics3D
-      /* For creating child windows for 3D graphics */
+      int add_3dfont(char *fname, int fsize, char ftype);
+      int c_traverse(struct b_list *hp, struct descrip * res, int position);
       char child_window_stuff(wbp w, wbp wp, char child_window);
+      int cpp_drawstring3d(double x, double y, double z, char *s, char *f,
+			   int t, int size, void *tfont);
+      void cube(double length, double x, double y, double z, int gen);
+      void cylinder(double radius1, double radius2, double height,
+		double x,  double y, double z, int slices, int rings, int gen);
+      void disk(double radius1, double radius2, double angle1, double angle2,
+	        double x, double y, double z, int slices, int rings, int gen);
+      int drawpoly(wbp w, double* v, int num, int type, int dim);
+      int drawstrng3d(wbp w, double x, double y, double z, char *s);
+      int fileimage(wbp w, char* filename);
+      int getlight(int light, char* buf);
+      int getmaterials(char* buf);
+      void getmeshmode(wbp w, char *answer);
+      int gettexcoords(wbp w, char *buf);
+      void gettexmode(wbp w, char *abuf, dptr answer);
+      int gettexture(wbp w, dptr dp);
+      int imagestr(wbp w, char* str);
       int init_3dcontext(wcp wc);
       void makecurrent(wbp w);
-      int drawstrng3d(wbp w, double x, double y, double z, char *s);
-      int cpp_drawstring3d(double x, double y, double z, char *s, char *f, int t, int size, void *tfont);
-      int add_3dfont(char *fname, int fsize, char ftype);
+      int popmatrix();
+      int pushmatrix();
+      int pushmatrix_rd(wbp w, dptr f);
+      int redraw3D(wbp w);
+      int rotate(wbp w, dptr argv, int i, dptr f);
+      int scale(wbp w, dptr argv, int i, dptr f);
+      int section_length(wbp w);
+      int setdim(wbp w, char* s);
+      int seteye(wbp w, char *s);
+      int seteyedir(wbp w, char *s);
+      int seteyepos(wbp w, char *s);
+      int seteyeup(wbp w, char *s);
+      int setlight(wbp w, char* s, int light);
+      int setlinewidth3D(wbp w, LONG linewid);
+      int setmaterials(wbp w, char* s);
+      int setmeshmode(wbp w, char* s);
+      int setrings(wbp w, char *s);
+      int setselectionmode(wbp w, char* s);
+      int setslices(wbp w, char *s);
+      int settexcoords(wbp w, char* s);
+      int settexmode(wbp w, char* s);
+      int settexture(wbp w, char* str, int len);
+      void sphere(double radius, double x, double y, double z,
+		  int slices, int rings, int gen);
       wfp srch_3dfont(char *fname, int fsize, char ftype);
+      int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2);
+      int TexDrawPoint(wbp w, int texhandle, int x, int y);
+      int TexReadImage(wbp w, int texhandle, int x, int y,struct imgdata *imd);
+      int texwindow2D(wbp w, wbp w2d);
+      int texwindow3D(wbp w1, wbp w2);
+      void torus(double radius1, double radius2, double x,double y, double z,
+		 int slices, int rings, int gen);
+      int translate(wbp w, dptr argv, int i, dptr f);
+      int traversefunctionlist(wbp w);
    #endif					/* Graphics3D */
 
    #ifdef MSWindows
@@ -784,6 +844,9 @@ dptr rec_structinate(dptr dp, char *name, int nfields, char *a[]);
 
 #ifdef Messaging
 struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq);
+int Mclose(struct MFile* mf);
+int Mpop_delete(struct MFile* mf, unsigned int msgnum);
+void Mstartreading(struct MFile* mf);
 #endif					/* Messaging */
 
 #ifdef PosixFns
@@ -796,6 +859,7 @@ void stat2rec			(struct stat *st, dptr dp, struct b_record **rp);
 dptr rec_structor		(char *s);
 dptr rec_structor3d		(char *s);
 int sock_connect		(char *s, int udp, int timeout);
+int sock_getstrg		(char *buf, int maxi, SOCKET fd);
 int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
 int get_uid			(char *name);
@@ -855,7 +919,6 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    int	Ofield			(int nargs, Fargs);
    int	Olimit			(int nargs, Fargs);
    int	Ollist			(int nargs, Fargs);
-   int	Omkrec			(int nargs, Fargs);
 
    #ifdef MultiThread
       void	initalloc	(word codesize, struct progstate *p);
@@ -864,6 +927,8 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    #endif				/* MultiThread */
 
 #endif					/* COMPILER */
+
+   int	Omkrec			(int nargs, Fargs);
 
 /* dynamic records */
 struct b_proc *dynrecord(dptr s, dptr fields, int n);

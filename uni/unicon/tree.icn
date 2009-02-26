@@ -476,18 +476,10 @@ procedure mangle_class_sym(sym)
    # First check if it is in the classes defined in this file.  These
    # override any imports.
    #
-$ifdef Uniconc
    if member(\package_level_class_syms, sym) then
-$else
-   if member(package_level_class_syms, sym) then
-$endif # Uniconc
       return package_mangled_symbol(sym)
 
-$ifdef Uniconc
    if member(\imported_classes, sym) then {
-$else
-   if member(imported_classes, sym) then {
-$endif
       l := imported_classes[sym]
       if *l > 1 then {
 $ifdef Uniconc
@@ -830,7 +822,6 @@ procedure extract_identifiers(node, res)
    return res
 end
 
-$ifdef Uniconc
 procedure iconc_prep_parse_tree(parent, child)
    local i, t, o, m, s, el
    local todo, tmplist, newnode
@@ -901,7 +892,6 @@ procedure iconc_prep_parse_tree(parent, child)
          }
       }
 end
-$endif # Uniconc
 
 #
 # Useful debug function to recursively print a treenode.

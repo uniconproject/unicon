@@ -497,29 +497,25 @@ end
 # a_Returns the list of directories in the LPATH environment variable.
 #
 procedure preproc_get_path_list()
-    static the_list
-$ifdef Uniconc
-    static iconc_list
-$endif # Uniconc
-    initial {
-        the_list := preproc_compute_path_list()
-$ifdef Uniconc
-        iconc_list := preproc_compute_iconc_path_list()
-$endif # Uniconc
+   static the_list
+   static iconc_list
+   initial {
+      the_list := preproc_compute_path_list()
+      if \iconc then
+	 iconc_list := preproc_compute_iconc_path_list()
     }
-$ifdef Uniconc
     if \iconc then
         return iconc_list 
-$endif # Uniconc
     return the_list
 end
 
+# TODO: consider merging ..._compute_path_list() and ... iconc_path_list()
 #
 # Computes the list of directories in the LPATH environment variable.
 #
 procedure preproc_compute_path_list()
     local result,path_string,path_sep, f
-    result := []
+    result := [ ]
 
     path_string := getenv("LPATH") | "."
 
@@ -544,8 +540,6 @@ procedure preproc_compute_path_list()
     return result
 end
 
-
-$ifdef Uniconc
 procedure preproc_compute_iconc_path_list()
    local f, rslt, sep, paths, binpath
 
@@ -573,7 +567,6 @@ procedure preproc_compute_iconc_path_list()
 
    return rslt
 end
-$endif # Uniconc
 
 #
 # Determines if a "#lines" is called for and generates one if so.

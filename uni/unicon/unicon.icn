@@ -34,15 +34,13 @@ global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
 global classes,comp,exec,strict,links,imports,loud,ct,reserved
 global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
 global yydbg, yyout, linkline, translateducode, imported, imported_classes
-$ifdef Uniconc
-global iconc
-global iconc_links
-global iconc_parsed
-global iconc_imports
-global iconc_posixloc
-global iconc_parsed_posix
-global iconc_perifile_idx
-$endif # Uniconc
+
+#
+# These globals for -C
+#
+global iconc, iconc_links, iconc_parsed, iconc_imports
+global iconc_posixloc, iconc_parsed_posix, iconc_perifile_idx
+
 
 link basename, io
 
@@ -88,7 +86,6 @@ procedure iwrites(args[])
   return args[-1]|""
 end
 
-$ifdef Uniconc
 procedure iconc_make_exename_opt(args)
    local rslt
    local i, arg
@@ -106,9 +103,7 @@ procedure iconc_make_exename_opt(args)
       }
    return rslt
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure ipaths_get()
    static rslt
    local binpath, pathstr, pathsep, f
@@ -136,9 +131,7 @@ procedure ipaths_get()
       }
    return rslt
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure lpaths_get()
    static rslt
    local binpath, pathstr, pathsep, f
@@ -171,9 +164,7 @@ procedure lpaths_get()
       }
    return rslt
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure calc_posix_loc()
    if (bpath := (&features ? (="Binaries at " & tab(0)))) |
       ((f := open((bpath := getpaths()) ||
@@ -182,9 +173,7 @@ procedure calc_posix_loc()
          iconc_posixloc := (bpath || "../ipl/procs/posix.icn")
          }
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure iconc_linkref_resolve(srcfname, ref)
    static lpaths, sep
    local i, f, path, base, comps, rslt
@@ -290,9 +279,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
    # write("mdw: link-ref: \"" || lpaths[i] || sep || ref || ".icn\".");
    return rslt
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure iconc_importref_resolve(ref)
    static sep, ipaths
    local i, k, f, entry, rslt
@@ -347,9 +334,7 @@ procedure iconc_importref_resolve(ref)
 
    return rslt
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure iconc_yyparse(fname, tmplist)
    # write("mdw: iconc_yyparse(" || fname || ")...")
    yyfilename := outfilename := fname
@@ -377,9 +362,7 @@ procedure iconc_yyparse(fname, tmplist)
       close(yyout)
    reinitialize()
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure get_abs_file_name(fname)
     local pair, cwd, rslt
 
@@ -394,7 +377,6 @@ procedure get_abs_file_name(fname)
     rslt ||:= pair[2]
     return rslt
 end
-$endif # Uniconc
 
 
 #
@@ -434,11 +416,7 @@ end
 procedure unicon_usage(continue_flag)
    local f
    if \continue_flag then f := iwrite else f := istop
-   msg := "Usage: unicon [-cB"
-$ifdef Uniconc
-   msg ||:= "C"
-$endif
-   msg ||:= "stuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n   _
+   msg := "Usage: unicon [-cBCstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n   _
 	     [--help] [-version] [-v i] file... [-x args]"
    f(msg)
 end
@@ -469,9 +447,7 @@ procedure unicon_help()
 end
 
 procedure unicon(argv)
-$ifdef Uniconc
    local tmpfnames, tmpopt
-$endif # Uniconc
 
    initialize()
    if *argv = 0 then {
@@ -479,13 +455,12 @@ $endif # Uniconc
       }
    EmptyNode := leaf(N_Empty)
    /yydebug := 0
-$ifdef Uniconc
+
    tmpfnames := []
    iconc_links := table()
    iconc_parsed := table()
    iconc_imports := table()
    ca_init()
-$endif # Uniconc
 
    every i := 1 to *argv do {
       if \exec then next            # after -x, args are for execution
@@ -504,7 +479,6 @@ $endif # Uniconc
 	       uni_predefs[sym] := def
 	       }
 	    }
-$ifdef Uniconc
          else if (match ("-C", argv[i])) then {
             #
             # Generate code suitable for consumption by iconc.
@@ -521,20 +495,17 @@ $ifdef Uniconc
                icontopt ||:= tmpopt
             calc_posix_loc()
             }
-$endif # Uniconc
 	 else
 	 case argv[i] of {
 	 "-c"   : {
 	    sysok := &null
 	    if comp = 0 then comp := -1        # don't make exe
-$ifdef Uniconc
             if \iconc then {
                if /icontopt then
                   icontopt := "-c "
                else
                   icontopt ||:= "-c "
                }
-$endif # Uniconc
 	    }
 	 "-quiet"  : loud := &null
 	 "-log"  : {
@@ -593,11 +564,9 @@ $endif # Uniconc
 	 # do not translate .u files
 	 if map(fName[find(".", fName)+1 : 0]) == ("u"|"u1"|"u2") then {
 	     linkline ||:= " " || quotes(fName)
-$ifdef Uniconc
              if \iconc then {
                 insert(iconc_links, fName)
                 }
-$endif # Uniconc
 	     next
 	 }
 	 else {
@@ -607,11 +576,10 @@ $endif # Uniconc
 	     /translateducode := []
 	     put(translateducode, ucodefile)
 	 }
-$ifdef Uniconc         
-         if \iconc then
+         if \iconc then {
             # mark this file as parsed
             insert(iconc_parsed, get_abs_file_name(fName))
-$endif # Uniconc
+	    }
 
 	 yyfilename := outfilename := fName
 	 yyin := ""
@@ -624,10 +592,8 @@ $endif # Uniconc
 	    tmpname := tempname("uni",,temppath,5)
 	    yyout := open(tmpname, "w") |
 	       stop("can't open temporary file ",tmpname," for writing")
-$ifdef Uniconc
             put(tmpfnames, tmpname)
             ca_assoc(yyfilename, tmpname) 
-$endif # Uniconc
 	    }
 	 else yyout := &output
 
@@ -657,19 +623,14 @@ $endif # Uniconc
 	 }
 	 if find("wicont", selecticont()) then
             delay(1000)
-$ifdef Uniconc
          if /iconc then {
-$endif # Uniconc
 	    /tmpname | remove(tmpname) |
 	    iwrite(&errout,"remove ", image(tmpname), " fails")
-$ifdef Uniconc
             }
-$endif # Uniconc
 	 reinitialize()
      }
   }
 
-$ifdef Uniconc
    #
    # If this output is intended for consumption by iconc, suck in
    # all files associated with link-refs and import-refs, and yyparse
@@ -794,10 +755,10 @@ $ifdef Uniconc
 #          every remove(!tmpfnames)
 #      else
 #          errors +:= 1
-if not (rv = 0) then errors +:= 1
+      if not (rv = 0) then errors +:= 1
       }
   else
-$endif # Uniconc
+
   if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
       cmd := selecticont()
       cmd ||:= " "
@@ -904,12 +865,11 @@ $endif
 end
 
 procedure writelink(dir, s)
-$ifdef Uniconc
-   if \iconc then
+   if \iconc then {
       # do not generate linkrefs in 
       # code that will be sent to iconc...
       return
-$endif # Uniconc
+      }
    if map(s[-4:0]) == ".icn" then
       s[-4:0] := ""
    write(yyout,"link \"",canonize(dir),map(s,"\\","/"),"\"")

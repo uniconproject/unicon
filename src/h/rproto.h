@@ -917,6 +917,7 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    int	Ocreate			(word *entryp, Fargs);
    int	Oescan			(int nargs, Fargs);
    int	Ofield			(int nargs, Fargs);
+   int	Omkrec			(int nargs, Fargs);
    int	Olimit			(int nargs, Fargs);
    int	Ollist			(int nargs, Fargs);
 
@@ -927,8 +928,6 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
    #endif				/* MultiThread */
 
 #endif					/* COMPILER */
-
-   int	Omkrec			(int nargs, dptr Fargs);
 
 /* dynamic records */
 struct b_proc *dynrecord(dptr s, dptr fields, int n);

@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.21 2009-01-07 11:42:14 jeffery Exp $
+# $Id: top.mak,v 1.22 2009-02-26 19:03:26 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -49,7 +49,10 @@ config/unix/$(name)/status src/h/define.h:
 Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-		sh ./configure
+		$(MAKE) cfg
+
+cfg:
+		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 Thin-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -60,7 +63,7 @@ Thin-Configure:	config/unix/$(name)/status
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
-		sh ./configure
+		$(MAKE) cfg
 
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -72,13 +75,13 @@ V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		-cd src/lib/voice;		$(MAKE)
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-		sh ./configure
+		$(MAKE) cfg
 
 VX-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		-cd src/lib/voice;		$(MAKE)
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
-		sh ./configure
+		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 
 # Get the status information for a specific system.

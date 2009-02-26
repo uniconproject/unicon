@@ -231,11 +231,9 @@ procedure Progend(x1)
       every thePackage.insertsym(!package_level_syms)
       }
 
-$ifdef Uniconc
   if \iconc then  {
      iconc_prep_parse_tree(&null, x1)
      }
-$endif # Uniconc
 
   #
   # generate output
@@ -352,14 +350,13 @@ invocop  : IDENT ;
 	 | STRINGLIT COLON INTLIT {$$ := node("invocop3", $1,$2,$3);} ;
 
 package  : PACKAGE lnkfile {
-$ifdef Uniconc
    if \thePackage then {
       if not (thePackage.name == $2.s) then {
          yyerror(fName || " cannot be in both package "|| thePackage.name ||
             " and package " || $2.s)
          $$ := EmptyNode
          }
-      else {
+      else { # this branch allowed for -C / iconc
          thePackage.insertfname(fName)
          thePackage.add_imported()
          }
@@ -370,19 +367,6 @@ $ifdef Uniconc
       thePackage.insertfname(fName)
       thePackage.add_imported()
       }
-$else
-   if \thePackage then {
-      yyerror(fName || " cannot be in both package "|| thePackage.name ||
-         " and package " || $2.s)
-      $$ := EmptyNode
-      }
-   else {
-      $$ := node("package", $1,$2);
-      thePackage := Package($2.s)
-      thePackage.insertfname(fName)
-      thePackage.add_imported()
-      }
-$endif # Uniconc
    } ;
 
 import: IMPORT lnklist {
@@ -402,9 +386,8 @@ global	: GLOBAL idlist { $$ := node("global", $1,$2) } ;
 
 record	: RECORD IDENT LPAREN fldlist RPAREN {
 		$$ := declaration($2,$4,$1,$3,$5)
-$ifdef Uniconc
-      ca_add_proc(yyfilename, $2.s)
-$endif
+		if \iconc then
+		   ca_add_proc(yyfilename, $2.s)
 		} ;
 
 fldlist	: { $$ := EmptyNode } ;
@@ -428,9 +411,8 @@ meth	: methhead SEMICOL locals initial procbody END {
 
 prochead: PROCEDURE IDENT LPAREN arglist RPAREN {
 		$$ := declaration($2, $4, $1, $3, $5)
-$ifdef Uniconc
-      ca_add_proc(yyfilename, $2.s)
-$endif
+		if \iconc then
+		   ca_add_proc(yyfilename, $2.s)
 		} ;
 
 methhead: METHOD IDENT LPAREN arglist RPAREN {
@@ -504,11 +486,7 @@ expr1a	: expr1 ;
 expr1	: expr2a ;
 	| expr2a SWAP expr1      { $$ := node("swap", $1,$2,$3);} ;
 	| expr2a ASSIGN expr1    { 
-$ifdef Uniconc
-          $$ := mdw_assign(node("assign",$1,$2,$3));
-$else
-          $$ := node("assign",$1,$2,$3);
-$endif # Uniconc
+          $$ := parenthesize_assign(node("assign",$1,$2,$3));
           } ;
 	| expr2a REVSWAP expr1   { $$ := node("revswap", $1,$2,$3);} ;
 	| expr2a REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3);} ;
@@ -647,46 +625,22 @@ expr11	: literal ;
 	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3);} ;
 	| expr11 LBRACE pdcolist RBRACE { $$ := node("Pdco1", $1,$2,$3,$4);} ;
 	| expr11 LPAREN exprlist RPAREN {
-$ifdef Uniconc
            $$ := SimpleInvocation($1,$2,$3,$4);
-$else
-           $$ := node("invoke",$1,$2,$3,$4);
-$endif # Uniconc
       } ;
 	| expr11 DOLLAR INITIALLY LPAREN exprlist RPAREN {
-$ifdef Uniconc
-	   $$ := InvocationNodeShim($1,$2,$3,$4,$5,$6)
-$else
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6)
-$endif # Uniconc
 	   } ;
 	| expr11 DOLLAR IDENT LPAREN exprlist RPAREN {
-$ifdef Uniconc
-	   $$ := InvocationNodeShim($1,$2,$3,$4,$5,$6)
-$else
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6)
-$endif # Uniconc
 	   } ;
 	| expr11 DOLLAR IDENT DOT INITIALLY LPAREN exprlist RPAREN {
-$ifdef Uniconc
-	   $$ := InvocationNodeShim($1,$2,$3,$4,$5,$6,$7,$8)
-$else
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6,$7,$8)
-$endif # Uniconc
 	   } ;
 	| expr11 DOLLAR IDENT DOT IDENT LPAREN exprlist RPAREN {
-$ifdef Uniconc
-	   $$ := InvocationNodeShim($1,$2,$3,$4,$5,$6,$7,$8)
-$else
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6,$7,$8)
-$endif # Uniconc
 	   } ;
 	| expr11 DOT IDENT {
-$ifdef Uniconc
            $$ := FieldRef($1,$2,$3);
-$else
-           $$ := Field($1,$2,$3) 
-$endif
       } ;
 	| packageref;
 	| expr11 DOT INITIALLY { $$ := Field($1,$2,$3) } ;
@@ -752,8 +706,12 @@ expr	: error { $$ := node("error"); } ;
 
 %%
 
-$ifdef Uniconc
-procedure mdw_assign(nd)
+#
+# This procedure parenthesizes the right-hand side of an expression,
+# apparently to simplify or correct any precedence or semantic issues
+# when passing the code on to iconc.
+#
+procedure parenthesize_assign(nd)
    local rhs
 
    if /iconc then
@@ -769,14 +727,10 @@ procedure mdw_assign(nd)
    nd.children[3] := rhs
    return nd
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure FieldRef(lhs, dot, rhs)
-   if /iconc then
-      return Field(lhs, dot, rhs);
-   if (type(lhs) ~== "treenode") then
-      return Field(lhs, dot, rhs);
+   if /iconc | (type(lhs) ~== "treenode") then
+      return Field(lhs, dot, rhs)
 
    if (lhs.label == "invoke") then {
       tmpcount +:= 1;
@@ -787,7 +741,6 @@ procedure FieldRef(lhs, dot, rhs)
       }
    return Field(lhs, dot, rhs)
 end
-$endif # Uniconc
 
 procedure InvocationNode(args[])
    tmpcount +:= 1
@@ -805,23 +758,30 @@ procedure InvocationNode(args[])
        }
        else lparen := "("
    }
-   if *args = 6 then
+   if *args = 6 then {
        return node("Paren",lparen,node("invoke",
-	  Field(Field(n1, ".", "__m"), "." , args[3]),
+		    # iconc uses no __m business
+		   (if /iconc then Field(Field(n1, ".", "__m"), "." , args[3])
+			      else Field(n1, ".", args[3])),
+
 	     args[4], node("exprlist",
 	     if n1 === args[1] then args[1] else "__"||tmpcount,
 	     if args[5] === EmptyNode then EmptyNode else ",",args[5]),args[6])
 	     ,")")
-   else return  node("Paren",lparen,node("invoke",Field(Field(
+	}
+   else {
+      if /iconc then
+	 return  node("Paren",lparen,node("invoke",Field(Field(
 			  Field(n1,".", "__m"),
 			 "." , args[3]),".",args[5]),
 		       args[6], node("exprlist",
 				if n1 === args[1] then args[1] else "__"||tmpcount,
 				if args[7] === EmptyNode then EmptyNode else ",",args[7]),args[8])
 		      ,")")
+      else return SuperMethodInvok ! args
+   }
 end
 
-$ifdef Uniconc
 procedure SimpleInvocation(expr11, lparen, args, rparen)
    if /iconc then
       return node("invoke", expr11, lparen, args, rparen)
@@ -856,9 +816,7 @@ procedure SimpleInvocation(expr11, lparen, args, rparen)
       }
    return node("invoke", expr11, lparen, args, rparen)
 end
-$endif # Uniconc
 
-$ifdef Uniconc
 procedure SuperMethodInvok(args[])
    tmpcount +:= 1
    if (type(args[1]) == "token") & (args[1].tok = IDENT) then {
@@ -887,49 +845,6 @@ procedure SuperMethodInvok(args[])
       if args[7] === EmptyNode then EmptyNode else ",", args[7]), args[8]),
       ")", ))
 end
-$endif # Uniconc
-
-$ifdef Uniconc
-procedure InvocationNodeShim(args[])
-   if /iconc then
-      return InvocationNode ! args
-
-   tmpcount +:= 1
-   if type(args[1]) == "token" & (args[1].tok = IDENT) then {
-      n1 := args[1]
-      lparen := copy(args[1])
-      lparen.tok := LPAREN
-      lparen.s := "("
-      }
-   else {
-      n1 := node("Paren","(",node("assign","__"||tmpcount,":=",args[1]),")")
-      if lparen := Clone1stToken(args[1]) then {
-         lparen.tok := LPAREN
-         lparen.s := "("
-         }
-      else
-         lparen := "("
-      }
-   if *args = 6 then {
-      return node("Paren", lparen, node("invoke",
-         Field(n1, ".", args[3]),
-         args[4], node("exprlist",
-         if n1 === args[1] then args[1] else "__" || tmpcount,
-         if args[5] === EmptyNode then EmptyNode else ",", args[5]),
-         args[6]), ")")
-      }
-   else {
-      # original
-      # return node("Paren", lparen, node("invoke",
-      #    Field(Field(n1, ".", args[3]), ".", args[5]),
-      #    args[6], node("exprlist",
-      #    if n1 === args[1] then args[1] else "__" || tmpcount,
-      #    if args[7] === EmptyNode then EmptyNode else ",", args[7]), args[8]),
-      #    ")",)
-      return SuperMethodInvok ! args
-      }
-end
-$endif # Uniconc
 
 procedure isloco(node, s)
 case type(node) of {

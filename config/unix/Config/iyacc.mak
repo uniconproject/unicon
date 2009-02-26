@@ -4,7 +4,6 @@ include ../../Makedefs
 
 DEST	      = .
 HDRS	      = defs.h
-LDFLAGS	      =
 LIBS	      =
 LINKER	      = $(CC)
 MAKEFILE      = Makefile
@@ -45,11 +44,11 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo -n "Loading $(PROGRAM) ... "
 		@$(LINKER) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
 		@cp iyacc test
-		@cd test; make
+		@cd test; $(MAKE)
 		@echo "done"
 
 Clean:;		@rm -f $(OBJS) $(PROGRAM)
-		@cd test; make clean
+		@cd test; $(MAKE) clean
 
 clobber:;	@rm -f $(OBJS) $(PROGRAM)
 
@@ -70,7 +69,7 @@ program:        $(PROGRAM)
 tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
 
 test:		$(PROGRAM)
-		@cd test; make
+		@cd test; $(MAKE)
 
 ###
 closure.o: defs.h

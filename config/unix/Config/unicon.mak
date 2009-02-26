@@ -18,50 +18,13 @@ else
 endif
 export PATH:=$(BIN):$(PATH)
 
-U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u
+U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
 
 UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn ca.icn
 
-unicon$(EXE): Unicon
-
-#unicon: $(U)
-#	$(ICONT) $(U)
-#	$(CP) unicon$(EXE) $(BIN)
-
-Unicon:
-	$(TOUCH) idol.u
-	-(test -f ./.dummy && make unicon-fresh) || (test -f ./.dummy2 && make unicon-update) || (make unicon-fresh)
-
-unicon-fresh: $(U)
-#	$(RM) unigram.icn
-#	$(IYACC) -i unigram.y
-	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u
-	$(CP) unicon$(EXE) $(BIN)
-	$(RM) ./.dummy
-	$(TOUCH) ./.dummy2
-
-unicon-update: $(U)
+unicon: $(U)
 	$(ICONT) $(U)
 	$(CP) unicon$(EXE) $(BIN)
-
-#uniconc: $(UCFILES)
-#	$(RM) $(U) unigram.icn
-#	$(IYACC) -i unigram.y
-#	$(UNICON) -DUniconc $(UCFILES) -o unicon
-#	$(CP) unicon $(BIN)
-
-uniconc:
-	-(test -f ./.dummy && make uniconc-update) || (make uniconc-fresh)
-
-uniconc-fresh: $(UCFILES)
-#	$(RM) unigram.icn
-#	$(IYACC) -i unigram.y
-	$(UNICON) -DUniconc $(UCFILES) -o unicon
-	$(CP) unicon $(BIN)
-	$(TOUCH) ./.dummy
-
-uniconc-update: $(U)
-	$(UNICON) -DUnicon $(U) -o unicon
 
 # A windows-specific build option
 wunicon$(EXE): wunicon

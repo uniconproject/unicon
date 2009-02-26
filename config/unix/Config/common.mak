@@ -12,12 +12,12 @@ common:		doincl.o patchstr.o
 		cp patchstr ../../bin
 
 gdbm:
-	cd ../gdbm; ./configure; $(MAKE) libgdbm.a
+	cd ../gdbm; $(MAKE) libgdbm.a
 	cp ../gdbm/libgdbm.a ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/libgdbm.a)
 
 libtp:
-	cd ../libtp; ./configure; $(MAKE)
+	cd ../libtp; $(MAKE)
 	cp ../libtp/libtp.a ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/libtp.a)
 
@@ -42,7 +42,7 @@ dlrgint.o: ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
 xwindow.o: ../h/graphics.h ../h/xwin.h
 
 rswitch.o: FORCE
-	$(CC) -c rswitch.[cs]
+	$(CC) $(CFLAGS) -c rswitch.[cs]
 FORCE:
 
 #  The following section is needed if changes are made to the Icon grammar,

@@ -5,10 +5,9 @@ include ../../Makedefs
 
 srcdir = .
 
-CC = gcc
-
 MAKEINFO = makeinfo
 TEXI2DVI = texi2dvi
+RANLIB = ranlib
 
 DEFS =
 
@@ -16,8 +15,6 @@ DEFS =
 LIBS =  -lc
 
 # SunOS users might wish to add '-fpcc-struct-return' to CFLAGS. see INSTALL.
-CFLAGS = -O
-LDFLAGS =
 
 # Common prefix for installation directories
 prefix = /usr/local
@@ -78,10 +75,9 @@ OBJS = $(DBM_OF) $(NDBM_OF) $(GDBM_OF)
 HDRS = gdbmdefs.h extern.h gdbmerrno.h systems.h dbm.h ndbm.h gdbmconst.h \
 	proto.h
 
-MSCFILES = COPYING ChangeLog Makefile.in README gdbm.3 gdbm.texinfo \
+MSCFILES = COPYING ChangeLog Makefile README gdbm.3 gdbm.texinfo \
 	gdbm.info NEWS INSTALL gdbm.proto gdbm.proto2 conv2gdbm.c \
-	configure configure.in alloca.c getopt.c getopt.h samp1.cc \
-	autoconf.h.in
+	alloca.c getopt.c getopt.h samp1.cc autoconf.h
 
 DISTFILES = $(SRCS) $(HDRS) $(MSCFILES)
 

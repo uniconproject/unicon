@@ -6,21 +6,10 @@ include ../../Makedefs
 
 SHELL = /bin/sh
 
-top_srcdir = .
-srcdir = .
-prefix = /usr/local
-exec_prefix = ${prefix}
-libdir = ${exec_prefix}/lib
-includedir = ${prefix}/include
-
-AUTOCONF = autoconf
-AUTOHEADER = autoheader
-
-CC = gcc
-
 RM = rm -f
 AR = ar
 SHTOOL = shtool/shtool
+RANLIB=ranlib
 
 CPPFLAGS = 
 LIBS = -lnsl 
@@ -67,7 +56,7 @@ distclean: clean
 	    (cd $$d && $(MAKE) $@); \
 	  fi; \
 	done
-	$(RM) Makefile config.h config.status config.cache config.log libtp.a
+	$(RM) Makefile libtp.a
 
 dist: Makefile distclean
 	$(SHTOOL) fixperm -v *; \
@@ -75,20 +64,6 @@ dist: Makefile distclean
 	echo "Building libtp-$V.tar.gz"; \
 	$(SHTOOL) tarball -o libtp-$V.tar.gz -c 'gzip -9' \
                           -e 'CVS,\.cvsignore,\.[oa]$$,\.core$$,~$$,^\.#' .
-
-Makefile: Makefile.in config.status
-	cd $(top_srcdir) && $(SHELL) ./config.status
-
-config.status: $(srcdir)/configure 
-	$(SHELL) ./config.status --recheck
-
-#
-# Uncomment the following dependency if you have autoconf and wish to change
-# the configure.in.  Its commented out because not all platforms have autoconf.
-#
-
-# $(srcdir)/configure: $(srcdir)/configure.in
-#	cd $(srcdir) && $(AUTOHEADER) && $(AUTOCONF)
 
 tp.o: tp.c config.h tp.h util.h uri/uri.h
 tpdunix.o: tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h

@@ -1,8 +1,7 @@
-/**********************************************************************\
-* tp.h: definitions for libtp transport protocol library               *
-* -------------------------------------------------------------------- *
-*      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
-\**********************************************************************/
+/*
+ * tp.h: definitions for libtp transport protocol library
+ *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
 #ifndef _TP_H
 #define _TP_H 1

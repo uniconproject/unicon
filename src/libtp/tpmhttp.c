@@ -1,17 +1,14 @@
-/**********************************************************************\
-* tpmhttp.c: HTTP (RFC 1945) Method for libtp                          *
-* -------------------------------------------------------------------- *
-*      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
-\**********************************************************************/
+/*
+ * tpmhttp.c: HTTP (RFC 1945) Method for libtp
+ *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
 /* TODO:
  *
  * - Do HTTP authentication if necessary
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>

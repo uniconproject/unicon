@@ -1,15 +1,11 @@
-/**********************************************************************\
-* tpdunix.c: Unix discipline for libtp.                                *
-* -------------------------------------------------------------------- *
-*      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
-\**********************************************************************/
+/*
+ * tpdunix.c: Unix discipline for libtp.
+ *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
 #define _UNIXDISC_C_
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
 #include "tp.h"
 #include "util.h"
 #include "tpdunix.h"
@@ -400,7 +396,7 @@ static Tpunixdisc_t _tpdunix =
 { { unixconnect, unixclose, unixread, unixreadln, 
     unixwrite, unixmem, unixfree, unixexcept, unixnewdisc, 0 }, 0 };
 
-Tpunixdisc_t* TpdUnix = &_tpdunix;
+Tpdisc_t* TpdUnix = (Tpdisc_t *)&_tpdunix;
   
 int tp_fileno(Tp_t *t)
 {

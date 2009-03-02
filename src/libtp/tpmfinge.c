@@ -1,12 +1,9 @@
-/**********************************************************************\
-* tpmfinger.c: Method for finger protocol (RFC1288).                   *
-* -------------------------------------------------------------------- *
-*	 Copyright 2000 by Steve Lumos.  All rights reserved.          *
-\**********************************************************************/
+/*
+ * tpmfinge.c: Method for finger protocol (RFC1288).
+ *	 Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>

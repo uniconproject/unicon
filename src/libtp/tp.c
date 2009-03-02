@@ -1,15 +1,11 @@
-/**********************************************************************\
-* tp.c: User functions for libtp.                                      *
-* -------------------------------------------------------------------- *
-*	 Copyright 2000 by Steve Lumos.  All rights reserved.          *
-\**********************************************************************/
+/*
+ * tp.c: User functions for libtp.
+ *	 Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
 #include <stdio.h>
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
 #include "tp.h"
 #include "util.h"
 

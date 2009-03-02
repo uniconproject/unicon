@@ -1,14 +1,10 @@
-/**********************************************************************\
-* util.c: Replacements for standard functions that don't yet exist on  *
-*         everything.                                                  *
-* -------------------------------------------------------------------- *
-*      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
-\**********************************************************************/
+/*
+ * util.c: Replacements for standard functions that don't yet exist on
+ *         everything.
+ *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
 #include "tp.h"
 
 #ifdef STDC_HEADERS

@@ -1,12 +1,9 @@
-/**********************************************************************\
-* tpmpop.c: Post Office Protocol (RFC 1939) support for libtp.         *
-* -------------------------------------------------------------------- *
-*      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
-\**********************************************************************/
+/*
+ * tpmpop.c: Post Office Protocol (RFC 1939) support for libtp.
+ *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>

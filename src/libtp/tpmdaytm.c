@@ -1,13 +1,9 @@
-/**********************************************************************\
-* tpmdaytime.c: RFC 876 protocol METHOD for libtp.                     *
-* -------------------------------------------------------------------- *
-*	 Copyright 2000 by Steve Lumos.  All rights reserved.          *
-\**********************************************************************/
+/*
+ * tpmdaytime.c: RFC 876 protocol METHOD for libtp.
+ *	 Copyright 2000 by Steve Lumos.  All rights reserved.
+ */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
 #include "tp.h"
 #include "util.h"
 

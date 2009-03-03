@@ -947,6 +947,36 @@ void scrubcursor(wbp w)
 				       wd->colors[wc->fg].c ^ wd->colors[wc->bg].c);
    }
 
+
+/*
+* release_3d_resources - free all resources used for 3D graphics
+*/
+ #ifdef Graphics3D
+ int release_3d_resources(wbp w)
+ {
+    int i;
+    wcp wc = w->context;
+    wdp wd = w->window->display;
+    
+       /* Free textures from memory */
+   for (i=0; i<wc->curtexture; i++) {
+      #if HAVE_LIBGL
+      free(wc->stex[i].tex);
+      #endif					/* HAVE_LIBGL */
+        wc->stex[i].w=0;
+   }
+   free(wc->stex);
+   i = wc->selectionnamecount;
+   while (i)
+      free(wc->selectionnamelist[i--]);
+   free(wc->selectionnamelist);
+   free(wc->texName);
+   free(wc->texcoords);
+   glXDestroyContext( wd->display, wc->ctx);
+    
+ }
+ #endif						/* Graphics3D */
+ 
 /*
  * wclose - close a window.  If is a real on-screen window,
  * wait for a DestroyNotify event from the server before returning.
@@ -971,6 +1001,10 @@ wbp w;
    while (w->window->children) {
       tmp_wb = w->window->children->child;
       wbl = w->window->children;
+#ifdef Graphics3D
+      if(tmp_wb->window->is_3D)
+	 release_3d_resources(tmp_wb);
+#endif						/* Graphics3D */
       w->window->children = w->window->children->next;
       w->window->display->refcount--;
       tmp_wb->refcount--;
@@ -1005,22 +1039,10 @@ wbp w;
       }
 
 #ifdef Graphics3D
-   /* Free textures from memory */
-   for (i=0; i<wc->curtexture; i++) {
-#if HAVE_LIBGL
-        free(wc->stex[i].tex);
-#endif					/* HAVE_LIBGL */
-        wc->stex[i].w=0;
-        }
-   free(wc->stex);
-   i = wc->selectionnamecount;
-   while (i)
-      free(wc->selectionnamelist[i--]);
-   free(wc->selectionnamelist);
-   free(wc->texName);
-   free(wc->texcoords);
-#endif					/* Graphics3D */
-
+   if (w->window->is_3D)
+      release_3d_resources(w);
+#endif						/* Graphics3D */
+   
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
       XDestroyWindow(stddpy,stdwin);
@@ -1038,7 +1060,7 @@ wbp w;
 /*      free_window(ws);  */
       free_binding(w);
       }
-
+ 
    return 0;
    }
 /*
@@ -1273,9 +1295,11 @@ int wmap(wbp w)
 
    STDLOCALS(w);
 #ifdef Graphics3D
-   wc->maxstex=16;
-   wc->stex = (struct _savetexture *) 
+   if (ws->is_3D) {
+      wc->maxstex=16;
+      wc->stex = (struct _savetexture *) 
                  malloc(wc->maxstex*sizeof(struct _savetexture));
+      }
 #endif					/* Graphics3D */
 
    /*

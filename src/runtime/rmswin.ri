@@ -1097,6 +1097,33 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 }
 
 /*
+ * release_3d_resources - free all resources used for 3D graphics
+ */
+#ifdef Graphics3D
+int release_3d_resources(wbp w)
+{
+   int i;
+   wcp wc = w->context;
+   
+   /* Free textures from memory */
+   for (i=0; i<wc->curtexture; i++) {
+      #if HAVE_LIBGL
+      free(wc->stex[i].tex);
+      #endif					/* HAVE_LIBGL */
+        wc->stex[i].w=0;
+   }
+   
+   free(wc->stex);
+   i = wc->selectionnamecount;
+   while (i)
+      free(wc->selectionnamelist[i--]);
+   free(wc->selectionnamelist);
+   free(wc->texName);
+   free(wc->texcoords);
+}
+#endif						/* Graphics3D */
+
+/*
  * wclose - make sure the window goes away - no questions asked
  */
 int wclose(wbp w)
@@ -1112,6 +1139,10 @@ int wclose(wbp w)
    while (w->window->children) {
       tmp_wb = w->window->children->child;
       wbl = w->window->children;
+#ifdef Graphics3D
+      if(tmp_wb->window->is_3D)
+	 release_3d_resources(tmp_wb);
+#endif						/* Graphics3D */      
       w->window->children = w->window->children->next;
       tmp_wb->refcount--;
       tmp_wb->window->parent=NULL;
@@ -1143,16 +1174,12 @@ int wclose(wbp w)
      w->window->parent=NULL;
      p->refcount--;
    }
-
-   /* Free textures from memory */
-   for (i=0; i<wc->curtexture; i++) {
-#if HAVE_LIBGL
-        free(wc->stex[i].tex);
-#endif					/* HAVE_LIBGL */
-        wc->stex[i].w = 0;
-        }
-   free(wc->stex);
-
+   
+#ifdef Graphics3D
+   if (w->window->is_3D)
+      release_3d_resources(w);
+#endif						/* Graphics3D */
+ 
    ws->inputmask &= ~WindowClosureMask;
 
    if (ws->win && ws->refcount > 1) {

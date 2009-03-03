@@ -7,9 +7,9 @@ int determinematerial(char *, C_integer, C_integer, C_integer, C_integer);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type);
 int texture(int width, int height, GLubyte *tex, int texmode);
 int texture_24img(wbp w, struct imgdata im);
-int textureimg(wbp w, int width, int height,
-               struct palentry *e, unsigned char *s, word len);
-
+int textureimg(wbp w, int width, int height, 
+		struct palentry *e, unsigned char *s, word len);
+		  
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
    FILE *f;
@@ -388,6 +388,7 @@ void sphere(double radius, double x, double y, double z, int slices, int rings, 
       gluQuadricTexture(qobj, GL_TRUE);
       }
    gluSphere(qobj, radius, slices, rings);
+   gluDeleteQuadric(qobj);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -426,6 +427,7 @@ void cylinder(double radius1, double radius2, double height,
      }
    /* draw the cylinder */
    gluCylinder(qobj, radius1, radius2, height, slices, rings);
+   gluDeleteQuadric(qobj);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -462,6 +464,7 @@ void disk(double radius1, double radius2, double angle1, double angle2,
       gluPartialDisk(qobj, radius1, radius2, slices, rings, angle1, angle2);
    else
       gluDisk(qobj, radius1, radius2, 15, 5);
+   gluDeleteQuadric(qobj);
    if (gen == 1){
       glEnable(GL_TEXTURE_GEN_S);
       glEnable(GL_TEXTURE_GEN_T);
@@ -2719,6 +2722,8 @@ int fileimage(wbp w, char* filename)
    if ((r = readGIF(filename, 0, &im)) == Succeeded){
       i = textureimg(w, im.width, im.height, im.paltbl, im.data,
                      (word)im.width*(word)im.height);
+      free(im.data);
+      free(im.paltbl);
 
       }
    else {

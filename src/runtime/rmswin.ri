@@ -3700,13 +3700,19 @@ wbp w;
       wc->texmode = wc2->texmode;
 
 /* unfinished: make safe copy of context (textures, etc) */
-wc->nalced = wc2->nalced;
+      wc->nalced = wc2->nalced;
 #if HAVE_LIBGL
-wc->texName = malloc(wc->nalced * sizeof(GLuint));
+      wc->texName = malloc(wc->nalced * sizeof(GLuint));
+      if (wc->texName == NULL) syserr("internal memory error in Clone()");
 #endif					/* HAVE_LIBGL */
       wc->numtexcoords = wc2->numtexcoords;
       wc->ntextures = wc2->ntextures;
-      for (i=0; i<wc->numtexcoords; i++) wc->texcoords[i] = wc2->texcoords[i];
+      wc->ntexcoordsalced = wc2->ntexcoordsalced;
+      wc->texcoords = malloc(wc->ntexcoordsalced * sizeof (double));
+      if (wc->texcoords == NULL) syserr("internal memory error 2 in Clone()");
+      for (i=0; i<wc->numtexcoords; i++) {
+	 wc->texcoords[i] = wc2->texcoords[i];
+	 }
 #if HAVE_LIBGL
       for (i=0; i<256; i++) wc->texName[i] = wc2->texName[i];
 #if 0

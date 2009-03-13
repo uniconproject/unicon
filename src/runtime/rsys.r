@@ -1510,6 +1510,9 @@ struct ptstruct *ptopen(char *command)
 {
    int ac;
    char **av;
+#ifdef MacOSX
+   char *tmps;
+#endif					/* MacOSX */
 #if NT
    HANDLE hOutputReadMaster,hOutputRead,hOutputWrite;
    HANDLE hInputWriteMaster,hInputRead,hInputWrite;
@@ -1595,8 +1598,14 @@ struct ptstruct *ptopen(char *command)
    if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 	              sizeof(newPtStruct->slave_filename)) != 0) {
 #else					/* SUN */
+#ifdef MacOSX
+   if (((tmps = ptsname(newPtStruct->master_fd)) == NULL) ||
+      (strlen(tmps) > sizeof(newPtStruct->slave_filename)-1) ||
+      (!strcpy(newPtStruct->slave_filename, tmps))){
+#else					/* MacOSX */
    if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 		sizeof(newPtStruct->slave_filename)) != 0) {
+#endif					/* MacOSX */
 #endif					/* SUN */
       EXITERROR(newPtStruct);
       }

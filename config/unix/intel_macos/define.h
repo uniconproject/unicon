@@ -6,5 +6,6 @@
 #define UNIX 1
 #define NEED_UTIME
 #define NamedSemaphores
+#define MacOSX
 /* LoadFunc not implemented */
 

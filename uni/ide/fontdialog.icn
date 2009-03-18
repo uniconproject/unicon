@@ -43,9 +43,15 @@ class FontDialog : Dialog(
       self.display()
    end
 
+   method setfnt()
+      font := (\fn | "sans")
+      font ||:= "," || \fst
+      font ||:= "," || \fsz
+   end
+
    method on_edit_fontname(ev)
       fn := edit_fontname.selection_list[edit_fontname.get_selection()]
-      font := fn
+      setfnt()
       label_5.set_attribs("font="||font)
       self.init()
       self.resize()
@@ -54,7 +60,7 @@ class FontDialog : Dialog(
 
    method on_edit_fontsize(ev)
       fsz := edit_fontsize.selection_list[edit_fontsize.get_selection()]
-      font ||:= "," || fsz
+      setfnt()
       label_5.set_attribs("font="||font)
       self.init()
       self.resize()
@@ -65,7 +71,7 @@ class FontDialog : Dialog(
       fst := map(edit_fontstyle.selection_list[edit_fontstyle.get_selection()])
       if fst == "regular" then fst := &null
       else if fst == "bold italic" then fst := "bold,italic"
-      if \fst then font ||:= "," || fst
+      setfnt()
       label_5.set_attribs("font="||font)
       self.init()
       self.resize()
@@ -151,9 +157,12 @@ class FontDialog : Dialog(
       self.add(edit_fontcolor)
    end
 
-   initially
-      self.Dialog.initially()
-      font := "sans,11"
+initially
+   self.Dialog.initially()
+   fn := "sans"
+   fsz := "11"
+   font := setfnt()
+   fontcolor := "black"
 end
 
 #procedure main()

@@ -30,6 +30,11 @@ UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
 	$(UC) -o ui $(OBJ)
+ifdef _WINDOWS_
+	$(CP) ui.exe ../../bin
+else
+	$(CP) ui ../../bin
+endif
 
 ide.u: ide.icn
 	unicon -c ide
@@ -100,4 +105,10 @@ ui.u: ui.icn
 ui.exe: ui
 
 clean:
+ifdef _WINDOWS_
+	$(RM) *.u *~ uniclass.dir uniclass.pag ui.exe
+else
 	$(RM) *.u *~ uniclass.dir uniclass.pag ui
+endif
+
+

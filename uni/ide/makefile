@@ -15,6 +15,9 @@ endif
 UFLAGS=-c -u
 
 CFLAGS= -c -u
+
+CP=cp
+
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn fontdialog.icn templates.icn \
 	definitions.icn uproject.icn idol.icn preproce.icn \

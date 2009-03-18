@@ -128,7 +128,7 @@ class Mainbar(
       /findstr := ""
       oldwindow := &window
       &window := win
-	 if TextDialog(["Go to"], ["line# : "],"",1)=="Okay" then {
+	 if TextDialog(["Go to line# : "],"",1)=="Okay" then {
 	    ide.goto_line(integer(dialog_value[1]),1)
 	    }
       &window := oldwindow 
@@ -155,14 +155,15 @@ class Mainbar(
       /replacestr := ""
       oldwindow := &window
       &window := win
-       if TextDialog("Replace",["Find what: ", "Replace with: "],
-          [(\findstr | ""),""],1)=="Okay" then {
+       if TextDialog("Replace what with what: ",,
+          [(\findstr | ""),""],60)=="Okay" then {
           findstr := dialog_value[1]
-          ide.findstring(findstr)
+          replacestr := dialog_value[2]
+          if \findstr then ide.findstring(findstr)
+          first_x := ide.CurrentEditBox().cursor_x-(*dialog_value[1])
+          second_x := ide.CurrentEditBox().cursor_x
+          wu_replace(ev, first_x, second_x, replacestr)
           }
-       first_x := ide.CurrentEditBox().cursor_x-(*dialog_value[1])
-       second_x := ide.CurrentEditBox().cursor_x
-       wu_replace(ev, first_x, second_x, dialog_value[2])
       &window := oldwindow
       modified := 1
    end
@@ -189,7 +190,7 @@ class Mainbar(
       e := *m
       p1 := m[1:\first_x]
       p2 := m[\first_x+1 : e+1]
-      m := [p1 || replace_str || " " ||\p2]
+      m := [p1 || \replace_str || " " ||\p2]
       l := l[1: oldy] ||| m ||| l[oldy+1:0]
       ide.CurrentEditBox().set_contents(l) 
       ide.goto_line(oldy,1)
@@ -463,7 +464,7 @@ class Mainbar(
       local oldwindow
       oldwindow := &window
       &window := win
-         if TextDialog("Enter command line arguments: ", ,xargs,60)=="Okay" then
+         if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
          xargs := dialog_value[1]
       &window :=oldwindow   
    end

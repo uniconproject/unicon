@@ -52,7 +52,7 @@ $else # implies Windows for now
    $define PATHSEP "\\"
 $endif
 
-class UIDE : Dialog(menu_1, menu_bar, close_menu_item, exit_menu_item, 
+class UIDE : Dialog(menu_1, menu_bar, close_menu_item, 
                     file_menu, ivib_menu_item, new_menu_item, open_menu_item,
                     print_menu_item, save_menu_item, saveas_menu_item, 
                     copy_menu_item, cut_menu_item, find_menu_item, 
@@ -228,7 +228,6 @@ initially(initfile)
    return self
 end
 
-
 # These are primitive legacy Notice/TextDialog compatibility functions.
 # They need to be improved/polished and eventually moved to the gui package.
 
@@ -236,7 +235,7 @@ global dialog_value, dialog_button
 
 $define ButtonWidth	 50	# minimum button width
 $define ButtonHeight	 30	# button height
-$define FieldWidth	 10	# default field width
+$define FieldWidth	 20	# default field width
 $define OpenWidth	 50	# default field width for Open/SaveDialog
 
 $define XOff		  0	# offset for text vidgets
@@ -252,19 +251,11 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
    end
 
    method init_dialog()
-   local maxw
-      maxw := 0
-      every maxw <:= TextWidth(win, !captions)
-      maxw +:= 40
-      maxw <:= 220
-      self.resize_win(maxw, (32 * (*captions + *labels +2)))
    end
 
    method setup()
-   local i, cap
    local nlines := *captions + *labels + 2
    local label_2, text_button_1, text_field_1
-
 
       self.set_attribs("size=220," || (32 * nlines))
       every i := 1 to *captions do {
@@ -283,8 +274,8 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
 	 }
       every i := 1 to *labels do {
 	 text_field_1 := TextField()
-	 text_field_1.set_pos(100, integer((*captions + i)*100/nlines) || "%-10")
-	 text_field_1.set_size(100, 30)
+	 text_field_1.set_pos(20, integer((*captions + i)*100/nlines) || "%-10")
+	 text_field_1.set_size(180, 30)
 	 text_field_1.set_draw_border()
 	 text_field_1.set_contents("")
 	 self.add(text_field_1)
@@ -320,8 +311,6 @@ end
 procedure TextDialog(			#: text dialog
    win, captions, labels, defaults, widths, buttons, index
    )
-local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
-      cwidth, dialog, maxw, y, temp_win
 
    if type(win) ~== "window" then {
       win :=: captions :=: labels :=: defaults :=: widths :=: buttons :=:
@@ -336,6 +325,12 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    /widths := []
    /buttons := ["Okay", "Cancel"]
    /index := 1
+
+   write(image(captions))
+   write(image(labels))
+   write(image(defaults))
+   write(image(widths))
+   write(image(buttons))
 
    if type(captions) ~== "list" then captions := [captions]
    if type(labels) ~== "list" then labels := ([\labels] | [])
@@ -368,6 +363,9 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    cwidth := WAttrib(win, "fwidth")
 
    dialog := vdialog(captions, labels, buttons)
+
+   maxw := 0
+   every maxw <:= TextWidth(win, !captions)
 
    y := -lead
 
@@ -407,6 +405,7 @@ $endif
    return dialog_button
 
 end
+
 
 procedure main(argv)
    local d := argv[1]

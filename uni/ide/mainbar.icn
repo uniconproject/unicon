@@ -125,7 +125,7 @@ class Mainbar(
 
    method on_goto_line(ev)
       local oldwindow
-      /findstr := ""
+
       oldwindow := &window
       &window := win
 	 if TextDialog(["Go to line# : "],"",1)=="Okay" then {
@@ -156,10 +156,10 @@ class Mainbar(
       oldwindow := &window
       &window := win
        if TextDialog("Replace what with what: ",,
-          [(\findstr | ""),""],60)=="Okay" then {
+          [(\findstr | ""),""],1)=="Okay" then {
           findstr := dialog_value[1]
           replacestr := dialog_value[2]
-          if \findstr then ide.findstring(findstr)
+          ide.findstring(findstr)
           first_x := ide.CurrentEditBox().cursor_x-(*dialog_value[1])
           second_x := ide.CurrentEditBox().cursor_x
           wu_replace(ev, first_x, second_x, replacestr)
@@ -220,9 +220,9 @@ class Mainbar(
 	    #MsgBox.compute_and_invalidate()
             MsgBox.set_attribs("fg=" || fL[2])
             }
-         if EditBox.set_attribs("font=" || fL[1]) then {
+         if (ide.CurrentEditBox()).set_attribs("font=" || fL[1]) then {
             #EditBox.compute_and_invalidate()
-	    EditBox.set_attribs("fg=" || fL[2])
+	    (ide.CurrentEditBox()).set_attribs("fg=" || fL[2])
 	    }
          }
       dialogself.init()

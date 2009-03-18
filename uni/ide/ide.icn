@@ -522,6 +522,8 @@ class IDE (
    method handle_openfile(ev, filename)
       local line, L, nchars, fd, file, tab_label, found, which_tab
 
+      chdir(current_dir)
+
       if /filename then {
 $ifdef _UNIX
          fd := HFileDialog()
@@ -533,6 +535,7 @@ $else
          filename := WinOpenDialog(dialogself.win, "Open File ...", "", 5) | fail 
 $endif
          }
+      current_dir := filedirectory
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
          #sav := &window
          #&window  := &null
@@ -542,10 +545,10 @@ $endif
          #filename := "noname.icn"
          #new_tabitem(,1,filename,"")
          }
-      if map(filename)[-4:0] == ".icp" then { # open project
-         project := filename
-         updateproject()
-         }
+#      if map(filename)[-4:0] == ".icp" then { # open project
+#         project := filename
+#         updateproject()
+#         }
       if  filename[-2:0]==(".*") then filename := filename[1:-2] 
       file := open(filename, "ru") | {
          MsgBox.set_contents(["Could not open file: " || filename])
@@ -659,7 +662,8 @@ $endif
    # Close File Menu Item Method
    #
    method handle_closefile(ev, c)
-      \FileBrowser.nodereplace(CurrentTabItem().get_label())
+      if ide.CurrentTabItem().label ~== "scratch" then
+         \FileBrowser.nodereplace(CurrentTabItem().get_label())
       if /c then c :=  CurrentTabItem()
       if *FileTabSet.children = 1 then handle_new_menu_item()
       FileTabSet.remove(c)
@@ -1080,7 +1084,7 @@ $endif
       oldwindow := &window
       &window := dialogself.win
          CurrentEditBox().cursor_x := CurrentEditBox().cursor_y := 1
-         if TextDialog("String to seek: ",,findstr,80)=="Okay" then {
+         if TextDialog("String to seek: ",,findstr,1)=="Okay" then {
 	    dialogself.resize()
 	    findstr := dialog_value[1]
 	    findstring(findstr)
@@ -1176,6 +1180,8 @@ $endif
       while line := read(f) do
          put(fileslist,line)
       close(f)
+      chdir(current_dir)
+
 $ifdef _UNIX
       fd := HFileDialog()
       fd.show_modal()
@@ -1184,6 +1190,8 @@ $ifdef _UNIX
       filename := fd.get_result() | fail
       filedirectory := fd.get_directory()
 $else
+      current_dir := filedirectory
+
       filename := WinSaveDialog(&window, "Save file As:", "", 50) | fail
       ##if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
 $endif
@@ -1248,6 +1256,9 @@ $endif
    #
    method ProjectSave(ev)
       local fd, filename, foo, numfiles:=0
+
+      chdir(current_dir)
+
 $ifdef _UNIX
       fd := HFileDialog()
       fd.show_modal()
@@ -1260,6 +1271,8 @@ $else
       filename := WinSaveDialog(&window, "Save Project As:", "", 50) | fail
       if filename[-2:0] == ".*" then filename[-2:0] := ""
 $endif
+      current_dir := filedirectory
+
       numfiles+:=1
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
          MsgBox.set_contents(["Enter project name to save"])

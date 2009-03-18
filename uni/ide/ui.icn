@@ -251,12 +251,19 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
    end
 
    method init_dialog()
+   local maxw
+      maxw := 0
+      every maxw <:= TextWidth(win, !captions)
+      maxw +:= 40
+      maxw <:= 220
+      self.resize_win(maxw, (32 * (*captions + *labels +2)))
    end
 
    method setup()
    local i, cap
    local nlines := *captions + *labels + 2
    local label_2, text_button_1, text_field_1
+
 
       self.set_attribs("size=220," || (32 * nlines))
       every i := 1 to *captions do {
@@ -360,9 +367,6 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    cwidth := WAttrib(win, "fwidth")
 
    dialog := vdialog(captions, labels, buttons)
-
-   maxw := 0
-   every maxw <:= TextWidth(win, !captions)
 
    y := -lead
 

@@ -58,10 +58,12 @@ class IDE (
    end
 
    method on_close_btn(ev)
-      FileBrowser.nodereplace(ide.CurrentTabItem().label)
-      handle_closefile()
-      FileTabSet.set_which_one(tab_item_2)
-      FileTabSet.resize()
+      if ide.CurrentTabItem().label ~== "scratch" then {
+         FileBrowser.nodereplace(ide.CurrentTabItem().label)
+         handle_closefile()
+         FileTabSet.set_which_one(tab_item_2)
+         FileTabSet.resize()
+         }
    end
 
    method on_save_btn(ev)
@@ -662,8 +664,7 @@ $endif
    # Close File Menu Item Method
    #
    method handle_closefile(ev, c)
-      if ide.CurrentTabItem().label ~== "scratch" then
-         \FileBrowser.nodereplace(CurrentTabItem().get_label())
+      \FileBrowser.nodereplace(CurrentTabItem().get_label())
       if /c then c :=  CurrentTabItem()
       if *FileTabSet.children = 1 then handle_new_menu_item()
       FileTabSet.remove(c)

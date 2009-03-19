@@ -50,10 +50,12 @@ class Mainbar(
    )
 
    method on_close_file(ev)
-      FileBrowser.nodereplace(ide.CurrentTabItem().label)
-      ide.handle_closefile()
-      FileTabSet.set_which_one(tab_item_2)
-      FileTabSet.resize()
+      if ide.CurrentTabItem().label ~== "scratch" then {
+         FileBrowser.nodereplace(ide.CurrentTabItem().label)
+         ide.handle_closefile()
+         FileTabSet.set_which_one(tab_item_2)
+         FileTabSet.resize()
+         }
    end
 
    method on_ivib(ev)
@@ -81,11 +83,7 @@ class Mainbar(
    end
 
    method on_open_file(ev)
-      ide.handle_openfile(ev)
-      tab_item_1.set_label("Messages: (Single File Mode)")
-      DevTabSet.set_which_one(tab_item_1)
-      tab_item_1.init()
-      DevTabSet.resize()
+      ide.on_open_btn(ev)
    end
 
    method on_print_file(ev)

@@ -259,6 +259,7 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
    end
 
    method setup()
+   local i, cap
    local nlines := *captions + *labels + 2
    local label_2, text_button_1, text_field_1
 
@@ -316,6 +317,8 @@ end
 procedure TextDialog(			#: text dialog
    win, captions, labels, defaults, widths, buttons, index
    )
+local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
+      cwidth, dialog, maxw, y, temp_win
 
    if type(win) ~== "window" then {
       win :=: captions :=: labels :=: defaults :=: widths :=: buttons :=:
@@ -330,12 +333,6 @@ procedure TextDialog(			#: text dialog
    /widths := []
    /buttons := ["Okay", "Cancel"]
    /index := 1
-
-   write(image(captions))
-   write(image(labels))
-   write(image(defaults))
-   write(image(widths))
-   write(image(buttons))
 
    if type(captions) ~== "list" then captions := [captions]
    if type(labels) ~== "list" then labels := ([\labels] | [])

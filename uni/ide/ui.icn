@@ -277,7 +277,16 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
 	 text_field_1.set_pos(20, integer((*captions + i)*100/nlines) || "%-10")
 	 text_field_1.set_size(180, 30)
 	 text_field_1.set_draw_border()
-	 text_field_1.set_contents("")
+         if dialogFor == "find" then
+	    text_field_1.set_contents(findstr)
+         else if dialogFor == "goto" then
+	    text_field_1.set_contents(gotoln)
+         else if dialogFor == "compile" then
+	    text_field_1.set_contents(targs)
+         else if dialogFor == "run" then
+	    text_field_1.set_contents(xargs)
+         else text_field_1.set_contents("")
+
 	 self.add(text_field_1)
 	 put(textfields, text_field_1)
 	 }
@@ -373,7 +382,7 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
 end
 
 procedure Notice(captions[])		#: notice dialog
-   local win, temp_win
+   local win, temp_win, p
    static type
 
    initial type := proc("type", 0)	# protect attractive name

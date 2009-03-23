@@ -15,10 +15,9 @@ $include "defaults.icn"
 
 link io
 
-# $define lpr "lpr -Plexnormal"
-$define lpr "enscript -b \" \" -1 -Plexnormal"
+
 global new_CProject, new_JavaProject, new_UniconProject,
-        javaProject, cppProject, uniconProject, uide
+        javaProject, cppProject, uniconProject, uide, gotoln
 
 #
 # Class menubar needs description.
@@ -89,6 +88,20 @@ class Mainbar(
    method on_print_file(ev)
       local f, L, line
       L := ide.CurrentEditBox().get_contents() | []
+      d := PrintDialog()
+      d.show_modal()
+      if /copies_num then fail			# Cancel
+
+      lpr := d.printcmd.get_contents()
+      if match("enscript"|"lpr", lpr) then {
+	  lpr ||:= " -P" || \prn_name
+	  lpr ||:= " -#" || \copies_num
+	  }
+      else if match("lp", lpr) then {
+	  lpr ||:= " -d " || \prn_name
+	  lpr ||:= " -n " || \copies_num
+	  }
+$ifdef _UNIX
       if f := open(lpr, "pw") then {
 	 every line := !L do {
 	    line := trim(line, '\^m')
@@ -96,6 +109,17 @@ class Mainbar(
 	    }
          close(f)
          }
+$else
+      # windows, for now
+      if f := open("output.prn", "w") then {
+	 every line := !L do {
+	    line := trim(line, '\^m')
+	    write(f, line)
+	    }
+         close(f)
+	 system( lpr || " output.prn" )
+         }
+$endif
       else {
          MsgBox.set_contents(["Sorry, no printing yet."])
          }
@@ -123,11 +147,13 @@ class Mainbar(
 
    method on_goto_line(ev)
       local oldwindow
-
+      /gotoln := ""
+      dialogFor := "goto"
       oldwindow := &window
       &window := win
-	 if TextDialog(["Go to line# : "],"",1)=="Okay" then {
-	    ide.goto_line(integer(dialog_value[1]),1)
+         if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
+            gotoln := integer(dialog_value[1])
+	    ide.goto_line(gotoln,1)
 	    }
       &window := oldwindow 
    end
@@ -149,6 +175,7 @@ class Mainbar(
       local oldwindow, ceb
       ceb := ide.CurrentEditBox()
       ceb.cursor_x := ceb.cursor_y := 1
+      dialogFor := "replace"
       /findstr := ""
       /replacestr := ""
       oldwindow := &window
@@ -445,8 +472,14 @@ class Mainbar(
    end
 
    method on_compile_options(ev)
-      if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
+      local oldwindow
+      dialogFor := "compile"
+      /targs := ""
+      oldwindow := &window
+      &window := win
+         if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
          targs := dialog_value[1]
+      &window :=oldwindow   
 #      configdlg := ConfigureOptions()
 #      configdlg.show_modal()
    end
@@ -460,6 +493,8 @@ class Mainbar(
 
    method on_run_arguments(ev)
       local oldwindow
+      dialogFor := "run"
+      /xargs := ""
       oldwindow := &window
       &window := win
          if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then

@@ -26,7 +26,7 @@ global targs,browser,
    opened_files_locs,opened_files_num,
    tab_label,filedirectory,
    fileCompiled, overwrite, url_field,
-   lst, web_mode, commands_file, ide, file_contents
+   lst, web_mode, commands_file, ide, file_contents, dialogFor
 
 #
 # Class IDE
@@ -142,6 +142,7 @@ class IDE (
    method on_replace(ev)
       local oldwindow
       /findstr := ""
+      dialogFor := "replace"
       oldwindow := &window
       &window := win
          if TextDialog("Replace what with what: ",,
@@ -155,11 +156,13 @@ class IDE (
 
    method on_goto_line(ev)
       local oldwindow
-      /findstr := ""
+      /gotoln := ""
+      dialogFor := "goto"
       oldwindow := &window
       &window := win
-	 if TextDialog("Go to line: ",,"",6)=="Okay" then {
-	    goto_line(integer(dialog_value[1]),1)
+         if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
+            gotoln := integer(dialog_value[1])
+	    ide.goto_line(gotoln,1)
 	    }
       &window := oldwindow 
    end
@@ -666,7 +669,6 @@ $endif
    method handle_closefile(ev, c)
       \FileBrowser.nodereplace(CurrentTabItem().get_label())
       if /c then c :=  CurrentTabItem()
-      if *FileTabSet.children = 1 then handle_new_menu_item()
       FileTabSet.remove(c)
       MsgBox.set_contents(["closed " || (FileTabSet.get_which_one()).label])
       every i := 1 to *opened_files_list do
@@ -1082,6 +1084,7 @@ $endif
    method handle_files()
       local oldwindow
       /findstr := ""
+      dialogFor := "find"
       oldwindow := &window
       &window := dialogself.win
          CurrentEditBox().cursor_x := CurrentEditBox().cursor_y := 1

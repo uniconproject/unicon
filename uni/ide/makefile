@@ -22,12 +22,13 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn fontdialog.icn templates.icn \
 	definitions.icn uproject.icn idol.icn preproce.icn \
 	ytab_h.icn yyerror.icn unigram.icn unilex.icn unicon.icn \
-	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn
+	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
+	printdlg.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u fontdialog.u templates.u definitions.u uproject.u \
 	idol.u preproce.u ytab_h.u yyerror.u unigram.u unilex.u unicon.u \
-	classbrowser.u tree.u imgs.u utags.u matchparen.u
+	classbrowser.u tree.u imgs.u utags.u matchparen.u printdlg.u
 
 UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
 
@@ -41,6 +42,9 @@ endif
 
 ide.u: ide.icn
 	unicon -c ide
+
+printdlg.u: printdlg.icn
+	unicon -c printdlg
 
 hfiledialog.u: hfiledialog.icn
 	unicon -c hfiledialog
@@ -85,9 +89,9 @@ yyerror.u: yyerror.icn
 	unicon -c yyerror
 
 unigram.u: unigram.icn unilex.u
-	unicon -c unigram yyerror
+	unicon -c unigram
 
-unilex.u: unilex.icn yyerror.u
+unilex.u: unilex.icn
 	unicon -c unilex
 
 unicon.u: unicon.icn

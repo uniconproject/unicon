@@ -549,7 +549,7 @@ end
 #
 # a class defining operations on methods and procedures
 #
-class Method : declaration (Class, locals, initl, procbody, abstract_flag)
+class Method : declaration (Class, locals, initl, procbody, abstract_flag, firsttoken)
   method mkspec()
     decl := self$String()
     decl ?:= {
@@ -577,6 +577,18 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag)
   end
   method Write(f, nam)
     yyprint("\n")
+
+      if \firsttoken then {
+	 if outfilename ~== firsttoken.filename |
+	    outline ~= firsttoken.line then {
+	    write(yyout,"\n#line ", firsttoken.line-1," \"",
+		  firsttoken.filename,"\"")
+	    outline := firsttoken.line
+	    outcol := 1
+	    outfilename := firsttoken.filename
+	    }
+	 }
+
     writes(f, "procedure ")
     writes(f, self.Class$name(), "_")
     yyprint(name)

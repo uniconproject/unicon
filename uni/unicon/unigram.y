@@ -272,13 +272,13 @@ decl	: record
 
 initiallysection: { $$ := EmptyNode }
 	| INITIALLY SEMICOL locals initial procbody {
-	   $$ := Method( , , , , , "initially", EmptyNode, "method", "(", ")")
+	   $$ := Method( , , , , , $1, "initially", EmptyNode, "method", "(", ")")
 	   $$.locals := $3
 	   $$.initl := $4
 	   $$.procbody := $5
 	}
 	| INITIALLY LPAREN arglist RPAREN SEMICOL locals initial procbody {
-	   $$ := Method( , , , , , "initially", $3, "method", "(", ")")
+	   $$ := Method( , , , , , $1, "initially", $3, "method", "(", ")")
 	   $$.locals := $6
 	   $$.initl := $7
 	   $$.procbody := $8
@@ -416,7 +416,7 @@ prochead: PROCEDURE IDENT LPAREN arglist RPAREN {
 		} ;
 
 methhead: METHOD IDENT LPAREN arglist RPAREN {
-		$$ := Method( , , , , , $2.s, $4, $1.s, $3, $5)
+		$$ := Method( , , , , , $1, $2.s, $4, $1.s, $3, $5)
 		} ;
 
 
@@ -768,7 +768,7 @@ procedure InvocationNode(args[])
 	     if n1 === args[1] then args[1] else "__"||tmpcount,
 	     if args[5] === EmptyNode then EmptyNode else ",",args[5]),args[6])
 	     ,")")
-	}
+      }
    else {
       if /iconc then
 	 return  node("Paren",lparen,node("invoke",Field(Field(

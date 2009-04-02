@@ -150,7 +150,7 @@ procedure Keyword(x1,x2)
 		       "errornumber","errortext","errorvalue","errout","fail",
 		       "eventcode","eventsource","eventvalue","features",
 		       "file","host","input","lcase","letters","level",
-		       "line","main","null","output","phi","pi","pos",
+		       "line","main","null","output","phi","pi","pick","pos",
 		       "progname","random","regions","source","storage",
 		       "subject","time","trace","dump","ucase","version",
 		       "errno","window","col","row","x","y","interval",

@@ -64,11 +64,13 @@ method littleord(s)
 end
 
 #
+# Produce binary integer that was read in (as a string) from a file.
+# Integer value depends on big-endian vs. little-endian interpretation.
 #
-method littleendian(s)
+method endian(s)
    local i
    i := 0
-   s := reverse(s)
+   if /isBigEndian then s := reverse(s)
    every i := littleord(!s) + i * 256
    return i
 end
@@ -106,7 +108,7 @@ method readIcodeHeader()
    hdr := header()
    every i := 1 to 11 do {
       w := move(wordSize)
-      hdr[i] := littleendian(w)
+      hdr[i] := endian(w)
       }
 
    hdr.config := move(16 * wordSize)
@@ -115,12 +117,12 @@ method readIcodeHeader()
       # Reading both of FtabWidth, and FoffWidth
       every i := 13 to 14 do{
          w := move(wordSize/2)
-         hdr[i] := littleendian(w)
+         hdr[i] := endian(w)
          }
       # Reading all of Nfields, Fo, and Bm
       every i := 15 to 17 do{
          w := move(wordSize)
-         hdr[i] := littleendian(w)
+         hdr[i] := endian(w)
          }
       }
 end
@@ -235,7 +237,7 @@ method getSrcFileNames(exeFile)
       fNames := []
       while i < hdr.linenums do {
          move(wordSize)
-         put(LLL, j := littleendian(move(wordSize)))
+         put(LLL, j := endian(move(wordSize)))
          i +:= (wordSize * 2)
          }
       every i := 1 to *LLL do  {
@@ -251,6 +253,7 @@ end
 # Initialization
 #
 initially()
-   icodeVersion := "unkown?"
+   icodeVersion := "unknown?"
    IntBits := WordBits := -1
+   #need to check: which endian are we?
 end

@@ -85,6 +85,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <limits.h>
 
 #if INT_MAX == 32767
@@ -130,6 +131,19 @@ typedef struct { word dword, vword; } descriptor;
 typedef struct { word title; double rval; } realblock;
 typedef struct { word title; FILE *fp; word stat; descriptor fname; } fileblock;
 
+#define alcstr alcstr_0
+#define alcreal alcreal_0
+#define alcfile alcfile_0
+#define cnv_int cnv_int_0
+#define cnv_real cnv_real_0
+#define cnv_str cnv_str_0
+
+int cnv_int(descriptor *, descriptor *);
+int cnv_str(descriptor *, descriptor *);
+int cnv_real(descriptor *, descriptor *);
+int cnv_c_str(descriptor *, descriptor *);
+int chmod();
+int umask(int);
 char *alcstr(char *s, word len);
 realblock *alcreal(double v);
 fileblock *alcfile(FILE *fp, int stat, descriptor *name);

@@ -717,6 +717,9 @@ procedure pathload(fname, entry)	#: load C function from $FPATH
    local path, found
 
    path := getenv("FPATH") | "."
+   if match("Binaries at ", sfeat := &features) then {
+       path ||:= " " || sfeat[13:0]
+   }
    found := pathfind(fname, path)
 
    if /found then

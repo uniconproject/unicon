@@ -4,6 +4,7 @@
 # Updated and maintained by : Ziad Al-Sharif
 # Original Author : Eric Munson
 #
+link cfunc
 
 record header (
    hsize,    # /* size of interpreter code          */
@@ -68,7 +69,17 @@ end
 # Integer value depends on big-endian vs. little-endian interpretation.
 #
 method endian(s)
-   local i
+local i, xl, xb, s1
+static isBigEndian
+initial {
+  if (&features=="external functions") & \pack then {
+     s1 := pack(1, "n")
+     xl := unpack(s1, "l")
+     xb := unpack(s1, "b")
+     if xl = 1 then write("littleendian")
+     if xb = 1 then { write("bigendian"); isBigEndian := 1 }
+     }
+   }
    i := 0
    if /isBigEndian then s := reverse(s)
    every i := littleord(!s) + i * 256

@@ -709,9 +709,12 @@ void f(dptr s, dptr d)
 	       key.dptr = StrLoc(Blk(bp,Tvtbl)->tref);
 	       key.dsize = StrLen(Blk(bp,Tvtbl)->tref);
 	       content = dbm_fetch(db, key);
-	       if (content.dptr == NULL) fatalerr(103, s);
-	       Protect(StrLoc(*d) = alcstr(content.dptr, content.dsize),fatalerr(103, s));
-	       StrLen(*d) = content.dsize;
+	       if (content.dptr == NULL) *d = nulldesc;
+	       else {
+		  StrLoc(*d) = alcstr(content.dptr, content.dsize);
+		  Protect(StrLoc(*d),fatalerr(103, s));
+		  StrLen(*d) = content.dsize;
+		  }
 	       return;
 	       }
 	    else

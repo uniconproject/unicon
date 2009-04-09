@@ -3,7 +3,7 @@
 #
 
 
-UC      = unicon
+UC      = ../../bin/unicon
 EXEs    = udb
 DEL     = -rm
 CLEAN   = clean
@@ -37,7 +37,7 @@ tools:
 
 udb: $(UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(UFILES) -o udb
-	mv udb ../../bin
+	cp udb ../../bin
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

@@ -4,7 +4,7 @@
 # Date:  June 20, 2008
 #
 
-UC         = unicon
+UC         = ../../../bin/unicon
 CFLAGS     = -u -c 
 LDFLAGS    = -u
 STANDALONE = -DStandAlone
@@ -23,7 +23,7 @@ lib: $(UFILES)
 
 
 tools: listener.u $(Tools)
-	mv $(Tools) ../../bin
+	cp $(Tools) ../../bin
 
 $(Tools): $%
 	$(UC) $(STANDALONE) $(LDFLAGS) $@

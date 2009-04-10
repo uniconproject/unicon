@@ -81,7 +81,7 @@ end
 method constructEventMask()
 
    if *internalMask > 0 | *externalMask > 0 | *traceMask > 0 then{
-      eventMask := cset(E_Error || E_Exit) ++ 
+      eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
                    cset(E_Collect || E_EndCollect) ++
                    internalMask ++ externalMask ++ traceMask
       if *breakMask > 0 then{
@@ -113,7 +113,8 @@ method constructEventMask()
          }
       }
    else{ # *internalMask = 0 & *externalMask = 0 & *traceMask = 0
-      eventMask := cset(E_Error || E_Exit) ++ cset(E_Collect || E_EndCollect)
+      eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
+                   cset(E_Collect || E_EndCollect)
       if *breakMask > 0 then{
          eventMask ++:= cset(E_Line)
          valueMask[E_Line] := breakMask
@@ -261,7 +262,7 @@ method Fresh()
    #If there is a watchpoint then the E_Assign will be added and the 
    #variable will be added to the watchMask set.
  
-   eventMask       := cset(E_Error || E_Exit)
+   eventMask       := cset(E_Error || E_Exit || E_Signal)
    internalMask    := cset('')
    externalMask    := cset('')
    traceMask       := cset('')

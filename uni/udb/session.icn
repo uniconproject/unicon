@@ -39,6 +39,11 @@ method startSession()
       # every udb_evalTree(eventMask, activation_record) do{
       every Debug.startEvaluator() do{
          if DState.State = PAUSE then{
+            if DState.RunCode = SIGNAL then{
+               Message := "\n   "||DState.TP[1]||" program received a signal "||
+                          &eventvalue ||"."
+               DState.Write(Message)
+               } 
             # suspends the loop and go back to udb_Console() for a new cmd.
             suspend
             }

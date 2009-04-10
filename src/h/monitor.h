@@ -953,9 +953,16 @@
 
 #if defined(EventMon) || defined(E_Pelem)
 #undef E_Pelem
-#define E_Pelem	'\201'
+#define E_Pelem		'\201'
 #else
 #define E_Pelem 0
+#endif
+
+#if defined(EventMon) || defined(E_Signal)
+#undef E_Signal
+#define E_Signal	'\202'
+#else
+#define E_Signal 0
 #endif
 
 /* unused pool.  how many event codes are unused?
@@ -972,7 +979,7 @@
 137
 162
 
-202 203 204 205 206 207
+203 204 205 206 207
 210 211 212 213 214 215 216 217
 220 221 222 223 224 225 226 227
 230 231 232 233 234 235 236 237

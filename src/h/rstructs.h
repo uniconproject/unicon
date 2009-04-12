@@ -476,6 +476,11 @@ struct progstate {
    struct descrip eventsource;		/* &eventsource */
    dptr Glbl_argp;			/* global argp */
 
+   /* Systems don't have more than, oh, about 50 signals, eh?
+    * Currently in the system there is 40 of them            */
+   struct descrip Handlers[41];
+   int Inited;
+   int signal;
    /*
     * trapped variable keywords' values
     */

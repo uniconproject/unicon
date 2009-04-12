@@ -440,6 +440,21 @@ int interp_x(int fsig,dptr cargp)
 
    for (;;) {
 
+#ifdef MultiThread
+      /* 
+       *  If the TP (the child program) received a signal that it does
+       *  not have a handler for, it reports it back to its parent.
+       *  The reported event is E_Signal with a string name of that signal
+       */
+      if (curpstate->signal > 0) {
+         struct descrip val;
+         StrLoc(val) = si_i2s(signalnames, curpstate->signal);
+         StrLen(val) = strlen(StrLoc(val));
+         InterpEVValD(&val,E_Signal);
+         curpstate->signal = 0;
+         }
+#endif					/* MultiThread */
+
 #if UNIX && e_tick
       if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
 	  ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {

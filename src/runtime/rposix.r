@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.38 2008-07-22 22:31:34 jeffery Exp $
+ * $Id: rposix.r,v 1.39 2009-04-12 09:04:46 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1546,21 +1546,30 @@ int nargs;
  * Signals and trapping
  */
 
+#ifndef MultiThread
 /* Systems don't have more than, oh, about 50 signals, eh? */
-static struct descrip handlers[50];
+static struct descrip handlers[41];
 static int inited = 0;
+#endif					/* MultiThread */
+
+void init_sighandlers()
+{
+   int i;
+   for(i = 0; i < 41; i++)
+      handlers[i] = nulldesc;
+   inited = 1;
+}
 
 struct descrip register_sig(sig, handler)
 int sig;
 struct descrip handler;
 {
    struct descrip old;
-   if (!inited) {
-      int i;
-      for(i = 0; i < 50; i++)
-	 handlers[i] = nulldesc;
-      inited = 1;
-   }
+   if (!inited) init_sighandlers();
+
+#ifdef MultiThread
+   curpstate->signal = 0;
+#endif					/* MultiThread */
 
    old = handlers[sig];
    handlers[sig] = handler;
@@ -1574,17 +1583,43 @@ int sig;
    struct b_proc *pp;
    char *p;
 
-   if (!inited) {
-      int i;
-      for(i = 0; i < 50; i++)
-	 handlers[i] = nulldesc;
-      inited = 1;
-   }
+   if (!inited) init_sighandlers();
 
    proc = handlers[sig];
+#ifdef MultiThread
+   curpstate->signal = 0;
+#endif					/* MultiThread */
 
-   if (is:null(proc))
+   /*
+    * proc is NULL if there is no signal handler for current signal.
+    * How could we get a signal of a given type, if we didn't register
+    * a handler for it?
+    */
+   if (is:null(proc)) {
+#ifdef MultiThread
+      if ((!is:null(curpstate->eventmask)) &&
+	  Testb((word)ToAscii(E_Signal), curpstate->eventmask)) {
+	 /* if we are in the TP and it has no signal handling 
+	  * report the signal back to its parent
+	  */
+	 curpstate->signal = sig;
+	 return;
+	 }
+      else {
+	 /*
+	  * Child has no handler and parent does not want to deal with it.
+	  * Execute the default behavior for this signal.
+	  */
+	 signal(sig, SIG_DFL);
+	 raise(sig);
+	 return;
+	 }
+#else
+      signal(sig, SIG_DFL);
+      raise(sig);
       return;
+#endif					/* MultiThread */
+      }
 
    /* Invoke proc */
    p = si_i2s(signalnames, sig);

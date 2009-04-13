@@ -221,7 +221,7 @@ procedure preproc_scan_directive()
         }
         "include": {
             if /preproc_if_state then {
-                path_list := preproc_get_path_list()
+                path_list := lpaths_get()
                 if sym := preproc_qword() & *sym > 0 &
                         preproc_at_end() then {
                     if member(preproc_include_set,sym) then {
@@ -491,81 +491,6 @@ procedure preproc_error(msg)
         "$" || \preproc_command || ": " | "",msg)
     preproc_err_count +:= 1
     return
-end
-
-#
-# a_Returns the list of directories in the LPATH environment variable.
-#
-procedure preproc_get_path_list()
-   static the_list
-   static iconc_list
-   initial {
-      the_list := preproc_compute_path_list()
-      if \iconc then
-	 iconc_list := preproc_compute_iconc_path_list()
-    }
-    if \iconc then
-        return iconc_list 
-    return the_list
-end
-
-# TODO: consider merging ..._compute_path_list() and ... iconc_path_list()
-#
-# Computes the list of directories in the LPATH environment variable.
-#
-procedure preproc_compute_path_list()
-    local result,path_string,path_sep, f
-    result := [ ]
-
-    path_string := getenv("LPATH") | "."
-
-    if (binpath := (&features ? (="Binaries at " & tab(0)))) |
-       ((f := open((binpath:=getpaths()) || ("iconx"|"iconx.exe"|"wiconx.exe")))) then{
-	close(\f)
-	path_string ||:= " " ||
-	    binpath || "../uni/gui " || binpath || "../uni/lib " ||
-	    binpath || "../ipl/gincl " ||
-	    binpath || "../ipl/mincl " || binpath || "../ipl/incl"
-       }
-
-    if \path_string ~== "" then {
-        path_sep := getenv("PATHSEP") | " "
-        path_string ? {
-            while put(result,tab(find(path_sep))) do {
-                move(1)
-            }
-            put(result,tab(0))
-        }
-    }
-    return result
-end
-
-procedure preproc_compute_iconc_path_list()
-   local f, rslt, sep, paths, binpath
-
-   rslt := []
-   paths := "."
-
-   if (binpath := (&features ? (="Binaries at " & tab(0)))) |
-      ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|"wiconx.exe")))) then{
-      close(\f)
-      paths ||:= " " ||
-         binpath || "../ipl/incl " ||
-         binpath || "../uni/lib " || binpath || "../uni/gui " ||
-         binpath || "../ipl/gincl " ||
-         binpath || "../ipl/mincl"
-   }
-
-   if not (paths == "") then {
-      sep := getenv("PATHSEP") | " "
-      paths ? {
-         while (put(rslt, tab(find(sep)))) do
-            move(1)
-         put(rslt, tab(0))
-      }
-   }
-
-   return rslt
 end
 
 #

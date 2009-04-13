@@ -886,12 +886,7 @@ procedure fetchspec(name)
 	 }
       close(f)
       }
-   ipath := getenv("IPATH") | ""
-   if binpath := (&features ? (="Binaries at " & tab(0))) then { }
-   else if (f := open((binpath:=getpaths()) || ("nticonx.exe"|"wiconx.exe"|"iconx"))) then {
-	close(f)
-        }
-   ipath ||:= " \"" || binpath || "../ipl/lib\" \"" || binpath||"../uni/lib\" \"" || binpath || "../uni/gui\""
+   ipath := ipaths()
 
    if \ipath then {
       ipath ? {

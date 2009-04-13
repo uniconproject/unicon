@@ -740,6 +740,8 @@
    
    #ifdef MultiThread
       #define glbl_argp (curpstate->Glbl_argp)
+      #define handlers  (curpstate->Handlers)
+      #define inited    (curpstate->Inited)
       #define kywd_err  (curpstate->Kywd_err)
       #define kywd_pos  (curpstate->Kywd_pos)
       #define kywd_prog  (curpstate->Kywd_prog)

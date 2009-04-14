@@ -15,7 +15,18 @@ UFILES=gui.u file_dlg.u font_dlg.u db.u \
  texthandler.u time.u timezone.u typehandler.u undoableedit.u undomanager.u url.u \
  event.u md5.u httprequest.u httpresponse.u
 
-all: $(UFILES)
+# COPYINS are library files copied in from other directories for
+# organizational purposes. Inspired by ipl/lib.  They have to be
+# compiled in this directory in order for the class specification
+# database to work.
+COPYINS=selection3D.u
+
+all: $(UFILES) $(COPYINS)
+
+selection3D.u: ../3d/selection3D.icn
+	cp ../3d/selection3D.icn .
+	unicon -c selection3D.icn
+	rm selection3D.icn
 
 deps:
 	$(UNIDEP) *.icn -nb -f deps.out

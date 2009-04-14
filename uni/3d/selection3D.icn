@@ -1,0 +1,161 @@
+#
+#  Auther Jafar Al-Gharaibeh
+#  Date 03/27/2009
+#
+
+
+
+global select3D
+
+class Listener3D(item, obj, action, event_type)
+   method listen_to(ev)
+      event_type := ev
+   end
+   method is_listening_to(ev)
+      return event_type = ev
+   end
+   initially
+     
+end
+
+
+class Selection3D( Tleft_click, Tright_click, Tdouble_click, Tleft_drag,
+		   Tright_drag, counter,
+		   CLICK, LEFT_CLICK, RIGHT_CLICK, DOUBLE_CLICK,
+		   DRAG, LEFT_DRAG, RIGHT_DRAG )
+
+   method handle_event(ev)
+      local Tselectable, picked_objects := [], t, x, l
+      static last_click_time, pick_drag
+      initial last_click_time := 0
+
+      case ev of{
+	 &lpress:{
+	    t:=&time
+	    if t-last_click_time > 35 then
+	       Tselectable := Tleft_click
+	    else
+	       Tselectable := Tdouble_click
+	   
+	    last_click_time := t
+	    }
+	 &rpress:{ Tselectable := Tright_click }
+	 &lrelease:{
+	    pick_drag:=&null
+	    fail
+	 }
+	 &ldrag:{
+	    if \(l := Tleft_drag[pick_drag] ) then{
+	       l.action(l.obj)
+	       return
+	       }
+	       fail
+	    }
+	 default : {fail}
+	 } #  case
+     
+     if (not &pick) | /&pick then fail
+      
+      #every write(&pick)
+      #write("-------------- new pick", image(&pick))
+      &pick ? {
+	 while t := tab(find("-") | 0) do{
+	    push(picked_objects, t)
+	    move(1)
+	    #write("picked:", t)
+	    if pos(0) then break
+	    } # while
+	 } # &pick
+      
+      every x := !picked_objects do{
+      #x := pop(picked_objects)
+      #write("work:", image(x))
+      pick_drag := x
+	 if \(l := Tselectable[x] ) then{
+	    l.action(l.obj)
+	    return
+	    }
+      }
+   end
+
+   method inc_counter()
+      counter +:= 1
+      return counter
+   end
+   
+   method selectable(item, action,  event_type ,obj)
+      local l, p, new_name      
+      /event_type := LEFT_CLICK
+      new_name := item ||"_3D_"|| string(inc_counter())
+      #write(new_name)
+      
+      if \obj then
+	 p := lang::find_method(obj, action) | stop("No such method ", action)
+      else
+	 image(action) ? {
+	    ="procedure" | stop("No such procedure ", action)
+	    p := action
+	    }
+      
+      l:= Listener3D(item, obj, p)
+      l.listen_to(event_type)
+      add_listener3D(event_type, l)
+
+      return new_name
+   end
+
+   method add_action(name, action,  event_type ,obj)
+      local l, p, item
+      /event_type := LEFT_CLICK
+      
+      if \obj then
+	 p := lang::find_method(obj, action) | stop("No such method ", action)
+      else
+	 image(action) ? {
+	    ="procedure" | stop("No such procedure ", action)
+	    p := action
+	    }
+      name ? {item := tab(find("_3D_")|0)}
+      l:= Listener3D(item, obj, p)
+      l.listen_to(event_type)
+      add_listener3D(event_type, l)
+
+
+      return name
+   end
+
+   method add_listener3D(event_type, l)
+      case event_type of{
+	 LEFT_CLICK	: {Tleft_click[new_name] := l}
+	 RIGHT_CLICK	: {Tright_click[new_name] := l}
+	 DOUBLE_CLICK	: {Tdouble_click[new_name] := l}
+	 CLICK		: {Tright_click[new_name] := Tleft_click[new_name] := l}
+	 DRAG		: {Tright_drag[new_name] := Tleft_drag[new_name] := l}
+	 LEFT_DRAG	: {Tleft_drag[new_name] := l}
+	 RIGHT_DRAG	: {Tright_drag[new_name] := l}
+	 }
+   end
+   
+   #method insert_in(id, ev)
+      
+   #end
+   
+   #method listen_to_event(id, event_type)
+   #   if \(l:=Tselectable[new_name]) then l.listen_to(event_type)
+   #end
+
+   initially
+      counter :=1000
+      Tleft_click := table()
+      Tright_click := table()
+      Tdouble_click := table()
+      Tleft_drag := table()
+      Tright_drag := table()
+      CLICK := 1
+      LEFT_CLICK:=	2
+      RIGHT_CLICK := 3
+      DOUBLE_CLICK := 4
+      DRAG:=5
+      LEFT_DRAG:=6
+      RIGHT_DRAG:=7
+end

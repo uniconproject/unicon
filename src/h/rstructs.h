@@ -73,7 +73,11 @@ struct b_cset {			/* cset block */
    unsigned int bits[CsetSize];		/*   array of bits */
    };
 
-union f { /* mdw: eliminate anonymous union that chokes amd64 gcc */
+/*
+ * This union was pulled out of struct b_file and made non-anonymous
+ * in order to eliminate an error in some version of gcc on amd64.
+ */
+union f {
    FILE *fp;
 #ifdef Graphics
    struct _wbinding *wb;
@@ -98,39 +102,10 @@ union f { /* mdw: eliminate anonymous union that chokes amd64 gcc */
 
 struct b_file {			/* file block */
    word title;			/*   T_File */
-   union f fd; /* mdw: this was anonymous */
+   union f fd;
    word status;			/*   file status */
    struct descrip fname;	/*   file name (string qualifier) */
    };
-#ifdef AnonymousUnionBreaksSomeAmd64Compilers
-struct b_file {         /* file block */
-   word title;       /*   T_File */
-   union {
-      FILE *fp;         /*   stdio file pointer */
-#ifdef Graphics
-     struct _wbinding *wb;       /*   window */
-#endif               /* Graphics */
-#ifdef Messaging
-     struct MFile *mf;
-#endif               /* Messaging */
-#ifdef ISQL
-     struct ISQLFile *sqlf;
-#endif               /* ISQL */
-#ifdef Dbm
-     struct DBM *dbm;
-#endif               /* Dbm */
-#ifdef Audio
-     struct AudioFile *af;
-#endif               /* Audio */
-#ifdef PseudoPty
-     struct ptstruct *pt;
-#endif					/* PseudoPty */
-      int fd;        /*   other int-based file descriptor */
-      } fd;
-   word status;         /*   file status */
-   struct descrip fname;   /*   file name (string qualifier) */
-   };
-#endif /* AnonymousUnion... */
 
 #ifdef ISQL
 

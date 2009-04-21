@@ -1505,7 +1505,9 @@ function{0,1} reads(f,i)
        * Read characters from a compressed file
        */
       if (status & Fs_Compress) {
-	 if (gzeof(fp)) fail;
+	 if (gzeof(fp)) {
+	    fail;
+	    }
 	 slen = gzread((gzFile)fp,StrLoc(s),i);
 	 if (slen == 0)
 	    fail;
@@ -2040,21 +2042,6 @@ function {1} name(x[nargs])
 
    declare {
       union f f;
-#ifdef AnonymousUnionAsParameter
-      union {
-      FILE *fp;
-#ifdef Graphics
-      struct _wbinding *wb;
-#endif               /* Graphics */
-#ifdef Messaging
-      struct MFile *mf;
-#endif               /* Messaging */
-#ifdef Dbm
-      struct DBM *dbm;
-#endif               /* Dbm */
-      int  fd;
-      } f;
-#endif /* AnonymousUnionAsParameter */
       word status =
 #if terminate
 #ifndef ConsoleWindow

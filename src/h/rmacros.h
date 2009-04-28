@@ -176,7 +176,7 @@
  * Block references that do not use (the address of) a particular field.
  */
 #define Blk(p,u) ((((!ValidPtr(p)) || ((p)->u.title != T_ ## u)) ? \
-      heaperr("invalid block",p, T_ ## u) : 1), &((p)->u))
+      (heaperr("invalid block",p, T_ ## u) , 1) : 1), &((p)->u))
 
 /*
  * Block references for generic (set|table) code.

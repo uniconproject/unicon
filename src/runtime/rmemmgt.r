@@ -1550,8 +1550,21 @@ long physicalmemorysize()
 {
    char buf[80], *p;
    long i;
+   FILE *f;
 #if UNIX
-   FILE *f = fopen("/proc/meminfo", "r");
+#ifdef SUN
+/*
+ * New method: call sysconf(). How portable is this?  POSIX knows
+ * about _SC_PAGE_SIZE but not _SC_PHYS_PAGES?
+ */
+   i = sysconf(_SC_PHYS_PAGES);
+   i *= sysconf(_SC_PAGE_SIZE);
+   return i;
+#endif					/* SUN */
+   /*
+    * old method:, use meminfo, if it is present
+    */
+   f = fopen("/proc/meminfo", "r");
    if (f) {
       while (fgets(buf, 80, f)) {
 	 if (!strncmp("MemTotal: ", buf, strlen("MemTotal: "))) {
@@ -1562,11 +1575,16 @@ long physicalmemorysize()
 	    while (isspace(*p)) p++;
 	    if (!strncmp(p, "kB",2)) i *= 1024;
 	    else if (!strncmp(p, "MB", 2)) i *= 1024 * 1024;
+	    fclose(f);
 	    return i;
 	    }
 	 }
       fclose(f);
       }
+   /*
+    * No meminfo? Could try "top", but don't want to launch external process
+    * during initialization...
+    */
 #endif					/* UNIX */
 #if NT
    MEMORYSTATUS ms;

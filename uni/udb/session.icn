@@ -137,9 +137,19 @@ end
 method cmdLoad(cmd)
    
    if cmd[2][1] == "-" then{
-      #load -external name
-      if find("external", cmd[2]) & \cmd[3] then
-         Debug.External.cmdLoad(cmd[3])
+      #load -agent name
+      if find("agent", cmd[2]) & \cmd[3] then{
+         if Debug.External.cmdLoad(cmd[3:0]) then{
+            Message := "\n   External Agent: \""|| cmd[3] ||"\" _
+                        is loaded successfully."
+            DState.Write(Message)
+            }
+         else{
+            DState.State := ERROR
+            Message := "\n   Can not fined agent: \""|| cmd[3] ||"\" !!!."
+            DState.Write(Message)
+            }
+         } 
       #load -semi-internal name 
       else if find("semi-internal", cmd[2]) & \cmd[3] then
          Debug.SemiInternal.cmdLoad(cmd[3])

@@ -250,7 +250,7 @@
 #endif					/* MaxAbrSize */
 
 #ifndef MStackSize
-      #define MStackSize 30000		/* size of the main stack in words */
+      #define MStackSize 50000		/* size of the main stack in words */
 #endif					/* MStackSize */
 
 #ifndef StackSize

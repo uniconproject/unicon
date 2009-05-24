@@ -2051,8 +2051,8 @@ int setlight(wbp w, char* s, int light)
          /* set the diffuse value of the light */
          glLightfv(light, GL_DIFFUSE, color);
          s2 = s2 + i;
-         if(*s2 != ';' && *s2 != '\0') return Failed;
-         if(*s2 != '\0') s2++;
+	 if (*s2 != ';' && *s2 != '\0') return Failed;
+	 if (*s2 != '\0') s2++;
          }
       /* set the specular lighting values */
       if (!strncmp(s2, "specular", 8)) {
@@ -2065,7 +2065,7 @@ int setlight(wbp w, char* s, int light)
             }
          s3[i] = '\0';
          /* convert to appropriate values */
-         if (parsecolor(w, s3, &rd, &gr, &bl, &al)==Failed)
+	 if (parsecolor(w, s3, &rd, &gr, &bl, &al) == Failed)
             return Failed;
          color[0] = rd/(GLfloat)65535;
          color[1] = gr/(GLfloat)65535;
@@ -2073,29 +2073,29 @@ int setlight(wbp w, char* s, int light)
          color[3] = al/(GLfloat)65535;
          glLightfv(light, GL_SPECULAR, color);
          s2 = s2 + i;
-         if(*s2 != ';' && *s2 != '\0') return Failed;
-         if(*s2 != '\0') s2++;
+	 if (*s2 != ';' && *s2 != '\0') return Failed;
+	 if (*s2 != '\0') s2++;
          }
       /* set the positon of the light */
 	if (!strncmp(s2, "position", 8)) {
          s2 = s2 + 8;
 	   for (j = 0; j < 2; j++) {
-           while(isspace(*s2)) s2++;
+	   while (isspace(*s2)) s2++;
            i = 0;
-           if(*s2 == '\0') return Failed;
-           while(s2[i] != '\0' && s2[i] != ',') {
+	   if (*s2 == '\0') return Failed;
+	   while (s2[i] != '\0' && s2[i] != ',') {
               s3[i] = s2[i];
               i++;
               }
            s3[i] = '\0';
            color[j] = atof(s3);
            s2 = s2 + i;
-           if(*s2 != ',') return Failed;
+	   if (*s2 != ',') return Failed;
            s2++;
            }
-         while(isspace(*s2)) s2++;
-         if(*s2 == '\0') return Failed;
-         while(s2[i] != '\0' && s2[i] != ';') {
+	 while (isspace(*s2)) s2++;
+	 if (*s2 == '\0') return Failed;
+	 while (s2[i] != '\0' && s2[i] != ';') {
             s3[i] = s2[i];
             i++;
             }
@@ -2103,8 +2103,8 @@ int setlight(wbp w, char* s, int light)
          color[2] = atof(s3);
          color[3] = 0.0;
          s2 = s2  + i;
-         if(*s2 != ';' && *s2 != '\0') return Failed;
-         if(*s2 != '\0') s2++;
+	 if (*s2 != ';' && *s2 != '\0') return Failed;
+	 if (*s2 != '\0') s2++;
          glLightfv(light, GL_POSITION, color);
          }
       }
@@ -2244,7 +2244,7 @@ int settexcoords(wbp w, char* s)
 
    draw_code = si_s2i(redraw3Dnames, "Texcoord");
    if (draw_code == -1)
-       return Failed;
+      return Failed;
    MakeInt(draw_code, &g);
    c_put(&f, &g);
 
@@ -2300,7 +2300,7 @@ int settexcoords(wbp w, char* s)
          val.dword = D_Real;
          c_put(&f, &val);
          j++;
-         if(*s2 == ',') {
+	 if (*s2 == ',') {
 	    s2++;
 	    i=0;
 	    }
@@ -2324,7 +2324,7 @@ int setslices(wbp w, char *s)
    int slices;
    wcp wc = w->context;
 
-  slices = atoi(s);
+   slices = atoi(s);
    /* must be positive integer */
    if (slices < 1 )
       return Error;
@@ -2339,7 +2339,7 @@ int setrings(wbp w, char *s)
    int rings;
    wcp wc = w->context;
 
-  rings = atoi(s);
+   rings = atoi(s);
    /* must be positive integer */
    if (rings < 1 )
       return Error;

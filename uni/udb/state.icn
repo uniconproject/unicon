@@ -171,17 +171,6 @@ method Update(state)
 end
 
 #
-# private method:
-# it is mainly used to check the Windows exe
-#
-method checkWindowsExe()
-$ifndef _UNIX
-   if not find(".", TP[1]) then
-      TP[1] ||:= ".exe"
-$endif  #_UNIX   
-end
-
-#
 # Initialize the UDB Debugging State
 #
 method initializeState(tp)
@@ -192,8 +181,11 @@ method initializeState(tp)
    State := NONE
    if tp[1] then{
       TP := tp
-      checkWindowsExe()
       # check if the TP is loadable and accessable.
+$ifndef _UNIX
+      if not stat(TP[1]) & stat(TP[1]||".exe") then
+         TP[1]||:=".exe"
+$endif
       if stat(TP[1]) then{
          #--
          EvInit(TP) | stop("cant start evinit on " || TP[1])

@@ -298,9 +298,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    BlkLoc(ws->listp) = (union block *)lp;
    ws->width = ws->height = 0;
    wc = w->context;
-   wc->maxstex=16;
-   wc->stex = (struct _savetexture *) 
-	               malloc(wc->maxstex*sizeof(struct _savetexture));
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;
@@ -1095,33 +1092,6 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
    }
    return DefWindowProc(hwnd, msg, wp, lp);
 }
-
-/*
- * release_3d_resources - free all resources used for 3D graphics
- */
-#ifdef Graphics3D
-int release_3d_resources(wbp w)
-{
-   int i;
-   wcp wc = w->context;
-   
-   /* Free textures from memory */
-   for (i=0; i<wc->curtexture; i++) {
-      #if HAVE_LIBGL
-      free(wc->stex[i].tex);
-      #endif					/* HAVE_LIBGL */
-        wc->stex[i].w=0;
-   }
-   
-   free(wc->stex);
-   i = wc->selectionnamecount;
-   while (i)
-      free(wc->selectionnamelist[i--]);
-   free(wc->selectionnamelist);
-   free(wc->texName);
-   free(wc->texcoords);
-}
-#endif						/* Graphics3D */
 
 /*
  * wclose - make sure the window goes away - no questions asked
@@ -4909,9 +4879,6 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
    ws->width = ws->height = 0;
    wc = w->context;
-   wc->maxstex=16;
-   wc->stex = (struct _savetexture *) 
-	malloc(wc->maxstex*sizeof(struct _savetexture));
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;

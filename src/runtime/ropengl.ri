@@ -101,6 +101,11 @@ int init_3dcontext(wcp wc)
    wc->texName = malloc(16 * sizeof(GLuint));
    if (wc->texName == NULL) return Failed;
    wc->nalced = 16;
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+	       malloc(wc->maxstex*sizeof(struct _savetexture));
+   if (wc->stex == NULL) return Failed;
+   
    wc->texcoords = malloc(256 * sizeof (double));
    if (wc->texcoords == NULL) return Failed;
    wc->ntexcoordsalced = 256;
@@ -110,6 +115,58 @@ int init_3dcontext(wcp wc)
    wc->meshmode = GL_POLYGON;
    return Succeeded;
 }
+
+
+/*
+* release_3d_resources - free all resources used for 3D graphics
+*/
+int release_3d_resources(wbp w)
+{
+   int i;
+   wcp wc = w->context;
+#ifdef XWindows      
+   wdp wd = w->window->display;
+#endif					/* XWindows */
+
+   for (i=0; i<wc->ntextures; i++) {
+      free(wc->stex[i].tex);
+      wc->stex[i].w=0;
+   }
+   free(wc->stex);
+   i = wc->selectionnamecount;
+   while (i){
+      free(wc->selectionnamelist[i--]);
+   }
+   free(wc->selectionnamelist);
+   free(wc->texName);
+   free(wc->texcoords);
+
+#ifdef XWindows   
+   glXDestroyContext( wd->display, wc->ctx);
+#endif					/* XWindows */
+}
+ 
+/*
+ * check if we have enough textures names (and records)
+ * try to allocate if we need more
+ */
+int make_enough_texture_space(wcp wc)
+{
+   if (wc->ntextures >= wc->nalced) {
+      wc->nalced *= 2;
+      wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
+      if (wc->texName==NULL) return Failed;
+
+      wc->maxstex *= 2;
+      wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
+      if (wc->stex==NULL) return Failed;
+      
+      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
+   }
+   
+   return Succeeded;
+}
+
 
 /* calculates the surface normal "n" given three vertices on the surface */
 void calcNormal( double* v0, double* v1, double *v2, double* n )
@@ -1486,9 +1543,7 @@ int traversefunctionlist(wbp w)
 	                }
                      }
                   } /* for j=0 ... */
-#if HAVE_LIBGL
                glMultMatrixd((GLdouble *)matvalues);	
-#endif					/* HAVE_LIBGL */
                }
 	    break;
          case REDRAW_POLYGON:      /* DrawPolygon() */
@@ -2873,11 +2928,9 @@ int textureimg(wbp w, int width, int height,
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded)  {
-      k = wc->curtexture;
-      if (k >= wc->maxstex) {
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-         }
+      k = wc->ntextures;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       wc->stex[k].tex = tex;
       wc->stex[k].width = width;
       wc->stex[k].height = height;
@@ -2960,11 +3013,9 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
    if (i == Succeeded)  {
-      k = wc->curtexture;
-      if (k>=wc->maxstex) {
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-         }
+      k = wc->ntextures;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       wc->stex[k].tex = tex;
       wc->stex[k].width = width;
       wc->stex[k].height = height;
@@ -3076,11 +3127,9 @@ int texwindow2D(wbp w, wbp w2d)
    /* apply the texture */
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
    if (r == Succeeded)  {
-      k = wc->curtexture;
-      if (k>=wc->maxstex) {
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-         }
+      k = wc->ntextures;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       wc->stex[k].tex = tex;
       wc->stex[k].width = ws->width;
       wc->stex[k].height = ws->height;
@@ -3122,11 +3171,9 @@ int texwindow3D(wbp w1, wbp w2)
    }
 #endif					/* MSWindows */
     if (i == Succeeded) {
-     k = wc->curtexture;
-      if (k>=wc->maxstex) {
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-         }
+      k = wc->ntextures;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       wc->stex[k].tex = tex;
       wc->stex[k].width = width;
       wc->stex[k].height = height;
@@ -3488,15 +3535,10 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
    /*
     * need a new texture name, make room for it if necessary
     */
-   if (wc->ntextures >= wc->nalced) {
-      wc->nalced *= 2;
-      wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
-      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
-      }
+   if (make_enough_texture_space(wc)==Failed) return NULL;
+   
    glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
-   wc->curtexture = wt2->texindex = wc->ntextures;
-   wc->ntextures++;
-
+   
    if (ttype == 3)
       i = imagestr(w, name);
    else {
@@ -3504,8 +3546,12 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
       filename[MaxFileName] = '\0';
       i = fileimage(w, filename);
       }
-   if (i == Succeeded)
+      
+   if (i == Succeeded){
+      wc->curtexture = wt2->texindex = wc->ntextures;
+      wc->ntextures++;      
       return wt2;
+      }
    else return NULL;
 }
 
@@ -3558,11 +3604,9 @@ int texture_24img(wbp w, struct imgdata im)
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded) {
-      k = wc->curtexture;
-      if (k>=wc->maxstex) {
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-         }
+      k = wc->ntextures;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       wc->stex[k].tex = tex;
       wc->stex[k].width = width;
       wc->stex[k].height = height;
@@ -3622,11 +3666,9 @@ int texture_16img(wbp w, struct imgdata im)
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded) {
-      k = wc->curtexture;
-      if (k>=wc->maxstex) {
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-         }
+      k = wc->ntextures;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       wc->stex[k].tex = tex;
       wc->stex[k].width = width;
       wc->stex[k].height = height;

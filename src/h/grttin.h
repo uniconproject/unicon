@@ -231,7 +231,7 @@ typedef int jmp_buf;
 #endif                                  /* Messaging */
 
 #if NT
-typedef int HMODULE, WSADATA, WORD, HANDLE, MEMORYSTATUS;
+typedef int HMODULE, WSADATA, WORD, HANDLE, MEMORYSTATUS, DWORD;
 #ifdef NTGCC
 typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
 #endif
@@ -315,7 +315,7 @@ typedef int siptr, stringint, inst;
       
    #ifdef MSWindows
       typedef int clock_t, jmp_buf, MINMAXINFO, OSVERSIONINFO, BOOL_CALLBACK;
-      typedef int int_PASCAL, LRESULT_CALLBACK, MSG, BYTE, WORD, DWORD;
+      typedef int int_PASCAL, LRESULT_CALLBACK, MSG, BYTE, WORD;
       typedef int HINSTANCE, HGLOBAL, HPEN, HBRUSH, HRGN;
       typedef int LPSTR, HBITMAP, WNDCLASS, PAINTSTRUCT, POINT, RECT;
       typedef int HWND, HDC, UINT, WPARAM, LPARAM, SIZE;

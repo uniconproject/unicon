@@ -13,7 +13,6 @@ SHTOOL = shtool/shtool
 
 INCLUDES = -I../uri -I..
 DEFINES = -DHAVE_CONFIG_H
-CFLAGS = $(CPPFLAGS) -Wall -Werror -Wno-unused -ggdb $(DEFINES) $(INCLUDES)
 
 LDLIBS = ../libtp.a $(LIBS)
 
@@ -22,6 +21,9 @@ OBJS = daytime.o fing.o hhead.o pop.o testuri.o wtrace.o
 SRCS = daytime.c fing.c hhead.c pop.c testuri.c wtrace.c
 
 all: Makefile $(PROGS)
+
+.c.o:
+	$(CC) $(CFLAGS) -I.. -I../uri -c $*.c
 
 clean:
 	$(RM) $(OBJS)

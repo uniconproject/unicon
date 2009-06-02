@@ -4,6 +4,10 @@
  * from the web server.  It is also an example of the program using
  * its own exception handler. */
 
+#ifndef NO_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

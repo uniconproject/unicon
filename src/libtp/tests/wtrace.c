@@ -5,6 +5,10 @@
  * replacing the default discipline with one that wraps readf,
  * readlnf, and writef. */
 
+#ifndef NO_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

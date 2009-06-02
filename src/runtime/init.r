@@ -105,6 +105,7 @@ char *prog_name;			/* name of icode file */
  */
 
 int line_info;				/* flag: line information is available */
+int versioncheck_only;			/* flag: check version and exit */
 char *file_name = NULL;			/* source file for current execution point */
 #ifndef MultiThread
 int line_num = 0;			/* line number for current execution point */
@@ -567,8 +568,10 @@ void check_version(struct header *hdr, char *name,
 #else					/* HAVE_LIBZ */
       fclose(fname);
 #endif					/* HAVE_LIBZ */
+      if (versioncheck_only) exit(-1);
       error(name, "cannot run");
       }
+   if (versioncheck_only) exit(0);
 }
 
 #endif

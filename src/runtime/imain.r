@@ -976,6 +976,15 @@ int *ip;
 	    break;
 #endif					/* TallyOpt */
 
+	/*
+	 * Perform version check and exit if -V option given
+	 */
+	case 'V': {
+	    extern int versioncheck_only;
+	    versioncheck_only = 1;
+	    }
+	    break;
+
       /*
        * Set stderr to new file if -e option is given.
        */

@@ -4217,7 +4217,7 @@ function{1} Texture(argv[argc])
    body {
       wbp w, w2;
       wcp wc;
-      int warg = 0, nfields, draw_code;
+      int warg = 0, nfields, draw_code, i, saved_tex;
       unsigned char *s;
       char filename[MaxFileName + 1];
       tended char* tmp;
@@ -4229,7 +4229,7 @@ function{1} Texture(argv[argc])
       wc = w->context;
       if (argc - warg < 1)/* missing texture source */
          runerr(103);	
-
+      
       if (!constr && !(constr = rec_structor3d("gl_texture")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
@@ -4238,18 +4238,18 @@ function{1} Texture(argv[argc])
        * create a record of the graphical object and its parameters
        */
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
-      f.dword = D_Record;
-      f.vword.bptr = (union block *)rp;
-      MakeStr("Texture", 7, &(rp->fields[0])); 
 
       draw_code = si_s2i(redraw3Dnames, "Texture");
       if (draw_code == -1)
 	fail; 
+      
       MakeInt(draw_code, &(rp->fields[1]));
       if (argc > 0 && is:file(argv[0]))
 	rp->fields[3] = argv[0];
       else
 	rp->fields[3] = kywd_xwin[XKey_Window];
+      
+      saved_tex =  wc->curtexture;
 
       if (argc - warg > 1) { /* replace an existing texture "name" */
 	 C_integer theTexture;
@@ -4257,6 +4257,7 @@ function{1} Texture(argv[argc])
 	    runerr(101, argv[warg+1]);
 	    }
 	 theTexture++;
+	 /*printf("DO WE EVER USE THIS HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH\n");*/
 	 MakeInt(theTexture, &(rp->fields[2]));
 	 wc->curtexture = theTexture;
 #if HAVE_LIBGL
@@ -4270,21 +4271,16 @@ function{1} Texture(argv[argc])
        * This name is stored in w->context->texName[w->context->ntexture].
        * so we put w->context->ntexture in the list.
        */
-      if (wc->ntextures >= wc->nalced) {
-#if HAVE_LIBGL
-         wc->nalced *= 2;
-         wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
-         glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
-#endif					/* HAVE_LIBGL */
-         }
+
+      if (make_enough_texture_space(wc)==Failed) fail;
+
 #if HAVE_LIBGL
       glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
 #endif					/* HAVE_LIBGL */
+      
       wc->curtexture = wc->ntextures;
-      wc->ntextures++;
+      
       }
-      MakeInt(wc->curtexture, &(rp->fields[2]));
-      c_put(&(w->window->funclist), &f);
 
       /* check if the source is another window */
       if (argc>warg && is:file(argv[warg])) {
@@ -4301,6 +4297,7 @@ function{1} Texture(argv[argc])
             texwindow3D(w, w2);
          else
             texwindow2D(w, w2);
+	 i = Succeeded;
 	 }
       /* check if the source is a record */
       else if (is:record(argv[warg])) {
@@ -4319,6 +4316,7 @@ function{1} Texture(argv[argc])
          texhandle = IntVal(BlkLoc(argv[warg])->Record.fields[2]);
          rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
          wc->curtexture = texhandle;
+	 i = Succeeded;
 #if HAVE_LIBGL
          glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
 #endif					/* HAVE_LIBGL */
@@ -4327,6 +4325,7 @@ function{1} Texture(argv[argc])
 	 /* otherwise it must be a string */
 	 if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
 	 s = (unsigned char *)tmp;
+	 /*if ( settexture( w, s, strlen(s)) == Succeeded) then ;*/
 	 while(isspace(*s)) s++;
 	 while(isdigit(*s)) s++;
 	 while(isspace(*s)) s++; 
@@ -4338,11 +4337,28 @@ function{1} Texture(argv[argc])
 	 else {  /* it is a file name */
 	    strncpy(filename, tmp, MaxFileName);
 	    filename[MaxFileName] = '\0';
-	    if (fileimage(w, filename) != Succeeded)
+	    i = fileimage(w, filename);
+	    /*if (settexture(w,filename, strlen(filename), f )==Succeeded )
+	       return f
+	    else
 	       fail;
+	    */
 	    }
 	 }
-      return f; 
+      
+      if (i==Succeeded) {
+	 wc->ntextures++;
+	 f.dword = D_Record;
+	 f.vword.bptr = (union block *)rp;
+	 MakeStr("Texture", 7, &(rp->fields[0]));
+	 MakeInt(wc->curtexture, &(rp->fields[2]));
+	 c_put(&(w->window->funclist), &f);
+	 return f; 
+      }
+      else{
+	 wc->curtexture = saved_tex;
+	 fail;
+	 }
       }
 end
 

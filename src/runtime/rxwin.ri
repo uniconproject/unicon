@@ -1264,6 +1264,13 @@ int wmap(wbp w)
    XClassHint clhints;
 
    STDLOCALS(w);
+#ifdef Graphics3D
+   /*wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+                 malloc(wc->maxstex*sizeof(struct _savetexture));
+		 */
+#endif					/* Graphics3D */
+   
 
    /*
     *  Create a pixmap for this canvas if there isn't one already.
@@ -4619,7 +4626,11 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    ws->x += wc->dx;
 #ifdef Graphics3D
    wc->is_3D = ws->is_3D = is_3d;
-
+   /*
+   wc->maxstex=16;
+   wc->stex = (struct _savetexture *) 
+               malloc(wc->maxstex*sizeof(struct _savetexture));
+	       */
    if (is_3d) {
       if (init_3dcontext(wc) == Failed) return 0;
       }
@@ -4649,7 +4660,12 @@ char my_wmap(wbp w)
 
 /*   STDLOCALS(w); */
 #ifdef Graphics3D
+    /*wc->maxstex=16;
+    wc->stex = (struct _savetexture *) 
+	 malloc(wc->maxstex*sizeof(struct _savetexture));
+    */
     if (ws->is_3D) child_window = 2;
+    
 #endif					/* Graphics3D */
     wp = ws->parent;
    /*
@@ -4923,25 +4939,12 @@ char my_wmap(wbp w)
      Atom WMDeleteWindow = XInternAtom(ws->display->display, "WM_DELETE_WINDOW", True);
      XSetWMProtocols(ws->display->display, ws->win, &WMDeleteWindow, 1);
    }
-   
+
 #ifdef Graphics3D
    if (child_window==2) {
       /* set defaults for attributes */
-     w->context->eyeupx = w->context->eyeupz = 0.0;
-     w->context->eyeupy = 1.0;
-     w->context->dim = 3;
-     w->context->eyeposx = w->context->eyeposy =  w->context->eyeposz = 0.0;
-     w->context->eyedirx = w->context->eyediry = 0.0;
-     w->context->eyedirz = -100.0;
-     w->context->autogen = 1;
-     w->context->texmode = 0;
-     w->context->numtexcoords = 0;
-#if HAVE_LIBGL
-     w->context->texName = malloc(16 * sizeof(GLuint));
-#endif					/* HAVE_LIBGL */
-     w->context->nalced = 16;
-     w->context->ntextures = 0;
-     w->context->curtexture = -1;
+      if (init_3dcontext(w->context)==Failed)
+	 return 0;
      
      /* create an empty list for list of function calls */
 /*
@@ -4951,26 +4954,7 @@ char my_wmap(wbp w)
 */     
      /* set up the appropriate opengl states */
 #if HAVE_LIBGL
-     glViewport(0, 0, (GLsizei)ws->width, (GLsizei)ws->height);
-     glClearColor(RED(w->context->bg)/(GLfloat)255,
-		  GREEN(w->context->bg)/(GLfloat)255,
-		  BLUE(w->context->bg)/(GLfloat)255, 0.0);
-     
-     glGenTextures(16, w->context->texName);
-     glEnable(GL_DEPTH_TEST);
-     glEnable(GL_TEXTURE_GEN_S);
-     glEnable(GL_TEXTURE_GEN_T);
-     glMaterialf(GL_FRONT, GL_SHININESS, 50.0);
-     glEnable(GL_LIGHTING);
-     glEnable(GL_LIGHT0);
-     glEnable(GL_NORMALIZE);
-     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-     glMatrixMode(GL_PROJECTION);
-     glLoadIdentity();
-     tb = 0.125 * ws->height / ws->width;
-     glFrustum(-0.125, 0.125, -tb, tb, 0.25, 50000.0);
-     glMatrixMode(GL_MODELVIEW);
-     glLoadIdentity();
+      init_opengl(w);
 #endif					/* HAVE_LIBGL */
    }
 #endif					/* Graphics3D */

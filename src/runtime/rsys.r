@@ -1233,7 +1233,7 @@ FILE *popen (const char* cmd, const char *mode)
   if (*p == '"') {
     q = ++p;
     while(*p && *p != '"') p++;
-    if (*p != '\0') {
+    if (*p == '\0') {
       fprintf(stderr, "popen: malformed command (\" not terminated)\n");
       return NULL;
     }

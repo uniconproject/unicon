@@ -22,7 +22,7 @@ mkdir -p ../../../ipl/lib
 cp makefile.cfn ../../../ipl/cfuncs/makefile
 
 cp ../../unix/Config/ipllib.mak ../../../ipl/lib/makefile
-cp ../../unix/Config/ide.mak ../../../uni/ide/makefile
+# cp ../../unix/Config/ide.mak ../../../uni/ide/makefile
 cp ../../unix/Config/ivib.mak ../../../uni/ivib/makefile
 cp ../../unix/Config/unilib.mak ../../../uni/lib/makefile
 echo EXE=.exe > ../../../uni/unicon/makefile

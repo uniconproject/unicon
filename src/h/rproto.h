@@ -600,6 +600,7 @@ void detectRedirection();
    #endif				/* XWindows */
 
    #ifdef Graphics3D
+      void init_opengl(wbp  w);
       int add_3dfont(char *fname, int fsize, char ftype);
       int c_traverse(struct b_list *hp, struct descrip * res, int position);
       char child_window_stuff(wbp w, wbp wp, char child_window);

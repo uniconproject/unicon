@@ -102,7 +102,6 @@ int init_3dcontext(wcp wc)
    wc->rings = 10;
    wc->selectionenabled = 0;
    wc->selectionrendermode=0;
-   wc->selectionavailablename=1;
    wc->selectionnamelistsize=256;
    wc->selectionnamecount=0;
    wc->selectionnamelist = malloc(wc->selectionnamelistsize*sizeof(char*));
@@ -113,12 +112,12 @@ int init_3dcontext(wcp wc)
    wc->eyedirz = -100.0;
    wc->autogen = 1;
    wc->texmode = wc->numtexcoords = 0;
-   wc->texName = malloc(1024 * sizeof(GLuint));
+   wc->texName = malloc(16 * sizeof(GLuint));
    if (wc->texName == NULL) return Failed;
-   wc->nalced = 1024;
-   wc->maxstex=1024;
+   wc->nalced = 16;
+   wc->maxstex=16;
    
-   wc->stex = (struct _savetexture *) malloc(1024*sizeof(struct _savetexture));
+   wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
    if (wc->stex == NULL) return Failed;
    
    wc->texcoords = malloc(256 * sizeof (double));
@@ -151,7 +150,7 @@ int release_3d_resources(wbp w)
    wc->stex = NULL;
    i = wc->selectionnamecount;
    while (i){
-      free(wc->selectionnamelist[i--]);
+      free(wc->selectionnamelist[--i]);
    }
    free(wc->selectionnamelist);
    free(wc->texName);
@@ -878,7 +877,7 @@ int redraw3D(wbp w)
 		  savedhits++;
 		  while (numnam--) {
 		     int i = *bufp2++;
-		     if ((0 < i) && (i <= wc->selectionnamecount))
+		     if ((0 <= i) && (i < wc->selectionnamecount))
 			memsize += strlen(wc->selectionnamelist[i])+1;
 		     }
 
@@ -888,7 +887,7 @@ int redraw3D(wbp w)
 		  while (numnames) {
 		     name = *bufp++;
 		     --numnames;
-		     if ((0 < name) && (name <= wc->selectionnamecount)) {
+		     if ((0 <= name) && (name < wc->selectionnamecount)) {
 			strcat(tmpname, wc->selectionnamelist[name]);
 			if (numnames)strcat(tmpname, "-");
 			}
@@ -2676,8 +2675,8 @@ int seteye(wbp w, char *s)
 /* set a texture */
 int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
 {
-   wcp wc = w->context;
-   char *s;
+   wcp wc = w->context;    
+   char* s;
    int nfields, draw_code;
    /*tended struct descrip f; */
    tended struct descrip d;

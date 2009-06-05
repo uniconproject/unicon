@@ -1314,7 +1314,6 @@ function{1} EraseArea(argv[argc])
          glClearColor(RED(w->context->bg)/(GLfloat)256,
                GREEN(w->context->bg)/(GLfloat)256, 
                BLUE(w->context->bg)/(GLfloat)256, 0.0);
-         w->context->selectionavailablename=1;
 	 /* need to free selectionnamelist entries here */
          w->context->selectionnamecount=0;
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
@@ -4332,7 +4331,7 @@ function{1} Texture(argv[argc])
 	 else
 	    fail;
 	 }
-      }
+   }
 end
 
 
@@ -4674,9 +4673,7 @@ function{1} WSection(argv[argc])
 
       if (wc->selectionenabled) {
 	 /*  integer code for opengl selection */
-         MakeInt(wc->selectionavailablename, &(rp->fields[5]));
-         wc->selectionavailablename++;
-         wc->selectionnamecount++;
+         MakeInt(wc->selectionnamecount, &(rp->fields[5]));
 	 
 	 if (wc->selectionnamecount >= wc->selectionnamelistsize) {
 	    wc->selectionnamelistsize *=2;
@@ -4688,6 +4685,7 @@ function{1} WSection(argv[argc])
 	    runerr(103, argv[warg]);
 
 	 wc->selectionnamelist[wc->selectionnamecount] = strdup(tmp);
+	 wc->selectionnamecount++;
 	 }
       else
 	rp->fields[5]=zerodesc;

@@ -644,7 +644,7 @@ void detectRedirection();
       int setslices(wbp w, char *s);
       int settexcoords(wbp w, char* s);
       int settexmode(wbp w, char* s);
-      int settexture(wbp w, char* str, int len);
+      int settexture(wbp w, char* str, int len, struct descrip *f, int curtex);
       void sphere(double radius, double x, double y, double z,
 		  int slices, int rings, int gen);
       wfp srch_3dfont(char *fname, int fsize, char ftype);

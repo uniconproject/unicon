@@ -4,7 +4,7 @@
  */
 int bltex(wbp w, int width, int height, int ch, char *s, word len);
 int determinematerial(char *, C_integer, C_integer, C_integer, C_integer);
-wtp lookup_texture_byname(wbp w, char *name, int len, int type);
+wtp lookup_texture_byname(wbp w, char *name, int len, int type, int curtex);
 int texture(int width, int height, GLubyte *tex, int texmode);
 int texture_24img(wbp w, struct imgdata im);
 int textureimg(wbp w, int width, int height, 
@@ -2674,12 +2674,12 @@ int seteye(wbp w, char *s)
 }
 
 /* set a texture */
-int settexture(wbp w, char* str, int len)
+int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
 {
    wcp wc = w->context;
-   char* s;
+   char *s;
    int nfields, draw_code;
-   tended struct descrip f;
+   /*tended struct descrip f; */
    tended struct descrip d;
    tended struct b_record *rp;
    static dptr constr;
@@ -2696,8 +2696,8 @@ int settexture(wbp w, char* str, int len)
     */
    if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
       return Failed;
-   f.dword = D_Record;
-   f.vword.bptr = (union block *)rp;
+   (*f).dword = D_Record;
+   (*f).vword.bptr = (union block *)rp;
    MakeStr("Texture", 7, &(rp->fields[0])); 
 
    draw_code = si_s2i(redraw3Dnames, "Texture");
@@ -2714,7 +2714,7 @@ int settexture(wbp w, char* str, int len)
    else		  /* it is a file name */
       ttype = 1;
 
-   wt = lookup_texture_byname(w, str, len, ttype);
+   wt = lookup_texture_byname(w, str, len, ttype, curtex);
    if (wt == NULL) return Failed;
 
    /*
@@ -2724,7 +2724,7 @@ int settexture(wbp w, char* str, int len)
     */
    MakeInt(wc->curtexture, &(rp->fields[2]));
    rp->fields[3] = nulldesc;
-   c_put(&(w->window->funclist), &f);
+   c_put(&(w->window->funclist), f);
 
    return Succeeded;
 }
@@ -3539,12 +3539,12 @@ dptr rec_structor3d(char *name)
    return 0;
 }
 
-wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
+wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
 {
    char filename[MaxFileName +1];
    wcp wc = w->context;
    wtp wt = wc->textures, wt2;
-   int i;
+   int i, saved_tex;
    makecurrent(w);
    while (wt) {
       if (wt->textype == ttype) {
@@ -3573,13 +3573,19 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
       wc->textures->previous = wt2;
       }
    wc->textures = wt2;
-
-   /*
-    * need a new texture name, make room for it if necessary
-    */
-   if (make_enough_texture_space(wc)==Failed) return NULL;
+   saved_tex = wc->curtexture;
+   if (curtex==-1){
+      /*
+      * need a new texture name, make room for it if necessary
+      */
+      if (!make_enough_texture_space(wc)) return NULL;
+      wc->curtexture = wc->ntextures;
+      }
+   else /* replace the curtex */
+      wc->curtexture = curtex;
    
-   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
+   
+   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
    
    if (ttype == 3)
       i = imagestr(w, name);
@@ -3590,11 +3596,14 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype)
       }
       
    if (i == Succeeded){
-      wc->curtexture = wt2->texindex = wc->ntextures;
+      wt2->texindex = wc->ntextures;
       wc->ntextures++;      
       return wt2;
       }
-   else return NULL;
+   else{
+      wc->curtexture=saved_tex;
+      return NULL;
+      }
 }
 
 int texture_24img(wbp w, struct imgdata im)

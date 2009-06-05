@@ -3290,9 +3290,11 @@ char * abuf;
       case A_MESHMODE:
 	 if (!setmeshmode(w,val)) return Failed;
 	 break;
-      case A_TEXTURE:
-	 AttemptAttr(settexture(w, StrLoc(d), StrLen(d)));
+      case A_TEXTURE:{
+	 tended struct descrip f; /* -1 means no curtexture*/
+	 AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1));
 	 break;
+	 }
       case A_TEXCOORD:
 	 AttemptAttr(settexcoords(w, val));
 	 break;
@@ -3344,7 +3346,7 @@ char * abuf;
             }
 	 break;
 	 }
-      case A_INPUTMASK: {
+      case A_INPUTMASK: {	 
 	 AttemptAttr(setinputmask(w, val));
 	 break;
 	 }

@@ -4218,12 +4218,11 @@ function{1} Texture(argv[argc])
       wbp w, w2;
       wcp wc;
       int warg = 0, nfields, draw_code, i, saved_tex;
-      unsigned char *s;
-      char filename[MaxFileName + 1];
       tended char* tmp;
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
+      C_integer theTexture=-1;
 
       OptWindow(w);
       wc = w->context;
@@ -4236,54 +4235,61 @@ function{1} Texture(argv[argc])
 
       /*
        * create a record of the graphical object and its parameters
+       *
+       * to redraw a texture we must know the texture name assigned by opengl
+       * This name is stored in wc->texName[wc->curtexture].
+       * so we put wc->curtexture in the list.
        */
-      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 
       draw_code = si_s2i(redraw3Dnames, "Texture");
       if (draw_code == -1)
 	fail; 
-      
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
       MakeInt(draw_code, &(rp->fields[1]));
       if (argc > 0 && is:file(argv[0]))
-	rp->fields[3] = argv[0];
+	 rp->fields[3] = argv[0];
       else
-	rp->fields[3] = kywd_xwin[XKey_Window];
+	 rp->fields[3] = kywd_xwin[XKey_Window];
+      MakeStr("Texture", 7, &(rp->fields[0]));
+      f.dword = D_Record;
+      f.vword.bptr = (union block *)rp;
       
-      saved_tex =  wc->curtexture;
+      saved_tex = wc->curtexture;
 
       if (argc - warg > 1) { /* replace an existing texture "name" */
-	 C_integer theTexture;
 	 if (!cnv:C_integer(argv[warg + 1], theTexture)) {
 	    runerr(101, argv[warg+1]);
 	    }
-	 theTexture++;
+	 if (theTexture>=wc->ntextures) fail;
+	 theTexture++; /* should be check, probably no need for ++ */
 	 /*printf("DO WE EVER USE THIS HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH\n");*/
-	 MakeInt(theTexture, &(rp->fields[2]));
 	 wc->curtexture = theTexture;
+	 }
+      /* check if the source is a record */
+      else if (is:record(argv[warg])) {
+	 C_integer texhandle;
+	 
+	 if (!cnv:C_string(BlkD(argv[warg],Record)->fields[0], tmp))
+	    runerr(103, argv[warg]);
+	 
+	 if (strcmp(tmp, "Texture")) runerr(103, argv[warg]);
+	 
+	 w2 = BlkD(BlkLoc(argv[warg])->Record.fields[3],File)->fd.wb;
+	 rp->fields[3] = BlkLoc(argv[warg])->Record.fields[3];
+	 wc = w2->context;
+	 
+	 /* Pull out the texture handle */
+         texhandle = IntVal(BlkLoc(argv[warg])->Record.fields[2]);
+	 rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
+	 wc->curtexture = texhandle;
 #if HAVE_LIBGL
 	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
 #endif					/* HAVE_LIBGL */
+	 c_put(&(w->window->funclist), &f);
+	 return f; 
 	 }
-      else {
-
-      /*
-       * to redraw a texture we must know the texture name assigned by opengl
-       * This name is stored in w->context->texName[w->context->ntexture].
-       * so we put w->context->ntexture in the list.
-       */
-
-      if (make_enough_texture_space(wc)==Failed) fail;
-
-#if HAVE_LIBGL
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->ntextures]);
-#endif					/* HAVE_LIBGL */
       
-      wc->curtexture = wc->ntextures;
-      
-      }
-
-      /* check if the source is another window */
-      if (argc>warg && is:file(argv[warg])) {
+      if (is:file(argv[warg])) { /*check if the source is another window*/
 	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
 	 if ((BlkLoc(argv[warg])->File.status & (Fs_Read|Fs_Write)) == 0)
@@ -4291,73 +4297,40 @@ function{1} Texture(argv[argc])
 	 w2 = BlkLoc(argv[warg])->File.fd.wb;
 	 if (ISCLOSED(w2))
 	    runerr(142,argv[warg]);
-
+	 
+	 if (theTexture==-1){
+	    if (make_enough_texture_space(wc)==Failed) fail;
+	    wc->curtexture = wc->ntextures;
+	    }
+	 else
+	    wc->curtexture = theTexture;
+	 
 	 /* convert the window into a texture */
          if (w2->context->is_3D)
-            texwindow3D(w, w2);
-         else
-            texwindow2D(w, w2);
+	    texwindow3D(w, w2);
+	 else
+	    texwindow2D(w, w2);
 	 i = Succeeded;
+	 if (i==Succeeded){
+	    wc->ntextures++;
+	    MakeInt(wc->curtexture, &(rp->fields[2]));
+	    c_put(&(w->window->funclist), &f);
+	    return f;
+	    }
+	 else{
+	    wc->curtexture = saved_tex;
+	    fail;
+	    }
 	 }
-      /* check if the source is a record */
-      else if (is:record(argv[warg])) {
-	 C_integer texhandle;
-
-	 if (!cnv:C_string(BlkD(argv[warg],Record)->fields[0], tmp))
-	    runerr(103, argv[warg]);
-
-	 if (strcmp(tmp, "Texture")) runerr(103, argv[warg]);
-
-         w2 = BlkD(BlkLoc(argv[warg])->Record.fields[3],File)->fd.wb;
-         rp->fields[3] = BlkLoc(argv[warg])->Record.fields[3];
-         wc = w2->context;
-
-         /* Pull out the texture handle */
-         texhandle = IntVal(BlkLoc(argv[warg])->Record.fields[2]);
-         rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
-         wc->curtexture = texhandle;
-	 i = Succeeded;
-#if HAVE_LIBGL
-         glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-#endif					/* HAVE_LIBGL */
-	 }
-      else {
+      else{
 	 /* otherwise it must be a string */
 	 if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
-	 s = (unsigned char *)tmp;
-	 /*if ( settexture( w, s, strlen(s)) == Succeeded) then ;*/
-	 while(isspace(*s)) s++;
-	 while(isdigit(*s)) s++;
-	 while(isspace(*s)) s++; 
-
-	 if (*s == ',') { /* must be an image string */
-	    if (imagestr(w, tmp) != Succeeded)
-	       runerr(153, argv[warg]);
-	    }
-	 else {  /* it is a file name */
-	    strncpy(filename, tmp, MaxFileName);
-	    filename[MaxFileName] = '\0';
-	    i = fileimage(w, filename);
-	    /*if (settexture(w,filename, strlen(filename), f )==Succeeded )
-	       return f
-	    else
-	       fail;
-	    */
-	    }
-	 }
-      
-      if (i==Succeeded) {
-	 wc->ntextures++;
-	 f.dword = D_Record;
-	 f.vword.bptr = (union block *)rp;
-	 MakeStr("Texture", 7, &(rp->fields[0]));
-	 MakeInt(wc->curtexture, &(rp->fields[2]));
-	 c_put(&(w->window->funclist), &f);
-	 return f; 
-      }
-      else{
-	 wc->curtexture = saved_tex;
-	 fail;
+	 i = settexture(w, tmp, strlen(tmp), &f, theTexture);
+	 
+	 if (i==Succeeded)
+	    return f;
+	 else
+	    fail;
 	 }
       }
 end

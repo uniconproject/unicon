@@ -145,7 +145,7 @@ method get_CommandLine()
             put(cmd, \tok)
             tab(many(WhiteSpace))
             op := tab(many(OPCHAR))  | &null
-            if \op then{
+            if \op & not (cmd[1] == ("b"|"break"))then{
                if op ==":" then{
                   #write("-------op=",op)
                   tok := tab(many(TOKEN)) | ""
@@ -153,8 +153,8 @@ method get_CommandLine()
                   cmd[-1]:=tok
                   }
                else
-                  put(cmd,op)
-               } 
+                  put(cmd,\op)
+               }
             }
          }
       #write(ximage(cmd))

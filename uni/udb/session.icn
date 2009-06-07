@@ -116,8 +116,9 @@ method parse_Command(cmd)
      "info"   :{  cmdInfo(cmd)                      }
      "analyze":{  Debug.Internal.cmdAnalyzeInfo(cmd[3]) }
      #- the shell commands
-     "ls"|"ll":{ ls()  }
-     "pwd"    :{ pwd() }
+     "ls"|"ll":{ ls()     }
+     "pwd"    :{ pwd()    }
+     "cd"     :{ cd(cmd)  }
      #-new set of commands for the UDB config script 
      "loadscript" :{ }
      "runscript"  :{ }
@@ -473,6 +474,13 @@ end
 #
 method pwd()
    system(DState.cmdHistory[1])
+end
+
+#
+# the shell cd command
+#
+method cd(cmd)
+   chdir(cmd[2])
 end
 
 #

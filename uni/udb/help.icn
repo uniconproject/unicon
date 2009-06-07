@@ -1,0 +1,640 @@
+#
+# help.icn
+# Handles UDB's help system
+# Ziad Al-Sharif
+# zsharif@gmail.com
+# June 2009
+#
+ 
+$include "defaults.icn"
+
+
+#
+# provide the UDB debugging help
+#
+class HELP(
+   DState,      # an object of the class State()
+   cmdClasses,  # information about UDB's command classes
+   assistance,  # UDB's help assistance messages
+   loadState,   # information about UDB's LOAD state applicable commands
+   pauseState,  # information about UDB's PAUSE state applicable commands
+   errorState,  # information about UDB's ERROR state applicable commands
+   basic,       # information about the basic class of commands
+   breakpoints, # information about the breakpoints class of commands
+   watchpoints, # information about the watchpoints class of commands
+   tracepoints, # information about the tracepoints class of commands
+   stack,       # information about the stack class of commands
+   stepping,    # information about the stepping class of commands
+   data,        # information about the data class of commands
+   files,       # information about the files class of commands
+   memory,      # information about the memory class of commands
+   shell,       # information about the shell class of commands
+   extensions,  # information about the extensions class of commands
+   Message
+   )
+
+#         
+# General Help Command
+#
+method cmdHelp(cmd)
+
+   #write("This is command " || cmd[1])
+   if *cmd = 1 then {
+   case DState.State of {
+   NONE | LOAD | END:{
+      Message := loadState||cmdClasses||assistance
+      }
+    PAUSE:{
+      Message := pauseState||cmdClasses||assistance
+      }
+    ERROR:{
+      Message := errorState||cmdClasses||assistance
+      }
+   }# end of case   
+   }
+   else{
+   case cmd[2] of {
+   "basic":{
+    Message := basic
+    }
+   "breakpoints" | "breakpoint":{
+    Message := breakpoints || assistance
+    }
+   "watchpoints" | "watchpoint":{
+    Message := watchpoints || assistance
+    }
+   "tracepoints" | "tracepoint":{
+    Message := tracepoints || assistance
+    }
+   "stack":{
+    Message := stack || assistance
+    }
+   "stepping":{
+    Message := stepping || assistance
+    }
+   "data":{
+    Message := data || assistance
+    }
+   "files":{
+    Message := files || assistance
+    }
+   "memory":{
+    Message := memory || assistance
+    }
+   "shell":{
+    Message := shell || assistance
+    }
+   "extensions"|"extension"|"agent":{
+    Message := extensions || assistance
+    }
+   "load":{
+    Message:="_
+    \n   Loads a program into UDB. Use: \"load program\"_
+    \n   load p arg : loads program (p) with argument (arg)"
+    }
+   "step":{
+    Message:="_
+    \n   Steps into the next line in the source code_
+    \n   step   : steps one line_
+    \n   step n : steps (n) lines"
+    }
+   "run":{
+    Message:="_
+    \n   Starts (or restarts) program execution_
+    \n   run      : runs current loaded program_
+    \n   run args : args list passed to program"
+    }
+   "next":{
+    Message:="_
+    \n   next steps to next line even on function calls_
+    \n   treats function call as only one operation_
+    \n   next   : steps one line_
+    \n   next n : steps (n) lines"
+    }
+   "frame":{
+    Message:="_
+    \n   Prints out the Stack Frame info_
+    \n   frame   : prints current stack frame info_
+    \n   frame n : prints info about stack frame number (n)_
+    \n             n=0 current frame, oldest frame has the bigest number_
+    \n   look for \"help up\" and \"help down"
+    }
+   "up":{
+    Message:="_
+    \n   Moves current frame pointer up in the execution stack_
+    \n   up   : moves current frame pointer one frame up_
+    \n   up n : moves current frame pointer (n) frames up_
+    \n   look for \"help down\" and \"help frame\""
+    }
+   "down":{
+    Message:="_
+    \n   Moves current frame pointer down in the stack_
+    \n   down   : moves current frame pointer one frame down_
+    \n   down n : moves current frame pointer (n) frames down_
+    \n   look for \"help up\" and \"help frame\""
+    }
+   "quit":{
+    Message:="\n   quit: Exits UDB. Use: \"quit\""
+    }
+   "help":{
+    Message:="\n   help: for more help. Try \"help command\""
+    }
+   "print":{
+    Message:="_
+    \n   Prints variable information:_
+    \n   print       : prints globals and locals of current frame_
+    \n   print var   : prints the var value from current frame_
+    \n   print var i : prints tha var value from frame number i_
+    \n   print -G    : prints all global vars_
+    \n   print -L    : prints all local vars in current frame_
+    \n   print -P    : prints all Formal Parameters"
+    }
+   "where":{
+    Message:="_
+    \n   Prints the current position in the Source Code_
+    \n   where      : shows 10 stack frames from the top_
+    \n                another where will show the next 10 frames_
+    \n   where i    : shows 10 stack frames starting at frame i_
+    \n   where -i   : shows 10 stack frames starting at frame i from the end_
+    \n   look for \"help break\""
+    }
+   "c"|"cont"|"continue":{
+    Message:="_
+    \n   Continue to run at full speed after a breakpoint_
+    \n   continue_
+    \n   look for \"help cont\""
+    }
+   "break":{
+    Message:="_
+    \n   Sets a breakpoint_
+    \n   break        : prints all of the pre-set breakpoints_
+    \n   break num    : Sets a break at line number (num)_
+    \n   break f num  : Sets a break in file f at line number num_
+    \n   break Proc   : Sets a break at procedure named \"Proc\"_
+    \n   break f Proc : Sets a break in file f at procedure \"Proc\""
+    }
+   "clear":{
+    Message:="_
+    \n   Clears a breakpoint_
+    \n   clear        : Clears all of the pre-set breakpoints_
+    \n   clear num    : Clears break at line num in the current file_
+    \n   clear f num  : Clears break in file f at line num_
+    \n   clear Proc   : Clears break at procedure Proc in the current file_
+    \n   clear f Proc : Clears break in file f at procedure Proc"
+    }
+   "watch":{
+    Message:="_
+    \n   Sets a watchpoint on some var_
+    \n   watch          : prints a list of all pre-set watch vars_
+    \n   watch var      : break at every line the var can change,_
+    \n                    if the program is running, it watche for_ 
+    \n                    var in the local scope, otherwize it_
+    \n                    assumes that var is a global variable_
+    \n   watch var proc : watch for local var in procedure proc"
+    }
+   "list":{
+    Message:="_
+    \n   Prints out some source code lines_
+    \n   list      : if program is not running yet, current line is the_
+    \n               line of procedure main(). Otherwise, current line is_
+    \n               where the execution paused_ 
+    \n   list +    : prints 10 lines from the current file centered_
+    \n               around the current line, another list cmd will_
+    \n               print the next 10 lines and so on._
+    \n   list -    : prints the previous 10 lines from the current print_
+    \n   list num  : prints 10 lines centered around the line num_
+    \n   list Proc : prints 10 lines centered around the precedure Proc_
+    \n   list f    : prints 10 lines from the begining of file f_
+    \n   list f n  : prints 10 lines centered around the line n of file f"
+    }
+   "src":{
+    Message:="_
+    \n   Prints out a sorted list of related source code info_
+    \n   src       : prints a detailed summery of all used file names_
+    \n   src -f    : prints all loaded file names_
+    \n   src -m    : prints all unloaded source file names_
+    \n   src -u    : prints all loaded user files_
+    \n   src -l    : prints all loaded library files_
+    \n   src -pkg  : prints all used package names_
+    \n   src -cls  : prints all used class names-does not belong to packages_
+    \n   src -proc : prints all used procedure names_
+    \n   src -fun  : prints all used function names_
+    \n   src -g    : prints all used global variables_
+    \n   src -r    : prints all used record names_
+    \n   src -a    : prints a summery of used source files"
+    }
+   "trace":{
+    Message:="_
+    \n   Sets a tracer on any variable or execution behavior of the program:_
+    \n   trace var | var=[on|off]_
+    \n      -proc | -proc=[on | off] |_
+    \n      -proc [ call | fail | suspend | resume ]=[on | off]_
+    \n      -func | -func=[on | off] |_
+    \n      -func [ call | fail | suspend | resume ]=[on | off]_
+    \n      -oper | -oper=[on | off] |_
+    \n      -oper [ call | fail | suspend | resume ]=[on | off]_
+    \n      -scan | -scan=[on | off] |_
+    \n      -scan [ new  | fail | suspend | resume ]=[on | off]_
+    \n   \"on\" and \"off\" are used to turn the tracer on and off_
+    \n   when there is no on/off then the action is printing info_
+    \n   ----------------------_
+    \n   trace var             : prints the traced var info_
+    \n                           if the program is running, it assumes the_ 
+    \n                           var is in the local scope, otherwise it_
+    \n                           assumes that var is a global variable_
+    \n   trace var p           : prints traced var info that is local to p_
+    \n   trace var=[on|off]    : traces every value the var can have,_
+    \n   trace var=[on|off] p  : traces a local var in procedure p_
+    \n   --In oreder to set any of the following behavior tracers ON,_
+    \n     it must be set before the program is running/rerunning_
+    \n   trace -proc           : prints all the traced procedure info_
+    \n   trace -proc=[on|off]  : Sets the procdure tracer on/off _
+    \n   trace -proc call      : prints the traced procedure calls_
+    \n   trace -proc call=on   : Sets a tracer ON on every procedure call_
+    \n   trace -proc call=off  : Sets a tracer OFF on every procedure call_
+    \n   and the rest ar going in the same fashion"
+    }
+   default:{
+    Message:="\n   Command not found. Type \"help\" for assistance"
+    } 
+   }#end of case
+   }# end of else
+   #make udb console takes no actions 
+   DState.State := SKIP
+   DState.Write(Message)
+end
+
+initially()
+
+   cmdClasses := "_ 
+    \n_   
+    \n   Command Classes:_
+    \n   basic       : the most common essential commands_
+    \n   breakpoints : how to stop a program at certain source code locations_
+    \n   watchpoints : how to observe certain variable activities_
+    \n   tracepoints : how observe the behavior of certain execution properties_
+    \n   stack       : how to investigate the execution stack_
+    \n   stepping    : how to step in the execution of the buggy program_
+    \n   data        : how to examin and change data in the execution state_
+    \n   files       : how to look up source files and code_
+    \n   memory      : how to look up the memory usage_
+    \n   shell       : supported shell commands_
+    \n   extensions  : manage internal and external extensions"
+
+   assistance :="_
+    \n_
+    \n   Type \"help\" followed by a class name for a list of class commands_
+    \n   Type \"help all\" for the list of all commands_
+    \n   Type \"help\" followed by command name for full documentation."
+
+   loadState :="_
+    \n   Applicable Commands are:_
+    \n   load  : loads a new program into udb_
+    \n   run   : runs the pre-loaded program under udb_
+    \n   break : sets a breakpoint in source code property_
+    \n   clear : deletes an existing breakpoint, watchpoint, and tracepoint_
+    \n   trace : to trace some of a program's execution behaviors_
+    \n   list  : displays lines of the source code_
+    \n   info  : shows information about different debugging properities_
+    \n   quit  : quits the current UDB session_
+    \n   help cmd : shows more info about a specific command"
+
+   pauseState := "_
+    \n   Applicable Commands are:_
+    \n   cont  : continue on a full speed execution after a PAUSE_
+    \n   step  : stepping one or more lines in the source code_
+    \n   next  : same as step command except treating a_
+    \n           procedure call as one command or one line of code_
+    \n   load  : loads a new program into udb_
+    \n   run   : restarts the execution from the begining_
+    \n   where : shows the current location info_
+    \n   frame : shows the current stack frame info_
+    \n   up    : moves up one or more stack frame_
+    \n   down  : moves down one or more stack frame_
+    \n   print : prints out the value of a var in current frame_
+    \n   bt    : prints out the back trace_
+    \n   break : sets a breakpoint in the source code_
+    \n   clear : deletes an existing breakpoint_
+    \n   trace : to trace some of the program behaviors_
+    \n   list  : to print out lines of the source code_
+    \n   src   : prints out a list of the source files_
+    \n   quit  : quits the current UDB Session_
+    \n   help  : shows more info about different commands"
+
+   errorState := "_
+    \n   Applicable Commands are:_
+    \n   where : shows the current location info_
+    \n   bt    : prints out the back trace_
+    \n   print : prints out the value of a var in current frame_
+    \n   load  : loads a new program into udb_
+    \n   run   : restarts the execution from the begining_
+    \n   break : sets a breakpoint in the source code_
+    \n   clear : deletes an existing breakpoint_
+    \n   trace : to trace some of the program behaviors_
+    \n   list  : to print out lines of the source code_
+    \n   src   : prints out a list of the source files_
+    \n   quit  : quits the current UDB Session_
+    \n   help  : shows more info about different commands"
+
+   basic := "_
+    \n   The Most Common Basic Commands are:_
+    \n   udb [program] : Starts UDB and loads the executable program into it_
+    \n   load          : loads a new program into udb_
+    \n   run [arglist] : Starts the already loaded program [with arglist]_
+    \n   break line    : sets a breakpoint in the source code line_
+    \n   break proc    : Sets a breakpoint at the entry of procedure proc_
+    \n   where         : backtraces and displays the current program stack_
+    \n   print expr    : displays the value of expr_
+    \n   continue      : resumes the running of the program_
+    \n   next          : executes the next line and steps over any procedure_
+    \n   step          : executes the next line and steps into any procedure_
+    \n   quit          : quits the current UDB session_
+    \n   help          : shows more info about different commands"
+
+   breakpoints := "_
+    \n   The Most Common Breakpoints Related Commands are:_
+    \n   break line   : Sets a breakpoint in the source code line, if execution_
+                        is stopped, line is within the current file, otherwise,_
+                        it is within the file contains prcedure main_
+    \n   break proc   : Sets a breakpoint at the entry of procedure proc_
+    \n   break [F] L  : Sets a breakpoint at line number L [in file F]_
+    \n_
+    \n   info break     : Shows a complete list of all breakpoints_
+    \n   info break [id]: Shows only the breakpoint with the number id_
+    \n   info break [F] : Shows only breakpoints from that [file]_
+    \n_
+    \n   clear          : Removes all breakpoints_
+    \n   clear break    : Removes all breakpoints_
+    \n   clear break p  : Removes the breakpoint at the entry to procedure p_
+    \n   clear break [file] line : Removes the breakpoint at line [in file]_
+    \n_
+    \n   delete break     : Deletes all breakpoints_
+    \n   delete break [n] : Deletes only the breakpoint with the id number [n]_
+    \n_
+    \n   enable break     : Enables all disabled breakpoints_
+    \n   enable break [n] : Enables the breakpoint with the id number [n]_
+    \n   disable break    : Disables all breakpoints_
+    \n   disable break [n]: Disables the breakpoint with the id number [n]"
+
+   watchpoints := "_
+    \n   The Most Common Watchpoints Related Commands are:_
+    \n   watch [-silent] [count] variable [[=|>|<|<=|>=|~=] value]_
+    \n     Sets an assignment watchpoint on variable whenever assigned,_
+    \n     with an optional condition on the assigned value. watch is an alias_
+    \n     If [–silent] is provided, the watchpoint does not notify the user at_
+    \n     every incident. If [count] is provided and count > 0, it observes _
+    \n     the first count number of incidents. If [count] is provided and _
+    \n     count < 0, the user is able to trace back the last [count] number of_
+    \n     incident’s locations and values._
+    \n_  
+    \n   watch [–silent] var: Silentlly watches var whenever assigned_
+    \n   watch [count] var  : Watches var's first count number of assignments_
+    \n   watch [-count] var : Watches var's values and tracks its last count_
+    \n   watch var = val    : Watches var whenever assigned with value_
+    \n   watch var > val    : Watches var whenever assigned with a value > val_
+    \n   watch –s n var     : Silentlly watches var's first n assignments_
+    \n_  
+    \n   rwatch [–silent] [count] variable [[=|>|<|<=|>=|~=] value]_
+    \n     Sets a watchpoint on variable whenever read. Other arguments are_
+    \n     similar to the watch command._
+    \n_  
+    \n   vwatch [–silent] [count] variable [[=|>|<|<=|>=|~=] value]_
+    \n     Sets a watchpoint on variable whenever assigned and the new value_
+    \n     is different from the old one (changed value). Other arguments are_
+    \n     similar to the watch command._
+    \n_  
+    \n   twatch [–silent] [count] variable [[=|~=] type ]_
+    \n     Sets a watchpoint on variable whenever assigned and the type of new_
+    \n     value is different from the type of the old one (changed type)._
+    \n     Other arguments are similar to the watch command._
+    \n_  
+    \n   swatch [–silent][count]_
+    \n     Sets a watchpoint on string scanning environment; in particular the_
+    \n     explicit and implicit change of &pos and &subject keywords._
+    \n_  
+    \n   info watchpoints : Shows a complete list of all watchpoints_
+    \n              info awatch, info rwatch, info vwatch, or info twatch,_
+    \n              each shows a list of the specified type of watchpoints_
+    \n_  
+    \n   clear watchpoints: clears all watchpoints regardless of their type_
+    \n              clear awatch, clear rwatch, clear twatch, clear vwatch, or_
+    \n              clear swatch, clears only the specified type of watchpoints_
+    \n_  
+    \n   delete watchpoints : Deletes all watchpoints_
+    \n              delete awatch, delete rwatch, delete twatch, delete vwatch,_
+    \n              or delete swatch, each deletes only the specified type of_
+    \n              watchpoints._
+    \n   delete watch [n]   : Deletes the watchpoint with the id number [n]_
+    \n_  
+    \n   enable watchpoints : Enables all disabled watchpoints_
+    \n              enable awatch, enable rwatch, enable twatch, enable vwatch,_
+    \n              or enable swatch, each enables only the specified_
+    \n              type of watchpoints_
+    \n   enable watch [n]   : Enables the watchpoint with the id number [n]_
+    \n_  
+    \n   disable watchpoints: Disables all watchpoints_
+    \n              disable awatch, disable rwatch, disable twatch,_
+    \n              disable vwatch,or disable swatch, each disables_
+    \n              only the specified type of watchpoints_
+    \n   disable watch [n]  : Disables the watchpoint with the id number [n]"
+
+   tracepoints := "_
+    \n   trace [–silent] [count] procedure [behavior [op value]]_
+           Sets a tracepoint on procedure whenever the provided behavior is_
+           satisfied. If behavior is not provided, all behaviors are traced._
+           If [–silent] is provided, the tracepoint does not notify the user_
+           at every incident. If [count] is provided and count > 0, it traces_
+           the first [count] number of incidents. If [count] is provided and _
+           count < 0, the user is able to trace back the last count number_
+           of incidents._
+    \n_  
+    \n   trace bar        : Traces all valid behaviors of the procedure bar_
+    \n   trace bar call   : Traces procedure bar whenever it is called. Action_
+    \n                      is very similar to the break bar command_
+    \n   trace bar return : Traces procedure bar whenever it is returned_
+    \n   trace bar return <= 1 : Traces procedure bar whenever it returns_
+    \n                           a value <= 1_
+    \n   trace 10 bar resume   : Traces procedure bar for the first 10 times_
+    \n                           it resumes_
+    \n   trace bar fail        : Traces procedure bar whenever it is failed_
+    \n_   
+    \n   trace –silent bar     : Silentlly traces all valid behaviors of bar_
+    \n_
+    \n   trace [–silent] [count] function [behavior [op value]]_
+    \n     Sets a tracepoint on built-in function whenever the provide behavior_
+    \n     is satisfied. If behavior is not provided, all behaviors are traced._
+    \n     Other arguments are similar to the procedure trace command_
+    \n   trace abs call        : Traces abs() whenever it is called_
+    \n   trace write fail      : Traces write() whenever it is failed_
+    \n   trace cos return < 0  : Traces cos() whenever it is returns_
+    \n                          a value < 0_
+    \n_  
+    \n   trace [–silent] [count] operator [behavior [op value]]_
+    \n     Sets a tracepoint on a built-in operator whenever the provided_
+    \n     behavior is satisfied. If behavior is not provided, all behaviors_
+    \n     are traced. operator is one of the following: (+, -, *, /, \, =,_
+    \n     ~=, ==, ~==, ===, ~===, <, <=, <<=, >, >=, >>=, ++, --, **,!,?,[])_
+    \n_  
+    \n   trace [] fail      : Traces the [] (subscript) whenever failed_
+    \n   trace ! suspend    : Traces the ! (Bang) whenever suspended_
+    \n   trace = fail       : Traces the = whenever it is failed_
+    \n   trace ~==          : Traces the ~== for any of its behaviors_
+    \n   trace ~== return   : Traces the ~== whenever it returns (succeeded)_
+    \n                        because both sides are lexically not equal)_
+    \n   trace ~== return = “ab” : Traces the ~== whenever it returns and_
+    \n                        both sides are lexically equal to “ab”_
+    \n_  
+    \n   info tracepoints   : Prints a complete list of all tracepoints_
+    \n   info trace [n]     : Prints info about the tracepoint with id [n]_
+    \n   info trace [name]  : Prints info about the tracepoint on [name]_
+    \n   info trace enabled : Prints a list of all enabled tracepoints_
+    \n   info trace disabled: Prints a list of all disabled tracepoints_
+    \n   info trace deleted : Prints a complete list of all deleted tracepoints_
+    \n_
+    \n   clear trace         : Clears all tracepoints_
+    \n   clear trace [n]     : Clears the tracepoint with id number [n]_
+    \n   clear trace [name]  : Clears the tracepoint set on [name]_
+    \n   delete trace [n]    : Deletes the tracepoint with id number [n]_
+    \n   delete trace [name] : Deletes the tracepoint set on [name]_
+    \n_
+    \n   enable tracepoints  : Enables all tracepoints_
+    \n   enable trace [n]    : Enables the tracepoint that has the id [n]_
+    \n   enable trace [name] : Enables the tracepoint set on [name]_
+    \n   disable trace       : Disables all tracepoints_
+    \n   disable trace [n]   : Disables the tracepoint with id number [n]_
+    \n   disable trace [name]: Disables the tracepoint set on [name]"
+
+   stack := "_
+    \n   bt [n]   : Prints a trace of all frames in the current stack._
+    \n              If [n] is provided, it prints the nth innermost frames_
+    \n              when n>0, and it prints the nth outermost frames when_
+    \n              n < 0. where [n] and bt [n] are aliases;_
+    \n              i.e. where, where 10,where -10, bt , bt 10_
+    \n_   
+    \n   frame [n]: Selects and displays information of frame number [n]_
+    \n              if [n] is not provided, it displays information about_
+    \n              the currently selected frame. f [n] is an alias_
+    \n_  
+    \n   up [n]   : Moves the selected frame [n] frames up; if [n] is not_
+    \n              provided, it moves the currently frame one frame up_
+    \n_   
+    \n   down [n] : Moves the selected frame [n] frames down; if [n] is not_
+    \n               provided, it moves the currently frame one frame down"
+
+   stepping := "_
+    \n   continue    : Resumes program’s execution. cont and c are aliases_
+    \n   step [count]: Executes the program until a new line is reached;_
+    \n                 if [count] is specified, it repeats the command count_
+    \n                 more times. s and s [count] are aliases._
+    \n   next [count]: Executes the next line and steps over any procedure call_
+    \n                 if [count] is specified, it repeats the command [count]_ 
+    \n                 more times. n and n [count] are aliases._
+    \n   return      : Completes the execution of the current procedure and_
+                       returns back to the place of calling to step on the next_
+                       statement after the call. ret and finish are aliases."
+   data := "_
+    \n   print var : Prints the value of var; if variable is a reference to a_
+    \n               structure, then it displays its ximage, otherwise it_
+    \n               displays its simple value. p is an alias._
+    \n_  
+    \n   print &keyword : Prints the value of &keyword; i.e. print &pos_
+    \n_  
+    \n   print expr: Prints the evaluation of the expr. i.e._
+    \n               p L[5]    : prints the contents of L[5]._
+    \n               p S[i:10] : prints the characters between i and 10 of S._
+    \n               print r.a : prints the contents of failed a of record r._
+    \n_
+    \n   print var = expr: Evaluates expr and assigns its value to var. i.e._
+    \n                     print x = 10, print L[1] = 1000, print S[4] = \“K\”,_
+    \n                     p T[\“one\”]=\“1\”, p S[5:10]=\“insert a string\”_
+    \n                     p r.a = 4.5, p x = y; where y is another variable._
+    \n_  
+    \n   print &keyword = val: Assigns a val to a &keyword;_
+    \n                         i.e. p &pos = 1, p &subject = \“ABCcba\”_
+    \n_
+    \n   print *var        : Prints the size of variable whenever it is_
+    \n                       applicable; i.e. print *L, or print *S_
+    \n   print !var        : Generates and prints the values of var;_
+    \n                       i.e. print !L, or print !S._
+    \n   print &features   : Prints the first generated value out of the_
+    \n                       keyword &features._
+    \n   print ! &features : Prints all generated values out of the_
+    \n                       keyword &features._
+    \n_
+    \n   info local  : Shows all local variable names in the current frame._
+    \n   info static : Shows all static variable names in the current frame._
+    \n   info param  : Shows all parameter variable names in the current frame."
+
+   files := "_
+    \n   list          : Displays ten lines of source code; if execution is_
+    \n                   paused,the printed lines are from the current line_
+    \n                   and file, otherwise, the printed lines are from the_
+    \n                   file that has the procedure main(). l is an alias_
+    \n   list +        : Displays the next ten lines of source code_
+    \n   list -        : Displays the previous ten lines of source code_
+    \n   list proc     : Displays ten source lines surrounding procedure proc_
+    \n   list [F] line : Displays ten source lines surrounding line [in file F]_
+    \n                   if line is positive, counts will starts from the top_
+    \n                   of the file, otherwise, count starts from the bottom_
+    \n                   of the file. i.e. l -25: shows ten lines surrounding_
+    \n                   the line number 25 counting backward from the end_
+    \n                   of file_
+    \n_  
+    \n   info source   : Prints a detailed summary about the loaded executable_
+    \n   info file     : Prints a list of all source files in use including_
+    \n                   library files_
+    \n   info found    : Prints a list of all loaded source files including_
+    \n                   library files_
+    \n   info missing  : Prints a list of all not loaded used source files_
+    \n   info user     : Prints a list of all user-defined source files in use_
+    \n   info lib      : Prints a list of all library file names in use_
+    \n   info package  : Prints a list of all package names in use_
+    \n   info class    : Prints a list of all class names in use_
+    \n   info record   : Prints a list of all record names in use_
+    \n   info procedure: Prints a list of all procedure names in use_
+    \n   info function : Prints a list of all built-in function names in use_
+    \n   info global   : Prints a list of all global variable names in use_
+    \n   info icode    : Prints information about the current icode binary"
+
+   memory := "_
+    \n   Important Commands to Look up the Current Memory Usage_
+    \n   print &regions    : Prints a summary of the total available memory and_
+    \n                       how mach in each region_
+    \n   print &storage    : Prints a summary of the total used memory_
+    \n                       and how much is currently allocated in each region_
+    \n   print &allocations: Prints a summary of the total allocations up to_
+    \n                       that point of execution. Memory that cleaned up_
+    \n                       by the GC is still count_
+    \n   print &collections: Prints a summary of the total number of Garbage_
+    \n                       Collections occurred up to that point of execution"
+
+   shell := "_
+    \n   Some of the most needed shell commands during a UDB session_
+    \n   ls  : Equivalent to the Unix ls shell command_
+    \n   pwd : Equivalent to the Unix pwd shell command_
+    \n   cd  : Equivalent to the Unix cd shell command"
+
+   extensions := "_
+    \n   Extension Agents Related Commands_
+    \n   enable internal agent : Enables the internal agent named agent_
+    \n   disable internal agent: Disables the internal agent named agent_
+    \n_  
+    \n   info internal         : Prints information about all internal agents_
+    \n                           available in the session and the system_
+    \n   info internal agent   : Prints information about the specific internal_
+    \n                           agents named agent_
+    \n_  
+    \n   load –agent agent     : Loads a standalone external agent named agent_
+    \n                           on the fly during the debugging session_
+    \n   enable external       : Enables all external agent that are loaded_
+    \n   enable external agent : Enables the external agent named agent_
+    \n   disable external      : Disables all external agent that are loaded_
+    \n                           in the current session_
+    \n   disable external agent: Disables the specific external agent named_
+    \n                           agent that is loaded in the current session_
+    \n   info external         : Prints information about all external agents_
+    \n                           available in the session_
+    \n   info external agent   : Prints information about the external agent_
+    \n                           named agent"
+end
+

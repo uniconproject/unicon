@@ -14,6 +14,7 @@ $include "defaults.icn"
 #
 class Session(
    DState,       # an object of the class State()
+   Help,         # an object of the class HELP()
    Message,      # the formatted output message
    Debug         # An object of the class Evaluator() 
    )
@@ -95,7 +96,7 @@ method parse_Command(cmd)
      "down"   :{  Debug.Frame.cmdDown()             }
      "?"      |
      "h"      |
-     "help"   :{  cmdHelp(cmd)                      }
+     "help"   :{  Help.cmdHelp(cmd)                 }
      "c"      |
      "cont"   :{  Debug.Step.cmdContinue()          }
      "w"      |
@@ -420,6 +421,7 @@ method cmdInfo(cmd)
       "trace"      |
       "watchpoint" |
       "tracepoints":{ Debug.Trace.printTraceInfo(cmd)        }
+      # The followings are for source code information
       "global"     :{ Debug.Print.cmdPrint(["p","-g"])       }
       "local"      :{ Debug.Print.cmdPrint(["p","-l"])       }
       "static"     :{ Debug.Print.cmdPrint(["p","-s"])       }
@@ -431,14 +433,25 @@ method cmdInfo(cmd)
       "missing"    :{ Debug.Print.cmdSource(["src","-m"])    }
       "user"       :{ Debug.Print.cmdSource(["src","-u"])    }
       "lib"        :{ Debug.Print.cmdSource(["src","-l"])    }
+      "pkg"        |
       "package"    :{ Debug.Print.cmdSource(["src","-pkg"])  }
+      "cls"        |
       "class"      :{ Debug.Print.cmdSource(["src","-cls"])  }
+      "rec"        |
       "record"     :{ Debug.Print.cmdSource(["src","-rec"])  }
+      "proc"       |
       "procedure"  :{ Debug.Print.cmdSource(["src","-proc"]) }
+      "func"       |
       "function"   :{ Debug.Print.cmdSource(["src","-func"]) }
-      "icode"      :{ Debug.Print.cmdSource(["src","-icode"])}      
-      "internal"   :{ Debug.Internal.cmdInfo(cmd[3])         }
-      "external"   :{ Debug.External.cmdInfo(cmd[3])         }
+       
+      "icode"      :{ Debug.Print.cmdSource(["src","-icode"])}
+
+      # the follwing is to query about agents
+      "agents"     :{                                        }
+      "internal"   |      
+      "internals"  :{ Debug.Internal.cmdInfo(cmd[3])         }
+      "external"   |
+      "externals"  :{ Debug.External.cmdInfo(cmd[3])         }
       default:{
           DState.State := ERROR
           Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
@@ -462,256 +475,16 @@ method pwd()
    system(DState.cmdHistory[1])
 end
 
-#         
-# General Help Command
-#
-method cmdHelp(cmd)
-
-   #write("This is command " || cmd[1])
-   if *cmd = 1 then {
-   case DState.State of {
-    NONE | LOAD | END:{
-      Message:="_
-      \n   Applicable Commands are:_
-      \n   load  : loads a new program into udb_
-      \n   run   : runs the pre-loaded program under udb_
-      \n   break : sets a breakpoint in the source code_
-      \n   clear : deletes an existing breakpoint_
-      \n   trace : to trace some of the program behaviors_
-      \n   list  : prints out lines of the source code_
-      \n   src   : prints out a list of the source files_
-      \n   quit  : quits the current UDB Session_
-      \n   help cmd : shows more info about a specific command"
-      }
-    PAUSE:{
-      Message:="_
-      \n   Applicable Commands are:_
-      \n   cont  : continue on a full speed execution after a PAUSE_
-      \n   step  : stepping one or more lines in the source code_
-      \n   next  : same as step command except treating a_
-      \n           procedure call as one command or one line of code_
-      \n   load  : loads a new program into udb_
-      \n   run   : restarts the execution from the begining_
-      \n   where : shows the current location info_
-      \n   frame : shows the current stack frame info_
-      \n   up    : moves up one or more stack frame_
-      \n   down  : moves down one or more stack frame_
-      \n   print : prints out the value of a var in current frame_
-      \n   bt    : prints out the back trace_
-      \n   break : sets a breakpoint in the source code_
-      \n   clear : deletes an existing breakpoint_
-      \n   trace : to trace some of the program behaviors_
-      \n   list  : to print out lines of the source code_
-      \n   src   : prints out a list of the source files_
-      \n   quit  : quits the current UDB Session_
-      \n   help cmd : shows more info about a specific command"
-      }
-    ERROR:{
-      Message:="_
-      \n   Applicable Commands are:_
-      \n   where : shows the current location info_
-      \n   bt    : prints out the back trace_
-      \n   print : prints out the value of a var in current frame_
-      \n   load  : loads a new program into udb_
-      \n   run   : restarts the execution from the begining_
-      \n   break : sets a breakpoint in the source code_
-      \n   clear : deletes an existing breakpoint_
-      \n   trace : to trace some of the program behaviors_
-      \n   list  : to print out lines of the source code_
-      \n   src   : prints out a list of the source files_
-      \n   quit  : quits the current UDB Session_
-      \n   help cmd : shows more info about a specific command"
-      }
-   }# end of case   
-   }
-   else{
-   case cmd[2] of {
-    "load":{
-      Message:="_
-      \n   Loads a program into UDB. Use: \"load program\"_
-      \n   load p     : loads program (p)_
-      \n   load p arg : loads program (p) with argument (arg)"
-      }
-    "step":{
-      Message:="_
-      \n   Steps into the next line in the source code_
-      \n   step   : steps one line_
-      \n   step n : steps (n) lines"
-      }
-    "run":{
-      Message:="_
-      \n   Starts (or restarts) program execution_
-      \n   run      : runs current loaded program_
-      \n   run args : args list passed to program"
-      }
-    "next":{
-      Message:="_
-      \n   next steps to next line even on function calls_
-      \n   treats function call as only one operation_
-      \n   next   : steps one line_
-      \n   next n : steps (n) lines"
-      }
-    "frame":{
-      Message:="_
-      \n   Prints out the Stack Frame info_
-      \n   frame   : prints current stack frame info_
-      \n   frame n : prints info about stack frame number (n)_
-      \n             n=0 current frame, oldest frame has the bigest number_
-      \n   look for \"help up\" and \"help down"
-      }
-    "up":{
-      Message:="_
-      \n   Moves current frame pointer up in the execution stack_
-      \n   up   : moves current frame pointer one frame up_
-      \n   up n : moves current frame pointer (n) frames up_
-      \n   look for \"help down\" and \"help frame\""
-      }
-    "down":{
-      Message:="_
-      \n   Moves current frame pointer down in the stack_
-      \n   down   : moves current frame pointer one frame down_
-      \n   down n : moves current frame pointer (n) frames down_
-      \n   look for \"help up\" and \"help frame\""
-      }
-    "quit":{
-      Message:="\n   quit: Exits UDB. Use: \"quit\""
-      }
-    "help":{
-      Message:="\n   help: for more help. Try \"help command\""
-      }
-    "print":{
-      Message:="_
-      \n   Prints variable information:_
-      \n   print       : prints globals and locals of current frame_
-      \n   print var   : prints the var value from current frame_
-      \n   print var i : prints tha var value from frame number i_
-      \n   print -G    : prints all global vars_
-      \n   print -L    : prints all local vars in current frame_
-      \n   print -P    : prints all Formal Parameters"
-      }
-    "where":{
-      Message:="_
-      \n   Prints the current position in the Source Code_
-      \n   where      : shows 10 stack frames from the top_
-      \n                another where will show the next 10 frames_
-      \n   where i    : shows 10 stack frames starting at frame i_
-      \n   where -i   : shows 10 stack frames starting at frame i from the end_
-      \n   look for \"help break\""
-      }
-    "cont":{
-      Message:="_
-      \n   Continue to run at full speed after a breakpoint_
-      \n   continue_
-      \n   look for \"help cont\""
-      }
-    "break":{
-      Message:="_
-      \n   Sets a breakpoint_
-      \n   break        : prints all of the pre-set breakpoints_
-      \n   break num    : Sets a break at line number (num)_
-      \n   break f num  : Sets a break in file f at line number num_
-      \n   break Proc   : Sets a break at procedure named \"Proc\"_
-      \n   break f Proc : Sets a break in file f at procedure \"Proc\""
-      }
-    "clear":{
-      Message:="_
-      \n   Clears a breakpoint_
-      \n   clear        : Clears all of the pre-set breakpoints_
-      \n   clear num    : Clears break at line num in the current file_
-      \n   clear f num  : Clears break in file f at line num_
-      \n   clear Proc   : Clears break at procedure Proc in the current file_
-      \n   clear f Proc : Clears break in file f at procedure Proc"
-      }
-    "watch":{
-      Message:="_
-      \n   Sets a watchpoint on some var_
-      \n   watch          : prints a list of all pre-set watch vars_
-      \n   watch var      : break at every line the var can change,_
-      \n                    if the program is running, it watche for_ 
-      \n                    var in the local scope, otherwize it_
-      \n                    assumes that var is a global variable_
-      \n   watch var proc : watch for local var in procedure proc"
-      }
-    "list":{
-      Message:="_
-      \n   Prints out some source code lines_
-      \n   list      : if program is not running yet, current line is the_
-      \n               line of procedure main(). Otherwise, current line is_
-      \n               where the execution paused_ 
-      \n   list +    : prints 10 lines from the current file centered_
-      \n               around the current line, another list cmd will_
-      \n               print the next 10 lines and so on._
-      \n   list -    : prints the previous 10 lines from the current print_
-      \n   list num  : prints 10 lines centered around the line num_
-      \n   list Proc : prints 10 lines centered around the precedure Proc_
-      \n   list f    : prints 10 lines from the begining of file f_
-      \n   list f n  : prints 10 lines centered around the line n of file f"
-      }
-    "src":{
-      Message:="_
-      \n   Prints out a sorted list of related source code info_
-      \n   src       : prints a detailed summery of all used file names_
-      \n   src -f    : prints all loaded file names_
-      \n   src -m    : prints all unloaded source file names_
-      \n   src -u    : prints all loaded user files_
-      \n   src -l    : prints all loaded library files_
-      \n   src -pkg  : prints all used package names_
-      \n   src -cls  : prints all used class names-does not belong to packages_
-      \n   src -proc : prints all used procedure names_
-      \n   src -fun  : prints all used function names_
-      \n   src -g    : prints all used global variables_
-      \n   src -r    : prints all used record names_
-      \n   src -a    : prints a summery of used source files"
-      }
-    "trace":{
-      Message:="_
-      \n   Sets a tracer on any variable or execution behavior of the program:_
-      \n   trace var | var=[on|off]_
-      \n      -proc | -proc=[on | off] |_
-      \n      -proc [ call | fail | suspend | resume ]=[on | off]_
-      \n      -func | -func=[on | off] |_
-      \n      -func [ call | fail | suspend | resume ]=[on | off]_
-      \n      -oper | -oper=[on | off] |_
-      \n      -oper [ call | fail | suspend | resume ]=[on | off]_
-      \n      -scan | -scan=[on | off] |_
-      \n      -scan [ new  | fail | suspend | resume ]=[on | off]_
-      \n   \"on\" and \"off\" are used to turn the tracer on and off_
-      \n   when there is no on/off then the action is printing info_
-      \n   ----------------------_
-      \n   trace var             : prints the traced var info_
-      \n                           if the program is running, it assumes the_ 
-      \n                           var is in the local scope, otherwise it_
-      \n                           assumes that var is a global variable_
-      \n   trace var p           : prints traced var info that is local to p_
-      \n   trace var=[on|off]    : traces every value the var can have,_
-      \n   trace var=[on|off] p  : traces a local var in procedure p_
-      \n   --In oreder to set any of the following behavior tracers ON,_
-      \n     it must be set before the program is running/rerunning_
-      \n   trace -proc           : prints all the traced procedure info_
-      \n   trace -proc=[on|off]  : Sets the procdure tracer on/off _
-      \n   trace -proc call      : prints the traced procedure calls_
-      \n   trace -proc call=on   : Sets a tracer ON on every procedure call_
-      \n   trace -proc call=off  : Sets a tracer OFF on every procedure call_
-      \n   and the rest ar going in the same fashion"
-      }
-    default:{
-      Message:="\n   Command not found. Type \"help\" for assistance"
-      } 
-   }#end of case
-   }# end of else
-   #make udb console takes no actions 
-   DState.State := SKIP
-   DState.Write(Message)
-end
-
 #
 # Initialization
 #
 initially()
 
    Debug  := Evaluator()
+   Help   := HELP()
 
-   DState := Debug.DState           := 
+   DState := Help.DState            :=
+             Debug.DState           := 
              Debug.Break.DState     := 
              Debug.Watch.DState     := 
              Debug.Step.DState      := 

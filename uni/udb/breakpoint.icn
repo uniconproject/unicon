@@ -176,7 +176,7 @@ end
 # [b linenum], [b ProcName], [b file linenum]
 #
 method cmdBreak(cmd)
-   local code, line, fname, arg, break_point, i
+   local code, line, fname, cname, pkgname, arg, break_point, i
 
    msg := ""
    if not (DState.State = (LOAD | PAUSE)) then {
@@ -189,28 +189,83 @@ method cmdBreak(cmd)
    DState.State := SKIP
 
    # if cmd is only "break"; will print all of the preset breakpoints info
-   if *cmd = 1 then{
+   if *cmd = 1 then{  # i.e. break
       printBreakInfo()
       return
-      } 
+      }
  
-   if *cmd = 2 then {
+   if *cmd = 2 then { # i.e. break line, or break procedure/method 
       if DState.State = PAUSE then
          fname := keyword("file",Monitored)
       else
          fname := DState.srcFile.procMainFile
       arg   := cmd[2]
       }
-   else if *cmd > 2 then {
+   else if *cmd = 3 then { # i.e. break file line
       fname := cmd[2]
       arg   := cmd[3]
       }
+   else if *cmd = 4 then{ # i.e. break file:line, break class::method,
+                          #   or break package::procedure
+      if cmd[3] == ":" then{
+         fname := cmd[2]
+         arg   := cmd[4]
+         }
+      else if cmd[3] == "::" then{
+         pkgname := cname := cmd[2]
+         arg := cmd[4]
+         if DState.srcCode.isMethod(arg, cname)  then{
+               fname := DState.srcFile.getClassFile(cname)
+               line  := DState.srcFile.getMethodLine(arg, cname, fname)
+               }
+         else if DState.srcCode.isPackage(pkgname) & 
+                 DState.srcCode.isProcedure(arg)    then
+            fname := DState.srcFile.getProcFile(arg)
+         else{
+            DState.State := ERROR
+            msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+            msg ||:="\n   Try \"help\" or \"help break\" for assistance."
+            DState.Write(msg)
+            return
+            }
+         }
+      }
+   else if *cmd = 6 & cmd[3] == "::" & cmd[5] == "::" then{
+      # i.e. break package::class::method 
+      pkgname := cmd[2]
+      cname := cmd[4]
+      arg := cmd[6]
+      if DState.srcCode.isPackage(pkgname) & 
+         DState.srcCode.isMethod(arg, cname) then
+         fname := DState.srcFile.getProcFile(arg)
+      }
+   else{
+      DState.State := ERROR
+      msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+      msg ||:="\n   Try \"help\" or \"help break\" for assistance."
+      DState.Write(msg)
+      return
+      }
 
+   #write("fname=", image(fname))
    #fname := addExtension(fname)
-   if not find(".icn", fname) then
-      fname ||:= ".icn"
+   if \fname then{
+      if not find(".icn", fname) then
+         fname ||:= ".icn"
+      }
+   else{
+      DState.State := ERROR
+      msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+      msg ||:="\n   Try \"help\" or \"help break\" for assistance."
+      DState.Write(msg)
+      return
+      }
 
-   if DState.srcFile.isSrcFile(fname) then{
+   if \line & \fname then{
+      break_point := breakPt(count +:= 1, fname, line, ENABLED,
+                             DState.srcFile.getSrcLine(fname, line))
+      }
+   else if DState.srcFile.isSrcFile(fname) then{
       if DState.srcFile.isLoaded(fname) then{
          if line := integer(arg) then{
             if DState.srcFile.isInFile(fname, line) then{
@@ -280,24 +335,34 @@ method cmdBreak(cmd)
 end
 
 #
+# clear all breakpoints
+#
+method clearAllBreakpoints()
+    local x, size := 0
+
+    size := *breakPoints
+    if size > 0 then{
+       DState.breakMask := set()
+       every x := key(breakPoints) do
+          delete(breakPoints, x)
+       msg := "\n   All breakpoints are cleared; ("||size||"total)."
+       }
+    else
+       msg := "\n   No breakpoints are available to be cleared."
+    DState.Write(msg)
+    return
+end
+
+#
 # It clears pre-set breakpoints
 #
 method cmdClear(cmd)
-   local line, x, fname, arg, id, i, size:=0
+   local line, fname, arg, id, i, size:=0
 
    # clears all of the preset breakpoints
    # clear break
    if *cmd = 2 then{
-      size := *breakPoints
-      if size > 0 then{
-         DState.breakMask := set()
-         every x := key(breakPoints) do
-            delete(breakPoints, x)
-         msg := "\n   All breakpoints are cleared; ("||size||"total)."
-         }
-      else
-         msg := "\n   No breakpoints are available to be cleared."
-      DState.Write(msg)
+      clearAllBreakpoints()
       return
       }
    
@@ -313,8 +378,14 @@ method cmdClear(cmd)
       arg   := cmd[4]
       }
 
-   if not find(".icn", fname) then
-      fname ||:= ".icn"
+   if \fname then{
+      if not find(".icn", fname) then
+         fname ||:= ".icn"
+      }
+   else{
+      clearAllBreakpoints()
+      return
+      }
 
    if DState.srcFile.isSrcFile(fname) then{
       if line := integer(arg) then{

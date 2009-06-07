@@ -28,7 +28,7 @@ class State(
    externalMask,    # The cset of the active externals event mask   
    traceMask,       # a cset of &eventcode(s) of wanted traced fetures
 
-   cur_Frame,       # points at the last investigated frame, using up,down,frame n
+   cur_Frame,       # points at the last investigated frame, using up,down,frame
 
    Message,         # a string formated with the current message
 
@@ -174,7 +174,7 @@ end
 # Initialize the UDB Debugging State
 #
 method initializeState(tp)
-   local x, src, found, missing
+   local x, src, found, missing, plural:=""
 
    # This is only when the TP is passed at the start of udb, i.e: ./udb test
    # in either case the ErrorCode will be initialized
@@ -198,11 +198,15 @@ $endif
             Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
                          srcFile.exeSize||" of "||icode.icodeVersion 
             found := *srcFile.foundFiles
-            if found > 0 then
-               Message ||:=  "\n   "|| found ||" file(s) are found"
+            if found > 0 then{
+               if found > 1 then plural := "s are " else plural := " is "
+               Message ||:=  "\n   "|| found ||" file"||plural||"found"
+               }
             missing := *srcFile.missingFiles
-            if missing > 0 then
-               Message ||:=  "\n   and "|| missing ||" file(s) are missing"
+            if missing > 0 then{
+               if missing > 1 then plural := "s are " else plural := " is "
+               Message ||:=  "\n   and "|| missing ||" file"||plural||"missing"
+               }
             Message ||:= "\n   Type \"help\" for assistance _
                                or \"src\" for file(s) name"
             }

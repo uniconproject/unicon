@@ -14,12 +14,12 @@ SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
             agent.icn internals.icn externals.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
-            evaluator.icn session.icn console.icn defaults.icn
+            evaluator.icn session.icn console.icn defaults.icn help.icn
 UFILES    = udb.u icode.u srcfile.u srccode.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
-            evaluator.u session.u console.u
+            evaluator.u session.u console.u help.u
 LIB       = lib
 LIBRARY   = $(LIB)/listener.u    $(LIB)/memory.u     $(LIB)/structaliases.u \
             $(LIB)/structusage.u $(LIB)/looptime.u   $(LIB)/proctime.u \
@@ -47,6 +47,9 @@ console.u: console.icn defaults.icn state.u session.u evaluator.u
 
 session.u: session.icn defaults.icn state.u evaluator.u externals.u
 	$(UC) $(cflags) session
+
+help.u: help.icn defaults.icn state.u
+	$(UC) $(cflags) help
 
 evaluator.u: evaluator.icn defaults.icn state.u data.u trace.u internals.u externals.u
 	$(UC) $(cflags) evaluator

@@ -173,7 +173,66 @@ method searchFileProcs(Fname, ProcName)
       }
    else{
       fail
-      } 
+      }
+end
+
+#
+# Used by cmdBreak
+# Searchs the Fname for a specific ProcName and returns its linenum
+#
+method searchFileClasses(Fname, cname)
+   local temp, temp1, offset, base
+
+   if \Fname & \cname & member(foundFiles, Fname) then{
+      base := srcIndex[Fname].fbegin
+      offset := 1
+      while temp := srcText[base + offset] do{
+         temp ? {
+            tab(many(WhiteSpace))
+            if(temp1 := tab(many(&letters))) == "class" then{
+              tab(many(WhiteSpace))
+              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
+              if temp1 == cname then{
+                 return offset
+                 }  
+              }
+            }
+         offset +:= 1
+         }
+      }
+   else{
+      fail
+      }
+end
+
+#
+# Used by cmdBreak
+# Searchs the Fname for a specific ProcName and returns its linenum
+#
+method searchClassMethods(mthd, cname, fname)
+   local temp, temp1, offset, base, cline
+
+
+   if cline := searchFileClasses(fname, cname) then{
+      base := srcIndex[fname].fbegin + cline
+      offset := 1
+      while temp := srcText[base + offset] do{
+         temp ? {
+            tab(many(WhiteSpace))
+            if(temp1 := tab(many(&letters))) == "method" then{
+              tab(many(WhiteSpace))
+              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
+              if temp1 == mthd then{
+                 return (offset+cline)
+                 }  
+              }
+            }
+         offset +:= 1
+         }
+      }
+   else{
+      fail
+      }
 end
 
 #
@@ -269,6 +328,36 @@ method getProcLine(pname, pfile)
        if pline := searchFileProcs(pfile, pname) then
           return pline
     fail
+end
+
+#
+# returns the file name of a procedure 
+#
+method getClassFile(cname)
+    local fname
+
+    every fname := !foundFiles do
+       if searchFileClasses(fname, cname) then
+          return fname
+    fail
+end
+
+#
+# returns the file name of a procedure 
+#
+method getMethodLine(m_name, c_name, f_name)
+    local fname, line
+
+    if /f_name then{
+       if fname := getClassFile(c_name) then
+          f_name := fname
+       else fail
+       }
+    
+    if line := searchClassMethods(m_name, c_name, f_name) then
+       return line
+    else
+       fail
 end
 
 #

@@ -46,6 +46,11 @@ method analyzeGlobalNames()
    local var, pkg, img, x, i, j
 
    every x := globalnames(Monitored) do{
+     # globalnames() keeps a reference for strings in the icode
+     # This is very bad for multiple loaded programs
+     # So, this image() thing takes care of the problem by
+     # allocating a new string in the string region. 
+     x := image(x)[2:-1]
      var := variable(x, Monitored)
      img := image(var)
      if find("procedure", img) then{
@@ -285,15 +290,39 @@ end
 #
 # public method:
 # This method succeeds if name is a method used in this program
-# and it returns it class name
+# and it returns it class name; the m_name = "cls_method"
 #
-method isMethod(name)
-   local cls
+method isMethod(m_name, c_name)
+   local mthd, cls, i
 
-   every cls := key(methods) do
-      if \methods[cls] & member(methods[cls], name) then 
-         return cls
-   fail
+   #every cls := key(methods) do{
+   #   every m := !methods[cls] do 
+   #      write(cls,"_",m)
+   #   write("--------OK")
+   #   }
+
+   if /c_name then{
+      if i := find("_",m_name) then
+         cls  := m_name[1:i]
+
+      if isClass(cls) & member(methods[cls], m_name)  then
+         return
+      else{
+         every cls := key(methods) do
+            if \methods[cls] & member(methods[cls], m_name) then 
+               return cls
+         fail
+         }
+      }
+   else{
+      if isClass(c_name) then{
+         mthd := c_name||"_"||m_name            
+         if \methods[c_name] & member(methods[c_name], mthd) then
+            return cls
+         fail
+         }
+      }
+  fail
 end
 
 #
@@ -316,7 +345,6 @@ method getPackages()
    if *packages > 0 then{
       every pkg := key(packages) do
         push(names, pkg)
-      write(ximage(packages))
       return sortf(names)
       }
    else

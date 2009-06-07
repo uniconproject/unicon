@@ -666,8 +666,8 @@ method parsePrintExpression(expr)
            } 
         }
 
-#   every x:=!tokens do
-#      write("-----x=",x)
+   #every x:=!tokens do
+   #   write("-----x=",x)
    return tokens
 end
 
@@ -803,13 +803,14 @@ method cmdList(cmd)
 end
 
 #
-# used to print the name of the file names, it print 10 at a time
+# used to print source code info, it print 10 at a time
 #
-method printFileNames(fnames, ftype)
-   local i:=0, cur:=0, ans, total
+method printSrcInfo(fnames, ftype)
+   local i:=0, cur:=0, ans, total, plural := ""
 
    total := *fnames
-   Message := "\n   Total of "||total||"-"||ftype||":\n"
+   if total > 1 then plural := "s"
+   Message := "\n   Total of "||total||"-"||ftype||plural||":\n"
    while *fnames > 0 do{
      i +:= 1
      Message ||:= "   "||(cur+:=1)||"# "||get(fnames) ||"\n"
@@ -830,14 +831,17 @@ end
 # used to print a summery of all used files 
 #
 method printSrcSummery(detail)
-   local found, missing, ftotal
+   local found, missing, ftotal, plural
 
    found   := *DState.srcFile.foundFiles
    missing := *DState.srcFile.missingFiles
    ftotal  := found + missing
-   Message   :="\n   A total of ["||ftotal||"] source files are used"
-   Message ||:="\n   "||left(found,5)  ||"source files are found"
-   Message ||:="\n   "||left(missing,5)||"source files are missing"
+   if ftotal > 1 then plural := "s are " else plural := " is "
+   Message   :="\n   A total of ["||ftotal||"] source file"||plural||"used"
+   if found > 1 then plural := "s are " else plural := " is "
+   Message ||:="\n   "||left(found,5)  ||"source file"||plural||"found"
+   if missing > 1 then plural := "s are " else plural := " is "
+   Message ||:="\n   "||left(missing,5)||"source file"||plural||"missing"
    if \detail then{   
       Message ||:="\n   ---------------------------------------"
       Message ||:="\n   "||left(*DState.srcCode.packages,5)||"packages, with "||
@@ -873,77 +877,77 @@ method cmdSource(cmd)
       # all loaded source files 
       "-f"|"-found":{
           if names := DState.srcFile.getFoundFiles() then
-             printFileNames(names,"Found File")
+             printSrcInfo(names,"Found File")
           else
              DState.Write("\n   No found source file(s) !!")
           }
       # all unable to load source files
       "-m"|"-missing":{
           if names := DState.srcFile.getMissingFiles() then
-             printFileNames(names,"Missing File")
+             printSrcInfo(names,"Missing File")
           else
             DState.Write("\n   No missing source file(s) !!")
           }
       # all files (user+library) used in the binary
       "-file":{
           if names := DState.srcFile.getSourceFiles() then
-             printFileNames(names,"Used file")
+             printSrcInfo(names,"Used file")
           else
             DState.Write("\n   No source file(s) !!")
           }
       # all user defined files used in the binary
       "-u"|"user"|"usr":{
           if names := DState.srcFile.getUserFiles() then
-             printFileNames(names,"User defined file")
+             printSrcInfo(names,"User defined file")
           else
             DState.Write("\n   No  user defined source file(s) !!")
           }
       # all library files used in the binary
       "-l"|"-lib"|"-library":{
           if names := DState.srcFile.getLibFiles() then
-             printFileNames(names,"Used library file")
+             printSrcInfo(names,"Used library file")
           else
             DState.Write("\n   No library file(s) !!")
           }
       # all packages used in the binary
       "-pkg"|"-pk"|"-package":{
           if names := DState.srcCode.getPackages() then
-             printFileNames(names,"Used package")
+             printSrcInfo(names,"Used package")
           else
             DState.Write("\n   No packages used !!")
           }
       # all classes used in the binary
       "-c"|"-cls"|"-class":{
           if names := DState.srcCode.getClasses() then
-             printFileNames(names,"Used standalone class")
+             printSrcInfo(names,"Used standalone class")
           else
             DState.Write("\n   No classes used !!")
           }
       # all procedures used in the binary
       "-p"|"-proc"|"-procedure":{
           if names := DState.srcCode.getProcedures() then
-             printFileNames(names,"Used procedure")
+             printSrcInfo(names,"Used procedure")
           else
             DState.Write("\n   No procedures used !!")
           }
       # all built-in functions used in the binary
       "-fun"|"-func"|"-function":{
           if names := DState.srcCode.getFunctions() then
-             printFileNames(names,"Used built-in function")
+             printSrcInfo(names,"Used built-in function")
           else
             DState.Write("\n   No functions used !!")
           }
       # all global variable names used in the binary
       "-g"|"-glb"|"-global":{
           if names := DState.srcCode.getGlobals() then
-             printFileNames(names,"Used global variable")
+             printSrcInfo(names,"Used global variable")
           else
             DState.Write("\n   No global variables used !!")
           }
       # all record names used in the binary
       "-r"|"-rec"|"-record":{
           if names := DState.srcCode.getRecords() then
-             printFileNames(names,"Used record")
+             printSrcInfo(names,"Used record")
           else
             DState.Write("\n   No global records used !!")
           }

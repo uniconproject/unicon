@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.49 2008-11-02 03:56:41 jeffery Exp $
+ * $Id: fxposix.ri,v 1.50 2009-06-09 09:30:38 jeffery Exp $
  */
 
 /*
@@ -1169,7 +1169,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       }
 
       if (is:list(argv)) {
-         margv = (char **)malloc((BlkD(argv,List)->size+1) * sizeof(char *));
+         margv = (char **)malloc((BlkD(argv,List)->size+3) * sizeof(char *));
          if (margv == NULL) runerr(305);
 	 n = 0;
 	 /* Traverse the list */
@@ -1188,7 +1188,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       if ((n == 0) && is_internal(p)) {
 		  margv[n++] = "cmd"; /* on Win9x this should be command */
 		  margv[n++] = "/C";
-		  margv[n++] = "p";
+		  margv[n++] = p;
 		  }
 	       else {
 		  margv[n++] = p;
@@ -1309,7 +1309,7 @@ extern char *ArgvToCmdline(char **);
 		  total += strlen(margv[i]) + 1;
 		  i++;
 		  }
-	       n = i-1;
+	       n = i;
 	       /* We use Icon's allocator, it's the only safe way. */
 	       Protect(s = alcstr(0, total), runerr(0));
 	       p = s;
@@ -1318,6 +1318,8 @@ extern char *ArgvToCmdline(char **);
 		  p += strlen(margv[i]);
 		  *p++ = ' ';
 		  }
+               --p;
+	       *p = '\0';
 #ifdef MSWindows
 	       i = (C_integer)mswinsystem(s);
 #else					/* MSWindows */

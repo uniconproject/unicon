@@ -446,8 +446,10 @@
 #endif					/* PatternType */
 
 #define T_Tvmonitored   28      /* Monitored trapped variable */
+#define T_Intarray	29      /* integer array */
+#define T_Realarray	30      /* real array */
 
-#define MaxType		28	/* maximum type number */
+#define MaxType		30	/* maximum type number */
 
 /*
  * Definitions for keywords.

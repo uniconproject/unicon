@@ -157,6 +157,22 @@ struct b_list {			/* list-header block */
    union block *listtail;	/*   pointer to last list-element block */
    };
 
+
+struct b_intarray {
+   word title;			/* T_Intarray */
+   word blksize;		/* size of block */
+   union block *dims;		/* dimension sizes, NULL for 1D */
+   word a[1];			/* true array size == size, above */
+   };
+
+struct b_realarray {
+   word title;			/* T_Realarray */
+   word blksize;		/* size of block */
+   union block *dims;		/* dimension sizes, NULL for 1D */
+   double a[1];			/* true array size == size, above */
+   };
+
+
 struct b_proc {			/* procedure block */
    word title;			/*   T_Proc */
    word blksize;		/*   size of block */

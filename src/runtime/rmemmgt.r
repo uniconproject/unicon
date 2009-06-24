@@ -93,6 +93,8 @@ int bsizes[] = {
 #else					/* EventMon */
      0,
 #endif					/* EventMon */
+     0,				/* T_Intarray (29), int array */
+     0,				/* T_Realarray (30), real array */
     };
 
 /*
@@ -141,6 +143,8 @@ int firstd[] = {
     0,				/* T_Pattern (26), pattern block */
     4*WordSize,              /* T_Pelem (27), pattern element */
     2*WordSize,			/* T_Tvmonitored */
+    0,				/* T_Intarray (29), integer array */
+    0,				/* T_Realarray (30), real array */
     };
 
 /*
@@ -175,8 +179,10 @@ int firstp[] = {
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
     3*WordSize,               /* T_Pattern(26) pattern block*/
-    2*WordSize,               /* T_Pelem(26) pattern element block*/
-    -1,
+    2*WordSize,               /* T_Pelem(27) pattern element block*/
+    -1,				/* T_Tvmonitored (28) */
+    2*WordSize,			/* T_Intarray (29), integer array */
+    2*WordSize,			/* T_Realarray (30), integer array */
     };
 
 /*
@@ -211,8 +217,10 @@ int ptrno[] = {
     -1,                       /* T_Kywdstr (24), string keyword variable */
     -1,                       /* T_Kywdevent (25), event keyword variable */
      1,                       /* T_Pattern (26), pattern block */
-     1,                       /* T_Pelem (26), pattern element block */
-     -1,			/* T_Tvmonitored */
+     1,                       /* T_Pelem (27), pattern element block */
+    -1,				/* T_Tvmonitored (28) */
+     1,				/* T_Intarray (29), integer array */
+     1,				/* T_Realarray (30), real array */
     };
 
 /*
@@ -248,6 +256,8 @@ char *blkname[] = {
    "pattern",                           /* T_Pattern (26) */
    "pattern element",                   /* T_Pelem (27) */
    "monitor trapped variable",		/* T_Tvmonitored (28) */
+   "integer array",			/* T_Intarray (29) */
+   "real array",			/* T_Realarray (30) */
    };
 
 /*

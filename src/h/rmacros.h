@@ -503,6 +503,8 @@
 #define D_Pattern	(T_Pattern  | D_Typecode | F_Ptr)
 #define D_Pelem		(T_Pelem    | D_Typecode | F_Ptr)
 #endif					/* PatternType */
+#define D_Intarray	(T_Intarray | D_Typecode | F_Ptr)
+#define D_Realarray	(T_Realarray | D_Typecode | F_Ptr)
 
 #define D_Var		(F_Var | F_Nqual | F_Ptr)
 #define D_Typecode	(F_Nqual | F_Typecode)

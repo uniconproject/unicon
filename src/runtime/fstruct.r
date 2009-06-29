@@ -1711,3 +1711,54 @@ function{1} constructor(s, x[n])
       return proc(bp);
       }
 end
+
+#ifdef Arrays
+
+/*
+ * Temporary / experimental!  Do not turn on yet, under construction.
+ */
+
+function{1} IntArray(x[n])
+   abstract {
+      return new list(integer)
+      }
+   body {
+      union block *bp;
+      int num = 1;
+      int i;
+      for(i=0;i<n;i++){
+	 if (!is:C_integer(x[i])) runerr(101, x[i]);
+	 }
+      for(i=0;i<n-1;i++) num *= IntVal(x[i]);
+      return nulldesc;
+      }
+end
+
+function{1} IntArrayElem(x[n])
+   abstract {
+      return new list(integer)
+      }
+   body {
+      return nulldesc;
+      }
+end
+
+function{1} RealArray(x[n])
+   abstract {
+      return new list(real)
+      }
+   body {
+      return nulldesc;
+      }
+end
+
+function{1} RealArrayElem(x[n])
+   abstract {
+      return new list(real)
+      }
+   body {
+      return nulldesc;
+      }
+end
+
+#endif					/* Arrays */

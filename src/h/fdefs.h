@@ -413,3 +413,11 @@ FncDef(fetch,2)
   FncDefV(Refresh)
   FncDefV(WindowContents)
   FncDefV(WSection)
+
+#ifdef Arrays
+  /* temporary / subject to change or elimination */
+  FncDefV(IntArray)
+  FncDefV(IntArrayElem)
+  FncDefV(RealArray)
+  FncDefV(RealArrayElem)
+#endif					/* Arrays */

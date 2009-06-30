@@ -345,9 +345,10 @@ struct errtab errtab[] = {
    126, "list or record expected",
 #ifdef PatternType
    127, "invalid type to pattern operation",
-   128, "unevlauted variable or function call expected",
+   128, "unevaluated variable or function call expected",
    129, "unable to convert unevaluated variable to pattern",
 #endif					/* PatternType */
+   130, "incorrect number of arguments",
 #ifdef Graphics
    140, "window expected",
    141, "program terminated by window manager",

@@ -1058,3 +1058,27 @@ word nbytes,stdsize;
       }
    return NULL;
 }
+
+#ifdef Arrays
+
+struct b_intarray *alcintarray(uword n)
+{
+int bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
+register struct b_intarray *blk;
+AlcBlk(blk, b_intarray, T_Intarray, bsize);
+blk->blksize = bsize;
+blk->dims = NULL;
+return blk;
+}
+
+struct b_realarray *alcrealarray(uword n)
+{
+int bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
+register struct b_realarray *blk;
+AlcBlk(blk, b_realarray, T_Realarray, bsize);
+blk->blksize = bsize;
+blk->dims = NULL;
+return blk;
+}
+
+#endif					/* Arrays */

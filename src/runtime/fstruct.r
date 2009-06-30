@@ -1718,28 +1718,60 @@ end
  * Temporary / experimental!  Do not turn on yet, under construction.
  */
 
+/*
+ * allocate an int array ; one-dimensional for now.
+ */
 function{1} IntArray(x[n])
    abstract {
       return new list(integer)
       }
    body {
-      union block *bp;
+      struct descrip d;
+      C_integer ci;
       int num = 1;
       int i;
       for(i=0;i<n;i++){
-	 if (!is:C_integer(x[i])) runerr(101, x[i]);
+	 if (!cnv:C_integer(x[i], ci)) runerr(101, x[i]);
+	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
 	 }
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
-      return nulldesc;
+      d.vword.bptr = (union block *) alcintarray(num);
+      d.dword = D_Intarray;
+      for(i=0; i<num; i++) d.vword.bptr->Intarray.a[i] = IntVal(x[n-1]);
+      return d;
       }
 end
 
-function{1} IntArrayElem(x[n])
+/*
+ * get/set array element; to be replaced by syntax support.
+ * In version 0, since dimension == 1, n==1 means get, n==2 means set.
+ */
+function{1} IntArrayElem(a, x[n])
    abstract {
       return new list(integer)
       }
    body {
-      return nulldesc;
+      C_integer ci, cnew;
+      struct b_intarray *ap;
+      int nelem;
+      ap = (struct b_intarray *)BlkLoc(a);
+      if (ap->title != T_Intarray) runerr(123,a);
+      if (n == 0) runerr(130);
+      if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
+      if (ci <= 0) runerr(101, x[0]);
+      nelem = ((ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word));
+      if (ci > nelem) runerr(101,x[0]);
+      if (n == 1) {
+	 /* get element */
+	 return C_integer ap->a[ci-1];
+	 }
+      else if (n == 2) {
+	 /* set element */
+         if (!cnv:C_integer(x[1], cnew)) runerr(101, x[1]);
+	 ap->a[ci-1] = cnew;
+	 return C_integer cnew;
+	 }
+      else runerr(130);
       }
 end
 
@@ -1748,16 +1780,55 @@ function{1} RealArray(x[n])
       return new list(real)
       }
    body {
-      return nulldesc;
+      struct descrip d;
+      double dv;
+      C_integer ci;
+      int num = 1;
+      int i;
+      for(i=0;i<n-1;i++){
+	 if (!cnv:C_integer(x[i], ci)) runerr(101, x[i]);
+	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
+	 }
+      if (!cnv:C_double(x[i], dv)) runerr(101, x[i]);
+      for(i=0;i<n-1;i++) num *= IntVal(x[i]);
+      d.vword.bptr = (union block *) alcrealarray(num);
+      d.dword = D_Realarray;
+      for(i=0; i<num; i++) d.vword.bptr->Realarray.a[i] = dv;
+      return d;
       }
 end
 
-function{1} RealArrayElem(x[n])
+/*
+ * get/set array element; to be replaced by syntax support.
+ * In version 0, since dimension == 1, n==1 means get, n==2 means set.
+ */
+function{1} RealArrayElem(a,x[n])
    abstract {
       return new list(real)
       }
    body {
-      return nulldesc;
+      C_integer ci;
+      double cnew;
+      struct b_realarray *ap;
+      int nelem;
+      ap = (struct b_realarray *)BlkLoc(a);
+      if (ap->title != T_Realarray) runerr(123,a);
+      if (n == 0) runerr(130);
+      if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
+      if (ci <= 0) runerr(101, x[0]);
+      nelem = ((ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double));
+      if (ci > nelem) runerr(101,x[0]);
+      if (n == 1) {
+	 /* get element */
+	 return C_double ap->a[ci-1];
+	 }
+      else if (n == 2) {
+	 /* set element */
+         if (!cnv:C_double(x[1], cnew)) runerr(101, x[1]);
+	 ap->a[ci-1] = cnew;
+	 return C_double cnew;
+	 }
+      else runerr(130);
       }
 end
 

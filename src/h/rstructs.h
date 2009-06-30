@@ -746,6 +746,10 @@ union block {			/* general block */
 #ifdef LargeInts
    struct b_bignum Lrgint;
 #endif				/* LargeInts */
+#ifdef Arrays
+   struct b_intarray Intarray;
+   struct b_realarray Realarray;
+#endif					/* Arrays */
    };
 
 #ifdef PseudoPty

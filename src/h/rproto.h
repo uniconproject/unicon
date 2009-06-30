@@ -953,3 +953,7 @@ void StopAudioThread(struct AudioFile * Ptr);
 void heaperr(char *msg, union block *p, int t);
 #endif					/* DebugHeap */
 
+#ifdef Arrays
+struct b_intarray *alcintarray(uword n);
+struct b_realarray *alcrealarray(uword n);
+#endif					/* Arrays */

@@ -1715,11 +1715,12 @@ end
 #ifdef Arrays
 
 /*
- * Temporary / experimental!  Do not turn on yet, under construction.
+ * Temporary / experimental!  Subject to change or deletion.
  */
 
 /*
- * allocate an int array ; one-dimensional for now.
+ * IntArray(dim1,...,dimN,initvalue) allocate an int array.
+ * 
  */
 function{1} IntArray(x[n])
    abstract {
@@ -1727,6 +1728,7 @@ function{1} IntArray(x[n])
       }
    body {
       struct descrip d;
+      struct b_intarray *dims = NULL;
       C_integer ci;
       int num = 1;
       int i;
@@ -1737,6 +1739,11 @@ function{1} IntArray(x[n])
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
       d.vword.bptr = (union block *) alcintarray(num);
       d.dword = D_Intarray;
+      if (n>2) {
+	 dims = alcintarray(n-1);
+	 for (i=0;i<n-1;i++) dims->a[i] = IntVal(x[i]);
+	 d.vword.bptr->Intarray.dims = (union block *)dims;
+	 }
       for(i=0; i<num; i++) d.vword.bptr->Intarray.a[i] = IntVal(x[n-1]);
       return d;
       }
@@ -1752,23 +1759,44 @@ function{1} IntArrayElem(a, x[n])
       }
    body {
       C_integer ci, cnew;
-      struct b_intarray *ap;
-      int nelem;
-      ap = (struct b_intarray *)BlkLoc(a);
+      int i, j, ndims, base = 0;
+      struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+      /* need to check that ap is a block pointer type of descriptor first */
       if (ap->title != T_Intarray) runerr(123,a);
-      if (n == 0) runerr(130);
-      if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
-      if (ci <= 0) runerr(101, x[0]);
-      nelem = ((ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word));
-      if (ci > nelem) runerr(101,x[0]);
-      if (n == 1) {
-	 /* get element */
-	 return C_integer ap->a[ci-1];
+      ndims = (ap->dims?
+	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
+	       : 1);
+      if (n < ndims) runerr(130);
+      for(i=0;i<ndims;i++) {
+         if (!cnv:C_integer(x[i], ci)) runerr(101, x[0]);
+	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
+	 if (ci <= 0) { /* not doing negative subscripts for now */
+	    runerr(101, x[0]);
+	    }
+	 if (ci > ((ndims == 1) ? ((ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word)) : ap->dims->Intarray.a[i]))
+	    runerr(101, x[i]);
 	 }
-      else if (n == 2) {
+
+      /*
+       * Update the base subscript.
+       * base subscript + last dimension subscript = total subscript
+       */
+      if (ndims > 1) {
+	 for (i=0;i<ndims-1;i++) {
+	    int forthisi = 1;
+	    for(j=i+1;j<ndims;j++) forthisi *= ap->dims->Intarray.a[j];
+	    base += forthisi * (IntVal(x[i])-1);
+	    }
+	 }
+
+      if (n == ndims) {
+	 /* get element */
+	 return C_integer ap->a[base + ci-1];
+	 }
+      else if (n == ndims + 1) {
 	 /* set element */
-         if (!cnv:C_integer(x[1], cnew)) runerr(101, x[1]);
-	 ap->a[ci-1] = cnew;
+         if (!cnv:C_integer(x[n-1], cnew)) runerr(101, x[n-1]);
+	 ap->a[base + ci-1] = cnew;
 	 return C_integer cnew;
 	 }
       else runerr(130);
@@ -1781,6 +1809,7 @@ function{1} RealArray(x[n])
       }
    body {
       struct descrip d;
+      struct b_intarray *dims = NULL;
       double dv;
       C_integer ci;
       int num = 1;
@@ -1793,6 +1822,11 @@ function{1} RealArray(x[n])
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
       d.vword.bptr = (union block *) alcrealarray(num);
       d.dword = D_Realarray;
+      if (n>2) {
+	 dims = alcintarray(n-1);
+	 for (i=0;i<n-1;i++) dims->a[i] = IntVal(x[i]);
+	 d.vword.bptr->Realarray.dims = (union block *)dims;
+	 }
       for(i=0; i<num; i++) d.vword.bptr->Realarray.a[i] = dv;
       return d;
       }
@@ -1809,23 +1843,44 @@ function{1} RealArrayElem(a,x[n])
    body {
       C_integer ci;
       double cnew;
-      struct b_realarray *ap;
-      int nelem;
-      ap = (struct b_realarray *)BlkLoc(a);
+      int i, j, ndims, base = 0;
+      struct b_realarray *ap = (struct b_realarray *)BlkLoc(a);
+      /* need to check that ap is a block pointer type of descriptor first */
       if (ap->title != T_Realarray) runerr(123,a);
-      if (n == 0) runerr(130);
-      if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
-      if (ci <= 0) runerr(101, x[0]);
-      nelem = ((ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double));
-      if (ci > nelem) runerr(101,x[0]);
-      if (n == 1) {
+      ndims = (ap->dims?
+	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
+	       : 1);
+      if (n < ndims) runerr(130);
+      for(i=0;i<ndims;i++) {
+         if (!cnv:C_integer(x[i], ci)) runerr(101, x[0]);
+	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
+	 if (ci <= 0) { /* not doing negative subscripts for now */
+	    runerr(101, x[0]);
+	    }
+	 if (ci > ((ndims == 1) ? ((ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double)) : ap->dims->Realarray.a[i]))
+	    runerr(101, x[i]);
+	 }
+
+      /*
+       * Update the base subscript.
+       * base subscript + last dimension subscript = total subscript
+       */
+      if (ndims > 1) {
+	 for(i=0;i<ndims-1;i++) {
+	    int forthisi = 1;
+	    for(j=i+1;j<ndims;j++) forthisi *= ap->dims->Intarray.a[j];
+	    base += forthisi * (IntVal(x[i])-1);
+	    }
+	 }
+
+      if (n == ndims) {
 	 /* get element */
-	 return C_double ap->a[ci-1];
+	 return C_double ap->a[base + ci-1];
 	 }
       else if (n == 2) {
 	 /* set element */
-         if (!cnv:C_double(x[1], cnew)) runerr(101, x[1]);
-	 ap->a[ci-1] = cnew;
+         if (!cnv:C_double(x[n-1], cnew)) runerr(101, x[n-1]);
+	 ap->a[base + ci-1] = cnew;
 	 return C_double cnew;
 	 }
       else runerr(130);

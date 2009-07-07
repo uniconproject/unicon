@@ -4,6 +4,7 @@
 */
 
 #define UNIX 1
+#define SUN 1
 #define INTMAIN /* int main() */
 
 #define LoadFunc 1

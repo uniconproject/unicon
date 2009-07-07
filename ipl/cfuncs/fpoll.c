@@ -65,6 +65,8 @@ int fpoll(int argc, descriptor *argv)	/*: await data from file */
 #elif __bsdi__ || __FreeBSD__ || __NetBSD__ || __OpenBSD__ || __APPLE__
    if (f->_r > 0)
       RetArg(1);
+#elif __sun
+   /* insert your implementation here */
 #else
    if (f->_cnt > 0)
       RetArg(1);

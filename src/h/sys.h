@@ -404,3 +404,9 @@
 	#include <vorbis/codec.h>
 	#include <vorbis/vorbisfile.h>
 #endif					/* HAVE_LIBOGG */
+
+#ifndef NAME_MAX
+#ifdef PosixFns
+#define NAME_MAX _POSIX_NAME_MAX
+#endif
+#endif

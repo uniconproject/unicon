@@ -27,8 +27,10 @@ Setup-NoGraphics: Setup-Common
 Setup-Graphics:  Setup-Common
 	echo '# Graphics enabled'		>> $(TOP)/Makedefs
 	echo 'XL = -L../../bin -lXpm $$(XLIBS)'	>> $(TOP)/Makedefs
+	echo 'XPM=xpm'				>> $(TOP)/Makedefs
 	echo '# Graphics enabled'		>> $(TOP)/Makedefs.in
 	echo 'XL = -L../../bin -lXpm $$(XLIBS)'	>> $(TOP)/Makedefs.in
+	echo 'XPM=xpm'				>> $(TOP)/Makedefs.in
 	echo '#define Graphics 1'		>> $(SRC)/h/define.h
 
 Setup-Thin: Setup-Common

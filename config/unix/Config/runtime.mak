@@ -41,7 +41,7 @@ interp_all:
 	$(MAKE) iconx
 
 iconx: $(OBJS)
-	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS)
+	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL)
 	cp iconx ../../bin
 	strip ../../bin/iconx
 

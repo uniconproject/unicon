@@ -10,8 +10,6 @@
 #include "../h/version.h"
 #include "../h/header.h"
 
-extern int SyntCode(char *s);
-
 struct unref {
    word name;
    int num;

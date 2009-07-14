@@ -111,3 +111,7 @@ void	ldump			(void);
 #ifdef DeBugLinker
 void	idump			(char *c);
 #endif					/* DeBugLinker */
+
+#ifdef SrcSyntaxInfo
+int	SyntCode(char *);
+#endif					/* SrcSyntaxInfo */

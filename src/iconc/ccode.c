@@ -3377,7 +3377,7 @@ invok_methods(n, gents, ncls, rslt)
    cd_add(cd);
    cd = alc_ary(1);
    cd->ElemTyp(0) = A_Str;
-   cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+   cd->Str(0) =              "switch (r_rp->recdesc->Proc.recnum) {";
    cd_add(cd);
    for (i=0; i<ncls; i++) {
       r = gents[i]->val.rec;
@@ -3601,7 +3601,7 @@ invok_methods_and_flds(p, n, clss, ncls, recs, nrec, rslt)
    cd_add(cd);
    cd = alc_ary(1);
    cd->ElemTyp(0) = A_Str;
-   cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+   cd->Str(0) =              "switch (r_rp->recdesc->Proc.recnum) {";
    cd_add(cd);
 
    for (i=0; i<nrec; i++) {
@@ -3641,7 +3641,7 @@ invok_methods_and_flds(p, n, clss, ncls, recs, nrec, rslt)
     */
    cd = alc_ary(1);
    cd->ElemTyp(0) = A_Str;
-   cd->Str(0) = "      printf(\"rec-num: %d.\\n\",r_rp->recdesc->proc.recnum);";
+   cd->Str(0) = "      printf(\"rec-num: %d.\\n\",r_rp->recdesc->Proc.recnum);";
    cd_add(cd);
 
    /*
@@ -3722,7 +3722,7 @@ invok_methods_and_flds(p, n, clss, ncls, recs, nrec, rslt)
    cd_add(cd);
    cd = alc_ary(1);
    cd->ElemTyp(0) = A_Str;
-   cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+   cd->Str(0) =              "switch (r_rp->recdesc->Proc.recnum) {";
    cd_add(cd);
 
    for (i=0; i<ncls; i++) {
@@ -4085,7 +4085,7 @@ field_ref(p, n, rslt)
       cd_add(cd);
       cd = alc_ary(1);
       cd->ElemTyp(0) = A_Str;
-      cd->Str(0) =              "switch (r_rp->recdesc->proc.recnum) {";
+      cd->Str(0) =              "switch (r_rp->recdesc->Proc.recnum) {";
       cd_add(cd);
 
       rp = fp->rlist;

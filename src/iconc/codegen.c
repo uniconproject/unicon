@@ -1980,7 +1980,7 @@ gen_disam(hfile, cfile)
    fprintf(cfile, "   int sfx;\n\n");
    fprintf(cfile, "   if (d.dword != D_Record)\n");
    fprintf(cfile, "      return 0;\n");
-   fprintf(cfile, "   d = ((struct b_record *)BlkLoc(d))->recdesc->proc.recname;\n");
+   fprintf(cfile, "   d = ((struct b_record *)BlkLoc(d))->recdesc->Proc.recname;\n");
    fprintf(cfile, "   if ((len = StrLen(d)) <= 14)\n");
    fprintf(cfile, "      return 0;\n");
    fprintf(cfile, "   sfx = *(int *)((StrLoc(d)) + len - 4);\n");

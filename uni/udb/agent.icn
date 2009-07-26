@@ -108,13 +108,14 @@ method build_Mask()
    every Name := !activeClients do
       eventMask ++:= Clients[Name].eventMask
 
+   DState.eventMask ++:= eventMask
    if mtype == "internal" then{
-      DState.internalMask := eventMask
-      DState.Update()
+      DState.internalMask := eventMask 
+      #DState.Update()
       }
    else if mtype == ("external"|"semi-internal") then{
       DState.externalMask := eventMask 
-      DState.Update()
+      #DState.Update()
       }
 end
 

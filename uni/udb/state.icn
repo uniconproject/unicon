@@ -81,7 +81,7 @@ end
 method constructEventMask()
 
    if *internalMask > 0 | *externalMask > 0 | *traceMask > 0 then{
-      eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
+      eventMask := cset(E_Error || E_Exit || E_Signal) ++ cset(E_MXevent)
                    cset(E_Collect || E_EndCollect) ++
                    internalMask ++ externalMask ++ traceMask
       if *breakMask > 0 then{
@@ -143,7 +143,7 @@ end
 #  
 method Update(state)
 
-   if /state then state := State else  State := state
+   /state := State
    case state of {
      LOAD :{
           write("\n   --- a program just loaded ---") 
@@ -164,7 +164,7 @@ method Update(state)
         eventMask ++:= internalMask ++ externalMask
         }
      default:{
-        Write("OPs: Start Over !!!")
+        #Write("OPs: Start Over !!!")
         Fresh()
         }
      }

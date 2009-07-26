@@ -166,7 +166,17 @@ procedure Keyword(x1,x2)
    return node("keyword",x1,x2)
 end
 
+global list_of_all_fields, dummyrecno
 procedure Field(x1,x2,x3)
+initial { list_of_all_fields := [ ]; dummyrecno := 1 }
+
+   if \iconc then {
+      if type(x3) == "token" then {
+	 put(list_of_all_fields, x3.s)
+	 write(&errout, "field ", image(x3.s))
+	 }
+      }
+
    return node("field",x1,x2,x3)
 end
 
@@ -241,6 +251,16 @@ procedure Progend(x1)
 #  iwrite("Generating code:")
    yyprint(x1)
    write(yyout)
+
+   if \iconc & (type(list_of_all_fields) == "list") &
+	(*list_of_all_fields > 0) then {
+      writes(yyout, "record __dummyrecord",dummyrecno,"(",
+			list_of_all_fields[1])
+      every writes(yyout, ",", list_of_all_fields[2 to *list_of_all_fields])
+      write(yyout, ")")
+      dummyrecno +:= 1
+      list_of_all_fields := [ ]
+      }
 end
 %}
 
@@ -716,7 +736,7 @@ procedure parenthesize_assign(nd)
 
    if /iconc then
       return nd
-   if (not(*nd.children = 3)) then
+   if not (*nd.children = 3) then
       return nd
    rhs := nd.children[3]
    if (not(type(rhs) == "treenode")) then

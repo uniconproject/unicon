@@ -66,6 +66,11 @@ NT-Configure-GCC:
 		@echo Now remember to add unicon/bin to your path
 		@echo Then run "make Unicon" to build
 
+build:
+		gcc src/common/build.c -lncurses -o build
+		build $(name)
+		-rm build
+
 Pure:
 		touch Makedefs
 		rm -rf icon.* bin/[a-z]* lib/[a-z]*

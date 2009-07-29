@@ -10,7 +10,8 @@ name=unspecified
 dest=/must/specify/dest/
 
 help:
-	@echo UNIX: Run "make Configure name=system" or "make X-Configure name=system"
+	@echo UNIX: Run "make Configure name=system" or "make X-Configure
+	name=system" or "make build name=system"
 	@echo "   where system is one of those in config/unix."
 	@echo 'Windows (MSVC): Run "nmake NT-Configure" or "nmake W-Configure".'
 	@echo 'Windows (GCC): Run "make NT-Configure-GCC" or "make W-Configure-GCC".'
@@ -41,7 +42,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.23 2009-03-02 22:49:12 jeffery Exp $
+# $Id: top.mak,v 1.24 2009-07-29 10:11:45 zsharif Exp $
 
 
 # Configure the code for a specific system.
@@ -83,7 +84,17 @@ VX-Configure:	config/unix/$(name)/status
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
+##################################################################
+# 
+# This is used utilize the ncurses-based tool to build Unicon
+# make build name=xxxx
 
+build:
+	gcc src/common/build.c -lncurses -o build
+	build $(name)
+	-rm build
+
+##################################################################
 # Get the status information for a specific system.
 
 Status:

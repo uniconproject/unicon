@@ -37,7 +37,9 @@ struct tv {
 extern struct tv * tv_alc(int);
 extern struct tv * tv_alc_set(int);
 extern void tv_bit_clr(struct tv *, int);
-/*extern int tv_bit_get(struct tv *, int);*/
+#ifndef tv_bit_get
+extern int tv_bit_get(struct tv *, int);
+#endif					/* tv_bit_get */
 extern void tv_bit_set(struct tv *, int);
 extern void tv_bits_clr(struct tv *, int);
 extern void tv_bits_cpy(struct tv *, struct tv *, int);

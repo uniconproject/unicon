@@ -11,6 +11,8 @@
 #include "ccode.h"
 #include "cproto.h"
 #include "tv.h"
+#include "util.h"
+#include "vtbl.h"
 #ifdef TypTrc
 #ifdef HighResTime
 #include <sys/time.h>
@@ -5343,11 +5345,8 @@ struct argtyps *argtyps;
  *  If the type consists of a single named variable, return its symbol
  *  table entry through the parameter "single".
  */
-extern
-int
-varsubtyp(typ, single)
-   typeinfo_t * typ;
-   struct lentry ** single;
+
+int varsubtyp(typeinfo_t *typ, struct lentry **single)
 {
    int i, j;
    int n_set;

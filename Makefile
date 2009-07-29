@@ -6,7 +6,7 @@
 #  specific makefile that contains build rules.
 
 help:
-	@echo UNIX: Run "make Configure name=system" or "make X-Configure name=system"
+	@echo UNIX: Run "make Configure name=system" or "make X-Configure name=system" or "make build name=system"
 	@echo "   where system is one of those in config/unix."
 	@echo Windows (MSVC): Run "nmake NT-Configure" or "nmake W-Configure".
 	@echo Windows (GCC): Run "make NT-Configure-GCC" or "make W-Configure-GCC".

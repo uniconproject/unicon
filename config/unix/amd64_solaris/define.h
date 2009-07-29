@@ -10,6 +10,7 @@
 #define LoadFunc 1
 #define SysOpt   1
 #define NoRanlib
+#define COpts " -m64 -I/usr/X11R6/include -L/usr/X11R6/lib/64 "
 
 /* CPU architecture */
 #define IntBits 32

@@ -1715,6 +1715,16 @@ dptr dp1, dp2;
          } 
 
       default:
+#ifdef Arrays
+	 if (Type(*dp1) == T_Intarray) {
+	    sprintf(sbuf, "intarray(?)");
+	    len = strlen(sbuf);
+	    Protect(t = alcstr(sbuf, len), return Error);
+	    StrLoc(*dp2) = t;
+	    StrLen(*dp2) = len;
+	    }
+	 else
+#endif					/* Arrays */
         if (Type(*dp1) == T_External) {
            /*
             * For now, just produce "external(n)". 

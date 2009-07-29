@@ -1755,7 +1755,7 @@ end
  */
 function{1} IntArrayElem(a, x[n])
    abstract {
-      return new list(integer)
+      return integer
       }
    body {
       C_integer ci, cnew;
@@ -1769,7 +1769,6 @@ function{1} IntArrayElem(a, x[n])
       if (n < ndims) runerr(130);
       for(i=0;i<ndims;i++) {
          if (!cnv:C_integer(x[i], ci)) runerr(101, x[0]);
-	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
 	 if (ci <= 0) { /* not doing negative subscripts for now */
 	    runerr(101, x[0]);
 	    }
@@ -1838,7 +1837,7 @@ end
  */
 function{1} RealArrayElem(a,x[n])
    abstract {
-      return new list(real)
+      return real
       }
    body {
       C_integer ci;

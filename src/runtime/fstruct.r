@@ -985,7 +985,17 @@ end
 "list(i, x) - create a list of size i, with initial value x."
 
 function{1} list(n, x)
-   if !def:C_integer(n, 0L) then
+   if is:set(n) then {
+      abstract {
+         return new list(store[type(n).set_elem])
+      	 }
+      body {
+         struct descrip d;
+         cnv_list(&n, &d); /* can't fail, already know n is a set */
+	 return d;
+	 }
+   }
+   else if !def:C_integer(n, 0L) then
       runerr(101, n)
 
    abstract {

@@ -809,35 +809,16 @@ function{1} sort(t, i)
             return new list(store[type(t).set_elem])
             }
          body {
-            register dptr d1;
-            register word size;
-            register int j, k;
-            tended struct b_list *lp;
-            union block *ep, *bp;
-            register struct b_slots *seg;
-            /*
-             * Create a list the size of the set, copy each element into
-             * the list, and then sort the list using qsort as in list
-             * sorting and return the sorted list.
-             */
-            size = BlkD(t,Set)->size;
+	    register word size;
+	    tended struct descrip d;
+	    cnv_list(&t, &d); /* can't fail, already know t is a set */
 
-            Protect(lp = alclist(size, size), runerr(0));
+	    size = BlkD(t,Set)->size;
+	    if (size > 1)  /* only need to sort non-trivial sets */
+	       qsort((char *)Blk(BlkD(d,List)->listhead,Lelem)->lslots,
+		     (int)size,sizeof(struct descrip),(QSortFncCast)anycmp);
 
-            bp = BlkLoc(t);  /* need not be tended if not set until now */
-
-            if (size > 0) {  /* only need to sort non-empty sets */
-               d1 = Blk(lp->listhead,Lelem)->lslots;
-               for (j=0; j < HSegs && (seg= BlkPH(bp,Table,hdir)[j])!=NULL;j++)
-                  for (k = segsize[j] - 1; k >= 0; k--)
-                     for (ep= seg->hslots[k]; ep!=NULL;ep=BlkPE(ep,Telem,clink))
-                        *d1++ = BlkPE(ep,Selem,setmem);
-               qsort((char *)Blk(lp->listhead,Lelem)->lslots,(int)size,
-                     sizeof(struct descrip),(QSortFncCast)anycmp);
-               }
-
-            Desc_EVValD(lp, E_Lcreate, D_List);
-            return list(lp);
+            return d;
             }
          }
 

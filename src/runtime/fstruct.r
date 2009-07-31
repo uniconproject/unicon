@@ -599,7 +599,6 @@ function{1} insert(s, x[n])
       }
 end
 
-#ifdef Uniconc
 #if COMPILER
 #define ClsInstSuffix "__mdw_inst_mdw"
 #else
@@ -631,8 +630,8 @@ function{0,1} classname(r)
       }
 end
 
-"membervarnames(r) - get list of the member vars for class instance r"
-function{1} membervarnames(r)
+"membernames(r) - get list of the member vars for class instance r"
+function{1} membernames(r)
    if !is:record(r) then
       runerr(107, r)
    abstract {
@@ -657,40 +656,46 @@ end
 "methodnames(r) - get list of method names for class instance r"
 function{1} methodnames(r, cooked_names)
    if !is:record(r) then
-      runerr(107, r)
+      if !is:string(r) then
+         runerr(107, r)
    abstract {
       return new list(string)
       }
    body {
+      tended struct b_list * p;
+      union block * blk;
+      register struct b_lelem * bp;
+      register word i, k, n_mthds, n_glbls;
+      word len;
+      tended char *s;
+      char * procname;
+
+      if (is:record(r)) {
 #if !COMPILER
       char * suffix;
 #endif /* COMPILER */
-      union block * blk;
-      unsigned recnm_len;
       struct b_record * br;
       tended char * recnm_bgn;
       tended char * recnm_end;
-      tended struct b_list * p;
-      register struct b_lelem * bp;
-      register word i, k, n_mthds, n_glbls;
 
       br = BlkD(r, Record);
-      recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
-      recnm_end = strstr(recnm_bgn, ClsInstSuffix);
-      recnm_len = recnm_end - recnm_bgn + 1;
+      s = StrLoc(Blk(br->recdesc,Proc)->recname);
+      recnm_end = strstr(s, ClsInstSuffix);
+      len = recnm_end - s + 1;
       n_glbls = egnames - gnames;
       for (i=0,n_mthds=0; i<n_glbls; i++) {
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
+         procname = StrLoc(Blk(blk,Proc)->pname);
+         if (strncmp(procname, s, len))
             continue;
 #if !COMPILER
-         suffix = StrLoc(blk->proc.pname);
-         suffix += (recnm_end - recnm_bgn);
-         if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
+         suffix = StrLoc(Blk(blk,Proc)->pname);
+         suffix += (recnm_end - s);
+         if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") ==0)
             continue;
-#endif /* COMPILER */
+#endif					/* COMPILER */
          n_mthds++;
          }
       Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
@@ -699,41 +704,27 @@ function{1} methodnames(r, cooked_names)
          if (globals[i].dword != D_Proc)
             continue;
          blk = globals[i].vword.bptr;
-         if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
+         if (strncmp(StrLoc(Blk(blk,Proc)->pname), s, len))
             continue;
 #if !COMPILER
          suffix = StrLoc(blk->Proc.pname);
-         suffix += (recnm_end - recnm_bgn);
-         if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
+         suffix += (recnm_end - s);
+         if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") ==0)
             continue;
-#endif /* COMPILER */
+#endif					/* COMPILER */
          if (cooked_names.vword.integr) {
-            bp->lslots[k].dword = StrLen(blk->Proc.pname) - recnm_len;
-            bp->lslots[k].vword.sptr = StrLoc(blk->Proc.pname) + recnm_len;
+            bp->lslots[k].dword = StrLen(blk->Proc.pname) - len;
+            bp->lslots[k].vword.sptr = StrLoc(blk->Proc.pname) + len;
             }
          else {
             bp->lslots[k] = blk->Proc.pname;
             }
          k++;
          }
-      return list(p);
       }
-end
-
-"methodnames_fromstr - get list of method names for class named s"
-function{1} methodnames_fromstr(s, cooked_names)
-   if !cnv:C_string(s) then
-      runerr(103,s)
-   abstract {
-      return new list(string)
-      }
-   body {
-      word len;
-      char * procname;
-      union block * blk;
-      tended struct b_list * p;
-      register struct b_lelem * bp;
-      register word i, k, n_glbls, n_mthds;
+   else {
+      if (!cnv:C_string(r, s))
+	 runerr(103,r);
 
       len = strlen(s);
       n_glbls = egnames - gnames;
@@ -784,29 +775,31 @@ function{1} methodnames_fromstr(s, cooked_names)
             }
          k++;
          }
+      }
       return list(p);
       }
 end
 
 "methods(r) - get list of methods for class instance r"
 function{1} methods(r)
-   if !is:record(r) then
-      runerr(107, r)
+   declare {
+      union block * blk;
+      tended struct b_list * p;
+      register word i, k, n_glbls, n_mthds;
+      register struct b_lelem * bp;
+      }
    abstract {
       return new list(proc)
       }
-   body {
-#if !COMPILER
+
+   type_case r of {
+      record:
+	 body {
       char * suffix;
-#endif /* COMPILER */
-      union block * blk;
       unsigned recnm_len;
       struct b_record * br;
       tended char * recnm_bgn;
       tended char * recnm_end;
-      tended struct b_list * p;
-      register struct b_lelem * bp;
-      register word i, k, n_glbls, n_mthds;
 
       br = BlkD(r, Record);
       recnm_bgn = StrLoc(Blk(br->recdesc, Proc)->recname);
@@ -820,7 +813,7 @@ function{1} methods(r)
          if (strncmp(StrLoc(Blk(blk,Proc)->pname), recnm_bgn, recnm_len))
             continue;
 #if !COMPILER
-      suffix = StrLoc(blk->proc.pname);
+      suffix = StrLoc(Blk(blk,Proc)->pname);
       suffix += (recnm_end - recnm_bgn);
       if (strcmp(suffix, "__state") == 0 || strcmp(suffix, "__methods") == 0)
          continue;
@@ -847,6 +840,64 @@ function{1} methods(r)
          }
       return list(p);
       }
+      string:
+	 body {
+      word len;
+      char * procname;
+      tended char *s;
+
+      if (!cnv:C_string(r, s))
+	 runerr(103, r);
+      len = StrLen(r);
+      n_glbls = egnames - gnames;
+      for (i=0,n_mthds=0; i<n_glbls; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (StrLen(Blk(blk,Proc)->pname) <= len)
+            continue;
+         procname = StrLoc(blk->Proc.pname);
+         if (strncmp(procname, s, len))
+            continue;
+         if (procname[len] != '_')
+            continue;
+#if !COMPILER
+         if (strcmp(procname + len, "__state") == 0)
+            continue;
+         if (strcmp(procname + len, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         n_mthds++;
+         }
+      Protect(p = alclist_raw(n_mthds, n_mthds), runerr(0));
+      bp = Blk(p->listhead,Lelem);
+      for (i=0,k=0; i<n_glbls && k<n_mthds; i++) {
+         if (globals[i].dword != D_Proc)
+            continue;
+         blk = globals[i].vword.bptr;
+         if (StrLen(Blk(blk,Proc)->pname) <= len)
+            continue;
+         procname = StrLoc(blk->Proc.pname);
+         if (strncmp(procname, s, len))
+            continue;
+         if (procname[len] != '_')
+            continue;
+#if !COMPILER
+         if (strcmp(procname + len, "__state") == 0)
+            continue;
+         if (strcmp(procname + len, "__methods") == 0)
+            continue;
+#endif /* COMPILER */
+         bp->lslots[k].dword = D_Proc;
+         bp->lslots[k].vword.bptr = blk;
+         k++;
+         }
+      return list(p);
+      }
+      default: {
+	 runerr(107, r)
+	 }
+	 }
 end
 
 "methods_fromstr(s) - get list of methods for class instance r"
@@ -912,75 +963,46 @@ function{1} methods_fromstr(s)
       }
 end
 
-"oprecvar(r) - get the operations record (as a variable) for class instance r"
-function{0,1} oprecvar(r)
-   if !is:record(r) then
-      runerr(107, r)
+"oprec(r) - get the operations record for class instance r"
+function{0,1} oprec(r)
    abstract {
       return variable
       }
    body {
-      /* this calls nothing that provokes a collect */
-      char * p;
-      char * recnm_bgn;
-      char * recnm_end;
-      unsigned recnm_len;
-      struct b_record * br;
-      register word i, n_glbls;
-
-      br = BlkD(r, Record);
-      recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
-      recnm_end = strstr(recnm_bgn, ClsInstSuffix);
-      recnm_len = recnm_end - recnm_bgn;
-      n_glbls = egnames - gnames;
-      for (i=0; i<n_glbls; i++) {
-         p = StrLoc(gnames[i]);
-         if (strncmp(recnm_bgn, p, recnm_len))
-            continue;
-         p += recnm_len;
-         if (strncmp(p, "__oprec", 7) == 0)
-            break;
-         }
-      if (i < n_glbls) {
-         result.dword = D_Var;
-         VarLoc(result) = (dptr)&globals[i];
-         return result;
-         }
-      else
-         fail;
-      }
-end
-
-"oprecvar_fromstr(s) - take string as arg"
-function{0,1} oprecvar_fromstr(s)
-   if !cnv:C_string(s) then
-      runerr(103,s)
-   abstract {
-      return variable
-      }
-   body {
-      /* this calls nothing that provokes a collect */
+      tended char * s;
       char * p;
       register word i, len, n_glbls;
 
-      len = strlen(s);
+      if (is:record(r)) {
+	 char * recnm_end;
+	 struct b_record * br;
+	 br = BlkD(r, Record);
+	 s = StrLoc(Blk(br->recdesc,Proc)->recname);
+	 recnm_end = strstr(s, ClsInstSuffix);
+	 len = recnm_end - s;
+	 }
+      else {
+	 if (!cnv:C_string(r, s))
+	    runerr(103, r);
+	 len = strlen(s);
+	 }
       n_glbls = egnames - gnames;
       for (i=0; i<n_glbls; i++) {
-         p = StrLoc(gnames[i]);
-         if (strncmp(s, p, len))
-            continue;
-         p += len;
-         if (strncmp(p, "__oprec", 7) == 0)
-            break;
-         }
-      if (i >= n_glbls)
-         fail;
-      result.dword = D_Var;
-      VarLoc(result) = (dptr)&globals[i];
-      return result;
+	 p = StrLoc(gnames[i]);
+	 if (strncmp(s, p, len))
+	    continue;
+	 p += len;
+	 if (strncmp(p, "__oprec", 7) == 0)
+	    break;
+	 }
+      if (i < n_glbls) {
+	 result.dword = D_Var;
+	 VarLoc(result) = (dptr)&globals[i];
+	 return result;
+	 }
+      else fail;
       }
 end
-#endif /* Uniconc */
 
 "list(i, x) - create a list of size i, with initial value x."
 
@@ -994,9 +1016,10 @@ function{1} list(n, x)
          cnv_list(&n, &d); /* can't fail, already know n is a set */
 	 return d;
 	 }
-   }
-   else if !def:C_integer(n, 0L) then
-      runerr(101, n)
+      }
+   else {
+      if !def:C_integer(n, 0L) then
+	 runerr(101, n)
 
    abstract {
       return new list(type(x))
@@ -1042,6 +1065,7 @@ function{1} list(n, x)
        */
       return list(hp);
       }
+   }
 end
 
 
@@ -1769,21 +1793,24 @@ function{1} IntArrayElem(a, x[n])
       }
    body {
       C_integer ci, cnew;
-      int i, j, ndims, base = 0;
+      int i, j, ndims=1, base = 0;
       struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+#if 0
       /* need to check that ap is a block pointer type of descriptor first */
       if (ap->title != T_Intarray) runerr(123,a);
-      ndims = (ap->dims?
-	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
-	       : 1);
+      if (ap->dims)
+	 ndims = ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
+		   sizeof(word)) / sizeof(word));
       if (n < ndims) runerr(130);
       for(i=0;i<ndims;i++) {
+#endif
          if (!cnv:C_integer(x[i], ci)) runerr(101, x[0]);
 	 if (ci <= 0) { /* not doing negative subscripts for now */
 	    runerr(101, x[0]);
 	    }
-	 if (ci > ((ndims == 1) ? ((ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word)) : ap->dims->Intarray.a[i]))
+	 if (ci > ((ndims == 1) ? ((ap->blksize-sizeof(struct b_intarray))/sizeof(word))+1 : ap->dims->Intarray.a[i]))
 	    runerr(101, x[i]);
+#if 0
 	 }
 
       /*
@@ -1797,18 +1824,19 @@ function{1} IntArrayElem(a, x[n])
 	    base += forthisi * (IntVal(x[i])-1);
 	    }
 	 }
+#endif
 
       if (n == ndims) {
 	 /* get element */
-	 return C_integer ap->a[base + ci-1];
+	 return C_integer ap->a[/*base +*/ ci-1];
 	 }
-      else if (n == ndims + 1) {
+      else /* if (n == ndims + 1) */ {
 	 /* set element */
          if (!cnv:C_integer(x[n-1], cnew)) runerr(101, x[n-1]);
-	 ap->a[base + ci-1] = cnew;
+	 ap->a[/* base +*/ ci-1] = cnew;
 	 return C_integer cnew;
 	 }
-      else runerr(130);
+/*      else runerr(130); */
       }
 end
 

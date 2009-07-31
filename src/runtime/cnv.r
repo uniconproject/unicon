@@ -1276,3 +1276,41 @@ char *s;
    StrLen(*dp) = p - s;
    StrLoc(*dp) = s;
    }
+
+/*
+ * cnv_list - (*s, *d), convert a value into a list (sets only)
+ */
+int cnv_list(dptr s, dptr d)
+{
+   register dptr d1;
+   register word size;
+   register int j, k;
+   tended struct b_list *lp;
+   union block *ep, *bp;
+   register struct b_slots *seg;
+
+   if (!is:set(*s)) return 0;
+   /*
+    * Create a list the size of the set, copy each element into
+    * the list, and then sort the list using qsort as in list
+    * sorting and return the sorted list.
+    */
+   size = BlkD(*s,Set)->size;
+
+   Protect(lp = alclist(size, size), fatalerr(0,NULL));
+
+   bp = BlkLoc(*s);  /* need not be tended if not set until now */
+
+   if (size > 0) {  /* only need to copy values for non-empty sets */
+      d1 = Blk(lp->listhead,Lelem)->lslots;
+      for (j=0; j < HSegs && (seg= BlkPH(bp,Table,hdir)[j])!=NULL;j++)
+	 for (k = segsize[j] - 1; k >= 0; k--)
+	    for (ep= seg->hslots[k]; ep!=NULL;ep=BlkPE(ep,Telem,clink))
+	       *d1++ = BlkPE(ep,Selem,setmem);
+      }
+
+   Desc_EVValD(lp, E_Lcreate, D_List);
+   d->dword = D_List;
+   BlkLoc(*d) = (union block *)lp;
+   return 1;
+}

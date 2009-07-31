@@ -80,6 +80,7 @@ int		cnv_cset	(dptr s, dptr d);
 #endif					/* MultiThread */
 int		cnv_ec_int	(dptr s, C_integer *d);
 int		cnv_eint	(dptr s, dptr d);
+int		cnv_list	(dptr s, dptr d);
 #ifdef MultiThread
 int		cnv_int_0	(dptr s, dptr d);
 int		cnv_int_1	(dptr s, dptr d);

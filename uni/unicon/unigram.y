@@ -173,7 +173,7 @@ initial { list_of_all_fields := [ ]; dummyrecno := 1 }
    if \iconc then {
       if type(x3) == "token" then {
 	 put(list_of_all_fields, x3.s)
-	 write(&errout, "field ", image(x3.s))
+#	 write(&errout, "field ", image(x3.s))
 	 }
       }
 

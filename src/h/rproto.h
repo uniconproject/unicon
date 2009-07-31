@@ -890,8 +890,10 @@ void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
 #if COMPILER
 
    struct b_refresh *alcrefresh	(int na, int nl, int nt, int wk_sz);
+   int  apply			(dptr, dptr, dptr, continuation);
    void	atrace			(void);
    void	ctrace			(void);
+   void dynrec_start_set	(word);
    void	failtrace		(void);
    void	initalloc		(void);
    int	invoke			(int n, dptr args, dptr rslt, continuation c);

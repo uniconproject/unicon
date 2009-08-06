@@ -1,12 +1,11 @@
-/*----------------------------------------------------------------------- 
+/*
  * The ncurses-based build 
  * This program is written to run from the top level directory for Unicon
  * i.e. ./build intel_linux | ./build amd64_linux | ./build intel_macos  
  *
  * Author: Ziad Al-Sharif
  *         zsharif@gmail.com
- * 
- *-----------------------------------------------------------------------*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +46,7 @@ char msg2[]  = {"<SPACE>: Select   "};
 char msg0[]  = {"<DOWN> : Move down"};
 char msg3[]  = {"<ENTER>: Build    "};
 
-char title[] = {"*** Unicon's Configuration Build *** "};
+char title[] = {"*** Unicon Configuration Options *** "};
 
 int n_choices=7;
 int selected[7];
@@ -82,8 +81,8 @@ WINDOW *create_newwin(int height, int width, int starty, int startx)
 
     if (((startx + width) > COLS) || ((starty + height) > LINES)){
 	endwin();
-	printf("There is no enough space on the current shell !!\n");
-        printf("You may try to increase the size of the current shell window !!\n");
+	printf("There is not enough screen space on the current terminal!\n");
+        printf("Please increase the size of the terminal to 80x24 or larger.\n");
         exit(-1);
     }
     local_win = newwin(height, width, starty, startx);
@@ -189,7 +188,7 @@ int menu()
 		       rewrite_Makedefs();
 
                        endwin();
-                       printf("\n\n make Unicon \n");
+                       printf("\n\nmake Unicon \n");
 		       system("make Unicon");
 		    }
 		 }
@@ -271,10 +270,9 @@ void analyze_Selections(int current)
 	    strcat(temp, " NONE.");
     }
     else if (selected[current] == -1){
-        temp[0]='\"';
-        temp[1]='\0';
+	strcpy(temp, "The ");
         strcat(temp,items[current]);
-        strcat(temp,"\": is not supported by this platform current settings !.");
+        strcat(temp," feature was not found on this platform.");
     }
     /*y = starty + HEIGHT + 3;
      */
@@ -719,13 +717,13 @@ void rewrite_Auto_h(void)
 
     fin = fopen (source, "r");
     if (fin == NULL){
-       printf("\n--- can not open configuration file %s ---\n",source);
+       printf("\n--- cannot open configuration file %s ---\n",source);
        exit(-1);
        }
     
     fout = fopen (dest, "w");
     if (fout == NULL){
-	printf("\n--- can not open a temporary file %s ---\n", dest);
+	printf("\n--- cannot write to temporary file %s ---\n", dest);
        exit(-1);
        }
 
@@ -751,7 +749,7 @@ void read_Auto_h()
 
     fin = fopen (AUTO_H, "r");
     if (fin == NULL){
-       printf("\n--- can not open configuration file %s ---\n",AUTO_H);
+       printf("\n--- cannot open configuration file %s ---\n",AUTO_H);
        exit(-1);
        }
 
@@ -837,7 +835,7 @@ void read_Makedefs()
 
     fin = fopen (MAKEDEFS, "r");
     if (fin == NULL){
-       printf("\n--- can not open configuration file %s ---\n",MAKEDEFS);
+       printf("\n--- cannot open configuration file %s ---\n",MAKEDEFS);
        exit(-1);
        }
 
@@ -860,13 +858,13 @@ void rewrite_Makedefs(void)
 
     fin = fopen(source, "r");
     if (fin == NULL){
-       printf("\n--- can not open configuration file %s ---\n",source);
+       printf("\n--- cannot open configuration file %s ---\n",source);
        exit(-1);
        }
 
     fout = fopen (dest, "w");
     if (fout == NULL){
-       printf("\n--- can not open a temporary file %s ---\n",dest);
+       printf("\n--- cannot write to temporary file %s ---\n",dest);
        exit(-1);
        }
 

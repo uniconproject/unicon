@@ -42,7 +42,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.24 2009-07-29 10:11:45 zsharif Exp $
+# $Id: top.mak,v 1.25 2009-08-06 22:04:21 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -53,6 +53,9 @@ Configure:	config/unix/$(name)/status
 		$(MAKE) cfg
 
 cfg:
+		sh ./configure --without-xlib CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
+
+x-cfg:
 		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 Thin-Configure:	config/unix/$(name)/status
@@ -64,7 +67,7 @@ Thin-Configure:	config/unix/$(name)/status
 X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
-		$(MAKE) cfg
+		$(MAKE) x-cfg
 
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -90,9 +93,15 @@ VX-Configure:	config/unix/$(name)/status
 # make build name=xxxx
 
 build:
-	gcc src/common/build.c -lncurses -o build
-	build $(name)
-	-rm build
+	if [ $(TERM) == dumb ] ; then \
+		echo "No building on dumb terminals, use make Configure"; \
+	elif [ -f /usr/include/curses.h ] ; then \
+		gcc src/common/build.c -lncurses -o build; \
+		./build $(name) ; \
+		rm build; \
+	else \
+		echo "No /usr/include/curses.h found, use make Configure";\
+	fi
 
 ##################################################################
 # Get the status information for a specific system.

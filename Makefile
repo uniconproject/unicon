@@ -67,9 +67,15 @@ NT-Configure-GCC:
 		@echo Then run "make Unicon" to build
 
 build:
-		gcc src/common/build.c -lncurses -o build
-		build $(name)
-		-rm build
+	if [ $(TERM) == dumb ] ; then \
+		echo "No building on dumb terminals, use make Configure"; \
+	elif [ -f /usr/include/curses.h ] ; then \
+		gcc src/common/build.c -lncurses -o build; \
+		./build $(name) ; \
+		rm build; \
+	else \
+		echo "No /usr/include/curses.h found, use make Configure";\
+	fi
 
 Pure:
 		touch Makedefs

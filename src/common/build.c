@@ -12,13 +12,13 @@
 #include <string.h>
 #include <curses.h>
 
-#define _BASIC_       0
-#define _ODBC_        1
-#define _2D_X11_      2
-#define _3D_OpenGL_   3 
-#define _3D_Fonts_    4
-#define _AUDIO_       5
-#define _VoIP_        6
+/*#define _BASIC_       0*/
+#define _ODBC_        0
+#define _2D_X11_      1
+#define _3D_OpenGL_   2 
+#define _3D_Fonts_    3
+#define _AUDIO_       4
+#define _VoIP_        5
 
 #define WIDTH         60
 #define HEIGHT        11
@@ -40,7 +40,7 @@ void rewrite_Makedefs(void);
 
 WINDOW *main_win, *title_win, *sub_win, *ans_win;
 
-char msg4[]  = {"<ESC>: Quit     "};
+char msg4[]  = {"<Q>  : Quit     "};
 char msg1[]  = {"<UP> : Move up  "};
 char msg2[]  = {"<SPACE>: Select   "};
 char msg0[]  = {"<DOWN> : Move down"};
@@ -48,24 +48,24 @@ char msg3[]  = {"<ENTER>: Build    "};
 
 char title[] = {"*** Unicon Configuration Options *** "};
 
-int n_choices=7;
-int selected[7];
+int n_choices=6;
+int selected[6];
 
 int startx = 0;
 int starty = 0;
 
 char *choices[] = { 
-     /*-0-*/  " ** Basic Configurations              ! ",
-     /*-1-*/  "    --Database (ODBC) Support         ! ",
-     /*-2-*/  "    --2D Graphics (X11) Support       ! ",
-     /*-3-*/  "      --3D Graphics (OpenGL) Support  ! ",
-     /*-4-*/  "      --3D Fonts    (OpenGL) Support  ! ",
-     /*-5-*/  "    --Audio Support                   ! ",
-     /*-6-*/  "      --VoIP Support                  ! "
+     /*-0-    " ** Basic Configurations              ! ",*/
+     /*-0-*/  "    --Database (ODBC) Support         ! ",
+     /*-1-*/  "    --2D Graphics (X11) Support       ! ",
+     /*-2-*/  "      --3D Graphics (OpenGL) Support  ! ",
+     /*-3-*/  "      --3D Fonts    (OpenGL) Support  ! ",
+     /*-4-*/  "    --Audio Support                   ! ",
+     /*-5-*/  "      --VoIP Support                  ! "
 };
 
 char *items[] = {
-    "Basic", 
+  /*"Basic", */
     "ODBC",
     "X11",
     "3D-Graphics",
@@ -96,7 +96,7 @@ void InitSelections()
 {
     n_choices = sizeof(choices) / sizeof(char *);
 
-    selected[_BASIC_]     =  1;
+    /*selected[_BASIC_]     =  1;*/
     selected[_ODBC_]      = -1;
     selected[_2D_X11_]    = -1;
     selected[_3D_OpenGL_] = -1;
@@ -165,6 +165,8 @@ int menu()
                  /*printf("[%d][%d]",COLS,LINES);?*/
 		 break;
 	         }
+            case 'q':
+            case 'Q':
 	    case 27:{ /* the Esc key   */
 	         /* quit the build process */
 		 ch = getAnswer(1);
@@ -217,17 +219,20 @@ void check_Selections(int current)
 {
     int i;
 
-    if (current == _BASIC_){      /* Check for Basic Configurations */ 
+    /*if (current == _BASIC_){      /* Check for Basic Configurations * / 
        if (!selected[_BASIC_])
           for(i=1; i < n_choices; ++i)
 	     if (selected[i] > 0)
 	        selected[i] = 0;
        }
-    else if (current == _2D_X11_){ /* Check for the Graphics Configurations */ 
+       else */
+    if (current == _2D_X11_){ /* Check for the Graphics Configurations */ 
        if (!selected[_2D_X11_])
-          for(i=3; i < 5; ++i)
+	 if (selected[_3D_OpenGL_] > 0) selected[_3D_OpenGL_] = 0;
+	 if (selected[_3D_Fonts_] > 0)  selected[_3D_Fonts_]  = 0;
+	 /*for(i=2; i < 4; ++i)
 	     if (selected[i] > 0)
-	        selected[i] = 0;
+	     selected[i] = 0;*/
        }
     else if (current == _3D_OpenGL_){ /* Check for the 3D Graphics Configurations */
        if ((!selected[_3D_OpenGL_]) && (selected[_3D_Fonts_] > 0))
@@ -250,8 +255,9 @@ void check_Selections(int current)
 	  selected[_AUDIO_] = 1;
        }
 
-    if ((current > _BASIC_) && (!selected[_BASIC_]))
-       selected[_BASIC_] = 1;
+    /* if ((current > _BASIC_) && (!selected[_BASIC_]))
+     *  selected[_BASIC_] = 1;
+     */
 }
 
 void analyze_Selections(int current)
@@ -588,17 +594,17 @@ void checkEnabledFeatures(void)
      * Check for Database support 
      */
     if (isEnabled(_DataBase, _DataBase_Score))
-        selected[_ODBC_]= 0;
+        selected[_ODBC_]= 1;
 
     /* 
      * Check for "X11 2D Graphics" + "3D Graphics" + "3D Fonts" support 
      */
     if (isEnabled(_X11_2DGraphics, _X11_2DGraphics_Score)){
-        selected[_2D_X11_] = 0;
+        selected[_2D_X11_] = 1;
         if (isEnabled(_3DGraphics, _3DGraphics_Score)){
-            selected[_3D_OpenGL_] = 0;
+            selected[_3D_OpenGL_] = 1;
             if (isEnabled(_3DFonts, _3DFonts_Score))
-		selected[_3D_Fonts_] = 0;
+		selected[_3D_Fonts_] = 1;
 	}
     }
  
@@ -606,9 +612,9 @@ void checkEnabledFeatures(void)
      * Check for "Audio" and "VoIP" support 
      */
     if (isEnabled(_Audio, _Audio_Score)){
-        selected[_AUDIO_] = 0;
+        selected[_AUDIO_] = 1;
         if (isEnabled(_VoIP, _VoIP_Score))
-            selected[_VoIP_] = 0;
+            selected[_VoIP_] = 1;
     }
 }
 

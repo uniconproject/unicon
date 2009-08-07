@@ -175,30 +175,30 @@ int menu()
 		 break;
 	         }
             case 10:{ /* the Enter key */
-	         /* start the build process only if there is some selections */
+	         /* start the build process only if there is some selections * /
 	         int j=0;
 	         for(i=0; i < n_choices; ++i){
 		     if (selected[i] > 0)
 		        ++j;
 		 } 
-                 if ( j > 0 ) { 
-		    ch = getAnswer(2);
-		    if ((ch == 'Y') || (ch=='y')){
-		       choice = highlight;
+                 if ( j > 0 ) { */
+		 ch = getAnswer(2);
+		 if ((ch == 'Y') || (ch=='y')){
+		    choice = highlight;
 
-		       rewrite_Auto_h();
-		       rewrite_Makedefs();
+		    rewrite_Auto_h();
+		    rewrite_Makedefs();
 
-                       endwin();
-                       printf("\n\nmake Unicon \n");
-		       system("make Unicon");
+                    endwin();
+                    printf("\n\nmake Unicon \n");
+		    system("make Unicon");
 		    }
-		 }else if (j==0){
-	            /* quit the build process -- no selection has been made*/
+		    /*}else if (j==0){
+	            /* quit the build process -- no selection has been made* /
 		    ch = getAnswer(1);
 		    if ((ch == 'Y') || (ch=='y'))
-                       choice = highlight;
-		 }
+		    choice = highlight;* /
+		    }*/
 		 break;
 	         }
 	    }
@@ -278,7 +278,7 @@ void analyze_Selections(int current)
             temp[l+1]='\0';
 	}
 	else
-	    strcat(temp, " NONE.");
+	    strcat(temp, " NONE = Basic.");
     }
     else if (selected[current] == -1){
 	strcpy(temp, "The ");

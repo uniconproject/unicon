@@ -191,6 +191,11 @@ int menu()
                        printf("\n\nmake Unicon \n");
 		       system("make Unicon");
 		    }
+		 }else if (j==0){
+	            /* quit the build process -- no selection has been made*/
+		    ch = getAnswer(1);
+		    if ((ch == 'Y') || (ch=='y'))
+                       choice = highlight;
 		 }
 		 break;
 	         }

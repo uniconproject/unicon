@@ -640,6 +640,7 @@ expr11	: literal ;
 	| BREAK nexpr { $$ := node("Break", $1,$2);} ;
 	| LPAREN exprlist RPAREN { $$ := node("Paren", $1,$2,$3);} ;
 	| LBRACE compound RBRACE { $$ := node("Brace", $1,$2,$3);} ;
+	| LBRACE caselist RBRACE { $$ := tablelit($1,$2,$3);} ;
 	| LBRACK exprlist RBRACK { $$ := node("Brack", $1,$2,$3);} ;
 	| expr11 LBRACK exprlist RBRACK { $$ := node("Subscript", $1,$2,$3,$4);} ;
 	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3);} ;
@@ -875,4 +876,38 @@ case type(node) of {
       if (node.tok = IDENT) & (node.s == s) then return
       }
    }
+end
+
+procedure buildtab_from_cclause(n, args)
+   if type(n) ~== "treenode" then stop("bad table literal")
+   comma := copy(n.children[2])
+   comma.tok := COMMA
+   comma.s := ","
+   case n.label of {
+     "cclause0": {
+        if *args.children > 0 then push(args.children, comma)
+	push(args.children, n.children[3])
+	}
+     "cclause1": {
+        if *args.children > 0 then push(args.children, comma)
+	push(args.children, n.children[3])
+	push(args.children, comma)
+	push(args.children, n.children[1])
+	}
+   }
+end
+
+procedure tablelit(lb, cl, rb)
+local tabid, lp, rp, args
+   args := node("elst1")
+   write("I am a tablelit, cl is ", image(cl.label))
+   while type(cl)=="treenode" & cl.label == "Caselist" do {
+      buildtab_from_cclause(cl.children[3], args)
+      cl := cl.children[1]
+      }
+   buildtab_from_cclause(cl, args)
+   tabid := copy(lb); tabid.tok := IDENT; tabid.s := "table"
+   lp := copy(lb); lp.tok := LPAREN; lp.s := "("
+   rp := copy(rb); rp.tok := RPAREN; rp.s := ")"
+   return node("invoke", tabid, lp, args, rp)
 end

@@ -26,6 +26,7 @@ FncDef(center,3)
 FncDef(char,1)
 FncDef(chdir,1)
 FncDef(close,1)
+FncDef(cofail,1)
 FncDef(collect,2)
 FncDefV(constructor)
 FncDef(copy,1)
@@ -355,7 +356,6 @@ FncDef(fetch,2)
    /*
     * These functions are under MultiThread for no good reason.
     */
-   FncDef(cofail,1)
    FncDef(globalnames,1)
    FncDef(fieldnames,1)
    FncDef(localnames,2)

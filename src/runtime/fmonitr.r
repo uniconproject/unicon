@@ -21,9 +21,9 @@
  * event(x, y, C) -- generate an event at the program level.
  */
 
-"event(x, y, C) - create event with event code x and event value y."
+"EvSend(x, y, C) - send event with event code x and event value y."
 
-function{0,1} event(x,y,ce)
+function{0,1} EvSend(x,y,ce)
    body {
       struct progstate *dest = NULL;
 

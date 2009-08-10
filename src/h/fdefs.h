@@ -374,7 +374,7 @@ FncDef(fetch,2)
     * events have been instrumented.
     */
    FncDef(EvGet,2)
-   FncDef(event,3)
+   FncDef(EvSend,3)
    FncDef(eventmask,2)
    FncDef(opmask,2)
 

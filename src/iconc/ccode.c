@@ -1329,8 +1329,8 @@ gencode(p, n, rslt)
             }
 
          /*
-          * Go to the end of the loop and see if the loop's success continuation
-          *  is in a separate function.
+          * Go to the end of the loop and see if the loop's success
+          *  continuation is in a separate function.
           */
          cur_fnc = li.end_loop->Container;
          cur_fnc->cursor = li.end_loop;
@@ -2072,7 +2072,7 @@ struct val_loc *rslt;
    if (co_rslt != NULL) {
       cd = alc_ary(1);
       cd->ElemTyp(0) = A_Str;
-      cd->Str(0) = "++BlkLoc(k_current)->coexpr.size;";
+      cd->Str(0) = "++BlkLoc(k_current)->Coexpr.size;";
       cd_add(cd);
       cd = alc_ary(3);
       cd->ElemTyp(0) = A_Str;
@@ -4580,8 +4580,7 @@ static void propagate_literals()  {
 
 /*
  * analyze_literals - analyzes the generated code to replace
- *                      complex record dereferences with  C
- *                      literals.
+ *                      complex record dereferences with  C literals.
  */
 static void analyze_literals(struct code *start, struct code *top, int lvl)  {
    struct code *ptr, *tmp, *not_null;
@@ -5558,8 +5557,7 @@ inv_op(p, n, rslt)
                break;
            case AdjCpy:
                /*
-                * Copy into a new temporary which is used as the
-                *  parameter.
+                * Copy into a new temporary which is used as the parameter.
                 */
               arg_rslt = chk_alc(NULL, n->intrnl_lftm);
               cd_add(mk_cpyval(arg_rslt, symtab[i].loc));
@@ -5921,8 +5919,7 @@ struct tmplftm *lifetm_ary;
    }
 
 /*
- * alc_lftm - allocate an array of lifetime information for an argument
- *  list.
+ * alc_lftm - allocate an array of lifetime information for an argument list.
  */
 static struct tmplftm *alc_lftm(num, args)
 int num;

@@ -166,13 +166,13 @@ procedure Keyword(x1,x2)
    return node("keyword",x1,x2)
 end
 
-global list_of_all_fields, dummyrecno
+global set_of_all_fields, dummyrecno
 procedure Field(x1,x2,x3)
-initial { list_of_all_fields := [ ]; dummyrecno := 1 }
+initial { set_of_all_fields := set(); dummyrecno := 1 }
 
    if \iconc then {
       if type(x3) == "token" then {
-	 put(list_of_all_fields, x3.s)
+	 insert(set_of_all_fields, x3.s)
 #	 write(&errout, "field ", image(x3.s))
 	 }
       }
@@ -252,14 +252,15 @@ procedure Progend(x1)
    yyprint(x1)
    write(yyout)
 
-   if \iconc & (type(list_of_all_fields) == "list") &
-	(*list_of_all_fields > 0) then {
-      writes(yyout, "record __dummyrecord",dummyrecno,"(",
-			list_of_all_fields[1])
-      every writes(yyout, ",", list_of_all_fields[2 to *list_of_all_fields])
+   if \iconc & (type(set_of_all_fields) == "set") &
+	(*set_of_all_fields > 0) then {
+	arandomfield := !set_of_all_fields
+      writes(yyout, "record __dummyrecord",dummyrecno,"(",arandomfield)
+      delete(set_of_all_fields, arandomfield)
+      every writes(yyout, ",", !set_of_all_fields)
       write(yyout, ")")
       dummyrecno +:= 1
-      list_of_all_fields := [ ]
+      set_of_all_fields := set()
       }
 end
 %}

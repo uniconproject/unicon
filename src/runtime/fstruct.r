@@ -385,7 +385,7 @@ end
 /*
  * Insert an array of alternating keys and values into a table.
  */
-int cinserttable(union block **pbp, int n, dptr x)
+int c_inserttable(union block **pbp, int n, dptr x)
 {
    tended struct descrip s;
    union block **pd;
@@ -555,7 +555,7 @@ function{1} insert(s, x[n])
          body {
 	    tended union block *bp;
 	    bp = BlkLoc(s);
-	    if (cinserttable(&bp, n, x) == -1) runerr(0);
+	    if (c_inserttable(&bp, n, x) == -1) runerr(0);
             return s;
             }
          }
@@ -1607,7 +1607,7 @@ end
 }
 #enddef
 
-int c_setinsert(union block **pps, dptr pd)
+int c_insertset(union block **pps, dptr pd)
 {
    int rv;
    C_SETINSERT(*pps, pd, rv);
@@ -1689,7 +1689,7 @@ function{1} set(x[n])
 		}
 	      }
 	      else {
-		if (c_setinsert(&ps, & (x[arg])) == -1) {
+		if (c_insertset(&ps, & (x[arg])) == -1) {
                    runerr(0);
                    }
 	      }
@@ -1716,7 +1716,7 @@ function{1} table(x[n])
       if (bp == NULL)
          runerr(0);
       if (n-i > 1) {
-	 if (cinserttable(&bp, n, x) == -1) runerr(0);
+	 if (c_inserttable(&bp, n, x) == -1) runerr(0);
 	 }
       if (n % 2)
 	 bp->Table.defvalue = x[n-1];

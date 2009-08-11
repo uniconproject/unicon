@@ -68,6 +68,8 @@ struct b_proc	*bi_strprc	(dptr s, C_integer arity);
 void		c_exit		(int i);
 int		c_get		(struct b_list *hp, struct descrip *res);
 void		c_put		(struct descrip *l, struct descrip *val);
+int		c_inserttable	(union block **pbp, int n, dptr x);
+int		c_insertset	(union block **pps, dptr pd);
 int		CmdParamToArgv	(char *s, char ***avp, int dequote);
 int		cnv_c_dbl	(dptr s, double *d);
 int		cnv_c_int	(dptr s, C_integer *d);
@@ -408,6 +410,7 @@ void detectRedirection();
    int	allowresize	(wbp w, int on);
    int	blimage		(wbp w, int x, int y, int wd, int h,
    			  int ch, unsigned char *s, word len);
+   char child_window_stuff(wbp w, wbp wp, char child_window);
    wcp	clone_context	(wbp w);
    int	copyArea	(wbp w,wbp w2,int x,int y,int wd,int h,int x2,int y2);
    int	do_config	(wbp w, int status);
@@ -604,7 +607,6 @@ void detectRedirection();
       void init_opengl(wbp  w);
       int add_3dfont(char *fname, int fsize, char ftype);
       int c_traverse(struct b_list *hp, struct descrip * res, int position);
-      char child_window_stuff(wbp w, wbp wp, char child_window);
       int cpp_drawstring3d(double x, double y, double z, char *s, char *f,
 			   int t, int size, void *tfont);
       void cube(double length, double x, double y, double z, int gen);
@@ -955,6 +957,10 @@ void StopAudioThread(struct AudioFile * Ptr);
 #ifdef DebugHeap
 void heaperr(char *msg, union block *p, int t);
 #endif					/* DebugHeap */
+
+#ifdef LoadFunc
+int makefunc	(dptr d, char *name, int (*func)());
+#endif					/* LoadFunc */
 
 #ifdef Arrays
 struct b_intarray *alcintarray(uword n);

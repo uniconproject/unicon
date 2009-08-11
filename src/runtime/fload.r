@@ -60,8 +60,11 @@ char *dlerror(void)
    #passthru #endif
 #endif					/* __FreeBSD__ */
 
-int glue();
-int makefunc	(dptr d, char *name, int (*func)());
+#if COMPILER
+int glue(int, dptr, dptr, continuation);
+#else
+int glue(int, dptr);
+#endif
 
 "loadfunc(filename,funcname) - load C function dynamically."
 

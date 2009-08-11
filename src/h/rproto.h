@@ -887,6 +887,8 @@ void signal_dispatcher		(int sig);
 int get_fd			(struct descrip, unsigned int errmask);
 dptr u_read			(int fd, int n, dptr d);
 void dup_fds			(dptr d_stdin, dptr d_stdout, dptr d_stderr);
+int set_if_selectable		(struct descrip *f, fd_set *fdsp, int *n);
+void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
 #endif					/* PosixFns */
 
 #if COMPILER

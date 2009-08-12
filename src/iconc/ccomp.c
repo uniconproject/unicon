@@ -278,8 +278,10 @@ Deliberate Syntax Error
 #endif
 
 #ifdef Graphics
-   /* mdw: modified: strcat(s," -lXpm "); */
-   strcat(s, " -lXpm -lGL -lGLU ");
+   strcat(s," -lXpm ");
+#ifdef Graphics3D
+   strcat(s, "-lGL -lGLU ");
+#endif					/* Graphics3D */
    strcat(s, ICONC_XLIB);
 #endif						/* Graphics */
 

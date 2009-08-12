@@ -23,12 +23,12 @@
  */
 #define MaxLineLen (4095) 
 
-#define caf_is_peri(c) ((c)->flgs & F_Peri)
-#define caf_is_parsed(c) ((c)->flgs & F_Prsd)
-#define caf_set_parsed(c) ((c)->flgs |= F_Prsd)
-#define caf_set_peri(c) ((c)->flgs |= F_Peri)
-#define invk_is_resolved(i) ((i)->flgs & F_Rslvd)
-#define invk_set_resolved(i) ((i)->flgs |= F_Rslvd)
+#define caf_is_peri(c)		((c)->flgs & F_Peri)
+#define caf_is_parsed(c)	((c)->flgs & F_Prsd)
+#define caf_set_parsed(c)	((c)->flgs |= F_Prsd)
+#define caf_set_peri(c)		((c)->flgs |= F_Peri)
+#define invk_is_resolved(i)	((i)->flgs & F_Rslvd)
+#define invk_set_resolved(i)	((i)->flgs |= F_Rslvd)
 
 struct imp { /* import target */
    char * name;
@@ -364,6 +364,8 @@ ca_mark_parsed(fname)
    return 0; 
 }
 
+int looking_for_main;
+
 extern
 int
 ca_resolve(void)
@@ -466,8 +468,6 @@ struct caf *
 caf_get_by_alias(alias)
    char * alias;
 {
-   char * p;
-   char * q;
    struct caf * caf;
 
    for (caf=cafs; caf; caf=caf->next) {
@@ -1030,6 +1030,7 @@ read_caf_name(void)
    caf->alias = alloc(sizeof(char) * (len + 1));
    strcpy(caf->alias, q);
    caf->alias[len - 1] = 0; /* clobber cr */
+
    /* init rest of caf */ 
    caf->flgs = 0;
    caf->lnks = NULL;
@@ -1080,6 +1081,7 @@ read_caf_proc(void)
    prc->name[len - 1] = 0; /* clobber cr */
    prc->next = cafs->prcs;
    cafs->prcs = prc;
+
    /*
     * add a htbl entry for this prc
     */

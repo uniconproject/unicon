@@ -12,7 +12,6 @@
 #include <string.h>
 #include <curses.h>
 
-/*#define _BASIC_       0*/
 #define _ODBC_        0
 #define _2D_X11_      1
 #define _3D_OpenGL_   2 
@@ -55,7 +54,6 @@ int startx = 0;
 int starty = 0;
 
 char *choices[] = { 
-     /*-0-    " ** Basic Configurations              ! ",*/
      /*-0-*/  "    --Database (ODBC) Support         ! ",
      /*-1-*/  "    --2D Graphics (X11) Support       ! ",
      /*-2-*/  "      --3D Graphics (OpenGL) Support  ! ",
@@ -65,7 +63,6 @@ char *choices[] = {
 };
 
 char *items[] = {
-  /*"Basic", */
     "ODBC",
     "X11",
     "3D-Graphics",
@@ -96,7 +93,6 @@ void InitSelections()
 {
     n_choices = sizeof(choices) / sizeof(char *);
 
-    /*selected[_BASIC_]     =  1;*/
     selected[_ODBC_]      = -1;
     selected[_2D_X11_]    = -1;
     selected[_3D_OpenGL_] = -1;
@@ -107,8 +103,6 @@ void InitSelections()
 
 void InitMenu()
 {
-    /*int row, col; */
-     
     initscr();
     clear();
     noecho();
@@ -162,7 +156,6 @@ int menu()
                     selected[current] = 1;
                     check_Selections(current);
 		    }
-                 /*printf("[%d][%d]",COLS,LINES);?*/
 		 break;
 	         }
             case 'q':
@@ -175,13 +168,6 @@ int menu()
 		 break;
 	         }
             case 10:{ /* the Enter key */
-	         /* start the build process only if there is some selections * /
-	         int j=0;
-	         for(i=0; i < n_choices; ++i){
-		     if (selected[i] > 0)
-		        ++j;
-		 } 
-                 if ( j > 0 ) { */
 		 ch = getAnswer(2);
 		 if ((ch == 'Y') || (ch=='y')){
 		    choice = highlight;
@@ -193,12 +179,6 @@ int menu()
                     printf("\n\nmake Unicon \n");
 		    system("make Unicon");
 		    }
-		    /*}else if (j==0){
-	            /* quit the build process -- no selection has been made* /
-		    ch = getAnswer(1);
-		    if ((ch == 'Y') || (ch=='y'))
-		    choice = highlight;* /
-		    }*/
 		 break;
 	         }
 	    }
@@ -219,20 +199,10 @@ void check_Selections(int current)
 {
     int i;
 
-    /*if (current == _BASIC_){      /* Check for Basic Configurations * / 
-       if (!selected[_BASIC_])
-          for(i=1; i < n_choices; ++i)
-	     if (selected[i] > 0)
-	        selected[i] = 0;
-       }
-       else */
     if (current == _2D_X11_){ /* Check for the Graphics Configurations */ 
        if (!selected[_2D_X11_])
 	 if (selected[_3D_OpenGL_] > 0) selected[_3D_OpenGL_] = 0;
 	 if (selected[_3D_Fonts_] > 0)  selected[_3D_Fonts_]  = 0;
-	 /*for(i=2; i < 4; ++i)
-	     if (selected[i] > 0)
-	     selected[i] = 0;*/
        }
     else if (current == _3D_OpenGL_){ /* Check for the 3D Graphics Configurations */
        if ((!selected[_3D_OpenGL_]) && (selected[_3D_Fonts_] > 0))
@@ -254,10 +224,6 @@ void check_Selections(int current)
       if (selected[_VoIP_])
 	  selected[_AUDIO_] = 1;
        }
-
-    /* if ((current > _BASIC_) && (!selected[_BASIC_]))
-     *  selected[_BASIC_] = 1;
-     */
 }
 
 void analyze_Selections(int current)
@@ -285,11 +251,8 @@ void analyze_Selections(int current)
         strcat(temp,items[current]);
         strcat(temp," feature was not found on this platform.");
     }
-    /*y = starty + HEIGHT + 3;
-     */
     x = (WIDTH/2) - (strlen(temp)/2)+4;
     wmove(ans_win,1, 1);
-    /*clrtoeol(ans_win);*/
     mvwprintw(ans_win,1,1,"                                                                   ");
     mvwprintw(ans_win,1, x, temp);
     wrefresh(ans_win);
@@ -306,7 +269,6 @@ int getAnswer(int which)
 
     x = (WIDTH/2) - (strlen(temp)/2)+3;
     wmove(ans_win,2, 1);
-    /*wclrtoeol(ans_win);*/
     mvwprintw(ans_win,2,1,"                                                                   ");
     mvwprintw(ans_win,2, x, temp);
     ch = wgetch(ans_win);

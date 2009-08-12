@@ -173,10 +173,15 @@ extern int opt_hc_opts;
    exe_sz = strlen(exename);
    src_sz = strlen(srcname);
    lib_sz += strlen(LinkLibs);
+#if 0
+   /*
+    * dlrgint disabled for now; linking in rt.a/rlrgint seems to conflict.
+    */
    if (!largeints) {
       dlrgint = makename(sbuf, refpath, "dlrgint", ObjSuffix);
       lib_sz += strlen(dlrgint) + 1;
       }
+#endif
 
 /*
  * The following code is operating-system dependent [@tccomp.03].
@@ -255,11 +260,13 @@ Deliberate Syntax Error
    *s++ = ' ';
    strcpy(s, srcname);
    s += src_sz;
+#if 0
    if (!largeints) {
       *s++ = ' ';
       strcpy(s, dlrgint);
       s += strlen(dlrgint);
       }
+#endif
    for (l = liblst; l != NULL; l = l->next) {
       *s++ = ' ';
       strcpy(s, l->libname);
@@ -346,11 +353,13 @@ Deliberate Syntax Error
    s += src_sz - 1;
    strcpy(s, "obj");
    s += 3;
+#if 0
    if (!largeints) {
       *s++ = ',';
       strcpy(s, dlrgint);
       s += strlen(dlrgint);
       }
+#endif
    for (l = liblst; l != NULL; l = l->next) {
       *s++ = ',';
       strcpy(s, l->libname);

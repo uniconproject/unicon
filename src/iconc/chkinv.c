@@ -22,7 +22,7 @@ static void chksmpl  (struct node *n, int smpl_invk);
 static int     seq_exec (int exec_flg1, int exec_flg2);
 static int     spcl_inv (struct node *n, struct node *asgn);
 
-static ret_flag;
+static int ret_flag;
 
 /*
  * chkinv - check for invocation and assignment optimizations.

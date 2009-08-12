@@ -4816,7 +4816,6 @@ struct code *alc_ary(n)
 int n;
    {
    struct code *cd;
-   static cnt=1;
 
    cd = NewCode(2 * n + 1);
    cd->cd_id = C_CdAry;

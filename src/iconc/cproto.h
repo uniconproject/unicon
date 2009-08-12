@@ -85,6 +85,7 @@ struct node      *invk_nd    (struct node *loc_model, struct node *proc,
 void           invoc_grp  (char *grp);
 void           invocbl    (nodeptr op, int arity);
 struct node      *key_leaf   (nodeptr loc_model, char *keyname);
+char		*libpath	(char *prog, char *envname);
 void           liveness (nodeptr n, nodeptr resumer, nodeptr *failer, int *gen);
 struct node      *list_nd    (nodeptr loc_model, nodeptr args);
 void           lnkdcl     (char *name);

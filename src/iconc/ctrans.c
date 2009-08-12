@@ -9,6 +9,7 @@
 #include "ctoken.h"
 #include "ccode.h"
 #include "cproto.h"
+#include "ca.h"
 
 /*
  * Prototypes.

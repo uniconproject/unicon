@@ -94,7 +94,7 @@ procedure iconc_make_exename_opt(args)
    rslt := "-o "
    every i := 1 to *args do {
       arg := args[i]
-      if (arg[1] == "-") then
+      if arg[1] == "-" then
          next
       cmpnts := suffix(arg)
       rslt ||:= cmpnts[1]
@@ -196,12 +196,13 @@ procedure calc_posix_loc()
 end
 
 procedure iconc_linkref_resolve(srcfname, ref)
-   static lpaths, sep
+   static lpaths, ipaths, sep
    local i, f, path, base, comps, rslt
 
    initial {
       sep := PATHCHAR
       lpaths := lpaths_get()
+      ipaths := ipaths_get()
       if (bpath := (&features ? (="Binaries at " & tab(0)))) |
          ((f := open((bpath := getpaths()) ||
          ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
@@ -210,7 +211,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
          }
       }
 
-   if (ref[1] == '"') then
+   if ref[1] == '"' then
       # strip quotes
       ref := ref[2:-1]
 
@@ -220,7 +221,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
    #
    # try the raw ref first
    #
-   if (f := open(ref)) then {
+   if (map(ref[-4:0])==".icn") & (f := open(ref)) then {
       close(f)
       put(rslt, ref)
       return rslt
@@ -229,7 +230,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
    #
    # try the raw ref .icn next
    #
-   if (f := open(ref || ".icn")) then {
+   if f := open(ref || ".icn") then {
       close(f)
       put(rslt, ref || ".icn")
       return rslt
@@ -241,7 +242,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
       #
       comps := suffix(ref)
       comps[2] := ".icn"
-      if (f := open(comps[1] || comps[2])) then {
+      if f := open(comps[1] || comps[2]) then {
          close(f)
          put(rslt, (comps[1] || comps[2]))
          return rslt
@@ -260,14 +261,14 @@ procedure iconc_linkref_resolve(srcfname, ref)
    # to be revisited.
    #
    # begin hack
-   if (ref == "posix") then
+   if ref == "posix" then
       return [iconc_posixloc]
    # end hack
 
    base := comps[2]
    comps := tail(srcfname)
    path := comps[1] || sep
-   if (f := open(path || base || ".icn")) then {
+   if f := open(path || base || ".icn") then {
       close(f)
       put(rslt, (path || base || ".icn"))
       return rslt
@@ -277,26 +278,20 @@ procedure iconc_linkref_resolve(srcfname, ref)
    # Either the ref is an .icn file in the LPATH corresponding to
    # some .u file on the IPATH, or it is invalid.
    #
-   every i := 1 to *lpaths do {
-      if (f := open(lpaths[i] || sep || ref || ".icn")) then {
-         close(f)
-         break
-         }
-      else {
-         f := &null
-         }
-      }
-   if i = *lpaths & /f then {
+   if f := open(fil := ((!lpaths | !ipaths) || sep || ref || ".icn")) then {
+       close(f)
+   } else {
       #
       # The ref is invalid.
       #
-      return &null
-      }
+       return &null
+   }
+
    #
    # We found a .icn for the ref, so assume that
    # a .u exists for it and the ref is valid.
    #
-   put(rslt, (lpaths[i] || sep || ref || ".icn"))
+   put(rslt, fil)
    # write("mdw: link-ref: \"" || lpaths[i] || sep || ref || ".icn\".");
    return rslt
 end
@@ -343,7 +338,7 @@ procedure iconc_importref_resolve(ref)
       tab(many(' :'))
       while put(rslt, (ipaths[i] || sep || tab(upto(':')))) do
          tab(many(' :'))
-      if (k := find('(')) then
+      if k := find("(") then
          put(rslt, (ipaths[i] || sep || tab(k)))
       else
          put(rslt, (ipaths[i] || sep || tab(0)))
@@ -388,7 +383,7 @@ procedure get_abs_file_name(fname)
     local pair, cwd, rslt
 
     pair := tail(fname)
-    if (pair[1] == "") then
+    if pair[1] == "" then
         pair[1] := "."
     cwd := chdir()
     rslt := chdir(pair[1])
@@ -500,13 +495,13 @@ procedure unicon(argv)
 	       uni_predefs[sym] := def
 	       }
 	    }
-         else if (match ("-C", argv[i])) then {
+         else if match ("-C", argv[i]) then {
             #
             # Generate code suitable for consumption by iconc.
             #
             iconc := 1
             parseonly := 1
-            if (*argv[i] > 2) then
+            if *argv[i] > 2 then
                tmpopt := "-U" || argv[i][3:0] || " "
             else
                tmpopt := "-U1 "
@@ -702,7 +697,7 @@ procedure unicon(argv)
 
          while *iconc_links > 0 do {
             every k := key(iconc_links) do {
-               if (k == "posix") then
+               if k == "posix" then
                   iconc_parsed_posix := 1
                if member(locallinks, k) then {
                   # write("mdw: redundant linkref: " || k)

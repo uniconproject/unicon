@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.26 2009-08-12 05:56:56 jeffery Exp $
+# $Id: top.mak,v 1.27 2009-08-21 19:43:39 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -92,8 +92,12 @@ VX-Configure:	config/unix/$(name)/status
 # make build name=xxxx
 
 build:
-	if [ $(TERM) == dumb ] ; then \
+	if test "$(TERM)" = "dumb" ; then \
 		echo "No building on dumb terminals, use make Configure"; \
+	elif [ -f /usr/lib/libcurses.so ] ; then \
+		gcc src/common/build.c -lcurses -o build; \
+		./build $(name) ; \
+		rm build; \
 	elif [ -f /usr/include/curses.h ] ; then \
 		gcc src/common/build.c -lncurses -o build; \
 		./build $(name) ; \

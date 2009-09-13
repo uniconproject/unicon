@@ -70,6 +70,6 @@ clean:
 
 cleantools:
 	@for i in $(Tools) ; do\
-		(rm ../../bin/$$i; );\
+		(rm ../../../bin/$$i; );\
 	done
 

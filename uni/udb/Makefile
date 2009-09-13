@@ -109,7 +109,7 @@ clean:
 	$(DEL) *.pag
 	$(DEL) *.db
 	$(DEL) *~
-	$(DEL) ../bin/$(EXEs) 
+	$(DEL) ../../bin/$(EXEs) 
 	cd lib; make clean
 
 cleantools:

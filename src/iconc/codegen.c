@@ -920,7 +920,7 @@ struct c_fnc *fnc;
       fprintf(codefile, "static int P%s_%s()\n", prefix, name);
       fprintf(codefile, "   {\n");
       if (fnc->flag & CF_Coexpr)
-         fprintf(codefile, "#ifdef Coexpr\n");
+         fprintf(codefile, "#ifdef CoExpr\n");
    
       prefix = fnc->frm_prfx;
    
@@ -930,9 +930,9 @@ struct c_fnc *fnc;
       fprintf(codefile, "   r_pfp  = (struct PF%s_%s *)pfp;\n", prefix, name);
       prtcode(&(fnc->cd), 0);
       if (fnc->flag & CF_Coexpr) {
-         fprintf(codefile, "#else\t\t\t\t\t/* Coexpr */\n");
+         fprintf(codefile, "#else\t\t\t\t\t/* CoExpr */\n");
          fprintf(codefile, "   fatalerr(401, NULL);\n");
-         fprintf(codefile, "#endif\t\t\t\t\t/* Coexpr */\n");
+         fprintf(codefile, "#endif\t\t\t\t\t/* CoExpr */\n");
          }
       fprintf(codefile, "   }\n");
       }

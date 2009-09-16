@@ -87,11 +87,10 @@ linearsearch:
        * the current program, we may need to translate it, eh?
        */
       if (!InRange(records, bptr, ftabp)) {
-         Arg0 = fnames[IntVal(Arg2)];
-         goto linearsearch;
-         }
+	 progtouse = findprogramforblock(bptr);
+	 }
       else
-         progtouse = curpstate;
+	 progtouse = curpstate;
 
       /* use the correct field table */
       ENTERPSTATE(progtouse);

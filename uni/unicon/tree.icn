@@ -392,7 +392,7 @@ procedure yyprint(node)
 end
 
 procedure print_imports(node)
-   if type(node)=="treenode" & node.label=="lnklist" then {
+   if type(node)=="treenode" & node.label=="implist" then {
       print_imports(node.children[1])
       print_imports(node.children[3])
    } else if node.tok = (IDENT|STRINGLIT) then {
@@ -834,7 +834,7 @@ procedure iconc_prep_parse_tree(parent, child)
       child := pop(todo)
       case type(child) of {
          "treenode": {
-            if child.label == ("link" | "import" | "lnklist") then {
+            if child.label == ("link" | "import" |"lnklist"|"implist") then {
                every i := 1 to *child.children do {
                   if not (type(child.children[i]) == "token") then
                      next

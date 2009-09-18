@@ -390,7 +390,7 @@ package  : PACKAGE lnkfile {
       }
    } ;
 
-import: IMPORT lnklist {
+import: IMPORT implist {
    $$ := node("import", $1,$2," ")
    import_class($2)
    } ;
@@ -399,6 +399,9 @@ link	: LINK lnklist { $$ := node("link", $1,$2," "); } ;
 
 lnklist	: lnkfile ;
 	| lnklist COMMA lnkfile { $$ := node("lnklist", $1,$2,$3); } ;
+
+implist	: lnkfile ;
+	| implist COMMA lnkfile { $$ := node("implist", $1,$2,$3); } ;
 
 lnkfile	: IDENT ;
 	| STRINGLIT ;

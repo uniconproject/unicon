@@ -3957,9 +3957,11 @@ field_ref(p, n, rslt)
       /* mdw: modified
        * if (deref)
        *  deref_cd(rec_loc, rec_loc);
+       *
+       * if (deref) removed because some . expressions are missing needed
+       * derefs. Put that optimization back in only if that can be fixed.
        */
-      if (deref)
-         deref_fld(rec_loc);
+      deref_fld(rec_loc);
       }
 
    setloc(fld);

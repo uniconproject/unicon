@@ -87,9 +87,14 @@ linearsearch:
        * the current program, we may need to translate it, eh?
        */
       if (!InRange(records, bptr, ftabp)) {
-	 progtouse = findprogramforblock(bptr);
+	 /* foreign */
+	 if ((progtouse = findprogramforblock(bptr)) == curpstate) {
+	    /* "foreign" is actually a built-in, no field table at all */
+	    Arg0 = fnames[IntVal(Arg2)];
+	    goto linearsearch;
+	    }
 	 }
-      else
+      else /* domestic */
 	 progtouse = curpstate;
 
       /* use the correct field table */
@@ -168,7 +173,8 @@ linearsearch:
 #ifdef MultiThread
 	    if (progtouse)
 	       Arg0 = progtouse->Efnames[IntVal(Arg2)];
-	    else RunErr(207, &Arg1);
+	    else
+	       RunErr(207, &Arg1);
 #else					/* MultiThread */
 	    Arg0 = efnames[IntVal(Arg2)];
 #endif					/* MultiThread */
@@ -215,7 +221,9 @@ linearsearch:
 	    ENTERPSTATE(thisprog);
 #endif
 	    }
-	 if (fnum < 0) RunErr(207, &Arg1);
+	 if (fnum < 0) {
+	    RunErr(207, &Arg1);
+	    }
 	 md = rp2->fields[fnum];
 	 if (is:record(md)) {
 	    /*

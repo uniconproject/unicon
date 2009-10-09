@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.39 2009-04-12 09:04:46 jeffery Exp $
+ * $Id: rposix.r,v 1.40 2009-10-09 23:43:34 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -516,20 +516,20 @@ struct b_record **rp;
    for (i = 0; i < 13; i++)
      (*rp)->fields[i].dword = D_Integer;
 
-   IntVal((*rp)->fields[0]) = (int)st->st_dev;
-   IntVal((*rp)->fields[1]) = (int)st->st_ino;
-   IntVal((*rp)->fields[3]) = (int)st->st_nlink;
-   IntVal((*rp)->fields[6]) = (int)st->st_rdev;
-   IntVal((*rp)->fields[7]) = (int)st->st_size;
-   IntVal((*rp)->fields[8]) = (int)st->st_atime;
-   IntVal((*rp)->fields[9]) = (int)st->st_mtime;
-   IntVal((*rp)->fields[10]) = (int)st->st_ctime;
+   IntVal((*rp)->fields[0]) = (word)st->st_dev;
+   IntVal((*rp)->fields[1]) = (word)st->st_ino;
+   IntVal((*rp)->fields[3]) = (word)st->st_nlink;
+   IntVal((*rp)->fields[6]) = (word)st->st_rdev;
+   IntVal((*rp)->fields[7]) = (word)st->st_size;
+   IntVal((*rp)->fields[8]) = (word)st->st_atime;
+   IntVal((*rp)->fields[9]) = (word)st->st_mtime;
+   IntVal((*rp)->fields[10]) = (word)st->st_ctime;
 #if NT
-   IntVal((*rp)->fields[11]) = (int)0;
-   IntVal((*rp)->fields[12]) = (int)0;
+   IntVal((*rp)->fields[11]) = (word)0;
+   IntVal((*rp)->fields[12]) = (word)0;
 #else
-   IntVal((*rp)->fields[11]) = (int)st->st_blksize;
-   IntVal((*rp)->fields[12]) = (int)st->st_blocks;
+   IntVal((*rp)->fields[11]) = (word)st->st_blksize;
+   IntVal((*rp)->fields[12]) = (word)st->st_blocks;
 #endif
 
    (*rp)->fields[13] = nulldesc;

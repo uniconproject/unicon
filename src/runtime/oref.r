@@ -960,9 +960,22 @@ operator{0,1} [] subsc(underef x -> dx,y)
          body {
             word i;
             register union block *bp; /* doesn't need to be tended */
+	    union block *rd;
 
             bp = BlkLoc(dx);
-            i = cvpos(y, (word)(Blk(Blk(bp,Record)->recdesc,Proc)->nfields));
+	    rd = Blk(bp,Record)->recdesc;
+	    /*
+	     * check if the record is an object, if yes, add 2 to the subscript
+	     */
+
+            if (Blk(rd,Proc)->ndynam == -3) {
+		  i = cvpos(y, (word)(Blk(rd,Proc)->nfields-2));
+		  i += 2;
+		  }
+	       else {
+		  i = cvpos(y, (word)(Blk(rd,Proc)->nfields));
+		  }
+	    
             if (i == CvtFail || i > Blk(Blk(bp,Record)->recdesc,Proc)->nfields)
                fail;
 

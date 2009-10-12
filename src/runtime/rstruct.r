@@ -692,7 +692,6 @@ dynrecord(s, fields, n)
    int i, hval, len;
    struct b_proc * bp;
    struct b_proc_list * bpl;
-   static int NextRecNum = 0;
 
    if (StrLen(*s) == 0) {
       for (i=1; i<=n; i++)
@@ -724,11 +723,6 @@ dynrecord(s, fields, n)
          }
       }
 
-#if (COMPILER)
-   if (NextRecNum == 0) NextRecNum = mdw_dynrec_start;
-#else
-   if (NextRecNum == 0) NextRecNum = *records+1;
-#endif
    bp = (struct b_proc *)malloc(sizeof(struct b_proc) +
       sizeof(struct descrip) * n);
    if (bp == NULL) return NULL;
@@ -741,7 +735,7 @@ dynrecord(s, fields, n)
 #endif
    bp->nfields = n;
    bp->ndynam = -2;
-   bp->recnum = NextRecNum++;
+   bp->recnum = -1; /* recnum -1 means: dynamic record */
    bp->recid = 1;
    StrLoc(bp->recname) = malloc(StrLen(*s)+1);
    if (StrLoc(bp->recname) == NULL) return NULL;
@@ -765,7 +759,6 @@ dynrecord(s, fields, n)
 #else /* Uniconc */
 struct b_proc *dynrecord(dptr s, dptr fields, int n)
    {
-      static int NextRecNum;
       struct b_proc_list *bpelem = NULL;
       struct b_proc *bp = NULL;
       int i, ct=0;
@@ -799,7 +792,6 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
        }
     }
 
-      if (NextRecNum == 0) NextRecNum = *records+1;
       bp = (struct b_proc *)malloc(sizeof(struct b_proc) +
                sizeof(struct descrip) * n);
       if (bp == NULL) return NULL;
@@ -808,7 +800,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       bp->entryp.ccode = Omkrec;
       bp->nfields = n;
       bp->ndynam = -2;
-      bp->recnum = NextRecNum++;
+      bp->recnum = -1; /* dynamic record */
       bp->recid = 1;
       StrLoc(bp->recname) = malloc(StrLen(*s)+1);
 

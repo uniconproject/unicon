@@ -86,7 +86,17 @@ operator{1} * size(x)
          return C_integer i;
          }
       record: inline {
-         return C_integer Blk(BlkD(x,Record)->recdesc,Proc)->nfields;
+         C_integer siz;
+	 union block *bp, *rd;
+	 bp = BlkLoc(x);
+	 rd = Blk(bp,Record)->recdesc;
+         siz = Blk(BlkD(x,Record)->recdesc,Proc)->nfields;
+	 /*
+	  * if the record is an object, subtract 2 from the size
+	  */
+         if (Blk(rd,Proc)->ndynam == -3)
+	    siz -= 2;
+         return C_integer siz;
          }
       coexpr: inline {
          return C_integer BlkD(x,Coexpr)->size;

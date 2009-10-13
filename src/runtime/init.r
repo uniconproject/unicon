@@ -2212,13 +2212,6 @@ struct progstate *findprogramforblock(union block *p)
    struct progstate *tmpp;
    extern struct b_proc *stubrec;
 
-   if ((p == BlkLoc(posix_lock)) || (p == BlkLoc(posix_timeval)) ||
-       (p == BlkLoc(posix_stat)) || (p == BlkLoc(posix_message)) ||
-       (p == BlkLoc(posix_passwd)) || (p == BlkLoc(posix_group)) ||
-       (p == BlkLoc(posix_servent)) || (p == BlkLoc(posix_hostent)) ||
-       (p == (union block *)stubrec))
-      return curpstate;
-
    while (ce != NULL) {
       tmpp = ce->program;
       if (InRange(tmpp->Code, p, tmpp->Elines)) {

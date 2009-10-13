@@ -53,7 +53,6 @@ LibDcl(field,2,".")
     * Map the field number into a field number for the record x.
     */
    rp = BlkD(Arg1,Record);
-
    bptr = rp->recdesc;
 
    if (IntVal(Arg2) < 0) {
@@ -77,6 +76,10 @@ linearsearch:
          }
       if (i<nfields) fnum = i;
       else fnum = -1;
+      }
+   else if (bptr->Proc.recnum == -1) {
+	    Arg0 = fnames[IntVal(Arg2)];
+	    goto linearsearch;
       }
    else {
 
@@ -147,21 +150,20 @@ linearsearch:
        * if we are an object, look for a corresponding method
        */
       union block *rd = rp->recdesc;
-      if ((Blk(rd,Proc)->ndynam == -3) ||
-	  (!strcmp(StrLoc(rd->Proc.lnames[0]), "__s")) ||
-	  (!strcmp(StrLoc(rd->Proc.lnames[0]), "__m")) ||
-	  (!strcmp(StrLoc(rd->Proc.lnames[rd->Proc.nfields-1]), "__m"))) {
+      if (Blk(rd,Proc)->ndynam == -3) {
 	 struct b_record *rp2;
 	 union block *rd2;
 	 tended struct descrip md;
-	 if (rd->Proc.ndynam == -3)
-	    md = rd->Proc.lnames[rd->Proc.nparam];
-	 else if (!strcmp(StrLoc(rd->Proc.lnames[0]), "__s"))
-	    md = rp->fields[1];
-	 else if (!strcmp(StrLoc(rd->Proc.lnames[0]), "__m"))
-	    md = rp->fields[0];
-	 else
-	    md = rp->fields[rd->Proc.nfields-1];
+
+#ifdef NativeObjects
+	 if (rd->Proc.ndynam == -3) {
+	    md = rp->fields[rd->Proc.nparam]; /* methods in procedure block */
+	    }
+#else					/* NativeObjects */
+	 if (rd->Proc.ndynam == -3) {
+	    md = rp->fields[1]; /* fields[0] is __s, fields[1] is __m */
+	    }
+#endif					/* NativeObjects */
 
 	 if (!is:record(md))
 	    RunErr(107, &Arg1);
@@ -241,6 +243,7 @@ linearsearch:
 
 	    if (stubrec == NULL) {
 	       stubrec = dynrecord(&emptystr, rp->recdesc->Proc.lnames, 2);
+	       stubrec->ndynam = -3; /* oh, let's pretend we're an object */
 	       }
 
 	    Protect(new_rec = alcrecd(2, (union block *)stubrec), RunErr(0,0));

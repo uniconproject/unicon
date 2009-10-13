@@ -11,8 +11,8 @@
  *  Icon version number and date.
  *  These are the only two entries that change any more.
  */
-#define VersionNumber "11.5"
-#define VersionDate "March 22, 2009"
+#define VersionNumber "11.6"
+#define VersionDate "October 12, 2009"
 
 /*
  * Version number to insure format of data base matches version of iconc
@@ -45,37 +45,37 @@
        #ifdef FieldTableCompression
 
 	  #if IntBits == 16
-	     #define IVersion "I9.U.10FT/16/16"
+	     #define IVersion "I9.U.20FT/16/16"
 	  #endif				/* IntBits == 16 */
 
 	  #if IntBits == 32
 #if WordBits==64
-	     #define IVersion "I9.U.10FT/32/64"
+	     #define IVersion "I9.U.20FT/32/64"
 #else
-	     #define IVersion "I9.U.10FT/32/32"
+	     #define IVersion "I9.U.20FT/32/32"
 #endif
 	  #endif				/* IntBits == 32 */
 
 	  #if IntBits == 64
-	     #define IVersion "I9.U.10FT/64/64"
+	     #define IVersion "I9.U.20FT/64/64"
 	  #endif				/* IntBits == 64 */
 
        #else				/* FieldTableCompression */
 
 	  #if IntBits == 16
-	     #define IVersion "I9.U.10/16/32"
+	     #define IVersion "I9.U.20/16/32"
 	  #endif				/* IntBits == 16 */
 
 	  #if IntBits == 32
 #if WordBits==64
-	     #define IVersion "I9.U.10/32/64"
+	     #define IVersion "I9.U.20/32/64"
 #else
-	     #define IVersion "I9.U.10/32/32"
+	     #define IVersion "I9.U.20/32/32"
 #endif
 	  #endif				/* IntBits == 32 */
 
 	  #if IntBits == 64
-	     #define IVersion "I9.U.10/64/64"
+	     #define IVersion "I9.U.20/64/64"
 	  #endif				/* IntBits == 64 */
 
        #endif				/* FieldTableCompression */

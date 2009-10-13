@@ -137,14 +137,12 @@ word xnargs;
 #ifdef OVLD_DEBUG
 	    fprintf(stdout,"LastOp = %d\tFieldNum=%d\n",lastop, fieldnum);
 #endif
-	    if ( fieldnum != -1)
-	    {
+	    if ( fieldnum != -1) {
 	     deref(&rargp[1],&x);
 #ifdef OVLD_DEBUG
 	     fprintf(stdout, "Try overload\n");
 #endif
-	     if (is:record(x))
-		{
+	     if (is:record(x)) {
 		  register word fnum;
 		  tended struct b_record *rp;
 		  register dptr dp;
@@ -163,19 +161,16 @@ word xnargs;
 /*
 Check if our record is a class ( has a method vector)
 */
-		   for( i = 0; i < nfields;i++)
-		     {
+		   for( i = 0; i < nfields;i++) {
 		       if (!strcmp(StrLoc(bptr->proc.lnames[i]), "__m"))
 			 {
 			   found = 1;
 			   break;
 			 }
 		     }/* for ... nfields */
-		   if (found)
-		     {
+		   if (found) {
 		       md = rp->fields[i];
-		       if (is:record(md))
-			 {
+		       if (is:record(md)) {
 			 rp2 = (struct b_record *)BlkLoc(md);
 #ifdef OVLD_DEBUG
 			 fprintf(stdout, " x has method vector\n");
@@ -187,6 +182,9 @@ Now that we have a method vector we check if it contains the specified field
 #ifdef FieldTableCompression
 #define FO(i) ((foffwidth==1)?(focp[i]&255L):((foffwidth==2)?(fosp[i]&65535L):fo[i]))
 #define FTAB(i) ((ftabwidth==1)?(ftabcp[i]&255L):((ftabwidth==2)?(ftabsp[i]&65535L):ftabp[i]))
+
+	 if (rp2->recdesc->proc.recnum == -1)
+	    syserr("dynamic classes not supported yet\n");
 
 	 fnum = FTAB(FO(fieldnum) + (rp2->recdesc->proc.recnum - 1));
 

@@ -235,7 +235,8 @@ dptr dargv;
 struct rtentrypts {
   int (*Cnv_int)(dptr, dptr);
 } rtentryvector;
-rtentryvector.Cnv_int = cnv_int_0;
+#undef cnv_int_0
+rtentryvector.Cnv_int = cnv_int;
 #endif
 
    blk = (struct b_proc *)dargv[0].vword.bptr;	/* proc block address */

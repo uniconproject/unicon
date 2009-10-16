@@ -467,7 +467,8 @@ struct b_list *f(uword size, uword nslots)
 #enddef
 
 #ifdef MultiThread
-alclist_raw_macro(alclist_raw_0,0,0)
+#passthru #undef alclist_raw
+alclist_raw_macro(alclist_raw,0,0)
 alclist_raw_macro(alclist_raw_1,E_List,E_Lelem)
 #else					/* MultiThread */
 alclist_raw_macro(alclist_raw,0,0)
@@ -572,7 +573,8 @@ struct b_real *f(double val)
 #enddef
 
 #ifdef MultiThread
-alcreal_macro(alcreal_0,0)
+#passthru #undef alcreal
+alcreal_macro(alcreal,0)
 alcreal_macro(alcreal_1,E_Real)
 #else					/* MultiThread */
 alcreal_macro(alcreal,0)
@@ -724,7 +726,8 @@ char *f(register char *s, register word slen)
 #enddef
 
 #ifdef MultiThread
-alcstr_macro(alcstr_0,0)
+#passthru #undef alcstr
+alcstr_macro(alcstr,0)
 alcstr_macro(alcstr_1,E_String)
 #else					/* MultiThread */
 alcstr_macro(alcstr,0)

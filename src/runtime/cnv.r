@@ -470,7 +470,8 @@ dptr s, d;
 #enddef
 
 #ifdef MultiThread
-cnv_int_macro(cnv_int_0,0,0,0,0,0)
+#passthru #undef cnv_int
+cnv_int_macro(cnv_int,0,0,0,0,0)
 cnv_int_macro(cnv_int_1,E_Aconv,E_Tconv,E_Nconv,E_Fconv,E_Sconv)
 #else					/* MultiThread */
 cnv_int_macro(cnv_int,0,0,0,0,0)
@@ -500,7 +501,8 @@ int f(dptr s, dptr d)
 #enddef
 
 #ifdef MultiThread
-cnv_real_macro(cnv_real_0,0,0,0,0)
+#passthru #undef cnv_real
+cnv_real_macro(cnv_real,0,0,0,0)
 cnv_real_macro(cnv_real_1,E_Aconv,E_Tconv,E_Sconv,E_Fconv)
 #else					/* MultiThread */
 cnv_real_macro(cnv_real,0,0,0,0)
@@ -559,7 +561,8 @@ int f(dptr s, dptr d)
 #enddef
 
 #ifdef MultiThread
-cnv_str_macro(cnv_str_0,0,0,0,0,0)
+#passthru #undef cnv_str
+cnv_str_macro(cnv_str,0,0,0,0,0)
 cnv_str_macro(cnv_str_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
 #else					/* MultiThread */
 cnv_str_macro(cnv_str,0,0,0,0,0)

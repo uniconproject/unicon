@@ -352,12 +352,13 @@ FncDef(fetch,2)
    FncDefV(WinSaveDialog)
    FncDefV(WinSelectDialog)
 
+   FncDef(fieldnames,1)
+
 #ifdef MultiThread
    /*
     * These functions are under MultiThread for no good reason.
     */
    FncDef(globalnames,1)
-   FncDef(fieldnames,1)
    FncDef(localnames,2)
    FncDef(staticnames,2)
    FncDef(paramnames,2)

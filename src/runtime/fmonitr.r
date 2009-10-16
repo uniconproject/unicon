@@ -72,16 +72,18 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
    p->Alcpelem =
        (0 /*(Testb((word)ToAscii(E_Slots), cs))*/ ? alcpelem_1 : alcpelem_0);
 #endif					/* PatternType */
+#undef alcreal
    p->Alcreal =
-      ((Testb((word)ToAscii(E_Real), cs)) ? alcreal_1 : alcreal_0);
+      ((Testb((word)ToAscii(E_Real), cs)) ? alcreal_1 : alcreal);
    p->Alcrecd =
       ((Testb((word)ToAscii(E_Record), cs)) ? alcrecd_1 : alcrecd_0);
    p->Alcrefresh =
       ((Testb((word)ToAscii(E_Refresh), cs)) ? alcrefresh_1 : alcrefresh_0);
    p->Alcselem =
       ((Testb((word)ToAscii(E_Selem), cs)) ? alcselem_1 : alcselem_0);
+#undef alcstr
    p->Alcstr =
-      ((Testb((word)ToAscii(E_String), cs)) ? alcstr_1 : alcstr_0);
+      ((Testb((word)ToAscii(E_String), cs)) ? alcstr_1 : alcstr);
    p->Alcsubs =
       ((Testb((word)ToAscii(E_Tvsubs), cs)) ? alcsubs_1 : alcsubs_0);
    p->Alctelem =
@@ -117,7 +119,8 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Alclstb = alclstb_1;
       }
    else {
-      p->Alclist_raw = alclist_raw_0;
+#undef alclist_raw
+      p->Alclist_raw = alclist_raw;
       p->Alclist = alclist_0;
       p->Alclstb = alclstb_0;
       }
@@ -137,9 +140,12 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       }
    else {
       p->Cnvcset = cnv_cset_0;
-      p->Cnvint = cnv_int_0;
-      p->Cnvreal = cnv_real_0;
-      p->Cnvstr = cnv_str_0;
+#undef cnv_int
+#undef cnv_real
+#undef cnv_str
+      p->Cnvint = cnv_int;
+      p->Cnvreal = cnv_real;
+      p->Cnvstr = cnv_str;
       p->Cnvtcset = cnv_tcset_0;
       p->Cnvtstr = cnv_tstr_0;
       }
@@ -546,6 +552,18 @@ void EVStrAlc_1(word n)
       EVVal(n, E_String);
       }
 }
+
+/*
+ * C-calling iconc-iconx compatibility variables.  Iconc-compatible C may
+ * refer to these globals. They are normally remapped in the VM to curpstate
+ * variables, e.g. curpstate->T_errornumber, so we need to think about this.
+ * In the meantime, avoid a crash by defining the iconc-versions in iconx.
+ */
+#passthru #undef t_errornumber
+#passthru #undef t_errorvalue
+#passthru #undef t_have_val
+int t_errornumber, t_have_val;
+struct descrip t_errorvalue;
 
 #else					/* MultiThread */
 static char xjunk;			/* avoid empty module */

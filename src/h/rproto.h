@@ -19,17 +19,23 @@ union block	*alchash_0	(int tcode);
 union block	*alchash_1	(int tcode);
 struct b_slots	*alcsegment_0	(word nslots);
 struct b_slots	*alcsegment_1	(word nslots);
-struct b_list	*alclist_raw_0	(uword size, uword nslots);
+#undef alclist_raw
+struct b_list	*alclist_raw	(uword size, uword nslots);
+#define alclist_raw (curpstate->Alclist_raw)
 struct b_list	*alclist_raw_1	(uword size, uword nslots);
 struct b_list	*alclist_0	(uword size, uword nslots);
 struct b_list	*alclist_1	(uword size, uword nslots);
 struct b_lelem	*alclstb_0	(uword nslots,uword first,uword nused);
 struct b_lelem	*alclstb_1	(uword nslots,uword first,uword nused);
-struct b_real	*alcreal_0	(double val);
+#undef alcreal
+struct b_real	*alcreal	(double val);
+#define alcreal (curpstate->Alcreal)
 struct b_real	*alcreal_1	(double val);
 struct b_selem	*alcselem_0	(dptr mbr,uword hn);
 struct b_selem	*alcselem_1	(dptr mbr,uword hn);
-char		*alcstr_0	(char	*s,word slen);
+#undef alcstr
+char		*alcstr	(char	*s,word slen);
+#define alcstr (curpstate->Alcstr)
 char		*alcstr_1	(char	*s,word slen);
 struct b_telem	*alctelem_0	(void);
 struct b_telem	*alctelem_1	(void);
@@ -84,11 +90,17 @@ int		cnv_ec_int	(dptr s, C_integer *d);
 int		cnv_eint	(dptr s, dptr d);
 int		cnv_list	(dptr s, dptr d);
 #ifdef MultiThread
-int		cnv_int_0	(dptr s, dptr d);
+#undef cnv_int
+int		cnv_int		(dptr s, dptr d);
+#define cnv_int (curpstate->Cnvint)
 int		cnv_int_1	(dptr s, dptr d);
-int		cnv_real_0	(dptr s, dptr d);
+#undef cnv_real
+int		cnv_real	(dptr s, dptr d);
+#define cnv_real (curpstate->Cnvreal)
 int		cnv_real_1	(dptr s, dptr d);
-int		cnv_str_0	(dptr s, dptr d);
+#undef cnv_str
+int		cnv_str	(dptr s, dptr d);
+#define cnv_str (curpstate->Cnvstr)
 int		cnv_str_1	(dptr s, dptr d);
 int		cnv_tcset_0	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tcset_1	(struct b_cset *cbuf, dptr s, dptr d);
@@ -166,6 +178,7 @@ word		* findoldipc	(struct b_coexpr *ce, int level);
 int		findline	(word *ipc);
 int		findloc		(word *ipc);
 int		findsyntax	(word *ipc);
+int		fldlookup	(struct b_record *rec, const char * const fld);
 void		fpetrap		(void);
 int		getvar		(char *s,dptr vp);
 uword		hash		(dptr dp);

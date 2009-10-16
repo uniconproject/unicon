@@ -1425,6 +1425,22 @@ function{0,1} variable(s)
       }
 end
 
+
+"fieldnames(r) - generate the fieldnames of record r"
+
+function{*} fieldnames(r)
+   abstract {
+      return string
+      }
+   if !is:record(r) then runerr(107,r)
+   body {
+      int i, sz = Blk(BlkD(r,Record)->recdesc,Proc)->nfields;
+      for(i=0;i<sz;i++)
+	 suspend Blk(BlkD(r,Record)->recdesc,Proc)->lnames[i];
+      fail;
+      }
+end
+
 #ifdef MultiThread
 
 "cofail(CE) - transmit a co-expression failure to CE"
@@ -1452,22 +1468,6 @@ function{0,1} cofail(CE)
       struct b_coexpr *ncp = BlkD(CE, Coexpr);
       if (co_chng(ncp, NULL, &result, A_Cofail, 1) == A_Cofail) fail;
       return result;
-      }
-end
-
-
-"fieldnames(r) - generate the fieldnames of record r"
-
-function{*} fieldnames(r)
-   abstract {
-      return string
-      }
-   if !is:record(r) then runerr(107,r)
-   body {
-      int i, sz = Blk(BlkD(r,Record)->recdesc,Proc)->nfields;
-      for(i=0;i<sz;i++)
-	 suspend Blk(BlkD(r,Record)->recdesc,Proc)->lnames[i];
-      fail;
       }
 end
 

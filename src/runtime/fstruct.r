@@ -615,10 +615,15 @@ function{0,1} classname(r)
    body {
       char * recnm_bgn;
       char * recnm_end;
+      char * first__;
+      char * second__;
       struct b_record * br;
 
       br = BlkD(r, Record);
       recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
+      first__ = strstr(recnm_bgn, "__");
+      second__ = strstr(first__ + 2, "__");
+      if (second__ != NULL) recnm_bgn = first__ + 2;
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);
       if (recnm_end > recnm_bgn) {
          StrLen(result) = recnm_end - recnm_bgn;
@@ -1579,6 +1584,7 @@ function{1} put(x, vals[n])
       return x;
       }
 end
+
 
 /*
  * C language set insert.  pps must point to a tended block pointer.
@@ -1788,10 +1794,100 @@ end
  * In version 0, since dimension == 1, n==1 means get, n==2 means set.
  */
 function{1} IntArrayElem(a, x[n])
+   len_case n of {
+      0: {
+	 runerr(130);
+	 }
+      1: { /* simplest, special-case get */
+	 abstract {
+	    return integer
+	    }
+	 inline {
+	    C_integer ci, cnew;
+	    int i, j, ndims, base = 0;
+	    struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+	    /* Need to check that ap is a block pointer type of descriptor. */
+	    if (ap->title != T_Intarray) runerr(123,a);
+
+	    if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
+	    if (ci <= 0) { /* not doing negative subscripts for now */
+	       runerr(101, x[0]);
+	       }
+	    if (ci > ((ap->blksize - sizeof(struct b_intarray) + sizeof(word))/
+		      sizeof(word)))
+	       runerr(101, x[i]);
+
+	    /* get element */
+	    return C_integer ap->a[ci-1];
+	    }
+	 }
+      2: { /* 1D set or 2D get */
+	 abstract {
+	    return integer
+	    }
+	 inline {
+	    C_integer ci, cnew;
+	    int i, j, ndims, base = 0;
+	    struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+	    /* Need to check that ap is a block pointer type of descriptor. */
+	    if (ap->title != T_Intarray) runerr(123,a);
+	    ndims = (ap->dims?
+	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
+		 sizeof(word)) / sizeof(word))
+	       : 1);
+
+	    if (ndims == 1) { /* do a set */
+
+	       if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
+	       if (ci <= 0) { /* not doing negative subscripts for now */
+		  runerr(101, x[0]);
+		  }
+	       if (ci > ((ap->blksize - sizeof(struct b_intarray) +
+			  sizeof(word))/sizeof(word)))
+		  runerr(101, x[i]);
+
+	       /* set element */
+	       if (!cnv:C_integer(x[1], cnew)) runerr(101, x[1]);
+	       ap->a[ci-1] = cnew;
+	       return C_integer cnew;
+	       }
+
+	    else { /* ndims had better be == 2, do a get */
+
+	       if (n < ndims) runerr(130);
+
+	       if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
+	       if (ci <= 0) { /* not doing negative subscripts for now */
+		  runerr(101, x[0]);
+		  }
+	       if (ci > ap->dims->Intarray.a[0])
+		  runerr(101, x[0]);
+
+	       if (!cnv:C_integer(x[1], ci)) runerr(101, x[1]);
+	       if (ci <= 0) { /* not doing negative subscripts for now */
+		  runerr(101, x[1]);
+		  }
+	       if (ci > ap->dims->Intarray.a[1])
+		  runerr(101, x[1]);
+
+	       /*
+		* Update the base subscript.
+		* base subscript + last dimension subscript = total subscript
+		*/
+
+	       base += ap->dims->Intarray.a[1] * (IntVal(x[0])-1);
+
+	       /* get element */
+	       return C_integer ap->a[base + ci-1];
+	       }
+	    }
+	 }
+
+ default: {
    abstract {
       return integer
       }
-   body {
+   inline {
       C_integer ci, cnew;
       int i, j, ndims=1, base = 0;
       struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
@@ -1838,6 +1934,8 @@ function{1} IntArrayElem(a, x[n])
 	 }
 /*      else runerr(130); */
       }
+   }
+    }
 end
 
 function{1} RealArray(x[n])

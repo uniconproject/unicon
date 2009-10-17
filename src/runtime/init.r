@@ -719,9 +719,15 @@ char *argv[];
    rootpstate.EVstralc = EVStrAlc_0;
    rootpstate.Interp = interp_0;
    rootpstate.Cnvcset = cnv_cset_0;
-   rootpstate.Cnvint = cnv_int_0;
-   rootpstate.Cnvreal = cnv_real_0;
-   rootpstate.Cnvstr = cnv_str_0;
+#passthru #undef cnv_int
+#passthru #undef cnv_real
+#passthru #undef cnv_str
+#passthru #undef alcreal
+#passthru #undef alcstr
+#passthru #undef alclist_raw
+   rootpstate.Cnvint = cnv_int;
+   rootpstate.Cnvreal = cnv_real;
+   rootpstate.Cnvstr = cnv_str;
    rootpstate.Cnvtcset = cnv_tcset_0;
    rootpstate.Cnvtstr = cnv_tstr_0;
    rootpstate.Deref = deref_0;
@@ -734,14 +740,14 @@ char *argv[];
    rootpstate.Alcpattern = alcpattern_0;
    rootpstate.Alcpelem = alcpelem_0;
 #endif					/* PatternType */
-   rootpstate.Alclist_raw = alclist_raw_0;
+   rootpstate.Alclist_raw = alclist_raw;
    rootpstate.Alclist = alclist_0;
    rootpstate.Alclstb = alclstb_0;
-   rootpstate.Alcreal = alcreal_0;
+   rootpstate.Alcreal = alcreal;
    rootpstate.Alcrecd = alcrecd_0;
    rootpstate.Alcrefresh = alcrefresh_0;
    rootpstate.Alcselem = alcselem_0;
-   rootpstate.Alcstr = alcstr_0;
+   rootpstate.Alcstr = alcstr;
    rootpstate.Alcsubs = alcsubs_0;
    rootpstate.Alctelem = alctelem_0;
    rootpstate.Alctvtbl = alctvtbl_0;
@@ -2012,9 +2018,9 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->EVstralc = EVStrAlc_0;
    pstate->Interp = interp_0;
    pstate->Cnvcset = cnv_cset_0;
-   pstate->Cnvint = cnv_int_0;
-   pstate->Cnvreal = cnv_real_0;
-   pstate->Cnvstr = cnv_str_0;
+   pstate->Cnvint = cnv_int;
+   pstate->Cnvreal = cnv_real;
+   pstate->Cnvstr = cnv_str;
    pstate->Cnvtcset = cnv_tcset_0;
    pstate->Cnvtstr = cnv_tstr_0;
    pstate->Deref = deref_0;
@@ -2023,14 +2029,14 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Alcfile = alcfile_0;
    pstate->Alchash = alchash_0;
    pstate->Alcsegment = alcsegment_0;
-   pstate->Alclist_raw = alclist_raw_0;
+   pstate->Alclist_raw = alclist_raw;
    pstate->Alclist = alclist_0;
    pstate->Alclstb = alclstb_0;
-   pstate->Alcreal = alcreal_0;
+   pstate->Alcreal = alcreal;
    pstate->Alcrecd = alcrecd_0;
    pstate->Alcrefresh = alcrefresh_0;
    pstate->Alcselem = alcselem_0;
-   pstate->Alcstr = alcstr_0;
+   pstate->Alcstr = alcstr;
    pstate->Alcsubs = alcsubs_0;
    pstate->Alctelem = alctelem_0;
    pstate->Alctvtbl = alctvtbl_0;

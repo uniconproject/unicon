@@ -586,9 +586,7 @@ int longest_dr = 0;
 struct b_proc_list **dr_arrays;
 #ifdef Uniconc
 static word mdw_dynrec_start = 0;
-#endif /* Uniconc */
 
-#ifdef Uniconc
 extern
 void
 dynrec_start_set(start)
@@ -596,9 +594,7 @@ dynrec_start_set(start)
 {
    mdw_dynrec_start = start;
 }
-#endif /* Uniconc */
 
-#ifdef Uniconc
 static
 char *
 dynrec_recname_create(name, flds, nflds)
@@ -626,9 +622,7 @@ dynrec_recname_create(name, flds, nflds)
 
    return rslt;
 }
-#endif /* Uniconc */
 
-#ifdef Uniconc
 static
 int
 rmkrec(nargs, cargp, rslt)
@@ -655,12 +649,8 @@ rmkrec(nargs, cargp, rslt)
    rslt->vword.bptr = (union block *)rp;
    return A_Continue;
 }
-#endif /* Uniconc */
 
-#ifdef Uniconc
-extern
-int
-fldlookup(rec, fld)
+int fldlookup(rec, fld)
     struct b_record * rec;
     const char * const fld;
 {
@@ -669,18 +659,17 @@ fldlookup(rec, fld)
 
     len = strlen(fld);
     desc = rec->recdesc;
-    for (len=strlen(fld),i=0; i<Blk(desc,Proc)->nfields; i++) {
+    for (i=0; i<Blk(desc,Proc)->nfields; i++) {
         if (len == StrLen(desc->Proc.lnames[i]) &&
-           (strncmp(fld, StrLoc(desc->Proc.lnames[i]), len) == 0))
+           (strncmp(fld, StrLoc(desc->Proc.lnames[i]), len) == 0)) {
            break;
+	   }
         }
     if (i >= desc->Proc.nfields)
         i = -1;
     return i;
 }
-#endif /* Uniconc */
 
-#ifdef Uniconc
 static struct b_proc_list * dr_tbl[128] = { 0 };
 
 struct b_proc *
@@ -728,7 +717,7 @@ dynrecord(s, fields, n)
    if (bp == NULL) return NULL;
    bp->title = T_Proc;
    bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
-#if (COMPILER)
+#if COMPILER
    bp->ccode = rmkrec;
 #else
    bp->entryp.ccode = Omkrec;
@@ -756,7 +745,9 @@ dynrecord(s, fields, n)
    dr_tbl[hval] = bpl;
    return bp;
 }
+
 #else /* Uniconc */
+
 struct b_proc *dynrecord(dptr s, dptr fields, int n)
    {
       struct b_proc_list *bpelem = NULL;
@@ -860,3 +851,56 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
       }
    }
 #endif					/* MultiThread */
+
+/*
+ * Insert an array of alternating keys and values into a table.
+ */
+int cinserttable(union block **pbp, int n, dptr x)
+{
+   tended struct descrip s;
+   union block **pd;
+   struct b_telem *te;
+   register uword hn;
+   int res, argc;
+
+   s.dword = D_Table;
+   BlkLoc(s) = *pbp;
+   for(argc=0; argc<n; argc+=2) {
+      hn = hash(x+argc);
+
+      /* get this now because can't tend pd */
+      Protect(te = alctelem(), return -1);
+
+      pd = memb(*pbp, x+argc, hn, &res);	/* search table for key */
+      if (res == 0) {
+	 /*
+	  * The element is not in the table - insert it.
+	  */
+	 Blk(*pbp, Table)->size++;
+	 te->clink = *pd;
+	 *pd = (union block *)te;
+	 te->hashnum = hn;
+	 te->tref = x[argc];
+	 if (argc+1 < n)
+	    te->tval = x[argc+1];
+	 else
+	    te->tval = nulldesc;
+	 if (TooCrowded(*pbp))
+	    hgrow(*pbp);
+	 }
+      else {
+	 /*
+	  * We found an existing entry; just change its value.
+	  */
+	 deallocate((union block *)te);
+	 te = (struct b_telem *) *pd;
+	 if (argc+1 < n)
+	    te->tval = x[argc+1];
+	 else
+	    te->tval = nulldesc;
+	 }
+      EVValD(&s, E_Tinsert);
+      EVValD(x+argc, E_Tsub);
+      }
+   return 0;
+}

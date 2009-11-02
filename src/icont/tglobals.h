@@ -22,7 +22,7 @@ Global int lmask;			/* mask for local table hash */
 Global unsigned int csize	Init(100);	/* constant table */
 Global unsigned int lsize	Init(100);	/* local table */
 Global unsigned int nsize	Init(1000);	/* ipc/line num. assoc. table */
-Global unsigned int stsize	Init(20000);	/* string space */
+Global unsigned int stsize	Init(200000);	/* string space */
 Global unsigned int maxcode	Init(15000);	/* code space */
 Global unsigned int fnmsize	Init(10);	/* ipc/file name assoc. table */
 Global unsigned int maxlabels	Init(500);	/* maximum num of labels/proc */

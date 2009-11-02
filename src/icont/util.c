@@ -48,6 +48,12 @@ unsigned int m, n;
    return a;
    }
 
+struct freedchunk {
+   char *p;
+   struct freedchunk *next;
+} *freedchunks;
+
+
 /*
  * trealloc - realloc a table making it half again larger and zero the
  *   new part of the table.
@@ -87,8 +93,26 @@ char *tbl_name;     /* name of the table */
    if (tblfree != NULL)
       free_offset = DiffPtrs(*(char **)tblfree,  (char *)table);
 
-   if ((new_tbl = (char *)realloc(table, (unsigned)num_bytes)) == 0)
+   /*
+    * Replace:
+    *
+    * if ((new_tbl = (char *)realloc(table, (unsigned)num_bytes)) == 0)
+    *    quitf("out of memory for %s", tbl_name);
+    *
+    * with a non-freeing, larger malloc-plus-copy.
+    * The reason is that the string table, at least, is at present believed
+    * to leave behind some live pointers after a trealloc.
+    */
+   if ((new_tbl = (char *)malloc((unsigned)num_bytes)) == 0)
       quitf("out of memory for %s", tbl_name);
+   memcpy(new_tbl, table, *size * unit_size);
+   {
+   struct freedchunk *p = malloc(sizeof(struct freedchunk));
+   p->p = (char *)table;
+   p->next = freedchunks;
+   freedchunks = p;
+   }
+
 
    for (i = *size * unit_size; i < num_bytes; ++i)
       new_tbl[i] = 0;

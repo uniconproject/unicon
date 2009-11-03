@@ -1815,7 +1815,8 @@ static int jpegread(char *filename, int p)
 
    if (setjmp(jerr.setjmp_buffer)) {
       jpeg_destroy_decompress(&cinfo);
-      fclose(gf_f);
+      if (gf_f != NULL)
+	 fclose(gf_f);
       return Failed;
       }
 

@@ -609,6 +609,64 @@ fi
 ])
 
 
+
+AC_DEFUN([CHECK_PNG],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if png is wanted)
+AC_ARG_WITH(png,
+[  --with-png=DIR root directory path of png installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-png to disable png usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  PNG_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+PNG_HOME=/usr/local
+if test ! -f "${PNG_HOME}/include/png.h"
+then
+        PNG_HOME=/usr
+fi
+])
+
+#
+# Locate PNG, if wanted
+#
+if test -n "${PNG_HOME}"
+then
+        PNG_OLD_LDFLAGS=$LDFLAGS
+        PNG_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${PNG_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${PNG_HOME}/include"
+        AC_LANG_SAVE
+        AC_LANG_C
+	AC_CHECK_LIB(png, png_read_image, [png_cv_libpng=yes], [png_cv_libpng=no])
+        AC_CHECK_HEADER(png.h, [png_cv_png_h=yes], [png_cv_png_h=no])
+        AC_LANG_RESTORE
+        if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+		AC_CHECK_LIB(png, png_read_image)
+                AC_MSG_CHECKING(png in ${PNG_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(png in ${PNG_HOME})
+                LDFLAGS="$PNG_OLD_LDFLAGS"
+                CPPFLAGS="$PNG_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+])
+
 AC_DEFUN([CHECK_OPENGL],
 #
 # Handle user hints

@@ -20,7 +20,7 @@ static	int	sicmp		(siptr sip1, siptr sip2);
 int pollctr;
 FILE *ConsoleBinding = NULL;
 /*
- * the global buffer used as work space for printing string, etc 
+ * the global buffer used as work space for printing string, etc
  */
 char ConsoleStringBuf[MaxReadStr * 48];
 char *ConsoleStringBufPtr = ConsoleStringBuf;
@@ -890,7 +890,7 @@ int mystrcmp(char *s1, char *s2)
  * texturephrase(s, &r, &g, &b, &texture) -- parse Unicon colored texture
  */
 static int texturephrase(buf, r, g, b, a)
-char *buf; 
+char *buf;
 long *r, *g, *b, *a;
    {
    char buf2[128];
@@ -933,7 +933,7 @@ long *r, *g, *b, *a;
  *   translucent                 pale         moderate
  *   subtranslucent              light        strong
  * [ opaque     ]        [[very] medium ]   [ vivid    ]   [color[ish]]   color
- *                               dark 
+ *                               dark
  *                               deep
  *
  *  where "color" is any of:
@@ -954,7 +954,7 @@ long *r, *g, *b, *a;
  */
 
 static int colorphrase(buf, r, g, b, a)
-char *buf; 
+char *buf;
 long *r, *g, *b, *a;
    {
    int len, very;
@@ -1075,7 +1075,7 @@ long *r, *g, *b, *a;
    /* interpolate hls specs */
    if (blend > 0) {
       bl2 = 1.0 - blend;
-   
+
       if (s1 == 0.0)
          ; /* use h2 unchanged */
       else if (s2 == 0.0)
@@ -1088,7 +1088,7 @@ long *r, *g, *b, *a;
          h2 = blend * h1 + bl2 * h2;
       if (h2 < 0)
          h2 += 360;
-   
+
       l2 = blend * l1 + bl2 * l2;
       s2 = blend * s1 + bl2 * s2;
       }
@@ -1831,7 +1831,7 @@ static int jpegread(char *filename, int p)
       cinfo.quantize_colors = TRUE;
       cinfo.desired_number_of_colors = 254;
       }
-   else { 
+   else {
         cinfo.quantize_colors = FALSE;
    }
 
@@ -1864,7 +1864,7 @@ static int jpegread(char *filename, int p)
 /*   if (p == 1) */
       gf_string = calloc(jpg_space=row_stride*cinfo.output_height,
 			 sizeof(unsigned char));
-	
+
    /*
     * Make a one-row-high sample array that will go away when done with image
     */
@@ -1925,7 +1925,7 @@ static int jpegread(char *filename, int p)
 void my_error_exit (j_common_ptr cinfo)
 {
   my_error_ptr myerr = (my_error_ptr) cinfo->err;
-  (*cinfo->err->output_message) (cinfo);
+  /*(*cinfo->err->output_message) (cinfo);*/
   jpeg_destroy(cinfo);
   if (gf_f) { fclose(gf_f); gf_f = NULL; }
   longjmp(myerr->setjmp_buffer, 1);
@@ -1947,7 +1947,10 @@ static int pngread(char *filename, int p);
 int readPNG(char *filename, int p, struct imgdata *imd)
 {
    int r = pngread(filename, p);			/* read image */
-   if (r == Failed) return Failed;
+   if (r == Failed){
+      if (gf_f) { fclose(gf_f); gf_f = NULL; }
+      return Failed;
+      }
 
    imd->width = gf_width;		/* set return variables */
    imd->height = gf_height;
@@ -1969,7 +1972,8 @@ static int pngread(char *filename, int p)
    double  gamma;
    png_uint_32  i, rowbytes;
    png_bytepp row_pointers = NULL;
-   png_color_16p pBackground;
+   png_color_16p image_background;
+   /*png_color_16 my_background;*/
    png_structp png_ptr = NULL;
    png_infop info_ptr = NULL;
    png_infop end_info = NULL;
@@ -1993,7 +1997,6 @@ static int pngread(char *filename, int p)
 
    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
-
    if (!png_ptr)
       return Failed;
 
@@ -2011,7 +2014,7 @@ static int pngread(char *filename, int p)
 
    if (setjmp(png_jmpbuf(png_ptr))) {
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-      if (gf_f) { fclose(gf_f); gf_f = NULL; }	
+      if (gf_f) { fclose(gf_f); gf_f = NULL; }
       return Failed;
       }
 
@@ -2035,24 +2038,62 @@ static int pngread(char *filename, int p)
     * images to 8 bits per sample; and convert grayscale to RGB[A]
     */
 
-   if (color_type == PNG_COLOR_TYPE_PALETTE)
-      png_set_expand(png_ptr);
-   if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-      png_set_expand(png_ptr);
-   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-      png_set_expand(png_ptr);
+   switch (color_type) {
+      case PNG_COLOR_TYPE_PALETTE:
+	 png_set_palette_to_rgb(png_ptr);
+	 if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)){
+	    /* adds a full alpha channel if there is transparency information
+	    * in a tRNS chunk.  for now just strip alpha off.
+	    */
+	    /*png_set_tRNS_to_alpha(png_ptr);*/
+	    png_set_strip_alpha(png_ptr);
+	    }
+	 break;
+      case PNG_COLOR_TYPE_GRAY:
+	 if (bit_depth < 8)
+	    png_set_gray_1_2_4_to_8(png_ptr);
+	 png_set_gray_to_rgb(png_ptr);
+	 break;
+      case PNG_COLOR_TYPE_GRAY_ALPHA:
+	 if (bit_depth < 8)
+	    png_set_gray_1_2_4_to_8(png_ptr);
+	 png_set_gray_to_rgb(png_ptr);
+	 png_set_strip_alpha(png_ptr);
+	 break;
+      case PNG_COLOR_TYPE_RGB:
+	 break;
+      case PNG_COLOR_TYPE_RGB_ALPHA:
+	 png_set_strip_alpha(png_ptr);
+	 break;
+      }
+
    if (bit_depth == 16)
       png_set_strip_16(png_ptr);
-   if (color_type == PNG_COLOR_TYPE_GRAY ||
-       color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-      png_set_gray_to_rgb(png_ptr);
+   else if (bit_depth < 8)
+      png_set_packing(png_ptr);
+
+#ifdef NTGCC
+   if (color_type == PNG_COLOR_TYPE_RGB ||
+       color_type == PNG_COLOR_TYPE_RGB_ALPHA ||
+       color_type == PNG_COLOR_TYPE_PALETTE)
+      png_set_bgr(png_ptr);
+#endif						/* NTGCC*/
+
+   if (png_get_bKGD(png_ptr, info_ptr, &image_background))
+        png_set_background(png_ptr, image_background,
+        	PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+   /*else
+      png_set_background(png_ptr, &my_background,
+      	PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+    */
 
    /*
-    * if it doesn't have a file gamma, don't
-    * do any correction
+    * do file gamma for gamma correction, or use a default gamma
     */
    if (png_get_gAMA(png_ptr, info_ptr, &gamma))
       png_set_gamma(png_ptr, GammaCorrection, gamma);
+   else
+      png_set_gamma(png_ptr, GammaCorrection, 1.0/2.2);
 
    /*
     * All transformations have been registered; now update info_ptr data,
@@ -2062,8 +2103,6 @@ static int pngread(char *filename, int p)
    png_read_update_info(png_ptr, info_ptr);
 
    rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-
-   /* pChannels = (int)png_get_channels(png_ptr, info_ptr); */
 
    if ((gf_string = (unsigned char *)malloc(rowbytes*gf_height)) == NULL) {
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
@@ -2080,8 +2119,12 @@ static int pngread(char *filename, int p)
    /* set the individual row_pointers to point at the correct offsets */
 
    for (i = 0;  i < gf_height;  ++i)
+#ifdef NTGCC
+      /* image is upside down, reverse it */
+      row_pointers[gf_height-1-i] = gf_string + i*rowbytes;
+#else								/* NTGCC*/
       row_pointers[i] = gf_string + i*rowbytes;
-
+#endif								/* NTGCC*/
 
    /* now we can go ahead and just read the whole image */
    png_read_image(png_ptr, row_pointers);
@@ -2092,7 +2135,7 @@ static int pngread(char *filename, int p)
    free(row_pointers);
    row_pointers = NULL;
 
-   png_read_end(png_ptr, NULL);
+   /*png_read_end(png_ptr, NULL);*/
 
    if (png_ptr && info_ptr) {
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
@@ -3300,7 +3343,7 @@ char * abuf;
 	 AttemptAttr(settexcoords(w, val));
 	 break;
       case A_TEXMODE:
-	 AttemptAttr(settexmode(w, val)); 
+	 AttemptAttr(settexmode(w, val));
 	 break;
       case A_SLICES:
 	AttemptAttr(setslices(w, val));
@@ -3347,7 +3390,7 @@ char * abuf;
             }
 	 break;
 	 }
-      case A_INPUTMASK: {	 
+      case A_INPUTMASK: {
 	 AttemptAttr(setinputmask(w, val));
 	 break;
 	 }
@@ -3448,10 +3491,10 @@ char * abuf;
 	 else {
 #ifdef Graphics3D
        if (w->context->is_3D) {
-	  if (setmaterials(w,val) != Succeeded) 
-	     return Failed;  
+	  if (setmaterials(w,val) != Succeeded)
+	     return Failed;
           }
-       else 
+       else
 #endif					/* Graphics3D */
 	    if (setfg(w, val) != Succeeded) return Failed;
 	    }
@@ -3484,12 +3527,12 @@ char * abuf;
       case A_LINEWIDTH: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
-#ifdef Graphics3D  
+#ifdef Graphics3D
  	 if (w->context->is_3D) {
             if (setlinewidth3D(w, tmp) == Error)
 	       return Failed;
 	    }
-         else 
+         else
 #endif					/* Graphics3D */
 	 if (setlinewidth(w, tmp) == Error)
 	    return Failed;
@@ -3752,15 +3795,15 @@ char * abuf;
         break;
       case A_TEXCOORD:
 	 strcpy(abuf, "auto");
-	 if (wc->autogen) 
-	    MakeStr(abuf, 4, answer); 
+	 if (wc->autogen)
+	    MakeStr(abuf, 4, answer);
 	 else {
 	    gettexcoords(w, abuf);
 	    MakeStr(strdup(abuf), strlen(abuf), answer);
 	    }
 	 break;
       case A_SLICES:
-	MakeInt(wc->slices, answer);	
+	MakeInt(wc->slices, answer);
 	break;
       case A_RINGS:
 	MakeInt(wc->rings, answer);
@@ -3769,7 +3812,7 @@ char * abuf;
 	 sprintf(abuf,"%s",((w->context->selectionenabled==1)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
-	 }	
+	 }
       case A_BUFFERMODE: {
 	 sprintf(abuf,"%s",((w->context->buffermode==BUFFERED3D)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
@@ -3800,7 +3843,7 @@ char * abuf;
 	 MakeInt(FWIDTH(w), answer);
 	 break;
       case A_INPUTMASK: {
-         char *s = abuf;  
+         char *s = abuf;
          int mask = w->window->inputmask;
          if (mask & PointerMotionMask)
             *s++ = 'm';
@@ -3853,8 +3896,8 @@ char * abuf;
 	    break;
 	    }
 	 break;
-      case A_FG:      
-#ifdef Graphics3D  
+      case A_FG:
+#ifdef Graphics3D
  	 if (w->context->is_3D)
 	    getmaterials(abuf);
 	 else
@@ -4601,7 +4644,7 @@ stringint attribs[] = {
    {"selection",	A_SELECTION},
    {"size",		A_SIZE},
    {"slices",		A_SLICES},
-   {"texcoord",		A_TEXCOORD}, 
+   {"texcoord",		A_TEXCOORD},
    {"texmode",		A_TEXMODE},
    {"texture",		A_TEXTURE},
    {"titlebar",		A_TITLEBAR},
@@ -4698,7 +4741,7 @@ int Wy()
 char * watt(wbp w, char *s)
 {
    int config=0, len = strlen(s);
-   struct descrip throw;   
+   struct descrip throw;
    char foo[256];
    wattrib(w, s, strlen(s), &throw, foo);
 

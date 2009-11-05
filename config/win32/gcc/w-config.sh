@@ -19,5 +19,3 @@ echo BINDIR=../../bin >> ../../../uni/unicon/makefile
 echo UNICON=../unicon/unicon >> ../../../uni/unicon/makefile
 echo top: unicon wunicon >> ../../../uni/unicon/makefile
 cat ../../unix/Config/unicon.mak >>../../../uni/unicon/makefile
-# no longer copy makefile.ide up, it has been made multiplatform
-# cat makefile.ide > ../../../uni/ide/makefile

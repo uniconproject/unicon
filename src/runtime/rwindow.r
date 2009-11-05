@@ -2041,13 +2041,6 @@ static int pngread(char *filename, int p)
    switch (color_type) {
       case PNG_COLOR_TYPE_PALETTE:
 	 png_set_palette_to_rgb(png_ptr);
-	 if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)){
-	    /* adds a full alpha channel if there is transparency information
-	    * in a tRNS chunk.  for now just strip alpha off.
-	    */
-	    /*png_set_tRNS_to_alpha(png_ptr);*/
-	    png_set_strip_alpha(png_ptr);
-	    }
 	 break;
       case PNG_COLOR_TYPE_GRAY:
 	 if (bit_depth < 8)
@@ -2079,6 +2072,14 @@ static int pngread(char *filename, int p)
       png_set_bgr(png_ptr);
 #endif						/* NTGCC*/
 
+   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)){
+      /* adds a full alpha channel if there is transparency information
+       * in a tRNS chunk.  for now just strip alpha off.
+       */
+      /*png_set_tRNS_to_alpha(png_ptr);*/
+      png_set_strip_alpha(png_ptr);
+      }
+	 
    if (png_get_bKGD(png_ptr, info_ptr, &image_background))
         png_set_background(png_ptr, image_background,
         	PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);

@@ -25,7 +25,8 @@ UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
 	$(UC) -o ui $(OBJ)
-	cp ui ../../bin
+	-$(CP) ui ../../bin
+	-$(CP) ui.exe ../../bin
 
 ide.u: ide.icn
 	unicon -c ide
@@ -76,10 +77,12 @@ ytab_h.u: ytab_h.icn
 	unicon -c ytab_h
 
 yyerror.u: yyerror.icn
+	unicon -c unigram
 	unicon -c yyerror
 
 unigram.u: unigram.icn unilex.u
-	unicon -c unigram yyerror
+	unicon -c unigram
+	unicon -c yyerror
 
 unilex.u: unilex.icn yyerror.u
 	unicon -c unilex

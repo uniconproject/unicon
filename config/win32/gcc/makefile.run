@@ -11,6 +11,8 @@ MAKE=make
 RTT=../../bin/rtt
 O=o
 RM=rm
+CMD=cmd
+CP=cp
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -49,29 +51,29 @@ interp_all: $(COBJS)
 MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
 wiconx: $(OBJS) $(WOBJS) $(COBJS)
-	command /C libtp
-	command /C gdbm
+	$(CMD) /C libtp
+	$(CMD) /C gdbm
 	$(CC) -mwindows -Xlinker --stack -Xlinker 8192000 -o wiconx.exe $(guiflags) $(OBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
-	cp wiconx.exe ../../bin/wiconx.exe
+	$(CP) wiconx.exe ../../bin/wiconx.exe
 
 iconx: $(OBJS) $(WOBJS) $(COBJS)
-	command /C libtp
-	command /C gdbm
+	$(CMD) /C libtp
+	$(CMD) /C gdbm
 	$(CC) -Xlinker --stack -Xlinker 8192000 -o iconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
-	cp iconx.exe ../../bin
+	$(CP) iconx.exe ../../bin
 
 nticonx:
 	-$(RM) *.$(O)
-	cp ../../config/win32/gcc/wdefine.h ../h/define.h
+	$(CP) ../../config/win32/gcc/wdefine.h ../h/define.h
 	cat ../../config/win32/gcc/ntconsole.h >>../h/define.h
 	$(MAKE) iconx
 	-$(RM) *.$(O)
-	cp ../../config/win32/gcc/define.h ../h/define.h
+	$(CP) ../../config/win32/gcc/define.h ../h/define.h
 	$(MAKE) $(OBJS)
 	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
 	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
 	gcc -Xlinker --stack -Xlinker 768000 -o nticonx.exe $(OBJS) ..\libtp\libtp.a -lkernel32 -lwinmm -lwsock32 -lodbc32 ../gdbm/libgdbm.a
-	cp nticonx.exe ../../bin
+	$(CP) nticonx.exe ../../bin
 
 xcnv.$(O): cnv.r $(HDRS)
 	$(RTT) -x cnv.r
@@ -367,7 +369,7 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) \
 	ar qc rt.a `sed 's/$$/.$(O)/' rttfull.lst` ../common/rswitch.$(O)\
 	    ../common/long.$(O) ../common/time.$(O) \
 	    ../common/xwindow.$(O)
-	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
+	$(CP) rt.a rt.db ../common/dlrgint.$(O) ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 
 cnv.$(O): cnv.r $(HDRS)

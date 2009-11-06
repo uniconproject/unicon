@@ -86,10 +86,12 @@ ytab_h.u: ytab_h.icn
 	unicon -c ytab_h
 
 yyerror.u: yyerror.icn
+	unicon -c unigram
 	unicon -c yyerror
 
 unigram.u: unigram.icn unilex.u yyerror.u
 	unicon -c unigram
+	unicon -c yyerror
 
 unilex.u: unilex.icn yyerror.u
 	unicon -c unilex

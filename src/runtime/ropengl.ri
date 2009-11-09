@@ -7,10 +7,10 @@ int determinematerial(char *, C_integer, C_integer, C_integer, C_integer);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type, int curtex);
 int texture(int width, int height, GLubyte *tex, int texmode);
 int texture_24img(wbp w, struct imgdata im);
-int textureimg(wbp w, int width, int height, 
+int textureimg(wbp w, int width, int height,
 		struct palentry *e, unsigned char *s, word len);
 int init_3dcontext(wcp wc);
-		  
+
 FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 {
    FILE *f;
@@ -49,10 +49,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    if ((ws->funclist.vword.bptr = (union block *)alclist(0, 40000)) == NULL)
       return NULL;
    ws->funclist.dword = D_List;
-   
+
    /* initialize opengl state*/
    init_opengl(w);
-   
+
    return f;
 }
 
@@ -61,7 +61,7 @@ void init_opengl(wbp  w)
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
    wsp ws;
    wcp wc;
-   
+
    ws= w->window;
    wc= w->context;
 
@@ -110,15 +110,17 @@ int init_3dcontext(wcp wc)
    wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
    wc->eyedirz = -100.0;
    wc->autogen = 1;
+   wc->normmode = 1;
+   wc->normals = NULL;
    wc->texmode = wc->numtexcoords = 0;
    wc->texName = malloc(16 * sizeof(GLuint));
    if (wc->texName == NULL) return Failed;
    wc->nalced = 16;
    wc->maxstex=16;
-   
+
    wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
    if (wc->stex == NULL) return Failed;
-   
+
    wc->texcoords = malloc(256 * sizeof (double));
    if (wc->texcoords == NULL) return Failed;
    wc->ntexcoordsalced = 256;
@@ -137,7 +139,7 @@ int release_3d_resources(wbp w)
 {
    int i;
    wcp wc = w->context;
-#ifdef XWindows      
+#ifdef XWindows
    wdp wd = w->window->display;
 #endif					/* XWindows */
 
@@ -155,11 +157,11 @@ int release_3d_resources(wbp w)
    free(wc->texName);
    free(wc->texcoords);
 
-#ifdef XWindows   
+#ifdef XWindows
    glXDestroyContext( wd->display, wc->ctx);
 #endif					/* XWindows */
 }
- 
+
 /*
  * check if we have enough textures names (and records)
  * try to allocate if we need more
@@ -172,14 +174,14 @@ int make_enough_texture_space(wcp wc)
       if (wc->texName==NULL) return Failed;
       /*
       wc->maxstex *= 2;
-      printf(" realloc STEX STEX STEX !\n "); 
+      printf(" realloc STEX STEX STEX !\n ");
       wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
       if (wc->stex==NULL) return Failed;
-      printf(" realloc STEX DONEEEEEEEEEEEEEEEEEEEEEEEEEE !\n "); 
+      printf(" realloc STEX DONEEEEEEEEEEEEEEEEEEEEEEEEEE !\n ");
       */
-      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);      
+      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
    }
-   
+
    return Succeeded;
 }
 
@@ -230,7 +232,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 
    makecurrent(w);
    /* must reset the current normal vector */
-   glNormal3f(0.0, 0.0, 1.0);
+   glNormal3dv(n);
 
    /* each vertex has an x-coordinate and a y-coordinate */
    if (dim == 2){
@@ -275,13 +277,24 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    if (dim == 3){
       if (!wc->texmode) {
          glBegin(type);
-         for (i = 0; i < num; i = i+3){
-	    if (i%9==0 && i+9<num){ 
-	       calcNormal(&v[i], &v[i+3], &v[i+6], n);
-	       glNormal3dv(n);
+	 if(wc->normmode==1)
+	    for (i = 0; i < num; i = i+3){
+	       if (i%9==0 && i+9<num){
+		  calcNormal(&v[i], &v[i+3], &v[i+6], n);
+		  glNormal3dv(n);
+	       }
+	       glVertex3d(v[i], v[i+1], v[i+2]);
+	       }
+	 else if(wc->normmode==2){
+	    if (num > wc->numnormals) return Failed;
+	    for (i = 0; i < num; i = i+3){
+	       glNormal3dv(&(wc->normals[i]));
+	       glVertex3dv(&v[i]);
+	       }
 	    }
-            glVertex3d(v[i], v[i+1], v[i+2]);
-	 }
+	 else 
+	    for (i = 0; i < num; i = i+3)
+	       glVertex3dv(&v[i]);
          glEnd();
        }
       else {
@@ -292,15 +305,26 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
             glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 
-            glBegin(type);
-            for (i = 0; i < num; i=i+3)
-	       if (i%9==0 && i+9<num){ 
-		  calcNormal(&v[i], &v[i+3], &v[i+6], n);
-		  glNormal3dv(n);
+	    glBegin(type);
+	    if(wc->normmode==1)
+	       for (i = 0; i < num; i = i+3){
+		  if (i%9==0 && i+9<num){
+		     calcNormal(&v[i], &v[i+3], &v[i+6], n);
+		     glNormal3dv(n);
+		     }
+		  glVertex3d(v[i], v[i+1], v[i+2]);
+		  }
+	    else if(wc->normmode==2){
+	       if (num > wc->numnormals) return Failed;
+	       for (i = 0; i < num; i = i+3){
+		  glNormal3dv(&(wc->normals[i]));
+		  glVertex3dv(&v[i]);
+		  }
 	       }
-	       glNormal3dv(n);
-               glVertex3d(v[i], v[i+1], v[i+2]);
-            glEnd();
+	    else 
+	       for (i = 0; i < num; i = i+3)
+		  glVertex3dv(&v[i]);
+	    glEnd();
            }
          else {
             /*
@@ -309,18 +333,53 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 	     */
             if (num/3 > wc->numtexcoords/2)
               return Failed;
-            glBegin(type);
-            j = 0;
-            for (i = 0; i < num; i=i+3) {
-	       if (i%9==0 && i+9<num){ 
-		  calcNormal(&v[i], &v[i+3], &v[i+6], n);
-		  glNormal3dv(n);
+	    j = 0;
+	    
+	    if(wc->normmode==1){
+	       glBegin(type);
+	       for (i = 0; i < num; i = i+3){
+		  if (i%9==0 && i+9<num){
+		     calcNormal(&v[i], &v[i+3], &v[i+6], n);
+		     glNormal3dv(n);
+		     }
+		  glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+		  j = j + 2;
+		  glVertex3d(v[i], v[i+1], v[i+2]);
 		  }
-               glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
-               glVertex3d(v[i], v[i+1], v[i+2]);
-               j = j + 2;
-             }
-            glEnd();
+	       glEnd();
+	       }
+	    else if(wc->normmode==2){
+	       if (num > wc->numnormals) return Failed;
+	       /*glEnableClientState(GL_VERTEX_ARRAY);
+	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	       glEnableClientState(GL_NORMAL_ARRAY);
+	       glVertexPointer(3, GL_DOUBLE, 0, v);
+	       glNormalPointer(GL_DOUBLE, 0, wc->normals);
+	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords);
+	       glDrawArrays(type, 0, num);
+	       glDisableClientState(GL_VERTEX_ARRAY);
+	       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	       glDisableClientState(GL_NORMAL_ARRAY);
+	       */
+	       
+	       for (i = 0; i < num; i = i+3){
+#ifdef Arrays		  
+		  glNormal3dv(&(wc->normals[i]));
+#endif					/* Arrays */
+		  glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+		  j = j + 2;
+		  glVertex3dv(&v[i]);
+		  }
+		  
+	       }
+	    else {
+	       for (i = 0; i < num; i = i+3){
+		  glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+		  j = j + 2;
+		  glVertex3dv(&v[i]);
+		  }
+	       glEnd();
+	       }
          }
       }
    }
@@ -590,7 +649,7 @@ void disk(double radius1, double radius2, double angle1, double angle2,
 }
 
 /* other helper functions */
-  	
+
 /*
  * pop a matrix from either the projection or the modelview matrix stack
  */
@@ -692,7 +751,7 @@ int pushmatrix_rd(wbp w, dptr f)
 
    draw_code = si_s2i(redraw3Dnames, "PushMatrix");
    if (draw_code == -1)
-       return Failed; 
+       return Failed;
    MakeInt(draw_code, &(rp->fields[1]));
 
    c_put(&(w->window->funclist), f);
@@ -741,14 +800,14 @@ int redraw3D(wbp w)
 
   /*
    *  render in GL_RENDER mode otherwise GL_SELECT
-   */   
+   */
    if (!wc->selectionrendermode) {      /* GL_RENDER mode  */
 
     /* restore the viewing volume to the default  */
       glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();  
+      glLoadIdentity();
       glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
-	         0.125 * ws->height / ws->width, 0.25, 50000.0); 
+	         0.125 * ws->height / ws->width, 0.25, 50000.0);
 
       glMatrixMode(GL_MODELVIEW);
       glPushMatrix();
@@ -782,28 +841,28 @@ int redraw3D(wbp w)
       glXSwapBuffers(w->window->display->display, w->window->win);
       }
    else {	/* GL_SELECT mode  */
-      GLint viewport[4];  
+      GLint viewport[4];
       GLuint        selectionbuf[256];        /* selection buffer */
       GLuint        selectionhits=0;          /* number of hits   */
       GLuint *bufp = selectionbuf;
       unsigned int j, i = 0;
 
 
-      /*  change the view volume  so that it is only restricted 
-       *  to a small region under the mouse cursor   
+      /*  change the view volume  so that it is only restricted
+       *  to a small region under the mouse cursor
        */
       glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();  
+      glLoadIdentity();
 
       glGetIntegerv(GL_VIEWPORT, viewport);
       gluPickMatrix((GLdouble)ws->pointerx,
                    (GLdouble)(viewport[3]-ws->pointery),
                     3.0, 3.0,    /*  picking region width and height  */
-                    viewport);      
+                    viewport);
 
       glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
 	         0.125 * ws->height / ws->width, 0.25, 50000.0);
-   
+
      glMatrixMode(GL_MODELVIEW);
      glPushMatrix();
      glLoadIdentity();
@@ -847,7 +906,7 @@ int redraw3D(wbp w)
 	    bufp++;           /* skip z2 */
 	    bufp+=numnames;   /* skip names */
             }
-	
+
 	 qsort(z_buf,selectionhits, sizeof(GLuint), compare_GLuint);
 
          /* second pass : get the data  */
@@ -872,7 +931,7 @@ int redraw3D(wbp w)
 		   * z is 2 locations back. set it to 1 so that
 		   * it will be skipped next time
 		   */
-		  *(bufp-2)=1;  
+		  *(bufp-2)=1;
 		  savedhits++;
 		  while (numnam--) {
 		     int i = *bufp2++;
@@ -881,7 +940,7 @@ int redraw3D(wbp w)
 		     }
 
 	          Protect(tmpname = alcstr(NULL, memsize), return Error);
-	          tmpname[0] = '\0'; 
+	          tmpname[0] = '\0';
 
 		  while (numnames) {
 		     name = *bufp++;
@@ -891,7 +950,7 @@ int redraw3D(wbp w)
 			if (numnames)strcat(tmpname, "-");
 			}
                      } /* while */
-		
+
                   if ( strlen(tmpname) > 0 ){
 		     newnameadded=1;
                      MakeStr(tmpname, strlen(tmpname), &the_newselectedname);
@@ -906,11 +965,11 @@ int redraw3D(wbp w)
          } /* selection hits  */
       glPopMatrix();
       glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();  
+      glLoadIdentity();
       glFrustum(-0.125, 0.125, -0.125 * ws->height / ws->width,
 	         0.125 * ws->height / ws->width, 0.25, 50000.0);
       glMatrixMode(GL_MODELVIEW);
-   }   
+   }
    return Succeeded;
 }
 
@@ -1044,13 +1103,15 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define REDRAW_MESHMODE 448
 #define REDRAW_PICK 464
 #define REDRAW_MULTMATRIX 480
+#define REDRAW_NORMALS 496
+#define REDRAW_NORMOD 512
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			30 },		/* number of entries */
+   { 0,			32 },		/* number of entries */
    { "DrawCube",	REDRAW_CUBE | 4 },
    { "DrawCylinder",	REDRAW_CYLINDER | 6},
    { "DrawDisk",	REDRAW_DISK | 7 },
@@ -1061,7 +1122,7 @@ stringint redraw3Dnames[] = {
    { "DrawSphere",	REDRAW_SPHERE | 4 },
    { "DrawString3d",    REDRAW_DRAWSTRING3D | 3},
    { "DrawTorus",	REDRAW_TORUS | 5},
-   { "EndMark",         REDRAW_ENDMARK},   
+   { "EndMark",         REDRAW_ENDMARK},
    { "Fg",		REDRAW_FG},
    { "FillPolygon",	REDRAW_FILLPOLYGON },
    { "Font3d",          REDRAW_FONT3D },
@@ -1070,6 +1131,7 @@ stringint redraw3Dnames[] = {
    { "MatrixMode",	REDRAW_MATRIXMODE },
    { "MeshMode",        REDRAW_MESHMODE },
    { "MultMatrix",	REDRAW_MULTMATRIX },
+   { "Normals",		REDRAW_NORMALS },
    { "Pick"	,	REDRAW_PICK},
    { "PopMatrix",	REDRAW_POPMATRIX },
    { "PushMatrix",	REDRAW_PUSHMATRIX },
@@ -1080,6 +1142,7 @@ stringint redraw3Dnames[] = {
    { "Translate",	REDRAW_TRANSLATE | 3 },
    { "dim",		REDRAW_DIM },
    { "linewidth",	REDRAW_LINEWIDTH },
+   { "normode",		REDRAW_NORMOD },
    { "texmode",		REDRAW_TEXMODE },
    };
 
@@ -1171,7 +1234,7 @@ int traversefunctionlist(wbp w)
 
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
-	    torus(v[3], v[4], v[0], v[1], v[2], 
+	    torus(v[3], v[4], v[0], v[1], v[2],
 		IntVal(BlkLoc(flist)->Record.fields[7]),    /*  slices  */
 		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  rings   */
 		(wc->texmode?wc->autogen:0));
@@ -1239,7 +1302,7 @@ int traversefunctionlist(wbp w)
 #if HAVE_FTGL
 	    if (!cnv:C_double(rp->fields[2], x)) goto free_v_and_fail;
 	    if (!cnv:C_double(rp->fields[3], y)) goto free_v_and_fail;
-	    if (!cnv:C_double(rp->fields[4], z)) goto free_v_and_fail;	  
+	    if (!cnv:C_double(rp->fields[4], z)) goto free_v_and_fail;
 	    if (!cnv:C_string(rp->fields[5], s)) goto free_v_and_fail;
 	    drawstrng3d(w,x,y,z,s);
 #endif					/* HAVE_FTGL */
@@ -1293,7 +1356,7 @@ int traversefunctionlist(wbp w)
             bp1->listprev = (union block *) funclist;
          }
 	 if (! is:integer(bp1->lslots[k1])) { /* should check for large int! */
-	    return Error;	
+	    return Error;
 	    }
          tmp = IntVal(bp1->lslots[k1]);
 
@@ -1438,7 +1501,7 @@ int traversefunctionlist(wbp w)
                }
             var1 = bp1->lslots[k1];
 
-            if (!cnv:C_integer(var1, num)) goto free_v_and_fail;	 
+            if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
 
 	    wc->selectionenabled = num;
 	    break;
@@ -1496,6 +1559,9 @@ int traversefunctionlist(wbp w)
 
             /* there is a list of texture coordinates to use */
             else {
+#ifdef Arrays
+	       struct b_realarray *ap;
+#endif					/* Arrays */
                glDisable(GL_TEXTURE_GEN_S);
                glDisable(GL_TEXTURE_GEN_T);
                wc->autogen = 0;
@@ -1505,9 +1571,10 @@ int traversefunctionlist(wbp w)
 		     wc->ntexcoordsalced, funclist->size-1);
 	          goto free_v_and_fail;
 	          }
-
+#ifndef Arrays
                /* traverse the list and set the texture coordinates */
                for (j=0; j < (funclist->size)-3; j++){
+#endif
                   if (used1 <= 1){
 	             bp1 = (struct b_lelem *) bp1->listnext;
                      used1 = bp1->nused;
@@ -1520,24 +1587,70 @@ int traversefunctionlist(wbp w)
 
                   if (used1>0) {
 	             d = bp1->lslots[k1];
-                     if (!cnv:real(d, d)) return 0;
+#ifdef Arrays
+		     ap = (struct b_realarray *)BlkLoc(d);
+		     if (ap->title!=T_Realarray){
+			printf("NOT a real Array!!..\n");
+			return Failed;
+			}
+		     wc->numtexcoords = (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
+		     wc->texcoords = ap->a;
+#else					/* Arrays*/
+		     if (!cnv:real(d, d)) return 0;
 	             bp1->lslots[k1] = d;
 	             wc->texcoords[j] = BlkD(d,Real)->realval;
+#endif					/* Arrays*/
                      }
+#ifndef Arrays
                   } /* for j=0 ... */
 
                wc->numtexcoords = funclist->size-3;
+#endif					/* Arrays */
                }
+	    break;
+	    
+         case REDRAW_NORMALS:     /* Normals() */
+            /* there is a list of normal coordinates to use */
+               if (used1 <= 1){
+	          bp1 = (struct b_lelem *) bp1->listnext;
+                  used1 = bp1->nused;
+                  k1 = bp1->first;
+                  }
+               else {
+	          if (k1++ >= bp1->nslots) k1 = 0;
+	          used1--;
+                  }
+
+               if (used1>0) {
+#ifdef Arrays
+		  struct b_realarray *ap;
+	          d = bp1->lslots[k1];
+		  ap = (struct b_realarray *)BlkLoc(d);
+		  if (ap->title!=T_Realarray){
+		     printf("NOT a real Array!!..\n");
+		     return Failed;
+		     }
+		  wc->numnormals = (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
+		  wc->normals = ap->a;
+#endif					/* Arrays*/
+                  }
 	    break;
          case REDRAW_MULTMATRIX:      /* MultMatrix() */
             {
-               GLdouble matvalues[4][4];
-               int mi=0, mj=0;
+#ifdef Arrays
+	       struct b_realarray *ap;
+	       double *matvalues;
+#else					/* Arrays */
+	       double matvalues[16];
+#endif					/* Arrays */
+               int mi=0;
                /* check if we have a list of size 18.  18 = 2 reserved + 16 values */
-               if ((funclist->size)!=18) goto free_v_and_fail; 
+#ifndef Arrays
+               if ((funclist->size)!=18) goto free_v_and_fail;
 
                /* traverse the list and set matrix elements */
                for (j=0; j < (funclist->size)-2 /*16*/; j++){
+#endif					/* Arrays */
                   if (used1 <= 1){
 	             bp1 = (struct b_lelem *) bp1->listnext;
                      used1 = bp1->nused;
@@ -1549,17 +1662,26 @@ int traversefunctionlist(wbp w)
                      }
 
                   if (used1>0) {
-	             d = bp1->lslots[k1];
+	             	 d = bp1->lslots[k1];
+#ifdef Arrays
+		     		 ap = (struct b_realarray *)BlkLoc(d);
+		     		 if (ap->title!=T_Realarray){
+					 	printf("NOT a real Array!!..\n");
+					 	return Failed;
+						}
+		     		 matvalues = ap->a;
+#else					/* Arrays*/
                      if (!cnv:real(d, d)) return 0;
-	             bp1->lslots[k1] = d;
-	             matvalues[mj][mi] = BlkD(d,Real)->realval;
-	             if (++mj==4 ){
-	                mj=0;
-	                mi++;
-	                }
-                     }
+	             	 bp1->lslots[k1] = d;
+					 matvalues[mi++] = BlkD(d,Real)->realval;
+#endif					/* Arrays */
+                     } /*used1>0 */
+#ifndef Arrays
                   } /* for j=0 ... */
-               glMultMatrixd((GLdouble *)matvalues);	
+#endif					/* Arrays */
+#if HAVE_LIBGL
+               glMultMatrixd((GLdouble *)matvalues);
+#endif					/* HAVE_LIBGL */
                }
 	    break;
          case REDRAW_POLYGON:      /* DrawPolygon() */
@@ -1582,8 +1704,14 @@ int traversefunctionlist(wbp w)
 	    /* call drawpoly with GL_LINE_LOOP to get a polygon */
 	    drawpoly(w, v, (funclist->size)-2, w->context->meshmode, wc->dim);
 	    break;
-         case REDRAW_FILLPOLYGON:      /* FillPolygon() */
+         case REDRAW_FILLPOLYGON:{      /* FillPolygon() */
+	    double *vpoly;
+#ifdef Arrays
+	    struct b_realarray *ap;
+#else					/* Arrays */
+	    num= (funclist->size)-2;
 	    for (j = 0; j < (funclist->size)-2; j++) {
+#endif					/* Arrays */
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
@@ -1595,15 +1723,27 @@ int traversefunctionlist(wbp w)
                   }
 
                var2 = bp1->lslots[k1];
+#ifdef Arrays
+	       ap = (struct b_realarray *)BlkLoc(var2);
+	       if (ap->title!=T_Realarray){
+		  printf("NOT a real Array!!..\n");
+		  return Failed;
+	       }
+	       vpoly=ap->a;
+	       num=(ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
+# else	/* Arrays */
 	       if (!is:real(var2)) {
 	          if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
 	          }
 	       else
 	          GetReal(&var2, v[j]);
                } /* for j=0 */
+	       vpoly=v;
+#endif	/* Arrays */
 	    /* drawpoly with GL_POLYGON will give filled polygons */
-            drawpoly(w, v, (funclist->size)-2, w->context->meshmode, wc->dim);
+            drawpoly(w, vpoly, num, w->context->meshmode, wc->dim);
 	    break;
+		}
          case REDRAW_SEGMENT:      /* DrawSegment() */
 	    for (j = 0; j < (funclist->size)-1; j++) {
                if (used1<=1) {
@@ -1661,7 +1801,7 @@ int traversefunctionlist(wbp w)
       	    fprintf(stderr,"invalid displaylist entry '%s'\n",
 	       (is:string(fname) ? StrLoc(fname) : "(corrupted)"));
 	       goto free_v_and_fail;
-	 } /* switch tmp */	 
+	 } /* switch tmp */
          } /* else if is:list  */
       else {
 	 return Failed;
@@ -1675,7 +1815,7 @@ int traversefunctionlist(wbp w)
 /*
  * traverse the given list and set material properties
  */
-int determinematerial(temp, r, g, b, a) 
+int determinematerial(temp, r, g, b, a)
 char *temp;
 C_integer r, g, b, a;
 {
@@ -1945,7 +2085,7 @@ int setmaterials(wbp w, char* s)
 
          /* set the property */
          glMaterialfv(GL_FRONT, GL_SPECULAR, color);
-         MakeStr("specular", 8, &material);	
+         MakeStr("specular", 8, &material);
          c_put(&f, &material);
 	 }
 
@@ -1962,7 +2102,7 @@ int setmaterials(wbp w, char* s)
 	 /* set the shininess */
 	 shine = atof(sbuf2);
 	 glMaterialf(GL_FRONT, GL_SHININESS, shine);
-         MakeStr("shininess", 9, &material);		
+         MakeStr("shininess", 9, &material);
 	 c_put(&f, &material);
 	 rd = shine;
 	 gr = 0;
@@ -2674,7 +2814,7 @@ int seteye(wbp w, char *s)
 /* set a texture */
 int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
 {
-   wcp wc = w->context;    
+   wcp wc = w->context;
    char* s;
    int nfields, draw_code;
    /*tended struct descrip f; */
@@ -2696,11 +2836,11 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
       return Failed;
    (*f).dword = D_Record;
    (*f).vword.bptr = (union block *)rp;
-   MakeStr("Texture", 7, &(rp->fields[0])); 
+   MakeStr("Texture", 7, &(rp->fields[0]));
 
    draw_code = si_s2i(redraw3Dnames, "Texture");
    if (draw_code == -1)
-       return Failed; 
+       return Failed;
    MakeInt(draw_code, &(rp->fields[1]));
 
    s=str;
@@ -2777,7 +2917,7 @@ int imagestr(wbp w, char* str)
       else
 	   return Failed;
       }
-	
+
 
  /* Extract the palette name and skip its comma.*/
    c = *s++;		     /* save initial character */
@@ -2925,7 +3065,7 @@ int textureimg(wbp w, int width, int height,
             tex[(iy*width+ix)*3+2] = (GLint)BLUE(w->context->bg);
          }
          if (++ix >= width) {
-            ix = 0;	
+            ix = 0;
 	  	/* reset for new row */
             iy--;
             }
@@ -2948,7 +3088,7 @@ int textureimg(wbp w, int width, int height,
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;      
+	 wc->maxstex *= 2;
 	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
 	 if (wc->stex==NULL) return Failed;
 	 }
@@ -2981,14 +3121,14 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
    if (m == 0)
       msk1 = 8;
    else               /* mask for first byte of row */
-      msk1 = 1 << (m - 1);		
+      msk1 = 1 << (m - 1);
    ix = width;
    iy = height-1;
    m = msk1;
    while (len--) {
       /* if hexadecimal character */
-      if (isxdigit(c = *s++)) {		
-         if (!isdigit(c))		
+      if (isxdigit(c = *s++)) {
+         if (!isdigit(c))
             c += 9;
          while (m > 0) {
 	    --ix;
@@ -3039,7 +3179,7 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;      
+	 wc->maxstex *= 2;
 	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
 	 if (wc->stex==NULL) return Failed;
 	 }
@@ -3086,7 +3226,7 @@ int texwindow2D(wbp w, wbp w2d)
    wcp wc = w2d->context;
 #ifdef XWindows
    wdp wd = w2d->window->display;
-   Display *stddpy = wd->display; 
+   Display *stddpy = wd->display;
    XColor colorcell;
    lastcp = wd->colors;
 #endif					/* XWindows */
@@ -3159,7 +3299,7 @@ int texwindow2D(wbp w, wbp w2d)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;      
+	 wc->maxstex *= 2;
 	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
 	 if (wc->stex==NULL) return Failed;
 	 }
@@ -3209,7 +3349,7 @@ int texwindow3D(wbp w1, wbp w2)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;      
+	 wc->maxstex *= 2;
 	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
 	 if (wc->stex==NULL) return Failed;
 	 }
@@ -3325,7 +3465,7 @@ int translate(wbp w, dptr argv, int i, dptr f)
 
    draw_code = si_s2i(redraw3Dnames, "Translate");
    if (draw_code == -1)
-       return Failed; 
+       return Failed;
    MakeInt(draw_code, &(rp->fields[1]));
 
    for (j = i; j < i+3; j++)
@@ -3366,7 +3506,7 @@ int rotate(wbp w, dptr argv, int i, dptr f)
 
    draw_code = si_s2i(redraw3Dnames, "Rotate");
    if (draw_code == -1)
-       return Failed; 
+       return Failed;
    MakeInt(draw_code, &(rp->fields[1]));
 
    /* strangeness here preserves name,x,y,z,... field ordering */
@@ -3411,7 +3551,7 @@ int scale(wbp w, dptr argv, int i, dptr f)
    MakeStr("Scale", 5, &(rp->fields[0]));
    draw_code = si_s2i(redraw3Dnames, "Scale");
    if (draw_code == -1)
-       return Failed; 
+       return Failed;
    MakeInt(draw_code, &(rp->fields[1]));
 
    for (j = i; j < i+3; j++)
@@ -3526,11 +3666,11 @@ dptr rec_structor3d(char *name)
    else if (!strcmp(name, "gl_font3d"))
       return rec_structinate(&gl_font3d, "gl_font3d", 3, gl_font_fields);
    else if (!strcmp(name, "gl_drawstring3d"))
-	return rec_structinate(&gl_drawstring3d, "gl_drawstring3d", 
+	return rec_structinate(&gl_drawstring3d, "gl_drawstring3d",
 				6, gl_drawstring3d_fields);
-   else if (!strcmp(name, "gl_endmark")) 
+   else if (!strcmp(name, "gl_endmark"))
       return rec_structinate(&gl_endmark, "gl_endmark", 3, gl_mark_fields);
-   else if (!strcmp(name, "gl_mark")) 
+   else if (!strcmp(name, "gl_mark"))
 	return rec_structinate(&gl_mark, "gl_mark", 7, gl_mark_fields);
 #endif					/* Graphics3D */
 
@@ -3581,10 +3721,10 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
       }
    else /* replace the curtex */
       wc->curtexture = curtex;
-   
-   
+
+
    glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-   
+
    if (ttype == 3)
       i = imagestr(w, name);
    else {
@@ -3592,10 +3732,10 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
       filename[MaxFileName] = '\0';
       i = fileimage(w, filename);
       }
-      
+
    if (i == Succeeded){
       wt2->texindex = wc->ntextures;
-      wc->ntextures++;      
+      wc->ntextures++;
       return wt2;
       }
    else{
@@ -3635,7 +3775,7 @@ int texture_24img(wbp w, struct imgdata im)
       tex[(iy*width+ix)*3+2] = t[2];
       t = t+3;
       if (++ix >= width) {
-         ix = 0;	
+         ix = 0;
  	/* reset for new row */
          iy--;
       }
@@ -3657,7 +3797,7 @@ int texture_24img(wbp w, struct imgdata im)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;      
+	 wc->maxstex *= 2;
 	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
 	 if (wc->stex==NULL) return Failed;
 	 }
@@ -3703,7 +3843,7 @@ int texture_16img(wbp w, struct imgdata im)
       tex[(iy*width+ix)*3+2] = t[2] && 0xF8;
       t = t+3;
       if (++ix >= width) {
-         ix = 0;	
+         ix = 0;
  	/* reset for new row */
          iy--;
       }
@@ -3725,7 +3865,7 @@ int texture_16img(wbp w, struct imgdata im)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;      
+	 wc->maxstex *= 2;
 	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
 	 if (wc->stex==NULL) return Failed;
 	 }
@@ -3745,18 +3885,18 @@ int
 drawstrng3d(wbp w, double x, double y, double z, char *s)
 {
    int xx=0;
-   char *p, *q; 
+   char *p, *q;
 #ifdef WIN32
-   char path[255] = "..\\src\\lib\\fonts\\"; 
+   char path[255] = "..\\src\\lib\\fonts\\";
 #else
-   char path[255] = "../src/lib/fonts/";  
+   char path[255] = "../src/lib/fonts/";
 #endif
    static char *full_name = NULL;
    FILE *f = 0;
 #if HAVE_FTGL
    int len_full_name=0, len_path=0, len_font=strlen(curr_font->name);
 
-   makecurrent(w); 
+   makecurrent(w);
    if (full_name==NULL) {
       full_name = (char *) malloc(sizeof(char)*255);
       findonpath("unicon", full_name, 255);
@@ -3790,14 +3930,14 @@ drawstrng3d(wbp w, double x, double y, double z, char *s)
    case 3: fprintf(stderr, "Return 3\n"); break;
       }
 
-   free(p); 
+   free(p);
    return ((xx==0)?Succeeded:Failed);
 #else
    return Failed;
 #endif
 }
 
-int 
+int
 add_3dfont(char *fname, int fsize, char ftype)
 {
 #if HAVE_FTGL
@@ -3822,7 +3962,7 @@ add_3dfont(char *fname, int fsize, char ftype)
    return 1;
 }
 
-wfp 
+wfp
 srch_3dfont(char *fname, int fsize, char ftype)
 {
 #if HAVE_FTGL
@@ -3922,9 +4062,9 @@ int section_length(wbp w)
 
    hp = BlkD(ws->funclist, List);
    elements = hp->size;
-   if (hp->size <= 0) 
+   if (hp->size <= 0)
         return 0;
-        
+
    bp = Blk(hp->listtail, Lelem);
    used=bp->nused;
    k = bp->first + used-1;
@@ -4026,7 +4166,7 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
    if (x1 > x2) {
       swapno(&x1, &x2);
       swapno(&y1, &y2);
-      }	
+      }
    dx = x2 - x1;
    dy = abs(y2 - y1);
    ee  = 0;
@@ -4041,7 +4181,7 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
    for (xx=x1; xx<=x2; xx++) {
       if (steep) {
 	 l = w3+ty;
-	 } 
+	 }
       else {
 	 l = w3+tx;
 	 }
@@ -4097,13 +4237,13 @@ int TexDrawPoint(wbp w, int texhandle, int x, int y)
 
 
 /*
- * Update Texture with new image data   
+ * Update Texture with new image data
  */
 
 int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 {
    wcp wc=w->context;
-   char bfmode = wc->buffermode; 
+   char bfmode = wc->buffermode;
    int wd, ht, l, nextLineOffset, i, j;
    GLubyte *tex;
    unsigned char *s;
@@ -4111,7 +4251,7 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
    tex = wc->stex[texhandle].tex;
    wd  = wc->stex[texhandle].width;
    ht  = wc->stex[texhandle].height;
- 
+
    /*  check for width and height.  the old texture with the new image  */
    if (wd<x+imd->width || ht<y+imd->height)
       return Failed;
@@ -4119,7 +4259,7 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
    s = imd->data ;  /* point to the image data*/
    l = (ht-y)*wd*3- ( wd-x)*3; /* first byte in texture data to be updated */
    nextLineOffset = (wd+imd->width)*3;
-  
+
    for (i=0; i<imd->height; i++) {
       for (j=0; j<imd->width; j++) {
 	 tex[l++] = (GLubyte) *s++;
@@ -4164,7 +4304,7 @@ int setselectionmode(wbp w, char* s)
    if (!strcmp("on", s))
 	   wc->selectionenabled = 1;
    else if (!strcmp("off", s))
-	   wc->selectionenabled = 0;  
+	   wc->selectionenabled = 0;
    else
 	   return Error;
 
@@ -4175,4 +4315,4 @@ int setselectionmode(wbp w, char* s)
 
    c_put(&(w->window->funclist), &f);
    return Succeeded;
-}   
+}

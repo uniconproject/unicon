@@ -4460,6 +4460,90 @@ function{1} Texcoord(argv[argc])
 end
 
 /*
+ * Normals (w, s) or Normals (w, L)
+ */
+
+"Normal(argv[]){1} - set texture coordinate to those defined by the string s or the list L "
+
+function{1} Normals(argv[argc])
+   abstract { return list }
+   body {
+      wbp w;
+      wcp wc;
+      int i, warg = 0, draw_code, num, j;
+      tended char* tmp;
+      tended struct descrip f, funcname, g, val;
+      tended struct b_list *func, *norms;
+#ifdef Arrays
+      tended struct descrip d;
+      tended struct b_realarray *ap;
+#endif					/* Arrays */
+
+      OptWindow(w);
+
+      wc = w->context;
+      num=argc-warg;
+      if (num < 1) /* missing the texture coordinates */
+	 runerr(103);
+
+      /* create a list */
+      Protect(func = alclist(0, MinListSlots+3), runerr(0));
+      f.dword = D_List;
+      f.vword.bptr = (union block*) func;
+      MakeStr("Normals", 7, &funcname);
+      c_put(&f, &funcname);
+
+      draw_code = si_s2i(redraw3Dnames, "Normals");
+      if (draw_code == -1)
+	 fail;
+      MakeInt(draw_code, &g);
+      c_put(&f, &g);
+      
+      /* check if the argument is a list */
+      if (argv[warg].dword == D_List) {
+         norms = (struct b_list*) argv[warg].vword.bptr;
+#ifdef Arrays
+	 ap = alcrealarray(norms->size);
+	 d.dword = D_Realarray;
+	 d.vword.bptr = (union block *) ap;
+	 wc->normals = ap->a;
+#endif					/* Arrays */
+
+         for (i = 0; i < norms->size; i++) {
+            c_traverse(norms, &val, i);
+            if (!cnv:C_double(val, wc->normals[i]))
+               runerr(102, val);
+	    }
+#ifdef Arrays
+	 c_put(&f, &d);
+#endif					/* Arrays */
+	 }
+	 /* the arguments are texture coordinates */
+	 else {
+#if HAVE_LIBGL
+#endif					/* HAVE_LIBGL */
+#ifdef Arrays
+	    ap = alcrealarray(num);
+	    d.dword = D_Realarray;
+	    d.vword.bptr = (union block *) ap;
+	    wc->normals = ap->a;
+	    wc->numnormals = num;
+#endif					/* Arrays */
+	    j=0;
+	    for (i = warg; i < argc; i++) {
+	       if (!cnv:C_double(argv[i], wc->normals[j++]))
+		  runerr(102, argv[i]);
+	       }
+#ifdef Arrays
+	 c_put(&f, &d);
+#endif					/* Arrays */
+	 }
+      c_put(&(w->window->funclist), &f);
+      return f;
+      }
+end
+
+/*
  * MultMatrix (w, L) 
  */
 

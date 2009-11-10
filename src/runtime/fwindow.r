@@ -15,7 +15,7 @@
 
 #ifdef Graphics
 
-
+
 
 "Active() - produce the next active window"
 
@@ -50,7 +50,7 @@ function{1} Alert(argv[argc])
       ReturnWindow;
       }
 end
-
+
 "Bg(w,s) - background color"
 
 function{0,1} Bg(argv[argc])
@@ -126,7 +126,7 @@ function{1} Clip(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "Clone(w, attribs...) - create a new context bound to w's canvas"
 
@@ -225,7 +225,7 @@ function{1} Clone(argv[argc])
       }
 end
 
-
+
 
 "Color(argv[]) - return or set color map entries"
 
@@ -282,7 +282,7 @@ function{0,1} Color(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "ColorValue(w,s) - produce RGB components from string color name"
 
@@ -335,7 +335,7 @@ function{0,1} ColorValue(argv[argc])
       fail;
       }
 end
-
+
 
 "CopyArea(w,w2,x,y,width,height,x2,y2) - copy area"
 
@@ -388,7 +388,7 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
       ReturnWindow;
       }
 end
-
+
 /*
  * Bind the canvas associated with w to the context
  *  associated with w2.  If w2 is omitted, create a new context.
@@ -440,7 +440,7 @@ function{0,1} Couple(w,w2)
       return result;
       }
 end
-
+
 /*
  * DrawArc(w, x1, y1, width1, height1, angle11, angle21,...)
  */
@@ -545,7 +545,7 @@ function{1} DrawCircle(argv[argc])
          runerr(102, argv[warg + r]);
       }
 end
-
+
 /*
  * DrawCurve(w,x1,y1,...xN,yN)
  *  Draw a smooth curve through the given points.
@@ -612,7 +612,7 @@ function{1} DrawCurve(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "DrawImage(w,x,y,s) - draw bitmapped figure"
 
@@ -739,7 +739,7 @@ function{0,1} DrawImage(argv[argc])
          return C_integer i;
       }
 end
-
+
 /*
  * DrawLine(w,x1,y1,...xN,yN)
  */
@@ -857,7 +857,7 @@ function{1} DrawLine(argv[argc])
         }
       }
 end
-
+
 /*
  * DrawPoint(w, x1, y1, ...xN, yN)
  */
@@ -968,7 +968,7 @@ function{1} DrawPoint(argv[argc])
         }
      }
 end
-
+
 /*
  * DrawPolygon(w,x1,y1,...xN,yN)
  */
@@ -1070,7 +1070,7 @@ function{1} DrawPolygon(argv[argc])
        }
      }
 end
-
+
 
 /*
  * DrawRectangle(w, x1, y1, width1, height1, ..., xN, yN, widthN,heightN)
@@ -1109,7 +1109,7 @@ function{1} DrawRectangle(argv[argc])
       ReturnWindow;
       }
 end
-
+
 /*
  * DrawSegment(x11,y11,x12,y12,...,xN1,yN1,xN2,yN2)
  */
@@ -1203,7 +1203,7 @@ function{1} DrawSegment(argv[argc])
       ReturnWindow;
       }
 end
-
+
 /*
  * DrawString(w, x1, y1, s1, ..., xN, yN, sN)
  */
@@ -1289,7 +1289,7 @@ function{1} DrawString(argv[argc])
       }
       }
 end
-
+
 
 "EraseArea(w,x,y,width,height) - clear an area of the window"
 
@@ -1333,7 +1333,7 @@ function{1} EraseArea(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "Event(w) - return an event from a window"
 
@@ -1405,7 +1405,7 @@ function{1} Event(argv[argc])
 	 runerr(143);
       }
 end
-
+
 
 "Fg(w,s) - foreground color"
 
@@ -1465,7 +1465,7 @@ function{0,1} Fg(argv[argc])
       return string(len, tmp);
       }
 end
-
+
 /*
  * FillArc(w, x1, y1, width1, height1, angle11, angle21,...)
  */
@@ -1540,7 +1540,7 @@ function{1} FillArc(argv[argc])
       ReturnWindow;
       }
 end
-
+
 /*
  * FillCircle(w, x1, y1, r1, angle11, angle21, ...)
  */
@@ -1564,7 +1564,7 @@ function{1} FillCircle(argv[argc])
          runerr(102, argv[warg + r]);
       }
 end
-
+
 /*
  * FillPolygon(w, x1, y1, ...xN, yN)
  */
@@ -1576,7 +1576,7 @@ function{1} FillPolygon(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0, draw_code;
+      int i, j, n, warg = 0, num, draw_code;
       XPoint *points;
       int dx, dy;
       OptWindow(w);
@@ -1587,11 +1587,14 @@ function{1} FillPolygon(argv[argc])
          struct descrip funcname, g;	/* do not need to be tended */
          tended struct descrip f;
          tended struct b_list *func;
-	   
+#ifdef Arrays
+         tended struct descrip d;
+         tended struct b_realarray *ap;
+#endif					/* Arrays */
          /* create a list to save function information */
          Protect(func = alclist(0, 14), runerr(0));
          f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
+         f.vword.bptr = (union block *) func;
          MakeStr("FillPolygon", 11, &funcname);
          c_put(&f, &funcname);
 
@@ -1601,35 +1604,51 @@ function{1} FillPolygon(argv[argc])
          MakeInt(draw_code, &g);
          c_put(&f, &g);
 
-	 if (argc-warg > 256) {
-	    v = calloc(argc-warg, sizeof (double));
+	 num = argc-warg;
+#ifdef Arrays
+	 ap = alcrealarray(num);
+	 d.dword = D_Realarray;
+	 d.vword.bptr = (union block *) ap;
+	 v = ap->a;
+#else					/* Arrays */
+	 if (num > 256) {
+	    v = calloc(num, sizeof (double));
 	    if (v == NULL) runerr(305);
 	    }
 	 else v = v2;
-
+#endif					/* Arrays */
          /* convert arguments and put them in the list */
-         for(i = 0; i<argc-warg; i++) {
+         for(i = 0; i<num; i++) {
             if (!cnv:C_double(argv[warg + i], v[i])) {
+#ifndef Arrays
 	       if (v != v2) free(v);
+#endif					/* Arrays */
                runerr(102, argv[warg+i]);
                }
+#ifndef Arrays
             c_put(&f, &argv[warg+i]);
+#endif					/* Arrays */
 	    }
+#ifdef Arrays
+	 c_put(&f, &d);
+#endif					/* Arrays */
          /* draw polygons */
          c_put(&(w->window->funclist), &f);
 
          CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, argc-warg, GL_POLYGON, w->context->dim);
+	    drawpoly(w, v, num, GL_POLYGON, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
 	    }
+#ifndef Arrays
 	 if (v != v2) free(v);
+#endif					/* Arrays */
 	 return f;
 	 }
-      else 
+      else
 #endif					/* Graphics3D */
       {
       CheckArgMultiple(2);
@@ -1695,7 +1714,7 @@ function{1} FillRectangle(argv[argc])
       }
 end
 
-
+
 
 "Font(w,s) - get/set font"
 
@@ -1748,7 +1767,7 @@ function{0,1} Font(argv[argc])
       return string(len,tmp);
       }
 end
-
+
 
 "FreeColor(argv[]) - free colors"
 
@@ -1783,7 +1802,7 @@ function{1} FreeColor(argv[argc])
       }
 
 end
-
+
 
 "GotoRC(w,r,c) - move cursor to a particular text row and column"
 
@@ -1811,7 +1830,7 @@ function{1} GotoRC(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "GotoXY(w,x,y) - move cursor to a particular pixel location"
 
@@ -1839,7 +1858,7 @@ function{1} GotoXY(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "Lower(w) - lower w to the bottom of the window stack"
 
@@ -1855,7 +1874,7 @@ function{1} Lower(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "NewColor(w,s) - allocate an entry in the color map"
 
@@ -1874,7 +1893,7 @@ function{0,1} NewColor(argv[argc])
       }
 end
 
-
+
 
 "PaletteChars(w,p) - return the characters forming keys to palette p"
 
@@ -1912,7 +1931,7 @@ function{0,1} PaletteChars(argv[argc])
       fail; /* NOTREACHED */ /* avoid spurious rtt warning message */
       }
 end
-
+
 
 "PaletteColor(w,p,s) - return color of key s in palette p"
 
@@ -1954,7 +1973,7 @@ function{0,1} PaletteColor(argv[argc])
       return string(len, s);
       }
 end
-
+
 
 "PaletteKey(w,p,s) - return key of closest color to s in palette p"
 
@@ -2000,7 +2019,7 @@ function{0,1} PaletteKey(argv[argc])
          fail;
       }
 end
-
+
 
 "Pattern(w,s) - sets the context fill pattern by string name"
 
@@ -2029,7 +2048,7 @@ function{1} Pattern(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "Pending(w,x[]) - produce a list of events pending on window"
 
@@ -2098,7 +2117,7 @@ function{0,1} Pending(argv[argc])
       }
 end
 
-
+
 
 "Pixel(w,x,y,width,height) - produce the contents of some pixels"
 
@@ -2190,7 +2209,7 @@ function{3} Pixel(argv[argc])
       }
       }
 end
-
+
 
 "QueryPointer(w) - produce mouse position"
 
@@ -2217,7 +2236,7 @@ function{0,2} QueryPointer(w)
       fail;
       }
 end
-
+
 
 "Raise(w) - raise w to the top of the window stack"
 
@@ -2233,7 +2252,7 @@ function{1} Raise(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "ReadImage(w, s, x, y, p) - load image file"
 
@@ -2336,7 +2355,7 @@ function{0,1} ReadImage(argv[argc])
       }
 end
 
-
+
 
 "WSync(w) - synchronize with server"
 
@@ -2362,7 +2381,7 @@ function{1} WSync(w)
       return w;
       }
 end
-
+
 
 "TextWidth(w,s) - compute text pixel width"
 
@@ -2384,7 +2403,7 @@ function{1} TextWidth(argv[argc])
       return C_integer i;
       }
 end
-
+
 
 "Uncouple(w) - uncouple window"
 
@@ -2403,7 +2422,7 @@ function{1} Uncouple(w)
       return w;
       }
 end
-
+
 "WAttrib(argv[]) - read/write window attributes"
 
 function{*} WAttrib(argv[argc])
@@ -2555,7 +2574,7 @@ function{*} WAttrib(argv[argc])
       fail;
       }
 end
-
+
 
 "WDefault(w,program,option) - get a default value from the environment"
 
@@ -2584,7 +2603,7 @@ function{0,1} WDefault(argv[argc])
       return string(l,prog);
       }
 end
-
+
 
 "WFlush(w) - flush all output to window w"
 
@@ -2600,7 +2619,7 @@ function{1} WFlush(argv[argc])
       ReturnWindow;
       }
 end
-
+
 
 "WriteImage(w,filename,x,y,width,height) - write an image to a file"
 
@@ -2664,7 +2683,7 @@ function{0,1} WriteImage(argv[argc])
       ReturnWindow;
       }
 end
-
+
 #ifdef MSWindows
 
 "WinAssociate(ext) - return the application associated with an extension"
@@ -2725,7 +2744,7 @@ function{0,1} WinPlayMedia(argv[argc])
       }
 end
 
-
+
 
 /*
  * Simple Windows-native pushbutton
@@ -4261,7 +4280,7 @@ function{1} Texture(argv[argc])
 	    }
 	 if (theTexture>=wc->ntextures) fail;
 	 theTexture++; /* should be check, probably no need for ++ */
-	 /*printf("DO WE EVER USE THIS HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH\n");*/
+	 /*printf("DO WE EVER USE THIS ?\n");*/
 	 wc->curtexture = theTexture;
 	 }
       /* check if the source is a record */
@@ -4334,9 +4353,8 @@ function{1} Texture(argv[argc])
    }
 end
 
-
-/* 
- * Texcoord (w, s) or Texture (w, L) 
+/*
+ * Texcoord (w, s) or Texture (w, L)
  */
 
 "Texcoord(argv[]){1} - set texture coordinate to those defined by the string s or the list L "
@@ -4346,22 +4364,27 @@ function{1} Texcoord(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, warg = 0, draw_code;
+      int i, warg = 0, draw_code, num;
       tended char* tmp;
       tended struct descrip f, funcname, mode, val, g;
       tended struct b_list *func, *coords;
+#ifdef Arrays
+      tended struct descrip d;
+      tended struct b_realarray *ap;
+#endif					/* Arrays */
 
       OptWindow(w);
 
       wc = w->context;
-      if (argc-warg < 1) /* missing the texture coordinates */
+      num=argc-warg;
+      if (num < 1) /* missing the texture coordinates */
 	 runerr(103);
 
-      /* create a list */ 
+      /* create a list */
       Protect(func = alclist(0, MinListSlots+3), runerr(0));
-      f.dword = D_List; 
-      f.vword.bptr = (union block*) func; 
-      MakeStr("Texcoord", 8, &funcname); 
+      f.dword = D_List;
+      f.vword.bptr = (union block*) func;
+      MakeStr("Texcoord", 8, &funcname);
       c_put(&f, &funcname);
 
       draw_code = si_s2i(redraw3Dnames, "Texcoord");
@@ -4369,20 +4392,21 @@ function{1} Texcoord(argv[argc])
 	 fail;
       MakeInt(draw_code, &g);
       c_put(&f, &g);
-     
+
       /* check if the argument is a list */
       if (argv[warg].dword == D_List) {
 #if HAVE_LIBGL
          if (glIsEnabled(GL_TEXTURE_GEN_S))
             glDisable(GL_TEXTURE_GEN_S);
          if (glIsEnabled(GL_TEXTURE_GEN_T))
-            glDisable(GL_TEXTURE_GEN_T); 
+            glDisable(GL_TEXTURE_GEN_T);
 #endif					/* HAVE_LIBGL */
          mode = zerodesc;
          c_put(&f, &mode);
-         wc->autogen = 0; 
+         wc->autogen = 0;
          wc->numtexcoords = 0;
          coords = (struct b_list*) argv[warg].vword.bptr;
+#ifndef Arrays
 	 if (coords->size > wc->ntexcoordsalced) {
 	    wc->texcoords = realloc(wc->texcoords,
 				    coords->size * sizeof(double));
@@ -4394,18 +4418,30 @@ function{1} Texcoord(argv[argc])
 	       }
 	    wc->ntexcoordsalced = coords->size;
 	    }
+#else					/* Arrays */
+	 ap = alcrealarray(coords->size);
+	 d.dword = D_Realarray;
+	 d.vword.bptr = (union block *) ap;
+	 wc->texcoords = ap->a;
+#endif					/* Arrays */
+
          for (i = 0; i < coords->size; i++) {
-            c_traverse(coords, &val, i); 
+            c_traverse(coords, &val, i);
             if (!cnv:C_double(val, wc->texcoords[i]))
                runerr(102, val);
-            c_put(&f, &val);
+#ifndef Arrays
+	    c_put(&f, &val);
+#endif					/* Arrays */
             wc->numtexcoords++;
 	    }
+#ifdef Arrays
+	 c_put(&f, &d);
+#endif					/* Arrays */
 	 }
       else {
-	 if (argc-warg == 1) { /* probably "auto" */
+	 if (num == 1) { /* probably "auto" */
 	    if (!cnv:C_string(argv[warg], tmp))
-	       runerr(103, argv[warg]); 
+	       runerr(103, argv[warg]);
 	    if (!strcmp(tmp, "auto")){
 	       wc->autogen = 1;
 	       wc->numtexcoords = 0;
@@ -4413,7 +4449,7 @@ function{1} Texcoord(argv[argc])
 	       if (!glIsEnabled(GL_TEXTURE_GEN_S))
 		  glEnable(GL_TEXTURE_GEN_S);
 	       if (!glIsEnabled(GL_TEXTURE_GEN_T))
-		  glEnable(GL_TEXTURE_GEN_T); 
+		  glEnable(GL_TEXTURE_GEN_T);
 #endif					/* HAVE_LIBGL */
 	       mode = onedesc;
 	       c_put(&f, &mode);
@@ -4426,36 +4462,48 @@ function{1} Texcoord(argv[argc])
 	    if (glIsEnabled(GL_TEXTURE_GEN_S))
 	       glDisable(GL_TEXTURE_GEN_S);
 	    if (glIsEnabled(GL_TEXTURE_GEN_T))
-	       glDisable(GL_TEXTURE_GEN_T); 
+	       glDisable(GL_TEXTURE_GEN_T);
 #endif					/* HAVE_LIBGL */
 	    mode = zerodesc;
 	    c_put(&f, &mode);
-	    wc->autogen = 0; 
+	    wc->autogen = 0;
 	    wc->numtexcoords = 0;
-	    if (argc - warg > wc->ntexcoordsalced) {
+#ifndef Arrays
+	    if (num > wc->ntexcoordsalced) {
 	       wc->texcoords = realloc(wc->texcoords,
-				       (argc-warg) * sizeof(double));
+				       (num) * sizeof(double));
 	       if (wc->texcoords == NULL) {
 		  /*
 		   * realloc fails; where did our old tex coordinates go?
 		   */
 		  runerr(305);
 		  }
-	       wc->ntexcoordsalced = (argc-warg);
+	       wc->ntexcoordsalced = (num);
 	       }
+#else					/* Arrays */
+	    ap = alcrealarray(num);
+	    d.dword = D_Realarray;
+	    d.vword.bptr = (union block *) ap;
+	    wc->texcoords = ap->a;
+#endif					/* Arrays */
 	    for (i = warg; i < argc; i++) {
 	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords++]))
 		  runerr(102, argv[i]);
+#ifndef Arrays
 	       c_put(&f, &argv[i]);
+#endif					/* Arrays */
 	       }
 	    }
+#ifdef Arrays
+	 c_put(&f, &d);
+#endif					/* Arrays */
 	 }
       /* there must be an even number of arguments */
       if (wc->numtexcoords % 2  != 0) {
 	 runerr(154);
          }
       c_put(&(w->window->funclist), &f);
-      return f; 
+      return f;
       }
 end
 
@@ -4544,7 +4592,7 @@ function{1} Normals(argv[argc])
 end
 
 /*
- * MultMatrix (w, L) 
+ * MultMatrix (w, L)
  */
 
 "MultMatrix(argv[]){1} - multiply transformation matrix by the list L "
@@ -4554,14 +4602,16 @@ function{1} MultMatrix(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, j, k, warg = 0, draw_code;
-      tended struct descrip f, funcname, val, g;
+      int i, k, warg = 0, draw_code;
+      tended struct descrip f, funcname, g, val;
       tended struct b_list *func, *matlist;
-#if HAVE_LIBGL
-      GLdouble matvalues[4][4];
-#else					/* HAVE_LIBGL */
-      double matvalues[4][4];
-#endif					/* HAVE_LIBGL */
+#ifndef Arrays
+      double matvalues[16];
+#else					/* Arrays */
+      tended struct descrip d;
+      tended struct b_realarray *ap;
+      double *matvalues;
+#endif					/* Arrays */
 
       OptWindow(w);
 
@@ -4569,11 +4619,11 @@ function{1} MultMatrix(argv[argc])
       if (argc-warg < 1) /* missing the matrix elements */
 	 runerr(103);
 
-      /* create a list */ 
+      /* create a list */
       Protect(func = alclist(0, MinListSlots+3), runerr(0));
-      f.dword = D_List; 
-      f.vword.bptr = (union block*) func; 
-      MakeStr("MultMatrix", 10, &funcname); 
+      f.dword = D_List;
+      f.vword.bptr = (union block*) func;
+      MakeStr("MultMatrix", 10, &funcname);
       c_put(&f, &funcname);
 
       draw_code = si_s2i(redraw3Dnames, "MultMatrix");
@@ -4581,24 +4631,34 @@ function{1} MultMatrix(argv[argc])
 	 fail;
       MakeInt(draw_code, &g);
       c_put(&f, &g);
-     
+#ifdef Arrays
+	 ap = alcrealarray(16);
+	 d.dword = D_Realarray;
+	 d.vword.bptr = (union block *) ap;
+	 matvalues = ap->a;
+#endif					/* Arrays */
+
       /* check if the argument is a list */
       if (argv[warg].dword == D_List) {
          matlist = (struct b_list*) argv[warg].vword.bptr;
-	 if (matlist->size != 16) {
+	 	if (matlist->size != 16) {
 	    /*
 	     * fails; transformation matrix should have 16 values
 	     */
-	    runerr(305, argv[warg]);
-	    }
-         for (i = 0; i < 4; i++) 
-	    for (j = 0; j < 4; j++){
-	       c_traverse(matlist, &val, i*4+j); 
-	       if (!cnv:C_double(val, matvalues[j][i]))
-		  runerr(102, val);
-	       c_put(&f, &val);
+	    	runerr(305, argv[warg]);
+	    	}
+         for (i = 0; i < 16; i++){
+	       c_traverse(matlist, &val, i);
+	       if (!cnv:C_double(val, matvalues[i]))
+		  	 runerr(102, val);
+#ifndef Arrays
+			c_put(&f, &val);
+#endif						/* Arrays */
 	       }
-	 }
+#ifdef Arrays
+		c_put(&f, &d);
+#endif
+	 	}
       else {
 	 /* the remaining arguments are matrix elements */
 	 if (argc - warg != 16 ) {
@@ -4608,18 +4668,23 @@ function{1} MultMatrix(argv[argc])
 	    runerr(305);
 	    }
 	 k=warg;
-	 for (i = 0; i < 4; i++) 
-            for (j = 0; j < 4; j++){
-	       if (!cnv:C_double(argv[k], matvalues[j][i]))
+	 for (i = 0; i < 16; i++){
+	       if (!cnv:C_double(argv[k], matvalues[i]))
 		  runerr(102, argv[k]);
+#ifndef Arrays
 	       c_put(&f, &argv[k++]);
+#endif						/* Arrays */
 	       }
+#ifdef Arrays
+		c_put(&f, &d);
+#endif						/* Arrays */
+
 	    }
       c_put(&(w->window->funclist), &f);
 #if HAVE_LIBGL
-      glMultMatrixd((GLdouble *)matvalues);	
+      glMultMatrixd((GLdouble *)matvalues);
 #endif					/* HAVE_LIBGL */
-      return f; 
+      return f;
       }
 end
 

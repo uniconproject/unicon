@@ -904,3 +904,97 @@ int cinserttable(union block **pbp, int n, dptr x)
       }
    return 0;
 }
+
+#ifdef Arrays
+/*
+ * Convert an array to a list 
+ */
+
+int arraytolist(struct descrip arr, struct descrip *res)
+{
+   tended struct b_list *lp;
+   int ndims, lsize, i; 
+   register struct b_lelem *lelemp;
+
+   if (arr.dword == D_Realarray){
+
+      struct b_realarray *ap = (struct b_realarray *) BlkLoc(arr);
+      if (ap->title != T_Realarray) return Error;
+      
+      ndims = (ap->dims?
+      ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
+      : 1);
+      
+      lsize = (ndims>1? ap->dims->Intarray.a[0]:
+       (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double));
+
+      Protect( lp = alclist(0, lsize), return Error);
+      res->dword = D_List;
+      res->vword.bptr = (union block *) lp;
+      lelemp = (struct b_lelem *) lp->listhead; /* Blk(lp->listhead,Lelem); */
+      
+
+      if (ndims==1){
+	 struct b_real *xp;
+	 for (i=0; i<lsize; i++){
+	    xp = alcreal((double)ap->a[i]);
+	    lelemp->lslots[i].vword.bptr = (union block *) xp;
+	    lelemp->lslots[i].dword = D_Real;
+	    lelemp->nused++;
+	    lp->size++;
+	    }
+         } /* if (ndims==1) */
+      else if (ndims==2){
+	 struct b_realarray *ap2;
+	 int n=ap->dims->Intarray.a[1];
+	 int base=0, j;
+
+	 for (i=0; i<lsize; i++){
+	    ap2 = alcrealarray(n);
+
+	    ap2->dims=NULL;
+	    for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
+	       ap2->a[j]=ap->a[base++];
+
+	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
+	    lelemp->lslots[i].dword = D_Realarray;
+	    lelemp->nused++;
+	 }
+
+	 } /* (ndims==2) */
+     else { /* (ndims > 2) */
+	 struct b_realarray *ap2;
+	 struct b_intarray *dims = NULL;
+	 int n=ap->dims->Intarray.a[1];
+	 int base=0, j;
+	 
+	 for(i=2; i<ndims; i++)
+	    n*=ap->dims->Intarray.a[i];
+
+	 for (i=0; i<lsize; i++){
+	    struct b_intarray *dims = NULL;
+	    
+	    ap2 = alcrealarray(n);
+	    dims = alcintarray(ndims-1); 	/* dimension is less by 1 */    
+	    ap2->dims = (union block *)dims;	
+	    for(j=1; j<ndims; j++)		/* copy the dimensions to the new array */
+	       dims->a[j-1]=ap->dims->Intarray.a[j];
+
+	    for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
+	       ap2->a[j]=ap->a[base++];
+
+	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
+	    lelemp->lslots[i].dword = D_Realarray;
+	    lelemp->nused++;
+	 }
+
+	 } /* (ndims==2) */
+ 
+      } /* Realrray */
+   else if (arr.dword == D_Intarray){
+
+      }
+
+   return Succeeded;
+}
+#endif					/* Arrays */

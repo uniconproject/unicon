@@ -3346,6 +3346,11 @@ char * abuf;
       case A_TEXMODE:
 	 AttemptAttr(settexmode(w, val));
 	 break;
+      case A_NORMMODE:
+	 if (!strcmp(val,"on")) wc->normmode=2;
+	 else if (!strcmp(val,"auto")) wc->normmode=1;
+	 else wc->normmode=0;
+	 break;
       case A_SLICES:
 	AttemptAttr(setslices(w, val));
 	break;
@@ -3794,6 +3799,20 @@ char * abuf;
       case A_TEXMODE:
 	gettexmode( w, abuf, answer );
         break;
+      case A_NORMMODE:
+	 if (!wc->normmode){
+	    strcpy(abuf, "off");
+	    MakeStr(abuf, 3, answer); 
+	 }
+	 else if (wc->normmode==1){
+	    strcpy(abuf, "auto");
+	    MakeStr(abuf, 4, answer); 
+	 }
+	 else{
+	    strcpy(abuf, "on");
+	    MakeStr(abuf, 2, answer); 
+	 }
+	 break;
       case A_TEXCOORD:
 	 strcpy(abuf, "auto");
 	 if (wc->autogen)

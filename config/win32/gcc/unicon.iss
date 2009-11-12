@@ -11,9 +11,13 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-AlwaysCreateUninstallIcon=yes
+;AlwaysCreateUninstallIcon=yes
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
+
+; This eliminates the need for restart for the new PATH to be effective
+ChangesEnvironment=yes
+
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4
@@ -82,4 +86,71 @@ Filename: "{app}\bin\UI.EXE"; Description: "Launch Windows Unicon"; Flags: nowai
 
 [UninstallDelete]
 Type: files; Name: "{app}\WU.url"
+
+[Registry]
+; Add unicon\bin to the path (current user only)
+;Root: HKCU; Subkey: "Environment"; ValueName: "Path"; ValueType: "string"; ValueData: "{app}\bin;{olddata}"; Check: NotOnPathAlready(); Flags: preservestringtype;
+
+; Add unicon\bin to the path (all users)
+Root: HKLM; Subkey: "SYSTEM\ControlSet001\Control\Session Manager\Environment"; ValueName: "Path"; ValueType: "string"; ValueData: "{app}\bin;{olddata}"; Check: NotOnAllUsersPathAlready(); Flags: preservestringtype;
+
+
+[Code]
+function NotOnPathAlready(): Boolean;
+var
+  BinDir, Path: String;
+begin
+  Log('Checking if unicon\bin dir is already on the %PATH%');
+  if RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', Path) then
+  begin // Successfully read the value
+    Log('HKCU\Environment\PATH = ' + Path);
+    BinDir := ExpandConstant('{app}\bin');
+    Log('Looking for unicon\bin dir in %PATH%: ' + BinDir + ' in ' + Path);
+    if Pos(LowerCase(BinDir), Lowercase(Path)) = 0 then
+    begin
+      Log('Did not find unicon\bin dir in %PATH% so will add it');
+      Result := True;
+    end
+    else
+    begin
+      Log('Found unicon\bin dir in %PATH% so will not add it again');
+      Result := False;
+    end
+  end
+  else // The key probably doesn't exist
+  begin
+    Log('Could not access HKCU\Environment\PATH so assume it is ok to add it');
+    Result := True;
+  end;
+end;
+
+function NotOnAllUsersPathAlready(): Boolean;
+var
+  BinDir, Path: String;
+begin
+  Log('Checking if unicon\bin dir is already on the %PATH%');
+  if RegQueryStringValue(HKEY_LOCAL_MACHINE, 'SYSTEM\ControlSet001\Control\Session Manager\Environment', 'Path', Path) then
+  begin // Successfully read the value
+    Log('HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment\PATH = ' + Path);
+    BinDir := ExpandConstant('{app}\bin');
+    Log('Looking for unicon\bin dir in %PATH%: ' + BinDir + ' in ' + Path);
+    if Pos(LowerCase(BinDir), Lowercase(Path)) = 0 then
+    begin
+      Log('Did not find unicon\bin dir in %PATH% so will add it');
+      Result := True;
+    end
+    else
+    begin
+      Log('Found unicon\bin dir in %PATH% so will not add it again');
+      Result := False;
+    end
+  end
+  else // The key probably doesn't exist
+  begin
+    Log('Could not access HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment\PATH so assume it is ok to add it');
+    Result := True;
+  end;
+end;
+
+
 

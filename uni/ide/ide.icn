@@ -868,13 +868,15 @@ $endif
             if find(CurrentTabItem().label||":",lst[i]) then
                nerrors +:= 1
             }
-         if find(".icn",CurrentTabItem().label) then nerrors -:= 1
+         if find(".icn",CurrentTabItem().label) & nerrors > 0 then
+	    nerrors -:= 1
          \MsgBox.set_contents(lst)
-         if ( \ (MsgBox.vsb)).set_value(*lst - MsgBox.vsb.page_size) then
-            MsgBox.refresh()
-         every s := !lst do s ? {
-            if (fn := ((tab(any(&letters))||=":")|"") || 
-               tab(many(&letters++&digits++' .\\/-'))) & =":" &
+	 if ( \ (MsgBox.vsb)).set_value(*lst - MsgBox.vsb.page_size) then
+	    MsgBox.refresh()
+	 every s := !lst do s ? {
+            if (not match("Script")) &
+	       (fn := ((tab(any(&letters))||=":")|"") || 
+			tab(many(&letters++&digits++' .\\/-'))) & =":" &
                ln := integer(tab(many(&digits))) & = ":" then {
                handle_openfile( , fn)
 #                 if not handle_openfile( , fn) then {
@@ -990,7 +992,8 @@ $else
 $endif
       if find(".icn", CurrentTabItem().label) then {
 $ifdef _UNIX
-         cmd := "./"||quotes(icodename) || " " || xargs
+	 if not match("./", icodename) then cmd ||:= "./"
+	 cmd := quotes(icodename) || " " || xargs
 $else
          cmd := quotes(icodename)||".exe"
 $endif
@@ -998,8 +1001,15 @@ $endif
 $ifdef _UNIX
       # path search, see if xterm exists on path, use it
       if pathfind("xterm", getenv("PATH")) then {
-         console :="xterm -hold -e script -c \""
-         cmd :=console ||\cmd || " \" " || wiconlog
+	 if (fun:=open("uname","pr")) &
+	     (unam := read(fun)) & close(fun) & match("Darwin",unam) then {
+	    console :="xterm -hold -e script " || wiconlog ||" "
+	    cmd :=console ||\cmd || " "
+	    }
+	 else {
+	    console :="xterm -hold -e script -c \""
+	    cmd :=console ||\cmd || " \" " || wiconlog
+	    }
          }
       else #just run without "console || ..."
          cmd ||:= " &> " || wiconlog

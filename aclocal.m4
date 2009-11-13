@@ -646,8 +646,12 @@ then
         AC_LANG_C
 	AC_CHECK_LIB(png, png_read_image, [png_cv_libpng=yes], [png_cv_libpng=no])
         AC_CHECK_HEADER(png.h, [png_cv_png_h=yes], [png_cv_png_h=no])
+#	AC_CHECK_HEADER(pngconf.h, [png_cv_pngconf_h=yes], [png_cv_pngconf_h=no])
+#	AC_CHECK_HEADER(zlib.h, [png_cv_zlib_h=yes], [png_cv_zlib_h=no])
+#	AC_CHECK_HEADER(zconf.h, [png_cv_zconf_h=yes], [png_cv_zconf_h=no])
         AC_LANG_RESTORE
-        if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes"
+	if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes" 
+	   # -a "$png_cv_pngconf_h" = "yes" -a "$png_cv_zlib_h" = "yes" -a "$png_cv_zconf_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them

@@ -542,28 +542,15 @@ $else
 $endif
          }
       current_dir := filedirectory
-      if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-         #sav := &window
-         #&window  := &null
-         #   Notice("Enter File Name")
-         #&window := sav
+      if /filename | filename=="" | filename[-1]==("\\"|"/") then
          return MsgBox.set_contents("Enter File Name")
-         #filename := "noname.icn"
-         #new_tabitem(,1,filename,"")
-         }
-#      if map(filename)[-4:0] == ".icp" then { # open project
-#         project := filename
-#         updateproject()
-#         }
+
       if  filename[-2:0]==(".*") then filename := filename[1:-2] 
-      file := open(filename, "ru") | {
-         MsgBox.set_contents(["Could not open file: " || filename])
-         return
-         }
       tab_label :=  file_name(filename)
       found := 1
       file_contents := []
       nchars := 0
+      if file := open(filename, "ru") then
       while line := read(file) do {
          if line[-1] == "\^m" then line := line[1:-1]
          put(file_contents, line)

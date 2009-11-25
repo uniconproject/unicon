@@ -1,9 +1,9 @@
- 
 #
 # evaluator.icn
 # Handles the main Runtime Monitoring facilities
 # Author : Ziad Al-Sharif
 # Date   : Feb 24, 2008 
+# e-mail : zsharif@gmail.com
 #
 
 $include "evdefs.icn"
@@ -27,7 +27,10 @@ class Evaluator(
    Trace,       # An object of the Tracing() class
    Internal,    # An object of the Internals() class
    External,    # An object of the Externals() class
+   DTA,         # an object of the TempAssert() class
    DState,      # An object of the State() class
+   
+   BuiltIns,    # A table that maps eventcodes to their methods 
    
    Message      # a string formated with the current message
    )
@@ -37,67 +40,69 @@ class Evaluator(
 # it some how for the need of the udb debugging facilities. 
 #
 method startEvaluator()
+   local obj, eventMask, valueMask
 
-   while EvGet(DState.eventMask, DState.valueMask) do {
-     #write("-->",evnames(&eventcode), ": ", image(&eventvalue))
-     if DState.State = RUN then {
-        case &eventcode of{
-          E_Line:{
-            Break.checkBreakpoint()
-            if DState.RunCode = NEXT then{ Step.checkNext() }
-            if DState.RunCode = STEP then{ Step.checkStep() }
-            }
-          E_Assign | E_Value :{
-            # check for Watch point on var
-            if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
-            }
-          E_Deref:{
-            if *DState.watchReadMask   > 0  then Watch.checkWatchRead()
-            }
-          E_Spos | E_Snew:{
-            if *DState.watchChangeMask > 0  then Watch.checkWatchScan()
-            }
-          E_Exit:{
-            DState.State := END
-            }
-          E_Error:{
-            DState.State := PAUSE
-            DState.RunCode := ERROR
-            showRunError()
-            }
-          E_Signal:{
-            DState.State := PAUSE
-            DState.RunCode := SIGNAL
-            } 
-          E_Collect:{
-            #???
-            }
-          E_EndCollect:{
-            #???
-            }  
-        } # end of case ecode
+   eventMask := DState.eventMask
+   valueMask := DState.valueMask
 
-        if *DState.traceMask > 0 &
-           member(DState.traceMask, &eventcode) then Trace.checkTraceBehavior()
+   while EvGet(eventMask, valueMask) do {
+      #write("----->",evnames(&eventcode), ": ", syntname(&eventvalue))
 
-        if Internal.enabled > 0 & 
-           member(Internal.eventMask, &eventcode) then Internal.forward()
-        if External.enabled > 0 & 
-           member(External.eventMask, &eventcode) then External.forward()
-        }
-        else
-           Write("The State is Not a RUN State !!!")
+      # Classical Debugging Tehniques 
+      if *(\DState.MaskTable[&eventcode]) > 0 then 
+         BuiltIns[&eventcode](self)
+
+      # Tracing Features 
+      if *DState.traceMask > 0 then{
+         if member(DState.traceMask, &eventcode) then 
+            Trace.checkTraceBehavior()
+         }
+
+      # Internal Extension Agents 
+      if Internal.enabled > 0 then{
+         every obj := !Internal.activeClients do 
+            if member(obj.eventMask, &eventcode) then 
+               obj.Forward()
+         }
+
+      # External Extension Agents  
+      if External.enabled > 0 then
+         External.Forward()
+
+      # Temporal Assertions
+      if *DTA.assertTable > 0 then  DTA.forward()
      
-     if DState.State = PAUSE then{ suspend }
-     if DState.State = END   then{ return  }
-     }
+      if DState.State = PAUSE then{ suspend }
+      else
+      if DState.State = END   then{ return  }
+      }
 end
 
 #
-# prints the RunTime error Messages
+# Handles UDB's E_Line Event
 #
-method showRunError()
+method handle_Stepping()
+
+   if *DState.breakMask > 0 then { Break.checkBreakpoint() }
+   if DState.RunCode = NEXT then { Step.checkNext()        }
+   if DState.RunCode = STEP then { Step.checkStep()        }
+end
+
+#
+# Handles UDB's E_Exit Events
+#
+method handle_Exit()
+   DState.State := END
+end
+
+#
+# Handles UDB's E_Error Events and prints the RunTime error Messages
+#
+method handle_Error()
    local cur_line, cur_file, cur_p, src
+
+   DState.State   := PAUSE
+   DState.RunCode := ERROR
 
    cur_file := keyword("file", Monitored) | "?"
    cur_line := keyword("line", Monitored) | "?"
@@ -109,6 +114,39 @@ method showRunError()
    Message ||:="\n   "||DState.srcFile.getSrcLine(cur_file, cur_line)
    Message ||:="\n   "||keyword("errortext",Monitored)
    DState.Write(Message)
+end
+
+#
+# Handles UDB's E_Signal Event
+#
+method handle_Signals()
+   DState.State   := PAUSE
+   DState.RunCode := SIGNAL
+end
+
+#
+# initializes the evaluator main loop functionalities
+#
+method initEvaluator()
+
+   BuiltIns[E_Line]   := self.__m.handle_Stepping
+
+   #Evaluator_handle_WatchChange
+   BuiltIns[E_Assign] := self.__s.Watch.__m.checkWatchChange
+   BuiltIns[E_Value]  := self.__s.Watch.__m.checkWatchChange
+
+   #Evaluator_handle_WatchRead
+   BuiltIns[E_Deref]  := self.__s.Watch.__m.checkWatchRead 
+
+   #Evaluator_handle_StringScanning
+   BuiltIns[E_Spos]   := self.__s.Watch.__m.checkWatchScan
+   BuiltIns[E_Snew]   := self.__s.Watch.__m.checkWatchScan
+
+   BuiltIns[E_Exit]   := self.__m.handle_Exit
+
+   BuiltIns[E_Error]  := self.__m.handle_Error
+
+   BuiltIns[E_Signal] := self.__m.handle_Signals
 end
 
 #
@@ -124,6 +162,10 @@ initially()
    Trace    := Tracing()       # The Dynamic Tracing Techniques
    Internal := Internals()     # The Internal monitors and/or visualizers 
    External := Externals()     # The External monitors with co-expression switch
+   DTA      := TempAssert()    # The Dynamic Temporal Assertions
+
+   BuiltIns := table()         # The main loop of the evaluator table
+   initEvaluator()             # Initialize the builtIns Evaluator Table
 
    Message  := ""
 end

@@ -3,9 +3,11 @@
 # Handles the main console based command interpreter
 # Author : Ziad Al-Sharif
 # Date   : Feb 24, 2008 
+# e-mail : zsharif@gmail.com
 #
 
 $include "defaults.icn"
+$include "evdefs.icn"
 
 class Console : Session(
    UP,         # The up arrow control key
@@ -13,7 +15,8 @@ class Console : Session(
    RIGHT,      # The right arrow control key
    LEFT,       # The left arrow control key
    ENTER,      # The enter key
-   BkSp        # The Back Space key
+   BkSp,       # The Back Space key
+   badKeys     # a set of all other control keys
    )
 
 #
@@ -41,7 +44,6 @@ $else # Windows console
       }
 $endif # _UNIX
    else{
-      #writes(e1)
       return e1
       }
 end
@@ -104,12 +106,14 @@ $endif
             break 
             }
          default:{
-            if /left then  
-               line ||:=ch
-            else{
-               line := line[1:left]||ch||line[left:0]
-               left +:= 1
-               }  
+            if not member(badKeys, ch) then{
+               if /left then  
+                  line ||:=ch
+               else{
+                  line := line[1:left]||ch||line[left:0]
+                  left +:= 1
+                  }
+               }
             }
          }#end of case
 
@@ -139,23 +143,27 @@ method get_CommandLine()
       DState.update_cmdHistory(line)
       cmd := []
       line ? {
-         while &pos <= *line do {
-            tab(many(WhiteSpace))
-            tok := tab(many(TOKEN)) | &null
-            put(cmd, \tok)
-            tab(many(WhiteSpace))
-            op := tab(many(OPCHAR))  | &null
-            if \op & not (cmd[1] == ("b"|"break"))then{
-               if op ==":" then{
-                  #write("-------op=",op)
-                  tok := tab(many(TOKEN)) | ""
-                  tok := cmd[-1]||op||tok
-                  cmd[-1]:=tok
-                  }
-               else
-                  put(cmd,\op)
-               }
-            }
+          while &pos <= *line do {
+             tab(many(WhiteSpace))
+             tok := tab(many(TOKEN)) | &null
+             put(cmd, \tok)
+             tab(many(WhiteSpace))
+
+             op := tab(many(OPCHAR))  | &null
+             put(cmd,\op)
+             tab(many(WhiteSpace))
+
+             op := tab(many(BRACKETS)) | &null
+             put(cmd,\op)
+             tab(many(WhiteSpace))
+
+             op := tab(many(PARENTHESES)) | &null
+             put(cmd,\op)
+             tab(many(WhiteSpace))
+
+             op := tab(many(BRACES)) | &null
+             put(cmd,\op)
+             }
          }
       #write(ximage(cmd))
       return cmd
@@ -180,24 +188,53 @@ method startConsole(argv)
           # when the program is PAUSED, we can make use of cmds such as:
           # [run: re-execute],[break],[step],[next],[cont],[quit],[up],[down]
           # [frame], [print], [where]
+
+$ifdef TEST
           DState.RunCode := RUN
+          #Debug.Internal.cmdEnable("counter") ### TEST E_Deref
+          #Debug.External.cmdLoad(["-call","counter"]) ### TEST E_Deref
+          #Debug.External.cmdLoad(["counter"]) ### TEST E_Deref
+
+          #Debug.Internal.cmdEnable("counter_pcall") ### TEST E_Pcall
+          #Debug.External.cmdLoad(["-call","counter_pcall"]) ### TEST E_Pcall
+          #Debug.External.cmdLoad(["counter_pcall"]) ### TEST E_Pcall
+
+          #Debug.Internal.cmdEnable("counter_line") ### TEST E_Line
+          #Debug.External.cmdLoad(["-call","counter_line"]) ### TEST E_Line
+          #Debug.External.cmdLoad(["counter_line"]) ### TEST E_Line
+
+          #Debug.Internal.cmdEnable("counter_syntax") ### TEST E_Syntax
+          #Debug.External.cmdLoad(["-call","counter_syntax"]) ### TEST E_Syntax
+          #Debug.External.cmdLoad(["counter_syntax"]) ### TEST E_Syntax
+
+          #cmd:=["assert","test_assert",":","6","sometime","()","{","i","<=","n","}"]
+          #push(DState.cmdHistory,"assert test_assert:6 sometime(){ i <= n }")
+          #cmd := ["assert","test_assert",":","6","always","()","{","i","<=","n","}"]
+          #push(DState.cmdHistory,"assert test_assert:6 always(){ i <= n }")
+          #Debug.DTA.cmdAssert(cmd)
+          #DState.State := RUN
+$endif
           every startSession() do{
              old_State := DState.State
              while DState.State ~= RUN do{
                case DState.State of {
                  END | 
-                 QUIT:    { break break next 
-                            #-- TEST: for The Sake of getting the Time right
-                            ###break break break 
+                 QUIT:    { 
+$ifndef TEST
+                            break break next
+$else 
+                            #-- Automated TEST: to get the Time right
+                            break break break 
+$endif
                           }
                  CONTINUE:{ DState.State   := RUN
                             DState.RunCode := CONTINUE    
                             next                       }
                  STEP:    { DState.State   := RUN
-                            DState.RunCode := STEP        
+                            DState.RunCode := STEP
                             next                       }
                  NEXT:    { DState.State   := RUN
-                            DState.RunCode := NEXT        
+                            DState.RunCode := NEXT
                             next                       }
                  RERUN:   { DState.State   := RUN
                             break break next           }
@@ -237,6 +274,26 @@ method startConsole(argv)
    }# end while DState.State
 end
 
+method otherControls()
+   local F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12
+   local PgUp, PgDn, Ins, Del, End, Home
+
+$ifdef _UNIX 
+   F1 := "\eOP";  F2 := "\eOQ";  F3 := "\eOR";  F4 := "\eOS"
+   F5 := "\e[1";  F6 := "\e[1";  F7 := "\e[1";  F8 := "\e[1"
+   F9 := "\e[20"; F10:= "\e[21"; F11:= "\e[23"; F12:= "??"
+
+   PgUp:= "\e[5~"; PgDn:= "\e[6~"; Ins := "\e[2~"; Del := "\e[3~"
+   End := "\e[F";  Home:= "\e[H"
+
+   return set(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+              PgUp, PgDn, Ins, Del, End, Home)
+$else
+   return set()
+$endif
+
+end
+
 #
 #  Initialization
 #
@@ -255,6 +312,7 @@ $ifdef _UNIX
    LEFT  := "\e[D"
    ENTER := "\n"
    BkSp  := "\d"
+   badKeys := otherControls()
 $else
    UP    := "\xe0H"
    DOWN  := "\xe0P"
@@ -262,5 +320,6 @@ $else
    LEFT  := "\xe0K"
    ENTER := "\r"
    BkSp  := "\b"
+   badKeys := otherControls()
 $endif
 end

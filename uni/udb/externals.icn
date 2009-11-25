@@ -1,10 +1,10 @@
-
 #
 # externals.icn
 # handles the external monitores that can be loaded 
 # to run in-conjunction with UDB
 # Author  : Ziad Al-Sharif
 # Date    : Feb 24, 2008
+# e-mail  : zsharif@gmail.com
 #
 
 $include "defaults.icn"
@@ -17,6 +17,7 @@ record ExternalClient(
    Id,        # a unique identification number
    State,     # The current external monitor program state
    Prog,      # The program handler (co-expression) of the external monitor
+   Proc,      # The program events handler of the external monitor
    eventMask  # The eventmask of the external monitor program
    )
 
@@ -29,19 +30,43 @@ class Externals : Agent()
 # This method receives a command list from UDB and loads an
 # external monitor program into a new co-expression
 #
-method cmdLoad(name)
-   local prog, param, mask := &cset, client, old
-   
-   if \name[2] then param := name[2:0]
-   if \(prog := load(name[1], param)) then{
-      variable("&eventsource", prog ) := &main
-      mask := @ prog
+method cmdLoad(Name)
+   local prog, mproc, name, param, mask := &cset, client, old, x, flag
+ 
+   #write(ximage(Name))
+
+   if *Name = 1 then{
+      name  := Name[1]
+      param := [] #name[2:0]
+      } 
+   else if *Name >= 2 then{
+         flag := Name[1]
+         name := Name[2]
+         param := Name[3:0]
+         }
+
+   if \(prog := load(name, param)) then{
+      if /flag | flag == "coexpression" then{
+         variable("&eventsource", prog ) := &main
+         mask := @ prog
+         #write("external program is loaded: Co-exper")
+         }
+      else if \flag & flag == ("-semi"|"-call") then{
+         mproc := variable("handle_Events", prog) #:= &main
+         #write("external program is loaded: Proc-call")
+         mask  := mproc(&eventcode, &eventvalue) #@ prog
+         }
+
       count +:= 1
       enabled +:= 1
-      insert(activeClients, name)
-      client := ExternalClient(name, count, ENABLED, prog, mask)
+      client := ExternalClient(name, count, ENABLED, prog, mproc, mask)
+      insert(activeClients, client)
    
-      # if you have tow or more monitors of the same name,
+      # debug the agent mask
+      #every x := !mask do
+      #   write("-->",evnames(x))
+
+      # if you have two or more monitors of the same name,
       # then build a list for them
       if /Clients[name] then{
          Clients[name] := client
@@ -64,13 +89,23 @@ end
 #
 # It handles the updates in each client by forwarding relevent events
 #
-method forward()
-   local name
+method Forward()
+   local obj
 
-   ## what if there is more than one monitor loaded with the same name??
-   every name := !activeClients do
-      if member(Clients[name].eventMask, &eventcode) then
-         event(,,Clients[name].Prog)
+   every obj := !activeClients do {
+      if member(obj.eventMask, &eventcode) then{
+         if \obj.Proc then{
+            obj.Proc(&eventcode, &eventvalue)
+            #write("\n-inter-program-proc->",evnames(&eventcode),
+            #                           ": ",image(&eventvalue))
+            }
+         else{
+            EvSend(,,obj.Prog)
+            #write("\n-Co-Expression->",evnames(&eventcode),
+            #                      ": ",image(&eventvalue))
+            }
+         }
+      }
 end
 
 #

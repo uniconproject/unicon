@@ -1,9 +1,9 @@
-
 #
 # data.icn
 # Handles the print debugging faclities found in debuggers such as GDB
 # Author  : Ziad Al-Sharif
 # Date    : Feb 24, 2008
+# e-mail  : zsharif@gmail.com
 #
 
 $include "evdefs.icn"
@@ -88,12 +88,14 @@ end
 # returns the expression value or fails
 # used by cmdPrint() and assignVar()  
 #
-method getVarValue(expr, level)
-   local Value, ref, var, Var, index:=[]
+method getVarValue(Expr, level)
+   local Value, x, expr:="", ref, var, Var, index:=[]
   
-   # if the string expr is no a litteral (string value)
+   every x := !Expr do expr ||:= x
+
+   # if the string in the expr is not a litteral (string value)
    if expr[1] ~== "\"" then{
-      index := parsePrintExpression(expr)
+      index := parsePrintExpression(Expr)
       if *index = 0 then fail
 
       var := get(index)
@@ -118,7 +120,7 @@ method getVarValue(expr, level)
       return Value
       }
    else
-      return expr 
+      return expr[2:-1]
 end
 
 
@@ -127,38 +129,72 @@ end
 # get a reference for an element of a structure
 #
 method getVarReference(Var, index, level)
-   local v, j, i1, i2, x, fld
+   local v, j, i1, i2, x1,x2, x, fld
 
    if *index = 0 then return Var
 
+   #write("====",ximage(Var),"====",ximage(index))
+ 
    case type(Var) of{
       "integer"|"real"|"null"|"cset"|"set"|"file"|"window"|
       "procedure"|"co-expression"|"external":{
            return Var
            }
       "string":{
-           x := get(index)
-           if j := find(":",x) then{
-              i1 := integer(x[1:j])
-              i2 := integer(x[j+1:0])
-              Var := Var[i1:i2]
-              return Var
-              }
-           else if v := variable(x, Monitored, level, 1) | integer(x) then{
+           x1 := get(index)
+           x2 := get(index)
+           if \x1 & /x2 then{
+              v := variable(x1, Monitored, level) | integer(x1)
               Var := Var[v]
               return Var
               }
-           fail
+           else if \x1 & \x2 then{
+              i1 := variable(x1, Monitored, level) | integer(x1) 
+              i2 := variable(x2, Monitored, level) | integer(x2) 
+              Var := Var[i1:i2]
+              return Var
+              }
+           else   fail
            }
       "list":{
-           x := get(index)
-           if v := variable(x, Monitored, level, 1) | integer(x) then{
-              if type(v) == "integer" & member(Var, v) then{
+           x1 := get(index)
+           x2 := get(index)
+           if \x1 & /x2 then{
+              v := variable(x1, Monitored, level) | integer(x1)
+              if abs(v) <= *Var then{
                  Var := Var[v]
-                 return getVarReference(Var, index, level)
+                 return Var #getVarReference(Var, index, level)
+                 }
+              else fail 
+              }
+           else if \x1 & \x2 then{
+              if x2 == "][" then{
+                 v := variable(x1, Monitored, level) | integer(x1) 
+                 if abs(v) <= *Var then{
+                    Var := Var[v]
+                    return getVarReference(Var, index, level)
+                    }
+                 else fail 
+                 }
+              else if x1 == "][" then{
+                 v := variable(x2, Monitored, level) | integer(x2) 
+                 if abs(v) <= *Var then{
+                    Var := Var[v]
+                    return getVarReference(Var, index, level)
+                    }
+                 else fail 
+                 }
+              else{
+                 i1 := variable(x1, Monitored, level) | integer(x1) 
+                 i2 := variable(x2, Monitored, level) | integer(x2)
+                 if abs(i1) <= *Var & abs(i2) <= *Var then{
+                    Var := Var[i1:i2]
+                    return getVarReference(Var, index, level)
+                    }
+                 else fail 
                  }
               }
-           fail
+           else   fail
            }
       "table":{
            x := get(index)
@@ -172,15 +208,22 @@ method getVarReference(Var, index, level)
            fail
            }
       # "record" & "object" do not have the word "record" in their type
-      default:{
+       default:{
            x := get(index)
-           every fld := fieldnames(Var) do{
-              if x === fld then{
-                 Var := Var[string(x)]
-                 return getVarReference(Var, index, level)
-                 }
+           if x == "." then x := get(index)
+
+           if \x then{
+              every fld := fieldnames(Var) do{
+                 if x === fld then{
+                    Var := Var[string(x)]
+                    return getVarReference(Var, index, level)
+                    }
+                  }
+              fail
               }
-           fail
+           else{
+              return getVarReference(Var, index, level)
+              }
            }
       }
 end
@@ -190,7 +233,7 @@ end
 # to assign a value to any variable or element of a structure
 #
 method setVarReference(lvar, index, level, value)
-   local v, j, i1, i2, x, fld, Var
+   local v, j, i1, i2, x, x1, x2, fld, Var
 
    if *index = 0 then{
       if variable(lvar, Monitored, level) then{
@@ -216,36 +259,37 @@ method setVarReference(lvar, index, level, value)
            else fail
            }
         "string":{
-           if *index = 0 then{
-              if j := find(":",x) then{
-                 # what if either of i1 or i2 were variables??
-                 i1 := integer(x[1:j])
-                 i2 := integer(x[j+1:0])
-                 variable(lvar, Monitored, level, 1) := 
-                          Var[1:i1]|| string(value) ||Var[i2:0]
-                 }
-              else if v := variable(x, Monitored, level, 1) | integer(x) then{
-                    variable(lvar, Monitored, level, 1) := 
-                             Var[1:v]||string(value) || Var[v+1:0]
-                 } 
+           x1 := x
+           x2 := get(index)
+           if \x1 & /x2 then{
+              v := variable(x1, Monitored, level) | integer(x1)
+              variable(lvar, Monitored, level, 1) := 
+                       Var[1:v] || string(value) || Var[v+1:0]
               return
               }
-           else{
-              fail
+           else if \x1 & \x2 then{
+              i1 := variable(x1, Monitored, level) | integer(x1) 
+              i2 := variable(x2, Monitored, level) | integer(x2)
+              variable(lvar, Monitored, level, 1) := 
+                       Var[1:i1]|| string(value) ||Var[i2:0]
+              return
               }
+           else   fail
            }
         "list":{
-           if v := variable(x, Monitored, level, 1) | integer(x) then{
-              if type(v) == "integer" & member(Var, v) then{
-                 if *index = 0 then{
-                    Var[v] := value
-                    return
-                    } 
-                 else Var := Var[v]
+           if x ~== "][" then{ 
+              if v := variable(x, Monitored, level, 1) | integer(x) then{
+                 if type(v) == "integer" & member(Var, v) then{
+                    if *index = 0 then{
+                       Var[v] := value
+                       return
+                       }
+                    else Var := Var[v]
+                    }
+                 else fail
                  }
               else fail
               }
-           else fail
            }
         "table":{
            if v := variable(x, Monitored, level, 1) |
@@ -292,16 +336,18 @@ end
 # finds the var reference and prints its value acording
 # to the action such as */! or the value itself
 #
-method printVar(expr, action, level)
-   local Var, var, ref, index, x
+method printVar(Expr, action, level)
+   local Var, var, ref, index, x, expr:=""
   
-   index := parsePrintExpression(expr)
+   index := parsePrintExpression(Expr)
    if *index = 0 then{
       Message :="\n   \""||expr||"\" is Unkown Expression !!!"
       DState.Write(Message)
       return
       }
    
+   every x := !Expr do expr ||:= x
+
    var := get(index)
    if Var := variable(var, Monitored, level) then
       if (ref := getVarReference(Var, index, level)) & *index = 0 then{
@@ -335,17 +381,21 @@ end
 #
 # sets a variable value according to the user input
 #
-method assignVar(lexpr, rexpr, level)
-   local lhs, lvar , rvalue
+method assignVar(Lexpr, Rexpr, level)
+   local lhs, lvar , rvalue, x, lexpr:="", rexpr:=""
 
-   lhs := parsePrintExpression(lexpr)
+   every x := !Lexpr do lexpr ||:= x
+   every x := !Rexpr do rexpr ||:= x
+
+   lhs := parsePrintExpression(Lexpr)
    if *lhs = 0 then{
       Message :="\n   The expression \""||lexpr||"\" is Unkown !!!"
       DState.Write(Message)
       return
       }
 
-   if rvalue := getVarValue(rexpr, level) then{
+   if rvalue := getVarValue(Rexpr, level) then{
+      #write("---lhs------->>",ximage(lhs),"--",image(rvalue))
       lvar := get(lhs)
       if setVarReference(lvar, lhs, level, rvalue) then
          Message :="\n   Assigning \""||lexpr||"\" with \""||
@@ -365,7 +415,7 @@ end
 # procedures that are still in the stack can also be viewed.
 #
 method cmdPrint(cmd)
-   local i, expr, action, level, cur_level
+   local i, j, expr, action, level, cur_level, left, right
 
    if DState.State ~= PAUSE then{
       DState.State := ERROR
@@ -376,58 +426,60 @@ method cmdPrint(cmd)
       }
 
    cur_level := keyword("level",Monitored)
-   if \cmd[2] then{
-      if cmd[2] == ("*"|"!"|"?") then{
-         action := cmd[2]
-         delete(cmd,2)
+   level     := DState.cur_Frame
+   if level > cur_level then{ 
+      Message   :="\n   Frame #"||level||" is not valid"
+      Message ||:="\n   The stack currentlly has "||cur_level||" frame(s)"
+      DState.Write(Message)
+      return            
+      }
+
+   if \cmd[1] then{
+      if cmd[1] == ("*"|"!"|"?") then{
+         action := cmd[1]
+         delete(cmd,1)
          }
-      if \cmd[3] & cmd[3] == ("="|":=") & \cmd[4] then{
-         #print a = 10 [level] or #print &pos:=5
-         if \cmd[5] then level := integer(cmd[5]) | 0 
-         else            level := DState.cur_Frame
-         if level > cur_level then{ 
-            Message   :="\n   Frame #"||level||" is not valid"
-            Message ||:="\n   The stack currentlly has "||cur_level||" frame(s)"
-            DState.Write(Message)
-            return            
+      every j := 1 to *cmd do{
+         if cmd[j] == ("="|":=") then{
+            left   := cmd[1:j]
+            right  := cmd[j+1:0]
+            action := ":=" 
+            break
             }
-         if i := find("&", cmd[2]) then 
-            assignKeyword(cmd[2], cmd[4], level)
+         }
+      if \action & action == ":=" then{
+         if left[1] == "&" then{ 
+            left := "&"||left[2]
+            assignKeyword(left, right, level)
+            } 
          else
-            assignVar(cmd[2], cmd[4], level)
+            assignVar(left, right, level)
          }
       else{
-         if \cmd[3] then level := integer(cmd[3]) | 0 
-         else            level := DState.cur_Frame
-         if level > cur_level then{ 
-            Message   :="\n   Frame #"||level||" is not valid"
-            Message ||:="\n   The stack currentlly has "||cur_level||" frame(s)"
-            DState.Write(Message)
-            return            
-            }
-         expr := cmd[2]
+         expr := cmd
          #print -g [level]
-         if expr == ("-g"|"-G"|"-globals") then{
+         if expr[1] == ("-g"|"-G"|"-globals") then{
             printGlobals(level)
             return
             }
          #print -l [level]
-         else if expr == ("-l"|"-L"|"-locals") then{
+         else if expr[1] == ("-l"|"-L"|"-locals") then{
             printLocals(level)
             return
             }
          #print -p [level]
-         else if expr == ("-p"|"-P"|"-params") then{
+         else if expr[1] == ("-p"|"-P"|"-params") then{
             printParams(level)
             return
             }
          #print -s [level]
-         else if expr == ("-s"|"-S"|"-static") then{
+         else if expr[1] == ("-s"|"-S"|"-static") then{
             printStatics(level)
             return
             }
          #print &pos or #print *&subject 
-         else if expr[1] == "&" then{ 
+         else if expr[1] == "&" then{
+            expr := "&"||expr[2] 
             printKeyword(expr, action, level)
             }
          #print x or #print *s
@@ -436,7 +488,7 @@ method cmdPrint(cmd)
          }
       }
    else{
-      Message   :="\n   The command \""||cmd[1]||"\" is incomplete"
+      Message :="\n   The command \""||DState.cmdHistory[1]||"\" is incomplete"
       Message ||:="\n   Try \"help\" or \"help print\" for assistance."
       DState.Write(Message)
       }
@@ -449,7 +501,7 @@ method assignKeyword(lexpr, rexpr, level)
    local data
 
    #print &pos:=10
-   if isValidKeyword(lexpr[2:0]) then{
+   if isValidKeyword(lexpr) then{
       if data := getVarValue(rexpr,level) then{
          variable(lexpr, Monitored, 0, 1) := data
          Message :="\n   Assigning \""||lexpr||"\" with \""||
@@ -478,13 +530,13 @@ method printKeyword(expr, action, level)
    local data
 
    #print &pos or #print *&subject
-   if isValidKeyword(expr[2:0]) then{
-      if data := isGlobalKeyword(expr[2:0]) then{
+   if isValidKeyword(expr) then{
+      if data := isGlobalKeyword(expr) then{
          Message :="\n   "|| expr ||" = "|| data
          DState.Write(Message)
          return
          }
-      else if data := isGenKeyword(expr[2:0], action) then{
+      else if data := isGenKeyword(expr, action) then{
          Message :="\n   "|| expr ||" = "|| data
          DState.Write(Message)
          return
@@ -531,34 +583,34 @@ method isGlobalKeyword(expr)
 
    if member(GlobalKeywords, expr) then{
       case expr of{
-         "clock":   { return data := &clock       }
-         "date":    { return data := &date        }
-         "now":     { return data := &now         }
-         "dateline":{ return data := &dateline    }
-         "digits":  { return data := &digits      }
-         "e":       { return data := &e           }
-         "fail":    { return data := "&fail"      }
-         "host":    { return data := &host        }
-         "lcase":   { return data := &lcase       }
-         "letters": { return data := &letters     }
-         "null":    { return data := image(&null) }
-         "phi":     { return data := &phi         }
-         "pi":      { return data := &pi          }
-         "dump":    { return data := &dump        }
-         "ucase":   { return data := &ucase       }
-         "version": { return data := &version     }
-         "lpress":  { return data := &lpress      }
-         "mpress":  { return data := &mpress      }
-         "rpress":  { return data := &rpress      }
-         "lrelease":{ return data := &lrelease    }
-         "mrelease":{ return data := &mrelease    }
-         "rrelease":{ return data := &rrelease    }
-         "ldrag":   { return data := &ldrag       }
-         "mdrag":   { return data := &mdrag       }
-         "rdrag":   { return data := &rdrag       }
-         "resize":  { return data := &resize      }
-         "ascii":   { return data := &ascii       }
-         "cset":    { return data := &cset        }
+         "&clock":   { return data := &clock       }
+         "&date":    { return data := &date        }
+         "&now":     { return data := &now         }
+         "&dateline":{ return data := &dateline    }
+         "&digits":  { return data := &digits      }
+         "&e":       { return data := &e           }
+         "&fail":    { return data := "&fail"      }
+         "&host":    { return data := &host        }
+         "&lcase":   { return data := &lcase       }
+         "&letters": { return data := &letters     }
+         "&null":    { return data := image(&null) }
+         "&phi":     { return data := &phi         }
+         "&pi":      { return data := &pi          }
+         "&dump":    { return data := &dump        }
+         "&ucase":   { return data := &ucase       }
+         "&version": { return data := &version     }
+         "&lpress":  { return data := &lpress      }
+         "&mpress":  { return data := &mpress      }
+         "&rpress":  { return data := &rpress      }
+         "&lrelease":{ return data := &lrelease    }
+         "&mrelease":{ return data := &mrelease    }
+         "&rrelease":{ return data := &rrelease    }
+         "&ldrag":   { return data := &ldrag       }
+         "&mdrag":   { return data := &mdrag       }
+         "&rdrag":   { return data := &rdrag       }
+         "&resize":  { return data := &resize      }
+         "&ascii":   { return data := &ascii       }
+         "&cset":    { return data := &cset        }
          default:   { fail }
          }
       }
@@ -574,7 +626,7 @@ method isGenKeyword(expr, action)
 
    if member(GenKeywords, expr) then{
       case expr of{
-         "features":{
+         "&features":{
              if \action == "!" then{
                 data:=""
                 every x := &features do data ||:="\n      "|| x
@@ -585,7 +637,7 @@ method isGenKeyword(expr, action)
                 fail
              return data
              }
-         "regions":{
+         "&regions":{
              L := []
              every x := keyword("&regions", Monitored) do{
                 put(L,x)
@@ -596,7 +648,7 @@ method isGenKeyword(expr, action)
              data ||:= "\n   --Block  Region = "||L[3]||" Byte"
              return data
              }
-         "storage":{
+         "&storage":{
              L := []
              every x := keyword("&storage", Monitored) do{
                 put(L,x)
@@ -607,7 +659,7 @@ method isGenKeyword(expr, action)
              data ||:= "\n   --Block  Region     = "||L[3]||" Byte"
              return data
              }
-         "allocated":{
+         "&allocated":{
              L := []
              every x := keyword("&allocated", Monitored) do{
                 put(L,x)
@@ -618,7 +670,7 @@ method isGenKeyword(expr, action)
              data ||:= "\n   --Block  Region  = "||L[4]||" Byte"
              return data
              }
-         "collections":{
+         "&collections":{
              L := []
              every x := keyword("&collections", Monitored) do{
                 put(L,x)
@@ -637,35 +689,34 @@ end
 
 #
 # parse the expression into tokens, mainVar is tokens[1]
-# ie L[2], L[3][4], L[1].x, S[5:-5]
+# ie L[2], L[3][4], L[1].x, S[5:-5], L[3][3][3], L[3][3][2:4]
 #
 method parsePrintExpression(expr)
-   local x, old_x, j, valid_char, tokens := []
-   
-   valid_char := CHARACTER ++ cset('-_:\"') 
-   
-   expr ? {
-        if x := tab(many(valid_char)) then{
-           put(tokens, x)
-           while (j := move(1)) ==("["|"]"|"."|",") do{
-               if j == "." & old_x := integer(x) then{
-                 if x := tab(many(valid_char)) then{
-                    if integer(x) then{
-                       old_x := pop(tokens)
-                       old_x ||:="."||x
-                       put(tokens, old_x)
-                       old_x := &null
-                       }
-                    else 
-                       put(tokens,x)
-                    } 
-                 }
-              else if x := tab(many(valid_char)) then
-                    put(tokens,x)
-              }
-           } 
-        }
+    local i, j, x, tokens := []
 
+    every i := 1 to *expr do{
+       x := expr[i]
+       if not (x == ("["|"]"|","|":")) then{
+          if not numeric(x) & j:=find(".", x) then{
+             put(tokens, x[1:j])
+             put(tokens, ".")
+             put(tokens, x[j+1:0])
+             }
+          else
+             put(tokens, x)
+          }
+       else if x == "]" & expr[i+1] == "[" then{
+          # handle p L[3] [2], "][" is used to indecate new sublist
+          put(tokens,"][")
+          }
+       else if x == "]" & expr[i+1][1] == "." then{
+          # handle p L[3].xxx
+          put(tokens,".")
+          expr[i+1] := expr[i+1][2:0]
+          }
+       }
+          
+   #write("------------ Tokens")
    #every x:=!tokens do
    #   write("-----x=",x)
    return tokens
@@ -968,27 +1019,27 @@ end
 initially()
 
    Keywords := 
-      set("allocated","clock","collections","column","current",
-          "date","now","dateline","digits","e","error",
-          "errornumber","errortext","errorvalue","errout","fail",
-          "eventcode","eventsource","eventvalue","features",
-          "file","host","input","lcase","letters","level",
-          "line","main","null","output","phi","pi","pos",
-          "progname","random","regions","source","storage",
-          "subject","time","trace","dump","ucase","version",
-          "errno","window","col","row","x","y","interval",
-          "control","shift","meta","lpress","mpress","rpress",
-          "lrelease","mrelease","rrelease","ldrag","mdrag",
-          "rdrag","resize","ascii","cset"
+      set("&allocated","&clock","&collections","&column","&current",
+          "&date","&now","&dateline","&digits","&e","&error",
+          "&errornumber","&errortext","&errorvalue","&errout","&fail",
+          "&eventcode","&eventsource","&eventvalue","&features",
+          "&file","&host","&input","&lcase","&letters","&level",
+          "&line","&main","&null","&output","&phi","&pi","&pos",
+          "&progname","&random","&regions","&source","&storage",
+          "&subject","&time","&trace","&dump","&ucase","&version",
+          "&errno","&window","&col","&row","&x","&y","&interval",
+          "&control","&shift","&meta","&lpress","&mpress","&rpress",
+          "&lrelease","&mrelease","&rrelease","&ldrag","&mdrag",
+          "&rdrag","&resize","&ascii","&cset"
           )
    GlobalKeywords := 
-      set("clock","date","now","dateline","digits","e","fail",
-          ,"host","lcase","letters","null","phi","pi",
-          "dump","ucase","version","lpress","mpress","rpress",
-          "lrelease","mrelease","rrelease","ldrag","mdrag","rdrag",
-          "resize","ascii","cset"
+      set("&clock","&date","&now","&dateline","&digits","&e","&fail",
+          "&host","&lcase","&letters","&null","&phi","&pi",
+          "&dump","&ucase","&version","&lpress","&mpress","&rpress",
+          "&lrelease","&mrelease","&rrelease","&ldrag","&mdrag","&rdrag",
+          "&resize","&ascii","&cset"
           )
    GenKeywords :=
-      set("features", "allocated", "collections", "storage","regions")
+      set("&features", "&allocated", "&collections", "&storage","&regions")
    Message := ""
 end

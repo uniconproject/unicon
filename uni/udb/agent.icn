@@ -1,4 +1,3 @@
-
 #
 # agent.icn
 # it is an abstract class that handles the basic extra monitoring
@@ -6,6 +5,7 @@
 # type of minitors
 # Author  : Ziad Al-Sharif
 # Date    : Feb 24, 2008
+# e-mail  : zsharif@gmail.com
 #
 
 $include "defaults.icn"
@@ -15,12 +15,12 @@ $include "defaults.icn"
 #
 class Agent(
    DState,          # An object of the class State()
-   eventMask,       # Monitor event Mask is for all externals or internals
+   eventMask,       # Monitored events of the external or internal agent
    Clients,         # A table of the InternalClient record
    activeClients,   # A set of the current active clients
    disabledClients, # A set of the current disabled clients
    mtype,           # it holds the derived class identity (internal or external)
-   count,           # an integer holds the tatal number of monitors
+   count,           # an integer holds the tatal number of monitors (Agents)
    enabled          # an integer hold the total number of enabled monitors
    )
 
@@ -28,12 +28,12 @@ class Agent(
 # Enables the internal monitor
 #
 method cmdEnable(name)
-   local msg:="??"
+   local msg:="??", obj
 
-   if \Clients[name] then{
-      if Clients[name].State = DISABLED then{
-         Clients[name].State := ENABLED
-         insert(activeClients, name)
+   if obj := \Clients[name] then{
+      if obj.State = DISABLED then{
+         obj.State := ENABLED
+         insert(activeClients, obj)
          delete(disabledClients, name)
          enabled +:= 1
          build_Mask()
@@ -44,7 +44,7 @@ method cmdEnable(name)
       }
    else
       msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
-   DState.Write(msg)
+   #DState.Write(msg)
 end
 
 #
@@ -75,7 +75,7 @@ end
 #
 method cmdInfo(name)
    local i:=1, msg:="\n   "
-
+    
    ## what if there is more than one monitor loaded with the same name??
    if \name then{
       if \Clients[name] then{
@@ -87,14 +87,14 @@ method cmdInfo(name)
       else
          msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
       }
-   else{
+   else if *activeClients > 0 then{
       every name := !activeClients do
          msg ||:= i ||":"||name||"\n   "
-      if msg >= 5 then
+      if *msg >= 5 then
          msg := "\n   The following are the enabled "||mtype||" monitors:"||msg
       else
          msg := "\n   There is no enabled "||mtype||"s !"
-      } 
+      }
    DState.Write(msg)
 end
 
@@ -102,11 +102,11 @@ end
 # it constructs/re-constucts the eventMask from all active monitors  
 #
 method build_Mask()
-   local Name
+   local obj
 
    eventMask := cset('')
-   every Name := !activeClients do
-      eventMask ++:= Clients[Name].eventMask
+   every obj := !activeClients do
+      eventMask ++:= obj.eventMask
 
    DState.eventMask ++:= eventMask
    if mtype == "internal" then{

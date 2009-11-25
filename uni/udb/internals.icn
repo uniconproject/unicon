@@ -1,10 +1,10 @@
-
 #
 # internals.icn
 # handles the internals (built-in) monitores that can be used 
 # during the debugging session with UDB
 # Author  : Ziad Al-Sharif
 # Date    : Feb 24, 2008
+# e-mail  : zsharif@gmail.com
 #
 
 $include "defaults.icn"
@@ -13,20 +13,6 @@ $include "defaults.icn"
 # Loads and initializes the internal monitors
 #
 class Internals : Agent()
-
-#
-# It handles the updates in each client by forwarding relevent events
-#
-method forward()
-   local Name
-   
-   every Name := !activeClients do{
-      if Clients[Name].State = ENABLED & 
-         member(Clients[Name].eventMask, &eventcode) then{
-         Clients[Name].Forward()
-         }
-      }
-end
 
 #
 # Analyzes whatever the internal monitor has collected so far
@@ -100,6 +86,10 @@ end
 #
 method Init()
    
+   register("counter_syntax",EventCounterSyntax())   ##  TEST
+   register("counter_line",EventCounterLine())       ##  TEST
+   register("counter_pcall",EventCounterPcall())     ##  TEST
+   register("counter_deref",EventCounterDeref())     ##  TEST
    register("memory", Memory())
    register("varprofile", VarProfile())
    register("procprofile", ProcProfile())
@@ -119,4 +109,5 @@ initially()
 
    self.Agent.initially("internal")
    Init()
+   
 end

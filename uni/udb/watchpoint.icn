@@ -3,6 +3,7 @@
 # It handles UDB's watchpoints related tasks
 # Author: Ziad Al-Sharif
 # Date:   7-15-2008
+# e-mail : zsharif@gmail.com
 #
 
 $include "evdefs.icn"
@@ -587,7 +588,7 @@ end
 
 #
 # private method
-# when everything is right, it adds/rplaces a watchpoint
+# when everything is right, it adds/replaces a watchpoint
 # watchType = (WASSIGN | WVALUECHANGE | WTYPECHANGE | WREAD)
 #
 method addWatchpoint(cmd)
@@ -655,12 +656,12 @@ method cmdWatch(cmd)
          member(DState.watchChangeMask, var) then {
          msg   :="\n   Watchpoint #"||varInfo[var].id||" already exist: "||var
          msg ||:="\n   previous command is : "||varInfo[var].cmd
-         msg ||:="\n   Do you really want to rplace it (Y/n)? : "
+         msg ||:="\n   Do you really want to replace it (Y/n)? : "
          DState.Writes(msg)
          if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then{
             delete(DState.watchReadMask, var)
             delete(DState.watchChangeMask, var)
-            msg :="\n   previous command has been rplaced."
+            msg :="\n   previous command has been replaced."
             DState.Write(msg)
             addWatchpoint()
             }
@@ -1009,7 +1010,7 @@ method cmdEnable(cmd)
                   msg:="\n   Watchpoint #"||id||" is already enabled."
                else
                   msg:="\n   Watchpoint #"||id||" is deleted;_
-                        it can not be enabled."
+                        it cannot be enabled."
                DState.Write(msg)
                fail
                }
@@ -1086,7 +1087,7 @@ method cmdDisable(cmd)
                   msg:="\n   Watchpoint #"||id||" is already disabled."
                else
                   msg:="\n   Watchpoint #"||id||" is deleted;_
-                        it can not be disabled."
+                        it cannot be disabled."
                DState.Write(msg)
                fail
                }

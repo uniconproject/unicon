@@ -3,13 +3,12 @@
 #  Handles the collected Source Files from the Icode
 #  Author : Ziad Al-Sharif
 #  Date   : Feb 24, 2008
+#  e-mail : zsharif@gmail.com
 # 
 
 $include "defaults.icn"
 link bincvt
 link strings
-
-
 
 #
 # It is used to index the loaded source files in the srcText list
@@ -269,9 +268,11 @@ end
 # checks whether fname is a source file or not
 #
 method isSrcFile(fname)
-  if not find(".icn", fname) then fname ||:= ".icn" 
-  if member(foundFiles, fname) | member(missingFiles, fname) then
-     return
+  if \fname then{
+     if not find(".icn", fname) then fname ||:= ".icn" 
+     if member(foundFiles, fname) | member(missingFiles, fname) then
+        return
+     }
   fail
 end
 
@@ -328,6 +329,33 @@ method getProcLine(pname, pfile)
        if pline := searchFileProcs(pfile, pname) then
           return pline
     fail
+end
+
+#
+# returns the procedure name based on a line number and a file name
+#
+method getProcName(fname, line)
+   local fstart, srcLine, temp, temp1
+
+   if \fname & \line & member(foundFiles, fname) then{
+      fstart  := srcIndex[fname].fbegin
+      srcLine := fstart + line
+      #write("----fstart=",fstart,"   srcLine=",srcLine) 
+      # search backward from the line up until the procedure header
+      while srcLine >= fstart & temp := srcText[srcLine] do{
+         #write("----temp=",temp)
+         temp ? {
+            tab(many(WhiteSpace))
+            if(temp1 := tab(many(&letters))) == ("procedure"|"method") then{
+              tab(many(WhiteSpace))
+              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
+              return temp1
+              }
+            }
+         srcLine -:= 1 
+         }
+      }
+   else fail
 end
 
 #

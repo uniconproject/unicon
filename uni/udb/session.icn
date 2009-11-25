@@ -3,8 +3,8 @@
 # Handles the main debugging session properties such as initialization
 # Author : Ziad Al-Sharif
 # Date   : Feb 24, 2008 
+# e-mail : zsharif@gmail.com
 #
-
 
 $include "evdefs.icn"
 $include "defaults.icn"
@@ -23,10 +23,10 @@ class Session(
 # Here where the udb Session starts on
 #
 method startSession()
-   local arg
+   local arg, t
 
    #-- it may need to be in EvInit() for the sake of re-run
-   &eventsource := &null
+   #&eventsource := &null
 
    EvInit(DState.TP) | stop("cant start evinit on " || DState.TP[1])
    Message :="   Starting program: "
@@ -36,15 +36,18 @@ method startSession()
    #DState.srcCode.analyzeGlobalNames()
 
    if DState.State = RUN  then {
+      #--- TEST Time
+      # t := keyword("&time", Monitored)
       # a generator that ends when TP is over and no more events out of it.
-      # every udb_evalTree(eventMask, activation_record) do{
+      # every udb_evalTree(eventMask, activation_record) do
+      #Debug.initEvaluator()
       every Debug.startEvaluator() do{
          if DState.State = PAUSE then{
             if DState.RunCode = SIGNAL then{
                Message := "\n   "||DState.TP[1]||" program received a signal "||
-                          &eventvalue ||"."
+                          &eventvalue||"."
                DState.Write(Message)
-               } 
+               }
             # suspends the loop and go back to udb_Console() for a new cmd.
             suspend
             }
@@ -54,6 +57,11 @@ method startSession()
             }
       }#end every 
    }
+   #--- Test
+   #write("====================================")
+   #write("The monitoring cost is :", keyword("&time", Monitored) - t)
+   #write("====================================")
+   #--- Test
 
   DState.State := END
   Message := "\n   "||DState.TP[1]||" program exited normally."
@@ -74,7 +82,7 @@ method parse_Command(cmd)
      "q"      |
      "quit"   :{  cmdQuit()                         }
      "p"      |
-     "print"  :{  cmdPrint(cmd)                     }
+     "print"  :{  cmdPrint(cmd[2:0])                }
      "b"      |
      "break"  :{  Debug.Break.cmdBreak(cmd)         }
      "watch"  |
@@ -109,6 +117,8 @@ method parse_Command(cmd)
      "delete" :{  cmdDelete(cmd)                    }
      "enable" :{  cmdEnable(cmd)                    }
      "disable":{  cmdDisable(cmd)                   }
+     # Temporal Assertions support
+     "assert" :{  Debug.DTA.cmdAssert(cmd)          }
      #-cmds that are not in GDB
      "source" |
      "src"    :{  Debug.Print.cmdSource(cmd)        }
@@ -142,7 +152,7 @@ method cmdLoad(cmd)
       #load -agent name
       if find("agent", cmd[2]) & \cmd[3] then{
          if Debug.External.cmdLoad(cmd[3:0]) then{
-            Message := "\n   External Agent: \""|| cmd[3] ||"\" _
+            Message := "\n   External Agent: \""|| cmd[-1] ||"\" _
                         is loaded successfully."
             DState.Write(Message)
             }
@@ -333,7 +343,7 @@ else{
       "b"          |
       "break"      |
       "breakpoint" |
-      "breakpoints":{ Debug.Break.cmdEnable(cmd)    }
+      "breakpoints":{ Debug.Break.cmdEnable(cmd)       }
       "awatch"     |
       "rwatch"     |
       "twatch"     |
@@ -341,15 +351,15 @@ else{
       "swatch"     |
       "watch"      |
       "watchpoint" |
-      "watchpoints":{ Debug.Watch.cmdEnable(cmd)    }
+      "watchpoints":{ Debug.Watch.cmdEnable(cmd)       }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
       "watchpoint" |
-      "tracepoints":{ Debug.Trace.cmdEnable(cmd)    }
-      "internal"   :{                               }
-      "external"   :{                               }
+      "tracepoints":{ Debug.Trace.cmdEnable(cmd)       }
+      "internal"   :{ Debug.Internal.cmdEnable(cmd[3]) }
+      "external"   :{ Debug.Internal.cmdEnable(cmd[3]) }
       default:{
          DState.State := ERROR
          Message:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
@@ -372,7 +382,7 @@ else{
       "b"          |
       "break"      |
       "breakpoint" |
-      "breakpoints":{ Debug.Break.cmdDisable(cmd)    }
+      "breakpoints":{ Debug.Break.cmdDisable(cmd)       }
       "awatch"     |
       "rwatch"     |
       "twatch"     |
@@ -380,15 +390,15 @@ else{
       "swatch"     |
       "watch"      |
       "watchpoint" |
-      "watchpoints":{ Debug.Watch.cmdDisable(cmd)    }
+      "watchpoints":{ Debug.Watch.cmdDisable(cmd)       }
       "ptrace"     |
       "otrace"     |
       "ftrace"     |
       "trace"      |
       "watchpoint" |
-      "tracepoints":{ Debug.Trace.cmdDisable(cmd)    }
-      "internal"   :{                                }
-      "external"   :{                                }
+      "tracepoints":{ Debug.Trace.cmdDisable(cmd)       }
+      "internal"   :{ Debug.Internal.cmdDisable(cmd[3]) }
+      "external"   :{ Debug.Internal.cmdDisable(cmd[3]) }
       default:{
           DState.State := ERROR
           Message:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
@@ -403,7 +413,8 @@ end
 # Finds out information about some of the debugging commands
 #
 method cmdInfo(cmd)
-
+   local name := cmd[3]
+   #write(" =-------", ximage(cmd))
    case cmd[2] of  {
       "b"          |
       "break"      |
@@ -446,13 +457,17 @@ method cmdInfo(cmd)
       "function"   :{ Debug.Print.cmdSource(["src","-func"]) }
        
       "icode"      :{ Debug.Print.cmdSource(["src","-icode"])}
-
+      
       # the follwing is to query about agents
+      "agent"      |      
       "agents"     :{                                        }
       "internal"   |      
-      "internals"  :{ Debug.Internal.cmdInfo(cmd[3])         }
+      "internals"  :{ Debug.Internal.cmdInfo(name)           }
       "external"   |
-      "externals"  :{ Debug.External.cmdInfo(cmd[3])         }
+      "externals"  :{ Debug.External.cmdInfo(name)           }
+      # temporal assertions
+      "assert"     |
+      "assertion"  :{ Debug.DTA.cmdInfo(cmd)                 }
       default:{
           DState.State := ERROR
           Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
@@ -491,16 +506,17 @@ initially()
    Debug  := Evaluator()
    Help   := HELP()
 
-   DState := Help.DState            :=
+   DState := Help.DState            := 
              Debug.DState           := 
              Debug.Break.DState     := 
              Debug.Watch.DState     := 
              Debug.Step.DState      := 
              Debug.Frame.DState     := 
              Debug.Print.DState     := 
-             Debug.Trace.DState     :=
+             Debug.Trace.DState     := 
              Debug.Internal.DState  := 
-             Debug.External.DState  := State()
+             Debug.External.DState  := 
+             Debug.DTA.DState       := State()
 
 # Test : To test the inter-program event forwarding
 #        DState.external := debug.external

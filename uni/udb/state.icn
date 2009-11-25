@@ -1,9 +1,9 @@
-
 #
 # state.icn
 # Handles the main debugging state properties
 # Author : Ziad Al-Sharif
 # Date   : Feb 24, 2008
+# e-mail : zsharif@gmail.com
 #
 
 $include "evdefs.icn"
@@ -19,6 +19,7 @@ class State(
    RunCode,         # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
    RunCount,        # integer counts number of runs a program has in a session
 
+   MaskTable,       # a table that maps eventcodes into their value masks
    eventMask,       # the cset of the main evaluator set of event codes 
    valueMask,       # table used for breakpoints and watchpoints set of masks
    breakMask,       # a set of the E_Line values that we like to break on
@@ -27,6 +28,10 @@ class State(
    internalMask,    # The cset of the active internals event mask
    externalMask,    # The cset of the active externals event mask   
    traceMask,       # a cset of &eventcode(s) of wanted traced fetures
+
+   assertEventMask, # a cset of the active temporal assertions event masks
+   assertVars,      # a set with all assertions' variables
+   assertLoc,       # a set with all line numbers that has assertions on them
 
    cur_Frame,       # points at the last investigated frame, using up,down,frame
 
@@ -79,19 +84,22 @@ end
 # constructs/reconstructs the monitoring/debugging event-mask & value-mask
 #
 method constructEventMask()
+   local x
 
-   if *internalMask > 0 | *externalMask > 0 | *traceMask > 0 then{
+   #write("----> state.icn: re-constructing all of event mask and value mask")
+   if *internalMask >0 | *externalMask >0    | 
+      *traceMask >0    | *assertEventMask >0 then{
       eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
                    cset(E_MXevent) ++
                    cset(E_Collect || E_EndCollect) ++
-                   internalMask ++ externalMask ++ traceMask
-      if *breakMask > 0 then{
+                   internalMask ++ externalMask ++ traceMask ++ assertEventMask
+      if *breakMask > 0 | *assertEventMask > 0 then{
          if member(traceMask,E_Line)    |
             member(internalMask,E_Line) | member(externalMask,E_Line) then
             delete(valueMask,E_Line)
          else{
             eventMask ++:= cset(E_Line)
-            valueMask[E_Line] := breakMask
+            valueMask[E_Line] := breakMask ++ assertLoc
             }
          }
       if *watchChangeMask > 0 then{
@@ -112,6 +120,19 @@ method constructEventMask()
             valueMask[E_Deref] := watchReadMask
             }
          }
+      if *assertEventMask > 0 then{
+         if member(traceMask,E_Deref)    |
+            member(internalMask,E_Deref) | member(externalMask,E_Deref) then
+            delete(valueMask,E_Deref)
+         else{
+            #write("OK, Iam here with E_Assign and E_Deref")
+            #write(ximage(assertVars))
+            eventMask ++:= assertEventMask #cset(E_Deref || E_Assign || E_Value)
+            valueMask[E_Deref]  := assertVars
+            valueMask[E_Assign] := assertVars
+            }
+         }
+
       }
    else{ # *internalMask = 0 & *externalMask = 0 & *traceMask = 0
       eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
@@ -135,6 +156,11 @@ method constructEventMask()
          valueMask[E_Deref] := watchReadMask
          }
       }
+
+      # debug the agent mask
+      #write("------[state.icn: eventMask]------")
+      #every x := !eventMask do
+      #   write("-->",evnames(x))
 end
 
 #
@@ -147,13 +173,14 @@ method Update(state)
    if /state then state := State else  State := state
    case state of {
      LOAD :{
-          write("\n   --- a program just loaded ---") 
+          #write("\n   --- a program just loaded ---") 
           }
      RUN  |
      RERUN:{
         RunCount +:= 1
         constructEventMask()
         } 
+     PAUSE   |
      CONTINUE:{
         constructEventMask()
         }
@@ -193,9 +220,11 @@ $endif
          if src := icode.getSrcFileNames(TP[1]) then{
             srcFile.loadSourceFiles(TP[1], src)
             State := LOAD
-            #--
             srcCode.analyzeGlobalNames()
-            ###State := RUN ###### TEST : For the sake of getting the Time right
+            #-- Automated TEST
+$ifdef TEST
+            State := RUN ###### TEST : For the sake of getting the Time right
+$endif
             Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
                          srcFile.exeSize||" of "||icode.icodeVersion 
             found := *srcFile.foundFiles
@@ -263,13 +292,25 @@ method Fresh()
    internalMask    := cset('')
    externalMask    := cset('')
    traceMask       := cset('')
+   assertEventMask := cset('')
 
-   valueMask       := table()
+   valueMask       := table() 
+   assertVars      := set()
    breakMask       := set()
    watchChangeMask := set()
    watchReadMask   := set()
+   assertLoc       := set()
    cur_Frame       := 0 # the current active frame is the last one
    cmdHistory      := [""]
+
+
+   MaskTable           := table()
+   MaskTable[E_Line]   := breakMask
+   MaskTable[E_Assign] := watchChangeMask
+   MaskTable[E_Value]  := watchChangeMask
+   MaskTable[E_Snew]   := watchChangeMask
+   MaskTable[E_Spos]   := watchChangeMask
+   MaskTable[E_Deref]  := watchReadMask
 
    Message         := VERSION||"\n   "
 end

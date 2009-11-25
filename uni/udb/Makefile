@@ -15,28 +15,39 @@ SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
             evaluator.icn session.icn console.icn defaults.icn help.icn
+
 UFILES    = udb.u icode.u srcfile.u srccode.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
             evaluator.u session.u console.u help.u
+
 LIB       = lib
-LIBRARY   = $(LIB)/listener.u    $(LIB)/memory.u     $(LIB)/structaliases.u \
-            $(LIB)/structusage.u $(LIB)/looptime.u   $(LIB)/proctime.u \
-            $(LIB)/procprofile.u $(LIB)/varprofile.u $(LIB)/deadvar.u \
-            $(LIB)/failedloop.u  $(LIB)/failedsubscript.u\
-            $(LIB)/typechange.u
+LIBRARY   = $(LIB)/listener.u      $(LIB)/memory.u     $(LIB)/structaliases.u \
+            $(LIB)/structusage.u   $(LIB)/looptime.u   $(LIB)/proctime.u \
+            $(LIB)/procprofile.u   $(LIB)/varprofile.u $(LIB)/deadvar.u \
+            $(LIB)/failedloop.u    $(LIB)/failedsubscript.u\
+            $(LIB)/typechange.u \
+            $(LIB)/counter_deref.u       $(LIB)/counter_pcall.u \
+            $(LIB)/counter_line.u  $(LIB)/counter_syntax.u
+
+DTA        = dta
+DTA_UFILES = $(DTA)/atomic_agent.u $(DTA)/temporals.u
 
 
-all: Libfiles $(EXEs) 
+all: Libfiles Assertions $(EXEs) 
 
 Libfiles:
-	cd lib; make
-tools:
-	cd lib; make tools
+	cd $(LIB); make
 
-udb: $(UFILES)
-	$(UC) $(ldflags) $(LIBRARY) $(UFILES) -o udb
+Assertions:
+	cd $(DTA); make
+
+tools:
+	cd $(LIB); make tools
+
+udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
+	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
 	cp udb ../../bin
 
 udb.u: udb.icn console.u
@@ -109,11 +120,13 @@ clean:
 	$(DEL) *.pag
 	$(DEL) *.db
 	$(DEL) *~
+	cd $(LIB); make clean
+	cd $(DTA); make clean
 	$(DEL) ../../bin/$(EXEs) 
 	cd lib; make clean
 
 cleantools:
-	cd lib; make cleantools
+	cd $(LIB); make cleantools
 
 
 

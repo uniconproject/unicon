@@ -213,7 +213,7 @@ procedure flush_queue()
       except := pop(vc_queue) |
          ExitNotice("Malformed broadcast queue.")
       every monitor := (except ~=== !mps) do
-	 if mask := event( , , monitor.prog) then {
+	 if mask := EvSend( , , monitor.prog) then {
 	    if mask ~=== monitor.mask then {
 	       while type(mask) ~== "cset" do {
 		  #
@@ -222,7 +222,7 @@ procedure flush_queue()
 		  #
 		  put(vc_queue, mask)
 		  put(vc_queue, monitor)
-		  if not (mask := event( , , monitor.prog)) then
+		  if not (mask := EvSend( , , monitor.prog)) then
          	     unschedule(monitor)	# MP terminated
                   break next
 		  }
@@ -423,7 +423,7 @@ procedure run()
          # Forward the event to those MPs that want it.
 
          every monitor := !EventCodeTable[&eventcode] do {	
-            if mask := event( , , monitor.prog) then {		
+            if mask := EvSend( , , monitor.prog) then {		
 	       if mask ~=== monitor.mask then {			
 	          while type(mask) ~== "cset" do {			
 
@@ -431,7 +431,7 @@ procedure run()
                      # return to the mp to get his next event request.
 
                      broadcast(mask, monitor)
-                     if not (mask := event( , , monitor.prog)) then {	
+                     if not (mask := EvSend( , , monitor.prog)) then {	
                         unschedule(monitor)	# MP terminated
                         break next
 		        }						

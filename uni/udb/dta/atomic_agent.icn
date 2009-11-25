@@ -1,0 +1,961 @@
+#
+# atomic_agent.icn
+# Handles UDB's temporal logic macros
+# Ziad Al-Sharif
+# zsharif@gmail.com
+# June 2009
+#
+
+$include "evdefs.icn"
+$include "../defaults.icn"
+
+#
+# This class represents the operands in the assertion body. 
+# Each operand is either a 1) LITERAL, 2) VARIABLE, or 3) MACRO
+#
+class AtomicAgent(
+   id,          # the string name of this agent
+   DState,      # (Alias) object of type State class
+
+   fname,       # The operand's file name
+   line,        # The operand's line number
+   kind,        # The operand type (LITERAL | VARIABLE | MACRO)
+   name,        # The string name as seen by the programmer
+   pname,       # The variable's procedure name (scope)  
+   iNames,      # A set with all potential internal names (foo^x, foo-x,foo:x)
+
+   values,      # A stack list with all encountered values
+   ready,       # a flag tels if the agent is ready to be evaluated (T | F)
+   waitForValue,# a flag tels if the agent is waiting for E_Value (&null vs not)
+
+   eventMask,   # a cset with the operand's monitored events
+   #valueMask,  # a table with the operands monitored event values
+   msg          # a string with the latest message from this class   
+   )
+
+#
+# used to obtain the name of the current procedure name
+#
+method currentProcName(val)
+   local pimage, pname, i
+   
+   if type(val) == "procedure" then{
+      pimage := image(val)
+      i := find(" ", pimage)+1
+      pname := pimage[i:0]
+      return pname
+      }
+   else if type(val) == "null" then{
+      pimage := image(proc(Monitored, 0))
+      i := find(" ", pimage)+1
+      pname := pimage[i:0]
+      return pname
+      }
+   else
+      fail
+end
+
+#
+# receives a list of var info, i.e. [x], [foo,::,x], [class,::,foo,::,x] 
+# it sets the variable name, pname, and inames
+#
+method analyzeVarInfo(Var)
+   local x, vname, val, level
+
+   if type(Var) == "list" then{
+      if *Var = 1 then{
+         name := x := Var[1]
+         if x := numeric(name) then{ # [2] in {a < 2}
+            values := x
+            kind := LITERAL
+            #write("-------method analyzeVarInfo(Var)-------LITERAL")
+            }
+         else if DState.State = PAUSE then{
+            pname := currentProcName()
+            if val := variable(x, Monitored, 0) then{
+               vname := x||"-"||pname; insert(iNames, vname)
+               vname := x||"^"||pname; insert(iNames, vname)
+               vname := x||":"||pname; insert(iNames, vname)
+               ###push(values, val)
+               #write("-------method analyzeVarInfo(Var)-------val=",image(val))
+               }
+            else if val := variable(x, Monitored) then{
+               vname := x||"+"; insert(iNames, vname)
+               ###push(values, val)
+               }
+            else{
+               DState.State := ERROR
+               msg   :="\n   \""|| DState.cmdHistory[1]||"\" bad assertion"
+               msg ||:="\n   variable \""||x||"\" is not recognized"
+               msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+               DState.Write(msg)
+               fail
+               }
+            }
+         else if DState.State = LOAD then{
+            pname := DState.srcFile.getProcName(fname, line)
+            if DState.srcCode.isGlobal(x) then{
+               # ---What if it is local and global
+               #vname := x||"-"||pname; insert(iNames, vname)
+               #vname := x||"^"||pname; insert(iNames, vname)
+               #vname := x||":"||pname; insert(iNames, vname)
+               vname := x||"+"; insert(iNames, vname)
+               }
+            else{
+               vname := x||"-"||pname; insert(iNames, vname)
+               vname := x||"^"||pname; insert(iNames, vname)
+               vname := x||":"||pname; insert(iNames, vname)
+               #write("---method analyzeVarInfo(Var)-------val=",ximage(iNames))
+               }
+            }
+         }
+      else if *Var = 3 & member(SEPARATOR, Var[2]) then{# foo::x in {foo::x < k}
+         pname := Var[1]
+         name := x := Var[3]
+         vname := x||"-"||pname; insert(iNames, vname)
+         vname := x||"^"||pname; insert(iNames, vname)
+         vname := x||":"||pname; insert(iNames, vname)
+         if DState.State = PAUSE then{
+            if level := DState.srcCode.isActiveProc(pname) then{
+               val := variable(x, Monitored, level)
+               ###push(values, val)
+               }
+            }
+         }
+      }
+   else fail 
+   ready  := FALSE
+end
+
+#
+# checks whether the operand is ready for evaluation or not
+#
+method isReady()
+   if ready = TRUE & \values & *values > 0 then
+      return values[1]
+   fail
+end
+
+#
+# This method maybe overwritten in the derived class
+#
+method handle_event(ref)
+   #static param_var
+   local  var, val, vname, i
+
+   if \ref then{
+      val := variable(name, Monitored, 0)
+      put(values, val)
+      #write("--------------val=",image(val))
+      return
+      }
+
+   if &eventcode == E_Assign & member(iNames, &eventvalue) then{
+      waitForValue +:= 1
+      # if this is a parameter, get its original value
+      #if /param_var & i := find("^", &eventvalue) then{
+      #   #vname := &eventvalue[1:i]
+      #   #val := variable(vname, Monitored, 0)
+      #   #put(values, val)
+      #   param_var := 1
+      #   }
+      }
+   else if &eventcode == E_Value & waitForValue > 0 then{
+      put(values, &eventvalue)
+      ready := TRUE
+      waitForValue -:= 1
+      }
+end
+
+#
+# used to inquire the current value of a refereced variable
+#
+method currentVarValue(var)
+   local i, vname, value
+
+   i := find("-"|":"|"^"|"+",var)
+   vname := var[1:i]
+   value := variable(vname, Monitored, 0)
+   return value
+end
+
+#
+# returns the list of values found by the agent 
+#
+method getValue()
+   #write("-getValue->"||image(values))
+   if type(values) == "list" then
+      return values[-1]
+   else
+      return values
+end
+
+#
+# returns the list of values found by the agent 
+#
+method refreshData()
+   #write("-getValue->"||image(values))
+   if type(values) == "list" then
+      values := [ ]
+   else
+      return values
+end
+
+#
+# returns the name of the agent's target variable ass seen by the user
+#
+method getName()
+   return name
+end
+
+#
+# returns the agent's ID 
+#
+method getID()
+   return id
+end
+
+#
+# The class constructor
+#
+initially(DebugState, Fname, Line, Type, Var)
+
+   DState := DebugState
+   fname  := Fname
+   line   := Line
+   kind   := Type
+
+   ready        := FALSE
+   waitForValue := 0
+
+   iNames := set()
+   values := []
+
+   if kind = (VARIABLE | AGENT) & \Var then{
+      analyzeVarInfo(Var)
+      eventMask := cset(E_Assign || E_Value)# || E_Deref)
+      }
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles procedure calls
+#
+class _Call : AtomicAgent()
+
+#
+# handles the procedure call event
+#
+method handle_event()
+   local pimage, pname, i
+
+   if &eventcode == E_Pcall then{
+      pname := currentProcName(&eventvalue)
+      if pname == name then
+         values +:= 1
+      }
+end
+
+#
+# receives a list of var info, i.e. [foo], [class,::,foo] 
+# it sets the variable name, pname, and inames
+#
+method analyzeProcInfo(Var)
+   local x, cname
+
+   if type(Var) == "list" then{
+      if *Var = 1 then{
+         x := name := Var[1]
+         }
+      else if *Var = 3 then{
+         cname := Var[1]
+         name := Var[3]
+         x := cname||"_"||name
+         }
+
+      if not DState.srcCode.isProcedure(name) then
+            fail
+      if DState.State = PAUSE & DState.srcCode.isActiveProc(x) then
+         values := 1
+      else
+         values := 0
+      insert(iNames, x)
+      }
+   else fail 
+   ready  := FALSE
+end
+ 
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT)#, Var)
+
+   analyzeProcInfo(Var)
+   id         := "the calling counter of procedure "||name 
+   eventMask  := cset(E_Pcall)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles procedure returns
+#
+class _Return : AtomicAgent()
+
+#
+# handles the procedure returns events
+#
+method handle_event()
+   local pimage, pname, i
+
+   if &eventcode == E_Pret then{
+      pname := currentProcName()
+      if pname == name then
+         values := &eventvalue
+      }
+end
+
+#
+# receives a list of var info, i.e. [foo], [class,::,foo] 
+# it sets the variable name, pname, and inames
+#
+method analyzeProcInfo(Var)
+   local x, cname
+
+   if type(Var) == "list" then{
+      if *Var = 1 then{
+         x := name := Var[1]
+         }
+      else if *Var = 3 then{
+         cname := Var[1]
+         name := Var[3]
+         x := cname||"_"||name
+         }
+      if not DState.srcCode.isProcedure(name) then
+            fail
+      insert(iNames, x)
+      }
+   else fail 
+   ready  := FALSE
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT)#, Var)
+
+   analyzeProcInfo(Var)
+   id        := "the current returned value from procedure "|| name
+   eventMask := cset(E_Pret)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the referenced variables
+#
+class _Reference : AtomicAgent()
+
+#
+# handles the variables reference events
+#
+method handle_event()
+   if &eventcode == (E_Deref|E_Assign) & member(iNames, &eventvalue) then
+      values +:= 1
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   values    := 0
+   id        := "the current reference counter of variable "|| name
+   eventMask := cset(E_Deref||E_Assign)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the assigned variables
+#
+class _Assign : AtomicAgent()
+
+#
+# handles the variables number of times it is being assigned event
+#
+method handle_event()
+   #write("OKOKOKOKOKOKO")
+   if &eventcode == E_Assign & member(iNames, &eventvalue) then
+      values +:= 1
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the current assign counter of variable "|| name
+   values    := 0
+   eventMask := cset(E_Assign)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the number of times a variable has been read
+#
+class _Read : AtomicAgent()
+
+#
+# Handles the number of time a variable is being referenced event
+#
+method handle_event()
+
+   if &eventcode == E_Deref & member(iNames,&eventvalue) then
+      values +:= 1
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id          := "the current read counter of variable "|| name
+   values      := 0
+   eventMask   := cset(E_Deref)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the maximum variable value
+#
+class _Max : AtomicAgent()
+
+#
+# returns the agent's value 
+#
+method getValue()
+   local maximum
+
+   maximum := values[1]
+   every maximum <:= !values
+   return maximum
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the current max value of variable "|| name
+   eventMask := cset(E_Deref||E_Assign||E_Value)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the maximum variable value
+#
+class _NewMax : AtomicAgent(
+   new_max # a flag that becomes a non-null value when a new max is encountered 
+   )
+
+method handle_event()
+   static var := &null
+   local val
+
+#   if /values & &eventcode == E_Deref & member(iNames, &eventvalue) then{
+#      values := currentVarValue(&eventvalue)
+#      new_max := 1
+#      return values
+#      }
+#   else{
+    if &eventcode == E_Assign & member(iNames, &eventvalue) then
+       var := 1
+    else if &eventcode == E_Value & \var then{
+       if /values then{
+          values := &eventvalue
+          new_max := 1
+          return values
+          }
+       else if values < &eventvalue then{
+          values := &eventvalue
+          var := &null
+          new_max := 1
+          return values
+          }
+       var := &null
+       }
+#      }
+end
+
+#
+# returns the agent's value 
+#
+method getValue()
+   if \new_max then{
+      new_max := &null
+      return values
+      }
+   else
+      fail
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the current max value of variable "|| name
+   values    := &null
+   new_max   := &null
+   eventMask := cset(E_Assign||E_Value) #E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the minimum variable value
+#
+class _Min : AtomicAgent()
+
+#
+# returns the agent's value 
+#
+method getValue()
+   local minimum
+
+   minimum := values[1]
+   every minimum >:= !values
+   return minimum
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the current min value of variable " || name
+   eventMask := cset(E_Assign||E_Value)#E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the new minimum of a variable value
+# 
+class _NewMin : AtomicAgent(
+   id,     # the string name of this agent
+   new_min # a flag that becomes a non-null value when new min is encountered 
+   )
+
+method handle_event()
+   static var := &null
+   local val
+
+#   if /values & &eventcode == E_Deref & member(iNames, &eventvalue) then{
+#      values := currentVarValue(&eventvalue)
+#      new_min := 1
+#      return values
+#      }
+#   else{
+    if &eventcode == E_Assign & member(iNames, &eventvalue) then
+       var := 1 
+    else if &eventcode == E_Value & \var then{
+       if /values then{
+          values := &eventvalue
+          new_min := 1
+          return values
+          }
+       else if values > &eventvalue then{
+          values := &eventvalue
+          var := &null
+          new_min := 1
+          return values
+          }
+       var := &null
+       }
+#      }
+end
+
+#
+# returns the agent's value
+#
+method getValue()
+   if \new_min then{
+      new_min := &null
+      return values
+      }
+   else
+      fail
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   values    := &null
+   new_min   := &null
+   id        := "a new min value of variable "|| name
+   eventMask := cset(E_Assign || E_Value)#E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the initial value
+#
+class _Initial : AtomicAgent()
+
+#
+# returns the agent's value 
+#
+method getValue()
+   return values[1]
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the initial value of variable "|| name
+   eventMask := cset(E_Assign||E_Value)#E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the final variable value
+#
+class _Final : AtomicAgent()
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the final value of variable " || name
+   eventMask := cset(E_Assign||E_Value)#E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the Old (previous) variable value
+#
+class _Old : AtomicAgent()
+
+#
+# returns the agent's value
+#
+method getValue()
+   #write("-getValue->"||image(values))
+   if *values >= 2 then
+      return values[-2]
+   #else if *values = 1 then
+   #   return values[1]
+   else 
+      fail
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the old (previous) value of variable " || name
+   eventMask := cset(E_Assign || E_Value)#E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the minimum variable value
+#
+class _Current : AtomicAgent()
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the current value of variable "|| name
+   eventMask := cset(E_Assign || E_Value)#E_Deref
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the new variable value
+#
+class _New : AtomicAgent(
+   flag  # a flag tells whether the new value was encountered or not
+   )
+
+#
+# Handles the new related events
+#
+method handle_event()
+   static var := &null
+
+   if /flag then{
+      if &eventcode === E_Assign & name == &eventvalue then
+         var := 1
+      else if &eventcode === E_Value & \var then{
+         values := &eventvalue
+         var   := &null
+         flag  := 1
+         return values
+         }
+      }
+end
+
+#
+# returns the agent's value 
+#
+method getValue()
+   if \flag then{
+      flag := &null
+      return values
+      }
+   else
+      fail
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   id        := "the new value of variable "|| name
+   eventMask := cset(E_Assign || E_Value)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the average of all variable values
+#
+class _Avg : AtomicAgent(
+   count  # counts the number of times Name is assigned
+   )
+
+#
+# Handles the average related events
+#
+method handle_event()
+   static var := &null
+
+   if &eventcode == E_Assign & member(iNames,&eventvalue) then
+      var := 1
+   else if &eventcode == E_Value & \var then{
+      values +:= &eventvalue
+      count  +:= 1
+      var     := &null
+      }
+end
+
+#
+# returns the agent's value
+#
+method getValue()
+   return values/count
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   values    := 0
+   count     := 0.0
+   id        := "the average of all values of variable "|| name
+   eventMask := cset(E_Assign||E_Value)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the sum of all variable values
+#
+class _Sum : AtomicAgent()
+
+#
+# Handles the sum related events
+#
+method handle_event()
+   static var := &null
+
+   if &eventcode == E_Assign & member(iNames, &eventvalue) then
+      var := 1
+   else if &eventcode == E_Value & \var then{
+      values +:= &eventvalue
+      var     := &null
+      }
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+
+   values    := 0
+   id        := "the average of all values of variable "|| name
+   eventMask := cset(E_Assign||E_Value)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the sum of all variable values
+#
+class _Alias : AtomicAgent()
+#
+#method handle_event()
+#
+#end
+#
+##
+## The class Constructor
+##
+#initially(DebugState, Fname, Line, Var)
+#
+#   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT, Var)
+#
+#   id        := "the aliases of variable "|| name
+#   eventMask := cset(E_Assign||E_Value)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+link syntname
+
+#
+# This class handles the sum of all variable values
+#
+class _Iterations : AtomicAgent(
+   endLoop # a string with name of the end loop
+   )
+#
+# collect loop information
+#
+method handle_event()
+   local syntax
+
+   if &eventcode == E_Syntax then{
+      #write("----->",evnames(&eventcode), ": ", syntname(&eventvalue))
+      if name == (syntax := syntname(&eventvalue)) then{
+         if line  =  keyword("&line", Monitored) & 
+            fname == keyword("&file", Monitored) then
+            values +:= 1
+         }
+      else if syntax == endLoop then
+         values -:= 1
+      }
+   else if &eventcode == E_Line & &eventvalue = line & 
+      fname == keyword("&file", Monitored)           & 
+      name  == syntname(keyword("syntax", Monitored)) then
+      values +:= 1
+end
+
+#
+# Analyzes the loop name
+#
+method analyzeLoopInfo(loop_name)
+
+   #write(ximage(loop_name))
+   if type(loop_name) == "list" & *loop_name = 1 then{
+      name := get(loop_name)
+      if name[1]  == "\"" then name := name[2:0]
+      if name[-1] == "\"" then name := name[1:-2]
+      endLoop:= "end"||name
+      insert(iNames, endLoop)
+      }
+   #write(" name = ",name)
+end
+
+#
+# The class Constructor
+#
+initially(DebugState, Fname, Line, Var)
+
+   self.AtomicAgent.initially(DebugState, Fname, Line, AGENT)
+
+   analyzeLoopInfo(Var)
+   values    := 0
+   id        := "the number of iterations for loop "|| name
+   eventMask := cset(E_Syntax||E_Line)
+end

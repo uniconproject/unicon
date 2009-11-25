@@ -1,0 +1,2116 @@
+#
+# temporals.icn
+# Handles UDB's temporal logic operators
+# Ziad Al-Sharif
+# zsharif@gmail.com
+# June 2009
+#
+
+$include "evdefs.icn"
+$include "../defaults.icn"
+
+#$define PAST     set("alwaysp", "sometimep", "since", "previous")
+#$define FUTURE   set("alwaysf", "sometimef", "until", "next")
+#$define ALL      set("always" , "sometime")
+
+#
+# this class provides first handle on Temporal Assertions
+# such as parsing and event forwarding
+#
+class TempAssert(
+   DState,      # (Alias) object of type State class
+   count,       # an integer that counts the number of assertions
+
+   pname,       # the procedure name of the current assertion
+   fname,       # the file name of the current assertion
+   line,        # the line number of the current assertion
+   body,        # a list with elements of the current assertion
+   code,        # a string with the current code of the current assertion
+
+   assertTable, # a table that maps each assertion (obj) into its location
+   assertList,  # an ordered list with all assertion's locations
+
+   eventMask,   # a cset of all monitored events in regards of all assertions 
+   msg          # a string with latest message from this class
+   )
+
+#
+# This method validates the current assertion location
+#
+method isValidLocation(cmd)
+   local x
+
+   body := &null
+   if not (DState.State = (LOAD | PAUSE | RUN)) then {
+      DState.State := ERROR
+      msg := "\n   No Program is Loaded_
+              \n   Type \"help\" for assistance"
+      DState.Write(msg)
+      fail
+      }
+
+   #if not(member(PAST,x) | member(FUTURE,x) | member(ALL,x)) then
+   if numeric(cmd[2]) then{
+      line := integer(cmd[2])
+      if DState.State = PAUSE then
+         fname := keyword("file",Monitored)
+      else
+         fname := DState.srcFile.procMainFile
+      body := cmd[3:0]
+      }
+   else if cmd[3] == ":" then{
+      if find(".icn", cmd[2]) then
+         fname := cmd[2]
+      else 
+         fname := cmd[2]||".icn"
+   
+      if x := integer(cmd[4]) then
+        line := x
+      else{
+         DState.State := ERROR
+         msg   :="\n   \""||DState.cmdHistory[1]||"\" Unknown virtual location"
+         msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+         DState.Write(msg)
+         fail
+         }
+      body := cmd[5:0]
+      }
+   else{
+      if DState.State = PAUSE then{
+         fname := keyword("file",Monitored)
+         line  := keyword("line",Monitored)
+         body := cmd[2:0]
+         }
+      else{
+         DState.State := ERROR
+         msg   :="\n   \""||DState.cmdHistory[1]||"\" Unknown virtual location"
+         msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+         DState.Write(msg)
+         fail
+         }
+      }
+   
+   # ensure the file name and line number are valid
+   if DState.srcFile.isSrcFile(fname) then{
+      if DState.srcFile.isLoaded(fname) then{
+         if DState.srcFile.isInFile(fname, line) then{
+            if not (code := DState.srcFile.searchFileLines(fname, line)) then{
+               msg:="\n   Line number was not found,_
+                     \n   Please try a different line number"
+               DState.Write(msg)
+               fail
+               }
+            if not (pname := DState.srcFile.getProcName(fname, line)) then{
+               msg:="\n   Procedure name was not found,_
+                     \n   Please try a different line number"
+               DState.Write(msg)
+               fail
+               }
+            }
+         else{
+            msg:="\n   Line number "||line||" out of range; "||fname||
+                 " has "||DState.srcFile.getFileTotalLines(fname)||" lines." 
+            DState.Write(msg)
+            fail
+            }
+         }
+      else if DState.srcFile.isMissing(fname) then{
+         msg:="\n   Source file \""||fname||"\" is not loaded !!!"
+         DState.Write(msg)
+         fail
+         }
+      }
+   else{
+      msg := "\n   Source file \""||fname||"\" is not in the binary !!!"
+      DState.Write(msg)
+      fail
+      }
+   return
+end
+
+#
+# this method analyzes the first part of the assertion
+#
+method cmdAssert(cmd)
+   local obj, loc, ans
+
+   if not isValidLocation(cmd) then{
+      fail
+      }
+   else if *body = 0 then{
+      DState.State := ERROR
+      msg   :="\n   \""||DState.cmdHistory[1]||"\" Bad assertion syntax !!!"
+      msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+      DState.Write(msg)
+      fail
+      }
+  
+   count +:= 1
+   case body[1] of {
+     # past time assertions
+     "alwaysp":  { obj := AlwaysP(DState,pname,fname,line,code,body,count)  }
+     "sometimep":{ obj := SometimeP(DState,pname,fname,line,code,body,count)}
+     "since":    { obj := Since(DState,pname,fname,line,code,body,count)    }
+     "previous": { obj := Previous(DState,pname,fname,line,code,body,count) }
+     # future time assertions
+     "alwaysf":  { obj := AlwaysF(DState,pname,fname,line,code,body,count)  }
+     "sometimef":{ obj := SometimeF(DState,pname,fname,line,code,body,count)}
+     "until":    { obj := Until(DState,pname,fname,line,code,body,count)    }
+     "next":     { obj := Next(DState,pname,fname,line,code,body,count)     }
+     # all time assertions
+     "always":   { obj := Always(DState,pname,fname,line,code,body,count)   }
+     "sometime": { obj := Sometime(DState,pname,fname,line,code,body,count) }
+     default:{
+        DState.State := ERROR
+        msg :="\n   \""||DState.cmdHistory[1]||"\" Bad assertion syntax !!!"
+        msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+        DState.Write(msg)
+        count -:= 1
+        fail
+        }
+     }
+   loc := fname ||":"||line
+   if /assertTable[loc] then{ 
+      assertTable[loc] := obj
+      put(assertList,loc)
+      updateMasks()
+
+      msg   :="\n   Assertion "|| count ||"# "||DState.cmdHistory[1] ||
+              "\n   is set successfully ."
+      DState.Write(msg)
+      fname := line := code := &null
+      }
+   else{
+      msg   :="\n   An assertion is found in virtual location"
+      msg ||:="\n   Do you want to replace it with the new one (Y|n):"
+      DState.Writes(msg)
+      if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then{
+         assertTable[loc] := obj
+         put(assertList,loc)#assertList[-1] := loc
+         fname := line := code := &null
+         updateMasks()
+         }
+      else
+         count -:= 1
+     }
+      
+   #insert(DState.assertLoc, line)
+   #DState.assertVars ++:= obj.varNames
+   #------------------------------------------------------
+   #write("------------cmd----------  : \n", ximage(cmd)) 
+   #write("------------body---------  : \n", ximage(body)) 
+end
+
+#
+# provides the "info assert #" command
+#
+method cmdInfo(cmd)
+   local i,j, x, h, loc, L
+
+   msg:=""
+   if *cmd = 2 then{
+      every loc := !assertList do{
+         x := assertTable[loc]
+         msg ||:= "\n   Assertion "||x.id||"# "||x.strCmd||
+                  " : at "||x.fname||":"||x.line||"; "
+         msg ||:= if x.evalValue = TRUE then "(Valid)." else "(Failed)."
+         msg ||:= "\n   Its location was reached "||x.location||" times."
+         }
+      }
+   else if *cmd >= 3 & i:=numeric(cmd[3]) then{
+      loc := assertList[i]
+      x := assertTable[loc]
+      msg ||:= "\n   Assertion #"||x.id||" "||x.strCmd||
+               " : at "||x.fname||":"||x.line||"; "
+      msg ||:= if x.evalValue = TRUE then "(Valid)." else "(Failed)."
+      msg ||:= "\n   Its location was reached "||x.location||" times."
+
+      if *cmd = 3 then{
+         msg ||:= "\n   was hit ("||x.hits||") times and evaluated to True "||
+                  x.trueHits ||" times."
+         }
+      else if *cmd = 4 & j := numeric(cmd[4]) then{
+         L := x.evalStates[j]
+         if type(L) == "list" then{
+            msg ||:= "\n   Hits # "|| j ||" details"
+            msg ||:= "\n   -------------------------------------"
+            every h := !L do
+               msg ||:= h.getInfo()
+            }
+         else{
+            msg ||:= " has a total of "||x.hits||" hits."
+            }
+         }
+      }
+   DState.Write(msg)
+end
+
+#
+# forwards relevant events to relevant assertions based on their eventmask 
+#
+method forward()
+   local x
+   
+   #write("-Forward---->",evnames(&eventcode), ": ", image(&eventvalue))
+   every x := !assertTable do{
+     if x.state = ENABLED & member(x.eventMask, &eventcode) then{
+        case &eventcode of{
+           E_Assign:{ if member(x.varNames, &eventvalue) then x.handle_event() }
+           E_Value: { if x.waitForValue > 0 then x.handle_event()              }
+           E_Line:  { x.handle_event()                                         }
+           E_Deref: { if member(x.varNames, &eventvalue) then x.handle_event() }
+           default: { #if x.triggered = TRUE then 
+                      x.handle_event()    
+                    }
+           }
+        }
+     }
+end
+
+##
+## Try to evaluate the assertion when it is ready for evaluation
+## The evaluation is triggered based on the E_Line event 
+##
+#method trigger()
+#   local x, loc, fname, line
+#
+#   #write("-Trigger---->",evnames(&eventcode), ": ", image(&eventvalue))
+#   fname := keyword("&file", Monitored)
+#   line  := &eventvalue
+#   loc   := fname||":"||line
+#   if x := \assertTable[loc] & x.state = ENABLED then{
+#      if x.triggered = TRUE then{
+#         x.evaluate()
+#         }
+#      else if x.kind = FUTURE_TIME_ASSERT then{
+#         x.triggered := TRUE
+#         x.evaluate()
+#         }
+#      }
+#end
+
+#
+# it constructs/re-constucts the assertions' eventMask 
+# from all active assertions whenever an assertion is 
+# inserted, enabled, disabled  
+#
+method updateMasks()
+   local x, assertLoc:=set(), assertVars:=set()
+
+  # write("----------------------Build mask !!!!!!!!!!!!")
+   
+   # The temporal assertion's eventmask is a union of all enabled
+   # assertions event masks + the E_Line event that is used to trigger
+   # the assertion
+   eventMask := cset(E_Line)
+   every x := !assertTable do{
+      if x.state = ENABLED then{
+         eventMask  ++:= x.eventMask
+         assertVars ++:= x.varNames
+         insert(assertLoc, x.line)
+         }
+      }
+   DState.assertEventMask  := eventMask
+   DState.assertLoc        := assertLoc
+   DState.assertVars       := assertVars
+   DState.Update(RUN) ### TEST
+end
+
+#
+# The constructor
+#
+initially()
+   
+   count       := 0
+   assertTable := table()
+   assertList  := []
+   msg         := ""
+end
+
+#------------------------------------------------------------------------------
+
+#
+# This is an abstract class for all kind of assertions 
+#
+class Assertion(
+   DState,      # (Alias) object of type State class
+   id,          # an integer idetifies the number of the assertion
+   
+   pname,       # the procedure name of assertion's virtuall location
+   fname,       # the file name of assertion's virtuall location
+   line,        # the line number of assertion's virtuall location
+   code,        # an image of the source line of where the assertion is located
+   body,        # a list with the elements of the assertion body
+   strCmd,      # a string of the assertion command
+   kind,        # defines the type of the Temporal Assertion (past,future,all)
+
+   cycle,       # the number of hits that defines the life of the assertion
+   hits,        # counts the number of hits for each assertion
+   location,    # counts the number of location hits for each assertion
+
+   countFail,   # an integer countes the times the assertion failed
+   countTrue,   # an integer countes the times the assertion evaluated TRUE
+   countFalse,  # an integer countes the times the assertion evaluated FALSE
+   trueHits,    # an integer countes the times the assertion evaluated FALSE
+   falseHits,   # an integer countes the times the assertion evaluated FALSE
+
+   state,       # The state of the assertion (ENABLED | DISABLED)
+   triggered,   # a flag tels if the assertion is triggered (TRUE | FALSE)
+   ready,       # a flag tels if the assertion is ready to be evaluated (T | F)
+   implies,     # a flag tels if assertion's body has ==> or not (&null vs not)
+   waitForValue,# a flag tels if assertion is waiting for E_Value (&null vs not)
+
+   evalList,    # assertion's list of operands and operations:list
+   evalStates,  # assertion's evaluation history: table[hits] --> list of states
+   evalInterval,# assertion's results of temporal interval: table[hits]: T| F
+   evalValue,   # assertion's current overall evaluation value
+   evalSuite,   # a state tells what to do if the assertion is evaluated to True
+
+   LHS,         # avariable become TRUE when assertions left side is TRUE
+
+   eventMask,   # the set of all monitored events inqured by this assertion
+   #valueMask,  # a table maps monitored variables into their monitored events
+   varNames,    # a set of all internal names of the assertion vars
+   msg          # a string with the latest message from this class   
+   )
+
+#
+# Sets the assertion evaluation cycle; by default cycle is &null
+# cycle = &null: no cycle is provided, unlimited evaluation
+# cycle > 0    : evaluate the first cycle of hits; (until cycle = 0)
+# cycle = 0    : no more evaluations
+#
+method setCycles()
+   local i := 2, x
+
+   if (body[i] == "(" & body[i+1] == ")") | body[i] == "()" then{ 
+      cycle := &null
+      }
+   else if body[i] == "(" then{
+      if x := variable(body[i+1], Monitored, 0) | integer(body[i+1]) then{
+         cycle := x
+         }
+      else{
+         DState.State := ERROR
+         msg   :="\n   \""||strCmd||"\" Bad assertion cycle !!!"
+         msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+         DState.Write(msg)
+         fail
+         }
+      }
+   #this one is not needed, cycle is already a class variable
+   #put(evalList, cycle) # evalList[1] := cycle
+end
+
+#
+# parses the body of the assertion into its evalList
+# the first element in the lest is the current evaluation cycle
+# i.e. { old(x) > current(x) && x > 0}
+#
+method parseBody()
+   local i, k, x, vname, vscope, param, obj
+
+   setCycles()
+   
+   every i := 1 to *body do
+      if body[i] == "{" then break
+
+   if i = (1 | *body) | body[i+1] == "}" then{
+      DState.State := ERROR
+      msg   :="\n   \""||strCmd||"\" empty assertion !!!"
+      msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+      DState.Write(msg)
+      fail
+      }
+
+   #write("-----", ximage(body))
+
+   i +:= 1
+   while(i <= *body & body[i] ~== "}") do{
+      x := body[i]
+      #write("-----------[",i,"]---[",image(x),"]---")
+      if member(OPERATOR, x) then{ 
+         put(evalList, x)
+         k := i
+         }
+      else if body[i+1] == "(" then{ # i.e. old(foo::x) > current(foo::x)
+         param := []
+         every k:= i+2 to *body do{
+            if body[k] == ")" then  break
+            else  put(param, body[k])
+            }
+         case x of {
+            "initial":   { obj := _Initial(DState, fname, line, param)    }
+            "final":     { obj := _Final(DState, fname, line, param)      }
+            "old":       { obj := _Old(DState, fname, line, param)        }
+            "current":   { obj := _Current(DState, fname, line, param)    }
+            "new":       { obj := _New(DState, fname, line, param)        }
+            "max":       { obj := _Max(DState, fname, line, param)        }
+            "min":       { obj := _Min(DState, fname, line, param)        }
+            "newmax":    { obj := _NewMax(DState, fname, line, param)     }
+            "newmin":    { obj := _NewMin(DState, fname, line, param)     }
+            "sum":       { obj := _Sum(DState, fname, line, param)        }
+            "avg":       { obj := _Avg(DState, fname, line, param)        }
+            "call":      { obj := _Call(DState, fname, line, param)       }
+            "return":    { obj := _Return(DState, fname, line, param)     }
+            "reference": { obj := _Reference(DState, fname, line, param)  }
+            "assign":    { obj := _Assign(DState, fname, line, param)     }
+            "read":      { obj := _Read(DState, fname, line, param)       }
+            "alias":     { obj := _Alias(DState, fname, line, param)      }
+            "iterations":{ obj := _Iterations(DState, fname, line, param) }
+            default:{ # a variable not an agent
+               DState.State := ERROR
+               msg   :="\n   \""||strCmd||"\" bad assertion !!!"
+               msg ||:="\n   \""||x||"\" is not a know agent"
+               msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+               DState.Write(msg)
+               fail
+               }
+            }
+         put(evalList, obj)
+         obj := &null
+         }
+      else if body[i+1] == (":"|"::") then{ #i.e. {foo::x > old(foo::x)}
+         param := [x]
+         every k:= i+1 to *body do{
+            if body[k] == "}" | member(OPERATOR, body[k]) then{
+               k -:= 1
+               break
+               }
+            else  
+               put(param, body[k])
+            }
+         put(evalList, param)
+         param := &null
+         }
+      else if x == "(" then{ #i.e. {(foo::x) > old(x)}
+         every k:= i+1 to *body do{
+            if body[k] == ")" then  break
+            else  put(param, body[k])
+            }
+         put(evalList, param)
+         param := &null
+         }
+      else{ #i.e. {x > old(x)}
+         put(evalList, [x])
+         k := i
+         }
+      i := k + 1
+      }
+   #
+   # i.e. { i < n }:[stop|pause|hide|show]
+   #
+   if i < *body & body[i] == "}" then{
+      i +:= 1
+      if body[i] == ":" then i +:= 1
+      case body[i] of{
+         "stop": { evalSuite := STOP_WHEN_TRUE   }
+         "pause":{ evalSuite := PAUSE_WHEN_TRUE  }
+         "hide": { evalSuite := HIDE_WHEN_TRUE   }
+         "show": { evalSuite := SHOW_WHEN_TRUE   }
+         default:{ evalSuite := HIDE_WHEN_TRUE   }
+         }
+      }
+
+   # 
+   # print_evalList()
+   #
+
+   #
+   # convert simple variables into objects of type AtomicAgents()
+   #
+   every i := 1 to *evalList do{
+      x := evalList[i]
+      if type(x) == "list" then{ # simple variable [x]
+         # a referenced variable is found
+         obj := AtomicAgent(DState, fname, line, VARIABLE, x)
+         evalList[i] := obj
+
+         # a union set of all assertion variables
+         varNames  ++:= obj.iNames
+         eventMask ++:= obj.eventMask
+         }
+      else if type(x) ~== "string" then{ # not operator
+         varNames  ++:= x.iNames
+         eventMask ++:= x.eventMask
+         }
+      else if type(x) == "string" & x == ("==>"|"=>"|"-->"|"->") then{ # oper
+         implies := i
+         }
+      }
+
+#  #
+#  # if this assertion body has "implies", then devide evalList into two lists
+#  #
+#  if \implies then{
+#     LHS_evalList := evalList[1:k]
+#     RHS_evalList := evalList[k+1: 0]
+#     }
+end
+
+#
+# refresh_evalLiat(): frees all previouslly collected 
+# data during the previous hit
+#
+method refresh_evalList()
+   local i, x
+
+   every x := !evalList do
+      if type(x) ~== "string" & x.kind = (AGENT | VARIABLE) then
+         x.refreshData()
+end
+
+#
+# used for debugging
+#
+method print_evalList()
+   local x
+
+   write(":------evalList--------:")
+   every x := !evalList do
+      write("---[",image(x),"]---")
+end
+
+#
+# used for info command, h is the hit key
+#
+method print_evalHistory(h)
+   local x, k, i:=0, msg:="", L
+
+   if /h then{
+      every k := 1 to hits do{
+         L := evalStates[k]
+         if type(L) == "list" then{
+            every x := !L do{
+               i +:= 1
+               if x.Result = FALSE then
+                  msg ||:= x.getInfo(i)
+               }
+            }
+         }
+      }
+   else{
+      L := evalStates[h]
+      if type(L) == "list" then{
+         every x := !L do{
+            i +:= 1
+            if x.Result = FALSE then
+               msg ||:= x.getInfo(i)
+            }
+         }
+      }
+   DState.Write(msg)
+end
+
+#
+# checks whether the assertion is ready for evaluation or not
+# when it is ready, the ready set with a non-null value
+#
+method checkReady()
+   local x, countNotReady := 0
+
+   every x := !evalList do{
+      if type(x) ~== "string" then{ ### operator >, <, <=, >=, =, ||, &&,
+         if x.kind = (AGENT | VARIABLE) & x.ready ~= TRUE then{
+            countNotReady +:= 1
+            break
+            }
+         }
+      }
+
+   if countNotReady = 0 then{
+      ready := TRUE
+      return ready
+      }
+   else
+      fail
+end
+
+#
+# Forward relevant events ito relevant agents
+#
+method forward(x)
+
+   #write("x = ",image(x))
+   case &eventcode of{
+     E_Assign:{ if member(x.iNames, &eventvalue) then{
+                   x.handle_event()
+                   waitForValue +:= 1
+                   }
+              }
+     E_Value: { if x.waitForValue > 0 then{
+                   x.handle_event()
+                   waitForValue -:= 1
+                   }
+              }
+     E_Deref: { if member(x.iNames, &eventvalue) then x.handle_event()
+              }
+     default: { x.handle_event() }
+     }
+end
+
+#
+# Handles runtime events and forwards it to relevant objects (atomic agent)
+# sides tell what side of the assertion to handle the event
+#
+method handle_event(side)
+   local i, x
+
+   if state = ENABLED then{ 
+      if /side then{
+         #write("handle_event ------------ side = &null")
+         # loop over the entier evalList: just in case that the same variable
+         # is referenced by more than one agent in the same assertion
+         every x := !evalList do
+            if type(x) ~== "string" & x.kind = (VARIABLE | AGENT) then
+               forward(x)
+         }
+      else if side = 1 & \implies then{
+         #write("handle_event ------------ side = 1")
+         # handle assertion's left side
+         every i := 1 to (implies-1) do{
+            x := evalList[i]
+            if type(x) ~== "string" & x.kind = (VARIABLE | AGENT) then
+               forward(x)
+            }
+         }
+      else if side = 2 & \implies then{
+         #write("handle_event ------------ side = 2")
+         # handle assertion's right side
+         every i := implies+1 to *evalList do{
+            x := evalList[i]
+            if type(x) ~== "string" & x.kind = (VARIABLE | AGENT) then
+               forward(x)
+            }
+         }
+      else if side = -1 then{ #parameter values
+         every x := !evalList do
+            if type(x) ~== "string" & x.kind = (VARIABLE | AGENT) then
+               x.handle_event(side)
+         #write("--------------side = ", side)
+         }
+      else fail
+      }
+   else fail
+end
+
+#
+# analyzes the assertion's body after it is being parsed in the evalList
+#
+method getResult(oper, val1, val2)
+   local i, result
+
+   if numeric(val1) & numeric(val2) then{ 
+      case oper of{
+         ">":  { result := if val1  >  val2 then TRUE else FALSE }
+         ">=": { result := if val1  >= val2 then TRUE else FALSE }
+         "<":  { result := if val1  <  val2 then TRUE else FALSE }
+         "<=": { result := if val1  <= val2 then TRUE else FALSE }
+         "=":  { result := if val1   = val2 then TRUE else FALSE }
+         "!="|
+         "~=": { result := if val1  ~= val2 then TRUE else FALSE }
+         "|"|
+         "||": { result := if val1  |  val2 then TRUE else FALSE }
+         "&"|
+         "&&": { result := if val1  &  val2 then TRUE else FALSE }
+         #"==>"|"-->"|"->"|"=>":{ }# implies : stil to be implemented 
+         }
+      }
+   else if string(val1) & string(val2) then{ 
+      case oper of{
+         ">":  { result := if val1 >>  val2 then TRUE else FALSE }
+         ">=": { result := if val1 >>= val2 then TRUE else FALSE }
+         "<":  { result := if val1 <<  val2 then TRUE else FALSE }
+         "<=": { result := if val1 <<= val2 then TRUE else FALSE }
+         "=":  { result := if val1 ==  val2 then TRUE else FALSE }
+         }
+      }
+    else fail
+
+    return result
+end
+
+##
+## saves the surrent evaluation result for future inquiry 
+##
+#method storeResult(result, side)
+#   
+#   if /side then
+#      put(evalHistory, result)
+#   else if side = 1 then
+#
+#end
+
+#
+# This method evaluates this kind of assertions
+# side represents the part of to be evaluated, when it is null
+# evaluate the whole list
+#
+method evaluateState(side)
+   local first, second, oper, val1, val2, result
+
+   if \cycle & cycle <= 0 then
+      fail
+   else if \cycle then{
+      cycle -:= 1
+      if cycle = 0 then state := DISABLED
+      }
+
+   if \implies then{
+      if /side then 
+         fail
+      else if side = 1 then{
+         first  := evalList[1]
+         oper   := evalList[2]
+         second := evalList[3]
+         }
+      else if side = 2 then{ # evalList[4] == ("==>"|"=>"|"-->"|"->")
+         first  := evalList[5]
+         oper   := evalList[6]
+         second := evalList[7]
+         }
+      else fail
+      }
+   else if *evalList = 3 then{
+      first  := evalList[1]
+      oper   := evalList[2]
+      second := evalList[3]
+      }
+   else fail
+
+   if first.kind = (LITERAL | VARIABLE | AGENT) then
+      val1 := first.getValue()
+
+   if second.kind = (LITERAL | VARIABLE | AGENT) then
+      val2 := second.getValue()
+
+   if not (type(oper) == "string" & member(OPERATOR, oper)) then{
+      result := AssertHistory(val1, val2, oper, NOTVALID, "bad operator!")
+      if /side | side = 2 then{ 
+         /evalStates[hits] := []
+         put(evalStates[hits], result)
+         #countFail +:= 1
+         }
+      fail
+      }
+
+   if /val1 | / val2 then{
+      result := AssertHistory(image(val1), image(val2),
+                              oper, NOTVALID, "bad operand!")
+      if /side | side = 2 then{ 
+         /evalStates[hits] := []
+         put(evalStates[hits], result)
+         #countFail +:= 1
+         }
+      fail
+      }
+
+   if getResult(oper, val1, val2) = FALSE then{
+      result := AssertHistory(val1, val2, oper, FALSE, "!")
+      if /side | side = 2 then{ 
+         /evalStates[hits] := []
+         put(evalStates[hits], result)
+         #countFail +:= 1
+         }
+      return FALSE
+      }
+   else{
+      result := AssertHistory(val1, val2, oper, TRUE, "!")
+      if /side | side = 2 then{ 
+         /evalStates[hits] := []
+         put(evalStates[hits], result)
+         }
+      #countTrue +:= 1
+      return TRUE
+      }
+end
+
+#
+# prints the evaluation state information
+#
+method writeState()
+
+   msg   := "\n   Assertion #"||id||" "||strCmd||"; at "||fname||","||line
+   msg ||:= ": (Failed)."
+   msg ||:= "\n   It is hit ("||hits||") times; ("
+   msg ||:= trueHits||") times True and ("||falseHits||") times False."
+   msg ||:= "\n   Its location was reached "||location||" times."
+   DState.Write(msg)
+end
+
+#
+# check the evaluation suite when the result is TRUE
+#
+method check_evalSuite()
+ 
+   case evalSuite of{
+      HIDE_WHEN_TRUE: { }
+      STOP_WHEN_TRUE: { writeState() 
+                        DState.State := PAUSE
+                      }
+      SHOW_WHEN_TRUE: { writeState()
+                      }
+      PAUSE_WHEN_TRUE:{ writeState() 
+                        delay(500)
+                      }
+      }
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkIntervals()
+   local x, i
+
+   countTrue := countFalse := 0
+   every i := 1 to hits do{
+      write("i=",i)
+      if evalInterval[i] = TRUE then 
+         countTrue +:= 1
+      else 
+         countFalse +:= 1
+      }
+end
+
+#
+# accoumulates the set of all monitored variables
+# and associates them to the set of monitored events E_Assign and E_Deref
+# ????????????????????????????
+#method build_Mask()
+#   local x, i, vars := set()
+#
+#   every i := 1 to *evalList do{
+#      x := evalList[i]
+#      if x.kind = VARIABLE then{
+#         write("Variable : ", image(x))
+#         vars ++:= x.iNames
+#         }
+#      }
+#   varNames := vars
+#end
+
+#
+# this methods sets up strCmd with the string body of the assertion 
+#
+method setStrBody()
+   local i, t
+
+   strCmd := DState.cmdHistory[1]
+   t := body[1]
+   i := find(t, strCmd)
+   strCmd := strCmd[i:0]
+end
+
+#
+# The constructor of the Assertion class
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   DState       := DebugState
+   pname        := Pname
+   fname        := Fname
+   line         := Line
+   code         := Code
+   body         := Body
+   id           := ID
+
+   setStrBody()
+   #strCmd      := DebugState.cmdHistory[1]
+   #kind is to be set in the derived class
+   ready        := FALSE
+   implies      := &null
+   cycle        := &null
+   hits         := 0
+   location     := 0
+   state        := ENABLED
+   waitForValue := 0
+   
+   countFail    := 0
+   countTrue    := 0
+   countFalse   := 0
+   trueHits     := 0
+   falseHits    := 0
+
+   #eventMask   := cset() #cset(E_Assign || E_Value || E_Deref)
+   #valueMask   := table()
+
+   varNames     := set()
+   evalList     := []
+   LHS          := &null
+
+   evalStates   := table()#[]
+   evalInterval := table()
+   evalValue    := FALSE
+
+   msg          := ""
+
+   parseBody()
+   #evaluate() not here
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# Instances of this class are to be inserted
+# in the list of evaluation history of each assertion
+#
+class AssertHistory(
+   Val1,   # the first value
+   Val2,   # the second value
+   Oper,   # the operator 
+   Result, # the result
+   line,   # the line number of the evaluation
+   fname,  # the file name of the evaluation
+   Message # a detailed message about the result
+   )
+
+#
+# returns a formated history for the instance
+#
+method getInfo(i)
+   
+   if /i then{
+      return  "\n   "||Val1||" "||Oper||" "||Val2||": "    ||
+              (if Result = TRUE then "True" 
+               else if Result = FALSE then "False" else "Not Valid")  ||
+              " at file "|| fname||":"||line||"; "||Message
+      }
+   else if i <= 0 then{
+      return  Val1||" "||Oper||" "||Val2||": "            ||
+              (if Result = TRUE then "True" 
+               else if Result = FALSE then "False" else "Not Valid")  ||
+              " at file "||fname||":"||line||"; "||Message
+      }
+   else{
+      return  "\n   "||i||"# "||Val1||" "||Oper||" "||Val2||": "||
+              (if Result = TRUE then "True" 
+               else if Result = FALSE then "False" else "Not Valid")  ||
+              " at file "||fname||":"||line||"; "||Message
+      }
+end
+
+#
+# The constructor of the AssertHistory class
+#
+initially(v1, v2, op, result, msg)
+   Val1     := v1 
+   Val2     := v2
+   Oper     := op
+   Result   := result
+   Message  := msg
+  
+   line     := keyword("&line", Monitored)
+   fname    := keyword("&file", Monitored) 
+end
+
+#
+#==============================================================================
+#
+
+#
+# This class handles the evaluation of all time assertion always()
+# This kind of assertions is triggered by the call of its procedure
+# and evaluated based on its scope. Then, its triggered <- FALSE
+# when its procedure returns
+#
+class Always: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#  
+method handle_event()
+   #static param_var
+   local cur_proc, i, res
+   
+   #write("-Always[-]---->",evnames(&eventcode), ": ", image(&eventvalue))
+   if triggered = TRUE then{
+      self.Assertion.handle_event()
+      #if /param_var & &eventcode == E_Assign then{
+      #   #param_var := 1
+      #   #if evaluateState() = FALSE then
+      #   #   evaluateInterval(hits)
+      #   #checkEvaluation() ##???
+      #   }
+      #else
+      if &eventcode == (E_Pret | E_Pfail | E_Psusp) then{
+         cur_proc := image(proc(Monitored,0))
+         i := find(" ",cur_proc)+1
+         cur_proc := cur_proc[i:0]
+         if cur_proc == pname then{
+            evaluateInterval()
+            triggered := FALSE
+            }
+         }
+      else if &eventcode == E_Line then{
+         location +:= 1
+         if location >= 50000 then
+            DState.eventMask --:= eventMask
+         }
+      else if &eventcode ~== E_Assign then{
+         if (res := evaluateState()) = FALSE then
+            evaluateInterval()
+         else if \res = TRUE then
+            check_evalSuite()
+         #checkEvaluation() ##???
+         }
+      }
+   else if &eventcode == (E_Pcall | E_Presum) then{
+      cur_proc := image(&eventvalue)
+      i := find(" ",cur_proc) + 1
+      cur_proc := cur_proc[i:0]
+      if cur_proc == pname then{
+         triggered := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+   else if &eventcode == (E_Error | E_Exit) then
+      checkEvaluation()
+end
+
+#
+# This method evaluates the current interval after it is finished
+# It evaluates the
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = FALSE then result := FALSE
+         }
+      }
+   else fail
+
+   if result = TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x
+
+   #checkIntervals()
+   #x := countFalse + countTrue
+
+   if falseHits > 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := ALL_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line || E_Error || E_Exit) || ProcMask
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of all time assertion sometime()
+#
+class Sometime: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   #static param_var
+   local cur_file, cur_proc, i, res
+
+   if triggered = TRUE then{
+      self.Assertion.handle_event()
+      #if /param_var & &eventcode == E_Assign then{
+      #   param_var := 1
+      #   evaluateState()
+      #   }
+      #else
+      if &eventcode == (E_Pret | E_Pfail | E_Psusp) then{
+         cur_proc := image(proc(Monitored,0))
+         i := find(" ",cur_proc)+1
+         cur_proc := cur_proc[i:0]
+         if cur_proc == pname then{
+            evaluateInterval()
+            triggered := FALSE
+            }
+         }
+      else if &eventcode == E_Line then
+         location +:= 1
+      else if &eventcode ~== E_Assign then{
+         if (res := evaluateState()) = TRUE then{
+            #check_evalSuite()
+            evaluateInterval()
+            triggered := FALSE
+            #state := DISABLED
+            DState.eventMask --:= eventMask
+            }
+         else if \res = FALSE then
+            check_evalSuite()
+         }
+      }
+   else if &eventcode == (E_Pcall | E_Presum) then{
+      cur_proc := image(&eventvalue)
+      i := find(" ",cur_proc) + 1
+      cur_proc := cur_proc[i:0]
+      if cur_proc == pname then{
+         triggered := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+   else if &eventcode == (E_Error | E_Exit) then
+      checkEvaluation()
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countFalse + countTrue
+
+   if trueHits = 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := FALSE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = TRUE then result := TRUE
+         }
+      }
+   if result := TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := ALL_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line || E_Error || E_Exit) || ProcMask
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#==============================================================================
+#
+
+#
+# This class handles the evaluation of the past time assertion alwaysp()
+# which is equivalent to previous
+#
+class AlwaysP: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   #static param_var
+   local cur_file, cur_proc, i, res
+
+   if triggered = TRUE then{
+      self.Assertion.handle_event()
+      #if /param_var & &eventcode == E_Assign then{
+      #   param_var := 1
+      #   evaluateState()
+      #   }
+      #else
+      if &eventcode == E_Line then{
+         cur_file := keyword("&file", Monitored)
+         if &eventvalue = line & cur_file == fname then{
+            evaluateInterval()
+            location +:= 1
+            checkEvaluation()
+            triggered := FALSE
+            }
+         }
+      else if &eventcode ~== E_Assign then{
+         if (res := evaluateState()) = FALSE then
+            evaluateInterval()
+         else if \res = TRUE then
+            check_evalSuite()
+         }
+      }
+   else if &eventcode == (E_Pcall | E_Presum) then{
+      cur_proc := image(&eventvalue)
+      i := find(" ",cur_proc) + 1
+      cur_proc := cur_proc[i:0]
+      if cur_proc == pname then{
+         triggered := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = FALSE then result := FALSE
+         }
+      }
+   else fail
+
+   if result = TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countFalse + countTrue
+
+   if falseHits > 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := PAST_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line) || cset(E_Pcall || E_Presum)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of the past time assertion sometimep()
+#
+class SometimeP: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   #static param_var
+   local cur_file, cur_proc, i
+
+   if triggered = TRUE then{
+      self.Assertion.handle_event()
+      #if /param_var & &eventcode == E_Assign then{
+      #   param_var := 1
+      #   evaluateState()
+      #   }
+      #else
+      if &eventcode == E_Line then{
+         cur_file := keyword("&file", Monitored)
+         if &eventvalue = line & cur_file == fname then{
+            evaluateInterval()
+            location +:= 1
+            checkEvaluation()
+            triggered := FALSE
+            }
+         }
+      else if &eventcode ~== E_Assign then{
+         if evaluateState() = TRUE then
+            check_evalSuite() 
+         }
+      }
+   else if &eventcode == (E_Pcall | E_Presum) then{
+      cur_proc := image(&eventvalue)
+      i := find(" ",cur_proc) + 1
+      cur_proc := cur_proc[i:0]
+      if cur_proc == pname then{
+         triggered := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := FALSE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = TRUE then result := TRUE
+         }
+      }
+   if result := TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countFalse + countTrue
+
+   if trueHits = 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := PAST_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line) || cset(E_Pcall || E_Presum)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of the past time assertion since()
+# This kind of assertions is triggered when the condition is valid
+#
+class Since : Assertion(
+   triggered_line,  # The line number of the assertion trigger location
+   triggered_fname, # The file name of the assertion trigger location
+   part2_triggered  # a flag become true when part one is true
+   )
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   local cur_file, val, res
+
+   #write("-Since[-]---->",evnames(&eventcode), ": ", image(&eventvalue))
+   if part2_triggered = FALSE then{
+      self.Assertion.handle_event(1)
+      if evaluateState(1) = TRUE then{
+         triggered       := TRUE
+         part2_triggered := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         # save the location of the trigger
+         triggered_line  := keyword("&line", Monitored)
+         triggered_fname := keyword("&file", Monitored)
+         }
+      }
+   else{
+      if triggered = TRUE then{
+         if &eventcode == E_Line then{
+            cur_file := keyword("&file", Monitored)
+            if &eventvalue = line & cur_file == fname then{
+               evaluateInterval()
+               checkEvaluation()
+               location +:= 1
+               triggered := FALSE
+               }
+            }
+         else{ #if &eventcode ~== E_Line then
+            self.Assertion.handle_event(2)
+            if &eventcode ~== E_Assign then{ 
+               if (res := evaluateState(2)) = FALSE then
+                  evaluateInterval()
+               else if \res = TRUE then
+                  check_evalSuite()
+               }
+            }
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = FALSE then result := FALSE
+         }
+      }
+   else fail
+
+   if result = TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countTrue + countFalse
+
+   if falseHits > 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   triggered_line  := 0
+   triggered_fname := "?"
+
+   part2_triggered := FALSE
+
+   kind            := PAST_TIME_ASSERT
+   triggered       := FALSE
+   eventMask       := cset(E_Line) #|| cset(E_Pcall || E_Presum)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of the past time assertion previous()
+#
+class Previous: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   local cur_file, cur_proc, i, res
+
+   if &eventcode == (E_Pcall | E_Presum) then{
+      cur_proc := image(&eventvalue)
+      i := find(" ",cur_proc) + 1
+      cur_proc := cur_proc[i:0]
+      if cur_proc == pname then{
+         triggered := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+   else if triggered = TRUE then{
+      if &eventcode == E_Line then{
+         cur_file := keyword("&file", Monitored)
+         if &eventvalue = line & cur_file == fname then{
+            #evaluateState()
+            evaluateInterval()
+            checkEvaluation()
+            triggered := FALSE
+            }
+         }
+      else{
+         self.Assertion.handle_event()
+         if &eventcode ~== E_Assign then{ 
+            if (res := evaluateState()) = TRUE then
+               check_evalSuite()
+            } 
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      #every x := !L do{
+      x := L[-2]
+      if \x.Result = FALSE then result := FALSE
+      #   }
+      }
+   else fail
+
+   if result = TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countTrue + countFalse
+
+   if falseHits > 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := PAST_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line) || cset(E_Pcall || E_Presum)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#==============================================================================
+#
+
+#
+# This class handles the evaluation of the future time assertion always)
+# which is equivalent to next 
+# This kind of assertions is triggered when their virtual location is 
+# reached for the first time 
+#
+class AlwaysF: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   #static param_var
+   static pre_triggered
+   local cur_file, cur_proc, i, res
+
+   if triggered = TRUE then{
+      self.Assertion.handle_event()
+      #if /param_var & &eventcode == E_Assign then{
+      #   param_var := 1
+      #   #if checkReady() then
+      #   evaluateState()
+      #   }
+      #else
+      if &eventcode ~== E_Assign then{
+         if &eventcode == (E_Pret | E_Pfail | E_Psusp) then{
+            cur_proc := image(proc(Monitored,0))
+            i := find(" ",cur_proc) + 1
+            cur_proc := cur_proc[i:0]
+            if cur_proc == pname then{
+               evaluateInterval()
+               checkEvaluation()
+               pre_triggered := &null
+               triggered := FALSE
+               }
+            }
+         else if &eventcode == E_Line then
+            location +:= 1
+         else{
+            if (res := evaluateState()) = FALSE then
+               evaluateInterval()
+            else if \res = TRUE then
+               check_evalSuite()
+            }
+         }
+      }
+   else if &eventcode == E_Line & /pre_triggered then{
+      cur_file := keyword("&file", Monitored)
+      if &eventvalue = line & cur_file == fname then{
+         pre_triggered := TRUE
+         triggered     := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = FALSE then result := FALSE
+         }
+      }
+   else fail
+
+   if result = TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countTrue + countFalse
+
+   if falseHits > 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := FUTURE_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line) || cset(E_Pret || E_Pfail || E_Psusp)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of the future time assertion sometimef()
+#
+class SometimeF: Assertion()
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   #static param_var
+   static pre_triggered
+   local cur_file, cur_proc, i, res
+
+   if triggered = TRUE then{
+      self.Assertion.handle_event()
+      #if /param_var & &eventcode == E_Assign then{
+      #   param_var := 1
+      #   #if checkReady() then
+      #   evaluateState()
+      #   }
+      #else
+      if &eventcode ~== E_Assign then{
+         if &eventcode == (E_Pret | E_Pfail | E_Psusp) then{
+            cur_proc := image(proc(Monitored,0))
+            i := find(" ",cur_proc) + 1
+            cur_proc := cur_proc[i:0]
+            if cur_proc == pname then{
+               evaluateInterval()
+               checkEvaluation()
+               triggered := FALSE
+               }
+            }
+         else if &eventcode == E_Line then
+            location +:= 1
+         else{ 
+            if evaluateState() = TRUE then
+               check_evalSuite()
+            }
+         }
+      }
+   else if &eventcode == E_Line & /pre_triggered then{
+      cur_file := keyword("&file", Monitored)
+      if &eventvalue = line & cur_file == fname then{
+         pre_triggered := TRUE 
+         triggered     := TRUE
+         hits +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := FALSE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = TRUE then result := TRUE
+         }
+      }
+   if result := TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   #checkIntervals()
+   #x := countTrue + countFalse
+
+   if trueHits = 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+      evalValue := TRUE
+end
+
+
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind      := FUTURE_TIME_ASSERT
+   triggered := FALSE
+   eventMask := cset(E_Line) || cset(E_Pret || E_Pfail || E_Psusp)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of the future time assertion next()
+#
+class Next: Assertion(
+   pre_triggered # a flag tells that this assertion is triggered before
+)
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   local cur_file
+
+   #write("-Trigger---->",evnames(&eventcode), ": ", image(&eventvalue))
+   if &eventcode == E_Line & pre_triggered = FALSE then{
+      cur_file := keyword("&file", Monitored)
+      if &eventvalue = line & cur_file == fname then{
+         triggered     := TRUE
+         pre_triggered := TRUE
+         hits     +:= 1
+         location +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+   else if triggered = TRUE then{
+      self.Assertion.handle_event()
+      if checkReady() then{
+         #if (res := evaluateState()) = TRUE then ??
+         evaluateState()
+         evaluateInterval()
+         checkEvaluation()
+         triggered := FALSE
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = FALSE then result := FALSE
+         }
+      }
+   if result := TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x 
+
+   if falseHits > 0 then{
+      evalValue := FALSE
+      writeState()
+      DState.State := PAUSE
+      }
+   else
+      evalValue := TRUE
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   kind          := FUTURE_TIME_ASSERT
+   triggered     := FALSE
+   pre_triggered := FALSE
+   eventMask     := cset(E_Line)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#------------------------------------------------------------------------------
+#
+
+#
+# This class handles the evaluation of the future time assertion until()
+#
+class Until: Assertion(
+   part2_CountTrue,  # an integer counts the number of true evaluations
+   part2_CountFalse, # an integer counts the number of false evaluations
+   evaluated_line,   # The line number of the assertion complete evaluation
+   evaluated_fname,  # The file name of the assertion complete evaluation
+   pre_triggered     # a flag tells that this assert is previously triggered
+   )
+
+#
+# this methods handles events received from the evaluator of UDB
+#
+method handle_event()
+   local cur_file, val1, val2
+
+   if &eventcode == E_Line & pre_triggered = FALSE then{
+      cur_file := keyword("&file", Monitored)
+      if &eventvalue = line & cur_file == fname then{
+         triggered := TRUE
+         pre_triggered := TRUE
+         hits +:= 1
+         location +:= 1
+         self.Assertion.handle_event(-1)
+         }
+      }
+   else if triggered = TRUE & &eventcode ~== E_Line then{
+      self.Assertion.handle_event()
+      if &eventcode ~== E_Assign then{
+         if val1 := evaluateState(1) & val1 = FALSE then{
+            if val2 := evaluateState(2) & val2 = TRUE then{
+               part2_CountTrue +:= 1
+               check_evalSuite() #??
+               }
+            else
+               part2_CountFalse +:= 1
+            }
+         else if \val1 = TRUE then{
+            evaluated_line  := keyword("&line", Monitored)
+            evaluated_fname := keyword("&file", Monitored)
+            evaluateInterval()
+            checkEvaluation()
+            triggered := FALSE
+            }
+         }
+      }
+end
+
+#
+# This method evaluates the current interval
+#
+method evaluateInterval(h)
+   local x, L, result := TRUE
+
+   /h := hits
+   L := evalStates[h]
+   if type(L) == "list" then{
+      every x := !L do{
+         if x.Result = FALSE then result := FALSE
+         }
+      }
+   if result := TRUE then{
+      evalInterval[hits] := TRUE
+      trueHits +:= 1
+      }
+   else{
+      evalInterval[hits] := FALSE
+      falseHits +:= 1
+      }
+   checkEvaluation()  # for each interval
+   refresh_evalList() # for future hits
+end
+
+#
+# at the end of the program, it checks the state of this assertion
+#
+method checkEvaluation()
+   local x
+
+   x := part2_CountTrue + part2_CountFalse
+   if part2_CountTrue > 0 then{
+      evalValue := TRUE
+      msg   := "\n   Assertion #"||id||" at "||fname||","||line||": "||strCmd
+      msg ||:= ": (Valid "||part2_CountTrue||" out of "||x||")."
+      msg ||:= "\n   Ended at file "||evaluated_fname||":"||evaluated_line 
+      msg ||:= "\n   Its location was hit "||location||" times."
+      DState.Write(msg)
+      }
+   else{
+      evalValue := FALSE
+      msg   := "\n   Assertion #"||id||" at "||fname||","||line||": "||strCmd
+      msg ||:= ": (Failed "||part2_CountTrue||" out of "||x||")."
+      msg ||:= "\n   Ended at file "||evaluated_fname||":"||evaluated_line 
+      msg ||:= "\n   Its location was hit "||location||" times."
+      DState.Write(msg)
+      }
+end
+
+#
+# The constructor
+#
+initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+
+   part2_CountTrue  :=0
+   part2_CountFalse :=0
+   evaluated_line   := 0
+   evaluated_fname  := "?"
+
+   kind             := FUTURE_TIME_ASSERT
+   triggered        := FALSE
+   pre_triggered    := FALSE
+ 
+   eventMask        := cset(E_Line)
+   self.Assertion.initially(DebugState, Pname, Fname, Line, Code, Body, ID)
+end
+
+#
+#==============================================================================
+#
+

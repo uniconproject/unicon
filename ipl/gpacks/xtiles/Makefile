@@ -5,6 +5,7 @@ xtiles:	$(SRC)
 
 Iexe:	xtiles
 	cp xtiles ../../iexe/
+	rm -f xtiles
 
 Clean:
 	rm -f xtiles *.u[12]

@@ -11,6 +11,7 @@ skeem:	$(SRC)
 
 Iexe:	skeem
 	cp skeem ../../iexe/
+	rm -f skeem
 
 Clean:	
 	rm -f skeem *.u?

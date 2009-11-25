@@ -5,6 +5,7 @@ tcll1:
 
 Iexe:	tcll1
 	cp tcll1 ../../iexe/
+	rm -f tcll1
 
 Clean:
 	rm -f *.u[12] tcll1

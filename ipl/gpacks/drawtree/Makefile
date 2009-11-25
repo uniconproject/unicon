@@ -10,6 +10,7 @@ Build drawtree:
 
 Iexe:	drawtree
 	cp drawtree ../../iexe/
+	rm -f drawtree
 
 Clean:
 	rm -f *.u* drawtree

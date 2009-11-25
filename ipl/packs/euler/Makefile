@@ -6,6 +6,7 @@ euler:
 
 Iexe:	euler
 	cp euler ../../iexe/
+	rm -f euler
 
 Clean:
 	rm -f euler *.u[12]

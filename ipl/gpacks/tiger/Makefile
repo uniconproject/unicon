@@ -22,6 +22,7 @@ test:
 
 install:	$(PROGS) $(SCRIPTS)
 		cp $(PROGS) $(SCRIPTS) $(DEST)
+		rm -f $(PROGS) $(SCRIPTS) $(DEST)
 
 Iexe:		
 		$(MAKE) DEST=../../iexe install

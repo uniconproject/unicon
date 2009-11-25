@@ -71,6 +71,7 @@ ipd265.ps:	ipd265.bibl fig1.ps fig2.ps
 
 Iexe:	vib
 	cp vib ../../iexe/
+	rm -f vib
 
 clean Clean:
 	rm -f vib *.ps *.u[12] app vibpro* core busy dlog

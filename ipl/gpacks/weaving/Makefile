@@ -25,6 +25,7 @@ $(PROGS): 	$(PROCS)
 
 Iexe:		$(PROGS)
 		cp $(PROGS) ../../iexe/
+		rm -f $(PROGS)
 
 clean Clean:
 		rm -f $(PROGS) *.u?

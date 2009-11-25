@@ -85,11 +85,7 @@ clean:
 
 cleantools:
 	@for i in $(Tools) ; do\
-<<<<<<< Makefile
 		(rm ../../../bin/$$i; );\
 		(rm $$i; );\
-=======
-		(rm ../../../bin/$$i; );\
->>>>>>> 1.5
 	done
 

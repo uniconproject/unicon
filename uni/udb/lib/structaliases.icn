@@ -11,7 +11,12 @@ $include "evdefs.icn"
 # This class handles the struct usage of Aliases
 # List, Table, Set, Record
 #
+$ifndef StandAlone
 class StructAliases : Listener(
+$else
+class StructAliases (
+$endif
+
    eventMask,     # Monitored events for this detection
 
    tLalias,       # List's Aliases, maps the serial # to a set of var names
@@ -112,9 +117,11 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask := cset(E_Pcall || E_Assign || E_Value)
+   eventMask := cset(E_Exit || E_Error) ++ cset(E_Pcall || E_Assign || E_Value)
 
    tLalias := table() 
    tTalias := table() 
@@ -130,14 +137,46 @@ end
 $ifdef StandAlone
 
 link evinit
- 
+
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+# 
 procedure main(arg)
    local obj
    
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+   obj := StructAliases()
+
+   while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then
+         obj.write_Info()
+      else
+         obj.handle_Events() 
+      }
+   handle_Events() #fake call
+end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
    
-   obj := StructAliases()   
-   while EvGet(obj.eventMask) do
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+      obj := StructAliases()
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then
+      obj.write_Info()
+   else
       obj.handle_Events() 
 end
+
 $endif

@@ -10,7 +10,12 @@ $include "evdefs.icn"
 # The main Memeory Monitoring class:
 # It Handles the memory managment of an Icon/Unicon perogram 
 #
+$ifndef StandAlone
 class Memory : Listener(
+$else
+class Memory (
+$endif
+
    eventMask,      # The monitored events
    collectMask,    # The garbage collection mask
    allocMask,      # The heap memory allcation mask
@@ -265,11 +270,13 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
    allocMask   := AllocMask
    collectMask := cset(E_Collect || E_EndCollect)
-   eventMask   := allocMask ++ collectMask
+   eventMask   := cset(E_Exit || E_Error) ++ allocMask ++ collectMask
 
    Talloc_total  := table(1)
    Talloc_count  := table(1)
@@ -299,7 +306,8 @@ initially(name, state)
    AllocStateInfo  := [["Total"  ,0,0,0,0,0,0,0],
                        ["Total %",0,0,0,0,0,0,0],
                        ["Average",0,0,0,0,0,0,0]]
-     
+
+   collect_flag    := &null
 end
 
 
@@ -311,20 +319,59 @@ end
 $ifdef StandAlone
 
 link evinit
- 
+
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+# 
 procedure main(arg)
    local obj
    
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   
-   obj := Memory()   
+   obj := Memory()
+
    while EvGet(obj.eventMask) do{
-      if &eventcode == (E_Collect | E_EndCollect) then
+      if &eventcode == (E_Exit | E_Error) then{
+         obj.write_MemoryStateInfo()
+         obj.write_AllocStateInfo()
+         }
+      else if &eventcode == (E_Collect | E_EndCollect) then
          obj.handle_GarbageCollection()
       else
          obj.handle_MemoryAllocation()
       }
-   obj.write_MemoryStateInfo()
-   obj.write_AllocStateInfo()
+   # fake call
+   handle_Events()
 end
+
+#global obj
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+   
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      obj := Memory()
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then{
+      obj.write_MemoryStateInfo()
+      obj.write_AllocStateInfo()
+      fail
+      }
+   else if &eventcode == (E_Collect | E_EndCollect) then
+      obj.handle_GarbageCollection()
+   else
+      obj.handle_MemoryAllocation()
+   return
+end
+
 $endif

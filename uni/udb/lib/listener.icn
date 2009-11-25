@@ -18,18 +18,17 @@ class Listener(
 #
 # It handles and forwards the internal monitor
 #
-method Forward(code, value)
+method Forward()
    local foo, foolist
 
-   /code := &eventcode; /value := &eventvalue
-   if \self.methtab[code] then
-      self.methtab[code] (self, code, value)
+   if foo := \self.methtab[&eventcode] then
+      foo (self)
    else{
       foolist := self.methtab["handler"]
       every foo := !foolist do
-          foo(self) #, code, value)
+          foo(self)
       write("Forward, hmmmm")
-      }  
+      }
 end
 
 #

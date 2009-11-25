@@ -12,7 +12,12 @@ link syntname
 # This class handles loops times,
 # It finds the most n loops took time during the execution 
 #
+$ifndef StandAlone
 class LoopTime : Listener(
+$else
+class LoopTime (
+$endif
+
    eventMask,         # The monitored events for this detection
     
    procCallCount,     # Table maps each proc name into its number of calls
@@ -163,9 +168,11 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask := cset(E_Line || E_Syntax || E_Pcall)
+   eventMask := cset(E_Exit || E_Error) ++ cset(E_Line || E_Syntax || E_Pcall)
 
    procCallCount     := table(0)
    loopCount         := table(0)
@@ -185,16 +192,47 @@ end
 $ifdef StandAlone
 
 link evinit
- 
+
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+# 
 procedure main(arg)
    local obj
    
-   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   
-   obj := LoopTime()   
-   while EvGet(obj.eventMask) do
-         obj.handle_Events()
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+   obj := LoopTime()
 
-   obj.write_Info(10)
+   while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then
+         obj.write_Info(10)
+      else
+         obj.handle_Events()
+      }
+   #obj.write_Info(10)
+   handle_Events() #fake call
 end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+   
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      obj := LoopTime()
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then
+      obj.write_Info(10)
+   else
+      obj.handle_Events()
+end
+
 $endif

@@ -22,7 +22,12 @@ record ProcRecord(
 # This class monitores profile related information such as
 # procedure activities and variables
 #
+$ifndef StandAlone
 class ProcProfile : Listener(
+$else
+class ProcProfile (
+$endif
+
    eventMask,       # The monitored events
 
    procCallCount,   # procedure call count
@@ -210,9 +215,11 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask := ProcMask
+   eventMask := cset(E_Exit || E_Error) ++ ProcMask
  
    procCallCount    := table(0)
    procResumeCount  := table(0)
@@ -246,16 +253,47 @@ end
 $ifdef StandAlone
 
 link evinit
- 
+
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+# 
 procedure main(arg)
    local obj
    
-   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   
-   obj := ProcProfile()   
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+   obj := ProcProfile()
+
    while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then
+         obj.write_Info()
+      else
          obj.handle_Events()
       }
-   obj.write_Info()
+   #obj.write_Info()
+   handle_Events() #fake call
 end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+   
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      obj := ProcProfile()
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then
+      obj.write_Info()
+   else
+      obj.handle_Events()
+end
+
 $endif

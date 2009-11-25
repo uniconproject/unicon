@@ -12,7 +12,12 @@ $include "evdefs.icn"
 # it associates all names fo called procedures with
 # their acumulated elapsed time from all calls. 
 #
+$ifndef StandAlone
 class ProcTime : Listener(
+$else
+class ProcTime (
+$endif
+
    eventMask,        # The monitored events for this detection
 
    callMask,         # The monitored events for the calls + resumes
@@ -110,9 +115,11 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask := ProcMask
+   eventMask := cset(E_Exit || E_Error) ++ ProcMask
    callMask  := cset(E_Pcall || E_Presum)
    retMask   := cset(E_Pfail || E_Pret || E_Psusp || E_Prem)
 
@@ -131,16 +138,46 @@ end
 $ifdef StandAlone
 
 link evinit
- 
+
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+# 
 procedure main(arg)
    local obj
    
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   
    obj := ProcTime()   
+
    while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then
+         obj.write_Info(20)
+      else
          obj.handle_Events()
       }
-   obj.write_Info(20)
+   handle_Events() #fake call
 end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+   
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+      obj := ProcTime()   
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then
+      obj.write_Info(20)
+   else
+      obj.handle_Events()
+end
+
 $endif

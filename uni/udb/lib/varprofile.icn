@@ -10,7 +10,12 @@ $include "evdefs.icn"
 # This class monitors variables usage during the execution of a program
 # and build information about the most used ones (Local  & global)
 #
+$ifndef StandAlone
 class VarProfile : Listener(
+$else
+class VarProfile(
+$endif
+
    eventMask,      # A cset of the Monitored events 
 
    procCallCount,  # Table maps procedur names to their number of calls
@@ -234,9 +239,11 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask      := cset(E_Pcall || E_Deref)
+   eventMask      := cset(E_Exit || E_Error) ++ cset(E_Pcall || E_Deref)
 
    procCallCount  := table(0)
 
@@ -263,15 +270,49 @@ $ifdef StandAlone
 
 link evinit
 
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+#
 procedure main(arg)
    local obj
    
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
    obj := VarProfile()   
-   while EvGet(obj.eventMask) do
-      obj.handle_Events() 
 
-   obj.write_LocalVarInfo(10)
-   obj.write_GlobalVarInfo(10)
+   while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then{
+         obj.write_LocalVarInfo(10)
+         obj.write_GlobalVarInfo(10)
+         }
+      else
+         obj.handle_Events()
+      }
+   handle_Events() #fake call
 end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+
+   initial{   
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+      obj := VarProfile()
+      return obj.eventMask
+      }
+
+   &eventcode  := code
+   &eventvalue := value
+ 
+   if &eventcode == (E_Exit | E_Error) then{
+      obj.write_LocalVarInfo(10)
+      obj.write_GlobalVarInfo(10)
+      }
+   else
+      obj.handle_Events()
+end
+
 $endif

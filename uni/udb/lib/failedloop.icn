@@ -11,7 +11,12 @@ link syntname
 # check failed loop, loops that executes zero times
 # otherwise it will show up how many times that loop executed
 #
+$ifndef StandAlone
 class FailedLoop : Listener(
+$else
+class FailedLoop (
+$endif
+
    eventMask,     # Monitored events for this detection
    
    procCallCount, # Table counts the number of times each procedure is called
@@ -140,9 +145,12 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask     := cset(E_Pcall || E_Syntax || E_Line)
+   eventMask     := cset(E_Exit || E_Error) ++ 
+                    cset(E_Pcall || E_Syntax || E_Line)
 
    procCallCount := table(0)
    loopFailCount := table(-2)
@@ -158,17 +166,48 @@ end
 $ifdef StandAlone
 
 link evinit
- 
+
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+# 
 procedure main(arg)
    local obj
    
-   EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   
-   obj := FailedLoop()   
-   while EvGet(obj.eventMask) do
-      obj.handle_Events() 
+   EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+   obj := FailedLoop()
 
-   obj.write_Info()
+   while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then
+         obj.write_Info()
+      else
+         obj.handle_Events() 
+      }
+   #obj.write_Info()
+   handle_Events() #fake call
 end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+   
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")   
+      obj := FailedLoop()
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then
+      obj.write_Info()
+   else
+      obj.handle_Events() 
+end
+
 $endif
 

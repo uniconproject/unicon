@@ -23,7 +23,12 @@ record StructRecord(
 # struct type, the read percentage, and the write percentage on each type:
 # List, Table, Set, Record
 #
+$ifndef StandAlone
 class StructUsage : Listener(
+$else
+class StructUsage (
+$endif
+
    eventMask,      # All Monitored events for this detection
 
    ListChange,     # List events that indicate a change in the list
@@ -223,9 +228,12 @@ end
 #
 initially(name, state)
 
+$ifndef StandAlone
    self.Listener.initially(name, state)
+$endif
 
-   eventMask   := cset(ListMask ++ TableMask ++ SetMask ++ RecordMask)
+   eventMask   := cset(E_Exit || E_Error) ++ 
+                  cset(ListMask ++ TableMask ++ SetMask ++ RecordMask)
    ListChange  := cset(E_Lcreate||E_Lpop||E_Lpull||E_Lpush||E_Lput||E_Lget)
   #ListAccess  := cset(E_Lrand||E_Lsub||E_Lref||E_Lbang)
    TableChange := cset(E_Tcreate || E_Tdelete || E_Tinsert)
@@ -268,15 +276,45 @@ $ifdef StandAlone
 
 link evinit
 
+#
+# This main procedure is only used in the standalone mode
+# or udb's external co-expression mode
+#
 procedure main(arg)
    local obj
    
    EvInit(arg) | stop(" **** can not initialize Monitor !!!")
-   
-   obj := StructUsage()   
-   while EvGet(obj.eventMask) do
-      obj.handle_Events() 
+   obj := StructUsage()
 
-   obj.write_Info()
+   while EvGet(obj.eventMask) do{
+      if &eventcode == (E_Exit | E_Error) then
+         obj.write_Info()
+      else
+         obj.handle_Events() 
+      }
+   handle_Events() #fake call
 end
+
+#
+# This handle_Events procedure is only used udb's external 
+# inter-program procedure calls
+#
+procedure handle_Events(code, value)
+   static obj
+   
+   initial{
+      #EvInit(arg) | stop(" **** can not initialize Monitor !!!")
+      obj := StructUsage()
+      return obj.eventMask
+      } 
+
+   &eventcode  := code
+   &eventvalue := value
+
+   if &eventcode == (E_Exit | E_Error) then
+      obj.write_Info()
+   else
+      obj.handle_Events() 
+end
+
 $endif

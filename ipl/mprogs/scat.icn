@@ -62,19 +62,19 @@ procedure main(av)
    while EvGet(mask) do {
 	case &eventcode of {
   	   E_Pcall: {
-	    move(&eventvalue, 1, 0)
+	    Move(&eventvalue, 1, 0)
     	      current_proc := activation(&eventvalue, current_proc, [])
     	      put(current_proc.parent.children, current_proc)
     	      }
   	   E_Psusp: {
-	    move(current_proc.p, 0, 1)
+	    Move(current_proc.p, 0, 1)
     	      current_proc := current_proc.parent
     	      }
   	   E_Presum: {
     	      current_proc := current_proc.children[-1]
     	      }
   	   E_Pret: {
-	    move(current_proc.p, 0, 1)
+	    Move(current_proc.p, 0, 1)
     	      pull(current_proc.parent.children)
     	      current_proc := current_proc.parent
     	      }
@@ -129,11 +129,7 @@ procedure main(av)
 
 end
 
-procedure procedure_name(p)
-  return image(p) ? { ="procedure "; tab(0) }
-end
-
-procedure move(who, iscall, isrslt)
+procedure Move(who, iscall, isrslt)
    if (at[integer(2*log(call[who]+2,1.25)) || "," || integer(2*log(rslt[who]+2,1.25))] -:= 1) = 0 then
       EraseArea(2*log(call[who]+2,1.25) + 2, 2*log(rslt[who]+2,1.25) + 2, 2, 2)
    call[who] +:= iscall

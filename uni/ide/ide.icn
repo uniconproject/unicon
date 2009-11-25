@@ -657,6 +657,10 @@ $endif
    method handle_closefile(ev, c)
       \FileBrowser.nodereplace(CurrentTabItem().get_label())
       if /c then c :=  CurrentTabItem()
+      # check the size of the filetabset, if it is size 1 then exit
+      if *(FileTabSet.children) = 1 then {
+	  menubar.on_exit()
+      }
       FileTabSet.remove(c)
       MsgBox.set_contents(["closed " || (FileTabSet.get_which_one()).label])
       every i := 1 to *opened_files_list do

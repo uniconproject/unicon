@@ -1,7 +1,8 @@
 #
 # The src level makefile for utop program
-# By:    Ziad AL-Sharif
-# Date:  June 20, 2008
+# By:     Ziad AL-Sharif
+# Date:   June 20, 2008
+# e-mail: zsharif@gmail.com
 #
 
 UC         = ../../../bin/unicon
@@ -11,13 +12,16 @@ STANDALONE = -DStandAlone
 
 SRC    = listener.icn memory.icn structaliases.icn structusage.icn \
          looptime.icn proctime.icn procprofile.icn varprofile.icn \
-         deadvar.icn failedloop.icn failedsubscript.icn typechange.icn
+         deadvar.icn failedloop.icn failedsubscript.icn typechange.icn\
+         counter_deref.icn counter_pcall.icn counter_line.icn counter_syntax.icn
 UFILES = listener.u memory.u structaliases.u structusage.u \
          looptime.u proctime.u procprofile.u varprofile.u \
-         deadvar.u failedloop.u failedsubscript.u typechange.u
+         deadvar.u failedloop.u failedsubscript.u typechange.u \
+         counter_deref.u counter_pcall.u counter_line.u counter_syntax.u
 Tools  = memory structaliases structusage \
          looptime proctime procprofile varprofile \
-         deadvar failedloop failedsubscript typechange
+         deadvar failedloop failedsubscript typechange \
+         counter_deref counter_pcall counter_line counter_syntax
 
 lib: $(UFILES)
 
@@ -64,12 +68,28 @@ failedloop.u: failedloop.icn listener.u
 failedsubscript.u: failedsubscript.icn listener.u
 	$(UC) $(CFLAGS) failedsubscript.icn
 
+counter_deref.u: counter_deref.icn listener.u
+	$(UC) $(CFLAGS) counter_deref.icn
+
+counter_pcall.u: counter_pcall.icn listener.u
+	$(UC) $(CFLAGS) counter_pcall.icn
+
+counter_line.u: counter_line.icn listener.u
+	$(UC) $(CFLAGS) counter_line.icn
+
+counter_syntax.u: counter_syntax.icn listener.u
+	$(UC) $(CFLAGS) counter_syntax.icn
 
 clean:
 	-rm *.u *.pag *.dir *.db *~ *.ps
 
 cleantools:
 	@for i in $(Tools) ; do\
+<<<<<<< Makefile
 		(rm ../../../bin/$$i; );\
+		(rm $$i; );\
+=======
+		(rm ../../../bin/$$i; );\
+>>>>>>> 1.5
 	done
 

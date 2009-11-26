@@ -21,16 +21,16 @@ CP=cp
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn fontdialog.icn templates.icn \
 	definitions.icn uproject.icn idol.icn preproce.icn \
-	ytab_h.icn yyerror.icn unigram.icn unilex.icn unicon.icn \
+	ytab_h.icn yyerror.icn unigram.icn unicon.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
 	printdlg.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u fontdialog.u templates.u definitions.u uproject.u \
-	idol.u preproce.u ytab_h.u yyerror.u unigram.u unilex.u unicon.u \
+	idol.u preproce.u ytab_h.u yyerror.u unigram.u unicon.u \
 	classbrowser.u tree.u imgs.u utags.u matchparen.u printdlg.u
 
-UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
+UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
 	$(UC) -o ui $(OBJ)
@@ -89,12 +89,9 @@ yyerror.u: yyerror.icn
 	unicon -c unigram
 	unicon -c yyerror
 
-unigram.u: unigram.icn unilex.u yyerror.u
+unigram.u: unigram.icn yyerror.u
 	unicon -c unigram
 	unicon -c yyerror
-
-unilex.u: unilex.icn yyerror.u
-	unicon -c unilex
 
 unicon.u: unicon.icn
 	unicon -c unicon

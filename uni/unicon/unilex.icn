@@ -88,7 +88,12 @@ initial {
    return t
 end
 
+procedure lex_error()
+   yyerror("token not recognized")
+end
+
 procedure uni_error(s)
+   /errors := 0
    /s := "token not recognized"
    yyerror(s)
    errors +:= 1
@@ -135,7 +140,7 @@ initial {
    every punc_table["_" | !&letters] := do_letters
    }
 
-yycolno +:= *yytext
+   yycolno +:= *yytext
 
    repeat {
        if pos(0) then fail
@@ -307,7 +312,7 @@ end
 procedure do_equal()
 	      if yytext ||:= ="=" then {
 		  if yytext ||:= ="=" then {
-		     if yytext ||:= =":=" then{return AUGEQUIV}
+		      if yytext ||:= =":=" then{return AUGEQUIV}
 		      tokflags +:= Beginner
 		      return EQUIV
 		  }
@@ -381,13 +386,11 @@ procedure do_dot()
 	tokflags +:= Beginner+Ender
 	return REALLIT
     }
-    else if yytext ||:= ="|" then
-	{
-		return POR
+    else if yytext ||:= ="|" then {
+	return POR
 	}
-    else if yytext ||:= ="$" then
-	{
-		return PSETCUR
+    else if yytext ||:= ="$" then {
+	return PSETCUR
 	}
     else {
 	tokflags +:= Beginner
@@ -444,10 +447,9 @@ end
 
 procedure do_and()
     if yytext ||:= =":=" then { return AUGAND }
-    else if yytext ||:= ="&" then 
-	{ 	
-		write("Found PAND");
-		return PAND 
+    else if yytext ||:= ="&" then { 	
+	write("Found PAND");
+	return PAND 
 	}
     tokflags +:= Beginner
     return AND
@@ -532,9 +534,6 @@ procedure do_backquote()
    return PUNEVAL
 end
 
-
-
-
 global fName
 
 global errors
@@ -569,7 +568,7 @@ procedure yylex()
     yytext := saved_yytext
     yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
     if \debuglex then
-      write("yylex() : ",tokenstr(rv), "\t", image(yytext))
+      write("yylex() : ", tokenstr(rv), "\t", image(yytext))
     return rv
   }
   ender := iand(tokflags, Ender)

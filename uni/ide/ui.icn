@@ -86,39 +86,12 @@ class UIDE : Dialog(uide, startfile)
    #
    method ui_initialize()
       local f, line
-      ui_ini := getenv("UNICONINI") | "ui.ini"
       height := 400
       width := 600
       msglines := 7
       font := "sans,15"
       linebreak := "LF"           # default to UNIX mode
-      if f := open(ui_ini) then {
-         while line := read(f) do {
-            line ? {
-               if ="msglines" then {
-                  tab(upto(&digits))
-                  msglines := integer(tab(many(&digits)))
-                  }
-               else if ="height" then {
-                  tab(upto(&digits))
-                  height := integer(tab(many(&digits)))
-                  }
-               else if ="width" then {
-                  tab(upto(&digits))
-                  width := integer(tab(many(&digits)))
-                  }
-               else if ="font" then {
-                  tab(many('= \t'))
-                  font := tab(0)
-                  }
-               else if ="linebreak" then {
-                  tab(many('= \t'))
-                  linebreak := tab(0)
-                  }
-               }
-            }
-         close(f)
-     }
+      menubar.load_config()
 
       wiconlog := tempname("ui",,(getenv("TEMP") | "/tmp"),5)
       if not setenv("WICONLOG", wiconlog) then write("can't set WICONLOG")
@@ -150,6 +123,7 @@ $endif
       put(opened_files_list,"scratch")
       put(opened_files_locs,\filedirectory)
       ide.handle_openfile(&null, \startfile)
+      menubar.set_font()
    end
 
    method on_close(ev)

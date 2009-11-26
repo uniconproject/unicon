@@ -40,6 +40,7 @@ unicon.u : unicon.icn
 
 unilex.u : unilex.icn ytab_h.icn
 	$(ICONT) -c unilex
+	$(CP) unilex.u ../lib
 
 main.u: main.icn
 	$(ICONT) -c main

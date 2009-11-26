@@ -99,9 +99,9 @@ initial {
       istop("too many errors, aborting")
    iwrites(&errout, \fName, ":")
    if s == "syntax error" then
-      s := t[\statestk[1], yychar]
+      s := t[(\statestk)[1], yychar]
    if s == "syntax error" then {
-      s ||:= " (" || \statestk[1] ||";"|| yychar || ")"
+      s ||:= " (" || (\statestk)[1] ||";"|| yychar || ")"
       if /merrflag then s ||:= "\n(use -M for assistance with this error)"
       }
    iwrite(&errout, yylineno, ": # \"", yytext, "\": ", s)

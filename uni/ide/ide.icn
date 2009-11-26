@@ -581,6 +581,7 @@ $endif
          FileTabSet.set_which_one(\c)
          }
       FileTabSet.resize()
+      menubar.set_font()
       opened_file := filename
       tabs_num +:= 1
    end
@@ -1168,12 +1169,11 @@ $endif
    # Save Menu Item Method
    #
    method save()
-      if find("Untitled"|"scratch",CurrentTabItem().label) = 0 |
-         find(".icn"|".uprj",CurrentTabItem().label)then {
-         save_file(CurrentTabItem().label)
-         }
-      if find("Untitled"|"scratch",CurrentTabItem().label) then {
+      if CurrentTabItem().label == ("Untitled"|"scratch") then {
          saveas()
+         }
+      else {
+         save_file(CurrentTabItem().label)
          }
       modified := &null
    end
@@ -1182,21 +1182,16 @@ $endif
    #
    method saveas(ev)
       local fd, filename, foo, index := i, warntxt, fexist := &null
-      x:=chdir()
+
       fileslist := []
-      f := open("output.txt", "w")
-      every write(f,!open("."))
-      close(f)
-      f := open("output.txt")
-      while line := read(f) do
-         put(fileslist,line)
-      close(f)
+      every put(fileslist,!open("."))
+
       chdir(current_dir)
 
 $ifdef _UNIX
       fd := HFileDialog()
+      fd.set_attribs("label=Save File As:")
       fd.show_modal()
-      fd.set_attribs("label=Save file As:")
       #fd.set_extra_attribs(["label=Save file As:"])
       filename := fd.get_result() | fail
       filedirectory := fd.get_directory()

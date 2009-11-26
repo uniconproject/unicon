@@ -27,7 +27,7 @@ class Mainbar(
    new_UniconProject, uniconProject, open_Project, openUProj,
    menu_1, exit_menu_item, classbrowser_100, classbrowser_50, 
    classbrowser_normal, classbrowser_submenu, close_file, compile_only,
-   compile_options, copy, cut, findv, font, gotoline,
+   compile_options, copy, cut, findv, font, fontname, fgcolor, gotoline,
    insert_class, insert_menu, insert_method, insert_proc,
    ivib, make_exe, match_parenthesis,
    menu_10, menu_11, menu_12, menu_2, menu_6, menu_7, menu_9,
@@ -232,26 +232,90 @@ $endif
       ide.CurrentEditBox().handle_redo()
    end
 
+   method set_font(fname, fcolor)
+       if not (/fname := fontname) then fontname := fname
+       if not (/fcolor := fgcolor) then fgcolor := fcolor
+       if MsgBox.set_attribs("font=" || fontname) then {
+	   #MsgBox.compute_and_invalidate()
+	   MsgBox.set_attribs("fg=" || fgcolor)
+       }
+       if (ide.CurrentEditBox()).set_attribs("font=" || fontname) then {
+	   #EditBox.compute_and_invalidate()
+	   (ide.CurrentEditBox()).set_attribs("fg=" || fgcolor)
+       }
+       dialogself.init()
+       dialogself.resize()
+       dialogself.display()
+   end
+
    method on_font()
       local c, fL, eb
+      # suspicious that font is mixed-use as string font name and as an object
       /font := Font()
       
       fL := []
       
       every put(fL, fontdialog(font))
       if *fL > 0 then {
-         if MsgBox.set_attribs("font=" || fL[1]) then {
-	    #MsgBox.compute_and_invalidate()
-            MsgBox.set_attribs("fg=" || fL[2])
-            }
-         if (ide.CurrentEditBox()).set_attribs("font=" || fL[1]) then {
-            #EditBox.compute_and_invalidate()
-	    (ide.CurrentEditBox()).set_attribs("fg=" || fL[2])
-	    }
+	 fontname := fL[1]
+	 fgcolor := fL[2]
+	 set_font()
          }
-      dialogself.init()
-      dialogself.resize()
-      dialogself.display()
+   end
+
+$ifdef _UNIX
+$define PS "/"
+$else
+$define PS "\\"
+$endif
+   method save_config()
+   local f
+   if f := open(getenv("HOME"|"HOMEDIR")||PS||".uirc","w") then {
+      write(f,	#"width=",width,"\n",
+		#"height=",height,"\n",
+		#"msglines=",msglines,"\n",
+		"font=",fontname, "\n",
+		"fg=",fgcolor #, "\n",
+		#"linebreak=",linebreak
+		)
+      }
+   else {
+      MsgBox.set_contents(["couldn't save options"])
+      }
+   end
+
+   method load_config()
+   local f
+   if f := open(getenv("HOME"|"HOMEDIR")||PS||".uirc","r") then {
+      while line := read(f) do {
+	 line ? {
+	    if ="msglines" then {
+	       tab(upto(&digits))
+	       msglines := integer(tab(many(&digits)))
+	       }
+	    else if ="height" then {
+	       tab(upto(&digits))
+	       height := integer(tab(many(&digits)))
+	       }
+	    else if ="width" then {
+	       tab(upto(&digits))
+	       width := integer(tab(many(&digits)))
+	       }
+	    else if ="font" then {
+	       tab(many('= \t'))
+	       fontname := tab(0)
+	       }
+	    else if ="fg" then {
+		tab(many('= \t'))
+		fgcolor := tab(0)
+	    }
+	    else if ="linebreak" then {
+	       tab(many('= \t'))
+	       linebreak := tab(0)
+	       }
+	}
+     }
+   }
    end
 
    method on_view_window_all(ev)
@@ -855,6 +919,10 @@ $endif
       font.set_label("Font ...")
       font.connect(self, "on_font", ACTION_EVENT)
       menu_7.add(font)
+      saveoptions := TextMenuItem()
+      saveoptions.set_label("Save options")
+      saveoptions.connect(self, "save_config", ACTION_EVENT)
+      menu_7.add(saveoptions)
       menu_bar_1.add(menu_7)
       menu_11 := Menu()
       menu_11.set_label("Edit")

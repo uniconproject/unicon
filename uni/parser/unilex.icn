@@ -93,6 +93,7 @@ procedure lex_error()
 end
 
 procedure yylex2()
+local new_filename
 static punc_table
 initial {
    init_csets()
@@ -131,7 +132,7 @@ initial {
    every punc_table["_" | !&letters] := do_letters
    }
 
-yycolno +:= *yytext
+   yycolno +:= *yytext
 
    repeat {
        if pos(0) then fail
@@ -141,7 +142,9 @@ yycolno +:= *yytext
 	       if ="line " then {
 		   if yylineno := integer(tab(many(&digits))) then {
 		       =" \""
-		       yyfilename := tab(find("\"")|0)
+		       new_filename := tab(find("\"")|0)
+		       if map(new_filename[-3:0]) == ".icn" then
+			   yyfilename := new_filename
 		   }
 	       }
 	       tab(find("\n") | 0)
@@ -386,6 +389,7 @@ procedure do_minus()
     }
     if yytext ||:= ="-" then {
 	if yytext ||:= =":=" then { return AUGDIFF}
+	tokflags +:= Beginner # could be two unary prefix - operators
 	return DIFF
     }
     tokflags +:= Beginner
@@ -393,21 +397,29 @@ procedure do_minus()
 end
 
 procedure do_plus()
-	      if yytext ||:= =":" then {
-		  if yytext ||:= ="=" then { return AUGPLUS }
-		  return PCOLON
-	      }
-	      if yytext ||:= ="+" then {
-		  if yytext ||:= =":=" then {return AUGUNION}
-		  return UNION
-	      }
-	      tokflags +:= Beginner
-	      return PLUS
+   if yytoken.s == ":" & yytoken.column + 1 = yycolno then {
+      yytext := ":+"
+      warning("token may be malformed, did you mean +: ?")
+      yytext := "+"
+      }
+   if yytext ||:= =":" then {
+      if yytext ||:= ="=" then { return AUGPLUS }
+      return PCOLON
+      }
+   if yytext ||:= ="+" then {
+      if yytext ||:= =":=" then {return AUGUNION}
+      tokflags +:= Beginner # could be two unary prefix + operators
+      return UNION
+      }
+   tokflags +:= Beginner
+   return PLUS
 end
+
 procedure do_star()
     if yytext ||:= =":=" then { return AUGSTAR }
     if yytext ||:= ="*" then {
 	if yytext ||:= =":=" then {return AUGINTER}
+	tokflags +:= Beginner # could be two unary prefix * operators
 	return INTER
     }
     tokflags +:= Beginner
@@ -432,19 +444,38 @@ end
 
 procedure do_literal()
 	      until yytext ||:= =(yytext[1]) do {
-		  yytext ||:= ="\\"
-		  # need more logic here to eat escape chars
-		  yytext ||:= move(1)
+		  if yytext ||:= ="\\" then {
+		     # need more logic here to eat escape chars
+		     yytext ||:= ="^" # \^ is a control-char escape
+		     }
+		  yytext ||:= move(1) | {
+		      if not (yytext[-1]=="_") then {
+		         uni_error("unterminated string constant")
+			 break
+		     }
+		  }
 		  if yytext[-1] == "\n" then {
-		      if not yytext[-2] == "_" then {
-			  write(&errout, "unterminated string constant")
+		      # discard newline. discard trailing whitespace.
+		      yytext := trim(yytext[1:-1])
+		      yylineno +:= 1
+		      yycolno := 1
+		      if not (yytext[-1] == "_") then {
+			  uni_error("unterminated string constant")
+			  break
 		      }
 		      else {
-			  yytext := yytext[1:-2]
-			  tab(many(' \t'))
+			  yytext := yytext[1:-1] # discard _
+			  if eat := tab(many(' \t')) then {
+			      every s := !eat do {
+				 yycolno +:= 1
+				 if s == "\t" then {
+				    while (yycolno-1) % 8 ~= 0 do yycolno +:= 1
+				    }
+			         }
+			      }
+			  }
 		      }
 		  }
-	      }
 	      tokflags +:= Beginner + Ender
 	      if yytext[1] == "'" then
 		  return CSETLIT
@@ -486,7 +517,7 @@ procedure yylex()
     yytext := saved_yytext
     yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
     if \debuglex then
-      write("yylex() : ",tokenstr(rv))
+      write("yylex() : ", tokenstr(rv), "\t", image(yytext))
     return rv
   }
   ender := iand(tokflags, Ender)
@@ -517,18 +548,18 @@ procedure yylex()
     }
    yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)
    if \debuglex then
-      write("yylex() : ", tokenstr(rv))
+      write("yylex() : ", tokenstr(rv), "\t", image(yytext))
    return rv
 end
 
 
 #procedure main(argv)
-# local i
-# fName := argv[1] | stop("usage: unilex filename")
-# yyin := ""
-# every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
-# yylex_reinit()
+#  local i
+#  fName := argv[1] | stop("usage: unilex filename")
+#  yyin := ""
+#  every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
+#  yylex_reinit()
 
 #  while (i := yylex()) ~=== EOFX do
-#    write(image(i),": ",image(yytext))
+#     write(image(i),": ",image(yytext))
 #end

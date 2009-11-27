@@ -107,7 +107,7 @@ method constructEventMask()
             member(internalMask,E_Assign) | member(externalMask,E_Assign) then
             delete(valueMask,E_Assign)
          else{
-            eventMask ++:= cset(E_Assign)
+            eventMask ++:= cset(E_Assign || E_Value) #??? temp
             valueMask[E_Assign] := watchChangeMask
             }
          }
@@ -147,7 +147,7 @@ method constructEventMask()
             eventMask ++:= cset(E_Spos)
          if member(watchChangeMask, "&subject") then
             eventMask ++:= cset(E_Snew)
-         eventMask ++:= cset(E_Assign)
+         eventMask ++:= cset(E_Assign || E_Value) # ??? temp
          valueMask[E_Assign] := watchChangeMask
          }
 

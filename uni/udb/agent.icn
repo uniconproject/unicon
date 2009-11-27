@@ -37,36 +37,36 @@ method cmdEnable(name)
          delete(disabledClients, name)
          enabled +:= 1
          build_Mask()
-         msg := "\n   The "||mtype||" monitor ("||name||") is ENABLED"
+         msg:="\n   The "||mtype||" agent \""||name||"\" is ENABLED"
          }
       else
-         msg := "\n   The "||mtype||" monitor ("||name||") is already ENABLED"
+         msg:="\n   The "||mtype||" agent \""||name||"\"is already ENABLED"
       }
    else
-      msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
-   #DState.Write(msg)
+      msg:="\n   The "||mtype||" agent \""||name||"\" is NOT Found!"
+   DState.Write(msg)
 end
 
 #
 # Disables the internal monitor
 #
 method cmdDisable(name)
-   local msg:="??"
+   local obj, msg:="??"
 
-   if \Clients[name] then{
-      if Clients[name].State = ENABLED then{
-         Clients[name].State := DISABLED
+   if obj := \Clients[name] then{
+      if obj.State = ENABLED then{
+         obj.State := DISABLED
          insert(disabledClients, name)
-         delete(activeClients, name)
+         delete(activeClients, obj)
          enabled -:= 1
          build_Mask()
-         msg := "\n   The "||mtype||" monitor ("||name||") is DISABLED"
+         msg:="\n   The "||mtype||" agent \""||name||"\" is DISABLED"
          }
       else
-         msg := "\n   The "||mtype||" monitor ("||name||") is already DISABLED"
+         msg:="\n   The "||mtype||" agent \""||name||"\" is already DISABLED"
       }
    else
-      msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
+      msg:="\n   The "||mtype||" agent \""||name||"\" is NOT Found!"
    DState.Write(msg)
 end
 
@@ -74,26 +74,46 @@ end
 # printd out information about the enabled internals
 #
 method cmdInfo(name)
-   local i:=1, msg:="\n   "
+   local i:=0, msg:="", obj
     
    ## what if there is more than one monitor loaded with the same name??
    if \name then{
       if \Clients[name] then{
          if Clients[name].State = DISABLED then
-            msg := "\n   The "||mtype||" monitor ("||name||") is DISABLED"
+            msg:="\n   The "||mtype||" agent \""||name||"\" is DISABLED"
          else
-            msg := "\n   The "||mtype||" monitor ("||name||") is ENABLED"
+            msg:="\n   The "||mtype||" agent \""||name||"\" is ENABLED"
          }
       else
-         msg := "\n   The "||mtype||" monitor ("||name||") is NOT Found!"
+         msg:="\n   The "||mtype||" agent \""||name||"\" is NOT Found!"
       }
-   else if *activeClients > 0 then{
-      every name := !activeClients do
-         msg ||:= i ||":"||name||"\n   "
-      if *msg >= 5 then
-         msg := "\n   The following are the enabled "||mtype||" monitors:"||msg
+   else{
+      if *activeClients > 0 then{
+         i := 1
+         msg ||:="\n   The following are the enabled \""||mtype|| "\" agents:"
+         every obj := !activeClients do{
+            msg ||:="\n   "|| left(i,3) ||": "||obj.Name
+            i +:= 1
+            }
+         msg ||:= "\n   "
+         }
       else
-         msg := "\n   There is no enabled "||mtype||"s !"
+         msg ||:="\n   There are no enabled "||mtype||" agents !!! \n"
+
+      if *disabledClients > 0 then{
+         i := 1
+         msg ||:="\n   The following are the disabled \""||mtype||"\" agents:"
+         every name := !disabledClients do{
+            msg ||:="\n   "|| left(i,3) ||": "||name
+            i +:= 1
+            }
+         msg ||:= "\n   "
+         }
+      else
+         msg ||:= "\n   There are no disabled "||mtype||" agents !!! \n"
+
+      if i = 0 then
+         msg := "\n   There are no "||mtype||" agents !!!"
       }
    DState.Write(msg)
 end

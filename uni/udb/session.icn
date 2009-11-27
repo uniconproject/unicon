@@ -26,7 +26,7 @@ method startSession()
    local arg, t
 
    #-- it may need to be in EvInit() for the sake of re-run
-   #&eventsource := &null
+   &eventsource := &null
 
    EvInit(DState.TP) | stop("cant start evinit on " || DState.TP[1])
    Message :="   Starting program: "
@@ -460,7 +460,8 @@ method cmdInfo(cmd)
       
       # the follwing is to query about agents
       "agent"      |      
-      "agents"     :{                                        }
+      "agents"     :{ Debug.Internal.cmdInfo(name)
+                      Debug.External.cmdInfo(name)           }
       "internal"   |      
       "internals"  :{ Debug.Internal.cmdInfo(name)           }
       "external"   |

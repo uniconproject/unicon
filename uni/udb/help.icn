@@ -30,6 +30,7 @@ class HELP(
    memory,      # information about the memory class of commands
    shell,       # information about the shell class of commands
    extensions,  # information about the extensions class of commands
+   assertions,  # information about the temporal assertions class of commands
    Message
    )
 
@@ -83,6 +84,9 @@ method cmdHelp(cmd)
     }
    "shell":{
     Message := shell || assistance
+    }
+   "assertions"|"assert"|"temporals"|"assertion":{
+    Message := assertions || assistance
     }
    "extensions"|"extension"|"agent":{
     Message := extensions || assistance
@@ -279,7 +283,8 @@ initially()
     \n   files       : how to look up source files and code_
     \n   memory      : how to look up the memory usage_
     \n   shell       : supported shell commands_
-    \n   extensions  : manage internal and external extensions"
+    \n   extensions  : manage internal and external extensions_
+    \n   assertions  : how to insert Temporal Assertions"
 
    assistance :="_
     \n_
@@ -616,6 +621,8 @@ initially()
 
    extensions := "_
     \n   Extension Agents Related Commands_
+    \n   info agent            : Prints information about all extension agents_
+    \n   -----Internals ------------------------------------------------------_
     \n   enable internal agent : Enables the internal agent named agent_
     \n   disable internal agent: Disables the internal agent named agent_
     \n_  
@@ -624,11 +631,12 @@ initially()
     \n   info internal agent   : Prints information about the specific internal_
     \n                           agents named agent_
     \n_  
+    \n   -----Externals ------------------------------------------------------_
     \n   load –agent agent     : Loads a standalone external agent named agent_
     \n                           on the fly during the debugging session_
-    \n   enable external       : Enables all external agent that are loaded_
+    \n   enable external       : Enables all external agents that are loaded_
     \n   enable external agent : Enables the external agent named agent_
-    \n   disable external      : Disables all external agent that are loaded_
+    \n   disable external      : Disables all external agents that are loaded_
     \n                           in the current session_
     \n   disable external agent: Disables the specific external agent named_
     \n                           agent that is loaded in the current session_
@@ -636,5 +644,33 @@ initially()
     \n                           available in the session_
     \n   info external agent   : Prints information about the external agent_
     \n                           named agent"
+
+   assertions := "_
+    \n   Temporal Assertions' Related Commands_
+    \n   Each temporal assertion has all of the following:_
+    \n    * location         : defined by a file name and a line number_
+    \n    * scope            : The procedure where the assertion is located_
+    \n   Each temporal assertion has two kinds of evaluations:_
+    \n    * temporal state   : Depends on the object (i.e. var assign, ...etc)_
+    \n    * temporal interval: A consequtive sequence of temporal states_
+    \n   -----All Time Assertions---------------------------------------------_
+    \n   assert file:line always() { expr }   : expr must hold at all times_
+    \n   assert file:line sometime() { expr } : exper must hold at least once_
+    \n                                           during each interval_
+    \n   -----Past Time Assertions--------------------------------------------_
+    \n   assert file:line alwaysp() { expr }   : expr must hold at all times_
+    \n   assert file:line sometimep() { expr } : exper must hold at least once_
+    \n                                           during each interval_
+    \n   assert file:line since() { p1 ==> p2 }: since p1 holds, p2 must _
+    \n                         hold at all times up to the end of the interval_
+    \n   assert file:line previous() { p }     : p must hold at the previous_
+    \n                         state right before the assertions' location_
+    \n   -----Past Time Assertions--------------------------------------------_
+    \n   assert file:line alwaysf() { expr }   : expr must hold at all times_
+    \n   assert file:line sometimef() { expr } : exper must hold at least once_
+    \n                                           during each interval_
+    \n   assert file:line until() { p1 ==> p2 }: p1 holds until p2 holds_
+    \n   assert file:line next() { p }         : p must hold at the next_
+    \n                         state right after the assertions' location"
 end
 

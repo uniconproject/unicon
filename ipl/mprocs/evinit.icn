@@ -58,6 +58,22 @@ procedure MTEvInit(f,input,output,error)
       EvGet     :=: MTEvGet
       }
    else if type(f) == "list" then {
+      every i := 1 to *f do {
+	 arg := pop(f)
+	 if arg==="<" then {
+	    if not (input := open(f[1])) then
+	       write(&errout, "UDB: can't open redirect on ",
+		     image(f[1]|"missing file"))
+	    else f[1] := &null
+	    }
+	 else if arg===">" then {
+	    if not (output := open(f[1],"w")) then
+	       write(&errout, "UDB: can't open redirect on ",
+		     image(f[1]|"missing file"))
+	    else f[1] := &null
+	    }
+	 else if string(arg) then put(f,arg)
+	 }
       &eventsource := EventSource := Monitored := load(f[1],f[2:0],input,output,error) | fail
       EvGet     :=: MTEvGet
       }

@@ -25,7 +25,7 @@ class Console : Session(
 method my_getch()
    local e1, e2, e3
 
-   e1 := getch()
+   if not (e1 := getch()) then fail
 $ifdef _UNIX
    if e1 === "\e" then {
       if kbhit() then {
@@ -56,7 +56,8 @@ method get_Line()
    local max:=0
 
    writes(PROMPT)
-   while ch := my_getch() do{
+   repeat {
+      if not (ch := my_getch()) then return "quit"
       case ch of{
          DOWN:{
             left := &null

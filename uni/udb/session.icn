@@ -231,7 +231,7 @@ method cmdQuit()
       DState.Writes("\n   The program "|| 
                           DState.srcFile.exeName ||
                           " is running.  Exit anyway (Y/n)?: ")
-      if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then
+      if (not (ans:=read())) | (*ans=0) | map(ans[1]) == "y" then
          DState.State := QUIT
       else
          DState.State := SKIP

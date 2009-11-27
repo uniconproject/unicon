@@ -48,9 +48,31 @@ method startEvaluator()
    while EvGet(eventMask, valueMask) do {
       #write("----->",evnames(&eventcode), ": ", syntname(&eventvalue))
 
-      # Classical Debugging Tehniques 
-      if *(\DState.MaskTable[&eventcode]) > 0 then 
-         BuiltIns[&eventcode](self)
+      # Classical Debugging Tehniques --This is Bad for watchpoints 
+      #if *(\DState.MaskTable[&eventcode]) > 0 then 
+      #   BuiltIns[&eventcode](self) ???????!!! checklater
+
+      case &eventcode of{
+        E_Line:{
+          if *DState.breakMask > 0 then{ Break.checkBreakpoint() }
+          if DState.RunCode = NEXT then{ Step.checkNext()        }
+          if DState.RunCode = STEP then{ Step.checkStep()        }
+          }
+        E_Assign | E_Value :{
+          # check for Watch point on changed vars & keywords
+          if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
+          }
+        E_Deref:{
+          # check for Watch point on read vars & keywords
+          if *DState.watchReadMask   > 0  then Watch.checkWatchRead()
+          }
+        E_Spos | E_Snew:{
+          if *DState.watchChangeMask > 0  then Watch.checkWatchScan()
+          }
+        E_Exit:  { handle_Exit()    }
+        E_Error: { handle_Error()   }
+        E_Signal:{ handle_Signals() }
+        } # end of case ecode
 
       # Tracing Features 
       if *DState.traceMask > 0 then{

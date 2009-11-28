@@ -103,7 +103,7 @@ method checkStep()
    if step_count > 1 then{
       step_count -:= 1
       DState.State := RUN
-      DState.RunCode := NEXT
+      DState.RunCode := STEP
    }else
    if step_count = 1 then{
       step_count -:= 1
@@ -137,6 +137,8 @@ method cmdStep(cmd)
          step_count := count
       else
          step_count := 1
+
+      nex_level := keyword("level", Monitored)
       DState.Update(STEP)
       DState.Write("   Stepping.")
       }

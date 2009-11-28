@@ -8,6 +8,7 @@
 #
 
 $include "defaults.icn"
+$include "evdefs.icn"
 
 #
 # Loads and initializes the internal monitors
@@ -90,16 +91,48 @@ method Init()
    register("counter_line",EventCounterLine())       ##  TEST
    register("counter_pcall",EventCounterPcall())     ##  TEST
    register("counter_deref",EventCounterDeref())     ##  TEST
-   register("memory", Memory())
-   register("varprofile", VarProfile())
-   register("procprofile", ProcProfile())
-   register("proctime", ProcTime())
-   register("failedloop", FailedLoop())
-   register("failedsubscript", FailedSubscript())
-   register("looptime", LoopTime())
-   register("deadvar", DeadVar())
-   register("typechange", TypeChange())
-   register("structusage", StructUsage())
+
+   register("memory", Memory(),
+           ["handle_GarbageCollection", "handle_MemoryAllocation"], ,
+           ["write_AllocStateInfo","write_MemoryStateInfo"],
+           cset(E_Exit || E_Error || E_Collect || E_EndCollect) ++ AllocMask)
+
+   register("varprofile", VarProfile(),
+            ["handle_Events"], ,["write_LocalVarInfo","write_GlobalVarInfo"],
+            cset(E_Exit || E_Error || E_Pcall || E_Deref))
+
+   register("procprofile", ProcProfile(),
+            ["handle_Events"], ,["write_Info"],
+            cset(E_Exit || E_Error) ++ ProcMask)
+
+   register("proctime", ProcTime(),
+            ["handle_Events"], ,["write_Info"],
+            cset(E_Exit || E_Error) ++ ProcMask)
+
+   register("failedloop", FailedLoop(),
+             ["handle_Events"], ,["write_Info"],
+             cset(E_Exit || E_Error || E_Pcall || E_Syntax || E_Line))
+
+   register("failedsubscript", FailedSubscript(),
+            ["handle_Events"], ,["write_Info"],
+            cset(E_Exit || E_Error || E_Deref || E_Lref || E_Lsub || E_Ofail))
+
+   register("looptime", LoopTime(),
+           ["handle_Events"], ,["write_Info"],
+           cset(E_Exit || E_Error || E_Line || E_Syntax || E_Pcall))
+
+   register("deadvar", DeadVar(),
+            ["handle_Events"], ,["write_Info"], 
+            cset(E_Exit || E_Error || E_Pcall || E_Assign || E_Deref))
+
+   register("typechange", TypeChange(),
+            ["handle_Events"], ,["write_Info"],
+            cset(E_Exit || E_Error || E_Assign || E_Value))
+
+   register("structusage", StructUsage(),
+            ["handle_Events"], ,["write_Info"],
+            cset(E_Exit || E_Error) ++ 
+            cset(ListMask ++ TableMask ++ SetMask ++ RecordMask))
 end
 
 #

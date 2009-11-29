@@ -55,6 +55,12 @@ method cmdHelp(cmd)
    }
    else{
    case cmd[2] of {
+   "all":{
+       Message := basic || breakpoints ||watchpoints || tracepoints ||
+	   stack || stepping || data || files || memory || shell ||
+	   assertions || extensions ||
+	   assistance
+    }
    "basic":{
     Message := basic
     }
@@ -120,7 +126,7 @@ method cmdHelp(cmd)
     \n   Prints out the Stack Frame info_
     \n   frame   : prints current stack frame info_
     \n   frame n : prints info about stack frame number (n)_
-    \n             n=0 current frame, oldest frame has the bigest number_
+    \n             n=0 current frame, oldest frame has the biggest number_
     \n   look for \"help up\" and \"help down"
     }
    "up":{
@@ -146,16 +152,18 @@ method cmdHelp(cmd)
    "print":{
     Message:="_
     \n   Prints variable information:_
-    \n   print       : prints globals and locals of current frame_
-    \n   print var   : prints the var value from current frame_
-    \n   print var i : prints tha var value from frame number i_
-    \n   print -G    : prints all global vars_
-    \n   print -L    : prints all local vars in current frame_
-    \n   print -P    : prints all Formal Parameters"
+    \n   print           : prints globals and locals of current frame_
+    \n   print var       : prints the var value from current frame_
+    \n   print var = val : assigns and prints the var value from current frame_
+    \n   print var i : prints the var value from frame number i_
+    \n   print -G    : prints global variables_
+    \n   print -L    : prints local variables in current frame_
+    \n   print -P    : prints formal parameters"
     }
+   "bt"| "backtrace"|
    "where":{
     Message:="_
-    \n   Prints the current position in the Source Code_
+    \n   where/backtrace/bt print a backtrace of stack frames _
     \n   where      : shows 10 stack frames from the top_
     \n                another where will show the next 10 frames_
     \n   where i    : shows 10 stack frames starting at frame i_
@@ -249,14 +257,14 @@ method cmdHelp(cmd)
     \n   trace var p           : prints traced var info that is local to p_
     \n   trace var=[on|off]    : traces every value the var can have,_
     \n   trace var=[on|off] p  : traces a local var in procedure p_
-    \n   --In oreder to set any of the following behavior tracers ON,_
+    \n   --In order to set any of the following behavior tracers ON,_
     \n     it must be set before the program is running/rerunning_
     \n   trace -proc           : prints all the traced procedure info_
-    \n   trace -proc=[on|off]  : Sets the procdure tracer on/off _
+    \n   trace -proc=[on|off]  : sets the procdure tracer on/off _
     \n   trace -proc call      : prints the traced procedure calls_
-    \n   trace -proc call=on   : Sets a tracer ON on every procedure call_
-    \n   trace -proc call=off  : Sets a tracer OFF on every procedure call_
-    \n   and the rest ar going in the same fashion"
+    \n   trace -proc call=on   : sets a tracer ON on every procedure call_
+    \n   trace -proc call=off  : sets a tracer OFF on every procedure call_
+    \n                           and the rest are going in the same fashion"
     }
    default:{
     Message:="\n   Command not found. Type \"help\" for assistance"
@@ -343,14 +351,14 @@ initially()
 
    basic := "_
     \n   The Most Common Basic Commands are:_
-    \n   udb [program] : Starts UDB and loads the executable program into it_
+    \n   udb [program] : starts UDB and loads the executable program into it_
     \n   load          : loads a new program into udb_
-    \n   run [arglist] : Starts the already loaded program [with arglist]_
+    \n   run [arglist] : starts the already loaded program [with arglist]_
     \n   break line    : sets a breakpoint in the source code line_
-    \n   break proc    : Sets a breakpoint at the entry of procedure proc_
+    \n   break proc    : sets a breakpoint at the entry of procedure proc_
     \n   where         : backtraces and displays the current program stack_
     \n   print expr    : displays the value of expr_
-    \n   continue      : resumes the running of the program_
+    \n   continue      : resumes the program execution_
     \n   next          : executes the next line and steps over any procedure_
     \n   step          : executes the next line and steps into any procedure_
     \n   quit          : quits the current UDB session_
@@ -535,8 +543,8 @@ initially()
     \n                 if [count] is specified, it repeats the command [count]_ 
     \n                 more times. n and n [count] are aliases._
     \n   return      : Completes the execution of the current procedure and_
-                       returns back to the place of calling to step on the next_
-                       statement after the call. ret and finish are aliases."
+    \n                 returns back to the place of calling to step on the next_
+    \n                 statement after the call. ret and finish are aliases."
    data := "_
     \n   print var : Prints the value of var; if variable is a reference to a_
     \n               structure, then it displays its ximage, otherwise it_

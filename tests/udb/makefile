@@ -1,4 +1,4 @@
-all: basic watchpoints internals
+all: basic watchpoints internals info
 
 basic: watchme
 	udb watchme <basic.udb &>basic.out
@@ -30,3 +30,6 @@ internals:
 	udb watchme < typechange.udb
 	udb watchme < proctime.udb
 	udb watchme < procprofile.udb
+
+info:
+	udb watchme < info.udb

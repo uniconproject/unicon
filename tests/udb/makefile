@@ -1,4 +1,4 @@
-all: basic watchpoints internals info
+all: basic watchpoints internals info trace
 
 basic: watchme
 	udb watchme <basic.udb &>basic.out
@@ -33,3 +33,6 @@ internals:
 
 info:
 	udb watchme < info.udb
+
+trace:
+	udb trace <trace.udb

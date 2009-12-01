@@ -139,13 +139,14 @@ method get_CommandLine()
    local line, tok, op, cmd
 
    line := get_Line()
-   # analyize that cmd line
+   # analyze that cmd line
    if *line > 0 then{  
       DState.update_cmdHistory(line)
       cmd := []
       line ? {
           while &pos <= *line do {
              tab(many(WhiteSpace))
+	     if match("#") then break
              tok := tab(many(TOKEN)) | &null
              put(cmd, \tok)
              tab(many(WhiteSpace))
@@ -166,6 +167,7 @@ method get_CommandLine()
              put(cmd,\op)
              }
          }
+      if match("#") & *cmd=0 then put(cmd, "#")
       #write(ximage(cmd))
       return cmd
       }

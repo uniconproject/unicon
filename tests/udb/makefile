@@ -1,4 +1,8 @@
+<<<<<<< makefile
+all: basic watchpoints internals info assert
+=======
 all: basic watchpoints internals info trace
+>>>>>>> 1.5
 
 basic: watchme
 	udb watchme <basic.udb &>basic.out
@@ -33,6 +37,9 @@ internals:
 
 info:
 	udb watchme < info.udb
+
+assert:
+	udb watchme <assert.udb
 
 trace:
 	udb trace <trace.udb

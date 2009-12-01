@@ -1,0 +1,36 @@
+assert watchme:10 always() { i > 4 } 
+run
+assert watchme:8 sometime() { j = 4 } 
+c
+c
+c
+c
+c
+assert watchme:8 alwaysp() { j > i } 
+Y
+run
+
+assert watchme:8 sometimep() { num = 4 } 
+Y
+run
+# the following one dies in temporals.icn evaluateInterval
+assert watchme:8 previous() { num = 4 } 
+Y
+run
+assert watchme:10 since() { num = 4 ==> j = 6 } 
+Y
+run
+
+# the following seems to work, at least a little
+assert watchme:8 alwaysf() { i < j } 
+Y
+run
+assert watchme:8 sometimef() { i < j } 
+Y
+run
+assert watchme:8 next() { i < j } 
+Y
+run
+assert watchme:8 until() { i = 0 ==> j = 4 } 
+Y
+run

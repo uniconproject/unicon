@@ -1,8 +1,4 @@
-<<<<<<< makefile
-all: basic watchpoints internals info assert
-=======
-all: basic watchpoints internals info trace
->>>>>>> 1.5
+all: basic watchpoints internals info assert trace
 
 basic: watchme
 	udb watchme <basic.udb &>basic.out
@@ -31,7 +27,7 @@ internals:
 	udb watchme < varprofile.udb
 	udb watchme < looptime.udb
 	udb watchme < failedsubscript.udb
-	udb watchme < typechange.udb
+	-udb watchme < typechange.udb
 	udb watchme < proctime.udb
 	udb watchme < procprofile.udb
 

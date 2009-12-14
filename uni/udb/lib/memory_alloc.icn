@@ -1,0 +1,444 @@
+# 
+# Ziad AL-Sharif
+# Data Structure Visualization
+#
+
+$include "evdefs.icn"
+$include "keysyms.icn"
+
+link evinit
+link evnames
+link numbers
+link colormap
+link ximage
+
+$define ListChange   cset(E_Lcreate || E_Lpop || E_Lpull || E_Lpush || E_Lput || E_Lget)
+$define ListAccess   cset(E_Lrand   || E_Lsub || E_Lref  || E_Lbang)
+$define TableChange  cset(E_Tcreate || E_Tdelete || E_Tinsert)
+$define TableAccess  cset(E_Tkey    || E_Tmember || E_Trand || E_Tsub || E_Tref || E_Tbang || E_Tval)
+$define SetChange    cset(E_Screate || E_Sdelete || E_Sinsert)
+$define SetAccess    cset(E_Smember || E_Sval    || E_Sbang || E_Sval)
+$define RecordChange cset(E_Rcreate)
+$define RecordAccess cset(E_Rrand || E_Rsub || E_Rref || E_Rbang)
+
+
+class Display(
+   title,  # the window title
+   xmax,   # the window max width
+   xlimit, # the limit between the overview and the detailview
+   ymax,   # the window max hight
+   ylimit, # the y hight of the legend part
+   xscale, # the scalability on the x-axis
+   yscale, # the scalability on the y-axis
+   ypos,   # where to start drawing on the y-axis
+   wColor # a table with different window clons
+   )
+
+method layout()
+
+   &window := open(title,"g", "bg=very light blue","size="||xmax||","||ymax)
+   createColorContext()   
+   drawLegend()
+   DrawLine(wColor["gray"],0,160,xmax,160)
+   DrawRectangle(wColor["default"],0,0,xmax-1,ypos-15)
+end 
+
+method drawMemoryBar(which, T, RegionSize)
+   static p1:=0, p2:=0, old_p1:=-1,old_p2:=-1
+   local w := xmax-1, h := 25
+   local x1:= 0, y1:= ymax - 50
+   local x2:= 0, y2:= y1+h
+   local total:=0, available:=0, s1,s2,ww,k
+
+   case which of{
+     "init":{# initialization
+         # init the String region bar
+         DrawLine(wColor["gray"],x1,y1-1,xmax,y1-1)
+         FillRectangle(wColor["white"],  x1, y1, w, h)
+         DrawRectangle(wColor["default"],x1, y1, w, h)
+         DrawString(wColor["default"],   w/2.5,y1+15,
+                    "%0   of "||left(RegionSize,2)||" MB, String Region")
+         # init the Block region bar
+         FillRectangle(wColor["white"],  x2, y2, w, h)
+         DrawRectangle(wColor["default"],x2, y2, w, h)
+         DrawString(wColor["default"],   w/2.5,y2+15,
+                    "%0   of "||left(RegionSize,2)||" MB, Block Region")
+         }
+     "string":{ # update the string region bar
+         every k:= key(T) do total +:= T[k]
+         p1 := ceil(total *100.0/RegionSize)        
+         if p1 ~= old_p1 then{
+            old_p1 := p1
+            s1 := "%"||left(p1,3)||" of "||left(RegionSize,2)||" MB, String Region"
+            available := total * xmax / RegionSize
+            FillRectangle(wColor["white"],  w/2.5, y1+1, 20, 20)#Clear old %Num
+            #FillRectangle(wColor["String"], x1, y1, available, h)
+            every k := key(T) do{
+               ww := T[k] *  available /total
+               FillRectangle(wColor[k],  x1, y1+1, ww, h-1)
+               x1 +:= ww
+               } 
+            DrawString(wColor["default"],   w/2.5,y1+15, s1)
+            }
+         }
+     "block":{ # update the block region bar
+         every k:= key(T) do total +:= T[k]
+         p2 := ceil(total*100.0/RegionSize)
+         if p2 ~= old_p2 then{
+            old_p2 := p2
+            s2 := "%"||left(p2,3)||" of "||left(RegionSize,2)||" MB, Block Region"
+            available := total * xmax / RegionSize
+            FillRectangle(wColor["white"],  w/2.5, y2+2, 20, 20) #Clear old %Num
+            FillRectangle(wColor["white"],  x2, y2+1, available, h-1)
+            #FillRectangle(wColor["Block"], x2, y2+1, available, h-1)
+            every k := key(T) do{
+               ww := T[k] *  available /total
+               FillRectangle(wColor[k],  x2, y2+1, ww, h-1)
+               x2 +:= ww
+               } 
+            DrawString(wColor["default"],   w/2.5,y2+15, s2)
+            }
+         }
+     }# end case
+end
+
+#
+#
+method drawPie(T, num, label, label2)
+   local start, k, path, t
+   local w:=100, h:=100
+   local x:=0 , y := 16
+
+   if t := getPercentage(T) then{   
+      if num > 5 then{
+         y := 180
+         num -:= 5
+         } 
+      x := (num-1) * w + (num * 16)
+      DrawRectangle(wColor["gray"], x-8,y-8,w+16,h+16)
+      EraseArea(x-8,y+h+10,w+15,30)
+      DrawString(wColor["Text"],x,y+h+24,(\label|"?"))
+      if \label2 then 
+         DrawString(wColor["Text"],x,y+h+34,label2)
+      start := 0
+      every k := key(t) do {
+         path :=  (t[k] /100) * (2 * &pi)
+         FillArc(wColor[k],x,y,w,h,start,path)
+         DrawArc(wColor["default"],x,y,w,h,start,path)
+         start +:= path
+         }
+      }
+end
+
+#
+# takes a table that maps events to their total allocations
+# and returns another with the percentage of that total
+#
+method getPercentage(T)
+   local k, value, result := table(0)
+   local total := 0
+
+   every k := key(T) do total +:= T[k]
+   if total > 0 then{
+      every k := key(T) do
+         result[k] := 100.0 * T[k] / total
+      return result
+      }
+   else fail
+end
+
+#
+# draws three legends per-line
+#
+method drawLegend()
+   local i, x, y, h:=8, L := []
+   local evlabel     # a table of the used events
+
+   evlabel := Labels()
+   x := 10
+   y := ypos -10
+
+   DrawLine(wColor["gray"]   ,0,y-4,xmax,y-4)
+
+   every put(L, !AllocMask)
+   put(L,"access")
+   put(L,"change")
+   every i := 1 to *L by 3 do{
+     DrawRectangle(wColor["default"],x,y, h,h)
+     FillRectangle(wColor[L[i]],x,y, h,h)
+     DrawString(wColor["default"], x+15, y+h, evlabel[L[i]])
+     if \L[i+1] then{
+        DrawRectangle(wColor["default"],x+(xmax/3),y, h,h)
+        FillRectangle(wColor[L[i+1]],x+(xmax/3),y, h,h)
+        DrawString(wColor["default"], x+(xmax/3)+15, y+h, evlabel[L[i+1]])
+        }
+     if \L[i+2] then{
+        DrawRectangle(wColor["default"],x+(xmax/1.5),y, h,h)
+        FillRectangle(wColor[L[i+2]],x+(xmax/1.5),y, h,h)
+        DrawString(wColor["default"], x+(xmax/1.5)+15, y+h, evlabel[L[i+2]])
+        }
+     y +:= 15
+   }
+end
+
+#
+# Produce a table of labels
+#
+method Labels()
+   local code, result, labels := table()
+   
+   every code := !AllocMask do{
+      result := evnames(code)
+      result ?:= tab(find(" allocation"))
+      result ?:= {
+          tab(find("trapped variable")) || "tv"
+          }
+      labels[code] := result
+      }
+   labels["access"] := "Structure % of Access"
+   labels["change"] := "Structure % of Change"
+   return labels
+end
+
+#
+# Creates the color codes of each type
+#
+method createColorContext()
+   local ecode, color := colormap("standard")
+
+   wColor := table()   
+   wColor["default"] := Clone(&window, "fg=black")
+   wColor["white"]   := Clone(&window, "fg=very light blue")
+   wColor["Title"]   := Clone(&window, "fg=black", "font=serif,bold,16")
+   wColor["Text"]    := Clone(&window, "fg=black", "font=serif,12")
+   wColor["Block"]   := Clone(&window, "fg=blue")
+   wColor["String"]  := Clone(&window, "fg=blue")
+   wColor["change"]  := Clone(&window, "fg=whitish blue")
+   wColor["access"]  := Clone(&window, "fg=whitish gray")
+   wColor["gray"]    := Clone(&window, "fg=dark gray")
+   every ecode := !AllocMask do{
+      wColor[ecode] := Clone(&window, "fg="||color[ecode])
+      }
+end
+
+#
+# Initialize the main class variables
+#
+initially(av)
+
+   title := ("Monitoring "||av[1]||" "||av[2]) | "Memory Allocations :)"
+   xmax  := (600 < integer(av[2])) | 600
+   ymax  := (300 < integer(av[3])) | 500
+
+   xlimit:= xmax / 2
+   ylimit:= 150
+   ypos  := ymax - ylimit
+ 
+end
+
+
+#
+# The main Memeory Monitoring class
+#
+class MMM(
+   tp      ,    # target program name
+   eventMask,   # the monitor events
+            
+   Tstruct_usage,# counts the number of times a struct is used
+   Tstruct_count,# counts the number of created structures 
+   Talloc_string,# counts string allocations
+   Talloc_block, # counts block allocations
+   Talloc_count, # counts of allocations
+   Talloc_total, # total allocation
+   Tcollections, # garbage collection counts
+   Lists,        # counts the usage of lists
+   Tables,       # counts the usage of tables
+   Sets,         # counts the usage of sets
+   Records,      # counts the usage of records
+   
+   BlockRegion,  # the total memory in the block region
+   StringRegion, # the total memory in the String Region
+   display      # An object of the class Display()
+   )
+
+#
+#  The main monitoring loop
+#
+method Monitor()
+   local line:=-1, i := 0, collect_flag, num
+   local num_list:=set(),num_table:=set(),num_set:=set(), num_record :=set()
+
+   EvInit(tp) | stop(" can not initialize the \""||image(tp)||"\" program")
+
+   while EvGet(eventMask) do{
+      i+:=1
+      if &eventcode === E_Collect then{
+         Tcollections[&eventvalue] +:= 1
+         collect_flag  := 1
+         Talloc_string := table(0)   # re-initialize : count string allocations
+         Talloc_block  := table(0)   # re-initialize : count block allocations
+         #write("=-====== start collecting")
+         }  
+      else if &eventcode === E_EndCollect then{
+         collect_flag := &null
+         #write("=-====== end collecting")
+         }  
+      if member(AllocMask,&eventcode) then{ 
+         if /collect_flag then{
+            if &eventcode === (E_String | E_Tvsubs) then
+                 Talloc_string[&eventcode] +:= &eventvalue
+            else Talloc_block[&eventcode]  +:= &eventvalue
+            
+            Talloc_count[&eventcode] +:= 1
+            Talloc_total[&eventcode] +:= &eventvalue
+            }
+         else{# re-calculate memory after the garbage collector
+            if &eventcode === (E_String | E_Tvsubs) then
+                 Talloc_string[&eventcode] +:= &eventvalue
+            else Talloc_block[&eventcode]  +:= &eventvalue
+            #Talloc_count[&eventcode] +:= 1
+            Talloc_total[&eventcode] +:= &eventvalue
+            }
+         }  
+      else{ 
+         if member(ListMask,&eventcode) then{
+            if &eventcode == E_Lcreate then{
+               insert(num_list,serial(&eventvalue))
+               Tstruct_count[E_List] := *num_list}
+            Tstruct_usage[E_List] +:= 1
+            if member(ListChange,&eventcode) then Lists["change"] +:= 1
+            else                                  Lists["access"] +:= 1
+            } 
+         else if member(TableMask,&eventcode) then{
+            if &eventcode == E_Tcreate then{
+               insert(num_table,serial(&eventvalue))
+               Tstruct_count[E_Table] := *num_table}
+            Tstruct_usage[E_Table] +:= 1
+            if member(TableChange,&eventcode) then Tables["change"] +:= 1
+            else                                   Tables["access"] +:= 1
+            }  
+         else if member(SetMask,&eventcode) then{
+            if &eventcode == E_Screate then{
+               insert(num_set,serial(&eventvalue))
+               Tstruct_count[E_Set] := *num_set}
+            Tstruct_usage[E_Set] +:= 1
+            if member(SetChange,&eventcode) then Sets["change"] +:= 1
+            else                                 Sets["access"] +:= 1
+            }  
+         else if member(RecordMask,&eventcode) then{
+            if &eventcode == E_Rcreate then{
+               insert(num_record,serial(&eventvalue))
+               Tstruct_count[E_Record] := *num_record}
+            Tstruct_usage[E_Record] +:= 1
+            if member(RecordChange,&eventcode) then Records["change"] +:= 1
+            else                                    Records["access"] +:= 1
+            }
+         }  
+      #------------------------------
+      if /collect_flag then{
+         if i > 20 then{
+            num := 0
+            if *Talloc_total > 0 then
+               display.drawPie(Talloc_total, num+:=1,"% Total Alloc Size")
+
+            if *Talloc_count > 0 then
+               display.drawPie(Talloc_count, num+:=1,"% Total # Alloc")
+
+            if *Talloc_string > 0 then{
+               display.drawPie(Talloc_string,num+:=1, "% String Alloc")
+               display.drawMemoryBar("string",Talloc_string, StringRegion)
+               }
+
+            if *Talloc_block > 0 then{ 
+               display.drawPie(Talloc_block, num+:=1, "% Block Alloc")
+               display.drawMemoryBar("block", Talloc_block,  BlockRegion)
+               }
+
+            if *Tstruct_count > 0 then 
+               display.drawPie(Tstruct_count, num+:=1, "% # Created Struct")
+
+            if *Lists > 0 then   
+               display.drawPie(Lists,num+:=1, "% Lists Usage"," #"||Tstruct_count[E_List])
+            if *Tables > 0 then  
+               display.drawPie(Tables,num+:=1,"% Tables Usage"," #"||Tstruct_count[E_Table])
+            if *Sets > 0 then 
+               display.drawPie(Sets,num+:=1, "% Sets Usage"," #"||Tstruct_count[E_Set])
+            if *Records > 0 then
+               display.drawPie(Records,num+:=1, "% Records Usage"," #"||Tstruct_count[E_Record])
+            if *Tstruct_usage > 0 then 
+               display.drawPie(Tstruct_usage, num+:=1, "% All Struct Usage")
+
+            #delay(10)
+            i := 0
+            }
+         }
+      else{
+         display.drawMemoryBar("init",,BlockRegion)
+         write("=-====== re-calculate")
+         }
+      }
+end
+
+#
+# Initialize the Monitoring Stuff
+#
+method Init(args)
+   local Regions := []
+
+   tp := args
+   Tstruct_usage := table(0) 
+   Tstruct_count := table(0)
+   Talloc_string := table(0)
+   Talloc_block  := table(0)
+   Talloc_count  := table(0)
+   Talloc_total  := table(0)
+   Tcollections  := table(0)
+   Lists         := table(0)
+   Tables        := table(0)
+   Sets          := table(0)
+   Records       := table(0)
+
+   #Initialize all allocation types even if there is no allocation for them.
+   every Talloc_count[!AllocMask] := 0
+   every Talloc_total[!AllocMask] := 0
+   
+   BlockRegion  := 0
+   StringRegion := 0
+
+   every put(Regions, keyword("regions",Monitored))
+   StringRegion:= Regions[2]
+   BlockRegion := Regions[3]
+
+   ListChange := cset() 
+   eventMask := AllocMask ++ 
+                cset(E_Collect||E_EndCollect) ++ 
+                ListChange   ++ ListAccess    ++ 
+                TableChange  ++ TableAccess   ++
+                SetChange    ++ SetAccess     ++
+                RecordChange ++ RecordAccess
+
+end
+
+initially(args)
+
+   Init(args)
+
+   display := Display(args)
+   display.layout()
+   display.drawMemoryBar("init",,BlockRegion)
+end
+
+#-------------------------------------------------------
+
+procedure main(av)
+   local mmm
+
+   if av[1] then{
+      mmm := MMM(av)
+      mmm.Monitor()
+      until Event() === (&rpress | "\e")
+      }
+   else write("Memory Monitored Width Hight")
+end
+
+

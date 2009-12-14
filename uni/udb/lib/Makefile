@@ -13,15 +13,18 @@ STANDALONE = -DStandAlone
 SRC    = listener.icn memory.icn structaliases.icn structusage.icn \
          looptime.icn proctime.icn procprofile.icn varprofile.icn \
          deadvar.icn failedloop.icn failedsubscript.icn typechange.icn\
-         counter_deref.icn counter_pcall.icn counter_line.icn counter_syntax.icn
+         counter_deref.icn counter_pcall.icn counter_line.icn counter_syntax.icn \
+         memory_alloc.icn
 UFILES = listener.u memory.u structaliases.u structusage.u \
          looptime.u proctime.u procprofile.u varprofile.u \
          deadvar.u failedloop.u failedsubscript.u typechange.u \
-         counter_deref.u counter_pcall.u counter_line.u counter_syntax.u
+         counter_deref.u counter_pcall.u counter_line.u counter_syntax.u \
+         memory_alloc.u
 Tools  = memory structaliases structusage \
          looptime proctime procprofile varprofile \
          deadvar failedloop failedsubscript typechange \
-         counter_deref counter_pcall counter_line counter_syntax
+         counter_deref counter_pcall counter_line counter_syntax \
+         memory_alloc
 
 lib: $(UFILES)
 
@@ -37,6 +40,9 @@ listener.u: listener.icn
 
 memory.u: memory.icn listener.u
 	$(UC) $(CFLAGS) memory.icn
+
+memory_alloc.u: memory_alloc.icn
+	$(UC) $(CFLAGS) memory_alloc.icn
 
 structaliases.u: structaliases.icn listener.u
 	$(UC) $(CFLAGS) structaliases.icn

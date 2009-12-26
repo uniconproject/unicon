@@ -644,7 +644,7 @@ expr11	: literal ;
 	| BREAK nexpr { $$ := node("Break", $1,$2);} ;
 	| LPAREN exprlist RPAREN { $$ := node("Paren", $1,$2,$3);} ;
 	| LBRACE compound RBRACE { $$ := node("Brace", $1,$2,$3);} ;
-	| LBRACE caselist RBRACE { $$ := tablelit($1,$2,$3);} ;
+	| LBRACK caselist RBRACK { $$ := tablelit($1,$2,$3);} ;
 	| LBRACK exprlist RBRACK { $$ := node("Brack", $1,$2,$3);} ;
 	| expr11 LBRACK exprlist RBRACK { $$ := node("Subscript", $1,$2,$3,$4);} ;
 	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3);} ;

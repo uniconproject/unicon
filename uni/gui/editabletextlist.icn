@@ -1,5 +1,5 @@
 #
-# $Id: editabletextlist.icn,v 1.22 2006-07-10 01:13:44 rparlett Exp $
+# $Id: editabletextlist.icn,v 1.23 2010-01-12 16:17:45 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -13,6 +13,62 @@ import undo
 import lang
 
 $include "guih.icn"
+
+#
+# Remappable keybindings at present rely on the method vector
+# representation.
+#
+class Keybindings(keymap, prefix)
+   method handle_key(e)
+      if type(e) == "string" then e := prefix || e
+      if m := \ (keymap[e]) then {
+	 if m == "handle_prefix" then prefix ||:= e
+	 else {
+	    prefix := ""
+	    return m
+	    }
+	 }
+   end
+   method set_key(e,m)
+       keymap[e] := m
+   end
+   method emacs_mode()
+      keymap["\^a"] := "handle_start_of_line"
+      keymap["\e"] := "handle_prefix"
+      keymap["\^x"] := "handle_prefix"
+      keymap["\^c"] := "handle_prefix"
+      keymap["\^v"] := "handle_key_page_down"
+      keymap["\^z"] := "handle_scrolldown_one_line"
+      keymap["\^y"] := "handle_paste"
+   keymap["\^x\^c"] := "handle_exit"
+   keymap["\^x\^x"] := "exchange_point_and_mark"
+   keymap["\^x\^f"] := "find_file"
+   keymap["\^x\^s"] := "save_buffer"
+   keymap["\^x\^n"] := "next_error"
+   end
+initially
+   keymap := table("handle_default")
+   keymap[Key_Home] := "handle_key_home"
+   keymap[Key_End] := "handle_key_end"
+   keymap[Key_PgUp] := "handle_key_page_up"
+   keymap[Key_PgDn] := "handle_key_page_down"
+   keymap[Key_Up] := "handle_key_up"
+   keymap[Key_Down] := "handle_key_down"
+   keymap[Key_Left] := "handle_key_left"
+   keymap[Key_Right] := "handle_key_right"
+   keymap["\b"] := "handle_delete_left"
+   keymap["\r"] := keymap["\l"] := "handle_return"
+   keymap["\^k"] := "handle_delete_line"
+   keymap["\^a"] := "handle_select_all"
+   keymap["\^e"] := "handle_end_of_line"
+   keymap["\d"] := keymap["\^d"] := "handle_delete_right"
+   keymap["\^x"] := "handle_cut"
+   keymap["\^c"] := "handle_copy"
+   keymap["\^v"] := "handle_paste"
+   keymap["\^z"] := "handle_undo"
+   keymap["\^y"] := "handle_redo"
+   prefix := ""
+end
 
 #
 # A scrollable editable text area.  
@@ -40,7 +96,8 @@ class EditableTextList : LineBasedScrollArea(
    tab_width,
    wrap_mode,
    line_splitter,
-   changed
+   changed,
+   kmap
    )
 
    method get_view_x_padding()
@@ -314,6 +371,11 @@ class EditableTextList : LineBasedScrollArea(
       else if e === (&lrelease | &rrelease | &mrelease) then
          handle_release(e)
       else if \self.has_focus then {
+	 if \kmap then {
+	     meth := kmap.handle_key(e)
+	     self.__m[meth](self,e)
+	 }
+	 else
          case e of {
             Key_Home : handle_key_home(e)
             Key_End : handle_key_end(e)
@@ -1045,6 +1107,7 @@ class EditableTextList : LineBasedScrollArea(
       set_wrap_mode("off")
       self.cursor_x := self.cursor_y := 1
       set_fields(a)
+      kmap := Keybindings()
 end
 
 class ViewLine:Object(index, 

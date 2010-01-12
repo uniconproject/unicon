@@ -434,6 +434,11 @@ class BuffEditableTextList : EditableTextList(
          else if integer(e) = (&lrelease ) then
             handle_release(e)
          else if \self.has_focus then {
+	 if \kmap then {
+	     meth := kmap.handle_key(e)
+	     self.__m[meth](self,e)
+	 }
+	 else
             case e of {
                Key_Home : handle_key_home(e)
                Key_End : handle_key_end(e)

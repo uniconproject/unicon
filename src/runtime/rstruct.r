@@ -797,12 +797,12 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       for(i=0;i<StrLen(*s); i++) StrLoc(bp->recname)[i]=StrLoc(*s)[i];
       StrLoc(bp->recname)[StrLen(*s)] = '\0';
       for(i=0;i<n;i++) {
-         StrLen(bp->lnames[i]) = StrLen(fields[i]);
-    StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
-    if (StrLoc(bp->lnames[i]) == NULL) return NULL;
-    strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
-    StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
-         }
+	 StrLen(bp->lnames[i]) = StrLen(fields[i]);
+	 StrLoc(bp->lnames[i]) = malloc(StrLen(fields[i])+1);
+	 if (StrLoc(bp->lnames[i]) == NULL) return NULL;
+	 strncpy(StrLoc(bp->lnames[i]), StrLoc(fields[i]), StrLen(fields[i]));
+	 StrLoc(bp->lnames[i])[StrLen(fields[i])] = '\0';
+	 }
       bpelem = malloc(sizeof (struct b_proc_list));
       if (bpelem == NULL) return NULL;
       bpelem->this = bp;

@@ -98,3 +98,7 @@ Global int Gflag	Init(0);	/* -G: enable graphics (write wiconx)*/
 #endif					/* MSWindows && MSVC */
 
 Global int Zflag	Init(1);	/* -Z disables icode-gz compression */
+
+#ifdef OVLD
+Global int OVLDflag;   /* defaults to overloaded (so can make idol.u & unigram.u exceptions */
+#endif

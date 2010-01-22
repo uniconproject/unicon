@@ -6,7 +6,9 @@
  * readlnf, and writef. */
 
 #ifndef NO_CONFIG_H
+#ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
+#endif
 #endif
 
 #ifdef HAVE_CONFIG_H

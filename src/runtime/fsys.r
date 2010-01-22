@@ -1346,21 +1346,54 @@ function{0,1} reads(f,i)
       if (status & Fs_Messaging) {
 	 struct MFile *mf = BlkLoc(f)->File.fd.mf;
 	 /* Casting to unsigned lets us use reads(f, -1) */
-	 size_t size = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
+
+	 Maxread = (unsigned)i <= MaxReadStr ? i : MaxReadStr;
+
+	 StrLoc(s) = NULL;
+	 StrLen(s) = 0;
+
 	 if (!MFIN(mf, READING)) {
 	    Mstartreading(mf);
 	    }
-	 bytesread = tp_read(mf->tp, sbuf, size);
-	 if (bytesread <= 0) {
-	    extern int Merror;
-	    if (Merror >= 1200) {
-	       runerr(Merror, f);
+	 nbytes = 0;
+	 do {
+	    if (bytesread > 0) {
+	       if (i - bytesread <= MaxReadStr)
+		  Maxread = i - bytesread;
+	       else
+		  Maxread = MaxReadStr;
 	       }
-	    fail;
-	    }
 
-	 return string(bytesread, alcstr(sbuf, bytesread));
+	    slen = tp_read(mf->tp, sbuf, Maxread);
+
+	    if (slen <= 0) {
+	       extern int Merror;
+	       if (Merror >= 1200) {
+		  runerr(Merror, f);
+		  }
+	       if (bytesread == 0)
+		  fail;
+	       else return s;
+	       }
+	    bytesread += slen;
+	    rlen = slen < 0 ? (word)MaxReadStr : slen;
+
+	    Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
+	    if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
+	       Protect((StrLoc(s) =
+                        alcstr(StrLoc(s), StrLen(s))), runerr(0));
+	       }
+
+	    Protect(sp = alcstr(sbuf, rlen), runerr(0));
+	    if (StrLen(s) == 0)
+	       StrLoc(s) = sp;
+	    StrLen(s) += rlen;
+
+	    } while ((i == -1) || (bytesread < i));
+
+	 return s;
 	 }
+
       else
 #endif                                  /* Messaging */
 
@@ -1378,19 +1411,19 @@ function{0,1} reads(f,i)
 
 
 #ifdef PosixFns
-        if (status & Fs_Socket) {
+         if (status & Fs_Socket) {
 	    StrLen(s) = 0;
 	    Maxread = (i <= MaxReadStr)? i : MaxReadStr;
 	    do {
-	        ws = (SOCKET)BlkD(f,File)->fd.fd;
-		if (bytesread > 0) {
-                    if (i - bytesread <= MaxReadStr)
-                        Maxread = i - bytesread;
-                    else
-                        Maxread = MaxReadStr;
-                }
+	       ws = (SOCKET)BlkD(f,File)->fd.fd;
+	       if (bytesread > 0) {
+		  if (i - bytesread <= MaxReadStr)
+		     Maxread = i - bytesread;
+		  else
+		     Maxread = MaxReadStr;
+		  }
 
-		if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
+	       if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
 		    /*IntVal(amperErrno) = errno; */
 		    if (bytesread == 0)
 		        fail;
@@ -1404,18 +1437,18 @@ function{0,1} reads(f,i)
 		    bytesread += slen;
 		rlen = slen < 0 ? (word)MaxReadStr : slen;
 
-		Protect(reserve(Strings, rlen), runerr(0));
+		Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
 		if (StrLen(s) > 0 && !InRange(strbase, StrLoc(s), strfree)) {
 		    Protect(reserve(Strings, StrLen(s) + rlen), runerr(0));
 		    Protect((StrLoc(s) =
                         alcstr(StrLoc(s), StrLen(s))), runerr(0));
-		}
+		    }
 
 		Protect(sp = alcstr(sbuf, rlen), runerr(0));
 		if (StrLen(s) == 0)
 		    StrLoc(s) = sp;
 		StrLen(s) += rlen;
-	    } while (bytesread < i);
+	    } while ((i == -1) || (bytesread < i));
 	    return s;
 	}
 

@@ -916,6 +916,7 @@ int noimage;
 	    }
 	 }
       }
+#ifdef Arrays      
    else if (BlkType(lp->listhead) ==T_Realarray){
       tended struct descrip d;
       tended struct b_real *rblk = alcreal(0.0);
@@ -953,7 +954,7 @@ int noimage;
 	    }
 	 } /* for */
       }
-   
+#endif						/* Arrays */
 
 #if EBCDIC != 1
    putc(']', f);

@@ -640,7 +640,11 @@ function{} runerr(i,x[n])
          irunerr(205,i);
          errorfail;
          }
-      if (n == 0) 
+      /*
+       * A reason to make runerr() a vararg function is so that the offending
+       * value may be a null value where it was not wanted.
+       */
+      if (n == 0)
          runerr((int)i);
       else
          runerr((int)i, x[0]);

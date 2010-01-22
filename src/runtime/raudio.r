@@ -65,7 +65,7 @@ int audioDevice(int channels, int rate)
    if (waveOutOpen(&hwave,WAVE_MAPPER,&waveformater,(DWORD_PTR)PlayCallback,
 		   (DWORD_PTR)&bufferinfo,CALLBACK_FUNCTION) ==
       MMSYSERR_NOERROR ){
-      perror("");
+      /* should report the error more specifically somehow. &errno? */
       return 0;
       }
    return 0;
@@ -82,22 +82,28 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
    vorbis_info *oggfileinfo;
    bool okay;
 
-   if ( ( fd = fopen( FilePtr->fname , "rb" ) ) == NULL ){
-      perror("");
-      ExitProcess(1);
+   if ( ( fd = fopen(FilePtr->fname , "rb") ) == NULL ){
+      /*
+       * can't open file, fail
+       */
+      return NULL;
       }
 
-   if ( ov_open(fd,&oggplayfile,NULL,0) < 0 ){
-      perror("");
-      fprintf(stderr,"\nFor Some Reason ogg file is not opening\n");
+   if (ov_open(fd,&oggplayfile,NULL,0) < 0){
+      /*
+       * ogg open failed for some reason; fail
+       */
       fclose(fd);
-      ExitProcess(1);
+      return NULL;
       }
 
    if (!ov_seekable(&oggplayfile)){
       ov_clear(&oggplayfile);
-      perror("");
-      ExitProcess(1);
+      /*
+       * ogg seekable failed for some reason; fail
+       */
+      fclose(fd);
+      return NULL;
       }
 
    oggfileinfo=ov_info(&oggplayfile,-1);
@@ -107,8 +113,11 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       waveformater.wBitsPerSample > 1;
 
    if(audioDevice(oggfileinfo->channels, oggfileinfo->rate)){
-      fprintf(stderr,"\nError Setting up Audio Device\n");
-      ExitProcess(1);
+      /*
+       * Error setting up audio device; fail.
+       */
+      fclose(fd);
+      return NULL;
       }
    for (i=0; i < nbuffers; i++){
       ZeroMemory(&headers[i],sizeof(WAVEHDR));
@@ -265,15 +274,19 @@ void fixup_function_pointers(void)
    talBombOnError = (void (*)(void))GP("alBombOnError_LOKI");
 
    if (talBombOnError == NULL) {
-      fprintf(stderr,	"Could not GetProcAddress alBombOnError_LOKI\n");
-      exit(1);
+      /*
+       * Could not GetProcAddress alBombOnError_LOKI; fail.
+       */
+      return;
       }
 
    talBufferi = (void (*)(ALuint, ALenum, ALint ))	GP("alBufferi_LOKI");
 
    if (talBufferi == NULL) {
-      fprintf(stderr,	"Could not GetProcAddress alBufferi_LOKI\n");
-      exit(1);
+      /*
+       * Could not GetProcAddress alBufferi_LOKI; fail.
+       */
+      return;
       }
 
    alCaptureInit    = (ALboolean (*)( ALenum, ALuint, ALsizei ))
@@ -286,8 +299,10 @@ void fixup_function_pointers(void)
 
    talBufferWriteData = (PFNALBUFFERWRITEDATAPROC)GP("alBufferWriteData_LOKI");
    if(talBufferWriteData == NULL) {
-      fprintf( stderr, "Could not GP alBufferWriteData_LOKI\n" );
-      exit(1);
+      /*
+       * Could not GP alBufferWriteData_LOKI; fail.
+       */
+      return;
       }
 
    talBufferAppendData = (ALuint (*)(ALuint, ALenum, ALvoid *, ALint, ALint))
@@ -299,8 +314,10 @@ void fixup_function_pointers(void)
    talGenStreamingBuffers = (void (*)(ALsizei n, ALuint *bids ))
       GP("alGenStreamingBuffers_LOKI");
    if( talGenStreamingBuffers == NULL ) {
-      fprintf( stderr, "Could not GP alGenStreamingBuffers_LOKI\n");
-      exit(1);
+      /*
+       * Could not GP alGenStreamingBuffers_LOKI; fail.
+       */
+      return;
       }
 
    talutLoadRAW_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
@@ -308,8 +325,10 @@ void fixup_function_pointers(void)
 					   ALenum format))
       GP("alutLoadRAW_ADPCMData_LOKI");
    if (talutLoadRAW_ADPCMData == NULL) {
-      fprintf( stderr, "Could not GP alutLoadRAW_ADPCMData_LOKI\n");
-      exit(1);
+      /* 
+       * Could not GP alutLoadRAW_ADPCMData_LOKI; fail.
+       */
+      return;
       }
 
    talutLoadIMA_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
@@ -317,17 +336,21 @@ void fixup_function_pointers(void)
 					   ALenum format))
       GP("alutLoadIMA_ADPCMData_LOKI");
    if (talutLoadIMA_ADPCMData == NULL) {
-      fprintf( stderr, "Could not GP alutLoadIMA_ADPCMData_LOKI\n");
-      exit(1);
+      /* 
+       * Could not GP alutLoadIMA_ADPCMData_LOKI; fail.
+       */
+      return;
       }
 
    talutLoadMS_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data, ALuint size,
-					  ALuint freq,ALenum format))
-      GP("alutLoadMS_ADPCMData_LOKI");
+			        	  ALuint freq,ALenum format))
+                           GP("alutLoadMS_ADPCMData_LOKI");
 
    if( talutLoadMS_ADPCMData == NULL ) {
-      fprintf( stderr, "Could not GP alutLoadMS_ADPCMData_LOKI\n");
-      exit(1);
+      /* 
+       * Could not GP alutLoadMS_ADPCMData_LOKI; fail.
+       */
+      return;
       }
    return;
 }
@@ -350,7 +373,7 @@ ALboolean SourceIsPlaying(ALuint sid) {
 }
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
-/* The MP3 Support on top of OpenAL */
+/* The following is for MP3 Support on top of OpenAL */
 #define DATABUFSIZE_MP3 	4098
 #define MP3_FUNC    		"alutLoadMP3_LOKI"
 #define NUMSOURCES  		1
@@ -416,33 +439,51 @@ void * OpenAL_PlayMP3( void * args )
 
    /* the global fname */
    if (stat(FilePtr->fname, &sbuf) == -1) {
-      perror(FilePtr->fname);
-      return NULL;/*errno;*/
+      /*
+       * Can't stat the file; fail.
+       */
+      return NULL;
       }
    size = sbuf.st_size;
    data = malloc(size);
    if(data == NULL) {
-      exit(1);
+      /*
+       * Out of memory; this probably should be a runtime error.
+       */
+      return NULL;
       }
 
    fh = fopen(FilePtr->fname, "rb");
    if (fh == NULL) {
-      fprintf(stderr, "Could not open %s\n", FilePtr->fname);
+      /*
+       * Can't open the file for reading; fail.
+       */
       free(data);
-      exit(1);
+      return NULL;
       }
 
-   fread(data, 1, size, fh);
+   if (fread(data, 1, size, fh) <= 0) {
+      /*
+       * Can't read the file's stated size; fail. Possibly more serious.
+       */
+      free(data);
+      return NULL;
+      }
    alutLoadMP3p = (mp3Loader *) alGetProcAddress((ALubyte *) MP3_FUNC);
    if (alutLoadMP3p == NULL) {
+      /*
+       * Can't get the ProcAddress; fail.
+       */
       free(data);
-      fprintf(stderr, "Could not GetProc %s\n",(ALubyte *) MP3_FUNC);
-      exit(-4);
+      return NULL;
       }
 
    if(alutLoadMP3p(mp3buf, data, size) != AL_TRUE) {
-      fprintf(stderr, "alutLoadMP3p failed\n");
-      exit(-2);
+      /*
+       * Can't LoadMP3, fail;
+       */
+      free(data);
+      return NULL;
       }
 
    free(data);
@@ -460,7 +501,7 @@ void * OpenAL_PlayMP3( void * args )
 #endif /* if(HAVE_OPENAL && HAVE_LIBSDL && HAVE_LIBSMPEG) */
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)
-/* The Ogg-Vorbis Support of top of OpenAL*/
+/* The following is for Ogg-Vorbis Support on top of OpenAL*/
 #define DATABUFSIZE 		4096
 #define VORBIS_FUNC		"alutLoadVorbis_LOKI"
 static ALuint vorbbuf; /* our buffer */
@@ -524,37 +565,52 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
 
    /* the global fname */
    if (stat(FilePtr->fname, &sbuf) == -1) {
-      perror(FilePtr->fname);
-      return NULL;
+      /* perror(FilePtr->fname);
+       */
+      return NULL;/*errno;*/
       }
 
    size = sbuf.st_size;
    data = malloc(size);
    if (data == NULL) {
-      exit(1);
+      /*
+       * Can't malloc, probably should runtime error
+       */
+      return NULL;
       }
 
    fh = fopen(FilePtr->fname, "rb");
    if(fh == NULL) {
-      fprintf(stderr, "Could not open %s\n", FilePtr->fname);
       free(data);
-      exit(1);
+      /* fprintf(stderr, "Could not open %s\n", FilePtr->fname);
+       *  exit(1);
+       */
+      return NULL;
       }
-   fread(data, size, 1, fh);
+
+   if (fread(data, size, 1, fh) <= 0){
+      free(data);
+      return NULL;
+      }
 
    alutLoadVorbisp = (vorbisLoader *) alGetProcAddress((ALubyte *)VORBIS_FUNC);
    if (alutLoadVorbisp == NULL) {
       free(data);
-      fprintf(stderr, "Could not GetProc %s\n", (ALubyte *) VORBIS_FUNC);
-      exit(-4);
+      /* fprintf(stderr, "Could not GetProc %s\n", (ALubyte *) VORBIS_FUNC);
+       *  exit(-4);
+       */
+      return NULL;
       }
 
    if (alutLoadVorbisp(vorbbuf, data, size) != AL_TRUE) {
-      fprintf(stderr, "alutLoadVorbis failed\n");
-      exit(-2);
+      /* fprintf(stderr, "alutLoadVorbis failed\n");
+       *  exit(-2);
+       */
+      free(data);
+      return NULL;
       }
-   free(data);
 
+   free(data);
    alSourcePlay( vorbsource );
 
    while (SourceIsPlaying(vorbsource) == AL_TRUE) {
@@ -570,7 +626,7 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
 #endif 	/* #if(HAVE_LIBOPENAL && HAVE_LIBOGG)*/
 
 #ifdef HAVE_LIBOPENAL
-/* The WAV Support on top of OpenAL*/
+/* The following is for WAV Support on top of OpenAL */
 #define WAV_DATABUFFERSIZE (10 * (512 * 3) * 1024)
 static ALuint moving_source = 0;
 
@@ -612,7 +668,10 @@ static void initWAV(void)
    static void *data;
 
    data = malloc(WAV_DATABUFFERSIZE);
-   /* check malloc for failure */
+   if (data == NULL) {
+      free(data);
+      return;
+      }
 
    start = time(NULL);
    alListenerfv(AL_POSITION, zeroes );
@@ -622,19 +681,29 @@ static void initWAV(void)
 
    fh = fopen(FilePtr->fname, "rb");
    if (fh == NULL) {
-      fprintf(stderr, "Couldn't open fname\n");
-      exit(1);
+      /* fprintf(stderr, "Couldn't open fname\n");
+       *  exit(1);
+       */
+      free(data);
+      return;
       }
 
-   filelen = fread(data, 1, WAV_DATABUFFERSIZE, fh); /* check fread failure? */
+   if ((filelen = fread(data, 1, WAV_DATABUFFERSIZE, fh)) <=0){
+      fclose(fh);
+      free(data);
+      return;
+      }
    fclose(fh);
    alGetError();
 
    /* sure hope it's a wave file */
    alBufferData( stereo, AL_FORMAT_WAVE_EXT, data, filelen, 0 );
    if (alGetError() != AL_NO_ERROR) {
-      fprintf(stderr, "Could not BufferData\n");
-      exit(1);
+      /* fprintf(stderr, "Could not BufferData\n");
+       * exit(1);
+       */
+      free(data);
+      return;
       }
 
    free(data);
@@ -665,18 +734,21 @@ void * OpenAL_PlayWAV( void * args ) /* the WAV thread function */
       }
    done = 1;
    signe = 1;
+   /*-----------------------------*/
 
    dev = alcOpenDevice( NULL );
    if (dev == NULL) {
-      fprintf(stderr, "Could not open device\n");
+      /* fprintf(stderr, "Could not open device\n");
+       */  
       return NULL;
       }
 		
    /* Initialize ALUT. */
    context_id = alcCreateContext( dev, attrlist );
    if(context_id == NULL) {
-      fprintf(stderr, "Could not open context: %s\n",
-	      alGetString( alcGetError(dev) ));
+      /* fprintf(stderr, "Could not open context: %s\n",
+       *      alGetString( alcGetError(dev) ));
+       */
       return NULL;
       }
 
@@ -711,13 +783,16 @@ struct AudioFile * audioInit(char filename[])
       FilePtr->doneflag = 0;
       FilePtr->fname = strdup(filename);
       if (FilePtr->fname == NULL) {
-	 fprintf(stderr, "audio init: malloc failed\n");
+	 /* fprintf(stderr, "audio init: malloc failed\n");
+          */
+         free(FilePtr);
 	 return NULL;
 	 }
       return FilePtr;
       }
    else
-      fprintf(stderr, "\n Memory is not enough : malloc failed\n");
+      /* fprintf(stderr, "\n Memory is not enough : malloc failed\n");
+       */
    return NULL;
 }
 
@@ -729,13 +804,14 @@ struct AudioFile * StartAudioThread(char filename[])
 
    Ptr = audioInit(filename);
    if (Ptr != NULL) {
-      if((sp = strstr(Ptr->fname,".mp3")) != NULL ||
-	  (sp = strstr(Ptr->fname,".MP3")) != NULL) {
+      if((sp = strstr(Ptr->fname,".mp3")) != NULL) {
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32
 	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayMP3 , NULL) ) {
-	    fprintf(stderr, "error creating thread.\n");
-	    abort();
+	    /* fprintf(stderr, "error creating thread.\n");
+	     * abort();
+             */
+            return NULL;
 	    }
 	 return Ptr;
 #else
@@ -743,39 +819,44 @@ struct AudioFile * StartAudioThread(char filename[])
 	 return NULL;
 #endif /* WIN32 */
 #else
-	 fprintf(stderr, "\n StartAudioThread: sound not supported in VM\n");
+	 /* 
+          * fprintf(stderr, "\n StartAudioThread: sound not supported in VM\n");
+          */
 	 return NULL;
 #endif
 	 }
 
-      if((sp = strstr(Ptr->fname,".ogg")  ) != NULL ||
-	 (sp = strstr(Ptr->fname,".Ogg")  ) != NULL){
+      if((sp = strstr(Ptr->fname,".ogg")) != NULL){
 #if defined(HAVE_LIBOGG) 
 #ifndef WIN32
 	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayOgg , NULL) ) {
-	    fprintf(stderr, "error creating thread.\n");
-	    abort();
+	    /* fprintf(stderr, "error creating thread.\n");
+             * abort();
+             */
+            return NULL;
 	    }
 	 return Ptr;
 #else
 	 hThread = CreateThread(NULL,0,PlayOggVorbisWIN32,NULL,0,&dwThreadId);
 	 if (hThread == NULL)
-	    ExitProcess(1);
+	    return NULL; /*ExitProcess(1); */
 	 return Ptr;
 #endif /* WIN32 */
 #else
-	 fprintf(stderr, "\n HAVE_LIBOGG: is not defined\n");
+	 /* fprintf(stderr, "\n HAVE_LIBOGG: is not defined\n");
+          */
 	 return NULL;
 #endif /* defined(HAVE_LIBOGG)  */
 	 }
 
-      if((sp = strstr(Ptr->fname,".wav")  ) != NULL ||
-	 (sp = strstr(Ptr->fname,".WAV")  ) != NULL){
+      if((sp = strstr(Ptr->fname,".wav")) != NULL){
 #ifdef HAVE_LIBOPENAL
 #ifndef WIN32
 	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayWAV , NULL) ) {
-	    fprintf(stderr, "error creating thread.");
-	    abort();
+	    /* fprintf(stderr, "error creating thread.");
+	     * abort();
+             */
+            return NULL;
 	    }
 	 return Ptr;
 #else
@@ -783,13 +864,15 @@ struct AudioFile * StartAudioThread(char filename[])
 	 return NULL;
 #endif /* WIN32 */
 #else
-	 fprintf(stderr, "\n HAVE_LIBOPENAL: is not defined\n");
+	 /* fprintf(stderr, "\n HAVE_LIBOPENAL: is not defined\n");
+          */
 	 return NULL;
 #endif
 	 }/* End WAV Thread */
       }
    else {
-      fprintf(stderr, "\n No enough memory : malloc failed \n");
+      /* fprintf(stderr, "\n No enough memory : malloc failed \n");
+       */ 
       return NULL;
       }
    return NULL;
@@ -848,36 +931,30 @@ int LinuxMixer(char * cmd);
 
 int OpenMixer()
 {
-   int status;
 
    /* open mixer, read only */
    mixer_fd = open("/dev/mixer", O_RDONLY);
-   if (mixer_fd == -1) {
-      fprintf(stderr,"unable to open /dev/mixer");
+   if (mixer_fd == -1) { 
+      /* unable to open /dev/mixer */
       return mixer_fd;
       }
 
    /* get needed information about the mixer */
-   status = ioctl(mixer_fd, SOUND_MIXER_READ_DEVMASK, &devmask);
-   if (status == -1)
-      fprintf(stderr,"SOUND_MIXER_READ_DEVMASK ioctl failed");
+   if ( ioctl(mixer_fd, SOUND_MIXER_READ_DEVMASK, &devmask) == -1 ) 
+      return -1; /* ioctl failed */
 
-   status = ioctl(mixer_fd, SOUND_MIXER_READ_STEREODEVS, &stereodevs);
-   if (status == -1)
-      fprintf(stderr,"SOUND_MIXER_READ_STEREODEVS ioctl failed");
+   if ( ioctl(mixer_fd, SOUND_MIXER_READ_STEREODEVS, &stereodevs) == -1)
+      return -1; /* ioctl failed */
 
    /* get all of the information about the mixer */
-   status = ioctl(mixer_fd, SOUND_MIXER_READ_RECSRC, &recsrc);
-   if (status == -1)
-      fprintf(stderr,"SOUND_MIXER_READ_RECSRC ioctl failed");
+   if ( ioctl(mixer_fd, SOUND_MIXER_READ_RECSRC, &recsrc) == -1)
+      return -1; /* ioctl failed */
 
-   status = ioctl(mixer_fd, SOUND_MIXER_READ_RECMASK, &recmask);
-   if (status == -1)
-      fprintf(stderr,"SOUND_MIXER_READ_RECMASK ioctl failed");
+   if ( ioctl(mixer_fd, SOUND_MIXER_READ_RECMASK, &recmask) == -1)
+      return -1; /* ioctl failed */
 
-   status = ioctl(mixer_fd, SOUND_MIXER_READ_CAPS, &caps);
-   if (status == -1)
-      fprintf(stderr,"SOUND_MIXER_READ_CAPS ioctl failed");
+   if ( ioctl(mixer_fd, SOUND_MIXER_READ_CAPS, &caps) == -1)
+      return -1; /* ioctl failed */
 
    return mixer_fd;
 }
@@ -888,7 +965,7 @@ int CloseMixer()
    return 0;
 }
 
-int SetMixerAttribute(char * dev, int value)
+int SetMixerAttribute(char *dev, int value)
 {
    int left, right, level;	/* gain settings */
    int status;		/* return value from system calls */
@@ -900,7 +977,7 @@ int SetMixerAttribute(char * dev, int value)
       if (((1 << i) & devmask) && !strcmp(dev, sound_device_names[i]))
 	 break;
    if (i == SOUND_MIXER_NRDEVICES) { 	/* didn't find a match */
-      fprintf(stderr, "%s is not a valid mixer device\n", dev);
+      /* "dev" is not a valid mixer device */
       return -1;
       }
 
@@ -911,17 +988,15 @@ int SetMixerAttribute(char * dev, int value)
 
    /*display warning if left and right gains given for non-stereo device */
    if ((left != right) && !((1 << i) & stereodevs)) {
-      fprintf(stderr, "warning: %s is not a stereo device\n", dev);
+      /* Warning: "dev" is not a stereo device  */
       }
 
    /* encode both channels into one value */
    level = (right << 8) + left;
 
    /* set gain */
-   status = ioctl(mixer_fd, MIXER_WRITE(device), &level);
-   if (status == -1) {
-      fprintf(stderr,"MIXER_WRITE ioctl failed");
-      return -1;
+   if (ioctl(mixer_fd, MIXER_WRITE(device), &level) == -1) {
+      return -1; /* MIXER_WRITE ioctl failed */
       }
 
    /* unpack left and right levels returned by sound driver */
@@ -934,37 +1009,34 @@ int SetMixerAttribute(char * dev, int value)
 
 int GetMixerAttribute(char * dev)
 {
-   int left, right, level;	/* gain settings */
-   int status;		/* return value from system calls */
-   int device;		/* which mixer device to set */
-   int i;			/* general purpose loop counter */
+   int left, right, level;   /* gain settings */
+   int device;		     /* which mixer device to set */
+   int i;		     /* general purpose loop counter */
 
    /* figure out which device to use */
    for (i = 0 ; i < SOUND_MIXER_NRDEVICES ; i++)
       if (((1 << i) & devmask) && !strcmp(dev, sound_device_names[i]))
 	 break;
-   if (i == SOUND_MIXER_NRDEVICES) { 	/* didn't find a match */
-      fprintf(stderr, "%s is not a valid mixer device\n", dev);
+   if (i == SOUND_MIXER_NRDEVICES) { 	
+      /* didn't find a match             */
+      /* dev is not a valid mixer device */
       return -1;
       }
 
    device = i;
 
    if ((1 << i) & stereodevs) {
-      status = ioctl(mixer_fd, MIXER_READ(device), &level);
-      if (status == -1)
-	 fprintf(stderr,"SOUND_MIXER_READ ioctl failed");
+      if (ioctl(mixer_fd, MIXER_READ(device), &level) == -1)
+	 return -1; /* ioctl failed */
       left  = level & 0xff;
       right = (level & 0xff00) >> 8;
       level = (left + right) / 2;
       }
    else { /* only one channel */
-      status = ioctl(mixer_fd, MIXER_READ(device), &level);
-      if (status == -1)
-	 fprintf(stderr,"SOUND_MIXER_READ ioctl failed");
+      if (ioctl(mixer_fd, MIXER_READ(device), &level) == -1)
+	 return -1; /* ioctl failed */
       level = level & 0xff;
       }
-
    return level;
 }
 
@@ -1112,6 +1184,7 @@ int GetAllMixerLinesInfo()
       return -1;
    for (i = 0 ; i < mxcaps.cDestinations ; i++){
       pmxl= (MIXERLINE*)malloc(sizeof(MIXERLINE));
+      if (pmxl == NULL)  return -1;
       pmxl->cbStruct = sizeof(MIXERLINE);
       pmxl->dwDestination = i;
       res = mixerGetLineInfo((HMIXEROBJ)hmix, pmxl,
@@ -1126,6 +1199,7 @@ int GetAllMixerLinesInfo()
 	 /*---*/
 	 for (k = 0 ; k < num ; k++){
 	    pmxl= (MIXERLINE*)malloc(sizeof(MIXERLINE));
+            if (pmxl == NULL)  return -1;
 	    pmxl->cbStruct = sizeof(MIXERLINE);
 	    pmxl->dwDestination = i;
 	    pmxl->dwSource = k;

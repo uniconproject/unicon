@@ -18,7 +18,7 @@
 
 #ifdef MultiThread
 /*
- * event(x, y, C) -- generate an event at the program level.
+ * EvSend(x, y, C) -- formerly event(); generate an event at the program level.
  */
 
 "EvSend(x, y, C) - send event with event code x and event value y."

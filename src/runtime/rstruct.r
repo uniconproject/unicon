@@ -910,16 +910,22 @@ int cinserttable(union block **pbp, int n, dptr x)
  * Convert an array to a list 
  */
 
-int arraytolist(struct descrip arr, struct descrip *res)
+int arraytolist(struct descrip *arr)
 {
-   tended struct b_list *lp;
    int ndims, lsize, i; 
    register struct b_lelem *lelemp;
+   tended struct b_list *lparr;
+   
+   if ( is:list(*arr)){
+      lparr = (struct b_list *) BlkD(*arr, List);
+      if (lparr->listtail!=NULL) return Succeeded;
+      }
+   else
+      return Error;
 
-   if (arr.dword == D_Realarray){
+   if (BlkType(lparr->listhead) ==T_Realarray){
 
-      struct b_realarray *ap = (struct b_realarray *) BlkLoc(arr);
-      if (ap->title != T_Realarray) return Error;
+      struct b_realarray *ap = (struct b_realarray *) lparr->listhead;
       
       ndims = (ap->dims?
       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
@@ -928,12 +934,10 @@ int arraytolist(struct descrip arr, struct descrip *res)
       lsize = (ndims>1? ap->dims->Intarray.a[0]:
        (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double));
 
-      Protect( lp = alclist(0, lsize), return Error);
-      res->dword = D_List;
-      res->vword.bptr = (union block *) lp;
-      lelemp = (struct b_lelem *) lp->listhead; /* Blk(lp->listhead,Lelem); */
+      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return Error );      
+      lelemp->listprev = lelemp->listnext = (union block *) lparr;
+      lparr->listhead = lparr->listtail = (union block *)lelemp;
       
-
       if (ndims==1){
 	 struct b_real *xp;
 	 for (i=0; i<lsize; i++){
@@ -941,7 +945,6 @@ int arraytolist(struct descrip arr, struct descrip *res)
 	    lelemp->lslots[i].vword.bptr = (union block *) xp;
 	    lelemp->lslots[i].dword = D_Real;
 	    lelemp->nused++;
-	    lp->size++;
 	    }
          } /* if (ndims==1) */
       else if (ndims==2){
@@ -991,10 +994,179 @@ int arraytolist(struct descrip arr, struct descrip *res)
 	 } /* (ndims==2) */
  
       } /* Realrray */
-   else if (arr.dword == D_Intarray){
+   else if (BlkType(lparr->listhead)==T_Intarray){
 
       }
+   else
+      return Error;
 
    return Succeeded;
 }
+
+int cpint2realarray(dptr dp1, dptr dp2, word i, word j, int copyelements)
+{
+   word size;
+   struct b_intarray *ap;
+   tended struct b_realarray *ap2;
+   
+   /*
+   * Calculate the size of the sublist.
+   */
+   size =j - i;
+   if (!reserve(Blocks, (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray)
+      + size * (word)sizeof(double))))  return Error;
+   
+   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return Error);
+   ap = (struct b_realarray *) BlkD(*dp1, List)->listhead;
+   
+   if (copyelements){
+      word *a, k;
+      double *b;
+      
+      a=ap->a;
+      b=ap2->a;
+   
+      /* cop elements i throgh j to the new array ap2*/
+      for (k=i-1, j=0; j<size; k++,j++)
+	 b[j]=a[k];
+      }
+   
+   if (ap->dims){
+      word ndims;
+      ndims=(ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word);
+      /*the fisrt dimension of the new array is reduced to size*/
+      ap2->dims->Intarray.a[1]= size ;
+      /* the remaining dimensions are the same, just copy them*/
+      for(i=2; i<ndims; i++)
+	 ap2->dims->Intarray.a[i]=ap->dims->Intarray.a[i];
+      }
+   else
+      ap2->dims=NULL;
+   
+   /*
+   * Fix type and location fields for the new realarray
+   */
+   dp2->vword.bptr = (union block *)
+      alclisthdr(size, (union block *) ap2);
+   dp2->dword = D_List;
+
+   EVValD(dp2, e);
+   return Succeeded;
+}
+
+
+#begdef cprealarray_macro(f, e)
+/*
+ * cprealarray(dp1,dp2,i,j) - copy subarray dp1[i:j] into dp2.
+ */
+int f(dptr dp1, dptr dp2, word i, word j)
+{
+   word size, copyelements=1;
+   struct b_realarray *ap;
+   tended struct b_realarray *ap2;
+   
+   /*
+   * Calculate the size of the sublist.
+   */
+   size =j - i;
+   if (!reserve(Blocks, (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray)
+      + size * (word)sizeof(double))))  return Error;
+   
+   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return Error);
+   ap = (struct b_realarray *) BlkD(*dp1, List)->listhead;
+
+   if (copyelements){
+      word k;
+      double *a, *b;
+      
+      a=ap->a;
+      b=ap2->a;
+   
+      /* cop elements i throgh j to the new array ap2*/
+      for (k=i-1, j=0; j<size; k++,j++)
+	 b[j]=a[k];
+      }
+   
+   if (ap->dims){
+      word ndims;
+      ndims=(ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word);
+      /*the fisrt dimension of the new array is reduced to size*/
+      ap2->dims->Intarray.a[1]= size ;
+      /* the remaining dimensions are the same, just copy them*/
+      for(i=2; i<ndims; i++)
+	 ap2->dims->Intarray.a[i]=ap->dims->Intarray.a[i];
+      }
+   else
+      ap2->dims=NULL;
+   
+   /*
+   * Fix type and location fields for the new realarray
+   */
+   dp2->vword.bptr = (union block *)
+      alclisthdr(size, (union block *) ap2);
+   dp2->dword = D_List;
+
+   EVValD(dp2, e);
+   return Succeeded;
+}
+#enddef
+
+cprealarray_macro(cprealarray_0, 0)
+
+#begdef cpintarray_macro(f, e)
+/*
+* cpintarray(dp1,dp2,i,j) - copy subarray dp1[i:j] into dp2.
+*/
+int f(dptr dp1, dptr dp2, word i, word j)
+{
+   word size, copyelements=1;
+   struct b_intarray *ap;
+   tended struct b_intarray *ap2;
+   
+   /*
+   * Calculate the size of the sublist.
+   */
+   size =j - i;
+   if (!reserve(Blocks, (word)(sizeof(struct b_list) + (word) sizeof(struct b_intarray)
+      + size * (word) sizeof(word))))  return Error;
+   
+   Protect(ap2 = (struct b_intarray *) alcintarray(size), return Error);
+   ap = (struct b_intarray *) BlkD(*dp1, List)->listhead;
+   
+   if (copyelements){
+      word *a, *b, k;
+      
+      a=ap->a;
+      b=ap2->a;
+   
+      /* cop elements i throgh j to the new array ap2*/
+      for (k=i-1, j=0; j<size; k++,j++)
+	 b[j]=a[k];
+      }
+   
+   if (ap->dims){
+      word ndims;
+      ndims=(ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word);
+      ap2->dims->Intarray.a[1]= size ;
+      for(i=2; i<ndims; i++)
+	 ap2->dims->Intarray.a[i]=ap->dims->Intarray.a[i];
+      }
+   else
+      ap2->dims=NULL;
+   
+   /*
+   * Fix type and location fields for the new intarray
+   */
+   dp2->vword.bptr = (union block *)
+      alclisthdr(size, (union block *) ap2);
+   dp2->dword = D_List;
+   EVValD(dp2, e);
+   return Succeeded;
+}
+#enddef
+
+cpintarray_macro(cpintarray_0, 0)
+
+
+
 #endif					/* Arrays */

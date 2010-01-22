@@ -42,28 +42,63 @@ operator{*} ! bang(underef x -> dx)
             word xi = 0;
 #endif					/* E_Lsub */
             EVValD(&dx, E_Lbang);
+	    
+#ifdef Arrays
+	    ep = BlkD(dx,List)->listhead;
+	    if (BlkType(ep)==T_Realarray){
+	       tended struct b_realarray *ap =  ( struct b_realarray * ) ep;
+	       word asize = BlkD(dx,List)->size;
+	       
+	       for (i=0;i<asize;i++){
+#if E_Lsub
+		  ++xi;
+		  EVVal(xi, E_Lsub);
+#endif					/* E_Lsub */
+
+                  suspend struct_var(&ap->a[i], ap);
+		  }
+	       }
+	    else if ( BlkType(ep)==T_Intarray){
+	       tended struct b_intarray *ap =  ( struct b_intarray * ) ep;
+	       word asize = BlkD(dx,List)->size;
+	       
+	       for (i=0;i<asize;i++){
+#if E_Lsub
+		  ++xi;
+		  EVVal(xi, E_Lsub);
+#endif					/* E_Lsub */
+
+                  suspend struct_var(&ap->a[i], ap);
+		  }
+	       }
+	    else{
+#endif					/* Arrays */
+
 
             /*
              * x is a list.  Chain through each list element block and for
              * each one, suspend with a variable pointing to each
              * element contained in the block.
              */
-            for (ep = BlkD(dx,List)->listhead;
-		 BlkType(ep) == T_Lelem;
-                 ep = Blk(ep,Lelem)->listnext){
-               for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
-                  j = ep->Lelem.first + i;
-                  if (j >= ep->Lelem.nslots)
-                     j -= ep->Lelem.nslots;
+	       for (ep = BlkD(dx,List)->listhead;
+		  BlkType(ep) == T_Lelem;
+		  ep = Blk(ep,Lelem)->listnext){
+		  for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+		     j = ep->Lelem.first + i;
+		     if (j >= ep->Lelem.nslots)
+			j -= ep->Lelem.nslots;
 
 #if E_Lsub
-		  ++xi;
-		  EVVal(xi, E_Lsub);
+		     ++xi;
+		     EVVal(xi, E_Lsub);
 #endif					/* E_Lsub */
 
-                  suspend struct_var(&ep->Lelem.lslots[j], ep);
-                  }
-               }
+		     suspend struct_var(&ep->Lelem.lslots[j], ep);
+		     }
+		  }
+#ifdef Arrays		  
+	       }
+#endif					/* Arrays */
             }
          }
 
@@ -440,27 +475,40 @@ operator{0,1} ? random(underef x -> dx)
 
             EVValD(&dx, E_Lrand);
             EVVal(i, E_Lsub);
+	    
+	    bp = BlkD(dx,List)->listhead;
 
-            j = 1;
-            /*
-             * Work down chain list of list blocks and find the block that
-             *  contains the selected element.
-             */
-            bp = BlkD(dx,List)->listhead;
-            while (i >= j + Blk(bp,Lelem)->nused) {
-               j += Blk(bp,Lelem)->nused;
-               bp = Blk(bp,Lelem)->listnext;
-               if (BlkType(bp) == T_List)
-                  syserr("list reference out of bounds in random");
-               }
-            /*
-             * Locate the appropriate element and return a variable
-             * that points to it.
-             */
-            i += Blk(bp,Lelem)->first - j;
-            if (i >= bp->Lelem.nslots)
-               i -= bp->Lelem.nslots;
-            return struct_var(&(bp->Lelem.lslots[i]), bp);
+#ifdef Arrays
+	    if (BlkD(dx,List)->listtail!=NULL){
+#endif					/* Arrays */
+
+	       j = 1;
+	       /*
+	       * Work down chain list of list blocks and find the block that
+	       *  contains the selected element.
+	       */
+	       while (i >= j + Blk(bp,Lelem)->nused) {
+		  j += Blk(bp,Lelem)->nused;
+		  bp = Blk(bp,Lelem)->listnext;
+		  if (BlkType(bp) == T_List)
+		     syserr("list reference out of bounds in random");
+		  }
+	       /*
+	       * Locate the appropriate element and return a variable
+	       * that points to it.
+	       */
+	       i += Blk(bp,Lelem)->first - j;
+	       if (i >= bp->Lelem.nslots)
+		  i -= bp->Lelem.nslots;
+	       return struct_var(&(bp->Lelem.lslots[i]), bp);
+#ifdef Arrays
+	       }
+	    else if (BlkType(bp)==T_Realarray)
+	       return  struct_var(&((struct b_realarray *)(bp))->a[i-1], bp);
+	    else  /* if (Blk(bp, Intarray)->title==T_Intarray)     assumed to be int array*/
+	       return  struct_var(&((struct b_intarray *)(bp))->a[i-1], bp);
+#endif					/* Arrays */	    
+
             }
          }
 
@@ -665,8 +713,23 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
             i = j;
             j = t;
             }
-         if (cplist(&dx, &result, i, j) == Error)
-	    runerr(0);
+
+#ifdef Arrays
+	 if (BlkD(dx,List)->listtail!=NULL){
+#endif					/* Arrays */
+	    if (cplist(&dx, &result, i, j) == Error)
+	       runerr(0);
+#ifdef Arrays
+	       }
+	 else if ( BlkType(BlkD(dx,List)->listhead)==T_Realarray){
+	    if (cprealarray(&dx, &result, i, j) == Error)
+	       runerr(0);
+	    }
+	 else /*if ( BlkType(BlkD(dx,List)->listhead)==T_Intarray)*/{
+	    if (cpintarray(&dx, &result, i, j) == Error)
+	       runerr(0);
+	    }
+#endif					/* Arrays */	    
          return result;
          }
       }
@@ -874,24 +937,35 @@ operator{0,1} [] subsc(underef x -> dx,y)
              *  element.
              */
             bp = lp->listhead;
-            j = 1;
-	    /*
-	     * y is in range, so bp can never be null here. if it was, a memory
-	     * violation would occur in the code that follows, anyhow, so
-	     * exiting the loop on a NULL bp makes no sense.
-	     */
-            while (i >= j + Blk(bp,Lelem)->nused) {
-               j += bp->Lelem.nused;
-               bp = bp->Lelem.listnext;
-               }
 
-            /*
-             * Locate the desired element and return a pointer to it.
-             */
-            i += bp->Lelem.first - j;
-            if (i >= bp->Lelem.nslots)
-               i -= bp->Lelem.nslots;
-            return struct_var(&bp->Lelem.lslots[i], bp);
+#ifdef Arrays
+	    if (lp->listtail!=NULL){
+#endif					/* Arrays */
+	       /*
+	       * y is in range, so bp can never be null here. if it was, a memory
+	       * violation would occur in the code that follows, anyhow, so
+	       * exiting the loop on a NULL bp makes no sense.
+	       */
+	       j = 1;
+	       while (i >= j + Blk(bp,Lelem)->nused) {
+		  j += bp->Lelem.nused;
+		  bp = bp->Lelem.listnext;
+		  }
+
+	       /*
+	       * Locate the desired element and return a pointer to it.
+	       */
+	       i += bp->Lelem.first - j;
+	       if (i >= bp->Lelem.nslots)
+		  i -= bp->Lelem.nslots;
+	       return struct_var(&bp->Lelem.lslots[i], bp);
+#ifdef Arrays
+	    }
+	    else if (BlkType(bp)==T_Realarray)
+		  return  struct_var(&((struct b_realarray *)(bp))->a[i-1], bp);
+	    else  /* if (BlkType(bp)==T_Intarray)     assumed to be int array*/
+	       return  struct_var(&((struct b_intarray *)(bp))->a[i-1], bp);
+#endif					/* Arrays */	    
             }
          }
 

@@ -70,6 +70,10 @@ function{1} delete(s, x[n])
 	    tended struct descrip d;
             C_integer cnv_x;
 	    int i, size, argc;
+#ifdef Arrays
+	    if (BlkD(s,List)->listtail==NULL) 
+	       if (arraytolist(&s)!=Succeeded) fail;
+#endif					/* Arrays*/
 
 	    for (argc = 0; argc < n; argc++) {
 
@@ -202,6 +206,10 @@ function{0,1} get_or_pop(x,i)
 	 body {
 	    int j;
 	    EVValD(&x, E_Lget);
+#ifdef Arrays
+	    if (BlkD(x,List)->listtail==NULL) 
+	       if (arraytolist(&x)!=Succeeded) fail;
+#endif					/* Arrays*/
 	    for(j=0;j<i;j++)
 	       if (!c_get(BlkD(x,List), &result)) fail;
 	    return result;
@@ -501,6 +509,10 @@ function{1} insert(s, x[n])
 	    tended struct descrip d;
 	    C_integer cnv_x;
             word i, j, size, argc;
+#ifdef Arrays
+	    if (BlkD(s,List)->listtail==NULL) 
+	       if (arraytolist(&s)!=Succeeded) fail;
+#endif					/* Arrays*/
 
 	    for(argc=0;argc<n;argc+=2) {
 	       hp = BlkD(s, List);
@@ -1203,6 +1215,12 @@ function{0,1} pull(x,n)
       register word i, j;
       register struct b_list *hp;
       register struct b_lelem *bp;
+      
+#ifdef Arrays
+      if (BlkD(x,List)->listtail==NULL) 
+	 if (arraytolist(&x)!=Succeeded) fail;
+#endif					/* Arrays*/
+      
 
       for(j=0;j<n;j++) {
 	 EVValD(&x, E_Lpull);
@@ -1252,9 +1270,15 @@ dptr val;
    register struct b_lelem *bp; /* does not need to be tended */
    static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
+#ifdef Arrays
+   if (BlkD(*l,List)->listtail==NULL) 
+      if (arraytolist(l)!=Succeeded) return;
+#endif					/* Arrays*/
+
    /*
     * Point bp at the first list-element block.
     */
+
    bp = Blk(BlkD(*l,List)->listhead, Lelem);
 
    /*
@@ -1330,6 +1354,12 @@ function{1} push(x, vals[n])
       register struct b_lelem *bp; /* does not need to be tended */
       static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
+
+#ifdef Arrays
+      if (BlkD(x,List)->listtail==NULL) 
+	 if (arraytolist(&x)!=Succeeded) fail;
+#endif					/* Arrays*/
+
 
       if (n == 0) {
 	 dp = &nulldesc;
@@ -1501,6 +1531,11 @@ function{1} put(x, vals[n])
       register struct b_lelem *bp;  /* does not need to be tended */
       static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
+#ifdef Arrays
+	    if (BlkD(x,List)->listtail==NULL) 
+	       if (arraytolist(&x)!=Succeeded) fail;
+#endif					/* Arrays*/
+
       if (n == 0) {
 	 dp = &nulldesc;
 	 num = 1;
@@ -1767,24 +1802,32 @@ function{1} IntArray(x[n])
       return new list(integer)
       }
    body {
-      struct descrip d;
+      tended struct descrip d;
       struct b_intarray *dims = NULL;
+      word *a;
       C_integer ci;
       int num = 1;
       int i;
+      int bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
       for(i=0;i<n;i++){
 	 if (!cnv:C_integer(x[i], ci)) runerr(101, x[i]);
 	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
 	 }
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
-      d.vword.bptr = (union block *) alcintarray(num);
-      d.dword = D_Intarray;
+
+      if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) runerr(0);
+
+      d.vword.bptr = (union block *)
+	 alclisthdr(num, (union block *)alcintarray(num));
+      d.dword = D_List;
       if (n>2) {
 	 dims = alcintarray(n-1);
 	 for (i=0;i<n-1;i++) dims->a[i] = IntVal(x[i]);
-	 d.vword.bptr->Intarray.dims = (union block *)dims;
+	 d.vword.bptr->List.listhead->Intarray.dims = (union block *)dims;
 	 }
-      for(i=0; i<num; i++) d.vword.bptr->Intarray.a[i] = IntVal(x[n-1]);
+      a = d.vword.bptr->List.listhead->Intarray.a;
+      for(i=0; i<num; i++)
+	 a[i] = IntVal(x[n-1]);
       return d;
       }
 end
@@ -1805,7 +1848,8 @@ function{1} IntArrayElem(a, x[n])
 	 inline {
 	    C_integer ci, cnew;
 	    int i, j, ndims, base = 0;
-	    struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+	    struct b_list *lp = BlkD(a, List);
+	    struct b_intarray *ap = (struct b_intarray *)(lp->listhead);
 	    /* Need to check that ap is a block pointer type of descriptor. */
 	    if (ap->title != T_Intarray) runerr(123,a);
 
@@ -1828,7 +1872,8 @@ function{1} IntArrayElem(a, x[n])
 	 inline {
 	    C_integer ci, cnew;
 	    int i, j, ndims, base = 0;
-	    struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+	    struct b_list *lp = BlkD(a, List);
+	    struct b_intarray *ap = (struct b_intarray *)(lp->listhead);
 	    /* Need to check that ap is a block pointer type of descriptor. */
 	    if (ap->title != T_Intarray) runerr(123,a);
 	    ndims = (ap->dims?
@@ -1890,7 +1935,8 @@ function{1} IntArrayElem(a, x[n])
    inline {
       C_integer ci, cnew;
       int i, j, ndims=1, base = 0;
-      struct b_intarray *ap = (struct b_intarray *)BlkLoc(a);
+      struct b_list *lp = BlkD(a, List);
+      struct b_intarray *ap = (struct b_intarray *)(lp->listhead);
 #if 0
       /* need to check that ap is a block pointer type of descriptor first */
       if (ap->title != T_Intarray) runerr(123,a);
@@ -1943,26 +1989,33 @@ function{1} RealArray(x[n])
       return new list(real)
       }
    body {
-      struct descrip d;
+      tended struct descrip d;
       struct b_intarray *dims = NULL;
-      double dv;
+      double dv, *a;
       C_integer ci;
       int num = 1;
       int i;
+      int bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
       for(i=0;i<n-1;i++){
 	 if (!cnv:C_integer(x[i], ci)) runerr(101, x[i]);
 	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
 	 }
       if (!cnv:C_double(x[i], dv)) runerr(101, x[i]);
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
-      d.vword.bptr = (union block *) alcrealarray(num);
-      d.dword = D_Realarray;
+      
+      if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) runerr(0);
+      
+      d.vword.bptr = (union block *)
+	 alclisthdr(num, (union block *)alcrealarray(num));
+      d.dword = D_List;
+
       if (n>2) {
 	 dims = alcintarray(n-1);
 	 for (i=0;i<n-1;i++) dims->a[i] = IntVal(x[i]);
-	 d.vword.bptr->Realarray.dims = (union block *)dims;
+	 d.vword.bptr->List.listhead->Realarray.dims = (union block *)dims;
 	 }
-      for(i=0; i<num; i++) d.vword.bptr->Realarray.a[i] = dv;
+      a = d.vword.bptr->List.listhead->Realarray.a;
+      for(i=0; i<num; i++) a[i] = dv;
       return d;
       }
 end
@@ -1979,7 +2032,8 @@ function{1} RealArrayElem(a,x[n])
       C_integer ci;
       double cnew;
       int i, j, ndims, base = 0;
-      struct b_realarray *ap = (struct b_realarray *)BlkLoc(a);
+      struct b_list *lp = BlkD(a, List);
+      struct b_realarray *ap = (struct b_realarray *)(lp->listhead);
       /* need to check that ap is a block pointer type of descriptor first */
       if (ap->title != T_Realarray) runerr(123,a);
       ndims = (ap->dims?
@@ -2020,6 +2074,18 @@ function{1} RealArrayElem(a,x[n])
 	 }
       else runerr(130);
       }
+end
+
+function{1} ArrayToList(a)
+abstract {
+   return new list(real) ++ new list(integer)
+}
+body {
+   if (arraytolist(&a)==Succeeded)
+      return a;
+   else
+      fail;
+}
 end
 
 #endif					/* Arrays */

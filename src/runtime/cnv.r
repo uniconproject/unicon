@@ -746,6 +746,22 @@ void f(dptr s, dptr d)
          }
 
       default: {
+#ifdef Arrays
+	 if ( Offset(*s)>0 ) {
+	    if (BlkD(*s, Realarray)->title==T_Realarray){
+	       d->vword.bptr = (union block *) alcreal(  * (double *)((word *)VarLoc(*s) + Offset(*s)) );
+	       d->dword = D_Real;
+	    }
+	    else if (BlkD(*s,Intarray)->title==T_Intarray){
+	       d->vword.integr = (word) *((word *)(VarLoc(*s)) +  Offset(*s)) ;
+	       d->dword = D_Integer;
+	    }
+	    else
+	       *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
+	 }
+	 else
+#endif					/* Arrays */
+
          /*
           * An ordinary variable is being dereferenced.
           */

@@ -133,6 +133,65 @@
             store[type(x)] = type(y)
             }
          inline {
+#ifdef Arrays 
+	    if ( Offset(x)>0 ) {
+	       if (BlkD(x, Realarray)->title==T_Realarray){
+		  tended struct descrip val;
+		  if (is:real(y)){
+		     *(double *)( (word *) VarLoc(x) + Offset(x)) = getdbl(&y);
+		     }
+		  else{ /* y is not real, try to convert the realarray to list*/
+		     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
+		     tended struct descrip dlist;
+		     word i;
+
+		     i = (Offset(x)*sizeof(word)-sizeof(struct b_realarray)
+			+sizeof(double)) / sizeof(double);
+			
+		     dlist.vword.bptr = (union block *) xlist;
+		     dlist.dword = D_List;		     
+		     if (arraytolist(&dlist)!=Succeeded) fail;
+		     
+		     /* 
+		      * assuming the new list has one lelem block only, 
+		      * i should be in the first block. no need to loop 
+		      * through several blocks
+		      */
+
+		     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
+		     }
+	       }
+	       else if (BlkD(x,Intarray)->title==T_Intarray){
+		  C_integer ii;
+		  if (cnv:C_integer(y, ii)) 
+		     *((word *)VarLoc(x) + Offset(x)) = ii;
+		  else{ /* y is not integer, try to convert the intarray to list*/
+		     tended struct b_list *xlist= BlkD(x, Intarray)->listp;
+		     tended struct descrip dlist;
+		     word i;
+		     
+		     i = (Offset(x)*sizeof(word)-sizeof(struct b_intarray)+
+			sizeof(word)) / sizeof(word);
+		     
+		     dlist.vword.bptr = (union block *) xlist;
+		     dlist.dword = D_List;		     
+		     if (arraytolist(&dlist)!=Succeeded) fail;
+		     
+		     /* 
+		     * assuming the new list has one lelem block only, 
+		     * i should be in the first block. no need to loop 
+		     * through several blocks
+		     */
+
+		     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
+		     }
+		  }
+	       else
+		  Asgn(x, y)
+	    }
+	    else
+#endif					/* Arrays */
+
             Asgn(x, y)
             }
          }

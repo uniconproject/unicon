@@ -426,6 +426,24 @@ alcpelem_macro(alcpelem,0)
 
 #endif					/* PatternType */
 
+/*
+ * allocate just a list header block.  internal use only (alc*array family).
+ */
+struct b_list *alclisthdr(uword size, union block *bptr)
+{
+   register struct b_list *blk;
+   AlcFixBlk(blk, b_list, T_List)
+   blk->size = size;
+   blk->id = list_ser++;
+   blk->listhead = bptr;
+   blk->listtail = NULL;
+#ifdef Arrays
+   ( (struct b_realarray *) bptr)->listp = blk;
+#endif					/* Arrays */
+   return blk;
+}
+
+
 #begdef alclist_raw_macro(f, e_list, e_lelem)
 /*
  * alclist - allocate a list header block in the block region.
@@ -1071,6 +1089,7 @@ register struct b_intarray *blk;
 AlcBlk(blk, b_intarray, T_Intarray, bsize);
 blk->blksize = bsize;
 blk->dims = NULL;
+blk->listp = NULL;
 return blk;
 }
 
@@ -1081,6 +1100,7 @@ register struct b_realarray *blk;
 AlcBlk(blk, b_realarray, T_Realarray, bsize);
 blk->blksize = bsize;
 blk->dims = NULL;
+blk->listp = NULL;
 return blk;
 }
 

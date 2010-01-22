@@ -713,6 +713,11 @@ char *argv[];
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
 
+#ifdef Arrays   
+   rootpstate.Cprealarray = cprealarray_0;
+   rootpstate.Cpintarray = cpintarray_0;
+#endif					/* Arrays */   
+
    rootpstate.Cplist = cplist_0;
    rootpstate.Cpset = cpset_0;
    rootpstate.Cptable = cptable_0;
@@ -2011,6 +2016,11 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
       curpstate->blockregion->Gnext->Gprev = pstate->blockregion;
    curpstate->blockregion->Gnext = pstate->blockregion;
    initalloc(0, pstate);
+
+#ifdef Arrays   
+   pstate->Cprealarray = cprealarray_0;
+   pstate->Cpintarray = cpintarray_0;
+#endif					/* Arrays */      
 
    pstate->Cplist = cplist_0;
    pstate->Cpset = cpset_0;

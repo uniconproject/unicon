@@ -867,10 +867,8 @@ struct b_list *lp;
 int noimage;
    {
    register word i, j;
-   register struct b_lelem *bp;
    word size, count;
-
-   bp = (struct b_lelem *) lp->listhead;
+   
    size = lp->size;
 
    if (noimage > 0 && size > 0) {
@@ -893,28 +891,69 @@ int noimage;
    fprintf(f, "list_%ld = $<", (long)lp->id);
 #endif				/* EBCDIC != 1 */
 
-   count = 1;
-   i = 0;
-   if (size > 0) {
-      for (;;) {
-         if (++i > bp->nused) {
-            i = 1;
-            bp = (struct b_lelem *) bp->listnext;
-            }
-         if (count <= ListLimit/2 || count > size - ListLimit/2) {
-            j = bp->first + i - 1;
-            if (j >= bp->nslots)
-               j -= bp->nslots;
-            outimage(f, &bp->lslots[j], noimage+1);
-            if (count >= size)
-               break;
-            putc(',', f);
-            }
-         else if (count == ListLimit/2 + 1)
-            fprintf(f, "...,");
-         count++;
-         }
+   if (lp->listtail!=NULL){   
+      register struct b_lelem *bp = (struct b_lelem *) lp->listhead;   
+      count = 1;
+      i = 0;
+      if (size > 0) {
+	 for (;;) {
+	    if (++i > bp->nused) {
+	       i = 1;
+	       bp = (struct b_lelem *) bp->listnext;
+	       }
+	    if (count <= ListLimit/2 || count > size - ListLimit/2) {
+	       j = bp->first + i - 1;
+	       if (j >= bp->nslots)
+		  j -= bp->nslots;
+	       outimage(f, &bp->lslots[j], noimage+1);
+	       if (count >= size)
+		  break;
+	       putc(',', f);
+	       }
+	    else if (count == ListLimit/2 + 1)
+	       fprintf(f, "...,");
+	    count++;
+	    }
+	 }
       }
+   else if (BlkType(lp->listhead) ==T_Realarray){
+      tended struct descrip d;
+      tended struct b_real *rblk = alcreal(0.0);
+      /* probably need to worry about the following pointer*/
+      register struct b_realarray *ap = (struct b_realarray *) lp->listhead;
+      
+      d.vword.bptr = (union block *) rblk;
+      d.dword = D_Real;
+      
+      for (i=0;i<size;i++) {
+	 if (i < ListLimit/2 || i >= size - ListLimit/2) {
+	    rblk->realval = ap->a[i];
+	    outimage(f, &d , noimage+1);
+	    if (i < size-1)
+	       putc(',', f);
+	    }
+	 else if (i == ListLimit/2){
+	    fprintf(f, "...,");
+	    i=size-ListLimit/2-1;
+	    }
+	 } /* for*/
+      }
+   else if (BlkType(lp->listhead) ==T_Intarray){
+      register struct b_intarray *ap = (struct b_intarray *) lp->listhead;
+
+      for (i=0;i<size;i++) {
+	 if (i < ListLimit/2 || i >= size - ListLimit/2) {
+	    fprintf(f, "%ld" , ap->a[i]);
+	    if (i < size-1)
+	       putc(',', f);
+	    }
+	 else if (i == ListLimit/2){
+	    fprintf(f, "...,");
+	    i=size-ListLimit/2-1;
+	    }
+	 } /* for */
+      }
+   
 
 #if EBCDIC != 1
    putc(']', f);

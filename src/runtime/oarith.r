@@ -356,61 +356,402 @@ ArithOp( + , plus , Add , RealAdd, list_add )
 int list_add(dptr x, dptr y, dptr z)
 {
    tended struct b_list *lp1;
-   tended struct b_lelem *bp1;
-#ifdef LargeInts
-   tended struct descrip lx, ly;
-#endif					/* LargeInts */
-   struct descrip *slotptr;
    word size1, size2;
    word i, j, slot;
-   if (is:list(*x) && is:list(*y)) {
-      size1 = BlkLoc(*x)->list.size;
-      size2 = BlkLoc(*y)->list.size;
-      if (size1 != size2) return Error;
-      if (cplist(x, z, (word)1, size1 + 1) == Error)
-         return Error;
-      /* add in values from y */
 
-      lp1 = (struct b_list *) BlkLoc(*y);
-      bp1 = (struct b_lelem *) lp1->listhead;
-      i = 1;
-      slot = 0;
-      while (size2 > 0) {
-         j = bp1->first + i - 1;
-         if (j >= bp1->nslots)
-            j -= bp1->nslots;
-         slotptr = BlkLoc(*z)->list.listhead->lelem.lslots + slot++;
-         list_add(slotptr, bp1->lslots+j, slotptr);
-         if (++i > bp1->nused) {
-            i = 1;
-            bp1 = (struct b_lelem *) bp1->listnext;
-            }
-         size2--;
-         }
+   if (is:list(*x) && is:list(*y)) {
+      size1 = BlkLoc(*x)->List.size;
+      size2 = BlkLoc(*y)->List.size;
+      if (size1 != size2) return Error;
+#ifdef Arrays      
+      if ( BlkType(BlkD(*x,List)->listhead)==T_Realarray){
+	 double *a, *c;
+
+	 if ( BlkType(BlkD(*y,List)->listhead)==T_Realarray){ /*the two are real arrays*/
+	    double *b;
+	    if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    /* points to the three arrays data and copy! */
+	    a = ((struct b_realarray *) BlkLoc(*x)->List.listhead )->a;
+	    b = ((struct b_realarray *) BlkLoc(*y)->List.listhead )->a;
+	    c = ((struct b_realarray *) BlkLoc(*z)->List.listhead)->a;
+	 
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + b[i];
+	    } /* two real arrays*/
+	 else if ( BlkType(BlkD(*y,List)->listhead)==T_Intarray){ /*first arrays is real, second is int*/
+	    word *b;
+
+	    if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    
+	    a = ((struct b_realarray *) BlkLoc(*x)->List.listhead )->a;
+	    b =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
+	    c = ((struct b_realarray *) BlkLoc(*z)->List.listhead)->a;
+	    /* a is real, b is int, hopefully the c compiler knows how to do it*/
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + b[i];
+	    } /* two real arrays*/
+	 else{
+	    /* the second list is a List */
+	    tended union block *ep;
+	    tended struct b_realarray *apa, *apc;
+	    word k=0;
+	    double f;
+	    
+	    if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+
+	    apa = (struct b_realarray *) BlkLoc(*x)->List.listhead;
+	    apc = (struct b_realarray *) BlkLoc(*z)->List.listhead;
+	    
+	    for (ep = BlkD(*y,List)->listhead; BlkType(ep) == T_Lelem;
+	       ep = Blk(ep,Lelem)->listnext){
+	       for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+		  j = ep->Lelem.first + i;
+		  if (j >= ep->Lelem.nslots)
+		  j -= ep->Lelem.nslots;
+		     
+		  if (!cnv:C_double(ep->Lelem.lslots[j], f)) 
+		     return Error;
+		  
+		  apc->a[k] = apa->a[k] + f;
+		  k++;
+		  }
+	       }
+	    }
+	 }
+      else if ( BlkType(BlkD(*x,List)->listhead)==T_Intarray){
+	 word *a;
+	 
+	 if ( BlkType(BlkD(*y,List)->listhead)==T_Realarray){ /*first arrays is int, second is real*/
+	    double *b, *c;
+	    if (cprealarray(y, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    /* points to the three arrays data and copy! */
+	    a = ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
+	    b = ((struct b_realarray *) BlkLoc(*y)->List.listhead )->a;
+	    c = ((struct b_realarray *) BlkLoc(*z)->List.listhead)->a;
+	 
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + b[i];
+	    } 
+	 else if ( BlkType(BlkD(*y,List)->listhead)==T_Intarray){  /*the two are int arrays*/
+	    word *b, *c;
+
+	    if (cpintarray(x, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    
+	    a = ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
+	    b =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
+	    c = ((struct b_intarray *) BlkLoc(*z)->List.listhead)->a;
+	    /* a is real, b is int, hopefully the c compiler knows how to do it*/
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + b[i];
+	    } /* two real arrays*/
+	 else{
+	    /* the second list is a List */
+	    tended union block *ep;
+	    tended struct b_intarray *apa, *apc;
+	    word k=0, d;
+	    
+	    if (cpintarray(x, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    
+	    apa = (struct b_intarray *) BlkLoc(*x)->List.listhead;
+	    apc = (struct b_intarray *) BlkLoc(*z)->List.listhead;
+	    
+	    for (ep = BlkD(*y,List)->listhead; BlkType(ep) == T_Lelem;
+	       ep = Blk(ep,Lelem)->listnext){
+	       for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+		  j = ep->Lelem.first + i;
+		  if (j >= ep->Lelem.nslots)
+		     j -= ep->Lelem.nslots;
+		  
+		  /* default : The resutling array is of type int */
+		  if (Type(ep->Lelem.lslots[j]) == T_Integer ){
+		     if (!cnv:C_integer(ep->Lelem.lslots[j], d))
+			return Error;
+		     apc->a[k] = apa->a[k] + d;
+		     k++;
+		     }
+		  else{ 
+		     /* we might be able to continue with real, copy the elements to 
+		      * a new realarray and continue
+		      */
+		     tended struct b_realarray *apc2;
+		     double f;
+		     word ii;
+		     if (cpint2realarray(x, z, (word) 1, size1 + 1) == Error)
+			return Error;
+		     
+		     apc2 = (struct b_realarray *) BlkLoc(*z)->List.listhead;
+		     for (ii=0; ii<k; ii++)
+			apc2->a[ii] = apc->a[ii];
+		     
+		     /* where we stoped in the last list lelem*/
+		     ii=i;
+		     /* no need to start over since elements were copied already*/
+		     for (/*ep = BlkD(*y,List)->listhead*/;
+			BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext){
+			for (i = ii; i < Blk(ep,Lelem)->nused; i++) {
+			   j = ep->Lelem.first + i;
+			   if (j >= ep->Lelem.nslots)
+			      j -= ep->Lelem.nslots;
+			   if (!cnv:C_double(ep->Lelem.lslots[j], f))
+			      return Error;
+			   apc2->a[k] = apa->a[k] + f;
+			   k++;
+			   }
+			ii=0;
+			}
+		     return Succeeded;
+		     }
+		  } /*for i=0 */
+	       } /* for ep = */
+	    }
+	 }
+      else if ( BlkType(BlkD(*y,List)->listhead)==T_Realarray){
+	 tended union block *ep;
+	 tended struct b_realarray *apa, *apc;
+	 word k=0;
+	 double f;
+	 
+	 if (cprealarray(y, z, (word) 1, size1 + 1) == Error)
+	    return Error;
+	 
+	 apa = (struct b_realarray *) BlkLoc(*y)->List.listhead;
+	 apc = (struct b_realarray *) BlkLoc(*z)->List.listhead;
+	 
+	 for (ep = BlkD(*x,List)->listhead; BlkType(ep) == T_Lelem;
+	    ep = Blk(ep,Lelem)->listnext){
+	    for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+	       j = ep->Lelem.first + i;
+	       if (j >= ep->Lelem.nslots)
+		  j -= ep->Lelem.nslots;
+	       
+	       if (!cnv:C_double(ep->Lelem.lslots[j], f)) 
+		  return Error;
+	       
+	       apc->a[k] = apa->a[k] + f;
+	       k++;
+	       }
+	    }
+	 }
+      else if ( BlkType(BlkD(*y,List)->listhead)==T_Intarray){
+	 tended union block *ep;
+	 tended struct b_intarray *apa, *apc;
+	 word k=0, d;
+
+	 if (cpintarray(y, z, (word) 1, size1 + 1) == Error)
+	    return Error;
+	 
+	 apa = (struct b_intarray *) BlkLoc(*y)->List.listhead;
+	 apc = (struct b_intarray *) BlkLoc(*z)->List.listhead;
+	 
+	 for (ep = BlkD(*x,List)->listhead; BlkType(ep) == T_Lelem;
+	    ep = Blk(ep,Lelem)->listnext){
+	    for (i = 0; i < Blk(ep,Lelem)->nused; i++) {
+	       j = ep->Lelem.first + i;
+	       if (j >= ep->Lelem.nslots)
+		  j -= ep->Lelem.nslots;
+	       
+	       /* default : The resutling array is of type int */
+	       if (Type(ep->Lelem.lslots[j]) == T_Integer ){
+		  if (!cnv:C_integer(ep->Lelem.lslots[j], d))
+		     return Error;
+		  apc->a[k] = apa->a[k] + d;
+		  k++;
+		  }
+	       else{ 
+		  /* we might be able to continue with real, copy the elements to 
+		   * a new realarray and continue
+		   */
+		  tended struct b_realarray *apc2;
+		  double f;
+		  word ii;
+		  if (cpint2realarray(y, z, (word) 1, size1 + 1) == Error)
+		     return Error;
+		  
+		  apc2 = (struct b_realarray *) BlkLoc(*z)->List.listhead;
+		  for (ii=0; ii<k; ii++)
+		     apc2->a[ii] = apc->a[ii];
+		   /* where we stoped in the last list lelem*/
+		  ii=i;
+		  /* no need to start over since elements were copied already*/
+		  for (/*ep = BlkD(*x,List)->listhead*/;
+		     BlkType(ep) == T_Lelem; ep = Blk(ep,Lelem)->listnext){
+		     for (i = ii; i < Blk(ep,Lelem)->nused; i++) {
+			j = ep->Lelem.first + i;
+			if (j >= ep->Lelem.nslots)
+			   j -= ep->Lelem.nslots;
+			if (!cnv:C_double(ep->Lelem.lslots[j], f))
+			   return Error;
+			apc2->a[k] = apa->a[k] + f;
+			k++;
+			
+			}
+			ii=0;
+		     }
+		  return Succeeded;
+		  
+		  }
+	       } /*for i=0*/
+	    } /* for ep */
+	 }
+      else{ /* the two lists are of type List  */
+#endif					/* Arrays */
+	 struct descrip *slotptr;
+	 tended struct b_lelem *bp1;
+	 if (cplist(x, z, (word)1, size1 + 1) == Error)
+	    return Error;
+	 /* add in values from y */
+
+	 lp1 = (struct b_list *) BlkLoc(*y);
+	 bp1 = (struct b_lelem *) lp1->listhead;
+	 i = 1;
+	 slot = 0;
+	 while (size2 > 0) {
+	    j = bp1->first + i - 1;
+	    if (j >= bp1->nslots)
+	       j -= bp1->nslots;
+	    slotptr = BlkLoc(*z)->List.listhead->Lelem.lslots + slot++;
+	    list_add(slotptr, bp1->lslots+j, slotptr);
+	    if (++i > bp1->nused) {
+	       i = 1;
+	       bp1 = (struct b_lelem *) bp1->listnext;
+	       }
+	    size2--;
+	    }
+#ifdef Arrays
+	 }
+#endif
       }
    else if (is:list(*x)) {
       /* x a list, y a scalar */
-      size1 = BlkLoc(*x)->list.size;
-      if (cplist(x, z, (word)1, size1 + 1) == Error)
-         return Error;
-      for (i=0; i<size1; i++) {
-         slotptr = BlkLoc(*z)->list.listhead->lelem.lslots + i;
-         list_add(slotptr, y, slotptr);
+#ifdef Arrays
+      if ( BlkType(BlkD(*x,List)->listhead)==T_Realarray){
+	 double *a, *c, f;
+	 size1 = BlkLoc(*x)->List.size;
+	 
+	 if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
+	    return Error;
+	 if (!cnv:C_double(*y, f)) 
+	    return Error;
+	 
+	 a =  ((struct b_realarray *) BlkLoc(*x)->List.listhead )->a;
+	 c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
+
+	 for(i=0; i<size1; i++)
+	    c[i] = a[i] + f ;
 	 }
+      else if ( BlkType(BlkD(*x,List)->listhead)==T_Intarray){
+	 word *a, d;
+	 double f;
+	 size1 = BlkLoc(*x)->List.size;
+	 if ( Type ( *y ) == T_Integer ){
+	    word *c;
+	    if (!cnv:C_integer(*y, d)) 
+	       return Error;
+	    if (cpintarray(x, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    a =  ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
+	    c =  ((struct b_intarray *) BlkLoc(*z)->List.listhead )->a;
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + d ;
+	    }
+	 else if (cnv:C_double(*y, f)){
+	    double *c;
+	    if (cpint2realarray(x, z, (word) 1, size1 + 1, 0 /* no need to copy elements */) == Error)
+	       return Error;
+	    a =  ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
+	    c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + f ;
+	    }
+	 else
+	    return Error;
+	 }
+      else{
+#endif					/* Arrays*/
+	 struct descrip *slotptr;
+	 size1 = BlkLoc(*x)->List.size;
+	 if (cplist(x, z, (word)1, size1 + 1) == Error)
+	    return Error;
+	 for (i=0; i<size1; i++) {
+	    slotptr = BlkLoc(*z)->List.listhead->Lelem.lslots + i;
+	    list_add(slotptr, y, slotptr);
+	    }
+#ifdef Arrays	 
+      }
+#endif					/* Arrays */
       }
    else if (is:list(*y)) {
       /* y a list, x a scalar */
-      size1 = BlkLoc(*y)->list.size;
-      if (cplist(y, z, (word)1, size1 + 1) == Error)
-         return Error;
-      for (i=0; i<size1; i++) {
-         slotptr = BlkLoc(*z)->list.listhead->lelem.lslots + i;
-         list_add(slotptr, x, slotptr);
+#ifdef Arrays      
+      if ( BlkType(BlkD(*y,List)->listhead)==T_Realarray){
+	 double *a, *c, f;
+	 size1 = BlkLoc(*y)->List.size;
+	 
+	 if (cprealarray(y, z, (word) 1, size1 + 1) == Error)
+	    return Error;
+	 if (!cnv:C_double(*x, f)) 
+	    return Error;
+	 
+	 a =  ((struct b_realarray *) BlkLoc(*y)->List.listhead )->a;
+	 c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
+
+	 for(i=0; i<size1; i++)
+	    c[i] = a[i] + f ;
 	 }
+      else if ( BlkType(BlkD(*y,List)->listhead)==T_Intarray){
+	 word *a, d;
+	 double f;
+	 size1 = BlkLoc(*y)->List.size;
+	 if ( Type ( *x ) == T_Integer ){
+	    word *c;
+	    if (!cnv:C_integer(*x, d)) 
+	       return Error;
+	    if (cpintarray(y, z, (word) 1, size1 + 1) == Error)
+	       return Error;
+	    a =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
+	    c =  ((struct b_intarray *) BlkLoc(*z)->List.listhead )->a;
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + d ;
+	    }
+	 else if (cnv:C_double(*x, f)){
+	    double *c;
+	    if (cpint2realarray(y, z, (word) 1, size1 + 1, 0 /* no need to copy elements */) == Error)
+	       return Error;
+	    a =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
+	    c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
+	    for(i=0; i<size1; i++)
+	       c[i] = a[i] + f ;
+	    }
+	 else
+	    return Error;
+	 }
+      else{
+#endif					/* Arrays */
+	 struct descrip *slotptr;
+	 size1 = BlkLoc(*y)->List.size;
+	 if (cplist(y, z, (word)1, size1 + 1) == Error)
+	    return Error;
+	 for (i=0; i<size1; i++) {
+	    slotptr = BlkLoc(*z)->List.listhead->Lelem.lslots + i;
+	 list_add(slotptr, x, slotptr);
+	 }
+#ifdef Arrays
+	 }
+#endif					/* Arrays */	 
       }
    else {
       C_integer tmp, tmp2, irslt;
       double tmp3, tmp4;
+#ifdef LargeInts
+      tended struct descrip lx, ly;
+#endif					/* LargeInts */
+      
       /* x, y must be numeric */
       if (cnv:(exact)C_integer(*x, tmp) && cnv:(exact)C_integer(*y, tmp2)) {
          irslt = add(tmp,tmp2);

@@ -1589,14 +1589,20 @@ void gentables()
 
 #ifdef OVLD
    /*
-   write out the op2fieldnum map 
-   */
+    * write out the op2fieldnum map 
+    */
    hdr.OpTab = pc;
 #ifdef OVLD_DEBUG
-   fprintf(stdout, "OPcode = %d\n", NUMOPCODES);
+   fprintf(stdout, "#OPcode = %d\n", NUMOPCODES);
+   for ( i = 0; i < NUMOPCODES; i++) {
+      fprintf(stdout, "OPcode[%d] = %d\n", i, op2fieldnum[i]);
+      }
 #endif
+   /*
+    * The pc += and longwrite() are faster than calling outop() repeatedly
+    * in a loop, but are we sure it is 32-vs.-64-bit correct?
+    */
    pc += NUMOPCODES * sizeof(int);
-
    if (longwrite(op2fieldnum, (long) (NUMOPCODES) * (sizeof(int)), outfile) < 0)
          quit("cannot write icode file");
 

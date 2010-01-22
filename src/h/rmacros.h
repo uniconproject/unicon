@@ -856,6 +856,10 @@
       #define k_input       (curpstate->K_input)
       #define k_output      (curpstate->K_output)
       
+#ifdef Arrays
+      #define cprealarray   (curpstate->Cprealarray)
+      #define cpintarray    (curpstate->Cpintarray)
+#endif      				/* Arrays */
       #define cplist	    (curpstate->Cplist)
       #define cpset	    (curpstate->Cpset)
       #define cptable	    (curpstate->Cptable)

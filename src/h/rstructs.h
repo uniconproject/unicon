@@ -161,6 +161,7 @@ struct b_list {			/* list-header block */
 struct b_intarray {
    word title;			/* T_Intarray */
    word blksize;		/* size of block */
+   union block *listp;		/* pointer to the list block */
    union block *dims;		/* dimension sizes, NULL for 1D */
    word a[1];			/* true array size == size, above */
    };
@@ -168,6 +169,7 @@ struct b_intarray {
 struct b_realarray {
    word title;			/* T_Realarray */
    word blksize;		/* size of block */
+   union block *listp;		/* pointer to the list block */
    union block *dims;		/* dimension sizes, NULL for 1D */
    double a[1];			/* true array size == size, above */
    };
@@ -571,6 +573,10 @@ struct progstate {
    /*
     * Function Instrumentation Fields.
     */
+#ifdef Arrays   
+   int (*Cprealarray)(dptr, dptr, word, word);
+   int (*Cpintarray)(dptr, dptr, word, word);
+#endif					/* Arrays */
    int (*Cplist)(dptr, dptr, word, word);
    int (*Cpset)(dptr, dptr, word);
    int (*Cptable)(dptr, dptr, word);

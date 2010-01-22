@@ -422,4 +422,5 @@ FncDef(fetch,2)
   FncDefV(IntArrayElem)
   FncDefV(RealArray)
   FncDefV(RealArrayElem)
+  FncDefV(ArrayToList)
 #endif					/* Arrays */

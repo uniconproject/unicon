@@ -25,6 +25,9 @@ struct b_list	*alclist_raw	(uword size, uword nslots);
 struct b_list	*alclist_raw_1	(uword size, uword nslots);
 struct b_list	*alclist_0	(uword size, uword nslots);
 struct b_list	*alclist_1	(uword size, uword nslots);
+#ifdef Arrays
+struct b_list   *alclisthdr	(uword size, union block *bptr);
+#endif					/* Arrays */
 struct b_lelem	*alclstb_0	(uword nslots,uword first,uword nused);
 struct b_lelem	*alclstb_1	(uword nslots,uword first,uword nused);
 #undef alcreal
@@ -125,6 +128,12 @@ int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
 #ifdef MultiThread
 int		cplist_0	(dptr dp1,dptr dp2,word i,word j);
 int		cplist_1	(dptr dp1,dptr dp2,word i,word j);
+#ifdef Arrays
+int		cprealarray_0	(dptr dp1,dptr dp2,word i,word j);
+int		cpintarray_0	(dptr dp1,dptr dp2,word i,word j);
+int		cprealarray_1	(dptr dp1,dptr dp2,word i,word j);
+int		cpintarray_1	(dptr dp1,dptr dp2,word i,word j);
+#endif					/* Arrays */
 int		cpset_0		(dptr dp1,dptr dp2,word size);
 int		cpset_1		(dptr dp1,dptr dp2,word size);
 int		cptable_0	(dptr dp1,dptr dp2,word size);
@@ -135,6 +144,10 @@ void		EVStrAlc_1	(word n);
 int		cplist		(dptr dp1,dptr dp2,word i,word j);
 int		cpset		(dptr dp1,dptr dp2,word size);
 int		cptable		(dptr dp1,dptr dp2,word size);
+#ifdef Arrays
+int		cprealarray	(dptr dp1,dptr dp2,word i,word j);
+int		cpintarray	(dptr dp1,dptr dp2,word i,word j);
+#endif					/* Arrays */
 #endif					/* MultiThread */
 void		cpslots		(dptr dp1,dptr slotptr,word i, word j);
 int		csetcmp		(unsigned int *cs1,unsigned int *cs2);

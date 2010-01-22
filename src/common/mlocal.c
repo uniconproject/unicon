@@ -150,7 +150,7 @@ char *findonpath(char *name, char *buf, size_t len) {
 /* X_OK flag not reliable, just check whether the file exists */
 #define access _access
 #define X_OK 00
-#endif
+#endif					/* NT */
       if (access(buf, X_OK) == 0)
          return buf;
 #if MSDOS

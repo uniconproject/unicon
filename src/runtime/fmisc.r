@@ -1961,6 +1961,19 @@ function{*} keyword(keyname,ce,i)
    if !def:C_integer(i,0) then
       runerr(101,i)
    body {
+#if 0
+/*
+ * Unfinished: change this gigantic chain of if (strcmp())... into
+ * a switch statement that uses the stringint mechanism.
+ */
+static stringint siKeywords[] = {
+   {0, 67},
+#define KDef(p,n) {"p", n},
+#include "../icont/keyword.h"
+#include "../h/kdefs.h"
+   };
+#endif
+
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
       if (kname[0] == '&') kname++;

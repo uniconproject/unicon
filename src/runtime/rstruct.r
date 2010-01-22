@@ -683,9 +683,6 @@ dynrecord(s, fields, n)
    struct b_proc_list * bpl;
 
    if (StrLen(*s) == 0) {
-      for (i=1; i<=n; i++)
-         printf("\tfield %d: \"%.*s\"\n", i, StrLen(fields[i-1]),
-            StrLoc(fields[i-1]));
       if (dynrec_recname_create(s, fields, n) == NULL) {
          printf("dynrecord: dynrec_recname_create failure.\n");
          return NULL;

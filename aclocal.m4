@@ -143,15 +143,19 @@ fi
 #
 if test -n "${FTGL_HOME}"
 then
-	FTGL_OLD_LDFLAGS=$LDFLAGS
-	FTGL_OLD_CPPFLAGS=$CPPFLAGS
-	LDFLAGS="$LDFLAGS -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib"
-	CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
-        AC_LANG_SAVE
-        AC_LANG_CPLUSPLUS
-        AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
-        AC_CHECK_HEADER(FTGL.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
-        AC_LANG_RESTORE
+    FTGL_OLD_LDFLAGS=$LDFLAGS
+    FTGL_OLD_CPPFLAGS=$CPPFLAGS
+    LDFLAGS="$LDFLAGS -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib"
+    CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
+    AC_PROG_CXX
+    #
+    # test whether we found a C++ compiler; for now, only a true g++
+    # used to AC_LANG_CPLUSPLUS but that dies with a FATAL error if no C++
+    #
+    if test "$CXX" = "g++" -a "$GXX" = "yes"
+    then
+	AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
+	AC_CHECK_HEADER(FTGL.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
         if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
         then
                 #
@@ -169,6 +173,9 @@ then
 		CPPFLAGS="$FTGL_OLD_CPPFLAGS"
                 AC_MSG_RESULT(failed)
         fi
+    else
+	echo "missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+    fi
 fi
 
 ])
@@ -445,6 +452,9 @@ then
         JVOIPLIB_OLD_LDFLAGS=$LDFLAGS
         JVOIPLIB_OLD_CPPFLAGS=$LDFLAGS
         LDFLAGS="$LDFLAGS -L${JVOIPLIB_HOME}"
+	AC_PROG_CXX
+    if test "$CXX" = "g++" -a "$GXX" = "yes"
+    then
         AC_LANG_SAVE
         AC_LANG_CPLUSPLUS
         #  _ZN7JThread13ThreadStartedEv
@@ -479,6 +489,7 @@ then
 		AC_SUBST(JV_LDFLAGS)
                 AC_MSG_RESULT(failed)
         fi
+    fi
 fi
 
 ])

@@ -1014,7 +1014,7 @@ int cpint2realarray(dptr dp1, dptr dp2, word i, word j, int copyelements)
       + size * (word)sizeof(double))))  return Error;
    
    Protect(ap2 = (struct b_realarray *) alcrealarray(size), return Error);
-   ap = (struct b_realarray *) BlkD(*dp1, List)->listhead;
+   ap = (struct b_intarray *) BlkD(*dp1, List)->listhead;
    
    if (copyelements){
       word *a, k;

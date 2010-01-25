@@ -119,7 +119,11 @@ operator{1} * size(x)
 	 if ((status & Fs_ODBC) == Fs_ODBC) { /* ODBC file */
 	    struct ISQLFile *fp;
 	    int rc;
-#if (ODBCVER >= 0x0351)
+	    /*
+	     * This ODBCVER version check probably doesn't work, since rtt
+	     * runs without sucking in system includes, on which it depends.
+	     */
+#if (ODBCVER >= 0x0351) || defined(MacOSX)
 	    SQLLEN numrows;
 #else					/* ODBCVER >= 0x0351 */
 	    SQLINTEGER numrows;

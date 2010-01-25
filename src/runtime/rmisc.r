@@ -451,7 +451,7 @@ int noimage;
 	  * Check for a predefined cset; use keyword name if found.
 	  */
 	 if ((csn = csname(dp)) != NULL) {
-	    fprintf(f, csn);
+	    fprintf(f, "%s", csn);
 	    return;
 	    }
          /*
@@ -763,7 +763,7 @@ int noimage;
             putc(')', f);
             }
          else if (Type(*dp) == T_External)
-            fprintf(f, "external(%d)",BlkD(*dp,External)->blksize);
+            fprintf(f, "external(%ld)",BlkD(*dp,External)->blksize);
          else if (Type(*dp) <= MaxType)
             fprintf(f, "%s", blkname[Type(*dp)]);
          else

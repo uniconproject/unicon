@@ -438,7 +438,7 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    blk->listhead = bptr;
    blk->listtail = NULL;
 #ifdef Arrays
-   ( (struct b_realarray *) bptr)->listp = blk;
+   ( (struct b_realarray *) bptr)->listp = (union block *)blk;
 #endif					/* Arrays */
    return blk;
 }

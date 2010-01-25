@@ -386,7 +386,8 @@ int region;
    if (rl.rlim_cur < curblock->size) {
       rl.rlim_cur = curblock->size;
       if (setrlimit(RLIMIT_STACK , &rl) == -1) {
-	 fprintf(stderr,"iconx setrlimit(%d) failed %d\n", rl.rlim_cur, errno);
+	 fprintf(stderr,"iconx setrlimit(%lu) failed %d\n",
+		 (unsigned long)(rl.rlim_cur),errno);
 	 fflush(stderr);
 	 }
       }

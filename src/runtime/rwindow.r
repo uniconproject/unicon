@@ -4795,7 +4795,7 @@ char * watt(wbp w, char *s)
 
    if (strchr(s, '=') == NULL) {
       if (is:integer(throw)) {
-	 sprintf(foo, "%d", IntVal(throw));
+	 sprintf(foo, "%ld", IntVal(throw));
 	 }
       else if (!is:string(throw)) return NULL;
       return strdup(foo);

@@ -398,7 +398,7 @@ void EVVariable(dptr dx, int eventcode)
 
    if (i == GlobalName) {
       if (reserve(Strings, StrLen(parent->eventval) + 1) == NULL) {
-	 fprintf(stderr, "failed to reserve %d bytes for global\n",
+	 fprintf(stderr, "failed to reserve %ld bytes for global\n",
 		 StrLen(parent->eventval)+1);
 	 syserr("monitoring out-of-memory error");
 	 }
@@ -409,7 +409,7 @@ void EVVariable(dptr dx, int eventcode)
       }
    else if ((i == StaticName) || (i == LocalName) || (i == ParamName)) {
       if (!reserve(Strings, StrLen(parent->eventval) + StrLen(*procname) + 1)) {
-	 fprintf(stderr,"failed to reserve %d bytes for %d, %d+%d\n",
+	 fprintf(stderr,"failed to reserve %ld bytes for %d, %ld+%ld\n",
 		StrLen(parent->eventval)+StrLen(*procname)+1, i,
 		 StrLen(parent->eventval), StrLen(*procname));
 	 syserr("monitoring out-of-memory error");
@@ -509,7 +509,7 @@ void EVInit()
     *  the text segment.
     */
 #ifdef HaveProfil
-   profil(ticker.s, sizeof(ticker.s), (long) EVInit & ~0x3FFFF, 2);
+   profil((char *)(ticker.s), sizeof(ticker.s), (long) EVInit & ~0x3FFFF, 2);
 #endif					/* HaveProfil*/
 #endif					/* UNIX */
 

@@ -1943,7 +1943,7 @@ EntInterp;
 	    char buf[50];
 
 	    sprintf(buf, "unimplemented opcode: %ld (0x%08x)\n",
-               (long)lastop, lastop);
+               (long)lastop, (unsigned int)lastop);
 	    syserr(buf);
 	    }
 	 }

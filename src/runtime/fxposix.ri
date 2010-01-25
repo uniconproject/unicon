@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.51 2009-08-11 09:21:32 jeffery Exp $
+ * $Id: fxposix.ri,v 1.52 2010-01-25 17:06:04 jeffery Exp $
  */
 
 /*
@@ -797,7 +797,7 @@ function{0,1} fcntl(f, action, options)
 	 case SEEK_END: *p++ = '-'; break;
 	 }
 
-	 sprintf(p, "%ld,%ld", fl.l_start, fl.l_len);
+	 sprintf(p, "%ld,%ld", (long)fl.l_start, (long)fl.l_len);
 
 	 if (!constr)
 	    if (!(constr = rec_structor("posix_lock")))
@@ -1221,11 +1221,13 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
 	 dup_fds(&d_stdin, &d_stdout, &d_stderr);
 
-	 if (is_argv_str)
-	    execl("/bin/sh", "sh", "-c", cmdline, 0);
+	 if (is_argv_str) {
+	    execl("/bin/sh", "sh", "-c", cmdline, (char *)0);
+	    }
 	 else {
-	    execvp(margv[0], margv);
-	    free(margv);
+	    if (execvp(margv[0], margv) == -1) {
+	       free(margv);
+	       }
             }
 
 	  /*

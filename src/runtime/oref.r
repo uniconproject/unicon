@@ -159,7 +159,7 @@ operator{*} ! bang(underef x -> dx)
 		     if (mf->resp->sc != 200)
 			fail;
 
-		     if (sscanf(mf->resp->msg, "%*s %*d %d", &msglen) < 1)
+		     if (sscanf(mf->resp->msg, "%*s %*d %ld", &msglen) < 1)
 			runerr(1212, dx);
 		     tp_freeresp(mf->tp, mf->resp);
 
@@ -859,7 +859,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  if (mf->resp->sc != 200) {
 		     fail;
 		     }
-		  if (sscanf(mf->resp->msg, "%*s %*d %d", &msglen) < 1) {
+		  if (sscanf(mf->resp->msg, "%*s %*d %ld", &msglen) < 1) {
 		     runerr(1212, dx);
 		     }
 		  tp_freeresp(mf->tp, mf->resp);

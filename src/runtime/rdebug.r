@@ -357,7 +357,7 @@ int get_name(dptr dp1,dptr dp0)
                      blkptr = blkptr->Lelem.listprev;
                      i += blkptr->Lelem.nused;
                      }
-                  sprintf(sbuf,"list_%d[%ld]",
+                  sprintf(sbuf,"list_%ld[%ld]",
 			  (long)Blk(Blk(blkptr,Lelem)->listprev,List)->id, (long)i);
                   i = strlen(sbuf);
                   Protect(StrLoc(*dp0) = alcstr(sbuf,i), return Error);
@@ -367,7 +367,7 @@ int get_name(dptr dp1,dptr dp0)
                   i = varptr - Blk(blkptr,Record)->fields;
                   proc = &blkptr->Record.recdesc->Proc;
 
-                  sprintf(sbuf,"record %s_%d.%s", StrLoc(proc->recname),
+                  sprintf(sbuf,"record %s_%ld.%s", StrLoc(proc->recname),
 			  Blk(blkptr,Record)->id,
 			  StrLoc(proc->lnames[i]));
 
@@ -507,11 +507,11 @@ static int keyref(bp, dp)
          bp = Blk(bp,Telem)->clink;
 #ifdef Dbm
    if (BlkType(bp) == T_File) {
-      sprintf(sbuf, "dbmfile(%s)[", Blk(bp,File)->fname);
+      sprintf(sbuf, "dbmfile(%s)[", StrLoc(Blk(bp,File)->fname));
       }
    else
 #endif					/* Dbm */
-      sprintf(sbuf, "table_%d[", Blk(bp,Table)->id);
+      sprintf(sbuf, "table_%ld[", Blk(bp,Table)->id);
    { char * dest = sbuf + strlen(sbuf);
    strncpy(dest, s2, len);
    dest[len] = '\0';

@@ -34,6 +34,10 @@
    Feature(1, "_MACINTOSH", "Macintosh")
 #endif					/* MACINTOSH */
 
+#ifdef MacOSX
+   Feature(1, "_MACOSX", "MacOSX")
+#endif					/* MacOSX */
+
 #if MSDOS
 #if INTEL_386 || HIGHC_386 || WATCOM || ZTC_386 || BORLAND_386 || SCCX_MX
    Feature(1, "_MSDOS_386", "MS-DOS/386")

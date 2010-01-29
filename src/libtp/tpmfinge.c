@@ -8,6 +8,9 @@
 #ifdef STDC_HEADERS
 #include <stdlib.h>
 #endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #include "tp.h"
 

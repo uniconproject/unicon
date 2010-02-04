@@ -1,10 +1,11 @@
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #ifdef __APPLE__
 #include <sys/malloc.h>
-#include <stdlib.h>
-#include <string.h>
 #else
 #include <malloc.h>
 #endif

@@ -1,4 +1,11 @@
+/*
+ * This is iyacc's main.c; byacc's main.c with Java and Icon support.
+ * iyacc needs to be updated to the current version of byacc!
+ */
+
 #include <signal.h>
+#include <unistd.h>		/* for _exit() */
+
 #include "defs.h"
 
 char dflag;
@@ -63,15 +70,31 @@ char  *rassoc;
 short **derives;
 char *nullable;
 
-extern char *mktemp();
 extern char *getenv();
 
+/*
+ * Since fclose() is called via the signal handler, it might die.  Don't loop
+ * if there is a problem closing a file.
+ */
+#define DO_CLOSE(fp) \
+	if (fp != 0) { \
+	    FILE *use = fp; \
+	    fp = 0; \
+	    fclose(use); \
+	}
 
-void done(int k)
+static int got_intr = 0;
+
+void
+done(int k)
 {
-    if (action_file) { fclose(action_file); unlink(action_file_name); }
-    if (text_file) { fclose(text_file); unlink(text_file_name); }
-    if (union_file) { fclose(union_file); unlink(union_file_name); }
+    DO_CLOSE(action_file);
+    DO_CLOSE(text_file);
+    DO_CLOSE(union_file);
+
+    if (got_intr)
+	_exit(EXIT_FAILURE);
+
     exit(k);
 }
 
@@ -318,10 +341,6 @@ void create_file_names(void)
     text_file_name[len + 5] = 't';
     union_file_name[len + 5] = 'u';
 
-    mktemp(action_file_name);
-    mktemp(text_file_name);
-    mktemp(union_file_name);
-
     if (jflag)/*rwj*/
       {
       len = strlen(java_class_name);
@@ -404,13 +423,13 @@ void open_files(void)
 	    open_error(input_file_name);
     }
 
-    action_file = fopen(action_file_name, "w");
+    action_file = tmpfile();
     if (action_file == 0)
-	open_error(action_file_name);
+	open_error("action_file");
 
-    text_file = fopen(text_file_name, "w");
+    text_file = tmpfile();
     if (text_file == 0)
-	open_error(text_file_name);
+	open_error("text_file");
 
     if (vflag)
     {
@@ -424,9 +443,9 @@ void open_files(void)
 	defines_file = fopen(defines_file_name, "w");
 	if (defines_file == 0)
 	    open_error(defines_file_name);
-	union_file = fopen(union_file_name, "w");
+	union_file = tmpfile();
 	if (union_file ==  0)
-	    open_error(union_file_name);
+	    open_error("union_file");
     }
 
     output_file = fopen(output_file_name, "w");

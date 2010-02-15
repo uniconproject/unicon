@@ -814,7 +814,7 @@ $ifdef _UNIX
             system("unicon " || " -c " || targs ||
                    " " || arglist || " > " || wiconlog || " 2>&1", lst, 1)
 $else
-               system("wunicon -c " ||
+               system("wunicon -c -quiet -log "|| wiconlog || " " ||
                       targs || " " || arglist, lst, 1)
 $endif
             showanyerror(wiconlog, lst)
@@ -839,7 +839,7 @@ $ifdef _UNIX
              " " || arglist || " > "|| wiconlog || " 2>&1", lst, 1)
 $else
      if find(".icn",CurrentTabItem().label) then
-        system("wunicon " ||  targs || " " || arglist, lst, 1)
+        system("wunicon -quiet -log " || wiconlog || " " ||  targs || " " || arglist, lst, 1)
 $endif
       showanyerror(wiconlog, lst)
 
@@ -1053,7 +1053,7 @@ $ifdef _UNIX
 $else
       fname:= CurrentTabItem().label
       if find(".icn",fname) then {
-         system("wunicon -c"||" "||targs||
+         system("wunicon -c -quiet -log " || wiconlog ||" "||targs||
 	        " "||comp1file(fname), lst, 1)
          }
 $endif

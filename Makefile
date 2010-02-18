@@ -31,6 +31,12 @@ X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure
+		@if grep -q "HAVE_LIBX11 1" src/h/auto.h; then \
+			echo "Think we found X11, you are good to go."; \
+		else \
+			echo "No X11, no graphics." ; \
+			echo "#undef Graphics" >> src/h/define.h ; \
+		fi
 		@echo Now remember to add unicon/bin to your path
 
 Thin-X-Configure:	config/unix/$(name)/status

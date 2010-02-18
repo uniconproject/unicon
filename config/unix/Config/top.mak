@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.27 2009-08-21 19:43:39 jeffery Exp $
+# $Id: top.mak,v 1.28 2010-02-18 07:52:22 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -67,6 +67,13 @@ X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		$(MAKE) x-cfg
+		@if grep -q "HAVE_LIBX11 1" src/h/auto.h; then \
+			echo "Think we found X11, you are good to go."; \
+		else \
+			echo "No X11, no graphics." ; \
+			echo "#undef Graphics" >> src/h/define.h ; \
+		fi
+
 
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null

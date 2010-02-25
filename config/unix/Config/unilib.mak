@@ -25,7 +25,7 @@ all: $(UFILES) $(COPYINS)
 
 selection3D.u: ../3d/selection3D.icn
 	cp ../3d/selection3D.icn .
-	unicon -c selection3D.icn
+	$(UNICON) -c selection3D.icn
 	rm selection3D.icn
 
 deps:

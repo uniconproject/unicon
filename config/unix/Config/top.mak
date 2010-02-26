@@ -41,7 +41,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.28 2010-02-18 07:52:22 jeffery Exp $
+# $Id: top.mak,v 1.29 2010-02-26 07:00:06 jeffery Exp $
 
 
 # Configure the code for a specific system.
@@ -110,7 +110,9 @@ build:
 		./build $(name) ; \
 		rm build; \
 	else \
-		echo "No /usr/include/curses.h found, use make Configure";\
+		make Configure name=$(name); \
+		echo "No curses library was found for 'build', used 'make Configure name=$(name)'"; \
+		echo "If you want X11 graphics, run 'make X-Configure name=$(name)'"; \
 	fi
 
 ##################################################################

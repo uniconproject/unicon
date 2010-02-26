@@ -1,4 +1,10 @@
 #!/bin/sh
+
+#
+# This shell script attempts to automatically assign the correct platform name
+# for UNIX-based configurations.
+#
+
 SYS=`uname -ms | sed 's/ /_/' | sed 's/x86_64/amd64/' | sed 's/Linux/linux/' | sed 's/x86/intel/'`
 case "$SYS" in
    linux_amd64)

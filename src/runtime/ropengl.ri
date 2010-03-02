@@ -667,8 +667,10 @@ int popmatrix()
       glGetIntegerv(GL_PROJECTION_STACK_DEPTH, &params2);
       if (params2 > 1)
          glPopMatrix();
-      else
+      else{
+	 /*printf(" PROJECTION MODE ... POP is failing...!! %d \n", params2 );*/
 	 return Failed;
+      }
       }
 
    else {
@@ -681,6 +683,7 @@ int popmatrix()
 	 if (params2 > 1)
 	    glPopMatrix();
     	 else {
+	    /*printf(" MODELVIEW------- MODE ... POP is failing...!! %d \n", params2 );*/
 	    return Failed;
             }
       }
@@ -705,8 +708,10 @@ int pushmatrix()
       if (params2 < 2) {
          glPushMatrix();
          }
-      else
+      else{
+	 /*printf(" PROJECTION MODE ... PUUUUUUUUUUUUSH is failing...!! %d \n", params2 );*/
 	 return Failed;
+      }
       }
 
    else {
@@ -716,8 +721,10 @@ int pushmatrix()
       glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &params2);
       if (params2 < 32)
 	 glPushMatrix();
-      else
+      else{
+	 /*printf(" MODELVIEW------- MODE ... PUUUUUUUUUUUUSH is failing...!! %d \n", params2 );*/
 	 return Failed;
+      }
       }
    return Succeeded;
 }
@@ -2443,6 +2450,11 @@ int settexcoords(wbp w, char* s)
    tended struct descrip f = nulldesc, val = nulldesc;
    struct descrip funcname, mode, g;
    tended struct b_list *func;
+#ifdef Arrays
+   tended struct descrip d;
+   tended struct b_realarray *ap;
+#endif					/* Arrays */
+
    makecurrent(w);
 
    /* create a list */
@@ -2491,13 +2503,14 @@ int settexcoords(wbp w, char* s)
       if (glIsEnabled(GL_TEXTURE_GEN_T))
          glDisable(GL_TEXTURE_GEN_T);
       /* parse string */
+
       while(*s2 != '\0') {
          while(*s2 != ',' && *s2 != '\0' ) {
             s3[i] = *s2;
             i++; s2++;
            }
          s3[i]='\0';
-        /* create a list element for the coordinate */
+	 /* create a list element for the coordinate */
 	 if (j >= w->context->ntexcoordsalced) {
 	    w->context->texcoords = realloc(w->context->texcoords,
 					    (w->context->ntexcoordsalced + 1+
@@ -2507,9 +2520,11 @@ int settexcoords(wbp w, char* s)
 	    w->context->ntexcoordsalced += (strlen(s)/2);
 	    }
          w->context->texcoords[j] = r = atof(s3);
+#ifndef Arrays	 
          BlkLoc(val) = (union block *)alcreal(r);
          val.dword = D_Real;
          c_put(&f, &val);
+#endif					/* Arrays */	 
          j++;
 	 if (*s2 == ',') {
 	    s2++;
@@ -2517,8 +2532,18 @@ int settexcoords(wbp w, char* s)
 	    }
          else break;
          }
+
+#ifdef Arrays
+      ap = alcrealarray(j);
+      d.dword = D_Realarray;
+      d.vword.bptr = (union block *) ap;
+      for(i=0; i<j; i++)
+	 ap->a[i]=w->context->texcoords[i];
+      c_put(&f, &d);
+#endif					/* Arrays */
+
       /* Number of texture coordinates must be even */
-      if ((BlkD(f, List)->size-3) % 2)
+      if (j % 2)
 	 return Error;
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;

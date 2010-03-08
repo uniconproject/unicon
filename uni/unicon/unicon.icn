@@ -31,7 +31,7 @@
 #          imports = names of external classes to import
 #
 global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
-global classes,comp,exec,strict,links,imports,loud,ct,reserved
+global classes,comp,exec,strict,links,imports,loud,ct,reserved,optimize
 global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
 global yydbg, yyout, linkline, translateducode, imported, imported_classes
 
@@ -450,6 +450,7 @@ procedure unicon_help()
    "   -G          : generate graphics (wiconx) executable",
    "   -M          : report error message to the authorities",
    "   -o ofile    : generate executable named ofile",
+   "   -O          : optimize (under construction)",
    "   -s          : work silently",
    "   -t          : turn on tracing",
    "   -u          : warn of undeclared variables",
@@ -544,6 +545,7 @@ procedure unicon(argv)
 		argv[i+1] := "-o"
 		}
 	     }
+	 "-O": optimize := 1
 	 # -I and -L: add argv[i+1] to LPATH or IPATH, respectively
 	 "-I"|"-L": {
 	    if argv[i] == "-I" then thepath := "LPATH" else thepath := "IPATH" 
@@ -934,7 +936,13 @@ end
 procedure selecticont()
 local cmd
    if not (cmd := mygetenv("ICONT")) then {
-      cmd := (&features ? (="Binaries at " & tab(0))) | ""
+      #
+      # if we find binaries via path search, use them; otherwise
+      # try for binaries directory via &progname.  Won't be very
+      # successful 
+      #
+      cmd := (&features ? (="Binaries at " & tab(0))) |
+	  (&progname ? tab(find("unicon"))) | ""
       if &features=="Win32" & &features=="console window" then
          cmd ||:= "wicont"
       else
@@ -943,6 +951,7 @@ local cmd
    cmd := quotes(cmd)
    if &features=="Win32" & &features=="console window" then
       cmd ||:= " -s"
+   if not stat(cmd) then write("warning, no icont found in ", cmd)
    return cmd
 end
 

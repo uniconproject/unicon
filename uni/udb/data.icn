@@ -341,7 +341,7 @@ method printVar(Expr, action, level)
   
    index := parsePrintExpression(Expr)
    if *index = 0 then{
-      Message :="\n   \""||expr||"\" is Unkown Expression !!!"
+      Message :="\n   \""||expr||"\" is an unknown expression."
       DState.Write(Message)
       return
       }
@@ -359,7 +359,7 @@ method printVar(Expr, action, level)
                       Message ||:= image(x)||", "
                    Message:=Message[1:-2] || " }"
                  }
-            "?" :{ Message := "OPS: not implemented yet!!!"  }
+            "?" :{ Message := "OOPS: not implemented yet!!!"  }
             default:{
                  Message := "\n   "||expr||" = "
                  #DState.Write("---type of ",expr," is : ", type(ref))
@@ -372,7 +372,7 @@ method printVar(Expr, action, level)
                  }
              }
          }
-      else Message :="\n   \""||expr||"\" is Unkown Expression !!!"
+      else Message :="\n   \""||expr||"\" is an Unknown Expression !!!"
    else Message := "\n   The variable \""|| var ||
                    "\" is not within the current frame"
    DState.Write(Message)
@@ -389,7 +389,7 @@ method assignVar(Lexpr, Rexpr, level)
 
    lhs := parsePrintExpression(Lexpr)
    if *lhs = 0 then{
-      Message :="\n   The expression \""||lexpr||"\" is Unkown !!!"
+      Message :="\n   The expression \""||lexpr||"\" is Unknown !!!"
       DState.Write(Message)
       return
       }
@@ -428,8 +428,8 @@ method cmdPrint(cmd)
    cur_level := keyword("level",Monitored)
    level     := DState.cur_Frame
    if level > cur_level then{ 
-      Message   :="\n   Frame #"||level||" is not valid"
-      Message ||:="\n   The stack currentlly has "||cur_level||" frame(s)"
+      Message   :="\n   Frame #"||level||" is not valid."
+      Message ||:="\n   The stack currently has "||cur_level||" frame(s)"
       DState.Write(Message)
       return            
       }
@@ -488,7 +488,7 @@ method cmdPrint(cmd)
          }
       }
    else{
-      Message :="\n   The command \""||DState.cmdHistory[1]||"\" is incomplete"
+      Message :="\n   The command \""||DState.cmdHistory[1]||"\" is incomplete."
       Message ||:="\n   Try \"help\" or \"help print\" for assistance."
       DState.Write(Message)
       }
@@ -505,13 +505,13 @@ method assignKeyword(lexpr, rexpr, level)
       if data := getVarValue(rexpr,level) then{
          variable(lexpr, Monitored, 0, 1) := data
          Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" has been succeeded"
+                    rexpr||"\" has succeeded"
          DState.Write(Message)
          return
          }
       else{
          Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" has been failed"
+                    rexpr||"\" has failed."
          DState.Write(Message)
          fail
          } 
@@ -552,7 +552,7 @@ method printKeyword(expr, action, level)
          return
          }
       else{
-         Message :="\n   "|| expr || " is not a valid operation yet !!!."
+         Message :="\n   "|| expr || " is not a valid udb operation yet."
          DState.Write(Message)
          fail 
          }
@@ -696,20 +696,26 @@ method parsePrintExpression(expr)
 
     every i := 1 to *expr do{
        x := expr[i]
-       if not (x == ("["|"]"|","|":")) then{
+       if not (x == ("["|"]"|","|":")) then {
           if not numeric(x) & j:=find(".", x) then{
              put(tokens, x[1:j])
              put(tokens, ".")
              put(tokens, x[j+1:0])
              }
-          else
-             put(tokens, x)
+          else {
+	     if (x === "pos") & (tokens[-1]==="&") &
+		 (expr[i-2] == ("[" | ":")) then {
+		tokens[-1] ||:= x
+	        }
+	     else
+		put(tokens, x)
+	     }
           }
-       else if x == "]" & expr[i+1] == "[" then{
-          # handle p L[3] [2], "][" is used to indecate new sublist
+       else if x == "]" & expr[i+1] == "[" then {
+          # handle p L[3] [2], "][" is used to indicate new sublist
           put(tokens,"][")
           }
-       else if x == "]" & expr[i+1][1] == "." then{
+       else if x == "]" & expr[i+1][1] == "." then {
           # handle p L[3].xxx
           put(tokens,".")
           expr[i+1] := expr[i+1][2:0]
@@ -848,7 +854,7 @@ method cmdList(cmd)
       printSrcLines(cur_file, cur_line)
       }
    else{
-      Message := "\n   Source File \""||cur_file||"\" is NOT loaded !!!"
+      Message := "\n   Source file \""||cur_file||"\" is NOT loaded."
       DState.Write(Message)
       }
 end

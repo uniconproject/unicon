@@ -4,11 +4,10 @@
 # This shell script attempts to automatically assign the correct platform name
 # for UNIX-based configurations.
 #
-
 SYS=`uname -a | sed 's/ /_/g'`
 case "$SYS" in
    Darwin*Version_10*i386)
-      make build name=amd64_macos;;
+      if [ $SHLVL -lt 3 ]; then { make build name=amd64_macos; }; else { echo "Can't run interactive options menu at shell level $SHLVL"; }; fi;;
    Darwin*Version_9*i386)
       make build name=intel_macos;;
    Darwin*Power_Macintosh)

@@ -136,9 +136,8 @@ end
 # returns list of the current command line
 #
 method get_CommandLine()
-   local line, tok, op, cmd
+   local tok, op, cmd, line := get_Line()
 
-   line := get_Line()
    # analyze that cmd line
    if *line > 0 then{  
       DState.update_cmdHistory(line)
@@ -165,10 +164,13 @@ method get_CommandLine()
 
              op := tab(many(BRACES)) | &null
              put(cmd,\op)
+
+	     if any(&cset --
+		    (WhiteSpace++TOKEN++OPCHAR++BRACKETS++PARENTHESES++BRACES))
+	     then { write("udb does not yet handle ", move(1)); fail }
              }
          }
       if match("#") & *cmd=0 then put(cmd, "#")
-      #write(ximage(cmd))
       return cmd
       }
    else

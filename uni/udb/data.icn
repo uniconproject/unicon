@@ -389,7 +389,7 @@ method assignVar(Lexpr, Rexpr, level)
 
    lhs := parsePrintExpression(Lexpr)
    if *lhs = 0 then{
-      Message :="\n   The expression \""||lexpr||"\" is Unknown !!!"
+      Message :="\n   The expression \""||lexpr||"\" is unknown."
       DState.Write(Message)
       return
       }
@@ -399,13 +399,13 @@ method assignVar(Lexpr, Rexpr, level)
       lvar := get(lhs)
       if setVarReference(lvar, lhs, level, rvalue) then
          Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" has been succeeded"
+                    rexpr||"\" succeeded."
       else
          Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" has been failed"
+                    rexpr||"\" failed."
       }
    else 
-      Message := "\n   The RHS expr \""||rexpr||"\" is Unknown !!!"
+      Message := "\n   The RHS expr \""||rexpr||"\" is unknown."
 
    DState.Write(Message)
 end
@@ -420,7 +420,7 @@ method cmdPrint(cmd)
    if DState.State ~= PAUSE then{
       DState.State := ERROR
       Message := "\n   The program is not being run._
-                  \n   Try \"run\", or Type \"help\" for assistance"
+                  \n   Try \"run\", or Type \"help\" for assistance."
       DState.Write(Message)
       return
       }
@@ -429,7 +429,7 @@ method cmdPrint(cmd)
    level     := DState.cur_Frame
    if level > cur_level then{ 
       Message   :="\n   Frame #"||level||" is not valid."
-      Message ||:="\n   The stack currently has "||cur_level||" frame(s)"
+      Message ||:="\n   The stack currently has "||cur_level||" frame(s)."
       DState.Write(Message)
       return            
       }
@@ -505,13 +505,13 @@ method assignKeyword(lexpr, rexpr, level)
       if data := getVarValue(rexpr,level) then{
          variable(lexpr, Monitored, 0, 1) := data
          Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" has succeeded"
+                    rexpr||"\" succeeded."
          DState.Write(Message)
          return
          }
       else{
          Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" has failed."
+                    rexpr||"\" failed."
          DState.Write(Message)
          fail
          } 
@@ -785,8 +785,8 @@ method cmdList(cmd)
          }
       else{
          DState.RunCode := DState.State := ERROR
-         Message := "\n   No Program is Loaded nor Running_
-                     \n   Type \"help\" for assistance"
+         Message := "\n   No Program is Loaded nor Running._
+                     \n   Type \"help\" for assistance."
          DState.Write(Message)
          return
          }
@@ -885,9 +885,9 @@ method printSrcInfo(fnames, ftype)
 end
 
 #
-# used to print a summery of all used files 
+# used to print a summary of all used files 
 #
-method printSrcSummery(detail)
+method printSrcSummary(detail)
    local found, missing, ftotal, plural
 
    found   := *DState.srcFile.foundFiles
@@ -936,85 +936,85 @@ method cmdSource(cmd)
           if names := DState.srcFile.getFoundFiles() then
              printSrcInfo(names,"Found File")
           else
-             DState.Write("\n   No found source file(s) !!")
+             DState.Write("\n   No found source file(s).")
           }
       # all unable to load source files
       "-m"|"-missing":{
           if names := DState.srcFile.getMissingFiles() then
              printSrcInfo(names,"Missing File")
           else
-            DState.Write("\n   No missing source file(s) !!")
+            DState.Write("\n   No missing source file(s).")
           }
       # all files (user+library) used in the binary
       "-file":{
           if names := DState.srcFile.getSourceFiles() then
              printSrcInfo(names,"Used file")
           else
-            DState.Write("\n   No source file(s) !!")
+            DState.Write("\n   No source file(s).")
           }
       # all user defined files used in the binary
       "-u"|"user"|"usr":{
           if names := DState.srcFile.getUserFiles() then
              printSrcInfo(names,"User defined file")
           else
-            DState.Write("\n   No  user defined source file(s) !!")
+            DState.Write("\n   No user defined source file(s).")
           }
       # all library files used in the binary
       "-l"|"-lib"|"-library":{
           if names := DState.srcFile.getLibFiles() then
              printSrcInfo(names,"Used library file")
           else
-            DState.Write("\n   No library file(s) !!")
+            DState.Write("\n   No library file(s).")
           }
       # all packages used in the binary
       "-pkg"|"-pk"|"-package":{
           if names := DState.srcCode.getPackages() then
              printSrcInfo(names,"Used package")
           else
-            DState.Write("\n   No packages used !!")
+            DState.Write("\n   No packages used.")
           }
       # all classes used in the binary
       "-c"|"-cls"|"-class":{
           if names := DState.srcCode.getClasses() then
              printSrcInfo(names,"Used standalone class")
           else
-            DState.Write("\n   No classes used !!")
+            DState.Write("\n   No classes used.")
           }
       # all procedures used in the binary
       "-p"|"-proc"|"-procedure":{
           if names := DState.srcCode.getProcedures() then
              printSrcInfo(names,"Used procedure")
           else
-            DState.Write("\n   No procedures used !!")
+            DState.Write("\n   No procedures used.")
           }
       # all built-in functions used in the binary
       "-fun"|"-func"|"-function":{
           if names := DState.srcCode.getFunctions() then
              printSrcInfo(names,"Used built-in function")
           else
-            DState.Write("\n   No functions used !!")
+            DState.Write("\n   No functions used.")
           }
       # all global variable names used in the binary
       "-g"|"-glb"|"-global":{
           if names := DState.srcCode.getGlobals() then
              printSrcInfo(names,"Used global variable")
           else
-            DState.Write("\n   No global variables used !!")
+            DState.Write("\n   No global variables used.")
           }
       # all record names used in the binary
       "-r"|"-rec"|"-record":{
           if names := DState.srcCode.getRecords() then
              printSrcInfo(names,"Used record")
           else
-            DState.Write("\n   No global records used !!")
+            DState.Write("\n   No global records used.")
           }
       # a detailed summery with some statistics about the binary
       "-a"|"-all":{
-          printSrcSummery(1)
+          printSrcSummary(1)
           }
       # a short summery about the binary
       default:{
-          printSrcSummery()
+          printSrcSummary()
           } 
       }
 end

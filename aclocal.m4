@@ -619,8 +619,6 @@ fi
 
 ])
 
-
-
 AC_DEFUN([CHECK_PNG],
 #
 # Handle user hints
@@ -681,6 +679,64 @@ then
         fi
 fi
 ])
+
+AC_DEFUN([CHECK_PTHREAD],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if pthread is wanted)
+AC_ARG_WITH(pthread,
+[  --with-pthread=DIR root directory path of pthread installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-pthread to disable pthread usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  PTHREAD_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+PTHREAD_HOME=/usr/local
+if test ! -f "${PTHREAD_HOME}/include/pthread.h"
+then
+        PTHREAD_HOME=/usr
+fi
+])
+
+#
+# Locate pthread, if wanted
+#
+if test -n "${PTHREAD_HOME}"
+then
+        PTHREAD_OLD_LDFLAGS=$LDFLAGS
+        PTHREAD_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${PTHREAD_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${PTHREAD_HOME}/include"
+        AC_LANG_SAVE
+        AC_LANG_C
+	AC_CHECK_LIB(pthread, pthread_create, [pthread_cv_libpthread=yes], [pthread_cv_libpthread=no])
+        AC_CHECK_HEADER(pthread.h, [pthread_cv_pthread_h=yes], [pthread_cv_pthread_h=no])
+        AC_LANG_RESTORE
+	if test "pthread_cv_libpthread" = "yes" -a "pthread_cv_pthread_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+		AC_CHECK_LIB(pthread, pthread_create)
+                AC_MSG_CHECKING(pthread in ${PTHREAD_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(pthread in ${PTHREAD_HOME})
+                LDFLAGS="$PTHREAD_OLD_LDFLAGS"
+                CPPFLAGS="$PTHREAD_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+])
+
 
 AC_DEFUN([CHECK_OPENGL],
 #

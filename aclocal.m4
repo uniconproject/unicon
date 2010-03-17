@@ -684,7 +684,7 @@ AC_DEFUN([CHECK_PTHREAD],
 #
 # Handle user hints
 #
-[AC_MSG_CHECKING(if pthread is wanted)
+[AC_MSG_CHECKING(if POSIX threads are wanted)
 AC_ARG_WITH(pthread,
 [  --with-pthread=DIR root directory path of pthread installation [defaults to
                     /usr/local or /usr if not found in /usr/local]
@@ -717,7 +717,7 @@ then
 	AC_CHECK_LIB(pthread, pthread_create, [pthread_cv_libpthread=yes], [pthread_cv_libpthread=no])
         AC_CHECK_HEADER(pthread.h, [pthread_cv_pthread_h=yes], [pthread_cv_pthread_h=no])
         AC_LANG_RESTORE
-	if test "pthread_cv_libpthread" = "yes" -a "pthread_cv_pthread_h" = "yes"
+	if test "$pthread_cv_libpthread" = "yes" -a "$pthread_cv_pthread_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them

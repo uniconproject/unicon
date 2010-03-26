@@ -8,9 +8,9 @@ include ../makedefs
 
 # nothing to configure here yet
 ifdef _WINDOWS_
-	UC=wunicon
+	UC=..\..\bin\wunicon
 else
-	UC=unicon
+	UC=../../bin/unicon
 endif
 UFLAGS=-c -u
 
@@ -41,69 +41,69 @@ else
 endif
 
 ide.u: ide.icn
-	unicon -c ide
+	$(UC) -c ide
 
 printdlg.u: printdlg.icn
-	unicon -c printdlg
+	$(UC) -c printdlg
 
 hfiledialog.u: hfiledialog.icn
-	unicon -c hfiledialog
+	$(UC) -c hfiledialog
 
 buffertextlist.u: buffertextlist.icn
-	unicon -c buffertextlist
+	$(UC) -c buffertextlist
 
 buffertabitem.u: buffertabitem.icn
-	unicon -c buffertabitem
+	$(UC) -c buffertabitem
 
 buffertabset.u: buffertabset.icn
-	unicon -c buffertabset
+	$(UC) -c buffertabset
 
 matchparen.u: matchparen.icn
-	unicon -c  matchparen
+	$(UC) -c  matchparen
 
 mainbar.u: mainbar.icn
-	unicon -c mainbar
+	$(UC) -c mainbar
 
 fontdialog.u: fontdialog.icn
-	unicon -c fontdialog
+	$(UC) -c fontdialog
 
 templates.u: templates.icn
-	unicon -c templates
+	$(UC) -c templates
 
 definitions.u: definitions.icn
-	unicon -c definitions
+	$(UC) -c definitions
 
 uproject.u: uproject.icn
-	unicon -c uproject
+	$(UC) -c uproject
 
 idol.u: idol.icn
-	unicon -c idol
+	$(UC) -c idol
 
 preproce.u: preproce.icn
-	unicon -c preproce
+	$(UC) -c preproce
 
 ytab_h.u: ytab_h.icn
-	unicon -c ytab_h
+	$(UC) -c ytab_h
 
 yyerror.u: yyerror.icn
-	unicon -c unigram
-	unicon -c yyerror
+	$(UC) -c unigram
+	$(UC) -c yyerror
 
 unigram.u: unigram.icn yyerror.u
-	unicon -c unigram
-	unicon -c yyerror
+	$(UC) -c unigram
+	$(UC) -c yyerror
 
 unicon.u: unicon.icn
-	unicon -c unicon
+	$(UC) -c unicon
 
 classbrowser.u: classbrowser.icn  imgs.u tree.u
-	unicon -c classbrowser
+	$(UC) -c classbrowser
 
 tree.u: tree.icn
-	unicon -c tree
+	$(UC) -c tree
 
 utags.u: utags.icn
-	unicon -c utags
+	$(UC) -c utags
 
 ui.u: ui.icn
 	$(UC) $(CFLAGS) ui

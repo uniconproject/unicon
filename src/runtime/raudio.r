@@ -3,9 +3,8 @@
  */
 
 /*
- * This file contains Audio API functions on top of
- * OpenAL to play MP3, Ogg Vorbis, and WAV.
- * StartAudioThread(filename) is the main function where
+ * This file contains Audio API functions on top of OpenAL to play MP3,
+ * Ogg Vorbis, and WAV. StartAudioThread(filename) is the main function where
  * filename is any of the three formats.
  */
 
@@ -257,6 +256,7 @@ void micro_sleep(unsigned int n)
    return;
 }
 
+#if defined(HAVE_LIBOPENAL)
 void fixup_function_pointers(void)
 {
    talcGetAudioChannel = (ALfloat (*)(ALuint channel))
@@ -371,6 +371,7 @@ ALboolean SourceIsPlaying(ALuint sid) {
       }
    return AL_FALSE;
 }
+#endif					/* HAVE_LIBOPENAL */
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 /* The following is for MP3 Support on top of OpenAL */

@@ -217,6 +217,8 @@ void	(*talBombOnError)(void);
 
 void	(*talBufferi)(ALuint bid, ALenum param, ALint value);
 
+typedef void	(*tbwd)(ALuint bid, ALenum format, ALvoid *data,
+			      ALint size, ALint freq, ALenum iFormat);
 void	(*talBufferWriteData)(ALuint bid, ALenum format, ALvoid *data,
 			      ALint size, ALint freq, ALenum iFormat);
 
@@ -257,19 +259,23 @@ void micro_sleep(unsigned int n)
 }
 
 #if defined(HAVE_LIBOPENAL)
-void fixup_function_pointers(void)
+/*
+ * Assign dynamic OpenAL extension function pointers. There are numerous
+ * failure points possible. Return 1 for success, 0 for failure.
+ */
+int fixup_function_pointers(void)
 {
-   talcGetAudioChannel = (ALfloat (*)(ALuint channel))
-      GP("alcGetAudioChannel_LOKI");
-   talcSetAudioChannel = (void (*)(ALuint channel, ALfloat volume))
-      GP("alcSetAudioChannel_LOKI");
-   talMute   = (void (*)(void)) GP("alMute_LOKI");
-   talUnMute = (void (*)(void)) GP("alUnMute_LOKI");
+   Protect(talcGetAudioChannel = (ALfloat (*)(ALuint channel))
+      GP("alcGetAudioChannel_LOKI"), return 0);
+   Protect(talcSetAudioChannel = (void (*)(ALuint channel, ALfloat volume))
+      GP("alcSetAudioChannel_LOKI"), return 0);
+   Protect(talMute   = (void (*)(void)) GP("alMute_LOKI"), return 0);
+   Protect(talUnMute = (void (*)(void)) GP("alUnMute_LOKI"), return 0);
 
-   talReverbScale = (void (*)(ALuint sid, ALfloat param))
-      GP("alReverbScale_LOKI");
-   talReverbDelay = (void (*)(ALuint sid, ALfloat param))
-      GP("alReverbDelay_LOKI");
+   Protect(talReverbScale = (void (*)(ALuint sid, ALfloat param))
+      GP("alReverbScale_LOKI"), return 0);
+   Protect(talReverbDelay = (void (*)(ALuint sid, ALfloat param))
+      GP("alReverbDelay_LOKI"), return 0);
 
    talBombOnError = (void (*)(void))GP("alBombOnError_LOKI");
 
@@ -277,7 +283,7 @@ void fixup_function_pointers(void)
       /*
        * Could not GetProcAddress alBombOnError_LOKI; fail.
        */
-      return;
+      return 0;
       }
 
    talBufferi = (void (*)(ALuint, ALenum, ALint ))	GP("alBufferi_LOKI");
@@ -286,7 +292,7 @@ void fixup_function_pointers(void)
       /*
        * Could not GetProcAddress alBufferi_LOKI; fail.
        */
-      return;
+      return 0;
       }
 
    alCaptureInit    = (ALboolean (*)( ALenum, ALuint, ALsizei ))
@@ -297,12 +303,12 @@ void fixup_function_pointers(void)
    alCaptureGetData = (ALsizei (*)( ALvoid*, ALsizei, ALenum, ALuint ))
       GP("alCaptureGetData_EXT");
 
-   talBufferWriteData = (PFNALBUFFERWRITEDATAPROC)GP("alBufferWriteData_LOKI");
+   talBufferWriteData = (tbwd)GP("alBufferWriteData_LOKI");
    if(talBufferWriteData == NULL) {
       /*
        * Could not GP alBufferWriteData_LOKI; fail.
        */
-      return;
+      return 0;
       }
 
    talBufferAppendData = (ALuint (*)(ALuint, ALenum, ALvoid *, ALint, ALint))
@@ -317,7 +323,7 @@ void fixup_function_pointers(void)
       /*
        * Could not GP alGenStreamingBuffers_LOKI; fail.
        */
-      return;
+      return 0;
       }
 
    talutLoadRAW_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
@@ -328,7 +334,7 @@ void fixup_function_pointers(void)
       /* 
        * Could not GP alutLoadRAW_ADPCMData_LOKI; fail.
        */
-      return;
+      return 0;
       }
 
    talutLoadIMA_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
@@ -339,7 +345,7 @@ void fixup_function_pointers(void)
       /* 
        * Could not GP alutLoadIMA_ADPCMData_LOKI; fail.
        */
-      return;
+      return 0;
       }
 
    talutLoadMS_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data, ALuint size,
@@ -350,9 +356,9 @@ void fixup_function_pointers(void)
       /* 
        * Could not GP alutLoadMS_ADPCMData_LOKI; fail.
        */
-      return;
+      return 0;
       }
-   return;
+   return 1;
 }
 
 ALboolean SourceIsPlaying(ALuint sid) {
@@ -435,7 +441,10 @@ void * OpenAL_PlayMP3( void * args )
       return NULL;
       }
    alcMakeContextCurrent( context_id );
-   fixup_function_pointers();
+   if (!fixup_function_pointers()) {
+      alcCloseDevice(dev);
+      return NULL;
+      }
    initMP3();
 
    /* the global fname */
@@ -561,7 +570,10 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
       return NULL;
       }
    alcMakeContextCurrent( context_id );
-   fixup_function_pointers();
+   if (!fixup_function_pointers()) {
+      alcCloseDevice(dev);
+      return NULL;
+      }
    initOggVorbis();
 
    /* the global fname */
@@ -721,13 +733,17 @@ static void cleanupWAV(void)
 #endif
 }
 
-void * OpenAL_PlayWAV( void * args ) /* the WAV thread function */
+/* Thread function to play WAV file under OpenAL. */
+void * OpenAL_PlayWAV( void * args )
 {
    ALCdevice *dev;
    int attrlist[] = { ALC_FREQUENCY, 22050,ALC_INVALID };
    time_t shouldend;
 
-   /*------ To solve replaying ---*/ 
+   /*
+    * Flimsy attempt to avoid two PlayWAV calls at the same time.
+    * Needs to be redone using a mutex.
+    */ 
    static short int done = 0,signe=0; 
    if (done != 0) {
       while(done != 0 )
@@ -735,7 +751,6 @@ void * OpenAL_PlayWAV( void * args ) /* the WAV thread function */
       }
    done = 1;
    signe = 1;
-   /*-----------------------------*/
 
    dev = alcOpenDevice( NULL );
    if (dev == NULL) {
@@ -754,7 +769,10 @@ void * OpenAL_PlayWAV( void * args ) /* the WAV thread function */
       }
 
    alcMakeContextCurrent( context_id );
-   fixup_function_pointers();
+   if (!fixup_function_pointers()) {
+      alcCloseDevice(dev);
+      return NULL;
+      }
    talBombOnError();
    initWAV();
    alSourcePlay( moving_source );

@@ -289,10 +289,6 @@
 #undef OF
 #endif					/* HAVE_LIBJPEG */
 
-#if HAVE_LIBPNG
-#include "png.h"
-#endif					/* HAVE_LIBPNG */
-
 #ifdef Graphics
    #define VanquishReturn(s) return s;
 #endif					/* Graphics */
@@ -370,7 +366,11 @@
 #undef VMS
 #endif
 
+#if HAVE_LIBPNG
+#include <png.h>
+#else					/* HAVE_LIBPNG */
 #include <zlib.h>
+#endif					/* HAVE_LIBPNG */
 
 #ifndef VMS
 #define VMS 0

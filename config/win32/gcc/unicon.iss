@@ -29,7 +29,7 @@ Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\unicon\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; CopyMode: alwaysoverwrite
+Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; CopyMode: alwaysoverwrite
 Source: "\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; CopyMode: alwaysoverwrite
 Source: "\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; CopyMode: alwaysoverwrite
 Source: "\unicon\ipl\packs\*.*"; DestDir: "{app}\ipl\packs"; CopyMode: alwaysoverwrite
@@ -68,6 +68,8 @@ Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; CopyMode: always
 Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\udb\*.*"; DestDir: "{app}\uni\udb"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\udb\dta\*.*"; DestDir: "{app}\uni\udb\dta"; CopyMode: alwaysoverwrite
+Source: "\unicon\uni\udb\lib\*.*"; DestDir: "{app}\uni\udb\lib"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
 Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; CopyMode: alwaysoverwrite

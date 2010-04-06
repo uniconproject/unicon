@@ -2,7 +2,7 @@
 # Makefile
 #
 
-
+include ../makedefs
 UC      = ../../bin/unicon
 EXEs    = udb
 DEL     = -rm
@@ -48,7 +48,7 @@ tools:
 
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
-	cp udb ../../bin
+	cp udb$(EXE) ../../bin
 
 udb.u: udb.icn console.u
 	$(UC) $(cflags) udb

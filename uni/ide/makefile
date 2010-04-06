@@ -7,16 +7,10 @@ include ../makedefs
 #export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
 
 # nothing to configure here yet
-ifdef _WINDOWS_
-	UC=..\..\bin\wunicon
-else
-	UC=../../bin/unicon
-endif
+
+UC=../../bin/unicon
+WUC=../../bin/unicon
 UFLAGS=-c -u
-
-CFLAGS= -c -u
-
-CP=cp
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn fontdialog.icn templates.icn \
@@ -33,77 +27,78 @@ OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
-	$(UC) -o ui $(OBJ)
 ifdef _WINDOWS_
-	$(CP) ui.exe ../../bin
+	$(WUC) -o ui $(OBJ)
 else
-	$(CP) ui ../../bin
+	$(UC) -o ui $(OBJ)
 endif
+	$(CP) ui$(EXE) ../../bin
+	
 
 ide.u: ide.icn
-	$(UC) -c ide
+	$(UC) $(UFLAGS) ide
 
 printdlg.u: printdlg.icn
-	$(UC) -c printdlg
+	$(UC) $(UFLAGS) printdlg
 
 hfiledialog.u: hfiledialog.icn
-	$(UC) -c hfiledialog
+	$(UC) $(UFLAGS) hfiledialog
 
 buffertextlist.u: buffertextlist.icn
-	$(UC) -c buffertextlist
+	$(UC) $(UFLAGS) buffertextlist
 
 buffertabitem.u: buffertabitem.icn
-	$(UC) -c buffertabitem
+	$(UC) $(UFLAGS) buffertabitem
 
 buffertabset.u: buffertabset.icn
-	$(UC) -c buffertabset
+	$(UC) $(UFLAGS) buffertabset
 
 matchparen.u: matchparen.icn
-	$(UC) -c  matchparen
+	$(UC) $(UFLAGS)  matchparen
 
 mainbar.u: mainbar.icn
-	$(UC) -c mainbar
+	$(UC) $(UFLAGS) mainbar
 
 fontdialog.u: fontdialog.icn
-	$(UC) -c fontdialog
+	$(UC) $(UFLAGS) fontdialog
 
 templates.u: templates.icn
-	$(UC) -c templates
+	$(UC) $(UFLAGS) templates
 
 definitions.u: definitions.icn
-	$(UC) -c definitions
+	$(UC) $(UFLAGS) definitions
 
 uproject.u: uproject.icn
-	$(UC) -c uproject
+	$(UC) $(UFLAGS) uproject
 
 idol.u: idol.icn
-	$(UC) -c idol
+	$(UC) $(UFLAGS) idol
 
 preproce.u: preproce.icn
-	$(UC) -c preproce
+	$(UC) $(UFLAGS) preproce
 
 ytab_h.u: ytab_h.icn
-	$(UC) -c ytab_h
+	$(UC) $(UFLAGS) ytab_h
 
 yyerror.u: yyerror.icn
-	$(UC) -c unigram
-	$(UC) -c yyerror
+	$(UC) $(UFLAGS) unigram
+	$(UC) $(UFLAGS) yyerror
 
 unigram.u: unigram.icn yyerror.u
-	$(UC) -c unigram
-	$(UC) -c yyerror
+	$(UC) $(UFLAGS) unigram
+	$(UC) $(UFLAGS) yyerror
 
 unicon.u: unicon.icn
-	$(UC) -c unicon
+	$(UC) $(UFLAGS) unicon
 
 classbrowser.u: classbrowser.icn  imgs.u tree.u
-	$(UC) -c classbrowser
+	$(UC) $(UFLAGS) classbrowser
 
 tree.u: tree.icn
-	$(UC) -c tree
+	$(UC) $(UFLAGS) tree
 
 utags.u: utags.icn
-	$(UC) -c utags
+	$(UC) $(UFLAGS) utags
 
 ui.u: ui.icn
 	$(UC) $(CFLAGS) ui
@@ -111,10 +106,6 @@ ui.u: ui.icn
 ui.exe: ui
 
 clean:
-ifdef _WINDOWS_
-	$(RM) *.u *~ uniclass.dir uniclass.pag ui.exe
-else
-	$(RM) *.u *~ uniclass.dir uniclass.pag ui
-endif
+	$(RM) *.u *~ uniclass.dir uniclass.pag ui$(EXE)
 
 

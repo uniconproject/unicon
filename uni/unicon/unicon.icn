@@ -947,11 +947,15 @@ local cmd
          cmd ||:= "wicont"
       else
          cmd ||:= "icont"
+      if &features=="Win32"then
+         cmd:=cmd||".exe"
       }
+      
    cmd := quotes(cmd)
+   
+   if not stat(cmd) then write("warning: no icont found thought it would be ", cmd)
    if &features=="Win32" & &features=="console window" then
       cmd ||:= " -s"
-   if not stat(cmd) then write("warning, no icont found in ", cmd)
    return cmd
 end
 

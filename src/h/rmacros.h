@@ -88,6 +88,17 @@
    #define Fs_Pty   010000000            /* pty */
 #endif
 
+#ifdef Concurrent
+/*
+ * Thread status flags in status field of coexpr blocks.
+ * Ts_Native can only be Ts_Sync.  Ts_Posix may be Sync or Async.
+ */
+#define Ts_Native	1		/* native (assembler) coexpression */
+#define Ts_Posix	2		/* POSIX (pthread) coexpression */
+#define Ts_Sync		4		/* synchronous (Icon) coexpression) */
+#define Ts_Async        8		/* asynchronous (concurrent) thread */
+#endif					/* Concurrent */
+
 #ifdef Graphics
    #define XKey_Window 0
    #define XKey_Fg 1

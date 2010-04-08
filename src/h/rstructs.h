@@ -406,6 +406,9 @@ struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
    word size;			/*   number of results produced */
    word id;			/*   identification number */
+#ifdef Concurrent
+   word status;			/*   status (sync vs. async, etc) */
+#endif					/* Concurrent */
    struct b_coexpr *nextstk;	/*   pointer to next allocated stack */
    continuation fnc;		/*   function containing co-expression code */
    struct p_frame *es_pfp;	/*   current procedure frame pointer */
@@ -688,6 +691,9 @@ struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
    word size;			/*   number of results produced */
    word id;			/*   identification number */
+#ifdef Concurrent
+   word status;			/*   status (sync vs. async, etc) */
+#endif					/* Concurrent */
 #ifdef EventMon
    word actv_count;             /*   number of times activated using EvGet() */
 #endif				/* EventMon */

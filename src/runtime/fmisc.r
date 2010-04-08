@@ -2298,3 +2298,29 @@ end
 
 
 #endif					/* MultiThread */
+
+#ifdef Concurrent
+"thread(x) - execute a concurrent thread that evaluates procedure x"
+
+function{1} thread(x)
+  if is:proc(x) then {
+     abstract { return coexpr }
+     inline {
+	tended struct d;
+	d = nulldesc;
+	/*
+	 * Create a thread, similar to creating a (pthreads-based)
+	 * co-expression, except with the Cs_Concurrent flag on.
+	 */
+	return d;
+	}
+     }
+  /* later on we may want to add
+      else if is:coexpr(x) then {
+      ...
+      }
+      */
+  else { runerr(106,x)
+     }
+end
+#endif					/* Concurrent */

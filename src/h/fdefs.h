@@ -421,3 +421,7 @@ FncDef(fetch,2)
   FncDefV(RealArrayElem)
   FncDefV(ArrayToList)
 #endif					/* Arrays */
+
+#ifdef Concurrent
+  FncDef(thread,1)
+#endif					/* Concurrent */

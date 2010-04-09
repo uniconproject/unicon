@@ -729,7 +729,7 @@ struct b_refresh {		/* co-expression block */
 
 #endif					/* COMPILER */
 
-#ifdef Concurrent
+#ifdef PthreadCoswitch
 /* from the Icon pthreads-based co-expression implementation. */
 typedef struct context {
    pthread_t thread;	/* thread ID (thread handle) */
@@ -737,7 +737,7 @@ typedef struct context {
    sem_t *semp;		/* pointer to semaphore */
    int alive;		/* set zero when thread is to die */
    } context;
-#endif					/* Concurrent */
+#endif					/* PthreadCoswitch */
 
 union block {			/* general block */
    struct b_real Real;

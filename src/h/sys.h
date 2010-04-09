@@ -185,6 +185,13 @@
 #endif
 #endif					/* UNIX */
 
+#if defined(PthreadCoswitch) && !defined(Audio)
+#include <pthread.h>
+#endif					/* PthreadCoswitch & ! Audio */
+#ifdef PthreadCoswitch
+#include <semaphore.h>
+#endif					/* PthreadCoswitch */
+
 #if VMS
    #include <types.h>
    #include <dvidef>

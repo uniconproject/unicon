@@ -793,6 +793,13 @@ Deliberate Syntax Error
 #define HAVE_LIBZ 0
 #endif					/* HAVE_LIBZ */
 
+#if !HAVE_LIBZ
+#ifdef HAVE_LIBPNG
+#undef HAVE_LIBPNG
+#endif					/* HAVE_LIBPNG */
+#define HAVE_LIBPNG 0
+#endif					/* !HAVE_LIBZ */
+
 #ifndef HAVE_LIBJPEG
 #define HAVE_LIBJPEG 0
 #endif					/* HAVE_LIBJPEG */

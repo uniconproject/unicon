@@ -2299,23 +2299,33 @@ end
 "thread(x) - execute a concurrent thread that evaluates procedure x"
 
 function{1} thread(x)
-  if is:proc(x) then {
+  if is:coexpr(x) then {
      abstract { return coexpr }
-     inline {
+     body {
+	context *n;
+	/* Make sure it is a pthreads-based co-expression. */
+	if (BlkLoc(x)->status & Ts_Native) runerr(101,x);
+	if (BlkLoc(x)->status & Ts_Async) return x;
+	/* Turn on Async flag */
+	BlkLoc(x)->status = Ts_Posix | Ts_Async;
+	/* Transmit whatever is needed to wake it up. */
+	n = BlkLoc(x)->cstate[1];
+	sem_post(n->semp);
+	}
+     }
+  else if is:proc(x) then {
+     abstract { return coexpr }
+     body {
 	tended struct d;
 	d = nulldesc;
 	/*
 	 * Create a thread, similar to creating a (pthreads-based)
 	 * co-expression, except with the Cs_Concurrent flag on.
+	 * Build the icode to call Invoke on procedure x.
 	 */
 	return d;
 	}
      }
-  /* later on we may want to add
-      else if is:coexpr(x) then {
-      ...
-      }
-      */
   else { runerr(106,x)
      }
 end

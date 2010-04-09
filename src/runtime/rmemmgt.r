@@ -1228,10 +1228,11 @@ static void cofree()
 	    coclean(xep->cstate);
          #endif				/* CoClean */
 
-#ifdef CoProcesses
-         coswitch(BlkLoc(k_current)->coexpr.cstate, xep->cstate, -1);
-         /* terminate coproc for co-expression first */
-#endif					/* CoProcesses */
+#ifdef Concurrent
+	 /*
+	  * do we need to kill a thread before we free its pointer here
+	  */
+#endif					/* Concurrent */
 
          free((pointer)xep);
          }

@@ -825,15 +825,7 @@ void main(int argc, char **argv)
     *  returns only if an Op_Quit is executed.	If this happens,
     *  c_exit() is called to wrap things up.
     */
-
-
-
-#ifdef CoProcesses
-   codisp();    /* start up co-expr dispatcher, which will call interp */
-#else					/* CoProcesses */
    interp(0,(dptr)NULL);                        /*      [[I?]] */
-#endif					/* CoProcesses */
-
 
 #if SCCX_MX
     dos_set_ctrl_break(ctrlbrk);   /* Restore original Ctrl-C operation */
@@ -1179,10 +1171,11 @@ void xmfree()
             free((pointer)xabp);
             }
 
-#ifdef CoProcesses
-         coswitch(BlkLoc(k_current)->coexpr.cstate, xep->cstate, -1);
-                /* terminate coproc for coexpression first */
-#endif					/* CoProcesses */
+#ifdef Concurrent
+	 /*
+	  * do we need to kill a thread before we free its pointer here
+	  */
+#endif					/* Concurrent */
 
       free((pointer)xep);
       stklist = NULL;

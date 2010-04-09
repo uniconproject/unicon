@@ -2304,19 +2304,20 @@ function{1} thread(x)
      body {
 	context *n;
 	/* Make sure it is a pthreads-based co-expression. */
-	if (BlkLoc(x)->status & Ts_Native) runerr(101,x);
-	if (BlkLoc(x)->status & Ts_Async) return x;
+	if (BlkLoc(x)->Coexpr.status & Ts_Native) runerr(101,x);
+	if (BlkLoc(x)->Coexpr.status & Ts_Async) return x;
 	/* Turn on Async flag */
-	BlkLoc(x)->status = Ts_Posix | Ts_Async;
+	BlkLoc(x)->Coexpr.status = Ts_Posix | Ts_Async;
 	/* Transmit whatever is needed to wake it up. */
-	n = BlkLoc(x)->cstate[1];
+	n = BlkLoc(x)->Coexpr.cstate[1];
 	sem_post(n->semp);
+	return x;
 	}
      }
   else if is:proc(x) then {
      abstract { return coexpr }
      body {
-	tended struct d;
+	tended struct descrip d;
 	d = nulldesc;
 	/*
 	 * Create a thread, similar to creating a (pthreads-based)

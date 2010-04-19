@@ -12,6 +12,12 @@ global O, D, L, H, R, FS, IS, W, idchars
 # E                       [Ee][+-]?{D}+
 #
 
+#
+# tokens are records mainly for historical reasons at this point.
+# unilex.icn can probably still be compiled with icont, simplifying
+# bootstrapping, but if not for that, token should become a class.
+#
+
 record token(tok, s, line, column, filename)
 
 procedure init_csets()
@@ -603,6 +609,17 @@ procedure yylex()
    return rv
 end
 
+#
+# tell whether a token is a constant or not
+#
+procedure token_isconst(t)
+   return case t.tok of {
+     INTLIT | REALLIT | STRINGLIT | CSETLIT : {
+	 "const"
+     }
+     default: fail
+   }
+end
 
 #procedure main(argv)
 #  local i

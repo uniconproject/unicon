@@ -1,0 +1,23 @@
+# bug 883864 - from Steve Wampler
+#
+# The bug is that an initialization supplied in the class field list is
+# ignored. The initially has parameters after it, and this empty parameter
+# list subsumes/replaces the use of the class field list as a parameter list.
+# It should: initialize to "a value" and then override that to "A value" and
+# write that out.
+#
+class Aclass(avalue:"a value")
+
+    method showValue()
+	write(avalue)
+    end
+
+initially()
+    avalue := "A value"
+end
+
+procedure main()
+    a := Aclass()
+    a.showValue()
+end
+			      

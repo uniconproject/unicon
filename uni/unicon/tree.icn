@@ -1,5 +1,11 @@
 $include "ytab_h.icn"
 
+#
+# treenode is a record for historical reasons. This module probably
+# still compiles with icont, which simplifies bootstrapping. If not,
+# it might make sense to someday turn it into a class.
+#
+
 record treenode(label, children)
 procedure node(label, kids[])
    return treenode(label, kids)
@@ -731,6 +737,7 @@ end
 # Scope-check an expression.
 #
 procedure scopecheck_expr(node, local_vars, self_vars)
+
    case type(node) of {
       "treenode": {
          if node.label == ("keyword" | "packageref") then
@@ -753,7 +760,7 @@ procedure scopecheck_expr(node, local_vars, self_vars)
       "token": {
          if node.tok = IDENT then {
             if not member(\local_vars, node.s) then {
-               if member(\self_vars, node.s) then
+               if classfield_member(\self_vars, node.s) then
                   node.s := "self." || node.s
                else 
                   node.s := mangle_sym(node.s)
@@ -761,6 +768,19 @@ procedure scopecheck_expr(node, local_vars, self_vars)
          }
       }
    }
+end
+
+#
+# A member() function, modified to allow that the fields set could hold
+# some "arg3" tree nodes with initializers, instead of just string names.
+# It would be better to catch this at the insertion point some day.
+#
+procedure classfield_member(fields, s)
+    if member(fields, s) then return
+    if (x:=!fields) & type(x)=="treenode" &
+	x.label=="arg3" & x.children[1].s==s then {
+	return
+    }
 end
 
 procedure scopecheck_field(node, local_vars, self_vars)
@@ -929,4 +949,80 @@ procedure ckfnasgn(x, locals, selfs)
               x.line, x.filename)
       }
    return x
+end
+
+#
+# Check whether x is a constant expression. At present, this is a very
+# preliminary placeholder for subsequent constant folding optimization.
+# In order for this to have any effect, Someone has to modify the parse
+# tree to fold the constant.
+#
+procedure node_isconst(n)
+   if type(n)=="token" then {
+       if token_isconst(n) then {
+	   # token is a constant whose value is get_constantvalue(n)
+	   return token_isconst(n)
+       }
+   }
+   else if type(n) == "treenode" then {
+       case n.label of {
+	   "keyword": {
+	       if n.children[2].s ==
+		   ("digits","e","lcase","letters","pi","ucase") then {
+		  # constant keywords; list appears incomplete?
+		  return "const"
+		  }
+	   }
+	   "Bplus" | "Bdiff" | "Bunion" | "Bminus" | "Bstar" : {
+	       if node_isconst(n.children[1]) then {
+		   if node_isconst(n.children[3]) then {
+		       # n is a constant with value get_constantvalue(n),
+		       # it should be folded.
+		       return "const"
+		   }
+	       }
+	       else { # whole expr is not const, but check subtree
+		   node_isconst(n.children[3])
+	       }
+	       
+	   }
+	   default: {
+	       # know nothing; check whole tree
+	       every i := 1 to *n.children do node_isconst(n.children[i])
+	   }
+       }
+   }
+end
+
+#
+# Placeholder for a constant evaluator; needs to add more treenode types
+#
+procedure get_constantvalue(n)
+   if type(n)=="token" then {
+       case n.tok of {
+	   INTLIT : return integer(n.s)
+	   REALLIT : return real(n.s)
+	   STRINGLIT : return string(n.s[2:-1])
+	   CSETLIT : return cset(n.s[2:-1])
+       }
+   }
+   else if type(n) == "treenode" then {
+       case n.label of {
+	   "Bstar" : {
+	       constval := get_constantvalue(n.children[1]) *
+		   get_constantvalue(n.children[3])
+	       
+	       return constval
+	   }
+       }
+   }
+end
+
+#
+# Placeholder for a constant folding optimization. Modify the parse tree
+# to hold the folded constants, so shorter/simpler code is generated.
+#
+procedure constant_folder(n)
+    if n.label == "Bstar" then {
+    }
 end

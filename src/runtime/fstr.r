@@ -427,6 +427,14 @@ function{1} left(s1,n,s2)
 end
 
 
+/*
+ * What we know about map:
+ * In an IPL scan 4/18/2010, of around 350 lexical occurrences of map(),
+ * approximately 200 used default s2/s3. Of the remainder, roughly 21-25
+ * use &lcase and &ucase explicitly.  A significant percentage of the
+ * calls identifiably use a first argument of length 1, e.g. map(move(1)).
+ */
+
 "map(s1,s2,s3) - map s1, using s2 and s3."
 
 function{1} map(s1,s2,s3)
@@ -453,11 +461,48 @@ function{1} map(s1,s2,s3)
       static char maptab[256];
 
 #if !COMPILER
+      /*
+       * Defaulting is here, conversion only if cached maptab fails
+       */
       if (is:null(s2))
          s2 = ucase;
+      /*
+       * Short-cut conversions of &lcase and &ucase.
+       */
+      else {
+	 struct descrip _k_lcase_, _k_ucase_;
+	 Klcase(&_k_lcase_);
+	 Kucase(&_k_ucase_);
+	 if (s2.dword == D_Cset) {
+	    if (BlkLoc(s2) == BlkLoc(_k_lcase_)) {
+	       s2 = lcase;
+	       }
+	    else if (BlkLoc(s2) == BlkLoc(_k_ucase_)) {
+	       s2 = ucase;
+	       }
+	    }
+	 }
+
       if (is:null(s3))
          s3 = lcase;
+      /*
+       * Short-cut conversions of &lcase and &ucase.
+       */
+      else {
+	 struct descrip _k_lcase_, _k_ucase_;
+	 Klcase(&_k_lcase_);
+	 Kucase(&_k_ucase_);
+	 if (s3.dword == D_Cset) {
+	    if (BlkLoc(s3) == BlkLoc(_k_lcase_)) {
+	       s3 = lcase;
+	       }
+	    else if (BlkLoc(s3) == BlkLoc(_k_ucase_)) {
+	       s3 = ucase;
+	       }
+	    }
+	 }
 #endif					/* !COMPILER */
+
       /*
        * If s2 and s3 are the same as for the last call of map,
        *  the current values in maptab can be used. Otherwise, the
@@ -495,15 +540,21 @@ function{1} map(s1,s2,s3)
             maptab[str2[slen]&0377] = str3[slen];
          }
 
-      if (StrLen(s1) == 0) {
-         return emptystr;
-         }
+      slen = StrLen(s1);
+
+      if (slen == 0) {
+	 return emptystr;
+	 }
+      else if (slen == 1) {
+	 char c = maptab[*(StrLoc(s1)) & 0xFF];
+	 return string(1, (char *)&allchars[FromAscii(c) & 0xFF]);
+	 }
 
       /*
        * The result is a string the size of s1; create the result
        *  string, but specify no value for it.
        */
-      StrLen(result) = slen = StrLen(s1);
+      StrLen(result) = slen;
       Protect(StrLoc(result) = alcstr(NULL, slen), runerr(0));
       str1 = StrLoc(s1);
       str2 = StrLoc(result);

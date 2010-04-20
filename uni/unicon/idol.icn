@@ -430,6 +430,19 @@ class Class : declaration (supers,
 		    "  "||nam||"__oprec."||super||" := "|| super||"__oprec\n")
     yyprint("  }\n")
 
+
+    #
+    # If the class field list has defaults, write them out.
+    #
+    every fld := fields$foreach() do {
+	if type(fld) == "treenode" & fld.label == "arg3" then {
+	    writes(f,"/",fld.children[1].s, " := ")
+	    yyprint(fld.children[3])
+	    yyprint("\n")
+	    }
+	}
+
+
     #
     # create self, initialize from constructor parameters if no initially parms
     #
@@ -463,9 +476,13 @@ class Class : declaration (supers,
           yyprint(") | fail\n")
           }
        }
-    else {
-       every writes(f,",",fields$foreach())
-       if \self.ifields then every writes(f,",",(!self.ifields).ident)
+   else {
+      every fld := fields$foreach() do {
+	 if type(fld) == "treenode" then writes(f,",",fld.children[1].s)
+	 else
+	    writes(f,",",fld)
+	 }
+      if \self.ifields then every writes(f,",",(!self.ifields).ident)
        yyprint(")\n  self.__s := self\n")
     if ((methods$foreach())$name()| (!self.imethods).ident) == "initially" then
 	  yyprint("  self.__m.initially(self) | fail\n")

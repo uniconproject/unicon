@@ -33,6 +33,7 @@ dptr argp;
 #endif					/* PresentationManager */
    {
    struct b_proc *cproc;
+   long depth = 0, iteration = 0;
 
 #if COMPILER
 
@@ -61,6 +62,7 @@ dptr argp;
 
    for (pfp->pf_efp = NULL; pfp->pf_pfp != NULL; pfp = pfp->pf_pfp) {
       (pfp->pf_pfp)->pf_efp = (struct ef_marker *)pfp;
+      depth++;
       }
 
    /* Now start from the base procedure frame marker, producing a listing
@@ -81,8 +83,16 @@ dptr argp;
       --cipc.opnd;
       --cipc.op;
 
-      xtrace(cproc, pfp->pf_nargs, &arg[0], findline(cipc.opnd),
-         findfile(cipc.opnd));
+#define TRCMAX 10
+
+      if ((depth < TRCMAX) || (iteration < (TRCMAX>>1)) ||
+	   ((depth-iteration)<(TRCMAX>>1))) {
+	 xtrace(cproc, pfp->pf_nargs, &arg[0], findline(cipc.opnd),
+		findfile(cipc.opnd));
+	 }
+      else if ((depth > TRCMAX) && (iteration==(TRCMAX>>1))) {
+	 fprintf(stderr, "...\n");
+	 }
 #ifdef PresentationManager
       /* insert the text in the MLE */
       WinSendMsg(hwndMLE, MLM_INSERT, MPFROMP(ConsoleStringBuf), (MPARAM)0);
@@ -104,6 +114,7 @@ dptr argp;
          }
  
       pfp = (struct pf_marker *)(pfp->pf_efp);
+      iteration++;
       }
 #endif					/* COMPILER */
    }

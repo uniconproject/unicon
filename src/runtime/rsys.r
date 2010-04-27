@@ -2040,3 +2040,90 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    free(t);
    return rv;
 }
+
+#ifdef HAVE_LIBPTHREAD
+
+/* from netbsd.org, under the BSD license  */
+
+pthread_rwlock_t __environ_lock = PTHREAD_RWLOCK_INITIALIZER;
+
+extern char **environ;
+char *
+__findenv(const char *name, int *offset);
+
+int
+getenv_r(const char *name, char *buf, size_t len)
+{
+	int offset;
+	char *result;
+	int rv = -1;
+
+	_DIAGASSERT(name != NULL);
+
+	rwlock_rdlock(&__environ_lock);
+	result = __findenv(name, &offset);
+	if (result == NULL) {
+		errno = ENOENT;
+		goto out;
+	}
+	if (strlcpy(buf, result, len) >= len) {
+		errno = ERANGE;
+		goto out;
+	}
+	rv = 0;
+out:
+	rwlock_unlock(&__environ_lock);
+	return rv;
+}
+
+/*
+ * __findenv --
+ *	Returns pointer to value associated with name, if any, else NULL.
+ *	Sets offset to be the offset of the name/value combination in the
+ *	environmental array, for use by setenv(3) and unsetenv(3).
+ *	Explicitly removes '=' in argument name.
+ *
+ *	This routine *should* be a static; don't use it.
+ */
+char *
+__findenv(const char *name, int *offset)
+{
+	size_t len;
+	const char *np;
+	char **p, *c;
+
+	if (name == NULL || environ == NULL)
+		return NULL;
+	for (np = name; *np && *np != '='; ++np)
+		continue;
+	len = np - name;
+	for (p = environ; (c = *p) != NULL; ++p)
+		if (strncmp(c, name, len) == 0 && c[len] == '=') {
+			*offset = p - environ;
+			return c + len + 1;
+		}
+	*offset = p - environ;
+	return NULL;
+}
+
+#else
+int
+getenv_r(const char *name, char *buf, size_t len)
+{
+   char *buf2 = getenv(name);
+   if (buf2) {
+      if (strlen(buf2) >= len) {
+	 errno = ERANGE;
+	 return -1;
+	 }
+      errno = 0;
+      strcpy(buf, buf2);
+      return 0;
+      }
+   else {
+      errno = ENOENT;
+      return -1;
+      }
+}
+
+#endif					/* HAVE_LIBPTHREAD */

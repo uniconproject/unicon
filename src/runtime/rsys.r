@@ -2058,21 +2058,20 @@ getenv_r(const char *name, char *buf, size_t len)
 	char *result;
 	int rv = -1;
 
-	_DIAGASSERT(name != NULL);
-
-	rwlock_rdlock(&__environ_lock);
+	pthread_rwlock_rdlock(&__environ_lock);
 	result = __findenv(name, &offset);
 	if (result == NULL) {
 		errno = ENOENT;
 		goto out;
 	}
-	if (strlcpy(buf, result, len) >= len) {
+	if (strlen(result) >= len) {
 		errno = ERANGE;
 		goto out;
-	}
+	   }
+	strncpy(buf, result, len);
 	rv = 0;
 out:
-	rwlock_unlock(&__environ_lock);
+	pthread_rwlock_unlock(&__environ_lock);
 	return rv;
 }
 

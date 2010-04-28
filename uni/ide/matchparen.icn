@@ -14,11 +14,11 @@ class MatchParen(stack)
    end
 
    method add_char( c) 
-      local m
+      local m, n
       m := leftMatch(c)
 
       if \m then {
-         if (m ==  c) then { # c is some kind of left parenthesis
+         if m == c then { # c is some kind of left parenthesis
             push(stack, m)          # push a Character version, m
             }
          else {
@@ -30,13 +30,15 @@ class MatchParen(stack)
    end
   
    method add_string(s)
-      every i:=1 to *s do
+   local i
+      every i := 1 to *s do
          if add_char(s[i]) == "false" then fail
       return
    end
 
    method test(s)
-      every i:=1 to *stack do pop(stack)
+   local i, sav
+      every i := 1 to *stack do pop(stack)
 
       if add_string(s) & *stack=0 then {
          sav := &window

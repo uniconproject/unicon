@@ -16,7 +16,7 @@ class PrintDialog : Dialog(printerInfo_tab_item, printer_tabset, lprlocation_col
 
    method init_dialog()
       local name_lst := [], loc_lst := [], stat_lst := [],
-         printers_lst := [], name, loc, status, ln, prn
+         printers_lst := [], name, loc, status, ln, prn, i, log1
 
       printers_tbl := []
       system("lpstat -v > prn1.txt")
@@ -25,7 +25,6 @@ class PrintDialog : Dialog(printerInfo_tab_item, printer_tabset, lprlocation_col
          while prn := read(log1) do {
             prn ? {
                if \(name := tab(find(":"))) then {
-write("prn1 : ", image(name))
                   move(2)
                   loc := tab(0)
                   }
@@ -33,10 +32,10 @@ write("prn1 : ", image(name))
                }
            name := name[12:0]
            put(name_lst, name)
-write("put1 : ", image(name))
            put(loc_lst, loc)
            }
            close(log1)
+	   remove("prn1.txt")
         }
       if log1 := open("prn2.txt", "r") then {
          while prn := read(log1) do {
@@ -50,18 +49,14 @@ write("put1 : ", image(name))
            put(stat_lst, status)
            }
            close(log1)
+	   remove("prn2.txt")
         }
        every i := 1 to * name_lst do {
-	  printers_lst := []
-          put(printers_lst, name_lst[i])
-          put(printers_lst, loc_lst[i])
-          put(printers_lst, stat_lst[i])
+	  printers_lst := [name_lst[i], loc_lst[i], stat_lst[i]]
           put(printers_tbl, printers_lst)
           }
        printer_tbl.set_contents(printers_tbl)
 
-       remove("prn1.txt")
-       remove("prn2.txt")
 
 $ifdef _MS_WINDOWS_NT
       printcmd.set_contents("print")

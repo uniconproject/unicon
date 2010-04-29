@@ -2200,35 +2200,6 @@ static stringint siKeywords[] = {
       runerr(205, keyname);
       }
 end
-#ifdef MultiThread
-
-"opmask(ce,cs) - get or set ce's program's opcode mask"
-
-function{1} opmask(ce,cs)
-   if !is:coexpr(ce) then runerr(118,ce)
-
-   if is:null(cs) then {
-      abstract {
-         return cset++null
-         }
-      body {
-         result = BlkD(ce,Coexpr)->program->opcodemask;
-         return result;
-         }
-      }
-   else if !cnv:cset(cs) then runerr(104,cs)
-   else {
-      abstract {
-         return cset
-         }
-      body {
-         BlkD(ce, Coexpr)->program->opcodemask = cs;
-         return cs;
-         }
-      }
-end
-#endif					/* MultiThread */
-
 
 "structure(x) -- generate all structures allocated in program x"
 function {*} structure(x)

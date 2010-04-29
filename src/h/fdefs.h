@@ -374,7 +374,6 @@ FncDef(fetch,2)
    FncDef(EvGet,2)
    FncDef(EvSend,3)
    FncDef(eventmask,2)
-   FncDef(opmask,2)
 
 #endif					/* MultiThread */
 

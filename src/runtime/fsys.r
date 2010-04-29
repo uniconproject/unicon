@@ -43,8 +43,10 @@ extern int errno;
  */
 
 
-/* (should) change the mixed case of string s1 to the lower case string s2 */
-
+/*
+ * Change the mixed case of string s1 to the lower case string s2 by
+ * copying s2 (without the NUL terminator; can be at front or in the middle).
+ */
 void UtoL (char *s1, char *s2)
 {
    int i, l = strlen(s2);
@@ -258,18 +260,16 @@ function{0,1} getenv(s)
       }
 
    inline {
-      register char *p;
-      char sbuf[MaxCvtLen+1];
+      char *p, sbuf[MaxCvtLen+1];
       long l;
 
-      if ((p = getenv_r(s,sbuf,MaxCvtLen)) == 0) {
-	 l = strlen(p);
-	 Protect(p = alcstr(p,l),runerr(0));
+      if (getenv_r(s,sbuf,MaxCvtLen) == 0) {
+	 l = strlen(sbuf);
+	 Protect(p = alcstr(sbuf,l),runerr(0));
 	 return string(l,p);
 	 }
       else 				/* fail if not in environment */
 	 fail;
-
       }
 end
 

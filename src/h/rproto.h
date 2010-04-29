@@ -193,6 +193,7 @@ int		findloc		(word *ipc);
 int		findsyntax	(word *ipc);
 int		fldlookup	(struct b_record *rec, const char * const fld);
 void		fpetrap		(void);
+int		getenv_r	(const char *name, char *buf, size_t len);
 int		getvar		(char *s,dptr vp);
 uword		hash		(dptr dp);
 union block	**hchain	(union block *pb,uword hn);

@@ -19,25 +19,7 @@ global line
 ##################################################################
 
 procedure utags(contents, parentfile)
-   local  lineno, outlines, notid, word, javaKeywords:=[], x, gword
-      CKeywords :=["bool", "char", "class", "const",
-                   "const_cast", "double", "explicit",
-                   "extern", "float", "friend", "inline",
-                   "int", "long", "namespace", "private",
-                   "protected", "public", "short", "signed",
-                   "static", "string", "template", "unsigned",
-                   "using", "void"]
-
-      javaKeywords := ["abstract", "boolean", "byte",
-                       "char", "class", "const", "double",
-                       "extends", "final", "finally", "float",
-                       "generic", "implements", "import", "inner",
-                       "int", "interface", "long", "native",
-                       "operator", "outer", "package",
-                       "private", "protected", "public",
-                       "short", "static", "String",
-                       "super", "synchronized", "void"]
-
+   local  lineno, outlines, notid, word, x, gword
 
    notid := &cset -- &ucase -- &digits -- &lcase -- '_'
 
@@ -51,16 +33,11 @@ procedure utags(contents, parentfile)
       line[upto("/*",line):0] := ""
       line[upto("//",line):0] := ""
 
-#      if find((".cpp"|".java"|".icn"),line) then
-#      if find(("link "|"$include "|"import"),line) then{
-#	   put(outlines, Tag("procedure", line, lineno, parentfile))
-#       }
-#      else 
    line ? {
       gword3 := getword3(line)
 ### Unicon Tags ###
 
-      if find(".icn"|".cpp", parentfile) then {    #Unicon Tags
+      if find(".icn", parentfile) then {    #Unicon Tags
          gword := getword()
          tab(many(' ')) 
 
@@ -89,48 +66,7 @@ procedure utags(contents, parentfile)
                put(outlines, Tag("package", word, lineno, parentfile) )
           }
        }
-### Java Tags ###
-      else if find(".java", parentfile) then {    #Java Tags
-
-         x := getword()
-         if \x then gword := getword3(line)
-         else gword := &null
-
-         tab(many(' '))
-
-#         if gword === member(javaKeywords,gword) then {
-#            every  word := getword()  do
-#            put(outlines, Tag("class", gword, lineno, parentfile) )
-#          }
-#         if x === "class" then
-#            put(outlines, Tag("class", gword, lineno, parentfile) )
-
-#         if gword === "package" then 
-#            every  word := getword()  do
-#               put(outlines, Tag("package", gword, lineno, parentfile) )
-
-#         if gword === "public" | gword==="static" |
-#            gword === "void" | gword=== "main" then
-
-         if x === ("import"|"package") then {
-           word := getword()
-           write("Line # :",lineno, "   ", word)
-           put(outlines, Tag("link", \word, lineno, parentfile) )
-           write("=============================\n")
-         }
-
-         else if x === "public" then {
-           word := getword3(line)
-           if \word then {
-             write("Line # :",lineno, "   ", word)
-             if member(javaKeywords,word) then
-               word := getword()
-             else put(outlines, Tag("method", word, lineno, parentfile))
-           }
-           write("=============================\n")
-         }
-      }
-         lineno +:= 1
+       lineno +:= 1
    }
 }
    return outlines

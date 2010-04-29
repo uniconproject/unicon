@@ -22,15 +22,6 @@ Deliberate Syntax Error
 #endif					/* PORT */
 
 #if AMIGA
-#if __SASC
-   /* Undefine macros from fcntl.h and stdlib.h that collide with
-      function names in this module. */
-#passthru #undef close
-#passthru #undef open
-#passthru #undef read
-#passthru #undef write
-#passthru #undef getenv
-#endif __SASC                           /* SASC  */
 extern FILE *popen(const char *, const char *);
 extern int pclose(FILE *);
 #endif AMIGA                            /* AMIGA */
@@ -268,13 +259,10 @@ function{0,1} getenv(s)
 
    inline {
       register char *p;
+      char sbuf[MaxCvtLen+1];
       long l;
 
-#if AMIGA && __SASC
-      if ((p = __getenv(s)) != NULL) {
-#else                                /* AMIGA && __SASC */
-      if ((p = getenv(s)) != NULL) {	/* get environment variable */
-#endif                               /* AMIGA && __SASC */
+      if ((p = getenv_r(s,sbuf,MaxCvtLen)) == 0) {
 	 l = strlen(p);
 	 Protect(p = alcstr(p,l),runerr(0));
 	 return string(l,p);

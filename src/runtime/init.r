@@ -1267,13 +1267,14 @@ Deliberate Syntax Error
 
 /*
  * Check for environment variables that Icon uses and set system
- *  values as is appropriate.
+ *  values as is appropriate.  This is probably done once and pre-threads,
+ *  but go ahead and use getenv_r() to allow for reinitialization.
  */
 void envset()
    {
-   register char *p;
+   char *p, sbuf[MaxCvtLen+1];
 
-   if ((p = getenv("NOERRBUF")) != NULL)
+   if (getenv_r("NOERRBUF", sbuf, MaxCvtLen) == 0)
       noerrbuf++;
    env_int(TRACE, &k_trace, 0, (uword)0);
    env_int(COEXPSIZE, &stksize, 1, (uword)MaxUnsigned);
@@ -1299,7 +1300,7 @@ Deliberate Syntax Error
 #endif					/* PORT */
 
 #if AMIGA
-   if ((p = getenv("CHECKBREAK")) != NULL)
+   if (getenv_r("CHECKBREAK", sbuf, MaxCvtLen) == 0)
       chkbreak++;
    if (WBstrsize != 0 && WBstrsize <= MaxBlock) ssize = WBstrsize;
    if (WBblksize != 0 && WBblksize <= MaxBlock) abrsize = WBblksize;
@@ -1314,7 +1315,7 @@ Deliberate Syntax Error
  * End of operating-system specific code.
  */
 
-   if ((p = getenv(ICONCORE)) != NULL && *p != '\0') {
+   if ((getenv_r(ICONCORE, sbuf, MaxCvtLen) == 0) && *p != '\0') {
 
 /*
  * The following code is operating-system dependent [@init.05].  Set trap to
@@ -1384,16 +1385,15 @@ word *variable;
 int non_neg;
 uword limit;
 {
-   char *value;
-   char *s;
+   char *value, *s, sbuf[MaxCvtLen+1];
    register uword n = 0;
    register uword d;
    int sign = 1;
 
-   if ((value = getenv(name)) == NULL || *value == '\0')
+   if ((getenv_r(name, sbuf, MaxCvtLen) != 0) || (*sbuf == '\0'))
       return;
 
-   s = value;
+   value = s = sbuf;
    if (*s == '-') {
       if (non_neg)
 	 env_err("environment variable out of range", name, value);
@@ -1859,7 +1859,7 @@ void datainit()
    /*
     *  Initialization needed for event monitoring
     */
-   BlkLoc(csetdesc) = (union block *)&fullcs;
+   Kcset(&csetdesc);
    BlkLoc(rzerodesc) = (union block *)&realzero;
 #endif					/* MultiThread */
 

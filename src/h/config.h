@@ -759,8 +759,14 @@ Deliberate Syntax Error
    #define DirectExecution
 #endif					/* Header */
 
+#ifndef HAVE_LIBPTHREAD
 #ifdef Concurrent
-#define PthreadCoswitch
+#undef Concurrent
+#endif					/* Concurrent */
+#endif					/* HAVE_LIBPTHREAD */
+
+#ifdef Concurrent
+#define PthreadCoswitch 1
 #endif					/* Concurrent */
 
 #ifdef NoLIBZ

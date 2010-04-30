@@ -693,6 +693,8 @@ struct b_coexpr {		/* co-expression stack block */
    word id;			/*   identification number */
 #ifdef Concurrent
    word status;			/*   status (sync vs. async, etc) */
+   pthread_mutex_t smute, rmute;/*   control access to send/receive queues */
+   union block *squeue, *rqueue;/*   pending send/receive queues */
 #endif					/* Concurrent */
 #ifdef EventMon
    word actv_count;             /*   number of times activated using EvGet() */

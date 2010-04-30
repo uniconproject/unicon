@@ -99,7 +99,7 @@
       if (is:null(curpstate->eventmask)) break;
       else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
       curpstate->parent->eventval = *(dp);
-      if (!is:null(curpstate->valuemask) &&
+      if ((!is:null(curpstate->valuemask)) &&
 	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
@@ -288,7 +288,7 @@ typedef int siptr, stringint, inst;
    typedef int LONG, SHORT;
 
    #ifdef Audio
-      typedef int AudioStruct, AudioPtr, ALCcontext, ALuint, pthread_t;
+      typedef int AudioStruct, AudioPtr, ALCcontext, ALuint;
       typedef int HMIXER, MIXERLINE, MMRESULT, HMIXEROBJ, MIXERCAPS;
       typedef int MIXERCONTROL, MIXERLINECONTROLS, MIXERCONTROLDETAILS;
       typedef int MIXERCONTROLDETAILS_UNSIGNED, MIXERCONTROLDETAILS_BOOLEAN;
@@ -339,7 +339,7 @@ typedef int siptr, stringint, inst;
       typedef int AudioFile, AudioStruct, AudioPtr;
    #ifdef HAVE_LIBOPENAL   
       typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
-      typedef int PFNALBUFFERWRITEDATAPROC, ALCdevice, ALubyte;
+      typedef int ALCdevice, ALubyte;
    #endif				/* HAVE_LIBOPENAL */
    #endif				/* Audio */
 
@@ -360,8 +360,13 @@ typedef int siptr, stringint, inst;
       typedef int PBITMAPINFOHEADER, MinBitmapHeader, RGB;
    #endif				/* PresentationManager */
 
+#if defined(Audio) || defined(HAVE_LIBPTHREAD)
+      typedef int pthread_t;
+#endif					/* Audio || LIBPTHREAD */
+
 #ifdef HAVE_LIBPTHREAD
-       typedef int pthread_rwlock_t;
+       typedef int pthread_rwlock_t, sem_t;
+       typedef int pthread_mutex_t, pthread_mutexattr_t;
 #endif					/* HAVE_LIBPTHREAD */
 
    /*

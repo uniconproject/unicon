@@ -90,6 +90,7 @@ struct astkblk *alcactiv()
       ReturnErrNum(305, NULL);
    abp->nactivators = 0;
    abp->astk_nxt = NULL;
+   abp->arec[0].activator = NULL;
    return abp;
    }
 
@@ -230,6 +231,10 @@ struct b_coexpr *alccoexp()
    else
 #endif					/* MultiThread */
       ep->id = coexp_ser++;
+#ifdef Concurrent
+   ep->status = 0;
+   ep->squeue = ep->rqueue = NULL;
+#endif					/* Concurrent */
    ep->nextstk = stklist;
    ep->es_tend = NULL;
 

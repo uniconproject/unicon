@@ -798,6 +798,13 @@ dptr dp;
          }
       if(BlkLoc(cp->freshblk) != NULL)
          markblock(&((struct b_coexpr *)block)->freshblk);
+
+#ifdef Concurrent
+      if (cp->squeue != NULL)
+	 markptr(&(cp->squeue));
+      if (cp->rqueue != NULL)
+	 markptr(&(cp->rqueue));
+#endif					/* Concurrent */
 #endif                                  /* CoExpr */
       }
 
@@ -1572,7 +1579,7 @@ long physicalmemorysize()
    i = sysconf(_SC_PHYS_PAGES);
    i *= sysconf(_SC_PAGE_SIZE);
    return i;
-#endif					/* SUN */
+#else					/* SUN */
    /*
     * old method:, use meminfo, if it is present
     */
@@ -1597,6 +1604,7 @@ long physicalmemorysize()
     * No meminfo? Could try "top", but don't want to launch external process
     * during initialization...
     */
+#endif					/* SUN */
 #endif					/* UNIX */
 #if NT
    MEMORYSTATUS ms;

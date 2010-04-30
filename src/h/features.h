@@ -88,6 +88,10 @@
    Feature(1, "_CO_EXPRESSIONS", "co-expressions")
 #endif					/* CoExpr */
 
+#ifdef Concurrent
+   Feature(1, "_CONCURRENT", "concurrent threads")
+#endif					/* CoExpr */
+
 #ifdef ConsoleWindow
    Feature(1, "_CONSOLE_WINDOW", "console window")
 #endif					/* ConsoleWindow */

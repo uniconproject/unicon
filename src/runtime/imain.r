@@ -179,11 +179,14 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
     * Select log file name.  Might make this a command-line option.
     * Default to "WICON.LOG".  The log file is used by IDE programs to
     * report translation errors and jump to the offending source code line.
+    *
+    * No point in rewriting this to use getenv_r(), it occurs pre-threads.
+    * It could use some cleanup, though.
     */
-   if ((lognam = getenv("WICONLOG")) == NULL) {
-      if (((lognam = getenv("TEMP")) != NULL) &&
+   if ((lognam = getenv("WICONLOG")) == NULL) { /* no getenv_r */
+      if (((lognam = getenv("TEMP")) != NULL) && /* no getenv_r */
 	  (lognam = malloc(strlen(lognam) + 13)) != NULL) {
-	 strcpy(lognam, getenv("TEMP"));
+	 strcpy(lognam, getenv("TEMP")); /* no getenv_r */
 	 strcat(lognam, "\\");
 	 strcat(lognam, "winicon.log");
          }
@@ -191,10 +194,10 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
          lognam = "winicon.log";
       }
    remove(lognam);
-   if (getenv("WICONLOG")!=NULL)
+   if (getenv("WICONLOG") != NULL) /* no getenv_r */
       lognam = strdup(lognam);
-   if (getenv("TEMP") != NULL) {
-      tnam = _tempnam(getenv("TEMP"), "wx");
+   if (getenv("TEMP") != NULL) { /* no getenv_r */
+      tnam = _tempnam(getenv("TEMP"), "wx"); /* no getenv_r */
       }
    else {
       tnam = _tempnam("C:\\TEMP", "wx");
@@ -206,7 +209,6 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
    strcpy(tmplognam, tnam);
    flog = fopen(tnam, "w");
    free(tnam);
-
    if (flog == NULL) {
       syserr("unable to open logfile");
       }
@@ -1165,11 +1167,11 @@ void xmfree()
         *  it's not possible to have more than one, but nonetheless, the
         *  code provides for more than one.
         */
- 	 for (abp = xep->es_actstk; abp; ) {
-            xabp = abp;
-            abp = abp->astk_nxt;
-            free((pointer)xabp);
-            }
+      for (abp = xep->es_actstk; abp; ) {
+	 xabp = abp;
+	 abp = abp->astk_nxt;
+	 free((pointer)xabp);
+	 }
 
 #ifdef Concurrent
 	 /*

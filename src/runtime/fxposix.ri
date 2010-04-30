@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.52 2010-01-25 17:06:04 jeffery Exp $
+ * $Id: fxposix.ri,v 1.53 2010-04-30 09:53:30 jeffery Exp $
  */
 
 /*
@@ -2892,11 +2892,10 @@ function{0, 1} setenv(name, value)
 
       /*
        * WARNING! I don't know if other systems require putenv with
-       * non-auto storage! If there are, they should be added to this
-       * section.
+       * non-auto storage! If there are, they should be added to this section.
        *
-       * putenv(3C) needs a string that's "name=value". We malloc() the
-       * the string for this; if there's another call to putenv(3C)
+       * putenv(3C) needs a string that's "name=value". We malloc() the string
+       * string for this; if there's another call to putenv(3C)
        * with the same value, the old string is no longer needed. What
        * we do is store a sentinel in front of the name=value section;
        * before calling putenv we call getenv and see if it's a string
@@ -2904,7 +2903,7 @@ function{0, 1} setenv(name, value)
        * If it is we can free it.                  -- shamim July 2002
        */
 
-      char *p, *q;
+      char *p, *q, qbuf[MaxCvtLen+1];
       char* sentinel = "n59KxD2LlhPL1suOWsNg";
       int slen = strlen(sentinel);
       int n = slen + strlen(name) + strlen(value) + 1;
@@ -2913,7 +2912,12 @@ function{0, 1} setenv(name, value)
          fail;
       snprintf(p, n+1, "%s%s=%s", sentinel, name, value);
       p[n] = 0;
-      if ((q = getenv(name)) != 0) {
+
+      /*
+       * I am not converting this to getenv_r, as it appears that would
+       * defeat its cryptic semantics' purpose.
+       */
+      if ((q = getenv(name)) != 0) { /* not converting to getenv_r */
          q -= strlen(name) + slen + 1;
          if (strncmp(q, sentinel, slen) != 0)
             q = 0;

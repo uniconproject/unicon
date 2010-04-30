@@ -2697,11 +2697,10 @@ function{0,1} WinAssociate(ext)
       FILE *f;
       char fname[MAX_PATH];
       char buf[MAX_PATH];
-      char *s = getenv("TEMP");
       int l;
 
-      if (!s) strcpy(fname, ".\\");
-      else strcpy(fname, s);
+      
+      if (getenv_r("TEMP", fname, MAX_PATH-1) != 0) strcpy(fname, ".\\");
       if (fname[strlen(fname)-1] != '\\') strcat(fname, "\\");
       strcat(fname, "t.");
       fname[strlen(fname)+StrLen(ext)] = '\0';

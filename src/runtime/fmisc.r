@@ -2279,6 +2279,11 @@ function{1} thread(x)
 	if (BlkLoc(x)->Coexpr.status & Ts_Async) return x;
 	/* Turn on Async flag */
 	BlkLoc(x)->Coexpr.status = Ts_Posix | Ts_Async;
+	/* initialize sender/receiver queues */
+	pthread_mutex_init(&(BlkLoc(x)->Coexpr.smute), NULL);
+	pthread_mutex_init(&(BlkLoc(x)->Coexpr.rmute), NULL);
+	BlkLoc(x)->Coexpr.squeue = (union block *)alclist(0, MinListSlots);
+	BlkLoc(x)->Coexpr.rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
 	n = BlkLoc(x)->Coexpr.cstate[1];
 	sem_post(n->semp);

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.53 2010-04-30 09:53:30 jeffery Exp $
+ * $Id: fxposix.ri,v 1.54 2010-05-04 10:52:32 jeffery Exp $
  */
 
 /*
@@ -1734,12 +1734,14 @@ function{0,1} name(t)
       return string
    }
    inline {
-      char *p;
+      char *p, buf[32];
       int l;
+      struct tm gmt;
 #if i
       p = name((time_t *)&t);
 #else
-      p = asctime(gmtime((time_t *)&t));
+      if (gmtime_r((time_t *)&t, &gmt) == NULL) runerr(0);
+      if ((p = asctime_r(&gmt, buf)) == NULL) runerr(0);
 #endif
       l = strlen(p) - 1;
       reserve(Strings, l);

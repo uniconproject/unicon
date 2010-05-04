@@ -1245,6 +1245,33 @@ int x, y;		/* current mouse position */
 
 }
 
+
+/*
+ * setclasshints(w) - called by wmap() and my_wmap().
+ * Set the class hints that name the program (for reference by the
+ * window manager) following conventions given in O'Reilly.
+ */
+static void setclasshints(wbp w)
+{
+   int i;
+   char *p, *s, sbuf[256];
+   XClassHint clhints;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   
+   clhints.res_name = sbuf;
+   clhints.res_class = "IconProg";
+   if (getenv_r("RESOURCE_NAME", sbuf, 256) == -1) {
+      p = StrLoc(kywd_prog);
+      s = p + StrLen(kywd_prog);
+      while (s > p && s[-1] != '/')
+	 s--;				/* find tail of prog_name */
+      for (i=0; s < p+StrLen(kywd_prog); ) clhints.res_name[i++] = *s++;
+      clhints.res_name[i] = '\0';
+      }
+   XSetClassHint(wd->display, ws->win, &clhints);
+}
+
 /*
  * Create a canvas.
  *  If a window, cause the window to actually become visible on the screen.
@@ -1259,9 +1286,8 @@ int wmap(wbp w)
    struct imgdata *imd;
    int i, r;
    int new_pixmap = 0;
-   char *p, *s, sbuf[256];
+   char *p, *s;
    XWMHints wmhints;
-   XClassHint clhints;
 
    STDLOCALS(w);
 #ifdef Graphics3D
@@ -1492,25 +1518,11 @@ int wmap(wbp w)
       }
    XSetWMHints(stddpy, stdwin, &wmhints);
 
-   /*
-    * Set the class hints that name the program (for reference by the
-    * window manager) following conventions given in O'Reilly.
-    */
-   if (! (s = getenv("RESOURCE_NAME"))) {
-      p = StrLoc(kywd_prog);
-      s = p + StrLen(kywd_prog);
-      while (s > p && s[-1] != '/')
-	 s--;				/* find tail of prog_name */
-      }
-   clhints.res_name = sbuf;
-   clhints.res_class = "IconProg";
-   for (i=0; s < p+StrLen(kywd_prog); ) clhints.res_name[i++] = *s++;
-   clhints.res_name[i] = '\0';
-   XSetClassHint(stddpy, stdwin, &clhints);
+   setclasshints(w);
 
-   if (wd->cmap != DefaultColormap(stddpy,wd->screen)) { /* ? */
+   if (wd->cmap != DefaultColormap(stddpy,wd->screen)) {
       XSetWindowColormap(stddpy, stdwin, wd->cmap);
-}
+      }
    XSync(stddpy, False);
 
    if (ws->iconic != RootState) {
@@ -2427,12 +2439,9 @@ void getdisplay(w, answer)
 wbp w;
 char *answer;
    {
-   char *tmp;
    wdp wd = w->window->display;
    if (!strcmp(wd->name, "")) {
-      if ((tmp = getenv("DISPLAY")) != NULL)
-	 sprintf(answer, "%s", tmp);
-      else
+      if (getenv_r("DISPLAY", answer, 256) == -1)
 	 *answer = '\0';
       }
    else sprintf(answer, "%s", wd->name);
@@ -4668,7 +4677,6 @@ char my_wmap(wbp w)
    int new_pixmap = 0;
    char *p=NULL, *s=NULL, sbuf[256];
    XWMHints wmhints;
-   XClassHint clhints;
    XSizeHints size_hints;
    wsp ws = w->window;
    wcp wc = w->context;
@@ -4891,21 +4899,7 @@ char my_wmap(wbp w)
 */
    XSetWMHints(wd->display, ws->win, &wmhints);
 
-   /*
-    * Set the class hints that name the program (for reference by the
-    * window manager) following conventions given in O'Reilly.
-    */
-   if (! (s = getenv("RESOURCE_NAME"))) {
-      p = StrLoc(kywd_prog);
-      s = p + StrLen(kywd_prog);
-      while (s > p && s[-1] != '/')
-	 s--;				/* find tail of prog_name */
-      }
-   clhints.res_name = sbuf;
-   clhints.res_class = "IconProg";
-   for (i=0; s < p+StrLen(kywd_prog); ) clhints.res_name[i++] = *s++;
-   clhints.res_name[i] = '\0';
-   XSetClassHint(wd->display, ws->win, &clhints);
+   setclasshints(w);
 
 /*
    if (wd->cmap != DefaultColormap(wd->display,wd->screen)) {
@@ -5083,7 +5077,6 @@ void fillpolygon(wbp w, XPoint *points, int npoints)
    RENDER4(XFillPolygon,points,npoints,Complex,CoordModeOrigin);
    }
 }
-
 
 #else					/* Graphics */
 static char junk;		/* avoid empty module */

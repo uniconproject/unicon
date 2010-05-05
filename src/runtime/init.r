@@ -667,7 +667,6 @@ char *argv[];
    rootpstate.parent = rootpstate.next = NULL;
    rootpstate.parentdesc = nulldesc;
    rootpstate.eventmask= nulldesc;
-   rootpstate.opcodemask = nulldesc;
    rootpstate.eventcount = zerodesc;
    rootpstate.valuemask = nulldesc;
    rootpstate.eventcode= nulldesc;
@@ -1940,7 +1939,6 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->parent= NULL;
    pstate->parentdesc= nulldesc;
    pstate->eventmask= nulldesc;
-   pstate->opcodemask= nulldesc;
    pstate->eventcount = zerodesc;
    pstate->valuemask= nulldesc;
    pstate->eventcode= nulldesc;

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.54 2010-05-04 10:52:32 jeffery Exp $
+ * $Id: fxposix.ri,v 1.55 2010-05-05 12:23:19 jeffery Exp $
  */
 
 /*
@@ -1553,8 +1553,18 @@ function{0,1} crypt(key, salt)
       fail;
       return nulldesc; /* NOTREACHED */
 #else					/* NoCrypt */
+#ifdef HAVE_CRYPT_R
+      struct crypt_data localdata;
+      tended char *s;
+      char *crypt_r(const char *key, const char *salt, struct crypt_data *data);
+      localdata.initialized = 0;
+      s = crypt_r(key, salt, &localdata);
+      String(result, alcstr(s, strlen(s)));
+#else					/* HAVE_CRYPT_R */
       char *crypt(const char *key, const char *salt);
-      String(result, (char*)crypt(key, salt));
+      s = crypt(key, salt);
+      String(result, alcstr(s, strlen(s)));
+#endif					/* HAVE_CRYPT_R */
       return result;
 #endif					/* NoCrypt */
    }

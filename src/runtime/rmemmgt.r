@@ -160,7 +160,11 @@ int firstp[] = {
      0,                       /* T_File (5), file block */
      0,                       /* T_Proc (6), procedure block */
      3*WordSize,              /* T_Record (7), record block */
+#ifdef Concurrent
+     3*WordSize + sizeof(pthread_mutex_t),  /* T_List (8), list header block */
+#else				/* Concurrent */
      3*WordSize,              /* T_List (8), list header block */
+#endif				/* Concurrent */
      2*WordSize,              /* T_Lelem (9), list element block */
      4*WordSize,              /* T_Set (10), set header block */
      1*WordSize,              /* T_Selem (11), set element block */
@@ -576,7 +580,6 @@ struct progstate *pstate;
 
    PostDescrip(pstate->parentdesc);
    PostDescrip(pstate->eventmask);
-   PostDescrip(pstate->opcodemask);
    PostDescrip(pstate->valuemask);
    PostDescrip(pstate->eventcode);
    PostDescrip(pstate->eventval);

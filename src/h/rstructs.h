@@ -153,6 +153,9 @@ struct b_list {			/* list-header block */
    word title;			/*   T_List */
    word size;			/*   current list size */
    word id;			/*   identification number */
+#ifdef Concurrent
+   pthread_mutex_t mutex;
+#endif				/* Concurrent */
    union block *listhead;	/*   pointer to first list-element block */
    union block *listtail;	/*   pointer to last list-element block */
    };
@@ -453,6 +456,16 @@ struct ipc_line {
    int line;		/* line number */
    };
 
+#ifdef Concurrent
+struct threadstate {
+   pthread_t tid;
+   /* signal mask? etc. */
+   /*
+    * main goal for this struct is to hold VM-specific per-thread variables.
+    */
+   };
+#endif					/* Concurrent */
+
 #ifdef MultiThread
 /*
  * Program state encapsulation.  This consists of the VARIABLE parts of
@@ -460,11 +473,15 @@ struct ipc_line {
  */
 struct progstate {
    long hsize;				/* size of icode, 0 = C|Python|... */
+	/* hsize is a constant defined at load time, MT safe */
    struct progstate *parent;
+	/* parent is a constant defined at load time, MT safe */
    struct progstate *next;
+	/* next is a link list, seldom used, needs mutex */
    struct descrip parentdesc;		/* implicit "&parent" */
+	/* parentdesc is a constant defined at load time, MT safe */
    struct descrip eventmask;		/* implicit "&eventmask" */
-   struct descrip opcodemask;		/* implicit "&opcodemask" */
+	/* eventmask is read-only (to me), MT safe */
    struct descrip eventcount;		/* implicit "&eventcount" */
    struct descrip valuemask;
    struct descrip eventcode;		/* &eventcode */

@@ -612,19 +612,7 @@ Deliberate Syntax Error
  */
 
 #if e_opcode
-      /*
-       * If we've asked for ALL opcode events, or specifically for this one
-       * generate an MT-style event.
-       */
-      if ((!is:null(curpstate->eventmask) &&
-	   Testb((word)ToAscii(E_Opcode), curpstate->eventmask)) &&
-	  (is:null(curpstate->opcodemask) ||
-	   Testb((word)ToAscii(lastop), curpstate->opcodemask))) {
-	 ExInterp;
-	 MakeInt(lastop, &(curpstate->parent->eventval));
-	 actparent(E_Opcode);
-	 EntInterp
-	 }
+      EVVal(lastop, E_Opcode);
 #endif					/* E_Opcode */
 
       switch ((int)lastop) {		/*

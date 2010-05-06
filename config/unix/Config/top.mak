@@ -1,8 +1,5 @@
-#  Makefile for Unicon, based on that of Version 9.4 of Icon
+#  Top Level Makefile for Unicon, post-configuration, for UNIX-based systems
 #
-#  Things have changed since Version 9.3.
-#  See doc/install.htm for instructions.
-
 
 #  configuration parameters
 VERSION=v940
@@ -41,7 +38,7 @@ config/unix/$(name)/status src/h/define.h:
 #
 # Code configuration.
 #
-# $Id: top.mak,v 1.29 2010-02-26 07:00:06 jeffery Exp $
+# $Id: top.mak,v 1.30 2010-05-06 23:13:56 jeffery Exp $
 
 
 # Configure the code for a specific system.

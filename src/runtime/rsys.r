@@ -311,9 +311,11 @@ char *hostname;
    /*
     * VMS has its own special logic.
     */
-   char *h;
-   if (!(h = getenv("ICON_HOST")) && !(h = getenv("SYS$NODE")))
+   char *h, hbuf[256];
+   if ((getenv_r("ICON_HOST", hbuf, 255)) && (getenv_r("SYS$NODE", hbuf, 255)))
       h = "VAX/VMS";
+    else
+      h=hbuf;
    strcpy(hostname,h);
 #else					/* HostStr */
    {
@@ -733,7 +735,7 @@ int urlopen(char *url, int flag, struct netfd *retval)
 {
    char request[MAXPATHLEN + 35];
    char scheme[50], host[MAXPATHLEN], path[MAXPATHLEN];
-   char *proxy;
+   char *proxy, proxybuf[256];
    int port;
    struct hostent *nameinfo;
    int s, rv;
@@ -742,8 +744,12 @@ int urlopen(char *url, int flag, struct netfd *retval)
 
    if ( strncasecmp(url, "file:", 5) == 0 )
       file_flag = 1;
- 
-   if ((proxy = getenv("http_proxy")) == NULL || file_flag ) {
+   if (getenv_r("http_proxy", proxybuf, 255)==0)
+      proxy=proxybuf;
+   else
+      proxy=NULL;
+
+   if (proxy == NULL || file_flag ) {
       parse_url(url, scheme, host, &port, path);
 
 #ifdef DEBUG
@@ -1142,10 +1148,12 @@ int link(char *s1, char *s2)
  */
 FILE *mytmpfile()
 {
-   char *temp, *temp2;
+   char *temp, *temp2, tmpbuf[256];
    FILE *f;
    
-   if ((temp = getenv("TEMP")) == NULL) {
+   if (getenv_r("TEMP", tmpbuf, 255)==0)
+      temp=tmpbuf;
+   else{
       fprintf(stderr, "getenv(TEMP) failed\n");
       return NULL;
       }
@@ -1273,11 +1281,18 @@ FILE *popen (const char* cmd, const char *mode)
   }
   if (go_on == 0) {
     /* the app_name was not found */
+    char tmpbuf[256];
+    int tmpsize;
 #ifdef __TRACE
     fprintf(stderr, "%s not found, concatenating comspec\n", app_name);
 #endif
-    new_cmd = malloc(strlen(getenv("CONSPEC"))+4+strlen(cmd)+1);
-    sprintf(new_cmd, "%s /c %s", getenv("COMSPEC"), cmd);
+    if (getenv_r("CONSPEC", tmpbuf, 255)==0)
+      tmpsize=strlen(tmpbuf);
+    else
+      tmpsize=0;
+       
+    new_cmd = malloc(tmpsize+4+strlen(cmd)+1);
+    sprintf(new_cmd, "%s /c %s",tmpbuf, cmd);
     free(app_name);
     app_name = NULL;
   }

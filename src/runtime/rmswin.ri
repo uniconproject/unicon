@@ -1692,9 +1692,14 @@ HFONT mkfont(char *s, char is_3D)
 	  * Standard name: first try preferred family, then generalize.
 	  * ICONFONT can be NULL, in which case Windows chooses.
 	  */
+	 char *icnfnt, fnt[256];
+	 icnfnt = fnt;
 	 hf = findfont(stdfam, size, flags, 1);
-	 if (hf == NULL)
-	    hf = findfont(getenv("ICONFONT"), size, flags, 1);
+	 if (hf == NULL){
+	    if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
+	         icnfnt=NULL;
+	    hf = findfont(icnfnt, size, flags, 1);
+	    }
 	 }
       else {
 	 /*
@@ -3548,8 +3553,13 @@ wbp w;
    {
    int i;
    wcp wc;
+   char *icnfnt, fnt[256];
 
    GRFX_ALLOC(wc, _wcontext);
+   
+   if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
+     icnfnt=NULL;
+   
    wc->serial = ++context_serial;
    wc->bkmode = OPAQUE;        /* at present, only used in line drawing */
    wc->fg = RGB(0,0,0);
@@ -3575,7 +3585,7 @@ wbp w;
 	 ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
 	 OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
 	 DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
-	 getenv("ICONFONT"));
+	 icnfnt);
 
    wc->font->charwidth = 8; /* looks like a bug */
    wc->leading = 16;
@@ -3594,8 +3604,13 @@ wbp w;
    wsp ws = w->window;
    wbinding tmp;
    int i;
+   char icnfnt, fnt[256];
 
    GRFX_ALLOC(wc, _wcontext);
+   
+   if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
+     icnfnt=NULL;
+   
    wc->serial = ++context_serial;
 
    tmp.window = ws;
@@ -3648,7 +3663,7 @@ wbp w;
 	 ((MAXBYTESPERCHAR==1)?ANSI_CHARSET:DEFAULT_CHARSET),
 	 OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
 	 DEFAULT_QUALITY, FIXED_PITCH | FF_MODERN,
-	 getenv("ICONFONT"));
+	 icnfnt);
    wc->leading = wc2->leading;
    setfont(&tmp, &(wc2->font->name));
 

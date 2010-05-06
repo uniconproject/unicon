@@ -272,7 +272,7 @@ char *mktemp (const char *file)
 {
    char *dir;
    char *name;
-   char buf[11];
+   char buf[11], dirbuf[256];
    int len = strlen(file);
    _kernel_osfile_block blk;
    _kernel_swi_regs regs;
@@ -344,8 +344,9 @@ char *mktemp (const char *file)
    /* Otherwise, go through the list... */
 
    /* First of all, try <Tmp$Dir> */
-   if ((dir = getenv("Tmp$Dir")) != 0)
+   if ((getenv_r("Tmp$Dir", dirbuf, 255)) == 0)
    {
+      dir=durbuf;
       if (_kernel_osfile(ReadCat,dir,&blk) == 2)
          return concat(dir,file);
       else
@@ -719,7 +720,7 @@ MPWFlush(FILE *f) {
    static char *noLineFlush;
 
    if (!fetched) {
-      noLineFlush = getenv("NOLINEFLUSH");
+      noLineFlush = getenv("NOLINEFLUSH"); /* no need for getenv_r */
       fetched = 1;
       }
    if (!noLineFlush || noLineFlush[0] == '\0')
@@ -948,7 +949,7 @@ FILE *popen(char *cmd, char *mode)
 #endif		/* OS2_32 */
     int phandle, chandle, shandle;
     int rc;
-    char *cmdshell;
+    char *cmdshell, cmd[256];
 
     /* Validate */
     if(cmd == NULL || mode == NULL) return NULL;
@@ -987,8 +988,10 @@ FILE *popen(char *cmd, char *mode)
     DosSetFHandState(phandle, OPEN_FLAGS_NOINHERIT);
 
     /* Invoke the child, remember its processid */
-    cmdshell = getenv("COMSPEC");
-    if (cmdshell == NULL) cmdshell = "CMD.EXE";
+    if (getenv_r("COMSPEC", cmd, 255)==0)
+       cmdshell = cmd ;
+    else
+       cmdshell = "CMD.EXE";
 
     _pipes[chandle] = spawnlp(P_NOWAIT, cmdshell, cmdshell,"/c",cmd, NULL);
 

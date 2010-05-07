@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.57 2010-05-06 23:25:33 jeffery Exp $
+ * $Id: fxposix.ri,v 1.58 2010-05-07 06:47:29 to_jafar Exp $
  */
 
 /*
@@ -2434,7 +2434,8 @@ end
 function{0,1} getpw(u)
 
    declare {
-      struct passwd *pw;
+      struct passwd *pw, pwbuf;      
+      char buf[1024];
    }
    abstract {
       return record
@@ -2448,7 +2449,7 @@ function{0,1} getpw(u)
 	    tended char* name;
 	    cnv:C_string(u, name);
 	    
-	    if ((pw = getpwnam(name)) == NULL)
+	    if(getpwnam_r(name, &pwbuf, buf, 1024, &pw)!=0)
 	       fail;
 
 	    if (make_pwd(pw, &result) == 0)
@@ -2464,8 +2465,8 @@ function{0,1} getpw(u)
 #else					/* NT */
 	    C_integer uid;
 	    cnv:C_integer(u, uid);
-
-	    if ((pw = getpwuid(uid)) == NULL)
+	    
+	    if(getpwuid_r(uid, &pwbuf, buf, 1024, &pw)!=0)
 	       fail;
 
 	    if (make_pwd(pw, &result) == 0)
@@ -2500,7 +2501,8 @@ end
 function{0,1} getgr(g)
 
    declare {
-      struct group *gr;
+      struct group *gr, grbuf;
+      char buf[4096];
       }
    abstract {
       return record
@@ -2513,8 +2515,8 @@ function{0,1} getgr(g)
 #if NT
 	    fail;
 #else					/* NT */
-	    if ((gr = getgrnam(name)) == NULL)
-	       fail;
+	    if (getgrnam_r(name, &grbuf, buf, 4096, &gr)!=0)
+	      fail;
 
 	    if (make_group(gr, &result) == 0)
 	       syserr("failed to create posix record constructor");
@@ -2529,7 +2531,7 @@ function{0,1} getgr(g)
 #if NT
 	    fail;
 #else					/* NT */
-	    if ((gr = getgrgid(gid)) == NULL)
+	    if (getgrgid_r(gid, &grbuf, buf, 4096, &gr)!=0)
 	       fail;
 
 	    if (make_group(gr, &result) == 0)
@@ -2543,8 +2545,8 @@ function{0,1} getgr(g)
 #if NT
 	    fail;
 #else					/* NT */
-	    if ((gr = getgrent()) == NULL)
-	       fail;
+	    if (getgrent_r( &grbuf, buf, 4096, &gr)!=0)
+	      fail;
 
 	    if (make_group(gr, &result) == 0)
 	       syserr("failed to create posix record constructor");

@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.40 2009-10-09 23:43:34 jeffery Exp $
+ * $Id: rposix.r,v 1.41 2010-05-07 06:47:29 to_jafar Exp $
  */
 
 #ifdef PosixFns
@@ -283,8 +283,9 @@ char *name;
 #if NT
    return -1;
 #else					/* NT */
-   struct passwd *pw;
-   if (!(pw = getpwnam(name)))
+   struct passwd *pw, pwbuf;      
+   char buf[1024];
+   if(getpwnam_r(name, &pwbuf, buf, 1024, &pw)!=0)
       return -1;
    return pw->pw_uid;
 #endif					/* NT */
@@ -296,8 +297,9 @@ char *name;
 #if NT
    return -1;
 #else					/* NT */
-   struct group *gr;
-   if (!(gr = getgrnam(name)))
+   struct group *gr, grbuf;
+   char buf[4096];
+   if (getgrnam_r(name, &grbuf, buf, 4096, &gr)!=0)
       return -1;
    return gr->gr_gid;
 #endif					/* NT */
@@ -507,8 +509,9 @@ struct b_record **rp;
 {
    int i;
    char mode[12], *user, *group;
-   struct passwd *pw;
-   struct group *gr;
+   struct passwd *pw, pwbuf;
+   struct group *gr, grbuf;
+   char buf[4096];
 
    dp->dword = D_Record;
    dp->vword.bptr = (union block *)(*rp);
@@ -574,8 +577,7 @@ struct b_record **rp;
 #if NT
    (*rp)->fields[4] = (*rp)->fields[5] = emptystr;
 #else					/* NT */
-   pw = getpwuid(st->st_uid);
-   if (!pw) {
+   if(getpwuid_r(st->st_uid, &pwbuf, buf, 4096, &pw)!=0){
       sprintf(mode, "%d", st->st_uid);
       user = mode;
    } else
@@ -583,8 +585,7 @@ struct b_record **rp;
    StrLoc((*rp)->fields[4]) = alcstr(user, strlen(user));
    StrLen((*rp)->fields[4]) = strlen(user);
    
-   gr = getgrgid(st->st_gid);
-   if (!gr) {
+   if (getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr)!=0){
       sprintf(mode, "%d", st->st_gid);
       group = mode;
    } else

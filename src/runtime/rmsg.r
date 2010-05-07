@@ -402,10 +402,11 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       }
    else {
 #if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
-      struct passwd* passwd = getpwuid(getuid());
-      if (passwd != NULL) {
+      struct passwd* pw, pwbuf;      
+      char buf[1024];
+      if(getpwuid_r(getuid(), &pwbuf, buf, 1024, &pw)==0){
 	 snprintf(useraddr, sizeof(useraddr), "%s@%s", 
-		  passwd->pw_name, smtpserver);
+		  pw->pw_name, smtpserver);
 	 goto got_useraddr;
 	 }
 #endif

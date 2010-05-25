@@ -345,6 +345,15 @@ int nargs, *n;
          return I_Builtin;
       }
 
+#ifdef StackCheck
+   /*
+    * Make a stab at catching interpreter stack overflow.  This does
+    * not detect C stack overflow.
+    */
+   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->stackend)){
+      fatalerr(301, NULL);
+      }
+#else					/* StackCheck */
 #ifndef MultiThread
    /*
     * Make a stab at catching interpreter stack overflow.  This does
@@ -354,6 +363,7 @@ int nargs, *n;
       ((char *)sp + PerilDelta) > (char *)stackend) 
          fatalerr(301, NULL);
 #endif					/* MultiThread */
+#endif					/* StackCheck */
 
    /*
     * Build the procedure frame.

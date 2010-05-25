@@ -726,11 +726,13 @@ struct b_coexpr {		/* co-expression stack block */
    inst es_oldipc;              /*   oldipc */
    word es_ilevel;		/*   interpreter level */
    word *es_sp;			/*   sp */
+   word *stack;			/*   beginning of interpreter stack */
+   word *stackend;		/*   end of interpreter stack */
    dptr tvalloc;		/*   where to place transmitted value */
    struct descrip freshblk;	/*   refresh block pointer */
    struct astkblk *es_actstk;	/*   pointer to activation stack structure */
 
-   word cstate[CStateSize];	/*   C state information */
+   word cstate[CStateSize];	/*   C state information (registers, etc.) */
 
    #ifdef MultiThread
       struct progstate *program;

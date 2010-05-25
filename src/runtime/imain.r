@@ -649,7 +649,11 @@ void main(int argc, char **argv)
     */
 
 {
+#ifdef StackCheck
+    unsigned *temp_stackend=BlkD(k_current,Coexpr)->stackend, *temp_sp=sp;
+#else					/* StackCheck */
     unsigned *temp_stackend=stackend, *temp_sp=sp;
+#endif					/* StackCheck */
     inst temp_ipc=ipc;
     struct gf_marker *temp_gfp=gfp;
     struct ef_marker *temp_efp=efp;
@@ -682,8 +686,13 @@ void main(int argc, char **argv)
           }
           classname[k]=0;
 
-          stackend = stack + mstksize/WordSize;
-          sp = stack + Wsizeof(struct b_coexpr);
+#ifdef StackCheck
+          BlkD(k_current,Coexpr)->stackend = BlkD(k_current,Coexpr)->stack + mstksize/WordSize;
+          sp = BlkD(k_current,Coexpr)->stack + Wsizeof(struct b_coexpr);
+#else					/* StackCheck */
+	  stackend = stack + mstksize/WordSize;
+	  sp = stack + Wsizeof(struct b_coexpr);
+#endif					/* StackCheck */
 
           ipc.opnd = istart;
           *ipc.op++ = Op_Noop;
@@ -735,7 +744,11 @@ void main(int argc, char **argv)
 	  }
        }
 
+#ifdef StackCheck
+    BlkD(k_current,Coexpr)->stackend=temp_stackend;
+#else					/* StackCheck */
     stackend=temp_stackend;
+#endif					/* StackCheck */
     sp=temp_sp;
     ipc=temp_ipc;
     gfp=temp_gfp;
@@ -752,9 +765,13 @@ void main(int argc, char **argv)
     *  Point sp at word after b_coexpr block for &main, point ipc at initial
     *	icode segment, and clear the gfp.
     */
-
+#ifdef StackCheck
+   BlkD(k_current,Coexpr)->stackend = BlkD(k_current,Coexpr)->stack + mstksize/WordSize;
+   sp = BlkD(k_current,Coexpr)->stack + Wsizeof(struct b_coexpr);
+#else					/* StackCheck */
    stackend = stack + mstksize/WordSize;
    sp = stack + Wsizeof(struct b_coexpr);
+#endif					/* StackCheck */
 
    ipc.opnd = istart;
    *ipc.op++ = Op_Noop;  /* aligns Invoke's operand */	/*	[[I?]] */
@@ -1125,12 +1142,17 @@ void xmfree()
    if (mainhead == NULL) return;	/* already xmfreed */
    free((pointer)mainhead->es_actstk);	/* activation block for &main */
    mainhead->es_actstk = NULL;
+#ifdef StackCheck
+   free((pointer)mainhead->stack);	/* interpreter stack */
+   mainhead->stack = NULL;
+#else					/* StackCheck */
+   free((pointer)stack);		/* interpreter stack */
+   stack = NULL;
+#endif					/* StackCheck */
    mainhead = NULL;
 
    free((pointer)code);			/* icode */
    code = NULL;
-   free((pointer)stack);		/* interpreter stack */
-   stack = NULL;
    /*
     * more is needed to free chains of heaps, also a multithread version
     * of this function may be needed someday.

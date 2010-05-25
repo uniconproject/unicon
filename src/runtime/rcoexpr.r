@@ -29,7 +29,6 @@ struct b_coexpr *sblkp;
     */
    struct b_refresh *rblkp = (struct b_refresh *)BlkLoc(sblkp->freshblk);
 
-
 #if COMPILER
    na = rblkp->nargs;                /* number of arguments */
    nl = rblkp->nlocals;              /* number of locals */
@@ -81,7 +80,12 @@ struct b_coexpr *sblkp;
 #endif					/* UpStack */
 
    sblkp->es_argp = (dptr)newsp;  /* args are first thing on stack */
-
+#ifdef StackCheck
+   sblkp->stack = newsp;
+   sblkp->stackend = (word *)
+      ((word)((char *)sblkp + (stksize - sizeof(*sblkp))/2)
+         &~((word)WordSize*StackAlign-1));
+#endif					/* StackCheck */
 #endif					/* COMPILER */
 
    /*

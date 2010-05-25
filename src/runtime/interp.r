@@ -323,7 +323,7 @@ Deliberate Syntax Error
 dptr clintsrargp;
 #endif					/* !MultiThread */
 
-#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal,e_operand,e_syntax)
+#begdef interp_macro(interp_x,e_intcall,e_stack,e_fsusp,e_osusp,e_bsusp,e_ocall,e_ofail,e_tick,e_line,e_loc,e_opcode,e_fcall,e_prem,e_erem,e_intret,e_psusp,e_ssusp,e_pret,e_efail,e_sresum,e_fresum,e_oresum,e_eresum,e_presum,e_pfail,e_ffail,e_frem,e_orem,e_fret,e_oret,e_literal,e_operand,e_syntax,e_cstack)
 
 /*
  * The main loop of the interpreter.
@@ -354,10 +354,23 @@ int interp_x(int fsig,dptr cargp)
 #if e_intcall
    EVVal(fsig, e_intcall);
 #endif
-#if e_stack
-   EVVal(DiffPtrs(sp, stack), e_stack);
-#endif
+#if e_cstack
+#ifdef StackCheck
+   EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+   EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
+#endif					/* e_cstack */
 
+#ifdef StackCheck
+   /*
+    * Make a stab at catching interpreter stack overflow.  This does
+    * not detect C stack overflow.
+    */
+   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->stackend)){
+         fatalerr(301, NULL);
+	 }
+#else					/* StackCheck */
 #ifndef MultiThread
    /*
     * Make a stab at catching interpreter stack overflow.  This does
@@ -367,6 +380,7 @@ int interp_x(int fsig,dptr cargp)
       ((char *)sp + PerilDelta) > (char *)stackend) 
          fatalerr(301, NULL);
 #endif					/* MultiThread */
+#endif					/* StackCheck */
 
 #ifdef Polling
    if (!pollctr--) {
@@ -970,6 +984,16 @@ Deliberate Syntax Error
                   bp = BlkLoc(value_tmp);
                   args = (int)Blk(bp,List)->size;
 
+#ifdef StackCheck
+		  /*
+		   * Make a stab at catching interpreter stack overflow.
+		   * This does not detect C stack overflow.
+		   */
+		  if ((char *)sp + args * sizeof(struct descrip) + PerilDelta >
+                       (char *)(BlkD(k_current,Coexpr)->stackend)) {
+		     fatalerr(301, NULL);
+		     }
+#else					/* StackCheck */
 #ifndef MultiThread
 		  /*
 		   * Make a stab at catching interpreter stack overflow.
@@ -981,6 +1005,7 @@ Deliberate Syntax Error
                        (char *)stackend))
 		     fatalerr(301, NULL);
 #endif					/* MultiThread */
+#endif					/* StackCheck */
 
                   for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
 		       bp = Blk(bp,Lelem)->listnext) {
@@ -1020,6 +1045,20 @@ invokej:
 	    dptr carg;
 
 	    ExInterp;
+#if e_stack
+	    EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_stack);
+#endif
+
+#ifdef StackCheck
+	    /*
+	     * Make a stab at catching interpreter stack overflow.  This does
+	     * not detect C stack overflow.
+	     */
+	    if (((char *)sp + PerilDelta) >
+		(char *)(BlkD(k_current,Coexpr)->stackend))
+	       fatalerr(301, NULL);
+#endif					/* StackCheck */
+
 	    type = invoke(args, &carg, &nargs);
 	    EntInterp;
 
@@ -1191,7 +1230,11 @@ Unmark_uw:
 	       --ilevel;
 	       ExInterp;
 	       EVVal(A_Unmark_uw, e_intret);
-               EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+	       EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 	       return A_Unmark_uw;
 	       }
 
@@ -1318,7 +1361,11 @@ Lsusp_uw:
 		  --ilevel;
 		  ExInterp;
                   EVVal(A_Lsusp_uw, e_intret);
-                  EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+		  EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+		  EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 		  return A_Lsusp_uw;
 		  }
 	       rsp = (word *)efp - 1;
@@ -1445,7 +1492,11 @@ Eret_uw:
 	       --ilevel;
 	       ExInterp;
                EVVal(A_Eret_uw, e_intret);
-               EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+	       EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 	       return A_Eret_uw;
 	       }
 	    rsp = (word *)efp - 1;
@@ -1515,7 +1566,11 @@ Pret_uw:
 	       ExInterp;
 
                EVVal(A_Pret_uw, e_intret);
-               EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+	       EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 	       return A_Pret_uw;
 	       }
 	   
@@ -1627,7 +1682,11 @@ efail_noev:
                      EVVal((word)0, e_fresum);
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
-                     EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+                     EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 		     return A_Resume;
 
 		  case G_Osusp:
@@ -1635,7 +1694,11 @@ efail_noev:
                      EVVal((word)0, e_oresum);
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
-                     EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+                     EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 		     return A_Resume;
 
 		  case G_Csusp:
@@ -1643,7 +1706,11 @@ efail_noev:
                      EVVal((word)0, e_eresum);
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
-                     EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+                     EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 		     return A_Resume;
 
 		  case G_Esusp:
@@ -1687,7 +1754,11 @@ Pfail_uw:
 	       --ilevel;
 	       ExInterp;
                EVVal(A_Pfail_uw, e_intret);
-               EVVal(DiffPtrs(sp, stack), e_stack);
+#ifdef StackCheck
+               EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+#else					/* StackCheck */
+               EVVal(DiffPtrs(sp, stack), e_cstack);
+#endif					/* StackCheck */
 	       return A_Pfail_uw;
 	       }
 	    efp = pfp->pf_efp;
@@ -2057,8 +2128,8 @@ interp_quit:
 #enddef
 
 #ifdef MultiThread
-interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret,E_Literal,E_Operand,E_Syntax)
+interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret,E_Literal,E_Operand,E_Syntax,E_Cstack)
 #else					/* MultiThread */
 interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 #endif					/* MultiThread */

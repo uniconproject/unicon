@@ -236,8 +236,10 @@ int tallyopt = 0;			/* want tally results output? */
 int dumped = 0;				/* non-zero if reloaded from dump */
 #endif					/* ExecImages */
 
+#ifndef StackCheck
 word *stack;				/* Interpreter stack */
 word *stackend; 			/* End of interpreter stack */
+#endif					/* StackCheck */
 
 #ifdef MultipleRuns
 extern word coexp_ser;
@@ -766,13 +768,20 @@ char *argv[];
    rootstring.size = MaxStrSpace;
    rootblock.size  = MaxAbrSize;
 
+   /*
+    * Set default string and block regions to 1% of physical memory.
+    * Set the default interpreter stack size to (1%/4) of physical memory.
+    */
    { long l, onepercent;
      if (l = physicalmemorysize()) {
 	onepercent = l / 100;
 	if (rootstring.size < onepercent) rootstring.size = onepercent;
 	if (rootblock.size < onepercent) rootblock.size = onepercent;
+	if (mstksize < (onepercent / 4) / WordSize) {
+	   mstksize = (onepercent / 4) / WordSize;
+	   }
 	}
-     }
+   }
 
 #endif					/* COMPILER */
 
@@ -987,9 +996,12 @@ Deliberate Syntax Error
 #if COMPILER
    mainhead = (struct b_coexpr *)malloc((msize)sizeof(struct b_coexpr));
 #else					/* COMPILER */
+#ifdef StackCheck
+   mainhead = (struct b_coexpr *)malloc((msize)mstksize);
+#else					/* StackCheck */
    stack = (word *)malloc((msize)mstksize);
    mainhead = (struct b_coexpr *)stack;
-
+#endif					/* StackCheck */
 #endif					/* COMPILER */
 
    if (mainhead == NULL)
@@ -1007,6 +1019,10 @@ Deliberate Syntax Error
    mainhead->tvalloc = NULL;
    mainhead->freshblk = nulldesc;	/* &main has no refresh block. */
    mainhead->tvalloc = NULL;
+#ifdef StackCheck
+   mainhead->stack = (word *)(mainhead+1);
+#endif					/* StackCheck */
+
 					/*  This really is a bug. */
 #ifdef MultiThread
    mainhead->program = &rootpstate;
@@ -1897,7 +1913,6 @@ void datainit()
    pfp = 0;				/* Procedure frame pointer */
    sp = NULL;				/* Stack pointer */
 
-
 					/* In module rmemmgt.r:	*/
    coexp_ser = 2;
    list_ser = 1;
@@ -1911,7 +1926,6 @@ void datainit()
 
 					/* In module time.c: */
    first_time = 1;
-
 
 #endif					/* MultipleRuns */
 #endif					/* COMPILER */
@@ -1932,6 +1946,10 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    struct progstate *pstate = NULL;
    if (coexp == NULL) return NULL;
    pstate = coexp->program;
+#ifdef StackCheck
+   coexp->stack = (word *)(pstate+1);
+   coexp->stackend = (word *)((char *)(pstate+1)+(stacksize/2));
+#endif					/* StackCheck */
    /*
     * Initialize values.
     */

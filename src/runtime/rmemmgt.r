@@ -1583,6 +1583,13 @@ long physicalmemorysize()
    i *= sysconf(_SC_PAGE_SIZE);
    return i;
 #else					/* SUN */
+#ifdef MacOSX
+   unsigned long mem;
+   size_t len = sizeof(mem);
+   sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
+   i = mem;
+   return i;
+#else					/* MacOSX */
    /*
     * old method:, use meminfo, if it is present
     */
@@ -1607,6 +1614,7 @@ long physicalmemorysize()
     * No meminfo? Could try "top", but don't want to launch external process
     * during initialization...
     */
+#endif					/* MacOSX */
 #endif					/* SUN */
 #endif					/* UNIX */
 #if NT

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.58 2010-05-07 06:47:29 to_jafar Exp $
+ * $Id: fxposix.ri,v 1.59 2010-05-25 08:06:40 jeffery Exp $
  */
 
 /*
@@ -2545,8 +2545,19 @@ function{0,1} getgr(g)
 #if NT
 	    fail;
 #else					/* NT */
-	    if (getgrent_r( &grbuf, buf, 4096, &gr)!=0)
+#ifdef HAVE_GETGRENT_R
+	    if (getgrent_r( &grbuf, buf, 4096, &gr) != 0)
 	      fail;
+#else					/* HAVE_GETGRENT_R */
+	    /*
+	     * Need to lock long enough to get data copied out, except on
+	     * MacOSX this is guaranteed to be thread-safe.
+	     */
+	    if ((gr = getgrent()) == NULL)
+	       fail;
+	    grbuf = *gr;
+	    gr = &grbuf;
+#endif					/* HAVE_GETGRENT_R */
 
 	    if (make_group(gr, &result) == 0)
 	       syserr("failed to create posix record constructor");

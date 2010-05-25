@@ -657,6 +657,12 @@
 #define E_Stack 0
 #endif
 
+#if defined(EventMon) || defined(E_Cstack)
+#undef E_Cstack
+#define E_Cstack		'\345'		/* C stack depth */
+#else
+#define E_Cstack 0
+#endif
 
    /*
     * Expression events
@@ -989,7 +995,6 @@
 270 271 272 273 274 275 276 277
 
 300 303
-345
 365 366 367
 371 372 373 374 375 376 377
 */

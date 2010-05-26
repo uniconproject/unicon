@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.59 2010-05-25 08:06:40 jeffery Exp $
+ * $Id: fxposix.ri,v 1.60 2010-05-26 19:53:16 jeffery Exp $
  */
 
 /*
@@ -674,11 +674,11 @@ function{0,1} flock(f, cmd)
       if (flock(fd, option) != 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
-      }
+	 }
+      return nulldesc;
 #else					/* BSD */
       fail;
 #endif					/* BSD */
-      return nulldesc;
    }
 end
 

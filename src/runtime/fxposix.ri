@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.60 2010-05-26 19:53:16 jeffery Exp $
+ * $Id: fxposix.ri,v 1.61 2010-05-26 20:11:43 jeffery Exp $
  */
 
 /*
@@ -1748,7 +1748,14 @@ function{0,1} name(t)
       int l;
       struct tm gmt;
 #if i
+#if SUN
+      /*
+       * Solaris is non-posix by default.
+       */
+      if ((p = ctime_r((time_t *)&t, buf, 32)) == NULL) runerr(0);
+#else					/* SUN */
       if ((p = ctime_r((time_t *)&t, buf)) == NULL) runerr(0);
+#endif					/* SUN */
 #else
       if (gmtime_r((time_t *)&t, &gmt) == NULL) runerr(0);
       if ((p = asctime_r(&gmt, buf)) == NULL) runerr(0);

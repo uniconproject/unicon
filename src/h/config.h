@@ -138,6 +138,11 @@
    #define MultiThread
 #endif					/* NoMultiThread */
 
+#ifndef NoINTMAIN
+   #undef INTMAIN
+   #define INTMAIN
+#endif					/* NoINTMAIN */
+
 #ifndef NoProfil
    #undef HaveProfil
    #define HaveProfil

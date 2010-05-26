@@ -135,8 +135,8 @@
   }
 #define EVQUEEMPTY(ws) (BlkD((ws)->listp,List)->size == 0)
 
-#define SHARED          0
-#define MUTABLE         1
+#define CLR_SHARED          0
+#define CLR_MUTABLE         1
 #define MAXCOLORNAME	40
 /*
  * color structure, inspired by X code (xwin.h)
@@ -145,7 +145,7 @@ typedef struct wcolor {
   int		refcount;
   char		name[6+MAXCOLORNAME];	/* name for WAttrib & WColor reads */
   SysColor	c;
-  int           type;			/* SHARED or MUTABLE */
+  int           type;			/* CLR_SHARED or CLR_MUTABLE */
 } *wclrp;
 
 /*

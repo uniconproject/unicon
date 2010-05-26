@@ -155,7 +155,7 @@ int is_iconcolor;
       wd->colors[j].g = g;
       wd->colors[j].b = b;
       wd->colors[j].c = color.pixel;
-      wd->colors[j].type = SHARED;
+      wd->colors[j].type = CLR_SHARED;
       (*theColors)[(*numColors)++] = j;
       buckinsert(wd, &(wd->colors[j]));
       return &(wd->colors[j]);
@@ -352,7 +352,7 @@ unsigned int r,g,b;
       wd->colors[j].g = g;
       wd->colors[j].b = b;
       wd->colors[j].c = color.pixel;
-      wd->colors[j].type = SHARED;
+      wd->colors[j].type = CLR_SHARED;
       (*theColors)[(*numColors)++] = j;
       buckinsert(wd, &(wd->colors[j]));
       return &(wd->colors[j]);
@@ -445,7 +445,7 @@ wbp w1, w2;
 
    for (i1 = 0; i1 < ws1->numColors; i1++) {
       j = ws1->theColors[i1];
-      if (wd->colors[j].refcount > 0 && wd->colors[j].type != MUTABLE) {
+      if (wd->colors[j].refcount > 0 && wd->colors[j].type != CLR_MUTABLE) {
 	 for (i2 = 0; i2 < ws2->numColors; i2++) {
 	    if (j == ws2->theColors[i2])
 	       break;
@@ -527,7 +527,7 @@ int extent;
        */
       if (((extent==0) && (j == w->context->fg)) ||
 	  ((extent==0) && (j == w->context->bg)) ||
-	  (wd->colors[j].type == MUTABLE)) {
+	  (wd->colors[j].type == CLR_MUTABLE)) {
 	     theColors[numSaved++] = j;
 	     continue;
 	     }
@@ -638,7 +638,7 @@ char *s;
    wd->colors = calloc(DMAXCOLORS, sizeof (struct wcolor));
    strcpy(wd->colors[0].name,"black");
    wd->colors[0].refcount = 1;
-   wd->colors[0].type = SHARED;
+   wd->colors[0].type = CLR_SHARED;
    wd->colors[0].r = wd->colors[0].g = wd->colors[0].b = 0;
    color.red = color.green = color.blue = 0;
    if (XAllocColor(wd->display, wd->cmap, &color))
@@ -648,7 +648,7 @@ char *s;
 
    strcpy(wd->colors[1].name,"white");
    wd->colors[1].refcount = 1;
-   wd->colors[1].type = SHARED;
+   wd->colors[1].type = CLR_SHARED;
    wd->colors[1].r = wd->colors[1].g = wd->colors[1].b = 65535;
    color.red = color.green = color.blue = 65535;
    if (XAllocColor(wd->display, wd->cmap, &color))

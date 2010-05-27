@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.61 2010-05-26 20:11:43 jeffery Exp $
+ * $Id: fxposix.ri,v 1.62 2010-05-27 21:14:47 jeffery Exp $
  */
 
 /*
@@ -600,9 +600,36 @@ function{0,1} truncate(f, l)
       }
 end
 
+#if NT
+#define HAVE_FLOCK 1
+int flock(int fd, int operation)
+{
+   long flength;
+   if ((flength = _filelength(fd)) < 0) {
+      return -1;
+      }
+
+   if (_locking(fd, operation, flength) != 0) {
+      return -1;
+      }
+   return 0;
+}
+#define LOCK_EX LK_LOCK
+#define LOCK_NB LK_NBLCK
+#ifdef NTGCC
+#define LOCK_UN LK_UNLOCK
+#else					/* NTGCC */
+#define LOCK_UN LK_UNLCK
+#endif					/* NTGCC */
+#endif					/* NT */
+
 "flock() - apply or remove a lock on a file."
 
+#ifdef HAVE_FLOCK
 function{0,1} flock(f, cmd)
+#else					/* HAVE_FLOCK */
+function{0} flock(f, cmd)
+#endif					/* HAVE_FLOCK */
    declare {
       tended char *c;
    }
@@ -619,48 +646,21 @@ function{0,1} flock(f, cmd)
       int fd, i=0;
       long flength;
 
+#ifdef HAVE_FLOCK
 #if HAVE_LIBZ 
       if (BlkD(f,File)->status & Fs_Compress) {
          fail;
          }
 #endif					/* HAVE_LIBZ */
 
-#if NT
-      while (c[i])
-	 switch (c[i++]) {
-	 case 'x': option |= LK_LOCK; break;
-	 /*
-	 case 's': option |= LOCK_SH; break;
-	 */
-	 case 'b': option |= LK_NBLCK; break;
-#ifdef NTGCC
-	 case 'u': option |= LK_UNLOCK; break;
-#else					/* NTGCC */
-	 case 'u': option |= LK_UNLCK; break;
-#endif					/* NTGCC */
-	 default: runerr(1044, cmd);
-	 }
-
-      IntVal(amperErrno) = 0;
-      
-      if ((fd = get_fd(f, 0)) < 0)
-	 runerr(174, f);
-	   
-      if ((flength = _filelength(fd)) < 0)
-	  irunerr(174, (int)flength);
-
-      if (_locking(fd, option, flength) != 0) {
-	 IntVal(amperErrno) = errno;
-	 fail;
-      }
-      return nulldesc;
-#endif					/* NT */
-#if defined(BSD) || defined(BSD_4_4_LITE) || defined(IRIS4D) || defined(Linux)
-
       while (c[i])
 	 switch (c[i++]) {
 	 case 'x': option |= LOCK_EX; break;
+#if NT
+	 case 's': fail;
+#else
 	 case 's': option |= LOCK_SH; break;
+#endif
 	 case 'b': option |= LOCK_NB; break;
 	 case 'u': option |= LOCK_UN; break;
 	 default: runerr(1044, cmd);
@@ -676,9 +676,10 @@ function{0,1} flock(f, cmd)
 	 fail;
 	 }
       return nulldesc;
-#else					/* BSD */
+#else					/* HAVE_FLOCK */
       fail;
-#endif					/* BSD */
+#endif					/* HAVE_FLOCK */
+
    }
 end
 

@@ -2300,7 +2300,7 @@ int fg;
       return setfgrgb(w, r * 257, g * 257, b * 257);
       }
    for (i = 2; i < DMAXCOLORS; i++)
-      if (wd->colors[i].type == MUTABLE && wd->colors[i].c == -fg - 1)
+      if (wd->colors[i].type == CLR_MUTABLE && wd->colors[i].c == -fg - 1)
 	 break;
    if (i == DMAXCOLORS) return Failed;
    wc->fg = i;
@@ -2354,7 +2354,7 @@ int bg;
       return setbgrgb(w, r * 257, g * 257, b * 257);
       }
    for (i = 2; i < DMAXCOLORS; i++)
-      if (wd->colors[i].type == MUTABLE && wd->colors[i].c == -bg - 1)
+      if (wd->colors[i].type == CLR_MUTABLE && wd->colors[i].c == -bg - 1)
 	 break;
    if (i == DMAXCOLORS) return Failed;
    wc->bg = i;
@@ -3210,7 +3210,7 @@ int *retval;
    i = alc_centry(wd);
    if (i == 0)
       return Failed;
-   wd->colors[i].type = MUTABLE;
+   wd->colors[i].type = CLR_MUTABLE;
    wd->colors[i].c = pixels[0];
 
 
@@ -3275,7 +3275,7 @@ int mute_index;
    d = dp->display;
 
    for (i = 2; i < DMAXCOLORS; i++)
-      if (dp->colors[i].type == MUTABLE && dp->colors[i].c == - mute_index - 1)
+      if (dp->colors[i].type == CLR_MUTABLE && dp->colors[i].c == -mute_index-1)
 	    break;
    if (i == DMAXCOLORS)
       return NULL;
@@ -3314,7 +3314,7 @@ int mute_index;
    d = dp->display;
 
    for (i = 2; i < DMAXCOLORS; i++)
-      if (dp->colors[i].type == MUTABLE && dp->colors[i].c == - mute_index - 1)
+      if (dp->colors[i].type == CLR_MUTABLE && dp->colors[i].c == -mute_index-1)
             break;
    if (i != DMAXCOLORS)
       free_xcolor(w, dp->colors[i].c); 
@@ -3339,7 +3339,7 @@ char *s;
 
    for (i = 2; i < DMAXCOLORS; i++)
       if (dp->colors[i].r == color.red && dp->colors[i].g == color.green
-      && dp->colors[i].b == color.blue && dp->colors[i].type != MUTABLE)
+      && dp->colors[i].b == color.blue && dp->colors[i].type != CLR_MUTABLE)
          break;
    if (i != DMAXCOLORS)
       free_xcolor(w, dp->colors[i].c);
@@ -3829,7 +3829,7 @@ struct imgmem *imem;
       if (cp->c == c) {
 	 lastcp = cp;
       foundc:
-	 if (cp->type == MUTABLE)
+	 if (cp->type == CLR_MUTABLE)
 	    *rv = -c - 1;
 	 else {
             *rv = 1;

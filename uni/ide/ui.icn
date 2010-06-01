@@ -32,6 +32,7 @@ $include "guih.icn"
 link mainbar
 link getpaths
 link classbrowser
+link enqueue
 
 global pnlToolbar, MsgBox, EditBox, FileTabSet, ClassTabSet, DevTabSet,
        FileBrowser, linebreak, dialogself, browser, docpath,
@@ -118,12 +119,19 @@ $endif
    end
 
    method init_dialog()
+   local wid, ht
       ui_initialize()
       docpath := &null
       put(opened_files_list,"scratch")
       put(opened_files_locs,\filedirectory)
       ide.handle_openfile(&null, \startfile)
       menubar.set_font()
+      # queue up an lpress to set the initial focus to the editor buffer
+      if \win then {
+	  wid := WAttrib(win, "width")
+	  ht := WAttrib(win, "height")
+	  Enqueue(\win, &lpress, wid/2, ht/2)
+      }
    end
 
    method on_close(ev)

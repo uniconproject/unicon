@@ -260,10 +260,10 @@ function{0,1} getenv(s)
       }
 
    inline {
-      char *p, sbuf[MaxCvtLen+1];
+      char *p, sbuf[4096];
       long l;
 
-      if (getenv_r(s,sbuf,MaxCvtLen) == 0) {
+      if (getenv_r(s,sbuf,4095) == 0) {
 	 l = strlen(sbuf);
 	 Protect(p = alcstr(sbuf,l),runerr(0));
 	 return string(l,p);

@@ -780,6 +780,9 @@ char *argv[];
 	if (mstksize < (onepercent / 4) / WordSize) {
 	   mstksize = (onepercent / 4) / WordSize;
 	   }
+	if (stksize < (onepercent / 100) / WordSize) {
+	   stksize = (onepercent / 100) / WordSize;
+	   }
 	}
    }
 

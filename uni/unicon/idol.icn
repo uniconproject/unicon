@@ -72,19 +72,35 @@ end
 global imported
 
 procedure import_class(node)
-   local s
+   local s, pack
    /imported := table()
    if type(node)=="treenode" & node.label=="implist" then {
       import_class(node.children[1])
       import_class(node.children[3])
       }
-   else if node.tok = (IDENT|STRINGLIT) then {
-       tempp := Package(node.s)
-       if /tempp.dir then {
-          uni_error("Unable to import package " || node.s)
-          }
-       tempp.add_imported()
-   }
+   else if node.tok = IDENT then {
+      tempp := Package(node.s)
+      if /tempp.dir then {
+	 uni_error("Unable to import package " || node.s)
+	 }
+      tempp.add_imported()
+      }
+   else if node.tok = STRINGLIT then {
+      node.s ? {
+	  move(1)
+	  if pack := tab(find(".")) then {
+	      move(1)
+	      s := tab(-1)
+	  }
+	  else pack := tab(-1)
+      }
+
+      tempp := Package(pack)
+      if /tempp.dir then {
+	 uni_error("Unable to import package " || node.s)
+	 }
+      tempp.add_imported(s)
+      }
 end
 
 #
@@ -97,16 +113,17 @@ end
 class Package : declaration(files, dir, classes)
    #
    # Add to the two global tables of imported symbols from this package's
-   # set of symbols.
+   # set of symbols.  If sym is non-null, we are importing an individual
+   # symbol (import "pack.symbol").
    #
-   method add_imported()
+   method add_imported(sym)
       local s, f
 
-      if /dir then
-         return
+      if /dir then return
       
-      f := open(dir || "/uniclass", "dr") | stop("Couldn't re-open uniclass db in " || dir)
-      every s := fields.foreach() do {
+      f := open(dir || "/uniclass", "dr") |
+	 stop("Couldn't re-open uniclass db in " || dir)
+      every s := (if \sym then sym else fields.foreach()) do {
          if member(imported, s) then
              put(imported[s], self.name)
           else {
@@ -165,7 +182,12 @@ class Package : declaration(files, dir, classes)
    stop("can't write package spec for ", image(name))
    end
 initially(name)
-   self.name := name
+   if name[1] == name[-1] == "\"" then {
+       name := name[2:-1]
+       self.name := ((name ? tab(find("."))) | name)
+       }
+   else
+       self.name := name
    if dbe := fetchspec(self.name) then {
       Read(dbe.entry)
       self.dir := dbe.dir

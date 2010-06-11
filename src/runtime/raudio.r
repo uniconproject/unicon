@@ -195,6 +195,7 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
 	DWORD dwThreadId;
 	HANDLE hThread;
 #endif
+
 /*
 struct AudioFile{
 	int doneflag;
@@ -265,18 +266,20 @@ void micro_sleep(unsigned int n)
  */
 int fixup_function_pointers(void)
 {
-   Protect(talcGetAudioChannel = (ALfloat (*)(ALuint channel))
-      GP("alcGetAudioChannel_LOKI"), return 0);
+   talcGetAudioChannel = (ALfloat (*)(ALuint channel)) GP("alcGetAudioChannel_LOKI");
+   if (talcGetAudioChannel == NULL) {
+      return 0;
+      }
+      else
+
    Protect(talcSetAudioChannel = (void (*)(ALuint channel, ALfloat volume))
       GP("alcSetAudioChannel_LOKI"), return 0);
-   Protect(talMute   = (void (*)(void)) GP("alMute_LOKI"), return 0);
-   Protect(talUnMute = (void (*)(void)) GP("alUnMute_LOKI"), return 0);
-
+/*   Protect(talMute   = (void (*)(void)) GP("alMute_LOKI"), return 0);*/
+/*   Protect(talUnMute = (void (*)(void)) GP("alUnMute_LOKI"), return 0); */
    Protect(talReverbScale = (void (*)(ALuint sid, ALfloat param))
       GP("alReverbScale_LOKI"), return 0);
    Protect(talReverbDelay = (void (*)(ALuint sid, ALfloat param))
       GP("alReverbDelay_LOKI"), return 0);
-
    talBombOnError = (void (*)(void))GP("alBombOnError_LOKI");
 
    if (talBombOnError == NULL) {
@@ -285,16 +288,13 @@ int fixup_function_pointers(void)
        */
       return 0;
       }
-
    talBufferi = (void (*)(ALuint, ALenum, ALint ))	GP("alBufferi_LOKI");
-
    if (talBufferi == NULL) {
       /*
        * Could not GetProcAddress alBufferi_LOKI; fail.
        */
       return 0;
       }
-
    alCaptureInit    = (ALboolean (*)( ALenum, ALuint, ALsizei ))
       GP("alCaptureInit_EXT");
    alCaptureDestroy = (ALboolean (*)( void )) GP("alCaptureDestroy_EXT");
@@ -302,7 +302,6 @@ int fixup_function_pointers(void)
    alCaptureStop    = (ALboolean (*)( void )) GP("alCaptureStop_EXT");
    alCaptureGetData = (ALsizei (*)( ALvoid*, ALsizei, ALenum, ALuint ))
       GP("alCaptureGetData_EXT");
-
    talBufferWriteData = (tbwd)GP("alBufferWriteData_LOKI");
    if(talBufferWriteData == NULL) {
       /*
@@ -310,7 +309,6 @@ int fixup_function_pointers(void)
        */
       return 0;
       }
-
    talBufferAppendData = (ALuint (*)(ALuint, ALenum, ALvoid *, ALint, ALint))
       GP("alBufferAppendData_LOKI");
    talBufferAppendWriteData = (ALuint (*)(ALuint, ALenum, ALvoid *, ALint,
@@ -325,39 +323,37 @@ int fixup_function_pointers(void)
        */
       return 0;
       }
-
-   talutLoadRAW_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
+/*   talutLoadRAW_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
 					   ALuint size, ALuint freq,
 					   ALenum format))
       GP("alutLoadRAW_ADPCMData_LOKI");
    if (talutLoadRAW_ADPCMData == NULL) {
-      /* 
+       * 
        * Could not GP alutLoadRAW_ADPCMData_LOKI; fail.
-       */
-      return 0;
+       *
+      return 0; 
       }
-
    talutLoadIMA_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data,
 					   ALuint size, ALuint freq,
 					   ALenum format))
       GP("alutLoadIMA_ADPCMData_LOKI");
    if (talutLoadIMA_ADPCMData == NULL) {
-      /* 
+       * 
        * Could not GP alutLoadIMA_ADPCMData_LOKI; fail.
-       */
-      return 0;
+       *
+      return 0; 
       }
 
    talutLoadMS_ADPCMData = (ALboolean (*)(ALuint bid,ALvoid *data, ALuint size,
 			        	  ALuint freq,ALenum format))
                            GP("alutLoadMS_ADPCMData_LOKI");
-
    if( talutLoadMS_ADPCMData == NULL ) {
-      /* 
+       * 
        * Could not GP alutLoadMS_ADPCMData_LOKI; fail.
-       */
-      return 0;
+       *
+      return 0; 
       }
+*/
    return 1;
 }
 
@@ -366,11 +362,10 @@ ALboolean SourceIsPlaying(ALuint sid) {
    if (alIsSource(sid) == AL_FALSE) {
       return AL_FALSE;
       }
-
-   state = AL_INITIAL;
-   alGetSourceiv(sid, AL_SOURCE_STATE, &state);
+   alGetSourcei(sid, AL_SOURCE_STATE, &state);
+printf("state is %i\n", (int) state);
    switch(state) {
-   case AL_PLAYING:
+   case AL_PLAYING: 
    case AL_PAUSED:	  return AL_TRUE;
    default:
       break;
@@ -403,7 +398,8 @@ static void initMP3( void )
 
 static void cleanupMP3(void)
 {
-   alcDestroyContext(context_id);
+   if(context_id != NULL)
+      alcDestroyContext(context_id);
 #ifdef JLIB
    jv_check_mem();
 #endif
@@ -437,11 +433,13 @@ void * OpenAL_PlayMP3( void * args )
    /* Initialize ALUT. */
    context_id = alcCreateContext( dev, NULL );
    if (context_id == NULL) {
+      cleanupMP3();
       alcCloseDevice( dev );
       return NULL;
       }
    alcMakeContextCurrent( context_id );
    if (!fixup_function_pointers()) {
+      cleanupMP3();
       alcCloseDevice(dev);
       return NULL;
       }
@@ -476,9 +474,11 @@ void * OpenAL_PlayMP3( void * args )
       /*
        * Can't read the file's stated size; fail. Possibly more serious.
        */
+      fclose(fh)
       free(data);
       return NULL;
       }
+   fclose(fh)
    alutLoadMP3p = (mp3Loader *) alGetProcAddress((ALubyte *) MP3_FUNC);
    if (alutLoadMP3p == NULL) {
       /*
@@ -512,8 +512,9 @@ void * OpenAL_PlayMP3( void * args )
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)
 /* The following is for Ogg-Vorbis Support on top of OpenAL*/
-#define DATABUFSIZE 		4096
+#define DATABUFSIZE 		4096 
 #define VORBIS_FUNC		"alutLoadVorbis_LOKI"
+
 static ALuint vorbbuf; /* our buffer */
 static ALuint vorbsource = (ALuint ) -1;
 
@@ -524,16 +525,21 @@ vorbisLoader *alutLoadVorbisp = NULL;
 static void initOggVorbis( void )
 {
    start = time(NULL);
-   alGenBuffers( 1, &vorbbuf);
-   alGenSources( 1, &vorbsource);
-   alSourcei(  vorbsource, AL_BUFFER, vorbbuf );
-   alSourcei(  vorbsource, AL_LOOPING, AL_FALSE /*AL_TRUE*/ );
+   alGenSources(1, &vorbsource);
+   alGenBuffers(1, &vorbbuf);
+   alSourcei(vorbsource, AL_ROLLOFF_FACTOR, 0.0 );
+   alSource3f(vorbsource, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+   alSource3f(vorbsource, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
+   alSource3f(vorbsource, AL_POSITION, 0.0f, 0.0f, 0.0f);
+   alSourcei(vorbsource, AL_BUFFER, vorbbuf);
+   alSourcei(vorbsource, AL_LOOPING, AL_FALSE );
    return;
 }
 
 static void cleanupOggVorbis(void)
 {
-   alcDestroyContext(context_id);
+   if( context_id != NULL)
+      alcDestroyContext(context_id);
 #ifdef JLIB
    jv_check_mem();
 #endif
@@ -562,36 +568,31 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
    if ( dev == NULL ) {
       return NULL;
       }
-
    /* Initialize ALUT. */
    context_id = alcCreateContext( dev, NULL );
    if (context_id == NULL) {
+      cleanupOggVorbis();
       alcCloseDevice( dev );
       return NULL;
       }
    alcMakeContextCurrent( context_id );
    if (!fixup_function_pointers()) {
+      cleanupOggVorbis();
       alcCloseDevice(dev);
       return NULL;
       }
-   initOggVorbis();
-
    /* the global fname */
    if (stat(FilePtr->fname, &sbuf) == -1) {
       /* perror(FilePtr->fname);
        */
       return NULL;/*errno;*/
       }
-
-   size = sbuf.st_size;
-   data = malloc(size);
    if (data == NULL) {
       /*
        * Can't malloc, probably should runtime error
        */
       return NULL;
       }
-
    fh = fopen(FilePtr->fname, "rb");
    if(fh == NULL) {
       free(data);
@@ -600,37 +601,36 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
        */
       return NULL;
       }
+   size = sbuf.st_size;
+   data = malloc(size);
 
-   if (fread(data, size, 1, fh) <= 0){
+   if (fread(data, 1, size, fh) <= 0){
+      fclose(fh);
       free(data);
       return NULL;
       }
-
+   initOggVorbis();
+   fclose(fh); 
    alutLoadVorbisp = (vorbisLoader *) alGetProcAddress((ALubyte *)VORBIS_FUNC);
    if (alutLoadVorbisp == NULL) {
-      free(data);
       /* fprintf(stderr, "Could not GetProc %s\n", (ALubyte *) VORBIS_FUNC);
        *  exit(-4);
        */
       return NULL;
       }
-
    if (alutLoadVorbisp(vorbbuf, data, size) != AL_TRUE) {
       /* fprintf(stderr, "alutLoadVorbis failed\n");
        *  exit(-2);
        */
-      free(data);
       return NULL;
       }
-
    free(data);
    alSourcePlay( vorbsource );
-
    while (SourceIsPlaying(vorbsource) == AL_TRUE) {
       sleep(1);
-      if(FilePtr->doneflag) break;/* break the thread and stop playing */
+      if(FilePtr->doneflag) break; /* break the thread and stop playing */
       if(signe == 0)        break;
-      }
+      } 
    cleanupOggVorbis();
    alcCloseDevice( dev );
    done = 0;
@@ -728,6 +728,8 @@ static void initWAV(void)
 
 static void cleanupWAV(void)
 {
+   if(context_id != NULL)
+      alcDestroyContext(context_id);
 #ifdef JLIB
    jv_check_mem();
 #endif
@@ -770,6 +772,7 @@ void * OpenAL_PlayWAV( void * args )
 
    alcMakeContextCurrent( context_id );
    if (!fixup_function_pointers()) {
+      cleanupWAV();
       alcCloseDevice(dev);
       return NULL;
       }
@@ -786,7 +789,6 @@ void * OpenAL_PlayWAV( void * args )
       if(signe == 0)        break;
       }
    cleanupWAV();
-   alcDestroyContext( context_id );
    alcCloseDevice(  dev  );
    done = 0;
    return NULL;
@@ -795,9 +797,9 @@ void * OpenAL_PlayWAV( void * args )
 
 struct AudioFile * audioInit(char filename[])
 {
-   if (FilePtr == NULL)
+   if (FilePtr == NULL){
       FilePtr = (struct AudioFile *) malloc(sizeof(struct AudioFile));
-
+   }
    if (FilePtr != NULL) {
       FilePtr->doneflag = 0;
       FilePtr->fname = strdup(filename);
@@ -815,12 +817,12 @@ struct AudioFile * audioInit(char filename[])
    return NULL;
 }
 
+
 /* This is a general Audio API Function    */
 struct AudioFile * StartAudioThread(char filename[])
 {
    char *sp;
    static struct AudioFile *Ptr;
-
    Ptr = audioInit(filename);
    if (Ptr != NULL) {
       if((sp = strstr(Ptr->fname,".mp3")) != NULL) {

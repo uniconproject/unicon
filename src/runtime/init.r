@@ -654,6 +654,10 @@ char *argv[];
 
 #endif					/* OS2 */
 
+#ifdef Concurrent
+   pthread_mutex_init(&mutexmutex, NULL);
+#endif
+
 #if COMPILER
    curstring = &rootstring;
    curblock  = &rootblock;

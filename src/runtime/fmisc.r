@@ -2267,6 +2267,62 @@ end
 #endif					/* MultiThread */
 
 #ifdef Concurrent
+
+pthread_mutex_t* mutexes, mutexmutex;
+int maxmutexes;
+int nmutexes; 
+
+"mutex(x) - create and initialize a mutex. To be extended later to allow for naming mutexes."
+
+function{1} mutex(x)
+   abstract { return integer }
+   body{
+	pthread_mutex_lock(&mutexmutex);
+	if(nmutexes==maxmutexes){
+	   maxmutexes*=2+64;
+	   mutexes=realloc(mutexes, maxmutexes);
+	   if (mutexes==NULL)
+	     syserr("out of memory for mutexes!");
+  	   }
+	pthread_mutex_init(mutexes+nmutexes, NULL);
+        nmutexes++;
+	pthread_mutex_unlock(&mutexmutex);
+	return C_integer nmutexes;
+      }
+end
+
+"lock(x) - lock mutex x"
+
+function{1} lock(x)
+   if cnv:C_integer(x) then{
+      abstract { return integer}
+      body{
+         if (x<1 && x>nmutex)
+	    irunerr(101, x);
+	 pthread_mutex_lock(mutexes+x-1);
+         }
+      }  
+   else
+      runerr(101, x);
+end
+
+
+"unlock(x) - unlock mutex x"
+
+function{1} unlock(x)
+   if cnv:C_integer(x) then{
+      abstract { return integer}
+      body{
+         if (x<1 && x>nmutex)
+	    irunerr(101, x);
+	 pthread_mutex_unlock(mutexes+x-1);
+         }
+      }  
+   else
+      runerr(101, x);
+end
+
+
 "thread(x) - execute a concurrent thread that evaluates procedure x"
 
 function{1} thread(x)

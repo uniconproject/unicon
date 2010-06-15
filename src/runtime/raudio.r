@@ -474,7 +474,7 @@ void * OpenAL_PlayMP3( void * args )
       /*
        * Can't read the file's stated size; fail. Possibly more serious.
        */
-      fclose(fh)
+      fclose(fh);
       free(data);
       return NULL;
       }

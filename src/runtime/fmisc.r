@@ -2294,34 +2294,30 @@ end
 "lock(x) - lock mutex x"
 
 function{1} lock(x)
-   if cnv:C_integer(x) then{
-      abstract { return integer}
-      body{
-         if (x<1 && x>nmutex)
-	    irunerr(101, x);
-	 pthread_mutex_lock(mutexes+x-1);
-         }
-      }  
-   else
-      runerr(101, x);
+   if !cnv:C_integer(x) then
+      runerr(101, x)
+   abstract { return integer}
+   body{
+      if (x<1 || x>nmutexes)
+      	 irunerr(101, x);
+      pthread_mutex_lock(mutexes+x-1);
+      return C_integer 1;
+      }
 end
-
 
 "unlock(x) - unlock mutex x"
 
 function{1} unlock(x)
-   if cnv:C_integer(x) then{
-      abstract { return integer}
-      body{
-         if (x<1 && x>nmutex)
-	    irunerr(101, x);
-	 pthread_mutex_unlock(mutexes+x-1);
-         }
-      }  
-   else
-      runerr(101, x);
+   if !cnv:C_integer(x) then
+      runerr(101, x)
+   abstract { return integer}
+   body{
+      if (x<1 || x>nmutexes)
+      	 irunerr(101, x);
+      pthread_mutex_unlock(mutexes+x-1);
+      return C_integer 1;
+      }
 end
-
 
 "thread(x) - execute a concurrent thread that evaluates procedure x"
 
@@ -2341,7 +2337,7 @@ function{1} thread(x)
 	BlkLoc(x)->Coexpr.squeue = (union block *)alclist(0, MinListSlots);
 	BlkLoc(x)->Coexpr.rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
-	n = BlkLoc(x)->Coexpr.cstate[1];
+	n = (context *) BlkLoc(x)->Coexpr.cstate[1];
 	sem_post(n->semp);
 	return x;
 	}

@@ -586,6 +586,10 @@ void check_version(struct header *hdr, char *name,
    struct header hdr;
 #endif					/* !COMPILER */
 
+#ifdef Concurrent
+   extern pthread_mutex_t* mutexmutex;
+#endif
+
 #if COMPILER
 void init(name, argcp, argv, trc_init)
 char *name;

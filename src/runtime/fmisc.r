@@ -2337,7 +2337,7 @@ function{1} thread(x)
 	BlkLoc(x)->Coexpr.squeue = (union block *)alclist(0, MinListSlots);
 	BlkLoc(x)->Coexpr.rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
-	n = (context *) BlkLoc(x)->Coexpr.cstate[1];
+	n = BlkLoc(x)->Coexpr.cstate[1];
 	sem_post(n->semp);
 	return x;
 	}

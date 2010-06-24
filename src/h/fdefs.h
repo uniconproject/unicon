@@ -426,4 +426,5 @@ FncDef(fetch,2)
   FncDef(mutex,1)
   FncDef(lock,1)
   FncDef(unlock,1)
+  FncDef(join,1)
 #endif					/* Concurrent */

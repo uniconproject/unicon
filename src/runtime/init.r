@@ -592,7 +592,7 @@ void check_version(struct header *hdr, char *name,
    extern pthread_mutex_t* mutex_mutex;
    extern pthread_mutex_t* mutex_alcblk;
    extern pthread_mutex_t mutex_list_ser;
-   extern pthread_mutex_t mutex_coexpr_ser;
+   extern pthread_mutex_t mutex_coexp_ser;
    extern pthread_mutex_t mutex_set_ser;
    extern pthread_mutex_t mutex_table_ser;
 #endif					/* Concurrent */
@@ -669,7 +669,7 @@ char *argv[];
    pthread_mutex_init(&mutex_mutex, NULL);
    pthread_mutex_init(&mutex_alcblk, NULL);
    pthread_mutex_init(&mutex_list_ser, NULL);
-   pthread_mutex_init(&mutex_coexpr_ser, NULL);
+   pthread_mutex_init(&mutex_coexp_ser, NULL);
    pthread_mutex_init(&mutex_set_ser, NULL);
    pthread_mutex_init(&mutex_table_ser, NULL);
 #endif					/* Concurrent */

@@ -14,7 +14,7 @@ extern word alcnum;
 #ifdef Concurrent 
    pthread_mutex_t mutex_alcblk;
    pthread_mutex_t mutex_list_ser;
-   pthread_mutex_t mutex_coexpr_ser;
+   pthread_mutex_t mutex_coexp_ser;
    pthread_mutex_t mutex_set_ser;
    pthread_mutex_t mutex_table_ser;
 #endif					/* Concurrent */
@@ -249,13 +249,17 @@ struct b_coexpr *alccoexp()
       ep->id = 1;
    else
 #endif					/* MultiThread */
-      ep->id = coexp_ser++;
 #ifdef Concurrent
-   ep->status = 0;
-   ep->squeue = ep->rqueue = NULL;
+      pthread_mutex_lock(&mutex_coexp_ser);
+      ep->id = coexp_ser++;
+      pthread_mutex_unlock(&mutex_coexp_ser);
+      ep->status = 0;
+      ep->squeue = ep->rqueue = NULL;
+#else					/* Concurrent */
+      ep->id = coexp_ser++;
+      ep->nextstk = stklist;
+      ep->es_tend = NULL;
 #endif					/* Concurrent */
-   ep->nextstk = stklist;
-   ep->es_tend = NULL;
 
 #ifdef MultiThread
    /*
@@ -317,7 +321,7 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->status = status;
    blk->fname = tname;
    blk->fd.fp = fd;
-#ifdef AAAConcurrent
+#ifdef Concurrent
    pthread_mutex_init(&(blk->mutex), NULL);
 #endif				/* Concurrent */
    return blk;
@@ -346,12 +350,25 @@ union block *f(int tcode)
       EVVal(sizeof(struct b_table), e_table);
       AlcFixBlk(pt, b_table, T_Table);
       ps = (struct b_set *)pt;
+#ifdef Concurrent
+      pthread_mutex_lock(&mutex_table_ser);
       ps->id = table_ser++;
+      pthread_mutex_unlock(&mutex_table_ser);
+#else					/* Concurrent */
+      ps->id = table_ser++;
+#endif					/* Concurrent */
+
       }
    else {	/* tcode == T_Set */
       EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
+#ifdef Concurrent
+      pthread_mutex_lock(&mutex_set_ser);
       ps->id = set_ser++;
+      pthread_mutex_unlock(&mutex_set_ser);
+#else					/* Concurrent */
+      ps->id = set_ser++;
+#endif					/* Concurrent */
       }
    ps->size = 0;
    ps->mask = 0;

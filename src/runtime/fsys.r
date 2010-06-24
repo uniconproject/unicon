@@ -1877,6 +1877,9 @@ end
 #begdef DefaultFile(error_out)
    inline {
 #if error_out
+#ifdef Concurrent
+	 fblk = &k_errout;
+#endif					/* Concurrent */
       if ((k_errout.status & Fs_Write) == 0)
 	 runerr(213);
       else {
@@ -1887,6 +1890,9 @@ end
 #endif					/* ConsoleWindow */
 	 }
 #else					/* error_out */
+#ifdef Concurrent
+	 fblk = &k_output;
+#endif					/* Concurrent */
       if ((k_output.status & Fs_Write) == 0)
 	 runerr(213);
       else {
@@ -2036,6 +2042,9 @@ end
    }
 #endif					/* Messaging */
 
+#ifdef Concurrent 
+	    pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 
 #if terminate
 	    c_exit(EXIT_FAILURE);
@@ -2063,6 +2072,9 @@ function {1} name(x[nargs])
 
    declare {
       union f f;
+#ifdef Concurrent
+      register struct b_file *fblk;
+#endif					/* terminate */
       word status =
 #if terminate
 #ifndef ConsoleWindow
@@ -2123,6 +2135,7 @@ function {1} name(x[nargs])
 	     */
 	    for (n = 0; n < nargs; n++) {
 	       if (is:file(x[n])) {	/* Current argument is a file */
+
 #if nl
 		  /*
 		   * If this is not the first argument, output a newline to the
@@ -2201,6 +2214,9 @@ function {1} name(x[nargs])
 			if (ferror(f.fp))
 			   runerr(214);
 			fflush(f.fp);
+#ifdef Concurrent 
+			pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 #ifdef PosixFns
                         }
 #endif					/* PosixFns */
@@ -2228,6 +2244,11 @@ function {1} name(x[nargs])
 		  if ((status & Fs_Write) == 0)
 		     runerr(213, x[n]);
 		  f.fp = BlkLoc(x[n])->File.fd.fp;
+		  fblk = BlkD(x[n], File);
+#ifdef Concurrent 
+		  pthread_mutex_lock(&fblk->mutex);
+#endif					/* Concurrent */
+
 #ifdef ConsoleWindow
                   if ((f.fp == stdout && !(ConsoleFlags & StdOutRedirect)) ||
                       (f.fp == stderr && !(ConsoleFlags & StdErrRedirect))) {

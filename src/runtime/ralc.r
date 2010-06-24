@@ -11,6 +11,14 @@ static struct region *newregion	(word nbytes, word stdsize);
 
 extern word alcnum;
 
+#ifdef Concurrent 
+   pthread_mutex_t mutex_alcblk;
+   pthread_mutex_t mutex_list_ser;
+   pthread_mutex_t mutex_coexpr_ser;
+   pthread_mutex_t mutex_set_ser;
+   pthread_mutex_t mutex_table_ser;
+#endif					/* Concurrent */
+
 #ifndef MultiThread
 word coexp_ser = 2;	/* serial numbers for co-expressions; &main is 1 */
 word list_ser = 1;	/* serial numbers for lists */
@@ -30,8 +38,16 @@ word table_ser = 1;	/* serial numbers for tables */
    /*
     * Ensure that there is enough room in the block region.
     */
-   if (DiffPtrs(blkend,blkfree) < nbytes && !reserve(Blocks, nbytes))
+#ifdef Concurrent 
+   pthread_mutex_lock(&mutex_alcblk);
+#endif					/* Concurrent */
+
+   if (DiffPtrs(blkend,blkfree) < nbytes && !reserve(Blocks, nbytes)){
+#ifdef Concurrent 
+      pthread_mutex_unlock(&mutex_alcblk);
+#endif					/* Concurrent */
       return NULL;
+      }
 
    /*
     * Decrement the free space in the block region by the number of bytes
@@ -42,6 +58,9 @@ word table_ser = 1;	/* serial numbers for tables */
    var = (struct struct_nm *)blkfree;
    blkfree += nbytes;
    var->title = t_code;
+#ifdef Concurrent 
+   pthread_mutex_unlock(&mutex_alcblk);
+#endif					/* Concurrent */
 }
 #enddef
 
@@ -297,6 +316,10 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->fd.fp = fd;
    blk->status = status;
    blk->fname = tname;
+   blk->fd.fp = fd;
+#ifdef AAAConcurrent
+   pthread_mutex_init(&(blk->mutex), NULL);
+#endif				/* Concurrent */
    return blk;
    }
 #enddef
@@ -439,7 +462,13 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    register struct b_list *blk;
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_list_ser);
    blk->id = list_ser++;
+   pthread_mutex_unlock(&mutex_list_ser);
+#else					/* Concurrent */
+   blk->id = list_ser++;
+#endif					/* Concurrent */
    blk->listhead = bptr;
    blk->listtail = NULL;
 #ifdef Arrays
@@ -473,7 +502,14 @@ struct b_list *f(uword size, uword nslots)
    AlcFixBlk(blk, b_list, T_List)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_list_ser);
    blk->id = list_ser++;
+   pthread_mutex_unlock(&mutex_list_ser);
+#else					/* Concurrent */
+   blk->id = list_ser++;
+#endif					/* Concurrent */
+
    blk->listhead = blk->listtail = (union block *)lblk;
 
    lblk->nslots = nslots;
@@ -511,9 +547,14 @@ struct b_list *f(uword size, uword nslots)
    AlcFixBlk(blk, b_list, T_List)
    AlcBlk(lblk, b_lelem, T_Lelem, i)
    blk->size = size;
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_list_ser);
    blk->id = list_ser++;
+   pthread_mutex_unlock(&mutex_list_ser);
+#else					/* Concurrent */
+   blk->id = list_ser++;
+#endif					/* Concurrent */
    blk->listhead = blk->listtail = (union block *)lblk;
-
    lblk->blksize = i;
    lblk->nslots = nslots;
    lblk->first = 0;

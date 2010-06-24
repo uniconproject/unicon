@@ -199,6 +199,8 @@ struct pf_marker *pfp = NULL;		/* Procedure frame pointer */
 #ifdef MultiThread
 struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
+struct threadstate *curtstate;
+struct threadstate roottstate;
 #else					/* MultiThread */
 
 struct b_coexpr *mainhead;		/* &main */
@@ -587,8 +589,13 @@ void check_version(struct header *hdr, char *name,
 #endif					/* !COMPILER */
 
 #ifdef Concurrent
-   extern pthread_mutex_t* mutexmutex;
-#endif
+   extern pthread_mutex_t* mutex_mutex;
+   extern pthread_mutex_t* mutex_alcblk;
+   extern pthread_mutex_t mutex_list_ser;
+   extern pthread_mutex_t mutex_coexpr_ser;
+   extern pthread_mutex_t mutex_set_ser;
+   extern pthread_mutex_t mutex_table_ser;
+#endif					/* Concurrent */
 
 #if COMPILER
 void init(name, argcp, argv, trc_init)
@@ -659,8 +666,13 @@ char *argv[];
 #endif					/* OS2 */
 
 #ifdef Concurrent
-   pthread_mutex_init(&mutexmutex, NULL);
-#endif
+   pthread_mutex_init(&mutex_mutex, NULL);
+   pthread_mutex_init(&mutex_alcblk, NULL);
+   pthread_mutex_init(&mutex_list_ser, NULL);
+   pthread_mutex_init(&mutex_coexpr_ser, NULL);
+   pthread_mutex_init(&mutex_set_ser, NULL);
+   pthread_mutex_init(&mutex_table_ser, NULL);
+#endif					/* Concurrent */
 
 #if COMPILER
    curstring = &rootstring;
@@ -767,6 +779,9 @@ char *argv[];
    rootpstate.Alctvtbl = alctvtbl_0;
    rootpstate.Deallocate = deallocate_0;
    rootpstate.Reserve = reserve_0;
+   
+   rootpstate.tstate = &roottstate;
+   curtstate = &roottstate;
 #else					/* MultiThread */
 
    curstring = &rootstring;
@@ -1955,8 +1970,10 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 {
    struct b_coexpr *coexp = alccoexp(icodesize, stacksize);
    struct progstate *pstate = NULL;
+   struct threadstate *tstate = NULL;
    if (coexp == NULL) return NULL;
    pstate = coexp->program;
+   tstate = pstate->tstate;
 #ifdef StackCheck
    coexp->stack = (word *)(pstate+1);
    coexp->stackend = (word *)((char *)(pstate+1)+(stacksize/2));
@@ -1964,6 +1981,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    /*
     * Initialize values.
     */
+   tstate->Lastop = 0;
    pstate->hsize = icodesize;
    pstate->parent= NULL;
    pstate->parentdesc= nulldesc;
@@ -1980,7 +1998,6 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    StrLoc(pstate->ksub) = "";
    pstate->Kywd_ran = zerodesc;
    pstate->Line_num = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
-   pstate->Lastop = 0;
    pstate->Xargp = NULL;
    pstate->Xnargs = 0;
    pstate->K_errornumber = 0;

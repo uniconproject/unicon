@@ -2267,8 +2267,8 @@ end
 #endif					/* MultiThread */
 
 #ifdef Concurrent
-
-pthread_mutex_t* mutexes, mutexmutex;
+pthread_mutex_t* mutexes;
+pthread_mutex_t mutex_mutex;
 int maxmutexes;
 int nmutexes; 
 
@@ -2277,7 +2277,7 @@ int nmutexes;
 function{1} mutex(x)
    abstract { return integer }
    body{
-	pthread_mutex_lock(&mutexmutex);
+	pthread_mutex_lock(&mutex_mutex);
 	if(nmutexes==maxmutexes){
 	   maxmutexes*=2+64;
 	   mutexes=realloc(mutexes, maxmutexes);
@@ -2286,7 +2286,7 @@ function{1} mutex(x)
   	   }
 	pthread_mutex_init(mutexes+nmutexes, NULL);
         nmutexes++;
-	pthread_mutex_unlock(&mutexmutex);
+	pthread_mutex_unlock(&mutex_mutex);
 	return C_integer nmutexes;
       }
 end
@@ -2319,13 +2319,31 @@ function{1} unlock(x)
       }
 end
 
+"join(x) - join with thread x"
+
+function{1} join(x)
+  if is:coexpr(x) then {
+     abstract { return coexpr }
+     body {
+	struct context *n;
+	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
+	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
+	pthread_join(n->thread, NULL);
+	/*}*/
+	return x;
+	}
+     }
+  else { runerr(106,x)
+     }
+end
+
 "thread(x) - execute a concurrent thread that evaluates procedure x"
 
 function{1} thread(x)
   if is:coexpr(x) then {
      abstract { return coexpr }
      body {
-	context *n;
+	struct context *n;
 	/* Make sure it is a pthreads-based co-expression. */
 	if (BlkLoc(x)->Coexpr.status & Ts_Native) runerr(101,x);
 	if (BlkLoc(x)->Coexpr.status & Ts_Async) return x;
@@ -2337,7 +2355,7 @@ function{1} thread(x)
 	BlkLoc(x)->Coexpr.squeue = (union block *)alclist(0, MinListSlots);
 	BlkLoc(x)->Coexpr.rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
-	n = BlkLoc(x)->Coexpr.cstate[1];
+	n = (struct context *) BlkLoc(x)->Coexpr.cstate[1];
 	sem_post(n->semp);
 	return x;
 	}

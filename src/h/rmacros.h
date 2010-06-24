@@ -844,10 +844,14 @@
       #define coll_stat (curpstate->collstat)
       #define coll_str  (curpstate->collstr)
       #define coll_blk  (curpstate->collblk)
-      
-      #define lastop    (curpstate->Lastop)
-      #define lastopnd  (curpstate->Lastopnd)
-      
+#ifdef Concurrent 
+      #define lastop    (curtstate->Lastop)
+      #define lastopnd  (curtstate->Lastopnd)
+#else					/* Concurrent */
+      #define lastop    (curpstate->tstate->Lastop)
+      #define lastopnd  (curpstate->tstate->Lastopnd)
+#endif					/* Concurrent */
+         
       #define xargp     (curpstate->Xargp)
       #define xnargs    (curpstate->Xnargs)
       #define value_tmp (curpstate->Value_tmp)

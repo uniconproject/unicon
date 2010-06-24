@@ -105,6 +105,10 @@ struct b_file {			/* file block */
    union f fd;
    word status;			/*   file status */
    struct descrip fname;	/*   file name (string qualifier) */
+#ifdef Concurrent
+   pthread_mutex_t mutex;
+#endif				/* Concurrent */
+
    };
 
 #ifdef ISQL
@@ -456,15 +460,16 @@ struct ipc_line {
    int line;		/* line number */
    };
 
-#ifdef Concurrent
 struct threadstate {
+#ifdef Concurrent
    pthread_t tid;
+#endif					/* Concurrent */
    /* signal mask? etc. */
    /*
     * main goal for this struct is to hold VM-specific per-thread variables.
     */
+   word Lastop;
    };
-#endif					/* Concurrent */
 
 #ifdef MultiThread
 /*
@@ -567,7 +572,7 @@ struct progstate {
    struct region *stringregion;
    struct region *blockregion;
 
-   word Lastop;
+   struct threadstate *tstate;
 
    dptr Xargp;
    word Xnargs;

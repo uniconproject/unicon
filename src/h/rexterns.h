@@ -179,10 +179,12 @@ extern struct b_proc_list **dr_arrays;
    #ifdef ExecImages
       extern int dumped;		/* the interpreter has been dumped */
    #endif				/* ExecImages */
-   
+
    #ifdef MultiThread
       extern struct progstate *curpstate;
       extern struct progstate rootpstate;
+      extern struct threadstate *curtstate;
+      extern struct threadstate roottstate;
       extern int noMTevents;		/* no MT events during GC */
    #else				/* MultiThread */
       extern char *code;		/* start of icode */

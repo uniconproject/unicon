@@ -2244,8 +2244,8 @@ function {1} name(x[nargs])
 		  if ((status & Fs_Write) == 0)
 		     runerr(213, x[n]);
 		  f.fp = BlkLoc(x[n])->File.fd.fp;
-		  fblk = BlkD(x[n], File);
 #ifdef Concurrent 
+		  fblk = BlkD(x[n], File);
 		  pthread_mutex_lock(&fblk->mutex);
 #endif					/* Concurrent */
 

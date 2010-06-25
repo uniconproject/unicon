@@ -101,7 +101,7 @@ utags.u: utags.icn
 	$(UC) $(UFLAGS) utags
 
 ui.u: ui.icn
-	$(UC) $(CFLAGS) ui
+	$(UC) $(UFLAGS) ui
 
 ui.exe: ui
 

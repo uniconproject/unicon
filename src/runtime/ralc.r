@@ -17,6 +17,9 @@ extern word alcnum;
    pthread_mutex_t mutex_coexp_ser;
    pthread_mutex_t mutex_set_ser;
    pthread_mutex_t mutex_table_ser;
+#ifdef PatternType   
+   pthread_mutex_t mutex_pat_ser;
+#endif					/* PatternType */
 #endif					/* Concurrent */
 
 #ifndef MultiThread
@@ -429,7 +432,13 @@ struct b_pattern *f(word stck_size)
    EVVal(sizeof (struct b_pelem), e_pelem);
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
-   pheader->id = pat_ser++;
+#ifdef Concurrent
+      pthread_mutex_lock(&mutex_pat_ser);
+      pheader->id = pat_ser++;
+      pthread_mutex_unlock(&mutex_pat_ser);
+#else					/* Concurrent */
+      pheader->id = pat_ser++;
+#endif					/* Concurrent */
    pheader->pe = NULL;
    return pheader;
 }

@@ -492,7 +492,7 @@ struct progstate {
    struct descrip eventcode;		/* &eventcode */
    struct descrip eventval;		/* &eventval */
    struct descrip eventsource;		/* &eventsource */
-   dptr Glbl_argp;			/* global argp */
+   dptr Glbl_argp; /*TLS*/			/* global argp */
 
    /* Systems don't have more than, oh, about 50 signals, eh?
     * Currently in the system there is 40 of them            */
@@ -502,12 +502,12 @@ struct progstate {
    /*
     * trapped variable keywords' values
     */
-   struct descrip Kywd_err;
-   struct descrip Kywd_pos;
-   struct descrip ksub;
-   struct descrip Kywd_prog;
-   struct descrip Kywd_ran;
-   struct descrip Kywd_trc;
+   struct descrip Kywd_err;          /* Probably mutex. not important now */
+   struct descrip Kywd_pos;         /* TLS */
+   struct descrip ksub;             /* TLS */
+   struct descrip Kywd_prog;   
+   struct descrip Kywd_ran;        /*  TLS  */
+   struct descrip Kywd_trc;         /* leave global fow now   */
    struct b_coexpr *Mainhead;
    char *Code;
    char *Ecode;
@@ -528,10 +528,10 @@ struct progstate {
    char *Strcons;
    struct ipc_fname *Filenms, *Efilenms;
    struct ipc_line *Ilines, *Elines;
-   struct ipc_line * Current_line_ptr;
+  struct ipc_line * Current_line_ptr;  /* not used or what ?*/
 
    #ifdef PosixFns
-      struct descrip AmperErrno;
+  struct descrip AmperErrno;  /* TLS */
    #endif					/* PosixFns */
 
    #ifdef Graphics
@@ -550,7 +550,7 @@ struct progstate {
    #endif				/* Graphics3D */
    #endif				/* Graphics */
    
-   word Line_num, Column, Lastline, Lastcol;
+  word Line_num, Column, Lastline, Lastcol; /*TLS*/
 
    word Coexp_ser;			/* this program's serial numbers */
    word List_ser;
@@ -560,33 +560,33 @@ struct progstate {
    word Set_ser;
    word Table_ser;
 
-   word Kywd_time_elsewhere;		/* &time spent in other programs */
-   word Kywd_time_out;			/* &time at last program switch out */
+   word Kywd_time_elsewhere;		/* ???? TLS vs global  &time spent in other programs */
+   word Kywd_time_out;			/* ????  TLS vs global &time at last program switch out */
 
-   uword stringtotal;			/* cumulative total allocation */
-   uword blocktotal;			/* cumulative total allocation */
-   word colltot;			/* total number of collections */
-   word collstat;			/* number of static collect requests */
-   word collstr;			/* number of string collect requests */
-   word collblk;			/* number of block collect requests */
-   struct region *stringregion;
-   struct region *blockregion;
+   uword stringtotal;			/* mutex  cumulative total allocation */
+   uword blocktotal;			/* mutex cumulative total allocation */
+   word colltot;			/*  m      total number of collections */
+   word collstat;			/*  u      number of static collect requests */
+   word collstr;			/*  t      number of string collect requests */
+   word collblk;			/*  ex     number of block collect requests */
+   struct region *stringregion;    /*  separate regions vs shared      */
+   struct region *blockregion;     /*     same above     */
 
    struct threadstate *tstate;
 
-   dptr Xargp;
-   word Xnargs;
-   struct descrip Value_tmp;
+   dptr Xargp;                    /* TLS  */
+   word Xnargs;                   /* TLS  */
+   struct descrip Value_tmp;      /* TLS  */
 
-   struct descrip K_current;
-   int K_errornumber;
-   int K_level;
-   char *K_errortext;
-   struct descrip K_errorvalue;
-   int Have_errval;
-   int T_errornumber;
+   struct descrip K_current;      /* TLS  */
+   int K_errornumber;             /* TLS  */
+   int K_level;                      /* TLS  */
+   char *K_errortext;                     /* TLS  */
+   struct descrip K_errorvalue;           /* TLS  */
+   int Have_errval;                   /* TLS  */
+   int T_errornumber;                 /* TLS  */
    int T_have_val;
-   struct descrip T_errorvalue;
+   struct descrip T_errorvalue;           /* TLS  */
 
    struct descrip K_main;
    struct b_file K_errout;

@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.41 2010-05-07 06:47:29 to_jafar Exp $
+ * $Id: rposix.r,v 1.42 2010-06-25 06:53:09 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -221,9 +221,7 @@ int CleanupWinSocket(void)
 }
 #endif					/* NT */
 
-int get_fd(file, errmask)
-struct descrip file;
-unsigned int errmask;
+int get_fd(struct descrip file, unsigned int errmask)
 {
    int status;
 

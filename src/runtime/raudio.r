@@ -478,7 +478,7 @@ void * OpenAL_PlayMP3( void * args )
       free(data);
       return NULL;
       }
-   fclose(fh)
+   fclose(fh);
    alutLoadMP3p = (mp3Loader *) alGetProcAddress((ALubyte *) MP3_FUNC);
    if (alutLoadMP3p == NULL) {
       /*

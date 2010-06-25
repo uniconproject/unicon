@@ -1879,6 +1879,7 @@ end
 #if error_out
 #ifdef Concurrent
 	 fblk = &k_errout;
+	 pthread_mutex_lock(&fblk->mutex);
 #endif					/* Concurrent */
       if ((k_errout.status & Fs_Write) == 0)
 	 runerr(213);
@@ -1892,6 +1893,7 @@ end
 #else					/* error_out */
 #ifdef Concurrent
 	 fblk = &k_output;
+	 pthread_mutex_lock(&fblk->mutex);
 #endif					/* Concurrent */
       if ((k_output.status & Fs_Write) == 0)
 	 runerr(213);
@@ -2214,15 +2216,15 @@ function {1} name(x[nargs])
 			if (ferror(f.fp))
 			   runerr(214);
 			fflush(f.fp);
-#ifdef Concurrent 
-			pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
 #ifdef PosixFns
                         }
 #endif					/* PosixFns */
 #ifdef Graphics
 			}
 #endif					/* Graphics */
+#ifdef Concurrent 
+			pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 		     }
 #endif					/* nl */
 

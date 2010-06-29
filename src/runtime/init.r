@@ -1276,6 +1276,7 @@ Deliberate Syntax Error
       if (buf == NULL)
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
+      free(buf);
       }
 #endif					/* ARM || MACINTOSH ... */
 
@@ -1289,6 +1290,7 @@ Deliberate Syntax Error
       if (buf == NULL)
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
+      free(buf);
 #endif					/* MSWindows */
       }
 #endif					/* !HIGHC_386 */
@@ -1303,12 +1305,11 @@ Deliberate Syntax Error
     */
    millisec();
    }
-
+
 /*
  * Service routines related to getting things started.
  */
 
-
 /*
  * Check for environment variables that Icon uses and set system
  *  values as is appropriate.  This is probably done once and pre-threads,

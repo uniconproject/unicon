@@ -821,11 +821,11 @@ struct AudioFile * audioInit(char filename[])
 /* This is a general Audio API Function    */
 struct AudioFile * StartAudioThread(char filename[])
 {
-   char *sp;
+   char *sptr;
    static struct AudioFile *Ptr;
    Ptr = audioInit(filename);
    if (Ptr != NULL) {
-      if((sp = strstr(Ptr->fname,".mp3")) != NULL) {
+      if((sptr = strstr(Ptr->fname,".mp3")) != NULL) {
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32
 	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayMP3 , NULL) ) {
@@ -847,7 +847,7 @@ struct AudioFile * StartAudioThread(char filename[])
 #endif
 	 }
 
-      if((sp = strstr(Ptr->fname,".ogg")) != NULL){
+      if((sptr = strstr(Ptr->fname,".ogg")) != NULL){
 #if defined(HAVE_LIBOGG) 
 #ifndef WIN32
 	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayOgg , NULL) ) {
@@ -870,7 +870,7 @@ struct AudioFile * StartAudioThread(char filename[])
 #endif /* defined(HAVE_LIBOGG)  */
 	 }
 
-      if((sp = strstr(Ptr->fname,".wav")) != NULL){
+      if((sptr = strstr(Ptr->fname,".wav")) != NULL){
 #ifdef HAVE_LIBOPENAL
 #ifndef WIN32
 	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayWAV , NULL) ) {
@@ -1067,14 +1067,14 @@ int LinuxMixer(char * cmd) /* cmd: eg. "vol=50" */
    char val[5] = {'\0'};
    int  cmdiVal = -1;
    char cmdsVal[10] = {'\0'};
-   char *sp = NULL, *p = NULL;
+   char *sptr = NULL, *p = NULL;
 
    if( MixInitialize() >= 0){
       /*----------------parse cmd; */
       p = strchr(cmd,'=');
       if(p != NULL){ /* cmd: "cmd=ival" */
-	 sp=cmd;
-	 while(sp != p)	cmdsVal[i++] = *sp++;
+	 sptr=cmd;
+	 while(sptr != p)	cmdsVal[i++] = *sptr++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0') val[i++] = *p;
@@ -1602,7 +1602,7 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
    char val[5] = {'\0'};
    int  cmdiVal = -1;
    char cmdsVal[10] = {'\0'};
-   char *sp = NULL, *p = NULL;
+   char *sptr = NULL, *p = NULL;
    char * DevNames[10] = {
       "Volume Contro","Wave","SW Synth","Telephone","PC Speaker",
       "CD Audio","Line In","Microphone","IIS","Phone Line"};
@@ -1612,8 +1612,8 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
       /*----------------parse cmd */
       p = strchr(cmd,'=');
       if (p != NULL){ /* cmd: "cmd=ival" */
-	 sp=cmd;
-	 while(sp != p)	cmdsVal[i++]=*sp++;
+	 sptr=cmd;
+	 while(sptr != p)	cmdsVal[i++]=*sptr++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0')	val[i++]=*p;

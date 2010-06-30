@@ -109,7 +109,7 @@ operator{*} ! bang(underef x -> dx)
          body {
             FILE *fd;
             char sbuf[MaxCvtLen];
-            register char *sp;
+            register char *sptr;
             register C_integer slen, rlen;
             word status;
 #ifdef Dbm
@@ -276,9 +276,9 @@ operator{*} ! bang(underef x -> dx)
                         StrLen(result))), runerr(0));
 		     }
 
-                  Protect(sp = alcstr(sbuf,rlen), runerr(0));
+                  Protect(sptr = alcstr(sbuf,rlen), runerr(0));
                   if (StrLen(result) == 0)
-                     StrLoc(result) = sp;
+                     StrLoc(result) = sptr;
                   StrLen(result) += rlen;
                   } while (slen < 0);
                suspend result;

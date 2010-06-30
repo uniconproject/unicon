@@ -25,7 +25,7 @@
  */
 static void cstos (unsigned int *cs, dptr dp, char *s);
 static void itos (C_integer num, dptr dp, char *s);
-static int ston (dptr sp, union numeric *result);
+static int ston (dptr sptr, union numeric *result);
 static int tmp_str (char *sbuf, dptr s, dptr d);
 
 /*
@@ -198,13 +198,13 @@ dptr d;
       }
    else {
       register word slen = StrLen(*d);
-      register char *sp, *dp;
+      register char *sptr, *dp;
       Protect(dp = alcstr(NULL,slen+1), fatalerr(0,NULL));
       StrLen(*d) = StrLen(*d)+1;
-      sp = StrLoc(*d);
+      sptr = StrLoc(*d);
       StrLoc(*d) = dp;
       while (slen-- > 0)
-         *dp++ = *sp++;
+         *dp++ = *sptr++;
       *dp = '\0';
       }
 
@@ -962,11 +962,11 @@ char *s;
  * (we do this to avoid allocating a block for a real
  * that will later be used directly as a C_double).
  */
-static int ston(sp, result)
-dptr sp;
+static int ston(sptr, result)
+dptr sptr;
 union numeric *result;
    {
-   register char *s = StrLoc(*sp), *end_s;
+   register char *s = StrLoc(*sptr), *end_s;
    register int c;
    int realflag = 0;	/* indicates a real number */
    char msign = '+';    /* sign of mantissa */
@@ -982,9 +982,9 @@ union numeric *result;
    int err_no;
    char *ssave;         /* holds original ptr for bigradix */
 
-   if (StrLen(*sp) == 0)
+   if (StrLen(*sptr) == 0)
       return CvtFail;
-   end_s = s + StrLen(*sp);
+   end_s = s + StrLen(*sptr);
    c = *s++;
 
    /*

@@ -57,7 +57,7 @@ struct str_buf lex_sbuf;	/* string buffer for lexical analyzer */
  *   token value that would have been returned if the semicolon hadn't
  *   been inserted.
  *
- *  yytextbuf, savedtextbuf, yyfilename, yytext, and yylineno -
+ *  yyfilename, yytext (savedyytext), and yylineno -
  *   provide a generic lex-compatible token interface (for merr).
  */
 
@@ -66,13 +66,29 @@ static int lastend = 0;
 static int eofflag = 0;
 static int cc = '\n';
 
-static char yytextbuf[1024], savedtextbuf[1024];
-char *yyfilename, *yytext;
-int yylineno;
+char *yyfilename, *yytext, *savedyytext;
+int yylineno, yytextsize;
+
+void yytext_expand(int len)
+{
+   if (len > yytextsize) {
+      yytextsize = len + (len >> 1) + 256;
+      if ((yytext = realloc(yytext, yytextsize)) == NULL) {
+         fprintf(stderr, "out of memory for yytext(%d)\n", yytextsize);
+	 exit(-1);
+         }
+      if ((savedyytext = realloc(savedyytext, yytextsize)) == NULL) {
+         fprintf(stderr, "out of memory for yytext(%d)\n", yytextsize);
+	 exit(-1);
+      }
+   }
+}
 
 char *yytext_install(struct str_buf *sb)
 {
    char *s = str_install(sb);
+   int len = strlen(s);
+   if (len > yytextsize) yytext_expand(len);
    strcpy(yytext, s);
    return s;
 }
@@ -86,7 +102,11 @@ int yylex()
    static nodeptr lastval;
    static struct node semi_loc;
 
-   if (yytext == NULL) yytext = yytextbuf;
+   if (yytext == NULL) {
+      yytext = malloc(256);
+      savedyytext = malloc(256);
+      yytextsize = 256;
+      }
 
    if (lasttok != NULL) {
       /*
@@ -205,7 +225,7 @@ loop:
       yylval = OpNode(semicol_loc);
 
       yyfilename = tok_loc.n_file;
-      strcpy(savedtextbuf, yytext);
+      strcpy(savedyytext, yytext);
       strcpy(yytext, ";");
       yylineno = tok_loc.n_line;
 
@@ -219,10 +239,10 @@ ret:
    lasttok = 0;
    lastend = t->t_flags & Ender;
 
-      yyfilename = tok_loc.n_file;
-      if (!strcmp(";", yytext) && (t->t_type != SEMICOL))
-        strcpy(yytext, savedtextbuf);
-      yylineno = tok_loc.n_line;
+   yyfilename = tok_loc.n_file;
+   if (!strcmp(";", yytext) && (t->t_type != SEMICOL))
+      strcpy(yytext, savedyytext);
+   yylineno = tok_loc.n_line;
 
    return (t->t_type);
    }
@@ -268,7 +288,10 @@ int *cc;
     *  IdNode for it, and return.
     */
    if ((t = findres()) != NULL) {
-      strncpy(yytext, lex_sbuf.strtimage, lex_sbuf.endimage-lex_sbuf.strtimage);
+      int len = lex_sbuf.endimage - lex_sbuf.strtimage;
+      if (len > yytextsize)
+	 yytext_expand(len);
+      strncpy(yytext, lex_sbuf.strtimage, len);
       yytext[lex_sbuf.endimage-lex_sbuf.strtimage] = '\0';
       lex_sbuf.endimage = lex_sbuf.strtimage;
       yylval = ResNode(t->t_type);

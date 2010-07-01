@@ -92,7 +92,7 @@ struct node *buildarray		(struct node *a,struct node *lb,
 void	treeinit		(void);
 void	tsyserr			(char *s);
 void	writecheck		(int rc);
-void	yyerror			(int tok,struct node *lval,int state);
+void	yyerror			(char *s,int state);
 int	yylex			(void);
 int	yyparse			(void);
 

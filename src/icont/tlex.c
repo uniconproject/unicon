@@ -21,4 +21,5 @@
 #include "../h/parserr.h"
 #include "../common/lextab.h"
 #include "../common/yylex.h"
+#define SEPARATE_YYERROR
 #include "../common/error.h"

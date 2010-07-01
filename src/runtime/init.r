@@ -1276,7 +1276,6 @@ Deliberate Syntax Error
       if (buf == NULL)
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
-      free(buf);
       }
 #endif					/* ARM || MACINTOSH ... */
 
@@ -1290,7 +1289,6 @@ Deliberate Syntax Error
       if (buf == NULL)
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
-      free(buf);
 #endif					/* MSWindows */
       }
 #endif					/* !HIGHC_386 */

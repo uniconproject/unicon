@@ -56,12 +56,26 @@ struct str_buf lex_sbuf;	/* string buffer for lexical analyzer */
  *  lastval - when a semicolon is inserted and returned, lastval gets the
  *   token value that would have been returned if the semicolon hadn't
  *   been inserted.
+ *
+ *  yytextbuf, savedtextbuf, yyfilename, yytext, and yylineno -
+ *   provide a generic lex-compatible token interface (for merr).
  */
 
 static struct toktab *lasttok = NULL;
 static int lastend = 0;
 static int eofflag = 0;
 static int cc = '\n';
+
+static char yytextbuf[1024], savedtextbuf[1024];
+char *yyfilename, *yytext;
+int yylineno;
+
+char *yytext_install(struct str_buf *sb)
+{
+   char *s = str_install(sb);
+   strcpy(yytext, s);
+   return s;
+}
 
 int yylex()
    {
@@ -71,6 +85,8 @@ int yylex()
    int nlflag;
    static nodeptr lastval;
    static struct node semi_loc;
+
+   if (yytext == NULL) yytext = yytextbuf;
 
    if (lasttok != NULL) {
       /*
@@ -187,6 +203,12 @@ loop:
       lasttok = t;
       tok_loc = semi_loc;
       yylval = OpNode(semicol_loc);
+
+      yyfilename = tok_loc.n_file;
+      strcpy(savedtextbuf, yytext);
+      strcpy(yytext, ";");
+      yylineno = tok_loc.n_line;
+
       return SEMICOL;
       }
 ret:
@@ -196,6 +218,12 @@ ret:
     */
    lasttok = 0;
    lastend = t->t_flags & Ender;
+
+      yyfilename = tok_loc.n_file;
+      if (!strcmp(";", yytext) && (t->t_type != SEMICOL))
+        strcpy(yytext, savedtextbuf);
+      yylineno = tok_loc.n_line;
+
    return (t->t_type);
    }
 
@@ -240,12 +268,14 @@ int *cc;
     *  IdNode for it, and return.
     */
    if ((t = findres()) != NULL) {
+      strncpy(yytext, lex_sbuf.strtimage, lex_sbuf.endimage-lex_sbuf.strtimage);
+      yytext[lex_sbuf.endimage-lex_sbuf.strtimage] = '\0';
       lex_sbuf.endimage = lex_sbuf.strtimage;
       yylval = ResNode(t->t_type);
       return t;
       }
    else {
-      yylval = IdNode(str_install(&lex_sbuf));
+      yylval = IdNode(yytext_install(&lex_sbuf));
       return (struct toktab *)T_Ident;
       }
    }
@@ -383,10 +413,10 @@ int *cc;
       }
    *cc = c;
    if (realflag) {
-      yylval = RealNode(str_install(&lex_sbuf));
+      yylval = RealNode(yytext_install(&lex_sbuf));
       return T_Real;
       }
-   yylval = IntNode(str_install(&lex_sbuf));
+   yylval = IntNode(yytext_install(&lex_sbuf));
    return T_Int;
    }
 
@@ -462,11 +492,11 @@ int *cc;
       }
    len = lex_sbuf.endimage - lex_sbuf.strtimage;
    if (ac == '"') {     /* a string literal */
-      yylval = StrNode(str_install(&lex_sbuf), len);
+      yylval = StrNode(yytext_install(&lex_sbuf), len);
       return T_String;
       }
    else {		/* a cset literal */
-      yylval = CsetNode(str_install(&lex_sbuf), len);
+      yylval = CsetNode(yytext_install(&lex_sbuf), len);
       return T_Cset;
       }
    }
@@ -604,7 +634,7 @@ register int c;
    while ((c = NextChar) != '"' && c != EOF && c != '\n')
       AppChar(lex_sbuf, c);
    if (c == '"') {
-      tok_loc.n_file = str_install(&lex_sbuf);
+      tok_loc.n_file = yytext_install(&lex_sbuf);
       return NextChar;
       }
    else {

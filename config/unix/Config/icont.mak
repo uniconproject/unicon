@@ -3,7 +3,7 @@
 include ../../Makedefs
 
 TRANS=		trans.o tcode.o tlex.o lnklist.o tparse.o tsym.o tmem.o \
-		 tree.o tglobals.o
+		 tree.o tglobals.o yyerror.o
 
 LINKR=		link.o lglob.o lcode.o llex.o lmem.o lsym.o opcode.o lcompres.o
 

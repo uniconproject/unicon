@@ -16,6 +16,7 @@ static	char	*mapterm	(int typ,struct node *val);
    extern void PostClip(char *file, int line, int number, char *text);
 #endif				/* AMIGA && __SASC */
 
+#ifndef SEPARATE_YYERROR
 /*
  * yyerror produces syntax error messages.  tok is the offending token
  *  (yychar), lval is yylval, and state is the parser's state.
@@ -75,6 +76,7 @@ nodeptr lval;
    tfatals++;
    nocode++;
    }
+#endif					/* SEPARATE_YYERROR */
 
 /*
  * mapterm finds a printable string for the given token type

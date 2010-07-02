@@ -774,6 +774,10 @@ Deliberate Syntax Error
 #define PthreadCoswitch 1
 #endif					/* Concurrent */
 
+#ifdef PthreadCoswitch
+#define CoClean 1
+#endif					/* PthreadCoswitch */
+
 #ifdef NoLIBZ
 #undef HAVE_LIBZ
 #define HAVE_LIBZ 0

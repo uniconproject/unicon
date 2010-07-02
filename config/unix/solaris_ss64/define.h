@@ -20,4 +20,4 @@
 
 #define NEED_UTIME
 #define Messaging 1
-#define CoClean 1 /* posix co-expressions */
+#define PthreadCoswitch 1 /* posix co-expressions */

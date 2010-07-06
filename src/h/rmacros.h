@@ -754,17 +754,13 @@
     */
    
    #ifdef MultiThread
-      #define glbl_argp (curpstate->Glbl_argp)
       #define handlers  (curpstate->Handlers)
       #define inited    (curpstate->Inited)
       #define kywd_err  (curpstate->Kywd_err)
-      #define kywd_pos  (curpstate->Kywd_pos)
       #define kywd_prog  (curpstate->Kywd_prog)
-      #define kywd_ran  (curpstate->Kywd_ran)
       #define k_eventcode (curpstate->eventcode)
       #define k_eventsource (curpstate->eventsource)
       #define k_eventvalue (curpstate->eventval)
-      #define k_subject (curpstate->ksub)
       #define kywd_trc  (curpstate->Kywd_trc)
       #define mainhead (curpstate->Mainhead)
       #define code (curpstate->Code)
@@ -799,10 +795,6 @@
       #define elines (curpstate->Elines)
       #define current_line_ptr (curpstate->Current_line_ptr)
       
-      #ifdef PosixFns
-         #define amperErrno (curpstate->AmperErrno)
-      #endif
-
       #ifdef Graphics
          #define amperX   (curpstate->AmperX)
          #define amperY   (curpstate->AmperY)
@@ -822,11 +814,6 @@
       #endif				/* Graphics3D */
       #endif				/* Graphics */
       
-      #define line_num  (curpstate->Line_num)
-      #define column   (curpstate->Column)
-      #define lastline (curpstate->Lastline)
-      #define lastcol  (curpstate->Lastcol)
-      
       #define coexp_ser (curpstate->Coexp_ser)
       #define list_ser  (curpstate->List_ser)
 #ifdef PatternType
@@ -844,32 +831,63 @@
       #define coll_stat (curpstate->collstat)
       #define coll_str  (curpstate->collstr)
       #define coll_blk  (curpstate->collblk)
-#ifdef Concurrent 
+
+      /* thread local*/
       #define lastop    (curtstate->Lastop)
       #define lastopnd  (curtstate->Lastopnd)
-#else					/* Concurrent */
-      #define lastop    (curpstate->tstate->Lastop)
-      #define lastopnd  (curpstate->tstate->Lastopnd)
+
+      #define glbl_argp (curtstate->Glbl_argp)  
+
+      #define kywd_pos  (curtstate->Kywd_pos)
+      #define k_subject (curtstate->ksub)
+      #define kywd_ran  (curtstate->Kywd_ran)
+
+      #define xargp     (curtstate->Xargp)
+      #define xnargs    (curtstate->Xnargs)
+
+      #define value_tmp (curtstate->Value_tmp)
+      
+      #define k_current     (curtstate->K_current)
+      #define k_errornumber (curtstate->K_errornumber)
+      #define k_level       (curtstate->K_level)
+      #define k_errortext   (curtstate->K_errortext)
+      #define k_errorvalue  (curtstate->K_errorvalue)
+      #define have_errval   (curtstate->Have_errval)
+      #define t_errornumber (curtstate->T_errornumber)
+      #define t_have_val    (curtstate->T_have_val)
+      #define t_errorvalue  (curtstate->T_errorvalue)
+
+      #ifdef PosixFns
+         #define amperErrno (curtstate->AmperErrno)
+      #endif
+
+      #define line_num  (curtstate->Line_num)
+      #define column    (curtstate->Column)
+      #define lastline  (curtstate->Lastline)
+      #define lastcol   (curtstate->Lastcol)
+
+#ifdef Concurrent 
+      #define efp         (curtstate->Efp)
+      #define gfp         (curtstate->Gfp)
+      #define pfp         (curtstate->Pfp)
+      #define ipc         (curtstate->Ipc)
+      #define oldipc      (curtstate->Oldipc)
+      #define sp          (curtstate->Sp)
+      #define ilevel      (curtstate->Ilevel)
+
+#ifndef StackCheck
+      #define stack          (curtstate->Stack)
+      #define stackend       (curtstate->Stackend)
+      #endif					/* StackCheck */
 #endif					/* Concurrent */
-         
-      #define xargp     (curpstate->Xargp)
-      #define xnargs    (curpstate->Xnargs)
-      #define value_tmp (curpstate->Value_tmp)
-      
-      #define k_current     (curpstate->K_current)
-      #define k_errornumber (curpstate->K_errornumber)
-      #define k_level       (curpstate->K_level)
-      #define k_errortext   (curpstate->K_errortext)
-      #define k_errorvalue  (curpstate->K_errorvalue)
-      #define have_errval   (curpstate->Have_errval)
-      #define t_errornumber (curpstate->T_errornumber)
-      #define t_have_val    (curpstate->T_have_val)
-      #define t_errorvalue  (curpstate->T_errorvalue)
-      
+
       #define k_main        (curpstate->K_main)
       #define k_errout      (curpstate->K_errout)
       #define k_input       (curpstate->K_input)
       #define k_output      (curpstate->K_output)
+
+      #define longest_dr    (curpstate->Longest_dr)
+      #define dr_arrays     (curpstate->Dr_arrays)
       
 #ifdef Arrays
       #define cprealarray   (curpstate->Cprealarray)

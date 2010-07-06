@@ -451,12 +451,12 @@ struct b_refresh {		/* co-expression block */
  *  source program location.
  */
 struct ipc_fname {
-   word ipc;		/* offset of instruction into code region */
+   word ipc_saved;	/* offset of instruction into code region */
    word fname;		/* offset of file name into string region */
    };
 
 struct ipc_line {
-   word ipc;		/* offset of instruction into code region */
+   word ipc_saved;	/* offset of instruction into code region */
    int line;		/* line number */
    };
 
@@ -469,6 +469,48 @@ struct threadstate {
     * main goal for this struct is to hold VM-specific per-thread variables.
     */
    word Lastop;
+   dptr Glbl_argp; /*TLS*/			/* global argp */
+
+   struct descrip Kywd_pos;         /* TLS */
+   struct descrip ksub;             /* TLS */
+   struct descrip Kywd_ran;        /*  TLS  */
+
+
+   dptr Xargp;                    /* TLS  */
+   word Xnargs;                   /* TLS  */
+   struct descrip Value_tmp;      /* TLS  */
+
+   struct descrip K_current;      /* TLS  */
+   int K_errornumber;             /* TLS  */
+   int K_level;                      /* TLS  */
+   char *K_errortext;                     /* TLS  */
+   struct descrip K_errorvalue;           /* TLS  */
+   int Have_errval;                   /* TLS  */
+   int T_errornumber;                 /* TLS  */
+   int T_have_val;
+   struct descrip T_errorvalue;           /* TLS  */
+
+#ifdef PosixFns
+   struct descrip AmperErrno;  /* TLS */
+#endif					/* PosixFns */
+
+  word Line_num,   /* line number for current execution point */
+    Column, Lastline, Lastcol; /*TLS*/
+
+  struct ef_marker *Efp;	/* Expression frame pointer */
+  struct gf_marker *Gfp;	/* Generator frame pointer */
+  struct pf_marker *Pfp;	/* procedure frame pointer */
+  inst Ipc;			/* Interpreter program counter */
+  inst Oldipc;                  /* the previous ipc, fix returned line zero */
+  word *Sp;		/* Stack pointer */
+  int Ilevel;			/* Depth of recursion in interp() */
+
+#ifndef StackCheck
+  word *Stack;				/* Interpreter stack */
+  word *Stackend; 			/* End of interpreter stack */
+#endif					/* StackCheck */
+
+
    };
 
 #ifdef MultiThread
@@ -492,7 +534,7 @@ struct progstate {
    struct descrip eventcode;		/* &eventcode */
    struct descrip eventval;		/* &eventval */
    struct descrip eventsource;		/* &eventsource */
-   dptr Glbl_argp; /*TLS*/			/* global argp */
+
 
    /* Systems don't have more than, oh, about 50 signals, eh?
     * Currently in the system there is 40 of them            */
@@ -503,10 +545,8 @@ struct progstate {
     * trapped variable keywords' values
     */
    struct descrip Kywd_err;          /* Probably mutex. not important now */
-   struct descrip Kywd_pos;         /* TLS */
-   struct descrip ksub;             /* TLS */
    struct descrip Kywd_prog;   
-   struct descrip Kywd_ran;        /*  TLS  */
+
    struct descrip Kywd_trc;         /* leave global fow now   */
    struct b_coexpr *Mainhead;
    char *Code;
@@ -530,9 +570,6 @@ struct progstate {
    struct ipc_line *Ilines, *Elines;
   struct ipc_line * Current_line_ptr;  /* not used or what ?*/
 
-   #ifdef PosixFns
-  struct descrip AmperErrno;  /* TLS */
-   #endif					/* PosixFns */
 
    #ifdef Graphics
       struct descrip AmperX, AmperY, AmperRow, AmperCol;/* &x, &y, &row, &col */
@@ -550,7 +587,7 @@ struct progstate {
    #endif				/* Graphics3D */
    #endif				/* Graphics */
    
-  word Line_num, Column, Lastline, Lastcol; /*TLS*/
+
 
    word Coexp_ser;			/* this program's serial numbers */
    word List_ser;
@@ -563,6 +600,12 @@ struct progstate {
    word Kywd_time_elsewhere;		/* ???? TLS vs global  &time spent in other programs */
    word Kywd_time_out;			/* ????  TLS vs global &time at last program switch out */
 
+#ifdef Concurrent
+   pthread_mutex_t mutex_stringtotal;
+   pthread_mutex_t mutex_blocktotal;
+   pthread_mutex_t mutex_coll;
+#endif					/* Concurrent */
+
    uword stringtotal;			/* mutex  cumulative total allocation */
    uword blocktotal;			/* mutex cumulative total allocation */
    word colltot;			/*  m      total number of collections */
@@ -574,20 +617,6 @@ struct progstate {
 
    struct threadstate *tstate;
 
-   dptr Xargp;                    /* TLS  */
-   word Xnargs;                   /* TLS  */
-   struct descrip Value_tmp;      /* TLS  */
-
-   struct descrip K_current;      /* TLS  */
-   int K_errornumber;             /* TLS  */
-   int K_level;                      /* TLS  */
-   char *K_errortext;                     /* TLS  */
-   struct descrip K_errorvalue;           /* TLS  */
-   int Have_errval;                   /* TLS  */
-   int T_errornumber;                 /* TLS  */
-   int T_have_val;
-   struct descrip T_errorvalue;           /* TLS  */
-
    struct descrip K_main;
    struct b_file K_errout;
    struct b_file K_input;
@@ -595,6 +624,13 @@ struct progstate {
 
    dptr Clintsrargp;
 
+   /* dynamic record types */
+
+  int yyy;
+
+  int Longest_dr;
+  struct b_proc_list **Dr_arrays;
+  
    /*
     * Function Instrumentation Fields.
     */
@@ -731,8 +767,8 @@ struct b_coexpr {		/* co-expression stack block */
    inst es_oldipc;              /*   oldipc */
    word es_ilevel;		/*   interpreter level */
    word *es_sp;			/*   sp */
-   word *stack;			/*   beginning of interpreter stack */
-   word *stackend;		/*   end of interpreter stack */
+   word *es_stack;		/*   beginning of interpreter stack */
+   word *es_stackend;		/*   end of interpreter stack */
    dptr tvalloc;		/*   where to place transmitted value */
    struct descrip freshblk;	/*   refresh block pointer */
    struct astkblk *es_actstk;	/*   pointer to activation stack structure */

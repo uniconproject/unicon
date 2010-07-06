@@ -54,6 +54,11 @@ extern uword stattotal;		/* cumulative total of all static allocations */
 
 extern struct tend_desc *tend;  /* chain of tended descriptors */
 
+#ifdef Concurrent
+extern pthread_mutex_t mutex_stklist;
+extern pthread_mutex_t mutex_tend;
+#endif					/* Concurrent */
+
 /*
  * Externals that are conditional on features.
  */
@@ -138,14 +143,13 @@ extern struct b_real realzero;		/* real zero block */
    extern int n_statics;		/* number of static variables */
    extern struct b_coexpr *mainhead;	/* &main */
 
+   extern int longest_dr;
+   extern struct b_proc_list **dr_arrays;
+
 #ifdef PosixFns
 extern struct descrip amperErrno;
 #endif					/* PosixFns */
 #endif					/* MultiThread */
-
-/* dynamic record types */
-extern int longest_dr;
-extern struct b_proc_list **dr_arrays;
 
 /*
  * Externals that differ between compiler and interpreter.
@@ -154,28 +158,37 @@ extern struct b_proc_list **dr_arrays;
    /*
     * External declarations for the interpreter.
     */
+
+#ifndef Concurrent
+   extern struct pf_marker *pfp;	        /* Procedure frame pointer */
+   extern struct ef_marker *efp;		/* Expression frame pointer */
+   extern struct gf_marker *gfp;		/* Generator frame pointer */
+   extern inst ipc;			/* Interpreter program counter */
+   extern inst oldipc;                    /* the previous ipc, fix returned line zero */
+   extern word *sp;		/* Stack pointer */
+   extern int ilevel;	
+   extern word *stack;			/* interpreter stack base */
+   extern word *stackend;		/* end of evaluation stack */
+#endif					/* Concurrent */
    
-   extern inst ipc;			/* interpreter program counter */
-   extern inst oldipc;                  /* previous interp. program counter */
-   extern int ilevel;			/* interpreter level */
-   extern int ntended;			/* number of active tended descriptors*/
+/*delete
+   extern int ntended;			/* number of active tended descriptors
+*/
    extern struct b_cset k_ascii;	/* value of &ascii */
    extern struct b_cset k_cset;		/* value of &cset */
    extern struct b_cset k_digits;	/* value of &lcase */
    extern struct b_cset k_lcase;	/* value of &lcase */
    extern struct b_cset k_letters;	/* value of &letters */
    extern struct b_cset k_ucase;	/* value of &ucase */
-   extern struct descrip tended[];	/* tended descriptors */
-   extern struct ef_marker *efp;	/* expression frame pointer */
-   extern struct gf_marker *gfp;	/* generator frame pointer */
-   extern struct pf_marker *pfp;	/* procedure frame pointer */
-   extern word *sp;			/* interpreter stack pointer */
-   extern word *stack;			/* interpreter stack base */
-   extern word *stackend;		/* end of evaluation stack */
+
+/* delete
+   extern struct descrip tended[];	/* tended descriptors
+*/
    
    extern struct pstrnm pntab[];
    extern int pnsize;
    
+/*probably Thread Safe*/
    #ifdef ExecImages
       extern int dumped;		/* the interpreter has been dumped */
    #endif				/* ExecImages */
@@ -183,9 +196,18 @@ extern struct b_proc_list **dr_arrays;
    #ifdef MultiThread
       extern struct progstate *curpstate;
       extern struct progstate rootpstate;
+   #ifdef AAAConcurrent
+      extern __thread struct threadstate roottstate; 
+      extern __thread struct threadstate *curtstate;
+   #else					/* Concurrent */
+      extern struct threadstate roottstate; 
       extern struct threadstate *curtstate;
-      extern struct threadstate roottstate;
+   #endif					/* Concurrent */
       extern int noMTevents;		/* no MT events during GC */
+   #ifdef Concurrent
+      extern pthread_mutex_t mutex_noMTevents;
+   #endif					/* Concurrent */
+
    #else				/* MultiThread */
       extern char *code;		/* start of icode */
       extern char *ecode;		/* end of icode */

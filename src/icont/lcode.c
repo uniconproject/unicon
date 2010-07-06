@@ -308,7 +308,7 @@ void gencode()
             if (lnfree >= &lntable[nsize])
                lntable  = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
                   sizeof(struct ipc_line), 1, "line number table");
-            lnfree->ipc = pc;
+            lnfree->ipc_saved = pc;
             lnfree->line = lineno;
             lnfree++;
 #endif					/* SrcColumnInfo */
@@ -338,7 +338,7 @@ void gencode()
             if (lnfree >= &lntable[nsize])
                lntable  = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
                   sizeof(struct ipc_line), 1, "line number table");
-            lnfree->ipc = pc;
+            lnfree->ipc_saved = pc;
             lnfree->line = (colmno << 21) + lineno ;
             lnfree++;
    #endif                               /* SrcColumnInfo */
@@ -353,7 +353,7 @@ void gencode()
             if (lnfree >= &lntable[nsize])
                 lntable = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
                            sizeof(struct ipc_line), 1, "line number table");
-            lnfree->ipc = pc;
+            lnfree->ipc_saved = pc;
             lnfree->line = (colmno << 21) + (SyntCode(synt) << 16) + lineno;
             lnfree++;
 #endif					/* SrcSyntaxInfo */
@@ -517,9 +517,9 @@ static void setfile()
          &fnmsize, sizeof(struct ipc_fname), 1, "file name table");
 
 #ifdef CRAY
-   fnmfree->ipc = pc/8;
+   fnmfree->ipc_saved = pc/8;
 #else					/* CRAY */
-   fnmfree->ipc = pc;
+   fnmfree->ipc_saved = pc;
 #endif					/* CRAY */
 
    fnmfree->fname = getrest();
@@ -1524,7 +1524,7 @@ void gentables()
       struct ipc_fname *ptr;
       for (ptr = fnmtbl; ptr < fnmfree; ptr++) {
          fprintf(dbgfile, "%ld:\t%03d\tS+%03d\t\t\t# %s\n",
-            (long)(pc + k), ptr->ipc, ptr->fname, &lsspace[ptr->fname]);
+            (long)(pc + k), ptr->ipc_saved, ptr->fname, &lsspace[ptr->fname]);
          k = k + 8;
          }
       putc('\n', dbgfile);
@@ -1545,7 +1545,7 @@ void gentables()
       struct ipc_line *ptr;
       for (ptr = lntable; ptr < lnfree; ptr++) {
          fprintf(dbgfile, "%ld:\t%03d\t%03d\n", (long)(pc + k),
-            ptr->ipc, ptr->line);
+            ptr->ipc_saved, ptr->line);
          k = k + 8;
          }
       putc('\n', dbgfile);

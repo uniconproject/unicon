@@ -23,7 +23,7 @@ function{0,1} args(x,i)
       abstract { return integer }
       inline {
 #ifdef MultiThread
-	 return C_integer BlkD(x,Coexpr)->program->Xnargs;
+	 return C_integer BlkD(x,Coexpr)->program->tstate->Xnargs;
 #else
 	 fail;
 #endif					/* MultiThread */
@@ -36,8 +36,8 @@ function{0,1} args(x,i)
       inline {
 #ifdef MultiThread
 	 int c_i = IntVal(i);
-	 if ((c_i <= 0) || (c_i > BlkD(x,Coexpr)->program->Xnargs)) fail;
-	 return BlkD(x,Coexpr)->program->Xargp[IntVal(i)];
+	 if ((c_i <= 0) || (c_i > BlkD(x,Coexpr)->program->tstate->Xnargs)) fail;
+	 return BlkD(x,Coexpr)->program->tstate->Xargp[IntVal(i)];
 #else
 	 fail;
 #endif					/* MultiThread */
@@ -1688,7 +1688,7 @@ function{1} load(s,arglist,infile,outfile,errfile,
       return coexpr
       }
    body {
-      word *stack;
+      word *stack_tmp;
       struct progstate *pstate;
       char sbuf1[MaxCvtLen], sbuf2[MaxCvtLen];
       register struct b_coexpr *sblkp;
@@ -1756,10 +1756,10 @@ function{1} load(s,arglist,infile,outfile,errfile,
 	 else theError = &(BlkLoc(errfile)->File); /* could check harder */
          }
 
-      stack =
+      stack_tmp =
 	(word *)(sblkp = loadicode(loadstring,theInput,theOutput,theError,
 				   _bs_,_ss_,_stk_));
-      if(!stack) {
+      if(!stack_tmp) {
 	 fail;
          }
       pstate = sblkp->program;
@@ -1770,17 +1770,19 @@ function{1} load(s,arglist,infile,outfile,errfile,
       rootpstate.next = pstate;
 
       savedsp = sp;
-      sp = stack + Wsizeof(struct b_coexpr)
-        + Wsizeof(struct progstate) + pstate->hsize/WordSize;
+      sp = stack_tmp + Wsizeof(struct b_coexpr)  + Wsizeof(struct progstate)
+        + Wsizeof(struct threadstate) + pstate->hsize/WordSize;
       if (pstate->hsize % WordSize) sp++;
 
 #ifdef UpStack
       sblkp->cstate[0] =
-         ((word)((char *)sblkp + (mstksize - (sizeof(*sblkp)+sizeof(struct progstate)+pstate->hsize))/2)
+         ((word)((char *)sblkp + (mstksize - (sizeof(*sblkp)+sizeof(struct progstate)+
+            sizeof(struct threadstate)+pstate->hsize))/2)
             &~((word)WordSize*StackAlign-1));
 #else					/* UpStack */
       sblkp->cstate[0] =
-	((word)((char *)sblkp + mstksize - WordSize + sizeof(struct progstate) + pstate->hsize)
+	((word)((char *)sblkp + mstksize - WordSize + sizeof(struct progstate) +
+           sizeof(struct threadstate) + pstate->hsize)
            &~((word)WordSize*StackAlign-1));
 #endif					/* UpStack */
 
@@ -1824,11 +1826,11 @@ function{1} load(s,arglist,infile,outfile,errfile,
        */
       if (!is:null(arglist)) {
          PushDesc(arglist);
-	 pstate->Glbl_argp = (dptr)(sp - 1);
+	 pstate->tstate->Glbl_argp = (dptr)(sp - 1);
          }
       else {
          PushNull;
-	 pstate->Glbl_argp = (dptr)(sp - 1);
+	 pstate->tstate->Glbl_argp = (dptr)(sp - 1);
          {
          dptr tmpargp = (dptr) (sp - 1);
          Ollist(0, tmpargp);
@@ -1974,10 +1976,32 @@ static stringint siKeywords[] = {
       char *kname = kyname;
       if (kname[0] == '&') kname++;
       if (strcmp(kname,"allocated") == 0) {
+	 int tot;
+#ifdef Concurrent
+	 pthread_mutex_lock(&p->mutex_stringtotal);
+	 pthread_mutex_lock(&p->mutex_blocktotal);
+	 tot =  stattotal + p->stringtotal + p->blocktotal;
+	 pthread_mutex_unlock(&p->mutex_blocktotal);
+	 pthread_mutex_unlock(&p->mutex_stringtotal);
+	 suspend C_integer tot;
+
+	 suspend C_integer stattotal;
+
+	 pthread_mutex_lock(&p->mutex_stringtotal);
+	 tot =  p->stringtotal;
+	 pthread_mutex_unlock(&p->mutex_stringtotal);
+	 suspend C_integer tot;
+
+	 pthread_mutex_lock(&p->mutex_blocktotal);
+	 tot =  p->blocktotal;
+	 pthread_mutex_unlock(&p->mutex_blocktotal);
+	 return C_integer tot;
+#else					/* Concurrent */
 	 suspend C_integer stattotal + p->stringtotal + p->blocktotal;
 	 suspend C_integer stattotal;
 	 suspend C_integer p->stringtotal;
 	 return  C_integer p->blocktotal;
+#endif					/* Concurrent */
 	 }
       else if (strcmp(kname,"collections") == 0) {
 	 suspend C_integer p->colltot;
@@ -1997,19 +2021,19 @@ static stringint siKeywords[] = {
 	 return C_integer col;
 	 }
       else if (strcmp(kname,"current") == 0) {
-	 return p->K_current;
+	 return p->tstate->K_current;
 	 }
       else if (strcmp(kname,"error") == 0) {
 	 return kywdint(&(p->Kywd_err));
 	 }
       else if (strcmp(kname,"errornumber") == 0) {
-	 return C_integer p->K_errornumber;
+	 return C_integer p->tstate->K_errornumber;
 	 }
       else if (strcmp(kname,"errortext") == 0) {
-	 return C_string p->K_errortext;
+	 return C_string p->tstate->K_errortext;
 	 }
       else if (strcmp(kname,"errorvalue") == 0) {
-	 return p->K_errorvalue;
+	 return p->tstate->K_errorvalue;
 	 }
       else if (strcmp(kname,"errout") == 0) {
 	 return file(&(p->K_errout));
@@ -2052,7 +2076,7 @@ static stringint siKeywords[] = {
 	 /*
 	  * Shouldn't &level be per co-expression, not per program?
 	  */
-	 return C_integer p->K_level;
+	 return C_integer p->tstate->K_level;
 	 }
       else if (strcmp(kname,"line") == 0) {
 	 struct progstate *savedp = curpstate;
@@ -2088,13 +2112,13 @@ static stringint siKeywords[] = {
 	 return file(&(p->K_output));
 	 }
       else if (strcmp(kname,"pos") == 0) {
-	 return kywdpos(&(p->Kywd_pos));
+	 return kywdpos(&(p->tstate->Kywd_pos));
 	 }
       else if (strcmp(kname,"progname") == 0) {
 	 return kywdstr(&(p->Kywd_prog));
 	 }
       else if (strcmp(kname,"random") == 0) {
-	 return kywdint(&(p->Kywd_ran));
+	 return kywdint(&(p->tstate->Kywd_ran));
 	 }
       else if (strcmp(kname,"regions") == 0) {
          word allRegions = 0;
@@ -2117,7 +2141,7 @@ static stringint siKeywords[] = {
       else if (strcmp(kname,"source") == 0) {
 #ifdef CoExpr
 	 return coexpr(topact(
-			   BlkD(BlkD(d,Coexpr)->program->K_current,Coexpr)));
+			   BlkD(BlkD(d,Coexpr)->program->tstate->K_current,Coexpr)));
 #else					/* CoExpr */
 	fail;
 #endif					/* CoExpr */
@@ -2145,7 +2169,7 @@ static stringint siKeywords[] = {
 	 return C_integer allRegions;
 	 }
       else if (strcmp(kname,"subject") == 0) {
-	 return kywdsubj(&(p->ksub));
+	 return kywdsubj(&(p->tstate->ksub));
 	 }
       else if (strcmp(kname,"time") == 0) {
 	 /*
@@ -2328,7 +2352,9 @@ function{1} join(x)
 	struct context *n;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
+        printf("aaaaaaaaaaaa\n");
 	pthread_join(n->thread, NULL);
+        printf("bbbbbbbbbbbbb\n");
 	/*}*/
 	return x;
 	}

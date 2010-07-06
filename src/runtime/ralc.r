@@ -13,6 +13,7 @@ extern word alcnum;
 
 #ifdef Concurrent 
    pthread_mutex_t mutex_alcblk;
+   pthread_mutex_t mutex_alcstr;
    pthread_mutex_t mutex_list_ser;
    pthread_mutex_t mutex_coexp_ser;
    pthread_mutex_t mutex_set_ser;
@@ -178,13 +179,19 @@ struct b_coexpr *alccoexp()
    ep->title = T_Coexpr;
    ep->size = 0;
    ep->id = serial++;
-   ep->nextstk = stklist;
    ep->es_tend = NULL;
    ep->file_name = "";
    ep->line_num = 0;
    ep->freshblk = nulldesc;
    ep->es_actstk = NULL;
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_stklist);
+#endif					/* Concurrent */
+   ep->nextstk = stklist;
    stklist = ep;
+#ifdef Concurrent
+   pthread_mutex_unlock(&mutex_stklist);
+#endif					/* Concurrent */
    return ep;
    }
 #else					/* COMPILER */
@@ -207,8 +214,8 @@ struct b_coexpr *alccoexp()
 #ifdef MultiThread
    if (icodesize > 0) {
       ep = (struct b_coexpr *)
-	calloc(1, (msize)(stacksize + icodesize +
-			  sizeof(struct progstate) + sizeof(struct b_coexpr)));
+	calloc(1, (msize)(stacksize + icodesize + sizeof(struct progstate) +
+			  sizeof(struct threadstate) + sizeof(struct b_coexpr)));
       }
    else
 #endif					/* MultiThread */
@@ -227,7 +234,7 @@ struct b_coexpr *alccoexp()
 #ifdef MultiThread
       if (icodesize>0) {
          ep = (struct b_coexpr *)
-	    malloc((msize)(mstksize+icodesize+sizeof(struct progstate)));
+	    malloc((msize)(mstksize+icodesize+sizeof(struct progstate)+sizeof(struct threadstate)));
          }
       else
 #endif					/* MultiThread */
@@ -260,20 +267,29 @@ struct b_coexpr *alccoexp()
       ep->squeue = ep->rqueue = NULL;
 #else					/* Concurrent */
       ep->id = coexp_ser++;
-      ep->nextstk = stklist;
-      ep->es_tend = NULL;
 #endif					/* Concurrent */
+
+      ep->es_tend = NULL;
 
 #ifdef MultiThread
    /*
     * Initialize program state to self for &main; curpstate for others.
     */
-   if(icodesize>0) ep->program = (struct progstate *)(ep+1);
+   if(icodesize>0){
+     ep->program = (struct progstate *)(ep+1);
+     ep->program->tstate = (struct threadstate *) (ep->program + 1);
+     }
    else ep->program = curpstate;
-
 #endif					/* MultiThread */
 
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_stklist);
+#endif					/* Concurrent */
+   ep->nextstk = stklist;
    stklist = ep;
+#ifdef Concurrent
+   pthread_mutex_unlock(&mutex_stklist);
+#endif					/* Concurrent */
    return ep;
    }
 #endif					/* COMPILER */
@@ -323,7 +339,6 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->fd.fp = fd;
    blk->status = status;
    blk->fname = tname;
-   blk->fd.fp = fd;
 #ifdef Concurrent
    pthread_mutex_init(&(blk->mutex), NULL);
 #endif				/* Concurrent */
@@ -778,8 +793,15 @@ char *f(register char *s, register word slen)
    StrLen(ts) = slen;
    StrLoc(ts) = s;
 #if E_String
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_noMTevents);
+#endif					/* Concurrent */
    if (!noMTevents)
       EVVal(slen, e_string);
+#ifdef Concurrent
+   pthread_mutex_unlock(&mutex_noMTevents);
+#endif					/* Concurrent */
+
 #endif					/* E_String */
    s = StrLoc(ts);
 #endif					/* MultiThread */
@@ -787,11 +809,19 @@ char *f(register char *s, register word slen)
    /*
     * Make sure there is enough room in the string space.
     */
+#ifdef Concurrent 
+   pthread_mutex_lock(&mutex_alcstr);
+#endif					/* Concurrent */
+
    if (DiffPtrs(strend,strfree) < slen) {
       StrLen(ts) = slen;
       StrLoc(ts) = s;
-      if (!reserve(Strings, slen))
+      if (!reserve(Strings, slen)){
+#ifdef Concurrent 
+         pthread_mutex_unlock(&mutex_alcstr);
+#endif					/* Concurrent */
          return NULL;
+      }
       s = StrLoc(ts);
       }
 
@@ -811,6 +841,9 @@ char *f(register char *s, register word slen)
       d += slen;
 
    strfree = d;
+#ifdef Concurrent 
+      pthread_mutex_unlock(&mutex_alcstr);
+#endif					/* Concurrent */
    return ofree;
    }
 #enddef
@@ -1032,6 +1065,7 @@ char *f(int region, word nbytes)
       newsize = MinAbrSize;
 
    if ((rp = newregion(nbytes, newsize)) != 0) {
+     int tmp_noMTevents;
       rp->prev = curr;
       rp->next = NULL;
       curr->next = rp;
@@ -1041,7 +1075,14 @@ char *f(int region, word nbytes)
       curr->Gprev = rp;
       *pcurr = rp;
 #if e_tenurestring || e_tenureblock
-      if (!noMTevents) {
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_noMTevents);
+   tmp_noMTevents = noMTevents;
+   pthread_mutex_unlock(&mutex_noMTevents);
+#else					/* Concurrent */
+   tmp_noMTevents = noMTevents;
+#endif					/* Concurrent */
+      if (!tmp_noMTevents) {
          if (region == Strings) {
             EVVal(rp->size, e_tenurestring);
             }

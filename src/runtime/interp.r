@@ -51,12 +51,20 @@ word lastop;			/* Last operator evaluated */
 /*
  * Istate variables.
  */
+
+#ifndef Concurrent
+struct pf_marker *pfp = NULL;		/* Procedure frame pointer */
 struct ef_marker *efp;		/* Expression frame pointer */
 struct gf_marker *gfp;		/* Generator frame pointer */
 inst ipc;			/* Interpreter program counter */
 inst oldipc;                    /* the previous ipc, fix returned line zero */
 word *sp = NULL;		/* Stack pointer */
-
+int ilevel;	
+#ifndef StackCheck
+word *stack;				/* Interpreter stack */
+word *stackend; 			/* End of interpreter stack */
+#endif					/* StackCheck */
+#endif					/* Concurrent */
 
 #if UNIX && E_Tick
 extern union { 			/* clock ticker -- keep in sync w/ fmonitor.r */
@@ -67,7 +75,6 @@ extern unsigned long oldtick;	/* previous sum of the two longs */
 #endif					/* UNIX && E_Tick */
 
 
-int ilevel;			/* Depth of recursion in interp() */
 #ifndef MultiThread
 struct descrip value_tmp;	/* list argument to Op_Apply */
 #endif					/* MultiThread */
@@ -356,7 +363,7 @@ int interp_x(int fsig,dptr cargp)
 #endif
 #if e_cstack
 #ifdef StackCheck
-   EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+   EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
    EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -367,7 +374,7 @@ int interp_x(int fsig,dptr cargp)
     * Make a stab at catching interpreter stack overflow.  This does
     * not detect C stack overflow.
     */
-   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->stackend)){
+   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->es_stackend)){
          fatalerr(301, NULL);
 	 }
 #else					/* StackCheck */
@@ -513,8 +520,8 @@ int interp_x(int fsig,dptr cargp)
 	uword size;
 	word temp_no;
 	if (!current_line_ptr ||
-	    current_line_ptr->ipc > ipc_offset ||
-	    current_line_ptr[1].ipc <= ipc_offset) {
+	    current_line_ptr->ipc_saved > ipc_offset ||
+	    current_line_ptr[1].ipc_saved <= ipc_offset) {
 #if defined(LineCodes) && defined(Polling)
             if (!pollctr--) {
 	       ExInterp;
@@ -526,8 +533,8 @@ int interp_x(int fsig,dptr cargp)
 
 	    if(current_line_ptr &&
 	       current_line_ptr + 2 < elines &&
-	       current_line_ptr[1].ipc < ipc_offset &&
-	       ipc_offset < current_line_ptr[2].ipc) {
+	       current_line_ptr[1].ipc_saved < ipc_offset &&
+	       ipc_offset < current_line_ptr[2].ipc_saved) {
 	       current_line_ptr ++;
 	       } 
 	    else {
@@ -535,7 +542,7 @@ int interp_x(int fsig,dptr cargp)
 	       size = DiffPtrs((char *)elines, (char *)ilines) /
 		  sizeof(struct ipc_line *);
 	       while (size > 1) {
-		  if (ipc_offset >= current_line_ptr[size>>1].ipc) {
+		  if (ipc_offset >= current_line_ptr[size>>1].ipc_saved) {
 		     current_line_ptr = &current_line_ptr[size>>1];
 		     size -= (size >> 1);
 		     }
@@ -990,7 +997,7 @@ Deliberate Syntax Error
 		   * This does not detect C stack overflow.
 		   */
 		  if ((char *)sp + args * sizeof(struct descrip) + PerilDelta >
-                       (char *)(BlkD(k_current,Coexpr)->stackend)) {
+                       (char *)(BlkD(k_current,Coexpr)->es_stackend)) {
 		     fatalerr(301, NULL);
 		     }
 #else					/* StackCheck */
@@ -1046,7 +1053,7 @@ invokej:
 
 	    ExInterp;
 #if e_stack
-	    EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_stack);
+	    EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_stack);
 #endif
 
 #ifdef StackCheck
@@ -1055,7 +1062,7 @@ invokej:
 	     * not detect C stack overflow.
 	     */
 	    if (((char *)sp + PerilDelta) >
-		(char *)(BlkD(k_current,Coexpr)->stackend))
+		(char *)(BlkD(k_current,Coexpr)->es_stackend))
 	       fatalerr(301, NULL);
 #endif					/* StackCheck */
 
@@ -1231,7 +1238,7 @@ Unmark_uw:
 	       ExInterp;
 	       EVVal(A_Unmark_uw, e_intret);
 #ifdef StackCheck
-	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
 	       EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1362,7 +1369,7 @@ Lsusp_uw:
 		  ExInterp;
                   EVVal(A_Lsusp_uw, e_intret);
 #ifdef StackCheck
-		  EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+		  EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
 		  EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1493,7 +1500,7 @@ Eret_uw:
 	       ExInterp;
                EVVal(A_Eret_uw, e_intret);
 #ifdef StackCheck
-	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
 	       EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1567,7 +1574,7 @@ Pret_uw:
 
                EVVal(A_Pret_uw, e_intret);
 #ifdef StackCheck
-	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
 	       EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1683,7 +1690,7 @@ efail_noev:
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
 #ifdef StackCheck
-                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
                      EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1695,7 +1702,7 @@ efail_noev:
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
 #ifdef StackCheck
-                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
                      EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1707,7 +1714,7 @@ efail_noev:
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
 #ifdef StackCheck
-                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+                     EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
                      EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */
@@ -1755,7 +1762,7 @@ Pfail_uw:
 	       ExInterp;
                EVVal(A_Pfail_uw, e_intret);
 #ifdef StackCheck
-               EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->stack), e_cstack);
+               EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
 #else					/* StackCheck */
                EVVal(DiffPtrs(sp, stack), e_cstack);
 #endif					/* StackCheck */

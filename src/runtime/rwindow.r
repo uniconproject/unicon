@@ -4396,6 +4396,7 @@ FILE *OpenConsole()
 #ifdef MultiThread
       if (!curpstate) {
          curpstate = &rootpstate;
+	 curtstate = curpstate->tstate;
          rootpstate.eventmask = nulldesc;
          }
       if (!alclist) curpstate->Alclist = alclist_0;

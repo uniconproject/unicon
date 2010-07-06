@@ -1078,7 +1078,7 @@ function{0,1} read(f)
 
    body {
       register word slen, rlen;
-      register char *sp;
+      register char *sptr;
       int status;
       static char sbuf[MaxReadStr];
       tended struct descrip s;
@@ -1121,9 +1121,9 @@ function{0,1} read(f)
 	        Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
 		}
 
-	     Protect(sp = alcstr(sbuf,rlen), runerr(0));
+	     Protect(sptr = alcstr(sbuf,rlen), runerr(0));
 	     if (StrLen(s) == 0)
-	        StrLoc(s) = sp;
+	        StrLoc(s) = sptr;
 	     StrLen(s) += rlen;
 	     if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
 	     else {
@@ -1277,9 +1277,9 @@ function{0,1} read(f)
 	    Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
 	    }
 
-	 Protect(sp = alcstr(sbuf,rlen), runerr(0));
+	 Protect(sptr = alcstr(sbuf,rlen), runerr(0));
 	 if (StrLen(s) == 0)
-	    StrLoc(s) = sp;
+	    StrLoc(s) = sptr;
 	 StrLen(s) += rlen;
 	 } while (slen < 0);
       return s;
@@ -1313,7 +1313,7 @@ function{0,1} reads(f,i)
 
    body {
       register word slen, rlen;
-      register char *sp;
+      register char *sptr;
       static char sbuf[MaxReadStr];
       SOCKET ws;
       int bytesread = 0;
@@ -1372,9 +1372,9 @@ function{0,1} reads(f,i)
                         alcstr(StrLoc(s), StrLen(s))), runerr(0));
 	       }
 
-	    Protect(sp = alcstr(sbuf, rlen), runerr(0));
+	    Protect(sptr = alcstr(sbuf, rlen), runerr(0));
 	    if (StrLen(s) == 0)
-	       StrLoc(s) = sp;
+	       StrLoc(s) = sptr;
 	    StrLen(s) += rlen;
 
 	    } while ((i == -1) || (bytesread < i));
@@ -1432,9 +1432,9 @@ function{0,1} reads(f,i)
                         alcstr(StrLoc(s), StrLen(s))), runerr(0));
 		    }
 
-		Protect(sp = alcstr(sbuf, rlen), runerr(0));
+		Protect(sptr = alcstr(sbuf, rlen), runerr(0));
 		if (StrLen(s) == 0)
-		    StrLoc(s) = sp;
+		    StrLoc(s) = sptr;
 		StrLen(s) += rlen;
 	    } while ((i == -1) || (bytesread < i));
 	    return s;
@@ -1476,15 +1476,15 @@ function{0,1} reads(f,i)
        *  If reading a directory, return up to i bytes of next entry.
        */
       if ((BlkD(f,File)->status & Fs_Directory) != 0) {
-         char *sp;
+         char *sptr;
          struct dirent *de = readdir((DIR*) fp);
          if (de == NULL)
             fail;
          nbytes = strlen(de->d_name);
          if (nbytes > i)
             nbytes = i;
-         Protect(sp = alcstr(de->d_name, nbytes), runerr(0));
-         return string(nbytes, sp);
+         Protect(sptr = alcstr(de->d_name, nbytes), runerr(0));
+         return string(nbytes, sptr);
          }
 #endif
 #endif					/* ReadDirectory */
@@ -1930,9 +1930,8 @@ end
 
 #if HAVE_LIBZ
    if (status & Fs_Compress) {
-      if (gzputc((gzFile)(f.fp),'\n')==-1) {
+      if (gzputc((gzFile)(f.fp),'\n')==-1)
           runerr(214);
-          }
       }
    else
 #endif					/* HAVE_LIBZ */
@@ -1944,10 +1943,12 @@ end
       if (status & Fs_Messaging) {
 	 struct MFile *mf = f.mf;
 	 extern int Merror;
-	 if (!MFIN(mf, WRITING)) {
+	 if (!MFIN(mf, WRITING))
 	    runerr(213);
-	    }
 	 if (tp_write(mf->tp, "\n", 1) < 0) {
+#ifdef Concurrent
+	 pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 #if terminate
 	    syserr("tp_write failed in stop()");
 #else
@@ -1962,12 +1963,16 @@ end
 #endif                                  /* Messaging */
 #ifdef PosixFns
       if (status & Fs_Socket) {
-	 if (sock_write(f.fd, "\n", 1) < 0)
+	 if (sock_write(f.fd, "\n", 1) < 0){
+#ifdef Concurrent
+	    pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 #if terminate
 	    syserr("sock_write failed in stop()");
 #else
 	    fail;
 #endif
+	  }
          }
       else
 #endif					/* PosixFns */
@@ -2189,6 +2194,9 @@ function {1} name(x[nargs])
 			     runerr(213);
 			   }
 			   if (tp_write(mf->tp, "\n", 1) < 0) {
+#ifdef Concurrent
+			      pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 #if terminate
 			      syserr("tp_write failed in stop()");
 #else
@@ -2203,13 +2211,17 @@ function {1} name(x[nargs])
 #endif                                  /* Messaging */
 #ifdef PosixFns
 			if (status & Fs_Socket) {
-			   if (sock_write(f.fd, "\n", 1) < 0)
+			   if (sock_write(f.fd, "\n", 1) < 0){
+#ifdef Concurrent
+			      pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 #if terminate
 			      syserr("sock_write failed in stop()");
 #else
 			      fail;
 #endif
-			   }
+			     }
+			}
 			else {
 #endif					/* PosixFns */
 			putc('\n', f.fp);
@@ -2323,6 +2335,9 @@ function {1} name(x[nargs])
 		     if (status & Fs_Socket) {
 
 			if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
+#ifdef Concurrent
+			   pthread_mutex_unlock(&fblk->mutex);
+#endif					/* Concurrent */
 #if terminate
 			   syserr("sock_write failed in stop()");
 #else

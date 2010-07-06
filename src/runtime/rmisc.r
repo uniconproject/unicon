@@ -1180,28 +1180,28 @@ struct b_coexpr *ce;
  * findline - find the source line number associated with the ipc
  */
 #ifdef SrcColumnInfo
-int findline(ipc)
-word *ipc;
+int findline(ipc_in)
+word *ipc_in;
 {
-  return findloc(ipc) & 65535;
+  return findloc(ipc_in) & 65535;
 }
-int findcol(ipc)
-word *ipc;
+int findcol(ipc_in)
+word *ipc_in;
 {
-  return findloc(ipc) >> 21; /*16 changed to 21  */
-}
-
-int findsyntax(ipc)
-word *ipc;
-{
-  return ((findloc(ipc) >> 16) & 31);
+  return findloc(ipc_in) >> 21; /*16 changed to 21  */
 }
 
-int findloc(ipc)
+int findsyntax(ipc_in)
+word *ipc_in;
+{
+  return ((findloc(ipc_in) >> 16) & 31);
+}
+
+int findloc(ipc_in)
 #else					/* SrcColumnInfo */
-int findline(ipc)
+int findline(ipc_in)
 #endif					/* SrcColumnInfo */
-word *ipc;
+word *ipc_in;
 {
    uword ipc_offset;
    uword size;
@@ -1215,13 +1215,13 @@ word *ipc;
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
-   if (!InRange(code,ipc,ecode))
+   if (!InRange(code,ipc_in,ecode))
       return 0;
-   ipc_offset = DiffPtrs((char *)ipc,(char *)code);
+   ipc_offset = DiffPtrs((char *)ipc_in,(char *)code);
    base = ilines;
    size = DiffPtrs((char *)elines,(char *)ilines) / sizeof(struct ipc_line *);
    while (size > 1) {
-      if (ipc_offset >= base[size / two].ipc) {
+      if (ipc_offset >= base[size / two].ipc_saved) {
          base = &base[size / two];
          size -= size / two;
          }
@@ -1259,7 +1259,7 @@ int line;
       else
          size = size / two;
       }
-   return base->ipc;
+   return base->ipc_saved;
 }
 
 /*
@@ -1272,12 +1272,12 @@ int level;
    struct pf_marker *fp;
    int i;
 
-   if (BlkLoc(ce->program->K_current) != BlkLoc(k_current))
+   if (BlkLoc(ce->program->tstate->K_current) != BlkLoc(k_current))
       fp = ce->es_pfp;
    else
       fp = pfp;
 
-   i = ce->program->K_level;
+   i = ce->program->tstate->K_level;
    if (i<level) 
       return (word*)0;
 
@@ -1299,8 +1299,8 @@ int level;
  * hitsyntax - finds if the ipc that has an entry on the line table.
  * returns a syntax_code > 0 if it founds, otherwise it returns a zero.
  */
-int hitsyntax(ipc)
-word *ipc;
+int hitsyntax(ipc_in)
+word *ipc_in;
 {
 
    int synt=0;
@@ -1316,13 +1316,13 @@ word *ipc;
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
-   if (!InRange(code,ipc,ecode))
+   if (!InRange(code,ipc_in,ecode))
       return 0;
-   ipc_offset = DiffPtrs((char *)ipc,(char *)code);
+   ipc_offset = DiffPtrs((char *)ipc_in,(char *)code);
    base = ilines;
    size = DiffPtrs((char *)elines,(char *)ilines) / sizeof(struct ipc_line *);
    while (size > 1) {
-      if (ipc_offset >= base[size / two].ipc) {
+      if (ipc_offset >= base[size / two].ipc_saved) {
          base = &base[size / two];
          size -= size / two;
          }
@@ -1330,7 +1330,7 @@ word *ipc;
          size = size / two;
       }
 
-   if (ipc_offset == base->ipc)
+   if (ipc_offset == base->ipc_saved)
        synt = ((int)base->line >> 16) & 31;
    return synt;
 }
@@ -1338,8 +1338,8 @@ word *ipc;
 /*
  * findfile - find source file name associated with the ipc
  */
-char *findfile(ipc)
-word *ipc;
+char *findfile(ipc_in)
+word *ipc_in;
 {
    uword ipc_offset;
    struct ipc_fname *p;
@@ -1349,11 +1349,11 @@ word *ipc;
    extern word *records;
 #endif					/* MultiThread */
 
-   if (!InRange(code,ipc,ecode))
+   if (!InRange(code,ipc_in,ecode))
       return "?";
-   ipc_offset = DiffPtrs((char *)ipc,(char *)code);
+   ipc_offset = DiffPtrs((char *)ipc_in,(char *)code);
    for (p = efilenms - 1; p >= filenms; p--)
-      if (ipc_offset >= p->ipc)
+      if (ipc_offset >= p->ipc_saved)
          return strcons + p->fname;
    fprintf(stderr,"bad ipc/file name table\n");
    fflush(stderr);

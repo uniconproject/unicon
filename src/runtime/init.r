@@ -129,6 +129,9 @@ char *currend = NULL;			/* current end of memory region */
 
 
 word qualsize = QualLstSize;		/* size of quallist for fixed regions */
+#ifdef Concurrent 
+   pthread_mutex_t mutex_qualsize;
+#endif					/* Concurrent */
 
 word memcushion = RegionCushion;	/* memory region cushion factor */
 word memgrowth = RegionGrowth;		/* memory region growth factor */
@@ -160,6 +163,11 @@ struct b_coexpr *stklist;	/* base of co-expression block list */
 
 struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 
+#ifdef Concurrent
+pthread_mutex_t mutex_stklist;
+pthread_mutex_t mutex_tend;
+#endif					/* Concurrent */
+
 struct region rootstring, rootblock;
 
 #ifndef MultiThread
@@ -186,7 +194,6 @@ int debug_info=1;			/* flag: debugging information IS available */
 int err_conv=1;				/* flag: error conversion IS supported */
 
 int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
-struct pf_marker *pfp = NULL;		/* Procedure frame pointer */
 
 #ifndef MaxHeader
 #define MaxHeader MaxHdr
@@ -199,8 +206,13 @@ struct pf_marker *pfp = NULL;		/* Procedure frame pointer */
 #ifdef MultiThread
 struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
-struct threadstate *curtstate;
-struct threadstate roottstate;
+#ifdef AAAConcurrent
+      #passthru __thread struct threadstate roottstate; 
+      #passthru __thread struct threadstate *curtstate;
+#else					/* Concurrent */
+      struct threadstate roottstate; 
+      struct threadstate *curtstate;
+#endif					/* Concurrent */
 #else					/* MultiThread */
 
 struct b_coexpr *mainhead;		/* &main */
@@ -237,11 +249,6 @@ int tallyopt = 0;			/* want tally results output? */
 #ifdef ExecImages
 int dumped = 0;				/* non-zero if reloaded from dump */
 #endif					/* ExecImages */
-
-#ifndef StackCheck
-word *stack;				/* Interpreter stack */
-word *stackend; 			/* End of interpreter stack */
-#endif					/* StackCheck */
 
 #ifdef MultipleRuns
 extern word coexp_ser;
@@ -591,6 +598,8 @@ void check_version(struct header *hdr, char *name,
 #ifdef Concurrent
    extern pthread_mutex_t mutex_mutex;
    extern pthread_mutex_t mutex_alcblk;
+   extern pthread_mutex_t mutex_alcstr;
+
    extern pthread_mutex_t mutex_list_ser;
    extern pthread_mutex_t mutex_coexp_ser;
    extern pthread_mutex_t mutex_set_ser;
@@ -599,6 +608,45 @@ void check_version(struct header *hdr, char *name,
    extern pthread_mutex_t mutex_pat_ser;
 #endif					/* PatternType */
 #endif					/* Concurrent */
+
+void init_threadstate(struct threadstate *ts){
+
+   ts->Glbl_argp = NULL;
+
+   MakeInt(1, &(ts->Kywd_pos));
+   StrLen(ts->ksub) = 0;
+   StrLoc(ts->ksub) = "";
+
+   ts->Kywd_ran = zerodesc;
+   ts->K_errornumber = 0;
+   ts->K_level = 0;
+   ts->T_errornumber = 0;
+   ts->Have_errval = 0;
+   ts->T_have_val = 0;
+   ts->K_errortext = "";
+   ts->K_errorvalue = nulldesc;
+   ts->T_errorvalue = nulldesc;
+#ifdef PosixFns
+   ts->AmperErrno = zerodesc;
+#endif					/* PosixFns */
+
+   ts->Lastop = 0;
+   ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
+   ts->Xargp = NULL;
+   ts->Xnargs = 0;
+
+   ts->Ipc.opnd = NULL;
+   ts->Efp=NULL;		/* Expression frame pointer */
+   ts->Gfp=NULL;		/* Generator frame pointer */
+   ts->Pfp=NULL;	        /* procedure frame pointer */
+   ts->Sp = NULL;		/* Stack pointer */
+   ts->Ilevel=0;		/* Depth of recursion in interp() */
+
+#ifndef StackCheck
+   ts->Stack=NULL;		/* Interpreter stack */
+   ts->Stackend=NULL; 		/* End of interpreter stack */
+#endif					/* StackCheck */
+}
 
 #if COMPILER
 void init(name, argcp, argv, trc_init)
@@ -670,11 +718,23 @@ char *argv[];
 
 #ifdef Concurrent
    pthread_mutex_init(&mutex_mutex, NULL);
+
+   pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
+   pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);
+   pthread_mutex_init(&rootpstate.mutex_coll, NULL);
+
    pthread_mutex_init(&mutex_alcblk, NULL);
+   pthread_mutex_init(&mutex_alcstr, NULL);
+   pthread_mutex_init(&mutex_stklist, NULL);
+   pthread_mutex_init(&mutex_qualsize, NULL);
+
    pthread_mutex_init(&mutex_list_ser, NULL);
    pthread_mutex_init(&mutex_coexp_ser, NULL);
    pthread_mutex_init(&mutex_set_ser, NULL);
    pthread_mutex_init(&mutex_table_ser, NULL);
+#ifdef PatternType   
+   pthread_mutex_init(&mutex_pat_ser, NULL);
+#endif					/* PatternType */
 #endif					/* Concurrent */
 
 #if COMPILER
@@ -697,26 +757,15 @@ char *argv[];
    rootpstate.eventcode= nulldesc;
    rootpstate.eventval = nulldesc;
    rootpstate.eventsource = nulldesc;
-   rootpstate.Glbl_argp = NULL;
    rootpstate.Kywd_err = zerodesc;
-   MakeInt(1, &(rootpstate.Kywd_pos));
-   StrLen(rootpstate.ksub) = 0;
-   StrLoc(rootpstate.ksub) = "";
+
+   rootpstate.tstate = &roottstate;
+   curtstate = &roottstate;
+   init_threadstate(curtstate);
+
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;
-   rootpstate.Kywd_ran = zerodesc;
-   rootpstate.K_errornumber = 0;
-   rootpstate.K_level = 0;
-   rootpstate.T_errornumber = 0;
-   rootpstate.Have_errval = 0;
-   rootpstate.T_have_val = 0;
-   rootpstate.K_errortext = "";
-   rootpstate.K_errorvalue = nulldesc;
-   rootpstate.T_errorvalue = nulldesc;
-#ifdef PosixFns
-   rootpstate.AmperErrno = zerodesc;
-#endif					/* PosixFns */
 
 #ifdef Graphics
    rootpstate.AmperX = zerodesc;
@@ -736,6 +785,9 @@ char *argv[];
    rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
+
+   rootpstate.Longest_dr=0;
+   rootpstate.Dr_arrays=NULL;
 
 #ifdef Arrays   
    rootpstate.Cprealarray = cprealarray_0;
@@ -783,8 +835,6 @@ char *argv[];
    rootpstate.Deallocate = deallocate_0;
    rootpstate.Reserve = reserve_0;
    
-   rootpstate.tstate = &roottstate;
-   curtstate = &roottstate;
 #else					/* MultiThread */
 
    curstring = &rootstring;
@@ -1049,7 +1099,7 @@ Deliberate Syntax Error
    mainhead->freshblk = nulldesc;	/* &main has no refresh block. */
    mainhead->tvalloc = NULL;
 #ifdef StackCheck
-   mainhead->stack = (word *)(mainhead+1);
+   mainhead->es_stack = (word *)(mainhead+1);
 #endif					/* StackCheck */
 
 					/*  This really is a bug. */
@@ -1977,13 +2027,12 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate = coexp->program;
    tstate = pstate->tstate;
 #ifdef StackCheck
-   coexp->stack = (word *)(pstate+1);
-   coexp->stackend = (word *)((char *)(pstate+1)+(stacksize/2));
+   coexp->es_stack = (word *)(pstate+1);
+   coexp->es_stackend = (word *)((char *)(pstate+1)+(stacksize/2));
 #endif					/* StackCheck */
    /*
     * Initialize values.
     */
-   tstate->Lastop = 0;
    pstate->hsize = icodesize;
    pstate->parent= NULL;
    pstate->parentdesc= nulldesc;
@@ -1993,29 +2042,19 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->eventcode= nulldesc;
    pstate->eventval = nulldesc;
    pstate->eventsource = nulldesc;
-   pstate->Glbl_argp = NULL;
+
    pstate->Kywd_err = zerodesc;
-   pstate->Kywd_pos = onedesc;
-   StrLen(pstate->ksub) = 0;
-   StrLoc(pstate->ksub) = "";
-   pstate->Kywd_ran = zerodesc;
-   pstate->Line_num = pstate->Column = pstate->Lastline = pstate->Lastcol = 0;
-   pstate->Xargp = NULL;
-   pstate->Xnargs = 0;
-   pstate->K_errornumber = 0;
-   pstate->K_level = 0;
-   pstate->T_errornumber = 0;
-   pstate->Have_errval = 0;
-   pstate->T_have_val = 0;
-   pstate->K_level = 0;
-   pstate->K_errortext = "";
-   pstate->K_errorvalue = nulldesc;
-   pstate->T_errorvalue = nulldesc;
+
+   init_threadstate(tstate);
+
    pstate->Kywd_time_elsewhere = millisec();
    pstate->Kywd_time_out = 0;
    pstate->Mainhead= ((struct b_coexpr *)pstate)-1;
    pstate->K_main.dword = D_Coexpr;
    BlkLoc(pstate->K_main) = (union block *) pstate->Mainhead;
+
+   pstate->Longest_dr=0;
+   pstate->Dr_arrays=NULL;
 
 #ifdef Graphics
    pstate->AmperX = zerodesc;
@@ -2156,7 +2195,7 @@ C_integer bs, ss, stk;
     {fprintf(stderr,"can't malloc new icode region\n");c_exit(EXIT_FAILURE);});
 
    pstate = coexp->program;
-   pstate->K_current.dword = D_Coexpr;
+   pstate->tstate->K_current.dword = D_Coexpr;
 
    StrLen(pstate->Kywd_prog) = strlen(prog_name);
    StrLoc(pstate->Kywd_prog) = prog_name;
@@ -2270,17 +2309,26 @@ C_integer bs, ss, stk;
  */
 struct progstate *findprogramforblock(union block *p)
 {
-   struct b_coexpr *ce = stklist;
+   struct b_coexpr *ce;
    struct progstate *tmpp;
    extern struct b_proc *stubrec;
-
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_stklist);
+#endif					/* Concurrent */
+   ce = stklist;
    while (ce != NULL) {
       tmpp = ce->program;
       if (InRange(tmpp->Code, p, tmpp->Elines)) {
+#ifdef Concurrent
+	 pthread_mutex_unlock(&mutex_stklist);
+#endif					/* Concurrent */
 	 return tmpp;
 	 }
       ce = ce->nextstk;
       }
+#ifdef Concurrent
+   pthread_mutex_unlock(&mutex_stklist);
+#endif					/* Concurrent */
    return NULL;
 }
 

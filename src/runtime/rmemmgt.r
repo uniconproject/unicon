@@ -591,7 +591,7 @@ struct progstate *pstate;
 
    /* Kywd_err, &error, always an integer */
    /* Kywd_pos, &pos, always an integer */
-   postqual(&(pstate->ksub));
+   postqual(&(pstate->tstate->ksub));
    postqual(&(pstate->Kywd_prog));
    /* Kywd_ran, &random, always an integer */
    /* Kywd_trc, &trace, always an integer */
@@ -619,8 +619,8 @@ struct progstate *pstate;
    PostDescrip(pstate->Kywd_xwin[XKey_Window]);	/* &window */
 #endif					/* Graphics */
 
-   PostDescrip(pstate->K_errorvalue);
-   PostDescrip(pstate->T_errorvalue);
+   PostDescrip(pstate->tstate->K_errorvalue);
+   PostDescrip(pstate->tstate->T_errorvalue);
    }
 #endif					/* MultiThread */
 

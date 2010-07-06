@@ -81,8 +81,8 @@ struct b_coexpr *sblkp;
 
    sblkp->es_argp = (dptr)newsp;  /* args are first thing on stack */
 #ifdef StackCheck
-   sblkp->stack = newsp;
-   sblkp->stackend = (word *)
+   sblkp->es_stack = newsp;
+   sblkp->es_stackend = (word *)
       ((word)((char *)sblkp + (stksize - sizeof(*sblkp))/2)
          &~((word)WordSize*StackAlign-1));
 #endif					/* StackCheck */
@@ -101,7 +101,13 @@ struct b_coexpr *sblkp;
     */
 #if COMPILER
    sblkp->es_pfp = &sblkp->pf;
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
    sblkp->es_tend = &sblkp->pf.t;
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
    sblkp->pf.old_pfp = NULL;
    sblkp->pf.rslt = NULL;
    sblkp->pf.succ_cont = NULL;
@@ -111,7 +117,13 @@ struct b_coexpr *sblkp;
 #else					/* COMPILER */
    *((struct pf_marker *)dsp) = rblkp->pfmkr;
    sblkp->es_pfp = (struct pf_marker *)dsp;
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
    sblkp->es_tend = NULL;
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
    dsp = (dptr)((word *)dsp + Vwsizeof(*pfp));
    sblkp->es_ipc.opnd = rblkp->ep;
    sblkp->es_gfp = 0;
@@ -223,8 +235,13 @@ int first;
     */
    ccp->es_pfp = pfp;
    ccp->es_argp = glbl_argp;
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
    ccp->es_tend = tend;
-
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
 #if !COMPILER
    ccp->es_efp = efp;
    ccp->es_gfp = gfp;
@@ -259,7 +276,13 @@ int first;
     * Establish state for new co-expression.
     */
    pfp = ncp->es_pfp;
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
    tend = ncp->es_tend;
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
 
 #if !COMPILER
    efp = ncp->es_efp;
@@ -294,11 +317,17 @@ int first;
 #endif					/* MultiThread */
 
    coexp_act = swtch_typ;
+
 #ifdef PthreadCoswitch
+#ifdef Concurrent
+   pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
+#else					/* Concurrent */
    pthreadcoswitch(ccp->cstate, ncp->cstate,first);
+#endif					/* Concurrent */
 #else					/* PthreadCoswitch */
    coswitch(ccp->cstate, ncp->cstate,first);
 #endif					/* PthreadCoswitch */
+
    return coexp_act;
 #endif        				/* CoExpr */
    }
@@ -367,7 +396,13 @@ typedef struct context **cstate;
 /*
  * coswitch(old, new, first) -- switch contexts.
  */
-int pthreadcoswitch(void *o, void *n, int first) {
+
+int pthreadcoswitch(void *o, void *n, int first
+#ifdef Concurrent
+, word ostat, word nstat
+#endif					/* Concurrent */
+) {
+
 
    cstate ocs = o;			/* old cstate pointer */
    cstate ncs = n;			/* new cstate pointer */
@@ -400,12 +435,21 @@ int pthreadcoswitch(void *o, void *n, int first) {
          syserr("cannot create thread");
       new->alive = 1;
       }
-
+   
    sem_post(new->semp);			/* unblock the new thread */
-   sem_wait(old->semp);			/* block this thread */
 
-   if (!old->alive)		
+#ifdef AAAConcurrent
+   if (nstat & Ts_Sync )
+#endif					/* Concurrent */
+      sem_wait(old->semp);		/* block this thread */
+
+   if (!old->alive
+#ifdef AAAConcurrent
+       || (ostat & Ts_Async)
+#endif					/* Concurrent */
+       )
       pthread_exit(NULL);		/* if unblocked because unwanted */
+ 
    return 0;				/* else return to continue running */
    }
 
@@ -451,6 +495,11 @@ static void makesem(struct context *ctx) {
  */
 static void *nctramp(void *arg) {
    struct context *new = arg;		/* new context pointer */
+#ifdef AAAConcurrent
+   rootpstate.tstate = &roottstate;
+   curtstate = &roottstate;
+   init_threadstate(curtstate);
+#endif					/* Concurrent */
    sem_wait(new->semp);			/* wait for signal */
    new_context(0, 0);			/* call new_context; will not return */
    syserr("new_context returned to nctramp");

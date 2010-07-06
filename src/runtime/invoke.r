@@ -94,12 +94,23 @@ continuation succ_cont;
                }
             }
          tnd_args->num = nargs;
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
          tnd_args->previous = tend;
          tend = tnd_args;
-      
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
          signal = invoke(indx, tnd_args->d, rslt, succ_cont);
-      
+
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
          tend = tnd_args->previous;
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
          free(tnd_args);
          return signal;
          }
@@ -120,12 +131,22 @@ continuation succ_cont;
          for (i = 0; i < nargs; i++)
             tnd_args->d[indx++] = ep->Record.fields[i];
          tnd_args->num = nargs;
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
          tnd_args->previous = tend;
          tend = tnd_args;
-      
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
          signal = invoke(indx, tnd_args->d, rslt, succ_cont);
-      
+#ifdef Concurrent
+         pthread_mutex_lock(&mutex_tend);
+#endif					/* Concurrent */
          tend = tnd_args->previous;
+#ifdef Concurrent
+         pthread_mutex_unlock(&mutex_tend);
+#endif					/* Concurrent */
          free(tnd_args);
          return signal;
          }

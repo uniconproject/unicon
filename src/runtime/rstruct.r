@@ -582,8 +582,11 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
  * to make this smarter someday.
  */
 
+#ifndef MultiThread
 int longest_dr = 0;
 struct b_proc_list **dr_arrays;
+#endif					/* MultiThread */
+
 #ifdef Uniconc
 static word mdw_dynrec_start = 0;
 

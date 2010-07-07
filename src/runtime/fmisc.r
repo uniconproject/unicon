@@ -2370,25 +2370,29 @@ function{1} thread(x)
      abstract { return coexpr }
      body {
 	struct context *n;
+	struct b_coexpr *cp = BlkD(x, Coexpr);
 	/* Make sure it is a pthreads-based co-expression. */
-	if (BlkLoc(x)->Coexpr.status & Ts_Native) runerr(101,x);
-	if (BlkLoc(x)->Coexpr.status & Ts_Async) return x;
+	if (cp->status & Ts_Native) runerr(101,x);
+	if (cp->status & Ts_Async) return x;
 	/* Turn on Async flag */
-	BlkLoc(x)->Coexpr.status = Ts_Posix | Ts_Async;
+	cp->status = Ts_Posix | Ts_Async;
 	/* initialize sender/receiver queues */
-	pthread_mutex_init(&(BlkLoc(x)->Coexpr.smute), NULL);
-	pthread_mutex_init(&(BlkLoc(x)->Coexpr.rmute), NULL);
-	BlkLoc(x)->Coexpr.squeue = (union block *)alclist(0, MinListSlots);
-	BlkLoc(x)->Coexpr.rqueue = (union block *)alclist(0, MinListSlots);
+	pthread_mutex_init(&(cp->smute), NULL);
+	pthread_mutex_init(&(cp->rmute), NULL);
+	cp->squeue = (union block *)alclist(0, MinListSlots);
+	cp->rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
-	n = (struct context *) BlkLoc(x)->Coexpr.cstate[1];
-	if (n) {
-	   /* activate co-expression x, having changed it to Asynchronous */
-	   sem_post(n->semp);
-	   }
-	else {
+	n = (struct context *) cp->cstate[1];
+	if (n->alive == 0) {
 	   /* activate thread x for the first time */
+
+	   if ( pthread_create(&(n->thread), NULL, nctramp, n) != 0 )
+	      syserr("cannot create thread");
 	   }
+
+	/* activate co-expression x, having changed it to Asynchronous */
+	sem_post(n->semp);
+
 	return x;
 	}
      }

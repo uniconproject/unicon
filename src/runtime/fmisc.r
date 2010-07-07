@@ -2352,9 +2352,7 @@ function{1} join(x)
 	struct context *n;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
-        printf("aaaaaaaaaaaa\n");
 	pthread_join(n->thread, NULL);
-        printf("bbbbbbbbbbbbb\n");
 	/*}*/
 	return x;
 	}

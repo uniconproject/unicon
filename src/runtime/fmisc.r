@@ -2382,7 +2382,13 @@ function{1} thread(x)
 	BlkLoc(x)->Coexpr.rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
 	n = (struct context *) BlkLoc(x)->Coexpr.cstate[1];
-	sem_post(n->semp);
+	if (n) {
+	   /* activate co-expression x, having changed it to Asynchronous */
+	   sem_post(n->semp);
+	   }
+	else {
+	   /* activate thread x for the first time */
+	   }
 	return x;
 	}
      }

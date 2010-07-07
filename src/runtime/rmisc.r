@@ -160,7 +160,7 @@ int getvar(s,vp)
 #if !COMPILER
    /*
     *  If no procedure has been called (as can happen with icon_call(),
-    *  dont' try to find local identifier.
+    *  don't try to find local identifier.
     */
    if (pfp == NULL)
       goto glbvars;
@@ -1092,6 +1092,20 @@ struct b_coexpr *ce;
    struct astkblk *abp = ce->es_actstk, *oabp;
    struct actrec *arp;
    struct b_coexpr *actvtr;
+
+#if Concurrent
+   /*
+    * exit a co-expression if it has no activator (thread).
+    * May want to check that ce->status is Async here and/or fix thread
+    * activator initialization depending on desired join semantics.
+    */
+   if (abp == NULL) {
+      cstate cs = (cstate)(ce->cstate);
+      struct context *ctx = cs[1];
+      ctx->alive = 0;
+      pthread_exit(NULL);
+      }
+#endif					/* Concurrent */
 
 #ifdef MultiThread
    return abp->arec[0].activator;

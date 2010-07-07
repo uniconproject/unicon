@@ -1124,6 +1124,20 @@ Deliberate Syntax Error
    BlkLoc(k_main) = (union block *) mainhead;
    k_current = k_main;
 
+#ifdef PthreadCoswitch
+/*
+ * Allocate a struct context for the main co-expression.
+ */
+{
+   cstate ncs = (cstate) (mainhead->cstate);
+   context *ctx;
+   ctx = ncs[1] = alloc(sizeof (struct context));
+   makesem(ctx);
+   ctx->c = mainhead;
+}
+#endif					/* PthreadCoswitch */
+
+
 #if !COMPILER
 #if HAVE_LIBZ
    check_version(&hdr, name, fdname);

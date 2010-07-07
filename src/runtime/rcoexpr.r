@@ -382,26 +382,17 @@ dptr cargp;
 
 static int pco_inited = 0;		/* has first-time initialization been done? */
 
-static void makesem(struct context *ctx);
-static void *nctramp(void *arg);
-
-/*
- * Treat an Icon "cstate" array as an array of context pointers.
- * cstate[0] is used by Icon code that thinks it's setting a stack pointer.
- * We use cstate[1] to point to the actual context struct.
- * (Both of these are initialized to NULL by Icon 9.4.1 or later.)
- */
-typedef struct context **cstate;
 
 /*
  * coswitch(old, new, first) -- switch contexts.
  */
 
-int pthreadcoswitch(void *o, void *n, int first
 #ifdef Concurrent
-, word ostat, word nstat
+int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat)
+#else
+int pthreadcoswitch(void *o, void *n, int first)
 #endif					/* Concurrent */
-) {
+{
 
 
    cstate ocs = o;			/* old cstate pointer */
@@ -413,10 +404,9 @@ int pthreadcoswitch(void *o, void *n, int first
    else {
       /*
        * This is the first coswitch() call.
-       * Allocate and initialize the context struct for &main.
+       * Initialize the context struct for &main.
        */
-      old = ocs[1] = alloc(sizeof(struct context));
-      makesem(old);
+      old = ocs[1];
       old->thread = pthread_self();
       old->alive = 1;
       pco_inited = 1;
@@ -426,11 +416,10 @@ int pthreadcoswitch(void *o, void *n, int first
       new = ncs[1];			/* load new context pointer */
    else {
       /*
-       * This is a newly allocated cstate array.
-       * Allocate and initialize a context struct.
+       * This is a newly allocated cstate array, allocated and initialized
+       * over in alccoexp().  Create a thread for it and mark it alive.
        */
-      new = ncs[1] = alloc(sizeof(struct context));
-      makesem(new);
+      new = ncs[1];
       if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;
@@ -447,9 +436,9 @@ int pthreadcoswitch(void *o, void *n, int first
 #ifdef AAAConcurrent
        || (ostat & Ts_Async)
 #endif					/* Concurrent */
-       )
+       ) {
       pthread_exit(NULL);		/* if unblocked because unwanted */
- 
+      }
    return 0;				/* else return to continue running */
    }
 
@@ -475,7 +464,7 @@ void coclean(void *o) {
 /*
  * makesem(ctx) -- initialize semaphore in context struct.
  */
-static void makesem(struct context *ctx) {
+void makesem(struct context *ctx) {
    #ifdef NamedSemaphores		/* if cannot use unnamed semaphores */
       char name[50];
       sprintf(name, "i%ld.sem", (long)getpid());
@@ -493,12 +482,29 @@ static void makesem(struct context *ctx) {
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
  */
-static void *nctramp(void *arg) {
+void *nctramp(void *arg)
+{
    struct context *new = arg;		/* new context pointer */
-#ifdef AAAConcurrent
+   struct b_coexpr *ce;
+#ifdef Concurrent
    rootpstate.tstate = &roottstate;
    curtstate = &roottstate;
    init_threadstate(curtstate);
+   ce = new->c;
+   if (ce->title != T_Coexpr) {
+      fprintf(stderr, "warning ce title is %d\n", ce->title);
+      }
+   pfp = ce->es_pfp;
+   efp = ce->es_efp;
+   gfp = ce->es_gfp;
+   tend = ce->es_tend;
+   ipc = ce->es_ipc;
+   ilevel = ce->es_ilevel;
+   sp = ce->es_sp;
+   stack = ce->es_stack;
+   stackend = ce->es_stackend;
+   k_current.dword = D_Coexpr;
+   BlkLoc(k_current) = (union block *)ce;
 #endif					/* Concurrent */
    sem_wait(new->semp);			/* wait for signal */
    new_context(0, 0);			/* call new_context; will not return */

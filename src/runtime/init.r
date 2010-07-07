@@ -206,7 +206,7 @@ int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
 #ifdef MultiThread
 struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
-#ifdef AAAConcurrent
+#ifdef Concurrent
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;
 #else					/* Concurrent */

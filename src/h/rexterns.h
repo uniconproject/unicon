@@ -196,7 +196,10 @@ extern struct descrip amperErrno;
    #ifdef MultiThread
       extern struct progstate *curpstate;
       extern struct progstate rootpstate;
-   #ifdef AAAConcurrent
+   #ifdef Concurrent
+   /*
+    * This should be under something like HAS___THREAD, detected by autoconf.
+    */
       extern __thread struct threadstate roottstate; 
       extern __thread struct threadstate *curtstate;
    #else					/* Concurrent */

@@ -124,6 +124,13 @@ void		coacttrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		cofailtrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		corettrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 int		coswitch	(word *old, word *new, int first);
+#ifdef PthreadCoswitch
+#ifdef Concurrent
+int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat);
+#else					/* Concurrent */
+int pthreadcoswitch(void *o, void *n, int first);
+#endif					/* Concurrent */
+#endif					/* PthreadCoswitch */
 int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
 #ifdef MultiThread
 int		cplist_0	(dptr dp1,dptr dp2,word i,word j);
@@ -997,3 +1004,8 @@ struct b_realarray *alcrealarray(uword n);
 #endif					/* Arrays */
 
 void init_threadstate();
+
+#ifdef PthreadCoswitch
+void makesem(struct context *ctx);
+void *nctramp(void *arg);
+#endif					/* PthreadCoswitch */

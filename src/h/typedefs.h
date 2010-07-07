@@ -57,6 +57,16 @@ typedef word C_integer;
  */
 typedef int (*continuation) (void);
 
+#ifdef PthreadCoswitch
+/*
+ * Treat an Icon "cstate" array as an array of context pointers.
+ * cstate[0] is used by Icon code that thinks it's setting a stack pointer.
+ * We use cstate[1] to point to the actual context struct.
+ * (Both of these are initialized to NULL by Icon 9.4.1 or later.)
+ */
+typedef struct context **cstate;
+#endif					/* PthreadCoswitch */
+
 #if !COMPILER
 
    /*

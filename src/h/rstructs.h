@@ -798,6 +798,7 @@ typedef struct context {
    sem_t sema;		/* synchronization semaphore (if unnamed) */
    sem_t *semp;		/* pointer to semaphore */
    int alive;		/* set zero when thread is to die */
+   struct b_coexpr *c;  /* pointer to associated co-expression block */
    } context;
 #endif					/* PthreadCoswitch */
 

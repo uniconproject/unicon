@@ -282,6 +282,19 @@ struct b_coexpr *alccoexp()
    else ep->program = curpstate;
 #endif					/* MultiThread */
 
+#ifdef PthreadCoswitch
+/*
+ * Allocate a struct context for this co-expression.
+ */
+{
+   cstate ncs = (cstate) (ep->cstate);
+   context *ctx;
+   ctx = ncs[1] = alloc(sizeof (struct context));
+   makesem(ctx);
+   ctx->c = ep;
+}
+#endif					/* PthreadCoswitch */
+
 #ifdef Concurrent
    pthread_mutex_lock(&mutex_stklist);
 #endif					/* Concurrent */

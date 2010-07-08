@@ -799,8 +799,8 @@ void detectRedirection();
 
 
 #ifdef Audio
-struct AudioFile * StartAudioTread(char filename[]);
-void StopAudioThread(struct AudioFile * Ptr);
+int StartAudioThread(char filename[]);
+void StopAudioThread(int index);
 
 struct AudioFile * StartMP3Thread(char filename[]);
 struct AudioFile * StartWAVThread(char filename[]);
@@ -984,11 +984,6 @@ int     dbfetch(struct ISQLFile *, dptr);
 void    odbcerror               (struct ISQLFile *fp, int errornum);
 void    qalloc                  (struct ISQLFile *f, long n); /* query space alloc */
 #endif					/* ISQL */
-
-#ifdef Audio
-struct AudioFile * StartAudioThread(char filename[]);
-void StopAudioThread(struct AudioFile * Ptr);
-#endif					/* Audio */
 
 #ifdef DebugHeap
 void heaperr(char *msg, union block *p, int t);

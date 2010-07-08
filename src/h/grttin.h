@@ -274,6 +274,25 @@ typedef struct {
   typedef int SQLHBDC, SQLHENV, SQLCHAR, SQLINTEGER; /* 3.0 */
 #endif					/* ISQL */
 
+#ifdef Audio
+   typedef int AudioStruct, AudioPtr, AudioFile;
+   typedef int HMIXER, MIXERLINE, MMRESULT, HMIXEROBJ, MIXERCAPS;
+   typedef int MIXERCONTROL, MIXERLINECONTROLS, MIXERCONTROLDETAILS;
+   typedef int MIXERCONTROLDETAILS_UNSIGNED, MIXERCONTROLDETAILS_BOOLEAN;
+#ifdef HAVE_LIBOPENAL   
+   typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
+   typedef int ALubyte;
+#endif				/* HAVE_LIBOPENAL */
+#endif				/* Audio */
+
+#if HAVE_OGG
+typedef int OggVorbis_File, vorbis_info;
+#endif					/* HAVE_OGG */
+
+#ifdef HAVE_VOICE
+   typedef int VSESSION, PVSESSION;
+#endif				/* HAVE_VOICE */
+
 # if defined(Graphics) || defined(PosixFns)
 typedef int siptr, stringint, inst;
 #endif
@@ -286,13 +305,6 @@ typedef int siptr, stringint, inst;
    typedef int wbinding, wstate, wcontext, wfont;
    typedef int XRectangle, XPoint, XSegment, XArc, SysColor, LinearColor;
    typedef int LONG, SHORT;
-
-   #ifdef Audio
-      typedef int AudioStruct, AudioPtr, ALCcontext, ALuint;
-      typedef int HMIXER, MIXERLINE, MMRESULT, HMIXEROBJ, MIXERCAPS;
-      typedef int MIXERCONTROL, MIXERLINECONTROLS, MIXERCONTROLDETAILS;
-      typedef int MIXERCONTROLDETAILS_UNSIGNED, MIXERCONTROLDETAILS_BOOLEAN;
-   #endif					/* Audio */
 
    #ifdef MacGraph
       typedef int Str255, Point, StandardFileReply, SFTypeList, Ptr, PixMap;
@@ -330,18 +342,6 @@ typedef int siptr, stringint, inst;
          typedef int HFILE, OFSTRUCT, FILETIME, SYSTEMTIME;
       #endif				/* FAttrib */
    #endif				/* MSWindows */
-
-   #ifdef HAVE_VOICE
-      typedef int VSESSION, PVSESSION;
-   #endif				/* HAVE_VOICE */
-
-   #if defined Audio
-      typedef int AudioFile, AudioStruct, AudioPtr;
-   #ifdef HAVE_LIBOPENAL   
-      typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
-      typedef int ALCdevice, ALubyte;
-   #endif				/* HAVE_LIBOPENAL */
-   #endif				/* Audio */
 
    #ifdef PresentationManager
       /* OS/2 PM specifics */
@@ -501,10 +501,6 @@ typedef int siptr, stringint, inst;
    typedef int HGLRC, PIXELFORMATDESCRIPTOR;
 #endif
 #endif					/* Graphics3D */
-
-#if HAVE_OGG
-typedef int OggVorbis_File, vorbis_info;
-#endif					/* HAVE_OGG */
 
 #begdef MissingFunc(funcname)
 "an unavailable function"

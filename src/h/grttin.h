@@ -293,6 +293,12 @@ typedef int OggVorbis_File, vorbis_info;
    typedef int VSESSION, PVSESSION;
 #endif				/* HAVE_VOICE */
 
+#ifdef HAVE_LIBPTHREAD
+      typedef int pthread_t, pthread_attr_t;
+      typedef int pthread_rwlock_t, sem_t;
+      typedef int pthread_mutex_t, pthread_mutexattr_t;
+#endif					/* HAVE_LIBPTHREAD */
+
 # if defined(Graphics) || defined(PosixFns)
 typedef int siptr, stringint, inst;
 #endif
@@ -359,12 +365,6 @@ typedef int siptr, stringint, inst;
       typedef int va_list, BITMAPINFOHEADER, BITMAPFILEHEADER;
       typedef int PBITMAPINFOHEADER, MinBitmapHeader, RGB;
    #endif				/* PresentationManager */
-
-#ifdef HAVE_LIBPTHREAD
-      typedef int pthread_t, pthread_attr_t;
-      typedef int pthread_rwlock_t, sem_t;
-      typedef int pthread_mutex_t, pthread_mutexattr_t;
-#endif					/* HAVE_LIBPTHREAD */
 
    /*
     * Convenience macros to make up for RTL's long-windedness.

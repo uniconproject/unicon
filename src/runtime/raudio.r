@@ -34,15 +34,12 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int GetIndex()
 {
    int i;
+   for(i = 0; arraySource[i].inUse == 1; ++i)
+      i = i % 16;
    pthread_mutex_lock(&mutex);
-   for(i = 0; i < ARRAYSIZE; ++i)
-      if(arraySource[i].inUse == 0) {
-         arraySource[i].inUse = 1;
-         pthread_mutex_unlock(&mutex);
-         return i;
-         }
+   arraySource[i].inUse = 1;
    pthread_mutex_unlock(&mutex);
-   return -1;
+   return i;
 }
 
 void MixUnInitialize();
@@ -173,7 +170,7 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
 	 LeaveCriticalSection(&bufferinfo.criticalsection);
 	 if (!okay)
 	    WaitForSingleObject(bufferinfo.huponfree,INFINITE);
-	 }
+	}
 
       header = &(headers[currentbuffer]);
 
@@ -590,6 +587,7 @@ void OggExit(int index)
    isPlaying -= 1;
    alSourceStop(arraySource[index].source);
    ov_clear(&arraySource[index].oggStream);
+   alSourcei(arraySource[index].source, AL_BUFFER, 0);
    arraySource[index].inUse = 0;
    if(isPlaying == 0)
    {
@@ -603,11 +601,6 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
    int index;
    int *i = (int *) args;
    index = *i;
-/*   if(!fixup_function_pointers())
-   {
-      printf("bad fixup\n");
-      pthread_exit(NULL);
-   }*/
    if((ov_fopen(arraySource[index].filename, &arraySource[index].oggStream) < 0))
    {
       pthread_mutex_lock(&mutex);
@@ -647,6 +640,7 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
 #ifdef HAVE_LIBOPENAL
 /* The following is for WAV Support on top of OpenAL */
 
+
 /* Thread function to play WAV file under OpenAL. */
 void * OpenAL_PlayWAV( void * args )
 {
@@ -655,15 +649,6 @@ void * OpenAL_PlayWAV( void * args )
    ALint tState;
    indexSource = *index;
    arraySource[indexSource].wBuffer = alutCreateBufferFromFile(arraySource[indexSource].filename);
-/*   if(!fixup_function_pointers())
-   { 
-      pthread_mutex_lock(&mutex);
-      isPlaying -= 1;
-      if(isPlaying == 0)
-         alutExit();
-      pthread_mutex_unlock(&mutex);
-      pthread_exit(NULL);
-   }*/
    alSourceQueueBuffers(arraySource[indexSource].source, 1, &arraySource[indexSource].wBuffer);
    alSourcePlay(arraySource[indexSource].source);
    alGetSourcei(arraySource[indexSource].source, AL_SOURCE_STATE, &tState);
@@ -673,7 +658,7 @@ void * OpenAL_PlayWAV( void * args )
       alGetSourcei(arraySource[indexSource].source, AL_SOURCE_STATE, &tState);
    }
    alSourceStop(arraySource[indexSource].source);
-   alSourceUnqueueBuffers(arraySource[indexSource].source, 1, &arraySource[indexSource].wBuffer);
+   alSourcei(arraySource[indexSource].source, AL_BUFFER, 0);
    pthread_mutex_lock(&mutex);
    isPlaying -= 1;
    arraySource[indexSource].inUse = 0;
@@ -684,22 +669,14 @@ void * OpenAL_PlayWAV( void * args )
 }/* OpenAL_PlayWAV Thread */
 #endif /* HAVE_LIBOPENAL */
 
+
+
 /* This is a general Audio API Function    */
 int StartAudioThread(char filename[])
 {
    int i;
    pthread_attr_t attrib;
    char *sp;
-   pthread_mutex_lock(&mutex);
-   i = isPlaying;
-   pthread_mutex_unlock(&mutex);
-   while (i == 15)
-   {
-      sleep(1);
-      pthread_mutex_lock(&mutex);
-      i = isPlaying;
-      pthread_mutex_unlock(&mutex);
-   }
    pthread_mutex_lock(&mutex);
    if (isPlaying == 0 || isPlaying == -1)
       alutInit(NULL, NULL);
@@ -716,14 +693,18 @@ int StartAudioThread(char filename[])
       isPlaying = 0;
    }
    pthread_mutex_unlock(&mutex);
+   while (isPlaying >= 15)
+   {
+      sleep(1);
+   }
    i = GetIndex();
-   if (i != -1) {
-   pthread_mutex_lock(&mutex);
-   isPlaying += 1;
-   pthread_mutex_unlock(&mutex);
-   strcpy(arraySource[i].filename, filename);
-   pthread_attr_init(&attrib);
-   pthread_attr_setdetachstate(&attrib, PTHREAD_CREATE_DETACHED);
+   if (i != -1 && i <= 15) {
+      pthread_mutex_lock(&mutex);
+      isPlaying += 1;
+      pthread_mutex_unlock(&mutex);
+      strcpy(arraySource[i].filename, filename);
+      pthread_attr_init(&attrib);
+      pthread_attr_setdetachstate(&attrib, PTHREAD_CREATE_DETACHED);
       if((sp = strstr(filename,".mp3")) != NULL) {
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32

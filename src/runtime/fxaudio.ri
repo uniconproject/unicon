@@ -8,46 +8,33 @@
 "PlayAudio(s) - Play audio file."
 function{0,1} PlayAudio(fname)
 
-   declare {
-      tended struct descrip filename;
-      }
-
    if !cnv:C_string(fname) then
       runerr(103,fname)
 
     abstract {
-      return file;
+      return integer;
       }
 
    body {
-      int status;
-      FILE * f;
-      struct b_file *fl;
+      int f;
 
-      if ((f = (FILE*) StartAudioThread(fname)) == NULL) fail;
-      status = 1;
-      StrLen(filename) = strlen(fname);
-      StrLoc(filename) = fname;
-      Protect(fl = alcfile(f, status, &filename), runerr(0));
-      return file(fl);
+      if ((f = StartAudioThread(fname)) == -1) fail;
+      return C_integer f;
       }
 end
 
 "StopAudio - kill the audio thread."
 function{1} StopAudio(f)
 
-   if !is:file(f) then
-      runerr(105, f)
+   if !cnv:C_integer(f) then
+      runerr(103, f)
 
    abstract {
       return integer;
       }
 
    body {
-      /* we are passing the file name as struct */
-      AudioPtr Ptr;
-      Ptr = (AudioPtr)BlkD(f,File)->fd.fp;
-      StopAudioThread(Ptr);
+      StopAudioThread(f);
       return C_integer 1;
       }
 end

@@ -7,8 +7,47 @@
  * Ogg Vorbis, and WAV. StartAudioThread(filename) is the main function where
  * filename is any of the three formats.
  */
-
+const int ARRAYSIZE = 16;
 #ifdef Audio
+ 
+struct sSources
+{
+   ALuint source;
+   int inUse;
+   char filename[255];
+   ALuint buffer[4];
+   ALuint wBuffer;
+   ALuint mBuffer;
+   struct OggVorbis_File oggStream;
+   ALenum format;
+   pthread_t thread;
+#ifdef WIN32
+   HANDLE hThread;
+#endif
+   struct vorbis_info *vorbisInfo;
+};
+
+struct sSources arraySource[16];
+int isPlaying = -1;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int GetIndex()
+{
+   int i;
+   pthread_mutex_lock(&mutex);
+   for(i = 0; i < ARRAYSIZE; ++i)
+      if(arraySource[i].inUse == 0) {
+         arraySource[i].inUse = 1;
+         pthread_mutex_unlock(&mutex);
+         return i;
+         }
+   pthread_mutex_unlock(&mutex);
+   return -1;
+}
+
+void MixUnInitialize();
+int MixInitialize();
+int LinuxMixer(char * cmd);
 
 #if defined(WIN32) && defined(HAVE_LIBOGG)
 WAVEFORMATEX waveformater;
@@ -134,7 +173,7 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
 	 LeaveCriticalSection(&bufferinfo.criticalsection);
 	 if (!okay)
 	    WaitForSingleObject(bufferinfo.huponfree,INFINITE);
-	}
+	 }
 
       header = &(headers[currentbuffer]);
 
@@ -185,12 +224,8 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
 
 #if !defined(WIN32) && defined(HAVE_LIBOPENAL)
 	
-/*	#passthru #include <AL/altypes.h>
-//	#passthru #include <AL/alexttypes.h> */
-	pthread_t AudioThread;
-	static time_t start;
-	static ALCcontext *context_id;
-	static ALuint stereo;
+        #passthru #include <AL/alut.h>
+
 #else
 	DWORD dwThreadId;
 	HANDLE hThread;
@@ -271,7 +306,6 @@ int fixup_function_pointers(void)
       return 0;
       }
       else
-
    Protect(talcSetAudioChannel = (void (*)(ALuint channel, ALfloat volume))
       GP("alcSetAudioChannel_LOKI"), return 0);
 /*   Protect(talMute   = (void (*)(void)) GP("alMute_LOKI"), return 0);*/
@@ -357,127 +391,84 @@ int fixup_function_pointers(void)
    return 1;
 }
 
-ALboolean SourceIsPlaying(ALuint sid) {
-   ALint state;
-   if (alIsSource(sid) == AL_FALSE) {
-      return AL_FALSE;
-      }
-   alGetSourcei(sid, AL_SOURCE_STATE, &state);
-printf("state is %i\n", (int) state);
-   switch(state) {
-   case AL_PLAYING: 
-   case AL_PAUSED:	  return AL_TRUE;
-   default:
-      break;
-      }
-   return AL_FALSE;
-}
 #endif					/* HAVE_LIBOPENAL */
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 /* The following is for MP3 Support on top of OpenAL */
-#define DATABUFSIZE_MP3 	4098
+#define DATABUFSIZE_MP3 	(8 * 4098)
 #define MP3_FUNC    		"alutLoadMP3_LOKI"
-#define NUMSOURCES  		1
 
-static ALuint mp3buf; /* our buffer */
-static ALuint mp3source = (ALuint ) -1;
 /* our mp3 extension */
 typedef ALboolean (mp3Loader)(ALuint, ALvoid *, ALint);
 mp3Loader *alutLoadMP3p = NULL;
 
-static void initMP3( void )
+static void initMP3( int index )
 {
-   start = time(NULL);
-   alGenBuffers( 1, &mp3buf);
-   alGenSources( 1, &mp3source);
-   alSourcei(  mp3source, AL_BUFFER, mp3buf );
-   alSourcei(  mp3source, AL_LOOPING, AL_FALSE );
+   alSourcei(  arraySource[index].source, AL_BUFFER, arraySource[index].buffer[0] );
+   alSourcei(  arraySource[index].source, AL_LOOPING, AL_FALSE );
    return;
 }
 
-static void cleanupMP3(void)
-{
-   if(context_id != NULL)
-      alcDestroyContext(context_id);
-#ifdef JLIB
-   jv_check_mem();
-#endif
-}
 
 void * OpenAL_PlayMP3( void * args )
 {
-   ALCdevice *dev;
+   int *t = (int *) args;
+   int index;
    FILE *fh;
    struct stat sbuf;
    void *data;
    int i = 0;
    int size;
-
-   /*------ To solve replaying ---*/ 
-   static short int done = 0, signe=0;
-   if (done != 0){
-      while (done != 0)
-	 signe = 0;
-      }
-   done = 1;
-   signe = 1;
-
-   /*-----------------------------*/
-
-   dev = alcOpenDevice( NULL );
-   if (dev == NULL ) {
-      return NULL;
-      }
-
-   /* Initialize ALUT. */
-   context_id = alcCreateContext( dev, NULL );
-   if (context_id == NULL) {
-      cleanupMP3();
-      alcCloseDevice( dev );
-      return NULL;
-      }
-   alcMakeContextCurrent( context_id );
-   if (!fixup_function_pointers()) {
-      cleanupMP3();
-      alcCloseDevice(dev);
-      return NULL;
-      }
-   initMP3();
-
-   /* the global fname */
-   if (stat(FilePtr->fname, &sbuf) == -1) {
-      /*
-       * Can't stat the file; fail.
-       */
-      return NULL;
-      }
+   ALint tState;
+   index = *t;
+   if (stat(arraySource[index].filename, &sbuf) == -1) 
+   {
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
+   initMP3(index);
    size = sbuf.st_size;
    data = malloc(size);
-   if(data == NULL) {
-      /*
-       * Out of memory; this probably should be a runtime error.
-       */
-      return NULL;
-      }
-
-   fh = fopen(FilePtr->fname, "rb");
-   if (fh == NULL) {
-      /*
-       * Can't open the file for reading; fail.
-       */
+   if(data == NULL) 
+   {
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
+   fh = fopen(arraySource[index].filename, "rb");
+   if (fh == NULL) 
+   {
       free(data);
-      return NULL;
-      }
-
-   if (fread(data, 1, size, fh) <= 0) {
-      /*
-       * Can't read the file's stated size; fail. Possibly more serious.
-       */
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
+   if (fread(data, 1, size, fh) <= 0) 
+   {
       fclose(fh);
       free(data);
-      return NULL;
-      }
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
+
    fclose(fh);
    alutLoadMP3p = (mp3Loader *) alGetProcAddress((ALubyte *) MP3_FUNC);
    if (alutLoadMP3p == NULL) {
@@ -485,430 +476,378 @@ void * OpenAL_PlayMP3( void * args )
        * Can't get the ProcAddress; fail.
        */
       free(data);
-      return NULL;
-      }
-
-   if(alutLoadMP3p(mp3buf, data, size) != AL_TRUE) {
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
+   if(alutLoadMP3p(arraySource[index].mBuffer, data, size) != AL_TRUE) {
       /*
        * Can't LoadMP3, fail;
        */
       free(data);
-      return NULL;
-      }
-
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
    free(data);
-   alSourcePlay( mp3source );
-   while(SourceIsPlaying(mp3source) == AL_TRUE) {
+   alSourcePlay( arraySource[index].source );
+   alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &tState);
+   while(tState == AL_PLAYING)
+   {
       sleep(1);
-      if(FilePtr->doneflag)	break; /* stop playing */
-      if(signe == 0)        break;
-      }
-   cleanupMP3();
-   alcCloseDevice( dev );
-   done = 0;
-   return NULL;
+      alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &tState);
+   }
+   alSourceStop(arraySource[index].source);
+   pthread_mutex_lock(&mutex);
+   isPlaying -= 1;
+   arraySource[index].inUse = 0;
+   if(isPlaying == 0)
+      alutExit();
+   pthread_mutex_unlock(&mutex);
+   pthread_exit(NULL);
 }
 #endif /* if(HAVE_OPENAL && HAVE_LIBSDL && HAVE_LIBSMPEG) */
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)
 /* The following is for Ogg-Vorbis Support on top of OpenAL*/
-#define DATABUFSIZE 		4096 
-#define VORBIS_FUNC		"alutLoadVorbis_LOKI"
+#define DATABUFSIZE 		(4096 * 8)
 
-static ALuint vorbbuf; /* our buffer */
-static ALuint vorbsource = (ALuint ) -1;
-
-/* our vorbis extension */
-typedef ALboolean (vorbisLoader)(ALuint, ALvoid *, ALint);
-vorbisLoader *alutLoadVorbisp = NULL;
-
-static void initOggVorbis( void )
+int OggStreamBuf(ALuint buffer, int index)
 {
-   start = time(NULL);
-   alGenSources(1, &vorbsource);
-   alGenBuffers(1, &vorbbuf);
-   alSourcei(vorbsource, AL_ROLLOFF_FACTOR, 0.0 );
-   alSource3f(vorbsource, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
-   alSource3f(vorbsource, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
-   alSource3f(vorbsource, AL_POSITION, 0.0f, 0.0f, 0.0f);
-   alSourcei(vorbsource, AL_BUFFER, vorbbuf);
-   alSourcei(vorbsource, AL_LOOPING, AL_FALSE );
-   return;
+   char pcm[DATABUFSIZE];
+   int size;
+   int section;
+   int result;
+   int active;
+   size = 0;
+   while(size < DATABUFSIZE)
+   {
+      result = ov_read(&arraySource[index].oggStream, pcm + size, DATABUFSIZE - size, 0, 2, 1,
+	               &section);
+      if(result > 0)
+         size += result;
+      else
+         if(result < 0)
+            return 1;
+         else
+            break;
+   }
+   if(size == 0)
+      active = 1;
+   else
+      active = 0;
+   alBufferData(buffer, arraySource[index].format, pcm, size, arraySource[index].vorbisInfo->rate);
+   return active;
 }
 
-static void cleanupOggVorbis(void)
+int OggPlayback(int index)
 {
-   if( context_id != NULL)
-      alcDestroyContext(context_id);
-#ifdef JLIB
-   jv_check_mem();
-#endif
+   ALenum state;
+int processed;
+   alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &state);
+   if(state == AL_PLAYING)
+      return 0;
+   if(OggStreamBuf(arraySource[index].buffer[0], index) == 1)
+      return 1;
+   if(OggStreamBuf(arraySource[index].buffer[1], index) == 1)
+      return 1;
+   if(OggStreamBuf(arraySource[index].buffer[2], index) == 1)
+      return 1;   
+   if(OggStreamBuf(arraySource[index].buffer[3], index) == 1)
+      return 1;
+   alSourceQueueBuffers(arraySource[index].source, 4, arraySource[index].buffer);
+   alSourcePlay(arraySource[index].source);
+   return 0;
+}
+
+int OggUpdate(int index)
+{
+   int processed;
+   int active = 0;
+   alGetSourcei(arraySource[index].source, AL_BUFFERS_PROCESSED, &processed);
+   while(processed--)
+   {
+      ALuint buffer;
+      alSourceUnqueueBuffers(arraySource[index].source, 1, &buffer);
+      active = OggStreamBuf(buffer, index);
+      alSourceQueueBuffers(arraySource[index].source, 1, &buffer);
+   }
+   return active;
+}
+
+
+void OggExit(int index)
+{
+   pthread_mutex_lock(&mutex);
+   isPlaying -= 1;
+   alSourceStop(arraySource[index].source);
+   ov_clear(&arraySource[index].oggStream);
+   arraySource[index].inUse = 0;
+   if(isPlaying == 0)
+   {
+      alutExit();
+   }
+   pthread_mutex_unlock(&mutex);
 }
 
 void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
 {
-   ALCdevice *dev;
-   FILE *fh;
-   struct stat sbuf;
-   void *data;
-   int size;
-   int i = 0;
-
-   /*------ To solve replaying ---*/ 
-   static short int done = 0, signe=0;
-   if (done != 0){
-      while(done != 0 )
-	 signe = 0;
+   int index;
+   int *i = (int *) args;
+   index = *i;
+/*   if(!fixup_function_pointers())
+   {
+      printf("bad fixup\n");
+      pthread_exit(NULL);
+   }*/
+   if((ov_fopen(arraySource[index].filename, &arraySource[index].oggStream) < 0))
+   {
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse = 0;
+      if(isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }
+   arraySource[index].vorbisInfo = ov_info(&arraySource[index].oggStream, -1);
+   if(arraySource[index].vorbisInfo->channels == 1)
+      arraySource[index].format = AL_FORMAT_MONO16;
+   else
+      arraySource[index].format = AL_FORMAT_STEREO16;
+   if (OggPlayback(index) == 1)
+   {
+      OggExit(index);
+      pthread_exit(NULL);
+   }
+   while(OggUpdate(index) == 0)
+   {
+      if(OggPlayback(index) == 1)
+      {
+         OggExit(index);
+         pthread_exit;
       }
-   done = 1;
-   signe = 1;
-
-   /*-----------------------------*/
-   dev = alcOpenDevice( NULL );
-   if ( dev == NULL ) {
-      return NULL;
-      }
-   /* Initialize ALUT. */
-   context_id = alcCreateContext( dev, NULL );
-   if (context_id == NULL) {
-      cleanupOggVorbis();
-      alcCloseDevice( dev );
-      return NULL;
-      }
-   alcMakeContextCurrent( context_id );
-   if (!fixup_function_pointers()) {
-      cleanupOggVorbis();
-      alcCloseDevice(dev);
-      return NULL;
-      }
-   /* the global fname */
-   if (stat(FilePtr->fname, &sbuf) == -1) {
-      /* perror(FilePtr->fname);
-       */
-      return NULL;/*errno;*/
-      }
-   if (data == NULL) {
-      /*
-       * Can't malloc, probably should runtime error
-       */
-      return NULL;
-      }
-   fh = fopen(FilePtr->fname, "rb");
-   if(fh == NULL) {
-      free(data);
-      /* fprintf(stderr, "Could not open %s\n", FilePtr->fname);
-       *  exit(1);
-       */
-      return NULL;
-      }
-   size = sbuf.st_size;
-   data = malloc(size);
-
-   if (fread(data, 1, size, fh) <= 0){
-      fclose(fh);
-      free(data);
-      return NULL;
-      }
-   initOggVorbis();
-   fclose(fh); 
-   alutLoadVorbisp = (vorbisLoader *) alGetProcAddress((ALubyte *)VORBIS_FUNC);
-   if (alutLoadVorbisp == NULL) {
-      /* fprintf(stderr, "Could not GetProc %s\n", (ALubyte *) VORBIS_FUNC);
-       *  exit(-4);
-       */
-      return NULL;
-      }
-   if (alutLoadVorbisp(vorbbuf, data, size) != AL_TRUE) {
-      /* fprintf(stderr, "alutLoadVorbis failed\n");
-       *  exit(-2);
-       */
-      return NULL;
-      }
-   free(data);
-   alSourcePlay( vorbsource );
-   while (SourceIsPlaying(vorbsource) == AL_TRUE) {
-      sleep(1);
-      if(FilePtr->doneflag) break; /* break the thread and stop playing */
-      if(signe == 0)        break;
-      } 
-   cleanupOggVorbis();
-   alcCloseDevice( dev );
-   done = 0;
-   return NULL;
+      sleep(.75);
+   }
+   OggExit(index);
+   pthread_exit;
 } /* End OpenAL_PlayOgg  */
+
+
 #endif 	/* #if(HAVE_LIBOPENAL && HAVE_LIBOGG)*/
 
 #ifdef HAVE_LIBOPENAL
 /* The following is for WAV Support on top of OpenAL */
-#define WAV_DATABUFFERSIZE (10 * (512 * 3) * 1024)
-static ALuint moving_source = 0;
-
-static void iterateWAV( void )
-{
-   static ALfloat position[] = { 10.0, 0.0, 4.0 };
-   static ALfloat movefactor = 4.5;
-   static time_t then = 0;
-   time_t now;
-   ALint byteloki;
-   ALint size;
-
-   now = time( NULL );
-
-   /* Switch between left and right stereo sample every two seconds. */
-   if (now - then > 2) {
-      then = now;
-      movefactor *= -1.0;
-      }
-
-   position[0] += movefactor;
-   alSourcefv( moving_source, AL_POSITION, position );
-   micro_sleep(500000);
-   return;
-}
-
-static void initWAV(void)
-{
-   FILE *fh;
-   ALfloat zeroes[] = { 0.0f, 0.0f,  0.0f };
-   ALfloat back[]   = { 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f };
-   ALfloat front[]  = { 0.0f, 0.0f,  1.0f, 0.0f, 1.0f, 0.0f };
-   ALsizei size;
-   ALsizei bits;
-   ALsizei freq;
-   ALsizei format;
-   int filelen;
-   ALint err;
-   static void *data;
-
-   data = malloc(WAV_DATABUFFERSIZE);
-   if (data == NULL) {
-      free(data);
-      return;
-      }
-
-   start = time(NULL);
-   alListenerfv(AL_POSITION, zeroes );
-   /* alListenerfv(AL_VELOCITY, zeroes ); */
-   alListenerfv(AL_ORIENTATION, front );
-   alGenBuffers( 1, &stereo);
-
-   fh = fopen(FilePtr->fname, "rb");
-   if (fh == NULL) {
-      /* fprintf(stderr, "Couldn't open fname\n");
-       *  exit(1);
-       */
-      free(data);
-      return;
-      }
-
-   if ((filelen = fread(data, 1, WAV_DATABUFFERSIZE, fh)) <=0){
-      fclose(fh);
-      free(data);
-      return;
-      }
-   fclose(fh);
-   alGetError();
-
-   /* sure hope it's a wave file */
-   alBufferData( stereo, AL_FORMAT_WAVE_EXT, data, filelen, 0 );
-   if (alGetError() != AL_NO_ERROR) {
-      /* fprintf(stderr, "Could not BufferData\n");
-       * exit(1);
-       */
-      free(data);
-      return;
-      }
-
-   free(data);
-   alGenSources( 1, &moving_source);
-   alSourcei(  moving_source, AL_BUFFER, stereo );
-   alSourcei(  moving_source, AL_LOOPING, AL_TRUE);
-   return;
-}
-
-static void cleanupWAV(void)
-{
-   if(context_id != NULL)
-      alcDestroyContext(context_id);
-#ifdef JLIB
-   jv_check_mem();
-#endif
-}
 
 /* Thread function to play WAV file under OpenAL. */
 void * OpenAL_PlayWAV( void * args )
 {
-   ALCdevice *dev;
-   int attrlist[] = { ALC_FREQUENCY, 22050,ALC_INVALID };
-   time_t shouldend;
-
-   /*
-    * Flimsy attempt to avoid two PlayWAV calls at the same time.
-    * Needs to be redone using a mutex.
-    */ 
-   static short int done = 0,signe=0; 
-   if (done != 0) {
-      while(done != 0 )
-	 signe = 0;
-      }
-   done = 1;
-   signe = 1;
-
-   dev = alcOpenDevice( NULL );
-   if (dev == NULL) {
-      /* fprintf(stderr, "Could not open device\n");
-       */  
-      return NULL;
-      }
-		
-   /* Initialize ALUT. */
-   context_id = alcCreateContext( dev, attrlist );
-   if(context_id == NULL) {
-      /* fprintf(stderr, "Could not open context: %s\n",
-       *      alGetString( alcGetError(dev) ));
-       */
-      return NULL;
-      }
-
-   alcMakeContextCurrent( context_id );
-   if (!fixup_function_pointers()) {
-      cleanupWAV();
-      alcCloseDevice(dev);
-      return NULL;
-      }
-   talBombOnError();
-   initWAV();
-   alSourcePlay( moving_source );
-   while(SourceIsPlaying( moving_source ) == AL_TRUE) {
-      iterateWAV();
-      shouldend = time(NULL);
-      if ((shouldend - start) > 30) {
-	 alSourceStop(moving_source);
-	 }
-      if(FilePtr->doneflag == 1) break; /* break the thread and stop playing */
-      if(signe == 0)        break;
-      }
-   cleanupWAV();
-   alcCloseDevice(  dev  );
-   done = 0;
-   return NULL;
+   int *index = (int *)args;
+   int indexSource;
+   ALint tState;
+   indexSource = *index;
+   arraySource[indexSource].wBuffer = alutCreateBufferFromFile(arraySource[indexSource].filename);
+/*   if(!fixup_function_pointers())
+   { 
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      if(isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
+      pthread_exit(NULL);
+   }*/
+   alSourceQueueBuffers(arraySource[indexSource].source, 1, &arraySource[indexSource].wBuffer);
+   alSourcePlay(arraySource[indexSource].source);
+   alGetSourcei(arraySource[indexSource].source, AL_SOURCE_STATE, &tState);
+   while(tState == AL_PLAYING)
+   {
+      sleep(1);
+      alGetSourcei(arraySource[indexSource].source, AL_SOURCE_STATE, &tState);
+   }
+   alSourceStop(arraySource[indexSource].source);
+   alSourceUnqueueBuffers(arraySource[indexSource].source, 1, &arraySource[indexSource].wBuffer);
+   pthread_mutex_lock(&mutex);
+   isPlaying -= 1;
+   arraySource[indexSource].inUse = 0;
+   if(isPlaying == 0)
+      alutExit();
+   pthread_mutex_unlock(&mutex);
+   pthread_exit(NULL);
 }/* OpenAL_PlayWAV Thread */
 #endif /* HAVE_LIBOPENAL */
 
-struct AudioFile * audioInit(char filename[])
-{
-   if (FilePtr == NULL){
-      FilePtr = (struct AudioFile *) malloc(sizeof(struct AudioFile));
-   }
-   if (FilePtr != NULL) {
-      FilePtr->doneflag = 0;
-      FilePtr->fname = strdup(filename);
-      if (FilePtr->fname == NULL) {
-	 /* fprintf(stderr, "audio init: malloc failed\n");
-          */
-         free(FilePtr);
-	 return NULL;
-	 }
-      return FilePtr;
-      }
-   else
-      /* fprintf(stderr, "\n Memory is not enough : malloc failed\n");
-       */
-   return NULL;
-}
-
-
 /* This is a general Audio API Function    */
-struct AudioFile * StartAudioThread(char filename[])
+int StartAudioThread(char filename[])
 {
-   char *sptr;
-   static struct AudioFile *Ptr;
-   Ptr = audioInit(filename);
-   if (Ptr != NULL) {
-      if((sptr = strstr(Ptr->fname,".mp3")) != NULL) {
+   int i;
+   pthread_attr_t attrib;
+   char *sp;
+   pthread_mutex_lock(&mutex);
+   i = isPlaying;
+   pthread_mutex_unlock(&mutex);
+   while (i == 15)
+   {
+      sleep(1);
+      pthread_mutex_lock(&mutex);
+      i = isPlaying;
+      pthread_mutex_unlock(&mutex);
+   }
+   pthread_mutex_lock(&mutex);
+   if (isPlaying == 0 || isPlaying == -1)
+      alutInit(NULL, NULL);
+   if (isPlaying == -1)
+   {
+      for(i = 0; i < ARRAYSIZE; ++i)
+      {
+         alGenSources(1, &arraySource[i].source);
+         alGenBuffers(4, arraySource[i].buffer);
+         alGenBuffers(1, &arraySource[i].mBuffer);
+         alGenBuffers(1, &arraySource[i].wBuffer);
+         arraySource[i].inUse = 0;
+      }
+      isPlaying = 0;
+   }
+   pthread_mutex_unlock(&mutex);
+   i = GetIndex();
+   if (i != -1) {
+   pthread_mutex_lock(&mutex);
+   isPlaying += 1;
+   pthread_mutex_unlock(&mutex);
+   strcpy(arraySource[i].filename, filename);
+   pthread_attr_init(&attrib);
+   pthread_attr_setdetachstate(&attrib, PTHREAD_CREATE_DETACHED);
+      if((sp = strstr(filename,".mp3")) != NULL) {
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32
-	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayMP3 , NULL) ) {
+	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayMP3 , &i) ) {
 	    /* fprintf(stderr, "error creating thread.\n");
 	     * abort();
              */
-            return NULL;
+            pthread_mutex_lock(&mutex);
+            isPlaying -= 1;
+            pthread_mutex_unlock(&mutex);
+            return -1;
 	    }
-	 return Ptr;
+	 return i;
 #else
 	 /* WIN32 : MP3 is not implemented yet */
-	 return NULL;
+         pthread_mutex_lock(&mutex);
+         isPlaying -= 1;
+         pthread_mutex_unlock(&mutex);
+	 return -1;
 #endif /* WIN32 */
 #else
 	 /* 
           * fprintf(stderr, "\n StartAudioThread: sound not supported in VM\n");
           */
-	 return NULL;
+         pthread_mutex_lock(&mutex);
+         isPlaying -= 1;
+         pthread_mutex_unlock(&mutex);
+	 return -1;
 #endif
 	 }
 
-      if((sptr = strstr(Ptr->fname,".ogg")) != NULL){
+      if((sp = strstr(filename,".ogg")) != NULL){
 #if defined(HAVE_LIBOGG) 
 #ifndef WIN32
-	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayOgg , NULL) ) {
+	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayOgg , &i) ) {
 	    /* fprintf(stderr, "error creating thread.\n");
              * abort();
              */
-            return NULL;
+            pthread_mutex_lock(&mutex);
+            isPlaying -= 1;
+            pthread_mutex_unlock(&mutex);
+            return -1;
 	    }
-	 return Ptr;
+	 return i;
 #else
-	 hThread = CreateThread(NULL,0,PlayOggVorbisWIN32,NULL,0,&dwThreadId);
-	 if (hThread == NULL)
-	    return NULL; /*ExitProcess(1); */
-	 return Ptr;
+	 arraySource[i].hThread = CreateThread(NULL,0,PlayOggVorbisWIN32,NULL,0,&dwThreadId);
+	 if (arraySouce[i].hThread == NULL)
+         {
+            pthread_mutex_lock(&mutex);
+            isPlaying -= 1;
+            pthread_mutex_unlock(&mutex);
+	    return -1; /*ExitProcess(1); */
+         }
+	 return i;
 #endif /* WIN32 */
 #else
 	 /* fprintf(stderr, "\n HAVE_LIBOGG: is not defined\n");
           */
-	 return NULL;
+         pthread_mutex_lock(&mutex);
+         isPlaying -= 1;
+         pthread_mutex_unlock(&mutex);
+	 return -1;
 #endif /* defined(HAVE_LIBOGG)  */
 	 }
 
-      if((sptr = strstr(Ptr->fname,".wav")) != NULL){
+      if((sp = strstr(filename,".wav")) != NULL){
 #ifdef HAVE_LIBOPENAL
 #ifndef WIN32
-	 if ( pthread_create( &AudioThread, NULL, OpenAL_PlayWAV , NULL) ) {
+	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayWAV , &i) ) {
 	    /* fprintf(stderr, "error creating thread.");
 	     * abort();
              */
-            return NULL;
+            pthread_mutex_lock(&mutex);
+            isPlaying -= 1;
+            pthread_mutex_unlock(&mutex);
+            return -1;
 	    }
-	 return Ptr;
+	 return i;
 #else
 	 /* WIN32 : WAV is not implemented yet, you can use WinPlayMedia() */
-	 return NULL;
+         pthread_mutex_lock(&mutex);
+         isPlaying -= 1;
+         pthread_mutex_unlock(&mutex);
+	 return -1;
 #endif /* WIN32 */
 #else
 	 /* fprintf(stderr, "\n HAVE_LIBOPENAL: is not defined\n");
           */
-	 return NULL;
+         pthread_mutex_lock(&mutex);
+         isPlaying -= 1;
+         pthread_mutex_unlock(&mutex);
+	 return -1;
 #endif
 	 }/* End WAV Thread */
       }
    else {
       /* fprintf(stderr, "\n No enough memory : malloc failed \n");
        */ 
-      return NULL;
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      pthread_mutex_unlock(&mutex);
+      return -1;
       }
-   return NULL;
+   return -1;
 }
 
 
-void StopAudioThread(struct AudioFile * Ptr)
+void StopAudioThread(int index)
 {
-   if (Ptr != NULL) {
-      Ptr->doneflag = 1;
-      free(Ptr);
+   pthread_mutex_lock(&mutex);
+   if (arraySource[index].inUse == 1) 
+   {
+      isPlaying = 0;
+      arraySource[index].inUse = 0;
+      alSourceStop(arraySource[index].source);
+      if (isPlaying == 0)
+         alutExit();
 #ifdef WIN32
-      CloseHandle(hThread);
+      CloseHandle(arraySource[index].hThread);
+#else
+      pthread_cancel(arraySource[index].thread);
 #endif
-      }
+   }
+   pthread_mutex_unlock(&mutex);
 }
 
 /*
@@ -948,7 +887,7 @@ int CloseMixer();
 int SetMixerAttribute(char * dev, int value);
 int GetMixerAttribute(char * dev);
 int PrintAllMixerAttribute(char *device);
-int LinuxMixer(char * cmd);
+
 
 int OpenMixer()
 {
@@ -989,7 +928,6 @@ int CloseMixer()
 int SetMixerAttribute(char *dev, int value)
 {
    int left, right, level;	/* gain settings */
-   int status;		/* return value from system calls */
    int device;		/* which mixer device to set */
    int i;			/* general purpose loop counter */
 
@@ -1067,14 +1005,14 @@ int LinuxMixer(char * cmd) /* cmd: eg. "vol=50" */
    char val[5] = {'\0'};
    int  cmdiVal = -1;
    char cmdsVal[10] = {'\0'};
-   char *sptr = NULL, *p = NULL;
+   char *sp = NULL, *p = NULL;
 
    if( MixInitialize() >= 0){
       /*----------------parse cmd; */
       p = strchr(cmd,'=');
       if(p != NULL){ /* cmd: "cmd=ival" */
-	 sptr=cmd;
-	 while(sptr != p)	cmdsVal[i++] = *sptr++;
+	 sp=cmd;
+	 while(sp != p)	cmdsVal[i++] = *sp++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0') val[i++] = *p;
@@ -1602,7 +1540,7 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
    char val[5] = {'\0'};
    int  cmdiVal = -1;
    char cmdsVal[10] = {'\0'};
-   char *sptr = NULL, *p = NULL;
+   char *sp = NULL, *p = NULL;
    char * DevNames[10] = {
       "Volume Contro","Wave","SW Synth","Telephone","PC Speaker",
       "CD Audio","Line In","Microphone","IIS","Phone Line"};
@@ -1612,8 +1550,8 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
       /*----------------parse cmd */
       p = strchr(cmd,'=');
       if (p != NULL){ /* cmd: "cmd=ival" */
-	 sptr=cmd;
-	 while(sptr != p)	cmdsVal[i++]=*sptr++;
+	 sp=cmd;
+	 while(sp != p)	cmdsVal[i++]=*sp++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0')	val[i++]=*p;
@@ -1680,11 +1618,10 @@ int MixInitialize()
    return -1;
 }
 
-int MixUnInitialize()
+void MixUnInitialize()
 {
    CloseMixer();
 }
-
-#else					/* Audio */
-static char c;
+#else
+/**/
 #endif					/* Audio */

@@ -360,13 +360,10 @@ typedef int siptr, stringint, inst;
       typedef int PBITMAPINFOHEADER, MinBitmapHeader, RGB;
    #endif				/* PresentationManager */
 
-#if defined(Audio) || defined(HAVE_LIBPTHREAD)
-      typedef int pthread_t;
-#endif					/* Audio || LIBPTHREAD */
-
 #ifdef HAVE_LIBPTHREAD
-       typedef int pthread_rwlock_t, sem_t;
-       typedef int pthread_mutex_t, pthread_mutexattr_t;
+      typedef int pthread_t, pthread_attr_t;
+      typedef int pthread_rwlock_t, sem_t;
+      typedef int pthread_mutex_t, pthread_mutexattr_t;
 #endif					/* HAVE_LIBPTHREAD */
 
    /*

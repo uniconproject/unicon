@@ -7,7 +7,6 @@
  * Ogg Vorbis, and WAV. StartAudioThread(filename) is the main function where
  * filename is any of the three formats.
  */
-const int ARRAYSIZE = 16;
 #ifdef Audio
  
 struct sSources
@@ -29,15 +28,24 @@ struct sSources
 
 struct sSources arraySource[16];
 int isPlaying = -1;
+int isSet = 0;
+int gIndex;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int GetIndex()
 {
    int i;
-   for(i = 0; arraySource[i].inUse == 1; ++i)
-      i = i % 16;
    pthread_mutex_lock(&mutex);
-   arraySource[i].inUse = 1;
+   for(i = -1; i <= 16; ++i)
+   {
+      if (i >=0 && i <= 15)
+      {
+         if (arraySource[i].inUse == 0)
+            break;
+      }
+   }
+   if (i >= 0 && i <= 15)
+      arraySource[i].inUse += 1;
    pthread_mutex_unlock(&mutex);
    return i;
 }
@@ -109,49 +117,75 @@ int audioDevice(int channels, int rate)
 DWORD WINAPI PlayOggVorbisWIN32( void * params )
 {
    FILE *fd;
-   OggVorbis_File oggplayfile;
-   const int nbuffers = 5, buffersize = 4096;
+   const int nbuffers = 5, buffersize = (8 * 4096);
    unsigned int numsamples, numbytes, currentbuffer = 0, totprogress=0;
    int i, current_section = 0;
    WAVEHDR headers[nbuffers], *header;
-   vorbis_info *oggfileinfo;
    bool okay;
-
-   if ( ( fd = fopen(FilePtr->fname , "rb") ) == NULL ){
+   int index = gIndex;
+   isSet = 0;
+   pthread_mutex_lock(&mutex);
+   isPlaying += 1;
+   pthread_mutex_unlock(&mutex);
+   if ( ( fd = fopen(arraySource[index].filename , "rb") ) == NULL ){
       /*
        * can't open file, fail
        */
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse -= 1;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);      
       return NULL;
       }
 
-   if (ov_open(fd,&oggplayfile,NULL,0) < 0){
+   if (ov_open(fd,&arraySource[index].oggStream ,NULL,0) < 0){
       /*
        * ogg open failed for some reason; fail
        */
       fclose(fd);
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse -= 1;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
       return NULL;
       }
 
-   if (!ov_seekable(&oggplayfile)){
-      ov_clear(&oggplayfile);
+   if (!ov_seekable(&arraySource[index].oggStream)){
+      ov_clear(&arraySource[index].oggStream);
       /*
        * ogg seekable failed for some reason; fail
        */
-      fclose(fd);
+      fclose(fd)
+;      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse -= 1;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
       return NULL;
       }
 
-   oggfileinfo=ov_info(&oggplayfile,-1);
+   arraySource[index].vorbinfo =ov_info(&arraySource[index].oggStream,-1);
 
-   numsamples = (unsigned int)ov_pcm_total(&oggplayfile,0);
-   numbytes = numsamples * oggfileinfo->channels *
+   numsamples = (unsigned int)ov_pcm_total(&arraySource[index].oggStream,0);
+   numbytes = numsamples * arraySource[index].vorbinfo->channels *
       waveformater.wBitsPerSample > 1;
 
-   if(audioDevice(oggfileinfo->channels, oggfileinfo->rate)){
+   if(audioDevice(arraySource[index]vorbinfo->channels, arraySource[index].vorbinfo->rate)){
       /*
        * Error setting up audio device; fail.
        */
       fclose(fd);
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse -= 1;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
       return NULL;
       }
    for (i=0; i < nbuffers; i++){
@@ -176,7 +210,7 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
 
       for (header->dwBufferLength=0; header->dwBufferLength<buffersize; ){
 	 long ret = 0;
-	 if (( ret = ov_read( &oggplayfile,
+	 if (( ret = ov_read( &arraySource[index].vorbinfo,
 			     header->lpData+header->dwBufferLength,
 			     buffersize - header->dwBufferLength, 0, 2, 1,
 			     &current_section ) ) <= 0 ){
@@ -192,9 +226,6 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       if (header->dwBufferLength==0) {
 	 break;
 	 }
-
-      if(FilePtr->doneflag)
-	 break;
       }
 
    for (okay=false; !okay; ){
@@ -212,8 +243,15 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       }
 
    waveOutClose(hwave);
-   ov_clear(&oggplayfile);
+   ov_clear(&arraySource[index].oggStream);
+   alSourcei(arraySource[index], AL_BUFFER, 0);
    /* fclose(fd); // Casing Error */
+      pthread_mutex_lock(&mutex);
+      isPlaying -= 1;
+      arraySource[index].inUse -= 1;
+      if (isPlaying == 0)
+         alutExit();
+      pthread_mutex_unlock(&mutex);
    return 0;
 }
 
@@ -227,15 +265,6 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
 	DWORD dwThreadId;
 	HANDLE hThread;
 #endif
-
-/*
-struct AudioFile{
-	int doneflag;
-	char *fname;
-	};
-*/
-
-struct AudioFile *FilePtr;
 
 /*function pointer for LOKI extensions */
 ALfloat	(*talcGetAudioChannel)(ALuint channel);
@@ -401,7 +430,7 @@ mp3Loader *alutLoadMP3p = NULL;
 
 static void initMP3( int index )
 {
-   alSourcei(  arraySource[index].source, AL_BUFFER, arraySource[index].buffer[0] );
+   alSourceQueueBuffer(arraySource[index].source, 1, arraySource[index].mBuffer );
    alSourcei(  arraySource[index].source, AL_LOOPING, AL_FALSE );
    return;
 }
@@ -409,7 +438,6 @@ static void initMP3( int index )
 
 void * OpenAL_PlayMP3( void * args )
 {
-   int *t = (int *) args;
    int index;
    FILE *fh;
    struct stat sbuf;
@@ -417,25 +445,28 @@ void * OpenAL_PlayMP3( void * args )
    int i = 0;
    int size;
    ALint tState;
-   index = *t;
+   index = gIndex;
+   isSet = 0;
+   pthread_mutex_lock(&mutex);
+   isPlaying += 1;
+   pthread_mutex_unlock(&mutex);
    if (stat(arraySource[index].filename, &sbuf) == -1) 
    {
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if (isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
-   initMP3(index);
    size = sbuf.st_size;
    data = malloc(size);
    if(data == NULL) 
    {
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if (isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
@@ -447,7 +478,7 @@ void * OpenAL_PlayMP3( void * args )
       free(data);
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if (isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
@@ -459,7 +490,7 @@ void * OpenAL_PlayMP3( void * args )
       free(data);
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if (isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
@@ -475,7 +506,7 @@ void * OpenAL_PlayMP3( void * args )
       free(data);
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if (isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
@@ -488,13 +519,14 @@ void * OpenAL_PlayMP3( void * args )
       free(data);
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if (isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
    free(data);
+   initMP3(index);
    alSourcePlay( arraySource[index].source );
    alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &tState);
    while(tState == AL_PLAYING)
@@ -503,9 +535,10 @@ void * OpenAL_PlayMP3( void * args )
       alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &tState);
    }
    alSourceStop(arraySource[index].source);
+   alSourcei(arraySource[index], AL_BUFFER, 0);
    pthread_mutex_lock(&mutex);
    isPlaying -= 1;
-   arraySource[index].inUse = 0;
+   arraySource[index].inUse -= 1;
    if(isPlaying == 0)
       alutExit();
    pthread_mutex_unlock(&mutex);
@@ -515,7 +548,7 @@ void * OpenAL_PlayMP3( void * args )
 
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG)
 /* The following is for Ogg-Vorbis Support on top of OpenAL*/
-#define DATABUFSIZE 		(4096 * 8)
+#define DATABUFSIZE 		(4096 * 16)
 
 int OggStreamBuf(ALuint buffer, int index)
 {
@@ -548,7 +581,6 @@ int OggStreamBuf(ALuint buffer, int index)
 int OggPlayback(int index)
 {
    ALenum state;
-int processed;
    alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &state);
    if(state == AL_PLAYING)
       return 0;
@@ -588,7 +620,7 @@ void OggExit(int index)
    alSourceStop(arraySource[index].source);
    ov_clear(&arraySource[index].oggStream);
    alSourcei(arraySource[index].source, AL_BUFFER, 0);
-   arraySource[index].inUse = 0;
+   arraySource[index].inUse -= 1;
    if(isPlaying == 0)
    {
       alutExit();
@@ -598,14 +630,16 @@ void OggExit(int index)
 
 void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
 {
-   int index;
-   int *i = (int *) args;
-   index = *i;
-   if((ov_fopen(arraySource[index].filename, &arraySource[index].oggStream) < 0))
+   int index = gIndex;
+   isSet = 0;
+   pthread_mutex_lock(&mutex);
+   isPlaying += 1;
+   pthread_mutex_unlock(&mutex);
+   if(ov_fopen(arraySource[index].filename, &arraySource[index].oggStream) < 0)
    {
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
-      arraySource[index].inUse = 0;
+      arraySource[index].inUse -= 1;
       if(isPlaying == 0)
          alutExit();
       pthread_mutex_unlock(&mutex);
@@ -628,7 +662,7 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
          OggExit(index);
          pthread_exit;
       }
-      sleep(.75);
+      sleep(2);
    }
    OggExit(index);
    pthread_exit;
@@ -644,10 +678,13 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
 /* Thread function to play WAV file under OpenAL. */
 void * OpenAL_PlayWAV( void * args )
 {
-   int *index = (int *)args;
    int indexSource;
    ALint tState;
-   indexSource = *index;
+   indexSource = gIndex;
+   isSet = 0;
+   pthread_mutex_lock(&mutex);
+   isPlaying += 1;
+   pthread_mutex_unlock(&mutex);
    arraySource[indexSource].wBuffer = alutCreateBufferFromFile(arraySource[indexSource].filename);
    alSourceQueueBuffers(arraySource[indexSource].source, 1, &arraySource[indexSource].wBuffer);
    alSourcePlay(arraySource[indexSource].source);
@@ -661,7 +698,7 @@ void * OpenAL_PlayWAV( void * args )
    alSourcei(arraySource[indexSource].source, AL_BUFFER, 0);
    pthread_mutex_lock(&mutex);
    isPlaying -= 1;
-   arraySource[indexSource].inUse = 0;
+   arraySource[indexSource].inUse -= 1;
    if(isPlaying == 0)
       alutExit();
    pthread_mutex_unlock(&mutex);
@@ -682,7 +719,7 @@ int StartAudioThread(char filename[])
       alutInit(NULL, NULL);
    if (isPlaying == -1)
    {
-      for(i = 0; i < ARRAYSIZE; ++i)
+      for(i = 0; i <= 15 ; ++i)
       {
          alGenSources(1, &arraySource[i].source);
          alGenBuffers(4, arraySource[i].buffer);
@@ -693,60 +730,61 @@ int StartAudioThread(char filename[])
       isPlaying = 0;
    }
    pthread_mutex_unlock(&mutex);
-   while (isPlaying >= 15)
-   {
+   while (isSet != 0)
       sleep(1);
-   }
    i = GetIndex();
-   if (i != -1 && i <= 15) {
-      pthread_mutex_lock(&mutex);
-      isPlaying += 1;
-      pthread_mutex_unlock(&mutex);
+   if (i >= 0 && i <= 15) {
+      isSet = 1;
+      gIndex = i;
       strcpy(arraySource[i].filename, filename);
       pthread_attr_init(&attrib);
       pthread_attr_setdetachstate(&attrib, PTHREAD_CREATE_DETACHED);
       if((sp = strstr(filename,".mp3")) != NULL) {
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32
-	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayMP3 , &i) ) {
+	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayMP3 , NULL) ) {
 	    /* fprintf(stderr, "error creating thread.\n");
 	     * abort();
              */
             pthread_mutex_lock(&mutex);
-            isPlaying -= 1;
-            pthread_mutex_unlock(&mutex);
-            return -1;
+            arraySource[i].inUse -= 1;
+            pthread_mutex_unlock(&mutex); 
+            isSet = 0;
+            return 16;
 	    }
 	 return i;
 #else
 	 /* WIN32 : MP3 is not implemented yet */
          pthread_mutex_lock(&mutex);
-         isPlaying -= 1;
-         pthread_mutex_unlock(&mutex);
-	 return -1;
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex); 
+         isSet = 0;
+	 return 16;
 #endif /* WIN32 */
 #else
 	 /* 
           * fprintf(stderr, "\n StartAudioThread: sound not supported in VM\n");
           */
          pthread_mutex_lock(&mutex);
-         isPlaying -= 1;
-         pthread_mutex_unlock(&mutex);
-	 return -1;
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex); 
+         isSet = 0;
+	 return 16;
 #endif
 	 }
 
       if((sp = strstr(filename,".ogg")) != NULL){
 #if defined(HAVE_LIBOGG) 
 #ifndef WIN32
-	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayOgg , &i) ) {
+	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayOgg , NULL) ) {
 	    /* fprintf(stderr, "error creating thread.\n");
              * abort();
              */
             pthread_mutex_lock(&mutex);
-            isPlaying -= 1;
+            arraySource[i].inUse -= 1;
             pthread_mutex_unlock(&mutex);
-            return -1;
+            isSet = 0;
+            return 16;
 	    }
 	 return i;
 #else
@@ -754,9 +792,10 @@ int StartAudioThread(char filename[])
 	 if (arraySouce[i].hThread == NULL)
          {
             pthread_mutex_lock(&mutex);
-            isPlaying -= 1;
-            pthread_mutex_unlock(&mutex);
-	    return -1; /*ExitProcess(1); */
+            arraySource[i].inUse -= 1;
+            pthread_mutex_unlock(&mutex); 
+            isSet = 0;
+	    return 16; /*ExitProcess(1); */
          }
 	 return i;
 #endif /* WIN32 */
@@ -764,62 +803,70 @@ int StartAudioThread(char filename[])
 	 /* fprintf(stderr, "\n HAVE_LIBOGG: is not defined\n");
           */
          pthread_mutex_lock(&mutex);
-         isPlaying -= 1;
-         pthread_mutex_unlock(&mutex);
-	 return -1;
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex); 
+         isSet = 0;
+	 return 16;
 #endif /* defined(HAVE_LIBOGG)  */
 	 }
 
       if((sp = strstr(filename,".wav")) != NULL){
 #ifdef HAVE_LIBOPENAL
 #ifndef WIN32
-	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayWAV , &i) ) {
+	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayWAV , NULL) ) {
 	    /* fprintf(stderr, "error creating thread.");
 	     * abort();
              */
             pthread_mutex_lock(&mutex);
-            isPlaying -= 1;
-            pthread_mutex_unlock(&mutex);
-            return -1;
+            arraySource[i].inUse -= 1;
+            pthread_mutex_unlock(&mutex); 
+            isSet = 0;
+            return 16;
 	    }
 	 return i;
 #else
 	 /* WIN32 : WAV is not implemented yet, you can use WinPlayMedia() */
          pthread_mutex_lock(&mutex);
-         isPlaying -= 1;
-         pthread_mutex_unlock(&mutex);
-	 return -1;
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex); 
+         isSet = 0;
+	 return 16;
 #endif /* WIN32 */
 #else
 	 /* fprintf(stderr, "\n HAVE_LIBOPENAL: is not defined\n");
           */
          pthread_mutex_lock(&mutex);
-         isPlaying -= 1;
-         pthread_mutex_unlock(&mutex);
-	 return -1;
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex); 
+         isSet = 0;
+	 return 16;
 #endif
 	 }/* End WAV Thread */
       }
    else {
       /* fprintf(stderr, "\n No enough memory : malloc failed \n");
        */ 
-      pthread_mutex_lock(&mutex);
-      isPlaying -= 1;
-      pthread_mutex_unlock(&mutex);
-      return -1;
+         pthread_mutex_lock(&mutex);
+         arraySource[i].inUse -= 1;
+         pthread_mutex_unlock(&mutex); 
+         isSet = 0;
+         return 16;
       }
-   return -1;
+   return 16;
 }
 
 
 void StopAudioThread(int index)
 {
+   if (index < 0 || index > 15)
+      return;
    pthread_mutex_lock(&mutex);
-   if (arraySource[index].inUse == 1) 
+   if (arraySource[index].inUse > 0) 
    {
-      isPlaying = 0;
-      arraySource[index].inUse = 0;
+      isPlaying -= 1;;
+      arraySource[index].inUse -= 1;
       alSourceStop(arraySource[index].source);
+      alSourcei(arraySource[index].source, AL_BUFFER, 0);
       if (isPlaying == 0)
          alutExit();
 #ifdef WIN32

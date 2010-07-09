@@ -2303,8 +2303,8 @@ function{1} mutex(x)
    body{
 	pthread_mutex_lock(&mutex_mutex);
 	if(nmutexes==maxmutexes){
-	   maxmutexes*=2+64;
-	   mutexes=realloc(mutexes, maxmutexes);
+	   maxmutexes = maxmutexes * 2 + 64;
+	   mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t));
 	   if (mutexes==NULL)
 	     syserr("out of memory for mutexes!");
   	   }

@@ -1,5 +1,5 @@
 #
-# $Id: utils.icn,v 1.4 2006-07-09 23:43:13 rparlett Exp $
+# $Id: utils.icn,v 1.5 2010-07-13 23:12:43 ghollingshead Exp $
 #
 # This file is in the public domain.
 #
@@ -72,10 +72,10 @@ end
 # Read icon from file s.  dialog is an instance of CommonDialog
 #
 procedure util_read_icon(dialog, s)
-   if map(s)[-4:0] == ".gif" then
-      return read_gif_icon(dialog, s)
-   else if map(s)[-4:0] == ".xpm" then
+   if map(s)[-4:0] == ".xpm" then
       return read_xpm_icon(dialog, s)
+   else if stat(s) then
+      return read_imagefile_icon(dialog, s)
    else
       return read_string_icon(dialog, s)
 end
@@ -84,6 +84,10 @@ end
 # Read a standard gif icon.
 #
 procedure read_gif_icon(dialog, s)
+   return read_imagefile_icon(dialog, s)
+end
+
+procedure read_imagefile_icon(dialog, s)
    local w, raw, len
 
    w := WOpen("canvas=hidden", "image=" || s) | return dialog.alert_error("Couldn't open file " || s)

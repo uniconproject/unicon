@@ -272,17 +272,12 @@ int first;
 #endif					/* MultiThread */
          cotrace(ccp, ncp, swtch_typ, valloc);
 
+#ifndef Concurrent
    /*
     * Establish state for new co-expression.
     */
    pfp = ncp->es_pfp;
-#ifdef Concurrent
-         pthread_mutex_lock(&mutex_tend);
-#endif					/* Concurrent */
    tend = ncp->es_tend;
-#ifdef Concurrent
-         pthread_mutex_unlock(&mutex_tend);
-#endif					/* Concurrent */
 
 #if !COMPILER
    efp = ncp->es_efp;
@@ -307,6 +302,8 @@ int first;
 #if COMPILER
    coexpr_fnc = ncp->fnc;
 #endif					/* COMPILER */
+
+#endif					/* ! Concurrent */
 
 #ifdef MultiThread
    /*

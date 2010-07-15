@@ -408,39 +408,8 @@ union numeric {			/* long integers or real numbers */
    #endif				/* LargeInts */
    };
 
-#if COMPILER
-struct b_coexpr {		/* co-expression stack block */
-   word title;			/*   T_Coexpr */
-   word size;			/*   number of results produced */
-   word id;			/*   identification number */
-#ifdef Concurrent
-   word status;			/*   status (sync vs. async, etc) */
-#endif					/* Concurrent */
-   struct b_coexpr *nextstk;	/*   pointer to next allocated stack */
-   continuation fnc;		/*   function containing co-expression code */
-   struct p_frame *es_pfp;	/*   current procedure frame pointer */
-   dptr es_argp;		/*   current argument pointer */
-   struct tend_desc *es_tend;	/*   current tended pointer */
-   char *file_name;		/*   current file name */
-   word line_num;		/*   current line_number */
-   dptr tvalloc;		/*   where to place transmitted value */
-   struct descrip freshblk;	/*   refresh block pointer */
-   struct astkblk *es_actstk;	/*   pointer to activation stack structure */
-   word cstate[CStateSize];	/*   C state information */
-   struct p_frame pf;           /*   initial procedure frame */
-   };
 
-struct b_refresh {		/* co-expression block */
-   word title;			/*   T_Refresh */
-   word blksize;		/*   size of block */
-   word nlocals;		/*   number of local variables */
-   word nargs;			/*   number of arguments */
-   word ntemps;                 /*   number of temporary descriptors */
-   word wrk_size;		/*   size of non-descriptor work area */
-   struct descrip elems[1];	/*   locals and arguments */
-   };
-
-#else					/* COMPILER */
+#if !COMPILER
 
 /*
  * Structures for the interpreter.
@@ -745,6 +714,9 @@ struct b_iproc {		/* procedure block */
    struct descrip ip_lnames[1];	/*   list of local names (qualifiers) */
    };
 
+#endif					/* COMPILER */
+
+
 struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
    word size;			/*   number of results produced */
@@ -758,38 +730,48 @@ struct b_coexpr {		/* co-expression stack block */
    word actv_count;             /*   number of times activated using EvGet() */
 #endif				/* EventMon */
    struct b_coexpr *nextstk;	/*   pointer to next allocated stack */
+   struct tend_desc *es_tend;	/*   current tended pointer */
+   dptr es_argp;		/*   current argument pointer */
+   dptr tvalloc;		/*   where to place transmitted value */
+   struct descrip freshblk;	/*   refresh block pointer */
+   struct astkblk *es_actstk;	/*   pointer to activation stack structure */
+#if COMPILER
+   continuation fnc;		/*   function containing co-expression code */
+   struct p_frame *es_pfp;	/*   current procedure frame pointer */
+   char *file_name;		/*   current file name */
+   word line_num;		/*   current line_number */
+   struct p_frame pf;           /*   initial procedure frame */
+#else					/* COMPILER */
    struct pf_marker *es_pfp;	/*   current pfp */
    struct ef_marker *es_efp;	/*   efp */
    struct gf_marker *es_gfp;	/*   gfp */
-   struct tend_desc *es_tend;	/*   current tended pointer */
-   dptr es_argp;		/*   argp */
    inst es_ipc;			/*   ipc */
    inst es_oldipc;              /*   oldipc */
    word es_ilevel;		/*   interpreter level */
    word *es_sp;			/*   sp */
    word *es_stack;		/*   beginning of interpreter stack */
    word *es_stackend;		/*   end of interpreter stack */
-   dptr tvalloc;		/*   where to place transmitted value */
-   struct descrip freshblk;	/*   refresh block pointer */
-   struct astkblk *es_actstk;	/*   pointer to activation stack structure */
-
-   word cstate[CStateSize];	/*   C state information (registers, etc.) */
-
    #ifdef MultiThread
       struct progstate *program;
    #endif				/* MultiThread */
+#endif					/* COMPILER */
+   word cstate[CStateSize];	/*   C state information (registers, etc.) */
    };
 
-struct b_refresh {		/* co-expression block */
+struct b_refresh {		/* co-expression refresh block */
    word title;			/*   T_Refresh */
    word blksize;		/*   size of block */
+   word nlocals;		/*   number of local variables */
+#if COMPILER
+   word nargs;			/*   number of arguments */
+   word ntemps;                 /*   number of temporary descriptors */
+   word wrk_size;		/*   size of non-descriptor work area */
+#else					/* COMPILER */
    word *ep;			/*   entry point */
-   word numlocals;		/*   number of locals */
    struct pf_marker pfmkr;	/*   marker for enclosing procedure */
-   struct descrip elems[1];	/*   arguments and locals, including Arg0 */
+#endif
+   struct descrip elems[1];	/*   args and locals (VM: including Arg0) */
    };
-
-#endif					/* COMPILER */
 
 #ifdef PthreadCoswitch
 /* from the Icon pthreads-based co-expression implementation. */

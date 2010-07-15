@@ -752,7 +752,7 @@ struct b_refresh *f(word *entryx, int na, int nl)
 
    AlcVarBlk(blk, b_refresh, T_Refresh, na + nl);
    blk->ep = entryx;
-   blk->numlocals = nl;
+   blk->nlocals = nl;
    return blk;
    }
 

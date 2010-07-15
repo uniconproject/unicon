@@ -54,7 +54,7 @@ struct b_coexpr *sblkp;
 #else					/* COMPILER */
 
    na = (rblkp->pfmkr).pf_nargs + 1; /* number of arguments */
-   nl = (int)rblkp->numlocals;       /* number of locals */
+   nl = (int)rblkp->nlocals;         /* number of locals */
 
    /*
     * The interpreter stack starts at word after co-expression stack block.

@@ -57,6 +57,20 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
 #ifdef Concurrent
 extern pthread_mutex_t mutex_stklist;
 extern pthread_mutex_t mutex_tend;
+extern pthread_mutex_t *mutexes, mutex_mutex;
+extern int maxmutexes, nmutexes;
+
+extern pthread_mutex_t mutex_mutex;
+extern pthread_mutex_t mutex_alcblk;
+extern pthread_mutex_t mutex_alcstr;
+
+extern pthread_mutex_t mutex_list_ser;
+extern pthread_mutex_t mutex_coexp_ser;
+extern pthread_mutex_t mutex_set_ser;
+extern pthread_mutex_t mutex_table_ser;
+#ifdef PatternType   
+   extern pthread_mutex_t mutex_pat_ser;
+#endif					/* PatternType */
 #endif					/* Concurrent */
 
 /*

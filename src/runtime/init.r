@@ -595,21 +595,8 @@ void check_version(struct header *hdr, char *name,
    struct header hdr;
 #endif					/* !COMPILER */
 
-#ifdef Concurrent
-   extern pthread_mutex_t mutex_mutex;
-   extern pthread_mutex_t mutex_alcblk;
-   extern pthread_mutex_t mutex_alcstr;
-
-   extern pthread_mutex_t mutex_list_ser;
-   extern pthread_mutex_t mutex_coexp_ser;
-   extern pthread_mutex_t mutex_set_ser;
-   extern pthread_mutex_t mutex_table_ser;
-#ifdef PatternType   
-   extern pthread_mutex_t mutex_pat_ser;
-#endif					/* PatternType */
-#endif					/* Concurrent */
-
-void init_threadstate(struct threadstate *ts){
+void init_threadstate(struct threadstate *ts)
+{
 
    ts->Glbl_argp = NULL;
 

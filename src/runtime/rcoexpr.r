@@ -67,7 +67,7 @@ struct b_coexpr *sblkp;
     *  at the last word of the static block.
     */
 
-   newsp = (word *)((char *)sblkp + sizeof(struct b_coexpr));
+   newsp = (word *)((char *)sblkp + sizeof(struct b_coexpr) + sizeof(struct threadstate));
 
 #ifdef UpStack
    sblkp->cstate[0] =
@@ -500,6 +500,7 @@ void *nctramp(void *arg)
    sp = ce->es_sp;
    stack = ce->es_stack;
    stackend = ce->es_stackend;
+   glbl_argp = ce->es_argp;
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
 #endif					/* Concurrent */

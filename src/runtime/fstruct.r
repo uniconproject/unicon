@@ -525,7 +525,7 @@ function{1} insert(s, x[n])
 		  }
 	       size = hp->size;
 	       i = cvpos((long)cnv_x, size);
-	       if (i == CvtFail || i > size)
+	       if (i == CvtFail || i > size+1)
 		  fail;
 
 	       /*

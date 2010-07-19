@@ -134,8 +134,6 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);      
       return NULL;
       }
@@ -148,8 +146,6 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       return NULL;
       }
@@ -159,12 +155,10 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       /*
        * ogg seekable failed for some reason; fail
        */
-      fclose(fd)
-;      pthread_mutex_lock(&mutex);
+      fclose(fd);
+      pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       return NULL;
       }
@@ -183,8 +177,7 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
+
       pthread_mutex_unlock(&mutex);
       return NULL;
       }
@@ -249,8 +242,6 @@ DWORD WINAPI PlayOggVorbisWIN32( void * params )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
    return 0;
 }
@@ -455,8 +446,6 @@ void * OpenAL_PlayMP3( void * args )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -467,8 +456,6 @@ void * OpenAL_PlayMP3( void * args )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -479,8 +466,6 @@ void * OpenAL_PlayMP3( void * args )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -491,8 +476,6 @@ void * OpenAL_PlayMP3( void * args )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -507,8 +490,6 @@ void * OpenAL_PlayMP3( void * args )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -520,8 +501,6 @@ void * OpenAL_PlayMP3( void * args )
       pthread_mutex_lock(&mutex);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if (isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -539,8 +518,6 @@ void * OpenAL_PlayMP3( void * args )
    pthread_mutex_lock(&mutex);
    isPlaying -= 1;
    arraySource[index].inUse -= 1;
-   if(isPlaying == 0)
-      alutExit();
    pthread_mutex_unlock(&mutex);
    pthread_exit(NULL);
 }
@@ -621,10 +598,6 @@ void OggExit(int index)
    ov_clear(&arraySource[index].oggStream);
    alSourcei(arraySource[index].source, AL_BUFFER, 0);
    arraySource[index].inUse -= 1;
-   if(isPlaying == 0)
-   {
-      alutExit();
-   }
    pthread_mutex_unlock(&mutex);
 }
 
@@ -638,10 +611,9 @@ void * OpenAL_PlayOgg( void * args ) /* the OggVorbis Thread function */
    if(ov_fopen(arraySource[index].filename, &arraySource[index].oggStream) < 0)
    {
       pthread_mutex_lock(&mutex);
+      ov_clear(&arraySource[index].oggStream);
       isPlaying -= 1;
       arraySource[index].inUse -= 1;
-      if(isPlaying == 0)
-         alutExit();
       pthread_mutex_unlock(&mutex);
       pthread_exit(NULL);
    }
@@ -699,8 +671,6 @@ void * OpenAL_PlayWAV( void * args )
    pthread_mutex_lock(&mutex);
    isPlaying -= 1;
    arraySource[indexSource].inUse -= 1;
-   if(isPlaying == 0)
-      alutExit();
    pthread_mutex_unlock(&mutex);
    pthread_exit(NULL);
 }/* OpenAL_PlayWAV Thread */
@@ -715,10 +685,9 @@ int StartAudioThread(char filename[])
    pthread_attr_t attrib;
    char *sp;
    pthread_mutex_lock(&mutex);
-   if (isPlaying == 0 || isPlaying == -1)
-      alutInit(NULL, NULL);
    if (isPlaying == -1)
    {
+      alutInit(NULL, NULL);
       for(i = 0; i <= 15 ; ++i)
       {
          alGenSources(1, &arraySource[i].source);
@@ -867,8 +836,6 @@ void StopAudioThread(int index)
       arraySource[index].inUse -= 1;
       alSourceStop(arraySource[index].source);
       alSourcei(arraySource[index].source, AL_BUFFER, 0);
-      if (isPlaying == 0)
-         alutExit();
 #ifdef WIN32
       CloseHandle(arraySource[index].hThread);
 #else

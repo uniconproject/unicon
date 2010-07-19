@@ -3,7 +3,7 @@ include ../makedefs
 
 .PHONY: all clean deps
 
-UFILES=gui.u file_dlg.u font_dlg.u db.u \
+UFILES=gui.u file_dlg.u db.u \
  address.u base64handler.u basicclasscoding.u class.u classcoding.u \
  cltable.u comparator.u compoundedit.u contentdisposition.u contenttype.u cvsuser.u \
  cvsutil.u decode.u encode.u encodinghandler.u error.u format.u \

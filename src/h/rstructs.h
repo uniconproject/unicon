@@ -444,6 +444,7 @@ struct threadstate {
    struct descrip ksub;             /* TLS */
    struct descrip Kywd_ran;        /*  TLS  */
 
+   dptr Clintsrargp;
 
    dptr Xargp;                    /* TLS  */
    word Xnargs;                   /* TLS  */
@@ -593,7 +594,6 @@ struct progstate {
    struct b_file K_input;
    struct b_file K_output;
 
-   dptr Clintsrargp;
 
    /* dynamic record types */
 

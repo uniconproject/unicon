@@ -781,7 +781,6 @@
       #define efnames (curpstate->Efnames)
       #define globals (curpstate->Globals)
       #define eglobals (curpstate->Eglobals)
-      #define clintsrargp (curpstate->Clintsrargp)
       #define gnames (curpstate->Gnames)
       #define egnames (curpstate->Egnames)
       #define statics (curpstate->Statics)
@@ -842,6 +841,7 @@
       #define k_subject (curtstate->ksub)
       #define kywd_ran  (curtstate->Kywd_ran)
 
+      #define clintsrargp (curtstate->Clintsrargp)
       #define xargp     (curtstate->Xargp)
       #define xnargs    (curtstate->Xnargs)
 

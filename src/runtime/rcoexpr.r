@@ -101,13 +101,7 @@ struct b_coexpr *sblkp;
     */
 #if COMPILER
    sblkp->es_pfp = &sblkp->pf;
-#ifdef Concurrent
-         pthread_mutex_lock(&mutex_tend);
-#endif					/* Concurrent */
    sblkp->es_tend = &sblkp->pf.t;
-#ifdef Concurrent
-         pthread_mutex_unlock(&mutex_tend);
-#endif					/* Concurrent */
    sblkp->pf.old_pfp = NULL;
    sblkp->pf.rslt = NULL;
    sblkp->pf.succ_cont = NULL;
@@ -117,13 +111,7 @@ struct b_coexpr *sblkp;
 #else					/* COMPILER */
    *((struct pf_marker *)dsp) = rblkp->pfmkr;
    sblkp->es_pfp = (struct pf_marker *)dsp;
-#ifdef Concurrent
-         pthread_mutex_lock(&mutex_tend);
-#endif					/* Concurrent */
    sblkp->es_tend = NULL;
-#ifdef Concurrent
-         pthread_mutex_unlock(&mutex_tend);
-#endif					/* Concurrent */
    dsp = (dptr)((word *)dsp + Vwsizeof(*pfp));
    sblkp->es_ipc.opnd = rblkp->ep;
    sblkp->es_gfp = 0;
@@ -235,13 +223,7 @@ int first;
     */
    ccp->es_pfp = pfp;
    ccp->es_argp = glbl_argp;
-#ifdef Concurrent
-         pthread_mutex_lock(&mutex_tend);
-#endif					/* Concurrent */
    ccp->es_tend = tend;
-#ifdef Concurrent
-         pthread_mutex_unlock(&mutex_tend);
-#endif					/* Concurrent */
 #if !COMPILER
    ccp->es_efp = efp;
    ccp->es_gfp = gfp;

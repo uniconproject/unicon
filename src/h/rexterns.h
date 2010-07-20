@@ -241,6 +241,7 @@ extern struct descrip amperErrno;
       #endif				/* FieldTableCompression */
       extern dptr xargp;
       extern word xnargs;
+      extern dptr field_argp;
       
       extern word lastop;
    #endif				/* MultiThread */

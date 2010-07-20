@@ -841,7 +841,7 @@
       #define k_subject (curtstate->ksub)
       #define kywd_ran  (curtstate->Kywd_ran)
 
-      #define clintsrargp (curtstate->Clintsrargp)
+      #define field_argp (curtstate->Field_argp)
       #define xargp     (curtstate->Xargp)
       #define xnargs    (curtstate->Xnargs)
 

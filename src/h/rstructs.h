@@ -444,7 +444,7 @@ struct threadstate {
    struct descrip ksub;             /* TLS */
    struct descrip Kywd_ran;        /*  TLS  */
 
-   dptr Clintsrargp;
+   dptr Field_argp;			/* TLS -- see comment in imisc.r */
 
    dptr Xargp;                    /* TLS  */
    word Xnargs;                   /* TLS  */

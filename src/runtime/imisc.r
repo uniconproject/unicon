@@ -15,9 +15,6 @@ LibDcl(field,2,".")
    tended struct b_record *rp;
    register dptr dp;
    register union block *bptr;
-#ifndef MultiThread
-   extern dptr clintsrargp;
-#endif
 
 #ifdef MultiThread
    struct progstate *thisprog = curpstate, *progtouse = NULL;
@@ -32,7 +29,13 @@ LibDcl(field,2,".")
    extern word *records;
 #endif					/* MultiThread */
 
-   clintsrargp = cargp;
+   /*
+    * We may need to modify the argp, if we have to insert a "self" parameter.
+    * But we can't easily change the public interface of Ofield because it is
+    * declared by a LibDcl.  So, the field operator sets a global (well,
+    * really a per-thread) variable. By default it will retain its old value.
+    */
+   field_argp = cargp;
 
    Deref(Arg1);
 
@@ -266,7 +269,10 @@ linearsearch:
 	    else
 	       *((&(Arg0))+1) = Arg1;
 	    sp++; sp++;
-	    clintsrargp = cargp+1;
+	    /*
+	     * Bump up the argp; we inserted a "self" object.
+	     */
+	    field_argp = cargp+1;
 	    Return;
 	    }
 	 }

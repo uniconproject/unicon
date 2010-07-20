@@ -161,12 +161,14 @@ struct descrip t_errorvalue;		/* tentative k_errorvalue value */
 
 struct b_coexpr *stklist;	/* base of co-expression block list */
 
+#ifndef Concurrent
 struct tend_desc *tend = NULL;  /* chain of tended descriptors */
+#endif					/* Concurrent */
 
 #ifdef Concurrent
 pthread_mutex_t mutex_stklist;
-pthread_mutex_t mutex_tend;
 #endif					/* Concurrent */
+
 
 struct region rootstring, rootblock;
 
@@ -207,6 +209,8 @@ int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
 struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
 #ifdef Concurrent
+      struct tls_chain *tlshead;
+      pthread_mutex_t mutex_tls;
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;
 #else					/* Concurrent */
@@ -598,6 +602,10 @@ void check_version(struct header *hdr, char *name,
 void init_threadstate(struct threadstate *ts)
 {
 
+#ifdef Concurrent
+   ts->tid = pthread_self();
+#endif					/* Concurrent */
+
    ts->Glbl_argp = NULL;
 
    MakeInt(1, &(ts->Kywd_pos));
@@ -621,6 +629,8 @@ void init_threadstate(struct threadstate *ts)
    ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
    ts->Xargp = NULL;
    ts->Xnargs = 0;
+
+   ts->Tend = NULL;
 
    ts->Ipc.opnd = NULL;
    ts->Efp=NULL;		/* Expression frame pointer */
@@ -706,6 +716,8 @@ char *argv[];
 #ifdef Concurrent
    pthread_mutex_init(&mutex_mutex, NULL);
 
+   pthread_mutex_init(&mutex_tls, NULL);
+
    pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
    pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);
    pthread_mutex_init(&rootpstate.mutex_coll, NULL);
@@ -748,6 +760,7 @@ char *argv[];
 
    rootpstate.tstate = &roottstate;
    curtstate = &roottstate;
+
    init_threadstate(curtstate);
 
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));
@@ -1121,6 +1134,14 @@ Deliberate Syntax Error
    ctx = ncs[1] = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = mainhead;
+#ifdef Concurrent
+   tlshead = malloc(sizeof(struct tls_chain));
+   if (tlshead==NULL)
+      fatalerr(305, NULL);
+   tlshead->previous = tlshead->next = tlshead;
+   tlshead->ctx = ctx;
+   tlshead->tstate = curtstate;
+#endif					/* Concurrent */
 }
 #endif					/* PthreadCoswitch */
 

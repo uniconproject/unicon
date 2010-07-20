@@ -466,9 +466,27 @@ void *nctramp(void *arg)
    struct context *new = arg;		/* new context pointer */
    struct b_coexpr *ce;
 #ifdef Concurrent
-   rootpstate.tstate = &roottstate;
+   struct tls_chain *tlsnode;
+   /*   rootpstate.tstate = &roottstate;*/
    curtstate = &roottstate;
+
    init_threadstate(curtstate);
+   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+   tlsnode = malloc(sizeof(struct tls_chain));
+   if (tlsnode==NULL)
+      fatalerr(305, NULL);
+
+   pthread_mutex_lock(&mutex_tls);
+   tlsnode->previous =tlshead->previous;
+   tlsnode->next = tlshead;
+   tlshead->previous->next = tlsnode;
+   tlshead->previous = tlsnode;
+
+   tlsnode->ctx = new;
+   tlsnode->tstate = curtstate;
+   pthread_mutex_unlock(&mutex_tls);
+
    ce = new->c;
    if (ce->title != T_Coexpr) {
       fprintf(stderr, "warning ce title is %d\n", ce->title);

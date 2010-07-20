@@ -29,6 +29,25 @@ void err_msg(int n, dptr v)
    int saveerrno = errno;
 #endif                                  /* Messaging */
 
+#ifdef AAAConcurrent
+   struct tls_chain *tlsnode;
+   pthread_t tid;
+   int rc=0;
+   
+   pthread_mutex_lock(&mutex_tls);
+   tlsnode = tlshead->next;      /* skip the root tls */
+   tid = pthread_self();
+   while (tlsnode!=tlshead){
+     if (!pthread_equal(tid, tlsnode->tstate->tid)){
+        rc = pthread_cancel(tlsnode->tstate->tid);
+        /*printf("pthread_cancel() rc=%i\n", rc);*/
+        }
+      tlsnode=tlsnode->next;
+      }
+   
+   /* pthread_mutex_unlock(&mutex_tls);*/
+#endif					/* Concurrent */
+
    if (n == 0) {
       k_errornumber = t_errornumber;
       k_errorvalue = t_errorvalue;

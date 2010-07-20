@@ -867,6 +867,7 @@
       #define lastcol   (curtstate->Lastcol)
 
 #ifdef Concurrent 
+      #define tend         (curtstate->Tend)
       #define efp         (curtstate->Efp)
       #define gfp         (curtstate->Gfp)
       #define pfp         (curtstate->Pfp)

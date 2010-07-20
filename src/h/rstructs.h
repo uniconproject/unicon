@@ -466,6 +466,8 @@ struct threadstate {
   word Line_num,   /* line number for current execution point */
     Column, Lastline, Lastcol; /*TLS*/
 
+  struct tend_desc *Tend;  /* chain of tended descriptors */
+
   struct ef_marker *Efp;	/* Expression frame pointer */
   struct gf_marker *Gfp;	/* Generator frame pointer */
   struct pf_marker *Pfp;	/* procedure frame pointer */
@@ -782,6 +784,17 @@ typedef struct context {
    int alive;		/* set zero when thread is to die */
    struct b_coexpr *c;  /* pointer to associated co-expression block */
    } context;
+
+/*
+ * Structure for chaining threadstate structs.
+ */
+struct tls_chain {
+   struct tls_chain *next;
+   struct tls_chain *previous;
+   struct threadstate *tstate; 
+   struct context *ctx;         /* the corresponding context for tstate*/
+   };
+
 #endif					/* PthreadCoswitch */
 
 union block {			/* general block */

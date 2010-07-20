@@ -51,12 +51,12 @@ extern word memcushion;		/* memory region cushion factor */
 extern word memgrowth;		/* memory region growth factor */
 extern uword stattotal;		/* cumulative total of all static allocations */
 				/* N.B. not currently set */
-
+#ifndef Concurrent
 extern struct tend_desc *tend;  /* chain of tended descriptors */
+#endif					/* Concurrent */
 
 #ifdef Concurrent
 extern pthread_mutex_t mutex_stklist;
-extern pthread_mutex_t mutex_tend;
 extern pthread_mutex_t *mutexes, mutex_mutex;
 extern int maxmutexes, nmutexes;
 

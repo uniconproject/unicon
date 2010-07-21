@@ -14,6 +14,7 @@ extern word istart[4]; extern int mterm;
 extern int *OpTab;
 #endif
 
+#passthru __thread long jcon=0;
 
 /*
  * Prototypes for static functions.
@@ -109,7 +110,7 @@ dptr field_argp;			/* see comment in imisc.r/Ofield() */
 #endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
-   ExInterp;
+   ExInterp_sp;
 #enddef					/* Setup_Op */
 
 /*
@@ -123,7 +124,7 @@ dptr field_argp;			/* see comment in imisc.r/Ofield() */
 #endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
-   ExInterp;
+   ExInterp_sp;
 #enddef					/* Setup_Arg */
 
 #begdef Call_Cond(e)
@@ -283,8 +284,14 @@ printf("interp, fieldnum is still %d, recnum %d\n",
  *  to other variables.
  */
 
-#define ExInterp	sp = rsp;
-#define EntInterp	rsp = sp;
+#define ExInterp_sp	sp = rsp;
+#define EntInterp_sp	rsp = sp;
+
+#define ExInterp_ipc	ipc = ripc;
+#define EntInterp_ipc	ripc = ipc;
+
+#define ExInterp_lastop	rlastop = lastop;
+#define EntInterp_lastop	lastop = rlastop;
 
 /*
  * Inside the interpreter loop, PushDesc, PushNull, PushAVal, and
@@ -356,6 +363,10 @@ int interp_x(int fsig,dptr cargp)
    extern word tallybin[];
 #endif					/* TallyOpt */
 
+#ifdef Concurrent
+    int pollctr=0;
+#endif					/* Concurrent */
+
 #if e_intcall
    EVVal(fsig, e_intcall);
 #endif
@@ -396,7 +407,7 @@ int interp_x(int fsig,dptr cargp)
 
    ilevel++;
 
-   EntInterp;
+   EntInterp_sp;
 
    switch (fsig) {
    case G_Csusp: case G_Fsusp: case G_Osusp:
@@ -483,13 +494,13 @@ int interp_x(int fsig,dptr cargp)
 	  *  ticked.  Record an event and update the records.
 	  */
 	 word sum, nticks;
-	 ExInterp;
+	 ExInterp_sp;
 	 oldtick = ticker.l[0] + ticker.l[1];
 	 sum = ticker.s[0] + ticker.s[1] + ticker.s[2] + ticker.s[3];
 	 nticks = sum - oldsum;
 	 EVVal(nticks, e_tick);
 	 oldsum = sum;
-	 EntInterp;
+	 EntInterp_sp;
 	 }
 #endif					/* UNIX && e_tick */
 
@@ -522,9 +533,9 @@ int interp_x(int fsig,dptr cargp)
 	    current_line_ptr[1].ipc_saved <= ipc_offset) {
 #if defined(LineCodes) && defined(Polling)
             if (!pollctr--) {
-	       ExInterp;
+	       ExInterp_sp;
                pollctr = pollevent();
-	       EntInterp;
+	       EntInterp_sp;
 	       if (pollctr == -1) fatalerr(141, NULL);
 	       }	       
 #endif					/* LineCodes && Polling */
@@ -577,7 +588,7 @@ int interp_x(int fsig,dptr cargp)
        */
       if (curpstate->Interp == interp_1) {
 	 ilevel--;
-	 ExInterp;
+	 ExInterp_sp;
 	 return interp_1(0, cargp);
 	 }
 #endif					/* MultiThread */
@@ -586,9 +597,9 @@ int interp_x(int fsig,dptr cargp)
       lastop = GetOp;		/* Instruction fetch */
 
 #ifdef StackPic
-      ExInterp;
+      ExInterp_sp;
       stkdump((int)lastop);
-      EntInterp;
+      EntInterp_sp;
 #endif					/* StackPic */
 
 /*
@@ -601,10 +612,10 @@ Deliberate Syntax Error
 
 #if AMIGA
 #if LATTICE
-      ExInterp;
+      ExInterp_sp;
       if (chkbreak > 0)
 	 chkabort();			/* check for CTRL-C or CTRL-D break */
-      EntInterp;
+      EntInterp_sp;
 #endif					/* LATTICE */
 #endif					/* AMIGA */
 
@@ -911,13 +922,13 @@ Deliberate Syntax Error
 	    Call_Gen;
 
          case Op_Noop:		/* no-op */
-
+      
 #ifdef LineCodes
 #ifdef Polling
             if (!pollctr--) {
-	       ExInterp;
+	       ExInterp_sp;
                pollctr = pollevent();
-	       EntInterp;
+	       EntInterp_sp;
 	       if (pollctr == -1) fatalerr(141, NULL);
 	       }	       
 #endif					/* Polling */
@@ -946,9 +957,9 @@ Deliberate Syntax Error
 
 #if defined(LineCodes) && defined(Polling)
             if (!pollctr--) {
-	       ExInterp;
+	       ExInterp_sp;
                pollctr = pollevent();
-	       EntInterp;
+	       EntInterp_sp;
 	       if (pollctr == -1) fatalerr(141, NULL);
 	       }	       
 #endif					/* LineCodes && Polling */
@@ -1049,7 +1060,7 @@ invokej:
             int nargs;
 	    dptr carg;
 
-	    ExInterp;
+	    ExInterp_sp;
 #if e_stack
 	    EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_stack);
 #endif
@@ -1065,7 +1076,7 @@ invokej:
 #endif					/* StackCheck */
 
 	    type = invoke(args, &carg, &nargs);
-	    EntInterp;
+	    EntInterp_sp;
 
 	    if (type == I_Fail)
 	       goto efail_noev;
@@ -1081,9 +1092,9 @@ invokej:
 		*/
 	       pollctr >>= 1;
                if (!pollctr) {
-	          ExInterp;
+	          ExInterp_sp;
                   pollctr = pollevent();
-	          EntInterp;
+	          EntInterp_sp;
 	          if (pollctr == -1) fatalerr(141, NULL);
 	          }	       
 #endif					/* Polling */
@@ -1161,7 +1172,7 @@ invokej:
             InterpEVValD(&value_tmp, e_ocall);
             rargp = (dptr)(rsp - 1) - opnd;
             xargp = rargp;
-            ExInterp;
+            ExInterp_sp;
 #else					/* MultiThread */
 	    Setup_Arg(opnd);
 #endif					/* MultiThread */
@@ -1218,9 +1229,9 @@ mark0:
 	 case Op_Unmark:	/* remove expression frame */
 
 #if e_prem || e_erem
-	    ExInterp;
+	    ExInterp_sp;
             vanq_bound(efp, gfp);
-	    EntInterp;
+	    EntInterp_sp;
 #endif					/* E_Prem || E_Erem */
 
 	    gfp = efp->ef_gfp;
@@ -1233,7 +1244,7 @@ Unmark_uw:
             InterpEVValS((word *) ipc.opnd - 1, E_Syntax); /* -new- */
 	    if (efp->ef_ilevel < ilevel) {
 	       --ilevel;
-	       ExInterp;
+	       ExInterp_sp;
 	       EVVal(A_Unmark_uw, e_intret);
 #ifdef StackCheck
 	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
@@ -1350,9 +1361,9 @@ Unmark_uw:
 	       *lval = *(dptr)(rsp - 1);
 
 #if e_prem || e_erem
-	       ExInterp;
+	       ExInterp_sp;
                vanq_bound(efp, gfp);
-	       EntInterp;
+	       EntInterp_sp;
 #endif					/* E_Prem || E_Erem */
 
 	       gfp = efp->ef_gfp;
@@ -1364,7 +1375,7 @@ Unmark_uw:
 Lsusp_uw:
 	       if (efp->ef_ilevel < ilevel) {
 		  --ilevel;
-		  ExInterp;
+		  ExInterp_sp;
                   EVVal(A_Lsusp_uw, e_intret);
 #ifdef StackCheck
 		  EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
@@ -1401,9 +1412,9 @@ Lsusp_uw:
 
 	    svalp = (dptr)(rsp - 1);
 	    if (Var(*svalp)) {
-               ExInterp;
+               ExInterp_sp;
                retderef(svalp, (word *)glbl_argp, sp);
-               EntInterp;
+               EntInterp_sp;
                }
 
 	    /*
@@ -1495,7 +1506,7 @@ Eret_uw:
 	     */
 	    if (efp->ef_ilevel < ilevel) {
 	       --ilevel;
-	       ExInterp;
+	       ExInterp_sp;
                EVVal(A_Eret_uw, e_intret);
 #ifdef StackCheck
 	       EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
@@ -1523,9 +1534,9 @@ Eret_uw:
 	    struct b_proc *rproc;
 	    rproc = BlkD(*glbl_argp, Proc);
 #if e_prem || e_erem
-	    ExInterp;
+	    ExInterp_sp;
             vanq_proc(efp, gfp);
-	    EntInterp;
+	    EntInterp_sp;
 #endif					/* E_Prem || E_Erem */
 
 
@@ -1555,9 +1566,9 @@ Eret_uw:
 	    *glbl_argp = *(dptr)(rsp - 1);
 
 	    if (Var(*glbl_argp)) {
-               ExInterp;
+               ExInterp_sp;
                retderef(glbl_argp, (word *)glbl_argp, sp);
-               EntInterp;
+               EntInterp_sp;
                }
 
 	    --k_level;
@@ -1568,7 +1579,7 @@ Eret_uw:
 Pret_uw:
 	    if (pfp->pf_ilevel < ilevel) {
 	       --ilevel;
-	       ExInterp;
+	       ExInterp_sp;
 
                EVVal(A_Pret_uw, e_intret);
 #ifdef StackCheck
@@ -1651,9 +1662,9 @@ efail_noev:
 		  glbl_argp = resgfp->gf_argp;
 		  if (k_trace) {	/* procedure tracing */
                      k_trace--;
-		     ExInterp;
+		     ExInterp_sp;
 		     atrace(&(BlkD(*glbl_argp, Proc)->pname));
-		     EntInterp;
+		     EntInterp_sp;
 		     }
 		  }
 	       ipc = resgfp->gf_ipc;
@@ -1683,7 +1694,7 @@ efail_noev:
 
 	       switch (type) {
 		  case G_Fsusp:
-		     ExInterp;
+		     ExInterp_sp;
                      EVVal((word)0, e_fresum);
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
@@ -1695,7 +1706,7 @@ efail_noev:
 		     return A_Resume;
 
 		  case G_Osusp:
-		     ExInterp;
+		     ExInterp_sp;
                      EVVal((word)0, e_oresum);
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
@@ -1707,7 +1718,7 @@ efail_noev:
 		     return A_Resume;
 
 		  case G_Csusp:
-		     ExInterp;
+		     ExInterp_sp;
                      EVVal((word)0, e_eresum);
 		     --ilevel;
                      EVVal(A_Resume, e_intret);
@@ -1733,12 +1744,12 @@ efail_noev:
 	 case Op_Pfail: {	/* fail from procedure */
 
 #if e_pfail || e_prem || e_erem
-	    ExInterp;
+	    ExInterp_sp;
 #if e_prem || e_erem
             vanq_proc(efp, gfp);
 #endif					/* E_Prem || E_Erem */
             EVValD(glbl_argp, e_pfail);
-	    EntInterp;
+	    EntInterp_sp;
 #endif					/* E_Pfail || E_Prem || E_Erem */
 
 	    /*
@@ -1757,7 +1768,7 @@ Pfail_uw:
 
 	    if (pfp->pf_ilevel < ilevel) {
 	       --ilevel;
-	       ExInterp;
+	       ExInterp_sp;
                EVVal(A_Pfail_uw, e_intret);
 #ifdef StackCheck
                EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
@@ -1800,10 +1811,10 @@ Pfail_uw:
 	    PushVal(GetWord);
 	    Setup_Arg(2);
 
-ExInterp;
+ExInterp_sp;
 	    signal = Ofield(2,rargp);
 	    rargp = field_argp;
-EntInterp;
+EntInterp_sp;
 
 	    goto C_rtn_term;
 
@@ -1897,12 +1908,12 @@ EntInterp;
          
          case Op_Trapret:
             ilevel--;
-            ExInterp;
+            ExInterp_sp;
             return A_Trapret;
          
          case Op_Trapfail:
             ilevel--;
-            ExInterp;
+            ExInterp_sp;
             return A_Trapfail;
 #endif					/* PosixFns */
 
@@ -1933,7 +1944,7 @@ EntInterp;
             struct b_coexpr *ncp;
             dptr dp;
 
-            ExInterp;
+            ExInterp_sp;
             dp = (dptr)(sp - 1);
             xargp = dp - 2;
 
@@ -1946,7 +1957,7 @@ EntInterp;
             ncp = BlkD(*dp, Coexpr);
 
             signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
-            EntInterp;
+            EntInterp_sp;
             if (signal == A_Resume)
                goto efail_noev;
             else
@@ -1962,12 +1973,12 @@ EntInterp;
 #else                                        /* CoExpr */
             struct b_coexpr *ncp;
 
-            ExInterp;
+            ExInterp_sp;
             ncp = popact(BlkD(k_current, Coexpr));
 
             ++BlkLoc(k_current)->Coexpr.size;
             co_chng(ncp, (dptr)&sp[-1], NULL, A_Coret, 1);
-            EntInterp;
+            EntInterp_sp;
 #endif					/* CoExpr */
             break;
 
@@ -1980,7 +1991,7 @@ EntInterp;
 #else                                        /* CoExpr */
             struct b_coexpr *ncp;
 
-            ExInterp;
+            ExInterp_sp;
             ncp = popact(BlkD(k_current, Coexpr));
 
 	    /*
@@ -1992,7 +2003,7 @@ EntInterp;
 	       }
 
             co_chng(ncp, NULL, NULL, A_Cofail, 1);
-            EntInterp;
+            EntInterp_sp;
 #endif					/* CoExpr */
             break;
 
@@ -2014,7 +2025,7 @@ EntInterp;
 	 continue;
 
 C_rtn_term:
-	 EntInterp;
+	 EntInterp_sp;
 
 	 switch (signal) {
 

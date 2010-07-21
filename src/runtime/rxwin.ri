@@ -873,14 +873,27 @@ int pollevent()
    {
    wdp wd;
    int hm;
+#ifdef Concurrent
+   int i;
+   i=pthread_mutex_trylock(&mutex_pollevent);
+   if (i==EBUSY) return 400;
+#endif					/* Concurrent */
    for (wd = wdsplys; wd; wd = wd->next) {
       if ((hm = handle_misc(wd, NULL)) < 1) {
-	 if (hm == -1) return -1;
+	if (hm == -1){
+#ifdef Concurrent
+	  pthread_mutex_unlock(&mutex_pollevent);
+#endif					/* Concurrent */
+	  return -1;
+	  }
 	 else if (hm == 0) {
 	    /* how to handle failure? */
 	    }
          }
       }
+#ifdef Concurrent
+   pthread_mutex_unlock(&mutex_pollevent);
+#endif	x				/* Concurrent */
    return 400;
    }
 

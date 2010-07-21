@@ -711,7 +711,13 @@ struct b_record *f(int nflds, union block *recptr)
    EVVal(sizeof(struct b_record) + (nflds-1)*sizeof(struct descrip),e_record);
    AlcVarBlk(blk, b_record, T_Record, nflds)
    blk->recdesc = trecptr;
+#ifdef Concurrent
+   pthread_mutex_lock(&mutex_recid);
    blk->id = (((struct b_proc *)recptr)->recid)++;
+   pthread_mutex_unlock(&mutex_recid);
+#else					/* Concurrent */
+   blk->id = (((struct b_proc *)recptr)->recid)++;
+#endif					/* Concurrent */
    return blk;
    }
 #enddef

@@ -167,6 +167,8 @@ struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 
 #ifdef Concurrent
 pthread_mutex_t mutex_stklist;
+pthread_mutex_t mutex_pollevent;
+pthread_mutex_t mutex_recid;
 #endif					/* Concurrent */
 
 
@@ -719,6 +721,8 @@ char *argv[];
    pthread_mutex_init(&mutex_mutex, NULL);
 
    pthread_mutex_init(&mutex_tls, NULL);
+   pthread_mutex_init(&mutex_pollevent, NULL);
+   pthread_mutex_init(&mutex_recid, NULL);
 
    pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
    pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);

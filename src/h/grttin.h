@@ -154,13 +154,13 @@
 
 #begdef InterpEVVal(value,event)
 #if event
-  { ExInterp; RealEVVal(value,event); EntInterp; }
+  { ExInterp_sp; RealEVVal(value,event); EntInterp_sp; }
 #endif
 #enddef
 
 #begdef InterpEVValD(dp,event)
 #if event
- { ExInterp; EVValD(dp,event); EntInterp; }
+ { ExInterp_sp; EVValD(dp,event); EntInterp_sp; }
 #endif
 #enddef
 
@@ -169,7 +169,7 @@
  */  
 #begdef InterpEVValS(ipcopnd,event)
 #if event
- { ExInterp; EVValS(ipcopnd,event); EntInterp; }
+ { ExInterp_sp; EVValS(ipcopnd,event); EntInterp_sp; }
 #endif
 #enddef
 

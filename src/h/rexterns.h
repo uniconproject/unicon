@@ -58,6 +58,8 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
 #ifdef Concurrent
 extern struct tls_chain *tlshead;
 extern pthread_mutex_t mutex_tls;
+extern pthread_mutex_t mutex_pollevent;
+extern pthread_mutex_t mutex_recid;
 extern pthread_mutex_t mutex_stklist;
 extern pthread_mutex_t *mutexes, mutex_mutex;
 extern int maxmutexes, nmutexes;

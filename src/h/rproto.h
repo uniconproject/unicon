@@ -1004,3 +1004,7 @@ void init_threadstate();
 void makesem(struct context *ctx);
 void *nctramp(void *arg);
 #endif					/* PthreadCoswitch */
+
+#ifdef Concurrent 
+void handle_thread_error(int val);
+#endif					/* Concurrent */

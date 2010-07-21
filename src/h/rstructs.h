@@ -408,36 +408,38 @@ union numeric {			/* long integers or real numbers */
    #endif				/* LargeInts */
    };
 
-
-#if !COMPILER
-
 /*
- * Structures for the interpreter.
+ * We want to support pthreads eventually even under COMPILER.
+ * Towards that end, threadstate defined for both COMPILER and VM,
+ * but a lot of fields are VM-only.
  */
-
-/*
- * Declarations for entries in tables associating icode location with
- *  source program location.
- */
-struct ipc_fname {
-   word ipc_saved;	/* offset of instruction into code region */
-   word fname;		/* offset of file name into string region */
-   };
-
-struct ipc_line {
-   word ipc_saved;	/* offset of instruction into code region */
-   int line;		/* line number */
-   };
-
 struct threadstate {
 #ifdef Concurrent
    pthread_t tid;
 #endif					/* Concurrent */
    /* signal mask? etc. */
+
    /*
-    * main goal for this struct is to hold VM-specific per-thread variables.
+    * VM-specific per-thread variables.
     */
+#if !COMPILER
    word Lastop;
+   struct descrip Value_tmp;      /* TLS  */
+   dptr Xargp;                    /* TLS  */
+   word Xnargs;                   /* TLS  */
+  struct ef_marker *Efp;	/* Expression frame pointer */
+  struct gf_marker *Gfp;	/* Generator frame pointer */
+  struct pf_marker *Pfp;	/* procedure frame pointer */
+  inst Ipc;			/* Interpreter program counter */
+  inst Oldipc;                  /* the previous ipc, fix returned line zero */
+  word *Sp;		/* Stack pointer */
+  int Ilevel;			/* Depth of recursion in interp() */
+
+#ifndef StackCheck
+  word *Stack;				/* Interpreter stack */
+  word *Stackend; 			/* End of interpreter stack */
+#endif					/* StackCheck */
+#endif					/* !COMPILER */
    dptr Glbl_argp; /*TLS*/			/* global argp */
 
    struct descrip Kywd_pos;         /* TLS */
@@ -446,9 +448,6 @@ struct threadstate {
 
    dptr Field_argp;			/* TLS -- see comment in imisc.r */
 
-   dptr Xargp;                    /* TLS  */
-   word Xnargs;                   /* TLS  */
-   struct descrip Value_tmp;      /* TLS  */
 
    struct descrip K_current;      /* TLS  */
    int K_errornumber;             /* TLS  */
@@ -468,21 +467,26 @@ struct threadstate {
     Column, Lastline, Lastcol; /*TLS*/
 
   struct tend_desc *Tend;  /* chain of tended descriptors */
+   };
 
-  struct ef_marker *Efp;	/* Expression frame pointer */
-  struct gf_marker *Gfp;	/* Generator frame pointer */
-  struct pf_marker *Pfp;	/* procedure frame pointer */
-  inst Ipc;			/* Interpreter program counter */
-  inst Oldipc;                  /* the previous ipc, fix returned line zero */
-  word *Sp;		/* Stack pointer */
-  int Ilevel;			/* Depth of recursion in interp() */
+#if !COMPILER
 
-#ifndef StackCheck
-  word *Stack;				/* Interpreter stack */
-  word *Stackend; 			/* End of interpreter stack */
-#endif					/* StackCheck */
+/*
+ * Structures for the interpreter.
+ */
 
+/*
+ * Declarations for entries in tables associating icode location with
+ *  source program location.
+ */
+struct ipc_fname {
+   word ipc_saved;	/* offset of instruction into code region */
+   word fname;		/* offset of file name into string region */
+   };
 
+struct ipc_line {
+   word ipc_saved;	/* offset of instruction into code region */
+   int line;		/* line number */
    };
 
 #ifdef MultiThread

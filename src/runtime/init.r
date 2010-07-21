@@ -161,7 +161,7 @@ struct descrip t_errorvalue;		/* tentative k_errorvalue value */
 
 struct b_coexpr *stklist;	/* base of co-expression block list */
 
-#ifndef Concurrent
+#ifndef Concurrent /* or never? */
 struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 #endif					/* Concurrent */
 
@@ -625,13 +625,10 @@ void init_threadstate(struct threadstate *ts)
    ts->AmperErrno = zerodesc;
 #endif					/* PosixFns */
 
+#if !COMPILER
    ts->Lastop = 0;
-   ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
    ts->Xargp = NULL;
    ts->Xnargs = 0;
-
-   ts->Tend = NULL;
-
    ts->Ipc.opnd = NULL;
    ts->Efp=NULL;		/* Expression frame pointer */
    ts->Gfp=NULL;		/* Generator frame pointer */
@@ -643,6 +640,11 @@ void init_threadstate(struct threadstate *ts)
    ts->Stack=NULL;		/* Interpreter stack */
    ts->Stackend=NULL; 		/* End of interpreter stack */
 #endif					/* StackCheck */
+#endif					/* !COMPILER */
+
+   ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
+   ts->Tend = NULL;
+
 }
 
 #if COMPILER

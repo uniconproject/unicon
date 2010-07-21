@@ -172,6 +172,7 @@
    #undef Eve
    #undef MultiThread
    #undef EventMon
+   #undef Concurrent			/* for now */
 #endif					/* COMPILER */
 
 #ifndef NoStrInvoke

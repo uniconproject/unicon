@@ -1093,7 +1093,7 @@ struct b_coexpr *ce;
    struct actrec *arp;
    struct b_coexpr *actvtr;
 
-#if Concurrent
+#ifdef Concurrent
    /*
     * exit a co-expression if it has no activator (thread).
     * May want to check that ce->status is Async here and/or fix thread

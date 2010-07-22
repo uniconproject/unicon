@@ -1233,7 +1233,7 @@ invokej:
 	 case Op_Mark:		/* create expression frame marker */
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_AMARK])) != 0) handle_thread_error(retval);
-            if (ipc.op[-1] == Op_Amark) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AMARK]); goto L_amark; }
+            if (ipc.op[-1] == Op_Amark) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AMARK]); goto mark; }
 #endif					/*Concurrent*/
 	    PutOp(Op_Amark);
 	    opnd = GetWord;
@@ -1247,7 +1247,6 @@ invokej:
 	    goto mark;
 
 	 case Op_Amark: 	/* mark with absolute fipc */
-L_amark:
 	    newefp = (struct ef_marker *)(rsp + 1);
 	    newefp->ef_failure.opnd = (word *)GetWord;
 mark:

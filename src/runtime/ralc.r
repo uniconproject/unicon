@@ -14,13 +14,6 @@ extern word alcnum;
 #ifdef Concurrent 
    pthread_mutex_t mutex_alcblk;
    pthread_mutex_t mutex_alcstr;
-   pthread_mutex_t mutex_list_ser;
-   pthread_mutex_t mutex_coexp_ser;
-   pthread_mutex_t mutex_set_ser;
-   pthread_mutex_t mutex_table_ser;
-#ifdef PatternType   
-   pthread_mutex_t mutex_pat_ser;
-#endif					/* PatternType */
 #endif					/* Concurrent */
 
 #ifndef MultiThread
@@ -260,9 +253,9 @@ struct b_coexpr *alccoexp()
    else
 #endif					/* MultiThread */
 #ifdef Concurrent
-      pthread_mutex_lock(&mutex_coexp_ser);
+      pthread_mutex_lock(&static_mutexes[MTX_COEXP_SER]);
       ep->id = coexp_ser++;
-      pthread_mutex_unlock(&mutex_coexp_ser);
+      pthread_mutex_unlock(&static_mutexes[MTX_COEXP_SER]);
       ep->status = 0;
       ep->squeue = ep->rqueue = NULL;
 #else					/* Concurrent */
@@ -382,9 +375,9 @@ union block *f(int tcode)
       AlcFixBlk(pt, b_table, T_Table);
       ps = (struct b_set *)pt;
 #ifdef Concurrent
-      pthread_mutex_lock(&mutex_table_ser);
+      pthread_mutex_lock(&static_mutexes[MTX_TABLE_SER]);
       ps->id = table_ser++;
-      pthread_mutex_unlock(&mutex_table_ser);
+      pthread_mutex_unlock(&static_mutexes[MTX_TABLE_SER]);
 #else					/* Concurrent */
       ps->id = table_ser++;
 #endif					/* Concurrent */
@@ -394,9 +387,9 @@ union block *f(int tcode)
       EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
 #ifdef Concurrent
-      pthread_mutex_lock(&mutex_set_ser);
+      pthread_mutex_lock(&static_mutexes[MTX_SET_SER]);
       ps->id = set_ser++;
-      pthread_mutex_unlock(&mutex_set_ser);
+      pthread_mutex_unlock(&static_mutexes[MTX_SET_SER]);
 #else					/* Concurrent */
       ps->id = set_ser++;
 #endif					/* Concurrent */
@@ -461,9 +454,9 @@ struct b_pattern *f(word stck_size)
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
 #ifdef Concurrent
-      pthread_mutex_lock(&mutex_pat_ser);
+      pthread_mutex_lock(&static_mutexes[MTX_PAT_SER]);
       pheader->id = pat_ser++;
-      pthread_mutex_unlock(&mutex_pat_ser);
+      pthread_mutex_unlock(&static_mutexes[MTX_PAT_SER]);
 #else					/* Concurrent */
       pheader->id = pat_ser++;
 #endif					/* Concurrent */
@@ -517,9 +510,9 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
 #ifdef Concurrent
-   pthread_mutex_lock(&mutex_list_ser);
+   pthread_mutex_lock(&static_mutexes[MTX_LIST_SER]);
    blk->id = list_ser++;
-   pthread_mutex_unlock(&mutex_list_ser);
+   pthread_mutex_unlock(&static_mutexes[MTX_LIST_SER]);
 #else					/* Concurrent */
    blk->id = list_ser++;
 #endif					/* Concurrent */
@@ -557,9 +550,9 @@ struct b_list *f(uword size, uword nslots)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
 #ifdef Concurrent
-   pthread_mutex_lock(&mutex_list_ser);
+   pthread_mutex_lock(&static_mutexes[MTX_LIST_SER]);
    blk->id = list_ser++;
-   pthread_mutex_unlock(&mutex_list_ser);
+   pthread_mutex_unlock(&static_mutexes[MTX_LIST_SER]);
 #else					/* Concurrent */
    blk->id = list_ser++;
 #endif					/* Concurrent */
@@ -602,9 +595,9 @@ struct b_list *f(uword size, uword nslots)
    AlcBlk(lblk, b_lelem, T_Lelem, i)
    blk->size = size;
 #ifdef Concurrent
-   pthread_mutex_lock(&mutex_list_ser);
+   pthread_mutex_lock(&static_mutexes[MTX_LIST_SER]);
    blk->id = list_ser++;
-   pthread_mutex_unlock(&mutex_list_ser);
+   pthread_mutex_unlock(&static_mutexes[MTX_LIST_SER]);
 #else					/* Concurrent */
    blk->id = list_ser++;
 #endif					/* Concurrent */

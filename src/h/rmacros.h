@@ -1017,3 +1017,22 @@
    #define KEY_MISSING_ERR      1118
 
 #endif					/* ISQL */
+
+#ifdef Concurrent 
+  #define NUM_STATIC_MUTEXES	12
+
+   #define MTX_OP_ASTR		0
+   #define MTX_OP_AREAL		1
+   #define MTX_OP_ACSET		2
+   #define MTX_OP_ASTATIC	3
+   #define MTX_OP_AGLOBAL	4
+   #define MTX_OP_AMARK		5
+   #define MTX_OP_AGOTO		6
+   
+   #define MTX_LIST_SER		7
+   #define MTX_COEXP_SER	8
+   #define MTX_SET_SER		9
+   #define MTX_TABLE_SER	10
+   #define MTX_PAT_SER		11
+
+#endif					/* Concurrent */

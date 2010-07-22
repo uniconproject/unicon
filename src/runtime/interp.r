@@ -14,7 +14,10 @@ extern word istart[4]; extern int mterm;
 extern int *OpTab;
 #endif
 
+#ifdef Concurrent
+/* what is this? */
 #passthru __thread long jcon=0;
+#endif					/* Concurrent */
 
 /*
  * Prototypes for static functions.

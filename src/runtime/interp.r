@@ -774,8 +774,8 @@ L_areal:
 	       opnd = (word)(strcons + GetWord);
 #else					/* CRAY */
 	       opnd = (word)strcons + GetWord;
-#endif
-					/* CRAY */
+#endif					/* CRAY */
+
 #ifdef Concurrent
 	    PutInstr(Op_Astr, opnd, 2);
 #else					/*Concurrent*/

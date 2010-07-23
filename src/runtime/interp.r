@@ -14,11 +14,6 @@ extern word istart[4]; extern int mterm;
 extern int *OpTab;
 #endif
 
-#ifdef Concurrent
-/* what is this? */
-#passthru __thread long jcon=0;
-#endif					/* Concurrent */
-
 /*
  * Prototypes for static functions.
  */
@@ -269,6 +264,30 @@ printf("interp, fieldnum is still %d, recnum %d\n",
 #define PutWord(x) ipc.opnd[-1] = (x)
 #define GetOp (word)(*ipc.op++)
 #define PutOp(x) ipc.op[-1] = (x)
+
+/*
+ * "Semi-atomic" (thread-safe?) self-modifying instruction rewrite.
+ * This is written for a VM bytecode with one opcode and two words
+ * (a descriptor), such as Op_Str, in which the second word and the
+ * opcode are to be rewritten.
+ * Self-modifying bytecodes with another signature (not an int opcode
+ * followed by two words), if any, will require a different macro.
+ * Called after the ipc has been advanced past the entire instruction,
+ * within a mutex on the offset-based bytecode. To avoid a race
+ * condition on the pointer-based bytecode, the macro may not write
+ * the new opcode until after the offset has been converted to a pointer.
+ */
+#if WordBits == IntBits
+#begdef PutInstr(x,y,op_offset)
+   do { ipc.opnd[-1] = (y); ipc.op[-1-op_offset] = (x); } while(0)
+#enddef
+#else if WordBits == IntBits*2
+#begdef PutInstr(x,y,op_offset)
+   do { ipc.opnd[-1] = (y); ipc.op[-1-2*op_offset] = (x); } while(0)
+#enddef
+#else
+deliberate syntax error
+#endif
 
 /*
  * DerefArg(n) dereferences the nth argument.
@@ -670,12 +689,17 @@ Deliberate Syntax Error
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_ACSET])) != 0) handle_thread_error(retval);
             if (ipc.op[-1] == Op_Acset) { pthread_mutex_unlock(&static_mutexes[MTX_OP_ACSET]); goto L_acset; }
-#endif					/*Concurrent*/
+#else					/*Concurrent*/
 	    PutOp(Op_Acset);
+#endif					/*Concurrent*/
 	    PushVal(D_Cset);
 	    opnd = GetWord;
 	    opnd += (word)ipc.opnd;
+#ifdef Concurrent
+	    PutInstr(Op_Acset, opnd, 1);
+#else					/*Concurrent*/
 	    PutWord(opnd);
+#endif					/*Concurrent*/
 	    PushAVal(opnd);
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 #ifdef Concurrent
@@ -700,13 +724,18 @@ L_acset:
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_AREAL])) != 0) handle_thread_error(retval);
             if (ipc.op[-1] == Op_Areal) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AREAL]); goto L_areal; }
-#endif					/*Concurrent*/
+#else					/*Concurrent*/
 	    PutOp(Op_Areal);
+#endif					/*Concurrent*/
 	    PushVal(D_Real);
 	    opnd = GetWord;
 	    opnd += (word)ipc.opnd;
 	    PushAVal(opnd);
+#ifdef Concurrent
+	    PutInstr(Op_Areal, opnd, 1);
+#else					/*Concurrent*/
 	    PutWord(opnd);
+#endif					/*Concurrent*/
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 #ifdef Concurrent
             pthread_mutex_unlock(&static_mutexes[MTX_OP_AREAL]);
@@ -724,8 +753,9 @@ L_areal:
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_ASTR])) != 0) handle_thread_error(retval);
             if (ipc.op[-1] == Op_Astr) { pthread_mutex_unlock(&static_mutexes[MTX_OP_ASTR]); goto L_astr; }
-#endif					/*Concurrent*/
+#else					/*Concurrent*/
 	    PutOp(Op_Astr);
+#endif					/*Concurrent*/
 	    PushVal(GetWord)
 
 #ifdef MultiThread
@@ -744,9 +774,13 @@ L_areal:
 	       opnd = (word)(strcons + GetWord);
 #else					/* CRAY */
 	       opnd = (word)strcons + GetWord;
-#endif					/* CRAY */
-
+#endif
+					/* CRAY */
+#ifdef Concurrent
+	    PutInstr(Op_Astr, opnd, 2);
+#else					/*Concurrent*/
 	    PutWord(opnd);
+#endif					/*Concurrent*/
 	    PushAVal(opnd);
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 #ifdef Concurrent
@@ -772,8 +806,9 @@ L_astr:
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_AGLOBAL])) != 0) handle_thread_error(retval);
             if (ipc.op[-1] == Op_Aglobal) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AGLOBAL]); goto L_aglobal; }
-#endif					/*Concurrent*/
+#else					/*Concurrent*/
 	    PutOp(Op_Aglobal);
+#endif					/*Concurrent*/
 	    PushVal(D_Var);
 	    opnd = GetWord;
 #ifdef MultiThread
@@ -791,7 +826,11 @@ L_astr:
 #endif					/* MultiThread */
 	    {
 	    PushAVal(&globals[opnd]);
+#ifdef Concurrent
+	    PutInstr(Op_Aglobal, (word)&globals[opnd], 1);
+#else					/*Concurrent*/
 	    PutWord((word)&globals[opnd]);
+#endif					/*Concurrent*/
 	    }
 #ifdef Concurrent
             pthread_mutex_unlock(&static_mutexes[MTX_OP_AGLOBAL]);
@@ -813,8 +852,9 @@ L_aglobal:
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_ASTATIC])) != 0) handle_thread_error(retval);
             if (ipc.op[-1] == Op_Astatic) { pthread_mutex_unlock(&static_mutexes[MTX_OP_ASTATIC]); goto L_astatic; }
-#endif					/*Concurrent*/
+#else					/*Concurrent*/
 	    PutOp(Op_Astatic);
+#endif					/*Concurrent*/
 	    PushVal(D_Var);
 	    opnd = GetWord;
 #ifdef MultiThread
@@ -832,7 +872,11 @@ L_aglobal:
 #endif					/* MultiThread */
 	    {
 	    PushAVal(&statics[opnd]);
+#ifdef Concurrent
+	    PutInstr(Op_Astatic, (word)&statics[opnd], 1);
+#else					/*Concurrent*/
 	    PutWord((word)&statics[opnd]);
+#endif					/*Concurrent*/
 	    }
 #ifdef Concurrent
             pthread_mutex_unlock(&static_mutexes[MTX_OP_ASTATIC]);
@@ -1236,12 +1280,17 @@ invokej:
 	 case Op_Mark:		/* create expression frame marker */
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_AMARK])) != 0) handle_thread_error(retval);
-            if (ipc.op[-1] == Op_Amark) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AMARK]); goto mark; }
-#endif					/*Concurrent*/
+            if (ipc.op[-1] == Op_Amark) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AMARK]); goto L_amark; }
+#else					/*Concurrent*/
 	    PutOp(Op_Amark);
+#endif					/*Concurrent*/
 	    opnd = GetWord;
 	    opnd += (word)ipc.opnd;
-	    PutWord(opnd);
+#ifdef Concurrent
+	    PutInstr(Op_Amark, opnd, 1);
+#else					/*Concurrent*/
+	    PutWord(opnd); 
+#endif					/*Concurrent*/
 	    newefp = (struct ef_marker *)(rsp + 1);
 	    newefp->ef_failure.opnd = (word *)opnd;
 #ifdef Concurrent
@@ -1250,6 +1299,7 @@ invokej:
 	    goto mark;
 
 	 case Op_Amark: 	/* mark with absolute fipc */
+L_amark:
 	    newefp = (struct ef_marker *)(rsp + 1);
 	    newefp->ef_failure.opnd = (word *)GetWord;
 mark:
@@ -1873,11 +1923,16 @@ EntInterp_sp;
 #ifdef Concurrent
             if ((retval=pthread_mutex_lock(&static_mutexes[MTX_OP_AGOTO])) != 0) handle_thread_error(retval);
             if (ipc.op[-1] == Op_Agoto) { pthread_mutex_unlock(&static_mutexes[MTX_OP_AGOTO]); goto L_agoto; }
-#endif					/*Concurrent*/
+#else					/*Concurrent*/
 	    PutOp(Op_Agoto);
+#endif					/*Concurrent*/
 	    opnd = GetWord;
 	    opnd += (word)ipc.opnd;
-	    PutWord(opnd);
+#ifdef Concurrent
+	    PutInstr(Op_Agoto, opnd, 1);
+#else					/*Concurrent*/
+	    PutWord(opnd); 
+#endif					/*Concurrent*/
 	    ipc.opnd = (word *)opnd;
 #ifdef Concurrent
             pthread_mutex_unlock(&static_mutexes[MTX_OP_AGOTO]);

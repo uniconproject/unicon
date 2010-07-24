@@ -467,6 +467,11 @@ struct threadstate {
     Column, Lastline, Lastcol; /*TLS*/
 
   struct tend_desc *Tend;  /* chain of tended descriptors */
+
+#ifdef ThreadHeap
+  struct region *stringregion;    /*  separate regions vs shared      */
+  struct region *blockregion;     /*     same above     */
+#endif 					/* ThreadHeap */
    };
 
 #if !COMPILER
@@ -582,14 +587,17 @@ struct progstate {
    pthread_mutex_t mutex_coll;
 #endif					/* Concurrent */
 
+#ifndef ThreadHeap
+  struct region *stringregion;    /*  separate regions vs shared      */
+  struct region *blockregion;     /*     same above     */
+#endif 					/* ThreadHeap */
+
    uword stringtotal;			/* mutex  cumulative total allocation */
    uword blocktotal;			/* mutex cumulative total allocation */
    word colltot;			/*  m      total number of collections */
    word collstat;			/*  u      number of static collect requests */
    word collstr;			/*  t      number of string collect requests */
    word collblk;			/*  ex     number of block collect requests */
-   struct region *stringregion;    /*  separate regions vs shared      */
-   struct region *blockregion;     /*     same above     */
 
    struct threadstate *tstate;
 

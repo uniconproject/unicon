@@ -1007,4 +1007,5 @@ void *nctramp(void *arg);
 
 #ifdef Concurrent 
 void handle_thread_error(int val);
+struct region *newregion(word nbytes,word stdsize);
 #endif					/* Concurrent */

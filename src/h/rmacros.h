@@ -822,12 +822,13 @@
       #define table_ser (curpstate->Table_ser)
 
 #ifdef ThreadHeap 					/* ThreadHeap */      
-      #define curstring (curtstate->stringregion)
-      #define curblock  (curtstate->blockregion)
-#else 					/* ThreadHeap */
+      #define curtstring (curtstate->Curstring)
+      #define curtblock  (curtstate->Curblock)
+#endif 					/* ThreadHeap */
+
       #define curstring (curpstate->stringregion)
       #define curblock  (curpstate->blockregion)
-#endif 					/* ThreadHeap */
+
       #define strtotal  (curpstate->stringtotal)
       #define blktotal  (curpstate->blocktotal)
 

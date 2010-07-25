@@ -469,8 +469,8 @@ struct threadstate {
   struct tend_desc *Tend;  /* chain of tended descriptors */
 
 #ifdef ThreadHeap
-  struct region *stringregion;    /*  separate regions vs shared      */
-  struct region *blockregion;     /*     same above     */
+  struct region *Curstring;    /*  separate regions vs shared      */
+  struct region *Curblock;     /*     same above     */
 #endif 					/* ThreadHeap */
    };
 
@@ -587,10 +587,8 @@ struct progstate {
    pthread_mutex_t mutex_coll;
 #endif					/* Concurrent */
 
-#ifndef ThreadHeap
-  struct region *stringregion;    /*  separate regions vs shared      */
-  struct region *blockregion;     /*     same above     */
-#endif 					/* ThreadHeap */
+   struct region *stringregion;         /*  separate regions vs shared      */
+   struct region *blockregion;          /*     same above     */
 
    uword stringtotal;			/* mutex  cumulative total allocation */
    uword blocktotal;			/* mutex cumulative total allocation */

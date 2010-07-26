@@ -4397,6 +4397,9 @@ FILE *OpenConsole()
       if (!curpstate) {
          curpstate = &rootpstate;
 	 curtstate = curpstate->tstate;
+#ifdef AAAConcurrent /* is this necessarry?  */
+	 init_threadstate(curtstate);
+#endif					/*Concurrent*/
          rootpstate.eventmask = nulldesc;
          }
       if (!alclist) curpstate->Alclist = alclist_0;

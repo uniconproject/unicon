@@ -7,7 +7,6 @@
  * Prototypes.
  */
 static struct region *findgap	(struct region *curr, word nbytes);
-static struct region *newregion	(word nbytes, word stdsize);
 
 extern word alcnum;
 
@@ -1026,10 +1025,18 @@ char *f(int region, word nbytes)
    word want, newsize;
    extern int qualfail;
 
+#ifdef ThreadHeap
+   if (region == Strings)
+      pcurr = &curtstring;
+   else
+      pcurr = &curtblock;
+#else 					/* ThreadHeap */
    if (region == Strings)
       pcurr = &curstring;
    else
       pcurr = &curblock;
+#endif 					/* ThreadHeap */
+
    curr = *pcurr;
 
    /*
@@ -1164,7 +1171,7 @@ word nbytes;
  * newregion - try to malloc a new region and tenure the old one,
  *  backing off if the requested size fails.
  */
-static struct region *newregion(nbytes,stdsize)
+struct region *newregion(nbytes,stdsize)
 word nbytes,stdsize;
 {
    uword minSize = MinAbrSize;

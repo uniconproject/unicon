@@ -503,6 +503,11 @@ void *nctramp(void *arg)
    glbl_argp = ce->es_argp;
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
+
+#ifdef ThreadHeap
+   init_threadheap(curtstate);
+#endif					/* ThreadHeap */
+
 #endif					/* Concurrent */
    sem_wait(new->semp);			/* wait for signal */
    new_context(0, 0);			/* call new_context; will not return */

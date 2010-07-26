@@ -603,6 +603,65 @@ void check_version(struct header *hdr, char *name,
    struct header hdr;
 #endif					/* !COMPILER */
 
+#ifdef ThreadHeap
+void init_threadheap(struct threadstate *ts)
+{ 
+  static int first=1; /* wont cause a race condition */
+  struct region *rp;
+  word size;
+
+  /* the main thread just points to the initial regions */
+  if (first){
+   ts->Curstring = curstring;
+   ts->Curblock = curblock;
+   /*printf(" st=%0x   blk=%0x\n",  curstring, curblock);*/
+   first=0;
+   return;
+   }
+
+   /*
+    * That didn't work.  Allocate a new region with a size based on the
+    * newest previous region.
+    */
+   size = curpstate->stringregion->size; 
+
+   if ((rp = newregion(1, size)) != 0) {
+      rp->prev = curstring;
+      rp->next = NULL;
+      curstring->next = rp;
+      rp->Gnext = curstring;
+      rp->Gprev = curstring->Gprev;
+      if (curstring->Gprev) curstring->Gprev->Gnext = rp;
+      curstring->Gprev = rp;
+      curstring = rp;
+      }
+    else
+      syserr(" init_threadheap: insufficient memory");
+
+   ts->Curstring = rp;
+
+   size = curpstate->blockregion->size;
+
+   if ((rp = newregion(1, size)) != 0) {
+      rp->prev = curblock;
+      rp->next = NULL;
+      curblock->next = rp;
+      rp->Gnext = curblock;
+      rp->Gprev = curblock->Gprev;
+      if (curblock->Gprev) curblock->Gprev->Gnext = rp;
+      curblock->Gprev = rp;
+      curblock = rp;
+      }
+    else
+      syserr(" init_threadheap: insufficient memory");
+
+   ts->Curblock = rp;
+
+   /*printf(" st=%0x   blk=%0x\n",  curstring, curblock);*/
+
+}
+#endif 					/* ThreadHeap */
+
 void init_threadstate(struct threadstate *ts)
 {
 
@@ -648,7 +707,6 @@ void init_threadstate(struct threadstate *ts)
 
    ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
    ts->Tend = NULL;
-
 }
 
 #if COMPILER
@@ -1033,6 +1091,10 @@ Deliberate Syntax Error
    initalloc(hdr.hsize);
 #endif					/* MultiThread */
 #endif					/* COMPILER */
+
+#ifdef ThreadHeap
+   init_threadheap(curtstate);
+#endif					/* ThreadHeap */
 
 #if !COMPILER
    /*

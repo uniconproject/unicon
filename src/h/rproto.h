@@ -25,9 +25,6 @@ struct b_list	*alclist_raw	(uword size, uword nslots);
 struct b_list	*alclist_raw_1	(uword size, uword nslots);
 struct b_list	*alclist_0	(uword size, uword nslots);
 struct b_list	*alclist_1	(uword size, uword nslots);
-#ifdef Arrays
-struct b_list   *alclisthdr	(uword size, union block *bptr);
-#endif					/* Arrays */
 struct b_lelem	*alclstb_0	(uword nslots,uword first,uword nused);
 struct b_lelem	*alclstb_1	(uword nslots,uword first,uword nused);
 #undef alcreal
@@ -71,6 +68,10 @@ struct b_pattern	*alcpattern	(word size);
 struct b_pelem	*alcpelem(word pattern_code);
 #endif					/* PatternType */
 #endif					/* MultiThread */
+#ifdef Arrays
+struct b_list   *alclisthdr	(uword size, union block *bptr);
+#endif					/* Arrays */
+
 int		anycmp		(dptr dp1,dptr dp2);
 int		bfunc		(void);
 struct b_proc	*bi_strprc	(dptr s, C_integer arity);

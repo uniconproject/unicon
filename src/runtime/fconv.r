@@ -15,12 +15,12 @@ function{1} abs(n)
          }
       inline {
 	 C_integer i;
-	 extern int over_flow;
+	 int over_flow = 0;
 
 	 if (n >= 0)
 	    i = n;
 	 else {
-	    i = neg(n);
+	    i = neg(n, &over_flow);
 	    if (over_flow) {
 #ifdef LargeInts
 	       struct descrip tmp;

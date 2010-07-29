@@ -7,7 +7,7 @@
  */
 void		EVInit		(void);
 int		activate	(dptr val, struct b_coexpr *ncp, dptr result);
-word		add		(word a,word b);
+word		add		(word a,word b,int *over_flowp);
 void		addmem 	(struct b_set *ps,struct b_selem *pe, union block **pl);
 struct astkblk	*alcactiv	(void);
 #ifdef MultiThread
@@ -179,7 +179,7 @@ int		def_real	(dptr s, double df, dptr d);
 int		def_str		(dptr s, dptr df, dptr d);
 int		def_tcset (struct b_cset *cbuf,dptr s,struct b_cset *df,dptr d);
 int		def_tstr	(char *sbuf, dptr s, dptr df, dptr d);
-word		div3		(word a,word b);
+word		div3		(word a,word b, int *over_flowp);
 int		doasgn		(dptr dp1,dptr dp2);
 int		doimage		(int c,int q);
 int		dp_pnmcmp	(struct pstrnm *pne,dptr dp);
@@ -240,9 +240,9 @@ int	strncasecmp		(char *s1, char *s2, int n);
 #endif					/* FAttrib */
 union block	**memb		(union block *pb,dptr x,uword hn, int *res);
 void		mksubs		(dptr var,dptr val,word i,word j, dptr result);
-word		mod3		(word a,word b);
-word		mul		(word a,word b);
-word		neg		(word a);
+word		mod3		(word a,word b, int *over_flowp);
+word		mul		(word a,word b, int *over_flowp);
+word		neg		(word a, int *over_flowp);
 void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub*/
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		outimage	(FILE *f,dptr dp,int noimage);
@@ -278,7 +278,7 @@ char		*reserve	(int region, word nbytes);
 void		retderef		(dptr valp, word *low, word *high);
 void		segvtrap	(void);
 void		stkdump		(int);
-word		sub		(word a,word b);
+word		sub		(word a,word b, int *over_flowp);
 void		syserr		(char *s);
 struct b_coexpr	*topact		(struct b_coexpr *ce);
 void		xmfree		(void);

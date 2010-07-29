@@ -5,8 +5,6 @@
 
 #ifdef LargeInts
 
-extern int over_flow;
-
 /*
  *  Conventions:
  *
@@ -1895,6 +1893,7 @@ dptr dx;
       MakeInt(a, dx);
       }
    else {
+      int over_flow = 0;
       struct descrip td;
       char tdigits[INTBIGBLK];
 
@@ -1911,7 +1910,7 @@ dptr dx;
 	       return Error;
 	    }
          else {
-            y = mul(x, x);
+            y = mul(x, x, &over_flow);
             if (!over_flow)
                x = y;
             else {
@@ -1927,7 +1926,7 @@ dptr dx;
 		  return Error;
 	       }
             else {
-               y = mul(x, a);
+               y = mul(x, a, &over_flow);
                if (!over_flow)
                   x = y;
                else {

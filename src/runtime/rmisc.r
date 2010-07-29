@@ -1046,9 +1046,8 @@ struct b_coexpr *ce, *actvtr;
    struct actrec *arp;
 
 #ifdef MultiThread
-   abp->arec[0].activator = actvtr;
-#else					/* MultiThread */
-
+   if (ce->program != actvtr->program) return Succeeded;
+#endif					/* MultiThread */
    /*
     * If the last activator is the same as this one, just increment
     *  its count.
@@ -1074,7 +1073,7 @@ struct b_coexpr *ce, *actvtr;
    arp->acount = 1;
    arp->activator = actvtr;
    ce->es_actstk = abp;
-#endif					/* MultiThread */
+
    return Succeeded;
 }
 #endif					/* CoExpr */
@@ -1108,8 +1107,8 @@ struct b_coexpr *ce;
 #endif					/* Concurrent */
 
 #ifdef MultiThread
-   return abp->arec[0].activator;
-#else					/* MultiThread */
+   /* if we are trying to pop a different program, we probably shouldn't */
+#endif
 
    /*
     * If the current stack block is empty, pop it.
@@ -1135,7 +1134,6 @@ struct b_coexpr *ce;
 
    ce->es_actstk = abp;
    return actvtr;
-#endif					/* MultiThread */
 
 #else					/* CoExpr */
     syserr("popact() called, but co-expressions not implemented");
@@ -1953,65 +1951,67 @@ Deliberate Syntax Error
  *  file.
  */
 
-extern int over_flow;
-
-word add(a, b)
+word add(a, b, over_flowp)
 word a, b;
+int *over_flowp;
 {
    if ((a ^ b) >= 0 && (a >= 0 ? b > MaxLong - a : b < MinLong - a)) {
-      over_flow = 1;
+      *over_flowp = 1;
       return 0;
       }
    else {
-     over_flow = 0;
+     *over_flowp = 0;
      return a + b;
      }
 }
 
-word sub(a, b)
+word sub(a, b, over_flowp)
 word a, b;
+int *over_flowp;
 {
    if ((a ^ b) < 0 && (a >= 0 ? b < a - MaxLong : b > a - MinLong)) {
-      over_flow = 1;
+      *over_flowp = 1;
       return 0;
       }
    else {
-      over_flow = 0;
+      *over_flowp = 0;
       return a - b;
       }
 }
 
-word mul(a, b)
+word mul(a, b, over_flowp)
 word a, b;
+int *over_flowp;
 {
    if (b != 0) {
       if ((a ^ b) >= 0) {
 	 if (a >= 0 ? a > MaxLong / b : a < MaxLong / b) {
-            over_flow = 1;
+            *over_flowp = 1;
 	    return 0;
             }
 	 }
       else if (b != -1 && (a >= 0 ? a > MinLong / b : a < MinLong / b)) {
-         over_flow = 1;
+         *over_flowp = 1;
 	 return 0;
          }
       }
 
-   over_flow = 0;
+   *over_flowp = 0;
    return a * b;
 }
 
 /* MinLong / -1 overflows; need div3 too */
 
-word mod3(a, b)
+word mod3(a, b, over_flowp)
 word a, b;
+int *over_flowp;
 {
    word retval;
 
    switch ( b )
    {
       case 0:
-	 over_flow = 1; /* Not really an overflow, but definitely an error */
+	 *over_flowp = 1; /* Not really an overflow, but definitely an error */
 	 return 0;
 
       case MinLong:
@@ -2030,33 +2030,35 @@ word a, b;
 	 break;
       }
 
-   over_flow = 0;
+   *over_flowp = 0;
    return retval;
 }
 
-word div3(a, b)
+word div3(a, b, over_flowp)
 word a, b;
+int *over_flowp;
 {
    if ( ( b == 0 ) ||	/* Not really an overflow, but definitely an error */
         ( b == -1 && a == MinLong ) ) {
-      over_flow = 1;
+      *over_flowp = 1;
       return 0;
       }
 
-   over_flow = 0;
-   return ( a - mod3 ( a, b ) ) / b;
+   *over_flowp = 0;
+   return ( a - mod3 ( a, b, over_flowp) ) / b;
 }
 
 /* MinLong / -1 overflows; need div3 too */
 
-word neg(a)
+word neg(a, over_flowp)
 word a;
+int *over_flowp;
 {
    if (a == MinLong) {
-      over_flow = 1;
+      *over_flowp = 1;
       return 0;
       }
-   over_flow = 0;
+   *over_flowp = 0;
    return -a;
 }
 #endif					/* AsmOver */

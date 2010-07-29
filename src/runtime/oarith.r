@@ -7,8 +7,6 @@
  * protocol encapsulated in the macro ArithOp.
  */
 
-int over_flow = 0;
-
 #ifdef DataParallel
 int list_add(dptr x, dptr y, dptr z);
 #endif					/* DataParallel */
@@ -37,7 +35,7 @@ int list_add(dptr x, dptr y, dptr z);
                return integer
                }
             inline {
-               extern int over_flow;
+               int over_flow = 0;
                c_int_op(x,y);
                }
             }
@@ -81,7 +79,7 @@ end
    if (y == 0)
       runerr(201);  /* divide fix */
 
-   irslt = div3(x,y);
+   irslt = div3(x,y, &over_flow);
    if (over_flow) {
 #ifdef LargeInts
       MakeInt(x,&lx);
@@ -124,7 +122,7 @@ ArithOp( / , divide , Divide , RealDivide, list_add /* bogus */)
 #enddef
 
 #begdef Sub(x,y)
-   irslt = sub(x,y);
+   irslt = sub(x,y, &over_flow);
    if (over_flow) {
 #ifdef LargeInts
       MakeInt(x,&lx);
@@ -164,7 +162,7 @@ ArithOp( - , minus , Sub , RealSub, list_add /* bogus */)
 
 #begdef IntMod(x,y)
 {
-   irslt = mod3(x,y);
+   irslt = mod3(x,y, &over_flow);
    if (over_flow) {
       irunerr(202,y);
       errorfail;
@@ -209,7 +207,7 @@ ArithOp( % , mod , IntMod , RealMod, list_add /* bogus */ )
 #enddef
 
 #begdef Mpy(x,y)
-   irslt = mul(x,y);
+   irslt = mul(x,y,&over_flow);
    if (over_flow) {
 #ifdef LargeInts
       MakeInt(x,&lx);
@@ -239,9 +237,9 @@ operator{1} - neg(x)
          }
       inline {
 	    C_integer i;
-	    extern int over_flow;
+	    int over_flow = 0;
 
-	    i = neg(x);
+	    i = neg(x, &over_flow);
 	    if (over_flow) {
 #ifdef LargeInts
 	       struct descrip tmp;
@@ -332,7 +330,7 @@ end
 #enddef
 
 #begdef Add(x,y)
-   irslt = add(x,y);
+   irslt = add(x,y, &over_flow);
    if (over_flow) {
 #ifdef LargeInts
       MakeInt(x,&lx);

@@ -667,6 +667,9 @@ void init_threadstate(struct threadstate *ts)
 
 #ifdef Concurrent
    ts->tid = pthread_self();
+#ifdef PosixFns
+   ts->Nsaved=0;
+#endif					/* PosixFns */
 #endif					/* Concurrent */
 
    ts->Glbl_argp = NULL;

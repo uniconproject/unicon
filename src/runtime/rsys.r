@@ -117,7 +117,7 @@ struct b_file *fbp;
    register int c, l;
    FILE *fd = fbp->fd.fp;
 
-#ifdef PosixFns
+#if defined(PosixFns) && !defined(Concurrent)
    static char savedbuf[BUFSIZ];
    static int nsaved = 0;
 #endif					/* PosixFns */

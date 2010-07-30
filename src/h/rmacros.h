@@ -889,6 +889,12 @@
       #define stack          (curtstate->Stack)
       #define stackend       (curtstate->Stackend)
       #endif					/* StackCheck */
+
+#ifdef PosixFns
+      #define savedbuf       (curtstate->Savedbuf)
+      #define nsaved         (curtstate->Nsaved)
+#endif					/* PosixFns */
+
 #endif					/* Concurrent */
 
       #define k_main        (curpstate->K_main)

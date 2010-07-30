@@ -416,6 +416,10 @@ union numeric {			/* long integers or real numbers */
 struct threadstate {
 #ifdef Concurrent
    pthread_t tid;
+#ifdef PosixFns
+   char Savedbuf[BUFSIZ];
+   int Nsaved;
+#endif					/* PosixFns */
 #endif					/* Concurrent */
    /* signal mask? etc. */
 
@@ -747,6 +751,8 @@ struct b_coexpr {		/* co-expression stack block */
    dptr tvalloc;		/*   where to place transmitted value */
    struct descrip freshblk;	/*   refresh block pointer */
    struct astkblk *es_actstk;	/*   pointer to activation stack structure */
+   int coexp_act;               /*   used to pass signal across activations */
+                                /*   back to whomever activates, if they care */
 #if COMPILER
    continuation fnc;		/*   function containing co-expression code */
    struct p_frame *es_pfp;	/*   current procedure frame pointer */

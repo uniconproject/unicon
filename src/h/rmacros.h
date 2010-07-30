@@ -556,6 +556,17 @@
    word nparam; word ndynam; word nstatic; word fstatic;\
    struct sdescrip quals[n];}
 
+#ifdef ThreadHeap
+#define ssize    (curtstate->Curstring->size)
+#define strbase  (curtstate->Curstring->base)
+#define strend   (curtstate->Curstring->end)
+#define strfree  (curtstate->Curstring->free)
+
+#define abrsize  (curtstate->Curblock->size)
+#define blkbase  (curtstate->Curblock->base)
+#define blkend   (curtstate->Curblock->end)
+#define blkfree  (curtstate->Curblock->free)
+#else 					/* ThreadHeap */
 #define ssize    (curstring->size)
 #define strbase  (curstring->base)
 #define strend   (curstring->end)
@@ -565,6 +576,7 @@
 #define blkbase  (curblock->base)
 #define blkend   (curblock->end)
 #define blkfree  (curblock->free)
+#endif 					/* ThreadHeap */
 
 #if COMPILER
    
@@ -824,17 +836,16 @@
 #ifdef ThreadHeap 					/* ThreadHeap */      
       #define curtstring (curtstate->Curstring)
       #define curtblock  (curtstate->Curblock)
+      #define strtotal  (curtstate->stringtotal)
+      #define blktotal  (curtstate->blocktotal)
+#else 					/* ThreadHeap */
+      #define strtotal  (curpstate->stringtotal)
+      #define blktotal  (curpstate->blocktotal)
 #endif 					/* ThreadHeap */
 
       #define curstring (curpstate->stringregion)
       #define curblock  (curpstate->blockregion)
 
-      #define strtotal  (curpstate->stringtotal)
-      #define blktotal  (curpstate->blocktotal)
-
-      #define strtotal  (curpstate->stringtotal)
-      #define blktotal  (curpstate->blocktotal)
-      
       #define coll_tot  (curpstate->colltot)
       #define coll_stat (curpstate->collstat)
       #define coll_str  (curpstate->collstr)
@@ -888,13 +899,16 @@
 #ifndef StackCheck
       #define stack          (curtstate->Stack)
       #define stackend       (curtstate->Stackend)
-      #endif					/* StackCheck */
+#endif					/* StackCheck */
+
+      #define eret_tmp       (curtstate->Eret_tmp)
+      #define pollctr        (curtstate->Pollctr)
+
 
 #ifdef PosixFns
       #define savedbuf       (curtstate->Savedbuf)
       #define nsaved         (curtstate->Nsaved)
 #endif					/* PosixFns */
-
 #endif					/* Concurrent */
 
       #define k_main        (curpstate->K_main)
@@ -1034,7 +1048,7 @@
 #endif					/* ISQL */
 
 #ifdef Concurrent 
-  #define NUM_STATIC_MUTEXES	12
+  #define NUM_STATIC_MUTEXES	15
 
    #define MTX_OP_ASTR		0
    #define MTX_OP_AREAL		1
@@ -1050,4 +1064,23 @@
    #define MTX_TABLE_SER	10
    #define MTX_PAT_SER		11
 
+   #define MTX_STRHEAP		12
+   #define MTX_BLKHEAP		13
+
+   #define MTX_TLS		14
+
 #endif					/* Concurrent */
+
+
+#ifdef Concurrent
+/*
+ *  lock mutex mtx. msg is a string name that refers to mtx, useful for error tracing 
+ */
+#define MUTEX_LOCK( mtx, msg) { int retval; \
+  if ((retval=pthread_mutex_lock(&mtx)) != 0) handle_thread_error(retval); }
+#define MUTEX_UNLOCK( mtx, msg) { int retval; \
+  if ((retval=pthread_mutex_unlock(&mtx)) != 0)  handle_thread_error(retval); }
+#else
+#define MUTEX_LOCK( mtx, msg)
+#define MUTEX_UNLOCK( mtx, msg)
+#endif

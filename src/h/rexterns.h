@@ -69,7 +69,6 @@ extern int maxmutexes, nmutexes;
 extern pthread_mutex_t mutex_mutex;
 extern pthread_mutex_t mutex_alcblk;
 extern pthread_mutex_t mutex_alcstr;
-
 #endif					/* Concurrent */
 
 /*
@@ -85,9 +84,9 @@ extern pthread_mutex_t mutex_alcstr;
    extern struct descrip kywd_ftrc;	/* descriptor for &ftrace */
 #endif					/* FncTrace */
 
-#ifdef Polling
+#if defined(Polling) && !defined(Concurrent)
    extern int pollctr;
-#endif					/* Polling */
+#endif					/* Polling && !Concurrent */
 
 extern char typech[];
 extern word oldsum;

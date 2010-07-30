@@ -416,6 +416,8 @@ union numeric {			/* long integers or real numbers */
 struct threadstate {
 #ifdef Concurrent
    pthread_t tid;
+   int Pollctr;
+
 #ifdef PosixFns
    char Savedbuf[BUFSIZ];
    int Nsaved;
@@ -472,9 +474,13 @@ struct threadstate {
 
   struct tend_desc *Tend;  /* chain of tended descriptors */
 
+  struct descrip Eret_tmp;	/* eret value during unwinding */
+
 #ifdef ThreadHeap
   struct region *Curstring;    /*  separate regions vs shared      */
   struct region *Curblock;     /*     same above     */
+  uword stringtotal;			/* cumulative total allocation */
+  uword blocktotal;			/* cumulative total allocation */
 #endif 					/* ThreadHeap */
    };
 
@@ -594,8 +600,11 @@ struct progstate {
    struct region *stringregion;         /*  separate regions vs shared      */
    struct region *blockregion;          /*     same above     */
 
-   uword stringtotal;			/* mutex  cumulative total allocation */
-   uword blocktotal;			/* mutex cumulative total allocation */
+  /* in case we have separate heaps, i.e ThreadHeap is defined
+   * total here will be only for "dead" threads */
+   uword stringtotal;			/* cumulative total allocation */
+   uword blocktotal;			/* cumulative total allocation */
+
    word colltot;			/*  m      total number of collections */
    word collstat;			/*  u      number of static collect requests */
    word collstr;			/*  t      number of string collect requests */

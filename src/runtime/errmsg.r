@@ -14,44 +14,6 @@ extern void CallARexx(char *script);
 
 extern struct errtab errtab[];		/* error numbers and messages */
 
-#ifdef Concurrent 
-/*
- *  pthread errors handler
- */
-void handle_thread_error(int val)
-{
-   switch(val){
-
-   case EINVAL:
-      syserr("The value specified by mutex does not refer to an initialised mutex object.");
-      /* or syserr("the calling thread's priority is higher than the mutex's current priority ceiling");*/
-      break;
-   case EBUSY:
-     /*syserr("The mutex could not be acquired because it was already locked. ");*/
-      break;
-   case EAGAIN :
-      syserr("The mutex could not be acquired because the maximum number of recursive locks for mutex has been exceeded");
-      break;
-   case EDEADLK:
-      syserr("The current thread already owns the mutex.");
-      break;
-   case EPERM:
-      syserr("The current thread does not own the mutex. ");
-      break;
-
-   case ESRCH: /* pthread_cancel */
-     fprintf(stderr, "\nError: Tried to cancel a thread that doesn't exist.\n");
-      break;
-
-
-   default:
-      syserr(" pthread function error!\n ");
-      break;
-
-      }
-}
-#endif					/* Concurrent */
-
 /*
  * err_msg - print run-time error message, performing trace back if required.
  *  This function underlies the rtt runerr() construct.
@@ -72,7 +34,7 @@ void err_msg(int n, dptr v)
    pthread_t tid;
    int rc=0;
    
-   pthread_mutex_lock(&mutex_tls);
+   MUTEX_LOCK(static_mutexes[MTX_TLS], "MTX_TLS");
    tlsnode = tlshead->next;      /* skip the root tls */
    tid = pthread_self();
    while (tlsnode!=tlshead){
@@ -85,7 +47,7 @@ void err_msg(int n, dptr v)
       tlsnode=tlsnode->next;
       }
    
-   /* pthread_mutex_unlock(&mutex_tls);*/
+   MUTEX_UNLOCK(static_mutexes[MTX_TLS], "MTX_TLS");
 #endif					/* Concurrent */
 
    if (n == 0) {

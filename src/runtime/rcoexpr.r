@@ -161,8 +161,6 @@ int first;
 #ifndef CoExpr
    syserr("co_chng() called, but co-expressions not implemented");
 #else        				/* CoExpr */
-   static int coexp_act;     /* used to pass signal across activations */
-                             /* back to whomever activates, if they care */
 
    register struct b_coexpr *ccp = (struct b_coexpr *)BlkLoc(k_current);
 
@@ -295,7 +293,7 @@ int first;
       swtch_typ = A_Coact;
 #endif					/* MultiThread */
 
-   coexp_act = swtch_typ;
+   ncp->coexp_act = swtch_typ;
 
 #ifdef PthreadCoswitch
 #ifdef Concurrent
@@ -307,7 +305,7 @@ int first;
    coswitch(ccp->cstate, ncp->cstate,first);
 #endif					/* PthreadCoswitch */
 
-   return coexp_act;
+   return ccp->coexp_act;
 #endif        				/* CoExpr */
    }
 
@@ -477,7 +475,7 @@ void *nctramp(void *arg)
    if (tlsnode==NULL)
       fatalerr(305, NULL);
 
-   pthread_mutex_lock(&mutex_tls);
+   MUTEX_LOCK(static_mutexes[MTX_TLS], "MTX_TLS");
    tlsnode->previous =tlshead->previous;
    tlsnode->next = tlshead;
    tlshead->previous->next = tlsnode;
@@ -485,7 +483,7 @@ void *nctramp(void *arg)
 
    tlsnode->ctx = new;
    tlsnode->tstate = curtstate;
-   pthread_mutex_unlock(&mutex_tls);
+   MUTEX_UNLOCK(static_mutexes[MTX_TLS], "MTX_TLS");
 
    ce = new->c;
    if (ce->title != T_Coexpr) {
@@ -515,3 +513,42 @@ void *nctramp(void *arg)
    return NULL;
    }
 #endif					/* PthreadCoswitch */
+
+
+#ifdef Concurrent 
+/*
+ *  pthread errors handler
+ */
+void handle_thread_error(int val)
+{
+   switch(val){
+
+   case EINVAL:
+      syserr("The value specified by mutex does not refer to an initialised mutex object.");
+      /* or syserr("the calling thread's priority is higher than the mutex's current priority ceiling");*/
+      break;
+   case EBUSY:
+     /*syserr("The mutex could not be acquired because it was already locked. ");*/
+      break;
+   case EAGAIN :
+      syserr("The mutex could not be acquired because the maximum number of recursive locks for mutex has been exceeded");
+      break;
+   case EDEADLK:
+      syserr("The current thread already owns the mutex.");
+      break;
+   case EPERM:
+      syserr("The current thread does not own the mutex. ");
+      break;
+
+   case ESRCH: /* pthread_cancel */
+     fprintf(stderr, "\nError: Tried to cancel a thread that doesn't exist.\n");
+      break;
+
+
+   default:
+      syserr(" pthread function error!\n ");
+      break;
+
+      }
+}
+#endif					/* Concurrent */

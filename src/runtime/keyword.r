@@ -16,10 +16,30 @@ keyword{4} allocated
       return integer
       }
    inline {
+#ifdef ThreadHeap
+      struct tls_chain *tlsnode;
+      uword blktot=0;
+      uword strtot=0;
+      MUTEX_LOCK(static_mutexes[MTX_TLS], "MTX_TLS");
+      blktot = curpstate->blocktotal;
+      strtot = curpstate->stringtotal;
+      tlsnode = tlshead; 
+      do{
+	blktot += tlsnode->tstate->blocktotal;
+	strtot += tlsnode->tstate->stringtotal;
+	tlsnode=tlsnode->next;
+        }while (tlsnode!=tlshead);
+      MUTEX_UNLOCK(static_mutexes[MTX_TLS], "MTX_TLS");
+      suspend C_integer stattotal + strtot + blktot;
+      suspend C_integer stattotal;
+      suspend C_integer strtot;
+      return  C_integer blktot;
+#else					/* ThreadHeap */
       suspend C_integer stattotal + strtotal + blktotal;
       suspend C_integer stattotal;
       suspend C_integer strtotal;
       return  C_integer blktotal;
+#endif					/* ThreadHeap */
       }
 end
 
@@ -593,18 +613,22 @@ keyword{3} regions
 
       suspend C_integer 0;		/* static region */
 
+      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_STRHEAP");
       allRegions = DiffPtrs(strend,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->end,rp->base);
+      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_STRHEAP");
       suspend C_integer allRegions;	/* string region */
 
+      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
       allRegions = DiffPtrs(blkend,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curblock->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->end,rp->base);
+      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
       return C_integer allRegions;	/* block region */
       }
 end
@@ -633,19 +657,23 @@ keyword{3} storage
       struct region *rp;
 
       suspend C_integer 0;		/* static region */
-
+  
+      MUTEX_LOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
       allRegions = DiffPtrs(strfree,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->free,rp->base);
+      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_STRHEAP");
       suspend C_integer allRegions;	/* string region */
-
+  
+      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
       allRegions = DiffPtrs(blkfree,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curblock->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->free,rp->base);
+      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
       return C_integer allRegions;	/* block region */
       }
 end

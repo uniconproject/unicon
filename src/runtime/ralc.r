@@ -34,14 +34,14 @@ word table_ser = 1;	/* serial numbers for tables */
    /*
     * Ensure that there is enough room in the block region.
     */
-#ifdef Concurrent 
-   pthread_mutex_lock(&mutex_alcblk);
-#endif					/* Concurrent */
+#ifndef ThreadHeap
+   MUTEX_LOCK(mutex_alcblk, "mutex_alcblk");
+#endif					/* ThreadHeap */
 
    if (DiffPtrs(blkend,blkfree) < nbytes && !reserve(Blocks, nbytes)){
-#ifdef Concurrent 
-      pthread_mutex_unlock(&mutex_alcblk);
-#endif					/* Concurrent */
+#ifndef ThreadHeap
+      MUTEX_UNLOCK(mutex_alcblk, "mutex_alcblk");
+#endif					/* ThreadHeap */
       return NULL;
       }
 
@@ -54,9 +54,9 @@ word table_ser = 1;	/* serial numbers for tables */
    var = (struct struct_nm *)blkfree;
    blkfree += nbytes;
    var->title = t_code;
-#ifdef Concurrent 
-   pthread_mutex_unlock(&mutex_alcblk);
-#endif					/* Concurrent */
+#ifndef ThreadHeap
+   MUTEX_UNLOCK(mutex_alcblk, "mutex_alcblk");
+#endif					/* ThreadHeap */
 }
 #enddef
 
@@ -176,14 +176,10 @@ struct b_coexpr *alccoexp()
    ep->line_num = 0;
    ep->freshblk = nulldesc;
    ep->es_actstk = NULL;
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_LOCK(mutex_stklist, "mutex_stklist");
    ep->nextstk = stklist;
    stklist = ep;
-#ifdef Concurrent
-   pthread_mutex_unlock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
    return ep;
    }
 #else					/* COMPILER */
@@ -249,16 +245,18 @@ struct b_coexpr *alccoexp()
 
    if (icodesize > 0)
       ep->id = 1;
-   else
+   else{
 #endif					/* MultiThread */
-#ifdef Concurrent
-      pthread_mutex_lock(&static_mutexes[MTX_COEXP_SER]);
+      MUTEX_LOCK(static_mutexes[MTX_COEXP_SER], "MTX_COEXP_SER" );
       ep->id = coexp_ser++;
-      pthread_mutex_unlock(&static_mutexes[MTX_COEXP_SER]);
+      MUTEX_UNLOCK(static_mutexes[MTX_COEXP_SER], "MTX_COEXP_SER");
+#ifdef MultiThread
+   }
+#endif					/* MultiThread */
+
+#ifdef Concurrent
       ep->status = 0;
       ep->squeue = ep->rqueue = NULL;
-#else					/* Concurrent */
-      ep->id = coexp_ser++;
 #endif					/* Concurrent */
 
       ep->es_tend = NULL;
@@ -287,14 +285,10 @@ struct b_coexpr *alccoexp()
 }
 #endif					/* PthreadCoswitch */
 
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_LOCK(mutex_stklist, "mutex_stklist");
    ep->nextstk = stklist;
    stklist = ep;
-#ifdef Concurrent
-   pthread_mutex_unlock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
    return ep;
    }
 #endif					/* COMPILER */
@@ -373,25 +367,16 @@ union block *f(int tcode)
       EVVal(sizeof(struct b_table), e_table);
       AlcFixBlk(pt, b_table, T_Table);
       ps = (struct b_set *)pt;
-#ifdef Concurrent
-      pthread_mutex_lock(&static_mutexes[MTX_TABLE_SER]);
+      MUTEX_LOCK(static_mutexes[MTX_TABLE_SER], "MTX_TABLE_SER");
       ps->id = table_ser++;
-      pthread_mutex_unlock(&static_mutexes[MTX_TABLE_SER]);
-#else					/* Concurrent */
-      ps->id = table_ser++;
-#endif					/* Concurrent */
-
+      MUTEX_UNLOCK(static_mutexes[MTX_TABLE_SER], "MTX_TABLE_SER");
       }
    else {	/* tcode == T_Set */
       EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
-#ifdef Concurrent
-      pthread_mutex_lock(&static_mutexes[MTX_SET_SER]);
+      MUTEX_LOCK(static_mutexes[MTX_SET_SER], "MTX_SET_SER");
       ps->id = set_ser++;
-      pthread_mutex_unlock(&static_mutexes[MTX_SET_SER]);
-#else					/* Concurrent */
-      ps->id = set_ser++;
-#endif					/* Concurrent */
+      MUTEX_UNLOCK(static_mutexes[MTX_SET_SER], "MTX_SET_SER");
       }
    ps->size = 0;
    ps->mask = 0;
@@ -452,13 +437,9 @@ struct b_pattern *f(word stck_size)
    EVVal(sizeof (struct b_pelem), e_pelem);
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
-#ifdef Concurrent
-      pthread_mutex_lock(&static_mutexes[MTX_PAT_SER]);
-      pheader->id = pat_ser++;
-      pthread_mutex_unlock(&static_mutexes[MTX_PAT_SER]);
-#else					/* Concurrent */
-      pheader->id = pat_ser++;
-#endif					/* Concurrent */
+   MUTEX_LOCK(static_mutexes[MTX_PAT_SER], "MTX_PAT_SER");
+   pheader->id = pat_ser++;
+   MUTEX_UNLOCK(static_mutexes[MTX_PAT_SER], "MTX_PAT_SER");
    pheader->pe = NULL;
    return pheader;
 }
@@ -508,13 +489,9 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    register struct b_list *blk;
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
-#ifdef Concurrent
-   pthread_mutex_lock(&static_mutexes[MTX_LIST_SER]);
+   MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
    blk->id = list_ser++;
-   pthread_mutex_unlock(&static_mutexes[MTX_LIST_SER]);
-#else					/* Concurrent */
-   blk->id = list_ser++;
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
    blk->listhead = bptr;
    blk->listtail = NULL;
 #ifdef Arrays
@@ -548,13 +525,9 @@ struct b_list *f(uword size, uword nslots)
    AlcFixBlk(blk, b_list, T_List)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
-#ifdef Concurrent
-   pthread_mutex_lock(&static_mutexes[MTX_LIST_SER]);
+   MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
    blk->id = list_ser++;
-   pthread_mutex_unlock(&static_mutexes[MTX_LIST_SER]);
-#else					/* Concurrent */
-   blk->id = list_ser++;
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
 
    blk->listhead = blk->listtail = (union block *)lblk;
 
@@ -593,13 +566,9 @@ struct b_list *f(uword size, uword nslots)
    AlcFixBlk(blk, b_list, T_List)
    AlcBlk(lblk, b_lelem, T_Lelem, i)
    blk->size = size;
-#ifdef Concurrent
-   pthread_mutex_lock(&static_mutexes[MTX_LIST_SER]);
+   MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
    blk->id = list_ser++;
-   pthread_mutex_unlock(&static_mutexes[MTX_LIST_SER]);
-#else					/* Concurrent */
-   blk->id = list_ser++;
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
    blk->listhead = blk->listtail = (union block *)lblk;
    lblk->blksize = i;
    lblk->nslots = nslots;
@@ -703,13 +672,9 @@ struct b_record *f(int nflds, union block *recptr)
    EVVal(sizeof(struct b_record) + (nflds-1)*sizeof(struct descrip),e_record);
    AlcVarBlk(blk, b_record, T_Record, nflds)
    blk->recdesc = trecptr;
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_recid);
+   MUTEX_LOCK(mutex_recid, "mutex_recid");
    blk->id = (((struct b_proc *)recptr)->recid)++;
-   pthread_mutex_unlock(&mutex_recid);
-#else					/* Concurrent */
-   blk->id = (((struct b_proc *)recptr)->recid)++;
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(mutex_recid, "mutex_recid");
    return blk;
    }
 #enddef
@@ -804,15 +769,10 @@ char *f(register char *s, register word slen)
    StrLen(ts) = slen;
    StrLoc(ts) = s;
 #if E_String
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_noMTevents);
-#endif					/* Concurrent */
+   MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
    if (!noMTevents)
       EVVal(slen, e_string);
-#ifdef Concurrent
-   pthread_mutex_unlock(&mutex_noMTevents);
-#endif					/* Concurrent */
-
+   MUTEX_UNLOCK(mutex_noMTevents, "mutex_noMTevents");
 #endif					/* E_String */
    s = StrLoc(ts);
 #endif					/* MultiThread */
@@ -820,17 +780,17 @@ char *f(register char *s, register word slen)
    /*
     * Make sure there is enough room in the string space.
     */
-#ifdef Concurrent 
-   pthread_mutex_lock(&mutex_alcstr);
-#endif					/* Concurrent */
+#ifndef ThreadHeap 
+   MUTEX_LOCK(mutex_alcstr);
+#endif					/* ThreadHeap */
 
    if (DiffPtrs(strend,strfree) < slen) {
       StrLen(ts) = slen;
       StrLoc(ts) = s;
       if (!reserve(Strings, slen)){
-#ifdef Concurrent 
-         pthread_mutex_unlock(&mutex_alcstr);
-#endif					/* Concurrent */
+#ifndef ThreadHeap
+ 	MUTEX_UNLOCK(mutex_alcstr,"mutex_alcstr");
+#endif					/* ThreadHeap */
          return NULL;
       }
       s = StrLoc(ts);
@@ -852,9 +812,9 @@ char *f(register char *s, register word slen)
       d += slen;
 
    strfree = d;
-#ifdef Concurrent 
-      pthread_mutex_unlock(&mutex_alcstr);
-#endif					/* Concurrent */
+#ifndef ThreadHeap
+     MUTEX_UNLOCK(mutex_alcstr,"mutex_alcstr");
+#endif					/* ThreadHeap */
    return ofree;
    }
 #enddef
@@ -979,7 +939,9 @@ void f (union block *bp)
 {
    word nbytes;
    struct region *rp;
-
+#if defined(Concurrent) /* && !defined(ThreadHeap)*/
+   return;
+#endif					/* Concurrent && !ThreadHeap */
    nbytes = BlkSize(bp);
    for (rp = curblock; rp; rp = rp->next)
       if ((char *)bp + nbytes == rp->free)
@@ -1024,12 +986,18 @@ char *f(int region, word nbytes)
    struct region **pcurr, *curr, *rp;
    word want, newsize;
    extern int qualfail;
-
 #ifdef ThreadHeap
-   if (region == Strings)
+   int mtx_id;
+   if (region == Strings){
+      mtx_id = MTX_STRHEAP;
+      MUTEX_LOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
       pcurr = &curtstring;
-   else
+   }
+   else{
+      mtx_id = MTX_BLKHEAP;
+      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
       pcurr = &curtblock;
+   }
 #else 					/* ThreadHeap */
    if (region == Strings)
       pcurr = &curstring;
@@ -1042,11 +1010,18 @@ char *f(int region, word nbytes)
    /*
     * Check for space available now.
     */
-   if (DiffPtrs(curr->end, curr->free) >= nbytes)
+   if (DiffPtrs(curr->end, curr->free) >= nbytes){
+#ifdef ThreadHeap
+      MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
+#endif 					/* ThreadHeap */
       return curr->free;		/* quick return: current region is OK */
+   }
 
    if ((rp = findgap(curr, nbytes)) != 0) {    /* check all regions on chain */
       *pcurr = rp;			/* switch regions */
+#ifdef ThreadHeap
+       MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP OR MTX_BLKHEAP");
+#endif 					/* ThreadHeap */
       return rp->free;
       }
 
@@ -1094,13 +1069,10 @@ char *f(int region, word nbytes)
       curr->Gprev = rp;
       *pcurr = rp;
 #if e_tenurestring || e_tenureblock
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_noMTevents);
-   tmp_noMTevents = noMTevents;
-   pthread_mutex_unlock(&mutex_noMTevents);
-#else					/* Concurrent */
-   tmp_noMTevents = noMTevents;
-#endif					/* Concurrent */
+      MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
+      tmp_noMTevents = noMTevents;
+      MUTEX_UNLOCK(mutex_noMTevents, "mutex_noMTevents");
+
       if (!tmp_noMTevents) {
          if (region == Strings) {
             EVVal(rp->size, e_tenurestring);
@@ -1110,6 +1082,10 @@ char *f(int region, word nbytes)
             }
          }
 #endif					/* e_tenurestring || e_tenureblock */
+
+#ifdef ThreadHeap
+      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP OR MTX_BLKHEAP");
+#endif 					/* ThreadHeap */
       return rp->free;
       }
 

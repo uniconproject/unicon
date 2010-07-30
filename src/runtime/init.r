@@ -614,18 +614,19 @@ void init_threadheap(struct threadstate *ts)
   if (first){
    ts->Curstring = curstring;
    ts->Curblock = curblock;
-   /*printf(" st=%0x   blk=%0x\n",  curstring, curblock);*/
+   /*printf(" main str=%0x   main blk=%0x\n",  curtstring->base, curtblock->base);*/
    first=0;
    return;
    }
 
    /*
-    * That didn't work.  Allocate a new region with a size based on the
-    * newest previous region.
+    *  new string and block region should be allocated
     */
-   size = curpstate->stringregion->size; 
 
-   if ((rp = newregion(1, size)) != 0) {
+   MUTEX_LOCK(static_mutexes[MTX_STRHEAP],"MTX_STRHEAP");
+   size = 1024*1024*10;  /*curpstate->stringregion->size;*/
+
+   if ((rp = newregion(size, size)) != 0) {
       rp->prev = curstring;
       rp->next = NULL;
       curstring->next = rp;
@@ -634,15 +635,23 @@ void init_threadheap(struct threadstate *ts)
       if (curstring->Gprev) curstring->Gprev->Gnext = rp;
       curstring->Gprev = rp;
       curstring = rp;
+      ts->Curstring = rp;
       }
     else
       syserr(" init_threadheap: insufficient memory");
 
-   ts->Curstring = rp;
+   /*   printf(" st=%0x\n",  curstring->base);*/
 
-   size = curpstate->blockregion->size;
+   MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+   /*   printf(" rp=%0x,  string size=%d\n",rp, size);*/
 
-   if ((rp = newregion(1, size)) != 0) {
+   MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+   /* size = curpstate->blockregion->size;*/
+   size = 1024*1024*50;
+
+
+
+   if ((rp = newregion(size, size)) != 0) {
       rp->prev = curblock;
       rp->next = NULL;
       curblock->next = rp;
@@ -651,13 +660,17 @@ void init_threadheap(struct threadstate *ts)
       if (curblock->Gprev) curblock->Gprev->Gnext = rp;
       curblock->Gprev = rp;
       curblock = rp;
+      ts->Curblock = rp;
       }
     else
       syserr(" init_threadheap: insufficient memory");
 
-   ts->Curblock = rp;
+   /*   printf("  blk=%0x\n",  curblock->base);*/
 
-   /*printf(" st=%0x   blk=%0x\n",  curstring, curblock);*/
+    MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+
+   /*printf(" rp=%0x,  block size=%d\n",rp, size);*/
+
 
 }
 #endif 					/* ThreadHeap */
@@ -667,6 +680,8 @@ void init_threadstate(struct threadstate *ts)
 
 #ifdef Concurrent
    ts->tid = pthread_self();
+   ts->Pollctr=0;
+
 #ifdef PosixFns
    ts->Nsaved=0;
 #endif					/* PosixFns */
@@ -710,6 +725,13 @@ void init_threadstate(struct threadstate *ts)
 
    ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
    ts->Tend = NULL;
+
+#ifdef ThreadHeap
+   ts->Curstring = NULL;
+   ts->Curblock = NULL;
+   ts->stringtotal=0;
+   ts->blocktotal=0;
+#endif 					/* ThreadHeap */
 }
 
 #if COMPILER
@@ -1062,6 +1084,10 @@ Deliberate Syntax Error
    k_trace = hdr.trace;
 
 #endif					/* COMPILER */
+
+#ifdef ThreadHeap
+   init_threadheap(curtstate);
+#endif					/* ThreadHeap */
 
    /*
     * Examine the environment and make appropriate settings.    [[I?]]

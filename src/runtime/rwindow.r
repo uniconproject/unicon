@@ -17,7 +17,11 @@ static	int	sicmp		(siptr sip1, siptr sip2);
  *  the binding for the console window - FILE * for simplicity,
  *  &col, &row, &x, &y, &interval, timestamp, and modifier keys.
  */
+
+#ifndef Concurrent
 int pollctr;
+#endif					/* Concurrent */
+
 FILE *ConsoleBinding = NULL;
 /*
  * the global buffer used as work space for printing string, etc

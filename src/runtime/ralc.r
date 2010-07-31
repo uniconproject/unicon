@@ -781,7 +781,7 @@ char *f(register char *s, register word slen)
     * Make sure there is enough room in the string space.
     */
 #ifndef ThreadHeap 
-   MUTEX_LOCK(mutex_alcstr);
+   MUTEX_LOCK(mutex_alcstr, "mutex_enoughStringSpace");
 #endif					/* ThreadHeap */
 
    if (DiffPtrs(strend,strfree) < slen) {

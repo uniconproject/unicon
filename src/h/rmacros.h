@@ -1071,16 +1071,16 @@
 
 #endif					/* Concurrent */
 
-
 #ifdef Concurrent
 /*
- *  lock mutex mtx. msg is a string name that refers to mtx, useful for error tracing 
+ *  Lock mutex mtx. msg is a string name that refers to mtx, useful for
+ *  error tracing.
  */
 #define MUTEX_LOCK( mtx, msg) { int retval; \
   if ((retval=pthread_mutex_lock(&mtx)) != 0) handle_thread_error(retval); }
 #define MUTEX_UNLOCK( mtx, msg) { int retval; \
   if ((retval=pthread_mutex_unlock(&mtx)) != 0)  handle_thread_error(retval); }
-#else
+#else					/* Concurrent */
 #define MUTEX_LOCK( mtx, msg)
 #define MUTEX_UNLOCK( mtx, msg)
-#endif
+#endif					/* Concurrent */

@@ -214,7 +214,6 @@ struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
 #ifdef Concurrent
       struct tls_chain *tlshead;
-      pthread_mutex_t mutex_tls;
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;
 #else					/* Concurrent */
@@ -812,7 +811,6 @@ char *argv[];
 
    pthread_mutex_init(&mutex_mutex, NULL);
 
-   pthread_mutex_init(&mutex_tls, NULL);
    pthread_mutex_init(&mutex_pollevent, NULL);
    pthread_mutex_init(&mutex_recid, NULL);
 
@@ -2433,23 +2431,17 @@ struct progstate *findprogramforblock(union block *p)
    struct b_coexpr *ce;
    struct progstate *tmpp;
    extern struct b_proc *stubrec;
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_LOCK(mutex_stklist, "mutex_stklist");
    ce = stklist;
    while (ce != NULL) {
       tmpp = ce->program;
       if (InRange(tmpp->Code, p, tmpp->Elines)) {
-#ifdef Concurrent
-	 pthread_mutex_unlock(&mutex_stklist);
-#endif					/* Concurrent */
+	 MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
 	 return tmpp;
 	 }
       ce = ce->nextstk;
       }
-#ifdef Concurrent
-   pthread_mutex_unlock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
    return NULL;
 }
 

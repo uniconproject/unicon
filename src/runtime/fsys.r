@@ -1879,7 +1879,7 @@ end
 #if error_out
 #ifdef Concurrent
 	 fblk = &k_errout;
-	 pthread_mutex_lock(&fblk->mutex);
+	 MUTEX_LOCK(fblk->mutex, "mutex_file ");
 #endif					/* Concurrent */
       if ((k_errout.status & Fs_Write) == 0)
 	 runerr(213);
@@ -1893,7 +1893,7 @@ end
 #else					/* error_out */
 #ifdef Concurrent
 	 fblk = &k_output;
-	 pthread_mutex_lock(&fblk->mutex);
+ 	 MUTEX_LOCK(fblk->mutex, "mutex_file ");
 #endif					/* Concurrent */
       if ((k_output.status & Fs_Write) == 0)
 	 runerr(213);
@@ -1946,9 +1946,7 @@ end
 	 if (!MFIN(mf, WRITING))
 	    runerr(213);
 	 if (tp_write(mf->tp, "\n", 1) < 0) {
-#ifdef Concurrent
-	 pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
+	 MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 #if terminate
 	    syserr("tp_write failed in stop()");
 #else
@@ -1964,9 +1962,7 @@ end
 #ifdef PosixFns
       if (status & Fs_Socket) {
 	 if (sock_write(f.fd, "\n", 1) < 0){
-#ifdef Concurrent
-	    pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
+	    MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 #if terminate
 	    syserr("sock_write failed in stop()");
 #else
@@ -2048,11 +2044,7 @@ end
 #ifdef Messaging
    }
 #endif					/* Messaging */
-
-#ifdef Concurrent 
-	    pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
-
+	    MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 #if terminate
 	    c_exit(EXIT_FAILURE);
 #else					/* terminate */
@@ -2194,9 +2186,7 @@ function {1} name(x[nargs])
 			     runerr(213);
 			   }
 			   if (tp_write(mf->tp, "\n", 1) < 0) {
-#ifdef Concurrent
-			      pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
+	    		      MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 #if terminate
 			      syserr("tp_write failed in stop()");
 #else
@@ -2212,9 +2202,7 @@ function {1} name(x[nargs])
 #ifdef PosixFns
 			if (status & Fs_Socket) {
 			   if (sock_write(f.fd, "\n", 1) < 0){
-#ifdef Concurrent
-			      pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
+	    		      MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 #if terminate
 			      syserr("sock_write failed in stop()");
 #else
@@ -2234,9 +2222,7 @@ function {1} name(x[nargs])
 #ifdef Graphics
 			}
 #endif					/* Graphics */
-#ifdef Concurrent 
-			pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
+    		        MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 		     }
 #endif					/* nl */
 
@@ -2260,7 +2246,7 @@ function {1} name(x[nargs])
 		  f.fp = BlkLoc(x[n])->File.fd.fp;
 #ifdef Concurrent 
 		  fblk = BlkD(x[n], File);
-		  pthread_mutex_lock(&fblk->mutex);
+		  MUTEX_LOCK(fblk->mutex, "mutex_file ");
 #endif					/* Concurrent */
 
 #ifdef ConsoleWindow
@@ -2335,9 +2321,7 @@ function {1} name(x[nargs])
 		     if (status & Fs_Socket) {
 
 			if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
-#ifdef Concurrent
-			   pthread_mutex_unlock(&fblk->mutex);
-#endif					/* Concurrent */
+		  	   MUTEX_UNLOCK(fblk->mutex, "mutex_file ");
 #if terminate
 			   syserr("sock_write failed in stop()");
 #else

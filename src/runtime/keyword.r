@@ -613,13 +613,13 @@ keyword{3} regions
 
       suspend C_integer 0;		/* static region */
 
-      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_STRHEAP");
+      MUTEX_LOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
       allRegions = DiffPtrs(strend,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->end,rp->base);
-      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_STRHEAP");
+      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
       suspend C_integer allRegions;	/* string region */
 
       MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
@@ -664,7 +664,7 @@ keyword{3} storage
 	 allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->free,rp->base);
-      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_STRHEAP");
+      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
       suspend C_integer allRegions;	/* string region */
   
       MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");

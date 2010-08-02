@@ -1020,7 +1020,7 @@ char *f(int region, word nbytes)
    if ((rp = findgap(curr, nbytes)) != 0) {    /* check all regions on chain */
       *pcurr = rp;			/* switch regions */
 #ifdef ThreadHeap
-       MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP OR MTX_BLKHEAP");
+       MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
 #endif 					/* ThreadHeap */
       return rp->free;
       }
@@ -1084,7 +1084,7 @@ char *f(int region, word nbytes)
 #endif					/* e_tenurestring || e_tenureblock */
 
 #ifdef ThreadHeap
-      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP OR MTX_BLKHEAP");
+      MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
 #endif 					/* ThreadHeap */
       return rp->free;
       }

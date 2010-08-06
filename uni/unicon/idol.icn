@@ -850,13 +850,25 @@ class argList : idTaque(varg)
 	    if x.label == ("arg3" | "arg4") then
 	      write(yyout, "/", v, " := ", x.children[-1].s)
 	    if x.label == ("arg2" | "arg4") then {
-	      writes(yyout, v, " := ", x.children[3].s, "(",  v, ") |")
+	      case x.children[3].s of {
+		  "integer"|"string"|"numeric"|"cset"|"real": {
+		      writes(yyout, v, " := ", x.children[3].s, "(",  v, ") |")
+		  }
+		  default: {
+		      writes(yyout, "(type(",v,")==\"",x.children[3].s,"\") |")
+		  }
+	      }
 	      writes(yyout, " runerr(")
 	      writes(yyout, case x.children[3].s of {
 		"integer": 101
 		"numeric": 102
 		"string": 103
 		"cset": 104
+		"file": 105
+		"list": 108
+		"set": 119
+		"table": 124
+		"window": 140
 		default: 123
 	      })
 	      write(yyout,", ", v, ")")

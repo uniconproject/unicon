@@ -2,7 +2,7 @@
  * File: init.r
  * Initialization, termination, and such.
  * Contents: readhdr, init/icon_init, envset, env_err, env_int,
- *  fpe_trap, inttrag, segvtrap, error, syserr, c_exit, err,
+ *  fpe_trap, inttrap, segvtrap, error, syserr, c_exit, err,
  *  fatalerr, pstrnmcmp, datainit, [loadicode]
  */
 
@@ -169,6 +169,7 @@ struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 pthread_mutex_t mutex_stklist;
 pthread_mutex_t mutex_pollevent;
 pthread_mutex_t mutex_recid;
+pthread_mutex_t mutex_krandom;
 
 pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 #endif					/* Concurrent */
@@ -693,6 +694,7 @@ void init_threadstate(struct threadstate *ts)
    StrLoc(ts->ksub) = "";
 
    ts->Kywd_ran = zerodesc;
+   IntVal(ts->Kywd_ran) = getrandom();
    ts->K_errornumber = 0;
    ts->K_level = 0;
    ts->T_errornumber = 0;
@@ -1947,6 +1949,41 @@ struct pstrnm *a, *b;
   return strcmp(a->pstrep, b->pstrep);
 }
 
+word getrandom()
+{
+#ifndef NoRandomize
+/*
+ * Set the random number seed randomly.
+ * This code attempts to use the same algorithm as in ipl/procs/random.icn
+ *   &random := map("sSmMhH", "Hh:Mm:Ss", &clock) +
+ *    map("YyXxMmDd", "YyXx/Mm/Dd", &date) + &time + 1009 * ncalls
+ */
+   static int ncalls = 0;
+   word krandom;
+   int i;
+   time_t t;
+   struct tm *ct;
+
+   MUTEX_LOCK(mutex_krandom, "mutex_krandom");
+   time(&t);
+   ct = localtime(&t);
+   /* map &clock */
+   krandom = ((ct->tm_sec % 10)*10+ct->tm_sec/10)*10+
+       ((ct->tm_min % 10)*10+ct->tm_min/10)*10+
+       ((ct->tm_hour % 10)*10+ct->tm_hour/10);
+   /* + map &date */
+   krandom += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday;
+   /* + map &time */
+   krandom += millisec();
+   ncalls++;
+   krandom += 1009 * ncalls;
+   MUTEX_UNLOCK(mutex_krandom, "mutex_krandom");
+   return krandom;
+#else					/* NoRandomize */
+   return 0;
+#endif					/* NoRandomize */
+}
+
 /*
  * datainit - initialize some global variables.
  */
@@ -2015,36 +2052,8 @@ void datainit()
       k_output.status = Fs_Write;
 
    IntVal(kywd_pos) = 1;
-#ifndef NoRandomize
-/*
- * Set the random number seed randomly.
- * This code attempts to use the same algorithm as in ipl/procs/random.icn
- *   &random := map("sSmMhH", "Hh:Mm:Ss", &clock) +
- *    map("YyXxMmDd", "YyXx/Mm/Dd", &date) + &time + 1009 * ncalls
- */
-   {
-   static int ncalls = 0;
-   int i;
-   time_t t;
-   struct tm *ct;
-   char sbuf[MaxCvtLen];
+   IntVal(kywd_ran) = getrandom();
 
-   time(&t);
-   ct = localtime(&t);
-   /* map &clock */
-   k_random = ((ct->tm_sec % 10)*10+ct->tm_sec/10)*10+
-       ((ct->tm_min % 10)*10+ct->tm_min/10)*10+
-       ((ct->tm_hour % 10)*10+ct->tm_hour/10);
-   /* + map &date */
-   k_random += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday;
-   /* + map &time */
-   k_random += millisec();
-   ncalls++;
-   k_random += 1009 * ncalls;
-   }
-#else
-   IntVal(kywd_ran) = 0;
-#endif
    StrLen(kywd_prog) = strlen(prog_name);
    StrLoc(kywd_prog) = prog_name;
    StrLen(k_subject) = 0;

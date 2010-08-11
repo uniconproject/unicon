@@ -2003,6 +2003,18 @@ static stringint siKeywords[] = {
 	 return  C_integer p->blocktotal;
 #endif					/* Concurrent */
 	 }
+      else if (strcmp(kname,"tallocated") == 0) {
+#if defined(Concurrent) && defined(ThreadHeap)
+	 /*
+	  * Preliminary version just reports space used in current regions.
+	  */
+	 suspend C_integer (curstring->free - curstring->base) +
+	    (curblock->free - curblock->base);
+	 suspend C_integer (curstring->free - curstring->base);
+	 suspend C_integer (curblock->free - curblock->base);
+#endif					/* Concurrent && ThreadHeap */
+	 fail;
+	 }
       else if (strcmp(kname,"collections") == 0) {
 	 suspend C_integer p->colltot;
 	 suspend C_integer p->collstat;
@@ -2321,10 +2333,14 @@ function{1} lock(x)
    if !cnv:C_integer(x) then
       runerr(101, x)
    abstract { return integer}
-   body{
+   body {
+      int rv;
       if (x<1 || x>nmutexes)
       	 irunerr(101, x);
-      pthread_mutex_lock(mutexes+x-1);
+      if ((rv=pthread_mutex_lock(mutexes+x-1)) != 0) {
+	 fprintf(stderr, "pthread lock failure %d\n", rv);
+	 exit(-1);
+	 }
       return C_integer 1;
       }
 end
@@ -2336,9 +2352,13 @@ function{1} unlock(x)
       runerr(101, x)
    abstract { return integer}
    body{
+      int rv;
       if (x<1 || x>nmutexes)
       	 irunerr(101, x);
-      pthread_mutex_unlock(mutexes+x-1);
+      if ((rv=pthread_mutex_unlock(mutexes+x-1)) != 0) {
+	 fprintf(stderr, "pthread unlock failure %d\n", rv);
+	 exit(-1);
+	 }
       return C_integer 1;
       }
 end
@@ -2350,9 +2370,13 @@ function{1} join(x)
      abstract { return coexpr }
      body {
 	struct context *n;
+	int rv;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
-	pthread_join(n->thread, NULL);
+	if ((rv=pthread_join(n->thread, NULL)) != 0) {
+	   fprintf(stderr, "pthread join failure %d\n", rv);
+	   exit(-1);
+	   }
 	/*}*/
 	return x;
 	}

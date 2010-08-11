@@ -1,0 +1,44 @@
+#
+# talloc.icn -- thread allocation report test
+#
+
+global thrd
+
+procedure main(argv)
+   gsum:=0
+   thrd:=[]
+
+   if *argv>0 then
+      n:=integer(argv[1]) | stop ("arg must be integer")
+    else
+      n:=1
+  
+   d:=10^8 / n
+   every i:=1 to n do {
+     th := create talloc(d, i)
+     put(thrd, th)
+     }
+
+   mutex_gsum := mutex()
+  
+   write("running ", *thrd , " thread(s) please wait... ")
+
+   t:=&now
+   every i:=1 to *thrd do
+      thread(thrd[i])
+
+   every i:=1 to *thrd do
+      join(thrd[i])
+
+   write("sum=",gsum)
+   
+   write("time:", &now-t, " seconds")
+end
+
+procedure talloc(d, id)
+    every i := 1 to 1000 do {
+	x := (? [list, table])(?100)
+    }
+    write("Thread ", id, " allocated ", keyword("tallocated", thrd[id]))
+end
+    

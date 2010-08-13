@@ -49,6 +49,9 @@
 #define PATH_MAX FILENAME_MAX
 #define MAXHOSTNAMELEN		256
 #else					/* NT */
+#ifndef NAME_MAX
+#define NAME_MAX _POSIX_NAME_MAX
+#endif					/* not defined NAME_MAX */
 #define SOCKET int
 #endif					/* NT */
 

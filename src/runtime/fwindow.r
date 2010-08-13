@@ -2695,11 +2695,9 @@ function{0,1} WinAssociate(ext)
       }
    body {
       FILE *f;
-      char fname[MAX_PATH];
-      char buf[MAX_PATH];
+      char *s, fname[MAX_PATH], buf[MAX_PATH];
       int l;
 
-      
       if (getenv_r("TEMP", fname, MAX_PATH-1) != 0) strcpy(fname, ".\\");
       if (fname[strlen(fname)-1] != '\\') strcat(fname, "\\");
       strcat(fname, "t.");
@@ -2727,8 +2725,7 @@ function{0,1} WinPlayMedia(argv[argc])
    body {
       wbp w;
       tended char *tmp;
-      int warg = 0;
-      int i;
+      int i, warg = 0;
       wsp ws;
       word n;
       OptWindow(w);

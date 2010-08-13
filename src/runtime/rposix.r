@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.42 2010-06-25 06:53:09 jeffery Exp $
+ * $Id: rposix.r,v 1.43 2010-08-13 09:43:57 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -507,8 +507,10 @@ struct b_record **rp;
 {
    int i;
    char mode[12], *user, *group;
+#if !NT
    struct passwd *pw, pwbuf;
    struct group *gr, grbuf;
+#endif					/* !NT */
    char buf[4096];
 
    dp->dword = D_Record;

@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.63 2010-06-03 16:17:07 to_jafar Exp $
+ * $Id: fxposix.ri,v 1.64 2010-08-13 09:39:03 jeffery Exp $
  */
 
 /*
@@ -1749,13 +1749,22 @@ function{0,1} name(t)
       int l;
       struct tm gmt;
 #if i
+#if HAVE_CTIME_R
       if ((p = ctime_r((time_t *)&t, buf)) == NULL) runerr(0);
+#else					/* HAVE_CTIME_R */
+      /* need to add mutex here for thread-safe version if Concurrent */
+      if ((p = ctime((time_t *)&t)) == NULL) runerr(0);
+#endif					/* HAVE_CTIME_R */
 #else
+#if HAVE_GMTIME_R && HAVE_ASCTIME_R
       if (gmtime_r((time_t *)&t, &gmt) == NULL) runerr(0);
       if ((p = asctime_r(&gmt, buf)) == NULL) runerr(0);
+#else					/* HAVE_GMTIME_R && HAVE_ASCTIME_R */
+      /* need to add mutex here for thread-safe version if Concurrent */
+      p = asctime(gmtime((time_t *)&t));
+#endif					/* HAVE_GMTIME_R && HAVE_ASCTIME_R */
 #endif
       l = strlen(p) - 1;
-      reserve(Strings, l);
       Protect(StrLoc(result) = alcstr(p, l), runerr(0));
       StrLen(result) = l;
       return result;
@@ -2435,7 +2444,9 @@ end
 function{0,1} getpw(u)
 
    declare {
-      struct passwd *pw, pwbuf;      
+#if !NT
+      struct passwd *pw, pwbuf;
+#endif					/* !NT */
       char buf[1024];
    }
    abstract {
@@ -2502,7 +2513,9 @@ end
 function{0,1} getgr(g)
 
    declare {
+#if !NT
       struct group *gr, grbuf;
+#endif					/* !NT */
       char buf[4096];
       }
    abstract {

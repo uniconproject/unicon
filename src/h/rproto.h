@@ -262,7 +262,10 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct);
 int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize);
 int ptputc(const char c, struct ptstruct *ptStruct);
 int ptflush(struct ptstruct *ptStruct);
-#endif                                        /* PseudoPty */
+#ifdef MSWindows
+struct b_list *findactivepty(struct b_list *lps);
+#endif					/* MSWindows */
+#endif					/* PseudoPty */
 int		pushact		(struct b_coexpr *ce, struct b_coexpr *actvtr);
 int		putstr		(FILE *f,dptr d);
 char		*qsearch	(char *key, char *base, int nel, int width,

@@ -235,7 +235,11 @@ void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
       }
    }
 
+#ifdef INTMAIN
+int iconx(int argc, char **argv);
+#else					/* INTMAIN */
 void iconx(int argc, char **argv);
+#endif					/* INTMAIN */
 
 jmp_buf mark_sj;
 

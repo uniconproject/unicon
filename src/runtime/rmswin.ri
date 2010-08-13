@@ -3553,12 +3553,12 @@ wbp w;
    {
    int i;
    wcp wc;
-   char *icnfnt, fnt[256];
+   char *icnfnt = NULL, fnt[256];
 
    GRFX_ALLOC(wc, _wcontext);
    
-   if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
-     icnfnt=NULL;
+   if (getenv_r("ICONFONT", icnfnt, 255 ) == 0)
+     icnfnt = fnt;
    
    wc->serial = ++context_serial;
    wc->bkmode = OPAQUE;        /* at present, only used in line drawing */
@@ -3604,12 +3604,12 @@ wbp w;
    wsp ws = w->window;
    wbinding tmp;
    int i;
-   char icnfnt, fnt[256];
+   char *icnfnt = NULL, fnt[256];
 
    GRFX_ALLOC(wc, _wcontext);
    
-   if (getenv_r("ICONFONT", icnfnt, 255 )!=0)
-     icnfnt=NULL;
+   if (getenv_r("ICONFONT", fnt, 255 ) == 0)
+     icnfnt=fnt;
    
    wc->serial = ++context_serial;
 

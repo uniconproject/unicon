@@ -1,0 +1,461 @@
+link basename, getpaths
+
+procedure main(av)
+#   write("ush: (", *av, ")")
+#   every write("\t", image(!av))
+   if av[1][-3:0] == ".sh" then {
+      runscript(av)
+      }
+   else {
+       if av[1] == "-c" then pop(av)
+#      write("directly execute")
+      line := ""
+      every line ||:= !av || " "
+      ush(line[1:-1])
+      }
+end
+
+procedure runlist(L)
+   saveLscript := Lscript
+   savei := Lscript_i
+   Lscript := L
+   Lscript_i := 1
+   while Lscript_i <= *Lscript do {
+      ush(Lscript[Lscript_i])
+      Lscript_i +:= 1
+      }
+   Lscript := saveLscript
+   Lscript_i := savei
+end
+
+global Lscript, Lscript_i, variables
+
+procedure runscript(av)
+#   write("script")
+   if fscript := open(av[1]) then {
+      write("opened ", av[1], " script")
+      pop(av)
+      Lscript := [ ]
+      Lscript_i := 1
+      tab(many(' \t'))
+      while line := read(fscript) do {
+         if Lscript[-1][-1] == "\\" then Lscript[-1][-1] := line
+         else put(Lscript, line)
+         }
+      close(fscript)
+      fscript := &null
+      runlist(Lscript)
+      }
+   else write("ush: can't open ", av[1])
+end
+
+procedure ush(s)
+#write("ush: ", image(s))
+   av := [ ]
+   s ? {
+      tab(many(' \t'))
+      if ="(" then {  # should do paren balancing; too much work for now
+	 subcmd := tab(find(")")) |stop("unclosed parentheses in\n  ",image(s))
+	 =")"
+#write("trying subcmd ", image(subcmd))
+	 i2 := system("sh.exe " || subcmd)
+	 tab(many(' \t'))
+	 if pos(0) then return
+	 if ="&&" then {
+#write("trying &&, i2 ", image(i2))
+	    if i2 ~=== 0 then exit(i2)
+	    return ush(tab(0))
+	    }
+	 else if ="||" then {
+#write("trying ||, i2 ", image(i2))
+	    if i2 === 0 then return
+	    return ush(tab(0))
+	    }
+	 else stop("syntax error after parens in\n  ",image(s))
+	 }
+
+       # perform variable substitution
+       while tab((i := find("$"))+1) do {
+	   var := tab(many(&letters++&digits++'_'))
+#	   write("var ", var, " replaced as ", variables[var])
+	   s := &subject := s[1:i] || (\variables)[var] || s[i+1+*var:0] |
+	       stop("can't variable substitute in\n\t", image(s))
+       }
+
+       # perform command substitutions
+       while tab((i := find("`"))+1) do {
+	   cmdsub := tab(find("`"))
+#if match("basename",cmdsub) then cmdsub[1:9] := "c:\\bin\\basename.exe"
+           if not (fcmd := open(cmdsub, "p")) then
+	       stop("popen failed ", image(cmdsub))
+	   cmdout := read(fcmd)
+	   close(fcmd)
+#	   write("cmdsub ", cmdsub, " replaced as ", cmdout)
+	   s := &subject := s[1:i] || cmdout || s[i+2+*cmdsub:0] |
+	       stop("can't command substitute in\n\t", image(s))
+       }
+
+      tab(many(' \t'))
+      while cmd := tab(many(&cset -- '= \t')) do {
+
+#write("cmd is ", cmd, " *av = ", *av)
+         # handle assignments, but only in initial position
+         if ="=" then {
+            if *av ~=== 0 then {
+		cmd ||:= "="
+		cmd ||:= tab(many(&cset -- ' \t'))
+#write("cmd revised to ", cmd)
+		put(av, cmd)
+		tab(many(' \t'))
+		next
+	    }
+	    tab(many(' \t'))
+	    if ="\"" then {
+		val := tab(find("\""))
+		move(1)
+		}
+	    else val := tab(many(&letters++&digits++'._'))
+	    setenv(cmd, val)
+#write("setting ", image(cmd), " -> ", image(val))
+            /variables := table()
+	    variables[cmd] := val
+         tab(many(' \t'))
+	    next
+	    }
+         tab(many(' \t'))
+         if cmd == "&&" then {
+             if (i := run(av)) ~= 0 then exit(i)
+             av := [ ]
+             }
+         else if cmd == "#" then {
+             if (i := run(av)) ~= 0 then exit(i)
+             av := [ ]
+	     return
+	     }
+         else if (av[1] ~=== "if") & (cmd[-1] == ";") then {
+	     if *cmd>1 then put(av, cmd[1:-1])
+             run(av)
+             av := [ ]
+             }
+          else {
+	      sizcmd := *av
+	      every put(av, glob(cmd))
+	      if *av = sizcmd then {
+		  write(image(s), ": no match")
+		  fail
+	      }
+	  }
+      }
+      if (i := run(av)) ~=== 0 then exit(i)
+   }
+end
+
+procedure cp(av)
+   if *av ~= 3 then stop("ush: cp file1 file2")
+   if not (fin := open(av[2])) then stop("can't copy from ", av[2])
+   if (sr := stat(av[3])).mode[1] == "d" then {
+      av[3] ||:= "\\" || basename(av[2])
+      }
+
+   if not (fout := open(av[3],"w")) then stop("can't copy to ", av[3])
+   while write(fout, read(fin))
+   close(fout)
+   close(fin)
+end
+
+procedure catt(av)
+   local fout
+   fout := &output
+   pop(av)              # discard "cat"
+   if match(">>", av[-1]) then {
+       if not (fout := open(av[-1][3:0],"a")) then
+	   stop("can't append to ", av[3])
+       pull(av)
+   }
+   else if match(">", av[-1]) then {
+       if not (fout := open(av[-1][3:0],"w")) then
+	   stop("can't write to ", av[3])
+       pull(av)
+   }
+   else if av[-2] == ">>" then {
+       if not (fout := open(av[-1],"a")) then
+	   stop("can't append to ", av[-1])
+       pull(av)
+       pull(av)
+   }
+   else if av[-2] == ">" then {
+       if not (fout := open(av[-1],"w")) then
+	   stop("can't write to ", av[-1])
+       pull(av)
+       pull(av)
+   }
+
+   every fn := !av do {
+      if not (fin := open(fn)) then stop("can't read ", av[2])
+      while write(fout, read(fin))
+      close(fin)
+      }
+   if fout ~=== &output then
+      close(fout)
+end
+
+#
+procedure mv(av)
+   if *av ~= 3 then stop("ush: mv file dest")
+   if not (fin := open(av[2])) then stop("can't move/read from ", av[2])
+   if (sr := stat(av[3])).mode[1] == "d" then {
+      av[3] ||:= "\\" || basename(av[2])
+      }
+   if not (fout := open(av[3],"w")) then stop("can't move to ", av[3])
+   while write(fout, read(fin))
+   close(fout)
+   close(fin)
+   remove(av[2])
+end
+
+procedure rm(av)
+   if av[-1] == "2>nul" then pull(av)
+   else if av[-1] == "nul" & av[-2] == "2>" then { pull(av); pull(av); }
+   every remove(!av)
+end
+
+procedure for(av)
+local varname
+   /variables := table()
+   pop(av)              # discard "for"
+   varname := pop(av)   # fetch variable name, e.g. "i"
+   pop(av)              # discard "in"
+
+   if /Lscript then stop("'for' with no apparent script")
+   Lscript_i +:= 1
+   line := Lscript[Lscript_i]
+   if trim(line, ' \t', 0) ~=== "do" then
+       stop("'do' expected on line after 'for', got ", image(line))
+   Lscript_i +:= 1
+   forstart := Lscript_i
+   numdo := 1
+   until (numdo = 0) | (Lscript_i > *Lscript) do {
+      line := Lscript[Lscript_i]
+      Lscript_i +:= 1
+      line ? {
+	  tab(many(' \t'))
+	  case tab(0) of {
+	      "do": numdo +:= 1
+	      "done": numdo -:= 1
+	      }
+          }
+       }
+   if numdo > 0 then stop("malformed 'for' block")
+   Lscript_i -:= 1 #points at "done", will advance to line after that
+   newList := Lscript[forstart : Lscript_i] # slice not including "done"
+
+   
+   every variables[varname] := !av do {
+     runlist(newList)
+   }
+end
+
+procedure echo(av)
+   pop(av) # drop the word "echo"
+   fout := &output
+   if av[-2] == ">>" then {
+      if not (fout := open(av[-1],"a")) then
+	  stop("can't append to ", av[-1])
+      pull(av); pull(av)
+   }
+   else
+   if av[-2] == ">" then {
+      if not (fout := open(av[-1],"w")) then
+	  stop("can't write to ", av[-1])
+      pull(av); pull(av)
+   } else if av[-1][1:3] == ">>" then {
+      if not (fout := open(av[-1][3:0],"a")) then
+	  stop("can't append to ", av[-1][3:0])
+      pull(av)
+   } else if av[-1][1] == ">" then {
+      if not (fout := open(av[-1][2:0],"w")) then
+	  stop("can't write to ", av[-1][2:0])
+      pull(av)
+   }
+
+   every writes(fout, !av, " ")
+   write(fout)
+   if fout ~=== &output then close(fout)
+end
+
+procedure md(av)
+   pop(av) # discard "mkdir"
+   if av[1][1] == "-" then pop(av) # discard options, perhaps should support
+   mkdir(av[1])
+end
+
+procedure iff(av)
+local cond
+
+#writes("if called as: (")
+#every writes(!av, " ")
+#write(")")
+
+   pop(av) # discard "if"
+   cond := [ ]
+   if av[1] == "!" then { ifnot := 1; pop(av) }
+   while av[1] ~=== "then" do put(cond, pop(av))
+   if cond[-1] === ";" then pull(cond)
+
+   i := run(cond)
+
+   #
+   # time for then-part
+   #
+
+   if *av == 1 then {
+      #  multi-line if
+      Lscript_i +:= 1
+      then_start := Lscript_i
+      until (trim(Lscript[Lscript_i],,0) == "fi") | (Lscript_i > *Lscript) do {
+	 Lscript_i +:= 1
+	 }
+      if trim(Lscript[Lscript_i],,0) == "fi" then {
+	 newList := Lscript[then_start : Lscript_i] # slice not including "fi"
+	 }
+      else stop("if without fi: ")
+      }
+
+   if (i===0 & /ifnot) | (i~===0 & \ifnot) then {
+      # test passed, execute then-part
+      if *av == 1 then {
+	 # executing separate-line then-part
+	 runlist(newList)
+	 }
+      else if av[1] == "then" then {
+	 pop(av)
+	 thenpart := [ ]
+	 while av[1] ~=== "fi" do put(thenpart, pop(av))
+	 if thenpart[1] == "{" then pop(thenpart)
+	 if thenpart[-1] == "}" then pull(thenpart)
+	 ush(stringify(thenpart))
+	 }
+      else stop("then expected")
+      }
+   else {
+      # skipping over then-part on *av words
+      if *av == 1 then {
+	 # skip over separate-line then-part
+	 }
+      else {
+	 while av[1] ~=== "fi" do pop(av)
+	 }
+      }
+end
+
+procedure stringify(L)
+   rv := ""
+   every rv||:= !L || " "
+   if *L>0 then rv := rv[1:-1]
+   return rv
+end
+
+procedure test(av)
+   case av[2] of {
+       "-f": {
+	   if (str := stat(av[3])) then {
+#	      write("test ",av[2]," ",av[3]," succeeded")
+	      return 0
+	   }
+	   else {
+#	      write("test ",av[2]," ",av[3]," failed")
+	      return -1
+	   }
+       }
+       default: {
+	   stop("don't know how to test ", image(av[2]))
+       }
+   }
+end
+
+# special shell conditions in [ ]
+procedure cond(L)
+    if not pop(L) == "[" then stop("conditional trouble")
+    if not pull(L) == "]" then stop("conditional trouble, missing ]")
+    case L[1] of {
+      "-f": { # should be more picky, and check whether L[2] is regular
+	  if stat(L[2]) then return 0
+          else return -1
+      }
+     }
+end
+
+# run command, return its exit code
+procedure run(av)
+   case av[1] of {
+   ""    : fail
+   "cat"  : catt(av)
+   "cd"  : {
+       chdir(av[2])
+   }
+   "cp"  : cp(av)
+   "for"  : for(av)
+   "if"  : iff(av)
+   "echo": echo(av)
+   "mkdir"  : md(av)
+   "rm"  : rm(av)
+   "mv"  : mv(av)
+   "test": return test(av)
+   "[" : return cond(av)
+   default: {
+      line := av[1]
+#  write("first searching for ", line, " in: ", getenv("PATH"))
+      every foo := ((".\\" | getpaths()) || line) do {
+         if stat(foo) then {
+	  line := foo
+	  if not (line[-4:0] == (".exe" | ".com" | ".bat")) then {
+             av[1] := line
+             runscript(av)
+             return
+	     }
+	  break
+          }
+        }
+
+      line ||:= " "
+      every line ||:= av[2 to *av] || " "
+      line := line[1:-1]
+      if line == "" then fail
+      write("ush: system(", line,") from ", chdir())
+      i := &null
+      i := system(line)
+      if i~===0 then
+         write(&errout, image(line), " returns ", image(i))
+      return i
+      }
+   }
+end
+
+# glob(s) - generate file-globbed matches for s
+procedure glob(s)
+dir := "."
+
+   if not find("*", s) then return s
+   if find("/", s) then {
+       every i := find("/",s)
+       dir := s[1:i]
+       s := s[i+1:0]
+   }
+   if not s[1 | -1]=="*" then
+       stop("only globbing at front or back so far in ", image(s))
+
+   if not (fdir := open(dir)) then {
+       stop("can't open ",image(dir)," in ", chdir(),
+	    "\n...wanted to glob ", image(s))
+   }
+#   write("globbing ", s, " in dir ", dir, " (chdir ", chdir(), ")")
+   while fnam := read(fdir) do {
+      if (s[1]=="*" & fnam[-(*s-1) : 0] == s[2:0]) |
+	  (s[-1]=="*" & fnam[1 : (*s)] == s[1:-1]) then {
+	      if dir ~== "." then suspend dir ||"\\"|| fnam
+	      else
+		  suspend fnam
+      }
+   }
+   close(fdir)
+end

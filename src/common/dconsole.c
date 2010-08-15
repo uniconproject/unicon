@@ -11,10 +11,11 @@ void exit(int);
 
 /* FILE *ConsoleBinding = NULL; moved to rwindow.r */
 
+struct threadstate roottstate, *curtstate = &roottstate;
+
 #ifdef MultiThread
 
 struct progstate rootpstate;
-
 struct progstate *curpstate = &rootpstate;
 
 #else
@@ -1004,3 +1005,22 @@ int strncasecmp(char *s1, char *s2, int n)
 
 #endif					/* NTGCC */
 #endif					/* ConsoleWindow */
+
+int
+getenv_r(const char *name, char *buf, size_t len)
+{
+   char *buf2 = getenv(name);
+   if (buf2) {
+      if (strlen(buf2) >= len) {
+	 errno = ERANGE;
+	 return -1;
+	 }
+      errno = 0;
+      strcpy(buf, buf2);
+      return 0;
+      }
+   else {
+      errno = ENOENT;
+      return -1;
+      }
+}

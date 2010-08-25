@@ -24,7 +24,7 @@ OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	idol.u preproce.u ytab_h.u yyerror.u unigram.u unicon.u \
 	classbrowser.u tree.u imgs.u utags.u matchparen.u printdlg.u
 
-UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u yyerror.u
+UNICONPACKAGE=idol.u preproce.u unicon.u tree.u unigram.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
 ifdef _WINDOWS_

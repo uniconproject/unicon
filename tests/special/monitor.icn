@@ -1,0 +1,13 @@
+#
+# if you can't do this much monitoring, the monitoring facilities do not work
+#
+link evinit
+
+procedure main()
+  if not (&features == "dynamic loading") then runerr(121)
+  if not (&features == "event monitoring") then runerr(121)
+  EvInit("1to10")
+  while EvGet() do {
+      write(ord(&eventcode), ": ", image(&eventvalue))
+  }
+end

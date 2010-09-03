@@ -798,18 +798,20 @@ class BuffEditableTextList : EditableTextList(
 
          # Call the preprocessor but instead of passing a file name, 
          # we will pass a list containing the code
+	 preproc_err_count := 0
          yyin := ""
          every yyin ||:= preprocessor(s, uni_predefs) do yyin ||:= "\n"
-
-         # Reinitilize lexical analyzer
-         yylex_reinit()
-         # Initialize variables
-         /yydebug := 0
-         UniconPackage::parsingErrors := []
-         # Reparse the code
-         rv := yyparse()
+	 if preproc_err_count = 0 then {
+	    # Reinitialize lexical analyzer
+	    yylex_reinit()
+	    # Initialize variables
+	    /yydebug := 0
+	    UniconPackage::parsingErrors := []
+	    # Reparse the code
+	    rv := yyparse()
+	    }
          # Display errors	
-         if errors + yynerrs > 0 then {
+         if errors + (\yynerrs|0) + preproc_err_count > 0 then {
             every errorObject := !parsingErrors do {
                # display the error
                errorObject.lineNumber +:= lineNumberOffset

@@ -128,9 +128,6 @@ procedure preprocessor(fname,predefined_syms)
     if type(fname) ~== "list" then
     	close(preproc_file)
     preproc_done()
-    if preproc_err_count > 0 then {
-        stop()      # force error exit (abruptly)
-    }
 end
 
 
@@ -597,9 +594,11 @@ procedure preproc_error(msg)
     if upto(non_shell_word_chars,filename) then {
         filename := image(filename)
     }
-    write(&errout,"File ",filename,"; Line ",preproc_line," # ",
-        "$" || \preproc_command || ": " | "",msg)
+    outTxt := "File " || filename || "; Line " || preproc_line || " # " ||
+        (("$" || \preproc_command || ": ") | "") || msg
     preproc_err_count +:= 1
+    /parsingErrors := []
+    push( parsingErrors, ParseError( preproc_line, outTxt))
     return
 end
 

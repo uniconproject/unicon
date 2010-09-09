@@ -939,7 +939,7 @@ char *argv[];
     * Set default string and block regions to 1% of physical memory.
     * Set the default interpreter stack size to (1%/4) of physical memory.
     */
-   { long l, onepercent;
+   { unsigned long l, onepercent;
      if (l = physicalmemorysize()) {
 	onepercent = l / 100;
 	if (rootstring.size < onepercent) rootstring.size = onepercent;
@@ -2154,9 +2154,11 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    if (coexp == NULL) return NULL;
    pstate = coexp->program;
    tstate = pstate->tstate;
+   tstate->Stack = (word *)((char *)(tstate+1) + icodesize);
+   tstate->Stackend = (word *)(((char *)(tstate->Stack)) + (stacksize/2));
 #ifdef StackCheck
-   coexp->es_stack = (word *)(pstate+1);
-   coexp->es_stackend = (word *)((char *)(pstate+1)+(stacksize/2));
+   coexp->es_stack = tstate->Stack;
+   coexp->es_stackend = tstate->Stackend;
 #endif					/* StackCheck */
    /*
     * Initialize values.
@@ -2317,7 +2319,20 @@ C_integer bs, ss, stk;
       return NULL;
 #endif					/* HAVE_LIBZ */
    /*
-    * Allocate memory for icode and the struct that describes it
+    * Allocate memory for icode, the struct that describes it, and the
+    * memory regions as follows.
+    *
+    * ----------------------
+    * | struct b_coexpr    |
+    * ----------------------
+    * | struct progstate   |
+    * ----------------------
+    * | struct threadstate |
+    * ----------------------
+    * | icode              |
+    * ----------------------
+    * | stack              |
+    * ----------------------
     */
    Protect(coexp = initprogram(hdr.hsize, stk, ss, bs),
     {fprintf(stderr,"can't malloc new icode region\n");c_exit(EXIT_FAILURE);});

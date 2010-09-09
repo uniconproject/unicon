@@ -1568,10 +1568,10 @@ void blkdump()
 #endif                                  /* DeBugIconx */
 
 
-long physicalmemorysize()
+unsigned long physicalmemorysize()
 {
    char buf[80], *p;
-   long i;
+   unsigned long i;
    FILE *f;
 #if UNIX
 #ifdef SUN

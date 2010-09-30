@@ -4220,11 +4220,18 @@ function{1} MatrixMode(argv[argc])
 end
 
 /* 
- * Texture (w, s) or Texture (w1, w2) 
- * 
+ * Texture(x) sets the current texture used in drawing 3D shapes.
+ * Texture(R) reuses an existing texture.
+ * Texture(s) sets a new texture from string s.
+ * Texture(w1,w2) sets a new texture from window w2.
+ * Texture(x, i) replace texture #i with what is in x.
+ * Texture(x, R) replace R's texture with what is in x.
+ * Texture(x, texturehandle) replaces a texture (and also sets
+ * it as the current texture).
+ * texturehandle is an integer or a (display list texture record).
  */
 
-"Texture(argv[]){1} - apply the texture defined by the string s or use the window w2 as a texture "
+"Texture([w], x) - apply the texture defined by the string or window x as a texture "
 
 function{1} Texture(argv[argc])
    abstract{ return record }
@@ -4270,15 +4277,35 @@ function{1} Texture(argv[argc])
       
       saved_tex = wc->curtexture;
 
-      if (argc - warg > 1) { /* replace an existing texture "name" */
-	 if (!cnv:C_integer(argv[warg + 1], theTexture)) {
+      /*
+       * Replace an existing texture "name".  In this case, we are setting
+       * the current texture (integer handle) and then expecting the later
+       * code which is processing argv[warg] to install on our handle.
+       * But the later code would normally put in a new texture.
+       */
+      if (argc - warg > 1) {
+	 if (is:record(argv[warg+1])) {
+	    if (!cnv:C_string(BlkD(argv[warg],Record)->fields[0], tmp))
+	       runerr(103, argv[warg]);
+	    if (strcmp(tmp, "Texture")) runerr(103, argv[warg]);
+	    /* Pull out the texture handle */
+	    theTexture = IntVal(BlkLoc(argv[warg])->Record.fields[2]);
+	    }
+	 else if (!cnv:C_integer(argv[warg + 1], theTexture)) {
 	    runerr(101, argv[warg+1]);
 	    }
-	 if (theTexture>=wc->ntextures) fail;
+	 if ((theTexture<0) || (theTexture>=wc->ntextures)) fail;
 	 theTexture++; /* should be check, probably no need for ++ */
-	 /*printf("DO WE EVER USE THIS ?\n");*/
+
 	 wc->curtexture = theTexture;
 	 }
+
+      /*
+       * Set the current texture.  It can either be set to a new texture
+       * (via string or window argument) or it be set to an existing
+       * texture (via integer code and display list Texture record).
+       */
+
       /* check if the source is a record */
       else if (is:record(argv[warg])) {
 	 C_integer texhandle;
@@ -4302,8 +4329,11 @@ function{1} Texture(argv[argc])
 	 c_put(&(w->window->funclist), &f);
 	 return f; 
 	 }
-      
-      if (is:file(argv[warg])) { /*check if the source is another window*/
+
+      /*
+       * If the source texture is another window's contents...
+       */
+      if (is:file(argv[warg])) {
 	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);
 	 if ((BlkLoc(argv[warg])->File.status & (Fs_Read|Fs_Write)) == 0)
@@ -4321,12 +4351,13 @@ function{1} Texture(argv[argc])
 	 
 	 /* convert the window into a texture */
          if (w2->context->is_3D)
-	    texwindow3D(w, w2);
+	    i = texwindow3D(w, w2);
 	 else
-	    texwindow2D(w, w2);
-	 i = Succeeded;
+	    i = texwindow2D(w, w2);
+
 	 if (i==Succeeded){
-	    wc->ntextures++;
+	    if (wc->curtexture == wc->ntextures)
+	       wc->ntextures++;
 	    MakeInt(wc->curtexture, &(rp->fields[2]));
 	    c_put(&(w->window->funclist), &f);
 	    return f;
@@ -4337,7 +4368,9 @@ function{1} Texture(argv[argc])
 	    }
 	 }
       else{
-	 /* otherwise it must be a string */
+	 /*
+	  * Otherwise it must be a string (probably, a filename).
+	  */
 	 if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
 	 i = settexture(w, tmp, strlen(tmp), &f, theTexture);
 	 

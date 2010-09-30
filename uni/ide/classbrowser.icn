@@ -47,7 +47,7 @@ class  ClassBrowser : Tree(
    # with a different image.
    ############################################################################
    method draw_line(xp, yp, i, selection_cw, cursor_cw, highlight_cw)
-      local N, dashed, lp, j, bmps, img, little
+      local N, dashed, lp, j, bmps, img, little, temp
 
       N := contents[i]
       dashed := Clone(self.cbwin, "pattern=gray", "fillstyle=textured")
@@ -166,13 +166,13 @@ class  ClassBrowser : Tree(
                system("cd")
                system("find . -name '" ||  N.label ||
                       "\'  > profile_account_settings_overlay..txt")
-	       ide.handle_openfile( ev, N.label)
+	       ide.handle_openfile( e, N.label)
                }
             if find(".cpp" | ".h",N.label) then {
                system("cd")
                system("find . -name '" ||  N.label || 
                       "\' > profile_account_settings_overlay..txt")
-	       ide.handle_openfile( ev, N.label)
+	       ide.handle_openfile( e, N.label)
                }
 
                # Normal click down
@@ -248,29 +248,21 @@ class  ClassBrowser : Tree(
    end
 
    method highlight_line(i)
-      start_handle(e)
-      if /i  then i := 1
-      if not(*contents >=  i > 1) then i := 1
-
-      mark_x := 1
-      mark_y := i
-      cursor_y := i
-      cursor_x := *contents[i] + 1
-      end_handle(e)
+      start_handle()
+      end_handle()
    end
 
    initially()
       self$Tree.initially() 
-      which_down := 1
       fileimgs := table()
       files_root := Tag("editor", "Editor",0, &null)
 end
 
 
 
-################################################################################
+#
 # class  Tag : is a subclass of Node used only to keep track of Node attribs
-################################################################################
+#
 class Tag : Node (
    type,        # Type is what kind of node it is (method, $include, procedure).
    lineno,      # The line number on which the Node occurs.

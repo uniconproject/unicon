@@ -66,6 +66,7 @@ procedure yystalists(node)
 end
 
 procedure yyprint(node)
+   local ini
    static lasttok
    repeat			# allows us to suppress tail recursion
    case type(node) of {
@@ -195,10 +196,12 @@ procedure yyprint(node)
 end
 
 procedure print_imports(node)
+local fn, tempp
    if type(node)=="treenode" & node.label=="lnklist" then {
       print_imports(node.children[1])
       print_imports(node.children[3])
-   } else if node.tok = (IDENT|STRINGLIT) then {
+      }
+   else if node.tok = (IDENT|STRINGLIT) then {
       tempp := Package(node.s)
       every fn := (\tempp.files).foreach() do {
          if map(fn)[-4:0]==".icn" then fn[-4:0] := ""
@@ -213,9 +216,9 @@ end
 # imported package it belongs to, or whether it belongs to the local package.
 #
 procedure mangle_sym(sym)
+local x, s, l
    initial {
       if \yydbg then {
-         dbg := 1
          write("imported syms:---")
          every x := !sort(imported) do {
             s := "["
@@ -255,9 +258,9 @@ end
 # as opposed to general symbols.
 #
 procedure mangle_class_sym(sym)
+local x, s, l
    initial {
       if \yydbg then {
-         dbg := 1
          write("imported class syms:---")
          every x := !sort(imported_classes) do {
             s := "["
@@ -391,7 +394,7 @@ end
 # Perform the superclass declaration scope-check for the class c.
 #
 procedure scopecheck_superclass_dec(c)
-   local tmp, x
+   local tmp, x, sc
 
    tmp := idTaque(":")
    x := c.supers_node
@@ -460,7 +463,7 @@ end
 # Scope-check the methods in class c
 #
 procedure scopecheck_methods(c)
-   local self_vars
+local self_vars, local_vars, m
    self_vars := set()
 
    every insert(self_vars, c.foreachmethod().name)
@@ -528,6 +531,7 @@ procedure scopecheck_expr(node, local_vars, self_vars)
 end
 
 procedure scopecheck_field(node, local_vars, self_vars)
+local lhs, rhs
    while type(node) == "treenode" & node.label === "field" do {
       lhs := node.children[1]
       rhs := node.children[3]
@@ -557,6 +561,7 @@ end
 # for example.
 #
 procedure extract_identifiers(node, res)
+local el
    /res := set()
    case type(node) of {
       "treenode": {
@@ -586,6 +591,7 @@ end
 # Useful debug function to recursively print a treenode.
 #
 procedure print_node(node, childindex, indent)
+local i, s
    /indent := 0
    /childindex := " "
    s := repl(" ", indent*3) || childindex || " "

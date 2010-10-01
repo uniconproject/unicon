@@ -3417,7 +3417,8 @@ function{1} DrawTorus(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int n, i, j, warg = 0, nfields, draw_code, slices, rings;
+      wcp wc;
+      int n, i, j, warg = 0, nfields, draw_code;
       double r1, r2, x, y, z;
       tended struct descrip f;
       tended struct b_record *rp;
@@ -3426,13 +3427,11 @@ function{1} DrawTorus(argv[argc])
 
       OptWindow(w);
       CheckArgMultiple(5);
-
-      bfmode = w->context->buffermode;
-      slices = w->context->slices;
-      rings = w->context->rings;
-	
+      
+      wc = w->context;
+      bfmode = wc->buffermode;
       /* tori are not allowed in a 2-dim space */
-      if (w->context->dim == 2) 
+      if (wc->dim == 2) 
          runerr(150);
 
       if (!constr && !(constr = rec_structor3d("gl_torus")))
@@ -3448,7 +3447,9 @@ function{1} DrawTorus(argv[argc])
          if (!cnv:C_double(argv[i+3], r1)) runerr(102, argv[i+3]);
          if (!cnv:C_double(argv[i+4], r2)) runerr(102, argv[i+4]);
 	 if (bfmode)
-	    torus(r1, r2, x, y, z, slices, rings, (w->context->texmode?w->context->autogen:0));
+	    torus(r1, r2, x, y, z, 
+		    wc->slices, wc->rings, 
+		   (wc->texmode?wc->autogen:0));
 	 /* create a record of the graphical object */	   
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
 	 f.dword = D_Record;
@@ -3460,8 +3461,6 @@ function{1} DrawTorus(argv[argc])
 	     fail;
 
          MakeInt(draw_code, &(rp->fields[1]));
-	 MakeInt(slices, &(rp->fields[7]));
-         MakeInt(rings,  &(rp->fields[8]));
 
          for(j = i; j < i + 5; j++)
 	    rp->fields[2 + j-i] = argv[j];
@@ -3553,7 +3552,7 @@ function{1} DrawSphere(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, i, j, nfields, draw_code, slices, rings;
+      int warg = 0, n, i, j, nfields, draw_code;
       double r, x, y, z;
       tended struct b_record *rp;
       tended struct descrip f;
@@ -3574,9 +3573,6 @@ function{1} DrawSphere(argv[argc])
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
       bfmode = wc->buffermode;
-      slices = wc->slices;
-      rings = wc->rings;
-
       for(i = warg; i < argc; i += 4) {
 
 	 /* convert parameters and draw a sphere */
@@ -3585,7 +3581,7 @@ function{1} DrawSphere(argv[argc])
 	 if (!cnv:C_double(argv[i+2], z))  runerr(102, argv[i+2]);
 	 if (!cnv:C_double(argv[i+3], r))  runerr(102, argv[i+3]); 
 	 if (bfmode)
-	    sphere(r, x, y, z, slices, rings, (wc->texmode?wc->autogen:0));
+	    sphere(r, x, y, z, wc->slices, wc->rings, (wc->texmode?wc->autogen:0));
 
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
@@ -3597,9 +3593,6 @@ function{1} DrawSphere(argv[argc])
          if (draw_code == -1)
 	     fail;
          MakeInt(draw_code, &(rp->fields[1]));
-
-	 MakeInt(slices, &(rp->fields[6]));
-         MakeInt(rings,  &(rp->fields[7]));
 
 	 /* put parameter in the list for the function */
 	 rp->fields[2] = argv[i];
@@ -3627,7 +3620,7 @@ function{1} DrawCylinder(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, i, j, nfields, draw_code, slices, rings;
+      int warg = 0, n, i, j, nfields, draw_code;
       double r1, r2, h, x, y, z;
       tended struct descrip f;
       tended struct b_record *rp;
@@ -3647,8 +3640,6 @@ function{1} DrawCylinder(argv[argc])
       nfields = (int) BlkD(*constr,Proc)->nfields;
 
       bfmode = wc->buffermode;
-      slices = wc->slices;
-      rings = wc->rings;
 
       for(i = warg; i < argc; i += 6) {
 
@@ -3660,7 +3651,7 @@ function{1} DrawCylinder(argv[argc])
 	 if (!cnv:C_double(argv[i+4], r1)) runerr(102, argv[i+4]);
 	 if (!cnv:C_double(argv[i+5], r2)) runerr(102, argv[i+5]);
 	 if (bfmode)
-	    cylinder(r1, r2, h, x, y, z, slices, rings, (wc->texmode ? wc->autogen : 0));
+	    cylinder(r1, r2, h, x, y, z, wc->slices, wc->rings, (wc->texmode ? wc->autogen : 0));
 	 /* create a record of the graphical object */
 	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
          f.dword = D_Record;
@@ -3672,8 +3663,6 @@ function{1} DrawCylinder(argv[argc])
              fail;
 
          MakeInt(draw_code, &(rp->fields[1]));
-	 MakeInt(slices, &(rp->fields[8]));
-         MakeInt(rings,  &(rp->fields[9]));
 
 	   /* put parameters in the list */
          for(j = i; j < i + 6; j++)
@@ -3699,7 +3688,7 @@ function{1} DrawDisk(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, j, i, nfields, draw_code, slices, rings;
+      int warg = 0, n, j, i, nfields, draw_code;
       double r1, r2, a1, a2, x, y, z;
       tended struct descrip f;
       static dptr constr;
@@ -3714,8 +3703,6 @@ function{1} DrawDisk(argv[argc])
       nfields = (int) BlkD(*constr, Proc)->nfields;
 
       bfmode = wc->buffermode;
-      slices = wc->slices;
-      rings = wc->rings;
 
       for (i = warg; i < argc; i += 7) {
 	 if (argc-warg <= i+3)
@@ -3731,8 +3718,6 @@ function{1} DrawDisk(argv[argc])
          if (draw_code == -1)
 	     fail;
          MakeInt(draw_code, &(rp->fields[1]));
-	 MakeInt(slices, &(rp->fields[9]));
-         MakeInt(rings,  &(rp->fields[10]));
 
 	 if (!cnv:C_double(argv[i], x))   runerr(102, argv[i]);
 	 if (!cnv:C_double(argv[i+1], y)) runerr(102, argv[i+1]);
@@ -3763,7 +3748,7 @@ function{1} DrawDisk(argv[argc])
 	    rp->fields[8] = argv[i+6];
 	    }
 	 if (bfmode)
-	    disk(r1, r2, a1, a2, x, y, z, slices, rings, (wc->texmode ? wc->autogen : 0));
+	    disk(r1, r2, a1, a2, x, y, z, wc->slices, wc->rings, (wc->texmode ? wc->autogen : 0));
          c_put(&(w->window->funclist), &f);
         }
       if (bfmode)

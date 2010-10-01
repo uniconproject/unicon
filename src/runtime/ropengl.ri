@@ -116,7 +116,7 @@ int init_3dcontext(wcp wc)
    wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
    wc->eyedirz = -100.0;
    wc->autogen = 1;
-   wc->normmode = 1;
+   wc->normode = 1;
    wc->normals = NULL;
    wc->texmode = wc->numtexcoords = 0;
    wc->texName = malloc(16 * sizeof(GLuint));
@@ -283,7 +283,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    if (dim == 3){
       if (!wc->texmode) {
          glBegin(type);
-	 if(wc->normmode==1)
+	 if(wc->normode==1)
 	    for (i = 0; i < num; i = i+3){
 	       if (i%9==0 && i+9<num){
 		  calcNormal(&v[i], &v[i+3], &v[i+6], n);
@@ -291,7 +291,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 	       }
 	       glVertex3d(v[i], v[i+1], v[i+2]);
 	       }
-	 else if(wc->normmode==2){
+	 else if(wc->normode==2){
 	    if (num > wc->numnormals) return Failed;
 	    for (i = 0; i < num; i = i+3){
 	       glNormal3dv(&(wc->normals[i]));
@@ -312,7 +312,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 
 	    glBegin(type);
-	    if(wc->normmode==1)
+	    if(wc->normode==1)
 	       for (i = 0; i < num; i = i+3){
 		  if (i%9==0 && i+9<num){
 		     calcNormal(&v[i], &v[i+3], &v[i+6], n);
@@ -320,7 +320,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 		     }
 		  glVertex3d(v[i], v[i+1], v[i+2]);
 		  }
-	    else if(wc->normmode==2){
+	    else if(wc->normode==2){
 	       if (num > wc->numnormals) return Failed;
 	       for (i = 0; i < num; i = i+3){
 		  glNormal3dv(&(wc->normals[i]));
@@ -341,7 +341,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
               return Failed;
 	    j = 0;
 	    
-	    if(wc->normmode==1){
+	    if(wc->normode==1){
 	       glBegin(type);
 	       for (i = 0; i < num; i = i+3){
 		  if (i%9==0 && i+9<num){
@@ -354,7 +354,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 		  }
 	       glEnd();
 	       }
-	    else if(wc->normmode==2){
+	    else if(wc->normode==2){
 	       if (num > wc->numnormals) return Failed;
 	       /*glEnableClientState(GL_VERTEX_ARRAY);
 	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1117,14 +1117,16 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 #define REDRAW_PICK 464
 #define REDRAW_MULTMATRIX 480
 #define REDRAW_NORMALS 496
-#define REDRAW_NORMOD 512
+#define REDRAW_NORMODE 512
+#define REDRAW_SLICES 528
+#define REDRAW_RINGS 544
 
 /*
  * Map 3D redrawing names to which switch case to use, and how many
  * real number arguments to convert.
  */
 stringint redraw3Dnames[] = {
-   { 0,			32 },		/* number of entries */
+   { 0,			34 },		/* number of entries */
    { "DrawCube",	REDRAW_CUBE | 4 },
    { "DrawCylinder",	REDRAW_CYLINDER | 6},
    { "DrawDisk",	REDRAW_DISK | 7 },
@@ -1155,7 +1157,9 @@ stringint redraw3Dnames[] = {
    { "Translate",	REDRAW_TRANSLATE | 3 },
    { "dim",		REDRAW_DIM },
    { "linewidth",	REDRAW_LINEWIDTH },
-   { "normode",		REDRAW_NORMOD },
+   { "normode",		REDRAW_NORMODE },
+   { "rings",		REDRAW_RINGS },
+   { "slices",		REDRAW_SLICES },
    { "texmode",		REDRAW_TEXMODE },
    };
 
@@ -1248,8 +1252,8 @@ int traversefunctionlist(wbp w)
 	 switch(tmp & ~0xf) {
 	 case REDRAW_TORUS:
 	    torus(v[3], v[4], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->Record.fields[7]),    /*  slices  */
-		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  rings   */
+		 wc->slices,				/*  slices  */
+		 wc->rings,				/*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_CUBE:
@@ -1257,20 +1261,20 @@ int traversefunctionlist(wbp w)
 	    break;
 	 case REDRAW_SPHERE:
 	    sphere(v[3], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->Record.fields[6]),    /*  slices  */
-		IntVal(BlkLoc(flist)->Record.fields[7]),    /*  rings   */
+		 wc->slices,				/*  slices  */
+		 wc->rings,				/*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_CYLINDER:
 	    cylinder(v[4], v[5], v[3], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->Record.fields[8]),    /*  slices  */
-		IntVal(BlkLoc(flist)->Record.fields[9]),    /*  rings   */
+		 wc->slices,				/*  slices  */
+		 wc->rings,				/*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_DISK:
 	    disk(v[3], v[4], v[5], v[6], v[0], v[1], v[2],
-		IntVal(BlkLoc(flist)->Record.fields[9]),    /*  slices  */
-		IntVal(BlkLoc(flist)->Record.fields[10]),   /*  rings   */
+		 wc->slices,				/*  slices  */
+		 wc->rings,				/*  rings   */
 		(wc->texmode?wc->autogen:0));
 	    break;
 	 case REDRAW_ROTATE:
@@ -1546,6 +1550,69 @@ int traversefunctionlist(wbp w)
                   glDisable(GL_TEXTURE_2D);
                wc->texmode = 0;
 	       }
+	    break;
+	 case REDRAW_SLICES:
+	    /* WAttrib("slices=...") */
+            if (used1<=1) {
+	       bp1=(struct b_lelem *) bp1->listnext;
+	       used1 = bp1->nused;
+	       k1 = bp1->first;
+	    }
+	    else {
+	       if (k1++>=bp1->nslots) k1=0;
+	       used1--;
+	    }
+	    var1 = bp1->lslots[k1];
+	    
+	    if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
+	    
+	    /* make sure slice is more than 0, otherwise just ignore */
+            if (num>0)
+	       wc->slices = num;
+	    break;
+	 case REDRAW_RINGS:
+	    /* WAttrib("rings=...") */
+            if (used1<=1) {
+	       bp1=(struct b_lelem *) bp1->listnext;
+	       used1 = bp1->nused;
+	       k1 = bp1->first;
+	    }
+	    else {
+	       if (k1++>=bp1->nslots) k1=0;
+	       used1--;
+	    }
+	    var1 = bp1->lslots[k1];
+	    
+	    if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
+	    
+	    /* make sure rings is more than 0, otherwise just ignore */
+            if (num>0)
+	       wc->rings = num;
+	    break;
+	 case REDRAW_NORMODE:
+	    /* WAttrib("normode=...") */
+            if (used1<=1) {
+	       bp1=(struct b_lelem *) bp1->listnext;
+	       used1 = bp1->nused;
+	       k1 = bp1->first;
+	    }
+	    else {
+	       if (k1++>=bp1->nslots) k1=0;
+	       used1--;
+	    }
+	    var1 = bp1->lslots[k1];
+	    
+	    if (!cnv:C_integer(var1, num)) goto free_v_and_fail;
+	    
+	    /* normals is off */
+            if (num==0)
+	       wc->normode = 0;
+	    /* normals is on */
+            if (num==2)
+	       wc->normode = 2;
+	    /* default is auto*/
+            else
+	       wc->normode = 1;
 	    break;
          case REDRAW_TEXCOORD:      /* Texcoord() or WAttrib("texcoord=...") */
             /*
@@ -2446,6 +2513,49 @@ int settexmode(wbp w, char* s)
    return Succeeded;
 }
 
+/* set the normal mode, on, off or auto */
+int setnormode(wbp w, char* s)
+{
+   tended struct descrip f;
+   struct descrip funcname, g;
+   tended struct b_list *func;
+   tended struct descrip mode;
+   wcp wc = w->context;
+   int draw_code;
+   
+   makecurrent(w);
+   /* create a list */
+   if ((func = alclist(0, MinListSlots)) == NULL)
+      return Failed;
+   f.dword = D_List;
+   f.vword.bptr = (union block*) func;
+   MakeStr("normode", 7, &funcname);
+   c_put(&f, &funcname);
+   
+   draw_code = si_s2i(redraw3Dnames, "normode");
+   if (draw_code == -1)
+      return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
+   
+   if (!strcmp("on", s))
+      wc->normode = 2;
+   else if (!strcmp("auto", s))
+      wc->normode = 1;
+   /* turn normals off */
+   else if (!strcmp("off", s))
+      wc->normode = 0;
+   /* not a valid normals mode so generate an error */
+   else
+      return Error;
+   
+   MakeInt(wc->normode, &mode);
+   c_put(&f, &mode);
+   c_put(&(w->window->funclist), &f);
+   return Succeeded;
+}
+
+
 /* set texture coordinates */
 int settexcoords(wbp w, char* s)
 {
@@ -2561,32 +2671,110 @@ int settexcoords(wbp w, char* s)
 }
 
 /* set the slices attribute */
-int setslices(wbp w, char *s)
+int setslices(wbp w, char* s)
 {
-   int slices;
+   tended struct descrip f;
+   struct descrip funcname, g;
+   tended struct b_list *func;
+   tended struct descrip val;
+   int draw_code, slices;
    wcp wc = w->context;
-
+   
+   makecurrent(w);
+   /* create a list */
+   if ((func = alclist(0, MinListSlots)) == NULL)
+      return Failed;
+   f.dword = D_List;
+   f.vword.bptr = (union block*) func;
+   MakeStr("slices", 6, &funcname);
+   c_put(&f, &funcname);
+   
+   draw_code = si_s2i(redraw3Dnames, "slices");
+   if (draw_code == -1)
+      return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
+   
    slices = atoi(s);
-   /* must be positive integer */
-   if (slices < 1 )
-      return Error;
-
-   w->context->slices = slices;
+   /* must be positive integer */   
+   if (slices <= 0) return Error;
+   MakeInt(slices, &val);
+   c_put(&f, &val);   
+   wc->slices = slices;
+   
+   c_put(&(w->window->funclist), &f);
    return Succeeded;
 }
 
 /* set the rings attribute */
-int setrings(wbp w, char *s)
+int setrings(wbp w, char* s)
 {
-   int rings;
+   tended struct descrip f;
+   struct descrip funcname, g;
+   tended struct b_list *func;
+   tended struct descrip val;
+   int draw_code, rings;
    wcp wc = w->context;
-
+   
+   makecurrent(w);
+   /* create a list */
+   if ((func = alclist(0, MinListSlots)) == NULL)
+      return Failed;
+   f.dword = D_List;
+   f.vword.bptr = (union block*) func;
+   MakeStr("rings", 5, &funcname);
+   c_put(&f, &funcname);
+   
+   draw_code = si_s2i(redraw3Dnames, "rings");
+   if (draw_code == -1)
+      return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
+   
    rings = atoi(s);
    /* must be positive integer */
-   if (rings < 1 )
-      return Error;
+   if (rings<=0) return Error;
+   MakeInt(rings, &val);
+   c_put(&f, &val);   
+   wc->rings = rings;
+   
+   c_put(&(w->window->funclist), &f);
+   return Succeeded;
+}
 
-   w->context->rings = rings;
+/* set the fovangle attribute */
+int setfov(wbp w, char* s)
+{
+   tended struct descrip f;
+   struct descrip funcname, g;
+   tended struct b_list *func;
+   tended struct descrip val;
+   int draw_code;
+   double fov;
+   wcp wc = w->context;
+   
+   makecurrent(w);
+   /* create a list */
+   if ((func = alclist(0, MinListSlots)) == NULL)
+      return Failed;
+   f.dword = D_List;
+   f.vword.bptr = (union block*) func;
+   MakeStr("fov", 3, &funcname);
+   c_put(&f, &funcname);
+   
+   draw_code = si_s2i(redraw3Dnames, "fov");
+   if (draw_code == -1)
+      return Failed;
+   MakeInt(draw_code, &g);
+   c_put(&f, &g);
+   
+   fov = atof(s);
+   BlkLoc(val) = (union block *)alcreal(fov);
+   val.dword = D_Real;
+   c_put(&f, &val);
+   wc->fov = fov;
+   
+   c_put(&(w->window->funclist), &f);
    return Succeeded;
 }
 
@@ -3618,11 +3806,11 @@ struct descrip gl_drawstring3d = {D_Null};
 struct descrip gl_mark = {D_Null};
 struct descrip gl_endmark = {D_Null};
 
-char * gl_torus_fields[] = {"radius1","radius2", "slices", "rings"};
+char * gl_torus_fields[] = {"radius1","radius2"};
 char * gl_cube_fields[] = {"length"};
-char * gl_sphere_fields[] = {"radius", "slices", "rings"};
-char * gl_cylinder_fields[] ={"height","radius1","radius2","slices", "rings"};
-char * gl_disk_fields[] = {"radius1","radius2", "angle1","angle2","slices", "rings"};
+char * gl_sphere_fields[] = {"radius"};
+char * gl_cylinder_fields[] ={"height","radius1","radius2"};
+char * gl_disk_fields[] = {"radius1","radius2", "angle1","angle2"};
 char * gl_rotate_fields[] = {"angle"};
 char * gl_matrixmode_fields[] = {"mode"};
 char * gl_meshmode_fields[] = {"mode"};
@@ -3667,15 +3855,15 @@ dptr rec_structor3d(char *name)
 {
 #ifdef Graphics3D
    if (!strcmp(name, "gl_torus"))
-      return rec_structinate(&gl_torus, "gl_torus", 9, gl_torus_fields);
+      return rec_structinate(&gl_torus, "gl_torus", 7, gl_torus_fields);
    else if (!strcmp(name, "gl_cube"))
       return rec_structinate(&gl_cube, "gl_cube", 6, gl_cube_fields);
    else if (!strcmp(name, "gl_sphere"))
-      return rec_structinate(&gl_sphere, "gl_sphere", 8, gl_sphere_fields);
+      return rec_structinate(&gl_sphere, "gl_sphere", 6, gl_sphere_fields);
    else if (!strcmp(name, "gl_cylinder"))
-      return rec_structinate(&gl_cylinder, "gl_cylinder", 10, gl_cylinder_fields);
+      return rec_structinate(&gl_cylinder, "gl_cylinder", 8, gl_cylinder_fields);
    else if (!strcmp(name, "gl_disk"))
-      return rec_structinate(&gl_disk, "gl_disk", 11, gl_disk_fields);
+      return rec_structinate(&gl_disk, "gl_disk", 9, gl_disk_fields);
    else if (!strcmp(name, "gl_rotate"))
       return rec_structinate(&gl_rotate, "gl_rotate", 6, gl_rotate_fields);
    else if (!strcmp(name, "gl_translate"))

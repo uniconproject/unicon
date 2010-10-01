@@ -3350,10 +3350,8 @@ char * abuf;
       case A_TEXMODE:
 	 AttemptAttr(settexmode(w, val));
 	 break;
-      case A_NORMMODE:
-	 if (!strcmp(val,"on")) wc->normmode=2;
-	 else if (!strcmp(val,"auto")) wc->normmode=1;
-	 else wc->normmode=0;
+      case A_NORMODE:
+	 AttemptAttr(setnormode(w, val));
 	 break;
       case A_SLICES:
 	AttemptAttr(setslices(w, val));
@@ -3361,9 +3359,12 @@ char * abuf;
       case A_RINGS:
 	AttemptAttr(setrings(w, val));
 	break;
-      case A_PICK:
-	AttemptAttr(setselectionmode(w, val));
+      case A_FOV:
+	AttemptAttr(setfov(w, val));
         break;
+      case A_PICK:
+	 AttemptAttr(setselectionmode(w, val));
+	 break;
       case A_BUFFERMODE: {
         if (!strcmp(val,"on")) wc->buffermode=BUFFERED3D;
         else wc->buffermode = IMMEDIATE3D;
@@ -3803,12 +3804,12 @@ char * abuf;
       case A_TEXMODE:
 	gettexmode( w, abuf, answer );
         break;
-      case A_NORMMODE:
-	 if (!wc->normmode){
+      case A_NORMODE:
+	 if (!wc->normode){
 	    strcpy(abuf, "off");
 	    MakeStr(abuf, 3, answer); 
 	 }
-	 else if (wc->normmode==1){
+	 else if (wc->normode==1){
 	    strcpy(abuf, "auto");
 	    MakeStr(abuf, 4, answer); 
 	 }
@@ -4629,6 +4630,7 @@ stringint attribs[] = {
    {"fheight",		A_FHEIGHT},
    {"fillstyle",	A_FILLSTYLE},
    {"font",		A_FONT},
+   {"fovangle",		A_FOV},
    {"fwidth",		A_FWIDTH},
    {"gamma",		A_GAMMA},
    {"geometry",		A_GEOMETRY},
@@ -4654,6 +4656,7 @@ stringint attribs[] = {
    {"linestyle",	A_LINESTYLE},
    {"linewidth",	A_LINEWIDTH},
    {"meshmode",		A_MESHMODE},
+   {"normode",		A_NORMODE},
    {"pattern",		A_PATTERN},
    {"pick",		A_PICK},
    {"pointer",		A_POINTER},

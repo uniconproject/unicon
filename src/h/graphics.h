@@ -454,9 +454,11 @@ typedef struct _wcontext {
   double        eyeupx, eyeupy, eyeupz;	   /* eye up vector */
   double        eyedirx, eyediry, eyedirz; /* eye direction vector */
   double        eyeposx, eyeposy, eyeposz; /* eye position */
+
+  double        fov; 		/* field of view angle */
   
   double        *normals;		/* vertex normals data */
-  int           normmode;	    	/* normals on, off or auto */
+  int           normode;	    	/* normals on, off or auto */
   int           numnormals;           /* # of normals used */
 
   int           autogen;  /* flag to automatically generate texture coordinate */
@@ -744,12 +746,13 @@ typedef struct
 #define A_TITLEBAR      77
 #define A_BUFFERMODE    78
 #define A_MESHMODE      79
-#define A_SLICES        80
-#define A_RINGS         81
-#define A_PICK          82
-#define A_NORMMODE      83
+#define A_SLICES	80
+#define A_RINGS		81
+#define A_PICK   	82
+#define A_NORMODE       83
+#define A_FOV       	84
 
-#define NUMATTRIBS	83
+#define NUMATTRIBS	84
 
 #define XICONSLEEP	20 /* milliseconds */
 

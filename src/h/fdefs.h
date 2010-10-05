@@ -412,14 +412,7 @@ FncDef(fetch,2)
   FncDefV(WindowContents)
   FncDefV(WSection)
 
-#ifdef Arrays
-  /* temporary / subject to change or elimination */
-  FncDefV(IntArray)
-  FncDefV(IntArrayElem)
-  FncDefV(RealArray)
-  FncDefV(RealArrayElem)
-  FncDefV(ArrayToList)
-#endif					/* Arrays */
+  FncDefV(array)
 
 #ifdef Concurrent
   FncDef(thread,1)

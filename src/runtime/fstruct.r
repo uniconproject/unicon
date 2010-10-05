@@ -1790,302 +1790,78 @@ end
 #ifdef Arrays
 
 /*
- * Temporary / experimental!  Subject to change or deletion.
+ * array(dim1,...,dimN,initvalue) allocate an array.
  */
-
-/*
- * IntArray(dim1,...,dimN,initvalue) allocate an int array.
- * 
- */
-function{1} IntArray(x[n])
+function{1} array(x[n])
    abstract {
-      return new list(integer)
+      return new list(integer++real)
       }
    body {
       tended struct descrip d;
       struct b_intarray *dims = NULL;
-      word *a;
+      word *a_ip;
+      double dv, *a_dp;
       C_integer ci;
       int num = 1;
       int i;
-      int bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
-      for(i=0;i<n;i++){
-	 if (!cnv:C_integer(x[i], ci)) runerr(101, x[i]);
-	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
-	 }
-      for(i=0;i<n-1;i++) num *= IntVal(x[i]);
-
-      if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) runerr(0);
-
-      d.vword.bptr = (union block *)
-	 alclisthdr(num, (union block *)alcintarray(num));
-      d.dword = D_List;
-      if (n>2) {
-	 dims = alcintarray(n-1);
-	 for (i=0;i<n-1;i++) dims->a[i] = IntVal(x[i]);
-	 d.vword.bptr->List.listhead->Intarray.dims = (union block *)dims;
-	 }
-      a = d.vword.bptr->List.listhead->Intarray.a;
-      for(i=0; i<num; i++)
-	 a[i] = IntVal(x[n-1]);
-      return d;
-      }
-end
-
-/*
- * get/set array element; to be replaced by syntax support.
- * In version 0, since dimension == 1, n==1 means get, n==2 means set.
- */
-function{1} IntArrayElem(a, x[n])
-   len_case n of {
-      0: {
-	 runerr(130);
-	 }
-      1: { /* simplest, special-case get */
-	 abstract {
-	    return integer
-	    }
-	 inline {
-	    C_integer ci, cnew;
-	    int i, j, ndims, base = 0;
-	    struct b_list *lp = BlkD(a, List);
-	    struct b_intarray *ap = (struct b_intarray *)(lp->listhead);
-	    /* Need to check that ap is a block pointer type of descriptor. */
-	    if (ap->title != T_Intarray) runerr(123,a);
-
-	    if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
-	    if (ci <= 0) { /* not doing negative subscripts for now */
-	       runerr(101, x[0]);
-	       }
-	    if (ci > ((ap->blksize - sizeof(struct b_intarray) + sizeof(word))/
-		      sizeof(word)))
-	       runerr(101, x[i]);
-
-	    /* get element */
-	    return C_integer ap->a[ci-1];
-	    }
-	 }
-      2: { /* 1D set or 2D get */
-	 abstract {
-	    return integer
-	    }
-	 inline {
-	    C_integer ci, cnew;
-	    int i, j, ndims, base = 0;
-	    struct b_list *lp = BlkD(a, List);
-	    struct b_intarray *ap = (struct b_intarray *)(lp->listhead);
-	    /* Need to check that ap is a block pointer type of descriptor. */
-	    if (ap->title != T_Intarray) runerr(123,a);
-	    ndims = (ap->dims?
-	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
-		 sizeof(word)) / sizeof(word))
-	       : 1);
-
-	    if (ndims == 1) { /* do a set */
-
-	       if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
-	       if (ci <= 0) { /* not doing negative subscripts for now */
-		  runerr(101, x[0]);
-		  }
-	       if (ci > ((ap->blksize - sizeof(struct b_intarray) +
-			  sizeof(word))/sizeof(word)))
-		  runerr(101, x[i]);
-
-	       /* set element */
-	       if (!cnv:C_integer(x[1], cnew)) runerr(101, x[1]);
-	       ap->a[ci-1] = cnew;
-	       return C_integer cnew;
-	       }
-
-	    else { /* ndims had better be == 2, do a get */
-
-	       if (n < ndims) runerr(130);
-
-	       if (!cnv:C_integer(x[0], ci)) runerr(101, x[0]);
-	       if (ci <= 0) { /* not doing negative subscripts for now */
-		  runerr(101, x[0]);
-		  }
-	       if (ci > ap->dims->Intarray.a[0])
-		  runerr(101, x[0]);
-
-	       if (!cnv:C_integer(x[1], ci)) runerr(101, x[1]);
-	       if (ci <= 0) { /* not doing negative subscripts for now */
-		  runerr(101, x[1]);
-		  }
-	       if (ci > ap->dims->Intarray.a[1])
-		  runerr(101, x[1]);
-
-	       /*
-		* Update the base subscript.
-		* base subscript + last dimension subscript = total subscript
-		*/
-
-	       base += ap->dims->Intarray.a[1] * (IntVal(x[0])-1);
-
-	       /* get element */
-	       return C_integer ap->a[base + ci-1];
-	       }
-	    }
-	 }
-
- default: {
-   abstract {
-      return integer
-      }
-   inline {
-      C_integer ci, cnew;
-      int i, j, ndims=1, base = 0;
-      struct b_list *lp = BlkD(a, List);
-      struct b_intarray *ap = (struct b_intarray *)(lp->listhead);
-#if 0
-      /* need to check that ap is a block pointer type of descriptor first */
-      if (ap->title != T_Intarray) runerr(123,a);
-      if (ap->dims)
-	 ndims = ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) +
-		   sizeof(word)) / sizeof(word));
-      if (n < ndims) runerr(130);
-      for(i=0;i<ndims;i++) {
-#endif
-         if (!cnv:C_integer(x[i], ci)) runerr(101, x[0]);
-	 if (ci <= 0) { /* not doing negative subscripts for now */
-	    runerr(101, x[0]);
-	    }
-	 if (ci > ((ndims == 1) ? ((ap->blksize-sizeof(struct b_intarray))/sizeof(word))+1 : ap->dims->Intarray.a[i]))
-	    runerr(101, x[i]);
-#if 0
-	 }
+      int bsize;
+      int i_or_real = 0;
 
       /*
-       * Update the base subscript.
-       * base subscript + last dimension subscript = total subscript
+       * Prepare dimensions.
+       * Calculate total # of elements for n-dimensional array.
        */
-      if (ndims > 1) {
-	 for (i=0;i<ndims-1;i++) {
-	    int forthisi = 1;
-	    for(j=i+1;j<ndims;j++) forthisi *= ap->dims->Intarray.a[j];
-	    base += forthisi * (IntVal(x[i])-1);
-	    }
-	 }
-#endif
-
-      if (n == ndims) {
-	 /* get element */
-	 return C_integer ap->a[/*base +*/ ci-1];
-	 }
-      else /* if (n == ndims + 1) */ {
-	 /* set element */
-         if (!cnv:C_integer(x[n-1], cnew)) runerr(101, x[n-1]);
-	 ap->a[/* base +*/ ci-1] = cnew;
-	 return C_integer cnew;
-	 }
-/*      else runerr(130); */
-      }
-   }
-    }
-end
-
-function{1} RealArray(x[n])
-   abstract {
-      return new list(real)
-      }
-   body {
-      tended struct descrip d;
-      struct b_intarray *dims = NULL;
-      double dv, *a;
-      C_integer ci;
-      int num = 1;
-      int i;
-      int bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
       for(i=0;i<n-1;i++){
 	 if (!cnv:C_integer(x[i], ci)) runerr(101, x[i]);
 	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
 	 }
-      if (!cnv:C_double(x[i], dv)) runerr(101, x[i]);
       for(i=0;i<n-1;i++) num *= IntVal(x[i]);
-      
+
+      /*
+       * Decide whether we are doing the IntArray or RealArray.
+       */
+      if (cnv:(exact)C_integer(x[n-1], ci)) {
+	 i_or_real = 1; /* integer */
+	 bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
+	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
+	 }
+      else if (cnv:C_double(x[n-1], dv)) {
+	 i_or_real = 2; /* real */
+	 bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
+	 }
+      else runerr(102, x[n-1]);
+
       if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) runerr(0);
-      
-      d.vword.bptr = (union block *)
-	 alclisthdr(num, (union block *)alcrealarray(num));
+
+      if (i_or_real == 1)
+	 d.vword.bptr = (union block *) alclisthdr(num,
+	 (union block *)alcintarray(num));
+      else
+	 d.vword.bptr = (union block *) alclisthdr(num,
+	 (union block *)alcrealarray(num));
       d.dword = D_List;
 
       if (n>2) {
 	 dims = alcintarray(n-1);
 	 for (i=0;i<n-1;i++) dims->a[i] = IntVal(x[i]);
-	 d.vword.bptr->List.listhead->Realarray.dims = (union block *)dims;
+	 if (i_or_real == 1)
+	    d.vword.bptr->List.listhead->Intarray.dims = (union block *)dims;
+	 else
+	    d.vword.bptr->List.listhead->Realarray.dims = (union block *)dims;
 	 }
-      a = d.vword.bptr->List.listhead->Realarray.a;
-      for(i=0; i<num; i++) a[i] = dv;
+
+      if (i_or_real == 1) {
+	 a_ip = d.vword.bptr->List.listhead->Intarray.a;
+	 for(i=0; i<num; i++) a_ip[i] = IntVal(x[n-1]);
+	 }
+      else {
+	 a_dp = d.vword.bptr->List.listhead->Realarray.a;
+	 for(i=0; i<num; i++) a_dp[i] = dv;
+	 }
+
       return d;
       }
 end
-
-/*
- * get/set array element; to be replaced by syntax support.
- * In version 0, since dimension == 1, n==1 means get, n==2 means set.
- */
-function{1} RealArrayElem(a,x[n])
-   abstract {
-      return real
-      }
-   body {
-      C_integer ci;
-      double cnew;
-      int i, j, ndims, base = 0;
-      struct b_list *lp = BlkD(a, List);
-      struct b_realarray *ap = (struct b_realarray *)(lp->listhead);
-      /* need to check that ap is a block pointer type of descriptor first */
-      if (ap->title != T_Realarray) runerr(123,a);
-      ndims = (ap->dims?
-	       ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
-	       : 1);
-      if (n < ndims) runerr(130);
-      for(i=0;i<ndims;i++) {
-         if (!cnv:C_integer(x[i], ci)) runerr(101, x[0]);
-	 if (!is:integer(x[i])) MakeInt(ci, &(x[i]));
-	 if (ci <= 0) { /* not doing negative subscripts for now */
-	    runerr(101, x[0]);
-	    }
-	 if (ci > ((ndims == 1) ? ((ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double)) : ap->dims->Realarray.a[i]))
-	    runerr(101, x[i]);
-	 }
-
-      /*
-       * Update the base subscript.
-       * base subscript + last dimension subscript = total subscript
-       */
-      if (ndims > 1) {
-	 for(i=0;i<ndims-1;i++) {
-	    int forthisi = 1;
-	    for(j=i+1;j<ndims;j++) forthisi *= ap->dims->Intarray.a[j];
-	    base += forthisi * (IntVal(x[i])-1);
-	    }
-	 }
-
-      if (n == ndims) {
-	 /* get element */
-	 return C_double ap->a[base + ci-1];
-	 }
-      else if (n == 2) {
-	 /* set element */
-         if (!cnv:C_double(x[n-1], cnew)) runerr(101, x[n-1]);
-	 ap->a[base + ci-1] = cnew;
-	 return C_double cnew;
-	 }
-      else runerr(130);
-      }
-end
-
-function{1} ArrayToList(a)
-abstract {
-   return new list(real) ++ new list(integer)
-}
-body {
-   if (arraytolist(&a)==Succeeded)
-      return a;
-   else
-      fail;
-}
-end
-
+#else					/* Arrays */
+MissingFuncV(array)
 #endif					/* Arrays */

@@ -675,6 +675,10 @@ Deliberate Syntax Error
    #define PseudoPty
 #endif					/* PseudoPty */
 
+#ifndef NoArrays
+   #define Arrays
+#endif					/* Arrays */
+
 #ifndef ExecSuffix
    #define ExecSuffix ""
 #endif					/* ExecSuffix */

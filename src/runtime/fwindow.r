@@ -751,7 +751,7 @@ function{1} DrawLine(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0, draw_code;
+      int i, j, n, warg = 0;
       XPoint points[MAXXOBJS];
       int dx, dy;
       double x1,x2,y1,y2;
@@ -785,51 +785,42 @@ function{1} DrawLine(argv[argc])
 	 }
 
       if (w->context->is_3D){
-         double *v, v2[256];  
-         struct descrip funcname, g;        /* do not need to be tended */
+	 word num, start=0;
          tended struct descrip f;
-         tended struct b_list *func;
+	 tended struct descrip d;
+	 tended struct b_realarray *ap;
 
          /* create a list to keep track of function information */
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawLine", 8, &funcname);
-         c_put(&f, &funcname);
+	 if (create3Dlisthdr(&f, "DrawLine", 4)!=Succeeded)
+	   fail;
 
-         draw_code = si_s2i(redraw3Dnames, "DrawLine");
-         if (draw_code == -1)
-	     fail;
-         MakeInt(draw_code, &g);
-
-         c_put(&f, &g);
-
-	 if (argc-warg > 256) {
-	    v = calloc(argc-warg, sizeof (double));
-	    if (v == NULL) runerr(305);
-	    }
-	 else v = v2;
-
-         /* convert arguments to doubles and put them in the list */
-         for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i])) {
-	       if (v != v2) free(v);
-               runerr(102, argv[warg+i]);
-	       }
-            c_put(&f, &argv[warg+i]);
-            }
+	 /* check if the argument is a list */
+	 if (is:list(argv[warg]))
+	   num= BlkD(argv[warg], List)->size;
+	 else{
+	   num = argc-warg;
+	   start = warg;
+	  }
+	  
+	  /* Check the number of coordinates*/
+	  if (num%w->context->dim != 0 || num<w->context->dim*2)
+	    runerr(146);
+	    
+	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	   runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	 c_put(&f, &d);
+	 
          c_put(&(w->window->funclist), &f);
 
-         /* draw the lines */
-         CheckArgMultiple(w->context->dim);
+	 /* draw the lines */
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, argc-warg, GL_LINE_STRIP, w->context->dim);
+	    drawpoly(w, ap->a, num, GL_LINE_STRIP, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
 	    }
-	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
          }
@@ -869,12 +860,10 @@ function{1} DrawPoint(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0, draw_code;
+      int i, j, n, warg = 0;
       XPoint points[MAXXOBJS];
       int dx, dy;
-
       double x,y;
-      double *v, v2[256];
       int int_x, int_y;
       int is_texture=0, base=0;
       int texhandle;
@@ -900,48 +889,42 @@ function{1} DrawPoint(argv[argc])
 	 }
   
       if (w->context->is_3D) {
-         double *v, v2[256];   
-         struct descrip funcname, g;		/* do not need to be tended */
+	 word num, start=0;
          tended struct descrip f;
-         tended struct b_list *func;
+	 tended struct descrip d;
+	 tended struct b_realarray *ap;
+	 
 
-         /* create a list to store function information */
-         Protect(func = alclist(0, MinListSlots), runerr(0)); 
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawPoint", 9, &funcname);
-         c_put(&f, &funcname);
-
-         draw_code = si_s2i(redraw3Dnames, "DrawPoint");
-         if (draw_code == -1)
-	     fail;
-         MakeInt(draw_code, &g);
-         c_put(&f, &g);
-
-	 if (argc-warg > 256) {
-	    v = calloc(argc-warg, sizeof (double));
-	    if (v == NULL) runerr(305);
-	    }
-	 else v = v2;
-
-         /* convert the arguments and store them in the list */
-         for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i])) {
-	       if (v != v2) free(v);
-               runerr(102, argv[warg+i]);
-	       }
-            c_put(&f, &argv[warg+i]);
-	    }
+	 /* create a list to store function information */
+	 if (create3Dlisthdr(&f, "DrawPoint", 4)!=Succeeded)
+	   fail;
+	 
+	 /* check if the argument is a list */
+	 if (is:list(argv[warg]))
+	   num= BlkD(argv[warg], List)->size;
+	 else{
+	   num = argc-warg;
+	   start = warg;
+	 }
+	 
+	 /* Check the number of coordinates*/
+	 if (num%w->context->dim!=0)
+	   runerr(146);
+	 
+	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	   runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	 c_put(&f, &d);
+	 
          c_put(&(w->window->funclist), &f);
-         CheckArgMultiple(w->context->dim);
+
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, argc-warg, GL_POINTS, w->context->dim);
+	    drawpoly(w, ap->a, num, GL_POINTS, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
 	    }
-	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
 	 }
@@ -980,57 +963,47 @@ function{1} DrawPolygon(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, base, dx, dy, warg = 0, draw_code;
+      int i, j, n, base, dx, dy, warg = 0;
       XPoint points[MAXXOBJS];
       OptWindow(w);
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double *v, v2[256]; 
-         struct descrip funcname, g;   /* do not need to be tended */
+	 word num, start=0;
          tended struct descrip f;
-         tended struct b_list *func;
+	 tended struct descrip d;
+	 tended struct b_realarray *ap;
       
          /* create a list for function information */
-         Protect(func = alclist(0, MinListSlots), runerr(0));  
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawPolygon", 11, &funcname);
-         c_put(&f, &funcname);
-
-         draw_code = si_s2i(redraw3Dnames, "DrawPolygon");
-         if (draw_code == -1) {
-	     fail;
-             }
-         MakeInt(draw_code, &g);
-         c_put(&f, &g);
-
-	 if (argc-warg > 256) {
-	    v = calloc(argc-warg, sizeof (double));
-	    if (v == NULL) runerr(305);
-	    }
-	 else v = v2;
-
-         /* convert the arguments and put them in the list */
-         for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i])) {
-	       if (v != v2) free(v);
-               runerr(102, argv[warg+i]);
-	       }
-            c_put(&f, &argv[warg+i]);
-	    }
+	 if (create3Dlisthdr(&f, "DrawPolygon", 4)!=Succeeded)
+	   fail;
+	 
+	 /* check if the argument is a list */
+	 if (is:list(argv[warg]))
+	   num= BlkD(argv[warg], List)->size;
+	 else{
+	   num = argc-warg;
+	   start = warg;
+	  }
+	  /* Check the number of coordinates*/
+	  if (num%w->context->dim!=0 || num<3*w->context->dim)
+	    runerr(146);
+	  
+	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	   runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	 c_put(&f, &d);
+	 
          c_put(&(w->window->funclist), &f);
  
          /* draw the polygon */
-         CheckArgMultiple(w->context->dim);
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, argc-warg, GL_LINE_LOOP /* w->context->meshmode*/, w->context->dim);
+	    drawpoly(w, ap->a, num, GL_LINE_LOOP /* w->context->meshmode*/, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
 	    }
-	 if (v != v2) free(v);
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
 	 }
@@ -1128,50 +1101,42 @@ function{1} DrawSegment(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double *v, v2[256];
-         struct descrip funcname, g;	/* do not need to be tended */
+	 word num, start=0;
          tended struct descrip f;
-         tended struct b_list *func;
+	 tended struct descrip d;
+	 tended struct b_realarray *ap;
 
          /* create a list for function information */
-         Protect(func = alclist(0, MinListSlots), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func; 
-         MakeStr("DrawSegment", 11, &funcname);
-         c_put(&f, &funcname);
-
-         draw_code = si_s2i(redraw3Dnames, "DrawLine");
-         if (draw_code == -1) 
-	     fail;
-         MakeInt(draw_code, &g);
-         c_put(&f, &g);
-
-	 if (argc-warg > 256) {
-	    v = calloc(argc-warg, sizeof (double));
-	    if (v == NULL) runerr(305);
-	    }
-	 else v = v2;
-
-         /* convert the arguments and save the values in the list */
-         for (i = 0; i<argc-warg; i++){
-            if (!cnv:C_double(argv[warg + i], v[i])) {
-	       if (v != v2) free(v);
-               runerr(102, argv[warg+i]);
-	       }
-            c_put(&f, &argv[warg+i]);
-	      }
-
+	 if (create3Dlisthdr(&f, "DrawSegment", 4)!=Succeeded)
+	   fail;
+	 
+	 /* check if the argument is a list */
+	 if (is:list(argv[warg]))
+	   num= BlkD(argv[warg], List)->size;
+	 else{
+	   num = argc-warg;
+	   start = warg;
+	  }
+	  
+	  /* Check the number of coordinates*/
+	  if (num%(2*w->context->dim) != 0)
+	    runerr(146);
+	  
+	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	   runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	 c_put(&f, &d);
+	 
          /* draw the line segments */
          c_put(&(w->window->funclist), &f);
-         CheckArgMultiple(w->context->dim);
+
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, argc-warg, GL_LINES, w->context->dim);
+	    drawpoly(w, ap->a, argc-warg, GL_LINES, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
 	    }
-	 if (v != v2) free(v);
 	 redraw3D(w);
 	 return f;
 	 }
@@ -1576,57 +1541,37 @@ function{1} FillPolygon(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0, num, draw_code;
+      int i, n, warg = 0, num;
       XPoint *points;
       int dx, dy;
       OptWindow(w);
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-         double *v, v2[256];
-         struct descrip funcname, g;	/* do not need to be tended */
+	 word start = 0;
          tended struct descrip f;
-         tended struct b_list *func;
          tended struct descrip d;
          tended struct b_realarray *ap;
 
-         /* create a list to save function information */
-         Protect(func = alclist(0, 14), runerr(0));
-         f.dword = D_List;
-         f.vword.bptr = (union block *) func;
-         MakeStr("FillPolygon", 11, &funcname);
-         c_put(&f, &funcname);
+	 /* create a list to store function information */
+	 if (create3Dlisthdr(&f, "FillPolygon", 4)!=Succeeded)
+	    fail;
 
-         draw_code = si_s2i(redraw3Dnames, "FillPolygon");
-         if (draw_code == -1)
-	     fail;
-         MakeInt(draw_code, &g);
-         c_put(&f, &g);
-
-	 num = argc-warg;
-
-	 if (is:list(argv[warg])) {
-	    struct b_list *coords;
-	    coords = (struct b_list *) BlkD(argv[warg], List);
-	    if (cplist2realarray(&argv[warg], &d, 0, coords->size, 0)!=Succeeded)
-		runerr(305, argv[warg]);
-	    ap = (struct b_realarray *) BlkD(d, List)->listhead;
-	    v = ap->a;
-	    num = coords->size;
-	    }
+	 /* check if the argument is a list */
+	 if (is:list(argv[warg]))
+	    num= BlkD(argv[warg], List)->size;
 	 else{
-	    Protect(ap = (struct b_realarray *) alcrealarray(num), runerr(0));
-	    d.vword.bptr = (union block *) alclisthdr(num, (union block *) ap);
-	    d.dword = D_List;
-	    v = ap->a;
-	    /* convert arguments and put them in the list */
-	    for(i = 0; i<num; i++) {
-	       if (!cnv:C_double(argv[warg + i], v[i])) {
-		  runerr(102, argv[warg+i]);
-		  }
-		}
-	  } /* else argument is not a list */
+	    num = argc-warg;
+	    start = warg;
+	    }
 
+	 /* Check the number of coordinates*/
+	 if (num%w->context->dim != 0 || num<w->context->dim*3)
+	    runerr(146);
+
+	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	    runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 c_put(&f, &d);
 
          /* draw polygons */
@@ -1635,7 +1580,7 @@ function{1} FillPolygon(argv[argc])
          /*CheckArgMultiple(w->context->dim);*/
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
-	    drawpoly(w, v, num, GL_POLYGON, w->context->dim);
+	    drawpoly(w, ap->a, num, GL_POLYGON, w->context->dim);
 	    glFlush();
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
@@ -4372,12 +4317,11 @@ function{1} Texcoord(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, j, warg = 0, draw_code, num;
+      int warg = 0, num, start=0;
       tended char* tmp;
-      tended struct descrip f, funcname, mode, val, g;
-      tended struct b_list *func, *coords;
-#ifdef Arrays
+      tended struct descrip f, mode;
       tended struct descrip d;
+#ifdef Arrays
       tended struct b_realarray *ap;
 #endif					/* Arrays */
 
@@ -4389,20 +4333,36 @@ function{1} Texcoord(argv[argc])
 	 runerr(103);
 
       /* create a list */
-      Protect(func = alclist(0, MinListSlots+3), runerr(0));
-      f.dword = D_List;
-      f.vword.bptr = (union block*) func;
-      MakeStr("Texcoord", 8, &funcname);
-      c_put(&f, &funcname);
-
-      draw_code = si_s2i(redraw3Dnames, "Texcoord");
-      if (draw_code == -1)
-	 fail;
-      MakeInt(draw_code, &g);
-      c_put(&f, &g);
+      if (create3Dlisthdr(&f, "Texcoord", 8)!=Succeeded)
+	fail;
 
       /* check if the argument is a list */
-      if (is:list(argv[warg])) {
+      if (is:list(argv[warg]))
+	num= BlkD(argv[warg], List)->size;
+      else{
+	num = argc-warg;
+	start=warg;
+
+	if (num == 1) { /* probably "auto" */
+	  if (!cnv:C_string(argv[warg], tmp))
+	    runerr(103, argv[warg]);
+	  if (!strcmp(tmp, "auto")){
+	    wc->autogen = 1;
+	    wc->numtexcoords = 0;
+#if HAVE_LIBGL
+	    if (!glIsEnabled(GL_TEXTURE_GEN_S))
+	      glEnable(GL_TEXTURE_GEN_S);
+	    if (!glIsEnabled(GL_TEXTURE_GEN_T))
+	      glEnable(GL_TEXTURE_GEN_T);
+#endif					/* HAVE_LIBGL */
+	    mode = onedesc;
+	    c_put(&f, &mode);
+	    c_put(&(w->window->funclist), &f);
+	    return f;
+	  }
+	  else fail;
+	  }
+	}
 #if HAVE_LIBGL
          if (glIsEnabled(GL_TEXTURE_GEN_S))
             glDisable(GL_TEXTURE_GEN_S);
@@ -4413,62 +4373,17 @@ function{1} Texcoord(argv[argc])
          c_put(&f, &mode);
          wc->autogen = 0;
          wc->numtexcoords = 0;
-         coords = (struct b_list *) BlkD(argv[warg], List);
-#ifdef  Arrays
-	 if (cplist2realarray(&argv[warg], &d, 0, coords->size, 0)!=Succeeded)
+	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
 	    runerr(305, argv[warg]);
+#ifdef  Arrays
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 wc->texcoords = ap;
-	 wc->numtexcoords = coords->size;
+#endif					/* Arrays */
+	 wc->numtexcoords = num;
 	 c_put(&f, &d);
-#endif					/* Arrays */
-	 }
-      else {
-	 if (num == 1) { /* probably "auto" */
-	    if (!cnv:C_string(argv[warg], tmp))
-	       runerr(103, argv[warg]);
-	    if (!strcmp(tmp, "auto")){
-	       wc->autogen = 1;
-	       wc->numtexcoords = 0;
-#if HAVE_LIBGL
-	       if (!glIsEnabled(GL_TEXTURE_GEN_S))
-		  glEnable(GL_TEXTURE_GEN_S);
-	       if (!glIsEnabled(GL_TEXTURE_GEN_T))
-		  glEnable(GL_TEXTURE_GEN_T);
-#endif					/* HAVE_LIBGL */
-	       mode = onedesc;
-	       c_put(&f, &mode);
-	       }
-	    else fail;
-	    }
-	 /* the arguments are texture coordinates */
-	 else {
-#if HAVE_LIBGL
-	    if (glIsEnabled(GL_TEXTURE_GEN_S))
-	       glDisable(GL_TEXTURE_GEN_S);
-	    if (glIsEnabled(GL_TEXTURE_GEN_T))
-	       glDisable(GL_TEXTURE_GEN_T);
-#endif					/* HAVE_LIBGL */
-	    mode = zerodesc;
-	    c_put(&f, &mode);
-	    wc->autogen = 0;
-	    wc->numtexcoords = 0;
-#ifdef Arrays
-	    Protect(ap = (struct b_realarray *) alcrealarray(num), runerr(0));
-	    d.vword.bptr = (union block *)
-		alclisthdr(num, (union block *) ap);
-	    d.dword = D_List;
-	    for (i = warg, j=0; i < argc; i++)
-	       if (!cnv:C_double(argv[i], ap->a[j++]))
-		  runerr(102, argv[i]);
-	    wc->texcoords = ap;
-	    wc->numtexcoords = num;
-	    c_put(&f, &d);
-#endif					/* Arrays */
-	    }
-	 }
+
       /* there must be an even number of arguments */
-      if (wc->numtexcoords % 2  != 0) {
+      if (num % 2  != 0) {
 	 runerr(154);
          }
       c_put(&(w->window->funclist), &f);
@@ -4487,12 +4402,10 @@ function{1} Normals(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, warg = 0, draw_code, num, j;
-      tended char* tmp;
-      tended struct descrip f, funcname, g, val;
-      tended struct b_list *func, *norms;
-#ifdef Arrays
+      int warg = 0, num, start=0;
+      tended struct descrip f;
       tended struct descrip d;
+#ifdef Arrays      
       tended struct b_realarray *ap;
 #endif					/* Arrays */
 
@@ -4500,52 +4413,30 @@ function{1} Normals(argv[argc])
 
       wc = w->context;
       num=argc-warg;
-      if (num < 1) /* missing the texture coordinates */
+      if (num < 1) /* missing the normals coordinates */
 	 runerr(103);
 
       /* create a list */
-      Protect(func = alclist(0, MinListSlots+3), runerr(0));
-      f.dword = D_List;
-      f.vword.bptr = (union block*) func;
-      MakeStr("Normals", 7, &funcname);
-      c_put(&f, &funcname);
-
-      draw_code = si_s2i(redraw3Dnames, "Normals");
-      if (draw_code == -1)
-	 fail;
-      MakeInt(draw_code, &g);
-      c_put(&f, &g);
+      if (create3Dlisthdr(&f, "Normals", 4)!=Succeeded)
+	fail;
       
       /* check if the argument is a list */
-      if (argv[warg].dword == D_List) {
-         norms = (struct b_list*) argv[warg].vword.bptr;
+      if (is:list(argv[warg]))
+	num= BlkD(argv[warg], List)->size;
+      else{
+	num = argc-warg;
+	start = warg;
+	}
+      
+      if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 runerr(305, argv[warg]);
 #ifdef Arrays
-	 if (cplist2realarray(&argv[warg], &d, 0, norms->size, 0)!=Succeeded)
-	    runerr(305, argv[warg]);
-	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-	 wc->normals = ap;
-	 wc->numnormals = norms->size;
-	 c_put(&f, &d);
+      ap = (struct b_realarray *) BlkD(d, List)->listhead;
+      wc->normals = ap;
 #endif					/* Arrays */
-	 }
-	 /* the arguments are normals coordinates */
-	 else {
-#ifdef Arrays
-	    Protect(ap = (struct b_realarray *) alcrealarray(num), runerr(0));
-	    d.vword.bptr = (union block *)
-		alclisthdr(num, (union block *) ap);
-	    d.dword = D_List;
-	    j=0;
-	    for (i = warg; i < argc; i++) {
-	       if (!cnv:C_double(argv[i], ap->a[j++]))
-		  runerr(102, argv[i]);
-	       }
-	  wc->normals = ap;
-	  wc->numnormals = num;
+      wc->numnormals = num;
+      c_put(&f, &d);
 
-	 c_put(&f, &d);
-#endif					/* Arrays */
-	 }
       c_put(&(w->window->funclist), &f);
       return f;
       }
@@ -4562,15 +4453,11 @@ function{1} MultMatrix(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, k, warg = 0, draw_code;
-      tended struct descrip f, funcname, g, val;
-      tended struct b_list *func, *matlist;
-#ifndef Arrays
-      double matvalues[16];
-#else					/* Arrays */
+      int warg = 0, start=0, num;
+      tended struct descrip f;
       tended struct descrip d;
+#ifdef Arrays
       tended struct b_realarray *ap;
-      double *matvalues;
 #endif					/* Arrays */
 
       OptWindow(w);
@@ -4580,69 +4467,32 @@ function{1} MultMatrix(argv[argc])
 	 runerr(103);
 
       /* create a list */
-      Protect(func = alclist(0, MinListSlots+3), runerr(0));
-      f.dword = D_List;
-      f.vword.bptr = (union block*) func;
-      MakeStr("MultMatrix", 10, &funcname);
-      c_put(&f, &funcname);
-
-      draw_code = si_s2i(redraw3Dnames, "MultMatrix");
-      if (draw_code == -1)
-	 fail;
-      MakeInt(draw_code, &g);
-      c_put(&f, &g);
-#ifdef Arrays
-	 ap = alcrealarray(16);
-	 d.dword = D_Realarray;
-	 d.vword.bptr = (union block *) ap;
-	 matvalues = ap->a;
-#endif					/* Arrays */
-
+      if (create3Dlisthdr(&f, "MultMatrix", 4)!=Succeeded)
+	fail;
+      
       /* check if the argument is a list */
-      if (argv[warg].dword == D_List) {
-         matlist = (struct b_list*) argv[warg].vword.bptr;
-	 	if (matlist->size != 16) {
-	    /*
-	     * fails; transformation matrix should have 16 values
-	     */
-	    	runerr(305, argv[warg]);
-	    	}
-         for (i = 0; i < 16; i++){
-	       c_traverse(matlist, &val, i);
-	       if (!cnv:C_double(val, matvalues[i]))
-		  	 runerr(102, val);
-#ifndef Arrays
-			c_put(&f, &val);
-#endif						/* Arrays */
-	       }
-#ifdef Arrays
-		c_put(&f, &d);
-#endif
-	 	}
-      else {
-	 /* the remaining arguments are matrix elements */
-	 if (argc - warg != 16 ) {
-	    /*
-	     * transformation matrix must have 16 values
-	     */
-	    runerr(305);
-	    }
-	 k=warg;
-	 for (i = 0; i < 16; i++){
-	       if (!cnv:C_double(argv[k], matvalues[i]))
-		  runerr(102, argv[k]);
-#ifndef Arrays
-	       c_put(&f, &argv[k++]);
-#endif						/* Arrays */
-	       }
-#ifdef Arrays
-		c_put(&f, &d);
-#endif						/* Arrays */
+      if (is:list(argv[warg]))
+	num= BlkD(argv[warg], List)->size;
+      else{
+	num = argc-warg;
+	start = warg;
+	}
 
-	    }
+      /*
+       * transformation matrix must have 16 values
+       */
+      if (num != 16 )
+	runerr(305);
+      
+      if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	runerr(305, argv[warg]);
+#ifdef Arrays
+      ap = (struct b_realarray *) BlkD(d, List)->listhead;
+#endif					/* Arrays */
+      c_put(&f, &d);
       c_put(&(w->window->funclist), &f);
 #if HAVE_LIBGL
-      glMultMatrixd((GLdouble *)matvalues);
+      glMultMatrixd((GLdouble *)ap->a);
 #endif					/* HAVE_LIBGL */
       return f;
       }

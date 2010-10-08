@@ -699,6 +699,7 @@ void detectRedirection();
 		 int slices, int rings, int gen);
       int translate(wbp w, dptr argv, int i, dptr f);
       int traversefunctionlist(wbp w);
+      int create3Dlisthdr(dptr dp, char *strname, word size);
    #endif					/* Graphics3D */
 
    #ifdef MSWindows

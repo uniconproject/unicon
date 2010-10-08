@@ -261,6 +261,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glEnd();
            }
          else {
+	    double *atex=wc->texcoords->a;
             /*
              * There must be at least the same number of texture coordinate
              * pairs as there are vertices. If not, fail.
@@ -270,7 +271,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glBegin(type);
             j = 0;
             for (i = 0; i < num; i = i+2) {
-               glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
+               glTexCoord2f(atex[j], atex[j+1]);
                glVertex2d(v[i], v[i+1]);
                j += 2;
              }
@@ -386,7 +387,8 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 	       
 	       }
 	    else {
-	       /*glEnableClientState(GL_VERTEX_ARRAY);
+	      /*
+	       glEnableClientState(GL_VERTEX_ARRAY);
 	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	       glVertexPointer(3, GL_DOUBLE, 0, v);
 	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
@@ -1679,12 +1681,11 @@ int traversefunctionlist(wbp w)
 			printf("Texcoord: Can't find the real array!!..\n");
 			return Failed;
 			}
-		     wc->numtexcoords = (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
+		     wc->numtexcoords = BlkD(d, List)->size;
 		     wc->texcoords = ap;
                      }
                }
 	    break;
-	    
          case REDRAW_NORMALS:     /* Normals() */
             /* there is a list of normal coordinates to use */
                if (used1 <= 1){
@@ -1700,31 +1701,17 @@ int traversefunctionlist(wbp w)
                if (used1>0) {
 		  struct b_realarray *ap;
 	          d = bp1->lslots[k1];
-		  ap = (struct b_realarray *)BlkLoc(d);
+		  ap = (struct b_realarray *) BlkD(d, List)->listhead;
 		  if (ap->title!=T_Realarray){
 		     printf("REDRAW_NORMALS: NOT a real Array!!..\n");
 		     return Failed;
 		     }
-		  wc->numnormals = (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
+		  wc->numnormals = BlkD(d, List)->size;
 		  wc->normals = ap;
                   }
 	    break;
          case REDRAW_MULTMATRIX:      /* MultMatrix() */
-            {
-#ifdef Arrays
-	       struct b_realarray *ap;
-	       double *matvalues;
-#else					/* Arrays */
-	       double matvalues[16];
-#endif					/* Arrays */
-               int mi=0;
-               /* check if we have a list of size 18.  18 = 2 reserved + 16 values */
-#ifndef Arrays
-               if ((funclist->size)!=18) goto free_v_and_fail;
-
-               /* traverse the list and set matrix elements */
-               for (j=0; j < (funclist->size)-2 /*16*/; j++){
-#endif					/* Arrays */
+               /* check if we have a list of size 16 */
                   if (used1 <= 1){
 	             bp1 = (struct b_lelem *) bp1->listnext;
                      used1 = bp1->nused;
@@ -1736,31 +1723,20 @@ int traversefunctionlist(wbp w)
                      }
 
                   if (used1>0) {
-	             	 d = bp1->lslots[k1];
-#ifdef Arrays
-		     		 ap = (struct b_realarray *)BlkLoc(d);
-		     		 if (ap->title!=T_Realarray){
-					 	printf("NOT a real Array!!..\n");
-					 	return Failed;
-						}
-		     		 matvalues = ap->a;
-#else					/* Arrays*/
-                     if (!cnv:real(d, d)) return 0;
-	             	 bp1->lslots[k1] = d;
-					 matvalues[mi++] = BlkD(d,Real)->realval;
-#endif					/* Arrays */
-                     } /*used1>0 */
-#ifndef Arrays
-                  } /* for j=0 ... */
-#endif					/* Arrays */
+		      struct b_realarray *ap;
+		      d = bp1->lslots[k1];
+		      ap = (struct b_realarray *) BlkD(d, List)->listhead;
+		      if (ap->title!=T_Realarray){
+			printf("REDRAW_MULTMATRIX: NOT a real Array!!..\n");
+			return Failed;
+		      }
 #if HAVE_LIBGL
-               glMultMatrixd((GLdouble *)matvalues);
+		      glMultMatrixd((GLdouble *)ap->a);
 #endif					/* HAVE_LIBGL */
-               }
+                     } /*used1>0 */
 	    break;
          case REDRAW_POLYGON:      /* DrawPolygon() */
             /* element in position 1 is the dim attribute */
-            for (j = 0; j < (funclist->size)-2; j++) {
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
@@ -1771,21 +1747,19 @@ int traversefunctionlist(wbp w)
                   used1--;
                   }
 
-               var2 = bp1->lslots[k1];
-               if(!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-	       }
-
-	    /* call drawpoly with GL_LINE_LOOP to get a polygon */
-	    drawpoly(w, v, (funclist->size)-2, w->context->meshmode, wc->dim);
+               if (used1>0) {
+		 struct b_realarray *ap;
+		 d = bp1->lslots[k1];
+		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+		 if (ap->title!=T_Realarray){
+		   printf("REDRAW_POLYGON: NOT a real Array!!..\n");
+		   return Failed;
+		 }
+		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
+	       } /*used1>0 */
 	    break;
-         case REDRAW_FILLPOLYGON:{      /* FillPolygon() */
-	    double *vpoly;
-#ifdef Arrays
-	    struct b_realarray *ap;
-#else					/* Arrays */
-	    num= (funclist->size)-2;
-	    for (j = 0; j < (funclist->size)-2; j++) {
-#endif					/* Arrays */
+         case REDRAW_FILLPOLYGON:      /* FillPolygon() */
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
@@ -1795,32 +1769,20 @@ int traversefunctionlist(wbp w)
                   if (k1++>=bp1->nslots) k1=0;
                   used1--;
                   }
-
-               var2 = bp1->lslots[k1];
-#ifdef Arrays
-	       ap = (struct b_realarray *) BlkD(var2, List)->listhead;
-	       if (ap->title!=T_Realarray){
-		 printf("REDRAW_FILLPOLYGON: Can't find the real array!!..\n");
-		 return Failed;
-	       }
-	       
-	       vpoly=ap->a;
-	       num=(ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
-# else	/* Arrays */
-	       if (!is:real(var2)) {
-	          if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-	          }
-	       else
-	          GetReal(&var2, v[j]);
-               } /* for j=0 */
-	       vpoly=v;
-#endif	/* Arrays */
-	    /* drawpoly with GL_POLYGON will give filled polygons */
-            drawpoly(w, vpoly, num, w->context->meshmode, wc->dim);
+               
+               if (used1>0) {
+		 struct b_realarray *ap;
+		 d = bp1->lslots[k1];
+		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+		 if (ap->title!=T_Realarray){
+		   printf("REDRAW_FILLPOLYGON: NOT a real Array!!..\n");
+		   return Failed;
+		 }
+		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
+	       } /*used1>0 */
 	    break;
-		}
          case REDRAW_SEGMENT:      /* DrawSegment() */
-	    for (j = 0; j < (funclist->size)-1; j++) {
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
@@ -1830,15 +1792,20 @@ int traversefunctionlist(wbp w)
                   if (k1++>=bp1->nslots) k1=0;
                   used1--;
                }
-
-               var2 = bp1->lslots[k1];
-	       if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-	       } /* for j=0 */
-	    drawpoly(w, v, (funclist->size)-2, GL_LINES, wc->dim);
+               
+               if (used1>0) {
+		 struct b_realarray *ap;
+		 d = bp1->lslots[k1];
+		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+		 if (ap->title!=T_Realarray){
+		   printf("REDRAW_SEGMENT: NOT a real Array!!..\n");
+		   return Failed;
+		 }
+		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINES, wc->dim);
+	       } /*used1>0 */
 	    break;
          case REDRAW_LINE:       /* DrawLine() */
-	    used1 = bp1->nused-2;
-	    for (j = 0; j < (funclist->size-2); j++) {
                if (used1<=0) {
                   bp1=(struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
@@ -1849,14 +1816,19 @@ int traversefunctionlist(wbp w)
                   used1--;
                   }
 
-            var2 = bp1->lslots[k1];
-	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-	    }
-
-	    drawpoly(w, v, (funclist->size)-2, GL_LINE_STRIP, wc->dim);
+	       if (used1>0) {
+		 struct b_realarray *ap;
+		 d = bp1->lslots[k1];
+		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+		 if (ap->title!=T_Realarray){
+		   printf("REDRAW_LINE: NOT a real Array!!..\n");
+		   return Failed;
+		 }
+		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINE_STRIP, wc->dim);
+	       } /*used1>0 */
 	    break;
          case REDRAW_POINT:       /* DrawPoint() */
-	    for (j = 0; j < (funclist->size)-1; j++) {
                if (used1<=1) {
                   bp1=(struct b_lelem *) bp1->listnext;
                   used1 = bp1->nused;
@@ -1866,11 +1838,17 @@ int traversefunctionlist(wbp w)
                   if (k1++>=bp1->nslots) k1=0;
                   used1--;
                   }
-
-            var2 = bp1->lslots[k1];
-	    if (!cnv:C_double(var2, v[j])) goto free_v_and_fail;
-            }
-	    drawpoly(w, v, (funclist->size)-2, GL_POINTS, wc->dim);
+	       if (used1>0) {
+		 struct b_realarray *ap;
+		 d = bp1->lslots[k1];
+		 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+		 if (ap->title!=T_Realarray){
+		   printf("REDRAW_POINT: NOT a real Array!!..\n");
+		   return Failed;
+		 }
+		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_POINTS, wc->dim);
+	       } /*used1>0 */
 	    break;
          default:
       	    fprintf(stderr,"invalid displaylist entry '%s'\n",
@@ -2015,9 +1993,7 @@ int gettexcoords(wbp w, char *buf)
 int setlinewidth3D(wbp w, LONG linewid)
 {
    tended struct descrip f;
-   struct descrip funcname, width, g;
-   tended struct b_list *func;
-   int draw_code;
+   struct descrip  width;
 
    if (linewid < 0) return Error;
    makecurrent(w);
@@ -2025,18 +2001,8 @@ int setlinewidth3D(wbp w, LONG linewid)
    glLineWidth(linewid);
 
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block *) func;
-   MakeStr("linewidth", 9, &funcname);
-   c_put(&f, &funcname);
-
-   draw_code = si_s2i(redraw3Dnames, "linewidth");
-   if (draw_code == -1)
-       return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   if (create3Dlisthdr(&f, "linewidth", 4)!=Succeeded)
+     return Error;
 
    MakeInt(linewid, &width);
    c_put(&f, &width);
@@ -2055,15 +2021,14 @@ int setmaterials(wbp w, char* s)
 #ifdef XWindows
    wdp wd = w->window->display;
 #endif					/* XWindows */
-   int k, j, i = 0, draw_code;
+   int k, j, i = 0;
    long rd, gr, bl, al;
    GLfloat shine;
    GLfloat color[4];
    char sbuf1[MaxCvtLen];
    char sbuf2[MaxCvtLen];
    tended struct descrip f;
-   struct descrip funcname, material, r, b, g, a, gg;
-   tended struct b_list *func; /* tended added */
+   struct descrip material, r, b, g, a, gg;
 
    makecurrent(w);
    while(s[i]) {
@@ -2071,19 +2036,9 @@ int setmaterials(wbp w, char* s)
       k = 0;
 
       /* create a list element for each material property */
-      if ((func = alclist(0, 7)) == NULL)
-         return Failed;
-      f.dword = D_List;
-      f.vword.bptr = (union block *) func;
-      MakeStr("Fg", 2, &funcname);
-      c_put(&f, &funcname);
-
-      draw_code = si_s2i(redraw3Dnames, "Fg");
-      if (draw_code == -1)
-	return Failed;
-      MakeInt(draw_code, &gg);
-      c_put(&f, &gg);
-
+      if (create3Dlisthdr(&f, "Fg", 7)!=Succeeded)
+	return Error;
+      
      /*
       * parse the string to determine the material property and its value
       */
@@ -2409,26 +2364,14 @@ int setlight(wbp w, char* s, int light)
 int setdim(wbp w, char* s)
 {
    tended struct descrip f;
-   struct descrip funcname, g;
-   tended struct b_list *func; /* tended added */
    tended struct descrip d;
-   int dim, draw_code;
+   int dim;
 
    makecurrent(w);
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-         return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("dim", 3, &funcname);
-   c_put(&f, &funcname);
-
-   draw_code = si_s2i(redraw3Dnames, "dim");
-   if (draw_code == -1)
-       return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
-
+   if (create3Dlisthdr(&f, "dim", 4)!=Succeeded)
+     return Error;
+   
    dim = atoi(s);
    /* must be a value between 1 and 4 */
    if (dim < 1 || dim > 4)
@@ -2459,26 +2402,14 @@ void gettexmode(wbp w, char *abuf, dptr answer)
 int settexmode(wbp w, char* s)
 {
    tended struct descrip f;
-   struct descrip funcname, g;
-   tended struct b_list *func;
    tended struct descrip mode;
    wcp wc = w->context;
-   int oldtexmode = wc->texmode, draw_code;
+   int oldtexmode = wc->texmode;
 
    makecurrent(w);
     /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("texmode", 7, &funcname);
-   c_put(&f, &funcname);
-
-   draw_code = si_s2i(redraw3Dnames, "texmode");
-   if (draw_code == -1)
-       return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+    if (create3Dlisthdr(&f, "texmode", 4)!=Succeeded)
+      return Error;
 
    /*
     * turn textures on in replace, blend, or modulate (default mode = replace)
@@ -2525,18 +2456,8 @@ int setnormode(wbp w, char* s)
    
    makecurrent(w);
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("normode", 7, &funcname);
-   c_put(&f, &funcname);
-   
-   draw_code = si_s2i(redraw3Dnames, "normode");
-   if (draw_code == -1)
-      return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   if (create3Dlisthdr(&f, "normode", 4)!=Succeeded)
+     return Error;
    
    if (!strcmp("on", s))
       wc->normode = 2;
@@ -2562,29 +2483,17 @@ int settexcoords(wbp w, char* s)
    double r;
    char* s2 = s;
    char s3[MaxCvtLen];
-   int j, i =0, draw_code;
-   tended struct descrip f = nulldesc, val = nulldesc;
-   struct descrip funcname, mode, g;
-   tended struct b_list *func;
-   tended struct descrip d;
+   int j, i =0;
+   tended struct descrip f, val = nulldesc;
+   tended struct descrip d, mode;
    tended struct b_realarray *ap;
 
 
    makecurrent(w);
 
    /* create a list */
-   if ((func = alclist(0, MinListSlots+2)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("Texcoord", 8, &funcname);
-   c_put(&f, &funcname);
-
-   draw_code = si_s2i(redraw3Dnames, "Texcoord");
-   if (draw_code == -1)
-      return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   if (create3Dlisthdr(&f, "Texcoord", 4)!=Succeeded)
+     return Error;
 
    while(isspace(*s2)) s2++;
 
@@ -2675,26 +2584,14 @@ int settexcoords(wbp w, char* s)
 int setslices(wbp w, char* s)
 {
    tended struct descrip f;
-   struct descrip funcname, g;
-   tended struct b_list *func;
    tended struct descrip val;
-   int draw_code, slices;
+   int slices;
    wcp wc = w->context;
    
    makecurrent(w);
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("slices", 6, &funcname);
-   c_put(&f, &funcname);
-   
-   draw_code = si_s2i(redraw3Dnames, "slices");
-   if (draw_code == -1)
-      return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   if (create3Dlisthdr(&f, "slices", 4)!=Succeeded)
+     return Error;
    
    slices = atoi(s);
    /* must be positive integer */   
@@ -2711,26 +2608,14 @@ int setslices(wbp w, char* s)
 int setrings(wbp w, char* s)
 {
    tended struct descrip f;
-   struct descrip funcname, g;
-   tended struct b_list *func;
    tended struct descrip val;
-   int draw_code, rings;
+   int rings;
    wcp wc = w->context;
    
    makecurrent(w);
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("rings", 5, &funcname);
-   c_put(&f, &funcname);
-   
-   draw_code = si_s2i(redraw3Dnames, "rings");
-   if (draw_code == -1)
-      return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   if (create3Dlisthdr(&f, "rings", 4)!=Succeeded)
+     return Error;
    
    rings = atoi(s);
    /* must be positive integer */
@@ -2747,27 +2632,14 @@ int setrings(wbp w, char* s)
 int setfov(wbp w, char* s)
 {
    tended struct descrip f;
-   struct descrip funcname, g;
-   tended struct b_list *func;
    tended struct descrip val;
-   int draw_code;
    double fov;
    wcp wc = w->context;
    
    makecurrent(w);
    /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-      return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("fov", 3, &funcname);
-   c_put(&f, &funcname);
-   
-   draw_code = si_s2i(redraw3Dnames, "fov");
-   if (draw_code == -1)
-      return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   if (create3Dlisthdr(&f, "fov", 4)!=Succeeded)
+     return Error;
    
    fov = atof(s);
    BlkLoc(val) = (union block *)alcreal(fov);
@@ -4434,26 +4306,13 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 int setselectionmode(wbp w, char* s)
 {
    tended struct descrip f;
-   struct descrip funcname, g;
-   tended struct b_list *func;
    tended struct descrip mode;
-   int draw_code;
    wcp wc = w->context;
 
    makecurrent(w);
-   /* create a list */
-   if ((func = alclist(0, MinListSlots)) == NULL)
-	   return Failed;
-   f.dword = D_List;
-   f.vword.bptr = (union block*) func;
-   MakeStr("Pick", 4, &funcname);
-   c_put(&f, &funcname);
-
-   draw_code = si_s2i(redraw3Dnames, "Pick");
-   if (draw_code == -1)
-	   return Failed;
-   MakeInt(draw_code, &g);
-   c_put(&f, &g);
+   /* create a list to store function information */
+   if (create3Dlisthdr(&f, "Pick", 4)!=Succeeded)
+     return Error;
 
    if (!strcmp("on", s))
 	   wc->selectionenabled = 1;
@@ -4468,5 +4327,25 @@ int setselectionmode(wbp w, char* s)
    c_put(&f, &mode);
 
    c_put(&(w->window->funclist), &f);
+   return Succeeded;
+}
+
+int create3Dlisthdr(dptr dp, char *strname, word size){
+   int draw_code;
+   struct descrip funcname, g;	/* do not need to be tended */
+   tended struct b_list *func;
+  
+   /* create a list to save function information */
+   Protect(func = alclist(0, size), return Error);
+   dp->dword = D_List;
+   dp->vword.bptr = (union block *) func;
+   MakeStr(strname, strlen(strname), &funcname);
+   c_put(dp, &funcname);
+  
+   draw_code = si_s2i(redraw3Dnames, strname);
+   if (draw_code == -1)
+      return Error;
+   MakeInt(draw_code, &g);
+   c_put(dp, &g);
    return Succeeded;
 }

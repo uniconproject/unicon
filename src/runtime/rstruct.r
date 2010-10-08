@@ -1007,7 +1007,7 @@ int arraytolist(struct descrip *arr)
 
 int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
 {
-   word size;
+   word size, arrflag=0;
    tended struct b_realarray *ap2;
    tended struct descrip val;
    tended struct b_list *lp;
@@ -1015,7 +1015,7 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
    if ( is:list(*dp))
       lp = (struct b_list *) BlkD(*dp, List);
    else
-      return Error;
+      arrflag=1;
    
    /*
    * Calculate the size of the sublist.
@@ -1030,12 +1030,21 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
    if (!skipcopyelements){
       word k;
       /* copy elements i throgh j to the new array ap2*/
-      for (k=0; i<j; k++,i++){
-         c_traverse(lp, &val, i);
-         if (!cnv:C_double(val, ap2->a[k]))
+      if (arrflag){
+	for (k=0; i<j; k++,i++){
+	  if (!cnv:C_double(dp[k], ap2->a[k]))
             return Error;
+	  }
 	}
+      else{
+	for (k=0; i<j; k++,i++){
+	  c_traverse(lp, &val, i);
+	  if (!cnv:C_double(val, ap2->a[k]))
+            return Error;
+	  }
+	  }
       }
+    
    
   /* for now, we only handle one dimensional lists */
    ap2->dims=NULL;

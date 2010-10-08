@@ -127,9 +127,7 @@ int init_3dcontext(wcp wc)
    wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
    if (wc->stex == NULL) return Failed;
 
-   wc->texcoords = malloc(256 * sizeof (double));
-   if (wc->texcoords == NULL) return Failed;
-   wc->ntexcoordsalced = 256;
+   wc->texcoords = NULL; 
    wc->ntextures = 0;
    wc->curtexture = -1;
    wc->buffermode = IMMEDIATE3D;
@@ -161,8 +159,6 @@ int release_3d_resources(wbp w)
    }
    free(wc->selectionnamelist);
    free(wc->texName);
-   free(wc->texcoords);
-
 #ifdef XWindows
    glXDestroyContext( wd->display, wc->ctx);
 #endif					/* XWindows */
@@ -220,6 +216,11 @@ void calcNormal( double* v0, double* v1, double *v2, double* n )
     */
 }
 
+int setnormals(double *norm){
+ 
+  return 0;
+}
+
 
 
 /*
@@ -237,12 +238,11 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    wcp wc = w->context;
 
    makecurrent(w);
-   /* must reset the current normal vector */
-   glNormal3dv(n);
-
+   
    /* each vertex has an x-coordinate and a y-coordinate */
    if (dim == 2){
-
+      /* must reset the current normal vector */
+      glNormal3dv(n);
       /* no texturing */
       if (!wc->texmode) {
          glBegin(type);
@@ -270,7 +270,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glBegin(type);
             j = 0;
             for (i = 0; i < num; i = i+2) {
-               glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+               glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
                glVertex2d(v[i], v[i+1]);
                j += 2;
              }
@@ -281,28 +281,56 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 
    /* each vertex is of the form (x, y, z) */
    if (dim == 3){
+      double *vnorm;
+      int vcount;
+      int normcount;
+      
+      /*prepare normals for normals auto mode*/
+      if(wc->normode==1){ 
+         /*vnorm = malloc (num*sizeof(double));*
+/*	 if (type==GL_TRIANGLES || type==GL_TRIANGLE_FAN || type ==GL_TRIANGLE_STRIP)
+	   vcount=3;
+	 else if (type==GL_QUADS || type==GL_QUAD_STRIP)
+	   vcount = 4;
+	 else  if (type==GL_POLYGON)
+	   vcount = 3;
+	 normcount = num - num % (vcount);
+ */	if (num>9){
+	  calcNormal(&v[0], &v[3], &v[6], n );
+	  }
+	  glNormal3dv(n);
+	  
+         /*for (i = 0; i < num; i = i+3){
+	    vnorm[i] = n[0];
+	    vnorm[i+1] = n[1];
+	    vnorm[i+2] = n[2];
+	   }
+	   */
+	}
+      else if(wc->normode==2){ /* normals are supplied by the user*/
+	  if (num > wc->numnormals) return Failed;
+	  vnorm = wc->normals->a;
+	  }
+      else
+	/* must reset the current normal vector */
+	glNormal3dv(n);
+      
       if (!wc->texmode) {
-         glBegin(type);
-	 if(wc->normode==1)
+	  if(wc->normode==2){
+	    glBegin(type);
 	    for (i = 0; i < num; i = i+3){
-	       if (i%9==0 && i+9<num){
-		  calcNormal(&v[i], &v[i+3], &v[i+6], n);
-		  glNormal3dv(n);
-	       }
-	       glVertex3d(v[i], v[i+1], v[i+2]);
-	       }
-	 else if(wc->normode==2){
-	    if (num > wc->numnormals) return Failed;
-	    for (i = 0; i < num; i = i+3){
-	       glNormal3dv(&(wc->normals[i]));
+	       glNormal3dv(&vnorm[i]);
 	       glVertex3dv(&v[i]);
 	       }
+	    glEnd();
 	    }
-	 else 
+	 else{
+	    glBegin(type);
 	    for (i = 0; i < num; i = i+3)
 	       glVertex3dv(&v[i]);
-         glEnd();
-       }
+	    glEnd();
+	    }
+	}
       else {
 
 	 /* opengl should generate the texture coordinate */
@@ -311,26 +339,20 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
             glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 
-	    glBegin(type);
-	    if(wc->normode==1)
+	    if(wc->normode==2){
+	       glBegin(type);
 	       for (i = 0; i < num; i = i+3){
-		  if (i%9==0 && i+9<num){
-		     calcNormal(&v[i], &v[i+3], &v[i+6], n);
-		     glNormal3dv(n);
-		     }
-		  glVertex3d(v[i], v[i+1], v[i+2]);
-		  }
-	    else if(wc->normode==2){
-	       if (num > wc->numnormals) return Failed;
-	       for (i = 0; i < num; i = i+3){
-		  glNormal3dv(&(wc->normals[i]));
+		  glNormal3dv(&(vnorm[i]));
 		  glVertex3dv(&v[i]);
 		  }
+	       glEnd();
 	       }
-	    else 
+	    else{
+	       glBegin(type);
 	       for (i = 0; i < num; i = i+3)
 		  glVertex3dv(&v[i]);
-	    glEnd();
+	       glEnd();
+	       }
            }
          else {
             /*
@@ -340,47 +362,42 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             if (num/3 > wc->numtexcoords/2)
               return Failed;
 	    j = 0;
-	    
-	    if(wc->normode==1){
-	       glBegin(type);
-	       for (i = 0; i < num; i = i+3){
-		  if (i%9==0 && i+9<num){
-		     calcNormal(&v[i], &v[i+3], &v[i+6], n);
-		     glNormal3dv(n);
-		     }
-		  glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
-		  j = j + 2;
-		  glVertex3d(v[i], v[i+1], v[i+2]);
-		  }
-	       glEnd();
-	       }
-	    else if(wc->normode==2){
-	       if (num > wc->numnormals) return Failed;
-	       /*glEnableClientState(GL_VERTEX_ARRAY);
+	    if(wc->normode==2){
+	      /*
+	       glEnableClientState(GL_VERTEX_ARRAY);
 	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	       glEnableClientState(GL_NORMAL_ARRAY);
 	       glVertexPointer(3, GL_DOUBLE, 0, v);
-	       glNormalPointer(GL_DOUBLE, 0, wc->normals);
-	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords);
+	       glNormalPointer(GL_DOUBLE, 0, vnorm);
+	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
 	       glDrawArrays(type, 0, num);
 	       glDisableClientState(GL_VERTEX_ARRAY);
 	       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	       glDisableClientState(GL_NORMAL_ARRAY);
 	       */
-	       
+	       glBegin(type);
 	       for (i = 0; i < num; i = i+3){
-#ifdef Arrays		  
-		  glNormal3dv(&(wc->normals[i]));
-#endif					/* Arrays */
-		  glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+		  glNormal3dv(&(vnorm[i]));
+		  glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
 		  j = j + 2;
 		  glVertex3dv(&v[i]);
 		  }
-		  
+	       glEnd();
+	       
 	       }
 	    else {
+	       /*glEnableClientState(GL_VERTEX_ARRAY);
+	       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	       glVertexPointer(3, GL_DOUBLE, 0, v);
+	       glTexCoordPointer(2, GL_DOUBLE, 0, wc->texcoords->a);
+	       glDrawArrays(type, 0, num);
+	       glDisableClientState(GL_VERTEX_ARRAY);
+	       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	       */
+
+	       glBegin(type);
 	       for (i = 0; i < num; i = i+3){
-		  glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+		  glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
 		  j = j + 2;
 		  glVertex3dv(&v[i]);
 		  }
@@ -388,6 +405,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 	       }
          }
       }
+      
    }
    /* each vertex is of the form (x, y, z, w) */
    if (dim == 4){
@@ -417,7 +435,7 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
             glBegin(type);
             j = 0;
             for (i = 0; i < num; i=i+4) {
-               glTexCoord2f(wc->texcoords[j], wc->texcoords[j+1]);
+               glTexCoord2f(wc->texcoords->a[j], wc->texcoords->a[j+1]);
                glVertex4d(v[i], v[i+1], v[i+2], v[i+3]);
                j = j + 2;
               }
@@ -1608,7 +1626,7 @@ int traversefunctionlist(wbp w)
             if (num==0)
 	       wc->normode = 0;
 	    /* normals is on */
-            if (num==2)
+            else if (num==2)
 	       wc->normode = 2;
 	    /* default is auto*/
             else
@@ -1639,22 +1657,11 @@ int traversefunctionlist(wbp w)
 
             /* there is a list of texture coordinates to use */
             else {
-#ifdef Arrays
 	       struct b_realarray *ap;
-#endif					/* Arrays */
                glDisable(GL_TEXTURE_GEN_S);
                glDisable(GL_TEXTURE_GEN_T);
                wc->autogen = 0;
-
-	       if (wc->ntexcoordsalced < funclist->size-3) {
-	          printf("need to grow ntexcooords alced %d need %ld\n",
-		     wc->ntexcoordsalced, funclist->size-3);
-	          goto free_v_and_fail;
-	          }
-#ifndef Arrays
-               /* traverse the list and set the texture coordinates */
-               for (j=0; j < (funclist->size)-3; j++){
-#endif
+	       
                   if (used1 <= 1){
 	             bp1 = (struct b_lelem *) bp1->listnext;
                      used1 = bp1->nused;
@@ -1667,25 +1674,14 @@ int traversefunctionlist(wbp w)
 
                   if (used1>0) {
 	             d = bp1->lslots[k1];
-#ifdef Arrays
-		     ap = (struct b_realarray *)BlkLoc(d);
+		     ap = (struct b_realarray *) BlkD(d, List)->listhead;
 		     if (ap->title!=T_Realarray){
-			printf("NOT a real Array!!..\n");
+			printf("Texcoord: Can't find the real array!!..\n");
 			return Failed;
 			}
 		     wc->numtexcoords = (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
-		     wc->texcoords = ap->a;
-#else					/* Arrays*/
-		     if (!cnv:real(d, d)) return 0;
-	             bp1->lslots[k1] = d;
-	             wc->texcoords[j] = BlkD(d,Real)->realval;
-#endif					/* Arrays*/
+		     wc->texcoords = ap;
                      }
-#ifndef Arrays
-                  } /* for j=0 ... */
-
-               wc->numtexcoords = funclist->size-3;
-#endif					/* Arrays */
                }
 	    break;
 	    
@@ -1702,17 +1698,15 @@ int traversefunctionlist(wbp w)
                   }
 
                if (used1>0) {
-#ifdef Arrays
 		  struct b_realarray *ap;
 	          d = bp1->lslots[k1];
 		  ap = (struct b_realarray *)BlkLoc(d);
 		  if (ap->title!=T_Realarray){
-		     printf("NOT a real Array!!..\n");
+		     printf("REDRAW_NORMALS: NOT a real Array!!..\n");
 		     return Failed;
 		     }
 		  wc->numnormals = (ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
-		  wc->normals = ap->a;
-#endif					/* Arrays*/
+		  wc->normals = ap;
                   }
 	    break;
          case REDRAW_MULTMATRIX:      /* MultMatrix() */
@@ -1804,11 +1798,12 @@ int traversefunctionlist(wbp w)
 
                var2 = bp1->lslots[k1];
 #ifdef Arrays
-	       ap = (struct b_realarray *)BlkLoc(var2);
+	       ap = (struct b_realarray *) BlkD(var2, List)->listhead;
 	       if (ap->title!=T_Realarray){
-		  printf("NOT a real Array!!..\n");
-		  return Failed;
+		 printf("REDRAW_FILLPOLYGON: Can't find the real array!!..\n");
+		 return Failed;
 	       }
+	       
 	       vpoly=ap->a;
 	       num=(ap->blksize - sizeof(struct b_realarray) + sizeof(double))/sizeof(double);
 # else	/* Arrays */
@@ -1999,11 +1994,16 @@ int gettexcoords(wbp w, char *buf)
    char *s = buf;
    int i;
    wcp wc = w->context;
-   getatexcoord(wc->texcoords[0], s);
+#ifdef Arrays
+   getatexcoord(wc->texcoords->a[0], s);
+#endif					/* Arrays */   
+
    s += strlen(s);
    for (i = 1; i < wc->numtexcoords; i++) {
       *s++ = ',';
-      getatexcoord(wc->texcoords[i], s);
+#ifdef Arrays
+      getatexcoord(wc->texcoords->a[i], s);
+#endif					/* Arrays */   
       s += strlen(s);
      }
    return Succeeded;
@@ -2566,10 +2566,9 @@ int settexcoords(wbp w, char* s)
    tended struct descrip f = nulldesc, val = nulldesc;
    struct descrip funcname, mode, g;
    tended struct b_list *func;
-#ifdef Arrays
    tended struct descrip d;
    tended struct b_realarray *ap;
-#endif					/* Arrays */
+
 
    makecurrent(w);
 
@@ -2612,35 +2611,20 @@ int settexcoords(wbp w, char* s)
       c_put(&f, &mode);
       j = w->context->numtexcoords = 0;
       w->context->autogen = 0;
-
+      
       /* must turn off automatic texture generation */
       if (glIsEnabled(GL_TEXTURE_GEN_S))
          glDisable(GL_TEXTURE_GEN_S);
       if (glIsEnabled(GL_TEXTURE_GEN_T))
          glDisable(GL_TEXTURE_GEN_T);
       /* parse string */
-
+      /* if Arrays are defined then the first pass counts the # of texcoords */ 
       while(*s2 != '\0') {
          while(*s2 != ',' && *s2 != '\0' ) {
             s3[i] = *s2;
             i++; s2++;
            }
          s3[i]='\0';
-	 /* create a list element for the coordinate */
-	 if (j >= w->context->ntexcoordsalced) {
-	    w->context->texcoords = realloc(w->context->texcoords,
-					    (w->context->ntexcoordsalced + 1+
-					     strlen(s)/2) * sizeof(double));
-	    if (w->context->texcoords == NULL)
-	       return Failed;
-	    w->context->ntexcoordsalced += (strlen(s)/2);
-	    }
-         w->context->texcoords[j] = r = atof(s3);
-#ifndef Arrays	 
-         BlkLoc(val) = (union block *)alcreal(r);
-         val.dword = D_Real;
-         c_put(&f, &val);
-#endif					/* Arrays */	 
          j++;
 	 if (*s2 == ',') {
 	    s2++;
@@ -2649,14 +2633,31 @@ int settexcoords(wbp w, char* s)
          else break;
          }
 
-#ifdef Arrays
-      ap = alcrealarray(j);
-      d.dword = D_Realarray;
-      d.vword.bptr = (union block *) ap;
-      for(i=0; i<j; i++)
-	 ap->a[i]=w->context->texcoords[i];
+
+      Protect(ap = (struct b_realarray *) alcrealarray(j), return Error);
+      d.vword.bptr = (union block *) alclisthdr(j, (union block *) ap);
+      d.dword = D_List;
+      w->context->texcoords = ap;
       c_put(&f, &d);
-#endif					/* Arrays */
+
+      /* second pass to collect texcoord data */
+      s2 = s;
+      i = 0;
+      j = 0;
+      while(*s2 != '\0') {
+         while(*s2 != ',' && *s2 != '\0' ) {
+            s3[i] = *s2;
+            i++; s2++;
+           }
+         s3[i]='\0';
+         ap->a[j] = r = atof(s3);
+         j++;
+	 if (*s2 == ',') {
+	    s2++;
+	    i=0;
+	    }
+         else break;
+         }
 
       /* Number of texture coordinates must be even */
       if (j % 2)

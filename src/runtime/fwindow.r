@@ -1587,10 +1587,9 @@ function{1} FillPolygon(argv[argc])
          struct descrip funcname, g;	/* do not need to be tended */
          tended struct descrip f;
          tended struct b_list *func;
-#ifdef Arrays
          tended struct descrip d;
          tended struct b_realarray *ap;
-#endif					/* Arrays */
+
          /* create a list to save function information */
          Protect(func = alclist(0, 14), runerr(0));
          f.dword = D_List;
@@ -1605,37 +1604,35 @@ function{1} FillPolygon(argv[argc])
          c_put(&f, &g);
 
 	 num = argc-warg;
-#ifdef Arrays
-	 ap = alcrealarray(num);
-	 d.dword = D_Realarray;
-	 d.vword.bptr = (union block *) ap;
-	 v = ap->a;
-#else					/* Arrays */
-	 if (num > 256) {
-	    v = calloc(num, sizeof (double));
-	    if (v == NULL) runerr(305);
+
+	 if (is:list(argv[warg])) {
+	    struct b_list *coords;
+	    coords = (struct b_list *) BlkD(argv[warg], List);
+	    if (cplist2realarray(&argv[warg], &d, 0, coords->size, 0)!=Succeeded)
+		runerr(305, argv[warg]);
+	    ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	    v = ap->a;
+	    num = coords->size;
 	    }
-	 else v = v2;
-#endif					/* Arrays */
-         /* convert arguments and put them in the list */
-         for(i = 0; i<num; i++) {
-            if (!cnv:C_double(argv[warg + i], v[i])) {
-#ifndef Arrays
-	       if (v != v2) free(v);
-#endif					/* Arrays */
-               runerr(102, argv[warg+i]);
-               }
-#ifndef Arrays
-            c_put(&f, &argv[warg+i]);
-#endif					/* Arrays */
-	    }
-#ifdef Arrays
+	 else{
+	    Protect(ap = (struct b_realarray *) alcrealarray(num), runerr(0));
+	    d.vword.bptr = (union block *) alclisthdr(num, (union block *) ap);
+	    d.dword = D_List;
+	    v = ap->a;
+	    /* convert arguments and put them in the list */
+	    for(i = 0; i<num; i++) {
+	       if (!cnv:C_double(argv[warg + i], v[i])) {
+		  runerr(102, argv[warg+i]);
+		  }
+		}
+	  } /* else argument is not a list */
+
 	 c_put(&f, &d);
-#endif					/* Arrays */
+
          /* draw polygons */
          c_put(&(w->window->funclist), &f);
 
-         CheckArgMultiple(w->context->dim);
+         /*CheckArgMultiple(w->context->dim);*/
 	 if (w->context->buffermode) {
 #if HAVE_LIBGL
 	    drawpoly(w, v, num, GL_POLYGON, w->context->dim);
@@ -1643,9 +1640,6 @@ function{1} FillPolygon(argv[argc])
 	    glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
 	    }
-#ifndef Arrays
-	 if (v != v2) free(v);
-#endif					/* Arrays */
 	 return f;
 	 }
       else
@@ -4378,7 +4372,7 @@ function{1} Texcoord(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int i, warg = 0, draw_code, num;
+      int i, j, warg = 0, draw_code, num;
       tended char* tmp;
       tended struct descrip f, funcname, mode, val, g;
       tended struct b_list *func, *coords;
@@ -4408,7 +4402,7 @@ function{1} Texcoord(argv[argc])
       c_put(&f, &g);
 
       /* check if the argument is a list */
-      if (argv[warg].dword == D_List) {
+      if (is:list(argv[warg])) {
 #if HAVE_LIBGL
          if (glIsEnabled(GL_TEXTURE_GEN_S))
             glDisable(GL_TEXTURE_GEN_S);
@@ -4419,36 +4413,13 @@ function{1} Texcoord(argv[argc])
          c_put(&f, &mode);
          wc->autogen = 0;
          wc->numtexcoords = 0;
-         coords = (struct b_list*) argv[warg].vword.bptr;
-#ifndef Arrays
-	 if (coords->size > wc->ntexcoordsalced) {
-	    wc->texcoords = realloc(wc->texcoords,
-				    coords->size * sizeof(double));
-	    if (wc->texcoords == NULL) {
-	       /*
-		* realloc fails; where did our old tex coordinates go?
-		*/
-	       runerr(305, argv[warg]);
-	       }
-	    wc->ntexcoordsalced = coords->size;
-	    }
-#else					/* Arrays */
-	 ap = alcrealarray(coords->size);
-	 d.dword = D_Realarray;
-	 d.vword.bptr = (union block *) ap;
-	 wc->texcoords = ap->a;
-#endif					/* Arrays */
-
-         for (i = 0; i < coords->size; i++) {
-            c_traverse(coords, &val, i);
-            if (!cnv:C_double(val, wc->texcoords[i]))
-               runerr(102, val);
-#ifndef Arrays
-	    c_put(&f, &val);
-#endif					/* Arrays */
-            wc->numtexcoords++;
-	    }
-#ifdef Arrays
+         coords = (struct b_list *) BlkD(argv[warg], List);
+#ifdef  Arrays
+	 if (cplist2realarray(&argv[warg], &d, 0, coords->size, 0)!=Succeeded)
+	    runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	 wc->texcoords = ap;
+	 wc->numtexcoords = coords->size;
 	 c_put(&f, &d);
 #endif					/* Arrays */
 	 }
@@ -4482,35 +4453,19 @@ function{1} Texcoord(argv[argc])
 	    c_put(&f, &mode);
 	    wc->autogen = 0;
 	    wc->numtexcoords = 0;
-#ifndef Arrays
-	    if (num > wc->ntexcoordsalced) {
-	       wc->texcoords = realloc(wc->texcoords,
-				       (num) * sizeof(double));
-	       if (wc->texcoords == NULL) {
-		  /*
-		   * realloc fails; where did our old tex coordinates go?
-		   */
-		  runerr(305);
-		  }
-	       wc->ntexcoordsalced = (num);
-	       }
-#else					/* Arrays */
-	    ap = alcrealarray(num);
-	    d.dword = D_Realarray;
-	    d.vword.bptr = (union block *) ap;
-	    wc->texcoords = ap->a;
-#endif					/* Arrays */
-	    for (i = warg; i < argc; i++) {
-	       if (!cnv:C_double(argv[i], wc->texcoords[wc->numtexcoords++]))
-		  runerr(102, argv[i]);
-#ifndef Arrays
-	       c_put(&f, &argv[i]);
-#endif					/* Arrays */
-	       }
-	    }
 #ifdef Arrays
-	 c_put(&f, &d);
+	    Protect(ap = (struct b_realarray *) alcrealarray(num), runerr(0));
+	    d.vword.bptr = (union block *)
+		alclisthdr(num, (union block *) ap);
+	    d.dword = D_List;
+	    for (i = warg, j=0; i < argc; i++)
+	       if (!cnv:C_double(argv[i], ap->a[j++]))
+		  runerr(102, argv[i]);
+	    wc->texcoords = ap;
+	    wc->numtexcoords = num;
+	    c_put(&f, &d);
 #endif					/* Arrays */
+	    }
 	 }
       /* there must be an even number of arguments */
       if (wc->numtexcoords % 2  != 0) {
@@ -4565,38 +4520,29 @@ function{1} Normals(argv[argc])
       if (argv[warg].dword == D_List) {
          norms = (struct b_list*) argv[warg].vword.bptr;
 #ifdef Arrays
-	 ap = alcrealarray(norms->size);
-	 d.dword = D_Realarray;
-	 d.vword.bptr = (union block *) ap;
-	 wc->normals = ap->a;
-#endif					/* Arrays */
-
-         for (i = 0; i < norms->size; i++) {
-            c_traverse(norms, &val, i);
-            if (!cnv:C_double(val, wc->normals[i]))
-               runerr(102, val);
-	    }
-#ifdef Arrays
+	 if (cplist2realarray(&argv[warg], &d, 0, norms->size, 0)!=Succeeded)
+	    runerr(305, argv[warg]);
+	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
+	 wc->normals = ap;
+	 wc->numnormals = norms->size;
 	 c_put(&f, &d);
 #endif					/* Arrays */
 	 }
-	 /* the arguments are texture coordinates */
+	 /* the arguments are normals coordinates */
 	 else {
-#if HAVE_LIBGL
-#endif					/* HAVE_LIBGL */
 #ifdef Arrays
-	    ap = alcrealarray(num);
-	    d.dword = D_Realarray;
-	    d.vword.bptr = (union block *) ap;
-	    wc->normals = ap->a;
-	    wc->numnormals = num;
-#endif					/* Arrays */
+	    Protect(ap = (struct b_realarray *) alcrealarray(num), runerr(0));
+	    d.vword.bptr = (union block *)
+		alclisthdr(num, (union block *) ap);
+	    d.dword = D_List;
 	    j=0;
 	    for (i = warg; i < argc; i++) {
-	       if (!cnv:C_double(argv[i], wc->normals[j++]))
+	       if (!cnv:C_double(argv[i], ap->a[j++]))
 		  runerr(102, argv[i]);
 	       }
-#ifdef Arrays
+	  wc->normals = ap;
+	  wc->numnormals = num;
+
 	 c_put(&f, &d);
 #endif					/* Arrays */
 	 }

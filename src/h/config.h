@@ -839,6 +839,10 @@ Deliberate Syntax Error
 #define Graphics3D 1
 #endif					/* HAVE_LIBGL */
 
+#ifndef Arrays
+  #undef Graphics3D
+#endif
+
 #ifndef Graphics
 #undef Graphics3D
 #endif					/* Graphics */

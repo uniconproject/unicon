@@ -457,15 +457,16 @@ typedef struct _wcontext {
 
   double        fov; 		/* field of view angle */
   
-  double        *normals;		/* vertex normals data */
+  struct b_realarray  *normals;		/* vertex normals data */
+  
   int           normode;	    	/* normals on, off or auto */
   int           numnormals;           /* # of normals used */
-
+  
   int           autogen;  /* flag to automatically generate texture coordinate */
   int           texmode;    /* textures on or off */
   int           numtexcoords;           /* # of texture coordinates used */
-  int           ntexcoordsalced;      /* # of texture coordinates alloced */
-  double        *texcoords;             /* texture coordinates */
+  struct b_realarray  *texcoords;             /* texture coordinates */
+  
   int ntextures;			/* # textures actually used */
   int curtexture;			/* subscript of current texture */
   int nalced;				/* number allocated */

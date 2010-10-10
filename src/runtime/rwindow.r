@@ -3838,6 +3838,33 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
 	 }
+      case A_GRENDERER: {
+#if HAVE_LIBGL
+	 sprintf(abuf,"%s", (char *) glGetString(GL_RENDERER));
+#else					/* HAVE_LIBGL */
+	 sprintf(abuf,"%s", "Unknown");
+#endif					/* HAVE_LIBGL */
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+	 }
+      case A_GVENDOR: {
+#if HAVE_LIBGL
+	 sprintf(abuf,"%s", (char *) glGetString(GL_VENDOR));
+#else					/* HAVE_LIBGL */
+	 sprintf(abuf,"%s", "Unknown");
+#endif					/* HAVE_LIBGL */
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+	 }
+      case A_GVERSION: {
+#if HAVE_LIBGL
+	 sprintf(abuf,"%s", (char *) glGetString(GL_VERSION));
+#else					/* HAVE_LIBGL */
+	 sprintf(abuf,"%s", "Unknown");
+#endif					/* HAVE_LIBGL */
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
+	 }
       case A_BUFFERMODE: {
 	 sprintf(abuf,"%s",((w->context->buffermode==BUFFERED3D)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
@@ -4634,6 +4661,9 @@ stringint attribs[] = {
    {"fwidth",		A_FWIDTH},
    {"gamma",		A_GAMMA},
    {"geometry",		A_GEOMETRY},
+   {"grenderer",	A_GRENDERER},
+   {"gvendor",		A_GVENDOR},
+   {"gversion",		A_GVERSION},
    {"height",		A_HEIGHT},
    {"iconic",		A_ICONIC},
    {"iconimage",	A_ICONIMAGE},

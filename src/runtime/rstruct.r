@@ -1003,25 +1003,15 @@ int arraytolist(struct descrip *arr)
    return Succeeded;
 }
 
-
-
 int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
 {
-   word size, arrflag=0;
+   word size;
    tended struct b_realarray *ap2;
-   tended struct descrip val;
-   tended struct b_list *lp;
-   
-   if ( is:list(*dp))
-      lp = (struct b_list *) BlkD(*dp, List);
-   else
-      arrflag=1;
    
    /*
    * Calculate the size of the sublist.
    */
    size =j - i ;
-
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray)
       + size * (word)sizeof(double))))  return Error;
    
@@ -1030,21 +1020,41 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
    if (!skipcopyelements){
       word k;
       /* copy elements i throgh j to the new array ap2*/
-      if (arrflag){
-	for (k=0; i<j; k++,i++){
-	  if (!cnv:C_double(dp[k], ap2->a[k]))
-            return Error;
+      if (is:list(*dp)){
+	tended struct b_list *lp;
+	lp = (struct b_list *) BlkD(*dp, List);
+	if (BlkType(lp->listhead) == T_Realarray){
+	  double *a, *a2;
+	  a = &(((struct b_realarray *) lp->listhead )->a[i]);
+	  a2 = ap2->a;
+	  for (k=0; k<size; k++)
+	     a2[k]=a[k];
+	  }
+	else if (BlkType(lp->listhead) == T_Intarray){
+	  word *a;
+	  double *a2;
+	  a = &(((struct b_intarray *) lp->listhead )->a[i]);
+	  a2 = ap2->a;
+	  for (k=0; k<size; k++)
+	     a2[k]=(double) a[k];
+	  }
+	else{ /* regular list */
+	  tended struct descrip val;
+	  for (k=0; k<size; k++,i++){
+	    c_traverse(lp, &val, i); /* This is not very efficient */
+	    if (!cnv:C_double(val, ap2->a[k]))
+	      return Error;
+	    }
 	  }
 	}
-      else{
-	for (k=0; i<j; k++,i++){
-	  c_traverse(lp, &val, i);
-	  if (!cnv:C_double(val, ap2->a[k]))
-            return Error;
+      else{ /*( *dp is not a list, it is a ptr to an array of descriptors)*/
+	dp = &dp[i];
+	for (k=0; k<size; k++){
+	  if (!cnv:C_double(*dp++, ap2->a[k]))
+	    return Error;
+	    }
 	  }
-	  }
-      }
-    
+      } /* skip */
    
   /* for now, we only handle one dimensional lists */
    ap2->dims=NULL;

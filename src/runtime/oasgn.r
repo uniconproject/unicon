@@ -136,9 +136,9 @@
 #ifdef Arrays 
 	    if ( Offset(x)>0 ) {
 	       if (BlkD(x, Realarray)->title==T_Realarray){
-		  tended struct descrip val;
-		  if (is:real(y)){
-		     *(double *)( (word *) VarLoc(x) + Offset(x)) = getdbl(&y);
+		  double yy;
+		  if (cnv:C_double(y, yy)){
+		     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
 		     }
 		  else{ /* y is not real, try to convert the realarray to list*/
 		     tended struct b_list *xlist= BlkD(x, Realarray)->listp;
@@ -163,7 +163,7 @@
 	       }
 	       else if (BlkD(x,Intarray)->title==T_Intarray){
 		  C_integer ii;
-		  if (cnv:C_integer(y, ii)) 
+		  if (cnv:(exact)C_integer(y, ii)) 
 		     *((word *)VarLoc(x) + Offset(x)) = ii;
 		  else{ /* y is not integer, try to convert the intarray to list*/
 		     tended struct b_list *xlist= BlkD(x, Intarray)->listp;

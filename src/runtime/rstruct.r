@@ -991,12 +991,77 @@ int arraytolist(struct descrip *arr)
 	    lelemp->nused++;
 	 }
 
-	 } /* (ndims==2) */
+	 } /* (ndims>2) */
  
       } /* Realrray */
    else if (BlkType(lparr->listhead)==T_Intarray){
 
-      }
+      struct b_intarray *ap = (struct b_intarray *) lparr->listhead;
+      
+      ndims = (ap->dims?
+      ((ap->dims->Intarray.blksize - sizeof(struct b_intarray) + sizeof(word)) / sizeof(word))
+      : 1);
+      
+      lsize = (ndims>1? ap->dims->Intarray.a[0]:
+       (ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word));
+
+      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return Error );      
+      lelemp->listprev = lelemp->listnext = (union block *) lparr;
+      lparr->listhead = lparr->listtail = (union block *)lelemp;
+      
+      if (ndims==1){
+	 for (i=0; i<lsize; i++){
+	    MakeInt(ap->a[i],&(lelemp->lslots[i]));
+	    lelemp->nused++;
+	    }
+         } /* if (ndims==1) */
+      else if (ndims==2){
+	 struct b_intarray *ap2;
+	 int n=ap->dims->Intarray.a[1];
+	 int base=0, j;
+
+	 for (i=0; i<lsize; i++){
+	    ap2 = alcintarray(n);
+
+	    ap2->dims=NULL;
+	    for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
+	       ap2->a[j]=ap->a[base++];
+
+	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
+	    lelemp->lslots[i].dword = D_Intarray;
+	    lelemp->nused++;
+	 }
+
+	 } /* (ndims==2) */
+     else { /* (ndims > 2) */
+	 struct b_intarray *ap2;
+	 struct b_intarray *dims = NULL;
+	 int n=ap->dims->Intarray.a[1];
+	 int base=0, j;
+	 
+	 for(i=2; i<ndims; i++)
+	    n*=ap->dims->Intarray.a[i];
+
+	 for (i=0; i<lsize; i++){
+	    struct b_intarray *dims = NULL;
+	    
+	    ap2 = alcintarray(n);
+	    dims = alcintarray(ndims-1); 	/* dimension is less by 1 */    
+	    ap2->dims = (union block *)dims;	
+	    for(j=1; j<ndims; j++)		/* copy the dimensions to the new array */
+	       dims->a[j-1]=ap->dims->Intarray.a[j];
+
+	    for(j=0; j<n; j++) /* copy elemets over to the new sub-array */
+	       ap2->a[j]=ap->a[base++];
+
+	    lelemp->lslots[i].vword.bptr = (union block *) ap2;
+	    lelemp->lslots[i].dword = D_Intarray;
+	    lelemp->nused++;
+	 }
+
+	 } /* (ndims>2) */
+
+      } /* IntArray*/
    else
       return Error;
 

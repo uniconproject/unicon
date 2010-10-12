@@ -1068,6 +1068,52 @@ int arraytolist(struct descrip *arr)
    return Succeeded;
 }
 
+/*
+ * traverse a list and produce the element given by position
+ */
+int c_traverse(struct b_list *hp, struct descrip * res, int position)
+{
+   register word i;
+   register struct b_lelem *bp;
+   int j, used;
+
+   /*
+    * Fail if the list is not big enough.
+    */
+   if (hp->size < position)
+      return 0;
+
+   /*
+    * Point bp at the first list block.  If the first block has no
+    *  elements in use, point bp at the next list block.
+    */
+   bp = (struct b_lelem *) hp->listhead;
+   if (bp->nused <= 0) {
+      bp = (struct b_lelem *) bp->listnext;
+      hp->listhead = (union block *) bp;
+      bp->listprev = (union block *) hp;
+      }
+
+   /*
+    * Parse through the list blocks to find the specified element.
+    */
+   i = bp->first;
+   used = bp->nused;
+   for (j=0; j < position; j++){
+      if (used <= 1){
+	 bp = (struct b_lelem *) bp->listnext;
+         used = bp->nused;
+         i = bp->first;
+         }
+      else {
+	 if (i++ >= bp->nslots) i = 0;
+	 used--;
+         }
+      }
+   *res = bp->lslots[i];
+   return 1;
+}
+
 int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
 {
    word size;

@@ -863,6 +863,7 @@ C_integer iipow(n1, n2)
 C_integer n1, n2;
    {
    C_integer result;
+   extern int over_flow;
 
    /* Handle some special cases first */
    over_flow = 0;
@@ -885,13 +886,13 @@ C_integer n1, n2;
    for ( ; ; ) {
       if (n2 & 01L)
 	 {
-	 result = mul(result, n1);
+	 result = mul(result, n1, &over_flow);
 	 if (over_flow)
 	    return 0;
 	 }
 
       if ( ( n2 >>= 1 ) == 0 ) break;
-      n1 = mul(n1, n1);
+      n1 = mul(n1, n1, &over_flow);
       if (over_flow)
 	 return 0;
       }

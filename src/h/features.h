@@ -188,7 +188,7 @@
 #endif					/* ISQL */
 
 #ifdef Audio
-   Feature(1, "_AUDIO", "Audio: Ogg/Vorbis and OpenAL")
+   Feature(1, "_AUDIO", "Audio")
 #endif					/* Audio */
 
 #ifdef HAVE_VOICE

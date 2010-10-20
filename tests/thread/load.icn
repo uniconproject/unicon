@@ -1,0 +1,24 @@
+procedure main()
+    f := open("a.icn","w") | stop("can't write a.icn")
+    write(f, "procedure main()\n_
+	         write(\"hello, world\")\n_
+              end")
+    close(f)
+    write("compiling a.icn")
+    if ss := system("icont a.icn") then {
+	if ss ~= 0 then stop("compile returned ", image(ss))
+        }
+    else stop("system(icont a.icn) failed")
+    
+    write("loading a")
+    if (x := load("a")) then write("loaded ", image(x))
+    else stop("couldn't load(a)")
+
+    write("running a")
+    @x
+    write("returned to parent, goodbye.")
+    remove("a.icn")
+    if find("NT", &features) then remove("a.exe")
+    else remove("a")
+end
+    

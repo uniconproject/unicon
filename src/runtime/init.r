@@ -2351,7 +2351,7 @@ C_integer bs, ss, stk;
    /*
     * Establish pointers to icode data regions.		[[I?]]
     */
-   pstate->Code    = (char *)(pstate + 1);
+   pstate->Code    = ((char *)(pstate + 1)) + sizeof(struct threadstate);
    pstate->Ecode    = (char *)(pstate->Code + hdr.Records);
    pstate->Records = (word *)(pstate->Code + hdr.Records);
    pstate->Ftabp   = (int *)(pstate->Code + hdr.Ftab);

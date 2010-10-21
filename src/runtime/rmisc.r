@@ -1107,7 +1107,12 @@ struct b_coexpr *ce;
 #endif					/* Concurrent */
 
 #ifdef MultiThread
-   /* if we are trying to pop a different program, we probably shouldn't */
+   /*
+    * If we are trying to pop a different program, we probably shouldn't.
+   if (curpstate != ce->program) {
+      syserr("multiprogram disaster in popact\n");
+      }
+    */
 #endif
 
    /*
@@ -1119,8 +1124,15 @@ struct b_coexpr *ce;
       free((pointer)oabp);
       }
 
-   if (abp == NULL || abp->nactivators == 0)
-      syserr("empty activator stack\n");
+   if (abp == NULL || abp->nactivators == 0) {
+#ifdef MultiThread
+      if (curpstate->parent) {
+	 return BlkD(curpstate->parent->K_main, Coexpr);
+	 }
+      else
+#endif					/* MultiThread */
+	 syserr("empty activator stack\n");
+      }
 
    /*
     * Find the activation record for the most recent co-expression.

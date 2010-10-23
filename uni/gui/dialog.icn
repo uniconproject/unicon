@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.21 2009-11-25 23:49:40 jeffery Exp $
+# $Id: dialog.icn,v 1.22 2010-10-23 07:45:40 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -421,6 +421,15 @@ class Dialog : Component(
          if c := self.find_accel(e) then
             c.handle_accel(e)
       }
+
+$ifdef _MACOSX
+      #
+      # On Macs, substitute control-click for right-click and shift-click
+      # for middle-click.  Should we do this everywhere, for consistency?
+      #
+      if &control & (e === (&lpress | &ldrag | &lrelease)) then e -:= 2
+      else if &shift & (e === (&lpress | &ldrag | &lrelease)) then e -:= 1
+$endif
 
       do_handle_event(e)
 

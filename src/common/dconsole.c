@@ -1024,3 +1024,13 @@ getenv_r(const char *name, char *buf, size_t len)
       return -1;
       }
 }
+
+/* dummy functions to get unicon built on Windows */
+struct b_list *alclisthdr(uword size, union block *bptr)
+{return NULL;}
+
+struct b_realarray *alcrealarray(uword n)
+{return NULL;}
+
+int c_traverse(struct b_list *hp, struct descrip * res, int position)
+{return 0;}

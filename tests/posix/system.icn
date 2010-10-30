@@ -1,0 +1,13 @@
+procedure main()
+    remove("foo.out")
+    f := open("x.icn","w")
+    write(f,"procedure main()")
+    write(f,"   write(\"hello world\")")
+    write(f,"end")
+    close(f)
+    system("unicon x.icn > foo.out 2>&1")
+    write("reading foo.out")
+    fin := open("foo.out") | stop("can't open foo.out for reading")
+    every write("\t",!fin)
+    close(fin)
+end

@@ -130,40 +130,6 @@ char *ArgvToCmdline(char **argv)
 #endif					/* NT */
 
 #ifdef MSWindows
-#ifdef ConsoleWindow
-void detectRedirection()
-{
-   struct stat sb;
-   /*
-    * Look at the standard file handles and attempt to detect
-    * redirection.
-    */
-   if (fstat(stdin->_file, &sb) == 0) {
-      if (sb.st_mode & S_IFCHR) {		/* stdin is a device */
-	 }
-      if (sb.st_mode & S_IFREG) {		/* stdin is a regular file */
-	 }
-      /* stdin is of size sb.st_size */
-      if (sb.st_size > 0) {
-         ConsoleFlags |= StdInRedirect;
-	 }
-      }
-   else {					/* unable to identify stdin */
-      }
-
-   if (fstat(stdout->_file, &sb) == 0) {
-      if (sb.st_mode & S_IFCHR) {		/* stdout is a device */
-	 }
-      if (sb.st_mode & S_IFREG) {		/* stdout is a regular file */
-	 }
-      /* stdout is of size sb.st_size */
-      if (sb.st_size == 0)
-         ConsoleFlags |= StdOutRedirect;
-      }
-   else {					/* unable to identify stdout */
-     }
-}
-#endif					/* ConsoleWindow */
 
 char *lognam;
 char tmplognam[128];

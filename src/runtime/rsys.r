@@ -1286,7 +1286,7 @@ FILE *popen (const char* cmd, const char *mode)
 #ifdef __TRACE
     fprintf(stderr, "%s not found, concatenating comspec\n", app_name);
 #endif
-    if (getenv_r("CONSPEC", tmpbuf, 255)==0)
+    if (getenv_r("COMSPEC", tmpbuf, 255)==0)
       tmpsize=strlen(tmpbuf);
     else
       tmpsize=0;
@@ -1938,6 +1938,41 @@ int ptflush(struct ptstruct *ptStruct)
 
 FILE *finredir, *fouredir, *ferredir;
 
+#ifdef ConsoleWindow
+void detectRedirection()
+{
+   struct stat sb;
+   /*
+    * Look at the standard file handles and attempt to detect
+    * redirection.
+    */
+   if (fstat(stdin->_file, &sb) == 0) {
+      if (sb.st_mode & S_IFCHR) {		/* stdin is a device */
+	 }
+      if (sb.st_mode & S_IFREG) {		/* stdin is a regular file */
+	 }
+      /* stdin is of size sb.st_size */
+      if (sb.st_size > 0) {
+         ConsoleFlags |= StdInRedirect;
+	 }
+      }
+   else {					/* unable to identify stdin */
+      }
+
+   if (fstat(stdout->_file, &sb) == 0) {
+      if (sb.st_mode & S_IFCHR) {		/* stdout is a device */
+	 }
+      if (sb.st_mode & S_IFREG) {		/* stdout is a regular file */
+	 }
+      /* stdout is of size sb.st_size */
+      if (sb.st_size == 0)
+         ConsoleFlags |= StdOutRedirect;
+      }
+   else {					/* unable to identify stdout */
+     }
+}
+#endif					/* ConsoleWindow */
+
 /*
  * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
  * Called for both input processing (e.g. in WinMain()) and in output
@@ -1956,7 +1991,8 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    (*avp)[rv] = NULL;
 
 #ifdef ConsoleWindow
-   detectRedirection();
+   if (dequote)
+      detectRedirection();
 #endif					/* ConsoleWindow */
 
    while (*t2) {
@@ -1965,13 +2001,15 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 	 case '\0': break;
 #ifdef ConsoleWindow
 	 case '<': case '>': {
+	    FILE *f;
+	    char c, buf[128], *t3;
+	    if (dequote == 0) goto skipredirect;
 	    /*
 	     * perform file redirection; this is for Windows 3.1
 	     * and other situations where Wiconx is launched from
 	     * a shell that does not process < and > characters.
 	     */
-	    char c = *t2++, buf[128], *t3;
-	    FILE *f;
+	    c = *t2++;
 	    while (*t2 && isspace(*t2)) t2++;
 	    t3 = buf;
 	    while (*t2 && !isspace(*t2)) *t3++ = *t2++;
@@ -2017,14 +2055,19 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 #if NT
             FINDDATA_T fd;
 #endif					/* NT */
-	    char *t3 = t2;
+	    char *t3;
+skipredirect:
+	    t3 = t2;
             while (*t2 && !isspace(*t2)) t2++;
 	    if (*t2)
 	       *t2++ = '\0';
             strcpy(tmp, t3);
+
 #if NT
-	    if (!FINDFIRST(tmp, &fd)) {
+	    if (!strcmp(tmp, ">") || !FINDFIRST(tmp, &fd)) {
 #endif
+
+
 	       *avp = realloc(*avp, (rv + 2) * sizeof (char *));
 	       (*avp)[rv++] = salloc(t3);
                (*avp)[rv] = NULL;

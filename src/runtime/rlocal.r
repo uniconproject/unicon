@@ -21,6 +21,23 @@
 Deliberate Syntax Error
 #endif					/* PORT */
 
+#if NT
+   char *internal_cmds[] = {
+      "dir", "cd", "chdir", "copy", "ren", "rename", "del", "erase",
+      "md", "mkdir", "rd", "rmdir", "vol", "label", "verify", "type",
+      "break", "cls", "chcp", "ctty", "date", "echo", "lh", "loadhigh",
+      "lock", "path", "pause", "prompt", "set", "time", "unlock", "ver", NULL
+      };
+int is_internal(char *s)
+{
+   int i = 0;
+   while (internal_cmds[i]) {
+      if (! stricmp(s, internal_cmds[i])) return 1;
+      }
+   return 0;
+}
+#endif                                  /* NT */
+
 
 /*********************************** AMIGA ***********************************/
 

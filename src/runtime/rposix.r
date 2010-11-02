@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.43 2010-08-13 09:43:57 jeffery Exp $
+ * $Id: rposix.r,v 1.44 2010-11-02 01:47:17 ghollingshead Exp $
  */
 
 #ifdef PosixFns
@@ -506,10 +506,10 @@ struct descrip *dp;
 struct b_record **rp;
 {
    int i;
-   char mode[12], *user, *group;
+   char mode[12], *user = NULL, *group = NULL;
 #if !NT
-   struct passwd *pw, pwbuf;
-   struct group *gr, grbuf;
+   struct passwd *pw = NULL, pwbuf;
+   struct group *gr = NULL, grbuf;
 #endif					/* !NT */
    char buf[4096];
 
@@ -585,11 +585,13 @@ struct b_record **rp;
    StrLoc((*rp)->fields[4]) = alcstr(user, strlen(user));
    StrLen((*rp)->fields[4]) = strlen(user);
    
-   if (getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr)!=0){
+   if ((getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr)!=0) || (gr == NULL)){
       sprintf(mode, "%d", st->st_gid);
       group = mode;
-   } else
+      }
+   else {
       group = gr->gr_name;
+      }
    StrLoc((*rp)->fields[5]) = alcstr(group, strlen(group));
    StrLen((*rp)->fields[5]) = strlen(group);
 #endif					/* NT */

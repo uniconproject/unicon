@@ -9,7 +9,7 @@ include ../makedefs
 # nothing to configure here yet
 
 UC=../../bin/unicon
-WUC=../../bin/unicon
+WUC=../../bin/wunicon -G
 UFLAGS=-c -u
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
@@ -27,13 +27,12 @@ OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 UNICONPACKAGE=idol.u preproce.u unicon.u tree.u unigram.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
-ifdef _WINDOWS_
+ifdef EXE
 	$(WUC) -o ui $(OBJ)
 else
 	$(UC) -o ui $(OBJ)
 endif
 	$(CP) ui$(EXE) ../../bin
-	
 
 ide.u: ide.icn
 	$(UC) $(UFLAGS) ide

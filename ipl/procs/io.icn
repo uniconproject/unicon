@@ -589,7 +589,7 @@ end
 
 procedure directory(name)		#: succeed if name is a directory
 
-$ifdef _MS_WINDOWS
+$ifdef _MS_WINDOWS_NT
    if fattrib(name, "status")[1] == "d" then
       return name
    else
@@ -684,13 +684,13 @@ end
 $endif
 
 
-procedure pathfind(fname, path)		#: find file on path
+procedure pathfind(fname, path, psep)		#: find file on path
    local f, dir, fullname
 
    $ifdef _UNIX
-      $define PSEP ' :' 
+      /psep := ' :' 
    $else
-      $define PSEP ' ' 
+      /psep := ' ' 
    $endif
 
    fname ? {
@@ -704,12 +704,19 @@ procedure pathfind(fname, path)		#: find file on path
    /path := ""
    path := ". " || path
    path ? while not pos(0) do {
-      dir := tab(upto(PSEP) | 0)
+      dir := tab(upto(psep) | 0)
       fullname := trim(dir, '/') || "/" || fname
       if close(open(fullname)) then
          return fullname
-      tab(many(PSEP))
+      tab(many(psep))
       }
+$ifdef _MS_WINDOWS_NT
+   # On windows, if we are doing a system PATH search with ; try to append .exe
+   # Might want to append other path-responding executables.
+   if (psep === ';') & map(fname[-4:0]) ~== ".exe" &
+       (not find(".", fname[-4:0])) then
+      return pathfind(fname || ".exe", path, psep)
+$endif
    fail
 end
 

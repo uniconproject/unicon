@@ -116,6 +116,13 @@ char *ArgvToCmdline(char **argv)
    else {
       char *qq = mytmp;
       while (qq=strchr(qq, '/')) *qq='\\';
+      if (strchr(mytmp, ' ')) {
+	 int j = strlen(mytmp);
+	 mytmp[j+2] = '\0';
+	 mytmp[j+1] = '"';
+	 for( ; j > 0 ; j--) mytmp[j] = mytmp[j-1];
+	 mytmp[0] = '"';
+	 }
       }
    len += strlen(mytmp);
    if (len > 1023) mytmp = realloc(mytmp, len+1);

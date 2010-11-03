@@ -1,13 +1,37 @@
+link io
 procedure main()
-    remove("foo.out")
-    f := open("x.icn","w")
-    write(f,"procedure main()")
-    write(f,"   write(\"hello world\")")
-    write(f,"end")
-    close(f)
-    system("unicon x.icn > foo.out 2>&1")
-    write("reading foo.out")
-    fin := open("foo.out") | stop("can't open foo.out for reading")
-    every write("\t",!fin)
-    close(fin)
+   remove("foo.out")
+   f := open("x.icn","w")
+   write(f,"procedure main()")
+   write(f,"   write(\"hello world\")")
+   write(f,"end")
+   close(f)
+   system("unicon x.icn > foo.out 2>&1")
+   write("reading foo.out")
+   fin := open("foo.out") | stop("can't open foo.out for reading")
+   every write("\t",!fin)
+   close(fin)
+   if write("javac: ", pathfind("javac", getenv("PATH"), ';')) then {
+      write("trying javac -version")
+      f := open("hello.java","w")
+      write(f,"class hello {")
+      write(f,"public static void main(String[] args) {")
+      write(f,"   System.out.println(\"hello world\")")
+      write(f,"}}")
+      close(f)
+      if i := system("javac -version") then write("\t-->returns ",i)
+      else write("system(javac -version) fails")
+      if i := system("javac hello.java > bar.out 2>&1") then
+	 write("\t-->returns ",i)
+      else write("system(javac hello) fails")
+      if fin := open("bar.out") then {
+	 every write("\t",!fin)
+	 close(fin)
+	 }
+      else stop("can't open foo.out for reading")
+      }
+   else {
+      write("did not find a javac along ", getenv("PATH") | "no path?")
+      }
+   write("...done")
 end

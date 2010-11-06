@@ -3838,7 +3838,7 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
 	 }
-      case A_GRENDERER: {
+      case A_GLRENDERER: {
 #if HAVE_LIBGL
 	 sprintf(abuf,"%s", (char *) glGetString(GL_RENDERER));
 #else					/* HAVE_LIBGL */
@@ -3847,7 +3847,7 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
 	 }
-      case A_GVENDOR: {
+      case A_GLVENDOR: {
 #if HAVE_LIBGL
 	 sprintf(abuf,"%s", (char *) glGetString(GL_VENDOR));
 #else					/* HAVE_LIBGL */
@@ -3856,7 +3856,7 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
 	 }
-      case A_GVERSION: {
+      case A_GLVERSION: {
 #if HAVE_LIBGL
 	 sprintf(abuf,"%s", (char *) glGetString(GL_VERSION));
 #else					/* HAVE_LIBGL */
@@ -4661,9 +4661,9 @@ stringint attribs[] = {
    {"fwidth",		A_FWIDTH},
    {"gamma",		A_GAMMA},
    {"geometry",		A_GEOMETRY},
-   {"grenderer",	A_GRENDERER},
-   {"gvendor",		A_GVENDOR},
-   {"gversion",		A_GVERSION},
+   {"glrenderer",	A_GLRENDERER},
+   {"glvendor",		A_GLVENDOR},
+   {"glversion",	A_GLVERSION},
    {"height",		A_HEIGHT},
    {"iconic",		A_ICONIC},
    {"iconimage",	A_ICONIMAGE},

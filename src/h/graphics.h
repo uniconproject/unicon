@@ -752,9 +752,9 @@ typedef struct
 #define A_PICK   	82
 #define A_NORMODE       83
 #define A_FOV       	84
-#define A_GVERSION     	85
-#define A_GVENDOR     	86
-#define A_GRENDERER    	87
+#define A_GLVERSION    	85
+#define A_GLVENDOR     	86
+#define A_GLRENDERER   	87
 
 #define NUMATTRIBS	87
 

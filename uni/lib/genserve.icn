@@ -1,0 +1,285 @@
+#
+# genserve.icn - Generic server for line-oriented text-based protocols.
+#
+# Authors: Jafar Al-Gharaibeh and Clinton Jeffery
+#
+# Based on server.icn from the CVE project.
+#
+# Date: 11/07/2011
+#
+
+$include "posix.icn"
+
+class SocketDriver(
+	 socket,
+	 user,		# Associated user object, or &null if none
+
+	 dtype,		# one of "listen", "admin", or "user"
+
+	 pending_output,# string containing generated output not yet sent
+			# across the socket barrier.
+
+	 pending_input,	# unhandled input (typically from incomplete lines).
+
+	 partition,	# A string that indicates a logical break in the
+			# inputs. "\n" for example. This could be extended
+			# to be a list of strings.
+
+	 Error		# Indicates a socket failure if set
+	 )
+
+   ##
+   # returns the pending input on socket. If partition is set, the input
+   # is broken into parts based on partition and generated one by one.
+   # If Error is set then the socket is invalid and can't be trusted anymore.
+   #
+   method read_socket()
+      local buffer, buffer2
+      if buffer2 := pending_input || ready( socket ) then {
+	 pending_input := ""
+	 if /partition then # no partitions, return everything
+	    return buffer2
+	   
+	 buffer2 ? {
+	    while buffer := tab(find(partition)) do {
+	       suspend buffer
+	       move(*partition)
+	       }
+	    if *(buffer := tab(0)) > 0 then
+	       pending_input := buffer
+	    } # buffer2
+	 } 
+      else
+	 Error := "Failure in reading input from socket: " || image(socket)
+   end
+    
+   method write_socket(s)
+      pending_output ||:= s
+      #writes(socket, s)
+   end
+    
+   # 
+   # flushes any pending output on the socket
+   #
+   method flush()
+      if *(\pending_output) > 0 then {
+	 writes(socket, pending_output)
+	 pending_output := ""
+	 }
+   end
+    
+initially
+   /pending_input := ""
+   /pending_output := ""
+end
+
+#
+#  this should evolve to a good logger and should be moved to a separate file
+#
+class LogHandler()
+   method logit(L[])
+      local msg, s
+      msg:=""
+      every s := !L do
+	 msg ||:= s
+      
+      write(&clock," ",msg)
+   end
+end
+
+#
+#  A basic server class, ideas from cved
+#
+class BasicServer(
+	 port,		# one port for now. Some future servers may need to
+			# listen to several ports.
+
+	 server_name,	# text name of the server. Default: Unicon Server
+
+	 Tsocket_drivers, # socket to SocketDriver objects
+	 socket_list,
+	 logger,	# Logger object
+	 fileHandler	# fileTransfer object ? to be added
+	 )
+
+   ##
+   #  Starts listening on a specific port for TCP requests
+   #  open up network to listen for connections until server is shut down
+   #  @param p   the port to listen to. Default is the class variable port
+   #
+   method open_listener_TCP(p)
+      local listen_sock
+      /p := port
+      if not(listen_sock := server_socket(p)) then {
+         logger.logit("open_listener_TCP(:",image(port),
+		      "): starting server failed because ", sys_errstr(&errno))
+         shutdown()
+      }
+      logger.logit("open_listener_TCP():", server_name, 
+		   " Server started on port ", port)
+
+      add_socket(listen_sock, &null, "listen")
+   end
+   
+   #
+   # add sock to the list of open connections
+   #
+   method add_socket(sock, user, typ)
+      Tsocket_drivers[sock] := SocketDriver(sock, user, typ)
+      put(socket_list, sock)
+   end
+   
+   ##
+   # close connection to sock and remove it with its driver
+   #@param sock socket to be removed
+   method remove_socket(sock)
+      local i
+      Tsocket_drivers[sock].pending_output := ""
+      delete( Tsocket_drivers, sock  )
+   
+      every i := 1 to *socket_list do {
+	 if socket_list[i] === sock then {
+	    delete(socket_list, i)
+	    }
+	 }
+      close( sock )
+   end
+
+   ##
+   # open a listner socket at port p
+   # @param p port to use
+   #
+   method server_socket(p)
+      return open(":" || p, "nl")
+   end
+   
+   ##
+   # run forever
+   #
+   method run()
+      local i, sock, L, buffer, driver, listen_sock
+
+      repeat {
+	 L := select( socket_list, SERVER_TIMEOUT*1000)
+
+	 every sock := !L do {
+	    driver := Tsocket_drivers[sock]
+
+	    if /driver then {
+	       logger.logit("Run(): This should not happen!  _
+			     What is the best way to handle this?")
+	       logger.logit("Run(): Driver is null; do not know socket ", 
+			     image(sock))
+	       next  # fail?
+	       }
+
+	    case driver.dtype of {
+	    "listen": {
+
+	       # If they can't log in, stop listening to them.
+	       # login() would have closed the socket already
+	       if not login(driver) then
+		  remove_socket(sock)
+                     
+	       # create a net listener socket to replace the last one
+	       # note that the last one gets connected to a user in the
+	       # lower level code regardless of whether the login works,
+	       # and is thus not usable for listening for any new users.
+	       # This is a feature of the unicon networking design, and
+	       # probably a good one.
+
+	       if listen_sock := server_socket(port) then 
+		  add_socket(listen_sock, &null, "listen")
+	       else {
+		  logger.logit("Run(): can't open a new listener!")
+		  # need to do more here
+		  }
+	       }
+
+	    # Read from connected, "live" sockets
+	    "admin" | "user" : {
+	       every buffer := driver.read_socket() do {
+		  # These are the requests coming to the server. for now just
+		  # log them and emit them back with server_name!!!!
+		  logger.logit("Run(): This is what I got:", image(buffer) )
+		  driver.write_socket(server_name || " => " || buffer)
+		  }
+
+	       if \driver.Error then {
+		  logger.logit ("Run() :", driver.Error)
+		  remove_socket(sock)
+		  }
+	       }
+
+	    default: {
+	       write("unknown driver.dtype ", image(driver.dtype))
+	       }
+               # end default
+	    } # end case
+	 } # end every sock := !L
+
+	 every driver := !Tsocket_drivers do
+	    driver.flush()
+      } # end repeat
+   end
+
+   #
+   # login -- authenticate the connection.
+   # Not all servers require "real" login. Those servers that
+   # do so need to override this method with proper login
+   #
+   # @param driver the driver object associated with this login
+   method login(driver)
+      driver.dtype := "user"
+      return
+   end
+   
+   #
+   # shutdown: gracefully shuts down the server.
+   #
+   method shutdown()
+      local sock
+      # remove sockets
+      every sock := key(Tsocket_drivers) do
+	 remove_socket( sock )
+
+      logger.logit("shutdown(): ", server_name, " ", server_version())
+      exit(0)
+   end
+   
+   method server_version()
+      return "0.1"
+   end
+   
+initially
+   /server_name := "Unicon Server"
+   /port := DEFAULT_PORT
+   logger := LogHandler()
+   socket_list := []
+   Tsocket_drivers := table()
+end
+
+#
+# SIGINT_handler: handles CTRL-Cs to this process
+#
+procedure SIGINT_handler(s)
+   server.shutdown()
+end
+
+global server
+
+$ifdef MAIN
+
+procedure main()
+    trap("SIGINT", SIGINT_handler)
+    
+    server := BasicServer(9000, "Generic Server")
+    
+    write("opening TCP connection...")
+    server.open_listener_TCP()
+
+    write("running the server...")
+    server.run()
+    write("Good bye")
+end
+$endif

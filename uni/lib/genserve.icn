@@ -42,12 +42,13 @@ class SocketDriver(
 	   
 	 buffer2 ? {
 	    while buffer := tab(find(partition)) do {
-	       suspend buffer
 	       move(*partition)
+	       pending_input := &subject[&pos:0]
+	       suspend buffer
 	       }
 	    if *(buffer := tab(0)) > 0 then
 	       pending_input := buffer
-	    } # buffer2
+	    } # buffer2 ? ...
 	 } 
       else
 	 Error := "Failure in reading input from socket: " || image(socket)
@@ -153,6 +154,8 @@ class BasicServer(
       return open(":" || p, "nl")
    end
    
+   abstract method process_input(s)
+
    ##
    # run forever
    #
@@ -199,10 +202,7 @@ class BasicServer(
 	    # Read from connected, "live" sockets
 	    "admin" | "user" : {
 	       every buffer := driver.read_socket() do {
-		  # These are the requests coming to the server. for now just
-		  # log them and emit them back with server_name!!!!
-		  logger.logit("Run(): This is what I got:", image(buffer) )
-		  driver.write_socket(server_name || " => " || buffer)
+		  process_input(buffer)
 		  }
 
 	       if \driver.Error then {

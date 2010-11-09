@@ -8,6 +8,9 @@
 # Date: 11/07/2011
 #
 
+$define SERVER_TIMEOUT 5
+$define DEFAULT_PORT 8080
+
 $include "posix.icn"
 
 class SocketDriver(
@@ -72,6 +75,7 @@ class SocketDriver(
 initially
    /pending_input := ""
    /pending_output := ""
+   /parition := "\n"
 end
 
 #
@@ -117,7 +121,7 @@ class BasicServer(
          shutdown()
       }
       logger.logit("open_listener_TCP():", server_name, 
-		   " Server started on port ", port)
+		   " started on port ", port)
 
       add_socket(listen_sock, &null, "listen")
    end
@@ -154,7 +158,9 @@ class BasicServer(
       return open(":" || p, "nl")
    end
    
-   abstract method process_input(s)
+   method process_input(driver, buffer)
+    stop("Error: Server should implement method process_input(driver, buffer)")
+   end
 
    ##
    # run forever
@@ -170,9 +176,8 @@ class BasicServer(
 
 	    if /driver then {
 	       logger.logit("Run(): This should not happen!  _
-			     What is the best way to handle this?")
-	       logger.logit("Run(): Driver is null; do not know socket ", 
-			     image(sock))
+			  What is the best way to handle this?  _
+			  Driver is null; do not know socket:" || image(sock))
 	       next  # fail?
 	       }
 
@@ -202,7 +207,7 @@ class BasicServer(
 	    # Read from connected, "live" sockets
 	    "admin" | "user" : {
 	       every buffer := driver.read_socket() do {
-		  process_input(buffer)
+		  process_input(driver, buffer)
 		  }
 
 	       if \driver.Error then {

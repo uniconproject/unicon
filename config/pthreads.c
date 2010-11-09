@@ -97,6 +97,7 @@ int coswitch(void *o, void *n, int first) {
 /*
  * coclean(old) -- clean up co-expression state before freeing.
  */
+#if 0
 void coclean(void *o) {
    cstate ocs = o;			/* old cstate pointer */
    context *old = ocs[1];		/* old context pointer */
@@ -112,7 +113,7 @@ void coclean(void *o) {
    #endif
    free(old);				/* free context block */
    }
-
+#endif
 /*
  * makesem(ctx) -- initialize semaphore in context struct.
  */

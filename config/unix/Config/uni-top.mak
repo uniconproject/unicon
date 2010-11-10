@@ -13,6 +13,7 @@ all :
 	cd util; $(MAKE)
 	cd unidoc; $(MAKE)
 	cd ide; $(MAKE)
+	cd 3d; $(MAKE)
 
 clean Clean:
 	cd iyacc; $(MAKE) Clean
@@ -28,3 +29,4 @@ clean Clean:
 	cd util; $(MAKE) clean
 	cd unidoc; $(MAKE) clean
 	cd ide; $(MAKE) clean
+	cd 3d; $(MAKE) clean

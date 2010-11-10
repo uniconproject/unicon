@@ -21,4 +21,3 @@
 #define LoadFunc
 
 #define Graphics 1
-#define Arrays 1

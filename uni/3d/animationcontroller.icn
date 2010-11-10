@@ -1,10 +1,12 @@
 # animationcontroller.icn
 #
-#  Auther : Jafar Al-Gharaibeh
+#  Author : Jafar Al-Gharaibeh
 #  Date   : Oct/17/09
 #
 
 package graphics3d
+
+$include "graphics3dh.icn"
 
 #
 #
@@ -39,13 +41,13 @@ class AnimationController(
    
    method faster()
       animation_step +:= 1
-      write("animation_step:", animation_step)
+      DEBUGW("animation_step:", animation_step)
    end
    
    method slower()
       if animation_step > 1 then{
 	 animation_step -:= 1
-	 write("animation_step:", animation_step)
+	 DEBUGW("animation_step:", animation_step)
 	 }
    end
    
@@ -55,16 +57,16 @@ class AnimationController(
       animation_track := anim_set
       #animation_step := anim_set.maxKey/120
       a_clock := 0
-      write("anim track set to:", anim_set.label)
+      DEBUGW("anim track set to:", anim_set.label)
       
-      write("mapping... animation to bones")
+      DEBUGW("mapping... animation to bones")
       
       every anim := ! anim_set.lsAnimation do{
          bone := skeleton.get_bone_by_label(anim.boneName)
          bone.animation := anim
-         #write("bone:", bone.label, " TO anim:", anim.boneName)
+         DEBUGW("bone:", bone.label, " TO anim:", anim.boneName)
          }
-      write("done!")
+      DEBUGW("done!")
    end
    
    method calc_animation()
@@ -73,7 +75,7 @@ class AnimationController(
 	 a_clock := 0
  	 #CalcAnimation(Skeletton)
       }
-      #write("controller clock:", a_clock)
+      DEBUGW("controller clock:", a_clock)
       skeleton.calc_animation(a_clock)
       a_clock +:= animation_step
       

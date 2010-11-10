@@ -1,10 +1,15 @@
 # This is terrain.icn
-# Auther: Jafar Al-Gharaibeh
+# Author: Jafar Al-Gharaibeh
 # Date : Sep-3-2008
 #
 
 package graphics3d
 
+$include "graphics3dh.icn"
+
+#
+#
+#
 class Terrain:BasicObject3D(
    texture_file,
    base, rows, cols,
@@ -38,7 +43,7 @@ class Terrain:BasicObject3D(
 	 Texture(texture_file)
          }
       
-      #write("rendering terrain.....")
+      #DEBUGW("rendering terrain.....")
       Fg("green")
       every i:= 1 to rows-1 by 1 do{
          L := list()#(rows*6)
@@ -66,28 +71,24 @@ class Terrain:BasicObject3D(
 	
       WAttrib("meshmode="||string(meshmod))
       WAttrib("texmode=off")  
-      #write("done with terrain.....")
+      #DEBUGW("done with terrain.....")
    end
    
    method load(fname)
       local fin, s, p
       
-      write("loading terrain....")
+      DEBUGW("loading terrain....")
 
-      fin := open(fname) | ( write("can't open ", fname) & fail )
-      write("loading terrain.... 2")
+      fin := open(fname) | ( DEBUGW("can't open ", fname) & fail )
       
-      if /(p := stat(fin)) then write("No stat") & fail
-      write("loading terrain.... 3")
+      if /(p := stat(fin)) then DEBUGW("No stat") & fail
       
-      s := reads(fin, p.size) | ( write("empty terrain data file?!") & fail )
-      write("loading terrain.... 4")
+      s := reads(fin, p.size) | ( DEBUGW("empty terrain data file?!") & fail )
       
       close(fin)
       
-      write ("size s=",*s)
       parse_terrain(s)
-      write("DONE loading terrain....")
+      DEBUGW("DONE loading terrain....")
       
       return 
    end

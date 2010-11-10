@@ -1,11 +1,16 @@
 # util3d.icn
 #
-#  Auther : Jafar Al-Gharaibeh
+#  Author : Jafar Al-Gharaibeh
 #  Date   : Oct/07/08
 #
 
 package graphics3d
 
+$include "graphics3dh.icn"
+
+#
+#
+#
 
 #
 # deepcopy(A) -- make a full copy of the object A, including
@@ -33,6 +38,28 @@ procedure deepcopy(A,cache)
 
     return .cache[A]
 end
+
+
+
+#
+# Return the directory name of the file name s, including the trailing /
+#
+procedure directory_name(s)
+   local i
+   every i := find(PS, s)
+   return s[1:\i + 1] | ""
+end
+
+#
+# Return the file name of s
+#
+procedure file_name(s)
+   local i
+   every i := find(PS, s)
+   return s[\i + 1:0] | s
+end
+
+
 
 procedure matrixTranspose(c)
    local a

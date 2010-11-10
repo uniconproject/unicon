@@ -7,6 +7,8 @@
 
 package graphics3d
 
+$include "graphics3dh.icn"
+
 class Skeleton(
    root_bones,
    lst_mesh,
@@ -23,7 +25,7 @@ class Skeleton(
 	    create_bone_table(root_bone)
 	    }
 	 if rendering_mode=="bone_mesh_local"  then create_bone_local_Mesh()
-	 write("done preparing the x model with skeleton")
+	 DEBUGW("done preparing the x model with skeleton")
    end
 
    method add_root_bone(bone)
@@ -77,7 +79,7 @@ class Skeleton(
       local bone
       bone := bone_table[bName]
       if /bone then{
-         #write(" Warning! I don't have a bone called : ", bName)
+         DEBUGW(" Warning! I don't have a bone called : ", bName)
          fail
          }
 
@@ -125,19 +127,20 @@ class Skeleton(
       t:=&time
       every root_bone := !root_bones do 
 	 root_bone.calc_animation(anim_clock)
-      #write(" calc bone animation::", &time-t)
+      DEBUGW(" calc bone animation::", &time-t)
       
       t:=&time
       every root_bone := !root_bones do 
 	 root_bone.build_skin(rendering_mode)
-      #write(" rebuilding skin:", &time-t)
+      DEBUGW(" rebuilding skin:", &time-t)
       
       t:=&time
       if rendering_mode == "bone_mesh_final" then{
-	 every mesh := !lst_mesh do
-	    #write("special rendering!!! mesh: ", mesh.label)
+	 every mesh := !lst_mesh do{
+	    DEBUGW("special rendering!!! mesh: ", mesh.label)
 	    mesh.specialRender()
-	 #write(" special render:", &time-t)
+	    DEBUGW(" special render:", &time-t)
+	  }
       }
    end   
    

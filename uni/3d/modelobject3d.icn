@@ -1,10 +1,13 @@
 # modelobject3d.icn
 #
-#  Auther : Jafar Al-Gharaibeh
+#  Author : Jafar Al-Gharaibeh
 #  Date   : Oct/08/08
 #
 
 package graphics3d
+
+$include "graphics3dh.icn"
+
 
 #####################################
 #
@@ -65,7 +68,7 @@ class ModelObject3D:BasicObject3D(
       local tmp_cs
   
       if load3DModel(fname, self)  then{
-         write(fname, " model file was loaded successfully!!")            
+         DEBUGW(fname, " model file was loaded successfully!!")            
          model_file_name := fname
          return
          }
@@ -80,10 +83,10 @@ class ModelObject3D:BasicObject3D(
    method render_details()
       local mesh
 
-      write(" \nRendering model............... ", label )
+      DEBUGW(" \nRendering model............... ", label )
       
       every mesh := !lst_mesh do{
-         write("rendering mesh ", mesh.label)
+         DEBUGW("rendering mesh ", mesh.label)
          mesh.render()
 	 }
    end
@@ -157,7 +160,7 @@ class ModelObject3D:BasicObject3D(
          "x" : d := dx
          "z" : d := dz
          default:{
-            write(" wrong scale axis! ", adjust_axis )
+            DEBUGW(" wrong scale axis! ", adjust_axis )
             fail
             }
          }

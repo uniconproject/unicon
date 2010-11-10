@@ -1,10 +1,15 @@
 # This is xparse.icn
-# Auther: Jafar Al-Gharaibeh
+# Author: Jafar Al-Gharaibeh
 # Date : Sep-3-2008
 #
 
 package graphics3d
 
+$include "graphics3dh.icn"
+
+#
+#
+#
 global current_xfile
 
 class XFile(
@@ -23,7 +28,7 @@ method load(fname, m3d)
    s := reads(fin, 16) | stop("empty x file?!")
    checkHeader(s)
    if /(p := stat(fin)) then {
-      write("No stat")
+      DEBUGW("No stat")
       fail
    }
    s := reads(fin, p.size) | stop("empty x file?!")
@@ -109,7 +114,7 @@ method parseBlock()
    local Text, Token
 
    skip_whitespace()   # skip spaces and empty lines
-   #write ("new block")
+   #DEBUGW ("new block")
 
    case move(1) of {
       "{": { 
@@ -134,7 +139,7 @@ method parseBlock()
          move(-1)
       	 Text := parse_identifier()
       	 /Text:="null"
-      	 #write(" Identifier : ", Text)
+      	 #DEBUGW(" Identifier : ", Text)
          return BlockID(Text)
          }
       } #case
@@ -142,7 +147,7 @@ end
 
 method BlockID(id)
    if id=="" then{
-      write("Error, no block read !")
+      DEBUGW("Error, no block read !")
       return "Error"
       }
    if member(X_TemplateID, id ) then{
@@ -201,15 +206,15 @@ method parseBone(parentBone)
 
    cBone.set_label( cBoneName )
 
-   writes(" adding new bone: ", cBoneName)
+   DEBUGW(" adding new bone: ", cBoneName)
    if /parentBone then{  # Skeleton 1st bone
        has_bones:= cBone
        current_model.skeleton.add_root_bone(cBone)
-       write("     :root")
+       DEBUGW("     :root")
       }
    else{
       parentBone.add_subnode(cBone)
-      write("      :sub bone")
+      DEBUGW("      :sub bone")
      }
    
    token := "{"
@@ -241,18 +246,18 @@ method parseMesh()
    current_model.addMesh(mesh)
    mesh.set_label(parse_identifier()|getID("M"))
    jump_after("{")
-      write(" new mesh was created - Mesh: ", mesh.label)   
+      DEBUGW(" new mesh was created - Mesh: ", mesh.label)   
 
    nVertices := parse_int()   
    semicolon()
    nextline()
-   write("Number of vertices:", nVertices)
+   DEBUGW("Number of vertices:", nVertices)
    mesh.lst_vertex := parseArray(nVertices, parseVertex )
 
    nFaces := parse_int()
    semicolon()
    nextline()
-   write("Number of Faces:", nFaces)
+   DEBUGW("Number of Faces:", nFaces)
    mesh.lst_face := parseArray(nFaces, parseFace)
    
    token := "{"
@@ -277,7 +282,7 @@ method parseMeshTextureCoords()
    nTextureCoords := parse_int() 
    semicolon()
    nextline()
-   write("Number of Texture Coords:", nTextureCoords)
+   DEBUGW("Number of Texture Coords:", nTextureCoords)
    current_mesh.lst_texturecoords :=   
       parseArray(nTextureCoords, parseTextureCoords)
    jump_after("}")
@@ -290,7 +295,7 @@ method parseMeshMaterials()
    nMaterials := parse_int() 
    semicolon()
    skip_whitespace()
-   #write("Number of Materials :", nMaterials)
+   #DEBUGW("Number of Materials :", nMaterials)
 
    nFace := parse_int() # should be same as *(current_mesh.lst_face)
    semicolon()
@@ -331,7 +336,7 @@ method parseMeshNormals()
    nNormals := parse_int()
    semicolon()
    nextline()
-   #write("Number of normals:", nNormals)   
+   #DEBUGW("Number of normals:", nNormals)   
    current_mesh.lst_normal := parseArray(nNormals, parseVertex )
 
    nFace := parse_int()
@@ -407,7 +412,7 @@ method parseMaterial(to_table)
                else if exists(file_name(tex_fname)) then
                   tex_fname := file_name(tex_fname)
                else
-                  write(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
+                  DEBUGW(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
                }
 
             newMaterial.textureFileName := tex_fname
@@ -416,9 +421,9 @@ method parseMaterial(to_table)
             if newMaterial.textureFileName[1]=="." then 
                newMaterial.textureFileName := newMaterial.textureFileName[5:0]
 
-            #write(" new texture file : ", newMaterial.textureFileName )
+            #DEBUGW(" new texture file : ", newMaterial.textureFileName )
             #if not (exists(newMaterial.textureFileName)) then
-            #   write(" file not found..!! ")
+            #   DEBUGW(" file not found..!! ")
             }
          default: avoidTemplate()
          } #case
@@ -444,11 +449,11 @@ method parseSkinWeights()
       /tempBoneTable := table()
       cBone := Bone()
       tempBoneTable[temp] := cBone
-      #write("skin weight .. looking for bone:", temp)
+      #DEBUGW("skin weight .. looking for bone:", temp)
       }
    #if temp~==cBone.label then stop(temp," == ",cBone.label," couldn't be ")
 
-   #write("Skinning bone:", cBone.label, "  temp=", temp)
+   #DEBUGW("Skinning bone:", cBone.label, "  temp=", temp)
    semicolon()
    skip_whitespace()
 
@@ -460,7 +465,7 @@ method parseSkinWeights()
    cBone.lst_weight := parseArray(nVertices, parse_real)
    L:= parseArray(16, parse_real )
    if *L=0 then{
-      write(" Error: Bone label : ", cBone.label)
+      DEBUGW(" Error: Bone label : ", cBone.label)
       #stop(" Error!!")
    }
    cBone.skin_offset_matrix := Matrix4x4()
@@ -479,7 +484,7 @@ method parseAnimationSets()
    animationSet.label := ( parse_identifier() | getID("T") )
 
    jump_after("{")
-   write("Animation Set:", animationSet.label)
+   DEBUGW("Animation Set:", animationSet.label)
 
    token := "{"
    while(token ~== "}") do{
@@ -487,7 +492,7 @@ method parseAnimationSets()
          "Comment": {}
          "}":{
               animationSet.maxKey := maxKey
-              write("MaxKey:", maxKey) 
+              DEBUGW("MaxKey:", maxKey) 
               current_model.addAnimationSet( animationSet)
               return
               }
@@ -497,7 +502,7 @@ method parseAnimationSets()
       }# while
 	
    animationSet.maxKey := maxKey
-   write("MaxKey:", maxKey)
+   DEBUGW("MaxKey:", maxKey)
    current_model.addAnimationSet( animationSet)
 end
 
@@ -519,7 +524,7 @@ method parseAnimations(animationSet) #Frm::AnimationSet* &pAS);
             jump_after("{")
             tempAnimation.boneName := parse_identifier()
             jump_after("}")
-            #write("Animated Bone:",tempAnimation.boneName)
+            #DEBUGW("Animated Bone:",tempAnimation.boneName)
             }
         "AnimationKey": parseAnimationKeys(tempAnimation)
          default: avoidTemplate()
@@ -594,22 +599,22 @@ method parseAnimationKeys(animation) #Frm::Animation* &pA);
 
    case key_type of {
       0:{
-      	 #write(" Rotation Keys:", Size)
+      	 #DEBUGW(" Rotation Keys:", Size)
          animation.lst_rotation := parseArray(Size, graphics3d__XFile_parseRotationKey)
-         #write(" Rotations read: ", *animation.lst_rotation)
+         #DEBUGW(" Rotations read: ", *animation.lst_rotation)
          } # 0
       1:{
-      	 #write("Scaling Keys : ", Size)
+      	 #DEBUGW("Scaling Keys : ", Size)
          animation.lst_scaling := parseArray(Size, graphics3d__XFile_parseScalingKey)
-         #write(" Scalings read: ", *animation.lst_scaling)
+         #DEBUGW(" Scalings read: ", *animation.lst_scaling)
          } #1
       2:{
-      	 #write("Position Keys: ", Size)
+      	 #DEBUGW("Position Keys: ", Size)
          animation.lst_translation := parseArray(Size, graphics3d__XFile_parseScalingKey)
-         #write(" positions read: ", *animation.lst_translation)
+         #DEBUGW(" positions read: ", *animation.lst_translation)
          } # 2
       4:{
-      	#write(Size, "Matrix Keys")
+      	#DEBUGW(Size, "Matrix Keys")
          while (Size>0 ) do{
             Size -:= 1
             tempMatrix := MatrixKey()
@@ -629,7 +634,7 @@ method parseAnimationKeys(animation) #Frm::Animation* &pA);
             animation.addAnimationKey("matrix", tempMatrix)
             }
          } # 4
-      default: write("Unknown Key Type", key_type, " ...")
+      default: DEBUGW("Unknown Key Type", key_type, " ...")
    	}
 
    jump_after("}")
@@ -647,7 +652,7 @@ method MapMeshToBones(currentBone)
          }
     }
 
-   #write("Bone:", currentBone.label, " is linked to mesh ", currentBone.mesh_name)
+   #DEBUGW("Bone:", currentBone.label, " is linked to mesh ", currentBone.mesh_name)
 
    if (currentBone.has_subnodes()) then
       every cBone := !currentBone.subnodes do{

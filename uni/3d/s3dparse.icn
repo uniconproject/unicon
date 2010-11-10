@@ -11,8 +11,13 @@
 #
 
 package graphics3d
+link file_dlg
 
+$include "graphics3dh.icn"
 
+#
+#
+#
 record partRecord(firstVertexIndex, vertexCount,
         firstTriIndex, triCount, partName)
 record triangleRecord(textureIndex, vi1,u1,v1, vi2,u2,v2, vi3,u3,v3)
@@ -67,8 +72,8 @@ method load(filename, m3d)
          {
 
             every frm:=1 to 24 do{
-            mesh  := uMesh()
-            frame := umFrame()
+            mesh  := Mesh()
+            frame := Frame()
             if \s3dpart.partName then
                frame.Name := s3dpart.partName
 
@@ -93,7 +98,7 @@ method load(filename, m3d)
                   else
                      write(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
                }
-               newMaterial := uMaterial()
+               newMaterial := Material()
                newMaterial.textureFileName := tex_fname
                put (mesh.lsTexture, tex_fname)
                
@@ -112,19 +117,19 @@ method load(filename, m3d)
                #  if i%100 = 0 then write( "  x=",vertexRecs[i+j].x, 
                #                            "  y=",vertexRecs[i+j].y, 
                #                            "  z=",vertexRecs[i+j].z)
-                put( mesh.lst_vertex, uVector3( vertexRecs[i+j].x, vertexRecs[i+j].y, vertexRecs[i+j].z ))
+                put( mesh.lst_vertex, Vector3( vertexRecs[i+j].x, vertexRecs[i+j].y, vertexRecs[i+j].z ))
              }
 
             every i := s3dpart.firstTriIndex+1 to ( s3dpart.firstTriIndex + s3dpart.triCount) do {
-                 face := uFace()
+                 face := Face()
                  tri := triangleRecs[i]
                  put( face.lst_vertex_index, (tri.vi1+1) ) 
                  put( face.lst_vertex_index, (tri.vi2+1) )
                  put( face.lst_vertex_index, (tri.vi3+1) )
 
-                 put( face.lsTex, uTextureVector2( tri.u1, tri.v1  ))
-                 put( face.lsTex, uTextureVector2( tri.u2, tri.v2  ))
-                 put( face.lsTex, uTextureVector2( tri.u3, tri.v3  ))
+                 put( face.lsTex, TextureVector2( tri.u1, tri.v1  ))
+                 put( face.lsTex, TextureVector2( tri.u2, tri.v2  ))
+                 put( face.lsTex, TextureVector2( tri.u3, tri.v3  ))
 
                  face.texIndex := tri.textureIndex+1
 

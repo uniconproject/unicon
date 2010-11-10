@@ -7,6 +7,11 @@
 
 package graphics3d
 
+$include "graphics3dh.icn"
+
+#
+#
+#
 class Bone : Node(
    mesh_name,		# the mesh label that this bone works on
    mapped_mesh,		# the mesh object that this bone works on
@@ -42,7 +47,7 @@ class Bone : Node(
       if *lst_vertex_index >0 then {
       local_mesh:=Mesh()
       local_mesh.label:= mesh_name || "$" || label
-      write(" creating new bone mesh ",  local_mesh.label )
+      DEBUGW(" creating new bone mesh ",  local_mesh.label )
       
       local_mesh.lst_vertex:= mapped_mesh.lst_vertex
       local_mesh.lst_vertex_final := local_mesh.lst_vertex 
@@ -107,7 +112,7 @@ class Bone : Node(
       if \local_mesh then{   
 	 PushMatrix()
 	 MultMatrix(skin_offset_matrix.to_list())
-	 #write(" rendering bone mesh ", local_mesh.label )
+	 DEBUGW(" rendering bone mesh ", local_mesh.label )
 	 local_mesh.render()
 	 PopMatrix()
       }
@@ -122,14 +127,14 @@ class Bone : Node(
    # Final_Matrix = Skin_Offset * Combined_Matrix
 
    method build_final_matrix() 
-      #write(" Combined Matrix : ", label)
+      DEBUGW(" Combined Matrix : ", label)
       if \parent_node then{
          combined_matrix := local_matrix.mul2(parent_node.combined_matrix )
          }
       else
          combined_matrix := deepcopy(local_matrix)
 
-      #write(" Final Matrix : ", label)
+      DEBUGW(" Final Matrix : ", label)
       if *skin_offset_matrix >0 then
          final_matrix := skin_offset_matrix.mul2(combined_matrix)
       else
@@ -141,12 +146,12 @@ class Bone : Node(
    
    method transform_skin()
       local i, j, v
-      #write(" trying to transform skin.... for mesh:", mapped_mesh.label)
-      #write("image(mapped_mesh.is_rigid)=",image(mapped_mesh.is_rigid))
+      DEBUGW(" trying to transform skin.... for mesh:", mapped_mesh.label)
+      DEBUGW("image(mapped_mesh.is_rigid)=",image(mapped_mesh.is_rigid))
       
       #mapped_mesh.is_rigid :=1
       if \(mapped_mesh.is_rigid) then{
-	 #write(" Transformaing sking.... for mesh:", mapped_mesh.label)
+	 DEBUGW(" Transformaing sking.... for mesh:", mapped_mesh.label)
          every i:= 1 to *lst_vertex_index do{
             j:=lst_vertex_index[i]
             #v := mapped_mesh.lst_vertex[j]
@@ -205,9 +210,9 @@ class Bone : Node(
          anim_index_T:=1
          }
          
-      #write("anim time:", pkey)
+      DEBUGW("anim time:", pkey)
       if /animation then{
-         #write("no Animation for me! bone:", image(label), " mesh:", image(mesh_name))
+         #DEBUGW("no Animation for me! bone:", image(label), " mesh:", image(mesh_name))
          fail
          }
 
@@ -286,7 +291,7 @@ class Bone : Node(
             
          mat.identity()
          quat.to_matrix(mat)
-	 #write("BONE LABEL:", label , " -- " , image(mat) ) #, " -- ", image(mat.A))
+	 DEBUGW("BONE LABEL:", label , " -- " , image(mat) ) #, " -- ", image(mat.A))
          local_matrix.mul(mat)
          }
 

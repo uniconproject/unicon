@@ -1,0 +1,74 @@
+# basicanimationobject3d.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : March/07/07
+#
+
+package graphics3d
+
+class BasicAnimationObject3D:BasicObject3D(
+
+      velocity,         # Vector3 , directional           
+      rot_speed,        # Vector3
+      
+      speed_inc,         #  
+      max_speed,
+      
+      strength,
+      health           
+   )
+           
+   method animate_move()
+      loc.add(velocity)
+      T.x:=loc.x
+      T.y:=loc.y
+      T.z:=loc.z
+   end
+   
+   method animate_rotate()
+      orientation_angles.add(rot_speed)
+      Rx.angle := rot_speed.x
+      Ry.angle := rot_speed.y
+      Rz.angle := rot_speed.z
+   end
+   
+   method animate()
+      animate_move()
+      animate_rotate()
+   end
+
+   method rotate_ref()
+      orientation_angles.add(rot_speed)
+      Rx.angle := orientation_angles.x
+      Ry.angle := orientation_angles.y
+      Rz.angle := orientation_angles.z
+   end
+
+   method set_velocity (v)
+      velocity.set(v)
+   end
+   
+   method set_velocityxyz (x, y, z)
+      velocity.setxyz (x, y, z)
+   end
+   
+   method add_velocity(v)
+      velocity.add(v)
+   end
+   
+   method adjust_with_frame_rate()
+   
+   end
+
+   initially ( myname )
+      self.BasicObject3D.initially(myname)
+      /velocity := Vector3D(0.0, 0.0, 0.0)
+      /rot_speed := Vector3D(0.0, 0.0, 0.0)
+
+      
+      # these valuse were chosen carefully to be used effecienly in collideWith function
+      # in general the object well not affect other objetcs during collision, that is why strength is 0
+      # and also a very small value for health guarantees that the object will die in the first collision
+      /health:=.0000000001    # new born, barely alive! 
+      /strength:=0            # and has no strength!      
+end

@@ -1,0 +1,97 @@
+# animationkeys.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : Oct/07/08
+#
+
+package graphics3d
+
+#
+#
+#
+record RotateKey(the_time, quat )
+record ScaleKey(the_time, v)
+record PositionKey(the_time, v)
+record MatrixKey(the_time, matrix)
+
+#
+#
+#
+class AnimationKeys(
+   boneName,
+   lst_rotation,
+   lst_scaling,
+   lst_translation,
+   lst_matrix
+   )
+   method init()
+      lst_rotation := []
+      lst_scaling := []
+      lst_translation := []
+      lst_matrix := []
+   end
+   
+   method is_name(bname)
+      if boneName==bname then return self
+   end
+   
+   method matrix_empty()
+      if *lst_matrix=0 then return
+   end
+
+   method rotation_empty()
+      if *lst_rotation=0 then return
+   end
+
+   method translation_empty()
+      if *lst_translation=0 then return
+   end
+
+   method scaling_empty()
+      if *lst_scaling=0 then return
+   end
+
+   method matrix_size()
+      return *lst_matrix
+   end
+
+   method rotation_size()
+      return *lst_rotation
+   end
+
+   method translation_size()
+      return *lst_translation
+   end
+
+   method scaling_size()
+      return *lst_scaling
+   end
+
+   method get_matrix(i)
+      return lst_matrix[i]
+   end
+
+   method get_rotation(i)
+      return lst_rotation[i]
+   end
+
+   method get_translation(i)
+      return lst_translation[i]
+   end
+
+   method get_scaling(i)
+      return lst_scaling[i]
+   end
+
+   
+   method addAnimationKey(key_type, theKey)   
+      case key_type of{
+         "rotate"    : put(lst_rotation, theKey)
+         "scale"     : put(lst_scaling, theKey)
+         "translate" : put(lst_translation, theKey)
+         "matrix"    : put(lst_matrix, theKey)
+      } # case
+   end
+   initially
+      init()
+end

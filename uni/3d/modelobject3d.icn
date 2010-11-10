@@ -1,0 +1,223 @@
+# modelobject3d.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : Oct/08/08
+#
+
+package graphics3d
+
+#####################################
+#
+#  load3DModel() should be the IO interface between uModel 
+#  and different 3d model file formats
+#
+#####################################
+
+
+procedure load3DModel(filename, m3d)
+   local fin
+    /m3d := ModelObject3D()
+    if map(filename[-4:0]) == ".s3d" then{
+       fin := S3DFile()
+       m3d.format:=".s3d"
+       }
+    else if map(filename[-2:0]) == ".x" then{
+       fin := XFile()
+       m3d.format:=".x"
+       }
+    else
+       fail
+
+    if fin.load(filename, m3d) then
+       return
+    else
+       fail
+end
+#####################################
+
+
+class ModelObject3D:BasicObject3D(
+
+   model_file_name,		# file label of the model
+   format,			#  "x", "s3d", or "?"
+   rendering_mode,		# "mesh", "bone", bone_mesh , "morph", or what else?
+   
+   lst_mesh,			# list of all meshes in the model      #concatMesh,
+	     
+   
+   scale_value
+   )
+   method init(fname)
+
+      scale_value := 1
+      format := "unkown"   
+
+      lst_mesh := []
+      
+      
+      if \fname then
+         load(fname)
+      
+   end
+   
+   
+   method load( fname )
+      local tmp_cs
+  
+      if load3DModel(fname, self)  then{
+         write(fname, " model file was loaded successfully!!")            
+         model_file_name := fname
+         return
+         }
+
+   end
+   
+   method addMesh(mesh)
+      put(lst_mesh, mesh)
+   end
+   
+  
+   method render_details()
+      local mesh
+
+      write(" \nRendering model............... ", label )
+      
+      every mesh := !lst_mesh do{
+         write("rendering mesh ", mesh.label)
+         mesh.render()
+	 }
+   end
+ 
+   method translateBy(tx, ty, tz)
+      every (!lst_mesh).translate_vx(tx, ty, tz)
+   end
+   
+   method rotateBy(angle, axis)
+      every (!lst_mesh).rotate_vx(angle, axis)
+   end
+   
+   method scaleBy(s)
+      every (!lst_mesh).scale_vx(s)
+   end
+
+    method normalize(factor)
+      local d, dx, dy, dz, mesh, tx, ty, tz
+      
+      calc_bounding_box()
+      
+      /factor := 1.0
+            
+      dx := bb_max.x - bb_min.x
+      dy := bb_max.y - bb_min.y
+      dz := bb_max.z - bb_min.z
+      
+      tx := -dx / 2.0 - bb_min.x
+      ty := -bb_min.y
+      tz := -dz / 2.0 - bb_min.z
+      
+
+      if dx>dy & dx>dz then
+	 d:=dx
+      else if dy>dz then
+	 d:=dy
+      else
+	 d:=dz
+
+      scale_value := real(factor) / d
+      translateBy(tx, ty, tz)
+      
+      every mesh:= !lst_mesh do
+         mesh.scale_vx(scale_value)
+      
+      
+ 
+   end
+
+
+   # scale the model by the adjust_value acoording to the adjust_axis
+   # note : this scale adjustment is uniform on all axieses.
+   method adjustScale(adjust_value, adjust_axis, angle, axis)
+      local d, dx, dy, dz, tx, ty, tz
+      
+      calc_bounding_box()
+      
+      /adjust_value := 1.0
+      /adjust_axis := "y"
+      
+      dy := bb_max.y - bb_min.y
+      dx := bb_max.x - bb_min.x
+      dz := bb_max.z - bb_min.z
+      
+      tx := -dx / 2.0 - bb_min.x
+      ty := -dy / 2.0 - bb_min.y
+      tz := -dz / 2.0 - bb_min.z
+
+      case adjust_axis of{
+         "y" : d := dy
+         "x" : d := dx
+         "z" : d := dz
+         default:{
+            write(" wrong scale axis! ", adjust_axis )
+            fail
+            }
+         }
+
+      scale_value := real(adjust_value) / d
+
+      translateBy(tx, ty, tz)
+      
+      if \angle then
+         rotateBy(angle, axis)
+         
+      scaleBy(scale_value )
+
+      #write("Max x, y ,z :", bb_max.x, ", ", 
+      #                       bb_max.y, ", ", 
+      #                       bb_max.z)
+	
+      #write("Min x, y ,z :", bb_min.x, ", ", 
+      #                       bb_min.y, ", ", 
+      #                       bb_min.z)
+	
+   end
+
+   method calc_bounding_box()
+      local i, mesh 
+	
+       mesh := lst_mesh[1]
+       mesh.calc_bounding_box()
+       bb_min := mesh.bb_min
+       bb_max := mesh.bb_max
+
+       every i:=2 to  *lst_mesh do{
+          mesh := lst_mesh[i]
+          mesh.calc_bounding_box()
+
+          if bb_min.x > mesh.bb_min.x then
+             bb_min.x := mesh.bb_min.x
+          else
+          if bb_max.x < mesh.bb_max.x then
+             bb_max.x := mesh.bb_max.x
+
+          if bb_min.y > mesh.bb_min.y then
+             bb_min.y := mesh.bb_min.y
+          else
+          if bb_max.y < mesh.bb_max.y then
+             bb_max.y := mesh.bb_max.y
+
+          if bb_min.z > mesh.bb_min.z then
+             bb_min.z := mesh.bb_min.z
+          else
+          if bb_max.z < mesh.bb_max.z then
+             bb_max.z := mesh.bb_max.z
+          }
+   end
+
+   initially(myname)
+   
+      self.BasicObject3D.initially(myname)
+      format := "?"
+      lst_mesh := list()
+   
+end
+  

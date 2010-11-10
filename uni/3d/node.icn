@@ -1,0 +1,125 @@
+#
+# File:   node.icn
+# Author: Jafar Al-Gharaibeh
+# Date   : Oct/14/09
+#
+
+package graphics3d
+
+#
+# This class represents a node in a tree structure.
+#
+class Node(
+   subnodes,  		# list of subnodes. Tree structure
+   label,
+   depth,
+   parent_node
+   )
+   
+   method init()
+      parent_node := &null
+      subnodes := []
+   end
+   
+   method set_label (s)
+     if \s then return (label := s)
+   end
+   
+   #
+   # return the count of all nodes below the current node.
+   # current node is excluded.
+   method subtree_count()
+      local n, node
+      n := *subnodes
+      every node := !subnodes do
+	 n +:= node.subtree_count()
+      return n
+   end
+   
+   method add_subnode(node)
+      node.parent_node := self
+      put(subnodes, node)
+   end
+
+   method has_subnodes()
+      if *subnodes > 0 then return *subnodes
+   end
+   
+   #
+   # Return the {Node} that has the label look4name, or fail
+   #
+   method get_node_by_label(look4name)
+      local node, snode
+      if label==look4name then
+         return self
+
+      every node := !subnodes do
+         if snode := node.get_node_by_label(look4name) then
+            return snode
+   end
+
+   method is_leaf()
+      if *subnodes=0 then return
+   end
+   
+   #
+   # Generate all the {Nodes} in this subtree, including this {Node},
+   # in preorder ordering.
+   #
+   method generate_all_preorder()
+      suspend self | (!subnodes).generate_all_preorder()
+   end
+
+   #
+   # Generate all the {Nodes} in this subtree, including this {Node},
+   # in postorder ordering.
+   #
+   method generate_all_postorder()
+      suspend (!subnodes).generate_all_postorder() | self
+   end
+
+   #
+   # Return the label
+   #
+   method get_label()
+      return self.label
+   end
+ 
+   #
+   # Get the parent_node node, or fail if there is none.
+   #
+   method get_parent_node()
+      return \self.parent_node
+   end
+
+   #
+   # Get the node nodes
+   #
+   method get_children()
+      return subnodes
+   end
+
+   #
+   # Clear all the subnodes
+   #
+   method clear_children()
+      subnodes := []
+   end
+
+   #
+   # Delete the given {Node} from the subnodes.
+   #
+   method delete_node(n)
+      local i
+      every i := 1 to *self.subnodes do {
+         if n === self.subnodes[i] then {
+            delete(self.subnodes, i)
+            return
+         }
+      }
+   end
+   
+   initially()
+      parent_node := &null
+      subnodes := []
+end

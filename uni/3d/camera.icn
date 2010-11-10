@@ -1,0 +1,130 @@
+# camera.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : Oct/08/08
+#
+
+package graphics3d
+
+class Camera(
+   position,
+   target,
+   upVector,
+
+   radius,
+   moveDist,
+
+   hRadians,
+   vRadians,
+
+   halfPI,
+   
+   line, line2
+
+   )
+
+   method init()
+      position := Vector3(0.0, 0.0, 1.0)
+      target := Vector3(0.0, 0.0, 0.0)
+      upVector := Vector3(0.0, 1.0, 0.0)
+
+      radius := 1.0
+      moveDist := 1.0
+
+      # angles that it is rotated in the x-z plane and in the y direction
+      # (horizontal and vertical).
+      hRadians := 0.0 
+      vRadians := 0.0
+      
+      halfPI := &pi/2.0
+      #Fg("red")
+      #line:=DrawSphere(target.x, target.y, target.z, 0.1)
+      
+      #Fg("blue")
+      #line2:=DrawSphere(position.x, position.y, position.z, 0.5)
+      
+      #DrawLine( position.x, position.y, position.z,
+      #    	      target.x, target.y, target.z )
+   end
+#
+# Setting the Camera consists of giving its position and angles that it is
+# rotated in the x-z plane and in the y direction (horizontal and vertical).
+#
+   method set( x, y, z, h, v)
+      position.setxyz(x, y, z)
+      target := Vector3(0.0, 0.0, 0.0)
+      upVector := Vector3(0.0, 1.0, 0.0) 
+      hRadians := h
+      vRadians := v
+
+      rotate(0,0)
+  end
+
+#
+# Rotating the Camera is possible in both the horizontal and vertical 
+#
+   method rotate( h, v)
+      hRadians +:= h
+      vRadians +:= v
+
+      target.x := position.x + radius * cos(vRadians) * cos(hRadians)
+      target.y := position.y + radius * sin(vRadians)
+      target.z := position.z + radius * cos(vRadians) * sin(hRadians)
+
+      upVector.x := position.x - target.x
+      upVector.y := abs(position.y + radius * sin(vRadians + halfPI))
+      upVector.z := position.z - target.z
+      
+      
+      #line[3]:=position.x
+      #line[4]:=position.y
+      #line[5]:=position.z
+      #line.x:=target.x
+      #line.y:=target.y
+      #line.z:=target.z
+      
+      Eye(position.x, position.y, position.z,
+          target.x, target.y, target.z,
+          upVector.x, upVector.y, upVector.z)
+
+   end
+   
+#
+# Sliding along the vertical and horizontal planes,
+#
+   method slide( h, v)
+      position.y +:= v * moveDist
+      position.x +:= h * moveDist * cos(hRadians + halfPI)
+      position.z +:= h * moveDist * sin(hRadians + halfPI)
+      rotate(0,0)
+   end
+
+#
+# Since moving the Camera occurs with all of the current angles, and the
+# distance in each direction can be calculated, all we need is a distance
+# forward or back at the current angle.
+#
+   method move(d)
+      /d := 1.0
+      position.y +:= d * moveDist * sin(vRadians)
+      position.x +:= d * moveDist * cos(vRadians) * cos(hRadians)
+      position.z +:= d * moveDist * cos(vRadians) * sin(hRadians)
+      rotate(0,0)
+   end
+###################################33
+ # need to be revised!!!
+   method move_faster()
+      moveDist +:= 1
+   end
+
+   method move_slower()
+      if moveDist > 1.0 then{
+         moveDist -:= 1.0
+
+      }
+   end
+
+
+   initially()
+      init()
+end

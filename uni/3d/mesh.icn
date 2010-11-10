@@ -1,0 +1,495 @@
+
+#
+# File:   mesh.icn
+# Author: Jafar Al-Gharaibeh
+# Date   : Oct/08/08
+#
+
+package graphics3d
+
+class Mesh : BasicObject3D (
+
+   lst_vertex,            # list of vertices (3D Vectors)
+   lst_vertex_final,
+   lst_texturecoords,
+   lst_normal,
+   #lsTexture,
+   lst_material,          # list of materilas
+   lst_face,              # list of faces
+   
+   is_rigid,
+   whereToRenderList,
+   render_list_face_count
+   )
+
+   method init()
+      label:="uniconMesh"
+      lst_vertex:=list()
+      #lst_vertex_final := []
+      lst_texturecoords := list()
+      lst_material := list()
+      lst_face:=list()
+
+   end
+   
+   method normalRender ()
+      local face, L, Ltex, Lnorm, currentMaterial, cm , oldMaterial, faceMaterial,  uv,
+            meshmod, i, diffuse, specular, emission, shininess, display_list, j, k, LL
+            
+      meshmod :=  WAttrib("meshmode")
+      WAttrib("meshmode=triangles")
+      
+      if /lst_vertex_final then lst_vertex_final:=lst_vertex
+      
+      write(" *vertex       : ", *lst_vertex)
+      write(" *vertex Final : ", *lst_vertex_final)
+      write(" *Faces : ", *lst_face)
+      write(" *texture      : ", *lst_texturecoords)
+      
+      PushMatrix()
+      
+      whereToRenderList := []
+
+   oldMaterial := -1
+   render_list_face_count := []
+   i:=1
+   k:=0
+   while i <= *lst_face do{
+      L := []
+      Ltex := []
+      Lnorm := []
+      
+      if \(lst_face[i].materialIndex) then{
+         currentMaterial := lst_face[i].materialIndex
+         faceMaterial := lst_face[i].materialIndex
+         }
+      else{
+         currentMaterial := 1
+         faceMaterial := 1
+         }
+        #if /lst_vertex_final then write( "NOOOOOOOOOOOOOOOOOO!!!! ")
+      while *L <9000 & i<= *lst_face & currentMaterial= faceMaterial do{
+         face := lst_face[i]
+         every put(L, lst_vertex_final[ !face.lst_vertex_index ]["x"|"y"|"z"])
+	 
+	 #if \lst_normal then every put(Lnorm, lst_normal[ !face.lst_vertex_index ]["x"|"y"|"z"])
+	 
+	 k+:=*(face.lst_vertex_index)
+	 
+	 
+         
+         if *(face.lst_texcoord)>=3 then
+            every uv := !face.lst_texcoord do{
+               put(Ltex, uv.u )
+               put(Ltex, uv.v )
+               }
+         else
+            every uv := lst_texturecoords[ !face.lst_vertex_index ] do{
+               put(Ltex, uv.u )
+               put(Ltex, uv.v )
+               }
+         if \(lst_face[i].materialIndex) then
+            faceMaterial := lst_face[i].materialIndex
+         else
+            faceMaterial := currentMaterial
+
+         i +:= 1
+         }
+	 
+	 put(render_list_face_count, *L)
+	 
+         if *Ltex > 1 then
+            Texcoord(Ltex)
+	 if *Lnorm>1 then
+	    Normals(Lnorm)
+
+         if *lst_material > 0 & oldMaterial~=currentMaterial then{
+            cm := lst_material[currentMaterial]
+            oldMaterial := currentMaterial
+
+           diffuse := "diffuse " || string( cm.diffuse[1] * 65535 ) || "," ||
+                              string( cm.diffuse[2] * 65535 ) || "," ||
+                              string( cm.diffuse[3]  * 65535  )
+           #write(diffuse)
+            emission := "emission " || string( cm.emissive[1] * 65535  ) || "," ||
+                              string( cm.emissive[2]* 65535  ) || "," ||
+                              string( cm.emissive[3]* 65535 )
+         #write(emission)
+            specular := "specular " || string( cm.specular[1] * 65535 ) || "," ||
+                              string( cm.specular[2]* 65535 ) || "," ||
+                              string( cm.specular[3]* 65535 )
+         #write(specular)
+            shininess := "shininess " || ( string(cm.power) | "50" )
+            
+          # write( shininess )
+       
+
+            Fg("red")
+            Fg( diffuse || ";" || emission || ";" || specular || ";" ||shininess )
+            #Fg("65000, 65000, 65000")
+            #Fg( diffuse )
+            #Fg( emissive )
+            #Fg( specular )
+            #Fg( shininess )
+            #write("--------------------------")
+            #write(Fg())
+            #write("-------------------------------------------")
+
+            if \lst_material[currentMaterial].textureFileName then{              
+               if WAttrib("texmode")=="off" then WAttrib("texmode=on")               
+               Texture(lst_material[currentMaterial].textureFileName )
+	       write( "Texture :", lst_material[currentMaterial].textureFileName )
+               }
+           else
+               if WAttrib("texmode")=="on" then WAttrib("texmode=off")
+           }
+	   
+	  # if *Lnorm==*L then{
+	  #    if WAttrib("normmode")~=="on" then
+	#	 WAttrib("normmode=on")
+	 #  }else WAttrib("normmode=auto")
+	      
+		 
+	
+
+         
+         #FillPolygon ( 0,0,0, 1,0,0, 1,1,0, 0,1,0)
+         
+        
+         display_list:= WindowContents()
+         
+	 LL := array(*L, 0.0)         
+         every j:=1 to *L do
+            LL[j] := L[j]
+         L:= ["FillPolygon",  176, LL ]
+         
+                 # construct a display list entry 
+	 #push(L, 176)         # redraw code for FillPolygon
+	 #push(L,"FillPolygon")
+ 
+         put ( display_list, L )
+         put(whereToRenderList, *display_list)
+
+	 #write("L=")
+	 #every writes( " ",!L)
+	 #write()
+
+      } # while
+      
+         PopMatrix()
+
+         if WAttrib("texmode")=="on" then WAttrib("texmode=off")
+         WAttrib("meshmode="||string(meshmod))
+	 #WAttrib("normmode=auto")
+
+   end
+   
+   method OLD_specialRender()
+      local i, face, L, currentMaterial, oldMaterial, faceMaterial,  uv,
+            display_list_index, next_index, display_list
+ 
+  oldMaterial := -1
+  next_index := 0
+
+   i:=1
+   while i <= *lst_face do{
+      L := []
+
+      if \(lst_face[i].materialIndex) then{
+         currentMaterial := lst_face[i].materialIndex
+         faceMaterial := lst_face[i].materialIndex
+         }
+      else{
+         currentMaterial := 1
+         faceMaterial := 1
+         }
+
+      while *L <9000 & i<= *lst_face & currentMaterial= faceMaterial do{
+         face := lst_face[i]
+         every put(L, lst_vertex_final[ !face.lst_vertex_index ]["x"|"y"|"z"])
+     
+         if \(lst_face[i].materialIndex) then
+            faceMaterial := lst_face[i].materialIndex
+         else
+            faceMaterial := currentMaterial
+
+         i +:= 1
+         }
+         if *lst_material > 0 & oldMaterial~=currentMaterial then
+            oldMaterial := currentMaterial
+
+         display_list:= WindowContents()
+   
+         # construct a display list entry 
+	 
+	 push(L, 176)         # redraw code for FillPolygon
+	 push(L,"FillPolygon")
+	 
+         #L := RealArray(*L, 0)
+         #every i:=1 to *L do
+         #   RealArrayElem(LL,i, L[i])
+         #L:= ["FillPolygon",  176, LL ]
+	 
+	 
+	 next_index +:= 1
+	 display_list_index := whereToRenderList[next_index]
+ 
+         #write("display_list[display_list_index]:=L")
+	 display_list[display_list_index]:=L
+	 
+	 #write("L=")
+	 #every writes( " ",!L)
+	 #write()
+	 
+         
+         #FillPolygon ! L 
+      } # while
+   end
+   
+   
+   method specialRender()
+   local i, face, L, LL, currentMaterial, oldMaterial, faceMaterial,  uv,
+   display_list_index, next_index, display_list, k, v, n
+   
+   oldMaterial := -1
+   next_index := 0
+   display_list:= WindowContents()
+   
+   i:=1
+   
+   while i <= *lst_face do{
+      
+      if \(lst_face[i].materialIndex) then{
+	 currentMaterial := lst_face[i].materialIndex
+	 faceMaterial := lst_face[i].materialIndex
+      }
+      else{
+	 currentMaterial := 1
+	 faceMaterial := 1
+      }
+      #L := []
+      k:=1
+      next_index +:= 1
+      #write("*************** *render= ", whereToRenderList[next_index])
+      display_list_index := whereToRenderList[next_index]
+      LL := display_list[display_list_index][3] # list(render_list_face_count[next_index])
+      n:=render_list_face_count[next_index]
+      while k <n  & i<= *lst_face & currentMaterial= faceMaterial do{
+	 face := lst_face[i]
+ 
+	 v := lst_vertex_final[face.lst_vertex_index[1]]
+	 LL[k]:= v.x
+	 LL[k+1]:= v.y
+	 LL[k+2]:= v.z
+	 v := lst_vertex_final[face.lst_vertex_index[2]]
+	 LL[k+3]:= v.x
+	 LL[k+4]:= v.y
+	 LL[k+5]:= v.z
+	 v := lst_vertex_final[face.lst_vertex_index[3]]
+	 LL[k+6]:= v.x
+	 LL[k+7]:= v.y
+	 LL[k+8]:= v.z
+	 k+:=9
+	 
+	 if \(lst_face[i].materialIndex) then
+	    faceMaterial := lst_face[i].materialIndex
+	 else
+	    faceMaterial := currentMaterial
+	       
+	       i +:= 1
+      }
+      
+      
+      if *lst_material > 0 & oldMaterial~=currentMaterial then
+	 oldMaterial := currentMaterial
+	 
+   } # while
+   end
+   
+   
+   
+   method render_details()  # returns a unicon display list index
+
+      write ( "  rendering Mesh......   vx=", image(*lst_vertex), "   faces=", image(*lst_face))
+
+      if /whereToRenderList then
+         normalRender()
+      else
+         specialRender()
+      end
+
+   method addMaterial(newMaterial)
+      put(lst_material, newMaterial)
+   end
+   
+   method set_label (s)
+     if \s then return (label := s)
+   end
+
+   method calc_bounding_box()
+      local face, maxv, minv, v
+      maxv := Vector3()
+      face := lst_face[1]
+
+      minv := copy(lst_vertex[1])
+      maxv := copy(lst_vertex[1])
+
+      every v := !lst_vertex do {
+         if minv.x > v.x then
+            minv.x := v.x
+         else 
+         if maxv.x < v.x then
+            maxv.x := v.x
+
+         if minv.y > v.y then
+            minv.y := v.y
+         else 
+         if maxv.y < v.y then
+            maxv.y := v.y
+
+         if minv.z > v.z then
+            minv.z := v.z
+         else 
+         if maxv.z < v.z then
+            maxv.z := v.z
+         }
+
+      bb_min := minv
+      bb_max := maxv
+      
+      #write(image(bb_min))
+      #write(image(bb_max))
+   end
+
+   method translate_vx(tx, ty, tz)
+   local v
+      every v := !lst_vertex do{
+         v.x +:= tx
+         v.y +:= ty
+         v.z +:= tz
+         }
+   end
+   
+   method rotate_vx(angle, axis)
+   local anglePI, sin_t, cos_t, v, x, y, z
+   
+      anglePI := angle * &pi / 180.0
+      sin_t := sin(angle)
+      cos_t := cos(angle)
+      
+      case axis of{
+         "z"|"Z" :{
+            every v := !lst_vertex do{
+               x := v.x
+               y := v.y
+               v.x := cos_t * x + sin_t * y 
+               v.y := cos_t * y - sin_t * x  
+               }
+            }
+         "y"|"Y" :{
+            every v := !lst_vertex do{
+               x := v.x
+               z := v.z
+               v.x := cos_t * x - sin_t * z 
+               v.z := cos_t * x + sin_t * z 
+               }
+            }
+         "x"|"X" :{
+            every v := !lst_vertex do{
+               z := v.z
+               y := v.y
+               v.y := cos_t * y + sin_t * z 
+               v.z := cos_t * z - cos_t * y
+               }
+            }
+         }#case
+   end
+
+
+   method scale_vx(s)
+      local v
+      every v := !lst_vertex do{
+         v.x := v.x * s 
+         v.y := v.y * s
+         v.z := v.z * s 
+         }
+   end
+
+   initially(myname)
+      self.BasicObject3D.initially(myname)
+      init()
+
+end # Class Mesh
+
+##########################   class uFrame
+class uFrame(
+      label,
+      section,
+      renderedFrame,
+
+      T,
+      Rx, Ry, Rz,
+
+
+      lsMesh,         # list of meshes
+      render_list,
+      render_index_list,   # unicon display list indecies
+      isKeyFrame
+   )
+
+   method render()
+      local mesh
+
+      # should do the transformation before anything else!
+      # then render the frame -- following
+      #write(" ")
+      #write ( " Rendering Frame :  ", label,"-",i ,  "    Meshes: ",  *lsMesh )
+
+      section := WSection(label)
+      PushMatrix()
+      T  := Translate(0, 0, 0)
+      Rx := Rotate(0, 1, 0, 0)
+      Ry := Rotate(0, 0, 1, 0)
+      Rz := Rotate(0, 0, 0, 1)
+
+      render_index_list := list()
+
+      #DrawCube(0,0,0, 0.5)
+      every mesh := !lsMesh do{
+         put(render_index_list, mesh.render())
+         }
+
+      PopMatrix()
+      WSection()
+      return render_index_list
+   end
+   
+   method activate()
+   local i, j, main_display_list      
+      main_display_list := WindowContents()
+      j:=1
+      every i:=!render_index_list do{
+         main_display_list[i]:=render_list[j]
+          j+:=1
+         }
+   end
+
+   method renderOffline(r_i_list)
+      local mesh
+      render_index_list := r_i_list
+      render_list := []
+      every mesh := !lsMesh do
+         put(render_list, mesh.renderOffline() )
+   end
+
+   method hide()
+      section.skip:=1
+   end
+   
+   method show()
+      section.skip:=0
+   end
+
+   initially
+      lsMesh := list()      
+end # Class Frame

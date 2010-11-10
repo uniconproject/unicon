@@ -1,0 +1,254 @@
+
+#
+# File:   quaternion.icn
+# Author: Jafar Al-Gharaibeh
+# Date   : Oct/08/08
+#
+
+#****************************************************************************
+# * Quaternion code 
+# 
+
+package graphics3d
+
+$define EPSLN 0.000001
+
+class Quaternion(
+    W, X, Y, Z      # components of a quaternion
+    )
+
+method set( w, x, y, z)
+   W := w
+   X := x
+   Y := y
+   Z := z
+end
+
+method print()
+   write( W, ", ", X, ", ", Y, ", ", Z )
+end
+
+method mul(b)
+   local  w, x, y, z
+
+   W := W*b.W - (X*b.X + Y*b.Y + Z*b.Z)
+  
+   X := W*b.X + b.W*X + Y*b.Z - Z*b.Y
+   Y := W*b.Y + b.W*Y + Z*b.X - X*b.Z
+   Z := W*b.Z + b.W*Z + X*b.Y - Y*b.X
+   return self
+end
+
+method times(b)
+   local  w, x, y, z
+
+   w := W*b.W - (X*b.X + Y*b.Y + Z*b.Z)
+  
+   x := W*b.X + b.W*X + Y*b.Z - Z*b.Y
+   y := W*b.Y + b.W*Y + Z*b.X - X*b.Z
+   z := W*b.Z + b.W*Z + X*b.Y - Y*b.X
+
+   return Quaternion(w,x,y,z)
+end
+
+method negate()
+  X := -X
+  Y := -Y
+  Z := -Z
+  return self
+end
+
+method invert()
+   local norme, recip
+   
+   norme := sqrt(W*W + X*X + Y*Y + Z*Z)
+   if (norme < EPSLN) then
+      norme := 1.0
+
+   recip := 1.0 / norme
+
+   W :=  W * recip
+   X := -X * recip
+   Y := -Y * recip
+   Z := -Z * recip
+
+  return self
+end
+
+method normalize()
+   local norme, recip
+   norme := sqrt(W*W + X*X + Y*Y + Z*Z)
+   if (norme < EPSLN)then {
+      W := 1.0
+      X := Y := Z := 0.0
+      }
+   else{
+      recip := 1.0/norme
+      W *:= recip
+      X *:= recip
+      Y *:= recip
+      Z *:= recip
+      }
+  return self
+end
+
+method from_axis(angle, x, y, z)
+   local omega, s, c
+   
+   s := sqrt(x*x + y*y + z*z)
+  
+   if (s > EPSLN) then{
+      c := 1.0/s
+      x *:= c
+      y *:= c
+      z *:= c
+      omega :=  0.5 * angle
+      s := sin(omega)
+      X := s*x
+      Y := s*y
+      Z := s*z
+      W := cos(omega)
+      }
+   else{
+      X := Y := Z := 0.0
+      W := 1.0
+      }
+  
+   normalize()
+   return self
+end
+
+
+method to_matrix(matrix)   #  return a list of 16 real values
+   /matrix := Matrix4x4()
+
+   matrix.set (
+      [ 
+      1.0 - 2.0*Y*Y - 2.0*Z*Z,
+      2.0*X*Y - 2.0*W*Z,
+      2.0*X*Z + 2.0*W*Y,
+      0.0,	       
+      2.0*X*Y + 2.0*W*Z,
+      1.0 - 2.0*X*X - 2.0*Z*Z,	       
+      2.0*Y*Z - 2.0*W*X,
+      0.0,
+      2.0*X*Z - 2.0*W*Y,
+      2.0*Y*Z + 2.0*W*X,       
+      1.0 - 2.0*X*X - 2.0*Y*Y,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0 ]
+      )
+   return matrix
+end
+
+
+method to_matrixOLD(matrix)   #  return a list of 16 real values
+   /matrix := Matrix4x4()
+
+   matrix[1] := 1.0 - 2.0*Y*Y - 2.0*Z*Z;
+   matrix[5] := 2.0*X*Y + 2.0*W*Z;
+   matrix[9] := 2.0*X*Z - 2.0*W*Y;
+   matrix[13] := 0.0
+   
+   matrix[2] := 2.0*X*Y - 2.0*W*Z;
+   matrix[6] := 1.0 - 2.0*X*X - 2.0*Z*Z;
+   matrix[10] := 2.0*Y*Z + 2.0*W*X;
+   matrix[14] := 0.0
+
+   matrix[3] := 2.0*X*Z + 2.0*W*Y;
+   matrix[7] := 2.0*Y*Z - 2.0*W*X;
+   matrix[11] := 1.0 - 2.0*X*X - 2.0*Y*Y;
+   matrix[15] := 0.0
+   
+   matrix[4] := 0.0
+   matrix[8] := 0.0
+   matrix[12] := 0.0
+   matrix[16] := 1.0
+   
+   
+   return matrix
+end
+
+method slerp(a, b, t)
+   local omega, cosom, sinom, sclp, sclq, i
+
+   cosom := a.X*b.X + a.Y*b.Y + a.Z*b.Z + a.W*b.W
+
+   if ((1.0+cosom) > EPSLN) then{
+      if ((1.0-cosom) > EPSLN) then{
+	 omega := acos(cosom)
+	 sinom := sin(omega)
+	 sclp := sin((1.0-t)*omega) / sinom
+	 sclq := sin(t*omega) / sinom
+	 }
+      else{
+	 sclp := 1.0 - t
+	 sclq := t
+	 }
+
+      X := sclp*a.X + sclq*b.X
+      Y := sclp*a.Y + sclq*b.Y
+      Z := sclp*a.Z + sclq*b.Z
+      W := sclp*a.W + sclq*b.W
+      }
+   else{
+      X :=-a.Y
+      Y := a.X
+      Z :=-a.W
+      W := a.Z
+
+     sclp := sin((1.0-t) * &pi * 0.5)
+     sclq := sin(t * &pi * 0.5)
+
+     X := sclp*a.X + sclq*b.X
+     Y := sclp*a.Y + sclq*b.Y
+     Z := sclp*a.Z + sclq*b.Z
+     }
+end
+
+
+method expp()
+   local m, len
+   
+   len := sqrt(X*X + Y*Y + Z*Z)
+
+   if (len > EPSLN) then
+      m := sin(len)/len
+   else
+      m := 1.0
+
+   W := cos(len)
+
+   X *:= m
+   Y *:= m
+   Z *:= m 
+
+  return self
+end
+
+method logg()
+   local len
+
+   len := sqrt(X*X + Y*Y + Z*Z);
+   len := atan(len/W);
+
+   W := 0.0
+
+   X *:= len
+   Y *:= len
+   Z *:= len
+
+  return self
+end
+
+   initially(w, x, y, z)
+   W := \w | 1.0
+   X := \x | 0.0
+   Y := \y | 0.0
+   Z := \z | 0.0
+
+end # class Quaternion
+

@@ -1,0 +1,333 @@
+#
+# File:   s3dparse.icn
+# Authors: Clinton Jeffery,  Jafar Al-Gharaibeh
+# early 2007
+#
+# It might be best to write a YACC grammar for parsing
+# .s3d files but let us first consider a handwritten parse
+# and see if it is viable.  The entire file
+# is read into one big string s and method main()
+# reads that in and invokes a string scanning environment on it:
+#
+
+package graphics3d
+
+
+record partRecord(firstVertexIndex, vertexCount,
+        firstTriIndex, triCount, partName)
+record triangleRecord(textureIndex, vi1,u1,v1, vi2,u2,v2, vi3,u3,v3)
+
+record vertexRecord(x,y,z)
+
+record lightRecord(label, typ, x, y, z, r, g, b, typedata)
+
+record cameraRecord(label, x, y, z,
+          pitch, blank, heading, horizontalFieldOfViewinRadians,
+          rightX, rightY, rightZ,
+          upX, upY, upZ, fwdX, fwdY, fwdZ, ex, wye, zee)
+
+class S3DFile(
+#
+# The S3D Master File Format uses exactly these variable names
+#
+     textureCount, triCount, vertexCount,
+     frameCount, partCount, lightCount, cameraCount,
+
+     partRecs, textureRecs, triangleRecs,
+     vertexRecs, lightRecs, cameraRecs
+)
+
+method utexcoord(u,v)
+    return (u / 256.0) || "," || (1.0 - (v / 256.0))
+end
+
+method s3dtexcoord(u,v)
+   return [u / 256.0, 1.0 - (v / 256.0)]
+end
+
+
+method load(filename, m3d)
+   local fin, s, face, mesh, new_frames, frame, tri, s3dpart, i, frm, j, 
+         tex_fname, tex_fname2, newMaterial, p
+
+   fin := open(filename) | stop("can't open ", filename)
+   if /(p := stat(fin)) then {
+      write("No stat")
+      fail
+   }
+   s := reads(fin, p.size) | stop("empty x file?!")
+   close(fin)
+
+   s ? {
+      S3Dparse()
+      }
+
+   new_frames := [] 
+      every s3dpart := !partRecs do
+         {
+
+            every frm:=1 to 24 do{
+            mesh  := uMesh()
+            frame := umFrame()
+            if \s3dpart.partName then
+               frame.Name := s3dpart.partName
+
+            put (frame.lsMesh, mesh)
+            put (new_frames, frame )
+
+
+
+            every tex_fname := !textureRecs do
+            {
+               if tex_fname[-1] == "\r" then tex_fname := tex_fname[1:-1]
+               if map(tex_fname[-4:0]) ~== ".gif" then 
+                     tex_fname := map(tex_fname[1:-4])||".gif"
+
+               if not exists(tex_fname) then{
+                  i:=find (file_name(filename), filename)
+                  tex_fname2 := filename[1:i] || file_name(tex_fname)
+                  if exists(tex_fname2) then
+                        tex_fname := tex_fname2
+                  else if exists(file_name(tex_fname)) then
+                     tex_fname := file_name(tex_fname)
+                  else
+                     write(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
+               }
+               newMaterial := uMaterial()
+               newMaterial.textureFileName := tex_fname
+               put (mesh.lsTexture, tex_fname)
+               
+               put (mesh.lst_material, newMaterial)
+            }
+
+            # Texture(textureRecs[tri.textureIndex + 1]) |
+            #                           stop("can't set texture ",
+            #                   textureRecs[tri.textureIndex + 1])
+
+
+
+            j:=(frm-1)*s3dpart.vertexCount
+            
+            every i:= (s3dpart.firstVertexIndex+1 ) to ( s3dpart.firstVertexIndex + s3dpart.vertexCount) do{
+               #  if i%100 = 0 then write( "  x=",vertexRecs[i+j].x, 
+               #                            "  y=",vertexRecs[i+j].y, 
+               #                            "  z=",vertexRecs[i+j].z)
+                put( mesh.lst_vertex, uVector3( vertexRecs[i+j].x, vertexRecs[i+j].y, vertexRecs[i+j].z ))
+             }
+
+            every i := s3dpart.firstTriIndex+1 to ( s3dpart.firstTriIndex + s3dpart.triCount) do {
+                 face := uFace()
+                 tri := triangleRecs[i]
+                 put( face.lst_vertex_index, (tri.vi1+1) ) 
+                 put( face.lst_vertex_index, (tri.vi2+1) )
+                 put( face.lst_vertex_index, (tri.vi3+1) )
+
+                 put( face.lsTex, uTextureVector2( tri.u1, tri.v1  ))
+                 put( face.lsTex, uTextureVector2( tri.u2, tri.v2  ))
+                 put( face.lsTex, uTextureVector2( tri.u3, tri.v3  ))
+
+                 face.texIndex := tri.textureIndex+1
+
+                 put ( mesh.lst_face, face )
+
+            } # every i
+            }
+         } #every part
+
+   return new_frames
+end
+
+# Principle: a Bit of Bottom Up Engineering
+
+# skip (scan past) the rest of this line
+method comment(howMany : 1) # aka skipLine
+   local i
+   if not ="//" then write("warning, expected comment at ", tab(find("\n")))
+   every i := 1 to howMany do tab(find("\n")+1)
+   return
+end
+
+method exists(fname)
+   return close(open(fname))
+end
+
+# parse a bunch of digits
+method d()
+   return integer(tab(many(&digits)))
+end
+
+method f()
+     static dig_e
+      initial {
+          dig_e := &digits++'.-e'
+      }
+    return real(tab(many(dig_e)))
+end
+
+method nl()
+    ="\r"
+    ="\n" | fail
+    return
+end
+
+method cm()
+    tab(many(' '))
+    ="," | fail
+    tab(many(' '))
+    return
+end
+
+
+method S3Dparse()
+
+   comment() | stop("missing version field description")
+   version() | stop("missing version number")
+   comment() | stop("missing header field descriptions")
+   (textureCount := d(), cm(), triCount := d(), cm(),
+    vertexCount := d(), cm(), partCount := d(), cm(),
+    frameCount := d(), cm(), lightCount := d(), cm(),
+    cameraCount := d()) |
+      stop("missing header field(s)")
+   ="\r"
+   nl() | stop("extra junk on header fields line ", tab(find("\n")))
+
+   #write("header ", textureCount , ",", triCount, ",",
+   #vertexCount, ",", frameCount , ",", partCount , ",", lightCount , ",",
+   # cameraCount )
+
+   comment() | stop("missing part list field descriptions")
+   partRecords()
+   #write("parsed ", *partRecs, " parts")
+   comment() | stop("missing texture list field descriptions")
+   textureRecords()
+   #write("parsed ", *textureRecs, " textures")
+   comment() | stop("missing triangle list field descriptions")
+   triangleRecords()
+   #write("parsed ", *triangleRecs, " triangles")
+   comment() | stop("missing vertex list field descriptions")
+   vertexRecords()
+   #write("parsed ", *vertexRecs, " vertices")
+   comment() | stop("missing light list field descriptions")
+   lightRecords()
+   #write("parsed ", *lightRecs, " lights")
+   comment() | stop("missing camera list field descriptions")
+   cameraRecords()
+   #write("parsed ", *cameraRecs, " cameras")
+   extensions()
+end
+
+method version()
+    if not ="103" then write("warning, version number ", tab(find("\n")))
+    else tab(find("\n"))
+    move(1)
+    return
+end
+
+
+method partRecords()
+   local L, i
+   L := partRecs := []
+   every i := 1 to partCount do {
+      put(L,partRecord(d(), cm() & d(), cm() & d(), cm() & d(),
+         =",\"" & tab(find("\"")))) |
+         stop("bad partrecord data ", image(tab(find("\n"))))
+
+
+      ="\"" | stop("bad partrecord before ", image(tab(find("\n"))))
+      ="\r"
+      nl() | stop("bad partrecord before ", image(tab(find("\n"))))
+      }
+end
+
+method textureRecords()
+    local L
+    L := textureRecs := []
+    every 1 to textureCount do {
+   put(L, tab(find("\n")))
+   move(1)
+    }
+end
+
+method s3dutexcoord(u)
+    return (u / 256.0)
+end
+
+method s3dvtexcoord(v)
+    return (1.0 - (v / 256.0))
+end
+
+method triangleRecords()
+    local L
+    L := triangleRecs := []
+    every 1 to triCount do {
+      put(L,triangleRecord(d(),
+         cm() & d(), cm() & s3dutexcoord(f()), cm() & s3dvtexcoord(f()),
+         cm() & d(), cm() & s3dutexcoord(f()), cm() & s3dvtexcoord(f()),
+         cm() & d(), cm() & s3dutexcoord(f()), cm() & s3dvtexcoord(f()))) |
+         stop("bad trianglerecord ", image(tab(find("\n"))))
+      nl() | stop("bad trianglerecord before ", image(tab(find("\n"))))
+    }
+end
+
+method vertexRecords()
+    local L, discards
+    L := vertexRecs := []
+    every 1 to vertexCount * frameCount do {
+      put(L,vertexRecord( f(), cm() & f(), cm() & f())) |
+         stop("bad vertexrecord ", image(tab(find("\n"))))
+      nl() | stop("bad vertexrecord before ", image(tab(find("\n"))))
+    }
+    # discard extra/bogus records
+    discards := 0
+    while not match("//") do { tab(find("\n")+1); discards +:= 1 }
+    if discards > 0 then write("discarded ", discards, " extra vertices")
+end
+
+
+method lightRecords()
+    local L
+    L := lightRecs := []
+    every 1 to lightCount do {
+      put(L,lightRecord( 2(="\"", tab(find("\"")), ="\""),
+         cm() & d(),cm() & f(),cm() & f(),
+         cm() & f(),cm() & f(),cm() & f(),cm() & f()),
+         cm() & tab(find("\n"))) |
+         stop("bad lightrecord ", image(tab(find("\n"))))
+      nl() | stop("bad lightrecord before ", image(tab(find("\n"))))
+    }
+end
+
+
+
+method cameraRecords()
+    local L
+    L := cameraRecs := []
+    every 1 to cameraCount do {
+      put(L,cameraRecord( 2(="\"", tab(find("\"")), ="\""),
+         cm() & f(),cm() & f(),cm() & f(),
+         cm() & f(),cm() & f(),cm() & f(),cm() & f()),
+         tab(find("\n")),
+         nl() & f(), cm() & f(), cm() & f(),
+         nl() & f(), cm() & f(), cm() & f(),
+         nl() & f(), cm() & f(), cm() & f(),
+         nl() & f(), cm() & f(), cm() & f()) |
+         stop("bad camerarecord ", image(tab(find("\n"))))
+      nl() | stop("bad camerarecord before ", image(tab(find("\n"))))
+    }
+end
+
+method extensions()
+   local extensionName, length
+    while extensionName := tab(find(" ")) do {
+   =" "
+   length := d()
+        nl()
+   every 1 to length do tab(find("\n")+1)
+    }
+end
+
+initially()
+
+   textureCount:= triCount:= vertexCount:= frameCount:= partCount:= lightCount:= cameraCount:=0
+
+end

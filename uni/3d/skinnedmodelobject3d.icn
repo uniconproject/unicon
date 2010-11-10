@@ -1,0 +1,172 @@
+# skinnedmodelobject.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : Oct/08/08
+#
+
+package graphics3d
+
+
+class SkinnedModelObject3D:ModelObject3D(
+      #concatMesh,
+	     
+      #skinnedMesh,
+      skeleton,			#  Skeleton()
+      is_rigid,			# null if the model does not have bones      
+      tbl_animation_sets,
+      animationc,		# AnimationController()
+
+      rendering_mode		# "mesh", "bone", bone_mesh , "morph", or what else?
+
+ 
+   )
+   
+   method load( fname )
+      local tmp_cs
+  
+      if load3DModel(fname, self)  then{
+         write(fname, " model file was loaded successfully!!")            
+         model_file_name := fname
+	 setup()
+         return
+         }
+
+      
+   end
+   method setup()
+      local n
+      write("---------------------------------- setup()")
+      if  skeleton.is_not_empty() then{
+      	 #rendering_mode:="bone_mesh_local"
+      	 write("reset skin")
+	 reset_skin()
+         skeleton.setup(lst_mesh, rendering_mode)
+	 n:=skeleton.bone_count()
+	 write (" This models has this # of bones : ", n)
+      }
+      else{
+	 reset_skin()
+	 write("done preparing the x model with NOOOOOO skeleton")
+	 
+      }
+
+   end
+
+   method reset_skin()
+      local mesh, v
+      
+      #write("---------------------------------- reset_skin()")
+      if rendering_mode=="mesh" then{
+	 #write("================ copy original vertex data" )
+         every mesh := !lst_mesh do
+                mesh.lst_vertex_final := mesh.lst_vertex
+	 }
+      #else if rendering_mode:= "bone_mesh_final" then
+	# mesh.lst_vertex_final := deepcopy(mesh.lst_vertex)
+      else{
+         every mesh := !lst_mesh do
+            if \mesh.is_rigid then{
+	       #write("mesh is rigid... creating zero vertexfinal ")
+               mesh.lst_vertex_final := []
+               every v := !(mesh.lst_vertex) do
+                  put(mesh.lst_vertex_final, Vector3(0, 0, 0))
+               }
+            else if \skeleton then{
+               mesh.lst_vertex_final := []
+	       #write("herereeeeeeeeeeeeeeeeeeeeeee")
+	    }
+            else{
+               #write("----------- copy original vertex data" )
+	       mesh.lst_vertex_final := mesh.lst_vertex
+	       }
+          }
+            
+   end   
+   
+   method render_details()
+      local mesh
+
+      write(" \nRendering model............... ", label )
+      
+      #every mesh := !lst_mesh do{
+       #  write("rendering mesh ", mesh.label)
+        # mesh.render()
+	# }
+      case rendering_mode of{
+	 "bone_mesh_local"  : {skeleton.render(rendering_mode)}
+	 #"bone_mesh_final"  : {skeleton.render(rendering_mode)}
+	 default : { # "rendering_mode=mesh "
+	    every mesh := !lst_mesh do{
+	       write("rendering mesh ", mesh.label)
+	       mesh.render()
+	    }
+	    }
+	 }      
+   end
+
+
+   
+   method addAnimationSet(aSet)
+      tbl_animation_sets[aSet.label] := aSet
+   end
+   
+   method get_animationset(nam)
+      if member(tbl_animation_sets, nam) then 
+	 return tbl_animation_sets[nam]
+   end
+   
+   method pick_animation(nam)
+      local anim, a
+      if /nam then anim := ?tbl_animation_sets
+      else anim := get_animationset(nam)
+
+      if \anim then{
+	 animationc.set_animation_track(anim)
+	 write("picked animation:", anim.label)
+	 write("max key:", anim.maxKey)
+	 #every a:=!anim.lsAnimation do{
+	  #  write("bone:",a.boneName)
+	   # write("*M:",*(a.lst_matrix))
+	    #write("*R:",*(a.lst_rotation))
+	    #write("*S:",*(a.lst_scaling))
+	    #write("*T:",*(a.lst_translation))
+	    #}
+      	 }
+      else
+         write("No such animation!")
+   end
+   
+   method calc_animation()
+      local t
+      
+      if rendering_mode == "bone_mesh_final" then{
+         t:=&time
+         reset_skin()
+         #write("reset skin time:", &time-t)
+         }
+      
+      animationc.calc_animation()
+      
+   end
+   
+   
+
+
+   initially(myname, rendmod)
+      self.ModelObject3D.initially(myname)
+      
+      if /rendmod then
+         rendering_mode := "bone_mesh_local"	# just render the mesh as is. no bones, frames, etc...
+      else
+	 rendering_mode := rendmod
+      
+      skeleton := Skeleton()
+      skeleton.rendering_mode := rendering_mode
+      
+      tbl_animation_sets := table(&null)      
+      animationc := AnimationController()
+      animationc.set_skeleton(skeleton)
+      
+      is_rigid := &null
+end
+  

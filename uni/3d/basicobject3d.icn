@@ -1,0 +1,188 @@
+# basicobject3d.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : March/07/07
+#
+
+package graphics3d
+
+class BasicObject3D(
+      label,             # string
+      loc,              # Vector3
+      orientation_angles,  # Vector3 , Orientation in the 3D space
+      			   # which are the angles around x, y, z axises	      
+      scalexyz,
+      color,           
+      radius,           # aproximation of the bounding sphere radius
+      
+      reference,	# Vector3 a refrence point in the 3D space
+      
+      bb_max,		#  max vector and min vector four bounding box calcs
+      bb_min,		#
+      
+      visible_section,   # Unicon WSection Record
+      Txyz,                # Unicon Translation Record
+      Rx,               # 
+      Ry,               # Unicon Rotation Records
+      Rz,               # 
+      
+      Sxyz,
+      
+      
+      
+      render_func	# rendering function if supplied
+   )
+
+   # render Template for all 3D objects
+   method render()                  
+         visible_section := WSection( label )
+         PushMatrix()               
+            Txyz:=Translate (loc.x, loc.y, loc.z)
+            Sxyz:=Scale(scalexyz.x, scalexyz.y, scalexyz.z)
+            Rx:=Rotate(orientation_angles.x, 1.0, 0.0, 0.0)
+            Ry:=Rotate(orientation_angles.y, 0.0, 1.0, 0.0)
+            Rz:=Rotate(orientation_angles.z, 0.0, 0.0, 1.0)
+                      
+            render_details() # this is the real render
+            
+
+         PopMatrix()
+         WSection()
+   end
+   
+   # every object will override this method to customize
+   # its look in the way it likes
+   method render_details()
+      if \render_func then
+         render_func()
+   end
+
+   method set_render_func(new_render)
+       render_func := new_render
+   end
+   
+   method refreshLoc()
+      if /Txyz then fail
+      Txyz.x:=loc.x
+      Txyz.y:=loc.y
+      Txyz.z:=loc.z
+   end
+
+   method refreshScale()
+      if /Sxyz then fail
+      Sxyz.x:=scalexyz.x
+      Sxyz.y:=scalexyz.y
+      Sxyz.z:=scalexyz.z
+   end
+   
+   method refreshRot()
+      if /Rx then fail
+      Rx.angle := orientation_angles.x
+      Ry.angle := orientation_angles.y
+      Rz.angle := orientation_angles.z
+   end
+   
+   method set_location (v)
+      loc.set (v)
+      refreshLoc()
+   end
+
+   method set_locationxyz (x, y, z)
+      loc.setxyz (x, y, z)
+      refreshLoc()      
+   end
+   
+   #
+   # param count: 1(vector) OR 3(reals)
+   #
+   method move(dx, dy, dz)
+      if numeric(dx) then
+         loc.addxyz(dx, dy, dz)
+      else
+         loc.add(dx) 
+      refreshLoc()
+   end
+   
+   method set_orientation(v)
+      orientation_angles.set(v)
+      refreshRot()
+   end
+   
+   method set_orientationxyz(x, y, z)
+      orientation_angles.setxyz(x, y, z)
+      refreshRot()
+   end
+
+   method set_reference(v)
+      reference.set(v)
+   end
+
+   method set_referencexyz(x, y, z)
+      reference.setxyz(x, y, z)
+   end
+   
+   method rotate(rx, ry, rz)
+      if numeric(rx) then
+         orientation_angles.addxyz(rx, ry, rz)
+      else
+         orientation_angles.add(rx)
+      refreshRot()
+   end
+
+   method show()
+      visible_section.skip:=0
+   end
+   
+   method hide()
+      visible_section.skip:=1
+   end
+      
+   method is_hidden()
+      if visible_section.skip~=0 then return
+   end
+   
+   method calc_bounding_box()
+   end
+
+   method is_colliding( another_object )         
+      if loc.distance_to( another_object.loc ) < 
+         radius + another_object.radius then return
+   end
+   
+   method set_size_to(val)
+      local d, dx, dy, dz, mesh, tx, ty, tz
+      
+      calc_bounding_box()
+      
+      /val := 1.0
+            
+      dx := bb_max.x - bb_min.x
+      dy := bb_max.y - bb_min.y
+      dz := bb_max.z - bb_min.z
+      
+      tx := -dx / 2.0 - bb_min.x
+      ty := -bb_min.y
+      tz := -dz / 2.0 - bb_min.z
+      
+
+      if dx>dy & dx>dz then
+	 d:=dx
+      else if dy>dz then
+	 d:=dy
+      else
+	 d:=dz
+
+      scalexyz.x := scalexyz.y := scalexyz.z := real(val) / d      
+      refreshScale()
+   
+   end
+
+   initially(myname )
+      /label := myname
+      /loc := Vector3(0.0, 0.0, 0.0)
+      /orientation_angles := Vector3(0.0, 0.0, 0.0)
+      /scalexyz := Vector3(1.0, 1.0, 1.0)
+      radius := 1.0
+      bb_min := Vector3(-1,-1,-1)
+      bb_max := Vector3( 1, 1, 1)
+end

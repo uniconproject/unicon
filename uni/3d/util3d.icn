@@ -1,0 +1,153 @@
+# util3d.icn
+#
+#  Auther : Jafar Al-Gharaibeh
+#  Date   : Oct/07/08
+#
+
+package graphics3d
+
+
+#
+# deepcopy(A) -- make a full copy of the object A, including
+#    any referenced objects - derived from deepcopy() version
+#    given in the Unicon book.
+#
+procedure deepcopy(A,cache)
+    local k
+
+    /cache := table()       # used to handle multi-referenced objects
+    if \cache[A] then return cache[A]
+
+    case type(A) of {
+        "table"|"list"|"record": {
+            cache[A] := copy(A)
+            every cache[A][k := key(A)] := deepcopy(A[k], cache)
+            }
+        "set": {
+            cache[A] := set()
+            every insert(cache[A], deepcopy(!A, cache))
+            }
+        default:
+            return A
+        }
+
+    return .cache[A]
+end
+
+procedure matrixTranspose(c)
+   local a
+   a:= deepcopy(c)
+   a[5 ]:=:a[ 2]
+   a[9 ]:=:a[ 3]
+   a[10]:=:a[ 7]
+   a[13]:=:a[ 4]
+   a[14]:=:a[ 8]
+   a[15]:=:a[12]
+   
+   return a
+end
+
+procedure printrow(L)
+    every writes(left(string(!L),5), "  ")
+end
+
+procedure matrixMul(a, b)
+   local c
+
+      c := Matrix4x4()
+
+
+      c[1] := a[1]*b[1] + a[2]*b[5] + a[3]*b[9] + a[4]*b[13]
+      c[2] := a[1]*b[2] + a[2]*b[6] + a[3]*b[10] + a[4]*b[14]
+      c[3] := a[1]*b[3] + a[2]*b[7] + a[3]*b[11] + a[4]*b[15]
+      c[4] := a[1]*b[4] + a[2]*b[8] + a[3]*b[12] + a[4]*b[16]
+
+      c[5] := a[5]*b[1] + a[6]*b[5] + a[7]*b[9] + a[8]*b[13]
+      c[6] := a[5]*b[2] + a[6]*b[6] + a[7]*b[10] + a[8]*b[14]
+      c[7] := a[5]*b[3] + a[6]*b[7] + a[7]*b[11] + a[8]*b[15]
+      c[8] := a[5]*b[4] + a[6]*b[8] + a[7]*b[12] + a[8]*b[16]
+
+      c[9 ] := a[9]*b[1] + a[10]*b[5] + a[11]*b[9] + a[12]*b[13]
+      c[10] := a[9]*b[2] + a[10]*b[6] + a[11]*b[10] + a[12]*b[14]
+      c[11] := a[9]*b[3] + a[10]*b[7] + a[11]*b[11] + a[12]*b[15]
+      c[12] := a[9]*b[4] + a[10]*b[8] + a[11]*b[12] + a[12]*b[16]
+
+      c[13] := a[13]*b[1] + a[14]*b[5] + a[15]*b[9] + a[16]*b[13]
+      c[14] := a[13]*b[2] + a[14]*b[6] + a[15]*b[10] + a[16]*b[14]
+      c[15] := a[13]*b[3] + a[14]*b[7] + a[15]*b[11] + a[16]*b[15]
+      c[16] := a[13]*b[4] + a[14]*b[8] + a[15]*b[12] + a[16]*b[16]
+
+
+#      every row:=0 to 12 by 4 do{
+#         every j:=1 to 4 do{
+#            tmp := 0
+#            l:=0
+#            every k:=1 to 4 do{
+#               tmp +:= a[row + k] * b[(k-1)*4+j]
+#               l +:= 4
+#               } #k
+#            c[row + j] := tmp
+#            #writes ("[",row,",",j,"]=",tmp)
+#            writes (tmp, "  ")
+#            } #j
+#            write(" ")
+#         } # row
+   return c
+end
+
+procedure matrixMulVector(a, v)
+   local newv, L, Lnew, row, col, k
+   newv := Vector3()
+   
+   newv.x := a[1]*v.x + a[5]*v.y + a[ 9]*v.z + a[13]
+   newv.y := a[2]*v.x + a[6]*v.y + a[10]*v.z + a[14]
+   newv.z := a[3]*v.x + a[7]*v.y + a[11]*v.z + a[15]
+
+
+   #L:= [v.x, v.y, v.x, 0]
+   #Lnew := list(4, 0)
+
+   #every col := 1 to 4 do{
+   #   k:=0;
+   #   every row := 1 to 4 do{
+   #      Lnew[col] +:= a[k + col]*L[row]
+   #      k+:=4
+   #      }
+   #   }
+   #newv.x := Lnew[1]
+   #newv.y := Lnew[2]
+   #newv.z := Lnew[3]
+   return newv
+end
+
+procedure matrixRotate(angle, axis)
+   local sint, cost, c
+   sint := sin(angle)
+   cost := cos(angle)
+   
+   case axis of{
+   "x" :{
+      c := [ 1,    0,    0, 0,
+             0, cost, sint, 0,
+             0, -sint, cost, 0,
+             0,    0,    0, 1
+            ]
+         }
+   "y" :{
+      c := [ sint, 0, cost, 0,
+                0, 1,    0, 0,
+             cost, 0,-sint, 0,
+                0, 0,    0, 1
+            ]
+         }
+   "z" :{
+      c := [ cost, sint, 0, 0,
+            -sint, cost, 0, 0,
+                0,    0, 1, 0,
+                0,    0, 0, 1
+            ]
+         }
+      } # case
+         
+  return c
+end

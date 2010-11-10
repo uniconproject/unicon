@@ -676,7 +676,10 @@ Deliberate Syntax Error
 #endif					/* PseudoPty */
 
 #ifndef NoArrays
-   #define Arrays
+   #ifdef Arrays
+   #undef Arrays
+   #endif
+   #define Arrays 1
 #endif					/* Arrays */
 
 #ifndef ExecSuffix

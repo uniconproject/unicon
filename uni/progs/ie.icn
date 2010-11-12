@@ -14,13 +14,8 @@ invocable all
 procedure main(args)
 $ifdef _MS_WINDOWS_NT
     SystemType := "Windows"
-    ImageLoc := "./image"
-    SplitLoc := "./split"
 $else
     SystemType := "UNIX"
-    ImageLoc := "/home/icon/ilib/image"
-    ImageLoc := "./image"
-    SplitLoc := "./split"
 $endif
 
     &trace := 0
@@ -39,7 +34,7 @@ $endif
 
     header := [
         "invocable all",
-        "link \"" || ImageLoc || "\", \"" || SplitLoc || "\"",
+        "link image",
         if \WinIcon then "link graphics" else "",
         "global showtype, showimage, showImage",
         "procedure main()",
@@ -161,6 +156,7 @@ $endif
         
         write(sfile, "end")
         WriteWR(sfile)
+        WriteSplit(sfile)
         close(sfile)
 
         case (SystemType) of {
@@ -198,6 +194,21 @@ procedure WriteWR(f)
     write(f, "writes(\"   \",tag, Image(e,3))")
     write(f, "\twrite(if \\showtype then \"  (\"||type(e)||\")\" else \"\")")
     write(f, "end");
+end
+procedure WriteSplit(f)
+
+    write(f,
+	  "procedure split(line,dlms)\n",
+	  "local w\n",
+	  "/dlms := ' \t'\n",
+	  "w := []\n",
+	  "line ? repeat {\n",
+	  "   tab(upto(~dlms))\n",
+          "   put(w,tab(many(~dlms))) | break\n",
+          "      }\n",
+	  "return w\n",
+	  "end\n")
+
 end
 procedure Help()
     write("Enter any Icon expression to evaluate it")

@@ -362,6 +362,9 @@ struct region {
    char *base;				/* start of region */
    char *end;				/* end of region */
    char *free;				/* free pointer */
+#ifdef Concurrent
+   word owner;				/* the serial number of the thread owning this region*/
+#endif					/* Concurrent */
    struct region *prev, *next;		/* forms a linked list of regions */
    struct region *Gprev, *Gnext;	/* global (all programs) lists */
    };
@@ -417,6 +420,17 @@ struct threadstate {
 #ifdef Concurrent
    pthread_t tid;
    int Pollctr;
+   
+   /* used in fmath.r, log() */
+   double Lastbase;
+   double Divisor;
+   
+   /* used in fstr.r, map() */
+   char Maptab[256];
+   
+   /* used in rposix.r */
+   word *Callproc;
+   word Ibuf[100];
 
 #ifdef PosixFns
    char Savedbuf[BUFSIZ];
@@ -475,7 +489,7 @@ struct threadstate {
   struct tend_desc *Tend;  /* chain of tended descriptors */
 
   struct descrip Eret_tmp;	/* eret value during unwinding */
-
+  
 #ifdef ThreadHeap
   struct region *Curstring;    /*  separate regions vs shared      */
   struct region *Curblock;     /*     same above     */
@@ -530,7 +544,7 @@ struct progstate {
    /* Systems don't have more than, oh, about 50 signals, eh?
     * Currently in the system there is 40 of them            */
    struct descrip Handlers[41];
-   int Inited;
+   /*int Inited; not used anymore */
    int signal;
    /*
     * trapped variable keywords' values

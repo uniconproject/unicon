@@ -69,6 +69,11 @@ extern int maxmutexes, nmutexes;
 extern pthread_mutex_t mutex_mutex;
 extern pthread_mutex_t mutex_alcblk;
 extern pthread_mutex_t mutex_alcstr;
+
+extern int GCthread;
+extern int NARthreads;
+
+
 #endif					/* Concurrent */
 
 /*

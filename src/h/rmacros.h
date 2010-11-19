@@ -767,7 +767,6 @@
    
    #ifdef MultiThread
       #define handlers  (curpstate->Handlers)
-      #define inited    (curpstate->Inited)
       #define kywd_err  (curpstate->Kywd_err)
       #define kywd_prog  (curpstate->Kywd_prog)
       #define k_eventcode (curpstate->eventcode)
@@ -909,6 +908,19 @@
       #define savedbuf       (curtstate->Savedbuf)
       #define nsaved         (curtstate->Nsaved)
 #endif					/* PosixFns */
+
+      /* used in fmath.r, log() */
+      #define lastbase	     	(curtstate->Lastbase)
+      #define divisor		(curtstate->Divisor)
+
+      /* used in fstr.r, map() */
+      #define maptab		(curtstate->Maptab)
+      
+      /* used in rposix.r */
+      #define callproc		(curtstate->Callproc)
+      #define ibuf		(curtstate->Ibuf)
+
+
 #endif					/* Concurrent */
 
       #define k_main        (curpstate->K_main)
@@ -1048,7 +1060,6 @@
 #endif					/* ISQL */
 
 #ifdef Concurrent 
-  #define NUM_STATIC_MUTEXES	15
 
    #define MTX_OP_ASTR		0
    #define MTX_OP_AREAL		1
@@ -1068,6 +1079,23 @@
    #define MTX_BLKHEAP		13
 
    #define MTX_TLS		14
+   
+   #define MTX_CURFILE_HANDLE	15
+   
+   #define MTX_SEGVTRAP_N	16
+   
+   #define MTX_DR_TBL		17
+   
+   #define MTX_SOCK_MAP		18
+   
+   #define MTX_GCTHREAD		19
+   
+/* #define MTX_HANDLERS	??
+   
+   #define MTX_PCO_INITED	??
+*/  
+   /* total is:  */
+   #define NUM_STATIC_MUTEXES	20
 
 #endif					/* Concurrent */
 
@@ -1077,10 +1105,25 @@
  *  error tracing.
  */
 #define MUTEX_LOCK( mtx, msg) { int retval; \
+  printf("lock=%s\n ", msg); \
   if ((retval=pthread_mutex_lock(&mtx)) != 0) handle_thread_error(retval); }
 #define MUTEX_UNLOCK( mtx, msg) { int retval; \
+printf("unlock=%s\n ", msg); \
   if ((retval=pthread_mutex_unlock(&mtx)) != 0)  handle_thread_error(retval); }
+
+/*
+ *  Lock mutex static_mutexes[mtx].
+ */
+#define MUTEX_LOCKID(mtx) { int retval; \
+printf("lock=%d\n ", mtx); \
+  if ((retval=pthread_mutex_lock(&static_mutexes[mtx])) != 0) handle_thread_error(retval); }
+#define MUTEX_UNLOCKID(mtx) { int retval; \
+  printf("unlock=%d\n ", mtx); \
+  if ((retval=pthread_mutex_unlock(&static_mutexes[mtx])) != 0)  handle_thread_error(retval); }
+ 
 #else					/* Concurrent */
 #define MUTEX_LOCK( mtx, msg)
 #define MUTEX_UNLOCK( mtx, msg)
+#define MUTEX_LOCKID(mtx)
+#define MUTEX_UNLOCKID(mtx)
 #endif					/* Concurrent */

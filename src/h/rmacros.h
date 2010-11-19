@@ -1105,20 +1105,16 @@
  *  error tracing.
  */
 #define MUTEX_LOCK( mtx, msg) { int retval; \
-  printf("lock=%s\n ", msg); \
   if ((retval=pthread_mutex_lock(&mtx)) != 0) handle_thread_error(retval); }
 #define MUTEX_UNLOCK( mtx, msg) { int retval; \
-printf("unlock=%s\n ", msg); \
   if ((retval=pthread_mutex_unlock(&mtx)) != 0)  handle_thread_error(retval); }
 
 /*
  *  Lock mutex static_mutexes[mtx].
  */
 #define MUTEX_LOCKID(mtx) { int retval; \
-printf("lock=%d\n ", mtx); \
   if ((retval=pthread_mutex_lock(&static_mutexes[mtx])) != 0) handle_thread_error(retval); }
 #define MUTEX_UNLOCKID(mtx) { int retval; \
-  printf("unlock=%d\n ", mtx); \
   if ((retval=pthread_mutex_unlock(&static_mutexes[mtx])) != 0)  handle_thread_error(retval); }
  
 #else					/* Concurrent */

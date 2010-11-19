@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.44 2010-11-02 01:47:17 ghollingshead Exp $
+ * $Id: rposix.r,v 1.45 2010-11-19 06:27:49 to_jafar Exp $
  */
 
 #ifdef PosixFns
@@ -1318,10 +1318,12 @@ static void sock_put(s, fd)
 char *s;
 int fd;
 {
+   MUTEX_LOCKID(MTX_SOCK_MAP);
    sock_map[nsock].fd = fd;
    sock_map[nsock].name = (char*) malloc(strlen(s) + 1);
    strcpy(sock_map[nsock].name, s);
    nsock++;
+   MUTEX_UNLOCKID(MTX_SOCK_MAP);
 }
 
 #if !NT
@@ -1487,7 +1489,9 @@ struct hostent *hs;
 #if !COMPILER
 
 /* No provision for resumption */
+#ifndef Concurrent
 static word *callproc, ibuf[100];
+#endif					/* Concurrent */
 static dptr call(proc, args, nargs)
 struct descrip proc;
 dptr args;
@@ -1552,23 +1556,29 @@ int nargs;
 #ifndef MultiThread
 /* Systems don't have more than, oh, about 50 signals, eh? */
 static struct descrip handlers[41];
-static int inited = 0;
-#endif					/* MultiThread */
 
 void init_sighandlers()
 {
    int i;
    for(i = 0; i < 41; i++)
       handlers[i] = nulldesc;
-   inited = 1;
 }
+#else					/* MultiThread */
+
+void init_sighandlers(pstate)
+struct progstate *pstate;
+{
+   int i;
+   for(i = 0; i < 41; i++)
+      pstate->Handlers[i] = nulldesc;
+}
+#endif					/* MultiThread */
 
 struct descrip register_sig(sig, handler)
 int sig;
 struct descrip handler;
 {
    struct descrip old;
-   if (!inited) init_sighandlers();
 
 #ifdef MultiThread
    curpstate->signal = 0;
@@ -1585,8 +1595,6 @@ int sig;
    struct descrip proc, val;
    struct b_proc *pp;
    char *p;
-
-   if (!inited) init_sighandlers();
 
    proc = handlers[sig];
 #ifdef MultiThread

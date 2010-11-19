@@ -607,7 +607,7 @@ dynrec_recname_create(name, flds, nflds)
 {
    char * p;
    int i, len;
-   static char rslt[256];
+   char * rslt;
 
    for (i=len=0; i<nflds; i++)
       len += StrLen(flds[i]);
@@ -615,6 +615,8 @@ dynrec_recname_create(name, flds, nflds)
       printf("dynrec_name_create: name exceeds max.\n");
       return NULL;
       }
+      
+   Protect(rslt = alcstr(NULL, 256), return NULL);
    for (p=rslt,i=0; i<nflds; i++) {
       strncpy(p, StrLoc(flds[i]), StrLen(flds[i]));
       p += StrLen(flds[i]);
@@ -741,8 +743,10 @@ dynrecord(s, fields, n)
    bpl = malloc(sizeof(struct b_proc_list));
    if (bpl == NULL) return NULL;
    bpl->this = bp;
+   MUTEX_LOCKID(MTX_DR_TBL);
    bpl->next = dr_tbl[hval];
    dr_tbl[hval] = bpl;
+   MUTEX_UNLOCKID(MTX_DR_TBL);
    return bp;
 }
 

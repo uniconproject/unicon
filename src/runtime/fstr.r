@@ -458,7 +458,9 @@ function{1} map(s1,s2,s3)
       register int i;
       register word slen;
       register char *str1, *str2, *str3;
+#ifndef Concurrent
       static char maptab[256];
+#endif					/* Concurrent */
 
 #if !COMPILER
       /*

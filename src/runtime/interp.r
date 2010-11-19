@@ -668,6 +668,12 @@ Deliberate Syntax Error
       EVVal(lastop, E_Opcode);
 #endif					/* E_Opcode */
 
+#ifdef Concurrent
+      /* If there is a pending GC request, then block/sleep*/
+      if (GCthread)
+	wait4GC(0);
+#endif					/* Concurrent */
+
       switch ((int)lastop) {		/*
 				 * Switch on opcode.  The cases are
 				 * organized roughly by functionality

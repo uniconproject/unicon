@@ -637,8 +637,10 @@ void init_threadheap(struct threadstate *ts)
       curstring = rp;
       ts->Curstring = rp;
       }
-    else
+    else{
+      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
       syserr(" init_threadheap: insufficient memory");
+      }
 
    /*   printf(" st=%0x\n",  curstring->base);*/
 
@@ -662,8 +664,10 @@ void init_threadheap(struct threadstate *ts)
       curblock = rp;
       ts->Curblock = rp;
       }
-    else
+    else{
+      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
       syserr(" init_threadheap: insufficient memory");
+      }
 
    /*   printf("  blk=%0x\n",  curblock->base);*/
 
@@ -681,6 +685,10 @@ void init_threadstate(struct threadstate *ts)
 #ifdef Concurrent
    ts->tid = pthread_self();
    ts->Pollctr=0;
+   
+   /* used in fmath.r, log() */
+   ts->Lastbase=0.0;
+   ts->Divisor;
 
 #ifdef PosixFns
    ts->Nsaved=0;
@@ -733,6 +741,7 @@ void init_threadstate(struct threadstate *ts)
    ts->stringtotal=0;
    ts->blocktotal=0;
 #endif 					/* ThreadHeap */
+
 }
 
 #if COMPILER
@@ -851,8 +860,11 @@ char *argv[];
 
    rootpstate.tstate = &roottstate;
    curtstate = &roottstate;
-
+   
+   
    init_threadstate(curtstate);
+   
+   init_sighandlers(curpstate);
 
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
@@ -930,6 +942,7 @@ char *argv[];
 
    curstring = &rootstring;
    curblock  = &rootblock;
+   init_sighandlers();
 #endif					/* MultiThread */
 
    rootstring.size = MaxStrSpace;
@@ -1223,6 +1236,13 @@ Deliberate Syntax Error
    BlkLoc(k_main) = (union block *) mainhead;
    k_current = k_main;
 
+   /**/
+#ifdef Concurrent
+   GCthread=0;		/* The thread who requested a GC */
+   NARthreads=1;	/* Number of Async Running threads*/
+#endif					/* Concurrent */
+   
+
 #ifdef PthreadCoswitch
 /*
  * Allocate a struct context for the main co-expression.
@@ -1233,6 +1253,8 @@ Deliberate Syntax Error
    ctx = ncs[1] = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = mainhead;
+   ctx->thread = pthread_self();
+   ctx->alive = 1;
 #ifdef Concurrent
    tlshead = malloc(sizeof(struct tls_chain));
    if (tlshead==NULL)
@@ -1659,11 +1681,14 @@ void segvtrap()
    {
    static int n = 0;
 
+   MUTEX_LOCKID(MTX_SEGVTRAP_N);
    if (n != 0) {			/* only try traceback once */
       fprintf(stderr, "[Traceback failed]\n");
+      MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
       exit(1);
       }
    n++;
+   MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
 
 #if MVS || VM
 #if SASC
@@ -2175,6 +2200,8 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 
    pstate->Kywd_err = zerodesc;
 
+   init_sighandlers(pstate);
+   
    init_threadstate(tstate);
 
    pstate->Kywd_time_elsewhere = millisec();

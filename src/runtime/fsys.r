@@ -1080,7 +1080,7 @@ function{0,1} read(f)
       register word slen, rlen;
       register char *sptr;
       int status;
-      static char sbuf[MaxReadStr];
+      char sbuf[MaxReadStr];
       tended struct descrip s;
       FILE *fp;
 #ifdef PosixFns
@@ -1314,7 +1314,7 @@ function{0,1} reads(f,i)
    body {
       register word slen, rlen;
       register char *sptr;
-      static char sbuf[MaxReadStr];
+      char sbuf[MaxReadStr];
       SOCKET ws;
       int bytesread = 0;
       int Maxread = 0;

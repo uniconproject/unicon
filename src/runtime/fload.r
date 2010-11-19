@@ -88,6 +88,7 @@ function{0,1} loadfunc(filename,funcname)
       /*
        * Get a library handle, reusing it over successive calls.
        */
+      MUTEX_LOCKID(MTX_CURFILE_HANDLE);
       if (!handle || !curfile || strcmp(filename, curfile) != 0) {
          if (curfile)
             free((pointer)curfile);	/* free the old file name */
@@ -116,8 +117,10 @@ function{0,1} loadfunc(filename,funcname)
       if (!handle || !func) {
          fprintf(stderr, "\nloadfunc(\"%s\",\"%s\"): %s\n",
             filename, funcname, dlerror());
+         MUTEX_UNLOCKID(MTX_CURFILE_HANDLE);
          runerr(216);
          }
+      MUTEX_UNLOCKID(MTX_CURFILE_HANDLE);
       /*
        * Build and return a proc descriptor.
        */

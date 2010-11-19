@@ -924,7 +924,7 @@ char *s;
    {
    register char *p;
    long ival;
-   static char *maxneg = MaxNegInt;
+   char *maxneg = MaxNegInt;
 
    p = s + MaxCvtLen - 1;
    ival = num;

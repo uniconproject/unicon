@@ -150,7 +150,6 @@ alcbignum_macro(alcbignum,0)
 struct b_coexpr *alccoexp()
    {
    struct b_coexpr *ep;
-   static int serial = 2; /* main co-expression is allocated elsewhere */
    ep = (struct b_coexpr *)malloc((msize)stksize);
 
    /*
@@ -170,7 +169,9 @@ struct b_coexpr *alccoexp()
 
    ep->title = T_Coexpr;
    ep->size = 0;
-   ep->id = serial++;
+   MUTEX_LOCKID(MTX_COEXP_SER);
+   ep->id = coexp_ser++;
+   MUTEX_UNLOCKID(MTX_COEXP_SER);
    ep->es_tend = NULL;
    ep->file_name = "";
    ep->line_num = 0;
@@ -247,9 +248,9 @@ struct b_coexpr *alccoexp()
       ep->id = 1;
    else{
 #endif					/* MultiThread */
-      MUTEX_LOCK(static_mutexes[MTX_COEXP_SER], "MTX_COEXP_SER" );
+      MUTEX_LOCKID(MTX_COEXP_SER);
       ep->id = coexp_ser++;
-      MUTEX_UNLOCK(static_mutexes[MTX_COEXP_SER], "MTX_COEXP_SER");
+      MUTEX_UNLOCKID(MTX_COEXP_SER);
 #ifdef MultiThread
    }
 #endif					/* MultiThread */
@@ -1044,8 +1045,12 @@ char *f(int region, word nbytes)
       if (rp->size >= want) {	/* if large enough to possibly succeed */
          *pcurr = rp;
          collect(region);
-         if (DiffPtrs(rp->end,rp->free) >= want)
+         if (DiffPtrs(rp->end,rp->free) >= want){
+#ifdef ThreadHeap
+	    MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
+#endif 					/* ThreadHeap */         
             return rp->free;
+            }
          }
 
    /*

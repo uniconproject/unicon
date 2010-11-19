@@ -104,8 +104,10 @@ function{1} log(x,b)
       if !cnv:C_double(b) then
          runerr(102, b)
       body {
+#ifndef Concurrent      
          static double lastbase = 0.0;
          static double divisor;
+#endif					/* Concurrent */
 
          if (b <= 1.0) {
             drunerr(205, b);

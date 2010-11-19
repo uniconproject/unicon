@@ -357,8 +357,9 @@ dptr cargp;
  * (This is for Mac OS 10.3 which does not have unnamed semaphores.)
  */
 
+#if 0
 static int pco_inited = 0;		/* has first-time initialization been done? */
-
+#endif
 
 /*
  * coswitch(old, new, first) -- switch contexts.
@@ -376,18 +377,25 @@ int pthreadcoswitch(void *o, void *n, int first)
    cstate ncs = n;			/* new cstate pointer */
    context *old, *new;			/* old and new context pointers */
 
-   if (pco_inited)				/* if not first call */
+#if 0
+if (pco_inited)				/* if not first call */
+#endif
       old = ocs[1];			/* load current context pointer */
-   else {
+#if 0
+else {
       /*
        * This is the first coswitch() call.
        * Initialize the context struct for &main.
        */
-      old = ocs[1];
-      old->thread = pthread_self();
-      old->alive = 1;
-      pco_inited = 1;
+      MUTEX_LOCKID(MTX_PCO_INITED);
+
+	old = ocs[1];
+	old->thread = pthread_self();
+	old->alive = 1;
+	pco_inited = 1;
+      MUTEX_UNLOCKID(MTX_PCO_INITED);
       }
+#endif      
 
    if (first != 0)			/* if not first call for this cstate */
       new = ncs[1];			/* load new context pointer */

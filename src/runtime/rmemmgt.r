@@ -19,7 +19,7 @@ static void sweep_stk	(struct b_coexpr *ce);
 static void reclaim		(void);
 static void cofree		(void);
 static void scollect		(word extra);
-static int     qlcmp		(dptr  *q1,dptr  *q2);
+static int  qlcmp		(dptr  *q1,dptr  *q2);
 static void adjust		(char *source, char *dest);
 static void compact		(char *source);
 static void mvc		(uword n, char *src, char *dest);
@@ -282,7 +282,27 @@ uword segsize[] = {
    ((uword)HSlots) << 9,		/* segment 10 */
    ((uword)HSlots) << 10,		/* segment 11 */
    };
-
+
+#ifdef Concurrent
+int GCthread;
+int NARthreads;
+
+void wait4GC(isGCthread){
+  
+  if (isGCthread){
+    /* GC is over, reset GCthread and wakeup all threads*/
+    
+    return;
+  }
+  
+  /* the thread that gets here should block and wait for GC to finish*/
+  
+  return;
+}
+
+#endif					/* Concurrent */
+
+
 /*
  * initalloc - initialization routine to allocate memory regions
  */
@@ -377,10 +397,40 @@ int collect(region)
 int region;
    {
    struct b_coexpr *cp;
-
+   int i;
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
    struct rlimit rl;
+#endif
 
+#ifdef Concurrent
+   /* If there is a pending GC request, then block/sleep .
+    * And make sure we dont start a GC in the middle of starting
+    * a new Async thread. Precaution to avoid problems.
+    */
+   i=pthread_mutex_trylock(&static_mutexes[MTX_GCTHREAD]);
+   if (i==EBUSY){
+      /* another thread was faster than me and have already requested a GC,\
+       * I only have to “sleep” and wait for him to finish
+       */
+      wait4GC(0); /* I'm part of the GC party now! Sleeping!!*/
+      return 1;  /* GC is done. I don't have to continue here, just return */
+      }
+   else if (i) syserr("Mutex Disaster in GCthread mutex in collet()");
+
+   /* keep waiting until only one thread (current) is running*/
+   while ( NARthreads>1) sleep(1); 
+   
+   /* now it is safe to proceed with GC with only the current thread running*/
+   
+   /* unset GCthread and unlock the mutex, no need to keep them since
+    * only the current thread is running now
+    */
+   GCthread = 0;  /* no need to lock, only one thread is running*/
+   MUTEX_UNLOCKID(MTX_GCTHREAD);
+
+#endif					/* Concurrent */
+
+#if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
    getrlimit(RLIMIT_STACK , &rl);
    /*
     * Grow the C stack, proportional to the block region. Seems crazy large,
@@ -422,8 +472,12 @@ int region;
     */
 
 #if !COMPILER
-   if (sp == NULL)
+   if (sp == NULL){
+#ifdef Concurrent
+      wait4GC(1);  /* 1 is the flag to the function to wake up all of the waiting threads. */
+#endif					/* Concurrent */
       return 0;
+      }
 #endif					/* !COMPILER */
 
 #if MACINTOSH
@@ -558,6 +612,10 @@ int region;
       EVValD(&nulldesc, E_EndCollect);
       }
 #endif					/* instrument allocation events */
+
+#ifdef Concurrent
+      wait4GC(1);  /* 1 is the flag to the function to wake up all of the waiting threads. */
+#endif					/* Concurrent */
 
    return 1;
    }

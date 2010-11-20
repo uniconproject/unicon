@@ -162,6 +162,18 @@ int first;
    syserr("co_chng() called, but co-expressions not implemented");
 #else        				/* CoExpr */
 
+/*
+ * after getting rid of this static, and rewritng the two uses of it in 
+ *  the code few pages below, native coexpr start casuing problem. They 
+ *  couldn't "fail" anymore at the unicon level.  This problem would have
+ *  to be fixed for native co-exprs and pthread co-exprs to ever co-exist.
+ *  for now we are keeping them under ifdefs.
+ */
+#ifndef PthreadCoswitch
+  static int coexp_act; 
+#endif					/* PthreadCoswitch */
+
+  
    register struct b_coexpr *ccp = (struct b_coexpr *)BlkLoc(k_current);
 
 #if !COMPILER
@@ -293,7 +305,13 @@ int first;
       swtch_typ = A_Coact;
 #endif					/* MultiThread */
 
+#ifdef PthreadCoswitch
    ncp->coexp_act = swtch_typ;
+#else					/* PthreadCoswitch */
+   coexp_act = swtch_typ;
+#endif					/* PthreadCoswitch */
+
+
 
 #ifdef PthreadCoswitch
 #ifdef Concurrent
@@ -305,7 +323,13 @@ int first;
    coswitch(ccp->cstate, ncp->cstate,first);
 #endif					/* PthreadCoswitch */
 
+#ifdef PthreadCoswitch
    return ccp->coexp_act;
+#else					/* PthreadCoswitch */
+   return coexp_act;
+#endif					/* PthreadCoswitch */
+
+
 #endif        				/* CoExpr */
    }
 

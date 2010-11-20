@@ -1089,13 +1089,15 @@
    #define MTX_SOCK_MAP		18
    
    #define MTX_GCTHREAD		19
+   #define MTX_NARTHREADS	20
+   #define MTX_COND_GC		21
    
-/* #define MTX_HANDLERS	??
+   #define MTX_HANDLERS		22
    
-   #define MTX_PCO_INITED	??
-*/  
+   #define MTX_PCO_INITED	23
+  
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	20
+   #define NUM_STATIC_MUTEXES	24
 
 #endif					/* Concurrent */
 

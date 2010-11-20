@@ -362,10 +362,10 @@ struct region {
    char *base;				/* start of region */
    char *end;				/* end of region */
    char *free;				/* free pointer */
-#ifdef Concurrent
-   word owner;				/* the serial number of the thread owning this region*/
-#endif					/* Concurrent */
    struct region *prev, *next;		/* forms a linked list of regions */
+#ifdef Concurrent   
+   struct region *Tprev, *Tnext;	/* forms a linked list of regions owned by current thread */
+#endif					/* Concurrent */
    struct region *Gprev, *Gnext;	/* global (all programs) lists */
    };
 

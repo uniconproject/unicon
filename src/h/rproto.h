@@ -1017,10 +1017,9 @@ void handle_thread_error(int val);
 #endif					/* Concurrent */
 struct region *newregion(word nbytes,word stdsize);
 
-#if 0
+
 #ifdef MultiThread
 void init_sighandlers(struct progstate *pstate);
 #else					/* MultiThread */
 void init_sighandlers();
 #endif					/* MultiThread */
-#endif

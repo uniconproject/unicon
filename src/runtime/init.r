@@ -688,7 +688,6 @@ void init_threadstate(struct threadstate *ts)
    
    /* used in fmath.r, log() */
    ts->Lastbase=0.0;
-   ts->Divisor;
 
 #ifdef PosixFns
    ts->Nsaved=0;
@@ -833,7 +832,8 @@ char *argv[];
    pthread_mutex_init(&mutex_alcstr, NULL);
    pthread_mutex_init(&mutex_stklist, NULL);
    pthread_mutex_init(&mutex_qualsize, NULL);
-
+   
+   pthread_cond_init(&cond_gc, NULL);
 #endif					/* Concurrent */
 
 #if COMPILER
@@ -848,6 +848,9 @@ char *argv[];
     * initialize root pstate
     */
    curpstate = &rootpstate;
+   
+   init_sighandlers(curpstate);
+   
    rootpstate.parent = rootpstate.next = NULL;
    rootpstate.parentdesc = nulldesc;
    rootpstate.eventmask= nulldesc;
@@ -864,7 +867,7 @@ char *argv[];
    
    init_threadstate(curtstate);
    
-   init_sighandlers(curpstate);
+   
 
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);

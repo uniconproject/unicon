@@ -70,8 +70,9 @@ extern pthread_mutex_t mutex_mutex;
 extern pthread_mutex_t mutex_alcblk;
 extern pthread_mutex_t mutex_alcstr;
 
-extern int GCthread;
+extern pthread_t GCthread;
 extern int NARthreads;
+extern pthread_cond_t cond_gc;
 
 
 #endif					/* Concurrent */

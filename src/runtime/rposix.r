@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.45 2010-11-19 06:27:49 to_jafar Exp $
+ * $Id: rposix.r,v 1.46 2010-11-20 07:33:19 to_jafar Exp $
  */
 
 #ifdef PosixFns
@@ -1583,9 +1583,10 @@ struct descrip handler;
 #ifdef MultiThread
    curpstate->signal = 0;
 #endif					/* MultiThread */
-
+   MUTEX_LOCKID(MTX_HANDLERS);
    old = handlers[sig];
    handlers[sig] = handler;
+   MUTEX_UNLOCKID(MTX_HANDLERS);
    return old;
 }
 

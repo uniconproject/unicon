@@ -2393,11 +2393,10 @@ function{1} thread(x)
      body {
 	struct context *n;
 	struct b_coexpr *cp = BlkD(x, Coexpr);
+	int i;
 	/* Make sure it is a pthreads-based co-expression. */
 	if (cp->status & Ts_Native) runerr(101,x);
 	if (cp->status & Ts_Async) return x;
-	/* Turn on Async flag */
-	cp->status = Ts_Posix | Ts_Async;
 	/* initialize sender/receiver queues */
 	pthread_mutex_init(&(cp->smute), NULL);
 	pthread_mutex_init(&(cp->rmute), NULL);
@@ -2405,6 +2404,19 @@ function{1} thread(x)
 	cp->rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
 	n = (struct context *) cp->cstate[1];
+	do{
+	  i=pthread_mutex_trylock(&static_mutexes[MTX_GCTHREAD]);
+	  if (i==EBUSY){
+	     /* check to see if another thread and have already requested a GC. 
+	      * OR another thread is in a critical region and locked MTX_GCthread
+	      */
+	      if (GCthread)
+		wait4GC(0); /* I'm part of the GC party now! Sleeping!!*/
+	      else
+		sleep(1);
+	    }
+	  else if (i) syserr("Mutex Disaster in GCthread mutex in thread()");
+	} while (i); /* keep looping until I aquire the mutex*/
 	if (n->alive == 0) {
 	   /* activate thread x for the first time */
 
@@ -2412,8 +2424,16 @@ function{1} thread(x)
 	      syserr("cannot create thread");
 	   }
 
+	/* Turn on Async flag */
+	cp->status = Ts_Posix | Ts_Async;
+
 	/* activate co-expression x, having changed it to Asynchronous */
 	sem_post(n->semp);
+	/* inrement the counter of the Async running threads*/
+	MUTEX_LOCKID(MTX_NARTHREADS); 
+	NARthreads++;	
+	MUTEX_UNLOCKID(MTX_NARTHREADS);
+	MUTEX_UNLOCKID(MTX_GCTHREAD);
 
 	return x;
 	}

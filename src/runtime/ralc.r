@@ -6,7 +6,13 @@
 /*
  * Prototypes.
  */
+#ifdef ThreadHeap
+static struct region *findgap(struct region *curr_private, word nbytes, int region);
+static struct region *switchtopublicheap(struct region *curr_private,
+      struct region *curr_public, struct region **pcurr_public);
+#else 					/* ThreadHeap */
 static struct region *findgap	(struct region *curr, word nbytes);
+#endif 					/* ThreadHeap */
 
 extern word alcnum;
 
@@ -988,16 +994,21 @@ char *f(int region, word nbytes)
    word want, newsize;
    extern int qualfail;
 #ifdef ThreadHeap
-   int mtx_id;
+   int mtx_publicheap, mtx_heap;
+   struct region *curr_private, **pcurr_public;
    if (region == Strings){
-      mtx_id = MTX_STRHEAP;
-      MUTEX_LOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+      mtx_publicheap = MTX_PUBLICSTRHEAP;
+      mtx_heap=MTX_STRHEAP;
       pcurr = &curtstring;
+      curr_private = curtstring;
+      pcurr_public = &public_stringregion;
    }
    else{
-      mtx_id = MTX_BLKHEAP;
-      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+      mtx_publicheap = MTX_PUBLICBLKHEAP;
+      mtx_heap=MTX_BLKHEAP;
       pcurr = &curtblock;
+      curr_private = curtblock;
+      pcurr_public = &public_blockregion;
    }
 #else 					/* ThreadHeap */
    if (region == Strings)
@@ -1011,18 +1022,17 @@ char *f(int region, word nbytes)
    /*
     * Check for space available now.
     */
-   if (DiffPtrs(curr->end, curr->free) >= nbytes){
-#ifdef ThreadHeap
-      MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
-#endif 					/* ThreadHeap */
+   if (DiffPtrs(curr->end, curr->free) >= nbytes)
       return curr->free;		/* quick return: current region is OK */
-   }
 
-   if ((rp = findgap(curr, nbytes)) != 0) {    /* check all regions on chain */
-      *pcurr = rp;			/* switch regions */
+
 #ifdef ThreadHeap
-       MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
-#endif 					/* ThreadHeap */
+   if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
+#else 					/* ThreadHeap */
+   if ((rp = findgap(curr, nbytes)) != 0)     /* check all regions on chain */
+#endif 					/* ThreadHeap */   
+      {
+      *pcurr = rp;			/* switch regions */
       return rp->free;
       }
 
@@ -1031,7 +1041,7 @@ char *f(int region, word nbytes)
     */
    while (curr->next)
       curr = curr->next;
-
+      
    /*
     * Need to collect garbage.  To reduce thrashing, set a minimum requirement
     *  of 10% of the size of the newest region, and collect regions until that
@@ -1041,17 +1051,35 @@ char *f(int region, word nbytes)
    if (want < nbytes)
       want = nbytes;
 
+#ifndef ThreadHeap
    for (rp = curr; rp; rp = rp->prev)
       if (rp->size >= want) {	/* if large enough to possibly succeed */
          *pcurr = rp;
          collect(region);
+         if (DiffPtrs(rp->end,rp->free) >= want)
+            return rp->free;
+         }
+#else 					/* ThreadHeap */
+   collect(region); /* try to collect the private region first */
+   if (DiffPtrs(curr_private->end,curr_private->free) >= want)
+      return curr_private->free;
+      
+   /* look in the public heaps, */
+   MUTEX_LOCKID(mtx_publicheap);
+   for (rp = *pcurr_public; rp; rp = rp->Tnext)
+      if (rp->size >= want) {	/* if large enough to possibly succeed */
+         *pcurr = rp;
+         collect(region);
          if (DiffPtrs(rp->end,rp->free) >= want){
-#ifdef ThreadHeap
-	    MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
-#endif 					/* ThreadHeap */         
+            switchtopublicheap(curr_private, rp, pcurr_public);
+	    MUTEX_UNLOCKID(mtx_publicheap);
             return rp->free;
             }
          }
+   MUTEX_UNLOCKID(mtx_publicheap);
+   
+   MUTEX_LOCKID(mtx_heap);
+#endif 					/* ThreadHeap */   
 
    /*
     * That didn't work.  Allocate a new region with a size based on the
@@ -1065,6 +1093,7 @@ char *f(int region, word nbytes)
 
    if ((rp = newregion(nbytes, newsize)) != 0) {
      int tmp_noMTevents;
+      MUTEX_LOCKID(mtx_heap);
       rp->prev = curr;
       rp->next = NULL;
       curr->next = rp;
@@ -1072,7 +1101,13 @@ char *f(int region, word nbytes)
       rp->Gprev = curr->Gprev;
       if (curr->Gprev) curr->Gprev->Gnext = rp;
       curr->Gprev = rp;
+      MUTEX_UNLOCKID(mtx_heap);
       *pcurr = rp;
+#ifdef ThreadHeap
+      MUTEX_LOCKID(mtx_publicheap);
+      switchtopublicheap(curr_private, rp, pcurr_public);
+      MUTEX_UNLOCKID(mtx_publicheap);
+#endif 					/* ThreadHeap */       
 #if e_tenurestring || e_tenureblock
       MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
       tmp_noMTevents = noMTevents;
@@ -1087,11 +1122,7 @@ char *f(int region, word nbytes)
             }
          }
 #endif					/* e_tenurestring || e_tenureblock */
-
-#ifdef ThreadHeap
-      MUTEX_UNLOCK(static_mutexes[mtx_id], "MTX_STRHEAP OR MTX_BLKHEAP");
-#endif 					/* ThreadHeap */
-      return rp->free;
+    return rp->free;
       }
 
    /*
@@ -1099,6 +1130,24 @@ char *f(int region, word nbytes)
     *  Collect the regions that weren't collected before and see if any
     *  region has enough to satisfy the original request.
     */
+#ifdef ThreadHeap
+   /* look in the public heaps, */
+   MUTEX_LOCKID(mtx_publicheap);
+   for (rp = *pcurr_public; rp; rp = rp->Tnext)
+      if (rp->size < want) {		/* if not collected earlier */
+         *pcurr = rp;
+         collect(region);
+         if (DiffPtrs(rp->end,rp->free) >= want){
+            switchtopublicheap(curr_private, rp, pcurr_public);
+	    MUTEX_UNLOCKID(mtx_publicheap);
+            return rp->free;
+            }
+         }
+   MUTEX_UNLOCKID(mtx_publicheap);
+   
+   if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
+   
+#else 					/* ThreadHeap */
    for (rp = curr; rp; rp = rp->prev)
       if (rp->size < want) {		/* if not collected earlier */
          *pcurr = rp;
@@ -1106,7 +1155,10 @@ char *f(int region, word nbytes)
          if (DiffPtrs(rp->end,rp->free) >= want)
             return rp->free;
          }
-   if ((rp = findgap(curr, nbytes)) != 0) {
+
+   if ((rp = findgap(curr, nbytes)) != 0)
+#endif 					/* ThreadHeap */   
+   {
       *pcurr = rp;
       return rp->free;
       }
@@ -1129,16 +1181,88 @@ reserve_macro(reserve_1,E_TenureString,E_TenureBlock)
 #else					/* MultiThread */
 reserve_macro(reserve,0,0)
 #endif					/* MultiThread */
-
+
+
+#ifdef ThreadHeap
+/*
+ * switch the thread current region (curr_private) with curr_public from the
+ * public heaps. The switch is done in the chain and a pointer to the new private
+ * region is returned.
+ * IMPORTANT: This function assumes that the public heap in use is locked.
+ */
+static struct region *switchtopublicheap(curr_private, curr_public, pcurr_public)
+struct region *curr_private;
+struct region *curr_public;
+struct region **pcurr_public; /* pointer to the head of the list*/
+  {
+   if (curr_public){
+      curr_private->Tnext = curr_public->Tnext;
+      curr_private->Tprev = curr_public->Tprev;
+
+      if (curr_public->Tnext){
+	curr_private->Tnext->Tprev = curr_private;
+	curr_public->Tnext = NULL;
+	if (curr_public->Tprev){ /* middle node*/
+	  curr_private->Tprev->Tnext = curr_private;
+	  curr_public->Tprev = NULL;
+	  }
+	else
+	  *pcurr_public = curr_private;
+	}
+      else if (curr_public->Tprev){
+	curr_private->Tprev->Tnext = curr_private;
+	curr_public->Tprev = NULL;
+	}
+      else
+	*pcurr_public = curr_private;
+      }
+   
+   return curr_public;
+  }
+#endif 					/* ThreadHeap */
+
 /*
  * findgap - search region chain for a region having at least nbytes available
  */
+#ifdef ThreadHeap
+static struct region *findgap(curr_private, nbytes, region)
+struct region *curr_private;
+word nbytes;
+int region;
+#else 					/* ThreadHeap */
 static struct region *findgap(curr, nbytes)
 struct region *curr;
 word nbytes;
+#endif 					/* ThreadHeap */
    {
    struct region *rp;
+   
+#ifdef ThreadHeap
+   struct region **pcurr_public;
+   struct region *curr;
+   int mtx_publicheap;
+   if (region == Strings){
+      curr = public_stringregion;
+      pcurr_public = &public_stringregion;
+      mtx_publicheap = MTX_PUBLICSTRHEAP;
+      }
+   else{
+      curr = public_blockregion;
+      pcurr_public = &public_blockregion;
+      mtx_publicheap = MTX_PUBLICBLKHEAP;
+      }
+   
+   MUTEX_LOCKID(mtx_publicheap);
+   for (rp = curr; rp; rp = rp->next)
+      if (DiffPtrs(rp->end, rp->free) >= nbytes)
+         break;
+         
+   if (rp) rp=switchtopublicheap(curr_private, rp, pcurr_public);
+   MUTEX_UNLOCKID(mtx_publicheap);
 
+   return rp;
+#else 					/* ThreadHeap */
+/* With ThreadHeap, skip this, we know we are at the front of the list */
    for (rp = curr; rp; rp = rp->prev)
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
          return rp;
@@ -1146,6 +1270,7 @@ word nbytes;
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
          return rp;
    return NULL;
+#endif 					/* ThreadHeap */
    }
 
 /*
@@ -1183,6 +1308,10 @@ word nbytes,stdsize;
          rp->free = rp->base = (char *)AllocReg(rp->size);
          if (rp->free != NULL) {
             rp->end = rp->base + rp->size;
+#ifdef ThreadHeap
+	    rp->Tnext=NULL;
+	    rp->Tprev=NULL;
+#endif 					/* ThreadHeap */   
             return rp;
             }
          rp->size = (rp->size + nbytes)/2 - 1;

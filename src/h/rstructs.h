@@ -364,7 +364,7 @@ struct region {
    char *free;				/* free pointer */
    struct region *prev, *next;		/* forms a linked list of regions */
 #ifdef Concurrent   
-   struct region *Tprev, *Tnext;	/* forms a linked list of regions owned by current thread */
+   struct region *Tprev, *Tnext;	/* forms a linked list of public regions. i.e not owned by any thread */
 #endif					/* Concurrent */
    struct region *Gprev, *Gnext;	/* global (all programs) lists */
    };
@@ -609,6 +609,9 @@ struct progstate {
    pthread_mutex_t mutex_stringtotal;
    pthread_mutex_t mutex_blocktotal;
    pthread_mutex_t mutex_coll;
+   
+   struct region *Public_stringregion;         /*  separate regions vs shared      */
+   struct region *Public_blockregion;          /*     same above     */
 #endif					/* Concurrent */
 
    struct region *stringregion;         /*  separate regions vs shared      */

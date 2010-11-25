@@ -290,6 +290,8 @@ pthread_cond_t cond_gc;
 
 void wait4GC(isGCthread){
   
+  printf("I'm in wait4GC\n");
+  
   if (isGCthread){ /* if I am the thread doing GC */
     /* GC is over, reset GCthread and wakeup all threads*/
     MUTEX_LOCKID(MTX_COND_GC);
@@ -297,9 +299,11 @@ void wait4GC(isGCthread){
     /* broadcast a wakeup call to all threads waiting on cond_gc*/
     pthread_cond_broadcast(&cond_gc);
     MUTEX_UNLOCKID(MTX_COND_GC);
+    printf("I'm in wait4GC.... DONE!\n");
     return;
   }
   
+  printf("I'm  gonna be sleeping for 4 GC\n");
   /* the thread that gets here should block and wait for GC to finish*/
   
   MUTEX_LOCKID(MTX_NARTHREADS);
@@ -431,6 +435,7 @@ int region;
     */
  do{
     i=pthread_mutex_trylock(&static_mutexes[MTX_GCTHREAD]);
+    printf(" trying to lock for GC\n");
     if (i==EBUSY){
       /* check to see if another thread was faster than me and have already
        * requested a GC. OR another thread is in a critical region and doesn't
@@ -446,11 +451,13 @@ int region;
     else if (i) syserr("Mutex Disaster in GCthread mutex in collet()");
    } while (i);	/* keep looping until I aquire the mutex*/
 
+  printf("locked is OK!\n");
    GCthread = pthread_self();
    
    /* keep waiting until only one thread (current) is running*/
    while ( NARthreads>1) sleep(1); 
    
+   printf("proceed with GC\n");
    /* now it is safe to proceed with GC with only the current thread running*/
    
    /* unset GCthread and unlock the mutex, no need to keep them since

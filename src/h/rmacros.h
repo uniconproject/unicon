@@ -837,6 +837,8 @@
       #define curtblock  (curtstate->Curblock)
       #define strtotal  (curtstate->stringtotal)
       #define blktotal  (curtstate->blocktotal)
+      #define public_stringregion (curpstate->Public_stringregion)
+      #define public_blockregion (curpstate->Public_blockregion)
 #else 					/* ThreadHeap */
       #define strtotal  (curpstate->stringtotal)
       #define blktotal  (curpstate->blocktotal)
@@ -1094,10 +1096,14 @@
    
    #define MTX_HANDLERS		22
    
-   #define MTX_PCO_INITED	23
+   #define MTX_PCO_INITED	23 /* remove this*/
+   
+   #define MTX_PUBLICSTRHEAP	24
+   #define MTX_PUBLICBLKHEAP	25
+   
   
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	24
+   #define NUM_STATIC_MUTEXES	26
 
 #endif					/* Concurrent */
 

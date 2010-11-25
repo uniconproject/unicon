@@ -174,7 +174,6 @@ pthread_mutex_t mutex_krandom;
 pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 #endif					/* Concurrent */
 
-
 struct region rootstring, rootblock;
 
 #ifndef MultiThread
@@ -604,17 +603,57 @@ void check_version(struct header *hdr, char *name,
 #endif					/* !COMPILER */
 
 #ifdef ThreadHeap
+
+void howmanyblock(){
+  int i=0;
+  struct region *rp;
+  
+  printf("here is what I have:\n");
+  rp = curpstate->stringregion;
+  while (rp){ i++;   rp = rp->Gnext; }
+  rp = curpstate->stringregion->Gprev;
+  while (rp){ i++;   rp = rp->Gprev; }
+  printf(" Global string= %d\n", i);
+
+  rp = curpstate->stringregion;
+  i=0;
+  while (rp){ i++; rp = rp->next;}
+  rp = curpstate->stringregion->prev;
+  while (rp){ i++;   rp = rp->prev; }
+
+  printf(" local string= %d\n", i);
+
+  rp = curpstate->blockregion;
+  i=0;
+  while (rp){i++; rp = rp->Gnext;}
+  rp = curpstate->blockregion->Gprev;
+  while (rp){ i++;   rp = rp->Gprev; }
+
+  printf(" Global block= %d\n", i);
+
+  rp = curpstate->blockregion;
+  i=0;
+  while (rp){i++; rp = rp->next; }
+  rp = curpstate->blockregion->prev;
+  while (rp){ i++;   rp = rp->prev; }
+
+  printf(" local block= %d\n", i);
+}
+
 void init_threadheap(struct threadstate *ts)
 { 
   static int first=1; /* wont cause a race condition */
   struct region *rp;
   word size;
 
+  
+
   /* the main thread just points to the initial regions */
   if (first){
    ts->Curstring = curstring;
    ts->Curblock = curblock;
-   /*printf(" main str=%0x   main blk=%0x\n",  curtstring->base, curtblock->base);*/
+   printf(" *************main str=%0x   main blk=%0x\n",  curtstring->base, curtblock->base);
+   howmanyblock();
    first=0;
    return;
    }
@@ -623,10 +662,10 @@ void init_threadheap(struct threadstate *ts)
     *  new string and block region should be allocated
     */
 
-   MUTEX_LOCK(static_mutexes[MTX_STRHEAP],"MTX_STRHEAP");
-   size = 1024*1024*10;  /*curpstate->stringregion->size;*/
+   size = 1024*1024*1;  /*curpstate->stringregion->size;*/
 
    if ((rp = newregion(size, size)) != 0) {
+      MUTEX_LOCKID(MTX_STRHEAP);
       rp->prev = curstring;
       rp->next = NULL;
       curstring->next = rp;
@@ -635,25 +674,21 @@ void init_threadheap(struct threadstate *ts)
       if (curstring->Gprev) curstring->Gprev->Gnext = rp;
       curstring->Gprev = rp;
       curstring = rp;
+      MUTEX_UNLOCKID(MTX_STRHEAP);
       ts->Curstring = rp;
       }
-    else{
-      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+    else
       syserr(" init_threadheap: insufficient memory");
-      }
 
    /*   printf(" st=%0x\n",  curstring->base);*/
 
-   MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
    /*   printf(" rp=%0x,  string size=%d\n",rp, size);*/
-
-   MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+   
    /* size = curpstate->blockregion->size;*/
-   size = 1024*1024*50;
-
-
+   size = 1024*1024*2;
 
    if ((rp = newregion(size, size)) != 0) {
+      MUTEX_LOCKID(MTX_BLKHEAP);
       rp->prev = curblock;
       rp->next = NULL;
       curblock->next = rp;
@@ -662,19 +697,19 @@ void init_threadheap(struct threadstate *ts)
       if (curblock->Gprev) curblock->Gprev->Gnext = rp;
       curblock->Gprev = rp;
       curblock = rp;
+
+      printf("------------- after allocatin for a new thread: \n");
+      howmanyblock();
+
+      MUTEX_UNLOCKID(MTX_BLKHEAP);
       ts->Curblock = rp;
       }
-    else{
-      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+    else
       syserr(" init_threadheap: insufficient memory");
-      }
 
    /*   printf("  blk=%0x\n",  curblock->base);*/
 
-    MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
-
    /*printf(" rp=%0x,  block size=%d\n",rp, size);*/
-
 
 }
 #endif 					/* ThreadHeap */
@@ -891,6 +926,12 @@ char *argv[];
    rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
+
+#ifdef Concurrent
+   rootpstate.Public_stringregion = NULL;
+   rootpstate.Public_blockregion = NULL;
+#endif					/* Concurrent */
+
 
    rootpstate.Longest_dr=0;
    rootpstate.Dr_arrays=NULL;
@@ -1137,7 +1178,7 @@ Deliberate Syntax Error
 #endif					/* MultiThread */
 #endif					/* COMPILER */
 
-#ifdef ThreadHeap
+#ifdef ThreadHeap_REMOVETHIS
    init_threadheap(curtstate);
 #endif					/* ThreadHeap */
 

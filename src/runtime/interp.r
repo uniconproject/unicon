@@ -670,8 +670,11 @@ Deliberate Syntax Error
 
 #ifdef Concurrent
       /* If there is a pending GC request, then block/sleep*/
-      if (GCthread)
+      if (GCthread){
+      	ExInterp_sp;
 	wait4GC(0);
+	/*EntInterp_sp;*/
+	}
 #endif					/* Concurrent */
 
       switch ((int)lastop) {		/*

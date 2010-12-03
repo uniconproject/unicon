@@ -2337,10 +2337,31 @@ function{1} lock(x)
       int rv;
       if (x<1 || x>nmutexes)
       	 irunerr(101, x);
+
+      /*
+       * The following code was modified o avoid extra locking to accomodate GC
+       * There might be better ways to do this.
+       */
+      if ((rv=pthread_mutex_trylock(mutexes+x-1)) == 0)
+      	 return C_integer 1;
+      else if (rv!=EBUSY)
+	fprintf(stderr, "pthread lock failure %d\n", rv);
+
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+      NARthreads--;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
+
       if ((rv=pthread_mutex_lock(mutexes+x-1)) != 0) {
 	 fprintf(stderr, "pthread lock failure %d\n", rv);
 	 exit(-1);
 	 }
+
+      MUTEX_LOCKID(MTX_GCTHREAD);
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+      NARthreads++;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
+      MUTEX_UNLOCKID(MTX_GCTHREAD);
+
       return C_integer 1;
       }
 end
@@ -2373,11 +2394,19 @@ function{1} join(x)
 	int rv;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
+	MUTEX_LOCKID(MTX_NARTHREADS); 
+	NARthreads--;	
+	MUTEX_UNLOCKID(MTX_NARTHREADS);
 	if ((rv=pthread_join(n->thread, NULL)) != 0) {
 	   fprintf(stderr, "pthread join failure %d\n", rv);
 	   exit(-1);
 	   }
 	/*}*/
+        MUTEX_LOCKID(MTX_GCTHREAD);
+	MUTEX_LOCKID(MTX_NARTHREADS); 
+	NARthreads++;	
+	MUTEX_UNLOCKID(MTX_NARTHREADS);
+	MUTEX_UNLOCKID(MTX_GCTHREAD);
 	return x;
 	}
      }

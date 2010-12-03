@@ -30,14 +30,14 @@ void err_msg(int n, dptr v)
 #endif                                  /* Messaging */
 
 #ifdef AAAConcurrent
-   struct tls_chain *tlsnode;
+   struct tls_node *tlsnode;
    pthread_t tid;
    int rc=0;
    
-   MUTEX_LOCK(static_mutexes[MTX_TLS], "MTX_TLS");
+   MUTEX_LOCKID(MTX_TLS_CHAIN);
    tlsnode = tlshead->next;      /* skip the root tls */
    tid = pthread_self();
-   while (tlsnode!=tlshead){
+   while (tlsnode!=NULL){
      if (!pthread_equal(tid, tlsnode->tstate->tid)){
        if ((rc=pthread_cancel(tlsnode->tstate->tid))!=0)
 	 handle_thread_error(rc);
@@ -47,7 +47,7 @@ void err_msg(int n, dptr v)
       tlsnode=tlsnode->next;
       }
    
-   MUTEX_UNLOCK(static_mutexes[MTX_TLS], "MTX_TLS");
+   MUTEX_UNLOCKID(MTX_TLS_CHAIN);
 #endif					/* Concurrent */
 
    if (n == 0) {

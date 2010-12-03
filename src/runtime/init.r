@@ -213,7 +213,7 @@ int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
 struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
 #ifdef Concurrent
-      struct tls_chain *tlshead;
+      struct tls_node *tlshead;
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;
 #else					/* Concurrent */
@@ -698,7 +698,7 @@ void init_threadheap(struct threadstate *ts)
       curblock->Gprev = rp;
       curblock = rp;
 
-      printf("------------- after allocatin for a new thread: \n");
+      printf("------------- after allocation for a new thread: \n");
       howmanyblock();
 
       MUTEX_UNLOCKID(MTX_BLKHEAP);
@@ -1300,10 +1300,17 @@ Deliberate Syntax Error
    ctx->thread = pthread_self();
    ctx->alive = 1;
 #ifdef Concurrent
-   tlshead = malloc(sizeof(struct tls_chain));
+   tlshead = malloc(sizeof(struct tls_node));
    if (tlshead==NULL)
       fatalerr(305, NULL);
-   tlshead->previous = tlshead->next = tlshead;
+   /* 
+    * This is the first node on the chain. It will be always the first.
+    * New nodes will be added to the end of the chain, setting tlshead->prev
+    * to point to the last node will make it easy to add at the end. The chain 
+    * is circular in one direction, backward, but not forward.
+    */
+   tlshead->prev = tlshead; 
+   tlshead->next = NULL;
    tlshead->ctx = ctx;
    tlshead->tstate = curtstate;
 #endif					/* Concurrent */

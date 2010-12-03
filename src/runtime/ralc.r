@@ -8,8 +8,8 @@
  */
 #ifdef ThreadHeap
 static struct region *findgap(struct region *curr_private, word nbytes, int region);
-static struct region *switchtopublicheap(struct region *curr_private,
-      struct region *curr_public, struct region **pcurr_public);
+static struct region *swap2publicheap(struct region *curr_private,
+      struct region *curr_public, struct region **p_public);
 #else 					/* ThreadHeap */
 static struct region *findgap	(struct region *curr, word nbytes);
 #endif 					/* ThreadHeap */
@@ -995,20 +995,20 @@ char *f(int region, word nbytes)
    extern int qualfail;
 #ifdef ThreadHeap
    int mtx_publicheap, mtx_heap;
-   struct region *curr_private, **pcurr_public;
+   struct region *curr_private, **p_publicheap;
    if (region == Strings){
       mtx_publicheap = MTX_PUBLICSTRHEAP;
       mtx_heap=MTX_STRHEAP;
       pcurr = &curtstring;
       curr_private = curtstring;
-      pcurr_public = &public_stringregion;
+      p_publicheap = &public_stringregion;
    }
    else{
       mtx_publicheap = MTX_PUBLICBLKHEAP;
       mtx_heap=MTX_BLKHEAP;
       pcurr = &curtblock;
       curr_private = curtblock;
-      pcurr_public = &public_blockregion;
+      p_publicheap = &public_blockregion;
    }
 #else 					/* ThreadHeap */
    if (region == Strings)
@@ -1061,25 +1061,27 @@ char *f(int region, word nbytes)
          }
 #else 					/* ThreadHeap */
    collect(region); /* try to collect the private region first */
-   if (DiffPtrs(curr_private->end,curr_private->free) >= want)
+   if (DiffPtrs(curr_private->end,curr_private->free) >= want){
+      printf("--------- Just did a GC to my private heap. I have memory now!\n");
       return curr_private->free;
+      }
       
    /* look in the public heaps, */
    MUTEX_LOCKID(mtx_publicheap);
-   for (rp = *pcurr_public; rp; rp = rp->Tnext)
+   for (rp = *p_publicheap; rp; rp = rp->Tnext)
       if (rp->size >= want) {	/* if large enough to possibly succeed */
-         *pcurr = rp;
+         curr_private = swap2publicheap(curr_private, rp, p_publicheap);
+      	 *pcurr = curr_private;
          collect(region);
-         if (DiffPtrs(rp->end,rp->free) >= want){
-            switchtopublicheap(curr_private, rp, pcurr_public);
+         if (DiffPtrs( curr_private->end, curr_private->free) >= want){
+	    printf("+++++++++Just did a GC to a public heap. I have memory now!\n");
 	    MUTEX_UNLOCKID(mtx_publicheap);
-            return rp->free;
+            return curr_private->free;
             }
          }
    MUTEX_UNLOCKID(mtx_publicheap);
    
-   MUTEX_LOCKID(mtx_heap);
-#endif 					/* ThreadHeap */   
+ #endif 					/* ThreadHeap */   
 
    /*
     * That didn't work.  Allocate a new region with a size based on the
@@ -1090,7 +1092,7 @@ char *f(int region, word nbytes)
       newsize = nbytes;
    if (newsize < MinAbrSize)
       newsize = MinAbrSize;
-
+     
    if ((rp = newregion(nbytes, newsize)) != 0) {
      int tmp_noMTevents;
       MUTEX_LOCKID(mtx_heap);
@@ -1102,12 +1104,13 @@ char *f(int region, word nbytes)
       if (curr->Gprev) curr->Gprev->Gnext = rp;
       curr->Gprev = rp;
       MUTEX_UNLOCKID(mtx_heap);
-      *pcurr = rp;
 #ifdef ThreadHeap
+      printf(" ~~~~~ new region was allocated size=%d\n", newsize);
       MUTEX_LOCKID(mtx_publicheap);
-      switchtopublicheap(curr_private, rp, pcurr_public);
+      swap2publicheap(curr_private, NULL, p_publicheap);
       MUTEX_UNLOCKID(mtx_publicheap);
-#endif 					/* ThreadHeap */       
+#endif 					/* ThreadHeap */
+      *pcurr = rp;
 #if e_tenurestring || e_tenureblock
       MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
       tmp_noMTevents = noMTevents;
@@ -1130,17 +1133,19 @@ char *f(int region, word nbytes)
     *  Collect the regions that weren't collected before and see if any
     *  region has enough to satisfy the original request.
     */
+
 #ifdef ThreadHeap
+     printf(" !!!!!! we are disparate for memory now!! trying all options \n ");
    /* look in the public heaps, */
    MUTEX_LOCKID(mtx_publicheap);
-   for (rp = *pcurr_public; rp; rp = rp->Tnext)
+   for (rp = *p_publicheap; rp; rp = rp->Tnext)
       if (rp->size < want) {		/* if not collected earlier */
-         *pcurr = rp;
+         curr_private = swap2publicheap(curr_private, rp, p_publicheap);
+         *pcurr = curr_private;
          collect(region);
-         if (DiffPtrs(rp->end,rp->free) >= want){
-            switchtopublicheap(curr_private, rp, pcurr_public);
-	    MUTEX_UNLOCKID(mtx_publicheap);
-            return rp->free;
+         if (DiffPtrs(curr_private->end,curr_private->free) >= want){
+ 	    MUTEX_UNLOCKID(mtx_publicheap);
+            return curr_private->free;
             }
          }
    MUTEX_UNLOCKID(mtx_publicheap);
@@ -1185,15 +1190,15 @@ reserve_macro(reserve,0,0)
 
 #ifdef ThreadHeap
 /*
- * switch the thread current region (curr_private) with curr_public from the
+ * swap the thread current region (curr_private) with curr_public from the
  * public heaps. The switch is done in the chain and a pointer to the new private
  * region is returned.
  * IMPORTANT: This function assumes that the public heap in use is locked.
  */
-static struct region *switchtopublicheap(curr_private, curr_public, pcurr_public)
+static struct region *swap2publicheap(curr_private, curr_public, p_public)
 struct region *curr_private;
 struct region *curr_public;
-struct region **pcurr_public; /* pointer to the head of the list*/
+struct region **p_public; /* pointer to the head of the list*/
   {
    if (curr_public){
       curr_private->Tnext = curr_public->Tnext;
@@ -1207,15 +1212,30 @@ struct region **pcurr_public; /* pointer to the head of the list*/
 	  curr_public->Tprev = NULL;
 	  }
 	else
-	  *pcurr_public = curr_private;
+	  *p_public = curr_private;
 	}
       else if (curr_public->Tprev){
 	curr_private->Tprev->Tnext = curr_private;
 	curr_public->Tprev = NULL;
 	}
       else
-	*pcurr_public = curr_private;
+	*p_public = curr_private;
+     } 
+    else { /* NO SWAP: just insert curr_private into the public heap. */
+	if (*p_public==NULL){
+	   curr_private->Tprev=NULL;
+	   curr_private->Tnext=NULL;
+	   }
+	else{
+	   curr_private->Tnext=*p_public;
+	   curr_private->Tprev=NULL;
+	   curr_private->Tnext->Tprev=curr_private;
+	   }
+   	*p_public=curr_private;
+	return NULL;
       }
+	
+
    
    return curr_public;
   }
@@ -1238,26 +1258,26 @@ word nbytes;
    struct region *rp;
    
 #ifdef ThreadHeap
-   struct region **pcurr_public;
+   struct region **p_public;
    struct region *curr;
    int mtx_publicheap;
    if (region == Strings){
       curr = public_stringregion;
-      pcurr_public = &public_stringregion;
+      p_public = &public_stringregion;
       mtx_publicheap = MTX_PUBLICSTRHEAP;
       }
    else{
       curr = public_blockregion;
-      pcurr_public = &public_blockregion;
+      p_public = &public_blockregion;
       mtx_publicheap = MTX_PUBLICBLKHEAP;
       }
    
    MUTEX_LOCKID(mtx_publicheap);
-   for (rp = curr; rp; rp = rp->next)
+   for (rp = curr; rp; rp = rp->Tnext)
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
          break;
          
-   if (rp) rp=switchtopublicheap(curr_private, rp, pcurr_public);
+   if (rp) rp=swap2publicheap(curr_private, rp, p_public);
    MUTEX_UNLOCKID(mtx_publicheap);
 
    return rp;

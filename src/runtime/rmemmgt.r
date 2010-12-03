@@ -290,8 +290,6 @@ pthread_cond_t cond_gc;
 
 void wait4GC(isGCthread){
   
-  printf("I'm in wait4GC\n");
-  
   if (isGCthread){ /* if I am the thread doing GC */
     /* GC is over, reset GCthread and wakeup all threads*/
     MUTEX_LOCKID(MTX_COND_GC);
@@ -299,11 +297,11 @@ void wait4GC(isGCthread){
     /* broadcast a wakeup call to all threads waiting on cond_gc*/
     pthread_cond_broadcast(&cond_gc);
     MUTEX_UNLOCKID(MTX_COND_GC);
-    printf("I'm in wait4GC.... DONE!\n");
+    printf("I'm the GCthread in wait4GC.... I have just finished GC and woke up all threads DONE!\n");
     return;
   }
   
-  printf("I'm  gonna be sleeping for 4 GC\n");
+  printf("I'm a thread who is  gonna be sleeping 4 GC\n");
   /* the thread that gets here should block and wait for GC to finish*/
   
   MUTEX_LOCKID(MTX_NARTHREADS);
@@ -323,6 +321,7 @@ void wait4GC(isGCthread){
   NARthreads++;  /* NOTE: do we need to lock this ?*/
   MUTEX_UNLOCKID(MTX_NARTHREADS);
 
+  printf("I'm a thread who just got a wake up call after GC\n");
 return;
 }
 
@@ -428,6 +427,8 @@ int region;
    struct rlimit rl;
 #endif
 
+printf("in collect\n"); fflush(stdout);
+
 #ifdef Concurrent
    /* If there is a pending GC request, then block/sleep .
     * And make sure we dont start a GC in the middle of starting
@@ -529,8 +530,20 @@ int region;
    /*
     * Sync the values (used by sweep) in the coexpr block for &current
     *  with the current values.
+    *  Note: no need to lock MTX_TLS_CHAIN since only the GCthread is running
     */
    cp = BlkD(k_current, Coexpr);
+#ifdef Concurrent
+   { struct tls_node *t;
+   for (t = tlshead; t != NULL; t = t->next) {
+      t->ctx->c->es_tend = t->tstate->Tend;
+      t->ctx->c->es_pfp = t->tstate->Pfp;
+      t->ctx->c->es_gfp = t->tstate->Gfp;
+      t->ctx->c->es_efp = t->tstate->Efp;
+      t->ctx->c->es_sp = t->tstate->Sp;
+      }
+   }
+#else					/* Concurrent */
    cp->es_tend = tend;
 
 #if !COMPILER
@@ -539,6 +552,7 @@ int region;
    cp->es_efp = efp;
    cp->es_sp = sp;
 #endif					/* !COMPILER */
+#endif					/* Concurrent */
 
    /*
     * Reset qualifier list.
@@ -578,6 +592,7 @@ int region;
     */
    {
      wsp ws;
+     wcp wc;
 
      for (ws = wstates; ws ; ws = ws->next) {
 	    if (is:file(ws->filep))
@@ -589,6 +604,11 @@ int region;
 	    markblock(&(ws->funclist));
 #endif                            /* Graphics3D */
         }
+
+     for (wc = wcntxts; wc ; wc = wc->next) {
+	if (wc->normals) markptr((union block **)&(wc->normals));
+	if (wc->texcoords) markptr((union block **)(&(wc->texcoords)));
+	}
    }
 #endif					/* Graphics */
 
@@ -668,11 +688,47 @@ int region;
    else if (Pointer(d))\
       markblock(&(d));
 
+#ifdef Concurrent
+/*
+ * use tls_node * instead of threadstate in order to sync VM registers
+ */
+static void markthread(struct tls_node *tcp)
+{
+   struct b_coexpr *coex = tcp->ctx->c;
+   /* sync VM registers here?  Or maybe do ALL of them before any other
+    * marking.
+    */
+   PostDescrip(tcp->tstate->Value_tmp);
+   PostDescrip(tcp->tstate->Kywd_pos);
+   PostDescrip(tcp->tstate->ksub);
+   PostDescrip(tcp->tstate->Kywd_ran);
+   PostDescrip(tcp->tstate->K_current);
+   PostDescrip(tcp->tstate->K_errorvalue);
+   PostDescrip(tcp->tstate->T_errorvalue);
+   PostDescrip(tcp->tstate->AmperErrno);
+   PostDescrip(tcp->tstate->Eret_tmp);
+   /* ??? */
+}
+#endif					/* Concurrent */
+
 static void markprogram(pstate)
 struct progstate *pstate;
    {
    struct descrip *dp;
 
+   /* call markthread() on all the threads created from this program.
+    * This replaces some of the former programstate marking below
+    */
+#ifdef Concurrent
+   struct tls_node *t;
+   for (t = tlshead; t != NULL; t = t->next)
+       markthread(t);
+#else					/* Concurrent */
+   postqual(&(pstate->tstate->ksub));
+   PostDescrip(pstate->tstate->K_errorvalue);
+   PostDescrip(pstate->tstate->T_errorvalue);
+#endif					/* Concurrent */
+   
    PostDescrip(pstate->parentdesc);
    PostDescrip(pstate->eventmask);
    PostDescrip(pstate->valuemask);
@@ -686,8 +742,9 @@ struct progstate *pstate;
 
    /* Kywd_err, &error, always an integer */
    /* Kywd_pos, &pos, always an integer */
-   postqual(&(pstate->tstate->ksub));
+
    postqual(&(pstate->Kywd_prog));
+
    /* Kywd_ran, &random, always an integer */
    /* Kywd_trc, &trace, always an integer */
 
@@ -714,8 +771,6 @@ struct progstate *pstate;
    PostDescrip(pstate->Kywd_xwin[XKey_Window]);	/* &window */
 #endif					/* Graphics */
 
-   PostDescrip(pstate->tstate->K_errorvalue);
-   PostDescrip(pstate->tstate->T_errorvalue);
    }
 #endif					/* MultiThread */
 

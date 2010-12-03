@@ -17,10 +17,10 @@ keyword{4} allocated
       }
    inline {
 #ifdef ThreadHeap
-      struct tls_chain *tlsnode;
+      struct tls_node *tlsnode;
       uword blktot=0;
       uword strtot=0;
-      MUTEX_LOCK(static_mutexes[MTX_TLS], "MTX_TLS");
+      MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
       tlsnode = tlshead; 
@@ -28,8 +28,8 @@ keyword{4} allocated
 	blktot += tlsnode->tstate->blocktotal;
 	strtot += tlsnode->tstate->stringtotal;
 	tlsnode=tlsnode->next;
-        }while (tlsnode!=tlshead);
-      MUTEX_UNLOCK(static_mutexes[MTX_TLS], "MTX_TLS");
+        }while (tlsnode!=NULL);
+      MUTEX_UNLOCKID(MTX_TLS_CHAIN);
       suspend C_integer stattotal + strtot + blktot;
       suspend C_integer stattotal;
       suspend C_integer strtot;

@@ -1080,7 +1080,7 @@
    #define MTX_STRHEAP		12
    #define MTX_BLKHEAP		13
 
-   #define MTX_TLS		14
+   #define MTX_TLS_CHAIN	14
    
    #define MTX_CURFILE_HANDLE	15
    

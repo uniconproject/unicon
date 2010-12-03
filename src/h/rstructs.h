@@ -829,10 +829,14 @@ typedef struct context {
 
 /*
  * Structure for chaining threadstate structs.
+ * The first node will be for the main thread, it  will be always the fisrt.
+ * New nodes will be added to the end of the chain, setting tlshead->prev
+ * to point to the last node will make it easy to add at the end. The chain 
+ * is circular in one direction, backward, but not forward.
  */
-struct tls_chain {
-   struct tls_chain *next;
-   struct tls_chain *previous;
+struct tls_node {
+   struct tls_node *next;
+   struct tls_node *prev;
    struct threadstate *tstate; 
    struct context *ctx;         /* the corresponding context for tstate*/
    };

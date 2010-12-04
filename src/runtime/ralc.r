@@ -1025,13 +1025,14 @@ char *f(int region, word nbytes)
    if (DiffPtrs(curr->end, curr->free) >= nbytes)
       return curr->free;		/* quick return: current region is OK */
 
-
+printf("=============================================\n");
 #ifdef ThreadHeap
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
 #else 					/* ThreadHeap */
    if ((rp = findgap(curr, nbytes)) != 0)     /* check all regions on chain */
 #endif 					/* ThreadHeap */   
       {
+      printf(" that was easy, I just found enough memory in one of the heaps. no need to GC\n ");
       *pcurr = rp;			/* switch regions */
       return rp->free;
       }
@@ -1210,26 +1211,35 @@ struct region **p_public; /* pointer to the head of the list*/
 	if (curr_public->Tprev){ /* middle node*/
 	  curr_private->Tprev->Tnext = curr_private;
 	  curr_public->Tprev = NULL;
+	  printf("mmmmmmmmmmmm  middle node\n");
 	  }
-	else
+	else{
 	  *p_public = curr_private;
+	   printf(" FFFFFFF-------  First node in a list\n");
+	  }
 	}
       else if (curr_public->Tprev){
 	curr_private->Tprev->Tnext = curr_private;
 	curr_public->Tprev = NULL;
+	printf("--------LLLLLLLL last node in a list \n");
 	}
-      else
+      else{
 	*p_public = curr_private;
+	printf("1-1-1-1-1-1-1-1 one node only! \n");
+	}
      } 
     else { /* NO SWAP: just insert curr_private into the public heap. */
+    	printf("should be here after a new region is allocated! \n");
 	if (*p_public==NULL){
 	   curr_private->Tprev=NULL;
 	   curr_private->Tnext=NULL;
+	   printf("first PUBLIC************************* \n");
 	   }
 	else{
 	   curr_private->Tnext=*p_public;
 	   curr_private->Tprev=NULL;
 	   curr_private->Tnext->Tprev=curr_private;
+	   printf("inserted to public ********* \n");
 	   }
    	*p_public=curr_private;
 	return NULL;

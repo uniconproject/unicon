@@ -345,6 +345,7 @@ int isGCthread;
      * only the current thread is running now
      */
     /*MUTEX_UNLOCKID(MTX_GCTHREAD);*/
+    return;
     } 
   
   printf("I'm a thread who is  gonna be sleeping 4 GC\n"); fflush(stdout);
@@ -474,7 +475,7 @@ int region;
    struct rlimit rl;
 #endif
 
-#ifdef Concurrent
+#ifdef AAAConcurrent
        wait4GC(2);
 #endif					/* Concurrent */
 
@@ -521,7 +522,7 @@ int region;
 
 #if !COMPILER
    if (sp == NULL){
-#ifdef Concurrent
+#ifdef AAAConcurrent
       wait4GC(1);  /* 1 is the flag to the function to wake up all of the waiting threads. */
 #endif					/* Concurrent */
       return 0;
@@ -680,7 +681,7 @@ int region;
       }
 #endif					/* instrument allocation events */
 
-#ifdef Concurrent
+#ifdef AAAConcurrent
       wait4GC(1);  /* 1 is the flag to the function to wake up all of the waiting threads. */
 #endif					/* Concurrent */
 

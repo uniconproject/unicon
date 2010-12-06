@@ -346,7 +346,7 @@ int nargs, *n;
     * Make a stab at catching interpreter stack overflow.  This does
     * not detect C stack overflow.
     */
-   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->stackend)){
+   if (((char *)sp + PerilDelta) > (char *)(BlkD(k_current,Coexpr)->es_stackend)){
       fatalerr(301, NULL);
       }
 #else					/* StackCheck */

@@ -1105,6 +1105,12 @@
    /* total is:  */
    #define NUM_STATIC_MUTEXES	26
 
+   /* used by wait4GC function*/
+   #define GC_GOTOSLEEP 0
+   #define GC_WAKEUPCALL 1
+   #define GC_STOPALLTHREADS 2
+
+
 #endif					/* Concurrent */
 
 #ifdef Concurrent

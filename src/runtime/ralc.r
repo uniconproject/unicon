@@ -8,8 +8,6 @@
  */
 #ifdef ThreadHeap
 static struct region *findgap(struct region *curr_private, word nbytes, int region);
-static struct region *swap2publicheap(struct region *curr_private,
-      struct region *curr_public, struct region **p_public);
 #else 					/* ThreadHeap */
 static struct region *findgap	(struct region *curr, word nbytes);
 #endif 					/* ThreadHeap */
@@ -1025,14 +1023,12 @@ char *f(int region, word nbytes)
    if (DiffPtrs(curr->end, curr->free) >= nbytes)
       return curr->free;		/* quick return: current region is OK */
 
-printf("=============================================\n");
 #ifdef ThreadHeap
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
 #else 					/* ThreadHeap */
    if ((rp = findgap(curr, nbytes)) != 0)     /* check all regions on chain */
 #endif 					/* ThreadHeap */   
       {
-      printf(" that was easy, I just found enough memory in one of the heaps. no need to GC\n ");
       *pcurr = rp;			/* switch regions */
       return rp->free;
       }
@@ -1061,27 +1057,28 @@ printf("=============================================\n");
             return rp->free;
          }
 #else 					/* ThreadHeap */
+
+   wait4GC(GC_STOPALLTHREADS);
    collect(region); /* try to collect the private region first */
    if (DiffPtrs(curr_private->end,curr_private->free) >= want){
-      printf("--------- Just did a GC to my private heap. I have memory now!\n");
+      wait4GC(GC_WAKEUPCALL);
       return curr_private->free;
       }
       
    /* look in the public heaps, */
-   MUTEX_LOCKID(mtx_publicheap);
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
       if (rp->size >= want) {	/* if large enough to possibly succeed */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
       	 *pcurr = curr_private;
          collect(region);
          if (DiffPtrs( curr_private->end, curr_private->free) >= want){
-	    printf("+++++++++Just did a GC to a public heap. I have memory now!\n");
-	    MUTEX_UNLOCKID(mtx_publicheap);
+            wait4GC(GC_WAKEUPCALL);
             return curr_private->free;
             }
          }
-   MUTEX_UNLOCKID(mtx_publicheap);
    
+   /* GC has failed so far to  free enough memory, wake up all threads for now */   
+   wait4GC(GC_WAKEUPCALL); 
  #endif 					/* ThreadHeap */   
 
    /*
@@ -1106,7 +1103,6 @@ printf("=============================================\n");
       curr->Gprev = rp;
       MUTEX_UNLOCKID(mtx_heap);
 #ifdef ThreadHeap
-      printf(" ~~~~~ new region was allocated size=%d\n", newsize);
       MUTEX_LOCKID(mtx_publicheap);
       swap2publicheap(curr_private, NULL, p_publicheap);
       MUTEX_UNLOCKID(mtx_publicheap);
@@ -1138,19 +1134,18 @@ printf("=============================================\n");
 #ifdef ThreadHeap
      printf(" !!!!!! we are disparate for memory now!! trying all options \n ");
    /* look in the public heaps, */
-   MUTEX_LOCKID(mtx_publicheap);
+   wait4GC(GC_STOPALLTHREADS); 
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
       if (rp->size < want) {		/* if not collected earlier */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
          *pcurr = curr_private;
          collect(region);
          if (DiffPtrs(curr_private->end,curr_private->free) >= want){
- 	    MUTEX_UNLOCKID(mtx_publicheap);
+   	    wait4GC(GC_WAKEUPCALL); 
             return curr_private->free;
             }
          }
-   MUTEX_UNLOCKID(mtx_publicheap);
-   
+   wait4GC(GC_WAKEUPCALL); 
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
    
 #else 					/* ThreadHeap */
@@ -1196,7 +1191,7 @@ reserve_macro(reserve,0,0)
  * region is returned.
  * IMPORTANT: This function assumes that the public heap in use is locked.
  */
-static struct region *swap2publicheap(curr_private, curr_public, p_public)
+struct region *swap2publicheap( curr_private, curr_public, p_public)
 struct region *curr_private;
 struct region *curr_public;
 struct region **p_public; /* pointer to the head of the list*/
@@ -1211,41 +1206,31 @@ struct region **p_public; /* pointer to the head of the list*/
 	if (curr_public->Tprev){ /* middle node*/
 	  curr_private->Tprev->Tnext = curr_private;
 	  curr_public->Tprev = NULL;
-	  printf("mmmmmmmmmmmm  middle node\n");
 	  }
-	else{
+	else
 	  *p_public = curr_private;
-	   printf(" FFFFFFF-------  First node in a list\n");
-	  }
 	}
       else if (curr_public->Tprev){
 	curr_private->Tprev->Tnext = curr_private;
 	curr_public->Tprev = NULL;
-	printf("--------LLLLLLLL last node in a list \n");
 	}
-      else{
+      else
 	*p_public = curr_private;
-	printf("1-1-1-1-1-1-1-1 one node only! \n");
-	}
      } 
-    else { /* NO SWAP: just insert curr_private into the public heap. */
-    	printf("should be here after a new region is allocated! \n");
+    else { /* NO SWAP: some thread is giving up his heap. 
+    	      Just insert curr_private into the public heap. */
 	if (*p_public==NULL){
 	   curr_private->Tprev=NULL;
 	   curr_private->Tnext=NULL;
-	   printf("first PUBLIC************************* \n");
 	   }
 	else{
 	   curr_private->Tnext=*p_public;
 	   curr_private->Tprev=NULL;
 	   curr_private->Tnext->Tprev=curr_private;
-	   printf("inserted to public ********* \n");
 	   }
    	*p_public=curr_private;
 	return NULL;
       }
-	
-
    
    return curr_public;
   }

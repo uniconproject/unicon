@@ -646,14 +646,10 @@ void init_threadheap(struct threadstate *ts)
   struct region *rp;
   word size;
 
-  
-
   /* the main thread just points to the initial regions */
   if (first){
    ts->Curstring = curstring;
    ts->Curblock = curblock;
-   printf(" *************main str=%0x   main blk=%0x\n",  curtstring->base, curtblock->base);
-   howmanyblock();
    first=0;
    return;
    }
@@ -680,12 +676,8 @@ void init_threadheap(struct threadstate *ts)
     else
       syserr(" init_threadheap: insufficient memory");
 
-   /*   printf(" st=%0x\n",  curstring->base);*/
-
-   /*   printf(" rp=%0x,  string size=%d\n",rp, size);*/
-   
    /* size = curpstate->blockregion->size;*/
-   size = 1024*1024*2;
+   size = 1024*1024*4;
 
    if ((rp = newregion(size, size)) != 0) {
       MUTEX_LOCKID(MTX_BLKHEAP);
@@ -698,19 +690,11 @@ void init_threadheap(struct threadstate *ts)
       curblock->Gprev = rp;
       curblock = rp;
 
-      printf("------------- after allocation for a new thread: \n");
-      howmanyblock();
-
       MUTEX_UNLOCKID(MTX_BLKHEAP);
       ts->Curblock = rp;
       }
     else
       syserr(" init_threadheap: insufficient memory");
-
-   /*   printf("  blk=%0x\n",  curblock->base);*/
-
-   /*printf(" rp=%0x,  block size=%d\n",rp, size);*/
-
 }
 #endif 					/* ThreadHeap */
 

@@ -1102,6 +1102,14 @@ struct b_coexpr *ce;
       cstate cs = (cstate)(ce->cstate);
       struct context *ctx = cs[1];
       ctx->alive = 0;
+      /* give up the heaps owned by the thread */
+      swap2publicheap(curtblock, NULL,  &public_blockregion);
+      swap2publicheap(curtstring, NULL,  &public_stringregion);
+      if (ce->status & Ts_Async){
+	 MUTEX_LOCKID(MTX_NARTHREADS); 
+	 NARthreads--;	
+	 MUTEX_UNLOCKID(MTX_NARTHREADS);
+        }
       pthread_exit(NULL);
       }
 #endif					/* Concurrent */

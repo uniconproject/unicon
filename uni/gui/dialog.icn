@@ -1,5 +1,5 @@
 #
-# $Id: dialog.icn,v 1.22 2010-10-23 07:45:40 jeffery Exp $
+# $Id: dialog.icn,v 1.23 2010-12-07 19:09:10 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -368,6 +368,10 @@ class Dialog : Component(
       if e === -11 then {
          fire(CLOSE_BUTTON_EVENT, e)
       }
+
+      if (&control | &shift) & (e === (&lpress | &lrelease | &ldrag)) then {
+	 e -:= 2
+	 }
 
       if e === (&lpress | &rpress | &mpress) then {
          check_click_count(e)

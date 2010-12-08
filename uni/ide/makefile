@@ -21,7 +21,7 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u fontdialog.u templates.u definitions.u uproject.u \
-	idol.u preproce.u ytab_h.u yyerror.u unigram.u unicon.u \
+	idol.u preproce.u yyerror.u unigram.u unicon.u \
 	classbrowser.u tree.u imgs.u utags.u matchparen.u printdlg.u
 
 UNICONPACKAGE=idol.u preproce.u unicon.u tree.u unigram.u yyerror.u
@@ -75,9 +75,6 @@ idol.u: idol.icn
 
 preproce.u: preproce.icn
 	$(UC) $(UFLAGS) preproce
-
-ytab_h.u: ytab_h.icn
-	$(UC) $(UFLAGS) ytab_h
 
 yyerror.u: yyerror.icn
 	$(UC) $(UFLAGS) unigram

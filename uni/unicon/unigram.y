@@ -196,6 +196,8 @@ procedure Progend(x1)
    if yynerrs > 0 then
       istop(yynerrs || " error" || (if yynerrs > 1 then "s" else ""))
 
+   if /x1 then istop("error: empty file")
+
    package_level_syms := set()
    package_level_class_syms := set()
    set_package_level_syms(x1)

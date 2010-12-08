@@ -9,7 +9,7 @@ UFILES=classinfo.u databaseinfo.u packageinfo.u parsedclass.u \
 	parsedfunction.u parsedinitiallymethod.u parsedmethod.u \
 	parsedobject.u parsedprocedure.u parsedprogram.u \
 	parsedrecord.u parser.u preproce.u unigram.u \
-	unilex.u ytab_h.u
+	unilex.u
 
 PROGS=showtree$(EXE) showdb$(EXE)
 

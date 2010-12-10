@@ -2383,6 +2383,8 @@ function{1} trylock(x)
 	fail;
       else
 	fprintf(stderr, "pthread lock failure %d\n", rv);
+      }
+      fail;
 end
 
 "unlock(x) - unlock mutex x"

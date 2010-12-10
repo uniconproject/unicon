@@ -417,6 +417,7 @@ FncDef(fetch,2)
 #ifdef Concurrent
   FncDef(thread,1)
   FncDef(mutex,1)
+  FncDef(trylock,1)
   FncDef(lock,1)
   FncDef(unlock,1)
   FncDef(join,1)

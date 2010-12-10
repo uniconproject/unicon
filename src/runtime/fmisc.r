@@ -2366,6 +2366,25 @@ function{1} lock(x)
       }
 end
 
+"trylock(x) - try locking mutex x"
+
+function{1} trylock(x)
+   if !cnv:C_integer(x) then
+      runerr(101, x)
+   abstract { return integer}
+   body {
+      int rv;
+      if (x<1 || x>nmutexes)
+      	 irunerr(101, x);
+
+      if ((rv=pthread_mutex_trylock(mutexes+x-1)) == 0)
+      	 return C_integer 1;
+      else if (rv==EBUSY)
+	fail;
+      else
+	fprintf(stderr, "pthread lock failure %d\n", rv);
+end
+
 "unlock(x) - unlock mutex x"
 
 function{1} unlock(x)

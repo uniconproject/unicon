@@ -287,6 +287,7 @@ uword segsize[] = {
 pthread_t GCthread;
 int NARthreads;
 pthread_cond_t cond_gc;
+sem_t sem_gc; 
 
 void wait4GC(action)
 int action; 
@@ -295,10 +296,18 @@ static cond_nsuspended=0; /* the number of waiting threads on the condition vari
 static gc_queue=0;    
   if (action==GC_WAKEUPCALL){ /* if I am the thread doing GC */
     /* GC is over, reset GCthread and wakeup all threads*/
+
+    gc_queue--;
+    if(gc_queue){
+      MUTEX_UNLOCKID(MTX_GCTHREAD);
+      sem_post(&sem_gc);
+      printf(" finished GC, but have to sleep for another GC \n");
+      wait4GC(GC_GOTOSLEEP);
+      return;
+      }
+
     GCthread=NULL;
-
     MUTEX_UNLOCKID(MTX_GCTHREAD);
-
     MUTEX_LOCKID(MTX_COND_GC);
     /* broadcast a wakeup call to all threads waiting on cond_gc*/
     pthread_cond_broadcast(&cond_gc);
@@ -313,46 +322,46 @@ static gc_queue=0;
      * And make sure we dont start a GC in the middle of starting
      * a new Async thread. Precaution to avoid problems.
      */
-    do{
-	i=pthread_mutex_trylock(&static_mutexes[MTX_GCTHREAD]);
-    	printf(" trying to lock for GC\n");
-    	if (i==EBUSY){
-      	   /* check to see if another thread was faster than me and have already
-       	    * requested a GC. OR another thread is in a critical region and doesn't
-       	    * want a GC to start now.
-       	    */
-	    if (GCthread) {
-	       wait4GC(GC_GOTOSLEEP); /* I'm part of the GC party now! Sleeping!!*/
-	       printf("HAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAH\n");
-	       }
-	    else
-		idelay(1);
-      	   }
-    	 else if (i) syserr("Mutex Disaster in GCthread mutex in wait4GC()");
-       } while (i);	/* keep looping until I aquire the mutex*/
-
-    /* there might be cases where a new GC request is recieved. before all threads 
-     * from a previous GC have woken up. I have to wait for all threads to wakeup
-     *  before I can start a new GC
-     */
-    while (cond_nsuspended); /* make sure no thread is still sleeping*/
-
+      MUTEX_LOCKID(MTX_GC_QUEUE);
+      if(gc_queue){
+	gc_queue++;
+	printf("HAHAHAHAHAHAHAHAHAHAH    gc_queue=%d\n", gc_queue);
+	MUTEX_UNLOCKID(MTX_GC_QUEUE);
+	sem_wait(&sem_gc); /* I'm part of the GC party now! Sleeping!!*/
+	MUTEX_LOCKID(MTX_GCTHREAD);	
+	}
+      else{
+	gc_queue++;
+	MUTEX_UNLOCKID(MTX_GC_QUEUE);
+	MUTEX_LOCKID(MTX_GCTHREAD);
+	/* there might be cases where a new GC request is recieved. before all threads 
+	 * from a previous GC have woken up. I have to wait for all threads to wakeup
+	 *  before I can start a new GC
+	 */
+	while (cond_nsuspended); /* make sure no thread is still sleeping*/
+	}
+	
     printf("GCThread: got the GC lock, I will wait for other threads to stop!\n");
     fflush(stdout);
     GCthread = pthread_self();
    
     /* keep waiting until only one thread (current) is running*/
-    while ( NARthreads>1)/*sleep(1)*/; 
-   
+    while ( NARthreads-gc_queue)/*sleep(1)*/; 
+    
     printf("GCthread: ready, I will proceed with GC now\n"); fflush(stdout);
     /* now it is safe to proceed with GC with only the current thread running*/
-   
-    /* unset GCthread and unlock the mutex, no need to keep them since
-     * only the current thread is running now
-     */
-    /*MUTEX_UNLOCKID(MTX_GCTHREAD);*/
     return;
-    } 
+    }
+    /*
+     *  Check to see it is nesessary to do GC for the current thread. Hopefully we 
+     *  will force GC to happen if that is the case.
+     */
+    else if ((curtblock->end - curtblock->free) / (double) curtblock->size < 0.09 ) {
+	if (!reserve(Blocks, curtblock->end - curtblock->free + 100))
+	  printf(stderr, " Disaster! in wait4GC. \n");
+
+      return;
+    }
   
   printf("I'm a thread who is  gonna be sleeping 4 GC\n"); fflush(stdout);
   /* the thread that gets here should block and wait for GC to finish*/

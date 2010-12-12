@@ -548,6 +548,16 @@ void *nctramp(void *arg)
 
 
 #ifdef Concurrent 
+
+void clean_threads()
+{
+   int i;
+   for(i=0; i<NUM_STATIC_MUTEXES; i++)
+      pthread_mutex_destroy(&static_mutexes[i]);
+
+   pthread_cond_destroy(&cond_gc);
+   sem_destroy(&sem_gc);
+}
 /*
  *  pthread errors handler
  */

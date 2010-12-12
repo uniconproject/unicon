@@ -830,6 +830,7 @@ void main(int argc, char **argv)
 #endif
 
 #ifdef Concurrent
+    clean_threads();
     /*pthread_exit(EXIT_SUCCESS);*/
 #endif
 

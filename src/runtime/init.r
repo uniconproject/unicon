@@ -853,6 +853,7 @@ char *argv[];
    pthread_mutex_init(&mutex_qualsize, NULL);
    
    pthread_cond_init(&cond_gc, NULL);
+   sem_init(&sem_gc, 0, 0);
 #endif					/* Concurrent */
 
 #if COMPILER

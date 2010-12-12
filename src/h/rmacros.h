@@ -1101,9 +1101,11 @@
    #define MTX_PUBLICSTRHEAP	24
    #define MTX_PUBLICBLKHEAP	25
    
+   #define MTX_GC_QUEUE		26
+   
   
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	26
+   #define NUM_STATIC_MUTEXES	27
 
    /* used by wait4GC function*/
    #define GC_GOTOSLEEP 0

@@ -71,8 +71,7 @@ extern pthread_mutex_t mutex_alcstr;
 extern pthread_t GCthread;
 extern int NARthreads;
 extern pthread_cond_t cond_gc;
-
-
+extern sem_t sem_gc; 
 #endif					/* Concurrent */
 
 /*

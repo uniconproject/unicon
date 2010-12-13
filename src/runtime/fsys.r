@@ -2726,8 +2726,23 @@ function{0,1} delay(n)
       }
 
    inline {
+#ifdef Concurrent
+      int ret;
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+      NARthreads--;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);   
+      ret = idelay(n);
+      MUTEX_LOCKID(MTX_GCTHREAD);
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+      NARthreads++;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
+      MUTEX_UNLOCKID(MTX_GCTHREAD);
+      if (ret == Failed)
+        fail;
+#else					/* Concurrent */
       if (idelay(n) == Failed)
         fail;
+#endif					/* Concurrent */        
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;

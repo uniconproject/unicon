@@ -633,10 +633,12 @@ int region;
 #endif                            /* Graphics3D */
         }
 
+#ifdef Graphics3D
      for (wc = wcntxts; wc ; wc = wc->next) {
 	if (wc->normals) markptr((union block **)&(wc->normals));
 	if (wc->texcoords) markptr((union block **)(&(wc->texcoords)));
 	}
+#endif                            /* Graphics3D */
    }
 #endif					/* Graphics */
 

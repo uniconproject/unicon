@@ -2329,12 +2329,12 @@ function{1} condvar(x)
 	if(ncondvars==maxcondvars){
 	   maxcondvars = maxcondvars * 2 + 64;
 	   condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t));
-	   condvarsmtxs=realloc(condvarsmtxs, maxcondvars * sizeof(word));
+	   condvarsmtxs=realloc(condvarsmtxs, maxcondvars * sizeof(int));
 	   if (condvars==NULL || condvarsmtxs==NULL)
 	     syserr("out of memory for condition variables!");
   	   }
 	pthread_cond_init(condvars+ncondvars, NULL);
-	condvarsmtxs[ncondvars]=x;
+	condvarsmtxs[ncondvars]=x-1;
         ncondvars++;
         MUTEX_UNLOCKID(MTX_CONDVARS);
 	return C_integer ncondvars;

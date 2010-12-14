@@ -557,6 +557,20 @@ void clean_threads()
 
    pthread_cond_destroy(&cond_gc);
    sem_destroy(&sem_gc);
+
+   pthread_mutex_destroy(&mutex_mutex);
+   
+   for(i=0; i<nmutexes; i++)
+      pthread_mutex_destroy(&mutexes[i]);
+   
+   free(mutexes);
+   
+
+   for(i=0; i<ncondvars; i++)
+      pthread_cond_destroy(&condvars[i]);
+   
+   free(condvars);
+   free(condvarsmtxs);
 }
 /*
  *  pthread errors handler

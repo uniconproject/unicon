@@ -2303,10 +2303,97 @@ end
 #endif					/* MultiThread */
 
 #ifdef Concurrent
+
+pthread_cond_t* condvars;
+int* condvarsmtxs;
+int maxcondvars;
+int ncondvars; 
+
+
 pthread_mutex_t* mutexes;
 pthread_mutex_t mutex_mutex;
 int maxmutexes;
 int nmutexes; 
+
+
+"condvar(x) - create and initialize a condition variable. x is the mutex to be used with it"
+
+function{1} condvar(x)
+   if !cnv:C_integer(x) then
+      runerr(101, x)
+   body{
+	MUTEX_LOCKID(MTX_CONDVARS);
+	if(ncondvars==maxcondvars){
+	   maxcondvars = maxcondvars * 2 + 64;
+	   condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t));
+	   condvarsmtxs=realloc(condvarsmtxs, maxcondvars * sizeof(word));
+	   if (condvars==NULL || condvarsmtxs==NULL)
+	     syserr("out of memory for condition variables!");
+  	   }
+	pthread_cond_init(condvars+ncondvars, NULL);
+	condvarsmtxs[ncondvars]=x;
+        ncondvars++;
+        MUTEX_UNLOCKID(MTX_CONDVARS);
+	return C_integer ncondvars;
+      }
+end
+
+"condwait(x) - wait on condition variable x"
+
+function{1} condwait(x)
+   if !cnv:C_integer(x) then
+      runerr(101, x)
+   abstract { return integer}
+   body {
+      int rv;
+      if (x<1 || x>ncondvars)
+      	 irunerr(101, x);
+
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+      NARthreads--;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
+
+      if (rv=pthread_cond_wait(condvars+x-1, &mutexes[condvarsmtxs[x]]) != 0){
+      	 fprintf(stderr, "condition variable wait failure %d\n", rv);
+      	 exit(-1);
+      	 }
+
+      MUTEX_LOCKID(MTX_GCTHREAD);
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+      NARthreads++;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
+      MUTEX_UNLOCKID(MTX_GCTHREAD);
+
+      return C_integer 1;
+      }
+end
+
+"condsignal(x, y) - signal the condition variable x y times. Default y is 1, y=0 means broadcast"
+
+function{1} condsignal(x, y)
+   declare { int Y=0;}
+   if !cnv:C_integer(x) then
+      runerr(101, x)
+      if is:null(y) then
+	inline { Y = 1; }
+      else if !cnv:C_integer(y) then
+	runerr(101, y)
+   
+   abstract { return integer}
+   body {
+       /* y times is not implemented  */
+      int rv;
+      if (x<1 || x>ncondvars)
+      	 irunerr(101, x);
+      	 
+      if (rv=pthread_cond_signal(condvars+x-1) != 0){
+      	 fprintf(stderr, "condition variable wait failure %d\n", rv);
+      	 exit(-1);
+      	 }
+      return C_integer 1;
+      }
+end
+
 
 "mutex(x) - create and initialize a mutex. To be extended later to allow for naming mutexes."
 

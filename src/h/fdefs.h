@@ -421,4 +421,7 @@ FncDef(fetch,2)
   FncDef(lock,1)
   FncDef(unlock,1)
   FncDef(join,1)
+  FncDef(condvar,1)
+  FncDef(condwait,1)
+  FncDef(condsignal,2)
 #endif					/* Concurrent */

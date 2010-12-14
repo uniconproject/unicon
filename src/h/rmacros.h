@@ -1103,9 +1103,11 @@
    
    #define MTX_GC_QUEUE		26
    
+   #define MTX_CONDVARS		27
+   
   
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	27
+   #define NUM_STATIC_MUTEXES	28
 
    /* used by wait4GC function*/
    #define GC_GOTOSLEEP 0

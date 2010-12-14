@@ -358,7 +358,7 @@ static gc_queue=0;
      */
     else if ((curtblock->end - curtblock->free) / (double) curtblock->size < 0.09 ) {
 	if (!reserve(Blocks, curtblock->end - curtblock->free + 100))
-	  printf(stderr, " Disaster! in wait4GC. \n");
+	  fprintf(stderr, " Disaster! in wait4GC. \n");
 
       return;
     }

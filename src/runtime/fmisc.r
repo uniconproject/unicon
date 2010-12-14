@@ -2322,6 +2322,9 @@ function{1} condvar(x)
    if !cnv:C_integer(x) then
       runerr(101, x)
    body{
+         if (x<1 || x>nmutexes)
+	  irunerr(101, x);
+
 	MUTEX_LOCKID(MTX_CONDVARS);
 	if(ncondvars==maxcondvars){
 	   maxcondvars = maxcondvars * 2 + 64;

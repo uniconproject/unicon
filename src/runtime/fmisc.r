@@ -2356,7 +2356,7 @@ function{1} condwait(x)
       NARthreads--;	
       MUTEX_UNLOCKID(MTX_NARTHREADS);
 
-      if (rv=pthread_cond_wait(condvars+x-1, &mutexes[condvarsmtxs[x]]) != 0){
+      if (rv=pthread_cond_wait(condvars+x-1, &mutexes[condvarsmtxs[x-1]]) != 0){
       	 fprintf(stderr, "condition variable wait failure %d\n", rv);
       	 exit(-1);
       	 }

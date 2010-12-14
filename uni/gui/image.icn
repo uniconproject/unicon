@@ -1,5 +1,5 @@
 #
-# $Id: image.icn,v 1.3 2006-07-09 23:43:07 rparlett Exp $
+# $Id: image.icn,v 1.4 2010-12-14 22:29:33 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -71,8 +71,8 @@ class Image : Component(
    end
 
    #
-   # Invoke this is if the image in the file changed (but the filename
-   # didn't).  The image will be reloaded and redisplayed.
+   # Invoke this is if the image in the file changed (but the
+   # filename didn't).  The image will be reloaded and redisplayed.
    #
    method image_changed()
       close_image()
@@ -165,14 +165,16 @@ class Image : Component(
          "t" : yoff := 0
          "b" : yoff := h1 - zoom_h
          "c" : yoff := (h1 - zoom_h) / 2
-         default : fatal("incorrect y internal_alignment specifier: " || image(self.y_internal_alignment))
+         default : fatal("incorrect y internal_alignment specifier: " ||
+			 image(self.y_internal_alignment))
       }
 
       case self.x_internal_alignment of {
          "l" : xoff := 0
          "r" : xoff := w1 - zoom_w
          "c" : xoff := (w1 - zoom_w) / 2
-         default : fatal("incorrect x internal_alignment specifier: " || image(self.x_internal_alignment))
+         default : fatal("incorrect x internal_alignment specifier: " ||
+			 image(self.x_internal_alignment))
       }
 
       zoom_w <:= 1
@@ -183,9 +185,12 @@ class Image : Component(
          if WAttrib(zc, "width") = zoom_w & WAttrib(zc,"height") = zoom_h then
             CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)
          else
-            Zoom(imwin, W, 0, 0, img_w, img_h, x1 + xoff, y1 + yoff, zoom_w, zoom_h)
-      } else {
-         zc := WOpen("size=" || zoom_w || "," || zoom_h, "canvas=hidden") | fatal("Couldn't open temp window")
+            Zoom(imwin, W, 0, 0, img_w, img_h,
+		 x1 + xoff, y1 + yoff, zoom_w, zoom_h)
+         }
+      else {
+         zc := WOpen("size=" || zoom_w || "," || zoom_h, "canvas=hidden") |
+	    fatal("Couldn't open temp window")
          Zoom(imwin, zc, 0, 0, img_w, img_h, 0, 0, zoom_w, zoom_h)
          insert(zoom_cache, filename, zc)
          CopyArea(zc, W, , , , , x1 + xoff, y1 + yoff)
@@ -195,7 +200,8 @@ class Image : Component(
       # Border if required.
       #
       if \self.draw_border_flag then
-         DrawRaisedRectangle(W, x1 + xoff - BORDER_WIDTH, y1 + yoff - BORDER_WIDTH, zoom_w + 2 * BORDER_WIDTH, zoom_h + 2 * BORDER_WIDTH)
+         DrawRaisedRectangle(W, x1+xoff-BORDER_WIDTH, y1+yoff-BORDER_WIDTH,
+			     zoom_w + 2*BORDER_WIDTH, zoom_h + 2*BORDER_WIDTH)
       self.do_shading(W)
 
    end
@@ -217,7 +223,9 @@ class Image : Component(
                set_cache_image()
             else
                clear_cache_image()
-         "internal_alignment" : set_internal_alignment!string_vals(attr, val, 2)
+         "internal_alignment" : {
+	    set_internal_alignment!string_vals(attr, val, 2)
+	    }
          default: self.Component.set_one(attr, val)
       }
    end
@@ -234,4 +242,44 @@ class Image : Component(
       /zoom_cache := table()
       self.x_internal_alignment := self.y_internal_alignment := "c"
       set_fields(a)
+end
+
+#
+# An Image generated on the fly, instead of loaded from a file.
+#
+class TempImage : Image(basewidth, baseheight)
+
+   #
+   # return the handle to the temp image in the cache, so you can directly
+   # edit it.  Call image_changed() when you want the widget to update on
+   # the visible window.
+   #
+   method imwin()
+      return image_cache[filename]
+   end
+   method image_changed()
+      invalidate()
+   end
+   method display(buffer_flag)
+      if not member(image_cache, filename) then {
+	imwin := WOpen("canvas=hidden", "size="||basewidth||","||baseheight)
+	insert(image_cache, filename, imwin)
+    }
+    self.Image.display(buffer_flag)
+end
+
+initially(a[])
+    if match("width=", x := !a) then
+	basewidth := integer(x[7:0]) else basewidth := 64
+    if match("height=", x := !a) then
+	baseheight := integer(x[8:0]) else baseheight := 64
+    if match("size=", x := !a) then {
+	x[6:0] ? {
+	    basewidth := integer(tab(many(&digits)))
+	    =","
+	    baseheight := integer(tab(many(&digits)))
+	}
+    }
+    self.Image.initially()
+    set_fields(a)
 end

@@ -1,5 +1,5 @@
 #
-# $Id: image.icn,v 1.4 2010-12-14 22:29:33 jeffery Exp $
+# $Id: image.icn,v 1.5 2010-12-15 01:45:24 jeffery Exp $
 #
 # This file is in the public domain.
 #
@@ -262,9 +262,8 @@ class TempImage : Image(basewidth, baseheight)
    end
    method display(buffer_flag)
       if not member(image_cache, filename) then {
-	imwin := WOpen("canvas=hidden", "size="||basewidth||","||baseheight)
-	insert(image_cache, filename, imwin)
-    }
+	insert(image_cache, filename, WOpen("canvas=hidden", "size="||basewidth||","||baseheight))
+	   }
     self.Image.display(buffer_flag)
 end
 

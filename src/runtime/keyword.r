@@ -16,7 +16,7 @@ keyword{4} allocated
       return integer
       }
    inline {
-#ifdef ThreadHeap
+#ifdef Concurrent
       struct tls_node *tlsnode;
       uword blktot=0;
       uword strtot=0;
@@ -34,12 +34,12 @@ keyword{4} allocated
       suspend C_integer stattotal;
       suspend C_integer strtot;
       return  C_integer blktot;
-#else					/* ThreadHeap */
+#else					/* Concurrent */
       suspend C_integer stattotal + strtotal + blktotal;
       suspend C_integer stattotal;
       suspend C_integer strtotal;
       return  C_integer blktotal;
-#endif					/* ThreadHeap */
+#endif					/* Concurrent */
       }
 end
 

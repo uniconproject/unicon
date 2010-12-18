@@ -2004,7 +2004,7 @@ static stringint siKeywords[] = {
 #endif					/* Concurrent */
 	 }
       else if (strcmp(kname,"tallocated") == 0) {
-#if defined(Concurrent) && defined(ThreadHeap)
+#ifdef Concurrent
 	 /*
 	  * Preliminary version just reports space used in current regions.
 	  */
@@ -2012,7 +2012,7 @@ static stringint siKeywords[] = {
 	    (curblock->free - curblock->base);
 	 suspend C_integer (curstring->free - curstring->base);
 	 suspend C_integer (curblock->free - curblock->base);
-#endif					/* Concurrent && ThreadHeap */
+#endif					/* Concurrent */
 	 fail;
 	 }
       else if (strcmp(kname,"collections") == 0) {

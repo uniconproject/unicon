@@ -490,12 +490,12 @@ struct threadstate {
 
   struct descrip Eret_tmp;	/* eret value during unwinding */
   
-#ifdef ThreadHeap
+#ifdef Concurrent
   struct region *Curstring;    /*  separate regions vs shared      */
   struct region *Curblock;     /*     same above     */
   uword stringtotal;			/* cumulative total allocation */
   uword blocktotal;			/* cumulative total allocation */
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
    };
 
 #if !COMPILER

@@ -556,7 +556,7 @@
    word nparam; word ndynam; word nstatic; word fstatic;\
    struct sdescrip quals[n];}
 
-#ifdef ThreadHeap
+#ifdef Concurrent
 #define ssize    (curtstate->Curstring->size)
 #define strbase  (curtstate->Curstring->base)
 #define strend   (curtstate->Curstring->end)
@@ -566,7 +566,7 @@
 #define blkbase  (curtstate->Curblock->base)
 #define blkend   (curtstate->Curblock->end)
 #define blkfree  (curtstate->Curblock->free)
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
 #define ssize    (curstring->size)
 #define strbase  (curstring->base)
 #define strend   (curstring->end)
@@ -576,7 +576,7 @@
 #define blkbase  (curblock->base)
 #define blkend   (curblock->end)
 #define blkfree  (curblock->free)
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
 #if COMPILER
    
@@ -832,17 +832,17 @@
       #define set_ser   (curpstate->Set_ser)
       #define table_ser (curpstate->Table_ser)
 
-#ifdef ThreadHeap 					/* ThreadHeap */      
+#ifdef Concurrent
       #define curtstring (curtstate->Curstring)
       #define curtblock  (curtstate->Curblock)
       #define strtotal  (curtstate->stringtotal)
       #define blktotal  (curtstate->blocktotal)
       #define public_stringregion (curpstate->Public_stringregion)
       #define public_blockregion (curpstate->Public_blockregion)
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
       #define strtotal  (curpstate->stringtotal)
       #define blktotal  (curpstate->blocktotal)
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
       #define curstring (curpstate->stringregion)
       #define curblock  (curpstate->blockregion)

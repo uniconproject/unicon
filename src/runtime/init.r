@@ -602,7 +602,7 @@ void check_version(struct header *hdr, char *name,
    struct header hdr;
 #endif					/* !COMPILER */
 
-#ifdef ThreadHeap
+#ifdef Concurrent
 
 void howmanyblock(){
   int i=0;
@@ -696,7 +696,7 @@ void init_threadheap(struct threadstate *ts)
     else
       syserr(" init_threadheap: insufficient memory");
 }
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
 void init_threadstate(struct threadstate *ts)
 {
@@ -753,12 +753,12 @@ void init_threadstate(struct threadstate *ts)
    ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
    ts->Tend = NULL;
 
-#ifdef ThreadHeap
+#ifdef Concurrent
    ts->Curstring = NULL;
    ts->Curblock = NULL;
    ts->stringtotal=0;
    ts->blocktotal=0;
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
 }
 
@@ -1127,9 +1127,9 @@ Deliberate Syntax Error
 
 #endif					/* COMPILER */
 
-#ifdef ThreadHeap
+#ifdef Concurrent
    init_threadheap(curtstate);
-#endif					/* ThreadHeap */
+#endif					/* Concurrent */
 
    /*
     * Examine the environment and make appropriate settings.    [[I?]]
@@ -1163,9 +1163,9 @@ Deliberate Syntax Error
 #endif					/* MultiThread */
 #endif					/* COMPILER */
 
-#ifdef ThreadHeap_REMOVETHIS
+#ifdef Concurrent_REMOVETHIS
    init_threadheap(curtstate);
-#endif					/* ThreadHeap */
+#endif					/* Concurrent */
 
 #if !COMPILER
    /*

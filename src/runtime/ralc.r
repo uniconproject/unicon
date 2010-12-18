@@ -6,11 +6,11 @@
 /*
  * Prototypes.
  */
-#ifdef ThreadHeap
+#ifdef Concurrent
 static struct region *findgap(struct region *curr_private, word nbytes, int region);
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
 static struct region *findgap	(struct region *curr, word nbytes);
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
 extern word alcnum;
 
@@ -38,16 +38,9 @@ word table_ser = 1;	/* serial numbers for tables */
    /*
     * Ensure that there is enough room in the block region.
     */
-#ifndef ThreadHeap
-   MUTEX_LOCK(mutex_alcblk, "mutex_alcblk");
-#endif					/* ThreadHeap */
 
-   if (DiffPtrs(blkend,blkfree) < nbytes && !reserve(Blocks, nbytes)){
-#ifndef ThreadHeap
-      MUTEX_UNLOCK(mutex_alcblk, "mutex_alcblk");
-#endif					/* ThreadHeap */
+   if (DiffPtrs(blkend,blkfree) < nbytes && !reserve(Blocks, nbytes))
       return NULL;
-      }
 
    /*
     * Decrement the free space in the block region by the number of bytes
@@ -58,9 +51,6 @@ word table_ser = 1;	/* serial numbers for tables */
    var = (struct struct_nm *)blkfree;
    blkfree += nbytes;
    var->title = t_code;
-#ifndef ThreadHeap
-   MUTEX_UNLOCK(mutex_alcblk, "mutex_alcblk");
-#endif					/* ThreadHeap */
 }
 #enddef
 
@@ -785,17 +775,10 @@ char *f(register char *s, register word slen)
    /*
     * Make sure there is enough room in the string space.
     */
-#ifndef ThreadHeap 
-   MUTEX_LOCK(mutex_alcstr, "mutex_enoughStringSpace");
-#endif					/* ThreadHeap */
-
    if (DiffPtrs(strend,strfree) < slen) {
       StrLen(ts) = slen;
       StrLoc(ts) = s;
       if (!reserve(Strings, slen)){
-#ifndef ThreadHeap
- 	MUTEX_UNLOCK(mutex_alcstr,"mutex_alcstr");
-#endif					/* ThreadHeap */
          return NULL;
       }
       s = StrLoc(ts);
@@ -817,9 +800,6 @@ char *f(register char *s, register word slen)
       d += slen;
 
    strfree = d;
-#ifndef ThreadHeap
-     MUTEX_UNLOCK(mutex_alcstr,"mutex_alcstr");
-#endif					/* ThreadHeap */
    return ofree;
    }
 #enddef
@@ -944,9 +924,9 @@ void f (union block *bp)
 {
    word nbytes;
    struct region *rp;
-#if defined(Concurrent) /* && !defined(ThreadHeap)*/
+#ifdef Concurrent   /*   DO WE NEED THIS ? WE HAVE PRIVATE HEAPS NOW  */
    return;
-#endif					/* Concurrent && !ThreadHeap */
+#endif					/* Concurrent */
    nbytes = BlkSize(bp);
    for (rp = curblock; rp; rp = rp->next)
       if ((char *)bp + nbytes == rp->free)
@@ -991,7 +971,7 @@ char *f(int region, word nbytes)
    struct region **pcurr, *curr, *rp;
    word want, newsize;
    extern int qualfail;
-#ifdef ThreadHeap
+#ifdef Concurrent
    int mtx_publicheap, mtx_heap;
    struct region *curr_private, **p_publicheap;
    if (region == Strings){
@@ -1008,12 +988,12 @@ char *f(int region, word nbytes)
       curr_private = curtblock;
       p_publicheap = &public_blockregion;
    }
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
    if (region == Strings)
       pcurr = &curstring;
    else
       pcurr = &curblock;
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
    curr = *pcurr;
 
@@ -1023,11 +1003,11 @@ char *f(int region, word nbytes)
    if (DiffPtrs(curr->end, curr->free) >= nbytes)
       return curr->free;		/* quick return: current region is OK */
 
-#ifdef ThreadHeap
+#ifdef Concurrent
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
    if ((rp = findgap(curr, nbytes)) != 0)     /* check all regions on chain */
-#endif 					/* ThreadHeap */   
+#endif 					/* Concurrent */   
       {
       *pcurr = rp;			/* switch regions */
       return rp->free;
@@ -1048,7 +1028,7 @@ char *f(int region, word nbytes)
    if (want < nbytes)
       want = nbytes;
 
-#ifndef ThreadHeap
+#ifndef Concurrent
    for (rp = curr; rp; rp = rp->prev)
       if (rp->size >= want) {	/* if large enough to possibly succeed */
          *pcurr = rp;
@@ -1056,7 +1036,7 @@ char *f(int region, word nbytes)
          if (DiffPtrs(rp->end,rp->free) >= want)
             return rp->free;
          }
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
 
    wait4GC(GC_STOPALLTHREADS);
    collect(region); /* try to collect the private region first */
@@ -1079,7 +1059,7 @@ char *f(int region, word nbytes)
    
    /* GC has failed so far to  free enough memory, wake up all threads for now */   
    wait4GC(GC_WAKEUPCALL); 
- #endif 					/* ThreadHeap */   
+ #endif 					/* Concurrent */   
 
    /*
     * That didn't work.  Allocate a new region with a size based on the
@@ -1102,11 +1082,11 @@ char *f(int region, word nbytes)
       if (curr->Gprev) curr->Gprev->Gnext = rp;
       curr->Gprev = rp;
       MUTEX_UNLOCKID(mtx_heap);
-#ifdef ThreadHeap
+#ifdef Concurrent
       MUTEX_LOCKID(mtx_publicheap);
       swap2publicheap(curr_private, NULL, p_publicheap);
       MUTEX_UNLOCKID(mtx_publicheap);
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
       *pcurr = rp;
 #if e_tenurestring || e_tenureblock
       MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
@@ -1131,7 +1111,7 @@ char *f(int region, word nbytes)
     *  region has enough to satisfy the original request.
     */
 
-#ifdef ThreadHeap
+#ifdef Concurrent
      printf(" !!!!!! we are disparate for memory now!! trying all options \n ");
    /* look in the public heaps, */
    wait4GC(GC_STOPALLTHREADS); 
@@ -1148,7 +1128,7 @@ char *f(int region, word nbytes)
    wait4GC(GC_WAKEUPCALL); 
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
    
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
    for (rp = curr; rp; rp = rp->prev)
       if (rp->size < want) {		/* if not collected earlier */
          *pcurr = rp;
@@ -1158,7 +1138,7 @@ char *f(int region, word nbytes)
          }
 
    if ((rp = findgap(curr, nbytes)) != 0)
-#endif 					/* ThreadHeap */   
+#endif 					/* Concurrent */   
    {
       *pcurr = rp;
       return rp->free;
@@ -1184,7 +1164,7 @@ reserve_macro(reserve,0,0)
 #endif					/* MultiThread */
 
 
-#ifdef ThreadHeap
+#ifdef Concurrent
 /*
  * swap the thread current region (curr_private) with curr_public from the
  * public heaps. The switch is done in the chain and a pointer to the new private
@@ -1234,25 +1214,25 @@ struct region **p_public; /* pointer to the head of the list*/
    
    return curr_public;
   }
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
 
 /*
  * findgap - search region chain for a region having at least nbytes available
  */
-#ifdef ThreadHeap
+#ifdef Concurrent
 static struct region *findgap(curr_private, nbytes, region)
 struct region *curr_private;
 word nbytes;
 int region;
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
 static struct region *findgap(curr, nbytes)
 struct region *curr;
 word nbytes;
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
    {
    struct region *rp;
    
-#ifdef ThreadHeap
+#ifdef Concurrent
    struct region **p_public;
    struct region *curr;
    int mtx_publicheap;
@@ -1276,7 +1256,7 @@ word nbytes;
    MUTEX_UNLOCKID(mtx_publicheap);
 
    return rp;
-#else 					/* ThreadHeap */
+#else 					/* Concurrent */
 /* With ThreadHeap, skip this, we know we are at the front of the list */
    for (rp = curr; rp; rp = rp->prev)
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
@@ -1285,7 +1265,7 @@ word nbytes;
       if (DiffPtrs(rp->end, rp->free) >= nbytes)
          return rp;
    return NULL;
-#endif 					/* ThreadHeap */
+#endif 					/* Concurrent */
    }
 
 /*
@@ -1323,10 +1303,10 @@ word nbytes,stdsize;
          rp->free = rp->base = (char *)AllocReg(rp->size);
          if (rp->free != NULL) {
             rp->end = rp->base + rp->size;
-#ifdef ThreadHeap
+#ifdef Concurrent
 	    rp->Tnext=NULL;
 	    rp->Tprev=NULL;
-#endif 					/* ThreadHeap */   
+#endif 					/* Concurrent */   
             return rp;
             }
          rp->size = (rp->size + nbytes)/2 - 1;

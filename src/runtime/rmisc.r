@@ -588,6 +588,7 @@ int noimage;
         }
 
       record: {
+	 int is_obj = 0;
          /*
           * If noimage is nonzero, print "record(n)" where n is the
           *  number of fields in the record.  If noimage is zero, print
@@ -596,17 +597,36 @@ int noimage;
          bp = BlkLoc(*dp);
          i = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
          s = StrLoc(bp->Record.recdesc->Proc.recname);
-         fprintf(f, "record ");
+         j = Blk(Blk(bp,Record)->recdesc,Proc)->nfields;
+
+	 if((j>0) && (bp == (Blk(bp,Record)->fields[0]).vword.bptr) &&
+	    !strcmp(StrLoc(Blk(Blk(bp,Record)->recdesc,Proc)->lnames[0]),
+		    "__s")) {
+	    char *__stateloc;
+	    fprintf(f, "object ");
+	    is_obj = 1;
+	    if ((__stateloc = strstr(s, "__state")) != NULL) {
+	       while (s != __stateloc) {
+		  printimage(f, *s++, '\0'); i--; }
+	       s += 7; i -= 7;
+	       }
+	    while (i-- > 0)
+	       printimage(f, *s++, '\0');
+	    }
+	 else {
+	    fprintf(f, "record ");
          while (i-- > 0)
             printimage(f, *s++, '\0');
+	    }
          fprintf(f, "_%ld", (long)Blk(bp,Record)->id);
-         j = Blk(Blk(bp,Record)->recdesc,Proc)->nfields;
+
          if (j <= 0)
             fprintf(f, "()");
          else if (noimage > 0)
             fprintf(f, "(%ld)", (long)j);
          else {
             putc('(', f);
+	    if (is_obj) i = 2; else
             i = 0;
             for (;;) {
                outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);

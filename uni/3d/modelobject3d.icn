@@ -75,10 +75,62 @@ class ModelObject3D:BasicObject3D(
 
    end
    
+   method mesh_count()
+      return *lst_mesh
+   end
+
+   method vertex_count()
+     local c:=0, mesh
+      every mesh:=!lst_mesh do
+        c+:=mesh.vertex_count()
+      return c
+   end
+
+   method face_count()
+     local c:=0, mesh
+     every mesh:=!lst_mesh do
+        c+:=mesh.face_count()
+      return c
+   end
+  
+   method material_count()
+     local mesh, c:=0
+     every mesh:=!lst_mesh do
+        c+:=mesh.material_count()
+      return c
+   end
+
+   method texmaterial_count()
+      local mesh, c:=0
+      every mesh:=!lst_mesh do
+         c+:=mesh.material_count()
+      return c
+   end
+
+   method texture_files()
+      local s:=set(), L:=[], mesh
+      every mesh:=!lst_mesh do
+         s++:=mesh.texture_files()
+      every put(L, !s)
+      return L
+   end
+
+   method texture_files_count()
+      local s
+      s:=texture_files()
+      return *s
+   end
+
+
+   
+   method meshes()
+      every suspend !lst_mesh
+   end
+
    method addMesh(mesh)
       put(lst_mesh, mesh)
    end
-   
+
   
    method render_details()
       local mesh
@@ -196,23 +248,14 @@ class ModelObject3D:BasicObject3D(
           mesh := lst_mesh[i]
           mesh.calc_bounding_box()
 
-          if bb_min.x > mesh.bb_min.x then
-             bb_min.x := mesh.bb_min.x
-          else
-          if bb_max.x < mesh.bb_max.x then
-             bb_max.x := mesh.bb_max.x
+          if not (bb_min.x >:=mesh.bb_min.x) then
+             bb_max.x <:= mesh.bb_max.x
 
-          if bb_min.y > mesh.bb_min.y then
-             bb_min.y := mesh.bb_min.y
-          else
-          if bb_max.y < mesh.bb_max.y then
-             bb_max.y := mesh.bb_max.y
+          if not (bb_min.y >:= mesh.bb_min.y) then
+             bb_max.y <:= mesh.bb_max.y
 
-          if bb_min.z > mesh.bb_min.z then
-             bb_min.z := mesh.bb_min.z
-          else
-          if bb_max.z < mesh.bb_max.z then
-             bb_max.z := mesh.bb_max.z
+          if not(bb_min.z >:= mesh.bb_min.z) then
+             bb_max.z <:= mesh.bb_max.z
           }
    end
 

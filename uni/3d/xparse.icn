@@ -17,51 +17,73 @@ class XFile(
 
      current_model,  current_mesh,
      X_TemplateID, filename, blockTable, tempBoneTable, maxKey,
-     has_bones
+     has_bones,
+     texture_format,
+     texture_path
      
 )
 
 method load(fname, m3d)
    local s, fin, p
    filename := fname
-   fin := open(filename) | stop("can't open ", filename)
-   s := reads(fin, 16) | stop("empty x file?!")
-   checkHeader(s)
-   if /(p := stat(fin)) then {
-      DEBUGW("No stat")
-      fail
-   }
-   s := reads(fin, p.size) | stop("empty x file?!")
-   close(fin)
+   fin := open(filename) | 
+	    ( DEBUGW("can't open "|| filename) & fail )
+
+   s := reads(fin, 16) |
+	    ( DEBUGW("empty x file?!") & close(fin) & fail)
+
+   checkHeader(s) | fail
+
+   p := stat(fin) | 
+	    ( DEBUGW("can't stat "|| filename) & close(fin) & fail )
+
+   s := reads(fin, p.size) | 
+	    ( DEBUGW("empty x file?!") & close(fin) & fail )
    
    current_model := m3d
    current_xfile := self
    has_bones := &null
 
    s ? { Xparse() }
+   
+   close(fin)
+
    return 
 end
 
 method checkHeader(s)
    s ? {
-      ="xof " 		  | stop("Not a .X model file. Aborted...")
-      integer( move(2) ) <= 3 | stop("Major version greater than 03. Aborted...")
-      integer( move(2) ) <= 3 | stop("Minor version greater than 03. Aborted...")
-      ="txt" 		  | stop(" Not a text file format. Aborted...")
+      ="xof " 		  | DEBUGW("Not a .X model file. Aborted...")
+      integer( move(2) ) <= 3 | DEBUGW("Major version greater than 03. Aborted...")
+      integer( move(2) ) <= 3 | DEBUGW("Minor version greater than 03. Aborted...")
+      ="txt" 		  | DEBUGW(" Not a text file format. Aborted...")
       }
 
    return
 end
 
-method exists(fname)
-   return close(open(fname))
+method set_texture_path(texpath)
+  if texpath[-1]==PS then
+    texture_path := texpath
+  else
+    texture_path := texpath || PS
+    
+  stat(texture_path) | DEBUGW(texture_path || " Doesn't exist!")
+end
+
+# if set, map the texture file names read in the model file` to the new format
+# Probably this function should be extened to check if the underlying unicon 
+# supports jpg and png
+method set_texture_format(f)
+  if f == (".gif" | ".png" | ".jpg") then
+    texture_format := f
+  else
+    DEBUGW( f || " texture format is not supported!")
 end
 
 method error_missing(s)
-   stop(" Error : missing", s ,"the .x file: ", filename)
+   stop(" Error : missing", s ," the .x file: ", filename)
 end
-
-
 
 method jump_after(ch)
    tab(find(ch)+1)
@@ -69,7 +91,6 @@ method jump_after(ch)
 end
 
 method replace_slash(s)
-   local i
    map(s,'\\','/')
    return s
 end
@@ -77,13 +98,22 @@ end
 method file_name(fpath)
 local i
    i:= *fpath
-   while i>0 & fpath[i] ~== ("/" | "\\") do
+   while i>0 & fpath[i] ~== (PS) do
        i-:=1
       
    if i=0 then return fpath
-   
-   return fpath[-i:0]
+   return fpath[i+1:0]
 end
+
+method path_name(fpath)
+local i
+   i:= *fpath
+   while i>0 & fpath[i] ~== (PS) do
+       i-:=1
+      
+   if i>0 then return fpath[1:i+1]
+end
+
 
 method Xparse()
    local root_bone
@@ -346,8 +376,43 @@ method parseMeshNormals()
    jump_after("}")
 end
 
+method find_texture(tex_fname)
+  local tex_fname2, texfnamebase, xpath
+
+  /texture_path:=""
+#ifdef _UNIX
+  tex_fname := replace_slash(tex_fname)
+#endif
+
+  if \texture_format & map(tex_fname[-4:0]) ~== texture_format then 
+    tex_fname := map(tex_fname[1:-4]) || texture_format
+  
+  if stat(tex_fname) then return tex_fname
+  
+  texfnamebase := file_name(tex_fname)
+  # try the model's dir
+  if xpath:=path_name(filename) then{
+    tex_fname2 := xpath || texfnamebase
+    if stat(tex_fname2) then return tex_fname2
+    }
+  
+  # try the current dir. 
+  # And better to remember the current dir in case the user changes it
+  xpath := chdir() || PS
+  if stat(xpath || texfnamebase) then
+    return xpath || tex_fname
+  
+  # try the textures path set by the user
+  if stat(texture_path || texfnamebase) then
+    return texture_path || texfnamebase
+ 
+  # couldn't find the texture!
+  DEBUGW(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
+  
+end
+
 method parseMaterial(to_table)
-   local id, token, newMaterial, i, tex_fname2, tex_fname
+   local id, token, newMaterial, i, tex_fname
 
    newMaterial := Material()
    if \to_table then{
@@ -399,31 +464,15 @@ method parseMaterial(to_table)
             tab(upto('"'))
             move(1)
             tex_fname := tab(upto('"')) | stop("error in texture file label")
-            #if map(tex_fname[-4:0]) ~== ".gif" then 
-            #   tex_fname := map(tex_fname[1:-4])||".gif"
-#ifdef _UNIX
-            tex_fname := replace_slash(tex_fname)
-#endif
-            if not exists(tex_fname) then{
-               i:=find (file_name(filename), filename)
-               tex_fname2 := filename[1:i] || file_name(tex_fname)
-               if exists(tex_fname2) then
-                  tex_fname := tex_fname2
-               else if exists(file_name(tex_fname)) then
-                  tex_fname := file_name(tex_fname)
-               else
-                  DEBUGW(" Error: texture (", tex_fname, ") doesn't exist for 3D model: ", filename)
-               }
-
+	    if not (tex_fname := find_texture(tex_fname)) then
+	      DEBUGW(" file not found..!! ", tex_fname)
+	     
             newMaterial.textureFileName := tex_fname
             jump_after("}")
 
+	    # probably should get rid of this. not usefull anymore
             if newMaterial.textureFileName[1]=="." then 
                newMaterial.textureFileName := newMaterial.textureFileName[5:0]
-
-            #DEBUGW(" new texture file : ", newMaterial.textureFileName )
-            #if not (exists(newMaterial.textureFileName)) then
-            #   DEBUGW(" file not found..!! ")
             }
          default: avoidTemplate()
          } #case

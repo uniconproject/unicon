@@ -36,7 +36,39 @@ class Mesh : BasicObject3D (
       lst_face:=list()
 
    end
+
+   method vertex_count()
+      return *lst_vertex
+   end
+
+   method face_count()
+      return *lst_face
+   end
+
+   method material_count()
+      return *lst_material
+   end
    
+   method texmaterial_count()
+      local m, c:=0
+      every m:=!lst_material do
+        if \ (m.textureFileName) then c+:=1
+      return c
+   end
+
+   method texture_file_count()
+      local s
+      s:=texture_files()
+      return *s
+   end
+
+   method texture_files()
+      local s:=set(), m
+      every m:=!lst_material do
+        insert(s, \(m.textureFileName))
+      return s
+   end
+
    method normalRender ()
       local face, L, Ltex, Lnorm, currentMaterial, cm , oldMaterial, faceMaterial,  uv,
             meshmod, i, diffuse, specular, emission, shininess, display_list, j, k, LL

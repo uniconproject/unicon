@@ -108,8 +108,14 @@ class SkinnedModelObject3D:ModelObject3D(
 	 }      
    end
 
-
+   method bone_count()
+      return skeleton.bone_count()
+   end
    
+   method animation_count()
+      return *tbl_animation_sets
+   end
+
    method addAnimationSet(aSet)
       tbl_animation_sets[aSet.label] := aSet
    end
@@ -138,6 +144,18 @@ class SkinnedModelObject3D:ModelObject3D(
       	 }
       else
          DEBUGW("No such animation!")
+   end
+
+   method animations()
+      local a
+      every a:=!tbl_animation_sets do
+	 suspend a.get_label()
+   end
+
+   method get_animation_max_key(nam)
+      local a
+      a:= get_animationset(nam) | fail
+      return a.get_max_key()
    end
    
    method calc_animation()

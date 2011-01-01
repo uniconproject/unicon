@@ -1,0 +1,113 @@
+import gui
+
+#
+# A leak-reducing WAttrib(). Allows WAttrib-based attributes to be
+# added to the derender set.
+#
+procedure Fg(argv[])
+local L, win, len
+static real_fg
+initial real_fg := proc("Fg", 0)
+
+   if type(argv[1]) == "window" then {
+      win := pop(argv)
+      }
+   else if type(argv[1]) ~== "string" then
+      write("argtype was :", type(argv[1]))
+   else win := &window
+
+   if  (type(argv[1])=="string") & member(\subwins3d, win) then {
+      L := WindowContents(win)
+      real_fg ! push(argv, win)
+      return L[*L]
+      }
+   else {
+      return real_fg ! push(argv, win)
+      }
+end
+
+procedure WAttrib(argv[])
+local L, win, len
+static real_wattrib
+initial real_wattrib := proc("WAttrib", 0)
+
+   if type(argv[1]) == "window" then {
+      win := pop(argv)
+      }
+   else if type(argv[1]) ~== "string" then
+      write("argtype was :", type(argv[1]))
+   else win := &window
+
+   if  find("=", argv[1]) & member(\subwins3d, win) then {
+      L := WindowContents(win)
+      len := *L
+      real_wattrib ! push(argv, win)
+      suspend L[len+1 to *L]
+      }
+   else {
+      return real_wattrib ! push(argv, win)
+      }
+end
+
+
+class Dispatcher3D : Dispatcher(subwins)
+
+   method add_subwin(sw)
+      insert(subwins, sw)
+   end
+   
+   method message_loop(r)
+      if /r then {
+         while *dispatcher.dialogs > 0 do
+            do_event() | do_validate() | do_ticker()
+      } else {
+         while \r.is_open do
+            do_event() | do_validate() | do_ticker() | world.handle_event() | delay(10)
+      }
+   end
+   
+   initially
+   
+      self.Dispatcher.initially()
+      subwins := set()
+   #tickers := set()
+   
+
+end
+
+
+
+global subwins3d
+
+class Subwindow3D : Component (xbtn_x, xbtn_y)
+   method resize()
+     compute_absolutes()
+     self.invalidate()  
+     WAttrib(cwin, "pos="||x||","||y)
+     WAttrib(cwin, "size="||w||","||h)
+   end
+   method display()
+   
+      
+    Refresh(cwin)
+   end
+   method init()
+      if /self.parent then
+         fatal("incorrect ancestry (parent null)")
+      self.parent_dialog := self.parent.get_parent_dialog_reference()
+
+      # clone clones tiny to start with, resize to actual size later
+      self.cwin := (Clone ! ([self.parent.get_cwin_reference(), "gl", "bg= pale blue",
+               "size=1,1", "pos=14,195", "inputmask=mck"] |||
+              self.attribs)) | stop("can't open 3D win")
+      self.cbwin := (Clone ! ([self.parent.get_cbwin_reference(), "gl", "bg=pale blue",
+                "size=1,1", "pos=14,195"] |||
+               self.attribs))
+
+      /subwins3d := set()
+      insert(subwins3d, self.cwin)      
+
+      set_accepts_focus()
+      dispatcher.add_subwin(self.cwin)
+   end
+end

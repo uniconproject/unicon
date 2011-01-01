@@ -1,0 +1,578 @@
+import gui
+$include "guih.icn"
+
+global view
+
+class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
+   miAbout, boarderstat, boarderwin3d, bordercam, tblsummary,
+   tcolattrib, tcolvalue, timesh, tiskeleton, tisummary, tllogmsg, tsstat,
+   menubar, mHelp, tianimation,  start_dir, wdir, files_history , tblanimation,
+   tckeys, tcname, check_box_group_animation , tcFrames, mioptions, mipreferences, treeskeleton)
+   
+   method component_setup()
+      self.setup()
+      setup_animationbtns()
+      init_history()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+    world.w3d := view_model3d.cwin
+    \(world.w3d) | write("Window is null!!")
+   end
+   
+   method init_history()
+      local fin, what, dat, line, mif, f, fname, i
+      start_dir := wdir := chdir() | ""
+      files_history :=[]
+      fin := open("last_session.ini") | fail
+      
+      while line:=read(fin) do{
+	line ? {
+	  what := tab(find(":")) | next
+	  move(1)
+	  dat :=  tab(0) | next
+	  case what of{
+	    "dir" : stat(dat) & wdir := dat
+	    "file": stat(dat) & put(files_history, dat)
+	  }
+	} # line ?
+      } # while
+      close(fin)
+      
+      *files_history>0 | fail
+      
+      mFile.add(MenuSeparator())
+      
+      every i:=1 to *files_history do {
+	f:=files_history[i]
+	mif := TextMenuItem()
+	fname := file_name(f)
+	mif.set_label(i || ". " ||fname)
+	mif.connect(self, "on_mif", ACTION_EVENT)
+	mFile.add(mif)
+      }
+   end
+   
+   method add_file_history(f)
+      local i, replace, mif, items, base
+      if f==files_history[1] then fail # the new file is already at the top of the list
+      every i:=2 to *files_history do
+	if f==files_history[i] then{
+	  delete(files_history, i)
+	  break replace:=i
+	  }
+      push(files_history, f)
+      return
+      #if *files_history=1 then mFile.add(MenuSeparator())
+	
+      if /replace then{
+	mif := TextMenuItem()
+	mif.set_label(f)
+	mif.connect(self, "on_mif", ACTION_EVENT)
+	mFile.add(mif)
+	}
+      else{
+	items := mFile.get_children()
+	base := *items - *files_history
+	mif := items[base+replace]
+	mFile.remove(mif)
+	mFile.add(mif, base+1)
+	}
+   end
+
+   method on_mif(ev)
+     local mif, i
+     mif := ev.get_source()
+     mif.get_label() ? i:=integer(tab(find(".")))
+     \i | fail
+     load_file(files_history[i])
+   end
+   
+   method on_miLoadModel(ev)
+     local fd, fname
+    #$ifdef _UNIX
+         fd := FileDialog()
+         fd.set_directory(wdir)
+         fd.show_modal()
+         fname := fd.get_result() | fail
+    ##$else
+    #  fname := WinOpenDialog("Open 3D Model File...", "", 50) | fail
+    #$endif    
+
+      if not(map(fname[-4:0]) == ".s3d" | map(fname[-2:0]) == ".x" )then
+         fail
+      load_file(fname)
+   end
+   
+   method load_file(fname)
+     world.w3d := view_model3d.cwin
+     world.load (fname, 1.8) | fail
+     wdir := directory_name(fname)
+     add_file_history(fname)
+     fill_summary()
+     fill_animation()
+     world.render()
+     self.display()
+   end
+   
+   method fill_animation()
+    local anim, L, LL:=[]
+    every anim := world.mod3d.animations() do{
+	L:=[anim, world.mod3d.get_animation_max_key(anim) | "?"]
+	put(LL, L)
+      }
+
+    tblanimation.set_contents(LL)
+    tsstat.display()
+   end
+   
+   method fill_summary()
+     local  LL:=[], L
+     
+     L := []     
+     put(L, "meshes", world.mod3d.mesh_count() )
+     put(LL, L)
+
+     L := []     
+     put(L, "vertices", world.mod3d.vertex_count() )
+     put(LL, L)
+
+     L := []     
+     put(L, "polygons", world.mod3d.face_count() )
+     put(LL, L)
+
+     L := []     
+     put(L, "bones", world.mod3d.bone_count() )
+     put(LL, L)
+     
+     L := []     
+     put(L, "animations", world.mod3d.animation_count() )
+     put(LL, L)
+     
+     L := []     
+     put(L, "all materials", world.mod3d.material_count() )
+     put(LL, L)
+
+     L := []     
+     put(L, "textured materials", world.mod3d.texmaterial_count() )
+     put(LL, L)
+
+     L := []     
+     put(L, "#textures", world.mod3d.texture_files_count() )
+     put(LL, L)
+
+     tblsummary.set_contents(LL)
+     tsstat.display()
+   end
+
+   method on_miQuit(ev)
+    local fout, f
+      chdir(start_dir)
+      fout:=open("last_session.ini", "w")
+      write(fout, "dir:",wdir )
+      every f:=!files_history do
+	write(fout, "file:", f)
+      close(fout)
+      self.dispose()
+   end
+
+   method on_miAbout(ev)
+    local win
+    win:=&window
+    &window := &null
+    Notice("       Unicon 3D viewer         ",
+           "         Version 1.0            ",
+           "",
+	   " Developer : Jafar Al-Gharaibeh ",
+	   " Email     : to.jafar@gmail.com ",
+	   " Date      : Dec 30, 2010       ")
+    
+    &window := win
+   end
+   
+   method logit(msgs[])
+    local msg:=""
+    static L
+    initial L := tllogmsg.get_contents()
+      every msg||:=\(!msgs)
+      put(L, string(msg))
+      tllogmsg.set_contents(L)
+      tllogmsg.set_selections([*L])
+      tllogmsg.set_cursor(*L)
+      tllogmsg.ensure_row_visible(*L)
+      tllogmsg.display()
+   end
+   
+   method on_play()
+      if on_tblanimation() then
+	world.set_auto_refresh()
+   end
+   
+   method on_stop()
+      world.unset_auto_refresh()
+   end
+
+   method on_pause()
+      world.unset_auto_refresh()
+   end
+
+   method setup_animationbtns()
+      local animation_toolbar, icnbtn, panel_1
+      
+      animation_toolbar := ToolBar()
+      animation_toolbar.set_pos("2", "70%")
+      animation_toolbar.set_size("96%", "41")
+      #animation_toolbar.set_draw_border()
+      
+      panel_1 := Panel()
+      panel_1.set_pos("2", "50%")
+      panel_1.set_size("96%", "35")
+      panel_1.set_align("l", "c")
+      
+      check_box_group_animation := CheckBoxGroup()
+      
+      icnbtn := ToggleIconButton()
+      icnbtn.set_pos("34", "50%")
+      icnbtn.set_align("l", "c")
+      icnbtn.set_draw_border()
+      icnbtn.set_tooltip("Play")
+      icnbtn.set_no_keyboard()
+      check_box_group_animation.add(icnbtn)
+      icnbtn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~33~~~~~~~~~~~~~~~~303~~~~~~~~~~~~~~~3003~~~~~~~~~~~~~~30003~~~~~~~~~~~~~300003~~~~~~~~~~~~3000003~~~~~~~~~~~30000003~~~~~~~~~~30000006~~~~~~~~~~3000006~~~~~~~~~~~300006~~~~~~~~~~~~30006~~~~~~~~~~~~~3006~~~~~~~~~~~~~~306~~~~~~~~~~~~~~~36~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      icnbtn.connect(self, "on_play", ACTION_EVENT)
+      panel_1.add(icnbtn)
+      
+      icnbtn := ToggleIconButton()
+      icnbtn.set_pos("68", "50%")
+      icnbtn.set_align("l", "c")
+      icnbtn.set_draw_border()
+      icnbtn.set_tooltip("Pause")
+      icnbtn.set_no_keyboard()
+      check_box_group_animation.add(icnbtn)
+      icnbtn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~333333~333333~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~300006~300006~~~~~366666~366666~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      icnbtn.connect(self, "on_pause", ACTION_EVENT)
+      panel_1.add(icnbtn)
+      
+      icnbtn := ToggleIconButton()
+      icnbtn.set_pos("102", "50%")
+      icnbtn.set_align("l", "c")
+      icnbtn.set_draw_border()
+      icnbtn.set_tooltip("Stop")
+      icnbtn.set_no_keyboard()
+      check_box_group_animation.add(icnbtn)
+      icnbtn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~333333333333~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~300000000006~~~~~~366666666666~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      icnbtn.connect(self, "on_stop", ACTION_EVENT)
+      panel_1.add(icnbtn)
+      animation_toolbar.add(panel_1)
+      
+      tianimation.add(animation_toolbar)
+   end   
+   
+   method on_tblanimation(ev)
+     local LL, a, row
+     static last_anim
+     initial last_anim:=""
+     LL:=tblanimation.get_contents()
+     row:=tblanimation.row_get_cursor() | fail
+     a:=row[1]
+     (\a)~==last_anim | fail
+     logit("current animation: ", a)
+     world.mod3d.pick_animation(a)
+     last_anim := a
+     return
+   end
+
+   method on_mipreferences(ev)
+   end
+
+   method on_treeskeleton(ev)
+   end
+
+   method setup()
+      self.set_attribs("size=1011,591", "bg=very light gray", "label=Unicon 3D Model Viewer")
+      menubar := MenuBar()
+      menubar.set_pos("0", "0")
+      mFile := Menu()
+      mFile.set_label("File")
+      miLoadModel := TextMenuItem()
+      miLoadModel.set_label("Load Model...")
+      miLoadModel.connect(self, "on_miLoadModel", ACTION_EVENT)
+      mFile.add(miLoadModel)
+      mipreferences := TextMenuItem()
+      mipreferences.set_label("Preferences...")
+      mipreferences.connect(self, "on_mipreferences", ACTION_EVENT)
+      mFile.add(mipreferences)
+      miQuit := TextMenuItem()
+      miQuit.set_label("Quit")
+      miQuit.connect(self, "on_miQuit", ACTION_EVENT)
+      mFile.add(miQuit)
+      menubar.add(mFile)
+      mHelp := Menu()
+      mHelp.set_label("Help")
+      miAbout := TextMenuItem()
+      miAbout.set_label("About")
+      miAbout.connect(self, "on_miAbout", ACTION_EVENT)
+      mHelp.add(miAbout)
+      menubar.add(mHelp)
+      self.add(menubar)
+      boarderwin3d := Border()
+      boarderwin3d.set_pos(204, 27)
+      boarderwin3d.set_size(806, 495)
+      boarderwin3d.set_internal_alignment("l")
+      view_model3d := Subwindow3D()
+      view_model3d.set_pos(5, 5)
+      view_model3d.set_size(793, 482)
+      boarderwin3d.add(view_model3d)
+      self.add(boarderwin3d)
+      tllogmsg := TextList()
+      tllogmsg.set_pos(206, 531)
+      tllogmsg.set_size(802, 57)
+      tllogmsg.set_draw_border()
+      tllogmsg.set_attribs("bg=white")
+      tllogmsg.set_tooltip("Status and log messages")
+      tllogmsg.set_contents(["Log Messages"])
+      self.add(tllogmsg)
+      bordercam := Border()
+      bordercam.set_pos(4, 35)
+      bordercam.set_size(193, 136)
+      bordercam.set_internal_alignment("l")
+      self.add(bordercam)
+      boarderstat := Border()
+      boarderstat.set_pos(1, 386)
+      boarderstat.set_size(201, 198)
+      boarderstat.set_internal_alignment("l")
+      self.add(boarderstat)
+      tsstat := TabSet()
+      tsstat.set_pos("0", "181")
+      tsstat.set_size("199", "196")
+      tsstat.set_tooltip("Model Statistics & Info")
+      tisummary := TabItem()
+      tisummary.set_label("Summary")
+      tblsummary := Table()
+      tblsummary.set_pos("2", "2")
+      tblsummary.set_size("100%-6", "100%-6")
+      tblsummary.set_contents([])
+      tcolattrib := TableColumn()
+      tcolattrib.set_label("Attrib")
+      tcolattrib.set_internal_alignment("l")
+      tblsummary.add_column(tcolattrib)
+      tcolvalue := TableColumn()
+      tcolvalue.set_label("Value/Count")
+      tcolvalue.set_internal_alignment("l")
+      tblsummary.add_column(tcolvalue)
+      tisummary.add(tblsummary)
+      tsstat.add(tisummary)
+      timesh := TabItem()
+      timesh.set_label("Mesh")
+      tsstat.add(timesh)
+      tiskeleton := TabItem()
+      tiskeleton.set_label("Skeleton")
+      treeskeleton := Tree()
+      treeskeleton.set_pos("2", "2")
+      treeskeleton.set_size("100%-6", "100%-6")
+      treeskeleton.set_draw_border()
+      treeskeleton.connect(self, "on_treeskeleton", ACTION_EVENT)
+      tiskeleton.add(treeskeleton)
+      tsstat.add(tiskeleton)
+      tianimation := TabItem()
+      tianimation.set_label("Animation")
+      tblanimation := Table()
+      tblanimation.set_pos("2", "2")
+      tblanimation.set_size("100%-6", "70%")
+      tblanimation.connect(self, "on_tblanimation", ACTION_EVENT)
+      tblanimation.set_select_one()
+      tblanimation.set_contents([])
+      tcname := TableColumn()
+      tcname.set_label("Name")
+      tcname.set_internal_alignment("l")
+      tblanimation.add_column(tcname)
+      tcFrames := TableColumn()
+      tcFrames.set_label("#Frames")
+      tcFrames.set_internal_alignment("l")
+      tblanimation.add_column(tcFrames)
+      tianimation.add(tblanimation)
+      tsstat.add(tianimation)
+      tsstat.set_which_one(tianimation)
+      self.add(tsstat)
+   end
+
+   initially
+      self.Dialog.initially()
+      logger := view := self
+      
+end
+
+procedure main()
+   local d
+   world := World()
+   gui::dispatcher := Dispatcher3D()
+   d := U3DViewer()
+   d.connect(d, "on_miQuit", CLOSE_BUTTON_EVENT)
+   d.show_modal()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|15|string|border|integer|3|
+#string|custom|integer|2|string|edit_list|integer|1|string|icon_button|
+#integer|1|string|list|integer|1|string|menu|integer|6|string|menu_bar|
+#integer|1|string|scroll_bar|integer|1|string|tab_item|integer|4|string
+#|tab_set|integer|1|string|table|integer|2|string|table_column|integer|
+#4|string|text_list|integer|1|string|text_menu_item|integer|4|string|tr
+#ee|integer|1|SuperClass Name|string|Dialog|Import Name|string|gui|Butt
+#on Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox
+# Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Inde
+#nt|integer|3|Gen Main|integer|1|Gen Component Setup|integer|1|Gen Init
+# Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|
+#4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|list|2|strin
+#g|bg=very light gray|string|label=Unicon 3D Model Viewer|Name|string|U
+#3DViewer|Width|integer|1011|Height|integer|591|Items|list|6|class|Canv
+#asMenuBar|26|Parent Canvas|1|Name|string|menubar|Class Name|string|Men
+#uBar|Import Name|string|gui|X Fix|integer|1|Y Fix|integer|1|W Fix|inte
+#ger|1|H Fix|integer|1|W Default|integer|1|H Default|integer|1|X Spec|s
+#tring|0|Y Spec|string|0|W Spec|string|100%|H Spec|integer|23|X Align|s
+#tring|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw B
+#order|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|
+#0|Class Variable|integer|1|Parent Component|1|Menus|list|2|class|Canva
+#sMenu|17|Name|string|mFile|Class Name|string|Menu|Import Name|string|g
+#ui|Accel|null|Label|string|File|Label Left|null|Label Right|null|Is sh
+#aded|null|Img Left|null|Img Left Width|null|Img Left Height|null|Img R
+#ight|string|9,c1,0~~~~~~~~000~~~~~~00000~~~~0000000~~0000000000000000~
+#~00000~~~~000~~~~~~0~~~~~~~~|Img Right Width|integer|9|Img Right Heigh
+#t|integer|9|Event Method|null|Class Variable|integer|1|Children|list|3
+#|class|CanvasTextMenuItem|16|Name|string|miLoadModel|Class Name|string
+#|TextMenuItem|Import Name|string|gui|Accel|null|Label|string|Load Mode
+#l...|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img
+# Left Width|null|Img Left Height|null|Img Right|null|Img Right Width|n
+#ull|Img Right Height|null|Event Method|string|on_miLoadModel|Class Var
+#iable|integer|1|class|CanvasTextMenuItem|16|Name|string|mipreferences|
+#Class Name|string|TextMenuItem|Import Name|string|gui|Accel|null|Label
+#|string|Preferences...|Label Left|null|Label Right|null|Is shaded|null
+#|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|null
+#|Img Right Width|null|Img Right Height|null|Event Method|string|on_mip
+#references|Class Variable|integer|1|class|CanvasTextMenuItem|16|Name|s
+#tring|miQuit|Class Name|string|TextMenuItem|Import Name|string|gui|Acc
+#el|null|Label|string|Quit|Label Left|null|Label Right|null|Is shaded|n
+#ull|Img Left|null|Img Left Width|null|Img Left Height|null|Img Right|n
+#ull|Img Right Width|null|Img Right Height|null|Event Method|string|on_
+#miQuit|Class Variable|integer|1|class|CanvasMenu|17|Name|string|mHelp|
+#Class Name|string|Menu|Import Name|string|gui|Accel|null|Label|string|
+#Help|Label Left|null|Label Right|null|Is shaded|null|Img Left|null|Img
+# Left Width|null|Img Left Height|null|Img Right|string|9,c1,0~~~~~~~~0
+#00~~~~~~00000~~~~0000000~~0000000000000000~~00000~~~~000~~~~~~0~~~~~~~
+#~|Img Right Width|integer|9|Img Right Height|integer|9|Event Method|nu
+#ll|Class Variable|integer|1|Children|list|1|class|CanvasTextMenuItem|1
+#6|Name|string|miAbout|Class Name|string|TextMenuItem|Import Name|strin
+#g|gui|Accel|null|Label|string|About|Label Left|null|Label Right|null|I
+#s shaded|null|Img Left|null|Img Left Width|null|Img Left Height|null|I
+#mg Right|null|Img Right Width|null|Img Right Height|null|Event Method|
+#string|on_miAbout|Class Variable|integer|1|class|CanvasBorder|28|Paren
+#t Canvas|1|Name|string|boarderwin3d|Class Name|string|Border|Import Na
+#me|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|nu
+#ll|H Default|null|X Spec|integer|204|Y Spec|integer|27|W Spec|integer|
+#806|H Spec|integer|495|X Align|string|l|Y Align|string|t|Is shaded|nul
+#l|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null
+#|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Comp
+#onent|1|Internal Alignment|string|l|Children|list|1|class|CanvasCustom
+#|25|Parent Canvas|1|Name|string|view_model3d|Class Name|string|Subwind
+#ow3D|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|nul
+#l|W Default|null|H Default|null|X Spec|integer|5|Y Spec|integer|5|W Sp
+#ec|integer|793|H Spec|integer|482|X Align|string|l|Y Align|string|t|Is
+# shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|T
+#ooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|
+#Parent Component|22|Title Obj|null|class|CanvasTextList|29|Parent Canv
+#as|1|Name|string|tllogmsg|Class Name|string|TextList|Import Name|strin
+#g|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Def
+#ault|null|X Spec|integer|206|Y Spec|integer|531|W Spec|integer|802|H S
+#pec|integer|57|X Align|string|l|Y Align|string|t|Is shaded|null|Is But
+#ton Subclass|null|Draw Border|integer|1|Attribs|list|1|string|bg=white
+#|Tooltip|string|Status and log messages|Accel|null|Event Handlers|list
+#|0|Class Variable|integer|1|Parent Component|1|Select One|null|Select 
+#Many|null|Checked|list|1|null|Contents|list|1|string|Log Messages|clas
+#s|CanvasBorder|28|Parent Canvas|1|Name|string|bordercam|Class Name|str
+#ing|Border|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H F
+#ix|null|W Default|null|H Default|null|X Spec|integer|4|Y Spec|integer|
+#35|W Spec|integer|193|H Spec|integer|136|X Align|string|l|Y Align|stri
+#ng|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|l
+#ist|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|int
+#eger|1|Parent Component|1|Internal Alignment|string|l|Children|list|0|
+#Title Obj|null|class|CanvasBorder|28|Parent Canvas|1|Name|string|board
+#erstat|Class Name|string|Border|Import Name|string|gui|X Fix|null|Y Fi
+#x|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|inte
+#ger|1|Y Spec|integer|386|W Spec|integer|201|H Spec|integer|198|X Align
+#|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw
+# Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|lis
+#t|0|Class Variable|integer|1|Parent Component|1|Internal Alignment|str
+#ing|l|Children|list|0|Title Obj|null|class|CanvasTabSet|27|Parent Canv
+#as|1|Name|string|tsstat|Class Name|string|TabSet|Import Name|string|gu
+#i|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default
+#|null|X Spec|string|0|Y Spec|string|181|W Spec|string|199|H Spec|strin
+#g|196|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subcl
+#ass|null|Draw Border|null|Attribs|list|0|Tooltip|string|Model Statisti
+#cs & Info|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Pa
+#rent Component|1|Children|list|4|class|CanvasTabItem|28|Parent Canvas|
+#1|Name|string|tisummary|Class Name|string|TabItem|Import Name|string|g
+#ui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defaul
+#t|null|X Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spec|str
+#ing|100%|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Su
+#bclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Ev
+#ent Handlers|null|Class Variable|integer|1|Parent Component|42|Label|s
+#tring|Summary|Parent TabSet|42|Children|list|1|class|CanvasTable|28|Pa
+#rent Canvas|1|Name|string|tblsummary|Class Name|string|Table|Import Na
+#me|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|nu
+#ll|H Default|null|X Spec|string|2|Y Spec|string|2|W Spec|string|100%-6
+#|H Spec|string|100%-6|X Align|string|l|Y Align|string|t|Is shaded|null
+#|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|
+#Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Compo
+#nent|46|Select One|null|Select Many|null|Columns|list|2|class|CanvasTa
+#bleColumn|6|Name|string|tcolattrib|Class Variable|integer|1|Label|stri
+#ng|Attrib|Column Width|integer|79|Internal Alignment|string|l|Auto wid
+#th flag|integer|1|class|CanvasTableColumn|6|Name|string|tcolvalue|Clas
+#s Variable|integer|1|Label|string|Value/Count|Column Width|integer|79|
+#Internal Alignment|string|l|Auto width flag|integer|1|class|CanvasTabI
+#tem|28|Parent Canvas|1|Name|string|timesh|Class Name|string|TabItem|Im
+#port Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Def
+#ault|null|H Default|null|X Spec|integer|0|Y Spec|integer|0|W Spec|stri
+#ng|100%|H Spec|string|100%|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|
+#null|Accel|null|Event Handlers|null|Class Variable|integer|1|Parent Co
+#mponent|42|Label|string|Mesh|Parent TabSet|42|Children|list|0|class|Ca
+#nvasTabItem|28|Parent Canvas|1|Name|string|tiskeleton|Class Name|strin
+#g|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fi
+#x|null|W Default|null|H Default|null|X Spec|integer|0|Y Spec|integer|0
+#|W Spec|string|100%|H Spec|string|100%|X Align|string|l|Y Align|string
+#|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|lis
+#t|0|Tooltip|null|Accel|null|Event Handlers|null|Class Variable|integer
+#|1|Parent Component|42|Label|string|Skeleton|Parent TabSet|42|Children
+#|list|1|class|CanvasTree|29|Parent Canvas|1|Name|string|treeskeleton|C
+#lass Name|string|Tree|Import Name|string|gui|X Fix|null|Y Fix|null|W F
+#ix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|2|Y Spe
+#c|string|2|W Spec|string|100%-6|H Spec|string|100%-6|X Align|string|l|
+#Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|in
+#teger|1|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|l
+#ist|2|string|ACTION_EVENT|string|on_treeskeleton|Class Variable|intege
+#r|1|Parent Component|58|Select One|null|Select Many|null|Show Root Han
+#dles|integer|1|Show Root|integer|1|class|CanvasTabItem|28|Parent Canva
+#s|1|Name|string|tianimation|Class Name|string|TabItem|Import Name|stri
+#ng|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H De
+#fault|null|X Spec|integer|0|Y Spec|integer|0|W Spec|string|100%|H Spec
+#|string|100%|X Align|string|l|Y Align|string|t|Is shaded|null|Is Butto
+#n Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|nul
+#l|Event Handlers|null|Class Variable|integer|1|Parent Component|42|Lab
+#el|string|Animation|Parent TabSet|42|Children|list|1|class|CanvasTable
+#|28|Parent Canvas|1|Name|string|tblanimation|Class Name|string|Table|I
+#mport Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W De
+#fault|null|H Default|null|X Spec|string|2|Y Spec|string|2|W Spec|strin
+#g|100%-6|H Spec|string|70%|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|
+#null|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|strin
+#g|on_tblanimation|Class Variable|integer|1|Parent Component|65|Select 
+#One|integer|1|Select Many|null|Columns|list|2|class|CanvasTableColumn|
+#6|Name|string|tcname|Class Variable|integer|1|Label|string|Name|Column
+# Width|integer|79|Internal Alignment|string|l|Auto width flag|integer|
+#1|class|CanvasTableColumn|6|Name|string|tcFrames|Class Variable|intege
+#r|1|Label|string|#Frames|Column Width|integer|79|Internal Alignment|st
+#ring|l|Auto width flag|integer|1|Which One|65|Initial Focus|null|Event
+# Handlers|list|0|

@@ -1,0 +1,145 @@
+$include "keysyms.icn"
+
+import graphics3d
+
+global world, logger
+
+class World(
+  mod3d, num, w3d, cam, ter, auto_refresh
+)
+
+#
+# load model fname and set its coordinates to "fit" in size 
+#
+method load(fname, size)
+  if \fname then{
+    mod3d := SkinnedModelObject3D("mod3d", "bone_mesh_final")
+    logger.logit("Loading " || fname || ". Please wait...")
+    mod3d.load(fname, "walk")
+    logger.logit("Done loading.")
+    #if \size then mod3d.adjustScale(size, "y" )
+    mod3d.set_size_to(4.0)
+    cam:= Camera()
+    cam.set(0.0, 1.0, 6.0, -&pi/2, 0.0)
+    return
+    }
+end
+
+method render()
+  local tmpw, t
+
+  tmpw := &window
+  &window := w3d
+  #EraseArea()
+  Fg("red")
+  
+  logger.logit("Rendering...")
+  t:=&time
+  DrawSphere(0, 0, 0, 0.2)
+  mod3d.render()
+  logger.logit("Done rendering in " || &time-t || " ms.")  
+  &window :=tmpw
+end
+
+method set_auto_refresh()
+  auto_refresh := 1
+end
+
+method unset_auto_refresh()
+  auto_refresh := &null
+end
+
+method handle_event()
+  local i, tmpw
+  static t, fr, d, t2, t3
+  initial {
+    t := &time
+    fr:=0
+    d:=0.8
+    }
+
+  tmpw := &window
+  &window := w3d
+
+  while *Pending()>0 do{
+        case Event() of {
+	  "\e" : exit()
+	  "a"  : mod3d.move( 0.05, 0, 0)
+	  "A"  : mod3d.move(-0.05, 0, 0)
+	  "s"  : mod3d.move( 0, 0.05, 0)
+	  "S"  : mod3d.move( 0,-0.05, 0)
+	  "d"  : mod3d.move( 0, 0, 0.05)
+	  "D"  : mod3d.move( 0, 0,-0.05)
+	  
+	  "z"  : mod3d.rotate( 2, 0, 0)
+	  "Z"  : mod3d.rotate(-2, 0 ,0)
+	  "x"  : mod3d.rotate( 0, 2, 0)
+	  "X"  : mod3d.rotate( 0,-2, 0)
+	  "c"  : mod3d.rotate( 0, 0, 2)
+	  "C"  : mod3d.rotate( 0, 0,-2)
+	  
+	  Key_Up   :cam.move( d)
+	  Key_Down :cam.move(-d)
+	  
+	  Key_Left :cam.rotate(-0.1, 0)
+	  Key_Right:cam.rotate( 0.1, 0)
+	  
+	  "w"  : cam.slide( 0.1, 0)
+	  "W"  : cam.slide(-0.1, 0)
+	  "e"  : cam.slide( 0, 0.1)
+	  "E"  : cam.slide( 0,-0.1)
+	  
+	  "3"  :  write(d+:= 0.2)
+	  "4"  :  write(d-:= 0.2)
+	  
+	  
+	  "1"  : mod3d.animationc.faster()
+	  "2"  : mod3d.animationc.slower()
+	  "0"  : (/auto_refresh:=1) | auto_refresh:=&null
+	  
+	  "+"  : {
+	    write("new frame----------------")
+	    mod3d.calc_animation()
+	  }
+	  " "  :{ 
+	    mod3d.pick_animation()
+	    #mod3d.calc_animation()
+	  }
+	  "m"  :{ 
+	    mod3d.pick_animation("Walk")
+	    #mod3d.calc_animation()
+	  }
+	  
+	  Key_PgUp  : cam.rotate( 0, 0.1)
+	  Key_PgDn  : cam.rotate( 0,-0.1)
+
+        } #case
+        
+        #write(mod3d.Name)
+
+     if /auto_refresh then Refresh()
+      
+    }#while
+
+ if \auto_refresh then{
+    #t1 := &time
+    mod3d.calc_animation()
+    t2 := &time
+    Refresh()    
+    t3:=&time
+    fr+:=1
+    
+    if t3-t > 5000 then{
+       write("refresh time", t3 - t2)
+       write( fr / 5.0, " fps")
+       t:=t3
+       fr:=0
+       }
+    
+    #write("calc time", t2 - t1)
+    
+ }
+
+end
+
+end   #### class World

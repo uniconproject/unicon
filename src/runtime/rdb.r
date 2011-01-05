@@ -45,6 +45,7 @@ int dbclose(struct ISQLFile *fp)
 FILE *isql_open(char *db, dptr table, dptr user, dptr password)
 {
    struct ISQLFile *fp = NULL;
+   CURTSTATE();
 
    GRFX_ALLOC(fp, ISQLFile);
 
@@ -301,6 +302,7 @@ void odbcerror(struct ISQLFile *fp, int errornum)
       "cannot get tables information", "row has no key definition",
       "row has too many keys defined", "row is missing one or more table keys"
       };
+   CURTSTATE();
 
    k_errornumber=errornum;
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,

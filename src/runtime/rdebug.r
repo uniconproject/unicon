@@ -34,12 +34,17 @@ dptr argp;
    {
    struct b_proc *cproc;
    long depth = 0, iteration = 0;
-
 #if COMPILER
-
    struct debug *debug;
    word nparam;
+#else					/* COMPILER */
+   struct pf_marker *origpfp;
+   dptr arg;
+   inst cipc;
+#endif					/* COMPILER */
+   CURTSTATE();
 
+#if COMPILER
    if (lcl_pfp == NULL)
       return;
    debug = PFDebug(*lcl_pfp);
@@ -47,13 +52,8 @@ dptr argp;
    cproc = debug->proc;
    xtrace(cproc, (word)abs((int)cproc->nparam), argp, debug->old_line,
       debug->old_fname);
-
 #else					/* COMPILER */
-
-   struct pf_marker *origpfp = pfp;
-   dptr arg;
-   inst cipc;
-
+   origpfp = pfp;
    /*
     * Chain back through the procedure frame markers, looking for the
     *  first one, while building a foward chain of pointers through
@@ -550,6 +550,7 @@ dptr valloc;
 #if !COMPILER
    inst t_ipc;
 #endif					/* !COMPILER */
+   CURTSTATE();
 
    --k_trace;
 
@@ -652,6 +653,7 @@ static void ttrace()
    {
    struct b_proc *bp;
    word nargs;
+   CURTSTATE();
 
 #ifndef PresentationManager
    fprintf(stderr, "   ");
@@ -831,6 +833,7 @@ dptr dp;
 int nargs;
 dptr arg;
    {
+   CURTSTATE();
 
    showline(findfile(ipc.opnd), findline(ipc.opnd));
    showlevel(k_level);
@@ -855,6 +858,7 @@ dptr dp;
 dptr rval;
    {
    inst t_ipc;
+   CURTSTATE();
 
    /*
     * Compute the ipc of the return instruction.
@@ -877,6 +881,7 @@ void failtrace(dp)
 dptr dp;
    {
    inst t_ipc;
+   CURTSTATE();
 
    /*
     * Compute the ipc of the fail instruction.
@@ -899,6 +904,7 @@ dptr dp;
 dptr rval;
    {
    inst t_ipc;
+   CURTSTATE();
 
    /*
     * Compute the ipc of the suspend instruction.
@@ -921,6 +927,7 @@ void atrace(dp)
 dptr dp;
    {
    inst t_ipc;
+   CURTSTATE();
 
    /*
     * Compute the ipc of the instruction causing resumption.
@@ -944,6 +951,7 @@ struct b_coexpr *ncp;
    {
    struct b_proc *bp;
    inst t_ipc;
+   CURTSTATE();
 
    bp = BlkD(*glbl_argp, Proc);
    /*
@@ -968,6 +976,7 @@ struct b_coexpr *ncp;
    {
    struct b_proc *bp;
    inst t_ipc;
+   CURTSTATE();
 
    bp = BlkD(*glbl_argp, Proc);
    /*
@@ -992,6 +1001,7 @@ struct b_coexpr *ncp;
    {
    struct b_proc *bp;
    inst t_ipc;
+   CURTSTATE();
 
    bp = BlkD(*glbl_argp, Proc);
    /*

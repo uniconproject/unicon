@@ -28,6 +28,7 @@ struct b_coexpr *sblkp;
     * Get pointer to refresh block.
     */
    struct b_refresh *rblkp = (struct b_refresh *)BlkLoc(sblkp->freshblk);
+   CURTSTATE();
 
 #if COMPILER
    na = rblkp->nargs;                /* number of arguments */
@@ -170,11 +171,12 @@ int first;
  *  for now we are keeping them under ifdefs.
  */
 #ifndef PthreadCoswitch
-  static int coexp_act; 
+   static int coexp_act; 
 #endif					/* PthreadCoswitch */
+   register struct b_coexpr *ccp;
+   CURTSTATE();
 
-  
-   register struct b_coexpr *ccp = (struct b_coexpr *)BlkLoc(k_current);
+   ccp = (struct b_coexpr *)BlkLoc(k_current);
 
 #if !COMPILER
 #ifdef MultiThread
@@ -497,13 +499,12 @@ void *nctramp(void *arg)
    struct b_coexpr *ce;
 #ifdef Concurrent
    struct tls_node *tlsnode;
-   /*   rootpstate.tstate = &roottstate;*/
-   curtstate = &roottstate;
+   CURTSTATE();
 
    init_threadstate(curtstate);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
-   tlsnode = malloc(sizeof(struct tls_node));
+   tlsnode = (struct tls_node *)malloc(sizeof(struct tls_node));
    if (tlsnode==NULL)
       fatalerr(305, NULL);
 
@@ -519,7 +520,7 @@ void *nctramp(void *arg)
 
    ce = new->c;
    if (ce->title != T_Coexpr) {
-      fprintf(stderr, "warning ce title is %d\n", ce->title);
+      fprintf(stderr, "warning ce title is %ld\n", ce->title);
       }
    pfp = ce->es_pfp;
    efp = ce->es_efp;
@@ -607,4 +608,22 @@ void handle_thread_error(int val)
 
       }
 }
+
+#ifndef HAVE_KEYWORD__THREAD
+pthread_key_t tstate_key;
+
+struct threadstate *init_tstate()
+{
+   struct threadstate *mytstate = malloc(sizeof(struct threadstate));
+   if (mytstate == NULL) return NULL;
+   pthread_setspecific(tstate_key, (void *)mytstate);
+}
+
+struct threadstate *get_tstate()
+{
+   /* look up the tstate */
+   return (struct threadstate *)pthread_getspecific(tstate_key);
+}
+
+#endif					/* HAVE_KEYWORD__THREAD */
 #endif					/* Concurrent */

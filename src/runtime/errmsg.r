@@ -28,6 +28,7 @@ void err_msg(int n, dptr v)
 #ifdef Messaging
    int saveerrno = errno;
 #endif                                  /* Messaging */
+   CURTSTATE();
 
 #ifdef AAAConcurrent
    struct tls_node *tlsnode;
@@ -167,6 +168,7 @@ void irunerr(n, v)
 int n;
 C_integer v;
    {
+   CURTSTATE();
    t_errornumber = n;
    IntVal(t_errorvalue) = v;
    t_errorvalue.dword = D_Integer;
@@ -183,6 +185,7 @@ int n;
 double v;
    {
    union block *bp;
+   CURTSTATE();
 
    bp = (union block *)alcreal(v);
    if (bp != NULL) {

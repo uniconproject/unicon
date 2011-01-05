@@ -222,6 +222,7 @@ function{0,1} proc(x,i)
 	 struct b_proc *bp = NULL;
 	 struct pf_marker *fp;
 	 dptr dp=NULL;
+	 CURTSTATE();
 	 if (BlkLoc(x) != BlkLoc(k_current)) {
 	    ce = (struct b_coexpr *)BlkLoc(x);
 	    dp = ce->es_argp;

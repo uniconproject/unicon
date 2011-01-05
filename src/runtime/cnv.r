@@ -175,6 +175,7 @@ int cnv_c_str(s, d)
 dptr s;
 dptr d;
    {
+   CURTSTATE();
    /*
     * Get the string to the end of the string region and append a '\0'.
     */

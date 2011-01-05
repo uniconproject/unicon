@@ -126,6 +126,7 @@ function{1} collect(region, bytes)
       return null
       }
    body {
+      CURTSTATE();
       if (bytes < 0) {
          irunerr(205, bytes);
          errorfail;
@@ -282,6 +283,9 @@ function{1} display(i,f,c)
    declare {
       struct b_coexpr *ce = NULL;
       struct progstate *prog, *savedprog;
+#ifdef Concurrent
+      struct threadstate *curtstate = get_tstate();
+#endif					/* Concurrent */
       }
 #else					/* MultiThread */
 function{1} display(i,f)
@@ -364,6 +368,7 @@ function{1} errorclear()
       return null
       }
    body {
+      CURTSTATE();
       k_errornumber = 0;
       k_errortext = "";
       k_errorvalue = nulldesc;
@@ -664,6 +669,7 @@ function{1,*} seq(from, by)
       }
    body {
       word seq_lb = 0, seq_ub = 0;
+      CURTSTATE();
 
       /*
        * Produce error if by is 0, i.e., an infinite sequence of from's.
@@ -1361,11 +1367,16 @@ function{0,1} variable(s)
 
    body {
       register int rv;
-
 #ifdef MultiThread
       struct progstate *prog, *savedprog;
-      struct pf_marker *tmp_pfp = pfp;
-      dptr tmp_argp = glbl_argp;
+      struct pf_marker *tmp_pfp;
+      dptr tmp_argp;
+#endif					/* MultiThread */
+      CURTSTATE();
+
+#ifdef MultiThread
+      tmp_pfp = pfp;
+      tmp_argp = glbl_argp;
 
       savedprog = curpstate;
       if (is:null(c)) c = k_current;
@@ -1456,7 +1467,9 @@ function{0,1} cofail(CE)
    if is:null(CE) then
       body {
 #ifdef CoExpr
-	 struct b_coexpr *ce = topact(BlkD(k_current,Coexpr));
+	 struct b_coexpr *ce;
+	 CURTSTATE();
+	 ce = topact(BlkD(k_current,Coexpr));
 	 if (ce != NULL) {
 	    CE.dword = D_Coexpr;
 	    BlkLoc(CE) = (union block *)ce;
@@ -1851,7 +1864,10 @@ end
 "parent(ce) - given a ce, return &main for that ce's parent"
 
 function{1} parent(ce)
-   if is:null(ce) then inline { ce = k_current; }
+   if is:null(ce) then inline {
+      CURTSTATE();
+      ce = k_current;
+      }
    else if !is:coexpr(ce) then runerr(118,ce)
    abstract {
       return coexpr

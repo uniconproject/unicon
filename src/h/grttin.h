@@ -258,6 +258,10 @@ typedef int time_t;
 typedef int DIR;
 #endif					/* PosixFns */
 
+#ifdef Concurrent
+       typedef int pthread_key_t;
+#endif					/* Concurrent */
+
 #ifdef Dbm
 typedef int DBM;
 typedef struct {

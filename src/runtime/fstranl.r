@@ -20,9 +20,11 @@
    
    if is:null(s) then {
       inline {
+	 CURTSTATE();
          s = k_subject;
          }
       if is:null(i) then inline {
+	 CURTSTATE();
          cnv_ ## i = k_pos;
          }
       }

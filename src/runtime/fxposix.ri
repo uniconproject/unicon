@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.65 2010-10-30 18:49:10 jeffery Exp $
+ * $Id: fxposix.ri,v 1.66 2011-01-05 22:42:02 jeffery Exp $
  */
 
 /*
@@ -68,6 +68,7 @@ function{0,1} getppid()
       return integer
       }
    body {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -84,12 +85,13 @@ function{0,1} getpid()
       return integer
       }
    inline {
-     IntVal(amperErrno) = 0;
+      CURTSTATE();
+      IntVal(amperErrno) = 0;
 #ifdef NT
 #define getpid _getpid
 #endif
-     return C_integer (getpid());
-     }
+      return C_integer (getpid());
+      }
 end
 
 "link() - create a link to a file."
@@ -103,6 +105,7 @@ function{0,1} link(s1, s2)
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -127,6 +130,7 @@ function{0,1} symlink(s1, s2)
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -153,6 +157,7 @@ function{0,1} readlink(s)
       int len;
       char *out;
       long n;
+      CURTSTATE();
 
       IntVal(amperErrno) = 0;
 #if NT
@@ -462,6 +467,7 @@ function{0,1} chroot(d)
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -484,6 +490,7 @@ function{0,1} rmdir(s)
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
 #define rmdir _rmdir
@@ -878,6 +885,7 @@ function{0,1} utime(f, atime, mtime)
 #define utimbuf _utimbuf
 #endif
       struct utimbuf t;
+      CURTSTATE();
       t.actime = atime;
       t.modtime = mtime;
       IntVal(amperErrno) = 0;
@@ -902,6 +910,7 @@ function{0,1} ioctl(f, action, options)
       }
    inline {
       int retval, fd;
+      CURTSTATE();
       IntVal(amperErrno) = 0;
       if ((fd = get_fd(f, 0)) < 0)
 	 runerr(174, f);
@@ -1021,6 +1030,7 @@ function{0,1} fork()
       }
    inline {
       int pid;
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1048,6 +1058,7 @@ function{0,1} fdup(src, dest)
       int fd_src, fd_dest, status;
       char *fmode;
       FILE *fp;
+      CURTSTATE();
 
       if (BlkD(src,File)->status == 0)
 	 runerr(1042, src);
@@ -1237,6 +1248,7 @@ function{0,1} setuid(u)
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1259,6 +1271,7 @@ function{0,1} setgid(g)
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1294,6 +1307,7 @@ function{0,1} setpgrp()
       return null
       }
    inline {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1417,9 +1431,12 @@ function{0,1} wait(pid, options)
    body {
       char retval[64];
       int option = 0, status = 0, wpid, i=0;
+#if !NT && (defined(BSD) || defined(Linux) || defined(BSD_4_4_LITE))
+      struct rusage rusage;
+#endif
+      CURTSTATE();
 #if !NT
 #if defined(BSD) || defined(Linux) || defined(BSD_4_4_LITE)
-      struct rusage rusage;
       while(options[i])
 	 switch(options[i++]) {
 	 case 'n' : option |= WNOHANG; break;
@@ -1433,7 +1450,6 @@ function{0,1} wait(pid, options)
       }
 
 #else					/* BSD || Linux */
-
       /* HP and Solaris */
       if (pid == -1) {
 	 IntVal(amperErrno) = 0;
@@ -1557,6 +1573,7 @@ function{0,1} gettimeofday()
       struct b_record *rp; /* does not need to be tended */
       static dptr constr;
       int nfields;
+      CURTSTATE();
 
       IntVal(amperErrno) = 0;
 #if NT
@@ -1747,6 +1764,7 @@ function{0,1} send(addr, msg)
       return null
       }
    body {
+      CURTSTATE();
       IntVal(amperErrno) = 0;
       if (!sock_send(addr, StrLoc(msg), StrLen(msg))) {
 	 IntVal(amperErrno) = errno;

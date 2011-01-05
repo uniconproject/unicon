@@ -324,6 +324,7 @@ void main(int argc, char **argv)
    {
    int i, slen;
 
+   CURTSTATE();
 #if WildCards
 #ifndef MSWindows
    ExpandArgv(&argc, &argv);
@@ -1021,9 +1022,12 @@ int *ip;
    register word i, j;
    register struct b_proc *pp;
    register dptr dp;
-
    #ifdef MultiThread
       register struct progstate *savedstate = curpstate;
+   #endif					/* MultiThread */
+   CURTSTATE();
+
+   #ifdef MultiThread
       if (pstate){ 
 	curpstate = pstate;
 	curtstate = pstate->tstate;
@@ -1126,6 +1130,7 @@ void xmfree()
    {
    register struct b_coexpr **ep, *xep;
    register struct astkblk *abp, *xabp;
+   CURTSTATE();
 
    if (mainhead == NULL) return;	/* already xmfreed */
    free((pointer)mainhead->es_actstk);	/* activation block for &main */

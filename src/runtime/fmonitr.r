@@ -377,6 +377,7 @@ void EVVariable(dptr dx, int eventcode)
    dptr procname = NULL;
    struct progstate *parent = curpstate->parent;
    struct region *rp = curpstate->stringregion;
+   CURTSTATE();
 
    if (dx == glbl_argp) {
       /*
@@ -544,6 +545,7 @@ void mmrefresh()
    {
    char *p = NULL;
    word n;
+   CURTSTATE();
 
    /*
     * If the monitor is asking for E_EndCollect events, then it

@@ -110,6 +110,7 @@ function{1} close(f)
 #endif					/* HAVE_VOICE */
       FILE *fp = BlkD(f,File)->fd.fp;
       int status = BlkD(f,File)->status;
+      CURTSTATE();
 
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
@@ -1584,6 +1585,7 @@ function{0,1} remove(s)
       }
 
    inline {
+      CURTSTATE();
       if (remove(s) != 0) {
 #ifdef PosixFns
 	 IntVal(amperErrno) = 0;
@@ -1699,6 +1701,7 @@ function{0,1} seek(f,o)
 
    body {
       FILE *fd;
+      CURTSTATE();
 
       fd = BlkD(f,File)->fd.fp;
       if (BlkLoc(f)->File.status == 0)
@@ -2058,6 +2061,7 @@ function{0,1} where(f)
       FILE *fd;
       long ftell();
       long pos;
+      CURTSTATE();
 
       fd = BlkD(f,File)->fd.fp;
 
@@ -2728,6 +2732,7 @@ function{0,1} delay(n)
    inline {
 #ifdef Concurrent
       int ret;
+      CURTSTATE();
       MUTEX_LOCKID(MTX_NARTHREADS); 
       NARthreads--;	
       MUTEX_UNLOCKID(MTX_NARTHREADS);   
@@ -2763,6 +2768,7 @@ function{1} flush(f)
    body {
       FILE *fp = BlkD(f,File)->fd.fp;
       int status = BlkD(f,File)->status;
+      CURTSTATE();
 
       /*
        * File types for which no flushing is possible, or is a no-op.

@@ -18,6 +18,7 @@ function{0,1+} move(i)
    body {
       register C_integer j;
       C_integer oldpos;
+      CURTSTATE();
 
       /*
        * Save old &pos.  Local variable j holds &pos before the move.
@@ -75,6 +76,8 @@ function{0,1} pos(i)
       return integer
       }
    body {
+      CURTSTATE();
+
       /*
        * Fail if &pos is not equivalent to i, return i otherwise.
        */
@@ -99,6 +102,7 @@ function{0,1+} tab(i)
 
    body {
       C_integer j, t, oldpos;
+      CURTSTATE();
 
       /*
        * Convert i to an absolute position.

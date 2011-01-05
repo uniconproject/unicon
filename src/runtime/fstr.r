@@ -241,6 +241,7 @@ function{1} entab(s,i[n])
       char *in, *out, *iend;
       char c;
       int inserted = 0;
+      CURTSTATE();
 
       for (j=0; j<n; j++) {
 	 if (!cnv:integer(i[j],i[j]))
@@ -461,6 +462,7 @@ function{1} map(s1,s2,s3)
 #ifndef Concurrent
       static char maptab[256];
 #endif					/* Concurrent */
+      CURTSTATE();
 
 #if !COMPILER
       /*

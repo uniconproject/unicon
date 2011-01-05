@@ -780,11 +780,26 @@ Deliberate Syntax Error
 
 #ifdef Concurrent
 #define PthreadCoswitch 1
+#ifndef NoKeyword__Thread
+/* the default at present uses __thread */
+#define HAVE_KEYWORD__THREAD
+#endif					/* NoKeyword__Thread */
 #endif					/* Concurrent */
 
 #ifdef PthreadCoswitch
 #define CoClean 1
 #endif					/* PthreadCoswitch */
+
+#if COMPILER
+#undef StackCheck
+#define NoStackCheck
+#endif					/* COMPILER */
+
+#ifndef Concurrent
+#ifndef NoStackCheck
+#define StackCheck 1
+#endif					/* NoStackCheck */
+#endif					/* Concurrent */
 
 #ifdef NoLIBZ
 #undef HAVE_LIBZ

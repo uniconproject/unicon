@@ -6,6 +6,7 @@ include ../makedefs
 UC=$(UNICON)
 UFLAGS=-c -u
 
+
 UFILES= vector.u matrix.u quaternion.u util3d.u face.u material.u \
 	animationkeys.u animationset.u basicobject3d.u mesh.u \
 	node.u bone.u skeleton.u modelobject3d.u terrain.u\
@@ -19,6 +20,10 @@ SRC= modelobject3d.icn basicanimationobject3d.icn basicobject3d.icn \
 	skinnedmodelobject3d.icn camera.icn terrain.icn xparse.icn s3dparse.icn
 
 all: $(UFILES)
+
+pure:
+	$(MAKE) clean
+	$(MAKE) all
 
 skinnedmodelobject3d.u: skinnedmodelobject3d.icn modelobject3d.u skeleton.u
 

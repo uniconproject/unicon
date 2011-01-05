@@ -95,31 +95,31 @@ method replace_slash(s)
    return s
 end
 
-method file_name(fpath)
-local i
-   i:= *fpath
-   while i>0 & fpath[i] ~== (PS) do
-       i-:=1
-      
-   if i=0 then return fpath
-   return fpath[i+1:0]
-end
-
-method path_name(fpath)
-local i
-   i:= *fpath
-   while i>0 & fpath[i] ~== (PS) do
-       i-:=1
-      
-   if i>0 then return fpath[1:i+1]
-end
+# method file_name(fpath)
+# local i
+#    i:= *fpath
+#    while i>0 & fpath[i] ~== (PS) do
+#        i-:=1
+#       
+#    if i=0 then return fpath
+#    return fpath[i+1:0]
+# end
+# 
+# method path_name(fpath)
+# local i
+#    i:= *fpath
+#    while i>0 & fpath[i] ~== (PS) do
+#        i-:=1
+#       
+#    if i>0 then return fpath[1:i+1]
+# end
 
 
 method Xparse()
    local root_bone
    while not(pos(0)) do{
       case parseBlock() of {
-         "Error"	: stop("Stopped parseing the file ...")
+         "Error"	: { DEBUGW("Stopped parseing the file ..."); fail}
          "Comment"	: {}		# nothing to do
          "}"		: {} 		# end of a block ?!
          "Frame"	: parseBone(&null) 
@@ -199,8 +199,10 @@ end
 
 # create a random block id
 method getID(ch)
-   return string( (?224 + 31) * (256*256*256) + (?224 + 31) * (256*256) +
-                  (?224 + 31) *  256          + (?224 + 31)) || ch
+  static two24, two16, two8
+  initial {two24:=2^24; two16:=2^16; two8:=2^8}
+   return string( (?224 + 31) * two24 + (?224 + 31) * two16 +
+                  (?224 + 31) *  two8 + (?224 + 31)) || ch
 end
 
 #############

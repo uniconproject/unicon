@@ -2955,6 +2955,11 @@ int n;
    {
    if (n == 0)
       return;
+#ifdef Concurrent
+#ifndef HAVE_KEYWORD__THREAD
+   prt_str("struct threadstate *curtstate = get_tstate();", IndentInc);
+#endif					/* HAVE_KEYWORD__THREAD */
+#endif					/* Concurrent */
    prt_str("struct {", IndentInc);
    ForceNl();
    prt_str("struct tend_desc *previous;", 2 * IndentInc);

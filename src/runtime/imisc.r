@@ -379,6 +379,7 @@ LibDcl(bscan,2,"?")
    {
    int rc;
    struct pf_marker *cur_pfp;
+   CURTSTATE();
 
    /*
     * Convert the new value for &subject to a string.
@@ -456,6 +457,7 @@ LibDcl(escan,1,"escan")
    struct descrip tmp;
    int rc;
    struct pf_marker *cur_pfp;
+   CURTSTATE();
 
    /*
     * Copy the result of the scanning expression into Arg0, which will

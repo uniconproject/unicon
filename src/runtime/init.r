@@ -117,17 +117,13 @@ extern struct errtab errtab[];		/* error numbers and messages */
 word mstksize = MStackSize;		/* initial size of main stack */
 word stksize = StackSize;		/* co-expression stack size */
 
-
 #ifndef MultiThread
 int k_level = 0;			/* &level */
 struct descrip k_main;			/* &main */
 #endif					/* MultiThread */
 
 int set_up = 0;				/* set-up switch */
-
 char *currend = NULL;			/* current end of memory region */
-
-
 word qualsize = QualLstSize;		/* size of quallist for fixed regions */
 #ifdef Concurrent 
    pthread_mutex_t mutex_qualsize;
@@ -214,8 +210,10 @@ struct progstate *curpstate;		/* lastop accessed in program state */
 struct progstate rootpstate;
 #ifdef Concurrent
       struct tls_node *tlshead;
+#ifdef HAVE_KEYWORD__THREAD
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;
+#endif					/* HAVE_KEYWORD__THREAD */
 #else					/* Concurrent */
       struct threadstate roottstate; 
       struct threadstate *curtstate;
@@ -245,8 +243,6 @@ char *strcons;				/* pointer to string constant table */
 struct ipc_fname *filenms, *efilenms;	/* pointer to ipc/file name table */
 struct ipc_line *ilines, *elines;	/* pointer to ipc/line number table */
 #endif					/* MultiThread */
-
-
 
 #ifdef TallyOpt
 word tallybin[16];			/* counters for tallying */
@@ -289,7 +285,6 @@ int fdgets(int fd, char *buf, size_t count)
   buf[i]='\0';
   return i;
 }
-
 
 int dgetc(int fd) {
   int rv;
@@ -604,7 +599,8 @@ void check_version(struct header *hdr, char *name,
 
 #ifdef Concurrent
 
-void howmanyblock(){
+void howmanyblock()
+{
   int i=0;
   struct region *rp;
   
@@ -781,6 +777,7 @@ char *argv[];
    FILE *fname = 0;
    word cbread;
 #endif					/* COMPILER */
+   CURTSTATE();
 
 #if OS2
    char *p1, *p2;
@@ -831,7 +828,9 @@ char *argv[];
 #endif					/* OS2 */
 
 #ifdef Concurrent
-  
+#ifndef HAVE_KEYWORD__THREAD
+   pthread_key_create(&tstate_key, NULL);
+#endif					/* HAVE_KEYWORD__THREAD */
   {
    int i;
    for(i=0; i<NUM_STATIC_MUTEXES; i++)
@@ -881,13 +880,13 @@ char *argv[];
    rootpstate.eventsource = nulldesc;
    rootpstate.Kywd_err = zerodesc;
 
+#ifdef HAVE_KEYWORD__THREAD
    rootpstate.tstate = &roottstate;
    curtstate = &roottstate;
-   
-   
-   init_threadstate(curtstate);
-   
-   
+#else					/* HAVE_KEYWORD__THREAD */
+   rootpstate.tstate = get_tstate();
+#endif					/* HAVE_KEYWORD__THREAD */
+   init_threadstate(rootpstate.tstate);
 
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
@@ -916,7 +915,6 @@ char *argv[];
    rootpstate.Public_stringregion = NULL;
    rootpstate.Public_blockregion = NULL;
 #endif					/* Concurrent */
-
 
    rootpstate.Longest_dr=0;
    rootpstate.Dr_arrays=NULL;
@@ -1285,7 +1283,7 @@ Deliberate Syntax Error
    ctx->thread = pthread_self();
    ctx->alive = 1;
 #ifdef Concurrent
-   tlshead = malloc(sizeof(struct tls_node));
+   tlshead = (struct tls_node *)malloc(sizeof(struct tls_node));
    if (tlshead==NULL)
       fatalerr(305, NULL);
    /* 
@@ -1301,7 +1299,6 @@ Deliberate Syntax Error
 #endif					/* Concurrent */
 }
 #endif					/* PthreadCoswitch */
-
 
 #if !COMPILER
 #if HAVE_LIBZ
@@ -1494,8 +1491,6 @@ Deliberate Syntax Error
 #endif					/* AMIGA */
 
 #if ARM || MACINTOSH || UNIX || OS2 || VMS
-
-
    if (noerrbuf)
       setbuf(stderr, NULL);
    else {
@@ -1545,6 +1540,7 @@ Deliberate Syntax Error
 void envset()
    {
    char *p, sbuf[MaxCvtLen+1];
+   CURTSTATE();
 
    if (getenv_r("NOERRBUF", sbuf, MaxCvtLen) == 0)
       noerrbuf++;
@@ -1775,7 +1771,7 @@ char *s1, *s2;
 void syserr(s)
 char *s;
    {
-
+   CURTSTATE();
 
 #ifdef PresentationManager
    ConsoleFlags |= OutputToBuf;
@@ -1851,6 +1847,8 @@ int i;
    char *msg = "Strike any key to close console...";
 #endif					/* ScrollingConsoleWin */
 #endif					/* ConsoleWindow */
+
+   CURTSTATE();
 
 #if E_Exit
    if (curpstate != NULL)
@@ -2053,6 +2051,7 @@ void datainit()
 #ifdef MSWindows
    extern FILE *finredir, *fouredir, *ferredir;
 #endif					/* MSWindows */
+   CURTSTATE();
 
    /*
     * Initializations that cannot be performed statically (at least for
@@ -2120,7 +2119,6 @@ void datainit()
    StrLen(k_subject) = 0;
    StrLoc(k_subject) = "";
 
-
    StrLen(blank) = 1;
    StrLoc(blank) = " ";
    StrLen(emptystr) = 0;
@@ -2161,8 +2159,6 @@ void datainit()
    k_errornumber = 0;			/* &errornumber */
    k_errortext = "";			/* &errortext */
    currend = NULL;			/* current end of memory region */
-
-
    mstksize = MStackSize;		/* initial size of main stack */
    stksize = StackSize;			/* co-expression stack size */
    ssize = MaxStrSpace;			/* initial string space size (bytes) */
@@ -2343,6 +2339,8 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 struct progstate * findicode(word *opnd)
 {
    struct progstate *p;
+   CURTSTATE();
+
    for (p = &rootpstate; p != NULL; p = p->next) {
       if (InRange(p->Code, ipc.opnd, p->Ecode)) {
 	 return p;

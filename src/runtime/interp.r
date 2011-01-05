@@ -388,6 +388,7 @@ int interp_x(int fsig,dptr cargp)
 
 #ifdef Concurrent
     int retval;
+    CURTSTATE();
 #endif					/* Concurrent */
 
 #if e_intcall
@@ -2433,9 +2434,12 @@ int mt_activate(tvalp,rslt,ncp)
 dptr tvalp, rslt;
 register struct b_coexpr *ncp;
 {
-   register struct b_coexpr *ccp = BlkD(k_current, Coexpr);
+   register struct b_coexpr *ccp;
    int first, rv;
    dptr savedtvalloc = NULL;
+   CURTSTATE();
+
+   ccp = BlkD(k_current, Coexpr);
 
    /*
     * Set activator in new co-expression.

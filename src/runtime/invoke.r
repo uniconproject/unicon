@@ -147,12 +147,14 @@ int nargs, *n;
 {
    register struct pf_marker *newpfp;
    register dptr newargp;
-   register word *newsp = sp;
+   register word *newsp;
+   /* may want to manually tend in order to pass curtstate as a parameter */
    tended struct descrip arg_sv;
    register word i;
    struct b_proc *proc;
    int nparam;
 
+   newsp = sp;
    /*
     * Point newargp at Arg0 and dereference it.
     */

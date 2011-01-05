@@ -108,6 +108,7 @@ keyword{1} column
       }
    inline {
 #ifdef MultiThread
+      CURTSTATE();
       return C_integer findcol(ipc.opnd);
 #else
       fail;
@@ -122,6 +123,7 @@ keyword{1} current
       return coexpr
       }
    inline {
+      CURTSTATE();
       return k_current;
       }
 end
@@ -247,6 +249,7 @@ keyword{0,1} errornumber
       return integer
       }
    inline {
+      CURTSTATE();
       if (k_errornumber == 0)
          fail;
       return C_integer k_errornumber;
@@ -259,6 +262,7 @@ keyword{0,1} errortext
       return string
       }
    inline {
+      CURTSTATE();
       if (k_errornumber == 0)
          fail;
       return C_string k_errortext;
@@ -271,8 +275,10 @@ keyword{0,1} errorvalue
       return any_value
       }
    inline {
-      if (have_errval)
+      CURTSTATE();
+      if (have_errval) {
          return k_errorvalue;
+	 }
       else
          fail;
       }
@@ -412,13 +418,14 @@ keyword{1} file
       return string
       }
    inline {
+      char *s;
+      CURTSTATE();
 #if COMPILER
       if (line_info)
          return C_string file_name;
       else
          runerr(402);
 #else					/* COMPILER */
-      char *s;
       s = findfile(ipc.opnd);
       if (!strcmp(s,"?")) fail;
       return C_string s;
@@ -469,6 +476,7 @@ keyword{1} level
       }
 
    inline {
+      CURTSTATE();
 #if COMPILER
       if (!debug_info)
          runerr(402);
@@ -483,6 +491,7 @@ keyword{1} line
       return integer;
       }
    inline {
+      CURTSTATE();
 #if COMPILER
       if (line_info)
          return C_integer line_num;
@@ -577,7 +586,8 @@ keyword{1} pos
    abstract {
       return kywdpos
       }
-    inline {
+   inline {
+      CURTSTATE();
       return kywdpos(&kywd_pos);
       }
 end
@@ -598,6 +608,7 @@ keyword{1} random
       return kywdint
       }
    inline {
+      CURTSTATE();
       return kywdint(&kywd_ran);
       }
 end
@@ -610,6 +621,7 @@ keyword{3} regions
    inline {
       word allRegions = 0;
       struct region *rp;
+      CURTSTATE();
 
       suspend C_integer 0;		/* static region */
 
@@ -639,12 +651,13 @@ keyword{1} source
        return coexpr
        }
    inline {
+      CURTSTATE();
 #ifndef CoExpr
-         return k_main;
+      return k_main;
 #else					/* CoExpr */
-         return coexpr(topact(BlkD(k_current,Coexpr)));
+      return coexpr(topact(BlkD(k_current,Coexpr)));
 #endif					/* CoExpr */
-         }
+      }
 end
 
 "&storage - generate the amount of storage used for each region."
@@ -655,6 +668,7 @@ keyword{3} storage
    inline {
       word allRegions = 0;
       struct region *rp;
+      CURTSTATE();
 
       suspend C_integer 0;		/* static region */
   
@@ -684,6 +698,7 @@ keyword{1} subject
       return kywdsubj
       }
    inline {
+      CURTSTATE();
       return kywdsubj(&k_subject);
       }
 end
@@ -742,6 +757,7 @@ keyword{1} errno
       return kywdint
       }
    inline {
+      CURTSTATE();
       return kywdint(&amperErrno);
       }
 #else /* PosixFns */

@@ -557,6 +557,11 @@
    struct sdescrip quals[n];}
 
 #ifdef Concurrent
+#ifdef HAVE_KEYWORD__THREAD
+#define CURTSTATE()
+#else
+#define CURTSTATE() struct threadstate *curtstate = get_tstate()
+#endif
 #define ssize    (curtstate->Curstring->size)
 #define strbase  (curtstate->Curstring->base)
 #define strend   (curtstate->Curstring->end)
@@ -567,6 +572,7 @@
 #define blkend   (curtstate->Curblock->end)
 #define blkfree  (curtstate->Curblock->free)
 #else 					/* Concurrent */
+#define CURTSTATE()
 #define ssize    (curstring->size)
 #define strbase  (curstring->base)
 #define strend   (curstring->end)
@@ -905,7 +911,6 @@
       #define eret_tmp       (curtstate->Eret_tmp)
       #define pollctr        (curtstate->Pollctr)
 
-
 #ifdef PosixFns
       #define savedbuf       (curtstate->Savedbuf)
       #define nsaved         (curtstate->Nsaved)
@@ -921,7 +926,6 @@
       /* used in rposix.r */
       #define callproc		(curtstate->Callproc)
       #define ibuf		(curtstate->Ibuf)
-
 
 #endif					/* Concurrent */
 

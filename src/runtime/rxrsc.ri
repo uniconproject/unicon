@@ -605,6 +605,7 @@ char *s;
 		GLX_BLUE_SIZE, 1, GLX_DEPTH_SIZE, 1, GLX_ACCUM_RED_SIZE,
 		1, GLX_ACCUM_GREEN_SIZE, 1, GLX_ACCUM_BLUE_SIZE, 1, None};
 #endif					/* HAVE_LIBGL */
+   CURTSTATE();
 
    if (s == NULL)
      if (getenv_r("DISPLAY", tmp, 255)==0)
@@ -1140,6 +1141,7 @@ wdp wd;
 char *s;
    {
    wfp rv;
+   CURTSTATE();
    GRFX_ALLOC(rv, _wfont);
    rv->name = (char *)strdup(s);
    if (rv->name == NULL) ReturnErrNum(305, NULL);
@@ -1189,6 +1191,7 @@ wbp w;
    {
    wcp wc;
    wdp wd = w->window->display;
+   CURTSTATE();
 
    GRFX_ALLOC(wc, _wcontext);
    wc->serial = ++context_serial;
@@ -1285,6 +1288,7 @@ wbp w;
 wsp alc_winstate()
    {
    wsp ws;
+   CURTSTATE();
 
    GRFX_ALLOC(ws, _wstate);
    ws->serial = ++canvas_serial;

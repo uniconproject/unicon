@@ -60,6 +60,7 @@ SOCKET fd;
    {
    int r = 0, i=0;
    char *stmp=NULL;
+   CURTSTATE();
   
    if ((r=recv(fd, buf, maxi, MSG_PEEK))==SOCKET_ERROR) {
 #if NT
@@ -121,6 +122,7 @@ struct b_file *fbp;
    static char savedbuf[BUFSIZ];
    static int nsaved = 0;
 #endif					/* PosixFns */
+   CURTSTATE();
 
 #if AMIGA
 #if LATTICE

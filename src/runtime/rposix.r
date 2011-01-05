@@ -6,7 +6,7 @@
  * please add a short note here with your name and what changes were
  * made.
  *
- * $Id: rposix.r,v 1.46 2010-11-20 07:33:19 to_jafar Exp $
+ * $Id: rposix.r,v 1.47 2011-01-05 21:36:22 jeffery Exp $
  */
 
 #ifdef PosixFns
@@ -1359,6 +1359,7 @@ void catstrs(char **ptrs, dptr d)
 {
    int nmem = 0, i, n;
    char *p;
+   CURTSTATE();
 
    while (ptrs[nmem])
       nmem++;
@@ -1445,6 +1446,7 @@ struct hostent *hs;
    int nmem = 0, i, n;
    unsigned int *addr;
    char *p;
+   CURTSTATE();
 
    if (!(constr = rec_structor("posix_hostent")))
      return 0;
@@ -1499,9 +1501,12 @@ int nargs;
 {
    int i, off, retval;
    inst saved_ipc;
-   word *saved_sp = sp;
+   word *saved_sp;
    inst wp;
    dptr dp, ret;
+   CURTSTATE();
+
+   saved_sp = sp;
 
 #ifdef HP
    bcopy(&ipc, &saved_ipc, sizeof(ipc));
@@ -1659,6 +1664,7 @@ int fd, n;
 dptr d;
 {
    int tally = 0, nbytes;
+   CURTSTATE();
 
    if (n > 0) {
       /* Allocate n bytes of char space */

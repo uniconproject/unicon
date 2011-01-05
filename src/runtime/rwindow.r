@@ -290,6 +290,7 @@ wsp getactivewindow()
    LONG i, j, nwindows = 0;
    wsp ptr, ws, stdws = NULL;
    extern FILE *ConsoleBinding;
+   CURTSTATE();
 
    if (wstates == NULL) return NULL;
    for(ws = wstates; ws; ws=ws->next) nwindows++;
@@ -3103,6 +3104,7 @@ C_integer *bits;
    {
    C_integer v;
    int i, j, hexdigits_per_row, maxbits = *nbits;
+   CURTSTATE();
 
    /*
     * Get the width
@@ -4427,8 +4429,11 @@ FILE *OpenConsole()
        */
 #ifdef MultiThread
       if (!curpstate) {
+	 CURTSTATE();
          curpstate = &rootpstate;
+#ifdef HAVE_KEYWORD__THREAD
 	 curtstate = curpstate->tstate;
+#endif					/* HAVE_KEYWORD__THREAD */
 #ifdef AAAConcurrent /* is this necessarry?  */
 	 init_threadstate(curtstate);
 #endif					/*Concurrent*/

@@ -34,6 +34,7 @@ int win_highwater = -1;
 wbp alc_wbinding()
    {
    wbp w;
+   CURTSTATE();
 
    GRFX_ALLOC(w, _wbinding);
    GRFX_LINK(w, wbndngs);

@@ -53,14 +53,19 @@ int getvar(s,vp)
    struct b_proc *bp;
 #if COMPILER
    struct descrip sdp;
+#else					/* COMPILER */
+   struct pf_marker *fp;
+#endif
+   CURTSTATE();
 
+#if COMPILER
    if (!debug_info) 
       fatalerr(402,NULL);
 
    StrLoc(sdp) = s;
    StrLen(sdp) = strlen(s);
 #else					/* COMPILER */
-   struct pf_marker *fp = pfp;
+   fp = pfp;
 #endif					/* COMPILER */
 
    /*
@@ -1031,6 +1036,7 @@ char *sbuf;
    {
    register word slen;
    register char *c, *s;
+   CURTSTATE();
 
    c = StrLoc(*dp);
    slen = StrLen(*dp)++;
@@ -1111,6 +1117,7 @@ struct b_coexpr *ce;
    struct astkblk *abp = ce->es_actstk, *oabp;
    struct actrec *arp;
    struct b_coexpr *actvtr;
+   CURTSTATE();
 
 #ifdef Concurrent
    /*
@@ -1323,6 +1330,7 @@ int level;
 {
    struct pf_marker *fp;
    int i;
+   CURTSTATE();
 
    if (BlkLoc(ce->program->tstate->K_current) != BlkLoc(k_current))
       fp = ce->es_pfp;

@@ -42,6 +42,7 @@ char *s;
 int n;
    {
    int x, y, delta_x;
+   CURTSTATE();
    STDLOCALS(w);
 
    pollctr>>=1; pollctr++;
@@ -1301,7 +1302,7 @@ int wmap(wbp w)
    int new_pixmap = 0;
    char *p, *s;
    XWMHints wmhints;
-
+   CURTSTATE();
    STDLOCALS(w);
 #ifdef Graphics3D
    /*wc->maxstex=16;
@@ -1699,6 +1700,7 @@ int seticonlabel(w, val)
 wbp w;
 char *val;
    {
+   CURTSTATE();
    STDLOCALS(w);
    if (ws->iconlabel != NULL) free(ws->iconlabel);
    if ((ws->iconlabel = salloc(val)) == NULL)
@@ -1724,6 +1726,7 @@ wbp w;
 char *s;
 {
    wsp ws = w->window;
+   CURTSTATE();
    if (ws->windowlabel != NULL) free(ws->windowlabel);
    if ((ws->windowlabel = salloc(s)) == NULL)
       ReturnErrNum(305, Error);
@@ -3976,6 +3979,7 @@ int len;
    Pixmap p;
    char data[MAXXOBJS];
    char *buf = data;
+   CURTSTATE();
    STDLOCALS(w);
 
    if (wc->patternname != NULL)

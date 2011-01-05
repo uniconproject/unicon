@@ -927,12 +927,11 @@ dptr da, dx;
 int bigpow(da, db, dx)
 dptr da, db, dx;
 {
+   CURTSTATE();
 
    if (Type(*db) == T_Lrgint) {
       struct b_bignum *b;
-
       b = LrgInt ( db );
-
 
       if (Type(*da) == T_Lrgint) {
 	 if ( b->sign ) {
@@ -1009,6 +1008,7 @@ dptr   db, drslt;
    register DIGIT nth_dig, mask;
    struct b_bignum *b;
    word blen;
+   CURTSTATE();
 
    b = LrgInt ( db );
    blen = LEN ( b );
@@ -1875,6 +1875,7 @@ dptr dx;
    word x, y;
    int n = WordBits;
    int isbig = 0;
+   CURTSTATE();
 
    if (a == 0 || i <= 0) {              /* special cases */
       if (a == 0 && i <= 0)             /* 0 ^ negative -> error */

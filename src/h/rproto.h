@@ -1013,6 +1013,9 @@ void *nctramp(void *arg);
 #endif					/* PthreadCoswitch */
 
 #ifdef Concurrent 
+#ifndef HAVE_KEYWORD__THREAD
+struct threadstate *get_tstate();
+#endif					/* HAVE_KEYWORD__THREAD */
 void handle_thread_error(int val);
 void wait4GC(int action);
 void clean_threads();

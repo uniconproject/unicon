@@ -165,6 +165,8 @@ operator{*} = tabmat(x)
       register word l;
       register char *s1, *s2;
       C_integer i, j;
+      CURTSTATE();
+
       /*
        * Make a copy of &pos.
        */

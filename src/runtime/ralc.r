@@ -84,6 +84,7 @@ word table_ser = 1;	/* serial numbers for tables */
 struct astkblk *alcactiv()
    {
    struct astkblk *abp;
+   CURTSTATE();
 
    abp = (struct astkblk *)malloc((msize)sizeof(struct astkblk));
 
@@ -113,6 +114,7 @@ struct b_bignum *f(word n)
    {
    register struct b_bignum *blk;
    register uword size;
+   CURTSTATE();
 
    size = sizeof(struct b_bignum) + ((n - 1) * sizeof(DIGIT));
    /* ensure whole number of words allocated */
@@ -193,6 +195,7 @@ struct b_coexpr *alccoexp()
 
    {
    struct b_coexpr *ep;
+   CURTSTATE();
 
 #ifdef MultiThread
    if (icodesize > 0) {
@@ -297,6 +300,7 @@ struct b_cset *f()
    {
    register struct b_cset *blk;
    register int i;
+   CURTSTATE();
 
    EVVal(sizeof (struct b_cset), e_cset);
    AlcFixBlk(blk, b_cset, T_Cset)
@@ -357,6 +361,7 @@ union block *f(int tcode)
    register int i;
    register struct b_set *ps;
    register struct b_table *pt;
+   CURTSTATE();
 
    if (tcode == T_Table) {
       EVVal(sizeof(struct b_table), e_table);
@@ -397,6 +402,7 @@ struct b_slots *f(word nslots)
    {
    uword size;
    register struct b_slots *blk;
+   CURTSTATE();
 
    size = sizeof(struct b_slots) + WordSize * (nslots - HSlots);
    EVVal(size, e_slots);
@@ -482,6 +488,8 @@ alcpelem_macro(alcpelem,0)
 struct b_list *alclisthdr(uword size, union block *bptr)
 {
    register struct b_list *blk;
+   CURTSTATE();
+
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
    MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
@@ -512,6 +520,7 @@ struct b_list *f(uword size, uword nslots)
    register struct b_list *blk;
    register struct b_lelem *lblk;
    register word i;
+   CURTSTATE();
 
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + sizeof (struct b_lelem)
       + (nslots - 1) * sizeof(struct descrip)))) return NULL;
@@ -554,6 +563,7 @@ struct b_list *f(uword size, uword nslots)
    register word i = sizeof(struct b_lelem)+(nslots-1)*sizeof(struct descrip);
    register struct b_list *blk;
    register struct b_lelem *lblk;
+   CURTSTATE();
 
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + i))) return NULL;
    EVVal(sizeof (struct b_list), e_list);
@@ -595,6 +605,7 @@ struct b_lelem *f(uword nslots, uword first, uword nused)
    {
    register struct b_lelem *blk;
    register word i;
+   CURTSTATE();
 
    AlcVarBlk(blk, b_lelem, T_Lelem, nslots)
    blk->nslots = nslots;
@@ -626,6 +637,7 @@ alclstb_macro(alclstb,0)
 struct b_real *f(double val)
    {
    register struct b_real *blk;
+   CURTSTATE();
 
    EVVal(sizeof (struct b_real), e_real);
    AlcFixBlk(blk, b_real, T_Real)
@@ -693,6 +705,7 @@ int nt;
 int wrk_sz;
    {
    struct b_refresh *blk;
+   CURTSTATE();
 
    AlcVarBlk(blk, b_refresh, T_Refresh, na + nl)
    blk->nlocals = nl;
@@ -707,6 +720,7 @@ int wrk_sz;
 struct b_refresh *f(word *entryx, int na, int nl)
    {
    struct b_refresh *blk;
+   CURTSTATE();
 
    AlcVarBlk(blk, b_refresh, T_Refresh, na + nl);
    blk->ep = entryx;
@@ -846,6 +860,7 @@ alcsubs_macro(alcsubs,0)
 struct b_telem *f()
    {
    register struct b_telem *blk;
+   CURTSTATE();
 
    EVVal(sizeof (struct b_telem), e_telem);
    AlcFixBlk(blk, b_telem, T_Telem)
@@ -924,6 +939,7 @@ void f (union block *bp)
 {
    word nbytes;
    struct region *rp;
+   CURTSTATE();
 #ifdef Concurrent   /*   DO WE NEED THIS ? WE HAVE PRIVATE HEAPS NOW  */
    return;
 #endif					/* Concurrent */
@@ -974,7 +990,8 @@ char *f(int region, word nbytes)
 #ifdef Concurrent
    int mtx_publicheap, mtx_heap;
    struct region *curr_private, **p_publicheap;
-   if (region == Strings){
+   CURTSTATE();
+   if (region == Strings) {
       mtx_publicheap = MTX_PUBLICSTRHEAP;
       mtx_heap=MTX_STRHEAP;
       pcurr = &curtstring;
@@ -1321,24 +1338,28 @@ word nbytes,stdsize;
 
 struct b_intarray *alcintarray(uword n)
 {
-int bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
-register struct b_intarray *blk;
-AlcBlk(blk, b_intarray, T_Intarray, bsize);
-blk->blksize = bsize;
-blk->dims = NULL;
-blk->listp = NULL;
-return blk;
+   int bsize = sizeof(struct b_intarray) + (n-1) * sizeof(word);
+   register struct b_intarray *blk;
+   CURTSTATE();
+
+   AlcBlk(blk, b_intarray, T_Intarray, bsize);
+   blk->blksize = bsize;
+   blk->dims = NULL;
+   blk->listp = NULL;
+   return blk;
 }
 
 struct b_realarray *alcrealarray(uword n)
 {
-int bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
-register struct b_realarray *blk;
-AlcBlk(blk, b_realarray, T_Realarray, bsize);
-blk->blksize = bsize;
-blk->dims = NULL;
-blk->listp = NULL;
-return blk;
+   int bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
+   register struct b_realarray *blk;
+   CURTSTATE();
+
+   AlcBlk(blk, b_realarray, T_Realarray, bsize);
+   blk->blksize = bsize;
+   blk->dims = NULL;
+   blk->listp = NULL;
+   return blk;
 }
 
 #endif					/* Arrays */

@@ -151,6 +151,7 @@ dptr result;
 #ifdef CoExpr
 
    int first;
+   CURTSTATE();
 
    /*
     * Set activator in new co-expression.

@@ -15,6 +15,8 @@ operator{1} || cater(x, y)
       }
 
    body {
+      CURTSTATE();
+
       /*
        *  Optimization 1:  The strings to be concatenated are already
        *   adjacent in memory; no allocation is required.

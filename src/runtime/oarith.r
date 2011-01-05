@@ -911,6 +911,7 @@ C_integer n;
 dptr drslt;
    {
    double retval;
+   CURTSTATE();
 
    if (r == 0.0 && n <= 0) 
       ReturnErrNum(204, Error);

@@ -644,6 +644,7 @@ dptr dest;
 const dptr src;
    {
    word count;
+   CURTSTATE();
 
    count = BlkD(curpstate->eventsource,Coexpr)->actv_count;
    if (count != BlkD(*dest,Tvmonitored)->cur_actv)

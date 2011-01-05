@@ -201,7 +201,7 @@ extern struct descrip amperErrno;
 */
    extern struct b_cset k_ascii;	/* value of &ascii */
    extern struct b_cset k_cset;		/* value of &cset */
-   extern struct b_cset k_digits;	/* value of &lcase */
+   extern struct b_cset k_digits;	/* value of &digits */
    extern struct b_cset k_lcase;	/* value of &lcase */
    extern struct b_cset k_letters;	/* value of &letters */
    extern struct b_cset k_ucase;	/* value of &ucase */
@@ -222,11 +222,16 @@ extern struct descrip amperErrno;
       extern struct progstate *curpstate;
       extern struct progstate rootpstate;
    #ifdef Concurrent
-   /*
-    * This should be under something like HAS___THREAD, detected by autoconf.
-    */
+      #ifdef HAVE_KEYWORD__THREAD
+      /*
+       * HAVE_KEYWORD__THREAD should be detected by autoconf (and isn't yet).
+       */
       extern __thread struct threadstate roottstate; 
       extern __thread struct threadstate *curtstate;
+      #else					/* HAVE_KEYWORD__THREAD */
+      extern struct threadstate roottstate;
+      extern pthread_key_t tstate_key;
+      #endif					/* HAVE_KEYWORD__THREAD */
    #else					/* Concurrent */
       extern struct threadstate roottstate; 
       extern struct threadstate *curtstate;

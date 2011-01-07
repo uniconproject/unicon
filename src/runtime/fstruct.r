@@ -1829,6 +1829,13 @@ function{1} array(x[n])
 	 i_or_real = 2; /* real */
 	 bsize = sizeof(struct b_realarray) + (n-1) * sizeof(double);
 	 }
+      else if (is:list(x[n-1])) {
+	 /* get the first element of x[n-1], use it to set i_or_real */
+	 if (cplist2realarray(&x[n-1], &d, 0, BlkD(x[n-1],List)->size, 0) !=
+	     Succeeded)
+	    runerr(102, x[n-1]);
+	 return d;
+	 }
       else runerr(102, x[n-1]);
 
       if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) runerr(0);

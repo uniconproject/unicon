@@ -455,10 +455,8 @@ struct threadstate {
   word *Sp;		/* Stack pointer */
   int Ilevel;			/* Depth of recursion in interp() */
 
-#ifndef StackCheck
   word *Stack;				/* Interpreter stack */
   word *Stackend; 			/* End of interpreter stack */
-#endif					/* StackCheck */
 #endif					/* !COMPILER */
    dptr Glbl_argp; /*TLS*/			/* global argp */
 

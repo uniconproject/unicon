@@ -880,12 +880,12 @@ char *argv[];
    rootpstate.eventsource = nulldesc;
    rootpstate.Kywd_err = zerodesc;
 
-#ifdef HAVE_KEYWORD__THREAD
+#if !defined(Concurrent) || defined(HAVE_KEYWORD__THREAD)
    rootpstate.tstate = &roottstate;
    curtstate = &roottstate;
-#else					/* HAVE_KEYWORD__THREAD */
+#else					/* !Concurrent||HAVE_KEYWORD__THREAD */
    rootpstate.tstate = get_tstate();
-#endif					/* HAVE_KEYWORD__THREAD */
+#endif					/* !Concurrent||HAVE_KEYWORD__THREAD */
    init_threadstate(rootpstate.tstate);
 
    MakeInt(hdr.trace, &(rootpstate.Kywd_trc));

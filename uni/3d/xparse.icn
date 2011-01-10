@@ -363,7 +363,7 @@ method parseMeshMaterials()
 end
 
 method parseMeshNormals()
-   local nNormals, nFace
+   local nNormals, nFace, L, i
    jump_after("{")
    nNormals := parse_int()
    semicolon()
@@ -374,7 +374,14 @@ method parseMeshNormals()
    nFace := parse_int()
    semicolon()
    nextline()
-   parseArray(nFace, parseFaceNormals) # parseArray(nFaces, parseFace)
+   L:=parseArray(nFace, parseFaceNormals) # parseArray(nFaces, parseFace)
+   
+   if *L=*current_mesh.lst_face then
+      every i:=1 to nFace do
+	 current_mesh.lst_face[i].lst_normal_index := L[i]
+    else
+      DEBUGW("ERROR: The number of  face normals is not correct:", *L)   
+
    jump_after("}")
 end
 
@@ -393,7 +400,7 @@ method find_texture(tex_fname)
   
   texfnamebase := file_name(tex_fname)
   # try the model's dir
-  if xpath:=path_name(filename) then{
+  if xpath:=directory_name(filename) then{
     tex_fname2 := xpath || texfnamebase
     if stat(tex_fname2) then return tex_fname2
     }
@@ -785,14 +792,16 @@ procedure parseTextureCoords()
    return uv
 end
 
-procedure parseFaceNormals() # ignored so far
+procedure parseFaceNormals()
+   local L:=[]
     parse_int()
     semicolon()
     skip_whitespace()
-    (  parse_int_add_one() , coma() &
-       parse_int_add_one() , coma() &
-       parse_int_add_one() , semicolon()
+    (  put(L, parse_int_add_one()) , coma() &
+       put(L, parse_int_add_one()) , coma() &
+       put(L, parse_int_add_one()) , semicolon()
     )  | stop("bad face normal " )
+   return L
 end
 
 procedure parse_identifier()
@@ -803,16 +812,19 @@ end
 
 procedure parse_int_add_one()
    return (integer(tab(many(&digits))) + 1 )
+   stop("Error: parse_int_add_one")
 end
 
 procedure parse_int()
    return integer(tab(many(&digits)))
+   stop("Error: parse_int")
 end
 
 procedure parse_real()
    static dig_e
    initial dig_e := &digits++'.-e'
    return real(tab(many(dig_e)))
+   stop("Error: parse_real")
 end
 
 procedure nextline()
@@ -827,14 +839,14 @@ end
 
 procedure coma()
     tab(many(' \t'))
-    ="," | fail
+    ="," | fail # semicolon() | (move(-100 ) & stop(move(100)," ^comma expected^ ", move(100)))
     tab(many(' \t'))
     return
 end
 
 procedure semicolon()
     tab(many(' \t'))
-    =";" | fail
+    =";" | fail # | (move(-100 ) & stop(move(100)," ^semicolon expected^ ", move(100)))
     tab(many(' \t'))
     return
 end

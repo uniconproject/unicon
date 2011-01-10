@@ -23,7 +23,7 @@ class Mesh : BasicObject3D (
    lst_face,              # list of faces
    
    is_rigid,
-   whereToRenderList,
+   render_items,
    render_list_face_count
    )
 
@@ -39,6 +39,16 @@ class Mesh : BasicObject3D (
 
    method vertex_count()
       return *lst_vertex
+   end
+
+   method normals_count()
+      return *\lst_normal
+      return 0
+   end
+
+   method texture_coords_count()
+      return *\lst_texturecoords
+      return 0
    end
 
    method face_count()
@@ -57,290 +67,121 @@ class Mesh : BasicObject3D (
    end
 
    method texture_file_count()
-      local s
-      s:=texture_files()
-      return *s
+      return *texture_files()
    end
 
    method texture_files()
       local s:=set(), m
       every m:=!lst_material do
-        insert(s, \(m.textureFileName))
+        insert(s, m.get_texture_filename())
       return s
    end
 
-   method normalRender ()
-      local face, L, Ltex, Lnorm, currentMaterial, cm , oldMaterial, faceMaterial,  uv,
-            meshmod, i, diffuse, specular, emission, shininess, display_list, j, k, LL
+   method normal_render ()
+      local face, L, Ltex, Lnorm, currentMaterial, cm , oldMaterial:=-1, faceMaterial,  uv,
+            meshmod, i:=1, j,  LL, normod, render_item
             
-      meshmod :=  WAttrib("meshmode")
+      normod :=  WAttrib("normode"); meshmod :=  WAttrib("meshmode")
       WAttrib("meshmode=triangles")
-      
-      if /lst_vertex_final then lst_vertex_final:=lst_vertex
+     
+      /lst_vertex_final:=lst_vertex
       
       DEBUGW(" *vertex       : ", *lst_vertex)
       DEBUGW(" *vertex Final : ", *lst_vertex_final)
-      DEBUGW(" *Faces : ", *lst_face)
+      DEBUGW(" *Faces 	     : ", *lst_face)
       DEBUGW(" *texture      : ", *lst_texturecoords)
       
       PushMatrix()
-      
-      whereToRenderList := []
 
-   oldMaterial := -1
-   render_list_face_count := []
-   i:=1
-   k:=0
-   while i <= *lst_face do{
-      L := []
-      Ltex := []
-      Lnorm := []
-      
-      if \(lst_face[i].materialIndex) then{
-         currentMaterial := lst_face[i].materialIndex
-         faceMaterial := lst_face[i].materialIndex
-         }
-      else{
-         currentMaterial := 1
-         faceMaterial := 1
-         }
-        #if /lst_vertex_final then DEBUGW( "NOOOOOOOOOOOOOOOOOO!!!! ")
-      while *L <9000 & i<= *lst_face & currentMaterial= faceMaterial do{
-         face := lst_face[i]
-         every put(L, lst_vertex_final[ !face.lst_vertex_index ]["x"|"y"|"z"])
-	 
-	 #if \lst_normal then every put(Lnorm, lst_normal[ !face.lst_vertex_index ]["x"|"y"|"z"])
-	 
-	 k+:=*(face.lst_vertex_index)
-	 
-	 
-         
-         if *(face.lst_texcoord)>=3 then
-            every uv := !face.lst_texcoord do{
-               put(Ltex, uv.u )
-               put(Ltex, uv.v )
-               }
-         else
-            every uv := lst_texturecoords[ !face.lst_vertex_index ] do{
-               put(Ltex, uv.u )
-               put(Ltex, uv.v )
-               }
-         if \(lst_face[i].materialIndex) then
-            faceMaterial := lst_face[i].materialIndex
-         else
-            faceMaterial := currentMaterial
-
-         i +:= 1
-         }
+      render_list_face_count := []; render_items:=[]
+      i:=1
+      while i <= *lst_face do{
+	 L := [];  Ltex := [];  Lnorm := []
+	 currentMaterial := faceMaterial := ( lst_face[i].get_material_id() | 1 )
+	    
+	 while i<= *lst_face & currentMaterial= faceMaterial do{
+	    face := lst_face[i]
+	    every put(L, lst_vertex_final[ !face.lst_vertex_index ]["x" | "y" | "z"])
+	    every put(Ltex, lst_texturecoords[ !face.lst_vertex_index ]["u" | "v"])
+	    /lst_normal | every put(Lnorm, lst_normal[ !face.lst_normal_index ]["x"|"y"|"z"])
+	    faceMaterial := face.get_material_id()
+	    i +:= 1
+	    }
 	 
 	 put(render_list_face_count, *L)
 	 
-         if *Ltex > 1 then
-            Texcoord(Ltex)
-	 if *Lnorm>1 then
-	    Normals(Lnorm)
+	 if  *Ltex * 3/2 ~= *L then write("PROBLEM in texture coords")
+	 
+	 if *lst_material > 0 & oldMaterial~=currentMaterial then{
+	    cm := lst_material[currentMaterial]
+	    oldMaterial := currentMaterial
+	    if not (cm.apply()) then
+	       WAttrib("texmode")=="off" | WAttrib("texmode=off")
+	    }
 
-         if *lst_material > 0 & oldMaterial~=currentMaterial then{
-            cm := lst_material[currentMaterial]
-            oldMaterial := currentMaterial
-
-           diffuse := "diffuse " || string( cm.diffuse[1] * 65535 ) || "," ||
-                              string( cm.diffuse[2] * 65535 ) || "," ||
-                              string( cm.diffuse[3]  * 65535  )
-           #DEBUGW(diffuse)
-            emission := "emission " || string( cm.emissive[1] * 65535  ) || "," ||
-                              string( cm.emissive[2]* 65535  ) || "," ||
-                              string( cm.emissive[3]* 65535 )
-         #DEBUGW(emission)
-            specular := "specular " || string( cm.specular[1] * 65535 ) || "," ||
-                              string( cm.specular[2]* 65535 ) || "," ||
-                              string( cm.specular[3]* 65535 )
-         #DEBUGW(specular)
-            shininess := "shininess " || ( string(cm.power) | "50" )
-            
-          # DEBUGW( shininess )
-       
-
-            Fg("red")
-            Fg( diffuse || ";" || emission || ";" || specular || ";" ||shininess )
-            #Fg("65000, 65000, 65000")
-            #Fg( diffuse )
-            #Fg( emissive )
-            #Fg( specular )
-            #Fg( shininess )
-            #write("--------------------------")
-            #write(Fg())
-            #write("-------------------------------------------")
-
-            if \lst_material[currentMaterial].textureFileName then{              
-               if WAttrib("texmode")=="off" then WAttrib("texmode=on")               
-               Texture(lst_material[currentMaterial].textureFileName )
-	       DEBUGW( "Texture :", lst_material[currentMaterial].textureFileName )
-               }
-           else
-               if WAttrib("texmode")=="on" then WAttrib("texmode=off")
-           }
-	   
-	  # if *Lnorm==*L then{
-	  #    if WAttrib("normmode")~=="on" then
-	#	 WAttrib("normmode=on")
-	 #  }else WAttrib("normmode=auto")
-	      
-		 
+	 *Ltex = 0  | Texcoord(Ltex)
+	 (*Lnorm = 0 & WAttrib("normode=auto") ) | ( WAttrib("normode=on") & Normals(Lnorm))
 	
-
-         
-         #FillPolygon ( 0,0,0, 1,0,0, 1,1,0, 0,1,0)
-         
-        
-         display_list:= WindowContents()
-         
-	 LL := array(*L, 0.0)         
-         every j:=1 to *L do
-            LL[j] := L[j]
-         L:= ["FillPolygon",  176, LL ]
-         
-                 # construct a display list entry 
-	 #push(L, 176)         # redraw code for FillPolygon
-	 #push(L,"FillPolygon")
- 
-         put ( display_list, L )
-         put(whereToRenderList, *display_list)
-
-	 #write("L=")
-	 #every writes( " ",!L)
-	 #write()
-
-      } # while
+	 render_item := FillPolygon(L)  
+	 put(render_items, render_item)
+	 
+	 } # while
       
-         PopMatrix()
-
-         if WAttrib("texmode")=="on" then WAttrib("texmode=off")
-         WAttrib("meshmode="||string(meshmod))
-	 #WAttrib("normmode=auto")
-
+      PopMatrix()
+      
+      WAttrib("texmode")=="off" | WAttrib("texmode=off")
+      WAttrib("meshmode="||string(meshmod))
+      WAttrib("normode")==normod |  WAttrib("normode="||normod)
    end
    
-   method OLD_specialRender()
+   #
+   #  update the mesh directly in the display list. No new render items is added to the list
+   #
+   method update_render()
       local i, face, L, currentMaterial, oldMaterial, faceMaterial,  uv,
-            display_list_index, next_index, display_list
- 
-  oldMaterial := -1
-  next_index := 0
-
-   i:=1
-   while i <= *lst_face do{
-      L := []
-
-      if \(lst_face[i].materialIndex) then{
-         currentMaterial := lst_face[i].materialIndex
-         faceMaterial := lst_face[i].materialIndex
-         }
-      else{
-         currentMaterial := 1
-         faceMaterial := 1
-         }
-
-      while *L <9000 & i<= *lst_face & currentMaterial= faceMaterial do{
-         face := lst_face[i]
-         every put(L, lst_vertex_final[ !face.lst_vertex_index ]["x"|"y"|"z"])
-     
-         if \(lst_face[i].materialIndex) then
-            faceMaterial := lst_face[i].materialIndex
-         else
-            faceMaterial := currentMaterial
-
-         i +:= 1
-         }
-         if *lst_material > 0 & oldMaterial~=currentMaterial then
-            oldMaterial := currentMaterial
-
-         display_list:= WindowContents()
+	    index, display_item, k, v, n
    
-         # construct a display list entry 
+      oldMaterial := -1
+      index := 0
+      i:=1
+      while i <= *lst_face do{
 	 
-	 push(L, 176)         # redraw code for FillPolygon
-	 push(L,"FillPolygon")
-	 
-         #L := RealArray(*L, 0)
-         #every i:=1 to *L do
-         #   RealArrayElem(LL,i, L[i])
-         #L:= ["FillPolygon",  176, LL ]
-	 
-	 
-	 next_index +:= 1
-	 display_list_index := whereToRenderList[next_index]
- 
-         #write("display_list[display_list_index]:=L")
-	 display_list[display_list_index]:=L
-	 
-	 #write("L=")
-	 #every writes( " ",!L)
-	 #write()
-	 
-         
-         #FillPolygon ! L 
-      } # while
-   end
-   
-   
-   method specialRender()
-   local i, face, L, LL, currentMaterial, oldMaterial, faceMaterial,  uv,
-   display_list_index, next_index, display_list, k, v, n
-   
-   oldMaterial := -1
-   next_index := 0
-   display_list:= WindowContents()
-   
-   i:=1
-   
-   while i <= *lst_face do{
-      
-      if \(lst_face[i].materialIndex) then{
-	 currentMaterial := lst_face[i].materialIndex
-	 faceMaterial := lst_face[i].materialIndex
-      }
-      else{
-	 currentMaterial := 1
-	 faceMaterial := 1
-      }
-      #L := []
-      k:=1
-      next_index +:= 1
-      #write("*************** *render= ", whereToRenderList[next_index])
-      display_list_index := whereToRenderList[next_index]
-      LL := display_list[display_list_index][3] # list(render_list_face_count[next_index])
-      n:=render_list_face_count[next_index]
-      while k <n  & i<= *lst_face & currentMaterial= faceMaterial do{
-	 face := lst_face[i]
- 
-	 v := lst_vertex_final[face.lst_vertex_index[1]]
-	 LL[k]:= v.x
-	 LL[k+1]:= v.y
-	 LL[k+2]:= v.z
-	 v := lst_vertex_final[face.lst_vertex_index[2]]
-	 LL[k+3]:= v.x
-	 LL[k+4]:= v.y
-	 LL[k+5]:= v.z
-	 v := lst_vertex_final[face.lst_vertex_index[3]]
-	 LL[k+6]:= v.x
-	 LL[k+7]:= v.y
-	 LL[k+8]:= v.z
-	 k+:=9
-	 
-	 if \(lst_face[i].materialIndex) then
-	    faceMaterial := lst_face[i].materialIndex
+	 if faceMaterial := lst_face[i].get_material_id() then
+	    currentMaterial := faceMaterial
 	 else
-	    faceMaterial := currentMaterial
+	    currentMaterial := faceMaterial := 1
 	       
-	       i +:= 1
-      }
-      
-      
-      if *lst_material > 0 & oldMaterial~=currentMaterial then
-	 oldMaterial := currentMaterial
+	 k:=1
+	 index +:= 1
+	 L :=  render_items[index][3]
+	 n:=render_list_face_count[index]
+	 while k <n  & i<= *lst_face & currentMaterial= faceMaterial do{
+	    face := lst_face[i]
+	    v := lst_vertex_final[face.lst_vertex_index[1]]
+	    L[k]:= v.x
+	    L[k+1]:= v.y
+	    L[k+2]:= v.z
+	    v := lst_vertex_final[face.lst_vertex_index[2]]
+	    L[k+3]:= v.x
+	    L[k+4]:= v.y
+	    L[k+5]:= v.z
+	    v := lst_vertex_final[face.lst_vertex_index[3]]
+	    L[k+6]:= v.x
+	    L[k+7]:= v.y
+	    L[k+8]:= v.z
+	    k+:=9
+	    
+	    if not(faceMaterial := face.get_material_id()) then
+	       faceMaterial := currentMaterial
+		  
+	    i +:= 1
+	    }
 	 
-   } # while
+	 
+	 if *lst_material > 0 & oldMaterial~=currentMaterial then
+	    oldMaterial := currentMaterial
+	    
+	 } # while
    end
    
    
@@ -349,10 +190,10 @@ class Mesh : BasicObject3D (
 
       DEBUGW ( "  rendering Mesh......   vx=", image(*lst_vertex), "   faces=", image(*lst_face))
 
-      if /whereToRenderList then
-         normalRender()
+      if /render_items then
+         normal_render()
       else
-         specialRender()
+         update_render()
       end
 
    method addMaterial(newMaterial)
@@ -405,6 +246,12 @@ class Mesh : BasicObject3D (
          v.y +:= ty
          v.z +:= tz
          }
+   end
+
+   method flip_texcoord()
+      local uv
+      every uv := !lst_texturecoords do 
+	 uv.v := 1.0 - uv.v
    end
    
    method rotate_vx(angle, axis)

@@ -80,48 +80,51 @@ class ModelObject3D:BasicObject3D(
    end
 
    method vertex_count()
-     local c:=0, mesh
-      every mesh:=!lst_mesh do
-        c+:=mesh.vertex_count()
+     local c:=0
+      every c+:=(!lst_mesh).vertex_count()
+      return c
+   end
+
+   method normals_count()
+     local c:=0
+      every c+:= (!lst_mesh).normals_count()
+      return c
+   end
+
+   method texture_coords_count()
+     local c:=0
+      every c+:=(!lst_mesh).texture_coords_count()
       return c
    end
 
    method face_count()
-     local c:=0, mesh
-     every mesh:=!lst_mesh do
-        c+:=mesh.face_count()
+     local c:=0
+     every c+:=(!lst_mesh).face_count()
       return c
    end
   
    method material_count()
-     local mesh, c:=0
-     every mesh:=!lst_mesh do
-        c+:=mesh.material_count()
+     local c:=0
+     every c+:=(!lst_mesh).material_count()
       return c
    end
 
    method texmaterial_count()
-      local mesh, c:=0
-      every mesh:=!lst_mesh do
-         c+:=mesh.material_count()
+      local c:=0
+      every c+:=(!lst_mesh).texmaterial_count()
       return c
    end
 
    method texture_files()
-      local s:=set(), L:=[], mesh
-      every mesh:=!lst_mesh do
-         s++:=mesh.texture_files()
+      local s:=set(), L:=[]
+      every s++:=(!lst_mesh).texture_files()
       every put(L, !s)
       return L
    end
 
    method texture_files_count()
-      local s
-      s:=texture_files()
-      return *s
+      return *texture_files()
    end
-
-
    
    method meshes()
       every suspend !lst_mesh
@@ -131,6 +134,9 @@ class ModelObject3D:BasicObject3D(
       put(lst_mesh, mesh)
    end
 
+   method flip_texcoord()
+      every (!lst_mesh).flip_texcoord()
+   end
   
    method render_details()
       local mesh

@@ -14,6 +14,7 @@ class World(
 method load(fname, size)
   if \fname then{
     mod3d := SkinnedModelObject3D("mod3d", "bone_mesh_final")
+    #mod3d.set_texture_format("gif")
     logger.logit("Loading " || fname || ". Please wait...")
     mod3d.load(fname, "walk")
     logger.logit("Done loading.")
@@ -30,8 +31,13 @@ method render()
 
   tmpw := &window
   &window := w3d
-  #EraseArea()
+  EraseArea()
   Fg("red")
+  WAttrib("light0=diffuse white; ambient white; specular white; position 5.0, 5.0, 5.0")
+  WAttrib("light1=diffuse white; ambient white; specular white; position 5.0, 5.0, -5.0")
+  WAttrib("light0=on")
+  WAttrib("light1=on")
+  
   
   logger.logit("Rendering...")
   t:=&time
@@ -89,16 +95,15 @@ method handle_event()
 	  "e"  : cam.slide( 0, 0.1)
 	  "E"  : cam.slide( 0,-0.1)
 	  
-	  "3"  :  write(d+:= 0.2)
-	  "4"  :  write(d-:= 0.2)
+	  "3"  :  logger.logit("camera step: ", d+:= 0.2)
+	  "4"  :  logger.logit("camera step: ", d-:= 0.2)
 	  
 	  
-	  "1"  : mod3d.animationc.faster()
-	  "2"  : mod3d.animationc.slower()
+	  "1"  : logger.logit("animation step: ", mod3d.animationc.faster() )
+	  "2"  : logger.logit("animation step: ", mod3d.animationc.slower() )
 	  "0"  : (/auto_refresh:=1) | auto_refresh:=&null
 	  
 	  "+"  : {
-	    write("new frame----------------")
 	    mod3d.calc_animation()
 	  }
 	  " "  :{ 
@@ -130,8 +135,8 @@ method handle_event()
     fr+:=1
     
     if t3-t > 5000 then{
-       write("refresh time", t3 - t2)
-       write( fr / 5.0, " fps")
+       #write("refresh time", t3 - t2)
+       logger.logit( fr / 5.0, " fps")
        t:=t3
        fr:=0
        }

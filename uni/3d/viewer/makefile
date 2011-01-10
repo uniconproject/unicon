@@ -9,6 +9,10 @@ TARGET=u3dview
 
 all: $(UFILES) $(TARGET)
 
+pure:
+	$(MAKE) clean
+	$(MAKE) all
+
 $(TARGET): $(UFILES) 
 	$(UC) -o $(TARGET) $(UFILES)
 	

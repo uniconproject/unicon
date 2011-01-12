@@ -617,12 +617,15 @@ struct threadstate *init_tstate()
    struct threadstate *mytstate = malloc(sizeof(struct threadstate));
    if (mytstate == NULL) return NULL;
    pthread_setspecific(tstate_key, (void *)mytstate);
+   return mytstate;
 }
 
 struct threadstate *get_tstate()
 {
+   struct threadstate *mytstate;
    /* look up the tstate */
-   return (struct threadstate *)pthread_getspecific(tstate_key);
+   mytstate = (struct threadstate *)pthread_getspecific(tstate_key);
+   return (mytstate ? mytstate : init_tstate());
 }
 
 #endif					/* HAVE_KEYWORD__THREAD */

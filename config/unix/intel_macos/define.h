@@ -9,3 +9,4 @@
 #define MacOSX
 /* LoadFunc not implemented */
 
+#define NoKeyword__Thread 1

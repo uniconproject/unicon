@@ -324,7 +324,14 @@ void main(int argc, char **argv)
    {
    int i, slen;
 
-   CURTSTATE();
+#ifdef Concurrent
+#ifndef HAVE_KEYWORD__THREAD
+   struct threadstate *curtstate;
+   pthread_key_create(&tstate_key, NULL);
+   curtstate = get_tstate();
+#endif					/* HAVE_KEYWORD__THREAD */
+#endif					/* Concurrent */
+
 #if WildCards
 #ifndef MSWindows
    ExpandArgv(&argc, &argv);

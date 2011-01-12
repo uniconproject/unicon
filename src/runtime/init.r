@@ -828,9 +828,6 @@ char *argv[];
 #endif					/* OS2 */
 
 #ifdef Concurrent
-#ifndef HAVE_KEYWORD__THREAD
-   pthread_key_create(&tstate_key, NULL);
-#endif					/* HAVE_KEYWORD__THREAD */
   {
    int i;
    for(i=0; i<NUM_STATIC_MUTEXES; i++)

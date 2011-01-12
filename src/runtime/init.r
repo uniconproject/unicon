@@ -834,6 +834,7 @@ char *argv[];
   }
 
    pthread_mutex_init(&mutex_mutex, NULL);
+   pthread_mutex_init(&mutex_noMTevents, NULL);
 
    pthread_mutex_init(&mutex_pollevent, NULL);
    pthread_mutex_init(&mutex_recid, NULL);
@@ -2061,6 +2062,11 @@ void datainit()
    k_errout.title = T_File;
    k_input.title = T_File;
    k_output.title = T_File;
+#ifdef Concurrent
+   pthread_mutex_init(&(k_errout.mutex), NULL);
+   pthread_mutex_init(&(k_input.mutex), NULL);
+   pthread_mutex_init(&(k_output.mutex), NULL);
+#endif					/* Concurrent */
 #endif					/* MultiThread */
 
 #ifdef MSWindows

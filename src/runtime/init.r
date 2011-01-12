@@ -165,7 +165,6 @@ struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 pthread_mutex_t mutex_stklist;
 pthread_mutex_t mutex_pollevent;
 pthread_mutex_t mutex_recid;
-pthread_mutex_t mutex_krandom;
 
 pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 #endif					/* Concurrent */
@@ -2018,11 +2017,11 @@ word getrandom()
    word krandom;
    int i;
    time_t t;
-   struct tm *ct;
+   struct tm *ct, ctstruct;
 
-   MUTEX_LOCK(mutex_krandom, "mutex_krandom");
    time(&t);
-   ct = localtime(&t);
+   ct = localtime_r(&t, &ctstruct);
+   if (ct == NULL) return 0;
    /* map &clock */
    krandom = ((ct->tm_sec % 10)*10+ct->tm_sec/10)*10+
        ((ct->tm_min % 10)*10+ct->tm_min/10)*10+
@@ -2030,10 +2029,13 @@ word getrandom()
    /* + map &date */
    krandom += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday;
    /* + map &time */
-   krandom += millisec();
+
+#ifndef HAVE_KEYWORD__THREAD
    ncalls++;
-   krandom += 1009 * ncalls;
-   MUTEX_UNLOCK(mutex_krandom, "mutex_krandom");
+   krandom += millisec() + 1009 * ncalls;
+#else
+   krandom += millisec() + 1009 * (int)get_tstate();
+#endif
    return krandom;
 #else					/* NoRandomize */
    return 0;

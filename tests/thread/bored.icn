@@ -1,0 +1,253 @@
+#
+# Author: Jafar Al-Gharaibeh
+# 01/01/2011
+#
+# Bored threads : an example program that illustrates the use fo threads and mutexs
+# Story: Once upon a time, few threads were running on a computer in a small lab.
+# The computer was sitting idle, and the threads were just sitting doing nothing
+# most of the time. They got bored! so they decided to play a game. There was a thread
+# called  Master who is known to "lie" sometimes. And there were three other threads with
+# different personalities, they were called Trust, Notrust, Doubt.
+# The game is as follows, Master thread picks a number randomly (1 to max) and asks the other
+# threads to guess that number. When the threads make uncorrect guesses the Master tries
+# to give them hints so they can make better guesses, but as mentioned earlier, the Master
+# can't be fully trusted.
+# The current implementation of the program assumes the following
+#  1. The game is over as soon as one of the threads makes a correct guess
+#  2. Master can't lie about a correct guess (otherwise the game will noe make sense).
+#  3. When a thread makes an uncorrect guess, the master tells him if the guess is
+#     less than the real answer or greater than it. But the master might lie.
+#  4. Master decided to give an honest answer 50% of the time, and a random answer
+#     in the remaining 50%. So, on average, Master is honest 75% of the time.
+#  5. Thread ***Trust has faith in Master. He always trusts Master's hints.
+#     currently, Trust uses Master's hints to do a binary serach for the correct answer
+#  6. Thread ***Notrust has no faith in Master and decided to ignore all of his hints.
+#      currently, he just make sequential guesses.
+#  7. Thread ***Doubt likes Master but he knows he can't trust him always. Doubt decided to
+#     follow Master's advice 2/3 of the time and make his random guess 1/3 of the time. He uses
+#      these information to do a binary search for the answer.
+#  8. Threads Trust and Doubt simply restart their search if they reach a deadend.
+#
+#  That is it for now! future improvments might include variations of the behavior of the threads
+#  and the addition of new threads like a thread who picks his guesses randomly or a smart thread
+#  who remembers the history of the Master's hints and try to make a better guess based on that
+
+class MsgData(
+  gs,		# the thread guess
+  mtx_gs,	# mutex to protect gs
+  rp,		# the master reply
+  mtx_rp	# mutex to protect rp
+  )
+  
+  # post a msg from a thread to the master
+  method send_guess(g)
+    lock(mtx_gs)
+    gs := g
+    unlock(mtx_gs)
+  end
+
+  # get a msg sent by a thread to master
+  method get_guess()
+    local g
+    \gs | fail
+    lock(mtx_gs)
+    g:=gs
+    gs:=&null
+    unlock(mtx_gs)
+    return \g
+  end
+
+  # get a msg posted by the master to a thread
+  method get_reply()
+    local r
+    \rp | fail
+    lock(mtx_rp)
+    r:=rp
+    rp:=&null
+    unlock(mtx_rp)
+    return \r
+  end
+
+  # post a reply from the master to a thread
+  method send_reply(r)
+    lock(mtx_rp)
+    rp := r
+    unlock(mtx_rp)
+  end
+
+  initially
+    mtx_gs := mutex()
+    mtx_rp := mutex()
+end
+
+global msgs, # list that hold msgs between the threads and the master
+	    # msg[1] : master and thread 1
+	    # msg[2] : master and thread 2
+	    # and so forth...
+	    
+      go,   # flags the begining of the competetion between the threads
+      max,   # the max guess
+      done,
+      N	
+                                                                                                  
+procedure main(argv)                                                                                
+   local n:=3, threads:=[], answer, ways, names
+
+    ways:=[trust, notrust, doubt]
+    names := ["Trust", "Notrust", "Doubt"]
+    N := n
+    msgs:=[]
+    every 1 to n do put(msgs, MsgData())
+
+    every i:=1 to n do
+     put(threads, create work(i, msgs[i], ways[i], names[i]))
+
+    max := 2^16
+    
+    answer := ?max
+
+    write(" Master: I have a number in mind (^o^)''{", answer ,"} ...")
+    write(" Can you threads guess what is it ?")
+    every  thread(!threads)
+    t:=&now
+    go:=1
+    
+    process_guesses(answer, msgs)   # loop for every until we get a correct answer
+    
+    every join(!threads)
+                                                                                                    
+    write("time:", &now-t, " seconds")                                                               
+end
+
+procedure process_guesses(answer, msgs)
+  local r
+  while /done do{
+    every msg:=!msgs do{
+	if g:=msg.get_guess() then{
+	    if g=answer then { done:= r := "="; msg.send_reply(r); next }
+	    else if g<answer then r:="<"
+	    else r:=">"
+
+	    if ?2=1 then # send a correct reply
+	      msg.send_reply(r)
+	    else # send a random reply
+	      msg.send_reply(?2("<",">"))
+	      
+	      
+	  }
+      }
+    }
+
+    #every msg:=!msgs do msg.send_reply("Game Over!")
+end
+
+
+procedure wait_to_go()
+  while /go
+end
+
+class GuessData(gs, lo, hi, GS, LO, HI)
+  method set(g, l, h)
+    GS:=gs := g
+    LO:=lo:=l
+    HI:=hi:=h
+  end
+  method reset()
+    gs := GS
+    lo:=LO
+    hi:=HI
+    return gs
+  end
+
+  method get()
+    return gs
+  end
+
+  method higher()
+    lo:=gs
+    return gs := (lo+hi)/2
+  end
+
+  method lower()
+    hi:=gs
+    return gs := (lo+hi)/2
+  end
+
+  method inc()
+    if gs<hi then gs+:=1
+    else gs:=lo
+    return gs
+  end
+
+  method dec()
+    if gs>lo then gs-:=1
+    else gs:=hi
+    return gs
+  end
+  
+  initially
+    GS:=gs
+    LO:=lo
+    HI:=hi
+end
+
+procedure work(id, msg, my_way, name)
+  local guess, i
+  wait_to_go()
+  write("Thread ", name," is trying to guess...")
+  lgs:=1
+  ugs:=max
+  guess := GuessData(max/2, 0, max )
+  i:=0
+  repeat{
+      i+:=1
+      msg.send_guess(guess.get())
+      delay(1)
+      until (r:=msg.get_reply() | \done)
+      if \done then break
+      guess.gs := my_way(guess, r)
+      }
+  if r=="=" then
+    write("I'm thread ", name,  " (#guesses:", i, "). YES! :) The correct answer is:", guess.get() )
+  else
+    write("I'm thread ", name,  " (#guesses:", i, ").  FAILED! :(")
+end
+
+procedure trust(guess, r)
+  static last
+  initial last:=0
+
+   case r of {
+    "<" : guess.higher()
+    ">" : guess.lower()
+    "=" : return 0
+    default: return -1
+    }
+
+   if last=guess.get() then
+     return guess.reset()
+   
+   return last:=guess.get()
+end
+
+procedure notrust(guess, r)
+   if r=="=" then return 0
+   if r==("<"|">") then return guess.inc()
+   return -1
+end
+
+procedure doubt(guess, r)
+  static last
+  initial last:=0
+   case r of {
+    "<" : (?3>1 & guess.higher()) | guess.lower()
+    ">" : (?3>1 & guess.lower() ) | guess.higher()
+    "=" : return 0
+    default: return -1
+    }
+
+   if last=guess.get() then
+     return guess.reset()
+
+    return last:=guess.get()
+end

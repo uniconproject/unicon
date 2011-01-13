@@ -627,6 +627,11 @@ struct threadstate *get_tstate()
    mytstate = (struct threadstate *)pthread_getspecific(tstate_key);
    return (mytstate ? mytstate : init_tstate());
 }
+#else					/* HAVE_KEYWORD__THREAD */
+struct threadstate *get_tstate()
+{
+   return curtstate;
+}
 
 #endif					/* HAVE_KEYWORD__THREAD */
 #endif					/* Concurrent */

@@ -1107,11 +1107,21 @@
    
    #define MTX_GC_QUEUE		26
    
-   #define MTX_CONDVARS		27
+   #define MTX_QUALSIZE		27
+   
+   #define MTX_STKLIST		28
+   #define MTX_POLLEVENT	29
+   #define MTX_RECID		30
+   
+   #define MTX_NOMTEVENTS	31
+   #define MTX_MUTEXES		32
+   
+   
+   #define MTX_CONDVARS		33
    
   
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	28
+   #define NUM_STATIC_MUTEXES	34
 
    /* used by wait4GC function*/
    #define GC_GOTOSLEEP 0

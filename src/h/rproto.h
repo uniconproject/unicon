@@ -1017,7 +1017,7 @@ void *nctramp(void *arg);
 struct threadstate *get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */
 void handle_thread_error(int val);
-void wait4GC(int action);
+void thread_control(int action);
 void clean_threads();
 struct region *swap2publicheap(struct region * curr_private, 
 			       struct region * curr_public, 

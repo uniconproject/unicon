@@ -59,14 +59,8 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
 extern pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 
 extern struct tls_node *tlshead;
-extern pthread_mutex_t mutex_pollevent;
-extern pthread_mutex_t mutex_recid;
-extern pthread_mutex_t mutex_stklist;
-extern pthread_mutex_t *mutexes, mutex_mutex;
-extern int maxmutexes, nmutexes;
-
-extern pthread_mutex_t mutex_alcblk;
-extern pthread_mutex_t mutex_alcstr;
+extern pthread_mutex_t *mutexes;
+extern int nmutexes;
 
 extern pthread_t GCthread;
 extern int NARthreads;
@@ -76,12 +70,6 @@ extern sem_t sem_gc;
 extern pthread_cond_t* condvars;
 extern int* condvarsmtxs;
 extern ncondvars; 
-
-
-extern pthread_mutex_t* mutexes;
-extern pthread_mutex_t mutex_mutex;
-extern int nmutexes; 
-
 #endif					/* Concurrent */
 
 /*

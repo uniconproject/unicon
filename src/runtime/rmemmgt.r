@@ -283,120 +283,6 @@ uword segsize[] = {
    ((uword)HSlots) << 10,		/* segment 11 */
    };
 
-#ifdef Concurrent
-pthread_t GCthread;
-int NARthreads;
-pthread_cond_t cond_gc;
-sem_t sem_gc; 
-
-void wait4GC(action)
-int action; 
-{
-   static cond_nsuspended=0; /* #of waiting threads on the condition variable*/
-   static gc_queue=0;
-
-   CURTSTATE();
-   if (action==GC_WAKEUPCALL){ /* if I am the thread doing GC */
-      /* GC is over, reset GCthread and wakeup all threads*/
-
-      gc_queue--;
-      if (gc_queue) {
-	 MUTEX_UNLOCKID(MTX_GCTHREAD);
-	 sem_post(&sem_gc);
-	 /*printf(" finished GC, but have to sleep for another GC \n");*/
-	 wait4GC(GC_GOTOSLEEP);
-	 return;
-	 }
-
-      GCthread=NULL;
-      MUTEX_UNLOCKID(MTX_GCTHREAD);
-      MUTEX_LOCKID(MTX_COND_GC);
-      /* broadcast a wakeup call to all threads waiting on cond_gc*/
-      pthread_cond_broadcast(&cond_gc);
-      MUTEX_UNLOCKID(MTX_COND_GC);
-      /*printf("GCthread: in wait4GC.... I have just finished GC and woken up all threads DONE!\n");*/
-      fflush(stdout);
-      return;
-      }
-   else if (action==GC_STOPALLTHREADS) {
-      int i;
-      /*
-       * If there is a pending GC request, then block/sleep .
-       * And make sure we dont start a GC in the middle of starting
-       * a new Async thread. Precaution to avoid problems.
-       */
-      MUTEX_LOCKID(MTX_GC_QUEUE);
-      if (gc_queue) {
-	 gc_queue++;
-	 MUTEX_UNLOCKID(MTX_GC_QUEUE);
-	 sem_wait(&sem_gc); /* I'm part of the GC party now! Sleeping!!*/
-	 MUTEX_LOCKID(MTX_GCTHREAD);	
-	 }
-      else {
-	 gc_queue++;
-	 MUTEX_UNLOCKID(MTX_GC_QUEUE);
-	 MUTEX_LOCKID(MTX_GCTHREAD);
-	 /*
-	  * There might be cases where a new GC request is recieved
-	  * before all threads from a previous GC have woken up. I
-	  * have to wait for all threads to wakeup
-	  *  before I can start a new GC
-	  */
-	 while (cond_nsuspended); /* make sure no thread is still sleeping*/
-	 }
-	
-      fflush(stdout);
-      GCthread = pthread_self();
-
-      /* keep waiting until only one thread (current) is running*/
-      while ( NARthreads-gc_queue)/*sleep(1)*/; 
-
-      /*
-       * now it is safe to proceed with GC with only the current thread running
-       */
-      return;
-      }
-
-   /*
-    *  Check to see it is nesessary to do GC for the current thread.
-    *  Hopefully we will force GC to happen if that is the case.
-    */
-   else
-      if ((curtblock->end - curtblock->free) / (double) curtblock->size < 0.09)
-	 {
-	if (!reserve(Blocks, curtblock->end - curtblock->free + 100))
-	  fprintf(stderr, " Disaster! in wait4GC. \n");
-      return;
-    }
-  
-  /*printf("I'm a thread who is  gonna be sleeping 4 GC\n"); fflush(stdout);*/
-  /* the thread that gets here should block and wait for GC to finish*/
-  MUTEX_LOCKID(MTX_NARTHREADS);
-  NARthreads--;
-  MUTEX_UNLOCKID(MTX_NARTHREADS);
-  
-  /* lock MUTEX_COND_GC mutex and wait on the condition variable cond_gc.
-   * note that pthread_cond_wait will block the thread and will automatically
-   * and atomically unlock mutex while it waits. 
-   */
-  MUTEX_LOCKID(MTX_COND_GC);
-  cond_nsuspended++;
-  pthread_cond_wait(&cond_gc, &static_mutexes[MTX_COND_GC]); /*block!!*/
-  cond_nsuspended--;
-  MUTEX_UNLOCKID(MTX_COND_GC);
-  
-  /* wake up call recieved! GC is over. increment NARthread */
-  MUTEX_LOCKID(MTX_NARTHREADS); 
-  NARthreads++;
-  MUTEX_UNLOCKID(MTX_NARTHREADS);
-
-  /*printf("I'm a thread who just got a wake up call after GC\n");  fflush(stdout);*/
-return;
-}
-
-#endif					/* Concurrent */
-
-
 /*
  * initalloc - initialization routine to allocate memory regions
  */
@@ -547,7 +433,7 @@ int region;
 #if !COMPILER
    if (sp == NULL){
 #ifdef AAAConcurrent
-      wait4GC(1);  /* 1 is the flag to the function to wake up all of the waiting threads. */
+      thread_control(GC_WAKEUPCALL);  /* 1 wake up all threads. */
 #endif					/* Concurrent */
       return 0;
       }
@@ -708,7 +594,7 @@ int region;
 #endif					/* instrument allocation events */
 
 #ifdef AAAConcurrent
-      wait4GC(1);  /* 1 is the flag to the function to wake up all of the waiting threads. */
+      thread_control(GC_WAKEUPCALL);  /* wake up all threads. */
 #endif					/* Concurrent */
 
    return 1;

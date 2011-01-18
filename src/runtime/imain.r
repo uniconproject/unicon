@@ -1180,9 +1180,7 @@ void xmfree()
     *  nextstk fields, with stklist pointing to the head of the list.
     *  The list is traversed and each stack is freeing.
     */
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_LOCKID(MTX_STKLIST);
    ep = &stklist;
    while (*ep != NULL) {
       xep = *ep;
@@ -1207,9 +1205,7 @@ void xmfree()
       free((pointer)xep);
       stklist = NULL;
       }
-#ifdef Concurrent
-   pthread_mutex_unlock(&mutex_stklist);
-#endif					/* Concurrent */
+   MUTEX_UNLOCKID(MTX_STKLIST);
    }
 #endif					/* !COMPILER */
 

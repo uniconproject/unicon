@@ -2327,7 +2327,6 @@ int ncondvars;
 
 
 pthread_mutex_t* mutexes;
-pthread_mutex_t mutex_mutex;
 int maxmutexes;
 int nmutexes; 
 
@@ -2419,7 +2418,7 @@ end
 function{1} mutex(x)
    abstract { return integer }
    body{
-	pthread_mutex_lock(&mutex_mutex);
+	MUTEX_LOCKID(MTX_MUTEXES);
 	if(nmutexes==maxmutexes){
 	   maxmutexes = maxmutexes * 2 + 64;
 	   mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t));
@@ -2428,7 +2427,7 @@ function{1} mutex(x)
   	   }
 	pthread_mutex_init(mutexes+nmutexes, NULL);
         nmutexes++;
-	pthread_mutex_unlock(&mutex_mutex);
+	MUTEX_UNLOCKID(MTX_MUTEXES);
 	return C_integer nmutexes;
       }
 end
@@ -2567,7 +2566,7 @@ function{1} thread(x)
 	      * OR another thread is in a critical region and locked MTX_GCthread
 	      */
 	      if (GCthread)
-		wait4GC(0); /* I'm part of the GC party now! Sleeping!!*/
+		thread_control(GC_GOTOSLEEP); /* I'm part of the GC party now! Sleeping!!*/
 	      else
 		sleep(1);
 	    }

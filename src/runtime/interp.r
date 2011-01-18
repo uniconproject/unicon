@@ -673,7 +673,7 @@ Deliberate Syntax Error
       /* If there is a pending GC request, then block/sleep*/
       if (GCthread){
       	ExInterp_sp;
-	wait4GC(0);
+	thread_control(GC_GOTOSLEEP);
 	/*EntInterp_sp;*/
 	}
 #endif					/* Concurrent */
@@ -697,9 +697,9 @@ Deliberate Syntax Error
 
 	 case Op_Cset:		/* cset */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_ACSET],"MTX_OP_ACSET");
+	    MUTEX_LOCKID(MTX_OP_ACSET);
             if (ipc.op[-1] == Op_Acset) { 
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_ACSET], "MTX_OP_ACSET"); goto L_acset; }
+	      MUTEX_UNLOCKID(MTX_OP_ACSET); goto L_acset; }
 #else					/*Concurrent*/
 	    PutOp(Op_Acset);
 #endif					/*Concurrent*/
@@ -714,7 +714,7 @@ Deliberate Syntax Error
 	    PushAVal(opnd);
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_ACSET], "MTX_OP_ACSET");
+            MUTEX_UNLOCKID(MTX_OP_ACSET);
 	    break;
 
 	 case Op_Acset: 	/* cset, absolute address */
@@ -732,9 +732,9 @@ L_acset:
 
 	 case Op_Real:		/* real */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_AREAL], "MTX_OP_AREAL");
+	    MUTEX_LOCKID(MTX_OP_AREAL);
             if (ipc.op[-1] == Op_Areal) { 
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_AREAL], "MTX_OP_AREAL"); goto L_areal; }
+	      MUTEX_UNLOCKID(MTX_OP_AREAL); goto L_areal; }
 #else					/*Concurrent*/
 	    PutOp(Op_Areal);
 #endif					/*Concurrent*/
@@ -749,7 +749,7 @@ L_acset:
 #endif					/*Concurrent*/
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_AREAL], "MTX_OP_AREAL");
+            MUTEX_UNLOCKID(MTX_OP_AREAL);
 	    break;
 
 	 case Op_Areal: 	/* real, absolute address */
@@ -761,9 +761,9 @@ L_areal:
 
 	 case Op_Str:		/* string */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_ASTR], "MTX_OP_ASTR");
+	    MUTEX_LOCKID(MTX_OP_ASTR);
             if (ipc.op[-1] == Op_Astr) {
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_ASTR], "MTX_OP_ASTR"); goto L_astr; }
+	      MUTEX_UNLOCKID(MTX_OP_ASTR); goto L_astr; }
 #else					/*Concurrent*/
 	    PutOp(Op_Astr);
 #endif					/*Concurrent*/
@@ -795,7 +795,7 @@ L_areal:
 	    PushAVal(opnd);
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_ASTR],"MTX_OP_ASTR");
+            MUTEX_UNLOCKID(MTX_OP_ASTR);
 	    break;
 
 	 case Op_Astr:		/* string, absolute address */
@@ -814,9 +814,9 @@ L_astr:
 
 	 case Op_Global:	/* global */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_AGLOBAL], "MTX_OP_AGLOBAL");
+	    MUTEX_LOCKID(MTX_OP_AGLOBAL);
             if (ipc.op[-1] == Op_Aglobal) {
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_AGLOBAL],"MTX_OP_AGLOBAL"); goto L_aglobal; }
+	      MUTEX_UNLOCKID(MTX_OP_AGLOBAL); goto L_aglobal; }
 #else					/*Concurrent*/
 	    PutOp(Op_Aglobal);
 #endif					/*Concurrent*/
@@ -844,7 +844,7 @@ L_astr:
 #endif					/*Concurrent*/
 	    }
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_AGLOBAL], "MTX_OP_AGLOBAL");
+            MUTEX_UNLOCKID(MTX_OP_AGLOBAL);
 	    break;
 
 	 case Op_Aglobal:	/* global, absolute address */
@@ -860,9 +860,9 @@ L_aglobal:
 
 	 case Op_Static:	/* static */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_ASTATIC], "MTX_OP_ASTATIC");
+	    MUTEX_LOCKID(MTX_OP_ASTATIC);
             if (ipc.op[-1] == Op_Astatic) {
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_ASTATIC], "MTX_OP_ASTATIC"); goto L_astatic; }
+	      MUTEX_UNLOCKID(MTX_OP_ASTATIC); goto L_astatic; }
 #else					/*Concurrent*/
 	    PutOp(Op_Astatic);
 #endif					/*Concurrent*/
@@ -890,7 +890,7 @@ L_aglobal:
 #endif					/*Concurrent*/
 	    }
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_ASTATIC], "MTX_OP_ASTATIC");
+            MUTEX_UNLOCKID(MTX_OP_ASTATIC);
 	    break;
 
 	 case Op_Astatic:	/* static, absolute address */
@@ -1289,9 +1289,9 @@ invokej:
 
 	 case Op_Mark:		/* create expression frame marker */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_AMARK], "MTX_OP_AMARK");
+	    MUTEX_LOCKID(MTX_OP_AMARK);
             if (ipc.op[-1] == Op_Amark) {
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_AMARK], "MTX_OP_AMARK"); goto L_amark; }
+	      MUTEX_UNLOCKID(MTX_OP_AMARK); goto L_amark; }
 #else					/*Concurrent*/
 	    PutOp(Op_Amark);
 #endif					/*Concurrent*/
@@ -1305,7 +1305,7 @@ invokej:
 	    newefp = (struct ef_marker *)(rsp + 1);
 	    newefp->ef_failure.opnd = (word *)opnd;
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_AMARK], "MTX_OP_AMARK");
+            MUTEX_UNLOCKID(MTX_OP_AMARK);
 	    goto mark;
 
 	 case Op_Amark: 	/* mark with absolute fipc */
@@ -1931,9 +1931,9 @@ EntInterp_sp;
 
 	 case Op_Goto:		/* goto */
 #ifdef Concurrent
-	    MUTEX_LOCK(static_mutexes[MTX_OP_AGOTO], "MTX_OP_AGOTO");
+	    MUTEX_LOCKID(MTX_OP_AGOTO);
             if (ipc.op[-1] == Op_Agoto) {
-	      MUTEX_UNLOCK(static_mutexes[MTX_OP_AGOTO], "MTX_OP_AGOTO"); goto L_agoto; }
+	      MUTEX_UNLOCKID(MTX_OP_AGOTO); goto L_agoto; }
 #else					/*Concurrent*/
 	    PutOp(Op_Agoto);
 #endif					/*Concurrent*/
@@ -1946,7 +1946,7 @@ EntInterp_sp;
 #endif					/*Concurrent*/
 	    ipc.opnd = (word *)opnd;
 
-            MUTEX_UNLOCK(static_mutexes[MTX_OP_AGOTO], "MTX_OP_AGOTO");
+            MUTEX_UNLOCKID(MTX_OP_AGOTO);
 	    break;
 
 	 case Op_Agoto: 	/* goto absolute address */

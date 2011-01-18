@@ -876,14 +876,14 @@ int pollevent()
    int hm;
 #ifdef Concurrent
    int i;
-   i=pthread_mutex_trylock(&mutex_pollevent);
+   i=pthread_mutex_trylock(&static_mutexes[MTX_POLLEVENT]);
    if (i==EBUSY) return 400;
 #endif					/* Concurrent */
    for (wd = wdsplys; wd; wd = wd->next) {
       if ((hm = handle_misc(wd, NULL)) < 1) {
 	if (hm == -1){
 #ifdef Concurrent
-	  pthread_mutex_unlock(&mutex_pollevent);
+	  pthread_mutex_unlock(&static_mutexes[MTX_POLLEVENT]);
 #endif					/* Concurrent */
 	  return -1;
 	  }
@@ -893,7 +893,7 @@ int pollevent()
          }
       }
 #ifdef Concurrent
-   pthread_mutex_unlock(&mutex_pollevent);
+   pthread_mutex_unlock(&static_mutexes[MTX_POLLEVENT]);
 #endif	x				/* Concurrent */
    return 400;
    }

@@ -125,9 +125,6 @@ struct descrip k_main;			/* &main */
 int set_up = 0;				/* set-up switch */
 char *currend = NULL;			/* current end of memory region */
 word qualsize = QualLstSize;		/* size of quallist for fixed regions */
-#ifdef Concurrent 
-   pthread_mutex_t mutex_qualsize;
-#endif					/* Concurrent */
 
 word memcushion = RegionCushion;	/* memory region cushion factor */
 word memgrowth = RegionGrowth;		/* memory region growth factor */
@@ -162,10 +159,6 @@ struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 #endif					/* Concurrent */
 
 #ifdef Concurrent
-pthread_mutex_t mutex_stklist;
-pthread_mutex_t mutex_pollevent;
-pthread_mutex_t mutex_recid;
-
 pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 #endif					/* Concurrent */
 
@@ -833,21 +826,10 @@ char *argv[];
       pthread_mutex_init (&static_mutexes[i], NULL);
   }
 
-   pthread_mutex_init(&mutex_mutex, NULL);
-   pthread_mutex_init(&mutex_noMTevents, NULL);
-
-   pthread_mutex_init(&mutex_pollevent, NULL);
-   pthread_mutex_init(&mutex_recid, NULL);
-
    pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
    pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);
    pthread_mutex_init(&rootpstate.mutex_coll, NULL);
 
-   pthread_mutex_init(&mutex_alcblk, NULL);
-   pthread_mutex_init(&mutex_alcstr, NULL);
-   pthread_mutex_init(&mutex_stklist, NULL);
-   pthread_mutex_init(&mutex_qualsize, NULL);
-   
    pthread_cond_init(&cond_gc, NULL);
    sem_init(&sem_gc, 0, 0);
 #endif					/* Concurrent */
@@ -2521,17 +2503,17 @@ struct progstate *findprogramforblock(union block *p)
    struct b_coexpr *ce;
    struct progstate *tmpp;
    extern struct b_proc *stubrec;
-   MUTEX_LOCK(mutex_stklist, "mutex_stklist");
+   MUTEX_LOCKID(MTX_STKLIST);
    ce = stklist;
    while (ce != NULL) {
       tmpp = ce->program;
       if (InRange(tmpp->Code, p, tmpp->Elines)) {
-	 MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
+	 MUTEX_UNLOCKID(MTX_STKLIST);
 	 return tmpp;
 	 }
       ce = ce->nextstk;
       }
-   MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
+   MUTEX_UNLOCKID(MTX_STKLIST);
    return NULL;
 }
 

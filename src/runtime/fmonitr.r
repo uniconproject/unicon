@@ -345,10 +345,6 @@ char typech[MaxType+1];	/* output character for each type */
 
 int noMTevents;			/* don't produce events in EVAsgn */
 
-#ifdef Concurrent
-pthread_mutex_t mutex_noMTevents;
-#endif					/* Concurrent */
-
 #ifdef HaveProfil
 union { 			/* clock ticker -- keep in sync w/ interp.r */
    unsigned short s[16];	/* four counters */
@@ -398,13 +394,9 @@ void EVVariable(dptr dx, int eventcode)
     */
    curpstate->stringregion = parent->stringregion;
    parent->stringregion = rp;
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_noMTevents);
+   MUTEX_LOCKID(MTX_NOMTEVENTS);
    noMTevents++;
-   pthread_mutex_unlock(&mutex_noMTevents);
-#else					/* Concurrent */
-   noMTevents++;
-#endif					/* Concurrent */
+   MUTEX_UNLOCKID(MTX_NOMTEVENTS);
    i = get_name(dx,&(parent->eventval));
 
    if (i == GlobalName) {
@@ -448,13 +440,9 @@ void EVVariable(dptr dx, int eventcode)
 
    parent->stringregion = curpstate->stringregion;
    curpstate->stringregion = rp;
-#ifdef Concurrent
-   pthread_mutex_lock(&mutex_noMTevents);
+   MUTEX_LOCKID(MTX_NOMTEVENTS);
    noMTevents--;
-   pthread_mutex_unlock(&mutex_noMTevents);
-#else					/* Concurrent */
-   noMTevents--;
-#endif					/* Concurrent */
+   MUTEX_UNLOCKID(MTX_NOMTEVENTS);
    if (!is:null(curpstate->valuemask) &&
        (invaluemask(curpstate, eventcode, &(parent->eventval)) != Succeeded))
 	 return;

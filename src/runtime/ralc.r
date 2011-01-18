@@ -14,11 +14,6 @@ static struct region *findgap	(struct region *curr, word nbytes);
 
 extern word alcnum;
 
-#ifdef Concurrent 
-   pthread_mutex_t mutex_alcblk;
-   pthread_mutex_t mutex_alcstr;
-#endif					/* Concurrent */
-
 #ifndef MultiThread
 word coexp_ser = 2;	/* serial numbers for co-expressions; &main is 1 */
 word list_ser = 1;	/* serial numbers for lists */
@@ -173,10 +168,10 @@ struct b_coexpr *alccoexp()
    ep->line_num = 0;
    ep->freshblk = nulldesc;
    ep->es_actstk = NULL;
-   MUTEX_LOCK(mutex_stklist, "mutex_stklist");
+   MUTEX_LOCKID(MTX_STKLIST);
    ep->nextstk = stklist;
    stklist = ep;
-   MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
+   MUTEX_UNLOCKID(MTX_STKLIST);
    return ep;
    }
 #else					/* COMPILER */
@@ -283,10 +278,10 @@ struct b_coexpr *alccoexp()
 }
 #endif					/* PthreadCoswitch */
 
-   MUTEX_LOCK(mutex_stklist, "mutex_stklist");
+   MUTEX_LOCKID(MTX_STKLIST);
    ep->nextstk = stklist;
    stklist = ep;
-   MUTEX_UNLOCK(mutex_stklist, "mutex_stklist");
+   MUTEX_UNLOCKID(MTX_STKLIST);
    return ep;
    }
 #endif					/* COMPILER */
@@ -367,16 +362,16 @@ union block *f(int tcode)
       EVVal(sizeof(struct b_table), e_table);
       AlcFixBlk(pt, b_table, T_Table);
       ps = (struct b_set *)pt;
-      MUTEX_LOCK(static_mutexes[MTX_TABLE_SER], "MTX_TABLE_SER");
+      MUTEX_LOCKID(MTX_TABLE_SER);
       ps->id = table_ser++;
-      MUTEX_UNLOCK(static_mutexes[MTX_TABLE_SER], "MTX_TABLE_SER");
+      MUTEX_UNLOCKID(MTX_TABLE_SER);
       }
    else {	/* tcode == T_Set */
       EVVal(sizeof(struct b_set), e_set);
       AlcFixBlk(ps, b_set, T_Set);
-      MUTEX_LOCK(static_mutexes[MTX_SET_SER], "MTX_SET_SER");
+      MUTEX_LOCKID(MTX_SET_SER);
       ps->id = set_ser++;
-      MUTEX_UNLOCK(static_mutexes[MTX_SET_SER], "MTX_SET_SER");
+      MUTEX_UNLOCKID(MTX_SET_SER);
       }
    ps->size = 0;
    ps->mask = 0;
@@ -438,9 +433,9 @@ struct b_pattern *f(word stck_size)
    EVVal(sizeof (struct b_pelem), e_pelem);
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
-   MUTEX_LOCK(static_mutexes[MTX_PAT_SER], "MTX_PAT_SER");
+   MUTEX_LOCKID(MTX_PAT_SER);
    pheader->id = pat_ser++;
-   MUTEX_UNLOCK(static_mutexes[MTX_PAT_SER], "MTX_PAT_SER");
+   MUTEX_UNLOCKID(MTX_PAT_SER);
    pheader->pe = NULL;
    return pheader;
 }
@@ -492,9 +487,9 @@ struct b_list *alclisthdr(uword size, union block *bptr)
 
    AlcFixBlk(blk, b_list, T_List)
    blk->size = size;
-   MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
+   MUTEX_LOCKID(MTX_LIST_SER);
    blk->id = list_ser++;
-   MUTEX_UNLOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
+   MUTEX_UNLOCKID(MTX_LIST_SER);
    blk->listhead = bptr;
    blk->listtail = NULL;
 #ifdef Arrays
@@ -529,9 +524,9 @@ struct b_list *f(uword size, uword nslots)
    AlcFixBlk(blk, b_list, T_List)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
    blk->size = size;
-   MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
+   MUTEX_LOCKID(MTX_LIST_SER);
    blk->id = list_ser++;
-   MUTEX_UNLOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
+   MUTEX_UNLOCKID(MTX_LIST_SER);
 
    blk->listhead = blk->listtail = (union block *)lblk;
 
@@ -571,9 +566,9 @@ struct b_list *f(uword size, uword nslots)
    AlcFixBlk(blk, b_list, T_List)
    AlcBlk(lblk, b_lelem, T_Lelem, i)
    blk->size = size;
-   MUTEX_LOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
+   MUTEX_LOCKID(MTX_LIST_SER);
    blk->id = list_ser++;
-   MUTEX_UNLOCK(static_mutexes[MTX_LIST_SER], "MTX_LIST_SER");
+   MUTEX_UNLOCKID(MTX_LIST_SER);
    blk->listhead = blk->listtail = (union block *)lblk;
    lblk->blksize = i;
    lblk->nslots = nslots;
@@ -679,9 +674,9 @@ struct b_record *f(int nflds, union block *recptr)
    EVVal(sizeof(struct b_record) + (nflds-1)*sizeof(struct descrip),e_record);
    AlcVarBlk(blk, b_record, T_Record, nflds)
    blk->recdesc = trecptr;
-   MUTEX_LOCK(mutex_recid, "mutex_recid");
+   MUTEX_LOCKID(MTX_RECID);
    blk->id = (((struct b_proc *)recptr)->recid)++;
-   MUTEX_UNLOCK(mutex_recid, "mutex_recid");
+   MUTEX_UNLOCKID(MTX_RECID);
    return blk;
    }
 #enddef
@@ -778,10 +773,10 @@ char *f(register char *s, register word slen)
    StrLen(ts) = slen;
    StrLoc(ts) = s;
 #if E_String
-   MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
+   MUTEX_LOCKID(MTX_NOMTEVENTS);
    if (!noMTevents)
       EVVal(slen, e_string);
-   MUTEX_UNLOCK(mutex_noMTevents, "mutex_noMTevents");
+   MUTEX_UNLOCKID(MTX_NOMTEVENTS);
 #endif					/* E_String */
    s = StrLoc(ts);
 #endif					/* MultiThread */
@@ -1055,10 +1050,10 @@ char *f(int region, word nbytes)
          }
 #else 					/* Concurrent */
 
-   wait4GC(GC_STOPALLTHREADS);
+   thread_control(GC_STOPALLTHREADS);
    collect(region); /* try to collect the private region first */
    if (DiffPtrs(curr_private->end,curr_private->free) >= want){
-      wait4GC(GC_WAKEUPCALL);
+      thread_control(GC_WAKEUPCALL);
       return curr_private->free;
       }
       
@@ -1069,13 +1064,13 @@ char *f(int region, word nbytes)
       	 *pcurr = curr_private;
          collect(region);
          if (DiffPtrs( curr_private->end, curr_private->free) >= want){
-            wait4GC(GC_WAKEUPCALL);
+            thread_control(GC_WAKEUPCALL);
             return curr_private->free;
             }
          }
    
    /* GC has failed so far to  free enough memory, wake up all threads for now */   
-   wait4GC(GC_WAKEUPCALL); 
+   thread_control(GC_WAKEUPCALL); 
  #endif 					/* Concurrent */   
 
    /*
@@ -1106,9 +1101,9 @@ char *f(int region, word nbytes)
 #endif 					/* Concurrent */
       *pcurr = rp;
 #if e_tenurestring || e_tenureblock
-      MUTEX_LOCK(mutex_noMTevents, "mutex_noMTevents");
+      MUTEX_LOCKID(MTX_NOMTEVENTS);
       tmp_noMTevents = noMTevents;
-      MUTEX_UNLOCK(mutex_noMTevents, "mutex_noMTevents");
+      MUTEX_UNLOCKID(MTX_NOMTEVENTS);
 
       if (!tmp_noMTevents) {
          if (region == Strings) {
@@ -1131,18 +1126,18 @@ char *f(int region, word nbytes)
 #ifdef Concurrent
      printf(" !!!!!! we are disparate for memory now!! trying all options \n ");
    /* look in the public heaps, */
-   wait4GC(GC_STOPALLTHREADS); 
+   thread_control(GC_STOPALLTHREADS); 
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
       if (rp->size < want) {		/* if not collected earlier */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
          *pcurr = curr_private;
          collect(region);
          if (DiffPtrs(curr_private->end,curr_private->free) >= want){
-   	    wait4GC(GC_WAKEUPCALL); 
+   	    thread_control(GC_WAKEUPCALL); 
             return curr_private->free;
             }
          }
-   wait4GC(GC_WAKEUPCALL); 
+   thread_control(GC_WAKEUPCALL); 
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
    
 #else 					/* Concurrent */

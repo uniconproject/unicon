@@ -1180,6 +1180,11 @@ int pollevent()
    wbp w;
    MSG m;
    extern jmp_buf mark_sj;
+#ifdef Concurrent
+   int isbusy;
+   MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
+   if (isbusy) return 400;
+#endif					/* Concurrent */
 
    /* some while PeekMessage loops here, maybe one per window ? */
    while (PeekMessage(&m, NULL, 0, 0, PM_NOREMOVE)) {
@@ -1187,6 +1192,7 @@ int pollevent()
       TranslateMessage(&m);
       DispatchMessage(&m);
       }
+   MUTEX_UNLOCKID(MTX_POLLEVENT);      
    return 400;
    }
 

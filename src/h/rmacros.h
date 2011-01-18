@@ -1148,10 +1148,15 @@
   if ((retval=pthread_mutex_lock(&static_mutexes[mtx])) != 0) handle_thread_error(retval); }
 #define MUTEX_UNLOCKID(mtx) { int retval; \
   if ((retval=pthread_mutex_unlock(&static_mutexes[mtx])) != 0)  handle_thread_error(retval); }
- 
+
+#define MUTEX_TRYLOCKID(mtx, isbusy) { \
+if ((isbusy=pthread_mutex_lock(&static_mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+   {handle_thread_error(isbusy); isbusy=0;} }
+
 #else					/* Concurrent */
 #define MUTEX_LOCK( mtx, msg)
 #define MUTEX_UNLOCK( mtx, msg)
 #define MUTEX_LOCKID(mtx)
 #define MUTEX_UNLOCKID(mtx)
+#define MUTEX_TRYLOCKID(mtx, isbusy)
 #endif					/* Concurrent */

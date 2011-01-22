@@ -671,7 +671,7 @@ Deliberate Syntax Error
 
 #ifdef Concurrent
       /* If there is a pending GC request, then block/sleep*/
-      if (GCthread){
+      if (thread_call){
       	ExInterp_sp;
 	thread_control(GC_GOTOSLEEP);
 	/*EntInterp_sp;*/

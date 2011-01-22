@@ -2562,10 +2562,10 @@ function{1} thread(x)
 	do{
 	  i=pthread_mutex_trylock(&static_mutexes[MTX_GCTHREAD]);
 	  if (i==EBUSY){
-	     /* check to see if another thread and have already requested a GC. 
+	     /* check to see if another thread and have already requested a GC.
 	      * OR another thread is in a critical region and locked MTX_GCthread
 	      */
-	      if (GCthread)
+	      if (thread_call)
 		thread_control(GC_GOTOSLEEP); /* I'm part of the GC party now! Sleeping!!*/
 	      else
 		sleep(1);

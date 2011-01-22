@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.66 2011-01-05 22:42:02 jeffery Exp $
+ * $Id: fxposix.ri,v 1.67 2011-01-22 00:43:09 to_jafar Exp $
  */
 
 /*
@@ -1497,6 +1497,7 @@ function{0,1} wait(pid, options)
 	 strcat(retval, ":core");
 
 #else					/* NT */
+      {
       int termstat;
 
       while(options[i])
@@ -1511,6 +1512,7 @@ function{0,1} wait(pid, options)
 	 fail;
 	 }
       sprintf(retval, "%d terminated:%d", wpid, termstat);
+      }
 #endif					/* NT */
 
       String(result, retval);

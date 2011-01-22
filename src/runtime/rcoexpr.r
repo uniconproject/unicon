@@ -608,6 +608,7 @@ void handle_thread_error(int val)
 }
 
 pthread_t GCthread;
+int thread_call;
 int NARthreads;
 pthread_cond_t cond_gc;
 sem_t sem_gc; 
@@ -631,7 +632,7 @@ int action;
 	 return;
       }
       
-      GCthread=NULL;
+      thread_call=0;
       MUTEX_UNLOCKID(MTX_GCTHREAD);
       MUTEX_LOCKID(MTX_COND_GC);
       /* broadcast a wakeup call to all threads waiting on cond_gc*/
@@ -670,6 +671,8 @@ int action;
    
    fflush(stdout);
    GCthread = pthread_self();
+   thread_call=1;
+
    
    /* keep waiting until only one thread (current) is running*/
       while ( NARthreads-gc_queue)/*sleep(1)*/; 

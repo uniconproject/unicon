@@ -1244,8 +1244,11 @@ Deliberate Syntax Error
 
    /**/
 #ifdef Concurrent
-   GCthread=0;		/* The thread who requested a GC */
+   thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/
+#ifdef AAAMSWindows
+   ptw32_processInitialize();
+#endif  				/* MSWindows */
 #endif					/* Concurrent */
    
 

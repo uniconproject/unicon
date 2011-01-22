@@ -186,7 +186,7 @@
 #endif					/* UNIX */
 
 #ifdef HAVE_LIBPTHREAD
-#if !defined(Audio)
+#if !UNIX || !defined(Audio)
 #include <pthread.h>
 #endif					/* PthreadCoswitch & ! Audio */
 #include <semaphore.h>
@@ -360,6 +360,10 @@
 #endif					/* XWindows */
 #include <GL/glu.h>
 #endif					/* HAVE_LIBGL */
+
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif					/* HAVE_LIBPNG */
 
 #if HAVE_LIBZ
 

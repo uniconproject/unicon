@@ -63,6 +63,7 @@ extern pthread_mutex_t *mutexes;
 extern int nmutexes;
 
 extern pthread_t GCthread;
+extern int thread_call;
 extern int NARthreads;
 extern pthread_cond_t cond_gc;
 extern sem_t sem_gc; 

@@ -2006,7 +2006,13 @@ word getrandom()
    struct tm *ct, ctstruct;
 
    time(&t);
+
+#ifdef Concurrent
    ct = localtime_r(&t, &ctstruct);
+#else					/* Concurrent */
+   ct = localtime(&t);
+#endif					/* Concurrent */
+
    if (ct == NULL) return 0;
    /* map &clock */
    krandom = ((ct->tm_sec % 10)*10+ct->tm_sec/10)*10+

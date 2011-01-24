@@ -4668,7 +4668,7 @@ void getchildselection(wsp ws, childcontrol *cc, int *x, int *y)
 CHOOSEFONT cf;
 LOGFONT lf;
 
-int nativefontdialog(wbp w, char *buf, int flags, int fheight)
+int nativefontdialog(wbp w, char *buf, int flags, int fheight, char *colr)
 {
    strcpy(lf.lfFaceName, buf);
    lf.lfHeight = fheight;
@@ -4725,6 +4725,8 @@ int nativefontdialog(wbp w, char *buf, int flags, int fheight)
            ((lf.lfHeight > 0) ? lf.lfHeight : -lf.lfHeight),
            (lf.lfItalic ? ",italic" : ""),
 	   ((lf.lfWeight > 500) ? ",bold" : ""));
+   sprintf(colr,"%d,%d,%d",
+	   RED(cf.rgbColors),GREEN(cf.rgbColors),BLUE(cf.rgbColors));
    return Succeeded;
 }
 

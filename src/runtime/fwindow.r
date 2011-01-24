@@ -3029,7 +3029,7 @@ end
 
 "WinFontDialog(w,s) - choose a font for a window's context"
 
-function{0,1} WinFontDialog(argv[argc])
+function{0,2} WinFontDialog(argv[argc])
    abstract {
       return string
       }
@@ -3040,6 +3040,7 @@ function{0,1} WinFontDialog(argv[argc])
       int flags, t;
       tended char *s;
       char buf[64], *tmp = buf;
+      char colr[64];
       OptWindow(w);
 
       if (warg < argc) {
@@ -3050,9 +3051,12 @@ function{0,1} WinFontDialog(argv[argc])
 
       parsefont(s, buf, &flags, &fheight, &t);
 
-      if (nativefontdialog(w, buf, flags, fheight) == Failed) fail;
+      if (nativefontdialog(w, buf, flags, fheight, colr) == Failed) fail;
       StrLoc(result) = alcstr(buf, strlen(buf));
       StrLen(result) = strlen(buf);
+      suspend result;
+      StrLoc(result) = alcstr(colr, strlen(colr));
+      StrLen(result) = strlen(colr);
       return result;
       }
 end

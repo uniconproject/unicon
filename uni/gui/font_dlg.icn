@@ -3,6 +3,7 @@ $include "guih.icn"
 
 procedure fontdialog(font)
 $ifdef _UNIX
+   # TODO: need to use passed-in font as a default for this dialog
    d := FontDialog()
    d.show_modal()
    if font := \ (d.font) then {
@@ -14,9 +15,10 @@ $else
 $endif
 end
 
-class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok,
+class FontDialog : Dialog(
+   cancel, edit_fontcolor, label_4, label_5, ok,
    border_1, edit_fontname, edit_fontsize, edit_fontstyle, label_1, label_2,
-   label_3, font
+   label_3, font, fn, fsz, fst, fontcolor
    )
    method component_setup()
       self.setup()
@@ -35,11 +37,16 @@ class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok,
 
    method on_edit_fontcolor(ev)
       fontcolor := edit_fontcolor.selection_list[edit_fontcolor.get_selection()]
-      write("font color : ",fontcolor)
-      label_5.set_attribs("fg="||fontcolor)
+      label_5.set_attribs("font="||font,"fg="||fontcolor)
       self.init()
       self.resize()
       self.display()
+   end
+
+   method setfnt()
+      font := (\fn | "sans")
+      font ||:= "," || \fst
+      font ||:= "," || \fsz
    end
 
    method on_edit_fontname(ev)
@@ -48,9 +55,7 @@ class FontDialog : Dialog(cancel, edit_fontcolor, label_4, label_5, ok,
       if fst == "regular" then fst := &null
       else if fst == "bold italic" then fst := "bold,italic"
       fsz := edit_fontsize.selection_list[edit_fontsize.get_selection()]
-      font := fn
-      if \fst then font ||:= "," || fst
-      font ||:= "," || fsz
+      setfnt()
       label_5.set_attribs("font="||font)
       self.init()
       self.resize()

@@ -361,10 +361,6 @@
 #include <GL/glu.h>
 #endif					/* HAVE_LIBGL */
 
-#ifdef HAVE_LIBPNG
-#include <png.h>
-#endif					/* HAVE_LIBPNG */
-
 #if HAVE_LIBZ
 
 #  ifdef STDC

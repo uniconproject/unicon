@@ -819,6 +819,10 @@ char *argv[];
 
 #endif					/* OS2 */
 
+#if defined(HAVE_LIBPTHREAD) && !defined(SUN)
+   pthread_rwlock_init(&__environ_lock, NULL);
+#endif					/*HAVE_LIBPTHREAD && !SUN */
+
 #ifdef Concurrent
   {
    int i;

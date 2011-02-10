@@ -976,7 +976,12 @@
       #define deallocate    (curpstate->Deallocate)
       #define reserve       (curpstate->Reserve)
 
+#ifdef Concurrent
       #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); }
+#else					/* Concurrent */
+      #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); curtstate=p->tstate;}
+#endif					/* Concurrent */
+      
    #endif				/* MultiThread */
    
 #endif					/* COMPILER */

@@ -2103,11 +2103,9 @@ skipredirect:
 
 #ifdef HAVE_LIBPTHREAD
 
-#ifdef SUN
-extern pthread_rwlock_t __environ_lock;
-#else
+#ifndef SUN
 /* from netbsd.org, under the BSD license  */
-pthread_rwlock_t __environ_lock = PTHREAD_RWLOCK_INITIALIZER;
+pthread_rwlock_t __environ_lock;
 #endif
 
 extern char **environ;

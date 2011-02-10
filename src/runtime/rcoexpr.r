@@ -260,11 +260,12 @@ int first;
 #if COMPILER
    if (debug_info)
 #endif					/* COMPILER */
-      if (k_trace)
+      if (k_trace){
 #ifdef MultiThread
 	 if (swtch_typ != A_MTEvent)
 #endif					/* MultiThread */
-         cotrace(ccp, ncp, swtch_typ, valloc);
+	 cotrace(ccp, ncp, swtch_typ, valloc);
+	 }
 
 #ifndef Concurrent
    /*
@@ -297,6 +298,15 @@ int first;
    coexpr_fnc = ncp->fnc;
 #endif					/* COMPILER */
 
+#else					/* ! Concurrent */
+#if !COMPILER
+#ifdef MultiThread
+   /*
+    * Enter the program state of the co-expression being activated
+    */
+   ENTERPSTATE(ncp->program);
+#endif        				/* MultiThread */
+#endif					/* COMPILER */
 #endif					/* ! Concurrent */
 
 #ifdef MultiThread
@@ -309,28 +319,18 @@ int first;
 
 #ifdef PthreadCoswitch
    ncp->coexp_act = swtch_typ;
-#else					/* PthreadCoswitch */
-   coexp_act = swtch_typ;
-#endif					/* PthreadCoswitch */
-
-
-
-#ifdef PthreadCoswitch
 #ifdef Concurrent
    pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
 #else					/* Concurrent */
    pthreadcoswitch(ccp->cstate, ncp->cstate,first);
 #endif					/* Concurrent */
-#else					/* PthreadCoswitch */
-   coswitch(ccp->cstate, ncp->cstate,first);
-#endif					/* PthreadCoswitch */
-
-#ifdef PthreadCoswitch
    return ccp->coexp_act;
+   
 #else					/* PthreadCoswitch */
+   coexp_act = swtch_typ;
+   coswitch(ccp->cstate, ncp->cstate,first);
    return coexp_act;
 #endif					/* PthreadCoswitch */
-
 
 #endif        				/* CoExpr */
    }

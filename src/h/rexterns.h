@@ -51,6 +51,11 @@ extern word memcushion;		/* memory region cushion factor */
 extern word memgrowth;		/* memory region growth factor */
 extern uword stattotal;		/* cumulative total of all static allocations */
 				/* N.B. not currently set */
+
+#ifdef HAVE_LIBPTHREAD
+extern pthread_rwlock_t __environ_lock;
+#endif					/*HAVE_LIBPTHREAD && !SUN */
+   
 #ifndef Concurrent
 extern struct tend_desc *tend;  /* chain of tended descriptors */
 #endif					/* Concurrent */

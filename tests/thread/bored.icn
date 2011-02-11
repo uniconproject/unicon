@@ -100,31 +100,32 @@ procedure main(argv)
     every 1 to n do put(msgs, MsgData())
 
     every i:=1 to n do
-     put(threads, create work(i, msgs[i], ways[i], names[i]))
-
-    max := 2^16
-    
+      put(threads, create work(i, msgs[i], ways[i], names[i]))
+     
+    max := 2^17
     answer := ?max
-
-    write(" Master: I have a number in mind (^o^)''{", answer ,"} ...")
+     
+    every i:=1 to n do
+      put(threads, create process_guesses(n+i, answer, msgs[i]))
+     
+    write(" Master: I have a number in mind between 1 and ", max ," (^o^)''{", answer ,"} ...")
     write(" Can you threads guess what is it ?")
     every  thread(!threads)
     t:=&now
     go:=1
     
-    process_guesses(answer, msgs)   # loop for every until we get a correct answer
+    #process_guesses(answer, msgs)   # loop for every until we get a correct answer
     
     every join(!threads)
                                                                                                     
     write("time:", &now-t, " seconds")                                                               
 end
 
-procedure process_guesses(answer, msgs)
+procedure process_guesses(id, answer, msg)
   local r
   while /done do{
-    every msg:=!msgs do{
 	if g:=msg.get_guess() then{
-	    if g=answer then { done:= r := "="; msg.send_reply(r); next }
+	    if g=answer then { r := "="; msg.send_reply(r); done:= "="; }
 	    else if g<answer then r:="<"
 	    else r:=">"
 
@@ -132,15 +133,9 @@ procedure process_guesses(answer, msgs)
 	      msg.send_reply(r)
 	    else # send a random reply
 	      msg.send_reply(?2("<",">"))
-	      
-	      
-	  }
+	    }
       }
-    }
-
-    #every msg:=!msgs do msg.send_reply("Game Over!")
 end
-
 
 procedure wait_to_go()
   while /go
@@ -192,22 +187,22 @@ class GuessData(gs, lo, hi, GS, LO, HI)
 end
 
 procedure work(id, msg, my_way, name)
-  local guess, i
+  local guess, i, r, lgs, ugs
   wait_to_go()
   write("Thread ", name," is trying to guess...")
   lgs:=1
   ugs:=max
-  guess := GuessData(max/2, 0, max )
+  guess := GuessData(max/2, 1, max )
   i:=0
   repeat{
       i+:=1
       msg.send_guess(guess.get())
-      delay(1)
-      until (r:=msg.get_reply() | \done)
-      if \done then break
+      #delay(1)
+      while /done do { if r:=msg.get_reply() then break }
+      if (\r)=="=" | \done then break
       guess.gs := my_way(guess, r)
       }
-  if r=="=" then
+  if (\r)=="=" then
     write("I'm thread ", name,  " (#guesses:", i, "). YES! :) The correct answer is:", guess.get() )
   else
     write("I'm thread ", name,  " (#guesses:", i, ").  FAILED! :(")

@@ -936,24 +936,27 @@ end
 procedure selecticont()
 local cmd
    if not (cmd := mygetenv("ICONT")) then {
+
       #
       # if we find binaries via path search, use them; otherwise
       # try for binaries directory via &progname.  Won't be very
       # successful 
       #
-      cmd := (&features ? (="Binaries at " & tab(0))) |
-	  (&progname ? tab(find("unicon"))) | ""
+      cmd := ((&features ? (="Binaries at " & tab(0))) |
+              (&progname ? tab(find("unicon"))) | "")
+
       if &features=="Win32" & &features=="console window" then
          cmd ||:= "wicont"
       else
          cmd ||:= "icont"
       if &features=="Win32"then
-         cmd:=cmd||".exe"
+         cmd ||:= ".exe"
       }
       
    cmd := quotes(cmd)
    
-   if not stat(cmd) then write("warning: no icont found thought it would be ", cmd)
+   if not stat(cmd) then
+      write("warning: no icont found thought it would be\n\t", cmd)
    if &features=="Win32" & &features=="console window" then
       cmd ||:= " -s"
    return cmd

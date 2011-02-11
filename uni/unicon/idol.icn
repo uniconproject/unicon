@@ -329,10 +329,23 @@ class Class : declaration (supers,
        rv := self.fields$String(s)
        if *rv > 0 then rv ||:= ","
        if s~=="class" & *(\self.ifields)>0 then	{	# inherited fields
-         every l := !self.ifields do rv := rv || l.ident || ","
-         if /(superclass := classes$lookup(l.Class)) then
-   	  halt("class/resolve: couldn't find superclass ",sc)
-         if superclass$isvarg(l.ident) then rv := rv[1:-1]||"[],"
+	 every l := !self.ifields do {
+	    lid := l.ident
+	    if type(lid) == "string" then
+	       rv := rv || lid || ","
+	    else if type(lid)=="treenode" & lid.label == "arg3" then {
+	       rv := rv || (lid.children[1].s)
+	       if s=="class" then {
+		  rv := rv || ":" || lid.children[3].s
+		  }
+	       rv := rv || ","
+	       }
+	    else stop("Write(): can't handle ", type(ifi))
+	    }
+	 # resolve the last field in order to see if it is a vararg
+	 if /(superclass := classes$lookup(l.Class)) then
+	    halt("class/resolve: couldn't find superclass ",sc)
+	 if superclass$isvarg(l.ident) then rv := rv[1:-1]||"[],"
          }
        writes(f,rv[1:-1])
        }
@@ -410,7 +423,16 @@ class Class : declaration (supers,
     rv := ","
     rv ||:= self.fields$idTaque.String()		     # my fields
     if rv[-1] ~== "," then rv ||:= ","
-    every s := (!self.ifields).ident do rv := rv || s || "," # inherited fields
+
+    every ifi := (!self.ifields).ident do {
+       if type(ifi) == "string" then
+          rv := rv || ifi || "," # inherited fields
+       else if type(ifi) == "treenode" & ifi.label == "arg3" then {
+	    rv := rv || (ifi.children[1].s) || ","
+	    }
+       else stop("Write(): can't handle ", type(ifi))
+       }
+
     yyprint(rv[1:-1] || ")\n")
 
     #
@@ -454,7 +476,7 @@ class Class : declaration (supers,
 
 
     #
-    # If the class field list has defaults, write them out.
+    # If the class field list has or inherits defaults, write them out.
     #
     every fld := fields$foreach() do {
 	if type(fld) == "treenode" & fld.label == "arg3" then {
@@ -463,6 +485,13 @@ class Class : declaration (supers,
 	    yyprint("\n")
 	    }
 	}
+    every ifi := (!(self.ifields)).ident do {
+       if type(ifi) == "treenode" & ifi.label == "arg3" then {
+	  writes(f,"/",ifi.children[1].s, " := ")
+	  yyprint(ifi.children[3])
+	  yyprint("\n")
+	  }
+       }
 
 
     #
@@ -504,7 +533,16 @@ class Class : declaration (supers,
 	 else
 	    writes(f,",",fld)
 	 }
-      if \self.ifields then every writes(f,",",(!self.ifields).ident)
+      if \self.ifields then
+         every ifi := (!self.ifields).ident do {
+	    if type(ifi) == "string" then writes(f,",",ifi)
+	    else if type(ifi) == "treenode" & ifi.label == "arg3" then {
+	       writes(f, ",", ifi.children[1].s)
+	       }
+	    else {
+	       write(&errout, "unicon: system error inheriting ", type(ifi))
+	       }
+	    }
        yyprint(")\n  self.__s := self\n")
     if ((methods$foreach())$name()| (!self.imethods).ident) == "initially" then
 	  yyprint("  self.__m.initially(self) | fail\n")

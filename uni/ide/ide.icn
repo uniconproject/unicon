@@ -124,7 +124,7 @@ class IDE (
       local ceb
       findstring(findstr)
       ceb := CurrentEditBox()
-      first_x := (ceb.cursor_x- \(*dialog_value[1]))
+      first_x  := ceb.cursor_x - \(*dialog_value[1])
       second_x := ceb.cursor_x
       handle_select_str(e, first_x, second_x, ceb.cursor_y)
    end
@@ -228,8 +228,8 @@ class IDE (
    method new_tabitem(ev,x,filename,file_contents)
       local tab_item_new, EditBox
       tab_item_new := BufferTabItem()
-      if (x==1) then {
-         if (filename === "") then {
+      if x == 1 then {
+         if filename === "" then {
 	    nullfilename := &window
       	    &window  := &null
       	       Notice("Enter File Name ...")
@@ -266,7 +266,7 @@ class IDE (
             filefound := 1
             return
             }
-      if /filefound then{
+      if /filefound then {
          put(opened_files_list,filename)
          put(opened_files_locs,\filedirectory)
          }
@@ -281,8 +281,8 @@ class IDE (
    method new_project_tabitem(ev,x,filename,file_contents)
       local tab_item_new
       tab_item_new := TabItem()
-      if (x==1) then {
-         if (filename === "") then {
+      if x == 1 then {
+         if filename === "" then {
 	    nullfilename := &window
       	    &window  := &null
       	       Notice("Enter File Name ...")
@@ -291,7 +291,7 @@ class IDE (
          else  tab_item_new.set_label(filename)
          }
       else {
-         if (filename === "") then 
+         if filename === "" then 
       	    tab_item_new.set_label("Untitled")
          else tab_item_new.set_label(filename)
          }
@@ -577,7 +577,7 @@ $endif
 	    }
          }
       else {
-         c:= FileTabSet.get_tabitem(file_name(filename))
+         c := FileTabSet.get_tabitem(file_name(filename))
          FileTabSet.set_which_one(\c)
          }
       FileTabSet.resize()
@@ -589,8 +589,7 @@ $endif
    #  Open Project Menu Item Method
    #
    method handle_openproject(ev, projectname,fname)
-      local line, nchars, fd, file, found, which_tab, fin
-      local tab_id, c
+      local line, nchars, fd, file, found, which_tab, fin, tab_id, c
       if /projectname then {
 $ifdef _UNIX
          fd := HFileDialog()
@@ -660,8 +659,8 @@ $endif
       if /c then c :=  CurrentTabItem()
       # check the size of the filetabset, if it is size 1 then exit
       if *(FileTabSet.children) = 1 then {
-	  menubar.on_exit()
-      }
+	 menubar.on_exit()
+	 }
       FileTabSet.remove(c)
       MsgBox.set_contents(["closed " || (FileTabSet.get_which_one()).label])
       every i := 1 to *opened_files_list do
@@ -729,7 +728,7 @@ $endif
    method get_tabitem(lab)
       local c
       if (c:=!components).label == lab then return c
-      return &null
+      return
    end
    #
    #
@@ -774,7 +773,7 @@ $endif
          if \modified == 1 then {
             save_file(CurrentTabItem().label)
             }
-         every i:=1 to \*opened_files_list do
+         every i := 1 to \*opened_files_list do
             if CurrentTabItem().label === \opened_files_list[i] then
                filedirectory := opened_files_locs[i]
          }
@@ -786,9 +785,9 @@ $endif
       if /project then {
          if not (arglist := comp1file(\CurrentTabItem().label)) then {
             s := \CurrentTabItem().label #tab_label
-            if find(".icn", map(s))then {
+            if find(".icn", map(s)) then {
                s[find(".icn", map(s)) : 0] := ".u"
-               if s[1] ~== "-" & (not find(".", s))then s ||:= ".u"
+               if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
                }
             arglist := quotes(s)
             }
@@ -828,7 +827,8 @@ $endif
          while menu_1.menus[i] do {
             s := menu_1.menus[i].get_label()
             s[find(".icn", map(s)) : 0] := ".u"
-            if s[1] ~== "-" & (not find(".", s)) & find(".icn", map(s)) then s ||:= ".u"
+            if s[1] ~== "-" & (not find(".", s)) & find(".icn", map(s)) then
+	       s ||:= ".u"
             arglist ||:= s
             arglist ||:= " "
             i +:= 1
@@ -839,7 +839,8 @@ $ifdef _UNIX
              " " || arglist || " > "|| wiconlog || " 2>&1", lst, 1)
 $else
      if find(".icn",CurrentTabItem().label) then
-        system("wunicon -quiet -log " || wiconlog || " " ||  targs || " " || arglist, lst, 1)
+        system("wunicon -quiet -log " || wiconlog || " " ||  targs || " " ||
+	       arglist, lst, 1)
 $endif
       showanyerror(wiconlog, lst)
 
@@ -856,7 +857,7 @@ $endif
          }
          close(log1)
          remove(fn)
-         every i:=1 to *lst do {
+         every i := 1 to *lst do {
             if find(CurrentTabItem().label||":",lst[i]) then
                nerrors +:= 1
             }
@@ -887,6 +888,7 @@ $endif
          MsgBox.set_contents(lst)
          }
    end
+
    #
    # GotoErrorLine Method
    # Pick up the error from the selected line in the message window
@@ -901,7 +903,7 @@ $endif
          \MsgBox.refresh()
       \curLine ? {
          if ((fn:=((tab(any(&letters))||=":")|"")||
-            tab(many(&letters++&digits++' .\\/-')))& 
+            tab(many(&letters++&digits++' .\\/-'))) &
             = ":" & ln := integer(tab(many(&digits))) &= ":") then {
             errLine := "TRUE"
             if map(fn) ~== map(\tab_label) then {
@@ -993,14 +995,14 @@ $endif
 $ifdef _UNIX
       # path search, see if xterm exists on path, use it
       if pathfind("xterm", getenv("PATH")) then {
-	 if (fun:=open("uname","pr")) &
+	 if (fun := open("uname","pr")) &
 	     (unam := read(fun)) & close(fun) & match("Darwin",unam) then {
-	    console :="xterm -hold -e script " || wiconlog ||" "
-	    cmd :=console ||\cmd || " "
+	    console := "xterm -hold -e script " || wiconlog ||" "
+	    cmd := console || \cmd || " "
 	    }
 	 else {
-	    console :="xterm -hold -e script -c \""
-	    cmd :=console ||\cmd || " \" " || wiconlog
+	    console := "xterm -hold -e script -c \""
+	    cmd := console || \cmd || " \" " || wiconlog
 	    }
          }
       else #just run without "console || ..."
@@ -1009,8 +1011,8 @@ $else
      if fdir[0] == "\\" then
         fdir := fdir
      else fdir := fdir|| "\\"
-     if find(".icn",CurrentTabItem().label) then
-        cmd := "wiconx "||fdir||cmd
+     if find(".icn", CurrentTabItem().label) then
+        cmd := "wiconx " || fdir || cmd
      #cmd := "wiconx " || cmd
 $endif
 
@@ -1038,7 +1040,7 @@ $ifdef _UNIX
          compile_cmd_txt := "unicon"
 $else
       if find(".icn",tab_label) then
-         compile_cmd_txt := "wicont"
+         compile_cmd_txt := "wunicon"
 $endif
       if CurrentTabItem().label ==="Untitled" then {
          \MsgBox.set_contents(["Open a file to compile "])

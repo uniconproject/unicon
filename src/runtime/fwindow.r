@@ -2213,37 +2213,37 @@ function{0,1} ReadImage(argv[argc])
       OptTexWindow(w);
 
       if (is_texture)
-	 base=1;
+	 warg=1;
 
 
       if (argc - warg == 0)
 	 runerr(103,nulldesc);	
-      if (!cnv:C_string(argv[base], tmp))
-	 runerr(103,argv[base]);
+      if (!cnv:C_string(argv[warg], tmp))
+	 runerr(103,argv[warg]);
 
       /*
        * x and y must be integers; they default to the upper left pixel.
        */
-      if (argc - base < 2)
+      if (argc - warg < 2)
 	 x = -w->context->dx;
-      else if (!def:C_integer(argv[base+1], -w->context->dx, x))
+      else if (!def:C_integer(argv[warg+1], -w->context->dx, x))
 	 runerr(101, argv[warg+1]);
 
 
-      if (argc - base < 3)
+      if (argc - warg < 3)
 	 y = -w->context->dy;
-      else if (!def:C_integer(argv[base+2], -w->context->dy, y))
-         runerr(101, argv[base+2]);
+      else if (!def:C_integer(argv[warg+2], -w->context->dy, y))
+         runerr(101, argv[warg+2]);
 
 
       /*
        * p is an optional palette name.
        */
-      if (argc - base < 4 || is:null(argv[base+3])) p = 0;
+      if (argc - warg < 4 || is:null(argv[warg+3])) p = 0;
       else {
-         p = palnum(&argv[base+3]);
+         p = palnum(&argv[warg+3]);
          if (p == -1)
-            runerr(103, argv[base+3]);
+            runerr(103, argv[warg+3]);
          if (p == 0)
             fail;
          }

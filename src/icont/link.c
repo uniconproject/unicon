@@ -103,6 +103,38 @@ int lineno = 0;				/* current source line number */
 int fatals = 0;				/* number of errors encountered */
 
 /*
+ * cannotopen() - quitf with a detailed errno-based message
+ */
+void cannotopen(char *defaultmsg, char *filnam)
+{
+   char msgbuf[512];
+   sprintf(msgbuf, "%s %%s", defaultmsg);
+      switch (errno) {
+      case EACCES: strcat(msgbuf, " due to permissions"); break;
+      case EINTR: strcat(msgbuf, " due to interrupt"); break;
+      case EISDIR: strcat(msgbuf, ", cannot write to a dir"); break;
+      case EMFILE: strcat(msgbuf, "; app out of file handles"); break;
+      case ENAMETOOLONG: strcat(msgbuf, "\n-- name too long"); break;
+      case ENFILE: strcat(msgbuf,"; sys out of file handles"); break;
+      case ENOENT: strcat(msgbuf,"; does not exist"); break;
+      case ENOSPC: strcat(msgbuf,"; directory can't grow"); break;
+      case ENOTDIR: strcat(msgbuf,"; bogus path"); break;
+      case ENXIO: strcat(msgbuf,"; bogus device"); break;
+#if !NT
+      case ELOOP: strcat(msgbuf," due to symbolic link loop"); break;
+      case EOVERFLOW: strcat(msgbuf,"; file too long"); break;
+      case ETXTBSY: strcat(msgbuf,"; file is in use"); break;
+#endif					/* !NT */
+      case EROFS: strcat(msgbuf,"; read-only file system"); break;
+      case EINVAL: strcat(msgbuf,"; bogus mode?!"); break;
+      case ENOMEM: strcat(msgbuf,"; out of space"); break;
+      default: 
+      }
+   quitf(msgbuf,filnam);
+}
+
+
+/*
  *  ilink - link a number of files, returning error count
  */
 int ilink(ifiles,outname)
@@ -154,8 +186,9 @@ char *outname;
 	 infile = fopen(inname, ReadText);
 	 }
 
-      if (infile == NULL)
-         quitf("cannot open %s",inname);
+      if (infile == NULL) {
+	 cannotopen("cannot open", inname); /* die w/ detailed diagnostic */
+	 }
       readglob();
       fclose(infile);
       }
@@ -213,9 +246,15 @@ char *outname;
  */
 
    if (outfile == NULL) {		/* may exist, but can't open for "w" */
+      char thecwd[512];
       ofile = NULL;			/* so don't delete if it's there */
-      quitf("cannot create %s",outname);
+      if ((getcwd(thecwd, 511) != NULL) && strstr(thecwd, "Program Files"))
+	 quitf("cannot write %s to an installation directory\n"
+	       "Try a folder not under 'Program Files'.", outname);
+
+      cannotopen("cannot create", outname); /* die w/ detailed diagnostic */
       }
+
 
 #if MSDOS && (!NT)
    /*

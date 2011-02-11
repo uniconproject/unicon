@@ -1,7 +1,7 @@
 /*
  * fxposix.ri - posix interface
  *
- * $Id: fxposix.ri,v 1.67 2011-01-22 00:43:09 to_jafar Exp $
+ * $Id: fxposix.ri,v 1.68 2011-02-11 07:44:48 jeffery Exp $
  */
 
 /*
@@ -1663,7 +1663,18 @@ function{0,1} stat(f)
 	    static dptr constr;
 	    int nfields;
 
-            cnv:C_string(f, fname);
+	    /*
+	     * remove a layer of double quoting on filenames
+	     * such as "C:\Program Files\Unicon\bin\wicont.exe"
+	     */
+	    if ((StrLen(f)>1) && (StrLoc(f)[0] == '\"') &&
+		(StrLoc(f)[StrLen(f)-1] == '\"')) {
+	       StrLoc(f)++;
+	       StrLen(f)-=2;
+	       }
+
+            cnv:C_string(f, fname); /* can't fail, type_case says so */
+	
 	    IntVal(amperErrno) = 0;
 	    if (lstat(fname, &sbuf) != 0) {
 	       IntVal(amperErrno) = errno;

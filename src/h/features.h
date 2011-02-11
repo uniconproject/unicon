@@ -175,7 +175,7 @@
    Feature(1, "_LIBZ_COMPRESSION", "libz file compression")
 #endif					/* HAVE_LIBZ */
 
-#if HAVE_LIBJEG
+#if HAVE_LIBJPEG
    Feature(1, "_JPEG", "JPEG images")
 #endif					/* HAVE_LIBJPEG */
 

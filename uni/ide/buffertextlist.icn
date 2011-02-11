@@ -233,18 +233,18 @@ class BuffEditableTextList : EditableTextList(
       self.EditableTextList.handle_redo(e)
    end
 
-   method handle_press(e,recieved)
-      if /recieved & \mouse_locked then fail #lock mouse
+   method handle_press(e,received)
+      if /received & \mouse_locked then fail #lock mouse
       self.EditableTextList.handle_press(e)
    end
 
-   method handle_drag(e,recieved)
-      if /recieved & \mouse_locked then fail #lock mouse
+   method handle_drag(e,received)
+      if /received & \mouse_locked then fail #lock mouse
       self.EditableTextList.handle_drag(e)
    end
 
-   method handle_release(e,recieved)
-      if /recieved & \mouse_locked then fail #lock mouse
+   method handle_release(e,received)
+      if /received & \mouse_locked then fail #lock mouse
       self.EditableTextList.handle_release(e)
    end
 
@@ -508,12 +508,17 @@ class BuffEditableTextList : EditableTextList(
       }
    end
 
+   #
+   # The virtual x position of a line in the canvas, except
+   # that we have line numbering turned on at the left.
+   #
    method get_left_pos()
-      local lineno_space
-      lineno_space :=0
+      local lineno_space := 0
       # if \pegasus.line_no then
-      lineno_space := TextWidth(cwin,*contents) +3
-      return (lineno_space +(self.view.x - (\self.hsb).get_value()) | self.view.x)
+      #lineno_space := TextWidth(cwin,*contents) + 3
+      lineno_space := 35
+      return lineno_space +
+         ((self.view.x - (\self.hsb).get_value()) | self.view.x)
    end
 
    method draw(subject_x, subject_y, vx, vy, vw, vh)
@@ -581,7 +586,7 @@ class BuffEditableTextList : EditableTextList(
             }
          }
 
-      left_string_unicon ( self.cbwin, xp, yp, s, i )
+      left_string_unicon ( self.cbwin, xp, yp, detab(s, tab_width), i )
 
       if (v.index = \self.cursor_y) & 
          (v.first <= \self.cursor_x <= v.last) then {
@@ -645,8 +650,9 @@ class BuffEditableTextList : EditableTextList(
             }
          }
    end
+
    #
-   # I am not finished with this method - nclayton
+   # Ostensibly unfinished string search
    #
    method handle_stringsearch(s)
       local dlg
@@ -762,6 +768,8 @@ class BuffEditableTextList : EditableTextList(
       }
       # Draw the rest of the string s that was not a token
       Fg( win, "green" ) #Green
+      remainder := s[ last_s_Position : ( *s + 1 ) ]
+      if *(trim(remainder)) > 0 then
       DrawString( win, x, y, s[ last_s_Position : ( *s + 1 ) ] )
       Fg( win, "light green" ) #Light Green
    end

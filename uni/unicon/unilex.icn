@@ -452,13 +452,15 @@ procedure do_star()
 end
 
 procedure do_and()
-    if yytext ||:= =":=" then { return AUGAND }
-    else if yytext ||:= ="&" then { 	
-	write("Found PAND");
-	return PAND 
-	}
-    tokflags +:= Beginner
-    return AND
+   if yytext ||:= =":=" then { return AUGAND }
+   else if yytext ||:= ="&" then {
+$ifndef _PATTERNS
+      write(&errout, "pattern operator && is non-standard, did you mean & ?");
+$endif
+      return PAND 
+      }
+   tokflags +:= Beginner
+   return AND
 end
 
 procedure do_mod()

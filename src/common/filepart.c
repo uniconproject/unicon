@@ -465,7 +465,7 @@ int pathFind(char target[], char buf[], int n)
    if ((i = strlen(buf)) > 0) {
       i = buf[i - 1];
       if (i != '\\' && i != '/' && i != ':')
-         strcat(buf, "/");
+         strcat(buf, "\\");
       }
    strcat(buf, target);
    res = stat(buf, &sbuf);

@@ -122,6 +122,10 @@
    Feature(1, "_MULTITASKING", "multiple programs")
 #endif					/* MultiThread */
 
+#ifdef PatternType
+   Feature(1, "_PATTERNS", "pattern type")
+#endif					/* PatternType */
+
 #ifdef Pipes
    Feature(1, "_PIPES", "pipes")
 #endif					/* Pipes */

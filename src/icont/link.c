@@ -128,7 +128,6 @@ void cannotopen(char *defaultmsg, char *filnam)
       case EROFS: strcat(msgbuf,"; read-only file system"); break;
       case EINVAL: strcat(msgbuf,"; bogus mode?!"); break;
       case ENOMEM: strcat(msgbuf,"; out of space"); break;
-      default: 
       }
    quitf(msgbuf,filnam);
 }

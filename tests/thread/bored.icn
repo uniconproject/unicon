@@ -2,14 +2,14 @@
 # Author: Jafar Al-Gharaibeh
 # 01/01/2011
 #
-# Bored threads : an example program that illustrates the use fo threads and mutexs
+# Bored threads : an example program that illustrates the use of threads and mutexes
 # Story: Once upon a time, few threads were running on a computer in a small lab.
 # The computer was sitting idle, and the threads were just sitting doing nothing
 # most of the time. They got bored! so they decided to play a game. There was a thread
 # called  Master who is known to "lie" sometimes. And there were three other threads with
 # different personalities, they were called Trust, Notrust, Doubt.
 # The game is as follows, Master thread picks a number randomly (1 to max) and asks the other
-# threads to guess that number. When the threads make uncorrect guesses the Master tries
+# threads to guess that number. When the threads make incorrect guesses the Master tries
 # to give them hints so they can make better guesses, but as mentioned earlier, the Master
 # can't be fully trusted.
 # The current implementation of the program assumes the following
@@ -31,6 +31,10 @@
 #  That is it for now! future improvments might include variations of the behavior of the threads
 #  and the addition of new threads like a thread who picks his guesses randomly or a smart thread
 #  who remembers the history of the Master's hints and try to make a better guess based on that
+#
+#  Update (Feb 10, 2011)
+#     Add new threads that help the master evaluate the guesses. 
+#
 
 class MsgData(
   gs,		# the thread guess
@@ -49,7 +53,7 @@ class MsgData(
   # get a msg sent by a thread to master
   method get_guess()
     local g
-    \gs | fail
+    while /gs do if \done then fail
     lock(mtx_gs)
     g:=gs
     gs:=&null
@@ -60,7 +64,7 @@ class MsgData(
   # get a msg posted by the master to a thread
   method get_reply()
     local r
-    \rp | fail
+    while /rp do if \done then fail
     lock(mtx_rp)
     r:=rp
     rp:=&null
@@ -102,7 +106,7 @@ procedure main(argv)
     every i:=1 to n do
       put(threads, create work(i, msgs[i], ways[i], names[i]))
      
-    max := 2^17
+    max := 2^16
     answer := ?max
      
     every i:=1 to n do
@@ -110,6 +114,11 @@ procedure main(argv)
      
     write(" Master: I have a number in mind between 1 and ", max ," (^o^)''{", answer ,"} ...")
     write(" Can you threads guess what is it ?")
+    write("Threads are trying ....")
+    write(repl("-",80))
+    write("Thread\t\t#Guesses\tLast Guess\t\tWinner?")
+    write(repl("-",80))
+    
     every  thread(!threads)
     t:=&now
     go:=1
@@ -117,6 +126,7 @@ procedure main(argv)
     #process_guesses(answer, msgs)   # loop for every until we get a correct answer
     
     every join(!threads)
+    write(repl("-",80))
                                                                                                     
     write("time:", &now-t, " seconds")                                                               
 end
@@ -125,15 +135,13 @@ procedure process_guesses(id, answer, msg)
   local r
   while /done do{
 	if g:=msg.get_guess() then{
-	    if g=answer then { r := "="; msg.send_reply(r); done:= "="; }
-	    else if g<answer then r:="<"
-	    else r:=">"
-
-	    if ?2=1 then # send a correct reply
-	      msg.send_reply(r)
-	    else # send a random reply
-	      msg.send_reply(?2("<",">"))
+	    if g=answer then { msg.send_reply("="); break;}
+	    r := if g<answer then "<" else ">"
+	    ?2=1 | (r:= ?2("<",">"))  # 50% chance to "alter" the answer
+	    msg.send_reply(r)
 	    }
+	 else
+	    delay(1)
       }
 end
 
@@ -187,25 +195,18 @@ class GuessData(gs, lo, hi, GS, LO, HI)
 end
 
 procedure work(id, msg, my_way, name)
-  local guess, i, r, lgs, ugs
+  local guess, i, r
   wait_to_go()
-  write("Thread ", name," is trying to guess...")
-  lgs:=1
-  ugs:=max
+  #write("Thread ", name," is trying to guess...")
   guess := GuessData(max/2, 1, max )
   i:=0
-  repeat{
+  while /done do{
       i+:=1
       msg.send_guess(guess.get())
-      #delay(1)
-      while /done do { if r:=msg.get_reply() then break }
-      if (\r)=="=" | \done then break
-      guess.gs := my_way(guess, r)
+      if r:=msg.get_reply() then
+	 if r=="=" then (done:=id)& break else guess.gs := my_way(guess, r)
       }
-  if (\r)=="=" then
-    write("I'm thread ", name,  " (#guesses:", i, "). YES! :) The correct answer is:", guess.get() )
-  else
-    write("I'm thread ", name,  " (#guesses:", i, ").  FAILED! :(")
+  write(name,"\t\t",i,"\t\t",guess.get(), "\t\t\t", if (\r)=="=" then "YES!" else "NO")
 end
 
 procedure trust(guess, r)
@@ -216,7 +217,7 @@ procedure trust(guess, r)
     "<" : guess.higher()
     ">" : guess.lower()
     "=" : return 0
-    default: return -1
+    default: stop("Trust: unexpected reply!")
     }
 
    if last=guess.get() then
@@ -228,7 +229,7 @@ end
 procedure notrust(guess, r)
    if r=="=" then return 0
    if r==("<"|">") then return guess.inc()
-   return -1
+   stop("Notrust: unexpected reply!")
 end
 
 procedure doubt(guess, r)
@@ -238,7 +239,7 @@ procedure doubt(guess, r)
     "<" : (?3>1 & guess.higher()) | guess.lower()
     ">" : (?3>1 & guess.lower() ) | guess.higher()
     "=" : return 0
-    default: return -1
+    default: stop("Doubt: unexpected reply!")
     }
 
    if last=guess.get() then

@@ -30,25 +30,11 @@ void err_msg(int n, dptr v)
 #endif                                  /* Messaging */
    CURTSTATE();
 
-#ifdef AAAConcurrent
-   struct tls_node *tlsnode;
-   pthread_t tid;
-   int rc=0;
-   
-   MUTEX_LOCKID(MTX_TLS_CHAIN);
-   tlsnode = tlshead->next;      /* skip the root tls */
-   tid = pthread_self();
-   while (tlsnode!=NULL){
-     if (!pthread_equal(tid, tlsnode->tstate->tid)){
-       if ((rc=pthread_cancel(tlsnode->tstate->tid))!=0)
-	 handle_thread_error(rc);
-        /*printf("pthread_cancel() rc=%i\n", rc);*/
-        }
-
-      tlsnode=tlsnode->next;
-      }
-   
-   MUTEX_UNLOCKID(MTX_TLS_CHAIN);
+#ifdef Concurrent
+   /* 
+    * Force all of the threads to stop before proceeding with the runtime error 
+    */
+   thread_control(GC_STOPALLTHREADS);
 #endif					/* Concurrent */
 
    if (n == 0) {

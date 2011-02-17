@@ -93,6 +93,10 @@
    #include <fcntl.h>
 #ifdef NTGCC
    #include <dirent.h>
+   #ifndef OLD_NTGCC
+   /* The new GCC needs locking.h but the old one doesn't*/
+   #include <sys/locking.h>
+   #endif				/* OLD_NTGCC */
 #endif					/* NTGCC */
 
    #ifdef MSWindows

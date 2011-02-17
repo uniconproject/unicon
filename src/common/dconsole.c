@@ -57,6 +57,30 @@ struct descrip nullptr =
    {F_Ptr | F_Nqual};	                /* descriptor with null block pointer */
 struct descrip emptystr; 		/* zero-length empty string */
 
+
+#ifdef Concurrent
+#undef tend
+
+pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
+struct threadstate *get_tstate()
+{
+   return curtstate;
+}
+int _imp__pthread_mutex_lock(pthread_mutex_t *mtx)
+{
+  return 0;
+}
+int _imp__pthread_mutex_unlock(pthread_mutex_t *mtx)
+{
+  return 0;
+}
+void handle_thread_error(int val)
+{
+
+}
+
+#endif						/* Concurrent */
+
 struct tend_desc *tend;
 char *reserve_0(int r, word n) { return malloc(1); }
 
@@ -396,17 +420,17 @@ dptr d;
       }
    {
       register word slen = StrLen(*d);
-      register char *sp, *dp;
+      register char *dc_sp, *dp;
 
       dp = malloc(slen+1);
       if (dp == NULL)
          fatalerr(0,NULL);
 
       StrLen(*d) = StrLen(*d)+1;
-      sp = StrLoc(*d);
+      dc_sp = StrLoc(*d);
       StrLoc(*d) = dp;
       while (slen-- > 0)
-         *dp++ = *sp++;
+         *dp++ = *dc_sp++;
       *dp = '\0';
       }
    return 1;
@@ -566,11 +590,11 @@ char *s;
  * (we do this to avoid allocating a block for a real
  * that will later be used directly as a C_double).
  */
-static int ston(sp, result)
-dptr sp;
+static int ston(dc_sp, result)
+dptr dc_sp;
 union numeric *result;
    {
-   register char *s = StrLoc(*sp), *end_s;
+   register char *s = StrLoc(*dc_sp), *end_s;
    register int c;
    int realflag = 0;	/* indicates a real number */
    char msign = '+';    /* sign of mantissa */
@@ -586,9 +610,9 @@ union numeric *result;
    int err_no;
    char *ssave;         /* holds original ptr for bigradix */
 
-   if (StrLen(*sp) == 0)
+   if (StrLen(*dc_sp) == 0)
       return CvtFail;
-   end_s = s + StrLen(*sp);
+   end_s = s + StrLen(*dc_sp);
    c = *s++;
 
    /*

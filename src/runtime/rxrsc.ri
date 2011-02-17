@@ -505,7 +505,7 @@ wbp w;
 int extent;
    {
    int i;
-   unsigned long toFree[DMAXCOLORS];
+   unsigned long *toFree;
    int freed = 0;
    int *numColors;
    int numSaved;
@@ -514,7 +514,8 @@ int extent;
 
    numColors = (extent==1 ? &(ws->numiColors) : &(ws->numColors));
    theColors = (extent==1 ? ws->iconColors : ws->theColors);
-
+   toFree = malloc(*numColors * sizeof(unsigned long));
+   if (toFree == NULL) syserr("out of memory in freexcolors");
    numSaved = 0;
    for (i = *numColors-1; i >= 0; i--) {
       int j = theColors[i];
@@ -562,6 +563,7 @@ int extent;
    if (freed>0)
       XFreeColors(stddpy, wd->cmap, toFree, freed,0);
    *numColors = numSaved;
+   free(toFree);
    }
 
 /*

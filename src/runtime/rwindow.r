@@ -3241,6 +3241,7 @@ char * abuf;
    wsp ws = w->window;
    wcp wc = w->context;
    int toolong = 0;
+   tended struct descrip f; /* -1 means no curtexture */
 
    valptr = val;
    /*
@@ -3342,7 +3343,6 @@ char * abuf;
 	 if (!setmeshmode(w,val)) return Failed;
 	 break;
       case A_TEXTURE:{
-	 tended struct descrip f; /* -1 means no curtexture*/
 	 AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1));
 	 break;
 	 }

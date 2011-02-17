@@ -2568,7 +2568,7 @@ function{1} thread(x)
 	      if (thread_call)
 		thread_control(GC_GOTOSLEEP); /* I'm part of the GC party now! Sleeping!!*/
 	      else
-		sleep(1);
+		idelay(1);
 	    }
 	  else if (i) syserr("Mutex Disaster in GCthread mutex in thread()");
 	} while (i); /* keep looping until I aquire the mutex*/

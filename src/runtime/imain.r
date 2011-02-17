@@ -837,11 +837,6 @@ void main(int argc, char **argv)
     dos_set_ctrl_break(ctrlbrk);   /* Restore original Ctrl-C operation */
 #endif
 
-#ifdef Concurrent
-    clean_threads();
-    /*pthread_exit(EXIT_SUCCESS);*/
-#endif
-
    c_exit(EXIT_SUCCESS);
 #ifdef INTMAIN
    return 0;

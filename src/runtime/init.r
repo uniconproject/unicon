@@ -1955,7 +1955,11 @@ int i;
    WinPostQueueMsg(HMainMessageQueue, WM_QUIT, (MPARAM)0, (MPARAM)0);
    /* bye, bye */
    InterpThreadShutdown();
-#else					/* PresentationManager */
+#else
+#ifdef Concurrent
+    clean_threads();
+    /*pthread_exit(EXIT_SUCCESS);*/
+#endif					/* PresentationManager */
    exit(i);
 #endif					/* PresentationManager */
 #endif					/* TURBO || BORLAND_386 */

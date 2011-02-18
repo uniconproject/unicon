@@ -18,6 +18,8 @@ cat MAKEFILE.RUN >>../../../src/runtime/makefile
 echo ICONT=icont >../../../src/icont/makefile
 echo CONSOLE=NTConsole >>../../../src/icont/makefile
 cat MAKEFILE.T >>../../../src/icont/makefile
+rm ../../../src/libtp/config.h
+cp ../../../src/libtp/config_h.win ../../../src/libtp/config.h
 mkdir -p ../../../ipl/lib
 cp makefile.cfn ../../../ipl/cfuncs/makefile
 

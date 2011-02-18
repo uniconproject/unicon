@@ -90,29 +90,32 @@ global msgs, # list that hold msgs between the threads and the master
 	    # and so forth...
 	    
       go,   # flags the begining of the competetion between the threads
-      max,   # the max guess
+      Max,   # the max guess
       done,
       N	
                                                                                                   
 procedure main(argv)                                                                                
-   local n:=3, threads:=[], answer, ways, names
+   local n:=3, threads:=[], answer, ways, names, guesses
 
     ways:=[trust, notrust, doubt]
     names := ["Trust", "Notrust", "Doubt"]
     N := n
     msgs:=[]
+    guesses := []
+    Max := 2^16
+    answer := ?Max
+
     every 1 to n do put(msgs, MsgData())
+    every 1 to n do put(guesses, GuessData(Max/2, 1, Max))
 
     every i:=1 to n do
-      put(threads, create work(i, msgs[i], ways[i], names[i]))
+      put(threads, create work(i, msgs[i], ways[i], names[i], guesses[i]))
      
-    max := 2^16
-    answer := ?max
      
     every i:=1 to n do
       put(threads, create process_guesses(n+i, answer, msgs[i]))
      
-    write(" Master: I have a number in mind between 1 and ", max ," (^o^)''{", answer ,"} ...")
+    write(" Master: I have a number in mind between 1 and ", Max ," (^o^)''{", answer ,"} ...")
     write(" Can you threads guess what is it ?")
     write("Threads are trying ....")
     write(repl("-",80))
@@ -194,11 +197,11 @@ class GuessData(gs, lo, hi, GS, LO, HI)
     HI:=hi
 end
 
-procedure work(id, msg, my_way, name)
-  local guess, i, r
+procedure work(id, msg, my_way, name, guess)
+  local i, r
   wait_to_go()
   #write("Thread ", name," is trying to guess...")
-  guess := GuessData(max/2, 1, max )
+  #guess := GuessData(Max/2, 1, Max )
   i:=0
   while /done do{
       i+:=1

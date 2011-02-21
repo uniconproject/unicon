@@ -31,11 +31,30 @@
 #define NoCrypt
 #define Dbm
 #define Messaging
-#ifdef Messaging
+
+#if defined(Messaging) && defined(OLD_NTGCC)
 #define ssize_t signed
-#endif					/* Messaging */
+#endif					/* Messaging && OLD_NTGCC */
+
 #define LoadFunc
 #define MSWindows
 #define FAttrib 1
 #define FieldTableCompression 1
 #define HAVE_LIBGL 1
+
+#ifndef OLD_NTGCC
+#define Double
+#endif					/* OLD_NTGCC */
+
+/*define for png image support, libz is required by PNG */
+#define HAVE_LIBPNG 1
+#define HAVE_LIBZ 1    /* DO NOT define if you are using zlib1.dll */
+
+/*define for jpeg image support */
+#define HAVE_LIBJPEG 1
+
+/*define if you have pthreads and want concurrency*/
+/*#define HAVE_LIBPTHREAD 1
+#define Concurrent 1
+#define NoKeyword__Thread 1
+*/

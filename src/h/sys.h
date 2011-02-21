@@ -104,7 +104,10 @@
       #define LRESULT_CALLBACK LRESULT CALLBACK
       #define BOOL_CALLBACK BOOL CALLBACK
       #ifdef PosixFns
+      /* Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean" */
+      #define boolean bolean
       #include <winsock2.h>
+      #undef boolean
       #else					/* PosixFns */
       #include <windows.h>
       #endif					/* PosixFns */
@@ -116,7 +119,10 @@
       #define PATH_MAX 512
       #endif					/* PATH_MAX */
       #ifdef PosixFns
+      /* Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean" */
+      #define boolean bolean
       #include <winsock2.h>
+      #undef boolean
       #else
 #if defined(ISQL) || defined(Audio)
 #include <windows.h>
@@ -287,7 +293,7 @@
 #ifdef NTGCC
 /* avoid INT32 compile error in jmorecfg.h by pretending we used Xmd.h! */
 #define XMD_H
-#endif
+#endif					/* NTGCC */
 
 #include "jpeglib.h"
 #include "jerror.h"
@@ -295,6 +301,9 @@
 #include <setjmp.h>
 #endif					/* HAVE_LIBPNG */
 /* we do not use their definitions of GLOBAL, LOCAL, or OF; we use our own */
+#ifdef NTGCC
+#undef boolean
+#endif					/* NTGCC */
 #undef GLOBAL
 #undef LOCAL
 #undef OF
@@ -366,7 +375,6 @@
 #endif					/* HAVE_LIBGL */
 
 #if HAVE_LIBZ
-
 #  ifdef STDC
 #    define OF(args)  args
 #  else
@@ -379,6 +387,9 @@
 
 #if HAVE_LIBPNG
 #include <png.h>
+#ifdef NTGCC
+#include <zlib.h>
+#endif
 #else					/* HAVE_LIBPNG */
 #include <zlib.h>
 #endif					/* HAVE_LIBPNG */

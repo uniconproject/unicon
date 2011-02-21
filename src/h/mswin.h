@@ -201,7 +201,7 @@ typedef struct {
 
 #define MAXXOBJS 8
 
-#define GammaCorrection 1.0
+#define GammaCorrection 2.2
 
 #define glXSwapBuffers(foo, bar) { \
 HDC stddc = CreateWinDC(w);\

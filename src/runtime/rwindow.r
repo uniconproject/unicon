@@ -1245,9 +1245,9 @@ struct palentry *bmp_paltbl(int n, int *colortable)
    for(i=0;i<n;i++) {
       gf_paltbl[i].used = gf_paltbl[i].valid = 1;
       gf_paltbl[i].transpt = 0;
-      gf_paltbl[i].clr.red = ((unsigned char)((char *)(colortable+i))[0]) * 257;
+      gf_paltbl[i].clr.red = ((unsigned char)((char *)(colortable+i))[2]) * 257;
       gf_paltbl[i].clr.green = ((unsigned char)((char *)(colortable+i))[1]) * 257;
-      gf_paltbl[i].clr.blue = ((unsigned char)((char *)(colortable+i))[2]) * 257;
+      gf_paltbl[i].clr.blue = ((unsigned char)((char *)(colortable+i))[0]) * 257;
       }
    return gf_paltbl;
 }
@@ -1255,14 +1255,16 @@ struct palentry *bmp_paltbl(int n, int *colortable)
 /*
  * Construct Icon-style imgdata from BMP-style rasterdata.
  * Only trick we know about so far is to reverse rows so first row is bottom
+ * But apparently this is wrong (for some bmp's?) if there's no color table.
  */
 unsigned char * bmp_data(int width, int height, int bpp, char * rasterdata)
 {
 int i;
 int rowbytes = width * bpp;
-char *tmp = malloc(rowbytes);
+char *tmp;
 
-if (tmp==NULL) return NULL;
+if (bpp!=1) return rasterdata;
+if ((tmp = malloc(rowbytes))==NULL) return NULL;
 for(i=0;i<height/2;i++) {
    memmove(tmp, rasterdata + (i * rowbytes), rowbytes);
    memmove(rasterdata + (i * rowbytes),
@@ -2049,12 +2051,12 @@ static int pngread(char *filename, int p)
 	 break;
       case PNG_COLOR_TYPE_GRAY:
 	 if (bit_depth < 8)
-	    png_set_gray_1_2_4_to_8(png_ptr);
+	    png_set_expand_gray_1_2_4_to_8(png_ptr);
 	 png_set_gray_to_rgb(png_ptr);
 	 break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
 	 if (bit_depth < 8)
-	    png_set_gray_1_2_4_to_8(png_ptr);
+	    png_set_expand_gray_1_2_4_to_8(png_ptr);
 	 png_set_gray_to_rgb(png_ptr);
 	 png_set_strip_alpha(png_ptr);
 	 break;
@@ -3241,7 +3243,8 @@ char * abuf;
    wsp ws = w->window;
    wcp wc = w->context;
    int toolong = 0;
-   tended struct descrip f; /* -1 means no curtexture */
+   tended struct descrip f;
+
 
    valptr = val;
    /*
@@ -3343,6 +3346,7 @@ char * abuf;
 	 if (!setmeshmode(w,val)) return Failed;
 	 break;
       case A_TEXTURE:{
+         /* -1 means no curtexture */
 	 AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1));
 	 break;
 	 }

@@ -9,11 +9,7 @@
 #if !COMPILER
 #include "../h/header.h"
 
-#if HAVE_LIBZ
 static int readhdr	(char *name, struct header *hdr);
-#else					/* HAVE_LIBZ */
-static	FILE	*readhdr	(char *name, struct header *hdr);
-#endif					/* HAVE_LIBZ */
 #endif					/* !COMPILER */
 
 #if SCCX_MX
@@ -296,16 +292,11 @@ int dgetc(int fd) {
  * Open the icode file and read the header.
  * Used by icon_init() as well as MultiThread's loadicode()
  */
-#if HAVE_LIBZ
 static int readhdr(name,hdr)
-#else					/* HAVE_LIBZ */
-static FILE *readhdr(name,hdr)
-#endif					/* HAVE_LIBZ */
 char *name;
 struct header *hdr;
    {
    int fdname = -1;
-   FILE *fname = NULL;
    int n;
 
 #if MSDOS
@@ -313,14 +304,6 @@ struct header *hdr;
    char bytesThatBeginEveryExe[2] = {0,0};
    unsigned short originalExeBytesMod512, originalExePages;
    unsigned long originalExeBytes;
-#if SCCX_MX
-   char drive[260];
-   char dir[260];
-   char file[260];
-   char ext[260];
-   FILE*   setPtr;
-   int     i, c;
-#endif                                  /* SCCX_MX */
 #endif					/* MSDOS */
 
    if (!name)
@@ -343,7 +326,8 @@ struct header *hdr;
    if (n >= 4 && !stricmp(".exe", name + n - 4)) {
 #endif					/* ZTC_386 */
       thisIsAnExeFile = 1;
-      fname = pathOpen(name, ReadBinary);
+
+      fdname = pathOpenHandle(name, ReadBinary);
          /*
           * ixhdr's code for calling iconx from an .exe passes iconx the
           * full path of the .exe, so using pathOpen() seems redundant &
@@ -381,64 +365,43 @@ struct header *hdr;
 #endif					/* MVS */
 
 #if MSDOS || OS2
-      fname = pathOpen(tname,ReadBinary);	/* try to find path */
+      fdname = pathOpenHandle(tname,ReadBinary);	/* try to find path */
 #else					/* MSDOS || OS2 */
-
-   #if HAVE_LIBZ
       fdname = open(tname,O_RDONLY);
-   #else					/* HAVE_LIBZ */
-      fname = fopen(tname, ReadBinary);
-   #endif					/* HAVE_LIBZ */
-
 #endif					/* MSDOS || OS2 */
 
 #if NT
     /*
      * tried appending .exe, now try .bat or .cmd
      */
-    if (fname == NULL) {
+    if (fdname == -1) {
        strcpy(tname,name);
        strcat(tname,".bat");
-       fname = pathOpen(tname, ReadBinary);
-       if (fname == NULL) {
+       fdname = pathOpenHandle(tname, ReadBinary);
+       if (fdname == -1) {
           strcpy(tname,name);
           strcat(tname,".cmd");
-          fname = pathOpen(tname, ReadBinary);
+          fdname = pathOpenHandle(tname, ReadBinary);
           }
       }
 #endif					/* NT */
 
       }
 
-#if HAVE_LIBZ
    if (fdname == -1)			/* try the name as given */
-#else					/* HAVE_LIBZ */
-   if (fname == NULL)			/* try the name as given */
-#endif					/* HAVE_LIBZ */
 
 #if MSDOS || OS2
-      fname = pathOpen(name, ReadBinary);
+      fdname = pathOpenHandle(name, ReadBinary);
 #else					/* MSDOS || OS2 */
-
-   #if HAVE_LIBZ
       fdname = open(name, O_RDONLY);
-   #else					/* HAVE_LIBZ */
-      fname = fopen(name, ReadBinary);
-   #endif					/* HAVE_LIBZ */
-
 #endif					/* MSDOS || OS2 */
 
 #if MSDOS
       } /* end if (n >= 4 && !stricmp(".exe", name + n - 4)) */
 #endif					/* MSDOS */
 
-#if HAVE_LIBZ
    if (fdname == -1)
       return -1;
-#else					/* HAVE_LIBZ */
-   if (fname == NULL)
-      return NULL;
-#endif					/* HAVE_LIBZ */
 
    {
    static char errmsg[] = "can't read interpreter file header";
@@ -466,13 +429,8 @@ struct header *hdr;
    char buf[200];
 
    for (;;) {
-#if HAVE_LIBZ
       if (fdgets(fdname, buf, sizeof(buf)-1) ==-1)
 	 error(name, errmsg);
-#else					/* HAVE_LIBZ */
-      if (fgets(buf, sizeof buf-1, fname) == NULL)
-	 error(name, errmsg);
-#endif					/* HAVE_LIBZ */
 
 #if NT
       if (strncmp(buf, "rem [executable Icon binary follows]", 36) == 0)
@@ -482,17 +440,10 @@ struct header *hdr;
          break;
       }
 
-#if HAVE_LIBZ
    while ((n = dgetc(fdname)) != EOF && n != '\f')	/* read thru \f\n\0 */
       ;
    dgetc(fdname);
    dgetc(fdname);
-#else					/* HAVE_LIBZ */
-   while ((n = getc(fname)) != EOF && n != '\f')	/* read thru \f\n\0 */
-      ;
-   getc(fname);
-   getc(fname);
-#endif					/* HAVE_LIBZ */
 
 #else					/* ShellHeader */
 #if HAVE_LIBZ
@@ -505,14 +456,6 @@ deliberate syntax errror
 
 #if MSDOS && !NT
    if (thisIsAnExeFile) {
-#if SCCX_MX
-        if( thisIsIconx)
-        {
-            originalExeBytes = sizevar.value;
-        }
-        else
-#endif                                  /* SCCX_MX */
-        {
             static char exe_errmsg[] = "can't read MS-DOS .exe header";
             fread (&bytesThatBeginEveryExe,
                     sizeof bytesThatBeginEveryExe, 1, fname);
@@ -526,7 +469,6 @@ deliberate syntax errror
             fread (&originalExePages, sizeof originalExePages, 1, fname);
             originalExeBytes = (originalExePages - 1)*512 +
                                 originalExeBytesMod512;
-        }
         if (fseek(fname, originalExeBytes, 0))
             error(name, errmsg);
         if (ferror(fname) || feof(fname) || !originalExeBytes)
@@ -534,32 +476,18 @@ deliberate syntax errror
    }
 #endif                                  /* MSDOS && !NT */
 
-#if HAVE_LIBZ
    if (read(fdname,(char *)hdr, sizeof(*hdr)) != sizeof(*hdr))
-#else					/* HAVE_LIBZ */
-   if (fread((char *)hdr, sizeof(char), sizeof(*hdr), fname) != sizeof(*hdr))
-#endif					/* HAVE_LIBZ  */
       error(name, errmsg);
    }
 
-#if HAVE_LIBZ
    return fdname;
-#else					/* HAVE_LIBZ  */
-   return fname;
-#endif					/* HAVE_LIBZ  */
    }
 
 /*
  * Make sure the version number of the icode matches the interpreter version.
  * The string must equal IVersion or IVersion || "Z".
  */
-void check_version(struct header *hdr, char *name,
-#if HAVE_LIBZ
-   int fdname
-#else
-   FILE *fname
-#endif
-   )
+void check_version(struct header *hdr, char *name, int fdname )
 {
    if (strncmp((char *)hdr->config,IVersion, strlen(IVersion)) ||
        ((((char *)hdr->config)[strlen(IVersion)]) &&
@@ -568,11 +496,7 @@ void check_version(struct header *hdr, char *name,
       fprintf(stderr,"icode version mismatch in %s\n", name);
       fprintf(stderr,"\ticode version: %s\n",(char *)hdr->config);
       fprintf(stderr,"\texpected version: %s\n",IVersion);
-#if HAVE_LIBZ
       close(fdname);
-#else					/* HAVE_LIBZ */
-      fclose(fname);
-#endif					/* HAVE_LIBZ */
       if (versioncheck_only) exit(-1);
       error(name, "cannot run");
       }
@@ -1071,37 +995,9 @@ Deliberate Syntax Error
 #endif					/* COMPILER */
 
 #if !COMPILER
-#if OS2
-   if (use_resource)
-	memcpy(&hdr,icoderes,sizeof(hdr));
-   else {
-
-#if HAVE_LIBZ
-       fdname = readhdr(name,&hdr);
-       if (fdname == -1) {
-#else					/* HAVE_LIBZ */
-       fname = readhdr(name,&hdr);
-       if (fname == NULL) {
-#endif					/* HAVE_LIBZ */
-
-#ifdef PresentationManager
-	   ConsoleFlags |= OutputToBuf;
-	   fprintf(stderr, "Cannot locate the icode file: %s.\n", name);
-	   error(NULL, "Execution cannot proceed.");
-#else					/* PresentationManager */
-	   error(name, "cannot open interpreter file");
-#endif					/* PresentationManager */
-       }
-#else					/* OS2 */
-#if HAVE_LIBZ
    fdname = readhdr(name,&hdr);
    if (fdname == -1) {
-#else					/* HAVE_LIBZ */
-   fname = readhdr(name,&hdr);
-   if (fname == NULL) {
-#endif					/* HAVE_LIBZ */
       error(name, "cannot open interpreter file");
-#endif					/* OS2 */
       }
 
    k_trace = hdr.trace;
@@ -1287,11 +1183,7 @@ Deliberate Syntax Error
 #endif					/* PthreadCoswitch */
 
 #if !COMPILER
-#if HAVE_LIBZ
    check_version(&hdr, name, fdname);
-#else
-   check_version(&hdr, name, fname);
-#endif
 
 /*
  * if version says to decompress, call gzdopen and read interpretable code
@@ -1302,10 +1194,9 @@ Deliberate Syntax Error
 if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
    fname= gzdopen(fdname,"r");
    }
-else {
-   fname= fdopen(fdname,"r");
-   }
+else
 #endif					/* HAVE_LIBZ */
+   fname= fdopen(fdname,"r");
 
    /*
     * Read the interpretable code and data into memory.
@@ -1921,7 +1812,11 @@ int i;
    /*
     * free dynamic record types
     */
+#ifdef MuliThread
+   if(curpstate && dr_arrays) {
+#else					/* MultiThread */
    if(dr_arrays) {
+#endif					/* MultiThread */
       int i, j;
       struct b_proc_list *bpelem, *to_free;
       for(i=0;i<longest_dr;i++) {
@@ -2365,24 +2260,17 @@ C_integer bs, ss, stk;
    struct b_coexpr *coexp;
    struct progstate *pstate;
    struct header hdr;
-#if HAVE_LIBZ
    int fdname;
-#endif					/* HAVE_LIBZ */
    FILE *fname = NULL;
    word cbread;
 
    /*
     * open the icode file and read the header
     */
-#if HAVE_LIBZ
    fdname = readhdr(name,&hdr);
    if (fdname== -1)
        return NULL;
-#else					/* HAVE_LIBZ */
-   fname = readhdr(name,&hdr);
-   if (fname == NULL)
-      return NULL;
-#endif					/* HAVE_LIBZ */
+
    /*
     * Allocate memory for icode, the struct that describes it, and the
     * memory regions as follows.
@@ -2455,11 +2343,7 @@ C_integer bs, ss, stk;
    pstate->K_input  = *theInput;
    pstate->K_output = *theOutput;
 
-#if HAVE_LIBZ
    check_version(&hdr, name, fdname);
-#else
-   check_version(&hdr, name, fname);
-#endif
 
    /*
     * Read the interpretable code and data into memory.

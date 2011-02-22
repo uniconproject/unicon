@@ -494,21 +494,12 @@ int pathFind(char target[], char buf[], int n)
 
 
 #if MSDOS || OS2
-FILE *pathOpen(char *fname, char *mode)
+int pathOpenHandle(char *fname, char *mode)
    {
-#if OS2
    char buf[260 + 1];
-#else					/* OS2 */
-   char buf[150 + 1];
-#endif					/* OS2 */
    int i, use = 1;
 
-#if SCCX_MX
-   /* Avoid compiler warning */
-   for( i = 0; (buf[i] = fname[i]) != 0; ++i)
-#else
    for( i = 0; buf[i] = fname[i]; ++i)
-#endif					/* SCCX_MX */
 
       /* find out if a path has been given in the file name */
       if (buf[i] == '/' || buf[i] == ':' || buf[i] == '\\')
@@ -523,8 +514,20 @@ FILE *pathOpen(char *fname, char *mode)
 #else					/* OS2 */
    if (use && !pathFind(fname, buf, 150))
 #endif 					/* OS2 */
-       return 0;
-
-   return fopen(buf, mode);
+       return -1;
+#if NT
+   if (mode[1]=='b')
+     return open(buf, ( mode[0]=='r' ? O_RDONLY : O_WRONLY) | O_BINARY);
+   else
+#endif
+     return open(buf, mode[0]=='r' ? O_RDONLY : O_WRONLY);
    }
+
+FILE *pathOpen(char *fname, char *mode)
+{
+   int handle = pathOpenHandle(fname, mode);
+   if (handle==-1) return NULL;
+   return fdopen(handle, mode);
+}
+
 #endif					/* MSDOS || OS2 */

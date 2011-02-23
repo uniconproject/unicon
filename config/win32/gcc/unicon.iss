@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 1.2
+AppVerName=Windows Unicon Version 12.0 Beta.
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
@@ -11,6 +11,10 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
+OutputBaseFilename=setup-unicon
+Compression=lzma
+SolidCompression=true
+Uninstallable=yes
 ;AlwaysCreateUninstallIcon=yes
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
@@ -23,57 +27,61 @@ ChangesEnvironment=yes
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4
 
 [Files]
-Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; CopyMode: alwaysoverwrite
-Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; CopyMode: alwaysoverwrite
-Source: "\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\packs\*.*"; DestDir: "{app}\ipl\packs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\procs\*.*"; DestDir: "{app}\ipl\procs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\progs\*.*"; DestDir: "{app}\ipl\progs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\incl\*.*"; DestDir: "{app}\ipl\incl"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\data\*.*"; DestDir: "{app}\ipl\data"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\docs\*.*"; DestDir: "{app}\ipl\docs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\gpacks\*.*"; DestDir: "{app}\ipl\gpacks"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\gprocs\*.*"; DestDir: "{app}\ipl\gprocs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\gprogs\*.*"; DestDir: "{app}\ipl\gprogs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\gincl\*.*"; DestDir: "{app}\ipl\gincl"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\gdata\*.*"; DestDir: "{app}\ipl\gdata"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\gdocs\*.*"; DestDir: "{app}\ipl\gdocs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\mpacks\*.*"; DestDir: "{app}\ipl\mpacks"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\mprocs\*.*"; DestDir: "{app}\ipl\mprocs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\mprogs\*.*"; DestDir: "{app}\ipl\mprogs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\mincl\*.*"; DestDir: "{app}\ipl\mincl"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\mdata\*.*"; DestDir: "{app}\ipl\mdata"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; CopyMode: alwaysoverwrite
-Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\makedefs"; DestDir: "{app}\uni\"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\*.icn"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\*.u"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\makefile"; DestDir: "{app}\uni\gui"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\ivib\makefile"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\ivib\icon\*.*"; DestDir: "{app}\uni\gui\ivib\icon"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\gui\guidemos\makefile"; DestDir: "{app}\uni\gui\ivib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\udb\*.*"; DestDir: "{app}\uni\udb"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\udb\dta\*.*"; DestDir: "{app}\uni\udb\dta"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\udb\lib\*.*"; DestDir: "{app}\uni\udb\lib"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; CopyMode: alwaysoverwrite
-Source: "\unicon\uni\xml\*.*"; DestDir: "{app}\uni\xml"; CopyMode: alwaysoverwrite
+Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
+Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; Flags: ignoreversion
+Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; Flags: ignoreversion
+Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; Flags: ignoreversion
+Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; Flags: ignoreversion
+Source: "\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; Flags: ignoreversion
+Source: "\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; Flags: ignoreversion
+Source: "\unicon\ipl\packs\*.*"; DestDir: "{app}\ipl\packs"; Flags: ignoreversion
+Source: "\unicon\ipl\procs\*.*"; DestDir: "{app}\ipl\procs"; Flags: ignoreversion
+Source: "\unicon\ipl\progs\*.*"; DestDir: "{app}\ipl\progs"; Flags: ignoreversion
+Source: "\unicon\ipl\incl\*.*"; DestDir: "{app}\ipl\incl"; Flags: ignoreversion
+Source: "\unicon\ipl\data\*.*"; DestDir: "{app}\ipl\data"; Flags: ignoreversion
+Source: "\unicon\ipl\docs\*.*"; DestDir: "{app}\ipl\docs"; Flags: ignoreversion
+Source: "\unicon\ipl\gpacks\*.*"; DestDir: "{app}\ipl\gpacks"; Flags: ignoreversion
+Source: "\unicon\ipl\gprocs\*.*"; DestDir: "{app}\ipl\gprocs"; Flags: ignoreversion
+Source: "\unicon\ipl\gprogs\*.*"; DestDir: "{app}\ipl\gprogs"; Flags: ignoreversion
+Source: "\unicon\ipl\gincl\*.*"; DestDir: "{app}\ipl\gincl"; Flags: ignoreversion
+Source: "\unicon\ipl\gdata\*.*"; DestDir: "{app}\ipl\gdata"; Flags: ignoreversion
+Source: "\unicon\ipl\gdocs\*.*"; DestDir: "{app}\ipl\gdocs"; Flags: ignoreversion
+Source: "\unicon\ipl\mpacks\*.*"; DestDir: "{app}\ipl\mpacks"; Flags: ignoreversion
+Source: "\unicon\ipl\mprocs\*.*"; DestDir: "{app}\ipl\mprocs"; Flags: ignoreversion
+Source: "\unicon\ipl\mprogs\*.*"; DestDir: "{app}\ipl\mprogs"; Flags: ignoreversion
+Source: "\unicon\ipl\mincl\*.*"; DestDir: "{app}\ipl\mincl"; Flags: ignoreversion
+Source: "\unicon\ipl\mdata\*.*"; DestDir: "{app}\ipl\mdata"; Flags: ignoreversion
+Source: "\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; Flags: ignoreversion
+Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; Flags: ignoreversion
+Source: "\unicon\uni\makedefs"; DestDir: "{app}\uni\"; Flags: ignoreversion
+Source: "\unicon\uni\gui\*.icn"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
+Source: "\unicon\uni\gui\*.u"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
+Source: "\unicon\uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
+Source: "\unicon\uni\gui\makefile"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
+Source: "\unicon\uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\gui\ivib\makefile"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\gui\ivib\icon\*.*"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
+Source: "\unicon\uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\gui\guidemos\makefile"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
+Source: "\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
+Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
+Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; Flags: ignoreversion
+Source: "\unicon\uni\udb\*.*"; DestDir: "{app}\uni\udb"; Flags: ignoreversion
+Source: "\unicon\uni\udb\dta\*.*"; DestDir: "{app}\uni\udb\dta"; Flags: ignoreversion
+Source: "\unicon\uni\udb\lib\*.*"; DestDir: "{app}\uni\udb\lib"; Flags: ignoreversion
+Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
+Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
+Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; Flags: ignoreversion
+Source: "\unicon\uni\xml\*.*"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "\unicon\uni\3d\*.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
+Source: "\unicon\uni\3d\viewer\*.*"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
+Source: "\unicon\uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: ignoreversion
+Source: "\unicon\tests\thread\*.*"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 
 [INI]
 Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.sourceforge.net"
@@ -91,7 +99,7 @@ Type: files; Name: "{app}\WU.url"
 
 [Registry]
 ; Add unicon\bin to the path (current user only)
-;Root: HKCU; Subkey: "Environment"; ValueName: "Path"; ValueType: "string"; ValueData: "{app}\bin;{olddata}"; Check: NotOnPathAlready(); Flags: preservestringtype;
+;Root: HKCU; Subkey: "Environment"; ValueName: "Path"; ValueType: "string"; ValueData: "{app}\bin;{olddata}";  Flags: preservestringtype;
 
 ; Add unicon\bin to the path (all users)
 Root: HKLM; Subkey: "SYSTEM\ControlSet001\Control\Session Manager\Environment"; ValueName: "Path"; ValueType: "string"; ValueData: "{app}\bin;{olddata}"; Check: NotOnAllUsersPathAlready(); Flags: preservestringtype;

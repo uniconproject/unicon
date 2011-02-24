@@ -1,0 +1,274 @@
+import gui
+$include "guih.icn"
+global prn_name, copies_num, printers_tbl
+
+class PrintDialog : Dialog(printerInfo_tab_item, printer_tabset, lprlocation_col,
+    lprname_col, lprstatus_col,  cancel_btn, print_btn, printer_tbl, copies_lbl, copies_txt, copies_lbl_1, printcmd)
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   # need a portable way to check on print queues. On UNIX there is lpstat.
+   # lpstat -h localhost -v
+
+   method init_dialog()
+      local name_lst := [], loc_lst := [], stat_lst := [],
+         printers_lst := [], name, loc, status, ln, prn, i, log1
+
+      printers_tbl := []
+      system("lpstat -v > prn1.txt")
+      system("lpstat -p > prn2.txt")
+      if log1 := open("prn1.txt", "r") then {
+         while prn := read(log1) do {
+            prn ? {
+               if \(name := tab(find(":"))) then {
+                  move(2)
+                  loc := tab(0)
+                  }
+	       else stop("death by prn: ", image(prn))
+               }
+           name := name[12:0]
+           put(name_lst, name)
+           put(loc_lst, loc)
+           }
+           close(log1)
+	   remove("prn1.txt")
+        }
+      if log1 := open("prn2.txt", "r") then {
+         while prn := read(log1) do {
+            prn ? {
+               \(ln := tab(find(".")))
+               ln ? {
+                  tab(find("is")+2)
+                  status := tab(0) 
+                  }
+               }
+           put(stat_lst, status)
+           }
+           close(log1)
+	   remove("prn2.txt")
+        }
+       every i := 1 to * name_lst do {
+	  printers_lst := [name_lst[i], loc_lst[i], stat_lst[i]]
+          put(printers_tbl, printers_lst)
+          }
+       printer_tbl.set_contents(printers_tbl)
+
+
+$ifdef _MS_WINDOWS_NT
+      printcmd.set_contents("print")
+$else
+      printcmd.set_contents("enscript -b \" \" -1")
+$endif
+
+   end
+
+   method on_cancel_btn(ev)
+      copies_num := &null
+      self.dispose()
+   end
+
+   method on_print_btn(ev)
+   local index
+      if index := printer_tbl.get_selections()[1] then {
+         prn_name := printers_tbl[index][1]
+         }
+      copies_num := integer(copies_txt.get_contents())
+      self.dispose()
+   end
+   #
+   #  system Method
+   #
+   method system(s, lst, apnd)
+      local rv
+      if /s then fail
+      /lst := []
+      if /apnd then while pop(lst)
+      put(lst,s)
+      WAttrib("pointer=wait")
+      rv := proc("system", 0)(s)
+      WAttrib("pointer=arrow")
+
+      if \rv then return rv
+   end
+   method setup()
+      self.set_attribs("size=400,300", "bg=pale gray")
+      printer_tabset := TabSet()
+      printer_tabset.set_pos("2", "2")
+      printer_tabset.set_size("100%-4", "100%-4")
+      printerInfo_tab_item := TabItem()
+      printerInfo_tab_item.set_label("General")
+      printer_tbl := Table()
+      printer_tbl.set_pos("2", "2")
+      printer_tbl.set_size("100%-4", "70%-4")
+      printer_tbl.set_attribs("bg=white")
+      printer_tbl.set_select_one()
+      printer_tbl.set_contents([])
+      lprname_col := TableColumn()
+      lprname_col.set_label("Printer")
+      lprname_col.set_internal_alignment("l")
+      lprname_col.set_column_width(130)
+      printer_tbl.add_column(lprname_col)
+      lprlocation_col := TableColumn()
+      lprlocation_col.set_label("Location")
+      lprlocation_col.set_internal_alignment("l")
+      lprlocation_col.set_column_width(170)
+      printer_tbl.add_column(lprlocation_col)
+      lprstatus_col := TableColumn()
+      lprstatus_col.set_label("Status")
+      lprstatus_col.set_internal_alignment("l")
+      lprstatus_col.set_column_width(80)
+      printer_tbl.add_column(lprstatus_col)
+      printerInfo_tab_item.add(printer_tbl)
+      cancel_btn := TextButton()
+      cancel_btn.set_pos(275, 243)
+      cancel_btn.set_size("55", "25")
+      cancel_btn.connect(self, "on_cancel_btn", ACTION_EVENT)
+      cancel_btn.clear_toggles()
+      cancel_btn.set_label("Cancel")
+      cancel_btn.set_internal_alignment("c")
+      printerInfo_tab_item.add(cancel_btn)
+      print_btn := TextButton()
+      print_btn.set_pos(336, 242)
+      print_btn.set_size("55", "25")
+      print_btn.connect(self, "on_print_btn", ACTION_EVENT)
+      print_btn.clear_toggles()
+      print_btn.set_label("Print")
+      print_btn.set_internal_alignment("c")
+      printerInfo_tab_item.add(print_btn)
+      copies_txt := TextField()
+      copies_txt.set_pos("335", "195")
+      copies_txt.set_size("55", "25")
+      copies_txt.set_draw_border()
+      copies_txt.set_attribs("bg=white")
+      copies_txt.set_contents("1")
+      printerInfo_tab_item.add(copies_txt)
+      copies_lbl := Label()
+      copies_lbl.set_pos("275", "195")
+      copies_lbl.set_size("55", "25")
+      copies_lbl.set_internal_alignment("l")
+      copies_lbl.set_label("Copies")
+      printerInfo_tab_item.add(copies_lbl)
+      copies_lbl_1 := Label()
+      copies_lbl_1.set_pos(6, 196)
+      copies_lbl_1.set_size(76, 24)
+      copies_lbl_1.set_internal_alignment("l")
+      copies_lbl_1.set_label("Print Command")
+      printerInfo_tab_item.add(copies_lbl_1)
+      printcmd := TextField()
+      printcmd.set_pos("88", "196")
+      printcmd.set_size("161", "25")
+      printcmd.set_draw_border()
+      printcmd.set_attribs("bg=white")
+      printcmd.set_contents("lpr")
+      printerInfo_tab_item.add(printcmd)
+      printer_tabset.add(printerInfo_tab_item)
+      printer_tabset.set_which_one(printerInfo_tab_item)
+      self.add(printer_tabset)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+#procedure main()
+#   local d
+#   d := Print()
+#   d.show_modal()
+#end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|9|string|copies_lbl|integer
+#|1|string|copies_txt|integer|1|string|label|integer|1|string|tab_item|
+#integer|2|string|tab_set|integer|1|string|table|integer|2|string|table
+#_column|integer|3|string|text_button|integer|2|string|text_field|integ
+#er|2|SuperClass Name|string|Dialog|Import Name|string|gui|Button Group
+#s|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|
+#class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integ
+#er|3|Gen Main|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|
+#integer|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Wi
+#dth|null|Min Height|null|Ticker Rate|null|Attribs|list|1|string|bg=pal
+#e gray|Name|string|PrintDialog|Width|integer|400|Height|integer|300|It
+#ems|list|1|class|CanvasTabSet|27|Parent Canvas|1|Name|string|printer_t
+#abset|Class Name|string|TabSet|Import Name|string|gui|X Fix|null|Y Fix
+#|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|strin
+#g|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|100%-4|X Align|
+#string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw 
+#Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list
+#|0|Class Variable|integer|1|Parent Component|1|Children|list|1|class|C
+#anvasTabItem|28|Parent Canvas|1|Name|string|printerInfo_tab_item|Class
+# Name|string|TabItem|Import Name|string|gui|X Fix|null|Y Fix|null|W Fi
+#x|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|0|Y Spe
+#c|integer|0|W Spec|string|100%|H Spec|string|100%|X Align|string|l|Y A
+#lign|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|
+#Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|Class Varia
+#ble|integer|1|Parent Component|10|Label|string|General|Parent TabSet|1
+#0|Children|list|7|class|CanvasTable|28|Parent Canvas|1|Name|string|pri
+#nter_tbl|Class Name|string|Table|Import Name|string|gui|X Fix|null|Y F
+#ix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|str
+#ing|2|Y Spec|string|2|W Spec|string|100%-4|H Spec|string|70%-4|X Align
+#|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw
+# Border|null|Attribs|list|1|string|bg=white|Tooltip|null|Accel|null|Ev
+#ent Handlers|list|0|Class Variable|integer|1|Parent Component|14|Selec
+#t One|integer|1|Select Many|null|Columns|list|3|class|CanvasTableColum
+#n|6|Name|string|lprname_col|Class Variable|integer|1|Label|string|Prin
+#ter|Column Width|integer|130|Internal Alignment|string|l|Auto width fl
+#ag|null|class|CanvasTableColumn|6|Name|string|lprlocation_col|Class Va
+#riable|integer|1|Label|string|Location|Column Width|integer|170|Intern
+#al Alignment|string|l|Auto width flag|null|class|CanvasTableColumn|6|N
+#ame|string|lprstatus_col|Class Variable|integer|1|Label|string|Status|
+#Column Width|integer|80|Internal Alignment|string|l|Auto width flag|nu
+#ll|class|CanvasTextButton|36|Parent Canvas|1|Name|string|cancel_btn|Cl
+#ass Name|string|TextButton|Import Name|string|gui|X Fix|null|Y Fix|nul
+#l|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|2
+#75|Y Spec|integer|243|W Spec|string|55|H Spec|string|25|X Align|string
+#|l|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw B
+#order|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|
+#1|list|2|string|ACTION_EVENT|string|on_cancel_btn|Class Variable|integ
+#er|1|Parent Component|14|Label|string|Cancel|No Keyboard|null|Img Up|n
+#ull|Img Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|
+#Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|nu
+#ll|Internal Align|string|c|class|CanvasTextButton|36|Parent Canvas|1|N
+#ame|string|print_btn|Class Name|string|TextButton|Import Name|string|g
+#ui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defaul
+#t|null|X Spec|integer|336|Y Spec|integer|242|W Spec|string|55|H Spec|s
+#tring|25|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Su
+#bclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|nu
+#ll|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_print_bt
+#n|Class Variable|integer|1|Parent Component|14|Label|string|Print|No K
+#eyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|
+#Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|P
+#arent Button Group|null|Internal Align|string|c|class|CanvasTextField|
+#27|Parent Canvas|1|Name|string|copies_txt|Class Name|string|TextField|
+#Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W D
+#efault|null|H Default|null|X Spec|string|335|Y Spec|string|195|W Spec|
+#string|55|H Spec|string|25|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|null|Draw Border|integer|1|Attribs|list|1|str
+#ing|bg=white|Tooltip|null|Accel|null|Event Handlers|list|0|Class Varia
+#ble|integer|1|Parent Component|14|Contents|string|1|Filter String|stri
+#ng||class|CanvasLabel|27|Parent Canvas|1|Name|string|copies_lbl|Class 
+#Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|n
+#ull|H Fix|null|W Default|null|H Default|null|X Spec|string|275|Y Spec|
+#string|195|W Spec|string|55|H Spec|string|25|X Align|string|l|Y Align|
+#string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|Attri
+#bs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable
+#|integer|1|Parent Component|14|Label|string|Copies|Internal Align|stri
+#ng|l|class|CanvasLabel|27|Parent Canvas|1|Name|string|copies_lbl_1|Cla
+#ss Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fi
+#x|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|6|Y Spe
+#c|integer|196|W Spec|integer|76|H Spec|integer|24|X Align|string|l|Y A
+#lign|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null|
+#Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Var
+#iable|integer|1|Parent Component|14|Label|string|Print Command|Interna
+#l Align|string|l|class|CanvasTextField|27|Parent Canvas|1|Name|string|
+#printcmd|Class Name|string|TextField|Import Name|string|gui|X Fix|null
+#|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec
+#|string|88|Y Spec|string|196|W Spec|string|161|H Spec|string|25|X Alig
+#n|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Dra
+#w Border|integer|1|Attribs|list|1|string|bg=white|Tooltip|null|Accel|n
+#ull|Event Handlers|list|0|Class Variable|integer|1|Parent Component|14
+#|Contents|string|lpr|Filter String|string||Which One|14|Initial Focus|
+#null|Event Handlers|list|0|

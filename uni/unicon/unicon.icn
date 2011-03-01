@@ -625,7 +625,7 @@ procedure unicon(argv)
 	 if (rv = errors = yynerrs = 0) & /parseonly then {
 	     rv := mysystem(cmd || tmpname)
 	     if rv ~=== 0 then yynerrs +:= 1
-	     if &features == "Win32" then { # copy icont log to our console
+	     if &features=="MS Windows NT" & &features=="console window" then { # copy icont log to our console
 	        wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
 		every j := 1 to 5 do {
 		    if flog2 := open(wilog) then {
@@ -634,13 +634,12 @@ procedure unicon(argv)
 			remove(wilog) | write(&errout, wilog, " - wilog B not removed.")
 			break
 		    }
-		    if find("wicont", selecticont()) then
-		       delay(1000)
+		    delay(1000)
 		}
-	     }
+            delay(500)
+	    }
 	 }
-	 if find("wicont", selecticont()) then
-            delay(1000)
+
          if /iconc then {
 	    /tmpname | remove(tmpname) |
 	    iwrite(&errout,"remove ", image(tmpname), " fails")
@@ -786,18 +785,18 @@ procedure unicon(argv)
       if \exec then {
 	  every cmd ||:= " " || argv[exec to *argv]
       }
-      if &features == "Win32" then {
+      if &features=="MS Windows NT" & &features=="console window" then {
 	 wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
- # remove log prior to executing command
+	 # remove log prior to executing command
 	 if stat(wilog) then
 	    remove(wilog) | write(&errout, wilog, " - stale logfile not removed.")
          }
       rv := mysystem(cmd)
       if rv === 0 then {
-# if no errors, and we linked them from source, remove the .u
+         # if no errors, and we linked them from source, remove the .u
 	  every remove(!\translateducode)
       }
-      if &features == "Win32" then { # copy icont log to our console
+      if &features=="MS Windows NT" & &features=="console window" then { # copy icont log to our console
 	 wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
 	 every j := 1 to 5 do {
 	     if flog2 := open(wilog) then {
@@ -805,7 +804,7 @@ procedure unicon(argv)
 		 close(flog2)
 		 remove(wilog) | write(&errout, wilog, " wilog not removed.")
 		 break
-	     }
+	     }   
 	     delay(1000)
 	 }
      }
@@ -903,9 +902,11 @@ local myfile
 static trans, logger
 initial {
    trans := selecticont()
-   logger := mygetenv("WICONLOG")
+   logger := mygetenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
    }
-  if \logger then remove(logger) | write(&errout, logger, " - log not removed.")
+  if \logger then
+    remove(logger) | write( logger, " - log not removed.")
+
   rv := mysystem((\prefix|"") || trans || icontopt || argstr)
   if \flog then {
      if \logger then {
@@ -934,7 +935,7 @@ end
 
 # find the icont to use. An ICONT variable overrides defaults.
 procedure selecticont()
-local cmd
+local cmd, dash_s
    if not (cmd := mygetenv("ICONT")) then {
 
       #
@@ -944,21 +945,26 @@ local cmd
       #
       cmd := ((&features ? (="Binaries at " & tab(0))) |
               (&progname ? tab(find("unicon"))) | "")
-
-      if &features=="Win32" & &features=="console window" then
-         cmd ||:= "wicont"
+     
+      if &features=="MS Windows NT" then{
+	  if &features=="console window" then{ 
+	      cmd ||:= "wicont.exe"
+	      dash_S:=1
+	     }
+	  else
+	      cmd ||:= "icont.exe"
+         }
       else
          cmd ||:= "icont"
-      if &features=="Win32"then
-         cmd ||:= ".exe"
       }
       
    cmd := quotes(cmd)
    
    if not stat(cmd) then
       write("warning: no icont found thought it would be\n\t", cmd)
-   if &features=="Win32" & &features=="console window" then
-      cmd ||:= " -s"
+
+   if \dash_s then cmd ||:= " -s"
+
    return cmd
 end
 

@@ -239,7 +239,6 @@ extern int first_time;
 #endif					/* COMPILER */
 
 #if !COMPILER
-#if HAVE_LIBZ
 
 int fdgets(int fd, char *buf, size_t count) 
 {
@@ -273,8 +272,6 @@ int dgetc(int fd) {
     return c;
     }
 }
-
-#endif					/* HAVE_LIBZ */
 
 /*
  * Open the icode file and read the header.

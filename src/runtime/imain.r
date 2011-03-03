@@ -138,54 +138,10 @@ char *ArgvToCmdline(char **argv)
 
 #ifdef MSWindows
 
-char *lognam;
-char tmplognam[128];
-
 void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
    {
    WNDCLASS wc;
-#ifdef ConsoleWindow
-   char *tnam;
-   extern FILE *flog;
 
-   /*
-    * Select log file name.  Might make this a command-line option.
-    * Default to "WICON.LOG".  The log file is used by IDE programs to
-    * report translation errors and jump to the offending source code line.
-    *
-    * No point in rewriting this to use getenv_r(), it occurs pre-threads.
-    * It could use some cleanup, though.
-    */
-   if ((lognam = getenv("WICONLOG")) == NULL) { /* no getenv_r */
-      if (((lognam = getenv("TEMP")) != NULL) && /* no getenv_r */
-	  (lognam = malloc(strlen(lognam) + 13)) != NULL) {
-	 strcpy(lognam, getenv("TEMP")); /* no getenv_r */
-	 strcat(lognam, "\\");
-	 strcat(lognam, "winicon.log");
-         }
-      else
-         lognam = "winicon.log";
-      }
-   remove(lognam);
-   if (getenv("WICONLOG") != NULL) /* no getenv_r */
-      lognam = strdup(lognam);
-   if (getenv("TEMP") != NULL) { /* no getenv_r */
-      tnam = _tempnam(getenv("TEMP"), "wx"); /* no getenv_r */
-      }
-   else {
-      tnam = _tempnam("C:\\TEMP", "wx");
-      }
-   if (tnam == NULL) {
-      fprintf(stderr, "_tempnam failed, is your temp directory full?\n");
-      tnam = "wx0001";
-      }
-   strcpy(tmplognam, tnam);
-   flog = fopen(tnam, "w");
-   free(tnam);
-   if (flog == NULL) {
-      syserr("unable to open logfile");
-      }
-#endif					/* ConsoleWindow */
    if (!hPrevInstance) {
 #if NT
       wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -338,91 +294,6 @@ void main(int argc, char **argv)
 #endif
 #endif					/* WildCards */
 
-#if SCCX_MX
-    int     ctrlbrk;
-    FILE*   selfPtr;
-    int     new_argc;
-    char    **new_argv;
-    struct FIND *p;
-
-    strcpy(settingsname, argv[0]);
-    selfPtr = fopen( settingsname, "rb");
-    fseek( selfPtr, 0L, SEEK_END);
-    if( ftell( selfPtr) > sizevar.value)
-    {
-        ++argc;
-        --argv;
-        thisIsIconx = 1;
-    }
-    else
-        thisIsIconx = 0;
-
-    fclose( selfPtr);
-
-    /*
-     *  Expand wildcard file names:
-     *      Replace command line arguments with the file names that match
-     *      wildcard specifications.
-     *      Leave arguments that don't match file names as they are so the
-     *      icon program can deal with them.
-     */
-    new_argc = 1;
-    new_argv = malloc( new_argc * sizeof(char *));
-    new_argv[0] = malloc( (strlen(settingsname)+1) * sizeof(char));
-    memcpy( new_argv[0], settingsname, strlen(settingsname)+1);
-    for( i=1; i<argc; ++i)
-    {
-        if( (p = findfirst( argv[i], 0)) != NULL)
-        {
-            while( p)
-            {
-                new_argc++;
-                new_argv = realloc( new_argv, new_argc * sizeof(char *));
-                new_argv[new_argc-1] = malloc( (strlen(p->name)+1) * sizeof(char));
-                memcpy( new_argv[new_argc-1], p->name, strlen(p->name)+1);
-                p = findnext();
-            }
-        }
-        else
-        {
-            new_argc++;
-            new_argv = realloc( new_argv, new_argc * sizeof(char *));
-            new_argv[new_argc-1] = malloc( (strlen(argv[i])+1) * sizeof(char));
-            memcpy( new_argv[new_argc-1], argv[i], strlen(argv[i])+1);
-        }
-    }
-
-    if( new_argc == 1)
-    {
-        /* Add a null string to accommodate code in icon_setup() */
-        new_argv = realloc( new_argv, new_argc+1 * sizeof(char *));
-        new_argv[new_argc] = malloc( sizeof(char));
-        strcpy( new_argv[new_argc], "");
-    }
-
-    argv = new_argv;
-    argc = new_argc;
-
-#if 0
-    if( argc < 2)
-    {
-    syntax error!
-    The Symantec license agreement requires you to include a copyright
-    notice in your program.  This is a good place for it.
-
-        fprintf( stderr,
-            "\nCopyright (c) 1996, Your Name, Your City, Your State.\n");
-        exit(1);
-    }
-#endif
-    ctrlbrk = dos_get_ctrl_break();
-    dos_set_ctrl_break(1);   /* Ensure proper Ctrl-C operation */
-#endif  /* SCCX_MX */
-
-#if SASC
-   quiet(1);                    /* suppress C library diagnostics */
-#endif					/* SASC */
-
 #ifdef MultiThread
    /*
     * Look for MultiThread programming environment in which to execute
@@ -483,104 +354,6 @@ void main(int argc, char **argv)
    argv[0] = "iconx";
 #endif					/* CRAY */
 
-#if OS2
-   if (stubflag) {  /* Invoked as a direct executable */
-      stubexe = 1;
-      icon_init(argv[0],&argc, argv);
-      argc += 2;
-      argv -= 2;
-      }
-   else {
-      stubexe = 0;
-      icon_setup(argc, argv, &i);
-      if (i < 0) {
-	 argc++;
-	 argv--;
-	 i++;
-	 }
-      while (i--) {			    /* skip option arguments */
-	 argc--;
-	 argv++;
-	 }
-
-      if (argc <= 1)
-	 error(NULL, "An icode file was not specified.\nExecution cannot proceed.");
-      /*
-       * Call icon_init with the name of the icode file to execute.	    [[I?]]
-       */
-
-      icon_init(argv[1], &argc, argv);
-      }
-#else					/* OS2 */
-
-#if AMIGA && __SASC
-   if (argc == 0) {         /* argc == 0 flags a Workbench startup */
-      struct DiskObject *dob;
-      char *filename;
-      char *errorname;
-      char *size;
-      long newout;
-      long newerr;
-
-      if(dob = GetDiskObject(_WBargv[1])) {
-         if(dob->do_ToolTypes){
-         /* First get redirects from ToolTypes.
-            With a Workbench startup, stdin points to the console
-            window opened in MODE_NEWFILE, while stdout and stderr
-            share a pointer to the console window opened with
-            MODE_OLDFILE.  The close flag is on stderr. */
-
-            errorname = FindToolType(dob->do_ToolTypes,"STDERR");
-
-            if (errorname != NULL && strcmp(errorname, "-") == 0) {
-               if (filename = FindToolType(dob->do_ToolTypes,"STDOUT")) {
-                  if ( newout = Open(filename, MODE_NEWFILE) ) {
-                     Close(__ufbs[1].ufbfh);
-                     __ufbs[1].ufbfh = newout;
-                     __ufbs[2].ufbfh = newout;
-                     }
-                  }
-               }
-
-            else {
-               if (errorname != NULL) {
-                  if ( newerr = Open(errorname, MODE_NEWFILE) ) {
-                     __ufbs[2].ufbfh = newerr;
-                     __ufbs[1].ufbflg |= UFB_CLO;
-                     }
-                  }
- 
-               if (filename = FindToolType(dob->do_ToolTypes,"STDOUT")) {
-                  if (newout = Open(filename, MODE_NEWFILE) ) {
-                     if (newerr) Close(__ufbs[1].ufbfh);
-                     __ufbs[1].ufbfh = newout;
-                     __ufbs[1].ufbflg |= UFB_CLO;
-                     }
-                  }
-               }
-
-            if (filename = FindToolType(dob->do_ToolTypes,"STDIN"))
-               freopen(filename, "r", stdin);
-
-         /* Set sizes from Tooltypes. */
-            if (size = FindToolType(dob->do_ToolTypes,"STRSIZE"))
-               WBstrsize = strtoul(size,NULL,10);
-
-            if (size = FindToolType(dob->do_ToolTypes,"BLKSIZE"))
-               WBblksize = strtoul(size,NULL,10);
-
-            if (size = FindToolType(dob->do_ToolTypes,"MSTKSIZE"))
-               WBmstksize = strtoul(size,NULL,10);
-
-            }
-         FreeDiskObject(dob);
-         }
-
-      argc = _WBargc;
-      argv = _WBargv;
-      }
-#endif					/* AMIGA && __SASC */
-
    icon_setup(argc, argv, &i);
 
    if (i < 0) {
@@ -602,8 +375,6 @@ void main(int argc, char **argv)
     * Call icon_init with the name of the icode file to execute.	[[I?]]
     */
    icon_init(argv[1], &argc, argv);
-
-#endif					/* OS2 */
 
 #ifdef Messaging
    errno = 0;
@@ -983,6 +754,22 @@ int *ip;
 	    }
 	    break;
 
+	 case 'l': {
+	    char *p;
+	    if ( *(argv[1]+2) != '\0' )
+	       p = argv[1]+2;
+	    else {
+	       argv++;
+	       argc--;
+               (*ip)++;
+	       p = argv[1];
+	       if ( !p )
+		  error(NULL, "no file name given for logfile");
+	       }
+            if (!openlog(p))
+               syserr("Unable to open logfile\n");
+	    break;
+	    }
       /*
        * Set stderr to new file if -e option is given.
        */

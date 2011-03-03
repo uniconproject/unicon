@@ -535,7 +535,7 @@ FILE *pathOpen(char *fname, char *mode)
  * Global variables for logfiles.
  */
 char *lognam;
-extern FILE *flog;
+FILE *flog;
 
 void openlog(char *p)
 {

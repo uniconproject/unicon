@@ -623,11 +623,11 @@ int flock(int fd, int operation)
 }
 #define LOCK_EX LK_LOCK
 #define LOCK_NB LK_NBLCK
-#ifdef OLD_NTGCC			
+#if defined(NTGCC) && (__GNUC__ < 3)
 #define LOCK_UN LK_UNLOCK
-#else					/* OLD_NTGCC */
+#else					/* NTGCC < 3 */
 #define LOCK_UN LK_UNLCK
-#endif					/* OLD_NTGCC */
+#endif					/* NTGCC < 3 */
 #endif					/* NT */
 
 "flock() - apply or remove a lock on a file."
@@ -1126,7 +1126,7 @@ function{0,1} exec(f, argv[argc])
 	 margv[i] = p;
       }
       margv[i] = 0;
-      if (execvp(f,  margv) != 0) {
+      if (execvp(f, margv) != 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }

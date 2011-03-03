@@ -367,3 +367,6 @@ extern struct descrip posix_lock, posix_timeval, posix_stat, posix_message,
 #ifdef Messaging
 extern int M_open_timeout;
 #endif					/* Messaging */
+
+extern char *lognam;
+extern FILE *flog;

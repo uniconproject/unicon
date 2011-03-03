@@ -63,6 +63,7 @@
 #define Op_Cset  	 51
 #define Op_Dup   	 52
 #define Op_Efail 	 53
+#define Op_EInit 	 115
 #define Op_Eret  	 54
 #define Op_Escan 	 55
 #define Op_Esusp 	 56

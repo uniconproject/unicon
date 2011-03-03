@@ -49,18 +49,6 @@ int _fmode = 0;				/* force CR-LF on std.. files */
 #endif					/* HIGHC_386 */
 #endif					/* MSDOS */
 
-#if OS2
-
-char modname[256];			/* Character string for module name */
-#passthru HMODULE modhandle;		/* Handle of loaded module */
-char loadmoderr[256];			/* Error message if loadmodule fails */
-#define RT_ICODE 0x4843 		/* Resource type id is 'IC' */
-unsigned long icoderesid;		/* Resource ID from caller */
-char *icoderes; 			/* Pointer to the icode resource data */
-int use_resource = 0;			/* Set to TRUE if using a resource */
-int stubexe;				/* TRUE if resource attached to executable */
-#endif					/* OS2 */
-
 #if ARM || MACINTOSH || MVS || VM || UNIX || VMS
    /* nothing needed */
 #endif					/* ARM || MACINTOSH ... */
@@ -307,12 +295,7 @@ struct header *hdr;
 #endif					/* MSDOS */
 
    if (!name)
-
-#ifdef PresentationManager
-      error(NULL, "An icode file was not specified.\nExecution can't proceed.");
-#else					/* PresentationManager */
       error(name, "No interpreter file supplied");
-#endif					/* PresentationManager */
 
    /*
     * Try adding the suffix if the file name doesn't end in it.
@@ -349,26 +332,13 @@ struct header *hdr;
 	 error(name, "icode file name too long");
       strcpy(tname,name);
 
-#if MVS
-   {
-      char *p;
-      if (p = strchr(name, '(')) {
-	 tname[p-name] = '\0';
-      }
-#endif					/* MVS */
-
       strcat(tname,IcodeSuffix);
 
-#if MVS
-      if (p) strcat(tname,p);
-   }
-#endif					/* MVS */
-
-#if MSDOS || OS2
+#if MSDOS
       fdname = pathOpenHandle(tname,ReadBinary);	/* try to find path */
-#else					/* MSDOS || OS2 */
+#else					/* MSDOS */
       fdname = open(tname,O_RDONLY);
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 #if NT
     /*
@@ -390,11 +360,11 @@ struct header *hdr;
 
    if (fdname == -1)			/* try the name as given */
 
-#if MSDOS || OS2
+#if MSDOS
       fdname = pathOpenHandle(name, ReadBinary);
-#else					/* MSDOS || OS2 */
+#else					/* MSDOS */
       fdname = open(name, O_RDONLY);
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 #if MSDOS
       } /* end if (n >= 4 && !stricmp(".exe", name + n - 4)) */
@@ -1205,30 +1175,6 @@ else
 #if HAVE_LIBZ
  if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
 
-#if OS2
-   if (use_resource) {
-	memcpy(code,icoderes+sizeof(hdr),hdr.hsize);
-	DosFreeResource(icoderes);
-	if (modhandle) DosFreeModule(modhandle);
-   }
-   else {
-       if ((cbread = gzlongread(code, sizeof(char), (long)hdr.hsize, fname)) !=
-	  hdr.hsize) {
-#ifdef PresentationManager
-	  ConsoleFlags |= OutputToBuf;
-	  fprintf(stderr, "Invalid icode file: %s.\n", name);
-	  fprintf(stderr,"Could only read %ld (of %ld) bytes of code.\n",
-		  (long)cbread, (long)hdr.hsize);
-	  error(NULL, NULL);
-#else					/* PresentationManager */
-	  fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
-	    (long)hdr.hsize,(long)cbread);
-	  error(name, "bad icode file");
-#endif					/* PresentationManager */
-	  }
-       gzclose(fname);
-       }
-#else					/* OS2 */
    if ((cbread = gzlongread(code, sizeof(char), (long)hdr.hsize, fname)) !=
       hdr.hsize) {
       fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
@@ -1236,34 +1182,9 @@ else
       error(name, "bad icode file");
       }
    gzclose(fname);
-#endif					/* OS2 */
   }
   else  {        /* Don't need to decompress */
 
-#if OS2
-   if (use_resource) {
-	memcpy(code,icoderes+sizeof(hdr),hdr.hsize);
-	DosFreeResource(icoderes);
-	if (modhandle) DosFreeModule(modhandle);
-   }
-   else {
-      if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
-	  hdr.hsize) {
-#ifdef PresentationManager
-	  ConsoleFlags |= OutputToBuf;
-	  fprintf(stderr, "Invalid icode file: %s.\n", name);
-	  fprintf(stderr,"Could only read %ld (of %ld) bytes of code.\n",
-		  (long)cbread, (long)hdr.hsize);
-	  error(NULL, NULL);
-#else					/* PresentationManager */
-	  fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
-	    (long)hdr.hsize,(long)cbread);
-	  error(name, "bad icode file");
-#endif					/* PresentationManager */
-	  }
-       fclose(fname);
-   }
-#else					/* OS2 */
    if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
       hdr.hsize) {
       fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
@@ -1271,35 +1192,10 @@ else
       error(name, "bad icode file");
       }
    fclose(fname);
-#endif					/* OS2 */
 }
   
 #else					/* HAVE_LIBZ */
 
-#if OS2
-   if (use_resource) {
-	memcpy(code,icoderes+sizeof(hdr),hdr.hsize);
-	DosFreeResource(icoderes);
-	if (modhandle) DosFreeModule(modhandle);
-   }
-   else {
-      if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
-	  hdr.hsize) {
-#ifdef PresentationManager
-	  ConsoleFlags |= OutputToBuf;
-	  fprintf(stderr, "Invalid icode file: %s.\n", name);
-	  fprintf(stderr,"Could only read %ld (of %ld) bytes of code.\n",
-		  (long)cbread, (long)hdr.hsize);
-	  error(NULL, NULL);
-#else					/* PresentationManager */
-	  fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
-	    (long)hdr.hsize,(long)cbread);
-	  error(name, "bad icode file");
-#endif					/* PresentationManager */
-	  }
-       fclose(fname);
-   }
-#else					/* OS2 */
    if ((cbread = longread(code, sizeof(char), (long)hdr.hsize, fname)) !=
       hdr.hsize) {
       fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
@@ -1307,7 +1203,6 @@ else
       error(name, "bad icode file");
       }
    fclose(fname);
-#endif					/* OS2 */
 
 #endif					/* HAVE_LIBZ */
   
@@ -1676,39 +1571,6 @@ char *s;
    c_exit(EXIT_FAILURE);
    }
 
-#ifdef ConsoleWindow
-extern char *lognam;
-extern char tmplognam[];
-void closelogfile()
-{
-   if (flog) {
-      FILE *flog2;
-      int i;
-      fclose(flog);
-
-      /*
-       * write/append temporary log to the permanent logfile name
-       */
-      if ((flog = fopen(tmplognam, "r")) && (flog2 = fopen(lognam, "a"))) {
-	 while ((i = getc(flog)) != EOF)
-	    putc(i, flog2);
-	 fclose(flog);
-	 fclose(flog2);
-	 remove(tmplognam);
-         }
-
-      flog = NULL;
-      }
-   /*
-    * if it is not the ultimate default logfile name, free malloc'ed memory
-    */
-   if (lognam &&
-       ((getenv("WICONLOG")!=NULL) || strcmp(lognam, "winicon.log"))) {
-      free(lognam);
-      lognam = NULL;
-      }
-}
-#endif					/* ConsoleWindow */
 
 /*
  * c_exit(i) - flush all buffers and exit with status i.
@@ -1786,7 +1648,7 @@ int i;
 #undef exit
 #passthru #undef exit
 
-   closelogfile();
+   closelog();
 
 #endif					/* ConsoleWindow */
 
@@ -1812,10 +1674,10 @@ int i;
    /*
     * free dynamic record types
     */
-#ifdef MuliThread
-   if(curpstate && dr_arrays) {
+#ifdef MultiThread
+   if (curpstate && dr_arrays) {
 #else					/* MultiThread */
-   if(dr_arrays) {
+   if (dr_arrays) {
 #endif					/* MultiThread */
       int i, j;
       struct b_proc_list *bpelem, *to_free;

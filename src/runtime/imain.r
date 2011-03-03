@@ -342,17 +342,13 @@ void main(int argc, char **argv)
 	 free(buf);
 	 }
       }
-#endif
+#endif					/* UNIX */
 
    /*
     * Setup Icon interface.  It's done this way to avoid duplication
     *  of code, since the same thing has to be done if calling Icon
     *  is enabled.
     */
-
-#ifdef CRAY
-   argv[0] = "iconx";
-#endif					/* CRAY */
 
    icon_setup(argc, argv, &i);
 
@@ -568,6 +564,7 @@ void main(int argc, char **argv)
     */
    if (globals[0].dword != D_Proc)
       fatalerr(117, NULL);
+
    PushDesc(globals[0]);
    PushNull;
    glbl_argp = (dptr)(sp - 1);

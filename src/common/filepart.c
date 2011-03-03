@@ -1,5 +1,6 @@
 /*
- * This file contains pathfind(), fparse(), makename(), and smatch().
+ * This file contains pathfind(), fparse(), makename(), smatch(),
+ * pathOpen(), pathOpenHandle(), and openlog().
  */
 #include "../h/gsupport.h"
 
@@ -499,35 +500,71 @@ int pathOpenHandle(char *fname, char *mode)
    char buf[260 + 1];
    int i, use = 1;
 
+   /*
+    * Find out if a path has been given in the file name.
+    * If a path has been given with the file name, don't bother to
+    * use the PATH.
+    */
    for( i = 0; buf[i] = fname[i]; ++i)
-
-      /* find out if a path has been given in the file name */
-      if (buf[i] == '/' || buf[i] == ':' || buf[i] == '\\')
+      if ((buf[i] == '/') || (buf[i] == ':') || (buf[i] == '\\')) {
          use = 0;
+	 break;
+	 }
 
-   /* If a path has been given with the file name, don't bother to
-      use the PATH */
-
-#if OS2
-   if (use && DosSearchPath(SEARCH_CUR_DIRECTORY | SEARCH_ENVIRONMENT, 
-                            "PATH", fname, buf, 260))
-#else					/* OS2 */
-   if (use && !pathFind(fname, buf, 150))
-#endif 					/* OS2 */
+   if (use && !pathFind(fname, buf, 250))
        return -1;
+
 #if NT
-   if (mode[1]=='b')
+   if (mode[1] == 'b')
      return open(buf, ( mode[0]=='r' ? O_RDONLY : O_WRONLY) | O_BINARY);
    else
-#endif
+#endif					/* NT */
      return open(buf, mode[0]=='r' ? O_RDONLY : O_WRONLY);
    }
 
 FILE *pathOpen(char *fname, char *mode)
 {
    int handle = pathOpenHandle(fname, mode);
-   if (handle==-1) return NULL;
+   if (handle == -1) return NULL;
    return fdopen(handle, mode);
 }
 
 #endif					/* MSDOS || OS2 */
+
+/*
+ * Global variables for logfiles.
+ */
+char *lognam;
+extern FILE *flog;
+
+void openlog(char *p)
+{
+   lognam = p;
+   /*
+    * Open logfile, if it was requested on the command line (-l option).
+    * The log file is used by IDE's to report
+    * translation errors and jump to the offending source code line.
+    */
+   if (lognam != NULL) {
+      /*
+       * Append to logfile if it exists, otherwise write to it;
+       * reader of the logfile is responsible for deleting it.  Maybe also
+       * need to think about: don't generate a logfile unless asked, because
+       * if you weren't asked, there is no reader to delete that logfile.
+       */
+      if (flog = fopen(lognam, "r")) {
+	 freopen(lognam, "a", flog);
+	 }
+      else {
+	 flog = fopen(lognam, "w");
+	 }
+      }
+}
+
+void closelog()
+{
+   if (flog) {
+      fclose(flog);
+      flog = NULL;
+      }
+}

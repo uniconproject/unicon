@@ -102,3 +102,7 @@ Global int Zflag	Init(1);	/* -Z disables icode-gz compression */
 #ifdef OVLD
 Global int OVLDflag;   /* defaults to overloaded (so can make idol.u & unigram.u exceptions */
 #endif
+
+Global char *lognam;		/* name of a logfile, from -l logname */
+Global FILE *flog;		/* log file */
+

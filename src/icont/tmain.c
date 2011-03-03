@@ -7,22 +7,6 @@
 #include "tproto.h"
 #include "tglobals.h"
 
-#if SCCX_MX
-   #include "../h/filepat.h"
-   /* This sets the stack size so it runs in a Windows DOS box */
-   unsigned _stack = 100000;
-#endif      /* SCCX_MX */
-
-#if AMIGA
-   #include <workbench/startup.h>
-   #if __SASC
-      #include <proto/dos.h>
-      #include <proto/icon.h>
-      #include <proto/wb.h>
-      #undef NOT            /* #defined in <intuition/intuition.h> */
-   #endif				/* __SASC */
-#endif                                  /* AMIGA */
-
 #if MACINTOSH
    #if THINK_C
       #include "console.h"
@@ -324,47 +308,10 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 
 
 LRESULT_CALLBACK WndProc	(HWND, UINT, WPARAM, LPARAM);
-char *lognam;
-char tmplognam[128];
-extern FILE *flog;
 
 void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstance)
    {
    WNDCLASS wc;
-   char *tnam;
-
-   /*
-    * Select log file name.  Might make this a command-line option.
-    * Default to "WICON.LOG".  The log file is used by Wi to report
-    * translation errors and jump to the offending source code line.
-    */
-   if ((lognam = getenv("WICONLOG")) == NULL) {
-      if (((lognam = getenv("TEMP")) != NULL) &&
-	  (lognam = malloc(strlen(lognam) + 13)) != NULL) {
-	 strcpy(lognam, getenv("TEMP"));
-	 strcat(lognam, "\\");
-	 strcat(lognam, "winicon.log");
-         }
-      else
-	 lognam = "winicon.log";
-      }
-   if (flog = fopen(lognam, "r")) {
-      fclose(flog);
-      flog = NULL;
-      remove(lognam);
-      }
-   lognam = strdup(lognam);
-   flog = NULL;
-   tnam = _tempnam("C:\\TEMP", "wi");
-   if (tnam != NULL) {
-      strcpy(tmplognam, tnam);
-      flog = fopen(tmplognam, "w");
-      free(tnam);
-   }
-   if (flog == NULL) {
-      fprintf(stderr, "unable to open logfile");
-      exit(EXIT_FAILURE);
-      }
 
    if (!hPrevInstance) {
 #if NT
@@ -415,6 +362,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    wfreersc();
    return 0;
 }
+
 
 #define main icont
 #endif					/* MSWindows */
@@ -584,8 +532,8 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    /*
     * Process options. NOTE: Keep Usage definition in sync with getopt() call.
     */
-   #define Usage "[-cBstuEG] [-f s] [-o ofile] [-v i]"	/* omit -e from doc */
-   while ((c = getopt(argc,argv, "cBe:f:o:O:stuGv:ELZ")) != EOF)
+   #define Usage "[-cBstuEG] [-f s] [-l logfile] [-o ofile] [-v i]"	/* omit -e from doc */
+   while ((c = getopt(argc,argv, "cBe:f:l:o:O:stuGv:ELZ")) != EOF)
       switch (c) {
 	 case 'B':
 	    bundleiconx = 1;
@@ -638,6 +586,9 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
          case 'c':			/* -c: compile only (no linking) */
             nolink = 1;
             break;
+	 case 'l':
+	    openlog(optarg);
+	    break;
          case 'e':			/* -e file: redirect stderr */
             efile = optarg;
             break;
@@ -1009,17 +960,8 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
       remove(ofile);
       sprintf(errbuf, "%d errors\n", errors);
       report(errbuf);
-#ifdef ConsoleWindow
-      if (flog != NULL) {
-	 int i;
-	 fclose(flog);
-	 flog = NULL;
-	 i = rename(tmplognam, lognam);
-	 if (i != 0)
-	    fprintf(stderr, "renaming logfile %s to %s failed\n",
-		    tmplognam, lognam);
-	 }
-#endif					/* ConsoleWindow */
+      if (flog)
+	 closelog();
       exit(EXIT_FAILURE);
       }
 #ifdef ConsoleWindow
@@ -1042,16 +984,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    free(lfiles);
    free(rfiles);
 
-#ifdef ConsoleWindow
-   if (flog != NULL) {
-      int i;
-      fclose(flog);
-      flog = NULL;
-      i = rename(tmplognam, lognam);
-      if (i != 0)
-	 fprintf(stdout, "renaming %s to %s failed\n", tmplognam, lognam);
-      }
-#endif					/* ConsoleWindow */
+   closelog();
 
    exit(EXIT_SUCCESS);
    }
@@ -1264,12 +1197,10 @@ char *s;
    char *c = (strchr(s, '\n') ? "" : ":\n") ;
    if (!silent)
       fprintf(stderr,"%s%s",s,c);
-#ifdef ConsoleWindow
    else if (flog != NULL) {
       fprintf(flog, "%s%s",s,c);
       fflush(flog);
       }
-#endif					/* ConsoleWindow */
    }
 
 /*

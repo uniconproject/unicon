@@ -31,8 +31,21 @@ Deliberate Syntax Error
 int is_internal(char *s)
 {
    int i = 0;
+   char cmd[12], *cmdp, *s_ptr, *p; 
+
+   if ( p = strchr(s, ' ')){
+      cmdp=cmd; s_ptr=s;
+      if (p-s_ptr>9) return 0;
+      while (s_ptr!=p){ *cmdp=*s_ptr; cmdp++; s_ptr++;}
+      *cmdp='\0';
+      cmdp=cmd;
+      }
+   else
+      cmdp=s;
+    
    while (internal_cmds[i]) {
-      if (! stricmp(s, internal_cmds[i])) return 1;
+      if (! strcmp(cmdp, internal_cmds[i])) return 1;
+      i++;
       }
    return 0;
 }

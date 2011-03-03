@@ -1833,7 +1833,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
 	       if (!cnv:C_string((*f), p))
 		  runerr(103, *f);
-#if WIN32
+#if NT
 	       if ((n == 0) && is_internal(p)) {
 		  margv[n++] = "cmd"; /* on Win9x this should be command */
 		  margv[n++] = "/C";
@@ -1925,6 +1925,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       garbage[1] = "/C";
 	       }
 	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], garbage);
+	    free(garbage);
 	    }
 	 else {
 	    i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], margv);
@@ -1936,27 +1937,36 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    }
          }
       else {
-	    int argc;
-	    char **garbage, *g2;
-extern char *ArgvToCmdline(char **);
-
-	    argc = CmdParamToArgv(cmdline, &garbage, 0);
-
-            g2 = ArgvToCmdline(garbage);
-
 	    /* Sigh... old "system". Collect all args into a string. */
 	    if (is_argv_str) {
+	       int argc;
+	       char **garbage, *g2;
+extern char *ArgvToCmdline(char **);
+	       argc = CmdParamToArgv(cmdline, &garbage, 0);
+	       if (is_internal(garbage[0])) {
+	       	  int jj;
+	       	  argc += 2;
+	       	  garbage = realloc(garbage, (sizeof (char *)) * (argc+1));
+	       	  garbage[argc] = NULL;
+	       	  for(jj = argc-1; jj >= 2; jj--)
+		     garbage[jj] = garbage[jj-2];
+	       	  garbage[0] = "cmd";
+	       	  garbage[1] = "/C";
+	       	  }
+               g2 = ArgvToCmdline(garbage);
+
 #ifdef MSWindows
 	       i = (C_integer)mswinsystem(g2);
 #else					/* MSWindows */
 	       i = (C_integer)system(g2);
 #endif					/* MSWindows */
+	       free(garbage);
+	       free(g2);
 	       return C_integer i;
 	       }
 	    else {
 	       int i, total = 0, n;
 	       tended char *s;
-	 
 	       i = 0;
 	       while (margv[i]) {
 		  total += strlen(margv[i]) + 1;

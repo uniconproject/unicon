@@ -22,8 +22,8 @@ global targs,browser,
    fontheight,msglines,
    linebreak,ui_ini,filename,
    flag,tmp,configdlg,
-   tabs_num,opened_files_list,
-   opened_files_locs,opened_files_num,
+   tabs_num,opened_files_set,
+   opened_files_num,
    tab_label,filedirectory,
    fileCompiled, overwrite, url_field,
    lst, web_mode, commands_file, ide, file_contents, dialogFor
@@ -261,15 +261,6 @@ class IDE (
       tabs_num +:= 1
       modified := &null
       filefound := &null
-      every i := 1 to *opened_files_list do
-         if opened_files_list[i] === filename then {
-            filefound := 1
-            return
-            }
-      if /filefound then {
-         put(opened_files_list,filename)
-         put(opened_files_locs,\filedirectory)
-         }
 
       return tabs_num
    end
@@ -558,13 +549,15 @@ $endif
          }
       # A loop to check whether or not the file is already open
       # or if there is a different file open with the same name
-      every tab_id:=1 to *opened_files_list do {
-	 if opened_files_list[tab_id] === file_name(filename) then
-	    opened_files_num +:= 1
-	 }
+      #every tab_id:=1 to *opened_files_list do {
+      #	 if opened_files_list[tab_id] === file_name(filename) then
+      #	    opened_files_num +:= 1
+      #	 }
       # We don't have a files open with the same name, so 
       # add a new tab with the file name
-      if opened_files_num === 0 then {
+      if not member(opened_files_set, file_name(filename)) then
+      #if opened_files_num === 0 then 
+        {
          if find(".o",filename) then
             MsgBox.set_contents(["can not open "||filename])
 	 else {
@@ -574,6 +567,7 @@ $endif
                                 " lines, " || nchars || " characters"])
             FileTabSet.set_which_one(CurrentTabItem())
 	    handle_update()
+            insert(opened_files_set, file_name(filename))
 	    }
          }
       else {
@@ -663,18 +657,11 @@ $endif
 	 }
       FileTabSet.remove(c)
       MsgBox.set_contents(["closed " || (FileTabSet.get_which_one()).label])
-      every i := 1 to *opened_files_list do
-         if opened_files_list[i] === c.label then {
-            ix := i
-            return
-            }
+
       t := (FileTabSet.get_which_one()).label
-      delete(opened_files_list,opened_files_list[ix])
-      delete(opened_files_locs,opened_files_locs[ix])
+      delete(opened_files_set, t)
       tabs_num -:= 1
-      every i := 1 to *opened_files_list do
-         write("Files: ",opened_files_list[i]," Location: ",
-               opened_files_locs[i])
+
       handle_update()
       FileTabSet.resize()
    end
@@ -728,7 +715,7 @@ $endif
    method get_tabitem(lab)
       local c
       if (c:=!components).label == lab then return c
-      return
+      return &null
    end
    #
    #
@@ -773,9 +760,9 @@ $endif
          if \modified == 1 then {
             save_file(CurrentTabItem().label)
             }
-         every i := 1 to \*opened_files_list do
-            if CurrentTabItem().label === \opened_files_list[i] then
-               filedirectory := opened_files_locs[i]
+#         every i := 1 to \*opened_files_list do
+#            if CurrentTabItem().label === \opened_files_list[i] then
+#               filedirectory := opened_files_locs[i]
          }
       else {
          saveas()
@@ -1183,7 +1170,7 @@ $endif
    #  Save As Menu Item Method
    #
    method saveas(ev)
-      local fd, filename, foo, index := i, warntxt, fexist := &null
+      local fd, filename, foo, index := i, warntxt, fexist := &null, L
 
       fileslist := []
       every put(fileslist,!open("."))
@@ -1232,31 +1219,16 @@ $endif
                self.resize() # recalc with new components in place
                }
             }
+         FileBrowser.nodereplace(CurrentTabItem().label)
          CurrentTabItem().set_label(file_name(filename))
+         L := CurrentEditBox().get_contents() | []
+         FileBrowser.addreplace(L, file_name(filename), 0)
          save_file(filename)
          if find(".icp", map(filename)) then { # open project
             project := filename
             updateproject()
             }
          handle_update()
-         # This code to check the name of the saved file
-         # and replace it with another 
-         every i := 1 to *opened_files_list do
-            if opened_files_list[i] === CurrentTabItem().label then {
-               filefound := 1
-               index := i
-               return
-               }
-         if \filefound then{
-            put(opened_files_list,file_name(filename))
-            put(opened_files_locs,\filedirectory)
-            }
-         else {
-            delete(opened_files_list,opened_files_list[\index])
-            delete(opened_files_locs,opened_files_locs[\index])
-            put(opened_files_list,file_name(filename))
-            put(opened_files_locs,filedirectory)
-            }
          }
    end
    #
@@ -1306,8 +1278,7 @@ $endif
 initially
    tabs_num := 0
    ide := self
-   opened_files_list := []
-   opened_files_locs := []
+   opened_files_set := set()
    opened_files_num := 0
 end # IDE Class End
 

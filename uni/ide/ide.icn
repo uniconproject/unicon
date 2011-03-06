@@ -752,7 +752,15 @@ $endif
    #
    #
    method complink()
-      local x, arglist := "", lst := [], logf, i, s, fname, file_name
+      local x, arglist := "", lst := [], logf, i, s, fname, file_name,
+            cmd, cmdargs
+      static compile_cmd
+      initial {
+         if &features=="MS Windows NT" then
+            compile_cmd := "wunicon -quiet -log "
+         else
+            compile_cmd := "unicon "
+         }
 
       /targs := ""
       lst := []
@@ -795,14 +803,13 @@ $endif
             i +:= 1
             }
 
-         if find(".icn", \arglist) then {
+         if find(".icn",\arglist) then{
 $ifdef _UNIX
-            system("unicon " || " -c " || targs ||
-                   " " || arglist || " > " || wiconlog || " 2>&1", lst, 1)
+            cmdargs := " " || targs || " " || arglist || " > " || wiconlog || " 2>&1"
 $else
-               system("wunicon -c -quiet -log "|| wiconlog || " " ||
-                      targs || " " || arglist, lst, 1)
+            cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
 $endif
+            system(  compile_cmd || "-c" || cmdargs , lst,1, "Compiling...")
             showanyerror(wiconlog, lst)
             }
 
@@ -821,15 +828,18 @@ $endif
             i +:= 1
             }
          }
+
+     if find(".icn",CurrentTabItem().label) then{
 $ifdef _UNIX
-      system("unicon " || " -o " || quotes(icodename) || " " || targs || 
-             " " || arglist || " > "|| wiconlog || " 2>&1", lst, 1)
+         cmdargs := " " || targs || " " || arglist || " > " || wiconlog || " 2>&1"
+         cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs 
 $else
-     if find(".icn",CurrentTabItem().label) then
-        system("wunicon -quiet -log " || wiconlog || " " ||  targs || " " ||
-	       arglist, lst, 1)
+         cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
+         cmd := compile_cmd || cmdargs 
 $endif
-      showanyerror(wiconlog, lst)
+         system( cmd, lst,1,"Compiling...")
+         showanyerror(wiconlog, lst)
+         }
 
       fileCompiled :="TRUE"
    end
@@ -838,7 +848,7 @@ $endif
    #
    method showanyerror(fn, lst)
       local log1, i, s, ln, nerrors := 0
-      delay(800)
+      #delay(800)
       if log1 := open(fn, "r") then {
          while put(\lst, read(log1)) do {
          }
@@ -933,14 +943,16 @@ $endif
    #
    #  system Method
    #
-   method system(s, lst, apnd)
+   method system(s, lst, apnd, alternate_txt)
       local rv
+      static realsys
+      initial realsys:=proc("system", 0)
       if /s then fail
       /lst := []
       if /apnd then while pop(lst)
-      put(lst,s)
+      put(lst,\alternate_txt | s)
       WAttrib("pointer=wait")
-      rv := proc("system", 0)(s)
+      rv := realsys(s)
       WAttrib("pointer=arrow")
 
       if \rv then return rv
@@ -949,7 +961,7 @@ $endif
    # Run Method
    #
    method run()
-      local L, cmd, s, fdir
+      local L, cmd, s, fdir, cmd2
 $ifdef _UNIX
       console := "konsole --vt_sz 70x18 " 
 $else # implies Windows for now
@@ -985,25 +997,25 @@ $ifdef _UNIX
 	 if (fun := open("uname","pr")) &
 	     (unam := read(fun)) & close(fun) & match("Darwin",unam) then {
 	    console := "xterm -hold -e script " || wiconlog ||" "
-	    cmd := console || \cmd || " "
+	    cmd2 := console || \cmd || " "
 	    }
 	 else {
 	    console := "xterm -hold -e script -c \""
-	    cmd := console || \cmd || " \" " || wiconlog
+	    cmd2 := console || \cmd || " \" " || wiconlog
 	    }
          }
       else #just run without "console || ..."
-         cmd ||:= " &> " || wiconlog
+         cmd2 ||:= " &> " || wiconlog
 $else
-     if fdir[0] == "\\" then
-        fdir := fdir
-     else fdir := fdir|| "\\"
+     if fdir[-1] ~== "\\" then
+       fdir := fdir || "\\"
      if find(".icn", CurrentTabItem().label) then
-        cmd := "wiconx " || fdir || cmd
+        cmd2 := "wiconx -l" || wiconlog || " " || fdir || cmd
+
      #cmd := "wiconx " || cmd
 $endif
 
-      if system(cmd, L) then { # hope WICONLOG does trick?
+      if system(cmd2, L,,"Running " || fdir || cmd ) then { # hope WICONLOG does trick?
          showanyerror(wiconlog, L, 1)
          }
       else {
@@ -1017,35 +1029,32 @@ $endif
    #
    method compile()
       local command, str, compile_options, log1
+      static compile_cmd_txt
+      initial {
+         if &features=="MS Windows NT" then
+            compile_cmd := "wunicon -c -quiet -log "
+         else
+            compile_cmd := "unicon -c "
+         }
       /targs := ""
       /arglist := ""
       fdir := chdir(filedirectory)
       MsgBox.set_contents([""])
       lst := []
-$ifdef _UNIX
-      if find(".icn",tab_label) then
-         compile_cmd_txt := "unicon"
-$else
-      if find(".icn",tab_label) then
-         compile_cmd_txt := "wunicon"
-$endif
+
       if CurrentTabItem().label ==="Untitled" then {
          \MsgBox.set_contents(["Open a file to compile "])
          return
          }
+      fname:= CurrentTabItem().label
+
 $ifdef _UNIX
-      fname:= CurrentTabItem().label
-      if find(".icn",fname) then {
-          system("unicon -c " || " " || targs || " " ||comp1file(fname)||
-	         " > "||wiconlog||" 2>&1", lst, 1)
-          }
+      cmd := compile_cmd || targs || " " ||comp1file(fname)|| " > "||wiconlog||" 2>&1"
 $else
-      fname:= CurrentTabItem().label
-      if find(".icn",fname) then {
-         system("wunicon -c -quiet -log " || wiconlog ||" "||targs||
-	        " "||comp1file(fname), lst, 1)
-         }
+      cmd := compile_cmd || wiconlog ||" "||targs||  " "||comp1file(fname)
 $endif
+      if find(".icn",fname) then 
+         system( cmd, lst,1 ,comp1file(fname))      
       fileCompiled :="TRUE"
       showanyerror(wiconlog, lst)
    end

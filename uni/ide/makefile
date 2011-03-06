@@ -9,7 +9,7 @@ include ../makedefs
 # nothing to configure here yet
 
 UC=../../bin/unicon
-WUC=../../bin/wunicon -G
+WUC=../../bin/unicon -G
 UFLAGS=-c -u
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \

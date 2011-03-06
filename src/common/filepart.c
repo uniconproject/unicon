@@ -453,6 +453,13 @@ int pathFind(char target[], char buf[], int n)
    int res;
    struct stat sbuf;
 
+   if ((target[0] == '\\') || (target[1]==':' && target[2]=='\\')) {
+      if ((res = stat(target, &sbuf)) == 0) {
+	 strcpy(buf, target);
+	 return 1;
+	 }
+      }
+
    if ((path = getenv("PATH")) == 0)
       path = "";
 
@@ -508,7 +515,7 @@ int pathOpenHandle(char *fname, char *mode)
    for( i = 0; buf[i] = fname[i]; ++i)
       if ((buf[i] == '/') || (buf[i] == ':') || (buf[i] == '\\')) {
          use = 0;
-	 break;
+	 if (buf[i] == '/') buf[i] = '\\';
 	 }
 
    if (use && !pathFind(fname, buf, 250))
@@ -553,7 +560,7 @@ void openlog(char *p)
        * if you weren't asked, there is no reader to delete that logfile.
        */
       if (flog = fopen(lognam, "r")) {
-	 freopen(lognam, "a", flog);
+         flog = freopen(lognam, "a", flog);
 	 }
       else {
 	 flog = fopen(lognam, "w");

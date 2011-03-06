@@ -470,12 +470,10 @@ dptr d;
    register char *s;
    register word l;
    register int  i;
-
    l = StrLen(*d);
    if (l == 0)
       return  Succeeded;
    s = StrLoc(*d);
-
 #ifdef MSWindows
 #ifdef ConsoleWindow
    if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
@@ -592,16 +590,7 @@ int n;
    return Succeeded;
 #else					/* SCCX_MX */
 #if NT
-#ifdef MSWindows
    Sleep(n);
-#else					/* MSWindows */
-   /*
-    * In the old DOS documentation, sleep(n) took a # of seconds to sleep,
-    * but VC++ 2.0's _sleep() seems to be taking milliseconds.
-    */
-   _sleep(n);
-
-#endif					/* MSWindows */
    return Succeeded;
 #else					/* NT */
    return Failed;
@@ -1150,20 +1139,14 @@ int link(char *s1, char *s2)
  */
 FILE *mytmpfile()
 {
-   char *temp, *temp2, tmpbuf[256];
+   char *temp;
    FILE *f;
-   
-   if (getenv_r("TEMP", tmpbuf, 255)==0)
-      temp=tmpbuf;
-   else{
-      fprintf(stderr, "getenv(TEMP) failed\n");
-      return NULL;
-      }
-   if ((temp2 = _tempnam(temp, "wx")) == NULL) {
+
+   if ((temp = _tempnam(NULL, NULL)) == NULL) {
       fprintf(stderr, "_tempnam(TEMP) failed\n");
       return NULL;
       }
-   if ((f = fopen(temp2, "w+b")) == NULL) {
+   if ((f = fopen(temp, "w+b")) == NULL) {
       fprintf(stderr, "fopen(TEMP) w+b failed\n");
       return NULL;
       }

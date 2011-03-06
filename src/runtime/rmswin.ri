@@ -1257,6 +1257,12 @@ int wputc(int ci, wbp w)
    int y_plus_descent;
    HBRUSH hb;
 
+#ifdef ConsoleWindow
+   if (w == stdout || w == stderr || w==ConsoleBinding) {
+      if (flog) fputc(ci, flog);
+      }
+#endif					/* ConsoleWindow */
+
 #ifdef ScrollingConsoleWin
    char c2[3], *catenation;
    tended struct descrip result;

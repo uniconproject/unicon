@@ -359,8 +359,7 @@ procedure iconc_yyparse(fname, tmplist)
       yyin ||:= "\n"
    yylex_reinit()
    if /yydbg then {
-      temppath := getenv("TEMP") | "/tmp"
-      tmpname := tempname("uni","",temppath,5)
+      tmpname := tempname("uni",,,5)
       # write("mdw: tmpname: " || tmpname)
       yyout := open(tmpname, "w") |
          stop("can't open temporary file ",tmpname," for writing")
@@ -414,7 +413,7 @@ procedure initialize()
   linkline := ""
   tmpcount := 0
   reserved := " fi neht esle yreve elihw od ot yb "
-  flogname := tempname("uni",,temppath,5)
+  flogname := tempname("uni",,,5)
   if widollog := getenv("WIDOLLOG") then flog := open(flogname,"w")
   uni_predefs := predefs()
   sysinitialize()
@@ -533,7 +532,7 @@ procedure unicon(argv)
 		  }
 	       argv[i+1] := "-log"
 	       }
-	 }
+	   }
 	 "-version": {
             iwrite(&version)
 	    return 0
@@ -604,10 +603,13 @@ procedure unicon(argv)
 	 every yyin ||:= preprocessor(fName, uni_predefs) do yyin ||:= "\n"
          yylex_reinit()
 	 cmd := selecticont()
+         if &features=="MS Windows NT" & &features=="console window" then{
+            wilog := tempname("uni",".tmp",,)
+	    cmd ||:= " -l "|| wilog
+	    }
 	 cmd ||:= " -c "||icontopt||" -O "|| quotes(fName) ||" "
 	 if /yydbg then {
-	    temppath := getenv("TEMP") | "/tmp"
-	    tmpname := tempname("uni",,temppath,5)
+	    tmpname := tempname("uni",,,5)
 	    yyout := open(tmpname, "w") |
 	       stop("can't open temporary file ",tmpname," for writing")
             put(tmpfnames, tmpname)
@@ -626,7 +628,6 @@ procedure unicon(argv)
 	     rv := mysystem(cmd || tmpname)
 	     if rv ~=== 0 then yynerrs +:= 1
 	     if &features=="MS Windows NT" & &features=="console window" then { # copy icont log to our console
-	        wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
 		every j := 1 to 5 do {
 		    if flog2 := open(wilog) then {
 			while iwrite(&errout, read(flog2))
@@ -636,7 +637,6 @@ procedure unicon(argv)
 		    }
 		    delay(1000)
 		}
-            delay(500)
 	    }
 	 }
 
@@ -755,8 +755,7 @@ procedure unicon(argv)
          }
       cmd ||:= \exename
       if \iconc_perifile_idx then {
-         mw_temppath := getenv("TEMP") | "/tmp"
-         mw_tmpname := tempname("uni", "", mw_temppath, 5)
+         mw_tmpname := tempname("uni",,, 5)
          ca_write(mw_tmpname, tmpfnames[iconc_perifile_idx])
          cmd ||:= " -A " || mw_tmpname || " "
          }
@@ -778,6 +777,8 @@ procedure unicon(argv)
 
   if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
       cmd := selecticont()
+       if &features=="MS Windows NT" & &features=="console window" then
+	 cmd ||:= " -l "|| (wilog := tempname("uni",".tmp",,))
       cmd ||:= " "
       if \exename then cmd ||:= exename
       cmd ||:= ilinkopt
@@ -785,19 +786,13 @@ procedure unicon(argv)
       if \exec then {
 	  every cmd ||:= " " || argv[exec to *argv]
       }
-      if &features=="MS Windows NT" & &features=="console window" then {
-	 wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
-	 # remove log prior to executing command
-	 if stat(wilog) then
-	    remove(wilog) | write(&errout, wilog, " - stale logfile not removed.")
-         }
+
       rv := mysystem(cmd)
       if rv === 0 then {
          # if no errors, and we linked them from source, remove the .u
 	  every remove(!\translateducode)
       }
       if &features=="MS Windows NT" & &features=="console window" then { # copy icont log to our console
-	 wilog := getenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
 	 every j := 1 to 5 do {
 	     if flog2 := open(wilog) then {
 		 while iwrite(&errout, read(flog2))
@@ -949,7 +944,7 @@ local cmd, dash_s
       if &features=="MS Windows NT" then{
 	  if &features=="console window" then{ 
 	      cmd ||:= "wicont.exe"
-	      dash_S:=1
+	      dash_s:=1
 	     }
 	  else
 	      cmd ||:= "icont.exe"

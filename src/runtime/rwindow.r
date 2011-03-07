@@ -605,6 +605,12 @@ int len;
    /* turn off the cursor */
    hidecrsr(ws);
 
+   if (w == stdout || w == stderr || w==ConsoleBinding) {
+      if (flog) fprintf(flog, "%*s", len, s);
+      }
+
+
+
 #ifdef ScrollingConsoleWin
 #undef fprintf
    if (w == (wbp)ConsoleBinding) {
@@ -4412,7 +4418,7 @@ void waitkey(FILE *w)
    wgetevent((wbp)w, &answer,-1);
 }
 
-FILE *flog;
+/*FILE *flog;*/
 
 /*
  * OpenConsole

@@ -4418,8 +4418,9 @@ void waitkey(FILE *w)
    wgetevent((wbp)w, &answer,-1);
 }
 
-/*FILE *flog;*/
-
+#ifndef NT
+  FILE *flog;
+#endif						/* NT */
 /*
  * OpenConsole
  */

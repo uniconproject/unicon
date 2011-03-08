@@ -189,8 +189,10 @@ initially(name)
    else
        self.name := name
    if dbe := fetchspec(self.name) then {
+write("fetched spec for ", image(self.name), " : ", image(dbe))
       Read(dbe.entry)
       self.dir := dbe.dir
+write(".dir is ", image(self.dir))
       }
    /tag := "package"
    /fields := classFields()
@@ -957,8 +959,14 @@ end
 # find a class specification, along the IPATH if necessary
 #
 procedure fetchspec(name)
-   static nonwhite
+   static white, nonwhite
+$ifdef _MS_WINDOWS_NT
+   white := ' \t;'
+   nonwhite := &cset -- ' \t;'
+$else
+   white := ' \t'
    nonwhite := &cset -- ' \t'
+$endif
    if f := open(env,"dr") then {
       if s := fetch(f, name) then {
 	 close(f)
@@ -981,10 +989,10 @@ procedure fetchspec(name)
    if \ipath then {
       ipath ? {
          dir := ""
-	 tab(many(' '))
+	 tab(many(white))
 	 while dir ||:= tab(many(nonwhite)) do {
 	    if *dir>0 & dir[1]=="\"" & dir[-1] ~== "\"" then {
-		dir ||:= tab(many(' \t')) | { fail }
+		dir ||:= tab(many(white)) | { fail }
 	       }
 	    else {
 		if dir[1]==dir[-1]=="\"" then dir := dir[2:-1]
@@ -993,7 +1001,7 @@ procedure fetchspec(name)
 			close(f); return db_entry(dir, s) }
 		    close(f)
 		}
-		tab(many(' \t'))
+		tab(many(white))
 		dir := ""
 	    }
 	}

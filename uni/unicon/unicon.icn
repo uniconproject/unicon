@@ -104,6 +104,14 @@ procedure iconc_make_exename_opt(args)
    return rslt
 end
 
+procedure pathsep()
+$ifdef _MS_WINDOWS_NT
+   return getenv("PATHSEP") | ";"
+$else
+   return getenv("PATHSEP") | " "
+$endif
+end
+
 procedure ipaths()
 static pathstr
 local binpath, f
@@ -114,8 +122,10 @@ local binpath, f
          "wiconx.exe")))) then {
          close(\f)
          pathstr ||:=
-            binpath || "../ipl/lib " || binpath || "../uni/lib " ||
-            binpath || "../uni/gui " || binpath || "../uni/3d "
+            binpath || "../ipl/lib" || pathsep() ||
+	    binpath || "../uni/lib" || pathsep() ||
+            binpath || "../uni/gui" || pathsep() ||
+	    binpath || "../uni/3d" || pathsep()
          }
       pathstr ||:= (getenv("IPATH") | ".")
       }
@@ -124,15 +134,14 @@ end
 
 procedure ipaths_get()
    static rslt
-   local binpath, pathstr, pathsep
+   local binpath, pathstr
 
    initial {
       rslt := []
       pathstr := ipaths()
       if \pathstr ~== "" then {
-         pathsep := getenv("PATHSEP") | " "
          pathstr ? {
-            while put(rslt, tab(find(pathsep))) do
+            while put(rslt, tab(find(pathsep()))) do
                move(1)
             put(rslt, tab(0))
             }
@@ -151,16 +160,16 @@ local binpath, f
          ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|
          "wiconx.exe")))) then {
          close(\f)
-         pathstr ||:= binpath || "../ipl/incl "
-	 if \iconc then pathstr ||:= binpath || "../ipl/procs "
+         pathstr ||:= binpath || "../ipl/incl" || pathsep()
+	 if \iconc then pathstr ||:= binpath || "../ipl/procs" || pathsep()
          pathstr ||:=
-            binpath || "../uni/lib " ||
-            binpath || "../uni/gui " ||
-            binpath || "../ipl/gincl " ||
-            binpath || "../ipl/mincl "
+            binpath || "../uni/lib" || pathsep() ||
+            binpath || "../uni/gui" || pathsep() ||
+            binpath || "../ipl/gincl" || pathsep() ||
+            binpath || "../ipl/mincl" || pathsep()
 	 if \iconc then pathstr ||:=
-            binpath || "../ipl/gprocs " ||
-            binpath || "../ipl/gprogs "
+            binpath || "../ipl/gprocs" || pathsep() ||
+            binpath || "../ipl/gprogs" || pathsep()
          }
       pathstr ||:= (getenv("LPATH") | ".")
       }
@@ -169,15 +178,14 @@ end
 
 procedure lpaths_get()
    static rslt
-   local binpath, pathstr, pathsep, f
+   local binpath, pathstr, f
 
    initial {
       rslt := []
       pathstr := lpaths()
       if \pathstr ~== "" then {
-         pathsep := getenv("PATHSEP") | " "
          pathstr ? {
-            while put(rslt, tab(find(pathsep))) do
+            while put(rslt, tab(find(pathsep()))) do
                move(1)
             put(rslt, tab(0))
             }
@@ -792,7 +800,8 @@ procedure unicon(argv)
          # if no errors, and we linked them from source, remove the .u
 	  every remove(!\translateducode)
       }
-      if &features=="MS Windows NT" & &features=="console window" then { # copy icont log to our console
+      if &features=="MS Windows NT" & &features=="console window" then {
+	 # copy icont log to our console
 	 every j := 1 to 5 do {
 	     if flog2 := open(wilog) then {
 		 while iwrite(&errout, read(flog2))

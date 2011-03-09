@@ -708,7 +708,7 @@ class BuffEditableTextList : EditableTextList(
 
    # New left_string for the UniconTextList
    method left_string_unicon(win, x, y, s, currentLine)
-      local i, token, last_s_Position, new_s_Position, off
+      local i, token, last_s_Position, new_s_Position, off, remainder
 
       y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
       # Check if an error line has been set.
@@ -769,8 +769,8 @@ class BuffEditableTextList : EditableTextList(
       # Draw the rest of the string s that was not a token
       Fg( win, "green" ) #Green
       remainder := s[ last_s_Position : ( *s + 1 ) ]
-      if *(trim(remainder)) > 0 then
-      DrawString( win, x, y, s[ last_s_Position : ( *s + 1 ) ] )
+      if *(trim(\remainder)) > 0 then
+         DrawString( win, x, y, s[ last_s_Position : ( *s + 1 ) ] )
       Fg( win, "light green" ) #Light Green
    end
 

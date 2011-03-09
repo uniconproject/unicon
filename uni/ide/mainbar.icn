@@ -15,7 +15,8 @@ $include "guih.icn"
 link io, font_dlg
 
 
-global new_UniconProject, uniconProject, uide, gotoln
+global new_UniconProject, uniconProject, uide, gotoln, 
+   projectCreated, projectOpened
 
 #
 # Class menubar needs description.
@@ -696,6 +697,7 @@ $endif
          newUPro.show_modal()
          }
       projecttype :="Unicon"
+      projectCreated := "TRUE"
       tab_item_1.set_label("Messages: (Project Mode)")
       DevTabSet.set_which_one(tab_item_1)
       tab_item_1.init()
@@ -712,6 +714,7 @@ $endif
          pname:=file_name(projectname)
          }
       projecttype :="Unicon"
+
       tab_item_1.set_label("Messages: (Project Mode)")
       DevTabSet.set_which_one(tab_item_1)
       tab_item_1.init()
@@ -742,7 +745,8 @@ $ifdef _UNIX
       if \projecttype == "Unicon" then {
          chdir(filedirectory)
          system("make deps")
-         system("make"||" > "||wiconlog||" 2>&1",lst,1)
+         system("make -f "||pname2||"_uprjMakefile"||
+                " > "||wiconlog||" 2>&1",lst,1)
          ide.showanyerror(wiconlog, lst)
          }
       fileCompiled := "TRUE"
@@ -779,11 +783,13 @@ $endif
       local pname, pname2
       lst :=[]
       pname := ide.CurrentTabItem().label
-      pname2 := pname[1:*pname-4]||".exe"
+      pname2 := pname[1:*pname-4]
+
       if \(projectCreated| projectOpened) == "TRUE" then {
          if \projecttype == "Unicon" then {
             chdir(filedirectory)
-            system("make clean"||" > "||wiconlog||" 2>&1",lst,1)
+            system("make clean -f "||pname2||"_uprjMakefile"||
+                   " > "||wiconlog||" 2>&1",lst,1)
             }
          ide.showanyerror(wiconlog, lst)
          }
@@ -794,12 +800,13 @@ $endif
       local pname, pname2
       lst :=[]
       pname := ide.CurrentTabItem().label
-      pname2 := pname[1:*pname-4]||".exe"
+      pname2 := pname[1:*pname-4]
 
       if \projectCreated == "TRUE" then {
          if \projecttype == "Unicon" then {
             chdir(filedirectory)
-            system("make clean"||" > "||wiconlog||" 2>&1",lst,1)
+            system("make clean -f "||pname2||"_uprjMakefile"||
+               " > "||wiconlog||" 2>&1",lst,1)
             }
          ide.showanyerror(wiconlog, lst)
          }

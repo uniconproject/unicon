@@ -107,36 +107,21 @@ word getstr()
    register int c;
    register word indx;
 
-#if MACINTOSH
-   #if MPW
-      {
-      static short cursorcount = CURSORINTERVAL;
-      if (--cursorcount == 0) {
-         RotateCursor(-32);
-         cursorcount = CURSORINTERVAL;
-         }
-      }
-   #endif					/* MPW */
-#endif					/* MACINTOSH */
-
    indx = lsfree;
-   while ((c = getc(infile)) == ' ' || c == '\t') ;
+   while ((c = getc(infile)) == ' ' || c == '\t' || c == '\r') ;
    if (c == EOF)
       return -1;
    if (c == '\014') {		/* ^L sentinel between .u2 and .u1 portions */
       c = getc(infile);		/* discard following newline */
+      if (c == '\r') c = getc(infile); /* optional carriage return */
       return -1;
       }
 
-#if MSDOS && INTEL_386
    /*
-    * Code Builder lets carriage returns through sometimes.
+    * stop on any non-identifier character (whitespace or comma)
     */
    while (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != ',' &&
       c != EOF) {
-#else					/* MSDOS && INTEL_386 */
-   while (c != ' ' && c != '\t' && c != '\n' && c != ',' && c != EOF) {
-#endif					/* MSDOS && INTEL_386 */
 
       if (indx >= stsize)
          lsspace = (char *)trealloc(lsspace, NULL, &stsize, 1, 1,
@@ -148,6 +133,7 @@ word getstr()
       lsspace = (char *)trealloc(lsspace, NULL, &stsize, 1, 1,
          "string space");
    lsspace[indx] = '\0';
+   while (c == '\r') c = getc(infile);
    nlflag = (c == '\n');
    return lsfree;
    }
@@ -163,14 +149,10 @@ word getrest()
 
    indx = lsfree;
 
-#if MSDOS && INTEL_386
    /*
     * Code Builder lets carriage returns through on occasion
     */
    while ((c = getc(infile)) != '\n' && c != '\r' && c != EOF) {
-#else					/* MSDOS && INTEL_386 */
-   while ((c = getc(infile)) != '\n' && c != EOF) {
-#endif					/* MSDOS && INTEL_386 */
 
       if (indx >= stsize)
          lsspace = (char *)trealloc(lsspace, NULL, &stsize, 1, 1,
@@ -181,6 +163,7 @@ word getrest()
       lsspace = (char *)trealloc(lsspace, NULL, &stsize, 1, 1,
          "string space");
    lsspace[indx++] = '\0';
+   while (c == '\r') c = getc(infile);
    nlflag = (c == '\n');
    return putident((int)(indx - lsfree), 1);
    }

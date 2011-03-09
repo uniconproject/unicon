@@ -486,7 +486,8 @@ char *outname;
 	  */
 	 while ((c = getc(infile)) != EOF)
 	    if (c == '\014') {
-	       getc(infile);
+	       c = getc(infile);
+	       if (c == '\r') getc(infile);
 	       break;
 	       }
 	 }

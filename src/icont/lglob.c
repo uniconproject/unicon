@@ -140,7 +140,7 @@ void readglob()
             break;
 
          default:
-            quitf("ill-formed global file %s",inname);
+            quitf("ill-formed global section in file %s",inname);
          }
       }
    }

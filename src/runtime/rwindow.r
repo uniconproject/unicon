@@ -605,7 +605,7 @@ int len;
    /* turn off the cursor */
    hidecrsr(ws);
 
-   if (w == stdout || w == stderr || w==ConsoleBinding) {
+   if ( (FILE *) w == stdout || (FILE *) w == stderr || (FILE *) w == ConsoleBinding) {
       if (flog) fprintf(flog, "%*s", len, s);
       }
 
@@ -1983,7 +1983,7 @@ static int pngread(char *filename, int p)
    unsigned char header[8];
    int  bit_depth, color_type;
    double  gamma;
-   png_uint_32  i, rowbytes;
+   png_uint_32  i, rowbytes, mywidth, myheight;
    png_bytepp row_pointers = NULL;
    png_color_16p image_background;
    /*png_color_16 my_background;*/
@@ -2035,16 +2035,12 @@ static int pngread(char *filename, int p)
    png_set_sig_bytes(png_ptr, 8);
    png_read_info(png_ptr, info_ptr);
 
-   {
-   unsigned long mywidth, myheight;
+   png_get_IHDR(png_ptr, info_ptr, &mywidth, &myheight, &bit_depth, 
+   		&color_type, NULL, NULL, NULL);
 
-   png_get_IHDR(png_ptr, info_ptr, &mywidth, &myheight, &bit_depth,
-         &color_type, NULL, NULL, NULL);
-
-   gf_width = mywidth;
-   gf_height = myheight;
-   }
-
+   gf_width  = (int) mywidth;
+   gf_height = (int) myheight;
+ 
    /*
     * Expand palette images to RGB, low-bit-depth grayscale images to 8 bits,
     * transparency chunks to full alpha channel; strip 16-bit-per-sample

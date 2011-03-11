@@ -1924,11 +1924,11 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       garbage[0] = "cmd";
 	       garbage[1] = "/C";
 	       }
-	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], garbage);
+	    i = (C_integer)_spawnvp(_P_NOWAITO, garbage[0], (const char* const*) garbage);
 	    free(garbage);
 	    }
 	 else {
-	    i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], margv);
+	    i = (C_integer)_spawnvp(_P_NOWAITO, margv[0], (const char* const*) margv);
 	    free(margv);
             }
 	 if (i != 0) {

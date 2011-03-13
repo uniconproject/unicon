@@ -16,7 +16,7 @@
 #
 #  Contributors:  Paul Abrahams, Bob Alexander, Will Evans, David A. Gamey,
 #		  Richard L. Goerwitz, Will Menagarini, Charles Sharstis,
-#		  and Gregg Townsend.
+#		  Gregg Townsend, and Jafar Al-Gharaibeh.
 #
 ############################################################################
 #
@@ -101,12 +101,15 @@
 #	dpath(s)	returns the path to s on DPATH.
 #
 #			Both fail if the file is not found.
+#	isabspath(fname)
+#		succeeds if fname is a file/dir name with an absolute path and
+#		returns fname in that case. Otherwise it fails.
 #
 #	pathfind(fname, path)
 #		returns the full path of fname if found along the list of
 #		directories in "path", else fails.  If no path is given,
-#		getenv("DPATH") is the default.  As is customary in Icon
-#		path searching, "." is prepended to the path.
+#		getenv("DPATH") || getenv("PATH") is the default. As is 
+#               customary in Icon path searching, "." is prepended to the path.
 #
 #	pathload(fname, entry)
 #		calls loadfunc() to load entry from the file fname found on the
@@ -257,6 +260,12 @@
 
 link random
 link strings
+
+$ifdef _MS_WINDOWS_NT
+      $define PS "\\"
+$else
+      $define PS "/"
+$endif
 
 global buffer_in, buffer_out, Eof
 
@@ -583,7 +592,7 @@ end
 
 procedure exists(name)			#: test file existence
 
-   return close(open(name))
+   return stat(name)
 
 end
 
@@ -683,39 +692,52 @@ end
 
 $endif
 
+procedure isabspath(fname)
+   fname ? {
+      if ="/" & stat(fname) then return fname
+   $ifdef _MS_WINDOWS_NT
+      ("a" <<= map(move(1)) <<= "z") | fail
+      if =":\\" & stat(fname) then return fname
+   $endif
+      }
+end
 
 procedure pathfind(fname, path, psep)		#: find file on path
    local f, dir, fullname
 
    $ifdef _UNIX
-      /psep := ' :' 
+      /psep := ':'
+   $else
+   $ifdef _MS_WINDOWS_NT
+      /psep := ';' 
    $else
       /psep := ' ' 
    $endif
+   $endif
+
+   if isabspath(fname) then
+         return fname			# full absolute path works
 
    fname ? {
-      if ="/" & close(open(fname)) then
-         return fname			# full absolute path works
-      while tab(upto('/') + 1)
+      while tab(find(PS) + 1)
       fname := tab(0)			# get final component of path
       }
 
-   /path := getenv("DPATH")
-   /path := ""
-   path := ". " || path
+   /path := (getenv("DPATH")|"") || (getenv("PATH")|"")
+   path := "." || psep || path
    path ? while not pos(0) do {
       dir := tab(upto(psep) | 0)
-      fullname := trim(dir, '/') || "/" || fname
-      if close(open(fullname)) then
+      fullname := trim(dir, PS) || PS || fname
+      if stat(fullname) then
          return fullname
       tab(many(psep))
       }
 $ifdef _MS_WINDOWS_NT
    # On windows, if we are doing a system PATH search with ; try to append .exe
    # Might want to append other path-responding executables.
-   if (psep === ';') & map(fname[-4:0]) ~== ".exe" &
-       (not find(".", fname[-4:0])) then
-      return pathfind(fname || ".exe", path, psep)
+   if ( psep == ";") & (*fname<=4 |
+          ( map(fname[-4:0]) ~== ".exe" & (not find(".", fname[-4:0])))) then
+          return pathfind(fname || ".exe", path, psep)
 $endif
    fail
 end
@@ -809,7 +831,9 @@ procedure tempname(			#: get temporary file name
 
    /prefix := ""
    /suffix := ""
-   /path := "."
+   exists(\path) | 
+       (path :=  getenv("TEMP") | (if exists("/tmp") then "/tmp") | ".")
+
    if find("MS-DOS"|"MS Windows NT", &features) then
       prefix := path || "\\" || prefix
    else

@@ -697,7 +697,7 @@ procedure isabspath(fname)
       if ="/" & stat(fname) then return fname
    $ifdef _MS_WINDOWS_NT
       ("a" <<= map(move(1)) <<= "z") | fail
-      if =":\\" & stat(fname) then return fname
+      if =":\\" & stat(fname | (fname ||:=".exe")) then return fname
    $endif
       }
 end
@@ -715,7 +715,7 @@ procedure pathfind(fname, path, psep)		#: find file on path
    $endif
    $endif
 
-   if isabspath(fname) then
+   if fname := isabspath(fname) then
          return fname			# full absolute path works
 
    fname ? {

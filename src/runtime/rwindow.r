@@ -4441,9 +4441,6 @@ FILE *OpenConsole()
 #ifdef HAVE_KEYWORD__THREAD
 	 curtstate = curpstate->tstate;
 #endif					/* HAVE_KEYWORD__THREAD */
-#ifdef AAAConcurrent /* is this necessarry?  */
-	 init_threadstate(curtstate);
-#endif					/*Concurrent*/
          rootpstate.eventmask = nulldesc;
          }
       if (!alclist) curpstate->Alclist = alclist_0;
@@ -4463,6 +4460,12 @@ FILE *OpenConsole()
          initalloc(1000);
 #endif					/* MultiThread */
 #endif					/* COMPILER */
+
+#ifdef Concurrent
+      	 curtblock = curblock;
+	 curtstring = curstring;
+	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
+#endif					/*Concurrent*/
          }
 
       /*

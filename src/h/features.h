@@ -158,7 +158,7 @@
 
 #ifdef MSWindows
    Feature(1, "_MS_WINDOWS", "MS Windows")
-#if NT
+#ifdef NT
    Feature(1, "_WIN32", "Win32")
 #endif					/* NT */
 #endif					/* MSWindows */

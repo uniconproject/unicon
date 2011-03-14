@@ -327,7 +327,7 @@ extern stringint attribs[], drawops[];
    #endif				/* PresentationManager */
 
    #ifdef ConsoleWindow
-      extern FILE *ConsoleBinding, *flog;
+      extern FILE *ConsoleBinding;
       extern unsigned long ConsoleFlags;
       extern char ConsoleStringBuf[];
       extern char *ConsoleStringBufPtr;

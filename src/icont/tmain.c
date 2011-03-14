@@ -900,7 +900,7 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     */
    if (!errors && bundleiconx) {
       FILE *f, *f2;
-      char tmp[MaxPath], tmp2[MaxPath], *iconx;
+      char tmp[MaxPath], tmp2[MaxPath], *iconx, mesg[80];
       strcpy(tmp, ofile);
       strcpy(tmp+strlen(tmp)-4, ".bat");
       rename(ofile, tmp);
@@ -914,32 +914,39 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
          iconx = "iconx.exe";
 #endif					/* NT */
       if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
-	 char mesg[80];
-	 sprintf(mesg,"Tried to open %s to build .exe, but couldn't\n",iconx);
+	 sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx);
 	 report(mesg);
 	 errors++;
 	 }
       else {
-	 f2 = fopen(ofile, WriteBinary);
-	 while ((c = fgetc(f)) != EOF) {
-	    fputc(c, f2);
-	    }
-	 fclose(f);
-	 if ((f = fopen(tmp, ReadBinary)) == NULL) {
-	    report("tried to read .bat to append to .exe, but couldn't\n");
-	    errors++;
+	 if ((f2 = fopen(ofile, WriteBinary)) == NULL) {
+	    sprintf(mesg,"Could not write to %s to build .exe\n",
+		    ofile);
+	    report(mesg);
 	    }
 	 else {
 	    while ((c = fgetc(f)) != EOF) {
 	       fputc(c, f2);
 	       }
 	    fclose(f);
+	    if ((f = fopen(tmp, ReadBinary)) == NULL) {
+	       sprintf(mesg,"Could not read %s in order to append to .exe\n",
+		       tmp);
+	       report(mesg);
+	       errors++;
+	       }
+	    else {
+	       while ((c = fgetc(f)) != EOF) {
+		  fputc(c, f2);
+		  }
+	       fclose(f);
+	       }
+	    fclose(f2);
+	    setexe(ofile);
+	    unlink(tmp);
 	    }
-	 fclose(f2);
-	 setexe(ofile);
-	 unlink(tmp);
 	 }
-      }
+	 }
 
    /*
     * Finish by removing intermediate files.

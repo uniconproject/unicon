@@ -37,7 +37,7 @@ int file_comp(char *filename)
     * add "z" to the hdr->config.
     */
     
-   if ((finput=fopen(filename,"r"))==NULL) {
+   if ((finput=fopen(filename,ReadBinary))==NULL) {
       printf("Can't open the file: %s\n",filename);
       return 1;
       }
@@ -46,14 +46,19 @@ int file_comp(char *filename)
    strcpy(newfname,filename);
    strcat(newfname,"~z");
     
-   if ((foutput=fopen(newfname,"w"))==NULL) {
-      printf("Can't open the file: %s\n",newfname);
+   if ((foutput=fopen(newfname,WriteBinary))==NULL) {
+      printf("Can't open/write the file: %s\n",newfname);
+      fclose(finput);
       return 1;
       }
 
    for (;;) {
-      if (fgets(buf, sizeof buf-1, finput) == NULL)
-	 printf("Reading Error: Check if the file is executable Icon\n");
+      if (fgets(buf, sizeof buf-1, finput) == NULL) {
+	 fprintf(stderr, "read error: gz compressor can't grok the icode\n");
+	 fclose(finput);
+	 fclose(foutput);
+	 return 1;
+	 }
       else 
 	 fputs(buf, foutput);
       if (strncmp(buf, "[executable Icon binary follows]", 32) == 0)
@@ -68,6 +73,8 @@ int file_comp(char *filename)
 
    if (fread((char *)hdr, sizeof(char), sizeof(*hdr), finput) != sizeof(*hdr)){
       fprintf(stderr, "gz compressor can't read the header, compression\n");
+      fclose(finput);
+      fclose(foutput);
       return 1;
       }
 

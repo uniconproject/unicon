@@ -557,7 +557,7 @@ void clean_threads()
     * Make sure that mutexes, thread stuff are initialied before cleanning them.
     * if not, just return, this might happen if iconx is called with no args.
     */
-   if (!static_mutexes[0]) return;
+   /*if (!static_mutexes[0]) return;*/
 
    for(i=0; i<NUM_STATIC_MUTEXES; i++){
       pthread_mutex_destroy(&static_mutexes[i]);

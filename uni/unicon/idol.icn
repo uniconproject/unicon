@@ -88,11 +88,13 @@ procedure import_class(node)
    else if node.tok = STRINGLIT then {
       node.s ? {
 	  move(1)
-	  if pack := tab(find(".")) then {
+	  pack := ""
+	  while pack ||:= tab(upto('/\\')) do pack ||:= move(1)
+	  if pack ||:= tab(find(".")) then {
 	      move(1)
 	      s := tab(-1)
 	  }
-	  else pack := tab(-1)
+	  else pack ||:= tab(-1)
       }
 
       tempp := Package(pack)
@@ -183,11 +185,18 @@ class Package : declaration(files, dir, classes)
    end
 initially(name)
    if name[1] == name[-1] == "\"" then {
-       name := name[2:-1]
-       self.name := ((name ? tab(find("."))) | name)
-       }
-   else
-       self.name := name
+      name := name[2:-1]
+      self.name := ""
+      name ? {
+	 if upto('/\\') then {
+	    while self.name ||:= tab(upto('/\\')) do self.name ||:= move(1)
+	    }
+	 self.name ||:= tab(find(".")|0)
+	 }
+      }
+   else {
+      self.name := name
+      }
    if dbe := fetchspec(self.name) then {
       Read(dbe.entry)
       self.dir := dbe.dir
@@ -958,6 +967,7 @@ end
 #
 procedure fetchspec(name)
    static white, nonwhite
+   local basedir := "."
 $ifdef _MS_WINDOWS_NT
    white := ' \t;'
    nonwhite := &cset -- ' \t;'
@@ -965,7 +975,15 @@ $else
    white := ' \t'
    nonwhite := &cset -- ' \t'
 $endif
-   if f := open(env,"dr") then {
+   name ? {
+      while basedir ||:= tab(upto('\\/')) do {
+	 basedir ||:= move(1)
+	 }
+      name := tab(0)
+      # throw away initial "." and trailing "/"
+      if basedir[-1] == ("\\"|"/") then basedir := basedir[2:-1]
+      }
+   if f := open(basedir || "/" || env,"dr") then {
       if s := fetch(f, name) then {
 	 close(f)
 #	 if s[1] == "\^z" then { # need to decompress s
@@ -978,10 +996,13 @@ $endif
 #	    close(f2)
 #	    remove("gzip.out")
 #	    }
-	 return db_entry(".", s)
+	 return db_entry(basedir, s)
 	 }
       close(f)
       }
+
+   if basedir ~== "." then fail # if it gave a path, don't search IPATH
+
    ipath := ipaths()
 
    if \ipath then {

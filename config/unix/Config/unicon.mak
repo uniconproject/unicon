@@ -22,7 +22,7 @@ U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.
 
 UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn ca.icn
 
-unicon: $(U)
+unicon: $(U) ../lib/unilex.u
 	$(ICONT) $(U)
 	$(CP) unicon$(EXE) $(BIN)
 
@@ -38,9 +38,11 @@ wunicon: $(U)
 unicon.u : unicon.icn
 	$(ICONT) -c unicon
 
+../lib/unilex.u: unilex.u
+	$(CP) unilex.u ../lib
+
 unilex.u : unilex.icn ytab_h.icn
 	$(ICONT) -c unilex
-	$(CP) unilex.u ../lib
 
 main.u: main.icn
 	$(ICONT) -c main

@@ -13,15 +13,15 @@ UFLAGS=-c -u
 CFLAGS= -c -u
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn buffertabitem.icn mainbar.icn \
 	fontdialog.icn templates.icn definitions.icn uproject.icn cproject.icn jproject.icn \
-	projedit.icn idol.icn preproce.icn ytab_h.icn yyerror.icn unigram.icn unilex.icn unicon.icn \
-	classbrowser.icn tree.icn utags.icn
+	projedit.icn idol.icn preproce.icn ytab_h.icn yyerror.icn unigram.icn \
+	unicon.icn classbrowser.icn tree.icn utags.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u mainbar.u \
 	fontdialog.u templates.u definitions.u uproject.u cproject.u jproject.u \
-	projedit.u idol.u preproce.u yyerror.u unigram.u unilex.u unicon.u \
+	projedit.u idol.u preproce.u yyerror.u unigram.u unicon.u \
 	classbrowser.u tree.u utags.u
 
-UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u unilex.u yyerror.u
+UNICONPACKAGE=idol.u preproce.u tree.u unicon.u unigram.u yyerror.u
 
 ui:	$(UNICONPACKAGE) $(OBJ)
 	$(UC) -o ui $(OBJ)
@@ -77,12 +77,9 @@ yyerror.u: yyerror.icn
 	unicon -c unigram
 	unicon -c yyerror
 
-unigram.u: unigram.icn unilex.u
+unigram.u: unigram.icn
 	unicon -c unigram
 	unicon -c yyerror
-
-unilex.u: unilex.icn yyerror.u
-	unicon -c unilex
 
 unicon.u: unicon.icn
 	unicon -c unicon

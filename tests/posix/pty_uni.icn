@@ -1,0 +1,60 @@
+#
+# pty_uni.icn: Program for testing pseudo-tty interaction with Unicon programs.
+#
+# This file is to test pseudo-tty (bidirectional pipes)
+# capability to invoke and control other (console mode) unicon programs.
+# Status: runs on Linux, not on Windows yet.
+#
+
+procedure main()
+   #
+   # test 1: most trivial Unicon program, compiled w/iconx
+   #
+   if not (&features == "pseudo terminals") then stop("no ptys in VM")
+   fo := open("ptytest.icn","w") | stop("can't write a ptytest")
+   write(fo, "procedure main()")
+   write(fo, "   write(\"hello, world\")")
+   write(fo, "end")
+   close(fo)
+   system("unicon ptytest")
+   fi := open("./ptytest", "prw") | stop("can't open mode prw")
+   write("pty gives me: ", image(read(fi)))
+   close(fi)
+   write("...done")
+   remove("ptytest.icn")
+$ifdef _MS_WINDOWS_NT
+   remove("ptytest.exe")
+$else
+   remove("ptytest")
+$endif
+
+   #
+   # test 2: prove you can actually read and write interactively, with
+   # at least a line-at-a-time program, such as udb
+   #
+   fi := open("../../bin/udb", "prw") | stop("can't open udb mode prw")
+   line := ""
+   repeat {
+       if line ||:= ready(fi) then
+	   write(image(line))
+       if find("(udb)", line) then break
+   }
+   write("got initial udb prompt")
+   write(fi, "where"); flush(fi)
+   line := ""
+   repeat {
+       if line ||:= ready(fi) then
+	   write(image(line))
+       if find("(udb)", line) then break
+   }
+   write(fi, "quit")
+   line := ""
+   repeat {
+       if line ||:= ready(fi) then
+	   write(image(line))
+       if find("Goodbye", line) then break
+   }
+   write("closing")
+   close(fi)
+   write("...done")
+end

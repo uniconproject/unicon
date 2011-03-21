@@ -743,11 +743,20 @@ $endif
 end
 
 procedure pathload(fname, entry)	#: load C function from $FPATH
-   local path, found
-
+   local path, found, psep
+$ifdef _UNIX
+   psep := ":"
+$else
+$ifdef _MS_WINDOWS_NT
+   psep := ";" 
+$else
+   psep := " "
+$endif
+$endif
+   
    path := getenv("FPATH") | "."
    if match("Binaries at ", sfeat := &features) then {
-       path ||:= " " || sfeat[13:0]
+       path ||:= psep || sfeat[13:0]
    }
    found := pathfind(fname, path)
 

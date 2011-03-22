@@ -16,7 +16,8 @@ class Console : Session(
    LEFT,       # The left arrow control key
    ENTER,      # The enter key
    BkSp,       # The Back Space key
-   badKeys     # a set of all other control keys
+   badKeys,    # A set of all other control keys
+   mode		# Either &null (normal) or "-line"; test with \ or /
    )
 
 #
@@ -56,6 +57,12 @@ method get_Line()
    local max:=0
 
    writes(PROMPT)
+
+   # if line mode, read a whole line the old fashioned way, skip this function
+   if \mode == "-line" then
+      return read() | "quit"
+
+   # normal mode, read the line interactively
    repeat {
       if not (ch := my_getch()) then return "quit"
       case ch of{
@@ -123,7 +130,7 @@ $endif
       every c := 1 to max+7 do writes(" ")
       writes("\r")
       writes(PROMPT || line)
-      if \left then{
+      if \left then {
          writes("\r")
          writes(PROMPT || line[1:left])
          } 
@@ -183,6 +190,8 @@ end
 #
 method startConsole(argv)
    local ans, cmd, old_State:=NONE
+
+   if argv[1] == "-line" then mode := pop(argv)
 
    DState.initializeState(argv)
 

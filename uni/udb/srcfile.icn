@@ -57,17 +57,10 @@ end
 # Obtains the file size from its name and path
 #
 method getSourceFileSize(f)
-  local s:="", p, cmd :="du -h "
-  local fsize:=-1, i
+  local fstat, fsize := -1
 
-  # what about MS Windows ???     
-  cmd ||:= f 
-  p := open(cmd,"p")
-  while s ||:=  read(p) || "\n"
-  close(p)
-
-  i := find("\t",s)
-  fsize := s[1:\i]
+  fstat := stat(f) | fail
+  fsize := fstat.size
 
   return fsize 
 end

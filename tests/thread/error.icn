@@ -19,14 +19,17 @@ procedure main(argv)
 
    mutex_gsum := mutex()
   
-   write("running ", *thrd , " thread(s) please wait... ")
+   write("Running ", *thrd , " thread(s) please wait... ")
+   write("The test should crash with a run time error now,")
+   write("you should see only one runtime error message,any repetition ")
+   write("of the error message indicates a problem in the threads system.")
 
    t:=&now
    every i:=1 to *thrd do
       thread(thrd[i])
 
    every i:=1 to *thrd do
-      join(thrd[i])
+      wait(thrd[i])
 
    write("sum=",gsum)
    

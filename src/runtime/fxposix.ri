@@ -1421,6 +1421,31 @@ end
 "the return value is `status' from the wait(2) manpage."
 
 function{0,1} wait(pid, options)
+#ifdef Concurrent
+  if is:coexpr(pid) then {
+     abstract { return coexpr }
+     body {
+	struct context *n;
+	int rv;
+	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
+	n =  (struct context *)  BlkLoc(pid)->Coexpr.cstate[1];
+	MUTEX_LOCKID(MTX_NARTHREADS); 
+	NARthreads--;	
+	MUTEX_UNLOCKID(MTX_NARTHREADS);
+	if ((rv=pthread_join(n->thread, NULL)) != 0) {
+	   fprintf(stderr, "pthread join failure %d\n", rv);
+	   exit(-1);
+	   }
+	/*}*/
+        MUTEX_LOCKID(MTX_GCTHREAD);
+	MUTEX_LOCKID(MTX_NARTHREADS); 
+	NARthreads++;	
+	MUTEX_UNLOCKID(MTX_NARTHREADS);
+	MUTEX_UNLOCKID(MTX_GCTHREAD);
+	return pid;
+	}
+     }
+#endif					/* Concurrent */     
    if !def:C_integer(pid, -1) then
       runerr(101, pid)
    if !def:C_string(options, "") then 

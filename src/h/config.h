@@ -780,10 +780,10 @@ Deliberate Syntax Error
 
 #ifdef Concurrent
 #define PthreadCoswitch 1
-#ifndef NoKeyword__Thread
-/* the default at present uses __thread */
-#define HAVE_KEYWORD__THREAD
-#endif					/* NoKeyword__Thread */
+/*
+ * The default at present does not use __thread.
+ * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
+ */
 #endif					/* Concurrent */
 
 #ifdef PthreadCoswitch

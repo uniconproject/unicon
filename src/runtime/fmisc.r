@@ -2399,13 +2399,18 @@ function{1} condsignal(x, y)
    
    abstract { return integer}
    body {
-       /* y times is not implemented  */
-      int rv;
+      int rv, i;
       if (x<1 || x>ncondvars)
       	 irunerr(101, x);
       	 
-      if (rv=pthread_cond_signal(condvars+x-1) != 0){
-      	 fprintf(stderr, "condition variable wait failure %d\n", rv);
+      if (y == 0) {
+	 if ((rv=pthread_cond_broadcast(condvars+x-1)) != 0) {
+	    }
+	 }
+      else
+      for (i=0; i < y; i++)
+      if ((rv=pthread_cond_signal(condvars+x-1)) != 0){
+      	 syserr("condition variable wait failure %d\n", rv);
       	 exit(-1);
       	 }
       return C_integer 1;

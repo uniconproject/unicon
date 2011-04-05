@@ -71,6 +71,10 @@ unigram.u: unigram.icn
 #unigram.icn : unigram.y ytab_h.icn
 #	$(IYACC) -i unigram.y
 
+#ytab_h.icn: unigram.y
+#	$(IYACC) -i -d unigram.y
+#	mv unigram_tab.icn ytab_h.icn
+
 # these lines were used when Idol was involved in the build process
 #unigram.icn : unigram.y ytab_h.icn
 #	$(IYACC) -i unigram.y

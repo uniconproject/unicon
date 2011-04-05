@@ -2389,14 +2389,12 @@ end
 "condsignal(x, y) - signal the condition variable x y times. Default y is 1, y=0 means broadcast"
 
 function{1} condsignal(x, y)
-   declare { int Y=0;}
+   declare { C_integer Y=0;}
    if !cnv:C_integer(x) then
       runerr(101, x)
       if is:null(y) then
 	inline { Y = 1; }
-      else if !cnv:C_integer(y) then
-	 inline { Y = y; }
-      else
+      else if !cnv:C_integer(y, Y) then
 	runerr(101, y)
    
    abstract { return integer}
@@ -2412,7 +2410,9 @@ function{1} condsignal(x, y)
       else
       for (i=0; i < Y; i++)
       if ((rv=pthread_cond_signal(condvars+x-1)) != 0){
-      	 syserr("condition variable wait failure %d\n", rv);
+	 char cvwf[64];
+	 sprintf(cvwf, "condition variable wait failure %d\n", rv);
+      	 syserr(cvwf);
       	 exit(-1);
       	 }
       return C_integer 1;

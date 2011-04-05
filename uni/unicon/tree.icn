@@ -327,6 +327,22 @@ procedure yyprint(node)
 	    yyprint(node.children[6])
 	    fail
 	    }
+	 else if node.label == "critical" then {
+	 while outline < node.children[1].line do {
+	    write(yyout); outline +:= 1; outcol := 1
+	    }
+	 while outcol < node.children[1].column do {
+	    writes(yyout, " "); outcol +:= 1
+	    }
+	    yyprint("{ lock(")
+	    yyprint(node.children[2])
+	    yyprint("); ")
+	    yyprint(node.children[3])
+	    yyprint("; unlock(")
+	    yyprint(node.children[2])
+	    yyprint(") } ")
+	    fail
+	    }
 	 else if *node.children > 0 then {
             every yyprint(node.children[1 to *node.children-1])
 	    node := node.children[-1]

@@ -20,6 +20,7 @@
 %token	CASE        /* case      */
 %token	CLASS       /* class     */
 %token	CREATE      /* create    */
+%token	CRITICAL    /* critical  */
 %token	DEFAULT     /* default   */
 %token	DO          /* do        */
 %token	ELSE        /* else      */
@@ -641,6 +642,7 @@ expr11	: literal ;
 	| repeat ;
         | PUNEVAL { $$ := node("BPuneval", $1);} ;
 	| CREATE expr { $$ := node("create", $1,$2);} ;
+	| CRITICAL expr2a expr { $$ := node("critical", $1,$2,$3);} ;
 	| IDENT ;
 	| NEXT { $$ := node("Next", $1);} ;
 	| BREAK nexpr { $$ := node("Break", $1,$2);} ;

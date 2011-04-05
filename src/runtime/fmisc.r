@@ -2395,6 +2395,8 @@ function{1} condsignal(x, y)
       if is:null(y) then
 	inline { Y = 1; }
       else if !cnv:C_integer(y) then
+	 inline { Y = y; }
+      else
 	runerr(101, y)
    
    abstract { return integer}
@@ -2403,12 +2405,12 @@ function{1} condsignal(x, y)
       if (x<1 || x>ncondvars)
       	 irunerr(101, x);
       	 
-      if (y == 0) {
+      if (Y == 0) {
 	 if ((rv=pthread_cond_broadcast(condvars+x-1)) != 0) {
 	    }
 	 }
       else
-      for (i=0; i < y; i++)
+      for (i=0; i < Y; i++)
       if ((rv=pthread_cond_signal(condvars+x-1)) != 0){
       	 syserr("condition variable wait failure %d\n", rv);
       	 exit(-1);

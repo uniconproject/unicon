@@ -436,7 +436,6 @@ char *s, *t;
    }
 
 
-#if MSDOS
 #if NT
 #include <sys/stat.h>
 #include <direct.h>
@@ -453,7 +452,7 @@ int pathFind(char target[], char buf[], int n)
    int res;
    struct stat sbuf;
 
-   if ((target[0] == '\\') || (target[1]==':' && target[2]=='\\')) {
+   if ((target[0] == '/') || (target[0] == '\\') || (target[1]==':' && target[2]=='\\')) {
       if ((res = stat(target, &sbuf)) == 0) {
 	 strcpy(buf, target);
 	 return 1;
@@ -473,20 +472,28 @@ int pathFind(char target[], char buf[], int n)
    if ((i = strlen(buf)) > 0) {
       i = buf[i - 1];
       if (i != '\\' && i != '/' && i != ':')
+#if UNIX
+         strcat(buf, "/");
+#else
          strcat(buf, "\\");
+#endif
       }
    strcat(buf, target);
    res = stat(buf, &sbuf);
 
    while(res && *path) {
-      for (i = 0; *path && *path != ';'; ++i)
+      for (i = 0; *path && *path != ':' && *path != ';' ; ++i)
          buf[i] = *path++;
       if (*path)			/* skip the ; or : separator */
          ++path;
       if (i == 0)			/* skip empty fragments in PATH */
          continue;
       if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
+#if UNIX
+            buf[i++] = '/';
+#else
             buf[i++] = '\\';
+#endif
       strcpy(buf + i, target);
       res = stat(buf, &sbuf);
       /* exclude directories (and any other nasties) from selection */
@@ -497,7 +504,6 @@ int pathFind(char target[], char buf[], int n)
       *buf = 0;
    return res == 0;
    }
-#endif					/* MSDOS */
 
 
 

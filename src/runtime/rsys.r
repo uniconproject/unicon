@@ -379,7 +379,7 @@ long len;
 
 #if HAVE_LIBZ
 /*
- * Read a long string in shorter parts from a comressed file. 
+ * Read a long string in shorter parts from a compressed file. 
  * (Standard read may not handle long strings.)
  */
 word gzlongread(s,width,len,fd)

@@ -785,6 +785,7 @@ char *argv[];
 #passthru #undef cnv_int
 #passthru #undef cnv_real
 #passthru #undef cnv_str
+#passthru #undef alcfile
 #passthru #undef alcreal
 #passthru #undef alcstr
 #passthru #undef alclist_raw
@@ -796,7 +797,7 @@ char *argv[];
    rootpstate.Deref = deref_0;
    rootpstate.Alcbignum = alcbignum_0;
    rootpstate.Alccset = alccset_0;
-   rootpstate.Alcfile = alcfile_0;
+   rootpstate.Alcfile = alcfile;
    rootpstate.Alchash = alchash_0;
    rootpstate.Alcsegment = alcsegment_0;
 #ifdef PatternType
@@ -1978,7 +1979,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Deref = deref_0;
    pstate->Alcbignum = alcbignum_0;
    pstate->Alccset = alccset_0;
-   pstate->Alcfile = alcfile_0;
+   pstate->Alcfile = alcfile;
    pstate->Alchash = alchash_0;
    pstate->Alcsegment = alcsegment_0;
    pstate->Alclist_raw = alclist_raw;

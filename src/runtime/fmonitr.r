@@ -62,8 +62,9 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       ((Testb((word)ToAscii(E_Lrgint),cs)) ? alcbignum_1:alcbignum_0);
    p->Alccset =
       ((Testb((word)ToAscii(E_Cset), cs)) ? alccset_1 : alccset_0);
+#undef alcfile
    p->Alcfile =
-      ((Testb((word)ToAscii(E_File), cs)) ? alcfile_1 : alcfile_0);
+      ((Testb((word)ToAscii(E_File), cs)) ? alcfile_1 : alcfile);
    p->Alcsegment =
       ((Testb((word)ToAscii(E_Slots), cs)) ? alcsegment_1 : alcsegment_0);
 #ifdef PatternType

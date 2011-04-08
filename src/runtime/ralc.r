@@ -340,7 +340,8 @@ struct b_file *f(FILE *fd, int status, dptr name)
 #enddef
 
 #ifdef MultiThread
-alcfile_macro(alcfile_0,0)
+#passthru #undef alcfile
+alcfile_macro(alcfile,0)
 alcfile_macro(alcfile_1,E_File)
 #else					/* MultiThread */
 alcfile_macro(alcfile,0)

@@ -13,7 +13,9 @@ struct astkblk	*alcactiv	(void);
 #ifdef MultiThread
 struct b_cset	*alccset_0	(void);
 struct b_cset	*alccset_1	(void);
-struct b_file	*alcfile_0	(FILE *fd,int status,dptr name);
+#undef alcfile
+struct b_file	*alcfile	(FILE *fd,int status,dptr name);
+#define alcfile (curpstate->Alcfile)
 struct b_file	*alcfile_1	(FILE *fd,int status,dptr name);
 union block	*alchash_0	(int tcode);
 union block	*alchash_1	(int tcode);

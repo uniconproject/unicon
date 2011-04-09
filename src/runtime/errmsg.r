@@ -34,7 +34,8 @@ void err_msg(int n, dptr v)
    /* 
     * Force all of the threads to stop before proceeding with the runtime error 
     */
-   thread_control(GC_STOPALLTHREADS);
+   if (IntVal(kywd_err) == 0 || !err_conv)
+      thread_control(GC_STOPALLTHREADS);
 #endif					/* Concurrent */
 
    if (n == 0) {

@@ -930,7 +930,7 @@ Deliberate Syntax Error
       error(name, "cannot open interpreter file");
       }
 
-   k_trace = hdr.trace;
+   MakeInt(hdr.trace, &(kywd_trc));
 
 #endif					/* COMPILER */
 

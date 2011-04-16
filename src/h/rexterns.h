@@ -75,7 +75,7 @@ extern sem_t sem_gc;
 
 extern pthread_cond_t* condvars;
 extern int* condvarsmtxs;
-extern ncondvars; 
+extern int ncondvars; 
 #endif					/* Concurrent */
 
 /*

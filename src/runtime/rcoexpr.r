@@ -670,15 +670,15 @@ int action;
       */
       MUTEX_LOCKID(MTX_GC_QUEUE);
       if (gc_queue) {
-	 MUTEX_LOCKID(MTX_GCTHREAD);
+	 MUTEX_LOCKID(MTX_NARTHREADS);
 	 gc_queue++;
 	 NARthreads--;
-	 MUTEX_UNLOCKID(MTX_GCTHREAD);
+	 MUTEX_UNLOCKID(MTX_NARTHREADS);
 	 MUTEX_UNLOCKID(MTX_GC_QUEUE);
 	 sem_wait(&sem_gc); /* I am part of the GC party now! Sleeping!!*/
 	 
 	 /* The following lock will guarantee that the thread who woke me up
-	  * is already slepping
+	  * is already sleeping!
 	  */
 	 MUTEX_LOCKID(MTX_COND_GC);
 	 MUTEX_UNLOCKID(MTX_COND_GC);

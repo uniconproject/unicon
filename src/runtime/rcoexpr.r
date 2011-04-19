@@ -554,8 +554,9 @@ void clean_threads()
 {
    int i;
    /*
-    * Make sure that mutexes, thread stuff are initialied before cleanning them.
-    * if not, just return, this might happen if iconx is called with no args.
+    * Make sure that mutexes, thread stuff are initialized before cleaning
+    * them. If not, just return; this might happen if iconx is called with
+    * no args, for example.
     */
    /*if (!static_mutexes[0]) return;*/
 
@@ -620,31 +621,40 @@ int NARthreads;
 pthread_cond_t cond_gc;
 sem_t sem_gc; 
 
+/*
+ * Function thread_control() governs when to run and when to stop threads.
+ * Called by anyplace in the runtime system when it needs to stop all the
+ * threads, notably garbage collection and runtime errors.  Not yet
+ * implemented: ability to stop/resume individual threads.
+ *
+ * Legal values for the parameter (action) are:
+ *   0==put this thread to sleep, 1==wakeup all, 2==stop all threads
+ */
 void thread_control(action)
 int action; 
 {
-   static int cond_nsuspended=0; /* #of waiting threads on the condition variable*/
-   static int gc_queue=0;
+   static int cond_nsuspended=0; /* # waiting threads on condition variable */
+   static int gc_queue=0;        /* how many threads are waiting for GC */
    
    CURTSTATE();
    
    if (action==GC_WAKEUPCALL){ /* if I am the thread doing GC */
-      /* GC is over, reset GCthread and wakeup all threads*/
+      /* GC is over, reset GCthread and wakeup all threads. */
 
       if (gc_queue) {
 	 /* lock MUTEX_COND_GC mutex and wait on the condition variable cond_gc.
-	  * note that pthread_cond_wait will block the thread and will automatically
-	  * and atomically unlock mutex while it waits. 
+	  * note that pthread_cond_wait will block the thread and will
+	  * automatically and atomically unlock mutex while it waits. 
 	  */
 	 MUTEX_LOCKID(MTX_COND_GC);
 	 NARthreads--;
 	 cond_nsuspended++;
 	 MUTEX_UNLOCKID(MTX_GCTHREAD);
 	 
-	 /* wake up another thread to do GC and go to sleep*/
+	 /* wake up another thread to do GC and go to sleep */
 	 sem_post(&sem_gc);
 	 pthread_cond_wait(&cond_gc, &static_mutexes[MTX_COND_GC]); /*block!!*/
-	 /* wake up call recieved! GC is over. increment NARthread */
+	 /* wake up call received! GC is over. increment NARthread */
 	 MUTEX_LOCKID(MTX_NARTHREADS);
 	 cond_nsuspended--;
 	 NARthreads++;
@@ -653,21 +663,20 @@ int action;
 	 return;
       }
       
-      thread_call=0;
+      thread_call = 0;
       MUTEX_UNLOCKID(MTX_GCTHREAD);
       MUTEX_LOCKID(MTX_COND_GC);
-      /* broadcast a wakeup call to all threads waiting on cond_gc*/
+      /* broadcast a wakeup call to all threads waiting on cond_gc */
       pthread_cond_broadcast(&cond_gc);
       MUTEX_UNLOCKID(MTX_COND_GC);
       return;
    }
    else if (action==GC_STOPALLTHREADS) {
-      int i;
       /*
-      * If there is a pending GC request, then block/sleep .
-      * And make sure we dont start a GC in the middle of starting
-      * a new Async thread. Precaution to avoid problems.
-      */
+       * If there is a pending GC request, then block/sleep.
+       * Make sure we don't start a GC in the middle of starting
+       * a new Async thread. Precaution to avoid problems.
+       */
       MUTEX_LOCKID(MTX_GC_QUEUE);
       if (gc_queue) {
 	 MUTEX_LOCKID(MTX_NARTHREADS);
@@ -675,9 +684,9 @@ int action;
 	 NARthreads--;
 	 MUTEX_UNLOCKID(MTX_NARTHREADS);
 	 MUTEX_UNLOCKID(MTX_GC_QUEUE);
-	 sem_wait(&sem_gc); /* I am part of the GC party now! Sleeping!!*/
-	 
-	 /* The following lock will guarantee that the thread who woke me up
+	 sem_wait(&sem_gc); /* I am part of the GC party now! Sleeping!! */
+	 /*
+	  * The following lock will guarantee that the thread who woke me up
 	  * is already sleeping!
 	  */
 	 MUTEX_LOCKID(MTX_COND_GC);
@@ -690,28 +699,30 @@ int action;
 	 gc_queue++;
 	 MUTEX_UNLOCKID(MTX_GC_QUEUE);
 	 /*
-	 * There might be cases where a new GC request is recieved
-	 * before all threads from a previous GC have woken up. I have
-	 * to wait for all threads to wakeup before I can start a new GC.
-	 */
+	  * There might be cases where a new GC request is received
+	  * before all threads from a previous GC have woken up.
+	  * Wait for all threads to wakeup before starting a new GC.
+	  * Consider whether a call to usleep() in one or both of
+	  * these while loops would be beneficial.
+	  */
 	 while (cond_nsuspended); /* make sure no thread is still sleeping*/
-	 thread_call=1;
+	 thread_call = 1;
 	 while ( NARthreads-1)/*sleep(1)*/; 
 	 MUTEX_LOCKID(MTX_GCTHREAD);
 	 }
    
       GCthread = pthread_self();
       gc_queue--;
-         /*
-      * now it is safe to proceed with GC with only the current thread running
-      */
+      /*
+       * Now it is safe to proceed with GC with only the current thread running
+       */
       return;
       }
 
 /*
-*  Check to see it is nesessary to do GC for the current thread.
-*  Hopefully we will force GC to happen if that is the case.
-*/
+ *  Check to see it is necessary to do GC for the current thread.
+ *  Hopefully we will force GC to happen if that is the case.
+ */
    else
       if ((curtblock->end - curtblock->free) / (double) curtblock->size < 0.09)
       {
@@ -719,13 +730,14 @@ int action;
 	 fprintf(stderr, " Disaster! in thread_control. \n");
 	 return;
       }
-      
-  /* the thread that gets here should block and wait for GC to finish*/
- 
-  /* lock MUTEX_COND_GC mutex and wait on the condition variable cond_gc.
-  * note that pthread_cond_wait will block the thread and will automatically
-  * and atomically unlock mutex while it waits. 
-  */
+
+  /* The thread that gets here should block and wait for GC to finish. */
+
+  /*
+   * Lock MUTEX_COND_GC mutex and wait on the condition variable cond_gc.
+   * note that pthread_cond_wait will block the thread and will automatically
+   * and atomically unlock mutex while it waits. 
+   */
 
   MUTEX_LOCKID(MTX_COND_GC);
   MUTEX_LOCKID(MTX_NARTHREADS);
@@ -733,7 +745,7 @@ int action;
   cond_nsuspended++;
   MUTEX_UNLOCKID(MTX_NARTHREADS);
   pthread_cond_wait(&cond_gc, &static_mutexes[MTX_COND_GC]); /*block!!*/
-  /* wake up call recieved! GC is over. increment NARthread */
+  /* wake up call received! GC is over. increment NARthread */
   MUTEX_LOCKID(MTX_NARTHREADS); 
   NARthreads++;
   cond_nsuspended--;

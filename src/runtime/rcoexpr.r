@@ -649,7 +649,9 @@ int action;
 	 MUTEX_LOCKID(MTX_COND_GC);
 	 NARthreads--;
 	 cond_nsuspended++;
+	 
 	 MUTEX_UNLOCKID(MTX_GCTHREAD);
+	 MUTEX_UNLOCKID(MTX_NARTHREADS);
 	 
 	 /* wake up another thread to do GC and go to sleep */
 	 sem_post(&sem_gc);
@@ -665,6 +667,7 @@ int action;
       
       thread_call = 0;
       MUTEX_UNLOCKID(MTX_GCTHREAD);
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
       MUTEX_LOCKID(MTX_COND_GC);
       /* broadcast a wakeup call to all threads waiting on cond_gc */
       pthread_cond_broadcast(&cond_gc);
@@ -674,7 +677,7 @@ int action;
    else if (action==GC_STOPALLTHREADS) {
       /*
        * If there is a pending GC request, then block/sleep.
-       * Make sure we don't start a GC in the middle of starting
+       * Make sure we do not start a GC in the middle of starting
        * a new Async thread. Precaution to avoid problems.
        */
       MUTEX_LOCKID(MTX_GC_QUEUE);
@@ -705,9 +708,24 @@ int action;
 	  * Consider whether a call to usleep() in one or both of
 	  * these while loops would be beneficial.
 	  */
-	 while (cond_nsuspended); /* make sure no thread is still sleeping*/
+	 while (cond_nsuspended){
+	    MUTEX_LOCKID(MTX_COND_GC);
+	    if (cond_nsuspended==0){
+	       MUTEX_UNLOCKID(MTX_COND_GC);
+	       break; /* make sure no thread is still sleeping*/
+	       }
+	    MUTEX_UNLOCKID(MTX_COND_GC);
+	    usleep(5);
+	    }
+	 
 	 thread_call = 1;
-	 while ( NARthreads-1)/*sleep(1)*/; 
+	 while (NARthreads  > 1){
+	    MUTEX_LOCKID(MTX_NARTHREADS);
+	    if ( NARthreads  < 2) break;   /* keep MTX_NARTHREADS locked */
+	    MUTEX_UNLOCKID(MTX_NARTHREADS);
+	    usleep(5);
+	    }
+	    
 	 MUTEX_LOCKID(MTX_GCTHREAD);
 	 }
    

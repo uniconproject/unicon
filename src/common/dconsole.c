@@ -70,6 +70,10 @@ int _imp__pthread_mutex_lock(pthread_mutex_t *mtx)
 {
   return 0;
 }
+int _imp__pthread_mutex_trylock(pthread_mutex_t *mtx)
+{
+  return 0;
+}
 int _imp__pthread_mutex_unlock(pthread_mutex_t *mtx)
 {
   return 0;

@@ -577,7 +577,8 @@ void init_threadheap(struct threadstate *ts)
     *  new string and block region should be allocated
     */
 
-   size = 1024*1024*1;  /*curpstate->stringregion->size;*/
+   size = curpstate->stringregion->size / 4;
+   /* size = 1024*1024*1;  */
 
    if ((rp = newregion(size, size)) != 0) {
       MUTEX_LOCKID(MTX_STRHEAP);
@@ -595,8 +596,8 @@ void init_threadheap(struct threadstate *ts)
     else
       syserr(" init_threadheap: insufficient memory");
 
-   /* size = curpstate->blockregion->size;*/
-   size = 1024*1024*4;
+   size = curpstate->blockregion->size / 4;
+   /*size = 1024*1024*4;*/
 
    if ((rp = newregion(size, size)) != 0) {
       MUTEX_LOCKID(MTX_BLKHEAP);

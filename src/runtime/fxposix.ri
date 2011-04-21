@@ -1417,7 +1417,7 @@ function{0,1} umask(mask)
       }
 end
 
-"wait() - wait for process to terminate or stop."
+"wait() - wait for process (or co-exp thread) to terminate or stop."
 "the return value is `status' from the wait(2) manpage."
 
 function{0,1} wait(pid, options)
@@ -1432,16 +1432,15 @@ function{0,1} wait(pid, options)
 	MUTEX_LOCKID(MTX_NARTHREADS); 
 	NARthreads--;	
 	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	if ((rv=pthread_join(n->thread, NULL)) != 0) {
-	   fprintf(stderr, "pthread join failure %d\n", rv);
-	   exit(-1);
-	   }
+	
+	THREAD_JOIN(n->thread, NULL);
+	
 	/*}*/
-        MUTEX_LOCKID(MTX_GCTHREAD);
-	MUTEX_LOCKID(MTX_NARTHREADS); 
-	NARthreads++;	
-	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	MUTEX_UNLOCKID(MTX_GCTHREAD);
+        MUTEX_LOCKID(MTX_THREADCONTROL);
+	  MUTEX_LOCKID(MTX_NARTHREADS); 
+	  NARthreads++;	
+	  MUTEX_UNLOCKID(MTX_NARTHREADS);
+	MUTEX_UNLOCKID(MTX_THREADCONTROL);
 	return pid;
 	}
      }

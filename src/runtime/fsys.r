@@ -2747,11 +2747,11 @@ function{0,1} delay(n)
       NARthreads--;	
       MUTEX_UNLOCKID(MTX_NARTHREADS);   
       ret = idelay(n);
-      MUTEX_LOCKID(MTX_GCTHREAD);
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-      NARthreads++;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);
-      MUTEX_UNLOCKID(MTX_GCTHREAD);
+      MUTEX_LOCKID(MTX_THREADCONTROL);
+        MUTEX_LOCKID(MTX_NARTHREADS); 
+        NARthreads++;	
+        MUTEX_UNLOCKID(MTX_NARTHREADS);
+      MUTEX_UNLOCKID(MTX_THREADCONTROL);
       if (ret == Failed)
         fail;
 #else					/* Concurrent */

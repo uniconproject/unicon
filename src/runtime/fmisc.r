@@ -2376,11 +2376,11 @@ function{1} condwait(x)
       	 exit(-1);
       	 }
 
-      MUTEX_LOCKID(MTX_GCTHREAD);
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-      NARthreads++;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);
-      MUTEX_UNLOCKID(MTX_GCTHREAD);
+      MUTEX_LOCKID(MTX_THREADCONTROL);
+	 MUTEX_LOCKID(MTX_NARTHREADS); 
+	 NARthreads++;	
+	 MUTEX_UNLOCKID(MTX_NARTHREADS);
+      MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
       return C_integer 1;
       }
@@ -2392,10 +2392,10 @@ function{1} condsignal(x, y)
    declare { C_integer Y=0;}
    if !cnv:C_integer(x) then
       runerr(101, x)
-      if is:null(y) then
-	inline { Y = 1; }
-      else if !cnv:C_integer(y, Y) then
-	runerr(101, y)
+   if is:null(y) then
+      inline { Y = 1; }
+   else if !cnv:C_integer(y, Y) then
+      runerr(101, y)
    
    abstract { return integer}
    body {
@@ -2432,7 +2432,7 @@ function{1} mutex(x)
 	   if (mutexes==NULL)
 	     syserr("out of memory for mutexes!");
   	   }
-	pthread_mutex_init(mutexes+nmutexes, NULL);
+	MUTEX_INIT(mutexes[nmutexes], NULL);
         nmutexes++;
 	MUTEX_UNLOCKID(MTX_MUTEXES);
 	return C_integer nmutexes;
@@ -2454,25 +2454,25 @@ function{1} lock(x)
        * The following code was modified o avoid extra locking to accomodate GC
        * There might be better ways to do this.
        */
-      if ((rv=pthread_mutex_trylock(mutexes+x-1)) == 0)
+       
+      MUTEX_TRYLOCK(mutexes[x-1], rv, "Application level mutex lock");
+      if (rv == 0)
       	 return C_integer 1;
-      else if (rv!=EBUSY)
-	fprintf(stderr, "pthread lock failure %d\n", rv);
 
       MUTEX_LOCKID(MTX_NARTHREADS); 
       NARthreads--;	
       MUTEX_UNLOCKID(MTX_NARTHREADS);
 
-      if ((rv=pthread_mutex_lock(mutexes+x-1)) != 0) {
-	 fprintf(stderr, "pthread lock failure %d\n", rv);
-	 exit(-1);
-	 }
-
-      MUTEX_LOCKID(MTX_GCTHREAD);
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-      NARthreads++;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);
-      MUTEX_UNLOCKID(MTX_GCTHREAD);
+      MUTEX_LOCK(mutexes[x-1], "Application level mutex lock");
+      
+      /*
+       * Not allowed to porceed if there is a GC
+       */
+      MUTEX_LOCKID(MTX_THREADCONTROL);
+	 MUTEX_LOCKID(MTX_NARTHREADS); 
+	 NARthreads++;	
+	 MUTEX_UNLOCKID(MTX_NARTHREADS);
+      MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
       return C_integer 1;
       }
@@ -2489,12 +2489,10 @@ function{1} trylock(x)
       if (x<1 || x>nmutexes)
       	 irunerr(101, x);
 
-      if ((rv=pthread_mutex_trylock(mutexes+x-1)) == 0)
+      MUTEX_TRYLOCK(mutexes[x-1], rv, "Application level mutex trylock");
+      if (rv == 0)
       	 return C_integer 1;
-      else if (rv==EBUSY)
-	fail;
-      else
-	fprintf(stderr, "pthread lock failure %d\n", rv);
+
       fail;
       } 
 end
@@ -2509,10 +2507,7 @@ function{1} unlock(x)
       int rv;
       if (x<1 || x>nmutexes)
       	 irunerr(101, x);
-      if ((rv=pthread_mutex_unlock(mutexes+x-1)) != 0) {
-	 fprintf(stderr, "pthread unlock failure %d\n", rv);
-	 exit(-1);
-	 }
+      MUTEX_UNLOCK(mutexes[x-1], "Application level mutex unlock");
       return C_integer 1;
       }
 end
@@ -2524,22 +2519,20 @@ function{1} join(x)
      abstract { return coexpr }
      body {
 	struct context *n;
-	int rv;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
 	MUTEX_LOCKID(MTX_NARTHREADS); 
 	NARthreads--;	
 	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	if ((rv=pthread_join(n->thread, NULL)) != 0) {
-	   fprintf(stderr, "pthread join failure %d\n", rv);
-	   exit(-1);
-	   }
-	/*}*/
-        MUTEX_LOCKID(MTX_GCTHREAD);
-	MUTEX_LOCKID(MTX_NARTHREADS); 
-	NARthreads++;	
-	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	MUTEX_UNLOCKID(MTX_GCTHREAD);
+	
+	THREAD_JOIN(n->thread, NULL);
+	
+	/* } */
+	MUTEX_LOCKID(MTX_THREADCONTROL);
+	  MUTEX_LOCKID(MTX_NARTHREADS); 
+	  NARthreads++;	
+	  MUTEX_UNLOCKID(MTX_NARTHREADS);
+	MUTEX_UNLOCKID(MTX_THREADCONTROL);
 	return x;
 	}
      }
@@ -2560,24 +2553,24 @@ function{1} thread(x)
 	if (cp->status & Ts_Native) runerr(101,x);
 	if (cp->status & Ts_Async) return x;
 	/* initialize sender/receiver queues */
-	pthread_mutex_init(&(cp->smute), NULL);
-	pthread_mutex_init(&(cp->rmute), NULL);
+	MUTEX_INIT(cp->smute, NULL);
+	MUTEX_INIT(cp->rmute, NULL);
 	cp->squeue = (union block *)alclist(0, MinListSlots);
 	cp->rqueue = (union block *)alclist(0, MinListSlots);
 	/* Transmit whatever is needed to wake it up. */
 	n = (struct context *) cp->cstate[1];
-	do{
-	  i=pthread_mutex_trylock(&static_mutexes[MTX_GCTHREAD]);
+	
+	{
+	MUTEX_TRYLOCKID(MTX_THREADCONTROL, i);
 	  if (i==EBUSY){
-	     /* check to see if another thread and have already requested a GC.
-	      * OR another thread is in a critical region and locked MTX_GCthread
+	     /* check to see if another thread has already requested a GC.
+	      * OR another thread is in a critical region and locked MTX_THREADCONTROL
 	      */
 	      if (thread_call)
 		thread_control(GC_GOTOSLEEP); /* I'm part of the GC party now! Sleeping!!*/
 	      else
 		idelay(1);
 	    }
-	  else if (i) syserr("Mutex Disaster in GCthread mutex in thread()");
 	} while (i); /* keep looping until I aquire the mutex*/
 	if (n->alive == 0) {
 	   /* activate thread x for the first time */
@@ -2592,10 +2585,10 @@ function{1} thread(x)
 	/* activate co-expression x, having changed it to Asynchronous */
 	sem_post(n->semp);
 	/* inrement the counter of the Async running threads*/
-	MUTEX_LOCKID(MTX_NARTHREADS); 
-	NARthreads++;	
-	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	MUTEX_UNLOCKID(MTX_GCTHREAD);
+	  MUTEX_LOCKID(MTX_NARTHREADS); 
+	  NARthreads++;	
+	  MUTEX_UNLOCKID(MTX_NARTHREADS);
+	MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
 	return x;
 	}

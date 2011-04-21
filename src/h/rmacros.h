@@ -1099,7 +1099,7 @@
    
    #define MTX_SOCK_MAP		18
    
-   #define MTX_GCTHREAD		19
+   #define MTX_THREADCONTROL	19
    #define MTX_NARTHREADS	20
    #define MTX_COND_GC		21
    
@@ -1133,7 +1133,6 @@
    #define GC_WAKEUPCALL 1
    #define GC_STOPALLTHREADS 2
 
-
 #endif					/* Concurrent */
 
 #ifdef Concurrent
@@ -1142,26 +1141,41 @@
  *  error tracing.
  */
 #define MUTEX_LOCK( mtx, msg) { int retval; \
-  if ((retval=pthread_mutex_lock(&mtx)) != 0) handle_thread_error(retval); }
+  if ((retval=pthread_mutex_lock(&(mtx))) != 0) handle_thread_error(retval); }
+  
 #define MUTEX_UNLOCK( mtx, msg) { int retval; \
-  if ((retval=pthread_mutex_unlock(&mtx)) != 0)  handle_thread_error(retval); }
+  if ((retval=pthread_mutex_unlock(&(mtx))) != 0)  handle_thread_error(retval); }
+
+#define MUTEX_TRYLOCK(mtx, isbusy, msg) { \
+if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
+   {handle_thread_error(isbusy); isbusy=0;} }
+
+#define MUTEX_INIT( mtx, attr ) { int retval; \
+  if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) handle_thread_error(retval); }
+
+#define THREAD_JOIN( thrd, opt ) { int retval; \
+if ((retval=pthread_join(&(thrd), opt)) != 0) handle_thread_error(retval); }
 
 /*
  *  Lock mutex static_mutexes[mtx].
  */
 #define MUTEX_LOCKID(mtx) { int retval; \
   if ((retval=pthread_mutex_lock(&static_mutexes[mtx])) != 0) handle_thread_error(retval); }
+  
 #define MUTEX_UNLOCKID(mtx) { int retval; \
   if ((retval=pthread_mutex_unlock(&static_mutexes[mtx])) != 0)  handle_thread_error(retval); }
 
 #define MUTEX_TRYLOCKID(mtx, isbusy) { \
-if ((isbusy=pthread_mutex_lock(&static_mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+if ((isbusy=pthread_mutex_trylock(&static_mutexes[mtx])) != 0 && isbusy!=EBUSY) \
    {handle_thread_error(isbusy); isbusy=0;} }
 
 #else					/* Concurrent */
-#define MUTEX_LOCK( mtx, msg)
-#define MUTEX_UNLOCK( mtx, msg)
+#define MUTEX_INIT(mtx, attr)
+#define MUTEX_LOCK(mtx, msg)
+#define MUTEX_UNLOCK(mtx, msg)
+#define MUTEX_TRYLOCK(mtx, isbusy)
 #define MUTEX_LOCKID(mtx)
 #define MUTEX_UNLOCKID(mtx)
 #define MUTEX_TRYLOCKID(mtx, isbusy)
+#define THREAD_JOIN( thrd, opt )
 #endif					/* Concurrent */

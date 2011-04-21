@@ -1154,7 +1154,7 @@ if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
   if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) handle_thread_error(retval); }
 
 #define THREAD_JOIN( thrd, opt ) { int retval; \
-if ((retval=pthread_join(&(thrd), opt)) != 0) handle_thread_error(retval); }
+if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 
 /*
  *  Lock mutex static_mutexes[mtx].

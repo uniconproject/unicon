@@ -693,6 +693,7 @@ int action;
 	 MUTEX_UNLOCKID(MTX_COND_GC);
 	 
 	 MUTEX_LOCKID(MTX_THREADCONTROL);
+	 MUTEX_LOCKID(MTX_NARTHREADS);
 	 NARthreads++;
 	 }
       else {

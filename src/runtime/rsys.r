@@ -346,7 +346,7 @@ long len;
    long tally = 0;
    long n = 0;
 
-#if NT
+#if NT && !defined(NTGCC)
    /*
     * Under NT/MSVC++, ftell() used in Icon where() returns bad answers
     * after a wlongread().  We work around it here by fseeking after fread.
@@ -361,7 +361,7 @@ long len;
    while (len > 0) {
       n = fread(ts, width, (int)((len < MaxIn) ? len : MaxIn), fd);
       if (n <= 0) {
-#if NT
+#if NT && !defined(NTGCC)
          fseek(fd, pos + tally, SEEK_SET);
 #endif					/* NT */
          return tally;
@@ -370,7 +370,7 @@ long len;
       ts += n;
       len -= n;
       }
-#if NT
+#if NT && !defined(NTGCC)
    fseek(fd, pos + tally, SEEK_SET);
 #endif					/* NT */
    return tally;
@@ -383,16 +383,16 @@ long len;
  * (Standard read may not handle long strings.)
  */
 word gzlongread(s,width,len,fd)
-FILE *fd;
-int width;
 char *s;
+int width;
 long len;
+FILE *fd;
 {
    tended char *ts = s;
    long tally = 0;
    long n = 0;
 
-#if NT
+#if NT && !defined(NTGCC)
    /*
     * Under NT/MSVC++, ftell() used in Icon where() returns bad answers
     * after a wlongread().  We work around it here by fseeking after fread.
@@ -407,7 +407,7 @@ long len;
    while (len > 0) {
       n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
       if (n <= 0) {
-#if NT
+#if NT && !defined(NTGCC)
          gzseek(fd, pos + tally, SEEK_SET);
 #endif					/* NT */
          return tally;
@@ -416,7 +416,7 @@ long len;
       ts += n;
       len -= n;
       }
-#if NT
+#if NT && !defined(NTGCC)
    gzseek(fd, pos + tally, SEEK_SET);
 #endif					/* NT */
    return tally;

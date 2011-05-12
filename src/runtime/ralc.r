@@ -993,14 +993,14 @@ char *f(int region, word nbytes)
       pcurr = &curtstring;
       curr_private = curtstring;
       p_publicheap = &public_stringregion;
-   }
+      }
    else{
       mtx_publicheap = MTX_PUBLICBLKHEAP;
       mtx_heap=MTX_BLKHEAP;
       pcurr = &curtblock;
       curr_private = curtblock;
       p_publicheap = &public_blockregion;
-   }
+      }
 #else 					/* Concurrent */
    if (region == Strings)
       pcurr = &curstring;
@@ -1053,7 +1053,7 @@ char *f(int region, word nbytes)
 
    thread_control(GC_STOPALLTHREADS);
    collect(region); /* try to collect the private region first */
-   if (DiffPtrs(curr_private->end,curr_private->free) >= want){
+   if (DiffPtrs(curr_private->end,curr_private->free) >= want) {
       thread_control(GC_WAKEUPCALL);
       return curr_private->free;
       }
@@ -1070,13 +1070,16 @@ char *f(int region, word nbytes)
             }
          }
    
-   /* GC has failed so far to  free enough memory, wake up all threads for now */   
+   /*
+    * GC has failed so far to free enough memory, wake up all threads for now.
+    */   
    thread_control(GC_WAKEUPCALL); 
  #endif 					/* Concurrent */   
 
    /*
     * That didn't work.  Allocate a new region with a size based on the
-    * newest previous region.
+    * newest previous region. memgrowth is a percentile number (defaulting
+    * to 200, meaning "double each time"), so divide by 100.
     */
    newsize = (curr->size / 100) * memgrowth;
    if (newsize < nbytes)
@@ -1085,7 +1088,7 @@ char *f(int region, word nbytes)
       newsize = MinAbrSize;
      
    if ((rp = newregion(nbytes, newsize)) != 0) {
-     int tmp_noMTevents;
+      int tmp_noMTevents;
       MUTEX_LOCKID(mtx_heap);
       rp->prev = curr;
       rp->next = NULL;
@@ -1125,7 +1128,7 @@ char *f(int region, word nbytes)
     */
 
 #ifdef Concurrent
-     printf(" !!!!!! we are disparate for memory now!! trying all options \n ");
+   fprintf(stderr, " !!! Low memory!! Trying all options !!!\n ");
    /* look in the public heaps, */
    thread_control(GC_STOPALLTHREADS); 
    for (rp = *p_publicheap; rp; rp = rp->Tnext)

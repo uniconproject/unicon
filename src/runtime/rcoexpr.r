@@ -535,9 +535,7 @@ void *nctramp(void *arg)
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
 
-#ifdef Concurrent
-   init_threadheap(curtstate);
-#endif					/* Concurrent */
+   init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize);
 
 #endif					/* Concurrent */
    sem_wait(new->semp);			/* wait for signal */

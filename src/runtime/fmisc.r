@@ -2540,60 +2540,97 @@ function{1} join(x)
      }
 end
 
-"thread(x) - execute a concurrent thread that evaluates procedure x"
+"thread(x,blocksize,stringsize) - evaluate co-expression"
+" or procedure x concurrently"
 
-function{1} thread(x)
-  if is:coexpr(x) then {
-     abstract { return coexpr }
-     body {
-	struct context *n;
-	struct b_coexpr *cp = BlkD(x, Coexpr);
-	int i;
-	/* Make sure it is a pthreads-based co-expression. */
-	if (cp->status & Ts_Native) runerr(101,x);
-	if (cp->status & Ts_Async) return x;
-	/* initialize sender/receiver queues */
-	MUTEX_INIT(cp->smute, NULL);
-	MUTEX_INIT(cp->rmute, NULL);
-	cp->squeue = (union block *)alclist(0, MinListSlots);
-	cp->rqueue = (union block *)alclist(0, MinListSlots);
-	/* Transmit whatever is needed to wake it up. */
-	n = (struct context *) cp->cstate[1];
+function{1} thread(x, blocksize, stringsize)
+   declare {
+      C_integer _bs_, _ss_;
+      }
+   if !def:C_integer(blocksize,262144,_bs_) then
+      runerr(101,blocksize)
+   if !def:C_integer(stringsize,262144,_ss_) then
+      runerr(101,stringsize)
+   if is:coexpr(x) then {
+      abstract { return coexpr }
+      body {
+	 struct context *n;
+	 struct b_coexpr *cp = BlkD(x, Coexpr);
+	 int i;
+
+	 /*
+	  * Make sure it is a pthreads-based co-expression.
+	  */
+	 if (cp->status & Ts_Native) runerr(101,x);
+	 if (cp->status & Ts_Async) return x;
+
+	 /*
+	  * Initialize sender/receiver queues.
+	  */
+	 MUTEX_INIT(cp->smute, NULL);
+	 MUTEX_INIT(cp->rmute, NULL);
+	 cp->squeue = (union block *)alclist(0, MinListSlots);
+	 cp->rqueue = (union block *)alclist(0, MinListSlots);
+	 if (_bs_ < MinAbrSize) _bs_ = MinAbrSize;
+	 if (_ss_ < MinAbrSize) _ss_ = MinStrSpace;
+	 cp->ini_blksize = _bs_;
+	 cp->ini_ssize = _ss_;
+
+	 /*
+	  * Transmit whatever is needed to wake it up.
+	  */
+	 n = (struct context *) cp->cstate[1];
 	
-	{
-	MUTEX_TRYLOCKID(MTX_THREADCONTROL, i);
-	  if (i==EBUSY){
-	     /* check to see if another thread has already requested a GC.
-	      * OR another thread is in a critical region and locked MTX_THREADCONTROL
-	      */
-	      if (thread_call)
-		thread_control(GC_GOTOSLEEP); /* I'm part of the GC party now! Sleeping!!*/
-	      else
-		idelay(1);
+	 /*
+	  * Loop until I aquire the mutex.
+	  */
+	 {
+	    MUTEX_TRYLOCKID(MTX_THREADCONTROL, i);
+	    if (i==EBUSY) {
+	       /*
+		* Check to see if another thread has already requested a GC.
+		* OR: another thread is in a critical region and locked
+		* MTX_THREADCONTROL.
+		*/
+	       if (thread_call) {
+		  /* I'm part of the GC party now! Sleeping!!*/
+		  thread_control(GC_GOTOSLEEP);
+		  }
+	       else
+		  idelay(1);
+	       }
+	 } while (i);
+
+	 if (n->alive == 0) {
+	    /*
+	     * Activate thread x for the first time.
+	     */
+	    if ( pthread_create(&(n->thread), NULL, nctramp, n) != 0 )
+	       syserr("cannot create thread");
 	    }
-	} while (i); /* keep looping until I aquire the mutex*/
-	if (n->alive == 0) {
-	   /* activate thread x for the first time */
 
-	   if ( pthread_create(&(n->thread), NULL, nctramp, n) != 0 )
-	      syserr("cannot create thread");
-	   }
+	 /*
+	  * Turn on Async flag.
+	  */
+	 cp->status = Ts_Posix | Ts_Async;
 
-	/* Turn on Async flag */
-	cp->status = Ts_Posix | Ts_Async;
+	 /*
+	  * Activate co-expression x, having changed it to Asynchronous.
+	  */
+	 sem_post(n->semp);
 
-	/* activate co-expression x, having changed it to Asynchronous */
-	sem_post(n->semp);
-	/* inrement the counter of the Async running threads*/
-	  MUTEX_LOCKID(MTX_NARTHREADS); 
-	  NARthreads++;	
-	  MUTEX_UNLOCKID(MTX_NARTHREADS);
-	MUTEX_UNLOCKID(MTX_THREADCONTROL);
+	 /*
+	  * Increment the counter of the Async running threads.
+	  */
+	 MUTEX_LOCKID(MTX_NARTHREADS); 
+	 NARthreads++;	
+	 MUTEX_UNLOCKID(MTX_NARTHREADS);
+	 MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
-	return x;
-	}
-     }
-  else if is:proc(x) then {
+	 return x;
+	 }
+      }
+   else if is:proc(x) then {
      abstract { return coexpr }
      body {
 	tended struct descrip d;

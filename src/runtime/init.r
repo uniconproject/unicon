@@ -559,19 +559,30 @@ void howmanyblock()
   printf(" local block= %d\n", i);
 }
 
-void init_threadheap(struct threadstate *ts)
+/*
+ * Initialize separate heaps for (concurrent) threads.
+ * At present, PthreadCoswitch probably uses this for Pthread coexpressions.
+ */
+void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
 { 
-  static int first=1; /* wont cause a race condition */
-  struct region *rp;
-  word size;
+   /*
+    * This static doesn't cause a race condition because initial main
+    * co-expression will be initialized before any other thread is ever
+    * created.
+    */
+   static int first=1;
+   struct region *rp;
+   word size;
 
-  /* the main thread just points to the initial regions */
-  if (first){
-   ts->Curstring = curstring;
-   ts->Curblock = curblock;
-   first=0;
-   return;
-   }
+   /*
+    * The main thread just points to the initial regions.
+    */
+   if (first){
+      ts->Curstring = curstring;
+      ts->Curblock = curblock;
+      first = 0;
+      return;
+      }
 
    /*
     *  new string and block region should be allocated
@@ -939,7 +950,7 @@ Deliberate Syntax Error
 #endif					/* COMPILER */
 
 #ifdef Concurrent
-   init_threadheap(curtstate);
+   init_threadheap(curtstate, rootblock.size, rootstring.size);
 #endif					/* Concurrent */
 
    /*

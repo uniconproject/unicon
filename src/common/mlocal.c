@@ -140,10 +140,13 @@ char *findonpath(char *name, char *buf, size_t len) {
          return NULL;
          }
       memcpy(buf, next, plen);
+      
 #if NT
-      buf[plen] = '\\';
+      if (buf[plen-1] != '\\')
+	buf[plen] = '\\';
 #else					/* NT */
-      buf[plen] = '/';
+      if (buf[plen-1] != '/')
+	buf[plen] = '/';
 #endif					/* NT */
       strcpy(buf + plen + 1, name);
 #if NT

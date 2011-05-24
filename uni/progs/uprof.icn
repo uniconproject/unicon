@@ -3,7 +3,7 @@
 # Unicon Profiler v0.6
 # Author: Leah Wegner
 # Maintainer: Clinton Jeffery
-# May 21st, 2011
+# May 23st, 2011
 #
 # Notes:
 #  The granularity of the timing mechanism on Linux is 10 milliseconds.
@@ -46,10 +46,15 @@ procedure main(args)
    local Proc_alone_time := table(0)
    local proc_start_time := 0
    local proc_end_time := 0
+   local mask := ProcMask
+   local lastline, lines, line_time := table(0), line_count := table(0)
+   
 
    if args[1] == "-o" then { pop(args); output := pop(args) }
    else if match("-o", args[1]) then output := pop(args)[3:0]
    else output := &errout
+
+   if args[1] == "-l" then { pop(args); lines := 1; mask ++:= E_Line }
 
    #initializations
    symmap := evsyms()
@@ -58,16 +63,26 @@ procedure main(args)
 
    EvInit(args) | stop("*** cannot open program to monitor")
 
-   while EvGet(ProcMask) do {
+   while EvGet(mask) do {
       val := &eventvalue
 
    #Build the tables
       case &eventcode of {
+	 E_Line: {
+	     linetime := keyword("&time", Monitored)
+	     line_count[&eventvalue] +:= 1
+	     if delta := (0 < linetime-\last_linetime) then {
+		 line_time[&eventvalue] +:= delta
+	     }
+	     last_linetime := linetime
+	 }
+
       #CALL
          E_Pcall: {
             push(Proc_stack, val)
             push(Call_time_stack, (keyword("&time", Monitored)))
             Proc_call_list[val] +:= 1
+	    Proc_calls[val] +:= 1
          }
 
       #FAIL
@@ -192,6 +207,16 @@ if *Proc_stack > 0 then {
 		   divimage(Proc_alone_time[y],
 		       real(Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))))
    }
+
+   if \lines then {
+       write(output, "\n", printf("%8s %8s %8s", "LINE", "TIME", "COUNT"))
+       L := reverse(sort(line_time,2))
+       every le := !L do {
+	  write(output, printf("%8d %8d %8d", le[1], le[2], line_count[le[1]]))
+       }
+   }
+
+
 end
 
 #

@@ -572,7 +572,6 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
     */
    static int first=1;
    struct region *rp;
-   word size;
 
    /*
     * The main thread just points to the initial regions.
@@ -588,11 +587,10 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
     *  new string and block region should be allocated
     */
 
-   size = 1024*1024*1;
-   if (size < curpstate->stringregion->size / 4)
-     size = curpstate->stringregion->size / 4;
+   if (strsiz < 1024) strsiz = 262144;
+   if (blksiz < 1024) blksiz = 262144;
 
-   if ((rp = newregion(size, size)) != 0) {
+   if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID(MTX_STRHEAP);
       rp->prev = curstring;
       rp->next = NULL;
@@ -608,12 +606,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
     else
       syserr(" init_threadheap: insufficient memory");
 
-   size = 1024*1024*4;
-   if (size < curpstate->blockregion->size / 4)
-      size = curpstate->blockregion->size / 4;
-
-
-   if ((rp = newregion(size, size)) != 0) {
+   if ((rp = newregion(blksiz, blksiz)) != 0) {
       MUTEX_LOCKID(MTX_BLKHEAP);
       rp->prev = curblock;
       rp->next = NULL;
@@ -648,6 +641,8 @@ void init_threadstate(struct threadstate *ts)
 #endif					/* Concurrent */
 
    ts->Glbl_argp = NULL;
+   ts->Eret_tmp = nulldesc;
+   ts->Value_tmp = nulldesc;
 
    MakeInt(1, &(ts->Kywd_pos));
    StrLen(ts->ksub) = 0;

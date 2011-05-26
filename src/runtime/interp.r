@@ -106,6 +106,7 @@ dptr field_argp;			/* see comment in imisc.r/Ofield() */
    value_tmp.vword.bptr = (union block *)&op_tbl[lastop - 1];
    lastdesc = value_tmp;
    InterpEVValD(&value_tmp, e);
+   value_tmp = nulldesc;
 #endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;
    xargp = rargp;
@@ -452,6 +453,7 @@ int interp_x(int fsig,dptr cargp)
 	 }
 
       oldsp = rsp;
+      value_tmp = nulldesc;
 
       /*
        * Create the generator frame.
@@ -1283,6 +1285,8 @@ invokej:
 
 	    signal = Ollist((int)opnd,rargp);
 
+   	    value_tmp = nulldesc;
+
 	    goto C_rtn_term;
 
 				/* ---Marking and Unmarking--- */
@@ -1594,6 +1598,7 @@ Lsusp_uw:
 	    ipc = pfp->pf_ipc;
 	    glbl_argp = pfp->pf_argp;
 	    pfp = pfp->pf_pfp;
+   	    value_tmp = nulldesc;
 	    break;
 	    }
 
@@ -1629,6 +1634,7 @@ Eret_uw:
 	    rsp = (word *)efp - 1;
 	    efp = efp->ef_efp;
 	    PushDesc(eret_tmp);
+	    eret_tmp = nulldesc;
 	    break;
 	    }
 
@@ -1707,6 +1713,7 @@ Pret_uw:
 	    ipc = pfp->pf_ipc;
 	    glbl_argp = pfp->pf_argp;
 	    pfp = pfp->pf_pfp;
+   	    value_tmp = nulldesc;
 
 	    /*
 	     * Had moved E_Pret (via value_tmp) here for awhile,
@@ -2251,6 +2258,8 @@ return_term:
 	    InterpEVValD(&value_tmp, e_oret);
 #endif					/* E_Oret */
 	    lastev = E_Misc;
+
+	    value_tmp = nulldesc;
 	    }
 #endif					/* MultiThread */
 

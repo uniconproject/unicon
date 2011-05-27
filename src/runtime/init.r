@@ -642,7 +642,9 @@ void init_threadstate(struct threadstate *ts)
 
    ts->Glbl_argp = NULL;
    ts->Eret_tmp = nulldesc;
+#if !COMPILER
    ts->Value_tmp = nulldesc;
+#endif					/* !COMPILER */
 
    MakeInt(1, &(ts->Kywd_pos));
    StrLen(ts->ksub) = 0;

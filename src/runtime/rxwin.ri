@@ -4699,12 +4699,22 @@ char my_wmap(wbp w)
 
 /*   STDLOCALS(w); */
 #ifdef Graphics3D
+
     /*wc->maxstex=16;
     wc->stex = (struct _savetexture *) 
 	 malloc(wc->maxstex*sizeof(struct _savetexture));
     */
-    if (ws->is_3D) child_window = 2;
-    
+    if (ws->is_3D) {
+   int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+       child_window = 2;
+       if (wd->vis == NULL) {
+	  wd->vis = glXChooseVisual(wd->display, wd->screen, visualparms);
+	  if (wd->vis == NULL) {
+	     fprintf(stderr, "glXChooseVisual: visual failed\n");
+	     return NULL;
+	     }
+	  }
+       }
 #endif					/* Graphics3D */
     wp = ws->parent;
    /*

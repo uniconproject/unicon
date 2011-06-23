@@ -602,16 +602,10 @@ char *s;
    wdp wd;
    XColor color;
    char tmp[256];
-#if HAVE_LIBGL
-  int list[] = {GLX_RGBA, GLX_RED_SIZE, 1,  GLX_GREEN_SIZE, 1,
-		GLX_BLUE_SIZE, 1, GLX_DEPTH_SIZE, 1, GLX_ACCUM_RED_SIZE,
-		1, GLX_ACCUM_GREEN_SIZE, 1, GLX_ACCUM_BLUE_SIZE, 1, None};
-#endif					/* HAVE_LIBGL */
    CURTSTATE();
 
-   if (s == NULL)
-     if (getenv_r("DISPLAY", tmp, 255)==0)
-       s=tmp;
+   if ((s == NULL) && (getenv_r("DISPLAY", tmp, 255)==0))
+      s = tmp;
    if (s == NULL) s = "";
    for(wd = wdsplys; wd; wd = wd->next)
       if (!strcmp(wd->name,s)) {
@@ -630,6 +624,9 @@ char *s;
       return NULL;
       }
    wd->screen = DefaultScreen(wd->display);
+#ifdef Graphics3D
+   wd->vis = NULL; /* initialized later if we are a 3D app */
+#endif					/* Graphics3D */
    wd->cmap = DefaultColormap(wd->display, wd->screen);
 
    /*

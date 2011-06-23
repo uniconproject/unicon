@@ -22,17 +22,17 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
    /* create an opengl window */
 #ifdef XWindows
-   int  L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+   int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
 
   /* create an opengl window */
    wdp wd = alc_display(NULL);
    if (!glXQueryExtension(wd->display, &query, &query)) {
-      printf("X server has no OpenGL GLX extension\n");
+      fprintf(stderr, "X server has no OpenGL GLX extension\n");
       return NULL;
       }
-   wd->vis = glXChooseVisual(wd->display, wd->screen, L);
+   wd->vis = glXChooseVisual(wd->display, wd->screen, visualparms);
    if (wd->vis == NULL) {
-      printf("glXChooseVisual: visual failed\n");
+      fprintf(stderr, "glXChooseVisual: visual failed\n");
       return NULL;
       }
 #endif					/* XWindows */
@@ -2896,8 +2896,9 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
    while(isspace(*s)) s++;
    if (*s == ',')  /* must be an image string */
       ttype = 3;
-   else		  /* it is a file name */
+   else	{	  /* it is a file name */
       ttype = 1;
+      }
 
    wt = lookup_texture_byname(w, str, len, ttype, curtex);
    if (wt == NULL) return Failed;

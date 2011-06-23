@@ -361,17 +361,23 @@ keyword{1,*} features
 	    patchpath[strlen(patchpath)-strlen("iconx")] = '\0';
 	    }
 	 else {
-	    FILE *f = fopen(StrLoc(kywd_prog), "r");
 	    int c;
-	    /*
-	     * look for iconx in our icode file (could also try the dir
-	     * containing &progname). Should fix to look rather at argv[0]
-	     * or save iconx path from icode when icode is loaded.
-	     */
-	    while ((c = getc(f)) && (c != EOF) && (c != '\n'));
-	    refpath = patchpath+18;
-	    if (fscanf(f, "IXBIN=%s\n", refpath) != 1) refpath = "";
-	    fclose(f);
+	    FILE *f = fopen(StrLoc(kywd_prog), "r");
+	    if (f != NULL) {
+	       /*
+		* look for iconx in our icode file (could also try the dir
+		* containing &progname). Should fix to look rather at argv[0]
+		* or save iconx path from icode when icode is loaded.
+		*/
+	       while ((c = getc(f)) && (c != EOF) && (c != '\n'));
+	       refpath = patchpath+18;
+	       if (fscanf(f, "IXBIN=%s\n", refpath) != 1) refpath = "";
+	       fclose(f);
+	       }
+	    else {
+	       fprintf(stderr,"&features: can't open '%s' to look for iconx\n",
+		       StrLoc(kywd_prog));
+	       }
             }
 #endif					/* UNIX */
 	 }

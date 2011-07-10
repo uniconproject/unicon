@@ -1,6 +1,6 @@
 cd src\rtt
-make
+make -j4
 cd ..\runtime
-make interp_all
+make -j4 interp_all
 cd ..\icont
-make
+make -j4

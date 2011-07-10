@@ -1,3 +1,3 @@
 cd ..\libtp
-make -f makefile.wgc libtp.a
+make -j4 -f makefile.wgc libtp.a
 cd ..\runtime

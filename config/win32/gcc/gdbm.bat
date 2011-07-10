@@ -1,3 +1,3 @@
 cd ..\gdbm
-make -f makefile.wgc libgdbm.a
+make -j4 -f makefile.wgc libgdbm.a
 cd ..\runtime

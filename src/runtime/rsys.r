@@ -1913,7 +1913,7 @@ void detectRedirection()
     * Look at the standard file handles and attempt to detect
     * redirection.
     */
-   if (fstat(stdin->_file, &sb) == 0) {
+   if (fstat(fileno(stdin), &sb) == 0) {
       if (sb.st_mode & S_IFCHR) {		/* stdin is a device */
 	 }
       if (sb.st_mode & S_IFREG) {		/* stdin is a regular file */
@@ -1926,7 +1926,7 @@ void detectRedirection()
    else {					/* unable to identify stdin */
       }
 
-   if (fstat(stdout->_file, &sb) == 0) {
+   if (fstat(fileno(stdout), &sb) == 0) {
       if (sb.st_mode & S_IFCHR) {		/* stdout is a device */
 	 }
       if (sb.st_mode & S_IFREG) {		/* stdout is a regular file */
@@ -1982,8 +1982,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 	    else
 	       f = fopen(buf, "w");
 	    if (f == NULL) {
-	       MessageBox(0, "unable to redirect i/o", "system error",
-			  MB_ICONHAND);
+	       fprintf(stderr, "system error: unable to redirect i/o");
 	       c_exit(-1);
 	       }
 	    if (c == '<') {

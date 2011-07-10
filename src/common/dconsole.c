@@ -66,7 +66,7 @@ struct threadstate *get_tstate()
 {
    return curtstate;
 }
-int _imp__pthread_mutex_lock(pthread_mutex_t *mtx)
+/*int _imp__pthread_mutex_lock(pthread_mutex_t *mtx)
 {
   return 0;
 }
@@ -78,6 +78,7 @@ int _imp__pthread_mutex_unlock(pthread_mutex_t *mtx)
 {
   return 0;
 }
+*/
 void handle_thread_error(int val)
 {
 
@@ -97,6 +98,16 @@ char *reserve_0(int r, word n) { return malloc(1); }
    if (rv > 0) return tmp;
       return NULL;
    }
+
+int idelay(int n){
+  Sleep(n);
+  return Succeeded;
+}
+
+void xmfree(){
+
+}
+
 #endif						/* MSWindows */
 
 /*
@@ -239,6 +250,18 @@ void initalloc(word codesize)
    curstring->Gnext = curstring->Gprev = NULL;
    curblock->next = curblock->prev = NULL;
    curblock->Gnext = curblock->Gprev = NULL;
+
+#ifdef Concurrent
+      	 curtblock = curblock;
+	 curtstring = curstring;
+         {
+	   int i;
+         for(i=0; i<NUM_STATIC_MUTEXES; i++)
+            static_mutexes[i] = PTHREAD_MUTEX_INITIALIZER;
+ 
+	 }
+	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
+#endif					/*Concurrent*/
 
    if ((strfree = strbase = (char *)AllocReg(ssize)) == NULL)
       tfatal("insufficient memory for string region", NULL);

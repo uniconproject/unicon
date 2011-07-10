@@ -309,6 +309,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 
 LRESULT_CALLBACK WndProc	(HWND, UINT, WPARAM, LPARAM);
 
+#if 0
 void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstance)
    {
    WNDCLASS wc;
@@ -336,11 +337,14 @@ void MSStartup(int argc, char **argv, HINSTANCE hInstance, HINSTANCE hPrevInstan
       }
    }
 
+#endif
+
 HINSTANCE mswinInstance;
 int ncmdShow;
 
 jmp_buf mark_sj;
 
+#if 0
 int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpszCmdParam, int nCmdShow)
    {
@@ -351,9 +355,6 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    ncmdShow = nCmdShow;
    argc = CmdParamToArgv(GetCommandLine(), &argv, 0);
    MSStartup(argc, argv, hInstance, hPrevInstance);
-#if BORLAND_286
-   _InitEasyWin();
-#endif					/* BORLAND_286 */
    if (setjmp(mark_sj) == 0)
       icont(argc,argv);
    while (--argc>=0)
@@ -362,7 +363,11 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    wfreersc();
    return 0;
 }
-
+#else
+void iconx(int argc, char** argv){
+  icont(argc, argv);
+}
+#endif
 
 #define main icont
 #endif					/* MSWindows */

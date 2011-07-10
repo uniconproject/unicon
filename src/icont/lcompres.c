@@ -25,12 +25,10 @@ int file_comp(char *filename)
    struct header *hdr;
    int n, l, i, c;
    char *newfname;
-   char *buff;  
    char buf[200];
    char *cf;
   
    hdr = (struct header *)malloc(sizeof(struct header));
-   buff = (char *)malloc(sizeof(char)*20);
 
    /*
     * use fopen() to open the target file then read the header and
@@ -61,7 +59,11 @@ int file_comp(char *filename)
 	 }
       else 
 	 fputs(buf, foutput);
+#if NT
+      if (strncmp(buf, "rem [executable Icon binary follows]", 36) == 0)
+#else					/* NT */
       if (strncmp(buf, "[executable Icon binary follows]", 32) == 0)
+#endif					/* NT */
 	 break;
       }
 

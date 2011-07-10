@@ -226,16 +226,10 @@ struct b_cset  k_letters = {
  */
 
 #ifndef MultiThread
-#ifdef ConsoleWindow
-struct b_file  k_errout = {T_File, NULL, Fs_Write};     /* &errout */
-struct b_file  k_input = {T_File, NULL, Fs_Read|Fs_Window};     /* &input */
-struct b_file  k_output = {T_File, NULL, Fs_Write};     /* &output */
-#else					/* ConsoleWindow */
+/* input: is an Fs_Window if consolewindow; not doing that here anymore, add it to OpenConsole() */
 struct b_file  k_errout = {T_File, NULL, Fs_Write};	/* &errout */
 struct b_file  k_input = {T_File, NULL, Fs_Read};	/* &input */
 struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
-#endif					/* ConsoleWindow */
-
 #endif					/* MultiThread */
 
 /*
@@ -349,7 +343,7 @@ struct errtab errtab[] = {
    129, "unable to convert unevaluated variable to pattern",
 #endif					/* PatternType */
    130, "incorrect number of arguments",
-#ifdef Graphics
+/*#ifdef Graphics*/
    140, "window expected",
    141, "program terminated by window manager",
    142, "attempt to read/write on closed window",
@@ -358,17 +352,17 @@ struct errtab errtab[] = {
    145, "bad window attribute",
    146, "incorrect number of arguments to drawing function",
    147, "window attribute cannot be read or written as requested",
-#endif					/* Graphics */
+/*#endif*/					/* Graphics */
 
-#ifdef Graphics3D
+/*#ifdef Graphics3D*/
    150,  "drawing a 3D object while in 2D mode",
    151,  "pushed/popped too many matrices",
    152,  "modelview or projection expected",
    153,  "texture not in correct format",
    154,  "must have an even number of texture coordinates",
-#else					/* Graphics3D */
-   150,  "3D graphics is not enabled in this virtual machine",
-#endif					/* Graphics3D */
+/*#else*/					/* Graphics3D */
+   155,  "3D graphics is not enabled in this virtual machine",
+/*#endif*/					/* Graphics3D */
 
 #ifdef PosixFns
    /*

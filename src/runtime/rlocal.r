@@ -1167,12 +1167,10 @@ int rchar(int with_echo)
       tty.c_lflag &= ~ECHO;
    tcsetattr(STDIN, TCSANOW, &tty);	/* set temporary attributes */
 
-#ifdef Graphics
-   while (!kbhit()) { idelay(100); pollevent(); }
-#endif					/* Graphics */
+   checkpollevent();
 
    n = read(STDIN, &c, 1);		/* read one char from stdin */
-
+ 
    tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
 
    if (n == 1)				/* if read succeeded */

@@ -474,17 +474,9 @@ dptr d;
    if (l == 0)
       return  Succeeded;
    s = StrLoc(*d);
-#ifdef MSWindows
-#ifdef ConsoleWindow
-   if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
-	(f == stderr && !(ConsoleFlags & StdErrRedirect))) {
-      if (ConsoleBinding == NULL)
-         ConsoleBinding = OpenConsole();
-      { int i; for(i=0;i<l;i++) Consoleputc(s[i], f); }
-      return Succeeded;
-      }
-#endif					/* ConsoleWindow */
-#endif					/* MSWindows */
+
+   if (checkOpenConsole(f, s)) return Succeeded;
+
 #ifdef PresentationManager
    if (ConsoleFlags & OutputToBuf) {
       /* check for overflow */
@@ -555,15 +547,6 @@ int n;
 /*
  * The following code is operating-system dependent [@fsys.01].
  */
-#if OS2
-#if OS2_32
-   DosSleep(n);
-   return Succeeded;
-#else					/* OS2_32 */
-   return Failed;
-#endif					/* OS2_32 */
-#endif					/* OS2 */
-
 #if VMS
    delay_vms(n);
    return Succeeded;
@@ -1923,7 +1906,6 @@ int ptflush(struct ptstruct *ptStruct)
 
 FILE *finredir, *fouredir, *ferredir;
 
-#ifdef ConsoleWindow
 void detectRedirection()
 {
    struct stat sb;
@@ -1956,7 +1938,6 @@ void detectRedirection()
    else {					/* unable to identify stdout */
      }
 }
-#endif					/* ConsoleWindow */
 
 /*
  * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
@@ -1975,16 +1956,13 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    *avp = malloc(2 * sizeof(char *));
    (*avp)[rv] = NULL;
 
-#ifdef ConsoleWindow
    if (dequote)
       detectRedirection();
-#endif					/* ConsoleWindow */
 
    while (*t2) {
       while (*t2 && isspace(*t2)) t2++;
       switch (*t2) {
 	 case '\0': break;
-#ifdef ConsoleWindow
 	 case '<': case '>': {
 	    FILE *f;
 	    char c, buf[128], *t3;
@@ -2018,7 +1996,6 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 	       }
 	    break;
 	    }
-#endif					/* ConsoleWindow */
 	 case '"': {
 	    char *t3, c = '\0';
 	    if (dequote) t3 = ++t2;			/* skip " */

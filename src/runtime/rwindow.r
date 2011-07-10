@@ -3,6 +3,8 @@
  *  non window-system-specific window support routines
  */
 
+unsigned long ConsoleFlags = 0;			 /* Console flags */
+
 #ifdef Graphics
 
 static	int	colorphrase    (char *buf, long *r, long *g, long *b, long *a);
@@ -28,7 +30,6 @@ FILE *ConsoleBinding = NULL;
  */
 char ConsoleStringBuf[MaxReadStr * 48];
 char *ConsoleStringBufPtr = ConsoleStringBuf;
-unsigned long ConsoleFlags = 0;			 /* Console flags */
 
 int canvas_serial, context_serial;
 
@@ -233,53 +234,6 @@ dptr res;
       }
    return 1;
    }
-
-#ifdef ConsoleWindow
-/*
- *  getch() -- return char from window, without echoing
- */
-int getch(void)
-{
-   struct descrip res;
-   if (wgetchne((wbp)OpenConsole(), &res) >= 0)
-      return *StrLoc(res) & 0xFF;
-   else
-      return -1;	/* fail */
-}
-
-/*
- *  getch() -- return char from window, with echoing
- */
-int getche(void)
-{
-   struct descrip res;
-   if (wgetche((wbp)OpenConsole(), &res) >= 0)
-      return *StrLoc(res) & 0xFF;
-   else
-      return -1;	/* fail */
-}
-
-/*
- *  kbhit() -- check for availability of char from window
- */
-int kbhit(void)
-{
-   if (ConsoleBinding) {
-      /* make sure we're up-to-date event wise */
-      pollevent();
-      /*
-       * perhaps should look in the console's icon event list for a keypress;
-       *  either a string or event > 60k; presently, succeed for all events
-       */
-      if (BlkD(((wbp)ConsoleBinding)->window->listp,List)->size > 0)
-         return 1;
-      else
-        return 0;  /* fail */
-      }
-   else
-      return 0;  /* fail */
-}
-#endif					/* ConsoleWindow */
 
 /*
  * Get a window that has an event pending (queued)
@@ -4417,206 +4371,8 @@ void waitkey(FILE *w)
 #ifndef NT
   FILE *flog;
 #endif						/* NT */
-/*
- * OpenConsole
- */
-FILE *OpenConsole()
-   {
-   struct descrip attrs[4];
-   int eindx;
 
-   if (!ConsoleBinding) {
-      char ConsoleTitle[256];
-      tended struct b_list *hp;
 
-      /*
-       * If we haven't already allocated regions, we are called due to a
-       *  failure during program startup; allocate enough memory to
-       *  get the message out.
-       */
-#ifdef MultiThread
-      if (!curpstate) {
-	 CURTSTATE();
-         curpstate = &rootpstate;
-#ifdef HAVE_KEYWORD__THREAD
-	 curtstate = curpstate->tstate;
-#endif					/* HAVE_KEYWORD__THREAD */
-         rootpstate.eventmask = nulldesc;
-         }
-      if (!alclist) curpstate->Alclist = alclist_0;
-      if (!reserve) curpstate->Reserve = reserve_0;
-#endif
-      if (!curblock) {
-         curstring = (struct region *)malloc(sizeof (struct region));
-         curblock = (struct region *)malloc(sizeof (struct region));
-         curstring->size = MaxStrSpace;
-         curblock->size  = MaxAbrSize;
-#if COMPILER
-	 initalloc();
-#else					/* COMPILER */
-#ifdef MultiThread
-         initalloc(1000, &rootpstate);
-#else					/* MultiThread */
-         initalloc(1000);
-#endif					/* MultiThread */
-#endif					/* COMPILER */
-
-#ifdef Concurrent
-      	 curtblock = curblock;
-	 curtstring = curstring;
-	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
-#endif					/*Concurrent*/
-         }
-
-      /*
-       * allocate an empty event queue
-       */
-      if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
-
-      /*
-       * build the attribute list
-       */
-      AsgnCStr(attrs[0], "cursor=on");
-      AsgnCStr(attrs[1], "rows=24");
-      AsgnCStr(attrs[2], "columns=80");
-      /*
-       * enable this last argument (by telling wopen it has 4 args)
-       * if you want white text on black bg
-       */
-      AsgnCStr(attrs[3], "reverse=on");
-
-      strncpy(ConsoleTitle, StrLoc(kywd_prog), StrLen(kywd_prog));
-      ConsoleTitle[StrLen(kywd_prog)] = '\0';
-      strcat(ConsoleTitle, " - console");
-
-      ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
-      k_input.fd.fp = ConsoleBinding;
-      k_output.fd.fp = ConsoleBinding;
-      k_errout.fd.fp = ConsoleBinding;
-#ifdef ScrollingConsoleWin
-{
-      wsp ws = ((wbp)ConsoleBinding)->window;
-      ws->nChildren++;
-      ws->child = realloc(ws->child, ws->nChildren * sizeof(childcontrol));
-      makeeditregion(ConsoleBinding, ws->child + (ws->nChildren-1), "");
-      movechild(ws->child + (ws->nChildren-1), 0, 0, ws->width, ws->height);
-}
-#endif					/* ScrollingConsoleWin */
-      }
-   return ConsoleBinding;
-   }
-
-/*
- * Consolefprintf - fprintf to the Icon console
- */
-int Consolefprintf(FILE *file, const char *format, ...)
-   {
-   va_list list;
-   int retval = -1;
-   wbp console;
-
-   va_start(list, format);
-
-   if (ConsoleFlags & OutputToBuf) {
-     retval = vsprintf(ConsoleStringBufPtr, format, list);
-     ConsoleStringBufPtr += max(retval, 0);
-     }
-   else if (((file == stdout) && !(ConsoleFlags & StdOutRedirect)) ||
-       ((file == stderr) && !(ConsoleFlags & StdErrRedirect))) {
-      console = (wbp)OpenConsole();
-      if (console == NULL) return 0;
-      if ((retval = vsprintf(ConsoleStringBuf, format, list)) > 0) {
-        int len = strlen(ConsoleStringBuf);
-        if (flog != NULL) {
-           int i;
-	   for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
-	   }
-        wputstr(console, ConsoleStringBuf, len);
-	}
-      }
-   else
-      retval = vfprintf(file, format, list);
-   va_end(list);
-   return retval;
-   }
-
-int Consoleprintf(const char *format, ...)
-   {
-   va_list list;
-   int retval = -1;
-   wbp console;
-   FILE *file = stdout;
-
-   va_start(list, format);
-
-   if (ConsoleFlags & OutputToBuf) {
-     retval = vsprintf(ConsoleStringBufPtr, format, list);
-     ConsoleStringBufPtr += max(retval, 0);
-     }
-   else if (!(ConsoleFlags & StdOutRedirect)) {
-      console = (wbp)OpenConsole();
-      if (console == NULL) return 0;
-      if ((retval = vsprintf(ConsoleStringBuf, format, list)) > 0) {
-        int len = strlen(ConsoleStringBuf);
-        if (flog != NULL) {
-           int i;
-	   for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
-	   }
-        wputstr(console, ConsoleStringBuf, len);
-	}
-      }
-   else
-      retval = vfprintf(file, format, list);
-   va_end(list);
-   return retval;
-   }
-
-/*
- * Consoleputc -
- *   If output is to stdio and not redirected, open a console for it.
- */
-int Consoleputc(int c, FILE *f)
-   {
-   wbp console;
-   if (ConsoleFlags & OutputToBuf) {
-      *ConsoleStringBufPtr++ = c;
-      *ConsoleStringBufPtr = '\0';
-      return 1;
-      }
-   if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
-       (f == stderr && !(ConsoleFlags & StdErrRedirect))) {
-      if (flog) fputc(c, flog);
-      console = (wbp)OpenConsole();
-      if (console == NULL) return 0;
-      return wputc(c, console);
-      }
-   return fputc(c, f);
-   }
-
-#ifdef ConsoleWindow
-#undef fflush
-#passthru #undef fflush
-#endif					/* ConsoleWindow */
-
-int Consolefflush(FILE *f)
-{
-   wbp console;
-   extern int fflush(FILE *);
-   if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
-       (f == stderr && !(ConsoleFlags & StdErrRedirect))) {
-      if (flog) fflush(flog);
-      console = (wbp)OpenConsole();
-      if (console == NULL) return 0;
-#ifndef MSWindows
-      wflush(console);
-#endif					/* MSWindows */
-      return 0;
-      }
-  return fflush(f);
-}
-#ifdef ConsoleWindow
-#passthru #define fflush Consolefflush
-#endif					/* ConsoleWindow */
 
 /*
  * Compare two unsigned long values for qsort or qsearch.
@@ -4873,7 +4629,328 @@ char *rgbkey(int p, double r, double g, double b)	{ return 0; }
 
 #endif					/* Graphics */
 
-#if defined(Graphics) || defined(PosixFns)
+
+#ifdef ConsoleWindow
+/*
+ *  getch() -- return char from window, without echoing
+ */
+int getch(void)
+{
+   struct descrip res;
+   if (wgetchne((wbp)OpenConsole(), &res) >= 0)
+      return *StrLoc(res) & 0xFF;
+   else
+      return -1;	/* fail */
+}
+
+/*
+ *  getch() -- return char from window, with echoing
+ */
+int getche(void)
+{
+   struct descrip res;
+   if (wgetche((wbp)OpenConsole(), &res) >= 0)
+      return *StrLoc(res) & 0xFF;
+   else
+      return -1;	/* fail */
+}
+
+/*
+ *  kbhit() -- check for availability of char from window
+ */
+int kbhit(void)
+{
+   if (ConsoleBinding) {
+      /* make sure we're up-to-date event wise */
+      pollevent();
+      /*
+       * perhaps should look in the console's icon event list for a keypress;
+       *  either a string or event > 60k; presently, succeed for all events
+       */
+      if (BlkD(((wbp)ConsoleBinding)->window->listp,List)->size > 0)
+         return 1;
+      else
+        return 0;  /* fail */
+      }
+   else
+      return 0;  /* fail */
+}
+
+int checkOpenConsole( wbp w, char *s)
+{
+   int i;
+   if ((((FILE*)(w)) != ConsoleBinding) &&
+   	  ((((FILE*)(w)) == k_input.fd.fp) ||
+	   (((FILE*)(w)) == k_output.fd.fp) ||
+	   (((FILE*)(w)) == k_errout.fd.fp))) {
+	 (w) = (wbp)OpenConsole();
+       if (s){
+       	  register word l;
+	  l=strlen(s);
+          for(i=0;i<l;i++) Consoleputc(s[i], w);
+	  }
+       return 1;
+       }
+   return 0;
+}
+
+/*
+ * OpenConsole
+ */
+FILE *OpenConsole()
+   {
+   struct descrip attrs[4];
+   int eindx;
+
+   if (!ConsoleBinding) {
+      char ConsoleTitle[256];
+      tended struct b_list *hp;
+
+      /*
+       * If we haven't already allocated regions, we are called due to a
+       *  failure during program startup; allocate enough memory to
+       *  get the message out.
+       */
+#ifdef MultiThread
+      if (!curpstate) {
+	 CURTSTATE();
+         curpstate = &rootpstate;
+#ifdef HAVE_KEYWORD__THREAD
+	 curtstate = curpstate->tstate;
+#endif					/* HAVE_KEYWORD__THREAD */
+         rootpstate.eventmask = nulldesc;
+         }
+      if (!alclist) curpstate->Alclist = alclist_0;
+      if (!reserve) curpstate->Reserve = reserve_0;
+#endif
+      if (!curblock) {
+         curstring = (struct region *)malloc(sizeof (struct region));
+         curblock = (struct region *)malloc(sizeof (struct region));
+         curstring->size = MaxStrSpace;
+         curblock->size  = MaxAbrSize;
+#if COMPILER
+	 initalloc();
+#else					/* COMPILER */
+#ifdef MultiThread
+         initalloc(1000, &rootpstate);
+#else					/* MultiThread */
+         initalloc(1000);
+#endif					/* MultiThread */
+#endif					/* COMPILER */
+
+#ifdef Concurrent
+      	 curtblock = curblock;
+	 curtstring = curstring;
+	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
+#endif					/*Concurrent*/
+         }
+
+      /*
+       * allocate an empty event queue
+       */
+      if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
+
+      /*
+       * build the attribute list
+       */
+      AsgnCStr(attrs[0], "cursor=on");
+      AsgnCStr(attrs[1], "rows=24");
+      AsgnCStr(attrs[2], "columns=80");
+      /*
+       * enable this last argument (by telling wopen it has 4 args)
+       * if you want white text on black bg
+       */
+      AsgnCStr(attrs[3], "reverse=on");
+
+      strncpy(ConsoleTitle, StrLoc(kywd_prog), StrLen(kywd_prog));
+      ConsoleTitle[StrLen(kywd_prog)] = '\0';
+      strcat(ConsoleTitle, " - console");
+
+      ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
+      k_input.fd.fp = ConsoleBinding;
+      k_output.fd.fp = ConsoleBinding;
+      k_errout.fd.fp = ConsoleBinding;
+#ifdef ScrollingConsoleWin
+{
+      wsp ws = ((wbp)ConsoleBinding)->window;
+      ws->nChildren++;
+      ws->child = realloc(ws->child, ws->nChildren * sizeof(childcontrol));
+      makeeditregion(ConsoleBinding, ws->child + (ws->nChildren-1), "");
+      movechild(ws->child + (ws->nChildren-1), 0, 0, ws->width, ws->height);
+}
+#endif					/* ScrollingConsoleWin */
+      }
+   return ConsoleBinding;
+   }
+
+/*
+ * Consolefprintf - fprintf to the Icon console
+ */
+int Consolefprintf(FILE *file, const char *format, ...)
+   {
+   va_list list;
+   int retval = -1;
+   wbp console;
+
+   va_start(list, format);
+
+   if (ConsoleFlags & OutputToBuf) {
+     retval = vsprintf(ConsoleStringBufPtr, format, list);
+     ConsoleStringBufPtr += max(retval, 0);
+     }
+   else if (((file == stdout) && !(ConsoleFlags & StdOutRedirect)) ||
+       ((file == stderr) && !(ConsoleFlags & StdErrRedirect))) {
+      console = (wbp)OpenConsole();
+      if (console == NULL) return 0;
+      if ((retval = vsprintf(ConsoleStringBuf, format, list)) > 0) {
+        int len = strlen(ConsoleStringBuf);
+        if (flog != NULL) {
+           int i;
+	   for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
+	   }
+        wputstr(console, ConsoleStringBuf, len);
+	}
+      }
+   else
+      retval = vfprintf(file, format, list);
+   va_end(list);
+   return retval;
+   }
+
+int Consoleprintf(const char *format, ...)
+   {
+   va_list list;
+   int retval = -1;
+   wbp console;
+   FILE *file = stdout;
+
+   va_start(list, format);
+
+   if (ConsoleFlags & OutputToBuf) {
+     retval = vsprintf(ConsoleStringBufPtr, format, list);
+     ConsoleStringBufPtr += max(retval, 0);
+     }
+   else if (!(ConsoleFlags & StdOutRedirect)) {
+      console = (wbp)OpenConsole();
+      if (console == NULL) return 0;
+      if ((retval = vsprintf(ConsoleStringBuf, format, list)) > 0) {
+        int len = strlen(ConsoleStringBuf);
+        if (flog != NULL) {
+           int i;
+	   for(i=0;i<len;i++) fputc(ConsoleStringBuf[i], flog);
+	   }
+        wputstr(console, ConsoleStringBuf, len);
+	}
+      }
+   else
+      retval = vfprintf(file, format, list);
+   va_end(list);
+   return retval;
+   }
+
+/*
+ * Consoleputc -
+ *   If output is to stdio and not redirected, open a console for it.
+ */
+int Consoleputc(int c, FILE *f)
+   {
+   wbp console;
+   if (ConsoleFlags & OutputToBuf) {
+      *ConsoleStringBufPtr++ = c;
+      *ConsoleStringBufPtr = '\0';
+      return 1;
+      }
+   if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
+       (f == stderr && !(ConsoleFlags & StdErrRedirect))) {
+      if (flog) fputc(c, flog);
+      console = (wbp)OpenConsole();
+      if (console == NULL) return 0;
+      return wputc(c, console);
+      }
+   return fputc(c, f);
+   }
+
+
+#undef fflush
+#passthru #undef fflush
+
+int Consolefflush(FILE *f)
+{
+   wbp console;
+   extern int fflush(FILE *);
+   if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
+       (f == stderr && !(ConsoleFlags & StdErrRedirect))) {
+      if (flog) fflush(flog);
+      console = (wbp)OpenConsole();
+      if (console == NULL) return 0;
+#ifndef MSWindows
+      wflush(console);
+#endif					/* MSWindows */
+      return 0;
+      }
+  return fflush(f);
+}
+
+
+#passthru #define fflush Consolefflush
+
+#else					/* ConsoleWindow */
+
+/*
+ * If we don't have graphics facilities (e.g. we are nticonx), let's define Consolefprintf and friends
+ * anyhow, so that we can define the printf macros everywhere and not have to recompile to switch.
+ */
+#undef fprintf
+#undef printf
+#undef putc
+#undef fflush
+#passthru #undef fprintf
+#passthru #undef printf
+#passthru #undef putc
+#passthru #undef fflush
+
+
+int checkOpenConsole( FILE *w, char *s)
+{
+   return 0;
+}
+
+/*
+ * Consolefprintf - fprintf to the Icon console
+ */
+int Consolefprintf(FILE *file, const char *format, ...)
+   {
+   va_list list;
+   int retval = -1;
+   va_start(list, format);
+   retval = vfprintf(file, format, list);
+   va_end(list);
+   return retval;
+   }
+
+int Consoleprintf(const char *format, ...)
+   {
+   va_list list;
+   int retval = -1;
+   va_start(list, format);
+   retval = vfprintf(stdout, format, list);
+   va_end(list);
+   return retval;
+   }
+
+int Consoleputc(int c, FILE *f)
+   {
+   return fputc(c, f);
+   }
+
+int Consolefflush(FILE *f)
+{
+   extern int fflush(FILE *);
+   return fflush(f);
+}
+
+#endif					/*  */
+
 
 /*
  * the next section consists of code to deal with string-integer
@@ -4916,4 +4993,3 @@ int i;
   for(;sip2<=sip+sip[0].i;sip2++) if (sip2->i == i) return sip2->s;
   return NULL;
 }
-#endif					/* Graphics || PosixFns */

@@ -4,6 +4,12 @@
  *  This file simply includes an appropriate r*win.ri file.
  */
 
+void checkpollevent(){
+#ifdef Graphics
+   while (!kbhit()) { idelay(100); pollevent(); }
+#endif					/* Graphics */
+}
+
 #ifdef Graphics
 
 #ifdef MacGraph
@@ -20,6 +26,7 @@
 
 #ifdef MSWindows
 #include "rmswin.ri"
+#else
 #endif  				/* MSWindows */
 
 #ifdef Graphics3D
@@ -32,5 +39,11 @@
 #endif					/* Graphics3D */
 
 #else					/* Graphics */
+#if NT
+int main(int argc, char *argv[])
+{
+   return iconx(argc, argv);
+}
+#endif					/* NT */
 static char junk;		/* avoid empty module */
 #endif					/* Graphics */

@@ -1258,7 +1258,7 @@ function{0,1} pull(x,n)
       }
 end
 
-#ifdef Graphics
+
 /*
  * c_push - C-level, nontending push operation
  */
@@ -1331,7 +1331,7 @@ dptr val;
    bp->nused++;
    BlkLoc(*l)->List.size++;
    }
-#endif					/* Graphics */
+
 
 
 "push(L, x1, ..., xN) - push x onto beginning of list L."

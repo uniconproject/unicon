@@ -1323,13 +1323,8 @@ function{1} Event(argv[argc])
 	 runerr(142,d);
       w = BlkLoc(d)->File.fd.wb;
 #ifdef ConsoleWindow
-      if ((((FILE*)(w)) != ConsoleBinding) &&
-	  ((((FILE*)(w)) == k_input.fd.fp) ||
-	   (((FILE*)(w)) == k_output.fd.fp) ||
-	   (((FILE*)(w)) == k_errout.fd.fp)))
-	 (w) = (wbp)OpenConsole();
+      checkOpenConsole(w, NULL);
 #endif					/* ConsoleWindow */
-
       if (ISCLOSED(w) && BlkD(w->window->listp,List)->size == 0)
 	 runerr(142,d);
       if (argc - warg < 1)
@@ -2012,10 +2007,7 @@ function{0,1} Pending(argv[argc])
 
          w = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-         if ((((FILE*)(w)) != ConsoleBinding) &&
-	     ((((FILE*)(w)) == k_input.fd.fp) || (((FILE*)(w)) == k_output.fd.fp) ||
-	      (((FILE*)(w)) == k_errout.fd.fp)))
-	   w = (wbp)OpenConsole();
+	 checkOpenConsole( w, NULL);
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))
 	    isclosed = 1;

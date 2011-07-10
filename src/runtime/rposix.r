@@ -1771,62 +1771,6 @@ void dup_fds(dptr d_stdin, dptr d_stdout, dptr d_stderr)
    }
 }
 
-#if defined(PseudoPty) && defined(MSWindows)
-/*
- * Get a pty that has an event pending (queued).
- */
-struct b_list *findactivepty(struct b_list *lps)
-{
-   static LONG next = 0;
-   LONG i, j;
-   tended union block *ep;
-   tended struct descrip d;
-   extern FILE *ConsoleBinding;
-   struct ptstruct *pt;
-
-   Blk((union block *)lps, List);
-   if (lps->size == 0) return NULL;
-   d = nulldesc;
-   ep = (union block *)(lps->listhead);
-   /*
-    * go through listed ptys, looking for those with events pending
-    */
-   for ( ; BlkType(ep) == T_Lelem; ep = ep->Lelem.listnext) {
-      for (i = 0; i < ep->Lelem.nused; i++) {
-	 union block *bp;
-	 int status;
-	 DWORD tb;
-	 j = ep->Lelem.first + i;
-	 if (j >= ep->Lelem.nslots)
-	    j -= ep->Lelem.nslots;
-	 
-         if (!(is:file(ep->Lelem.lslots[j])))
-            syserr("internal error #1 calling findactivepty()");
-         if (!(status = BlkLoc(ep->Lelem.lslots[j])->File.status))
-            syserr("internal error #2 calling findactivepty()");
-         if (! (status & Fs_Pty)) {
-            syserr("internal error #3 calling findactivepty()");
-	    }
-         if (!(status & Fs_Read)) {
-            /* a closed window was found on the list, ignore it */
-	    continue;
-	    }
-	 bp = BlkLoc(ep->Lelem.lslots[j]);
-	 pt = bp->File.fd.pt;
-	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
-		&& (tb>0)) {
-	    if (is:null(d)) {
-	       BlkLoc(d) = (union block *)alclist(0, MinListSlots);
-	       d.dword = D_List;
-	       }
-	    c_put(&d, &(ep->Lelem.lslots[j]));
-	    }
-	 }
-      }
-   if (is:null(d)) return NULL;
-   return (struct b_list *)BlkLoc(d);
-}
-#endif
 
 #ifdef Graphics
 /*

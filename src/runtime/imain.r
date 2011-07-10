@@ -136,67 +136,16 @@ char *ArgvToCmdline(char **argv)
 }
 #endif					/* NT */
 
-#ifdef MSWindows
-
-void MSStartup(HINSTANCE hInstance, HINSTANCE hPrevInstance)
-   {
-   WNDCLASS wc;
-
-   if (!hPrevInstance) {
 #if NT
-      wc.style = CS_HREDRAW | CS_VREDRAW;
-#ifdef Graphics3D
-      wc.style |= CS_OWNDC;
-#endif
-#else					/* NT */
-      wc.style = 0;
-#endif					/* NT */
-      wc.lpfnWndProc = WndProc;
-      wc.cbClsExtra = 0;
-      wc.cbWndExtra = 0;
-      wc.hInstance  = hInstance;
-      wc.hIcon      = NULL;
-      wc.hCursor    = NULL;
-      wc.hbrBackground = GetStockObject(WHITE_BRUSH);
-      wc.lpszMenuName = NULL;
-      wc.lpszClassName = "iconx";
-      RegisterClass(&wc);
-      }
-   }
-
-#ifdef INTMAIN
-int iconx(int argc, char **argv);
-#else					/* INTMAIN */
-void iconx(int argc, char **argv);
-#endif					/* INTMAIN */
-
-jmp_buf mark_sj;
-
-int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                   LPSTR lpszCmdLine, int nCmdShow)
-   {
-   int argc;
-   char **argv;
-
-   mswinInstance = hInstance;
-   ncmdShow = nCmdShow;
-
-   argc = CmdParamToArgv(GetCommandLine(), &argv, 1);
-   MSStartup(hInstance, hPrevInstance);
-   if (setjmp(mark_sj) == 0)
-      iconx(argc,argv);
-   while (--argc>=0)
-      free(argv[argc]);
-   free(argv);
-   wfreersc();
-   xmfree();
-#ifdef NTGCC
-   _exit(0);
-#endif					/* NTGCC */
-   return 0;
-}
+/*
+ * On all Microsoft systems, main() here is named iconx(). On nticonx, a trivial main just calls
+ * iconx(); on iconx and wiconx, an MSSstartup() and WinMain() call iconx(). main() is provided by Windows.
+ */
 #define main iconx
-#else
+#endif
+
+
+#if NT				/* MSWindows */
 #if WildCards
 void ExpandArgv(int *argcp, char ***avp)
 {
@@ -248,14 +197,8 @@ void ExpandArgv(int *argcp, char ***avp)
    *argcp = newargc;
 }
 #endif					/* WildCards */
-#endif					/* MSWindows */
+#endif					/* NT */
 
-#if OS2
-int stubexe;
-void os2main(int stubflag, int argc, char**argv); /* Prototype OS2main */
-void os2main(stubflag, argc, argv)
-int stubflag;
-#else					/* OS2 */
 #ifdef MacGraph
 MouseInfoType gMouseInfo;
 PaletteHandle gPal;
@@ -276,7 +219,6 @@ void main(int argc, char **argv)
 #endif					/* INTMAIN */
 #endif					/* DLLICONX */
 #endif					/* MacGraph */
-#endif					/* OS2 */
    {
    int i, slen;
 
@@ -298,11 +240,9 @@ void main(int argc, char **argv)
    sem_init(&sem_gc, 0, 0);
 #endif					/* Concurrent */
 
-#if WildCards
-#ifndef MSWindows
+#if WildCards && NT
    ExpandArgv(&argc, &argv);
-#endif
-#endif					/* WildCards */
+#endif					/* WildCards && NT */
 
 #ifdef MultiThread
    /*

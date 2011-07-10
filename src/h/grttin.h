@@ -305,8 +305,10 @@ typedef int OggVorbis_File, vorbis_info;
 #endif					/* HAVE_LIBPTHREAD */
 
 # if defined(Graphics) || defined(PosixFns)
-typedef int siptr, stringint, inst;
+typedef int stringint, inst;
 #endif
+
+typedef int va_list, siptr;
 
 /*
  * graphics
@@ -331,7 +333,7 @@ typedef int siptr, stringint, inst;
       typedef int XGCValues, XColor, XFontStruct, XWindowAttributes, XEvent;
       typedef int XExposeEvent, XKeyEvent, XButtonEvent, XConfigureEvent;
       typedef int XSizeHints, XWMHints, XClassHint, XTextProperty;
-      typedef int Colormap, XVisualInfo, va_list;
+      typedef int Colormap, XVisualInfo;
       typedef int *Display, Cursor, GC, Window, Pixmap, Visual, KeySym;
       typedef int WidgetClass, XImage, XpmAttributes, XSetWindowAttributes;
    #endif				/* XWindows */
@@ -344,7 +346,7 @@ typedef int siptr, stringint, inst;
       typedef int HWND, HDC, UINT, WPARAM, LPARAM, SIZE;
       typedef int COLORREF, HFONT, LOGFONT, TEXTMETRIC, FONTENUMPROC, FARPROC;
       typedef int LOGPALETTE, HPALETTE, PALETTEENTRY, HCURSOR, BITMAP, HDIB;
-      typedef int va_list, LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS;
+      typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS;
       typedef int MCI_OPEN_PARMS, MCI_STATUS_PARMS, MCI_SEQ_SET_PARMS;
       typedef int CHOOSEFONT, CHOOSECOLOR, OPENFILENAME, HMENU, LPBITMAPINFO;
       typedef int childcontrol, CPINFO, BITMAPINFO, BITMAPINFOHEADER, RGBQUAD;
@@ -353,24 +355,7 @@ typedef int siptr, stringint, inst;
          typedef int HFILE, OFSTRUCT, FILETIME, SYSTEMTIME;
       #endif				/* FAttrib */
    #endif				/* MSWindows */
-
-   #ifdef PresentationManager
-      /* OS/2 PM specifics */
-      typedef int HAB, HPS, QMSG, HMQ, HWND, USHORT, MRESULT, ULONG, MPARAM;
-      typedef int PFNWP, HMODULE, SHORT, BOOL, TID, RECTL, ERRORID;
-      typedef int MRESULT_N_EXPENTRY, SIZEL, HDC, POINTL, HMTX, HBITMAP;
-      typedef int VOID_APIENTRY, UCHAR, HEV, LINEBUNDLE, BUTMAPARRAYFILEHEADER;
-      typedef int LONG, BITMAPINFOHEADER2, PBITMAPINFO2, PSZ, RGB2, BITMAPINFO2;
-      typedef int FONTMETRICS, PRECTL, PCHARBUNDLE, PLINEBUNDLE, PIMAGEBUNDLE;
-      typedef int AREABUNDLE, PAREABUNDLE, PPOINTL, POLYGON, CHARBUNDLE;
-      typedef int lclIdentifier, BYTE, PBYTE, PRGB2, FATTRS, PFATTRS, PULONG;
-      typedef int PBITMAPINFOHEADER2, BITMAPFILEHEADER2, BITMAPARRAYFILEHEADER2;
-      typedef int colorEntry, ARCPARAMS, threadargs, HPOINTER, CURSORINFO;
-      typedef int PCURSORINFO, DEVOPENSTRUCT, PDEVOPENDATA, SIZEF, HRGN, PSWP;
-      typedef int va_list, BITMAPINFOHEADER, BITMAPFILEHEADER;
-      typedef int PBITMAPINFOHEADER, MinBitmapHeader, RGB;
-   #endif				/* PresentationManager */
-
+   
    /*
     * Convenience macros to make up for RTL's long-windedness.
     */
@@ -396,7 +381,7 @@ typedef int siptr, stringint, inst;
    
    #define CnvTmpString(din,dout) \
      if (!cnv:tmp_string(din,dout)) runerr(103,din);
-   
+
    /*
     * conventions supporting optional initial window arguments:
     *
@@ -414,11 +399,7 @@ typedef int siptr, stringint, inst;
 	    fail;
          (w) = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-         if ((((FILE*)(w)) != ConsoleBinding) &&
-	     ((((FILE*)(w)) == k_input.fd.fp) ||
-	      (((FILE*)(w)) == k_output.fd.fp) ||
-	      (((FILE*)(w)) == k_errout.fd.fp)))
-	   (w) = (wbp)OpenConsole();
+	 checkOpenConsole(w, NULL);
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))
 	    fail;

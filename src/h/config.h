@@ -322,7 +322,7 @@
       #define ICONC_XLIB "-L/usr/X11R6/lib -lX11"
    #endif				/* ICONC_XLIB */
 
-   #ifdef ConsoleWindow
+#if 1 /*def ConsoleWindow*/
       /*
        * knock out fprintf and putc; these are here so that consoles may be used
        * in icont and rtt, not just iconx
@@ -335,6 +335,9 @@
       #define fflush Consolefflush
       #undef printf
       #define printf Consoleprintf
+#endif
+/* not sure whether this one should always be in effect. Maybe it should */
+#ifdef ConsoleWindow
       #undef exit
       #define exit c_exit
    #endif				/* Console Window */
@@ -831,7 +834,7 @@ Deliberate Syntax Error
 #define HAVE_LIBZ 0
 #endif					/* HAVE_LIBZ */
 
-#if !HAVE_LIBZ
+#if !HAVE_LIBZ && !defined(NTGCC)
 #ifdef HAVE_LIBPNG
 #undef HAVE_LIBPNG
 #endif					/* HAVE_LIBPNG */

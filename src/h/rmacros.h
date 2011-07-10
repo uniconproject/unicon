@@ -44,9 +44,9 @@
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */
 
-#ifdef Graphics
+/*#ifdef Graphics*/
    #define Fs_Window   0400	/* reading/writing on a window */
-#endif					/* Graphics */
+/*#endif */					/* Graphics */
    
 #define Fs_Untrans    01000	/* untranslated mode file */
 #define Fs_Directory  02000	/* reading a directory */
@@ -72,9 +72,9 @@
    #define Fs_Messaging 0400000
 #endif                                  /* Messaging */
 
-#ifdef Graphics3D
+/*#ifdef Graphics3D*/
    #define Fs_Window3D  01000000	/* reading/writing on a window */
-#endif					/* Graphics3D */
+/*#endif*/					/* Graphics3D */
 
 #if HAVE_LIBZ
    #define Fs_Compress  02000000	/* reading/writing compressed file */
@@ -99,7 +99,7 @@
 #define Ts_Async        8		/* asynchronous (concurrent) thread */
 #endif					/* Concurrent */
 
-#ifdef Graphics
+/*#ifdef Graphics*/
    #define XKey_Window 0
    #define XKey_Fg 1
    
@@ -114,7 +114,7 @@
     * Perform a "C" return, not processed by RTT
     */
    #define VanquishReturn(s) return s;
-#endif					/* Graphics */
+/*#endif*/					/* Graphics */
 
 /*
  * Codes returned by runtime support routines.
@@ -811,7 +811,7 @@
       #define elines (curpstate->Elines)
       #define current_line_ptr (curpstate->Current_line_ptr)
       
-      #ifdef Graphics
+/*#ifdef Graphics*/
          #define amperX   (curpstate->AmperX)
          #define amperY   (curpstate->AmperY)
          #define amperRow (curpstate->AmperRow)
@@ -825,10 +825,10 @@
          #define xmod_control (curpstate->Xmod_Control)
          #define xmod_shift (curpstate->Xmod_Shift)
          #define xmod_meta (curpstate->Xmod_Meta)
-      #ifdef Graphics3D
+      #ifdef Graphics3D  
          #define amperPick   (curpstate->AmperPick)
       #endif				/* Graphics3D */
-      #endif				/* Graphics */
+/*#endif*/				/* Graphics */
       
       #define coexp_ser (curpstate->Coexp_ser)
       #define list_ser  (curpstate->List_ser)
@@ -1069,6 +1069,17 @@
    #define KEY_MISSING_ERR      1118
 
 #endif					/* ISQL */
+
+
+/* 
+ * flags for ConsoleFlags
+ */
+/* I/O redirection flags */
+#define StdOutRedirect        1
+#define StdErrRedirect        2
+#define StdInRedirect         4
+#define OutputToBuf           8
+
 
 #ifdef Concurrent 
 

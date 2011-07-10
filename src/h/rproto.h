@@ -367,17 +367,23 @@ void		xmfree		(void);
    #endif				/* SASC */
 #endif                                  /* MVS || VM */
 
-#ifdef MSWindows
-#ifdef ConsoleWindow
+void checkpollevent();
 void detectRedirection();
+
+#ifdef ConsoleWindow
+int checkOpenConsole( wbp w, char *s );
+#else
+int checkOpenConsole( FILE *w, char *s );
 #endif
+
+#ifdef MSWindows
    #ifdef FAttrib
       #if MSDOS
          char *make_mode(unsigned short st_mode);
-#ifndef NTGCC
+         #ifndef NTGCC
          int strcasecmp(char *s1, char *s2);
          int strncasecmp(char *s1, char *s2, int n);
-#endif					/* NTGCC */
+         #endif				/* NTGCC */
       #endif				/* MSDOS */
    #endif				/* FAttrib */
 #endif					/* MSWindows */

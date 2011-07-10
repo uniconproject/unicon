@@ -309,9 +309,7 @@
 #undef OF
 #endif					/* HAVE_LIBJPEG */
 
-#ifdef Graphics
-   #define VanquishReturn(s) return s;
-#endif					/* Graphics */
+#define VanquishReturn(s) return s;
 
 /*
  * Feature-dependent includes.
@@ -398,6 +396,10 @@
 #define VMS 0
 #endif
 
+#else					/* HAVE_LIBZ */
+#if HAVE_LIBPNG
+/*#include <png.h>*/
+#endif					/* HAVE_LIBPNG */
 #endif					/* HAVE_LIBZ */
 
 #ifdef HAVE_VOICE

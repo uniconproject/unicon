@@ -760,15 +760,6 @@ typedef struct
 
 #define XICONSLEEP	20 /* milliseconds */
 
-/* 
- * flags for ConsoleFlags
- */
-/* I/O redirection flags */
-#define StdOutRedirect        1
-#define StdErrRedirect        2
-#define StdInRedirect         4
-#define OutputToBuf           8
-
 /* Values for 3D attribute "buffer" */
 #define IMMEDIATE3D   1
 #define BUFFERED3D 0

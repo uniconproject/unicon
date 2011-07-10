@@ -33,16 +33,12 @@ struct sdescrip {
    char *string;		/*   pointer to string */
    };
 
-#if defined(Graphics) || defined(PosixFns)
-
 struct si_ {
   char *s;
   int i;
 };
 typedef struct si_ stringint;
 typedef struct si_ *siptr;
-
-#endif					/* Graphics || PosixFns */
 
 /*
  * structure supporting dynamic record types

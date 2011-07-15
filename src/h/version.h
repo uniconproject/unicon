@@ -11,8 +11,13 @@
  *  Icon version number and date.
  *  These are the only two entries that change any more.
  */
-#define VersionNumber "11.7"
-#define VersionDate "January 14, 2011"
+#ifdef Concurrent
+#define VersionNumber "12.0"
+#else					/* Concurrent */
+#define VersionNumber "11.9"
+#endif					/* Concurrent */
+
+#define VersionDate "July 15, 2011"
 
 /*
  * Version number to insure format of data base matches version of iconc

@@ -452,16 +452,16 @@ $endif
    # Initialize the tooltip state and ticker.
    # @p
    method tooltip_init()
-      self.tooltip_state := 5
-      self.tooltip_ticker.start(200)
+      tooltip_state := 5
+      tooltip_ticker.start(200)
    end
 
    #
    # Cleanup the tooltip settings.
    # @p
    method tooltip_dispose()
-      self.tooltip_ticker.stop()
-      if self.tooltip_state = 2 then
+      tooltip_ticker.stop()
+      if tooltip_state = 2 then
          hide_tooltip()
    end
 
@@ -473,7 +473,7 @@ $endif
    # @param x   The starting delay in ms.
    #
    method set_tooltip_start_delay(x)
-      self.tooltip_start_delay := x
+      tooltip_start_delay := x
    end
 
    #
@@ -484,50 +484,75 @@ $endif
    # @param x   The delay in ms.
    #
    method set_tooltip_end_delay(x)
-      self.tooltip_end_delay := x
+      tooltip_end_delay := x
    end
 
    #
-   # Configure the tooltip continue delay (in ms).  if the cursor moves between
-   # two components within this time, the tooltip on the second shows 
-   # immediately.
+   # Configure the tooltip continue delay (in ms).  If the cursor moves
+   # between two components within this time, the tooltip on the second
+   # shows immediately.
    #
    # The default is 1500.
    #
    # @param x   The delay in ms.
    #
    method set_tooltip_continue_delay(x)
-      self.tooltip_continue_delay := x
+      tooltip_continue_delay := x
    end
 
    #
    # Show the tooltip at the given x,y position.
-   # @p
+   #
+   # @param obj   maybe which component's tooltip we are showing right now.
+   #
    method show_tooltip(x, y, obj)
-      local cw, ww, wh
+      local cw, ww, wh, fh
+      local lines, multiline, numlines
 
       ww := WAttrib(self.win, "width")
       wh := WAttrib(self.win, "height")
-
       cw := Clone(self.cwin, "bg=pale yellow", "font=sans,10", "fg=black")
+      fh := WAttrib(cw, "fheight")
 
-      self.tooltip_w := TextWidth(cw, obj.tooltip) + 4
-      self.tooltip_h := WAttrib(cw, "fheight") +  6
+      if find("\n", obj.tooltip) then multiline := 1
 
-      self.tooltip_x := x + 8
-      if self.tooltip_x + self.tooltip_w > ww then
-         self.tooltip_x := 0 <= ww - self.tooltip_w
+      lines := []
+      # Find the widest line, and calculate how many lines.
+      numlines := 1
+      tooltip_w := 0
+      obj.tooltip ? {
+	 while line := tab(find("\n")) do {
+	    put(lines, line)
+	    ="\n"
+	    numlines +:= 1
+	    tooltip_w <:= TextWidth(line) + 4
+	    }
+	 if line := tab(0) & *line > 0 then {
+	    put(lines, line)
+	    tooltip_w <:= TextWidth(line) + 4
+	    }
+	 }
+      tooltip_h := fh*numlines +  6
 
-      self.tooltip_y := y + 8   #self.y + self.h + 3
-      if self.tooltip_y + self.tooltip_h > wh then
-         self.tooltip_y := 0 <= wh - self.tooltip_h
+      tooltip_x := x + 8
+      if tooltip_x + tooltip_w > ww then
+         tooltip_x := 0 <= ww - tooltip_w
 
-      self.tooltip_win := WOpen("canvas=hidden", "size=" || self.tooltip_w || "," || self.tooltip_h)
-      CopyArea(cwin, self.tooltip_win, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h, 0, 0)
-      EraseRectangle(cw, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h)
-      Rectangle(cw, self.tooltip_x, self.tooltip_y, self.tooltip_w, self.tooltip_h)
-      center_string(cw, self.tooltip_x + self.tooltip_w / 2, 
-                    self.tooltip_y + self.tooltip_h / 2, obj.tooltip, obj.accel)
+      tooltip_y := y + 8   #self.y + self.h + 3
+      if tooltip_y + tooltip_h > wh then
+         tooltip_y := 0 <= wh - tooltip_h
+
+      tooltip_win := WOpen("canvas=hidden", "size=" ||
+				tooltip_w || "," || tooltip_h)
+      CopyArea(cwin, tooltip_win, tooltip_x, tooltip_y, tooltip_w, tooltip_h,
+		     0, 0)
+      EraseRectangle(cw, tooltip_x, tooltip_y, tooltip_w, tooltip_h)
+      Rectangle(cw, tooltip_x, tooltip_y, tooltip_w, tooltip_h)
+
+      every i := 1 to *lines do {
+	 center_string(cw, tooltip_x + tooltip_w / 2, 
+		       tooltip_y + 3 + fh * (i-1) + fh/2, lines[i], obj.accel)
+	 }
       Uncouple(cw)
    end
 

@@ -477,21 +477,6 @@ dptr d;
 
    if (checkOpenConsole(f, s)) return Succeeded;
 
-#ifdef PresentationManager
-   if (ConsoleFlags & OutputToBuf) {
-      /* check for overflow */
-      if (MaxReadStr * 4 - ((int)ConsoleStringBufPtr - (int)ConsoleStringBuf) < l + 1)
-	 return Failed;
-      /* big enough */
-      memcpy(ConsoleStringBufPtr, s, l);
-      ConsoleStringBufPtr += l;
-      *ConsoleStringBufPtr = '\0';
-      } /* End of if - push to buffer */
-   else if ((f == stdout && !(ConsoleFlags & StdOutRedirect)) ||
-	    (f == stderr && !(ConsoleFlags & StdErrRedirect)))
-      wputstr((wbinding *)PMOpenConsole(), s, l);
-   return Succeeded;
-#endif					/* PresentationManager */
 #if VMS
    /*
     * This is to get around a bug in VMS C's fwrite routine.
@@ -1906,6 +1891,11 @@ int ptflush(struct ptstruct *ptStruct)
 
 FILE *finredir, *fouredir, *ferredir;
 
+#ifdef Graphics
+/*
+ * Under Graphics builds, primarily wicon[tx], the use of < or > on a
+ * command line overrides default behavior of using a console window.
+ */
 void detectRedirection()
 {
    struct stat sb;
@@ -1938,6 +1928,7 @@ void detectRedirection()
    else {					/* unable to identify stdout */
      }
 }
+#endif					/* Graphics */
 
 /*
  * CmdParamToArgv() - convert a command line to an argv array.  Return argc.
@@ -1956,22 +1947,25 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
    *avp = malloc(2 * sizeof(char *));
    (*avp)[rv] = NULL;
 
+#ifdef Graphics
    if (dequote)
       detectRedirection();
+#endif					/* Graphics */
 
    while (*t2) {
       while (*t2 && isspace(*t2)) t2++;
       switch (*t2) {
 	 case '\0': break;
+#ifdef Graphics
+	 /*
+	  * perform file redirection; this is for MS Windows
+	  * and other situations where Wiconx is launched from
+	  * a shell that does not process < and > characters.
+	  */
 	 case '<': case '>': {
 	    FILE *f;
 	    char c, buf[128], *t3;
 	    if (dequote == 0) goto skipredirect;
-	    /*
-	     * perform file redirection; this is for Windows 3.1
-	     * and other situations where Wiconx is launched from
-	     * a shell that does not process < and > characters.
-	     */
 	    c = *t2++;
 	    while (*t2 && isspace(*t2)) t2++;
 	    t3 = buf;
@@ -1995,6 +1989,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 	       }
 	    break;
 	    }
+#endif					/* Graphics */
 	 case '"': {
 	    char *t3, c = '\0';
 	    if (dequote) t3 = ++t2;			/* skip " */

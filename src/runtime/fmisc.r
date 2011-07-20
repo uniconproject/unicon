@@ -2584,7 +2584,7 @@ function{1} thread(x, blocksize, stringsize)
 	 /*
 	  * Loop until I aquire the mutex.
 	  */
-	 {
+	 do {
 	    MUTEX_TRYLOCKID(MTX_THREADCONTROL, i);
 	    if (i==EBUSY) {
 	       /*

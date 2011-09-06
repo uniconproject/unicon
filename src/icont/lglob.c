@@ -20,8 +20,10 @@ int nrecords = 0;		/* number of records in program */
 /*
  * readglob reads the global information from infile (.u2) and merges it with
  *  the global table and record table.
+ *  return 1 if the file is processed for the first time.
+ *  return 0 if the file has already been linked to.
  */
-void readglob()
+int readglob(struct lfile *lf)
    {
    register word id;
    register int n, op;
@@ -52,8 +54,29 @@ void readglob()
       exit(EXIT_FAILURE);
 
       }
+   if ((op=getopc(&name)) != Op_Uid)
+     goto skipOP;
+
+   id = getid();		/* get version number of ucode */
+   if (lookup_linked_uid(&lsspace[id])) {
+     /* found it already, don't claim ownership of it and in fact, nuke our filename so we don't duplicate */
+     /*if (lf->lf_name)
+       printf("found %s (%s) already, skipping!\n", lf->lf_name, &lsspace[id]);
+     else
+       printf("found (%s) already, skipping!\n", &lsspace[id]);
+     */
+     lf->lf_name = NULL;
+     return 0;
+   } else {
+     /*printf("claiming ownership of %s!\n", &lsspace[id]);
+     /* by this gentle insertion of our uid onto the global list, we assert ownership of this uid forever */
+     lf->uid = &lsspace[id];
+   }
+
+   newline();
+
    while ((op = getopc(&name)) != EOF) {
-      switch (op) {
+skipOP: switch (op) {
          case Op_Record:	/* a record declaration */
             id = getid();	/* record name */
             n = getdec();	/* number of fields */
@@ -143,6 +166,7 @@ void readglob()
             quitf("ill-formed global section in file %s",inname);
          }
       }
+   return 1;
    }
 
 /*
@@ -165,8 +189,11 @@ void scanrefs()
     * Loop through .u1 files and accumulate reference lists.
     */
    lfls = llfiles;
-   while ((lf = getlfile(&lfls)) != 0)
-      scanfile(lf->lf_name);
+   while ((lf = getlfile(&lfls)) != 0) {
+      if (lf->lf_name)
+	 scanfile(lf->lf_name);
+      /* else this was a redundant reference found during .u1 processing */
+   }
    lstatics = 0;			/* discard accumulated statics */
 
    /*

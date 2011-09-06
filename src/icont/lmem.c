@@ -146,7 +146,6 @@ void dumplfiles()
 void alsolink(name)
 char *name;
    {
-   struct lfile *nlf, *p;
    char file[MaxFileName];
    int i;
 
@@ -163,6 +162,8 @@ char *name;
          }
       quitf(buf, name);
       }
+
+#if 0
 
 #if UNIX
    {
@@ -239,7 +240,34 @@ char *name;
    }
 
 #endif					/* MSDOS */
+#endif
 
+   add_linked_file(file);
+
+   }
+
+/*
+ * Return 1 if this uid is already on our list.
+ */
+int lookup_linked_uid(char *uid)
+{
+  struct lfile *p = llfiles;
+  while (p->lf_link != NULL) {
+    if (p->uid && !strcmp(p->uid, uid)) return 1;
+    p = p->lf_link;
+    }
+  return 0;
+}
+
+
+/*
+ * check if the file was already linked to (return 0), 
+ * if not add it to the list (return 1)
+ */
+
+int add_linked_file(char * file)
+{
+   struct lfile *nlf, *p;
    nlf = alclfile(file);
    if (llfiles == NULL) {
       llfiles = nlf;
@@ -247,15 +275,17 @@ char *name;
    else {
       p = llfiles;
       while (p->lf_link != NULL) {
-        if (strcmp(p->lf_name,file) == 0)
-           return;
+        if ( (p->lf_name) && (strcmp(p->lf_name,file) == 0))
+           return 0;
         p = p->lf_link;
         }
-      if (strcmp(p->lf_name,file) == 0)
-        return;
+      if ( (p->lf_name) && (strcmp(p->lf_name,file) == 0))
+        return 0;
       p->lf_link = nlf;
-      }
    }
+   return 1;
+}
+
 
 /*
  * getlfile - return a pointer (p) to the lfile structure pointed at by lptr

@@ -15,7 +15,7 @@
  */
 
 static	void	trans1		(char *filename);
-
+void writeUID(char *, FILE *);
 int tfatals;			/* number of fatal errors in file */
 int afatals;			/* total number of fatal errors */
 int nocode;			/* non-zero to suppress code generation */
@@ -135,6 +135,7 @@ char *filename;
    if (globfile == NULL)
       quitf("cannot create %s", oname2);
    writecheck(fprintf(globfile,"version\t%s\n",UVersion));
+   writeUID(oname1, globfile);
 #endif					/* VarTran */
 
    tok_loc.n_file = filename;
@@ -200,3 +201,18 @@ int rc;
    if (rc < 0)
       quit("cannot write to ucode file");
 }
+
+/*
+ * writeUID - write a universal-unicon ID to the file
+ */
+#define RandA        1103515245	/* random seed multiplier */
+#define RandC	      453816694	/* random seed additive constant */
+#define RanScale 4.65661286e-10	/* random scale factor = 1/(2^31-1) */
+#define RandVal(RNDSEED) (RanScale*((RandA*RNDSEED+RandC)&0x7FFFFFFFL))
+void writeUID(char *fname, FILE * f)
+{   
+  time_t t;
+   time(&t);
+   writecheck(fprintf(f,"uid\t%s-%d-%d\n", fname,t,RandVal(t)));
+}
+

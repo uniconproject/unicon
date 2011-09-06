@@ -4,6 +4,7 @@
  */
 struct lfile {
    char *lf_name;		/* name of the file */
+   char * uid;
    struct lfile *lf_link;	/* pointer to next file */
    };
 

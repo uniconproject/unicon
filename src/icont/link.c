@@ -188,7 +188,7 @@ char *outname;
       if (infile == NULL) {
 	 cannotopen("cannot open", inname); /* die w/ detailed diagnostic */
 	 }
-      readglob();
+      readglob(lf);
       fclose(infile);
       }
 
@@ -462,6 +462,9 @@ char *outname;
     */
    lfls = llfiles;
    while ((lf = getlfile(&lfls)) != 0) {
+     if (!(lf->lf_name))
+     continue;
+
       filename = lf->lf_name;
       makename(inname, SourceDir, filename, U1Suffix);
       makename(icnname, TargetDir, filename, SourceSuffix);

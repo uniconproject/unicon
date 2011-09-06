@@ -60,7 +60,7 @@ void	putlocal		(int n,word id,int flags,int imperror,
 				   word procname);
 void	quit			(char *msg);
 void	quitf			(char *msg,char *arg);
-void	readglob		(void);
+int	readglob		(struct lfile *lf);
 void report			(char *s);
 unsigned int round2		(unsigned int n);
 void	rout			(FILE *fd,char *name);
@@ -115,3 +115,5 @@ void	idump			(char *c);
 #ifdef SrcSyntaxInfo
 int	SyntCode(char *);
 #endif					/* SrcSyntaxInfo */
+
+int add_linked_file(char * file);

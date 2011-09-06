@@ -152,3 +152,4 @@
 #endif					/* PosixFns */
 
 #define Op_Synt         114             /* syntax code used by the linker */
+#define Op_Uid          115             /* Universal Identifier for .u files */

@@ -171,25 +171,33 @@ end
 #
 method checkIcodeVersion(p)
 
-   # by default, Assume a 32-bit machine with word size 4
+   # See if icode is for a 32-bit machine, word size 4
    wordSize := 4
    readIcodeHeader()
 
-   if find("I9.U.10FT",hdr.config) = 1 then{
+   if match("I9.U.10FT",hdr.config) then {
+      write("found 32-bit icode ", cstr(hdr.config))
       FTC := "FT"
-      &pos := p   # start over as a 64-bit machine
+      &pos := p   # start over as field-table aware; this may be unimplemented
       readIcodeHeader()
       }
-   if find("I9.U.10",hdr.config) ~= 1 then{
-      &pos := p   # start over as a 64-bit machine
-      wordSize := 8
-
-      readIcodeHeader()
-      icodeVersion := "64-bit"
-      }
-   else{
+   else if match("I9.U.10",hdr.config) then{
+      write("found 32-bit icode ", cstr(hdr.config))
       icodeVersion := "32-bit"
       }
+   else {
+      &pos := p   # start over as a 64-bit machine
+      wordSize := 8
+      readIcodeHeader()
+      if not match("I9.U",hdr.config) then
+	 write("Warning: did not recognize icode version:\n",
+	       image(hdr.config))
+      icodeVersion := "64-bit"
+      }
+end
+
+method cstr(s)
+    s ? return tab(find("\0")|0)
 end
 
 #
@@ -240,8 +248,7 @@ end
 # Collect the Source files from the executable Icode
 #
 method getSrcFileNames(exeFile)
-   local fNames, LLL,
-         p1, x, i, j
+   local fNames, LLL, p1, x, i, j
 
    openIcodeFile(exeFile)
 

@@ -9,6 +9,8 @@
 $include "defaults.icn"
 $include "evdefs.icn"
 
+link argparse
+
 class Console : Session(
    UP,         # The up arrow control key
    DOWN,       # The down arrow control key
@@ -148,37 +150,7 @@ method get_CommandLine()
    # analyze that cmd line
    if *line > 0 then{  
       DState.update_cmdHistory(line)
-      cmd := []
-      line ? {
-          while &pos <= *line do {
-             tab(many(WhiteSpace))
-	     if match("#") then break
-             tok := tab(many(TOKEN)) | &null
-             put(cmd, \tok)
-             tab(many(WhiteSpace))
-
-             op := tab(many(OPCHAR))  | &null
-             put(cmd,\op)
-             tab(many(WhiteSpace))
-
-             op := tab(many(BRACKETS)) | &null
-             put(cmd,\op)
-             tab(many(WhiteSpace))
-
-             op := tab(many(PARENTHESES)) | &null
-             put(cmd,\op)
-             tab(many(WhiteSpace))
-
-             op := tab(many(BRACES)) | &null
-             put(cmd,\op)
-
-	     if any(&cset --
-		    (WhiteSpace++TOKEN++OPCHAR++BRACKETS++PARENTHESES++BRACES))
-	     then { write("udb does not yet handle ", move(1)); fail }
-             }
-         }
-      if match("#") & *cmd=0 then put(cmd, "#")
-      return cmd
+      return argparse(line)
       }
    else
       fail

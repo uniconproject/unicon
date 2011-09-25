@@ -2955,11 +2955,15 @@ int n;
    {
    if (n == 0)
       return;
-#ifdef Concurrent
-#ifndef HAVE_KEYWORD__THREAD
+  
+   ForceNl();
+   prt_str("#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)", 0);
+   ForceNl();
    prt_str("struct threadstate *curtstate = get_tstate();", IndentInc);
-#endif					/* HAVE_KEYWORD__THREAD */
-#endif					/* Concurrent */
+   ForceNl();
+   prt_str("#endif\t\t\t\t\t/* Concurrent && !HAVE_KEYWORD__THREAD */", 0);
+   ForceNl();
+
    prt_str("struct {", IndentInc);
    ForceNl();
    prt_str("struct tend_desc *previous;", 2 * IndentInc);

@@ -389,6 +389,8 @@ char *outname;
     * and terminates the hard way (by exiting the DOS shell) if that
     * fails, rather than fall through and start executing machine code
     * as if it were batch commands.
+    *
+    * Should we add quoting \"...\" around %s or %0 in the code below?
     */
    sprintf(script,
            "@echo off\r\n%s %%0 %%1 %%2 %%3 %%4 %%5 %%6 %%7 %%8 %%9\r\n",
@@ -418,12 +420,12 @@ char *outname;
       "#!/bin/sh",
       "IXBIN=", iconxloc,
       "IXLCL=`echo $0 | sed 's=[^/]*$=iconx='`",
-      "[ -n \"$ICONX\" ] && exec \"$ICONX\" $0 ${1+\"$@\"}",
-      "[ -x $IXLCL ] && exec $IXLCL $0 ${1+\"$@\"}",
-      "[ -x $IXBIN ] && exec $IXBIN $0 ${1+\"$@\"}",
+      "[ -n \"$ICONX\" ] && exec \"$ICONX\" \"$0\" ${1+\"$@\"}",
+      "[ -x \"$IXLCL\" ] && exec \"$IXLCL\" \"$0\" ${1+\"$@\"}",
+      "[ -x \"$IXBIN\" ] && exec \"$IXBIN\" \"$0\" ${1+\"$@\"}",
       "exec ",
       "iconx",
-      " $0 ${1+\"$@\"}",
+      " \"$0\" ${1+\"$@\"}",
       "[executable Icon binary follows]");
    strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8));
    hdrsize = strlen(script) + 1;	/* length includes \0 at end */

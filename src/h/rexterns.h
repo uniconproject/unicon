@@ -63,7 +63,6 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
 #ifdef Concurrent
 extern pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 
-extern struct tls_node *tlshead;
 extern pthread_mutex_t *mutexes;
 extern int nmutexes;
 
@@ -215,6 +214,7 @@ extern struct descrip amperErrno;
    #ifdef MultiThread
       extern struct progstate *curpstate;
       extern struct progstate rootpstate;
+      extern struct threadstate *roottstatep; 
    #ifdef Concurrent
       #ifdef HAVE_KEYWORD__THREAD
       /*

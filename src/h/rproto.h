@@ -1014,14 +1014,15 @@ struct b_intarray *alcintarray(uword n);
 struct b_realarray *alcrealarray(uword n);
 #endif					/* Arrays */
 
-void init_threadstate();
-
 #ifdef PthreadCoswitch
 void makesem(struct context *ctx);
 void *nctramp(void *arg);
 #endif					/* PthreadCoswitch */
 
+void init_threadstate(struct threadstate *ts);
+
 #ifdef Concurrent 
+void tlschainadd(struct threadstate *tstate, struct context *ctx);
 #ifndef HAVE_KEYWORD__THREAD
 struct threadstate *get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */

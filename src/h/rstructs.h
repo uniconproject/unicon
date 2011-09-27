@@ -490,6 +490,18 @@ struct threadstate {
   uword stringtotal;			/* cumulative total allocation */
   uword blocktotal;			/* cumulative total allocation */
 #endif 					/* Concurrent */
+
+/*
+ * Structure for chaining threadstate structs.
+ * The first node will be for the main thread, it  will be always the first.
+ * New nodes will be added to the end of the chain, setting roottstate->prev
+ * to point to the last node will make it easy to add at the end. The chain 
+ * is circular in one direction, backward, but not forward.
+ */
+  struct threadstate *prev;
+  struct threadstate *next;
+
+  struct context *ctx;         /* the corresponding context for tstate*/
    };
 
 #if !COMPILER
@@ -820,21 +832,11 @@ typedef struct context {
    sem_t *semp;		/* pointer to semaphore */
    int alive;		/* set zero when thread is to die */
    struct b_coexpr *c;  /* pointer to associated co-expression block */
+#ifdef Concurrent
+   struct threadstate *tstate;
+   int tmplevel; 
+#endif				/* Concurrent */
    } context;
-
-/*
- * Structure for chaining threadstate structs.
- * The first node will be for the main thread, it  will be always the fisrt.
- * New nodes will be added to the end of the chain, setting tlshead->prev
- * to point to the last node will make it easy to add at the end. The chain 
- * is circular in one direction, backward, but not forward.
- */
-struct tls_node {
-   struct tls_node *next;
-   struct tls_node *prev;
-   struct threadstate *tstate; 
-   struct context *ctx;         /* the corresponding context for tstate*/
-   };
 
 #endif					/* PthreadCoswitch */
 

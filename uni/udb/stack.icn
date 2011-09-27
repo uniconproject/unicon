@@ -22,17 +22,23 @@ class Stack(
 #
 method printFrame(frame, detail:1)
    local x, i, level, p:="(", pname
-   local pfile:="file ", pline:="line "
+   local pfile:="file ", pline:="line ", CMonitored
    
-   level := keyword("level", Monitored) -1
+   CMonitored := keyword("current",Monitored)
+
+   level := keyword("level", CMonitored) -1
+
    if 0 <= frame <= level then{
       Message := "   #"|| frame
-      pname := image(proc(Monitored, frame))
+      pname := image(proc(CMonitored, frame))
+
       pname := pname[find(" ",pname)+1 : 0]
+
+#       pname ? if tab(find(" ")+1) then pname := tab(0)
       Message ||:= ": "|| pname
-      every x := paramnames(Monitored,frame) do{
+      every x := paramnames(CMonitored,frame) do{
          if \detail then{
-            i := variable(x, Monitored,frame)
+            i := variable(x, CMonitored,frame)
             p ||:= x||"="||image(i)||", "
             }
          else
@@ -45,13 +51,13 @@ method printFrame(frame, detail:1)
       #pfile := keyword("file",Monitored,frame) # ideal solution
       #pline := keyword("line",Monitored,frame) # ideal solution
       if frame = 0 then{
-         pfile ||:= keyword("file", Monitored)
-         pline ||:= keyword("line", Monitored)
+         pfile ||:= keyword("file", CMonitored)
+         pline ||:= keyword("line", CMonitored)
          }
       else{
-         pfile ||:= keyword("file", Monitored, frame)
+         pfile ||:= keyword("file", CMonitored, frame)
          #DState.srcFile.getProcFile(pname) | "?"
-         pline ||:= keyword("line", Monitored, frame) 
+         pline ||:= keyword("line", CMonitored, frame) 
          #DState.srcFile.getProcLine(pname,pfile) | "?"
          }
       Message ||:= " at "|| pfile ||":"||pline

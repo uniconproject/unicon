@@ -3,35 +3,31 @@ procedure main()
     if (x := load("level_tp")) then write("loaded ", image(x))
     else stop("couldn't load(level_tp)")
 
-   if &level=1 then
-      write("source program &level returned 1. This is Correct!")
-   else
-      write("source program &level returned ", &level ,  " This is WRONG!!")
+   write("\nin Source program: main(1)")
+   write("Source program &level returned ", &level, 
+	 if &level=1 then " (CORRECT!)" else " (WRONG!)")
       
-   foo()
-
+   foo(2)
    
-    write(" keword(): ",keyword("level", x))
+   write(" keword(): ",keyword("level", x))
    
-    write("running level_tp")
-    @x
-    write("returned to parent.")
-    write(" keword(): ",keyword("level", x))
+   write("running level_tp")
+   @x
+   write("returned to parent.")
+   write(" keword(): ",keyword("level", x))
     
-   if &level=1 then
-      write("source program &level returned 1. This is Correct!")
-   else
-      write("source program &level returned ", &level ,  " This is WRONG!!")
+   write("\nin Source program: main(1)")
+   write("Source program &level returned ", &level, 
+	 if &level=1 then " (CORRECT!)" else " (WRONG!)")
       
-   foo()
+   foo(2)
    
    write("DONE!  goodbye.")
 
 end
 
-procedure foo()
-   if &level=2 then
-      write("source program &level returned 2. This is Correct!")
-   else
-      write("source program &level returned ", &level ,  " This is WRONG!!")
+procedure foo(lvl)
+   write("\nin source program: foo: (", lvl ,")")
+   write("Target program &level returned ", &level, 
+	 if &level=lvl then " (CORRECT!)" else " (WRONG!)")
 end

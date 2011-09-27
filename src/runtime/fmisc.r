@@ -1990,6 +1990,19 @@ static stringint siKeywords[] = {
 
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
+#ifdef Concurrent
+      struct context *cntx = 
+	  (struct context *)(( cstate *) BlkD(d,Coexpr)->cstate)[1];
+	  struct threadstate *tstate;
+	  if (cntx->tstate)
+	     tstate = cntx->tstate;
+	  else
+	     tstate = p->tstate;
+	    
+#else					/* Concurrent */
+      struct threadstate *tstate = p->tstate;
+#endif					/* Concurrent */
+
       if (kname[0] == '&') kname++;
       if (strcmp(kname,"allocated") == 0) {
 	 int tot;
@@ -2049,19 +2062,19 @@ static stringint siKeywords[] = {
 	 return C_integer col;
 	 }
       else if (strcmp(kname,"current") == 0) {
-	 return p->tstate->K_current;
+	 return tstate->K_current;
 	 }
       else if (strcmp(kname,"error") == 0) {
 	 return kywdint(&(p->Kywd_err));
 	 }
       else if (strcmp(kname,"errornumber") == 0) {
-	 return C_integer p->tstate->K_errornumber;
+	 return C_integer tstate->K_errornumber;
 	 }
       else if (strcmp(kname,"errortext") == 0) {
-	 return C_string p->tstate->K_errortext;
+	 return C_string tstate->K_errortext;
 	 }
       else if (strcmp(kname,"errorvalue") == 0) {
-	 return p->tstate->K_errorvalue;
+	 return tstate->K_errorvalue;
 	 }
       else if (strcmp(kname,"errout") == 0) {
 	 return file(&(p->K_errout));
@@ -2101,10 +2114,7 @@ static stringint siKeywords[] = {
 	 return file(&(p->K_input));
 	 }
       else if (strcmp(kname,"level") == 0) {
-	 /*
-	  * Shouldn't &level be per co-expression, not per program?
-	  */
-	 return C_integer p->tstate->K_level;
+	 return C_integer tstate->K_level;
 	 }
       else if (strcmp(kname,"line") == 0) {
 	 struct progstate *savedp = curpstate;
@@ -2140,13 +2150,13 @@ static stringint siKeywords[] = {
 	 return file(&(p->K_output));
 	 }
       else if (strcmp(kname,"pos") == 0) {
-	 return kywdpos(&(p->tstate->Kywd_pos));
+	 return kywdpos(&(tstate->Kywd_pos));
 	 }
       else if (strcmp(kname,"progname") == 0) {
 	 return kywdstr(&(p->Kywd_prog));
 	 }
       else if (strcmp(kname,"random") == 0) {
-	 return kywdint(&(p->tstate->Kywd_ran));
+	 return kywdint(&(tstate->Kywd_ran));
 	 }
       else if (strcmp(kname,"regions") == 0) {
          word allRegions = 0;
@@ -2169,7 +2179,7 @@ static stringint siKeywords[] = {
       else if (strcmp(kname,"source") == 0) {
 #ifdef CoExpr
 	 return coexpr(topact(
-			   BlkD(BlkD(d,Coexpr)->program->tstate->K_current,Coexpr)));
+			   BlkD(tstate->K_current,Coexpr)));
 #else					/* CoExpr */
 	fail;
 #endif					/* CoExpr */
@@ -2197,7 +2207,7 @@ static stringint siKeywords[] = {
 	 return C_integer allRegions;
 	 }
       else if (strcmp(kname,"subject") == 0) {
-	 return kywdsubj(&(p->tstate->ksub));
+	 return kywdsubj(&(tstate->ksub));
 	 }
       else if (strcmp(kname,"time") == 0) {
 	 /*
@@ -2613,6 +2623,11 @@ function{1} thread(x, blocksize, stringsize)
 	  * Turn on Async flag.
 	  */
 	 cp->status = Ts_Posix | Ts_Async;
+
+	 /*
+	  * assign the correct "call" level to the new thread.
+	  */
+	 n->tstate->K_level = k_level+1;
 
 	 /*
 	  * Activate co-expression x, having changed it to Asynchronous.

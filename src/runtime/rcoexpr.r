@@ -192,6 +192,18 @@ int first;
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
+#ifdef Concurrent
+	    if (ncp->program == ccp->program){
+	       struct context *nctx, *cctx;
+	       nctx = (struct context *) ncp->cstate[1];
+	       cctx = (struct context *) ccp->cstate[1];
+	   	     
+	       if (nctx->tstate)
+	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
+	       else
+	       	  nctx->tmplevel =  cctx->tstate->K_level;
+	    	}
+#endif					/* Concurrent */
 	 break;
       case A_Coret:
          EVValX(ncp,E_Coret);
@@ -431,6 +443,7 @@ else {
        * over in alccoexp().  Create a thread for it and mark it alive.
        */
       new = ncs[1];
+      new->tmplevel=0;
       if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;
@@ -498,26 +511,13 @@ void *nctramp(void *arg)
    struct context *new = arg;		/* new context pointer */
    struct b_coexpr *ce;
 #ifdef Concurrent
-   struct tls_node *tlsnode;
    CURTSTATE();
 
    init_threadstate(curtstate);
+   tlschainadd(curtstate, new);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
-   tlsnode = (struct tls_node *)malloc(sizeof(struct tls_node));
-   if (tlsnode==NULL)
-      fatalerr(305, NULL);
-
-   MUTEX_LOCKID(MTX_TLS_CHAIN);
-   tlsnode->prev = tlshead->prev;
-   tlsnode->next = NULL;
-   tlshead->prev->next = tlsnode;
-   tlshead->prev = tlsnode;
-
-   tlsnode->ctx = new;
-   tlsnode->tstate = curtstate;
-   MUTEX_UNLOCKID(MTX_TLS_CHAIN);
-
+   k_level = new->tmplevel;
    ce = new->c;
    if (ce->title != T_Coexpr) {
       fprintf(stderr, "warning ce title is %ld\n", ce->title);

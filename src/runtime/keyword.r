@@ -17,18 +17,18 @@ keyword{4} allocated
       }
    inline {
 #ifdef Concurrent
-      struct tls_node *tlsnode;
+      struct threadstate *tstate;
       uword blktot=0;
       uword strtot=0;
       MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
-      tlsnode = tlshead; 
+      tstate = roottstatep; 
       do{
-	blktot += tlsnode->tstate->blocktotal;
-	strtot += tlsnode->tstate->stringtotal;
-	tlsnode=tlsnode->next;
-        }while (tlsnode!=NULL);
+	blktot += tstate->blocktotal;
+	strtot += tstate->stringtotal;
+	tstate=tstate->next;
+        }while (tstate!=NULL);
       MUTEX_UNLOCKID(MTX_TLS_CHAIN);
       suspend C_integer stattotal + strtot + blktot;
       suspend C_integer stattotal;

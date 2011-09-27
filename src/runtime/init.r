@@ -182,13 +182,16 @@ int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
 #endif
 
 #ifdef MultiThread
-struct progstate *curpstate;		/* lastop accessed in program state */
+struct progstate *curpstate;
 struct progstate rootpstate;
+struct threadstate *roottstatep; 
+
 #ifdef Concurrent
-      struct tls_node *tlshead;
 #ifdef HAVE_KEYWORD__THREAD
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;
+#else					/* HAVE_KEYWORD__THREAD */
+      struct threadstate roottstate;
 #endif					/* HAVE_KEYWORD__THREAD */
 #else					/* Concurrent */
       struct threadstate roottstate; 
@@ -559,6 +562,28 @@ void howmanyblock()
   printf(" local block= %d\n", i);
 }
 
+
+void tlschainadd(struct threadstate *tstate, struct context *ctx)
+{
+   MUTEX_LOCKID(MTX_TLS_CHAIN);
+   tstate->prev = roottstatep->prev;
+   tstate->next = NULL;
+   roottstatep->prev->next = tstate;
+   roottstatep->prev = tstate;
+   if (ctx){
+      tstate->ctx = ctx;
+      ctx->tstate = tstate;
+      }
+   else
+      /*
+       *  Warning: This may overwrite already initialized ctx,
+       *  But we can not risk leaving ctx uninitialized. 
+       */
+      tstate->ctx = NULL;
+
+   MUTEX_UNLOCKID(MTX_TLS_CHAIN);
+}
+
 /*
  * Initialize separate heaps for (concurrent) threads.
  * At present, PthreadCoswitch probably uses this for Pthread coexpressions.
@@ -751,6 +776,7 @@ char *argv[];
 #else					/* !Concurrent||HAVE_KEYWORD__THREAD */
    rootpstate.tstate = get_tstate();
 #endif					/* !Concurrent||HAVE_KEYWORD__THREAD */
+   roottstatep = rootpstate.tstate; 
    init_threadstate(rootpstate.tstate);
 
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
@@ -1081,9 +1107,6 @@ Deliberate Syntax Error
 #ifdef Concurrent
    thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/
-#ifdef AAAMSWindows
-   ptw32_processInitialize();
-#endif  				/* MSWindows */
 #endif					/* Concurrent */
    
 
@@ -1100,19 +1123,17 @@ Deliberate Syntax Error
    ctx->thread = pthread_self();
    ctx->alive = 1;
 #ifdef Concurrent
-   tlshead = (struct tls_node *)malloc(sizeof(struct tls_node));
-   if (tlshead==NULL)
-      fatalerr(305, NULL);
    /* 
-    * This is the first node on the chain. It will be always the first.
-    * New nodes will be added to the end of the chain, setting tlshead->prev
+    * This is the first node in the chain. It will be always the first.
+    * New nodes will be added to the end of the chain, setting roottstatep->prev
     * to point to the last node will make it easy to add at the end. The chain 
     * is circular in one direction, backward, but not forward.
+    * No need to lock TLS chain since only main is running.
     */
-   tlshead->prev = tlshead; 
-   tlshead->next = NULL;
-   tlshead->ctx = ctx;
-   tlshead->tstate = curtstate;
+   roottstatep->prev = roottstatep; 
+   roottstatep->next = NULL;
+   roottstatep->ctx = ctx;
+   ctx->tstate = roottstatep;
 #endif					/* Concurrent */
 }
 #endif					/* PthreadCoswitch */

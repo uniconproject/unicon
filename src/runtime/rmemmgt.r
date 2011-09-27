@@ -455,13 +455,13 @@ int region;
     */
    cp = BlkD(k_current, Coexpr);
 #ifdef Concurrent
-   { struct tls_node *t;
-   for (t = tlshead; t != NULL; t = t->next) {
-      t->ctx->c->es_tend = t->tstate->Tend;
-      t->ctx->c->es_pfp = t->tstate->Pfp;
-      t->ctx->c->es_gfp = t->tstate->Gfp;
-      t->ctx->c->es_efp = t->tstate->Efp;
-      t->ctx->c->es_sp = t->tstate->Sp;
+   { struct threadstate *tstate;
+   for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
+      tstate->ctx->c->es_tend = tstate->Tend;
+      tstate->ctx->c->es_pfp = tstate->Pfp;
+      tstate->ctx->c->es_gfp = tstate->Gfp;
+      tstate->ctx->c->es_efp = tstate->Efp;
+      tstate->ctx->c->es_sp = tstate->Sp;
       }
    }
 #else					/* Concurrent */
@@ -613,23 +613,23 @@ int region;
 
 #ifdef Concurrent
 /*
- * use tls_node * instead of threadstate in order to sync VM registers
+ * use  threadstate in order to sync VM registers
  */
-static void markthread(struct tls_node *tcp)
+static void markthread(struct threadstate *tcp)
 {
    struct b_coexpr *coex = tcp->ctx->c;
    /* sync VM registers here?  Or maybe do ALL of them before any other
     * marking.
     */
-   PostDescrip(tcp->tstate->Value_tmp);
-   PostDescrip(tcp->tstate->Kywd_pos);
-   PostDescrip(tcp->tstate->ksub);
-   PostDescrip(tcp->tstate->Kywd_ran);
-   PostDescrip(tcp->tstate->K_current);
-   PostDescrip(tcp->tstate->K_errorvalue);
-   PostDescrip(tcp->tstate->T_errorvalue);
-   PostDescrip(tcp->tstate->AmperErrno);
-   PostDescrip(tcp->tstate->Eret_tmp);
+   PostDescrip(tcp->Value_tmp);
+   PostDescrip(tcp->Kywd_pos);
+   PostDescrip(tcp->ksub);
+   PostDescrip(tcp->Kywd_ran);
+   PostDescrip(tcp->K_current);
+   PostDescrip(tcp->K_errorvalue);
+   PostDescrip(tcp->T_errorvalue);
+   PostDescrip(tcp->AmperErrno);
+   PostDescrip(tcp->Eret_tmp);
    /* ??? */
 }
 #endif					/* Concurrent */
@@ -643,8 +643,8 @@ struct progstate *pstate;
     * This replaces some of the former programstate marking below
     */
 #ifdef Concurrent
-   struct tls_node *t;
-   for (t = tlshead; t != NULL; t = t->next)
+   struct threadstate *t;
+   for (t = roottstatep; t != NULL; t = t->next)
        markthread(t);
 #else					/* Concurrent */
    postqual(&(pstate->tstate->ksub));

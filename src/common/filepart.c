@@ -474,26 +474,32 @@ int pathFind(char target[], char buf[], int n)
       if (i != '\\' && i != '/' && i != ':')
 #if UNIX
          strcat(buf, "/");
-#else
+#else					/* UNIX */
          strcat(buf, "\\");
-#endif
+#endif					/* UNIX */
       }
    strcat(buf, target);
+
    res = stat(buf, &sbuf);
 
    while(res && *path) {
+#if UNIX
       for (i = 0; *path && *path != ':' && *path != ';' ; ++i)
+#else
+      for (i = 0; *path && *path != ';' ; ++i)
+#endif
          buf[i] = *path++;
       if (*path)			/* skip the ; or : separator */
          ++path;
       if (i == 0)			/* skip empty fragments in PATH */
          continue;
-      if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
 #if UNIX
+      if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
             buf[i++] = '/';
-#else
+#else					/* UNIX */
+      if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\')
             buf[i++] = '\\';
-#endif
+#endif					/* UNIX */
       strcpy(buf + i, target);
       res = stat(buf, &sbuf);
       /* exclude directories (and any other nasties) from selection */
@@ -513,6 +519,7 @@ int pathOpenHandle(char *fname, char *mode)
    char buf[260 + 1];
    int i, use = 1;
 
+
    /*
     * Find out if a path has been given in the file name.
     * If a path has been given with the file name, don't bother to
@@ -524,8 +531,9 @@ int pathOpenHandle(char *fname, char *mode)
 	 if (buf[i] == '/') buf[i] = '\\';
 	 }
 
-   if (use && !pathFind(fname, buf, 250))
+   if (use && !pathFind(fname, buf, 250)) {
        return -1;
+      }
 
 #if NT
    if (mode[1] == 'b')

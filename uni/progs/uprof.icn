@@ -51,6 +51,9 @@ procedure main(args)
    local line_time := table(0), line_count := table(0)
    local longest_filename_length := 0
    
+   if (*args=0) | (args[1] == ("--help"|"-help")) then
+       stop("usage: uprof [-l] uniconprogram args\n",
+	    "  (the -l option enables line-level time sampling)")
 
    if args[1] == "-o" then { pop(args); output := pop(args) }
    else if match("-o", args[1]) then output := pop(args)[3:0]

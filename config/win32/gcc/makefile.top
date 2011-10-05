@@ -1,5 +1,6 @@
 # top-level Icon makefile, configured for Windows NT using GCC
 MAKE=make
+MAKE2=make -j4
 Top:
 	@echo To configure sources:
 	@echo    MSVC: "nmake NT-Configure" or "nmake W-Configure"
@@ -44,17 +45,17 @@ W-Configure:
 	echo Run "nmake Unicon" to build
 
 Unicon: Icon-icont
-	cd ipl/lib && $(MAKE)
+	cd ipl/lib && $(MAKE2)
 	cd uni/unicon && $(MAKE)
 
 Icon-icont:
-	cmd /C mkicont
+#	cmd /C mkicont
 
 #	sh Icon-icont.sh
 
-#	cd src/rtt && $(MAKE)
-#	cd src/runtime && $(MAKE) interp_all
-#	cd src/icont && $(MAKE)
+	cd src/rtt && $(MAKE2)
+	cd src/runtime && $(MAKE) interp_all
+	cd src/icont && $(MAKE2)
 
 Configure:
 	copy config/unix/Config/top.mak ./Makefile

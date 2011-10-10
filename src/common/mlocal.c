@@ -143,12 +143,12 @@ char *findonpath(char *name, char *buf, size_t len) {
       
 #if NT
       if (buf[plen-1] != '\\')
-	buf[plen] = '\\';
+	buf[plen++] = '\\';
 #else					/* NT */
       if (buf[plen-1] != '/')
-	buf[plen] = '/';
+	buf[plen++] = '/';
 #endif					/* NT */
-      strcpy(buf + plen + 1, name);
+      strcpy(buf + plen, name);
 #if NT
 /* X_OK flag not reliable, just check whether the file exists */
 #define access _access

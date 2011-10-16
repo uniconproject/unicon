@@ -106,9 +106,6 @@ procedure preprocessor(fname,predefined_syms)
     if type(fname) ~== "list" then
       close(preproc_file)
     preproc_done()
-    if preproc_err_count > 0 then {
-        stop()      # force error exit (abruptly)
-    }
 end
 
 #
@@ -121,6 +118,7 @@ procedure preproc_new(fname,predefined_syms)
       preproc_filename := preproc_include_name := type(fname)
       }
    else {
+      # Normal file execution
       preproc_file := open(fname) |
 	 stop(&progname, ": cannot open ", image(fname))
       preproc_include_set := set([fname])

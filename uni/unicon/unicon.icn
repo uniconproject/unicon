@@ -365,6 +365,9 @@ procedure iconc_yyparse(fname, tmplist)
    yyin := ""
    every yyin ||:= preprocessor(fname, uni_predefs) do
       yyin ||:= "\n"
+   if preproc_err_count > 0 then {
+      stop()      # force error exit (abruptly)
+      }
    yylex_reinit()
    if /yydbg then {
       tmpname := tempname("uni",,,5)
@@ -609,6 +612,9 @@ procedure unicon(argv)
 	 yyfilename := outfilename := fName
 	 yyin := ""
 	 every yyin ||:= preprocessor(fName, uni_predefs) do yyin ||:= "\n"
+	 if preproc_err_count > 0 then {
+	    stop()      # force error exit (abruptly)
+	    }
          yylex_reinit()
 	 cmd := selecticont()
          if &features=="MS Windows NT" & &features=="console window" then{

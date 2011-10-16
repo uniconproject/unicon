@@ -107,7 +107,7 @@ procedure preprocessor(fname,predefined_syms)
     suspend preproc_sync_lines()
 
     if type(fname) ~== "list" then
-    	close(preproc_file)
+      close(preproc_file)
     preproc_done()
 end
 
@@ -412,21 +412,16 @@ procedure preproc_read()
        preproc_file := pop(preproc_file_stack)) | fail
       }
     preproc_line +:= 1
-    #write(&errout,"+++ ",image(preproc_filename),":",
-    #              preproc_line," (",preproc_if_state,"): ",result)
-    
     return result
 end
 
-# Auxiliary read method
+# Auxiliary read method; "reads" from a file or an in-memory list of strings.
 procedure preproc_read_result( )
-  	if type(preproc_file) == "list" then
-		return pop(preproc_file)
-	else
-		return read(preproc_file)
+   if type(preproc_file) == "list" then
+      return pop(preproc_file)
+   else
+      return read(preproc_file)
 end
-
-
 
 #
 # a_Scans an identifier.

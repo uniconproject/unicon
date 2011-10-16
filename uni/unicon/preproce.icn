@@ -80,7 +80,7 @@ end
 # Preprocesses a file, generating output lines.
 #
 procedure preprocessor(fname,predefined_syms)
-    local line,result, tmppos
+    local line, result, tmppos
     static nonpunctuation
     initial {
         nonpunctuation := &letters ++ &digits ++ ' \t\f\r'
@@ -103,7 +103,8 @@ procedure preprocessor(fname,predefined_syms)
     }
     preproc_line +:= 1
     suspend preproc_sync_lines()
-    close(preproc_file)
+    if type(fname) ~== "list" then
+      close(preproc_file)
     preproc_done()
     if preproc_err_count > 0 then {
         stop()      # force error exit (abruptly)
@@ -114,15 +115,22 @@ end
 # a_Initializes the preprocessor "object".
 #
 procedure preproc_new(fname,predefined_syms)
-    preproc_file := open(fname) |
-            stop(&progname, ": cannot open ", image(fname))
+   if type(fname) == "list" then {
+      preproc_file := fname
+      preproc_include_set := set([type(fname)])
+      preproc_filename := preproc_include_name := type(fname)
+      }
+   else {
+      preproc_file := open(fname) |
+	 stop(&progname, ": cannot open ", image(fname))
+      preproc_include_set := set([fname])
+      preproc_filename := preproc_include_name := fname
+      }
     preproc_sym_table := \predefined_syms |table()
     preproc_if_stack := []
     preproc_file_stack := []
-    preproc_include_set := set([fname])
     preproc_if_state := &null
     preproc_word_chars := &letters ++ &digits ++ '_'
-    preproc_filename := preproc_include_name := fname
     preproc_line := preproc_print_line := 0
     preproc_print_filename := &null
     preproc_nest_level := 0
@@ -381,25 +389,32 @@ end
 #
 procedure preproc_read()
     local result
-    until result := read(preproc_file) do {
-        if *preproc_if_stack ~= preproc_nest_level then {
-            preproc_error("$if(s) without $endif(s): " ||
-                    *preproc_if_stack - preproc_nest_level)
-            until *preproc_if_stack <= preproc_nest_level do
-                preproc_if_state := pop(preproc_if_stack)
-        }
-        close(preproc_file)
-        delete(preproc_include_set,preproc_include_name)
-        (preproc_nest_level := pop(preproc_file_stack) &
-            preproc_line := pop(preproc_file_stack) &
-            preproc_include_name := pop(preproc_file_stack) &
-            preproc_filename := pop(preproc_file_stack) &
-            preproc_file := pop(preproc_file_stack)) | fail
-    }
-    preproc_line +:= 1
-    #write(&errout,"+++ ",image(preproc_filename),":",
-    #              preproc_line," (",preproc_if_state,"): ",result)
-    return result
+   until result := preproc_read_result() do {
+      if *preproc_if_stack ~= preproc_nest_level then {
+	 preproc_error("$if(s) without $endif(s): " ||
+		       *preproc_if_stack - preproc_nest_level)
+	 until *preproc_if_stack <= preproc_nest_level do
+	    preproc_if_state := pop(preproc_if_stack)
+	 }
+      if type(preproc_file) ~== "list" then
+	 close(preproc_file)
+      delete(preproc_include_set,preproc_include_name)
+      (preproc_nest_level := pop(preproc_file_stack) &
+       preproc_line := pop(preproc_file_stack) &
+       preproc_include_name := pop(preproc_file_stack) &
+       preproc_filename := pop(preproc_file_stack) &
+       preproc_file := pop(preproc_file_stack)) | fail
+      }
+   preproc_line +:= 1
+   return result
+end
+
+# Auxiliary read method; "reads" from a file or an in-memory list of strings.
+procedure preproc_read_result( )
+   if type(preproc_file) == "list" then
+      return pop(preproc_file)
+   else
+      return read(preproc_file)
 end
 
 #

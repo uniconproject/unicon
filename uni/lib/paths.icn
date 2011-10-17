@@ -1,0 +1,103 @@
+#
+# paths.icn - procedures for manipulating IPATH/LPATH
+#
+# Author: Clinton Jeffery
+#
+
+# link to older IPL module for actual executable path search routine
+link getpaths
+
+#
+# pathsep() returns the sentinel value that separates elements of the path.
+# extra care is needed (on non-Windows systems) when space appears in a
+# pathname, since space is the path separator for many shells.
+#
+procedure pathsep()
+$ifdef _MS_WINDOWS_NT
+   return getenv("PATHSEP") | ";"
+$else
+   return getenv("PATHSEP") | " "
+$endif
+end
+
+procedure ipaths()
+static pathstr
+local binpath, f
+   initial {
+      pathstr := ""
+      if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+         ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|
+         "wiconx.exe")))) then {
+         close(\f)
+         pathstr ||:=
+            binpath || "../ipl/lib" || pathsep() ||
+	    binpath || "../uni/lib" || pathsep() ||
+            binpath || "../uni/gui" || pathsep() ||
+	    binpath || "../uni/3d" || pathsep()
+         }
+      pathstr ||:= (getenv("IPATH") | ".")
+      }
+   return pathstr
+end
+
+procedure ipaths_get()
+   static rslt
+   local binpath, pathstr
+
+   initial {
+      rslt := []
+      pathstr := ipaths()
+      if \pathstr ~== "" then {
+         pathstr ? {
+            while put(rslt, tab(find(pathsep()))) do
+               move(1)
+            put(rslt, tab(0))
+            }
+         }
+      }
+   return rslt
+end
+
+
+procedure lpaths()
+static pathstr
+local binpath, f
+   initial {
+      pathstr := ""
+      if (binpath := (&features ? (="Binaries at " & tab(0)))) |
+         ((f := open((binpath := getpaths()) || ("iconx"|"iconx.exe"|
+         "wiconx.exe")))) then {
+         close(\f)
+         pathstr ||:= binpath || "../ipl/incl" || pathsep()
+	 if \iconc then pathstr ||:= binpath || "../ipl/procs" || pathsep()
+         pathstr ||:=
+            binpath || "../uni/lib" || pathsep() ||
+            binpath || "../uni/gui" || pathsep() ||
+            binpath || "../ipl/gincl" || pathsep() ||
+            binpath || "../ipl/mincl" || pathsep()
+	 if \iconc then pathstr ||:=
+            binpath || "../ipl/gprocs" || pathsep() ||
+            binpath || "../ipl/gprogs" || pathsep()
+         }
+      pathstr ||:= (getenv("LPATH") | ".")
+      }
+   return pathstr
+end
+
+procedure lpaths_get()
+   static rslt
+   local binpath, pathstr, f
+
+   initial {
+      rslt := []
+      pathstr := lpaths()
+      if \pathstr ~== "" then {
+         pathstr ? {
+            while put(rslt, tab(find(pathsep()))) do
+               move(1)
+            put(rslt, tab(0))
+            }
+         }
+      }
+   return rslt
+end

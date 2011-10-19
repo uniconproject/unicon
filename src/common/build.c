@@ -1,7 +1,7 @@
 /*
  * The ncurses-based build 
  * This program is written to run from the top level directory for Unicon
- * i.e. ./build intel_linux | ./build amd64_linux | ./build intel_macos  
+ * i.e. ./build x86_32_linux | ./build x86_64_linux | ./build x86_64_macos  
  *
  * Author: Ziad Al-Sharif
  *         zsharif@gmail.com
@@ -848,7 +848,7 @@ int main(int argc, char* argv[])
    char options[100]={"make X-Configure name="};
  
    if (argc < 2) {
-      printf("\nUsage: ./build [intel_linux | amd64_linux | intel_macos |"
+      printf("\nUsage: ./build [x86_32_linux | x86_64_linux | x86_32_macos |"
 	     " ...]\n\n\n");
       exit(-1);
       }

@@ -2627,7 +2627,7 @@ function{1} thread(x, blocksize, stringsize)
 	 /*
 	  * assign the correct "call" level to the new thread.
 	  */
-	 n->tstate->K_level = k_level+1;
+	 /* n->tstate->K_level = k_level+1;*/
 
 	 /*
 	  * Activate co-expression x, having changed it to Asynchronous.

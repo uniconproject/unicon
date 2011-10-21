@@ -1,4 +1,4 @@
-#########################################################################
+######################################################################
 #
 #	File:     algae.icn
 #
@@ -6,13 +6,13 @@
 #
 #	Author:   Clinton Jeffery
 #
-#	Date:     November 22, 1997
+#	Date:     October 21, 2011
 #
-#########################################################################
+######################################################################
 #
 #   This file is in the public domain.
 #
-############################################################################
+######################################################################
 #
 # Press ESC or q to quit
 # Left mouse assigns specific (row,column) break "points"
@@ -30,11 +30,11 @@
 #
 #  Requires:  Version 9 graphics
 #
-############################################################################
+#########################################################################
 #
 #  Includes:  evdefs.icn
 #
-############################################################################
+#########################################################################
 
 $include "evdefs.icn"
 
@@ -72,8 +72,10 @@ procedure main(av)
    algaeoptions := []
    while av[1][1] == "-" do {
       put(algaeoptions, pop(av))
-      if algaeoptions[-1] == "-f" then put(algaeoptions, pop(av))
+      if algaeoptions[-1] == ("-f"|"-P"|"-S") then
+	 put(algaeoptions, pop(av))
       }
+   if /&eventsource & *av=0 then stop("Usage: algae program arguments...")
    EvInit(av) | stop("Can't EvInit ",av[1])
    codes := algae_init(algaeoptions)
    evaltree(codes, algae_callback, algae_activation)
@@ -88,10 +90,11 @@ end
 procedure algae_init(algaeoptions)
    local t, position, geo, codes, i, cb, coord, e, s, x, y, m, row, column
    t := options(algaeoptions,
-		winoptions() || "P:S:-geo:-square!-func!-scan!-op!-noproc!")
+	   winoptions() || "P:-S+-geo:-square!-func!-scan!-op!-noproc!-step!")
    /t["L"] := "Algae"
    /t["B"] := "cyan"
    scale := \t["S"] | 12
+   delete(t, "S")
    if \t["square"] then {
       spot := square_spot
       mouse := square_mouse
@@ -106,6 +109,7 @@ procedure algae_init(algaeoptions)
    if \t["scan"]   then codes ++:= ScanMask
    if \t["func"]   then codes ++:= FncMask
    if \t["op"]     then codes ++:= OperMask
+   if \t["step"]   then step := 1
    hotspots := table()
    &window := Visualization := optwindow(t) | stop("no window")
    numrows := (WHeight() / (scale * 4))
@@ -210,7 +214,7 @@ procedure do1event(e, new)
 
    case e of {
       "q" |
-      "\e": exit()
+      "\e": stop("Program execution terminated by user request")
       "s": { # execute a single step
 	 step := 1
 	 return
@@ -341,8 +345,7 @@ procedure Color(s)
      magenta := Clone(&window, "fg=magenta") | stop("no magenta")
      t := table()
      /t[E_Fcall] := Clone(&window, "fg=red") | stop("no red")
-     /t[E_Ocall] := Clone(&window, "fg=chocolate") |
-     		    Clone(&window, "fg=orangish brown") |
+     /t[E_Ocall] := Clone(&window, "fg=chocolate" | "fg=orangish brown") |
 	 stop("no chocolate substitute")
      /t[E_Snew] :=  Clone(&window, "fg=purple") | stop("no purple")
      }

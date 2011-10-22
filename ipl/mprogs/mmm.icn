@@ -6,7 +6,7 @@
 #
 #	Author:   Clinton Jeffery
 #
-#	Date:     August 12, 1994
+#	Date:     October 22, 2011
 #
 ############################################################################
 #
@@ -38,7 +38,6 @@ link optwindw
 link typebind
 link colormap
 link wipe
-link xcompat
 
 global Visualization, contexts
 global t, sum, threesixty, wid, hei
@@ -74,9 +73,16 @@ procedure main(av)
    row1 := 0
    row2 := hei/2+1
 
+   bpp := 4
+
+   write("regions:")
    Regions := []
-   every put(Regions,keyword("regions",EventSource))
+   every put(Regions,keyword("regions",Monitored)) do
+       write("\t",image(Regions[-1]))
    pop(Regions)
+   write("pixels in string region ", wid * (hei/2), " bytes ", Regions[1])
+   write("bpp = ",Regions[1] / (wid * (hei/2)))
+   bpp := integer(Regions[1] / (wid * (hei / 2)))
 
    while EvGet(mymask) do {
       if &eventcode === E_Lelem then &eventcode := E_List
@@ -93,29 +99,30 @@ procedure main(av)
 	 E_EndCollect: {
 	    }
 	 E_String: {
-	    DrawLine(c_string,sum1/4,row1,(sum1+&eventvalue)/4,row1)
+	    if sum1/bpp ~= (sum1+&eventvalue)/bpp then
+		DrawLine(c_string,sum1/bpp,row1,(sum1+&eventvalue)/bpp,row1)
 	    sum1 +:= &eventvalue
-	    while sum1/4 >= wid do {
-	       sum1 -:= wid * 4
+	    while sum1/bpp >= wid do {
+	       sum1 -:= wid * bpp
 	       row1 +:= 1
 	       if row1 > hei/2 then {
 		  EraseArea(0,0,wid,hei/2)
 		  row1 := 0
 		  }
-	       DrawLine(c_string,0,row1,sum1/4,row1)
+	       DrawLine(c_string,0,row1,sum1/bpp,row1)
 	       }
 	    }
 	 !.allocstr: {
 	    c := \contexts[&eventcode] | stop("what is ",&eventcode)
-	    start := sum2/4
+	    start := sum2/bpp
 	    sum2 +:= &eventvalue
-	    sum2div4 := sum2/4
-	    DrawLine(c,start,row2,sum2div4,row2)
-	    while sum2div4 >= wid do {
-	       sum2 -:= wid * 4
-	       sum2div4 := sum2/4
+	    sum2divbpp := sum2/bpp
+	    DrawLine(c,start,row2,sum2divbpp,row2)
+	    while sum2divbpp >= wid do {
+	       sum2 -:= wid * bpp
+	       sum2divbpp := sum2/bpp
 	       row2 +:= 1
-	       DrawLine(c,0,row2,sum2div4,row2)
+	       DrawLine(c,0,row2,sum2divbpp,row2)
 	       }
 	    }
 	 default: {
@@ -123,7 +130,7 @@ procedure main(av)
 	    }
 	 }
       }
-
+   until Event()
 end
 
 procedure itypebind(z)
@@ -134,6 +141,6 @@ procedure itypebind(z)
   /(t[z]):=typebind(z,E_Integer||E_Real||E_Record||E_Set||E_String||E_Cset||
 		    E_File||E_List||E_Null||E_Proc||E_Table,table())
 #  if type(t[z][E_Proc])=="file" then close(t[z][E_Proc])
-  t[z][E_Proc] := XBind(z,"fg=#999")
+  t[z][E_Proc] := Clone(z,"fg=#999")
   return t[z]
 end

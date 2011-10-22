@@ -1,0 +1,180 @@
+#
+#
+#	Name:	piano.icn
+#	Title:	Piano-roll Line Number Monitor
+#	Author:	Clinton L. Jeffery
+#	Date:	Mar 27, 1991
+#
+#
+#  
+# A line-number monitor.  Invoked with the name of an Icon program
+# to execute and the command line arguments to give to it.  Runs
+# the program and displays its line numbers at clock ticks.
+#
+$include "evdefs.icn"
+link evinit
+link options
+
+global Visualization, stoplines, wr, width, height
+
+procedure doevents(e)
+   repeat {
+      if e === ("q"|"\e") then stop("execution halted by user request")
+      else {
+	 case e of {
+	    &lpress | &ldrag: {
+write("inserting at ", &y)
+	       insert(stoplines,&y)
+	       DrawLine(wr,0,&y,5,&y)
+WSync()
+	       }
+	    &resize: {
+	       width := &x
+	       height := &y
+	       }
+	    default: {
+		write("default ", image(e))
+	    }
+	    }
+	 }
+      if Pending()[1] then e := Event() else break
+      }
+write("do events: done")
+end
+
+procedure main(av)
+   local line_change_increment, t, position, wrap, connected, LinenoMask,
+       mymask, lastline, ww, wg, wb, wall, x, base, lastx, lasty, maxline,
+       value, scale, oldY, theY, step, e, sl
+   line_change_increment := 1
+   stoplines := set()
+   t := options(av,"P:w!c!")
+   position := t["P"]
+   /position := "0,120"
+   wrap := t["w"]
+   connected := t["c"]
+
+   if *av=0 then EvInit()
+   else EvInit(av)			 # direct MT monitor
+  
+   LinenoMask := cset(E_Loc || E_Tick || E_MXevent)
+   mymask := LinenoMask
+
+   lastline := 0
+   Visualization := open("Pianoroll","x","fg=black","bg=white",
+	     "geometry=256x250","pos="||position) |
+      stop("can't open window")
+   &window := Visualization
+   ww   := Clone(&window,"fg=white")
+   wr   := Clone(&window,"fg=red")
+   wg   := Clone(&window,"fg=green")
+   wb   := Clone(&window,"fg=blue")
+   wall := [&window, wr, wg, wb]
+   x    := 0
+   
+   base    := 0
+   lastx   := -1
+   lasty   := -1
+   width   := WAttrib("width")
+   height  :=  WAttrib("height")
+   maxline := 0
+
+   while EvGet(mymask) do {
+      case &eventcode of {
+	 E_Loc: {
+	    value := iand(&eventvalue,65535)
+	    if maxline <:= value then
+	       if maxline > height then {
+		  scale := real(height) / maxline
+		  WAttrib("windowlabel=Pianoroll, scale "||left(scale,4))
+		  }
+	    if value ~= lastline | x-base~=lastx then {
+#	    if value ~= lastline then {
+	       oldY := lastline
+	       oldY *:= \scale
+	       lastline := value
+	       lastx := x-base
+	       theY := lastline
+	       theY *:= \scale
+	       theY := integer(theY)
+	       if /connected then
+		  DrawPoint(x-base, theY)
+	       else
+		  DrawLine(x-base, theY, x-base, oldY)
+	       
+	       x +:= line_change_increment # comment out to get GMT-style
+
+	       if \step | member(stoplines, theY) then {
+		  DrawLine(if member(stoplines,\step) then wr else ww,
+			    0,\step,5,\step)
+		  DrawLine(ww,
+			    6,\step,width,\step)
+		  DrawLine(if \step then wg else wb,0,theY,width,theY)
+		  \step := &null
+		  WAttrib("windowlabel=Piano("||lastline||") s)tep, c)ont _ clear ")
+		  while e := Event() do {
+		     case e of {
+			"q"|"\e": {
+			   stop("Program execution terminated by user request")
+			   }
+			"s": {
+			   step := theY
+			   break
+			   }
+			"C": {
+			   EraseArea(0,theY,5,1)
+			   delete(stoplines,theY)
+			   break
+			   }
+			"c": {
+			   break
+			   }
+			" ": {
+			   every sl := !stoplines do {
+			      EraseArea(0,sl,5,1)
+			      }
+			   stoplines := set()
+			   break
+			   }
+			}
+		     }
+		  WAttrib("windowlabel=Piano")
+		  }
+	       }
+	    }
+
+	 E_Tick : {
+	    x +:= &eventvalue
+	    }
+	 E_MXevent: {
+write("MXevent")
+	    doevents(&eventvalue)
+	    }
+	 E_Disable: {
+	    mymask := ''
+	    }
+	 E_Enable: {
+	    mymask := LinenoMask
+	    }
+	 default: stop("unknown event code ",image(&eventcode))
+	 }
+
+      if x-base >= width then {
+	 if /wrap then {
+	    CopyArea(&window,&window,1,0,width-1,height,0,0)
+	    EraseArea(width-1,0,1,height)
+	    base +:= 1
+	    }
+	 else {
+	    x := base
+	    EraseArea(0,0,5)
+	    }
+#	 wdiv4 := width/4
+#	 wdiv4t3 := wdiv4*3
+#	 CopyArea(&window,&window,wdiv4t3,0,wdiv4,height,0,0)
+#	 EraseArea(wdiv4,0,wdiv4t3+1,height)
+#	 base +:= wdiv4t3
+	 }
+      if \wrap then EraseArea(x-base, 0, 1)
+   }
+end

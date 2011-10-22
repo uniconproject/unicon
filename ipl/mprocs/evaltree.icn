@@ -1,4 +1,4 @@
-############################################################################
+######################################################################
 #
 #	File:     evaltree.icn
 #
@@ -6,27 +6,27 @@
 #
 #	Author:   Clinton Jeffery
 #
-#	Date:     June 19, 1994
+#	Date:     October 22, 2011
 #
-###########################################################################
+######################################################################
 #
 #   This file is in the public domain.
 #
-############################################################################
+######################################################################
 #
 #  Usage: evaltree(cset, procedure, record constructor)
 #
 #  The record type must have fields node, parent, children
 #
-#  See "A Framework for Monitoring Program Execution", Clinton L. Jeffery,
-#  TR 93-21, Department of Computer Science, The University of Arizona,
-#  July 30, 1993.
+#  See "Program Monitoring and Visualization: an Exploratory Approach",
+#  Clinton L. Jeffery, Springer New York, 1999.
 #
-############################################################################
+######################################################################
 #
-#  Requires:  MT Icon and event monitoring
+#  Requires:  MT Icon and event monitoring.
+#		The record type must have fields node, parent, children.
 #
-############################################################################
+######################################################################
 
 $include "evdefs.icn"
 
@@ -39,19 +39,20 @@ global CallCodes,
    FailCodes,
    RemoveCodes
 
-procedure evaltree(mask, callback, activation_record)
-   local c, current, p, child
+global current # global so that callbacks can access it
 
+procedure evaltree(mask, callback, activation_record)
+   local c, p, child
 
    /activation_record := __evaltree_node
    CallCodes := string(mask ** cset(E_Pcall || E_Fcall || E_Ocall || E_Snew))
    SuspendCodes := string(mask ** cset(E_Psusp || E_Fsusp ||
-      E_Osusp || E_Ssusp))
-   ResumeCodes := string(mask ** cset(E_Presum || E_Fresum || E_Oresum ||
-      E_Sresum))
-   ReturnCodes  := string(mask ** cset(E_Pret || E_Fret || E_Oret))
+				       E_Osusp || E_Ssusp))
+   ResumeCodes := string(mask **
+			 cset(E_Presum || E_Fresum || E_Oresum || E_Sresum))
+   ReturnCodes := string(mask ** cset(E_Pret || E_Fret || E_Oret))
    FailCodes := string(mask ** cset(E_Pfail || E_Ffail || E_Ofail || E_Sfail))
-   RemoveCodes  := string(mask ** cset(E_Prem || E_Frem || E_Orem || E_Srem))
+   RemoveCodes := string(mask ** cset(E_Prem || E_Frem || E_Orem || E_Srem))
 
    current := activation_record()
    current.parent := activation_record()
@@ -103,4 +104,3 @@ procedure evaltree(mask, callback, activation_record)
 	 }
       }
 end
-

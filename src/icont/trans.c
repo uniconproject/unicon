@@ -211,8 +211,8 @@ int rc;
 #define RandVal(RNDSEED) (RanScale*((RandA*RNDSEED+RandC)&0x7FFFFFFFL))
 void writeUID(char *fname, FILE * f)
 {   
-  time_t t;
+   time_t t;
    time(&t);
-   writecheck(fprintf(f,"uid\t%s-%d-%d\n", fname,t,RandVal(t)));
+   writecheck(fprintf(f, "uid\t%s-%d-%d\n", fname, (int)t, (int)RandVal(t)));
 }
 

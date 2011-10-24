@@ -695,13 +695,19 @@ int checkOpenConsole( FILE *w, char *s );
       int setslices(wbp w, char *s);
       int settexcoords(wbp w, char* s);
       int settexmode(wbp w, char* s);
-      int settexture(wbp w, char* str, int len, struct descrip *f, int curtex);
+      int settexture(wbp w, char* str, int len, struct descrip *f, int curtex, 
+		     int is_init);
       void sphere(double radius, double x, double y, double z,
 		  int slices, int rings, int gen);
       wfp srch_3dfont(char *fname, int fsize, char ftype);
       int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2);
+      int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height);
+      int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height,
+		     int isfg);
       int TexDrawPoint(wbp w, int texhandle, int x, int y);
       int TexReadImage(wbp w, int texhandle, int x, int y,struct imgdata *imd);
+      int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, 
+		      int height, int xt, int yt, int width2, int height2);
       int texwindow2D(wbp w, wbp w2d);
       int texwindow3D(wbp w1, wbp w2);
       void torus(double radius1, double radius2, double x,double y, double z,

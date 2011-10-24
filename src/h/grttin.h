@@ -426,7 +426,7 @@ typedef int va_list, siptr;
         /* Pull out the texture handler */
 	texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
 	/* get the context from the window binding */
-	warg=0;
+	warg++;
       }
       else OptWindow(w); 
    #enddef   /* OptTexWindow */

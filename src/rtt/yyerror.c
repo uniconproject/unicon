@@ -140,7 +140,11 @@ int _yyerror(char *s, int state)
    if (__merr_errors++ > 10) {
       fprintf(stderr, "too many errors, aborting");
       exit(__merr_errors); }
-   if(yylval.t->fname) fprintf(stderr, "%s:", yylval.t->fname);
+   if (!yylval.t)
+     fprintf(stderr, "unexpected end of file:");
+   else
+     if(yylval.t->fname) fprintf(stderr, "%s:", yylval.t->fname);
+
    if ((!strcmp(s, "syntax error") || !strcmp(s,"parse error"))&&
          (state>=0 && state<=yymaxstate)) {
        if (errtab[state].i==1)
@@ -157,6 +161,9 @@ int _yyerror(char *s, int state)
       sprintf(sbuf,"%s (%d;%d)", s, state, yychar);
       s=sbuf;
       }
-   fprintf(stderr, "%d: # \"%s\": %s\n", yylval.t->line, yylval.t->image, s);
+      if (yylval.t)
+	fprintf(stderr, "%d: # \"%s\": %s\n", yylval.t->line, yylval.t->image, s);
+      else
+	fprintf(stderr, "%s\n", s);
    return 0;
 }

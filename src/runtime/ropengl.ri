@@ -511,46 +511,54 @@ void torus(double radius1, double radius2, double x,double y, double z, int slic
 void cube(double length, double x, double y, double z, int gen)
 {
    static GLfloat n[6][3] = {
-      {-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0},{1.0, 0.0, 0.0},
-      {0.0, -1.0, 0.0}, {0.0, 0.0, 1.0},{0.0, 0.0, -1.0}
+      {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0},{0.0, 0.0,-1.0},
+      {-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0},{0.0, -1.0, 0.0}
       };
 
-   static GLint faces[6][4] = {
-      {0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
-      {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3}
+    static GLint faces[6][4] = {
+      {0, 1, 2, 3}, {1, 4, 7, 2}, {4, 5, 6, 7},
+      {5, 0, 3, 6}, {3, 2, 7, 6}, {5, 4, 1, 0}
       };
 
    GLfloat v[8][3], len_div_2 = length / 2;
    GLint i;
 
-   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &i);
    glPushMatrix();
-   glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &i);
 
    glTranslatef(x, y, z);
 
-   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -len_div_2;
-   v[4][0] = v[5][0] = v[6][0] = v[7][0] = len_div_2;
-   v[0][1] = v[1][1] = v[4][1] = v[5][1] = -len_div_2;
-   v[2][1] = v[3][1] = v[6][1] = v[7][1] = len_div_2;
-   v[0][2] = v[3][2] = v[4][2] = v[7][2] = -len_div_2;
-   v[1][2] = v[2][2] = v[5][2] = v[6][2] = len_div_2;
+/*   static GLfloat v[8][3] = {
+      {-1.0, -1.0,  1.0}, 
+      { 1.0, -1.0,  1.0},
+      { 1.0,  1.0,  1.0},
+      {-1.0,  1.0,  1.0},
+      { 1.0, -1.0, -1.0}, 
+      {-1.0, -1.0, -1.0},
+      {-1.0,  1.0, -1.0},
+      { 1.0,  1.0, -1.0},
+      };
+*/
+   v[0][0] = v[0][1] = v[1][1] = v[3][0] = v[4][1] = v[4][2] =
+   v[5][0] = v[5][1] = v[5][2] = v[6][0] = v[6][2] = v[7][2] = -len_div_2;
+
+   v[0][2] = v[1][0] = v[1][2] = v[2][0] = v[2][1] = v[2][2] =
+   v[3][1] = v[3][2] = v[4][0] = v[6][1] = v[7][0] = v[7][1] = len_div_2;
 
    /* set default coordinates if needed */
 
    if (gen == 1) {
       glDisable(GL_TEXTURE_GEN_S);
       glDisable(GL_TEXTURE_GEN_T);
-      for (i = 5; i >= 0; i--) {
+      for (i = 0; i <=5 ; i++) {
 	 glBegin(GL_QUADS);
 	 glNormal3fv(&n[i][0]);
 	 glTexCoord2f(0.0, 0.0);
 	 glVertex3fv(&v[faces[i][0]][0]);
-	 glTexCoord2f(0.0, 1.0);
+	 glTexCoord2f(1.0, 0.0);
 	 glVertex3fv(&v[faces[i][1]][0]);
 	 glTexCoord2f(1.0, 1.0);
 	 glVertex3fv(&v[faces[i][2]][0]);
-	 glTexCoord2f(1.0, 0.0);
+	 glTexCoord2f(0.0, 1.0);
 	 glVertex3fv(&v[faces[i][3]][0]);
 	 glEnd();
 	 }
@@ -2859,12 +2867,11 @@ int seteye(wbp w, char *s)
 }
 
 /* set a texture */
-int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
+int settexture(wbp w, char* str, int len, struct descrip *f, int curtex, int is_init)
 {
    wcp wc = w->context;
    char* s;
    int nfields, draw_code;
-   /*tended struct descrip f; */
    tended struct descrip d;
    tended struct b_record *rp;
    static dptr constr;
@@ -2872,23 +2879,35 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
    int ttype;
 
    makecurrent(w);
-   if (!constr &&  !(constr = rec_structor3d("gl_texture")))
-      syserr("failed to create opengl record constructor");
-   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-   /*
-    * create a record of the graphical object and its parameters
-    */
-   if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
-      return Failed;
-   (*f).dword = D_Record;
-   (*f).vword.bptr = (union block *)rp;
-   MakeStr("Texture", 7, &(rp->fields[0]));
+   if (!is_init){
+      if (!constr &&  !(constr = rec_structor3d("gl_texture")))
+      	 syserr("failed to create opengl record constructor");
+   	 nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
 
-   draw_code = si_s2i(redraw3Dnames, "Texture");
-   if (draw_code == -1)
+   	 /*
+    	  * create a record of the graphical object and its parameters
+    	  */
+      if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
+      	 return Failed;
+     (*f).dword = D_Record;
+     (*f).vword.bptr = (union block *)rp;
+     MakeStr("Texture", 7, &(rp->fields[0]));
+
+     draw_code = si_s2i(redraw3Dnames, "Texture");
+     if (draw_code == -1)
        return Failed;
-   MakeInt(draw_code, &(rp->fields[1]));
+     MakeInt(draw_code, &(rp->fields[1]));
+
+     Protect(BlkLoc(rp->fields[3]) =
+	      (union block *)alcfile((FILE *)w, Fs_Window|Fs_Read|Fs_Write
+		      | (w->context->is_3D?Fs_Window3D:0)	
+		      , &emptystr), return Failed);
+
+     rp->fields[3].dword = D_File;
+     }
+   else
+      rp = BlkD(*f, Record);
 
    s=str;
    while(isspace(*s)) s++;
@@ -2909,7 +2928,7 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex)
     * So by remembering wc->ntextures we can recover the name of the texture.
     */
    MakeInt(wc->curtexture, &(rp->fields[2]));
-   rp->fields[3] = nulldesc;
+
    c_put(&(w->window->funclist), f);
 
    return Succeeded;
@@ -3245,7 +3264,6 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
      }
 }
 
-
 /* check if a number is a power of two */
 int powertwo(int a)
 {
@@ -3255,164 +3273,6 @@ int powertwo(int a)
      }
    if (a == p) return 0;
    else return p;
-}
-
-static wclrp lastcp;
-
-/* convert a 2D window into a texture */
-int texwindow2D(wbp w, wbp w2d)
-{
-   struct imgmem imem;
-   int i, j, r, k, l;
-   long rv;
-   wsp ws = w2d->window;
-   char strout[50];
-   char *s2;
-   GLubyte *tex = (GLubyte *)malloc(ws->height * ws->width * 3);
-   GLubyte *texp;
-   LinearColor clr;
-   wclrp cp;
-   unsigned long c;
-   wcp wc = w2d->context;
-#ifdef XWindows
-   wdp wd = w2d->window->display;
-   Display *stddpy = wd->display;
-   XColor colorcell;
-   lastcp = wd->colors;
-#endif					/* XWindows */
-
-   makecurrent(w);
-   imem.x = 0;
-   imem.y = 0;
-   imem.width = ws->width;
-   imem.height = ws->height;
-   /* call get pixel to get pixel information */
-   if (getpixel_init(w2d, &imem) == Failed)
-      return Failed;
-   for(j=0; j < ws->height; j++)
-	for(i=0; i < ws->width; i++) {
-#ifdef XWindows
-	   c = colorcell.pixel = XGetPixel(imem.im, i, j);
-	   rv = 0xff000000;
-	   if (lastcp->c == c) {
-             l = ((ws->height-j-1)*ws->width)*3;
-              texp = tex + l;
-	      texp[0] = lastcp->r>>8;
-	      texp[1] = lastcp->g>>8;
-	      texp[2] = lastcp->b>>8;
-	      continue;
-	      }
-	   else
-	      for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
-		 if (cp->c == c) {
-		    lastcp = cp;
-		 foundc:
-                    l = ((ws->height-j-1)*ws->width)*3;
-                    texp = tex + l;
-
-		    texp[0] = cp->r>>8;
-		    texp[1] = cp->g>>8;
-		    texp[2] = cp->b>>8;
-		    continue;
-		    }
-		 }
-	   if (rv == 0xff000000) {
-	      XQueryColor(stddpy, wd->cmap, &colorcell);
-	      rv = 1;
-	      clr = lcolor(w, colorcell);
-              l = ((ws->height-j-1)*ws->width+i)*3;
-              tex[l] = clr.red>>8;
-              tex[l+1] = clr.green>>8;
-              tex[l+2] = clr.blue>>8;
-	      }
-#else
- 	   if (getpixel(w2d, i, j, &rv, strout, &imem) == Failed)
-            return Failed;
-	   s2 = strout;
-         /* parse string to get pixel values */
-	   while(isspace(*s2)) s2++;
-           l = ((ws->height-j-1)*ws->width+i)*3;
-           tex[l] = atoi(s2)/256;
-  	   while(isdigit(*s2)) s2++;
-   	   s2++;
-           tex[l+1] = atoi(s2)/256;
-   	   while (isdigit(*s2)) s2++;
-  	   s2++;
-           tex[l+2] = atoi(s2)/256;
-#endif
-        }
-
-   /* apply the texture */
-   r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
-   if (r == Succeeded)  {
-      k = wc->curtexture;
-      /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
-	 }
-
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = ws->width;
-      wc->stex[k].height = ws->height;
-      return Succeeded;
-      }
-   else {
-     free(tex);
-     return Failed;
-     }
-}
-
-/* use another opengl window as a texture source */
-int texwindow3D(wbp w1, wbp w2)
-{
-   wsp ws = w2->window;
-   wcp wc = w2->context;
-   int width = ws->width;
-   int height = ws->height;
-   int i, k;
-   GLubyte *tex = (GLubyte *)malloc(height * width * 3);
-
-   /* change the current context to w2's context */
-#ifdef XWindows
-   glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
-   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
-   glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
-    i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
-#endif					/* XWindows */
-#ifdef MSWindows
-   {
-   HDC stddc = CreateWinDC(w2);
-   wglMakeCurrent(stddc, w2->context->ctx);
-   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
-   ReleaseDC(ws->iconwin, stddc);
-   stddc = CreateWinDC(w1);
-   wglMakeCurrent(stddc, w1->context->ctx);
-   i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
-   ReleaseDC(w1->window->iconwin, stddc);
-   }
-#endif					/* MSWindows */
-    if (i == Succeeded) {
-      k = wc->curtexture;
-      /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
-	 }
-
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = width;
-      wc->stex[k].height = height;
-      return Succeeded;
-      }
-    else {
-       free(tex);
-       return Failed;
-       }
 }
 
 /* apply a texture to a scene */
@@ -4094,173 +3954,6 @@ int section_length(wbp w)
    return Succeeded;
 }
 
-int swapno(int *x, int *y)
-{
-   int t;
-   t=*x;
-   *x=*y;
-   *y=t;
-   return 1;
-}
-
-int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
-{
-   wcp wc=w->context;
-   char bfmode = wc->buffermode, steep, ystep;
-   int cred, cgreen, cblue;
-   int wd3, wd, ht, w3, yy, xx, l, dx, dy, ee, ty, tx;
-   GLubyte *tex;
-
-   cred = (GLint) RED(wc->fg);
-   cgreen = (GLint) GREEN(wc->fg);
-   cblue = (GLint) BLUE(wc->fg);
-
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
-
-   /* Bresenham algorithm for line drawing */
-   if (x2 - x1 == 0) {
-      /* Vertical line (i.e. y-direction) */
-      if (y2 < y1) swapno(&y1, &y2);
-      xx = x1 * 3;
-      wd3 = wd * 3;
-      w3 = wd * 3 * y1;
-      for (yy = y1; yy <= y2; yy++) {
-	 l = xx + w3;
-	 tex[l] = cred;
-	 tex[l+1]=cgreen;
-	 tex[l+2]=cblue;
-	 w3 += wd3;
-	 }
-      wc->curtexture = texhandle;
-      if (bfmode) {
-	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-	 texture1(wd, ht, tex, wc->texmode);
-	 }
-      return Succeeded;
-      }
-
-   /* Other than vertical lines */
-   steep = abs(y2 - y1) > abs(x2 - x1);
-   if (steep) {
-      swapno(&x1, &y1);
-      swapno(&x2, &y2);
-      }
-   if (x1 > x2) {
-      swapno(&x1, &x2);
-      swapno(&y1, &y2);
-      }
-   dx = x2 - x1;
-   dy = abs(y2 - y1);
-   ee  = 0;
-   yy = y1;
-   if (y1 < y2) ystep = 1;
-   else ystep = -1;
-   wd3 = wd * 3;
-   if (steep) w3 = wd3 * x1;
-   else w3 = wd3 * y1;
-   ty = y1 * 3;
-   tx = x1 * 3;
-   for (xx=x1; xx<=x2; xx++) {
-      if (steep) {
-	 l = w3+ty;
-	 }
-      else {
-	 l = w3+tx;
-	 }
-      tex[l] = cred;
-      tex[l+1] = cgreen;
-      tex[l+2] = cblue;
-      ee += dy;
-      if (2 * ee >= dx) {
-	 yy = yy + ystep;
-	 ty += 3*ystep;
-	 if (!steep) w3 += wd3*ystep;
-	 ee -= dx;
-	 }
-      if (steep) w3 += wd3;
-      else tx += 3;
-      }
-
-   wc->curtexture = texhandle;
-   if (bfmode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
-   return Succeeded;
-}
-
-int TexDrawPoint(wbp w, int texhandle, int x, int y)
-{
-   wcp wc=w->context;
-   char bfmode = wc->buffermode;
-   int cred, cgreen, cblue, l, wd, ht;
-   GLubyte *tex;
-
-   cred = (GLint) RED(wc->fg);
-   cgreen = (GLint) GREEN(wc->fg);
-   cblue = (GLint) BLUE(wc->fg);
-
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
-
-   l = x + wd*3*y;
-   tex[l] = cred;
-   tex[l+1]=cgreen;
-   tex[l+2]=cblue;
-
-   wc->curtexture = texhandle;
-   if (bfmode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
-   return Succeeded;
-}
-
-
-/*
- * Update Texture with new image data
- */
-
-int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
-{
-   wcp wc=w->context;
-   char bfmode = wc->buffermode;
-   int wd, ht, l, nextLineOffset, i, j;
-   GLubyte *tex;
-   unsigned char *s;
-
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
-
-   /*  check for width and height.  the old texture with the new image  */
-   if (wd<x+imd->width || ht<y+imd->height)
-      return Failed;
-
-   s = imd->data ;  /* point to the image data*/
-   l = (ht-y)*wd*3- ( wd-x)*3; /* first byte in texture data to be updated */
-   nextLineOffset = (wd+imd->width)*3;
-
-   for (i=0; i<imd->height; i++) {
-      for (j=0; j<imd->width; j++) {
-	 tex[l++] = (GLubyte) *s++;
-	 tex[l++] = (GLubyte) *s++;
-	 tex[l++] = (GLubyte) *s++;
-	 }
-      l -= nextLineOffset;
-      }
-
-   wc->curtexture = texhandle;
-   if (bfmode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
-   return Succeeded;
-}
-
 int setselectionmode(wbp w, char* s)
 {
    tended struct descrip f;
@@ -4306,4 +3999,735 @@ int create3Dlisthdr(dptr dp, char *strname, word size){
    MakeInt(draw_code, &g);
    c_put(dp, &g);
    return Succeeded;
+}
+
+/*
+ ***************************************************************
+ *                     Dynamic Texture Functions
+ ***************************************************************
+ */
+
+#define INVISIBLE(a, b, start, finish) (a>finish || b<start)
+
+#define SWAPINT(x, y) do{ int t=x; x=y; y=t; }while(0)
+
+#define CLIPENDS(a, b, start, finish) do {\
+ 	if (a<start) a=start; if (b>finish) b=finish; } while(0)
+
+#define FCLIPENDS(a, b, start, finish, flag1, flag2) do {\
+	if (a<start) { a=start;  flag1=1;} else flag1=0; \
+	if (b>finish){ b=finish; flag2=1;} else flag2=0;} while (0)
+
+int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
+{
+   wcp wc=w->context;
+   char steep, ystep;
+   int cred, cgreen, cblue;
+   int wd3, wd, ht, yy, xx, l, yb, yt, xl, xr,
+        dx, dy, ee, ty, tx, clip1, clip2, y0, x0,
+	top, rit, pixelshift;
+   GLubyte *tex;
+
+   cred = (GLint) RED(wc->fg);
+   cgreen = (GLint) GREEN(wc->fg);
+   cblue = (GLint) BLUE(wc->fg);
+
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   /* Bresenham algorithm for line drawing */
+   if (x2==x1) {
+      if (x2 < 0 || x2 >= wd) return Failed;
+      /* Vertical line (i.e. y-direction) */
+      if (y2 < y1) SWAPINT(y1, y2);
+      CLIPENDS(y1, y2, 0, ht-1);
+      if INVISIBLE(y1, y2, 0, ht-1) return Failed;
+      wd3 = wd * 3;
+      l = wd3 * (ht-y1-1) + x1 * 3;
+      for (yy = y1; yy <= y2; yy++) {
+	 tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+	 l -= wd3;
+	 }
+      }
+   else if (y2==y1){
+      if (y2 < 0 || y2 >= wd) return Failed;
+      /* Horizonal line (i.e. x-direction) */
+      if (x2 < x1) SWAPINT(x1, x2);
+      CLIPENDS(x1, x2, 0, wd-1);
+      if INVISIBLE(x1, x2, 0, wd-1) return Failed;
+      wd3 = wd * 3;
+      l = wd3 * (ht-y1-1) + x1 * 3;
+      for (xx = x1; xx <= x2; xx++) {
+	 tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+	 l += 3;
+	 }
+      }
+   else {  /* All other lines */
+      steep = abs(y2 - y1) > abs(x2 - x1);
+      if (steep) {
+         SWAPINT(x1, y1);
+      	 SWAPINT(x2, y2);
+      	 top = wd - 1; rit = ht -1; 
+         }
+      else{ top = ht-1; rit = wd-1;  }
+
+      if (x1 > x2) { SWAPINT(x1, x2); SWAPINT(y1, y2);} 
+
+      dx = x2 - x1;
+      ee  = 0;
+      y0 = y1;
+      x0 = x1;
+      if (y1 < y2){
+      	 ystep = 1;
+      	 if (steep)
+	    { wd3 = wd * -3; tx=3;} 
+	 else 
+	    { wd3 = wd * -3; tx=3;}
+      	 dy = y2 - y1;
+      	 FCLIPENDS(y1, y2, 0, top, yb, yt);
+      	 if INVISIBLE(y1, y2, 0, top) return Failed;
+      	 if (yb){
+      	    clip1 = (0-y0)* dx/(ystep*dy) + x0;
+      	    if (clip1<0) clip1=0;
+            }
+      	 else clip1=0;
+
+      	 if (yt){
+            clip2 = (top-y0)* dx/(ystep*dy) + x0;
+            if(clip2>rit) clip2=rit;
+            }
+      	 else clip2=rit;
+
+      	 if (y2==y1) return Failed;
+      	 FCLIPENDS(x1, x2, clip1, clip2, xl, xr);
+      	 if INVISIBLE(x1, x2, 0, rit) return Failed;
+
+      	 if (xl){
+      	    clip1 = (0-x0)* (ystep*dy)/dx + y0;
+      	    if(clip1<0 || clip1>top) clip1=0;
+            }
+	 else clip1=0;
+
+      	 if (xr){
+      	    clip2 = (rit-x0)* (ystep*dy)/dx + y0;
+      	    if(clip2<0 || clip2>top) clip2=top;
+            }
+	 else clip2=top;
+
+	 CLIPENDS(y1, y2, clip1, clip2);
+      	 if INVISIBLE(y1, y2, 0, top) return Failed;	
+
+         }
+      else{ /* y1 > y2 */
+         ystep = -1;
+      	 if (steep)
+	    { wd3 = wd * -3; tx=-3;} 
+	 else 
+	    { wd3 = wd * 3; tx=3;}
+      	 dy = y1 - y2;
+      	 FCLIPENDS(y2, y1, 0, top, yb, yt);
+      	 if INVISIBLE(y2, y1, 0, top) return Failed;
+      	 if (yb){
+      	    clip2 = (0-y0)* dx/(ystep*dy) + x0;
+      	    if(clip2>rit) clip2=rit;
+            }
+      	 else clip2=rit;
+
+      	 if (yt){
+            clip1 = (top-y0)* dx/(ystep*dy) + x0;
+            if(clip1<0)clip1=0;
+            }
+      	 else clip1=0;
+
+      	 if (y2==y1) return Failed;
+      	 FCLIPENDS(x1, x2, clip1, clip2, xl, xr);
+      	 if INVISIBLE(x1, x2, 0, rit) return Failed;
+
+      	 if (xl){
+      	    clip1 = (0-x0)* (ystep*dy)/dx + y0;
+      	    if(clip1<0 || clip1>top) clip1=top;
+            }
+	 else clip1=top;
+
+      	 if (xr){
+      	    clip2 = (rit-x0)* (ystep*dy)/dx + y0;
+      	    if(clip2<0 || clip2>top) clip2=0;
+            }
+	 else clip2=0;
+
+	 CLIPENDS(y2, y1, clip2, clip1);
+      	 if INVISIBLE(y2, y1, 0, top) return Failed;
+	   
+         }
+
+      dx = x2 - x1;
+      dy = abs(y2 - y1);
+
+      if (steep){
+         l = (wd * (ht-x1-1) + y1) * 3;
+         pixelshift = wd3;
+         }
+      else{
+         l = (wd * (ht-y1-1) + x1) * 3;
+         pixelshift = 3;
+         }
+
+      for (xx=x1; xx<=x2; xx++) {
+         tex[l] = cred; tex[l+1] = cgreen; tex[l+2] = cblue;
+      	 ee += dy;
+      	 if (2 * ee >= dx) { l+=wd3+tx; ee -= dx; }
+      	 else l += pixelshift;
+         }
+   }
+
+   wc->curtexture = texhandle;
+   if (wc->buffermode) {
+      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+      texture1(wd, ht, tex, wc->texmode);
+      }
+   return Succeeded;
+}
+
+int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
+{
+   wcp wc=w->context;
+   int x2, y2;
+   char bfmode = wc->buffermode, steep, ystep;
+   int cred, cgreen, cblue;
+   int wd3, wd, ht, w3, yy, xx, l;
+   GLubyte *tex;
+   int skipTop=0, skipBottom=0, skipLeft=0, skipRight=0,
+       flipx=0, flipy=0; 
+
+   cred = (GLint) RED(wc->fg);
+   cgreen = (GLint) GREEN(wc->fg);
+   cblue = (GLint) BLUE(wc->fg);
+
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   /* if width/height is negative, flip it and readjust x and y accroridngly */
+   if (width < 0){ x+= width; width=-width; flipx=1;}
+   if (height < 0){ y+= height; height=-height; flipy=1;}
+
+   if (x+width<0 || x>wd || y+height<0 || y>ht) return Failed;
+
+   if (x<0){ 
+      width+=x; x=0; 
+      if (flipx) skipRight=1; else skipLeft=1;
+      }
+   if (x+width >= wd ) { 
+      width=wd-x-1; 
+      if (flipx) skipLeft=1; else skipRight=1;
+      }
+   if (y<0){ 
+      height+=y; y=0; 
+      if (flipy) skipTop=1; else skipBottom=1;
+      }
+   if (y+height >= ht ) {
+      height=ht-y-1; 
+      if (flipy)  skipBottom=1; else skipTop=1;
+      }
+
+   if (width==0 || height==0) return Failed;
+
+   wd3 = wd * 3;
+
+   /* Horizontal 1 */
+   x2=width+x;
+   if (!skipBottom){
+      l =  wd3 * (ht - y-1) + x * 3;
+      for (xx = x; xx <= x2; xx++) {
+       	  l = l + 3;
+       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+       	  }
+       }
+
+   /* Horizontal 2 */
+   y2=y+height;
+   if (!skipTop){
+      l =  wd3 * (ht - y2-1) + x * 3;
+      for (xx = x; xx <= x2; xx++) {
+       	  l = l + 3;
+       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+       	  }
+      }
+
+   /* verticals 1 & 2 */
+   if (!skipLeft){
+      l =  wd3 * (ht-y - 1) + x * 3;
+      for (yy = y; yy <= y2; yy++) {
+       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+       	  l -=  wd3;
+       	  }
+      }
+
+   if (!skipRight){
+      l =  wd3 * (ht-y - 1) + x * 3 + width * 3;
+      for (yy = y; yy <= y2; yy++) {
+       	  tex[l] = cred; tex[l+1]=cgreen; tex[l+2]=cblue;
+       	  l -=  wd3;
+       	  }
+      }
+
+      wc->curtexture = texhandle;
+      if (bfmode) {
+	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+	 texture1(wd, ht, tex, wc->texmode);
+	 }
+      return Succeeded;
+}
+
+int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int isfg)
+{
+   wcp wc=w->context;
+   int x2, y2;
+   char bfmode = wc->buffermode, steep, ystep;
+   int cred, cgreen, cblue;
+   int wd3, wd, ht, w3, yy, xx, l;
+   GLubyte *tex;
+
+   if (isfg){
+      cred = (GLint) RED(wc->fg);
+      cgreen = (GLint) GREEN(wc->fg);
+      cblue = (GLint) BLUE(wc->fg);
+      }
+   else{
+      cred = (GLint) RED(wc->bg);
+      cgreen = (GLint) GREEN(wc->bg);;
+      cblue = (GLint) BLUE(wc->bg);
+      }
+
+
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   /* if width/height is negative, flip it and readjust x and y accroridngly */
+   if (width < 0){ x+= width; width=-width; }
+   if (height < 0){ y+= height; height=-height; }
+
+   if (x+width<0 || x>wd || y+height<0 || y>ht) return Failed;
+
+   if (x<0){ width+=x; x=0;}
+   if (x+width > wd ) width=wd-x;
+   if (y<0){ height+=y; y=0;}
+   if (y+height > ht ) height=ht-y;
+
+   if (width==0 || height==0) return Failed;
+
+   wd3 = wd * 3;
+
+   /* Horizontal 1 */
+   x2=width+x; y2=y+height;
+
+   for (yy=y; yy<=y2; yy++){
+       l =  wd3 * (ht-yy - 1) + x * 3;
+       for (xx = x; xx <= x2; xx++) {
+       	   l = l + 3;
+       	   tex[l] = cred;
+       	   tex[l+1]=cgreen;
+       	   tex[l+2]=cblue;
+       	   }
+	}
+
+      wc->curtexture = texhandle;
+      if (bfmode) {
+	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+	 texture1(wd, ht, tex, wc->texmode);
+	 }
+      return Succeeded;
+}
+
+int TexDrawPoint(wbp w, int texhandle, int x, int y)
+{
+   wcp wc=w->context;
+   char bfmode = wc->buffermode;
+   int cred, cgreen, cblue, l, wd, ht;
+   GLubyte *tex;
+
+   cred = (GLint) RED(wc->fg);
+   cgreen = (GLint) GREEN(wc->fg);
+   cblue = (GLint) BLUE(wc->fg);
+
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   if (x<0 || x>wd || y<0 || y>ht) 
+      return Failed;
+
+   l = 3 * (x + wd * (ht-y - 1));
+   tex[l] = cred;
+   tex[l+1]=cgreen;
+   tex[l+2]=cblue;
+
+   wc->curtexture = texhandle;
+   if (bfmode) {
+      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+      texture1(wd, ht, tex, wc->texmode);
+      }
+   return Succeeded;
+}
+
+
+int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int height,
+    		 int xt, int yt, int width2, int height2)
+{
+   wcp wc=w2->context;
+   int wd, ht;
+   GLubyte *tex;
+ 
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   if (w->context->is_3D)
+      copyareaToTex3D(w, tex, x, y, width, height, xt, yt, wd, ht);
+   else
+      copyareaToTex(w, tex, x, y, width, height, xt, yt, wd, ht);
+   
+
+   wc->curtexture = texhandle;
+   if (wc->buffermode) {
+      glBindTexture(GL_TEXTURE_2D, wc->texName[texhandle]);
+      texture1(wd, ht, tex, wc->texmode);
+      }
+   return Succeeded;
+}
+
+/*
+ * Update Texture with new image data
+ */
+
+int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
+{
+   wcp wc=w->context;
+   char bfmode = wc->buffermode;
+   int wd, ht, l, nextLineOffset, i, j;
+   GLubyte *tex;
+   unsigned char *s;
+
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   /*  check for width and height.  the old texture with the new image  */
+   if (wd<x+imd->width || ht<y+imd->height)
+      return Failed;
+
+   s = imd->data ;  /* point to the image data*/
+   l = (ht-y)*wd*3- ( wd-x)*3; /* first byte in texture data to be updated */
+   nextLineOffset = (wd+imd->width)*3;
+
+   for (i=0; i<imd->height; i++) {
+      for (j=0; j<imd->width; j++) {
+	 tex[l++] = (GLubyte) *s++;
+	 tex[l++] = (GLubyte) *s++;
+	 tex[l++] = (GLubyte) *s++;
+	 }
+      l -= nextLineOffset;
+      }
+
+   wc->curtexture = texhandle;
+   if (bfmode) {
+      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+      texture1(wd, ht, tex, wc->texmode);
+      }
+   return Succeeded;
+}
+
+static wclrp lastcp;
+
+int copyareaToTex(wbp w2d, GLubyte *tex, int x, int y,  
+    int width, int height, int xt, int yt, int txw, int txh)
+{
+   struct imgmem imem;
+   int i, j, l, twd3;
+   long rv;
+   wsp ws = w2d->window;
+   char strout[50];
+   char *s2;
+   LinearColor clr;
+   wclrp cp;
+   unsigned long c, *c2;
+   wcp wc = w2d->context;
+#ifdef XWindows
+   wdp wd = w2d->window->display;
+   Display *stddpy = wd->display;
+   Visual *vis = w2d->window->vis;
+   XColor clrcell;
+   unsigned long rmask, gmask, bmask;
+   unsigned long rshift, rbits, gshift, gbits, bshift, bbits;
+
+   lastcp = wd->colors;
+
+   rmask = vis->red_mask, 
+   gmask = vis->green_mask, 
+   bmask = vis->blue_mask; 
+
+   rshift = 0; rbits = 0; 
+        while(!(rmask & 1)){ 
+            rshift++; 
+            rmask >>= 1; 
+        } 
+        while(rmask & 1){ 
+            rbits++; 
+            rmask >>= 1; 
+        } 
+        if(rbits>8){ 
+            rshift += rbits-8; 
+            rbits = 8; 
+        } 
+ 
+        gshift = 0; gbits = 0; 
+        while(!(gmask & 1)){ 
+            gshift++; 
+            gmask >>= 1; 
+        } 
+        while(gmask & 1){ 
+            gbits++; 
+            gmask >>= 1; 
+        } 
+        if(gbits>8){ 
+            gshift += gbits-8; 
+            gbits = 8; 
+        } 
+ 
+        bshift = 0; bbits = 0; 
+        while(!(bmask & 1)){ 
+            bshift++; 
+            bmask >>= 1; 
+        } 
+        while(bmask & 1){ 
+            bbits++; 
+            bmask >>= 1; 
+        } 
+        if(bbits>8){ 
+            bshift += bbits-8; 
+            bbits = 8; 
+        }
+
+
+
+#endif					/* XWindows */
+
+   imem.x = x;
+   imem.y = y;
+   imem.width = width;
+   imem.height = height;
+   /* call get pixel to get pixel information */
+   if (getpixel_init(w2d, &imem) == Failed)
+      return Failed;
+
+   twd3 = txw * 3;
+
+#ifdef XWindows
+   if(vis->class==TrueColor){ 
+  /*    unsigned char *ptr;
+      printf(" xoffset=%i  order=%i   depth=%i   pad=%i  bytes=%i   wid=%i  h=%i  r=%d  g=%d  b=%d bits=%i \n",  imem.im->xoffset
+      ,  imem.im->byte_order,  imem.im->depth,   imem.im->bitmap_pad,  
+     imem.im->bytes_per_line,  imem.im->width,  imem.im->height,
+imem.im->red_mask, imem.im->green_mask, imem.im->blue_mask, imem.im->bits_per_pixel
+ );*/
+      for(j=0; j < height; j++){
+   	l = (yt+height-j)*twd3 + xt * 3;
+	for(i=0; i < width; i++) {
+	   c =  XGetPixel(imem.im, i, j);
+          /* ptr = imem.im->data + (j * imem.im->bytes_per_line * height + 4 * i);
+	   c = *c2 & 0xffffff;*/
+           tex[l] =  ((c >> rshift) & ((1 << rbits)-1))  << (8-rbits); 
+           tex[l+1] =((c >> gshift) & ((1 << gbits)-1)) << (8-gbits); 
+           tex[l+2] =((c >> bshift) & ((1 << bbits)-1)) << (8-bbits); 
+	   l = l + 3;
+	   }
+	}
+      return Succeeded;
+      }
+#endif
+
+
+   for(j=0; j < height; j++){
+   	l = (yt+j-1)*twd3 + xt * 3;
+	for(i=0; i < width; i++) {
+#ifdef XWindows
+	   clrcell.pixel = XGetPixel(imem.im, i, j);
+	   rv = 0xff000000;
+	   if  (lastcp->c == c){
+	      tex[l] = lastcp ->r>>8;
+	      tex[l+1] = lastcp->g>>8;
+	      tex[l+2] = lastcp->b>>8;
+	      l = l + 3;
+	      continue;
+	      }
+	   else
+	      for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
+		 if (cp->c == c) {
+		    lastcp = cp;
+		 foundc:
+		    tex[l] = cp->r>>8;
+		    tex[l+1] = cp->g>>8;
+		    tex[l+2] = cp->b>>8;
+		    l = l + 3;
+		    continue;
+		    }
+		 }
+	   if (rv == 0xff000000) {
+	      XQueryColor(stddpy, wd->cmap, &clrcell);
+	      rv = 1;
+	      clr = lcolor(w2d, clrcell);
+              tex[l] = clr.red>>8;
+              tex[l+1] = clr.green>>8;
+              tex[l+2] = clr.blue>>8;
+	      l = l + 3;
+	      }
+#else
+ 	   if (getpixel(w2d, i, j, &rv, strout, &imem) == Failed)
+            return Failed;
+	   s2 = strout;
+         /* parse string to get pixel values */
+	   while(isspace(*s2)) s2++;
+           tex[l] = atoi(s2)/256;
+  	   while(isdigit(*s2)) s2++;
+   	   s2++;
+           tex[l+1] = atoi(s2)/256;
+   	   while (isdigit(*s2)) s2++;
+  	   s2++;
+           tex[l+2] = atoi(s2)/256;
+	   l = l + 3;
+#endif
+        }
+      }
+}
+
+
+int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,  
+    int width, int height, int xt, int yt, int txw, int txh)
+{
+   wsp ws = w3d->window;
+   wcp wc = w3d->context;
+   int i, j, k, twd3, l, m;
+   GLubyte *tex2 = (GLubyte *)malloc(height * width * 3);
+
+   /* change the current context to w2's context */
+#ifdef XWindows
+   glXMakeCurrent(ws->display->display, ws->win, w3d->context->ctx);
+/*   glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex2); */
+#endif					/* XWindows */
+#ifdef MSWindows
+   {
+   HDC stddc = CreateWinDC(w3d);
+   wglMakeCurrent(stddc, w3d->context->ctx);
+   glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex2);
+   ReleaseDC(ws->iconwin, stddc);
+   }
+#endif					/* MSWindows */
+   twd3 = txw * 3;
+   m=0;
+      for(j=0; j < height; j++){
+   	l = (yt+j)*twd3 + xt * 3;
+	for(i=0; i < width; i++) {
+           tex[l] =  tex2[m];
+           tex[l+1] = tex2[m+1];
+           tex[l+2] = tex2[m+2];
+	   l = l + 3;
+	   m = m +3;
+	   }
+	}    
+   free(tex2);
+   return Succeeded;
+}
+
+
+/* convert a 2D window into a texture */
+int texwindow2D(wbp w, wbp w2d)
+{
+   int k, r;
+   wsp ws = w2d->window;
+   GLubyte *tex = (GLubyte *)malloc(ws->height * ws->width * 3);
+   wcp wc = w2d->context;
+
+   makecurrent(w);
+
+   copyareaToTex(w2d, tex, 0, 0, ws->width, ws->height, 
+   		      0, 0, ws->width, ws->height);
+
+   /* apply the texture */
+
+   glBindTexture(GL_TEXTURE_2D, w->context->texName[wc->curtexture]);
+
+   r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
+   if (r == Succeeded)  {
+      k = wc->curtexture;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      if (k>=wc->maxstex){
+	 wc->maxstex *= 2;
+	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
+	 if (wc->stex==NULL) return Failed;
+	 }
+
+      wc->stex[k].tex = tex;
+      wc->stex[k].width = ws->width;
+      wc->stex[k].height = ws->height;
+      return Succeeded;
+      }
+   else {
+     free(tex);
+     return Failed;
+     }
+}
+
+/* use another opengl window as a texture source */
+int texwindow3D(wbp w1, wbp w2)
+{
+   wsp ws = w2->window;
+   wcp wc = w2->context;
+   int width = ws->width;
+   int height = ws->height;
+   int i, k;
+   GLubyte *tex = (GLubyte *)malloc(height * width * 3);
+
+   /* change the current context to w2's context */
+#ifdef XWindows
+   glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
+   glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
+   glBindTexture(GL_TEXTURE_2D, w1->context->texName[w1->context->curtexture]);
+    i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
+#endif					/* XWindows */
+#ifdef MSWindows
+   {
+   HDC stddc = CreateWinDC(w2);
+   wglMakeCurrent(stddc, w2->context->ctx);
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
+   ReleaseDC(ws->iconwin, stddc);
+   stddc = CreateWinDC(w1);
+   wglMakeCurrent(stddc, w1->context->ctx);
+   glBindTexture(GL_TEXTURE_2D, w1->context->texName[w1->context->curtexture]);
+   i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
+   ReleaseDC(w1->window->iconwin, stddc);
+   }
+#endif					/* MSWindows */
+    if (i == Succeeded) {
+      k = wc->curtexture;
+      /* no need to re-check, the check was made earlier in the code */
+      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      if (k>=wc->maxstex){
+	 wc->maxstex *= 2;
+	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
+	 if (wc->stex==NULL) return Failed;
+	 }
+
+      wc->stex[k].tex = tex;
+      wc->stex[k].width = width;
+      wc->stex[k].height = height;
+      return Succeeded;
+      }
+    else {
+       free(tex);
+       return Failed;
+       }
 }

@@ -15,8 +15,6 @@
 
 #ifdef Graphics
 
-
-
 "Active() - produce the next active window"
 
 function{0,1} Active()
@@ -347,7 +345,53 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
       int warg = 0, n, r;
       C_integer x, y, width, height, x2, y2, width2, height2;
       wbp w, w2;
+      int is_texture=0, base=0;
+      int texhandle;
+
       OptWindow(w);
+
+#ifdef Graphics3D
+      if (argc>warg && is:record(argv[warg])) {
+	/* set a boolean flag, use a texture */
+	is_texture=1;
+	/* Get the Window from Texture record */
+	w2 = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
+        /* Pull out the texture handler */
+	texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
+	/* get the context from the window binding */
+	warg++;
+      }
+
+      if (argc-warg<4) /* should have at least 4 int values */
+	    runerr(146);
+
+      if (is_texture) {
+	 base=warg;
+	 if (texhandle >= w2->context->maxstex) runerr(102, argv[base]);
+	 if (!cnv:C_integer(argv[base]  , x)) runerr(102, argv[base]);
+	 if (!cnv:C_integer(argv[base+1], y)) runerr(102, argv[base+1]);
+	 if (!cnv:C_integer(argv[base+2], width)) runerr(102, argv[base+2]);
+	 if (!cnv:C_integer(argv[base+3], height)) runerr(102, argv[base+3]);
+
+	 if (argc-warg>4){
+	    if (is:null(argv[base+4])) x2=x;
+	    else if (!cnv:C_integer(argv[base+4], x2)) 
+	    	 runerr(102, argv[base+4]);
+	    }
+	 else x2 = x;
+
+	 if (argc-warg>5){
+	    if (is:null(argv[base+5])) y2=y;
+	    else if (!cnv:C_integer(argv[base+5], y2)) 
+	    	 runerr(102, argv[base+5]);
+	    }
+	 else y2 = y;
+
+	 TexCopyArea(w, w2, texhandle, x, y, width, height, x2, y2,
+	 		  width2, height2);
+	 ReturnWindow;
+	 }
+#endif					/* Graphics3D */
 
       /*
        * 2nd window defaults to value of first window
@@ -754,33 +798,30 @@ function{1} DrawLine(argv[argc])
       int i, j, n, warg = 0;
       XPoint points[MAXXOBJS];
       int dx, dy;
-      double x1,x2,y1,y2;
-      int int_x1, int_x2, int_y1, int_y2;
+      C_integer x1, x2, y1, y2;
       int is_texture=0, base=0;
       int texhandle;
       OptTexWindow(w);
 #ifdef Graphics3D
       if (is_texture) {
 	 base=warg;
-	 CheckArgMultiple(4);
+	 CheckArgMultiple(2);
 
-	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
-	 if (!cnv:C_double(argv[base+1], x1)) runerr(102, argv[base+1]);
-	 if (!cnv:C_double(argv[base+2], y1)) runerr(102, argv[base+2]);
-	 if (!cnv:C_double(argv[base+3], x2)) runerr(102, argv[base+3]);
-	 if (!cnv:C_double(argv[base+4], y2)) runerr(102, argv[base+4]);
+	 if (argc-warg<4) /* first line should have at least 4 int values */
+	    runerr(146);
+	 
+	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
 
-	 /* Convert line co-ordinates to integer values */
-	 int_x1 = (int) x1;
-	 int_x2 = (int) x2;
-	 int_y1 = (int) y1;
-	 int_y2 = (int) y2;
+     	 if (!cnv:C_integer(argv[base]  , x1)) runerr(101, argv[base]);
+	 if (!cnv:C_integer(argv[base+1], y1)) runerr(101, argv[base+1]);
 
-	 if (x1-int_x1>0.5) int_x1++;
-	 if (x2-int_x2>0.5) int_x2++;
-	 if (y1-int_y1>0.5) int_y1++;
-	 if (y2-int_y2>0.5) int_y2++;
-	 TexDrawLine(w, texhandle, int_x1, int_y1, int_x2, int_y2);
+         for (base+=2; base < argc; base+=2){
+	     if (!cnv:C_integer(argv[base], x2)) runerr(101, argv[base]);
+	     if (!cnv:C_integer(argv[base+1], y2)) runerr(101, argv[base+1]);
+	     TexDrawLine(w, texhandle, x1, y1, x2, y2);
+	     x1=x2;
+	     y1=y2;
+	     }
 	 ReturnWindow;
 	 }
 
@@ -831,6 +872,7 @@ function{1} DrawLine(argv[argc])
 
       dx = w->context->dx;
       dy = w->context->dy;
+
       for(i=0, j=0;i<n;i++, j++) {
 	 int base = warg + i * 2;
          if (j==MAXXOBJS) {
@@ -863,8 +905,7 @@ function{1} DrawPoint(argv[argc])
       int i, j, n, warg = 0;
       XPoint points[MAXXOBJS];
       int dx, dy;
-      double x,y;
-      int int_x, int_y;
+      C_integer x,y;
       int is_texture=0, base=0;
       int texhandle;
 
@@ -872,19 +913,15 @@ function{1} DrawPoint(argv[argc])
 #ifdef Graphics3D
       if (is_texture) {
 	 base=warg;
-	 CheckArgMultiple(3); 
+	 CheckArgMultiple(2); 
 
 	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
-	 if (!cnv:C_double(argv[base+1], x)) runerr(102, argv[base+1]);
-	 if (!cnv:C_double(argv[base+2], y)) runerr(102, argv[base+2]);
 
-	 /* Convert line co-ordinates to integer values */
-	 int_x = (int) x;
-	 int_y = (int) y;
-
-	 if (x - int_x > 0.5) int_x++;
-	 if (y - int_y > 0.5) int_y++;
-	 TexDrawPoint(w, texhandle, int_x, int_y);
+         for (; base < argc; base+=2){
+	     if (!cnv:C_integer(argv[base], x)) runerr(101, argv[base]);
+	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
+	     TexDrawPoint(w, texhandle, x, y);
+	     }
 	 ReturnWindow;
 	 }
   
@@ -1056,11 +1093,30 @@ function{1} DrawRectangle(argv[argc])
       }
    body {
       wbp w;
-      int i, j, r, warg = 0;
+      int i, j, r, n, warg = 0;
       XRectangle recs[MAXXOBJS];
       C_integer x, y, width, height;
+      int is_texture=0, base=0;
+      int texhandle;
 
-      OptWindow(w);
+      OptTexWindow(w);
+
+#ifdef Graphics3D
+      if (is_texture) {
+	 base=warg;
+	 CheckArgMultiple(4);
+
+	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+         for (; base < argc; base+=4){
+     	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
+	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
+	     if (!cnv:C_integer(argv[base+2], width)) runerr(101, argv[base+2]);
+	     if (!cnv:C_integer(argv[base+3], height)) runerr(101, argv[base+3]);
+	     TexDrawRect(w, texhandle, x, y, width, height);
+	     }
+	 ReturnWindow;
+	 }
+#endif					/* Graphics3D */
       j = 0;
 
       for (i = warg; i < argc || i == warg; i += 4) {
@@ -1096,10 +1152,25 @@ function{1} DrawSegment(argv[argc])
       wbp w;
       int i, j, n, warg = 0, dx, dy, draw_code;
       XSegment segs[MAXXOBJS];
-
-      OptWindow(w);
-
+      C_integer x1, x2, y1, y2;
+      int is_texture=0, base=0;
+      int texhandle;
+      OptTexWindow(w);
 #ifdef Graphics3D
+      if (is_texture) {
+	 base=warg;
+	 CheckArgMultiple(4);
+	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+         for (; base < argc; base+=4){
+     	     if (!cnv:C_integer(argv[base]  , x1)) runerr(101, argv[base]);
+	     if (!cnv:C_integer(argv[base+1], y1)) runerr(101, argv[base+1]);
+	     if (!cnv:C_integer(argv[base+2], x2)) runerr(101, argv[base+2]);
+	     if (!cnv:C_integer(argv[base+3], y2)) runerr(101, argv[base+3]);
+	     TexDrawLine(w, texhandle, x1, y1, x2, y2);
+	     }
+	 ReturnWindow;
+	 }
+
       if (w->context->is_3D) {
 	 word num, start=0;
          tended struct descrip f;
@@ -1264,11 +1335,28 @@ function{1} EraseArea(argv[argc])
       }
    body {
       wbp w;
-      int warg = 0, i, r;
+      int warg = 0, i, r, n;
       C_integer x, y, width, height;
-      OptWindow(w);
+      int is_texture=0, base=0;
+      int texhandle;
+
+      OptTexWindow(w);
 
 #ifdef Graphics3D
+      if (is_texture) {
+	 base=warg;
+	 CheckArgMultiple(4);
+	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
+         for (; base < argc; base+=4){
+     	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
+	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
+	     if (!cnv:C_integer(argv[base+2], width)) runerr(101, argv[base+2]);
+	     if (!cnv:C_integer(argv[base+3], height)) runerr(101, argv[base+3]);
+	     TexFillRect(w, texhandle, x, y, width, height, 0);
+	     }
+	 ReturnWindow;
+	 }
+
       if (w->context->is_3D) {
 	 /*
 	  * allocate a new list for functions
@@ -1621,11 +1709,32 @@ function{1} FillRectangle(argv[argc])
       }
    body {
       wbp w;
-      int i, j, r, warg = 0;
+      int i, j, r, n, warg = 0;
       XRectangle recs[MAXXOBJS];
       C_integer x, y, width, height;
+      int is_texture=0, base=0;
+      int texhandle;
 
-      OptWindow(w);
+      OptTexWindow(w);
+
+#ifdef Graphics3D
+      if (is_texture) {
+	 base=warg;
+	 CheckArgMultiple(4);
+
+	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+         for (; base < argc; base+=4){
+     	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
+	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
+	     if (!cnv:C_integer(argv[base+2], width)) runerr(101, argv[base+2]);
+	     if (!cnv:C_integer(argv[base+3], height)) runerr(101, argv[base+3]);
+	     TexFillRect(w, texhandle, x, y, width, height, 1);
+	     }
+
+	 ReturnWindow;
+	 }
+#endif					/* Graphics3D */
+
       j = 0;
 
       for (i = warg; i < argc || i == warg; i += 4) {
@@ -4191,11 +4300,13 @@ function{1} Texture(argv[argc])
 	 rp->fields[3] = argv[0];
       else
 	 rp->fields[3] = kywd_xwin[XKey_Window];
+
       MakeStr("Texture", 7, &(rp->fields[0]));
       f.dword = D_Record;
       f.vword.bptr = (union block *)rp;
       
       saved_tex = wc->curtexture;
+
 
       /*
        * Replace an existing texture "name".  In this case, we are setting
@@ -4261,14 +4372,14 @@ function{1} Texture(argv[argc])
 	 w2 = BlkLoc(argv[warg])->File.fd.wb;
 	 if (ISCLOSED(w2))
 	    runerr(142,argv[warg]);
-	 
+
 	 if (theTexture==-1){
 	    if (make_enough_texture_space(wc)==Failed) fail;
 	    wc->curtexture = wc->ntextures;
 	    }
 	 else
 	    wc->curtexture = theTexture;
-	 
+
 	 /* convert the window into a texture */
          if (w2->context->is_3D)
 	    i = texwindow3D(w, w2);
@@ -4292,7 +4403,7 @@ function{1} Texture(argv[argc])
 	  * Otherwise it must be a string (probably, a filename).
 	  */
 	 if (!cnv:C_string(argv[warg], tmp)) runerr(103, argv[warg]);
-	 i = settexture(w, tmp, strlen(tmp), &f, theTexture);
+	 i = settexture(w, tmp, strlen(tmp), &f, theTexture, 1);
 	 
 	 if (i==Succeeded)
 	    return f;

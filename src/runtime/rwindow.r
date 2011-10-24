@@ -3302,8 +3302,8 @@ char * abuf;
 	 if (!setmeshmode(w,val)) return Failed;
 	 break;
       case A_TEXTURE:{
-         /* -1 means no curtexture */
-	 AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1));
+         /* -1 means no curtexture, 0 means f is not initialized */
+	 AttemptAttr( settexture(w, StrLoc(d), StrLen(d), &f, -1, 0));
 	 break;
 	 }
       case A_TEXCOORD:

@@ -387,8 +387,9 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 	    }
 	 else y2 = y;
 
-	 TexCopyArea(w, w2, texhandle, x, y, width, height, x2, y2,
-	 		  width2, height2);
+	 if (TexCopyArea(w, w2, texhandle, x, y, width, height, x2, y2,
+	 		  width2, height2)==Failed)
+			  fail;
 	 ReturnWindow;
 	 }
 #endif					/* Graphics3D */

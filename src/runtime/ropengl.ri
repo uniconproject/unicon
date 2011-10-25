@@ -4018,6 +4018,27 @@ int create3Dlisthdr(dptr dp, char *strname, word size){
 	if (a<start) { a=start;  flag1=1;} else flag1=0; \
 	if (b>finish){ b=finish; flag2=1;} else flag2=0;} while (0)
 
+
+#ifdef XWindows
+#define MKCURRENT3D(w3d) \
+   glXMakeCurrent(w3d->window->display->display, w3d->window->win, w3d->context->ctx);
+#endif					/* XWindows */
+
+#ifdef MSWindows
+#define MKCURRENT3D(w3d){ \
+   HDC stddc = CreateWinDC(w3d); \
+   wglMakeCurrent(stddc, w3d->context->ctx); \
+   ReleaseDC(w3d->window->iconwin, stddc);}
+#endif					/* MSWindows */
+
+#define TEXUPDATE(w, wc, texhand, tex, wd, ht) \
+      if (wc->buffermode) { \
+      	  wc->curtexture = texhand; \
+      	  MKCURRENT3D(w); \
+	  glBindTexture(GL_TEXTURE_2D, wc->texName[texhand]); \
+	  texture1(wd, ht, tex, wc->texmode); }
+
+
 int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
 {
    wcp wc=w->context;
@@ -4181,11 +4202,7 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
          }
    }
 
-   wc->curtexture = texhandle;
-   if (wc->buffermode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
+   TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;
 }
 
@@ -4193,7 +4210,7 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
 {
    wcp wc=w->context;
    int x2, y2;
-   char bfmode = wc->buffermode, steep, ystep;
+   char steep, ystep;
    int cred, cgreen, cblue;
    int wd3, wd, ht, w3, yy, xx, l;
    GLubyte *tex;
@@ -4272,19 +4289,16 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
        	  }
       }
 
-      wc->curtexture = texhandle;
-      if (bfmode) {
-	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-	 texture1(wd, ht, tex, wc->texmode);
-	 }
-      return Succeeded;
+
+   TEXUPDATE(w, wc, texhandle, tex, wd, ht);
+   return Succeeded;
 }
 
 int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int isfg)
 {
    wcp wc=w->context;
    int x2, y2;
-   char bfmode = wc->buffermode, steep, ystep;
+   char steep, ystep;
    int cred, cgreen, cblue;
    int wd3, wd, ht, w3, yy, xx, l;
    GLubyte *tex;
@@ -4309,12 +4323,12 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
    if (width < 0){ x+= width; width=-width; }
    if (height < 0){ y+= height; height=-height; }
 
-   if (x+width<0 || x>wd || y+height<0 || y>ht) return Failed;
+   if (x+width<0 || x>=wd || y+height<0 || y>=ht) return Failed;
 
    if (x<0){ width+=x; x=0;}
-   if (x+width > wd ) width=wd-x;
+   if (x+width >= wd ) width=wd-x-1;
    if (y<0){ height+=y; y=0;}
-   if (y+height > ht ) height=ht-y;
+   if (y+height >= ht ) height=ht-y-1;
 
    if (width==0 || height==0) return Failed;
 
@@ -4333,12 +4347,8 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
        	   }
 	}
 
-      wc->curtexture = texhandle;
-      if (bfmode) {
-	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-	 texture1(wd, ht, tex, wc->texmode);
-	 }
-      return Succeeded;
+   TEXUPDATE(w, wc, texhandle, tex, wd, ht);
+   return Succeeded;
 }
 
 int TexDrawPoint(wbp w, int texhandle, int x, int y)
@@ -4356,7 +4366,7 @@ int TexDrawPoint(wbp w, int texhandle, int x, int y)
    wd  = wc->stex[texhandle].width;
    ht  = wc->stex[texhandle].height;
 
-   if (x<0 || x>wd || y<0 || y>ht) 
+   if (x<0 || x>=wd || y<0 || y>=ht) 
       return Failed;
 
    l = 3 * (x + wd * (ht-y - 1));
@@ -4364,37 +4374,7 @@ int TexDrawPoint(wbp w, int texhandle, int x, int y)
    tex[l+1]=cgreen;
    tex[l+2]=cblue;
 
-   wc->curtexture = texhandle;
-   if (bfmode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
-   return Succeeded;
-}
-
-
-int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int height,
-    		 int xt, int yt, int width2, int height2)
-{
-   wcp wc=w2->context;
-   int wd, ht;
-   GLubyte *tex;
- 
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
-
-   if (w->context->is_3D)
-      copyareaToTex3D(w, tex, x, y, width, height, xt, yt, wd, ht);
-   else
-      copyareaToTex(w, tex, x, y, width, height, xt, yt, wd, ht);
-   
-
-   wc->curtexture = texhandle;
-   if (wc->buffermode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[texhandle]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
+   TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;
 }
 
@@ -4405,7 +4385,6 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int heigh
 int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 {
    wcp wc=w->context;
-   char bfmode = wc->buffermode;
    int wd, ht, l, nextLineOffset, i, j;
    GLubyte *tex;
    unsigned char *s;
@@ -4431,17 +4410,13 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
       l -= nextLineOffset;
       }
 
-   wc->curtexture = texhandle;
-   if (bfmode) {
-      glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
-      texture1(wd, ht, tex, wc->texmode);
-      }
+   TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;
 }
 
 static wclrp lastcp;
 
-int copyareaToTex(wbp w2d, GLubyte *tex, int x, int y,  
+int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,  
     int width, int height, int xt, int yt, int txw, int txh)
 {
    struct imgmem imem;
@@ -4510,8 +4485,6 @@ int copyareaToTex(wbp w2d, GLubyte *tex, int x, int y,
             bbits = 8; 
         }
 
-
-
 #endif					/* XWindows */
 
    imem.x = x;
@@ -4533,7 +4506,7 @@ int copyareaToTex(wbp w2d, GLubyte *tex, int x, int y,
 imem.im->red_mask, imem.im->green_mask, imem.im->blue_mask, imem.im->bits_per_pixel
  );*/
       for(j=0; j < height; j++){
-   	l = (yt+height-j)*twd3 + xt * 3;
+   	l = (txh-yt-j-1)*twd3 + xt * 3;
 	for(i=0; i < width; i++) {
 	   c =  XGetPixel(imem.im, i, j);
           /* ptr = imem.im->data + (j * imem.im->bytes_per_line * height + 4 * i);
@@ -4602,38 +4575,42 @@ imem.im->red_mask, imem.im->green_mask, imem.im->blue_mask, imem.im->bits_per_pi
       }
 }
 
-
 int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,  
     int width, int height, int xt, int yt, int txw, int txh)
 {
-   wsp ws = w3d->window;
    wcp wc = w3d->context;
    int i, j, k, twd3, l, m;
-   GLubyte *tex2 = (GLubyte *)malloc(height * width * 3);
+   GLubyte *tex2;
+
+   tex2 = (GLubyte *) malloc((height) * (width) * 4);
+   if (!tex2) return Failed;
 
    /* change the current context to w2's context */
 #ifdef XWindows
-   glXMakeCurrent(ws->display->display, ws->win, w3d->context->ctx);
-/*   glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex2); */
+   glXMakeCurrent(w3d->window->display->display, w3d->window->win, wc->ctx);
+   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height, 
+   		 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
 #endif					/* XWindows */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w3d);
    wglMakeCurrent(stddc, w3d->context->ctx);
-   glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex2);
+   glReadPixels( (GLint) x, (GLint)y, (GLint) width, (GLint) height, 
+   		 GL_RGBA, GL_UNSIGNED_BYTE, tex2);
    ReleaseDC(ws->iconwin, stddc);
    }
 #endif					/* MSWindows */
    twd3 = txw * 3;
+
    m=0;
       for(j=0; j < height; j++){
-   	l = (yt+j)*twd3 + xt * 3;
+   	l = (yt+j)* twd3 + xt * 3;
 	for(i=0; i < width; i++) {
            tex[l] =  tex2[m];
-           tex[l+1] = tex2[m+1];
-           tex[l+2] = tex2[m+2];
+           tex[l+1] =  tex2[m+1];
+           tex[l+2] =  tex2[m+2];
 	   l = l + 3;
-	   m = m +3;
+	   m = m +4;
 	   }
 	}    
    free(tex2);
@@ -4651,11 +4628,12 @@ int texwindow2D(wbp w, wbp w2d)
 
    makecurrent(w);
 
-   copyareaToTex(w2d, tex, 0, 0, ws->width, ws->height, 
+   copyareaToTex2D(w2d, tex, 0, 0, ws->width, ws->height, 
    		      0, 0, ws->width, ws->height);
 
    /* apply the texture */
 
+   MKCURRENT3D(w);
    glBindTexture(GL_TEXTURE_2D, w->context->texName[wc->curtexture]);
 
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
@@ -4730,4 +4708,53 @@ int texwindow3D(wbp w1, wbp w2)
        free(tex);
        return Failed;
        }
+}
+
+int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int height,
+    		 int xt, int yt, int width2, int height2)
+{
+   wcp wc=w2->context;
+   int wd, ht, wwd, wht;
+   GLubyte *tex;
+ 
+   wwd =  (int)w->window->width;
+   wht =  (int)w->window->height;
+   tex = wc->stex[texhandle].tex;
+   wd  = wc->stex[texhandle].width;
+   ht  = wc->stex[texhandle].height;
+
+   /* if width/height is negative, flip it and readjust x and y accroridngly */
+   if (width < 0){  x+= width;  xt+=width;  width=-width;   }
+   if (height < 0){ y+= height; yt+=height; height=-height; }
+
+
+   if (x+width<0 || x>wwd || y+height<0 || y>wht) return Failed;
+   if (xt+width<0 || xt>=wd || yt+height<0 || yt>=ht) return Failed;
+
+   if (x<0){ width+=x; x=0;}
+   if (xt<0){width+=xt; xt=0;} 
+   if (y<0){ height+=y; y=0;}
+   if (yt<0){ height+=yt; yt=0;}
+
+   if (x+width > wwd ) width=wwd-x;
+   if (xt+width > wd ) width=wd-xt;
+
+   if (y+height > wht ) height=wht-y;
+   if (yt+height >= ht ) height=ht-y-1;
+
+   if (width<=0 || height<=0) return Failed;
+
+   if (w->context->is_3D){
+      y = wht-y - height;
+      yt = ht-yt - height;
+      if (copyareaToTex3D(w, tex, x, y, width, height, xt, yt, wd, ht)==Failed)
+      	 return Failed;
+      }
+   else{
+      if (copyareaToTex2D(w, tex, x, y, width, height, xt, yt, wd, ht)==Failed)
+      	 return Failed;
+      }
+
+   TEXUPDATE(w2, wc, texhandle, tex, wd, ht);   
+   return Succeeded;
 }

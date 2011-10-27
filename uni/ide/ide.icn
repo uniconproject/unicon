@@ -985,7 +985,7 @@ $else
 $endif
       if find(".icn", CurrentTabItem().label) then {
 $ifdef _UNIX
-	 if not match("./", icodename) then cmd ||:= "./"
+	 if not match(("./"|"/"), icodename) then cmd ||:= "./"
 	 cmd := quotes(icodename) || " " || xargs
 $else
          cmd := quotes(icodename)||".exe"
@@ -1015,7 +1015,8 @@ $else
      #cmd := "wiconx " || cmd
 $endif
 
-      if system(cmd2, L,,"Running " || fdir || cmd ) then { # hope WICONLOG does trick?
+      if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
+	 # hope WICONLOG does trick?
          showanyerror(wiconlog, L, 1)
          }
       else {

@@ -285,7 +285,7 @@ procedure do_or()
 		      return LCONCAT
 		  }
 		  if yytext ||:= =":=" then { return AUGCONCAT}
-		  tokflags +:= 1
+		  tokflags +:= Beginner
 		  return CONCAT
 	      }
 	      tokflags +:= Beginner
@@ -312,7 +312,7 @@ end
 procedure do_qmark()
 	      if yytext ||:= =":=" then { return AUGQMARK }
 	      else if yytext ||:= = "?" then {return PMATCH }
-	      tokflags +:= 1
+	      tokflags +:= Beginner
 	      return QMARK
 end
 
@@ -416,14 +416,15 @@ procedure do_minus()
 	return DIFF
     }
     if yytext ||:= =">" then {
-		return PASSNONMATCH;
+	return PASSNONMATCH
 	}
     tokflags +:= Beginner
     return MINUS
 end
 
 procedure do_plus()
-   if yytoken.s == ":" & yytoken.column + 1 = yycolno then {
+   # if we just saw a : and now a +, issue a warning.
+   if (\yytoken).s == ":" & yytoken.column + 1 = yycolno then {
       yytext := ":+"
       warning("token may be malformed, did you mean +: ?")
       yytext := "+"
@@ -456,7 +457,7 @@ procedure do_and()
    if yytext ||:= =":=" then { return AUGAND }
    else if yytext ||:= ="&" then {
 $ifndef _PATTERNS
-      write(&errout, "pattern operator && is non-standard, did you mean & ?");
+      warning("pattern operator && is non-standard, did you mean & ?");
 $endif
       return PAND 
       }

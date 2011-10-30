@@ -775,6 +775,14 @@ struct b_coexpr {		/* co-expression stack block */
    union block *squeue, *rqueue;/*   pending send/receive queues */
    word ini_blksize, ini_ssize; /*   initial blksize and string size to want */
 #endif					/* Concurrent */
+#ifndef PthreadCoswitch
+   /*
+    * Under pthreads, tstates are managed in thread-local storage, but with
+    * native co-expressions they have to be allocated and a reference stored
+    * in the b_coexpr at co-expr construction time.
+    */
+   struct threadstate *tstate;
+#endif                                  /* !PthreadCoswitch */
 #ifdef EventMon
    word actv_count;             /*   number of times activated using EvGet() */
 #endif				/* EventMon */

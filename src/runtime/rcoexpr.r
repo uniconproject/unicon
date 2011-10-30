@@ -193,7 +193,7 @@ int first;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
 #ifdef Concurrent
-	    if (ncp->program == ccp->program){
+	    if (ncp->program == ccp->program) {
 	       struct context *nctx, *cctx;
 	       nctx = (struct context *) ncp->cstate[1];
 	       cctx = (struct context *) ccp->cstate[1];
@@ -272,7 +272,7 @@ int first;
 #if COMPILER
    if (debug_info)
 #endif					/* COMPILER */
-      if (k_trace){
+      if (k_trace) {
 #ifdef MultiThread
 	 if (swtch_typ != A_MTEvent)
 #endif					/* MultiThread */
@@ -293,6 +293,13 @@ int first;
    sp = ncp->es_sp;
    ilevel = (int)ncp->es_ilevel;
 #endif					/* COMPILER */
+
+#if 0
+/* testing: update the curtstate for native (non-pthreads) co-expr switches */
+#ifndef PthreadCoswitch
+   curtstate = ncp->tstate;
+#endif                                  /* PthreadCoswitch */
+#endif
 
 #if !COMPILER
 #ifdef MultiThread
@@ -558,7 +565,7 @@ void clean_threads()
     */
    /*if (!static_mutexes[0]) return;*/
 
-   for(i=0; i<NUM_STATIC_MUTEXES; i++){
+   for(i=0; i<NUM_STATIC_MUTEXES; i++) {
       pthread_mutex_destroy(&static_mutexes[i]);
       }
 
@@ -582,7 +589,7 @@ void clean_threads()
  */
 void handle_thread_error(int val)
 {
-   switch(val){
+   switch(val) {
 
    case EINVAL:
       syserr("The value specified by mutex does not refer to an initialised mutex object.");
@@ -635,7 +642,7 @@ int action;
    
    CURTSTATE();
    
-   if (action==GC_WAKEUPCALL){ /* if I am the thread doing GC */
+   if (action==GC_WAKEUPCALL) { /* if I am the thread doing GC */
       /* GC is over, reset GCthread and wakeup all threads. */
 
       if (gc_queue) {
@@ -701,7 +708,7 @@ int action;
 	 MUTEX_LOCKID(MTX_THREADCONTROL);
 	 GCthread = pthread_self();
 	 thread_call = 1;
-	 while (1){
+	 while (1) {
 	    MUTEX_LOCKID(MTX_NARTHREADS);
 	    if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
 	    MUTEX_UNLOCKID(MTX_NARTHREADS);

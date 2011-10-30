@@ -377,6 +377,11 @@ struct errtab errtab[] = {
    175, "network connection expected",
 #endif					/* PosixFns */
 
+#ifdef Concurrent
+   180, "invalid mutex handle",
+   181, "invalid condition variable handle",
+#endif					/* Concurrent */
+
 #ifdef Dbm
    190, "dbm database expected",
 #endif					/* Dbm */

@@ -130,7 +130,11 @@ end
 
 function{1} Clone(argv[argc])
    abstract {
+#ifdef Graphics3D
+      return file ++ record
+#else
       return file
+#endif					/* Graphics3D */
       }
    body {
       wbp w, w2;
@@ -138,8 +142,37 @@ function{1} Clone(argv[argc])
       tended struct descrip sbuf, sbuf2;
       char answer[128];
       char child_window=0;
+      int is_texture=0;
+      int texhandle;
+      tended struct descrip f;
+      tended struct b_record *rp;
 
-      OptWindow(w);
+      OptTexWindow(w);
+#ifdef Graphics3D
+      if (is_texture){
+      	 int nfields, draw_code;
+      	 static dptr constr;
+
+	 if (texhandle >= w->context->maxstex) runerr(101, argv[warg]);
+
+      	 if (!constr && !(constr = rec_structor3d("gl_texture")))
+	    syserr("failed to create opengl record constructor");
+      	 nfields = (int) BlkD(*constr, Proc)->nfields;
+
+      	 draw_code = si_s2i(redraw3Dnames, "Texture");
+      	 if (draw_code == -1)
+	    fail; 
+
+      	 Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      	 MakeInt(draw_code, &(rp->fields[1]));
+
+         MakeStr("Texture", 7, &(rp->fields[0]));
+      	 f.dword = D_Record;
+      	 f.vword.bptr = (union block *)rp;
+      
+ 	 MakeInt(texhandle, &(rp->fields[2]));
+	 }
+#endif					/* Graphics3D */
 
       for (n=warg; n<argc; n++) {
          if (!is:string(argv[n])) runerr(103, argv[n]);
@@ -219,6 +252,15 @@ function{1} Clone(argv[argc])
 #endif					/* Graphics3D */
 				   , &emptystr),runerr(0));
       result.dword = D_File;
+
+#ifdef Graphics3D
+      if (is_texture){
+       	 rp->fields[3] = result;
+	 return f;
+	 }
+	 
+#endif					/* Graphics3D */
+
       return result;
       }
 end
@@ -443,6 +485,7 @@ end
 
 function{0,1} Couple(w,w2)
    abstract {
+
       return file
       }
    body {

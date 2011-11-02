@@ -461,6 +461,9 @@ Deliberate Syntax Error
 	    case 'G':
 #ifdef Graphics
 	       status |= Fs_Window | Fs_Read | Fs_Write;
+#ifdef XWindows
+	       XInitThreads();
+#endif					/* XWindows */
 	       continue;
 #else					/* Graphics */
 	       fail;

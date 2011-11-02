@@ -66,6 +66,8 @@ extern pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
 extern pthread_mutex_t *mutexes;
 extern int nmutexes;
 
+extern pthread_mutex_t mutex_initial; 
+
 extern pthread_t GCthread;
 extern int thread_call;
 extern int NARthreads;

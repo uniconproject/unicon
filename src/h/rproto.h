@@ -1035,6 +1035,7 @@ struct threadstate *get_tstate();
 void handle_thread_error(int val);
 void thread_control(int action);
 void clean_threads();
+void init_threads();
 struct region *swap2publicheap(struct region * curr_private, 
 			       struct region * curr_public, 
 			       struct region ** p_public);

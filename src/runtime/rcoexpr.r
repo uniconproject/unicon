@@ -555,6 +555,29 @@ void *nctramp(void *arg)
 
 #ifdef Concurrent 
 
+pthread_mutex_t mutex_initial; 
+
+void init_threads()
+{
+   int i;
+   pthread_mutexattr_t a;
+
+   for(i=0; i<NUM_STATIC_MUTEXES; i++)
+      pthread_mutex_init (&static_mutexes[i], NULL);
+
+   pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
+   pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);
+   pthread_mutex_init(&rootpstate.mutex_coll, NULL);
+
+   pthread_cond_init(&cond_gc, NULL);
+   sem_init(&sem_gc, 0, 0);
+
+   pthread_mutexattr_init(&a);
+   pthread_mutexattr_settype(&a,PTHREAD_MUTEX_RECURSIVE);
+   pthread_mutex_init(&mutex_initial, &a);
+   pthread_mutexattr_destroy(&a);
+}
+
 void clean_threads()
 {
    int i;
@@ -568,6 +591,8 @@ void clean_threads()
    for(i=0; i<NUM_STATIC_MUTEXES; i++) {
       pthread_mutex_destroy(&static_mutexes[i]);
       }
+
+   pthread_mutex_destroy(&mutex_initial);
 
    pthread_cond_destroy(&cond_gc);
    sem_destroy(&sem_gc);

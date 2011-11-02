@@ -229,15 +229,7 @@ void main(int argc, char **argv)
    curtstate = get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */
 
-   for(i=0; i<NUM_STATIC_MUTEXES; i++)
-      pthread_mutex_init (&static_mutexes[i], NULL);
-
-   pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
-   pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);
-   pthread_mutex_init(&rootpstate.mutex_coll, NULL);
-
-   pthread_cond_init(&cond_gc, NULL);
-   sem_init(&sem_gc, 0, 0);
+   init_threads();
 #endif					/* Concurrent */
 
 #if WildCards && NT

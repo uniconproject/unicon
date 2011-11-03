@@ -306,28 +306,6 @@ extern stringint attribs[], drawops[];
       extern int ncmdShow;
    #endif				/* MSWindows */
 
-   #ifdef PresentationManager
-      /* this is the handle to the interpreter thread's anchor block */
-      extern HAB HInterpAnchorBlock;
-      extern HAB HMainAnchorBlock;
-      extern HMQ HInterpMessageQueue;
-      extern HMQ HMainMessageQueue;
-      extern lclIdentifier *LocalIds;
-      extern stringint siMixModes[];
-      extern stringint siLineTypes[];
-      extern stringint siColorNames[];
-      extern stringint siCursorSyms[];
-      extern LONG ScreenWidth;
-      extern LONG ScreenHeight;
-      extern LONG NumWindows;
-      extern LONG MaxPSColors;
-      extern colorEntry *ColorTable;
-      extern ULONG areaAttrs;
-      extern ULONG lineAttrs;
-      extern ULONG charAttrs;
-      extern ULONG imageAttrs;
-   #endif				/* PresentationManager */
-
    extern unsigned long ConsoleFlags;
    #ifdef ConsoleWindow
       extern FILE *ConsoleBinding;

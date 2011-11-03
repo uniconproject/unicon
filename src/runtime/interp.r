@@ -2002,9 +2002,9 @@ L_agoto:
 	      * that jumps to the next instruction...which is our ipc.opnd
 	      */
 
-	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
+/*	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
 
-	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");
+	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");*/
 #endif					/* Concurrent */
 	     break;
 

@@ -283,6 +283,9 @@ printf("interp, fieldnum is still %d, recnum %d\n",
 #begdef PutInstr(x,y,op_offset)
    do { ipc.opnd[-1] = (y); ipc.op[-1-op_offset] = (x); } while(0)
 #enddef
+#begdef PutInstrAt(x,y,p)
+   do { *((word *)(p+1)) = (word)(y); *((int *)(p)) = (x); } while(0)
+#enddef
 #else if WordBits == IntBits*2
 #begdef PutInstr(x,y,op_offset)
    do { ipc.opnd[-1] = (y); ipc.op[-1-2*op_offset] = (x); } while(0)
@@ -1967,9 +1970,9 @@ L_agoto:
 
 	 case Op_Init:		/* initial */
 #ifdef Concurrent
-	    MUTEX_LOCK(mutex_initial);
+	    MUTEX_LOCK(mutex_initial, "mutex_initial");
             if (ipc.op[-1] == Op_Agoto) {
-	      MUTEX_UNLOCK(mutex_initial);
+	      MUTEX_UNLOCK(mutex_initial, "mutex_initial");
 	      goto L_agoto; }
 #else					/*Concurrent*/
 	    *--ipc.op = Op_Goto;
@@ -1979,7 +1982,7 @@ L_agoto:
 	    opnd = GetWord;
 	    opnd += (word)ipc.opnd;
 	    PutInstr(Op_Agoto, opnd, 1);
-	    MUTEX_UNLOCK(mutex_initial);
+	    MUTEX_UNLOCK(mutex_initial, "mutex_initial");
 
 #else
 	    opnd = sizeof(*ipc.op) + sizeof(*rsp);
@@ -2001,7 +2004,7 @@ L_agoto:
 
 	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
 
-	     MUTEX_UNLOCK(mutex_initial);
+	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");
 #endif					/* Concurrent */
 	     break;
 

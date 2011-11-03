@@ -321,7 +321,6 @@ register nodeptr t;
 	 emitn("int", (int)Val0(t));
 	 break;
 
-
       case N_Apply:			/* application */
          traverse(Tree0(t));
          traverse(Tree1(t));
@@ -549,11 +548,17 @@ register nodeptr t;
 	 emit("declend");
 	 setloc(t,NULL);
 	 if (TType(Tree1(t)) != N_Empty) {
-	    lab = alclab(1);
+	    lab = alclab(2);
+	    emitlab(lab+1);
 	    emitl("init", lab);
 	    emitl("mark", lab);
 	    traverse(Tree1(t));
 	    emit("unmark");
+
+	    /*
+	     * end of initial section; unlock mutex and turn "init" into "agoto"
+	     */
+	    emitl("einit", lab+1);
 	    emitlab(lab);
 	    }
          else

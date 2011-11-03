@@ -63,7 +63,7 @@
 #define Op_Cset  	 51
 #define Op_Dup   	 52
 #define Op_Efail 	 53
-#define Op_EInit 	 115
+#define Op_EInit 	 116
 #define Op_Eret  	 54
 #define Op_Escan 	 55
 #define Op_Esusp 	 56
@@ -153,3 +153,4 @@
 
 #define Op_Synt         114             /* syntax code used by the linker */
 #define Op_Uid          115             /* Universal Identifier for .u files */
+/* Op_EInit is 116 for now. */

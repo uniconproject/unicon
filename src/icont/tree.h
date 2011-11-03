@@ -94,6 +94,7 @@ extern struct node tok_loc;     /* "model" token holding current location */
 #define N_ToBy		38		/* TO-BY operator */
 #define N_Unop		39		/* unary operator */
 #define N_Apply		40		/* procedure application */
+#define N_Init		41		/* initial clause */
 
 
 /*

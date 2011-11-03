@@ -287,6 +287,9 @@ printf("interp, fieldnum is still %d, recnum %d\n",
 #begdef PutInstr(x,y,op_offset)
    do { ipc.opnd[-1] = (y); ipc.op[-1-2*op_offset] = (x); } while(0)
 #enddef
+#begdef PutInstrAt(x,y,p)
+   do { *((word *)(p+1)) = (word)(y); *((int *)(p)) = (x); } while(0)
+#enddef
 #else
 deliberate syntax error
 #endif
@@ -1132,6 +1135,7 @@ L_astatic:
 			PushDesc(bp->Lelem.lslots[j]);
 			}
 		     }
+
 		  goto invokej;
 		  }
 
@@ -1744,11 +1748,9 @@ efail_noev:
 		*  structures that fail when complete.
 		*/
 
-#ifdef MultiThread
 	      if (efp == 0) {
 		 break;
 	         }
-#endif					/* MultiThread */
 
                oldipc = ipc;            /* fixing the line zero return */
 	       ipc = efp->ef_failure;
@@ -1937,6 +1939,7 @@ EntInterp_sp;
 	    goto C_rtn_term;
 
 	 case Op_Goto:		/* goto */
+L_goto:
 #ifdef Concurrent
 	    MUTEX_LOCKID(MTX_OP_AGOTO);
             if (ipc.op[-1] == Op_Agoto) {
@@ -1963,17 +1966,44 @@ L_agoto:
 	    break;
 
 	 case Op_Init:		/* initial */
+#ifdef Concurrent
+	    MUTEX_LOCK(mutex_initial);
+            if (ipc.op[-1] == Op_Agoto) {
+	      MUTEX_UNLOCK(mutex_initial);
+	      goto L_agoto; }
+#else					/*Concurrent*/
 	    *--ipc.op = Op_Goto;
+#endif					/*Concurrent*/
 
-#ifdef CRAY
-	    opnd = (sizeof(*ipc.op) + sizeof(*rsp))/8;
-#else					/* CRAY */
+#ifdef Concurrent
+	    opnd = GetWord;
+	    opnd += (word)ipc.opnd;
+	    PutInstr(Op_Agoto, opnd, 1);
+	    MUTEX_UNLOCK(mutex_initial);
+
+#else
 	    opnd = sizeof(*ipc.op) + sizeof(*rsp);
-#endif					/* CRAY */
-
 	    opnd += (word)ipc.opnd;
 	    ipc.opnd = (word *)opnd;
+#endif
 	    break;
+
+	  case Op_EInit:
+	     /* no-op on non-concurrent VM's, but still have to skip operand */
+	     opnd = GetWord;
+#ifdef Concurrent
+
+	     /*
+	      * Really interesting variant of PutInstr pokes instruction
+	      * back at corresponding Op_Init instruction to be a Goto
+	      * that jumps to the next instruction...which is our ipc.opnd
+	      */
+
+	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
+
+	     MUTEX_UNLOCK(mutex_initial);
+#endif					/* Concurrent */
+	     break;
 
 	 case Op_Limit: 	/* limit */
 	    Setup_Arg(0);

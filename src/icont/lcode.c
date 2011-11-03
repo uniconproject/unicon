@@ -175,6 +175,12 @@ void gencode()
             lemit(op, name);
             break;
 
+	 case Op_EInit:
+	    lab = getlab();
+	    newline();
+	    lemitl(op, lab, name);
+	    break;
+
          case Op_Chfail:
          case Op_Create:
          case Op_Goto:

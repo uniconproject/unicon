@@ -30,6 +30,7 @@ struct opentry optable[] = {
    "div",	Op_Div,
    "dup",	Op_Dup,
    "efail",	Op_Efail,
+   "einit",	Op_EInit,
    "end",	Op_End,
    "eqv",	Op_Eqv,
    "eret",	Op_Eret,

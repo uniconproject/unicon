@@ -17,14 +17,14 @@
 #define VersionNumber "11.9"
 #endif					/* Concurrent */
 
-#define VersionDate "July 15, 2011"
+#define VersionDate "November 2, 2011"
 
 /*
  * Version number to insure format of data base matches version of iconc
  *  and rtt.
  */
 
-#define DVersion "9.0.00"
+#define DVersion "12.0.00"
 
 #if COMPILER
 
@@ -45,42 +45,42 @@
     * and icode is compatible with the run-time system.
     */
    
-   #define UVersion "U9.0.00"
+   #define UVersion "U12.0.00"
    
        #ifdef FieldTableCompression
 
 	  #if IntBits == 16
-	     #define IVersion "I9.U.20FT/16/16"
+	     #define IVersion "I12.U.20FT/16/16"
 	  #endif				/* IntBits == 16 */
 
 	  #if IntBits == 32
 #if WordBits==64
-	     #define IVersion "I9.U.20FT/32/64"
+	     #define IVersion "I12.U.20FT/32/64"
 #else
-	     #define IVersion "I9.U.20FT/32/32"
+	     #define IVersion "I12.U.20FT/32/32"
 #endif
 	  #endif				/* IntBits == 32 */
 
 	  #if IntBits == 64
-	     #define IVersion "I9.U.20FT/64/64"
+	     #define IVersion "I12.U.20FT/64/64"
 	  #endif				/* IntBits == 64 */
 
        #else				/* FieldTableCompression */
 
 	  #if IntBits == 16
-	     #define IVersion "I9.U.20/16/32"
+	     #define IVersion "I12.U.20/16/32"
 	  #endif				/* IntBits == 16 */
 
 	  #if IntBits == 32
 #if WordBits==64
-	     #define IVersion "I9.U.20/32/64"
+	     #define IVersion "I12.U.20/32/64"
 #else
-	     #define IVersion "I9.U.20/32/32"
+	     #define IVersion "I12.U.20/32/32"
 #endif
 	  #endif				/* IntBits == 32 */
 
 	  #if IntBits == 64
-	     #define IVersion "I9.U.20/64/64"
+	     #define IVersion "I12.U.20/64/64"
 	  #endif				/* IntBits == 64 */
 
        #endif				/* FieldTableCompression */
@@ -90,4 +90,4 @@
 /*
  * Version number for event monitoring.
  */
-#define Eversion "9.0.00"
+#define Eversion "12.0.00"

@@ -651,6 +651,7 @@ Deliberate Syntax Error
 
 #else					/* OpenAttributes */
 
+
 #ifdef Graphics
       if (status & Fs_Window) {
 	 /*
@@ -865,8 +866,9 @@ Deliberate Syntax Error
 	   mode = O_RDONLY;
 
 	 f = (FILE *)dbm_open(fnamestr, mode, 0666);
-	 if (!f)
+	 if (!f) {
 	    fail;
+	    }
       }
       else
 #endif					/* DBM */
@@ -896,7 +898,7 @@ Deliberate Syntax Error
                   if (!cnv:C_integer(attr[0], timeout))
                      runerr(101, attr[0]);
                }
-#endif
+#endif					/* Graphics || Messaging || ISQL */
 	       /* connect to a port */
 	       fd = sock_connect(fnamestr, is_udp_or_listener, timeout);
 	    }
@@ -924,6 +926,18 @@ Deliberate Syntax Error
 	    return file(fl);
 	    }
 	 else if (stat(fnamestr, &st) < 0) {
+	    /* stat reported an error; file does not exist */
+#if UNIX
+         if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
+	    char tempbuf[512];
+	    strcpy(tempbuf, "ls -1 ");
+	    strcat(tempbuf, fnamestr);
+	    status |= Fs_Pipe;
+	    f = popen(tempbuf, "r");
+	    goto RETURNTHEFILE;
+	    }	 
+	 else
+#endif
 	    if (errno == ENOENT && (status & Fs_Read))
 	       fail;
 	    else
@@ -1033,6 +1047,7 @@ Deliberate Syntax Error
 #endif					/* MPW */
 #endif					/* MACINTOSH */
 
+RETURNTHEFILE:
       /*
        * Return the resulting file value.
        */

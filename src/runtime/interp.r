@@ -1979,11 +1979,8 @@ L_agoto:
 #endif					/*Concurrent*/
 
 #ifdef Concurrent
+	    /* no-op on concurrent VM's, but still have to skip operand */
 	    opnd = GetWord;
-	    opnd += (word)ipc.opnd;
-	    PutInstr(Op_Agoto, opnd, 1);
-	    MUTEX_UNLOCK(mutex_initial, "mutex_initial");
-
 #else
 	    opnd = sizeof(*ipc.op) + sizeof(*rsp);
 	    opnd += (word)ipc.opnd;
@@ -1991,9 +1988,9 @@ L_agoto:
 #endif
 	    break;
 
-	  case Op_EInit:
-	     /* no-op on non-concurrent VM's, but still have to skip operand */
-	     opnd = GetWord;
+	 case Op_EInit:
+	    /* no-op on non-concurrent VM's, but still have to skip operand */
+	    opnd = GetWord;
 #ifdef Concurrent
 
 	     /*
@@ -2002,9 +1999,9 @@ L_agoto:
 	      * that jumps to the next instruction...which is our ipc.opnd
 	      */
 
-/*	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
+	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
 
-	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");*/
+	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");
 #endif					/* Concurrent */
 	     break;
 

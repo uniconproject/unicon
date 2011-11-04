@@ -797,6 +797,7 @@ static void ttrace()
       default:
 
          bp = opblks[lastop];
+	 if (!bp) break;
          nargs = abs((int)bp->nparam);
          putc('{', stderr);
          if (lastop == Op_Bang || lastop == Op_Random)

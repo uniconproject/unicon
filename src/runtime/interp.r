@@ -63,6 +63,8 @@ int ilevel;
 word *stack;				/* Interpreter stack */
 word *stackend; 			/* End of interpreter stack */
 #endif					/* StackCheck */
+#else					/* Concurrent */
+int lock_count_mtx_init;
 #endif					/* Concurrent */
 
 #if UNIX && E_Tick
@@ -1980,7 +1982,15 @@ L_agoto:
 
 #ifdef Concurrent
 	    /* no-op on concurrent VM's, but still have to skip operand */
-	    opnd = GetWord;
+	    lock_count_mtx_init++;
+	    if (*ipc.opnd ==-1){
+	        while(lock_count_mtx_init--) 
+		   MUTEX_UNLOCK(mutex_initial, "mutex_initial");
+
+		err_msg(182, NULL);
+		}
+	    *ipc.opnd = -1;
+	    ipc.opnd++;
 #else
 	    opnd = sizeof(*ipc.op) + sizeof(*rsp);
 	    opnd += (word)ipc.opnd;
@@ -2002,6 +2012,7 @@ L_agoto:
 	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
 
 	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");
+	     lock_count_mtx_init--;
 #endif					/* Concurrent */
 	     break;
 

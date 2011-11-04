@@ -380,6 +380,7 @@ struct errtab errtab[] = {
 #ifdef Concurrent
    180, "invalid mutex handle",
    181, "invalid condition variable handle",
+   182, "illegal recursion in initial clause",
 #endif					/* Concurrent */
 
 #ifdef Dbm

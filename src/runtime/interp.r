@@ -286,7 +286,7 @@ printf("interp, fieldnum is still %d, recnum %d\n",
    do { ipc.opnd[-1] = (y); ipc.op[-1-op_offset] = (x); } while(0)
 #enddef
 #begdef PutInstrAt(x,y,p)
-   do { *((word *)(p+1)) = (word)(y); *((int *)(p)) = (x); } while(0)
+   do { *((word *)(p)) = (word)(y); *((int *)(p-1)) = (x); } while(0)
 #enddef
 #else if WordBits == IntBits*2
 #begdef PutInstr(x,y,op_offset)

@@ -24,9 +24,7 @@ case "$SYS" in
    Linux*|BSD/OS*|OpenBSD*)
       gcc -shared -o $LIBNAME -fPIC "$@";;
    Darwin*)
-      # cc -o $LIBNAME -fPIC "$@"
-      echo 1>&2 "No loadfunc() under OS X yet. Continuing."
-      exit 0;;
+      cc -Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -shared -o $LIBNAME -fPIC "$@";;
    FreeBSD*)
       ld -Bshareable -o $LIBNAME "$@" -lc;;
    *)

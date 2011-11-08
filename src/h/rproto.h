@@ -673,6 +673,7 @@ int checkOpenConsole( FILE *w, char *s );
       int gettexture(wbp w, dptr dp);
       int imagestr(wbp w, char* str);
       int init_3dcontext(wcp wc);
+      int copy_3dcontext(wcp wc, wcp rv);
       void makecurrent(wbp w);
       int popmatrix();
       int pushmatrix();

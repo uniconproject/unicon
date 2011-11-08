@@ -76,7 +76,7 @@ void init_opengl(wbp  w)
    glClearColor(RED(wc->bg)/(GLfloat)255, GREEN(wc->bg)/(GLfloat)255,
 		BLUE(wc->bg)/(GLfloat)255, 0.0);
 
-   glShadeModel(GL_SMOOTH); /* JAG */
+   glShadeModel(GL_SMOOTH);
    /*glPolygonMode(GL_FRONT, GL_FILL);*/
    glGenTextures(16, wc->texName);
    glEnable(GL_DEPTH_TEST);
@@ -3704,14 +3704,10 @@ int texture_24img(wbp w, struct imgdata im)
 #endif					/* XWindows */
    wcp wc = w->context;
    int width=im.width, height=im.height;
-   word len;
-   int c, v, i, k;
+   word l, wd3x2=width*3*2;
+   int c, v, i, j, k;
    unsigned char *t;
-   unsigned int ix = 0, iy = height -1;
-   GLubyte *tex = (GLubyte *)malloc(im.height * im.width * 3);
-
-   width = im.width;
-   len = (word)im.width * (word)im.height;
+   GLubyte *tex = (GLubyte *)malloc(height * width * 3);
    makecurrent(w);
    if (tex == NULL) return Failed;
 
@@ -3721,26 +3717,19 @@ int texture_24img(wbp w, struct imgdata im)
     */
 
    t = im.data;
-   while (len--) {
-         /* r,g,b component must be between 0 and 256 */
-      tex[(iy*width+ix)*3+2] = t[0];
-      tex[(iy*width+ix)*3+1] = t[1];
-      tex[(iy*width+ix)*3+0] = t[2];
-      t = t+3;
-      if (++ix >= width) {
-         ix = 0;
- 	/* reset for new row */
-         iy--;
-      }
-    }
-    if (ix > 0) {	/* pad final row if incomplete */
-         while (ix < width) {
-            tex[(iy*width+ix)*3+2] = (GLint)RED(w->context->bg);
-            tex[(iy*width+ix)*3+1] = (GLint)GREEN(w->context->bg);
-            tex[(iy*width+ix)*3+0] = (GLint)BLUE(w->context->bg);
-            ix++;
-           }
-	 }
+   l =  (height-1) * width * 3;
+
+   for(j=0; j < height; j++){
+	for(i=0; i < width; i++) {
+#ifdef XWindows
+           tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
+#else
+           tex[l+2] = t[0]; tex[l+1] = t[1]; tex[l] = t[2];
+#endif
+	   l = l + 3; t += 3;
+	   }
+   	l -= wd3x2;
+	}
 
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
@@ -4354,7 +4343,6 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
       cgreen = (GLint) GREEN(wc->bg);;
       cblue = (GLint) BLUE(wc->bg);
       }
-
 
    tex = wc->stex[texhandle].tex;
    wd  = wc->stex[texhandle].width;

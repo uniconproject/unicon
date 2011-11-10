@@ -927,17 +927,54 @@ Deliberate Syntax Error
 	    }
 	 else if (stat(fnamestr, &st) < 0) {
 	    /* stat reported an error; file does not exist */
+
+            if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
+		char tempbuf[1024];
 #if UNIX
-         if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
-	    char tempbuf[512];
-	    strcpy(tempbuf, "ls -1 ");
-	    strcat(tempbuf, fnamestr);
-	    status |= Fs_Pipe;
-	    f = popen(tempbuf, "r");
-	    goto RETURNTHEFILE;
-	    }	 
-	 else
+	    	strcpy(tempbuf, "ls -1 ");
+	    	strcat(tempbuf, fnamestr);
+	    	status |= Fs_Pipe;
+	    	f = popen(tempbuf, "r");
 #endif
+#if NT
+		*tempbuf = '\0';
+         	if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
+            	   /*
+	     	    * attempted to open a wildcard, do file completion
+	     	    */
+		   strcpy(tempbuf, fnamestr);
+            	   }
+	 	else {
+            	   /*
+	     	    * check and see if the file was actually a directory
+	      	    */
+            	    struct stat fs;
+
+            	    if (stat(fnamestr, &fs) == -1) fail;
+	    	    if (S_ISDIR(fs.st_mode)) {
+	       	       strcpy(tempbuf, fnamestr);
+	       	       if (tempbuf[strlen(tempbuf)-1] != '\\')
+	               strcat(tempbuf, "\\");
+	       	       strcat(tempbuf, "*.*");
+	       	       }
+	    	    }
+         	if (*tempbuf) {
+            	   FINDDATA_T fd;
+	    	   if (!FINDFIRST(tempbuf, &fd)) fail;
+            	   f = tmpfile();
+            	   if (f == NULL) fail;
+            	   do {
+               	      fprintf(f, "%s\n", FILENAME(&fd));
+               	      } while (FINDNEXT(&fd));
+            	   FINDCLOSE(&fd);
+            	   fflush(f);
+            	   fseek(f, 0, SEEK_SET);
+            	   if (f == NULL) fail;
+	    	   }
+#endif					/* NT */
+	    	goto RETURNTHEFILE;
+	    	}
+	    else
 	    if (errno == ENOENT && (status & Fs_Read))
 	       fail;
 	    else
@@ -994,47 +1031,8 @@ Deliberate Syntax Error
       /*
        * Fail if the file cannot be opened.
        */
-      if (f == NULL) {
-#ifdef MSWindows
-         char tempbuf[512];
-	 *tempbuf = '\0';
-         if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
-            /*
-	     * attempted to open a wildcard, do file completion
-	     */
-	    strcpy(tempbuf, fnamestr);
-            }
-	 else {
-            /*
-	     * check and see if the file was actually a directory
-	     */
-            struct stat fs;
-
-            if (stat(fnamestr, &fs) == -1) fail;
-	    if (S_ISDIR(fs.st_mode)) {
-	       strcpy(tempbuf, fnamestr);
-	       if (tempbuf[strlen(tempbuf)-1] != '\\')
-	          strcat(tempbuf, "\\");
-	       strcat(tempbuf, "*.*");
-	       }
-	    }
-         if (*tempbuf) {
-            FINDDATA_T fd;
-	    if (!FINDFIRST(tempbuf, &fd)) fail;
-            f = tmpfile();
-            if (f == NULL) fail;
-            do {
-               fprintf(f, "%s\n", FILENAME(&fd));
-               } while (FINDNEXT(&fd));
-            FINDCLOSE(&fd);
-            fflush(f);
-            fseek(f, 0, SEEK_SET);
-            if (f == NULL) fail;
-	    }
-#else					/* MSWindows */
-	 fail;
-#endif					/* MSWindows */
-	 }
+      if (f == NULL)
+      	 fail;
 
 #if MACINTOSH
 #if MPW

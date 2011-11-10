@@ -98,6 +98,6 @@ ui.u: ui.icn
 ui.exe: ui
 
 clean:
-	$(RM) *.u *~ uniclass.dir uniclass.pag ui$(EXE)
+	$(RM) *.u uniclass.dir uniclass.pag ui$(EXE)
 
 

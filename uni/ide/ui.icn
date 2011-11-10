@@ -391,6 +391,14 @@ $endif
 
 end
 
+# outside of package UniconPackage, an IDE warning should be in the messagebox
+procedure warning(s, lineno, filenam)
+   local msg := ""
+   if \filenam then msg := msg || filenam || ":"
+   if \lineno then msg := msg || lineno || ":"
+   msg ||:= ": " || s 
+   MsgBox.set_contents([msg])
+end
 
 procedure main(argv)
    local d := argv[1]

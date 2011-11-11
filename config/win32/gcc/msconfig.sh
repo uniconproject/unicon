@@ -9,6 +9,8 @@ cp path.h ../../../src/h
 cp auto.h ../../../src/h
 cp RSWITCH.S ../../../src/common
 cp NTICONT.LNK ../../../src/icont
+cp unicon.ico ../../../src/runtime
+cp icon.rc ../../../src/runtime
 echo # noop > CONSOLE=NTConsole >../../../src/common/makefile
 cp makefile.cmn ../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile

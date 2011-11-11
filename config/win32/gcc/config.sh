@@ -9,6 +9,11 @@ cp path.h ../../../src/h
 cp auto.h ../../../src/h
 cp RSWITCH.S ../../../src/common
 cp NTICONT.LNK ../../../src/icont
+# unicon.icon has a control-Z char at pos 29, cp on our sh.exe
+# fails to copy beyoned that point leaving the file truncated.
+# Manual copy for now!
+# cp unicon.ico ../../../src/runtime
+cp icon.rc ../../../src/runtime
 echo CONSOLE=NTConsole >../../../src/common/makefile
 cat makefile.cmn >>../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile

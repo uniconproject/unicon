@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 12.0 Beta.
+AppVerName=Windows Unicon Version 12.0.1
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
@@ -11,11 +11,14 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon
+OutputBaseFilename=setup-unicon_12.0.1_concurrency-support
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
-;AlwaysCreateUninstallIcon=yes
+SetupIconFile=setup.ico
+WizardImageFile=setupbig.bmp
+WizardSmallImageFile=setupsmall.bmp
+
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
@@ -27,6 +30,8 @@ ChangesEnvironment=yes
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4
 
 [Files]
+Source: "\unicon\config\win32\gcc\uninstall.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "\unicon\config\win32\gcc\internet.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
@@ -75,11 +80,15 @@ Source: "\unicon\uni\udb\*.*"; DestDir: "{app}\uni\udb"; Flags: ignoreversion
 Source: "\unicon\uni\udb\dta\*.*"; DestDir: "{app}\uni\udb\dta"; Flags: ignoreversion
 Source: "\unicon\uni\udb\lib\*.*"; DestDir: "{app}\uni\udb\lib"; Flags: ignoreversion
 Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
+Source: "\unicon\uni\unicon\idol.u"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
+Source: "\unicon\uni\unicon\unigram.u"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; Flags: ignoreversion
 Source: "\unicon\uni\xml\*.*"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
-Source: "\unicon\uni\3d\*.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
-Source: "\unicon\uni\3d\viewer\*.*"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
+Source: "\unicon\uni\3d\*.icn"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
+Source: "\unicon\uni\3d\*.u"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
+Source: "\unicon\uni\3d\uniclass.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
+Source: "\unicon\uni\3d\viewer\*.icn"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "\unicon\uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: ignoreversion
 Source: "\unicon\tests\thread\*.*"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 
@@ -87,9 +96,11 @@ Source: "\unicon\tests\thread\*.*"; DestDir: "{app}\tests\thread"; Flags: ignore
 Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.sourceforge.net"
 
 [Icons]
+Name: {group}\{cm:UninstallProgram,Windows Unicon}; Filename: {uninstallexe};IconFilename: "{app}\uninstall.ico"
+Name: "{group}\Windows Unicon on the Web"; Filename: "{app}\WU.url" ;IconFilename: "{app}\internet.ico"
 Name: "{group}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"
-Name: "{group}\Windows Unicon on the Web"; Filename: "{app}\WU.url"
 Name: "{userdesktop}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"; MinVersion: 4,4; Tasks: desktopicon
+
 
 [Run]
 Filename: "{app}\bin\UI.EXE"; Description: "Launch Windows Unicon"; Flags: nowait postinstall skipifsilent

@@ -37,7 +37,8 @@ class HFileDialog : Dialog(
    flist,                   # TextList of files
    okay,                    #
    cancel,                  #
-   fext_list		    # File extension list
+   fext_list,		    # File extension list
+   init_fileType
    )
 
    #
@@ -103,6 +104,7 @@ class HFileDialog : Dialog(
    #
    # @p
    method get_std_dir()
+      local s
       s := dir.get_contents()
       if (s[-1] ~== PATHCHAR) then
          s ||:= PATHCHAR
@@ -129,6 +131,7 @@ class HFileDialog : Dialog(
     end
 
    method on_dlist()
+      local s, value, l
       #
       # Clicked in the directory list; get the item clicked on.
       #
@@ -158,6 +161,7 @@ class HFileDialog : Dialog(
       file.set_contents("")
    end
    method on_fextension_change()
+      local value, s, l
       #
       # Changed the file extension list; get the item clicked on.
       #
@@ -194,6 +198,7 @@ class HFileDialog : Dialog(
    end
 
    method on_dir()
+      local l, s
       #
       # Return pressed in directory TextField; update lists.
       #
@@ -214,7 +219,7 @@ class HFileDialog : Dialog(
    
    method component_setup()
       local l
-      extChoosed := "FALSE"
+      #extChoosed := "FALSE"
       #
       # Defaults if none set by caller.
       #
@@ -287,7 +292,8 @@ end
 # Read a directory.
 #
 procedure get_directory_list(s,file_extension)
-   local dir_list, file_list, ext
+   local dir_list, file_list, ext, fatal_error, fext_list,
+         s2, p, sr
    /fatal_error := stop
    fext_list :=["*.*", ".icn", ".uprj"]
 

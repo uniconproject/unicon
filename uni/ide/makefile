@@ -11,6 +11,7 @@ include ../makedefs
 UC=../../bin/unicon
 WUC=../../bin/unicon -G
 UFLAGS=-c -u
+UFLAGS2=-c
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn templates.icn \
@@ -67,30 +68,30 @@ uproject.u: uproject.icn
 	$(UC) $(UFLAGS) uproject
 
 idol.u: idol.icn
-	$(UC) $(UFLAGS) idol
+	$(UC) $(UFLAGS2) idol
 
 preproce.u: preproce.icn
-	$(UC) $(UFLAGS) preproce
+	$(UC) $(UFLAGS2) preproce
 
 yyerror.u: yyerror.icn
-	$(UC) $(UFLAGS) unigram
-	$(UC) $(UFLAGS) yyerror
+	$(UC) $(UFLAGS2) unigram
+	$(UC) $(UFLAGS2) yyerror
 
 unigram.u: unigram.icn yyerror.u
-	$(UC) $(UFLAGS) unigram
-	$(UC) $(UFLAGS) yyerror
+	$(UC) $(UFLAGS2) unigram
+	$(UC) $(UFLAGS2) yyerror
 
 unicon.u: unicon.icn
-	$(UC) $(UFLAGS) unicon
+	$(UC) $(UFLAGS2) unicon
 
 classbrowser.u: classbrowser.icn  imgs.u tree.u
-	$(UC) $(UFLAGS) classbrowser
+	$(UC) $(UFLAGS2) classbrowser
 
 tree.u: tree.icn
-	$(UC) $(UFLAGS) tree
+	$(UC) $(UFLAGS2) tree
 
 utags.u: utags.icn
-	$(UC) $(UFLAGS) utags
+	$(UC) $(UFLAGS2) utags
 
 ui.u: ui.icn
 	$(UC) $(UFLAGS) ui

@@ -16,7 +16,7 @@ link io, font_dlg
 
 
 global new_UniconProject, uniconProject, uide, gotoln, 
-   projectCreated, projectOpened
+   projectCreated, projectOpened, win
 
 #
 # Class menubar needs description.
@@ -42,9 +42,10 @@ class Mainbar(
    projecttype, make_compile_unicon, runProject, makeClean, 
    makeCleanAll, menu_separator, menu_separator2, connect_menu, 
    disconnect_menu, menu_act, pswd_menu, avt_menu, face_menu, reg_menu,
-   users_guide_file, commands_file, language_ref, 
+   users_guide_file, commands_file, language_ref, fileOpened,
    icon_ref, unicon_ref, graphics_ref, icon_prog_library, languages_faq, 
-   icon_faq, unicon_faq 
+   icon_faq, unicon_faq, modified, saveoptions, redo, new_Project,
+   ui_programming_envi, tutorial_overview, ivib_interface_builder
    )
 
    method on_close_file(ev)
@@ -85,7 +86,7 @@ class Mainbar(
    end
 
    method on_print_file(ev)
-      local f, L, line
+      local f, L, line, d
       L := ide.CurrentEditBox().get_contents() | []
       d := PrintDialog()
       d.show_modal()
@@ -145,7 +146,7 @@ $endif
    end
 
    method on_goto_line(ev)
-      local oldwindow
+      local oldwindow, win
       /gotoln := ""
       dialogFor := "goto"
       oldwindow := &window
@@ -171,7 +172,7 @@ $endif
    end
 
    method on_replace(ev)
-      local oldwindow, ceb
+      local oldwindow, ceb, replacestr, first_x, second_x 
       ceb := ide.CurrentEditBox()
       ceb.cursor_x := ceb.cursor_y := 1
       dialogFor := "replace"
@@ -595,6 +596,7 @@ $endif
    end
 
    method on_about(ev)
+      local sav
       sav := &window
       &window  := &null
          Notice("            Unicon IDE 0.9",

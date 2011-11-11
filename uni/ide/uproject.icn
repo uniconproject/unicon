@@ -9,10 +9,10 @@ global Utragetfile, projectname, filedirectory
 
 class UProject : Dialog(filesAdd_btn, filesDel_btn, sourcefiles_list, 
    Makefile_name, compilerName, compilerflags, 
-   linkerName, linkerflags, targetFile_name, 
-   uproj_TabSet, files_tab, fileslist, fileslist1,
-   filesloclist, UIDE_VERS, makeName, cc, ld,
-   cFlags, ObjDir, BinDir, SrcDir, files_added, tfile, 
+   linkerName, linkerflags, targetFile_name, selectedfile,
+   uproj_TabSet, files_tab, fileslist, fileslist1,prjPath,
+   filesloclist, UIDE_VERS, makeName, cc, ld, wcc, wld, lFlags,
+   cFlags, ObjDir, BinDir, SrcDir, files_added, tfile, inputstr,
    pname)
 
    method component_setup()
@@ -80,7 +80,7 @@ $endif
    # information stored in project                                   #
    #==================================================================#
    method createMakefile()
-      local l:="", resName
+      local l:="", resName, f, i, file
       resName:= ""
       projectCreated :="TRUE"
 $ifdef _UNIX
@@ -159,6 +159,7 @@ $endif
    end
    #=====================>>> getUFiles <<<============================
    method getUFiles(f)
+     local i, file
    # This will take the list of files in the SourceFiles list and
    # convert them to a string with the UFILES part strip suitable
    # for makefiles.
@@ -171,6 +172,7 @@ $endif
    end
    #=====================>>> getSourceFiles <<<=======================
    method getSRCFiles(f)
+      local i, file
    # This will take the list of files in the SourceFiles list and
    # convert them to a string with the SRCFILES part strip suitable
    # for makefiles.

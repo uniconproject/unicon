@@ -36,22 +36,11 @@ link enqueue
 
 global pnlToolbar, MsgBox, EditBox, FileTabSet, ClassTabSet, DevTabSet,
        FileBrowser, linebreak, dialogself, browser, docpath,
-       tab_item_1, tab_item_2, tab_item_3, menubar, current_dir
+       tab_item_1, tab_item_2, tab_item_3, menubar, current_dir, 
+       is_MSWindows, PATHSEP
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
-
-$ifdef _UNIX
-   $define PS  "/"
-$else
-   $define PS  "\\"
-$endif
-
-$ifdef _UNIX
-   $define PATHSEP "/"
-$else # implies Windows for now
-   $define PATHSEP "\\"
-$endif
 
 class UIDE : Dialog(uide, startfile)
 
@@ -96,21 +85,22 @@ class UIDE : Dialog(uide, startfile)
 
       wiconlog := tempname("ui",".tmp",,)
       xargs := ""
-$ifdef _UNIX
-      every browser := getenv("BROWSER") |
+      if /is_MSWindows then{
+         every browser := getenv("BROWSER") |
                        "firefox" | "netscape" | "mozilla"| "opera" do {
-         if stat(getpaths() || browser) then {
-            MsgBox.set_contents(["found browser " || browser])
-            break
-            }
-         else browser := &null
-         }
-$else
-      (browser := "\"" || WinAssociate("HTM") || "\"" ) |
-      write("What, no browser?  Unicon's online help won't be readable \n_
+            if stat(getpaths() || browser) then {
+               MsgBox.set_contents(["found browser " || browser])
+               break
+               }
+            else browser := &null
+           }
+        }
+     else
+        (browser := "\"" || WinAssociate("HTM") || "\"" ) |
+         write("What, no browser?  Unicon's online help won't be readable \n_
              until you associate an HTML reader application with the HTM \n_ 
              file extension.\n")
-$endif
+     
       set_docpath()
    end
 
@@ -374,13 +364,11 @@ procedure Notice(captions[])		#: notice dialog
       /win := temp_win := WOpen("canvas=hidden", "bg=gray")
       }
 
-$ifdef _MS_WINDOWS_NT
-   if p := proc("WinSelectDialog", 0) then {	# use built-in if available
-      p(win, captions)
-      dialog_button := "Okay"
-      }
+   if \is_MSWindows & (p := proc("WinSelectDialog", 0)) then {	# use built-in if available
+	 p(win, captions)
+	 dialog_button := "Okay"
+       }
    else
-$endif
       TextDialog(win, captions, , , , "Okay")
 
    dialog_value := &null
@@ -402,6 +390,16 @@ end
 
 procedure main(argv)
    local d := argv[1]
+
+   if &features=="MS Windows NT" then{
+       PATHSEP := "\\"
+       is_MSWindows := 1
+   }
+   else{
+       PATHSEP := "/"
+       is_MSWindows := &null
+   }
+
    d := UIDE(d)
    d.show_modal()
 end

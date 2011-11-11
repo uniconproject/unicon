@@ -5,14 +5,9 @@ link io
 
 #$define lpr "enscript -b \" \" -1 -Plexnormal"
 #----------------------------------------------
-$ifdef _UNIX
-   $define PATHSEP "/"
-$else # implies Windows for now
-   $define PATHSEP "\\"
-$endif
-#----------------------------------------------
 
 global targs,browser,
+   PATHSEP, projectOpened, lpr,
    browser1,docpath,
    xargs,icodename,
    wiconlog,project,
@@ -36,7 +31,8 @@ class IDE (
    class_btn, close_btn, method_btn, new_btn, open_btn, procedure_btn,
    copy_btn, cut_btn, find_btn, paste_btn, undo_btn, redo_btn, 
    opened_file, tablist, tabItem, view_3d, errors_list, errLine, 
-   modified, filefound
+   modified, filefound, menu_1, fileOpened, projectCompiled, find_next_btn,  
+   needConsole
    )
 
    method on_new_btn(ev)
@@ -121,7 +117,7 @@ class IDE (
    end
 
    method on_find_next_btn(ev)
-      local ceb
+      local ceb, first_x, second_x
       findstring(findstr)
       ceb := CurrentEditBox()
       first_x  := ceb.cursor_x - \(*dialog_value[1])
@@ -179,7 +175,7 @@ class IDE (
       menubar.on_view_window_filesmsgs(ev)
    end
    
-   method on_viewfilesclassbrowser_btn()
+   method on_viewfilesclassbrowser_btn(ev)
       menubar.on_view_window_filesclassbrowser(ev)
    end
 
@@ -226,7 +222,7 @@ class IDE (
    # for a file, into the TabSet.
    #
    method new_tabitem(ev,x,filename,file_contents)
-      local tab_item_new, EditBox
+      local tab_item_new, EditBox, nullfilename
       tab_item_new := BufferTabItem()
       if x == 1 then {
          if filename === "" then {
@@ -270,7 +266,7 @@ class IDE (
    # for a Project, into the TabSet.
    #
    method new_project_tabitem(ev,x,filename,file_contents)
-      local tab_item_new
+      local tab_item_new, nullfilename
       tab_item_new := TabItem()
       if x == 1 then {
          if filename === "" then {
@@ -517,7 +513,7 @@ class IDE (
    #  Open File Menu Item Method
    #
    method handle_openfile(ev, filename)
-      local line, L, nchars, fd, file, tab_label, found, which_tab
+      local line, L, nchars, fd, file, tab_label, found, which_tab, c
 
       chdir(current_dir)
 
@@ -585,14 +581,15 @@ $endif
    method handle_openproject(ev, projectname,fname)
       local line, nchars, fd, file, found, which_tab, fin, tab_id, c
       if /projectname then {
-$ifdef _UNIX
-         fd := HFileDialog()
-         fd.show_modal()
-         projectname := fd.get_result() | fail
-         filedirectory := fd.get_directory()
-$else
-         projectname := WinOpenDialog(&window, "Open Project ...", "", 50) | fail
-$endif
+         if /is_MSWindows then{
+            fd := HFileDialog()
+            fd.show_modal()
+            projectname := fd.get_result() | fail
+            filedirectory := fd.get_directory()
+            }
+         else
+            projectname := WinOpenDialog(&window, "Open Project ...", "", 50) | fail
+
          }
       if /projectname | projectname=="" | projectname[-1]==("\\"|"/") then {
          MsgBox.set_contents(["Enter Project Name"])
@@ -649,6 +646,7 @@ $endif
    # Close File Menu Item Method
    #
    method handle_closefile(ev, c)
+      local t
       \FileBrowser.nodereplace(CurrentTabItem().get_label())
       if /c then c :=  CurrentTabItem()
       # check the size of the filetabset, if it is size 1 then exit
@@ -721,7 +719,7 @@ $endif
    #
    #
    method InsertCode(template, definition)
-      local l, oldy
+      local l, oldy, s
       l := CurrentEditBox().get_contents() 
       oldy := CurrentEditBox().cursor_y
       s := ""
@@ -753,7 +751,7 @@ $endif
    #
    method complink()
       local x, arglist := "", lst := [], logf, i, s, fname, file_name,
-            cmd, cmdargs
+            cmd, cmdargs, fdir
       static compile_cmd
       initial {
          if &features=="MS Windows NT" then
@@ -804,11 +802,11 @@ $endif
             }
 
          if find(".icn",\arglist) then{
-$ifdef _UNIX
-            cmdargs := " " || targs || " " || arglist || " > " || wiconlog || " 2>&1"
-$else
-            cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
-$endif
+           if /is_MSWindows then
+             cmdargs := " " || targs || " " || arglist || " > " || wiconlog || " 2>&1"
+	   else
+             cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
+
             system(  compile_cmd || "-c" || cmdargs , lst,1, "Compiling...")
             showanyerror(wiconlog, lst)
             }
@@ -823,20 +821,21 @@ $endif
             s[find(".icn", map(s)) : 0] := ".u"
             if s[1] ~== "-" & (not find(".", s)) & find(".icn", map(s)) then
 	       s ||:= ".u"
-            arglist ||:= s
+            arglist ||:= quotes(s)
             arglist ||:= " "
             i +:= 1
             }
          }
 
      if find(".icn",CurrentTabItem().label) then{
-$ifdef _UNIX
+       if /is_MSWindows then{
          cmdargs := " " || targs || " " || arglist || " > " || wiconlog || " 2>&1"
-         cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs 
-$else
+         cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs  
+         }
+       else{
          cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
          cmd := compile_cmd || cmdargs 
-$endif
+         }
          system( cmd, lst,1,"Compiling...")
          showanyerror(wiconlog, lst)
          }
@@ -892,7 +891,8 @@ $endif
    # and open that file, going to the error line
    #
    method GotoErrorLine(errors_list)
-      local curLine, fileBase, cLineNum, ix, index
+      local curLine, fileBase, cLineNum, ix, index, fn, ln,
+            errmessage
       index := MsgBox.get_cursor()
       curLine := \lst[\index]
 
@@ -961,12 +961,12 @@ $endif
    # Run Method
    #
    method run()
-      local L, cmd, s, fdir, cmd2
-$ifdef _UNIX
-      console := "konsole --vt_sz 70x18 " 
-$else # implies Windows for now
-      console := "cmd "
-$endif
+      local L, cmd, s, fdir, cmd2, console, fun, unam
+      if /is_MSWindows then
+         console := "konsole --vt_sz 70x18 " 
+      else # implies Windows for now
+         console := "cmd "
+
       fdir := chdir(filedirectory)
       if \modified == 1 |
          fileCompiled === "FALSE" then complink()
@@ -974,46 +974,39 @@ $endif
       L := copy(\MsgBox.contents)
       if /icodename then fail
 
-$ifndef _UNIX
-      if not(any(&letters,icodename) & (icodename[2]==":"))then
-$endif
+      if /is_MSWindows then{
+         if not(any(&letters,icodename) & (icodename[2]==":"))then
+         if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP ||icodename
+         if find(".icn", CurrentTabItem().label) then {
+	    if not match(("./"|"/"), icodename) then cmd ||:= "./"
+	    cmd := quotes(icodename) || " " || xargs
+            }
 
-$ifdef _UNIX
-      if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP ||icodename
-$else
-      if icodename[1] ~== PATHSEP then icodename := icodename      
-$endif
-      if find(".icn", CurrentTabItem().label) then {
-$ifdef _UNIX
-	 if not match(("./"|"/"), icodename) then cmd ||:= "./"
-	 cmd := quotes(icodename) || " " || xargs
-$else
-         cmd := quotes(icodename)||".exe"
-$endif
+         # path search, see if xterm exists on path, use it
+         if pathfind("xterm", getenv("PATH")) then {
+	    if (fun := open("uname","pr")) &
+	        (unam := read(fun)) & close(fun) & match("Darwin",unam) then {
+	        console := "xterm -hold -e script " || wiconlog ||" "
+	        cmd2 := console || \cmd || " "
+	       }
+	     else {
+	       console := "xterm -hold -e script -c \""
+	       cmd2 := console || \cmd || " \" " || wiconlog
+	       }
+            }
+         else #just run without "console || ..."
+            cmd2 ||:= " &> " || wiconlog
          }
-$ifdef _UNIX
-      # path search, see if xterm exists on path, use it
-      if pathfind("xterm", getenv("PATH")) then {
-	 if (fun := open("uname","pr")) &
-	     (unam := read(fun)) & close(fun) & match("Darwin",unam) then {
-	    console := "xterm -hold -e script " || wiconlog ||" "
-	    cmd2 := console || \cmd || " "
-	    }
-	 else {
-	    console := "xterm -hold -e script -c \""
-	    cmd2 := console || \cmd || " \" " || wiconlog
-	    }
-         }
-      else #just run without "console || ..."
-         cmd2 ||:= " &> " || wiconlog
-$else
-     if fdir[-1] ~== "\\" then
-       fdir := fdir || "\\"
-     if find(".icn", CurrentTabItem().label) then
-        cmd2 := "wiconx -l" || wiconlog || " " || fdir || cmd
+      else{
+         if icodename[1] ~== PATHSEP then icodename := icodename
+         cmd := quotes(icodename||".exe")   
+         if fdir[-1] ~== "\\" then
+          fdir := fdir || "\\"
+         if find(".icn", CurrentTabItem().label) then
+           cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
 
-     #cmd := "wiconx " || cmd
-$endif
+         #cmd := "wiconx " || cmd
+         }
 
       if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
 	 # hope WICONLOG does trick?
@@ -1029,8 +1022,8 @@ $endif
    #  Compile Method
    #
    method compile()
-      local command, str, compile_options, log1
-      static compile_cmd_txt
+      local command, str, compile_options, log1, cmd, fname, arglist, fdir
+      static compile_cmd
       initial {
          if &features=="MS Windows NT" then
             compile_cmd := "wunicon -c -quiet -log "
@@ -1047,13 +1040,13 @@ $endif
          \MsgBox.set_contents(["Open a file to compile "])
          return
          }
-      fname:= CurrentTabItem().label
+      fname:= "\"" || CurrentTabItem().label || "\""
 
-$ifdef _UNIX
-      cmd := compile_cmd || targs || " " ||comp1file(fname)|| " > "||wiconlog||" 2>&1"
-$else
-      cmd := compile_cmd || wiconlog ||" "||targs||  " "||comp1file(fname)
-$endif
+      if /is_MSWindows then
+         cmd := compile_cmd || targs || " " ||comp1file(fname)|| " > "||wiconlog||" 2>&1"
+      else
+         cmd := compile_cmd || wiconlog ||" "||targs||  " "||comp1file(fname)
+
       if find(".icn",fname) then 
          system( cmd, lst,1 ,comp1file(fname))      
       fileCompiled :="TRUE"
@@ -1089,7 +1082,7 @@ $endif
    #
    #
    method handle_files()
-      local oldwindow
+      local oldwindow, first_x, second_x, e
       /findstr := ""
       dialogFor := "find"
       oldwindow := &window
@@ -1109,6 +1102,7 @@ $endif
    #
    #
    method handle_select_str(e, first_x, second_x, y_position)
+     local mark_x, mark_y, cursor_y, cursor_x
       CurrentEditBox().start_handle(e)
       mark_x := first_x
       mark_y := cursor_y := y_position
@@ -1180,26 +1174,29 @@ $endif
    #  Save As Menu Item Method
    #
    method saveas(ev)
-      local fd, filename, foo, index := i, warntxt, fexist := &null, L
+      local fd, filename, foo, index := i, warntxt, fexist := &null, L,
+            i, filelist, oldwindow, win, fileslist
 
       fileslist := []
       every put(fileslist,!open("."))
 
       chdir(current_dir)
 
-$ifdef _UNIX
-      fd := HFileDialog()
-      fd.set_attribs("label=Save File As:")
-      fd.show_modal()
-      #fd.set_extra_attribs(["label=Save file As:"])
-      filename := fd.get_result() | fail
-      filedirectory := fd.get_directory()
-$else
-      current_dir := filedirectory
+      if /is_MSWindows then{
+         fd := HFileDialog()
+         fd.set_attribs("label=Save File As:")
+         fd.show_modal()
+         #fd.set_extra_attribs(["label=Save file As:"])
+         filename := fd.get_result() | fail
+         filedirectory := fd.get_directory()
+         }
+      else{
+         current_dir := filedirectory
 
-      filename := WinSaveDialog(&window, "Save file As:", "", 50) | fail
-      ##if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
-$endif
+         filename := WinSaveDialog(&window, "Save file As:", "", 50) | fail
+         ##if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
+         }
+
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
          \MsgBox.set_contents(["Enter File Name to save"])
          return
@@ -1249,18 +1246,19 @@ $endif
 
       chdir(current_dir)
 
-$ifdef _UNIX
-      fd := HFileDialog()
-      fd.show_modal()
-      fd.set_attribs("label=Save Project As:")
-      #fd.set_extra_attribs(["label=Save file As:"])
-      filename := fd.get_result() | fail
-      filedirectory := fd.get_directory()
-      if numfiles>1 then fd.set_directory(filedirectory)
-$else
-      filename := WinSaveDialog(&window, "Save Project As:", "", 50) | fail
-      if filename[-2:0] == ".*" then filename[-2:0] := ""
-$endif
+      if /is_MSWindows then{
+         fd := HFileDialog()
+         fd.show_modal()
+         fd.set_attribs("label=Save Project As:")
+         #fd.set_extra_attribs(["label=Save file As:"])
+         filename := fd.get_result() | fail
+         filedirectory := fd.get_directory()
+         if numfiles>1 then fd.set_directory(filedirectory)
+         }
+      else{
+         filename := WinSaveDialog(&window, "Save Project As:", "", 50) | fail
+         if filename[-2:0] == ".*" then filename[-2:0] := ""
+         }
       current_dir := filedirectory
 
       numfiles+:=1

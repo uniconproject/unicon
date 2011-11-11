@@ -128,7 +128,7 @@ class BuffEditableTextList : EditableTextList(
    # 
    # @p
    method constrain_cursor()
-      local vi, v
+      local vi, v, s, i, j, l
 
       vi := get_view_list_index()
 
@@ -306,6 +306,7 @@ class BuffEditableTextList : EditableTextList(
    end
 
    method handle_return(e)
+      local i, str
       self.EditableTextList.handle_return(e)
       if \autoindent then{ 
 	 str := contents[cursor_y - 1]
@@ -314,7 +315,7 @@ class BuffEditableTextList : EditableTextList(
          while i < *str + 1  do {	    
             case str[i] of { 
                " "     : handle_default(" ")
-               "\t"    : handle_tab_text("\t")
+               #"\t"    : handle_tab_text("\t")
                default : i := *str +2
                }
             i +:= 1
@@ -403,7 +404,7 @@ class BuffEditableTextList : EditableTextList(
    #
    #
    method handle_event(e)
-      local old_contents_size, old_mw, E
+      local old_contents_size, old_mw, E, moved, meth
       if E := (\self.vsb).handle_event(e) then {
          #
          # Handled by VSB; amend line number and refresh contents
@@ -558,7 +559,7 @@ class BuffEditableTextList : EditableTextList(
 
 
    method draw_line(xp, yp, i, rev)
-      local si, s, off, off1, off2, v, r, fh, asc, desc
+      local si, s, off, off1, off2, v, r, fh, asc, desc, yp2, cw
 
       fh := WAttrib(self.cbwin, "fheight")
       asc := WAttrib(self.cbwin, "ascent")

@@ -12,7 +12,7 @@ HFLAGS=
 LDFLAGS=
 LIBS=
 SHELL=/bin/sh
-MAKE=make
+MAKE=make -j4
 O=o
 RM=-rm
 CP=cp
@@ -21,7 +21,7 @@ TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(
 
 LINKR=          link.$(O) lglob.$(O) lcode.$(O) llex.$(O) lmem.$(O) lsym.$(O) opcode.$(O)
 
-OBJS=           tmain.$(O) util.$(O) tlocal.$(O) tglobals.$(O) $(TRANS) $(LINKR)
+OBJS=           tmain.$(O) util.$(O) tlocal.$(O) tglobals.$(O) lcompres.$(O)  $(TRANS) $(LINKR)
 
 COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		../common/filepart.$(O) ../common/strtbl.$(O)\
@@ -35,13 +35,13 @@ WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 all:            $(ICONT)
 
 icont:        $(OBJS) common
-	gcc -o icont.exe $(OBJS) $(COBJS)
+	gcc -o icont.exe $(OBJS) $(COBJS) -lz
 	$(CP) icont.exe ../../bin
 
 wicont:
 	$(RM) tmain.$(O)
 	$(RM) link.$(O)
-	make wicont2
+	$(MAKE) wicont2
 
 # add $(linkdebug) after $(link) for debugging
 MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 --static -lpng -lz -ljpeg

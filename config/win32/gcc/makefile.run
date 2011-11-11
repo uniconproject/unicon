@@ -7,7 +7,7 @@ LDFLAGS=
 CC=gcc
 # -g for debugging, -Os to minimize space...
 CFLAGS=-D_X86_ -DWIN32 -DMSNT -D$(CONSOLE) -Os -I../gdbm -I../libtp
-MAKE=make
+MAKE=make -j4
 RTT=../../bin/rtt
 O=o
 RM=rm
@@ -43,37 +43,42 @@ COBJS=	../common/long.$(O) ../common/time.$(O) ../common/save.$(O) \
 
 ICOBJS=	long.$(O) time.$(O) save.$(O) rswitch.$(O) redirerr.$(O) xwindow.$(O) alloc.$(O) filepart.$(O) mlocal.$(O)
 
-OBJS=	$(XOBJS) $(COBJS)
+OBJS=	$(XOBJS) $(COBJS) icon.$(O)
 
 interp_all: $(COBJS)
 	$(MAKE) $(ICONX)
 
-MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 --static -lpng -lz -ljpeg
+MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 --static -lpng -lz -ljpeg -lpthread
 
 wiconx: $(OBJS) $(WOBJS) $(COBJS)
-	$(CMD) /C libtp
-	$(CMD) /C gdbm
+	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
+	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
 	$(CC) -mwindows -Xlinker --stack -Xlinker 8192000 -o wiconx.exe $(guiflags) $(OBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
 	$(CP) wiconx.exe ../../bin/wiconx.exe
 
 iconx: $(OBJS) $(WOBJS) $(COBJS)
-	$(CMD) /C libtp
-	$(CMD) /C gdbm
+	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
+	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
 	$(CC) -Xlinker --stack -Xlinker 8192000 -o iconx.exe $(guiflags) $(OBJS) $(WOBJS) ../gdbm/libgdbm.a ../libtp/libtp.a -lwinmm -lwsock32 -lodbc32 $(MYGUILIBS)
 	$(CP) iconx.exe ../../bin
 
-nticonx:
-	-$(RM) *.$(O)
+nticonx: $(OBJS) $(COBJS)
+	$(RM) *.$(O)
+	$(RM) iconx.exe
 	$(CP) ../../config/win32/gcc/wdefine.h ../h/define.h
 	cat ../../config/win32/gcc/ntconsole.h >>../h/define.h
 	$(MAKE) iconx
-	-$(RM) *.$(O)
+	$(RM) *.$(O)
+	$(RM) nticonx.exe
 	$(CP) ../../config/win32/gcc/define.h ../h/define.h
 	$(MAKE) $(OBJS)
 	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
 	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
-	gcc -Xlinker --stack -Xlinker 768000 -o nticonx.exe $(OBJS) ..\libtp\libtp.a -lkernel32 -lwinmm -lwsock32 -lodbc32 ../gdbm/libgdbm.a
+	gcc -Xlinker --stack -Xlinker 768000 -o nticonx.exe $(OBJS) ..\libtp\libtp.a -lkernel32 -lwinmm -lwsock32 -lodbc32 ../gdbm/libgdbm.a -lz -lpthread
 	$(CP) nticonx.exe ../../bin
+
+icon.$(O): icon.rc
+	windres icon.rc icon.$(O)
 
 xcnv.$(O): cnv.r $(HDRS)
 	$(RTT) -x cnv.r
@@ -578,4 +583,4 @@ fxtra.$(O): fxtra.r $(HDRS)
 	$(RM) `sed 's/$$/.c/' rttcur.lst`
 
 ../common/rswitch.o: ../common/rswitch.s
-	as -o ../common/rswitch.o ../common/rswitch.s
+	as --32 -o ../common/rswitch.o ../common/rswitch.s

@@ -1,0 +1,142 @@
+import gui
+$include "guih.icn"
+
+procedure AskSave(fn)
+   local m := ModifiedDialog()
+   if \fn then
+      m.label_1.set_label(fn || " is modified, save it?")
+   m.show_modal()
+   return \ (m.selection)
+end
+
+class ModifiedDialog : Dialog(selection, cancel_btn, label_1, no_btn, saveas_btn, yes_btn)
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_cancel_btn(ev)
+       selection := "Cancel"
+   end
+
+   method on_no_btn(ev)
+       selection := "No"
+   end
+
+   method on_saveas_btn(ev)
+       selection := "Save As"
+   end
+
+   method on_yes_btn(ev)
+       selection := "Yes"
+   end
+
+   method setup()
+      self.set_attribs("size=406,242")
+      label_1 := Label()
+      label_1.set_pos(105, 43)
+      label_1.set_size("200", "39")
+      label_1.set_internal_alignment("c")
+      label_1.set_label("File is modified, save it?")
+      self.add(label_1)
+      yes_btn := TextButton()
+      yes_btn.set_pos("135", "114")
+      yes_btn.set_size("58", )
+      yes_btn.connect(self, "on_yes_btn", ACTION_EVENT)
+      yes_btn.clear_toggles()
+      yes_btn.set_label("Yes")
+      yes_btn.set_internal_alignment("c")
+      self.add(yes_btn)
+      no_btn := TextButton()
+      no_btn.set_pos("214", "114")
+      no_btn.set_size("58", )
+      no_btn.connect(self, "on_no_btn", ACTION_EVENT)
+      no_btn.clear_toggles()
+      no_btn.set_label("No")
+      no_btn.set_internal_alignment("c")
+      self.add(no_btn)
+      saveas_btn := TextButton()
+      saveas_btn.set_pos("135", "155")
+      saveas_btn.connect(self, "on_saveas_btn", ACTION_EVENT)
+      saveas_btn.clear_toggles()
+      saveas_btn.set_label("Save As")
+      saveas_btn.set_internal_alignment("c")
+      self.add(saveas_btn)
+      cancel_btn := TextButton()
+      cancel_btn.set_pos("216", "156")
+      cancel_btn.set_size("58", )
+      cancel_btn.connect(self, "on_cancel_btn", ACTION_EVENT)
+      cancel_btn.clear_toggles()
+      cancel_btn.set_label("Cancel")
+      cancel_btn.set_internal_alignment("c")
+      self.add(cancel_btn)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|2|string|label|integer|1|st
+#ring|text_button|integer|4|SuperClass Name|string|Dialog|Import Name|s
+#tring|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Boxes|l
+#ist|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Boxes|l
+#ist|0|Gen Indent|integer|3|Gen Main|null|Gen Component Setup|integer|1
+#|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|class
+#|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs|lis
+#t|0|Name|string|ModifiedDialog|Width|integer|406|Height|integer|242|It
+#ems|list|5|class|CanvasLabel|27|Parent Canvas|1|Name|string|label_1|Cl
+#ass Name|string|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W F
+#ix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|105|Y 
+#Spec|integer|43|W Spec|string|200|H Spec|string|39|X Align|string|l|Y 
+#Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|null
+#|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|0|Class Va
+#riable|integer|1|Parent Component|1|Label|string|File is modified, sav
+#e it?|Internal Align|string|c|class|CanvasTextButton|36|Parent Canvas|
+#1|Name|string|yes_btn|Class Name|string|TextButton|Import Name|string|
+#gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defau
+#lt|integer|1|X Spec|string|135|Y Spec|string|114|W Spec|string|58|H Sp
+#ec|integer|23|X Align|string|l|Y Align|string|t|Is shaded|null|Is Butt
+#on Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Acc
+#el|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_yes
+#_btn|Class Variable|integer|1|Parent Component|1|Label|string|Yes|No K
+#eyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|
+#Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|P
+#arent Button Group|null|Internal Align|string|c|class|CanvasTextButton
+#|36|Parent Canvas|1|Name|string|no_btn|Class Name|string|TextButton|Im
+#port Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Def
+#ault|null|H Default|integer|1|X Spec|string|214|Y Spec|string|114|W Sp
+#ec|string|58|H Spec|integer|23|X Align|string|l|Y Align|string|t|Is sh
+#aded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0
+#|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|ACTION_EV
+#ENT|string|on_no_btn|Class Variable|integer|1|Parent Component|1|Label
+#|string|No|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|I
+#mg Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent Check
+#BoxGroup|null|Parent Button Group|null|Internal Align|string|c|class|C
+#anvasTextButton|36|Parent Canvas|1|Name|string|saveas_btn|Class Name|s
+#tring|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|nu
+#ll|H Fix|null|W Default|integer|1|H Default|integer|1|X Spec|string|13
+#5|Y Spec|string|155|W Spec|integer|58|H Spec|integer|23|X Align|string
+#|l|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw B
+#order|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|
+#1|list|2|string|ACTION_EVENT|string|on_saveas_btn|Class Variable|integ
+#er|1|Parent Component|1|Label|string|Save As|No Keyboard|null|Img Up|n
+#ull|Img Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|
+#Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|nu
+#ll|Internal Align|string|c|class|CanvasTextButton|36|Parent Canvas|1|N
+#ame|string|cancel_btn|Class Name|string|TextButton|Import Name|string|
+#gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defau
+#lt|integer|1|X Spec|string|216|Y Spec|string|156|W Spec|string|58|H Sp
+#ec|integer|23|X Align|string|l|Y Align|string|t|Is shaded|null|Is Butt
+#on Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Acc
+#el|null|Event Handlers|list|1|list|2|string|ACTION_EVENT|string|on_can
+#cel_btn|Class Variable|integer|1|Parent Component|1|Label|string|Cance
+#l|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height
+#|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|
+#null|Parent Button Group|null|Internal Align|string|c|Initial Focus|nu
+#ll|Event Handlers|list|0|

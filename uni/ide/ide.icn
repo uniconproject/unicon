@@ -122,7 +122,7 @@ class IDE (
       ceb := CurrentEditBox()
       first_x  := ceb.cursor_x - \(*dialog_value[1])
       second_x := ceb.cursor_x
-      handle_select_str(e, first_x, second_x, ceb.cursor_y)
+      handle_select_str(ev, first_x, second_x, ceb.cursor_y)
    end
 
    method on_undo_btn(ev)
@@ -522,7 +522,7 @@ $ifdef _UNIX
          fd := HFileDialog()
          fd.show_modal()
          filename := fd.get_result() | fail
-	 filepath := chdir()
+	 # filepath := chdir()
          filedirectory := fd.get_directory()
 $else
          filename := WinOpenDialog(dialogself.win, "Open File ...", "", 5) | fail 
@@ -905,7 +905,7 @@ $endif
             errLine := "TRUE"
             if map(fn) ~== map(\tab_label) then {
 	       handle_openfile( , fn)
-	       set_focus(CurrentEditBox())
+	       dialogself.set_focus(CurrentEditBox())
                }
          goto_line(ln,1)
          }
@@ -1057,9 +1057,7 @@ $endif
    #
    method prompt_save()
       if (CurrentEditBox().modified == 1) then {
-         case SelectDialog((\tab_label|"File")||
-			   " is modified, save it?",,,
-			   ["Yes", "Save As", "No", "Cancel"]) of {
+         case AskSave((\tab_label|"File")) of {
             "Yes":{
 		if CurrentTabItem().label ~=="Untitled" then {
 		   save_file(filename) #CurrentTabItem().label)		
@@ -1082,7 +1080,7 @@ $endif
    #
    #
    method handle_files()
-      local oldwindow, first_x, second_x, e
+      local oldwindow, first_x, second_x
       /findstr := ""
       dialogFor := "find"
       oldwindow := &window
@@ -1095,7 +1093,8 @@ $endif
             }
          first_x := (CurrentEditBox().cursor_x-*dialog_value[1])
          second_x := CurrentEditBox().cursor_x
-         handle_select_str(e, first_x, second_x, CurrentEditBox().cursor_y)
+         # no event
+         handle_select_str(&null, first_x, second_x, CurrentEditBox().cursor_y)
       &window := oldwindow
    end
    #

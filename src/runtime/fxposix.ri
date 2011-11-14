@@ -18,7 +18,11 @@ struct descrip amperErrno = {D_Integer};
 #ifdef PosixFns
 #if NT
 #define ftruncate _chsize
+
+#if !defined(NTGCC)
 #define pclose _pclose
+#endif					/* NTGCC */
+
 #define dup2 _dup2
 #define execvp _execvp
 #define fstat _fstat
@@ -1126,7 +1130,7 @@ function{0,1} exec(f, argv[argc])
 	 margv[i] = p;
       }
       margv[i] = 0;
-      if (execvp(f, margv) != 0) {
+      if (execvp(f, (const char* const*)margv) != 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }

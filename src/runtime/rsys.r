@@ -99,9 +99,9 @@ SOCKET fd;
 #endif					/* NT */
 
 #if NT
-#ifndef NTGCC
+#if !defined(NTGCC)
 #define pclose _pclose
-#endif
+#endif					/* NTGCC */
 #endif
 
 /*
@@ -1190,7 +1190,7 @@ FILE *popen (const char* cmd, const char *mode)
      */
 
   /* Look for the application name */
-  for (p = cmd; *p && isspace(*p); p++);
+  for (p = (char *)cmd; *p && isspace(*p); p++);
   if (*p == '"') {
     q = ++p;
     while(*p && *p != '"') p++;
@@ -1293,7 +1293,7 @@ FILE *popen (const char* cmd, const char *mode)
       return NULL;
     }
     CloseHandle(father_out);
-    fno = _open_osfhandle((long)father_out_dup, binary_mode);
+    fno = _open_osfhandle((word)father_out_dup, binary_mode);
     f = _fdopen(fno, mode);
     i = setvbuf( f, NULL, _IONBF, 0 );
   }
@@ -1320,7 +1320,7 @@ FILE *popen (const char* cmd, const char *mode)
       return NULL;
     }
     CloseHandle(father_in);
-    fno = _open_osfhandle((long)father_in_dup, binary_mode);
+    fno = _open_osfhandle((word)father_in_dup, binary_mode);
     f = _fdopen(fno, mode);
     i = setvbuf( f, NULL, _IONBF, 0 );
   }

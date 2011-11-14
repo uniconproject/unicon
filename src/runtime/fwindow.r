@@ -2789,7 +2789,7 @@ function{0,1} WinAssociate(ext)
       strncat(fname, StrLoc(ext), StrLen(ext));
       f = fopen(fname, "w");
       fclose(f);
-      if ((int)(FindExecutable(fname, NULL, buf)) < 32) {
+      if ((word)(FindExecutable(fname, NULL, buf)) < 32) {
          unlink(fname);
          fail;
          }
@@ -3152,8 +3152,7 @@ function{0,1} WinColorDialog(argv[argc])
       }
    body {
       wbp w;
-      C_integer x, y, width, height, warg = 0;
-      long r, g, b, a;
+      long r, g, b, a, warg = 0;
       tended char *s;
       char buf[64], *tmp = buf;
       OptWindow(w);
@@ -3180,9 +3179,7 @@ function{0,2} WinFontDialog(argv[argc])
       }
    body {
       wbp w;
-      int r;
-      C_integer x, y, width, height, warg = 0, fheight;
-      int flags, t;
+      int flags, t, fheight,  warg = 0;
       tended char *s;
       char buf[64], *tmp = buf;
       char colr[64];
@@ -3429,7 +3426,6 @@ MissingFuncV(WinSaveDialog)
 
 
 #else					/* Graphics */
-
 MissingFunc(Active)
 MissingFuncV(Alert)
 MissingFuncV(Bg)

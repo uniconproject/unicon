@@ -187,7 +187,7 @@ dptr dp1, dp2;
           * Collate these values according to the relative positions of
           *  their blocks in the heap.
 	  */
-         lresult = ((long)BlkLoc(*dp1) - (long)BlkLoc(*dp2));
+         lresult = ((word)BlkLoc(*dp1) - (word)BlkLoc(*dp2));
          if (lresult == 0)
             return Equal;
          return ((lresult > 0) ? Greater : Less);

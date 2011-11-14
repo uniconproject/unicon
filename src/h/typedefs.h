@@ -34,8 +34,6 @@ typedef unsigned int DIGIT;
    typedef long int word;
    typedef unsigned long int uword;
    #endif
-
-
 #else					/* IntBits != WordBits */
    typedef int word;
    #ifdef CDC_VXVE

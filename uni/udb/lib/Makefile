@@ -5,6 +5,7 @@
 # e-mail: zsharif@gmail.com
 #
 
+include ../../makedefs
 UC         = ../../../bin/unicon
 CFLAGS     = -u -c 
 LDFLAGS    = -u

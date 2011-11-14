@@ -383,12 +383,20 @@
 #undef VMS
 #endif
 
+/*
+ * On many platforms png.h includes zlib.h and including it again is an error
+ * for a redefined type.  On many other platforms png.h does not include zlib.h
+ * and this code needs to.  Apparently, this not including of zlib.h in png.h
+ * occurs for libpng 1.5 and higher.
+ */
 #if HAVE_LIBPNG
 #include <png.h>
-#ifdef NTGCC
+#if defined(NTGCC) || (defined(PNG_LIBPNG_VER) && (PNG_LIBPNG_VER >= 10500))
 #include <zlib.h>
 #endif
+
 #else					/* HAVE_LIBPNG */
+
 #include <zlib.h>
 #endif					/* HAVE_LIBPNG */
 
@@ -397,6 +405,8 @@
 #endif
 
 #else					/* HAVE_LIBZ */
+
+/* If you claim to have libpng, but you don't have libz, that's no good */
 #if HAVE_LIBPNG
 /*#include <png.h>*/
 #endif					/* HAVE_LIBPNG */

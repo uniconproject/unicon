@@ -28,11 +28,11 @@
 #if WordBits == 64
    
    #ifndef MinLong
-      #define MinLong  ((long int)0x8000000000000000) /* smallest long int */
+      #define MinLong  ((word)0x8000000000000000) /* smallest long int */
    #endif
    
    #ifndef MaxLong
-      #define MaxLong  ((long int)0x7fffffffffffffff) /* largest long integer */
+      #define MaxLong  ((word)0x7fffffffffffffff) /* largest long integer */
    #endif
    
    #define MaxStrLen 017777777777L		/* maximum string length */
@@ -65,8 +65,8 @@
 
 #if WordBits == 32
    
-   #define MaxLong  ((long int)017777777777L)   /* largest long integer */
-   #define MinLong  ((long int)020000000000L)   /* smallest long integer */
+   #define MaxLong  ((word)017777777777L)   /* largest long integer */
+   #define MinLong  ((word)020000000000L)   /* smallest long integer */
    
    #define MaxNegInt "-2147483648"
    

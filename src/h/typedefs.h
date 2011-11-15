@@ -27,7 +27,7 @@ typedef unsigned int DIGIT;
  */
 
 #if IntBits != WordBits
-   #if WordBits == 64
+#ifdef LongLongWord
    typedef long long int word;
    typedef unsigned long long int uword;
    #else

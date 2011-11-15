@@ -1130,7 +1130,11 @@ function{0,1} exec(f, argv[argc])
 	 margv[i] = p;
       }
       margv[i] = 0;
+#if NT
       if (execvp(f, (const char* const*)margv) != 0) {
+#else
+      if (execvp(f, margv) != 0) {
+#endif
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }

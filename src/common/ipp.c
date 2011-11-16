@@ -115,7 +115,7 @@ char *lpath;				/* LPATH for finding source files */
 
 static int ifdepth;			/* depth of $if nesting */
 
-extern int tfatals, nocode;		/* provided by icont, iconc */
+extern int __merr_errors, nocode;		/* provided by icont, iconc */
 
 /*
  * ppinit(fname, inclpath, m4) -- initialize preprocessor to read from fname.
@@ -537,7 +537,7 @@ char *s1, *s2;
       fprintf(stderr, "\"%s\": ", s2);		/* print offending value */
       }
    fprintf(stderr, "%s\n", s1);			/* print diagnostic */
-   tfatals++;
+   __merr_errors++;
    nocode++;
    }
 

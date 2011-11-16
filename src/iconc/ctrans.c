@@ -21,7 +21,7 @@ static void publish_unreachable_funcs(struct pentry *);
 /*
  * Variables.
  */
-int tfatals = 0;		/* total number of fatal errors */
+int __merr_errors = 0;		/* total number of fatal errors */
 int twarns = 0;			/* total number of warnings */
 int nocode;			/* set by lexer; unused in compiler */
 int in_line;			/* current input line number */
@@ -153,20 +153,20 @@ int trans(char *argv0)
       symdump();
 #endif					/* DeBug */
 
-      if (tfatals == 0) {
+      if (__merr_errors == 0) {
          chkstrinv();  /* see what needs be available for string invocation */
          chkinv();     /* perform "naive" optimizations */
          }
 
-      if (tfatals == 0)
+      if (__merr_errors == 0)
          typeinfer();        /* perform type inference */
 
       if (just_type_trace)
-         return tfatals;     /* stop without generating code */
+         return __merr_errors;     /* stop without generating code */
 
       publish_unreachable_funcs(proc_lst);
 
-      if (tfatals == 0) {
+      if (__merr_errors == 0) {
          adjust_class_recs(rec_lst);
          var_dcls();         /* output declarations for globals and statics */
          const_blks();       /* output blocks for cset and real literals */
@@ -179,10 +179,10 @@ int trans(char *argv0)
    /*
     * Report information about errors and warnings and be correct about it.
     */
-   if (tfatals == 1)
+   if (__merr_errors == 1)
       fprintf(stderr, "1 error; ");
-   else if (tfatals > 1)
-      fprintf(stderr, "%d errors; ", tfatals);
+   else if (__merr_errors > 1)
+      fprintf(stderr, "%d errors; ", __merr_errors);
    else if (verbose > 0)
       fprintf(stderr, "No errors; ");
 
@@ -192,14 +192,14 @@ int trans(char *argv0)
       fprintf(stderr, "%d warnings\n", twarns);
    else if (verbose > 0)
       fprintf(stderr, "no warnings\n");
-   else if (tfatals > 0)
+   else if (__merr_errors > 0)
       fprintf(stderr, "\n");
 
 #ifdef TranStats
    tokdump();
 #endif					/* TranStats */
 
-   return tfatals;
+   return __merr_errors;
    }
 
 /*

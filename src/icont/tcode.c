@@ -26,7 +26,6 @@ static int	traverse	(nodeptr t);
 static void	unopa		(int op, nodeptr t);
 static void	unopb		(int op);
 
-extern int tfatals;
 extern int nocode;
 
 /*

@@ -16,7 +16,7 @@
 
 static	void	trans1		(char *filename);
 void writeUID(char *, FILE *);
-int tfatals;			/* number of fatal errors in file */
+extern int __merr_errors;       /* in place of the old tfatals, the number of syntax errors in a file */
 int afatals;			/* total number of fatal errors */
 int nocode;			/* non-zero to suppress code generation */
 int in_line;			/* current input line number */
@@ -40,8 +40,9 @@ char **ifiles;
 
    while (*ifiles) {
       trans1(*ifiles++);	/* translate each file in turn */
-      afatals += tfatals;
+      afatals += __merr_errors;
       }
+
    tmfree();			/* free memory used for translation */
 
    /*
@@ -71,7 +72,7 @@ char *filename;
    char oname2[MaxFileName];	/* buffer for constructing file name */
    char oname3[MaxFileName];	/* buffer for constructing file name */
 
-   tfatals = 0;			/* reset error counts */
+   __merr_errors = 0;			/* reset error counts */
    nocode = 0;			/* allow code generation */
    in_line = 1;			/* start with line 1, column 0 */
    incol = 0;
@@ -153,7 +154,7 @@ char *filename;
       quit("cannot close ucode file");
 #endif					/* VarTran */
 
-   if (tfatals) {
+   if (__merr_errors) {
       remove(oname1);
       remove(oname2);
       }

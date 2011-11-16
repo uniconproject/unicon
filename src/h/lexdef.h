@@ -14,7 +14,7 @@ extern int incol;		/* current column number in input */
 extern int peekc;		/* one character look-ahead */
 extern FILE *srcfile;		/* current input file */
 
-extern int tfatals;		/* total fatal errors */
+extern int __merr_errors;		/* total fatal errors */
 
 /*
  * Token table structure.

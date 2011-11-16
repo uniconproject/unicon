@@ -615,7 +615,7 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
 
    if (call_main == NULL)
       return;         /* no main procedure, cannot continue */
-   if (tfatals > 0)
+   if (__merr_errors > 0)
       return;         /* don't do inference if there are fatal errors */
 
    /*

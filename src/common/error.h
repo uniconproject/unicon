@@ -10,6 +10,7 @@
  * Prototype.
  */
 
+extern int  __merr_errors;
 static	char	*mapterm	(int typ,struct node *val);
 
 #if AMIGA && __SASC
@@ -73,7 +74,7 @@ nodeptr lval;
       }
       }
 #endif					/* ConsoleWindow */
-   tfatals++;
+   __merr_errors++;
    nocode++;
    }
 #endif					/* SEPARATE_YYERROR */
@@ -144,8 +145,7 @@ char *s1, *s2;
       fprintf(flog, "%s\n", s1);
       }
 #endif					/* ConsoleWindow */
-
-   tfatals++;
+   __merr_errors++;
    nocode++;
    }
 
@@ -176,7 +176,7 @@ char *s1, *s2;
       }
 #endif				/* AMIGA && __SASC */
 
-   tfatals++;
+   __merr_errors++;
    nocode++;
    }
 

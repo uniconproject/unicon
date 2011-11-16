@@ -394,7 +394,7 @@ struct pentry *proc;
        */
       Tree1(n)->lifetime = NULL;
       liveness(Tree1(n), NULL, &failer, &gen);
-      if (tfatals > 0)
+      if (__merr_errors > 0)
          return;
       lbl = alc_lbl("end initial", 0);
       cd_add(lbl);
@@ -416,7 +416,7 @@ struct pentry *proc;
       }
    Tree2(n)->lifetime = NULL;
    liveness(Tree2(n), NULL, &failer, &gen);
-   if (tfatals > 0)
+   if (__merr_errors > 0)
       return;
    bound(Tree2(n), &ignore, 1);
 

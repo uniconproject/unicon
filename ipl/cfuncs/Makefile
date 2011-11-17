@@ -9,6 +9,7 @@ ICONT = icont
 IFLAGS = -us
 ITRAN = $(ICONT) $(IFLAGS)
 
+# Macs use libcfunc.dylib
 FUNCLIB = libcfunc.so
 
 .SUFFIXES: .c .o

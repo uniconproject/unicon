@@ -101,8 +101,8 @@ SOCKET fd;
 #if NT
 #if !defined(NTGCC)
 #define pclose _pclose
-#endif					/* NTGCC */
-#endif
+#endif					/* !NTGCC */
+#endif					/* NT */
 
 /*
  * getstrg - read a line into buf from file fbp.  At most maxi characters

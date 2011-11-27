@@ -43,7 +43,7 @@ printdlg.u: printdlg.icn
 hfiledialog.u: hfiledialog.icn
 	$(UC) $(UFLAGS) hfiledialog
 
-buffertextlist.u: buffertextlist.icn ../gui/EditableTextList.icn
+buffertextlist.u: buffertextlist.icn ../gui/editabletextlist.icn
 	$(UC) $(UFLAGS) buffertextlist
 
 buffertabitem.u: buffertabitem.icn

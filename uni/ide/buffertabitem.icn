@@ -54,10 +54,12 @@ class BufferTabItem : TabItem(
       Fg(cw, "black") #"greyish white")
       DrawLine(cw, xpw - 1, ypos, xpw - 1, ypos + pslh - 1)
       DrawLine(cw, xpw - 2, ypos + 1, xpw - 2, ypos + pslh - 2)
-      DrawLine(cw, self.label_x, ypos + pslh - 1, self.label_x, ypos, xpw - 1, ypos)
+      DrawLine(cw, self.label_x, ypos + pslh - 1,
+	       self.label_x, ypos, xpw - 1, ypos)
       
       Fg(cw, "white")
-      DrawLine(cw, self.label_x + 1, ypos + pslh - 2, self.label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
+      DrawLine(cw, self.label_x + 1, ypos + pslh - 2,
+	       self.label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
       Uncouple(cw)
 
       
@@ -65,26 +67,32 @@ class BufferTabItem : TabItem(
       #These  4 rectangles give the tabs a nice look
       ###
       Fg(\ (self.parent.cbwin), "white")
-      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2 + (pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 2)
+      FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2 ,
+		    label_w - 2, (pslh - 2) / 2)
       Fg(\ (self.parent.cbwin), "pale greyish white")
-      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2  +(pslh - 2) / 2 , self.label_w - 2, (pslh - 2) / 4)
+      FillRectangle(parent.cbwin, label_x, ypos + 2  + (pslh - 2) / 2 ,
+		    label_w - 2, (pslh - 2) / 4)
       Fg(\ (self.parent.cbwin), "light greyish white")
-      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) /2 )
+      FillRectangle(parent.cbwin, label_x, ypos + 2 ,
+		    label_w - 2, (pslh - 2) /2 )
       Fg(\ (self.parent.cbwin), "greyish white")
-      FillRectangle(self.parent.cbwin, self.label_x, ypos + 2 , self.label_w - 2, (pslh - 2) / 4)
-          
+      FillRectangle(parent.cbwin, label_x, ypos + 2 ,
+		    label_w - 2, (pslh - 2) / 4)
+
       updown := -1
       if parent.which_one === self then  updown :=1
 
       Fg(\ (self.parent.cbwin), "pale grey")
-      BevelRoundedRectangle(self.parent.cbwin, self.label_x+DEFAULT_TEXT_X_SURROUND -1,
-                            ypos-6 + pslh/ 2,  TextWidth(self.parent.cbwin, self.label),  3+(pslh - 2) / 2, updown)
+      BevelRoundedRectangle(parent.cbwin, label_x+DEFAULT_TEXT_X_SURROUND -1,
+                            ypos-6 + pslh/ 2, TextWidth(parent.cbwin, label),
+			    3 + (pslh - 2) / 2, updown)
       
       Fg(\ (self.parent.cbwin), "black")
-      left_string(self.parent.cbwin, self.label_x + DEFAULT_TEXT_X_SURROUND, ypos + pslh / 2, self.label)
+      left_string(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND,
+		  ypos + pslh / 2, self.label)
       
       if is_shaded() then
-         FilterRectangle(self.parent.cbwin, self.label_x, ypos + 2, self.label_w - 2, pslh - 1)
+         FilterRectangle(parent.cbwin, label_x, ypos + 2, label_w - 2, pslh-1)
       
    end
    
@@ -96,7 +104,8 @@ end
 
 
 #################################################################
-# Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle to be used for a TabItem.
+# Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle to be used
+# for a TabItem.
 procedure BevelRoundedRectangle(win, x, y, w, h, bw)	
    local b, upper, lower, xx, yy, r, a, cx, cy, cw, cr, oldfg1, oldfg2 
    static type

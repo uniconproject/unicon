@@ -116,9 +116,7 @@ class UIDE : Dialog(uide, startfile)
       menubar.set_font()
       # queue up an lpress to set the initial focus to the editor buffer
       if \win then {
-	  wid := WAttrib(win, "width")
-	  ht := WAttrib(win, "height")
-	  Enqueue(\win, &lpress, wid/2, ht/2)
+	  Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
       }
    end
 
@@ -205,7 +203,8 @@ $define XOff		  0	# offset for text vidgets
 $define XOffButton	 85	# initial x offset for buttons
 $define XOffIncr	 15	# space between buttons
 
-class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
+class vdialog : Dialog(captions, labels, buttons, textfields,
+		       defaults, myanswer)
    method component_setup()
       self.setup()
    end
@@ -220,6 +219,9 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
       maxw +:= 40
       maxw <:= 220
       self.resize_win(maxw, (32 * (*captions + *labels +2)))
+      if textfields[1] then {
+	 Enqueue(\win, &lpress, textfields[1].x+2, textfields[1].y+2)
+	 }
    end
 
    method setup()
@@ -246,6 +248,7 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
 	 text_field_1 := TextField()
 	 text_field_1.set_pos(20, integer((*captions + i)*100/nlines) || "%-10")
 	 text_field_1.set_size(180, 30)
+	 text_field_1.set_contents((\defaults)[i])
 	 text_field_1.set_draw_border()
          if dialogFor == "find" then
 	    text_field_1.set_contents(findstr)
@@ -256,6 +259,7 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
          else if dialogFor == "run" then
 	    text_field_1.set_contents(xargs)
          else text_field_1.set_contents("")
+	 text_field_1.connect(self, "on_keypress", ACTION_EVENT)
 
 	 self.add(text_field_1)
 	 put(textfields, text_field_1)
@@ -278,10 +282,16 @@ class vdialog : Dialog(captions, labels, buttons, textfields, myanswer)
       dispose()
    end
 
-initially(caps, labs, btns)
+   method on_keypress(ev)
+      myanswer := buttons[1]
+      dispose()
+   end
+
+initially(caps, labs, btns, dflts)
    captions := caps
    labels := labs
    buttons := btns
+   defaults := dflts
    textfields := []
    self.Dialog.initially()
 end
@@ -337,7 +347,7 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    pad := 2 * lead
    cwidth := WAttrib(win, "fwidth")
 
-   dialog := vdialog(captions, labels, buttons)
+   dialog := vdialog(captions, labels, buttons, defaults)
 
    maxw := 0
    every maxw <:= TextWidth(win, !captions)

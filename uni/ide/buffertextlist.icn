@@ -36,6 +36,7 @@ class BuffEditableTextList : EditableTextList(
    wrap_mode,
    line_splitter,
    changed,
+   moved,	# to-do: check if we need this and if so, implement it.
    mouse_locked,
    scroll_locked,
    vi,      #virtual line index
@@ -401,111 +402,64 @@ class BuffEditableTextList : EditableTextList(
          }
    end
    #
-   #
+   # Overrides default handle_event() re-parsing on line changes, etc.
    #
    method handle_event(e)
-      local old_contents_size, old_mw, E, moved, meth
-      if E := (\self.vsb).handle_event(e) then {
-         #
-         # Handled by VSB; amend line number and refresh contents
-         #
-         self.constrain_cursor()
-         self.refresh()
-         text_area_to_high()
-         } 
-      else if E := (\self.hsb).handle_event(e) then {
-         #
-         # Handled by HSB; amend left offset and refresh
-         #
-         self.constrain_cursor()
-         self.refresh()
-         text_area_to_high()
-         }
-      else {
-         if e === -11 then fail # window closed, nothing to do?
-         old_contents_size := *contents
+   local old_contents_size, old_mw, meth
+       
+      (\self.vsb).handle_event(e)
+      (\self.hsb).handle_event(e)
+      old_contents_size := *contents
 
-         changed := moved := &null
-         if integer(e) = (&lpress ) then
-            handle_press(e)
-         else if integer(e) = (&ldrag ) then
-            handle_drag(e)
-         else if integer(e) = &mpress then
-            simulate_wheelbutton()
-         else if integer(e) = (&lrelease ) then
-            handle_release(e)
-         else if \self.has_focus then {
-	 if \kmap then {
-	     meth := kmap.handle_key(e)
-	     self.__m[meth](self,e)
-	 }
-	 else
-            case e of {
-               Key_Home : handle_key_home(e)
-               Key_End : handle_key_end(e)
-               Key_PgUp : handle_key_page_up(e)
-               Key_PgDn : handle_key_page_down(e)
-               Key_Up : handle_key_up(e)
-               Key_Down : handle_key_down(e)
-               Key_Left :    handle_key_left(e)
-               Key_Right : handle_key_right(e)
-               #"\t" : handle_tab_text(e)    #not working
-               "\b" : handle_delete_left(e)
-               "\r" | "\l": handle_return(e)
-               "\^k" : handle_delete_line()
-               "\^a" : handle_start_of_line(e)
-               "\^e" : handle_end_of_line(e)
-               "\d" | "\^d" : handle_delete_right(e)
-               "\^x" :  handle_cut(e)
-               "\^c" :  handle_copy(e)
-               "\^v" :  handle_paste(e)
-               "\^z" :  handle_undo(e)
-               "\^y" :  handle_redo(e)
-               # "\^s" :  handle_stringsearch() #not working
-               default : handle_default(e)
-               }
-            }
-         if \moved then {
-            #
-            # Cursor moved.  Make sure still on screen; update scrollbars,
-            # and refresh text.
-            #
-    	    # Reparse code when the cursor moves in the Y axis
-	    case e of {
-               Key_PgUp | Key_PgDn | Key_Up | Key_Down | Key_Home | Key_End : {
-               # Clear line error since the cursor moved
-               ReparseCode()
-               }	
+      if e === (&lpress | &rpress) then
+	 handle_press(e)
+      else if integer(e) = &mpress then
+	 simulate_wheelbutton()
+      else if e === (&ldrag | &rdrag | &mdrag) then
+	 handle_drag(e)
+      else if e === (&lrelease | &rrelease | &mrelease) then
+	 handle_release(e)
+      else if \self.has_focus then {
+	 meth := kmap.handle_key(e)
+	 self.__m[meth](self,e)
+      }
+
+      if \moved then {
+	 #
+	 # Cursor moved.  Make sure still on screen; update scrollbars,
+	 # and refresh text.
+	 #
+	 # Reparse code when the cursor moves in the Y axis
+	 case e of {
+	    Key_PgUp | Key_PgDn | Key_Up | Key_Down | Key_Home | Key_End : {
+	       # Clear line error since the cursor moved
+	       ReparseCode()
+	       }
 	    }
-         self.constrain_line()
-         self.refresh(1)
-         text_area_to_high()
+	 constrain_line()
+	 refresh(1)
+	 return _Event(e, self, 0)
+	 }
 
-         return _Event(e, self, 0)
-         }
+      else if \changed then {
+	 if ((*contents ~= old_contents_size) | \long_line | 
+	    (old_mw ~= TextWidth(cwin, contents[long_line]))) then {
+	    #
+	    # Contents changed.  Re-compute all internal fields, ensure on
+	    # screen and re-display whole object.
+	    #
+	    set_internal_fields()
+	    constrain_line()
+	    display()
 
-         else if \changed then {
-            if (*contents ~= old_contents_size) | \long_line | 
-               (old_mw ~= TextWidth(cwin, contents[long_line])) then {
-               #
-               # Contents changed.  Re-compute all internal fields, ensure on
-               # screen and re-display whole object.
-               #
-               self.set_internal_fields()
-               self.constrain_line()
-               self.display()
-
-               # Set reparse flag
-	       doReparse := 1
-               #text_area_to_high()
-               } 
-            else {
-               self.constrain_line()
-               self.refresh(1)
-               text_area_to_high()
-               }
-            return _Event(e, self, 0)
-            }
+	    # Set reparse flag
+	    doReparse := 1
+	    } 
+	 else {
+	    constrain_line()
+	    refresh(1)
+	    }
+	 return _Event(e, self, 0)
       }
    end
 
@@ -652,19 +606,6 @@ class BuffEditableTextList : EditableTextList(
          }
    end
 
-   #
-   # Ostensibly unfinished string search
-   #
-   method handle_stringsearch(s)
-      local dlg
-      if /s then  {
-         dlg := name_dlg()
-         dlg.msg := "Enter Search String: "
-         dlg.show_modal()
-         s := dlg.get_result() | fail
-      }
-   end
-
    method toggle_autoindent()
       if \autoindent then  autoindent:= &null
       else autoindent := 1
@@ -690,7 +631,6 @@ class BuffEditableTextList : EditableTextList(
               }
             self.constrain_line()
             self.refresh(1)
-            text_area_to_high()
             }
          }
    end
@@ -849,9 +789,9 @@ class BuffEditableTextList : EditableTextList(
          yyin := contents[currentPositionY]
          yylex_reinit()
          # Get string s tokens
-         while ( (token := yylex() ) ~=== EOFX ) do {
+         while (token := yylex()) ~=== EOFX do {
             # Get tokens
-            case ( token ) of {
+            case token of {
                METHOD | PROCEDURE | CLASS : {
                   startPositionY := currentPositionY
                   break
@@ -876,9 +816,9 @@ class BuffEditableTextList : EditableTextList(
          yyin := contents[ currentPositionY ]
          yylex_reinit()
          # Get string s tokens
-         while ( ( token := yylex() ) ~=== EOFX ) do {
+         while ( token := yylex() ) ~=== EOFX do {
             # Get tokens
-            case ( token ) of {
+            case token of {
                END : {
                   endPositionY := currentPositionY
                   break

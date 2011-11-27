@@ -115,7 +115,6 @@ end
 # a_Initializes the preprocessor "object".
 #
 procedure preproc_new(fname,predefined_syms)
-
    if type(fname) == "list" then {
       preproc_file := fname
       preproc_include_set := set([type(fname)])
@@ -125,11 +124,9 @@ procedure preproc_new(fname,predefined_syms)
       # Normal file execution
       preproc_file := open(fname) |
 	 stop(&progname, ": cannot open ", image(fname))
-	
       preproc_include_set := set([fname])
       preproc_filename := preproc_include_name := fname
       }
-    
     preproc_sym_table := \predefined_syms |table()
     preproc_if_stack := []
     preproc_file_stack := []
@@ -394,7 +391,7 @@ end
 procedure preproc_read()
     local result
 
-   until result := preproc_read_result( ) do {
+   until result := preproc_read_result() do {
       if *preproc_if_stack ~= preproc_nest_level then {
 	 preproc_error("$if(s) without $endif(s): " ||
 		       *preproc_if_stack - preproc_nest_level)
@@ -411,8 +408,8 @@ procedure preproc_read()
        preproc_filename := pop(preproc_file_stack) &
        preproc_file := pop(preproc_file_stack)) | fail
       }
-    preproc_line +:= 1
-    return result
+   preproc_line +:= 1
+   return result
 end
 
 # Auxiliary read method; "reads" from a file or an in-memory list of strings.

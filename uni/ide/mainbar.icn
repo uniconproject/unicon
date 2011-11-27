@@ -27,7 +27,8 @@ class Mainbar(
    new_UniconProject, uniconProject, open_Project, openUProj,
    menu_1, exit_menu_item, classbrowser_100, classbrowser_50, 
    classbrowser_normal, classbrowser_submenu, close_file, compile_only,
-   compile_options, copy, cut, findv, myfont, fontname, fgcolor, gotoline,
+   compile_options, copy, cut, findv, findnext,
+   myfont, fontname, fgcolor, gotoline,
    insert_class, insert_menu, insert_method, insert_proc,
    ivib, make_exe, match_parenthesis,
    menu_10, menu_11, menu_12, menu_2, menu_6, menu_7, menu_9,
@@ -142,7 +143,11 @@ $endif
    end
 
    method on_find(ev)
-      ide.handle_files()
+      ide.handle_stringsearch()
+   end
+
+   method on_find_next(ev)
+      ide.handle_find_next()
    end
 
    method on_goto_line(ev)
@@ -972,6 +977,10 @@ $endif
       findv.connect(self, "on_find", ACTION_EVENT)
       findv.set_img_left("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~>>>~~~~~~~>6>~~~>6>~~~~~~~>>>~~~>>>~~~~~~>>>>>~>>>>>~~~~~>6>>>~>6>>>~~~~>>>>>>>>>>>>>~~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>>>>>>~>>>>>>>~>6>>>~~~~~>6>>>~>6>>>~~~~~>6>>>~>>>>>~~~~~>>>>>~~~~~~~~~~~~~~~~")
       menu_11.add(findv)
+      findnext := TextMenuItem()
+      findnext.set_label("Find Next")
+      findnext.connect(self, "on_find_next", ACTION_EVENT)
+      menu_11.add(findnext)
       replace := TextMenuItem()
       replace.set_label("Replace")
       replace.connect(self, "on_replace", ACTION_EVENT)

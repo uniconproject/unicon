@@ -27,16 +27,18 @@ class BufferTabSet : TabSet()
       #
       cw := Clone(self.cbwin, "drawop=reverse")
       Fg(cw, "pale gray")
-      DrawLine(cw, self.x, self.y + self.tab_h - 2, self.which_one.label_x, self.y + self.tab_h - 2)
+      DrawLine(cw, x, y + tab_h - 2, which_one.label_x, y + tab_h - 2)
 
       if /last_on_a_line then
-         DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 2, self.x + self.w - 1, self.y + self.tab_h - 2)
+         DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 2,
+		  x + w - 1, y + tab_h - 2)
 
       Fg(cw, "black")
-      DrawLine(cw, self.x, self.y + self.tab_h - 1, self.which_one.label_x, self.y + self.tab_h - 1)
+      DrawLine(cw, x, y + tab_h - 1, which_one.label_x, y + tab_h - 1)
 
       if /last_on_a_line then
-         DrawLine(cw, self.which_one.label_x + self.which_one.label_w, self.y + self.tab_h - 1, self.x + self.w - 2, self.y + self.tab_h - 1)
+         DrawLine(cw, which_one.label_x + which_one.label_w, y + tab_h - 1,
+		  x + w - 2, y + tab_h - 1)
 
       Uncouple(cw)
 
@@ -44,10 +46,10 @@ class BufferTabSet : TabSet()
       # Display contents of current tab into buffer
       #
       which_one.display(1)
-      self.do_shading(self.cbwin)
+      do_shading(cbwin)
 
       if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+         CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
 
    method tab_right(c)
@@ -58,7 +60,6 @@ class BufferTabSet : TabSet()
       set_which_one( components[ (i % *components) +1 ] )
    end
 
-   initially
-      self$TabSet.initially()
-
+initially
+   self$TabSet.initially()
 end

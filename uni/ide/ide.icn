@@ -113,13 +113,13 @@ class IDE (
    end
 
    method on_find_btn(ev)
-      handle_files() 
+      handle_stringsearch() 
    end
 
    method on_find_next_btn(ev)
       local ceb, first_x, second_x
-      findstring(findstr)
       ceb := CurrentEditBox()
+      ceb.findstring(findstr)
       first_x  := ceb.cursor_x - \(*dialog_value[1])
       second_x := ceb.cursor_x
       handle_select_str(ev, first_x, second_x, ceb.cursor_y)
@@ -736,13 +736,7 @@ $endif
    #
    #
    method goto_line(ln,cn)
-      if 1 <= ln <= *(CurrentEditBox().contents) then {
-         CurrentEditBox().cursor_y := ln
-         CurrentEditBox().cursor_x := cn
-         CurrentEditBox().constrain_line()
-         CurrentEditBox().refresh(1)
-         }
-      else {
+      if not (CurrentEditBox().goto_line(ln,cn)) then {
          MsgBox.set_contents(["nonexistent line number " || ln])
          }
    end
@@ -1079,57 +1073,18 @@ $endif
    #
    #
    #
-   method handle_files()
-      local oldwindow, first_x, second_x
-      /findstr := ""
-      dialogFor := "find"
-      oldwindow := &window
-      &window := dialogself.win
-         CurrentEditBox().cursor_x := CurrentEditBox().cursor_y := 1
-         if TextDialog("String to seek: ",,findstr,1)=="Okay" then {
-	    dialogself.resize()
-	    findstr := dialog_value[1]
-	    findstring(findstr)
-            }
-         first_x := (CurrentEditBox().cursor_x-*dialog_value[1])
-         second_x := CurrentEditBox().cursor_x
-         # no event
-         handle_select_str(&null, first_x, second_x, CurrentEditBox().cursor_y)
-      &window := oldwindow
+   method handle_stringsearch()
+      return CurrentEditBox().handle_stringsearch()
    end
    #
    #
    #
    method handle_select_str(e, first_x, second_x, y_position)
-     local mark_x, mark_y, cursor_y, cursor_x
-      CurrentEditBox().start_handle(e)
-      mark_x := first_x
-      mark_y := cursor_y := y_position
-      cursor_x := second_x
-      CurrentEditBox().end_handle(e)
+      CurrentEditBox().handle_select_str(e, first_x, second_x, y_position)
    end
-   #
-   #
-   #
-   method findstring(s)
-      local L, startcol, i, j
-      L := CurrentEditBox().get_contents()
-      startcol := CurrentEditBox().cursor_x
-      i := 1 #CurrentEditBox().cursor_y
-      foundline := &null
-      while L[i] do {
-	 if j := find(s, L[i], startcol) then {
-	    foundline := i
-	    foundcol := j
-	    goto_line(i,1)
-	    CurrentEditBox().cursor_x := j + *s
-	    CurrentEditBox().constrain_line()
-	    CurrentEditBox().refresh(1)
-	    return
-	    }
-	 i +:= 1
-	 startcol := 1
-         }
+
+   method handle_find_next()
+      CurrentEditBox().handle_find_next()
    end
    #
    #

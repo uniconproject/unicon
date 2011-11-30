@@ -163,16 +163,6 @@ int first;
    syserr("co_chng() called, but co-expressions not implemented");
 #else        				/* CoExpr */
 
-/*
- * after getting rid of this static, and rewritng the two uses of it in 
- *  the code few pages below, native coexpr start casuing problem. They 
- *  couldn't "fail" anymore at the unicon level.  This problem would have
- *  to be fixed for native co-exprs and pthread co-exprs to ever co-exist.
- *  for now we are keeping them under ifdefs.
- */
-#ifndef PthreadCoswitch
-   static int coexp_act; 
-#endif					/* PthreadCoswitch */
    register struct b_coexpr *ccp;
    CURTSTATE();
 
@@ -336,20 +326,22 @@ int first;
       swtch_typ = A_Coact;
 #endif					/* MultiThread */
 
-#ifdef PthreadCoswitch
    ncp->coexp_act = swtch_typ;
+#ifdef PthreadCoswitch
 #ifdef Concurrent
    pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
 #else					/* Concurrent */
    pthreadcoswitch(ccp->cstate, ncp->cstate,first);
 #endif					/* Concurrent */
-   return ccp->coexp_act;
-   
 #else					/* PthreadCoswitch */
-   coexp_act = swtch_typ;
    coswitch(ccp->cstate, ncp->cstate,first);
-   return coexp_act;
 #endif					/* PthreadCoswitch */
+   /*
+    * Beware!  Native co-expression switches may not save all registers,
+    * they might only preserve enough to immediate return.  So local variables
+    * like ccp might not be correct after the coswitch.
+    */
+   return ((struct b_coexpr *)BlkLoc(k_current))->coexp_act;
 
 #endif        				/* CoExpr */
    }
@@ -416,8 +408,6 @@ int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat)
 int pthreadcoswitch(void *o, void *n, int first)
 #endif					/* Concurrent */
 {
-
-
    cstate ocs = o;			/* old cstate pointer */
    cstate ncs = n;			/* new cstate pointer */
    context *old, *new;			/* old and new context pointers */

@@ -38,13 +38,13 @@ DTA_UFILES = $(DTA)/atomic_agent.u $(DTA)/temporals.u
 all: Libfiles Assertions $(EXEs) 
 
 Libfiles:
-	cd $(LIB); make
+	cd $(LIB); $(MAKE)
 
 Assertions:
-	cd $(DTA); make
+	cd $(DTA); $(MAKE)
 
 tools:
-	cd $(LIB); make tools
+	cd $(LIB); $(MAKE) tools
 
 udb: $(UFILES) $(LIBRARY) $(DTA_UFILES)
 	$(UC) $(ldflags) $(LIBRARY) $(DTA_UFILES) $(UFILES) -o udb
@@ -120,13 +120,13 @@ clean:
 	$(DEL) *.pag
 	$(DEL) *.db
 	$(DEL) *~
-	cd $(LIB); make clean
-	cd $(DTA); make clean
+	cd $(LIB); $(MAKE) clean
+	cd $(DTA); $(MAKE) clean
 	$(DEL) ../../bin/$(EXEs) 
-	cd lib; make clean
+	cd lib; $(MAKE) clean
 
 cleantools:
-	cd $(LIB); make cleantools
+	cd $(LIB); $(MAKE) cleantools
 
 
 

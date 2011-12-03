@@ -213,8 +213,13 @@
 /*
  * Memory sizing. 
  */
+
+/*
+ * # of co-expressions to allocate before garbage collecting (to cleanup co-expressions)
+ * Possibly should be based on physical memory size.
+ */
 #ifndef AlcMax
-   #define AlcMax 25
+   #define AlcMax 250
 #endif					/* AlcMax */
 
 /*

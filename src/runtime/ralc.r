@@ -141,14 +141,18 @@ alcbignum_macro(alcbignum,0)
 struct b_coexpr *alccoexp()
    {
    struct b_coexpr *ep;
+   /*
+    * If there have been too many co-expression allocations
+    * since a collection, attempt to free some co-expression blocks.
+    */
+   if (alcnum > AlcMax) collect(Static);
+
    ep = (struct b_coexpr *)malloc((msize)stksize);
 
    /*
-    * If malloc failed or if there have been too many co-expression allocations
-    * since a collection, attempt to free some co-expression blocks and retry.
+    * If malloc failed, attempt to free some co-expression blocks and retry.
     */
-
-   if (ep == NULL || alcnum > AlcMax) {
+   if (ep == NULL) {
       collect(Static);
       ep = (struct b_coexpr *)malloc((msize)stksize);
       }
@@ -189,8 +193,14 @@ struct b_coexpr *alccoexp()
 #endif					/* MultiThread */
 
    {
-   struct b_coexpr *ep;
+   struct b_coexpr *ep = NULL;
    CURTSTATE();
+
+   /*
+    * If there have been too many co-expression allocations
+    * since a collection, attempt to free some co-expression blocks.
+    */
+   if (alcnum > AlcMax) collect(Static);
 
 #ifdef MultiThread
    if (icodesize > 0) {
@@ -205,11 +215,9 @@ struct b_coexpr *alccoexp()
    }
 
    /*
-    * If malloc failed or there have been too many co-expression allocations
-    * since a collection, attempt to free some co-expression blocks and retry.
+    * If malloc failed, attempt to free some co-expression blocks and retry.
     */
-
-   if (ep == NULL || alcnum > AlcMax) {
+   if (ep == NULL) {
       collect(Static);
 
 #ifdef MultiThread

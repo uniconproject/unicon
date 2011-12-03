@@ -412,25 +412,7 @@ int pthreadcoswitch(void *o, void *n, int first)
    cstate ncs = n;			/* new cstate pointer */
    context *old, *new;			/* old and new context pointers */
 
-#if 0
-if (pco_inited)				/* if not first call */
-#endif
-      old = ocs[1];			/* load current context pointer */
-#if 0
-else {
-      /*
-       * This is the first coswitch() call.
-       * Initialize the context struct for &main.
-       */
-      MUTEX_LOCKID(MTX_PCO_INITED);
-
-	old = ocs[1];
-	old->thread = pthread_self();
-	old->alive = 1;
-	pco_inited = 1;
-      MUTEX_UNLOCKID(MTX_PCO_INITED);
-      }
-#endif      
+   old = ocs[1];			/* load current context pointer */
 
    if (first != 0)			/* if not first call for this cstate */
       new = ncs[1];			/* load new context pointer */
@@ -444,6 +426,8 @@ else {
       if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;
+
+      /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/
       }
    
    sem_post(new->semp);			/* unblock the new thread */
@@ -451,13 +435,10 @@ else {
 #ifdef AAAConcurrent
    if (nstat & Ts_Sync )
 #endif					/* Concurrent */
+      
       sem_wait(old->semp);		/* block this thread */
 
-   if (!old->alive
-#ifdef AAAConcurrent
-       || (ostat & Ts_Async)
-#endif					/* Concurrent */
-       ) {
+   if (!old->alive) {
       pthread_exit(NULL);		/* if unblocked because unwanted */
       }
    return 0;				/* else return to continue running */
@@ -469,17 +450,36 @@ else {
 void coclean(void *o) {
    cstate ocs = o;			/* old cstate pointer */
    struct context *old = ocs[1];	/* old context pointer */
+   struct region *strregion=NULL, *blkregion=NULL;
    if (old == NULL)			/* if never initialized, do nothing */
       return;
+
+   if (old->tstate){
+      strregion = old->tstate->Curstring;
+      blkregion = old->tstate->Curblock;
+   }
+
+   if (old->alive == 0)
+    return;
+    /*syserr(" The thread is not alive already! is this a problem?\n");*/
+
    old->alive = 0;			/* signal thread to exit */
+   old->tstate->ctx = NULL; 
+
    sem_post(old->semp);			/* unblock it */
    pthread_join(old->thread, NULL);	/* wait for thread to exit */
+
    #ifdef NamedSemaphores
       sem_close(old->semp);		/* close associated semaphore */
    #else
       sem_destroy(old->semp);		/* destroy associated semaphore */
    #endif
    free(old);				/* free context block */
+   /* give up the heaps owned by the thread */
+   if (blkregion){
+      swap2publicheap(blkregion, NULL,  &public_blockregion);
+      swap2publicheap(strregion, NULL,  &public_stringregion);
+     }
    }
 
 /*

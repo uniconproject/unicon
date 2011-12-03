@@ -585,6 +585,47 @@ void tlschainadd(struct threadstate *tstate, struct context *ctx)
 }
 
 /*
+ * reuse_region - search region chain for a region having at least nbytes available
+ */
+static struct region *reuse_region(nbytes, region)
+word nbytes;
+int region;
+   {
+   struct region *rp;
+   struct region **p_public;
+   struct region *curr;
+   int mtx_publicheap;
+
+   if (region == Strings){
+      curr = public_stringregion;
+      p_public = &public_stringregion;
+      mtx_publicheap = MTX_PUBLICSTRHEAP;
+      }
+   else{
+      curr = public_blockregion;
+      p_public = &public_blockregion;
+      mtx_publicheap = MTX_PUBLICBLKHEAP;
+      }
+
+   MUTEX_LOCKID(mtx_publicheap);
+
+   for (rp = curr; rp; rp = rp->Tnext){
+      if (DiffPtrs(rp->end, rp->free) >= nbytes){
+         if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
+	 else *p_public = curr->Tnext;	   
+  	 if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
+         curr->Tnext= NULL;
+         curr->Tprev = NULL;
+	 break;
+ 	 }
+      }
+
+   MUTEX_UNLOCKID(mtx_publicheap);
+
+   return rp;
+   }
+
+/*
  * Initialize separate heaps for (concurrent) threads.
  * At present, PthreadCoswitch probably uses this for Pthread coexpressions.
  */
@@ -612,10 +653,12 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
     *  new string and block region should be allocated
     */
 
-   if (strsiz < 1024) strsiz = 262144;
-   if (blksiz < 1024) blksiz = 262144;
+   if (strsiz < 1024)  strsiz = 10240;
+   if (blksiz < 1024)  blksiz = 10240;
 
-   if ((rp = newregion(strsiz, strsiz)) != 0) {
+   if((rp = reuse_region(strsiz/2, Strings)) != 0)
+      ts->Curstring =  curstring = rp;
+   else if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID(MTX_STRHEAP);
       rp->prev = curstring;
       rp->next = NULL;
@@ -631,7 +674,9 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
     else
       syserr(" init_threadheap: insufficient memory");
 
-   if ((rp = newregion(blksiz, blksiz)) != 0) {
+   if((rp = reuse_region(blksiz/2, Blocks)) != 0)
+      ts->Curblock =  curblock = rp;
+   else if ((rp = newregion(blksiz, blksiz)) != 0) {
       MUTEX_LOCKID(MTX_BLKHEAP);
       rp->prev = curblock;
       rp->next = NULL;
@@ -715,7 +760,6 @@ void init_threadstate(struct threadstate *ts)
    ts->stringtotal=0;
    ts->blocktotal=0;
 #endif 					/* Concurrent */
-
 }
 
 #if COMPILER

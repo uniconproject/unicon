@@ -457,6 +457,7 @@ int region;
 #ifdef Concurrent
    { struct threadstate *tstate;
    for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
+      if (!(tstate->ctx) || !(tstate->ctx->c) || tstate->ctx->alive==0 ) continue;
       tstate->ctx->c->es_tend = tstate->Tend;
       tstate->ctx->c->es_pfp = tstate->Pfp;
       tstate->ctx->c->es_gfp = tstate->Gfp;
@@ -645,6 +646,7 @@ struct progstate *pstate;
 #ifdef Concurrent
    struct threadstate *t;
    for (t = roottstatep; t != NULL; t = t->next)
+      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async))
        markthread(t);
 #else					/* Concurrent */
    postqual(&(pstate->tstate->ksub));
@@ -1319,12 +1321,6 @@ static void cofree()
          #ifdef CoClean
 	    coclean(xep->cstate);
          #endif				/* CoClean */
-
-#ifdef Concurrent
-	 /*
-	  * do we need to kill a thread before we free its pointer here
-	  */
-#endif					/* Concurrent */
 
          free((pointer)xep);
          }

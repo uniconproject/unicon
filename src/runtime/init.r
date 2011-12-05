@@ -523,178 +523,6 @@ deliberate syntax errror
    struct header hdr;
 #endif					/* !COMPILER */
 
-#ifdef Concurrent
-
-void howmanyblock()
-{
-  int i=0;
-  struct region *rp;
-  
-  printf("here is what I have:\n");
-  rp = curpstate->stringregion;
-  while (rp){ i++;   rp = rp->Gnext; }
-  rp = curpstate->stringregion->Gprev;
-  while (rp){ i++;   rp = rp->Gprev; }
-  printf(" Global string= %d\n", i);
-
-  rp = curpstate->stringregion;
-  i=0;
-  while (rp){ i++; rp = rp->next;}
-  rp = curpstate->stringregion->prev;
-  while (rp){ i++;   rp = rp->prev; }
-
-  printf(" local string= %d\n", i);
-
-  rp = curpstate->blockregion;
-  i=0;
-  while (rp){i++; rp = rp->Gnext;}
-  rp = curpstate->blockregion->Gprev;
-  while (rp){ i++;   rp = rp->Gprev; }
-
-  printf(" Global block= %d\n", i);
-
-  rp = curpstate->blockregion;
-  i=0;
-  while (rp){i++; rp = rp->next; }
-  rp = curpstate->blockregion->prev;
-  while (rp){ i++;   rp = rp->prev; }
-
-  printf(" local block= %d\n", i);
-}
-
-
-void tlschainadd(struct threadstate *tstate, struct context *ctx)
-{
-   MUTEX_LOCKID(MTX_TLS_CHAIN);
-   tstate->prev = roottstatep->prev;
-   tstate->next = NULL;
-   roottstatep->prev->next = tstate;
-   roottstatep->prev = tstate;
-   if (ctx){
-      tstate->ctx = ctx;
-      ctx->tstate = tstate;
-      }
-   else
-      /*
-       *  Warning: This may overwrite already initialized ctx,
-       *  But we can not risk leaving ctx uninitialized. 
-       */
-      tstate->ctx = NULL;
-
-   MUTEX_UNLOCKID(MTX_TLS_CHAIN);
-}
-
-/*
- * reuse_region - search region chain for a region having at least nbytes available
- */
-static struct region *reuse_region(nbytes, region)
-word nbytes;
-int region;
-   {
-   struct region *rp;
-   struct region **p_public;
-   struct region *curr;
-   int mtx_publicheap;
-
-   if (region == Strings){
-      curr = public_stringregion;
-      p_public = &public_stringregion;
-      mtx_publicheap = MTX_PUBLICSTRHEAP;
-      }
-   else{
-      curr = public_blockregion;
-      p_public = &public_blockregion;
-      mtx_publicheap = MTX_PUBLICBLKHEAP;
-      }
-
-   MUTEX_LOCKID(mtx_publicheap);
-
-   for (rp = curr; rp; rp = rp->Tnext){
-      if (DiffPtrs(rp->end, rp->free) >= nbytes){
-         if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
-	 else *p_public = curr->Tnext;	   
-  	 if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
-         curr->Tnext= NULL;
-         curr->Tprev = NULL;
-	 break;
- 	 }
-      }
-
-   MUTEX_UNLOCKID(mtx_publicheap);
-
-   return rp;
-   }
-
-/*
- * Initialize separate heaps for (concurrent) threads.
- * At present, PthreadCoswitch probably uses this for Pthread coexpressions.
- */
-void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
-{ 
-   /*
-    * This static doesn't cause a race condition because initial main
-    * co-expression will be initialized before any other thread is ever
-    * created.
-    */
-   static int first=1;
-   struct region *rp;
-
-   /*
-    * The main thread just points to the initial regions.
-    */
-   if (first){
-      ts->Curstring = curstring;
-      ts->Curblock = curblock;
-      first = 0;
-      return;
-      }
-
-   /*
-    *  new string and block region should be allocated
-    */
-
-   if (strsiz < 1024)  strsiz = 10240;
-   if (blksiz < 1024)  blksiz = 10240;
-
-   if((rp = reuse_region(strsiz/2, Strings)) != 0)
-      ts->Curstring =  curstring = rp;
-   else if ((rp = newregion(strsiz, strsiz)) != 0) {
-      MUTEX_LOCKID(MTX_STRHEAP);
-      rp->prev = curstring;
-      rp->next = NULL;
-      curstring->next = rp;
-      rp->Gnext = curstring;
-      rp->Gprev = curstring->Gprev;
-      if (curstring->Gprev) curstring->Gprev->Gnext = rp;
-      curstring->Gprev = rp;
-      curstring = rp;
-      MUTEX_UNLOCKID(MTX_STRHEAP);
-      ts->Curstring = rp;
-      }
-    else
-      syserr(" init_threadheap: insufficient memory");
-
-   if((rp = reuse_region(blksiz/2, Blocks)) != 0)
-      ts->Curblock =  curblock = rp;
-   else if ((rp = newregion(blksiz, blksiz)) != 0) {
-      MUTEX_LOCKID(MTX_BLKHEAP);
-      rp->prev = curblock;
-      rp->next = NULL;
-      curblock->next = rp;
-      rp->Gnext = curblock;
-      rp->Gprev = curblock->Gprev;
-      if (curblock->Gprev) curblock->Gprev->Gnext = rp;
-      curblock->Gprev = rp;
-      curblock = rp;
-
-      MUTEX_UNLOCKID(MTX_BLKHEAP);
-      ts->Curblock = rp;
-      }
-    else
-      syserr(" init_threadheap: insufficient memory");
-}
-#endif 					/* Concurrent */
-
 void init_threadstate(struct threadstate *ts)
 {
 
@@ -1017,7 +845,12 @@ Deliberate Syntax Error
 #endif					/* COMPILER */
 
 #ifdef Concurrent
-   init_threadheap(curtstate, rootblock.size, rootstring.size);
+       /* 
+        * The heaps for root are handled differently (allocated already). 
+        * This replaces a call to init_threadheap(curtstate, , ,)  
+	*/
+      curtstate->Curstring = curstring;
+      curtstate->Curblock = curblock;
 #endif					/* Concurrent */
 
    /*
@@ -1044,10 +877,6 @@ Deliberate Syntax Error
    initalloc(hdr.hsize);
 #endif					/* MultiThread */
 #endif					/* COMPILER */
-
-#ifdef Concurrent_REMOVETHIS
-   init_threadheap(curtstate);
-#endif					/* Concurrent */
 
 #if !COMPILER
    /*

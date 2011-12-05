@@ -1029,7 +1029,6 @@ void *nctramp(void *arg);
 void init_threadstate(struct threadstate *ts);
 
 #ifdef Concurrent 
-void tlschainadd(struct threadstate *tstate, struct context *ctx);
 #ifndef HAVE_KEYWORD__THREAD
 struct threadstate *get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */

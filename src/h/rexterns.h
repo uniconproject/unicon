@@ -112,6 +112,9 @@ extern struct b_real realzero;		/* real zero block */
    extern char ToEBCDIC[], FromEBCDIC[]; /* ASCII<->EBCDIC maps */
 #endif					/* EBCDIC == 2 */
 
+   extern struct region rootstring;
+   extern struct region rootblock;
+
 /*
  * Externals conditional on multithreading.
  */
@@ -119,8 +122,6 @@ extern struct b_real realzero;		/* real zero block */
    extern dptr glbl_argp;		/* argument pointer */
    extern struct region *curstring;
    extern struct region *curblock;
-   extern struct region rootstring;
-   extern struct region rootblock;
 
    extern struct descrip k_current;	/* &current */
    extern char *k_errortext;		/* value of &errortext */

@@ -388,7 +388,6 @@ int region;
        curstring = curtstring;
 #endif					/* Concurrent */
 
-
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
    getrlimit(RLIMIT_STACK , &rl);
    /*
@@ -457,7 +456,7 @@ int region;
 #ifdef Concurrent
    { struct threadstate *tstate;
    for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
-      if (!(tstate->ctx) || !(tstate->ctx->c) || tstate->ctx->alive==0 ) continue;
+      if (!(tstate->ctx) || !(tstate->ctx->c) || (tstate->ctx->alive==0) ) continue;
       tstate->ctx->c->es_tend = tstate->Tend;
       tstate->ctx->c->es_pfp = tstate->Pfp;
       tstate->ctx->c->es_gfp = tstate->Gfp;
@@ -646,8 +645,8 @@ struct progstate *pstate;
 #ifdef Concurrent
    struct threadstate *t;
    for (t = roottstatep; t != NULL; t = t->next)
-      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async))
-       markthread(t);
+      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async ) && (t->ctx->alive) )
+        markthread(t);
 #else					/* Concurrent */
    postqual(&(pstate->tstate->ksub));
    PostDescrip(pstate->tstate->K_errorvalue);
@@ -1319,7 +1318,7 @@ static void cofree()
             }
 #endif
          #ifdef CoClean
-	    coclean(xep->cstate);
+ 	    coclean(xep->cstate);
          #endif				/* CoClean */
 
          free((pointer)xep);

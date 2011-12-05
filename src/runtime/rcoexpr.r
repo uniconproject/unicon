@@ -8,6 +8,10 @@
  */
 static continuation coexpr_fnc;
 
+#ifdef Concurrent
+void tlschain_add(struct threadstate *tstate, struct context *ctx);
+void tlschain_remove(struct threadstate *tstate);
+#endif					/* Concurrent  */
 
 /*
  * co_init - use the contents of the refresh block to initialize the
@@ -451,36 +455,66 @@ void coclean(void *o) {
    cstate ocs = o;			/* old cstate pointer */
    struct context *old = ocs[1];	/* old context pointer */
    struct region *strregion=NULL, *blkregion=NULL;
-   if (old == NULL)			/* if never initialized, do nothing */
+   if (old == NULL) 			/* if never initialized, do nothing */
+     /* ((old->c->status & Ts_Sync) && (old->alive == 0)))*/      
       return;
-
+    
    if (old->tstate){
       strregion = old->tstate->Curstring;
       blkregion = old->tstate->Curblock;
    }
 
-   if (old->alive == 0)
-    return;
-    /*syserr(" The thread is not alive already! is this a problem?\n");*/
-
-   old->alive = 0;			/* signal thread to exit */
-   old->tstate->ctx = NULL; 
-
-   sem_post(old->semp);			/* unblock it */
-   pthread_join(old->thread, NULL);	/* wait for thread to exit */
-
+   if (old->c->status & Ts_Sync){
+      old->alive = 0;			/* signal thread to exit */
+      sem_post(old->semp);		/* unblock it */
+      THREAD_JOIN(old->thread, NULL);	/* wait for thread to exit */
+      }
+ 
    #ifdef NamedSemaphores
       sem_close(old->semp);		/* close associated semaphore */
    #else
       sem_destroy(old->semp);		/* destroy associated semaphore */
    #endif
-   free(old);				/* free context block */
-   /* give up the heaps owned by the thread */
-   if (blkregion){
-      swap2publicheap(blkregion, NULL,  &public_blockregion);
-      swap2publicheap(strregion, NULL,  &public_stringregion);
-     }
-   }
+
+   if ((old->c->status & Ts_Async) && (old->alive <= 0)){
+      MUTEX_LOCKID(MTX_TLS_CHAIN);
+      tlschain_remove(old->tstate);
+      MUTEX_UNLOCKID(MTX_TLS_CHAIN);
+      free(old); 			/* free context block */
+      return;
+      }
+
+   if (old->c->status & Ts_Async){
+      /* give up the heaps owned by the thread */
+      if (blkregion){
+         MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
+         swap2publicheap(blkregion, NULL,  &public_blockregion);
+         MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
+
+         MUTEX_LOCKID(MTX_PUBLICSTRHEAP);
+         swap2publicheap(strregion, NULL,  &public_stringregion);
+         MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
+         }
+      MUTEX_LOCKID(MTX_NARTHREADS); 
+
+      NARthreads--;	
+      MUTEX_UNLOCKID(MTX_NARTHREADS);
+      old->alive = -1;
+      pthread_exit(NULL);
+      }
+   else{
+      /*
+       * Give up the heaps owned by the old thread, 
+       * only GC thread is running, no need to lock 
+       */
+      if (blkregion){
+         swap2publicheap(blkregion, NULL,  &public_blockregion);
+         swap2publicheap(strregion, NULL,  &public_stringregion);
+         }
+      tlschain_remove(old->tstate);
+      free(old); 			/* free context block */
+      }
+  }
 
 /*
  * makesem(ctx) -- initialize semaphore in context struct.
@@ -511,7 +545,7 @@ void *nctramp(void *arg)
    CURTSTATE();
 
    init_threadstate(curtstate);
-   tlschainadd(curtstate, new);
+   tlschain_add(curtstate, new);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
    k_level = new->tmplevel;
@@ -541,7 +575,6 @@ void *nctramp(void *arg)
    return NULL;
    }
 #endif					/* PthreadCoswitch */
-
 
 #ifdef Concurrent 
 
@@ -800,4 +833,175 @@ struct threadstate *get_tstate()
 }
 
 #endif					/* HAVE_KEYWORD__THREAD */
-#endif					/* Concurrent */
+
+void howmanyblock()
+{
+  int i=0;
+  struct region *rp;
+  
+  printf("here is what I have:\n");
+  rp = curpstate->stringregion;
+  while (rp){ i++;   rp = rp->Gnext; }
+  rp = curpstate->stringregion->Gprev;
+  while (rp){ i++;   rp = rp->Gprev; }
+  printf(" Global string= %d\n", i);
+
+  rp = curpstate->stringregion;
+  i=0;
+  while (rp){ i++; rp = rp->next;}
+  rp = curpstate->stringregion->prev;
+  while (rp){ i++;   rp = rp->prev; }
+
+  printf(" local string= %d\n", i);
+
+  rp = curpstate->blockregion;
+  i=0;
+  while (rp){i++; rp = rp->Gnext;}
+  rp = curpstate->blockregion->Gprev;
+  while (rp){ i++;   rp = rp->Gprev; }
+
+  printf(" Global block= %d\n", i);
+
+  rp = curpstate->blockregion;
+  i=0;
+  while (rp){i++; rp = rp->next; }
+  rp = curpstate->blockregion->prev;
+  while (rp){ i++;   rp = rp->prev; }
+
+  printf(" local block= %d\n", i);
+}
+
+void tlschain_add(struct threadstate *tstate, struct context *ctx)
+{
+   MUTEX_LOCKID(MTX_TLS_CHAIN);
+   tstate->prev = roottstatep->prev;
+   tstate->next = NULL;
+   roottstatep->prev->next = tstate;
+   roottstatep->prev = tstate;
+   if (ctx){
+      tstate->ctx = ctx;
+      ctx->tstate = tstate;
+      }
+   else
+      /*
+       *  Warning: This may overwrite already initialized ctx,
+       *  But we can not risk leaving ctx uninitialized. 
+       */
+      tstate->ctx = NULL;
+
+   MUTEX_UNLOCKID(MTX_TLS_CHAIN);
+}
+
+void tlschain_remove(struct threadstate *tstate)
+{
+   /* 
+    * This function assumes that MTX_TLS_CHAIN is locked/unlocked 
+    * if needed. GCthread doesn't need to lock for example.
+    */
+
+   tstate->prev->next = tstate->next;
+   if (tstate->next)
+      tstate->next->prev = tstate->prev;
+
+   rootpstate.stringtotal += tstate->stringtotal;
+   rootpstate.blocktotal += tstate->blocktotal;
+   
+   free(tstate);
+}
+
+/*
+ * reuse_region - search region chain for a region having at least nbytes available
+ */
+static struct region *reuse_region(nbytes, region)
+word nbytes;
+int region;
+   {
+   struct region *rp;
+   struct region **p_public;
+   struct region *curr;
+   int mtx_publicheap;
+   word freebytes = nbytes / 4;
+
+   if (region == Strings){
+      curr = public_stringregion;
+      p_public = &public_stringregion;
+      mtx_publicheap = MTX_PUBLICSTRHEAP;
+      }
+   else{
+      curr = public_blockregion;
+      p_public = &public_blockregion;
+      mtx_publicheap = MTX_PUBLICBLKHEAP;
+      }
+
+   MUTEX_LOCKID(mtx_publicheap);
+
+   for (rp = curr; rp; rp = rp->Tnext){
+      if ( (rp->size>=nbytes) &&  DiffPtrs(rp->end, rp->free) >= freebytes){
+         if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
+	 else *p_public = curr->Tnext;	   
+  	 if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
+         curr->Tnext= NULL;
+         curr->Tprev = NULL;
+	 break;
+ 	 }
+      }
+
+   MUTEX_UNLOCKID(mtx_publicheap);
+
+   return rp;
+   }
+
+/*
+ * Initialize separate heaps for (concurrent) threads.
+ * At present, PthreadCoswitch probably uses this for Pthread coexpressions.
+ */
+void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
+{ 
+   struct region *rp;
+
+   /*
+    *  new string and block region should be allocated.
+    */
+
+    if (strsiz <  MinStrSpace)
+       strsiz = MinStrSpace;
+    if (blksiz <  MinAbrSize)
+       blksiz = MinAbrSize;
+
+   if((rp = reuse_region(strsiz, Strings)) != 0)
+      ts->Curstring =  curstring = rp;
+   else if ((rp = newregion(strsiz, strsiz)) != 0) {
+      MUTEX_LOCKID(MTX_STRHEAP);
+      rp->prev = curstring;
+      rp->next = NULL;
+      curstring->next = rp;
+      rp->Gnext = curstring;
+      rp->Gprev = curstring->Gprev;
+      if (curstring->Gprev) curstring->Gprev->Gnext = rp;
+      curstring->Gprev = rp;
+      curstring = rp;
+      MUTEX_UNLOCKID(MTX_STRHEAP);
+      ts->Curstring = rp;
+      }
+    else
+      syserr(" init_threadheap: insufficient memory for string region");
+
+   if((rp = reuse_region(blksiz, Blocks)) != 0)
+      ts->Curblock =  curblock = rp;
+   else if ((rp = newregion(blksiz, blksiz)) != 0) {
+      MUTEX_LOCKID(MTX_BLKHEAP);
+      rp->prev = curblock;
+      rp->next = NULL;
+      curblock->next = rp;
+      rp->Gnext = curblock;
+      rp->Gprev = curblock->Gprev;
+      if (curblock->Gprev) curblock->Gprev->Gnext = rp;
+      curblock->Gprev = rp;
+      curblock = rp;
+      MUTEX_UNLOCKID(MTX_BLKHEAP);
+      ts->Curblock = rp;
+      }
+    else
+      syserr(" init_threadheap: insufficient memory for block region");
+}
+#endif 					/* Concurrent */

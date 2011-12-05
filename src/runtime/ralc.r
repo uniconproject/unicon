@@ -210,9 +210,7 @@ struct b_coexpr *alccoexp()
       }
    else
 #endif					/* MultiThread */
-      {
-   ep = (struct b_coexpr *)malloc((msize)stksize);
-   }
+     ep = (struct b_coexpr *)malloc((msize)stksize);
 
    /*
     * If malloc failed, attempt to free some co-expression blocks and retry.
@@ -227,7 +225,6 @@ struct b_coexpr *alccoexp()
          }
       else
 #endif					/* MultiThread */
-
          ep = (struct b_coexpr *)malloc((msize)stksize);
       }
    if (ep == NULL)
@@ -256,8 +253,16 @@ struct b_coexpr *alccoexp()
 #endif					/* MultiThread */
 
 #ifdef Concurrent
-      ep->status = 0;
+      ep->status = Ts_Sync;
       ep->squeue = ep->rqueue = NULL;
+
+      ep->ini_blksize = rootblock.size/100;
+      if (ep->ini_blksize < MinAbrSize)
+         ep->ini_blksize = MinAbrSize;
+
+      ep->ini_ssize = rootstring.size/100;
+      if (ep->ini_ssize < MinStrSpace)
+         ep->ini_ssize = MinStrSpace;
 #endif					/* Concurrent */
 
       ep->es_tend = NULL;

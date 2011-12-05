@@ -2557,9 +2557,9 @@ function{1} thread(x, blocksize, stringsize)
    declare {
       C_integer _bs_, _ss_;
       }
-   if !def:C_integer(blocksize,262144,_bs_) then
+   if !def:C_integer(blocksize,0,_bs_) then
       runerr(101,blocksize)
-   if !def:C_integer(stringsize,262144,_ss_) then
+   if !def:C_integer(stringsize,0,_ss_) then
       runerr(101,stringsize)
    if is:coexpr(x) then {
       abstract { return coexpr }
@@ -2581,8 +2581,17 @@ function{1} thread(x, blocksize, stringsize)
 	 MUTEX_INIT(cp->rmute, NULL);
 	 cp->squeue = (union block *)alclist(0, MinListSlots);
 	 cp->rqueue = (union block *)alclist(0, MinListSlots);
-	 if (_bs_ < MinAbrSize) _bs_ = MinAbrSize;
-	 if (_ss_ < MinAbrSize) _ss_ = MinStrSpace;
+ 
+         if (!_bs_)
+	    _bs_ = rootblock.size/10 ;
+	 else if (_bs_ < MinAbrSize) 
+	    _bs_ = MinAbrSize;
+
+	 if (!_ss_)
+  	    _ss_ = rootstring.size/10;
+	 else if (_ss_ < MinStrSpace) 
+	    _ss_ =
+
 	 cp->ini_blksize = _bs_;
 	 cp->ini_ssize = _ss_;
 
@@ -2617,6 +2626,7 @@ function{1} thread(x, blocksize, stringsize)
 	     */
 	    if ( pthread_create(&(n->thread), NULL, nctramp, n) != 0 )
 	       syserr("cannot create thread");
+	    n->alive = 1;
 	    }
 
 	 /*

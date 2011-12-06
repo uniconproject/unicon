@@ -32,7 +32,19 @@ operator{*} ! bang(underef x -> dx)
          }
       }
    else type_case dx of {
-
+      integer: {
+         abstract {
+            return integer
+	    }
+	 inline {
+	    C_integer from=1, to;
+	    if (!cnv:C_integer(dx, to)) fail;
+	    if (to < 1) fail;
+	    for ( ; from <= to; from += 1) {
+	       suspend C_integer from;
+	       }
+	    }
+	 }
       list: {
          abstract {
             return type(dx).lst_elem

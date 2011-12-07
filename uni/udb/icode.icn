@@ -8,10 +8,11 @@
 
 # link cfunc if you have loadfunc() and wish to enable big-endian test
 $ifdef NOTDEF
-link cfunc
+   link cfunc
+$else
+   $define pack 0
+   $define unpack 0
 $endif
-
-link packunpk
 
 record header (
    hsize,    # /* size of interpreter code          */
@@ -79,7 +80,7 @@ method endian(s)
 local i, xl, xb, s1
 static isBigEndian
 initial {
-  if (&features=="external functions") & \pack then {
+  if (&features=="external functions") & \pack~===0 then {
      s1 := pack(1, "n")
      xl := unpack(s1, "l")
      xb := unpack(s1, "b")

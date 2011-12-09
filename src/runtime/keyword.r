@@ -387,7 +387,7 @@ keyword{1,*} features
 #else					/* COMPILER */
 #define Feature(guard,sym,kwval) if (kwval) suspend C_string kwval;
 #endif					/* COMPILER */
-#include "../h/features.h"
+#include "../h/feature.h"
 
       if (refpath && strlen(refpath) > 0) {
 	 char *s;

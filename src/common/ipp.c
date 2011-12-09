@@ -20,7 +20,7 @@
  *	ppch() -- return next preprocessed character
  *	ppecho() -- preprocess to stdout (for icont/iconc -E)
  *
- *  See ../h/features.h for the set of predefined symbols.
+ *  See ../h/feature.h for the set of predefined symbols.
  */
  
 #include "../h/gsupport.h"
@@ -142,7 +142,7 @@ int ppinit(char *fname, char *inclpath, int m4)
     * install predefined symbols
     */
 #define Feature(guard,symname,kwval) dlookup(symname, -1, "1");
-#include "../h/features.h"
+#include "../h/feature.h"
 
    /*
     * initialize variables and open source file 

@@ -155,7 +155,7 @@ xinvoke.o: invoke.r $(HDRS)
 	$(CC) $(CFLAGS) -c xinvoke.c
 	rm xinvoke.c
 
-xkeyword.o: keyword.r $(HDRS) ../h/features.h ../h/version.h
+xkeyword.o: keyword.r $(HDRS) ../h/feature.h ../h/version.h
 	../../bin/rtt -x keyword.r
 	$(CC) $(CFLAGS) -c xkeyword.c
 	rm xkeyword.c

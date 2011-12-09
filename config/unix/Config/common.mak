@@ -31,7 +31,7 @@ $(OBJS): ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 
 identify.o: ../h/version.h
 
-ipp.o: ../h/features.h
+ipp.o: ../h/feature.h
 
 literals.o: ../h/esctab.h
 

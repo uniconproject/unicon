@@ -112,10 +112,10 @@ class BuffEditableTextList : EditableTextList(
 
       # Search for the nearest x position on the new line corresponding to
       # the current x position.
-      d := TextWidthEx(self.cwin, self.contents[cursor_y], 1, self.cursor_x, self.tab_width)
+      d := TextWidthEx(cwin, contents[cursor_y], 1, cursor_x, tab_width)
       dest := self.contents[n]
       i := 1
-      while (i <= *dest) & (TextWidthEx(self.cwin, dest, 1, i, self.tab_width) < d) do
+      while (i <= *dest) & (TextWidthEx(cwin, dest, 1, i, tab_width) < d) do
          i +:= 1
 
       self.cursor_x := i
@@ -207,23 +207,23 @@ class BuffEditableTextList : EditableTextList(
    method on_vsb(ev,y_coor,enter_here)
       if /enter_here & \scroll_locked then fail #lock scrollbar
       self.EditableTextList.on_vsb(ev)
-      if \enter_here=1 then{
-             if \self.vsb then{
-                self.vsb.set_value(y_coor)
-                enter_here:=0
-                }
-         }
+      if \enter_here=1 then {
+	 if \self.vsb then {
+	    self.vsb.set_value(y_coor)
+	    enter_here := 0
+	    }
+	 }
    end
 
    method on_hsb(ev,x_coor,enter_here)
       if /enter_here & \scroll_locked then fail#lock scrollbar
       self.EditableTextList.on_hsb(ev)
       if \enter_here=1 then {
-             if \self.hsb then{
-                self.hsb.set_value(x_coor)
-                enter_here:=0
-                 }
-                }
+	 if \self.hsb then {
+	    self.hsb.set_value(x_coor)
+	    enter_here := 0
+	    }
+	 }
    end
 
    method handle_undo(e)
@@ -256,7 +256,6 @@ class BuffEditableTextList : EditableTextList(
    method handle_end_of_line(e)
       self.EditableTextList.handle_end_of_line(e)
    end
-
 
    method handle_key_home(e)
       self.EditableTextList.handle_start_of_line(e)
@@ -401,6 +400,7 @@ class BuffEditableTextList : EditableTextList(
          fire(SELECTION_CHANGED_EVENT, e)
          }
    end
+
    #
    # Overrides default handle_event() re-parsing on line changes, etc.
    #

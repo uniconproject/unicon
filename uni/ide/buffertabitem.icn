@@ -13,7 +13,6 @@
 $include "guih.icn"
 import gui
 
-
 #
 #  class BufferTabItem:  Overide Display method and add an extra attribute. 
 #
@@ -40,8 +39,9 @@ class BufferTabItem : TabItem(
    end
 
    
-   #################################################################
+   #
    # Display Tab Method:  Draw Tabs to Match the Editor's Theme.
+   #
    method display_tab()
       local xpw, pslh, updown, ypos, cw
       
@@ -62,10 +62,9 @@ class BufferTabItem : TabItem(
 	       self.label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
       Uncouple(cw)
 
-      
-      #################################################################
-      #These  4 rectangles give the tabs a nice look
-      ###
+      #
+      # These 4 rectangles give the tabs a nice look
+      #
       Fg(\ (self.parent.cbwin), "white")
       FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2 ,
 		    label_w - 2, (pslh - 2) / 2)
@@ -101,11 +100,10 @@ class BufferTabItem : TabItem(
       filename := &null
 end
 
-
-
-#################################################################
+#
 # Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle to be used
 # for a TabItem.
+#
 procedure BevelRoundedRectangle(win, x, y, w, h, bw)	
    local b, upper, lower, xx, yy, r, a, cx, cy, cw, cr, oldfg1, oldfg2 
    static type
@@ -134,11 +132,13 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
       y -:= (h := -h)
 
 
-  oldfg1:= Fg(b.hilite)
-  oldfg2:= Fg(b.shadow)
+   oldfg1 := Fg(b.hilite)
+   oldfg2 := Fg(b.shadow)
 
-   
-   r := (h/2) -.5    # the minus .5 make the cirlce fit perfect at the ends of the rectangle 
+   #
+   # The minus .5 makes the circle fit perfect at the ends of the rectangle
+   #
+   r := (h/2) -.5
    /bw := 2
    if bw >= 0 then {
       upper := b.hilite
@@ -180,5 +180,3 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
    
    return win
 end
-
-

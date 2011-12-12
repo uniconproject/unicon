@@ -559,7 +559,7 @@ $endif
 	 else {
 	    new_tabitem(,1,file_name(filename),file_contents) 
 	    FileBrowser.addreplace(file_contents, tab_label, 0)
-            \MsgBox.set_contents(["opened " || filename || ", " || *file_contents ||
+            \MsgBox.set_contents(["opened " || filename||", "||*file_contents||
                                 " lines, " || nchars || " characters"])
             FileTabSet.set_which_one(CurrentTabItem())
 	    handle_update()
@@ -588,7 +588,8 @@ $endif
             filedirectory := fd.get_directory()
             }
          else
-            projectname := WinOpenDialog(&window, "Open Project ...", "", 50) | fail
+            projectname := WinOpenDialog(&window, "Open Project ...", "", 50) |
+	       fail
 
          }
       if /projectname | projectname=="" | projectname[-1]==("\\"|"/") then {
@@ -598,7 +599,7 @@ $endif
          project := projectname
          updateproject()
          }
-      if projectname[-2:0]==(".*") then filename := filename[1:-2] 
+      if projectname[-2:0] == ".*" then filename := filename[1:-2] 
       file := open(projectname, "ru") | {
          \MsgBox.set_contents(["Could not open project: " || \filename])
          return
@@ -823,7 +824,7 @@ $endif
 
      if find(".icn",CurrentTabItem().label) then{
        if /is_MSWindows then{
-         cmdargs := " " || targs || " " || arglist || " > " || wiconlog || " 2>&1"
+         cmdargs := " " || targs || " " || arglist || " > " ||wiconlog||" 2>&1"
          cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs  
          }
        else{
@@ -970,7 +971,8 @@ $endif
 
       if /is_MSWindows then{
          if not(any(&letters,icodename) & (icodename[2]==":"))then
-         if icodename[1] ~== PATHSEP then icodename := "." || PATHSEP ||icodename
+         if icodename[1] ~== PATHSEP then
+	    icodename := "." || PATHSEP || icodename
          if find(".icn", CurrentTabItem().label) then {
 	    if not match(("./"|"/"), icodename) then cmd ||:= "./"
 	    cmd := quotes(icodename) || " " || xargs
@@ -1259,7 +1261,8 @@ class UpdatedTextDialog : Dialog(caption,message)
 
       add(bn1)
       add(bn2)
-      attrib("label="||caption,"size=460,150", "bg=light gray", "font=serif","resize=on")
+      attrib("label="||caption, "size=460,150", "bg=light gray",
+	     "font=serif", "resize=on")
    end
    method on_ok()
       overwrite := "OK"

@@ -6,9 +6,8 @@ name = undefined
 TOP = ../..
 SRC = $(TOP)/src
 
-
 Setup-Common:
-	cd Config; make Makefiles name=$(name)
+	cd Config; $(MAKE) Makefiles name=$(name)
 	cp $(name)/define.h $(SRC)/h
 	cp $(name)/rswitch.[cs] $(SRC)/common
 	echo 'AC_JV_LDFLAGS= @JV_LDFLAGS@' > $(TOP)/Makedefs

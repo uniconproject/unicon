@@ -4,12 +4,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
-#ifdef __APPLE__
-#include <sys/malloc.h>
-#else
-#include <malloc.h>
-#endif
-
 
 /*  machine-dependent definitions			*/
 /*  the following definitions are for the Tahoe		*/

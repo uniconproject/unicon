@@ -270,7 +270,7 @@ procedure digprod(i)		#: product of digits
 
    else j := 1
 
-   every j *:= !i
+   every j *:= !string(i)
 
    return j
 
@@ -283,7 +283,7 @@ procedure digsum(i)		#: sum of digits
 
    repeat {
       j := 0
-      every j +:= !i
+      every j +:= !string(i)
       suspend j
       if *j > 1 then i := j else fail
       }
@@ -588,7 +588,7 @@ procedure roman(n)		#: convert integer to Roman numeral
 
    integer(n) > 0 | fail
    result := ""
-   every arabic := !n do
+   every arabic := !string(n) do
       result := map(result,"IVXLCDM","XLCDM**") || equiv[arabic + 1]
    if find("*",result) then fail else return result
 

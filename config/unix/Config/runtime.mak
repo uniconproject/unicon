@@ -2,7 +2,6 @@
 
 include ../../Makedefs
 
-MAKE=make
 RM=rm -f
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\

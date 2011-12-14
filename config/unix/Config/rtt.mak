@@ -3,8 +3,6 @@
 
 include ../../Makedefs
 
-MAKE = make
-
 ROBJS = rttparse.o rttmain.o rttlex.o rttsym.o rttnode.o rttout.o rttmisc.o\
 	  rttdb.o rttinlin.o rttilc.o yyerror.o
 

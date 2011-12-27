@@ -1004,6 +1004,22 @@ union numeric *result;
       msign = c;
       c = (s < end_s) ? *s++ : ' ';
       }
+   else if (c == '&') {
+      if ((StrLen(*sptr) == 3) && (s[0] == 'p') && (s[1] == 'i')) {
+	 result->real = Pi;
+	 return T_Real;
+	 }
+      else if ((StrLen(*sptr) == 2) && (s[0] == 'e')) {
+	 result->real = 2.71828182845904523536028747135266249775724709369996;
+	 return T_Real;
+	 }
+      if ((StrLen(*sptr) == 4) && (s[0] == 'p') &&
+	  (s[1] == 'h') && (s[2] == 'i')) {
+	 result->real = 1.618033988749894848204586834365638117720309180;
+	 return T_Real;
+	 }
+      else return CvtFail;
+      }
 
    ssave = s - 1;   /* set pointer to beginning of digits in case it's needed */
 

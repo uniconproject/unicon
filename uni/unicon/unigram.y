@@ -919,3 +919,9 @@ local tabid, lp, rp, args
    rp := copy(rb); rp.tok := RPAREN; rp.s := ")"
    return node("invoke", tabid, lp, args, rp)
 end
+
+#
+# A record type for recording errors for later reporting e.g. within an IDE,
+# or to stderr.
+#
+record ParseError ( lineNumber, errorMessage )

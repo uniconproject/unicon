@@ -1,86 +1,95 @@
 procedure yyerror(s)
+
+local errorObject
+
 static t, __merr_errors
 initial {
    t := table(table("syntax error"))
    t[0] := table("invalid declaration")
    t[26] := table("left parenthesis expected to start class fieldlist")
+   t[26,373] := "fieldlist starts with left *parenthesis*, not curly brace!"
    t[26,257] := "left parenthesis expected to start class fieldlist"
-   t[26,372] := "fieldlist starts with left *parenthesis*, not curly brace!"
-   t[47] := table("missing identifier")
-   t[73] := table("invalid while control expression")
-   t[246] := table("missing operand after |||")
-   t[246,307] := "missing operand after |||"
-   t[246,317] := "illegal space inside |||:="
+   t[136] := table("missing fieldname or right parenthesis")
+   t[162] := table("missing then")
+   t[162,370] := "missing then"
+   t[162,364] := "spurious close-parenthesis"
+   t[403] := table("missing \"do\" or some such keyword earlier, or expected a comma or right brace here")
    t[10] := table("link list expected")
-   t[188] := table("unclosed parenthesis")
-   t[41] := table("method expected")
-   t[62] := table("invalid case control expression")
-   t[130] := table("missing fieldname or right parenthesis")
-   t[151] := table("missing \"of\" in case expression")
-   t[72] := table("invalid until control expression")
-   t[135] := table("missing comma or unclosed class field arguments")
-   t[135,282] := "unclosed class field arguments"
-   t[135,257] := "missing comma or unclosed class field arguments"
-   t[245] := table("missing operand after ||")
-   t[245,307] := "missing operand after ||"
-   t[245,317] := "illegal space inside ||:="
-   t[376] := table("parenthesis is required for method invocation")
-   t[444] := table("unclosed parenthesis")
+   t[78] := table("bad keyword name or bogus & precedes this token")
+   t[277] := table("field name expected")
+   t[324] := table("missing } somewhere before \"end\"")
+   t[104] := table("invalid compound expression")
+   t[104,272] := "invalid compound expression"
+   t[104,318] := "assignment missing its left operand"
+   t[282] := table("invalid initial expression")
+   t[67] := table("invalid every control expression")
+   t[72] := table("invalid repeat control expression")
+   t[203] := table("missing operator or unbalanced parenthesis/bracket")
+   t[313] := table("missing then-part")
    t[9] := table("invocable list expected")
-   t[51] := table("parameter name expected")
-   t[56] := table("unclosed literal or missing operator")
-   t[255] := table("missing or invalid second argument to !")
-   t[276] := table("parameter modifier must be a (atomic) literal or a convertor")
-   t[370] := table("unclosed parenthesis")
+   t[77] := table("invalid argument to unary !")
+   t[208] := table("expression expected, or need to move declaration to top of procedure or method")
+   t[40] := table("missing parameter list in procedure declaration")
+   t[103] := table("unclosed list")
+   t[124] := table("missing operator or \"do\" keyword")
    t[3] := table("global, class, or link expected")
-   t[3,306] := "global, class, or link expected"
-   t[3,282] := "method declaration outside any class"
+   t[3,307] := "global, class, or link expected"
+   t[3,283] := "method declaration outside any class"
    t[24] := table("missing semicolon")
-   t[24,274] := "semicolon expected"
-   t[24,271] := "missing semicolon"
-   t[66] := table("invalid if control expression")
-   t[265] := table("invalid local declaration")
-   t[375] := table("missing \"do\" or some such keyword earlier, or expected a comma or right brace here")
-   t[118] := table("missing operator or \"do\" keyword")
-   t[39] := table("missing parameter list in procedure declaration")
-   t[191] := table("missing operator or unbalanced parenthesis/bracket")
-   t[259] := table("field name expected")
-   t[301] := table("missing } somewhere before \"end\"")
+   t[24,272] := "missing semicolon"
+   t[24,275] := "semicolon expected"
+   t[155] := table("a ; or \\n is missing between method header and body")
+   t[265] := table("missing or invalid second argument to +")
+   t[270] := table("missing or invalid second argument to *")
+   t[76] := table("invalid while control expression")
+   t[296] := table("parameter name expected")
+   t[474] := table("unclosed parenthesis")
    t[23] := table("procedure not allowed within a class")
-   t[107] := table("too many closing curly braces")
-   t[107,365] := "semicolon or operator expected"
-   t[107,373] := "too many closing curly braces"
-   t[154] := table("missing then")
-   t[154,369] := "missing then"
-   t[154,363] := "spurious close-parenthesis"
-   t[264] := table("invalid initial expression")
+   t[65] := table("invalid create expression")
+   t[112] := table("missing semicolon or operator")
+   t[112,272] := "missing semicolon or operator"
+   t[112,366] := "missing semicolon or operator"
+   t[112,374] := "too many closing curly braces"
+   t[133] := table("invalid procedure body")
+   t[154] := table("procedure not allowed within a class")
+   t[196] := table("unclosed parenthesis")
+   t[264] := table("missing operand after |||")
+   t[264,308] := "missing operand after |||"
+   t[264,318] := "illegal space inside |||:="
    t[7] := table("unexpected end of file")
    t[28] := table("invalid global declaration")
-   t[75] := table("bad keyword name or bogus & precedes this token")
+   t[75] := table("invalid until control expression")
    t[12] := table("procedure name expected")
-   t[101] := table("invalid compound expression")
-   t[101,271] := "invalid compound expression"
-   t[101,317] := "assignment missing its left operand"
-   t[127] := table("invalid procedure body")
-   t[148] := table("a ; or \\n is missing between method header and body")
-   t[190] := table("unclosed list")
-   t[190,369] := "unclosed list"
-   t[190,271] := "missing operator or closing bracket"
-   t[64] := table("invalid every control expression")
-   t[195] := table("expression expected, or need to move declaration to top of procedure or method")
-   t[69] := table("invalid repeat control expression")
-   t[74] := table("invalid argument to unary !")
-   t[247] := table("missing or invalid second argument to +")
-   t[252] := table("missing or invalid second argument to *")
-   t[294] := table("missing then-part")
-   t[37] := table("invalid link declaration")
-   t[100] := table("unclosed list")
-   t[147] := table("procedure not allowed within a class")
-   t[278] := table("parameter name expected")
-   t[435] := table("malformed case expression")
-   t[63] := table("invalid create expression")
+   t[38] := table("invalid link declaration")
+   t[436] := table("malformed case expression")
+   t[64] := table("invalid case control expression")
+   t[263] := table("missing operand after ||")
+   t[263,308] := "missing operand after ||"
+   t[263,318] := "illegal space inside ||:="
+   t[48] := table("missing identifier")
+   t[69] := table("invalid if control expression")
+   t[158] := table("missing \"of\" in case expression")
+   t[273] := table("missing or invalid second argument to !")
+   t[294] := table("parameter modifier must be a (atomic) literal or a convertor")
+   t[404] := table("parenthesis is required for method invocation")
+   t[53] := table("parameter name expected")
+   t[58] := table("unclosed literal or missing operator")
+   t[142] := table("missing comma or unclosed class field arguments")
+   t[142,257] := "missing comma or unclosed class field arguments"
+   t[142,283] := "unclosed class field arguments"
+   t[42] := table("method expected")
+   t[199] := table("unclosed list")
+   t[199,272] := "missing operator or closing bracket"
+   t[199,370] := "unclosed list"
+   t[283] := table("invalid local declaration")
+   t[398] := table("unclosed parenthesis")
    __merr_errors := 0
    }
+
+   if s == "reinitialize merr errors" then {
+      __merr_errors := 0
+      return
+      }
 
    if __merr_errors = 0 then iwrite(&errout)
    else if map(s)== "stack underflow. aborting..." then return
@@ -89,12 +98,11 @@ initial {
       istop("too many errors, aborting")
    iwrites(&errout, \fName, ":")
    if s == "syntax error" then
-      s := t[statestk[1], yychar]
+      s := t[(\statestk)[1], yychar]
    if s == "syntax error" then {
-      s ||:= " (" || statestk[1] ||";"|| yychar || ")"
+      s ||:= " (" || (\statestk)[1] ||";"|| yychar || ")"
       if /merrflag then s ||:= "\n(use -M for assistance with this error)"
       }
-   iwrite(&errout, yylineno, ": # \"", yytext, "\": ", s)
    if \merrflag then {
       if ferr2 := open(\fName) then {
 	 iwrite(&errout, "Reporting (-M) your error to the Oracle (",
@@ -111,5 +119,8 @@ initial {
 	 close(ferr)
          }
       }
+   /parsingErrors := []
+   errorObject := ParseError( yylineno, s )
+   push( parsingErrors, errorObject )
    return
 end

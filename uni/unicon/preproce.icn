@@ -511,9 +511,11 @@ procedure preproc_error(msg)
     if upto(non_shell_word_chars,filename) then {
         filename := image(filename)
     }
-    write(&errout,"File ",filename,"; Line ",preproc_line," # ",
-        "$" || \preproc_command || ": " | "",msg)
+    outTxt := "File " || filename || "; Line " || preproc_line || " # " ||
+        (("$" || \preproc_command || ": ") | "") || msg
     preproc_err_count +:= 1
+    /parsingErrors := []
+    push( parsingErrors, ParseError( preproc_line, outTxt))
     return
 end
 

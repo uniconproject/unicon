@@ -30,6 +30,8 @@
 # LISTS  : links = names of external icon code to link to
 #          imports = names of external classes to import
 #
+global parsingErrors, returnErrorsFlag
+
 global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
 global classes,comp,exec,strict,links,imports,loud,ct,reserved,optimize
 global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
@@ -276,6 +278,9 @@ procedure iconc_yyparse(fname, tmplist)
    every yyin ||:= preprocessor(fname, uni_predefs) do
       yyin ||:= "\n"
    if preproc_err_count > 0 then {
+      every pe := !parsingErrors do {
+	 write(&errout, pe.errorMessage)
+	 }
       stop()      # force error exit (abruptly)
       }
    yylex_reinit()
@@ -323,6 +328,10 @@ procedure initialize()
   comp     := 0
   yynerrs  := 0
   errors   := 0
+
+  returnErrorsFlag := 0
+  parsingErrors := []
+
   merraddress := MERRADDRESS
   alpha    := &ucase ++ &lcase ++ '_' ++ &digits
   nonalpha := &cset -- alpha
@@ -453,18 +462,18 @@ procedure unicon(argv)
 		  }
 	       argv[i+1] := "-log"
 	       }
-	   }
+	    }
 	 "-version": {
-            iwrite(&version)
+	    iwrite(&version)
 	    return 0
 	    }
 	 "-x"      : exec := i
 	 "-o"      : {
-	     if (i=1) | (argv[i-1] ~=== "-o") then {
-	        exename := " -o " || quotes(argv[i+1]) || " "
-		argv[i+1] := "-o"
-		}
-	     }
+	    if (i=1) | (argv[i-1] ~=== "-o") then {
+	       exename := " -o " || quotes(argv[i+1]) || " "
+	       argv[i+1] := "-o"
+	       }
+	    }
 	 "-O": optimize := 1
 	 # -I and -L: add argv[i+1] to LPATH or IPATH, respectively
 	 "-I"|"-L": {
@@ -489,14 +498,15 @@ procedure unicon(argv)
 	      ilinkopt ||:= argv[i] || " "
 	      }
 	 "-M" : merrflag := 1
+	 "-r" : returnErrorsFlag := 1
 	 "--help" | "-?": unicon_help()
 	 default   : icontopt ||:= argv[i] || " "
-         }
+	 }
       }
       else {
 	 fName := argv[i] | stop("usage: unicon file")
 	 if not (map(fName[find(".", fName)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then {
-            fName ||:= ".icn"
+	    fName ||:= ".icn"
 	    }
 
 	 # do not translate .u files
@@ -508,12 +518,12 @@ procedure unicon(argv)
 	     next
 	 }
 	 else {
-	     # we are gonna translate, and if we link, we remove the .u
-	     ucodefile := basename(fName, ".icn") || ".u"
-	     linkline ||:= " " || quotes(ucodefile)
-	     /translateducode := []
-	     put(translateducode, ucodefile)
-	 }
+	    # we are gonna translate, and if we link, we remove the .u
+	    ucodefile := basename(fName, ".icn") || ".u"
+	    linkline ||:= " " || quotes(ucodefile)
+	    /translateducode := []
+	    put(translateducode, ucodefile)
+	    }
          if \iconc then {
             # mark this file as parsed
             insert(iconc_parsed, get_abs_file_name(fName))
@@ -523,9 +533,12 @@ procedure unicon(argv)
 	 yyin := ""
 	 every yyin ||:= preprocessor(fName, uni_predefs) do yyin ||:= "\n"
 	 if preproc_err_count > 0 then {
+	    every pe := !parsingErrors do {
+	       write(&errout, pe.errorMessage)
+	       }
 	    stop()      # force error exit (abruptly)
 	    }
-         yylex_reinit()
+	 yylex_reinit()
 	 cmd := selecticont()
          if &features=="MS Windows NT" & &features=="console window" then{
             wilog := tempname("uni",".tmp",,)
@@ -541,7 +554,6 @@ procedure unicon(argv)
 	    }
 	 else yyout := &output
 
-#	 yyout := &output
 	 write(yyout, "#line 0 \"", fName, "\"")
 	 iwrites(&errout, "Parsing ", fName ,": ")
 	 rv := yyparse()
@@ -697,9 +709,9 @@ procedure unicon(argv)
 #          errors +:= 1
       if not (rv = 0) then errors +:= 1
       }
-  else
+   else
 
-  if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
+   if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
       cmd := selecticont()
        if &features=="MS Windows NT" & &features=="console window" then
 	 cmd ||:= " -l "|| (wilog := tempname("uni",".tmp",,))
@@ -728,27 +740,29 @@ procedure unicon(argv)
 	     delay(1000)
 	 }
      }
-  }
+   }
    if \flog then {
       close(flog)
       moveto(flogname, widollog)
       }
    # Produce a non-zero exit code if there were any errors.
    if errors + yynerrs > 0 then {
-      exit(1)
+      if (\returnErrorsFlag = 1) then return parsingErrors
+      else
+	 exit(1)
       }
 end
 #
 # error/warning/message handling
 #
 procedure halt(args[])
-  errsrc()
-  every iwrites(&errout,!args)
-  istop()
+   errsrc()
+   every iwrites(&errout,!args)
+   istop()
 end
 
 procedure errsrc()
-  iwrites(&errout,"File ",\fName,"; Line ",\fLine,": Unicon/")
+   iwrites(&errout,"File ",\fName,"; Line ",\fLine,": Unicon/")
 end
 
 #

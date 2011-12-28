@@ -33,6 +33,8 @@ link mainbar
 link getpaths
 link classbrowser
 link enqueue
+link "../unicon/unigram", "../unicon/idol", "../unicon/tree"
+link "../unicon/preproce", "../unicon/unilex", "../unicon/unicon"
 
 global pnlToolbar, MsgBox, EditBox, FileTabSet, ClassTabSet, DevTabSet,
        FileBrowser, linebreak, dialogself, browser, docpath,
@@ -390,7 +392,7 @@ procedure Notice(captions[])		#: notice dialog
 end
 
 # outside of package UniconPackage, an IDE warning should be in the messagebox
-procedure warning(s, lineno, filenam)
+procedure ui_Warning(s, lineno, filenam)
    local msg := ""
    if \filenam then msg := msg || filenam || ":"
    if \lineno then msg := msg || lineno || ":"
@@ -398,8 +400,15 @@ procedure warning(s, lineno, filenam)
    MsgBox.set_contents([msg])
 end
 
+procedure ui_Progend(x)
+    fail
+end
+
 procedure main(argv)
    local d := argv[1]
+   reinitialize()
+   Progend := ui_Progend
+   warning := ui_Warning
 
    if &features=="MS Windows NT" then{
        PATHSEP := "\\"

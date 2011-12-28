@@ -15,18 +15,15 @@ UFLAGS2=-c
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn modified.icn templates.icn \
-	definitions.icn uproject.icn idol.icn preproce.icn \
-	ytab_h.icn yyerror.icn unigram.icn unicon.icn \
+	definitions.icn uproject.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u templates.u definitions.u uproject.u \
-	idol.u preproce.u yyerror.u unigram.u unicon.u \
-	classbrowser.u tree.u imgs.u utags.u matchparen.u
+	yyerror.u \
+	classbrowser.u imgs.u utags.u matchparen.u
 
-UNICONPACKAGE=idol.u preproce.u unicon.u tree.u unigram.u yyerror.u
-
-ui:	$(UNICONPACKAGE) $(OBJ)
+ui:	$(OBJ)
 ifdef EXE
 	$(WUC) -o ui $(OBJ)
 else
@@ -67,28 +64,23 @@ definitions.u: definitions.icn
 uproject.u: uproject.icn
 	$(UC) $(UFLAGS) uproject
 
-idol.u: idol.icn
-	$(UC) $(UFLAGS2) idol
+#idol.u: idol.icn
+#	$(UC) $(UFLAGS2) idol
 
-preproce.u: preproce.icn
-	$(UC) $(UFLAGS2) preproce
+#preproce.u: preproce.icn
+#	$(UC) $(UFLAGS2) preproce
 
-yyerror.u: yyerror.icn
-	$(UC) $(UFLAGS2) unigram
-	$(UC) $(UFLAGS2) yyerror
+#yyerror.u: yyerror.icn
+#	$(UC) $(UFLAGS2) yyerror
 
-unigram.u: unigram.icn yyerror.u
-	$(UC) $(UFLAGS2) unigram
-	$(UC) $(UFLAGS2) yyerror
+#unicon.u: unicon.icn
+#	$(UC) $(UFLAGS2) unicon
 
-unicon.u: unicon.icn
-	$(UC) $(UFLAGS2) unicon
-
-classbrowser.u: classbrowser.icn  imgs.u tree.u
+classbrowser.u: classbrowser.icn  imgs.u
 	$(UC) $(UFLAGS2) classbrowser
 
-tree.u: tree.icn
-	$(UC) $(UFLAGS2) tree
+#tree.u: tree.icn
+#	$(UC) $(UFLAGS2) tree
 
 utags.u: utags.icn
 	$(UC) $(UFLAGS2) utags

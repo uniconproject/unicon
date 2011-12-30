@@ -96,13 +96,14 @@ initial {
    __merr_errors +:= 1
    if __merr_errors > 10 then
       istop("too many errors, aborting")
-   iwrites(&errout, \fName, ":")
+   prefix := (\fName||":") | ""
    if s == "syntax error" then
       s := t[(\statestk)[1], yychar]
    if s == "syntax error" then {
       s ||:= " (" || (\statestk)[1] ||";"|| yychar || ")"
       if /merrflag then s ||:= "\n(use -M for assistance with this error)"
       }
+   s := prefix ||yylineno||": # \""|| yytext || "\" " || s
    if \merrflag then {
       if ferr2 := open(\fName) then {
 	 iwrite(&errout, "Reporting (-M) your error to the Oracle (",
@@ -112,7 +113,7 @@ initial {
 	 ferr := open("mail " || merraddress, "pw")
 	 while iwrite(ferr, "" ~== read())
 	 iwrite(ferr)
-	 iwrite(ferr, yylineno, ": # \"", yytext, "\": ", s)
+	 iwrite(ferr, s)
 	 iwrite(ferr)
 	 while iwrite(ferr, read(ferr2))
 	 close(ferr2)
@@ -121,6 +122,6 @@ initial {
       }
    /parsingErrors := []
    errorObject := ParseError( yylineno, s )
-   push( parsingErrors, errorObject )
+   put( parsingErrors, errorObject )
    return
 end

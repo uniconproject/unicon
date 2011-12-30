@@ -558,6 +558,11 @@ procedure unicon(argv)
 	 iwrites(&errout, "Parsing ", fName ,": ")
 	 rv := yyparse()
 	 if yynerrs = 0 then iwrite(&errout)
+	 else {
+	    every pe := !parsingErrors do {
+	       iwrite(&errout, pe.errorMessage)
+	       }
+	    }
 	 if /yydbg then
 	    close(yyout)
 	 if (rv = errors = yynerrs = 0) & /parseonly then {

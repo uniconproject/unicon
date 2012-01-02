@@ -20,7 +20,6 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u templates.u definitions.u uproject.u \
-	yyerror.u \
 	classbrowser.u imgs.u utags.u matchparen.u
 
 ui:	$(OBJ)

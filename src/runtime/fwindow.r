@@ -1464,7 +1464,8 @@ function{1} Event(argv[argc])
       else
 	 CnvCInteger(argv[warg], t)
 #ifdef MSWindows
-      SetFocus(w->window->win);
+      if (EVQUEEMPTY(w->window))
+      	 SetFocus(w->window->win);
 #endif					/* MSWindows */
       d = nulldesc;
       i = wgetevent(w, &d, t);
@@ -3271,7 +3272,7 @@ function{0,1} WinOpenDialog(argv[argc])
 
       if ((tmpstr = nativefiledialog(w, s1, s2, s3, i, j, 0)) == NULL) fail;
       len = strlen(tmpstr);
-      StrLoc(result) = alcstr(tmpstr, len);
+      StrLoc(result) = tmpstr;
       StrLen(result) = len;
       return result;
       }

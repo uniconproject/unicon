@@ -4863,9 +4863,12 @@ char *nativefiledialog(wbp w, char *s1, char *s2, char *s3,
     * If an extension is present in the filename, just return it
     */
    s2 = ofn.lpstrFile;
+
    while(strchr(s2, '\\')) s2 = strchr(s2, '\\') + 1;
-   if (strchr(s2,'.'))
-      return ofn.lpstrFile;
+   if (strchr(s2,'.')){
+      int len = strlen(ofn.lpstrFile);
+      return alcstr(ofn.lpstrFile, len+1);  
+      }
 
    /*
     * If no extension was given, append whatever extension was selected

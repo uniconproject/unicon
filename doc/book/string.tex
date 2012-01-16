@@ -1,0 +1,740 @@
+\clearpage\section{Chapter 3: String Processing}
+In addition to its groundbreaking expression evaluation, Unicon inherits
+other compelling features from Icon that reduce the effort required to
+write complex programs. Icon{\textquotesingle}s ancestor is
+\index{SNOBOL4}SNOBOL4, the grandfather of all string processing
+languages, and from it come some of the most flexible and readable
+built-in string processing facilities found in any language. In this
+chapter you will learn
+
+\begin{itemize}
+\item How to manipulate strings and sets of characters
+\item Icon{\textquotesingle}s string scanning \index{control
+structure}control structure
+\item How to write custom \index{pattern matching}pattern matching
+primitives, with \index{backtracking}backtracking
+\end{itemize}
+Techniques for matching regular expressions and context free grammars
+
+\subsection{String Indexes}
+You have already seen string literals delimited by double quotes, and
+the most common operators that work on strings: the size of a string is
+given by the unary \textsf{*} operator, substrings can be picked out
+with indexes, and two strings can be concatenated with the
+\textsf{{\textbar}{\textbar}} operator. Now it is time to present a
+deeper understanding of the meaning of indexes as they are used with
+strings and lists.
+
+\index{string!indexes 1 based}Indexes in a string refer to the positions
+between characters. The positions are numbered starting from 1. The
+index 0 refers to the position after the last character in the string,
+and negative indices count from the right side of the string:
+
+
+\begin{center}
+\includegraphics[width=3.6075in,height=1.0417in]{ub-img/ub-img7.png}
+\end{center}
+\vspace{-0.25cm}{\sffamily\bfseries Figure 3-1:}
+{\sffamily Positive and Negative String Indices}
+
+\bigskip
+
+The expression \index{slice!string s[i:j]}\textsf{s[i:j]} refers to the
+\index{substring}substring of \textsf{s} that lies between positions
+\textsf{i} and \textsf{j}. If either \textsf{i} or j is not a valid
+index into \textsf{s}, the expression fails. The expression
+\textsf{s[k]} is short for \textsf{s[k:k+1]} and refers to a single
+\index{character}character at position \textsf{k}. The expression
+\textsf{s[k+:n]} is the substring of length \textsf{n} starting at
+position \textsf{k}. If \textsf{s} is the string
+\textsf{{\textquotedbl}hello, world!{\textquotedbl}} then the
+expressions
+
+\iconcode{
+s[7] := {\textquotedbl} puny {\textquotedbl} \\
+s[13:18] := {\textquotedbl}earthlings{\textquotedbl}
+}
+
+\noindent
+change \textsf{s} into \textsf{{\textquotedbl}hello, puny
+earthlings!{\textquotedbl}}, illustrating the ease with which
+insertions and substitutions are made. The first assignment changes the
+string to \textsf{{\textquotedbl}hello, puny world!{\textquotedbl}},
+replacing a single character with six characters and thereby increasing
+its length. The second assignment operates on the modified string,
+replacing \textsf{{\textquotedbl}world{\textquotedbl}} with
+\textsf{{\textquotedbl}earthlings{\textquotedbl}}.
+
+Strings are values, just like numbers; if you copy a string and then
+work on the copy, the original will be left unchanged:
+
+\iconcode{
+s := {\textquotedbl}string1{\textquotedbl} \\
+new\_s := s \\
+new\_s[7] := {\textquotedbl}2{\textquotedbl}
+}
+
+Now the value of \textsf{new\_s} is
+{\textquotedbl}string2{\textquotedbl} but \textsf{s} is left unchanged.
+
+As mentioned in Chapter 1, strings can be compared with string
+\index{comparison operator!string}comparison operators such as
+\textsf{==}.
+
+\iconcode{
+if line[1] == {\textquotedbl}\#{\textquotedbl} then ...}
+
+If you find you are writing many such tests, the string processing you
+are doing may be more cleanly handled using the string scanning
+facilities, described below. But first, here is some more detail on the
+character set data type, which is used in many of the string scanning
+functions.
+
+\subsection{Character Sets}
+A cset is a set of characters. It has the usual properties of sets:
+order is not significant, and a character can only occur once in a
+cset. A \index{cset literal}cset literal is represented with single
+quotes:
+
+\iconcode{
+c := {\textquotesingle}aeiou{\textquotesingle}}
+
+Since characters can only occur once in a cset, duplicates in a cset
+literal are ignored; for example,
+\textsf{{\textquotesingle}aaiiee{\textquotesingle}} is equivalent to
+\textsf{{\textquotesingle}aie{\textquotesingle}}. Strings can be
+converted to csets and vice versa. Since csets do not contain
+duplicates, when a string is converted to a cset, all the duplicates
+are removed.
+
+Therefore to see if a string is composed of all the vowels and no
+consonants:
+
+\iconcode{
+if cset(s) == {\textquotesingle}aeiou{\textquotesingle} then ...}
+
+Or, to find the number of distinct characters in a string:
+
+\iconcode{
+n := *cset(s)}
+
+The \textsf{!} operator generates the members of a cset in sorted order;
+this is also useful in some situations.
+
+\subsection{Character Escapes}
+Both strings and csets rely on the backslash as an escape character
+within string literals. A backslash followed by an \index{escape
+codes}\textit{escape code} of one or more characters specifies a
+non-printable or control character. Escape codes may be specified by a
+numeric value given in hex or octal format - for example,
+\textsf{{\textquotedbl}{\textbackslash}x41{\textquotedbl}}.
+Alternatively, any control character may be specified with an escape
+code consisting of the caret (\textsf{\^{}}) followed by the alphabetic
+letter of the control character. A cset containing control-C,
+control-D, and control-Z could be specified as
+\textsf{{\textquotesingle}{\textbackslash}\^{}c{\textbackslash}\^{}d{\textbackslash}\^{}z{\textquotesingle}}.
+For the most common character escapes, a single-letter code is defined,
+such as \textsf{{\textquotedbl}{\textbackslash}t{\textquotedbl}} for
+the tab character, or
+\textsf{{\textquotedbl}{\textbackslash}n{\textquotedbl}} for the
+newline. For all other characters, the character following the
+backslash is the character; this is how quotes or backslashes are
+included in literals. The escape codes are summarized in Table 3-1.
+
+
+\bigskip
+
+{\centering\sffamily\bfseries
+Table 3-1
+\par}
+
+{\centering\sffamily\bfseries
+Escape Codes and Characters 
+\par}
+
+\begin{center}
+\tablehead{}
+\begin{supertabular}{|m{0.49625984in}|m{0.8837598in}|m{0.52125984in}|m{0.8587598in}|m{0.48375985in}|m{0.89625984in}|m{0.5087598in}|m{0.72955984in}|}
+\hline
+\sffamily\bfseries Code &
+\sffamily\bfseries Character &
+\sffamily\bfseries Code &
+\sffamily\bfseries Character &
+\sffamily\bfseries Code &
+\sffamily\bfseries Character &
+\sffamily\bfseries Code &
+\sffamily\bfseries Character\\\hline
+\ \ {\textbackslash}b &
+backspace &
+\ \ {\textbackslash}d &
+delete &
+\ \ {\textbackslash}e &
+escape &
+\ \ {\textbackslash}f &
+form feed\\\hline
+\ \ {\textbackslash}l &
+line feed &
+\ \ {\textbackslash}n &
+newline &
+\ \ {\textbackslash}r &
+carriage return &
+\ \ {\textbackslash}t &
+tab\\\hline
+\ \ {\textbackslash}v &
+vertical tab &
+\ {\textbackslash}{\textquotesingle} &
+quote &
+\ \ {\textbackslash}{\textquotedbl} &
+double quote &
+\ \ {\textbackslash}{\textbackslash} &
+backslash\\\hline
+\ {\textbackslash}\textit{ooo} &
+octal &
+{\textbackslash}x\textit{hh} &
+hexadecimal  &
+\ {\textbackslash}\^{}\textit{x} &
+Control-\textit{x} &
+~
+ &
+~
+\\\hline
+\end{supertabular}
+\end{center}
+\subsection{String Scanning}
+Icon{\textquotesingle}s string analysis facility is called
+\index{string!scanning}\textit{string scanning}. A
+\index{scanning!environment}scanning environment consists of a string
+\index{subject string}\index{string!subject}\textit{subject} and an
+integer \index{position,
+string}\index{string!position}\textit{position} within the subject at
+which scanning is to be performed. These values are held by the keyword
+variables \textsf{\&subject} and \textsf{\&pos}. Scanning environments
+are created by an expression of the form
+
+\iconcode{
+\textit{s} ? \textit{expr}}
+
+The binary \textsf{?} operator sets the subject to its left argument and
+initializes the position to 1; then it executes the expression on the
+right side.
+
+The expression usually has \index{matching functions}\textit{matching
+functions} in it. Matching functions change the position, and return
+the substring between the old and new positions. For example:
+\textsf{move(j)}\textsf{ }moves the position \textsf{j} places to the
+right and returns the substring between the old and new position. This
+string will have exactly \textsf{j} characters in it. When the position
+cannot move as directed, for example because there are less than
+\textsf{j} characters to the right, \index{move(i)}\textsf{move()}
+fails. Here is a simple example:
+
+\iconcode{
+text ? \{ \\
+\>   while move(1) do \\
+\>   \ \ \ write(move(1)) \\
+\>   \}
+}
+
+This code writes out every other character of the string in variable
+\textsf{text}.
+
+Another function is \index{tab(i)}\textsf{tab(i)}, which sets the
+position \textsf{\&pos} to its argument and returns the substring that
+it passed over. So the expression \textsf{tab(0)} will return the
+substring from the current position to the end of the string, and set
+the position to the end of the string.
+
+String scanning functions examine a string and generate the interesting
+positions in it. We have already seen \index{find()}\textsf{find()},
+which looks for substrings. In addition to the other parameters that
+define what the function looks for, these string functions end with
+three optional parameters: a string to examine and two integers. These
+functions \index{default!scanning parameters}default their string
+parameter to \textsf{\&subject}, the string being scanned. The two
+integer positions specify where in the string the processing will be
+performed; they default to 1 and 0 (the entire string), or
+\textsf{\&pos} and 0 if the string defaulted to use \textsf{\&subject}.
+Here is a \index{generator}generator that produces the words from the
+input:
+
+\iconcode{
+procedure getword() \\
+local wchar, line \\
+\>   wchar := \&letters ++ \&digits ++
+{\textquotesingle}{\textbackslash}{\textquotesingle}-{\textquotesingle} \\
+\>   while line := read() do \\
+\>   \ \ \ line ? while tab(upto(wchar)) do \{ \\
+\>   \ \ \ \ \ \ word := tab(many(wchar)) \\
+\>   \ \ \ \ \ \ suspend word \\
+\>   \ \ \ \ \ \ \} \\
+end
+}
+
+Variable \textsf{wchar}\textsf{ }is a cset of characters that are
+allowed in words, including apostrophe (which is escaped) and hyphen
+characters. \index{upto(c)}\textsf{upto(c)} returns the next position
+at which a character from the cset \textsf{c} occurs. The
+\index{many(c)}\textsf{many(c)} function returns the position after a
+sequence of characters from \textsf{c}, if one or more of them occur at
+the current position. The expression \textsf{tab(upto(wchar))} advances
+the position to a character from \textsf{wchar}; then
+\textsf{tab(many(wchar))} moves the position to the end of the word and
+returns the word that is found. This is a generator, so when it is
+resumed, it takes up execution from where it left off and continues to
+look for words (reading the input as necessary).
+
+Notice the first line: the cset \textsf{wchar} is the set union of the
+upper- and lowercase letters (the value of the keyword
+\textsf{\&letters}) and the digits (the keyword \textsf{\&digits}).
+This cset union is performed each time \textsf{getword()} is called,
+which is inefficient. Instead, the procedure ought to calculate the
+value and store it for all future calls to \textsf{getword()}.
+
+To do this, you declare the variable to be static, causing its value to
+persist across calls to the procedure. Normal local variables are
+initialized to the null value each time a procedure is entered. To do
+this, add these two lines to the beginning of the procedure:
+
+\iconcode{
+static wchar \\
+initial wchar := \&letters ++ \&digits ++
+{\textquotesingle}{\textbackslash}{\textquotesingle}-{\textquotesingle}
+}
+
+The \index{match(s)}\textsf{match(s)} function takes a string argument
+and succeeds if \textsf{s} is found at the current position in the
+subject. If it succeeds, it produces the position at the end of the
+matched substring. This expression
+
+\iconcode{
+if tab(match({\textquotedbl}-{\textquotedbl})) then sign := -1 else sign
+:= 1}
+
+\noindent
+looks to see if there is a minus sign at the current position; if one is
+found, \textsf{\&pos} is moved past it and the variable \textsf{sign}
+is assigned a -1; otherwise, it gets a 1. The expression
+\textsf{tab(match(s))} occurs quite often in string scanning, so it is
+given a shortcut: \textsf{=s} does the same thing.
+
+The last two string scanning functions to round out
+Icon{\textquotesingle}s built-in repertoire are
+\index{any(c)}\textsf{any(c)} and \index{bal()}\textsf{bal(c1,c2,c3)}.
+\textsf{any(c)} is similar to \textsf{many()}, but only tests a single
+character being scanned to see if it is in cset \textsf{c}. The
+\textsf{bal()} function produces positions at which a character in
+\textsf{c1} occurs, similar to \textsf{upto()}, with the added
+stipulation that the string up to those positions is \textit{balanced}
+with respect to characters in \textsf{c2} and \textsf{c3}. A string is
+balanced if it has the same number of characters from \textsf{c2} as
+from \textsf{c3} and there are at no point more \textsf{c3} characters
+present than \textsf{c2} characters. The \textsf{c1} argument defaults
+to \textsf{\&cset}. Since \textsf{c2} and \textsf{c3} default to
+\textsf{{\textquotesingle}({\textquotesingle}} and
+\textsf{{\textquotesingle}){\textquotesingle}}, \textsf{bal()} defaults
+to find balanced parentheses.
+
+The restriction that \textsf{bal()} only returns positions at which a
+character in \textsf{c1} occurs is a bit strange. Consider what you
+would need to do in order to write an expression that tells whether a
+string \textsf{s} is balanced or not.
+
+You might want to write it as \textsf{s ? (bal() = *s+1)} but
+\textsf{bal()} will never return that position. Concatenating an extra
+character solves this problem:
+
+\iconcode{
+procedure isbalanced(s) \\
+\>   return (s {\textbar}{\textbar} {\textquotedbl} {\textquotedbl}) ?
+(bal() = *s+1) \\
+end
+}
+
+If string \textsf{s} is very large, this solution is not cheap, since it
+creates a new copy of string \textsf{s}. You might write a version of
+\textsf{isbalanced()} that doesn{\textquotesingle}t use the
+\textsf{bal()} function, and see if you can make it run faster than
+this version. An example later in this chapter shows how to use
+\textsf{bal()} in a more elegant manner.
+
+\subsubsection{File Completion}
+
+Consider the following gem, attributed to Jerry \index{Nowlin,
+Jerry}Nowlin and Bob \index{Alexander, Bob}Alexander. Suppose you want
+to obtain the full name of a file, given only the first few letters of
+a filename and a list of complete \index{filename completion}filenames.
+The following one line procedure does the trick:
+
+\iconcode{
+procedure complete(prefix, filenames) \\
+\>   suspend match(prefix, p := !filenames) \& p \\
+end
+}
+
+This procedure works fine for lists with just a few members and also for
+cases where \textsf{prefix} is fairly large.
+
+\subsubsection[Backtracking]{Backtracking}
+\index{backtracking}The matching functions we have seen so far,
+(\textsf{tab()} and \textsf{move()}), are actually
+\index{generator}generators. That is, even though they only produce one
+value, they suspend instead of returning. If expression evaluation ever
+resumes one of these functions, they restore the old value of
+\textsf{\&pos}. This makes it easy to try alternative matches starting
+from the same position in the string:
+
+\iconcode{
+s ? (={\textquotedbl}0x{\textquotedbl} \& tab(many(\&digits ++
+{\textquotesingle}abcdefABCDEF{\textquotesingle}))) {\textbar} \\
+\>   tab(many(\&digits))
+}
+
+This expression will match either a hexadecimal string in the format
+used by C or a decimal integer. Suppose \textsf{s} contains the string
+\textsf{{\textquotedbl}0xy{\textquotedbl}}. The first part of the
+expression succeeds and matches the
+\textsf{{\textquotedbl}0x{\textquotedbl}}; but then the expression
+\textsf{tab(many(\&digits ++
+{\textquotesingle}abcdef{\textquotesingle}))} fails; this causes Unicon
+to resume the first \textsf{tab()}, which resets the position to the
+beginning of the string and fails. Unicon then evaluates the expression
+\textsf{tab(many(\&digits))} which succeeds (matching the string
+\textsf{{\textquotedbl}0{\textquotedbl}}); therefore the entire
+expression succeeds and leaves \textsf{\&pos} at 2.
+
+{\sffamily\bfseries
+Warning}
+
+{\sffamily
+Be careful when using tab() or move() in a surrounding expression that
+can fail! The fact that tab() and move() reset \&pos upon expression
+failure causes confusion and bugs when it happens accidentally.}
+
+\subsubsection{Concordance Example}
+Listing 3-1 illustrates the above concepts and introduces a few more.
+Here is a program to read a file, and generate a
+\index{concordance}concordance that prints each word followed by a list
+of the lines on which it occurs. Short words like
+\textsf{{\textquotedbl}the{\textquotedbl}} aren{\textquotesingle}t
+interesting, so the program only counts words longer than three
+characters. 
+
+\bigskip
+
+{\sffamily\bfseries Listing 3-1}
+{\sffamily\bfseries A simple concordance program}
+
+\iconcode{
+procedure main(args) \\
+\>   (*args = 1) {\textbar} stop({\textquotedbl}Need a
+file!{\textquotedbl}) \\
+\>   f := open(args[1]) {\textbar}
+stop({\textquotedbl}Couldn{\textquotesingle}t open {\textquotedbl},
+args[1]) \\
+\>   wordlist := table() \\
+\>   lineno := 0 \\
+\ \\
+\>   while line := map(read(f)) do \{ \\
+\>   \ \ \ lineno +:= 1 \\
+\>   \ \ \ every word := getword(line) do  \\
+\>   \ \ \ \ \ \ if *word {\textgreater} 3 then \{ \\
+\>   \ \ \ \ \ \ \ \ \ \# if word isn{\textquotesingle}t in the table, 
+	set entry to empty list \\
+\>   \ \ \ \ \ \ \ \ \ /wordlist[word] := list() \\
+\>   \ \ \ \ \ \ \ \ \ put(wordlist[word], lineno) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   L := sort(wordlist) \\
+\>   every l := !L do \{ \\
+\>   \ \ \ writes(l[1],
+{\textquotedbl}{\textbackslash}t{\textquotedbl}) \\
+\>   \ \ \ linelist := {\textquotedbl}{\textquotedbl} \\
+\>   \ \ \ \# Collect line numbers into a string \\
+\>   \ \ \ every linelist {\textbar}{\textbar}:= (!l[2]
+{\textbar}{\textbar} {\textquotedbl}, {\textquotedbl}) \\
+\>   \ \ \ \# trim the final {\textquotedbl}, {\textquotedbl} \\
+\>   \ \ \ write(linelist[1:-2]) \\
+\>   \ \ \ \} \\
+end \\
+\ \\
+procedure getword(s) \\
+\>   s ? while tab(upto(\&letters)) do \{ \\
+\>   \ \ \ word := tab(many(\&letters)) \\
+\>   \ \ \ suspend word \\
+\>   \ \ \ \} \\
+end
+}
+
+\noindent If we run this program on this input: 
+
+\iconcode{
+Half a league, half a league, \\
+Half a league onward, \\
+All in the valley of Death \\
+Rode the six hundred.
+}
+
+\noindent the program writes this output: 
+
+\iconcode{
+death \ \ 3 \\
+half \ \ \ 1, 2 \\
+hundred 4 \\
+league \ 1, 1, 2 \\
+onward \ 2 \\
+rode \ \ \ 4 \\
+valley \ 3
+}
+
+First, note that the \textsf{main()} procedure requires a command-line
+argument, the name of a file to open. Also, we pass all the lines read
+through the function \textsf{map()}. This is a function that takes
+three arguments, the first being the string to map; and the second and
+third specifying how the string should be mapped on a character by
+character basis. The defaults for the second and third arguments are
+the uppercase letters and the lowercase letters, respectively;
+therefore, the call to \textsf{map()} converts the line just read in to
+all \index{lower case}lowercase.
+
+\subsection{Regular Expressions}
+
+The Icon Program Library (included with the Unicon distribution)
+provides \index{regular expression}regular expression matching
+functions. To use it, add the line \textsf{link regexp} at the top of
+the program. Listing 3-2 is an example of a search-and-replace program
+called (somewhat inappropriately)
+\textsf{i}\index{grep}\textsf{grep}\textsf{.icn}: The actual searching
+and replacing is performed on each line of text by procedure
+\textsf{re\_sub()}. This procedure illustrates many classic aspects of
+string scanning. It marches through the string from right to left using
+a while loop. It builds up a result string, which by default would be a
+copy of its scanned string. At the start of each occurrence of the
+regular expression, the replacement string is appended to the result,
+and the regular expression is tabbed over and not appended to the
+result. When no more occurrences of the regular expression are found,
+the remainder of the string is appended to the result.
+
+\bigskip
+
+{\sffamily\bfseries Listing 3-2}
+{\sffamily\bfseries A simple grep-like program}
+
+\iconcode{
+link regexp \\
+procedure main(av) \\
+\>   local f, re, repl \\
+\>   every (f{\textbar}re{\textbar}repl) := pop(av) \\
+\>   f := open(f) {\textbar} stop({\textquotedbl}cant open file named:
+{\textquotedbl}, f) \\
+\>   while line := read(f) do \\
+\>   \ \ \ write(re\_sub(line, re, repl)) \\
+end \\
+procedure re\_sub(str, re, repl) \\
+\>   result := {\textquotedbl}{\textquotedbl} \\
+\>   str ? \{ \\
+\>   \ \ \ while j := ReFind(re) do \{ \\
+\>   \ \ \ \ \ \ result {\textbar}{\textbar}:= tab(j)
+{\textbar}{\textbar} repl \\
+\>   \ \ \ \ \ \ tab(ReMatch(re)) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ result {\textbar}{\textbar}:= tab(0) \\
+\>   \ \ \ \} \\
+\>   return result \\
+end
+}
+
+To replace all occurrences of
+{\textquotedbl}read{\textbar}write{\textquotedbl} with
+{\textquotedbl}IO operation{\textquotedbl} you could type 
+
+\iconcode{
+igrep mypaper.txt {\textquotedbl}read{\textbar}write{\textquotedbl}
+{\textquotedbl}IO Operation{\textquotedbl}}
+
+Since the program has access to the pattern matching operation at a
+finer grain, more complex operations are possible, this
+search-and-replace is just an example.
+
+\subsection{Grammars}
+\index{grammar}Grammars are collections of rules that describe
+\index{syntax}\textit{syntax}, the combinations of words allowed in a
+language. Grammars are used heavily both in linguistics and in computer
+science. \index{pattern matching}Pattern matching using a grammar is
+often called \index{parse}\textit{parsing}, and is one way to match
+patterns more complex than regular expressions can handle. This section
+presents some simple programming techniques for parsing context free
+grammars. Context free grammars utilize a \index{stack}stack to
+recognize a fundamentally more complex category of patterns than
+regular expressions can; they are defined below.
+
+For linguists, this treatment is elementary, but introduces useful
+programming techniques. For writers of programming language compilers,
+an automatic parser generator tool that you can use with Unicon or Icon
+is described in Chapter 18. If you are not interested in grammars, you
+can skip the rest of this chapter.
+
+A \index{context-free grammar}context-free grammar or CFG is a set of
+rules or \textit{productions}. Here is an example:
+
+\iconcode{
+S -{\textgreater} S S \\
+\>   {\textbar} (S) \\
+\>   {\textbar} ()
+}
+
+This grammar has three productions. There are two kinds of symbols,
+\textit{non-terminals} like \textsf{S} that can be replaced by the
+string on the right side of the rule, and \textit{terminals} like
+\textsf{(} and \textsf{)}. A series of applications of rules is called
+a derivation. One non-terminal is special and is called the
+\textit{start symbol}; a string is matched by the grammar if there is a
+sequence of derivations from the start symbol that leads to the string.
+By convention the start symbol will be the one mentioned first in the
+definition of the grammar. (This grammar only has one non-terminal, and
+it is also the start symbol.)\textit{ }
+
+This grammar matches all strings of balanced parentheses. The string
+\textsf{(()(()()))} can be matched by this derivation:
+
+\iconcode{
+S -{\textgreater} (S) -{\textgreater} (SS) -{\textgreater} (()S)
+-{\textgreater} (()(S)) -{\textgreater} \\
+\>   \ \ (()(SS)) -{\textgreater} (()(()S)) -{\textgreater} (()(()()))
+}
+
+\subsubsection{Parsing}
+
+Unicon programs can parse grammars in a very natural way using matching
+functions. A production
+
+\iconcode{
+A -{\textgreater} B a D  \\
+\>   {\textbar} C E b
+}
+
+can be mapped to this matching function:
+
+\iconcode{
+procedure A() \\
+\>   suspend (B() \& ={\textquotedbl}a{\textquotedbl} \& D())
+{\textbar} (C() \& E() \& ={\textquotedbl}b{\textquotedbl}) \\
+end
+}
+
+This procedure first tries to match a string matched by \textsf{B},
+followed the character \textsf{a}, followed by a string matched by
+\textsf{D}. If \textsf{D} \index{expression failure}fails, execution
+backtracks across the \textsf{={\textquotedbl}a{\textquotedbl}}
+(resetting \textsf{\&pos}) and resume \textsf{B()}, which will attempt
+the next match.
+
+If the sub-expression to the left of the \index{alternation operator (
+{\textbar} )}alternation fails, then execution will try the
+sub-expression on the right, \textsf{C() \& E() \&
+={\textquotedbl}b{\textquotedbl}} until something matches - in which
+case \textsf{A} succeeds, or nothing matches - which will cause it to
+fail.
+
+Parsers for any CFG can be written in this way. However, this would be a
+very expensive way to do it! Notice that Icon{\textquotesingle}s
+expression evaluation will basically try all possible derivations
+trying to match a string. This is not a good way to parse, especially
+if the grammar is amenable to lookahead methods. A more efficient
+method is given in the next section. For serious parsing jobs, Chapter
+18 shows how to use the Unicon versions of the standard
+industrial-strength lexical analyzer and parser generation tools, lex
+and yacc.
+
+\subsubsection[Doing It Better]{Doing It Better}
+
+Many grammars can be parsed much more efficiently by using the
+well-known techniques - consult a book on compilers for details. Here
+we present one way of parsing a grammar using some of the built-in
+functions. Consider this grammar for an arithmetic expression:
+
+\iconcode{
+E -{\textgreater} T {\textbar} T + E \\
+T -{\textgreater} F {\textbar} F * T \\
+F -{\textgreater} a {\textbar} b {\textbar} c {\textbar} ( E )
+}
+
+Listing 3-3 is an Unicon program that recognizes strings produced by
+this grammar:
+
+\bigskip
+
+{\sffamily\bfseries Listing 3-3}
+{\sffamily\bfseries Expression parser}
+
+\iconcode{
+procedure main() \\
+\>   while line := read() do \\
+\>   \ \ \ if expr(line) == line then \\
+\>   \ \ \ \ \ \ write({\textquotedbl}Success!{\textquotedbl}) \\
+\>   \ \ \ else write({\textquotedbl}Failure.{\textquotedbl}) \\
+end \\
+procedure expr(s) \\
+\>   s ? \{ \\
+\>   \ \ \ while t := tab(bal({\textquotesingle}+{\textquotesingle}))
+do \{ \\
+\>   \ \ \ \ \ \ term(t) {\textbar} \index{fail}fail ;
+={\textquotedbl}+{\textquotedbl} \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ term(tab(0)) {\textbar} fail \\
+\>   \ \ \ \} \\
+\>   return s \\
+end \\
+procedure term(s) \\
+\>   s ? \{ \\
+\>   \ \ \ while f := tab(bal({\textquotesingle}*{\textquotesingle}))
+do \{ \\
+\>   \ \ \ \ \ \ factor(f) {\textbar} fail ;
+={\textquotedbl}*{\textquotedbl} \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ factor(tab(0)) {\textbar} fail \\
+\>   \ \ \ \} \\
+\>   return s \\
+end \\
+procedure factor(s) \\
+\>   s ? suspend ={\textquotedbl}a{\textquotedbl} {\textbar}
+={\textquotedbl}b{\textquotedbl} {\textbar}
+={\textquotedbl}c{\textquotedbl} {\textbar}  \\
+\>   \ \ \ \ \ \ \ \ \ \ ( ={\textquotedbl}({\textquotedbl}
+{\textbar}{\textbar}
+expr(tab(bal({\textquotesingle}){\textquotesingle})))
+{\textbar}{\textbar} ={\textquotedbl}){\textquotedbl} ) \\
+end
+}
+
+The interesting procedure here is \index{bal()}\textsf{bal()}. With
+\textsf{{\textquotesingle}){\textquotesingle}} as its first argument,
+\textsf{bal()} scans to the closing parenthesis, skipping over any
+parentheses in nested subexpressions, which is exactly what is needed
+here.
+
+The procedure \textsf{factor()} is written according to the rule in the
+previous section. The procedures \textsf{expr()} and \textsf{term()}
+have the same structure. The \textsf{expr()} procedure skips any
+subexpressions (with balanced parentheses) and looks for a \textsf{+}.
+We know that this substring is a well-formed expression that is not a
+sum of terms, therefore, it must be a term. Similarly \textsf{term()}
+looks for \textsf{*} and it knows that the expression does not contain
+any \textsf{*} operators at the same nesting level; therefore it must
+be a factor.
+
+Notice that the procedures return the strings that they matched. This
+allows us to check if the whole line matched the grammar rather than
+just an initial substring. Also, notice that \textsf{factor()} uses
+string concatenation instead of conjunction, so that it can return the
+matched substring.
+
+{\sffamily
+Summary}
+
+Unicon{\textquotesingle}s string processing facilities are extensive.
+Simple operations are very easy, while more complex string analysis has
+the support of a special control structure, string scanning. String
+scanning is not as concise as regular expression pattern matching, but
+it is fundamentally more general because the code and patterns are
+freely intermixed.
+

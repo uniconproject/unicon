@@ -1,0 +1,406 @@
+\clearpage\section{Appendix E: Portability Considerations}
+
+Unicon{\textquotesingle}s POSIX-based system interface is divided into
+two pieces. The facilities presented in Chapter 5 are portable. You can
+expect the portable system interface to be available on any
+implementation of Unicon. Facilities will be implemented as completely
+as is feasible on each platform. This appendix presents the rest of the
+Unicon POSIX interface, as well as some notes on functionality specific
+to Microsoft Windows.
+
+\subsection[POSIX extensions]{POSIX extensions}
+
+\index{POSIX extensions}Technically, the extensions presented in this
+section may or may not be part of the POSIX standard. The important
+issue is that they are a part of the Unicon language as implemented on
+major POSIX-compliant UNIX platforms such as Solaris and Linux. Ports
+of Unicon to non-POSIX or quasi-POSIX platforms may or may not
+implement any of these facilities.
+
+\subsubsection{Information from System Files}
+
+There are four functions that read information from system files,
+getpw() to read the password file, getgr() for the group file,
+gethost() for hostnames, and getserv() for network services. Called
+with an argument (usually a string), they perform a lookup in the
+system file. When called with no arguments, these functions step
+through the files one entry at a time.
+
+The functions setpwent(), setgrent(), sethostent(), and setservent() do
+the same things as their POSIX C language counterparts; they reset the
+file position used by the get* routines to the beginning of the file.
+These functions return records whose members are similar to the C
+structures returned by the system functions getpwuid(2),
+gethostbyname(2), etc.
+
+\subsubsection{Fork and Exec}
+POSIX-compliant systems support an additional, lower-level interface
+using the functions \index{fork()}fork() and exec(). fork() causes the
+system to make a copy of the current process. After the fork there will
+be two identical processes that share all resources like open files,
+and differ only in one respect: the return value they each got from the
+call to fork(). One process gets a zero and is called the child; the
+other gets the process id of the child and is called the parent.
+
+Quite often fork() is used to run another program. In that case, the
+child process uses the system call exec() which replaces the code of
+the process with the code of a new program. This fork()/exec() pair is
+comparable to calling system() and using the option to not wait for the
+command to complete.
+
+The first argument to exec() is the filename of the program to execute,
+and the remaining arguments are the values of argv that the program
+will get, starting with argv[0]. 
+
+\iconcode{
+exec({\textquotedbl}/bin/echo{\textquotedbl},
+{\textquotedbl}echo{\textquotedbl},
+{\textquotedbl}Hello,{\textquotedbl},
+{\textquotedbl}world!{\textquotedbl})}
+
+\subsubsection{POSIX Functions}
+These functions are present in all Unicon binaries, but you can expect
+them to fail on most non-UNIX platforms. Check the readme.txt file that
+comes with your installation to ascertain whether it supports any of
+these functions.
+
+\paragraph[chown(f, u:{}-1, g:{}-1) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ \ change owner]{chown(f, u:-1, g:-1) :
+?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ change owner}
+chown(f, u, g) sets the owner of a file (or string filename) f to owner
+u and group g. The user and group arguments can be numeric
+ID{\textquotesingle}s or names.
+
+\paragraph[chroot(string) : ?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ change
+filesystem root]{chroot(string) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ change filesystem root}
+chroot(f) changes the root of the filesystem to f. This may be of
+assistance in implementing security measures.
+
+\paragraph[crypt(string, string) : string\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ encrypt password]{crypt(string, string) :
+string\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ encrypt password}
+crypt(s1, s2) encrypts the password s1 with the salt s2. The first two
+characters of the returned string will be the salt.
+
+\paragraph[exec(string, string, ...) : null\ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ execute program]{exec(string, string, ...) :
+null\ \ \ \ \ \ \ \ \ \  \ \ \ \ execute program}
+exec(s, arg0, arg1, arg2, ...) \textit{replaces} the currently executing
+Icon program with a new program named in s. The other arguments are
+passed to the program. Consult the POSIX exec(2) manual pages for more
+details. \texttt{s} must be a path to a binary executable program, not
+to a shell script (or, on UNIX) an Icon program. If you want to run
+such a script, the first argument to exec() should be the binary that
+can execute them, such as /bin/sh.
+
+\paragraph[fcntl(file, string, options)\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ file control]{fcntl(file, string,
+options)\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ file control}
+fcntl(file, cmd, arg) performs miscellaneous operations on the open
+file. See the fcntl(2) manual page for more details. Directories and
+DBM files cannot be arguments to fcntl(). The following characters are
+the possible values for cmd: 
+
+\ \ \ \ \ f \ \ \ \ \ \ \ \ Get flags (F\_SETFL)
+
+\ \ \ \ \ F \ \ \ \ \ \ \ Set flags (F\_GETFL)
+
+\ \ \ \ \ x \ \ \ \ \ \ \ Get close-on-exec flags (F\_GETFD)
+
+\ \ \ \ \ X \ \ \ \ \ \ \ Set close-on-exec flag (F\_SETFD)
+
+\ \ \ \ \ l \ \ \ \ \ \ \ \ Get file lock (F\_GETLK)
+
+\ \ \ \ \ L \ \ \ \ \ \ \ Set file lock (F\_SETLK)
+
+\ \ \ \ \ W \ \ \ \ \ \ Set file lock and wait (F\_SETLKW)
+
+\ \ \ \ \ o \ \ \ \ \ \ \ \ Get file owner or process group (F\_GETOWN)
+
+\ \ \ \ \ O \ \ \ \ \ \ \ Set file owner or process group (F\_SETOWN)
+
+In the case of L, the arg value should be a string that describes the
+lock, otherwise arg is an integer. A record will be returned by
+F\_GETLK: 
+
+\iconcode{
+\ \ record posix\_lock(value, pid)
+}
+
+The lock string consists of three parts separated by commas: the type of
+lock (r, w or u), the starting position, and the length. The starting
+position can be an offset from the beginning of the file (e.g. 23), end
+of the file (e.g. -50), or from the current position in the file (e.g.
++200). A length of 0 means lock till EOF. These characters represent
+the file flags set by F\_SETFL and accessed by F\_GETFL: 
+
+\ \ \ \ \ d \ \ \ \ \ \ \ FNDELAY 
+
+\ \ \ \ \ s \ \ \ \ \ \ \ FASYNC 
+
+\ \ \ \ \ a \ \ \ \ \ \ \ FAPPEND 
+
+\paragraph[fdup(file, file) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ duplicate file descriptor]{fdup(file, file) :
+?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ duplicate file descriptor}
+fdup(src, dest) is based on the POSIX dup2(2) system call. It is used to
+modify a specific UNIX file descriptor, such as just before calling
+exec(). The dest file is closed; src is made to have its Unix file
+descriptor; and the second file is replaced by the first. 
+
+\paragraph[filepair() : list\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ create connected files]{filepair() :
+list\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ create connected files}
+filepair() creates a bi-directional pair of connected files. This is
+analogous to the POSIX socketpair(2) function. It returns a list of two
+files, such that writes on one will be available on the other. The
+connection is bi-directional, unlike that returned by function pipe().
+The two files are indistinguishable. Caution: typically, the pair is
+created just before a fork(); after it, one process should close L[1]
+and the other should close L[2] or you will not get proper end-of-file
+notification. 
+
+\paragraph[fork() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  fork
+process]{fork() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  fork process}
+fork() creates a new process that is identical to the current process
+except in the return value. The parent gets a return value that is the
+PID of the child, and the child gets 0.
+
+\paragraph[getegid() : string\ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ \ \ \ get effective group identity]{getegid() :
+string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ \ get effective group
+identity}
+getegid() produces the effective group identity (gid) of the current
+process. The name is returned if it is available, otherwise the numeric
+code is returned.
+
+\paragraph[geteuid() : string\ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ \ \ \ \ \ \ get effective user identity]{geteuid() :
+string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ \ \ \ \ get effective user
+identity}
+geteuid() produces the effective user identity (uid) of the current
+process. The name is returned if it is available, otherwise the numeric
+code is returned.
+
+\paragraph[getgid() : string\ \ \ \ \ \ \ \ \ \ \ \ \ \  get group
+identity]{getgid() : string\ \ \ \ \ \ \ \ \ \ \ \ \ \  get group
+identity}
+getgid() produces the real group identity (gid) of the current process.
+The name is returned if it is available, otherwise the numeric code is
+returned.
+
+\paragraph[getgr(g) : record\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ get group
+information]{getgr(g) : record\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ get
+group information}
+getgr(g) returns a record that contains group file information for group
+g, a string group name or an integer group code. If g is null, each
+successive call to getgr() returns the next entry. setgrent() resets
+the sequence to the beginning. Return type:\\
+\ \ record posix\_group(name, passwd, gid, members)
+
+\paragraph[gethost(string) : record\ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ get host information]{gethost(string) :
+record\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ get host information}
+gethost(h) returns a record that contains host information for the
+machine named h. If h is null, each successive call to gethost()
+returns the next entry. sethostent() resets the sequence to the
+beginning. The aliases and addresses are comma separated lists of
+aliases and addresses (in a.b.c.d format) respectively. Return
+type:\\
+\ \ record posix\_hostent(name, aliases, addresses)
+
+\paragraph[getpgrp() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ get
+process group]{getpgrp() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ get
+process group}
+getpgrp() returns the process group of the current process. 
+
+\paragraph[getpid() : integer\ \ \ \ \ \ \ \ \ \ \ \  \ \ get process
+identification]{getpid() : integer\ \ \ \ \ \ \ \ \ \ \ \  \ \ get
+process identification}
+getpid() produces the process identification (pid) of the current
+process.
+
+\paragraph[getppid() : integer?\ \ \ \ \ \ \ \ \ \  \ \ get parent
+process identification]{getppid() : integer?\ \ \ \ \ \ \ \ \ \ 
+\ \ get parent process identification}
+getppid() produces the pid of the parent process.
+
+\paragraph[getpw(u) : posix\_password\ \ \ \ \ \ \ \  \ get password
+information]{getpw(u) : posix\_password\ \ \ \ \ \ \ \  \ get password
+information}
+getpw(u) returns a record that contains password file information. u can
+be a numeric uid or a user name. If u is null, each successive call to
+getpw() returns the next entry and setpwent() resets the sequence to
+the beginning. Return type:\\
+\ \ record posix\_password(name, passwd, uid, gid, age, comment, gecos,
+dir, shell)
+
+\paragraph[getserv(string, string) : posix\_servent\ \ \ \ \ \ 
+\ \ \ \ \ get service information]{getserv(string, string) :
+posix\_servent\ \ \ \ \ \  \ \ \ \ \ get service information}
+getserv(s, proto) returns a record that contains service information for
+the service s using protocol proto. If s is null, each successive call
+to getserv() returns the next entry. setservent() resets the sequence
+to the beginning. Return type:\\
+\ \ record posix\_servent(name, aliases, port, proto) 
+
+If proto is defaulted, it will return the first matching entry. 
+
+\paragraph[getuid() : string \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ get
+user identity]{getuid() : string \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ get user identity}
+getuid() produces the real user identity (uid) of the current process. 
+
+\paragraph[kill(integer, x) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ kill
+process]{kill(integer, x) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ kill
+process}
+kill(pid, signal) sends a signal to the process specified by pid. The
+second parameter can be the string name or the integer code of the
+signal to be sent.
+
+\paragraph[link(string, string) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ link files]{link(string, string) :
+?\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ link files}
+\index{link!file system}link(src,dest) creates a (hard) link dest that
+points to src.
+
+\paragraph[readlink(string) : string?\ \ \ \ \ \ \ \ \ \ \ \  \ \ read
+symbolic link]{readlink(string) : string?\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ read symbolic link}
+readlink(s) produces the filename referred to in a symbolic link at path
+s.
+
+\paragraph[setgid(integer) : ?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ set
+group identification]{setgid(integer) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ set group identification}
+setgid(g) sets the group id of the current process to g. See the UNIX
+setgid(2) man page. 
+
+\paragraph[setgrent() : null\ \ \ \ \ \ \ \ \ \  \ \ \ \ reset group
+information cursor]{setgrent() : null\ \ \ \ \ \ \ \ \ \  \ \ \ \ reset
+group information cursor}
+setgrent() resets and rewinds the pointer to the group file used by
+getgr() when getgr() is called with no arguments. 
+
+\paragraph[sethostent(integer:1) : null\ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ reset host information cursor]{sethostent(integer:1) :
+null\ \ \ \ \ \ \ \  \ \ \ \ \ \ \ reset host information cursor}
+sethostent(stayopen) resets and rewinds the pointer to the host file
+used by gethost(). The argument defines whether the file should be kept
+open between calls to gethost(); a nonzero value (the default) keeps it
+open. 
+
+\paragraph[setpgrp() : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ set process
+group]{setpgrp() : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ set process
+group}
+setpgrp() sets the process group. This is equivalent to setpgrp(0, 0) on
+BSD systems. 
+
+\paragraph[setpwent() : null\ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ reset
+password information cursor]{setpwent() : null\ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ \ \ reset password information cursor}
+setpwent() resets and rewinds the pointer to the password file used by
+getpw() when getpw() is called with no arguments.
+
+\paragraph[setservent(integer:1) : null \ \ \ \ \ \  \ \ reset service
+information cursor]{setservent(integer:1) : null \ \ \ \ \ \  \ \ reset
+service information cursor}
+setservent(stayopen) resets and rewinds the pointer to the services file
+used by getserv(). The argument defines whether the file should be kept
+open between calls to getserv(); a nonzero value (the default) keeps it
+open. 
+
+\paragraph[setuid(integer) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ set user identity]{setuid(integer) :
+?\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ set user identity}
+setuid(u) sets the user id of the current process to \texttt{u}. See the
+UNIX setuid(2) man page. 
+
+\paragraph[symlink(string, string) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ symbolic file link]{symlink(string, string) :
+?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ symbolic file link}
+\index{link!symbolic file}symlink(src, dest) makes a symbolic link dest
+that points to src.
+
+\paragraph[umask(integer) : integer\ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ \ \ \ file permission mask]{umask(integer) :
+integer\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ file permission mask}
+umask(u) sets the umask of the process to \texttt{u}. umask integers
+encode nine bits for the read, write, and execute permissions of user,
+group, and world access. See also chmod(). Each bit in the umask turns
+\textit{off} that access, by default, for newly created files. The old
+value of the umask is returned.
+
+\paragraph[wait(integer:{}-1, integer:0) : string\ \ \ \ \ \ \ \ \ \ 
+\ \ \ \ \ \ wait for process]{wait(integer:-1, integer:0) :
+string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ wait for process}
+wait(pid, options) waits for a process given by pid to terminate or
+stop. The default pid value causes the program to wait for all the
+current process{\textquotesingle} children. The options parameter is an
+OR of the values 1 (return if no child has exited) and 2 (return for
+children that are stopped, not just for those that exit). The returned
+string represents the pid and the exit status as defined in this table:
+
+
+\ \ \ \ \ UNIX equivalent\ \ \ \ \ \ example of returned string\\
+ \ \ \ \ WIFSTOPPED(status)\ \ \ \ {\textquotedbl}1234
+stopped:SIGTSTP{\textquotedbl} \\
+ \ \ \ \ WIFSIGNALLED(status)\ \ \ \ {\textquotedbl}1234
+terminated:SIGHUP{\textquotedbl} \\
+ \ \ \ \ WIFEXITED(status)\ \ \ \ {\textquotedbl}1234
+exit:1{\textquotedbl} \\
+ \ \ \ \ WIFCORE(status)\ \ \ \ \ \ {\textquotedbl}1234
+terminated:SIGSEGV:core{\textquotedbl} 
+
+Currently the \textsf{rusage} facility is unimplemented.
+
+\subsection[Microsoft Windows]{Microsoft Windows}
+Windows versions of Unicon support certain non-portable extensions to
+the system interfaces. Consult the readme.txt file and the on-line
+reference (Unicon Technical Report 7) for details.
+
+\subsubsection{Partial Support for POSIX}
+Windows supports the getpid() function, but not many of the other
+process-related functions such as getppid(). Windows supports the
+exec() function in addition to Unicon{\textquotesingle}s extended
+flavor of system(), but these functions may only launch Windows 32-bit
+.EXE binaries.
+
+Windows Unicon supports the following signals in functions such as
+kill(): SIGABRT, SIGBREAK, SIGFPE, SIGILL, SIGINT, SIGSEGV, and
+SIGTERM.
+
+Windows Unicon supports the umask() function, but ignores execute
+permission and treats user/group/world identically, using the most
+permissive access specified in the umask.
+
+\subsubsection{Native User Interface Components}
+Windows Icon supports limited access to platform-native user interface
+components and multimedia controls.
+
+WinButton(w,s,x,y,wd,ht) installs a pushbutton with label s on window w.
+
+WinColorDialog(w, s) allows the user to choose a color for a
+window{\textquotesingle}s context.
+
+WinEditRegion(w, s, s2, x, y, wd, ht) installs an edit box with label s.
+
+WinFontDialog(w, s) allows the user to choose a font for a
+window{\textquotesingle}s context.
+
+WinMenuBar(w, L1, L2,...) installs a set of top-level menus.
+
+WinOpenDialog(w, s1, s2, i, s3, j) allows the user to choose a file to
+open.
+
+WinPlayMedia(w, x[]) plays a multimedia resource.
+
+WinSaveDialog(w, s1, s2, i, s3, j) allows the user to choose a file to
+save.
+
+WinScrollBar(w, s, i1, i2, i3, x, y, wd, ht) installs a scrollbar.
+
+WinSelectDialog(w, s1, buttons) allows the user to select from a set of
+choices.
+

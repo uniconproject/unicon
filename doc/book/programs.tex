@@ -1,0 +1,1387 @@
+\clearpage
+\section{Chapter 1: Programs and Expressions}
+At Unicon{\textquotesingle}s heart are the core language features it
+shares with Icon. This chapter presents many of these key features of
+Unicon, starting with elements that it has in common with other popular
+languages. Detailed instructions show you how to \index{compile}compile
+and \index{run}run programs. Soon the examples start to focus on
+important ways in which Unicon is different from other languages. These
+differences are more than skin deep. If you dig deeply, you can find
+dozens of details where Unicon provides just the right blend of
+simplicity, flexibility, and power.
+
+When you finish this chapter, you will know how to
+
+\begin{itemize}
+\item edit, compile, and execute Unicon programs
+\item use the basic types to perform calculations
+\item identify expressions that can \index{expression failure}fail, or
+produce multiple results
+\item control the flow of execution using conditionals, looping, and
+procedures
+\end{itemize}
+\subsection{Your First Unicon Program}
+This section presents the nuts and bolts of writing and running an
+Unicon program. The information in this section will enable you to try
+the code examples or write your own programs. Before you can run the
+examples here or in any subsequent chapter, you must
+\index{install}install Unicon on your system. (See Appendix F for
+details on downloading and installing Unicon from the Unicon web site,
+http://unicon.sourceforge.net.) We are going to be very explicit here,
+and assume nothing about your background. If you are an experienced
+programmer, you will want to skim this section, and move on to the next
+section. If you are completely new to programming, have no fear. Unicon
+is pretty easy to learn.
+
+All programs consist of commands that use hardware to obtain or present
+information to users, and perform internal calculations that transform
+or manipulate information into a more useful form. To program a
+computer you write a document containing instructions for the computer
+to carry out in some order. In Unicon a list of instructions is called
+a \index{procedure}\textit{procedure}, and a
+\index{program}\textit{program} is a collection of one or more
+procedures. In larger programs, groups of related procedures are
+organized into classes or packages; these features are presented in
+Part II of this book. Unicon programs are text files that may be
+composed using any text \index{editor}editor. For the purposes of
+demonstration this section describes how to use \index{Ui}Ui, the
+program editor and integrated development tool that comes with Unicon.
+
+It is time to begin. Fire up Ui by typing
+{\textquotedbl}ui{\textquotedbl} from the command line, or launching
+the menu item or icon labeled {\textquotedbl}Unicon,{\textquotedbl} and
+type:
+
+\iconcode{
+procedure main() \\
+\>   write({\textquotedbl}Hello, amigo!{\textquotedbl}) \\
+end
+}
+
+Subject to font variations, your \index{screen}screen should look
+something like Figure 1-1. The large upper area of the window is the
+editing region where you type your program code. The lower area of the
+window is a status region in which the Ui program displays a message
+when a command completes successfully, or when your program has an
+error. Until you explicitly name your file something else, a new file
+has the name \textsf{noname.icn}. The font Ui uses to display
+\index{source code}source code is selectable from the Options \ menu.
+
+
+\begin{center}
+\includegraphics[width=6in,height=4.5953in]{ub-img/ub-img5.png}
+\end{center}
+\vspace{-0.25cm}{\sffamily\bfseries Figure 1-1:}
+{\sffamily Writing an Unicon program using the Ui program.}
+
+\bigskip
+
+The list of instructions that form a \textit{procedure }begins with the
+word \textsf{procedure} and ends with the word \textsf{end}. Each
+procedure has a name, so after writing a list of instructions you may
+refer to it by name without writing out the whole list again. The
+\textsf{write()} instruction is just such a procedure, only it is
+already written for you; it is built in to the language. When you issue
+a \textsf{write()} instruction, you must tell the computer what to
+write. The directions a procedure uses in carrying out its instructions
+are given inside the parentheses following that
+procedure{\textquotesingle}s name; in this case,
+\textsf{{\textquotedbl}Hello, amigo!{\textquotedbl}} is to be written.
+More generally, when you see parentheses after a name in the middle of
+a list of instructions, it is an instruction to go execute that
+procedure{\textquotesingle}s instructions. Inside the parentheses there
+may be zero, one, or many values supplied to that procedure.
+
+Besides writing your program, there are a lot of menu commands that you
+can use to control the details of compiling and executing your program
+within Ui. For instance, if you select \textbf{Run-{\textgreater}Run},
+Ui will do the following things for you.
+
+\ \ 1.\ \ Save the program in a file on disk\texttt{.} All Unicon
+programs end in \textsf{.icn}; you could name it anything you wished,
+using the \textbf{File-{\textgreater}SaveAs} command.
+
+\ \ 2.\ \ Compile the Unicon program from human-readable text to
+(virtual) machine language. To do this step manually, you can select
+the\newline
+\textbf{Compile-{\textgreater}Make executable} command.
+
+\ \ 3.\ \ Execute the program. This is the main purpose of the
+\textbf{Run} command. Ui performed the other steps in order to make
+this operation possible.
+
+If you type the \textsf{hello.icn} file correctly, the computer should
+chug and grind its teeth for awhile, and
+
+\iconcode{
+\>   Hello, amigo!
+}
+
+\noindent should appear in a window on your screen. This ought to be pretty
+intuitive, since the instructions included the line
+
+\iconcode{
+\>   write({\textquotedbl}Hello, amigo!{\textquotedbl})
+}
+
+\noindent in it. That{\textquotesingle}s how to write to the screen.
+It{\textquotesingle}s that simple.
+
+The first procedure to be executed when a program runs is called
+\textsf{main()}. Every instruction listed in the procedure named
+\textsf{main()} is executed in order, from top to bottom, after which
+the program terminates. Use the editor to add the following lines right
+after the line \textsf{write({\textquotedbl}Hello,
+amigo{\textquotedbl})} in the previous program:
+
+\iconcode{
+\>   write({\textquotedbl}How are you?{\textquotedbl}) \\
+\>   write(7 + 12)
+}
+
+\noindent The end result after making your changes should look like this:
+
+\iconcode{
+procedure main() \\
+\>   write({\textquotedbl}Hello, amigo!{\textquotedbl}) \\
+\>   write({\textquotedbl}How are you?{\textquotedbl}) \\
+\>   write(7 + 12) \\
+end
+}
+
+Run the program again. This example shows you what a list of
+instructions looks like, as well as how easy it is to tell the computer
+to do some arithmetic.
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+It would be fine (but not very useful) to tell the computer to add 7 and
+12 without telling it to write the resulting value. On seeing the
+instruction}
+
+\iconcode{
+\>   7 + 12
+}
+
+\noindent
+the computer would do the addition, throw the 19 away, and go on.
+
+Add the following line, and run it:
+
+\iconcode{
+\>   write({\textquotedbl}7 + 12{\textquotedbl})
+}
+
+This illustrates what the quotes are for. Quoted text is taken
+literally; without quotes, the computer tries to simplify (that is, do
+some arithmetic, or compute the value of what is written), which might
+be difficult if the material in question is not an expression!
+
+\iconcode{
+\>   write(hey you)
+}
+
+\noindent makes no sense and is an error. Add this line, and run it:
+
+\iconcode{
+\>   write(7 + {\textquotedbl}12{\textquotedbl})
+}
+
+The 12 in quotes is taken literally as some text, but that text happens
+to be digits that comprise a number, so adding it to another number
+makes perfect sense. The computer will not have as much success if you
+ask it to add 7 to {\textquotedblleft}amigo{\textquotedblright}. The
+computer views all of this in terms of values. A \textit{value} is a
+unit of information, such as a number. Anything enclosed in quotes is a
+single value. The procedure named \index{write()}\textsf{write()}
+prints values on your screen. \textit{Operators} such as \texttt{+}
+take values and combine them to produce other values, if it is possible
+to do so. The values you give to \texttt{+} had better be numbers! If
+you try to add something that doesn{\textquotesingle}t make sense, the
+program will stop running at that point, and print an error message.
+
+By now you must have the impression that writing things on your screen
+is pretty easy. Reading the \index{keyboard}keyboard is just as easy,
+as illustrated by the following program:
+
+\iconcode{
+procedure main() \\
+\>   write({\textquotedbl}Type a line ending with
+		{\textless}ENTER{\textgreater}:{\textquotedbl}) \\
+\>   write({\textquotedbl}The line you typed was{\textquotedbl} , read()) \\
+end
+}
+
+Run the program to see what it does. The procedure named
+\index{read()}\textsf{read()} is used to get what the user types. It is
+built in to the language. The \textsf{read()} instruction needs no
+directions to do its business, so nothing is inside the parentheses.
+When the program is run, \textsf{read()} grabs a line from the
+keyboard, turns it into a value, and produces that value for use in the
+program, in this case for the enclosing \textsf{write()} instruction.
+
+\textsf{The }\textsf{write()} instruction is happy to print out more
+than one value on a line, separated by commas. When you run the
+program, the \textsf{{\textquotedbl}the line you typed
+was{\textquotedbl}} part does not get printed until after you type the
+line for \textsf{read()} and that instruction completes. The
+\textsf{write()} instruction must have all of its directions (the
+values inside the parentheses) before it can go about its business.
+
+Now let{\textquotesingle}s try some variations. Can you guess what the
+following line will print?
+
+\iconcode{
+write({\textquotedbl}this line says {\textquotedbl} ,
+{\textquotedbl}read(){\textquotedbl})
+}
+
+The \textsf{read()} procedure is never executed because it is quoted!
+Quotes in effect say {\textquotedbl}take these letters literally, not
+as an equation or instruction to evaluate.{\textquotedbl} How about:
+
+\iconcode{
+\>   write({\textquotedbl}this line says , read(){\textquotedbl})
+}
+
+\noindent Here the quotes enclose one big value, which is printed, comma
+and all. The term for directions one gives to a procedure is
+\textit{parameter}; when you give a procedure more than one parameter,
+separated by commas, you are giving it a
+\index{parameter list}\textit{parameter list}. For example,
+
+\iconcode{
+\>   write({\textquotedbl}this value {\textquotedbl},
+{\textquotedbl}and this one{\textquotedbl})
+}
+
+\noindent Compile and run the following strange-looking program.
+What do you think it does?
+
+\iconcode{
+procedure main() \\
+\>   while write( {\textquotedbl}{\textquotedbl} \~{}== read() ) \\
+end
+}
+
+This program copies the lines you type until you type an empty line by
+pressing Enter without typing any characters first. The
+\texttt{{\textquotedbl}{\textquotedbl}} are used just as usual. They
+direct the program to take whatever is quoted literally, and this time
+it means literally nothing - an empty line. The operator
+\textsf{\~{}==} stands for {\textquotedbl}\index{not equals}not
+equals{\textquotedbl}. It compares the value on its left to the value
+on its right, and if they are not equal, it produces the value on the
+right side; if they are equal, it \index{expression
+failure}\textit{fails} - that is, the {\textquotedblleft}not
+equals{\textquotedblright} operator produces no value. If you have
+programmed in other languages, this may seem like a strange way to
+describe what is usually performed with nice simple Boolean values True
+and False. For now, try to take this description at face value; Unicon
+has no Boolean type or integer equivalent, it uses a more powerful
+concept that we will examine more fully in the chapters that follow.
+
+Thus, the whole expression \textsf{{\textquotedbl}{\textquotedbl} \~{}==
+read()} takes a line from the keyboard, and if it is not empty, it
+produces that value for the enclosing \textsf{write()} instruction.
+When you type an empty line, the value \textsf{read()} produces is
+equal to \textsf{{\textquotedbl}{\textquotedbl}}, and \textsf{\~{}==}
+produces no value for the enclosing \textsf{write()} instruction, which
+similarly fails when given no value. The \index{while}\textsf{while}
+instruction is a {\textquotedbl}\index{loop}loop{\textquotedbl} that
+repeats the instruction that follows it until that instruction fails
+(in this case, until there is no more input). There are other kinds of
+loops, as well as another way to use \textsf{while}; they are all
+described later in this chapter.
+
+So far we{\textquotesingle}ve painted you a picture of the Unicon
+language in very broad strokes, and informally introduced several
+relevant programming concepts along the way. These concepts are
+presented more thoroughly and in their proper contexts in the next
+sections and subsequent chapters. Hopefully you are already on your way
+to becoming an Icon programmer \textit{extraordinaire}. Now it is time
+to dive into many of the nuts and bolts that make programming in Unicon
+a unique experience.
+
+\subsection{Command Line Options}
+Unicon comes with an IDE, but you can also edit programs using your own
+editor, and compile and run them from your operating
+system{\textquotesingle}s command line. This section discusses the
+Unicon command line tools along with several useful options. The Unicon
+compiler executable is named unicon, and to compile the program foo.icn
+you would type
+
+\iconcode{
+\>   unicon foo
+}
+
+To execute the resulting program, you just type
+
+\iconcode{
+\>   foo
+}
+
+To compile and line a program consisting of several modules, you can
+just type them all on the command line, as in
+
+\iconcode{
+\>   unicon foo bar baz
+}
+
+\noindent but often you will want to compile them separately
+(using the -c command line option) and link the resulting object
+files, called ucode files; their extension is .u
+
+\iconcode{
+\>   unicon -c foo\newline \\
+\>   unicon -c bar\newline \\
+\>   unicon -c baz\newline \\
+\>   unicon foo.u bar.u baz.u
+}
+
+Some of the other useful command line options include:
+
+\begin{itemize}
+\item \textsf{{}-o arg}\ \ \ \ name the resulting output file arg
+\item \textsf{{}-x args}\ \ execute the program immediately after linking;
+		 this option goes \textit{after} the program filenames
+\item \textsf{{}-t}\ \ \ \ turn on tracing
+\item \textsf{{}-u}\ \ \ \ produce a warning for undeclared variables
+\end{itemize}
+
+These options can be specified in the Ui program under the Compile
+menu{\textquotesingle}s Compile Options command. Other options exist;
+consult your Unicon and Icon manual pages and platform-specific help
+files and release information for more details.
+
+\subsection{Expressions and Types}
+Each \index{procedure}procedure in an Unicon program is a sequence of
+\index{expression}\textit{expression}\textit{s.} All expressions are
+instructions for obtaining \index{value}values of some
+\index{type}type, such as a number or a word; some expressions also
+cause side effects, such as accessing a hardware device to read or
+write data. Simple expressions just read or write a value stored in
+memory. More interesting expressions specify a computation that
+manipulates zero or more \index{argument}\textit{argument} values to
+obtain \index{result}\textit{result} values by some combination of
+operators, procedures, or \index{control structure}control structures.
+
+The simplest expressions are \index{literal}\textit{literal}\textit{s},
+such as \textsf{2} or \textsf{{\textquotedbl}hello,
+world!{\textquotedbl}}\textsf{. }These expressions directly specify a
+value stored in memory. When the program runs, they do not do any
+computation, but rather evaluate to themselves. Literals are combined
+with other values to produce interesting results. Each literal has a
+corresponding \textit{type}. This chapter focuses on the \index{atomic
+types}atomic types. Atomic types represent individual, \index{immutable
+values}immutable values. The atomic types in Unicon are
+\index{integer}integer and \index{real number}real (floating-point)
+numbers, \index{string}string (a sequence of characters), and
+\index{cset}cset (a \index{character set}character set). Atomic types
+are distinguished by the fact that they have literal values, specified
+directly in the program code and represented as data in the compiled
+code. Values of other types such as lists are constructed during
+execution. Later chapters describe structure types that organize
+collections of values, and system types for interacting with the
+operating system via files, databases, windows, and network
+connections. 
+
+After literals, \index{reference}references to
+\index{variable}\textit{variable}\textit{s} are the next simplest form
+of expression. Variables are named memory locations that hold values
+for use in subsequent expressions. You refer to a variable by its name,
+which must start with a letter or underscore and may contain any number
+of letters, underscores, or numbers. Use names that make the meaning of
+the program clear. The values stored in variables are manipulated by
+using variable names in expressions like \textsf{i+j}. This expression
+results in a value that is the sum of the values in the variables
+\textsf{i} and \textsf{j}, just like you would expect.
+
+Some words may not be used as variable names because they have a special
+meaning in the language. These \index{reserved word}\textit{reserved
+word}\textit{s} include \textsf{procedure}, \textsf{end},
+\textsf{while}, and so on. Certain other special variables called
+\index{keyword}\textit{keyword}\textit{s} start with the ampersand
+character (\textsf{\&}) and denote special values. For example, normal
+variables are initialized to the null value represented by the keyword
+\textsf{\&}\index{null value, \&null}\textsf{null}. Other keywords
+include \textsf{\&date}\textsf{, }\textsf{\&time}\textsf{,} and so on.
+Reserved words and keywords are defined when the corresponding language
+features are presented. Complete lists of reserved words and keywords
+are given in Appendix A.
+
+Unlike many languages where you have to state up front
+(\textit{declare}) all the variables you are going to use\textit{ }and
+specify their data type, in Unicon variables do not have to be declared
+at all, and any variable can hold any type of value. However, Unicon
+will not allow you to mix incompatible types in an expression. Unicon
+is \index{type safe}\textit{type safe}, meaning that every operator
+checks its argument values to make sure they are compatible, converts
+them if necessary, and halts execution if they cannot be converted.
+
+\subsection[Numeric Computation]{Numeric Computation}
+Unicon supports the usual \index{arithmetic}arithmetic operators on two
+data types: \index{integer}integer and real. The integer type is a
+signed whole number of arbitrary magnitude. The real type is a signed
+\index{floating point}floating point decimal number whose size on any
+platform is the largest size supported by machine instructions,
+typically 64-bit double precision values. In addition to
+\index{addition}addition (\textsf{+}), \index{subtraction}subtraction
+(\textsf{{}-}), \index{multiplication}multiplication (\textsf{*}) and
+\index{division}division (\textsf{/}), there are operators for
+\index{modulo \%}modulo (\textsf{\%}) and \index{exponentiation
+\^{}}exponentiation (\textsf{\^{}}). Arithmetic operators require
+numeric operands.
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+Operations on integers produce integers; fractions are truncated, so 8/3
+produces 2. If either operand is a real, the other is converted to real
+and the result is real, so 8.0/3 is 2.66666...}
+
+As a general rule in Unicon, arguments to numeric operators and
+functions are automatically \index{type conversion!type
+conversion}converted to numbers if possible, and a \index{run-time
+error}run-time error occurs otherwise. The built-in functions
+\index{integer(x)}\textsf{integer(x)} and
+\index{real(x)}\textsf{real(x)} provide an explicit conversion
+mechanism that fails if \textsf{x} cannot be converted to numeric
+value, allowing a program to check values without resulting in a
+run-time error.
+
+In addition to the operators, built-in functions support several common
+\index{numeric operations}numeric operations. The
+\index{sqrt(x)}\textsf{sqrt(x)} function produces the square root of x,
+and \index{exp(x)}\textsf{exp(x)} raises \textit{e} to the \textsf{x}
+power. The value of \index{pi, 3.14... \&pi}\textit{pi} (3.141...) is
+available in keyword \textsf{\&pi}, the \index{golden ratio 1.618...,
+\&phi}Golden Ratio (1.618...) is available in \index{phi 1.618...,
+\&phi}\textsf{\&phi}, and \textit{e} (2.718...) is available in
+\index{e, 2.71... \&e}\textsf{\&e}. The \index{log(x)}\textsf{log(x)}
+function produces the \index{natural log, log(x)}natural log of
+\textsf{x}. The common \index{trigonometric function}trigonometric
+functions, such as \index{sin()}\textsf{sin()} and
+\index{cos()}\textsf{cos()}\textsf{ }take their angle arguments in
+\index{radian}radian units. The \index{min()}\textsf{min(x1, x2, ...)}
+and \index{max()}\textsf{max(x1, x2, ...)} routines return minimum and
+maximum values from any number of arguments. Appendix A gives a
+complete list of built-in functions and operators.
+
+Listing 1-1 shows a simple Unicon program that illustrates the use of
+variables in a numeric computation. The line at the beginning is a
+comment for the human reader. \ \index{comment}Comments begin with the
+\textsf{\#} character and extend to the end of the line on which they
+appear. The compiler ignores them.
+
+\bigskip
+
+{\sffamily\bfseries Listing 1-1}
+{\sffamily\bfseries Mystery program}
+
+\iconcode{
+\# What do I compute? \\
+procedure main() \\
+\>   local i, j, old\_r, r \\
+\>   i := read() \\
+\>   j := read() \\
+\>   old\_r := r := min(i, j) \\
+\>   while r {\textgreater} 0 do \{ \\
+\>\>    old\_r := r \\
+\>\>    if i {\textgreater} j then \\
+\>\>\>     i := r := i \% j \\
+\>\>    else \\
+\>\>\>     j := r := j \% i \\
+\>\>    \} \\
+\>   write(old\_r) \\
+end
+}
+
+This example illustrates \index{assignment}\textit{assignment}; values
+are assigned to (or {\textquotedbl}stored in{\textquotedbl}) variables
+with the \textsf{:=} operator. As you saw in the previous section, the
+function \textsf{read()} reads a line from the input and returns its
+value. The modulo operator (\textsf{\%}) is an important part of this
+program: \textsf{i \% j} is the \index{remainder}remainder when
+\textsf{i} is divided by \textsf{j}.
+
+The while \index{loop}loop in this program uses a reserved word
+\textsf{do} followed by an expression (really a compound expression
+enclosed in curly braces). The expression following the \textsf{do }is
+executed once each time the expression that controls the \textsf{while
+(r {\textgreater} 0)} succeeds. \ Inside the \textsf{while} loop, a
+\index{conditional expression}conditional
+\index{if-then-else}\textsf{if-then-else} expression is used to select
+one of two possible actions.
+
+The names of the variables in this example are obscure, and there are no
+human readable comments in it, only the one telling you
+it{\textquotesingle}s a {\textquotedbl}mystery
+program{\textquotesingle}!{\textquotedbl} Can you guess what this
+program does, without running it? If you give up, try running it with a
+few pairs of positive numbers.
+
+In addition to arithmetic operators, there are \index{augmented
+assignment}\textit{augmented assignment} operators. For instance, to
+increment the value in a variable by 2, these two statements are
+equivalent:
+
+\iconcode{
+\>   i +:= 2 \\
+\>   i := i + 2
+}
+
+Augmented assignment works for most \index{binary operator}binary
+operators, not just arithmetic. The expression \textsf{i
+}\textsf{\textit{op}}\textsf{:= expr} means the same as \textsf{i := i
+}\textsf{\textit{op}}\textsf{ expr}.
+
+\subsection{Strings and Csets}
+The non-numeric atomic types available in Unicon are character sequences
+(\index{string}strings) and \index{character set}character sets
+(\index{cset}csets). Icon originated in the domain of string
+processing, and from it Unicon inherits many sophisticated features for
+manipulating strings and performing \index{pattern matching}pattern
+matching. This section presents the simple and most common operations.
+More advanced operations and examples using strings and csets are given
+in Chapter 4.
+
+\index{string!literal}String literals are enclosed in double quotes, as
+in \textsf{{\textquotedbl}this is a string{\textquotedbl}}, while
+\index{cset literal}cset literals are enclosed in single quotes, as in
+\textsf{{\textquotesingle}aeiou{\textquotesingle}}. Although strings
+and csets are composed of characters, there is no
+\index{character}character type; a string (or cset) consisting of a
+single character is used instead.
+
+Current implementations of Unicon use eight-bit characters, allowing
+strings and csets to be composed from 256 unique characters.
+\index{ASCII}ASCII representation is used for the lower 128 characters,
+except on \index{EBCDIC}EBCDIC systems. The appearance of non-ASCII
+values is platform dependent. Like integers, strings can be arbitrarily
+large, constrained only by the amount of memory you have on your
+system.
+
+Several operators take string arguments. The \index{string!length
+(*s)}\textsf{*s} operator gives the \index{length operator (*x)}length
+of string \textsf{s}. The expression \index{string!concatenation s1
+{\textbar}{\textbar} s2}\textsf{s1{\textbar}{\textbar}s2} produces a
+string consisting of the characters in \textsf{s1} followed by those in
+\textsf{s2}. The \index{subscript operator}subscript operator
+\index{string!subscript (s[i])}\textsf{s[i]} produces a one-letter
+substring of \textsf{s} at the \textsf{i}th position.
+\index{string!indexes 1-based}Indices are counted starting from
+position 1. If \textsf{i} is negative, it is relative to the end of the
+string, for example \textsf{s[-2]} is the second to the last character
+in the string.
+
+Csets support set operators. \index{union (c1 ++ c2)}\textsf{c1++c2}
+produces a new cset that is the union of \textsf{c1} and \textsf{c2}.
+The expression \index{intersection (c1**c2)}\textsf{c1**c2} is the
+intersection, while \index{difference (c1 -{}- c2)}\textsf{c1-{}-c2} is
+the difference. In addition, several keywords denote commonly used
+csets. The keywords \ \index{letters,  \&letters}\textsf{\&letters},
+\textsf{\&lcase}, and \textsf{\&ucase} denote the alphabetic
+characters, \index{lower case}lower case characters a-z, and
+\index{upper case}upper case characters A-Z, respectively, while
+\index{digits, \&digits}\textsf{\&digits} is the set from 0-9,
+\index{ASCII, \&ascii}\textsf{\&ascii} is the lower 128 characters, and
+\index{cset, universal \&cset}\textsf{\&cset} is the set of all (256,
+on most implementations) characters.
+
+Many built-in functions operate on strings and csets. Some of the simple
+string functions are \index{reverse(x)}\textsf{reverse(s)}, which
+produces a string that is the reverse of \textsf{s}, and
+\index{trim(s,c)}\textsf{trim(s,c)}, which produces a substring of
+\textsf{s} that does not end with any character in cset \textsf{c}.
+
+Functions and operators that require string arguments convert numeric
+values to strings automatically, and halt execution with a run-time
+error if given a value that cannot be converted to a string.
+
+\subsection[Goal{}-directed Evaluation]{Goal-directed Evaluation}
+\index{goal-directed evaluation}So far, the simple examples of how
+expressions are evaluated have included nothing you
+wouldn{\textquotesingle}t find in ordinary programming languages. It is
+time to push past the ordinary.
+
+In most conventional languages, each expression always computes
+\textit{exactly one} result. If no valid result is possible, a
+\index{sentinel value}sentinel value such as -1, NULL, EOF
+(\index{end-of-file}end-of-file) or INF (\index{infinity}infinity) is
+returned instead. This means that the program must check the return
+value for this condition. For example, while reading integers from the
+input and performing some operation on them you might do something like
+this:
+
+\iconcode{
+\>   while (i := read()) \~{}= -1 do \\
+\>\>     process(i)
+}
+
+This will work, of course, except when you really need to use -1 as a
+value! It is somewhat cumbersome, however, even when a sentinel value
+is not a problem. Unicon provides a much nicer way to write this type
+of code, developed originally in the Icon language. In Unicon,
+expressions are \textit{goal-directed}. This means that every
+expression when evaluated has a goal of producing results for the
+surrounding expression. If an expression succeeds in producing a
+result, the surrounding expression executes as intended, but if an
+expression cannot produce a result, it is said to \index{expression
+failure}fail and the surrounding expression cannot be performed and in
+turn fails.
+
+Now take a look at that loop again. If it weren{\textquotesingle}t for
+the termination condition, you would not have to save the value in the
+intermediate variable \textsf{i}. If you would like to say:
+
+\iconcode{
+\>   process(read())
+}
+
+\noindent
+then your wishes are answered by Unicon; you can indeed write your
+program like this. The expression \textsf{read()} tries to produce a
+value by reading the input. When it is successful, \textsf{process()}
+is called with the value; but when \textsf{read()} cannot get any more
+values, that is, at the end of the file, it \textit{fails}. This
+failure propagates to the surrounding expression and \textsf{process()}
+is not called either. Here is the clincher: control expressions like
+\textsf{if} and \textsf{while} don{\textquotesingle}t check for Boolean
+(true/false) values, they check for \index{success}success! So our loop
+becomes
+
+\iconcode{
+\>   while process(read())
+}
+
+The \index{do clause}\textsf{do} clause of a \textsf{while} loop is
+optional; in this case, the \index{condition}condition does everything
+we need, and no \textsf{do} clause is necessary.
+
+Consider the \index{if statement}\textsf{if}\textsf{ }statement that was
+used in the earlier arithmetic example:
+
+\iconcode{
+\>   if i {\textgreater} j then ...
+}
+
+Comparison operators such as \textsf{{\textgreater}} succeed or fail
+depending on the values of the operands. This leads to another
+question: if an expression like \textsf{i {\textless} 3} succeeds, what
+value should it produce? No {\textquotedbl}true{\textquotedbl} value is
+needed, because any result other than failure is interpreted as
+{\textquotedbl}true.{\textquotedbl} This allows the operator to return
+a useful value instead! The \index{comparison operator}comparison
+operators produce the value of their right operand when they succeed.
+You can write conditions like
+
+\iconcode{
+\>   if 3 {\textless} i {\textless} 7 then ...
+}
+
+\noindent
+that appear routinely in math classes. Other programming languages only
+dream about being this elegant. First, Unicon computes \textsf{3
+{\textless} i}. If that is true, it returns the value \textsf{i}, which
+is now checked with 7. This expression in fact does exactly what
+you{\textquotesingle}d expect. It checks to see that the value of
+\textsf{i} is between 3 and 7. (Also, notice that if the first
+comparison fails, the second one will not be evaluated.)
+
+\subsection{Fallible Expressions}
+Because some expressions in Unicon can \index{fail!expression}fail to
+produce a result, you should learn to recognize such expressions on
+sight. These \index{fallible expression}\textit{fallible
+expression}\textit{s} control the flow of execution through any piece
+of Unicon code you see. When failure is expected it is elegant. When it
+is unexpected in your program code, it can be disastrous, causing
+incorrect output that you may not notice or, if you are lucky, the
+program may terminate with a run-time error.
+
+Some fallible expressions fail when they cannot perform the required
+computation; others are \textit{predicates} whose purpose is to fail if
+a condition is not satisfied. The subscript and \index{sectioning
+operator}sectioning operators are examples of the first category. \ The
+expression \textsf{x[i]} is a \index{subscript operator}subscript
+operator that selects element \textsf{i} out of some string or
+structure \textsf{x}. It fails if the index \textsf{i} is out of range.
+Similarly, the sectioning operator \textsf{x[i:j]} fails if either
+\textsf{i} or \textsf{j} are out of range.
+
+The \textsf{read()} function is illustrative of a large number of
+built-in functions that can fail. A call to \textsf{read()} fails at
+the end of a file. You can easily write procedures that behave
+similarly, failing when they cannot perform the computation that is
+asked. Unfortunately, for an arbitrary procedure call \textsf{p()}, you
+can{\textquotesingle}t tell if it is fallible without studying its
+\index{source code}source code or reference documentation. The safest
+thing is to expect any procedure call is fallible and check whether it
+failed, unless you know it is not fallible or its failure
+doesn{\textquotesingle}t matter. Following this advice may avoid many
+errors and save you lots of time. In this book we will be careful to
+point out fallible expressions when we introduce them.
+
+The less than operator \textsf{{\textless}} is a typical predicate
+operator, one that either fails or produces exactly one result. The
+unary predicates \index{null test /x}\textsf{/x} and \index{nonnull
+test {\textbackslash}x}\textsf{{\textbackslash}x} test a single
+operand, succeeding and producing the operand if it is null, or
+non-null, respectively. The following binary predicates compare two
+operands. The next section presents some additional, more complex
+fallible expressions.
+
+\bigskip
+
+\textsf{
+{\textless} \ \ \ \ {\textless}= \ \ \ \ {\textgreater}
+\ \ \ {\textgreater}= \ \ \ \ \ =
+\ \ \ \~{}=}\texttt{\ \ }\ \ \index{numeric comparison}numeric
+comparison operators
+
+\textsf{{\textless}{\textless} \ {\textless}{\textless}=
+\ {\textgreater}{\textgreater} \ {\textgreater}{\textgreater}= \ ==
+\ \~{}==\ \ }\ \ \index{lexical comparison}lexical (alphabetic)
+comparison
+
+\ \ \ \ \ \ \ \ \textsf{=== \ \ \ \ \ \ \ \ \~{}===}\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \index{reference
+comparison}reference comparison
+
+\subsection[Generators]{Generators}
+
+So far we have seen that an expression can produce no result (failure)
+or one result (success). In general, an expression can produce any
+number of results: 0, 1, or many. Expressions that can produce more
+than one result are called \index{generator}\textit{generators}.
+Consider the task of searching for a substring within a string:
+
+\iconcode{
+\>   find({\textquotedbl}lu{\textquotedbl},
+{\textquotedbl}Honolulu{\textquotedbl})
+}
+
+In most languages, this would return one of the substring matches,
+usually the first position at which the substring is found. In Unicon,
+this expression is a generator, and can produce \textit{all} the
+positions where the substring occurs. If the surrounding expression
+only needs one value, as in the case of an if test or an assignment,
+only the first value of a generator is produced. If a generator is part
+of a more complex expression, then the return values are produced in
+sequence until the whole expression produces a value.
+
+Let us look at this example:
+
+\iconcode{
+\>   3 {\textless} find({\textquotedbl}or{\textquotedbl},
+{\textquotedbl}horror{\textquotedbl})
+}
+
+The first value produced by \index{find()}\textsf{find()} is 2, which
+causes the \textsf{{\textless}}\textsf{ }operation to fail. Execution
+then resumes the call to \textsf{find()}, which produces a 5 as its
+next value, and the expression succeeds. The value of the expression is
+the first position of the substring greater than 3.
+
+The most obvious generator is the \index{alternation operator (
+{\textbar} )}alternation operator \textsf{{\textbar}}. The expression
+
+\iconcode{
+\>   expr1 {\textbar} expr2
+}
+
+\noindent
+produces its left-hand side followed by its right-hand side, if needed
+by the surrounding expression. This can perform many computations quite
+compactly. For example,
+
+\iconcode{
+\>   x = (3 {\textbar} 5)
+}
+
+checks to see if the value of \textsf{x} is either 3 or 5; more complex
+expressions follow logically:
+
+\iconcode{
+\>   (x {\textbar} y) = (3 {\textbar} 5)
+}
+
+This checks to see if either \textsf{x} or \textsf{y} has the value 3 or
+5. It is the Unicon equivalent of C{\textquotesingle}s
+
+\iconcode{
+\>   (x == 3) {\textbar}{\textbar} (x == 5) {\textbar}{\textbar} (y ==
+3) {\textbar}{\textbar} (y == 5)
+}
+
+In understanding any Unicon code you read, it helps if you identify the
+generators, if there are any. In addition to the alternation operator
+\textsf{{\textbar}} and the function \textsf{find()}, there are a few
+other generators in Icon{\textquotesingle}s built in repertoire of
+operators and functions. We mention them briefly here, so you can be on
+the lookout for them when reading code examples.
+
+The expression \textsf{i }\index{to, generator}\textsf{to j} is a
+generator that produces all the values between \textsf{i} and
+\textsf{j.} The expression \textsf{i to j }\index{to-by,
+generator}\textsf{by k} works similarly, incrementing each result by
+\textsf{k}; \textsf{i}, \textsf{j}, and \textsf{k} must all be integer
+or real numbers, and \textsf{k} must be non-zero. The expression
+\textsf{i to j} is equivalent to \ \ \ \ \ \ \textsf{i to j by 1}. The
+unary \index{generate operator "!x}\textsf{!} operator is a generator
+that produces the elements of its argument. This works on every type
+where it makes sense. Applied to a string, it produces all its
+characters (in order). Sets, tables, lists, or records produce the
+members of the structure.
+
+Generators get resumed for more results as needed in order for the
+surrounding expression to succeed, and this may propagate through many
+levels of nested enclosing expressions. However, special expressions
+called \index{bounded experssions}\textit{bounded expressions} will
+never resume their generator subexpressions. For example, the
+conditional expressions used in \textsf{if} and \textsf{while} are
+never resumed if they succeed; if they produce a result the then-branch
+or the loop body is executed, and if that code fails, it does not cause
+generators in the conditional to be resumed. Those bounded conditional
+expressions are re-evaluated starting from scratch if execution comes
+their way again. Another popular bounded expression is the semi-colon
+operator. \ The expression \textsf{expr1 ; expr2 }evaluates the two
+expressions in order, and bounds the first expression, so you
+don{\textquotesingle}t have to worry about backtracking into it if the
+second expression fails.
+
+\subsection{Iteration and Control Structures}
+You have already seen two control structures in Unicon: the \textsf{if}
+and the \textsf{while} loop, which test for \index{success}success.
+Unicon has several other control structures that vary in complexity and
+usefulness. Unicon is expression-based, and all control structures are
+expressions that can be used in surrounding expressions if desired. The
+big difference between control structures and ordinary operators or
+procedures is that ordinary operators and procedures
+don{\textquotesingle}t execute until their arguments have been
+evaluated and produced a result; they don{\textquotesingle}t execute at
+all if an argument fails. In contrast, a control structure uses one of
+its arguments to decide whether (or how many times) to evaluate its
+other arguments.
+
+Since control structures are expressions, it is reasonable to ask what
+result they produce for any surrounding expression. For example, the
+result of an \textsf{if} expression is the result of either its
+\textsf{then} part or its \textsf{else} part, whichever one was
+selected. On the other hand, a loop executes until its test fails,
+after which there is no meaningful result for it to produce, so \ loops
+always fail as far as surrounding expressions are concerned.
+
+The \index{control structure}control structure
+\index{every}\textsf{every} is a mechanism for processing the entire
+sequence of values produced by a generator. The expression 
+
+\iconcode{
+\>   every \textit{expr1} do \textit{expr2}
+}
+
+\noindent
+evaluates \textsf{\textit{expr2}} for each result generated by
+\textsf{\textit{expr1}}. This loop looks similar enough to a
+\textsf{while} loop to confuse people at first. The difference is that
+a \textsf{while} loop re-evaluates \textsf{\textit{expr1}} from scratch
+after each iteration of \textsf{\textit{expr2}}, but \textsf{every}
+\textit{resumes} \textsf{\textit{expr1}} for an additional result where
+it left off the last time through the loop. Using a generator to
+control a \textsf{while} loop makes no sense; the generator will
+restart each iteration, which may give you an infinite loop. Similarly,
+\textit{not} using a generator to control an \textsf{every} loop also
+makes no sense; if \textsf{\textit{expr1}} is not a generator the loop
+body executes at most one time.
+
+The classic example of \textsf{every} is a loop that generates the
+number sequence from a \textsf{to} expression, assigning the number to
+a variable that can be used in \textsf{\textit{expr2}}. In many
+languages these are called {\textquotedbl}for{\textquotedbl} loops. A
+\index{for loop}for loop in Unicon is written like this:
+
+\iconcode{
+\>   every i := 1 to 10 do write(i)
+}
+
+Of course, \textsf{every} and \textsf{to} are not limited to this basic
+type of for loop. Generators are more flexible. In fact, the for loop
+above looks clumsy when compared with the equivalent
+
+\iconcode{
+\>   every write(1 to 10)
+}
+
+A generator operand to a non-generator forms a generator. The enclosing
+non-generator (in this case, \textsf{write()}) executes repeatedly as
+the generator suspends and resumes.
+
+Unicon{\textquotesingle}s \textsf{every} keyword generalizes the concept
+of \index{iterator}\textit{iterator}\textit{s} found in languages such
+as Clu and C++. Iterators are special control structures that walk
+through a collection of data. Instead of being a special feature, in
+Unicon iterators are just one of many ways to utilize generators. The
+\index{sequence of results}sequence of results from an expression does
+not have to be stored in a structure to iterate over them. The sequence
+of results does not even have to be finite; many
+\index{generator}generator expressions produce an infinite sequence of
+results, as long as the surrounding expression keeps asking them for
+more. Here is another example of how \textsf{every} expressions are
+more flexible than for loops. The expression
+
+\iconcode{
+\>   every f(1 {\textbar} 4 {\textbar} 9 {\textbar} 16 {\textbar} 25
+{\textbar} 36)
+}
+
+\noindent
+executes the function \textsf{f} several times, passing the first few
+square numbers as parameters. A shorter equivalent that uses the power
+operator (\textsf{\^{}}) is \textsf{every f((1 to 6)\^{}2)}. An example
+in the next section shows how to generalize this to work with all the
+squares.
+
+The \textsf{if}, \textsf{while}, and \textsf{every} expressions are
+Unicon{\textquotesingle}s primary control structures. Several other
+control structures are available that may be more useful in certain
+situations. The loop
+
+\iconcode{
+\>   \index{until}until \textit{expr1} do \textit{expr2}
+}
+
+\noindent is \textsf{while}{\textquotesingle}s evil twin, executing
+\textsf{\textit{expr2}} as long as \textsf{\textit{expr1}}
+\index{expression failure}fails; on the other hand
+
+\iconcode{
+\>   \index{repeat loop}repeat \textit{expr}
+}
+
+\noindent is an infinite loop, executing \textsf{\textit{expr}}
+over and over.
+
+There are also variations on the \textsf{if} expression introduced
+earlier for conditional execution. First, the \textsf{else} branch is
+optional, so you can have an \textsf{if} expression that does nothing
+if the condition is not satisfied. Second, there is a special control
+structure introduced for the common situation in which several
+alternatives might be selected using a long sequence of \textsf{if ...
+else if ... else if ...} expressions. The \index{case
+expression}\textsf{case} expression replaces these chains of
+\textsf{if} expressions with the syntax:
+
+\iconcode{
+\>   case \textit{expr} of \{ \\
+\>   \textit{branch1}: \textit{expr1} \\
+\>   \textit{branch2}: \textit{expr2} \\
+\>   ... \\
+\>   default: \textit{expr}\textit{\textsubscript{i}} \\
+\>   \}
+}
+
+When a \textsf{case} expression executes, the \textsf{\textit{expr}} is
+evaluated, and compared to each branch value until one that matches
+exactly is found, as in the binary equality operator \textsf{===}.
+Branch expressions can be generators, in which case every result from
+the branch is compared with \textsf{\textit{expr}}. The default branch
+may be omitted in case expressions for which no action is to be taken
+if no branch is satisfied.
+
+When we introduced the \textsf{repeat} loop, you probably were wondering
+how to exit from the loop, since most applications do not run forever.
+One answer would be to call one of the built-in functions that
+terminate the entire program when it is time to get out of the loop.
+The \textsf{exit()}, \textsf{stop()}, and \textsf{runerr()} functions
+all serve this valuable purpose; their differences are described in
+Appendix A.
+
+A less drastic way to get out of any loop is to use the \index{break
+expression}\textsf{break} expression:
+
+\iconcode{
+\>   break \textit{expr}
+}
+
+This expression exits the nearest enclosing loop; \textsf{\textit{expr}}
+is evaluated outside the loop and treated as the value produced by
+executing the loop. This value is rarely used by the surrounding
+expression, but the mechanism is very useful, since it allows you to
+chain any number of breaks together, to exit several levels of loops
+simultaneously. The \textsf{break} expression has a cousin called
+\textsf{next} that does not get out of a loop, but instead skips the
+rest of the current iteration of a loop and begins the next iteration
+of the loop.
+
+\subsection[Procedures]{Procedures}
+\index{procedure}Procedures are a basic building block in most
+languages. Here is an example of an ordinary procedure. This one
+computes a simple polynomial, ax\textsuperscript{2}+bx+c.
+
+\iconcode{
+procedure poly(x,a,b,c) \\
+\>   return a * x\^{}2 + b * x + c \\
+end
+}
+
+\subsubsection{Parameters}
+Procedure \index{parameter}parameters are passed by value except for
+\index{structure types}structured data types, which are passed by
+\index{reference}reference. This means that when you pass in a string,
+number, or cset value, the procedure gets a \textit{copy} of that
+value; any changes the procedure makes to its copy will not be
+reflected in the calling procedure. On the other hand, structures that
+contain other values, such as lists, tables, records, and sets are not
+copied. The procedure being called gets a handle to the original value,
+and any changes it makes to the value will be visible to the calling
+procedure. Structure types are described in the next chapter.
+
+When you call a procedure with \index{parameters!wrong number}too many
+parameters, the extras are discarded. This feature is valuable for
+prototyping but can be dangerous if you aren{\textquotesingle}t
+careful! Similarly, if you call a procedure with too few parameters,
+the remaining variables are assigned the null value, \textsf{\&null}.
+The null value is also passed as a parameter if you omit a parameter.
+
+Now it is time to describe the unary operators \textsf{{\textbackslash}}
+and \textsf{/}. These operators test the expression against the null
+value. The expression \index{null test /x}\textsf{/}\textsf{\textit{x}}
+succeeds and returns \textsf{\textit{x}} if the value is the null
+value. This can be used to assign default values to procedure
+arguments: Any arguments that have a null value can be tested for and
+assigned a value. Here{\textquotesingle}s an example:
+
+\iconcode{
+procedure succ(x, i) \\
+\>   /i := 1 \\
+\>   return x + i \\
+end
+}
+
+If this procedure is called as \textsf{succ(10)}, the missing second
+parameter, \textsf{i}, is assigned the null value. The forward slash
+operator then tests \textsf{i} against the null value, which succeeds;
+therefore the value 1 is assigned to \textsf{i}.
+
+The backward slash checks if its argument is non-null. For example, this
+will write the value of \textsf{x} if it has a non-null value:
+
+\iconcode{
+\>   write({\textquotedbl}The value of x is {\textquotedbl},
+	{\textbackslash}x)
+}
+
+If \textsf{x} does in fact have the null value, then \index{nonnull test
+{\textbackslash}x}\textsf{{\textbackslash}x} will fail, which will mean
+that the \textsf{write()} procedure will not be called. If it helps you
+to not get these two mixed up, a slash pushes its operand
+{\textquotedbl}up{\textquotedbl} for non-null, and
+{\textquotedbl}down{\textquotedbl} for a null value.
+
+The preceding example of procedure \textsf{succ()} shows one way to
+specify a default value for a parameter. The built-in functions use
+such default values systematically to reduce the number of parameters
+needed; consistent defaults for entire families of functions make them
+easy to remember. Another key aspect of the built-in operations is
+implicit type conversion. Arguments to built-in functions and operators
+are converted as needed.
+
+\index{default, parameter}Defaulting and \index{type conversion}type
+conversion are so common and so valuable in Unicon that they have their
+own syntax. Parameter names may optionally be followed by a coercion
+function (usually the name of a built in type) and/or a default value,
+separated by colons. These constructs are especially useful in
+enforcing the public interfaces of library routines that will be used
+by many people.
+
+\iconcode{
+procedure succ(x:integer, i:integer:1) \\
+end
+}
+
+\noindent
+This parameter declaration is a more concise equivalent of
+
+\iconcode{
+procedure succ(x, i) \\
+\>   x := integer(x) {\textbar} runerr(101, x) \\
+\>   /i := 1 {\textbar} i := integer(i) {\textbar} runerr(101, i) \\
+end
+}
+
+\subsubsection{Variables and Scopes}
+\index{Variable}Variable names used as parameters are fundamentally
+different from procedure names. Parameter names have a
+\index{scope,}\textit{scope,} limited to the body of a single
+procedure, while procedure names are visible to the entire program.
+Parameters and procedures are special forms of two of the basic kinds
+of variables in Unicon: local variables and global variables.
+
+The scope of \index{global variables}global variables, including
+procedure names, consists of the entire program. Their value is stored
+in memory for the entire execution of the program. There are two kinds
+of \index{local variables}local variables; both introduce names that
+are defined only within a particular procedure. Regular local variables
+are created when a procedure is called, and destroyed when a procedure
+fails or returns a result; a separate copy of regular local variables
+is created for each call. \index{static variables}Static local
+variables are global variables whose names are visible only within a
+particular procedure; a single location in memory is shared by all
+calls to the procedure, and the last value assigned in one call is
+remembered in the next call.
+
+Variables do not have to be declared, and by default they are
+\textit{local}. To get a global variable, you have to declare it
+outside any procedure with a declaration like this:
+
+\iconcode{
+global MyGlobal
+}
+
+Such a declaration can be before, after, or in between procedures within
+a program source file, but cannot be inside a procedure body. Of
+course, another way to declare a global variable is to define a
+procedure; this creates a global variable initialized with the
+appropriate procedure value containing the procedure{\textquotesingle}s
+instructions.
+
+Regular and static local variables may be declared at the top of a
+procedure body, after the parameters and before the code starts, as in
+the following example:
+
+\iconcode{
+procedure foo() \\
+\>   local x, y \\
+\>   static z \\
+\>   ... \\\
+end
+}
+
+Each declared local variable name may be followed by a \textsf{:=} and
+an \textit{initializer} expression that specifies the
+variable{\textquotesingle}s initial value. Without an initializer,
+variables start with the null value, \textsf{\&null}\textit{. }Although
+you do not have to declare local variables, any large program and
+especially library procedures or multi-person projects should declare
+all local variables. If you don{\textquotesingle}t, and some other part
+of the code introduces a global variable by the same name as your
+undeclared local, your variable will be interpreted as a
+\index{reference}reference to the global. To help you avoid this
+problem, the \textsf{{}-u} command line option to the
+\index{compiler}compiler causes \index{undeclared variables}undeclared
+local variables to produce a compilation error message.
+
+After procedure body can begin with an \index{initial
+clause}\textsf{initial} clause, which will execute only the first time
+the procedure is called. The \textsf{initial} clause is primarily used
+to initialize static variables in ways that aren{\textquotesingle}t
+handled by initializers. As an example, the following procedure returns
+the next number in the Fibonacci number sequence each time it is
+called, using static variables to remember previous results in the
+sequence between calls.
+
+\iconcode{
+procedure fib() \\
+static x,y \\
+local z \\
+initial \{ \\
+\>   x := 0 \\
+\>   y := 1 \\
+\>   return 1 \\
+\>   \} \\
+\>   z := x + y \\
+\>   x := y \\
+\>   y := z \\
+\>   return z \\
+end
+}
+
+\subsubsection[Writing Your Own Generators]{Writing Your Own Generators}
+
+\index{generator}When a procedure returns a value, the procedure and its
+regular local variables cease to exist. But there are expressions that
+don{\textquotesingle}t disappear when they produce a value: generators!
+You can create your own generators by writing procedures that use
+\textsf{suspend} instead of \textsf{return. suspend} is different from
+\textsf{return} in that it saves the point of execution within the
+procedure; if another value is required by the calling expression, the
+generator continues execution from where it previously left off.
+
+Here is a procedure to generate all the squares. Instead of using
+multiplication, it uses addition to demonstrate generators! The code
+uses the fact that if we keep adding successive odd numbers, we get the
+squares.
+
+\iconcode{
+procedure squares() \\
+\>   odds := 1 \\
+\>   sum := 0 \\
+\>   repeat \{ \\
+\>   \ \ \ suspend sum \\
+\>   \ \ \ sum +:= odds \\
+\>   \ \ \ odds +:= 2 \\
+\>   \} \\
+end
+}
+
+To perform a computation on the squares, we can use it in an
+\textsf{every} statement:
+
+\iconcode{
+\>   every munge(squares())}
+
+{\sffamily\bfseries
+Warning}
+
+{\sffamily
+This is an infinite loop! (Do you know why? Whether munge() succeeds or
+fails, \textrm{every} will always resume squares() for another result
+to try; squares() generates an infinite result sequence.)}
+
+The \index{expression failure}\textsf{fail} expression makes the
+procedure fail. Control goes back to the calling procedure without
+returning a value, and the procedure ceases to exist; it cannot be
+resumed. A procedure also fails implicitly when control flows off the
+end of the procedure{\textquotesingle}s body.
+
+Here is a procedure that produces all the non-blank characters of a
+string, but bails out if the character \textsf{\#} is reached:
+
+\iconcode{
+procedure nonblank(s) \\
+\>   every c := !s do \{ \\
+\>   \ \ \ if c == {\textquotedbl}\#{\textquotedbl} then fail \\
+\>   \ \ \ if c \~{}== {\textquotedbl} {\textquotedbl} then suspend c \\
+\>   \} \\
+end
+}
+
+\subsubsection[Recursion]{Recursion}
+
+\index{recursion}A recursive procedure is one that calls itself,
+directly or indirectly. There are many cases where it is the most
+natural way of solving the problem. Consider the famous
+{\textquotedbl}Towers of \index{Hanoi}Hanoi{\textquotedbl} problem.
+Legend has it that when the universe was created, a group of monks in a
+temple were presented with a problem. In a temple in some remote place,
+there are three diamond needles, and on one of them is a
+\index{stack}stack of 64 golden disks all of different sizes, placed in
+order with the largest one at the bottom and the smallest on top. All
+the disks are to be moved to a different needle under the conditions
+that only one disk may be moved at a time, and a larger disk can never
+be placed on a smaller disk. When the monks complete their task, the
+universe will come to an end.
+
+How can you move the \textit{n} smallest disks? Well, if \textit{n} is
+1, it is simple; just move it. Since it{\textquotesingle}s the
+smallest, we will not be violating the condition. If \textit{n} is
+greater than 1, here{\textquotesingle}s what we can do: first, move the
+\textit{n-1} upper disks to the intermediate needle, then transfer the
+\textit{n}th disk, then move the \textit{n-1} upper disks to the
+destination needle. This whole procedure does not violate the
+requirements either (satisfy yourself that such is the case).
+
+Now write the procedure \textsf{hanoi(n)} that computes this algorithm.
+The first part is simple: if you have one disk, just move it.
+
+\iconcode{
+procedure hanoi(n, needle1:1, needle2:2) \\
+\>   if n = 1 then \\
+\>   \ \ \ write({\textquotedbl}Move disk from {\textquotedbl},
+needle1, {\textquotedbl} to {\textquotedbl}, needle2)
+}
+
+Otherwise, perform a recursive call with \textit{n-1}. First, to find
+the spare needle we have:
+
+\iconcode{
+\>   other := 6 - needle1 - needle2}
+
+Now move the \textit{n-1} disks from \textsf{needle1} to \textsf{other},
+move the biggest disk, and then move the \textit{n-1} again. The
+needles are passed as additional parameters into the recursive calls.
+They are always two distinct values out of the set \{1, 2, 3\}.
+
+\iconcode{
+\>   hanoi(n-1, needle1, other) \\
+\>   write({\textquotedbl}Move disk from {\textquotedbl}, needle1,
+{\textquotedbl} to {\textquotedbl}, needle2) \\
+\>   hanoi(n-1, other, needle2)
+}
+
+And that{\textquotesingle}s it! You{\textquotesingle}re done. Listing
+1-2 contains the complete program for you to try:
+
+\bigskip
+
+{\sffamily\bfseries Listing 1-2}
+{\sffamily\bfseries Towers of Hanoi}
+
+\iconcode{
+procedure main() \\
+\>   write({\textquotedbl}How many disks are on the towers of
+Hanoi?{\textquotedbl}) \\
+\>   hanoi(read()) \\
+end \\
+procedure hanoi(n:integer, needle1:1, needle2:2) \\
+local other \\
+\>   if n = 1 then \\
+\>   \ \ \ write({\textquotedbl}Move disk from {\textquotedbl},
+needle1, {\textquotedbl} to {\textquotedbl}, needle2) \\
+\>   else \{ \\
+\>   \ \ \ other := 6 - needle1 - needle2 \\
+\>   \ \ \ hanoi(n-1, needle1, other) \\
+\>   \ \ \ write({\textquotedbl}Move disk from {\textquotedbl},
+needle1, {\textquotedbl} to {\textquotedbl}, needle2) \\
+\>   \ \ \ hanoi(n-1, other, needle2) \\
+\>   \} \\
+end
+}
+
+Try this out with \index{tracing}tracing turned on to see how it works.
+To enable tracing, \index{compile}compile your program with a
+\textsf{{}-t} option, or assign the keyword \textsf{\&trace} a non-zero
+number giving the depth of calls to trace. Setting \textsf{\&trace} to
+-1 will turn on tracing to an infinite depth.
+
+Incidentally, to move \textit{n} disks,
+\textit{2}\textit{\textsuperscript{n}}\textit{ - 1} individual disk
+movements will be required. If the monks can move one disk a second, it
+will take them \textit{2}\textit{\textsuperscript{64}}\textit{ - 1}
+seconds, or about 60 trillion years. Current cosmology has the age of
+the universe to be around 50 billion years old, so we probably
+don{\textquotesingle}t have to worry about the monks finishing their
+task!
+
+{\sffamily
+Summary}
+
+In this chapter you have learned:
+
+{}-\ \ Unicon is an expression-based language organized as a set of
+procedures starting from a procedure called \textsf{main()}.
+
+{}-\ \ Unicon has four atomic types: arbitrary precision integers, real
+numbers, arbitrary length strings of characters, and character sets.
+
+{}-\ \ There is no Boolean concept in Unicon; instead, control is driven
+by whether an expression succeeds in producing a result or
+\index{fail}fails to do so. This eliminates the need for most
+\index{sentinel value}sentinel values, shortening many expressions.
+
+{}-\ \ \index{generator}Generator expressions can produce multiple
+results as needed by the surrounding expression in order for it to
+produce results.
+
+{}-\ \ Procedure parameters are passed by value for atomic types, and by
+reference for all other data types. Unicon features extensive argument
+defaults and automatic type coercion throughout its built-in function
+and operator repertoire.
+
+{}-\ \ Unicon has two scope levels: global and local. Undeclared
+variables are implicitly defined to be local.
+
+
+\bigskip

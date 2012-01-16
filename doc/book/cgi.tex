@@ -1,0 +1,558 @@
+\clearpage\section{Chapter 13: CGI Scripts}
+\index{CGI}CGI scripts are programs that read and write information to
+process input forms and generate dynamic content for the World Wide
+Web. CGI programs are called {\textquotedbl}scripts{\textquotedbl}
+because they are often written in \index{scripting languages}scripting
+languages, but they can be written in any language, such as C. The
+Unicon programming language is ideal for writing CGI scripts, since it
+has extraordinary support for string processing. In this chapter you
+will learn how to
+
+\begin{itemize}
+\item Construct programs whose input comes from a web server.
+\item Process user input obtained from fields in HTML forms
+\item Generate HTML output from your Icon programs
+\end{itemize}
+\subsection{Introduction to CGI}
+The Common Gateway Interface, or CGI, defines the means by which Web
+servers interact with external programs that assist in processing Web
+input and output. CGI scripts are programs that are invoked by a Web
+server to process input data from a user, or provide users with pages
+of dynamically generated content, as opposed to static content found in
+\index{HTML}HTML files. The primary
+\index{reference!documentation}reference documentation on CGI is
+available on the Web from the National Center for Supercomputer
+Applications (NCSA) at \textsf{http://hoohoo.ncsa.uiuc.edu/cgi/}. If
+you need a gentler treatment than the official reference, \textit{The
+CGI Book}, by Bill Weinman, is a good book on CGI. Although other
+methods for writing web applications on the server have been developed,
+CGI is the most general, portable method and is likely to remain in
+wide use for some time.
+
+This chapter describes \textsf{cgi.icn}, a library of procedures for
+writing CGI scripts. The \textsf{cgi.icn} library consists of a number
+of procedures to simplify CGI input processing and especially the
+generation of HTML-tagged output from various data structures. The
+\textsf{cgi.icn} reference documentation can be found in Appendix B,
+which describes many important modules in the Icon Program Library.
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+To use \texttt{cgi.icn}, place the statement\newline
+ \ \ \texttt{link cgi\newline
+}at the top of your program.}
+
+CGI programs use the hypertext markup language HTML as their output
+format for communicating with the user through a Web browser.
+Consequently, this chapter assumes you can cope with HTML, which is
+beyond the scope of this book. HTML is an ASCII format that mixes plain
+text with \textit{tags} consisting of names enclosed in angle brackets
+such as \textsf{{\textless}HTML{\textgreater}}. HTML defines many tags.
+A few common tags will be defined where they occur in the examples.
+Most tags occur in pairs that mark the beginning and end of some
+structure in the document. End tags have a slash character preceding
+the name, as in \textsf{{\textless}/FONT{\textgreater}}. More details
+on HTML are available from the World Wide Web Consortium at
+\textsf{http://www.w3.org/MarkUp/}.
+
+\subsubsection[Organization of a CGI Script]{Organization of a CGI
+Script}
+CGI programs are very simple. They process input data supplied by the
+Web browser that invoked the script (if any), and then write a new Web
+page, in HTML, to their standard output. When you use \textsf{cgi.icn}
+the input-processing phase is automatically completed before control is
+passed to your program, which is organized around the HTML code that
+you generate in response to the user. In fact, cgi.icn includes a
+\textsf{main()} procedure that processes the input and writes HTML
+header and tail information around your program{\textquotesingle}s
+output. 
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+When you use cgi.icn, you must call your main procedure cgimain(). }
+
+\subsubsection{Processing Input }
+The \index{HTTP}HTTP protocol includes two ways to invoke a CGI program,
+with different methods of supplying user input, either from the
+standard input or from a \textsf{QUERY\_STRING} environment variable.
+In either case, the input is organized as a set of fields that were
+given names in the HTML code from which the CGI program was invoked.
+For example, an HTML form might include a tag such as: 
+
+\iconcode{
+\>   {\textless}INPUT TYPE = {\textquotedbl}text{\textquotedbl} NAME =
+{\textquotedbl}PHONE{\textquotedbl} SIZE=15{\textgreater}}
+
+\noindent
+which allows input of a string of length up to 15 characters into a
+field named \textsf{PHONE}.
+
+After the CGI library processes the input, it provides applications with
+the various fields from the input form in a single table, which is a
+global variable named \textsf{cgi}. The keys of this table are exactly
+the names given in the HTML \textsf{INPUT} tags. The values accessed
+from the keys are the string values supplied by the user. For example,
+to access the \texttt{PHONE} field from the above example, the
+application could write 
+
+\iconcode{
+\>   cgi[{\textquotedbl}PHONE{\textquotedbl}]}
+
+\subsubsection{Processing Output }
+The main task of the CGI program is to write an HTML page to its
+standard output, and for this task \textsf{cgi.icn} provides a host of
+procedures. Typically these procedures convert a structure value into a
+string, wrapped with an appropriate HTML tag to format it properly. A
+typical example is the library procedure
+\textsf{cgiSelect(name,values)}, which writes an HTML \textsf{SELECT}
+tag for a field named name. The \textsf{SELECT} tag creates a list of
+radio buttons on an HTML form whose labels are given by a list of
+strings in the second parameter to \textsf{cgiSelect()}. A programmer
+might write
+
+\iconcode{
+\>   cgiSelect({\textquotedbl}GENDER{\textquotedbl},
+[{\textquotedbl}female{\textquotedbl},
+{\textquotedbl}male{\textquotedbl}])}
+
+to generate the HTML
+
+\iconcode{
+{\textless}SELECT
+NAME={\textquotedbl}GENDER{\textquotedbl}{\textgreater} \\
+{\textless}OPTION SELECTED{\textgreater}female \\
+{\textless}OPTION{\textgreater}male \\
+{\textless}/SELECT{\textgreater}
+}
+
+\subsubsection[Common CGI Environment Variables]{Common CGI Environment
+Variables}
+
+Much of the official CGI definition consists of a description of a set
+of standard \index{environment variable!CGI standard}environment
+variables that are set by the Web server as a method of passing
+information to the CGI script. Programmers access these environment
+variables using \textsf{getenv()}, as in 
+
+\iconcode{
+\>   getenv({\textquotedbl}REMOTE\_HOST{\textquotedbl})}
+
+Table 13-1 presents a summary of the CGI environment variables as a
+convenience so that this book can serve as a stand-alone reference for
+writing most CGI scripts. For a complete listing of all the environment
+variables supported by CGI go to
+\url{http://hoohoo.ncsa.uiuc.edu/cgi/env.html} on the Internet.
+
+{\centering\sffamily\bfseries Table 13-1}
+
+{\centering\sffamily\bfseries CGI Environment Variables}
+
+\begin{flushleft}
+\tablehead{}
+\begin{supertabular}{|m{1.9962599in}|m{3.9962597in}|}
+\hline
+\sffamily\bfseries Variable &
+\sffamily\bfseries Explanation\\\hline
+\sffamily CONTENT\_LENGTH &
+The length of the ASCII string provided by
+\textsf{method={\textquotedbl}POST{\textquotedbl}}.\\\hline
+\sffamily HTTP\_USER\_AGENT &
+The user{\textquotesingle}s browser software and proxy gateway, if any.
+The format is \textsf{\textit{name/version}}, but varies
+wildly.\\\hline
+\sffamily QUERY\_STRING &
+All of the information which follows the ? in the URL when using
+\textsf{method={\textquotedbl}GET{\textquotedbl}}. This is the string
+that holds all of the information submitted through the form. Since
+\textsf{QUERY\_STRING} is parsed and made available through a table
+stored in the global variable \textsf{cgi}, programmers that use
+\textsf{cgi.icn} do not generally consult this environment
+variable.\\\hline
+\sffamily REMOTE\_ADDR &
+The IP address of the client machine.\\\hline
+\sffamily REMOTE\_HOST &
+The hostname of the client machine. Defaults to IP held by
+\textsf{REMOTE\_ADDR}.\\\hline
+\sffamily REQUEST\_METHOD &
+The method (\textsf{GET} or \textsf{POST)} used to invoke the CGI
+script.\\\hline
+\sffamily SERVER\_NAME &
+The server{\textquotesingle}s hostname. It defaults to the IP
+address.\\\hline
+\sffamily SERVER\_SOFTWARE &
+The Web server that invoked the CGI script. The format is
+\textsf{\textit{name/version}}.\\\hline
+\end{supertabular}
+\end{flushleft}
+\subsection{The CGI Execution Environment}
+CGI scripts don{\textquotesingle}t execute as stand-alone programs and
+aren{\textquotesingle}t launched from a command line; a Web server
+executes them. The details of this are necessarily dependent on the
+operating system and Web server combination in use. The following
+examples are based on a typical UNIX Apache server installation in
+which users{\textquotesingle} HTML files are located under
+\textsf{\$HOME/public\_html}. Check with your system administrator or
+Web server documentation for the specific filenames, directories, and
+permissions required to execute scripts from your Web server. 
+
+Under Apache, you need to create a directory under your
+\textsf{\$HOME/public\_html} directory named \textsf{cgi-bin}. Both
+\textsf{\$HOME/public\_html} and its \textsf{cgi-bin} subdirectory
+should have {\textquotedbl}group{\textquotedbl} and
+{\textquotedbl}other{\textquotedbl} permissions set to allow both
+reading and executing for the Web server to run the programs you place
+there. Do not give anyone but yourself write permissions! The following
+commands set things up on a typical Apache system. The percent sign
+(\textsf{\%}) is not part of the command; it is the UNIX shell prompt.
+The period in the final command is part of the command and refers to
+the current working directory.
+
+\iconcode{
+\% mkdir \$HOME/public\_html \\
+\% cd \$HOME/public\_html \\
+\% mkdir cgi-bin \\
+\% chmod go+rx . cgi-bin
+}
+
+The next two example files will allow you to verify that your
+directories and permissions are correct for your Web server.
+
+\subsection{An Example HTML Form}
+
+CGI scripts are typically invoked from HTML pages, so for testing
+purposes, create an HTML form containing Listing 13-1, saved with the
+file name \textsf{simple.html} in your \textsf{\$HOME/public\_html}
+directory. When you have a CGI script compiled and ready to run, you
+can edit the URL in this file to point at your CGI program, the
+\textsf{simple.cgi} executable. When you view this page in your browser
+it should look something like the one shown in Figure 13-1.
+
+{\sffamily\bfseries Listing 13-1}
+{\sffamily\bfseries An HTML form}
+
+\iconcode{
+{\textless}HTML{\textgreater}{\textless}HEAD{\textgreater}{\textless}title{\textgreater}
+An HTML Form Example
+{\textless}/title{\textgreater}{\textless}/HEAD{\textgreater} \\
+{\textless}BODY{\textgreater} \\
+{\textless}h1{\textgreater} A
+{\textless}tt{\textgreater}cgi.icn{\textless}/tt{\textgreater}
+Demonstration{\textless}/h1{\textgreater} \\
+{\textless}form method={\textquotedbl}GET{\textquotedbl} \\
+\>   \ \
+action={\textquotedbl}http://www.cs.uidaho.edu/\~{}jeffery/cgi-bin/simple.cgi{\textquotedbl}{\textgreater} \\
+1. Name: {\textless}input type={\textquotedbl}text{\textquotedbl}
+name={\textquotedbl}name{\textquotedbl} size=25{\textgreater}
+{\textless}p{\textgreater} \\
+2. Age: \ {\textless}input type={\textquotedbl}text{\textquotedbl}
+name={\textquotedbl}age{\textquotedbl} size=3{\textgreater}
+\&nbsp;Years {\textless}p{\textgreater} \\
+3. Quest: \\
+{\textless}input type={\textquotedbl}checkbox{\textquotedbl}
+name={\textquotedbl}fame{\textquotedbl}{\textgreater}Fame{\textless}/input{\textgreater} \\
+{\textless}input type={\textquotedbl}checkbox{\textquotedbl}
+name={\textquotedbl}fortune{\textquotedbl}{\textgreater}Fortune{\textless}/input{\textgreater} \\
+{\textless}input type={\textquotedbl}checkbox{\textquotedbl}
+name={\textquotedbl}grail{\textquotedbl}{\textgreater}Grail{\textless}/input{\textgreater}{\textless}p{\textgreater} \\
+4. Favorite Color: \\
+{\textless}select
+name={\textquotedbl}color{\textquotedbl}{\textgreater} \\
+{\textless}option{\textgreater}Red \\
+{\textless}option{\textgreater}Green \\
+{\textless}option{\textgreater}Blue \\
+{\textless}option selected{\textgreater}Don{\textquotesingle}t Know
+(Aaagh!) \\
+{\textless}/select{\textgreater}{\textless}p{\textgreater} \\
+Comments:{\textless}br{\textgreater} \\
+{\textless}textarea rows=5 cols=60
+name={\textquotedbl}comments{\textquotedbl}{\textgreater}{\textless}/textarea{\textgreater}{\textless}p{\textgreater} \\
+{\textless}input type={\textquotedbl}submit{\textquotedbl}
+value={\textquotedbl}Submit Data{\textquotedbl}{\textgreater} \\
+{\textless}input type={\textquotedbl}reset{\textquotedbl}
+value={\textquotedbl}Reset Form{\textquotedbl}{\textgreater} \\
+{\textless}/form{\textgreater} \\
+{\textless}/BODY{\textgreater} \\
+{\textless}/HTML{\textgreater}
+}
+
+\begin{center}
+\includegraphics[width=5.5516in,height=5.989in]{ub-img/ub-img44.png}
+\end{center}
+
+{\sffamily\bfseries Figure 13-1:}
+{\sffamily An HTML Form Example}
+
+\subsection{An Example CGI Script: Echoing the User{\textquotesingle}s
+Input}
+
+The following script, named \textsf{simple.cgi} might be invoked from
+the \textsf{FORM} tag above. The \textsf{simple.cgi} script is produced
+from an Unicon source file, \textsf{simple.icn}\texttt{,} that you can
+copy from the book web site
+(\textsf{http://unicon.sourceforge.net/book/}). This program needs to
+be compiled with the command
+
+\iconcode{
+unicon \textrm{$-$}o simple.cgi simple.icn }
+
+Many Web servers are configured so that CGI scripts must end with the
+extension \textsf{.cgi}. Check with your system administrator about CGI
+naming conventions if the \textsf{.cgi} extension does not work for
+you. In addition to the web server being configured to allow user
+invocation, unless you use compiler option \textsf{{}-B} to bundle the
+virtual machine into your executable, your program must be able to find
+and execute the virtual machine from whatever user id
+CGI{\textquotesingle}s are executed.
+
+The program reads the form input specified in \textsf{simple.html}, and
+writes it back out. All \textsf{cgiEcho()} is doing in this case is
+adding an HTML newline tag after each call. If you look it up in
+Appendix B, you will find that it will copy its arguments to both the
+HTML output and a log file if given a file as its first argument.
+
+\iconcode{
+link cgi \\
+\ \\
+procedure cgimain() \\
+\>   cgiEcho({\textquotedbl}Hello, {\textquotedbl},
+cgi[{\textquotedbl}name{\textquotedbl}],
+{\textquotedbl}!{\textquotedbl}) \\
+\>   cgiEcho({\textquotedbl}Are you really {\textquotedbl},
+cgi[{\textquotedbl}age{\textquotedbl}], {\textquotedbl} years
+old?{\textquotedbl}) \\
+\>   cgiEcho({\textquotedbl}You seek: {\textquotedbl},
+cgi[{\textquotedbl}fame{\textquotedbl}]==={\textquotedbl}on{\textquotedbl}
+\& {\textquotedbl}fame{\textquotedbl}) \\
+\>   cgiEcho({\textquotedbl}You seek: {\textquotedbl},
+cgi[{\textquotedbl}fortune{\textquotedbl}]==={\textquotedbl}on{\textquotedbl}
+\& {\textquotedbl}fortune{\textquotedbl}) \\
+\>   cgiEcho({\textquotedbl}You seek: {\textquotedbl},
+cgi[{\textquotedbl}grail{\textquotedbl}]==={\textquotedbl}on{\textquotedbl}
+\& {\textquotedbl}grail{\textquotedbl}) \\
+\>   cgiEcho({\textquotedbl}Your favorite color is: {\textquotedbl},
+cgi[{\textquotedbl}color{\textquotedbl}]) \\
+\>   cgiEcho({\textquotedbl}Your comments: {\textquotedbl},
+cgi[{\textquotedbl}comments{\textquotedbl}]) \\
+end
+}
+
+Generating an output page that rehashes the user{\textquotesingle}s
+input is a good test of your HTML form before you deploy it with a CGI
+script that actually does something. In some cases, it is also helpful
+in allowing the user to recheck their submitted input and confirm or
+cancel before acting on it.
+
+\subsection{Debugging CGI Programs}
+
+CGI programs can be a pain to debug. You may have to debug your CGI
+execution environment, before you can even start debugging your CGI
+program itself. If your CGI script returns an {\textquotedbl}internal
+server error{\textquotedbl}, or no output at all, you may have file
+permissions wrong, or the CGI script may not be able to find the Unicon
+virtual machine in order to run the program. Some web servers execute
+CGI scripts under a special userid such as
+{\textquotedbl}web{\textquotedbl}, others will run them under your user
+id. Some web servers run CGI scripts under a protected file system
+where the root directory {\textquotedbl}/{\textquotedbl} is not the
+same as the root directory visible to your user account, so the path to
+iconx that you normally use may be invalid in your CGI program. CGI
+scripts may have a very limited PATH for security reasons, not the PATH
+you set for your user account. \ Your best bet is probably to use the
+-B Unicon compiler option to bundle the Unicon interpreter into your
+executable file; alternatively you can probably copy the virtual
+machine {\textquotedbl}iconx{\textquotedbl} into your cgi-bin directory
+
+Debugging your CGI program itself may require special tricks. Because
+your CGI program is executed by a web server, its standard error output
+may not be visible to you. \ You can try to redirect error output to
+standard out, but your error output may not be readable unless it is
+converted into HTML (say, by adding
+\textsf{{\textless}BR{\textgreater}} at each newline). One way to
+accomplish this is to write \textit{two} programs: one that performs
+the primary task, and a second program that calls the first one,
+catches any error messages, and converts any plain text output to HTML.
+
+\subsection{Appform: An Online Scholarship Application}
+
+The next example, \textsf{appform.icn}, is a larger CGI script for an
+on-line scholarship application that was used at a university. Its
+structure is similar to the previous example, with a significant twist:
+the user input is printed for the convenience of the scholarship
+administrators. As a fail-safe measure, the CGI script also e-mails the
+application to the scholarship administrator. This is useful if the
+print job fails for some reason.
+
+The program is a single \textsf{cgimain()} procedure, which starts by
+processing each of the user input fields. The program then opens a
+temporary file with a \textsf{.txt} extension, and writes a nicely
+formatted document containing the user{\textquotesingle}s scholarship
+application information.
+
+The code for Appform is shown in Listing 13-2. To run it you have to
+adapt it to fit your environment; for example, as written it prints to
+lpr, and sends mail to \textsf{jeffery@cs.uidaho.edu}. When running a
+CGI script it is important to realize you will run in a different
+directory, and with different user id and PATH environment, than your
+regular account. The program is run with whatever user id and
+permissions the system administrator has assigned the Web server
+process. For example, its root (/) directory may not be at the root of
+your regular filesystem, so absolute paths may not work.
+
+{\sffamily\bfseries
+Listing 13-2}
+
+{\sffamily\bfseries
+An online application form}
+
+\iconcode{
+\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
+ \\
+\# \ \ \ \ \ \ File: \ \ \ appform.icn \\
+\# \ \ \ \ \ \ Subject: CGI program to process scholarship applications \\
+\# \ \ \ \ \ \ Author: \ Clinton Jeffery \\
+\# \ \ \ \ \ \ Date: \ \ \ July 11, 2002 \\
+\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
+ \\
+\# This program processes a bunch of input fields \\
+\# defined in an on-line scholarship application at \\
+\# http://unicon.sourceforge.net/book/appform.html \\
+\# and from them, generates a text file which it \\
+\# prints, and e-mails to the scholarship coordinator. \\
+\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
+ \\
+\ \\
+link cgi \\
+link io \\
+\$define ADMIN {\textquotedbl}jeffery@cs.uidaho.edu{\textquotedbl} \\
+procedure cgimain() \\
+\ \ fname := tempname({\textquotedbl}appform{\textquotedbl},
+{\textquotedbl}.txt{\textquotedbl},
+{\textquotedbl}/tmp{\textquotedbl}) \\
+\ \ f :=
+open({\textquotedbl}/tmp/{\textquotedbl}{\textbar}{\textbar}fname,
+{\textquotedbl}w{\textquotedbl}) {\textbar}
+stop({\textquotedbl}can{\textquotesingle}t open /tmp/{\textquotedbl},
+fname) \\
+\ \ write({\textquotedbl}Generating typeset copy of application
+form...{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}Scholarship Program
+Application{\textbackslash}n{\textquotedbl}) \\
+\ \ write(f, {\textquotedbl}Name: {\textquotedbl},
+cgi[{\textquotedbl}NAME{\textquotedbl}],
+{\textquotedbl}{\textbackslash}t{\textbackslash}t Phone:
+{\textquotedbl}, cgi[{\textquotedbl}PHONE{\textquotedbl}]) \\
+\ \ write(f, {\textquotedbl}Address: {\textquotedbl},
+cgi[{\textquotedbl}ADDRESS1{\textquotedbl}], {\textquotedbl}
+{\textbackslash}t{\textbackslash}t Social Sec. Number: {\textquotedbl},
+cgi[{\textquotedbl}SOC{\textquotedbl}]) \\
+\ \ write(f, cgi[{\textquotedbl}ADDRESS2{\textquotedbl}],
+{\textquotedbl} {\textbackslash}t{\textbackslash}t Gender (M/F):
+{\textquotedbl},cgi[{\textquotedbl}GENDER{\textquotedbl}]) \\
+\ \ write(f) \\
+\ \ write(f,{\textquotedbl}Semester hours completed: {\textquotedbl},
+cgi[{\textquotedbl}CREDITS{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}College GPA: \ Overall {\textquotedbl},
+cgi[{\textquotedbl}GPA{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}Present Employer: {\textquotedbl},
+cgi[{\textquotedbl}EMPLOYER{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}Position: {\textquotedbl},
+cgi[{\textquotedbl}POSITION{\textquotedbl}], {\textquotedbl}
+Hours/week: {\textquotedbl}, cgi[{\textquotedbl}HOURS{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}Educational Background{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}High School: name, year, GPA,
+		graduated?{\textquotedbl}) \\
+\ \ write(f, cgi[{\textquotedbl}HIGH1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textquotedbl},
+cgi[{\textquotedbl}HIGH2{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}For each college, list name, dates attended,
+hours completed, degrees awarded.{\textquotedbl}) \\
+\ \ write(f,cgi[{\textquotedbl}COLL1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textquotedbl},
+cgi[{\textquotedbl}COLL2{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textbackslash}n{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}Academic honors, scholarships, and
+fellowships{\textquotedbl}) \\
+\ \ write(f,cgi[{\textquotedbl}HONOR1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textquotedbl},
+cgi[{\textquotedbl}HONOR2{\textquotedbl}]) \\
+\ \ write(f) \\
+\ \ write(f,{\textquotedbl}Extracurricular interests:{\textquotedbl}) \\
+\ \ write(f,cgi[{\textquotedbl}EXTRA1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textquotedbl},
+cgi[{\textquotedbl}EXTRA2{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}Professional organizations:{\textquotedbl}) \\
+\ \ write(f,cgi[{\textquotedbl}ORGS1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textquotedbl},
+cgi[{\textquotedbl}ORGS2{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}Research interests:{\textquotedbl}) \\
+\ \ write(f,cgi[{\textquotedbl}RESEARCH1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}n{\textquotedbl},
+cgi[{\textquotedbl}RESEARCH2{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}Name(s) of at least one person you have asked
+to{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}write an academic reference
+letter.{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}Name \ \ \ \ \ \ \ \ \ \ \ Address
+\ \ \ \ \ \ \ \ Relationship{\textquotedbl}) \\
+\ \ write(f,cgi[{\textquotedbl}REF1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}t{\textquotedbl},
+cgi[{\textquotedbl}REFADD1{\textquotedbl}],
+{\textquotedbl}{\textbackslash}t{\textquotedbl},cgi[{\textquotedbl}REFREL1{\textquotedbl}]) \\
+\ \ write(f,cgi[{\textquotedbl}REF2{\textquotedbl}],
+{\textquotedbl}{\textbackslash}t{\textquotedbl},
+cgi[{\textquotedbl}REFADD2{\textquotedbl}],
+{\textquotedbl}{\textbackslash}t{\textquotedbl},cgi[{\textquotedbl}REFREL2{\textquotedbl}]) \\
+\ \ write(f,{\textquotedbl}{\textbackslash}nI certify that information
+provided on this{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}application is correct and complete to my
+knowledge.{\textquotedbl}) \\
+\ \ write(f) \\
+\ \ write(f,{\textquotedbl}Signature: {\textquotedbl},
+repl({\textquotedbl}\_{\textquotedbl}, 60)) \\
+\ \ write(f,{\textquotedbl} Date: {\textquotedbl},
+repl({\textquotedbl}\_{\textquotedbl}, 60) \\
+\ \ write(f,
+{\textquotedbl}{\textbackslash}n{\textbackslash}\^{}l{\textbackslash}n{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}Please write a short statement of purpose,
+including{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}information about your background, major, and
+career{\textquotedbl}) \\
+\ \ write(f,{\textquotedbl}interests, and professional
+goals.{\textbackslash}n{\textquotedbl}) \\
+\ \ write(f, cgi[{\textquotedbl}INFO{\textquotedbl}]) \\
+\ \ close(f) \\
+\ \ write({\textquotedbl}Mailing form to program director...{\textquotedbl}) \\
+\ \ f := open(fname) \\
+\ \ m := open({\textquotedbl}mailto:{\textquotedbl} {\textbar}{\textbar}
+ADMIN, {\textquotedbl}m{\textquotedbl}, {\textquotedbl}Subject:
+appform{\textquotedbl}) \\
+\ \ while write(m, read(f)) \\
+\ \ close(m) \\
+\ \ close(f) \\
+\ \ write({\textquotedbl}Printing hard copy...{\textquotedbl}) \\
+\ \ system({\textquotedbl}cd /tmp; lpr {\textquotedbl}
+{\textbar}{\textbar} fname; rm {\textquotedbl} {\textbar}{\textbar}
+fname {\textbar}{\textbar} {\textquotedbl}.*{\textquotedbl}) \\
+\ \ cgiEcho({\textquotedbl}Thank you for applying, {\textquotedbl},
+cgi[{\textquotedbl}NAME{\textquotedbl}]) \\
+\ \ cgiEcho({\textquotedbl}Your application has been submitted to
+{\textquotedbl} {\textbar}{\textbar} ADMIN) \\
+end
+}
+
+\subsection{Summary}
+
+Writing CGI scripts in Unicon is easy. The input fields are handed to
+you elegantly in a global variable, and library functions allow you to
+write terse code that generates correct HTML output. The only thing
+certain about the fast-changing Internet standards is that they will
+get continually more complex at a rapid pace. CGI scripting is no
+substitute for \index{JavaScript}JavaScript, \index{XML}XML, or any
+newer buzzword that may be hot this week. But it is a lasting,
+multiplatform standard for how to run a program on a Web server from a
+browser, and it may be the simplest and best solution for many Internet
+applications for some time.

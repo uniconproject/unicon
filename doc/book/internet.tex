@@ -1,0 +1,612 @@
+\clearpage\section{Chapter 15: Internet Programs}
+Although it is decades old, the \index{Internet}Internet is easily the
+most important development in the past ten years of computing. Because
+it is ubiquitous, programmers should be able to take it for granted,
+and writing applications that use the Internet should be just as easy
+as writing programs for a standalone desktop computer. In many respects
+this ideal can be achieved in a modern programming language. The core
+facilities for Internet programming were introduced with simple
+examples as part of the system interface in Chapter 5. This chapter
+expands on this important area of software development. This chapter
+presents examples that show you how to
+
+\begin{itemize}
+\item Write Internet servers and clients
+\item Build programs that maintain a common view of multiple
+users{\textquotesingle} actions
+\end{itemize}
+\subsection{The Client-Server Model}
+The Internet allows you to distribute applications using any topology
+you wish, but the standard practice is to implement a
+\index{client/server}client/server topology in which a
+user{\textquotesingle}s machine plays the role of a client, requesting
+information or services from remote machines, each of which plays the
+role of a server. The relationship between clients and servers is
+many-to-many, since one client can connect to many servers and one
+server typically handles requests from many clients.
+
+Writing a \index{client}client is easy, in fact, for simple read-only
+access to a remote file, it is just as easy as opening a file on the
+hard disk. Most clients are a bit more involved, sending out requests
+and receiving replies in some agreed-upon format called a
+\index{protocol}\textit{protocol}. A protocol may be human readable
+text or it may be binary, and can consist of any number of messages
+back and forth between the client and server to transmit the required
+information. The most common Internet protocols are built-in parts of
+Unicon{\textquotesingle}s messaging facilities, but some applications
+define their own protocol.
+
+Writing a server program is a little bit harder. A server sits around in
+an infinite loop, waiting for clients and servicing their requests.
+When only one client is invoking a server, its job is simple enough,
+but when many simultaneous clients wish to connect, the server program
+must either be very efficient or else the clients will be kept waiting
+for unacceptably long periods.
+
+Although the following example programs emphasize how easy it is to
+write Internet clients and servers in Unicon, writing
+{\textquotedbl}industrial strength{\textquotedbl} applications requires
+additional security considerations which are mostly beyond the scope of
+this book. For example, user authentication and encryption are
+essential in most systems, and many modern servers are carefully tuned
+to maximize the number of simultaneous users they support, and minimize
+their vulnerability to denial of service attacks.
+
+\subsection{An Internet Scorecard Server}
+Many games with numeric scoring systems feature a list of high scores.
+This feature is interesting on an individual machine, but it is ten
+times as interesting on a machine connected to the Internet! The
+following simple \index{server}server program allows games to report
+their high scores from around the world. This allows players to compete
+globally. The scorecard server is called \textsf{scored}. By
+convention, servers are often given names ending in
+{\textquotedbl}d{\textquotedbl} to indicate that they are daemon
+programs that run in the background.
+
+\subsubsection{The Scorecard Client Procedure}
+Before you see the server program, take a look at the client procedure
+that a game calls to communicate with the \textsf{scored} server. To
+use this client procedure in your programs, add the following
+declaration to your program.
+
+\iconcode{
+link highscor
+}
+
+The procedure \textsf{highscore()} opens a network connection, writes
+four lines consisting of the protocol name
+{\textquotedbl}HSP{\textquotedbl}, the name of the game, the
+user{\textquotesingle}s identification (which could be a nickname, a
+number, an e-mail address, or anything else), and that
+game{\textquotesingle}s numeric score. Procedure \textsf{highscore()}
+then reads the complete list of high scores from the server, and
+returns the list. Most games write the list of high scores to a window
+for the user to ponder.
+
+\iconcode{
+procedure highscore(game, userid, score, server) \\
+\>   if not find({\textquotedbl}:{\textquotedbl}, server) then server
+{\textbar}{\textbar}:= {\textquotedbl}:4578{\textquotedbl} \\
+\>   f := open(server, {\textquotedbl}n{\textquotedbl}) {\textbar}
+fail \\
+\ \\
+\>   \# Send in this game{\textquotesingle}s score \\
+\>   write(f, {\textquotedbl}HSP{\textbackslash}n{\textquotedbl}, game,
+{\textquotedbl}{\textbackslash}n{\textquotedbl}, userid,
+{\textquotedbl}{\textbackslash}n{\textquotedbl}, score) {\textbar} \\
+\>   \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t write:
+{\textquotedbl}, \&errortext) \\
+\ \\
+\>   \# Get the high score list \\
+\>   L := [{\textquotedbl}High Scores{\textquotedbl}] \\
+\>   while line := read(f) do \\
+\>   \ \ \ put(L, line) \\
+\>   close(f) \\
+\>   return L \\
+end
+}
+
+\subsubsection{The Scorecard Server Program}
+
+The scorecard server program, \textsf{scored.icn} illustrates issues
+inherent in all Internet servers. It must sit at a port, accepting
+connection requests endlessly. For each connection, a call to
+\textsf{score\_result()} handles the request. The \textsf{main()}
+procedure given below allows the user to specify a port, or uses a
+default port if none is supplied. If another server is using a given
+port, it won{\textquotesingle}t be available to this server, and the
+client and server have to agree on which port the server is using.
+
+\iconcode{
+procedure main(av) \\
+\>   port := 4578 \# a random user-level port \\
+\>   if av[i := 1 to *av] == {\textquotedbl}-port{\textquotedbl} then \\
+\>   \ \ \ port := integer(av[i+1]) \\
+\ \\
+\>   write({\textquotedbl}Internet Scorecard version
+1.0{\textquotedbl}) \\
+\>   while net := open({\textquotedbl}:{\textquotedbl}
+{\textbar}{\textbar} port, {\textquotedbl}na{\textquotedbl}) \ do \{ \\
+\>   \ \ \ score\_result(net) \\
+\>   \ \ \ close(net) \\
+\>   \ \ \ \} \\
+\>   (\&errno = 0) {\textbar} stop({\textquotedbl}scored net accept
+failed: {\textquotedbl}, \\
+\>   \ \ \ \&errortext) \\
+end
+}
+
+The procedure \textsf{score\_result()} does all the real work of the
+server, and its implementation is of architectural significance. If any
+delay is possible in handling a request, the server will be unable to
+handle other simultaneous client requests. For this reason, many server
+programs immediately spawn a separate process to handle each request.
+You could do that with \textsf{system()}, as illustrated in Chapter 5,
+but for \textsf{scored} this is overkill. The server will handle each
+request almost instantaneously itself.
+
+Some small concessions to security are in order, even in a trivial
+example such as this. If a bogus Internet client connects by accident,
+it will fail to identify our protocol and be rejected. More subtly, if
+a rogue client opens a connection and writes nothing, we do not want to
+block waiting for input or the client will deny service to others. A
+call to select() is used to guarantee the server receives data within
+the first 1000 milliseconds (1 second). A last security concern is to
+ensure that the {\textquotedbl}game{\textquotedbl} filename supplied is
+valid; it must be an existing file in the current directory, not
+something like \textsf{/etc/passwd} for example. 
+
+The \textsf{score\_result()} procedure maintains a static table of all
+scores of all games that it knows about. The keys of the table are the
+names of different games, and the values in the table are lists of
+alternating user names and scores. The procedure starts by reading the
+game, user, and score from the network connection, and loading the
+game{\textquotesingle}s score list from a local file, if it
+isn{\textquotesingle}t in the table already. \ Both the score lists
+maintained in memory, and the high scores files on the server, are
+sequences of pairs of text lines containing a userid followed by a
+numeric score. The high score files have to be created and initialized
+manually with some N available (userid,score) pairs of lines, prior to
+their use by the server.
+
+\iconcode{
+procedure score\_result(net) \\
+\>   static t \\
+\>   initial t := table() \\
+\>   gamenamechars :=
+\&letters++\&digits++{\textquotesingle}-\_{\textquotesingle} \\
+\ \\
+\>   select(net, 1000) {\textbar} \{ write(net,
+{\textquotedbl}timeout{\textquotedbl}); fail \} \\
+\>   read(net) == {\textquotedbl}HSP{\textquotedbl} {\textbar} \{
+write(net, {\textquotedbl}wrong protocol{\textquotedbl}); fail \} \\
+\>   game := read(net) {\textbar} \{ write(net,{\textquotedbl}no
+game?{\textquotedbl}); fail \} \\
+\>   game++gamenamechars === gamenamechars {\textbar} \{ fail \} \\
+\>   owner := read(net) {\textbar} \{ write(net,{\textquotedbl}no
+owner?{\textquotedbl}); fail \} \\
+\>   score := numeric(read(net)) {\textbar} \{ write({\textquotedbl}no
+score?{\textquotedbl}); fail \} \\
+\ \\
+\>   if t[game] === \&null then \{ \\
+\>   \ \ \ if not (f := open(game)) then \{ \\
+\>   \ \ \ \ \ \ write(net, {\textquotedbl}No high scores here for
+{\textquotedbl}, game) \\
+\>   \ \ \ \ \ \ fail \\
+\ \ \ \ \ \ \ \ \ \} \\
+\ \ \ \ \ \ t[game] := L := [] \\
+\>   \ \ \ while put(L, read(f)) \\
+\>   \ \ \ close(f) \\
+\>   \ \ \ \} \\
+\>   else \\
+\>   \ \ \ L := t[game]
+}
+
+The central question is whether the new score makes an entry into the
+high scores list or not. The new score is checked against the last
+entry in the high score list, and if it is larger, it replaces that
+entry. It is then {\textquotedbl}bubbled{\textquotedbl} up to the
+correct place in the high score list by repeatedly comparing it with
+the next higher score, and swapping entries if it is higher. If the new
+score made the high score list, the list is written to its file on
+disk.
+
+\iconcode{
+\>   if score {\textgreater} L[-1] then \{ \\
+\>   \ \ \ L[-2] := owner \\
+\>   \ \ \ L[-1] := score \\
+\>   \ \ \ i := -1 \\
+\>   \ \ \ while L[i] {\textgreater} L[i-2] do \{ \\
+\>   \ \ \ \ \ \ L[i] :=: L[i-2] \\
+\>   \ \ \ \ \ \ L[i-1] :=: L[i-3] \\
+\>   \ \ \ \ \ \ i -:= 2 \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ f := open(game,{\textquotedbl}w{\textquotedbl}) \\
+\>   \ \ \ every write(f, !L) \\
+\>   \ \ \ close(f) \\
+\>   \ \ \ \}
+}
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+List \textit{L} and \textit{t[game]} refer to the same list, so the
+change to L here is seen by the next client that looks at
+\textit{t[game]}.}
+
+Lastly, whether the new score made the high score list or not, the high
+score list is written out on the network connection so that the game
+can display it.
+
+\iconcode{
+\>   every write(net, !L) \\
+end
+}
+
+Is this high score application useful and fun? Yes! Is it secure and
+reliable? No! It records any scores it is given for any game that has a
+high score file on the server. It is utterly easy to supply false
+scores. This is an honor system.
+
+\subsection{A Simple {\textquotedbl}Talk{\textquotedbl} Program}
+E-mail is the king of all Internet applications. After that, some of the
+most popular Internet applications are real-time dialogues between
+friends and strangers. Many on-line services rose to popularity because
+of their {\textquotedbl}chat rooms,{\textquotedbl} and Internet Relay
+Chat (\index{IRC}IRC) is a ubiquitous form of free real-time
+communication. These applications are evolving in multiple directions,
+such as streaming multimedia, and textual and graphical forms of
+interactive virtual reality. While it is possible to create arbitrarily
+complex forms of real-time communication over the Internet, for many
+purposes, a simple connection between two users{\textquotesingle}
+displays, with each able to see what the other types, is all that is
+needed.
+
+The next example program, called \textsf{italk}, is styled after the
+classic BSD UNIX \index{talk}\textsf{talk} program. The stuff you type
+appears on the lower half of the window, and the remote
+party{\textquotesingle}s input is in the upper half. Unlike a chat
+program, the characters appear as they are typed, instead of a line at
+a time. In many cases this allows the communication to occur more
+smoothly with fewer keystrokes.
+
+The program starts out innocently enough, by linking in library
+functions for graphics, defining symbolic constants for font and screen
+size. Among global variables, \textsf{vs} stands for vertical space,
+\textsf{cwidth} is column width, \textsf{wheight} and \textsf{wwidth}
+are the window{\textquotesingle}s dimensions, and \textsf{net} is the
+Internet connection to the remote machine.
+
+\iconcode{
+link graphics
+\ \\
+\$define ps 10 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# The size of the font to
+use \\
+\$define lines 48 \ \ \ \ \ \ \ \ \ \ \ \ \# No. of text lines in the
+window \\
+\$define margin 3 \ \ \ \ \ \ \ \ \ \ \ \ \# Space to leave around the
+margins \\
+\$define START\_PORT 1234
+\$define STOP\_PORT \ 1299
+\ \\
+global vs, cwidth, wheight, wwidth, net
+}
+
+The \textsf{main()} procedure starts by calling \textsf{win\_init()} and
+\textsf{net\_init()} to open up a local window and then establish a
+connection over the network, respectively. The first command line
+argument is the user and/or machine to connect to.
+
+\iconcode{
+procedure main(args) \\
+\>   win\_init() \\
+\>   net\_init(args[1] {\textbar} \\
+{\textquotedbl}127.0.0.1{\textquotedbl})
+}
+
+Before describing the window interaction or subsequent handling of
+network and window system events, consider how \textsf{italk}
+establishes communication in procedure \textsf{net\_init()}. Unlike
+many Internet applications, \textsf{italk} does not use a conventional
+client/server architecture in which a server daemon is always running
+in the background. To connect to someone on another machine, you name
+him or her in the format \textsf{user@host} on the command line. The
+code attempts to connect as a client to someone waiting on the other
+machine, and if it fails, it acts as a server on the local machine and
+waits for the remote party to connect to it.
+
+\iconcode{
+procedure net\_init(host) \\
+\>   host ?:= \{ \\
+\>   \ \ \ if user := tab(find({\textquotedbl}@{\textquotedbl})) then \\
+\>   \ \ \ \ \ \ move(1) \\
+\>   \ \ \ tab(0) \\
+\>   \ \ \ \} \\
+\>   net :=
+(open\_client{\textbar}open\_server{\textbar}give\_up)(host, user) \\
+end
+}
+
+The attempt to establish a network connection begins by attempting to
+open a connection to an \texttt{italk} that is already running on the
+remote machine. The \texttt{italk} program works with an arbitrary
+user-level set of ports (defined above as the range 1234-1299). An
+\texttt{italk} client wades through these ports on the remote machine,
+trying to establish a connection with the desired party. For each port
+at which \texttt{open()} succeeds, the client writes its user name,
+reads the user name for the process on the remote machine, and returns
+the connection if the desired party is found.
+
+\iconcode{
+procedure open\_client(host, user) \\
+\>   port := START\_PORT \\
+\>   if {\textbackslash}user then \{ \\
+\>   \ \ \ while net := open(host {\textbar}{\textbar}
+{\textquotedbl}:{\textquotedbl} {\textbar}{\textbar} port,
+{\textquotedbl}n{\textquotedbl}) do \{ \\
+\>   \ \ \ \ \ \ write(net, getenv({\textquotedbl}USER{\textquotedbl})
+{\textbar} {\textquotedbl}anonymous{\textquotedbl}) \\
+\>   \ \ \ \ \ \ if user == read(net) then return net \\
+\>   \ \ \ \ \ \ close(net) \\
+\ \ \ \ \ \ \ \ \ port +:= 1 \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   else \{ \\
+\>   \ \ \ net := open(host {\textbar}{\textbar}
+{\textquotedbl}:{\textquotedbl} {\textbar}{\textbar} port,
+{\textquotedbl}n{\textquotedbl}) \\
+\>   \ \ \ write(net, getenv({\textquotedbl}USER{\textquotedbl})
+{\textbar} {\textquotedbl}anonymous{\textquotedbl}) \\
+\>   \ \ \ read(net) \# discard \\
+\>   \ \ \ return net \\
+\>   \ \ \ \} \\
+end
+}
+
+The procedure \textsf{open\_server()} similarly cycles through the
+ports, looking for an available one on which to wait. When it receives
+a connection, it checks the client user and returns the connection if
+the desired party is calling.
+
+\iconcode{
+procedure open\_server(host, user) \\
+\>   repeat \{ \\
+\ \ \ \ \ \ port := START\_PORT \\
+\>   \ \ \ until net := open({\textquotedbl}:{\textquotedbl}
+{\textbar}{\textbar} port, {\textquotedbl}na{\textquotedbl}) do \{ \\
+\>   \ \ \ \ \ \ port +:= 1 \\
+\>   \ \ \ \ \ \ if port {\textgreater} STOP\_PORT then fail \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ if not (them := read(net)) then \{ \\
+\>   \ \ \ \ \ \ close(net) \\
+\>   \ \ \ \ \ \ next \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ if /user {\textbar} (them == user) then \{ \\
+\>   \ \ \ \ \ \ write(net, getenv({\textquotedbl}USER{\textquotedbl})
+{\textbar} {\textquotedbl}anonymous{\textquotedbl}) \\
+\>   \ \ \ \ \ \ WAttrib({\textquotedbl}label=talk: accepted call from
+{\textquotedbl}, them) \\
+\>   \ \ \ \ \ \ return net \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ WAttrib({\textquotedbl}label=talk: rejected call from
+{\textquotedbl}, them) \\
+\>   \ \ \ write(net, getenv({\textquotedbl}USER{\textquotedbl})
+{\textbar} {\textquotedbl}anonymous{\textquotedbl}) \\
+\>   \ \ \ close(net) \\
+\>   \ \ \ \} \\
+end
+}
+
+This connection protocol works in the common case, but is error prone.
+For example, if both users typed commands at identical instants, both
+would attempt to be clients, fail, and then become servers awaiting the
+other{\textquotesingle}s call. Perhaps worse from some
+users{\textquotesingle} point of view would be the fact that there is
+no real authentication of the identity of the users. The \textsf{italk}
+program uses whatever is in the USER \index{environment
+variable!USER}environment variable. The UNIX talk program solves both
+of these problems by writing a separate talk server daemon that
+performs the \textit{marshalling}. The daemons talk across the network
+and negotiate a connection, check to see if the user is logged in and
+if so, splash a message on the remote user{\textquotesingle}s screen
+inviting her to start up the talk program with the first
+user{\textquotesingle}s address.
+
+The next part of \textsf{italk}{\textquotesingle}s code to consider is
+the event handling. In reality, each \textsf{italk} program manages and
+multiplexes asynchronous input from two connections: the window and the
+network. The built-in function that is used for this purpose is
+\textsf{select()}. The \textsf{select()} function will wait until some
+(perhaps partial) input is available on one of its file, window, or
+network arguments.
+
+The important thing to remember when handling input from multiple
+sources is that you absolutely cannot block for I/O. This means when
+handling network connections, you should never use \textsf{read()}, you
+should only use \textsf{reads()}. For windows you should also avoid
+\textsf{read()}{\textquotesingle}s library procedure counterpart,
+\textsf{WRead()}. The code below checks which connection has input
+available and calls \textsf{Event()} as events come in on the window,
+and calls \textsf{reads()} on the network as input becomes available on
+it. In either case the received input is echoed to the correct location
+on the screen. Ctrl-D exits the program. To accept a command such as
+{\textquotedbl}quit{\textquotedbl} would have meant collecting
+characters till you have a complete line, which seems like overkill for
+such a simple application.
+
+\iconcode{
+\>   repeat \{ \\
+\>   \ \ \ *(L := select(net, \&window)){\textgreater}0 {\textbar}
+stop({\textquotedbl}empty select?{\textquotedbl}) \\
+\>   \ \ \ if L[1] === \&window then \{ \\
+\>   \ \ \ \ \ \ if \&lpress {\textgreater}= integer(e := Event())
+{\textgreater}= \&rdrag then next \\
+\>   \ \ \ \ \ \ if string(e) then \{ \\
+\>   \ \ \ \ \ \ \ \ \ writes(net, e) {\textbar} break \\
+\>   \ \ \ \ \ \ \ \ \ handle\_char(2, e) {\textbar} break \\
+\>   \ \ \ \ \ \ \ \ \ WSync() \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ else \{ \\
+\>   \ \ \ \ \ \ s := reads(net) {\textbar} break \\
+\>   \ \ \ \ \ \ handle\_char(1, s) {\textbar} break \\
+\>   \ \ \ \ \ \ WSync() \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   close(net) \\
+end
+}
+
+After such a dramatic example of input processing, the rest of the
+\textsf{italk} program is a bit anticlimactic, but it is presented
+anyhow for completeness sake. The remaining procedures are all
+concerned with managing the contents of the user{\textquotesingle}s
+window. Procedure \textsf{handle\_char(w, c)}, called from the input
+processing code above, writes a character to the appropriate part of
+the window. If \textsf{w = 1} the character is written to the upper
+half of the window. Otherwise, it is written to the lower half. The two
+halves of the window are scrolled separately, as needed.
+
+\iconcode{
+procedure handle\_char(w, c) \\
+\>   \# Current horiz. position for wach half of the window \\
+\>   static xpos \\
+\>   initial xpos := [margin, margin]
+\ \\
+\>   if c == {\textquotedbl}{\textbackslash}\^{}d{\textquotedbl} then
+fail \ \ \ \ \# EOF \\
+\ \\
+\>   \# Find the half of the window to use \\
+\>   y\_offset := (w - 1) * wheight/2 \\
+\ \\
+\>   if c ==
+({\textquotedbl}{\textbackslash}r{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}n{\textquotedbl})
+{\textbar} xpos[w] {\textgreater} wwidth then \{ \\
+\>   \ \ \ ScrollUp(y\_offset+1, wheight/2-1) \\
+\>   \ \ \ xpos[w] := margin \\
+\>   \ \ \ \} \\
+\>   if c ==
+({\textquotedbl}{\textbackslash}r{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}n{\textquotedbl})
+then return \\
+\>   \#handles backspacing on the current line \\
+\>   if c =={\textquotedbl}{\textbackslash}b{\textquotedbl} then \{ \\
+\>   \ \ \ if xpos[w] {\textgreater}= margin + cwidth then \{ \\
+\>   \ \ \ \ \ \ EraseArea(xpos[w] - cwidth,
+y\_offset+1+wheight/2-1-vs, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cwidth, vs) \\
+\>   \ \ \ \ \ \ xpos[w] -:= cwidth \\
+\>   \ \ \ \ \ \ return \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   DrawString(xpos[w], wheight/2 + y\_offset - margin, c) \\
+\>   xpos[w] +:= cwidth \\
+\>   return \\
+end
+}
+
+Scrolling either half of the window is done a line at a time. The
+graphics procedure \textsf{CopyArea()} is used to move the existing
+contents up one line, after which \textsf{EraseArea()} clears the line
+at the bottom.
+
+\iconcode{
+procedure ScrollUp(vpos, h) \\
+\>   CopyArea(0, vpos + vs, wwidth, h-vs, 0, vpos) \\
+\>   EraseArea(0, vpos + h - vs, wwidth, vs) \\
+end
+}
+
+The window is initialized with a call to the library procedure,
+\textsf{WOpen()}. The \textsf{WOpen()} procedure takes attribute
+parameters for the window{\textquotesingle}s size and font. These
+values, supplied as defined symbols at the top of the program, are also
+used to initialize several global variables such as \textsf{vs}, which
+gives the vertical space in pixels between lines.
+
+\iconcode{
+procedure win\_init() \\
+\>   WOpen({\textquotedbl}font=typewriter,{\textquotedbl}
+{\textbar}{\textbar} ps, {\textquotedbl}lines={\textquotedbl}
+{\textbar}{\textbar} lines, \\
+\>   \ \ \ \ \ \ {\textquotedbl}columns=80{\textquotedbl}) \\
+\>   wwidth := WAttrib({\textquotedbl}width{\textquotedbl}) \\
+\>   wheight := WAttrib({\textquotedbl}height{\textquotedbl}) \\
+\>   vs := WAttrib({\textquotedbl}fheight{\textquotedbl}) \\
+\>   cwidth := WAttrib({\textquotedbl}fwidth{\textquotedbl}) \\
+\>   DrawLine(0, wheight/2, wwidth, wheight/2) \\
+\>   Event() \\
+end
+}
+
+Lastly, the procedure \textsf{give\_up()} writes a message and exits the
+program, if no network connection is established. If \textsf{user} is
+null and the non-null test (the backslash operator) fails, the
+concatenation is not performed and \index{alternation operator (
+{\textbar} )}alternation causes the empty string to be passed as the
+second argument to \textsf{stop()}.
+
+\iconcode{
+procedure give\_up(host, user) \\
+\>   stop({\textquotedbl}no connection to {\textquotedbl},
+({\textbackslash}user {\textbar}{\textbar}
+{\textquotedbl}@{\textquotedbl}) {\textbar}
+{\textquotedbl}{\textquotedbl}, host) \\
+end
+}
+
+What enhancements would make \textsf{italk} more interesting? A first
+and most obvious extension would be to use a standard network protocol,
+such as that of UNIX \textsf{talk}, so that \textsf{italk} could
+communicate with other users that don{\textquotesingle}t have
+\textsf{italk}. UNIX \textsf{talk} also offers a more robust connection
+and authentication model (although you are still dependent on the
+administrator of a remote machine to guarantee that its \textsf{talkd}
+server is well behaved). Another feature of UNIX \textsf{talk} is
+support for multiple simultaneously connected users.
+
+One particularly neat extension you might implement is support for
+graphics, turning \textsf{italk} into a distributed whiteboard
+application for computer-supported cooperative work. To support
+graphics you would need to extend the window input processing to
+include a simple drawing program, and then you would need to extend the
+network protocol to include graphics commands, not just keystrokes. One
+way to do this would be to represent each user action (a keystroke or a
+graphics command) by a single line of text that is transmitted over the
+network. Such lines might look like:
+
+\iconcode{
+key H \\
+key i \\
+key ! \\
+circle 100,100,25
+}
+
+and so forth. At the other end, the program deciphering these commands
+translates them into appropriate output to the window, which would be
+pretty easy, at least for simple graphics. The nice part about this
+solution is that this particular collaborative whiteboard application
+would work fine across differing platforms (Linux, Microsoft Windows,
+and so on) and require only a couple hundred lines of code!
+
+{\sffamily
+Summary}
+
+Writing Internet programs can be easy and fun. There are several
+different ways to write Internet programs in Unicon. The
+\index{database}database interface presented in Chapter 6 allows you to
+develop client/server applications without \textit{any} explicit
+network programming when the server is a database. A \index{SQL}SQL
+server is overkill for many applications such as the high score server,
+and it is not appropriate for other non-database network applications
+such as the \textsf{italk} program.
+
+For these kinds of programs, it is better to {\textquotedbl}roll your
+own{\textquotedbl} network application protocol. Once a connection is
+established (perhaps using a client/server paradigm), the actual
+communication between programs is just as easy as file input and
+output. If you do roll your own network application, keep the protocol
+simple; it is easy enough to write yourself into deadlocks, race
+conditions, and all the other classic situations that make parallel and
+distributed programming perilous.
+

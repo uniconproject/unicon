@@ -1,0 +1,3300 @@
+\clearpage\section{Chapter 17: Object-oriented User Interfaces}
+
+Most application programs interact with users through a graphical
+\index{user interface}user interface. To achieve this, programmers use
+toolkits such as Motif or class libraries such as Swing or MFC. While
+Icon{\textquotesingle}s platform-independent graphics facilities are
+excellent for drawing to the \index{screen}screen, manipulating
+windows, and so on, the standard elements of \index{graphical user
+interface}graphical user interfaces are not built-in to the language. A
+library of procedures called the vidgets library provides Motif-like
+buttons, menus, scroll bars, and so on. The vidgets library suffers
+from two drawbacks: it is missing many interface components that are
+used in modern applications, and it is not easily extended to include
+new components.
+
+This chapter presents an alternative user interface class library that
+addresses these drawbacks. An object-oriented design is used to reduce
+complexity and increase the extensibility of the toolkit. The result is
+an elegant library, simply called {\textquotedbl}the GUI
+toolkit,{\textquotedbl} that is accessed by importing the package gui.
+The GUI toolkit is a class library, and as such it is specific to
+Unicon, and not intended to address the needs of Arizona Icon
+programmers, who can use the vidgets library. Unicon{\textquotesingle}s
+GUI toolkit offers many more interface components than does the vidgets
+library. Although this book describes the components provided by the
+GUI toolkit, you will probably need the book \textit{Graphics
+Programming in Icon} [Griswold98] to develop advanced custom user
+interfaces with application-specific graphics.
+
+The easiest way to use the GUI classes is with a program named
+\textit{Ivib} that allows you to design an interface by visually
+creating a dialog on the screen interactively. The program then
+generates an Unicon program that can be filled in to create a working
+application. When you finish this chapter you will know how to:
+
+\begin{itemize}
+\item Construct programs that employ a graphical user interface.
+\item Manipulate the attributes of objects such as buttons and
+scrollbars.
+\item Draw a program{\textquotesingle}s interface using ivib,
+Unicon{\textquotesingle}s improved visual interface builder.
+\end{itemize}
+\subsection[A Simple Dialog Example]{A Simple Dialog Example}
+\index{dialog}Object-orientation seems to be a big help in designing
+graphical user interfaces, and this is as true for Unicon as it is for
+other languages. The best way to see how the GUI classes work is to try
+out a simple example program. Listing 17-1 shows the source code in
+full; the code is explained in detail below.
+
+{\sffamily\bfseries
+Listing 17-1}
+
+{\sffamily\bfseries
+The TestDialog Program}
+
+\iconcode{
+import gui \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+class TestDialog : Dialog() \\
+\>   method component\_setup() \\
+\>   \ \ \ local l, b \\
+\>   \ \ \ l := Label({\textquotedbl}label=Click to
+close{\textquotedbl},{\textquotedbl}pos=50\%,33\%{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}align=c,c{\textquotedbl}) \\
+\>   \ \ \ add(l) \\
+\>   \ \ \ b := TextButton({\textquotedbl}label=Button{\textquotedbl},
+{\textquotedbl}pos=50\%,66\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl}) \\
+\>   \ \ \ b.connect(self, {\textquotedbl}dispose{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ add(b) \\
+\>   \ \ \ attrib({\textquotedbl}size=215,150{\textquotedbl},
+{\textquotedbl}bg=light gray{\textquotedbl},
+{\textquotedbl}font=serif{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ {\textquotedbl}resize=on{\textquotedbl}) \\
+\>   end \\
+end \\
+\ \\
+procedure main() \\
+\>   local d := TestDialog() \\
+\>   d.show\_modal() \\
+end
+}
+
+
+\bigskip
+
+Assuming the program is stored in a file called \textsf{testdialog.icn},
+issue the following command to compile it:
+
+\iconcode{
+\>   \ \ unicon testdialog
+}
+
+The result should be an executable file called \textsf{testdialog}.
+\ For convenience, this example program, together with several others,
+can be found in the \textsf{guidemos} directory of the Unicon
+distribution. \ Run this program, and the window shown in Figure 17-1
+should appear, and should close when the \index{button}button is
+clicked.
+
+\bigskip
+
+\begin{center}
+\includegraphics[width=2.3126in,height=1.8752in]{ub-img/ub-img50.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-1:}
+{\sffamily TestDialog window}
+
+\bigskip
+
+It is worth examining this example program line by line. It begins by
+declaring a new class, \textsf{TestDialog}. The line
+
+\iconcode{
+\>   \ \ class TestDialog : Dialog()}
+
+\noindent
+indicates that \textsf{TestDialog} is a \index{subclass}subclass of the
+class \textsf{Dialog} that is defined in the toolkit. This subclass
+relationship is true of all dialog windows. 
+
+The remainder of the class{\textquotesingle}s code is contained in a
+single method, \textsf{component\_setup(). \ }This method is invoked by
+the toolkit, and is provided as a convenient place to setup the
+dialog{\textquotesingle}s content. The first thing inside the
+\textsf{component\_setup()} method is the code that adds the label to
+the dialog: 
+
+\iconcode{
+\>   l := Label({\textquotedbl}label=Click to
+close{\textquotedbl},{\textquotedbl}pos=50\%,33\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl}) \\
+\>   add(l)}
+
+This assigns the variable \textsf{l} to a new \textsf{Label} object and
+sets the label string. The horizontal position is set to 50 percent of
+the window width and the vertical to 33 percent of the window height.
+The alignment of the object is centered both vertically and
+horizontally about the position. Finally, the label is added to the
+dialog with the line \textsf{add(l)}.
+
+The code to add a button is very similar, but a \textsf{TextButton}
+object is created rather than a \textsf{Label} object, and the vertical
+position is 66 percent of the window height. 
+
+The next line is more interesting:
+
+\iconcode{
+\>   b.connect(self, {\textquotedbl}dispose{\textquotedbl}, ACTION\_EVENT)
+}
+
+This adds a \textit{listener} to the button, and tells the toolkit than
+whenever the button fires an \ \textsf{ACTION\_EVENT}, which it will
+when it is pressed, the \textsf{dispose()} method in the class
+\textsf{self}, should be invoked. \ \textsf{self} of course refers to
+the \textsf{TestDialog} class, and \textsf{dispose()} is a method
+inherited from the base class \textsf{Dialog}, which simply closes the
+window. \ So all this means is that when the button is pressed, the
+dialog will close.
+
+The next line sets the attributes of the dialog window, including its
+initial size. Try changing these values to experiment with other dialog
+styles.
+
+\iconcode{
+\>   attrib({\textquotedbl}size=215,150{\textquotedbl},
+{\textquotedbl}bg=light gray{\textquotedbl},
+{\textquotedbl}font=serif{\textquotedbl},
+{\textquotedbl}resize=on{\textquotedbl})}
+
+After the class comes a standard Icon \textsf{main} method. \ This
+simply creates an instance of the dialog and invokes the method
+
+\iconcode{
+\>   d.show\_modal()}
+
+This call displays the dialog window and goes into the
+toolkit{\textquotesingle}s event handling loop. 
+
+\subsection{Positioning Objects}
+The button and the label were positioned in the example above by
+specifying percentages of the window size. An object can also be
+positioned by giving an absolute position, or by giving a percentage
+plus or minus an offset. So the following are all valid position
+specifiers:
+
+\iconcode{
+\>   \ \ {\textquotedbl}100{\textquotedbl} \\
+\>   \ \ {\textquotedbl}10\%{\textquotedbl} \\
+\>   \ \ {\textquotedbl}25\%+10{\textquotedbl} \\
+\>   \ \ {\textquotedbl}33\%-10{\textquotedbl}
+}
+
+Positions are often specified in class \index{constructor}constructor
+strings, with x and y values separated by commas. By default, the
+position specified relates to the top left corner of the object
+concerned. You can use the \textsf{{\textquotedbl}align{\textquotedbl}}
+attribute, which takes two alignment specifiers, to change this
+default. The first alignment specifier is an
+\textsf{{\textquotedbl}l{\textquotedbl}},
+\textsf{{\textquotedbl}c{\textquotedbl}}\texttt{,} or
+\textsf{{\textquotedbl}r{\textquotedbl}}, for left, center, or right
+horizontal alignment, respectively; the second is a
+\textsf{{\textquotedbl}t{\textquotedbl}},
+\textsf{{\textquotedbl}c{\textquotedbl}}, or
+\textsf{{\textquotedbl}b{\textquotedbl}}, for top, center, or bottom
+vertical alignment, respectively. There is one further attribute,
+\textsf{{\textquotedbl}size{\textquotedbl}}, whose specifiers take the
+same format as the position attribute. Most of the toolkit objects
+default to sensible sizes, and the size attribute can often be omitted.
+For example, a button{\textquotesingle}s size will default to a size
+based on the font in use and the string in the button.
+
+A generic method \textsf{attrib(attribs...)} in a utility class
+\textsf{SetFields} implements \index{attribute!GUI widget}attribute
+processing, but it mostly farms out the work to special-purpose methods
+that can be called directly: \textsf{set\_pos(x,y)},
+\textsf{set\_label(s)}, \textsf{set\_align(horizontal, vertical)}, and
+\textsf{set\_size(w, }\textsf{h)}. Other than these setter methods,
+Icon graphics attributes can be interspersed. \ For example, the
+attribute \textsf{{\textquotedbl}bg=green{\textquotedbl}} will set the
+object{\textquotesingle}s background color.
+
+Here are some examples of position, alignment, and size parameters, and
+a description of their meaning. In the call
+
+\iconcode{
+\>   attrib({\textquotedbl}pos=50\%,100{\textquotedbl},
+{\textquotedbl}align=c,t{\textquotedbl},
+{\textquotedbl}size=80\%,200{\textquotedbl})
+}
+
+\noindent
+the object is centered horizontally in the window, and takes up 80
+percent of the width; vertically its top edge starts at 100 and its
+height is 200 pixels. In contrast, the code
+
+\iconcode{
+\>   attrib({\textquotedbl}pos=100\%,100\%{\textquotedbl},
+{\textquotedbl}align=r,b{\textquotedbl},
+{\textquotedbl}size=50\%,50\%{\textquotedbl})
+}
+
+\noindent
+specifies that the object fills up the bottom right quarter of the
+window. The call
+
+\iconcode{
+\>   attrib({\textquotedbl}pos=33\%+20,0\%{\textquotedbl},
+{\textquotedbl}size=100,100\%{\textquotedbl})
+}
+
+\noindent
+directs that the object{\textquotesingle}s left hand side is at
+one-third of the window size plus 20 pixels; it is 100 pixels wide. It
+fills the whole window vertically.
+
+\subsection{A More Complex Dialog Example}
+
+Now it{\textquotesingle}s time to introduce some more component types.
+Listing 17-2 shows our next example program in full.
+
+\bigskip
+
+{\sffamily\bfseries
+Listing 17-2}
+
+{\sffamily\bfseries
+SecondTest Program}
+
+\iconcode{
+import gui \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# Second test program \\
+\# \\
+class SecondTest : Dialog( \\
+\>   \# \\
+\>   \# The class variables; each represents an object \\
+\>   \# in the dialog. \\
+\>   \# \\
+\>   text\_list,  \\
+\>   table,  \\
+\>   list,  \\
+\>   text\_field,  \\
+\>   \# \\
+\>   \# Some data variables. \\
+\>   \# \\
+\>   oses,  \\
+\>   languages, \\
+\>   shares \\
+\>   ) \\
+\ \\
+\>   \# \\
+\>   \# Add a line to the end of the text list \\
+\>   \# \\
+\>   method put\_line(s) \\
+\>   \ \ \ local l := text\_list.get\_contents() \\
+\>   \ \ \ put(l, s) \\
+\>   \ \ \ text\_list.set\_contents(l) \\
+\>   \ \ \ text\_list.goto\_pos(*l) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Event handlers - produce a line of interest. \\
+\>   \# \\
+\ \\
+\>   method handle\_check\_box\_1(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Favourite o/s is {\textquotedbl}
+{\textbar}{\textbar} oses[1]) \\
+\>   end \\
+\ \\
+\>   method handle\_check\_box\_2(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Favourite o/s is {\textquotedbl}
+{\textbar}{\textbar} oses[2]) \\
+\>   end \\
+\ \\
+\>   method handle\_check\_box\_3(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Favourite o/s is {\textquotedbl}
+{\textbar}{\textbar} oses[3]) \\
+\>   end \\
+\ \\
+\>   method handle\_text\_field(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Contents = {\textquotedbl}
+{\textbar}{\textbar} text\_field.get\_contents()) \\
+\>   end \\
+\ \\
+\>   method handle\_list(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Favourite language is
+{\textquotedbl} {\textbar}{\textbar} \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ languages[list.get\_selection()]) \\
+\>   end \\
+\ \\
+\>   method handle\_text\_menu\_item\_2(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}You selected the menu
+item{\textquotedbl}) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# The quit menu item \\
+\>   \# \\
+\>   method handle\_text\_menu\_item\_1(ev) \\
+\>   \ \ \ dispose() \\
+\>   end \\
+\ \\
+\>   method handle\_table(ev) \\
+\>   \ \ \ local i := table.get\_selections()[1] \\
+\>   \ \ \ put\_line(shares[i][1] {\textbar}{\textbar} {\textquotedbl}
+is trading at {\textquotedbl} {\textbar}{\textbar} shares[i][2]) \\
+\>   end \\
+\ \\
+\>   method handle\_table\_column\_1(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Clicked on column
+1{\textquotedbl}) \\
+\>   end \\
+\ \\
+\>   method handle\_table\_column\_2(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Clicked on column
+2{\textquotedbl}) \\
+\>   end
+\ \\
+\>   \# \\
+\>   \# This method is invoked for a component which may  \\
+\>   \# potentially want to handle an event (by firing an \\
+\>   \# event to its listeners for example). \ A dialog \\
+\>   \# is just another custom component, and so it can \\
+\>   \# override this method to do any custom processing. \\
+\>   \# \\
+\>   method handle\_event(ev) \\
+\>   \ \ \ put\_line({\textquotedbl}Icon event {\textquotedbl}
+{\textbar}{\textbar} ev) \\
+\>   \ \ \ self.Dialog.handle\_event(ev) \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ local menu\_bar, menu, panel\_1, panel\_2, panel\_3,  \\
+\>   \ \ \ \ \ \ \ \ \ panel\_4, panel\_5, label\_1, label\_2,
+label\_3,  \\
+\>   \ \ \ \ \ \ \ \ \ label\_4, label\_5, text\_menu\_item\_1,  \\
+\>   \ \ \ \ \ \ \ \ \ text\_menu\_item\_2, check\_box\_1,
+check\_box\_2, \\
+\>   \ \ \ \ \ \ \ \ \ check\_box\_3,table\_column\_1,
+table\_column\_2, \\
+\>   \ \ \ \ \ \ \ \ \ check\_box\_group \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Initialize some data for the objects. \\
+\>   \ \ \ \# \\
+\>   \ \ \ oses := [{\textquotedbl}Windows{\textquotedbl},
+{\textquotedbl}Linux{\textquotedbl},
+{\textquotedbl}Solaris{\textquotedbl}] \\
+\>   \ \ \ languages := [{\textquotedbl}C{\textquotedbl},
+{\textquotedbl}C++{\textquotedbl}, {\textquotedbl}Java{\textquotedbl},
+{\textquotedbl}Icon{\textquotedbl}] \\
+\>   \ \ \ shares := [[{\textquotedbl}Microsoft{\textquotedbl},
+{\textquotedbl}101.84{\textquotedbl}],
+[{\textquotedbl}Oracle{\textquotedbl},
+{\textquotedbl}32.52{\textquotedbl}],
+[{\textquotedbl}IBM{\textquotedbl},
+{\textquotedbl}13.22{\textquotedbl}],
+[{\textquotedbl}Intel{\textquotedbl},
+{\textquotedbl}142.00{\textquotedbl}]] \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set the attribs \\
+\>   \ \ \ \# \\
+\>   \ \ \ attrib({\textquotedbl}size=490,400{\textquotedbl},
+{\textquotedbl}min\_size=490,400{\textquotedbl},
+{\textquotedbl}font=sans{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ {\textquotedbl}bg=light
+gray{\textquotedbl},{\textquotedbl}label=Second example{\textquotedbl},
+{\textquotedbl}resize=on{\textquotedbl}) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set up a simple menu system \\
+\>   \ \ \ \# \\
+\>   \ \ \ menu\_bar := MenuBar() \\
+\>   \ \ \ menu := Menu({\textquotedbl}label=File{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item\_1 :=
+TextMenuItem({\textquotedbl}label=Quit{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item\_1.connect(self,
+{\textquotedbl}handle\_text\_menu\_item\_1{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ menu.add(text\_menu\_item\_1) \\
+\>   \ \ \ text\_menu\_item\_2 :=
+TextMenuItem({\textquotedbl}label=Message{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item\_2.connect(self,
+{\textquotedbl}handle\_text\_menu\_item\_2{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ menu.add(text\_menu\_item\_2) \\
+\>   \ \ \ menu\_bar.add(menu) \\
+\>   \ \ \ add(menu\_bar) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set-up the checkbox panel \\
+\>   \ \ \ \# \\
+\>   \ \ \ check\_box\_group := CheckBoxGroup() \\
+\>   \ \ \ panel\_1 := Panel({\textquotedbl}pos=20,50{\textquotedbl},
+{\textquotedbl}size=130,130{\textquotedbl}) \\
+\>   \ \ \ label\_2 := Label({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}internal\_alignment=l{\textquotedbl},
+{\textquotedbl}label=Favorite o/s{\textquotedbl}) \\
+\>   \ \ \ panel\_1.add(label\_2) \\
+\>   \ \ \ check\_box\_1 :=
+CheckBox({\textquotedbl}pos=0,30{\textquotedbl}) \\
+\>   \ \ \ check\_box\_1.set\_label(oses[1]) \\
+\>   \ \ \ check\_box\_1.connect(self,
+{\textquotedbl}handle\_check\_box\_1{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ check\_box\_group.add(check\_box\_1) \\
+\>   \ \ \ panel\_1.add(check\_box\_1) \\
+\>   \ \ \ check\_box\_2 :=
+CheckBox({\textquotedbl}pos=0,60{\textquotedbl}) \\
+\>   \ \ \ check\_box\_2.set\_label(oses[2]) \\
+\>   \ \ \ check\_box\_group.add(check\_box\_2) \\
+\>   \ \ \ check\_box\_2.connect(self,
+{\textquotedbl}handle\_check\_box\_2{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ panel\_1.add(check\_box\_2) \\
+\>   \ \ \ check\_box\_3 :=
+CheckBox({\textquotedbl}pos=0,90{\textquotedbl}) \\
+\>   \ \ \ check\_box\_3.set\_label(oses[3]) \\
+\>   \ \ \ check\_box\_group.add(check\_box\_3) \\
+\>   \ \ \ check\_box\_3.connect(self,
+{\textquotedbl}handle\_check\_box\_3{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ panel\_1.add(check\_box\_3) \\
+\>   \ \ \ add(panel\_1) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The text-list of messages. \\
+\>   \ \ \ \# \\
+\>   \ \ \ panel\_2 := Panel({\textquotedbl}pos=220,50{\textquotedbl},
+{\textquotedbl}size=100\%-240,50\%-60{\textquotedbl}) \\
+\>   \ \ \ label\_1 := Label({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}internal\_alignment=l{\textquotedbl},
+{\textquotedbl}label=Messages{\textquotedbl}) \\
+\>   \ \ \ panel\_2.add(label\_1) \\
+\>   \ \ \ text\_list :=
+TextDisplay({\textquotedbl}pos=0,30{\textquotedbl},
+{\textquotedbl}size=100\%,100\%-30{\textquotedbl}) \\
+\>   \ \ \ text\_list.set\_contents([]) \\
+\>   \ \ \ panel\_2.add(text\_list) \\
+\>   \ \ \ add(panel\_2) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The table of shares. \\
+\>   \ \ \ \# \\
+\>   \ \ \ panel\_3 :=
+Panel({\textquotedbl}pos=220,50\%{\textquotedbl},{\textquotedbl}size=100\%-240,50\%-40{\textquotedbl}) \\
+\>   \ \ \ table :=
+Table({\textquotedbl}pos=0,30{\textquotedbl},{\textquotedbl}size=100\%,100\%-30{\textquotedbl},
+{\textquotedbl}select\_one{\textquotedbl}) \\
+\>   \ \ \ table.connect(self,
+{\textquotedbl}handle\_table{\textquotedbl},
+SELECTION\_CHANGED\_EVENT) \\
+\>   \ \ \ table.set\_contents(shares) \\
+\ \\
+\>   \ \ \ table\_column\_1 :=
+TableColumn({\textquotedbl}label=Company{\textquotedbl},
+{\textquotedbl}internal\_alignment=l{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}column\_width=100{\textquotedbl}) \\
+\>   \ \ \ table\_column\_1.connect(self,
+{\textquotedbl}handle\_table\_column\_1{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ table.add\_column(table\_column\_1) \\
+\>   \ \ \ table\_column\_2 := TableColumn({\textquotedbl}label=Share
+price{\textquotedbl},
+{\textquotedbl}internal\_alignment=r{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}column\_width=100{\textquotedbl}) \\
+\>   \ \ \ table\_column\_2.connect(self,
+{\textquotedbl}handle\_table\_column\_2{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ table.add\_column(table\_column\_2) \\
+\>   \ \ \ panel\_3.add(table) \\
+\>   \ \ \ label\_5 := Label({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}internal\_alignment=l{\textquotedbl},
+{\textquotedbl}label=Shares{\textquotedbl}) \\
+\>   \ \ \ panel\_3.add(label\_5) \\
+\>   \ \ \ add(panel\_3) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The drop-down list of languages. \\
+\>   \ \ \ \# \\
+\>   \ \ \ panel\_4 := Panel({\textquotedbl}pos=20,190{\textquotedbl},
+{\textquotedbl}size=180,50{\textquotedbl}) \\
+\>   \ \ \ list := List({\textquotedbl}pos=0,30{\textquotedbl},
+{\textquotedbl}size=100,{\textquotedbl}) \\
+\>   \ \ \ list.connect(self,
+{\textquotedbl}handle\_list{\textquotedbl}, SELECTION\_CHANGED\_EVENT) \\
+\>   \ \ \ list.set\_selection\_list(languages) \\
+\>   \ \ \ panel\_4.add(list) \\
+\>   \ \ \ label\_3 := Label({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}internal\_alignment=l{\textquotedbl},
+{\textquotedbl}label=Favorite language{\textquotedbl}) \\
+\>   \ \ \ panel\_4.add(label\_3) \\
+\>   \ \ \ add(panel\_4) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The text field. \\
+\>   \ \ \ \# \\
+\>   \ \ \ panel\_5 := Panel({\textquotedbl}pos=20,280{\textquotedbl},
+{\textquotedbl}size=180,50{\textquotedbl}) \\
+\>   \ \ \ label\_4 := Label({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}internal\_alignment=l{\textquotedbl},
+{\textquotedbl}label=Enter a string{\textquotedbl}) \\
+\>   \ \ \ panel\_5.add(label\_4) \\
+\>   \ \ \ text\_field :=
+TextField({\textquotedbl}pos=0,30{\textquotedbl},
+{\textquotedbl}size=130,{\textquotedbl},
+{\textquotedbl}draw\_border=t{\textquotedbl}) \\
+\>   \ \ \ text\_field.connect(self,
+{\textquotedbl}handle\_text\_field{\textquotedbl},
+TEXTFIELD\_CHANGED\_EVENT) \\
+\>   \ \ \ panel\_5.add(text\_field) \\
+\>   \ \ \ add(panel\_5) \\
+\>   end \\
+end \\
+\ \\
+\# \\
+\# Simple main procedure just creates the dialog. \\
+\# \\
+procedure main() \\
+\>   local d := SecondTest() \\
+\>   d.show\_modal() \\
+end
+}
+
+\bigskip
+
+\begin{center}
+\includegraphics[width=4.0756in,height=3.6465in]{ub-img/ub-img51.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-2:}
+{\sffamily SecondTest window}
+
+\bigskip
+
+Start your look at this program with the \textsf{component\_setup()}
+method at the end. This method begins by initializing some data and
+setting the attributes. This includes several Icon graphics attributes,
+as well as the minimum size attribute, which is an attribute of the
+\textsf{Dialog} class.
+
+The next part creates a \index{menu bar}menu bar structure. We will deal
+with how menu structures work in detail later in this chapter, but for
+now just observe that this code creates two textual menu items within a
+\textsf{Menu} object, which is itself within a \textsf{MenuBar} object,
+which is added to the dialog. \ Both menu items are connected to event
+handler methods.
+
+The next section sets up the three \index{check boxes.}check boxes. The
+check boxes are placed, together with the label {\textquotedbl}Favorite
+o/s{\textquotedbl} in a \textsf{Panel} object. This object simply
+serves as a container for other objects that logically can be treated
+as a whole. The most important thing to note about a \textsf{Panel} is
+that objects within it have their size and position computed relative
+to the \textsf{Panel} rather than the window. So, for example, the
+first \textsf{Label} object is positioned with
+\textsf{{\textquotedbl}pos=0,0{\textquotedbl}}. This places it at the
+top left-hand corner of the \textsf{Panel}, not the top left of the
+window. Percentage specifications similarly relate to the enclosing
+\textsf{Panel}.
+
+Each \textsf{CheckBox} is a separate object. To make the three check
+boxes coordinate themselves as a group so that when one is checked
+another is unchecked, they are placed together in a
+\textsf{CheckBoxGroup} object. This does no more than
+{\textquotedbl}bracket{\textquotedbl} them together. \ When grouped
+together in this way the checkboxes are also called \index{radio
+buttons}\textit{radio buttons} because they work similar to the set of
+tuner buttons found on old car radios. \ Note that each
+\textsf{CheckBox} is added to the \textsf{CheckBoxGroup} \textit{and}
+the \textsf{Panel}.
+
+The next section is another \textsf{Panel} that holds another label
+({\textquotedbl}Messages{\textquotedbl}) and a \textsf{TextList}
+object. In this case the object is used to hold a list of message
+strings that scroll by like a terminal window. A \textsf{TextList}
+object can also be used for selecting one or more items from a list of
+strings and there is and editable version, \textsf{EditableTextList},
+which can be used for editing text.
+
+The third panel contains a label ({\textquotedbl}Shares{\textquotedbl}),
+and a \textsf{Table} object, which is used for displaying tabular data.
+Note that class \textsf{Table} has nothing to do with
+Icon{\textquotesingle}s table data type. Adding a \textsf{TableColumn}
+object to the table sets up each column. The table columns have their
+initial column width specified with attribute \textsf{column\_width}
+and the alignment of the column{\textquotesingle}s contents set with
+attribute \textsf{internal\_alignment}. The attribute
+\textsf{select\_one} is used to configure the table to allow one row to
+be highlighted at a time. The default is not to allow highlighting of
+rows; the other option is to allow several to be highlighted at once
+with \textsf{select\_many}.
+
+The next panel contains another label ({\textquotedbl}Favorite
+language{\textquotedbl}) and a drop-down list of selections, created
+using the \textsf{List} class. The selections are set using the
+\textsf{set\_selection\_list()} method. The final panel contains a
+label ({\textquotedbl}Enter a string{\textquotedbl}) and a
+\textsf{TextField} object, which is used to obtain entry of a string
+from the \index{keyboard}keyboard.
+
+Several of the components are connected to event handlers in the class.
+\ Each handler method adds a line to the list of strings in the
+\textsf{TextList} by calling the \textsf{put\_line()} method. The text
+list thus gives an idea of the events being produced by the toolkit.
+\ The exception is the menu item \textsf{Quit}, which exits the
+program.
+
+This dialog overrides the \textsf{handle\_event()} method, which is the
+method invoked by the toolkit for any component (including dialogs)
+which may want to handle an event. \ In this case, the dialog just
+prints out the Icon event code for the particular event. This method
+also checks for the Alt-q keyboard combination, which closes the
+dialog.
+
+\subsection{More About Event Handling}
+As shown in the above examples, components generate events when
+something of interest happens. \ For example, a button generates an
+\textsf{ACTION\_EVENT} when it is pressed. \ Different components
+generate different events, but there are some basic events generated by
+all components :
+
+\begin{center}
+\tablehead{\hline
+\sffamily\mdseries MOUSE\_PRESS\_EVENT &
+Generated on a mouse press within the component{\textquotesingle}s
+region.\\\hline}
+\begin{supertabular}{|m{2.9212599in}|m{2.9212599in}|}
+\sffamily\mdseries MOUSE\_DRAG\_EVENT &
+Generated on a mouse drag within the component{\textquotesingle}s
+region.\\\hline
+\sffamily\mdseries MOUSE\_RELEASE\_EVENT &
+Generated on a mouse release within the component{\textquotesingle}s
+region.\\\hline
+\end{supertabular}
+\end{center}
+For any non-mouse events, the \textsf{Dialog} class fires an
+\textsf{ICON\_EVENT}.
+
+When an event occurs and is passed to a listener, an \textsf{Event}
+object is provided as a parameter. \ This object contains three fields,
+with corresponding getter methods, as follows :
+
+\begin{center}
+\tablehead{}
+\begin{supertabular}{|m{2.9212599in}|m{2.9212599in}|}
+\hline
+\sffamily\mdseries get\_source() &
+Returns the component which fired the event.\\\hline
+\sffamily\mdseries get\_type() &
+Returns the type code, eg \textsf{ICON\_EVENT}\\\hline
+\sffamily\mdseries get\_param() &
+Returns an arbitrary parameter depending on the type. \ However in
+nearly all cases this is the original underlying Icon graphics event;
+for example \textsf{\&rrelease}.\\\hline
+\end{supertabular}
+\end{center}
+The \textsf{get\_param()} method is necessary, for example, to
+distinguish between a left mouse click and a right mouse click on a
+\textsf{MOUSE\_RELEASE\_EVENT}; for instance 
+
+\iconcode{
+\>   method on\_release(ev) \\
+\>   \ \ \ if ev.get\_param() === \&rrelease then \{ \\
+\>   \ \ \ \ \ \ ... process right mouse up \\
+\>   \ \ \ \} \\
+\>   end
+}
+
+\subsection{Containers}
+Some components are \textit{containers}; they contain other components.
+In fact, the \textsf{Dialog} class itself is a container. We have
+already seen the \textsf{Panel} class in action in the last example.
+Now let{\textquotesingle}s look at two more useful \index{container,
+GUI class}container objects in the standard toolkit: \textsf{TabSet}
+and \textsf{OverlaySet}.
+
+\subsubsection[TabSet]{\sffamily TabSet}
+This class provides a container object that contains several \index{tab,
+GUI class}tabbed panes, any one of which is displayed at any given
+time. The user switches between panes by clicking on the labeled tabs
+at the top of the object. The \textsf{TabSet} contains several
+\textsf{TabItems}, each of which contains the components for that
+particular pane. To illustrate this, Listing 17-3 presents a simple
+example of a \textsf{TabSet} that contains three \textsf{TabItems},
+each of which contains a single label.
+
+\bigskip
+
+{\sffamily\bfseries
+Listing 17-3}
+
+{\sffamily\bfseries
+TabSet Program}
+
+\iconcode{
+import gui \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# Simple example of a TabSet \\
+\# \\
+class Tabs : Dialog(quit\_button) \\
+\>   method change(e) \\
+\>   \ \ \ write({\textquotedbl}The tabset selection
+changed{\textquotedbl}) \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ local tab\_set, tab\_item\_1, tab\_item\_2, tab\_item\_3 \\
+\ \\
+\>   \ \ \ attrib({\textquotedbl}size=355,295{\textquotedbl},
+{\textquotedbl}font=sans{\textquotedbl}, {\textquotedbl}bg=light
+gray{\textquotedbl}, {\textquotedbl}label=TabSet
+example{\textquotedbl}, {\textquotedbl}resize=on{\textquotedbl}) \\
+\ \\
+\>   \ \ \ \#  \\
+\>   \ \ \ \# Create the TabSet \\
+\>   \ \ \ \# \\
+\>   \ \ \ tab\_set := TabSet({\textquotedbl}pos=20,20{\textquotedbl},
+{\textquotedbl}size=100\%-40,100\%-80{\textquotedbl}) \\
+\ \\
+\>   \ \ \ \#  \\
+\>   \ \ \ \# First pane \\
+\>   \ \ \ \# \\
+\>   \ \ \ tab\_item\_1 := TabItem({\textquotedbl}label=Pane
+1{\textquotedbl}) \\
+\>   \ \ \ tab\_item\_1.add(Label({\textquotedbl}pos=50\%,50\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}label=Label
+1{\textquotedbl})) \\
+\>   \ \ \ tab\_set.add(tab\_item\_1) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Second pane \\
+\>   \ \ \ \# \\
+\>   \ \ \ tab\_item\_2 := TabItem({\textquotedbl}label=Pane
+2{\textquotedbl}) \\
+\>   \ \ \ tab\_item\_2.add(Label({\textquotedbl}pos=50\%,50\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl}, {\textquotedbl}label=Label
+2{\textquotedbl})) \\
+\>   \ \ \ tab\_set.add(tab\_item\_2) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Third pane \\
+\>   \ \ \ \# \\
+\>   \ \ \ tab\_item\_3 := TabItem({\textquotedbl}label=Pane
+3{\textquotedbl}) \\
+\>   \ \ \ tab\_item\_3.add(Label({\textquotedbl}pos=50\%,50\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl}, {\textquotedbl}label=Label
+3{\textquotedbl})) \\
+\>   \ \ \ tab\_set.add(tab\_item\_3) \\
+\ \\
+\>   \ \ \ tab\_set.set\_which\_one(tab\_item\_1) \\
+\>   \ \ \ tab\_set.connect(self, {\textquotedbl}change{\textquotedbl},
+SELECTION\_CHANGED\_EVENT) \\
+\>   \ \ \ add(tab\_set) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Add a quit button \\
+\>   \ \ \ \# \\
+\>   \ \ \ quit\_button :=
+TextButton({\textquotedbl}pos=50\%,100\%-30{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl},
+{\textquotedbl}label=Quit{\textquotedbl}) \\
+\>   \ \ \ quit\_button.connect(self,
+{\textquotedbl}dispose{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ add(quit\_button) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Close the dialog when the window close button is pressed \\
+\>   \ \ \ \# \\
+\>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
+CLOSE\_BUTTON\_EVENT) \\
+\>   end \\
+end \\
+\ \\
+procedure main() \\
+\>   local d := Tabs() \\
+\>   d.show\_modal() \\
+end
+}
+
+\bigskip
+
+The resulting window is shown in Figure 17-3:
+
+\begin{center}
+\includegraphics[width=3.1272in,height=2.7299in]{ub-img/ub-img52.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-3:}
+{\sffamily TabSet example window}
+
+\bigskip
+
+One interesting point in this dialog is the following line :-
+
+\iconcode{
+\>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
+CLOSE\_BUTTON\_EVENT)}
+
+
+A dialog generates an event whenever the dialog close button is
+pressed. By connecting this event to the \texttt{dispose}
+method, the dialog is configured to close when this button is
+pressed.
+
+\subsubsection[OverlaySet]{OverlaySet}
+
+\index{overlay, GUI class}This class is very similar to the
+\textsf{TabSet} class, but control over which pane is currently on
+display is entirely under the programmer{\textquotesingle}s control.
+There is no line of tabs to click.
+
+Instead of adding items to \textsf{TabItem} structures,
+\textsf{OverlayItem} objects are used. An empty \textsf{OverlayItem}
+can be used if the area should be blank at some point. The current
+\textsf{OverlayItem} on display is set by the method
+\textsf{set\_which\_one(x)}, where \textsf{x} is the desired
+\textsf{OverlayItem}.
+
+\subsection{Menu Structures}
+
+The toolkit provides all the standard building blocks required to create
+a \index{menu}menu system (see Table 18-1). Customized components can
+also be added, and this is discussed later.
+
+\bigskip
+
+{\centering\sffamily\bfseries
+Table 18-1
+\par}
+
+{\centering\sffamily\bfseries
+Standard Menu System Components
+\par}
+
+\begin{flushleft}
+\tablehead{}
+\begin{supertabular}{|m{1.6906599in}|m{4.1518598in}|}
+\hline
+\sffamily\bfseries Component &
+\sffamily\bfseries Description\\\hline
+\sffamily MenuBar &
+This is the menu area along the top of the window, containing one or
+more \textsf{Menu}s.\\\hline
+\sffamily MenuButton &
+A floating menu bar containing one \textsf{Menu}.\\\hline
+\sffamily Menu &
+A drop down menu pane containing other \textsf{Menu}s or menu
+components.\\\hline
+\sffamily TextMenuItem &
+A textual menu item.\\\hline
+\ttfamily \textsf{CheckBoxMenuItem}  &
+A checkbox in a menu which can be part of a \textsf{CheckBoxGroup} if
+desired.\\\hline
+\sffamily MenuSeparator &
+A vertical separation line between items.\\\hline
+\end{supertabular}
+\end{flushleft}
+Items in a \textsf{Menu} can have left and right labels as well as
+customized left and right images. To see how this all fits together,
+Listing 17-4 shows our next example program.
+
+\bigskip
+
+{\sffamily\bfseries
+Listing 17-4}
+
+{\sffamily\bfseries
+A Menu Example Program}
+
+\iconcode{
+import gui \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# Menu example program. \\
+\# \\
+class MenuDemo : Dialog() \\
+\>   method component\_setup() \\
+\>   \ \ \ local file\_menu, menu\_bar, check\_box\_group,  \\
+\>   \ \ \ \ \ \ \ \ \ text\_menu\_item,labels\_menu, images\_menu, \\
+\>   \ \ \ \ \ \ \ \ \ checkboxes\_menu, group\_menu, alone\_menu, \\
+\>   \ \ \ \ \ \ \ \ \ menu\_button, check\_box\_menu\_item, button\_menu \\
+\ \\
+\>   \ \ \ attrib({\textquotedbl}size=426,270{\textquotedbl},
+{\textquotedbl}font=sans{\textquotedbl}, {\textquotedbl}bg=light
+gray{\textquotedbl}, {\textquotedbl}label=Menu example{\textquotedbl}) \\
+\ \\
+\>   \ \ \ check\_box\_group := CheckBoxGroup() \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Create the menu bar. \ The position and size default to \\
+\>   \ \ \ \# give a bar covering the top of the window. \\
+\>   \ \ \ \# \\
+\>   \ \ \ menu\_bar := MenuBar() \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The first menu ({\textquotedbl}File{\textquotedbl}) -
+just contains one text item. \\
+\>   \ \ \ \# \\
+\>   \ \ \ file\_menu :=
+Menu({\textquotedbl}label=File{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item :=
+TextMenuItem({\textquotedbl}label=Quit{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item.connect(self,
+{\textquotedbl}dispose{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ file\_menu.add(text\_menu\_item) \\
+\>   \ \ \ menu\_bar.add(file\_menu) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The second menu ({\textquotedbl}Labels{\textquotedbl}) -
+add some labels \\
+\>   \ \ \ \# \\
+\>   \ \ \ labels\_menu :=
+Menu({\textquotedbl}label=Labels{\textquotedbl}) \\
+\>   \ \ \ labels\_menu.add(TextMenuItem({\textquotedbl}label=One{\textquotedbl})) \\
+\>   \ \ \ labels\_menu.add(TextMenuItem({\textquotedbl}label=Two{\textquotedbl},
+{\textquotedbl}label\_left=ABC{\textquotedbl})) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Add a separator and another text item \\
+\>   \ \ \ labels\_menu.add(MenuSeparator()) \\
+\>   \ \ \ labels\_menu.add(TextMenuItem({\textquotedbl}label=Three{\textquotedbl},
+{\textquotedbl}label\_right=123{\textquotedbl})) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# A sub-menu in this menu, labelled
+{\textquotedbl}Images{\textquotedbl} \\
+\>   \ \ \ images\_menu :=
+Menu({\textquotedbl}label=Images{\textquotedbl}) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Add three text items with custom images. \ \ The rather \\
+\>   \ \ \ \# unwieldy strings create a triangle, a circle and a \\
+\>   \ \ \ \# rectangle. \\
+\>   \ \ \ \# \\
+\>   \ \ \ text\_menu\_item :=
+TextMenuItem({\textquotedbl}label=One{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item.set\_img\_left({\textquotedbl}15,c1,\_ \\
+\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}\~{}00\~{}00\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}\~{}00\~{}00\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}00\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}00\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\_ \\
+\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\_ \\
+\~{}0000000000000\~{}\_ \\
+000000000000000{\textquotedbl}) \\
+\>   \ \ \ images\_menu.add(text\_menu\_item) \\
+\>   \ \ \ text\_menu\_item :=
+TextMenuItem({\textquotedbl}label=Two{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item.set\_img\_left({\textquotedbl}15,c1,\_ \\
+\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}0000000\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}000\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\_ \\
+\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\_ \\
+\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+\~{}0\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\_ \\
+\~{}\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}\~{}000\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}0000000\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\~{}\~{}{\textquotedbl}) \\
+\>   \ \ \ images\_menu.add(text\_menu\_item) \\
+\>   \ \ \ text\_menu\_item :=
+TextMenuItem({\textquotedbl}label=Three{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item.set\_img\_left({\textquotedbl}15,c1,\_ \\
+000000000000000\_ \\
+000000000000000\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}00\_ \\
+000000000000000\_ \\
+000000000000000{\textquotedbl}) \\
+\>   \ \ \ images\_menu.add(text\_menu\_item) \\
+\>   \ \ \ labels\_menu.add(images\_menu) \\
+\>   \ \ \ menu\_bar.add(labels\_menu) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# The third menu
+({\textquotedbl}Checkboxes{\textquotedbl}) \\
+\>   \ \ \ \# \\
+\>   \ \ \ checkboxes\_menu :=
+Menu({\textquotedbl}label=Checkboxes{\textquotedbl}) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Sub-menu - {\textquotedbl}Group{\textquotedbl} - two
+checkboxes in a checkbox group. \\
+\>   \ \ \ \# \\
+\>   \ \ \ group\_menu :=
+Menu({\textquotedbl}label=Group{\textquotedbl}) \\
+\>   \ \ \ check\_box\_menu\_item :=
+CheckBoxMenuItem({\textquotedbl}label=One{\textquotedbl}) \\
+\>   \ \ \ check\_box\_group.add(check\_box\_menu\_item) \\
+\>   \ \ \ group\_menu.add(check\_box\_menu\_item) \\
+\>   \ \ \ check\_box\_menu\_item :=
+CheckBoxMenuItem({\textquotedbl}label=Two{\textquotedbl}) \\
+\>   \ \ \ check\_box\_group.add(check\_box\_menu\_item) \\
+\>   \ \ \ group\_menu.add(check\_box\_menu\_item) \\
+\>   \ \ \ checkboxes\_menu.add(group\_menu) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Sub-menu - {\textquotedbl}Alone{\textquotedbl} - two
+checkboxes on their own \\
+\>   \ \ \ \# \\
+\>   \ \ \ alone\_menu := Menu() \\
+\>   \ \ \ alone\_menu.set\_label({\textquotedbl}Alone{\textquotedbl}) \\
+\>   \ \ \ check\_box\_menu\_item\_3 :=
+CheckBoxMenuItem({\textquotedbl}label=Three{\textquotedbl}) \\
+\>   \ \ \ alone\_menu.add(check\_box\_menu\_item\_3) \\
+\>   \ \ \ check\_box\_menu\_item\_4 :=
+CheckBoxMenuItem({\textquotedbl}label=Four{\textquotedbl}) \\
+\>   \ \ \ alone\_menu.add(check\_box\_menu\_item\_4) \\
+\>   \ \ \ checkboxes\_menu.add(alone\_menu) \\
+\>   \ \ \ menu\_bar.add(checkboxes\_menu) \\
+\>   \ \ \ add(menu\_bar) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Finally, create a menu button - a mini floating menu with \\
+\>   \ \ \ \# one menu inside it. \\
+\>   \ \ \ \# \\
+\>   \ \ \ menu\_button :=
+MenuButton({\textquotedbl}pos=350,50\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl}) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# This is the menu, its label appears on the button. \ It \\
+\>   \ \ \ \# just contains a couple of text items for illustration \\
+\>   \ \ \ \# purposes. \\
+\>   \ \ \ \# \\
+\>   \ \ \ button\_menu :=
+Menu({\textquotedbl}label=Click{\textquotedbl}) \\
+\>   \ \ \ button\_menu.add(TextMenuItem({\textquotedbl}label=One{\textquotedbl})) \\
+\>   \ \ \ button\_menu.add(TextMenuItem({\textquotedbl}label=Two{\textquotedbl})) \\
+\>   \ \ \ menu\_button.set\_menu(button\_menu) \\
+\>   \ \ \ add(menu\_button) \\
+\>   end \\
+end \\
+\ \\
+procedure main() \\
+\>   local d := MenuDemo() \\
+\>   d.show\_modal() \\
+end
+}
+
+
+\bigskip
+
+The output of this program with the middle menu and its submenu open
+appears in Figure 17-4.\\
+
+\begin{center}
+\includegraphics[width=4.2043in,height=2.7925in]{ub-img/ub-img53.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-4:}
+{\sffamily Menus}
+
+\subsection{Trees}
+The toolkit contains a tree component, which can be used to represent
+hierarchical data. \ To use it, it is necessary to create a tree-like
+data structure of \textsf{Node} objects. \ Children are added to a
+\textsf{Node} using its \textsf{add()} method. \ For example:
+
+\iconcode{
+root := Node({\textquotedbl}label=Root{\textquotedbl}) \\
+child1 := Node({\textquotedbl}label=Child1{\textquotedbl}) \\
+child2 := Node({\textquotedbl}label=Child2{\textquotedbl}) \\
+root.add(child1) \\
+root.add(child2) \\
+...etc
+}
+
+\bigskip
+
+After setting up the tree of \textsf{Node} objects, the root is passed
+to the \textsf{Tree} component for display:
+
+\iconcode{
+tree := Tree({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}size=100,100{\textquotedbl})
+tree.set\_root\_node(root)
+}
+
+The tree data structure can change dynamically over time. \ When this
+occurs, the \textsf{Tree} must be notified of the change by invoking
+the \textsf{tree\_structure\_changed()} method. \ 
+
+The \textsf{Tree} class generates events when the selected \textsf{Node}
+(or \textsf{Node}s) changes, and also when part of the tree is expanded
+or collapsed by the user.
+
+Here is an example of the use of a \textsf{Tree}, together with a
+\textsf{Table}, to provide a file system explorer program. This program
+also uses a \textsf{Sizer} component. \ This is a narrow area between
+the tree and the table which can be dragged to resize both dynamically.
+\ Because of the toolkit{\textquotesingle}s relatively simple layout
+mechanism, the resizing code in \textsf{handle\_sizer()} is quite
+awkward.
+
+
+
+\begin{center}
+\includegraphics[width=5.8134in,height=3.4898in]{ub-img/ub-img54.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-5:}
+{\sffamily Explorer}
+
+
+\bigskip
+
+{\sffamily\bfseries
+Listing 17-5}
+
+{\sffamily\bfseries
+The Explorer Program}
+
+\iconcode{
+import gui \\
+\ \\
+\$include {\textquotedbl}keysyms.icn{\textquotedbl} \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# A very simple filesystem explorer with a tree and a table. \\
+\# \\
+class Explorer : Dialog(tree, sizer, tbl) \\
+\ \\
+\>   \# \\
+\>   \# Given a Node n, get the full file path it represents by \\
+\>   \# traversing up the tree structure to the root. \\
+\>   \# \\
+\>   method get\_full\_path(n) \\
+\>   \ \ \ local s \\
+\ \\
+\>   \ \ \ s := {\textquotedbl}{\textquotedbl} \\
+\>   \ \ \ repeat \{ \\
+\>   \ \ \ \ \ \ s := n.get\_label() {\textbar}{\textbar} s \\
+\>   \ \ \ \ \ \ n := n.get\_parent\_node() {\textbar} break \\
+\>   \ \ \ \} \\
+\>   \ \ \ return s \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Invoked when a sub-tree is expanded (ie: the little + is \\
+\>   \# clicked). \ An expansion event also includes contractions \\
+\>   \# too. \\
+\>   \# \\
+\>   method handle\_tree\_expansion() \\
+\>   \ \ \ local n := tree.get\_last\_expanded() \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Check whether it was an expansion or a contraction. \ If \\
+\>   \ \ \ \# an expansion, load the subtree and refresh the tree. \\
+\>   \ \ \ \# \\
+\>   \ \ \ if n.is\_expanded() then \{ \\
+\>   \ \ \ \ \ \ load\_subtree(n) \\
+\>   \ \ \ \ \ \ tree.tree\_structure\_changed() \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Invoked when a row in the tree is selected (or de-selected). \\
+\>   \# \\
+\>   method handle\_tree\_selection() \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# If we have something selected, load the table. \ We may  \\
+\>   \ \ \ \# not have something selected if the user contracted the \\
+\>   \ \ \ \# parent node of the selected node. \\
+\>   \ \ \ \# \\
+\>   \ \ \ local n \\
+\>   \ \ \ if n := tree.object\_get\_selections()[1] then \{ \\
+\>   \ \ \ \ \ \ load\_table(n) \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Given a Node n, load its children with the sub-directories. \\
+\>   \# \\
+\>   method load\_subtree(n) \\
+\>   \ \ \ local s, name, r1, dir\_list, file\_list \\
+\ \\
+\>   \ \ \ s := get\_full\_path(n) \\
+\>   \ \ \ l := get\_directory\_list(s) \\
+\>   \ \ \ n.clear\_children() \\
+\>   \ \ \ every name := !l[1] do \{ \\
+\>   \ \ \ \ \ \ if (name \~{}== {\textquotedbl}./{\textquotedbl}) \&
+(name \~{}== {\textquotedbl}../{\textquotedbl}) then \{ \\
+\>   \ \ \ \ \ \ \ \ \ r1 :=
+Node({\textquotedbl}always\_expandable=t{\textquotedbl}) \\
+\>   \ \ \ \ \ \ \ \ \ r1.set\_label(name) \\
+\>   \ \ \ \ \ \ \ \ \ n.add(r1) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Given a Node n, load the table with the sub-files and \\
+\>   \# sub-directories. \\
+\>   \# \\
+\>   method load\_table(n) \\
+\>   \ \ \ local s, l, t \\
+\ \\
+\>   \ \ \ s := get\_full\_path(n) \\
+\>   \ \ \ t := get\_directory\_list(s) \\
+\>   \ \ \ l := [ ] \\
+\>   \ \ \ every el := !sort(t[1] {\textbar}{\textbar}{\textbar} t[2])
+do \{ \\
+\>   \ \ \ \ \ \ p := stat(s {\textbar}{\textbar} el) {\textbar}
+stop({\textquotedbl}No stat{\textquotedbl}) \\
+\>   \ \ \ \ \ \ put(l, [el, p.size, ctime(p.mtime)[5:17], p.mode]) \\
+\>   \ \ \ \} \\
+\ \\
+\>   \ \ \ tbl.set\_contents(l) \\
+\>   \ \ \ tbl.goto\_pos(1, 0) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# The sizer has moved, so reset the sizes and positions of the \\
+\>   \# table, tree and sizer. \ Then call resize() to reposition \\
+\>   \# everything. \\
+\>   \# \\
+\>   method handle\_sizer(ev) \\
+\>   \ \ \ result\_x := sizer.get\_curr\_pos() \\
+\>   \ \ \ tree.set\_size(result\_x - 10, tree.h\_spec) \\
+\>   \ \ \ sizer.set\_pos(result\_x, sizer.y\_spec) \\
+\>   \ \ \ tbl.set\_pos(result\_x + 10, tbl.y\_spec) \\
+\>   \ \ \ tbl.set\_size({\textquotedbl}100\%-{\textquotedbl} \\
+{\textbar}{\textbar} string(result\_x + 20), tbl.h\_spec) \\
+\>   \ \ \ resize() \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Catch Alt-q to close the dialog. \\
+\>   \# \\
+\>   method quit\_check(ev) \\
+\>   \ \ \ if ev.get\_param() === {\textquotedbl}q{\textquotedbl} \&
+\&meta then \\
+\>   \ \ \ \ \ \ dispose() \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Override resize to set the sizer{\textquotesingle}s min/max
+locations. \\
+\>   \# \\
+\>   method resize() \\
+\>   \ \ \ self.Dialog.resize() \\
+\>   \ \ \ sizer.set\_min\_max(135, get\_w\_reference() - 160) \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ local root\_node \\
+\ \\
+\>   \ \ \ attrib({\textquotedbl}size=750,440{\textquotedbl},
+{\textquotedbl}resize=on{\textquotedbl},
+{\textquotedbl}label=Explorer{\textquotedbl}) \\
+\>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
+CLOSE\_BUTTON\_EVENT) \\
+\>   \ \ \ connect(self, {\textquotedbl}quit\_check{\textquotedbl},
+ICON\_EVENT) \\
+\>   \ \ \ tree := Tree({\textquotedbl}pos=10,10{\textquotedbl},
+{\textquotedbl}size=250,100\%-20{\textquotedbl},
+{\textquotedbl}select\_one{\textquotedbl}) \\
+\>   \ \ \ tree.connect(self,
+{\textquotedbl}handle\_tree\_expansion{\textquotedbl},
+TREE\_NODE\_EXPANSION\_EVENT) \\
+\>   \ \ \ tree.connect(self,
+{\textquotedbl}handle\_tree\_selection{\textquotedbl},
+SELECTION\_CHANGED\_EVENT) \\
+\>   \ \ \ add(tree) \\
+\ \\
+\>   \ \ \ tbl := Table({\textquotedbl}pos=270,10{\textquotedbl},
+{\textquotedbl}size=100\%-280,100\%-20{\textquotedbl},
+{\textquotedbl}select\_none{\textquotedbl}) \\
+\>   \ \ \ tbl.add\_column(TableColumn({\textquotedbl}label=File{\textquotedbl},
+{\textquotedbl}column\_width=150{\textquotedbl})) \\
+\>   \ \ \ tbl.add\_column(TableColumn({\textquotedbl}label=Size{\textquotedbl},
+{\textquotedbl}column\_width=75{\textquotedbl},
+{\textquotedbl}internal\_alignment=r{\textquotedbl})) \\
+\>   \ \ \ tbl.add\_column(TableColumn({\textquotedbl}label=Date{\textquotedbl},
+{\textquotedbl}column\_width=100{\textquotedbl})) \\
+\>   \ \ \ tbl.add\_column(TableColumn({\textquotedbl}label=Bits{\textquotedbl},
+{\textquotedbl}column\_width=100{\textquotedbl})) \\
+\>   \ \ \ add(tbl) \\
+\ \\
+\>   \ \ \ sizer := Sizer({\textquotedbl}pos=260,10{\textquotedbl},
+{\textquotedbl}size=10,100\%-20{\textquotedbl}) \\
+\>   \ \ \ sizer.connect(self,
+{\textquotedbl}handle\_sizer{\textquotedbl}, SIZER\_RELEASED\_EVENT) \\
+\>   \ \ \ add(sizer) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Initialize the tree data structure. \\
+\>   \ \ \ \# \\
+\>   \ \ \ root\_node := Node({\textquotedbl}label=/{\textquotedbl}) \\
+\>   \ \ \ load\_subtree(root\_node) \\
+\>   \ \ \ tree.set\_root\_node(root\_node) \\
+\>   \ \ \ tree.object\_set\_selections([root\_node]) \\
+\>   \ \ \ load\_table(root\_node) \\
+\>   end \\
+end \\
+\ \\
+procedure main() \\
+\>   local d := Explorer() \\
+\>   d.show\_modal() \\
+end
+}
+
+\subsection{Other Components}
+
+This section gives examples of some components that have not yet been
+encountered. For full details of how to use these classes, and the
+available methods and options, please see the GUI class library
+reference in Appendix B.
+
+\subsubsection[Borders]{Borders}
+This class provides decorative borders. Optionally, a single other
+component can be the title of the \textsf{Border}. This would normally
+be a \textsf{Label} object, but it could also be a \textsf{CheckBox} or
+an \textsf{Icon}, or whatever is desired. The \textsf{set\_title(c)}
+method is used to set the title. Here is a program fragment to create a
+border with a label as its title:
+
+\iconcode{
+\>   \ \ b := Border() \\
+\>   \ \ \# \\
+\>   \ \ \# Add a Label as the title \\
+\>   \ \ \# \\
+\>   \ \ l := Label({\textquotedbl}label=Title String{\textquotedbl}) \\
+\>   \ \ b.set\_title(l) \\
+\>   \ \ add(b)
+}
+
+The \textsf{Border} class acts as a container (like a \textsf{Panel}),
+and so objects may be placed within it in the same way.
+
+\subsubsection{Images and Icons}
+
+The toolkit provides support for both images loaded from files and
+bitmap icons defined by strings. Images stored in files are manipulated
+using the Image class. The method \textsf{set\_filename(x)} is used to
+set the location of the file to be displayed. The image is scaled down
+to the size of the object, and optionally may be scaled up if it is
+smaller. A border may be used if desired.
+
+Icons are created using the \texttt{Icon} class. The icon string is set
+using the \textsf{set\_img()} method; again a border can be used if
+desired. Finally, the \textsf{IconButton} class lets icons serve as
+buttons, producing events when they are clicked.
+
+\subsubsection{Scroll bars}
+
+Horizontal and vertical scroll bars are available with the
+\textsf{ScrollBar} class. Scroll bars can be used either in the
+conventional way, in which the button in the bar represents a page
+size, and the whole bar represents a total, or as a slider in which
+case the button simply moves over a specified range of numbers.
+
+\subsection{Custom Components}
+
+This section looks at how you can create customized components that can
+be added to dialogs. You might want to do this to have circular rather
+than rectangular buttons in your dialog, for example. Or perhaps you
+might want to add a substantial new component type in an application,
+such as the main grid area in a spreadsheet program.
+
+\subsubsection{Creating New Components}
+
+Every component is a \index{subclass}subclass of the \textsf{Component}
+class. This class contains several methods and variables that can be
+used by a new component. Custom components will extend this class by
+implementing its abstract class \textsf{display()}, and very possibly
+overriding and replacing one or more of
+\textsf{Component}{\textquotesingle}s methods, such as
+\textsf{resize()}.
+
+A full list of the methods and variables defined in the
+\textsf{Component} class is given in the GUI class library reference in
+Appendix B. Please refer to that section when reading this next
+example, which comes from the \textsf{gui} package itself: \ a simple
+{\textquotedbl}progress bar{\textquotedbl} component.
+
+{\sffamily\bfseries
+Listing 17-6}
+
+{\sffamily\bfseries
+A ProgressBar Component}
+
+\iconcode{
+package gui \\
+\ \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# A progress bar \\
+\# \\
+class ProgressBar : Component( \\
+\>   p, \ \ \ \ \ \ \ \# The percentage on display. \\
+\>   bar\_x, \\
+\>   bar\_y, \\
+\>   bar\_h, \ \ \ \# Maximum bar height and width. \\
+\>   bar\_w \\
+\>   ) \\
+\ \\
+\>   method resize() \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set a default height based on the font size. \\
+\>   \ \ \ \# \\
+\>   \ \ \ /self.h\_spec := WAttrib(self.cwin,
+{\textquotedbl}fheight{\textquotedbl}) + 2 *
+DEFAULT\_TEXT\_Y\_SURROUND \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Call the parent class{\textquotesingle}s method (this is
+mandatory). \\
+\>   \ \ \ \# \\
+\>   \ \ \ self.Component.resize() \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set bar height and width figures - this just gives a \\
+\>   \ \ \ \# sensible border between the
+{\textquotedbl}bar{\textquotedbl} and the border of the \\
+\>   \ \ \ \# object. \ By using these constants, a consistent \\
+\>   \ \ \ \# appearance with other objects is obtained. \\
+\>   \ \ \ \# \\
+\>   \ \ \ bar\_x := self.x + DEFAULT\_TEXT\_X\_SURROUND \\
+\>   \ \ \ bar\_y := self.y + BORDER\_WIDTH + 3 \\
+\>   \ \ \ bar\_w := self.w - 2 * DEFAULT\_TEXT\_X\_SURROUND \\
+\>   \ \ \ bar\_h := self.h - 2 * (BORDER\_WIDTH + 3)  \\
+\>   end \\
+\ \\
+\>   method display(buffer\_flag) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Erase and re-draw the border and bar \\
+\>   \ \ \ \# \\
+\>   \ \ \ EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h) \\
+\>   \ \ \ DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w,
+self.h) \\
+\>   \ \ \ FillRectangle(self.cbwin, self.bar\_x, self.bar\_y,
+self.bar\_w * p / 100.0, self.bar\_h) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Draw the string in reverse mode \\
+\>   \ \ \ \# \\
+\>   \ \ \ cw := Clone(self.cbwin,
+{\textquotedbl}drawop=reverse{\textquotedbl}) \\
+\>   \ \ \ center\_string(cw, self.x + self.w / 2, self.y + self.h / 2,
+p {\textbar}{\textbar} {\textquotedbl}\%{\textquotedbl}) \\
+\>   \ \ \ Uncouple(cw) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Copy from buffer to window if flag not set. \\
+\>   \ \ \ \# \\
+\>   \ \ \ if /buffer\_flag then \\
+\>   \ \ \ \ \ \ CopyArea(self.cbwin, self.cwin, self.x, self.y,
+self.w, self.h, self.x, self.y) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Get the current percentage. \\
+\>   \# \\
+\>   method get\_percentage() \\
+\>   \ \ \ return p \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Set the percentage. \\
+\>   \# \\
+\>   method set\_percentage(p) \\
+\>   \ \ \ p {\textless}:= 0 \\
+\>   \ \ \ p {\textgreater}:= 100 \\
+\>   \ \ \ self.p := p \\
+\>   \ \ \ self.invalidate() \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Provide an extra attribute,
+{\textquotedbl}percentage{\textquotedbl} \\
+\>   \# \\
+\>   method set\_one(attr, val) \\
+\>   \ \ \ case attr of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}percentage{\textquotedbl} :
+set\_percentage(int\_val(attr, val)) \\
+\>   \ \ \ \ \ \ default: self.Component.set\_one(attr, val) \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   initially(a[]) \\
+\>   \ \ \ self.Component.initially() \\
+\>   \ \ \ self.set\_percentage(0) \\
+\>   \ \ \ set\_fields(a) \\
+end \\
+}
+
+An example of a \textsf{ProgressBar} in use is shown in Figure 17-6.
+
+\begin{center}
+\includegraphics[width=4.2398in,height=2.3953in]{ub-img/ub-img55.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-6:}
+{\sffamily Progress bar in use}
+
+More complex components use other components within themselves. For
+example, the \textsf{TextList} class contains two \textsf{ScrollBar}s,
+each of which in turn contains two \textsf{IconButton}s. The
+\textsf{Component} class has support for contained objects built in, so
+creating components of this sort is quite easy.
+
+Figure 17-7 shows a dialog window containing another example component
+which contains an IconButton and a Label as subcomponents. \ A list of
+strings is given as an input parameter. When the button is pressed the
+label changes to the next item in the list, or goes back to the first
+one. \ The user can thus select any of the items.
+
+\begin{center}
+\includegraphics[width=3.4992in,height=2.6543in]{ub-img/ub-img56.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-7:}
+{\sffamily Circulate component in use}
+
+\bigskip
+
+In this example, the sub-components, \textsf{b} and \textsf{l}, are
+initialized in the component{\textquotesingle}s constructor, and also
+added to the component using the \textsf{add} method. \ This ensures
+they are properly initialized. \ A listener is connected to the button
+so that the selection moves on one when it is pressed. \ The
+\textsf{set\_selection()} method is available to a client program to
+change the selection programatically. \ Note how this method invokes
+\textsf{invalidate()}. \ This tells the toolkit that the component
+needs to be re-displayed. \ To keep the GUI responsive, the toolkit
+will only schedule this re-display when there are no user input events
+to be processed. \ \ So, \textsf{invalidate()} doesn{\textquotesingle}t
+actually invoke the component{\textquotesingle}s \textsf{display()}
+method directly.
+
+The \textsf{resize()} method sets the sub-components{\textquotesingle}
+position and size, and then calls the \textsf{resize()} method for each
+of them. The \textsf{display()} method erases the
+component{\textquotesingle}s rectangular area, draws a border, and
+draws the two sub-components into the area. \ The \textsf{set\_one()}
+method is also overridden to provide some custom attributes for the
+component. \ For all other attributes, the parent
+class{\textquotesingle}s \textsf{set\_one()} method is invoked, meaning
+all the standard attributes work too. \ So, a client can construct a
+\textsf{Circulate} with something like :
+
+\iconcode{
+\>   \ c := Circulate({\textquotedbl}size=,250{\textquotedbl},
+{\textquotedbl}pos=20,20{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}selection\_list=hot,warm,cold{\textquotedbl},
+{\textquotedbl}selection=2{\textquotedbl},
+{\textquotedbl}bg=green{\textquotedbl})
+}
+
+Note how the height is omitted; the \textsf{resize()} method will set a
+default value.
+
+\bigskip
+
+{\sffamily\bfseries
+Listing 17-7}
+
+{\sffamily\bfseries
+Circulate component}
+
+\iconcode{
+package gui \\
+link graphics \\
+\ \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# Selection from a list \\
+\# \\
+class Circulate : Component(selection, selection\_list, b, l) \\
+\>   \# \\
+\>   \# Set the list from which selections are made. \\
+\>   \# \\
+\>   \# @param x the list of selection strings \\
+\>   \# \\
+\>   method set\_selection\_list(x) \\
+\>   \ \ \ self.selection\_list := x \\
+\>   \ \ \ self.set\_selection(1) \\
+\>   \ \ \ return x \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Set the selection to the given index into the selection \\
+\>   \# list. \\
+\>   \# \\
+\>   \# @param x an index into the selection list \\
+\>   \# \\
+\>   method set\_selection(x) \\
+\>   \ \ \ self.selection := x \\
+\>   \ \ \ self.l.set\_label(self.selection\_list[self.selection]) \\
+\>   \ \ \ self.invalidate() \\
+\>   \ \ \ return x \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Return the current selection, as an index in the selection \\
+\>   \# list. \\
+\>   \# \\
+\>   \# @return an integer, being the current selection \\
+\>   \# \\
+\>   method get\_selection() \\
+\>   \ \ \ return self.selection \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Called once at startup, and whenever the window is resized. \\
+\>   \# \\
+\>   \# @p \\
+\>   method resize() \\
+\>   \ \ \ /self.h\_spec := WAttrib(self.cwin,
+{\textquotedbl}fheight{\textquotedbl}) + 16 \\
+\>   \ \ \ compute\_absolutes() \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set button position and size \\
+\>   \ \ \ \# \\
+\>   \ \ \ b.set\_pos(BORDER\_WIDTH, BORDER\_WIDTH) \\
+\>   \ \ \ b.set\_size(self.h - 2 * BORDER\_WIDTH, self.h - 2 *
+BORDER\_WIDTH) \\
+\>   \ \ \ b.resize() \\
+\ \\
+\>   \ \ \ l.set\_pos(self.h - BORDER\_WIDTH +
+DEFAULT\_TEXT\_X\_SURROUND, self.h / 2) \\
+\>   \ \ \ l.set\_align({\textquotedbl}l{\textquotedbl},
+{\textquotedbl}c{\textquotedbl}) \\
+\>   \ \ \ l.set\_size(self.w - self.h - 2 *
+DEFAULT\_TEXT\_X\_SURROUND, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ self.h - 2 * BORDER\_WIDTH) \\
+\>   \ \ \ l.resize() \\
+\>   \ \ \ return \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Display the object. \ In this case, double buffering is not \\
+\>   \# necessary. \\
+\>   \# \\
+\>   \# @p \\
+\>   method display(buffer\_flag) \\
+\>   \ \ \ W := if /buffer\_flag then self.cwin else self.cbwin \\
+\>   \ \ \ EraseRectangle(W, self.x, self.y, self.w, self.h) \\
+\>   \ \ \ DrawSunkenRectangle(W, self.x, self.y, self.w, self.h) \\
+\>   \ \ \ l.display(buffer\_flag) \\
+\>   \ \ \ b.display(buffer\_flag) \\
+\>   \ \ \ self.do\_shading(W) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# The handler for the button - move the selection forward. \\
+\>   \# \\
+\>   \# @p \\
+\>   method on\_button\_pressed(ev) \\
+\>   \ \ \ self.set\_selection(1 + self.selection \%
+*self.selection\_list) \\
+\>   \ \ \ create\_event\_and\_fire(SELECTION\_CHANGED\_EVENT, e) \\
+\>   end \\
+\ \\
+\>   method set\_one(attr, val) \\
+\>   \ \ \ case attr of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}selection{\textquotedbl} :
+set\_selection(int\_val(attr, val)) \\
+\>   \ \ \ \ \ \ {\textquotedbl}selection\_list{\textquotedbl} :
+set\_selection\_list(val) \\
+\>   \ \ \ \ \ \ default: self.Component.set\_one(attr, val) \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   initially(a[])  \\
+\>   \ \ \ self.Component.initially() \\
+\>   \ \ \ self.l := Label() \\
+\>   \ \ \ self.l.clear\_draw\_border() \\
+\>   \ \ \ add(self.l) \\
+\>   \ \ \ self.b := IconButton() \\
+\>   \ \ \ self.b.connect(self,
+{\textquotedbl}on\_button\_pressed{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ add(self.b) \\
+\>   \ \ \ b.set\_draw\_border() \\
+\>   \ \ \ self.b.set\_img({\textquotedbl}13,c1,\_ \\
+\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}000000\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}000\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}00000\~{}\_ \\
+\~{}00\~{}\~{}\~{}0000000\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}00\~{}\~{}\~{}\~{}\~{}\~{}00\~{}\~{}\_ \\
+\~{}\~{}00\~{}\~{}\~{}\~{}00\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}000000\~{}\~{}\~{}\~{}\_ \\
+\~{}\~{}\~{}\~{}0000\~{}\~{}\~{}\~{}\~{}\_ \\
+{\textquotedbl}) \\
+\>   \ \ \ set\_fields(a) \\
+end
+}
+
+\subsubsection{Customized Menu Components}
+
+Listing 17-8 contains a custom menu component. \ The class hierarchy for
+menu structures is different to other components, and so this component
+is a \index{subclass}subclass of \textsf{SubMenu}, rather than
+\textsf{Component}. \ The component allows the user to select one of a
+number of colors from a Palette by clicking on the desired box.
+\ Again, please read this example in conjunction with the reference
+section on menus.
+
+\bigskip
+
+{\sffamily\bfseries
+Listing 17-8}
+
+{\sffamily\bfseries
+Color Palette Program}
+
+\iconcode{
+import gui \\
+\ \\
+\# \\
+\# The standard constants \\
+\# \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# Width of one colour cell in pixels \\
+\# \\
+\$define CELL\_WIDTH 30 \\
+\ \\
+\# \\
+\# The Palette class \\
+\# \\
+class Palette : SubMenu( \\
+\>   w, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# \ \ \ \ \ \ \ \  \\
+\>   h, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# \ \ \ \ \ \ \ \  \\
+\>   colour, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# Colour number selected \\
+\>   palette, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# List of colours \\
+\>   box\_size, \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# Width/height in cells \\
+\>   temp\_win \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# Temporary window \\
+\>   ) \\
+\ \\
+\>   \# \\
+\>   \# Get the result \\
+\>   \# \\
+\>   method get\_colour() \\
+\>   \ \ \ return self.palette[self.colour] \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Set the palette list \\
+\>   \# \\
+\>   method set\_palette(l) \\
+\>   \ \ \ box\_size := integer(sqrt(*l)) \\
+\>   \ \ \ return self.palette := l \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# This is called by the toolkit; it is a convenient place to \\
+\>   \# initialize any sizes. \\
+\>   \# \\
+\>   method resize() \\
+\>   \ \ \ self.w := self.h := self.box\_size * CELL\_WIDTH +  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ 2 * BORDER\_WIDTH \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Called to display the item. \ The x, y co-ordinates have \\
+\>   \# been set up for us and give the top left hand corner of  \\
+\>   \# the display.  \\
+\>   \# \\
+\>   method display() \\
+\>   \ \ \ if /self.temp\_win then \{ \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \# Open a temporary area for the menu and copy. \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ self.temp\_win :=
+WOpen({\textquotedbl}canvas=hidden{\textquotedbl},
+{\textquotedbl}size={\textquotedbl} {\textbar}{\textbar} self.w
+{\textbar}{\textbar} {\textquotedbl},{\textquotedbl}
+{\textbar}{\textbar} self.h) \\
+\>   \ \ \ \ \ \ CopyArea(self.parent\_component.get\_parent\_win(), \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ self.temp\_win, self.x, self.y,
+self.w, self.h, 0, 0) \\
+\>   \ \ \ \} \\
+\ \\
+\>   \ \ \ cw := Clone(self.parent\_component.cwin) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Clear area and draw rectangle around whole \\
+\>   \ \ \ \# \\
+\>   \ \ \ EraseRectangle(cw, self.x, self.y, self.w, self.h) \\
+\>   \ \ \ DrawRaisedRectangle(cw, self.x, self.y, self.w, self.h) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Draw the colour grid. \\
+\>   \ \ \ \# \\
+\>   \ \ \ y1 := self.y + BORDER\_WIDTH \ \ \ \ \  \\
+\>   \ \ \ e := create {\textquotedbl}fg={\textquotedbl}
+{\textbar}{\textbar} !palette \\
+\>   \ \ \ every 1 to box\_size do \{ \\
+\>   \ \ \ \ \ \ x1 := self.x + BORDER\_WIDTH \  \\
+\>   \ \ \ \ \ \ every 1 to box\_size do \{ \\
+\>   \ \ \ \ \ \ \ \ \ WAttrib(cw, @e) \\
+\>   \ \ \ \ \ \ \ \ \ FillRectangle(cw, x1, y1, CELL\_WIDTH,
+CELL\_WIDTH) \\
+\>   \ \ \ \ \ \ \ \ \ x1 +:= CELL\_WIDTH \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ y1 +:= CELL\_WIDTH \\
+\>   \ \ \ \} \\
+\>   \ \ \ Uncouple(cw) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Test whether pointer in palette\_region, and if so which  \\
+\>   \# cell it{\textquotesingle}s in \\
+\>   \# \\
+\>   method in\_palette\_region() \\
+\>   \ \ \ if (self.x {\textless}= \&x {\textless} self.x + self.w) \& \\
+\>   \ \ \ \ \ \ (self.y {\textless}= \&y {\textless} self.y + self.h)
+then \{ \\
+\>   \ \ \ \ \ \ x1 := (\&x - self.x - BORDER\_WIDTH) / CELL\_WIDTH \\
+\>   \ \ \ \ \ \ y1 := (\&y - self.y - BORDER\_WIDTH) / CELL\_WIDTH \\
+\>   \ \ \ \ \ \ return 1 + x1 + y1 * box\_size \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Will be called if our menu is open. \\
+\>   \# \\
+\>   method handle\_event(e) \\
+\>   \ \ \ if i := self.in\_palette\_region() then \{ \\
+\>   \ \ \ \ \ \ if integer(e) = (\&lrelease {\textbar} \&rrelease
+{\textbar}  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&mrelease) then \{ \\
+\>   \ \ \ \ \ \ \ \ \ self.colour := i \\
+\>   \ \ \ \ \ \ \ \ \ \# This is a helper method in the superclass which \\
+\>   \ \ \ \ \ \ \ \ \ \# closes the menu system and fires an ACTION\_EVENT \\
+\>   \ \ \ \ \ \ \ \ \ succeed(e) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} else \{ \\
+\>   \ \ \ \ \ \ if integer(e) = (\&lrelease {\textbar} \&rrelease
+{\textbar} \&mrelease {\textbar} \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&lpress {\textbar}
+\&rpress {\textbar} \&mpress) then \\
+\>   \ \ \ \ \ \ \ \ \ \# This is a helper method in the superclass
+which \\
+\>   \ \ \ \ \ \ \ \ \ \# closes the menu system, without firing an
+event. \\
+\>   \ \ \ \ \ \ \ \ \ close\_all() \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Close this menu. \\
+\>   \# \\
+\>   method hide() \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Restore window area. \\
+\>   \ \ \ \# \\
+\>   \ \ \ cw := self.parent\_component.cwin \\
+\>   \ \ \ EraseRectangle(cw, self.x, self.y, self.w, self.h) \\
+\>   \ \ \ CopyArea(self.temp\_win,
+self.parent\_component.get\_parent\_win(), \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ 0, 0, self.w, self.h, self.x, self.y) \\
+\>   \ \ \ WClose(self.temp\_win) \\
+\>   \ \ \ self.temp\_win := \&null \\
+\>   end \\
+\ \\
+\>   \# Support a {\textquotedbl}palette{\textquotedbl} attrib \\
+\>   method set\_one(attr, val) \\
+\>   \ \ \ case attr of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}palette{\textquotedbl} :
+set\_palette(val) \\
+\>   \ \ \ \ \ \ default : self.MenuComponent.set\_one(attr, val) \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   initially(a[]) \\
+\>   \ \ \ self.SubMenu.initially() \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Set the image to appear on the Menu above ours. \ We \\
+\>   \ \ \ \# could design a tiny icon and use that instead of the \\
+\>   \ \ \ \# standard arrow if we wished. \\
+\>   \ \ \ \#  \\
+\>   \ \ \ self.set\_img\_right(img\_style({\textquotedbl}arrow\_right{\textquotedbl})) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Support the attrib style constructor. \\
+\>   \ \ \ \# \\
+\>   \ \ \ set\_fields(a) \\
+end \\
+\ \\
+\# \\
+\# Test class dialog. \\
+\# \\
+class TestPalette : Dialog(palette) \\
+\>   method on\_palette(ev) \\
+\>   \ \ \ write({\textquotedbl}Colour selected : {\textquotedbl}
+{\textbar}{\textbar} palette.get\_colour()) \\
+\>   end \\
+\ \\
+\>   method on\_anything(ev) \\
+\>   \ \ \ write({\textquotedbl}Anything item selected{\textquotedbl}) \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ local menu\_bar, menu, text\_menu\_item, close \\
+\ \\
+\>   \ \ \ attrib({\textquotedbl}size=400,200{\textquotedbl}) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Create a MenuBar structure which includes our palette  \\
+\>   \ \ \ \# as a sub-menu \\
+\>   \ \ \ \# \\
+\>   \ \ \ menu\_bar := MenuBar({\textquotedbl}pos=0,0{\textquotedbl}) \\
+\>   \ \ \ menu := Menu({\textquotedbl}label=Test{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item :=
+TextMenuItem({\textquotedbl}label=Anything{\textquotedbl}) \\
+\>   \ \ \ text\_menu\_item.connect(self,
+{\textquotedbl}on\_anything{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ menu.add(text\_menu\_item) \\
+\ \\
+\>   \ \ \ palette := Palette({\textquotedbl}label=Test
+menu{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}palette=red,green,yellow,black,\_ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ white,purple,gray,blue,pink{\textquotedbl}) \\
+\ \\
+\>   \ \ \ palette.connect(self,
+{\textquotedbl}on\_palette{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ menu.add(palette) \\
+\>   \ \ \ menu\_bar.add(menu) \\
+\>   \ \ \ add(menu\_bar) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Add a close button.  \\
+\>   \ \ \ \# \\
+\>   \ \ \ close :=
+TextButton({\textquotedbl}pos=50\%,66\%{\textquotedbl},
+{\textquotedbl}align=c,c{\textquotedbl},
+{\textquotedbl}label=Close{\textquotedbl}) \\
+\>   \ \ \ close.connect(self, {\textquotedbl}dispose{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ add(close) \\
+\>   end \\
+end \\
+\ \\
+\# \\
+\# Main program entry point. \\
+\# \\
+procedure main() \\
+\>   local d \\
+\>   d := TestPalette() \\
+\>   d.show\_modal() \\
+end
+}
+
+\bigskip
+
+The resulting window, with the \textsf{Palette} menu active is shown in
+Figure 17-8.
+
+\begin{center}
+\includegraphics[width=4.2398in,height=2.3953in]{ub-img/ub-img57.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-8:}
+{\sffamily TestPalette window}
+
+\subsubsection{Tickers}
+Nearly all GUI programs spend most of their time waiting for user input
+events. \ The toolkit allows this spare time to be exploited by user
+programs by the use of {\textquotedbl}tickers{\textquotedbl}. \ These
+are classes which subclass \textsf{Ticker}, and\texttt{ }implement a
+single method, \textsf{tick()}, \ which is invoked at a specified
+interval. \ In fact, if the toolkit is busy processing events or
+updating the display, the actual interval may be much greater than that
+requested (but it will never be less).
+
+Many components make use of tickers. \ For example when the mouse button
+is dragged below the bottom of an \textsf{EditableTextList} and held,
+the cursor scrolls downwards without any user events occurring. \ This
+is handled with a ticker.
+
+Here is a simple ticker :
+
+\iconcode{
+class FirstTicker : Ticker() \\
+\>   method tick() \\
+\>   \ \ \ write({\textquotedbl}Doing something in
+FirstTicker{\textquotedbl}) \\
+\>   end \\
+end
+}
+
+If we had an instance \textsf{t} of this ticker, we would start it with
+:
+
+\iconcode{
+t.set\_ticker(1000)}
+
+And stop it with
+
+\iconcode{
+t.stop\_ticker()}
+
+Both calls would have to be made whilst a dialog was open, because it is
+from within the toolkit{\textquotesingle}s event processing loop that
+tickers are scheduled.
+
+For convenience, the base \textsf{Component} class is a subclass of
+\textsf{Ticker}. \ This means that a dialog class (which is itself \ a
+subclass of \textsf{Component}, and hence of \textsf{Ticker} too), can
+simply implement a \textsf{tick()} method to use the ticker facility.
+\ It simply needs to invoke \textsf{set\_ticker()} and
+\textsf{stop\_ticker()} to start and stop the ticker, respectively.
+\ \ Another method, \textsf{retime\_ticker()}, allows the rate of an
+active ticker to be changed.
+
+One important rule regarding ticker programming has to be borne in mind,
+and that is that the \textsf{tick()} method implementation must return
+quite quickly; at most within a few tenths of a second. \ If it does
+not, then the GUI may become unresponsive to user events, which cannot
+be processed whilst control is in the \textsf{tick()} method.
+
+So, the \textsf{tick()} method must return quickly. \ But what if the
+task you want to implement in the background is by nature deeply
+structured and takes a long time. \ In this case, it may be difficult
+to get out of the \textsf{tick()} method promptly and continue in the
+same state on the next tick. \ Fortunately Icon has a feature which can
+be very helpful here, and that is co-expressions. \ A co-expression
+maintains its own stack and can suspend itself at any point, and then
+continue again later with the state (including stack) intact.
+
+Here is an example program which illustrates these points. \ It
+generates prime numbers using the Erastothenes{\textquotesingle} sieve
+method, in a ticker, using a co-expression to conveniently suspend
+generation after each prime.
+
+This program also introduces a new component, \ namely a slider which is
+used to increase or decrease the ticker rate dynamically.
+
+{\sffamily\bfseries
+Listing 17-9}
+
+{\sffamily\bfseries
+Erastothenes{\textquotesingle} Sieve Program}
+
+\iconcode{
+import gui \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\$define PRIME\_LIMIT 20000 \\
+\ \\
+\# \\
+\# A program to calculate prime numbers in a background ticker, \\
+\# and display them in a dialog. \\
+\# \\
+class Sieve : Dialog(prime\_ce,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ interval,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ count\_label,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ prime\_label,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rate\_label,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ start,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ stop) \\
+\ \\
+\>   \# \\
+\>   \# Bring the label and ticker into line with the interval \\
+\>   \# slider. \\
+\>   \# \\
+\>   method synch\_interval() \\
+\>   \ \ \ rate\_label.set\_label(interval.get\_value()
+{\textbar}{\textbar} {\textquotedbl} ms{\textquotedbl}) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# If the ticker is running, retime it. \\
+\>   \ \ \ \# \\
+\>   \ \ \ if is\_ticking() then \\
+\>   \ \ \ \ \ \ retime\_ticker(interval.get\_value()) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Toggle the grey state of the start/stop buttons. \\
+\>   \# \\
+\>   method toggle\_buttons() \\
+\>   \ \ \ start.toggle\_is\_shaded() \\
+\>   \ \ \ stop.toggle\_is\_shaded() \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Called when the start button has been pressed: toggle the \\
+\>   \# grey state and start the ticker. \\
+\>   \# \\
+\>   method on\_start() \\
+\>   \ \ \ toggle\_buttons() \\
+\>   \ \ \ set\_ticker(interval.get\_value()) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Called when the stop button has been pressed: toggle the \\
+\>   \# grey state and stop the ticker. \\
+\>   \#  \\
+\>   method on\_stop() \\
+\>   \ \ \ toggle\_buttons() \\
+\>   \ \ \ stop\_ticker() \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# The tick method, which is invoked regularly by the toolkit. \\
+\>   \# It just invokes the co-expression to display the next prime. \\
+\>   \# \\
+\>   method tick() \\
+\>   \ \ \ @prime\_ce \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# This method consitutes the co-expression body. \\
+\>   \# \\
+\>   method primes() \\
+\>   \ \ \ local prime\_candidate, non\_prime\_set, prime\_count \\
+\ \\
+\>   \ \ \ non\_prime\_set := set() \\
+\>   \ \ \ prime\_count := 0 \\
+\ \\
+\>   \ \ \ every prime\_candidate := 2 to \ PRIME\_LIMIT do \{ \\
+\>   \ \ \ \ \ \ if not member(non\_prime\_set, prime\_candidate) then
+\{ \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# Update the UI \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ count\_label.set\_label(prime\_count +:= 1) \\
+\>   \ \ \ \ \ \ \ \ \ prime\_label.set\_label(prime\_candidate) \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# Update the non-prime set. \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ every insert(non\_prime\_set, 2 *
+prime\_candidate to PRIME\_LIMIT by prime\_candidate) \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# Suspend the co-expression until the next
+tick. \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ @\&source \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ local prime\_border, rate, buttons, b \\
+\ \\
+\>   \ \ \ attrib({\textquotedbl}size=325,200{\textquotedbl},
+{\textquotedbl}label=Sieve{\textquotedbl}) \\
+\>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
+CLOSE\_BUTTON\_EVENT) \\
+\ \\
+\>   \ \ \ prime\_border :=
+Border({\textquotedbl}pos=20,20{\textquotedbl},
+{\textquotedbl}size=100\%-40,78{\textquotedbl}) \\
+\>   \ \ \ prime\_border.set\_title(Label({\textquotedbl}pos=10,0{\textquotedbl},
+{\textquotedbl}label=Primes{\textquotedbl})) \\
+\>   \ \ \ prime\_ce := create primes() \\
+\ \\
+\>   \ \ \ prime\_border.add(Label({\textquotedbl}pos=20,18{\textquotedbl},
+{\textquotedbl}label=Prime:{\textquotedbl})) \\
+\>   \ \ \ count\_label :=
+Label({\textquotedbl}pos=77,18{\textquotedbl},
+{\textquotedbl}size=40{\textquotedbl}) \\
+\>   \ \ \ count\_label.set\_label({\textquotedbl}{\textquotedbl}) \\
+\>   \ \ \ prime\_border.add(count\_label) \\
+\>   \ \ \ prime\_border.add(Label({\textquotedbl}pos=20,40{\textquotedbl},
+{\textquotedbl}label=Value:{\textquotedbl})) \\
+\>   \ \ \ prime\_label :=
+Label({\textquotedbl}pos=77,40{\textquotedbl},
+{\textquotedbl}size=40{\textquotedbl}) \\
+\>   \ \ \ prime\_label.set\_label({\textquotedbl}{\textquotedbl}) \\
+\>   \ \ \ prime\_border.add(prime\_label) \\
+\ \\
+\>   \ \ \ add(prime\_border) \\
+\ \\
+\>   \ \ \ rate := Panel({\textquotedbl}pos=20,112{\textquotedbl},
+{\textquotedbl}size=100\%-40,30{\textquotedbl}) \\
+\>   \ \ \ rate.add(Label({\textquotedbl}pos=0,50\%{\textquotedbl},
+{\textquotedbl}size=45{\textquotedbl},
+{\textquotedbl}align=l,c{\textquotedbl},
+{\textquotedbl}label=Rate:{\textquotedbl})) \\
+\>   \ \ \ interval :=
+Slider({\textquotedbl}pos=45,50\%{\textquotedbl},
+{\textquotedbl}size=100\%-90{\textquotedbl},
+{\textquotedbl}align=l,c{\textquotedbl},
+{\textquotedbl}range=20,2020{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}is\_horizontal=t{\textquotedbl}) \\
+\>   \ \ \ interval.set\_value(1000) \\
+\>   \ \ \ interval.connect(self,
+{\textquotedbl}synch\_interval{\textquotedbl}, SLIDER\_DRAGGED\_EVENT) \\
+\>   \ \ \ rate.add(interval) \\
+\ \\
+\>   \ \ \ rate\_label :=
+Label({\textquotedbl}pos=100\%,50\%{\textquotedbl},
+{\textquotedbl}size=45{\textquotedbl},
+{\textquotedbl}align=r,c{\textquotedbl},
+{\textquotedbl}internal\_alignment=r{\textquotedbl}) \\
+\>   \ \ \ rate.add(rate\_label) \\
+\>   \ \ \ synch\_interval() \\
+\>   \ \ \ add(rate) \\
+\ \\
+\>   \ \ \ buttons := Panel({\textquotedbl}pos=50\%,158{\textquotedbl},
+{\textquotedbl}size=161,25{\textquotedbl},
+{\textquotedbl}align=c,t{\textquotedbl}) \\
+\>   \ \ \ start := TextButton({\textquotedbl}pos=0,0{\textquotedbl},
+{\textquotedbl}label=Start{\textquotedbl}) \\
+\>   \ \ \ start.connect(self, {\textquotedbl}on\_start{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ buttons.add(start) \\
+\>   \ \ \ stop := TextButton({\textquotedbl}pos=58,0{\textquotedbl},
+{\textquotedbl}label=Stop{\textquotedbl},
+{\textquotedbl}is\_shaded=t{\textquotedbl}) \\
+\>   \ \ \ stop.connect(self, {\textquotedbl}on\_stop{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ buttons.add(stop) \\
+\>   \ \ \ b := TextButton({\textquotedbl}pos=108,0{\textquotedbl},
+{\textquotedbl}label=Quit{\textquotedbl}) \\
+\>   \ \ \ b.connect(self, {\textquotedbl}dispose{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ buttons.add(b) \\
+\>   \ \ \ add(buttons) \\
+\>   end \\
+end \\
+\ \\
+procedure main() \\
+\>   local d \\
+\>   d := Sieve() \\
+\>   d.show\_modal() \\
+end
+}
+
+\bigskip
+
+\begin{center}
+\includegraphics[width=3.4575in,height=2.3953in]{ub-img/ub-img58.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-9:}
+{\sffamily Sieve}
+
+\subsection{Advanced List Handling}
+
+Several of the more sophisticated components extend a common base class,
+\textsf{SelectableScrollArea}, namely \textsf{TextList}, \textsf{Table}
+and \textsf{Tree}. \ (In fact, \textsf{Table} doesn{\textquotesingle}t
+directly extend \textsf{SelectableScrollArea,} it contains a header
+component and a content component that does). It is quite easy to add
+some advanced features to these components, such as right-click popup
+menus, multi-selection and drag and drop, and this is explained in this
+section.
+
+\subsubsection{Selection}
+
+Selection handling is straightforward. \ First, configure the component
+so that it allows selection of no, one, or many rows using the methods
+\textsf{set\_select\_none()}, \textsf{set\_select\_one()} or
+\textsf{set\_select\_many()}, or the attributes
+\textsf{{\textquotedbl}select\_none{\textquotedbl}},
+\textsf{{\textquotedbl}select\_one{\textquotedbl}} or
+\textsf{{\textquotedbl}select\_many{\textquotedbl}}.
+
+Then, listen for changes by listening for \ a
+\textsf{SELECTION\_CHANGED\_EVENT} to be fired :
+
+{\sffamily
+\ \ \ \ comp.connect(self,
+{\textquotedbl}handle\_selection{\textquotedbl},
+SELECTION\_CHANGED\_EVENT)}
+
+When such an event does occur, the current selections can be retrieved
+in one of two ways. \ Either by getting the indexes of the selections
+using \textsf{get\_selections()}, or by getting the objects selected,
+using \textsf{object\_get\_selections()}. \ The former returns a list
+of integers, the latter a list of objects whose type depends on the
+component. \ For a \textsf{TextList}, a list of strings is returned,
+for a \textsf{Table}, a list of lists (each being a
+row{\textquotesingle}s data), and for a \textsf{Tree}, a list of
+\textsf{Node} objects is returned.
+
+There are corresponding setter methods for setting the selection
+dynamically.
+
+\subsubsection{Popups}
+
+Adding popup menus is also easy. \ First create a \textsf{Popup}
+component, ready to be shown. \ Then, listen for a
+\textsf{MOUSE\_RELEASE\_EVENT}. Finally, when an event occurs check
+that is a right mouse release, and that the object is in the state you
+want. \ If it is, just activate the popup via its \textsf{popup()}
+method.
+
+\subsubsection{Drag and drop}
+
+The toolkit supports a limited form of drag and drop. \ The limitation
+is that drag and drop can only take place between components within the
+same window. \ Nonetheless, this can still prove to be a useful
+feature.
+
+To implement drag and drop, a class, \textsf{DndHandler}, must be
+subclassed and an instance {\textquotedbl}plugged-in{\textquotedbl} to
+the component which is a source or target of a potential drag and drop
+operation, using its \textsf{set\_dnd\_handler()} method.
+
+The \textsf{DndHandler} class provides five callback methods which the
+toolkit uses to control a drag and drop operation.
+
+When using the \textsf{SelectableScrollArea} family of components, it is
+best to subclass \ \textsf{SelectableScrollAreaDndHandler}, which is a
+custom subclass of \ \textsf{DndHandler}, with several methods already
+defined appropriately.
+
+All of the above features are brought together in the following example
+program which provides a \textsf{Tree} and a \textsf{TextList}. Drag
+and drop is enabled between the two components, and both provide popup
+menus for adding/deleting elements.
+
+\bigskip
+
+\bigskip
+
+\begin{center}
+\includegraphics[width=3.7189in,height=3.3846in]{ub-img/ub-img59.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-10:}
+{\sffamily Drag and drop}
+
+\bigskip
+
+{\sffamily\bfseries Listing 17-10}
+{\sffamily\bfseries The Drag and drop Program}
+
+\iconcode{
+import gui \\
+\ \\
+\$include {\textquotedbl}guih.icn{\textquotedbl} \\
+\ \\
+\# \\
+\# A DndHandler for the list \\
+\# \\
+class ListDndHandler : SelectableScrollAreaDndHandler() \\
+\>   \# \\
+\>   \# A drop has occurred; we succeed iff we accept it \\
+\>   \# \\
+\>   method can\_drop(d) \\
+\>   \ \ \ local l, ll \\
+\>   \ \ \ if l := parent.get\_highlight() then \{ \\
+\>   \ \ \ \ \ \ if d.get\_source() === parent then \{ \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# Move within the list itself \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ parent.move\_rows(parent.get\_gesture\_selections(),
+l) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ else \{ \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# Copy from tree to list. \ d.get\_content()
+gives \\
+\>   \ \ \ \ \ \ \ \ \ \# a list of the nodes being dragged. \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ ll := [] \\
+\>   \ \ \ \ \ \ \ \ \ every el := !d.get\_content() do \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# Don{\textquotesingle}t drag folders. \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ if /el.is\_folder\_flag then \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ put(ll, el.get\_label()) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \ \ \ parent.insert\_rows(ll, l) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ return \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# This is invoked after a successful operation when the \\
+\>   \# list was the source. \ If the destination (c)
+wasn{\textquotesingle}t the \\
+\>   \# list, then we must delete the rows from the list. \\
+\>   \# \\
+\>   method end\_drag(d, c) \\
+\>   \ \ \ if c \~{}=== parent then \\
+\>   \ \ \ \ \ \ parent.delete\_rows(parent.get\_gesture\_selections()) \\
+\>   end \\
+end \\
+\ \\
+\# \\
+\# A DndHandler for the tree \\
+\# \\
+class TreeDndHandler : SelectableScrollAreaDndHandler() \\
+\>   \# \\
+\>   \# Called during a drag event \\
+\>   \# \\
+\>   method drag\_event(d) \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# We succeed if and only if the user is dragging over a
+row \\
+\>   \ \ \ \# (this is handled by the parent) AND the thing
+we{\textquotesingle}re over \\
+\>   \ \ \ \# is a folder. \\
+\>   \ \ \ \# \\
+\>   \ \ \ if self.SelectableScrollAreaDndHandler.drag\_event(d) then \\
+\>   \ \ \ \ \ \ return
+{\textbackslash}parent.object\_get\_highlight().is\_folder\_flag \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# A drop has occurred; we succeed iff we accept it \\
+\>   \# \\
+\>   method can\_drop(d) \\
+\>   \ \ \ local s, other, n, el \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Only consider a drop on a folder \\
+\>   \ \ \ \# \\
+\>   \ \ \ if other := parent.object\_get\_highlight() \&
+{\textbackslash}other.is\_folder\_flag then \{ \\
+\>   \ \ \ \ \ \ if d.get\_source() === parent then \{ \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# If parent is the drop source, then we have a
+dnd \\
+\>   \ \ \ \ \ \ \ \ \ \# from within the tree. \ So, we just move the
+nodes. \\
+\>   \ \ \ \ \ \ \ \ \ \# d.get\_content() will be a list of the nodes
+that \\
+\>   \ \ \ \ \ \ \ \ \ \# were dragged. \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ every el := !d.get\_content() do \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ if el.get\_parent\_node().delete\_node(el)
+then \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ other.add(el) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \} else \{ \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ \# Drop from list. \ In this case
+d.get\_content() will \\
+\>   \ \ \ \ \ \ \ \ \ \# be a list of strings. \\
+\>   \ \ \ \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \ \ \ every el := !d.get\_content() do \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ n := TreeNode() \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ n.set\_label(el) \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ other.add(n) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \} \\
+\ \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \# Notify the tree that the node data structure has  \\
+\>   \ \ \ \ \ \ \# altered. \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ parent.tree\_structure\_changed() \\
+\>   \ \ \ \ \ \ return \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# This is invoked after a successful operation when the \\
+\>   \# tree was the source. \ If the destination (c)
+wasn{\textquotesingle}t the \\
+\>   \# tree, then we must delete the nodes from the tree. \\
+\>   \# \\
+\>   method end\_drag(d, c) \\
+\>   \ \ \ if c \~{}=== parent then \{ \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \# Delete all the nodes which will have been dragged. \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ every n := !parent.object\_get\_gesture\_selections()
+do \{ \\
+\>   \ \ \ \ \ \ \ \ \ if /n.is\_folder\_flag then \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ n.get\_parent\_node().delete\_node(n) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \} \\
+\ \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \# Notify the tree that the node data structure has \\
+\>   \ \ \ \ \ \ \# altered. \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ parent.tree\_structure\_changed() \\
+\>   \ \ \ \} \\
+\>   end \\
+end \\
+\ \\
+\# \\
+\# We use a custom Node subclass to also store an
+{\textquotedbl}is\_folder\_flag{\textquotedbl} \\
+\# flag. \\
+\# \\
+class TreeNode : Node(is\_folder\_flag) \\
+\>   initially \\
+\>   \ \ \ self.Node.initially() \\
+\>   \ \ \ if {\textbackslash}is\_folder\_flag then \\
+\>   \ \ \ \ \ \ set\_bmps([img\_style({\textquotedbl}closed\_folder{\textquotedbl}), \\
+\>   \ \ \ \ \ \ img\_style({\textquotedbl}closed\_folder{\textquotedbl}),
+img\_style({\textquotedbl}closed\_folder{\textquotedbl})]) \\
+end \\
+\ \\
+\# \\
+\# The main dialog. \\
+\# \\
+class DNDTest : Dialog(tree, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ lst,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tree\_popup,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ list\_popup,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ new\_folder\_menu\_item,  \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ delete\_node\_menu\_item, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ delete\_rows\_menu\_item) \\
+\ \\
+\>   \# \\
+\>   \# Delete nodes handler \\
+\>   \# \\
+\>   method on\_delete\_node() \\
+\>   \ \ \ local n, i, l \\
+\ \\
+\>   \ \ \ every n := !(tree.object\_get\_gesture\_selections()) do \{ \\
+\>   \ \ \ \ \ \ n.get\_parent\_node().delete\_node(n) \\
+\>   \ \ \ \} \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Notify the tree that the node data structure has
+altered. \\
+\>   \ \ \ \# \\
+\>   \ \ \ tree.tree\_structure\_changed() \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Create a new folder \\
+\>   \# \\
+\>   method on\_new\_folder() \\
+\>   \ \ \ local n, o \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Simply add a new node under the cursor, and notify the \\
+\>   \ \ \ \# tree that the data structure changed. \\
+\>   \ \ \ \# \\
+\>   \ \ \ if o := tree.object\_get\_cursor() then \{ \\
+\>   \ \ \ \ \ \ n := TreeNode(1) \\
+\>   \ \ \ \ \ \ n.set\_label({\textquotedbl}New
+folder{\textquotedbl}) \\
+\>   \ \ \ \ \ \ o.add(n) \\
+\>   \ \ \ \ \ \ tree.tree\_structure\_changed() \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Delete rows from the list \\
+\>   \# \\
+\>   method on\_delete\_rows() \\
+\>   \ \ \ lst.delete\_rows(lst.get\_gesture\_selections()) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Add some rows to the list, at the cursor position, or at \\
+\>   \# the top if there is no cursor. \\
+\>   \# \\
+\>   method on\_new\_rows() \\
+\>   \ \ \ lst.insert\_rows([{\textquotedbl}new1{\textquotedbl},
+{\textquotedbl}new2{\textquotedbl},
+{\textquotedbl}new3{\textquotedbl}], lst.get\_cursor() {\textbar} 1) \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# Helper method to create a tree structure. \\
+\>   \# \\
+\>   method create\_tree() \\
+\>   \ \ \ local r, n \\
+\>   \ \ \ r := TreeNode(1) \\
+\>   \ \ \ r.set\_label({\textquotedbl}root{\textquotedbl}) \\
+\ \\
+\>   \ \ \ every s := {\textquotedbl}red{\textquotedbl} {\textbar}
+{\textquotedbl}green{\textquotedbl} {\textbar}
+{\textquotedbl}blue{\textquotedbl} {\textbar}
+{\textquotedbl}yellow{\textquotedbl} do \{ \\
+\>   \ \ \ \ \ \ n := TreeNode(1) \\
+\>   \ \ \ \ \ \ n.set\_label(s) \\
+\>   \ \ \ \ \ \ r.add(n) \\
+\>   \ \ \ \ \ \ every t := 1 to 5 do \{ \\
+\>   \ \ \ \ \ \ \ \ \ o := TreeNode() \\
+\>   \ \ \ \ \ \ \ \ \ o.set\_label(s {\textbar}{\textbar}
+{\textquotedbl}-{\textquotedbl} {\textbar}{\textbar}t) \\
+\>   \ \ \ \ \ \ \ \ \ n.add(o) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   \ \ \ return r \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# A selection-up event on the tree \\
+\>   \# \\
+\>   method on\_tree\_release(ev) \\
+\>   \ \ \ local n \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# If the Icon event was a right mouse release, \\
+\>   \ \ \ \# display the popup at the cursor. \\
+\>   \ \ \ \# \\
+\>   \ \ \ if ev.get\_param() === \&rrelease then \{ \\
+\>   \ \ \ \ \ \ n := tree.object\_get\_cursor() {\textbar} fail \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \# Adjust the shading depending on the node  \\
+\>   \ \ \ \ \ \ \# type. \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ if /n.is\_folder\_flag then \\
+\>   \ \ \ \ \ \ \ \ \ new\_folder\_menu\_item.set\_is\_shaded() \\
+\>   \ \ \ \ \ \ else \\
+\>   \ \ \ \ \ \ \ \ \ new\_folder\_menu\_item.clear\_is\_shaded() \\
+\>   \ \ \ \ \ \ if n === tree.get\_root\_node() then \\
+\>   \ \ \ \ \ \ \ \ \ delete\_node\_menu\_item.set\_is\_shaded() \\
+\>   \ \ \ \ \ \ else \\
+\>   \ \ \ \ \ \ \ \ \ delete\_node\_menu\_item.clear\_is\_shaded() \\
+\ \\
+\>   \ \ \ \ \ \ tree\_popup.popup() \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   \# \\
+\>   \# A mouse release event on the list \\
+\>   \# \\
+\>   method on\_list\_release(ev) \\
+\>   \ \ \ if ev.get\_param() === \&rrelease then \{ \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ \# If some rows to delete... \\
+\>   \ \ \ \ \ \ \# \\
+\>   \ \ \ \ \ \ if lst.get\_gesture\_selections() then \\
+\>   \ \ \ \ \ \ \ \ \ delete\_rows\_menu\_item.clear\_is\_shaded() \\
+\>   \ \ \ \ \ \ else \\
+\>   \ \ \ \ \ \ \ \ \ delete\_rows\_menu\_item.set\_is\_shaded() \\
+\ \\
+\>   \ \ \ \ \ \ list\_popup.popup() \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ local m, quit, mi \\
+\ \\
+\>   \ \ \ attrib({\textquotedbl}size=350,295{\textquotedbl},
+{\textquotedbl}resize=on{\textquotedbl}) \\
+\>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
+CLOSE\_BUTTON\_EVENT) \\
+\ \\
+\>   \ \ \ tree := Tree({\textquotedbl}pos=50\%-10,10{\textquotedbl},
+{\textquotedbl}size=50\%-20,100\%-70{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}align=r,t{\textquotedbl},
+{\textquotedbl}select\_many{\textquotedbl},
+{\textquotedbl}show\_root\_handles=f{\textquotedbl}) \\
+\>   \ \ \ tree.set\_root\_node(create\_tree()) \\
+\>   \ \ \ tree.set\_dnd\_handler(TreeDndHandler(tree)) \\
+\>   \ \ \ tree.connect(self,
+{\textquotedbl}on\_tree\_release{\textquotedbl},
+MOUSE\_RELEASE\_EVENT) \\
+\ \\
+\>   \ \ \ add(tree) \\
+\ \\
+\>   \ \ \ quit :=
+TextButton({\textquotedbl}pos=50\%,100\%-40{\textquotedbl},
+{\textquotedbl}align=c,t{\textquotedbl},
+{\textquotedbl}label=Quit{\textquotedbl}) \\
+\>   \ \ \ quit.connect(self, {\textquotedbl}dispose{\textquotedbl},
+ACTION\_EVENT) \\
+\>   \ \ \ add(quit) \\
+\ \\
+\>   \ \ \ \# \\
+\>   \ \ \ \# Create a TextList, with some arbitrary content. \\
+\>   \ \ \ \# \\
+\>   \ \ \ lst :=
+TextList({\textquotedbl}pos=50\%+10,10{\textquotedbl},
+{\textquotedbl}size=50\%-20,100\%-70{\textquotedbl},
+{\textquotedbl}select\_many{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}contents=one,two,three,four,five,\_ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ six,seven,eight,nine,ten,eleven,\_ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ twelve,thirteen,fourteen,fifteen,\_ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ sixteen,red,blue,green{\textquotedbl}) \\
+\ \\
+\>   \ \ \ lst.connect(self,
+{\textquotedbl}on\_list\_release{\textquotedbl},
+MOUSE\_RELEASE\_EVENT) \\
+\>   \ \ \ lst.set\_dnd\_handler(ListDndHandler(lst)) \\
+\>   \ \ \ add(lst) \\
+\ \\
+\>   \ \ \ tree\_popup := PopupMenu() \\
+\>   \ \ \ m := Menu() \\
+\>   \ \ \ tree\_popup.set\_menu(m) \\
+\ \\
+\>   \ \ \ delete\_node\_menu\_item :=
+TextMenuItem({\textquotedbl}label=Delete{\textquotedbl}) \\
+\>   \ \ \ delete\_node\_menu\_item.connect(self,
+{\textquotedbl}on\_delete\_node{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ m.add(delete\_node\_menu\_item) \\
+\ \\
+\>   \ \ \ new\_folder\_menu\_item :=
+TextMenuItem({\textquotedbl}label=New folder{\textquotedbl}) \\
+\>   \ \ \ new\_folder\_menu\_item.connect(self,
+{\textquotedbl}on\_new\_folder{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ m.add(new\_folder\_menu\_item) \\
+\>   \ \ \ add(tree\_popup) \\
+\ \\
+\>   \ \ \ list\_popup := PopupMenu() \\
+\>   \ \ \ m := Menu() \\
+\>   \ \ \ list\_popup.set\_menu(m) \\
+\>   \ \ \ delete\_rows\_menu\_item :=
+TextMenuItem({\textquotedbl}label=Delete{\textquotedbl}) \\
+\>   \ \ \ delete\_rows\_menu\_item.connect(self,
+{\textquotedbl}on\_delete\_rows{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ m.add(delete\_rows\_menu\_item) \\
+\>   \ \ \ mi := TextMenuItem({\textquotedbl}label=Insert
+rows{\textquotedbl}) \\
+\>   \ \ \ mi.connect(self,
+{\textquotedbl}on\_new\_rows{\textquotedbl}, ACTION\_EVENT) \\
+\>   \ \ \ m.add(mi) \\
+\>   \ \ \ add(list\_popup) \\
+\>   end \\
+end \\
+\ \\
+procedure main() \\
+\>   local d := DNDTest() \\
+\>   d.show\_modal() \\
+end
+}
+
+\subsection{Programming Techniques}
+
+Some of the earlier example dialogs were effectively
+{\textquotedbl}application windows.{\textquotedbl} In other words, the
+top-level window of a program. This section looks at some techniques
+for integrating dialog windows that are secondary or helper windows
+into a program.
+
+\subsubsection[Parameters]{Parameters}
+
+A dialog window will normally have parameters that the calling program
+will want to pass to it before it is displayed using the
+\textsf{show()} method. Possibly the attribute syntax
+\textsf{{\textquotedbl}key=val{\textquotedbl}} should be supported, and
+perhaps a default value should be set. \ All of these things are easily
+supported by following the following structure:
+
+\iconcode{
+class AnyDialog : Dialog(a\_variable) \\
+\>   method set\_a\_variable(x) \\
+\>   \ \ \ a\_variable := x \\
+\>   end \\
+\>   ... \\
+\>   method set\_one(attr, val) \\
+\>   \ \ \ case attr of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}a\_variable{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ set\_a\_variable(string\_val(attr, val)) \\
+\>   \ \ \ \ \ \ default: self.Dialog.set\_one(attr, val) \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ \# Initialize Components, possibly depending upon \\
+\>   \ \ \ \# the value of a\_variable \\
+\>   \ \ \ ... \\
+\>   \ \ \ \# Configure the window itself... \\
+\>   \ \ \ attrib({\textquotedbl}size=300,200{\textquotedbl}) \\
+\>   end \\
+\ \\
+\>   initially(a[]) \\
+\>   \ \ \ self.Dialog.initially() \\
+\>   \ \ \ a\_variable := {\textquotedbl}default value{\textquotedbl} \\
+\>   \ \ \ set\_fields(a) \\
+end
+}
+
+You then use the following code in the calling program:
+
+\iconcode{
+\>   d := AnyDialog() \\
+\>   d.set\_a\_variable({\textquotedbl}something{\textquotedbl})
+}
+
+or
+
+\iconcode{
+\>   d :=
+AnyDialog({\textquotedbl}a\_variable=something{\textquotedbl})}
+
+or just
+
+\iconcode{
+\>   d := AnyDialog()}
+
+
+\bigskip
+
+to use the default for \textsf{a\_variable}. \ Furthermore, the standard
+dialog attributes can still be used as you would expect :
+
+\iconcode{
+\>   d :=
+AnyDialog({\textquotedbl}a\_variable=something{\textquotedbl},
+{\textquotedbl}font=times{\textquotedbl},
+{\textquotedbl}bg=green{\textquotedbl},
+{\textquotedbl}fg=red{\textquotedbl})}
+
+Another nice feature of this pattern is that subclassing can follow the
+same pattern. \ For example:
+
+\iconcode{
+class AnotherDialog : AnyDialog(another\_variable) \\
+\>   method set\_another\_variable(x) \\
+\>   \ \ \ another\_variable := x \\
+\>   end \\
+\>   ... \\
+\>   method set\_one(attr, val) \\
+\>   \ \ \ case attr of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}another\_variable{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ set\_another\_variable(string\_val(attr, val)) \\
+\>   \ \ \ \ \ \ default: self.AnyDialog.set\_one(attr, val) \\
+\>   \ \ \ \} \\
+\>   end \\
+\ \\
+\>   method component\_setup() \\
+\>   \ \ \ self.AnyDialog.component\_setup() \\
+\>   \ \ \ ... \\
+\>   end \\
+\ \\
+\>   initially(a[]) \\
+\>   \ \ \ self.AnyDialog.initially() \\
+\>   \ \ \ another\_variable := {\textquotedbl}default
+value{\textquotedbl} \\
+\>   \ \ \ set\_fields(a) \\
+end
+}
+
+At first sight, it might seem that \textsf{set\_fields()} will be
+invoked twice, which may cause problems. \ In fact, because we are
+calling the \textsf{AnyDialog} constructor with no parameters, the
+\textsf{set\_fields()} call in that constructor has no effect. \ We
+just have to remember to call \textsf{set\_fields(a)} in the
+\textsf{AnotherDialog} constructor itself. \ This will delegate its
+work up to the parent classes{\textquotesingle} \textsf{set\_one()}
+methods to handle all of the possible attributes we may give it.
+
+Getting results back out to the calling program is very easy. The dialog
+can just set a result \index{variable}variable that can be retrieved by
+the caller using one of the dialog{\textquotesingle}s methods.
+
+\subsection[Ivib]{Ivib}
+\index{Ivib}Creating a dialog window with many components can be hard
+work, involving repeated compiles and runs to get the components
+correctly sized and positioned. Furthermore, much of the code in a
+dialog is lengthy and tiresome to write. To help reduce the work
+involved for the programmer in creating a dialog, a visual
+\index{interface builder}interface builder is available, called Ivib.
+This program allows a user to interactively place and configure
+components in a window area. A program is then generated automatically
+that implements the interface. Ivib owes inspiration to VIB, a program
+written by Mary \index{Cameron, Mary}Cameron and greatly extended by
+Gregg \index{Townsend, Gregg}Townsend. The main window of Ivib, with a
+dialog under construction, is shown in Figure 17-11.
+
+
+
+\begin{center}
+\includegraphics[width=5.9957in,height=6.7866in]{ub-img/ub-img60.png}
+\end{center}
+
+{\sffamily\bfseries Figure 17-11:}
+{\sffamily Ivib main window}
+
+To create a dialog window using Ivib, start the program with the name of
+a new source file. For example:
+
+\iconcode{
+\>   \ \ ivib myprog.icn}
+
+The Ivib window will appear with a blank
+{\textquotedbl}canvas{\textquotedbl} area, which represents the dialog
+window to be created. At startup, the attributes of this window are the
+default Icon window attributes. Before you learn how to change these
+attributes, here is how you add a button to the dialog. Clicking the
+button in the top left-hand corner of the toolbar does this. Try moving
+and resizing the resulting button by left-clicking on it with the
+mouse. To change the label in the button, click on it so that the red
+borders appear in the edges. Then press Alt-D. The dialog shown in
+Figure 17-12 appears.
+
+\begin{center}
+\includegraphics[width=5.698in,height=4.4783in]{ub-img/ub-img61.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-12}
+{\sffamily Button configuration window}
+
+Change the label by simply changing the text in the
+{\textquotedbl}Label{\textquotedbl} field and clicking
+{\textquotedbl}Okay{\textquotedbl}.
+
+As just mentioned, the dialog{\textquotesingle}s attributes are
+initially the default window attributes. To change these, select the
+menu option Canvas -{\textgreater} Dialog prefs. The window shown in
+Figure 17-13 will appear.
+
+\begin{center}
+\includegraphics[width=5.2799in,height=4.4807in]{ub-img/ub-img63.jpg}
+\end{center}
+
+{\sffamily\bfseries Figure 17-13}
+{\sffamily Dialog configuration window}
+
+\bigskip
+
+To change the dialog attributes:
+
+\begin{enumerate}
+\item \ Click on the Attribs tab
+
+\item \ Click on the Add button
+
+
+\item Edit the two text fields so that they hold the attribute name and
+the attribute value respectively; for example try adding
+{\textquotedbl}bg{\textquotedbl} and {\textquotedbl}pale
+blue{\textquotedbl}.
+\item \ Click on Apply.
+
+\item Click on Okay.
+\end{enumerate}
+
+\bigskip
+
+Note that the button changes its background to pale blue too. Each
+object has its own attributes that it can set to override the dialog
+attributes. \ Click on the button and press Alt-D to bring up the
+button{\textquotesingle}s configuration dialog again. Now click on the
+Attribs tab of this dialog and set the background color to white, for
+example. Then click okay and you will see that the
+button{\textquotesingle}s background changes to white.
+
+You will recall from the previous example programs that some objects can
+be contained in other objects, such as the \textsf{Panel} class. This
+is handled conveniently in Ivib. Add a \textsf{Panel} object to the
+dialog by clicking on the \textsf{Panel} button (on the second row,
+fourth from the left). A panel appears. Now drag the button into the
+panel. A message should appear in the information label below the
+toolbar, {\textquotedbl}Placed inside container.{\textquotedbl} Now try
+dragging the panel about, and you will observe that the button moves
+too - it is now {\textquotedbl}inside{\textquotedbl} the panel.
+Dragging it outside the panel{\textquotesingle}s area moves it back
+out. This method applies to all the container objects.
+
+There are several buttons that operate on objects. The large
+{\textquotedbl}X{\textquotedbl} button deletes the currently selected
+objects. Try selecting the button and deleting it. The arrow buttons
+are {\textquotedbl}redo{\textquotedbl} and
+{\textquotedbl}undo{\textquotedbl} operations. Clicking on the undo
+button will undo the delete operation and the button should reappear.
+
+Now try saving your canvas. Press Alt-S, and select a filename, or
+accept the default. At the end of an ivib-enhanced Unicon source file
+is a gigantic comment containing ivib{\textquotesingle}s layout
+information. This comment is \index{ASCII}ASCII text, but it is not
+really human-readable. If the program is called, for example,
+\textsf{myprog.icn}, then this can be compiled with
+
+\iconcode{
+\>   \ \ unicon myprog gui.u}
+
+\noindent
+to give an executable file \textsf{myprog} that, when run, will produce
+the same dialog shown in the canvas area. Of course, the resulting
+dialog will not do anything, and it is then up to the programmer to
+fill in the blanks by editing \textsf{myprog.icn}.
+
+Hopefully, following the above steps will give you an idea of how the
+Ivib program works. Below are more details of how the individual
+components, dialogs, and operations work.
+
+\subsubsection{Moving, Selecting and Resizing}
+Select an object by clicking on it with the mouse. Its selection is
+indicated by red edges around the corners. Multi-select objects by
+holding the shift key down and clicking on the objects. The first
+selected object will have red corners; the others will have black
+corners. There are several functions which operate on multiple objects
+and map some attribute of the first selected object to the others;
+hence the distinction.
+
+To move an object, select it by clicking on it with the left mouse
+button, and then drag it. Note that dragging an object even by one
+pixel will set the X or Y position to an absolute figure, disturbing
+any carefully set up percentage specification! Because this can be
+irritating when done accidentally, the X and/or Y position may be fixed
+in the dialog so that it cannot be moved in that plane. Alternatively,
+when selecting an object that you do not intend to move, use the right
+mouse button instead.
+
+To resize an object, select it and then click on one of the corners. The
+mouse cursor will change to a resize cursor and the corner may be
+dragged. Note that, like the position specification, resizing an object
+will set the size to an absolute number and will also reset the
+{\textquotedbl}use default{\textquotedbl} option. Again, this can be
+avoided by fixing the width and/or height in the
+object{\textquotesingle}s dialog box.
+
+\subsubsection{Dialog Configuration}
+This dialog, accessed via the menu selection \ \textsf{Canvas
+-{\textgreater} Dialog prefs} allows the user to configure some general
+attributes of the dialog being created. \ The tabs are described in
+this section.
+
+\paragraph{Size}
+The minimum width and height entries simply set the minimum dimensions
+of the window. The width and height may be configured here, or more
+simply by resizing the canvas area by clicking on the red bottom
+right-hand corner.
+
+\paragraph[Attribs]{Attribs}
+This has been described briefly above; the Add button produces a new
+entry that is then edited. The edited entry is placed in the table with
+Apply. The Delete button deletes the currently highlighted selection.
+
+\paragraph{Code generation}
+The part of the code to setup the dialog is written into a method called
+setup. If the {\textquotedbl}interpose in existing file{\textquotedbl}
+option is checked, then the program will read the present contents of
+the selected output file up to the current setup method, interpose the
+new setup, and copy the remainder out. This is useful if some changes
+have been made to the file output by a previous run. Note that it is
+important to take a copy of the existing file before using this option,
+in case unexpected results occur.
+
+The other options simply select which other methods should be produced.
+If a main procedure is produced, then the result will be an executable
+program.
+
+\paragraph{Other}
+This tab allows the name of the dialog to be set, together with a flag
+indicating whether it is {\textquotedbl}modal{\textquotedbl} or not. If
+so, then a method called pending is produced. This method is repeatedly
+called by the toolkit while it is waiting for events to occur.
+
+\subsubsection{Component Configuration}
+Each component dialog has a standard tabbed pane area for configuration
+of attributes common to all components. The tabs are as follows:
+
+\paragraph{Position \& Size}
+The X, Y, W and H options set the position and size of the object. The
+drop-down list can be used for convenience, or a value may be entered
+by hand. The {\textquotedbl}fix{\textquotedbl} buttons prevent the
+object from being moved or sized outside the given parameter in the
+Canvas area. This is useful once an object{\textquotesingle}s position
+has been finalized, and you don{\textquotesingle}t wish to accidentally
+move it. The {\textquotedbl}use default{\textquotedbl} buttons mean
+that the width/height will be set as the default for the object based
+on the parameters and the attributes. For example, a
+button{\textquotesingle}s size will be based on the label and the font.
+For some objects there is no default size, so these buttons are shaded.
+The alignment of the object is also set from this tab.
+
+\paragraph{Attribs}
+This works in exactly the same way as the Attribs tab for the dialog,
+except that these attributes apply only to the object.
+
+\paragraph{Other}
+The Other tab allows the name of the object to be set. This is the name
+used in the output program code. The {\textquotedbl}Draw
+Border{\textquotedbl} button applies to some objects (see the reference
+section in Appendix C for further information). If the
+{\textquotedbl}Is Shaded{\textquotedbl} button is clicked, then the
+initial state of the object will be shaded. If the {\textquotedbl}Has
+initial focus{\textquotedbl} button is clicked, then this object will
+have the initial \index{keyboard}keyboard focus when the dialog is
+opened.
+
+\subsubsection[Component Details]{Component Details}
+Components are added to the dialog by clicking on the toolbar buttons,
+and dialogs are produced by selecting the object and pressing Alt-D, as
+explained above. Most of the dialogs are hopefully straightforward, but
+some warrant further explanation.
+
+\paragraph{TextButton}
+The dialog for this component includes an option for the button to be
+added to a \textsf{ButtonGroup} structure. This is explained in detail
+shortly.
+
+\paragraph{Border}
+The \textsf{Border} component is rather odd. To select it, rather than
+clicking inside the border, click in the area at the bottom right hand
+corner. It can then be resized or moved. Now try dragging another
+object, such as a \textsf{CheckBox} or \textsf{Label} and release it so
+that its top left-hand corner is within the area in the bottom
+right-hand corner of the \textsf{Border} object. The
+\textsf{CheckBox}/\textsf{Label} or whatever is now the title of the
+\textsf{Border}. Thus, any object can be in the title. To remove the
+object from the \textsf{Border}, just drag it out. The alignment of the
+title object is set in the dialog, but is by default left aligned.
+
+\paragraph{Image}
+Initially the Image object has an outline. When a filename is entered
+into the dialog however, the image itself is displayed.
+
+\paragraph{CheckBox}
+Customized up/down images may be set from the dialog, and a
+\textsf{CheckBoxGroup} may be selected if one is available; this is
+explained in more detail shortly.
+
+\paragraph{MenuBar}
+The \textsf{MenuBar} dialog enables a complete multi-level menu to be
+created. Clicking on a line will allow an item to be inserted at that
+point. (Only menus can be inserted into the lowest level of course).
+Clicking on an item will allow insertion, deletion, or editing of the
+particular item. A \textsf{CheckBoxGroup} can be created by selecting
+multiple check boxes (by holding down the Shift key while clicking on
+the lines) and clicking the button.
+
+\paragraph{ScrollBar}
+Both vertical and horizontal scroll bars are available; for details of
+how the various options work, please see the \index{reference}reference
+manual for the toolkit.
+
+\paragraph{Table}
+A table column is added by clicking the Add button; the details should
+then be edited and the Apply button pressed to transfer the details to
+the table. A selected column can be deleted with the Delete button. The
+drop-down list selects whether or not lines in the table can be
+selected by clicking them.
+
+\paragraph[TabSet]{TabSet}
+Add a \textsf{TabItem} (a tabbed pane) by clicking the Add button. Note
+that a single pane is automatically present when the object is created.
+To switch between panes, select a \textsf{TabItem} button. An asterisk
+appears by the entry, and when the dialog is exited, it is this
+\textsf{TabItem} that is to the front of the \textsf{TabSet}. To add
+items to the current pane, simply drag and drop them into it. The whole
+of the item must be in the pane, and a confirmatory message appears to
+indicate that the item has been added to the container. To take it out
+of the container, just drag it out of the pane. Note that the selected
+pane is the one that is configured to be initially at the front when
+the dialog is opened.
+
+\paragraph{MenuButton}
+The \textsf{MenuButton} component is just a menu system with one root
+menu. The dialog is the same as that for \textsf{MenuBar} except that
+the small icon can be configured.
+
+\paragraph{OverlaySet}
+The configuration for an \textsf{OverlaySet} is very similar to that for
+a \textsf{TabSet}, except that there are no tab labels to configure of
+course.
+
+\paragraph{CheckBoxGroup}
+This does not create an object on the \index{screen}screen, but rather
+places several selected \textsf{CheckBox} objects into a
+\textsf{CheckBoxGroup} object, so that they act as coordinated radio
+buttons. \ To use this button, select several \textsf{CheckBox}
+objects, and press the button.
+
+The \textsf{CheckBoxGroup} itself is configured by selecting the menu
+item Canvas -{\textgreater} CheckBoxes. In fact, the only attribute to
+be configured is the name of the \textsf{CheckBoxGroup}. Note that once
+a \textsf{CheckBoxGroup} has been created, it cannot be deleted. A
+\textsf{CheckBox} can be taken out or put into a \textsf{CheckBoxGroup}
+from its configuration dialog.
+
+\paragraph{ButtonGroup}
+The \textsf{ButtonGroup} operates in a very similar fashion to
+\textsf{CheckBoxGroup}, except that it places buttons into a
+\textsf{ButtonGroup}.
+
+\subsubsection{Other Editing Functions}
+This section describes other editing functions which can be applied to
+the dialog being created. \ They are accessed either via the toolbar,
+the Selection menu, or the Edit menu.
+
+\paragraph{Delete}
+The Delete function simply deletes all the selected objects; note that
+deleting a container also deletes all the objects inside it.
+
+\paragraph{Undo and Redo}
+The Undo and Redo functions undo and redo changes. The size of the
+buffer used for storing undo information can be configured in the File
+-{\textgreater} Preferences dialog; by default it allows 7 steps
+backward at any one time.
+
+\paragraph[Center Horizontally]{Center Horizontally}
+The Center Horizontally operation sets the selected
+objects{\textquotesingle} X position specification to
+{\textquotedbl}50\%{\textquotedbl}, their alignment to center, and
+fixes them in that horizontal position. To
+{\textquotedbl}unfix{\textquotedbl} an object, uncheck the
+{\textquotedbl}fix{\textquotedbl} box in its dialog box. Center
+vertically naturally works in just the same way for the y position.
+
+\paragraph{Align Horizontally}
+The Align horizontally operation sets the X position and the X alignment
+of all the selected objects to the X position and the X alignment of
+the first selected object. Whether the objects end up appearing to be
+left-, center-, or right-aligned will depend on the alignment of the
+first selected object. {\textquotedbl}Align vertically{\textquotedbl}
+works just the same way.
+
+\paragraph{Grid}
+To use the Grid function, place several items roughly in a grid, select
+them all, perform the operation, and hopefully they will be nicely
+aligned.
+
+\paragraph{Copy}
+The Copy function simply creates a duplicate of each selected object.
+
+\paragraph{Equalize widths}
+The Equalize Widths function simply copies the width of the first
+selected object to all of the other selections. {\textquotedbl}Equalize
+heights{\textquotedbl} naturally does the same for heights.
+
+\paragraph{Even Space Horizontally}
+The Even Space Horizontally operation moves the objects so that they are
+equally spaced between the leftmost and rightmost objects of the
+current selections, which are not moved. {\textquotedbl}Even Space
+Vertically{\textquotedbl} does the same vertically.
+
+\paragraph{Reorder}
+The Reorder function is used to reorder the selected objects in the
+program{\textquotesingle}s internal lists. This is useful so that they
+are produced in the program output in the desired order, for example to
+ensure that the tab key moves from object to object in the right
+sequence. By selecting several objects and using reorder, those objects
+appear first in sequence in the order in which they were selected.
+
+{\sffamily
+Summary}
+
+The Unicon GUI toolkit offers a full-featured and attractive way of
+constructing interfaces. The toolkit has modern features - such as
+tables, tabbed property sheets, and multi-line text editing capability
+- that are not present in Icon{\textquotesingle}s earlier vidgets
+library. Many components that are present in both libraries are more
+flexible in the GUI toolkit, supporting fonts, colors, and graphics
+that the vidgets library does not handle well. The ivib interface
+builder tool provides programmers with easy access to the GUI toolkit.
+
+The object-orientation of the class library mainly affects its
+extensibility, although arguably it may also contribute to the
+simplicity of the design. Inheritance, including multiple inheritance,
+is used extensively in the 37 classes of the GUI toolkit. Inheritance
+is the main object-oriented feature that could not be easily mimicked
+in a procedural toolkit such as the vidgets library, and inheritance is
+the primary extension mechanism.
+
+
+\bigskip
+

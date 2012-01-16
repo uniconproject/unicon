@@ -1,0 +1,1596 @@
+\clearpage\section{Chapter 14: System and Administration Tools}
+
+In an open computing environment, users build their own tools to extend
+the capabilities provided by the system. Unicon is an excellent
+language for programmers who wish to control and extend their own
+system. This chapter presents the techniques used to write several
+simple system utilities of interest to general users as well as system
+administrators. Best of all, many of these utilities work across
+multiple platforms, thanks to Unicon{\textquotesingle}s high degree of
+system portability. You will see examples of
+
+\begin{itemize}
+\item Traversing and examining directories and their contents.
+\item Finding duplicate files.
+\item Implementing a quota system for disk usage.
+\item Doing your own custom backups.
+\item Capturing the results of a command-line session in a file.
+\end{itemize}
+
+\subsection{Searching for Files}
+
+To begin, consider a simple problem: that of finding a file whose name
+matches a specified pattern. Regular expressions are commonly used to
+describe the patterns to match, so you may want to link in the regular
+expression library. Here is the start of a file-search application.
+
+\iconcode{
+\# \\
+\# search.icn \\
+\# \\
+\# Search for files whose (entire) names match a pattern given \\
+\# as a regular expression \\
+\# \\
+\# Usage: ./search {\textless}pattern{\textgreater} [dirs] \\
+\ \\
+link regexp \\
+}
+
+The application should start by processing the
+\index{command-line}command-line arguments. There needs to be at least
+one argument: the pattern to search for. Arguments following that one
+are directories to search. If no directories are specified, you can use
+the current working \index{directory}directory. The procedure
+\textsf{findfile()} performs the actual task of searching for the
+files: 
+
+\iconcode{
+procedure main(args) \\
+\>   (*args {\textgreater} 0) {\textbar} stop({\textquotedbl}Usage:
+search {\textless}pattern{\textgreater} [directories]{\textquotedbl}) \\
+\>   pattern := pop(args) \\
+\>   if *args = 0 then \\
+\>   \ \ \ findfile({\textquotedbl}.{\textquotedbl}, pattern) \\
+\>   else \\
+\>   \ \ \ every dir := !args do \\
+\>   \ \ \ \ \ \ findfile(dir, pattern)\\ \\
+ \ \ exit(0) \\
+end
+}
+
+The search algorithm is a depth-first search. In each directory, check
+the type of each file. If you find a directory, make a recursive call
+to \textsf{findfile()}. But before you do that, check to see if the
+name of the file matches the pattern. 
+
+For efficiency, since the program uses the same regular expression for
+all searches, you can compile the pattern into a static variable called
+\textsf{pat}. The regular expression library allows you to perform this
+compilation once, the first time that \textsf{findfile()} is called,
+and then reuse it in subsequent calls.
+
+\iconcode{
+procedure findfile(dir, pattern) \\
+\>   local d, f, s \\
+\>   static pat \\
+\>   initial \{ \\
+\>   \ \ \ pat := RePat(pattern) {\textbar} \\
+\>   \ \ \ \ \ \ stop({\textquotedbl}Invalid pattern {\textquotedbl},
+image(pattern)) \\
+\>   \ \ \ \} \\
+\>   d := open(dir) {\textbar} \{ \\
+\>   \ \ \ write(\&errout, {\textquotedbl}Couldn{\textquotesingle}t
+access {\textquotedbl}, dir, \\
+\>   \ \ \ \ \ \ \ \ \ {\textquotedbl} {\textquotedbl},
+sys\_errstr(\&errno)) \\
+\>   \ \ \ return \\
+\>   \ \ \ \}
+}
+
+While you read the names of the files in the directory, be sure to not
+go into the special entries \textsf{{\textquotedbl}.{\textquotedbl}}
+and \textsf{{\textquotedbl}..{\textquotedbl}} that represent the
+current directory and the parent directory, respectively. Except for
+these names, the directory hierarchy is a \index{tree}tree so you
+don{\textquotesingle}t need to check for cycles. Some file systems
+support the concept of \index{link!file system}links, described in
+Chapter 5; links can introduce cycles, so the code below
+\index{link!recursioin}recursively calls itself only on regular
+directories, not on links.
+
+\iconcode{
+\>   while name := read(d) do \{ \\
+\>   \ \ \ if name == ({\textquotedbl}.{\textquotedbl} {\textbar}
+{\textquotedbl}..{\textquotedbl}) then \\
+\>   \ \ \ \ \ \ next \\
+\>   \ \ \ f := dir {\textbar}{\textbar}
+{\textquotedbl}/{\textquotedbl} {\textbar}{\textbar} name \\
+\>   \ \ \ s := stat(f) {\textbar} \{ \\
+\>   \ \ \ \ \ \ write(\&errout,
+{\textquotedbl}Couldn{\textquotesingle}t stat {\textquotedbl}, f, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl} {\textquotedbl},
+sys\_errstr(\&errno)) \\
+\>   \ \ \ \ \ \ next \\
+\>   \ \ \ \ \ \ \}
+}
+
+Here is the check of the file name against the pattern: 
+
+\iconcode{
+\>   \ \ \ name ? if tab(ReMatch(pat)) \& pos(0) then \\
+\>   \ \ \ \ \ \ write(f)
+}
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+Regular expressions do not use the same notation as file-matching
+wildcards used on the command line. The regular expression notation
+used by RePat() and ReMatch() is given in the documentation for the
+\texttt{regexp} module in Appendix B.}
+
+Finally, if \textsf{f} is the name of a directory, make the recursive
+call. Note that since the pattern has already been compiled and stored
+in a static variable, you don{\textquotesingle}t need to pass it in as
+a parameter for the recursive call.
+
+\iconcode{
+\>   \ \ \ if s.mode[1] == {\textquotedbl}d{\textquotedbl} then \\
+\>   \ \ \ \ \ \ findfile(f) \\
+\>   \} \\
+end
+}
+
+This is a very simple demonstration of some systems programming
+techniques for Unicon. You will see this sort of depth-first traversal
+of the file system again, in the section on file system backups later
+in this chapter.
+
+\subsection[Finding Duplicate Files]{Finding Duplicate Files}
+An interesting variation on the previous program is to find files whose
+contents are identical. This is valuable for those of us who make many
+copies of files in various subdirectories over time, and then forget
+which ones are changed. Since this task deals with lots of files, there
+are some things to think about. Reading a file is an expensive
+operation, so you should try to minimize the files you read. Since you
+can find the length of a file without reading it, you can use that to
+perform the first cut: you won{\textquotesingle}t need to compare files
+of different sizes. The first step, then, is to solve the simpler
+problem of finding files that have the same size. 
+
+The previous program example shows how to traverse the directory
+structure. For the lengths you can use a table - with each possible
+length, store the names of the files of that length. Since there are
+lots of files, try to be smart about what you store in the table. The
+natural structure is a list. This leads to the following code: 
+
+\iconcode{
+procedure scan(dir) \\
+\>   f := open(dir) \\
+\>   while name := read(f) do \{ \\
+\>   \ \ \ filename := dir {\textbar}{\textbar}
+{\textquotedbl}/{\textquotedbl} {\textbar}{\textbar} name \\
+\>   \ \ \ r := stat(filename) \\
+\>   \ \ \ case r.mode[1] of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}-{\textquotedbl} : \{ \\
+\>   \ \ \ \ \ \ \ \ \ /lengths[r.size] := list() \\
+\>   \ \ \ \ \ \ \ \ \ push(lengths[r.size], filename) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ {\textquotedbl}d{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ name == ({\textquotedbl}.{\textquotedbl}
+{\textbar} {\textquotedbl}..{\textquotedbl}) {\textbar} scan(filename) \\
+\>   \ \ \ \} \\
+\>   \} \\
+end
+}
+
+The main program scans all the directories, and for each list, compares
+all the files in it to each other. The global table named
+\textsf{lengths} maps lengths to filenames.
+
+\iconcode{
+global lengths \\
+\ \\
+procedure main() \\
+\>   lengths := table() \\
+\>   scan({\textquotedbl}/.{\textquotedbl}) \\
+\>   every l := !lengths do \{ \\
+\>   \ \ \ if *l = 1 then next \\
+\>   \ \ \ find\_dups(l) \\
+\>   \} \\
+end
+}
+
+For example, if in a directory there are files A, B, C, and D with
+lengths of 1, 2, 5, and 2 bytes, respectively, the \textsf{lengths}
+table will contain the following: 
+
+\iconcode{
+\>   lengths[1] === [ {\textquotedbl}A{\textquotedbl} ] \\
+\>   lengths[2] === [ {\textquotedbl}B{\textquotedbl},
+{\textquotedbl}D{\textquotedbl} ] \\
+\>   lengths[5] === [ {\textquotedbl}C{\textquotedbl} ]
+}
+
+If a list only has one element, there is no reason to call the function
+to compare all the elements together. 
+
+All of this makes sense, but in many cases there will be only one file
+that has a certain size. Creating a list for each file size is a small
+waste of space. What if, for the first entry, you only store the name
+of the file in the table? Then if you get a second file of the same
+size, you can convert the table entry to store a list. That is, in the
+above example you could have 
+
+\iconcode{
+\>   lengths[1] === {\textquotedbl}A{\textquotedbl} \\
+\>   lengths[2] === [ {\textquotedbl}B{\textquotedbl},
+{\textquotedbl}D{\textquotedbl} ] \\
+\>   lengths[5] === {\textquotedbl}C{\textquotedbl}
+}
+
+Now for most of the files, the program is only storing a string, and it
+creates a list only where it needs one. You can say that the table is
+\textit{heterogeneous} if you want to get technical about how its
+elements are a mixture of strings and lists. With this change, the main
+procedure becomes:
+
+\iconcode{
+global lengths \\
+\ \\
+procedure main() \\
+\>   lengths := table() \\
+\>   scan({\textquotedbl}/{\textquotedbl}) \\
+\>   every l := !lengths do \{ \\
+\>   \ \ \ if type(l) == {\textquotedbl}string{\textquotedbl} then next \\
+\>   \ \ \ find\_dups(l) \\
+\>   \ \ \ \} \\
+end
+}
+
+Instead of checking to see if the list has only one element, the code
+checks to see if the value from the table is a string, and ignores
+those entries.
+
+The scan procedure has to do a little more work. Instead of initializing
+the value to a list, you can use the name of the current file; if the
+value already in the table is a string, create a list and add both the
+name from the table and the name of the current file to the list. If
+the value in the table is a list already, then you can just add the
+current filename to it.
+
+\iconcode{
+while name := read(f) do \{ \\
+\>   \ \ \ filename := dir {\textbar}{\textbar}
+{\textquotedbl}/{\textquotedbl} {\textbar}{\textbar} name \\
+\>   \ \ \ r := stat(filename) \\
+\>   \ \ \ case r.mode[1] of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}-{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ case type(lengths[r.size]) of \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}null{\textquotedbl} :
+lengths[r.size] := filename \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}string{\textquotedbl} : \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ lengths[r.size] :=
+[lengths[r.size]] \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ push(lengths[r.size], filename) \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}list{\textquotedbl} :
+push(lengths[r.size], filename) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ {\textquotedbl}d{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ name == ({\textquotedbl}.{\textquotedbl}
+{\textbar} {\textquotedbl}..{\textquotedbl}) {\textbar} scan(filename) \\
+\>   \ \ \ \} \\
+\>   \}
+}
+
+To compare two files together, you will of course have to read both
+files. One way to do it would be to read in the files to memory and
+compare them, but that would take a lot of space. Most files even when
+they have the same size will probably be different; you only need to
+read the files until you find a difference. At the same time, you
+shouldn{\textquotesingle}t read the files one byte at a time, since the
+I/O system is optimized to read larger chunks at a time. The chunk size
+to use will depend on the exact configuration of the computer the
+program is running on, that is, the speed of the file reads compared to
+the CPU speed and the available RAM storage. 
+
+The actual comparison is simple: keep reading chunks of both files,
+failing if you find a difference and succeeding if you reach the ends
+of the files without finding any. 
+
+\iconcode{
+procedure compare(file1, file2) \\
+\>   static maxline \\
+\>   initial maxline := 1000 \\
+\>   f1 := open(file1) {\textbar} fail \\
+\>   f2 := open(file2) {\textbar} \{ close(f1); fail \} \\
+\>   while l1 := reads(f1, maxline) do \{ \\
+\>   \ \ \ l2 := reads(f2, maxline) \\
+\>   \ \ \ if l1 \~{}== l2 then \{ \\
+\>   \ \ \ \ \ \ every close(f1 {\textbar} f2) \\
+\>   \ \ \ \ \ \ fail \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   every close(f1 {\textbar} f2) \\
+\>   return \\
+end
+}
+
+One technique that is sometimes used for comparing long strings and so
+forth is \textit{hashing}. To use \index{hashing}hashing, you define a
+function that computes an integer from the string. If the hash values
+of two strings are different, you know that they cannot be the same.
+However hash values being equal doesn{\textquotesingle}t necessarily
+imply that the strings are equal, so in the worst case scenario you
+still have to compare the two strings. If you aren{\textquotesingle}t
+familiar with hashing, we encourage you to consult a book on algorithms
+to learn more about this technique and think about how the program may
+be further improved with it. One example hash function used internally
+by Unicon is equivalent to:
+
+\iconcode{
+procedure hash(s) \\
+\>   local i := 0 \\
+\>   every i +:= ord(s[1 to min(*s, 10)]) do \\
+\>   i *:= 37 \\
+\>   i +:= *s \\
+\>   return i \\
+end
+}
+
+To complete the application, one piece remains: given a list of
+filenames, you need to go through them all and make all the possible
+comparisons. This can be done with a simple loop, calling
+\textsf{compare()} to perform the actual comparisons. 
+
+\iconcode{
+procedure find\_dups(l) \\
+\>   every i := 1 to *l do \{ \\
+\>   \ \ \ f1 := l[i] \\
+\>   \ \ \ every j := i+1 to *l do \{ \\
+\>   \ \ \ \ \ \ if compare(f1, l[j]) then \\
+\>   \ \ \ \ \ \ \ \ \ write(f1, {\textquotedbl} == {\textquotedbl},
+l[j]) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+end
+}
+
+This is relatively inefficient: for a list of n files, it performs
+n(n-1)/2 comparisons and reads each file n-1 times. In certain
+situations it is possible to get by with not doing so many comparisons;
+we leave this as an exercise to the reader.
+
+{\sffamily\bfseries
+Tip}
+
+{\sffamily
+By clever use of hashing, you may be able to get away with reading each
+file just once.}
+
+Listing 14-1 shows the complete program, with added comments, and also
+some error checking. If any directory or file open fails, it prints a
+message and proceeds with the processing.
+
+\bigskip
+
+{\sffamily\bfseries Listing 14-1}
+{\sffamily\bfseries A program for finding duplicate files.}
+
+\iconcode{
+\#
+\# duplicate.icn
+\#
+\# Find files in the filesystem that are identical
+\ \\
+global lengths
+\ \\
+procedure main() \\
+\>   lengths := table() \\
+\>   \# On some systems, a leading {\textquotedbl}//{\textquotedbl} in
+a filename may have \\
+\>   \# a different meaning, so we use {\textquotedbl}/.{\textquotedbl}
+instead of just {\textquotedbl}/{\textquotedbl} \\
+\>   scan({\textquotedbl}/.{\textquotedbl}) \\
+\>   every l := !lengths do \{ \\
+\>   \ \ \ if type(l) == {\textquotedbl}string{\textquotedbl} then
+next \\
+\>   \ \ \ find\_dups(l) \\
+\>   \ \ \ \} \\
+ \ \ exit(0) \\
+end \\
+\ \\
+\# Scan all the directories and add files to the length map - \\
+\# the global table {\textquotedbl}lengths{\textquotedbl} \\
+procedure scan(dir) \\
+\>   f := open(dir) {\textbar} \{ \\
+\>   \ \ \ write(\&errout, {\textquotedbl}Couldn{\textquotesingle}t
+open {\textquotedbl}, dir, {\textquotedbl}; {\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ sys\_errstr(\&errno)) \\
+\>   \ \ \ fail \\
+\>   \ \ \ \} \\
+\>   while name := read(f) do \{ \\
+\>   \ \ \ filename := dir {\textbar}{\textbar}
+{\textquotedbl}/{\textquotedbl} {\textbar}{\textbar} name \\
+\>   \ \ \ r := stat(filename) {\textbar} \{ \\
+\>   \ \ \ \ \ \ write(\&errout,
+{\textquotedbl}Couldn{\textquotesingle}t stat {\textquotedbl},
+filename, {\textquotedbl}; {\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ sys\_errstr(\&errno)) \\
+\>   \ \ \ \ \ \ next \\
+\>   \ \ \ \ \ \ \} \\
+\ \\
+\>   \ \ \ \# A small optimisation: there are probably quite a few \\
+\>   \ \ \ \# zero-length files on the system; we ignore them all. \\
+\>   \ \ \ r.size {\textgreater} 0 {\textbar} next \\
+\ \\
+\>   \ \ \ case r.mode[1] of \{ \\
+\>   \ \ \ \ \ \ {\textquotedbl}-{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ \# ordinary file \\
+\>   \ \ \ \ \ \ \ \ \ case type(lengths[r.size]) of \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# if null, it{\textquotesingle}s the
+first time; just store \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# filename \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}null{\textquotedbl} :
+lengths[r.size] := filename \\
+\ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# if string, one element already exists;
+create a \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# list and make sure we add both the old
+filename \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# and the new one. \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}string{\textquotedbl} : \{ \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ lengths[r.size] :=
+[lengths[r.size]] \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ push(lengths[r.size], filename) \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \# There{\textquotesingle}s already a
+list; just add the filename \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}list{\textquotedbl} :
+push(lengths[r.size], filename) \\
+\>   \ \ \ \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ {\textquotedbl}d{\textquotedbl} : \\
+\>   \ \ \ \ \ \ \ \ \ \# A directory. Make sure to not scan . or .. \\
+\>   \ \ \ \ \ \ \ \ \ name == ({\textquotedbl}.{\textquotedbl}
+{\textbar} {\textquotedbl}..{\textquotedbl}) {\textbar} scan(filename) \\
+\>   \ \ \ \} \\
+\>   \} \\
+\>   close(f) \\
+\>   return {\textquotedbl}{\textquotedbl} \\
+end \\
+\ \\
+\# Given a list of filenames, compare the contents of each with \\
+\# every other. \\
+procedure find\_dups(l) \\
+\>   \# This is O(n\^{}2) \\
+\>   every i := 1 to *l do \{ \\
+\>   \ \ \ f1 := l[i] \\
+\>   \ \ \ every j := i+1 to *l do \{ \\
+\>   \ \ \ \ \ \ if compare(f1, l[j]) then \\
+\>   \ \ \ \ \ \ \ \ \ write(f1, {\textquotedbl} == {\textquotedbl},
+l[j]) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+end \\
+\ \\
+\# Compare two files; by reading in 1000 byte chunks. This value \\
+\# may need to be adjusted depending on your i/o speed compared \\
+\# to CPU speed and memory. \\
+procedure compare(file1, file2) \\
+\>   static maxline \\
+\>   initial maxline := 1000 \\
+\ \\
+\>   \# are f1 and f2 identical? \\
+\>   f1 := open(file1) {\textbar} \{ \\
+\>   \ \ \ write(\&errout, {\textquotedbl}Couldn{\textquotesingle}t
+open {\textquotedbl}, file1, {\textquotedbl}; {\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ sys\_errstr(\&errno)) \\
+\>   \ \ \ fail \\
+\>   \ \ \ \} \\
+\>   f2 := open(file2) {\textbar} \{ \\
+\>   \ \ \ close(f1) \\
+\>   \ \ \ write(\&errout, {\textquotedbl}Couldn{\textquotesingle}t
+open {\textquotedbl}, file2, {\textquotedbl}; {\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ sys\_errstr(\&errno)) \\
+\>   \ \ \ fail \\
+\>   \ \ \ \} \\
+\>   while l1 := reads(f1, maxline) do \{ \\
+\>   \ \ \ l2 := reads(f2, maxline) {\textbar} \\
+\>   \ \ \ \ \ \ \# The files are supposed to be the same size! How
+could \\
+\>   \ \ \ \ \ \ \# we read from one but not the other? \\
+\>   \ \ \ \ \ \ stop({\textquotedbl}Error reading {\textquotedbl},
+file2) \\
+\>   \ \ \ if l1 \~{}== l2 then \{ \\
+\>   \ \ \ \ \ \ every close(f1 {\textbar} f2) \\
+\>   \ \ \ \ \ \ fail \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+\>   every close(f1 {\textbar} f2) \\
+\>   return \\
+end
+}
+
+\subsection{User File Quotas}
+
+Many computing platforms offer a filesystem \index{quota}quota facility,
+where each user can only use so much of the disk to store files. The
+system will enforce this by not allowing any files to grow once the
+limit has been reached. However, many systems don{\textquotesingle}t
+have this facility, and on other systems the available quota mechanism
+is not enabled because the user might have an urgent and immediate need
+to exceed his or her quota for a short time.
+
+For these uses this section presents an alternate filesystem quota
+method. The quota for each user is stored in a file, and at regular
+intervals (perhaps overnight) the system examines the disk usage of
+each user. If it is above the quota, a message is sent. A summary
+message is also sent to the administrator so that any user that is over
+quota for more than a few days will be noticed.
+
+First, declare a few global variables that will hold the strings that
+are to be used in the messages that are sent: 
+
+\iconcode{
+global complaint\_part1, complaint\_part2, summary\_header \\
+\ \\
+procedure main(args) \\
+\>   \# Read database of users; get disk usage for each user and \\
+\>   \# check against his/her quota \\
+\>   db := {\textquotedbl}/usr/lib/quotas/userdb{\textquotedbl} \\
+\>   administrator := {\textquotedbl}root{\textquotedbl} \\
+\>   init\_strings()
+}
+
+\subsubsection{Calculating Disk Usage}
+
+The next step is to read in the database of users, and for every
+directory mentioned, calculate the \index{disk usage}disk usage. On
+UNIX systems you can just run \texttt{du} (the UNIX utility that
+measures disk usage) and read its output from a pipe to obtain this
+figure. The \textsf{{}-s} option tells \textsf{du} to print a summary
+of disk usage; it prints the usage and the name of the directory,
+separated by a tab character. If your platform doesn{\textquotesingle}t
+have a \textsf{du} command, how hard is it to write one in Unicon? The
+\textsf{du} command is actually very straightforward to write, using
+the techniques presented in the previous two programming examples.
+
+\iconcode{
+procedure du(dir) \\
+\>   local s, d, sum \\
+\ \\
+\>   \# If it{\textquotesingle}s not a directory, just return its size \\
+\>   s := stat(dir) \\
+\>   if s.mode[1] \~{}== {\textquotedblleft}d{\textquotedblright} then \\
+\>   \ \ \ return s.size \\
+\ \\
+\>   \# Otherwise, find the usage of each entry and add \\
+\>   d := open(dir) {\textbar} fail \\
+\>   sum := 0 \\
+\>   while filename := read(d) do \\
+\>   \ \ \ sum +:= du(filename) \\
+\>   close(d) \\
+\ \\
+\>   return sum \\
+end
+}
+
+Using this procedure, the program fills in the table of usages.
+
+\iconcode{
+\>   L := read\_db(db) \\
+\>   owners := L[1] \\
+\>   quotas := L[2] \\
+\>   daysover := L[3] \\
+\>   usages := table(0) \\
+\>   over := table() \\
+\>   every dir := key(owners) do \{ \\
+\>   \ \ \ usages[dir] := du(dir) \\
+\>   \ \ \ user := owners[dir]
+}
+
+If the usage reported is greater than the quota, increment the
+{\textquotedbl}days over{\textquotedbl} field. Save the results and
+send all the email later; this will allow us to only send one message
+to a user that owns more than one directory. 
+
+\iconcode{
+\>   \ \ \ if usages[dir] {\textgreater} quotas[dir] then \{ \\
+\>   \ \ \ \ \ \ /over[user] := [] \\
+\>   \ \ \ \ \ \ daysover[dir] +:= 1 \\
+\>   \ \ \ \ \ \ l := [dir, usages[dir], quotas[dir], daysover[dir]] \\
+\>   \ \ \ \ \ \ push(over[user], l) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ else \\
+\>   \ \ \ \ \ \ daysover[dir] := 0 \\
+\>   \ \ \ \} \\
+\>   every user := key(over) do \\
+\>   \ \ \ complain(user, over[user])
+}
+
+Finally, the program saves the database and sends a summary of the
+over-quota directories to the administrator. 
+
+\iconcode{
+\>   write\_db(db, owners, quotas, daysover) \\
+\>   send\_summary(administrator, owners, quotas, daysover, usages) \\
+end
+}
+
+\subsubsection{Sending Mail Messages}
+Two procedures in the quota program send mail messages as their primary
+task. This is done in many older system administration scripts by
+executing an external mail client using the \textsf{system()} function.
+Calling \index{system()}\textsf{system()} is a potential portability
+problem and security hole in many applications. The quota program uses
+Unicon{\textquotesingle}s messaging facilities to send mail, avoiding
+both of these problems.
+
+Procedure \textsf{complain()} sends a message to the user notifying
+him/her that certain directories are over quota. The entry for each
+user is a list, each member of which is a record of an over-quota
+directory, stored as a list. This list has the directory name, the
+usage, the quota and the number of days it has been over quota.
+
+\iconcode{
+procedure complain(user, L) \\
+\>   msg := {\textquotedbl}Dear {\textquotedbl} {\textbar}{\textbar}
+user {\textbar}{\textbar} complaint\_part1 \\
+\>   every l := !L do \{ \\
+\>   \ \ \ msg {\textbar}{\textbar}:=
+{\textquotedbl}{\textbackslash}t{\textquotedbl} {\textbar}{\textbar}
+l[1] {\textbar}{\textbar}
+{\textquotedbl}{\textbackslash}t{\textquotedbl} {\textbar}{\textbar}
+l[2] {\textbar}{\textbar}
+{\textquotedbl}{\textbackslash}t{\textquotedbl} {\textbar}{\textbar} \\
+\ \ \ \ \ \ \ \ \ l[3] {\textbar}{\textbar}
+{\textquotedbl}{\textbackslash}t{\textquotedbl} {\textbar}{\textbar}
+l[4] {\textbar}{\textbar}
+{\textquotedbl}{\textbackslash}n{\textquotedbl} \\
+\>   \} \\
+\>   msg {\textbar}{\textbar}:= complaint\_part2 \\
+\>   m :=
+open({\textquotedbl}mailto:{\textquotedbl}{\textbar}{\textbar} user,
+{\textquotedbl}m{\textquotedbl}, {\textquotedbl}Subject: Over
+Quota{\textquotedbl}) \\
+\>   write(m, msg) \\
+\>   close(m) \\
+end
+}
+
+Procedure \textsf{send\_summary()} sends mail to the administrator
+summarizing all over-quota directories. It uses the function
+\index{key()}\textsf{key()} to generate the indexes for tables
+\textsf{usages}, \textsf{quotas}, \textsf{owners}, and
+\textsf{daysover}, which are maintained in parallel. This use of
+\textsf{key()} is quite common. It might be possible to combine all
+these parallel tables into one big table and eliminate the need to call
+\textsf{key()}.
+
+\iconcode{
+procedure send\_summary(admin, owners, quotas, daysover, usages) \\
+\>   m :=
+open({\textquotedbl}mailto:{\textquotedbl}{\textbar}{\textbar} admin,
+{\textquotedbl}m{\textquotedbl}, {\textquotedbl}Subject: Quota
+Summary{\textquotedbl}) \\
+\>   write(m, summary\_header) \\
+\>   every dir := key(owners) do \\
+\>   \ \ \ if usages[dir] {\textgreater} quotas[dir] then \{ \\
+\ \ \ \ \ \ \ \ \ writes(m, dir,
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, owners[dir],
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ usages[dir]{\textbar}{\textbar}{\textquotedbl}/{\textquotedbl}{\textbar}{\textbar}quotas[dir],
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ daysover[dir]) \\
+\>   \ \ \ \ \ \ \# Flag anything over quota more than 5 days \\
+\>   \ \ \ \ \ \ if daysover[dir] {\textgreater} 5 then \\
+\>   \ \ \ \ \ \ \ \ \ writes(m, {\textquotedbl} ***{\textquotedbl}) \\
+\>   \ \ \ \ \ \ write(m) \\
+\>   \ \ \ \} \\
+\>   close(m) \\
+end
+}
+
+\subsubsection{The Quota Database}
+
+The database is stored as a plain text file so that the system
+administrator can easily make changes to it. It has four fields,
+separated by white space (spaces or tabs): a directory, the owner of
+the directory, the quota, and the number of days the directory has been
+over quota. Procedure \textsf{read\_db()} reads in the database. Blank
+lines or lines starting with {\textquotesingle}\#{\textquotesingle} are
+ignored. 
+
+\iconcode{
+procedure read\_db(db) \\
+\>   owners := table() \\
+\>   quotas := table(0) \\
+\>   daysover := table(0) \\
+\>   dbf := open(db) {\textbar}
+stop({\textquotedbl}Couldn{\textquotesingle}t open {\textquotedbl},db) \\
+\>   while line := read(dbf) {\textbar}{\textbar}
+{\textquotedbl}{\textbackslash}t{\textquotedbl} do \\
+\>   \ \ \ line ? \{ \\
+\>   \ \ \ \ \ \ tab(many({\textquotesingle}
+{\textbackslash}t{\textquotesingle})) \\
+\>   \ \ \ \ \ \ if pos(0) {\textbar} ={\textquotedbl}\#{\textquotedbl}
+then \\
+\>   \ \ \ \ \ \ \ \ \ next \\
+\>   \ \ \ \ \ \ dir := tab(upto({\textquotesingle}
+{\textbackslash}t{\textquotesingle})); \ \ tab(many({\textquotesingle}
+{\textbackslash}t{\textquotesingle})) \\
+\>   \ \ \ \ \ \ user := tab(upto({\textquotesingle}
+{\textbackslash}t{\textquotesingle})); \ tab(many({\textquotesingle}
+{\textbackslash}t{\textquotesingle})) \\
+\>   \ \ \ \ \ \ quota := tab(upto({\textquotesingle}
+{\textbackslash}t{\textquotesingle})); tab(many({\textquotesingle}
+{\textbackslash}t{\textquotesingle})) \\
+\>   \ \ \ \ \ \ days := tab(0) {\textbar}
+{\textquotedbl}{\textquotedbl} \\
+\>   \ \ \ \ \ \ \# The {\textquotedbl}days{\textquotedbl} field can be
+absent in which case 0 is \\
+\>   \ \ \ \ \ \ \# assumed. \\
+\>   \ \ \ \ \ \ if days == {\textquotedbl}{\textquotedbl} then days :=
+0
+}
+
+If multiple quota lines occur for a directory, the tables must be
+updated appropriately. The semantics of the tables require varying
+approaches. The owners table writes a warning message if quota lines
+with different owners for the same directory are found, but otherwise
+the owners table is unaffected by multiple entries. The actual quotas
+table allows multiple quota lines for a directory; in which case the
+quotas are added together. The daysover table retains the maximum value
+any quota line is overdue for a directory. 
+
+\iconcode{
+\>   \ \ \ \ \ \ if {\textbackslash}owners[dir] \~{}== user then \\
+\>   \ \ \ \ \ \ \ \ \ write(\&errout, {\textquotedbl}Warning:
+directory {\textquotedbl}, dir, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl} has more than one
+owner.{\textquotedbl}) \\
+\>   \ \ \ \ \ \ owners[dir] := user \\
+\ \ \ \ \ \ \ \ \ quotas[dir] +:= quota \\
+\>   \ \ \ \ \ \ daysover[dir] := days \\
+\>   \ \ \ \} \\
+\>   close(dbf) \\
+\>   return [owners, quotas, daysover] \\
+end
+}
+
+Procedure \textsf{write\_db()} rewrites a quota database with current
+quota information. Notice how the code preserves the
+\index{comment}comments and the blank lines that were present in the
+database file. This is very important when dealing with human-editable
+files. It also writes to a temporary file and then renames it to the
+correct name. This ensures that a consistent copy of the database is
+always present.
+
+\iconcode{
+procedure write\_db(db, owners, quotas, daysover) \\
+\>   new\_db := db {\textbar}{\textbar}
+{\textquotedbl}.new{\textquotedbl} \\
+\>   db\_old := open(db) \\
+\>   db\_new := open(new\_db, {\textquotedbl}w{\textquotedbl})
+{\textbar} stop({\textquotedbl}Couldn{\textquotesingle}t open
+{\textquotedbl}, new\_db) \\
+\>   while line := read(db\_old) do \{ \\
+\>   \ \ \ line ? \{ \\
+\>   \ \ \ \ \ \ tab(many({\textquotesingle}
+{\textbackslash}t{\textquotesingle})) \\
+\>   \ \ \ \ \ \ if pos(0) {\textbar} ={\textquotedbl}\#{\textquotedbl}
+then \{ \\
+\>   \ \ \ \ \ \ \ \ \ write(db\_new, line) \\
+\>   \ \ \ \ \ \ \ \ \ next \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \ \ \ dir := tab(upto({\textquotesingle}
+{\textbackslash}t{\textquotesingle})) \\
+\>   \ \ \ \ \ \ write(db\_new, dir,
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, owners[dir],
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ quotas[dir],
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, daysover[dir]) \\
+\>   \ \ \ \} \\
+\>   \} \\
+\>   close(db\_old) \\
+\>   close(db\_new) \\
+\>   rename(db, db {\textbar}{\textbar}
+{\textquotedbl}.bak{\textquotedbl}) \\
+\>   rename(new\_db, db) \\
+end
+}
+
+Lastly, procedure \textsf{init\_strings()} initializes global strings
+used for email messages. Concatenation is used to improve the
+readability of long strings that run across multiple lines.
+
+\iconcode{
+procedure init\_strings() \\
+\>   complaint\_part1 :=
+{\textquotedbl}:{\textbackslash}n{\textquotedbl} {\textbar}{\textbar} \\
+\>   \ \ \ {\textquotedbl}The following directories belonging to you
+are{\textquotedbl}{\textbar}{\textbar} \\
+\>   \ \ \ {\textquotedbl}over their
+quota:{\textbackslash}n{\textquotedbl}{\textbar}{\textbar} \\
+\>   \ \ \ {\textquotedbl}{\textbackslash}n{\textquotedbl}{\textbar}{\textbar} \\
+\>   \ \ \ {\textquotedbl}Directory \ \ \ {\textbackslash}tUsage
+{\textbackslash}tQuota {\textbackslash}tDays
+Over{\textbackslash}n{\textquotedbl} \\
+\>   complaint\_part2 := {\textquotedbl}{\textbackslash}nPlease take
+care of it.{\textquotedbl} \\
+\>   summary\_header :=
+{\textquotedbl}{\textbackslash}n{\textquotedbl}{\textbar}{\textbar}  \\
+\>   \ \ \ {\textquotedbl}Over-quota
+users{\textbackslash}n{\textquotedbl}{\textbar}{\textbar}  \\
+\>   \ \ \ {\textquotedbl}{\textbackslash}n{\textquotedbl}{\textbar}{\textbar} \\
+\>   \ \ \ {\textquotedbl}Directory \ \ {\textbackslash}tOwner
+{\textbackslash}tUsage/Quota {\textbackslash}tDays
+Over{\textbackslash}n{\textquotedbl} \\
+end
+}
+
+\subsection{Capturing a Shell Command Session}
+
+Many applications including debugging and training can benefit from the
+ability record a transcript of a session at the computer. This
+capability is demonstrated by the following program, called
+\textsf{script}. The \textsf{script} program uses a feature of POSIX
+systems called the \textit{pty}. This is short for
+\index{pseudo-tty}pseudo-tty. It is like a bi-directional pipe with the
+additional property that one end of it looks exactly like a
+conventional tty. The program at that end can set it into
+{\textquotedbl}no-echo{\textquotedbl} mode and so forth, just like it
+can a regular terminal. This application{\textquotesingle}s portability
+is limited to the UNIX platforms.
+
+The \textsf{script} program has only one option: if \textsf{{}-a} is
+used, output is appended to the transcript file instead of overwriting
+it. The option is used to set the second argument to \textsf{open()}: 
+
+\iconcode{
+\# script: capture a script of a shell session (as in BSD) \\
+\# Usage: script [-a] [filename] \\
+\# filename defaults to {\textquotedbl}typescript{\textquotedbl} \\
+\ \\
+procedure main(L) \\
+\>   if L[1] == {\textquotedbl}-a{\textquotedbl} then \{ \\
+\>   \ \ \ flags := {\textquotedbl}a{\textquotedbl}; pop(L) \\
+\>   \ \ \ \} \\
+\>   else \\
+\>   \ \ \ flags := {\textquotedbl}w{\textquotedbl}
+}
+
+Now the program must find a pty to use. A standard solution is to go
+down the list of all pty device names in sequence until an
+\textsf{open()} succeeds; then the procedure \textsf{capturesession()}
+is called, which performs the actual logging. On POSIX systems the pty
+names are of the form \textsf{\textit{/dev/ptyp-s0-a}}. The tty
+connected to the other end of the pipe then has the name
+\textsf{\textit{/dev/ttyXY}}, where \textsf{X} and \textsf{Y} are the
+two characters from the pty{\textquotesingle}s name.
+
+
+\iconcode{
+\>   \# Find a pty to use \\
+\>   every c1 := !{\textquotedbl}pqrs{\textquotedbl} do \\
+\>   \ \ \ every c2 := !(\&digits {\textbar}{\textbar}
+{\textquotedbl}abcdef{\textquotedbl}) do \\
+\>   \ \ \ \ \ \ if pty := open({\textquotedbl}/dev/pty{\textquotedbl}
+{\textbar}{\textbar} c1 {\textbar}{\textbar} c2,
+{\textquotedbl}rw{\textquotedbl}) then \{ \\
+\>   \ \ \ \ \ \ \ \ \ \# Aha! \\
+\>   \ \ \ \ \ \ \ \ \ capturesession(fname := L[1] {\textbar}
+{\textquotedbl}typescript{\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pty, c1
+{\textbar}{\textbar} c2, flags) \\
+\>   \ \ \ \ \ \ \ \ \ stop({\textquotedbl}Script is done, file
+{\textquotedbl}, image(fname)) \\
+\>   \ \ \ \ \ \ \} \\
+\>   stop({\textquotedbl}Couldn{\textquotesingle}t find a
+pty!{\textquotedbl}) \\
+end
+}
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+If you do not have read-write permissions on the pseudotty device the
+program uses, the program will fail. If this program does not work,
+check the permissions on the /dev/tty* device it is trying to use. }
+
+The \textsf{script} program uses the \index{system()}\textsf{system()}
+function, executing the user{\textquotesingle}s shell with the standard
+input, standard output, and standard error streams all redirected to be
+the tty end; then it waits for input (using
+\index{select()}\textsf{select()}) either from the user or from the
+spawned program. The program turns off echoing at its end, since the
+spawned program will be doing the echoing. The program sends any input
+available from the user to the spawned shell; anything that the shell
+sends is echoed to the user, and also saved to the script file. 
+
+\iconcode{
+procedure capturesession(scriptfile, pty, name, flags) \\
+\>   f := open(scriptfile, flags) {\textbar} \\
+\>   \ \ \ \ \ \ \ \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t
+open {\textquotedbl}, image(scriptfile)) \\
+\>   tty := open({\textquotedbl}/dev/tty{\textquotedbl}
+{\textbar}{\textbar} name, {\textquotedbl}rw{\textquotedbl})
+{\textbar} \\
+\>   \ \ \ \ \ \ \ \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t
+open tty!{\textquotedbl}) \\
+\>   shell := getenv({\textquotedbl}SHELL{\textquotedbl}) {\textbar}
+{\textquotedbl}/bin/sh{\textquotedbl} \\
+\>   system([shell, {\textquotedbl}-i{\textquotedbl}], tty, tty, tty,
+{\textquotedbl}nowait{\textquotedbl}) \\
+\ \\
+\>   \# Parent \\
+\>   close(tty) \\
+\>   system({\textquotedbl}stty raw -echo{\textquotedbl}) \\
+\ \\
+\>   \# Handle input \\
+\>   while L := select(pty, \&input) do \{ \\
+\>   \ \ \ if L[1] === \&input then \\
+\>   \ \ \ \ \ \ writes(pty, reads()) {\textbar} break \\
+\>   \ \ \ else if L[1] === pty then \{ \\
+\>   \ \ \ \ \ \ writes(f, inp := reads(pty)) {\textbar} break \\
+\>   \ \ \ \ \ \ writes(inp) \\
+\>   \ \ \ \} \\
+\>   \}
+}
+
+When \texttt{script} gets an EOF on either stream, it quits processing
+and closes the file, after resetting the parameters of the input to
+turn echoing back on. 
+
+\iconcode{
+\>   (\&errno = 0) {\textbar} write(\&errout, {\textquotedbl}Unexpected
+error: {\textquotedbl}, \\
+\>   \ \ \ sys\_errstr(\&errno)) \\
+\>   system({\textquotedbl}stty cooked echo{\textquotedbl}) \\
+\>   close(f) \\
+end
+}
+
+\subsection{Filesystem Backups}
+
+By now you have probably been told a few thousand times that regular
+\index{backups}backups of your files are a good idea. The problem
+arises when you are dealing with a system with a large amount of file
+storage, like modern multi-user systems. For these systems,
+\textit{incremental backups} are used. Incremental backups exploit the
+fact that a very large number of files on the system change rarely, if
+ever. There is no need to save them all to the backup medium every
+time. Instead, each backup notes the last time that a backup was
+performed, and only saves files that have been modified since then. 
+
+Each backup is given a number, so that the files in backup n were
+modified later than the last backup of a lower number. A Level 0 backup
+saves all the files on the system. 
+
+This section presents an incremental backup utility called
+\textsf{backup}. The \textsf{backup} utility saves all the files in a
+directory specified with the \textsf{{}-o} flag. Typically this will be
+the external backup storage, like a floppy disk (for small backups) or
+a Zip disk. The program re-creates the directory structure on the
+external device so that files may easily be recovered. The disadvantage
+of this strategy is that it does not compress the whole archive
+together, and therefore requires more storage than is strictly
+necessary. On the positive side, this approach avoids the fragility of
+compressed archives, in which the loss of even a small amount of data
+can render the whole archive unreadable. 
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+This program only saves to media that has a directory structure on which
+regular files may be written, such as floppy disks and
+Zip\textrm{{\textregistered}} disks. It does not work on many backup
+devices, such as tape drives, that require media to be written in a
+proprietary format.}
+
+Another feature of this backup program is that certain directories can
+be automatically excluded from the backup. This might include temporary
+directories like \textsf{/tmp} on UNIX systems. One directory that
+definitely must be excluded is the output device itself, or you will
+find that a very large amount of storage is needed! One of the best
+parts about \textsf{backup} is that you can modify this program to suit
+your needs: file compression, error recovery, support for multiple
+discs, or anything else that you require.
+
+\iconcode{
+\# \\
+\# backup.icn - incremental filesystem backups \\
+\# \\
+\# Usage: \\
+\# \ \ ./backup [-nlevel] [-ooutput] [dir] \\
+\# \\
+\# Save all files that have changed since the last backup of \\
+\# higher level (a level 0 backup is the highest level and saves \\
+\# all files; it is the default) \\
+\# The files are all saved to the directory
+{\textquotedbl}output{\textquotedbl}, which is \\
+\# probably a mounted backup device like a floppy or Zip drive. \\
+\# \\
+\# Example: \\
+\# \ \ \ backup -n3 -o/mnt/zip /home/bob \\
+\ \\
+link options \\
+\ \\
+global dbase, exclude, levels \\
+global output, last \\
+\ \\
+procedure main(args) \\
+\>   dbase := {\textquotedbl}/var/run/backups.db{\textquotedbl} \\
+\>   exclude := [{\textquotedbl}/mnt{\textquotedbl},
+{\textquotedbl}/tmp{\textquotedbl}, {\textquotedbl}/dev{\textquotedbl},
+{\textquotedbl}/proc{\textquotedbl}] \\
+\ \\
+\>   \# Process arguments \\
+\>   opt := options(args, {\textquotedbl}-n+ -o:{\textquotedbl}) \\
+\>   level :=
+integer({\textbackslash}opt[{\textquotedbl}n{\textquotedbl}])
+{\textbar} 0 \\
+\>   output := opt[{\textquotedbl}o{\textquotedbl}] \\
+\>   dir := args[1] {\textbar} {\textquotedbl}/{\textquotedbl} \\
+\ \\
+\>   {\textbackslash}output {\textbar} \\
+\>   \ \ \ stop({\textquotedbl}An output directory (option -o) must be
+specified!{\textquotedbl}) \\
+\>   if level {\textless} 0 {\textbar} level {\textgreater} 9 then \\
+\>   \ \ \ stop({\textquotedbl}Only levels 0..9 can be
+used.{\textquotedbl}) \\
+\ \\
+\>   \# Get the time of the previous lower-numbered backup \\
+\>   last := get\_time(level)
+\ \\
+\>   \# Now look for files newer than
+{\textquotedbl}last{\textquotedbl} \\
+\>   traverse(dir) \\
+\ \\
+\>   \# Write the database \\
+\>   save\_time(level) \\
+end
+}
+
+Procedure \index{traverse}\textsf{traverse}\textsf{()} is the
+interesting part of the program. It recursively descends the filesystem
+hierarchy, saving all the files it finds that are newer than the last
+backup. When a recent plain file is found, the procedure
+\textsf{copy\_file()} is called. 
+
+\iconcode{
+procedure traverse(dir) \\
+\>   \# Skip excluded directories \\
+\>   if dir == !exclude then \\
+\>   \ \ \ return \\
+\ \\
+\>   \# Read all the files; for any non-special files, copy them \\
+\>   \# over to the output dir, creating directories as necessary \\
+\>   d := open(dir) {\textbar} \{ \\
+\>   \ \ \ write(\&errout, {\textquotedbl}Couldn{\textquotesingle}t
+stat {\textquotedbl}, dir, {\textquotedbl} {\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ sys\_errstr(\&errno)) \\
+\>   \ \ \ return \\
+\>   \ \ \ \} \\
+\>   if dir[-1] \~{}== {\textquotedbl}/{\textquotedbl} then dir
+{\textbar}{\textbar}:= {\textquotedbl}/{\textquotedbl} \\
+\>   while name := read(d) do \{ \\
+\>   \ \ \ if name == ({\textquotedbl}.{\textquotedbl} {\textbar}
+{\textquotedbl}..{\textquotedbl}) then \\
+\>   \ \ \ \ \ \ next \\
+\>   \ \ \ s := stat(dir {\textbar}{\textbar} name) {\textbar} \{ \\
+\>   \ \ \ \ \ \ write(\&errout,
+{\textquotedbl}Couldn{\textquotesingle}t stat {\textquotedbl},
+dir{\textbar}{\textbar}name, {\textquotedbl} {\textquotedbl}, \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ sys\_errstr(\&errno)) \\
+\>   \ \ \ \ \ \ next \\
+\>   \ \ \ \} \\
+\>   \ \ \ if s.mode[1] == {\textquotedbl}d{\textquotedbl} then \\
+\>   \ \ \ \ \ \ traverse(dir {\textbar}{\textbar} name) \\
+\>   \ \ \ else \{ \\
+\>   \ \ \ \ \ \ \# Only save plain files \\
+\>   \ \ \ \ \ \ if s.mode[1] == {\textquotedbl}-{\textquotedbl} \&
+s.ctime {\textgreater} last then \\
+\>   \ \ \ \ \ \ \ \ \ copy\_file(dir, name) \\
+\>   \ \ \ \ \ \ \} \\
+\>   \ \ \ \} \\
+end
+}
+
+To copy a file, you must first ensure that its parent directory exists.
+If it doesn{\textquotesingle}t, the parent directory is created; then
+the file itself is copied. For efficiency, \textsf{backup} uses the
+system program (\textsf{cp} on UNIX) to copy the file. When directories
+are created, \textsf{backup} copies the owner and mode from the
+directory being backed up.
+
+{\sffamily\bfseries
+Note}
+
+{\sffamily
+This program must be run with administrator privileges for it to be able
+to read all the files on the system and also to be able to set the
+owner and mode.}
+
+\iconcode{
+procedure copy\_file(dir, name) \\
+\>   \# First, make sure the directory exists \\
+\>   mkdir\_p(output, dir) \\
+\>   system({\textquotedbl}cp {\textquotedbl} {\textbar}{\textbar} dir
+{\textbar}{\textbar} {\textquotedbl}/{\textquotedbl}
+{\textbar}{\textbar} name {\textbar}{\textbar} {\textquotedbl}
+{\textquotedbl} {\textbar}{\textbar} \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ output {\textbar}{\textbar}
+{\textquotedbl}/{\textquotedbl} {\textbar}{\textbar} dir) \\
+end \\
+\ \\
+procedure mkdir\_p(prefix, dir) \\
+\>   \# The name is supposed to be reminiscent of {\textquotedbl}mkdir
+-p{\textquotedbl} \\
+\>   \# Start at the first component and keep going down it, \\
+\>   \# copying mode and owner. \\
+\>   dir {\textbar}{\textbar}:= {\textquotedbl}/{\textquotedbl} \\
+\>   d := {\textquotedbl}{\textquotedbl} \\
+\>   dir ? while comp :=
+tab(upto({\textquotesingle}/{\textquotesingle})) do \{ \\
+\>   \ \ \ tab(many({\textquotesingle}/{\textquotesingle})) \\
+\>   \ \ \ d {\textbar}{\textbar}:= {\textquotedbl}/{\textquotedbl}
+{\textbar}{\textbar} comp \\
+\>   \ \ \ if {\textbackslash}stat(prefix {\textbar}{\textbar} d) then
+\{ \\
+\>   \ \ \ \ \ \ \# The directory doesn{\textquotesingle}t exist;
+create it. d is the \\
+\>   \ \ \ \ \ \ \# directory being copied over; get its uid and mode. \\
+\>   \ \ \ \ \ \ s := stat(d) \\
+\>   \ \ \ \ \ \ mkdir(prefix {\textbar}{\textbar} d, s.mode[2:11]) \\
+\>   \ \ \ \ \ \ chown(prefix {\textbar}{\textbar} d, s.uid, s.gid) \\
+\>   \ \ \ \} \\
+\>   \} \\
+end
+}
+
+The database file is very simple: for every level, the date of the last
+backup at that level is stored. Dates are stored in the system native
+format so that comparisons with file modification dates can be easily
+performed. If no earlier backup is found, procedure
+\textsf{get\_time()} returns the earliest possible time (the epoch);
+all files will have newer modified times, and therefore be backed up.
+
+All the dates found are stored in a global table so that they will be
+accessible when \textsf{backup} writes out the database later. 
+
+\iconcode{
+procedure get\_time(n) \\
+\>   \# Get the date of earlier backup \\
+\>   levels := table() \\
+\>   f := open(dbase) \\
+\ \\
+\>   while line := read({\textbackslash}f) do \\
+\>   \ \ \ line ? \{ \\
+\>   \ \ \ \ \ \ lev := integer(tab(upto({\textquotesingle}
+{\textquotesingle}))) \\
+\>   \ \ \ \ \ \ move(1) \\
+\>   \ \ \ \ \ \ date := tab(0) \\
+\>   \ \ \ \ \ \ levels[lev] := date \\
+\>   \ \ \ \ \ \ \} \\
+\>   close({\textbackslash}f) \\
+\>   every i := integer(!\&digits) do \\
+\>   \ \ \ if i {\textless} n then \\
+\>   \ \ \ \ \ \ prev := {\textbackslash}levels[i] \\
+\>   /prev := 0 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# default: the epoch \\
+\ \\
+\>   return prev \\
+end
+}
+
+Finally, the program saves the database of dates. It fetches the current
+time to save with the current level, and it also deletes all
+higher-numbered backups from the database.
+
+\iconcode{
+procedure save\_time(n) \\
+\>   levels[n] := \&now \\
+\ \\
+\>   f := open(dbase, {\textquotedbl}w{\textquotedbl}) {\textbar}
+stop({\textquotedbl}Couldn{\textquotesingle}t open table
+{\textquotedbl}, dbase) \\
+\>   every i := integer(!\&digits) do \\
+\>   \ \ \ if i {\textless}= n then \\
+\>   \ \ \ \ \ \ write(f, i, {\textquotedbl} {\textquotedbl},
+{\textbackslash}levels[i]) \\
+\>   \ \ \ else \\
+\>   \ \ \ \ \ \ break \\
+\>   close(f) \\
+end
+}
+
+\subsection{Filtering Email}
+
+Unicon{\textquotesingle}s messaging facilities can be used for filtering
+email messages obtained from a POP server. A filtering rule has two
+components: a pattern to look for, and an action to perform if the
+string is found. The action to be perform can take a few forms: the
+message can be saved in a folder; it can be deleted; or it can be
+forwarded to some other address. We can use a record to represent a
+rule:
+
+\iconcode{
+record rule(pattern, action, args)
+}
+
+Here are some example rules represented as records:
+
+\iconcode{
+\>   rule({\textquotedbl}From:
+.*spammer{\textbackslash}.com{\textquotedbl},
+{\textquotedbl}delete{\textquotedbl}) \\
+\>   rule({\textquotedbl}From:
+.*unicon-list@lists{\textbackslash}.sourceforge{\textbackslash}.net{\textquotedbl}, \\
+\>   \ \ \ {\textquotedbl}save{\textquotedbl},
+{\textquotedbl}folders/unicon{\textquotedbl}) \\
+\>   rule({\textquotedbl}Subject: .*xyzzy{\textquotedbl},
+{\textquotedbl}forward\textrm{{\textquotedbl}}
+\textrm{{\textquotedbl}}\href{mailto:shamim@home-domain.org}{shamim@home-domain.org}{\textquotedbl})
+}
+
+
+\bigskip
+
+We read all the rules from a file and use them to filter all messages.
+To connect \ to the POP server, we need some parameters: the server to
+connect to, the username and the password. These values are stored in a
+parameter file that we read. The parameters from the file can be stored
+in a global table called \textsf{params}. (We will deal with reading
+the file later.) First, we connect to the POP server and for every
+message, invoke the filter:
+
+\iconcode{
+\>   params := get\_parameters() \\
+ \ \ server :=
+{\textbackslash}params[{\textquotedbl}server{\textquotedbl}]
+{\textbar} \\
+ \ \ \ \ \ stop({\textquotedbl}No server specified in .popfilter
+file{\textquotedbl}) \\
+ \ \ user := {\textbackslash}params[{\textquotedbl}user{\textquotedbl}]
+{\textbar} \\
+ \ \ \ \ \ stop({\textquotedbl}No user specified in .popfilter
+file{\textquotedbl}) \\
+ \ \ password :=
+{\textbackslash}params[{\textquotedbl}password{\textquotedbl}]
+{\textbar} \\
+ \ \ \ \ \ stop({\textquotedbl}No password specified in .popfilter
+file{\textquotedbl}) \\
+ \ \ {\textbackslash}params[{\textquotedbl}inbox{\textquotedbl}]
+{\textbar} \\
+ \ \ \ \ \ stop({\textquotedbl}No inbox specified in .popfilter
+file{\textquotedbl}) \\
+\ \\
+ \ \ url := {\textquotedbl}pop://{\textquotedbl} {\textbar}{\textbar}
+user {\textbar}{\textbar} {\textquotedbl}:{\textquotedbl}
+{\textbar}{\textbar} password {\textbar}{\textbar}
+{\textquotedbl}@{\textquotedbl} {\textbar}{\textbar} server \\
+ \ \ s := open(url, {\textquotedbl}m{\textquotedbl}) {\textbar} \\
+ \ \ \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t connect to
+{\textquotedbl}, image(url)) \\
+ \ \ while filter(pop(s), rules) do \\
+ \ \ \ \ \ \# Make sure there are no errors \\
+ \ \ \ \ \ if s[{\textquotedbl}Status-Code{\textquotedbl}]
+{\textgreater}= 300 then \{ \\
+ \ \ \ \ \ \ \ \ close(s) \\
+ \ \ \ \ \ \ \ \ stop(\&progname, {\textquotedbl}: POP error:
+{\textquotedbl}, s[{\textquotedbl}Status-Code{\textquotedbl}], \\
+ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl} {\textquotedbl},
+s[{\textquotedbl}Reason-Phrase{\textquotedbl}] {\textbar}
+{\textquotedbl}{\textquotedbl}) \\
+ \ \ \ \ \ \}
+}
+
+After reading each message, we make sure that there
+wasn{\textquotesingle}t an error in talking to the POP server -- if
+there was one, we print the error and exit.
+
+The filtering procedure tries to match the message against every rule;
+if one matches, it hands the message off to the action procedure. If no
+rule matches, the message is saved to the default folder (the inbox).
+
+\iconcode{
+procedure filter(message, rules) \\
+ \ \ local filter\_rule \\
+ \ \ every filter\_rule := !rules do \\
+ \ \ \ \ \ if message? ReFind(filter\_rule.pattern) then \\
+ \ \ \ \ \ \ \ \ perform(filter\_rule.action, filter\_rule.args,
+message) {\textbar} \\
+ \ \ \ \ \ \ \ \ \ \ \ write(\&errout, {\textquotedbl}Error in
+{\textquotedbl},image(filter\_rule.action), \\
+ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl} {\textquotedbl},
+image(filter\_rule.args)) \\
+ \ \ \# No action matched so we save it in the inbox \\
+ \ \ perform({\textquotedbl}save{\textquotedbl},
+params[{\textquotedbl}inbox{\textquotedbl}], message) \\
+end
+}
+
+Since the patterns are regular expressions, we link in the IPL regexp
+package for the procedure \textsf{ReFind()} that will do the pattern
+matching.
+
+\iconcode{
+procedure perform(action, args, message) \\
+ \ \ local procname\\
+ \ \ procname :=
+{\textbackslash}proc({\textquotedbl}filterproc\_{\textquotedbl}
+{\textbar}{\textbar} action, 2) {\textbar}\\
+ \ \ \ \ \ stop(\&progname, {\textquotedbl}: action {\textquotedbl},
+image(action), {\textquotedbl} unknown.{\textquotedbl})\\
+ \ \ procname(message, args) {\textbar} fail\\
+ \ \ return {\textquotedbl}{\textquotedbl}\\
+end}
+
+We use Unicon{\textquotesingle}s string invocation (and
+we{\textquotesingle}d better remember to put \textsf{invocable all} at
+the top of the program) to call the procedure associated with each
+defined action. The function \textsf{proc()} tries to find the
+procedure with the right name; if it fails, it is an unknown action.
+The names of these procedures all have the form
+{\textquotedblleft}filterproc\_{\textquotedblright} appened with the
+name of the action. We make sure that the procedures succeed if there
+was no error in performing the action.
+
+\iconcode{
+procedure filterproc\_delete(message, args)\\
+ \ \ return {\textquotedbl}{\textquotedbl}
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \# We don{\textquotesingle}t have to do
+anything\\
+end\\
+\\
+procedure filterproc\_save(message, filename)\\
+ \ \ local f\\
+ \ \ f := open(filename, {\textquotedbl}a{\textquotedbl}) {\textbar}
+fail\\
+ \ \ write(f, message)\\
+ \ \ close(f)\\
+ \ \ return {\textquotedbl}{\textquotedbl}\\
+end\\
+procedure filterproc\_forward(message, address)\\
+ \ \ local subject, s\\
+\\
+ \ \ \# Find the subject of the message and use that\\
+ \ \ message? (tab(find({\textquotedbl}Subject: {\textquotedbl})) \&
+subject :=
+tab(upto({\textquotesingle}{\textbackslash}n{\textquotesingle})))\\
+ \ \ subject := {\textquotedbl}Subject: {\textquotedbl}
+{\textbar}{\textbar} {\textbackslash}subject\\
+\\
+ \ \ s := open({\textquotedbl}mailto://{\textquotedbl}
+{\textbar}{\textbar} address, {\textquotedbl}m{\textquotedbl}, subject)
+{\textbar} fail\\
+ \ \ write(s, message)\\
+ \ \ close(s)\\
+ \ \ return {\textquotedbl}{\textquotedbl}\\
+end}
+
+It would be easy to implement an action that sends messages to external
+programs -- in procedure \textsf{perform()}, if the first character of
+the action is the pipe symbol
+{\textquotedblleft}{\textbar}{\textquotedblright} we can open a pipe
+and write the message to it instead of calling the right action
+procedure. (This would be a good {\textquotedblleft}exercise left to
+the reader!{\textquotedblright})
+
+We still need to read the files and set up the \textsf{params} table and
+the list of rules. It is a good idea to allow blank lines and comments
+in files we read, since humans will be editing these files and we like
+comments to remind ourselves what things do. We need a procedure that
+reads a file and strips out comments and blank lines:
+
+\iconcode{
+\# Read a line from a file, skipping comments and blank lines\\
+procedure getline(f)\\
+ \ \ local line, s\\
+ \ \ while line := read(f) do line? \{\\
+ \ \ \ \ \ s := tab(upto({\textquotesingle}\#{\textquotesingle})
+{\textbar} 0)\\
+ \ \ \ \ \ if *trim(s) = 0 then next\\
+ \ \ \ \ \ return s\\
+ \ \ \}\\
+end}
+
+We read the POP parameters from a file named \textsf{.popfilter} in the
+user{\textquotesingle}s home directory and return a table of name-value
+pairs. The global variable \textsf{WS} is a cset that contains the
+space and tab characters; it is initialized in \textsf{main()}, when
+the program first starts executing.
+
+\iconcode{
+\# Read the \~{}/.popfilter file and return a table of name
+-{\textgreater} value\\
+\# pairs\\
+procedure get\_parameters()\\
+ \ \ local f, P, line\\
+ \ \ P := table()\\
+ \ \ f := open(getenv({\textquotedbl}HOME{\textquotedbl})
+{\textbar}{\textbar} {\textquotedbl}/.popfilter{\textquotedbl})
+{\textbar} return P\\
+\\
+ \ \ while line := getline(f) do line ? \{\\
+ \ \ \ \ \ pname := tab(upto(WS))\\
+ \ \ \ \ \ tab(many(WS))\\
+ \ \ \ \ \ P[pname] := tab(0)\\
+ \ \ \}\\
+ \ \ close(f)\\
+ \ \ return P\\
+end}
+
+The filtering rules are read from the file named on the command line.
+The pattern is separated from the action by an exclamation point, and
+(as usual) comments, blank lines and whitespace (around the
+{\textquotedblleft}!{\textquotedblright}) are allowed. Whitespace
+inside the regular expression is significant and should not be
+discarded so we use \textsf{trim()} to make sure we only remove
+trailing whitespace. Searches are anchored to the begin of line so we
+can easily look for individual headers; instead of separating a message
+into lines and using the {\textquotedblleft}beginning of
+line{\textquotedblright} regular expression operator, we simply we add
+a newline character to the front of the pattern.
+
+\iconcode{
+\# Read the file and return a list of rules. All the work is\\
+\# actually done in getline() and parse()\\
+procedure read\_rulefile(filename)\\
+ \ \ local f, rules\\
+\\
+ \ \ rules := [ ]\\
+ \ \ f := open(filename) {\textbar} fail\\
+ \ \ while push(rules, parse(getline(f)))\\
+ \ \ close(f)\\
+ \ \ return rules\\
+end\\
+}
+
+\iconcode{
+\# Parse a line into a pattern, an action, and optionally\\
+\# arguments to the action.\\
+procedure parse(s)\\
+ \ \ local regexp, action\\
+\\
+ \ \ s ? \{\\
+ \ \ \ \ \ tab(many(WS))\\
+ \ \ \ \ \ regexp := tab(upto({\textquotesingle}!{\textquotesingle})) \&
+move(1)\\
+ \ \ \ \ \ tab(many(WS))\\
+ \ \ \ \ \ action := tab(upto(WS) {\textbar} 0)\\
+ \ \ \ \ \ pos(0) {\textbar} (tab(many(WS)) \& args := tab(0))\\
+ \ \ \}\\
+ \ \ return rule({\textquotedbl}{\textbackslash}n{\textquotedbl}
+{\textbar}{\textbar} trim({\textbackslash}regexp),
+{\textbackslash}action, args)\\
+end}
+
+Here is an example action file that includes the example rules from
+above:
+
+\iconcode{
+\# Flush evil spammers!\\
+From: .*spammer{\textbackslash}.com \ \ \ \ \ \ \ !delete\\
+Subject: .*MAKE MONEY FAST \ !delete \ \ \ \# Got enough,
+thanks!\\
+\\
+\# Cool people get special attention\\
+From:
+.*unicon-list@lists{\textbackslash}.sourceforge{\textbackslash}.net
+\ !save folders/unicon\\
+From: .*(parlett{\textbar}jeffery{\textbar}pereda) \ \ \ !save
+folders/urgent\\
+\\
+\# The secret password!! Forward it to the pager.\\
+Subject: .*xyzzy \ \ \ \ \ \ \ \ \ \ \ !forward
+\href{mailto:pager@shamims-domain.org}{pager@shamims-domain.org}}
+
+And here{\textquotesingle}s an example .popfilter file:
+
+\iconcode{
+\# Settings for popfilter.icn, a POP client and email filter\\
+\# July 2002\\
+\\
+\# Where incoming mail is stored locally\\
+inbox /var/mail/shamim\\
+\\
+\# The POP server\\
+server jantar\\
+\\
+\# Remember, this is the username and password on jantar\\
+user spm\\
+password Xyz!1234}
+
+We have introduced the main procedure in pieces; here it is all in one
+place:
+
+\iconcode{
+link regexp\\
+record rule(pattern, action, args)\\
+global WS\\
+}
+
+\iconcode{
+\# Email and POP parameters\\
+global params\\
+\\
+\# We{\textquotesingle}re using string invocation\\
+invocable all\\
+procedure main()\\
+ \ \ local server, user, password\\
+ \ \ WS := {\textquotesingle} {\textbackslash}t{\textquotesingle}
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# whitespace\\
+ \ \ params := get\_parameters()\\
+ \ \ server :=
+{\textbackslash}params[{\textquotedbl}server{\textquotedbl}] {\textbar}
+stop({\textquotedbl}No server specified in .popfilter
+file{\textquotedbl})\\
+ \ \ user := {\textbackslash}params[{\textquotedbl}user{\textquotedbl}]
+{\textbar} stop({\textquotedbl}No user specified in .popfilter
+file{\textquotedbl})\\
+ \ \ password :=
+{\textbackslash}params[{\textquotedbl}password{\textquotedbl}]
+{\textbar} stop({\textquotedbl}No password specified in .popfilter
+file{\textquotedbl})\\
+ \ \ {\textbackslash}params[{\textquotedbl}inbox{\textquotedbl}]
+{\textbar} stop({\textquotedbl}No inbox specified in .popfilter
+file{\textquotedbl})\\
+ \ \ if *args = 0 then stop({\textquotedbl}Usage: {\textquotedbl},
+\&progname, {\textquotedbl} filter-rule-file{\textquotedbl})\\
+\\
+ \ \ url := {\textquotedbl}pop://{\textquotedbl} {\textbar}{\textbar}
+user {\textbar}{\textbar} {\textquotedbl}:{\textquotedbl}
+{\textbar}{\textbar} password {\textbar}{\textbar}
+{\textquotedbl}@{\textquotedbl} {\textbar}{\textbar} server\\
+\\
+ \ \ filter\_rules := read\_rulefile(args[1]) {\textbar}\\
+ \ \ \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t read filter
+rules from {\textquotedbl}, image(args[1]))\\
+ \ \ filter(testmsg(), filter\_rules)\\
+\\
+ \ \ s := open(url, {\textquotedbl}m{\textquotedbl}) {\textbar}
+stop({\textquotedbl}Couldn{\textquotesingle}t connect to
+{\textquotedbl}, image(url))\\
+\\
+ \ \ while filter(pop(s), filter\_rules) do\\
+ \ \ \ \ \ if s[{\textquotedbl}Status-Code{\textquotedbl}]
+{\textgreater}= 300 then \{\\
+ \ \ \ \ \ \ \ \ close(s)\\
+ \ \ \ \ \ \ \ \ stop(\&progname, {\textquotedbl}: POP error:
+{\textquotedbl}, s[{\textquotedbl}Status-Code{\textquotedbl}],
+{\textquotedbl} {\textquotedbl},
+s[{\textquotedbl}Reason-Phrase{\textquotedbl}] {\textbar}
+{\textquotedbl}{\textquotedbl})\\
+ \ \ \ \ \ \}\\
+ \ \ close(s)\\
+end}
+
+The complete program \textsf{popfilter.icn} can be obtained from the
+book{\textquotesingle}s website. There are still a few things this
+program would need to be truly useful. For example, we should allow
+non-anchored searches, and the user should be able to specify whether
+or not case is significant while looking for a pattern -- or perhaps a
+part of a pattern may be set to case sensitive by itself. Also, what if
+we want a {\textquotedblleft}!{\textquotedblright} in the regular
+expression? We hope that you will be inspired and able to make these
+additions yourself.
+
+{\sffamily
+Summary}
+
+Writing utilities and system administration tools is easy in Unicon.
+These programs rely \ heavily on the system facilities described in
+Chapter 5. While we do not advocate using Unicon in every case, you may
+find it is an advantage that your applications language is also an
+effective scripting language. Ordinary programs can easily take on
+scripting tasks, and programs that might otherwise be written in a
+scripting language have Unicon{\textquotesingle}s cleaner design and
+more robust set of control and data structures available.
+
+
+\bigskip

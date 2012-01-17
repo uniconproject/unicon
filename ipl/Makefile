@@ -52,8 +52,7 @@ Check:
 #  Clean up.
 
 Clean Pure:
-	rm -rf iexe */*.u[12] */*.zip
-	-rm -f `find *procs *progs -type f -perm -100 -print`
+	rm -rf iexe */*.u */*.zip
 	cd cfuncs && $(MAKE) Clean
 	cd gpacks/carpets && $(MAKE) Clean
 	cd gpacks/drawtree && $(MAKE) Clean

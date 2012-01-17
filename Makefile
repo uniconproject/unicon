@@ -85,7 +85,7 @@ build:
 
 Pure:
 		touch Makedefs
-		rm -rf icon.* bin/[a-z]* lib/[a-z]*
+		rm -rf icon.* bin/[a-z]* lib/[a-z]*.u
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure

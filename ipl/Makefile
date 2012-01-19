@@ -9,7 +9,7 @@ Ilib:	../bin/libcfunc.so
 	cd procs;  LPATH= ../../bin/icont -usc *.icn; mv *.u? ../../lib
 	cd gprocs; LPATH= ../../bin/icont -usc *.icn; mv *.u? ../../lib
 	cd cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont
-	mv cfuncs/*.u? ../lib
+	mv cfuncs/*.u? lib
 	mv cfuncs/libcfunc.so ../bin
 
 

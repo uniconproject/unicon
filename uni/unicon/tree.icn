@@ -104,64 +104,52 @@ end
 # will add error checking later
 
 procedure process_uneval(node)
-	case type(node.s) of 
-	{ 
-		"string":
-		{
-			write(node.s)
-		 	if node.s[1:3] === "``" then 		
-			{
-				node.s ?
-					{
-						if find(".") & find ("(") then
-						{
-							write("\nFound method call")
-							return emit_code_for_uneval("pattern_stringmethodcall")
-						}
-						else if find ("(") then
-						{
-							write("\nFound procedure call")
-							return emit_code_for_uneval( "pattern_stringfunccall")
-						}	
-						else
-							yyerror("`` must enclose function call", node)
-					}	
-			}
-		 	else
-		 	{
-		 		node.s ?
-					{
-						if find(".") & find ("(") then
-						{
-							write("\nFound method call")
-							return emit_code_for_uneval("pattern_boolmethodcall")
-						}
-						else if find ("(") then
-						{
-							write("\nFound procedure call")
-							return emit_code_for_uneval( "pattern_boolfunccall")
-						}	
-						else if find(".") then 
-						{
-						    write("\nFound field reference")
-	           				    return emit_code_for_uneval("pattern_unevalvar")
-						}
-						else
-						{
-						   write("\nFound variable reference")
-						   tab(upto(&letters))
-						   temp := tab(many(&letters))
-						   writes(yyout,"pattern_unevalvar( ")
-						   writes(yyout, "\"", temp, "\"")
-						   writes(yyout, ")")
-	        	   		           return
-						}	
-					}
-			}
-		}	
-		default :
-		write("Error string expected but got  ", type(node))
-	}
+   case type(node.s) of {
+      "string":	{
+	 write(node.s)
+	 if node.s[1:3] === "``" then {
+	    node.s ? {
+	       if find(".") & find ("(") then {
+		  write("\nFound method call")
+		  return emit_code_for_uneval("pattern_stringmethodcall")
+		  }
+	       else if find ("(") then {
+		  write("\nFound procedure call")
+		  return emit_code_for_uneval( "pattern_stringfunccall")
+		  }	
+	       else
+		  yyerror("`` must enclose function call", node)
+	       }	
+	    }
+	 else {
+	    node.s ? {
+	       if find(".") & find ("(") then {
+		  write("\nFound method call")
+		  return emit_code_for_uneval("pattern_boolmethodcall")
+		  }
+	       else if find ("(") then {
+		  write("\nFound procedure call")
+		  return emit_code_for_uneval( "pattern_boolfunccall")
+		  }	
+	       else if find(".") then {
+		  write("\nFound field reference")
+		  return emit_code_for_uneval("pattern_unevalvar")
+		  }
+	       else {
+		  write("\nFound variable reference")
+		  tab(upto(&letters))
+		  temp := tab(many(&letters))
+		  writes(yyout,"pattern_unevalvar( ")
+		  writes(yyout, "\"", temp, "\"")
+		  writes(yyout, ")")
+		  return
+		  }	
+	       }
+	    }
+	 }	
+      default :
+	 write("Error string expected but got  ", type(node))
+      }
 end
 
 procedure emit_assign_code(node)
@@ -415,7 +403,7 @@ procedure yyprint(node)
 end
 
 procedure print_imports(node)
-   if type(node)=="treenode" & node.label=="implist" then {
+   if type(node)=="treenode" & node.label==("implist"|"lnklist") then {
       print_imports(node.children[1])
       print_imports(node.children[3])
    } else if node.tok = (IDENT|STRINGLIT) then {

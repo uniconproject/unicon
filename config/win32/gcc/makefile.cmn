@@ -1,7 +1,5 @@
-OS=NT
-ENV=WIN32
-CPU=i386
-#!include <$(OS)$(ENV).mak>
+include ../../makedefs
+
 
 #  The -D$D option to CFLAGS makes it possible to specify a definition
 #  at the Make command level without revising the Makefile, as
@@ -10,13 +8,10 @@ CPU=i386
 #       make D=Debug
 #
 D=NOTHING
-CC=gcc
-# /O1 to minimize space, /Zi for debugging
-CFLAGS= -D_X86_ -DWIN32 -O -D$(D) -I../gdbm -I../libtp
-LDFLAGS=
-MAKE = make -j4
 
-O=o
+# /O1 to minimize space, /Zi for debugging
+CFLAGS= $(ISFLAG) -D_X86_ -DWIN32 -O -D$(D) -I../gdbm -I../libtp
+LDFLAGS= $(ISFLAG)
 
 HDRS=../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h  ../h/path.h\
 	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
@@ -31,11 +26,12 @@ common:         doincl.exe patchstr.exe
 winobjs: $(OBJS)
 
 doincl.exe:     doincl.$(O)
-	$(CC) -o doincl.exe doincl.$(O) libc.lib kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB
+	$(CC) $(LDFLAGS) -o doincl.exe doincl.$(O) -Llibc -Lkernel64 -Lntdll -Luser64 -Lgdi64 -Lwinspool -Lcomdlg64 -LVERSION
 
 patchstr.exe:   patchstr.c
 	$(CC) $(CFLAGS) patchstr.c
-	$(CC) -o patchstr.exe patchstr.o
+	$(CC) -c $(CFLAGS) patchstr.c
+	$(CC) $(LDFLAGS) -o patchstr.exe patchstr.o
 	cp patchstr.exe ..\..\bin
 
 patchstr.$(O):  patchstr.c
@@ -72,7 +68,7 @@ xwindow.$(O): ../h/graphics.h ../h/xwin.h ../h/pmwin.h
 #	$(CC) -D_X86_ -DWIN32 -c -I..\gdbm -I..\libtp rswitch.c
 
 rswitch.$(O): rswitch.s
-	as --32 rswitch.s
+	as $(ASMFLAG) rswitch.s
 
 #  The following section is needed if changes are made to the Icon grammar,
 #  but it is not run as part of the normal installation process.  If it is

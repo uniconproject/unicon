@@ -1,21 +1,13 @@
-OS=NT
-ENV=WIN32
-CPU=i386
-#!include <$(OS)$(ENV).mak>
+include ../../makedefs
 
-CC=gcc
-LD=ld
 # /Ox for maximum optimzation, /Zi for debugging...
 #CFLAGS= /D_X86_ /DWIN32 /Ox /D$(CONSOLE) /I..\gdbm /I..\libtp
-CFLAGS= -D_X86_ -DWIN32 -O -D$(CONSOLE) -I../gdbm -I../libtp
+CFLAGS= $(ISFLAG) -D_X86_ -DWIN32 -O -D$(CONSOLE) -I../gdbm -I../libtp
 HFLAGS=
-LDFLAGS=
+LDFLAGS= $(ISFLAG)
 LIBS=
 SHELL=/bin/sh
-MAKE=make -j4
-O=o
-RM=-rm
-CP=cp
+
 
 TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O) tree.$(O) yyerror.$(O)
 
@@ -32,10 +24,10 @@ ICOBJS=   long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O)
 WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
 
-all:            $(ICONT)
+all:            $(MYICONT)
 
 icont:        $(OBJS) common
-	gcc -o icont.exe $(OBJS) $(COBJS) -lz
+	$(CC) $(LDFLAGS) -o icont.exe $(OBJS) $(COBJS) $(NTOPTLIBS)
 	$(CP) icont.exe ../../bin
 
 wicont:
@@ -44,10 +36,9 @@ wicont:
 	$(MAKE) wicont2
 
 # add $(linkdebug) after $(link) for debugging
-MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 --static -lpng -lz -ljpeg
 
 wicont2: $(OBJS) common
-	gcc -o wicont.exe -mwindows $(guiflags) $(OBJS) $(COBJS) $(WOBJS) -lwinmm $(MYGUILIBS)
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(guiflags) $(OBJS) $(COBJS) $(WOBJS) -lwinmm $(MYGUILIBS) $(SHAREDLIBS) $(OPTLIBS)
 	$(CP) wicont.exe ../../bin
 
 common: $(COBJS) $(DCONSOLE)

@@ -72,25 +72,23 @@ end
 
 
 procedure  emit_code_for_uneval(funcname)
-	L := []
-	tab(many("`"))
-	temp := tab(upto("(.")) 
-	if \temp == "\\" then temp := "\\\\"
-	put(L,\temp)
-	while ( tab(upto(&letters))) do
-	{
-		temp := tab(many(&letters))
-		put(L,temp)
-	}
-	writes(yyout,funcname, "(")
-	writes(yyout, "[")
-	every temp := !L\ (*L -1) do
-	{
-		writes(yyout, "\"", temp,"\",")
-	}
- 	writes(yyout, "\"", L[*L], "\"")
-	writes(yyout, "])")
-	return
+   L := []
+   tab(many("`"))
+   temp := tab(upto("(.")) 
+   if \temp == "\\" then temp := "\\\\"
+   put(L,\temp)
+   while tab(upto(&letters)) do {
+      temp := tab(many(&letters))
+      put(L,temp)
+      }
+   writes(yyout,funcname, "(")
+   writes(yyout, "[")
+   every temp := !L\ (*L -1) do {
+      writes(yyout, "\"", temp,"\",")
+      }
+   writes(yyout, "\"", L[*L], "\"")
+   writes(yyout, "])")
+   return
 end
 
 
@@ -153,37 +151,31 @@ procedure process_uneval(node)
 end
 
 procedure emit_assign_code(node)
-	case type(node) of
-	{
-		"treenode":
-		{
-			if ( node.label ~== "field") then
-				{
-					yyerror("Assignement must be to field")
-					return;
-				}
-			if ( type(node.children[1]) ~== "token") then
-				{
-					yyerror("Multiple references not supported")
-					return;
-				}
-			writes(yyout,"[","\"",node.children[1].s,"\",\"",node.children[3].s,"\"]")
-			return
-		}
-		"token":
-		{
-			node.s ??
-				{
-					rec := tab(upto("."))
-					if \rec then &pos +:= 1; # jump over the .
-					var := tab(0)
-					write("rec =", rec, " var = ",var)
-					if (\rec) then writes(yyout,"[","\"",rec,"\",\"",var,"\"]")
-					else writes(yyout,"\"",var,"\"")
-				}
-		}
-	}
-
+   case type(node) of {
+      "treenode": {
+	 if node.label ~== "field" then {
+	    yyerror("Assignement must be to field")
+	    return
+	    }
+	 if type(node.children[1]) ~== "token" then {
+	    yyerror("Multiple references not supported")
+	    return
+	    }
+	 writes(yyout,"[","\"",node.children[1].s,"\",\"",
+		node.children[3].s,"\"]")
+	 return
+	 }
+      "token": {
+	 node.s ? {
+	    rec := tab(upto('.'))
+	    if \rec then &pos +:= 1; # jump over the .
+	    var := tab(0)
+	    write("rec =", rec, " var = ",var)
+	    if \rec then writes(yyout,"[","\"",rec,"\",\"",var,"\"]")
+	    else writes(yyout,"\"",var,"\"")
+	    }
+	 }
+      }
 end
 
 procedure yyprint(node)
@@ -243,7 +235,7 @@ procedure yyprint(node)
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
             fail
-        }	
+	    }	
          else if node.label == "BPmatch" then {
 	    writes(yyout, " pattern_match( ")
 	    yyprint(node.children[1])
@@ -251,7 +243,7 @@ procedure yyprint(node)
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
             fail
-        }	
+	    }	
          else if node.label == "BPiam" then {
 	    writes(yyout, " pattern_assign_immediate( ")
 	    yyprint(node.children[1])
@@ -261,7 +253,7 @@ procedure yyprint(node)
 	    emit_assign_code(node.children[3])
 	    writes(yyout, " ) ")		
             fail
-        }	
+	    }	
          else if node.label == "BPaom" then {
 	    writes(yyout, " pattern_assign_onmatch( ")
 	    yyprint(node.children[1])
@@ -271,7 +263,7 @@ procedure yyprint(node)
 	    emit_assign_code(node.children[3])
 	    writes(yyout, " ) ")		
             fail
-        }	
+	    }	
          else if node.label == "upsetcur" then {
 	    writes(yyout, " pattern_setcur( ")
 	    yyprint(node.children[2])
@@ -279,10 +271,10 @@ procedure yyprint(node)
 	    emit_assign_code(node.children[2])
 	    writes(yyout, " ) ")		
             fail
-        }	
+	    }	
          else if node.label == "BPuneval" then {
-		process_uneval(node.children[1])
-                fail
+	    process_uneval(node.children[1])
+	    fail
             }	
 	 else if node.label == ("varlist2"|"stalist2") then {
 	    yyprint(node.children[1])
@@ -406,14 +398,15 @@ procedure print_imports(node)
    if type(node)=="treenode" & node.label==("implist"|"lnklist") then {
       print_imports(node.children[1])
       print_imports(node.children[3])
-   } else if node.tok = (IDENT|STRINGLIT) then {
+      }
+   else if node.tok = (IDENT|STRINGLIT) then {
       tempp := Package(node.s)
       every fn := (\tempp.files).foreach() do {
-         if map(fn)[-4:0]==".icn" then fn[-4:0] := ""
-         writelink(tempp.dir, fn)
-         outcol := 1
+	 if map(fn)[-4:0]==".icn" then fn[-4:0] := ""
+	 writelink(tempp.dir, fn)
+	 outcol := 1
+	 }
       }
-   }
 end
 
 #
@@ -708,22 +701,22 @@ procedure scopecheck_locals(n, localvars, selfvars)
    if /n then fail
    if type(n) == "treenode" then {
       case n.label of {
-	  "locals2": {
-	      scopecheck_locals(n.children[1], localvars, selfvars)
-	      scopecheck_locals(n.children[3], localvars, selfvars)
-	  }
-	  "varlist2": {
-	      scopecheck_expr(n.children[3], localvars, selfvars)
-	  }
-	  "varlist3": {
-	      scopecheck_locals(n.children[1], localvars, selfvars)
-	  }
-	  "varlist4": {
-	      scopecheck_locals(n.children[1], localvars, selfvars)
-	      scopecheck_expr(n.children[5], localvars, selfvars)
-	  }
+	 "locals2": {
+	    scopecheck_locals(n.children[1], localvars, selfvars)
+	    scopecheck_locals(n.children[3], localvars, selfvars)
+	    }
+	 "varlist2": {
+	    scopecheck_expr(n.children[3], localvars, selfvars)
+	    }
+	 "varlist3": {
+	    scopecheck_locals(n.children[1], localvars, selfvars)
+	    }
+	 "varlist4": {
+	    scopecheck_locals(n.children[1], localvars, selfvars)
+	    scopecheck_expr(n.children[5], localvars, selfvars)
+	    }
+	 }
       }
-   }
    else if type(n) ~== "token" then
       stop("locals ", image(n), " is not a treenode or a token")
 end
@@ -735,7 +728,7 @@ procedure scopecheck_procbody(n, local_vars, self_vars)
    while n ~=== EmptyNode do {
       scopecheck_expr(n.children[1], local_vars, self_vars)
       n := n.children[3]
-   }
+      }
 end
 
 #
@@ -749,7 +742,8 @@ procedure scopecheck_expr(node, local_vars, self_vars)
             fail
          else if node.label == "field" then {
             scopecheck_field(node, local_vars, self_vars)
-         } else if node.label == ("swap"|"assign"|"revswap"|"revasgn"|
+	    }
+	 else if node.label == ("swap"|"assign"|"revswap"|"revasgn"|
 				  "augcat"|"auglcat"|"Bdiffa"|"Buniona"|
 				  "Bplusa"|"Bminusa"|"Bstara"|"Bintera"|
 				  "Bslasha"|"Bmoda"|"Bcareta"|"Baugeq"|
@@ -821,7 +815,7 @@ procedure extract_identifiers(node, res)
    /res := set()
    case type(node) of {
       "treenode": {
-         if node.label == ("arg2" | "arg3" | "arg4" | "stalist2" | "varlist2") then
+         if node.label == ("arg2"|"arg3"|"arg4" | "stalist2" | "varlist2") then
             extract_identifiers(node.children[1], res)
          else if node.label == ("varlist4" | "stalist4") then {
             extract_identifiers(node.children[1], res)

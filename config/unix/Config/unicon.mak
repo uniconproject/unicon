@@ -10,7 +10,7 @@ IYACC=../iyacc/iyacc
 ifeq ($(findstring WindowsNT, $(shell uname)),WindowsNT)
 	EXE=.exe
 else
-	ifeq ($(findstring CYGWIN, $(shell uname)),)
+	ifeq ($(findstring CYGWIN, $(shell uname)),CYGWIN)
 		EXE=
 	else
 		EXE=.exe

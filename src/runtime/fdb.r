@@ -69,7 +69,7 @@ function{0,1} dbcolumns(f,table_name)
     
     HSTMT hstmt;
     
-    static struct descrip colnames[] = {
+    static const struct descrip colnames[] = {
        {7,(word)"catalog"}, {6,(word)"schema"}, {9,(word)"tablename"},
        {7,(word)"colname"}, {8,(word)"datatype"}, {8,(word)"typename"},
        {7,(word)"colsize"}, {6,(word)"buflen"}, {9,(word)"decdigits"},

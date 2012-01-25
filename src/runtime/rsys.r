@@ -1401,6 +1401,7 @@ FILE *popen (const char* cmd, const char *mode)
 
 }
 
+#if defined(OLD_NTGCC) && (__GNUC__ < 3)
 int pclose (FILE * f)
 {
   struct _popen_elt *p, *q;
@@ -1447,6 +1448,7 @@ int pclose (FILE * f)
     
   return exit_code;
 }
+#endif					/* defined(OLD_NTGCC) && (__GNUC__ < 3) */
 #endif
 
 #ifdef PseudoPty

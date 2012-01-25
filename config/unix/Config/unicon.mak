@@ -22,7 +22,11 @@ U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.
 
 UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn ca.icn
 
-unicon: $(U) ../lib/unilex.u
+# Files from this dir that (for now) we copy into lib/ for use by external
+# programs.  Long term, need to reconcile with or replace by stuff in parser/
+LIBFILES= ../lib/unilex.u ../lib/tree.u
+
+unicon: $(U) $(LIBFILES)
 	$(ICONT) $(U)
 	$(CP) unicon$(EXE) $(BIN)
 
@@ -46,6 +50,9 @@ unilex.u : unilex.icn ytab_h.icn
 
 main.u: main.icn
 	$(ICONT) -c main
+
+../lib/tree.u: tree.u
+	$(CP) tree.u ../lib
 
 tree.u : tree.icn
 	$(ICONT) -c tree

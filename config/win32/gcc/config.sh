@@ -1,28 +1,26 @@
+# shared configuration between 32 and 64 bit builds
+# IMPORTANT : this file assumes that config32.sh or config64.sh will 
+#             run afterward to completete the configuration for 32 vs 64.
+#             PLEASE do "sh config32.sh" OR "sh config64.sh" after running this script!
 mkdir -p ../../../bin
 cp mkicont.bat ../../..
 cp mkunivib.bat ../../..
 cp gdbm.bat ../../../src/runtime
 cp libtp.bat ../../../src/runtime
 cp makefile.top ../../../makefile
-cp define.h ../../../src/h
 cp path.h ../../../src/h
 cp auto.h ../../../src/h
-cp RSWITCH.S ../../../src/common
 cp NTICONT.LNK ../../../src/icont
 # unicon.icon has a control-Z char at pos 29, cp on our sh.exe
 # fails to copy beyoned that point leaving the file truncated.
 # Manual copy for now!
 # cp unicon.ico ../../../src/runtime
 cp icon.rc ../../../src/runtime
-echo CONSOLE=NTConsole >../../../src/common/makefile
-cat makefile.cmn >>../../../src/common/makefile
+
+cp makefile.cmn ../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile
-echo ICONX=nticonx >../../../src/runtime/makefile
-echo CONSOLE=NTConsole >>../../../src/runtime/makefile
-cat MAKEFILE.RUN >>../../../src/runtime/makefile
-echo ICONT=icont >../../../src/icont/makefile
-echo CONSOLE=NTConsole >>../../../src/icont/makefile
-cat MAKEFILE.T >>../../../src/icont/makefile
+cp MAKEFILE.RUN ../../../src/runtime/makefile
+cp MAKEFILE.T ../../../src/icont/makefile
 rm ../../../src/libtp/config.h
 cp ../../../src/libtp/config_h.win ../../../src/libtp/config.h
 mkdir -p ../../../ipl/lib
@@ -32,7 +30,7 @@ cp ../../unix/Config/ipllib.mak ../../../ipl/lib/makefile
 # cp ../../unix/Config/ide.mak ../../../uni/ide/makefile
 cp ../../unix/Config/ivib.mak ../../../uni/ivib/makefile
 cp ../../unix/Config/unilib.mak ../../../uni/lib/makefile
-echo EXE=.exe > ../../../uni/unicon/makefile
+echo include ../../makedefs >../../../uni/unicon/makefile
 cat ../../unix/Config/unicon.mak >>../../../uni/unicon/makefile
 cp ../../unix/Config/xml.mak ../../../uni/xml/makefile
 cp ../../unix/Config/unidep.mak ../../../uni/unidep/makefile
@@ -47,7 +45,13 @@ echo EXE=.exe > ../../../uni/makedefs
 cat ../../unix/Config/uni-makedefs >>../../../uni/makedefs
 cp iyacc.mak ../../../uni/iyacc/Makefile
 
-rm ../../../src/icont/*.o 2> nul
-rm ../../../src/common/*.o 2> nul
-rm ../../../src/runtime/*.o 2> nul
+rm -f ../../../src/icont/*.o
+rm -f ../../../src/common/*.o
+rm -f ../../../src/runtime/*.o
+rm -f ../../../src/rtt/*.o
+rm -f ../../../src/gdbm/*.o
+rm -f ../../../src/gdbm/*.a
+rm -f ../../../src/libtp/*.o
+rm -f ../../../src/libtp/*.a
+rm -f ../../../src/libtp/uri/*.o
 echo # noop > ../../../uni/ide/makefile

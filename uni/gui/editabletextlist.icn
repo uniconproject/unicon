@@ -221,19 +221,19 @@ class EditableTextList : LineBasedScrollArea(
 
       vi := get_view_list_index()
 
-      if vi < self.get_first_line() then
-	 self.vsb.set_value(self.line_height * (vi - 1))
-      else if vi > self.get_last_line() then
-	 self.vsb.set_value(self.line_height * (vi - self.get_max_lines()))
+      if \vi < self.get_first_line() then
+	 self.vsb.set_value(self.line_height * (\vi - 1))
+      else if \vi > self.get_last_line() then
+	 self.vsb.set_value(self.line_height * (\vi - self.get_max_lines()))
 
-      v := self.view_list[vi]
-      s := v.str
+      v := self.view_list[\vi]
+      s := (\v).str
       i := TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width)
       j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
       l := self.get_left_pos()
-      if self.view.x - l > i then
+      if self.view.x - l > \i then
 	 self.hsb.set_value(i)
-      else if self.view.x - l + self.view.w < j then
+      else if self.view.x - l + self.view.w < \j then
 	 self.hsb.set_value(j - self.view.w)
    end
 
@@ -272,8 +272,7 @@ class EditableTextList : LineBasedScrollArea(
 	 if member(printable, c) then
 	    s ||:= c
       }
-      if *s = 0 then
-	 fail
+      if *s = 0 then fail
       return s
    end
 
@@ -334,12 +333,13 @@ class EditableTextList : LineBasedScrollArea(
 	    self.set_internal_fields()
 	    self.constrain_line()
 	    self.invalidate()
-	 } else {
+	    }
+	 else {
 	    self.constrain_line()
 	    self.refresh(1)
-	 }
+	    }
 	 fire(CONTENT_CHANGED_EVENT, e)
-      }
+	 }
 
       if (cursor_x ~= old_cursor_x) | (cursor_y ~= old_cursor_y) then {
 	 moved := 1
@@ -360,7 +360,7 @@ class EditableTextList : LineBasedScrollArea(
 	 (\hr & (\moved | \changed)) then {
 	 self.invalidate()
 	 fire(SELECTION_CHANGED_EVENT, e)
-      }
+	 }
    end
 
    method handle_event(e)

@@ -1,4 +1,13 @@
+#
 #  buffertextlist.icn - modified editabletextlist
+#
+#  Author: Nolan Clayton, Hani bani Salameh, Clinton Jeffery
+#
+#  Adds line numbers, syntax coloring and error highlighting for an
+#  IDE to the generic EditableTextlist.
+#
+#  To do: separate out Unicon language dependency so it is extensible.
+#
 
 #
 #  A scrollable editable text area.  An {Event} is generated whenever the
@@ -14,193 +23,24 @@ $include "guih.icn"
 $include "../unicon/ytab_h.icn"
 
 class BuffEditableTextList : EditableTextList(
-   contents,
-   printable,               # The printable characters
-   cursor_x,                #
-   cursor_y,                #
-   mark_x,                  #
-   mark_y,                  #
-   direction,               #
-   is_held,
-   long_line,               #
-   undo_manager,
-   old_view_list_size,
-   old_mw,
-   old_cursor_x,
-   old_cursor_y,
-   old_has_region,
-   view_list,
-   tab_width,
-   wrap_mode,
-   line_splitter,
-   changed,
    moved,	# to-do: check if we need this and if so, implement it.
    mouse_locked,
    scroll_locked,
    vi,      #virtual line index
-   undolist,# Takent from old-version editabletextlist
-   wordlist, # Takent from old-version editabletextlist
-   noedit, # Takent from old-version editabletextlist
-   startdragx, # Takent from old-version editabletextlist
-   enddragx, # Takent from old-version editabletextlist
-   startdragy, # Takent from old-version editabletextlist
-   enddragy, # Takent from old-version editabletextlist
-   donedrag, # Takent from old-version editabletextlist
-   highlightcolor, # Takent from buffertextlist
-   autoindent, # Takent from buffertextlist
-   scroll_y,  # Takent from buffertextlist
+   undolist,# taken from old-version editabletextlist
+   wordlist, # taken from old-version editabletextlist
+   noedit, # taken from old-version editabletextlist
+   startdragx, # taken from old-version editabletextlist
+   enddragx, # taken from old-version editabletextlist
+   startdragy, # taken from old-version editabletextlist
+   enddragy, # taken from old-version editabletextlist
+   donedrag, # taken from old-version editabletextlist
+   highlightcolor, # taken from buffertextlist
+   autoindent, # taken from buffertextlist
+   scroll_y,  # taken from buffertextlist
    errorLineNumber,
    doReparse
    )
-
-
-   method get_view_x_padding()
-      return DEFAULT_TEXT_X_SURROUND
-   end
-
-   method get_view_y_padding()
-      return DEFAULT_TEXT_Y_SURROUND
-   end
-
-   method get_line_count()
-      return *self.view_list
-   end
-
-   method get_contents()
-      return self.contents
-   end
-
-   #
-   # Set the contents of the component.
-   #
-   # @param x the contents, as a list of strings
-   #
-   method set_contents(x)
-      self.contents := x
-      contents_changed()
-   end
-   #
-   # Call this method if the contents list, previously
-   # set with {set_contents()}, has changed.
-   #
-   method contents_changed()
-      if *self.contents = 0 then
-         #
-         # Must have somewhere for the cursor to go.
-         #
-         self.contents := [""]
-
-      clear_view_list()
-      clear_mark()
-      if \ (\self.parent_dialog).is_open then {
-         self.cursor_y >:= *self.contents
-         self.cursor_x >:= *self.contents[self.cursor_y] + 1
-         compute_and_invalidate()
-         constrain_line()
-         }
-      undo_manager.clear()
-   end
-
-   #
-   # Move cursor y to line n, and constrain x within range of that line.
-   #
-   # @p
-   method set_cursor_y(n)
-      local d, i, dest
-
-      # Search for the nearest x position on the new line corresponding to
-      # the current x position.
-      d := TextWidthEx(cwin, contents[cursor_y], 1, cursor_x, tab_width)
-      dest := self.contents[n]
-      i := 1
-      while (i <= *dest) & (TextWidthEx(cwin, dest, 1, i, tab_width) < d) do
-         i +:= 1
-
-      self.cursor_x := i
-      self.cursor_y := n
-
-      return n
-   end
-   #
-   # Move cursor so that it is in the text area, if possible.  
-   # May not be possible if cursor at end of line to the left of the text area.
-   # 
-   # @p
-   method constrain_cursor()
-      local vi, v, s, i, j, l
-
-      vi := get_view_list_index()
-
-      if vi < self.get_first_line() then {
-         v := view_list[self.get_first_line()]
-         self.cursor_y := v.index
-         self.cursor_x := v.first
-         }
-      else if vi >= self.get_first_line() + self.get_max_lines() then {
-         v := view_list[self.get_first_line() + self.get_max_lines() - 1]
-         self.cursor_y := v.index
-         self.cursor_x := v.first
-         }
-      else {
-         v := view_list[vi]
-         }
-
-      s := v.str
-      i := TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, 
-                       self.tab_width)
-      j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
-      l := self.get_left_pos()
-      if self.view.x - l > i then {
-         while (self.cursor_x - v.first + 1 < *s) & 
-            (TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, 
-            self.tab_width) < self.view.x - l) do
-            self.cursor_x +:= 1
-         } 
-      else if self.view.x - l + self.view.w < j then {
-         while (self.cursor_x - v.first + 1 > 1) & 
-            TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 2, 
-                        self.tab_width) > self.view.x - l + self.view.w do
-            self.cursor_x -:= 1
-         }
-   end
-   #
-   # Move the text area displayed so that the cursor is on the screen.
-   #
-   # @p
-   method constrain_line()
-      local v, s, i, j, l
-
-      vi := get_view_list_index()
-
-      if \vi < self.get_first_line() then
-         self.vsb.set_value(self.line_height * (\vi - 1))
-      else if \vi > self.get_last_line() then
-         self.vsb.set_value(self.line_height * (\vi - self.get_max_lines()))
-
-      v := self.view_list[\vi]
-      s := \v.str
-      i := TextWidthEx(self.cwin, s, 1, self.cursor_x - v.first + 1, 
-                       self.tab_width)
-      j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
-      l := self.get_left_pos()
-      if self.view.x - l > \i then
-         self.hsb.set_value(i)
-      else if self.view.x - l + self.view.w < \j then
-         self.hsb.set_value(j - self.view.w)
-   end
-
-   method handle_cut(e)
-      self.EditableTextList.handle_cut(e)
-   end
-
-   method handle_copy(e)
-      self.EditableTextList.handle_copy(e)
-   end
-
-
-   method handle_paste(e)
-      self.EditableTextList.handle_paste(e)
-   end
 
    method on_vsb(ev,y_coor,enter_here)
       if /enter_here & \scroll_locked then fail #lock scrollbar
@@ -224,14 +64,6 @@ class BuffEditableTextList : EditableTextList(
 	 }
    end
 
-   method handle_undo(e)
-      self.EditableTextList.handle_undo(e)
-   end
-
-   method handle_redo(e)
-      self.EditableTextList.handle_redo(e)
-   end
-
    method handle_press(e,received)
       if /received & \mouse_locked then fail #lock mouse
       self.EditableTextList.handle_press(e)
@@ -247,60 +79,12 @@ class BuffEditableTextList : EditableTextList(
       self.EditableTextList.handle_release(e)
    end
 
-   method handle_start_of_line(e)
-      self.EditableTextList.handle_start_of_line(e)
-   end
-
-   method handle_end_of_line(e)
-      self.EditableTextList.handle_end_of_line(e)
-   end
-
    method handle_key_home(e)
       self.EditableTextList.handle_start_of_line(e)
    end
 
    method handle_key_end(e)
       self.EditableTextList.handle_end_of_line(e)
-   end
-
-   method handle_select_all(e)
-      self.EditableTextList.handle_select_all(e)
-   end
-
-   method handle_key_up(e)
-      self.EditableTextList.handle_key_up(e)
-   end
-
-   method handle_key_down(e)
-      self.EditableTextList.handle_key_down(e)
-   end
-
-   method handle_key_left(e)
-      self.EditableTextList.handle_key_left(e)
-   end
-
-   method handle_key_right(e)
-      self.EditableTextList.handle_key_right(e)
-   end
-
-   method handle_key_page_up(e)
-      self.EditableTextList.handle_key_page_up(e)
-   end
-
-   method handle_key_page_down(e)
-      self.EditableTextList.handle_key_page_down(e)
-   end
-
-   method handle_delete_line(e)
-      self.EditableTextList.handle_delete_line(e)
-   end
-
-   method handle_delete_left(e)
-      self.EditableTextList.handle_delete_left(e)
-   end
-
-   method handle_delete_right(e)
-      self.EditableTextList.handle_delete_right(e)
    end
 
    method handle_return(e)
@@ -321,82 +105,6 @@ class BuffEditableTextList : EditableTextList(
         }
       # Reparse code when the cursor moves in the Y axis
       ReparseCode( )
-   end
-
-   method handle_default(e)
-      self.EditableTextList.handle_default(e)
-   end
-
-   method can_undo()
-      return undo_manager.can_undo()
-   end
-
-   method can_redo()
-      return undo_manager.can_redo()
-   end
-
-   method get_pasteable_clipboard()
-      local x, t, s, c
-      x := get_clipboard().get_content()
-      t := string(x) | fail
-      # Apply the filter to the string to paste
-      s := ""
-      every c := !t do {
-         if member(printable, c) then
-            s ||:= c
-         }
-      if *s = 0 then fail
-      return s
-   end
-
-   method start_handle()
-      old_view_list_size := *view_list
-      old_mw := long_line.tw
-      old_cursor_x := cursor_x
-      old_cursor_y := cursor_y
-      old_has_region := has_region() | &null
-      changed := &null
-   end
-
-   method end_handle(e)
-      local hr, moved
-      if \changed then {
-         if (*view_list ~= old_view_list_size) | 
-            (old_mw ~= long_line.tw) then {
-            #
-            # Contents changed.  Re-compute all internal fields, ensure on
-            # screen and re-display whole object.
-            #
-            self.set_internal_fields()
-            self.constrain_line()
-            self.invalidate()
-            } 
-         else {
-            self.constrain_line()
-            self.refresh(1)
-            }
-         fire(CONTENT_CHANGED_EVENT, e)
-         }
-
-      if (cursor_x ~= old_cursor_x) | (cursor_y ~= old_cursor_y) then {
-         moved := 1
-         if /changed then {
-            self.constrain_line()
-            self.refresh(1)
-            }
-         fire(CURSOR_MOVED_EVENT, e)
-         }
-      #
-      # Deduce a region change from looking for a change in whether there
-      # was/is a region; or if there is and was a region and if the cursor
-      # has moved, or the content changed.
-      #
-      hr := has_region()
-      if (/old_has_region & \hr) | (\old_has_region & /hr) |
-         (\hr & (\moved | \changed)) then {
-         self.invalidate()
-         fire(SELECTION_CHANGED_EVENT, e)
-         }
    end
 
    #
@@ -810,7 +518,7 @@ class BuffEditableTextList : EditableTextList(
       # Search down for the enclosing end
       currentPositionY := cursor_y
       while currentPositionY < *contents + 1 do {
-         # Reinitilize lexical analyzer
+         # Reinitialize lexical analyzer
          yyin := contents[ currentPositionY ]
          yylex_reinit()
          # Get string s tokens

@@ -40,7 +40,7 @@ link "../unicon/yyerror"
 global pnlToolbar, MsgBox, EditBox, FileTabSet, ClassTabSet, DevTabSet,
        FileBrowser, linebreak, dialogself, browser, docpath,
        tab_item_1, tab_item_2, tab_item_3, menubar, current_dir, 
-       is_MSWindows, PATHSEP
+       is_MSWindows, PATHSEP, env
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
@@ -79,11 +79,18 @@ class UIDE : Dialog(uide, startfile)
    #
    method ui_initialize()
       local f, line
+      env := getenv("IDOLENV") | "uniclass"
       height := 400
       width := 600
       msglines := 7
       font := "sans,15"
       linebreak := "LF"           # default to UNIX mode
+      alpha    := &ucase ++ &lcase ++ '_' ++ &digits
+      nonalpha := &cset -- alpha
+      alphadot := alpha ++ '.'
+      white    := ' \t\f\r'
+      nonwhite := &cset -- white
+
       menubar.load_config()
 
       wiconlog := tempname("ui",".tmp",,)

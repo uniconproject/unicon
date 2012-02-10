@@ -1598,7 +1598,12 @@ word getrandom()
        ((ct->tm_min % 10)*10+ct->tm_min/10)*10+
        ((ct->tm_hour % 10)*10+ct->tm_hour/10);
    /* + map &date */
-   krandom += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday;
+   krandom += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday ;
+#ifdef NT
+#define getpid _getpid
+#endif
+   krandom += getpid();
+
    /* + map &time */
 
 #ifndef HAVE_KEYWORD__THREAD

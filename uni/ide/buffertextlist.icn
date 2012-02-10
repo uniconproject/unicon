@@ -27,14 +27,6 @@ class BuffEditableTextList : EditableTextList(
    mouse_locked,
    scroll_locked,
    vi,      #virtual line index
-   undolist,# taken from old-version editabletextlist
-   wordlist, # taken from old-version editabletextlist
-   noedit, # taken from old-version editabletextlist
-   startdragx, # taken from old-version editabletextlist
-   enddragx, # taken from old-version editabletextlist
-   startdragy, # taken from old-version editabletextlist
-   enddragy, # taken from old-version editabletextlist
-   donedrag, # taken from old-version editabletextlist
    highlightcolor, # taken from buffertextlist
    autoindent, # taken from buffertextlist
    scroll_y,  # taken from buffertextlist
@@ -77,14 +69,6 @@ class BuffEditableTextList : EditableTextList(
    method handle_release(e,received)
       if /received & \mouse_locked then fail #lock mouse
       self.EditableTextList.handle_release(e)
-   end
-
-   method handle_key_home(e)
-      self.EditableTextList.handle_start_of_line(e)
-   end
-
-   method handle_key_end(e)
-      self.EditableTextList.handle_end_of_line(e)
    end
 
    method handle_return(e)
@@ -344,7 +328,7 @@ class BuffEditableTextList : EditableTextList(
    method highlight_line(i)
       start_handle()
       if /i  then i := 1
-      if not(*contents >=  i > 1) then i := 1
+      if not (*contents >=  i > 1) then i := 1
 
       mark_x := 1
       mark_y := i

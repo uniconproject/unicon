@@ -1,12 +1,12 @@
 ################################################################
 #
-#   File:         whitemenubar.icn
+#   File:	whitemenubar.icn
 #
-#   Subject:  SubClass of Menu Bar
+#   Subject:	SubClass of Menu Bar
 #
-#   Author:   Nolan Clayton
+#   Author:	Nolan Clayton
 #
-#   Date:       May 25, 04
+#   Date:	May 25, 04
 #
 ################################################################
 
@@ -14,51 +14,54 @@
 $include "guih.icn"
 
 
-#################################################################
+#
 # class White Menu Bar: Used only to overide the display method.
-#################################################################
+#
 class WhiteMenuBar : MenuBar( )
 
    method display(buffer_flag)
       local m, oldfg
 
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h,1)
+      EraseRectangle(cbwin, x, y, w, h)
+      DrawRaisedRectangle(cbwin, x, y, w, h,1)
 
       
-      ##################################################
+      #
       #These  4 rectangles give the tabs a nice look
-      oldfg := Fg(self.cbwin)
-      self.set_attribs("fg=white")
-      FillRectangle(self.cbwin, self.x, self.y + self.h/2, self.w, self.h/2)
-      self.set_attribs("fg=pale greyish white")
-      FillRectangle(self.cbwin, self.x, self.y + self.h/2, self.w, self.h/4)
-      self.set_attribs("fg=light greyish white")
-      FillRectangle(self.cbwin, self.x, self.y, self.w, self.h/2)
-      self.set_attribs("fg=greyish white")
-      FillRectangle(self.cbwin, self.x, self.y, self.w, self.h/4)
-      self.set_attribs("fg="||oldfg)
+      oldfg := Fg(cbwin)
+      set_attribs("fg=white")
+      FillRectangle(cbwin, x, y + h/2, w, h/2)
+      set_attribs("fg=pale greyish white")
+      FillRectangle(cbwin, x, y + h/2, w, h/4)
+      set_attribs("fg=light greyish white")
+      FillRectangle(cbwin, x, y, w, h/2)
+      set_attribs("fg=greyish white")
+      FillRectangle(cbwin, x, y, w, h/4)
+      set_attribs("fg="||oldfg)
        
-      #################################################################
-      # Draw the menu options with a raised rectangle around the open menu.  m.label_mid_w
-      # gives the space for the menu label, which includes DEFAULT_TEXT_X_SURROUND either side
-      # of the label itself. m.label_x is the x position, so m.label_x + DEFAULT_TEXT_X_SURROUND
+      #
+      # Draw the menu options with a raised rectangle around the open menu.
+      #m.label_mid_w gives the space for the menu label, which includes
+      # DEFAULT_TEXT_X_SURROUND either side
+      # of the label itself. m.label_x is the x position, so
+      # m.label_x + DEFAULT_TEXT_X_SURROUND
       # put the string in the centre of its area.
       every m := !menus do {
-         if m === \self.which_open then
-            DrawRaisedRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w,
-                                self.h - 2 * BORDER_WIDTH,1)
-         
-         left_string(self.cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, m$get_label())
-         
-         if \m.is_shaded_flag then
-            FilterRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w,
-                            self.h - 2 * BORDER_WIDTH)
+	 if m === \which_open then
+	    DrawRaisedRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
+				m.label_mid_w, h - 2 * BORDER_WIDTH,1)
+	 
+	 left_string(cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND,
+		     y + h / 2, m.get_label())
+	 
+	 if \m.is_shaded_flag then
+	    FilterRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
+			    m.label_mid_w, h - 2 * BORDER_WIDTH)
       }
 
-      self$do_shading(self.cbwin)
+      do_shading(cbwin)
       if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+	 CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
    
    initially(argv[])

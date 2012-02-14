@@ -34,8 +34,9 @@ X-Configure:	config/unix/$(name)/status
 		@if grep -q "HAVE_LIBX11 1" src/h/auto.h; then \
 			echo "Think we found X11, you are good to go."; \
 		else \
-			echo "No X11, no graphics." ; \
-			echo "#undef Graphics" >> src/h/define.h ; \
+			make Configure name=$(name); \
+			echo "X11 libraries or headers missing; graphics" ; \
+			echo "not enabled. " ; \
 		fi
 		@echo Now remember to add unicon/bin to your path
 

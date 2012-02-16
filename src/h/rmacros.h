@@ -35,7 +35,8 @@
 #define Fs_Write	 02	/* write access */
 #define Fs_Create	 04	/* file created on open */
 #define Fs_Append	010	/* append mode */
-#define Fs_Pipe		020	/* reading/writing on a pipe */
+#define Fs_Pipe		020	/* reading or writing on a pipe */
+				/* see also: BPipe down below */
 
 #ifdef RecordIO
    #define Fs_Record    040	/* record structured file */
@@ -60,33 +61,35 @@
    #define Fs_Buff      020000
    #define Fs_Unbuf     040000
    #define Fs_Listen   0100000
+   #define Fs_BPipe    0200000		/* bidirectional pipe */
 #endif					/* PosixFns */
 
 #ifdef ISQL
-   #define Fs_ODBC      0200000
+   #define Fs_ODBC      0400000
    #define RC_SUCCESSFUL(rc) (rc==SQL_SUCCESS || rc==SQL_SUCCESS_WITH_INFO)
    #define RC_NOTSUCCESSFUL(rc) (!(RC_SUCCESSFUL(rc)))
 #endif					/* ISQL */
 
 #ifdef Messaging
-   #define Fs_Messaging 0400000
+   #define Fs_Messaging 01000000
 #endif                                  /* Messaging */
 
 /*#ifdef Graphics3D*/
-   #define Fs_Window3D  01000000	/* reading/writing on a window */
+   #define Fs_Window3D  02000000	/* reading/writing on a window */
 /*#endif*/					/* Graphics3D */
 
 #if HAVE_LIBZ
-   #define Fs_Compress  02000000	/* reading/writing compressed file */
+   #define Fs_Compress  04000000	/* reading/writing compressed file */
 #endif					/* HAVE_LIBZ */
 
 #ifdef HAVE_VOICE
-   #define Fs_Voice  04000000		/* voice/audio connection */
+   #define Fs_Voice  010000000		/* voice/audio connection */
 #endif					/* HAVE_VOICE */
 
 #ifdef PseudoPty
-   #define Fs_Pty   010000000            /* pty */
+   #define Fs_Pty   020000000            /* pty */
 #endif
+
 
 #ifdef Concurrent
 /*
@@ -1134,7 +1137,7 @@
    
    
    #define MTX_CONDVARS		33
-   
+
   
    /* total is:  */
    #define NUM_STATIC_MUTEXES	34

@@ -1169,8 +1169,11 @@ function{0,1} read(f)
 	 }
 #endif					/* PosixFns */
 
-      if (status & Fs_Writing) {
-	 fseek(fp, 0L, SEEK_CUR);
+      /* add more restriction on non-seekable entities. */
+      if ((status & Fs_Writing) && !(status & Fs_BPipe)) {
+	 if (fseek(fp, 0L, SEEK_CUR) != 0) {
+	    /* add bad stuff here, almost certainly EBADF not-seekable */
+	    }
 	 BlkLoc(f)->File.status &= ~Fs_Writing;
 	 }
       BlkLoc(f)->File.status |= Fs_Reading;

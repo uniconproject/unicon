@@ -1013,7 +1013,7 @@ function{0,1} pipe()
       StrLen(fname) = 4;
       for(i = 0; i < 2; i++) {
 	 fps[i] = fdopen(fds[i], i? "w":"r");
-	 Protect(fl = alcfile(fps[i], (i? Fs_Write:Fs_Read), &fname),
+	 Protect(fl = alcfile(fps[i], ((i? Fs_Write:Fs_Read))|Fs_BPipe, &fname),
 		 runerr(0));
 	 Blk(ep,Lelem)->lslots[i].dword = D_File;
 	 ep->Lelem.lslots[i].vword.bptr = (union block*)fl;
@@ -1992,7 +1992,7 @@ void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
    int fd, fromlen, status = BlkD(*f,File)->status;
    struct sockaddr_in from;
 
-   if ((status & (Fs_Socket|Fs_Messaging
+   if ((status & (Fs_Socket | Fs_Messaging | Fs_BPipe
 #if UNIX && defined(PseudoPty)
                   | Fs_Pty
 #endif					/* UNIX && PseudoPty */

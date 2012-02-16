@@ -221,6 +221,10 @@ int CleanupWinSocket(void)
 }
 #endif					/* NT */
 
+/*
+ * get_fd() - get file descriptor
+ * From a file value, obtain the UNIX file descriptor.
+ */
 int get_fd(struct descrip file, unsigned int errmask)
 {
    int status;

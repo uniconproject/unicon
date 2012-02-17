@@ -1520,7 +1520,7 @@ function{0,1} reads(f,i)
 
 #ifdef PosixFns
       /* Remember, sockets are always unbuffered */
-      if (status & Fs_Unbuf) {
+      if ((status & Fs_Unbuf) && !(status & Fs_BPipe)) {
 	 /* We do one read(2) call here to avoid interactions with stdio */
 
 	 int fd;

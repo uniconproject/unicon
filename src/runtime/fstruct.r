@@ -1838,14 +1838,14 @@ function{1} array(x[n])
 	 }
       else runerr(102, x[n-1]);
 
+      /*
+       * reserve # of bytes for both header and array block
+       */
       if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) runerr(0);
 
-      if (i_or_real == 1)
-	 d.vword.bptr = (union block *) alclisthdr(num,
-	 (union block *)alcintarray(num));
-      else
-	 d.vword.bptr = (union block *) alclisthdr(num,
-	 (union block *)alcrealarray(num));
+      d.vword.bptr = (union block *) alclisthdr(num,
+         ((i_or_real == 1) ? ((union block *)alcintarray(num)) :
+			     ((union block *)alcrealarray(num))));
       d.dword = D_List;
 
       if (n>2) {

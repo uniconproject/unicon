@@ -93,7 +93,7 @@ static char *out;	/* general purpose global output pointer */
 /* WARNING -- can move other strings; refresh addresses from descriptors. */
 #define AlcResult(w, h, max, hdr) do {\
    descriptor d = ppmalc(w, h, max); \
-   if (d.vword == 0) Error(306); \
+   if (d.vword.integr == 0) Error(306); \
    hdr = ppmcrack(argv[0] = d); \
 } while(0)
 
@@ -411,9 +411,9 @@ static descriptor ppmalc(int w, int h, int max)
 
    sprintf(buf, "P6\n%d %d\n%d\n", w, h, max);
    d.dword = strlen(buf) + 3 * w * h;
-   d.vword = (word)alcstr(NULL, d.dword);
-   if (d.vword != 0)
-      strcpy((void *)d.vword, buf);
+   d.vword.sptr = alcstr(NULL, d.dword);
+   if (d.vword.sptr != 0)
+      strcpy((void *)d.vword.sptr, buf);
    return d;
    }
 

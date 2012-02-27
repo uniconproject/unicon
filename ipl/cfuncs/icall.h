@@ -366,7 +366,7 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
   inside the macros RetReal() and RetString() below.
   For allocating lists of integers and reals see
                  mkIlist() and mkRlist()
-  in "mklist.r" here.
+  in "rstruct.r".
 */
 
 // Protection macro from grttin.h  Checks that the request for space succeeded.
@@ -396,15 +396,15 @@ word mkRlist(int x[], int n);
   struct b_real *d;  \
   Protect(d = alcreal(x), Error(307));  \
   return (argv->dword = D_Real, argv->vword.bptr = (union block *)d, 0);  \
-} while(0);
+} while(0)
 
 /* Given a C string "s", return an Icon string to the calling routine. */
 #define RetString(s) do {  \
   struct descrip d; \
   int len = strlen(s);  \
-  Protect(StrLoc(d) = alcstr(s,len), Error(306));  \
-  StrLen(d) = len;  \
-  return (argv->dword = StrLen(d), argv->vword.sptr = StrLoc(d), 0);  \
+  Protect(StringAddr(d) = alcstr(s,len), Error(306));  \
+  StringLen(d) = len;  \
+  return (argv->dword = StringLen(d), argv->vword.sptr = StringAddr(d), 0);  \
 } while (0);
 
 #define RetConstString(s) \

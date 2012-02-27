@@ -76,7 +76,7 @@ descriptor *argv;
       RetString(tbuf);
       }
 
-   big = (struct b_bignum *) argv[1].vword;	/* pointer to bignum struct */
+   big = (struct b_bignum *) argv[1].vword.bptr;/* pointer to bignum struct */
    nbig = big->lsd - big->msd + 1;		/* number of bignum digits */
    ndec = nbig * NB * 0.3010299956639812 + 1;	/* number of decimal digits */
    nbcd = ndec / BCDIGITS + 1;			/* number of BCD longs */

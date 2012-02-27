@@ -48,14 +48,14 @@ int vword(int argc, descriptor argv[])		/*: return descriptor v-word */
    if (argc == 0)
       Fail;
    else
-      RetInteger(argv[1].vword);
+      RetInteger(argv[1].vword.integr);
    }
 
 int icon_descriptor(int argc, descriptor argv[])  /*: construct descriptor */
    {
    ArgInteger(1);
    ArgInteger(2);
-   argv[0].dword = argv[1].vword;
+   argv[0].dword = argv[1].vword.integr;
    argv[0].vword = argv[2].vword;
    Return;
    }

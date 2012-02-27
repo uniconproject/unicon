@@ -667,6 +667,7 @@ struct b_real *f(double val)
    }
 #enddef
 
+#ifndef DescriptorDouble
 #ifdef MultiThread
 #passthru #undef alcreal
 alcreal_macro(alcreal,0)
@@ -674,6 +675,7 @@ alcreal_macro(alcreal_1,E_Real)
 #else					/* MultiThread */
 alcreal_macro(alcreal,0)
 #endif					/* MultiThread */
+#endif					/* DescriptorDouble */
 
 #begdef alcrecd_macro(f,e_record)
 /*
@@ -782,6 +784,7 @@ char *f(register char *s, register word slen)
    tended struct descrip ts;
    register char *d;
    char *ofree;
+   int padding;
 
 #ifdef MultiThread
    StrLen(ts) = slen;
@@ -795,16 +798,22 @@ char *f(register char *s, register word slen)
    s = StrLoc(ts);
 #endif					/* MultiThread */
 
+#if 1
+   padding = 8;
+#endif
+
    /*
     * Make sure there is enough room in the string space.
     */
-   if (DiffPtrs(strend,strfree) < slen) {
+   if (DiffPtrs(strend,strfree) < slen + 8) {
       StrLen(ts) = slen;
       StrLoc(ts) = s;
-      if (!reserve(Strings, slen)){
+      if (!reserve(Strings, slen+8)){
          return NULL;
       }
       s = StrLoc(ts);
+
+      if (((word)strfree) % 8) strfree += (8 - (((word)strfree) % 8));
       }
 
    strtotal += slen;

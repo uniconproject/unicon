@@ -293,11 +293,21 @@
    #define GetReal(dp,res) (BlkD(*dp, Real), *((struct size_dbl *)&(res)) =\
          *((struct size_dbl *)&(BlkLoc(*dp)->Real.realval)))
 #else					/* DebugHeap */
+#ifdef DescriptorDouble
+   #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
+         *((struct size_dbl *)&(dp->vword.realval))
+#else					/* DescriptorDouble */
    #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
          *((struct size_dbl *)&((BlkLoc(*dp)->Real.realval)))
+#endif					/* DescriptorDouble */
 #endif					/* DebugHeap */
+
 #else					/* Double */
+#ifdef DescriptorDouble
+   #define GetReal(dp,res)	res = dp->vword.realval
+#else					/* DescriptorDouble */
    #define GetReal(dp,res)	res = BlkD(*dp,Real)->realval
+#endif					/* DescriptorDouble */
 #endif					/* Double */
 
 /*
@@ -489,7 +499,11 @@
    #define D_Lrgint	((word)(T_Lrgint | D_Typecode | F_Ptr))
 #endif					/* LargeInts */
 
+#ifdef DescriptorDouble
+#define D_Real		((word)(T_Real     | D_Typecode))
+#else					/* DescriptorDouble */
 #define D_Real		((word)(T_Real     | D_Typecode | F_Ptr))
+#endif					/* DescriptorDouble */
 #define D_Cset		((word)(T_Cset     | D_Typecode | F_Ptr))
 #define D_File		((word)(T_File     | D_Typecode | F_Ptr))
 #define D_Proc		((word)(T_Proc     | D_Typecode | F_Ptr))

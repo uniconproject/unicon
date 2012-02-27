@@ -320,7 +320,11 @@ dptr da, dx;
 #ifdef Double
    {
    int	*rp, *rq;
+#ifdef DescriptorDouble
+   rp = (int *) &(da->vword.realval);
+#else					/* DescriptorDouble */
    rp = (int *) &(BlkLoc(*da)->Real.realval);
+#endif					/* DescriptorDouble */
    rq = (int *) &x;
    *rq++ = *rp++;
    *rq = *rp;
@@ -1037,7 +1041,11 @@ dptr   db, drslt;
 	 }
       }
 
+#ifdef DescriptorDouble
+   drslt->vword.realval = retval;
+#else					/* DescriptorDouble */
    Protect(BlkLoc(*drslt) = (union block *)alcreal(retval), return Error);
+#endif					/* DescriptorDouble */
    drslt->dword = D_Real;
    return Succeeded;
 }

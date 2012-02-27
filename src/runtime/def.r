@@ -114,7 +114,11 @@ DefConvert(def_int, C_integer, dptr, cnv_int, IntAsgn)
  */
 
 #begdef RealAsgn
+#ifdef DescriptorDouble
+   d->vword.realval = df;
+#else					/* DescriptorDouble */
    Protect(BlkLoc(*d) = (union block *)alcreal(df), fatalerr(0,NULL));
+#endif					/* DescriptorDouble */
    d->dword = D_Real;
 #enddef
 

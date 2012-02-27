@@ -1094,7 +1094,11 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
 	 d = bp->lslots[i];
          if (!cnv:real(d, d)) return 0;
 	 bp->lslots[i] = d;
+#ifdef DescriptorDouble
+	 a[j-(m-1)] = d.vword.realval;
+#else					/* DescriptorDouble */
 	 a[j-(m-1)] = BlkD(d, Real)->realval;
+#endif					/* DescriptorDouble */
 	 }
       if (used <= 1){
 	 bp = (struct b_lelem *) bp->listnext;
@@ -2646,7 +2650,11 @@ int setfov(wbp w, char* s)
      return Error;
    
    fov = atof(s);
+#ifdef DescriptorDouble
+   val.vword.realval = fov;
+#else					/* DescriptorDouble */
    BlkLoc(val) = (union block *)alcreal(fov);
+#endif					/* DescriptorDouble */
    val.dword = D_Real;
    c_put(&f, &val);
    wc->fov = fov;

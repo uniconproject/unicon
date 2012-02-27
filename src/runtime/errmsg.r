@@ -174,6 +174,12 @@ double v;
    union block *bp;
    CURTSTATE();
 
+#ifdef DescriptorDouble
+   t_errornumber = n;
+   t_errorvalue.vword.realval = v;
+   t_errorvalue.dword = D_Real;
+   t_have_val = 1;
+#else					/* DescriptorDouble */
    bp = (union block *)alcreal(v);
    if (bp != NULL) {
       t_errornumber = n;
@@ -181,5 +187,6 @@ double v;
       t_errorvalue.dword = D_Real;
       t_have_val = 1;
       }
+#endif					/* DescriptorDouble */
    err_msg(0,NULL);
    }

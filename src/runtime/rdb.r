@@ -223,7 +223,11 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
         case SQL_DOUBLE:
         case SQL_FLOAT:
         case SQL_REAL:
+#ifdef DescriptorDouble
+	  r->fields[p].vword.realval = atof(buff);
+#else					/* DescriptorDouble */
           BlkLoc(r->fields[p])=(union block *) alcreal(atof(buff));
+#endif					/* DescriptorDouble */
           (r->fields[p]).dword=D_Real;
           break;
 

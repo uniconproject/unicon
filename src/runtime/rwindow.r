@@ -3924,8 +3924,12 @@ char * abuf;
 	 MakeStr(abuf, strlen(abuf), answer);
          break;
       case A_GAMMA:
+#ifdef DescriptorDouble
+	 answer->vword.realval = wc->gamma;
+#else					/* DescriptorDouble */
          Protect(BlkLoc(*answer) = (union block *)alcreal(wc->gamma),
             return Error);
+#endif					/* DescriptorDouble */
          answer->dword = D_Real;
          break;
       case A_FILLSTYLE:

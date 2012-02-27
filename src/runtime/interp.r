@@ -397,6 +397,7 @@ int interp_x(int fsig,dptr cargp)
 
 #ifdef Concurrent
     int retval;
+extern int gettstate_count2;
     CURTSTATE();
 #endif					/* Concurrent */
 
@@ -751,7 +752,17 @@ L_acset:
 	    PushVal(D_Real);
 	    opnd = GetWord;
 	    opnd += (word)ipc.opnd;
+#ifdef DescriptorDouble
+	    /*
+	     * Now it is a pointer, but we want it to be the actual double.
+	     * Fetch the bit pattern needed.  Beware of fetching as real and
+	     * casting to word (int); it will change the value.
+	     */
+	    opnd = ((dptr)opnd)->vword.integr;
+	    PushVal( opnd );
+#else
 	    PushAVal(opnd);
+#endif					/* DescriptorDouble */
 #ifdef Concurrent
 	    PutInstr(Op_Areal, opnd, 1);
 #else					/*Concurrent*/
@@ -765,7 +776,11 @@ L_acset:
 	 case Op_Areal: 	/* real, absolute address */
 L_areal:
 	    PushVal(D_Real);
+#ifdef DescriptorDouble
+	    PushVal(GetWord);
+#else					/* DescriptorDouble */
 	    PushAVal(GetWord);
+#endif					/* DescriptorDouble */
 	    InterpEVValD((dptr)(rsp-1), e_literal);
 	    break;
 

@@ -490,7 +490,11 @@ int f(dptr s, dptr d)
    EVValD(&rzerodesc, e_tconv);
 
    if (cnv_c_dbl(s, &dbl)) {
+#ifdef DescriptorDouble
+      d->vword.realval = dbl;
+#else					/* DescriptorDouble */
       Protect(BlkLoc(*d) = (union block *)alcreal(dbl), fatalerr(0,NULL));
+#endif					/* DescriptorDouble */
       d->dword = D_Real;
       EVValD(d, e_sconv);
       return 1;
@@ -749,11 +753,17 @@ void f(dptr s, dptr d)
       default: {
 #ifdef Arrays
 	 if ( Offset(*s)>0 ) {
-	    if (BlkD(*s, Realarray)->title==T_Realarray){
-	       d->vword.bptr = (union block *) alcreal(  * (double *)((word *)VarLoc(*s) + Offset(*s)) );
+	    if (BlkD(*s, Realarray)->title==T_Realarray) {
+#ifdef DescriptorDouble
+	       d->vword.realval = *(double *)((word *)VarLoc(*s) + Offset(*s));
+#else					/* DescriptorDouble */
+	       d->vword.bptr =
+		  (union block *) alcreal(*(double *)((word *)VarLoc(*s) +
+						      Offset(*s)));
+#endif					/* DescriptorDouble */
 	       d->dword = D_Real;
 	    }
-	    else if (BlkD(*s,Intarray)->title==T_Intarray){
+	    else if (BlkD(*s,Intarray)->title==T_Intarray) {
 	       d->vword.integr = (word) *((word *)(VarLoc(*s)) +  Offset(*s)) ;
 	       d->dword = D_Integer;
 	    }

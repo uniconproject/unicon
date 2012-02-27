@@ -22,6 +22,9 @@ struct descrip {		/* descriptor */
    word dword;			/*   type field */
    union {
       word integr;		/*   integer value */
+#ifdef DescriptorDouble
+      double realval;
+#endif				/*   DescriptorDouble */
       char *sptr;		/*   pointer to character string */
       union block *bptr;	/*   pointer to a block */
       dptr descptr;		/*   pointer to a descriptor */
@@ -58,10 +61,12 @@ struct b_bignum {		/* large integer block */
    };
 #endif					/* LargeInts */
 
+#ifndef DescriptorDouble
 struct b_real {			/* real block */
    word title;			/*   T_Real */
    double realval;		/*   value */
    };
+#endif					/* DescriptorDouble */
 
 struct b_cset {			/* cset block */
    word title;			/*   T_Cset */
@@ -159,7 +164,6 @@ struct b_list {			/* list-header block */
    union block *listhead;	/*   pointer to first list-element block */
    union block *listtail;	/*   pointer to last list-element block */
    };
-
 
 struct b_intarray {
    word title;			/* T_Intarray */
@@ -679,7 +683,9 @@ struct progstate {
    struct b_list *(*Alclist_raw)(uword,uword);
    struct b_list *(*Alclist)(uword,uword);
    struct b_lelem *(*Alclstb)(uword,uword,uword);
+#ifndef DescriptorDouble
    struct b_real *(*Alcreal)(double);
+#endif					/* DescriptorDouble */
    struct b_record *(*Alcrecd)(int, union block *);
    struct b_refresh *(*Alcrefresh)(word *, int, int);
    struct b_selem *(*Alcselem)(dptr, uword);
@@ -849,7 +855,9 @@ typedef struct context {
 #endif					/* PthreadCoswitch */
 
 union block {			/* general block */
+#ifndef DescriptorDouble
    struct b_real Real;
+#endif					/* DescriptorDouble */
    struct b_cset Cset;
    struct b_file File;
    struct b_proc Proc;

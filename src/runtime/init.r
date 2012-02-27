@@ -717,7 +717,9 @@ char *argv[];
    rootpstate.Alclist_raw = alclist_raw;
    rootpstate.Alclist = alclist_0;
    rootpstate.Alclstb = alclstb_0;
+#ifndef DescriptorDouble
    rootpstate.Alcreal = alcreal;
+#endif					/* DescriptorDouble */
    rootpstate.Alcrecd = alcrecd_0;
    rootpstate.Alcrefresh = alcrefresh_0;
    rootpstate.Alcselem = alcselem_0;
@@ -1401,6 +1403,7 @@ int i;
    char *msg = "Strike any key to close console...";
 #endif					/* ScrollingConsoleWin */
 #endif					/* ConsoleWindow */
+extern int gettstate_count, gettstate_count2[];
 
    CURTSTATE();
 
@@ -1720,7 +1723,11 @@ void datainit()
     *  Initialization needed for event monitoring
     */
    Kcset(&csetdesc);
+#ifdef DescriptorDouble
+   rzerodesc.vword.realval = 0.0;
+#else					/* DescriptorDouble */
    BlkLoc(rzerodesc) = (union block *)&realzero;
+#endif					/* DescriptorDouble */
 #endif					/* MultiThread */
 
    maps2 = nulldesc;
@@ -1896,7 +1903,9 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Alclist_raw = alclist_raw;
    pstate->Alclist = alclist_0;
    pstate->Alclstb = alclstb_0;
+#ifndef DescriptorDouble
    pstate->Alcreal = alcreal;
+#endif					/* DescriptorDouble */
    pstate->Alcrecd = alcrecd_0;
    pstate->Alcrefresh = alcrefresh_0;
    pstate->Alcselem = alcselem_0;

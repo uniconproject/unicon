@@ -944,16 +944,26 @@ int noimage;
 #ifdef Arrays      
    else if (BlkType(lp->listhead) ==T_Realarray){
       tended struct descrip d;
+#ifndef DescriptorDouble
       tended struct b_real *rblk = alcreal(0.0);
+#endif					/* DescriptorDouble */
       /* probably need to worry about the following pointer*/
       register struct b_realarray *ap = (struct b_realarray *) lp->listhead;
       
+#ifdef DescriptorDouble
+      d.vword.realval = 0.0;
+#else					/* DescriptorDouble */
       d.vword.bptr = (union block *) rblk;
+#endif					/* DescriptorDouble */
       d.dword = D_Real;
       
       for (i=0;i<size;i++) {
 	 if (i < ListLimit/2 || i >= size - ListLimit/2) {
+#ifdef DescriptorDouble
+	    d.vword.realval = ap->a[i];
+#else					/* DescriptorDouble */
 	    rblk->realval = ap->a[i];
+#endif					/* DescriptorDouble */
 	    outimage(f, &d , noimage+1);
 	    if (i < size-1)
 	       putc(',', f);

@@ -74,8 +74,10 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
        (0 /*(Testb((word)ToAscii(E_Slots), cs))*/ ? alcpelem_1 : alcpelem_0);
 #endif					/* PatternType */
 #undef alcreal
+#ifndef DescriptorDouble
    p->Alcreal =
       ((Testb((word)ToAscii(E_Real), cs)) ? alcreal_1 : alcreal);
+#endif					/* DescriptorDouble */
    p->Alcrecd =
       ((Testb((word)ToAscii(E_Record), cs)) ? alcrecd_1 : alcrecd_0);
    p->Alcrefresh =

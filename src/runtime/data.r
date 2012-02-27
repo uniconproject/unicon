@@ -277,11 +277,15 @@ struct descrip zerodesc = {D_Integer};	/* integer 0 */
  */
 struct descrip csetdesc = {D_Cset};
 struct descrip eventdesc;
+#ifdef DescriptorDouble
+struct descrip rzerodesc = {D_Real, 0.0};
+#else					/* DescriptorDouble */
 struct descrip rzerodesc = {D_Real};
 /*
  *  Real block needed for event monitoring.
  */
 struct b_real realzero = {T_Real, 0.0};
+#endif					/* DescriptorDouble */
 #endif					/* MultiThread */
 
 /*

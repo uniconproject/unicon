@@ -973,9 +973,13 @@ union block * mkRlist(double x[], int n)
 
   /* Set slot i to a descriptor for the b_real containing the double x[i] */
   for (i = 0; i < size; i++) {
+#ifdef DescriptorDouble
+    bp->lslots[i].vword.realval = x[i];
+#else					/* DescriptorDouble */
     Protect(rblk = alcreal(x[i]), ReturnErrNum(307,NULL));
-    bp->lslots[i].dword = D_Real;
     bp->lslots[i].vword.bptr = (union block *)rblk;
+#endif					/* DescriptorDouble */
+    bp->lslots[i].dword = D_Real;
   }
 
   /* Event monitoring.  See h/grttin.h. */
@@ -1045,8 +1049,12 @@ int arraytolist(struct descrip *arr)
       if (ndims==1) {
 	 struct b_real *xp;
 	 for (i=0; i<lsize; i++) {
+#ifdef DescriptorDouble
+	    lelemp->lslots[i].vword.realval = (double)ap->a[i];
+#else					/* DescriptorDouble */
 	    xp = alcreal((double)ap->a[i]);
 	    lelemp->lslots[i].vword.bptr = (union block *) xp;
+#endif					/* DescriptorDouble */
 	    lelemp->lslots[i].dword = D_Real;
 	    lelemp->nused++;
 	    }

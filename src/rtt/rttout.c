@@ -900,16 +900,24 @@ int indent;
              * return/suspend C_double <expr>;
              */
             prt_str(rslt_loc, indent);
+#ifdef DescriptorDouble
+	    prt_str(".vword.realval = ", indent);
+            c_walk(n->u[0].child, indent + IndentInc, 0);
+            prt_str(";", indent + IndentInc);
+#else					/* DescriptorDouble */
             prt_str(".vword.bptr = (union block *)alcreal(", indent);
             c_walk(n->u[0].child, indent + IndentInc, 0);
             prt_str(");", indent + IndentInc);
+#endif					/* DescriptorDouble */
             ForceNl();
             prt_str(rslt_loc, indent);
             prt_str(".dword = D_Real;", indent);
+#ifndef DescriptorDouble
             /*
              * The allocation of the real block may fail.
              */
             chk_rsltblk(indent);
+#endif					/* DescriptorDouble */
             chkabsret(t, real_typ); /* compare return with abstract return */
             return;
          case C_String:
@@ -3762,6 +3770,13 @@ struct token *t;
             prt_str(".vword.bptr = (union block *)&cset_blk;", IndentInc);
             break;
          case DblConst:
+#ifdef DescriptorDouble
+            prt_str(rslt_loc, IndentInc);
+            prt_str(".dword = D_Real;", IndentInc);
+            ForceNl();
+            prt_str(rslt_loc, IndentInc);
+            fprintf(out_file, ".vword.realval = %s;", t->image);
+#else					/* DescriptorDouble */
             prt_str("static struct b_real real_blk = {T_Real, ", IndentInc);
             fprintf(out_file, "%s};", t->image);
             ForceNl();
@@ -3770,6 +3785,7 @@ struct token *t;
             ForceNl();
             prt_str(rslt_loc, IndentInc);
             prt_str(".vword.bptr = (union block *)&real_blk;", IndentInc);
+#endif					/* DescriptorDouble */
             break;
          case IntConst:
             prt_str(rslt_loc, IndentInc);

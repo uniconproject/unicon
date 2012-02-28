@@ -1,0 +1,603 @@
+% -*- lang: icon -*-
+
+\documentclass[11pt]{article}
+
+\usepackage[letterpaper]{geometry}
+\usepackage{alltt,moreverb,float}
+\usepackage{noweb}
+\usepackage{color}
+\usepackage{xr-hyper}  % cross-document links!  Must appear before hyperref!
+\pagestyle{noweb}
+\usepackage[hypertex,colorlinks=true,linkcolor=blue,filecolor=webgreen,extension=dvi]{hyperref}
+
+\newcommand{\chunkref}[1] {$\langle$\subpageref{#1}$\rangle$}
+
+
+\begin{document}
+
+\title{C Interface for Unicon}
+\author{Kostas Oikonomou \dots}
+
+\maketitle
+\tableofcontents
+
+\newpage
+\section{Introduction}
+
+This is an addition to the Unicon preprocessor aimed at automating the
+interfacing of external C routines to a Unicon program.  This document
+represents the second iteration of this effort.  The first iteration was the
+technical report ``An Improved C Calling Interface for the Unicon Language'' by
+U. Batchu, Dept. of Computer Science, University of New Mexico.
+
+The improved interface is supposed to handle a mixture of C and Unicon code
+as exemplified in Fig. \ref{fig:mix}.
+\begin{figure}[H]
+  \begin{alltt}
+    link lists
+    procedure main()
+      local a, s, v
+      write("enter a value for its factorial: ")
+      a := read()
+      write("the factorial of ", a, "is: ", fact(a))  # call to C
+      write("enter a string to check for palindrome: ")
+      s := read()
+      write("the palindrome check ")
+      palindrome(s)                                   # call to C
+      v := [1.1,2.2,3.3.4.4]
+      write("The sum of ", limage(v), ": ", vec1_sum(v,*v))
+    end
+    $C
+      fact.o \{int fact(int)\},
+      checkpalin.o \{int palindrome(char *)\}
+      vsum.o \{double vec1_sum(const double[], int)\}
+    $Cend
+  \end{alltt}
+  \vspace{-5ex}
+  \caption{\label{fig:mix} Mixing C and Unicon code. The [[.o]] files are
+    supposed to be existing C object files, which are loaded via a Unicon
+    ``stub'', see \S\ref{sec:stub}.}
+\end{figure}
+\newpage
+
+In general, the extended parser is supposed to handle preprocessor declarations
+of the following form in a [[.icn]] file:
+\begin{figure}[hbt]
+  \begin{alltt}
+    $C
+      binom.o       \{int fact(int), int binomial(int,int)\},
+      bubble.o      \{void bubblesort(int[], int)\},
+      checkpalin.o  \{int palindrome(char)\},
+      vsum.o        \{double vec1_sum(const double[], int),
+                      double vec2_sum(const double[], int, const double[], int)\}
+    $Cend
+  \end{alltt}
+  \vspace{-5ex}
+  \caption{\label{fig:pp} Preprocessor declarations between [[$C]] and
+    [[$Cend]].}
+\end{figure}
+
+The basic idea is to process each [[.o]] file in its entirety, then move on to
+the next file, and finally make a shared library out of all of them.  To process
+a [[.o]] file we use the following data structures:
+\begin{description}
+  \item[ [[f_list]] ] list: the C function names in the current [[.o]]
+    file.
+  \item[ [[f_ret_type]] ] table: C function name $\to$ return type.
+  \item[ [[f_args]] ] table: C function name $\to$ list of descriptions of its
+    arguments.  Each description is a record [[(type,array,const)]], where
+    [[array]] is defined if the argument is an array, and [[const]] is defined
+    if it is a constant.  See the examples in [[$C]], [[$Cend]] above.
+\end{description}
+<<Parser local variables>>=
+local f_list, f_ret_type, f_args, argdesc
+@
+
+
+
+@
+\section{The C includes parser}
+\enlargethispage*{2cm}
+
+The procedure [[CIncludesParser]] is supposed to be invoked from [[unicon.icn]].
+<<*>>=
+link strings
+procedure CIncludesParser(C_includes_string)
+  <<Parser local variables>>
+  initial {
+    <<Get the C compiler and set the appropriate flags>>
+  }
+  <<Initialize locals>>
+  mfname := tempname("makefile.ic.")  # a unique name for a makefile
+  mfile := open(mfname, "w")
+  <<Define the C compiler and flags in [[mfile]]>>
+  C_includes_string ? {
+    tab(many(white))
+    tab(upto(&letters))
+    while oname := tab(many(&letters ++ &digits ++ '._')) do {
+      put(onames, oname)
+      oname ? {wname := tab(upto('.')) || "_wrap.c"}
+      put(wnames, wname)
+      tab(many(white))
+      tab(match("{")) | stop("Missing '{' in <", &subject, ">!")
+      tab(many(white))
+      <<Parse the function signatures, make [[f_list]], [[f_ret_type]], [[f_args]]>>
+      f := open(wname, "w")
+      <<Include basic header files>>
+      <<Write the C function prototypes>>
+      <<Write the C function interfaces>>
+      close(f)
+      <<Add to the Unicon [[stub]]>>
+      <<Move to the next [[.o]] file>>
+    }
+    assert(pos(0))
+  }
+  <<Add to [[mfile]] commands to build the shared library from [[onames]] and [[wnames]]>>
+  close(mfile)
+  <<make the library>>
+  return stub
+end
+@
+
+
+
+@
+<<Parser local variables>>=
+local oname, wname, fname, argd, ret_type, white, star, str,
+  onames, wnames, f, arg, k, ret_str, command, sharedlib,
+  stub, flag, final_fname, o1string, o2string, SYS
+static CC, ICPATH, SFLAGS
+@
+
+
+@
+<<Initialize locals>>=
+white := ' \t\n'
+argdesc := constructor("argdesc", "type", "array", "const")
+preproc_filename ? {  # global
+  sharedlib := "c" || tab(upto('.')) || ".so"
+}
+onames := [];  wnames := []
+@
+
+@ Based on the name of the compiler specified by the user, we set various flags
+etc.  Example settings for the Sun Studio 12 compilers:
+\begin{verbatim}
+  CC='cc -m64 -KPIC'  ICPATH=/opt/unicon/local/C   SFLAGS=-G
+\end{verbatim}
+Incorrect flags may allow the code to compile but cause runtime errors.
+E.g. leave out the [[-fPIC]] from [[CC]] but put it in [[SFLAGS]] in the above
+example.
+\nextchunklabel{c:CC}
+<<Get the C compiler and set the appropriate flags>>=
+CC := getenv("CC") | stop("Set CC to the name of your C compiler!")
+# This needs to be improved:
+system("type " || CC) =0 | stop("Cannot locate compiler '", CC, "'!")
+# ICPATH is the path to \texttt{Icon2C.h}
+if match("cc", CC) then {        # Assume Sun compiler
+  CC ||:= " -m64 -KPIC"
+  SFLAGS := "-G"
+  ICPATH := "."
+}
+else if match("gcc", CC) then {  # Some variant of gcc, e.g. gcc-4.3.2
+  CC ||:= " -m64 -fPIC"
+  SFLAGS := "-shared"
+  ICPATH := "."
+}
+else 
+  stop("Unknown compiler '", CC, "'!")
+@
+
+@
+<<Define the C compiler and flags in [[mfile]]>>=
+write(mfile, "# Assumes GNU make!")
+write(mfile, "CC = ", CC)
+write(mfile, "CFLAGS = -I", ICPATH)
+write(mfile, "SFLAGS = ", SFLAGS)
+write(mfile, "%.o : %.c")
+write(mfile, "\t$(CC) -c $(CFLAGS) $<")
+@
+
+
+@
+\subsection{Parsing the function signatures of a \texttt{.o} file}
+
+Look at Fig. \ref{fig:mix}.
+<<Parse the function signatures, make [[f_list]], [[f_ret_type]], [[f_args]]>>=
+f_list := []
+f_ret_type := table()
+f_args := table()
+until match("}") do {
+  ret_type := tab(many(&letters))
+  tab(many(white)) | 
+    stop("Missing whitespace after return type in <", tab(0), ">!")
+  fname := tab(many(&letters ++ &digits ++ '_')) | 
+    stop("Missing function name in <", tab(0), ">!")
+  f_ret_type[fname] := ret_type
+  put(f_list, fname)
+  tab(many(white))
+  tab(match("(")) | stop("Missing '(' in <", tab(0), ">!")
+  <<Parse the arguments of function [[fname]]>>
+  tab(match(")"));  tab(many(white)) 
+  tab(match(","));  tab(many(white))
+}
+@
+
+
+@ 
+<<Parse the arguments of function [[fname]]>>=
+f_args[fname] := []
+until match(")") do {
+  argd := argdesc()          # New function argument
+  arraysize := &null
+  tab(many(white))
+  str := tab(many(&letters)) | 
+    stop("Missing parameter type in '", tab(0), "'!")
+  if str == "const" then {   # Is the argument a constant?
+    argd.const := "const"
+    tab(many(white))
+    argd.type := tab(many(&letters)) | 
+      stop("Missing parameter type in '", tab(0), "'!")
+  }
+  else
+    argd.type := str
+  if match("[") then {       # Is the argument an array?
+    argd.array := "yes"
+    move(2)                  # skip the [ ]
+    # The array's size, an \texttt{int}, should follow:
+    tab(upto(',')+1);  tab(many(white))
+    tab(match("int")) | stop("Missing array size before '", tab(0), "'!")
+    arraysize := argdesc("int",,)
+  }
+  else if tab(many(white)) & match("*") then { # we should have a \texttt{char *}
+    argd.type == "char" | stop("'", argd.type, " *' is illegal!")
+    argd.type := "char *"
+    move(1)
+  }
+  put(f_args[fname], argd)
+  put(f_args[fname], \arraysize)
+  \argd.type | stop("Something's wrong: can't parse argument <", str, ">!")
+  tab(many(white))
+  tab(any(','))
+}
+@
+
+
+
+
+@
+\newpage
+\subsection{Making the wrapper file}
+
+Here are the wrapper files produced for the [[binom.o]] and [[vsum.o]] lines of
+Fig. \ref{fig:pp}:
+\begin{alltt}
+\textbf{binom_wrap.c:}
+\small
+#include "Icon2C.h"
+
+int fact(int);
+int binomial(int, int);
+
+int fact_wrap(int argc, dptr argv)
+\{
+  int retValue;
+  int arg1;
+  ArgInteger(1);
+  arg1 = IntegerVal(argv[1]);
+  retValue = fact(arg1);
+  RetInteger(retValue);
+\}
+
+int binomial_wrap(int argc, dptr argv)
+\{
+  int retValue;
+  int arg1;
+  int arg2;
+  ArgInteger(1);
+  arg1 = IntegerVal(argv[1]);
+  ArgInteger(2);
+  arg2 = IntegerVal(argv[2]);
+  retValue = binomial(arg1, arg2);
+  RetInteger(retValue);
+\}
+\end{alltt}
+
+\newpage
+\begin{alltt}
+\textbf{vsum_wrap.c}
+\small
+#include "Icon2C.h"
+
+double vec_sum(double[], int, double[], int, double[], int);
+
+int vec_sum_wrap(int argc, dptr argv)
+\{
+  double retValue;
+  double *arg1;
+  int arg2;
+  double *arg3;
+  int arg4;
+  double *arg5;
+  int arg6;
+  ArgList(1);
+  arg1 = (double *) malloc((int) ListLen(argv[1]) * sizeof(double));
+  RListVal(argv[1],arg1);
+  ArgInteger(2);
+  arg2 = IntegerVal(argv[2]);
+  ArgList(3);
+  arg3 = (double *) malloc((int) ListLen(argv[3]) * sizeof(double));
+  RListVal(argv[3],arg3);
+  ArgInteger(4);
+  arg4 = IntegerVal(argv[4]);
+  ArgList(5);
+  arg5 = (double *) malloc((int) ListLen(argv[5]) * sizeof(double));
+  RListVal(argv[5],arg5);
+  ArgInteger(6);
+  arg6 = IntegerVal(argv[6]);
+  retValue = vec_sum(arg1, arg2, arg3, arg4, arg5, arg6);
+  RetReal(retValue);
+\}
+\end{alltt}
+@
+
+@
+<<Include basic header files>>=
+write(f, "#include \"Icon2C.h\"")
+write(f)
+@
+
+
+@
+<<Write the C function prototypes>>=
+every fname := !f_list do {
+  str := f_ret_type[fname] || " " || fname || "("
+  every arg := !f_args[fname] do {
+    str ||:= \arg.const || " "
+    str ||:= arg.type
+    case arg.type of {
+      "int"|"double"|"char":
+        if \arg.array then str ||:= "[]"
+    }
+    str ||:= ", "
+  }
+  str[-2] := ");"
+  write(f, str)
+}
+write(f)
+@
+
+
+@
+<<Write the C function interfaces>>=
+every fname := !f_list do {
+  write(f, "int ", fname, "_wrap(int argc, dptr argv)")
+  write(f, "{") 
+  <<Declaration of the function's return value>>
+  <<Variable declarations>>
+  <<Memory allocation for variables>>
+  <<Call of original C function>>
+  <<Handle copying of C arrays to Unicon lists>>
+  write(f, "}\n")
+}
+@
+
+
+@ 
+<<Declaration of the function's return value>>=
+case f_ret_type[fname] of {
+  "int":     write(f, "  int retValue;")
+  "double":  write(f, "  double retValue;")
+  "char":    write(f, "  char retValue;")
+  "void": {}
+}
+@
+
+
+@ 
+<<Variable declarations>>=
+k := 1
+every arg := !f_args[fname] do {
+  star := if \arg.array then "*" else ""
+  case arg.type of {
+    "int":     write(f, "  int ",    star, "arg", k, ";")
+    "double":  write(f, "  double ", star, "arg", k, ";")
+    "char":    write(f, "  char ",   star, "arg", k, ";")
+    "char *":  write(f, "  char *arg", k, ";")
+  }
+  k +:= 1
+}
+@
+
+@ Allocate memory for the C variables corresponding to the Unicon data types
+passed to the C function.
+<<Memory allocation for variables>>=
+k := 1
+every arg := !f_args[fname] do {
+  case arg.type of {
+    "int":
+      if \arg.array then {
+        write(f, "  ArgList(", k, " );")
+        write(f, "  arg", k, " = (int *) malloc((int) ListLen(argv[",
+          k, "]) * sizeof(int));")
+        write(f, "  IListVal(argv[", k, "], arg", k, ");")
+      }
+      else {
+        write(f, "  ArgInteger(", k, ");")
+        write(f, "  arg", k, " = IntegerVal(argv[", k, "]);")
+      }
+    "char": {
+      write(f, "  ArgString(", k, ");")
+      write(f, "  arg", k, " = StringVal(argv[", k, "]);")
+    }
+    "double":
+      if \arg.array then {
+        write(f, "  ArgList(", k, ");")
+        write(f, "  arg", k, " = (double *) malloc((int) ListLen(argv[",
+          k, "]) * sizeof(double));")
+        write(f, "  RListVal(argv[", k, "],", "arg", k, ");")
+      }
+      else {
+        write(f, "  ArgReal(", k, ");")
+        write(f, "  arg", k, " = RealVal(argv[", k, "]);")
+      }
+  }
+  k +:= 1
+}
+@
+
+
+
+@ \enlargethispage*{2cm}
+<<Call of original C function>>=
+if f_ret_type[fname] == "void" then
+  writes(f, "  ")
+else
+  writes(f, "  retValue = ")
+writes(f, fname, "(")
+every k := 1 to *f_args[fname]-1 do
+  writes(f, "arg", k, ", ")
+write(f, "arg", *f_args[fname], ");")
+@
+
+
+
+@ 
+<<Handle copying of C arrays to Unicon lists>>=
+k := 1
+case f_ret_type[fname] of {
+  "int": {
+    if (arg := !f_args[fname] & \arg.array) then {
+      # some argument of the function is an array
+      if /arg.const then {
+        <<Handle a non-const array>>
+      }
+    }
+    ret_str := "  RetInteger(retValue);"
+  }
+  "char":
+    write(f, "  RetString(retValue);")
+  "double":
+     if (arg := !f_args[fname] & \arg.array) then {
+       if /arg.const then {
+         <<Handle a non-const array>>
+       }
+       ret_str := "  RetReal(retValue);"
+     }
+  "void": {
+    if (arg := !f_args[fname] & \arg.array) then {
+      if /arg.const then {
+        <<Handle a non-const array>>
+      }
+    }
+    ret_str := "  return 0;"
+  }
+}
+write(f, ret_str)
+@
+
+@
+<<Handle a non-const array>>=
+case arg.type of {
+  "int":     writes(f, "  IValList(")
+  "double":  writes(f, "  RValList(")
+}
+write(f, "arg", k, ", ", "argv[", k, "]);")
+@
+
+
+
+@
+\subsection{Making the Unicon stub}
+\label{sec:stub}
+
+\textcolor{red}{I don't understand what the [[icon_]] business is here.}
+<<Add to the Unicon [[stub]]>>=
+/stub := "link io\n"
+every fname := !f_list do {
+  flag := &null
+  fname ? 
+    if tab(match("icon_")) then {
+      final_fname := tab(0);  flag := 1
+    }
+    else final_fname := fname
+  stub ||:= "procedure " || final_fname || "(a[])\n" ||
+    "  return (" || final_fname || 
+    " := pathload(\"" || sharedlib || "\",\"" ||
+    if \flag then fname else final_fname || "_wrap\"))\!a\n" ||
+    "end\n" 
+}
+@
+
+@
+<<Move to the next [[.o]] file>>=
+tab(match("}"));  tab(many(white))
+tab(match(","));  tab(many(white))
+@
+
+
+
+@
+\section{Building the shared library}
+
+This depends on the operating system.  Remember that [[CC]], [[ICPATH]], and
+[[SFLAGS]] are supposed to be defined at this point; see \chunkref{c:CC}.
+<<Add to [[mfile]] commands to build the shared library from [[onames]] and [[wnames]]>>=
+f := open("uname -sr | sed 's/ //'", "p")
+SYS := read(f)
+close(f)
+write("Building shared library for a ", SYS, " system")
+o1string := " "  # string of \texttt{.o} files supposed to be already there
+o2string := " "  # string of \texttt{\_wrap.o} files
+every o1string ||:= !onames || " "
+every o2string ||:= replace(!wnames, ".c", ".o") || " "
+write(mfile, "OBJECTS = ", o1string, o2string)
+write(mfile, sharedlib, ": $(OBJECTS)")
+command := &null
+if match("SunOS5", SYS) then
+  command := "$(CC) $(SFLAGS) -o $@ $+ -lsocket"
+else if match("AIX", SYS) then { # this doesn't seem to work yet...
+  command := "ld -bM:SRE -berok -bexpall -bnoentry -bnox -bnogc -brtl -o " ||
+    sharedlib
+}
+else if match("IRIX", SYS) then { 
+  command := "ld -shared -o " || sharedlib
+}
+else if match("OSF", SYS) then {  
+  command := "ld -shared -expect_unresolved \'*\' -o " ||
+    sharedlib || "-lc"
+}
+else if match("Linux"|"BSD\/OS"|"OpenBSD", SYS) then { 
+  command := "gcc -shared -o " || sharedlib || " -fPIC "
+}
+else if match("Darwin", SYS) then { 
+  command := "cc -shared -o " || sharedlib || "-fPIC "
+}
+else if match("FreeBSD", SYS) then {
+  command := "ld -Bshareable -o " || sharedlib || " " || "-lc"
+}
+if \command then
+  write(mfile, "\t", command)
+else {
+  write("Don't know how to make libraries under ", SYS, "!")
+  exit(0)
+}
+@
+
+@
+<<make the library>>=
+(system("make -f " || mfname) = 0) | 
+  stop("Building library '", sharedlib, "' with '", mfname, "' failed!")
+remove(mfname)
+remove(o2string)
+@
+
+
+@
+\twocolumn
+\section{Index}
+\nowebindex
+\onecolumn
+@
+
+\end{document}

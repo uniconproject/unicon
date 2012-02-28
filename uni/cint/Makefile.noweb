@@ -1,0 +1,47 @@
+# The =, as opposed to the :=, is important!  It makes `lang' a recursively-expanded
+# variable.  The ``cut'' assumes that the first line of the.nw file looks like
+# % -*- lang: oot -*-
+# The $(subst ) takes care of a trailing semicolon, if any.
+lang = $(subst ;,,$(shell head -1 $< | cut -d' ' -f 4))
+
+
+# Noweb stuff
+NWB = /opt/noweb/bin
+NWL = /opt/noweb/lib
+MPPLIB = /opt/noweb/mpp
+
+define NOTANGLE 
+$(NWB)/notangle -L'#line %-1L "%F"%N'
+endef
+
+CPIF = $(NWB)/cpif
+
+# Weave commands:
+AUTO_WEAVE = $(NWL)/markup $< | $(NWL)/autodefs.$(lang) | $(NWL)/finduses -noquote \
+	| $(NWL)/mpp -lib $(MPPLIB) -L $(lang) | $(NWL)/noidx -delay \
+	| $(NWL)/totex -delay > $@
+AUTO_WEAVE_LOCAL = $(NWL)/markup $< | $(NWL)/autodefs.$(lang) -local \
+	| $(NWL)/finduses -noquote | $(NWL)/mpp -lib $(MPPLIB) -L $(lang) \
+        | $(NWL)/noidx -delay | $(NWL)/totex -delay > $@
+PLAIN_WEAVE = $(NWL)/markup $< | $(NWL)/finduses -noquote \
+	| $(NWL)/mpp -lib $(MPPLIB) -L $(lang) | $(NWL)/noidx -delay | $(NWL)/totex -delay > $@
+WEAVE = noweave -delay
+
+# (1) Easier implementation of assertions, via sed.
+# (2) You can't write "assert (...)", you must write "assert(...)", with no space!
+# (3) Only one assert() per line.
+# (4) The notangle line produces #line comments indicating the location in
+# the .nw source, thus making debugging much easier!
+define ASSERT
+sed -e 's/assert(\(.*\))/((\1) | \
+stop("Assertion failure on line ", \&line, " of ", \&file, "!"))/'
+endef
+
+%.dvi : %.tex
+	latex $<
+
+%.pdf : %.dvi
+	dvipdfm $<
+
+%.tex : %.nw
+	$(AUTO_WEAVE_LOCAL)

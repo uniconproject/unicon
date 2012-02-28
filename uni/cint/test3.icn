@@ -1,0 +1,31 @@
+link lists
+procedure main()
+    local n, s, u, v
+    writes("Enter a value for its factorial: ")
+    n := read()
+    write("The factorial of ", n, " is: ", f(n))
+    writes("Enter a string to check for palindrome: ")
+    s := read()
+    write("Palindrome check: ", p(s))
+    v := [1.1,2.2,3.3,4.4,5.5]
+    write("Sum of vector ", limage(v), ": ", vec1_sum(v,*v))  # call to C
+end
+
+
+$C
+  fact.o {int fact(int)},
+  checkpalin.o {int palindrome(char *)}
+  vsum.o {double vec1_sum(const double[], int)}
+$Cend
+
+
+procedure f(n)
+  # Call to C
+  return fact(n)
+end
+
+procedure p(s)
+  # Call to C
+  return palindrome(s)
+end
+

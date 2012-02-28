@@ -124,16 +124,16 @@ procedure preproc_new(fname,predefined_syms)
       preproc_include_set := set([fname])
       preproc_filename := preproc_include_name := fname
       }
-    preproc_sym_table := \predefined_syms |table()
-    preproc_if_stack := []
-    preproc_file_stack := []
-    preproc_if_state := &null
-    preproc_word_chars := &letters ++ &digits ++ '_'
-    preproc_line := preproc_print_line := 0
-    preproc_print_filename := &null
-    preproc_nest_level := 0
-    preproc_err_count := 0
-    return
+   preproc_sym_table := \predefined_syms |table()
+   preproc_if_stack := []
+   preproc_file_stack := []
+   preproc_if_state := &null
+   preproc_word_chars := &letters ++ &digits ++ '_'
+   preproc_line := preproc_print_line := 0
+   preproc_print_filename := &null
+   preproc_nest_level := 0
+   preproc_err_count := 0
+   return
 end
 
 #
@@ -288,7 +288,7 @@ procedure preproc_scan_directive()
         }
         "ITRACE": {
             if /preproc_if_state then {
-                if value := integer(tab(many(&digits ++ "-"))) &
+                if value := integer(tab(many(&digits ++ '-'))) &
                         preproc_at_end() then {
                     &trace := value
                 } else {
@@ -296,7 +296,22 @@ procedure preproc_scan_directive()
                 }
             }
         }
-        default: {
+	"C":{
+           if /preproc_if_state then {
+               cincludes := ""
+	       while line := preproc_read() do {
+		   if match("$Cend", line) then {Cend := "yes"; break}
+		   cincludes ||:= line
+	       }
+	       if /Cend then {
+		   preproc_error("unfinished C code block")
+	       }
+	       stub := CIncludesParser(cincludes)
+	       # write("------ stub ------"); write(stub); write(repl("-",19)) 
+	       return stub
+	   }
+       }
+    default: {
             if /preproc_if_state then {
                 preproc_error("unknown preprocessor directive")
             }
@@ -386,7 +401,7 @@ end
 # file if appropriate, failing at end-of-input.
 #
 procedure preproc_read()
-    local result
+   local result
    until result := preproc_read_result() do {
       if *preproc_if_stack ~= preproc_nest_level then {
 	 preproc_error("$if(s) without $endif(s): " ||

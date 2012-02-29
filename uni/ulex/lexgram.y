@@ -7,9 +7,9 @@
 
 %{
 #include <stdio.h>
+#include <string.h>
 #include "tree.h"
 #include "automata.h"
-#include <string.h>
 struct automata* convert(struct tree* tr);
 int rulenumber = 1;
 %}
@@ -71,164 +71,148 @@ int rulenumber = 1;
 
 %%
 
-Goal: Start { labelaut($1); createicon($1); }
+Goal: Start { labelaut($1); createicon($1); } ;
 
-Start:    Newlines Percentexp Newlines
-                               { 
-				 $$ = convert($2);
-                               } 
-        | Newlines Percentexp
-                               { 
-				 $$ = convert($2);
-	                       }
-        | Percentexp Newlines 
-                               { 
-				 $$ = convert($1);
-	                       }
-        | Percentexp
-                               { 
-				 $$ = convert($1);
-	                       }
+Start:    Newlines Percentexp Newlines { $$ = convert($2); }
+        | Newlines Percentexp          { $$ = convert($2); }
+        | Percentexp Newlines          { $$ = convert($1); }
+        | Percentexp                   { $$ = convert($1); }
 	;
 
-Percentexp: Regexps
-                               {
-				 $$ = $1;
-			       }
+Percentexp: Regexps ;
 
-Regexps: Exprs Newlines      { 
-	                         $$ = $1; 
-	                       } 
-         | Exprs               {
-	                         $$ = $1;
-                               }
-	 ;
+Regexps : Exprs Newlines { $$ = $1; } 
+	| Exprs		 { $$ = $1; }
+	;
 
 Newlines:  NEWLINE Newlines
-         | NEWLINE;
+	| NEWLINE;
 
-
-Exprs:    Exprs Newlines OneExpr 
-                               {
-                                 $$ = alcnode(EXPRTREE); 
-			         $$->children[0] = $1;
-				 $$->children[1] = $3;
-			       }
+Exprs:    Exprs Newlines OneExpr {
+	   $$ = alcnode(EXPRTREE); 
+	   $$->children[0] = $1;
+	   $$->children[1] = $3;
+	   }
 	| OneExpr
-        ;
-
-OneExpr: Expr ACTION           {
-	                        $$ = alcnode(EXPRESSION);
-				$$->children[0] = $1;
-				$$->children[1] = alcnode(ACTION);
-				$$->children[1]->text = yylval.s;
-                               }
-
-        | Expr                 {
-                                $$ = alcnode(EXPRESSION);
-				$$->children[0] = $1;
-				$$->children[1] = alcnode(ACTION);
-				$$->children[1]->text = "# fail";
-                               }
 	;
 
-Expr:    QUOTES                { 
-	                        $$ = alcnode(QUOTES);
-				$$->text = yylval.s;
-                               }
+OneExpr : Expr ACTION {
+	   $$ = alcnode(EXPRESSION);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(ACTION);
+	   $$->children[1]->text = yylval.s;
+	   }
 
-       | BACKSLASH             {
-			        $$ = alcnode(BACKSLASH);
-				$$->text = yylval.s;
-                               }
+	| Expr {
+	   $$ = alcnode(EXPRESSION);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(ACTION);
+	   $$->children[1]->text = "# fail";
+	   }
+	;
 
-       | CSET                  { 
-	                        $$ = alcnode(CSET);
-				$$->text = yylval.s;
-                               }
-       
-       | CHARACTER             { 
-	                        $$ = alcnode(CHARACTER);
-				$$->text = yylval.s;
-                               }
+Expr    : QUOTES { 
+	   $$ = alcnode(QUOTES);
+	   $$->text = yylval.s;
+	   }
 
-       | DOT                   { $$ = alcnode(DOT); }
+	| BACKSLASH {
+	   $$ = alcnode(BACKSLASH);
+	   $$->text = yylval.s;
+	   }
 
-       | BeginLine             
-       | EndLine              
-       | Question              
-       | Star    
-       | Plus                
-       | Expr OR Expr          {
-                                $$ = alcnode(OREXPR);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(OR);
-                                $$->children[2] = $3; 
-                               }
-       | Expr Expr             { 
-                                $$ = alcnode(CONCATEXPR);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(CONCAT);
-                                $$->children[2] = $2; 
-                               }
-       | Parenthetic         
-       | ForSlash    
-       | Occurrence
-       ;
+	| CSET { 
+	   $$ = alcnode(CSET);
+	   $$->text = yylval.s;
+	   }
 
-BeginLine:  LINEBEGIN Expr     {
-	                        $$ = alcnode(BEGINNING);
-                                $$->children[0] = alcnode(LINEBEGIN);
-                                $$->children[1] = $2; 
-                               }
+	| CHARACTER { 
+	   $$ = alcnode(CHARACTER);
+	   $$->text = yylval.s;
+	   }
 
-EndLine:  Expr LINEEND         {
-                                $$ = alcnode(ENDING);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(LINEEND); 
-                               }
+	| DOT { $$ = alcnode(DOT); }
 
-Question:  Expr OPTIONAL       {
-                                $$ = alcnode(QUESTION);
-				$$->children[1] = alcnode(OPTIONAL);
-                                $$->children[0] = $1;
-                               }
+	| BeginLine
+	| EndLine
+	| Question
+	| Star
+	| Plus
+	| Expr OR Expr {
+	   $$ = alcnode(OREXPR);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(OR);
+	   $$->children[2] = $3;
+           }
+	| Expr Expr {
+	   $$ = alcnode(CONCATEXPR);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(CONCAT);
+	   $$->children[2] = $2;
+	   }
+	| Parenthetic
+	| ForSlash
+	| Occurrence
+	;
 
-Star:  Expr ZEROORMORE         {
-                                $$ = alcnode(STAR);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(ZEROORMORE);
-                               }
+BeginLine: LINEBEGIN Expr {
+	   $$ = alcnode(BEGINNING);
+	   $$->children[0] = alcnode(LINEBEGIN);
+	   $$->children[1] = $2;
+	   }
+	;
 
-Plus:  Expr ONEORMORE          {
-                                $$ = alcnode(PLUS);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(ONEORMORE); 
-                               }
+EndLine: Expr LINEEND {
+	   $$ = alcnode(ENDING);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(LINEEND);
+	   }
+	;
 
-Parenthetic:  PARENTHESES Expr CLOSEPARENTHESES
-                               {
-                                $$ = alcnode(PARENTHETIC);
-                                $$->children[0] = alcnode(PARENTHESES);
-                                $$->children[1] = $2;
-                                $$->children[2] = alcnode(CLOSEPARENTHESES); 
-			       }
+Question: Expr OPTIONAL {
+	   $$ = alcnode(QUESTION);
+	   $$->children[1] = alcnode(OPTIONAL);
+	   $$->children[0] = $1;
+	   }
+	;
 
-ForSlash:  Expr FORWARDSLASH Expr
-                               {
-                                $$ = alcnode(FORSLASH);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(FORWARDSLASH);
-                                $$->children[2] = $3; 
-                               }
+Star: Expr ZEROORMORE {
+	   $$ = alcnode(STAR);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(ZEROORMORE);
+	   }
+	;
 
-Occurrence: Expr CURLBRACKETS; {
-                                $$ = alcnode(OCCURRENCES);
-                                $$->children[0] = $1;
-                                $$->children[1] = alcnode(CURLBRACKETS); 
-				$$->text = yylval.s;
-                               }
+Plus: Expr ONEORMORE {
+	   $$ = alcnode(PLUS);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(ONEORMORE);
+	   }
+	;
 
+Parenthetic: PARENTHESES Expr CLOSEPARENTHESES {
+	   $$ = alcnode(PARENTHETIC);
+	   $$->children[0] = alcnode(PARENTHESES);
+	   $$->children[1] = $2;
+	   $$->children[2] = alcnode(CLOSEPARENTHESES); 
+	   }
+	;
+
+ForSlash: Expr FORWARDSLASH Expr {
+	   $$ = alcnode(FORSLASH);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(FORWARDSLASH);
+	   $$->children[2] = $3;
+	   }
+	;
+
+Occurrence: Expr CURLBRACKETS {
+	   $$ = alcnode(OCCURRENCES);
+	   $$->children[0] = $1;
+	   $$->children[1] = alcnode(CURLBRACKETS);
+	   $$->text = yylval.s;
+	   }
+	;
 
 %%
 
@@ -236,12 +220,12 @@ extern int yylineno;
 
 int yyerror(char *s)
 {
-  /*
-   * Eventually want to use merr for better error messaging.
-   */
+   /*
+    * Eventually want to use merr for better error messaging.
+    */
 
-  fprintf(stderr, "%s on line %d\n", s, yylineno);
-  return 0;
+   fprintf(stderr, "%s on line %d\n", s, yylineno);
+   return 0;
 }
 
 /*
@@ -249,22 +233,20 @@ int yyerror(char *s)
  */ 
 struct automata* convert(struct tree* tr)
 {
-  struct automata *returnvalue, *aut1, *aut2;
-  struct anode *newnode1, *newnode2;
-  struct anodelist *listptr, *listptr2;
-  struct edgelist *elistptr;
-  char *tempstring, *getsinglechar;
-  int t1, t2, i;
+   struct automata *returnvalue, *aut1, *aut2;
+   struct anode *newnode1, *newnode2;
+   struct anodelist *listptr, *listptr2;
+   struct edgelist *elistptr;
+   char *tempstring, *getsinglechar;
+   int t1, t2, i;
 
-  /*
-   * Conversion is accomplished by breaking it down into separate cases and
-   * exploiting recursion wherever possible.
-   */
+   /*
+    * Conversion is accomplished by breaking it down into separate cases and
+    * exploiting recursion wherever possible.
+    */
 
-  switch (tr->label) 
-    {
-    case EXPRTREE:
-      {
+   switch (tr->label) {
+   case EXPRTREE: {
 	/*
 	 * This case is handled by converting the two subtrees and then making
 	 * a new start node with epsilon transitions to the start nodes of the
@@ -304,8 +286,7 @@ struct automata* convert(struct tree* tr)
 	return returnvalue;
       }
 
-    case EXPRESSION:
-      {
+    case EXPRESSION: {
 	/*
 	 * This case is handled by converting the expression recursively and 
 	 * associating the accepting states with the semantic action if there
@@ -317,11 +298,9 @@ struct automata* convert(struct tree* tr)
 
 	returnvalue = convert(tr->children[0]);
 
-	if (tr->children[1] != NULL)
-	  {
+	if (tr->children[1] != NULL) {
 	    listptr = returnvalue->accepting;
-	    while (listptr != NULL)
-	      {
+	    while (listptr != NULL) {
 		listptr->current->semaction = tr->children[1]->text;
 		listptr = listptr->next;
 	      }
@@ -329,8 +308,7 @@ struct automata* convert(struct tree* tr)
 	
 	listptr = returnvalue->states;
 	
-	while(listptr != NULL)
-	  {
+	while(listptr != NULL) {
 	    listptr->current->rulenum = rulenumber;
 	    listptr = listptr->next;
 	  }
@@ -340,8 +318,7 @@ struct automata* convert(struct tree* tr)
 	return returnvalue;
       }
 
-    case OREXPR:
-      {
+    case OREXPR: {
 	/*
 	 * This case is handled by converting the two expressions that are 
 	 * connected by the or and making a new start state with an epsilon
@@ -381,8 +358,7 @@ struct automata* convert(struct tree* tr)
         return returnvalue;
       }
 
-    case CONCATEXPR:
-      {
+    case CONCATEXPR: {
 	/*
 	 * This case is handled by converting the two subexpressions and 
 	 * linking the accepting states of the first to the start state of the
@@ -394,16 +370,13 @@ struct automata* convert(struct tree* tr)
 
 	listptr = aut1->accepting;
 	
-	while (listptr != NULL) 
-	  {
-	    if (listptr->current->epsilon == NULL)
-	      {
+	while (listptr != NULL) {
+	    if (listptr->current->epsilon == NULL) {
 		listptr->current->epsilon = alcnodelist();
 		listptr->current->epsilon->current = aut2->start;
 	      }
 
-	    else
-	      {
+	    else {
 		listptr2 = listptr->current->epsilon;
 
 		while (listptr2->next != NULL)
@@ -427,8 +400,7 @@ struct automata* convert(struct tree* tr)
 	return aut1;
       }
 
-    case QUOTES:
-      {
+    case QUOTES: {
 	/*
 	 * This case is handled by creating a chain of states with transitions
 	 * that correspond to each individual letter of the string in quotes.
@@ -446,19 +418,10 @@ struct automata* convert(struct tree* tr)
 	tempstring = tr->text;
 	tempstring++;
 
-	while (*tempstring != 34)
-	  {
-	    getsinglechar = (char *) calloc(2, sizeof(char));
-
-	    if (getsinglechar == NULL)
-	      {
-		fprintf(stderr, "convert: calloc failed\n"); fflush(stderr);
-		exit(-1);
-	      }
-
+	while (*tempstring != 34) {
+	    getsinglechar = (char *) alc(sizeof(char), "convert");
 	    getsinglechar[0] = *tempstring;
 	    getsinglechar[1] = '\0';
-
 	    newnode2 = alcanode(0);
 	    listptr->next = alcnodelist();
 	    listptr->next->current = newnode2;
@@ -478,8 +441,7 @@ struct automata* convert(struct tree* tr)
 	return returnvalue;
       }
 
-    case BACKSLASH:
-      {
+    case BACKSLASH: {
 	/*
 	 * This case is handled by creating a two state automata with the edge
 	 * labelled directly with the character that follows the backslash.
@@ -519,8 +481,7 @@ struct automata* convert(struct tree* tr)
 	returnvalue->accepting->current = newnode2;
       }
 
-    case CSET:
-      {
+    case CSET: {
 	/*
 	 * This case is handled by creating an automata with a start state and
 	 * transitioning to a final state and the edge is labelled with the 
@@ -548,8 +509,7 @@ struct automata* convert(struct tree* tr)
 	return returnvalue;
       }
 
-    case CHARACTER:
-      {
+    case CHARACTER: {
 	/*
 	 * The most striaghtforward case - create a two state automata that
 	 * transitions from the start to the final state on the specified 
@@ -580,8 +540,7 @@ struct automata* convert(struct tree* tr)
 	return returnvalue;
       }
 
-    case DOT:
-      {
+    case DOT: {
 	/*
 	 * This case uses a special feature of our automata that creates a 
 	 * transition that simply means consume any character. Each node has
@@ -610,8 +569,7 @@ struct automata* convert(struct tree* tr)
 	return returnvalue;
       }
 
-    case BEGINNING:
-      {
+    case BEGINNING: {
 	/*
 	 * This is accomplished by converting the tree obtained from the 
 	 * regular expression into an automata, and then adding a transition
@@ -622,19 +580,16 @@ struct automata* convert(struct tree* tr)
 
 	listptr = aut1->accepting;
 
-	while(listptr != NULL)
-	  {
+	while(listptr != NULL) {
 	    listptr2 = listptr->current->dot;
 
-	    if (listptr2 == NULL)
-	      {
+	    if (listptr2 == NULL) {
 		listptr2 = alcnodelist();
 		listptr2->current = listptr->current;
 		listptr->current->dot = listptr2;
 	      }
 
-	    else
-	      {
+	    else {
 		while (listptr2->next != NULL)
 		  listptr2 = listptr2->next;
 		
@@ -648,8 +603,7 @@ struct automata* convert(struct tree* tr)
 	return aut1;
       }
 
-    case ENDING:
-      {
+    case ENDING: {
 	/*
 	 * This case is handled by converting the regular expression and then
 	 * adding a new start state that transitions to itself on any input
@@ -676,8 +630,7 @@ struct automata* convert(struct tree* tr)
 	return aut1;
       }
 
-    case QUESTION:
-      {
+    case QUESTION: {
 	/*
 	 * This adds the start state to the list of accepting states for the
 	 * machine that is a conversion of the regular expression.
@@ -698,8 +651,7 @@ struct automata* convert(struct tree* tr)
 	return aut1;
       }
 
-    case STAR:
-      {
+    case STAR: {
 	/*
 	 * This case converts the regular expression and then adds an epsilon
 	 * transition from the final states to the start state and makes the
@@ -710,19 +662,16 @@ struct automata* convert(struct tree* tr)
 
         listptr = aut1->accepting;
 
-        while (listptr != NULL) 
-	  {
+        while (listptr != NULL) {
 	    listptr2 = listptr->current->epsilon;
 
-	    if (listptr2 == NULL)
-	      {
+	    if (listptr2 == NULL) {
 		listptr2 = alcnodelist();
 		listptr2->current = aut1->start;
 		listptr->current->epsilon = listptr2;
 	      }
 
-	    else
-	      {
+	    else {
 		while (listptr2->next != NULL)
 		  listptr2 = listptr2->next;
 
@@ -741,8 +690,7 @@ struct automata* convert(struct tree* tr)
         return aut1;
       }
 
-    case PLUS:
-      {
+    case PLUS: {
 	/*
 	 * Works similar to the case for star except that it doesn't make the
 	 * start state a final state.
@@ -754,16 +702,13 @@ struct automata* convert(struct tree* tr)
         if (listptr == NULL)
           return aut1;
 
-        while (listptr != NULL)
-          {
-            if (listptr->current->epsilon == NULL)
-              {
+        while (listptr != NULL) {
+            if (listptr->current->epsilon == NULL) {
                 listptr->current->epsilon = alcnodelist();
                 listptr->current->epsilon->current = aut1->start;
               }
 
-            else
-              {
+            else {
                 listptr2 = listptr->current->epsilon;
 
                 while (listptr2->next != NULL)
@@ -785,8 +730,7 @@ struct automata* convert(struct tree* tr)
     case FORSLASH:
       // 
 
-    case OCCURRENCES:
-      {
+    case OCCURRENCES: {
 	tempstring = tr->text;
 	tempstring++;
 	t1 = *tempstring - 48;                /* convert from char to int */
@@ -799,8 +743,7 @@ struct automata* convert(struct tree* tr)
 
 	returnvalue = convert(tr->children[0]);
 
-	for (i = 1; i < t1; i++)
-	  {
+	for (i = 1; i < t1; i++) {
 	    /*
 	     * This loop will continue until the first number in the number of
 	     * occurrences or theonly number as the case may be. It will 
@@ -813,16 +756,14 @@ struct automata* convert(struct tree* tr)
 	    aut1 = convert(tr->children[0]);
 	    
 	    listptr = returnvalue->accepting;
-	    while (listptr != NULL)
-	      {
+	    while (listptr != NULL) {
 		if (listptr->current->epsilon == NULL)
 		  {
 		    listptr->current->epsilon = alcnodelist();
 		    listptr->current->epsilon->current = aut1->start;
 		  }
 
-		else
-		  {
+		else {
 		    listptr2 = listptr->current->epsilon;
 
 		    while (listptr2->next != NULL)
@@ -844,8 +785,7 @@ struct automata* convert(struct tree* tr)
 	    listptr->next = aut1->states;
 	  }
 
-	if (tempstring != NULL)
-	  {
+	if (tempstring != NULL) {
 	    /*
 	     * If there were two numbers in the set of occurrences then we do 
 	     * basically the same as the above up to the second number except
@@ -854,21 +794,17 @@ struct automata* convert(struct tree* tr)
 	     */
 
 	    t2 = *tempstring - 48;
-	    for (i = t1; i < t2; i++)
-	      {
+	    for (i = t1; i < t2; i++) {
 		aut1 = convert(tr->children[0]);
 		listptr = returnvalue->accepting;
 
-		while (listptr != NULL)
-		  {
-		    if (listptr->current->epsilon == NULL)
-		      {
+		while (listptr != NULL) {
+		    if (listptr->current->epsilon == NULL) {
 			listptr->current->epsilon = alcnodelist();
 			listptr->current->epsilon->current = aut1->start;
 		      }
 
-		    else
-		      {
+		    else {
 			listptr2 = listptr->current->epsilon;
 
 			while (listptr2->next != NULL)
@@ -895,9 +831,7 @@ struct automata* convert(struct tree* tr)
 		listptr->next = aut1->states;
 	      }
 	  }
-
 	return returnvalue;
       }
     }
 }
-

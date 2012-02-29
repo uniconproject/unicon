@@ -6,10 +6,10 @@
  */
 
 struct tree {
-  int label;
-  char* text;
-  struct tree* children[3];
+   int label;
+   char* text;
+   struct tree* children[3];
 };
 
-#include "tree.c"
-
+struct tree * alcnode(int lab);
+void treeprint(struct tree* t);

@@ -19,11 +19,8 @@ FILE *outfile;
 
 int main(int argc, char *argv[])
 {
-   int i;
-   int nextchar, nextchar2;
    char ppcmdline[1024];
-   int arg = 1;
-   int pp = 1;
+   int i, nextchar, nextchar2, arg = 1, pp = 1;
    outfilename = "lex.yy.icn";
 
    if (argc > arg && !strcmp(argv[arg], "-nopp")) {
@@ -42,12 +39,13 @@ int main(int argc, char *argv[])
       }
 
    if (arg >= argc) {
-      fprintf(stderr, "usage: ulex [-nopp] [-ooutfile] file\n");
+      fprintf(stderr, "usage: ulex [-nopp] [-ooutfile] file.l\n");
       fflush(stderr);
       exit(-1);
       }
 
    yyfilename = argv[arg];
+   printf("ulex 0.2 invoked on %s\n", yyfilename);
    if (pp) {
       sprintf(ppcmdline, "ulpp < %s", yyfilename);
       if (strcmp(ppcmdline+strlen(ppcmdline)-2, ".l"))
@@ -71,19 +69,17 @@ int main(int argc, char *argv[])
 
    /* process up to first %% */
 
-   if ((nextchar = fgetc(yyin)) == EOF) {
+   if (((nextchar = fgetc(yyin)) == EOF)||((nextchar2 = fgetc(yyin)) == EOF)) {
       fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
+      fflush(stderr);
+      exit(-1);
       }
    if (nextchar == 10 || nextchar == 13)
       yylineno++;
-  
-   if ((nextchar2 = fgetc(yyin)) == EOF) {
-      fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);
-      }
-   if(nextchar2 == 10 || nextchar2 == 13)
+   if (nextchar2 == 10 || nextchar2 == 13)
       yylineno++;
 
-   while(nextchar != '%' || (nextchar2 != '%' && nextchar2 != '{')) {
+   while (nextchar != '%' || (nextchar2 != '%' && nextchar2 != '{')) {
       /*
        * ignore everything until either %% or %{
        */
@@ -95,31 +91,37 @@ int main(int argc, char *argv[])
 	 yylineno++;
       }
 
-   if (nextchar2 == '{')
+   if (nextchar2 == '{') {
       grab_upto_percents();
+      }
      
    i = yyparse();
 
+   if (i)
+      printf("regex errors in %s\n", yyfilename);
    /*
     * copy out remainder, up to EOF, into output file.
     */
-
-   yyin = fopen("ulex.tmp","r");
+   if ((yyin = fopen("ulex.tmp","r")) == NULL) {
+      fprintf(stderr, "cannot open ulex.tmp for reading\n");
+      fflush(stderr);
+      exit(-1);
+      }
    while (((nextchar = fgetc(yyin)) != EOF) && (nextchar != '%'))
-      fprintf(outfile, "%c", nextchar);
+      fputc(nextchar, outfile);
    if (nextchar == '%') nextchar = fgetc(yyin);
    if (nextchar == '%') nextchar = fgetc(yyin);
 
    nextchar = fgetc(yyin);
-   while(nextchar != EOF) {
-      fprintf(outfile, "%c", nextchar);
+   while (nextchar != EOF) {
+      fputc(nextchar, outfile);
       if ((nextchar = fgetc(yyin)) == EOF) break;
       }
 
    fclose(outfile);
    fclose(yyin);
    unlink("ulex.tmp");
-   printf("\n");
+   printf("No errors\n");
    return 0;
 }
 
@@ -160,7 +162,7 @@ char* grab_upto_percents()
       if (nextchar == '\\') slash = 1 - slash;
 
       if (index >= size-2) {
-	 size = size * 2;
+	 size *= 2;
 	 begintext = realloc(begintext, size * sizeof(char));
 	 if (begintext == NULL) {
 	    fprintf(stderr, "calloc failed in makebigger\n");
@@ -181,7 +183,7 @@ char* grab_upto_percents()
 	 yylineno++;
       }
 
-   while(nextchar != '%' || nextchar2 != '%') {
+   while (nextchar != '%' || nextchar2 != '%') {
       nextchar = nextchar2;
       if ((nextchar2 = fgetc(yyin)) == EOF) {
 	 fprintf(stderr, "Unexpected EOF in %s\n", yyfilename);

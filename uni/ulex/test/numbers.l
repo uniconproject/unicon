@@ -1,8 +1,8 @@
 
 %{
-/*
- * Lexical specification for numbers.
- */
+#
+# Lexical specification for numbers.
+#
 %}
 
 %%

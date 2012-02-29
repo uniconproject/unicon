@@ -2,254 +2,255 @@
 
 void ulexskel(FILE *f)
 {
+fprintf(f, "%s",
+   "#\n"
+   "# ulex skeleton by Katrina Ray\n"
+   "# May, 2003\n"
+   "# do not edit by hand, this file is machine-generated\n"
+   "#\n\n"
 
-fprintf(f, "%s\n", "#");
-fprintf(f, "%s\n", "# ulex skeleton by Katrina Ray");
-fprintf(f, "%s\n", "# May, 2003");
-fprintf(f, "%s\n", "# do not edit by hand, this file is machine-generated");
-fprintf(f, "%s\n\n", "#");
+   "record edge(symbol, destinations)\n"
+   "record anode(label, rulenum, edges, epsilon, dot)\n"
+   "record automata(start, states, accepting)\n\n"
 
-fprintf(f, "%s\n", "record edge(symbol, destinations)");
-fprintf(f, "%s\n", "record anode(label, rulenum, edges, epsilon, dot)");
-fprintf(f, "%s\n\n", "record automata(start, states, accepting)");
+   "global yychar, yytext, yyin, yyleng\n\n"
 
-fprintf(f, "%s\n\n", "global yychar, yytext, yyin, yyleng");
+   "#\n"
+   "# matchstrings reads from a specified input file and calls the simulate\n"
+   "# function repeatedly on smaller and smaller pieces of the input until\n"
+   "# it finds a match. It reports what parts of the input\n"
+   "# it could parse and what rule accepted the string.\n"
+   "#\n\n"
 
-fprintf(f, "%s\n", "#");
-fprintf(f, "%s\n", "# matchstrings reads from a specified input file and calls the simulate ");
-fprintf(f, "%s\n", "# function repeatedly on smaller and smaller pieces of the input until");
-fprintf(f, "%s\n", "# it finds a match. It reports what parts of the input");
-fprintf(f, "%s\n", "# it could parse and what rule accepted the string.");
-fprintf(f, "%s\n\n", "#");
+   "global stringseq\n\n");
 
-fprintf(f, "%s\n\n", "global stringseq");
+fprintf(f, "%s",
+   "procedure yyulex(aut)\n"
+   "local rulenum, readfrom, position, less, currstring, getln\n\n"
 
-fprintf(f, "%s\n", "procedure yyulex(aut)");
-fprintf(f, "%s\n", "local rulenum, readfrom, position, less, currstring, getln");
+   "initial {\n"
+   "   if /yyin then yyin := &input\n"
+   "   readfrom := yyin\n\n"
 
-fprintf(f, "%s\n", "initial {");
-fprintf(f, "%s\n", "   if /yyin then yyin := &input");
-fprintf(f, "%s\n", "   readfrom := yyin");
+   "   stringseq := read(readfrom) || \"\\n\"\n\n"
 
-fprintf(f, "%s\n", "   stringseq := read(readfrom) || \"\\n\"");
+   "   while getln := read(readfrom) do\n"
+   "      stringseq ||:= getln || \"\\n\"\n\n"
 
-fprintf(f, "%s\n", "   while getln := read(readfrom) do ");
-fprintf(f, "%s\n", "      stringseq ||:= getln || \"\\n\"");
+   "   close(readfrom)\n"
+   "   }\n\n"
 
-fprintf(f, "%s\n", "   close(readfrom)");
-fprintf(f, "%s\n\n", "   }");
+   "   if stringseq == \"\" then {\n"
+   "      return yychar := -1\n"
+   "      }\n\n"
 
-fprintf(f, "%s\n", "   if stringseq == \"\" then {");
-fprintf(f, "%s\n", "      return yychar := -1");
-fprintf(f, "%s\n\n", "      }");
+   "   less := 0\n"
+   "   position := *stringseq + 1\n\n"
 
-fprintf(f, "%s\n", "   less := 0");
-fprintf(f, "%s\n\n", "   position := *stringseq + 1");
+   "   foo := 1\n"
+   "   until (foo = *stringseq+1) | (simulate(aut, stringseq[1:foo])===0) do\n"
+   "      foo +:= 1\n"
+   "   less := position - foo - 1\n"
+   "   if less < 0 then less := 0\n\n"
 
-fprintf(f, "%s\n", "   foo := 1");
-fprintf(f, "%s\n", "   until (foo = *stringseq+1) | (simulate(aut, stringseq[1:foo]) === 0) do");
-fprintf(f, "%s\n", "      foo+:=1");
-fprintf(f, "%s\n", "   less := position-foo-1");
-fprintf(f, "%s\n\n", "   if less < 0 then less := 0");
+   "   while *stringseq > 0 do {\n"
+   "      currstring := stringseq[1:position-less]\n"
 
-fprintf(f, "%s\n", "   while *stringseq > 0 do {");
-fprintf(f, "%s\n", "      currstring := stringseq[1:position-less]");
+   "      rulenum := simulate(aut, currstring)\n"
 
-fprintf(f, "%s\n", "      rulenum := simulate(aut, currstring)");
+   "      if rulenum > 0 then {\n"
+   "         yytext := currstring\n"
+   "         yyleng := *yytext\n"
 
-fprintf(f, "%s\n", "      if rulenum > 0 then {");
-fprintf(f, "%s\n", "         yytext := currstring");
-fprintf(f, "%s\n", "         yyleng := *yytext");
+   "         stringseq := stringseq[position-less:position]\n"
+   "         position := less + 1\n"
 
-fprintf(f, "%s\n", "         stringseq := stringseq[position-less:position]");
-fprintf(f, "%s\n", "         position := less + 1");
+   "         foo := 1\n"
+   "         until (foo = *stringseq+1) | (simulate(aut, stringseq[1:foo])=== 0) do\n"
+   "            foo +:= 1\n"
+   "         less := position-foo-1\n"
+   "         if less < 0 then less := 0\n\n"
 
-fprintf(f, "%s\n", "         foo := 1");
-fprintf(f, "%s\n", "         until (foo = *stringseq+1) | (simulate(aut, stringseq[1:foo])=== 0) do");
-fprintf(f, "%s\n", "            foo+:=1");
-fprintf(f, "%s\n", "         less := position-foo-1");
-fprintf(f, "%s\n", "         if less < 0 then less := 0");
+   "         if yychar := (\\semantic_action)[rulenum] () then\n"
+   "            return yychar\n"
+   "         }\n"
 
+   "      else {\n"
+   "         less +:= 1\n"
+   "         if less >= position then {\n"
+   "            writes(stringseq[1]) # didn't match nothin', copy to stdout\n"
+   "            stringseq := stringseq[2:0]\n"
+   "            }\n"
+   "         }\n"
+   "    }\n"
 
-fprintf(f, "%s\n", "         if yychar := (\\semantic_action)[rulenum] () then");
-fprintf(f, "%s\n", "            return yychar");
-fprintf(f, "%s\n", "         }");
+   "end\n\n");
 
-fprintf(f, "%s\n", "      else {");
-fprintf(f, "%s\n", "         less +:= 1");
-fprintf(f, "%s\n", "         if less >= position then {");
-fprintf(f, "%s\n", "            writes(stringseq[1]) # didn't match nothin', copy to stdout");
-fprintf(f, "%s\n", "            stringseq := stringseq[2:0]");
-fprintf(f, "%s\n", "            }");
-fprintf(f, "%s\n", "         }");
-fprintf(f, "%s\n", "    }");
+fprintf(f, "%s",
+   "#\n"
+   "# simulate(automata, word) determines whether or not the \n"
+   "# word would be accepted by the given automata. It gets the possible\n"
+   "# destinations at each symbol of the string and then adds on wherever it\n"
+   "# could also get if we use any epsilon transitions out of those states.\n"
+   "# Then the list of accepting states is compared to the reachable set\n"
+   "# of states to determine if the word was accepted and by which rule.\n"
+   "#\n"
 
-fprintf(f, "%s\n", "end");
+   "procedure simulate(myaut, word)\n"
+   "local first, currstates, acceptcheck, currsymbol, build\n"
 
-fprintf(f, "%s\n", "#");
-fprintf(f, "%s\n", "# simulate takes an automata and a word and determines whether or not the ");
-fprintf(f, "%s\n", "# word would be accepted by the given automata. It gets the possible ");
-fprintf(f, "%s\n", "# destinations at each symbol of the string and then adds on wherever it");
-fprintf(f, "%s\n", "# could also get if we use any epsilon transitions out of those states. Then");
-fprintf(f, "%s\n", "# the list of accepting states is compared to the reachable set of states to");
-fprintf(f, "%s\n", "# determine if the word was accepted and by which rule.");
-fprintf(f, "%s\n", "#");
+   "   currstates := list(0)\n"
+   "   put(currstates, myaut.start)\n"
 
-fprintf(f, "%s\n", "procedure simulate(myaut, word)");
-fprintf(f, "%s\n", "local first, currstates, acceptcheck, currsymbol, build");
+   "   acceptcheck := copy(myaut.accepting)\n"
+   "   currsymbol := word\n"
 
-fprintf(f, "%s\n", "   currstates := list(0)");
-fprintf(f, "%s\n", "   put(currstates, myaut.start)");
+   "   while *currsymbol > 0 do {\n"
+   "      currstates := getdestinations(currstates, currsymbol)\n"
+   "      if *currstates = 0 then\n"
+   "         return 0\n"
+   "      currsymbol := currsymbol[2:*currsymbol+1]\n"
+   "      }\n"
 
-fprintf(f, "%s\n", "   acceptcheck := copy(myaut.accepting)");
-fprintf(f, "%s\n", "   currsymbol := word");
+   "   # add states reachable through epsilon transitions\n"
 
-fprintf(f, "%s\n", "   while *currsymbol > 0 do {");
-fprintf(f, "%s\n", "      currstates := getdestinations(currstates, currsymbol)");
-fprintf(f, "%s\n", "      if *currstates = 0 then");
-fprintf(f, "%s\n", "         return 0");
-fprintf(f, "%s\n", "      currsymbol := currsymbol[2:*currsymbol+1]");
-fprintf(f, "%s\n", "      }");
-
-fprintf(f, "%s\n", "   # add states reachable through epsilon transitions");
-
-fprintf(f, "%s\n", "   build := copy(currstates)");
-fprintf(f, "%s\n", "   while *build > 0 do {");
-fprintf(f, "%s\n", "      current := pop(build)");
-fprintf(f, "%s\n", "      currstates |||:= copy(current.epsilon)");
-fprintf(f, "%s\n", "      build |||:= copy(current.epsilon)");
-fprintf(f, "%s\n", "      }");
+   "   build := copy(currstates)\n"
+   "   while *build > 0 do {\n"
+   "      current := pop(build)\n"
+   "      currstates |||:= copy(current.epsilon)\n"
+   "      build |||:= copy(current.epsilon)\n"
+   "      }\n\n"
 	
-fprintf(f, "%s\n", "   while *acceptcheck > 0 do {");
-fprintf(f, "%s\n", "      value1 := pop(acceptcheck)");
-fprintf(f, "%s\n", "      check2 := copy(currstates)");
+   "   while *acceptcheck > 0 do {\n"
+   "      value1 := pop(acceptcheck)\n"
+   "      check2 := copy(currstates)\n"
 
-fprintf(f, "%s\n", "      while *check2 > 0 do {");
-fprintf(f, "%s\n", "         value2 := pop(check2)");
+   "      while *check2 > 0 do {\n"
+   "         value2 := pop(check2)\n"
 
-fprintf(f, "%s\n", "         if value1.label = value2.label then");
-fprintf(f, "%s\n", "            return value1.rulenum");
-fprintf(f, "%s\n", "         }");
-fprintf(f, "%s\n", "      }");
-fprintf(f, "%s\n", "end");
+   "         if value1.label = value2.label then\n"
+   "            return value1.rulenum\n"
+   "         }\n"
+   "      }\n"
+   "end\n\n");
 
+fprintf(f, "%s",
+   "#\n"
+   "# getdestinations uses the current set of states and\n"
+   "# simulates one step of automata computation on the given\n"
+   "# string and returns the resulting set of destinations\n"
+   "#\n"
 
-fprintf(f, "%s\n", "#");
-fprintf(f, "%s\n", "# getdestinations uses the current set of states and");
-fprintf(f, "%s\n", "# simulates one step of automata computation on the given");
-fprintf(f, "%s\n", "# string and returns the resulting set of destinations");
-fprintf(f, "%s\n", "#");
+   "procedure getdestinations(currstates, currsymbol)\n"
+   "local result, current, buildresult\n\n"
 
-fprintf(f, "%s\n", "procedure getdestinations(currstates, currsymbol)");
-fprintf(f, "%s\n", "local result, current, buildresult");
+   "   result := list(0)\n"
+   "   if *currstates ~= 0 then {\n\n"
 
-fprintf(f, "%s\n", "   result := list(0)");
-fprintf(f, "%s\n", "   if *currstates ~= 0 then {");
+   "      # add states reachable through epsilon transitions\n"
+   "      buildresult := copy(currstates)\n"
 
-fprintf(f, "%s\n", "      # add states reachable through epsilon transitions");
+   "        while *buildresult > 0 do {\n"
+   "          current := pop(buildresult)\n"
+   "	  currstates |||:= copy(current.epsilon)\n"
+   "          buildresult |||:= copy(current.epsilon)\n"
+   "          }\n\n"
 
-fprintf(f, "%s\n", "      buildresult := copy(currstates)");
+   "      buildresult := copy(currstates)\n"
+   "      while *buildresult > 0 do\n"
+   "          result |||:= reach(pop(buildresult), currsymbol)\n"
+   "    }\n"
+   "    return result\n"
+   "end\n\n");
 
-fprintf(f, "%s\n", "        while *buildresult > 0 do {");
-fprintf(f, "%s\n", "          current := pop(buildresult)");
-fprintf(f, "%s\n", "	  currstates |||:= copy(current.epsilon)");
-fprintf(f, "%s\n", "          buildresult |||:= copy(current.epsilon)");
-fprintf(f, "%s\n", "          }");
+fprintf(f, "%s",
+   "#\n"
+   "# reach returns the list of states that can be reached\n"
+   "# on character symbol from the state state.\n"
+   "#\n"
 
-fprintf(f, "%s\n", "      buildresult := copy(currstates)");
-fprintf(f, "%s\n", "      while *buildresult > 0 do");
-fprintf(f, "%s\n", "          result |||:= reach(pop(buildresult), currsymbol)");
-fprintf(f, "%s\n", "    }");
-fprintf(f, "%s\n", "    return result");
-fprintf(f, "%s\n", "end");
+   "procedure reach(state, symbol)\n"
+   "local edgeset, answer, edgesymbol, bound1, bound2, curredge\n\n"
 
-fprintf(f, "%s\n", "#");
-fprintf(f, "%s\n", "# reach returns the list of states that can be reached");
-fprintf(f, "%s\n", "# on character symbol from the state state.");
-fprintf(f, "%s\n", "#");
+   "   edgeset := copy(state.edges)\n"
+   "   answer := list(0)\n\n"
 
-fprintf(f, "%s\n", "procedure reach(state, symbol)");
-fprintf(f, "%s\n", "local edgeset, answer, edgesymbol, bound1, bound2, curredge");
+   "   while *edgeset > 0 do {\n"
+   "      curredge := pop(edgeset)\n"
+   "      edgesymbol := copy(curredge.symbol)\n"
 
-fprintf(f, "%s\n", "   edgeset := copy(state.edges)");
-fprintf(f, "%s\n", "   answer := list(0)");
+   "      if edgesymbol[1] == symbol[1] then\n"
+   "            answer |||:= curredge.destinations\n"
 
-fprintf(f, "%s\n", "   while *edgeset > 0 do {");
-fprintf(f, "%s\n", "      curredge := pop(edgeset)");
-fprintf(f, "%s\n", "      edgesymbol := copy(curredge.symbol)");
+   "      else if edgesymbol[1] == \"[\" then {\n\n"
 
-fprintf(f, "%s\n", "      if edgesymbol[1] == symbol[1] then");
-fprintf(f, "%s\n", "            answer |||:= curredge.destinations");
+   "	  if edgesymbol[2]==\"^\" then {\n"
+   "	      cs := edgesymbol[3:find(\"]\", edgesymbol)]\n"
+   "	      if not find(symbol[1], cs) then\n"
+   "		  answer |||:= curredge.destinations\n"
+   "	  }\n"
+   "	  else {\n"
 
-fprintf(f, "%s\n", "      else if edgesymbol[1] == \"[\" then {");
+   "         while edgesymbol[1] ~== \"]\" do {\n"
+   "            edgesymbol := edgesymbol[2:*edgesymbol+1]\n\n"
 
-fprintf(f, "%s\n", "	  if edgesymbol[2]==\"^\" then {");
-fprintf(f, "%s\n", "	      cs := edgesymbol[3:find(\"]\", edgesymbol)]");
-fprintf(f, "%s\n", "	      if not find(symbol[1], cs) then");
-fprintf(f, "%s\n", "		  answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "	  }");
-fprintf(f, "%s\n", "	  else {");
+   "            if edgesymbol[1] == \"\\\\\" then {\n"
+   "               edgesymbol := edgesymbol[2:*edgesymbol+1]\n"
 
-fprintf(f, "%s\n", "         while edgesymbol[1] ~== \"]\" do {");
-fprintf(f, "%s\n", "            edgesymbol := edgesymbol[2:*edgesymbol+1]");
+   "               if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then\n"
+   "                  answer |||:= curredge.destinations\n"
+   "               else if (edgesymbol[1] == \"t\") & (symbol[1] == \"\\t\") then\n"
+   "                  answer |||:= curredge.destinations\n"
+   "               else if edgesymbol[1] == symbol[1] then\n"
+   "                  answer |||:= curredge.destinations\n"
+   "               }\n\n"
 
-fprintf(f, "%s\n", "            if edgesymbol[1] == \"\\\\\" then {");
-fprintf(f, "%s\n", "               edgesymbol := edgesymbol[2:*edgesymbol+1]");
+   "            else if edgesymbol[2] == \"-\" then {\n"
+   "               bound1 := edgesymbol[1]\n"
+   "               edgesymbol := edgesymbol[3:*edgesymbol+1]\n"
+   "               bound2 := edgesymbol[1]\n"
 
-fprintf(f, "%s\n", "               if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then");
-fprintf(f, "%s\n", "                  answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "               else if (edgesymbol[1] == \"t\") & (symbol[1] == \"\\t\") then");
-fprintf(f, "%s\n", "                  answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "               else if edgesymbol[1] == symbol[1] then");
-fprintf(f, "%s\n", "                  answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "               }");
+   "               if ord(bound1) <= ord(symbol[1]) <= ord(bound2) then\n"
+   "                  answer |||:= curredge.destinations\n"
+   "               }\n"
 
-fprintf(f, "%s\n", "            else if edgesymbol[2] == \"-\" then {");
-fprintf(f, "%s\n", "               bound1 := edgesymbol[1]");
-fprintf(f, "%s\n", "               edgesymbol := edgesymbol[3:*edgesymbol+1]");
-fprintf(f, "%s\n", "               bound2 := edgesymbol[1]");
+   "            else if edgesymbol[1] == symbol[1] then\n"
+   "                answer |||:= curredge.destinations\n"
+   "          }\n"
+   "          }\n"
+   "      }\n\n"
 
-fprintf(f, "%s\n", "               if ord(bound1) <= ord(symbol[1]) <= ord(bound2) then");
-fprintf(f, "%s\n", "                  answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "               }");
+   "      else if edgesymbol[1] == \"\\\\\" then {\n"
+   "         if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then\n"
+   "            answer |||:= curredge.destinations\n"
+   "         else if (edgesymbol[1] == \"t\") & (symbol[1] == \"\\t\") then\n"
+   "            answer |||:= curredge.destinations\n"
+   "         else if edgesymbol[1] == symbol[1] then\n"
+   "            answer |||:= curredge.destinations\n"
+   "         }\n"
+   "      }\n\n"
 
-fprintf(f, "%s\n", "            else if edgesymbol[1] == symbol[1] then");
-fprintf(f, "%s\n", "                answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "          }");
-fprintf(f, "%s\n", "          }");
-fprintf(f, "%s\n", "      }");
+   "   answer |||:= state.dot\n"
+   "   return answer\n"
+   "end\n\n");
 
-fprintf(f, "%s\n", "      else if edgesymbol[1] == \"\\\\\" then {");
-fprintf(f, "%s\n", "         if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then");
-fprintf(f, "%s\n", "            answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "         else if (edgesymbol[1] == \"t\") & (symbol[1] == \"\\t\") then");
-fprintf(f, "%s\n", "            answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "         else if edgesymbol[1] == symbol[1] then");
-fprintf(f, "%s\n", "            answer |||:= curredge.destinations");
-fprintf(f, "%s\n", "         }");
-fprintf(f, "%s\n", "      }");
+fprintf(f, "%s",
+   "procedure printstates(states)\n"
+   "local statecopy, current\n\n"
 
-fprintf(f, "%s\n", "   answer |||:= state.dot");
-fprintf(f, "%s\n", "   return answer");
-fprintf(f, "%s\n", "end");
+   "   write(\"printstates size \", *states, \" in entity \", image(states))\n"
 
-fprintf(f, "%s\n", "procedure printstates(states)");
-fprintf(f, "%s\n", "local statecopy, current");
+   "   statecopy := copy(states)\n\n"
 
-fprintf(f, "%s\n", "   write(\"printstates on size \", *states, \" in entity \", image(states))");
+   "   while *statecopy > 1 do {\n"
+   "      current := pop(statecopy)\n"
+   "      write(current.label, \", \")\n"
+   "      }\n\n"
 
-fprintf(f, "%s\n", "   statecopy := copy(states)");
-
-fprintf(f, "%s\n", "   while *statecopy > 1 do {");
-fprintf(f, "%s\n", "      current := pop(statecopy)");
-fprintf(f, "%s\n", "      write(current.label, \", \")");
-fprintf(f, "%s\n", "      }");
-
-fprintf(f, "%s\n", "   if *statecopy > 0 then {");
-fprintf(f, "%s\n", "      current := pop(statecopy)");
-fprintf(f, "%s\n", "      write(current.label)");
-fprintf(f, "%s\n", "      }");
-
-fprintf(f, "%s\n", "    else write(\"state list is empty\")");
-fprintf(f, "%s\n", "end");
+   "   if *statecopy > 0 then {\n"
+   "      current := pop(statecopy)\n"
+   "      write(current.label)\n"
+   "      }\n"
+   "    else write(\"state list is empty\")\n"
+   "end\n");
 }

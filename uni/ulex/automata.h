@@ -23,7 +23,7 @@ struct anode {
    struct edgelist* edges;
    struct anodelist* epsilon;          /* states we can reach on no input */
    struct anodelist* dot;              /* states we can reach on any input */
-                                       /* ie. just need to consume one symbol */
+                                       /* (just need to consume one symbol) */
    char* semaction;
    };
 
@@ -38,7 +38,7 @@ struct automata {
    struct anodelist* accepting;
    };
 
-
+void *alc(int n, char *caller);
 struct edge * alcedge(char* sym);
 struct edgelist * alcedgelist();
 struct anode * alcanode(int lab);

@@ -23,7 +23,7 @@ int whiteflag=0;
 
 %%
 
-"}%"	{ printf("}% should read %}"); }
+"}%"	{ printf("%s", "}% should read %}"); }
 
 "%%"	{
 	/*
@@ -34,15 +34,20 @@ int whiteflag=0;
 	whiteflag = 1;
 
 	if (foutfile == NULL) {
-	   fprintf(stderr, "exiting\n");
+	   fprintf(stderr, "couldn't write to ulex.tmp; exiting\n");
 	   fflush(stderr);
 	   exit(1);
 	   }
 	fprintf(foutfile, "\n\n");
 	fprintf(foutfile, "$line %d \"%s\"\n", yylineno, yyfilename);
-	while ((nextchar = yyinput()) != EOF) fprintf(foutfile,"%c",nextchar);
+
+	while ((nextchar = yyinput()) > 0) {
+	   fprintf(foutfile,"%c",nextchar);
+	   }
+
 	fclose(foutfile);
-	return -1 /* token(PERCENTS) */;
+/*	return -1; was token(PERCENTS) */;
+	return 0;
 	}
 
 "["("^")?([^\]\\]|((\\\\)*\\.))+"]" {
@@ -100,12 +105,9 @@ int token(int x)
 
 int grab_semantic_action()
 {
-    int numbrace, quotemode, slash;
+    int numbrace = 1, quotemode = 0, slash = 0;
     int nextchar;
     char* temp;
-    numbrace = 1;
-    quotemode = 0;
-    slash = 0;
 
     while (numbrace != 0) {
         nextchar = yyinput();
@@ -143,7 +145,7 @@ int grab_semantic_action()
 
 int yywrap()
 {
-   return 1;
+   return -1;
 }
 
 int yyinput(void) { return input(); }

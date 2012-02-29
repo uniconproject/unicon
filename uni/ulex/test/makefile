@@ -1,4 +1,3 @@
-
 #
 # Katie Ray
 # Project: ulex
@@ -11,6 +10,9 @@ numbers: numbers.u ulexskel.u helpers.u
 
 numbers.u: numbers.icn ulexskel.icn helpers.u
 	unicon -c numbers.icn
+
+numbers.icn: numbers.l
+	ulex numbers.l
 
 ulexskel.u: ulexskel.icn 
 	unicon -c ulexskel.icn

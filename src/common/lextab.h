@@ -39,7 +39,7 @@ struct toktab toktab[] = {
    "local",           LOCAL,         Beginner,          /*  21 */
    "next",            NEXT,          Beginner+Ender,    /*  22 */
    "not",             NOT,           Beginner,          /*  23 */
-   "of",              OF,            0,                 /*  24 */
+   "of",              OF_T,          0,                 /*  24 */
    "procedure",       PROCEDURE,     0,                 /*  25 */
    "record",          RECORD,        0,                 /*  26 */
    "repeat",          REPEAT,        Beginner,          /*  27 */

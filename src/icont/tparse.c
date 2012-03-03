@@ -63,7 +63,7 @@ int id_cnt;
 #define LOCAL 278
 #define NEXT 279
 #define NOT 280
-#define OF 281
+#define OF_T 281      /* renamed to avoid system macro OF() */
 #define PROCEDURE 282
 #define RECORD 283
 #define REPEAT 284

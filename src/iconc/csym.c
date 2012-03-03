@@ -830,7 +830,7 @@ struct implement *ip;
     *  invocation.
     */
    fprintf(codefile, "   {T_Proc, 11, O%c%c_%s, %d, -1, 0, 0, {{%d, \"", c1, c2,
-      name, nargs, strlen(op));
+      name, nargs, (int)strlen(op));
    for (s = op; *s != '\0'; ++s) {
       if (*s == '\\')
          fprintf(codefile, "\\");

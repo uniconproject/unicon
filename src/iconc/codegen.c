@@ -157,8 +157,8 @@ void var_dcls()
       for (i = 0; i < GHSize; i++)
          for (gptr = ghash[i]; gptr != NULL; gptr = gptr->blink)
             if (!(gptr->flag & F_SmplInv))
-               fprintf(codefile, "   {%d, \"%s\"},\n", strlen(gptr->name),
-                  gptr->name);
+               fprintf(codefile, "   {%d, \"%s\"},\n",
+		       (int)strlen(gptr->name), gptr->name);
          fprintf(codefile, "   };\n");
       }
 
@@ -356,7 +356,7 @@ proc_blk(gptr, init_glbl)
       fprintf(inclfile, "dptr r_rslt, continuation r_s_cont);\n");
       initpblk(inclfile, 'P', p->prefix, name, nquals, p->nargs, p->ndynam,
          p->nstatic, n_stat + 1);
-      fprintf(inclfile, "\n   {%d, \"%s\"},\n", strlen(name), name);
+      fprintf(inclfile, "\n   {%d, \"%s\"},\n", (int)strlen(name), name);
       }
    arg_nms(p->args, init_glbl);
    p->tnd_loc = dyn_nms(p->dynams, init_glbl);
@@ -380,7 +380,8 @@ int prt;
    n = arg_nms(lptr->next, prt);
    lptr->val.index = n;
    if (prt)
-      fprintf(inclfile, "   {%d, \"%s\"},\n", strlen(lptr->name), lptr->name);
+      fprintf(inclfile, "   {%d, \"%s\"},\n",
+	      (int)strlen(lptr->name), lptr->name);
    return n + 1;
    }
 
@@ -399,7 +400,8 @@ int prt;
    n = dyn_nms(lptr->next, prt);
    lptr->val.index = n;
    if (prt)
-      fprintf(inclfile, "   {%d, \"%s\"},\n", strlen(lptr->name), lptr->name);
+      fprintf(inclfile, "   {%d, \"%s\"},\n",
+	      (int)strlen(lptr->name), lptr->name);
    return n + 1;
    }
 
@@ -416,7 +418,8 @@ int prt;
    stat_nms(lptr->next, prt);
    lptr->val.index = ++n_stat;
    if (prt)
-      fprintf(inclfile, "   {%d, \"%s\"},\n", strlen(lptr->name), lptr->name);
+      fprintf(inclfile, "   {%d, \"%s\"},\n",
+	      (int)strlen(lptr->name), lptr->name);
    }
 
 /*
@@ -481,7 +484,7 @@ char *name;
    fprintf(inclfile, "\n");
    implproto(ip);
    initpblk(inclfile, 'F', prefix, name, 1, nargs, -1, 0, 0);
-   fprintf(inclfile, "{%d, \"%s\"}}};\n", strlen(name), name);
+   fprintf(inclfile, "{%d, \"%s\"}}};\n", (int)strlen(name), name);
    }
 
 /*
@@ -524,7 +527,7 @@ int init_glbl;
     */
    initpblk(inclfile, 'R', r->prefix, name, nfields + 1, nfields, -2,
       r->rec_num, 1);
-   fprintf(inclfile, "\n   {%d, \"%s\"},\n", strlen(name), name);
+   fprintf(inclfile, "\n   {%d, \"%s\"},\n", (int)strlen(name), name);
    fldnames(r->fields);
    fprintf(inclfile, "   }};\n");
    }
@@ -542,7 +545,7 @@ struct fldname *fields;
       return;
    fldnames(fields->next);
    name = fields->name;
-   fprintf(inclfile, "   {%d, \"%s\"},\n", strlen(name), name);
+   fprintf(inclfile, "   {%d, \"%s\"},\n", (int)strlen(name), name);
    }
 
 /*
@@ -1088,7 +1091,8 @@ int outer;
                      fprintf(codefile, ".vword.sptr = \"%s\";\n", lit->image);
                      fprintf(codefile, "   ");
                      val_loc(cd->Rslt, outer);
-                     fprintf(codefile, ".dword = %d;\n", strlen(lit->image));
+                     fprintf(codefile, ".dword = %d;\n",
+			     (int)strlen(lit->image));
                      fprintf(codefile, "   cnv_int(&");
                      val_loc(cd->Rslt, outer);
                      fprintf(codefile, ", &");

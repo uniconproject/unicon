@@ -454,7 +454,7 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
    if (verbose > 3)
       fprintf(stdout, "n-rttyp-bits: %d n-rttyp-vords: %d\n"
          "n-vect-bytes: %d sizeof-vord: %d\n", n_rttyp_bits, n_rttyp_vords,
-         n_vect_bytes, sizeof(vord));
+         n_vect_bytes, (int)(sizeof(vord)));
 
    rng_buf = alloc(n_rttyp_bits * sizeof(unsigned int));
 

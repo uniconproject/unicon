@@ -92,9 +92,9 @@ on these topics.
 
 \subsection{ulex}
 
-The name \textsf{ulex} stands for Unicon LEX. The 
-\textsf{ulex} program was written by Katie Ray and Clinton Jeffery
-and is presently unfinished, at an alpha-test level of completion.
+The name \textsf{ulex} stands for Unicon LEX. The \textsf{ulex}
+program was written by Katie Ray with a little help from Clinton Jeffery
+and is presently at an alpha-test stage of completion and maturity.
 It is inspired by
 the classic UNIX program called \textsf{lex} that dates back to 1975. The
 \textsf{ulex} tool takes a lexical specification and produces a lexical
@@ -120,8 +120,9 @@ file. In this section, you will see how to build such a program using
 \textsf{ulex}. A short, albeit simplistic, definition of a word is any
 sequence of non-white space characters. White space characters are
 blanks and tabs. Below is a complete \textsf{ulex} program that
-operates like \textsf{wc}:\\
+operates like \textsf{wc}:
 
+\pagebreak
 
 \iconcode{
 ws \ \ \ [ {\textbackslash}t] \\
@@ -133,16 +134,16 @@ global cc, wc, lc \\
 \ \\
 \%\% \\
 \ \\
-\{nonws\}+ \ \ \ \{ cc +:= yyleng; wc +:= 1 \} \\
-\{ws\}+ \ \ \ \ \ \ \{ cc +:= yyleng \} \\
-{\textbackslash}n \ \ \ \ \ \ \ \ \ \{ lc +:= 1; cc +:= 1 \} \\
+\{nonws\}+ \> \> \> \> \{ cc +:= yyleng; wc +:= 1 \} \\
+\{ws\}+ \> \> \> \> \{ cc +:= yyleng \} \\
+{\textbackslash}n \> \> \> \> \{ lc +:= 1; cc +:= 1 \} \\
 \ \\
 \%\% \\
 \ \\
 procedure main() \\
-\ \ \ cc := wc := lc := 0 \\
-\ \ \ yylex() \\
-\ \ \ write(right(lc, 8), right(wc, 8), right(cc, 8)) \\
+\> cc := wc := lc := 0 \\
+\> yylex() \\
+\> write(right(lc, 8), right(wc, 8), right(cc, 8)) \\
 end
 }
 
@@ -249,15 +250,15 @@ digiletter [a-zA-Z0-9\_] \\
 \ \\
 \%\% \\
 \ \\
-\{letter\}\{digiletter\}* \ \{ yylval := yytext; return NAME \} \\
-$[0-9]\+$
-({\textbackslash}.[0-9]+)? \ \ \ \ \ \{ yylval := numeric(yytext);
+\{letter\}\{digiletter\}* \> \> \> \> \> \> \> \{ yylval := yytext; return NAME \} \\
+$[0-9]+$
+({\textbackslash}.[0-9]+)? \> \> \> \> \> \> \> \{ yylval := numeric(yytext);
 return NUMBER \} \\
-{\textbackslash}n \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{ return 0 \} \\
+{\textbackslash}n \> \> \> \> \> \> \> \{ return 0 \} \\
 {\textquotedbl}:={\textquotedbl}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{ return ASSIGNMENT \} \\
+\> \> \> \> \> \> \> \{ return ASSIGNMENT \} \\
 $[$ {\textbackslash}t$]+$ \\
- .\ \ \ \  \ \ \ \ \ \ \ \ \ \ \{ return ord(yytext) \} \\
+ .\> \> \> \> \> \> \> \{ return ord(yytext) \} \\
 \%\%
 }
 
@@ -289,6 +290,8 @@ Table 18-1 lists the most commonly used operators in \textsf{ulex}.
 Advanced users will want to consult the documentation for \textsf{flex}
 or its predecessor, \textsf{lex}, for a more complete list.
 
+\vspace{0.16in}
+
 {\centering\sffamily\bfseries
 Table 18-1
 \par}
@@ -297,8 +300,8 @@ Table 18-1
 Commonly used lex operators
 \par}
 
+\vspace{-0.10in}
 \begin{flushleft}
-\tablehead{}
 \begin{supertabular}{|m{0.7268598in}|m{5.1156597in}|}
 \hline
 \sffamily\bfseries Operator &

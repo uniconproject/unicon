@@ -4,7 +4,7 @@ nonws	[^ \t\n]
 global cc, wc, lc
 %}
 %%
-{nonws}+	{ cc+:=yyleng;	wc+:= 1 }
+{nonws}+	{ cc+:=yyleng; wc+:= 1 }
 {ws}+		{ cc +:= yyleng }
 \n		{ lc +:= 1; cc +:= 1 }
 %%

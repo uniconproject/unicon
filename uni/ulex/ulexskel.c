@@ -179,7 +179,7 @@ fprintf(f, "%s",
    "      curredge := pop(edgeset)\n"
    "      edgesymbol := copy(curredge.symbol)\n"
 
-   "      if edgesymbol[1] == symbol[1] then\n"
+   "      if edgesymbol[1] == symbol[1] ~== \"[\" then\n"
    "            answer |||:= curredge.destinations\n"
 
    "      else if edgesymbol[1] == \"[\" then {\n\n"
@@ -221,11 +221,11 @@ fprintf(f, "%s",
    "      }\n\n"
 
    "      else if edgesymbol[1] == \"\\\\\" then {\n"
-   "         if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then\n"
+   "         if (edgesymbol[2] == \"n\") & (symbol[1] == \"\\n\") then\n"
    "            answer |||:= curredge.destinations\n"
-   "         else if (edgesymbol[1] == \"t\") & (symbol[1] == \"\\t\") then\n"
+   "         else if (edgesymbol[2] == \"t\") & (symbol[1] == \"\\t\") then\n"
    "            answer |||:= curredge.destinations\n"
-   "         else if edgesymbol[1] == symbol[1] then\n"
+   "         else if edgesymbol[2] == symbol[1] then\n"
    "            answer |||:= curredge.destinations\n"
    "         }\n"
    "      }\n\n"

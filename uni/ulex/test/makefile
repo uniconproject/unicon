@@ -5,20 +5,26 @@
 # makefile 
 #
 
-numbers: numbers.u ulexskel.u helpers.u
-	unicon numbers.u 
-
-numbers.u: numbers.icn ulexskel.icn helpers.u
+numbers.u: numbers.icn
 	unicon -c numbers.icn
 
 numbers.icn: numbers.l
 	ulex numbers.l
 
-ulexskel.u: ulexskel.icn 
-	unicon -c ulexskel.icn
+wc: wc.u
+	unicon wc.u
 
-helpers.u: helpers.icn
-	unicon -c helpers.icn
+wc.u: wc.icn
+	unicon -c wc
+
+wc.icn: wc.l
+	ulex wc.l
+
+calcscan.u: calcscan.icn
+	unicon -c calcscan
+
+calcscan.icn: calcscan.l
+	ulex calcscan.l
 
 # for testing purposes
 

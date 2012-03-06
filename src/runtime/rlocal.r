@@ -52,39 +52,6 @@ int is_internal(char *s)
 #endif                                  /* NT */
 
 
-/*********************************** AMIGA ***********************************/
-
-#if AMIGA
-#if LATTICE
-long _STACK = 20000;
-long _MNEED = 200000;	/* reserve space for allocation (may be too large) */
-#endif					/* LATTICE */
-#if __SASC
-long __stack = 20000;
-#endif					/* __SASC */
-
-/* Implement popen and pclose using Per Bojsen's APipe-Handler */
-
-FILE *popen(const char *pname, const char *mode) {
-
-   char *exname;
-   char device[] = "APIPE:";
-   FILE *fp;
-
-   exname = malloc(strlen(pname) + strlen(device) + 1);
-   strcpy(exname, device);
-   strcat(exname, pname);
-   fp = fopen(exname, mode);
-   free(exname);
-   return fp;
-   }
-
-int pclose(FILE *pipe) {
-   return fclose(pipe);
-   }
-
-#endif					/* AMIGA */
-
 /*********************************** ARM ***********************************/
 
 #if ARM
@@ -1073,6 +1040,13 @@ FILE *ptr;
 #define vfork fork	
 #endif
 
+struct filepid {
+   FILE *f;
+   int pid;
+   struct filepid *next;
+   };
+struct filepid *root_of_all_filepids;
+
 FILE *popen (const char *command, const char *mode)
 {
    FILE *fp;
@@ -1104,7 +1078,12 @@ FILE *popen (const char *command, const char *mode)
 		} else {			/* vfork -- parent or failed */
 			close(pr);
 			if (pid > 0) {	/* vfork -- parent */
-				return fp;
+			  struct filepid *temp = malloc(sizeof(struct filepid));
+			  temp->f = fp;
+			  temp->pid = pid;
+			  temp->next = root_of_all_filepids;
+			  root_of_all_filepids = temp;
+			  return fp;
 			} else {		/* vfork -- failed! */
 				fclose(fp);
 			}
@@ -1119,12 +1098,36 @@ FILE *popen (const char *command, const char *mode)
 
 int pclose(FILE *fd)
 {
+   struct filepid *temp = root_of_all_filepids, *temp2, *tail = NULL;
+   int pid;
 	int waitstat;
-
 	if (fclose(fd) != 0) {
 		return EOF;
 	}
-	wait(&waitstat);
+	while (temp) {
+	   if (temp->f == fd) {
+	      pid = temp->pid;
+	      kill(pid, SIGPIPE );
+	      if (pid==waitpid(pid, &waitstat, 0 )){ /* we are good */
+		 if (temp2 = temp->next) {
+		    *temp = *(temp->next);
+		    free(temp2);
+		    }
+		 else if (temp == root_of_all_filepids) {
+		    free(temp);
+		    root_of_all_filepids = NULL;
+		    }
+		 else if (tail && tail->next==temp) {
+		    tail->next = temp->next;
+		    free(temp);
+		    }
+		 return waitstat;
+		 }
+	      }
+	   tail = temp;
+	   temp = temp->next;
+	   }
+	wait(&waitstat );
 	return waitstat;
 }
 #endif

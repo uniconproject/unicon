@@ -37,6 +37,18 @@ int main(int argc, char *argv[])
 	 }
       arg++;
       }
+   else {
+      /*
+       * Use a flex-style output filenaming convention, e.g. output from
+       * file.l is file.icn instead of lex.yy.icn
+       */
+      int len = strlen(argv[arg]);
+      strcpy(ppcmdline, argv[arg]);
+      if (((ppcmdline[len-1]=='l')||(ppcmdline[len-1]=='L')) &&
+	   (ppcmdline[len-2]=='.')) ppcmdline[len-2] = '\0';
+      strcat(ppcmdline, ".icn");
+      outfilename = strdup(ppcmdline);
+      }
 
    if (arg >= argc) {
       fprintf(stderr, "usage: ulex [-nopp] [-ooutfile] file.l\n");

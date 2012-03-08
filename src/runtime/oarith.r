@@ -935,7 +935,11 @@ dptr drslt;
       r *= r;
       n >>= 1;
       }
+#ifdef DescriptorDouble
+   drslt->vword.realval = retval;
+#else					/* DescriptorDouble */
    Protect(BlkLoc(*drslt) = (union block *)alcreal(retval), return Error);
+#endif					/* DescriptorDouble */
    drslt->dword = D_Real;
    return Succeeded;
    }

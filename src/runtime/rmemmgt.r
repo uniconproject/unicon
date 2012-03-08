@@ -58,7 +58,11 @@ int bsizes[] = {
     -1,                       /* T_Null (0), not block */
     -1,                       /* T_Integer (1), not block */
      0,                       /* T_Lrgint (2), large integer */
+#ifdef DescriptorDouble
+    -1,
+#else					/* DescriptorDouble */
      sizeof(struct b_real),   /* T_Real (3), real number */
+#endif					/* DescriptorDouble */
      sizeof(struct b_cset),   /* T_Cset (4), cset */
      sizeof(struct b_file),   /* T_File (5), file block */
      0,                       /* T_Proc (6), procedure block */

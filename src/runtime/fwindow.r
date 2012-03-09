@@ -2262,7 +2262,11 @@ function{3} Pixel(argv[argc])
 		* Needs implementing under the compiler iconc.
 		*/
 	       r_args[0] = lastval;
+#ifdef TSTATARG 
+	       if ((signal = interp(G_Fsusp, r_args, CURTSTATARG)) != A_Resume) {
+#else 		 	   	  	 /* TSTATARG */
 	       if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {
+#endif 		 	   	  	 /* TSTATARG */
 		  tend = r_tend.previous;
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);
@@ -2280,7 +2284,11 @@ function{3} Pixel(argv[argc])
 		*/
 	       r_args[0].dword = D_Integer;
 	       r_args[0].vword.integr = rv;
+#ifdef TSTATARG 
+	       if ((signal = interp(G_Fsusp, r_args, CURTSTATARG)) != A_Resume) {
+#else 		 	   	  	 /* TSTATARG */
 	       if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {
+#endif 		 	   	  	 /* TSTATARG */
 		  tend = r_tend.previous;
 		  getpixel_term(w, &imem);
 		  VanquishReturn(signal);
@@ -2307,6 +2315,7 @@ function{0,2} QueryPointer(w)
       return integer
       }
    body {
+      CURTSTATVAR();
       pollevent();
       if (is:null(w)) {
 	 query_rootpointer(&xp);

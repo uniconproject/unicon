@@ -53,6 +53,10 @@ operator{*} ! bang(underef x -> dx)
 #if E_Lsub
             word xi = 0;
 #endif					/* E_Lsub */
+
+	   /* static struct threadstate *curtstate;
+            if (!curtstate) curtstate=roottstatep;*/
+
             EVValD(&dx, E_Lbang);
 	    
 #ifdef Arrays

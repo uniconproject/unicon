@@ -1541,7 +1541,13 @@ int nargs;
 
    sp += (nargs+1)*2;
    ipc.op = (int *)callproc;
+
+#ifdef TSTATARG 
+   retval = interp(0, NULL, CURTSTATARG);
+#else 		 	   	  	 /* TSTATARG */
    retval = interp(0, NULL);
+#endif 		 	   	  	 /* TSTATARG */
+
    if (retval != A_Resume) ret = (dptr)(sp-1);
 
 #ifdef HP

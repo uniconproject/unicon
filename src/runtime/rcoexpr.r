@@ -360,6 +360,7 @@ int fsig;
 dptr cargp;
    {
    continuation cf;
+   CURTSTATVAR();
    if (coexpr_fnc != NULL) {
       cf = coexpr_fnc;
       coexpr_fnc = NULL;
@@ -369,7 +370,11 @@ dptr cargp;
 #if COMPILER
       syserr("new_context() called with no coexpr_fnc defined");
 #else					/* COMPILER */
+#ifdef TSTATARG 
+      interp(fsig, cargp, CURTSTATARG);
+#else 		 	   	  	 /* TSTATARG */
       interp(fsig, cargp);
+#endif 		 	   	  	 /* TSTATARG */
 #endif					/* COMPILER */
    }
 #else					/* CoExpr */

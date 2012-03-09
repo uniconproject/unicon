@@ -372,7 +372,11 @@ Deliberate Syntax Error
 /*
  * The main loop of the interpreter.
  */
+#ifdef TSTATARG
+int interp_x(int fsig,dptr cargp, struct threadstate *curtstate)
+#else 		 	   	  	 /* TSTATARG */
 int interp_x(int fsig,dptr cargp)
+#endif		 	   	  	 /* TSTATARG */
    {
    register word opnd;
    register word *rsp;
@@ -397,8 +401,9 @@ int interp_x(int fsig,dptr cargp)
 
 #ifdef Concurrent
     int retval;
-extern int gettstate_count2;
+#ifndef TSTATARG
     CURTSTATE();
+#endif		 	   	  	 /* TSTATARG */
 #endif					/* Concurrent */
 
 #if e_intcall
@@ -624,7 +629,11 @@ extern int gettstate_count2;
       if (curpstate->Interp == interp_1) {
 	 ilevel--;
 	 ExInterp_sp;
-	 return interp_1(0, cargp);
+#ifdef TSTATARG 
+	 return interp_1(0, cargp, CURTSTATARG);
+#else 		 	   	  	 /* TSTATARG */
+         return interp_1(0, cargp);
+#endif 		 	   	  	 /* TSTATARG */
 	 }
 #endif					/* MultiThread */
 #endif					/* E_Line || E_Loc */

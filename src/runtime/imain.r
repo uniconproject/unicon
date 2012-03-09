@@ -413,8 +413,11 @@ void main(int argc, char **argv)
           set_up = 1;
 
           PushDesc(globals[i]);
-          interp(0,(dptr)NULL);
-
+#ifdef TSTATARG
+          interp(0,(dptr)NULL, CURTSTATARG);           /*      [[I?]] */
+#else 		 	   	  	 /* TSTATARG */
+          interp(0,(dptr)NULL);                        /*      [[I?]] */
+#endif 		 	   	  	 /* TSTATARG */
 	  /*
 	   * Now we have <classname>__oprec pointing at method vector.
 	   * Copy it in  __m field of record constructor block
@@ -541,7 +544,11 @@ void main(int argc, char **argv)
     *  returns only if an Op_Quit is executed.	If this happens,
     *  c_exit() is called to wrap things up.
     */
+#ifdef TSTATARG
+   interp(0,(dptr)NULL, CURTSTATARG);           /*      [[I?]] */
+#else 		 	   	  	 /* TSTATARG */
    interp(0,(dptr)NULL);                        /*      [[I?]] */
+#endif 		 	   	  	 /* TSTATARG */
 
 #if SCCX_MX
     dos_set_ctrl_break(ctrlbrk);   /* Restore original Ctrl-C operation */

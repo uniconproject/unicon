@@ -20,6 +20,7 @@ keyword{4} allocated
       struct threadstate *tstate;
       uword blktot=0;
       uword strtot=0;
+      CURTSTATVAR();
       MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
@@ -53,6 +54,7 @@ keyword{2} clock
       time_t t;
       struct tm *ct;
       char sbuf[128], *tmp;
+      CURTSTATVAR();
 
       time(&t);
       ct = localtime(&t);
@@ -93,6 +95,7 @@ keyword{4} collections
       return integer
       }
    inline {
+      CURTSTATVAR();
       suspend C_integer coll_tot;
       suspend C_integer coll_stat;
       suspend C_integer coll_str;
@@ -181,6 +184,7 @@ keyword{2} dateline
       char *merid, *tmp;
       int i;
       int tz_sec, offset_hrs;
+      CURTSTATVAR();
 
       time(&t);
       ct = localtime(&t);
@@ -346,6 +350,8 @@ keyword{1,*} features
 #else					/* RefPath */
       char *refpath = "";
 #endif					/* RefPath */
+
+      CURTSTATVAR();
 
       if ((int)strlen(patchpath) > 18) refpath = patchpath+18;
       else if (strlen(refpath)==0) {
@@ -560,6 +566,7 @@ keyword{0,*} pick
       int i, elements;
       struct b_list *namelist;
       struct descrip name;
+      CURTSTATVAR();
 
       if (is:null(lastEventWin)) runerr(140, lastEventWin);
       if (is:null(amperPick)) fail;

@@ -387,6 +387,7 @@ function{*} function()
       }
    body {
       register int i;
+      CURTSTATVAR();
 
       for (i = 0; i<pnsize; i++) {
 	 suspend string(strlen(pntab[i].pstrep), pntab[i].pstrep);
@@ -1450,6 +1451,7 @@ function{*} fieldnames(r)
    if !is:record(r) then runerr(107,r)
    body {
       int i, sz = Blk(BlkD(r,Record)->recdesc,Proc)->nfields;
+      CURTSTATVAR();
       for(i=0;i<sz;i++)
 	 suspend Blk(BlkD(r,Record)->recdesc,Proc)->lnames[i];
       fail;
@@ -1941,6 +1943,7 @@ function{*} globalnames(ce)
 #endif					/* MultiThread */
    body {
       struct descrip *dp;
+      CURTSTATVAR();
 #ifdef MultiThread
       for (dp = ps->Gnames; dp != ps->Egnames; dp++) {
 #else					/* MultiThread */

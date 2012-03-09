@@ -409,8 +409,11 @@ LibDcl(bscan,2,"?")
     */
    ArgType(0) = D_Var;
    VarLoc(Arg0) = &Arg1;
-
-   rc = interp(G_Csusp,cargp);
+#ifdef TSTATARG 
+   rc = interp(G_Csusp,cargp, CURTSTATARG);
+#else 		 	   	  	 /* TSTATARG */
+   rc = interp(G_Csusp,cargp );
+#endif 		 	   	  	 /* TSTATARG */
 
 #if E_Srem || E_Sfail
    if (rc != A_Resume)
@@ -503,7 +506,12 @@ LibDcl(escan,1,"escan")
 
    EVValD(&k_subject, E_Ssusp);
 
-   rc = interp(G_Csusp,cargp);
+#ifdef TSTATARG 
+   rc = interp(G_Csusp,cargp, CURTSTATARG);
+#else 		 	   	  	 /* TSTATARG */
+   rc = interp(G_Csusp,cargp );
+#endif 		 	   	  	 /* TSTATARG */
+
    if (pfp != cur_pfp)
       return rc;
 

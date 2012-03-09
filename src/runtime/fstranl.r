@@ -97,6 +97,7 @@ function{*} bal(c1,c2,c3,s,i,j)
    body {
       C_integer cnt;
       char c;
+      CURTSTATVAR();
 
       /*
        * Loop through characters in s[i:j].  When a character in c2
@@ -140,6 +141,7 @@ function{*} find(s1,s2,i,j)
    body {
       register char *str1, *str2;
       C_integer s1_len, l, term;
+      CURTSTATVAR();
 
       /*
        * Loop through s2[i:j] trying to find s1 at each point, stopping
@@ -242,6 +244,7 @@ function{*} upto(c,s,i,j)
       runerr(104,c)
    body {
       C_integer tmp;
+      CURTSTATVAR();
 
       /*
        * Look through s[i:j] and suspend position of each occurrence of

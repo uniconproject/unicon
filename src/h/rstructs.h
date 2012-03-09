@@ -663,7 +663,11 @@ struct progstate {
    int (*Cpset)(dptr, dptr, word);
    int (*Cptable)(dptr, dptr, word);
    void (*EVstralc)(word);
+#ifdef TSTATARG
+   int (*Interp)(int,dptr, struct threadstate*);
+#else 		 	   	  	 /* TSTATARG */
    int (*Interp)(int,dptr);
+#endif 		 	   	  	 /* TSTATARG */
    int (*Cnvcset)(dptr,dptr);
    int (*Cnvint)(dptr,dptr);
    int (*Cnvreal)(dptr,dptr);

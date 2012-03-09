@@ -217,8 +217,13 @@ void		icon_init	(char *name, int *argcp, char *argv[]);
 void		iconhost	(char *hostname);
 int		idelay		(int n);
 #ifdef MultiThread
+#ifdef TSTATARG
+int		interp_0	(int fsig,dptr cargp, struct threadstate *curtstate);
+int		interp_1	(int fsig,dptr cargp, struct threadstate *curtstate);
+#else 		 	   	  	 /* TSTATARG */
 int		interp_0	(int fsig,dptr cargp);
 int		interp_1	(int fsig,dptr cargp);
+#endif		 	   	  	 /* TSTATARG */
 #else
 int		interp		(int fsig,dptr cargp);
 #endif

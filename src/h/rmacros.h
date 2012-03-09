@@ -578,6 +578,15 @@
 #define CURTSTATE()
 #else
 #define CURTSTATE() struct threadstate *curtstate = get_tstate()
+#ifdef TSTATARG
+#define CURTSTATARG curtstate
+#define RTTCURTSTATARG ,curtstate
+#define CURTSTATVAR()  struct threadstate *curtstate = get_tstate()
+#else
+#define CURTSTATARG
+#define RTTCURTSTATARG
+#define CURTSTATVAR()
+#endif 					/* TSTATARG */
 #endif
 #define ssize    (curtstate->Curstring->size)
 #define strbase  (curtstate->Curstring->base)
@@ -590,6 +599,9 @@
 #define blkfree  (curtstate->Curblock->free)
 #else 					/* Concurrent */
 #define CURTSTATE()
+#define CURTSTATARG
+#define RTTCURTSTATARG
+#define CURTSTATVAR()
 #define ssize    (curstring->size)
 #define strbase  (curstring->base)
 #define strend   (curstring->end)

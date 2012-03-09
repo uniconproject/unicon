@@ -1408,18 +1408,18 @@ int brace;
 		  switch (op_type) {
 		  case TokFunction:
 		     prt_str(
-		       "if ((signal = interp(G_Fsusp, r_args)) != A_Resume) {",
+		       "if ((signal = interp(G_Fsusp, r_args RTTCURTSTATARG)) != A_Resume) {",
 			     indent);
 		     break;
 		  case Operator:
 		  case Keyword:
 		     prt_str(
-		       "if ((signal = interp(G_Osusp, r_args)) != A_Resume) {",
+		       "if ((signal = interp(G_Osusp, r_args RTTCURTSTATARG)) != A_Resume) {",
 			     indent);
 		     break;
 		  default:
 		     prt_str(
-		       "if ((signal = interp(G_Csusp, r_args)) != A_Resume) {",
+		       "if ((signal = interp(G_Csusp, r_args RTTCURTSTATARG)) != A_Resume) {",
 			     indent);
 		  }
 		  }

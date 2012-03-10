@@ -2967,7 +2967,7 @@ int n;
    ForceNl();
    prt_str("#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)", 0);
    ForceNl();
-   prt_str("struct threadstate *curtstate = get_tstate();", IndentInc);
+   prt_str("CURTSTATE();", IndentInc);
    ForceNl();
    prt_str("#endif\t\t\t\t\t/* Concurrent && !HAVE_KEYWORD__THREAD */", 0);
    ForceNl();

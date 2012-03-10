@@ -284,7 +284,8 @@ function{1} display(i,f,c)
       struct b_coexpr *ce = NULL;
       struct progstate *prog, *savedprog;
 #ifdef Concurrent
-      struct threadstate *curtstate = get_tstate();
+       struct threadstate *curtstate =
+                   (struct threadstate *) pthread_getspecific(tstate_key);
 #endif					/* Concurrent */
       }
 #else					/* MultiThread */

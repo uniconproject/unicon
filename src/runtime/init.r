@@ -1600,6 +1600,7 @@ word getrandom()
    int i;
    time_t t;
    struct tm *ct, ctstruct;
+   CURTSTATE();
 
    time(&t);
 
@@ -1627,7 +1628,7 @@ word getrandom()
    ncalls++;
    krandom += millisec() + 1009 * ncalls;
 #else
-   krandom += millisec() + 1009 * (int)get_tstate();
+   krandom += millisec() + 1009 * (int) curtstate;
 #endif
    return krandom;
 #else					/* NoRandomize */

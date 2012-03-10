@@ -577,11 +577,14 @@
 #ifdef HAVE_KEYWORD__THREAD
 #define CURTSTATE()
 #else
-#define CURTSTATE() struct threadstate *curtstate = get_tstate()
+#define CURTSTATE() struct threadstate *curtstate = \
+                   (struct threadstate *) pthread_getspecific(tstate_key);
+
 #ifdef TSTATARG
 #define CURTSTATARG curtstate
 #define RTTCURTSTATARG ,curtstate
-#define CURTSTATVAR()  struct threadstate *curtstate = get_tstate()
+#define CURTSTATVAR() struct threadstate *curtstate = \
+                   (struct threadstate *) pthread_getspecific(tstate_key);
 #else
 #define CURTSTATARG
 #define RTTCURTSTATARG

@@ -523,8 +523,24 @@ deliberate syntax errror
    struct header hdr;
 #endif					/* !COMPILER */
 
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+pthread_key_t tstate_key;
+void alloc_tstate(struct threadstate *ts)
+{
+   if (!ts){
+      ts = malloc(sizeof(struct threadstate));
+      if (ts == NULL) return;
+      }
+}
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
+
 void init_threadstate(struct threadstate *ts)
 {
+
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+   if (!ts) alloc_tstate(ts);
+   pthread_setspecific(tstate_key, (void *)ts);
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
 #ifdef Concurrent
    ts->tid = pthread_self();
@@ -609,7 +625,9 @@ char *argv[];
    FILE *fname = 0;
    word cbread;
 #endif					/* COMPILER */
-   CURTSTATE();
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+    struct threadstate *curtstate;
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
    prog_name = name;			/* Set icode file name */
 
@@ -642,14 +660,10 @@ char *argv[];
    rootpstate.eventsource = nulldesc;
    rootpstate.Kywd_err = zerodesc;
 
-#if !defined(Concurrent) || defined(HAVE_KEYWORD__THREAD)
-   rootpstate.tstate = &roottstate;
    curtstate = &roottstate;
-#else					/* !Concurrent||HAVE_KEYWORD__THREAD */
-   rootpstate.tstate = get_tstate();
-#endif					/* !Concurrent||HAVE_KEYWORD__THREAD */
-   roottstatep = rootpstate.tstate; 
-   init_threadstate(rootpstate.tstate);
+   rootpstate.tstate = curtstate;
+   roottstatep = curtstate; 
+   init_threadstate(curtstate);
 
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;

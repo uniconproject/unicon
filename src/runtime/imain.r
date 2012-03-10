@@ -226,7 +226,6 @@ void main(int argc, char **argv)
 #ifndef HAVE_KEYWORD__THREAD
    struct threadstate *curtstate;
    pthread_key_create(&tstate_key, NULL);
-   curtstate = get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */
 
    init_threads();
@@ -313,6 +312,8 @@ void main(int argc, char **argv)
     * Call icon_init with the name of the icode file to execute.	[[I?]]
     */
    icon_init(argv[1], &argc, argv);
+   
+   curtstate = roottstatep;
 
 #ifdef Messaging
    errno = 0;

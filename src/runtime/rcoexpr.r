@@ -547,7 +547,9 @@ void *nctramp(void *arg)
    struct context *new = arg;		/* new context pointer */
    struct b_coexpr *ce;
 #ifdef Concurrent
-   CURTSTATE();
+#ifndef HAVE_KEYWORD__THREAD
+    struct threadstate *curtstate;
+#endif					/* HAVE_KEYWORD__THREAD */
 
    init_threadstate(curtstate);
    tlschain_add(curtstate, new);
@@ -812,32 +814,6 @@ int action;
 
   return;
 }
-
-#ifndef HAVE_KEYWORD__THREAD
-pthread_key_t tstate_key;
-
-struct threadstate *init_tstate()
-{
-   struct threadstate *mytstate = malloc(sizeof(struct threadstate));
-   if (mytstate == NULL) return NULL;
-   pthread_setspecific(tstate_key, (void *)mytstate);
-   return mytstate;
-}
-
-struct threadstate *get_tstate()
-{
-   struct threadstate *mytstate;
-   /* look up the tstate */
-   mytstate = (struct threadstate *)pthread_getspecific(tstate_key);
-   return (mytstate ? mytstate : init_tstate());
-}
-#else					/* HAVE_KEYWORD__THREAD */
-struct threadstate *get_tstate()
-{
-   return curtstate;
-}
-
-#endif					/* HAVE_KEYWORD__THREAD */
 
 void howmanyblock()
 {

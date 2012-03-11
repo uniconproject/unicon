@@ -548,10 +548,10 @@ void *nctramp(void *arg)
    struct b_coexpr *ce;
 #ifdef Concurrent
 #ifndef HAVE_KEYWORD__THREAD
-    struct threadstate *curtstate;
+    struct threadstate *curtstate=NULL;
 #endif					/* HAVE_KEYWORD__THREAD */
 
-   init_threadstate(curtstate);
+   init_threadstate(&curtstate);
    tlschain_add(curtstate, new);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 

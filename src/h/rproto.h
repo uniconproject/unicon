@@ -1031,7 +1031,7 @@ void makesem(struct context *ctx);
 void *nctramp(void *arg);
 #endif					/* PthreadCoswitch */
 
-void init_threadstate(struct threadstate *ts);
+void init_threadstate(struct threadstate **tsptr);
 
 #ifdef Concurrent 
 #ifndef HAVE_KEYWORD__THREAD

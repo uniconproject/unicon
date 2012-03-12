@@ -140,7 +140,7 @@ blanks and tabs. Listing 18-1 shows a complete \textsf{ulex} program that
 operates like \textsf{wc}.  It can be compiled by the commands
 
 \iconcode{
-ulex wc.l
+ulex wc.l \\
 unicon wc
 }
 
@@ -386,28 +386,42 @@ precedence. This is useful for creating more complex expressions with
 *, +, and {\textbar}.\\\hline
 \end{supertabular}
 \end{flushleft}
+
 Before you conclude your study of \textsf{ulex}, two subtle points are
 worth knowing. The matches allowed by a list of regular expressions are
 often ambiguous, and this is normal and healthy. For example, does
 \textsf{count10} match a variable name and then an integer, or just one
 variable name? The \textsf{ulex} tool matches the longest substring of
-input that can match the regular expression. So it matches
+input that can match any of its regular expressions. So it matches
 \textsf{count10} as one word, which is a variable name in this case.
+
 There is one more sticky point: what if two rules match the exact same
 input characters, with no longest match to break the tie? In this case,
 \textsf{ulex} picks the first rule listed in the specification that
-matches, so the order of the rules can be important.
+matches, so the order of the rules is important.  It is common to have
+more specific regular expressions up top, with more general regular
+expressions later in the ulex .l files. If you put a more general rule
+first, more specific rules that match the same characters will be ignored.
 
 \subsubsection{Lexical analyzers in real compilers}
+
 Lexical analyzers in real compilers will exhibit some differences from
-the desktop calculator example. For one thing, more than half of the
-compilers out there use handwritten lexical analyzers instead of
-lex-generated ones. This is because lexical analyzer speed is
-significant to overall compilation speed, and because not every
-behavior needed in lexical analyzers is easily handled by regular
-expressions. Nevertheless, ulex might save a lot of programmer time,
-both in the initial development and in the later maintenance phase when
-changes are needed. Here are some more practical tips when using ulex.
+the desktop calculator example. For one thing, many compilers use
+handwritten lexical analyzers instead of lex-generated ones. In the
+early days of lex this was often the case because lexical analyzer speed is
+significant to overall compilation speed. If a lexical analyzer is
+handwritten for a modern compiler it is more likely to be because not every
+behavior needed in a particular language's lexical analyzer is easily
+handled by regular expressions. As a simple example, Unicon's lexical
+analyzer performs semi-colon insertion using a simple rule that would
+be difficult or impossible to formulate using regular expressions.
+
+Nevertheless, ulex can save a lot of programmer time, both in the
+initial development and in the later maintenance phase when
+changes are needed. When a lexical analyzer needs some feature that
+is not implementable using a regular expression, it can usually be
+accomplished with a extra lines of Unicon code to augment a ulex-based
+lexical analyzer. Here are some more practical tips when using ulex.
 
 \liststyleLvii
 \begin{itemize}
@@ -417,7 +431,7 @@ reports, or it might involve useful computation, such as de-escaping
 literal strings, or computing integer values from octal or hexadecimal
 constants. For each token, allocate a new record instance and assign
 \textsf{yylval} to refer to it.
-\item Your lexical analyzer code may be smaller if you place reserved
+\item Your lexical analyzer code may be far smaller if you place reserved
 words in a table, and look them up after matching the pattern for
 variable names, instead of writing a separate regular expression for
 each reserved word. If you \textit{do} choose to write separate regular

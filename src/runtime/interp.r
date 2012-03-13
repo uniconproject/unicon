@@ -1180,12 +1180,12 @@ L_astatic:
 		     else { /* not list or an intarray, must be a realarray */
 #ifndef DescriptorDouble
 			reserve(Blocks, args * sizeof(struct b_real));
-			bp = BlkLoc(value_tmp);
+			bp = BlkLoc(value_tmp)->List.listhead;
 #endif
 			for (i = 0; i < args; i++) {
 			   PushVal(D_Real);
 #ifdef DescriptorDouble
-			   PushVal(bp->Intarray.a[i]);
+			   PushVal(*(word *)(bp->Realarray.a+i));
 #else
 			   PushAVal(alcreal(bp->Realarray.a[i]));
 #endif

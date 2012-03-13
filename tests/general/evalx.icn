@@ -89,12 +89,13 @@ procedure p7()
    write("(x := y) & &fail ----> ",image((x := y) & &fail) | "none")
    write("every write(!\"abcdef\") ----> ",image(every write(!"abcdef")) | "none")
    write("every write(![1,2,3,4,5]) ----> ",image(every write(![1,2,3,4,5])) | "none")
-   write("every write(!![1,2,3,4,5]) ----> ",image(every write(!![1,2,3,4,5])) | "none")
+   write("every write(!![1,2,3,4,5]) ----> ",image(every write(!string(![1,2,3,4,5]))) | "none")
 end
 
 procedure p8()
-   write("every write(!![1,\"ab\",[1,2,3],34]) ----> ",image(every write(!![1,"ab",[1,2,3],34])) | "none")
-   write("every write(!([1,\"ab\",[1,2,3],34][1 to 4])) ----> ",image(every write(!([1,"ab",[1,2,3],34][1 to 4]))) | "none")
+   write("every write(!![1,\"ab\",[1,2,3],34]) ----> ",image(every write(!![string(1),"ab",[1,2,3],string(34)])) | "none")
+   write("every write(!([1,\"ab\",[1,2,3],34][1 to 4])) ----> ",
+	 image(every write(!([string(1),"ab",[1,2,3],string(34)][1 to 4]))) | "none")
    write("x := array(1,2,3,4,5) ----> ",image(x := array(1,2,3,4,5)) | "none")
    write("every write(!x) ----> ",image(every write(!x)) | "none")
    write("x := 1 ----> ",image(x := 1) | "none")
@@ -115,7 +116,7 @@ procedure p9()
    write("!\"abc\" ----> ",image(!"abc") | "none")
    write("![1,2,3] ----> ",image(![1,2,3]) | "none")
    write("!&lcase ----> ",image(!&lcase) | "none")
-   write("!30 ----> ",image(!30) | "none")
+   write("!30 ----> ",image(!string(30)) | "none")
    write("!table() ----> ",image(!table()) | "none")
    write("?\"abc\" ----> ",image(?"abc") | "none")
 end
@@ -231,4 +232,3 @@ procedure main()
    p15()
    p16()
 end
-

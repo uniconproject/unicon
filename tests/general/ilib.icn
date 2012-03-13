@@ -277,7 +277,8 @@ end
 
 procedure gen(p, a[])			#: test a simple procedure or generator
    &random := 4747
-   writes(left(image(p)[11:0], LSIZE - 1))
+   outp := (image(p) ? (=("procedure "|"function ") & tab(0)))
+   writes(left(outp, LSIZE - 1))
    every writes(" ", ((p ! a) \ GENLIMIT) | "\n")
    return
 end
@@ -287,6 +288,7 @@ procedure lst(p, a[])			#: test a procedure that returns a list
 
    L := (p ! a) | ["[FAILED]"]
    writes(left(image(p)[11:0], LSIZE - 1))
+   if type(L)=="integer" then L := string(L)
    every writes(" ", (!L \ GENLIMIT) | "\n")
    return
 end

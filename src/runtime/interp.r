@@ -1155,6 +1155,9 @@ L_astatic:
 #endif					/* MultiThread */
 #endif					/* StackCheck */
 
+#ifdef Arrays
+		  if(Blk(bp,List)->listtail) {
+#endif					/* Arrays */
                   for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
 		       bp = Blk(bp,Lelem)->listnext) {
 		     for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
@@ -1164,6 +1167,32 @@ L_astatic:
 			PushDesc(bp->Lelem.lslots[j]);
 			}
 		     }
+#ifdef Arrays
+		  }
+		  else {
+		     bp = Blk(bp,List)->listhead;
+		     if (bp->Intarray.title==T_Intarray) {
+			for (i = 0; i < args; i++) {
+			   PushVal(D_Integer);
+			   PushVal(bp->Intarray.a[i]);
+			   }
+			}
+		     else { /* not list or an intarray, must be a realarray */
+#ifndef DescriptorDouble
+			reserve(Blocks, args * sizeof(struct b_real));
+			bp = BlkLoc(value_tmp);
+#endif
+			for (i = 0; i < args; i++) {
+			   PushVal(D_Real);
+#ifdef DescriptorDouble
+			   PushVal(bp->Intarray.a[i]);
+#else
+			   PushAVal(alcreal(bp->Realarray.a[i]));
+#endif
+			   }
+			}
+		     }
+#endif					/* Arrays */
 
 		  goto invokej;
 		  }

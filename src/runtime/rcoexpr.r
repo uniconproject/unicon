@@ -539,6 +539,16 @@ void makesem(struct context *ctx) {
    #endif				/* NamedSemaphores */
    }
 
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+pthread_key_t tstate_key;
+struct threadstate * alloc_tstate()
+{
+   struct threadstate *ts = malloc(sizeof(struct threadstate));
+   if (ts == NULL) syserr("alloc_tstate(): Out of memory");
+   return ts;
+}
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
+
 /*
  * nctramp() -- trampoline for calling new_context(0,0).
  */
@@ -547,11 +557,14 @@ void *nctramp(void *arg)
    struct context *new = arg;		/* new context pointer */
    struct b_coexpr *ce;
 #ifdef Concurrent
+
 #ifndef HAVE_KEYWORD__THREAD
-    struct threadstate *curtstate=NULL;
+    struct threadstate *curtstate;
+    curtstate = (new->tstate ? new->tstate : alloc_tstate());
+    pthread_setspecific(tstate_key, (void *) curtstate);
 #endif					/* HAVE_KEYWORD__THREAD */
 
-   init_threadstate(&curtstate);
+   init_threadstate(curtstate);
    tlschain_add(curtstate, new);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 

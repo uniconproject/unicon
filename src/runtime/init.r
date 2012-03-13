@@ -523,26 +523,8 @@ deliberate syntax errror
    struct header hdr;
 #endif					/* !COMPILER */
 
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
-pthread_key_t tstate_key;
-void alloc_tstate(struct threadstate **ts)
+void init_threadstate( struct threadstate *ts)
 {
-   if (!(*ts)){
-      *ts = malloc(sizeof(struct threadstate));
-      if (*ts == NULL) syserr("alloc_tstate(): Out of memory");
-      }
-}
-#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
-
-void init_threadstate( struct threadstate **tsptr)
-{
-   struct threadstate *ts=*tsptr;
-
-#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
-   if (!ts) { alloc_tstate(&ts); *tsptr=ts;}
-   pthread_setspecific(tstate_key, (void *)ts);
-#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
-  
 #ifdef Concurrent
    ts->tid = pthread_self();
    ts->Pollctr=0;
@@ -664,7 +646,11 @@ char *argv[];
    curtstate = &roottstate;
    rootpstate.tstate = curtstate;
    roottstatep = curtstate; 
-   init_threadstate(&curtstate);
+   init_threadstate(curtstate);
+
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+   pthread_setspecific(tstate_key, (void *) curtstate);
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;
@@ -1002,7 +988,7 @@ Deliberate Syntax Error
 
 #ifdef PthreadCoswitch
 /*
- * Allocate a struct context for the main co-expression.
+ * Allocate a struct context   for the main co-expression.
  */
 {
    cstate ncs = (cstate) (mainhead->cstate);
@@ -1820,6 +1806,16 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    coexp->es_stack = tstate->Stack;
    coexp->es_stackend = tstate->Stackend;
 #endif					/* StackCheck */
+
+#ifdef Concurrent
+   {
+   cstate ncs = (cstate) (coexp->cstate);
+   context *ctx;
+   ctx = ncs[1];
+   ctx->tstate = tstate;
+   }
+#endif					/* Concurrent */
+
    /*
     * Initialize values.
     */
@@ -1836,8 +1832,10 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Kywd_err = zerodesc;
 
    init_sighandlers(pstate);
-   
-   init_threadstate(&tstate);
+
+#ifndef Concurrent
+   init_threadstate(tstate);
+#endif					/* Concurrent */  
 
    pstate->Kywd_time_elsewhere = millisec();
    pstate->Kywd_time_out = 0;

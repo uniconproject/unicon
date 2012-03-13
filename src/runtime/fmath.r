@@ -135,7 +135,55 @@ body {
    struct descrip dtmp;
    if (argc == 0) fail;
    dtmp = argv[0];
-   for(i=1;i<argc;i++) if (anycmp(&dtmp, argv+i) < 0) dtmp = argv[i];
+   if (argc == 1) {
+      if (is:list(dtmp)) {
+	 int i, j, size;
+	 union block *bp;
+#ifdef Arrays
+	 if (BlkD(dtmp,List)->listtail == NULL) {
+	    int size = BlkD(dtmp,List)->size;
+	    if (size==0) fail;
+	    bp = BlkD(dtmp,List)->listhead;
+	    if (bp->Intarray.title == T_Intarray) {
+	       word mymax = bp->Intarray.a[0];
+	       for(i = 1; i < size; i++)
+		  if (bp->Intarray.a[i] > mymax) mymax = bp->Intarray.a[i];
+	       return C_integer mymax;
+	       }
+	    else {
+	       double mymax = bp->Realarray.a[0];
+	       for(i = 1; i < size; i++)
+		  if (bp->Realarray.a[i] > mymax) mymax = bp->Realarray.a[i];
+	       dtmp.dword = D_Real;
+#ifdef DescriptorDouble
+	       dtmp.vword.realval = mymax;
+#else					/* DescriptorDouble */
+	       dtmp.vword.bptr = (union block *)alcreal(mymax);
+#endif					/* DescriptorDouble */
+	       return dtmp;
+	       }
+	    }
+
+#endif
+	 /*
+	  * normal max(L), walk through list elements
+	  */
+	 bp = dtmp.vword.bptr;
+	 dtmp = nulldesc; /* the minimal value */
+	 for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
+	      bp = Blk(bp,Lelem)->listnext) {
+	    for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
+	       j = bp->Lelem.first + i;
+	       if (j >= bp->Lelem.nslots)
+		  j -= bp->Lelem.nslots;
+	       if (anycmp(bp->Lelem.lslots+j, &dtmp) == Greater)
+		  dtmp = bp->Lelem.lslots[j];
+	       }
+	    }
+	 }
+      }
+   else
+      for(i=1;i<argc;i++) if (anycmp(&dtmp, argv+i) < 0) dtmp = argv[i];
    return dtmp;
    }
 end

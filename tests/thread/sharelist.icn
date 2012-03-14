@@ -1,0 +1,21 @@
+#
+# this test illustrates how lists must be protected from threads.
+# at present, lists are not so protected
+#
+procedure main()
+   if not (&features == "concurrent threads") then
+       stop("requires concurrent threads")
+   L := []
+   n := 3
+   threads := []
+   every i := 1 to n do
+       put(threads, create work(i))
+   every i := 1 to n do
+       thread(threads[i])
+   every wait(!threads)
+   every write(!L)
+end
+
+procedure work(i)
+    every j := 1 to 1000000 do put(L, j^i)
+end

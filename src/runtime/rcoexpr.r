@@ -191,7 +191,6 @@ int first;
 	       struct context *nctx, *cctx;
 	       nctx = (struct context *) ncp->cstate[1];
 	       cctx = (struct context *) ccp->cstate[1];
-	   	     
 	       if (nctx->tstate)
 	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
 	       else
@@ -431,8 +430,7 @@ int pthreadcoswitch(void *o, void *n, int first)
        * over in alccoexp().  Create a thread for it and mark it alive.
        */
       new = ncs[1];
-      new->tmplevel=0;
-      if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
+       if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;
 

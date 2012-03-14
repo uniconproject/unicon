@@ -516,7 +516,7 @@ void EVInit()
     *  The reference to EVInit below just obtains an arbitrary address within
     *  the text segment.
     */
-#ifdef HaveProfil
+#ifdef AAAHaveProfil
 #ifdef PROFIL_CHAR_P
    profil((char *)(ticker.s), sizeof(ticker.s), (long) EVInit & ~0x3FFFF, 2);
 #else					/* PROFIL_CHAR_P */

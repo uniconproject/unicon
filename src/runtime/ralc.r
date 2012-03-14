@@ -288,6 +288,7 @@ struct b_coexpr *alccoexp()
    ctx = ncs[1] = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = ep;
+   ctx->tmplevel=0;
 #ifdef Concurrent 
    ctx->tstate = NULL;
 #endif					/* Concurrent */

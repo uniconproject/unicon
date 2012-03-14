@@ -850,9 +850,9 @@ typedef struct context {
    sem_t *semp;		/* pointer to semaphore */
    int alive;		/* set zero when thread is to die */
    struct b_coexpr *c;  /* pointer to associated co-expression block */
+   int tmplevel; 
 #ifdef Concurrent
    struct threadstate *tstate;
-   int tmplevel; 
 #endif				/* Concurrent */
    } context;
 

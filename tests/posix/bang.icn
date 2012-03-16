@@ -1,4 +1,9 @@
+# purpose of this test is obviously to test whether !f is working, where
+# f is a directory that has been opened.  Output is sorted because the
+# order the filenames come out of open() is not guaranteed.
 procedure main()
-
-   every write(!open("test-dir"))
+    L := []
+    every put(L, ".svn" ~== !open("test-dir"))
+    L := sort(L)
+    every write(!L)
 end

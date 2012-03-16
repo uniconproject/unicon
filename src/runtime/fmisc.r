@@ -1415,7 +1415,7 @@ function{0,1} variable(s)
       rv = getvar(s, &result);
    
 #ifdef MultiThread
-      if (is:coexpr(c)) {
+      if (BlkLoc(c) != BlkLoc(k_current)) {
 	 ENTERPSTATE(savedprog);
 	 pfp = tmp_pfp;
 	 glbl_argp = tmp_argp;

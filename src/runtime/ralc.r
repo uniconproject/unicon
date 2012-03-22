@@ -147,6 +147,7 @@ struct b_coexpr *alccoexp()
     */
    if (alcnum > AlcMax) collect(Static);
 
+
    ep = (struct b_coexpr *)malloc((msize)stksize);
 
    /*
@@ -288,9 +289,22 @@ struct b_coexpr *alccoexp()
    ctx = ncs[1] = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = ep;
-   ctx->tmplevel=0;
-#ifdef Concurrent 
-   ctx->tstate = NULL;
+   ctx->tmplevel = 0;
+   ctx->have_thread = 0;
+#ifdef Concurrent
+#ifdef MultiThread
+   if(icodesize>0){
+      ctx->isProghead = 1;
+      ctx->tstate = ep->program->tstate;
+      ctx->tstate->ctx = ctx;
+      }
+   else{ 
+      ctx->tstate = NULL; 
+      ctx->isProghead = 0;
+      }
+#endif					/* MultiThread */
+ 
+
 #endif					/* Concurrent */
 
 }
@@ -300,6 +314,7 @@ struct b_coexpr *alccoexp()
    ep->nextstk = stklist;
    stklist = ep;
    MUTEX_UNLOCKID(MTX_STKLIST);
+
    return ep;
    }
 #endif					/* COMPILER */

@@ -1009,6 +1009,7 @@ Deliberate Syntax Error
    roottstatep->prev = roottstatep; 
    roottstatep->next = NULL;
    roottstatep->ctx = ctx;
+   ctx->isProghead = 1;
    ctx->tstate = roottstatep;
 #endif					/* Concurrent */
 }
@@ -1806,15 +1807,6 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    coexp->es_stack = tstate->Stack;
    coexp->es_stackend = tstate->Stackend;
 #endif					/* StackCheck */
-
-#ifdef Concurrent
-   {
-   cstate ncs = (cstate) (coexp->cstate);
-   context *ctx;
-   ctx = ncs[1];
-   ctx->tstate = tstate;
-   }
-#endif					/* Concurrent */
 
    /*
     * Initialize values.

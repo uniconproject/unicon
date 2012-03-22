@@ -433,6 +433,7 @@ int pthreadcoswitch(void *o, void *n, int first)
        if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;
+      new->have_thread = 1;
 
       /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/
       }
@@ -467,10 +468,13 @@ void coclean(void *o) {
       blkregion = old->tstate->Curblock;
    }
 
+
    if (old->c->status & Ts_Sync){
       old->alive = 0;			/* signal thread to exit */
-      sem_post(old->semp);		/* unblock it */
-      THREAD_JOIN(old->thread, NULL);	/* wait for thread to exit */
+      if (old->have_thread){
+         sem_post(old->semp);		/* unblock it */
+         THREAD_JOIN(old->thread, NULL);	/* wait for thread to exit */
+         }
       }
  
    #ifdef NamedSemaphores
@@ -770,7 +774,7 @@ int action;
       else {
 	 gc_queue++;
 	 MUTEX_UNLOCKID(MTX_GC_QUEUE);
-	 
+
 	 MUTEX_LOCKID(MTX_THREADCONTROL);
 	 GCthread = pthread_self();
 	 thread_call = 1;
@@ -891,12 +895,16 @@ void tlschain_remove(struct threadstate *tstate)
     * if needed. GCthread doesn't need to lock for example.
     */
 
+   if (!tstate || !tstate->prev) return;
+ 
    tstate->prev->next = tstate->next;
    if (tstate->next)
       tstate->next->prev = tstate->prev;
 
    rootpstate.stringtotal += tstate->stringtotal;
    rootpstate.blocktotal += tstate->blocktotal;
+
+   if (tstate->ctx && tstate->ctx->isProghead) return;
    
    free(tstate);
 }

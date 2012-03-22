@@ -409,10 +409,13 @@ int region;
       }
 #endif
 
+/* In concurrent Unicon, the GC theard shouldn't wake up a thread  */
+#ifndef Concurrent
 #if E_Collect
    if (!noMTevents)
       EVVal((word)region,E_Collect);
 #endif					/* E_Collect */
+#endif					/* Concurrent */
 
    switch (region) {
       case Static:
@@ -590,12 +593,14 @@ int region;
       }
    }
 
+#ifndef Concurrent
 #if E_Lrgint || E_Real || E_Cset || E_File || E_Record || E_Tvsubs || E_External || E_List || E_Lelem || E_Table || E_Telem || E_Tvtbl || E_Set || E_Selem || E_Slots || E_Coexpr || E_Refresh || E_String
    if (!noMTevents) {
       mmrefresh();
       EVValD(&nulldesc, E_EndCollect);
       }
 #endif					/* instrument allocation events */
+#endif					/* Concurrent */
 
 #ifdef AAAConcurrent
       thread_control(GC_WAKEUPCALL);  /* wake up all threads. */
@@ -615,13 +620,11 @@ int region;
    else if (Pointer(d))\
       markblock(&(d));
 
-#ifdef Concurrent
 /*
  * use  threadstate in order to sync VM registers
  */
 static void markthread(struct threadstate *tcp)
 {
-   struct b_coexpr *coex = tcp->ctx->c;
    /* sync VM registers here?  Or maybe do ALL of them before any other
     * marking.
     */
@@ -636,12 +639,12 @@ static void markthread(struct threadstate *tcp)
    PostDescrip(tcp->Eret_tmp);
    /* ??? */
 }
-#endif					/* Concurrent */
 
 static void markprogram(pstate)
 struct progstate *pstate;
    {
    struct descrip *dp;
+
 
    /* call markthread() on all the threads created from this program.
     * This replaces some of the former programstate marking below
@@ -652,11 +655,18 @@ struct progstate *pstate;
       if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async ) && (t->ctx->alive) )
         markthread(t);
 #else					/* Concurrent */
+#if 0
    postqual(&(pstate->tstate->ksub));
    PostDescrip(pstate->tstate->K_errorvalue);
    PostDescrip(pstate->tstate->T_errorvalue);
+PostDescrip(pstate->tstate->K_current);
+#else
+   markthread(pstate->tstate);
+#endif
 #endif					/* Concurrent */
    
+PostDescrip(pstate->K_main);
+
    PostDescrip(pstate->parentdesc);
    PostDescrip(pstate->eventmask);
    PostDescrip(pstate->valuemask);
@@ -1305,7 +1315,10 @@ static void cofree()
     */
    ep = &stklist;
    while (*ep != NULL) {
-      if (BlkType(*ep) == T_Coexpr) {
+
+      if ((BlkType(*ep) == T_Coexpr) /* &&
+      (((struct b_coexpr *)(*ep))->program == curpstate) */) {
+	
          xep = *ep;
          *ep = (*ep)->nextstk;
          /*

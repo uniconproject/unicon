@@ -851,9 +851,11 @@ typedef struct context {
    int alive;		/* set zero when thread is to die */
    struct b_coexpr *c;  /* pointer to associated co-expression block */
    int tmplevel; 
+   int have_thread;
 #ifdef Concurrent
    struct threadstate *tstate;
-#endif				/* Concurrent */
+   int isProghead;
+#endif	 			/* Concurrent */
    } context;
 
 #endif					/* PthreadCoswitch */

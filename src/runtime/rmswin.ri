@@ -4359,6 +4359,14 @@ int setinputmask(wbp w, char *val)
    else {
       ws->inputmask &= ~WindowClosureMask;
       }
+   if (strchr(val,'t')) {
+      if (!(ws->inputmask | TouchInputMask)) {
+	 ws->inputmask |= TouchInputMask;
+	 }
+      }
+   else {
+      ws->inputmask &= ~TouchInputMask;
+      }
    return Succeeded;
 }
 

@@ -94,6 +94,7 @@
 #define PointerMotionMask    1
 #define WindowClosureMask    2
 #define KeyReleaseMask       4
+#define TouchInputMask       8
 
 /*
  * something I think should be #defined

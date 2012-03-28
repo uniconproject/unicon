@@ -395,6 +395,23 @@ keyword{1,*} features
 #endif					/* COMPILER */
 #include "../h/feature.h"
 
+#ifdef MSWindows
+      {
+      int value = GetSystemMetrics(SM_DIGITIZER);
+      if (value & NID_READY){ /* stack ready */
+	 if (value  & NID_MULTI_INPUT){ /* digitizer is multitouch */ 
+	    suspend C_string "Multitouch input";
+	    }
+	 else if (value & (NID_INTEGRATED_TOUCH|NID_EXTERNAL_TOUCH)){
+	    suspend C_string "Touch input";
+	    }
+	 else if (value & (NID_INTEGRATED_PEN|NID_EXTERNAL_PEN)){
+	    suspend C_string "Pen input";
+	    }
+      }
+}
+#endif					/* MSWindows */
+
       if (refpath && strlen(refpath) > 0) {
 	 char *s;
 #if UNIX

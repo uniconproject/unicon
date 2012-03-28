@@ -720,9 +720,9 @@ int action;
 	  * note that pthread_cond_wait will block the thread and will
 	  * automatically and atomically unlock mutex while it waits. 
 	  */
-	 MUTEX_LOCKID(MTX_COND_GC);
 	   NARthreads--;
 	   MUTEX_UNLOCKID(MTX_NARTHREADS);
+	 MUTEX_LOCKID(MTX_COND_GC);
 	   /* wake up another thread to do GC and go to sleep */
 	   sem_post(&sem_gc);
 	   MUTEX_UNLOCKID(MTX_THREADCONTROL);

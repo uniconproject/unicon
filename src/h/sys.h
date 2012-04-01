@@ -184,6 +184,7 @@
    #include <sys/times.h>
    #include <sys/types.h>
    #include <termios.h>
+   #include <poll.h>
    #ifdef SysSelectH
       #include <sys/select.h>
    #endif

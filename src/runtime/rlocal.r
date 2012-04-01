@@ -1210,6 +1210,31 @@ int kbhit(void)
    return 0;				/* return result */
 }
 
+/*
+ * kbhit_ms(n) -- return nonzero if characters are available for getch/getche,
+ * waiting up to n milliseconds.
+ */
+int kbhit_ms(int n)
+{
+   struct termios otty, tty;
+   struct pollfd fd_stdin;
+   int rv;
+
+   tcgetattr(STDIN, &otty);		/* get current tty attributes */
+
+   tty = otty;
+   tty.c_lflag &= ~ICANON;		/* disable input batching */
+   tcsetattr(STDIN, TCSANOW, &tty);	/* set attribute temporarily */
+
+   fd_stdin.fd = fileno(stdin);
+   fd_stdin.events = POLLIN;
+
+   rv = poll(&fd_stdin, 1, n);
+
+   tcsetattr(STDIN, TCSANOW, &otty);	/* reset tty to original state */
+   return rv == 1;				/* return result */
+}
+
 #endif					/* UNIX */
 
 /*********************************** VMS ***********************************/

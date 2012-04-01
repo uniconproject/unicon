@@ -6,7 +6,11 @@
 
 void checkpollevent(){
 #ifdef Graphics
+#ifdef KbhitPoll
+   while (!kbhit_ms(133)) { pollevent(); }
+#else					/* KbhitPoll */
    while (!kbhit()) { idelay(100); pollevent(); }
+#endif					/* KbhitPoll */
 #endif					/* Graphics */
 }
 

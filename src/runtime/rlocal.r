@@ -1187,6 +1187,12 @@ int rchar(int with_echo)
  */
 int kbhit(void)
 {
+
+#ifdef KbhitIoctl
+   unsigned i;
+   ioctl(0, FIONREAD, &i);
+   return i != 0;
+#else					/* KbhitIoctl */
    struct termios otty, tty;
    fd_set fds;
    struct timeval tv;
@@ -1207,7 +1213,9 @@ int kbhit(void)
 
    if (rv == -1) return 0;
    if (FD_ISSET(0, &fds)) return 1;
-   return 0;				/* return result */
+#endif					/* KbhitIoctl */
+
+   return 0;
 }
 
 /*

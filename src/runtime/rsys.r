@@ -333,8 +333,8 @@ char *hostname;
    }
 
 /*
- * Read a long string in shorter parts. (Standard read may not handle long
- *  strings.)
+ * Read a long string in shorter parts. (Standard read may not handle
+ *  long strings.)
  */
 word longread(s,width,len,fd)
 FILE *fd;
@@ -545,9 +545,16 @@ int n;
 #if UNIX
    {
    struct timeval t;
+#if defined(KbhitPoll) || defined(KbhitIoctl)
+   struct pollfd fd_stdin;
+   fd_stdin.fd = fileno(stdin);
+   fd_stdin.events = POLLIN;
+   poll(&fd_stdin, 1, n);
+#else					/* KbhitPoll || KbhitIoctl */
    t.tv_sec = n / 1000;
    t.tv_usec = (n % 1000) * 1000;
    select(1, NULL, NULL, NULL, &t);
+#endif					/* KbhitPoll || KbhitIoctl */
    return Succeeded;
    }
 #endif					/* UNIX */

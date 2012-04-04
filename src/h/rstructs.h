@@ -495,6 +495,10 @@ struct threadstate {
   uword blocktotal;			/* cumulative total allocation */
 #endif 					/* Concurrent */
 
+#ifdef MultiThread
+  struct progstate *pstate;
+#endif
+
 /*
  * Structure for chaining threadstate structs.
  * The first node will be for the main thread, it  will be always the first.

@@ -573,6 +573,15 @@
    word nparam; word ndynam; word nstatic; word fstatic;\
    struct sdescrip quals[n];}
 
+#ifdef LOCALPROGSTATE
+#define CURPSTATE() struct progstate *curpstate = curtstate->pstate;
+#define CURPTSTATE() struct progstate *curpstate =	\
+    ((struct threadstate *) pthread_getspecific(tstate_key))->pstate;
+#else 
+#define CURPSTATE()
+#define CURPTSTATE()
+#endif
+
 #ifdef Concurrent
 #ifdef HAVE_KEYWORD__THREAD
 #define CURTSTATE()

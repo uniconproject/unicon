@@ -161,9 +161,15 @@ end
 # most of the user control debugging interface
 #
 method startConsole(argv)
-   local ans, cmd, old_State:=NONE
+   local ans, cmd, old_State := NONE, funame
 
+   # check whether we are on Solaris, and if so, default to cooked input
+   if funame := open("uname","p") then {
+      if find("SunOS", read(funame)) then mode := "-line"
+      close(funame)
+      }
    if argv[1] == "-line" then mode := pop(argv)
+   else if argv[1] == "-noline" then { mode := &null; pop(argv) }
 
    DState.initializeState(argv)
 

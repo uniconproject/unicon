@@ -912,39 +912,34 @@ static struct region *reuse_region(nbytes, region)
 word nbytes;
 int region;
    {
-   struct region *rp;
    struct region **p_public;
    struct region *curr;
    int mtx_publicheap;
    word freebytes = nbytes / 4;
 
    if (region == Strings){
-      curr = public_stringregion;
       p_public = &public_stringregion;
       mtx_publicheap = MTX_PUBLICSTRHEAP;
       }
    else{
-      curr = public_blockregion;
       p_public = &public_blockregion;
       mtx_publicheap = MTX_PUBLICBLKHEAP;
       }
 
    MUTEX_LOCKID(mtx_publicheap);
-
-   for (rp = curr; rp; rp = rp->Tnext){
-      if ( (rp->size>=nbytes) &&  DiffPtrs(rp->end, rp->free) >= freebytes){
+   for (curr = *p_public; curr; curr = curr->Tnext){
+      if ( (curr->size>=nbytes) &&  DiffPtrs(curr->end, curr->free) >= freebytes){
          if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
-	 else *p_public = curr->Tnext;	   
+	 else *p_public = curr->Tnext;	        
   	 if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
          curr->Tnext= NULL;
          curr->Tprev = NULL;
-	 break;
- 	 }
+	  break;
+ 	   }
       }
-
    MUTEX_UNLOCKID(mtx_publicheap);
 
-   return rp;
+   return curr;
    }
 
 /*

@@ -1,8 +1,7 @@
 #
 # agent.icn
-# it is an abstract class that handles the basic extra monitoring
-# architecture, it will be derived into internals and externals
-# type of minitors
+# This abstract class handles the basic extra monitoring
+# architecture. It is derived into internal and external type of monitors
 # Author  : Ziad Al-Sharif
 # Date    : Feb 24, 2008
 # e-mail  : zsharif@gmail.com
@@ -19,7 +18,7 @@ class Agent(
    Clients,         # A table of the InternalClient record
    activeClients,   # A set of the current active clients
    disabledClients, # A set of the current disabled clients
-   mtype,           # it holds the derived class identity (internal or external)
+   mtype,           # the derived class identity (internal or external)
    count,           # an integer holds the tatal number of monitors (Agents)
    enabled          # an integer hold the total number of enabled monitors
    )
@@ -30,8 +29,8 @@ class Agent(
 method cmdEnable(name)
    local msg:="??", obj
 
-   if obj := \Clients[name] then{
-      if obj.State = DISABLED then{
+   if obj := \Clients[name] then {
+      if obj.State = DISABLED then {
          obj.State := ENABLED
          insert(activeClients, obj)
          delete(disabledClients, name)
@@ -53,8 +52,8 @@ end
 method cmdDisable(name)
    local obj, msg:="??"
 
-   if obj := \Clients[name] then{
-      if obj.State = ENABLED then{
+   if obj := \Clients[name] then {
+      if obj.State = ENABLED then {
          obj.State := DISABLED
          insert(disabledClients, name)
          delete(activeClients, obj)
@@ -77,8 +76,8 @@ method cmdInfo(name)
    local i:=0, msg:="", obj
     
    ## what if there is more than one monitor loaded with the same name??
-   if \name then{
-      if \Clients[name] then{
+   if \name then {
+      if \Clients[name] then {
          if Clients[name].State = DISABLED then
             msg:="\n   The "||mtype||" agent \""||name||"\" is DISABLED"
          else
@@ -87,8 +86,8 @@ method cmdInfo(name)
       else
          msg:="\n   The "||mtype||" agent \""||name||"\" is NOT Found!"
       }
-   else{
-      if *activeClients > 0 then{
+   else {
+      if *activeClients > 0 then {
          i := 1
          msg ||:="\n   The following are the enabled \""||mtype|| "\" agents:"
          every obj := !activeClients do{
@@ -124,16 +123,15 @@ end
 method build_Mask()
    local obj
 
-   eventMask := cset('')
-   every obj := !activeClients do
-      eventMask ++:= obj.eventMask
+   eventMask := ''
+   every eventMask ++:= (!activeClients).eventMask
 
    DState.eventMask ++:= eventMask
-   if mtype == "internal" then{
+   if mtype == "internal" then {
       DState.internalMask := eventMask 
       #DState.Update()
       }
-   else if mtype == ("external"|"semi-internal") then{
+   else if mtype == ("external"|"semi-internal") then {
       DState.externalMask := eventMask 
       #DState.Update()
       }
@@ -143,12 +141,10 @@ end
 # Initialization
 #
 initially(t)
-
    mtype   := t
-   count   := 0
-   enabled := 0
+   count   := enabled := 0
    Clients := table()
    activeClients   := set()
    disabledClients := set()
-   eventMask := cset('')
+   eventMask := ''
 end

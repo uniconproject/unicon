@@ -26,6 +26,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
   /* create an opengl window */
    wdp wd = alc_display(NULL);
+   if (wd==NULL){
+    fprintf(stderr, "can't allocate a new display: ");
+    return NULL;
+   }
    if (!glXQueryExtension(wd->display, &query, &query)) {
       fprintf(stderr, "X server has no OpenGL GLX extension\n");
       return NULL;

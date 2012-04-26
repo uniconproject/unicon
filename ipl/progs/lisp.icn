@@ -58,7 +58,8 @@ record prop(v,f)  # abbreviated propery list
 procedure main(f) 
 local sexpr, source
    initialize()
-   if *f=0 then put(f, "-")
+   if f[1] == ("-C" | "/C") then pop(f)  # run-command-then-terminate mode
+   else if not (!f=="-") then put(f, "-")   # append "-" by default
    while source := pop(f) do {
       if not (infile := (if source == "-" then &input else open(source))) then
 	 stop("wtLisp can't open ", image(source))

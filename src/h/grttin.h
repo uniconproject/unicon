@@ -72,16 +72,26 @@
  */
 #define Protect(notnull,orelse) do {if ((notnull)==NULL) orelse;} while(0)
 
+/* 
+ * This is not correct for monitoring facilities, but it is a way
+ * to turn off compile errors until their turn come to be fixed
+*/
+#ifdef LOCALPROGSTATE
+#define   mycurpstate mainpstate
+#else					/* LOCALPROGSTATE */
+#define   mycurpstate curpstate
+#endif					/* LOCALPROGSTATE */
+
 /*
  * perform what amounts to "function inlining" of EVVal
  */
 #begdef RealEVVal(value,event)
    do {
-      if (is:null(curpstate->eventmask)) break;
-      else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
-      MakeInt(value, &(curpstate->parent->eventval));
-      if (!is:null(curpstate->valuemask) &&
-	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
+      MakeInt(value, &(mycurpstate->parent->eventval));
+      if (!is:null(mycurpstate->valuemask) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
    } while (0)
@@ -96,11 +106,11 @@
 #begdef EVValD(dp,event)
 #if event
    do {
-      if (is:null(curpstate->eventmask)) break;
-      else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
-      curpstate->parent->eventval = *(dp);
-      if ((!is:null(curpstate->valuemask)) &&
-	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
+      mycurpstate->parent->eventval = *(dp);
+      if ((!is:null(mycurpstate->valuemask)) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
    } while (0)
@@ -111,15 +121,15 @@
 #if event
    do {
       int scode;
-      if (is:null(curpstate->eventmask)) break;
-      else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
-      if (!is:null(curpstate->valuemask) &&
-	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
+      if (!is:null(mycurpstate->valuemask) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
 
       scode = hitsyntax(ipcopnd);
       if (scode == 0) break;
-      MakeInt(scode, &(curpstate->parent->eventval));
+      MakeInt(scode, &(mycurpstate->parent->eventval));
       actparent(event);
    } while (0)
 #endif
@@ -128,13 +138,13 @@
 #begdef EVValX(bp,event)
 #if event
    do {
-      struct progstate *parent = curpstate->parent;
-      if (is:null(curpstate->eventmask)) break;
-      else if (!Testb((word)ToAscii(event), curpstate->eventmask)) break;
+      struct progstate *parent = mycurpstate->parent;
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
       parent->eventval.dword = D_Coexpr;
       BlkLoc(parent->eventval) = (union block *)(bp);
-      if (!is:null(curpstate->valuemask) &&
-	  (invaluemask(curpstate, event, &(curpstate->parent->eventval)) != Succeeded))
+      if (!is:null(mycurpstate->valuemask) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
       actparent(event);
    } while (0)
@@ -144,8 +154,8 @@
 #begdef EVVar(dp, e)
 #if e
    do {
-      if (!is:null(curpstate->eventmask) &&
-         Testb((word)ToAscii(e), curpstate->eventmask)) {
+      if (!is:null(mycurpstate->eventmask) &&
+         Testb((word)ToAscii(e), mycurpstate->eventmask)) {
             EVVariable(dp, e);
 	    }
    } while(0)

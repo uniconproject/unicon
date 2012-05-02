@@ -215,7 +215,11 @@ extern struct descrip amperErrno;
    #endif				/* ExecImages */
 
    #ifdef MultiThread
+   #ifdef LOCALPROGSTATE
+      extern struct progstate *mainpstate;
+   #else					/* LOCALPROGSTATE */
       extern struct progstate *curpstate;
+   #endif					/* LOCALPROGSTATE */
       extern struct progstate rootpstate;
       extern struct threadstate *roottstatep; 
    #ifdef Concurrent

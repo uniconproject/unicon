@@ -80,6 +80,7 @@ local fn, arglist, arg
    if T === ATOM([l]) then {                 # it's an atom
       if T === l then return .T
       if EQ([NIL,l]) === T then return .NIL
+      if numeric(l) then return l		# numbers eval to themselves
       return .((\words[l]).v | NIL)
       }
    if glist(l) then {                        # it's a list
@@ -115,6 +116,10 @@ local fn, arglist, arg, value, fcn
       "ATOM"    : ATOM([l[2]]) | NIL
       "NULL"    : NULL([l[2]]) | NIL
       "EQ"      : EQ([l[2],l[3]]) | NIL
+      "NUMBERP" : NUMBERP([l[2]]) | NIL
+      "ADD1"    : ADD1([l[2]]) | NIL
+      "SUB1"    : SUB1([l[2]]) | NIL
+      "ZEROP"   : ZEROP([l[2]]) | NIL
       "PRINT"   : PRINT([l[2]]) | NIL
       "EVAL"    : EVAL([l[2]]) | NIL
       "DEFINE"  : DEFINE(l[2]) | NIL
@@ -195,18 +200,43 @@ procedure SET(l)
       return .(words[l[1]].v := l[2])
 end
 
-## (ATOM a)
+#
+# (ATOM a)
 #
 procedure ATOM(l)
    if type(l[1]) == "list" then
-      return (*l[1] = 0 & T) | NIL
-   return T
+      return (*l[1] = 0 & .T) | .NIL
+   return .T
 end
 
 ## (NULL l)
 #
 procedure NULL(l)
    return EQ([NIL,l[1]])
+end
+
+## (NUMBERP l)
+#
+procedure NUMBERP(l)
+   return if numeric(l[1]) then .T else .NIL
+end
+
+## (ZEROP l)
+#
+procedure ZEROP(l)
+   return if numeric(l[1]) & l = 0 then .T else .NIL
+end
+
+## (ADD1 l)
+#
+procedure ADD1(l)
+   return if numeric(l[1]) then l[1]+1 else .NIL
+end
+
+## (SUB1 l)
+#
+procedure SUB1(l)
+   return if numeric(l[1]) then l[1]-1 else .NIL
 end
 
 ## (EQ a1 a2)
@@ -244,22 +274,14 @@ end
 ## (TRACE l)
 #
 procedure TRACE(l)
-   local fn
-
-   every fn := !l do {
-      insert(trace_set, fn)
-      }
+   every insert(trace_set, !l)
    return NIL
 end
 
 ## (UNTRACE l)
 #
 procedure UNTRACE(l)
-   local fn
-
-   every fn := !l do {
-      delete(trace_set, fn)
-      }
+   every delete(trace_set, !l)
    return NIL
 end
 
@@ -271,16 +293,11 @@ end
 
 ## (DEFINE fname definition)
 #
-# This has been considerable rewritten (and made more difficult to use!)
+# This has been considerably rewritten (and made more difficult to use!)
 #  in order to match EV-LISP syntax.
 procedure DEFINE(l)
-   local fn_def, fn_list
-
-   fn_list := []
-   every fn_def := !l do {
-      put(fn_list, define_fn(fn_def))
-      }
-
+   local fn_list := []
+   every put(fn_list, define_fn(!l))
    return fn_list
 end
 
@@ -365,8 +382,8 @@ static blanks
           }
 end
 
-## bstol(s) - convert a balanced string into equivalent
-#       list representation.
+#
+# bstol(s) - convert a balanced string into equivalent list representation.
 #
 procedure bstol(s)
 static blanks

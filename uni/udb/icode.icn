@@ -178,7 +178,8 @@ method checkIcodeVersion(p)
    wordSize := 4
    readIcodeHeader()
 
-   if match("I12.U.10FT",hdr.config) then {
+   # What kind of icode do we have? Field Table compressed?
+   if hdr.config ? (="I12.U." & tab(-2) & ="FT") then {
       write("found 32-bit icode ", cstr(hdr.config))
       FTC := "FT"
       &pos := p   # start over as field-table aware; this may be unimplemented

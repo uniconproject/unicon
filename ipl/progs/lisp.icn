@@ -120,6 +120,11 @@ local fn, arglist, arg, value, fcn
       "ADD1"    : ADD1([l[2]]) | NIL
       "SUB1"    : SUB1([l[2]]) | NIL
       "ZEROP"   : ZEROP([l[2]]) | NIL
+      "ONEP"    : ONEP([l[2]]) | NIL
+      "MINUSP"  : MINUSP([l[2]]) | NIL
+      "LESSP"   : LESSP([l[2],l[3]]) | NIL
+      "GREATERP": GREATERP([l[2],l[3]]) | NIL
+      "EQUAL"   : EQUAL([l[2],l[3]]) | NIL
       "PRINT"   : PRINT([l[2]]) | NIL
       "EVAL"    : EVAL([l[2]]) | NIL
       "DEFINE"  : DEFINE(l[2]) | NIL
@@ -225,6 +230,36 @@ end
 #
 procedure ZEROP(l)
    return if numeric(l[1]) & l[1] = 0 then .T else .NIL
+end
+
+## (ONEP l)
+#
+procedure ONEP(l)
+   return if numeric(l[1]) & l[1] = 1 then .T else .NIL
+end
+
+## (MINUSP l)
+#
+procedure MINUSP(l)
+   return if numeric(l[1]) & l[1] < 0 then .T else .NIL
+end
+
+## (LESSP l)
+#
+procedure LESSP(l)
+   return if numeric(l[1]) & numeric(l[2]) & l[1] < l[2] then .T else .NIL
+end
+
+## (GREATERP l)
+#
+procedure GREATERP(l)
+   return if numeric(l[1]) & numeric(l[2]) & l[1] > l[2] then .T else .NIL
+end
+
+## (EQUAL l) - need to generalize to a full Lisp EQUAL
+#
+procedure EQUAL(l)
+   return if numeric(l[1]) & numeric(l[2]) & l[1] = l[2] then .T else .NIL
 end
 
 ## (ADD1 l)

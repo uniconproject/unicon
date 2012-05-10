@@ -331,7 +331,8 @@ end
 # This has been considerably rewritten (and made more difficult to use!)
 #  in order to match EV-LISP syntax.
 procedure DEFINE(l)
-   local fn_list := []
+   local fn_list
+   fn_list := []
    every put(fn_list, define_fn(!l))
    return fn_list
 end
@@ -470,7 +471,14 @@ procedure HELP()
 	 "  (null (car (car a)))      ==> T\n",
 	 "  (eval (quote a))          ==> (A B C)\n",
 	 "  (print a)                 ==> (A B C)\n",
-	 "                                (A B C)\n",
+	 "  (numberp 4)               ==> T\n",
+	 "  (minusp -5)               ==> T\n",
+	 "  (zerop (sub1 (add1 0)))   ==> T\n",
+	 "  (onep (sub1 (add1 1)))    ==> T\n",
+	 "  (lessp 1 5)               ==> T\n",
+	 "  (equal 3 3)               ==> T\n",
+	 "  (greaterp 5 1)            ==> T\n",
+	 "\n",
 	 "Define functions cadr and cddr:\n",
 	 "  (define (quote (\n",
 	 "          (cadr (lambda (l) (car (cdr l))))\n",

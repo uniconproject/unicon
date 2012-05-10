@@ -93,10 +93,10 @@ libgdbm.a: $(OBJS) gdbm.h
 gdbm.h:	gdbm.proto gdbmerrno.h gdbm.proto2
 	rm -f gdbm.h
 	cp $(srcdir)/gdbm.proto gdbm.h
-	chmod +w gdbm.h
+	-chmod +w gdbm.h
 	grep _ $(srcdir)/gdbmerrno.h >> gdbm.h
 	cat $(srcdir)/gdbm.proto2 >> gdbm.h
-	chmod -w gdbm.h
+	-chmod -w gdbm.h
 
 testgdbm: testgdbm.o libgdbm.a 
 	$(CC) $(LDFLAGS) -o testgdbm testgdbm.o libgdbm.a 

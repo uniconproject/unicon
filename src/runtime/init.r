@@ -245,35 +245,36 @@ extern int first_time;
 
 int fdgets(int fd, char *buf, size_t count) 
 {
-  int i;
-  char *temp=buf;
+   int i, rrv;
+   char *temp=buf;
 
-  for (i=0;i<count;i++) {
-    if (read(fd,temp,1)==-1) {
-      return -1;
-    }
-    if (*temp==EOF)  /* end of the file */
-      break;
-    if (*temp=='\n') { /* new line */
-      i++;
-      break;
-    }
-    temp++;
-  }
-  buf[i]='\0';
-  return i;
+   for (i=0;i<count;i++) {
+      if ((rrv = read(fd,temp,1)) == -1) {
+	 return -1;
+	 }
+      else if (rrv==0)  /* end of file */
+	 break;
+      if (*temp=='\n') { /* new line */
+	 i++;
+	 break;
+	 }
+      temp++;
+      }
+   buf[i]='\0';
+   return i;
 }
 
-int dgetc(int fd) {
-  int rv;
-  unsigned char c;
-  rv = read(fd,&c,1);
-  if (rv == -1)
-    return -1;
-  else if (rv == 0) return EOF;
-  else {
-    return c;
-    }
+int dgetc(int fd)
+{
+   int rv;
+   unsigned char c;
+   rv = read(fd,&c,1);
+   if (rv == -1)
+      return -1;
+   else if (rv == 0) return EOF;
+   else {
+      return c;
+      }
 }
 
 /*

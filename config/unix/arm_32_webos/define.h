@@ -17,6 +17,8 @@
  */
 #define NoCrypt
 
+#define NoCoexpr
+
 /*
  * #define Concurrent 1
  * here to enable threads. If you do on certain older platforms,

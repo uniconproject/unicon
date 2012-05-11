@@ -143,5 +143,10 @@ static void *nctramp(void *arg) {
    syserr("new_context returned to nctramp");
    return NULL;
    }
-
+#else
+int coswitch(void *o, void *n, int first)
+{
+   syserr("coswitch called on a platform without co-expression support");
+   return -1;
+}
 #endif

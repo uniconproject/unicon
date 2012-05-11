@@ -120,6 +120,10 @@ local fn, arglist, arg, value, fcn
       "NUMBERP" : NUMBERP([l[2]]) | NIL
       "ADD1"    : ADD1([l[2]]) | NIL
       "SUB1"    : SUB1([l[2]]) | NIL
+      "DIFFERENCE": DIFFERENCE([l[2], l[3]]) | NIL
+      "EXPT"    : EXPT([l[2], l[3]]) | NIL
+      "QUOTIENT": QUOTIENT([l[2], l[3]]) | NIL
+      "REMAINDER": REMAINDER([l[2], l[3]]) | NIL
       "ZEROP"   : ZEROP([l[2]]) | NIL
       "ONEP"    : ONEP([l[2]]) | NIL
       "MINUSP"  : MINUSP([l[2]]) | NIL
@@ -273,6 +277,30 @@ end
 #
 procedure SUB1(l)
    return if numeric(l[1]) then l[1]-1 else .NIL
+end
+
+## (DIFFERENCE a1 a2)
+#
+procedure DIFFERENCE(l)
+   return if numeric(l[1]) & numeric(l[2]) then l[1] - l[2] else .NIL
+end
+
+## (EXPT a1 a2)
+#
+procedure EXPT(l)
+   return if numeric(l[1]) & numeric(l[2]) then l[1] ^ l[2] else .NIL
+end
+
+## (QUOTIENT a1 a2)
+#
+procedure QUOTIENT(l)
+   return if numeric(l[1]) & numeric(l[2]) then l[1] / l[2] else .NIL
+end
+
+## (REMAINDER a1 a2)
+#
+procedure REMAINDER(l)
+   return if numeric(l[1]) & numeric(l[2]) then l[1] % l[2] else .NIL
 end
 
 ## (EQ a1 a2)

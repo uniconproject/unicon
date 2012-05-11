@@ -21,12 +21,13 @@
 #include <sys/stat.h>
 
 #include "../h/define.h"
+static int inited = 0;		/* has first-time initialization been done? */
+#ifndef NoCoexpr
 
 extern void new_context(int, void *);
 extern void syserr(char *msg);
 extern void *alloc(unsigned int n);
 
-static int inited = 0;		/* has first-time initialization been done? */
 
 /*
  * Define a "context" struct to hold the thread information we need.
@@ -142,3 +143,5 @@ static void *nctramp(void *arg) {
    syserr("new_context returned to nctramp");
    return NULL;
    }
+
+#endif

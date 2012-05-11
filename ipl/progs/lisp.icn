@@ -119,6 +119,8 @@ local fn, arglist, arg, value, fcn
       "EQ"      : EQ([l[2],l[3]]) | NIL
       "NUMBERP" : NUMBERP([l[2]]) | NIL
       "ADD1"    : ADD1([l[2]]) | NIL
+      "PLUS"    : PLUS(l[2:0]) | NIL
+      "TIMES"   : TIMES(l[2:0]) | NIL
       "SUB1"    : SUB1([l[2]]) | NIL
       "DIFFERENCE": DIFFERENCE([l[2], l[3]]) | NIL
       "EXPT"    : EXPT([l[2], l[3]]) | NIL
@@ -271,6 +273,26 @@ end
 #
 procedure ADD1(l)
    return if numeric(l[1]) then l[1]+1 else .NIL
+end
+
+## (PLUS l)
+#
+procedure PLUS(l)
+local sum
+   sum := 0
+   every x := !l do
+      if numeric(x) then sum +:= x else return .NIL
+   return sum
+end
+
+## (TIMES l)
+#
+procedure TIMES(l)
+local product
+   product := 1
+   every x := !l do
+      if numeric(x) then product *:= x else return .NIL
+   return product
 end
 
 ## (SUB1 l)

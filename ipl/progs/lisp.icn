@@ -121,6 +121,9 @@ local fn, arglist, arg, value, fcn
       "ADD1"    : ADD1([l[2]]) | NIL
       "PLUS"    : PLUS(l[2:0]) | NIL
       "TIMES"   : TIMES(l[2:0]) | NIL
+      "MIN"     : MIN(l[2:0]) | NIL
+      "MAX"     : MAX(l[2:0]) | NIL
+      "RECIP"   : RECIP([l[2]]) | NIL
       "SUB1"    : SUB1([l[2]]) | NIL
       "DIFFERENCE": DIFFERENCE([l[2], l[3]]) | NIL
       "EXPT"    : EXPT([l[2], l[3]]) | NIL
@@ -293,6 +296,32 @@ local product
    every x := !l do
       if numeric(x) then product *:= x else return .NIL
    return product
+end
+
+## (MIN l)
+#
+procedure MIN(l)
+local m
+   m := l[1]
+   every x := !l do
+      if numeric(x) then m >:= x else return .NIL
+   return m
+end
+
+## (MAX l)
+#
+procedure MAX(l)
+local m
+   m := l[1]
+   every x := !l do
+      if numeric(x) then m <:= x else return .NIL
+   return m
+end
+
+## (RECIP l)
+#
+procedure RECIP(l)
+   return if numeric(l[1]) then 1.0 / l[1] else .NIL
 end
 
 ## (SUB1 l)

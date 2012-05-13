@@ -10,6 +10,7 @@
 #define CComp "gcc"
 #define COpts "-Os"
 #define NEED_UTIME
+#define Double
 
 /*
  * Some Linuxen have -lcrypt, some dont.

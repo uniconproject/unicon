@@ -45,6 +45,7 @@
 #  See HELP function at end of file for syntax summary/examples.
 #
 ############################################################################
+link ximage
 
 global words,     # table of variable atoms
        T, NIL,    # universal constants
@@ -52,7 +53,7 @@ global words,     # table of variable atoms
 
 global trace_set  # set of currently traced functions
 
-record prop(v,f)  # abbreviated propery list
+record prop(v,f)  # abbreviated property list
 
 $ifndef NOMAIN
 procedure main(argv)
@@ -64,6 +65,7 @@ $endif
 #
 procedure lisp(f) 
 local sexpr, source
+   /f := []
    initialize()
    preload()
    if f[1] == ("-C" | "/C") then pop(f)  # run-command-then-terminate mode
@@ -84,6 +86,7 @@ end
 #
 procedure EVAL(l)
 local fn, arglist, arg
+
    l := l[1]
    if T === ATOM([l]) then {                 # it's an atom
       if T === l then return .T
@@ -95,6 +98,7 @@ local fn, arglist, arg
       if T === ATOM([l[1]]) then
          case l[1] of {
          "QUOTE" : return .(l[2] | NIL)
+	 "FUNCTION": return FUNCTION([l[2]]) | NIL
          "COND"  : return COND(l[2:0])
          "SETQ"  : return SET([l[2]]|||evlis(l[3:0]))
          "ITRACEON"  : return (&trace := -1,T)
@@ -160,7 +164,7 @@ local fn, arglist, arg, value, fcn
          return value
          }
    fcn := (\words[fn]).f | return NIL
-   if type(fcn) == "list" then
+   if type(fcn) == "list" then {
       if fcn[1] == "LAMBDA" then {
          value :=  lambda(l[2:0],fcn[2],fcn[3])
          if member(trace_set, string(fn)) then {
@@ -171,6 +175,10 @@ local fn, arglist, arg, value, fcn
          }
       else
          return EVAL([fn])
+      }
+   else if type(fcn) == "procedure" then {
+      return fcn(l[2:0])
+   }
    return NIL
 end
 
@@ -190,13 +198,35 @@ end
 ## initialize() - set up global values
 #
 procedure initialize()
+local func
    words := table()
+
+   every func := (ADD1 | APPEND | ATOM | CAR | CDR | COND | CONS |
+		  DEFINE | DIFFERENCE |
+		  EQ | EQUAL | EVAL | EXPT | FUNCTION | GREATERP | HELP |
+		  LAST | LENGTH | LESSP | LIST |
+		  MAX | MIN | MINUSP | NULL | NUMBERP |
+		  ONEP | PLUS | PRINT | QUOTIENT |
+		  RECIP | REMAINDER | REVERSE |
+		  SET | SUB1 | TIMES | TRACE | UNTRACE | ZEROP ) do {
+      words[image(func)[11:0]] := prop(, func)
+   }
+
    trace_set := set()
    T     := "T"
    NIL   := []
 end
 
 ### Primitive Functions
+
+#
+# (ATOM a)
+#
+procedure ATOM(l)
+   if type(l[1]) == "list" then
+      return (*l[1] = 0 & .T) | .NIL
+   return .T
+end
 
 ## (CAR l)
 #
@@ -216,6 +246,14 @@ procedure CONS(l)
    return ([l[1]]|||glist(l[2])) | NIL
 end
 
+## (FUNCTION f) - special form, look up function value in symbol table
+#
+procedure FUNCTION(l)
+   if \((\words[l[1]]).f) then {
+      return words[l[1]].f
+      }
+end
+
 ## (SET a l)
 #
 procedure SET(l)
@@ -225,15 +263,6 @@ procedure SET(l)
       return .(words[l[1]].v := l[2].v)
    else
       return .(words[l[1]].v := l[2])
-end
-
-#
-# (ATOM a)
-#
-procedure ATOM(l)
-   if type(l[1]) == "list" then
-      return (*l[1] = 0 & .T) | .NIL
-   return .T
 end
 
 ## (NULL l)
@@ -281,6 +310,7 @@ end
 ## (EQUAL l) - close enough to a full Lisp EQUAL
 #
 procedure EQUAL(l)
+local i
    if l[1] === l[2] then return .T
    if type(l[1]) ~== type(l[2]) then return .NIL
    if numeric(l[1]) & numeric(l[2]) then
@@ -306,7 +336,7 @@ end
 ## (PLUS l)
 #
 procedure PLUS(l)
-local sum
+local sum, x
    sum := 0
    every x := !l do
       if numeric(x) then sum +:= x else return .NIL
@@ -316,7 +346,7 @@ end
 ## (TIMES l)
 #
 procedure TIMES(l)
-local product
+local product, x
    product := 1
    every x := !l do
       if numeric(x) then product *:= x else return .NIL
@@ -326,7 +356,7 @@ end
 ## (MIN l)
 #
 procedure MIN(l)
-local m
+local m, x
    m := l[1]
    every x := !l do
       if numeric(x) then m >:= x else return .NIL
@@ -336,7 +366,7 @@ end
 ## (MAX l)
 #
 procedure MAX(l)
-local m
+local m, x
    m := l[1]
    every x := !l do
       if numeric(x) then m <:= x else return .NIL
@@ -489,7 +519,10 @@ local save, act, form, pair, result, arg, i
    every arg := !formals do
       save[arg] := \words[arg] | prop(NIL)
    i := 0
-   every words[!formals] := (prop(actuals[i+:=1]|NIL)\1)
+   every act := !formals do {
+      words[act] := (prop(actuals[i+:=1]|NIL)\1)
+      if type(words[act].v) == "procedure" then words[act].f := words[act].v
+   }
    result := EVAL([def])
    every pair := !sort(save) do
       words[pair[1]] := pair[2]
@@ -573,12 +606,16 @@ end
 #
 #
 procedure ltos(l)
-   local tmp
+   local tmp, elem
 
    if type(l) ~== "list" then return l
    if *l = 0 then return "NIL"
    tmp := "("
-   every tmp ||:= ltos(!l) || " "
+   every elem := !l do {
+      if string(elem)|(type(elem)=="list") then tmp ||:= ltos(elem)
+      else tmp ||:= ximage(elem)
+      tmp ||:= " "
+      }
    tmp[-1] := ")"
    return tmp
 end
@@ -604,12 +641,13 @@ local l, s
 	       "(define (quote ((member (lambda (sex lis) _
 		   (cond ((null lis) nil) _
 		      ((equal sex (car lis)) lis) _
-		      (t (member sex (cdr lis)))))))))"
+		      (t (member sex (cdr lis)))))))))" |
+	       "(define (quote ((mapcar (lambda (lis fun) _
+		   (cond ((null lis) nil) _
+		      (t (cons (fun (car lis)) (mapcar (cdr lis) fun)))))))))"
 	       ) do
       every l := bstol(Map(s)) do {
-PRINT([
 	 EVAL([ l ])
-	 ])
     }
 end
 

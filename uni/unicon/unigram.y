@@ -47,6 +47,7 @@
 %token	STATIC      /* static    */
 %token	SUSPEND     /* suspend   */
 %token	THEN        /* then      */
+%token	THREAD      /* thread    */
 %token	TO          /* to        */
 %token	UNTIL       /* until     */
 %token	WHILE       /* while     */
@@ -642,6 +643,24 @@ expr11	: literal ;
 	| repeat ;
         | PUNEVAL { $$ := node("BPuneval", $1);} ;
 	| CREATE expr { $$ := node("create", $1,$2);} ;
+	| THREAD expr {
+	      fakeThreadIdent := Clone1stToken($1)
+	      fakeThreadIdent.tok := IDENT
+	      fakeCreate := Clone1stToken($1)
+	      fakeCreate.tok := CREATE
+	      fakeCreate.s := "create"
+#	      fakeThreadIdent.s := "thread"
+	      fakeLParen := Clone1stToken($1)
+	      fakeLParen.tok := LPAREN
+	      fakeLParen.s := "("
+	      fakeRParen := Clone1stToken($1)
+	      fakeRParen.tok := RPAREN
+	      fakeRParen.s := ")"
+
+	      $$ := SimpleInvocation(fakeThreadIdent,fakeLParen,
+				     node("create", fakeCreate, $2),
+				     fakeRParen);
+	      } ;
 	| CRITICAL expr2a COLON expr { $$ := node("critical", $1,$2,$3,$4);} ;
 	| IDENT ;
 	| NEXT { $$ := node("Next", $1);} ;

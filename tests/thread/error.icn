@@ -12,22 +12,20 @@ procedure main(argv)
       n:=1
   
    d:=10^2 / n
-   every i:=1 to n do{
-     th := create suma(d, i)
-     put(thrd, th)
-     }
 
-   mutex_gsum := mutex()
-  
-   write("Running ", *thrd , " thread(s) please wait... ")
+   write("Running ", n , " thread(s) please wait... ")
    write("The test should crash with a run time error now,")
    write("you should see only one runtime error message,any repetition ")
    write("of the error message indicates a problem in the threads system.")
 
    t:=&now
-   every i:=1 to *thrd do
-      thread(thrd[i])
+   every i:=1 to n do{
+     th := thread suma(d, i)
+     put(thrd, th)
+     }
 
+   mutex_gsum := mutex()
+  
    every i:=1 to *thrd do
       wait(thrd[i])
 

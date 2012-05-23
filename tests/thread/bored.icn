@@ -105,33 +105,30 @@ procedure main(argv)
     Max := 2^16
     answer := ?Max
 
-    every 1 to n do put(msgs, MsgData())
-    every 1 to n do put(guesses, GuessData(Max/2, 1, Max))
+    every !n do{
+       put(msgs, MsgData())
+       put(guesses, GuessData(Max/2, 1, Max))
+       }
 
-    every i:=1 to n do
-      put(threads, create work(i, msgs[i], ways[i], names[i], guesses[i]))
-     
-     
-    every i:=1 to n do
-      put(threads, create process_guesses(n+i, answer, msgs[i]))
-     
-    write(" Master: I have a number in mind between 1 and ", Max ," (^o^)''{", answer ,"} ...")
+    write(" Master: I have a number in mind between 1 and ", 
+	  Max ," (^o^)''{", answer ,"} ...")
     write(" Can you threads guess what is it ?")
     write("Threads are trying ....")
     write(repl("-",80))
     write("Thread\t\t#Guesses\tLast Guess\t\tWinner?")
     write(repl("-",80))
-    
-    every  thread(!threads)
+
+    every i:=!n do{
+       put(threads, thread work(i, msgs[i], ways[i], names[i], guesses[i]))
+       put(threads, thread process_guesses(n+i, answer, msgs[i]))
+       }
+
     t:=&now
     go:=1
     
-    #process_guesses(answer, msgs)   # loop for every until we get a correct answer
-    
     every wait(!threads)
     write(repl("-",80))
-                                                                                                    
-    write("time:", &now-t, " seconds")                                                               
+    write("time:", &now-t, " seconds")
 end
 
 procedure process_guesses(id, answer, msg)
@@ -248,5 +245,5 @@ procedure doubt(guess, r)
    if last=guess.get() then
      return guess.reset()
 
-    return last:=guess.get()
+   return last:=guess.get()
 end

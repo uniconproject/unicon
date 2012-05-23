@@ -12,31 +12,18 @@ procedure main(argv)
     else
       n:=1
   
-   d:=10^8 / n
-   every i:=1 to n do {
-     th := create talloc(d, i)
-     put(thrd, th)
-     }
-
-   mutex_gsum := mutex()
-  
-   write("running ", *thrd , " thread(s) please wait... ")
-
+   write("running ", n , " thread(s) please wait... ")
    t:=&now
-   every i:=1 to *thrd do
-      thread(thrd[i])
-
-   every i:=1 to *thrd do
-      join(thrd[i])
-
+   every i:= !n do put(thrd,thread talloc(i))
+   every wait(!thrd)
    
    write("time:", &now-t, " seconds")
 end
 
-procedure talloc(d, id)
-    every i := 1 to 1000 do {
+procedure talloc(id)
+    every i := !1000 do 
 	x := (? [list, table])(?100)
-    }
+
     write("Thread ", id, " allocated ", keyword("tallocated", thrd[id]))
 end
     

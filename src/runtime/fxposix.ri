@@ -1437,7 +1437,8 @@ function{0,1} wait(pid, options)
 	int rv;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(pid)->Coexpr.cstate[1];
-	if (!n->have_thread) fail;
+	if ( n->alive == 0 ) fail;
+
 	MUTEX_LOCKID(MTX_NARTHREADS); 
 	NARthreads--;	
 	MUTEX_UNLOCKID(MTX_NARTHREADS);

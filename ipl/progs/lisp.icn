@@ -82,6 +82,20 @@ local sexpr, source
       }
 end
 
+## (READ) - read an s-expr under program control.
+#
+# This is obviously inadequate, the whole input subsystem needs re-thinking.
+#
+procedure READ()
+local tmp
+   tmp := ("" ~== |Map(read())) || " "
+   while not checkbal(tmp) do {
+      if more(')','(',tmp) then break
+      tmp ||:= (("" ~== |Map(read())) || " ") | break
+      }
+   return bstol(balstr(tmp))
+end
+
 ## (EVAL e) - the actual LISP interpreter
 #
 procedure EVAL(l)
@@ -148,6 +162,7 @@ local fn, arglist, arg, value, fcn
       "EQUAL"   : EQUAL([l[2],l[3]]) | NIL
       "PRINT"   : PRINT([l[2]]) | NIL
       "EVAL"    : EVAL([l[2]]) | NIL
+      "READ"    : READ([]) | NIL
       "DEFINE"  : DEFINE(l[2]) | NIL
       "LIST"    : LIST(l[2:0]) | NIL
       "LENGTH"  : LENGTH(l[2]) | NIL
@@ -451,9 +466,22 @@ end
 ## (PRINT l)
 #
 procedure PRINT(l)
+   PRIN1(l)
+   TERPRI()
+end
+
+## (PRIN1 l) - print without carriage return
+#
+procedure PRIN1(l)
    if type(l[1]) == "prop" then
-      return PRINT([l[1].v])
-   return write(strip(ltos(l)))
+      return PRIN1([l[1].v])
+   return writes(strip(ltos(l)))
+end
+
+## (TERPRI l) - terminate a print by printing a carriage return
+#
+procedure TERPRI()
+    write()
 end
 
 ## COND(l) - support routine to eval
@@ -698,7 +726,13 @@ procedure HELP()
     "  (min 13 4 8)              ==> 4\n",
     "  (max 18 21 4)             ==> 21\n",
     "  (recip 8)                 ==> 0.125\n",
-    "  (sub1 4)                  ==> 3\n", "  (difference 4 20)         ==> -16\n", "  (expt 2 5)                ==> 32\n", "  (quotient 21 4)           ==> 5\n", "  (remainder 21 4)          ==> 1\n", "  (zerop 0)                 ==> T\n", "  (onep 1)                  ==> T\n",
+    "  (sub1 4)                  ==> 3\n",
+    "  (difference 4 20)         ==> -16\n",
+    "  (expt 2 5)                ==> 32\n",
+    "  (quotient 21 4)           ==> 5\n",
+    "  (remainder 21 4)          ==> 1\n",
+    "  (zerop 0)                 ==> T\n",
+    "  (onep 1)                  ==> T\n",
     "  (minusp -5)               ==> T\n",
     "  (lessp 1 5)               ==> T\n",
     "  (equal 3 3)               ==> T\n",

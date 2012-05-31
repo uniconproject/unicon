@@ -40,23 +40,27 @@
 #define Op_Power	 31
 #define Op_Random	 32
 #define Op_Rasgn	 33
-#define Op_Refresh	 34
-#define Op_Rswap	 35
-#define Op_Sect		 36
-#define Op_Size		 37
-#define Op_Subsc	 38
-#define Op_Swap		 39
-#define Op_Tabmat	 40
-#define Op_Toby		 41
-#define Op_Unions	 42
-#define Op_Value	 43
+#define Op_Rcv		 34
+#define Op_RcvBk	 35
+#define Op_Refresh	 36
+#define Op_Rswap	 37
+#define Op_Sect		 38
+#define Op_Snd		 39
+#define Op_SndBk	 40
+#define Op_Size		 41
+#define Op_Subsc	 42
+#define Op_Swap		 43
+#define Op_Tabmat	 44
+#define Op_Toby		 45
+#define Op_Unions	 46
+#define Op_Value	 47
 /*
  * Other instructions.
  */
-#define Op_Bscan	 44
-#define Op_Ccase	 45
-#define Op_Chfail	 46
-#define Op_Coact 	 47
+#define Op_Bscan	 117
+#define Op_Ccase	 118
+#define Op_Chfail	 119
+#define Op_Coact 	 120
 #define Op_Cofail	 48
 #define Op_Coret 	 49
 #define Op_Create	 50
@@ -99,6 +103,7 @@
 #define Op_FQuit	 87
 #define Op_Tally	 88
 #define Op_Apply	 89
+
 
 /*
  * "Absolute" address operations.  These codes are inserted in the

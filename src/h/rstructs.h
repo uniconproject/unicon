@@ -159,7 +159,10 @@ struct b_list {			/* list-header block */
    word size;			/*   current list size */
    word id;			/*   identification number */
 #ifdef Concurrent
-   pthread_mutex_t mutex;
+   word shared;
+   int mutexid;
+   word max, full, empty ;
+   int cvfull, cvempty;
 #endif				/* Concurrent */
    union block *listhead;	/*   pointer to first list-element block */
    union block *listtail;	/*   pointer to last list-element block */
@@ -208,6 +211,10 @@ struct b_record {		/* record block */
    word title;			/*   T_Record */
    word blksize;		/*   size of block */
    word id;			/*   identification number */
+#ifdef Concurrent
+   word shared;
+   int mutexid;
+#endif				/* Concurrent */
    union block *recdesc;	/*   pointer to record constructor */
    struct descrip fields[1];	/*   fields */
    };
@@ -236,6 +243,10 @@ struct b_set {			/* set-header block */
    word size;			/*   size of the set */
    word id;			/*   identification number */
    word mask;			/*   mask for slot num, equals n slots - 1 */
+#ifdef Concurrent
+   word shared;
+   int mutexid;
+#endif				/* Concurrent */
    struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
    };
 
@@ -244,6 +255,10 @@ struct b_table {		/* table-header block */
    word size;			/*   current table size */
    word id;			/*   identification number */
    word mask;			/*   mask for slot num, equals n slots - 1 */
+#ifdef Concurrent
+   word shared;
+   int mutexid;
+#endif				/* Concurrent */
    struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
    struct descrip defvalue;	/*   default table element value */
    };
@@ -785,9 +800,12 @@ struct b_coexpr {		/* co-expression stack block */
    word id;			/*   identification number */
 #ifdef Concurrent
    word status;			/*   status (sync vs. async, etc) */
-   pthread_mutex_t smute, rmute;/*   control access to send/receive queues */
-   union block *squeue, *rqueue;/*   pending send/receive queues */
-   word ini_blksize, ini_ssize; /*   initial blksize and string size to want */
+   word shared;
+   pthread_mutex_t mutex;
+   struct descrip *handdata;     /*   result just handed  to the current ce */
+   struct descrip cequeue;       /*   CEs waiting to receive results   */
+   struct descrip inbox, outbox; /*   pending send/receive queues */
+   word ini_blksize, ini_ssize;  /*   initial blksize and string size to want */
 #endif					/* Concurrent */
 #ifndef PthreadCoswitch
    /*

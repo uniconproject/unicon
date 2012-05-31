@@ -100,6 +100,9 @@
 #define Ts_Posix	2		/* POSIX (pthread) coexpression */
 #define Ts_Sync		4		/* synchronous (Icon) coexpression) */
 #define Ts_Async        8		/* asynchronous (concurrent) thread */
+#define Ts_Active      16               /* someone activated me */
+#define Ts_WTinbox     32               /* waiting on inbox Q */
+#define Ts_WToutbox    64               /* waiting on outbox Q */
 #endif					/* Concurrent */
 
 /*#ifdef Graphics*/
@@ -574,20 +577,21 @@
    struct sdescrip quals[n];}
 
 #ifdef LOCALPROGSTATE
-#define CURPSTATE() struct progstate *curpstate = curtstate->pstate;
-#define CURPTSTATE() struct progstate *curpstate =	\
+#define CURPTSTATE struct progstate *curpstate = curtstate->pstate;
+#define CURPSTATE struct progstate *curpstate =	\
     ((struct threadstate *) pthread_getspecific(tstate_key))->pstate;
-#else 
-#define CURPSTATE()
-#define CURPTSTATE()
-#endif
+#else
+#define CURPSTATE
+#define CURPTSTATE
+#endif  					/* LOCALPROGSTATE */
 
 #ifdef Concurrent
 #ifdef HAVE_KEYWORD__THREAD
 #define CURTSTATE()
 #else
 #define CURTSTATE() struct threadstate *curtstate =	\
-                   (struct threadstate *) pthread_getspecific(tstate_key);
+                   (struct threadstate *) pthread_getspecific(tstate_key); \
+                    CURPTSTATE;
 
 #ifdef TSTATARG
 #define CURTSTATARG curtstate
@@ -1202,7 +1206,14 @@ if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
    {handle_thread_error(isbusy); isbusy=0;} }
 
 #define MUTEX_INIT( mtx, attr ) { int retval; \
-  if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) handle_thread_error(retval); }
+    if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) handle_thread_error(retval); }
+
+#define MUTEX_RECURSIVE_INIT( mtx ) { pthread_mutexattr_t mattr; \
+   pthread_mutexattr_init(&mattr); \
+   pthread_mutexattr_settype(&mattr,PTHREAD_MUTEX_RECURSIVE); \
+   MUTEX_INIT(mtx, &mattr); \
+   pthread_mutexattr_destroy(&mattr); } 
+
 
 #define THREAD_JOIN( thrd, opt ) { int retval; \
 if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
@@ -1217,16 +1228,85 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
   if ((retval=pthread_mutex_unlock(&static_mutexes[mtx])) != 0)  handle_thread_error(retval); }
 
 #define MUTEX_TRYLOCKID(mtx, isbusy) { \
-if ((isbusy=pthread_mutex_trylock(&static_mutexes[mtx])) != 0 && isbusy!=EBUSY) \
-   {handle_thread_error(isbusy); isbusy=0;} }
+    if ((isbusy=pthread_mutex_trylock(&static_mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+      {handle_thread_error(isbusy); isbusy=0;} }
+
+#define INC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx)}
+#define DEC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx)}
+
+#define INC_NARTHREADS_CONTROLLED { \
+   MUTEX_LOCKID(MTX_THREADCONTROL); \
+   MUTEX_LOCKID(MTX_NARTHREADS); \
+   NARthreads++; \
+   MUTEX_UNLOCKID(MTX_NARTHREADS); \
+   MUTEX_UNLOCKID(MTX_THREADCONTROL); }
+
+#define DEC_NARTHREADS { \
+   MUTEX_LOCKID(MTX_NARTHREADS); \
+   NARthreads--; \
+   MUTEX_UNLOCKID(MTX_NARTHREADS); }
+
+#define MUTEX_LOCK_CONTROLLED(mtx, msg) { int retval; \
+      MUTEX_TRYLOCK(mtx, retval, msg); \
+      if (retval==EBUSY){ \
+	 DEC_NARTHREADS;      \
+         MUTEX_LOCK(mtx, msg); \
+	 INC_NARTHREADS_CONTROLLED;}}
 
 #else					/* Concurrent */
 #define MUTEX_INIT(mtx, attr)
+#define MUTEX_RECURSIVE_INIT(mtx)
 #define MUTEX_LOCK(mtx, msg)
 #define MUTEX_UNLOCK(mtx, msg)
 #define MUTEX_TRYLOCK(mtx, isbusy, msg)
 #define MUTEX_LOCKID(mtx)
 #define MUTEX_UNLOCKID(mtx)
 #define MUTEX_TRYLOCKID(mtx, isbusy)
-#define THREAD_JOIN( thrd, opt )
+#define THREAD_JOIN(thrd, opt)
+#define MUTEX_LOCK_CONTROLLED(mtx, msg)
+#define INC_LOCKID(x, mtx)
+#define DEC_LOCKID(x, mtx)
+#define INC_NARTHREADS_CONTROLLED
+#define DEC_NARTHREADS
+
 #endif					/* Concurrent */
+
+#ifdef TSLIST
+
+#define MUTEX_LOCKBLK(bp, msg) MUTEX_LOCK(mutexes[bp->mutexid], msg)
+
+#define MUTEX_LOCKBLK_CONTROLLED(bp, msg) MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
+
+#define MUTEX_UNLOCKBLK(bp, msg) MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
+
+#define MUTEX_TRYLOCKBLK(bp, isbusy, msg) MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
+
+#define C_PUT_PROTECTED(L, v){ MUTEX_LOCKBLK(BlkD(L, List))	\
+                c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));}
+
+#define MUTEX_INITBLK( bp ){if (!bp->shared){ pthread_mutexattr_t mattr; \
+   pthread_mutexattr_init(&mattr); \
+   pthread_mutexattr_settype(&mattr,PTHREAD_MUTEX_RECURSIVE); \
+   bp->mutexid = get_mutex(&mattr); \
+   pthread_mutexattr_destroy(&mattr); \
+   bp->shared = 1; }}
+
+#define CV_INITBLK(bp) {  MUTEX_INITBLK(bp) \
+     bp->cvfull = get_cv(bp->mutexid); \
+     bp->cvempty = get_cv(bp->mutexid); \
+     bp->full = 0; \
+     bp->empty = 0; \
+     bp->max = 1024; }
+
+#define MUTEX_GETBLK(bp) mutexes + bp->mutexid
+#else
+#define MUTEX_INITBLK(bp)
+#define MUTEX_LOCKBLK(bp, msg)
+#define MUTEX_LOCKBLK_CONTROLLED(bp, msg)
+#define MUTEX_UNLOCKBLK(bp, msg)
+#define MUTEX_TRYLOCKBLK(bp, isbusy, msg)
+#define C_PUT_PROTECTED(L, v)
+#define CV_INITBLK(bp)
+#define MUTEX_GETBLK(bp)
+#endif
+

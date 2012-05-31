@@ -160,15 +160,30 @@ expr7	: expr8 ;
 	| expr7 MOD expr8 {Bmod($1,$2,$3);} ;
 
 expr8	: expr9 ;
+	| postfixthreadop ;
 	| expr9 CARET expr8 {Bcaret($1,$2,$3);} ;
+
+postfixthreadop:
+	  expr9 SND { Bsnd($1,$2,EmptyNode);} ;
+	| expr9 SNDBK { Bsndbk($1,$2,EmptyNode);} ;
+	| expr9 RCV { Brcv($1,$2,EmptyNode);} ;
+	| expr9 RCVBK { Brcvbk($1,$2,EmptyNode);} ;
 
 expr9	: expr10 ;
 	| expr9 BACKSLASH expr10 {Blim($1,$2,$3);} ;
 	| expr9 AT expr10 {Bact($1,$2,$3);};
+	| expr9 SND expr10 {Bsnd($1,$2,$3);};
+	| expr9 SNDBK expr10 {Bsndbk($1,$2,$3);};
+	| expr9 RCV expr10 {Brcv($1,$2,$3);};
+	| expr9 RCVBK expr10 {Brcvbk($1,$2,$3);};
 	| expr9 BANG expr10 {Apply($1,$2,$3);};
 
 expr10	: expr11 ;
 	| AT expr10 {Uat($1,$2);} ;
+	| SND expr10 {Bsnd(EmptyNode,$1,$2);} ;
+	| SNDBK expr10 {Bsndbk(EmptyNode,$1,$2);} ;
+	| RCV expr10 {Brcv(EmptyNode,$1,$2);} ;
+	| RCVBK expr10 {Brcvbk(EmptyNode,$1,$2);} ;
 	| NOT expr10 {Unot($1,$2);} ;
 	| BAR expr10 {Ubar($1,$2);} ;
 	| CONCAT expr10 {Uconcat($1,$2);} ;
@@ -202,6 +217,10 @@ expr11	: literal ;
 	| until ;
 	| every ;
 	| repeat ;
+	| RCV { Brcv(EmptyNode,$1,EmptyNode); };
+	| RCVBK { Brcvbk(EmptyNode,$1,EmptyNode); };
+	| SND { Bsnd(EmptyNode,$1,EmptyNode); };
+	| SNDBK { Bsndbk(EmptyNode,$1,EmptyNode); };
 	| CREATE expr {Create($1,$2);} ;
 	| IDENT {Var($1);} ;
 	| NEXT {Next($1);} ;
@@ -216,6 +235,7 @@ expr11	: literal ;
 	| expr11 DOT IDENT {Field($1,$2,$3);} ;
 	| AND FAIL {Kfail($1,$2);} ;
 	| AND IDENT {Keyword($1,$2);} ;
+
 
 while	: WHILE expr {While0($1,$2);} ;
 	| WHILE expr DO expr {While1($1,$2,$3,$4);} ;

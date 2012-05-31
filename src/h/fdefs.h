@@ -414,7 +414,6 @@ FncDef(fetch,2)
 
   FncDefV(array)
 
-#ifdef Concurrent
   FncDef(thread,1)
   FncDef(mutex,1)
   FncDef(trylock,1)
@@ -422,4 +421,3 @@ FncDef(fetch,2)
   FncDef(unlock,1)
   FncDef(condvar,1)
   FncDef(signal,2)
-#endif					/* Concurrent */

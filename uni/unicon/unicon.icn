@@ -299,6 +299,13 @@ procedure iconc_yyparse(fname, tmplist)
    ca_assoc(fname, tmpname)
    rv := yyparse()
    if yynerrs = 0 then iwrite(&errout)
+   else {
+      # we got some errors. In the old days they wrote themselves out, but
+      # in order be IDE friendly, we now do this after yyparse finishes.
+      every pe := !parsingErrors do {
+	 write(&errout, pe.errorMessage)
+	 }
+      }
    if /yydbg then
       close(yyout)
    reinitialize()
@@ -568,7 +575,8 @@ procedure unicon(argv)
 	 if (rv = errors = yynerrs = 0) & /parseonly then {
 	     rv := mysystem(cmd || tmpname)
 	     if rv ~=== 0 then yynerrs +:= 1
-	     if &features=="MS Windows NT" & &features=="console window" then { # copy icont log to our console
+	     if &features=="MS Windows NT" & &features=="console window" then {
+		# copy icont log to our console
 		every j := 1 to 5 do {
 		    if flog2 := open(wilog) then {
 			while iwrite(&errout, read(flog2))

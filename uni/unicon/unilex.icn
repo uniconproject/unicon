@@ -4,7 +4,7 @@
 
 link escape
 
-#$define debuglex 1
+$define debuglex 1
 global yytext, yyin, yytoken #, debuglex
 
 global O, D, L, H, R, FS, IS, W, idchars
@@ -306,6 +306,23 @@ end
 
 procedure do_at()
     if yytext ||:= =":=" then { return AUGAT }
+    if yytext ||:= =">>" then { 
+       tokflags +:= Beginner + Ender
+       return SNDBK 
+       }
+    if yytext ||:= =">" then {
+       tokflags +:= Beginner + Ender
+       return SND 
+       }
+    if yytext ||:= ="<<" then {
+       tokflags +:= Beginner + Ender
+       return RCVBK 
+       }
+    if yytext ||:= ="<" then {
+       tokflags +:= Beginner + Ender
+       return RCV 
+      }
+    
     tokflags +:= Beginner
     return AT
 end

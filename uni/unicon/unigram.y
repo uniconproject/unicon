@@ -142,6 +142,11 @@
 %token  PIMDASSN      /* $$ */  
 %token  PSETCUR       /* .$ */  
 
+%token	SND          /* @>       */
+%token	SNDBK        /* @>>      */
+%token	RCV          /* @<       */
+%token	RCVBK        /* @<<      */
+
 %{
 
 procedure Keyword(x1,x2)
@@ -195,8 +200,12 @@ global outline, outcol, outfilename,package_level_syms,package_level_class_syms
 
 procedure Progend(x1)
    
-   if yynerrs > 0 then
+   if yynerrs > 0 then {
+      every pe := !parsingErrors do {
+	 write(&errout, pe.errorMessage)
+	 }
       istop(yynerrs || " error" || (if yynerrs > 1 then "s" else ""))
+      }
 
    if /x1 then istop("error: empty file")
 
@@ -598,15 +607,30 @@ expr7	: expr8 ;
 	| expr7 MOD expr8 { $$ := node("Bmod", $1,$2,$3);} ;
 
 expr8	: expr9 ;
+	| postfixthreadop ;
 	| expr9 CARET expr8 { $$ := node("Bcaret", $1,$2,$3);} ;
+
+postfixthreadop:
+	  expr9 SND { $$ := node("Bsnd", $1,$2,EmptyNode);} ;
+	| expr9 SNDBK { $$ := node("Bsndbk", $1,$2,EmptyNode);} ;
+	| expr9 RCV { $$ := node("Brcv", $1,$2,EmptyNode);} ;
+	| expr9 RCVBK { $$ := node("Brcvbk", $1,$2,EmptyNode);} ;
 
 expr9	: expr10 ;
 	| expr9 BACKSLASH expr10 { $$ := node("limit", $1,$2,$3);} ;
-	| expr9 AT expr10 { $$ := node("at", $1,$2,$3) };
+	| expr9 AT expr10 { $$ := node("at", $1,$2,$3);} ;
+	| expr9 SND expr10 { $$ := node("Bsnd", $1,$2,$3);} ;
+	| expr9 SNDBK expr10 { $$ := node("Bsndbk", $1,$2,$3);} ;
+	| expr9 RCV expr10 { $$ := node("Brcv", $1,$2,$3);} ;
+	| expr9 RCVBK expr10 { $$ := node("Brcvbk", $1,$2,$3);} ;
 	| expr9 BANG expr10 { $$ := node("apply", $1,$2,$3);};
 
 expr10	: expr11 ;
 	| AT expr10 { $$ := node("uat", $1,$2);} ;
+	| SND expr10 { $$ := node("Bsnd", EmptyNode,$1,$2);} ;
+	| SNDBK expr10 { $$ := node("Bsndbk", EmptyNode,$1,$2);} ;
+	| RCV expr10 { $$ := node("Brcv", EmptyNode,$1,$2);} ;
+	| RCVBK expr10 { $$ := node("Brcvbk", EmptyNode,$1,$2);} ;
 	| NOT expr10 { $$ := node("unot", $1,$2);} ;
 	| BAR expr10 { $$ := node("ubar", $1,$2);} ;
 	| CONCAT expr10 { $$ := node("uconcat", $1,$2);} ;
@@ -641,7 +665,11 @@ expr11	: literal ;
 	| until ;
 	| every ;
 	| repeat ;
-        | PUNEVAL { $$ := node("BPuneval", $1);} ;
+	| SND { $$ := node("Bsnd", EmptyNode,$1,EmptyNode);} ;
+	| SNDBK { $$ := node("Bsndbk", EmptyNode,$1,EmptyNode);} ;
+	| RCV { $$ := node("Brcv", EmptyNode,$1,EmptyNode);} ;
+	| RCVBK { $$ := node("Brcvbk", EmptyNode,$1,EmptyNode);} ;
+	| PUNEVAL { $$ := node("BPuneval", $1);} ;
 	| CREATE expr { $$ := node("create", $1,$2);} ;
 	| THREAD expr {
 	      fakeThreadIdent := Clone1stToken($1)
@@ -649,7 +677,7 @@ expr11	: literal ;
 	      fakeCreate := Clone1stToken($1)
 	      fakeCreate.tok := CREATE
 	      fakeCreate.s := "create"
-#	      fakeThreadIdent.s := "thread"
+	      fakeThreadIdent.s := "spawn"
 	      fakeLParen := Clone1stToken($1)
 	      fakeLParen.tok := LPAREN
 	      fakeLParen.s := "("

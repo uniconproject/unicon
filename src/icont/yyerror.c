@@ -343,11 +343,8 @@ extern char *yyfilename;
 
 extern char *yytext;
 
-extern short *yyssp;
-
-int yyerror(char *s)
+int yyerror(char *s, int state)
 {
-   int state = *yyssp;
    int i;
    char sbuf[128];
    if (! yyerror_isinitialized++) yyerror_init();

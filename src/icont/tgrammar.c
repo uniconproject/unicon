@@ -6,6 +6,8 @@
 #include "../common/yacctok.h"
 
 %{
+#define yyerror(x) yyerror(x, yystate)
+
 /*
  * These commented directives are passed through the first application
  * of cpp, then turned into real includes in tgram.g by fixgram.icn.
@@ -33,6 +35,10 @@ int id_cnt;
 #define Arglist2(x)		/* empty */
 #define Arglist3(x,y,z)		id_cnt = -id_cnt
 #define Bact(x1,x2,x3)		$$ = tree5(N_Activat,x2,x2,x3,x1) 
+#define Bsnd(x1,x2,x3)		$$ = tree5(N_Binop,x2,x2,x1,x3) 
+#define Bsndbk(x1,x2,x3)	$$ = tree5(N_Binop,x2,x2,x1,x3) 
+#define Brcv(x1,x2,x3)		$$ = tree5(N_Binop,x2,x2,x1,x3) 
+#define Brcvbk(x1,x2,x3)	$$ = tree5(N_Binop,x2,x2,x1,x3) 
 #define Bamper(x1,x2,x3)	$$ = tree5(N_Conj,x2,x2,x1,x3) 
 #define Bassgn(x1,x2,x3)	$$ = tree5(N_Binop,x2,x2,x1,x3) 
 #define Baugact(x1,x2,x3)	$$ = tree5(N_Activat,x2,x2,x3,x1) 

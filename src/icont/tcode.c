@@ -870,6 +870,19 @@ int op;
 	 name = "unions";
 	 break;
 
+      case RCV:
+	 name = "rcv";
+	 break;
+      case RCVBK:
+	 name = "rcvbk";
+	 break;
+      case SND:
+	 name = "snd";
+	 break;
+      case SNDBK:
+	 name = "sndbk";
+	 break;
+
       default:
 	 emitn("?binop", op);
 	 tsyserr("binop: undefined binary operator");

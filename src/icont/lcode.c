@@ -134,6 +134,10 @@ void gencode()
          case Op_Subsc:
          case Op_Swap:
          case Op_Unions:
+      case Op_Snd:
+      case Op_SndBk:
+      case Op_Rcv:
+      case Op_RcvBk:
 
          /* Unary operators. */
 

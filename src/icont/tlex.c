@@ -7,8 +7,8 @@
 #undef T_String
 #undef T_Cset
 #include "../h/lexdef.h"
-#include "ttoken.h"
 #include "tree.h"
+#include "ttoken.h"
 #include "tproto.h"
 
 #if MACINTOSH

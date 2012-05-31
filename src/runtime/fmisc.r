@@ -2733,10 +2733,10 @@ function{1} unlock(x)
      }
 end
 
-"thread(x,blocksize,stringsize) - evaluate co-expression"
+"spawn(x,blocksize,stringsize) - evaluate co-expression"
 " or procedure x concurrently"
 
-function{1} thread(x, blocksize, stringsize)
+function{1} spawn(x, blocksize, stringsize)
    declare {
       C_integer _bs_, _ss_;
       }
@@ -2851,7 +2851,7 @@ MissingFuncV(lock)
 MissingFuncV(trylock)
 MissingFuncV(unlock)
 MissingFuncV(condvar)
-MissingFuncV(thread)
+MissingFuncV(spawn)
 MissingFuncV(signal)
 
 #endif					/* Concurrent */

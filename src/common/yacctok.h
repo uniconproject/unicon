@@ -33,7 +33,7 @@
 %token	LOCAL       /* local     */
 %token	NEXT        /* next      */
 %token	NOT         /* not       */
-%token	OF          /* of        */
+%token	OF_T        /* of        */
 %token	PROCEDURE   /* procedure */
 %token	RECORD      /* record    */
 %token	REPEAT      /* repeat    */
@@ -97,6 +97,10 @@
 %token	AUGQMARK    /* ?:=       */
 %token	AT          /* @         */
 %token	AUGAT       /* @:=       */
+%token	RCV         /* @<        */
+%token	RCVBK       /* @<<       */
+%token	SND         /* @>        */
+%token	SNDBK       /* @>>       */
 %token	BACKSLASH   /* \         */
 %token	CARET       /* ^         */
 %token	AUGCARET    /* ^:=       */

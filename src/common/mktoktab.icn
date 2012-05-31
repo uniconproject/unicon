@@ -202,9 +202,12 @@ procedure main()
          if unary == "_" & binary == "_" then
             err(opfnm, op_linenum, "either unary or binary flag must be set")
          if unary ~== "_" then {
-            if *op ~= 1 then
-               err(opfnm, op_linenum,
-                  "unary operators must be single characters: " || op);
+            if *op ~= 1 then {
+#               err(opfnm, op_linenum,
+#                  "unary operators must be single characters: " || op);
+               write(&errout, "Warning: ", opfnm, " line ", op_linenum,
+                  ": unary operators 'must' be single characters: " || op);
+	       }
             insert(unary_set, op)
             }
          if \aug & binary == "_" then
@@ -258,6 +261,7 @@ repeat {
 
    op_trie := build_trie(op_lst)
 
+
    write(toktab);
    wrt(toktab, 0, "/*")
    wrt(toktab, 0, " * getopr - find the longest legal operator and return the")
@@ -273,6 +277,7 @@ repeat {
    wrt(toktab, 1, "tfatal(\"invalid character\", (char *)NULL);")
    wrt(toktab, 1, "return -1;")
    wrt(toktab, 1, "}")
+
 end
 
 procedure makeline(token,tokval,flag,count)	# build an output line for token table.
@@ -329,10 +334,13 @@ end
 procedure op_out(op, aug, tokval, unary, binary)
    local flag, arity
 
+   if op == ("@<" | "@<<" | "@>" | "@>>") then flag := "be"
+   else
    if unary_str(op) then
       flag := "b"
    else
       flag := ""
+
    if unary == "u" then
       arity := "Unary"
    if binary == "b" then
@@ -354,9 +362,9 @@ procedure wrt_op(op, tokval, flag, arity, define)
    flag := flagtable[flag]
    writes(toktab, "   {{\"", left(esc(op) || "\",", 9))
    writes(toktab, left(tokval || ",", 12))
-   writes(toktab, left(flag || "},", 11))
+   writes(toktab, left(flag || "},", 17))
    writes(toktab, left(arity|| ",", 16))
-   write(toktab, "NULL, NULL}, /* ", cnt, " */")
+   write(toktab, "NULL, NULL}, /*", cnt, "*/")
    if \define then
       wrt_tok_def(tokval, op)
    if op == ":=" then

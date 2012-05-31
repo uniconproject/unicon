@@ -673,23 +673,28 @@ operator{0,1} @<< rcvbk(x,y)
 end
 #else					/* Concurrent */
 /* 
- * Should never get into these fucntions as the VM detects the absence
- * of threads and handles these operators in the interpreter loop
+ * Should never get into these functions as the VM detects the absence
+ * of threads and handles these operators in the interpreter loop.
+ * Arguably, they should be runtime errors, not fails.
  */
-operator{0,1} @> snd(x,y)
-body{fail;}
+operator{0} @> snd(x,y)
+abstract { return empty_type }
+body { fail; }
 end
 
-operator{0,1} @>> sndbk(x,y)
-body{fail;}
+operator{0} @>> sndbk(x,y)
+abstract { return empty_type }
+body { fail; }
 end
 
-operator{0,1} @< rcv(x,y)
-body{fail;}
+operator{0} @< rcv(x,y)
+abstract { return empty_type }
+body { fail; }
 end
 
-operator{0,1} @<< rcvbk(x,y)
-body{fail;}
+operator{0} @<< rcvbk(x,y)
+abstract { return empty_type }
+body { fail; }
 end
 
 #endif					/* Concurrent */

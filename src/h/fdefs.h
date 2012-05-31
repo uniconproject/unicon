@@ -414,7 +414,7 @@ FncDef(fetch,2)
 
   FncDefV(array)
 
-  FncDef(thread,1)
+  FncDef(spawn,1)
   FncDef(mutex,1)
   FncDef(trylock,1)
   FncDef(lock,1)

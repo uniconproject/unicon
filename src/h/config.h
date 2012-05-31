@@ -783,6 +783,7 @@ Deliberate Syntax Error
 
 #ifdef Concurrent
 #define PthreadCoswitch 1
+#define TSLIST 
 /*
  * The default at present does not use __thread.
  * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h

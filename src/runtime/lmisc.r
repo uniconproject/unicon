@@ -1,6 +1,6 @@
 /*
  * file: lmisc.r
- *   Contents: [O]create, activate
+ *   Contents: [O]create, activate, msg_send, msg_receive
  */
 
 /*
@@ -175,3 +175,517 @@ dptr result;
    RunErr(401,NULL);
 #endif					/* CoExpr */
    }
+
+#ifdef Concurrent
+int msg_receive( dccp, dncp, msg, timeout)
+dptr dccp;
+dptr dncp;
+/*dptr valloc; /* location of value being transmitted */
+dptr msg;	 	 	  /* location to put result */
+int timeout;
+{
+   tended struct b_coexpr *ccp = BlkD(*dccp, Coexpr);
+   tended struct b_coexpr *ncp;
+   tended struct b_list *hp;
+   if (dncp){
+      ncp = BlkD(*dncp, Coexpr);
+      hp = BlkD(ncp->outbox, List);
+      }
+   else
+      hp = BlkD(ccp->inbox, List);
+
+   switch (timeout){
+   	  case 0  :
+   	     if (hp->size==0){
+ 	        if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	     	*msg = nulldesc;
+	     	Fail;
+		}
+
+   	     MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
+   	     if (hp->size==0){
+	        *msg = nulldesc;
+	     	MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+ 	        if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	     	Fail;
+      	     	}
+   	     c_get(hp, msg);
+	     MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+	     if (hp->size <= hp->max/50+1 && hp->full)
+	        pthread_cond_signal(condvars + hp->cvfull);
+   	     Return;
+	     break; 
+
+	  case -1 :
+   	     MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
+   	     if (hp->size==0){
+	        int cvid = hp->cvempty;
+	    	pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+	        hp->empty++;
+                while (hp->size==0){
+ 	           if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	       	   DEC_NARTHREADS;
+		   pthread_cond_wait(condvars + cvid, mtx);
+	       	   INC_NARTHREADS_CONTROLLED;
+		   }
+	        hp->empty--;
+		if (hp->size==0){ /* This shouldn't be the case, but.. */
+	     	   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+ 	           if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	     	   Fail;
+		   }
+      	     	}
+   	     c_get(hp, msg);
+	     MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+   	     if (hp->size <= hp->max/50+1 && hp->full) 
+	     	pthread_cond_signal(condvars + hp->cvfull);
+   	     Return;
+	     break;
+
+
+	  case -2 :
+   	  if (hp->size == 0){
+             idelay(1);
+             if (hp->size == 0) 
+      	     	if (!dncp) 
+		   idelay(-1);
+	    	else{
+		   MUTEX_LOCKBLK_CONTROLLED(BlkD(ncp->cequeue, List), 
+	  			       "receieve(): list mutex");
+	       	   c_put(&(ncp->cequeue), dccp);
+	       	   MUTEX_UNLOCKBLK(BlkD(ncp->cequeue, List), 
+	 				"receive(): list mutex");
+	           idelay(-1);
+	       	   if (ccp->handdata != NULL){
+	              *msg = *(ccp->handdata);
+	              ccp->handdata = NULL;
+	              Return;
+	              }
+	           }  
+              }
+	     break;
+	  default :
+   	     MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
+   	     if (hp->size==0){
+  	        struct timespec   ts;
+  	        struct timeval    tp;
+	    	int cvid = hp->empty;
+	    	pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+    		
+		gettimeofday(&tp, NULL);
+		/* Convert from timeval to timespec */
+    		ts.tv_sec  = tp.tv_sec;
+    		ts.tv_nsec = tp.tv_usec * 1000 + timeout % 1000;
+    		ts.tv_sec += timeout / 1000;
+
+	        hp->empty++;
+	        DEC_NARTHREADS;
+                pthread_cond_timedwait(condvars + cvid, mtx, &ts);
+	        INC_NARTHREADS_CONTROLLED;
+	        hp->empty--;
+		if (hp->size==0){
+	     	   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+ 	           if (hp->full)  
+		      pthread_cond_signal(condvars + hp->cvfull);
+      	     	   Fail;
+		   }
+      	     	}
+   	     c_get(hp, msg);
+	     MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+	     if (hp->size <= hp->max/50+1 && hp->full)
+	     	pthread_cond_signal(condvars + hp->cvfull);
+   	     Return;
+      }
+}
+
+
+int msg_send( dccp, dncp, msg, timeout)
+dptr dccp;
+dptr dncp;
+/*dptr valloc; /* location of value being transmitted */
+dptr msg;	 	 	  /* location to put result */
+int timeout;
+{
+   tended struct b_coexpr *ccp = BlkD(*dccp, Coexpr);
+   tended struct b_list *hp;
+   if (dncp){
+      dptr ncpRQ = &(BlkD(*dncp, Coexpr)->inbox);
+      hp = BlkD(*ncpRQ, List);
+      MUTEX_LOCKBLK_CONTROLLED(hp, "msg_send(): list mutex");
+      if (hp->size>=hp->max){
+	    int cvid = hp->cvfull;
+	    pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+         if (timeout==0){ 
+	    MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
+	    Fail;
+	    }
+         hp->full++;
+         while (hp->size>=hp->max){
+ 	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+	 hp->full--;
+      	 }
+      c_put(ncpRQ, msg);
+      MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
+      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      MakeInt(hp->size, msg);
+      Return;
+      }
+   
+   /* check if any ce is waiting on my outbox */
+   hp = BlkD(ccp->cequeue, List);
+   if (hp->size>0){
+      tended struct descrip d;
+      struct context *n;
+      MUTEX_LOCKBLK_CONTROLLED(hp, "send(): list mutex");
+      c_get(hp, &d);
+      BlkD(d, Coexpr)->handdata = msg;
+      MUTEX_UNLOCKBLK(hp, "send(): list mutex");
+      n = (struct context *) BlkD(d, Coexpr)->cstate[1];
+      if (n->alive > 0){
+      	 sem_post(n->semp);
+	 MakeInt(hp->size, msg);
+	 Return;
+	 }
+      }
+
+   /* no one is waiting, place the msg in my outbox */
+   hp = BlkD(ccp->outbox, List);
+   MUTEX_LOCKBLK_CONTROLLED(hp, "send(): list mutex");
+      if (hp->size>=hp->max){
+         if (timeout==0){ 
+	    MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
+	    Fail;
+	    }
+         hp->full++;
+         while (hp->size>=hp->max){
+	    int cvid = hp->cvfull;
+	    pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+
+ 	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+	 hp->full--;
+      	 }
+   c_put(&(ccp->outbox), msg);
+   MUTEX_UNLOCKBLK(hp, "send(): list mutex");
+   if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+   MakeInt(hp->size, msg);
+   Return;
+}
+
+"x@>y - non-blocking send."
+/*
+ *  thread send .  y is either &null or a co-expression.
+ *  if y is null, send to (the current thread's) outbox.
+ *  fails if value cannot be sent to y because y is full.
+ *  otherwise, produces the size of y's queue
+ */
+operator{0,1} @> snd(x,y)
+   declare {
+      tended struct b_list *hp;
+      tended struct descrip L;
+      }
+   abstract { return integer }
+
+   if is:null(y) then inline {
+      CURTSTATE();
+      L = (BlkD(k_current, Coexpr))->outbox;
+      hp = BlkD(L, List);
+      }
+   else if is:coexpr(y) then inline {
+      L = (BlkD(y, Coexpr))->inbox;
+      hp = BlkD(L, List);
+      }
+   else if is:list(y) then inline {
+      L = y;
+      hp = BlkD(L, List);
+      }
+   else 
+      runerr(106, y)
+
+   body{
+      if (hp->size>=hp->max){
+         if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	 fail;
+	 }
+
+      MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
+      if (hp->size>=hp->max){
+	 MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
+	 if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	 fail;
+	 }
+      c_put(&L, &x);
+      MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
+
+      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      return C_integer hp->size;
+      }
+end
+
+"x@>>y - blocking send."
+/*
+ *  thread send .  y is either &null or a co-expression.
+ *  if y is null, send to (the current thread's) outbox.
+ *  fails if value cannot be sent to y because y is full.
+ *  otherwise, produces the size of y's queue
+ */
+operator{0,1} @>> sndbk(x,y)
+   declare {
+      tended struct b_list *hp;
+      tended struct descrip L;
+      }
+   abstract { return integer }
+
+   if is:null(y) then inline {
+      CURTSTATE();
+      L = (BlkD(k_current, Coexpr))->outbox;
+      hp = BlkD(L, List);
+      }
+   else if is:coexpr(y) then inline {
+      L = (BlkD(y, Coexpr))->inbox;
+      hp = BlkD(L, List);
+      }
+   else if is:list(y) then inline {
+      L = y;
+      hp = BlkD(L, List);
+      }
+   else 
+      runerr(106, y)
+
+   body{
+      MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
+      if (hp->size>=hp->max){
+         int cvid = hp->cvfull;
+	 pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+         hp->full++;
+         while (hp->size>=hp->max){
+ 	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+	 hp->full--;
+      	 }
+      c_put(&L, &x);
+      MUTEX_UNLOCKBLK(hp, "send(): list mutex");
+
+      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      return C_integer hp->size;
+      }
+end
+
+"x@<y - non-blocking receive."
+/*
+ *  thread send .  y is either &null or a co-expression.
+ *  if y is null, send to (the current thread's) outbox.
+ *  fails if value cannot be sent to y because y is full.
+ *  otherwise, produces the size of y's queue
+ */
+operator{0,1} @< rcv(x,y)
+   declare {
+      tended struct b_list *hp;
+      struct descrip d;
+      }
+   abstract { return any_value }
+
+   if !is:null(x) then inline {
+      C_integer xval;
+
+      if (!cnv:C_integer(x, xval)) 
+         runerr(101, x);
+
+      if (is:list(y)){
+         if (xval>0) BlkD(y, List)->max = xval;
+         else if (xval<0) BlkD(y, List)->max = xval; 
+	 return C_integer BlkD(y, List)->size; 
+         }
+      else if (is:null(y)){
+         CURTSTATE();
+	 d = k_current;
+	 }
+      else if (is:coexpr(y))
+         d = y;
+      else 
+         runerr(106, y);
+
+      if (xval==0)
+         return C_integer BlkD((BlkD(d, Coexpr))->inbox, List)->size;
+      else if (xval>0) {
+         BlkD((BlkD(d, Coexpr))->outbox, List)->max = xval;
+	 return C_integer (BlkD(d, List))->size; 
+	 }
+      else {
+         BlkD((BlkD(d, Coexpr))->inbox, List)->max = -xval;
+	 return C_integer (BlkD(d, List))->size; 
+	 }
+      }
+
+   if is:null(y) then inline {
+      CURTSTATE();
+      hp = BlkD(BlkD(k_current, Coexpr)->inbox, List);
+      }
+   else if is:coexpr(y) then inline {
+      hp = BlkD(BlkD(y, Coexpr)->outbox, List);
+      }
+   else if is:list(y) then inline {
+      hp = BlkD(y, List);
+      }
+   else 
+      runerr(106, y)
+
+   body{
+
+      if (hp->size==0){
+         if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	 fail;
+	 }
+
+      MUTEX_LOCKBLK_CONTROLLED(hp, "rcv(): list mutex");
+      if (hp->size==0){
+         MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
+ 	 if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	 fail;
+      	 }
+      c_get(hp, &d);
+      MUTEX_UNLOCKBLK(hp, "rcv(): list+ mutex");
+      if (hp->size <= hp->max/50+1 && hp->full)
+         pthread_cond_signal(condvars + hp->cvfull);
+      return d;   
+      }
+end
+
+"x@<<y - blocking receive."
+/*
+ *  thread send .  y is either &null or a co-expression.
+ *  if y is null, send to (the current thread's) outbox.
+ *  fails if value cannot be sent to y because y is full.
+ *  otherwise, produces the size of y's queue
+ */
+operator{0,1} @<< rcvbk(x,y)
+   declare {
+      tended struct b_list *hp;
+      struct descrip d;
+      }
+   abstract { return any_value }
+
+   if !def:C_integer(x, -1) then
+     runerr(101, x)
+
+   if is:null(y) then inline {
+      CURTSTATE();
+      hp = BlkD(BlkD(k_current, Coexpr)->inbox, List);
+      }
+   else if is:coexpr(y) then inline {
+      hp = BlkD(BlkD(y, Coexpr)->outbox, List);
+      }
+   else if is:list(y) then inline {
+      hp = BlkD(y, List);
+      }
+   else 
+      runerr(106, y)
+
+   body{
+      switch (x){
+         case -1 :
+   	    MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
+   	    if (hp->size==0){
+	       int cvid = hp->cvempty;
+	       pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+	       hp->empty++;
+               while (hp->size==0){
+ 	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	          DEC_NARTHREADS;
+	     	  pthread_cond_wait(condvars + cvid, mtx );
+	       	  INC_NARTHREADS_CONTROLLED;
+		  }
+	       hp->empty--;
+	       if (hp->size==0){ /* This shouldn't be the case, but.. */
+	          MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
+ 	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	     	  fail;
+		  }
+      	       }
+   	    c_get(hp, &d);
+	    MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
+   	    if (hp->size <= hp->max/50+1 && hp->full) 
+	       pthread_cond_signal(condvars + hp->cvfull);
+   	    return d;
+
+   	 case 0  :
+   	    if (hp->size==0){
+ 	       if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	       fail;
+	       }
+
+   	    MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
+   	    if (hp->size==0){
+	       MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+ 	       if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	       fail;
+      	       }
+   	    c_get(hp, &d);
+	    MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
+	    if (hp->size <= hp->max/50+1 && hp->full)
+	       pthread_cond_signal(condvars + hp->cvfull);
+   	    return d;
+
+	 default :{
+  	    struct timespec   ts;
+  	    struct timeval    tp;
+    		
+	    gettimeofday(&tp, NULL);
+	    /* Convert from timeval to timespec */
+    	    ts.tv_sec  = tp.tv_sec;
+    	    ts.tv_nsec = tp.tv_usec * 1000 + x % 1000;
+    	    ts.tv_sec += x / 1000;
+
+   	    MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
+   	    if (hp->size==0){
+	       int cvid = hp->cvempty;
+	       pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+	       hp->empty++;
+	       DEC_NARTHREADS;
+               pthread_cond_timedwait(condvars + cvid, mtx, &ts);
+	       INC_NARTHREADS_CONTROLLED;
+	       hp->empty--;
+	       if (hp->size==0){
+	          MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
+ 	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	     	  fail;
+		  }
+      	       }
+   	    c_get(hp, &d);
+	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+	    if (hp->size <= hp->max/50+1 && hp->full) 
+	       pthread_cond_signal(condvars + hp->cvfull);
+
+   	    return d;
+	    } /* default */
+	 } /* switch */
+      }
+end
+#else					/* Concurrent */
+operator{0,1} @> snd(x,y)
+body{}
+end
+
+operator{0,1} @>> sndbk(x,y)
+body{}
+end
+
+operator{0,1} @< rcv(x,y)
+body{}
+end
+
+operator{0,1} @<< rcvbk(x,y)
+body{}
+end
+
+#endif					/* Concurrent */

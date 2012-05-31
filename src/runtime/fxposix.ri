@@ -1427,6 +1427,7 @@ end
 
 "wait() - wait for process (or co-exp thread) to terminate or stop."
 "the return value is `status' from the wait(2) manpage."
+"OR: - wait on condition variable pid."
 
 function{0,1} wait(pid, options)
 #ifdef Concurrent
@@ -1437,27 +1438,45 @@ function{0,1} wait(pid, options)
 	int rv;
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(pid)->Coexpr.cstate[1];
+
 	if ( n->alive == 0 ) fail;
 
-	MUTEX_LOCKID(MTX_NARTHREADS); 
-	NARthreads--;	
-	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	
+	DEC_NARTHREADS;	
 	THREAD_JOIN(n->thread, NULL);
-	/*n->alive = 0;*/
-	
-	/*}*/
-        MUTEX_LOCKID(MTX_THREADCONTROL);
-	  MUTEX_LOCKID(MTX_NARTHREADS); 
-	  NARthreads++;	
-	  MUTEX_UNLOCKID(MTX_NARTHREADS);
-	MUTEX_UNLOCKID(MTX_THREADCONTROL);
+	INC_NARTHREADS_CONTROLLED;
+
 	return pid;
 	}
      }
-#endif					/* Concurrent */     
+#endif					/* Concurrent */ 
+
    if !def:C_integer(pid, -1) then
       runerr(101, pid)
+ /* 
+  *if pid>=-1 then it is a process, otherwise it is a condition variable 
+  */
+
+#ifdef Concurrent
+   abstract { return integer }
+   body {
+      if (pid<-1){
+         int rv;
+	 int x = -pid-2;
+      	 if (x<0 || x>=ncondvars)
+      	    irunerr(181, pid);
+
+      	 DEC_NARTHREADS;	
+      	 if (rv=pthread_cond_wait(condvars+x, &mutexes[condvarsmtxs[x]]) != 0){
+      	    fprintf(stderr, "condition variable wait failure %d\n", rv);
+      	    exit(-1);
+      	    }
+	 INC_NARTHREADS_CONTROLLED;
+
+      	 return C_integer 1;
+      	 }
+      }
+#endif					/* Concurrent */     
+
    if !def:C_string(options, "") then 
       runerr(103, options)
    abstract {
@@ -1803,7 +1822,29 @@ end
 
 "send() - send a UDP datagram."
 
-function{0,1} send(addr, msg)
+function{0,1} send(addr, msg, timeout)
+#ifdef Concurrent
+  if !def:C_integer(timeout, 0) then
+     runerr(101, timeout)
+  if is:coexpr(addr) then {
+     abstract { return integer }
+     body {
+        CURTSTATE();
+	if (msg_send(&k_current, &addr, &msg, timeout) == A_Continue)
+	   return msg;
+	fail;
+	}
+     }
+  if is:null(addr) then {
+     abstract { return integer }
+     body {
+     	CURTSTATE();
+	if (msg_send(&k_current, NULL, &msg, timeout) == A_Continue)
+	   return msg;
+	fail;
+	}
+     }
+#endif					/* Concurrent */ 
    if !cnv:C_string(addr) then
       runerr(103, addr)
    if !cnv:string(msg) then
@@ -1823,8 +1864,34 @@ function{0,1} send(addr, msg)
 end
 
 "receive() - receive a UDP datagram."
-
+#ifdef Concurrent
+function{0,1} receive(f, timeout)
+#else					/* Concurrent */ 
 function{0,1} receive(f)
+#endif					/* Concurrent */ 
+
+#ifdef Concurrent
+  if !def:C_integer(timeout, 0) then
+     runerr(101, timeout)
+  if is:null(f) then {
+     body {
+	tended struct descrip d;
+
+	if (msg_receive(&k_current, NULL, &d, 0) == A_Continue)
+	   return d;
+	fail;
+	}
+     }
+  if is:coexpr(f) then {
+     body {
+	tended struct descrip d;
+
+	if (msg_receive(&k_current, &f, &d, 0) == A_Continue)
+	   return d;
+	fail;
+	}
+     }
+#endif					/* Concurrent */ 
   if !is:file(f) then
       runerr(105, f)
    abstract {

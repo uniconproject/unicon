@@ -740,6 +740,10 @@ function {0,1} serial(x)
       coexpr:   inline {
          return C_integer BlkD(x,Coexpr)->id;
          }
+      null: inline {
+      	 CURTSTATE();
+         return C_integer BlkD(k_current,Coexpr)->id;
+         }
 #ifdef Graphics
       file:   inline {
 	 if (BlkD(x,File)->status & Fs_Window) {
@@ -2344,86 +2348,108 @@ pthread_mutex_t* mutexes;
 int maxmutexes;
 int nmutexes; 
 
+int get_mutex( pthread_mutexattr_t *mattr){
+    int n;
+    MUTEX_LOCKID(MTX_MUTEXES);
+    if(nmutexes==maxmutexes){
+         maxmutexes = maxmutexes * 2 + 128;
+	 mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t));
+	 if (mutexes==NULL)
+	    syserr("get_mutex(): out of memory!");
+  	 }
+     MUTEX_INIT(mutexes[nmutexes], mattr);
+     n = nmutexes++;
+     MUTEX_UNLOCKID(MTX_MUTEXES);
+     return n;
+}
 
-"condvar(x) - create and initialize a condition variable. x is the mutex to be used with it"
+ /*
+  *   create a new cv, reuse the mutex mtx if it is supplied (non-negative)
+  */
+int get_cv(int mtx){
+   int n;
+   MUTEX_LOCKID(MTX_CONDVARS);
+   if(ncondvars==maxcondvars){
+      maxcondvars = maxcondvars * 2 + 128;
+      condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t));
+      condvarsmtxs=realloc(condvarsmtxs, maxcondvars * sizeof(int));
+      if (condvars==NULL || condvarsmtxs==NULL)
+	     syserr("out of memory for condition variables!");
+      }
+   pthread_cond_init(condvars+ncondvars, NULL);
+   if(mtx<0) 
+      condvarsmtxs[ncondvars]=get_mutex(NULL)-1;
+   else
+      condvarsmtxs[ncondvars]=mtx;
+      
+   n = ncondvars++;
+   MUTEX_UNLOCKID(MTX_CONDVARS);
+   return n;
+}
+
+"condvar(mtx) - create and initialize a condition variable. Reuse the mutex mtx if it is not null"
 
 function{1} condvar(x)
-   if !cnv:C_integer(x) then
-      runerr(101, x)
-   body{
-         if (x<1 || x>nmutexes)
-	  irunerr(101, x);
-
-	MUTEX_LOCKID(MTX_CONDVARS);
-	if(ncondvars==maxcondvars){
-	   maxcondvars = maxcondvars * 2 + 64;
-	   condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t));
-	   condvarsmtxs=realloc(condvarsmtxs, maxcondvars * sizeof(int));
-	   if (condvars==NULL || condvarsmtxs==NULL)
-	     syserr("out of memory for condition variables!");
-  	   }
-	pthread_cond_init(condvars+ncondvars, NULL);
-	condvarsmtxs[ncondvars]=x-1;
-        ncondvars++;
-        MUTEX_UNLOCKID(MTX_CONDVARS);
-	return C_integer ncondvars;
-      }
-end
-
-"condwait(x) - wait on condition variable x"
-
-function{1} condwait(x)
-   if !cnv:C_integer(x) then
-      runerr(101, x)
-   abstract { return integer}
-   body {
-      int rv;
-      if (x<1 || x>ncondvars)
-      	 irunerr(101, x);
-
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-      NARthreads--;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);
-
-      if (rv=pthread_cond_wait(condvars+x-1, &mutexes[condvarsmtxs[x-1]]) != 0){
-      	 fprintf(stderr, "condition variable wait failure %d\n", rv);
-      	 exit(-1);
+   if is:list(x) then{
+      abstract { return list }
+      inline{
+         tended struct b_list *hp = BlkD(x, List);
+      	 CV_INITBLK(hp);
+      	 return x;
       	 }
-
-      MUTEX_LOCKID(MTX_THREADCONTROL);
-	 MUTEX_LOCKID(MTX_NARTHREADS); 
-	 NARthreads++;	
-	 MUTEX_UNLOCKID(MTX_NARTHREADS);
-      MUTEX_UNLOCKID(MTX_THREADCONTROL);
-
-      return C_integer 1;
       }
+   else if def:C_integer(x,-1) then{
+      abstract { return integer }
+      inline { return C_integer -2 - get_cv(x); }
+      }
+   else runerr(180,x)
+   
 end
 
-"condsignal(x, y) - signal the condition variable x y times. Default y is 1, y=0 means broadcast"
+"signal(x, y) - signal the condition variable x y times. Default y is 1, y=0 means broadcast"
 
-function{1} condsignal(x, y)
+function{1} signal(x, y)
    declare { C_integer Y=0;}
+   if is:coexpr(x) then {
+      abstract { return coexpr }
+      body {
+	 struct context *n;
+	 struct b_coexpr *cp = BlkD(x, Coexpr);
+
+ 	 /*
+	  * Transmit whatever is needed to wake it up.
+	  */
+	 n = (struct context *) cp->cstate[1];
+	
+	 if (n->alive == 0)
+	    fail;
+
+	 sem_post(n->semp);
+
+	 return x;
+	 }
+      }
+
    if !cnv:C_integer(x) then
-      runerr(101, x)
+      runerr(181, x)
    if is:null(y) then
       inline { Y = 1; }
    else if !cnv:C_integer(y, Y) then
       runerr(101, y)
    
-   abstract { return integer}
+   abstract { return integer }
    body {
       int rv, i;
-      if (x<1 || x>ncondvars)
-      	 irunerr(101, x);
-      	 
+      int x1 = -x-2;
+       if (x1<0 || x1>=ncondvars)
+      	 irunerr(181, x);
       if (Y == 0) {
-	 if ((rv=pthread_cond_broadcast(condvars+x-1)) != 0) {
+	 if ((rv=pthread_cond_broadcast(condvars+x1)) != 0) {
 	    }
 	 }
       else
       for (i=0; i < Y; i++)
-      if ((rv=pthread_cond_signal(condvars+x-1)) != 0){
+      if ((rv=pthread_cond_signal(condvars+x1)) != 0){
 	 char cvwf[64];
 	 sprintf(cvwf, "condition variable wait failure %d\n", rv);
       	 syserr(cvwf);
@@ -2437,120 +2463,273 @@ end
 "mutex(x) - create and initialize a mutex. To be extended later to allow for naming mutexes."
 
 function{1} mutex(x)
-   abstract { return integer }
-   body{
-	MUTEX_LOCKID(MTX_MUTEXES);
-	if(nmutexes==maxmutexes){
-	   maxmutexes = maxmutexes * 2 + 64;
-	   mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t));
-	   if (mutexes==NULL)
-	     syserr("out of memory for mutexes!");
-  	   }
-	MUTEX_INIT(mutexes[nmutexes], NULL);
-        nmutexes++;
-	MUTEX_UNLOCKID(MTX_MUTEXES);
-	return C_integer nmutexes;
-      }
+   if is:null(x) then {
+       abstract { return integer }
+       inline {
+	 return C_integer get_mutex(NULL)+1;
+         }
+      }   
+   else type_case x of {
+     set:{
+	 abstract { return set }
+         inline {
+	    MUTEX_INITBLK(BlkD(x, Set));
+	    return x;
+	    }
+	 }
+     table:{
+	 abstract { return table }
+         inline {
+	    MUTEX_INITBLK(BlkD(x, Table));
+	    return x;
+	    }
+	 }
+     record:{
+	 abstract { return record }
+         inline {
+	    MUTEX_INITBLK(BlkD(x, Record));
+	    return x;
+	    }
+	 }
+     list:{
+	 abstract { return list }
+         inline {
+	    MUTEX_INITBLK(BlkD(x, List));
+	    return x;
+	    }
+	 }
+     default:
+         runerr(122, x)
+     }
 end
 
 "lock(x) - lock mutex x"
 
 function{1} lock(x)
-   if !cnv:C_integer(x) then
-      runerr(101, x)
-   abstract { return integer}
+   if cnv:C_integer(x) then{
+       abstract { return integer }
    body {
       int rv;
-      if (x<1 || x>nmutexes)
-      	 irunerr(101, x);
+      int x1;
+      if (x<0){	
+      	 if (x>-2 || -x-1>ncondvars)
+      	 irunerr(181, x);
+	 x1 = condvarsmtxs[-x-2];
+	 } 
+      else
+         x1 = x-1;
+      if (x1<0 || x1>=nmutexes)
+      	 irunerr(180, x);
 
       /*
-       * The following code was modified o avoid extra locking to accomodate GC
+       * The following code was modified to avoid extra locking to accomodate GC
        * There might be better ways to do this.
        */
-       
-      MUTEX_TRYLOCK(mutexes[x-1], rv, "Application level mutex lock");
-      if (rv == 0)
-      	 return C_integer 1;
 
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-      NARthreads--;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);
-
-      MUTEX_LOCK(mutexes[x-1], "Application level mutex lock");
-      
-      /*
-       * Not allowed to porceed if there is a GC
-       */
-      MUTEX_LOCKID(MTX_THREADCONTROL);
-	 MUTEX_LOCKID(MTX_NARTHREADS); 
-	 NARthreads++;	
-	 MUTEX_UNLOCKID(MTX_NARTHREADS);
-      MUTEX_UNLOCKID(MTX_THREADCONTROL);
-
+      MUTEX_LOCK_CONTROLLED(mutexes[x1], "lock(mutex) function");
       return C_integer 1;
       }
+   }
+  else type_case x of {
+     set:{
+	 abstract { return set }
+         body{
+	    struct b_set *bp = BlkD(x, Set);
+	    if (bp->shared){
+	       MUTEX_LOCKBLK_CONTROLLED(bp, "lock(set) function");
+               return x;
+	       }
+	    runerr(180, x);
+	    }
+	 }
+     table:{
+	 abstract { return table }
+         body {
+	    struct b_table *bp = BlkD(x, Table);
+	    if (bp->shared){
+	       MUTEX_LOCKBLK_CONTROLLED(bp, "lock(table) function");
+               return x;
+	       }
+	    runerr(180, x);	    
+            }
+	 }
+     record:{
+	 abstract { return record }
+         body {
+	    struct b_record *bp = BlkD(x, Record);
+	    if (bp->shared){
+	       MUTEX_LOCKBLK_CONTROLLED(bp, "lock(record) function");
+               return x;
+	       }
+	    runerr(180, x);
+            }
+	 }
+     list:{
+	 abstract { return list }
+         inline {
+	    struct b_list *bp = BlkD(x, List);
+	    if (bp->shared){
+	       MUTEX_LOCKBLK_CONTROLLED(bp, "lock(list) function");
+               return x;
+	       }
+	    runerr(180, x);
+	    }
+	 }
+     default:
+         runerr(180, x)
+     }
 end
 
 "trylock(x) - try locking mutex x"
 
 function{1} trylock(x)
-   if !cnv:C_integer(x) then
-      runerr(101, x)
-   abstract { return integer}
+   if cnv:C_integer(x) then{
+       abstract { return integer }
    body {
       int rv;
-      if (x<1 || x>nmutexes)
-      	 irunerr(101, x);
+      int x1;
+      if (x<0){	
+      	 if (x>-2 || -x-1>ncondvars)
+      	 irunerr(181, x);
+	 x1 = condvarsmtxs[-x-2];
+	 } 
+      else
+         x1 = x-1;
+      if (x1<0 || x1>=nmutexes)
+      	 irunerr(180, x);
 
-      MUTEX_TRYLOCK(mutexes[x-1], rv, "Application level mutex trylock");
-      if (rv == 0)
-      	 return C_integer 1;
-
+      MUTEX_TRYLOCK(mutexes[x1], rv, "trylock(mutex) function");
+      if (rv == 0) return C_integer 1;
       fail;
-      } 
+      }
+   }
+  else type_case x of {
+     set:{
+	 abstract { return set }
+         body{
+	    struct b_set *bp = BlkD(x, Set);
+	    if (bp->shared){
+	       int rv;
+      	       MUTEX_TRYLOCKBLK(bp, rv, "trylock(set) function");
+      	       if (rv == 0) return x;
+      	       fail;
+	       }
+	    runerr(180, x);
+	    }
+	 }
+     table:{
+	 abstract { return table }
+         body {
+	    struct b_table *bp = BlkD(x, Table);
+	    if (bp->shared){
+	       int rv;
+      	       MUTEX_TRYLOCKBLK(bp, rv, "trylock(table) function");
+      	       if (rv == 0) return x;
+      	       fail;
+	       }
+	    runerr(180, x);
+            }
+	 }
+     record:{
+	 abstract { return record }
+         body {
+	    struct b_record *bp = BlkD(x, Record);
+	    if (bp->shared){
+	       int rv;
+      	       MUTEX_TRYLOCKBLK(bp, rv, "trylock(record) function");
+      	       if (rv == 0) return x;
+      	       fail;
+	       }
+	    runerr(180, x);
+            }
+	 }
+     list:{
+	 abstract { return list }
+         body {
+	    struct b_list *bp = BlkD(x, List);
+	    if (bp->shared){
+	       int rv;
+      	       MUTEX_TRYLOCKBLK(bp, rv, "trylock(list) function");
+      	       if (rv == 0) return x;
+      	       fail;
+	       }
+	    runerr(180, x);
+	    }
+	 }
+     default:
+         runerr(180, x)
+     }
 end
 
 "unlock(x) - unlock mutex x"
 
 function{1} unlock(x)
-   if !cnv:C_integer(x) then
-      runerr(101, x)
-   abstract { return integer}
-   body{
+   if cnv:C_integer(x) then{
+       abstract { return integer }
+   body {
       int rv;
-      if (x<1 || x>nmutexes)
-      	 irunerr(101, x);
-      MUTEX_UNLOCK(mutexes[x-1], "Application level mutex unlock");
+      int x1;
+      if (x<0){	
+      	 if (x>-2 || -x-1>ncondvars)
+      	 irunerr(181, x);
+	 x1 = condvarsmtxs[-x-2];
+	 } 
+      else
+         x1 = x-1;
+      if (x1<0 || x1>=nmutexes)
+      	 irunerr(180, x);
+
+      MUTEX_UNLOCK(mutexes[x1], "unlock(mutex) function");
       return C_integer 1;
       }
-end
-
-"join(x) - join with thread x"
-
-function{1} join(x)
-  if is:coexpr(x) then {
-     abstract { return coexpr }
-     body {
-	struct context *n;
-	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
-	n =  (struct context *)  BlkLoc(x)->Coexpr.cstate[1];
-	MUTEX_LOCKID(MTX_NARTHREADS); 
-	NARthreads--;	
-	MUTEX_UNLOCKID(MTX_NARTHREADS);
-	
-	THREAD_JOIN(n->thread, NULL);
-	
-	/* } */
-	MUTEX_LOCKID(MTX_THREADCONTROL);
-	  MUTEX_LOCKID(MTX_NARTHREADS); 
-	  NARthreads++;	
-	  MUTEX_UNLOCKID(MTX_NARTHREADS);
-	MUTEX_UNLOCKID(MTX_THREADCONTROL);
-	return x;
-	}
-     }
-  else { runerr(106,x)
+   }
+  else type_case x of {
+     set:{
+	 abstract { return set }
+         body{
+	    struct b_set *bp = BlkD(x, Set);
+	    if (bp->shared){
+	       MUTEX_UNLOCKBLK(bp, "unlock(set) function");
+               return x;
+	       }
+	    runerr(180, x);
+	    }
+	 }
+     table:{
+	 abstract { return table }
+         body {
+	    struct b_table *bp = BlkD(x, Table);
+	    if (bp->shared){
+	       MUTEX_UNLOCKBLK(bp, "unlock(table) function");
+               return x;
+	       }
+	    runerr(180, x);	    
+            }
+	 }
+     record:{
+	 abstract { return record }
+         body {
+	    struct b_record *bp = BlkD(x, Record);
+	    if (bp->shared){
+	       MUTEX_UNLOCKBLK(bp, "unlock(record) function");
+               return x;
+	       }
+	    runerr(180, x);
+            }
+	 }
+     list:{
+	 abstract { return list }
+         body {
+	    struct b_list *bp = BlkD(x, List);
+	    if (bp->shared){
+	       MUTEX_UNLOCKBLK(bp, "unlock(list) function");
+               return x;
+	       }
+	    runerr(180, x);
+	    }
+	 }
+     default:
+         runerr(180, x)
      }
 end
 
@@ -2571,21 +2750,12 @@ function{1} thread(x, blocksize, stringsize)
 	 struct context *n;
 	 struct b_coexpr *cp = BlkD(x, Coexpr);
 	 int i;
-
 	 /*
 	  * Make sure it is a pthreads-based co-expression.
 	  */
 	 if (cp->status & Ts_Native) runerr(101,x);
 	 if (cp->status & Ts_Async) return x;
 
-	 /*
-	  * Initialize sender/receiver queues.
-	  */
-	 MUTEX_INIT(cp->smute, NULL);
-	 MUTEX_INIT(cp->rmute, NULL);
-	 cp->squeue = (union block *)alclist(0, MinListSlots);
-	 cp->rqueue = (union block *)alclist(0, MinListSlots);
- 
          if (!_bs_)
 	    _bs_ = rootblock.size/10 ;
 	 else if (_bs_ < MinAbrSize) 
@@ -2594,7 +2764,7 @@ function{1} thread(x, blocksize, stringsize)
 	 if (!_ss_)
   	    _ss_ = rootstring.size/10;
 	 else if (_ss_ < MinStrSpace) 
-	    _ss_ =
+	    _ss_ = MinStrSpace;
 
 	 cp->ini_blksize = _bs_;
 	 cp->ini_ssize = _ss_;
@@ -2651,9 +2821,7 @@ function{1} thread(x, blocksize, stringsize)
 	 /*
 	  * Increment the counter of the Async running threads.
 	  */
-	 MUTEX_LOCKID(MTX_NARTHREADS); 
-	 NARthreads++;	
-	 MUTEX_UNLOCKID(MTX_NARTHREADS);
+	 INC_LOCKID(NARthreads, MTX_NARTHREADS);
 	 MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
 	 return x;
@@ -2675,4 +2843,15 @@ function{1} thread(x, blocksize, stringsize)
   else { runerr(106,x)
      }
 end
+
+#else					/* Concurrent */
+
+MissingFuncV(mutex)
+MissingFuncV(lock)
+MissingFuncV(trylock)
+MissingFuncV(unlock)
+MissingFuncV(condvar)
+MissingFuncV(thread)
+MissingFuncV(signal)
+
 #endif					/* Concurrent */

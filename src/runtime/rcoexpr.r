@@ -502,10 +502,7 @@ void coclean(void *o) {
          swap2publicheap(strregion, NULL,  &public_stringregion);
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
          }
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-
-      NARthreads--;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);
+      DEC_NARTHREADS;	
       old->alive = -1;
       pthread_exit(NULL);
       }
@@ -662,7 +659,7 @@ void handle_thread_error(int val)
    switch(val) {
 
    case EINVAL:
-      syserr("The value specified by mutex does not refer to an initialised mutex object.");
+      fatalerr(180, NULL);
       /* or syserr("the calling thread's priority is higher than the mutex's current priority ceiling");*/
       break;
    case EBUSY:
@@ -817,12 +814,7 @@ int action;
   MUTEX_UNLOCKID(MTX_COND_GC);
 
   /* wake up call received! GC is over. increment NARthread */
-  MUTEX_LOCKID(MTX_THREADCONTROL);
-    MUTEX_LOCKID(MTX_NARTHREADS); 
-    NARthreads++;
-    MUTEX_UNLOCKID(MTX_NARTHREADS);
-  MUTEX_UNLOCKID(MTX_THREADCONTROL);
-
+  INC_NARTHREADS_CONTROLLED;
   return;
 }
 
@@ -995,4 +987,5 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
     else
       syserr(" init_threadheap: insufficient memory for block region");
 }
+
 #endif 					/* Concurrent */

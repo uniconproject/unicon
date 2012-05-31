@@ -1011,6 +1011,21 @@ L_astatic:
 	    DerefArg(2);
 	    Call_Cond(e_ofail);
 
+	 case Op_Rcv: 		/* e1 @< e2 */
+	 case Op_RcvBk:		/* e1 @<< e2 */
+	 case Op_Snd: 		/* e1 @> e2 */
+	 case Op_SndBk:		/* e1 @>> e2 */
+#ifdef Concurrent
+	    Setup_Op(2, e_ocall);
+	    DerefArg(1);
+	    DerefArg(2);
+	    Call_Cond(e_ofail);
+#else					/* Concurrent */
+	    err_msg(183, NULL);
+	    goto efail;
+#endif					/* Concurrent */
+
+
 	 case Op_Asgn:		/* e1 := e2 */
 	    Setup_Op(2, e_ocall);
 	    Call_Cond(e_ofail);
@@ -2162,6 +2177,7 @@ L_agoto:
 
 	 case Op_Coact: {	/* @e */
 
+
 #ifndef CoExpr
             err_msg(401, NULL);
             goto efail;
@@ -2174,15 +2190,45 @@ L_agoto:
             xargp = dp - 2;
 
             Deref(*dp);
-            if (dp->dword != D_Coexpr) {
+#ifdef AAAConcurrent
+            if (is:null(*dp)){
+	       dptr passval = (dptr)(sp - 3);
+	       if (is:null(*passval))
+	          signal = msg_receive( &k_current, NULL, passval, -1);
+	       else
+		  signal = msg_send( &k_current, NULL, passval, 0);
+	       }
+	    else 
+            if (is:integer(*dp)){
+	       dptr passval = (dptr)(sp - 3);
+	       if (is:null(*passval))
+	          signal = msg_receive( &k_current, NULL, passval, IntVal(*dp));
+	       else
+		  signal = msg_send( &k_current, NULL, passval, IntVal(*dp));
+	       }
+	    else
+#endif					/* Concurrent */	      
+            if (is:coexpr(*dp)) {
+               ncp = BlkD(*dp, Coexpr);
+#ifdef AAAConcurrent
+	       if (ncp->status & Ts_Async){
+	          dptr passval = (dptr)(sp - 3);
+	          if (is:null(*passval))
+	             signal = msg_receive( &k_current, dp, passval, 0);
+	          else
+		     signal = msg_send( &k_current, dp, passval, 0);
+		  }
+	       else
+#endif					/* Concurrent */	      
+                  signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
+	       }
+	    else{
                err_msg(118, dp);
                goto efail;
                }
 
-            ncp = BlkD(*dp, Coexpr);
-
-            signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
             EntInterp_sp;
+
             if (signal == A_Resume)
                goto efail_noev;
             else

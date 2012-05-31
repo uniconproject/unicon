@@ -984,6 +984,48 @@ Deliberate Syntax Error
 #ifdef Concurrent
    thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/
+
+{
+ 
+     struct b_list *hp;
+     mainhead->status = Ts_Sync;	 
+     /*
+      * Initialize sender/receiver queues.
+      */
+
+      if((hp = alclist(0, 1024))==NULL)
+      	    fatalerr(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      hp->id=-1;
+      hp->shared = 1;
+      hp->max = 1024;
+      BlkLoc(mainhead->outbox) = (union block *) hp;
+      mainhead->outbox.dword = D_List;
+
+      if((hp = alclist(0, 1024))==NULL)
+      	    fatalerr(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      hp->shared = 1;
+      hp->id=-2;
+      hp->max = 1024;
+      BlkLoc(mainhead->inbox) = (union block *) hp;
+      mainhead->inbox.dword = D_List;
+
+      if((hp = alclist(0, 64))==NULL)
+      	    fatalerr(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      hp->shared = 1;
+      hp->id=-3;
+      hp->max = 64;
+      BlkLoc(mainhead->cequeue) = (union block *) hp;
+      mainhead->cequeue.dword = D_List;
+
+      mainhead->handdata = NULL;
+      list_ser=1;
+}
 #endif					/* Concurrent */
    
 
@@ -1644,11 +1686,11 @@ void datainit()
    k_errout.title = T_File;
    k_input.title = T_File;
    k_output.title = T_File;
-#ifdef Concurrent
-   pthread_mutex_init(&(k_errout.mutex), NULL);
-   pthread_mutex_init(&(k_input.mutex), NULL);
-   pthread_mutex_init(&(k_output.mutex), NULL);
-#endif					/* Concurrent */
+
+   MUTEX_INIT(k_errout.mutex, NULL);
+   MUTEX_INIT(k_input.mutex, NULL);
+   MUTEX_INIT(k_output.mutex, NULL);
+
 #endif					/* MultiThread */
 
 #ifdef MSWindows

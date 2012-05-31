@@ -527,7 +527,16 @@ int iselect(int fd, int t)
 int idelay(n)
 int n;
    {
-   if (n <= 0) return Succeeded; /* delay < 0 = no delay */
+   if (n == 0) return Succeeded; /* delay < 0 = no delay */
+#ifdef Concurrent
+   if (n < 0){  /* delay < 0 = block the current thread */
+      CURTSTATE();
+      DEC_NARTHREADS;
+      sem_wait(curtstate->ctx->semp);		/* block this thread */
+      INC_NARTHREADS_CONTROLLED;
+      return Succeeded; 
+      }
+#endif					/* Concurrent */        
 
 /*
  * The following code is operating-system dependent [@fsys.01].

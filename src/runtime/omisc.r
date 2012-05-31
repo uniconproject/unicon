@@ -85,6 +85,14 @@ operator{1} * size(x)
 	    i = cssize(&x);
          return C_integer i;
          }
+      coexpr: inline {
+#ifdef Concurrent 
+         struct b_coexpr *cp = BlkD(x, Coexpr);
+	 if (cp->status & Ts_Async)
+	    return C_integer  BlkD(cp->outbox, List)->size;
+#endif					/* Concurrent */ 
+         return C_integer BlkD(x,Coexpr)->size;
+         }
       record: inline {
          C_integer siz;
 	 union block *bp, *rd;
@@ -97,9 +105,6 @@ operator{1} * size(x)
          if (Blk(rd,Proc)->ndynam == -3)
 	    siz -= 2;
          return C_integer siz;
-         }
-      coexpr: inline {
-         return C_integer BlkD(x,Coexpr)->size;
          }
       file: inline {
 	 int status = BlkD(x,File)->status;

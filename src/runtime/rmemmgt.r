@@ -163,16 +163,21 @@ int firstp[] = {
      0,                       /* T_Cset (4), cset */
      0,                       /* T_File (5), file block */
      0,                       /* T_Proc (6), procedure block */
-     3*WordSize,              /* T_Record (7), record block */
 #ifdef Concurrent
-     3*WordSize + sizeof(pthread_mutex_t),  /* T_List (8), list header block */
+     4*WordSize + sizeof(int),    /* T_Record (7), record block */
+     7*WordSize + 3*sizeof(int),  /* T_List (8), list header block */
+     2*WordSize,                  /* T_Lelem (9), list element block */
+     5*WordSize + sizeof(int),    /* T_Set (10), set header block */
+     1*WordSize,                  /* T_Selem (11), set element block */
+     5*WordSize + sizeof(int),    /* T_Table (12), table header block */
 #else				/* Concurrent */
+     3*WordSize,              /* T_Record (7), record block */\
      3*WordSize,              /* T_List (8), list header block */
-#endif				/* Concurrent */
      2*WordSize,              /* T_Lelem (9), list element block */
      4*WordSize,              /* T_Set (10), set header block */
      1*WordSize,              /* T_Selem (11), set element block */
      4*WordSize,              /* T_Table (12), table header block */
+#endif				/* Concurrent */
      1*WordSize,              /* T_Telem (13), table element block */
      1*WordSize,              /* T_Tvtbl (14), table element trapped variable */
      2*WordSize,              /* T_Slots (15), set/table hash block */
@@ -893,10 +898,15 @@ dptr dp;
          markblock(&((struct b_coexpr *)block)->freshblk);
 
 #ifdef Concurrent
-      if (cp->squeue != NULL)
-	 markptr(&(cp->squeue));
-      if (cp->rqueue != NULL)
-	 markptr(&(cp->rqueue));
+       
+       if (!is:null(cp->inbox)){
+	 markblock(&(cp->inbox));
+	 markblock(&(cp->outbox));
+	 markblock(&(cp->cequeue));
+	 if (cp->handdata!=NULL) 
+	    markblock((cp->handdata));
+	 }
+
 #endif					/* Concurrent */
 #endif                                  /* CoExpr */
       }

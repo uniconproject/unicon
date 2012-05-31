@@ -2759,27 +2759,14 @@ function{0,1} delay(n)
       }
 
    inline {
-#ifdef Concurrent
-      int ret;
-      CURTSTATE();
-      MUTEX_LOCKID(MTX_NARTHREADS); 
-      NARthreads--;	
-      MUTEX_UNLOCKID(MTX_NARTHREADS);   
-      ret = idelay(n);
-      MUTEX_LOCKID(MTX_THREADCONTROL);
-        MUTEX_LOCKID(MTX_NARTHREADS); 
-        NARthreads++;	
-        MUTEX_UNLOCKID(MTX_NARTHREADS);
-      MUTEX_UNLOCKID(MTX_THREADCONTROL);
-      if (ret == Failed)
-        fail;
-#else					/* Concurrent */
       if (idelay(n) == Failed)
         fail;
-#endif					/* Concurrent */        
 #ifdef Graphics
+{
+      CURTSTATE();
       pollctr >>= 1;
       pollctr++;
+}
 #endif					/* Graphics */
       return nulldesc;
       }

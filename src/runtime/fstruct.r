@@ -26,7 +26,8 @@ function{1} delete(s, x[n])
             register union block **pd;
             union block *bp;     /* does not need to be tended. */
             int res, argc;
-
+	    
+	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Set), "delete(): lock set");
 	    for (argc = 0; argc < n; argc++) {
 	       hn = hash(x+argc);
 	       pd = memb(BlkLoc(s), x + argc, hn, &res);
@@ -40,6 +41,7 @@ function{1} delete(s, x[n])
 	       EVValD(&s, E_Sdelete);
 	       EVValD(x+argc, E_Sval);
 	       }
+	    MUTEX_UNLOCKBLK(BlkD(s, Set), "delete(): unlock set");
             return s;
 	    }
       table:
@@ -49,6 +51,7 @@ function{1} delete(s, x[n])
             register uword hn;
             int res, argc;
 
+	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Table), "delete(): lock table");
 	    for (argc = 0; argc < n; argc++) {
 	       hn = hash(x+argc);
 	       pd = memb(BlkLoc(s), x+argc, hn, &res);
@@ -62,6 +65,7 @@ function{1} delete(s, x[n])
 	       EVValD(&s, E_Tdelete);
 	       EVValD(x+argc, E_Tsub);
 	       }
+	    MUTEX_UNLOCKBLK(BlkD(s, Table), "delete(): unlock table");
             return s;
             }
       list:
@@ -70,15 +74,16 @@ function{1} delete(s, x[n])
 	    tended struct descrip d;
             C_integer cnv_x;
 	    int i, size, argc;
+
 #ifdef Arrays
 	    if (BlkD(s,List)->listtail==NULL) 
 	       if (arraytolist(&s)!=Succeeded) fail;
 #endif					/* Arrays*/
 
+	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, List), "delete(): lock list");
+
 	    for (argc = 0; argc < n; argc++) {
-
 	       if (!cnv:C_integer(x[argc], cnv_x)) runerr(101, x[argc]);
-
 	       hp = BlkD(s, List);
 	       size = hp->size;
 	       for (i = 1; i <= size; i++) {
@@ -89,6 +94,7 @@ function{1} delete(s, x[n])
 	       EVValD(&s, E_Ldelete);
 	       EVVal(cnv_x, E_Lsub);
 	       }
+	    MUTEX_UNLOCKBLK(BlkD(s, List), "delete(): unlock list");
 	    return s;
 	    }
 #if defined(Dbm) || defined(Messaging)
@@ -205,13 +211,22 @@ function{0,1} get_or_pop(x,i)
 
 	 body {
 	    int j;
+	    tended struct b_list *hp;
+	    
 	    EVValD(&x, E_Lget);
 #ifdef Arrays
-	    if (BlkD(x,List)->listtail==NULL) 
+	    if (BlkD(x, List)->listtail==NULL) 
 	       if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
+	    hp = BlkD(x, List);
+   	    MUTEX_LOCKBLK_CONTROLLED( BlkD(x, List), "get() lock list");
+	    hp = BlkD(x, List);
 	    for(j=0;j<i;j++)
-	       if (!c_get(BlkD(x,List), &result)) fail;
+	       if (!c_get(hp, &result)){
+	          MUTEX_UNLOCKBLK(hp, "get(): unlock list");
+ 	          fail;
+		  }
+	    MUTEX_UNLOCKBLK(hp, "get(): unlock list");
 	    return result;
 	    }
 	 }
@@ -312,8 +327,8 @@ function{*} key(t)
       list: {
 	 abstract { return integer }
 	 inline {
-	    C_integer i, sz = BlkD(t, List)->size;
-	    for(i=1; i<=sz; i++) suspend C_integer i;
+	    C_integer i;
+	    for(i=1; i<=BlkD(t, List)->size; i++) suspend C_integer i;
 	    fail;
 	    }
 	 }
@@ -462,6 +477,8 @@ function{1} insert(s, x[n])
             int res, argc;
             struct b_selem *se;
             register union block **pd;
+	    
+   	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Set), "insert(): lock set");
 
 	    for(argc=0;argc<n;argc++) {
 	       bp = BlkLoc(s);
@@ -495,6 +512,7 @@ function{1} insert(s, x[n])
 	       EVValD(&s, E_Sinsert);
 	       EVValD(x+argc, E_Sval);
 	       }
+   	    MUTEX_UNLOCKBLK(BlkD(s, Set), "insert(): unlock set");
             return s;
             }
          }
@@ -509,10 +527,13 @@ function{1} insert(s, x[n])
 	    tended struct descrip d;
 	    C_integer cnv_x;
             word i, j, size, argc;
+
 #ifdef Arrays
 	    if (BlkD(s,List)->listtail==NULL) 
 	       if (arraytolist(&s)!=Succeeded) fail;
 #endif					/* Arrays*/
+
+   	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, List), "insert(): lock list");
 
 	    for(argc=0;argc<n;argc+=2) {
 	       hp = BlkD(s, List);
@@ -520,13 +541,18 @@ function{1} insert(s, x[n])
 		* Make sure that subscript x is in range.
 		*/
 	       if (!cnv:C_integer(x[argc], cnv_x)) {
-		  if (cnv:integer(x[argc],x[argc])) fail;
+		  if (cnv:integer(x[argc],x[argc])){
+		     MUTEX_UNLOCKBLK(BlkD(s, List), "insert(): unlock list");
+		     fail;
+		     }
 		  runerr(101, x[argc]);
 		  }
 	       size = hp->size;
 	       i = cvpos((long)cnv_x, size);
-	       if (i == CvtFail || i > size+1)
+	       if (i == CvtFail || i > size+1){
+   	          MUTEX_UNLOCKBLK(BlkD(s, List), "insert(): unlock list");
 		  fail;
+		  }
 
 	       /*
 		* Perform i-1 rotations so that the position to be inserted
@@ -554,6 +580,7 @@ function{1} insert(s, x[n])
 		  c_put(&s, &d);
 		  }
 	       }
+   	    MUTEX_UNLOCKBLK(BlkD(s, List), "insert(): unlock list");
 	    return s;
 	    }
          }
@@ -566,8 +593,10 @@ function{1} insert(s, x[n])
 
          body {
 	    tended union block *bp;
+   	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Table), "insert(): lock table");
 	    bp = BlkLoc(s);
 	    if (c_inserttable(&bp, n, x) == -1) runerr(0);
+   	    MUTEX_UNLOCKBLK(BlkD(s, Table), "insert(): unlock table");
             return s;
             }
          }
@@ -1215,12 +1244,13 @@ function{0,1} pull(x,n)
       register word i, j;
       register struct b_list *hp;
       register struct b_lelem *bp;
-      
+
 #ifdef Arrays
       if (BlkD(x,List)->listtail==NULL) 
 	 if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
       
+      MUTEX_LOCKBLK_CONTROLLED(BlkD(x, List), "pull(): lock list");
 
       for(j=0;j<n;j++) {
 	 EVValD(&x, E_Lpull);
@@ -1229,7 +1259,10 @@ function{0,1} pull(x,n)
 	  * Point at list header block and fail if the list is empty.
 	  */
          hp = BlkD(x, List);
-	 if (hp->size <= 0) fail;
+	 if (hp->size <= 0){
+   	    MUTEX_UNLOCKBLK(hp, "pull(): unlock list");
+ 	    fail;
+	    }
 
 	 /*
 	  * Point bp at the last list element block.  If the last block has no
@@ -1254,6 +1287,7 @@ function{0,1} pull(x,n)
 	 bp->nused--;
 	 hp->size--;
 	 }
+      MUTEX_UNLOCKBLK(hp, "pull(): unlock list");
       return result;
       }
 end
@@ -1305,8 +1339,7 @@ dptr val;
        */
       while ((bp = alclstb(i, (word)0, (word)0)) == NULL) {
          i /= 4;
-         if (i < MinListSlots)
-            fatalerr(0, NULL);
+         if (i < MinListSlots) fatalerr(0, NULL);
          }
 
       Blk(BlkD(*l, List)->listhead, Lelem)->listprev = (union block *)bp;
@@ -1369,6 +1402,8 @@ function{1} push(x, vals[n])
 	 dp = vals;
 	 num = n;
 	 }
+
+      MUTEX_LOCKBLK_CONTROLLED(BlkD(x, List), "push(): lock list");
 
       for (val = 0; val < num; val++) {
 	 /*
@@ -1434,6 +1469,8 @@ function{1} push(x, vals[n])
 	 hp->size++;
 	 }
 
+      MUTEX_UNLOCKBLK(hp, "push(): unlock list");
+
       EVValD(&x, E_Lpush);
 
       /*
@@ -1455,9 +1492,9 @@ void c_put(struct descrip *l, struct descrip *val)
 				   division by a constant that's a power of 2*/
 
    /*
-    * Point hp at the list-header block and bp at the last
-    *  list-element block.
+    * Point bp at the last list-element block.
     */
+
    bp = Blk(BlkD(*l,List)->listtail, Lelem);
    
    /*
@@ -1484,14 +1521,13 @@ void c_put(struct descrip *l, struct descrip *val)
        */
       while ((bp = alclstb(i, (word)0, (word)0)) == NULL) {
          i /= 4;
-         if (i < MinListSlots)
-            fatalerr(0, NULL);
+         if (i < MinListSlots) fatalerr(0, NULL);
          }
 
       Blk(BlkD(*l,List)->listtail,Lelem)->listnext = (union block *) bp;
-      bp->listprev = ((struct b_list *)BlkLoc(*l))->listtail;
+      bp->listprev = BlkD(*l,List)->listtail;
       bp->listnext = BlkLoc(*l);
-      ((struct b_list *)BlkLoc(*l))->listtail = (union block *) bp;
+      BlkD(*l,List)->listtail = (union block *) bp;
       }
 
    /*
@@ -1525,10 +1561,10 @@ function{1} put(x, vals[n])
       }
 
    body {
-      tended struct b_list *hp;
+      struct b_list *hp;
       dptr dp;
       register word i, val, num;
-      register struct b_lelem *bp;  /* does not need to be tended */
+      struct b_lelem *bp;  /* does not need to be tended */
       static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 #ifdef Arrays
@@ -1545,12 +1581,13 @@ function{1} put(x, vals[n])
 	 num = n;
 	 }
 
+      MUTEX_LOCKBLK_CONTROLLED(BlkD(x,List), "put(): lock list");
+
       /*
        * Point hp at the list-header block and bp at the last
        *  list-element block.
        */
       for(val = 0; val < num; val++) {
-
 	 hp = BlkD(x, List);
 	 bp = Blk(hp->listtail, Lelem);
    
@@ -1588,6 +1625,10 @@ function{1} put(x, vals[n])
 		  runerr(0);
 	       }
 
+#ifdef Concurrent
+	    hp = BlkD(x, List);
+#endif					/* Concurrent */
+
 	    Blk(hp->listtail, Lelem)->listnext = (union block *) bp;
 	    bp->listprev = hp->listtail;
 	    bp->listnext = (union block *) hp;
@@ -1610,6 +1651,8 @@ function{1} put(x, vals[n])
 	 hp->size++;
 
 	 }
+
+      MUTEX_UNLOCKBLK(hp, "put(): unlock list");
 
       EVValD(&x, E_Lput);
 

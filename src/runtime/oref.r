@@ -945,9 +945,12 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	     * Make sure that subscript y is in range.
 	     */
             lp = BlkD(dx, List);
+	    MUTEX_LOCKBLK_CONTROLLED(lp, "x[y]: lock list");
             i = cvpos((long)y, (long)lp->size);
-            if (i == CvtFail || i > lp->size)
+            if (i == CvtFail || i > lp->size){
+	       MUTEX_UNLOCKBLK(lp, "x[y]: unlock list");
                fail;
+	       }
             /*
              * Locate the list-element block containing the desired
              *  element.
@@ -974,6 +977,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	       i += bp->Lelem.first - j;
 	       if (i >= bp->Lelem.nslots)
 		  i -= bp->Lelem.nslots;
+	       MUTEX_UNLOCKBLK(BlkD(dx,List), "x[y]: unlock list");
 	       return struct_var(&bp->Lelem.lslots[i], bp);
 #ifdef Arrays
 	    }

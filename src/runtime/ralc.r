@@ -8,8 +8,10 @@
  */
 #ifdef Concurrent
 static struct region *findgap(struct region *curr_private, word nbytes, int region);
+#define INIT_SHARED(blk) blk->shared = 0
 #else 					/* Concurrent */
 static struct region *findgap	(struct region *curr, word nbytes);
+#define INIT_SHARED(blk)
 #endif 					/* Concurrent */
 
 extern word alcnum;
@@ -177,6 +179,7 @@ struct b_coexpr *alccoexp()
    ep->nextstk = stklist;
    stklist = ep;
    MUTEX_UNLOCKID(MTX_STKLIST);
+   INIT_SHARED(ep);
    return ep;
    }
 #else					/* COMPILER */
@@ -254,16 +257,52 @@ struct b_coexpr *alccoexp()
 #endif					/* MultiThread */
 
 #ifdef Concurrent
-      ep->status = Ts_Sync;
-      ep->squeue = ep->rqueue = NULL;
+{
+ 
+     struct b_list *hp;
+     ep->status = Ts_Sync;
+	 
+     /*
+      * Initialize sender/receiver queues.
+      */
 
+      if((hp = alclist(0, 1024))==NULL)
+      	    ReturnErrNum(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      BlkLoc(ep->outbox) = (union block *) hp;
+      ep->outbox.dword = D_List;
+      hp->max = 1024;
+      CV_INITBLK(hp);
+
+      if((hp = alclist(0, 1024))==NULL)
+      	    ReturnErrNum(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      BlkLoc(ep->inbox) = (union block *) hp;
+      ep->inbox.dword = D_List;
+      hp->max = 1024;
+      CV_INITBLK(hp);
+
+      if((hp = alclist(0, 64))==NULL)
+      	    ReturnErrNum(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      BlkLoc(ep->cequeue) = (union block *) hp;
+      ep->cequeue.dword = D_List;
+      hp->max = 64;
+      ep->handdata = NULL;
+      
       ep->ini_blksize = rootblock.size/100;
       if (ep->ini_blksize < MinAbrSize)
          ep->ini_blksize = MinAbrSize;
 
+      INIT_SHARED(ep);
+
       ep->ini_ssize = rootstring.size/100;
       if (ep->ini_ssize < MinStrSpace)
          ep->ini_ssize = MinStrSpace;
+}
 #endif					/* Concurrent */
 
       ep->es_tend = NULL;
@@ -365,9 +404,7 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->fd.fp = fd;
    blk->status = status;
    blk->fname = tname;
-#ifdef Concurrent
-   pthread_mutex_init(&(blk->mutex), NULL);
-#endif				/* Concurrent */
+   MUTEX_INIT(blk->mutex, NULL);
    return blk;
    }
 #enddef
@@ -409,6 +446,7 @@ union block *f(int tcode)
       }
    ps->size = 0;
    ps->mask = 0;
+   INIT_SHARED(ps);
    for (i = 0; i < HSegs; i++)
       ps->hdir[i] = NULL;
    return (union block *)ps;
@@ -526,6 +564,7 @@ struct b_list *alclisthdr(uword size, union block *bptr)
    MUTEX_UNLOCKID(MTX_LIST_SER);
    blk->listhead = bptr;
    blk->listtail = NULL;
+   INIT_SHARED(blk);
 #ifdef Arrays
    ( (struct b_realarray *) bptr)->listp = (union block *)blk;
 #endif					/* Arrays */
@@ -561,6 +600,8 @@ struct b_list *f(uword size, uword nslots)
    MUTEX_LOCKID(MTX_LIST_SER);
    blk->id = list_ser++;
    MUTEX_UNLOCKID(MTX_LIST_SER);
+
+   INIT_SHARED(blk);
 
    blk->listhead = blk->listtail = (union block *)lblk;
 
@@ -604,6 +645,7 @@ struct b_list *f(uword size, uword nslots)
    blk->id = list_ser++;
    MUTEX_UNLOCKID(MTX_LIST_SER);
    blk->listhead = blk->listtail = (union block *)lblk;
+   INIT_SHARED(blk);
    lblk->blksize = i;
    lblk->nslots = nslots;
    lblk->first = 0;
@@ -713,6 +755,7 @@ struct b_record *f(int nflds, union block *recptr)
    MUTEX_LOCKID(MTX_RECID);
    blk->id = (((struct b_proc *)recptr)->recid)++;
    MUTEX_UNLOCKID(MTX_RECID);
+   INIT_SHARED(blk);
    return blk;
    }
 #enddef

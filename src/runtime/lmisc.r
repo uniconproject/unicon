@@ -672,20 +672,24 @@ operator{0,1} @<< rcvbk(x,y)
       }
 end
 #else					/* Concurrent */
+/* 
+ * Should never get into these fucntions as the VM detects the absence
+ * of threads and handles these operators in the interpreter loop
+ */
 operator{0,1} @> snd(x,y)
-body{}
+body{fail;}
 end
 
 operator{0,1} @>> sndbk(x,y)
-body{}
+body{fail;}
 end
 
 operator{0,1} @< rcv(x,y)
-body{}
+body{fail;}
 end
 
 operator{0,1} @<< rcvbk(x,y)
-body{}
+body{fail;}
 end
 
 #endif					/* Concurrent */

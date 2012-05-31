@@ -587,10 +587,9 @@ int longest_dr = 0;
 struct b_proc_list **dr_arrays;
 #endif					/* MultiThread */
 
-#ifdef Uniconc
+#if COMPILER
 static word mdw_dynrec_start = 0;
 
-extern
 void
 dynrec_start_set(start)
    word start;

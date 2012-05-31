@@ -146,7 +146,7 @@ struct node      *unary_nd   (nodeptr op, nodeptr arg);
 void           var_dcls   (void);
 int               varsubtyp  (typeinfo_t *typ, struct lentry **single);
 void	          writecheck (int rc);
-void	          yyerror    (int tok,struct node *lval,int state);
+void              yyerror			(char *s,int state);
 int               yylex      (void);
 int               yyparse    (void);
 pointer		xmalloc	(long n);

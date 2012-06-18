@@ -7,7 +7,7 @@
 #	Author:   Stephen B. Wampler, modified by Phillip Lee Thomas and
 #		  Clinton Jeffery
 #
-#	Date:     February 4, 1991; version 1.3:  May 17, 2012
+#	Date:     February 4, 1991; version 1.3:  June 17, 2012
 #
 ############################################################################
 #
@@ -102,13 +102,13 @@ procedure EVAL(l)
 local fn, arglist, arg
 
    l := l[1]
-   if T === ATOM([l]) then {                 # it's an atom
+   if T === ATOM([l]) then {			# it's an atom
       if T === l then return .T
       if EQ([NIL,l]) === T then return .NIL
       if numeric(l) then return l		# numbers eval to themselves
       return .((\words[l]).v | NIL)
       }
-   if glist(l) then {                        # it's a list
+   if glist(l) then {				# it's a list
       if T === ATOM([l[1]]) then
          case l[1] of {
          "QUOTE" : return .(l[2] | NIL)
@@ -117,7 +117,7 @@ local fn, arglist, arg
          "SETQ"  : return SET([l[2]]|||evlis(l[3:0]))
          "ITRACEON"  : return (&trace := -1,T)
          "ITRACEOFF" : return (&trace := 0,NIL)
-         "HELP"      : return (HELP(),NIL)
+	 "HELP"      : return (HELP(l[2:0]),NIL)
          "EXIT"      : exit(0)
          default : return apply([l[1]]|||evlis(l[2:0])) | NIL
          }
@@ -216,16 +216,17 @@ procedure initialize()
 local func
    words := table()
 
-   every func := (ADD1 | APPEND | ATOM | CAR | CDR | COND | CONS |
-		  DEFINE | DIFFERENCE |
-		  EQ | EQUAL | EVAL | EXPT | FUNCTION | GREATERP | HELP |
-		  LAST | LENGTH | LESSP | LIST |
-		  MAX | MIN | MINUSP | NULL | NUMBERP |
-		  ONEP | PLUS | PRINT | QUOTIENT |
-		  RECIP | REMAINDER | REVERSE |
-		  SET | SUB1 | TIMES | TRACE | UNTRACE | ZEROP ) do {
-      words[image(func)[11:0]] := prop(, func)
-   }
+   every func := (
+      ADD1 | APPEND | ATOM | CAR | CDR | COND | CONS |
+      DEFINE | DIFFERENCE |
+      EQ | EQUAL | EVAL | EXPT | FUNCTION | GREATERP | HELP |
+      LAST | LENGTH | LESSP | LIST |
+      MAX | MIN | MINUSP | NULL | NUMBERP |
+      ONEP | PLUS | PRINT | QUOTIENT |
+      RECIP | REMAINDER | REVERSE |
+      SET | SUB1 | TIMES | TRACE | UNTRACE | ZEROP ) do {
+	 words[image(func)[11:0]] := prop(, func)
+	 }
 
    trace_set := set()
    T     := "T"
@@ -676,106 +677,127 @@ local l, s
 	       ) do
       every l := bstol(Map(s)) do {
 	 EVAL([ l ])
-    }
+	 }
 end
 
-procedure HELP()
-   write("\n",
-    "Execution:\n",
-    "  lisp -C file1 ... filen   ==> [Load and run files, then exit.]\n",
-    "  lisp file1 ... filen      ==> [Load and run files, then enter\n",
-    "                                  interactive mode until (exit).]\n",
-    "  (exit)                    ==> [Exit gracefully from lisp.]\n",
-    "\n",
-    "***** Syntax *****\n",
-    "\n",
-    "Basic functions:\n",
-    "  (quote (a b c))           ==> (A B C)\n",
-    "  (setq a (quote (a b c)))  ==> (A B C)\n",
-    "  (setq b (quote (x y z)))  ==> (X Y Z)\n",
-    "  (setq c (quote (a b c)))  ==> (A B C)\n",
-    "  (car a)                   ==> A\n",
-    "  (cadr a)                  ==> B\n",
-    "  (last a)                  ==> C\n",
-    "  (cdr a)                   ==> (B C)\n",
-    "  (append a b)              ==> (A B C X Y Z)\n",
-    "  (cons (quote d) a)        ==> (D A B C)\n",
-    "  (eval (quote a))          ==> (A B C)\n",
-    "  (list (quote x) a)        ==> (X (A B C))\n",
-    "  (reverse a)               ==> (C B A)\n",
-    "  (atom (quote ()))         ==> T\n",
-    "  (atom a)                  ==> NIL\n",
-    "  (eq (car a) (car a))      ==> T\n",
-    "  (eq a c)                  ==> NIL\n",
-    "  (equal a c)               ==> T\n",
-    "  (function cadr)           ==> (LAMBDA (L) (CAR (CDR L)))\n",
-    "  (length a)                ==> 3\n",
-    "  (memq (quote a) a)        ==> (A B C)\n",
-    "  (memq (quote (what is)) (quote (you (what is) your name)))\n",
-    "                            ==> NIL\n",
-    "  (member (quote (what is)) (quote (you (what is) your name)))\n",
-    "                            ==> ((WHAT IS) YOUR NAME)\n",
-    "  (null (car (car a)))      ==> T\n",
-    "  (print a)                 ==> (A B C)\n",
-    "\n",
-    "Arithmetic functions:\n",
-    "  (numberp 4)               ==> T\n",
-    "  (add1 3)                  ==> 4\n",
-    "  (plus 2 3 4)              ==> 9\n",
-    "  (times 2 3 6)             ==> 36\n",
-    "  (min 13 4 8)              ==> 4\n",
-    "  (max 18 21 4)             ==> 21\n",
-    "  (recip 8)                 ==> 0.125\n",
-    "  (sub1 4)                  ==> 3\n",
-    "  (difference 4 20)         ==> -16\n",
-    "  (expt 2 5)                ==> 32\n",
-    "  (quotient 21 4)           ==> 5\n",
-    "  (remainder 21 4)          ==> 1\n",
-    "  (zerop 0)                 ==> T\n",
-    "  (onep 1)                  ==> T\n",
-    "  (minusp -5)               ==> T\n",
-    "  (lessp 1 5)               ==> T\n",
-    "  (equal 3 3)               ==> T\n",
-    "  (greaterp 5 1)            ==> T\n",
-    "  (mapcar (quote (1 2 3)) (function add1))\n",
-    "                            ==> (2 3 4)\n",
-    "\n",
-    "Tracing and help:\n",
-    "  (trace (quote (car)))     ==> NIL\n",
-    "  (untrace (quote (car)))   ==> NIL\n",
-    "  (itraceon)                ==> T   [Turn on icon tracing.]\n",
-    "  (itraceoff)               ==> NIL [Turn off icon tracing.]\n",
-    "  (help)                    ==> NIL [Print help message.]\n",
-    "\n",
-    "***** Examples *****\n",
-    "  (zerop (sub1 (add1 0)))   ==> T\n",
-    "  (onep (sub1 (add1 1)))    ==> T\n",
-    "\n",
-    "Defining functions: cadr and cddr:\n",
-    "  (define (quote (\n",
-    "          (caddr (lambda (l) (car (cdr (cdr l)))))\n",
-    "          (cddr (lambda (l) (cdr (cdr l))))\n",
-    "          )))               ==> (CADR CDDR)\n",
-    "  (caddr a)                 ==> C\n",
-    "  (cddr a)                  ==> (C)\n",
-    "  (trace (quote (cadr)))    ==> NIL\n",
-    "  (cadr a)                  ==> B\n",
-    "  (untrace (quote (cadr)))  ==> NIL\n",
-    "\n",
-    "Is an atom in a list? Using cond and recursion:\n",
-    "  (define (quote (\n",
-    "    (has (lambda (atm lis)\n",
-    "      (cond ((null lis) nil)\n",
-    "        ((eq atm (car lis)) t)\n",
-    "        (t (has atm (cdr lis))))\n",
-    "  )) )))                    ==> (HAS)\n",
-    "  (has (quote y) b)         ==> T\n",
-    "\n",
-    "Make '+' and '-' aliases of plus and difference:\n",
-    "  (define (quote (\n",
-    "    (+ (lambda (m n) (plus m n)))\n",
-    "    (- (lambda (m n) (difference m n)))\n",
-    "  )))"
-    )
+procedure HELP(cmd)
+   static Execution, Basics, Arithmetic, Tracing, Programs
+   initial {
+      Execution := "\n" ||
+         "Execution:\n" ||
+         "  lisp -C file1 ... filen   ==> [Load and run files, then exit.]\n" ||
+         "  lisp file1 ... filen      ==> [Load and run files, then enter\n" ||
+         "                                  interactive mode until (exit).]\n" ||
+         "  (exit)                    ==> [Exit gracefully from lisp.]"
+      # "***** Syntax *****\n",
+      Basics := "\n" ||
+         "Basic functions:\n" ||
+         "  (quote (a b c))           ==> (A B C)\n" ||
+         "  (setq a (quote (a b c)))  ==> (A B C)\n" ||
+         "  (setq b (quote (x y z)))  ==> (X Y Z)\n" ||
+         "  (setq c (quote (a b c)))  ==> (A B C)\n" ||
+         "  (car a)                   ==> A\n" ||
+         "  (cadr a)                  ==> B\n" ||
+         "  (last a)                  ==> C\n" ||
+         "  (cdr a)                   ==> (B C)\n" ||
+         "  (append a b)              ==> (A B C X Y Z)\n" ||
+         "  (cons (quote d) a)        ==> (D A B C)\n" ||
+         "  (eval (quote a))          ==> (A B C)\n" ||
+         "  (list (quote x) a)        ==> (X (A B C))\n" ||
+         "  (reverse a)               ==> (C B A)\n" ||
+         "  (atom (quote ()))         ==> T\n" ||
+         "  (atom a)                  ==> NIL\n" ||
+         "  (eq (car a) (car a))      ==> T\n" ||
+         "  (eq a c)                  ==> NIL\n" ||
+         "  (equal a c)               ==> T\n" ||
+         "  (function cadr)           ==> (LAMBDA (L) (CAR (CDR L)))\n" ||
+         "  (memq (quote a) a)        ==> (A B C)\n" ||
+         "  (memq (quote (what is)) (quote (you (what is) your name)))\n" ||
+         "                            ==> NIL\n"  ||
+         "  (member (quote (what is)) (quote (you (what is) your name)))\n" ||
+         "                            ==> ((WHAT IS) YOUR NAME)\n" ||
+         "  (null (car (car a)))      ==> T\n" ||
+         "  (print a)                 ==> (A B C)"
+      
+      Arithmetic := "\n" ||
+         "Arithmetic functions:\n" ||
+         "  (numberp 4)               ==> T\n" ||
+         "  (length a)                ==> 3\n" ||
+         "  (add1 3)                  ==> 4\n" ||
+         "  (plus 2 3 4)              ==> 9\n" ||
+         "  (times 2 3 6)             ==> 36\n" ||
+         "  (min 13 4 8)              ==> 4\n" ||
+         "  (max 18 21 4)             ==> 21\n" ||
+         "  (recip 8)                 ==> 0.125\n" ||
+         "  (sub1 4)                  ==> 3\n" ||
+         "  (difference 4 20)         ==> -16\n" ||
+         "  (expt 2 5)                ==> 32\n" ||
+         "  (quotient 21 4)           ==> 5\n" ||
+         "  (remainder 21 4)          ==> 1\n" ||
+         "  (zerop 0)                 ==> T\n" ||
+         "  (onep 1)                  ==> T\n" ||
+         "  (minusp -5)               ==> T\n" ||
+         "  (lessp 1 5)               ==> T\n" ||
+         "  (equal 3 3)               ==> T\n" ||
+         "  (greaterp 5 1)            ==> T\n" ||
+         "  (mapcar (quote (1 2 3)) (function add1))\n" ||
+         "                            ==> (2 3 4)"
+      Tracing := "\n" ||
+         "Tracing and help:\n" ||
+         "  (trace (quote (car)))     ==> NIL\n" ||
+         "  (untrace (quote (car)))   ==> NIL\n" ||
+         "  (itraceon)                ==> T   [Turn on icon tracing.]\n" ||
+         "  (itraceoff)               ==> NIL [Turn off icon tracing.]\n" ||
+         "  (help)                    ==> NIL [Print help message.]"
+      Programs := "\n" ||
+         "***** Programming Examples *****\n" ||
+         "  (zerop (sub1 (add1 0)))   ==> T\n" ||
+         "  (onep (sub1 (add1 1)))    ==> T\n" ||
+         "\n" ||
+         "Defining functions: cadr and cddr:\n" ||
+         "  (define (quote (\n" ||
+         "     (caddr (lambda (l) (car (cdr (cdr l)))))\n" ||
+         "     (cddr (lambda (l) (cdr (cdr l))))\n" ||
+         "     )))                    ==> (CADDR CDDR)\n" ||
+         "  (caddr a)                 ==> C\n" ||
+         "  (cddr a)                  ==> (C)\n" ||
+         "  (trace (quote (cadr)))    ==> NIL\n" ||
+         "  (cadr a)                  ==> B\n" ||
+         "  (untrace (quote (cadr)))  ==> NIL\n" ||
+         "\n" ||
+         "Is an atom in a list? Using cond and recursion:\n" ||
+         "  (define (quote (\n" ||
+         "    (has (lambda (atm lis)\n" ||
+         "      (cond ((null lis) nil)\n" ||
+         "        ((eq atm (car lis)) t)\n" ||
+         "        (t (has atm (cdr lis))))\n" ||
+         "  )) )))                    ==> (HAS)\n" ||
+         "  (has (quote y) b)         ==> T\n" ||
+         "\n" ||
+         "Make '+' and '-' aliases of plus and difference:\n" ||
+         "  (define (quote (\n" ||
+         "    (+ (lambda (m n) (plus m n)))\n" ||
+         "    (- (lambda (m n) (difference m n)))\n" ||
+         "  )))"
+      }
+   
+   if *cmd = 0 then {
+      write(Execution)
+      write(Basics)
+      write(Arithmetic)
+      write(Tracing)
+      write(Programs)
+      }
+   else every n := 1 to *cmd do {
+      case cmd[n][1] of {
+         "E" : write(Execution)
+         "B" : write(Basics)
+         "A" : write(Arithmetic)
+         "T" : write(Tracing)
+         "P" : write(Programs)
+         default : write("For brief help, enter: (help E[xecution] | B[asics] |\n" ||
+            "  A[rithmetic] | T[racing] | P[rogram examples])")
+         }
+      }
    return
 end

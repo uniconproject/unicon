@@ -2736,7 +2736,7 @@ end
 "spawn(x,blocksize,stringsize) - evaluate co-expression"
 " or procedure x concurrently"
 
-function{1} spawn(x, blocksize, stringsize)
+function{0,1} spawn(x, blocksize, stringsize)
    declare {
       C_integer _bs_, _ss_;
       }
@@ -2750,6 +2750,13 @@ function{1} spawn(x, blocksize, stringsize)
 	 struct context *n;
 	 struct b_coexpr *cp = BlkD(x, Coexpr);
 	 int i;
+
+	 if (!is:null(curpstate->eventmask)) {
+	    fprintf(stderr,
+		    "monitoring of concurrent programs is not yet supported.");
+	    runerr(183, x);
+	    }
+
 	 /*
 	  * Make sure it is a pthreads-based co-expression.
 	  */

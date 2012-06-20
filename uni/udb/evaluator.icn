@@ -129,12 +129,12 @@ method handle_Error()
    cur_file := keyword("file", Monitored) | "?"
    cur_line := keyword("line", Monitored) | "?"
    #cur_p := "2"#image(image(proc(Monitored, 0 ))) | "OPS!!"
-   Message := "\n   Run-time error : " ||keyword("errornumber",Monitored)||
-              "\n   "  || #cur_p
-              "; File "||cur_file||
+   Message := "\nRun-time error " ||keyword("errornumber",Monitored)||
+              "\nFile "||cur_file||
               "; Line "||cur_line||"; Col "||keyword("column",Monitored)
-   Message ||:="\n   "||DState.srcFile.getSrcLine(cur_file, cur_line)
-   Message ||:="\n   "||keyword("errortext",Monitored)
+   Message ||:="\n"||DState.srcFile.getSrcLine(cur_file, cur_line)
+   Message ||:="\n"||repl("-", keyword("column",Monitored))||"^"
+   Message ||:="\n"||keyword("errortext",Monitored)
    DState.Write(Message)
 end
 

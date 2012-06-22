@@ -1253,33 +1253,18 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
          MUTEX_LOCK(mtx, msg); \
 	 INC_NARTHREADS_CONTROLLED;}}
 
-#else					/* Concurrent */
-#define MUTEX_INIT(mtx, attr)
-#define MUTEX_RECURSIVE_INIT(mtx)
-#define MUTEX_LOCK(mtx, msg)
-#define MUTEX_UNLOCK(mtx, msg)
-#define MUTEX_TRYLOCK(mtx, isbusy, msg)
-#define MUTEX_LOCKID(mtx)
-#define MUTEX_UNLOCKID(mtx)
-#define MUTEX_TRYLOCKID(mtx, isbusy)
-#define THREAD_JOIN(thrd, opt)
-#define MUTEX_LOCK_CONTROLLED(mtx, msg)
-#define INC_LOCKID(x, mtx)
-#define DEC_LOCKID(x, mtx)
-#define INC_NARTHREADS_CONTROLLED
-#define DEC_NARTHREADS
 
-#endif					/* Concurrent */
+#define MUTEX_LOCKBLK(bp, msg) \
+   if (bp->shared) MUTEX_LOCK(mutexes[bp->mutexid], msg)
 
-#ifdef TSLIST
+#define MUTEX_LOCKBLK_CONTROLLED(bp, msg) \
+   if (bp->shared) MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
 
-#define MUTEX_LOCKBLK(bp, msg) MUTEX_LOCK(mutexes[bp->mutexid], msg)
+#define MUTEX_UNLOCKBLK(bp, msg) \
+   if (bp->shared) MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
 
-#define MUTEX_LOCKBLK_CONTROLLED(bp, msg) MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
-
-#define MUTEX_UNLOCKBLK(bp, msg) MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
-
-#define MUTEX_TRYLOCKBLK(bp, isbusy, msg) MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
+#define MUTEX_TRYLOCKBLK(bp, isbusy, msg) \
+   if (bp->shared) MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
 
 #define C_PUT_PROTECTED(L, v){ MUTEX_LOCKBLK(BlkD(L, List))	\
                 c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));}
@@ -1299,7 +1284,23 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
      bp->max = 1024; }
 
 #define MUTEX_GETBLK(bp) mutexes + bp->mutexid
-#else
+
+#else					/* Concurrent */
+#define MUTEX_INIT(mtx, attr)
+#define MUTEX_RECURSIVE_INIT(mtx)
+#define MUTEX_LOCK(mtx, msg)
+#define MUTEX_UNLOCK(mtx, msg)
+#define MUTEX_TRYLOCK(mtx, isbusy, msg)
+#define MUTEX_LOCKID(mtx)
+#define MUTEX_UNLOCKID(mtx)
+#define MUTEX_TRYLOCKID(mtx, isbusy)
+#define THREAD_JOIN(thrd, opt)
+#define MUTEX_LOCK_CONTROLLED(mtx, msg)
+#define INC_LOCKID(x, mtx)
+#define DEC_LOCKID(x, mtx)
+#define INC_NARTHREADS_CONTROLLED
+#define DEC_NARTHREADS
+
 #define MUTEX_INITBLK(bp)
 #define MUTEX_LOCKBLK(bp, msg)
 #define MUTEX_LOCKBLK_CONTROLLED(bp, msg)
@@ -1308,5 +1309,5 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define C_PUT_PROTECTED(L, v)
 #define CV_INITBLK(bp)
 #define MUTEX_GETBLK(bp)
-#endif
 
+#endif					/* Concurrent */

@@ -119,12 +119,20 @@ int firstd[] = {
      7*WordSize,              /* T_Proc (6), procedure block */
 #endif				/* MultiThread */
 
+#ifdef Concurrent
+     6*WordSize,              /* T_Record (7), record block */
+#else					/* Concurrent */
      4*WordSize,              /* T_Record (7), record block */
+#endif					/* Concurrent */
      0,                       /* T_List (8), list header block */
      7*WordSize,              /* T_Lelem (9), list element block */
      0,                       /* T_Set (10), set header block */
      3*WordSize,              /* T_Selem (11), set element block */
+#ifdef Concurrent
+     (6+HSegs)*WordSize,      /* T_Table (12), table header block */
+#else					/* Concurrent */
      (4+HSegs)*WordSize,      /* T_Table (12), table header block */
+#endif					/* Concurrent */
      3*WordSize,              /* T_Telem (13), table element block */
      3*WordSize,              /* T_Tvtbl (14), table element trapped variable */
      0,                       /* T_Slots (15), set/table hash block */
@@ -164,12 +172,12 @@ int firstp[] = {
      0,                       /* T_File (5), file block */
      0,                       /* T_Proc (6), procedure block */
 #ifdef Concurrent
-     4*WordSize + sizeof(int),    /* T_Record (7), record block */
-     7*WordSize + 3*sizeof(int),  /* T_List (8), list header block */
-     2*WordSize,                  /* T_Lelem (9), list element block */
-     5*WordSize + sizeof(int),    /* T_Set (10), set header block */
-     1*WordSize,                  /* T_Selem (11), set element block */
-     5*WordSize + sizeof(int),    /* T_Table (12), table header block */
+     5*WordSize,              /* T_Record (7), record block */
+     10*WordSize,             /* T_List (8), list header block */
+     2*WordSize,              /* T_Lelem (9), list element block */
+     6*WordSize,              /* T_Set (10), set header block */
+     1*WordSize,              /* T_Selem (11), set element block */
+     6*WordSize,              /* T_Table (12), table header block */
 #else				/* Concurrent */
      3*WordSize,              /* T_Record (7), record block */\
      3*WordSize,              /* T_List (8), list header block */

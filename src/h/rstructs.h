@@ -160,9 +160,9 @@ struct b_list {			/* list-header block */
    word id;			/*   identification number */
 #ifdef Concurrent
    word shared;
-   int mutexid;
+   word mutexid;
    word max, full, empty ;
-   int cvfull, cvempty;
+   word cvfull, cvempty;
 #endif				/* Concurrent */
    union block *listhead;	/*   pointer to first list-element block */
    union block *listtail;	/*   pointer to last list-element block */
@@ -213,7 +213,7 @@ struct b_record {		/* record block */
    word id;			/*   identification number */
 #ifdef Concurrent
    word shared;
-   int mutexid;
+   word mutexid;
 #endif				/* Concurrent */
    union block *recdesc;	/*   pointer to record constructor */
    struct descrip fields[1];	/*   fields */
@@ -245,7 +245,7 @@ struct b_set {			/* set-header block */
    word mask;			/*   mask for slot num, equals n slots - 1 */
 #ifdef Concurrent
    word shared;
-   int mutexid;
+   word mutexid;
 #endif				/* Concurrent */
    struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
    };
@@ -257,7 +257,7 @@ struct b_table {		/* table-header block */
    word mask;			/*   mask for slot num, equals n slots - 1 */
 #ifdef Concurrent
    word shared;
-   int mutexid;
+   word mutexid;
 #endif				/* Concurrent */
    struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
    struct descrip defvalue;	/*   default table element value */

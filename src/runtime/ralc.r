@@ -404,7 +404,10 @@ struct b_file *f(FILE *fd, int status, dptr name)
    blk->fd.fp = fd;
    blk->status = status;
    blk->fname = tname;
-   MUTEX_INIT(blk->mutex, NULL);
+#ifdef Concurrent
+   blk->mutexid = get_mutex(&rmtx_attr);
+#endif					/* Concurrent */  
+
    return blk;
    }
 #enddef

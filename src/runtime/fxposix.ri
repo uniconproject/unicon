@@ -1439,10 +1439,11 @@ function{0,1} wait(pid, options)
 	/*if (BlkLoc(x)->Coexpr.status & Ts_Async){*/
 	n =  (struct context *)  BlkLoc(pid)->Coexpr.cstate[1];
 
-	if ( n->alive == 0 ) fail;
+	if ( n->alive == 0 || n->alive==-2) fail;
 
 	DEC_NARTHREADS;	
 	THREAD_JOIN(n->thread, NULL);
+	n->alive = -2;    /* mark it as joined*/
 	INC_NARTHREADS_CONTROLLED;
 
 	return pid;

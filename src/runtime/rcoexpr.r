@@ -597,7 +597,8 @@ void *nctramp(void *arg)
 
 #ifdef Concurrent 
 
-pthread_mutex_t mutex_initial; 
+pthread_mutex_t mutex_initial;  /* initial clause mutex */
+pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 
 void init_threads()
 {
@@ -614,10 +615,9 @@ void init_threads()
    pthread_cond_init(&cond_gc, NULL);
    sem_init(&sem_gc, 0, 1);
 
-   pthread_mutexattr_init(&a);
-   pthread_mutexattr_settype(&a,PTHREAD_MUTEX_RECURSIVE);
-   pthread_mutex_init(&mutex_initial, &a);
-   pthread_mutexattr_destroy(&a);
+   pthread_mutexattr_init(&rmtx_attr);
+   pthread_mutexattr_settype(&rmtx_attr,PTHREAD_MUTEX_RECURSIVE);
+   pthread_mutex_init(&mutex_initial, &rmtx_attr);
 }
 
 void clean_threads()
@@ -647,9 +647,12 @@ void clean_threads()
 
    for(i=0; i<ncondvars; i++)
       pthread_cond_destroy(&condvars[i]);
+
+   pthread_mutexattr_destroy(&rmtx_attr);
    
    free(condvars);
    free(condvarsmtxs);
+
 }
 /*
  *  pthread errors handler

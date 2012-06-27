@@ -1687,9 +1687,11 @@ void datainit()
    k_input.title = T_File;
    k_output.title = T_File;
 
-   MUTEX_INIT(k_errout.mutex, NULL);
-   MUTEX_INIT(k_input.mutex, NULL);
-   MUTEX_INIT(k_output.mutex, NULL);
+#ifdef Concurrent
+   k_errout.mutexid = get_mutex(&rmtx_attr);
+   k_input.mutexid = get_mutex(&rmtx_attr);
+   k_output.mutexid = get_mutex(&rmtx_attr);
+#endif					/* Concurrent */  
 
 #endif					/* MultiThread */
 

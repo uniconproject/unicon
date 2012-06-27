@@ -386,6 +386,7 @@ struct errtab errtab[] = {
    181, "invalid condition variable",
    182, "illegal recursion in initial clause",
    183, "concurrent threads are not enabled in this virtual machine",
+   184, "structure cannot have more than one mutex at the same time",
 #endif					/* Concurrent */
 
 #ifdef Dbm

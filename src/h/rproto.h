@@ -1043,8 +1043,8 @@ void clean_threads();
 void init_threads();
 int msg_receive( dptr dccp, dptr dncp, dptr msg, int timeout);
 int msg_send( dptr dccp, dptr dncp, dptr msg, int timeout);
-int get_mutex( pthread_mutexattr_t *mattr);
-int get_cv(int mtx);
+word get_mutex( pthread_mutexattr_t *mattr);
+word get_cv(word mtx);
 
 struct region *swap2publicheap(struct region * curr_private, 
 			       struct region * curr_public, 

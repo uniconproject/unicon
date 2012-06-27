@@ -107,7 +107,7 @@ struct b_file {			/* file block */
    word status;			/*   file status */
    struct descrip fname;	/*   file name (string qualifier) */
 #ifdef Concurrent
-   pthread_mutex_t mutex;
+   word mutexid;
 #endif				/* Concurrent */
 
    };
@@ -185,6 +185,17 @@ struct b_realarray {
    };
 
 
+struct b_mask {			/* mask block, used to access fields across blocks */
+   word title;			/*   T_Table, T_Set, T_List or, T_Record */
+   word size;			/*   size */
+   word id;			/*   identification number */
+#ifdef Concurrent
+   word shared;
+   word mutexid;
+#endif				/* Concurrent */
+   };
+
+
 struct b_proc {			/* procedure block */
    word title;			/*   T_Proc */
    word blksize;		/*   size of block */
@@ -242,11 +253,11 @@ struct b_set {			/* set-header block */
    word title;			/*   T_Set */
    word size;			/*   size of the set */
    word id;			/*   identification number */
-   word mask;			/*   mask for slot num, equals n slots - 1 */
 #ifdef Concurrent
    word shared;
    word mutexid;
 #endif				/* Concurrent */
+   word mask;			/*   mask for slot num, equals n slots - 1 */
    struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
    };
 
@@ -254,11 +265,11 @@ struct b_table {		/* table-header block */
    word title;			/*   T_Table */
    word size;			/*   current table size */
    word id;			/*   identification number */
-   word mask;			/*   mask for slot num, equals n slots - 1 */
 #ifdef Concurrent
    word shared;
    word mutexid;
 #endif				/* Concurrent */
+   word mask;			/*   mask for slot num, equals n slots - 1 */
    struct b_slots *hdir[HSegs];	/*   directory of hash slot segments */
    struct descrip defvalue;	/*   default table element value */
    };
@@ -917,6 +928,7 @@ union block {			/* general block */
    struct b_intarray Intarray;
    struct b_realarray Realarray;
 #endif					/* Arrays */
+   struct b_mask Mask;
    };
 
 #ifdef PseudoPty

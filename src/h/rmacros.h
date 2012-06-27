@@ -161,6 +161,8 @@
  */
 #define BlkLoc(d)	((d).vword.bptr)
 
+#define BlkMask(d)	((struct b_mask *)((d).vword.bptr))
+
 /*
  * Block reference macros.  This abstraction of the act of dereferencing a
  * block pointer does not add clarity, it allows runtime type checking of
@@ -1254,11 +1256,18 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 	 INC_NARTHREADS_CONTROLLED;}}
 
 
+/********** block macros *************/
 #define MUTEX_LOCKBLK(bp, msg) \
    if (bp->shared) MUTEX_LOCK(mutexes[bp->mutexid], msg)
 
 #define MUTEX_LOCKBLK_CONTROLLED(bp, msg) \
    if (bp->shared) MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
+
+#define MUTEX_LOCKBLK_NOCHK(bp, msg) \
+   MUTEX_LOCK(mutexes[bp->mutexid], msg)
+
+#define MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, msg) \
+   MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
 
 #define MUTEX_UNLOCKBLK(bp, msg) \
    if (bp->shared) MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
@@ -1266,14 +1275,21 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define MUTEX_TRYLOCKBLK(bp, isbusy, msg) \
    if (bp->shared) MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
 
+#define MUTEX_UNLOCKBLK_NOCHK(bp, msg) \
+   MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
+
+#define MUTEX_TRYLOCKBLK_NOCHK(bp, isbusy, msg) \
+   MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
+
 #define C_PUT_PROTECTED(L, v){ MUTEX_LOCKBLK(BlkD(L, List))	\
                 c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));}
 
-#define MUTEX_INITBLK( bp ){if (!bp->shared){ pthread_mutexattr_t mattr; \
-   pthread_mutexattr_init(&mattr); \
-   pthread_mutexattr_settype(&mattr,PTHREAD_MUTEX_RECURSIVE); \
-   bp->mutexid = get_mutex(&mattr); \
-   pthread_mutexattr_destroy(&mattr); \
+#define MUTEX_INITBLK(bp){if (!bp->shared){ \
+   bp->mutexid = get_mutex(&rmtx_attr); \
+   bp->shared = 1; }}
+
+#define MUTEX_INITBLKID(bp, mtx){if (!bp->shared){	\
+   bp->mutexid = mtx; \
    bp->shared = 1; }}
 
 #define CV_INITBLK(bp) {  MUTEX_INITBLK(bp) \
@@ -1302,8 +1318,11 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define DEC_NARTHREADS
 
 #define MUTEX_INITBLK(bp)
+#define MUTEX_INITBLKID(bp, mtx)
 #define MUTEX_LOCKBLK(bp, msg)
 #define MUTEX_LOCKBLK_CONTROLLED(bp, msg)
+#define MUTEX_LOCKBLK_NOCHK(bp, msg)
+#define MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, msg)
 #define MUTEX_UNLOCKBLK(bp, msg)
 #define MUTEX_TRYLOCKBLK(bp, isbusy, msg)
 #define C_PUT_PROTECTED(L, v)

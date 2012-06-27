@@ -1,0 +1,40 @@
+#
+# Jafar Al-Gharaibeh
+#
+#  June/15/2012
+#
+
+
+package threads
+
+
+#
+# create a communication channel with thread x
+#
+# Note : chTable is a table of tables of all private comunication
+#        channels in the aplication that are waiting for the second
+#        end of the channel to respond and pick the call from the table
+#
+
+procedure channel(x)
+   local ce, T, L
+   static chTable
+   initial chTable := mutex(table())
+   
+   ce := &current
+   
+   critical chTable:{
+       if not(member(chTable, ce)) then chTable[ce] := table() 
+       if not(member(chTable, x)) then chTable[x] := table() 
+       
+       T := chTable[ce]
+
+       if member(T, x) then{
+          L := T[x]
+	  delete(T, x)
+          }
+       else
+          chTable[x][ce] :=  L := condvar([])
+       }
+    return L
+end

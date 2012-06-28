@@ -2190,37 +2190,15 @@ L_agoto:
             xargp = dp - 2;
 
             Deref(*dp);
-#ifdef AAAConcurrent
-            if (is:null(*dp)){
-	       dptr passval = (dptr)(sp - 3);
-	       if (is:null(*passval))
-	          signal = msg_receive( &k_current, NULL, passval, -1);
-	       else
-		  signal = msg_send( &k_current, NULL, passval, 0);
-	       }
+
+#ifdef Concurrent
+            if (is:null(*dp))
+	       signal = activate((dptr)(sp - 3), NULL, (dptr)(sp - 3));
 	    else 
-            if (is:integer(*dp)){
-	       dptr passval = (dptr)(sp - 3);
-	       if (is:null(*passval))
-	          signal = msg_receive( &k_current, NULL, passval, IntVal(*dp));
-	       else
-		  signal = msg_send( &k_current, NULL, passval, IntVal(*dp));
-	       }
-	    else
 #endif					/* Concurrent */	      
             if (is:coexpr(*dp)) {
                ncp = BlkD(*dp, Coexpr);
-#ifdef AAAConcurrent
-	       if (ncp->status & Ts_Async){
-	          dptr passval = (dptr)(sp - 3);
-	          if (is:null(*passval))
-	             signal = msg_receive( &k_current, dp, passval, 0);
-	          else
-		     signal = msg_send( &k_current, dp, passval, 0);
-		  }
-	       else
-#endif					/* Concurrent */	      
-                  signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
+               signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
 	       }
 	    else{
                err_msg(118, dp);

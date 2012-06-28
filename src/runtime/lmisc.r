@@ -151,7 +151,118 @@ dptr result;
 #ifdef CoExpr
 
    int first;
-   CURTSTATE();
+
+#ifdef Concurrent
+   if (!ncp){
+      tended struct b_list *hp;
+      ncp = BlkD(k_current, Coexpr);
+
+
+      if (!is:null(*val)){      
+      /* send */
+
+      hp = BlkD(ncp->outbox, List);
+      MUTEX_LOCKBLK_CONTROLLED(hp, "activate(): list mutex");
+      if (hp->size>=hp->max){
+         int cvid = hp->cvfull;
+         pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+         hp->full++;
+         while (hp->size>=hp->max){
+            if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+         hp->full--;
+         }
+      c_put(&(ncp->outbox), val);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
+      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      }
+
+      /* receive */
+      hp = BlkD(ncp->inbox, List);
+      MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
+
+      if (hp->size==0){
+         int cvid = hp->cvempty;
+	 pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+	 hp->empty++;
+         while (hp->size==0){
+ 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+	 hp->empty--;
+	 if (hp->size==0){ /* This shouldn't be the case, but.. */
+	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+ 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	    return A_Resume;
+	    }
+      	 }
+      c_get(hp, result);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
+      if (hp->size <= hp->max/50+1 && hp->full) 
+	 pthread_cond_signal(condvars + hp->cvfull);
+
+      return A_Continue;   
+      }
+   else
+   if (ncp->status & Ts_Async){
+      struct b_list *hp;
+
+      if (!is:null(*val)){
+      /* send */
+
+      hp = BlkD(ncp->inbox, List);
+      MUTEX_LOCKBLK_CONTROLLED(hp, "activate(): list mutex");
+      if (hp->size>=hp->max){
+         int cvid = hp->cvfull;
+         pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+         hp->full++;
+         while (hp->size>=hp->max){
+            if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+         hp->full--;
+         }
+      c_put(&(ncp->inbox), val);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
+      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      }
+
+      /* receive */
+      hp = BlkD(ncp->outbox, List);
+      MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
+
+      if (hp->size==0){
+         int cvid = hp->cvempty;
+	 pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+	 hp->empty++;
+         while (hp->size==0){
+ 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+	    DEC_NARTHREADS;
+	    pthread_cond_wait(condvars + cvid, mtx);
+	    INC_NARTHREADS_CONTROLLED;
+	    }
+	 hp->empty--;
+	 if (hp->size==0){ /* This shouldn't be the case, but.. */
+	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
+ 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+      	    return A_Resume;
+	    }
+      	 }
+      c_get(hp, result);
+      MUTEX_UNLOCKBLK(hp, "activate: list mutex");
+      if (hp->size <= hp->max/50+1 && hp->full) 
+	 pthread_cond_signal(condvars + hp->cvfull);
+
+      return A_Continue;   
+   }
+#endif					/* Concurrent */
 
    /*
     * Set activator in new co-expression.
@@ -177,6 +288,7 @@ dptr result;
    }
 
 #ifdef Concurrent
+
 int msg_receive( dccp, dncp, msg, timeout)
 dptr dccp;
 dptr dncp;

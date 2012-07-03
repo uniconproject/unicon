@@ -77,8 +77,10 @@
 %token	AUGSLT      /* <<:=      */
 %token	SLE         /* <<=       */
 %token	AUGSLE      /* <<=:=     */
+%token	RCVBK       /* <<@       */
 %token	NMLE        /* <=        */
 %token	AUGNMLE     /* <=:=      */
+%token	RCV         /* <@        */
 %token	NMEQ        /* =         */
 %token	AUGNMEQ     /* =:=       */
 %token	SEQ         /* ==        */
@@ -97,8 +99,6 @@
 %token	AUGQMARK    /* ?:=       */
 %token	AT          /* @         */
 %token	AUGAT       /* @:=       */
-%token	RCV         /* @<        */
-%token	RCVBK       /* @<<       */
 %token	SND         /* @>        */
 %token	SNDBK       /* @>>       */
 %token	BACKSLASH   /* \         */

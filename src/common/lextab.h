@@ -119,28 +119,28 @@ struct optab optab[] = {
    {{"<<:=",   AUGSLT,     0},              0,              NULL, NULL}, /*27*/
    {{"<<=",    SLE,        0},              Binary,         NULL, NULL}, /*28*/
    {{"<<=:=",  AUGSLE,     0},              0,              NULL, NULL}, /*29*/
-   {{"<=",     NMLE,       0},              Binary,         NULL, NULL}, /*30*/
-   {{"<=:=",   AUGNMLE,    0},              0,              NULL, NULL}, /*31*/
-   {{"=",      NMEQ,       Beginner},       Unary | Binary, NULL, NULL}, /*32*/
-   {{"=:=",    AUGNMEQ,    0},              0,              NULL, NULL}, /*33*/
-   {{"==",     SEQ,        Beginner},       Binary,         NULL, NULL}, /*34*/
-   {{"==:=",   AUGSEQ,     0},              0,              NULL, NULL}, /*35*/
-   {{"===",    EQUIV,      Beginner},       Binary,         NULL, NULL}, /*36*/
-   {{"===:=",  AUGEQUIV,   0},              0,              NULL, NULL}, /*37*/
-   {{">",      NMGT,       0},              Binary,         NULL, NULL}, /*38*/
-   {{">:=",    AUGNMGT,    0},              0,              NULL, NULL}, /*39*/
-   {{">=",     NMGE,       0},              Binary,         NULL, NULL}, /*40*/
-   {{">=:=",   AUGNMGE,    0},              0,              NULL, NULL}, /*41*/
-   {{">>",     SGT,        0},              Binary,         NULL, NULL}, /*42*/
-   {{">>:=",   AUGSGT,     0},              0,              NULL, NULL}, /*43*/
-   {{">>=",    SGE,        0},              Binary,         NULL, NULL}, /*44*/
-   {{">>=:=",  AUGSGE,     0},              0,              NULL, NULL}, /*45*/
-   {{"?",      QMARK,      Beginner},       Unary,          NULL, NULL}, /*46*/
-   {{"?:=",    AUGQMARK,   0},              0,              NULL, NULL}, /*47*/
-   {{"@",      AT,         Beginner},       0,              NULL, NULL}, /*48*/
-   {{"@:=",    AUGAT,      0},              0,              NULL, NULL}, /*49*/
-   {{"@<",     RCV,        Beginner+Ender}, Unary | Binary, NULL, NULL}, /*50*/
-   {{"@<<",    RCVBK,      Beginner+Ender}, Unary | Binary, NULL, NULL}, /*51*/
+   {{"<<@",    RCVBK,      Beginner+Ender}, Unary | Binary, NULL, NULL}, /*30*/
+   {{"<=",     NMLE,       0},              Binary,         NULL, NULL}, /*31*/
+   {{"<=:=",   AUGNMLE,    0},              0,              NULL, NULL}, /*32*/
+   {{"<@",     RCV,        Beginner+Ender}, Unary | Binary, NULL, NULL}, /*33*/
+   {{"=",      NMEQ,       Beginner},       Unary | Binary, NULL, NULL}, /*34*/
+   {{"=:=",    AUGNMEQ,    0},              0,              NULL, NULL}, /*35*/
+   {{"==",     SEQ,        Beginner},       Binary,         NULL, NULL}, /*36*/
+   {{"==:=",   AUGSEQ,     0},              0,              NULL, NULL}, /*37*/
+   {{"===",    EQUIV,      Beginner},       Binary,         NULL, NULL}, /*38*/
+   {{"===:=",  AUGEQUIV,   0},              0,              NULL, NULL}, /*39*/
+   {{">",      NMGT,       0},              Binary,         NULL, NULL}, /*40*/
+   {{">:=",    AUGNMGT,    0},              0,              NULL, NULL}, /*41*/
+   {{">=",     NMGE,       0},              Binary,         NULL, NULL}, /*42*/
+   {{">=:=",   AUGNMGE,    0},              0,              NULL, NULL}, /*43*/
+   {{">>",     SGT,        0},              Binary,         NULL, NULL}, /*44*/
+   {{">>:=",   AUGSGT,     0},              0,              NULL, NULL}, /*45*/
+   {{">>=",    SGE,        0},              Binary,         NULL, NULL}, /*46*/
+   {{">>=:=",  AUGSGE,     0},              0,              NULL, NULL}, /*47*/
+   {{"?",      QMARK,      Beginner},       Unary,          NULL, NULL}, /*48*/
+   {{"?:=",    AUGQMARK,   0},              0,              NULL, NULL}, /*49*/
+   {{"@",      AT,         Beginner},       0,              NULL, NULL}, /*50*/
+   {{"@:=",    AUGAT,      0},              0,              NULL, NULL}, /*51*/
    {{"@>",     SND,        Beginner+Ender}, Unary | Binary, NULL, NULL}, /*52*/
    {{"@>>",    SNDBK,      Beginner+Ender}, Unary | Binary, NULL, NULL}, /*53*/
    {{"\\",     BACKSLASH,  Beginner},       Unary,          NULL, NULL}, /*54*/
@@ -373,6 +373,8 @@ int *cc;
                         return 28;   /* <<= */
                         }
                      break;
+                  case '@':
+                     return 30;   /* <<@ */
                   default:
                      *cc = c;
                      return 26;   /* << */
@@ -381,14 +383,16 @@ int *cc;
             case '=':
                if ((c = NextChar) == ':') {
                   if ((c = NextChar) == '=') {
-                     return 31;   /* <=:= */
+                     return 32;   /* <=:= */
                      }
                   }
                else {
                   *cc = c;
-                  return 30;   /* <= */
+                  return 31;   /* <= */
                   }
                break;
+            case '@':
+               return 33;   /* <@ */
             default:
                *cc = c;
                return 22;   /* < */
@@ -398,109 +402,101 @@ int *cc;
          switch (c = NextChar) {
             case ':':
                if ((c = NextChar) == '=') {
-                  return 33;   /* =:= */
+                  return 35;   /* =:= */
                   }
                break;
             case '=':
                switch (c = NextChar) {
                   case ':':
                      if ((c = NextChar) == '=') {
-                        return 35;   /* ==:= */
+                        return 37;   /* ==:= */
                         }
                      break;
                   case '=':
                      if ((c = NextChar) == ':') {
                         if ((c = NextChar) == '=') {
-                           return 37;   /* ===:= */
+                           return 39;   /* ===:= */
                            }
                         }
                      else {
                         *cc = c;
-                        return 36;   /* === */
+                        return 38;   /* === */
                         }
                      break;
                   default:
                      *cc = c;
-                     return 34;   /* == */
+                     return 36;   /* == */
                   }
                break;
             default:
                *cc = c;
-               return 32;   /* = */
+               return 34;   /* = */
             }
          break;
       case '>':
          switch (c = NextChar) {
             case ':':
                if ((c = NextChar) == '=') {
-                  return 39;   /* >:= */
+                  return 41;   /* >:= */
                   }
                break;
             case '=':
                if ((c = NextChar) == ':') {
                   if ((c = NextChar) == '=') {
-                     return 41;   /* >=:= */
+                     return 43;   /* >=:= */
                      }
                   }
                else {
                   *cc = c;
-                  return 40;   /* >= */
+                  return 42;   /* >= */
                   }
                break;
             case '>':
                switch (c = NextChar) {
                   case ':':
                      if ((c = NextChar) == '=') {
-                        return 43;   /* >>:= */
+                        return 45;   /* >>:= */
                         }
                      break;
                   case '=':
                      if ((c = NextChar) == ':') {
                         if ((c = NextChar) == '=') {
-                           return 45;   /* >>=:= */
+                           return 47;   /* >>=:= */
                            }
                         }
                      else {
                         *cc = c;
-                        return 44;   /* >>= */
+                        return 46;   /* >>= */
                         }
                      break;
                   default:
                      *cc = c;
-                     return 42;   /* >> */
+                     return 44;   /* >> */
                   }
                break;
             default:
                *cc = c;
-               return 38;   /* > */
+               return 40;   /* > */
             }
          break;
       case '?':
          if ((c = NextChar) == ':') {
             if ((c = NextChar) == '=') {
-               return 47;   /* ?:= */
+               return 49;   /* ?:= */
                }
             }
          else {
             *cc = c;
-            return 46;   /* ? */
+            return 48;   /* ? */
             }
          break;
       case '@':
          switch (c = NextChar) {
             case ':':
                if ((c = NextChar) == '=') {
-                  return 49;   /* @:= */
+                  return 51;   /* @:= */
                   }
                break;
-            case '<':
-               if ((c = NextChar) == '<') {
-                  return 51;   /* @<< */
-                  }
-               else {
-                  *cc = c;
-                  return 50;   /* @< */
-                  }
             case '>':
                if ((c = NextChar) == '>') {
                   return 53;   /* @>> */
@@ -511,7 +507,7 @@ int *cc;
                   }
             default:
                *cc = c;
-               return 48;   /* @ */
+               return 50;   /* @ */
             }
          break;
       case '[':

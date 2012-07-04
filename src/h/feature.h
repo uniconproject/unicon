@@ -66,6 +66,10 @@
    Feature(1, "_UNIX", "UNIX")
 #endif					/* VM */
 
+#ifdef SUN
+   Feature(1, "_SOLARIS", "Solaris")
+#endif					/* SUN */
+
 #ifdef PosixFns
    Feature(1, "_POSIX", "POSIX")
 #endif					/* PosixFns */

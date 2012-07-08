@@ -3716,7 +3716,7 @@ int texture_24img(wbp w, struct imgdata im)
 #endif					/* XWindows */
    wcp wc = w->context;
    int width=im.width, height=im.height;
-   word l, wd3x2=width*3*2;
+   word l, wd3x2=width*3*2, wh3=width*height*3;
    int c, v, i, j, k;
    unsigned char *t;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
@@ -3729,19 +3729,23 @@ int texture_24img(wbp w, struct imgdata im)
     */
 
    t = im.data;
-   l =  (height-1) * width * 3;
 
+#ifdef XWindows
+   l =  (height-1) * width * 3;
    for(j=0; j < height; j++){
 	for(i=0; i < width; i++) {
-#ifdef XWindows
            tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
-#else
-           tex[l+2] = t[0]; tex[l+1] = t[1]; tex[l] = t[2];
-#endif
 	   l = l + 3; t += 3;
 	   }
    	l -= wd3x2;
 	}
+#else					/* XWindows */
+   for(l=0; l < wh3; l+=3, t+=3) {
+      tex[l+2] = t[0]; tex[l+1] = t[1]; tex[l] = t[2];
+      }
+#endif					/* XWindows */
+
+
 
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
@@ -4439,7 +4443,9 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
       return Failed;
 
    s = imd->data ;  /* point to the image data*/
-   l = (ht-y)*wd*3- ( wd-x)*3; /* first byte in texture data to be updated */
+
+#ifdef XWindows
+   l = (ht-y-imd->height)*wd*3- ( wd-x)*3; /* first byte in texture data to be updated */
    nextLineOffset = (wd+imd->width)*3;
 
    for (i=0; i<imd->height; i++) {
@@ -4450,6 +4456,21 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 	 }
       l -= nextLineOffset;
       }
+#else					/* XWindows */
+   l = (ht-y-imd->height)*wd*3 + ( x)*3; /* first byte in texture data to be updated */
+   nextLineOffset = (wd-imd->width)*3;
+
+   for (i=0; i<imd->height; i++) {
+      for (j=0; j<imd->width; j++) {
+	 tex[l+2] = (GLubyte) *s++;
+	 tex[l+1] = (GLubyte) *s++;
+	 tex[l] = (GLubyte) *s++;
+	 l+=3;
+	 }
+      l += nextLineOffset;
+      }
+#endif					/* XWindows */
+
 
    TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;

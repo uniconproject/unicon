@@ -164,13 +164,11 @@ dptr result;
       hp = BlkD(ncp->outbox, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate(): list mutex");
       if (hp->size>=hp->max){
-         int cvid = hp->cvfull;
-         pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
          hp->full++;
          while (hp->size>=hp->max){
             if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
          hp->full--;
@@ -185,13 +183,11 @@ dptr result;
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
 
       if (hp->size==0){
-         int cvid = hp->cvempty;
-	 pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
 	 hp->empty++;
          while (hp->size==0){
  	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars +  hp->cvempty, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->empty--;
@@ -218,13 +214,11 @@ dptr result;
       hp = BlkD(ncp->inbox, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate(): list mutex");
       if (hp->size>=hp->max){
-         int cvid = hp->cvfull;
-         pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
          hp->full++;
          while (hp->size>=hp->max){
             if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
          hp->full--;
@@ -239,13 +233,11 @@ dptr result;
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
 
       if (hp->size==0){
-         int cvid = hp->cvempty;
-	 pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
 	 hp->empty++;
          while (hp->size==0){
  	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars + hp->cvempty, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->empty--;
@@ -331,13 +323,11 @@ int timeout;
 	  case -1 :
    	     MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
    	     if (hp->size==0){
-	        int cvid = hp->cvempty;
-	    	pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
 	        hp->empty++;
                 while (hp->size==0){
  	           if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
 	       	   DEC_NARTHREADS;
-		   pthread_cond_wait(condvars + cvid, mtx);
+		   pthread_cond_wait(condvars + hp->cvempty, MUTEX_GETBLK(hp));
 	       	   INC_NARTHREADS_CONTROLLED;
 		   }
 	        hp->empty--;
@@ -380,10 +370,7 @@ int timeout;
    	     MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
    	     if (hp->size==0){
   	        struct timespec   ts;
-  	        struct timeval    tp;
-	    	int cvid = hp->empty;
-	    	pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
-    		
+  	        struct timeval    tp; 
 		gettimeofday(&tp, NULL);
 		/* Convert from timeval to timespec */
     		ts.tv_sec  = tp.tv_sec;
@@ -392,7 +379,8 @@ int timeout;
 
 	        hp->empty++;
 	        DEC_NARTHREADS;
-                pthread_cond_timedwait(condvars + cvid, mtx, &ts);
+                pthread_cond_timedwait(condvars + 
+			 hp->cvempty, MUTEX_GETBLK(hp), &ts);
 	        INC_NARTHREADS_CONTROLLED;
 	        hp->empty--;
 		if (hp->size==0){
@@ -424,9 +412,7 @@ int timeout;
       dptr ncpRQ = &(BlkD(*dncp, Coexpr)->inbox);
       hp = BlkD(*ncpRQ, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "msg_send(): list mutex");
-      if (hp->size>=hp->max){
-	    int cvid = hp->cvfull;
-	    pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+      if (hp->size>=hp->max){ 
          if (timeout==0){ 
 	    MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
 	    Fail;
@@ -435,7 +421,7 @@ int timeout;
          while (hp->size>=hp->max){
  	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->full--;
@@ -474,12 +460,9 @@ int timeout;
 	    }
          hp->full++;
          while (hp->size>=hp->max){
-	    int cvid = hp->cvfull;
-	    pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
-
  	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->full--;
@@ -574,13 +557,11 @@ operator{0,1} @>> sndbk(x,y)
    body{
       MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
       if (hp->size>=hp->max){
-         int cvid = hp->cvfull;
-	 pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
          hp->full++;
          while (hp->size>=hp->max){
  	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + cvid, mtx);
+	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->full--;
@@ -708,13 +689,11 @@ operator{0,1} @<< rcvbk(x,y)
          case -1 :
    	    MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
    	    if (hp->size==0){
-	       int cvid = hp->cvempty;
-	       pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
 	       hp->empty++;
                while (hp->size==0){
  	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
 	          DEC_NARTHREADS;
-	     	  pthread_cond_wait(condvars + cvid, mtx );
+	     	  pthread_cond_wait(condvars + hp->cvempty, MUTEX_GETBLK(hp));
 	       	  INC_NARTHREADS_CONTROLLED;
 		  }
 	       hp->empty--;
@@ -759,12 +738,11 @@ operator{0,1} @<< rcvbk(x,y)
     	    ts.tv_sec += x / 1000;
 
    	    MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
-   	    if (hp->size==0){
-	       int cvid = hp->cvempty;
-	       pthread_mutex_t *mtx = MUTEX_GETBLK(hp); 
+   	    if (hp->size==0){ 
 	       hp->empty++;
 	       DEC_NARTHREADS;
-               pthread_cond_timedwait(condvars + cvid, mtx, &ts);
+               pthread_cond_timedwait(condvars + 
+	       		hp->cvempty, MUTEX_GETBLK(hp), &ts);
 	       INC_NARTHREADS_CONTROLLED;
 	       hp->empty--;
 	       if (hp->size==0){

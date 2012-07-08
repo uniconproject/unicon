@@ -603,21 +603,22 @@ pthread_mutexattr_t rmtx_attr;  /* recursive mutex attr ready to be used */
 void init_threads()
 {
    int i;
-   pthread_mutexattr_t a;
+
+   pthread_mutexattr_init(&rmtx_attr);
+   pthread_mutexattr_settype(&rmtx_attr,PTHREAD_MUTEX_RECURSIVE);
+
 
    for(i=0; i<NUM_STATIC_MUTEXES; i++)
-      pthread_mutex_init (&static_mutexes[i], NULL);
+      MUTEX_INIT(static_mutexes[i], NULL);
 
-   pthread_mutex_init(&rootpstate.mutex_stringtotal, NULL);
-   pthread_mutex_init(&rootpstate.mutex_blocktotal, NULL);
-   pthread_mutex_init(&rootpstate.mutex_coll, NULL);
+   MUTEX_INIT(rootpstate.mutex_stringtotal, NULL);
+   MUTEX_INIT(rootpstate.mutex_blocktotal, NULL);
+   MUTEX_INIT(rootpstate.mutex_coll, NULL);
 
    pthread_cond_init(&cond_gc, NULL);
    sem_init(&sem_gc, 0, 1);
 
-   pthread_mutexattr_init(&rmtx_attr);
-   pthread_mutexattr_settype(&rmtx_attr,PTHREAD_MUTEX_RECURSIVE);
-   pthread_mutex_init(&mutex_initial, &rmtx_attr);
+   MUTEX_INIT(mutex_initial, &rmtx_attr);
 }
 
 void clean_threads()

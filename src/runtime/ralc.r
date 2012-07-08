@@ -291,6 +291,8 @@ struct b_coexpr *alccoexp()
       BlkLoc(ep->cequeue) = (union block *) hp;
       ep->cequeue.dword = D_List;
       hp->max = 64;
+      CV_INITBLK(hp);
+
       ep->handdata = NULL;
       
       ep->ini_blksize = rootblock.size/100;

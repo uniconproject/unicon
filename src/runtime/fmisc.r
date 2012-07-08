@@ -284,6 +284,7 @@ function{1} display(i,f,c)
       struct b_coexpr *ce = NULL;
       struct progstate *prog, *savedprog;
 #ifdef Concurrent
+       /* rtt doesn't like CURTSTATE() in declare clause */
        struct threadstate *curtstate =
                    (struct threadstate *) pthread_getspecific(tstate_key);
 #endif					/* Concurrent */
@@ -2015,23 +2016,24 @@ static stringint siKeywords[] = {
       if (strcmp(kname,"allocated") == 0) {
 	 int tot;
 #ifdef Concurrent
-	 pthread_mutex_lock(&p->mutex_stringtotal);
-	 pthread_mutex_lock(&p->mutex_blocktotal);
+	 MUTEX_LOCK(p->mutex_stringtotal, " keyword(): stringtotal");
+	 MUTEX_LOCK(p->mutex_blocktotal, " keyword(): blocktotal");
 	 tot =  stattotal + p->stringtotal + p->blocktotal;
-	 pthread_mutex_unlock(&p->mutex_blocktotal);
-	 pthread_mutex_unlock(&p->mutex_stringtotal);
+	 MUTEX_UNLOCK(p->mutex_blocktotal, " keyword(): blocktotal");
+	 MUTEX_UNLOCK(p->mutex_stringtotal, " keyword(): stringtotal");
+
 	 suspend C_integer tot;
 
 	 suspend C_integer stattotal;
 
-	 pthread_mutex_lock(&p->mutex_stringtotal);
+	 MUTEX_LOCK(p->mutex_stringtotal, " keyword(): stringtotal");
 	 tot =  p->stringtotal;
-	 pthread_mutex_unlock(&p->mutex_stringtotal);
+	 MUTEX_UNLOCK(p->mutex_stringtotal, " keyword(): stringtotal");
 	 suspend C_integer tot;
 
-	 pthread_mutex_lock(&p->mutex_blocktotal);
+	 MUTEX_LOCK(p->mutex_blocktotal, " keyword(): blocktotal");
 	 tot =  p->blocktotal;
-	 pthread_mutex_unlock(&p->mutex_blocktotal);
+	 MUTEX_UNLOCK(p->mutex_blocktotal, " keyword(): blocktotal");
 	 return C_integer tot;
 #else					/* Concurrent */
 	 suspend C_integer stattotal + p->stringtotal + p->blocktotal;

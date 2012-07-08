@@ -997,6 +997,7 @@ Deliberate Syntax Error
       	    fatalerr(307, NULL);
 
       MUTEX_INITBLK(hp);
+      CV_INITBLK(hp);
       hp->id=-1;
       hp->shared = 1;
       hp->max = 1024;
@@ -1007,6 +1008,7 @@ Deliberate Syntax Error
       	    fatalerr(307, NULL);
 
       MUTEX_INITBLK(hp);
+      CV_INITBLK(hp);
       hp->shared = 1;
       hp->id=-2;
       hp->max = 1024;
@@ -1017,6 +1019,7 @@ Deliberate Syntax Error
       	    fatalerr(307, NULL);
 
       MUTEX_INITBLK(hp);
+      CV_INITBLK(hp);
       hp->shared = 1;
       hp->id=-3;
       hp->max = 64;

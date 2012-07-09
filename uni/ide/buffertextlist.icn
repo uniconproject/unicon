@@ -212,7 +212,7 @@ class BuffEditableTextList : EditableTextList(
       s := v.str
       si := self.cursor_x - v.first + 1
 
-      left_string(self.cbwin, xp, yp, detab(s, self.tab_width))
+      left_string(self.cbwin, xp, yp, detab(s))
 
       Fg(self.cbwin, "pale greyish white")  #rectangle color
       yp2 :=  yp + ((asc - desc)/2) - asc
@@ -231,18 +231,18 @@ class BuffEditableTextList : EditableTextList(
             }
          }
 
-      left_string_unicon ( self.cbwin, xp, yp, detab(s, tab_width), i )
+      left_string_unicon ( self.cbwin, xp, yp, detab(s), i )
 
       if (v.index = \self.cursor_y) & 
          (v.first <= \self.cursor_x <= v.last) then {
          if \self.has_focus then {
             cw := Clone(self.cbwin, "bg=red", "fg=white")
             off := TextWidthEx(self.cbwin, s, 1, si, self.tab_width)
-            EraseRectangle(cw, xp + off, 1 + yp - self.line_height / 2, 
+            EraseRectangle(cw, xp + off, yp - self.line_height / 2, 
                            CharWidth(self.cbwin, s[si]), self.line_height)
 
             if s[si] ~== "\t" then
-               left_string(cw, xp + off, yp + 1, s[si])
+               left_string(cw, xp + off, yp, s[si])
 
             Uncouple(cw)
             } 

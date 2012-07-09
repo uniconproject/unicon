@@ -655,22 +655,22 @@ keyword{3} regions
 
       suspend C_integer 0;		/* static region */
 
-      MUTEX_LOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+      MUTEX_LOCKID(MTX_STRHEAP);
       allRegions = DiffPtrs(strend,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->end,rp->base);
-      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+      MUTEX_UNLOCKID(MTX_STRHEAP);
       suspend C_integer allRegions;	/* string region */
 
-      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+      MUTEX_LOCKID(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkend,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->end,rp->base);
       for (rp = curblock->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->end,rp->base);
-      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+      MUTEX_UNLOCKID(MTX_BLKHEAP);
       return C_integer allRegions;	/* block region */
       }
 end
@@ -702,22 +702,22 @@ keyword{3} storage
 
       suspend C_integer 0;		/* static region */
   
-      MUTEX_LOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+      MUTEX_LOCKID(MTX_STRHEAP);
       allRegions = DiffPtrs(strfree,strbase);
       for (rp = curstring->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curstring->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->free,rp->base);
-      MUTEX_UNLOCK(static_mutexes[MTX_STRHEAP], "MTX_STRHEAP");
+      MUTEX_UNLOCKID(MTX_STRHEAP);
       suspend C_integer allRegions;	/* string region */
   
-      MUTEX_LOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+      MUTEX_LOCKID(MTX_BLKHEAP);
       allRegions = DiffPtrs(blkfree,blkbase);
       for (rp = curblock->next; rp; rp = rp->next)
 	 allRegions += DiffPtrs(rp->free,rp->base);
       for (rp = curblock->prev; rp; rp = rp->prev)
 	 allRegions += DiffPtrs(rp->free,rp->base);
-      MUTEX_UNLOCK(static_mutexes[MTX_BLKHEAP], "MTX_BLKHEAP");
+      MUTEX_UNLOCKID(MTX_BLKHEAP);
       return C_integer allRegions;	/* block region */
       }
 end

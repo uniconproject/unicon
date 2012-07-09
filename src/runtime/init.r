@@ -142,10 +142,6 @@ struct b_coexpr *stklist;	/* base of co-expression block list */
 struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 #endif					/* Concurrent */
 
-#ifdef Concurrent
-pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
-#endif					/* Concurrent */
-
 struct region rootstring, rootblock;
 
 #ifndef MultiThread

@@ -166,16 +166,16 @@ dptr result;
       if (hp->size>=hp->max){
          hp->full++;
          while (hp->size>=hp->max){
-            if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	    CV_SIGNAL_EMPTYBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
+	    CV_WAIT_FULLBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
          hp->full--;
          }
       c_put(&(ncp->outbox), val);
       MUTEX_UNLOCKBLK(hp, "activate: list mutex");
-      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      CV_SIGNAL_EMPTYBLK(hp);
       }
 
       /* receive */
@@ -185,22 +185,22 @@ dptr result;
       if (hp->size==0){
 	 hp->empty++;
          while (hp->size==0){
- 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	    CV_SIGNAL_FULLBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars +  hp->cvempty, MUTEX_GETBLK(hp));
+	    CV_WAIT_EMPTYBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->empty--;
 	 if (hp->size==0){ /* This shouldn't be the case, but.. */
 	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
- 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	    CV_SIGNAL_FULLBLK(hp);
       	    return A_Resume;
 	    }
       	 }
       c_get(hp, result);
       MUTEX_UNLOCKBLK(hp, "activate: list mutex");
-      if (hp->size <= hp->max/50+1 && hp->full) 
-	 pthread_cond_signal(condvars + hp->cvfull);
+      if (hp->size <= hp->max/50+1) 
+ 	 CV_SIGNAL_FULLBLK(hp);
 
       return A_Continue;   
       }
@@ -216,16 +216,16 @@ dptr result;
       if (hp->size>=hp->max){
          hp->full++;
          while (hp->size>=hp->max){
-            if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	    CV_SIGNAL_EMPTYBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
+	    CV_WAIT_FULLBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
          hp->full--;
          }
       c_put(&(ncp->inbox), val);
       MUTEX_UNLOCKBLK(hp, "activate: list mutex");
-      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      CV_SIGNAL_EMPTYBLK(hp);
       }
 
       /* receive */
@@ -235,22 +235,22 @@ dptr result;
       if (hp->size==0){
 	 hp->empty++;
          while (hp->size==0){
- 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	    CV_SIGNAL_FULLBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + hp->cvempty, MUTEX_GETBLK(hp));
+	    CV_WAIT_EMPTYBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->empty--;
 	 if (hp->size==0){ /* This shouldn't be the case, but.. */
 	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
- 	    if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	    CV_SIGNAL_FULLBLK(hp);
       	    return A_Resume;
 	    }
       	 }
       c_get(hp, result);
       MUTEX_UNLOCKBLK(hp, "activate: list mutex");
-      if (hp->size <= hp->max/50+1 && hp->full) 
-	 pthread_cond_signal(condvars + hp->cvfull);
+      if (hp->size <= hp->max/50+1) 
+ 	 CV_SIGNAL_FULLBLK(hp);
 
       return A_Continue;   
    }
@@ -301,7 +301,7 @@ int timeout;
    switch (timeout){
    	  case 0  :
    	     if (hp->size==0){
- 	        if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	        CV_SIGNAL_FULLBLK(hp);
 	     	*msg = nulldesc;
 	     	Fail;
 		}
@@ -310,13 +310,14 @@ int timeout;
    	     if (hp->size==0){
 	        *msg = nulldesc;
 	     	MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
- 	        if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	        CV_SIGNAL_FULLBLK(hp);
       	     	Fail;
       	     	}
    	     c_get(hp, msg);
 	     MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
-	     if (hp->size <= hp->max/50+1 && hp->full)
-	        pthread_cond_signal(condvars + hp->cvfull);
+	     if (hp->size <= hp->max/50+1)
+ 	        CV_SIGNAL_FULLBLK(hp);
+
    	     Return;
 	     break; 
 
@@ -325,22 +326,23 @@ int timeout;
    	     if (hp->size==0){
 	        hp->empty++;
                 while (hp->size==0){
- 	           if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	          CV_SIGNAL_FULLBLK(hp);
 	       	   DEC_NARTHREADS;
-		   pthread_cond_wait(condvars + hp->cvempty, MUTEX_GETBLK(hp));
+	    	   CV_WAIT_EMPTYBLK(hp);
 	       	   INC_NARTHREADS_CONTROLLED;
 		   }
 	        hp->empty--;
 		if (hp->size==0){ /* This shouldn't be the case, but.. */
 	     	   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
- 	           if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	           CV_SIGNAL_FULLBLK(hp);
       	     	   Fail;
 		   }
       	     	}
    	     c_get(hp, msg);
 	     MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
-   	     if (hp->size <= hp->max/50+1 && hp->full) 
-	     	pthread_cond_signal(condvars + hp->cvfull);
+   	     if (hp->size <= hp->max/50+1) 
+ 	        CV_SIGNAL_FULLBLK(hp);
+
    	     Return;
 	     break;
 
@@ -379,21 +381,20 @@ int timeout;
 
 	        hp->empty++;
 	        DEC_NARTHREADS;
-                pthread_cond_timedwait(condvars + 
-			 hp->cvempty, MUTEX_GETBLK(hp), &ts);
+		CV_TIMEDWAIT_EMPTYBLK(hp, ts);
 	        INC_NARTHREADS_CONTROLLED;
 	        hp->empty--;
 		if (hp->size==0){
 	     	   MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
- 	           if (hp->full)  
-		      pthread_cond_signal(condvars + hp->cvfull);
+ 	           CV_SIGNAL_FULLBLK(hp);
       	     	   Fail;
 		   }
       	     	}
    	     c_get(hp, msg);
 	     MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
-	     if (hp->size <= hp->max/50+1 && hp->full)
-	     	pthread_cond_signal(condvars + hp->cvfull);
+	     if (hp->size <= hp->max/50+1)
+ 	        CV_SIGNAL_FULLBLK(hp);
+
    	     Return;
       }
 }
@@ -419,16 +420,16 @@ int timeout;
 	    }
          hp->full++;
          while (hp->size>=hp->max){
- 	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	    CV_SIGNAL_EMPTYBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
+	    CV_WAIT_FULLBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->full--;
       	 }
       c_put(ncpRQ, msg);
       MUTEX_UNLOCKBLK(hp, "msg_send(): list mutex");
-      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      CV_SIGNAL_EMPTYBLK(hp);
       MakeInt(hp->size, msg);
       Return;
       }
@@ -460,16 +461,16 @@ int timeout;
 	    }
          hp->full++;
          while (hp->size>=hp->max){
- 	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	    CV_SIGNAL_EMPTYBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
+	    CV_WAIT_FULLBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->full--;
       	 }
    c_put(&(ccp->outbox), msg);
    MUTEX_UNLOCKBLK(hp, "send(): list mutex");
-   if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+   CV_SIGNAL_EMPTYBLK(hp);
    MakeInt(hp->size, msg);
    Return;
 }
@@ -506,20 +507,19 @@ operator{0,1} @> snd(x,y)
 
    body{
       if (hp->size>=hp->max){
-         if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	 CV_SIGNAL_EMPTYBLK(hp);
 	 fail;
 	 }
 
       MUTEX_LOCKBLK_CONTROLLED(hp, "snd(): list mutex");
       if (hp->size>=hp->max){
 	 MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
-	 if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	 CV_SIGNAL_EMPTYBLK(hp);
 	 fail;
 	 }
       c_put(&L, &x);
       MUTEX_UNLOCKBLK(hp, "snd(): list mutex");
-
-      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      CV_SIGNAL_EMPTYBLK(hp);
       return C_integer hp->size;
       }
 end
@@ -559,17 +559,16 @@ operator{0,1} @>> sndbk(x,y)
       if (hp->size>=hp->max){
          hp->full++;
          while (hp->size>=hp->max){
- 	    if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+ 	    CV_SIGNAL_EMPTYBLK(hp);
 	    DEC_NARTHREADS;
-	    pthread_cond_wait(condvars + hp->cvfull, MUTEX_GETBLK(hp));
+	    CV_WAIT_FULLBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
 	    }
 	 hp->full--;
       	 }
       c_put(&L, &x);
       MUTEX_UNLOCKBLK(hp, "send(): list mutex");
-
-      if (hp->empty) pthread_cond_signal(condvars + hp->cvempty);
+      CV_SIGNAL_EMPTYBLK(hp);
       return C_integer hp->size;
       }
 end
@@ -636,20 +635,20 @@ operator{0,1} @< rcv(x,y)
    body{
 
       if (hp->size==0){
-         if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	 CV_SIGNAL_FULLBLK(hp);
 	 fail;
 	 }
 
       MUTEX_LOCKBLK_CONTROLLED(hp, "rcv(): list mutex");
       if (hp->size==0){
          MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
- 	 if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	 CV_SIGNAL_FULLBLK(hp);
       	 fail;
       	 }
       c_get(hp, &d);
       MUTEX_UNLOCKBLK(hp, "rcv(): list+ mutex");
-      if (hp->size <= hp->max/50+1 && hp->full)
-         pthread_cond_signal(condvars + hp->cvfull);
+      if (hp->size <= hp->max/50+1)
+ 	 CV_SIGNAL_FULLBLK(hp);
       return d;   
       }
 end
@@ -691,40 +690,40 @@ operator{0,1} @<< rcvbk(x,y)
    	    if (hp->size==0){
 	       hp->empty++;
                while (hp->size==0){
- 	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	          CV_SIGNAL_FULLBLK(hp);
 	          DEC_NARTHREADS;
-	     	  pthread_cond_wait(condvars + hp->cvempty, MUTEX_GETBLK(hp));
+		  CV_WAIT_EMPTYBLK(hp);
 	       	  INC_NARTHREADS_CONTROLLED;
 		  }
 	       hp->empty--;
 	       if (hp->size==0){ /* This shouldn't be the case, but.. */
 	          MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
- 	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	          CV_SIGNAL_FULLBLK(hp);
       	     	  fail;
 		  }
       	       }
    	    c_get(hp, &d);
 	    MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
-   	    if (hp->size <= hp->max/50+1 && hp->full) 
-	       pthread_cond_signal(condvars + hp->cvfull);
+   	    if (hp->size <= hp->max/50+1) 
+ 	          CV_SIGNAL_FULLBLK(hp);
    	    return d;
 
    	 case 0  :
    	    if (hp->size==0){
- 	       if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	       CV_SIGNAL_FULLBLK(hp);
 	       fail;
 	       }
 
    	    MUTEX_LOCKBLK_CONTROLLED(hp, "rcvbk(): list mutex");
    	    if (hp->size==0){
 	       MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
- 	       if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	       CV_SIGNAL_FULLBLK(hp);
       	       fail;
       	       }
    	    c_get(hp, &d);
 	    MUTEX_UNLOCKBLK(hp, "rcvbk(): list mutex");
-	    if (hp->size <= hp->max/50+1 && hp->full)
-	       pthread_cond_signal(condvars + hp->cvfull);
+	    if (hp->size <= hp->max/50+1)
+ 	       CV_SIGNAL_FULLBLK(hp);
    	    return d;
 
 	 default :{
@@ -741,20 +740,19 @@ operator{0,1} @<< rcvbk(x,y)
    	    if (hp->size==0){ 
 	       hp->empty++;
 	       DEC_NARTHREADS;
-               pthread_cond_timedwait(condvars + 
-	       		hp->cvempty, MUTEX_GETBLK(hp), &ts);
+	       CV_TIMEDWAIT_EMPTYBLK(hp, ts);
 	       INC_NARTHREADS_CONTROLLED;
 	       hp->empty--;
 	       if (hp->size==0){
 	          MUTEX_UNLOCKBLK(hp, "rcv(): list mutex");
- 	          if (hp->full) pthread_cond_signal(condvars + hp->cvfull);
+ 	          CV_SIGNAL_FULLBLK(hp);
       	     	  fail;
 		  }
       	       }
    	    c_get(hp, &d);
 	    MUTEX_UNLOCKBLK(hp, "receive(): list mutex");
-	    if (hp->size <= hp->max/50+1 && hp->full) 
-	       pthread_cond_signal(condvars + hp->cvfull);
+	    if (hp->size <= hp->max/50+1) 
+ 	       CV_SIGNAL_FULLBLK(hp);
 
    	    return d;
 	    } /* default */

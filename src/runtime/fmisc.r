@@ -2016,24 +2016,24 @@ static stringint siKeywords[] = {
       if (strcmp(kname,"allocated") == 0) {
 	 int tot;
 #ifdef Concurrent
-	 MUTEX_LOCK(p->mutex_stringtotal, " keyword(): stringtotal");
-	 MUTEX_LOCK(p->mutex_blocktotal, " keyword(): blocktotal");
+	 MUTEX_LOCKID(p->mutexid_stringtotal);
+	 MUTEX_LOCKID(p->mutexid_blocktotal);
 	 tot =  stattotal + p->stringtotal + p->blocktotal;
-	 MUTEX_UNLOCK(p->mutex_blocktotal, " keyword(): blocktotal");
-	 MUTEX_UNLOCK(p->mutex_stringtotal, " keyword(): stringtotal");
+	 MUTEX_UNLOCKID(p->mutexid_blocktotal);
+	 MUTEX_UNLOCKID(p->mutexid_stringtotal);
 
 	 suspend C_integer tot;
 
 	 suspend C_integer stattotal;
 
-	 MUTEX_LOCK(p->mutex_stringtotal, " keyword(): stringtotal");
+	 MUTEX_LOCKID(p->mutexid_stringtotal);
 	 tot =  p->stringtotal;
-	 MUTEX_UNLOCK(p->mutex_stringtotal, " keyword(): stringtotal");
+	 MUTEX_UNLOCKID(p->mutexid_stringtotal);
 	 suspend C_integer tot;
 
-	 MUTEX_LOCK(p->mutex_blocktotal, " keyword(): blocktotal");
+	 MUTEX_LOCKID(p->mutexid_blocktotal);
 	 tot =  p->blocktotal;
-	 MUTEX_UNLOCK(p->mutex_blocktotal, " keyword(): blocktotal");
+	 MUTEX_UNLOCKID(p->mutexid_blocktotal);
 	 return C_integer tot;
 #else					/* Concurrent */
 	 suspend C_integer stattotal + p->stringtotal + p->blocktotal;
@@ -2340,8 +2340,6 @@ end
 
 #ifdef Concurrent
 
-
-
 #define OFF		0
 #define ON		1
 
@@ -2361,15 +2359,6 @@ end
 #define CV_FULL		1052
 #define CV_EMPTY	1053
 
-pthread_cond_t* condvars;
-word* condvarsmtxs;
-word maxcondvars;
-word ncondvars; 
-
-
-pthread_mutex_t* mutexes;
-word maxmutexes;
-word nmutexes; 
 
 #define GETCVMUTEXID(x,y){ \
    if (x>-2 || -x-1>ncondvars) irunerr(180, x); \
@@ -2378,22 +2367,25 @@ word nmutexes;
 #define GETMUTEXID(x,y) { \
    if (x<0) GETCVMUTEXID(x,y) \
    else y = x-1; \
-   if (y<0 || y>=nmutexes) irunerr(180, x);}
+   if (y<NUM_STATIC_MUTEXES || y>=nmutexes) irunerr(180, x);}
 
 
 word get_mutex( pthread_mutexattr_t *mattr){
-    word n;
-    MUTEX_LOCKID(MTX_MUTEXES);
-    if(nmutexes==maxmutexes){
-         maxmutexes = maxmutexes * 2 + 128;
-	 mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t));
-	 if (mutexes==NULL)
-	    syserr("get_mutex(): out of memory!");
-  	 }
-     MUTEX_INIT(mutexes[nmutexes], mattr);
-     n = nmutexes++;
-     MUTEX_UNLOCKID(MTX_MUTEXES);
-     return n;
+word n;
+   MUTEX_LOCKID_CONTROLLED(MTX_MUTEXES);
+   if(nmutexes==maxmutexes){
+      thread_control(TC_STOPALLTHREADS);
+      if(nmutexes==maxmutexes){
+         maxmutexes = maxmutexes * 2;
+         mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t *));
+         if (mutexes==NULL) syserr("get_mutex(): out of memory for mutexes!");
+         thread_control(TC_WAKEUPCALL);
+         }
+      }
+   MUTEX_INITID(nmutexes, mattr);
+   n = nmutexes++;
+   MUTEX_UNLOCKID(MTX_MUTEXES);
+   return n;
 }
 
  /*
@@ -2401,15 +2393,19 @@ word get_mutex( pthread_mutexattr_t *mattr){
   */
 word get_cv(word mtx){
    word n;
-   MUTEX_LOCKID(MTX_CONDVARS);
+   MUTEX_LOCKID_CONTROLLED(MTX_CONDVARS);
    if(ncondvars==maxcondvars){
-      maxcondvars = maxcondvars * 2 + 128;
-      condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t));
+      thread_control(TC_STOPALLTHREADS);
+      maxcondvars = maxcondvars * 2;
+      condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t *));
       condvarsmtxs=realloc(condvarsmtxs, maxcondvars * WordSize);
       if (condvars==NULL || condvarsmtxs==NULL)
-	     syserr("out of memory for condition variables!");
+	     syserr("get_cv(): out of memory for condition variables!");
+      thread_control(TC_WAKEUPCALL);
       }
-   pthread_cond_init(condvars+ncondvars, NULL);
+
+   condvars[ncondvars] = malloc(sizeof(pthread_cond_t)); \
+   pthread_cond_init(condvars[ncondvars], NULL);
    if(mtx<0) 
       condvarsmtxs[ncondvars]=get_mutex(&rmtx_attr)-1;
    else
@@ -2477,12 +2473,12 @@ function{1} signal(x, y)
        if (x1<0 || x1>=ncondvars)
       	 irunerr(181, x);
       if (Y == 0) {
-	 if ((rv=pthread_cond_broadcast(condvars+x1)) != 0) {
+	 if ((rv=pthread_cond_broadcast(condvars[x1])) != 0) {
 	    }
 	 }
       else
       for (i=0; i < Y; i++)
-      if ((rv=pthread_cond_signal(condvars+x1)) != 0){
+      if ((rv=pthread_cond_signal(condvars[x1])) != 0){
 	 char cvwf[64];
 	 sprintf(cvwf, "condition variable wait failure %d\n", rv);
       	 syserr(cvwf);
@@ -2581,7 +2577,7 @@ function{1} lock(x)
        * There might be better ways to do this.
        */
 
-      MUTEX_LOCK_CONTROLLED(mutexes[x1], "lock(mutex) function");
+      MUTEX_LOCKID_CONTROLLED(x1);
       return C_integer x;
       }
    }
@@ -2593,7 +2589,7 @@ function{1} lock(x)
          inline {
 	    struct b_mask *bp = BlkMask(x);
 	    if (bp->shared){
-	       MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, "lock(structure)");
+	       MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, "lock(struct)");
                return x;
 	       }
 	    runerr(180, x);
@@ -2601,7 +2597,7 @@ function{1} lock(x)
 	 }
       file:{
          inline {
-	    MUTEX_LOCK_CONTROLLED(mutexes[BlkD(x, File)->mutexid], "lock(file)");
+	    MUTEX_LOCKID_CONTROLLED(BlkD(x, File)->mutexid);
             return x;
 	    }
 	 }
@@ -2620,7 +2616,7 @@ function{0,1} trylock(x)
          word x1;
          GETMUTEXID(x, x1);
 
-         MUTEX_TRYLOCK(mutexes[x1], rv, "trylock(mutex) function");
+         MUTEX_TRYLOCKID(x1, rv);
          if (rv == 0) return C_integer x;
          fail;
          }
@@ -2644,8 +2640,7 @@ function{0,1} trylock(x)
       file:{
          inline {
             int rv;
-            MUTEX_TRYLOCK(mutexes[BlkD(x, File)->mutexid], rv, 
-	 			       "trylock(file) function");
+            MUTEX_TRYLOCKID(BlkD(x, File)->mutexid, rv);
             if (rv == 0) return x;
             fail;
 	    }
@@ -2665,7 +2660,7 @@ function{1} unlock(x)
       word x1;
       GETMUTEXID(x, x1);
 
-      MUTEX_UNLOCK(mutexes[x1], "unlock(mutex) function");
+      MUTEX_UNLOCKID(x1);
       return C_integer 1;
       }
    }
@@ -2685,7 +2680,7 @@ function{1} unlock(x)
 	 }
       file:{
          inline {
-	    MUTEX_UNLOCK(mutexes[BlkD(x, File)->mutexid], "unlock(file)");
+	    MUTEX_UNLOCKID(BlkD(x, File)->mutexid);
             return x;
 	    }
 	 }
@@ -2755,7 +2750,7 @@ function{0,1} spawn(x, blocksize, stringsize)
 		*/
 	       if (thread_call) {
 		  /* I'm part of the GC party now! Sleeping!!*/
-		  thread_control(GC_GOTOSLEEP);
+		  thread_control(TC_ANSWERCALL);
 		  }
 	       else
 		  idelay(1);

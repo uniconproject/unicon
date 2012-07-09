@@ -219,8 +219,7 @@ function{0,1} get_or_pop(x,i)
 	       if (arraytolist(&x)!=Succeeded) fail;
 #endif					/* Arrays*/
 	    hp = BlkD(x, List);
-   	    MUTEX_LOCKBLK_CONTROLLED( BlkD(x, List), "get() lock list");
-	    hp = BlkD(x, List);
+   	    MUTEX_LOCKBLK_CONTROLLED(hp, "get() lock list");
 	    for(j=0;j<i;j++)
 	       if (!c_get(hp, &result)){
 	          MUTEX_UNLOCKBLK(hp, "get(): unlock list");

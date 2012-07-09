@@ -693,7 +693,7 @@ Deliberate Syntax Error
       /* If there is a pending GC request, then block/sleep*/
       if (thread_call){
       	ExInterp_sp;
-	thread_control(GC_GOTOSLEEP);
+	thread_control(TC_ANSWERCALL);
 	/*EntInterp_sp;*/
 	}
 #endif					/* Concurrent */
@@ -2040,10 +2040,11 @@ L_agoto:
 
 	 case Op_Init:		/* initial */
 #ifdef Concurrent
-	    MUTEX_LOCK(mutex_initial, "mutex_initial");
+	    MUTEX_LOCKID(MTX_INITIAL);
             if (ipc.op[-1] == Op_Agoto) {
-	      MUTEX_UNLOCK(mutex_initial, "mutex_initial");
-	      goto L_agoto; }
+	       MUTEX_UNLOCKID(MTX_INITIAL);
+	       goto L_agoto; 
+	       }
 #else					/*Concurrent*/
 	    *--ipc.op = Op_Goto;
 #endif					/*Concurrent*/
@@ -2053,7 +2054,7 @@ L_agoto:
 	    lock_count_mtx_init++;
 	    if (*ipc.opnd ==-1){
 	        while(lock_count_mtx_init--) 
-		   MUTEX_UNLOCK(mutex_initial, "mutex_initial");
+	       	   MUTEX_UNLOCKID(MTX_INITIAL);
 
 		err_msg(182, NULL);
 		}
@@ -2079,7 +2080,7 @@ L_agoto:
 
 	     PutInstrAt(Op_Agoto, ipc.opnd, (ipc.op + ((opnd<<3)/IntBits+1)));
 
-	     MUTEX_UNLOCK(mutex_initial, "mutex_initial");
+       	     MUTEX_UNLOCKID(MTX_INITIAL);
 	     lock_count_mtx_init--;
 #endif					/* Concurrent */
 	     break;

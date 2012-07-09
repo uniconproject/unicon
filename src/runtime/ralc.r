@@ -1141,10 +1141,10 @@ char *f(int region, word nbytes)
          }
 #else 					/* Concurrent */
 
-   thread_control(GC_STOPALLTHREADS);
+   thread_control(TC_STOPALLTHREADS);
    collect(region); /* try to collect the private region first */
    if (DiffPtrs(curr_private->end,curr_private->free) >= want) {
-      thread_control(GC_WAKEUPCALL);
+      thread_control(TC_WAKEUPCALL);
       return curr_private->free;
       }
       
@@ -1155,7 +1155,7 @@ char *f(int region, word nbytes)
       	 *pcurr = curr_private;
          collect(region);
          if (DiffPtrs( curr_private->end, curr_private->free) >= want){
-            thread_control(GC_WAKEUPCALL);
+            thread_control(TC_WAKEUPCALL);
             return curr_private->free;
             }
          }
@@ -1163,7 +1163,7 @@ char *f(int region, word nbytes)
    /*
     * GC has failed so far to free enough memory, wake up all threads for now.
     */   
-   thread_control(GC_WAKEUPCALL); 
+   thread_control(TC_WAKEUPCALL); 
  #endif 					/* Concurrent */   
 
    /*
@@ -1220,18 +1220,18 @@ char *f(int region, word nbytes)
 #ifdef Concurrent
    fprintf(stderr, " !!! Low memory!! Trying all options !!!\n ");
    /* look in the public heaps, */
-   thread_control(GC_STOPALLTHREADS); 
+   thread_control(TC_STOPALLTHREADS); 
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
       if (rp->size < want) {		/* if not collected earlier */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
          *pcurr = curr_private;
          collect(region);
          if (DiffPtrs(curr_private->end,curr_private->free) >= want){
-   	    thread_control(GC_WAKEUPCALL); 
+   	    thread_control(TC_WAKEUPCALL); 
             return curr_private->free;
             }
          }
-   thread_control(GC_WAKEUPCALL); 
+   thread_control(TC_WAKEUPCALL); 
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
    
 #else 					/* Concurrent */

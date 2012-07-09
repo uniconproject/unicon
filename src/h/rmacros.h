@@ -1158,7 +1158,7 @@
    
    #define MTX_THREADCONTROL	19
    #define MTX_NARTHREADS	20
-   #define MTX_COND_GC		21
+   #define MTX_COND_TC		21
    
    #define MTX_HANDLERS		22
    
@@ -1176,19 +1176,32 @@
    #define MTX_RECID		30
    
    #define MTX_NOMTEVENTS	31
+
    #define MTX_MUTEXES		32
-   
-   
    #define MTX_CONDVARS		33
+
+   #define MTX_STRINGTOTAL	34
+   #define MTX_BLOCKTOTAL	35
+   #define MTX_COLL		36
+
+
+   /* This should be the last mutex, becasue it has special initialization*/
+   #define MTX_INITIAL		37
 
   
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	34
+   #define NUM_STATIC_MUTEXES	38
 
    /* used by wait4GC function*/
-   #define GC_GOTOSLEEP 0
-   #define GC_WAKEUPCALL 1
-   #define GC_STOPALLTHREADS 2
+
+
+   #define TC_NONE -1
+
+   #define TC_ANSWERCALL 0
+
+   #define TC_CALLTHREADS 1
+   #define TC_WAKEUPCALL 2
+   #define TC_STOPALLTHREADS 3
 
 #endif					/* Concurrent */
 
@@ -1197,6 +1210,7 @@
  *  Lock mutex mtx. msg is a string name that refers to mtx, useful for
  *  error tracing.
  */
+
 #define MUTEX_LOCK( mtx, msg) { int retval; \
   if ((retval=pthread_mutex_lock(&(mtx))) != 0) handle_thread_error(retval); }
   
@@ -1210,27 +1224,29 @@ if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
 #define MUTEX_INIT( mtx, attr ) { int retval; \
     if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) handle_thread_error(retval); }
 
-#define MUTEX_RECURSIVE_INIT( mtx ) { pthread_mutexattr_t mattr; \
-   pthread_mutexattr_init(&mattr); \
-   pthread_mutexattr_settype(&mattr,PTHREAD_MUTEX_RECURSIVE); \
-   MUTEX_INIT(mtx, &mattr); \
-   pthread_mutexattr_destroy(&mattr); } 
-
 
 #define THREAD_JOIN( thrd, opt ) { int retval; \
 if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 
 /*
- *  Lock mutex static_mutexes[mtx].
+ *  Lock mutex mutexes[mtx].
  */
+
+#define MUTEX_INITID( mtx, attr ) { int retval;{	\
+  mutexes[mtx] = malloc(sizeof(pthread_mutex_t)); \
+  if ((retval=pthread_mutex_init(mutexes[mtx], attr)) != 0) handle_thread_error(retval); }}
+
+#define MUTEXID(mtx) mutexes[mtx]
+
+
 #define MUTEX_LOCKID(mtx) { int retval; \
-  if ((retval=pthread_mutex_lock(&static_mutexes[mtx])) != 0) handle_thread_error(retval); }
-  
+  if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) handle_thread_error(retval); }
+
 #define MUTEX_UNLOCKID(mtx) { int retval; \
-  if ((retval=pthread_mutex_unlock(&static_mutexes[mtx])) != 0)  handle_thread_error(retval); }
+  if ((retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  handle_thread_error(retval); }
 
 #define MUTEX_TRYLOCKID(mtx, isbusy) { \
-    if ((isbusy=pthread_mutex_trylock(&static_mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+    if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
       {handle_thread_error(isbusy); isbusy=0;} }
 
 #define INC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx)}
@@ -1248,6 +1264,14 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
    NARthreads--; \
    MUTEX_UNLOCKID(MTX_NARTHREADS); }
 
+
+#define MUTEX_LOCKID_CONTROLLED(mtx) { int retval; \
+      MUTEX_TRYLOCKID(mtx, retval); \
+      if (retval==EBUSY){ \
+	 DEC_NARTHREADS;      \
+         MUTEX_LOCKID(mtx); \
+	 INC_NARTHREADS_CONTROLLED;}}
+
 #define MUTEX_LOCK_CONTROLLED(mtx, msg) { int retval; \
       MUTEX_TRYLOCK(mtx, retval, msg); \
       if (retval==EBUSY){ \
@@ -1258,28 +1282,32 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 
 /********** block macros *************/
 #define MUTEX_LOCKBLK(bp, msg) \
-   if (bp->shared) MUTEX_LOCK(mutexes[bp->mutexid], msg)
+   if (bp->shared) MUTEX_LOCKID(bp->mutexid)
 
 #define MUTEX_LOCKBLK_CONTROLLED(bp, msg) \
-   if (bp->shared) MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
-
-#define MUTEX_LOCKBLK_NOCHK(bp, msg) \
-   MUTEX_LOCK(mutexes[bp->mutexid], msg)
-
-#define MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, msg) \
-   MUTEX_LOCK_CONTROLLED(mutexes[bp->mutexid], msg)
+   if (bp->shared) MUTEX_LOCKID_CONTROLLED(bp->mutexid)
 
 #define MUTEX_UNLOCKBLK(bp, msg) \
-   if (bp->shared) MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
+   if (bp->shared) MUTEX_UNLOCKID(bp->mutexid)
 
 #define MUTEX_TRYLOCKBLK(bp, isbusy, msg) \
-   if (bp->shared) MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
+   if (bp->shared) MUTEX_TRYLOCKID(bp->mutexid, isbusy)
+
+
+/* assume that the block is shared! */
+#define MUTEX_LOCKBLK_NOCHK(bp, msg) \
+   MUTEX_LOCKID(bp->mutexid)
+
+#define MUTEX_LOCKBLK_CONTROLLED_NOCHK(bp, msg) \
+   MUTEX_LOCKID_CONTROLLED(bp->mutexid)
+
 
 #define MUTEX_UNLOCKBLK_NOCHK(bp, msg) \
-   MUTEX_UNLOCK(mutexes[bp->mutexid], msg)
+   MUTEX_UNLOCKID(bp->mutexid)
 
 #define MUTEX_TRYLOCKBLK_NOCHK(bp, isbusy, msg) \
-   MUTEX_TRYLOCK(mutexes[bp->mutexid], isbusy, msg)
+   MUTEX_TRYLOCKID(bp->mutexid, isbusy)
+
 
 #define C_PUT_PROTECTED(L, v){ MUTEX_LOCKBLK(BlkD(L, List))	\
                 c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));}
@@ -1292,6 +1320,8 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
    bp->mutexid = mtx; \
    bp->shared = 1; }}
 
+#define MUTEX_GETBLK(bp) mutexes[bp->mutexid]
+
 #define CV_INITBLK(bp) {  MUTEX_INITBLK(bp) \
      bp->cvfull = get_cv(bp->mutexid); \
      bp->cvempty = get_cv(bp->mutexid); \
@@ -1299,11 +1329,26 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
      bp->empty = 0; \
      bp->max = 1024; }
 
-#define MUTEX_GETBLK(bp) mutexes + bp->mutexid
+#define CV_WAIT_FULLBLK(bp) \
+    pthread_cond_wait(condvars[bp->cvfull], MUTEX_GETBLK(bp));
+
+#define CV_WAIT_EMPTYBLK(bp) \
+    pthread_cond_wait(condvars[bp->cvempty], MUTEX_GETBLK(bp));
+
+#define CV_SIGNAL_FULLBLK(bp) if (bp->full) { \
+    pthread_cond_signal(condvars[bp->cvfull]);}
+
+#define CV_SIGNAL_EMPTYBLK(bp) if (bp->empty) { \
+    pthread_cond_signal(condvars[bp->cvempty]);}
+
+#define CV_TIMEDWAIT_EMPTYBLK(bp, t)\
+  pthread_cond_timedwait(condvars[bp->cvempty], MUTEX_GETBLK(bp), &t);
+
 
 #else					/* Concurrent */
 #define MUTEX_INIT(mtx, attr)
-#define MUTEX_RECURSIVE_INIT(mtx)
+#define MUTEX_INITID(mtx, attr)
+#define MUTEXID(mtx)
 #define MUTEX_LOCK(mtx, msg)
 #define MUTEX_UNLOCK(mtx, msg)
 #define MUTEX_TRYLOCK(mtx, isbusy, msg)
@@ -1312,6 +1357,7 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define MUTEX_TRYLOCKID(mtx, isbusy)
 #define THREAD_JOIN(thrd, opt)
 #define MUTEX_LOCK_CONTROLLED(mtx, msg)
+#define MUTEX_LOCKID_CONTROLLED(mtx)
 #define INC_LOCKID(x, mtx)
 #define DEC_LOCKID(x, mtx)
 #define INC_NARTHREADS_CONTROLLED

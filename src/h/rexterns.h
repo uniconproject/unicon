@@ -61,23 +61,21 @@ extern struct tend_desc *tend;  /* chain of tended descriptors */
 #endif					/* Concurrent */
 
 #ifdef Concurrent
-extern pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
-
-extern pthread_mutex_t *mutexes;
+extern pthread_mutex_t **mutexes;
 extern word nmutexes;
+extern word maxmutexes;
 
-extern pthread_mutex_t mutex_initial; 
 pthread_mutexattr_t rmtx_attr;
 
 extern pthread_t GCthread;
 extern int thread_call;
 extern int NARthreads;
-extern pthread_cond_t cond_gc;
-extern sem_t sem_gc; 
 
-extern pthread_cond_t* condvars;
+extern pthread_cond_t **condvars;
 extern word* condvarsmtxs;
 extern word ncondvars; 
+extern word maxcondvars; 
+
 #endif					/* Concurrent */
 
 /*

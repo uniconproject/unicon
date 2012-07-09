@@ -646,9 +646,9 @@ struct progstate {
    word Kywd_time_out;			/* ????  TLS vs global &time at last program switch out */
 
 #ifdef Concurrent
-   pthread_mutex_t mutex_stringtotal;
-   pthread_mutex_t mutex_blocktotal;
-   pthread_mutex_t mutex_coll;
+   word mutexid_stringtotal;
+   word mutexid_blocktotal;
+   word mutexid_coll;
    
    struct region *Public_stringregion;         /*  separate regions vs shared      */
    struct region *Public_blockregion;          /*     same above     */

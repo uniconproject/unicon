@@ -1344,6 +1344,8 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define CV_TIMEDWAIT_EMPTYBLK(bp, t)\
   pthread_cond_timedwait(condvars[bp->cvempty], MUTEX_GETBLK(bp), &t);
 
+#define SUSPEND_THREADS() thread_control(TC_STOPALLTHREADS);
+#define RESUME_THREADS() thread_control(TC_WAKEUPCALL);
 
 #else					/* Concurrent */
 #define MUTEX_INIT(mtx, attr)
@@ -1374,5 +1376,8 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define C_PUT_PROTECTED(L, v)
 #define CV_INITBLK(bp)
 #define MUTEX_GETBLK(bp)
+
+#define SUSPEND_THREADS()
+#define RESUME_THREADS()
 
 #endif					/* Concurrent */

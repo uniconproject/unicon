@@ -216,18 +216,18 @@ int release_3d_resources(wbp w)
 int make_enough_texture_space(wcp wc)
 {
    if (wc->ntextures >= wc->nalced) {
+    SUSPEND_THREADS();
+    if (wc->ntextures >= wc->nalced) {
       wc->nalced *= 2;
       wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
-      if (wc->texName==NULL) return Failed;
-      /*
-      wc->maxstex *= 2;
-      printf(" realloc STEX STEX STEX !\n ");
-      wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-      if (wc->stex==NULL) return Failed;
-      printf(" realloc STEX DONEEEEEEEEEEEEEEEEEEEEEEEEEE !\n ");
-      */
+       if (wc->texName==NULL){
+       RESUME_THREADS();
+       return Failed;
+       }
       glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
-   }
+      }
+    RESUME_THREADS();
+    }
 
    return Succeeded;
 }
@@ -3210,10 +3210,17 @@ int textureimg(wbp w, int width, int height,
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
-	 }
+        SUSPEND_THREADS();
+        if (k>=wc->maxstex){
+	  wc->maxstex *= 2;
+	  wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
+	  if (wc->stex==NULL){
+	   RESUME_THREADS();
+	   return Failed;
+	   }
+	  }
+       RESUME_THREADS();
+       }
 
       wc->stex[k].tex = tex;
       wc->stex[k].width = width;
@@ -3301,9 +3308,17 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
+         SUSPEND_THREADS();
+      	 if (k>=wc->maxstex){
+	    wc->maxstex *= 2;
+	    wc->stex = realloc(wc->stex, 
+	    	     sizeof(struct _savetexture)*wc->maxstex);
+	    if (wc->stex==NULL){
+               RESUME_THREADS();
+	       return Failed;
+	       }
+	    }
+         RESUME_THREADS();
 	 }
 
       wc->stex[k].tex = tex;
@@ -3755,9 +3770,17 @@ int texture_24img(wbp w, struct imgdata im)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
+         SUSPEND_THREADS();
+      	 if (k>=wc->maxstex){
+	    wc->maxstex *= 2;
+	    wc->stex = realloc(wc->stex, 
+	    	     sizeof(struct _savetexture)*wc->maxstex);
+	    if (wc->stex==NULL){
+	       RESUME_THREADS();
+	       return Failed;
+	       }
+	    }
+    	 RESUME_THREADS();
 	 }
 
       wc->stex[k].tex = tex;
@@ -4704,9 +4727,17 @@ int texwindow2D(wbp w, wbp w2d)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
+         SUSPEND_THREADS();
+         if (k>=wc->maxstex){
+	    wc->maxstex *= 2;
+	    wc->stex = realloc(wc->stex, 
+	    	     sizeof(struct _savetexture)*wc->maxstex);
+	    if (wc->stex==NULL){
+               RESUME_THREADS();
+	       return Failed;
+	       }
+	    }
+         RESUME_THREADS();
 	 }
 
       wc->stex[k].tex = tex;
@@ -4756,9 +4787,17 @@ int texwindow3D(wbp w1, wbp w2)
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
       if (k>=wc->maxstex){
-	 wc->maxstex *= 2;
-	 wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	 if (wc->stex==NULL) return Failed;
+         SUSPEND_THREADS();
+         if (k>=wc->maxstex){
+	    wc->maxstex *= 2;
+	    wc->stex = realloc(wc->stex, 
+	    	     sizeof(struct _savetexture)*wc->maxstex);
+	    if (wc->stex==NULL){
+               RESUME_THREADS();
+	       return Failed;
+	       }
+	 }
+         RESUME_THREADS();
 	 }
 
       wc->stex[k].tex = tex;

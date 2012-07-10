@@ -2374,13 +2374,13 @@ word get_mutex( pthread_mutexattr_t *mattr){
 word n;
    MUTEX_LOCKID_CONTROLLED(MTX_MUTEXES);
    if(nmutexes==maxmutexes){
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       if(nmutexes==maxmutexes){
          maxmutexes = maxmutexes * 2;
          mutexes=realloc(mutexes, maxmutexes * sizeof(pthread_mutex_t *));
          if (mutexes==NULL) syserr("get_mutex(): out of memory for mutexes!");
-         thread_control(TC_WAKEUPCALL);
          }
+      RESUME_THREADS();
       }
    MUTEX_INITID(nmutexes, mattr);
    n = nmutexes++;

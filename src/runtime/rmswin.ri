@@ -1993,28 +1993,32 @@ int alc_rgb(wbp w, SysColor rgb)
          if (rgb == scp[i].c && scp[i].type == CLR_SHARED) break;
 	 }
       if (i == numColors) {
-         numColors++;
-	 if (ResizePalette(palette, numColors) == 0) {
-	    numColors--;
-	    return Failed;
-            }
-         scp = realloc(scp, numColors * sizeof(struct wcolor));
-         if (scp == NULL) { numColors--; return Failed; }
-	 scp[numColors - 1].c = rgb;
-	 scp[numColors - 1].type = CLR_SHARED;
-	 sprintf(scp[numColors - 1].name, "%d,%d,%d",
+         SUSPEND_THREADS();
+         if (i == numColors) {
+            numColors++;
+	    if (ResizePalette(palette, numColors) == 0) {
+	       numColors--;
+	       return Failed;
+               }
+            scp = realloc(scp, numColors * sizeof(struct wcolor));
+            if (scp == NULL) { numColors--; return Failed; }
+	    scp[numColors - 1].c = rgb;
+	    scp[numColors - 1].type = CLR_SHARED;
+	    sprintf(scp[numColors - 1].name, "%d,%d,%d",
                  RED(rgb), GREEN(rgb), BLUE(rgb));
-         lp.palNumEntries = 1;
-	 lp.palVersion = 0x300;
-	 lp.palPalEntry[0].peFlags = 0;
-	 lp.palPalEntry[0].peRed = RED(rgb);
-	 lp.palPalEntry[0].peGreen = GREEN(rgb);
-	 lp.palPalEntry[0].peBlue = BLUE(rgb);
-         SetPaletteEntries(palette, numColors - 1, 1, lp.palPalEntry);
-	 hdc = GetDC(ws->iconwin);
-	 SelectPalette(hdc, palette, FALSE);
-	 RealizePalette(hdc);
-	 ReleaseDC(ws->iconwin, hdc);
+            lp.palNumEntries = 1;
+	    lp.palVersion = 0x300;
+	    lp.palPalEntry[0].peFlags = 0;
+	    lp.palPalEntry[0].peRed = RED(rgb);
+	    lp.palPalEntry[0].peGreen = GREEN(rgb);
+	    lp.palPalEntry[0].peBlue = BLUE(rgb);
+            SetPaletteEntries(palette, numColors - 1, 1, lp.palPalEntry);
+	    hdc = GetDC(ws->iconwin);
+	    SelectPalette(hdc, palette, FALSE);
+	    RealizePalette(hdc);
+	    ReleaseDC(ws->iconwin, hdc);
+	    }
+         RESUME_THREADS();
 	 }
       }
    return Succeeded;
@@ -3056,9 +3060,10 @@ int mutable_color(wbp w, dptr argv, int argc, int *retval)
       FREE_STDLOCALS(w);
       return Failed;
       }
-
+   SUSPEND_THREADS();
    numColors++;
    scp = realloc(scp, numColors * sizeof(struct wcolor));
+   RESUME_THREADS();
    if (scp == NULL) {
       FREE_STDLOCALS(w);
       return Failed;

@@ -4777,10 +4777,12 @@ FILE *OpenConsole()
 #ifdef ScrollingConsoleWin
 {
       wsp ws = ((wbp)ConsoleBinding)->window;
+      SUSPEND_THREADS();
       ws->nChildren++;
       ws->child = realloc(ws->child, ws->nChildren * sizeof(childcontrol));
       makeeditregion(ConsoleBinding, ws->child + (ws->nChildren-1), "");
       movechild(ws->child + (ws->nChildren-1), 0, 0, ws->width, ws->height);
+      RESUME_THREADS();
 }
 #endif					/* ScrollingConsoleWin */
       }

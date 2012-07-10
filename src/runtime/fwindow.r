@@ -2869,10 +2869,14 @@ function{0,1} WinButton(argv[argc])
        * create a new button if none is found
        */
       if (i == ws->nChildren) {
-         ws->nChildren++;
-         ws->child = realloc(ws->child,
+         SUSPEND_THREADS();
+      	 if (i == ws->nChildren) {
+            ws->nChildren++;
+            ws->child = realloc(ws->child,
 			     ws->nChildren * sizeof(childcontrol));
-	 makebutton(ws, ws->child + i, s);
+	    makebutton(ws, ws->child + i, s);
+	    }
+         RESUME_THREADS();
          }
 
       if (warg >= argc) x = 0;
@@ -2946,10 +2950,16 @@ function{0,1} WinScrollBar(argv[argc])
        * create a new scrollbar at end of array if none was found
        */
       if (i == ws->nChildren) {
-         ws->nChildren++;
-         ws->child = realloc(ws->child, ws->nChildren * sizeof(childcontrol));
-	 makescrollbar(ws, ws->child + i, s, i1, i2);
+         SUSPEND_THREADS();
+      	 if (i == ws->nChildren) {
+            ws->nChildren++;
+            ws->child = realloc(ws->child,
+			     ws->nChildren * sizeof(childcontrol));
+	    makescrollbar(ws, ws->child + i, s, i1, i2);
+	    }
+         RESUME_THREADS();
          }
+
       /*
        * i3, the interval, defaults to 10
        */
@@ -3062,10 +3072,16 @@ function{0, 2} WinEditRegion(argv[argc])
        * create a new edit region if none is found
        */
       if (i == ws->nChildren) {
-         ws->nChildren++;
-         ws->child = realloc(ws->child, ws->nChildren * sizeof(childcontrol));
-	 makeeditregion(w, ws->child + i, s);
+         SUSPEND_THREADS();
+      	 if (i == ws->nChildren) {
+            ws->nChildren++;
+            ws->child = realloc(ws->child,
+			     ws->nChildren * sizeof(childcontrol));
+	    makeeditregion(w, ws->child + i, s);
+	    }
+         RESUME_THREADS();
          }
+
       /*
        * Invoked with no value, return the current value of an existing
        * edit region (entire buffer is one gigantic string).
@@ -4792,11 +4808,16 @@ function{1} WSection(argv[argc])
          MakeInt(wc->selectionnamecount, &(rp->fields[5]));
 	 
 	 if (wc->selectionnamecount >= wc->selectionnamelistsize) {
-	    wc->selectionnamelistsize *=2;
-	    wc->selectionnamelist=realloc(wc->selectionnamelist,
-		wc->selectionnamelistsize*sizeof(char*));
-	    if (wc->selectionnamelist == NULL) fail;
+	    SUSPEND_THREADS();
+	    if (wc->selectionnamecount >= wc->selectionnamelistsize) {
+	       wc->selectionnamelistsize *=2;
+	       wc->selectionnamelist=realloc(wc->selectionnamelist,
+			wc->selectionnamelistsize*sizeof(char*));
+	       if (wc->selectionnamelist == NULL) fail;
+	       }
+	    RESUME_THREADS();
 	    }
+
 	 if (!cnv:C_string(argv[warg], tmp))
 	    runerr(103, argv[warg]);
 

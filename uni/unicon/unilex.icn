@@ -314,14 +314,6 @@ procedure do_at()
        tokflags +:= Beginner + Ender
        return SND 
        }
-    if yytext ||:= ="<<" then {
-       tokflags +:= Beginner + Ender
-       return RCVBK 
-       }
-    if yytext ||:= ="<" then {
-       tokflags +:= Beginner + Ender
-       return RCV 
-      }
     
     tokflags +:= Beginner
     return AT
@@ -368,12 +360,20 @@ procedure do_greater()
 end
 
 procedure do_less()
+   if yytext ||:= ="@" then {
+      tokflags +:= Beginner + Ender
+      return RCV
+      }
 	      if yytext ||:= =":=" then { return AUGNMLT }
 	      if yytext ||:= ="-" then {
 		  if yytext ||:= =">" then { return REVSWAP }
 		  return REVASSIGN
 	      }
 	      if yytext ||:= ="<" then {
+		  if yytext ||:= "@" then {
+		     tokflags +:= Beginner + Ender
+		     return RCVBK 
+		  }
 		  if yytext ||:= =":=" then { return AUGSLT }
 		  if yytext ||:= ="=" then {
 		      if yytext ||:= =":=" then {return AUGSLE}

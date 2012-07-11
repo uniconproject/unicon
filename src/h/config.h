@@ -685,6 +685,10 @@ Deliberate Syntax Error
    #define Arrays 1
 #endif					/* Arrays */
 
+#if !defined(NoDescriptorDouble) && (WordBits==64)
+   #define DescriptorDouble 1
+#endif					/* DescriptorDouble */
+
 #ifndef ExecSuffix
    #define ExecSuffix ""
 #endif					/* ExecSuffix */

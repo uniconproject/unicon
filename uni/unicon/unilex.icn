@@ -182,7 +182,9 @@ initial {
        }
 
        yytext := move(1)
-       return punc_table[yytext]()
+       if rv := punc_table[yytext]() then {
+	   return rv
+       }
    }
 end
 
@@ -370,7 +372,7 @@ procedure do_less()
 		  return REVASSIGN
 	      }
 	      if yytext ||:= ="<" then {
-		  if yytext ||:= "@" then {
+		  if yytext ||:= ="@" then {
 		     tokflags +:= Beginner + Ender
 		     return RCVBK 
 		  }

@@ -16,6 +16,39 @@ package threads
 #        end of the channel to respond and pick the call from the table
 #
 
+class Shared_Variable(value)
+   method lock()
+      static builtin_lock
+      initial builtin_lock := proc("lock", 0)
+
+      return builtin_lock(self)
+   end
+
+   method trylock()
+      static builtin_trylock
+      initial builtin_lock := proc("trylock", 0)
+
+      return builtin_trylock(self)
+   end
+
+   method unlock()
+      static builtin_unlock
+      initial builtin_lock := proc("unlock", 0)
+
+      return builtin_unlock(self)
+   end
+   
+   initially(x, mtx)
+
+      value := x
+
+      if \mtxx then 
+         mutex(self, mtx)
+      else
+         mutex(self)
+end
+
+
 procedure channel(x)
    local ce, T, L
    static chTable

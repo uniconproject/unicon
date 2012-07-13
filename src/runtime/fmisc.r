@@ -2778,7 +2778,14 @@ function{0,1} spawn(x, blocksize, stringsize)
 
 	 /*
 	  * Activate co-expression x, having changed it to Asynchronous.
-	  */
+    	  *  but firt Set the activator/parent of the new thread.
+    	  */
+   	  if (cp->es_actstk == NULL)
+      	     Protect(cp->es_actstk = alcactiv(),runerr(0,x));
+
+   	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == Error)
+      	     runerr(0,x);
+
 	 sem_post(n->semp);
 
 	 /*

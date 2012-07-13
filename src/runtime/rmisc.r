@@ -1129,20 +1129,6 @@ struct b_coexpr *ce;
    struct b_coexpr *actvtr;
    CURTSTATE();
 
-#ifdef Concurrent
-   /*
-    * exit (usually) a co-expression if it has no activator (thread).
-    * May want to check that ce->status is Async here and/or fix thread
-    * activator initialization depending on desired join semantics.
-    * coclean calls pthread_exit() in case of sync threads.
-    */
-   if (abp == NULL) {
-      #ifdef CoClean
- 	 coclean(ce->cstate);
-      #endif				/* CoClean */
-      }
-#endif					/* Concurrent */
-
 #ifdef MultiThread
    /*
     * If we are trying to pop a different program, we probably shouldn't.
@@ -1176,12 +1162,18 @@ struct b_coexpr *ce;
     *  Decrement the activation count and if it is zero, pop that
     *  activation record and decrement the count of activators.
     */
+
    arp = &abp->arec[abp->nactivators - 1];
    actvtr = arp->activator;
-   if (--arp->acount == 0)
-      abp->nactivators--;
 
-   ce->es_actstk = abp;
+#ifdef Concurrent
+   if (ce->status & Ts_Sync){
+      if (--arp->acount == 0)
+         abp->nactivators--;
+      ce->es_actstk = abp;
+      }
+#endif					/* Concurrent */
+
    return actvtr;
 
 #else					/* CoExpr */

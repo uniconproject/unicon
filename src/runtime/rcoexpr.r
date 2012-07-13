@@ -229,9 +229,48 @@ int first;
          retderef(valloc, (word *)glbl_argp, sp);
 #endif					/* COMPILER */
 
-      if (ncp->tvalloc != NULL)
-         *ncp->tvalloc = *valloc;
+#ifdef Concurrent
+      if (ccp->status & Ts_Async){
+         struct b_list *hp;
+         struct descrip L;
+         L = ccp->outbox;
+      	 hp = BlkD(L, List);
+      	 MUTEX_LOCKBLK_CONTROLLED(hp, "co_chng(): list mutex");
+      	 if (hp->size>=hp->max){
+            hp->full++;
+            while (hp->size>=hp->max){
+ 	       CV_SIGNAL_EMPTYBLK(hp);
+	       DEC_NARTHREADS;
+	       CV_WAIT_FULLBLK(hp);
+	       INC_NARTHREADS_CONTROLLED;
+	       }
+	    hp->full--;
+      	    }
+         c_put(&L, valloc);
+      	 MUTEX_UNLOCKBLK(hp, "co_chng(): list mutex");
+      	 CV_SIGNAL_EMPTYBLK(hp);
+	 return;
       }
+      else
+#endif					/* Concurrent */
+         if (ncp->tvalloc != NULL)
+            *ncp->tvalloc = *valloc;
+      }
+
+#ifdef Concurrent
+   /*
+    * exit if this is a thread.
+    * May want to check/fix thread  activator initialization 
+    * depending on desired join semantics.
+    * coclean calls pthread_exit() in case of sync threads.
+    */
+   if (ccp->status & Ts_Async){
+      #ifdef CoClean
+ 	 coclean(ccp->cstate);
+      #endif				/* CoClean */
+      }
+#endif					/* Concurrent */
+
    ncp->tvalloc = NULL;
    ccp->tvalloc = rsltloc;
 
@@ -492,6 +531,7 @@ void coclean(void *o) {
       }
 
    if (old->c->status & Ts_Async){
+      tended struct b_list *hp;
       /* give up the heaps owned by the thread */
       if (blkregion){
          MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
@@ -504,6 +544,13 @@ void coclean(void *o) {
          }
       DEC_NARTHREADS;	
       old->alive = -1;
+
+      hp = BlkD(old->c->outbox, List);
+      CV_SIGNAL_EMPTYBLK(hp);
+
+      hp = BlkD(old->c->inbox, List);
+      CV_SIGNAL_FULLBLK(hp);
+
       pthread_exit(NULL);
       }
    else{

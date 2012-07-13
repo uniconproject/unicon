@@ -2837,7 +2837,7 @@ function{1} Attrib(argv[argc])
          ccp = BlkD(k_current, Coexpr);
 	 base = 0;
       	 }
-	 
+
       if (argc-base==1){ /* for now, it is a query, and the only form suported */
          if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
 	 switch (q) {
@@ -2858,7 +2858,7 @@ function{1} Attrib(argv[argc])
          }
 
       /* must have pairs of attribute and their values to continue */
-      if (argc-base%2 != 0) runerr(130, nulldesc);
+      if ((argc-base)%2 != 0) runerr(130, nulldesc);
 
       for (; base < argc; base+=2){
       	 if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);

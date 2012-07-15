@@ -13,6 +13,8 @@ unsigned _stack = 100000;
  * prototypes for static functions.
  */
 static void add_tdef (char *name);
+extern int yynerrs;
+extern int __merr_errors;
 
 /*
  * refpath is used to locate the standard include files for the Icon.
@@ -438,6 +440,8 @@ char **argv;
       }
 #endif					/* Rttx */
 
+   if ( yynerrs > 0 || __merr_errors > 0)
+      return EXIT_FAILURE;
    return EXIT_SUCCESS;
    }
 

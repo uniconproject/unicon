@@ -644,8 +644,13 @@ int noimage;
          }
 
       coexpr: {
-         fprintf(f, "co-expression_%ld(%ld)",
-            (long)BlkD(*dp, Coexpr)->id,(long)BlkLoc(*dp)->Coexpr.size);
+         struct b_coexpr *cp = BlkD(*dp, Coexpr);
+#ifdef Concurrent
+         if (cp->status & Ts_Async)
+            fprintf(f, "thread_%ld(%ld)", (long) cp->id, (long) cp->size);
+   	 else
+#endif					/* Concurrent */
+            fprintf(f, "co-expression_%ld(%ld)", (long) cp->id, (long) cp->size);
          }
 
       tvsubs: {
@@ -1219,7 +1224,13 @@ struct b_coexpr *ce;
       for (i = abp->nactivators; i >= 1; i--) {
          arp = &abp->arec[i-1];
          /*for (j = 1; j <= arp->acount; j++)*/
-         fprintf(stderr, "co-expression_%ld(%d)\n", (long)(arp->activator->id),
+#ifdef Concurrent
+         if (arp->activator->status & Ts_Async)
+            fprintf(stderr, "thread_%ld(%d)\n", (long)(arp->activator->id),
+            arp->acount);
+   	 else
+#endif					/* Concurrent */
+            fprintf(stderr, "co-expression_%ld(%d)\n", (long)(arp->activator->id),
             arp->acount);
          }
       abp = abp->astk_nxt;
@@ -1788,15 +1799,28 @@ dptr dp1, dp2;
           *  where m is the number of the co-expressions and n is the
           *  number of results that have been produced.
           */
+	 word numchar;
 
          sprintf(sbuf, "_%ld(%ld)", (long)BlkD(source,Coexpr)->id,
             (long)BlkLoc(source)->Coexpr.size);
          len = strlen(sbuf);
-	 Protect (reserve(Strings, len + 13), return Error);
-         Protect(t = alcstr("co-expression", (word)(13)), return Error);
+#ifdef Concurrent
+         if (BlkLoc(source)->Coexpr.status & Ts_Async){
+	    numchar = 6;
+	    Protect (reserve(Strings, len + numchar), return Error);
+            Protect(t = alcstr("thread", numchar), return Error);
+	    }
+   	 else
+#endif					/* Concurrent */
+            {
+	    numchar = 13;
+	    Protect (reserve(Strings, len + numchar), return Error);
+            Protect(t = alcstr("co-expression", numchar), return Error);
+	    }
+
          StrLoc(*dp2) = t;
          Protect(alcstr(sbuf, len), return Error);
-         StrLen(*dp2) = 13 + len;
+         StrLen(*dp2) = numchar + len;
          }
 
       tvmonitored:{

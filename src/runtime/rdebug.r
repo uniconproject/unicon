@@ -569,7 +569,14 @@ dptr valloc;
 
    showlevel(k_level);
    putstr(stderr, &proc->pname);
-   fprintf(stderr,"; co-expression_%ld ", (long)ccp->id);
+
+#ifdef Concurrent
+   if (ccp->status & Ts_Async)
+      fprintf(stderr,"; thread_%ld ", (long)ccp->id);
+   else
+#endif					/* Concurrent */
+      fprintf(stderr,"; co-expression_%ld ", (long)ccp->id);
+
    switch (swtch_typ) {
       case A_Coact:
          fprintf(stderr,": ");
@@ -585,7 +592,14 @@ dptr valloc;
          fprintf(stderr,"failed to ");
          break;
       }
-   fprintf(stderr,"co-expression_%ld\n", (long)ncp->id);
+
+#ifdef Concurrent
+   if (ncp->status & Ts_Async)
+      fprintf(stderr,"thread_%ld", (long)ncp->id);
+   else
+#endif					/* Concurrent */
+      fprintf(stderr,"co-expression_%ld\n", (long)ncp->id);
+
    fflush(stderr);
    }
 #endif					/* CoExpr */
@@ -962,9 +976,23 @@ struct b_coexpr *ncp;
    showline(findfile(t_ipc.opnd), findline(t_ipc.opnd));
    showlevel(k_level);
    putstr(stderr, &(bp->pname));
-   fprintf(stderr,"; co-expression_%ld : ", (long)ccp->id);
+
+#ifdef Concurrent
+   if (ccp->status & Ts_Async)
+      fprintf(stderr,"; thread_%ld : ", (long)ccp->id);
+   else
+#endif	
+      fprintf(stderr,"; co-expression_%ld : ", (long)ccp->id);
+
    outimage(stderr, (dptr)(sp - 3), 0);
-   fprintf(stderr," @ co-expression_%ld\n", (long)ncp->id);
+
+#ifdef Concurrent
+   if (ncp->status & Ts_Async)
+      fprintf(stderr," @ thread_%ld\n", (long)ncp->id);
+   else
+#endif	
+      fprintf(stderr," @ co-expression_%ld\n", (long)ncp->id);
+
    fflush(stderr);
    }
 
@@ -987,9 +1015,23 @@ struct b_coexpr *ncp;
    showline(findfile(t_ipc.opnd), findline(t_ipc.opnd));
    showlevel(k_level);
    putstr(stderr, &(bp->pname));
-   fprintf(stderr,"; co-expression_%ld returned ", (long)ccp->id);
+
+#ifdef Concurrent
+   if (ccp->status & Ts_Async)
+      fprintf(stderr,"; thread_%ld returned ", (long)ccp->id);
+   else
+#endif	
+      fprintf(stderr,"; co-expression_%ld returned ", (long)ccp->id);
+
    outimage(stderr, (dptr)(&ncp->es_sp[-3]), 0);
-   fprintf(stderr," to co-expression_%ld\n", (long)ncp->id);
+
+#ifdef Concurrent
+   if (ncp->status & Ts_Async)
+      fprintf(stderr," to thread_%ld\n", (long)ncp->id);
+   else
+#endif	
+      fprintf(stderr," to co-expression_%ld\n", (long)ncp->id);
+
    fflush(stderr);
    }
 
@@ -1012,8 +1054,23 @@ struct b_coexpr *ncp;
    showline(findfile(t_ipc.opnd), findline(t_ipc.opnd));
    showlevel(k_level);
    putstr(stderr, &(bp->pname));
-   fprintf(stderr,"; co-expression_%ld failed to co-expression_%ld\n",
-      (long)ccp->id, (long)ncp->id);
+
+#ifdef Concurrent
+   if (ccp->status & ncp->status & Ts_Async)
+      fprintf(stderr,"; thread_%ld failed to thread_%ld\n",
+      			(long)ccp->id, (long)ncp->id);
+   else
+   if ( (ccp->status & Ts_Async) && (ncp->status & Ts_Sync))
+      fprintf(stderr,"; thread_%ld failed to co-expression_%ld\n",
+      			(long)ccp->id, (long)ncp->id);
+   else
+   if ( (ccp->status & Ts_Sync) && ncp->status & Ts_Async)
+      fprintf(stderr,"; coexpression_%ld failed to thread_%ld\n",
+      			(long)ccp->id, (long)ncp->id);
+   else
+#endif	
+      fprintf(stderr,"; co-expression_%ld failed to co-expression_%ld\n",
+      			(long)ccp->id, (long)ncp->id);
    fflush(stderr);
    }
 #endif					/* CoExpr */

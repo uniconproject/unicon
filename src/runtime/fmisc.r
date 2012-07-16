@@ -342,9 +342,17 @@ function{1} display(i,f)
       else if (i > k_level)
          i = k_level;
 
-      fprintf(std_f,"co-expression_%ld(%ld)\n\n",
-         (long)BlkD(k_current,Coexpr)->id,
-	 (long)BlkD(k_current,Coexpr)->size);
+#ifdef Concurrent
+      if (BlkD(k_current,Coexpr)->status & Ts_Async)
+         fprintf(std_f,"thread_%ld(%ld)\n\n",
+            (long)BlkD(k_current,Coexpr)->id,
+	    (long)BlkD(k_current,Coexpr)->size);
+      else
+#endif					/* Concurrent */
+         fprintf(std_f,"co-expression_%ld(%ld)\n\n",
+            (long)BlkD(k_current,Coexpr)->id,
+	    (long)BlkD(k_current,Coexpr)->size);
+
       fflush(std_f);
 #ifdef MultiThread
       if (ce) {
@@ -1308,7 +1316,13 @@ function{1} type(x)
       table:    inline { return C_string "table";     }
       set:      inline { return C_string "set";       }
       record:   inline { return Blk(BlkD(x,Record)->recdesc,Proc)->recname; }
-      coexpr:   inline { return C_string "co-expression"; }
+      coexpr:   inline { 
+#ifdef Concurrent
+      		   if (BlkD(x, Coexpr)->status & Ts_Async)
+      		      return C_string "thread"; 
+#endif					/* Concurrent */
+      		   return C_string "co-expression"; 
+		   }
 #ifdef PatternType
       pattern:     inline { return C_string "pattern"; }
 #endif					/* PatternType */
@@ -2826,6 +2840,15 @@ function{1} Attrib(argv[argc])
       word base=0, q, n;
 
       if (argc == 0) runerr(130, nulldesc);
+
+#ifdef AAArrays
+  /* pending: add support for Attrib(L, DATATYPE") */
+		   if (BlkD(x,List)->listtail==NULL){
+	    	      if (BlkType(BlkD(x,List)->listhead)==T_Realarray)
+      		         return C_string "realarray";
+      		      return C_string "intarray";
+	    	      } 
+#endif					/* Arrays*/
 
       if (is:coexpr(argv[0])) {
       	 if (argc == 1) runerr(130, nulldesc);

@@ -173,8 +173,7 @@ dptr field_argp;			/* see comment in imisc.r/Ofield() */
 Check if our record is a class ( has a method vector)
 */
 		   for( i = 0; i < nfields;i++) {
-		       if (!strcmp(StrLoc(bptr->Proc.lnames[i]), "__m"))
-			 {
+		       if (!strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
 			   found = 1;
 			   break;
 			 }
@@ -401,7 +400,12 @@ int interp_x(int fsig,dptr cargp)
 
 #ifdef Concurrent
     int retval;
-#ifndef TSTATARG
+/*
+ * TSTATARG doesn't take a CURTSTATE because it is a passed parameter.
+ * OVLD doesn't take a CURTSTATE because it declares a tended variable.
+ * Review OVLD code and do away with the tended if possible.
+ */
+#if !(defined(TSTATARG) || defined(OVLD))
     CURTSTATE();
 #endif		 	   	  	 /* TSTATARG */
 #endif					/* Concurrent */

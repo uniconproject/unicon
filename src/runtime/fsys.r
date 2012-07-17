@@ -931,7 +931,13 @@ Deliberate Syntax Error
             if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
 		char tempbuf[1024];
 #if UNIX
-	    	strcpy(tempbuf, "ls -1 ");
+	    	strcpy(tempbuf, "ls -1d ");
+/*
+ * Get rid of colored ls output.  On by default.
+ */
+#ifndef NoLsExtensions
+	    	strcat(tempbuf, "--indicator-style=none ");
+#endif					/* LsExtensions */
 	    	strcat(tempbuf, fnamestr);
 	    	status |= Fs_Pipe;
 	    	f = popen(tempbuf, "r");
@@ -1510,9 +1516,19 @@ function{0,1} reads(f,i)
 #endif					/* ReadDirectory */
 
       /*
+       * For ordinary files, it is time to support reads -1 (whole file).
+       */
+      if ((i == -1) && (status == (Fs_Read|Fs_Buff))) {
+	 int fd, kk;
+	 struct stat statbuf;
+	 if ((fd = fileno(fp)) == -1) fail;
+	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
+	 i = statbuf.st_size;
+	 }
+      /*
        * Be sure that a positive number of bytes is to be read.
        */
-      if (i <= 0) {
+      else if (i <= 0) {
 	 irunerr(205, i);
 
 	 errorfail;

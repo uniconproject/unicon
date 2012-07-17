@@ -1516,7 +1516,7 @@ function{0,1} reads(f,i)
 #endif					/* ReadDirectory */
 
       /*
-       * For ordinary files, it is time to support reads -1 (whole file).
+       * For ordinary files, reads -1 means the whole file.
        */
       if ((i == -1) && (status == (Fs_Read|Fs_Buff))) {
 	 int fd, kk;
@@ -1524,6 +1524,16 @@ function{0,1} reads(f,i)
 	 if ((fd = fileno(fp)) == -1) fail;
 	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
 	 i = statbuf.st_size;
+	 }
+      /*
+       * For suspiciously large reads on normal files, cap at file size.
+       */
+      else if ((i >= 65535) && (status == (Fs_Read|Fs_Buff))) {
+	 int fd, kk;
+	 struct stat statbuf;
+	 if ((fd = fileno(fp)) == -1) fail;
+	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
+	 if (i > statbuf.st_size) i = statbuf.st_size;
 	 }
       /*
        * Be sure that a positive number of bytes is to be read.

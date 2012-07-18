@@ -119,10 +119,10 @@ struct optab optab[] = {
    {{"<<:=",   AUGSLT,     0},              0,              NULL, NULL}, /*27*/
    {{"<<=",    SLE,        0},              Binary,         NULL, NULL}, /*28*/
    {{"<<=:=",  AUGSLE,     0},              0,              NULL, NULL}, /*29*/
-   {{"<<@",    RCVBK,      Beginner+Ender}, Unary | Binary, NULL, NULL}, /*30*/
+   {{"<<@",    RCVBK,      Beginner+Ender}, Binary,         NULL, NULL}, /*30*/
    {{"<=",     NMLE,       0},              Binary,         NULL, NULL}, /*31*/
    {{"<=:=",   AUGNMLE,    0},              0,              NULL, NULL}, /*32*/
-   {{"<@",     RCV,        Beginner+Ender}, Unary | Binary, NULL, NULL}, /*33*/
+   {{"<@",     RCV,        Beginner+Ender}, Binary,         NULL, NULL}, /*33*/
    {{"=",      NMEQ,       Beginner},       Unary | Binary, NULL, NULL}, /*34*/
    {{"=:=",    AUGNMEQ,    0},              0,              NULL, NULL}, /*35*/
    {{"==",     SEQ,        Beginner},       Binary,         NULL, NULL}, /*36*/
@@ -141,8 +141,8 @@ struct optab optab[] = {
    {{"?:=",    AUGQMARK,   0},              0,              NULL, NULL}, /*49*/
    {{"@",      AT,         Beginner},       0,              NULL, NULL}, /*50*/
    {{"@:=",    AUGAT,      0},              0,              NULL, NULL}, /*51*/
-   {{"@>",     SND,        Beginner+Ender}, Unary | Binary, NULL, NULL}, /*52*/
-   {{"@>>",    SNDBK,      Beginner+Ender}, Unary | Binary, NULL, NULL}, /*53*/
+   {{"@>",     SND,        Beginner+Ender}, Binary,         NULL, NULL}, /*52*/
+   {{"@>>",    SNDBK,      Beginner+Ender}, Binary,         NULL, NULL}, /*53*/
    {{"\\",     BACKSLASH,  Beginner},       Unary,          NULL, NULL}, /*54*/
    {{"^",      CARET,      Beginner},       Unary | Binary, NULL, NULL}, /*55*/
    {{"^:=",    AUGCARET,   0},              0,              NULL, NULL}, /*56*/

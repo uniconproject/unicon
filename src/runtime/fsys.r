@@ -890,7 +890,9 @@ Deliberate Syntax Error
 	       runerr(209, spec);
 	    if (status & Fs_Append) {
 	       /* "na" => listen for connections */
+      	       DEC_NARTHREADS;
 	       fd = sock_listen(fnamestr, is_udp_or_listener);
+      	       INC_NARTHREADS_CONTROLLED;
 	    } else {
 	       C_integer timeout = 0;
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
@@ -900,7 +902,9 @@ Deliberate Syntax Error
                }
 #endif					/* Graphics || Messaging || ISQL */
 	       /* connect to a port */
+      	       DEC_NARTHREADS;
 	       fd = sock_connect(fnamestr, is_udp_or_listener, timeout);
+      	       INC_NARTHREADS_CONTROLLED;
 	    }
 	    /*
 	     * read/reads is not allowed on a listener socket, only select
@@ -1128,10 +1132,13 @@ function{0,1} read(f)
 	  StrLen(s) = 0;
           do {
 	     ws = (SOCKET)BlkD(f,File)->fd.fd;
+      	     DEC_NARTHREADS;
 	     if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
 	        /*IntVal(amperErrno) = errno; */
+      	        INC_NARTHREADS_CONTROLLED;
 	        fail;
 		}
+      	     INC_NARTHREADS_CONTROLLED;
 	     if (slen == -3)
 		fail;
 	     if (slen == 1 && *sbuf == '\n')
@@ -1209,7 +1216,9 @@ function{0,1} read(f)
 	 pollctr >>= 1;
 	 pollctr++;
 	 if (status & Fs_Window) {
+      	    DEC_NARTHREADS;
 	    slen = wgetstrg(sbuf,MaxReadStr,fp);
+      	    INC_NARTHREADS_CONTROLLED;
 	    if (slen == -1)
 	       runerr(141);
 	    else if (slen == -2)
@@ -1227,7 +1236,9 @@ function{0,1} read(f)
 	     char *s, *p=sbuf;
 	     IntVal(amperErrno) = 0;
 	     slen = 0;
+      	     DEC_NARTHREADS;
 	     d = readdir((DIR *)fp);
+      	     INC_NARTHREADS_CONTROLLED;
 	     if (!d)
 	        fail;
 	     s = d->d_name;
@@ -1248,11 +1259,12 @@ function{0,1} read(f)
 	if (status & Fs_Compress) {
             
             if (gzeof(fp)) fail;
-
+      	    DEC_NARTHREADS;
             if (gzgets((gzFile)fp,sbuf,MaxReadStr+1) == Z_NULL) {
+      	       INC_NARTHREADS_CONTROLLED;
 	       runerr(214);
                }
-
+      	    INC_NARTHREADS_CONTROLLED;
 	    slen = strlen(sbuf);
 
             if (slen==MaxReadStr && sbuf[slen-1]!='\n') slen = -2;
@@ -1271,9 +1283,13 @@ function{0,1} read(f)
 /*	      struct timeval timeout;
 	      timeout.tv_sec = 1L;
 	      timeout.tv_usec = 0L; */
+      	      DEC_NARTHREADS;
 	      if ((slen = ptgetstr(sbuf, MaxReadStr, (struct ptstruct *)fp, 0))
-		== -1)
+		== -1){
+      		 INC_NARTHREADS_CONTROLLED;
 		 fail;
+		 }
+      	      INC_NARTHREADS_CONTROLLED;
 	      }
 	 else
 #endif					/* PseudoPty */
@@ -1281,7 +1297,8 @@ function{0,1} read(f)
 #ifdef RecordIO
 	 if ((slen = (status & Fs_Record ? getrec(sbuf, MaxReadStr, fp) :
 			   getstrg(sbuf, MaxReadStr, BlkD(f,File))))
-	     == -1) fail;
+	     == -1)
+	     fail;
 #else					/* RecordIO */
 
 	 if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
@@ -1365,10 +1382,11 @@ function{0,1} reads(f,i)
 
 	 StrLoc(s) = NULL;
 	 StrLen(s) = 0;
-
+      	 DEC_NARTHREADS;
 	 if (!MFIN(mf, READING)) {
 	    Mstartreading(mf);
 	    }
+      	 INC_NARTHREADS_CONTROLLED;
 	 nbytes = 0;
 	 do {
 	    if (bytesread > 0) {
@@ -1377,8 +1395,9 @@ function{0,1} reads(f,i)
 	       else
 		  Maxread = MaxReadStr;
 	       }
-
+      	    DEC_NARTHREADS;
 	    slen = tp_read(mf->tp, sbuf, Maxread);
+      	    INC_NARTHREADS_CONTROLLED;
 
 	    if (slen <= 0) {
 	       extern int Merror;
@@ -1415,9 +1434,12 @@ function{0,1} reads(f,i)
       if (status & Fs_Pty) {
 	 struct ptstruct *p = (struct ptstruct *)BlkLoc(f)->File.fd.fp;
 	 tended char *s = alcstr(NULL, i);
+      	 DEC_NARTHREADS;
 	 if ((slen = ptlongread(s, i, p)) == -1) {
+      	    INC_NARTHREADS_CONTROLLED;
 	    fail;
 	    }
+      	 INC_NARTHREADS_CONTROLLED;
 	 return string(slen, s);
 	 }
       else
@@ -1436,14 +1458,16 @@ function{0,1} reads(f,i)
 		  else
 		     Maxread = MaxReadStr;
 		  }
-
+      	       DEC_NARTHREADS;
 	       if ((slen = sock_getstrg(sbuf, Maxread, ws)) == -1) {
 		    /*IntVal(amperErrno) = errno; */
+      	            INC_NARTHREADS_CONTROLLED;
 		    if (bytesread == 0)
 		        fail;
 		    else
 		        return s;
 		}
+      	        INC_NARTHREADS_CONTROLLED;
 		if (slen == -3)
 		    fail;
 
@@ -1503,7 +1527,10 @@ function{0,1} reads(f,i)
        */
       if ((BlkD(f,File)->status & Fs_Directory) != 0) {
          char *sptr;
-         struct dirent *de = readdir((DIR*) fp);
+	 struct dirent *de;
+      	 DEC_NARTHREADS;
+         de = readdir((DIR*) fp);
+      	 INC_NARTHREADS_CONTROLLED;
          if (de == NULL)
             fail;
          nbytes = strlen(de->d_name);
@@ -1555,8 +1582,12 @@ function{0,1} reads(f,i)
 	    runerr(174, f);
 
 	 IntVal(amperErrno) = 0;
-	 if (u_read(fd, i, &s) == 0)
+      	 DEC_NARTHREADS;
+	 if (u_read(fd, i, &s) == 0){
+      	    INC_NARTHREADS_CONTROLLED;
 	    fail;
+	    }
+      	 INC_NARTHREADS_CONTROLLED;
 	 return s;
       }
 #endif					/* PosixFns */
@@ -1575,7 +1606,9 @@ function{0,1} reads(f,i)
 	 if (gzeof(fp)) {
 	    fail;
 	    }
+      	 DEC_NARTHREADS;
 	 slen = gzread((gzFile)fp,StrLoc(s),i);
+      	 INC_NARTHREADS_CONTROLLED;
 	 if (slen == 0)
 	    fail;
 	 else if (slen == -1)
@@ -1598,8 +1631,9 @@ function{0,1} reads(f,i)
 	 }
       else
 #endif					/* Graphics */
-
+      DEC_NARTHREADS;
       tally = longread(StrLoc(s),sizeof(char),i,fp);
+      INC_NARTHREADS_CONTROLLED;
 
       if (tally == 0)
 	 fail;
@@ -2349,7 +2383,7 @@ function {1} name(x[nargs])
    declare {
       union f f;
 #ifdef Concurrent
-      register struct b_file *fblk;
+      tended struct b_file *fblk;
 #endif					/* terminate */
       word status =
 #if terminate

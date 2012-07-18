@@ -507,8 +507,41 @@ operator{0,1} @> snd(x,y)
       L = y;
       hp = BlkD(L, List);
       }
+   else if is:file(y) then inline {
+      tended struct descrip t;
+      union f f;
+      struct b_file *fblk = BlkD(y, File);
+      word status = fblk->status;
+  
+      f.fp = BlkLoc(y)->File.fd.fp;
+   
+      /*
+       * Convert the argument to a string, defaulting to a empty
+       *  string.
+       */
+       if (!def:tmp_string(x,emptystr,t))
+          runerr(109, x);
+
+	/*
+	 * Output the string.
+	 */
+#ifdef PosixFns
+        if (status & Fs_Socket) {
+           MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+	   if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
+              MUTEX_UNLOCKID(fblk->mutexid);
+	      fail;
+	      }
+           MUTEX_UNLOCKID(fblk->mutexid);
+	   return C_integer 1;
+      	}
+#endif	
+				/* PosixFns */
+      runerr(118, y);
+
+      }
    else 
-      runerr(106, y)
+      runerr(118, y)
 
    body{
       if (hp->size>=hp->max){
@@ -556,6 +589,43 @@ operator{0,1} @>> sndbk(x,y)
       L = y;
       hp = BlkD(L, List);
       }
+   else if is:file(y) then inline {
+      tended struct descrip t;
+      union f f;
+      struct b_file *fblk = BlkD(y, File);
+      word status = fblk->status;
+  
+      f.fp = BlkLoc(y)->File.fd.fp;
+   
+      /*
+       * Convert the argument to a string, defaulting to a empty
+       *  string.
+       */
+       if (!def:tmp_string(x,emptystr,t))
+          runerr(109, x);
+
+	/*
+	 * Output the string.
+	 */
+#ifdef PosixFns
+        if (status & Fs_Socket) {
+           MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
+	   if (sock_write(f.fd, StrLoc(t), StrLen(t)) < 0) {
+              MUTEX_UNLOCKID(fblk->mutexid);
+	      fail;
+	      }
+	   if (sock_write(f.fd, "\n", 1) < 0){
+              MUTEX_UNLOCKID(fblk->mutexid);
+	      fail;
+	      }
+           MUTEX_UNLOCKID(fblk->mutexid);
+	   return C_integer 1;
+      	}
+#endif	
+				/* PosixFns */
+      runerr(118, y);
+
+      }
    else 
       runerr(106, y)
 
@@ -594,7 +664,6 @@ operator{0,1} @< rcv(x,y)
 
    if !is:null(x) then inline {
       C_integer xval;
-
       if (!cnv:C_integer(x, xval)) 
          runerr(101, x);
 
@@ -634,8 +703,75 @@ operator{0,1} @< rcv(x,y)
    else if is:list(y) then inline {
       hp = BlkD(y, List);
       }
+#ifdef PosixFns
+   else if is:file(y) then inline {
+      int status, fd, i=0;
+      tended struct descrip desc;
+      status = BlkD(y, File)->status;
+
+      if (!(status & Fs_Read))
+	  runerr(212, y);
+
+#ifdef Graphics
+      if (status & Fs_Window) {
+	 /* implement ready() on window */
+         fail;
+         }
+#endif					/* Graphics */
+
+#if defined(PseudoPty)
+      if (status & Fs_Pty) {
+         tended char *sbuf = NULL;
+         struct ptstruct *pt = BlkD(y, File)->fd.pt;
+#if NT
+         DWORD tb;
+	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
+		&& (tb>0)) {
+#else
+	 int tb;
+	 fd_set readset;
+	 struct timeval tv;
+	 FD_ZERO(&readset);
+	 FD_SET(pt->master_fd, &readset);
+	 tv.tv_sec = tv.tv_usec = 0;
+	 if (select(pt->master_fd+1, &readset, NULL, NULL, &tv) > 0) {
+	    /* performance bug: how many bytes are really available? */
+	    tb = 1;
+#endif
+	    if (i == 0) i = tb;
+            else if (tb < i) i = tb;
+            Protect(sbuf = alcstr(NULL, i), runerr(0));
+	    DEC_NARTHREADS;
+#if NT
+            status = ReadFile(pt->master_read, sbuf, i, &tb, NULL);
+#else
+	    tb = read(pt->master_fd, sbuf, i);
+            status = (tb != -1);
+#endif
+	    INC_NARTHREADS_CONTROLLED;
+	    if (!status) fail;
+            StrLoc(desc) = sbuf;
+            StrLen(desc) = tb;
+            return desc;
+	 }
+	else fail;
+	}
+#endif					/* PseudoPty */
+
+      if ((fd = get_fd(y, 0)) < 0)
+	 runerr(174, y);
+
+      if (status & Fs_Buff)
+	 runerr(1048, y);
+
+      IntVal(amperErrno) = 0;
+      if (u_read(fd, i, &desc) == 0)
+	 fail;
+      return desc;
+      }
+#endif					/* PosixFns */
    else 
-      runerr(106, y)
+      runerr(118, y)
 
    body{
 
@@ -660,7 +796,7 @@ end
 
 "x@<<y - blocking receive."
 /*
- *  thread send .  y is either &null or a co-expression.
+ *  thread send . y is either &null or a co-expression.
  *  if y is null, send to (the current thread's) outbox.
  *  fails if value cannot be sent to y because y is full.
  *  otherwise, produces the size of y's queue
@@ -685,8 +821,65 @@ operator{0,1} @<< rcvbk(x,y)
    else if is:list(y) then inline {
       hp = BlkD(y, List);
       }
+   else if is:file(y) then inline {
+      register word slen, rlen;
+      register char *sptr;
+      int status;
+      char sbuf[MaxReadStr];
+      tended struct descrip s;
+      FILE *fp;
+#ifdef PosixFns
+      SOCKET ws;
+#endif					/* PosixFns */
+      /*
+       * Get a pointer to the file and be sure that it is open for reading.
+       */
+      fp = BlkD(y, File)->fd.fp;
+      status = BlkLoc(y)->File.status;
+      if ((status & Fs_Read) == 0)
+      runerr(212, y);
+
+#ifdef PosixFns
+      if (status & Fs_Socket) {
+         StrLen(s) = 0;
+         do {
+	    ws = (SOCKET)BlkD(y,File)->fd.fd;
+      	    DEC_NARTHREADS;
+	    if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
+	       /*IntVal(amperErrno) = errno; */
+      	       INC_NARTHREADS_CONTROLLED;
+	       fail;
+	       }
+      	    INC_NARTHREADS_CONTROLLED;
+	    if (slen == -3)
+	       fail;
+	    if (slen == 1 && *sbuf == '\n')
+	       break;
+	    rlen = slen < 0 ? (word)MaxReadStr : slen;
+
+	    Protect(reserve(Strings, rlen), runerr(0));
+	    if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
+	       Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
+	       Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
+	       }
+
+	    Protect(sptr = alcstr(sbuf,rlen), runerr(0));
+	    if (StrLen(s) == 0)
+	       StrLoc(s) = sptr;
+	    StrLen(s) += rlen;
+	    if (StrLoc(s) [ StrLen(s) - 1 ] == '\n') { StrLen(s)--; break; }
+	    else {
+	       /* no newline to trim; EOF? */
+	       }
+	    }
+	 while (slen > 0);
+         return s;
+	 }
+#endif					/* PosixFns */
+      runerr(118, y);
+      }
    else 
-      runerr(106, y)
+      runerr(118, y)
 
    body{
       switch (x){
@@ -762,6 +955,8 @@ operator{0,1} @<< rcvbk(x,y)
    	    return d;
 	    } /* default */
 	 } /* switch */
+
+      fail;   /* make rtt happy! */
       }
 end
 #else					/* Concurrent */

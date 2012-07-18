@@ -648,14 +648,14 @@ operator{0,1} @>> sndbk(x,y)
       }
 end
 
-"x@<y - non-blocking receive."
+"x<@y - non-blocking receive."
 /*
  *  thread send .  y is either &null or a co-expression.
  *  if y is null, send to (the current thread's) outbox.
  *  fails if value cannot be sent to y because y is full.
  *  otherwise, produces the size of y's queue
  */
-operator{0,1} @< rcv(x,y)
+operator{0,1} <@ rcv(x,y)
    declare {
       tended struct b_list *hp;
       struct descrip d;
@@ -794,14 +794,14 @@ operator{0,1} @< rcv(x,y)
       }
 end
 
-"x@<<y - blocking receive."
+"x<<@y - blocking receive."
 /*
  *  thread send . y is either &null or a co-expression.
  *  if y is null, send to (the current thread's) outbox.
  *  fails if value cannot be sent to y because y is full.
  *  otherwise, produces the size of y's queue
  */
-operator{0,1} @<< rcvbk(x,y)
+operator{0,1} <<@ rcvbk(x,y)
    declare {
       tended struct b_list *hp;
       struct descrip d;
@@ -975,12 +975,12 @@ abstract { return empty_type }
 body { fail; }
 end
 
-operator{0} @< rcv(x,y)
+operator{0} <@ rcv(x,y)
 abstract { return empty_type }
 body { fail; }
 end
 
-operator{0} @<< rcvbk(x,y)
+operator{0} <<@ rcvbk(x,y)
 abstract { return empty_type }
 body { fail; }
 end

@@ -280,7 +280,7 @@ void main(int argc, char **argv)
       if (buf) {
 	 sprintf(buf, "FPATH=%s %s", (p ? p : "."), (q ? q : "."));
 	 putenv(buf);
-	 free(buf);
+	 /* buf is part of the environment; don't free it. */
 	 }
       }
 #endif					/* UNIX */

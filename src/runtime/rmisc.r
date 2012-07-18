@@ -633,12 +633,15 @@ int noimage;
             putc('(', f);
 	    if (is_obj) i = 2; else
             i = 0;
+	    /* if we have any fields at all... */
+	    if (i < j) {
             for (;;) {
                outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);
                if (++i >= j)
                   break;
                putc(',', f);
                }
+	    }
             putc(')', f);
             }
          }

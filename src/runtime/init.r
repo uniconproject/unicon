@@ -1346,14 +1346,13 @@ void segvtrap()
    {
    static int n = 0;
 
-   MUTEX_LOCKID(MTX_SEGVTRAP_N);
+   MUTEX_LOCKID_CONTROLLED(MTX_SEGVTRAP_N);
    if (n != 0) {			/* only try traceback once */
       fprintf(stderr, "[Traceback failed]\n");
       MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
       exit(1);
       }
    n++;
-   MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
 
 #if MVS || VM
 #if SASC
@@ -1362,6 +1361,7 @@ void segvtrap()
 #endif					/* MVS || VM */
 
    fatalerr(302, NULL);
+   MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
    }
 
 /*
@@ -1464,6 +1464,16 @@ extern int gettstate_count, gettstate_count2[];
 	 }
       }
 #endif					/* MultiThread */
+
+#ifdef Concurrent
+       /* 
+        * make sure no other thread is running, we are about to do 
+        * some cleanup and free memory so it wont be safe to leave 
+	* any other thread running after this point.
+	*/
+        thread_control(TC_STOPALLTHREADS);
+#endif					/* PresentationManager */
+
 
 #ifdef TallyOpt
    {

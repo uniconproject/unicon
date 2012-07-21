@@ -242,6 +242,25 @@ function{} exit(status)
    if !def:C_integer(status, EXIT_SUCCESS) then
       runerr(101, status)
    inline {
+
+#ifdef Concurrent
+   /*
+    * exit if this is a thread.
+    * May want to check/fix thread  activator initialization 
+    * depending on desired join semantics.
+    * coclean calls pthread_exit() in case of Async threads.
+    */
+   if ( status==10101 ){
+     struct b_coexpr *ccp;
+     CURTSTATE();
+     ccp = BlkD(k_current, Coexpr);
+     if (ccp->status & Ts_Async){
+         #ifdef CoClean
+ 	 coclean(ccp->cstate);
+         #endif				/* CoClean */
+         }
+      }
+#endif					/* Concurrent */
       c_exit((int)status);
       }
 end

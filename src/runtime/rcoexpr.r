@@ -708,13 +708,14 @@ void clean_threads()
    pthread_cond_destroy(&cond_tc);
    sem_destroy(&sem_tc);
 
-   for(i=0; i<nmutexes; i++){
+   /*  keep MTX_SEGVTRAP_N alive	*/
+   for(i=1; i<nmutexes; i++){
       pthread_mutex_destroy(mutexes[i]);
       free(mutexes[i]);
       }
    
-   free(mutexes);
-   
+  /* free(mutexes); */
+
 
    for(i=0; i<ncondvars; i++){
       pthread_cond_destroy(condvars[i]);
@@ -873,7 +874,7 @@ int action;
          pthread_cond_broadcast(&cond_tc);
          return;
          }
-      case:TC_STOPALLTHREADS:{
+      case TC_STOPALLTHREADS:{
          /*
           * If there is a pending TC request, then block/sleep.
           * Make sure we do not start a GC in the middle of starting
@@ -910,20 +911,23 @@ int action;
          return;
          }
       case TC_KILLALLTHREADS:{
-
+/*
          if (ccp->status & Ts_Async){
       	    #ifdef CoClean
  	    coclean(ccp->cstate);
-            #endif				/* CoClean */
+            #endif			
             }
+*/
 	 break;
          }
       default:{
 
       }  /* switch (action) */
+     }
 
   return;
 }
+
 
 void howmanyblock()
 {

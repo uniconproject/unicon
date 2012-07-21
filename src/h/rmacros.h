@@ -1202,6 +1202,7 @@
    #define TC_CALLTHREADS 1
    #define TC_WAKEUPCALL 2
    #define TC_STOPALLTHREADS 3
+   #define TC_KILLALLTHREADS 4
 
 #endif					/* Concurrent */
 

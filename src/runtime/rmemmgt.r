@@ -1344,14 +1344,17 @@ static void cofree()
           *  it's not possible to have more than one, but nonetheless, the
           *  code provides for more than one.
           */
-#if 0
-	 /* disabled and leaking for now, pending a bug hunt */
          for (abp = xep->es_actstk; abp; ) {
             xabp = abp;
             abp = abp->astk_nxt;
-            free((pointer)xabp);
-            }
+            if ( xabp->nactivators == 0 )
+               free((pointer)xabp);
+#ifdef __TRACE
+            else 
+	       fprintf(stderr,"Warning: internal gc error: activator list is not empty.\n"); 
 #endif
+            } /* for abp */ 
+
          #ifdef CoClean
  	    coclean(xep->cstate);
          #endif				/* CoClean */

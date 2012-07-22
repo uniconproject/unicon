@@ -1176,9 +1176,11 @@ struct b_coexpr *ce;
 
 #ifdef Concurrent
    if (ce->status & Ts_Sync){
+#endif					/* Concurrent */
       if (--arp->acount == 0)
          abp->nactivators--;
       ce->es_actstk = abp;
+#ifdef Concurrent
       }
 #endif					/* Concurrent */
 

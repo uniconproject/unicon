@@ -1471,7 +1471,7 @@ extern int gettstate_count, gettstate_count2[];
         * some cleanup and free memory so it wont be safe to leave 
 	* any other thread running after this point.
 	*/
-        thread_control(TC_STOPALLTHREADS);
+        thread_control(TC_KILLALLTHREADS);
 #endif					/* PresentationManager */
 
 

@@ -788,7 +788,13 @@ int action;
       case TC_ANSWERCALL:{
          /*---------------------------------*/
          switch (action_in_progress){
-	    case TC_KILLALLTHREADS:
+	    case TC_KILLALLTHREADS:{
+      	       #ifdef CoClean
+	       DEC_NARTHREADS;
+     	       coclean(BlkD(k_current, Coexpr)->cstate);
+               #endif
+	       break;
+	       }
       	    default:{
       	       /*
        	        *  Check to see it is necessary to do GC for the current thread.
@@ -905,20 +911,19 @@ int action;
 	    usleep(2);
 	    }
          /*
-          * Now it is safe to proceed with GC with only the current thread running
+          * Now it is safe to proceed with TC with only the current thread running
           */
          tc_queue--;
          return;
          }
       case TC_KILLALLTHREADS:{
-/*
-         if (ccp->status & Ts_Async){
-      	    #ifdef CoClean
- 	    coclean(ccp->cstate);
-            #endif			
-            }
-*/
-	 break;
+	 /* wait until only this thread is running  */
+         thread_call = 1;
+	 while (1) {
+	    if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
+	    usleep(2);
+	    }
+	 return;
          }
       default:{
 

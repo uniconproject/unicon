@@ -4,6 +4,8 @@
 # zsharif@gmail.com
 # June 2009
 #
+BASE=../../..
+include ../../makedefs
 
 UC      = ../../../bin/unicon
 CFLAGS  = -c -u

@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-
+BASE=../..
 include ../makedefs
 UC      = ../../bin/unicon
 EXEs    = udb

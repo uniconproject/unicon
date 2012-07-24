@@ -2401,7 +2401,7 @@ interp_quit:
 
 #ifdef MultiThread
 interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick,E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail,E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret,E_Oret,E_Literal,E_Operand,E_Syntax,E_Cstack)
+interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick, E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail, E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret, E_Oret,E_Literal,E_Operand,E_Syntax,E_Cstack)
 #else					/* MultiThread */
 interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 #endif					/* MultiThread */

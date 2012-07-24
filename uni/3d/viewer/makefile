@@ -1,6 +1,6 @@
-
-DEL = rm -rf
-UC=unicon
+include ../../makedefs
+DEL = $(RM)
+UC=$(UNICON)
 UFLAGS=-c -u
 
 UFILES= u3dviewer.u world.u subwin3d.u 

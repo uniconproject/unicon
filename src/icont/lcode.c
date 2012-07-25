@@ -1617,7 +1617,7 @@ void gentables()
     * in a loop, but are we sure it is 32-vs.-64-bit correct?
     */
    pc += NUMOPCODES * sizeof(int);
-   if (longwrite(op2fieldnum, (long) (NUMOPCODES) * (sizeof(int)), outfile) < 0)
+   if (longwrite((char *)op2fieldnum, (long) (NUMOPCODES) * (sizeof(int)), outfile) < 0)
          quit("cannot write icode file");
 
    

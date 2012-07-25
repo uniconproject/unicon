@@ -891,7 +891,7 @@ static char *op2funcmap[] = {
    "__minus__", /*binary -  operator*/
    "__mod__",   /*binary % operator*/
    "__mult__",  /*binary * operator*/
-   "__neg__",   /* unary ~ operator */
+   "__neg__",   /* unary - operator */
    "__neqv__",  /*binary ~=== operator*/
    NULL, 
    NULL, 
@@ -906,14 +906,18 @@ static char *op2funcmap[] = {
    "__powr__",  /*binary ^ operator*/
    "__random__",/* unary ? operator */ 
    NULL, 
+	NULL,
+	NULL,
    "__refresh__", /* unary ^ operator */
    NULL, 
    "__sect__", 
+	NULL,
+	NULL,
    "__size__", /* unary * operator */
    "__subsc__", /* ternary [i:j] operator*/
    NULL, 
-   "__tabmat__", /* unary ~ operator */
-   "__toby__", 
+   "__tabmat__", /* unary = operator */
+   "__toby__", /* ternary  to i by j "operator" */
    "__union__", /*binary ++ operator*/
    NULL, 
    NULL, 
@@ -930,7 +934,7 @@ static char *op2funcmap[] = {
    NULL, 
    NULL, 
    NULL
-   };
+   }; /* op2funcmap */
 
 #define NUMOPCODES (sizeof(op2funcmap)/sizeof(char *))
 

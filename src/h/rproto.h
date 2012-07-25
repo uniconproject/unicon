@@ -75,6 +75,11 @@ struct b_list   *alclisthdr	(uword size, union block *bptr);
 #endif					/* Arrays */
 
 int		anycmp		(dptr dp1,dptr dp2);
+#ifdef Arrays
+int		arraytolist	(struct descrip *arr);
+int		cplist2realarray(dptr dp, dptr dp2, word i, word j,
+				 word skipcopyelements);
+#endif					/* Arrays */
 int		bfunc		(void);
 struct b_proc	*bi_strprc	(dptr s, C_integer arity);
 void		c_exit		(int i);
@@ -230,6 +235,9 @@ int		interp		(int fsig,dptr cargp);
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
 int		iselect		(int fd, int t);
+int		Kcset		(dptr cargp);
+int		Klcase		(dptr cargp);
+int		Kucase		(dptr cargp);
 int		lexcmp		(dptr dp1,dptr dp2);
 word		longread	(char *s,int width,long len,FILE *fname);
 #if HAVE_LIBZ
@@ -254,6 +262,7 @@ word		mul		(word a,word b, int *over_flowp);
 word		neg		(word a, int *over_flowp);
 void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub*/
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
+void		openlog		(char *p);
 void		outimage	(FILE *f,dptr dp,int noimage);
 struct b_coexpr	*popact		(struct b_coexpr *ce);
 unsigned long	physicalmemorysize();
@@ -680,10 +689,12 @@ int checkOpenConsole( FILE *w, char *s );
       int init_3dcontext(wcp wc);
       int copy_3dcontext(wcp wc, wcp rv);
       void makecurrent(wbp w);
+      int make_enough_texture_space(wcp wc);
       int popmatrix();
       int pushmatrix();
       int pushmatrix_rd(wbp w, dptr f);
       int redraw3D(wbp w);
+      int release_3d_resources(wbp w);
       int rotate(wbp w, dptr argv, int i, dptr f);
       int scale(wbp w, dptr argv, int i, dptr f);
       int section_length(wbp w);
@@ -692,10 +703,12 @@ int checkOpenConsole( FILE *w, char *s );
       int seteyedir(wbp w, char *s);
       int seteyepos(wbp w, char *s);
       int seteyeup(wbp w, char *s);
+      int setfov(wbp w, char* s);
       int setlight(wbp w, char* s, int light);
       int setlinewidth3D(wbp w, LONG linewid);
       int setmaterials(wbp w, char* s);
       int setmeshmode(wbp w, char* s);
+      int setnormode(wbp w, char* s);
       int setrings(wbp w, char *s);
       int setselectionmode(wbp w, char* s);
       int setslices(wbp w, char *s);
@@ -888,6 +901,7 @@ int	nthcmp		(dptr d1,dptr d2);
 void	nxttab		(C_integer *col, dptr *tablst, dptr endlst,
 			   C_integer *last, C_integer *interval);
 int	order		(dptr dp);
+int	pathFind	(char target[], char buf[], int n);
 int	printable	(int c);
 int	ripow		(double r, C_integer n, dptr rslt);
 void	rtos		(double n,dptr dp,char *s);

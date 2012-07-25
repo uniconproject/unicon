@@ -1728,13 +1728,15 @@ unsigned long physicalmemorysize()
 	 }
       fclose(f);
       }
+   return 0;
    /*
     * No meminfo? Could try "top", but don't want to launch external process
     * during initialization...
     */
 #endif					/* MacOSX */
 #endif					/* SUN */
-#endif					/* UNIX */
+
+#else					/* UNIX */
 #if NT
    MEMORYSTATUS ms;
    GlobalMemoryStatus(&ms);
@@ -1742,4 +1744,5 @@ unsigned long physicalmemorysize()
 #else					/* NT */
    return 0;
 #endif					/* NT */
+#endif					/* UNIX */
 }

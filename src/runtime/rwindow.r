@@ -640,7 +640,6 @@ int len;
   /* show the cursor again */
   UpdateCursorPos(ws, w->context);
   showcrsr(ws);
-  return;
 }
 
 
@@ -1223,7 +1222,7 @@ int i;
 int rowbytes = width * bpp;
 char *tmp;
 
-if (bpp!=1) return rasterdata;
+if (bpp!=1) return (unsigned char *)rasterdata;
 if ((tmp = malloc(rowbytes))==NULL) return NULL;
 for(i=0;i<height/2;i++) {
    memmove(tmp, rasterdata + (i * rowbytes), rowbytes);

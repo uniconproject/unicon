@@ -713,7 +713,8 @@ int *ip;
 	       if ( !p )
 		  error(NULL, "no file name given for logfile");
 	       }
-            if (!openlog(p))
+            openlog(p);
+            if (!flog)
                syserr("Unable to open logfile\n");
 	    break;
 	    }

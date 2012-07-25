@@ -1346,7 +1346,11 @@ function{1} type(x)
                 case T_Coexpr: { return C_string "foreign-local-co-expression";}
 		default:       { return C_string "foreign-local-??";       }
 		}
-	     fail; /* won't get here; this silences a bogus rtt warning */
+	     /*
+	      * won't get here; this silences a bogus rtt warning, but some
+	      * C compilers may be smart enough to notice and complain.
+	      */
+	     fail;
              }
 #endif					/* EventMon */
       default:

@@ -186,7 +186,10 @@ char *outname;
 	 }
 
       if (infile == NULL) {
-	 cannotopen("cannot open", inname); /* die w/ detailed diagnostic */
+	 cannotopen("cannot open", inname); /* die w/ diagnostic */
+	 }
+      else if (verbose >= 5) {
+	 fprintf(stderr, "linking %s\n", inname);
 	 }
       readglob(lf);
       fclose(infile);

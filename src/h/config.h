@@ -133,7 +133,11 @@
    #define CoExpr
 #endif					/* NoCoExpr */
 
-#ifndef NoMultiThread
+#ifdef NoMultiThread
+#ifndef NoEventMon
+   #define NoEventMon
+#endif					/* NoEventMon */
+#else
    #undef MultiThread
    #define MultiThread
 #endif					/* NoMultiThread */

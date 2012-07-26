@@ -202,3 +202,7 @@
 #ifdef HAVE_VOICE
    Feature(1, "_VOIP", "Voice Over IP")
 #endif					/* HAVE_VOICE */
+
+#ifdef OVLD
+   Feature(1, "_OVLD", "operator overloading")
+#endif					/* OVLD */

@@ -188,12 +188,12 @@
 #ifdef EventMon
    #undef MultiThread
    #define MultiThread
-#endif					/* EventMon */
 
 #ifndef NoMonitoredTrappedVar
    #undef MonitoredTrappedVar
    #define MonitoredTrappedVar
 #endif					/* MonitoredTrappedVar */
+#endif					/* EventMon */
 
 
 /*

@@ -790,8 +790,10 @@ int action;
          switch (action_in_progress){
 	    case TC_KILLALLTHREADS:{
       	       #ifdef CoClean
-	       DEC_NARTHREADS;
      	       coclean(BlkD(k_current, Coexpr)->cstate);
+	       #else
+      	       DEC_NARTHREADS;	
+      	       pthread_exit(NULL);
                #endif
 	       break;
 	       }

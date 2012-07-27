@@ -295,9 +295,15 @@ struct token *trigger;
             e1 = (e1 * e2);
             break;
          case '/':
+	    if (e2 == 0) {
+	       errt2(*tp, "division by zero in #", trigger->image);
+	       }
             e1 = (e1 / e2);
             break;
          case '%':
+	    if (e2 == 0) {
+	       errt2(*tp, "modulo by zero in #", trigger->image);
+	       }
             e1 = (e1 % e2);
             break;
          }

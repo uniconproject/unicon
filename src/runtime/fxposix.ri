@@ -904,7 +904,11 @@ end
 
 "ioctl() - control a device driver."
 
+#if NT || !defined(UNICON_IOCTL)
+function{0} ioctl(f, action, options)
+#else
 function{0,1} ioctl(f, action, options)
+#endif
    if !cnv:C_integer(action) then
       runerr(103, action)
    if !is:file(f) then

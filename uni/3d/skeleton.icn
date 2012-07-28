@@ -121,8 +121,15 @@ class Skeleton(
       every root_bone := !root_bones do 
 	 root_bone.render_standalone()
    end
+
+   method swap_anim_keys(curious)
+     local mesh
+      every mesh := !lst_mesh do
+	 mesh.swap_anim_keys(curious)
+   end
+  
    
-   method calc_animation(anim_clock)   
+   method calc_animation(anim_clock, curious)   
       local mesh, root_bone, t
       t:=&time
       every root_bone := !root_bones do 
@@ -138,10 +145,11 @@ class Skeleton(
       if rendering_mode == "bone_mesh_final" then{
 	 every mesh := !lst_mesh do{
 	    DEBUGW("special rendering!!! mesh: ", mesh.label)
-	    mesh.update_render()
+	    mesh.update_render(curious)
 	    DEBUGW(" special render:", &time-t)
 	  }
       }
+
    end   
    
    initially()

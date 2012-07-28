@@ -29,12 +29,22 @@ class Bone : Node(
    
    animation,
    
-   display_list_matrix
+   display_list_matrix,
+
+   anim_index_mat,anim_index_R,
+   anim_index_S, anim_index_T
+
    )
    method init()
       lst_vertex_index := []
       lst_weight := []
       skin_offset_matrix := []     
+      anim_index_mat:=1 
+      anim_index_R:=1
+      anim_index_S:=1
+      anim_index_T:=1
+         
+
    end
    
    
@@ -201,15 +211,7 @@ class Bone : Node(
    
    method calc_animation(pkey)
       local delta_key, cur_time, A, B, C, mat, quat, scal, tran, bone
-      static anim_index_mat,anim_index_R,
-         anim_index_S, anim_index_T
-      initial{
-	 anim_index_mat:=1 
-	 anim_index_R:=1
-         anim_index_S:=1
-         anim_index_T:=1
-         }
-         
+
       DEBUGW("anim time:", pkey)
       if /animation then{
          #DEBUGW("no Animation for me! bone:", image(label), " mesh:", image(mesh_name))

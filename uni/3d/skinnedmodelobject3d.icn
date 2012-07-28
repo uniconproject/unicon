@@ -19,10 +19,13 @@ class SkinnedModelObject3D:ModelObject3D(
       is_rigid,			# null if the model does not have bones      
       tbl_animation_sets,
       animationc,		# AnimationController()
+      current_anim,
 
-      rendering_mode		# "mesh", "bone", bone_mesh , "morph", or what else?
-
- 
+      rendering_mode,	# "mesh", "bone", bone_mesh , "morph", or what else?
+      cv_anim,
+      swap_key,
+      key_is_ready,
+      anim_thread
    )
    
    method load( fname )
@@ -124,6 +127,10 @@ class SkinnedModelObject3D:ModelObject3D(
       if member(tbl_animation_sets, nam) then 
 	 return tbl_animation_sets[nam]
    end
+
+   method get_current_animation()
+      return \current_anim
+   end
    
    method pick_animation(nam)
       local anim, a
@@ -132,6 +139,7 @@ class SkinnedModelObject3D:ModelObject3D(
 
       if \anim then{
 	 animationc.set_animation_track(anim)
+         current_anim := anim.label
 	 DEBUGW("picked animation:", anim.label)
 	 DEBUGW("max key:", anim.maxKey)
 	 #every a:=!anim.lsAnimation do{
@@ -159,20 +167,55 @@ class SkinnedModelObject3D:ModelObject3D(
    end
    
    method calc_animation()
-      local t
-      
-      if rendering_mode == "bone_mesh_final" then{
-         t:=&time
-         reset_skin()
-         #DEBUGW("reset skin time:", &time-t)
+      if /anim_thread then{
+         if rendering_mode == "bone_mesh_final" then{
+            reset_skin()
+            }
+         animationc.calc_animation()
          }
-      
-      animationc.calc_animation()
-      
+      else{
+        if /key_is_ready then{
+           #if /swap_key then
+           { swap_key := 1; signal(cv_anim)}
+	   }
+         else{
+            swap_anim_keys()
+            key_is_ready := &null
+            swap_key := 1
+            signal(cv_anim)
+            }
+	}
    end
-   
-   
 
+  method swap_anim_keys()
+     skeleton.swap_anim_keys(self)
+  end
+
+  method wait_key()
+    critical cv_anim: while /swap_key & \key_is_ready do wait(cv_anim) 
+  end
+
+  method start_anim_thread()
+    cv_anim := condvar()
+    key_is_ready := &null
+    swap_key := &null
+    anim_thread := thread calc_animation_thread()
+  end
+
+
+  method notify()
+    key_is_ready := 1
+    swap_key := &null
+  end
+
+  method calc_animation_thread()
+     repeat{
+        if rendering_mode == "bone_mesh_final" then{
+           reset_skin()
+           }
+        animationc.calc_animation(self)
+        }
+   end
 
    initially(myname, rendmod)
       self.ModelObject3D.initially(myname)

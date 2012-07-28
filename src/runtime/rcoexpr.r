@@ -781,7 +781,20 @@ int action;
 {
    static int tc_queue=0;        /* how many threads are waiting for TC */
    static int action_in_progress=TC_NONE;
-   
+#ifdef GC_TIMING_TUNING
+/* timing for GC, for testing and performance tuning */
+   struct timeval    tp; 
+   static word t_init=0;
+   static word first_thread=0;
+   static word thrd_t=0;
+   static word lastgc_t=0;
+   static word gc_count=-5;
+   static word tot = 0;
+   static word tot_lastgc=0;
+   static word tot_gcwait=0;
+   word tmp;
+#endif
+
    CURTSTATE();
 
    switch (action){
@@ -878,8 +891,27 @@ int action;
          action_in_progress = TC_NONE;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
          MUTEX_UNLOCKID(MTX_THREADCONTROL);
+
+#ifdef GC_TIMING_TUNING
+/* timing for GC, for testing and performance tuning */
+
+        gettimeofday(&tp, NULL);
+	tmp =  tp.tv_sec * 1000000 + tp.tv_usec-t_init;
+        if (gc_count>0){
+	   tot += tmp;
+    	   printf("========total GC time (ms):%d   av=%d\n", tmp/1000,
+		 		    tot/1000/gc_count);
+           }
+	else
+    	   printf("========total GC time (ms):%d\n", tmp/1000);
+
+	t_init = 0;
+        first_thread=0;
+#endif
+
          /* broadcast a wakeup call to all threads waiting on cond_tc */
          pthread_cond_broadcast(&cond_tc);
+
          return;
          }
       case TC_STOPALLTHREADS:{
@@ -896,6 +928,33 @@ int action;
 
          sem_wait(&sem_tc); /* Allow only one thread to pass at a time!! */
 
+#ifdef GC_TIMING_TUNING
+/* timing for GC, for testing and performance tuning */
+
+     if (t_init==0){
+        first_thread=1;
+         gc_count++;
+
+        gettimeofday(&tp, NULL);
+    	thrd_t = t_init = tp.tv_sec * 1000000 + tp.tv_usec;
+
+     	if (lastgc_t!=0){
+
+           if (gc_count>0){
+	      tot_lastgc+=thrd_t-lastgc_t;
+	      printf("+++++++++++++\ntime (ms) since last GC: %d    av=%d\n***********\n",
+	   			  (t_init-lastgc_t)/1000, tot_lastgc/1000/gc_count);
+	      }
+           else
+	      printf("+++++++++++++\ntime (ms) since last GC: %d\n***********\n",
+	   			  (t_init-lastgc_t)/1000);
+          }
+
+ 	 lastgc_t=t_init;
+
+	}
+#endif
+
          /* If another TCthread just woke me up, ensure that he is gone to sleep already! */
          MUTEX_LOCKID(MTX_COND_TC);
          MUTEX_UNLOCKID(MTX_COND_TC);
@@ -904,14 +963,30 @@ int action;
 
          TCthread = pthread_self();
          thread_call = 1;
-         action_in_progress = action;
 	 /* NARthreads should reach and stay at zero during TC*/
 	 while (1) {
 	    MUTEX_LOCKID(MTX_NARTHREADS);
 	    if (NARthreads  <= 0) break;  /* unlock MTX_NARTHREADS after GC*/
 	    MUTEX_UNLOCKID(MTX_NARTHREADS);
-	    usleep(2);
+	    usleep(50);
 	    }
+
+#ifdef GC_TIMING_TUNING
+/* timing for GC, for testing and performance tuning */
+        gettimeofday(&tp, NULL);
+	tmp = tp.tv_sec * 1000000 + tp.tv_usec;
+        if (gc_count>0 && first_thread){	
+	   tot_gcwait +=tmp-t_init;
+	   first_thread=0;
+    	   printf("@@@SUSPEND TIME: time (microsec) I waited to start GC=%d     Av=%d \n", 
+	   		tmp-thrd_t, tot_gcwait/gc_count);
+	   }
+	   else
+    	   printf("SAME GC Cycle:time (microsec) I waited to start GC=%d\n", tmp-thrd_t);
+ 	thrd_t = tmp;
+#endif
+
+
          /*
           * Now it is safe to proceed with TC with only the current thread running
           */
@@ -921,10 +996,12 @@ int action;
       case TC_KILLALLTHREADS:{
 	 /* wait until only this thread is running  */
          thread_call = 1;
+         action_in_progress = action;
 	 while (1) {
 	    if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
-	    usleep(2);
+	    usleep(50);
 	    }
+         /*action_in_progress = TC_NONE;*/
 	 return;
          }
       default:{

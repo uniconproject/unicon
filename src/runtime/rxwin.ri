@@ -876,7 +876,10 @@ int pollevent()
    int hm;
 #ifdef Concurrent
    int isbusy;
+/*   CURTSTATE();
+   if (BlkD(k_current, Coexpr)->id>1) return 100000;
    MUTEX_TRYLOCKID(MTX_POLLEVENT, isbusy);
+*/
    if (isbusy) return 400;
 #endif					/* Concurrent */
    for (wd = wdsplys; wd; wd = wd->next) {

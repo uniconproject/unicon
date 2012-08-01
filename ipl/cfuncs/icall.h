@@ -153,13 +153,6 @@ union block {
      fileblock File;
 };
 
-#define alcstr alcstr_0
-#define alcreal alcreal_0
-#define alcfile alcfile_0
-#define cnv_int cnv_int_0
-#define cnv_real cnv_real_0
-#define cnv_str cnv_str_0
-
 int cnv_int(descriptor *, descriptor *);
 int cnv_str(descriptor *, descriptor *);
 int cnv_real(descriptor *, descriptor *);

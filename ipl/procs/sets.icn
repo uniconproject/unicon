@@ -38,7 +38,9 @@
 #  
 #	seteq(S1, S2)	tests equivalence of sets S1 and S2.
 #
-#	setlt(S1, S2)	tests inclusion of set S1 in S2.
+#	setlt(S1, S2)	tests strict inclusion of S1 in S2.
+#
+#       setle(S1, S2)   tests non-strict inclusion of S1 in S2
 #
 #	simage(S)	string image of set
 #
@@ -102,10 +104,21 @@ procedure seteq(set1, set2)		#: set equivalence
 
 end
 
-procedure setlt(set1, set2)		#: set inclusion
+procedure setlt(set1, set2)		#: S1 is a proper subset of S2
    local x
 
    if *set1 >= *set2 then fail
+   every x := !set1 do
+      if not member(set2, x) then fail
+   return set2
+
+end
+
+
+procedure setle(set1, set2)		#: S1 is a subset of S2
+   local x
+
+   if *set1 > *set2 then fail
    every x := !set1 do
       if not member(set2, x) then fail
    return set2

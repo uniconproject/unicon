@@ -4,9 +4,9 @@
 #
 #	Subject:  Procedures for input and output
 #
-#	Author:   Ralph E. Griswold
+#	Author:   Ralph E. Griswold, tweaks by Kostas Oikonomou
 #
-#	Date:     October 6, 2000
+#	Date:     August 2, 2012
 #
 ############################################################################
 #
@@ -299,9 +299,9 @@ filename   ? {
 return _DOS_FileParts_(filename,filename[1:d + p],dev,path,name,ext)
 end
 
-procedure Flush()			#: flush output buffer
-
-   while write(pull(buffer_out))
+procedure Flush(f)			#: flush output buffer
+   /f := &output
+   while write(f,pull(buffer_out))
 
    return
 
@@ -327,20 +327,22 @@ procedure PutBack(s)			#: put back line read
 
 end
 
-procedure Read()			#: read a line in buffered mode
+procedure Read(f)			#: read a line in buffered mode
 
    initial{
       buffer_in := []
       }
+   /f := &input
 
    if *buffer_in = 0 then
-      put(buffer_in,read()) | (Eof := 1)
+      put(buffer_in,read(f)) | (Eof := 1)
    return get(buffer_in)
 
 end
 
-procedure ReadAhead(n)			#: read ahead
-
+procedure ReadAhead(f, n)			#: read ahead
+   if integer(f) & /n then f :=: n
+   /f := &input
    while *buffer_in < n do
       put(buffer_in,read()) | {
          Eof := 1

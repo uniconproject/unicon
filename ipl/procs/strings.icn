@@ -4,9 +4,9 @@
 #
 #	Subject:  Procedures for manipulating strings
 #
-#	Author:   Ralph E. Griswold
+#	Author:   Ralph E. Griswold, additions by Kostas Oikonomou
 #
-#	Date:     June 10, 2001
+#	Date:     August 2, 2012
 #
 ############################################################################
 #
@@ -679,4 +679,42 @@ procedure words(s, c)		#: generate words from string
 
    fail
 
+end
+
+#
+# wordlist(s,c): produce list of words from string
+# Multiple consecutive separators are counted as one, so this procedure
+# will not return empty words.
+#
+procedure wordlist(s,sep:cset:' \t,')
+  local L := [ ], c := &ascii -- sep
+  s ? while tab(upto(c)) do put(L, tab(many(c)))
+  return L
+end
+
+#
+# fieldlist(s,c): produce list of fields from string
+# Will produce empty words (fields), if they occur between two consecutive
+# separators.
+# Example expected format: "a|bc| |d|||fg"
+procedure fieldlist(s,sep)
+  local L := []
+  /sep := ',|'
+  s ? {
+    while put(L, tab(upto(sep) | 0)) do {
+      move(1) | break
+    }
+  }
+  return L
+end
+
+#
+# numlist(s,c): produce list of numbers from string
+# Given a string, this procedure returns a list of the numbers in it, if
+# any.  Subtlety: suppose we eliminate "n := "; then if the numeric()
+# fails, we never tab() and the while loop never terminates!.
+procedure numlist(s,sep:cset:' \t,')
+  local n, L := [ ], c := &ascii -- sep
+  s ? while tab(upto(c)) do {n := tab(many(c)); put(L,numeric(n))}
+  return L
 end

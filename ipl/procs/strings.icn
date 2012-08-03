@@ -686,8 +686,10 @@ end
 # Multiple consecutive separators are counted as one, so this procedure
 # will not return empty words.
 #
-procedure wordlist(s,sep:cset:' \t,')
-  local L := [ ], c := &ascii -- sep
+procedure wordlist(s,sep)
+  local L, c
+  L := [ ]
+  c := &ascii -- (\sep | ' \t,')
   s ? while tab(upto(c)) do put(L, tab(many(c)))
   return L
 end
@@ -698,7 +700,8 @@ end
 # separators.
 # Example expected format: "a|bc| |d|||fg"
 procedure fieldlist(s,sep)
-  local L := []
+  local L
+  L := []
   /sep := ',|'
   s ? {
     while put(L, tab(upto(sep) | 0)) do {
@@ -713,8 +716,10 @@ end
 # Given a string, this procedure returns a list of the numbers in it, if
 # any.  Subtlety: suppose we eliminate "n := "; then if the numeric()
 # fails, we never tab() and the while loop never terminates!.
-procedure numlist(s,sep:cset:' \t,')
-  local n, L := [ ], c := &ascii -- sep
+procedure numlist(s,sep)
+  local n, L, c
+  L := [ ]
+  c := &ascii -- (\sep | ' \t,')
   s ? while tab(upto(c)) do {n := tab(many(c)); put(L,numeric(n))}
   return L
 end

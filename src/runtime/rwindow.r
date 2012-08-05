@@ -420,6 +420,19 @@ dptr dx;
    return 0;
    }
 
+/* linkfiletowindow - link in the Icon file block with an (opened) window */
+void linkfiletowindow(wbp w, struct b_file *fl)
+{
+   w->window->filep.dword = D_File;
+   BlkLoc(w->window->filep) = (union block *)fl;
+   if (is:null(lastEventWin)) {
+      lastEventWin = w->window->filep;
+      lastEvFWidth = FWIDTH(w);
+      lastEvLeading = LEADING(w);
+      lastEvAscent = ASCENT(w);
+      }
+}
+
 
 /*
  * Enqueue an event, encoding time interval and key state with x and y values.

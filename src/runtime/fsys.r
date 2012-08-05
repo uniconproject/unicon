@@ -997,7 +997,22 @@ Deliberate Syntax Error
             	   if (f == NULL) fail;
 	    	   }
 #endif					/* NT */
-	    	goto RETURNTHEFILE;
+		/*
+		 * Return the resulting file value. Duplicate of code below,
+		 * because rtt does not support goto statements.
+		 */
+		StrLen(filename) = strlen(fnamestr);
+		StrLoc(filename) = fnamestr;
+		Protect(fl = alcfile(f, status, &filename), runerr(0));
+#ifdef Graphics
+		/*
+		 * link in the Icon file value so this window can find it
+		 */
+		if (status & Fs_Window) {
+		  linkfiletowindow((wbp)f, fl);
+		  }
+#endif					/* Graphics */
+		return file(fl);
 	    	}
 	    else
 	    if (errno == ENOENT && (status & Fs_Read))
@@ -1070,7 +1085,6 @@ Deliberate Syntax Error
 #endif					/* MPW */
 #endif					/* MACINTOSH */
 
-RETURNTHEFILE:
       /*
        * Return the resulting file value.
        */
@@ -1084,17 +1098,9 @@ RETURNTHEFILE:
        * link in the Icon file value so this window can find it
        */
       if (status & Fs_Window) {
-	 ((wbp)f)->window->filep.dword = D_File;
-	 BlkLoc(((wbp)f)->window->filep) = (union block *)fl;
-	 if (is:null(lastEventWin)) {
-	    lastEventWin = ((wbp)f)->window->filep;
-            lastEvFWidth = FWIDTH((wbp)f);
-            lastEvLeading = LEADING((wbp)f);
-            lastEvAscent = ASCENT((wbp)f);
-            }
+	 linkfiletowindow((wbp)f, fl);
 	 }
 #endif					/* Graphics */
-
       return file(fl);
       }
 end

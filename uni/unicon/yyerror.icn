@@ -93,8 +93,14 @@ initial {
    if __merr_errors = 0 then iwrite(&errout)
    else if map(s)== "stack underflow. aborting..." then return
    __merr_errors +:= 1
-   if __merr_errors > 10 then
+   if __merr_errors > 10 then {
+      if *\parsingErrors > 0 then {
+	 every pe := !parsingErrors do {
+	    iwrite(&errout, pe.errorMessage)
+	    }
+	 }
       istop("too many errors, aborting")
+      }
    prefix := (\fName||":") | ""
    if s == "syntax error" then
       s := t[(\statestk)[1], yychar]

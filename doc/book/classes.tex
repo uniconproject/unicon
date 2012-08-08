@@ -1,16 +1,242 @@
-\clearpage\section{Chapter 9: Classes and Objects}
-Classes are user-defined data types that model the information and
-behavior of elements in the application domain. \ In Unicon they are
-records with associated procedures, called methods. Instances of these
-special record types are called objects. In this chapter you will learn
-how to:
+\clearpage\section{Chapter 9: Objects and Classes}
+
+\index{object-oriented programming}Object-oriented programming means
+different things to different people. In Unicon, object-oriented
+programming starts with encapsulation, inheritance, and polymorphism.
+These ideas are found in most object-oriented languages as well as many
+languages that are not object-oriented. The next several chapters
+present these ideas and illustrate their use in design diagrams and
+actual code. Both diagrams and code are relevant because they are
+alternative notations by which programmers share their knowledge. This
+chapter explores the essence of object-orientation and gives you the
+concepts needed before you delve into diagrams and code examples. In
+this chapter you will learn:
 
 \begin{itemize}
+\item How different programming languages support objects in different
+ways
+\item To simplify programs by encapsulating data and code
+\item The relationship between objects and program design
 \item Draw diagrams that show class names, attributes, and methods
 \item Write corresponding code for classes and their methods
 \item Create instances of classes and invoke methods on those objects
 \end{itemize}
-\subsection{Class Diagrams}
+
+\subsection{Objects in Programming Languages}
+
+Object-oriented programming can be done in any language, but some
+languages make it easier than others. Support for objects should not
+come at the cost of strange syntax or programs that look funny in a
+heterogeneous desktop-computing environment. \index{Smalltalk}Smalltalk
+has these problems. C++ is based on a well-known syntax and is used for
+mainstream desktop computing applications, but its low-level
+machine-orientation makes C++ less than ideal as an algorithmic
+notation usable by non-experts. \index{Java}Java offers a simple object
+model and familiar syntax - a potent combination. The main advantages
+Unicon has over Java are fundamentally higher-level built-in types,
+operations, and control structures.
+
+Many object-oriented languages require that \textit{everything} be done
+in terms of objects, even when objects are not appropriate. Unicon
+provides objects as just another tool to aid in the writing of
+programs, especially large ones. Icon already provides a powerful
+notation for expressing a general class of algorithms. The purpose of
+object-orientation is to enhance that notation, not to get in the way
+of it.
+
+Icon does not support user-defined objects, although its built-in types
+have nice object-like encapsulation and polymorphism properties.
+Unicon{\textquotesingle}s object-oriented facilities descend from a
+package for Icon called \index{Idol}Idol. In Idol, a preprocessor
+implemented objects with no support from the underlying Icon runtime
+system. In contrast, Unicon has support for objects built-in to the
+language. This simplifies the notation and improves the performance of
+object-related computations.
+
+Object-orientation adds several general concepts into procedure-based
+programming. The single overriding reason for \index{object-oriented
+programming}object-oriented programming is to reduce complexity in
+large programs. Simple programs can be written easily in any language.
+Somewhere between the 1,000-line mark and the 10,000-line mark most
+programmers can no longer keep track of their entire program at once.
+By using a very high-level programming language, fewer lines of code
+are required; a programmer can write perhaps ten times as large a
+program and still be able to keep track of things.
+
+As programmers write larger and larger programs, the benefit provided by
+\index{very high-level language}very high-level languages does not keep
+up with program complexity. This obstacle has been labeled the
+{\textquotedbl}software crisis,{\textquotedbl} and object-oriented
+programming is one way to address this crisis. In short, the goals of
+object-oriented programming are to reduce the complexity of coding
+required to write very large programs and to allow code to be
+understood independently of the context of the surrounding program. The
+techniques employed to achieve these goals are discussed below. 
+
+A second reason to consider object-oriented programming is that the
+paradigm fits certain problem domains especially well, such as
+simulation, and graphical user interfaces. The first well-known
+object-oriented language, \index{Simula67}Simula67, certainly had the
+domain of simulation in mind. The second pioneering object-oriented
+language, Smalltalk, popularized fundamental aspects of bitmapped
+graphical user interfaces that are nearly universal today. Three
+decades of experience with object-oriented techniques has led many
+practitioners to conclude that the concepts presented below are very
+general and widely applicable, but not all problems fit the
+object-oriented mold. Unicon advocates the use of objects, but this is
+a suggestion, not a rule. 
+
+\subsubsection{Encapsulation}
+
+The primary concept advocated by object-oriented programming is the
+principle of \index{encapsulation}encapsulation. Encapsulation is the
+isolation, in the source code that a programmer writes, of a data
+representation and the code that manipulates the data representation.
+In some sense, encapsulation is an assertion that no other routines in
+the program have {\textquotedbl}side-effects{\textquotedbl} with
+respect to the data structure in question. It is easier to reason about
+encapsulated data because all of the source code that could affect that
+data is immediately present with its definition. 
+
+Encapsulation does for data structures what the procedure does for
+algorithms: it draws a line of demarcation in the program source code.
+Code outside this boundary is (or can be, or ought to be) irrelevant to
+the code that is inside, and vice versa. All communication across the
+boundary occurs through a public interface. We call an encapsulated
+data structure an object. Just as a set of named variables called
+parameters comprises the only interface between a procedure and the
+code that uses it, a set of named procedures called methods comprises
+the only interface between an object and the code that uses it. 
+
+This textual definition of encapsulation as a property of program source
+code accounts for the fact that good programmers can write encapsulated
+data structures in any language. The problem is not capability, but
+verification. To verify encapsulation some languages require
+programmers to specify the visibility of every piece of information in
+each data structure as {\textquotedbl}public{\textquotedbl} or
+{\textquotedbl}private.{\textquotedbl} There are even multiple forms of
+privacy (semi-private?). Unicon instead stresses simplicity. 
+
+\subsubsection{Inheritance}
+
+In large programs, the same or nearly the same data structures are used
+over and over again for myriad different purposes. Similarly,
+variations on the same algorithms are employed by structure after
+structure. To minimize redundancy, techniques are needed to support
+code sharing for both data structures and algorithms. Code is shared by
+related data structures through a programming concept called
+\index{inheritance}inheritance. 
+
+The basic premise of inheritance is simple: when writing code for a data
+structure that is similar to a structure that is already written, one
+specifies the new structure by giving the differences between it and
+the old structure, instead of copying and then modifying the old
+structure{\textquotesingle}s code. Obviously there are times when the
+inheritance mechanism is not useful, such as if the two data structures
+are more different than they are similar, or if they are simple enough
+that inheritance would only confuse things, for example. 
+
+Inheritance addresses a variety of common programming problems found at
+different conceptual levels. The most obvious software engineering
+problem it solves might be termed enhancement. During the development
+of a program, its data structures may require extension via new state
+variables or new operations or both; inheritance is especially useful
+when both the original structure and the extension are used by the
+application. Inheritance also supports simplification, or the reduction
+of a data structure{\textquotesingle}s state variables or operations.
+Simplification is analogous to \index{argument culling}\textit{argument
+culling}\textit{,} an idea from lambda calculus (don{\textquotesingle}t
+worry if this sounds like Greek to you), in that it describes a logical
+relation between structures. In general, inheritance may be used in
+source code to describe any sort of relational hyponymy, or special
+casing. In Unicon the collection of all inheritance relations defines a
+directed (not necessarily acyclic) graph. 
+
+\subsubsection[Polymorphism]{Polymorphism}
+\index{polymorphism}From the perspective of the writer of related data
+structures, inheritance provides a convenient method for code sharing,
+but what about the code that uses objects? Since objects are
+encapsulated, that code is not dependent upon the internals of the
+object at all, and it makes no difference to the client code whether
+the object in question belongs to the original class or the inheriting
+class. 
+
+In fact, we can make a stronger statement. Due to encapsulation,
+different executions of some code that uses objects to implement a
+particular algorithm may operate on different objects that are not
+related by inheritance at all. Such code can utilize any objects that
+implement the operations that the code invokes. This facility is called
+polymorphism, and such algorithms are called generic. This feature is
+found in many non-object-oriented languages; in object-oriented
+languages it is a natural extension of encapsulation. 
+
+\subsection[Objects in Program Design]{Objects in Program Design}
+\index{program design}Another fundamental way to think about objects is
+from the point of view of software design. During program design,
+objects are used to model the problem domain. The different kinds of
+objects and relationships between objects capture fundamental
+information that organizes the rest of the program{\textquotesingle}s
+design and implementation. Program design includes several other
+fundamental tasks such as the design of the user interface, or
+interactions with external systems across a network. Additional kinds
+of modeling are used for these tasks, but they all revolve around the
+object model.
+
+The Unified Modeling Language (\index{UML}UML) is a diagramming notation
+for building software models. It was invented by Grady Booch, Ivar
+Jacobson, and James Rumbaugh of Rational Software. In UML, software
+models document the purpose and method of a software system. For small,
+simple, or well-understood software projects, a prose description may
+be all the documentation that is needed. UML is of interest to
+designers of larger software systems for which a prose description
+alone would be inadequate. The advantage of a model is that it conveys
+information that is both more precise and more readily understood than
+a prose description. UML is used during multiple phases of the software
+lifecycle. UML defines several kinds of diagrams, of which we will only
+consider four in this book.
+
+\begin{itemize}
+\item \textbf{Use case diagrams} show the organization of the
+application around the specific tasks accomplished by different users.
+\item \textbf{Class diagrams} show much of the static structure of the
+application data.
+\item \textbf{Statechart diagrams} model dynamic behavior of systems
+that respond to external events, including user input.
+\item \textbf{Collaboration diagrams} model interactions between
+multiple objects
+\end{itemize}
+These diagrams describe key aspects of many categories of software
+applications. The reader should consult the UML Notation Guide and
+Semantics documents for a complete description of UML. \ A good
+introduction is given in \textit{UML Toolkit}, by Hans-Erik Eriksson
+and Magnus Penker (1998).
+
+A typical application of UML to a software development project would use
+these kinds of diagrams in sequence. You might start by constructing
+use case diagrams and detailed descriptions of the different kinds of
+users and tasks performed using the system. Then develop class diagrams
+that capture the relationships between different kinds of objects
+manipulated by the system. Finally, construct statechart and
+collaboration diagrams as needed to describe the sequences of events
+that can occur and the corresponding operations performed by various
+objects in response to those events.
+
+While use case and statechart diagrams are important, their purpose is
+to help organize and elaborate on the object model represented by one
+or more class diagrams. For this reason, the next two chapters present
+elements of class diagrams along with the corresponding programming
+concepts. Use case diagrams, statecharts, and collaboration diagrams
+are discussed in chapter 12.
+
+\subsection{Classes and Class Diagrams}
+
+Classes are user-defined data types that model the information and
+behavior of elements in the application domain. \ In Unicon they are
+records with associated procedures, called methods. Instances of these
+special record types are called objects.  But the language constructs
+originated from a need to model application domain concepts, so it is
+appropriate to introduce them from that perspective.
+
 Modeling a software system begins with the task of identifying things
 that are in the system and specifying how they are related. A class
 diagram shows a static view of relationships between the main kinds of
@@ -128,6 +354,7 @@ record declarations; such declarations have the standard semantics and
 exist in the global name space. 
 
 \subsection{Object Instances}
+
 Like records, \index{instances!class object}instances of a class type
 are created with a \index{constructor!class}constructor function whose
 name is that of the class. Instances of a class are called objects, and
@@ -294,6 +521,7 @@ as method invocation like any other object. Using the \textsf{self}
 variable explicitly is rare.
 
 \subsection{Comparing Records and Classes by Example}
+
 The concepts of classes and objects are found in many programming
 languages. The following example clarifies the object model adopted by
 Unicon and provides an initial impression of these
@@ -345,6 +573,7 @@ allows an Icon programmer to maintain a voluntary encapsulation of that
 type. 
 
 \subsubsection{After Objects}
+
 Here is part of the same buffer abstraction coded in Unicon. This
 example lays the groundwork for some more substantial techniques to
 follow. Methods are like procedures that are always called in reference
@@ -408,8 +637,7 @@ last resort you could get a reference to the built-in function
 parameter of 0 tells it to skip scoping rules and look for a built-in
 function by that name.
 
-{\sffamily
-Summary}
+\section*{Summary}
 
 Classes are global declarations that define a record data type and the
 set of procedures that operate on that type. Instances of a class type

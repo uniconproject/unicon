@@ -1,4 +1,5 @@
 \clearpage\section{Chapter 4: Advanced Language Features}
+
 The previous chapters described a wide range of built-in computational
 facilities that comprise much of what makes Unicon a great language.
 This chapter delves into interesting features that help make Unicon
@@ -93,6 +94,7 @@ then \textsf{s(x)} is the same as \textsf{foo(x)}. For an integer value
 expression is the value of the \textsf{i}{\textquotesingle}th argument.
 
 \subsection{List Structures and Parameter Lists}
+
 The functions \textsf{write()} and \textsf{put()} take any number of
 arguments; this flexibility helps make them powerful and convenient.
 You can write \index{variable!no. of arguments}variable argument
@@ -117,6 +119,7 @@ the elements of \textsf{L} are written contiguously on a single line
 (unless they contain newline characters).
 
 \subsection{Co-expressions}
+
 A \index{co-expression}co-expression is an independent, encapsulated
 \index{thread}thread{}-like context, where the results of an expression
 (hopefully a generator!) can be picked off one at a time. Let us
@@ -155,10 +158,10 @@ initial i := 0 \\
 end
 }
 
-Now, consider the code generating program example again. It may need not
-a single name sequence, but two kinds of names: statement labels and
-temporary variables. In this case, you will have to write a different
-procedure for each such sequence you need. The \textsf{nameseq()}
+Now, consider the code generating program again. It may need not one
+name sequence, but two kinds of names: statement labels and
+temporary variables. It would be poor engineering to write a different
+procedure for each such sequence. The \textsf{nameseq()}
 procedure was already cumbersome for so simple a task, but generalizing
 it for multiple kinds of names makes it \textit{really} messy. By
 creating a pair of co-expressions, you can capture exactly what is
@@ -220,9 +223,7 @@ seqsel([create fibonacci(), create primes()])}
 Assuming that you have a pair of \index{generator}generator procedures
 that produce the Fibonacci numbers (1, 1, 2, 3, 5, 8, 13, \ ?) and the
 primes (2, 3, 5, 7, 11, ?), this expression produces the numbers 1, 2,
-5, 13, 89, ....
-
-Here is the implementation of \textsf{seqsel()}:
+5, 13, 89, .... Here is the implementation of \textsf{seqsel()}:
 
 \iconcode{
 procedure seqsel(a) \\
@@ -392,12 +393,13 @@ good way to assign a series of values to a group of variables but it
 demonstrates an interesting technique.
 
 \subsection{Coroutines}
-In a conventional procedure invocation, procedures have an asymmetric
+
+In conventional invocation, procedures have an asymmetric
 relationship; when control is transferred from the caller to the
 callee, the callee procedure starts execution at the top. Coroutines
 have an equal relationship: when control is transferred from one
-coroutine to another, execution starts from the previous point that its
-execution was suspended from. This process is called resumption. The
+coroutine to another, execution starts from the point that
+execution was suspended. This process is called resumption. The
 \index{producer/consumer}producer/consumer problem is a good example of
 procedures that have an equal relationship. Figure 4-1 shows how the
 control flow between coroutines is different from that of conventional
@@ -553,6 +555,7 @@ run, the random number facility will be initialized with a different
 number.
 
 \subsection{Simulation}
+
 A Galton Box is a device that demonstrates how balls falling through a
 lattice of pegs will end up distributed binomially. A simulation of a
 Galton box combines several of the techniques described previously.
@@ -704,8 +707,7 @@ initial ballcounts := table(0) \\
 end
 }
 
-{\sffamily
-Summary}
+\section*{Summary}
 
 Unicon is particularly powerful when different language features are
 combined. The ability to combine features in interesting ways is the

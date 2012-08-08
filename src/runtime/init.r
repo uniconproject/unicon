@@ -670,8 +670,14 @@ char *argv[];
    rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
-
 #ifdef Concurrent
+       /* 
+        * The heaps for root are handled differently (allocated already). 
+        * This replaces a call to init_threadheap(curtstate, , ,)  
+	*/
+   curtstate->Curstring = &rootstring;
+   curtstate->Curblock = &rootblock;
+
    rootpstate.Public_stringregion = NULL;
    rootpstate.Public_blockregion = NULL;
 #endif					/* Concurrent */
@@ -843,15 +849,6 @@ Deliberate Syntax Error
    MakeInt(hdr.trace, &(kywd_trc));
 
 #endif					/* COMPILER */
-
-#ifdef Concurrent
-       /* 
-        * The heaps for root are handled differently (allocated already). 
-        * This replaces a call to init_threadheap(curtstate, , ,)  
-	*/
-      curtstate->Curstring = curstring;
-      curtstate->Curblock = curblock;
-#endif					/* Concurrent */
 
    /*
     * Examine the environment and make appropriate settings.    [[I?]]

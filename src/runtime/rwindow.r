@@ -4720,30 +4720,44 @@ FILE *OpenConsole()
 
    if (!ConsoleBinding) {
       char ConsoleTitle[256];
-      tended struct b_list *hp;
+      struct b_list *hp;
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+       struct threadstate *curtstate;
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
       /*
        * If we haven't already allocated regions, we are called due to a
        *  failure during program startup; allocate enough memory to
        *  get the message out.
        */
+
 #ifdef MultiThread
       if (!curpstate) {
-	 CURTSTATE();
          curpstate = &rootpstate;
-#ifdef HAVE_KEYWORD__THREAD
-	 curtstate = curpstate->tstate;
-#endif					/* HAVE_KEYWORD__THREAD */
          rootpstate.eventmask = nulldesc;
          }
       if (!alclist) curpstate->Alclist = alclist_0;
       if (!reserve) curpstate->Reserve = reserve_0;
-#endif
+#endif						/* MultiThread */
+
+
       if (!curblock) {
          curstring = (struct region *)malloc(sizeof (struct region));
          curblock = (struct region *)malloc(sizeof (struct region));
          curstring->size = MaxStrSpace;
          curblock->size  = MaxAbrSize;
+#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
+   	 curtstate = &roottstate;
+	 curpstate->tstate = curtstate;
+   	 rootpstate.tstate = curtstate;
+   	 roottstatep = curtstate; 
+   	 init_threadstate(curtstate);
+   	 pthread_key_create(&tstate_key, NULL);
+   	 pthread_setspecific(tstate_key, (void *) curtstate);
+         curtstate->Curstring = curstring;
+         curtstate->Curblock = curblock;
+#endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
+
 #if COMPILER
 	 initalloc();
 #else					/* COMPILER */
@@ -4755,16 +4769,12 @@ FILE *OpenConsole()
 #endif					/* COMPILER */
 
 #ifdef Concurrent
+
       	 curtblock = curblock;
 	 curtstring = curstring;
-	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
 #endif					/*Concurrent*/
          }
 
-      /*
-       * allocate an empty event queue
-       */
-      if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
 
       /*
        * build the attribute list
@@ -4781,6 +4791,11 @@ FILE *OpenConsole()
       strncpy(ConsoleTitle, StrLoc(kywd_prog), StrLen(kywd_prog));
       ConsoleTitle[StrLen(kywd_prog)] = '\0';
       strcat(ConsoleTitle, " - console");
+
+      /*
+       * allocate an empty event queue
+       */
+      if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
 
       ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
       k_input.fd.fp = ConsoleBinding;
